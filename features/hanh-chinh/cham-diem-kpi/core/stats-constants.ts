@@ -1,0 +1,10 @@
+/**
+ * Constants for Chấm điểm KPI Stats tab (aligned with Nhân viên stats)
+ */
+
+export const STATS_CHART_HEIGHT = 200;
+
+export const DEPT_COLORS = [
+  '#6366f1', '#06b6d4', '#f59e0b', '#ef4444', '#10b981',
+  '#8b5cf6', '#ec4899', '#14b8a6', '#f97316',
+];

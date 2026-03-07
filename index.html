@@ -1,0 +1,104 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#ffffff" />
+    <title>Forpeasantz</title>
+    <!-- Open Graph (share preview) – dùng logo app -->
+    <meta property="og:title" content="Forpeasantz" />
+    <meta property="og:description" content="Hợp Tác Xã Nông Nghiệp Công Nghệ Cao FP - Forpeasantz" />
+    <meta property="og:image" content="https://scontent.fhan4-5.fna.fbcdn.net/v/t39.30808-6/646547940_873439215698096_8760186466343055269_n.jpg?_nc_cat=103&ccb=1-7&_nc_sid=13d280&_nc_ohc=RAsKtIGtd-8Q7kNvwHyjEYV&_nc_oc=AdmPaglRA6w8umYrs4ELlGNy4mcwgbEmXig4eHfJHVpmlEkxBZBTaSnD3vaVn20o-Y4&_nc_zt=23&_nc_ht=scontent.fhan4-5.fna&_nc_gid=ZR7t3ad-E7IH_sTcGZ8tPQ&_nc_ss=8&oh=00_Afx9TruOr9KWk3qZWGBgUKCEX3O7--0UU6h9sjb98wlIqA&oe=69B09F87" />
+    <!-- Favicon & logo app (logo trên browser tab) -->
+    <link rel="icon" type="image/png" href="https://scontent.fhan4-5.fna.fbcdn.net/v/t39.30808-6/646547940_873439215698096_8760186466343055269_n.jpg?_nc_cat=103&ccb=1-7&_nc_sid=13d280&_nc_ohc=RAsKtIGtd-8Q7kNvwHyjEYV&_nc_oc=AdmPaglRA6w8umYrs4ELlGNy4mcwgbEmXig4eHfJHVpmlEkxBZBTaSnD3vaVn20o-Y4&_nc_zt=23&_nc_ht=scontent.fhan4-5.fna&_nc_gid=ZR7t3ad-E7IH_sTcGZ8tPQ&_nc_ss=8&oh=00_Afx9TruOr9KWk3qZWGBgUKCEX3O7--0UU6h9sjb98wlIqA&oe=69B09F87" />
+    <link rel="apple-touch-icon" href="https://scontent.fhan4-5.fna.fbcdn.net/v/t39.30808-6/646547940_873439215698096_8760186466343055269_n.jpg?_nc_cat=103&ccb=1-7&_nc_sid=13d280&_nc_ohc=RAsKtIGtd-8Q7kNvwHyjEYV&_nc_oc=AdmPaglRA6w8umYrs4ELlGNy4mcwgbEmXig4eHfJHVpmlEkxBZBTaSnD3vaVn20o-Y4&_nc_zt=23&_nc_ht=scontent.fhan4-5.fna&_nc_gid=ZR7t3ad-E7IH_sTcGZ8tPQ&_nc_ss=8&oh=00_Afx9TruOr9KWk3qZWGBgUKCEX3O7--0UU6h9sjb98wlIqA&oe=69B09F87" />
+    
+    <!-- Default font (Inter) + Noto Sans fallback – other fonts lazy-loaded on demand -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Áp dụng chế độ tối + cỡ chữ ngay khi tải (trước React) để tránh nháy -->
+    <script>
+      (function() {
+        try {
+          var raw = localStorage.getItem('ui-storage');
+          if (!raw) return;
+          var data = JSON.parse(raw);
+          var state = data && data.state;
+          if (!state) return;
+          var el = document.documentElement;
+          // Dark mode
+          var scheme = state.colorScheme;
+          var isDark = scheme === 'dark' || (scheme === 'system' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (isDark) {
+            el.classList.add('dark');
+            var meta = document.querySelector('meta[name="theme-color"]');
+            if (meta) meta.setAttribute('content', '#0f172a');
+          } else {
+            el.classList.remove('dark');
+            var meta = document.querySelector('meta[name="theme-color"]');
+            if (meta) meta.setAttribute('content', '#ffffff');
+          }
+          // Text size preference
+          var fontSize = state.fontSize;
+          if (fontSize) el.dataset.textSize = fontSize;
+          // Language
+          var lang = state.language;
+          if (lang === 'en') el.lang = 'en';
+          // Primary color – prevent flash of default color
+          var colorMap = {
+            blue:'221.2 83.2% 53.3%', violet:'262.1 83.3% 57.8%',
+            emerald:'142.1 76.2% 36.3%', rose:'346.8 77.2% 49.8%',
+            amber:'37.7 92.1% 50.2%', orange:'24.6 95% 53.1%',
+            cyan:'188.7 94.5% 42.7%', slate:'215.4 16.3% 46.9%'
+          };
+          var pc = state.primaryColor;
+          if (pc && colorMap[pc]) {
+            var v = colorMap[pc];
+            el.style.setProperty('--primary', v);
+            el.style.setProperty('--ring', v);
+            el.style.setProperty('--secondary-foreground', v);
+            el.style.setProperty('--accent-foreground', v);
+            el.style.setProperty('--color-primary', 'hsl(' + v + ')');
+            el.style.setProperty('--color-ring', 'hsl(' + v + ' / 0.5)');
+          }
+        } catch (e) {}
+      })();
+    </script>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@18.3.1",
+    "react-dom": "https://esm.sh/react-dom@18.3.1",
+    "react-dom/": "https://esm.sh/react-dom@18.3.1/",
+    "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
+    "@tanstack/react-query": "https://esm.sh/@tanstack/react-query@^5.17.19?external=react,react-dom",
+    "sonner": "https://esm.sh/sonner@^1.4.0?external=react,react-dom",
+    "react/": "https://esm.sh/react@18.3.1/",
+    "react-router-dom": "https://esm.sh/react-router-dom@^6.22.0?external=react,react-dom",
+    "zustand": "https://esm.sh/zustand@^4.5.0?external=react",
+    "zustand/": "https://esm.sh/zustand@^4.5.0/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
+    "lucide-react": "https://esm.sh/lucide-react@^0.344.0?external=react",
+    "framer-motion": "https://esm.sh/framer-motion@^11.0.8?external=react,react-dom",
+    "react-hook-form": "https://esm.sh/react-hook-form@^7.50.1?external=react",
+    "zod": "https://esm.sh/zod@^3.22.4",
+    "@hookform/resolvers/zod": "https://esm.sh/@hookform/resolvers@^3.3.4/zod?external=react,react-hook-form",
+    "dayjs": "https://esm.sh/dayjs@^1.11.10",
+    "recharts": "https://esm.sh/recharts@^2.12.0?external=react,react-dom",
+    "clsx": "https://esm.sh/clsx@^2.1.0",
+    "tailwind-merge": "https://esm.sh/tailwind-merge@^2.2.1",
+    "@hookform/resolvers/": "https://esm.sh/@hookform/resolvers@^5.2.2/",
+    "dayjs/": "https://esm.sh/dayjs@^1.11.19/",
+    "i18next": "https://esm.sh/i18next@^24.2.2",
+    "react-i18next": "https://esm.sh/react-i18next@^15.4.1?external=react,i18next"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./index.tsx"></script>
+  </body>
+</html>

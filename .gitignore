@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Environment variables (chứa secret - không commit)
+.env
+.env.local
+.env.*.local
+
+# Build
+dist/
+build/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

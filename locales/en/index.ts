@@ -1,0 +1,159 @@
+/**
+ * Locale en (English) – merged from namespace files.
+ */
+import common from './common.json';
+import pages from './pages.json';
+import employee from './employee.json';
+import department from './department.json';
+import branch from './branch.json';
+import position from './position.json';
+import jobLevel from './jobLevel.json';
+import permission from './permission.json';
+import backup from './backup.json';
+import company from './company.json';
+import tenure from './tenure.json';
+import loginDevices from './loginDevices.json';
+import payrollIp from './payroll-ip.json';
+import adminForm from './admin-form.json';
+import attendance from './attendance.json';
+import chucNangNhiemVu from './chucNangNhiemVu.json';
+import diemCongTru from './diem-cong-tru.json';
+import chamDiemKpi from './cham-diem-kpi.json';
+import bangLuong from './bang-luong.json';
+import thietLapCongViec from './thiet-lap-cong-viec.json';
+import duAn from './du-an.json';
+import congViec from './cong-viec.json';
+import baoCao from './bao-cao.json';
+import guide from './guide.json';
+import thietLapTaiLieu from './thiet-lap-tai-lieu.json';
+import taiLieu from './tai-lieu.json';
+import hoSo from './ho-so.json';
+import thietLapTaiSan from '@/features/hanh-chinh/thiet-lap-tai-san/locales/en.json';
+import danhSachTaiSan from '@/features/hanh-chinh/danh-muc-tai-san/locales/en.json';
+import capPhatThuHoi from '@/features/hanh-chinh/cap-phat-thu-hoi/locales/en.json';
+import baoTriSuaChua from '@/features/hanh-chinh/bao-tri-sua-chua/locales/en.json';
+import kiemKeTaiSan from '@/features/hanh-chinh/kiem-ke-tai-san/locales/en.json';
+import khauHaoTaiSan from '@/features/hanh-chinh/khau-hao-tai-san/locales/en.json';
+import noiQuanLy from '@/features/hanh-chinh/noi-quan-ly/locales/en.json';
+import thietLapTuyenDung from '@/features/nhan-su/thiet-lap-tuyen-dung/locales/en.json';
+import deXuatTuyenDung from '@/features/nhan-su/de-xuat-tuyen-dung/locales/en.json';
+import ungVien from '@/features/nhan-su/ung-vien/locales/en.json';
+import lichPhongVan from '@/features/nhan-su/lich-phong-van/locales/en.json';
+import thuGuiUngVien from '@/features/nhan-su/thu-gui-ung-vien/locales/en.json';
+import hopDong from '@/features/nhan-su/hop-dong/locales/en.json';
+import baoCaoTuyenDung from '@/features/nhan-su/bao-cao-tuyen-dung/locales/en.json';
+import thietLapDaoTao from '@/features/nhan-su/thiet-lap-dao-tao/locales/en.json';
+import khoaDaoTao from '@/features/nhan-su/khoa-dao-tao/locales/en.json';
+import thietLapKhoa from '@/features/nhan-su/khoa-dao-tao/thiet-lap/locales/en.json';
+import dangKyDaoTao from '@/features/nhan-su/dang-ky-dao-tao/locales/en.json';
+import baoCaoDaoTao from '@/features/nhan-su/bao-cao-dao-tao/locales/en.json';
+import keHoachDaoTao from '@/features/nhan-su/ke-hoach-dao-tao/locales/en.json';
+import danhMucTaiChinh from '@/features/tai-chinh/danh-muc-tai-chinh/locales/en.json';
+import taiKhoan from '@/features/tai-chinh/tai-khoan/locales/en.json';
+import deXuatChiPhi from '@/features/tai-chinh/de-xuat-chi-phi/locales/en.json';
+import keHoachChiPhi from '@/features/tai-chinh/ke-hoach-chi-phi/locales/en.json';
+import thuChi from '@/features/tai-chinh/thu-chi/locales/en.json';
+import baoCaoTaiChinh from '@/features/tai-chinh/bao-cao-tai-chinh/locales/en.json';
+import danhMucHangHoa from '@/features/kho-van/danh-muc-hang-hoa/locales/en.json';
+import hangHoa from '@/features/kho-van/danh-sach-hang-hoa/locales/en.json';
+import nhaCungCap from '@/features/kho-van/danh-sach-nha-cung-cap/locales/en.json';
+import doiTac from '@/features/kho-van/danh-sach-doi-tac/locales/en.json';
+import phieuKho from '@/features/kho-van/phieu-kho/locales/en.json';
+import tonKho from '@/features/kho-van/ton-kho/locales/en.json';
+import baoCaonhapXuatTon from '@/features/kho-van/bao-cao-nhap-xuat-ton/locales/en.json';
+import kiemKeKho from '@/features/kho-van/kiem-ke-kho/locales/en.json';
+import phieuDeXuatVatTu from '@/features/kho-van/phieu-de-xuat-vat-tu/locales/en.json';
+import donDatHang from '@/features/mua-hang/don-dat-hang/locales/en.json';
+import nhaCungCapMuaHang from '@/features/mua-hang/danh-sach-doi-tac/locales/en.json';
+import thietLapDeXuatVatTu from '@/features/mua-hang/thiet-lap-de-xuat-vat-tu/locales/en.json';
+import thanhToanDoiTac from '@/features/mua-hang/thanh-toan-doi-tac/locales/en.json';
+import baoCaodeXuatVatTu from '@/features/mua-hang/bao-cao-de-xuat-vat-tu/locales/en.json';
+import suMenhTamNhin from '@/features/dieu-hanh/su-menh-tam-nhin/locales/en.json';
+import phanTichSwot from '@/features/dieu-hanh/phan-tich-swot/locales/en.json';
+import phanTichDoiThu from '@/features/dieu-hanh/phan-tich-doi-thu/locales/en.json';
+import chienLuoc from '@/features/dieu-hanh/chien-luoc/locales/en.json';
+import hanhDongCotLoi from '@/features/dieu-hanh/hanh-dong-cot-loi/locales/en.json';
+import tieuChiKpi from '@/features/dieu-hanh/tieu-chi-kpi/locales/en.json';
+import theoDoiDanhGia from '@/features/dieu-hanh/theo-doi-danh-gia/locales/en.json';
+import kho from './kho.json';
+
+const en = {
+
+  ...(common as Record<string, string>),
+  ...(pages as Record<string, string>),
+  ...(employee as Record<string, string>),
+  ...(department as Record<string, string>),
+  ...(branch as Record<string, string>),
+  ...(position as Record<string, string>),
+  ...(jobLevel as Record<string, string>),
+  ...(permission as Record<string, string>),
+  ...(backup as Record<string, string>),
+  ...(company as Record<string, string>),
+  ...(tenure as Record<string, string>),
+  ...(loginDevices as Record<string, string>),
+  ...(payrollIp as Record<string, string>),
+  ...(adminForm as Record<string, string>),
+  ...(attendance as Record<string, string>),
+  ...(chucNangNhiemVu as Record<string, string>),
+  ...(diemCongTru as Record<string, string>),
+  ...(chamDiemKpi as Record<string, string>),
+  ...(bangLuong as Record<string, string>),
+  ...(thietLapCongViec as Record<string, string>),
+  ...(duAn as Record<string, string>),
+  ...(congViec as Record<string, string>),
+  ...(baoCao as Record<string, string>),
+  ...(guide as Record<string, string>),
+  ...(thietLapTaiLieu as Record<string, string>),
+  ...(taiLieu as Record<string, string>),
+  ...(hoSo as Record<string, string>),
+  ...(thietLapTaiSan as Record<string, string>),
+  ...(danhSachTaiSan as Record<string, string>),
+  ...(capPhatThuHoi as Record<string, string>),
+  ...(baoTriSuaChua as Record<string, string>),
+  ...(kiemKeTaiSan as Record<string, string>),
+  ...(khauHaoTaiSan as Record<string, string>),
+  ...(noiQuanLy as Record<string, string>),
+  ...(thietLapTuyenDung as Record<string, string>),
+  ...(deXuatTuyenDung as Record<string, string>),
+  ...(ungVien as Record<string, string>),
+  ...(lichPhongVan as Record<string, string>),
+  ...(thuGuiUngVien as Record<string, string>),
+  ...(hopDong as Record<string, string>),
+  ...(baoCaoTuyenDung as Record<string, string>),
+  ...(thietLapDaoTao as Record<string, string>),
+  ...(khoaDaoTao as Record<string, string>),
+  ...(thietLapKhoa as Record<string, string>),
+  ...(dangKyDaoTao as Record<string, string>),
+  ...(baoCaoDaoTao as Record<string, string>),
+  ...(keHoachDaoTao as Record<string, string>),
+...(danhMucTaiChinh as Record<string, string>),
+  ...(taiKhoan as Record<string, string>),
+  ...(deXuatChiPhi as Record<string, string>),
+  ...(keHoachChiPhi as Record<string, string>),
+  ...(thuChi as Record<string, string>),
+  ...(baoCaoTaiChinh as Record<string, string>),
+  ...(danhMucHangHoa as Record<string, string>),
+  ...(hangHoa as Record<string, string>),
+  ...(nhaCungCap as Record<string, string>),
+  ...(doiTac as Record<string, string>),
+  ...(phieuKho as Record<string, string>),
+  ...(tonKho as Record<string, string>),
+  ...(baoCaonhapXuatTon as Record<string, string>),
+  ...(kiemKeKho as Record<string, string>),
+  ...(phieuDeXuatVatTu as Record<string, string>),
+  ...(donDatHang as Record<string, string>),
+  ...(nhaCungCapMuaHang as Record<string, string>),
+  ...(thietLapDeXuatVatTu as Record<string, string>),
+  ...(thanhToanDoiTac as Record<string, string>),
+  ...(baoCaodeXuatVatTu as Record<string, string>),
+  ...(suMenhTamNhin as Record<string, string>),
+  ...(phanTichSwot as Record<string, string>),
+  ...(phanTichDoiThu as Record<string, string>),
+  ...(chienLuoc as Record<string, string>),
+  ...(hanhDongCotLoi as Record<string, string>),
+  ...(tieuChiKpi as Record<string, string>),
+  ...(theoDoiDanhGia as Record<string, string>),
+  ...(kho as Record<string, string>),
+};
+
+export default en;

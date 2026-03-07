@@ -1,0 +1,122 @@
+import { supabase } from '../../../../lib/supabase';
+import type { Position } from '../core/types';
+import type { PositionFormValues } from '../core/schema';
+import { TRANG_THAI, type TrangThai } from '../../../../lib/constants';
+import { getJobLevels } from '../../cap-bac/services/cap-bac-service';
+import { getDepartments } from '../../phong-ban/services/phong-ban-service';
+import i18n from '../../../../lib/i18n';
+
+const TABLE = 'fp_var_chuc_vu';
+
+function rowToPosition(row: Record<string, unknown>, deptMap: Map<string, string>, levelMap: Map<string, string>): Position {
+  const phongBanId = row.phong_ban_id != null ? String(row.phong_ban_id) : null;
+  const capBacId = row.cap_bac_id != null ? String(row.cap_bac_id) : null;
+  return {
+    id: String(row.id),
+    ten_chuc_vu: ((row.ten_chuc_vu as string) ?? '').trim(),
+    phong_ban_id: phongBanId,
+    cap_bac_id: capBacId,
+    ten_phong_ban: phongBanId ? deptMap.get(phongBanId) : undefined,
+    ten_cap_bac: capBacId ? levelMap.get(capBacId) : undefined,
+    mo_ta: (row.mo_ta as string)?.trim() ?? null,
+    tt: row.tt != null ? Number(row.tt) : 0,
+    trang_thai: (row.trang_thai as TrangThai) ?? TRANG_THAI.DANG_DUNG,
+    tg_tao: row.tg_tao ? new Date(row.tg_tao as string).toISOString() : '',
+    tg_cap_nhat: row.tg_cap_nhat ? new Date(row.tg_cap_nhat as string).toISOString() : '',
+  };
+}
+
+async function buildLookupMaps() {
+  const [departments, jobLevels] = await Promise.all([getDepartments(), getJobLevels()]);
+  return {
+    deptMap: new Map(departments.map((d) => [d.id, d.ten_phong_ban])),
+    levelMap: new Map(jobLevels.map((l) => [l.id, l.ten_cap_bac])),
+  };
+}
+
+export const getPositions = async (): Promise<Position[]> => {
+  const { data, error } = await supabase
+    .from(TABLE)
+    .select('id, ten_chuc_vu, phong_ban_id, cap_bac_id, mo_ta, tt, trang_thai, tg_tao, tg_cap_nhat')
+    .order('tt', { ascending: true, nullsFirst: false })
+    .order('ten_chuc_vu', { ascending: true });
+
+  if (error) throw new Error(error.message ?? i18n.t('position.service.notFound'));
+  const { deptMap, levelMap } = await buildLookupMaps();
+  return (data ?? []).map((row) => rowToPosition(row, deptMap, levelMap));
+};
+
+export const createPosition = async (data: PositionFormValues): Promise<Position> => {
+  const row = {
+    ten_chuc_vu: data.ten_chuc_vu.trim(),
+    phong_ban_id: data.phong_ban_id || null,
+    cap_bac_id: data.cap_bac_id || null,
+    mo_ta: data.mo_ta?.trim() || null,
+    tt: data.tt ?? 0,
+    trang_thai: data.trang_thai,
+    tg_tao: new Date().toISOString(),
+    tg_cap_nhat: new Date().toISOString(),
+  };
+
+  const { data: inserted, error } = await supabase
+    .from(TABLE)
+    .insert(row)
+    .select('id, ten_chuc_vu, phong_ban_id, cap_bac_id, mo_ta, tt, trang_thai, tg_tao, tg_cap_nhat')
+    .single();
+
+  if (error) throw new Error(error.message);
+  const { deptMap, levelMap } = await buildLookupMaps();
+  return rowToPosition(inserted, deptMap, levelMap);
+};
+
+export const updatePosition = async (id: string, data: PositionFormValues): Promise<Position> => {
+  const row = {
+    ten_chuc_vu: data.ten_chuc_vu.trim(),
+    phong_ban_id: data.phong_ban_id || null,
+    cap_bac_id: data.cap_bac_id || null,
+    mo_ta: data.mo_ta?.trim() || null,
+    tt: data.tt ?? 0,
+    trang_thai: data.trang_thai,
+    tg_cap_nhat: new Date().toISOString(),
+  };
+
+  const { data: updated, error } = await supabase
+    .from(TABLE)
+    .update(row)
+    .eq('id', id)
+    .select('id, ten_chuc_vu, phong_ban_id, cap_bac_id, mo_ta, tt, trang_thai, tg_tao, tg_cap_nhat')
+    .single();
+
+  if (error) throw new Error(error.message ?? i18n.t('position.service.notFound'));
+  const { deptMap, levelMap } = await buildLookupMaps();
+  return rowToPosition(updated, deptMap, levelMap);
+};
+
+export const updatePositionStatus = async (ids: string[], status: TrangThai): Promise<Position | undefined> => {
+  if (ids.length === 1) {
+    const { data, error } = await supabase
+      .from(TABLE)
+      .update({ trang_thai: status, tg_cap_nhat: new Date().toISOString() })
+      .eq('id', ids[0])
+      .select('id, ten_chuc_vu, phong_ban_id, cap_bac_id, mo_ta, tt, trang_thai, tg_tao, tg_cap_nhat')
+      .single();
+
+    if (error) throw new Error(error.message);
+    if (!data) return undefined;
+    const { deptMap, levelMap } = await buildLookupMaps();
+    return rowToPosition(data, deptMap, levelMap);
+  }
+
+  const { error } = await supabase
+    .from(TABLE)
+    .update({ trang_thai: status, tg_cap_nhat: new Date().toISOString() })
+    .in('id', ids);
+
+  if (error) throw new Error(error.message);
+  return undefined;
+};
+
+export const deletePositions = async (ids: string[]): Promise<void> => {
+  const { error } = await supabase.from(TABLE).delete().in('id', ids);
+  if (error) throw new Error(error.message);
+};

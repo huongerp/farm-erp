@@ -1,0 +1,65 @@
+/** Bộ lọc chung cho báo cáo đề xuất vật tư */
+export interface BaoCaoDeXuatVatTuFilters {
+  dateFrom: string;
+  dateTo: string;
+  /** 0 Chờ duyệt, 1 Đã duyệt, 2 Không duyệt */
+  trangThaiIds: (0 | 1 | 2)[];
+  noiDeXuatIds: string[];
+  nguoiDeXuatIds: string[];
+  nguoiDuyetIds: string[];
+}
+
+/** Dòng tổng hợp theo trạng thái */
+export interface TongHopByTrangThaiRow {
+  trang_thai: 0 | 1 | 2;
+  ten_trang_thai?: string;
+  count: number;
+}
+
+/** Dòng tổng hợp theo nơi đề xuất */
+export interface TongHopByNoiDeXuatRow {
+  id_noi_de_xuat: string;
+  ten_noi_de_xuat?: string;
+  count: number;
+}
+
+/** Kết quả tổng hợp theo kỳ */
+export interface TongHopDeXuatKyResult {
+  total: number;
+  choDuyet: number;
+  daDuyet: number;
+  khongDuyet: number;
+  byTrangThai: TongHopByTrangThaiRow[];
+  byNoiDeXuat: TongHopByNoiDeXuatRow[];
+  /** Số phiếu theo tháng (để vẽ chart): key = YYYY-MM */
+  byMonth?: { monthKey: string; label: string; count: number }[];
+}
+
+/** Dòng chi tiết phiếu (để hiển thị bảng) */
+export interface ChiTietPhieuRow {
+  id: string;
+  so_phieu: string;
+  ngay: string;
+  ngay_can: string;
+  id_noi_de_xuat: string;
+  ten_noi_de_xuat?: string;
+  id_nguoi_de_xuat: string;
+  ten_nguoi_de_xuat?: string;
+  id_nguoi_duyet?: string | null;
+  ten_nguoi_duyet?: string | null;
+  trang_thai: 0 | 1 | 2;
+  ghi_chu?: string;
+}
+
+/** Dòng bảng liên kết đơn hàng */
+export interface LienKetDonHangRow {
+  id_phieu: string;
+  so_phieu: string;
+  ngay: string;
+  trang_thai: 0 | 1 | 2;
+  ten_noi_de_xuat?: string;
+  ten_nguoi_de_xuat?: string;
+  da_chuyen_don: boolean;
+  so_phieu_don?: string;
+  id_don_dat_hang?: string;
+}

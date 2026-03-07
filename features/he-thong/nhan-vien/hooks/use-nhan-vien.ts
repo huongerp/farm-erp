@@ -1,0 +1,138 @@
+
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getEmployees, getEmployeeById, createEmployee, updateEmployee, deleteEmployees, updateEmployeeStatus, bulkUpdateEmployees, restoreEmployees } from "../services/nhan-vien-service";
+import { EmployeeFormValues } from "../core/schema";
+import { Employee } from "../core/types";
+import { toast } from "sonner";
+import i18n from '../../../../lib/i18n';
+
+export const useEmployees = () => {
+  return useQuery({
+    queryKey: ['employees'],
+    queryFn: getEmployees,
+    staleTime: 1000 * 60 * 5,
+  });
+};
+
+export const useEmployee = (id: string | null) => {
+  return useQuery({
+    queryKey: ['employee', id],
+    queryFn: () => getEmployeeById(id!),
+    enabled: !!id,
+  });
+};
+
+export const useCreateEmployee = (onSuccess?: () => void) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createEmployee,
+    onSuccess: (emp: Employee & { _authCreated?: boolean }) => {
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      toast.success(i18n.t('employee.toast.createSuccess'));
+      if (emp._authCreated) {
+        toast.info(i18n.t('employee.toast.authUserCreated', { email: emp.email }));
+      }
+      if (onSuccess) onSuccess();
+    },
+    onError: (err: any) => toast.error(`Lỗi: ${err.message}`)
+  });
+};
+
+export const useUpdateEmployee = (onSuccess?: () => void) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string, data: EmployeeFormValues }) => updateEmployee(id, data),
+    onSuccess: (emp: Employee & { _authCreated?: boolean }) => {
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      toast.success(i18n.t('employee.toast.updateSuccess'));
+      if (emp._authCreated) {
+        toast.info(i18n.t('employee.toast.authUserCreated', { email: emp.email }));
+      }
+      if (onSuccess) onSuccess();
+    },
+    onError: (err: any) => toast.error(`Lỗi: ${err.message}`)
+  });
+};
+
+export const useUpdateStatusEmployee = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+      mutationFn: ({ ids, status }: { ids: string[], status: string }) => updateEmployeeStatus(ids, status),
+      onSuccess: (_, variables) => {
+        queryClient.invalidateQueries({ queryKey: ['employees'] });
+        toast.success(i18n.t('employee.toast.statusUpdateSuccess', { count: variables.ids.length }));
+      },
+      onError: (err: any) => toast.error(`Lỗi: ${err.message}`)
+    });
+};
+
+export const useBulkUpdateEmployees = (onSuccess?: () => void) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ ids, fields }: { ids: string[]; fields: Record<string, any> }) =>
+      bulkUpdateEmployees(ids, fields),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      toast.success(i18n.t('employee.toast.bulkUpdateSuccess', { count: variables.ids.length }));
+      onSuccess?.();
+    },
+    onError: (err: any) => toast.error(`Lỗi: ${err.message}`),
+  });
+};
+
+export const useDeleteEmployees = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: string[]) => deleteEmployees(ids),
+    onSuccess: (_, ids) => {
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      toast.success(i18n.t('employee.toast.deleteSuccess', { count: ids.length }));
+    },
+    onError: (err: any) => toast.error(err.message)
+  });
+};
+
+/**
+ * Hook xóa có thể hoàn tác (undo).
+ * Xóa trước → hiện toast có nút "Hoàn tác" → nếu nhấn thì restore lại.
+ */
+export const useDeleteWithUndo = () => {
+  const queryClient = useQueryClient();
+
+  const deleteMut = useMutation({
+    mutationFn: (ids: string[]) => deleteEmployees(ids),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const restoreMut = useMutation({
+    mutationFn: (employees: Employee[]) => restoreEmployees(employees),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      toast.success(i18n.t('employee.toast.undoSuccess'));
+    },
+  });
+
+  const deleteWithUndo = async (
+    employees: Employee[],
+    callbacks?: { onDone?: () => void }
+  ) => {
+    const ids = employees.map(e => e.id);
+    const snapshot = [...employees]; // lưu bản sao để restore
+
+    await deleteMut.mutateAsync(ids);
+    callbacks?.onDone?.();
+
+    toast(i18n.t('employee.toast.deleteCount', { count: ids.length }), {
+      duration: 6000,
+      action: {
+        label: i18n.t('employee.toast.undo'),
+        onClick: () => restoreMut.mutate(snapshot),
+      },
+    });
+  };
+
+  return { deleteWithUndo, isPending: deleteMut.isPending };
+};

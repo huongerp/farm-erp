@@ -1,0 +1,22 @@
+{
+  "noiQuanLy.tabs.danhSach": "Danh sách",
+  "noiQuanLy.tabs.thongKe": "Thống kê",
+  "noiQuanLy.stats.title": "Thống kê nơi quản lý",
+  "noiQuanLy.stats.subtitle": "Tổng quan nơi lưu trữ và tài sản theo vị trí.",
+  "noiQuanLy.stats.totalLocations": "Tổng nơi lưu",
+  "noiQuanLy.stats.activeLocations": "Đang hoạt động",
+  "noiQuanLy.stats.inactiveLocations": "Ngưng hoạt động",
+  "noiQuanLy.stats.totalAssetsInLocations": "Tổng tài sản tại các nơi lưu",
+  "noiQuanLy.stats.assetsPerLocation": "Số tài sản theo nơi lưu",
+  "noiQuanLy.stats.byBranch": "Theo chi nhánh",
+  "noiQuanLy.stats.locationCol": "Nơi lưu",
+  "noiQuanLy.stats.branchCol": "Chi nhánh",
+  "noiQuanLy.stats.assetCountCol": "Số tài sản",
+  "noiQuanLy.stats.statusCol": "Trạng thái",
+  "noiQuanLy.stats.branchNameCol": "Chi nhánh",
+  "noiQuanLy.stats.locationCountCol": "Số nơi lưu",
+  "noiQuanLy.stats.loading": "Đang tải...",
+  "noiQuanLy.stats.noData": "Chưa có dữ liệu",
+  "noiQuanLy.stats.exportReport": "Xuất báo cáo",
+  "noiQuanLy.stats.printReport": "In báo cáo"
+}

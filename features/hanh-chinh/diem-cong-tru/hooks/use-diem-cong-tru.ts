@@ -1,0 +1,69 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import i18n from '../../../../lib/i18n';
+import {
+  getDiemCongTruRecords,
+  createDiemCongTruRecord,
+  updateDiemCongTruRecord,
+  deleteDiemCongTruRecords,
+  getPayrollPointGroupsForModule,
+  getEmployeesForSelect,
+} from '../services/diem-cong-tru-service';
+import { DiemCongTruFormValues } from '../core/schema';
+
+export const useDiemCongTruRecords = () =>
+  useQuery({
+    queryKey: ['diemCongTruRecords'],
+    queryFn: getDiemCongTruRecords,
+  });
+
+export const usePayrollPointGroupsForDiemCongTru = () =>
+  useQuery({
+    queryKey: ['payrollPointGroups'],
+    queryFn: getPayrollPointGroupsForModule,
+  });
+
+export const useEmployeesForDiemCongTru = () =>
+  useQuery({
+    queryKey: ['employees'],
+    queryFn: getEmployeesForSelect,
+  });
+
+export const useCreateDiemCongTruRecord = (onSuccess?: () => void) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: DiemCongTruFormValues) => createDiemCongTruRecord(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['diemCongTruRecords'] });
+      toast.success(i18n.t('diemCongTru.toast.createSuccess'));
+      if (onSuccess) onSuccess();
+    },
+    onError: (err: unknown) => toast.error((err as Error).message),
+  });
+};
+
+export const useUpdateDiemCongTruRecord = (onSuccess?: () => void) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: DiemCongTruFormValues }) =>
+      updateDiemCongTruRecord(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['diemCongTruRecords'] });
+      toast.success(i18n.t('diemCongTru.toast.updateSuccess'));
+      if (onSuccess) onSuccess();
+    },
+    onError: (err: unknown) => toast.error((err as Error).message),
+  });
+};
+
+export const useDeleteDiemCongTruRecords = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: string[]) => deleteDiemCongTruRecords(ids),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['diemCongTruRecords'] });
+      toast.success(i18n.t('diemCongTru.toast.deleteSuccess', { count: variables.length }));
+    },
+    onError: (err: unknown) => toast.error((err as Error).message),
+  });
+};

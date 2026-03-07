@@ -1,0 +1,415 @@
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ClipboardCheck, List, CheckCircle, Edit, Printer, Power, PenLine, RefreshCw, FileText, X } from 'lucide-react';
+import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
+import DetailSection from '../../../../components/shared/DetailSection';
+import DetailField from '../../../../components/shared/DetailField';
+import DetailToolbar, { DetailToolbarAction } from '../../../../components/shared/DetailToolbar';
+import Button from '../../../../components/ui/Button';
+import Textarea from '../../../../components/ui/Textarea';
+import { BTN_CLOSE, BTN_EDIT } from '../../../../lib/button-labels';
+import { formatDate, cn } from '../../../../lib/utils';
+import { useAuthStore } from '../../../../store/useStore';
+import { getTrangThaiDotLabel, getKetQuaLabel } from '../core/constants';
+import type { DotKiemKeKho, ChiTietKiemKeKho, ChiTietKiemKeKhoUpdate } from '../core/types';
+import {
+  useUpdateChiTietKetQua,
+  useDieuChinhTonTheoKetQua,
+  useDieuChinhTonTheoDot,
+  useUpdateDotKiemKeKho,
+} from '../hooks/use-kiem-ke-kho';
+import NhapKetQuaKiemKeDialog from './NhapKetQuaKiemKeDialog';
+
+const getPhieuKiemKeKhoPreviewUrl = (id: string) => `/kho-van/kiem-ke-kho/preview/${encodeURIComponent(id)}`;
+
+interface Props {
+  data: DotKiemKeKho;
+  chiTiet: ChiTietKiemKeKho[];
+  chiTietLoading: boolean;
+  onClose: () => void;
+  onEdit?: (item: DotKiemKeKho) => void;
+  onTaoDanhSach?: (id: string) => void;
+  onHoanThanh?: (id: string) => void;
+  onStatusChange?: (item: DotKiemKeKho) => void;
+  taoDanhSachLoading?: boolean;
+  hoanThanhLoading?: boolean;
+}
+
+const DotKiemKeKhoDetail: React.FC<Props> = ({
+  data,
+  chiTiet,
+  chiTietLoading,
+  onClose,
+  onEdit,
+  onTaoDanhSach,
+  onHoanThanh,
+  onStatusChange,
+  taoDanhSachLoading,
+  hoanThanhLoading,
+}) => {
+  const { t } = useTranslation();
+  const user = useAuthStore((s) => s.user);
+  const currentUserId = user?.id ?? '';
+  const [nhapKetQuaRow, setNhapKetQuaRow] = useState<ChiTietKiemKeKho | null>(null);
+  const [ghiChuOpen, setGhiChuOpen] = useState(false);
+  const [ghiChuValue, setGhiChuValue] = useState(data.ghi_chu ?? '');
+
+  useEffect(() => {
+    if (ghiChuOpen) setGhiChuValue(data.ghi_chu ?? '');
+  }, [ghiChuOpen, data.ghi_chu]);
+
+  const updateDotMutation = useUpdateDotKiemKeKho(() => setGhiChuOpen(false));
+  const updateKetQuaMutation = useUpdateChiTietKetQua(data.id, () => setNhapKetQuaRow(null));
+  const dieuChinhRowMutation = useDieuChinhTonTheoKetQua(data.id);
+  const dieuChinhDotMutation = useDieuChinhTonTheoDot(data.id);
+
+  const isDraft = data.trang_thai === 'draft';
+  const isDangKiemKe = data.trang_thai === 'dang_kiem_ke';
+
+  const handleNhapKetQuaSave = useCallback(
+    (payload: ChiTietKiemKeKhoUpdate) => {
+      if (!nhapKetQuaRow || !currentUserId) return;
+      updateKetQuaMutation.mutate({
+        id_chi_tiet: nhapKetQuaRow.id,
+        data: payload,
+        id_nguoi_kiem: currentUserId,
+      });
+    },
+    [nhapKetQuaRow, currentUserId, updateKetQuaMutation]
+  );
+
+  const stats = useMemo(() => {
+    const khop = chiTiet.filter((c) => c.ket_qua === 'khop').length;
+    const thieu = chiTiet.filter((c) => c.ket_qua === 'thieu').length;
+    const thua = chiTiet.filter((c) => c.ket_qua === 'thua').length;
+    const chuaKiem = chiTiet.filter((c) => c.ket_qua === 'chua_kiem').length;
+    return { khop, thieu, thua, chuaKiem, total: chiTiet.length };
+  }, [chiTiet]);
+
+  const hasAnyThucTe = useMemo(
+    () => chiTiet.some((c) => c.so_luong_thuc_te != null),
+    [chiTiet]
+  );
+
+  const handleSaveGhiChu = useCallback(() => {
+    updateDotMutation.mutate(
+      { id: data.id, data: { ghi_chu: ghiChuValue.trim() || undefined } },
+      { onSuccess: () => setGhiChuOpen(false) }
+    );
+  }, [data.id, ghiChuValue, updateDotMutation]);
+
+  const toolbarActions: DetailToolbarAction[] = useMemo(() => {
+    const actions: DetailToolbarAction[] = [
+      {
+        label: t('kiemKeKho.printPhieu'),
+        icon: <Printer size={16} />,
+        onClick: () => window.open(getPhieuKiemKeKhoPreviewUrl(data.id), '_blank', 'noopener,noreferrer'),
+        variant: 'primary',
+      },
+      {
+        label: t('kiemKeKho.detail.fillNote'),
+        icon: <FileText size={16} />,
+        onClick: () => setGhiChuOpen(true),
+        variant: 'outline',
+      },
+    ];
+    if (isDraft && onTaoDanhSach) {
+      actions.push({
+        label: t('kiemKeKho.taoDanhSach'),
+        icon: <List size={16} />,
+        onClick: () => onTaoDanhSach(data.id),
+        variant: 'success',
+        disabled: taoDanhSachLoading,
+      });
+    }
+    if (isDangKiemKe && hasAnyThucTe) {
+      actions.push({
+        label: t('kiemKeKho.dieuChinhTonDot'),
+        icon: <RefreshCw size={16} />,
+        onClick: () => dieuChinhDotMutation.mutate(),
+        variant: 'secondary',
+        disabled: dieuChinhDotMutation.isPending,
+      });
+      if (onHoanThanh) {
+        actions.push({
+          label: t('kiemKeKho.hoanThanh'),
+          icon: <CheckCircle size={16} />,
+          onClick: () => onHoanThanh(data.id),
+          variant: 'success',
+          disabled: hoanThanhLoading,
+        });
+      }
+    }
+    if (onStatusChange) {
+      actions.push({
+        label: t('kiemKeKho.changeStatus'),
+        icon: <Power size={16} />,
+        onClick: () => onStatusChange(data),
+        variant: 'info',
+      });
+    }
+    return actions;
+  }, [
+    data,
+    isDraft,
+    isDangKiemKe,
+    hasAnyThucTe,
+    onTaoDanhSach,
+    onHoanThanh,
+    onStatusChange,
+    taoDanhSachLoading,
+    hoanThanhLoading,
+    dieuChinhDotMutation,
+    t,
+  ]);
+
+  const renderFooter = (
+    <div className="flex items-center justify-between w-full flex-wrap gap-2">
+      <Button
+        variant="ghost"
+        onClick={onClose}
+        className="text-muted-foreground hover:text-foreground border border-border"
+      >
+        {BTN_CLOSE()}
+      </Button>
+      <div className="flex items-center gap-3 flex-wrap">
+        {isDraft && onEdit && (
+          <Button
+            onClick={() => onEdit(data)}
+            className="bg-primary text-white shadow-lg hover:bg-primary/90"
+          >
+            <Edit size={16} className="mr-2" /> {BTN_EDIT()}
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <GenericDrawer
+      title={data.ma_dot}
+      subtitle={data.ten_dot}
+      icon={<ClipboardCheck size={20} className="text-primary" />}
+      onClose={onClose}
+      maxWidthClass={DRAWER_WIDTH_DETAIL}
+      footer={renderFooter}
+    >
+      {toolbarActions.length > 0 && (
+        <DetailToolbar actions={toolbarActions} className="bg-card rounded-xl border border-border mb-4" />
+      )}
+      <DetailSection title={t('kiemKeKho.form.infoSection')} icon={<ClipboardCheck size={14} />} variant="primary">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <DetailField label={t('kiemKeKho.store.maDotCol')} value={data.ma_dot} />
+          <DetailField label={t('kiemKeKho.store.tenDotCol')} value={data.ten_dot} />
+          <DetailField label={t('kiemKeKho.store.ngayBatDauCol')} value={formatDate(data.ngay_bat_dau)} />
+          <DetailField label={t('kiemKeKho.store.ngayKetThucCol')} value={formatDate(data.ngay_ket_thuc)} />
+          <DetailField
+            label={t('kiemKeKho.store.trangThaiCol')}
+            value={getTrangThaiDotLabel(data.trang_thai, t)}
+          />
+          <DetailField
+            label={t('kiemKeKho.store.nguoiPhuTrachCol')}
+            value={data.ten_nguoi_phu_trach || data.ma_nguoi_phu_trach || '—'}
+          />
+          <DetailField label={t('kiemKeKho.store.ghiChuCol')} value={data.ghi_chu} className="sm:col-span-2" />
+        </div>
+      </DetailSection>
+
+      <DetailSection title={t('kiemKeKho.chiTietSection')} icon={<List size={14} />} variant="primary">
+        {isDraft && chiTiet.length === 0 && (
+          <p className="text-sm text-muted-foreground py-4">{t('kiemKeKho.taoDanhSachHint')}</p>
+        )}
+        {(isDangKiemKe || data.trang_thai === 'hoan_thanh') && chiTiet.length > 0 && (
+          <>
+            <div className="flex flex-wrap gap-2 mb-3">
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                {t('kiemKeKho.stats.total')}: {stats.total}
+              </span>
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-700">
+                {t('kiemKeKho.ketQua.khop')}: {stats.khop}
+              </span>
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-700">
+                {t('kiemKeKho.ketQua.thieu')}: {stats.thieu}
+              </span>
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-violet-500/10 text-violet-700">
+                {t('kiemKeKho.ketQua.thua')}: {stats.thua}
+              </span>
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground">
+                {t('kiemKeKho.ketQua.chua_kiem')}: {stats.chuaKiem}
+              </span>
+            </div>
+            {chiTietLoading ? (
+              <p className="text-sm text-muted-foreground py-4">{t('kiemKeKho.loading')}</p>
+            ) : (
+              <div className="rounded-xl border border-border overflow-hidden">
+                <div className="overflow-x-auto max-h-[320px] overflow-y-auto custom-scrollbar">
+                  <table className="w-full text-sm text-left border-collapse">
+                    <thead className="sticky top-0 z-[1] bg-muted border-b border-border">
+                      <tr>
+                        <th className="px-3 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap">
+                          {t('kiemKeKho.store.khoCol')}
+                        </th>
+                        <th className="px-3 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap">
+                          {t('kiemKeKho.store.hangHoaCol')}
+                        </th>
+                        <th className="px-3 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap">
+                          {t('kiemKeKho.store.soLuongSoCol')}
+                        </th>
+                        <th className="px-3 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap">
+                          {t('kiemKeKho.store.soLuongThucTeCol')}
+                        </th>
+                        <th className="px-3 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap">
+                          {t('kiemKeKho.store.ketQuaCol')}
+                        </th>
+                        {isDangKiemKe && (
+                          <th className="px-3 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap w-[120px]">
+                            {t('common.actions')}
+                          </th>
+                        )}
+                      </tr>
+                    </thead>
+                    <tbody className="[&>tr>td]:border-b [&>tr>td]:border-border">
+                      {chiTiet.map((c) => (
+                        <tr key={c.id}>
+                          <td className="px-3 py-2">
+                            <span className="font-medium">{c.ten_kho || c.ma_kho || '—'}</span>
+                          </td>
+                          <td className="px-3 py-2">
+                            <span className="font-medium">{c.ten_hang || c.ma_hang || '—'}</span>
+                            {c.ma_hang && (
+                              <span className="text-xs text-muted-foreground block">{c.ma_hang}</span>
+                            )}
+                          </td>
+                          <td className="px-3 py-2 tabular-nums">
+                            {c.so_luong_so} {c.don_vi_tinh ? ` ${c.don_vi_tinh}` : ''}
+                          </td>
+                          <td className="px-3 py-2 tabular-nums">
+                            {c.so_luong_thuc_te != null
+                              ? `${c.so_luong_thuc_te}${c.don_vi_tinh ? ` ${c.don_vi_tinh}` : ''}`
+                              : '—'}
+                          </td>
+                          <td className="px-3 py-2">
+                            <span
+                              className={cn(
+                                'inline-flex px-2 py-0.5 rounded-full text-xs font-medium',
+                                c.ket_qua === 'khop' && 'bg-emerald-500/10 text-emerald-700',
+                                c.ket_qua === 'chua_kiem' && 'bg-muted text-muted-foreground',
+                                c.ket_qua === 'thieu' && 'bg-amber-500/10 text-amber-700',
+                                c.ket_qua === 'thua' && 'bg-violet-500/10 text-violet-700'
+                              )}
+                            >
+                              {getKetQuaLabel(c.ket_qua, t)}
+                            </span>
+                          </td>
+                          {isDangKiemKe && (
+                            <td className="px-3 py-2">
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon"
+                                  className="shrink-0 border-border"
+                                  onClick={() => setNhapKetQuaRow(c)}
+                                  disabled={updateKetQuaMutation.isPending}
+                                  title={t('kiemKeKho.table.nhapKetQua')}
+                                >
+                                  <PenLine size={16} />
+                                </Button>
+                                {c.so_luong_thuc_te != null &&
+                                  c.so_luong_thuc_te !== c.so_luong_so && (
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="icon"
+                                      className="shrink-0 border-border"
+                                      onClick={() => dieuChinhRowMutation.mutate(c.id)}
+                                      disabled={dieuChinhRowMutation.isPending}
+                                      title={t('kiemKeKho.dieuChinhTonTheoKetQua')}
+                                    >
+                                      <RefreshCw size={16} />
+                                    </Button>
+                                  )}
+                              </div>
+                            </td>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </DetailSection>
+
+      <NhapKetQuaKiemKeDialog
+        open={nhapKetQuaRow != null}
+        row={nhapKetQuaRow}
+        onClose={() => setNhapKetQuaRow(null)}
+        onSave={handleNhapKetQuaSave}
+        isLoading={updateKetQuaMutation.isPending}
+      />
+
+      <AnimatePresence>
+        {ghiChuOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => !updateDotMutation.isPending && setGhiChuOpen(false)}
+              className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-md"
+            />
+            <div className="fixed inset-0 z-[61] flex items-center justify-center p-4 pointer-events-none">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                onClick={(e) => e.stopPropagation()}
+                className={cn(
+                  'w-full min-w-[min(100%,28rem)] max-w-lg bg-card rounded-2xl shadow-2xl border border-border pointer-events-auto flex flex-col'
+                )}
+              >
+                <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+                  <h3 className="text-sm font-semibold text-foreground">
+                    {t('kiemKeKho.detail.ghiChuDialogTitle')}
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => !updateDotMutation.isPending && setGhiChuOpen(false)}
+                    disabled={updateDotMutation.isPending}
+                    className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground disabled:opacity-50"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+                <div className="p-5">
+                  <Textarea
+                    label=""
+                    value={ghiChuValue}
+                    onChange={(e) => setGhiChuValue(e.target.value)}
+                    placeholder={t('kiemKeKho.form.ghiChuPlaceholder')}
+                    rows={4}
+                    className="resize-none"
+                  />
+                </div>
+                <div className="flex justify-end gap-3 px-5 py-4 border-t border-border">
+                  <Button variant="outline" onClick={() => setGhiChuOpen(false)} disabled={updateDotMutation.isPending}>
+                    {t('common.cancel')}
+                  </Button>
+                  <Button onClick={handleSaveGhiChu} isLoading={updateDotMutation.isPending}>
+                    {t('common.save')}
+                  </Button>
+                </div>
+              </motion.div>
+            </div>
+          </>
+        )}
+      </AnimatePresence>
+    </GenericDrawer>
+  );
+};
+
+export default DotKiemKeKhoDetail;
