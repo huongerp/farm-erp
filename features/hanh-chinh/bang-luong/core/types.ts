@@ -74,6 +74,8 @@ export interface BangLuongRecord {
   /** Tổng lương thực lĩnh */
   tong_luong: number;
 
+  ghi_chu?: string;
+
   tg_tao: string;
   tg_cap_nhat: string;
 }

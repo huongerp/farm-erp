@@ -15,12 +15,13 @@ import { PayrollAdminFormGroup } from '../core/types';
 import { PayrollAdminFormGroupFormValues, payrollAdminFormGroupSchema } from '../core/schema';
 import { getAdminFormTypeOptions } from '../core/constants';
 import { useCreatePayrollAdminFormGroup, useUpdatePayrollAdminFormGroup } from '../hooks/use-payroll-form-group';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 
 const DEFAULT_VALUES: PayrollAdminFormGroupFormValues = {
   loai_phieu: 'late_early',
   so_luong_thang: 1,
   ghi_chu: '',
-  trang_thai: 1,
+  trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG,
 };
 
 interface Props {
@@ -125,8 +126,12 @@ const PayrollFormGroupForm: React.FC<Props> = ({ initialData, onClose }) => {
               render={({ field }) => (
                 <StatusToggle
                   label={t('payrollIp.groups.form.status')}
-                  value={field.value}
-                  onChange={field.onChange}
+                  value={field.value === 1 ? '1' : '0'}
+                  onChange={(v) => field.onChange(v === '1' ? 1 : 0)}
+                  activeValue="1"
+                  inactiveValue="0"
+                  activeLabel={t('payrollIp.active')}
+                  inactiveLabel={t('payrollIp.inactive')}
                   icon={<Power size={12} />}
                   required
                 />

@@ -4,7 +4,7 @@ import { Edit, Trash2, Briefcase, Power, Building2, Layers, Calendar, Clock, Fil
 import Button from '../../../../components/ui/Button';
 import { Position } from '../core/types';
 import { formatDate, formatDateTimeShort } from '../../../../lib/utils';
-import { TRANG_THAI } from '../../../../lib/constants';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
 import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';
@@ -22,7 +22,7 @@ interface Props {
 
 const PositionDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onStatusChange }) => {
   const { t } = useTranslation();
-  const isActive = data.trang_thai === TRANG_THAI.DANG_DUNG;
+  const isActive = data.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
 
   const toolbarActions: DetailToolbarAction[] = [
     ...(onStatusChange

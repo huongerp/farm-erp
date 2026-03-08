@@ -15,6 +15,7 @@ import { PayrollPointGroup } from '../core/types';
 import { PayrollPointGroupFormValues, payrollPointGroupSchema } from '../core/schema';
 import { getPointGroupTypeOptions } from '../core/constants';
 import { useCreatePayrollPointGroup, useUpdatePayrollPointGroup } from '../hooks/use-payroll-point-group';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 
 const DEFAULT_VALUES: PayrollPointGroupFormValues = {
   ma: '',
@@ -22,7 +23,7 @@ const DEFAULT_VALUES: PayrollPointGroupFormValues = {
   loai: 'cong',
   thu_tu: 0,
   ghi_chu: '',
-  trang_thai: 1,
+  trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG,
 };
 
 interface Props {

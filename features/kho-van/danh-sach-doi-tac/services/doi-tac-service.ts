@@ -1,4 +1,5 @@
 import type { DoiTac, LoaiDoiTac, NhomDoiTac, Tag } from '../core/types';
+import { TRANG_THAI_DOI_TAC } from '../core/types';
 import type { DoiTacFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
 
@@ -22,15 +23,15 @@ const seedTag: Tag[] = [
 type DoiTacRow = Omit<DoiTac, 'ten_nhom' | 'ten_tags'> & { ten_nhom?: string; ten_tags?: string[] };
 
 const seedDoiTac: DoiTacRow[] = [
-  { id: 'dt-1', ma_ncc: 'NCC-001', ten_ncc: 'Công ty Vật tư ABC', loai_doi_tac: 'nha_cung_cap', id_nhom: 'nhom-1', dia_chi: '123 Đường X', dien_thoai: '0281234567', email: 'abc@vt.vn', tag_ids: ['tag-1', 'tag-2'], thu_tu: 0, trang_thai: 1, tg_tao: ts(), tg_cap_nhat: ts() },
-  { id: 'dt-2', ma_ncc: 'NCC-002', ten_ncc: 'Nguyên liệu XYZ', loai_doi_tac: 'nha_cung_cap', id_nhom: 'nhom-2', dien_thoai: '0287654321', tag_ids: ['tag-2', 'tag-5'], thu_tu: 1, trang_thai: 1, tg_tao: ts(), tg_cap_nhat: ts() },
-  { id: 'dt-3', ma_ncc: 'NCC-003', ten_ncc: 'Dịch vụ Logistics 24h', loai_doi_tac: 'nha_cung_cap', id_nhom: 'nhom-3', dia_chi: '456 Đường Y', tag_ids: ['tag-1'], thu_tu: 2, trang_thai: 1, tg_tao: ts(), tg_cap_nhat: ts() },
-  { id: 'dt-4', ma_ncc: 'NCC-004', ten_ncc: 'Nhập khẩu Thiết bị', loai_doi_tac: 'nha_cung_cap', id_nhom: 'nhom-1', dien_thoai: '0908123456', tag_ids: ['tag-3', 'tag-4'], thu_tu: 3, trang_thai: 1, tg_tao: ts(), tg_cap_nhat: ts() },
-  { id: 'dt-5', ma_ncc: 'NCC-005', ten_ncc: 'Vật tư văn phòng Miền Nam', loai_doi_tac: 'nha_cung_cap', id_nhom: 'nhom-1', tag_ids: [], thu_tu: 4, trang_thai: 1, mo_ta: 'Chuyên văn phòng phẩm', tg_tao: ts(), tg_cap_nhat: ts() },
-  { id: 'dt-6', ma_ncc: 'NCC-006', ten_ncc: 'NCC ngừng hợp tác', loai_doi_tac: 'nha_cung_cap', id_nhom: null, tag_ids: [], thu_tu: 5, trang_thai: 0, tg_tao: ts(), tg_cap_nhat: ts() },
-  { id: 'dt-7', ma_ncc: 'KH-001', ten_ncc: 'Công ty Thương mại Đại Dương', loai_doi_tac: 'khach_hang', id_nhom: 'nhom-1', dia_chi: '78 Nguyễn Huệ', dien_thoai: '0289876543', email: 'contact@daiduong.vn', tag_ids: ['tag-1'], thu_tu: 0, trang_thai: 1, tg_tao: ts(), tg_cap_nhat: ts() },
-  { id: 'dt-8', ma_ncc: 'KH-002', ten_ncc: 'Siêu thị Điện máy Xanh', loai_doi_tac: 'khach_hang', id_nhom: 'nhom-2', dien_thoai: '1900xxxx', tag_ids: ['tag-2', 'tag-5'], thu_tu: 1, trang_thai: 1, tg_tao: ts(), tg_cap_nhat: ts() },
-  { id: 'dt-9', ma_ncc: 'KH-003', ten_ncc: 'Cửa hàng Văn phòng phẩm Sài Gòn', loai_doi_tac: 'khach_hang', id_nhom: 'nhom-1', tag_ids: [], thu_tu: 2, trang_thai: 1, tg_tao: ts(), tg_cap_nhat: ts() },
+  { id: 'dt-1', ma_ncc: 'NCC-001', ten_ncc: 'Công ty Vật tư ABC', loai_doi_tac: 'nha_cung_cap', id_nhom: 'nhom-1', dia_chi: '123 Đường X', dien_thoai: '0281234567', email: 'abc@vt.vn', tag_ids: ['tag-1', 'tag-2'], thu_tu: 0, trang_thai: TRANG_THAI_DOI_TAC.DANG_HOAT_DONG, tg_tao: ts(), tg_cap_nhat: ts() },
+  { id: 'dt-2', ma_ncc: 'NCC-002', ten_ncc: 'Nguyên liệu XYZ', loai_doi_tac: 'nha_cung_cap', id_nhom: 'nhom-2', dien_thoai: '0287654321', tag_ids: ['tag-2', 'tag-5'], thu_tu: 1, trang_thai: TRANG_THAI_DOI_TAC.DANG_HOAT_DONG, tg_tao: ts(), tg_cap_nhat: ts() },
+  { id: 'dt-3', ma_ncc: 'NCC-003', ten_ncc: 'Dịch vụ Logistics 24h', loai_doi_tac: 'nha_cung_cap', id_nhom: 'nhom-3', dia_chi: '456 Đường Y', tag_ids: ['tag-1'], thu_tu: 2, trang_thai: TRANG_THAI_DOI_TAC.DANG_HOAT_DONG, tg_tao: ts(), tg_cap_nhat: ts() },
+  { id: 'dt-4', ma_ncc: 'NCC-004', ten_ncc: 'Nhập khẩu Thiết bị', loai_doi_tac: 'nha_cung_cap', id_nhom: 'nhom-1', dien_thoai: '0908123456', tag_ids: ['tag-3', 'tag-4'], thu_tu: 3, trang_thai: TRANG_THAI_DOI_TAC.DANG_HOAT_DONG, tg_tao: ts(), tg_cap_nhat: ts() },
+  { id: 'dt-5', ma_ncc: 'NCC-005', ten_ncc: 'Vật tư văn phòng Miền Nam', loai_doi_tac: 'nha_cung_cap', id_nhom: 'nhom-1', tag_ids: [], thu_tu: 4, trang_thai: TRANG_THAI_DOI_TAC.DANG_HOAT_DONG, mo_ta: 'Chuyên văn phòng phẩm', tg_tao: ts(), tg_cap_nhat: ts() },
+  { id: 'dt-6', ma_ncc: 'NCC-006', ten_ncc: 'NCC ngừng hợp tác', loai_doi_tac: 'nha_cung_cap', id_nhom: null, tag_ids: [], thu_tu: 5, trang_thai: TRANG_THAI_DOI_TAC.NGUNG_HOAT_DONG, tg_tao: ts(), tg_cap_nhat: ts() },
+  { id: 'dt-7', ma_ncc: 'KH-001', ten_ncc: 'Công ty Thương mại Đại Dương', loai_doi_tac: 'khach_hang', id_nhom: 'nhom-1', dia_chi: '78 Nguyễn Huệ', dien_thoai: '0289876543', email: 'contact@daiduong.vn', tag_ids: ['tag-1'], thu_tu: 0, trang_thai: TRANG_THAI_DOI_TAC.DANG_HOAT_DONG, tg_tao: ts(), tg_cap_nhat: ts() },
+  { id: 'dt-8', ma_ncc: 'KH-002', ten_ncc: 'Siêu thị Điện máy Xanh', loai_doi_tac: 'khach_hang', id_nhom: 'nhom-2', dien_thoai: '1900xxxx', tag_ids: ['tag-2', 'tag-5'], thu_tu: 1, trang_thai: TRANG_THAI_DOI_TAC.DANG_HOAT_DONG, tg_tao: ts(), tg_cap_nhat: ts() },
+  { id: 'dt-9', ma_ncc: 'KH-003', ten_ncc: 'Cửa hàng Văn phòng phẩm Sài Gòn', loai_doi_tac: 'khach_hang', id_nhom: 'nhom-1', tag_ids: [], thu_tu: 2, trang_thai: TRANG_THAI_DOI_TAC.DANG_HOAT_DONG, tg_tao: ts(), tg_cap_nhat: ts() },
 ];
 
 let dbNhom: NhomDoiTac[] = JSON.parse(JSON.stringify(seedNhom));
@@ -105,7 +106,7 @@ export const createDoiTac = async (data: DoiTacFormValues): Promise<DoiTac> => {
     email: data.email?.trim() || undefined,
     mo_ta: data.mo_ta?.trim() || undefined,
     tag_ids: Array.isArray(data.tag_ids) ? data.tag_ids : [],
-    trang_thai: data.trang_thai as 0 | 1,
+    trang_thai: data.trang_thai,
     thu_tu: data.thu_tu ?? 0,
     tg_tao: ts(),
     tg_cap_nhat: ts(),
@@ -135,7 +136,7 @@ export const updateDoiTac = async (id: string, data: DoiTacFormValues): Promise<
     email: data.email?.trim() || undefined,
     mo_ta: data.mo_ta?.trim() || undefined,
     tag_ids: Array.isArray(data.tag_ids) ? data.tag_ids : [],
-    trang_thai: data.trang_thai as 0 | 1,
+    trang_thai: data.trang_thai,
     thu_tu: data.thu_tu ?? dbDoiTac[index].thu_tu,
     tg_cap_nhat: ts(),
   };

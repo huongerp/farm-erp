@@ -18,6 +18,7 @@ export interface AdminFormRequest {
   trang_thai_quan_ly: ApprovalStatus;
   trang_thai_hcns: ApprovalStatus;
   trang_thai: AdminFormStatus;
+  ghi_chu?: string | null;
   tg_tao: string;
   tg_cap_nhat: string;
 }

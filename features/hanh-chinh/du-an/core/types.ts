@@ -1,3 +1,5 @@
+import type { TrangThaiHoatDong } from '../../../../lib/constants';
+
 export interface DuAn {
   id: string;
   ma_du_an: string;
@@ -9,7 +11,7 @@ export interface DuAn {
   ngay_ket_thuc: string;
   muc_tieu: string;
   mo_ta: string;
-  trang_thai: 0 | 1;
+  trang_thai: TrangThaiHoatDong;
   tg_tao: string;
   tg_cap_nhat: string;
 }
@@ -22,5 +24,5 @@ export interface DuAnFormState {
   ngay_ket_thuc: string;
   muc_tieu: string;
   mo_ta: string;
-  trang_thai: number;
+  trang_thai: TrangThaiHoatDong;
 }

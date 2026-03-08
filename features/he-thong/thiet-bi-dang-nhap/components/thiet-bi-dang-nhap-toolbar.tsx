@@ -6,9 +6,10 @@ import Tooltip from '../../../../components/ui/Tooltip';
 import { useLoginDeviceStore } from '../store/useLoginDeviceStore';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 
 interface Props {
-  devices: { id: string; trang_thai: number; la_thiet_bi_hien_tai: boolean }[];
+  devices: { id: string; trang_thai: string; la_thiet_bi_hien_tai: boolean }[];
   onExport: () => void;
   onLogoutMany: (ids: string[]) => void;
 }
@@ -38,8 +39,8 @@ const LoginDeviceToolbar: React.FC<Props> = ({
 
   const statusOptions = useMemo(
     () => [
-      { label: t('common.activeStatus'), value: 'Active', count: devices.filter((d) => d.trang_thai === 1).length },
-      { label: t('common.inactiveStatus'), value: 'Inactive', count: devices.filter((d) => d.trang_thai === 0).length },
+      { label: t('common.activeStatus'), value: 'Active', count: devices.filter((d) => d.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG).length },
+      { label: t('common.inactiveStatus'), value: 'Inactive', count: devices.filter((d) => d.trang_thai === TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG).length },
     ],
     [t, devices]
   );
@@ -74,7 +75,7 @@ const LoginDeviceToolbar: React.FC<Props> = ({
     () =>
       selectedIdsArray.filter((id) => {
         const d = devices.find((x) => x.id === id);
-        return d && d.trang_thai === 1 && !d.la_thiet_bi_hien_tai;
+        return d && d.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG && !d.la_thiet_bi_hien_tai;
       }),
     [selectedIdsArray, devices]
   );

@@ -14,7 +14,7 @@ export const khoSchema = z.object({
   dia_chi: z.string().optional(),
   mo_ta: z.string().optional(),
   id_chi_nhanh: z.string().optional().nullable(),
-  trang_thai: z.coerce.number().refine((val) => val === 0 || val === 1, {
+  trang_thai: z.enum(['Đang hoạt động', 'Ngừng hoạt động'], {
     message: i18n.t('kho.validation.statusInvalid'),
   }),
   thu_tu: z.coerce.number().min(0, i18n.t('kho.validation.sortOrderMin')),

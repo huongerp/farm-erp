@@ -8,7 +8,7 @@ import Textarea from '../../../../components/ui/Textarea';
 import Combobox from '../../../../components/ui/Combobox';
 import { thanhToanDoiTacSchema, type ThanhToanDoiTacFormValues } from '../core/schema';
 import type { ThanhToanDoiTac } from '../core/types';
-import type { NhaCungCap } from '../../danh-sach-doi-tac/core/types';
+import type { DoiTac } from '../../../kho-van/danh-sach-doi-tac/core/types';
 import type { Department } from '../../../he-thong/phong-ban/core/types';
 import type { Employee } from '../../../he-thong/nhan-vien/core/types';
 import type { TrangThaiThanhToanDoiTac } from '../../thiet-lap-de-xuat-vat-tu/core/types';
@@ -20,7 +20,7 @@ import FormGrid from '../../../../components/shared/FormGrid';
 import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
 
 interface Props {
-  doiTacList: NhaCungCap[];
+  doiTacList: DoiTac[];
   donViList: Department[];
   employees: Employee[];
   statusList: TrangThaiThanhToanDoiTac[];

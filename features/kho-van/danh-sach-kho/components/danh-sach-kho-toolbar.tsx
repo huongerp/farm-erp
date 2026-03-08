@@ -55,12 +55,12 @@ const DanhSachKhoToolbar: React.FC<Props> = ({
       {
         label: t('common.activeStatus'),
         value: 'Active',
-        count: khoList.filter((k) => k.trang_thai === 1).length,
+        count: khoList.filter((k) => k.trang_thai === 'Đang hoạt động').length,
       },
       {
         label: t('common.inactiveStatus'),
         value: 'Inactive',
-        count: khoList.filter((k) => k.trang_thai === 0).length,
+        count: khoList.filter((k) => k.trang_thai === 'Ngừng hoạt động').length,
       },
     ],
     [khoList, t]

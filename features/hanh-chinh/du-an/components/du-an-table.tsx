@@ -29,8 +29,8 @@ const DuAnTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onView 
     setSort,
   } = useDuAnStore();
 
-  const renderStatusBadge = (status: number) =>
-    status === 1 ? (
+  const renderStatusBadge = (status: DuAn['trang_thai']) =>
+    status === 'Đang hoạt động' ? (
       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
         {t('common.activeStatus')}
       </span>

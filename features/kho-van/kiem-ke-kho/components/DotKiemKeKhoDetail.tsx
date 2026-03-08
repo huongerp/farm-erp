@@ -21,7 +21,7 @@ import {
 } from '../hooks/use-kiem-ke-kho';
 import NhapKetQuaKiemKeDialog from './NhapKetQuaKiemKeDialog';
 
-const getPhieuKiemKeKhoPreviewUrl = (id: string) => `/kho-van/kiem-ke-kho/preview/${encodeURIComponent(id)}`;
+const getPhieuKiemKeKhoPreviewUrl = (id: string) => `/mua-hang/kiem-ke-kho/preview/${encodeURIComponent(id)}`;
 
 interface Props {
   data: DotKiemKeKho;

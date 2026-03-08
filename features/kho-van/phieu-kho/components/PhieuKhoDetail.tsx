@@ -39,7 +39,7 @@ const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete
       {
         label: t('phieuKho.printAction'),
         icon: <Printer size={16} />,
-        onClick: () => window.open(`/kho-van/phieu-kho/preview/${data.id}`, '_blank', 'noopener,noreferrer'),
+        onClick: () => window.open(`/mua-hang/phieu-kho/preview/${data.id}`, '_blank', 'noopener,noreferrer'),
         variant: 'primary',
       },
     ],

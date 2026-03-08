@@ -55,12 +55,12 @@ const DoiTacToolbar: React.FC<Props> = ({
       {
         label: t('common.activeStatus'),
         value: 'Active',
-        count: data.filter((d) => d.trang_thai === 1).length,
+        count: data.filter((d) => d.trang_thai === 'Đang hoạt động').length,
       },
       {
         label: t('common.inactiveStatus'),
         value: 'Inactive',
-        count: data.filter((d) => d.trang_thai === 0).length,
+        count: data.filter((d) => d.trang_thai === 'Ngừng hoạt động').length,
       },
     ],
     [data, t]

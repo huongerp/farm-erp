@@ -48,26 +48,28 @@ export const KHO_VAN_MODULE_SLUGS: string[] = [
 function buildItem(
   config: KhoVanModuleConfig,
   t: (key: string) => string,
-  navigate: (path: string) => void
+  navigate: (path: string) => void,
+  basePath: string = BASE_PATH
 ): ModuleItem {
   return {
     title: t(config.titleKey),
     description: t(config.descKey),
     icon: config.icon,
     color: config.color,
-    action: () => navigate(`${BASE_PATH}/${config.slug}`),
-    moduleId: `${BASE_PATH}/${config.slug}`,
+    action: () => navigate(`${basePath}/${config.slug}`),
+    moduleId: `${basePath}/${config.slug}`,
   };
 }
 
 /**
- * Cấu hình nhóm và module cho submenu Kho vận.
+ * Cấu hình nhóm và module cho submenu Kho vận (hoặc basePath khác, ví dụ /mua-hang).
  */
 export function getKhoVanGroups(
   t: (key: string) => string,
-  navigate: (path: string) => void
+  navigate: (path: string) => void,
+  basePath: string = BASE_PATH
 ): ModuleGroup[] {
-  const item = (c: KhoVanModuleConfig) => buildItem(c, t, navigate);
+  const item = (c: KhoVanModuleConfig) => buildItem(c, t, navigate, basePath);
 
   return [
     {

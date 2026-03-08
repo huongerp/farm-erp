@@ -7,6 +7,7 @@ import FilterChipMultiSelect from '../../../../components/shared/FilterChipMulti
 import { useNhaCungCapStore } from '../store/useNhaCungCapStore';
 import type { NhaCungCap } from '../core/types';
 import type { NhomNhaCungCap } from '../core/types';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 
 interface Props {
   data: NhaCungCap[];
@@ -55,12 +56,12 @@ const DanhSachNhaCungCapToolbar: React.FC<Props> = ({
       {
         label: t('common.activeStatus'),
         value: 'Active',
-        count: data.filter((d) => d.trang_thai === 1).length,
+        count: data.filter((d) => d.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG).length,
       },
       {
         label: t('common.inactiveStatus'),
         value: 'Inactive',
-        count: data.filter((d) => d.trang_thai === 0).length,
+        count: data.filter((d) => d.trang_thai === TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG).length,
       },
     ],
     [data, t]

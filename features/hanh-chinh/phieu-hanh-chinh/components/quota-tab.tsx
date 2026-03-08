@@ -7,6 +7,7 @@ import { useAdminForms } from '../hooks/use-admin-form';
 import { usePayrollAdminFormGroups } from '../../thiet-lap-cong-luong/hooks/use-payroll-form-group';
 import { useAuthStore } from '../../../../store/useStore';
 import { getAdminFormTypeLabel } from '../../thiet-lap-cong-luong/core/constants';
+import { ADMIN_FORM_SHIFT_WEIGHT } from '../core/constants';
 import { AdminFormQuotaRow } from '../core/types';
 
 const AdminFormQuotaTab: React.FC = () => {
@@ -30,14 +31,6 @@ const AdminFormQuotaTab: React.FC = () => {
   const { data: groups = [] } = usePayrollAdminFormGroups();
 
   useEffect(() => {
-    if (!filters.month) {
-      const now = new Date();
-      const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-      setFilter('month', month);
-    }
-  }, [filters.month, setFilter]);
-
-  useEffect(() => {
     return () => resetState();
   }, [resetState]);
 
@@ -47,14 +40,18 @@ const AdminFormQuotaTab: React.FC = () => {
     if (forms.some((f) => f.nguoi_tao_id === 'emp-000')) return 'emp-000';
     return currentUserId;
   }, [forms, currentUserId]);
+  // Danh sách loại phiếu và định mức lấy từ nhóm hành chính (fp_hr_nhom_phieu_hanh_chinh).
+  // Đã dùng = tổng hệ số theo ca của phiếu chờ duyệt + đã duyệt (không cộng từ chối, đã hủy). Còn lại = định mức − đã dùng.
   const rows = useMemo<AdminFormQuotaRow[]>(() => {
     const myForms = forms.filter((f) => f.nguoi_tao_id === effectiveUserId);
     const month = filters.month;
     const usedByType = new Map<string, number>();
+    const statusCount = ['pending', 'manager_approved', 'approved'];
     myForms.forEach((f) => {
-      if (f.trang_thai !== 'approved') return;
+      if (!statusCount.includes(f.trang_thai)) return; // bỏ qua từ chối, đã hủy
       if (month && !f.ngay.startsWith(month)) return;
-      usedByType.set(f.loai_phieu, (usedByType.get(f.loai_phieu) ?? 0) + 1);
+      const weight = ADMIN_FORM_SHIFT_WEIGHT[f.ca] ?? 1;
+      usedByType.set(f.loai_phieu, (usedByType.get(f.loai_phieu) ?? 0) + weight);
     });
     return groups.map((g) => {
       const used = usedByType.get(g.loai_phieu) ?? 0;
@@ -63,7 +60,7 @@ const AdminFormQuotaTab: React.FC = () => {
         loai_phieu: g.loai_phieu,
         so_luong_thang: g.so_luong_thang,
         da_dung: used,
-        con_lai: Math.max(g.so_luong_thang - used, 0),
+        con_lai: Math.max(0, g.so_luong_thang - used),
       };
     });
   }, [forms, groups, filters.month, effectiveUserId]);

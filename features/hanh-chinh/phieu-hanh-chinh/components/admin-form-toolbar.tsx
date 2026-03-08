@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Tag, Calendar, ListOrdered, Clock } from 'lucide-react';
+import { Plus, Tag, Calendar, ListOrdered, Clock, ChevronDown } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
@@ -9,6 +9,19 @@ import { getAdminFormTypeOptions } from '../../thiet-lap-cong-luong/core/constan
 import { ADMIN_FORM_SHIFTS, getAdminFormShiftLabel, getAdminFormStatusLabel, ADMIN_FORM_STATUSES } from '../core/constants';
 import { useAdminFormFilterCounts } from '../hooks/use-admin-form-filter-counts';
 import type { AdminFormRequest } from '../core/types';
+
+/** Preset thời gian: mặc định Tất cả (không lọc theo tháng) */
+function getMonthPresetOptions(t: (key: string) => string) {
+  const now = new Date();
+  const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const last = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const lastMonth = `${last.getFullYear()}-${String(last.getMonth() + 1).padStart(2, '0')}`;
+  return [
+    { value: '', label: t('adminForm.filter.timeAll') },
+    { value: thisMonth, label: t('adminForm.filter.thisMonth') },
+    { value: lastMonth, label: t('adminForm.filter.lastMonth') },
+  ];
+}
 
 interface Props {
   /** Danh sách phiếu người dùng được xem. Count filter chip đếm trên list này. */
@@ -121,13 +134,19 @@ const AdminFormToolbar: React.FC<Props> = ({
         className="w-full sm:w-[160px]"
       />
       <div className="relative w-full sm:w-[170px]">
-        <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-        <input
-          type="month"
+        <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none z-10" />
+        <select
           value={filters.month}
           onChange={(e) => setFilter('month', e.target.value)}
-          className="w-full h-9 pl-8 pr-2 bg-muted/40 border border-border/60 rounded-lg text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all"
-        />
+          className="w-full h-9 pl-8 pr-8 bg-muted/40 border border-border/60 rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all appearance-none cursor-pointer"
+        >
+          {getMonthPresetOptions(t).map((opt) => (
+            <option key={opt.value || 'all'} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+        <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
       </div>
     </>
   );

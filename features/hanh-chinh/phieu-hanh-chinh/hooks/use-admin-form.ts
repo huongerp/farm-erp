@@ -18,6 +18,7 @@ import {
   rejectAdminFormByManager,
   approveAdminFormByHcns,
   rejectAdminFormByHcns,
+  updateAdminFormGhiChu,
 } from '../services/admin-form-service';
 import { AdminFormValues } from '../core/schema';
 
@@ -56,6 +57,19 @@ export const useUpdateAdminForm = (onSuccess?: () => void) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: AdminFormValues }) => updateAdminForm(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminForms'] });
+      toast.success(i18n.t('adminForm.toast.updateSuccess'));
+      if (onSuccess) onSuccess();
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+};
+
+export const useUpdateAdminFormGhiChu = (onSuccess?: () => void) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ghiChu }: { id: string; ghiChu: string | null }) => updateAdminFormGhiChu(id, ghiChu),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminForms'] });
       toast.success(i18n.t('adminForm.toast.updateSuccess'));

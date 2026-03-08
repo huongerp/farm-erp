@@ -1,10 +1,12 @@
+import type { TrangThaiHoatDong } from '../../../../lib/constants';
+
 /** Sứ mệnh phòng ban */
 export interface DeptMission {
   id: string;
   id_phong_ban: string;
   noi_dung: string;
   thu_tu: number;
-  trang_thai: 0 | 1;
+  trang_thai: TrangThaiHoatDong;
   tg_tao: string;
   tg_cap_nhat: string;
 }
@@ -17,7 +19,7 @@ export interface DeptFunction {
   ten_chuc_nang: string;
   mo_ta: string | null;
   thu_tu: number;
-  trang_thai: 0 | 1;
+  trang_thai: TrangThaiHoatDong;
   tg_tao: string;
   tg_cap_nhat: string;
 }
@@ -64,7 +66,7 @@ export interface KpiIndicator {
   chi_tieu_nguong: string;
   chu_ky_danh_gia: KpiCycle;
   thu_tu: number;
-  trang_thai: 0 | 1;
+  trang_thai: TrangThaiHoatDong;
   tg_tao: string;
   tg_cap_nhat: string;
   /** Populated: tên nhiệm vụ */

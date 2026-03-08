@@ -8,7 +8,7 @@ import FormGrid from '../../../../components/shared/FormGrid';
 import Combobox from '../../../../components/ui/Combobox';
 import Button from '../../../../components/ui/Button';
 import AvatarWithFallback from '../../../../components/ui/AvatarWithFallback';
-import { useDepartments } from '../../phong-ban/hooks/use-phong-ban';
+import { useDepartments } from '@/features/he-thong/phong-ban/hooks/use-phong-ban';
 import { usePositions } from '../../chuc-vu/hooks/use-chuc-vu';
 import { useJobLevels } from '../../cap-bac/hooks/use-cap-bac';
 import { useBranches } from '../../chi-nhanh/hooks/use-chi-nhanh';
@@ -48,7 +48,7 @@ const BulkEditSheet: React.FC<Props> = ({ selectedEmployees, onClose, onSuccess 
   });
 
   const departmentOptions = departments.map(d => ({ label: d.ten_phong_ban, value: d.id }));
-  const positionOptions = positions.filter(p => p.trang_thai === TRANG_THAI.DANG_DUNG).map(p => ({ label: p.ten_chuc_vu, value: p.id }));
+  const positionOptions = positions.map(p => ({ label: p.ten_chuc_vu, value: p.id }));
   const jobLevelOptions = jobLevels.filter((l: any) => l.trang_thai === TRANG_THAI.DANG_DUNG).map((l: any) => ({ label: l.ten_cap_bac, value: l.id }));
   const branchOptions = branches.filter(b => b.trang_thai === TRANG_THAI.DANG_DUNG).map(b => ({ label: b.ten_chi_nhanh, value: b.id }));
   const contractOptions = CONTRACT_TYPE_OPTIONS;

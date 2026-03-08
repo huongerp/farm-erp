@@ -14,6 +14,7 @@ import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
 import { AssetStorageLocation } from '../core/types';
 import { AssetStorageLocationFormValues, assetStorageLocationSchema } from '../core/schema';
 import { useCreateAssetStorageLocation, useUpdateAssetStorageLocation } from '../hooks/use-noi-luu';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
 
 const DEFAULT_VALUES: AssetStorageLocationFormValues = {
@@ -21,7 +22,7 @@ const DEFAULT_VALUES: AssetStorageLocationFormValues = {
   ma_noi_luu: '',
   ten_noi_luu: '',
   ghi_chu: '',
-  trang_thai: 1,
+  trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG,
 };
 
 interface Props {

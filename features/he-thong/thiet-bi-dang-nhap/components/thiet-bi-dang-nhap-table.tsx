@@ -6,6 +6,7 @@ import { useLoginDeviceStore } from '../store/useLoginDeviceStore';
 import GenericTable from '../../../../components/shared/GenericTable';
 import { formatDateTimeShort } from '../../../../lib/utils';
 import Tooltip from '../../../../components/ui/Tooltip';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 
 interface Props {
   data: LoginDevice[];
@@ -101,7 +102,7 @@ const LoginDeviceTable: React.FC<Props> = ({ data, isLoading, onLogout }) => {
               content={
                 item.la_thiet_bi_hien_tai
                   ? t('loginDevices.cannotLogoutCurrent')
-                  : item.trang_thai === 1
+                  : item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG
                     ? t('loginDevices.logoutDevice')
                     : '—'
               }
@@ -110,15 +111,15 @@ const LoginDeviceTable: React.FC<Props> = ({ data, isLoading, onLogout }) => {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (!item.la_thiet_bi_hien_tai && item.trang_thai === 1) {
+                  if (!item.la_thiet_bi_hien_tai && item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG) {
                     onLogout(item);
                   }
                 }}
-                disabled={item.la_thiet_bi_hien_tai || item.trang_thai === 0}
+                disabled={item.la_thiet_bi_hien_tai || item.trang_thai === TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG}
                 className={`
                   p-2 rounded-lg transition-all
                   ${
-                    item.la_thiet_bi_hien_tai || item.trang_thai === 0
+                    item.la_thiet_bi_hien_tai || item.trang_thai === TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG
                       ? 'text-muted-foreground/40 cursor-not-allowed'
                       : 'text-amber-600 hover:bg-amber-500/10 hover:text-amber-700'
                   }
@@ -177,11 +178,11 @@ const LoginDeviceTable: React.FC<Props> = ({ data, isLoading, onLogout }) => {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (!item.la_thiet_bi_hien_tai && item.trang_thai === 1) {
+                  if (!item.la_thiet_bi_hien_tai && item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG) {
                     onLogout(item);
                   }
                 }}
-                disabled={item.la_thiet_bi_hien_tai || item.trang_thai === 0}
+                disabled={item.la_thiet_bi_hien_tai || item.trang_thai === TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG}
                 className="p-2 text-amber-600 bg-amber-500/10 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <LogOut size={16} />

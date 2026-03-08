@@ -10,6 +10,7 @@ import { useKpiIndicatorsByTask } from '../hooks/use-kpi';
 import { useDeleteKpiIndicators, useUpdateKpiIndicatorStatus } from '../hooks/use-kpi';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { CONFIRM_DELETE } from '../../../../lib/button-labels';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import KpiTable from './KpiTable';
 import KpiForm from './KpiForm';
 import type { KpiIndicator } from '../core/types';
@@ -58,8 +59,8 @@ const KpiTab: React.FC = () => {
   };
 
   const handleStatusChangeKpi = (item: KpiIndicator) => {
-    const newStatus = item.trang_thai === 1 ? 0 : 1;
-    updateKpiStatusMutation.mutate({ ids: [item.id], status: newStatus as 0 | 1 });
+    const newStatus = item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG : TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
+    updateKpiStatusMutation.mutate({ ids: [item.id], status: newStatus });
   };
 
   return (

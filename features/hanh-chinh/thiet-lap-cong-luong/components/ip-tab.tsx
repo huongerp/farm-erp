@@ -12,6 +12,7 @@ import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_YES, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
 import { useListWithFilter } from '../../../../lib/hooks';
 import { formatDateTimeShort, getLanguage } from '../../../../lib/utils';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { PayrollWifiIp } from '../core/types';
 import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
 import ImportDialog from '../../../../components/shared/ImportDialog';
@@ -55,7 +56,7 @@ const PayrollWifiIpTab: React.FC = () => {
         !term ||
         item.ip_wifi.toLowerCase().includes(searchLower) ||
         (item.ten_chi_nhanh && item.ten_chi_nhanh.toLowerCase().includes(searchLower));
-      const statusKey = item.trang_thai === 1 ? 'Active' : 'Inactive';
+      const statusKey = item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? 'Active' : 'Inactive';
       const matchesStatus = f.status.length === 0 || f.status.includes(statusKey);
       const matchesBranch = f.id_chi_nhanh.length === 0 || f.id_chi_nhanh.includes(item.id_chi_nhanh);
       return matchesSearch && matchesStatus && matchesBranch;
@@ -114,7 +115,7 @@ const PayrollWifiIpTab: React.FC = () => {
         ten_chi_nhanh: item.ten_chi_nhanh ?? branch?.ten_chi_nhanh ?? '',
         ip_wifi: item.ip_wifi,
         ghi_chu: item.ghi_chu ?? '',
-        trang_thai_text: item.trang_thai === 1 ? t('payrollIp.active') : t('payrollIp.inactive'),
+        trang_thai_text: item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? t('payrollIp.active') : t('payrollIp.inactive'),
         tg_cap_nhat_text: formatDateTimeShort(item.tg_cap_nhat),
       };
     },
@@ -186,8 +187,8 @@ const PayrollWifiIpTab: React.FC = () => {
     });
   };
 
-  const handleStatusChangeMany = (ids: string[], status: 0 | 1) => {
-    const statusLabel = status === 1 ? t('payrollIp.active') : t('payrollIp.inactive');
+  const handleStatusChangeMany = (ids: string[], status: import('../../../../lib/constants').TrangThaiHoatDong) => {
+    const statusLabel = status === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? t('payrollIp.active') : t('payrollIp.inactive');
     confirm({
       title: t('payrollIp.statusChangeTitle'),
       message: t('payrollIp.statusChangeMessage', { count: ids.length, status: statusLabel }),
@@ -213,7 +214,7 @@ const PayrollWifiIpTab: React.FC = () => {
   const handleImportData = async (data: Record<string, any>[]) => {
     const branchByCode = new Map(branches.map((b) => [b.ma_chi_nhanh, b.id]));
     const branchByName = new Map(branches.map((b) => [b.ten_chi_nhanh, b.id]));
-    const rows: { id_chi_nhanh: string; ip_wifi: string; ghi_chu?: string; trang_thai: number }[] = [];
+    const rows: { id_chi_nhanh: string; ip_wifi: string; ghi_chu?: string; trang_thai: import('../../../../lib/constants').TrangThaiHoatDong }[] = [];
     const errors: string[] = [];
 
     data.forEach((row, idx) => {
@@ -231,9 +232,9 @@ const PayrollWifiIpTab: React.FC = () => {
       }
       const statusRaw = String(row.trang_thai ?? '').toLowerCase();
       const trang_thai =
-        statusRaw === '0' || statusRaw === 'inactive' || statusRaw === 'ngừng' || statusRaw === 'ngung'
-          ? 0
-          : 1;
+        statusRaw === '0' || statusRaw === 'inactive' || statusRaw === 'ngừng' || statusRaw === 'ngung' || statusRaw === 'ngừng hoạt động'
+          ? TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG
+          : TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
       rows.push({
         id_chi_nhanh,
         ip_wifi,

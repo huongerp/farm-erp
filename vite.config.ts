@@ -11,6 +11,20 @@ export default defineConfig(({ mode }) => {
         host: '0.0.0.0',
       },
       plugins: [
+        {
+          name: 'favicon-ico-redirect',
+          configureServer(server) {
+            server.middlewares.use((req, res, next) => {
+              if (req.url === '/favicon.ico') {
+                res.statusCode = 302;
+                res.setHeader('Location', '/favicon.svg');
+                res.end();
+                return;
+              }
+              next();
+            });
+          },
+        },
         react(),
         VitePWA({
           registerType: 'autoUpdate',

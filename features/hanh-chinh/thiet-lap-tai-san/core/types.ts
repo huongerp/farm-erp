@@ -1,3 +1,5 @@
+import type { TrangThaiHoatDong } from '../../../../lib/constants';
+
 /** Nơi lưu tài sản - liên kết với Chi nhánh */
 export interface AssetStorageLocation {
   id: string;
@@ -6,7 +8,7 @@ export interface AssetStorageLocation {
   ma_noi_luu: string;
   ten_noi_luu: string;
   ghi_chu?: string;
-  trang_thai: 0 | 1;
+  trang_thai: TrangThaiHoatDong;
   tg_tao: string;
   tg_cap_nhat: string;
 }
@@ -16,7 +18,7 @@ export interface AssetStorageLocationFormState {
   ma_noi_luu: string;
   ten_noi_luu: string;
   ghi_chu?: string;
-  trang_thai: number;
+  trang_thai: TrangThaiHoatDong;
 }
 
 /** Trạng thái tài sản */
@@ -26,7 +28,7 @@ export interface AssetStatus {
   ten: string;
   thu_tu: number;
   ghi_chu?: string;
-  trang_thai: 0 | 1;
+  trang_thai: TrangThaiHoatDong;
   tg_tao: string;
   tg_cap_nhat: string;
 }
@@ -36,7 +38,7 @@ export interface AssetStatusFormState {
   ten: string;
   thu_tu: number;
   ghi_chu?: string;
-  trang_thai: number;
+  trang_thai: TrangThaiHoatDong;
 }
 
 /** Phương pháp khấu hao */
@@ -49,7 +51,7 @@ export interface AssetGroup {
   ten: string;
   thu_tu: number;
   ghi_chu?: string;
-  trang_thai: 0 | 1;
+  trang_thai: TrangThaiHoatDong;
   /** Phương pháp khấu hao (đường thẳng / số dư giảm dần) */
   phuong_phap_khau_hao: PhuongPhapKhauHao;
   /** Tỷ lệ khấu hao %/năm (dùng cho cả hai phương pháp) */
@@ -65,7 +67,7 @@ export interface AssetGroupFormState {
   ten: string;
   thu_tu: number;
   ghi_chu?: string;
-  trang_thai: number;
+  trang_thai: TrangThaiHoatDong;
   phuong_phap_khau_hao: PhuongPhapKhauHao;
   ty_le_khau_hao?: number | null;
   so_nam_su_dung?: number | null;

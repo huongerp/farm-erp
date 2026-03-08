@@ -9,6 +9,7 @@ import { BTN_CLOSE, BTN_EDIT, BTN_DELETE } from '../../../../lib/button-labels';
 import { formatDateTimeShort } from '../../../../lib/utils';
 import type { TrangThaiDoiTac } from '../core/types';
 import { TRANG_THAI_MAU_DEFAULT } from '../core/constants';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 
 interface Props {
   data: TrangThaiDoiTac;
@@ -68,7 +69,7 @@ const TrangThaiDoiTacDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelet
             <h2 className="text-base font-bold text-foreground leading-tight truncate">{data.ten}</h2>
             <p className="text-body-sm text-muted-foreground font-mono mt-0.5">{data.ma}</p>
             <div className="mt-1.5">
-              {data.trang_thai === 1 ? (
+              {data.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium border border-primary/20">
                   {t('common.activeStatus')}
                 </span>
@@ -103,7 +104,7 @@ const TrangThaiDoiTacDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelet
             ) : null}
             <DetailField
               label={t('thietLapDeXuatVatTu.doiTac.form.status')}
-              value={data.trang_thai === 1 ? t('common.activeStatus') : t('common.inactiveStatus')}
+              value={data.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? t('common.activeStatus') : t('common.inactiveStatus')}
             />
             <DetailField label={t('thietLapDeXuatVatTu.doiTac.store.updatedCol')} value={formatDateTimeShort(data.tg_cap_nhat)} />
           </div>

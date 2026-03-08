@@ -65,7 +65,7 @@ export const useDeleteKpiIndicators = (onSuccess?: () => void) => {
 export const useUpdateKpiIndicatorStatus = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ ids, status }: { ids: string[]; status: 0 | 1 }) => updateKpiIndicatorStatus(ids, status),
+    mutationFn: ({ ids, status }: { ids: string[]; status: import('../../../../lib/constants').TrangThaiHoatDong }) => updateKpiIndicatorStatus(ids, status),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['kpi'] });
       toast.success(t('chucNangNhiemVu.toast.statusUpdate'));

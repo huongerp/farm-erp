@@ -1,3 +1,4 @@
+import type { TrangThaiHoatDong } from '../../../../lib/constants';
 import type { AdminFormType } from './constants';
 
 export interface PayrollWifiIp {
@@ -6,7 +7,7 @@ export interface PayrollWifiIp {
   ten_chi_nhanh?: string;
   ip_wifi: string;
   ghi_chu?: string;
-  trang_thai: 0 | 1;
+  trang_thai: TrangThaiHoatDong;
   tg_tao: string;
   tg_cap_nhat: string;
 }
@@ -15,7 +16,7 @@ export interface PayrollWifiIpFormState {
   id_chi_nhanh: string;
   ip_wifi: string;
   ghi_chu?: string;
-  trang_thai: number;
+  trang_thai: TrangThaiHoatDong;
 }
 
 export interface PayrollAdminFormGroup {
@@ -23,7 +24,7 @@ export interface PayrollAdminFormGroup {
   loai_phieu: AdminFormType;
   so_luong_thang: number;
   ghi_chu?: string;
-  trang_thai: 0 | 1;
+  trang_thai: TrangThaiHoatDong;
   tg_tao: string;
   tg_cap_nhat: string;
 }
@@ -32,7 +33,7 @@ export interface PayrollAdminFormGroupFormState {
   loai_phieu: AdminFormType | '';
   so_luong_thang: number;
   ghi_chu?: string;
-  trang_thai: number;
+  trang_thai: TrangThaiHoatDong;
 }
 
 /** Loại hạng mục điểm cộng trừ */
@@ -45,7 +46,7 @@ export interface PayrollPointGroup {
   loai: PointGroupType;
   thu_tu: number;
   ghi_chu?: string;
-  trang_thai: 0 | 1;
+  trang_thai: TrangThaiHoatDong;
   tg_tao: string;
   tg_cap_nhat: string;
 }
@@ -56,5 +57,5 @@ export interface PayrollPointGroupFormState {
   loai: PointGroupType | '';
   thu_tu: number;
   ghi_chu?: string;
-  trang_thai: number;
+  trang_thai: TrangThaiHoatDong;
 }

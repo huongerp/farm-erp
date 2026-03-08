@@ -27,7 +27,7 @@ const DEFAULT_VALUES: DuAnFormValues = {
   ngay_ket_thuc: '',
   muc_tieu: '',
   mo_ta: '',
-  trang_thai: 1,
+  trang_thai: 'Đang hoạt động',
 };
 
 interface Props {
@@ -191,6 +191,10 @@ const DuAnForm: React.FC<Props> = ({ initialData, onClose }) => {
                   label={t('duAn.form.status')}
                   value={field.value}
                   onChange={field.onChange}
+                  activeValue="Đang hoạt động"
+                  inactiveValue="Ngừng hoạt động"
+                  activeLabel={t('common.activeStatus')}
+                  inactiveLabel={t('common.inactiveStatus')}
                   icon={<Power size={12} />}
                   required
                 />

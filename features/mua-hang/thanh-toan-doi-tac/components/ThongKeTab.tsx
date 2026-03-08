@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Tag, Building2, Building, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 import { useThanhToanDoiTacList } from '../hooks/use-thanh-toan-doi-tac';
-import { useNhaCungCapList } from '../../danh-sach-doi-tac/hooks/use-nha-cung-cap';
+import { useDoiTacList } from '../../../kho-van/danh-sach-doi-tac/hooks/use-doi-tac';
 import { useDepartments } from '../../../he-thong/phong-ban/hooks/use-phong-ban';
 import { useTrangThaiThanhToanDoiTacList } from '../../thiet-lap-de-xuat-vat-tu/hooks/use-trang-thai-thanh-toan-doi-tac';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
@@ -19,7 +19,7 @@ import type { ThanhToanDoiTac } from '../core/types';
 const ThongKeTab: React.FC = () => {
   const { t } = useTranslation();
   const { data: list = [], isLoading, isError } = useThanhToanDoiTacList();
-  const { data: doiTacList = [] } = useNhaCungCapList();
+  const { data: doiTacList = [] } = useDoiTacList('nha_cung_cap');
   const { data: donViList = [] } = useDepartments();
   const { data: statusList = [] } = useTrangThaiThanhToanDoiTacList();
 

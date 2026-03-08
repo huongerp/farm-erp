@@ -1,6 +1,6 @@
 /**
  * Trang preview phiếu kiểm kê kho (mở tab mới) – toolbar Đóng + Tải PDF + In.
- * Route: /kho-van/kiem-ke-kho/preview/:id
+ * Route: /mua-hang/kiem-ke-kho/preview/:id
  */
 import React, { useCallback, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';

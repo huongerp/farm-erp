@@ -1,4 +1,4 @@
-import { supabase } from '../../../../lib/supabase';
+import { supabase, fetchAllRows } from '../../../../lib/supabase';
 import type { Department } from '../core/types';
 import type { DepartmentFormValues } from '../core/schema';
 import type { TrangThai } from '../../../../lib/constants';
@@ -7,26 +7,31 @@ import i18n from '../../../../lib/i18n';
 
 const TABLE = 'fp_var_phong_ban';
 
+/** Chuẩn hóa giá trị trạng thái từ DB (0/1 hoặc text) sang TrangThai text */
+function normalizeTrangThai(value: unknown): TrangThai {
+  if (value === 1 || value === '1') return TRANG_THAI.DANG_DUNG;
+  if (value === 0 || value === '0') return TRANG_THAI.NGUNG;
+  if (value === TRANG_THAI.DANG_DUNG || value === TRANG_THAI.NGUNG) return value as TrangThai;
+  return TRANG_THAI.DANG_DUNG;
+}
+
 function rowToDepartment(row: Record<string, unknown>): Department {
   return {
     id: String(row.id),
     ten_phong_ban: (row.ten_phong_ban as string) ?? '',
     chuc_nang: (row.chuc_nang as string) ?? null,
     tt: Number(row.tt) ?? 0,
-    trang_thai: (row.trang_thai as TrangThai) ?? TRANG_THAI.DANG_DUNG,
+    trang_thai: normalizeTrangThai(row.trang_thai),
     tg_tao: (row.tg_tao as string) ?? new Date().toISOString(),
     tg_cap_nhat: (row.tg_cap_nhat as string) ?? null,
   };
 }
 
 export const getDepartments = async (): Promise<Department[]> => {
-  const { data, error } = await supabase
-    .from(TABLE)
-    .select('*')
-    .order('tt', { ascending: true });
-
-  if (error) throw new Error(error.message ?? i18n.t('department.service.notFound'));
-  return (data ?? []).map(rowToDepartment);
+  const data = await fetchAllRows<Record<string, unknown>>((from, to) =>
+    supabase.from(TABLE).select('*').order('tt', { ascending: true }).range(from, to)
+  );
+  return data.map(rowToDepartment);
 };
 
 export const createDepartment = async (data: DepartmentFormValues): Promise<Department> => {

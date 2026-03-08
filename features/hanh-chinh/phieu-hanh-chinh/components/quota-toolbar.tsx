@@ -1,11 +1,24 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Calendar, ListOrdered } from 'lucide-react';
+import { Calendar, ListOrdered, ChevronDown } from 'lucide-react';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import type { ColumnConfig } from '../../../../store/createGenericStore';
 import { getAdminFormTypeOptions } from '../../thiet-lap-cong-luong/core/constants';
 import type { AdminFormQuotaRow } from '../core/types';
+
+/** Preset thời gian: mặc định Tất cả (theo chuẩn tab Phiếu của tôi) */
+function getMonthPresetOptions(t: (key: string) => string) {
+  const now = new Date();
+  const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const last = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const lastMonth = `${last.getFullYear()}-${String(last.getMonth() + 1).padStart(2, '0')}`;
+  return [
+    { value: '', label: t('adminForm.filter.timeAll') },
+    { value: thisMonth, label: t('adminForm.filter.thisMonth') },
+    { value: lastMonth, label: t('adminForm.filter.lastMonth') },
+  ];
+}
 
 interface Props {
   /** Danh sách dòng quota để đếm count theo loại phiếu. */
@@ -75,15 +88,22 @@ const AdminFormQuotaToolbar: React.FC<Props> = ({
         placeholder={t('adminForm.store.typeCol')}
         icon={ListOrdered}
         className="w-full sm:w-[220px]"
+        size="sm"
       />
       <div className="relative w-full sm:w-[170px]">
-        <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-        <input
-          type="month"
+        <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground pointer-events-none z-10" />
+        <select
           value={filters.month}
           onChange={(e) => setFilter('month', e.target.value)}
-          className="w-full h-9 pl-8 pr-2 bg-muted/40 border border-border/60 rounded-lg text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all"
-        />
+          className="w-full h-7 min-h-[28px] pl-8 pr-8 bg-muted/40 border border-border/60 rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all appearance-none cursor-pointer"
+        >
+          {getMonthPresetOptions(t).map((opt) => (
+            <option key={opt.value || 'all'} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground pointer-events-none" />
       </div>
     </>
   );

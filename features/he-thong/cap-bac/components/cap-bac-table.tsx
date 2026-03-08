@@ -4,7 +4,7 @@ import { Edit, Trash2, Power, Award } from 'lucide-react';
 import { JobLevel } from '../core/types';
 import { useJobLevelStore } from '../store/useJobLevelStore';
 import GenericTable from '../../../../components/shared/GenericTable';
-import { TRANG_THAI } from '../../../../lib/constants';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 
 interface Props {
   data: JobLevel[];
@@ -25,7 +25,7 @@ const JobLevelTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onS
   } = useJobLevelStore();
 
   const renderStatusBadge = (status: string) => {
-      return status === TRANG_THAI.DANG_DUNG ? (
+      return status === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? (
         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">{t('jobLevel.active')}</span>
     ) : (
         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border">{t('jobLevel.inactive')}</span>
@@ -68,7 +68,7 @@ const JobLevelTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onS
                 <div className="flex items-center justify-center gap-1">
                     <button
                         onClick={(e) => { e.stopPropagation(); onStatusChange(item); }}
-                        className={`p-2 rounded-lg transition-all ${item.trang_thai === TRANG_THAI.DANG_DUNG ? 'text-primary hover:bg-primary/10' : 'text-muted-foreground hover:bg-muted'}`}
+                        className={`p-2 rounded-lg transition-all ${item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? 'text-primary hover:bg-primary/10' : 'text-muted-foreground hover:bg-muted'}`}
                     >
                         <Power size={16} />
                     </button>

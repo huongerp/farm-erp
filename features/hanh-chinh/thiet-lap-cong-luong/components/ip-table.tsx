@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Edit, Trash2, Wifi } from 'lucide-react';
 import GenericTable from '../../../../components/shared/GenericTable';
 import { PayrollWifiIp } from '../core/types';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { usePayrollWifiIpStore } from '../store/usePayrollWifiIpStore';
 import Tooltip from '../../../../components/ui/Tooltip';
 import { formatDateTimeShort } from '../../../../lib/utils';
@@ -29,17 +30,16 @@ const PayrollWifiIpTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete
     setSort,
   } = usePayrollWifiIpStore();
 
-  const renderStatusBadge = (status: number) => (
-    status === 1 ? (
+  const renderStatusBadge = (status: string) =>
+    status === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? (
       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
-        {t('payrollIp.active')}
+        {status}
       </span>
     ) : (
       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border">
-        {t('payrollIp.inactive')}
+        {status}
       </span>
-    )
-  );
+    );
 
   const renderCell = (colId: string, item: PayrollWifiIp) => {
     switch (colId) {

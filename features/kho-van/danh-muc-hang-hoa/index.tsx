@@ -54,7 +54,7 @@ const DanhMucHangHoaPage: React.FC = () => {
         !term ||
         item.ten_danh_muc.toLowerCase().includes(searchLower) ||
         item.ma_danh_muc.toLowerCase().includes(searchLower);
-      const statusKey = item.trang_thai === 1 ? 'Active' : 'Inactive';
+      const statusKey = item.trang_thai === 'Đang hoạt động' ? 'Active' : 'Inactive';
       const matchesStatus = f.status.length === 0 || f.status.includes(statusKey);
       return matchesSearch && matchesStatus;
     },

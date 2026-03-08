@@ -106,34 +106,17 @@ export function getHanhChinhGroups(
   return [
     {
       groupTitle: t('page.hanhChinh.groupCongLuong'),
+      // Chỉ hiển thị 3 module; các module khác ẩn trên menu (code/route vẫn giữ): cham-cong, tong-hop-cham-cong, cham-diem-kpi, diem-cong-tru
       items: [
-        item({ slug: 'cham-cong', titleKey: 'page.hanhChinh.modules.chamCong', descKey: 'page.hanhChinh.descs.chamCong', icon: Calendar, color: 'bg-blue-500' }),
-        item({ slug: 'tong-hop-cham-cong', titleKey: 'page.hanhChinh.modules.tongHopChamCong', descKey: 'page.hanhChinh.descs.tongHopChamCong', icon: ClipboardCheck, color: 'bg-amber-500' }),
         item({ slug: 'phieu-hanh-chinh', titleKey: 'page.hanhChinh.modules.phieuHanhChinh', descKey: 'page.hanhChinh.descs.phieuHanhChinh', icon: Receipt, color: 'bg-indigo-500' }),
-        item({ slug: 'cham-diem-kpi', titleKey: 'page.hanhChinh.modules.chamDiemKpi', descKey: 'page.hanhChinh.descs.chamDiemKpi', icon: Target, color: 'bg-purple-500' }),
         item({ slug: 'bang-luong', titleKey: 'page.hanhChinh.modules.bangLuong', descKey: 'page.hanhChinh.descs.bangLuong', icon: Banknote, color: 'bg-emerald-500' }),
-        item({ slug: 'diem-cong-tru', titleKey: 'page.hanhChinh.modules.diemCongTru', descKey: 'page.hanhChinh.descs.diemCongTru', icon: Scale, color: 'bg-violet-500' }),
         item({ slug: 'thiet-lap-cong-luong', titleKey: 'page.hanhChinh.modules.thietLapCongLuong', descKey: 'page.hanhChinh.descs.thietLapCongLuong', icon: Settings, color: 'bg-slate-500' }),
       ],
     },
-    {
-      groupTitle: t('page.hanhChinh.groupTaiLieu'),
-      items: [
-        item({ slug: 'danh-sach-tai-lieu', titleKey: 'page.hanhChinh.modules.danhSachTaiLieu', descKey: 'page.hanhChinh.descs.danhSachTaiLieu', icon: FileText, color: 'bg-blue-500' }),
-        item({ slug: 'luu-tru-ho-so', titleKey: 'page.hanhChinh.modules.luuTruHoSo', descKey: 'page.hanhChinh.descs.luuTruHoSo', icon: Archive, color: 'bg-teal-500' }),
-        item({ slug: 'thiet-lap-tai-lieu', titleKey: 'page.hanhChinh.modules.thietLapTaiLieu', descKey: 'page.hanhChinh.descs.thietLapTaiLieu', icon: Settings, color: 'bg-slate-500' }),
-      ],
-    },
-    {
-      groupTitle: t('page.hanhChinh.groupCongViec'),
-      items: [
-        item({ slug: 'du-an', titleKey: 'page.hanhChinh.modules.duAn', descKey: 'page.hanhChinh.descs.duAn', icon: FolderOpen, color: 'bg-blue-500' }),
-        item({ slug: 'cong-viec-cua-toi', titleKey: 'page.hanhChinh.modules.congViecCuaToi', descKey: 'page.hanhChinh.descs.congViecCuaToi', icon: ClipboardList, color: 'bg-emerald-500' }),
-        item({ slug: 'cong-viec-toi-quan-ly', titleKey: 'page.hanhChinh.modules.congViecToiQuanLy', descKey: 'page.hanhChinh.descs.congViecToiQuanLy', icon: ClipboardList, color: 'bg-teal-500' }),
-        item({ slug: 'bao-cao', titleKey: 'page.hanhChinh.modules.baoCao', descKey: 'page.hanhChinh.descs.baoCao', icon: BarChart3, color: 'bg-cyan-500' }),
-        item({ slug: 'thiet-lap-cong-viec', titleKey: 'page.hanhChinh.modules.thietLapCongViec', descKey: 'page.hanhChinh.descs.thietLapCongViec', icon: Settings, color: 'bg-slate-500' }),
-      ],
-    },
+    // Nhóm Tài liệu ẩn trên menu (code/route vẫn giữ)
+    // { groupTitle: t('page.hanhChinh.groupTaiLieu'), items: [ danh-sach-tai-lieu, luu-tru-ho-so, thiet-lap-tai-lieu ] },
+    // Nhóm Công việc ẩn trên menu (code/route vẫn giữ)
+    // { groupTitle: t('page.hanhChinh.groupCongViec'), items: [ du-an, cong-viec-cua-toi, cong-viec-toi-quan-ly, bao-cao, thiet-lap-cong-viec ] },
     {
       groupTitle: t('page.hanhChinh.groupTaiSan'),
       items: [
@@ -146,16 +129,7 @@ export function getHanhChinhGroups(
         item(thietLapTaiSanMenuConfig),
       ],
     },
-    {
-      groupTitle: t('page.hanhChinh.groupQuanLyXe'),
-      items: [
-        item({ slug: 'danh-sach-xe', titleKey: 'page.hanhChinh.modules.danhSachXe', descKey: 'page.hanhChinh.descs.danhSachXe', icon: Car, color: 'bg-blue-500' }),
-        item({ slug: 'dang-ky-su-dung-xe', titleKey: 'page.hanhChinh.modules.dangKySuDungXe', descKey: 'page.hanhChinh.descs.dangKySuDungXe', icon: CalendarCheck, color: 'bg-emerald-500' }),
-        item({ slug: 'lich-bao-duong', titleKey: 'page.hanhChinh.modules.lichBaoDuong', descKey: 'page.hanhChinh.descs.lichBaoDuong', icon: Calendar, color: 'bg-amber-500' }),
-        item({ slug: 'phieu-xang-chi-phi-xe', titleKey: 'page.hanhChinh.modules.phieuXangChiPhiXe', descKey: 'page.hanhChinh.descs.phieuXangChiPhiXe', icon: Fuel, color: 'bg-orange-500' }),
-        item({ slug: 'quan-ly-lai-xe', titleKey: 'page.hanhChinh.modules.quanLyLaiXe', descKey: 'page.hanhChinh.descs.quanLyLaiXe', icon: UserCircle, color: 'bg-rose-500' }),
-        item({ slug: 'thiet-lap-quan-ly-xe', titleKey: 'page.hanhChinh.modules.thietLapQuanLyXe', descKey: 'page.hanhChinh.descs.thietLapQuanLyXe', icon: Settings, color: 'bg-slate-500' }),
-      ],
-    },
+    // Nhóm Quản lý xe ẩn trên menu (code/route vẫn giữ)
+    // { groupTitle: t('page.hanhChinh.groupQuanLyXe'), items: [ danh-sach-xe, dang-ky-su-dung-xe, lich-bao-duong, phieu-xang-chi-phi-xe, quan-ly-lai-xe, thiet-lap-quan-ly-xe ] },
   ];
 }

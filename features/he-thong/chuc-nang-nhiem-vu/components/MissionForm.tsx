@@ -12,6 +12,7 @@ import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
 import FormSection from '../../../../components/shared/FormSection';
 import { missionSchema, type MissionFormValues } from '../core/schema';
 import type { DeptMission } from '../core/types';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { useCreateMission, useUpdateMission } from '../hooks/use-chuc-nang-nhiem-vu';
 import Combobox from '../../../../components/ui/Combobox';
 import { useDepartments } from '../../phong-ban/hooks/use-phong-ban';
@@ -20,7 +21,7 @@ const DEFAULT_VALUES: MissionFormValues = {
   id_phong_ban: '',
   noi_dung: '',
   thu_tu: 0,
-  trang_thai: 1,
+  trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG,
 };
 
 interface Props {

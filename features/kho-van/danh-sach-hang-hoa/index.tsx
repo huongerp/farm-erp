@@ -11,6 +11,7 @@ import { useHangHoaStore } from './store/useHangHoaStore';
 import { useConfirmStore } from '../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../lib/button-labels';
 import { useListWithFilter } from '../../../lib/hooks';
+import { TRANG_THAI_HOAT_DONG } from '../../../lib/constants';
 import type { HangHoa } from './core/types';
 
 const DanhSachHangHoaPage: React.FC = () => {
@@ -57,7 +58,7 @@ const DanhSachHangHoaPage: React.FC = () => {
         item.ten_hang.toLowerCase().includes(searchLower) ||
         item.ma_hang.toLowerCase().includes(searchLower) ||
         (item.ten_danh_muc?.toLowerCase().includes(searchLower) ?? false);
-      const statusKey = item.trang_thai === 1 ? 'Active' : 'Inactive';
+      const statusKey = item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? 'Active' : 'Inactive';
       const matchesStatus = f.status.length === 0 || f.status.includes(statusKey);
       return matchesSearch && matchesStatus;
     },

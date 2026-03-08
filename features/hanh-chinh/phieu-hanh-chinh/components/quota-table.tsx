@@ -12,6 +12,11 @@ interface Props {
   useStore: () => GenericState<any>;
 }
 
+/** Hiển thị số định mức (số nguyên hoặc 1 chữ số thập phân) */
+function formatQuotaValue(n: number): string {
+  return n % 1 === 0 ? String(n) : n.toFixed(1);
+}
+
 const AdminFormQuotaTable: React.FC<Props> = ({ data, isLoading, useStore }) => {
   const { t } = useTranslation();
   const {
@@ -42,9 +47,17 @@ const AdminFormQuotaTable: React.FC<Props> = ({ data, isLoading, useStore }) => 
       case 'so_luong_thang':
         return <span className="text-sm font-semibold text-foreground tabular-nums">{item.so_luong_thang}</span>;
       case 'da_dung':
-        return <span className="text-sm text-foreground tabular-nums">{item.da_dung}</span>;
+        return (
+          <span className="text-sm text-foreground tabular-nums">
+            {formatQuotaValue(item.da_dung)}
+          </span>
+        );
       case 'con_lai':
-        return <span className="text-sm text-foreground tabular-nums">{item.con_lai}</span>;
+        return (
+          <span className="text-sm text-foreground tabular-nums">
+            {formatQuotaValue(item.con_lai)}
+          </span>
+        );
       case 'actions':
         return null;
       default:
@@ -87,11 +100,11 @@ const AdminFormQuotaTable: React.FC<Props> = ({ data, isLoading, useStore }) => 
       <div className="grid grid-cols-2 gap-2 px-3 py-2 bg-muted/30 rounded-lg text-body-sm">
         <div>
           <p className="text-muted-foreground mb-0.5">{t('adminForm.store.usedCol')}</p>
-          <p className="font-medium text-foreground">{item.da_dung}</p>
+          <p className="font-medium text-foreground">{formatQuotaValue(item.da_dung)}</p>
         </div>
         <div>
           <p className="text-muted-foreground mb-0.5">{t('adminForm.store.remainingCol')}</p>
-          <p className="font-medium text-foreground">{item.con_lai}</p>
+          <p className="font-medium text-foreground">{formatQuotaValue(item.con_lai)}</p>
         </div>
       </div>
     </div>

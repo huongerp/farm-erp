@@ -13,6 +13,7 @@ import FormGrid from '../../../../components/shared/FormGrid';
 import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
 import { dotKiemKeKhoSchema, type DotKiemKeKhoFormValues } from '../core/schema';
 import { useCreateDotKiemKeKho, useUpdateDotKiemKeKho } from '../hooks/use-kiem-ke-kho';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import { useEmployees } from '@/features/he-thong/nhan-vien/hooks/use-nhan-vien';
 import type { DotKiemKeKho } from '../core/types';
@@ -85,7 +86,7 @@ const DotKiemKeKhoForm: React.FC<Props> = ({ onClose, initialData, onSuccessAfte
   };
 
   const khoOptions = khoList
-    .filter((k) => k.trang_thai === 1)
+    .filter((k) => k.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG)
     .map((k) => ({ label: k.ten_kho, value: k.id, subLabel: k.ma_kho }));
   const employeeOptions = employees.map((e) => ({
     label: e.ho_ten,

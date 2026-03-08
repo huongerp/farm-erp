@@ -8,7 +8,7 @@ import DetailField from '../../../../components/shared/DetailField';
 import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
 import DetailToolbar, { DetailToolbarAction } from '../../../../components/shared/DetailToolbar';
 import { BTN_CLOSE, BTN_EDIT, BTN_DELETE } from '../../../../lib/button-labels';
-import { formatCurrency } from '../../../../lib/utils';
+import { formatCurrency, cn } from '../../../../lib/utils';
 import type { BangLuongRecord } from '../core/types';
 
 /** App dùng HashRouter: route nằm sau #, nên URL mở tab phải có hash */
@@ -76,7 +76,34 @@ const BangLuongDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete }) =
       maxWidthClass={DRAWER_WIDTH_DETAIL}
     >
       <div className="space-y-5">
-        <DetailToolbar actions={toolbarActions} className="bg-card rounded-xl border border-border" />
+        <div className="bg-card rounded-xl border border-border overflow-hidden">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3.5 border-b border-border bg-muted/20">
+            <div className="rounded-lg bg-background/80 p-2.5 border border-border">
+              <p className="text-xs text-muted-foreground mb-0.5">{t('bangLuong.detail.ngayCong')}</p>
+              <p className="text-sm font-semibold tabular-nums">
+                {data.ngay_cong} / {data.ngay_cong_chuan}
+              </p>
+            </div>
+            <div className="rounded-lg bg-background/80 p-2.5 border border-border">
+              <p className="text-xs text-muted-foreground mb-0.5">{t('bangLuong.store.luongCoBanTinhCol')}</p>
+              <p className="text-sm font-semibold tabular-nums">{formatCurrency(data.luong_co_ban_tinh)}</p>
+            </div>
+            <div className="rounded-lg bg-background/80 p-2.5 border border-border">
+              <p className="text-xs text-muted-foreground mb-0.5">{t('bangLuong.store.congTruNetCol')}</p>
+              <p className={cn(
+                'text-sm font-semibold tabular-nums',
+                data.cong_tru_net >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+              )}>
+                {data.cong_tru_net >= 0 ? '+' : ''}{formatCurrency(data.cong_tru_net)}
+              </p>
+            </div>
+            <div className="rounded-lg bg-background/80 p-2.5 border border-border col-span-2 sm:col-span-1">
+              <p className="text-xs text-muted-foreground mb-0.5">{t('bangLuong.detail.tongLuong')}</p>
+              <p className="text-sm font-bold tabular-nums text-primary">{formatCurrency(data.tong_luong)}</p>
+            </div>
+          </div>
+          <DetailToolbar actions={toolbarActions} className="!border-0" />
+        </div>
 
         <DetailSection
           title={t('bangLuong.detail.employee')}

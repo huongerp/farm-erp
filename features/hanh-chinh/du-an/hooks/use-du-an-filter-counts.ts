@@ -13,8 +13,8 @@ export function useDuAnFilterCounts(items: DuAn[], filters: DuAnFilters) {
 
     const matchStatus = (d: DuAn) =>
       (filters.status?.length ?? 0) === 0 ||
-      (filters.status?.includes('Active') && d.trang_thai === 1) ||
-      (filters.status?.includes('Inactive') && d.trang_thai === 0);
+      (filters.status?.includes('Active') && d.trang_thai === 'Đang hoạt động') ||
+      (filters.status?.includes('Inactive') && d.trang_thai === 'Ngừng hoạt động');
     const matchPhongBan = (d: DuAn) => {
       const arr = filters.id_phong_ban ?? [];
       if (arr.length === 0) return true;
@@ -34,7 +34,7 @@ export function useDuAnFilterCounts(items: DuAn[], filters: DuAnFilters) {
       const passNam = matchNam(d);
 
       if (passPhongBan && passNam) {
-        const k = d.trang_thai === 1 ? 'Active' : 'Inactive';
+        const k = d.trang_thai === 'Đang hoạt động' ? 'Active' : 'Inactive';
         statusCounts[k] = (statusCounts[k] ?? 0) + 1;
       }
       if (passStatus && passNam) {

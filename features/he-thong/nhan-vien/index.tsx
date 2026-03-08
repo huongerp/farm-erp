@@ -17,6 +17,8 @@ import ImportDialog from '../../../components/shared/ImportDialog';
 import ExportDialog from '../../../components/shared/ExportDialog';
 
 import { useEmployees, useDeleteWithUndo, useUpdateStatusEmployee } from './hooks/use-nhan-vien';
+import { useDepartments } from '@/features/he-thong/phong-ban/hooks/use-phong-ban';
+import { usePositions } from '@/features/he-thong/chuc-vu/hooks/use-chuc-vu';
 import { useEmployeeStore } from './store/useEmployeeStore';
 import { Employee } from './core/types';
 import { useConfirmStore } from '../../../store/useConfirmStore';
@@ -69,6 +71,8 @@ const EmployeePage: React.FC = () => {
   const { searchTerm, filters, sort, resetState, clearSelection, selectedIds, pagination, columns, setFilter } = useEmployeeStore();
 
   const { data: employees = [], isLoading } = useEmployees();
+  useDepartments(); // Prefetch danh sách phòng ban để form và toolbar có sẵn options
+  const { data: positions = [] } = usePositions(); // Tra cứu cấp bậc theo chức vụ ở bảng
   const { deleteWithUndo } = useDeleteWithUndo();
   const statusMutation = useUpdateStatusEmployee();
   const confirm = useConfirmStore(state => state.confirm);
@@ -260,6 +264,7 @@ const EmployeePage: React.FC = () => {
               onView={handleView}
               onDelete={handleDelete}
               onStatusChange={handleStatusChange}
+              positions={positions}
             />
           </div>
         </div>

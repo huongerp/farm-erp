@@ -1,6 +1,7 @@
 import { Kho } from '../core/types';
 import type { KhoFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -11,7 +12,7 @@ const seed: Kho[] = [
     ten_kho: 'Kho trung tâm',
     dia_chi: '123 Đường ABC, Quận 1',
     mo_ta: 'Kho chính',
-    trang_thai: 1,
+    trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG,
     thu_tu: 0,
     tg_tao: '2024-01-01T00:00:00.000Z',
     tg_cap_nhat: '2024-01-01T00:00:00.000Z',
@@ -21,7 +22,7 @@ const seed: Kho[] = [
     ma_kho: 'KHO-PB',
     ten_kho: 'Kho chi nhánh phía Bắc',
     dia_chi: '456 Đường XYZ',
-    trang_thai: 1,
+    trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG,
     thu_tu: 1,
     tg_tao: '2024-01-02T00:00:00.000Z',
     tg_cap_nhat: '2024-01-02T00:00:00.000Z',
@@ -54,7 +55,7 @@ export const createKho = async (data: KhoFormValues): Promise<Kho> => {
     dia_chi: data.dia_chi?.trim() || undefined,
     mo_ta: data.mo_ta?.trim() || undefined,
     id_chi_nhanh: data.id_chi_nhanh ?? null,
-    trang_thai: data.trang_thai as 0 | 1,
+    trang_thai: data.trang_thai,
     thu_tu: data.thu_tu ?? 0,
     tg_tao: now,
     tg_cap_nhat: now,
@@ -78,7 +79,7 @@ export const updateKho = async (id: string, data: KhoFormValues): Promise<Kho> =
     dia_chi: data.dia_chi?.trim() || undefined,
     mo_ta: data.mo_ta?.trim() || undefined,
     id_chi_nhanh: data.id_chi_nhanh ?? null,
-    trang_thai: data.trang_thai as 0 | 1,
+    trang_thai: data.trang_thai,
     thu_tu: data.thu_tu ?? 0,
     tg_cap_nhat: new Date().toISOString(),
   };
@@ -86,7 +87,7 @@ export const updateKho = async (id: string, data: KhoFormValues): Promise<Kho> =
   return updated;
 };
 
-export const updateKhoStatus = async (id: string, status: 0 | 1): Promise<Kho> => {
+export const updateKhoStatus = async (id: string, status: Kho['trang_thai']): Promise<Kho> => {
   await delay(300);
   const index = dbKho.findIndex((k) => k.id === id);
   if (index === -1) throw new Error(i18n.t('kho.service.notFound'));
@@ -122,7 +123,7 @@ export const importKho = async (
         dia_chi: row.dia_chi != null ? String(row.dia_chi).trim() : undefined,
         mo_ta: row.mo_ta != null ? String(row.mo_ta).trim() : undefined,
         id_chi_nhanh: row.id_chi_nhanh ?? null,
-        trang_thai: Number(row.trang_thai) === 0 ? 0 : 1,
+        trang_thai: String(row.trang_thai).trim() === 'Ngừng hoạt động' ? TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG : TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG,
         thu_tu: Number(row.thu_tu) || 0,
       };
       if (!data.ma_kho || !data.ten_kho) {

@@ -16,7 +16,7 @@ import FormSection from '../../../../components/shared/FormSection';
 import FormGrid from '../../../../components/shared/FormGrid';
 import { useJobLevels } from '../../cap-bac/hooks/use-cap-bac';
 import { useDepartments } from '../../phong-ban/hooks/use-phong-ban';
-import { TRANG_THAI } from '../../../../lib/constants';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 
 const DEFAULT_VALUES: PositionFormValues = {
   ten_chuc_vu: '',
@@ -24,7 +24,7 @@ const DEFAULT_VALUES: PositionFormValues = {
   phong_ban_id: '',
   mo_ta: '',
   tt: 0,
-  trang_thai: TRANG_THAI.DANG_DUNG,
+  trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG,
 };
 
 interface Props {
@@ -184,6 +184,10 @@ const PositionForm: React.FC<Props> = ({ initialData, onClose }) => {
                         label={t('position.form.status')}
                         value={field.value}
                         onChange={field.onChange}
+                        activeValue={TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG}
+                        inactiveValue={TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG}
+                        activeLabel={t('position.active')}
+                        inactiveLabel={t('position.inactive')}
                         icon={<Power size={12} />}
                         required
                       />

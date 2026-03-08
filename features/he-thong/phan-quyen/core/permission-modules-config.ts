@@ -173,7 +173,6 @@ export const PERMISSION_FUNCTIONS: PermissionFunction[] = [
       { groupTitleKey: 'page.muaHang.groupDeXuatVatTu', modules: [
         { id: BASE('mua-hang', 'phieu-de-xuat-vat-tu'), nameKey: 'page.muaHang.modules.phieuDeXuatVatTu' },
         { id: BASE('mua-hang', 'don-dat-hang'), nameKey: 'page.muaHang.modules.donDatHang' },
-        { id: BASE('mua-hang', 'danh-sach-doi-tac'), nameKey: 'page.muaHang.modules.danhSachDoiTac' },
         { id: BASE('mua-hang', 'thanh-toan-doi-tac'), nameKey: 'page.muaHang.modules.thanhToanDoiTac' },
         { id: BASE('mua-hang', 'bao-cao-de-xuat-vat-tu'), nameKey: 'page.muaHang.modules.baoCaoDeXuatVatTu' },
         { id: BASE('mua-hang', 'thiet-lap-de-xuat-vat-tu'), nameKey: 'page.muaHang.modules.thietLapDeXuatVatTu' },

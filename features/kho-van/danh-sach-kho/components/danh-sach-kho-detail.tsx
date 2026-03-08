@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Edit, Trash2, Warehouse, MapPin, FileText, ArrowUpFromLine, Calendar, Power } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import { Kho } from '../core/types';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { formatDate, formatDateTimeShort } from '../../../../lib/utils';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
 import DetailSection from '../../../../components/shared/DetailSection';
@@ -25,7 +26,7 @@ const DanhSachKhoDetail: React.FC<Props> = ({
   onDelete,
 }) => {
   const { t } = useTranslation();
-  const isActive = data.trang_thai === 1;
+  const isActive = data.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
 
   const renderFooter = (
     <div className="flex items-center justify-between w-full">

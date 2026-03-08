@@ -40,7 +40,7 @@ const DanhMucHangHoaDetail: React.FC<Props> = ({
   onAddChild,
 }) => {
   const { t } = useTranslation();
-  const isActive = data.trang_thai === 1;
+  const isActive = data.trang_thai === 'Đang hoạt động';
   const isParent = data.id_cha === null;
   const parentItem = data.id_cha
     ? allDanhMuc.find((d) => d.id === data.id_cha)
@@ -223,7 +223,7 @@ const DanhMucHangHoaDetail: React.FC<Props> = ({
                           <td className="px-4 py-2.5 font-medium text-foreground">{child.ten_danh_muc}</td>
                           <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">{child.ma_danh_muc}</td>
                           <td className="px-4 py-2.5">
-                            {child.trang_thai === 1 ? (
+                            {child.trang_thai === 'Đang hoạt động' ? (
                               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
                                 {t('common.active')}
                               </span>

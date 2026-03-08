@@ -6,7 +6,7 @@ import { Position } from '../core/types';
 import { usePositionStore } from '../store/usePositionStore';
 import GenericTable from '../../../../components/shared/GenericTable';
 import { formatDateShort } from '../../../../lib/utils';
-import { TRANG_THAI } from '../../../../lib/constants';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 
 interface Props {
   data: Position[];
@@ -27,7 +27,7 @@ const PositionTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onS
   } = usePositionStore();
 
   const renderStatusBadge = (status: string) => {
-      return status === TRANG_THAI.DANG_DUNG ? (
+      return status === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? (
         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">{t('position.active')}</span>
     ) : (
         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border">{t('position.inactive')}</span>
@@ -85,7 +85,7 @@ const PositionTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onS
                 <div className="flex items-center justify-center gap-1">
                     <button 
                         onClick={(e) => { e.stopPropagation(); onStatusChange(item); }}
-                        className={`p-2 rounded-lg transition-all ${item.trang_thai === TRANG_THAI.DANG_DUNG ? 'text-primary hover:bg-primary/10' : 'text-muted-foreground hover:bg-muted'}`}
+                        className={`p-2 rounded-lg transition-all ${item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? 'text-primary hover:bg-primary/10' : 'text-muted-foreground hover:bg-muted'}`}
                     >
                         <Power size={16} />
                     </button>

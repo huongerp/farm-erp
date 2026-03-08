@@ -9,7 +9,7 @@ export const duAnSchema = z.object({
   ngay_ket_thuc: z.string().min(1, { message: i18n.t('duAn.validation.ngayKetThucRequired') }),
   muc_tieu: z.string().optional().nullable(),
   mo_ta: z.string().optional().nullable(),
-  trang_thai: z.coerce.number().refine((val) => val === 0 || val === 1, {
+  trang_thai: z.enum(['Đang hoạt động', 'Ngừng hoạt động'], {
     message: i18n.t('duAn.validation.statusInvalid'),
   }),
 }).refine(

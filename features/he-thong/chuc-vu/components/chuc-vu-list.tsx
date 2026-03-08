@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Edit, Trash2, Briefcase } from 'lucide-react';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import { Position } from '../core/types';
-import { TRANG_THAI } from '../../../../lib/constants';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 
 interface Props {
   data: Position[];
@@ -63,7 +63,7 @@ const PositionList: React.FC<Props> = ({ data, isLoading, onEdit, onDelete }) =>
                      {pos.mo_ta || <span className="text-muted-foreground italic">{t('common.noDescription')}</span>}
                   </td>
                   <td className="px-6 py-3.5">
-                     {pos.trang_thai === TRANG_THAI.DANG_DUNG ? (
+                     {pos.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? (
                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary ring-1 ring-inset ring-primary/20">
                              <span className="w-1.5 h-1.5 rounded-full bg-primary"></span> {t('position.active')}
                          </span>

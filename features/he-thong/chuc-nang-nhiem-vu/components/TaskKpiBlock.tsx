@@ -6,6 +6,7 @@ import EmptyState from '../../../../components/shared/EmptyState';
 import { getColumnCellStyle } from '../../../../store/createGenericStore';
 import type { Task } from '../core/types';
 import type { KpiIndicator, KpiCycle } from '../core/types';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { useKpiIndicatorsByTask } from '../hooks/use-kpi';
 
 const KPI_SUB_COLUMNS = [
@@ -101,7 +102,7 @@ const TaskKpiBlock: React.FC<Props> = ({ task, onAddKpi, onViewKpi, onEditKpi, o
                     <td className="px-3 py-2 text-muted-foreground text-xs min-w-0" style={getColumnCellStyle(KPI_SUB_COLUMNS[4])}>{cycleLabel(kpi.chu_ky_danh_gia, t)}</td>
                     <td className="px-3 py-2 tabular-nums text-xs min-w-0" style={getColumnCellStyle(KPI_SUB_COLUMNS[5])}>{kpi.thu_tu}</td>
                     <td className="px-3 py-2 min-w-0" style={getColumnCellStyle(KPI_SUB_COLUMNS[6])}>
-                      {kpi.trang_thai === 1 ? (
+                      {kpi.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? (
                         <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary border border-primary/20">{t('chucNangNhiemVu.active')}</span>
                       ) : (
                         <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-muted text-muted-foreground border border-border">{t('chucNangNhiemVu.inactive')}</span>

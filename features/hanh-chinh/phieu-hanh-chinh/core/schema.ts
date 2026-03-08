@@ -4,9 +4,9 @@ import { ADMIN_FORM_SHIFTS } from './constants';
 import { ADMIN_FORM_TYPES } from '../../thiet-lap-cong-luong/core/constants';
 
 export const adminFormSchema = z.object({
-  loai_phieu: z.enum(ADMIN_FORM_TYPES, {
-    errorMap: () => ({ message: i18n.t('adminForm.validation.typeRequired') }),
-  }),
+  loai_phieu: z
+    .union([z.enum(ADMIN_FORM_TYPES), z.literal('')])
+    .refine((v) => v !== '', { message: i18n.t('adminForm.validation.typeRequired') }),
   ca: z.enum(ADMIN_FORM_SHIFTS, {
     errorMap: () => ({ message: i18n.t('adminForm.validation.shiftRequired') }),
   }),

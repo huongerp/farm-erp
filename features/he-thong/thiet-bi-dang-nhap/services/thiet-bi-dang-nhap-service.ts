@@ -1,11 +1,18 @@
-import { supabase } from '../../../../lib/supabase';
+import { supabase, fetchAllRows } from '../../../../lib/supabase';
 import type { LoginDevice } from '../core/types';
 import type { Session } from '@supabase/supabase-js';
 import type { Employee } from '../../nhan-vien/core/types';
 import { parseUserAgent } from '../utils/parse-user-agent';
 import i18n from '../../../../lib/i18n';
+import { TRANG_THAI_HOAT_DONG, type TrangThaiHoatDong } from '../../../../lib/constants';
 
 const TABLE = 'fp_var_login_devices';
+
+function normalizeTrangThai(val: unknown): TrangThaiHoatDong {
+  if (val === TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG) return TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG;
+  if (val === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG) return TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
+  return Number(val) === 0 ? TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG : TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
+}
 
 /**
  * Lấy session_id từ JWT access_token (claim session_id trong payload).
@@ -38,7 +45,7 @@ function rowToLoginDevice(row: Record<string, unknown>, currentSessionId: string
     dia_chi_ip: String(row.dia_chi_ip ?? ''),
     tg_dang_nhap_cuoi: row.tg_dang_nhap_cuoi ? new Date(row.tg_dang_nhap_cuoi as string).toISOString() : '',
     la_thiet_bi_hien_tai: currentSessionId != null && id === currentSessionId,
-    trang_thai: Number(row.trang_thai) === 0 ? 0 : 1,
+    trang_thai: normalizeTrangThai(row.trang_thai),
     tg_tao: row.tg_tao ? new Date(row.tg_tao as string).toISOString() : undefined,
     tg_cap_nhat: row.tg_cap_nhat ? new Date(row.tg_cap_nhat as string).toISOString() : undefined,
   };
@@ -83,12 +90,10 @@ export async function upsertCurrentLoginDevice(session: Session, employee: Emplo
 export async function getLoginDevices(): Promise<LoginDevice[]> {
   const { data: { session } } = await supabase.auth.getSession();
   const currentSessionId = session ? getSessionIdFromToken(session.access_token) : null;
-  const { data, error } = await supabase
-    .from(TABLE)
-    .select('*')
-    .order('tg_dang_nhap_cuoi', { ascending: false });
-  if (error) throw new Error(error.message ?? i18n.t('loginDevices.service.notFound'));
-  return (data ?? []).map((row) => rowToLoginDevice(row as Record<string, unknown>, currentSessionId));
+  const data = await fetchAllRows<Record<string, unknown>>((from, to) =>
+    supabase.from(TABLE).select('*').order('tg_dang_nhap_cuoi', { ascending: false }).range(from, to)
+  );
+  return data.map((row) => rowToLoginDevice(row, currentSessionId));
 }
 
 /**
@@ -101,7 +106,7 @@ export async function logoutDevice(id: string): Promise<LoginDevice> {
   }
   const { data: updated, error: updateError } = await supabase
     .from(TABLE)
-    .update({ trang_thai: 0, tg_cap_nhat: new Date().toISOString() })
+    .update({ trang_thai: TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG, tg_cap_nhat: new Date().toISOString() })
     .eq('id', id)
     .select()
     .single();

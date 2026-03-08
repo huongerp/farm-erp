@@ -3,6 +3,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Edit, Trash2, Phone, Briefcase, Building2, Mail, MapPin, Calendar, IdCard } from 'lucide-react';
 import { Employee } from '../core/types';
+import type { Position } from '../../chuc-vu/core/types';
 import { useEmployeeStore } from '../store/useEmployeeStore';
 import { cn, formatDate } from '../../../../lib/utils';
 import GenericTable from '../../../../components/shared/GenericTable';
@@ -23,9 +24,11 @@ interface Props {
     onDelete: (id: string) => void;
     onStatusChange: (item: Employee) => void;
     onView: (item: Employee) => void;
+    /** Danh sách chức vụ để tra cứu cấp bậc theo chức vụ khi nhân viên chưa có ten_cap_bac */
+    positions?: Position[];
 }
 
-const EmployeeTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onStatusChange, onView }) => {
+const EmployeeTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onStatusChange, onView, positions = [] }) => {
     const { t } = useTranslation();
     const {
         columns, pagination, setPage, setPageSize,
@@ -82,10 +85,15 @@ const EmployeeTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onS
                         <span className="truncate">{item.ten_phong_ban || '--'}</span>
                     </div>
                 );
-            case 'ten_cap_bac':
-                return item.ten_cap_bac
-                    ? <span className="text-body-sm font-medium text-foreground">{item.ten_cap_bac}</span>
+            case 'ten_cap_bac': {
+                const displayCapBac = item.ten_cap_bac
+                    ?? (item.id_chuc_vu && positions.length > 0
+                        ? positions.find((p) => p.id === item.id_chuc_vu)?.ten_cap_bac
+                        : undefined);
+                return displayCapBac
+                    ? <span className="text-body-sm font-medium text-foreground">{displayCapBac}</span>
                     : <span className="text-xs text-muted-foreground italic">--</span>;
+            }
             case 'ten_chi_nhanh':
                 return item.ten_chi_nhanh
                     ? <div className="flex items-center gap-1.5 text-body-sm text-foreground"><MapPin size={12} className="text-primary/60 shrink-0" /><span className="truncate">{item.ten_chi_nhanh}</span></div>

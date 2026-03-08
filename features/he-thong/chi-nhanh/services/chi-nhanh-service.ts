@@ -1,4 +1,4 @@
-import { supabase } from '../../../../lib/supabase';
+import { supabase, fetchAllRows } from '../../../../lib/supabase';
 import type { Branch } from '../core/types';
 import type { BranchFormValues } from '../core/schema';
 import type { TrangThai } from '../../../../lib/constants';
@@ -25,13 +25,10 @@ function rowToBranch(row: Record<string, unknown>): Branch {
 }
 
 export async function getBranches(): Promise<Branch[]> {
-  const { data, error } = await supabase
-    .from(TABLE)
-    .select('*')
-    .order('ten_chi_nhanh', { ascending: true });
-
-  if (error) throw new Error(error.message ?? i18n.t('branch.service.notFound'));
-  return (data ?? []).map(rowToBranch);
+  const data = await fetchAllRows<Record<string, unknown>>((from, to) =>
+    supabase.from(TABLE).select('*').order('ten_chi_nhanh', { ascending: true }).range(from, to)
+  );
+  return data.map(rowToBranch);
 }
 
 export async function createBranch(data: BranchFormValues): Promise<Branch> {

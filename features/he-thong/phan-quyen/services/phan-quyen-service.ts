@@ -1,6 +1,7 @@
-import { supabase } from '../../../../lib/supabase';
+import { supabase, fetchAllRows } from '../../../../lib/supabase';
 import { PositionPermission, AccessLog, ModulePermission, ActionType } from '../core/types';
 import { RoleFormValues } from '../core/schema';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import {
   PERMISSION_FUNCTIONS,
   PERMISSION_ACTIONS,
@@ -29,17 +30,23 @@ export function getModuleName(moduleId: string): string {
 
 /** Lấy danh sách chức vụ kèm quyền từ Supabase: fp_var_chuc_vu + fp_var_phan_quyen. */
 export const getRoles = async (): Promise<PositionPermission[]> => {
-  const [positions, departments, { data: phanQuyenRows }] = await Promise.all([
+  const [positions, departments, phanQuyenRows] = await Promise.all([
     getPositions(),
     getDepartments(),
-    supabase.from(TABLE_PHAN_QUYEN).select('id, chuc_vu_id, module_id, actions, tg_cap_nhat'),
+    fetchAllRows<{ chuc_vu_id: number; module_id: string; actions: string[] }>((from, to) =>
+      supabase
+        .from(TABLE_PHAN_QUYEN)
+        .select('id, chuc_vu_id, module_id, actions, tg_cap_nhat')
+        .order('id', { ascending: true })
+        .range(from, to)
+    ),
   ]);
 
   const deptTtMap = new Map<string, number>();
   departments.forEach((d) => deptTtMap.set(d.id, d.tt ?? 0));
 
   const permByChucVu = new Map<string, { module_id: string; actions: ActionType[] }[]>();
-  (phanQuyenRows ?? []).forEach((row: { chuc_vu_id: number; module_id: string; actions: string[] }) => {
+  phanQuyenRows.forEach((row) => {
     const cvid = String(row.chuc_vu_id);
     if (!permByChucVu.has(cvid)) permByChucVu.set(cvid, []);
     permByChucVu.get(cvid)!.push({
@@ -50,10 +57,12 @@ export const getRoles = async (): Promise<PositionPermission[]> => {
 
   let nhanVienCountMap: Record<string, number> = {};
   try {
-    const { data: nvRows } = await supabase.from('fp_var_nhan_vien').select('chuc_vu_id');
-    nhanVienCountMap = (nvRows ?? [])
-      .filter((r: { chuc_vu_id: number | null }) => r.chuc_vu_id != null)
-      .reduce<Record<string, number>>((acc, r: { chuc_vu_id: number }) => {
+    const nvRows = await fetchAllRows<{ chuc_vu_id: number | null }>((from, to) =>
+      supabase.from('fp_var_nhan_vien').select('chuc_vu_id').order('id', { ascending: true }).range(from, to)
+    );
+    nhanVienCountMap = nvRows
+      .filter((r) => r.chuc_vu_id != null)
+      .reduce<Record<string, number>>((acc, r) => {
         const id = String(r.chuc_vu_id);
         acc[id] = (acc[id] ?? 0) + 1;
         return acc;
@@ -70,7 +79,7 @@ export const getRoles = async (): Promise<PositionPermission[]> => {
       actions: q.actions,
     }));
 
-    const trangThaiNum = pos.trang_thai === '1' ? 1 : 0;
+    const trangThai = pos.trang_thai === TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG ? TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG : TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
     const thu_tu_phong_ban = pos.phong_ban_id ? (deptTtMap.get(pos.phong_ban_id) ?? 9999) : 9999;
 
     return {
@@ -84,7 +93,7 @@ export const getRoles = async (): Promise<PositionPermission[]> => {
       mo_ta: pos.mo_ta ?? null,
       so_nhan_vien: nhanVienCountMap[pos.id] ?? 0,
       quyen_han,
-      trang_thai: trangThaiNum as 0 | 1,
+      trang_thai: trangThai,
       tg_cap_nhat: pos.tg_cap_nhat ?? new Date().toISOString(),
     };
   });
@@ -103,7 +112,7 @@ export const createRole = async (
       cap_bac_id: null,
       mo_ta: data.mo_ta?.trim() ?? null,
       tt: 0,
-      trang_thai: String(data.trang_thai),
+      trang_thai: data.trang_thai,
     })
     .select('id, ten_chuc_vu, phong_ban_id, mo_ta, tt, trang_thai, tg_cap_nhat')
     .single();
@@ -122,7 +131,7 @@ export const createRole = async (
   }
 
   const id = String(chucVuId);
-  const trangThaiNum = insertedChucVu.trang_thai === '1' ? 1 : 0;
+  const trangThai = insertedChucVu.trang_thai === TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG ? TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG : TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
   return {
     id,
     id_chuc_vu: id,
@@ -134,7 +143,7 @@ export const createRole = async (
     mo_ta: insertedChucVu.mo_ta ?? null,
     so_nhan_vien: 0,
     quyen_han: permissions,
-    trang_thai: trangThaiNum as 0 | 1,
+    trang_thai: trangThai,
     tg_cap_nhat: insertedChucVu.tg_cap_nhat ? new Date(insertedChucVu.tg_cap_nhat).toISOString() : new Date().toISOString(),
   };
 };

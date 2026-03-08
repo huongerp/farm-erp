@@ -1,3 +1,5 @@
+import type { TrangThaiHoatDong } from '../../../../lib/constants';
+
 /** Hàng hóa: liên kết Danh mục hàng hóa qua id_danh_muc; ten_danh_muc enrich từ service. */
 export interface HangHoa {
   id: string;
@@ -11,7 +13,7 @@ export interface HangHoa {
   mo_ta?: string;
   /** URL hoặc base64 hình ảnh sản phẩm */
   hinh_anh?: string | null;
-  trang_thai: 0 | 1;
+  trang_thai: TrangThaiHoatDong;
   thu_tu: number;
   tg_tao: string;
   tg_cap_nhat: string;

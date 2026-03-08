@@ -14,13 +14,13 @@ import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
 import FormSection from '../../../../components/shared/FormSection';
 import FormGrid from '../../../../components/shared/FormGrid';
 
-import { TRANG_THAI } from '../../../../lib/constants';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 
 const DEFAULT_VALUES: JobLevelFormValues = {
   ten_cap_bac: '',
   cap_bac: 1,
   mo_ta: '',
-  trang_thai: TRANG_THAI.DANG_DUNG,
+  trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG,
 };
 
 interface Props {
@@ -130,6 +130,10 @@ const JobLevelForm: React.FC<Props> = ({ initialData, onClose }) => {
                         label={t('jobLevel.form.status')}
                         value={field.value}
                         onChange={field.onChange}
+                        activeValue={TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG}
+                        inactiveValue={TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG}
+                        activeLabel={t('jobLevel.active')}
+                        inactiveLabel={t('jobLevel.inactive')}
                         icon={<Power size={12} />}
                         required
                       />

@@ -7,6 +7,7 @@ import {
   addBangLuong,
   saveBangLuong,
   deleteBangLuong,
+  createBangLuongFromRecord,
 } from '../services/bang-luong-service';
 import type { BangLuongRecord } from '../core/types';
 
@@ -36,6 +37,19 @@ export function useAddBangLuong(onSuccess?: () => void) {
   return useMutation({
     mutationFn: ({ id_nhan_vien, nam, thang }: { id_nhan_vien: string; nam: number; thang: number }) =>
       addBangLuong(id_nhan_vien, nam, thang),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: BANG_LUONG_KEYS.all });
+      toast.success(i18n.t('bangLuong.toast.addSuccess'));
+      onSuccess?.();
+    },
+    onError: (err: unknown) => toast.error((err as Error).message),
+  });
+}
+
+export function useCreateBangLuongFromRecord(onSuccess?: () => void) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: createBangLuongFromRecord,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: BANG_LUONG_KEYS.all });
       toast.success(i18n.t('bangLuong.toast.addSuccess'));

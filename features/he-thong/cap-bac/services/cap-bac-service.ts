@@ -1,10 +1,16 @@
-import { supabase } from '../../../../lib/supabase';
+import { supabase, fetchAllRows } from '../../../../lib/supabase';
 import type { JobLevel } from '../core/types';
 import type { JobLevelFormValues } from '../core/schema';
-import { TRANG_THAI, type TrangThai } from '../../../../lib/constants';
+import { TRANG_THAI, TRANG_THAI_HOAT_DONG, type TrangThaiHoatDong } from '../../../../lib/constants';
 import i18n from '../../../../lib/i18n';
 
 const TABLE = 'fp_var_cap_bac';
+
+function normalizeTrangThai(val: unknown): TrangThaiHoatDong {
+  const s = val != null ? String(val).trim() : '';
+  if (s === TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG || s === TRANG_THAI.NGUNG) return TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG;
+  return TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
+}
 
 function rowToJobLevel(row: Record<string, unknown>): JobLevel {
   return {
@@ -12,20 +18,21 @@ function rowToJobLevel(row: Record<string, unknown>): JobLevel {
     ten_cap_bac: ((row.ten_cap_bac as string) ?? '').trim(),
     cap_bac: row.cap_bac != null ? Number(row.cap_bac) : 0,
     mo_ta: (row.mo_ta as string)?.trim() ?? null,
-    trang_thai: (row.trang_thai as TrangThai) ?? TRANG_THAI.DANG_DUNG,
+    trang_thai: normalizeTrangThai(row.trang_thai),
     tg_tao: row.tg_tao ? new Date(row.tg_tao as string).toISOString() : '',
     tg_cap_nhat: row.tg_cap_nhat ? new Date(row.tg_cap_nhat as string).toISOString() : '',
   };
 }
 
 export const getJobLevels = async (): Promise<JobLevel[]> => {
-  const { data, error } = await supabase
-    .from(TABLE)
-    .select('id, ten_cap_bac, cap_bac, mo_ta, trang_thai, tg_tao, tg_cap_nhat')
-    .order('cap_bac', { ascending: true, nullsFirst: false });
-
-  if (error) throw new Error(error.message ?? i18n.t('jobLevel.service.notFound'));
-  return (data ?? []).map(rowToJobLevel);
+  const data = await fetchAllRows<Record<string, unknown>>((from, to) =>
+    supabase
+      .from(TABLE)
+      .select('id, ten_cap_bac, cap_bac, mo_ta, trang_thai, tg_tao, tg_cap_nhat')
+      .order('cap_bac', { ascending: true, nullsFirst: false })
+      .range(from, to)
+  );
+  return data.map(rowToJobLevel);
 };
 
 export const createJobLevel = async (data: JobLevelFormValues): Promise<JobLevel> => {
@@ -68,7 +75,7 @@ export const updateJobLevel = async (id: string, data: JobLevelFormValues): Prom
   return rowToJobLevel(updated);
 };
 
-export const updateJobLevelStatus = async (ids: string[], status: TrangThai): Promise<JobLevel | undefined> => {
+export const updateJobLevelStatus = async (ids: string[], status: TrangThaiHoatDong): Promise<JobLevel | undefined> => {
   if (ids.length === 1) {
     const { data, error } = await supabase
       .from(TABLE)

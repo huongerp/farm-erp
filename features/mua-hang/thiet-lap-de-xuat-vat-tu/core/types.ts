@@ -14,6 +14,8 @@ export interface CauHinhDeXuatVatTu {
   cho_phep_sua_sau_duyet: boolean;
 }
 
+import type { TrangThaiHoatDong } from '../../../../lib/constants';
+
 /** Trạng thái đối tác (dùng trong module Danh sách đối tác / Nhà cung cấp) */
 export interface TrangThaiDoiTac {
   id: string;
@@ -22,7 +24,7 @@ export interface TrangThaiDoiTac {
   thu_tu: number;
   mau?: string;
   ghi_chu?: string;
-  trang_thai: 0 | 1;
+  trang_thai: TrangThaiHoatDong;
   tg_tao: string;
   tg_cap_nhat: string;
 }
@@ -35,7 +37,7 @@ export interface TrangThaiThanhToanDoiTac {
   thu_tu: number;
   mau?: string;
   ghi_chu?: string;
-  trang_thai: 0 | 1;
+  trang_thai: TrangThaiHoatDong;
   tg_tao: string;
   tg_cap_nhat: string;
 }

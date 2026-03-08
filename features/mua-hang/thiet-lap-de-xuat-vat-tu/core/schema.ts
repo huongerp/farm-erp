@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import i18n from '../../../../lib/i18n';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 
 const statusSchema = {
   ma: z.string().min(1, { message: i18n.t('thietLapDeXuatVatTu.validation.maRequired') }),
@@ -7,9 +8,7 @@ const statusSchema = {
   thu_tu: z.coerce.number().min(0, { message: i18n.t('thietLapDeXuatVatTu.validation.thuTuMin') }),
   mau: z.string().optional().nullable(),
   ghi_chu: z.string().optional().nullable(),
-  trang_thai: z.coerce.number().refine((val) => val === 0 || val === 1, {
-    message: i18n.t('thietLapDeXuatVatTu.validation.statusInvalid'),
-  }),
+  trang_thai: z.enum([TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG, TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG]),
 };
 
 export const trangThaiDoiTacSchema = z.object(statusSchema);

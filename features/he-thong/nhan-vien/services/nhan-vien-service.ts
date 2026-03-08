@@ -1,4 +1,4 @@
-import { supabase } from '../../../../lib/supabase';
+import { supabase, fetchAllRows } from '../../../../lib/supabase';
 import { ensureAuthUser } from '../../../../lib/ensure-auth-user';
 import type { Employee } from '../core/types';
 import type { EmployeeFormValues } from '../core/schema';
@@ -125,13 +125,17 @@ function formToRow(data: EmployeeFormValues): NhanVienRow {
 }
 
 export const getEmployees = async (): Promise<Employee[]> => {
-  const { data, error } = await supabase
-    .from(TABLE)
-    .select('*')
-    .order('id', { ascending: false });
-
-  if (error) throw new Error(error.message ?? i18n.t('employee.service.notFound'));
-  return (data ?? []).map(rowToEmployee);
+  const data = await fetchAllRows<NhanVienRow>((from, to) =>
+    supabase.from(TABLE).select('*').order('id', { ascending: false }).range(from, to)
+  );
+  const employees = data.map(rowToEmployee);
+  const [positions, depts, branches] = await Promise.all([getPositions(), getDepartments(), getBranches()]);
+  employees.forEach((emp) => {
+    emp.ten_chuc_vu = positions.find((p) => p.id === emp.id_chuc_vu)?.ten_chuc_vu;
+    emp.ten_phong_ban = depts.find((d) => d.id === emp.id_phong_ban)?.ten_phong_ban;
+    emp.ten_chi_nhanh = branches.find((b) => b.id === emp.id_chi_nhanh)?.ten_chi_nhanh;
+  });
+  return employees;
 };
 
 export const getEmployeeById = async (id: string): Promise<Employee | undefined> => {
@@ -142,7 +146,13 @@ export const getEmployeeById = async (id: string): Promise<Employee | undefined>
     .maybeSingle();
 
   if (error) throw new Error(error.message);
-  return data ? rowToEmployee(data) : undefined;
+  if (!data) return undefined;
+  const emp = rowToEmployee(data);
+  const [positions, depts, branches] = await Promise.all([getPositions(), getDepartments(), getBranches()]);
+  emp.ten_chuc_vu = positions.find((p) => p.id === emp.id_chuc_vu)?.ten_chuc_vu;
+  emp.ten_phong_ban = depts.find((d) => d.id === emp.id_phong_ban)?.ten_phong_ban;
+  emp.ten_chi_nhanh = branches.find((b) => b.id === emp.id_chi_nhanh)?.ten_chi_nhanh;
+  return emp;
 };
 
 export const getEmployeeByEmail = async (email: string): Promise<Employee | null> => {
@@ -154,7 +164,13 @@ export const getEmployeeByEmail = async (email: string): Promise<Employee | null
     .maybeSingle();
 
   if (error) throw new Error(error.message);
-  return data ? rowToEmployee(data) : null;
+  if (!data) return null;
+  const emp = rowToEmployee(data);
+  const [positions, depts, branches] = await Promise.all([getPositions(), getDepartments(), getBranches()]);
+  emp.ten_chuc_vu = positions.find((p) => p.id === emp.id_chuc_vu)?.ten_chuc_vu;
+  emp.ten_phong_ban = depts.find((d) => d.id === emp.id_phong_ban)?.ten_phong_ban;
+  emp.ten_chi_nhanh = branches.find((b) => b.id === emp.id_chi_nhanh)?.ten_chi_nhanh;
+  return emp;
 };
 
 export const createEmployee = async (data: EmployeeFormValues): Promise<Employee & { _authCreated?: boolean }> => {

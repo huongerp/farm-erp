@@ -1,4 +1,4 @@
-import { supabase } from '../../../../lib/supabase';
+import { supabase, fetchAllRows } from '../../../../lib/supabase';
 import {
   COLLECTION_TO_TABLE,
   RESTORE_ORDER,
@@ -124,12 +124,10 @@ function formatSize(bytes: number): string {
 // === Service functions ===
 
 export const getHistory = async (): Promise<ExportHistoryRecord[]> => {
-  const { data, error } = await supabase
-    .from(TABLE_BACKUP)
-    .select('*')
-    .order('tg_tao', { ascending: false });
-  if (error) throw new Error(`Đọc lịch sử backup: ${error.message}`);
-  return (data ?? []).map((row) => rowToHistoryRecord(row as Record<string, unknown>));
+  const data = await fetchAllRows<Record<string, unknown>>((from, to) =>
+    supabase.from(TABLE_BACKUP).select('*').order('tg_tao', { ascending: false }).range(from, to)
+  );
+  return data.map((row) => rowToHistoryRecord(row));
 };
 
 export const exportData = async (

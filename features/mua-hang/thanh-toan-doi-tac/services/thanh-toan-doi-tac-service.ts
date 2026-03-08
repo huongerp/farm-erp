@@ -2,7 +2,7 @@ import type { ThanhToanDoiTac } from '../core/types';
 import type { ThanhToanDoiTacFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
 import { getDepartments } from '../../../he-thong/phong-ban/services/phong-ban-service';
-import { getAllNhaCungCap } from '../../danh-sach-doi-tac/services/nha-cung-cap-service';
+import { getAllDoiTac } from '../../../kho-van/danh-sach-doi-tac/services/doi-tac-service';
 import { getEmployees } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
 import { getTrangThaiThanhToanDoiTacList } from '../../thiet-lap-de-xuat-vat-tu/services/trang-thai-thanh-toan-doi-tac-service';
 
@@ -21,7 +21,7 @@ const seed: Row[] = [
     hang_muc_thanh_toan: 'DNTT tiền cơm bếp ăn tuần 9',
     ngay: '2026-03-02',
     id_don_vi: 'dep-1',
-    id_doi_tac: 'ncc-mh-1',
+    id_doi_tac: 'dt-1',
     id_trang_thai_thanh_toan: 'tttt-1',
     so_tien: 4770000,
     ngay_xu_ly: '2026-03-02',
@@ -36,7 +36,7 @@ const seed: Row[] = [
     hang_muc_thanh_toan: 'Thanh toán dịch vụ vận chuyển',
     ngay: '2026-03-01',
     id_don_vi: null,
-    id_doi_tac: 'ncc-mh-3',
+    id_doi_tac: 'dt-3',
     id_trang_thai_thanh_toan: 'tttt-2',
     so_tien: 15000000,
     ngay_xu_ly: null,
@@ -71,7 +71,7 @@ async function enrichDoiTac<T extends { id_doi_tac: string }>(
   items: T[]
 ): Promise<(T & { ten_doi_tac?: string; ma_doi_tac?: string })[]> {
   try {
-    const list = await getAllNhaCungCap();
+    const list = await getAllDoiTac('nha_cung_cap');
     const map: Record<string, { ten: string; ma: string }> = {};
     list.forEach((d) => {
       map[d.id] = { ten: d.ten_ncc, ma: d.ma_ncc };

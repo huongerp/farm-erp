@@ -11,6 +11,7 @@ import MultiSelect from '../../../../components/ui/MultiSelect';
 import { NhaCungCapFormValues, nhaCungCapSchema } from '../core/schema';
 import type { NhaCungCap } from '../core/types';
 import type { NhomNhaCungCap, Tag as TagType } from '../core/types';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { useCreateNhaCungCap, useUpdateNhaCungCap, useCreateTag } from '../hooks/use-nha-cung-cap';
 import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/GenericDrawer';
 import FormSection from '../../../../components/shared/FormSection';
@@ -53,7 +54,7 @@ const DanhSachNhaCungCapForm: React.FC<Props> = ({ initialData, nhomList, tagLis
     email: '',
     mo_ta: '',
     tag_ids: [],
-    trang_thai: 1,
+    trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG,
     thu_tu: 0,
   };
 
@@ -226,6 +227,8 @@ const DanhSachNhaCungCapForm: React.FC<Props> = ({ initialData, nhomList, tagLis
                   label={t('common.status')}
                   value={field.value}
                   onChange={field.onChange}
+                  activeValue={TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG}
+                  inactiveValue={TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG}
                   icon={<Power size={12} />}
                   required
                 />

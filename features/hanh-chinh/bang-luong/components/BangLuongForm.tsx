@@ -1,19 +1,37 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Banknote, User, Calendar, Plus, Trash2 } from 'lucide-react';
-import Button from '../../../../components/ui/Button';
+import { Banknote, User, Calendar } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
 import CurrencyInput from '../../../../components/ui/CurrencyInput';
+import Combobox from '../../../../components/ui/Combobox';
 import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/GenericDrawer';
 import FormSection from '../../../../components/shared/FormSection';
 import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
-import { useAddBangLuong, useSaveBangLuong } from '../hooks/use-bang-luong';
+import { useSaveBangLuong, useCreateBangLuongFromRecord } from '../hooks/use-bang-luong';
 import { getEmployees } from '@/features/he-thong/nhan-vien/services/nhan-vien-service';
 import { useQuery } from '@tanstack/react-query';
-import type { BangLuongRecord, CongTruLuongItem } from '../core/types';
+import type { BangLuongRecord } from '../core/types';
 
 const currentYear = new Date().getFullYear();
 const currentMonth = new Date().getMonth() + 1;
+
+const defaultNumbers = {
+  ngay_cong: 0,
+  ngay_cong_chuan: 22,
+  luong_co_ban: 0,
+  luong_co_ban_tinh: 0,
+  luong_kpi: 0,
+  diem_kpi: 0,
+  kpi_dat: false,
+  ty_le_kpi_khong_dat: 0.7,
+  luong_kpi_tinh: 0,
+  luong_trach_nhiem: 0,
+  luong_trach_nhiem_tinh: 0,
+  phu_cap: 0,
+  phu_cap_tinh: 0,
+  cong_tru_net: 0,
+  tong_luong: 0,
+};
 
 interface Props {
   initialRecord?: BangLuongRecord | null;
@@ -24,59 +42,110 @@ interface Props {
 const BangLuongForm: React.FC<Props> = ({ initialRecord, defaultEmployeeId, onClose }) => {
   const { t } = useTranslation();
   const isEdit = !!initialRecord;
-  const addMutation = useAddBangLuong(onClose);
   const saveMutation = useSaveBangLuong(onClose);
+  const createFromFormMutation = useCreateBangLuongFromRecord(onClose);
 
   const [id_nhan_vien, setIdNhanVien] = useState(defaultEmployeeId ?? '');
   const [nam, setNam] = useState(currentYear);
   const [thang, setThang] = useState(currentMonth);
-  const [congTruItems, setCongTruItems] = useState<CongTruLuongItem[]>(
-    initialRecord?.cong_tru_khac ?? []
-  );
+  const [ngay_cong, setNgayCong] = useState(defaultNumbers.ngay_cong);
+  const [ngay_cong_chuan, setNgayCongChuan] = useState(defaultNumbers.ngay_cong_chuan);
+  const [luong_co_ban, setLuongCoBan] = useState(defaultNumbers.luong_co_ban);
+  const [luong_co_ban_tinh, setLuongCoBanTinh] = useState(defaultNumbers.luong_co_ban_tinh);
+  const [luong_kpi, setLuongKpi] = useState(defaultNumbers.luong_kpi);
+  const [diem_kpi, setDiemKpi] = useState(defaultNumbers.diem_kpi);
+  const [kpi_dat, setKpiDat] = useState(defaultNumbers.kpi_dat);
+  const [ty_le_kpi_khong_dat, setTyLeKpiKhongDat] = useState(defaultNumbers.ty_le_kpi_khong_dat);
+  const [luong_kpi_tinh, setLuongKpiTinh] = useState(defaultNumbers.luong_kpi_tinh);
+  const [luong_trach_nhiem, setLuongTrachNhiem] = useState(defaultNumbers.luong_trach_nhiem);
+  const [luong_trach_nhiem_tinh, setLuongTrachNhiemTinh] = useState(defaultNumbers.luong_trach_nhiem_tinh);
+  const [phu_cap, setPhuCap] = useState(defaultNumbers.phu_cap);
+  const [phu_cap_tinh, setPhuCapTinh] = useState(defaultNumbers.phu_cap_tinh);
+  /** Cộng trừ khác: một số (dương = cộng, âm = trừ) */
+  const [cong_tru_khac, setCongTruKhac] = useState(defaultNumbers.cong_tru_net);
+  const [ghi_chu, setGhiChu] = useState('');
 
   const { data: employees = [] } = useQuery({
     queryKey: ['employees-bang-luong'],
     queryFn: getEmployees,
   });
 
-  useEffect(() => {
-    if (initialRecord) {
-      setCongTruItems(initialRecord.cong_tru_khac.map((i) => ({ ...i })));
-    }
-  }, [initialRecord]);
-
   const employeeOptions = useMemo(
     () =>
-      employees
-        .filter((e) => e.trang_thai === 1)
-        .map((e) => ({
-          value: e.id,
-          label: `${e.ho_ten}${e.ma_nhan_vien ? ` (${e.ma_nhan_vien})` : ''}`,
-        })),
+      employees.map((e) => ({
+        value: e.id,
+        label: `${e.ma_nhan_vien || e.id} - ${e.ho_ten || ''}`.trim() || String(e.id),
+      })),
     [employees]
   );
 
-  const handleAddItem = () => {
-    setCongTruItems((prev) => [
-      ...prev,
-      { id: `ct-${Date.now()}`, loai: 'cong', so_tien: 0, ly_do: '' },
-    ]);
-  };
+  useEffect(() => {
+    if (initialRecord) {
+      setIdNhanVien(initialRecord.id_nhan_vien);
+      setNam(initialRecord.nam);
+      setThang(initialRecord.thang);
+      setNgayCong(initialRecord.ngay_cong);
+      setNgayCongChuan(initialRecord.ngay_cong_chuan);
+      setLuongCoBan(initialRecord.luong_co_ban);
+      setLuongCoBanTinh(initialRecord.luong_co_ban_tinh);
+      setLuongKpi(initialRecord.luong_kpi);
+      setDiemKpi(initialRecord.diem_kpi);
+      setKpiDat(initialRecord.kpi_dat);
+      setTyLeKpiKhongDat(initialRecord.ty_le_kpi_khong_dat);
+      setLuongKpiTinh(initialRecord.luong_kpi_tinh);
+      setLuongTrachNhiem(initialRecord.luong_trach_nhiem);
+      setLuongTrachNhiemTinh(initialRecord.luong_trach_nhiem_tinh);
+      setPhuCap(initialRecord.phu_cap);
+      setPhuCapTinh(initialRecord.phu_cap_tinh);
+      const net = initialRecord.cong_tru_khac.reduce(
+        (s, i) => s + (i.loai === 'cong' ? i.so_tien : -i.so_tien),
+        0
+      );
+      setCongTruKhac(net);
+      setGhiChu(initialRecord.ghi_chu ?? '');
+    }
+  }, [initialRecord]);
 
-  const handleRemoveItem = (id: string) => {
-    setCongTruItems((prev) => prev.filter((i) => i.id !== id));
-  };
+  const cong_tru_net = cong_tru_khac;
+  const tong_luong =
+    luong_co_ban_tinh + luong_kpi_tinh + luong_trach_nhiem_tinh + phu_cap_tinh + cong_tru_net;
 
-  const handleUpdateItem = (id: string, field: keyof CongTruLuongItem, value: string | number) => {
-    setCongTruItems((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, [field]: value } : i))
-    );
-  };
+  const cong_tru_khac_for_submit = useMemo(
+    () => [
+      {
+        id: '',
+        loai: (cong_tru_khac >= 0 ? 'cong' : 'tru') as 'cong' | 'tru',
+        so_tien: Math.abs(cong_tru_khac),
+      },
+    ],
+    [cong_tru_khac]
+  );
 
-  const handleSubmitAdd = (e: React.FormEvent) => {
+  const handleSubmitCreate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!id_nhan_vien) return;
-    addMutation.mutate({ id_nhan_vien, nam, thang });
+    createFromFormMutation.mutate({
+      id_nhan_vien,
+      nam,
+      thang,
+      ngay_cong,
+      ngay_cong_chuan,
+      luong_co_ban,
+      luong_co_ban_tinh,
+      luong_kpi,
+      diem_kpi,
+      kpi_dat,
+      ty_le_kpi_khong_dat,
+      luong_kpi_tinh,
+      luong_trach_nhiem,
+      luong_trach_nhiem_tinh,
+      phu_cap,
+      phu_cap_tinh,
+      cong_tru_khac: cong_tru_khac_for_submit,
+      cong_tru_net,
+      tong_luong,
+      ghi_chu: ghi_chu || undefined,
+    });
   };
 
   const handleSubmitEdit = (e: React.FormEvent) => {
@@ -84,14 +153,203 @@ const BangLuongForm: React.FC<Props> = ({ initialRecord, defaultEmployeeId, onCl
     if (!initialRecord) return;
     const updated: BangLuongRecord = {
       ...initialRecord,
-      cong_tru_khac: congTruItems,
+      ngay_cong,
+      ngay_cong_chuan,
+      luong_co_ban,
+      luong_co_ban_tinh,
+      luong_kpi,
+      diem_kpi,
+      kpi_dat,
+      ty_le_kpi_khong_dat,
+      luong_kpi_tinh,
+      luong_trach_nhiem,
+      luong_trach_nhiem_tinh,
+      phu_cap,
+      phu_cap_tinh,
+      cong_tru_khac: cong_tru_khac_for_submit,
+      cong_tru_net,
+      tong_luong,
+      ghi_chu: ghi_chu || undefined,
     };
     saveMutation.mutate(updated);
   };
 
-  const isLoading = addMutation.isPending || saveMutation.isPending;
-
+  const isLoading = saveMutation.isPending || createFromFormMutation.isPending;
   const formId = 'bang-luong-form';
+
+  const renderPeriodSection = () => (
+    <FormSection title={t('bangLuong.form.period')} icon={<Calendar size={14} />}>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-xs text-muted-foreground">{t('bangLuong.form.period')} - Năm</label>
+          <Input
+            type="number"
+            min={2000}
+            max={2100}
+            value={nam}
+            onChange={(e) => setNam(parseInt(e.target.value, 10) || currentYear)}
+            className="mt-1"
+            disabled={isEdit}
+          />
+        </div>
+        <div>
+          <label className="text-xs text-muted-foreground">Tháng</label>
+          <Input
+            type="number"
+            min={1}
+            max={12}
+            value={thang}
+            onChange={(e) => setThang(parseInt(e.target.value, 10) || 1)}
+            className="mt-1"
+            disabled={isEdit}
+          />
+        </div>
+      </div>
+    </FormSection>
+  );
+
+  const renderNgayCongSection = () => (
+    <FormSection title={t('bangLuong.detail.ngayCong')} icon={<Calendar size={14} />}>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-xs text-muted-foreground">{t('bangLuong.detail.ngayCong')}</label>
+          <Input
+            type="number"
+            min={0}
+            step={0.5}
+            value={ngay_cong}
+            onChange={(e) => setNgayCong(Number(e.target.value) || 0)}
+            className="mt-1"
+          />
+        </div>
+        <div>
+          <label className="text-xs text-muted-foreground">{t('bangLuong.detail.ngayCongChuan')}</label>
+          <Input
+            type="number"
+            min={1}
+            value={ngay_cong_chuan}
+            onChange={(e) => setNgayCongChuan(Number(e.target.value) || 22)}
+            className="mt-1"
+          />
+        </div>
+      </div>
+    </FormSection>
+  );
+
+  const renderLuongSection = () => (
+    <FormSection title={t('bangLuong.detail.luongCoBan')} icon={<Banknote size={14} />}>
+      <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs text-muted-foreground">{t('bangLuong.detail.luongCoBan')} (mức)</label>
+            <CurrencyInput value={luong_co_ban} onChange={setLuongCoBan} className="mt-1" />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground">{t('bangLuong.store.luongCoBanTinhCol')}</label>
+            <CurrencyInput value={luong_co_ban_tinh} onChange={setLuongCoBanTinh} className="mt-1" />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs text-muted-foreground">{t('bangLuong.detail.luongKpi')} (mức)</label>
+            <CurrencyInput value={luong_kpi} onChange={setLuongKpi} className="mt-1" />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground">{t('bangLuong.detail.diemKpi')}</label>
+            <Input
+              type="number"
+              step={0.01}
+              value={diem_kpi}
+              onChange={(e) => setDiemKpi(Number(e.target.value) || 0)}
+              className="mt-1"
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs text-muted-foreground">{t('bangLuong.form.tyLeKpiKhongDat')}</label>
+            <Input
+              type="number"
+              step={0.01}
+              min={0}
+              max={1}
+              value={ty_le_kpi_khong_dat}
+              onChange={(e) => setTyLeKpiKhongDat(Number(e.target.value) ?? 0.7)}
+              className="mt-1"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={kpi_dat}
+                onChange={(e) => setKpiDat(e.target.checked)}
+                className="rounded border-border"
+              />
+              {t('bangLuong.detail.kpiDat')}
+            </label>
+          </div>
+        </div>
+        <div>
+          <label className="text-xs text-muted-foreground">{t('bangLuong.store.luongKpiTinhCol')}</label>
+          <CurrencyInput value={luong_kpi_tinh} onChange={setLuongKpiTinh} className="mt-1" />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs text-muted-foreground">{t('bangLuong.detail.luongTrachNhiem')} (mức)</label>
+            <CurrencyInput value={luong_trach_nhiem} onChange={setLuongTrachNhiem} className="mt-1" />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground">{t('bangLuong.store.luongTrachNhiemTinhCol')}</label>
+            <CurrencyInput value={luong_trach_nhiem_tinh} onChange={setLuongTrachNhiemTinh} className="mt-1" />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs text-muted-foreground">{t('bangLuong.detail.phuCap')} (mức)</label>
+            <CurrencyInput value={phu_cap} onChange={setPhuCap} className="mt-1" />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground">{t('bangLuong.store.phuCapTinhCol')}</label>
+            <CurrencyInput value={phu_cap_tinh} onChange={setPhuCapTinh} className="mt-1" />
+          </div>
+        </div>
+      </div>
+    </FormSection>
+  );
+
+  const renderCongTruSection = () => (
+    <FormSection title={t('bangLuong.form.congTruKhac')} icon={<Banknote size={14} />}>
+      <div>
+        <label className="text-xs text-muted-foreground">
+          {t('bangLuong.store.congTruNetCol')} (dương = cộng, âm = trừ)
+        </label>
+        <Input
+          type="number"
+          value={cong_tru_khac === 0 ? '' : cong_tru_khac}
+          onChange={(e) => setCongTruKhac(Number(e.target.value) || 0)}
+          className="mt-1"
+          placeholder="0"
+        />
+      </div>
+    </FormSection>
+  );
+
+  const renderTongLuongAndGhiChu = () => (
+    <>
+      <FormSection title={t('bangLuong.detail.tongLuong')} icon={<Banknote size={14} />}>
+        <CurrencyInput value={tong_luong} onChange={() => {}} className="opacity-90" disabled />
+      </FormSection>
+      <FormSection title={t('bangLuong.form.ghiChu')} icon={<Banknote size={14} />}>
+        <textarea
+          value={ghi_chu}
+          onChange={(e) => setGhiChu(e.target.value)}
+          className="w-full min-h-[80px] px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+          placeholder={t('bangLuong.form.ghiChu')}
+        />
+      </FormSection>
+    </>
+  );
 
   return (
     <GenericDrawer
@@ -112,110 +370,37 @@ const BangLuongForm: React.FC<Props> = ({ initialRecord, defaultEmployeeId, onCl
     >
       <form
         id={formId}
-        onSubmit={isEdit ? handleSubmitEdit : handleSubmitAdd}
+        onSubmit={isEdit ? handleSubmitEdit : handleSubmitCreate}
         className="flex flex-col h-full"
       >
         <div className="flex-1 overflow-y-auto space-y-4 px-1">
-          {!isEdit ? (
-            <>
-              <FormSection title={t('bangLuong.form.employee')} icon={<User size={14} />}>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">
-                    {t('bangLuong.form.employee')} <span className="text-destructive">*</span>
-                  </label>
-                  <select
-                    value={id_nhan_vien}
-                    onChange={(e) => setIdNhanVien(e.target.value)}
-                    className="w-full h-9 px-3 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                    required
-                  >
-                    <option value="">{t('common.select')}</option>
-                    {employeeOptions.map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </FormSection>
-              <FormSection title={t('bangLuong.form.period')} icon={<Calendar size={14} />}>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs text-muted-foreground">{t('bangLuong.form.period')} - Năm</label>
-                    <Input
-                      type="number"
-                      min={2000}
-                      max={2100}
-                      value={nam}
-                      onChange={(e) => setNam(parseInt(e.target.value, 10) || currentYear)}
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs text-muted-foreground">Tháng</label>
-                    <Input
-                      type="number"
-                      min={1}
-                      max={12}
-                      value={thang}
-                      onChange={(e) => setThang(parseInt(e.target.value, 10) || 1)}
-                      className="mt-1"
-                    />
-                  </div>
-                </div>
-              </FormSection>
-            </>
-          ) : (
-            <>
-              <FormSection title={t('bangLuong.detail.employee')} icon={<User size={14} />}>
-                <p className="text-sm text-foreground">
-                  {initialRecord?.ten_nhan_vien} ({initialRecord?.ma_nhan_vien}) · {initialRecord?.nam}-{String(initialRecord?.thang).padStart(2, '0')}
-                </p>
-              </FormSection>
-              <FormSection title={t('bangLuong.form.congTruKhac')} icon={<Banknote size={14} />}>
-                <div className="space-y-2">
-                  {congTruItems.map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex flex-wrap items-center gap-2 p-2 rounded-lg bg-muted/30 border border-border"
-                    >
-                      <select
-                        value={item.loai}
-                        onChange={(e) => handleUpdateItem(item.id, 'loai', e.target.value as 'cong' | 'tru')}
-                        className="h-9 w-24 rounded-lg border border-border bg-background text-sm"
-                      >
-                        <option value="cong">{t('bangLuong.detail.cong')}</option>
-                        <option value="tru">{t('bangLuong.detail.tru')}</option>
-                      </select>
-                      <CurrencyInput
-                        value={item.so_tien}
-                        onChange={(v) => handleUpdateItem(item.id, 'so_tien', v)}
-                        className="flex-1 min-w-[120px]"
-                      />
-                      <Input
-                        placeholder={t('bangLuong.form.lyDo')}
-                        value={item.ly_do ?? ''}
-                        onChange={(e) => handleUpdateItem(item.id, 'ly_do', e.target.value)}
-                        className="flex-1 min-w-[100px]"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveItem(item.id)}
-                        className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg"
-                        aria-label={t('common.delete')}
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  ))}
-                  <Button type="button" variant="outline" size="sm" onClick={handleAddItem}>
-                    <Plus size={14} className="mr-1" />
-                    {t('bangLuong.form.addItem')}
-                  </Button>
-                </div>
-              </FormSection>
-            </>
-          )}
+          <FormSection title={t('bangLuong.form.employee')} icon={<User size={14} />}>
+            {isEdit ? (
+              <p className="text-sm text-foreground">
+                {initialRecord?.ten_nhan_vien} ({initialRecord?.ma_nhan_vien}) · {initialRecord?.nam}-
+                {String(initialRecord?.thang).padStart(2, '0')}
+              </p>
+            ) : (
+              <Combobox
+                label={t('bangLuong.form.employee')}
+                options={employeeOptions}
+                value={id_nhan_vien || null}
+                onChange={(v) => setIdNhanVien(v ? String(v) : '')}
+                placeholder={t('common.select')}
+                searchPlaceholder={t('common.search')}
+                required
+                icon={<User size={14} />}
+                searchable
+                dropdownInPortal
+              />
+            )}
+          </FormSection>
+
+          {renderPeriodSection()}
+          {renderNgayCongSection()}
+          {renderLuongSection()}
+          {renderCongTruSection()}
+          {renderTongLuongAndGhiChu()}
         </div>
       </form>
     </GenericDrawer>

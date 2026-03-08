@@ -14,7 +14,7 @@ export const danhMucHangHoaSchema = z.object({
   id_cha: z.string().optional().nullable(),
   thu_tu: z.coerce.number().min(0, i18n.t('danhMucHangHoa.validation.thuTuMin')),
   mo_ta: z.string().optional(),
-  trang_thai: z.coerce.number().refine((val) => val === 0 || val === 1, {
+  trang_thai: z.enum(['Đang hoạt động', 'Ngừng hoạt động'], {
     message: i18n.t('danhMucHangHoa.validation.statusInvalid'),
   }),
 });

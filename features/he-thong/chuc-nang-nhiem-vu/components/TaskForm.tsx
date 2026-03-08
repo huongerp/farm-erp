@@ -16,6 +16,7 @@ import Select from '../../../../components/ui/Select';
 import { useCreateTask, useUpdateTask } from '../hooks/use-chuc-nang-nhiem-vu';
 import Combobox from '../../../../components/ui/Combobox';
 import { useFunctionsByDepartment } from '../hooks/use-chuc-nang-nhiem-vu';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 
 const DEFAULT_VALUES: TaskFormValues = {
   id_chuc_nang: '',
@@ -24,7 +25,7 @@ const DEFAULT_VALUES: TaskFormValues = {
   mo_ta: '',
   nhom_chiu_trach_nhiem: null,
   thu_tu: 0,
-  trang_thai: 1,
+  trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG,
 };
 
 interface Props {

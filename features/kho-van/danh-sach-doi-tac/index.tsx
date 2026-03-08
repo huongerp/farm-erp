@@ -109,7 +109,7 @@ const DanhSachDoiTacPage: React.FC = () => {
         item.ten_ncc.toLowerCase().includes(searchLower) ||
         item.ma_ncc.toLowerCase().includes(searchLower) ||
         (item.ten_nhom?.toLowerCase().includes(searchLower) ?? false);
-      const statusKey = item.trang_thai === 1 ? 'Active' : 'Inactive';
+      const statusKey = item.trang_thai === 'Đang hoạt động' ? 'Active' : 'Inactive';
       const matchesStatus = f.status.length === 0 || f.status.includes(statusKey);
       const matchesNhom = f.id_nhom.length === 0 || (item.id_nhom != null && f.id_nhom.includes(item.id_nhom));
       return matchesSearch && matchesStatus && matchesNhom;
@@ -185,17 +185,17 @@ const DanhSachDoiTacPage: React.FC = () => {
     if (!viewingItem) return;
     setViewingItem(null);
     const tab = viewingItem.loai_doi_tac === 'nha_cung_cap' ? 'nhap' : 'xuat';
-    window.location.href = `/kho-van/phieu-kho?tab=${tab}&id_doi_tac=${viewingItem.id}`;
+    window.location.href = `/mua-hang/phieu-kho?tab=${tab}&id_doi_tac=${viewingItem.id}`;
   };
 
   const handleViewPhieu = (pk: PhieuKho) => {
-    window.open(`/kho-van/phieu-kho/preview/${pk.id}`, '_blank', 'noopener,noreferrer');
+    window.open(`/mua-hang/phieu-kho/preview/${pk.id}`, '_blank', 'noopener,noreferrer');
   };
 
   const handleEditPhieu = (pk: PhieuKho) => {
     setViewingItem(null);
     const tab = pk.loai === 'nhap' ? 'nhap' : pk.loai === 'xuat' ? 'xuat' : 'chuyen';
-    window.location.href = `/kho-van/phieu-kho?tab=${tab}&edit=${pk.id}`;
+    window.location.href = `/mua-hang/phieu-kho?tab=${tab}&edit=${pk.id}`;
   };
 
   const handleDeletePhieu = (id: string) => {

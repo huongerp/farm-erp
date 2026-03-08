@@ -8,6 +8,7 @@ import {
   deleteTrangThaiDoiTacList,
   updateTrangThaiDoiTacStatus,
 } from '../services/trang-thai-doi-tac-service';
+import type { TrangThaiHoatDong } from '../../../../lib/constants';
 import type { TrangThaiDoiTacFormValues } from '../core/schema';
 
 export const TRANG_THAI_DOI_TAC_QUERY_KEY = ['trangThaiDoiTac'];
@@ -47,7 +48,7 @@ export const useUpdateTrangThaiDoiTac = (onSuccess?: () => void) => {
 export const useUpdateTrangThaiDoiTacStatus = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ ids, status }: { ids: string[]; status: 0 | 1 }) => updateTrangThaiDoiTacStatus(ids, status),
+    mutationFn: ({ ids, status }: { ids: string[]; status: TrangThaiHoatDong }) => updateTrangThaiDoiTacStatus(ids, status),
     onSuccess: (_d, v) => {
       qc.invalidateQueries({ queryKey: TRANG_THAI_DOI_TAC_QUERY_KEY });
       toast.success(i18n.t('thietLapDeXuatVatTu.doiTac.toast.statusUpdate', { count: v.ids.length }));

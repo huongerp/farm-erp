@@ -8,6 +8,7 @@ import Button from '../../../../components/ui/Button';
 import Input from '../../../../components/ui/Input';
 import { roleSchema, RoleFormValues } from '../core/schema';
 import { PositionPermission, ModulePermission, ActionType } from '../core/types';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { SYSTEM_MODULES_CONFIG } from '../services/phan-quyen-service';
 import { useCreateRole } from '../hooks/use-phan-quyen';
 import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/GenericDrawer';
@@ -38,7 +39,7 @@ const RoleForm: React.FC<Props> = ({ initialData, onClose }) => {
 
   const { register, handleSubmit, formState: { errors }, reset } = useForm<RoleFormValues>({
     resolver: zodResolver(roleSchema),
-    defaultValues: { ma_vai_tro: '', ten_vai_tro: '', mo_ta: '', trang_thai: 1 }
+    defaultValues: { ma_vai_tro: '', ten_vai_tro: '', mo_ta: '', trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG }
   });
 
   useEffect(() => {

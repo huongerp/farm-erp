@@ -48,7 +48,7 @@ export const useUpdatePayrollWifiIp = (onSuccess?: () => void) => {
 export const useUpdatePayrollWifiIpStatus = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ ids, status }: { ids: string[]; status: 0 | 1 }) => updatePayrollWifiIpStatus(ids, status),
+    mutationFn: ({ ids, status }: { ids: string[]; status: import('../../../../lib/constants').TrangThaiHoatDong }) => updatePayrollWifiIpStatus(ids, status),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['payrollWifiIps'] });
       toast.success(i18n.t('payrollIp.toast.statusUpdate', { count: variables.ids.length }));

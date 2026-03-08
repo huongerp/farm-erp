@@ -7,7 +7,7 @@ import Tooltip from '../../../../components/ui/Tooltip';
 import { useEmployeeStore } from '../store/useEmployeeStore';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import { BTN_ADD } from '../../../../lib/button-labels';
-import { useDepartments } from '../../phong-ban/hooks/use-phong-ban';
+import { useDepartments } from '@/features/he-thong/phong-ban/hooks/use-phong-ban';
 import { usePositions } from '../../chuc-vu/hooks/use-chuc-vu';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import { STATUS_OPTIONS } from '../core/constants';

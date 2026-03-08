@@ -19,10 +19,10 @@ import { getNhanSuModuleTitleKeyBySlug, NHAN_SU_MODULE_SLUGS } from '../lib/nhan
 import { getMarketingModuleTitleKeyBySlug, MARKETING_MODULE_SLUGS } from '../lib/marketing-menu';
 import { getTaiChinhModuleTitleKeyBySlug, TAI_CHINH_MODULE_SLUGS } from '../lib/tai-chinh-menu';
 import { getMuaHangModuleTitleKeyBySlug, MUA_HANG_MODULE_SLUGS } from '../lib/mua-hang-menu';
-import { getKhoVanModuleTitleKeyBySlug, KHO_VAN_MODULE_SLUGS } from '../lib/kho-van-menu';
+import { KHO_VAN_MODULE_SLUGS } from '../lib/kho-van-menu';
 import { getDieuHanhModuleTitleKeyBySlug, DIEU_HANH_MODULE_SLUGS } from '../lib/dieu-hanh-menu';
 
-const SUBMENU_PATH = ['hanh-chinh', 'nhan-su', 'marketing', 'tai-chinh', 'mua-hang', 'kho-van', 'dieu-hanh'] as const;
+const SUBMENU_PATH = ['hanh-chinh', 'nhan-su', 'marketing', 'tai-chinh', 'mua-hang', 'dieu-hanh'] as const;
 
 /** Convert slug (cham-cong) to camelCase (chamCong) for i18n key */
 function slugToCamel(slug: string): string {
@@ -50,9 +50,6 @@ function getModuleTitle(
   }
   if (submenu === 'mua-hang' && MUA_HANG_MODULE_SLUGS.includes(decoded)) {
     return t(getMuaHangModuleTitleKeyBySlug(decoded));
-  }
-  if (submenu === 'kho-van' && KHO_VAN_MODULE_SLUGS.includes(decoded)) {
-    return t(getKhoVanModuleTitleKeyBySlug(decoded));
   }
   if (submenu === 'dieu-hanh' && DIEU_HANH_MODULE_SLUGS.includes(decoded)) {
     return t(getDieuHanhModuleTitleKeyBySlug(decoded));
@@ -121,9 +118,12 @@ const ModuleGuidePage: React.FC = () => {
 
   const moduleTitle = getModuleTitle(submenu, moduleSlug, t);
 
+  const decodedSlug = decodeURIComponent(moduleSlug || '');
   const moduleKey =
     submenu && moduleSlug
-      ? `${slugToCamel(submenu)}_${slugToCamel(decodeURIComponent(moduleSlug))}`
+      ? submenu === 'mua-hang' && KHO_VAN_MODULE_SLUGS.includes(decodedSlug)
+        ? `khoVan_${slugToCamel(decodedSlug)}`
+        : `${slugToCamel(submenu)}_${slugToCamel(decodedSlug)}`
       : '';
 
   const getSectionContent = (section: (typeof SECTION_KEYS)[number]): string => {

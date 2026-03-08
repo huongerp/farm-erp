@@ -1,4 +1,5 @@
 import React from 'react';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { useTranslation } from 'react-i18next';
 import { FileText, Edit, Trash2 } from 'lucide-react';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
@@ -19,7 +20,7 @@ interface Props {
 
 const PayrollFormGroupDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete }) => {
   const { t } = useTranslation();
-  const isActive = data.trang_thai === 1;
+  const isActive = data.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
   const typeLabel = getAdminFormTypeLabel(data.loai_phieu, t);
 
   const renderFooter = (

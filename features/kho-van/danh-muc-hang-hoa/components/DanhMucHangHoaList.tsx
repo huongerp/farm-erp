@@ -181,7 +181,7 @@ const DanhMucHangHoaList: React.FC<Props> = ({
       case 'trang_thai':
         return (
           <td key={col.id} className="px-6 py-3.5" style={getColumnCellStyle(col)}>
-            {item.trang_thai === 1 ? (
+            {item.trang_thai === 'Đang hoạt động' ? (
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
                 {t('common.active')}
               </span>

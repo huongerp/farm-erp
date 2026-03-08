@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import i18n from '../../../../lib/i18n';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 
 export const hangHoaSchema = z.object({
   ma_hang: z
@@ -16,9 +17,7 @@ export const hangHoaSchema = z.object({
   ton_toi_thieu: z.coerce.number().min(0).optional().nullable(),
   mo_ta: z.string().optional(),
   hinh_anh: z.string().optional().nullable(),
-  trang_thai: z.coerce.number().refine((val) => val === 0 || val === 1, {
-    message: i18n.t('hangHoa.validation.statusInvalid'),
-  }),
+  trang_thai: z.enum([TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG, TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG]),
   thu_tu: z.coerce.number().min(0, i18n.t('hangHoa.validation.thuTuMin')),
 });
 

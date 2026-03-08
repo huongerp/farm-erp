@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import i18n from '../../../../lib/i18n';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 
 const t = (key: string) => i18n.t(key);
 
@@ -8,7 +9,7 @@ export const missionSchema = z.object({
   id_phong_ban: z.string().min(1, t('chucNangNhiemVu.validation.departmentRequired')),
   noi_dung: z.string().min(1, t('chucNangNhiemVu.validation.missionContentRequired')).max(2000, t('chucNangNhiemVu.validation.missionContentMax')),
   thu_tu: z.coerce.number().int().min(0),
-  trang_thai: z.coerce.number().refine((v) => v === 0 || v === 1, { message: t('chucNangNhiemVu.validation.statusInvalid') }),
+  trang_thai: z.enum([TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG, TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG]),
 });
 export type MissionFormValues = z.infer<typeof missionSchema>;
 
@@ -19,7 +20,7 @@ export const functionSchema = z.object({
   ten_chuc_nang: z.string().min(2, t('chucNangNhiemVu.validation.nameMin')).max(255),
   mo_ta: z.string().max(500).optional().nullable(),
   thu_tu: z.coerce.number().int().min(0),
-  trang_thai: z.coerce.number().refine((v) => v === 0 || v === 1, { message: t('chucNangNhiemVu.validation.statusInvalid') }),
+  trang_thai: z.enum([TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG, TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG]),
 });
 export type FunctionFormValues = z.infer<typeof functionSchema>;
 
@@ -36,7 +37,7 @@ export const taskSchema = z.object({
   mo_ta: z.string().max(500).optional().nullable(),
   nhom_chiu_trach_nhiem: responsibleGroupEnum.nullable().optional(),
   thu_tu: z.coerce.number().int().min(0),
-  trang_thai: z.coerce.number().refine((v) => v === 0 || v === 1, { message: t('chucNangNhiemVu.validation.statusInvalid') }),
+  trang_thai: z.enum([TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG, TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG]),
 });
 export type TaskFormValues = z.infer<typeof taskSchema>;
 
@@ -49,6 +50,6 @@ export const kpiIndicatorSchema = z.object({
   chi_tieu_nguong: z.string().min(1, t('chucNangNhiemVu.validation.targetRequired')).max(255),
   chu_ky_danh_gia: kpiCycleSchema,
   thu_tu: z.coerce.number().int().min(0),
-  trang_thai: z.coerce.number().refine((v) => v === 0 || v === 1, { message: t('chucNangNhiemVu.validation.statusInvalid') }),
+  trang_thai: z.enum([TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG, TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG]),
 });
 export type KpiIndicatorFormValues = z.infer<typeof kpiIndicatorSchema>;

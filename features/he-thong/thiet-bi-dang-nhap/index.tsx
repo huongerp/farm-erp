@@ -17,6 +17,7 @@ import { useListWithFilter } from '../../../lib/hooks';
 import { useExportData } from '../../../lib/useExportData';
 import { getLanguage, formatDateTimeShort } from '../../../lib/utils';
 import type { LoginDevice } from './core/types';
+import { TRANG_THAI_HOAT_DONG } from '../../../lib/constants';
 
 const LoginDevicePage: React.FC = () => {
   const { t } = useTranslation();
@@ -106,7 +107,7 @@ const LoginDevicePage: React.FC = () => {
       dia_chi_ip: item.dia_chi_ip,
       tg_dang_nhap_cuoi: formatDateTimeShort(item.tg_dang_nhap_cuoi),
       trang_thai_text:
-        item.trang_thai === 1
+        item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG
           ? t('loginDevices.status.active')
           : t('loginDevices.status.inactive'),
     }),
@@ -136,7 +137,7 @@ const LoginDevicePage: React.FC = () => {
       toast.warning(t('loginDevices.cannotLogoutCurrent'));
       return;
     }
-    if (item.trang_thai === 0) return;
+    if (item.trang_thai === TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG) return;
     confirm({
       title: t('loginDevices.logoutDeviceConfirmTitle'),
       message: t('loginDevices.logoutDeviceConfirmMessage', {
