@@ -9,11 +9,12 @@ import Textarea from '../../../../components/ui/Textarea';
 import Select from '../../../../components/ui/Select';
 import Combobox from '../../../../components/ui/Combobox';
 import { PhieuKhoFormValues, phieuKhoSchema } from '../core/schema';
-import type { PhieuKho, LoaiPhieuKho } from '../core/types';
+import type { PhieuKho, LoaiPhieuKhoTab } from '../core/types';
+import { formatNumberVN } from '../../../../lib/utils';
 import type { Kho } from '../../danh-sach-kho/core/types';
 import type { HangHoa } from '../../danh-sach-hang-hoa/core/types';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
-import { useCreatePhieuKho, useUpdatePhieuKho, useTonKhoTheoKho } from '../hooks/use-phieu-kho';
+import { useCreatePhieuKho, useUpdatePhieuKho, useTonKhoTheoKho, useNextSoPhieu } from '../hooks/use-phieu-kho';
 import { useHangHoaList } from '../../danh-sach-hang-hoa/hooks/use-hang-hoa';
 import { useDoiTacList } from '../../danh-sach-doi-tac/hooks/use-doi-tac';
 import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/GenericDrawer';
@@ -22,28 +23,86 @@ import FormGrid from '../../../../components/shared/FormGrid';
 import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
 import GenericSubTableSection from '../../../../components/shared/GenericSubTableSection';
 
+const ADD_KHO = '__add_kho__';
+const ADD_KHO_DEN = '__add_kho_den__';
+const ADD_NCC = '__add_ncc__';
+const ADD_KH = '__add_kh__';
+const ADD_HANG_HOA = '__add_hang_hoa__';
+
 interface Props {
-  loai: LoaiPhieuKho;
+  loai: LoaiPhieuKhoTab;
   khoList: Kho[];
   initialData?: PhieuKho | null;
   onClose: () => void;
+  onRequestAddKho?: () => Promise<Kho | null>;
+  onRequestAddHangHoa?: () => Promise<HangHoa | null>;
+  onRequestAddNcc?: () => Promise<import('../../danh-sach-doi-tac/core/types').DoiTac | null>;
+  onRequestAddKh?: () => Promise<import('../../danh-sach-doi-tac/core/types').DoiTac | null>;
 }
 
-const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose }) => {
+const today = () => new Date().toISOString().slice(0, 10);
+
+const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose, onRequestAddKho, onRequestAddHangHoa, onRequestAddNcc, onRequestAddKh }) => {
   const { t } = useTranslation();
   const isEdit = !!initialData;
   const createMutation = useCreatePhieuKho(loai, onClose);
   const updateMutation = useUpdatePhieuKho(onClose);
+  const { data: nextSoPhieu, isLoading: loadingSoPhieu } = useNextSoPhieu(loai, !isEdit);
   const { data: hangHoaList = [] } = useHangHoaList();
   const { data: nhaCungCapList = [] } = useDoiTacList('nha_cung_cap');
   const { data: khachHangList = [] } = useDoiTacList('khach_hang');
 
+  const defaultValues: Partial<PhieuKhoFormValues> = {
+    so_phieu: '',
+    ngay: today(),
+    kho_id: '',
+    kho_den_id: null,
+    id_nha_cung_cap: null,
+    id_khach_hang: null,
+    mo_ta: '',
+    trang_thai: 'Chờ duyệt',
+    chi_tiet: [],
+  };
+
+  const { register, handleSubmit, formState: { errors }, reset, control, watch, setValue } = useForm<PhieuKhoFormValues>({
+    resolver: zodResolver(phieuKhoSchema) as any,
+    defaultValues,
+  });
+
+  const khoIdWatch = watch('kho_id');
+
   const khoOptions = useMemo(
     () => [
+      ...(onRequestAddKho ? [{ value: ADD_KHO, label: `➕ ${t('phieuKho.form.addWarehouse')}` }] : []),
       { value: '', label: t('phieuKho.form.warehousePlaceholder') },
       ...khoList.map((k) => ({ value: k.id, label: k.ten_kho })),
     ],
-    [khoList, t]
+    [khoList, t, onRequestAddKho]
+  );
+
+  const khoDenOptionsWithAdd = useMemo(() => {
+    const base = !khoIdWatch ? khoOptions : khoOptions.filter((o) => !o.value || o.value !== khoIdWatch);
+    if (!onRequestAddKho) return base;
+    const addOpt = { value: ADD_KHO_DEN, label: `➕ ${t('phieuKho.form.addWarehouse')}` };
+    return [addOpt, ...base.filter((o) => o.value !== ADD_KHO)];
+  }, [khoOptions, khoIdWatch, t, onRequestAddKho]);
+
+  const nccOptionsWithAdd = useMemo(
+    () => [
+      ...(onRequestAddNcc ? [{ value: ADD_NCC, label: `➕ ${t('phieuKho.form.addSupplier')}` }] : []),
+      { value: '', label: t('phieuKho.form.supplierPlaceholder') },
+      ...nhaCungCapList.filter((n) => n.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG).map((n) => ({ value: n.id, label: `${n.ma_ncc} - ${n.ten_ncc}` })),
+    ],
+    [nhaCungCapList, t, onRequestAddNcc]
+  );
+
+  const khOptionsWithAdd = useMemo(
+    () => [
+      ...(onRequestAddKh ? [{ value: ADD_KH, label: `➕ ${t('phieuKho.form.addCustomer')}` }] : []),
+      { value: '', label: t('phieuKho.form.customerPlaceholder') },
+      ...khachHangList.filter((n) => n.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG).map((n) => ({ value: n.id, label: `${n.ma_ncc} - ${n.ten_ncc}` })),
+    ],
+    [khachHangList, t, onRequestAddKh]
   );
 
   const hangHoaComboboxOptions = useMemo(
@@ -57,6 +116,13 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose }) 
         })),
     [hangHoaList, t]
   );
+  const hangHoaComboboxOptionsWithAdd = useMemo(
+    () => [
+      ...(onRequestAddHangHoa ? [{ value: ADD_HANG_HOA, label: `➕ ${t('phieuKho.form.addProduct')}`, subLabel: undefined }] : []),
+      ...hangHoaComboboxOptions,
+    ],
+    [hangHoaComboboxOptions, onRequestAddHangHoa, t]
+  );
 
   const hangHoaMap = useMemo(() => {
     const m: Record<string, HangHoa> = {};
@@ -64,41 +130,7 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose }) 
     return m;
   }, [hangHoaList]);
 
-  const nhaCungCapOptions = useMemo(
-    () => [
-      { value: '', label: t('phieuKho.form.supplierPlaceholder') },
-      ...nhaCungCapList.filter((n) => n.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG).map((n) => ({ value: n.id, label: `${n.ma_ncc} - ${n.ten_ncc}` })),
-    ],
-    [nhaCungCapList, t]
-  );
-
-  const khachHangOptions = useMemo(
-    () => [
-      { value: '', label: t('phieuKho.form.customerPlaceholder') },
-      ...khachHangList.filter((n) => n.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG).map((n) => ({ value: n.id, label: `${n.ma_ncc} - ${n.ten_ncc}` })),
-    ],
-    [khachHangList, t]
-  );
-
-  const defaultValues: Partial<PhieuKhoFormValues> = {
-    so_phieu: '',
-    ngay: '',
-    id_kho: '',
-    id_kho_den: null,
-    id_nha_cung_cap: null,
-    id_khach_hang: null,
-    mo_ta: '',
-    trang_thai: 0,
-    chi_tiet: [],
-  };
-
-  const { register, handleSubmit, formState: { errors }, reset, control, watch } = useForm<PhieuKhoFormValues>({
-    resolver: zodResolver(phieuKhoSchema) as any,
-    defaultValues,
-  });
-
-  const idKhoWatch = watch('id_kho');
-  const { data: tonKhoList = [] } = useTonKhoTheoKho(idKhoWatch || undefined);
+  const { data: tonKhoList = [] } = useTonKhoTheoKho(khoIdWatch || undefined);
 
   const tonKhoMap = useMemo(() => {
     const m: Record<string, number> = {};
@@ -107,35 +139,44 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose }) 
   }, [tonKhoList]);
 
   const { fields, append, remove } = useFieldArray({ control, name: 'chi_tiet' });
-  const khoDenOptions = useMemo(() => {
-    if (!idKhoWatch) return khoOptions;
-    return khoOptions.filter((o) => !o.value || o.value !== idKhoWatch);
-  }, [khoOptions, idKhoWatch]);
+
+  const renderAddOption = (opt: { value: string | number; label: string }) =>
+    (opt.value === ADD_KHO || opt.value === ADD_KHO_DEN || opt.value === ADD_NCC || opt.value === ADD_KH || opt.value === ADD_HANG_HOA)
+      ? <span className="text-primary font-medium">{opt.label}</span>
+      : undefined;
 
   useEffect(() => {
     if (initialData) {
       reset({
         so_phieu: initialData.so_phieu,
         ngay: initialData.ngay,
-        id_kho: initialData.id_kho,
-        id_kho_den: initialData.id_kho_den ?? null,
+        kho_id: initialData.kho_id,
+        kho_den_id: initialData.kho_den_id ?? null,
         id_nha_cung_cap: initialData.id_nha_cung_cap ?? null,
         id_khach_hang: initialData.id_khach_hang ?? null,
         mo_ta: initialData.mo_ta ?? '',
         trang_thai: initialData.trang_thai,
+        nguoi_tao_id: initialData.nguoi_tao_id ?? null,
         chi_tiet: (initialData.chi_tiet ?? []).map((ct) => ({
           id_hang_hoa: ct.id_hang_hoa,
           so_luong: ct.so_luong,
+          don_gia: ct.don_gia,
           ghi_chu: ct.ghi_chu ?? '',
         })),
       });
     } else {
-      reset(defaultValues);
+      reset({ ...defaultValues, ngay: today() });
     }
   }, [initialData, reset]);
 
+  useEffect(() => {
+    if (!isEdit && nextSoPhieu) {
+      setValue('so_phieu', nextSoPhieu);
+    }
+  }, [isEdit, nextSoPhieu, setValue]);
+
   const onSubmit: SubmitHandler<PhieuKhoFormValues> = (data) => {
-    if (loai === 'chuyen' && !data.id_kho_den) {
+    if (loai === 'chuyen' && !data.kho_den_id) {
       toast.error(t('phieuKho.validation.warehouseToRequired'));
       return;
     }
@@ -146,13 +187,14 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose }) 
     }
     const sanitized: PhieuKhoFormValues = {
       ...data,
-      id_kho_den: data.id_kho_den === '' || data.id_kho_den === undefined ? null : data.id_kho_den,
+      kho_den_id: data.kho_den_id === '' || data.kho_den_id === undefined ? null : data.kho_den_id,
       id_nha_cung_cap: data.id_nha_cung_cap === '' || data.id_nha_cung_cap === undefined ? null : data.id_nha_cung_cap,
       id_khach_hang: data.id_khach_hang === '' || data.id_khach_hang === undefined ? null : data.id_khach_hang,
       mo_ta: data.mo_ta?.trim() || undefined,
       chi_tiet: validChiTiet.map((c) => ({
         id_hang_hoa: c.id_hang_hoa.trim(),
         so_luong: Number(c.so_luong),
+        don_gia: c.don_gia != null ? Number(c.don_gia) : undefined,
         ghi_chu: c.ghi_chu?.trim() || undefined,
       })),
     };
@@ -172,7 +214,7 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose }) 
   const showCustomer = isXuat;
   const labelKho = isNhap ? t('phieuKho.form.warehouseTo') : t('phieuKho.form.warehouseFrom');
 
-  const chiTietValues = watch('chi_tiet') ?? [];
+  const chiTietValues: { id_hang_hoa?: string; so_luong?: number; don_gia?: number; ghi_chu?: string }[] = Array.isArray(watch('chi_tiet')) ? watch('chi_tiet') : [];
 
   return (
     <GenericDrawer
@@ -199,6 +241,8 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose }) 
               placeholder={t('phieuKho.form.codePlaceholder')}
               icon={<FileText size={12} />}
               required
+              readOnly={!isEdit}
+              disabled={!isEdit && loadingSoPhieu}
               {...register('so_phieu')}
               error={errors.so_phieu?.message}
             />
@@ -212,36 +256,55 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose }) 
             />
             <div className={isChuyen ? '' : 'col-span-1 sm:col-span-2'}>
               <Controller
-                name="id_kho"
+                name="kho_id"
                 control={control}
                 render={({ field }) => (
-                  <Select
+                  <Combobox
                     label={labelKho}
                     options={khoOptions}
-                    value={field.value}
-                    onChange={(e) => field.onChange(e.target.value)}
-                    onBlur={field.onBlur}
+                    value={field.value ?? ''}
+                    onChange={(v) => {
+                      if (v === ADD_KHO) {
+                        onRequestAddKho?.().then((k) => { if (k) setValue('kho_id', k.id); });
+                        return;
+                      }
+                      field.onChange(v ?? '');
+                    }}
+                    placeholder={t('phieuKho.form.warehousePlaceholder')}
+                    searchPlaceholder={t('phieuKho.form.itemSearchPlaceholder')}
+                    searchable
+                    dropdownInPortal
                     icon={<Warehouse size={12} />}
                     required
-                    error={errors.id_kho?.message}
+                    error={errors.kho_id?.message}
+                    renderOption={renderAddOption}
                   />
                 )}
               />
             </div>
             {isChuyen && (
               <Controller
-                name="id_kho_den"
+                name="kho_den_id"
                 control={control}
                 render={({ field }) => (
-                  <Select
+                  <Combobox
                     label={t('phieuKho.form.warehouseTo')}
-                    options={khoDenOptions}
+                    options={khoDenOptionsWithAdd}
                     value={field.value ?? ''}
-                    onChange={(e) => field.onChange(e.target.value === '' ? null : e.target.value)}
-                    onBlur={field.onBlur}
+                    onChange={(v) => {
+                      if (v === ADD_KHO_DEN) {
+                        onRequestAddKho?.().then((k) => { if (k) setValue('kho_den_id', k.id); });
+                        return;
+                      }
+                      field.onChange(v === '' || v === null ? null : v);
+                    }}
+                    placeholder={t('phieuKho.form.warehousePlaceholder')}
+                    searchable
+                    dropdownInPortal
                     icon={<ArrowRightLeft size={12} />}
                     required
-                    error={errors.id_kho_den?.message}
+                    error={errors.kho_den_id?.message}
+                    renderOption={renderAddOption}
                   />
                 )}
               />
@@ -251,14 +314,23 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose }) 
                 name="id_nha_cung_cap"
                 control={control}
                 render={({ field }) => (
-                  <Select
+                  <Combobox
                     label={t('phieuKho.form.supplier')}
-                    options={nhaCungCapOptions}
+                    options={nccOptionsWithAdd}
                     value={field.value ?? ''}
-                    onChange={(e) => field.onChange(e.target.value === '' ? null : e.target.value)}
-                    onBlur={field.onBlur}
+                    onChange={(v) => {
+                      if (v === ADD_NCC) {
+                        onRequestAddNcc?.().then((d) => { if (d) setValue('id_nha_cung_cap', d.id); });
+                        return;
+                      }
+                      field.onChange(v === '' || v === null ? null : v);
+                    }}
+                    placeholder={t('phieuKho.form.supplierPlaceholder')}
+                    searchable
+                    dropdownInPortal
                     icon={<Truck size={12} />}
                     error={errors.id_nha_cung_cap?.message}
+                    renderOption={renderAddOption}
                   />
                 )}
               />
@@ -268,14 +340,23 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose }) 
                 name="id_khach_hang"
                 control={control}
                 render={({ field }) => (
-                  <Select
+                  <Combobox
                     label={t('phieuKho.form.customer')}
-                    options={khachHangOptions}
+                    options={khOptionsWithAdd}
                     value={field.value ?? ''}
-                    onChange={(e) => field.onChange(e.target.value === '' ? null : e.target.value)}
-                    onBlur={field.onBlur}
+                    onChange={(v) => {
+                      if (v === ADD_KH) {
+                        onRequestAddKh?.().then((d) => { if (d) setValue('id_khach_hang', d.id); });
+                        return;
+                      }
+                      field.onChange(v === '' || v === null ? null : v);
+                    }}
+                    placeholder={t('phieuKho.form.customerPlaceholder')}
+                    searchable
+                    dropdownInPortal
                     icon={<Truck size={12} />}
                     error={errors.id_khach_hang?.message}
+                    renderOption={renderAddOption}
                   />
                 )}
               />
@@ -290,25 +371,6 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose }) 
                 rows={2}
               />
             </div>
-            <div className="col-span-1 sm:col-span-2">
-              <Controller
-                name="trang_thai"
-                control={control}
-                render={({ field }) => (
-                  <Select
-                    label={t('phieuKho.form.status')}
-                    options={[
-                      { value: '0', label: t('phieuKho.status.pending') },
-                      { value: '1', label: t('phieuKho.status.approved') },
-                      { value: '2', label: t('phieuKho.status.rejected') },
-                    ]}
-                    value={String(field.value)}
-                    onChange={(e) => field.onChange(Number(e.target.value))}
-                    onBlur={field.onBlur}
-                  />
-                )}
-              />
-            </div>
           </FormGrid>
         </FormSection>
 
@@ -317,7 +379,7 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose }) 
           icon={<Package size={14} className="text-primary" />}
           count={fields.length}
           addLabel={t('phieuKho.form.addRow')}
-          onAdd={() => append({ id_hang_hoa: '', so_luong: 0, ghi_chu: '' })}
+          onAdd={() => append({ id_hang_hoa: '', so_luong: 0, don_gia: 0, ghi_chu: '' })}
           emptyTitle={t('phieuKho.form.noItems')}
           emptyDescription={t('phieuKho.form.noItemsHint')}
           maxTableHeight="320px"
@@ -327,6 +389,8 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose }) 
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap w-10">#</th>
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[200px]">{t('phieuKho.form.item')}</th>
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[110px]">{t('phieuKho.form.quantity')}</th>
+              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[100px]">{t('phieuKho.form.unitPrice')}</th>
+              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[110px]">{t('phieuKho.form.amount')}</th>
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[64px]">{t('phieuKho.form.unit')}</th>
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[90px]">{t('phieuKho.form.stockAtWarehouse')}</th>
               {showTonKhoWarning && (
@@ -338,7 +402,7 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose }) 
           <tbody className="[&>tr>td]:border-b [&>tr>td]:border-border">
             {fields.length === 0 ? (
               <tr>
-                <td colSpan={showTonKhoWarning ? 7 : 6} className="px-4 py-6 text-center text-muted-foreground text-xs">
+                <td colSpan={showTonKhoWarning ? 9 : 8} className="px-4 py-6 text-center text-muted-foreground text-xs">
                   {t('phieuKho.form.noItems')}
                 </td>
               </tr>
@@ -346,6 +410,8 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose }) 
               fields.map((field, index) => {
                 const idHangHoa = chiTietValues[index]?.id_hang_hoa ?? '';
                 const soLuong = Number(chiTietValues[index]?.so_luong) || 0;
+                const donGia = Number(chiTietValues[index]?.don_gia) || 0;
+                const thanhTien = soLuong * donGia;
                 const ton = idHangHoa ? (tonKhoMap[idHangHoa] ?? 0) : 0;
                 const isOverStock = showTonKhoWarning && idHangHoa && soLuong > ton;
                 const donVi = idHangHoa ? (hangHoaMap[idHangHoa]?.don_vi_tinh ?? '—') : '—';
@@ -358,14 +424,29 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose }) 
                         control={control}
                         render={({ field: f }) => (
                           <Combobox
-                            options={hangHoaComboboxOptions}
+                            options={hangHoaComboboxOptionsWithAdd}
                             value={f.value || null}
-                            onChange={(v) => f.onChange(v ?? '')}
+                            onChange={(v) => {
+                              if (v === ADD_HANG_HOA) {
+                                onRequestAddHangHoa?.().then((h) => {
+                                  if (h) {
+                                    setValue(`chi_tiet.${index}.id_hang_hoa`, h.id);
+                                    const dg = hangHoaMap[h.id]?.don_gia ?? 0;
+                                    setValue(`chi_tiet.${index}.don_gia`, dg);
+                                  }
+                                });
+                                return;
+                              }
+                              f.onChange(v ?? '');
+                              const dg = v ? (hangHoaMap[String(v)]?.don_gia ?? 0) : 0;
+                              setValue(`chi_tiet.${index}.don_gia`, dg);
+                            }}
                             placeholder={t('phieuKho.form.itemPlaceholder')}
                             searchPlaceholder={t('phieuKho.form.itemSearchPlaceholder')}
                             searchable
                             triggerClassName="h-9 text-sm border-border rounded-md"
                             dropdownInPortal
+                            renderOption={renderAddOption}
                           />
                         )}
                       />
@@ -379,6 +460,19 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose }) 
                         className="h-9 text-sm border-border w-full min-w-[6rem] max-w-[10rem] tabular-nums"
                         {...register(`chi_tiet.${index}.so_luong`, { valueAsNumber: true })}
                       />
+                    </td>
+                    <td className="px-4 py-2.5 min-w-[100px] align-top">
+                      <Input
+                        type="number"
+                        min={0}
+                        step="any"
+                        inputMode="decimal"
+                        className="h-9 text-sm border-border w-full min-w-[6rem] max-w-[10rem] tabular-nums"
+                        {...register(`chi_tiet.${index}.don_gia`, { valueAsNumber: true })}
+                      />
+                    </td>
+                    <td className="px-4 py-2.5 text-xs text-muted-foreground tabular-nums">
+                      {formatNumberVN(thanhTien)}
                     </td>
                     <td className="px-4 py-2.5 text-xs text-muted-foreground">{donVi}</td>
                     <td className="px-4 py-2.5 text-xs text-muted-foreground tabular-nums">
@@ -408,6 +502,23 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose }) 
                 );
               })
             )}
+            {fields.length > 0 && (() => {
+              const tongSoLuong = chiTietValues.reduce((s, r) => s + (Number(r?.so_luong) || 0), 0);
+              const tongTien = chiTietValues.reduce((s, r) => {
+                const sl = Number(r?.so_luong) || 0;
+                const dg = Number(r?.don_gia) || 0;
+                return s + sl * dg;
+              }, 0);
+              return (
+                <tr key="totals" className="bg-muted/50 border-t-2 border-border font-medium">
+                  <td colSpan={2} className="px-4 py-2.5 text-muted-foreground text-xs" />
+                  <td className="px-4 py-2.5 text-xs tabular-nums">{formatNumberVN(tongSoLuong)}</td>
+                  <td className="px-4 py-2.5 text-xs" />
+                  <td className="px-4 py-2.5 text-xs tabular-nums">{formatNumberVN(tongTien)}</td>
+                  <td colSpan={showTonKhoWarning ? 4 : 3} className="px-4 py-2.5 text-xs" />
+                </tr>
+              );
+            })()}
           </tbody>
         </GenericSubTableSection>
       </form>

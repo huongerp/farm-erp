@@ -7,13 +7,17 @@ export type LoaiDoiTac = 'nha_cung_cap' | 'khach_hang';
 export type TrangThaiDoiTac = TrangThaiHoatDong;
 export { TRANG_THAI_HOAT_DONG as TRANG_THAI_DOI_TAC } from '../../../../lib/constants';
 
-/** Nhóm đối tác – dùng chung cho NCC và KH. */
+/** Nhóm đối tác – loại: Nhà cung cấp / Khách hàng. Trạng thái lưu text. */
 export interface NhomDoiTac {
   id: string;
   ma_nhom: string;
   ten_nhom: string;
+  /** Loại: nha_cung_cap | khach_hang (cột loai trên Supabase) */
+  loai?: LoaiDoiTac | null;
   thu_tu?: number;
-  trang_thai: 0 | 1;
+  trang_thai: TrangThaiHoatDong;
+  tg_tao?: string;
+  tg_cap_nhat?: string;
 }
 
 /** Tag – gắn vào đối tác để quản lý (MultiSelect, chip). */

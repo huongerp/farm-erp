@@ -7,6 +7,8 @@ interface DetailSectionProps {
   children: React.ReactNode;
   className?: string;
   variant?: 'primary' | 'muted';
+  /** Nút/hành động cùng hàng với title (chuẩn module Phòng ban) */
+  action?: React.ReactNode;
 }
 
 /** Section trong màn detail – dùng chung Section (cùng style với FormSection) */

@@ -14,7 +14,7 @@ export const doiTacSchema = z.object({
     .min(1, i18n.t('doiTac.validation.nameRequired'))
     .max(255, i18n.t('doiTac.validation.nameMax')),
   loai_doi_tac: loaiDoiTacSchema,
-  id_nhom: z.string().optional().nullable(),
+  id_nhom: z.string().min(1, i18n.t('doiTac.validation.idNhomRequired')),
   dia_chi: z.string().optional(),
   dien_thoai: z.string().optional(),
   email: z.string().optional(),
@@ -23,7 +23,7 @@ export const doiTacSchema = z.object({
   trang_thai: z.enum(['Đang hoạt động', 'Ngừng hoạt động'], {
     message: i18n.t('doiTac.validation.statusInvalid'),
   }),
-  thu_tu: z.coerce.number().min(0, i18n.t('doiTac.validation.thuTuMin')),
+  thu_tu: z.coerce.number().min(1, i18n.t('doiTac.validation.thuTuMin')),
 });
 
 export type DoiTacFormValues = z.infer<typeof doiTacSchema>;

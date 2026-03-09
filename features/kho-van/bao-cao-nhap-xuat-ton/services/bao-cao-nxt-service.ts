@@ -19,9 +19,12 @@ function inDateRange(ngay: string, dateFrom: string, dateTo: string): boolean {
   return ngay >= dateFrom && ngay <= dateTo;
 }
 
+/** Trạng thái phiếu: DB lưu text 'Chờ duyệt' | 'Đã duyệt' | 'Không duyệt'. Chỉ phiếu Không duyệt không tính tồn. */
+const TRANG_THAI_KHONG_DUYET = 'Không duyệt';
+
 /**
  * Lấy báo cáo tổng hợp NXT theo kỳ.
- * Chỉ tính phiếu đã duyệt (trang_thai === 1) cho nhập/xuất; tồn cuối = tồn hiện tại khi dateTo >= hôm nay.
+ * Tính phiếu Chờ duyệt + Đã duyệt cho nhập/xuất; chỉ Không duyệt không tính. Tồn cuối từ view fp_mh_ton_kho.
  */
 export async function getNXTByPeriod(filters: NXTReportFilters): Promise<NXTByPeriodResult> {
   await delay(300);
@@ -38,9 +41,9 @@ export async function getNXTByPeriod(filters: NXTReportFilters): Promise<NXTByPe
 
   const phieuInRange = allPhieu.filter((p) => {
     if (!inDateRange(p.ngay, dateFrom, dateTo)) return false;
-    if (p.trang_thai !== 1) return false; // chỉ đã duyệt
-    if (warehouseSet && !warehouseSet.has(p.id_kho)) return false;
-    if (warehouseSet && p.id_kho_den && !warehouseSet.has(p.id_kho_den)) return false;
+    if (p.trang_thai === TRANG_THAI_KHONG_DUYET) return false; // chỉ phiếu Không duyệt không tính
+    if (warehouseSet && !warehouseSet.has(p.kho_id)) return false;
+    if (warehouseSet && p.kho_den_id && !warehouseSet.has(p.kho_den_id)) return false;
     if (loaiSet && !loaiSet.has(p.loai)) return false;
     return true;
   });
@@ -64,46 +67,46 @@ export async function getNXTByPeriod(filters: NXTReportFilters): Promise<NXTByPe
     for (const ct of chiTiet) {
       if (hangHoaSet && !hangHoaSet.has(ct.id_hang_hoa)) continue;
       const h = hangHoaMap[ct.id_hang_hoa];
-      if (categorySet && h?.id_danh_muc && !categorySet.has(h.id_danh_muc)) continue;
+      if (categorySet && h?.danh_muc_id && !categorySet.has(h.danh_muc_id)) continue;
 
       const qty = ct.so_luong;
-      if (p.loai === 'nhap') {
-        const keyKho = `${p.id_kho}|${ct.id_hang_hoa}`;
+      if (p.loai === 'nhập') {
+        const keyKho = `${p.kho_id}|${ct.id_hang_hoa}`;
         const cur = byKhoHang.get(keyKho) ?? { nhap: 0, xuat: 0 };
         cur.nhap += qty;
         byKhoHang.set(keyKho, cur);
-        const kw = byWarehouse.get(p.id_kho) ?? { nhap: 0, xuat: 0 };
+        const kw = byWarehouse.get(p.kho_id) ?? { nhap: 0, xuat: 0 };
         kw.nhap += qty;
-        byWarehouse.set(p.id_kho, kw);
+        byWarehouse.set(p.kho_id, kw);
         const kp = byProduct.get(ct.id_hang_hoa) ?? { nhap: 0, xuat: 0 };
         kp.nhap += qty;
         byProduct.set(ct.id_hang_hoa, kp);
-      } else if (p.loai === 'xuat') {
-        const keyKho = `${p.id_kho}|${ct.id_hang_hoa}`;
+      } else if (p.loai === 'xuất') {
+        const keyKho = `${p.kho_id}|${ct.id_hang_hoa}`;
         const cur = byKhoHang.get(keyKho) ?? { nhap: 0, xuat: 0 };
         cur.xuat += qty;
         byKhoHang.set(keyKho, cur);
-        const kw = byWarehouse.get(p.id_kho) ?? { nhap: 0, xuat: 0 };
+        const kw = byWarehouse.get(p.kho_id) ?? { nhap: 0, xuat: 0 };
         kw.xuat += qty;
-        byWarehouse.set(p.id_kho, kw);
+        byWarehouse.set(p.kho_id, kw);
         const kp = byProduct.get(ct.id_hang_hoa) ?? { nhap: 0, xuat: 0 };
         kp.xuat += qty;
         byProduct.set(ct.id_hang_hoa, kp);
-      } else if (p.loai === 'chuyen' && p.id_kho_den) {
-        const keyFrom = `${p.id_kho}|${ct.id_hang_hoa}`;
-        const keyTo = `${p.id_kho_den}|${ct.id_hang_hoa}`;
+      } else if (p.loai === 'chuyển' && p.kho_den_id) {
+        const keyFrom = `${p.kho_id}|${ct.id_hang_hoa}`;
+        const keyTo = `${p.kho_den_id}|${ct.id_hang_hoa}`;
         const curFrom = byKhoHang.get(keyFrom) ?? { nhap: 0, xuat: 0 };
         curFrom.xuat += qty;
         byKhoHang.set(keyFrom, curFrom);
         const curTo = byKhoHang.get(keyTo) ?? { nhap: 0, xuat: 0 };
         curTo.nhap += qty;
         byKhoHang.set(keyTo, curTo);
-        const kwFrom = byWarehouse.get(p.id_kho) ?? { nhap: 0, xuat: 0 };
+        const kwFrom = byWarehouse.get(p.kho_id) ?? { nhap: 0, xuat: 0 };
         kwFrom.xuat += qty;
-        byWarehouse.set(p.id_kho, kwFrom);
-        const kwTo = byWarehouse.get(p.id_kho_den) ?? { nhap: 0, xuat: 0 };
+        byWarehouse.set(p.kho_id, kwFrom);
+        const kwTo = byWarehouse.get(p.kho_den_id) ?? { nhap: 0, xuat: 0 };
         kwTo.nhap += qty;
-        byWarehouse.set(p.id_kho_den, kwTo);
+        byWarehouse.set(p.kho_den_id, kwTo);
       }
     }
   }
@@ -111,7 +114,7 @@ export async function getNXTByPeriod(filters: NXTReportFilters): Promise<NXTByPe
   const productPassesFilter = (id_hang_hoa: string): boolean => {
     if (hangHoaSet && !hangHoaSet.has(id_hang_hoa)) return false;
     const h = hangHoaMap[id_hang_hoa];
-    if (categorySet && h?.id_danh_muc && !categorySet.has(h.id_danh_muc)) return false;
+    if (categorySet && h?.danh_muc_id && !categorySet.has(h.danh_muc_id)) return false;
     return true;
   };
 
@@ -145,21 +148,28 @@ export async function getNXTByPeriod(filters: NXTReportFilters): Promise<NXTByPe
   productIds.forEach((id_hang_hoa) => {
     const h = hangHoaMap[id_hang_hoa];
     if (hangHoaSet && !hangHoaSet.has(id_hang_hoa)) return;
-    if (categorySet && h?.id_danh_muc && !categorySet.has(h.id_danh_muc)) return;
+    if (categorySet && h?.danh_muc_id && !categorySet.has(h.danh_muc_id)) return;
     const mov = byProduct.get(id_hang_hoa) ?? { nhap: 0, xuat: 0 };
     let ton_cuoi = 0;
     let ton_dau = 0;
-    tonKhoList.filter((r) => r.id_hang_hoa === id_hang_hoa).forEach((r) => {
+    const tonRowsForProduct = tonKhoList.filter((r) => {
+      if (r.id_hang_hoa !== id_hang_hoa) return false;
+      if (warehouseSet && !warehouseSet.has(r.id_kho)) return false;
+      return true;
+    });
+    tonRowsForProduct.forEach((r) => {
       ton_cuoi += r.so_luong;
       const m = byKhoHang.get(`${r.id_kho}|${id_hang_hoa}`) ?? { nhap: 0, xuat: 0 };
       ton_dau += r.so_luong - m.nhap + m.xuat;
     });
+    const maHang = h?.ma_hang ?? h?.ma_hang_hoa ?? id_hang_hoa;
+    const tenHang = h?.ten_hang ?? h?.ten_hang_hoa ?? '—';
     byProductRows.push({
       id_hang_hoa,
-      ma_hang: h?.ma_hang ?? id_hang_hoa,
-      ten_hang: h?.ten_hang ?? '—',
+      ma_hang: maHang,
+      ten_hang: tenHang,
       ten_danh_muc: h?.ten_danh_muc,
-      don_vi_tinh: h?.don_vi_tinh ?? '—',
+      don_vi_tinh: h?.dvt ?? h?.don_vi_tinh ?? '—',
       ton_dau_ky: ton_dau,
       tong_nhap: mov.nhap,
       tong_xuat: mov.xuat,
@@ -170,6 +180,13 @@ export async function getNXTByPeriod(filters: NXTReportFilters): Promise<NXTByPe
   return { byWarehouse: byWarehouseRows, byProduct: byProductRows };
 }
 
+/** Map trạng thái số (UI filter) sang text DB. */
+const TRANG_THAI_NUM_TO_TEXT: Record<number, string> = {
+  0: 'Chờ duyệt',
+  1: 'Đã duyệt',
+  2: 'Không duyệt',
+};
+
 /**
  * Lấy danh sách phiếu trong kỳ (không kèm chi_tiet; gọi getPhieuKhoById khi cần chi tiết).
  */
@@ -179,14 +196,17 @@ export async function getPhieuInPeriod(filters: NXTReportFilters): Promise<Phieu
   const allPhieu = await getAllPhieuKho();
   const warehouseSet = warehouseIds.length > 0 ? new Set(warehouseIds) : null;
   const loaiSet = loaiPhieu.length > 0 ? new Set(loaiPhieu) : null;
-  const trangThaiSet = trangThaiPhieu.length > 0 ? new Set(trangThaiPhieu) : null;
+  const allowedTrangThai =
+    trangThaiPhieu.length > 0
+      ? new Set(trangThaiPhieu.map((n) => TRANG_THAI_NUM_TO_TEXT[n]))
+      : null;
 
   return allPhieu.filter((p) => {
     if (!inDateRange(p.ngay, dateFrom, dateTo)) return false;
-    if (warehouseSet && !warehouseSet.has(p.id_kho)) return false;
-    if (warehouseSet && p.id_kho_den && !warehouseSet.has(p.id_kho_den)) return false;
+    if (warehouseSet && !warehouseSet.has(p.kho_id)) return false;
+    if (warehouseSet && p.kho_den_id && !warehouseSet.has(p.kho_den_id)) return false;
     if (loaiSet && !loaiSet.has(p.loai)) return false;
-    if (trangThaiSet && !trangThaiSet.has(p.trang_thai)) return false;
+    if (allowedTrangThai && !allowedTrangThai.has(p.trang_thai)) return false;
     return true;
   });
 }
@@ -216,17 +236,19 @@ export async function getTonAtDate(filters: Pick<NXTReportFilters, 'warehouseIds
     if (warehouseSet && !warehouseSet.has(r.id_kho)) return;
     if (hangHoaSet && !hangHoaSet.has(r.id_hang_hoa)) return;
     const h = hangHoaMap[r.id_hang_hoa];
-    if (categorySet && h?.id_danh_muc && !categorySet.has(h.id_danh_muc)) return;
+    if (categorySet && h?.danh_muc_id && !categorySet.has(h.danh_muc_id)) return;
     const k = khoMap[r.id_kho];
+    const maHang = h?.ma_hang ?? (h as any)?.ma_hang_hoa ?? r.id_hang_hoa;
+    const tenHang = h?.ten_hang ?? (h as any)?.ten_hang_hoa ?? '—';
     rows.push({
       id_kho: r.id_kho,
       ma_kho: k?.ma_kho ?? r.id_kho,
       ten_kho: k?.ten_kho ?? r.id_kho,
       id_hang_hoa: r.id_hang_hoa,
-      ma_hang: h?.ma_hang ?? r.id_hang_hoa,
-      ten_hang: h?.ten_hang ?? '—',
+      ma_hang: maHang,
+      ten_hang: tenHang,
       ten_danh_muc: h?.ten_danh_muc,
-      don_vi_tinh: h?.don_vi_tinh ?? '—',
+      don_vi_tinh: h?.dvt ?? h?.don_vi_tinh ?? '—',
       so_luong: r.so_luong,
     });
   });

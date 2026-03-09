@@ -1,8 +1,9 @@
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Package, Warehouse, History, AlertTriangle, FolderOpen } from 'lucide-react';
-import { useAllTonKho } from '../hooks/use-ton-kho';
+import { useAllTonKho, useDinhMucTonKho } from '../hooks/use-ton-kho';
 import { useTonKhoTheoHangHoa, useLichSuNhapXuatByHangHoa } from '../hooks/use-ton-kho';
+import { dinhMucKey } from '../../phieu-kho/services/ton-kho-service';
 import { getKhoList } from '../../danh-sach-kho/services/kho-service';
 import { getAllHangHoa } from '../../danh-sach-hang-hoa/services/hang-hoa-service';
 import { useQuery } from '@tanstack/react-query';
@@ -37,6 +38,7 @@ export type RowProduct = {
 
 function useProductRows() {
   const { data: tonKhoList = [], isLoading } = useAllTonKho();
+  const { data: dinhMucMap, isLoading: loadingDinhMuc } = useDinhMucTonKho();
   const { data: hangHoaList = [] } = useQuery({
     queryKey: ['hangHoa'],
     queryFn: getAllHangHoa,
@@ -55,12 +57,21 @@ function useProductRows() {
   }, [hangHoaList]);
   const rows: RowProduct[] = useMemo(() => {
     const ids = new Set(byProduct.keys());
+    const map = dinhMucMap ?? new Map<string, number>();
     return Array.from(ids)
       .map((id_hang_hoa) => {
         const h = hangHoaMap[id_hang_hoa];
         const tong_so_luong = byProduct.get(id_hang_hoa) ?? 0;
-        const ton_toi_thieu = h?.ton_toi_thieu ?? null;
-        const canh_bao = ton_toi_thieu != null && tong_so_luong < ton_toi_thieu;
+        const tonByKho = tonKhoList.filter((r) => r.id_hang_hoa === id_hang_hoa);
+        let ton_toi_thieu: number | null = null;
+        let canh_bao = false;
+        tonByKho.forEach((r) => {
+          const dm = map.get(dinhMucKey(r.id_kho, id_hang_hoa));
+          if (dm != null) {
+            if (ton_toi_thieu == null || dm < ton_toi_thieu) ton_toi_thieu = dm;
+            if (r.so_luong < dm) canh_bao = true;
+          }
+        });
         return {
           id_hang_hoa,
           ma_hang: h?.ma_hang ?? id_hang_hoa,
@@ -74,8 +85,8 @@ function useProductRows() {
       })
       .filter((r) => r.tong_so_luong !== 0)
       .sort((a, b) => b.tong_so_luong - a.tong_so_luong);
-  }, [byProduct, hangHoaMap]);
-  return { rows, isLoading };
+  }, [byProduct, hangHoaMap, tonKhoList, dinhMucMap]);
+  return { rows, isLoading: isLoading || loadingDinhMuc };
 }
 
 function LoaiBadge({ loai }: { loai: LoaiPhieuKho }) {
@@ -499,6 +510,7 @@ const TonKhoTheoSanPhamTab: React.FC = () => {
               <EmptyState
                 icon={<Package size={40} className="text-muted-foreground opacity-20" />}
                 title={t('tonKho.byProduct.empty')}
+                description={t('tonKho.emptyHint')}
               />
             </div>
           ) : (

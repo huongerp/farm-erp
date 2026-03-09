@@ -14,9 +14,11 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'ngay', label: i18n.t('phieuKho.store.ngayCol'), visible: true, minWidth: 100, maxWidth: 140, order: 1 },
   { id: 'ten_kho', label: i18n.t('phieuKho.store.khoCol'), visible: true, minWidth: 140, maxWidth: 220, order: 2 },
   { id: 'ten_kho_den', label: i18n.t('phieuKho.store.khoDenCol'), visible: true, minWidth: 140, maxWidth: 220, order: 3 },
-  { id: 'mo_ta', label: i18n.t('phieuKho.store.descCol'), visible: true, minWidth: 140, maxWidth: 260, order: 4 },
-  { id: 'trang_thai', label: i18n.t('phieuKho.store.statusCol'), visible: true, minWidth: 100, maxWidth: 140, order: 5 },
-  { id: 'tg_cap_nhat', label: i18n.t('phieuKho.store.updatedCol'), visible: true, minWidth: 100, maxWidth: 140, order: 6 },
+  { id: 'tong_so_dong', label: i18n.t('phieuKho.list.totalItems'), visible: true, minWidth: 90, maxWidth: 120, order: 4 },
+  { id: 'tong_tien', label: i18n.t('phieuKho.list.totalValue'), visible: true, minWidth: 110, maxWidth: 160, order: 5 },
+  { id: 'mo_ta', label: i18n.t('phieuKho.store.descCol'), visible: true, minWidth: 140, maxWidth: 260, order: 6 },
+  { id: 'trang_thai', label: i18n.t('phieuKho.store.statusCol'), visible: true, minWidth: 100, maxWidth: 140, order: 7 },
+  { id: 'tg_cap_nhat', label: i18n.t('phieuKho.store.updatedCol'), visible: true, minWidth: 100, maxWidth: 140, order: 8 },
 ];
 
 const initialFilters: PhieuKhoFilters = {

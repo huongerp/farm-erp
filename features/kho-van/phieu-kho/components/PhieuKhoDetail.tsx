@@ -1,9 +1,10 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Edit, Trash2, FileText, Calendar, Warehouse, ArrowRightLeft, Package, Truck, Printer } from 'lucide-react';
+import { Edit, Trash2, FileText, Calendar, Warehouse, ArrowRightLeft, Package, Truck, Printer, CheckCircle } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
-import type { PhieuKho, LoaiPhieuKho } from '../core/types';
-import { formatDateTimeShort } from '../../../../lib/utils';
+import Textarea from '../../../../components/ui/Textarea';
+import type { PhieuKho, LoaiPhieuKhoTab } from '../core/types';
+import { formatDateTimeShort, formatNumberVN } from '../../../../lib/utils';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
 import DetailToolbar, { type DetailToolbarAction } from '../../../../components/shared/DetailToolbar';
 import DetailSection from '../../../../components/shared/DetailSection';
@@ -11,10 +12,11 @@ import DetailField from '../../../../components/shared/DetailField';
 import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
 import GenericSubTableSection from '../../../../components/shared/GenericSubTableSection';
 import { BTN_CLOSE, BTN_EDIT, BTN_DELETE } from '../../../../lib/button-labels';
+import { useUpdatePhieuKhoTrangThai } from '../hooks/use-phieu-kho';
 
 interface Props {
   data: PhieuKho;
-  loai: LoaiPhieuKho;
+  loai: LoaiPhieuKhoTab;
   onClose: () => void;
   onEdit: (item: PhieuKho) => void;
   onDelete: (id: string) => void;
@@ -22,14 +24,18 @@ interface Props {
 
 const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete }) => {
   const { t } = useTranslation();
+  const [showDuyetPopup, setShowDuyetPopup] = useState(false);
+  const [duyetGhiChu, setDuyetGhiChu] = useState('');
+  const updateTrangThaiMutation = useUpdatePhieuKhoTrangThai(() => setShowDuyetPopup(false));
+
   const statusLabel =
-    data.trang_thai === 0
+    data.trang_thai === 'Chờ duyệt'
       ? t('phieuKho.status.pending')
-      : data.trang_thai === 1
+      : data.trang_thai === 'Đã duyệt'
         ? t('phieuKho.status.approved')
         : t('phieuKho.status.rejected');
   const statusVariant =
-    data.trang_thai === 0 ? 'amber' : data.trang_thai === 1 ? 'primary' : 'rose';
+    data.trang_thai === 'Chờ duyệt' ? 'amber' : data.trang_thai === 'Đã duyệt' ? 'primary' : 'rose';
   const isChuyen = loai === 'chuyen';
   const isNhap = loai === 'nhap';
   const isXuat = loai === 'xuat';
@@ -37,13 +43,21 @@ const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete
   const detailToolbarActions: DetailToolbarAction[] = useMemo(
     () => [
       {
+        label: t('phieuKho.approveAction'),
+        icon: <CheckCircle size={16} />,
+        onClick: () => {
+          setDuyetGhiChu('');
+          setShowDuyetPopup(true);
+        },
+        variant: 'primary',
+      },
+      {
         label: t('phieuKho.printAction'),
         icon: <Printer size={16} />,
         onClick: () => window.open(`/mua-hang/phieu-kho/preview/${data.id}`, '_blank', 'noopener,noreferrer'),
-        variant: 'primary',
       },
     ],
-    [data.id, t]
+    [data.id, data.trang_thai, t]
   );
 
   const renderFooter = (
@@ -166,6 +180,11 @@ const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete
               icon={<FileText size={12} />}
               className="col-span-1 sm:col-span-2"
             />
+            <DetailField
+              label={t('phieuKho.detail.creator')}
+              value={data.ten_nguoi_tao ?? '—'}
+              icon={<FileText size={12} />}
+            />
           </DetailFieldGrid>
         </DetailSection>
 
@@ -186,6 +205,8 @@ const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[140px]">{t('phieuKho.form.itemName')}</th>
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap w-20">{t('phieuKho.form.unit')}</th>
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap w-24">{t('phieuKho.form.quantity')}</th>
+                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[90px]">{t('phieuKho.form.unitPrice')}</th>
+                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[100px]">{t('phieuKho.form.amount')}</th>
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[120px]">{t('phieuKho.form.note')}</th>
                 </tr>
               </thead>
@@ -196,7 +217,9 @@ const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete
                     <td className="px-4 py-2.5 font-mono text-xs">{ct.ma_hang ?? '—'}</td>
                     <td className="px-4 py-2.5 text-sm">{ct.ten_hang ?? '—'}</td>
                     <td className="px-4 py-2.5 text-xs text-muted-foreground">{ct.don_vi_tinh ?? '—'}</td>
-                    <td className="px-4 py-2.5 tabular-nums">{ct.so_luong}</td>
+                    <td className="px-4 py-2.5 tabular-nums">{formatNumberVN(ct.so_luong)}</td>
+                    <td className="px-4 py-2.5 tabular-nums">{formatNumberVN(ct.don_gia)}</td>
+                    <td className="px-4 py-2.5 tabular-nums">{formatNumberVN(ct.thanh_tien)}</td>
                     <td className="px-4 py-2.5 text-xs text-muted-foreground">{ct.ghi_chu ?? '—'}</td>
                   </tr>
                 ))}
@@ -220,6 +243,56 @@ const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete
           </DetailFieldGrid>
         </DetailSection>
       </div>
+
+      {showDuyetPopup && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50" onClick={() => setShowDuyetPopup(false)}>
+          <div
+            className="bg-card border border-border rounded-xl shadow-xl max-w-md w-full p-5 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold text-foreground">{t('phieuKho.approveDialog.title')}</h3>
+            <Textarea
+              label={t('phieuKho.approveDialog.note')}
+              placeholder={t('phieuKho.approveDialog.notePlaceholder')}
+              value={duyetGhiChu}
+              onChange={(e) => setDuyetGhiChu(e.target.value)}
+              rows={3}
+            />
+            <div className="flex flex-wrap items-center justify-end gap-2 pt-2">
+              <Button variant="ghost" onClick={() => setShowDuyetPopup(false)} className="border border-border">
+                {BTN_CLOSE()}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setDuyetTrangThai('Không duyệt');
+                  updateTrangThaiMutation.mutate(
+                    { id: data.id, trang_thai: 'Không duyệt', ghi_chu: duyetGhiChu.trim() || undefined },
+                    { onSuccess: () => setShowDuyetPopup(false) }
+                  );
+                }}
+                disabled={updateTrangThaiMutation.isPending}
+                className="border-rose-500 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+              >
+                {updateTrangThaiMutation.isPending ? '...' : t('phieuKho.approveDialog.rejectButton')}
+              </Button>
+              <Button
+                onClick={() => {
+                  setDuyetTrangThai('Đã duyệt');
+                  updateTrangThaiMutation.mutate(
+                    { id: data.id, trang_thai: 'Đã duyệt', ghi_chu: duyetGhiChu.trim() || undefined },
+                    { onSuccess: () => setShowDuyetPopup(false) }
+                  );
+                }}
+                disabled={updateTrangThaiMutation.isPending}
+                className="bg-primary text-white shadow-lg hover:bg-primary/90"
+              >
+                {updateTrangThaiMutation.isPending ? '...' : t('phieuKho.approveDialog.approveButton')}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </GenericDrawer>
   );
 };

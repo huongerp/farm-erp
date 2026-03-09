@@ -1,11 +1,12 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Download, Upload, Tag } from 'lucide-react';
+import { Plus, Download, Upload, Tag, MapPin } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import { useKhoStore } from '../store/useKhoStore';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
 import type { Kho } from '../core/types';
 
 interface Props {
@@ -28,6 +29,7 @@ const DanhSachKhoToolbar: React.FC<Props> = ({
   onStatusChangeMany,
 }) => {
   const { t } = useTranslation();
+  const { data: branches = [] } = useBranches();
   const {
     searchTerm,
     setSearchTerm,
@@ -41,13 +43,17 @@ const DanhSachKhoToolbar: React.FC<Props> = ({
   } = useKhoStore();
 
   const activeFilterCount = useMemo(
-    () => (searchTerm ? 1 : 0) + (filters.status.length > 0 ? 1 : 0),
-    [searchTerm, filters.status.length]
+    () =>
+      (searchTerm ? 1 : 0) +
+      (filters.status.length > 0 ? 1 : 0) +
+      (filters.id_chi_nhanh.length > 0 ? 1 : 0),
+    [searchTerm, filters.status.length, filters.id_chi_nhanh.length]
   );
 
   const handleClearAllFilters = () => {
     setSearchTerm('');
     setFilter('status', []);
+    setFilter('id_chi_nhanh', []);
   };
 
   const statusOptions = useMemo(
@@ -66,19 +72,47 @@ const DanhSachKhoToolbar: React.FC<Props> = ({
     [khoList, t]
   );
 
+  const branchOptions = useMemo(
+    () =>
+      branches.map((b) => ({
+        label: b.ten_chi_nhanh,
+        value: b.id,
+        count: khoList.filter((k) => k.id_chi_nhanh === b.id).length,
+      })),
+    [branches, khoList]
+  );
+
   const renderFilters = (
-    <FilterChipMultiSelect
-      options={statusOptions}
-      value={filters.status}
-      onChange={(v) => setFilter('status', v)}
-      placeholder={t('common.status')}
-      icon={Tag}
-      className="w-full sm:w-[140px]"
-    />
+    <>
+      <FilterChipMultiSelect
+        options={branchOptions}
+        value={filters.id_chi_nhanh}
+        onChange={(v) => setFilter('id_chi_nhanh', v)}
+        placeholder={t('kho.form.branch')}
+        icon={MapPin}
+        className="w-full sm:w-[160px]"
+      />
+      <FilterChipMultiSelect
+        options={statusOptions}
+        value={filters.status}
+        onChange={(v) => setFilter('status', v)}
+        placeholder={t('common.status')}
+        icon={Tag}
+        className="w-full sm:w-[140px]"
+      />
+    </>
   );
 
   const filterGroups = useMemo(
     () => [
+      {
+        key: 'id_chi_nhanh',
+        label: t('kho.form.branch'),
+        icon: MapPin,
+        options: branchOptions,
+        value: filters.id_chi_nhanh,
+        onChange: (val: string[]) => setFilter('id_chi_nhanh', val),
+      },
       {
         key: 'status',
         label: t('common.status'),
@@ -88,7 +122,7 @@ const DanhSachKhoToolbar: React.FC<Props> = ({
         onChange: (val: string[]) => setFilter('status', val),
       },
     ],
-    [filters.status, setFilter, t, statusOptions]
+    [filters.status, filters.id_chi_nhanh, setFilter, t, statusOptions, branchOptions]
   );
 
   const mobileActions = useMemo(

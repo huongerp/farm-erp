@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Edit, Trash2, Warehouse, MapPin, FileText, ArrowUpFromLine, Calendar, Power } from 'lucide-react';
+import { Edit, Trash2, Warehouse, MapPin, FileText, ArrowUpFromLine, Calendar, Power, Building2 } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import { Kho } from '../core/types';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
@@ -96,6 +96,12 @@ const DanhSachKhoDetail: React.FC<Props> = ({
           <DetailFieldGrid>
             <DetailField label={t('kho.form.name')} value={data.ten_kho} icon={<Warehouse size={12} />} />
             <DetailField label={t('kho.form.code')} value={data.ma_kho} icon={<Warehouse size={12} />} />
+            <DetailField
+              label={t('kho.detail.branch')}
+              value={data.ten_chi_nhanh ?? ''}
+              icon={<Building2 size={12} />}
+              emptyText={t('kho.detail.noBranch')}
+            />
             <DetailField
               label={t('kho.form.address')}
               value={data.dia_chi ?? ''}

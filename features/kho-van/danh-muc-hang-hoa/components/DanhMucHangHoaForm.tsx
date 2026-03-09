@@ -23,6 +23,8 @@ function getLevel(item: DanhMucHangHoa): number {
 interface Props {
   initialData?: DanhMucHangHoa | null;
   allDanhMuc: DanhMucHangHoa[];
+  /** Khi tạo mới: thứ tự mặc định (tự tăng từ max + 1). */
+  defaultThuTu?: number;
   onClose: () => void;
   defaultParentId?: string | null;
 }
@@ -30,6 +32,7 @@ interface Props {
 const DanhMucHangHoaForm: React.FC<Props> = ({
   initialData,
   allDanhMuc,
+  defaultThuTu,
   onClose,
   defaultParentId,
 }) => {
@@ -42,7 +45,7 @@ const DanhMucHangHoaForm: React.FC<Props> = ({
     ma_danh_muc: '',
     ten_danh_muc: '',
     id_cha: '',
-    thu_tu: 0,
+    thu_tu: defaultThuTu ?? 1,
     mo_ta: '',
     trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG,
   };
@@ -68,9 +71,10 @@ const DanhMucHangHoaForm: React.FC<Props> = ({
       reset({
         ...defaultValues,
         id_cha: defaultParentId ?? '',
+        thu_tu: defaultThuTu ?? 1,
       });
     }
-  }, [initialData, defaultParentId, allDanhMuc, reset]);
+  }, [initialData, defaultParentId, defaultThuTu, allDanhMuc, reset]);
 
   const onSubmit: SubmitHandler<DanhMucHangHoaFormValues> = (data) => {
     const sanitizedData = {

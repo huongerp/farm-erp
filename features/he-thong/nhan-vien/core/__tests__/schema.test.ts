@@ -10,6 +10,7 @@ const validData = () => ({
   so_dien_thoai: '0901234567',
   id_chuc_vu: 'pos-1',
   id_phong_ban: 'dep-1',
+  id_chi_nhanh: ['branch-1'],
   gioi_tinh: 'Nam' as const,
   trang_thai: 1,
   ngay_vao_lam: '2024-01-15',
@@ -187,6 +188,11 @@ describe('employeeSchema', () => {
 
     it('id_phong_ban bắt buộc', () => {
       expect(parse({ id_phong_ban: '' }).success).toBe(false);
+    });
+
+    it('id_chi_nhanh bắt buộc (ít nhất 1 chi nhánh)', () => {
+      expect(parse({ id_chi_nhanh: [] }).success).toBe(false);
+      expect(parse({ id_chi_nhanh: ['branch-1'] }).success).toBe(true);
     });
 
     it('ngay_vao_lam hợp lệ', () => {

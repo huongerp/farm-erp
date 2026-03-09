@@ -11,6 +11,8 @@ export interface Position {
   cap_bac_id?: string | null;
   ten_phong_ban?: string;
   ten_cap_bac?: string;
+  /** Số cấp bậc (từ fp_var_cap_bac.cap_bac), ví dụ 1 = Giám đốc */
+  cap_bac?: number;
 
   mo_ta: string | null;
   tt: number;

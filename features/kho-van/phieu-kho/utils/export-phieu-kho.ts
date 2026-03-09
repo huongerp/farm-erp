@@ -2,7 +2,7 @@
  * Xuất phiếu kho (nhập/xuất/chuyển) ra PDF – header công ty + thông tin phiếu + bảng chi tiết hàng hóa.
  */
 import type { PhieuKho, PhieuKhoChiTiet, LoaiPhieuKho } from '../core/types';
-import { formatDate, formatDateTime, getTodayISODate } from '../../../../lib/utils';
+import { formatDate, formatDateTime, getTodayISODate, formatNumberVN } from '../../../../lib/utils';
 import i18n from '../../../../lib/i18n';
 import { useUIStore } from '../../../../store/useStore';
 
@@ -14,12 +14,12 @@ function safeStr(v: string | number | null | undefined): string {
 }
 
 function getLoaiLabel(loai: LoaiPhieuKho, t: (k: string) => string): string {
-  const key = loai === 'nhap' ? 'phieuKho.tabs.nhap' : loai === 'xuat' ? 'phieuKho.tabs.xuat' : 'phieuKho.tabs.chuyen';
+  const key = loai === 'nhập' ? 'phieuKho.tabs.nhap' : loai === 'xuất' ? 'phieuKho.tabs.xuat' : 'phieuKho.tabs.chuyen';
   return t(key);
 }
 
-function getTrangThaiLabel(trangThai: 0 | 1 | 2, t: (k: string) => string): string {
-  const key = trangThai === 0 ? 'phieuKho.status.pending' : trangThai === 1 ? 'phieuKho.status.approved' : 'phieuKho.status.rejected';
+function getTrangThaiLabel(trangThai: string, t: (k: string) => string): string {
+  const key = trangThai === 'Chờ duyệt' ? 'phieuKho.status.pending' : trangThai === 'Đã duyệt' ? 'phieuKho.status.approved' : 'phieuKho.status.rejected';
   return t(key);
 }
 
@@ -58,9 +58,9 @@ export function buildPhieuKhoBodyHTML(phieu: PhieuKho, chiTiet: PhieuKhoChiTiet[
     [t('phieuKho.form.code'), phieu.so_phieu],
     [t('phieuKho.form.date'), formatDate(phieu.ngay)],
     [t('phieuKho.preview.loaiPhieu'), getLoaiLabel(phieu.loai, t)],
-    [t('phieuKho.form.warehouse'), phieu.ten_kho ?? phieu.id_kho ?? '—'],
+    [t('phieuKho.form.warehouse'), phieu.ten_kho ?? phieu.kho_id ?? '—'],
   ];
-  if (phieu.loai === 'chuyen' && phieu.ten_kho_den) {
+  if (phieu.loai === 'chuyển' && phieu.ten_kho_den) {
     infoRows.push([t('phieuKho.store.khoDenCol'), phieu.ten_kho_den]);
   }
   if (phieu.id_nha_cung_cap && phieu.ten_nha_cung_cap) {
@@ -68,15 +68,23 @@ export function buildPhieuKhoBodyHTML(phieu: PhieuKho, chiTiet: PhieuKhoChiTiet[
   }
   infoRows.push([t('phieuKho.store.statusCol'), getTrangThaiLabel(phieu.trang_thai, t)]);
   infoRows.push([t('phieuKho.form.description'), phieu.mo_ta ?? '—']);
+  infoRows.push([t('phieuKho.preview.creator'), phieu.ten_nguoi_tao ?? '—']);
+  infoRows.push([t('phieuKho.preview.relatedPerson'), '—']);
+  infoRows.push([t('phieuKho.preview.checker'), '—']);
+  infoRows.push([t('phieuKho.preview.approver'), '—']);
 
   let section2 = '';
   if (chiTiet.length > 0) {
+    const tongSoLuong = chiTiet.reduce((s, c) => s + (Number(c.so_luong) || 0), 0);
+    const tongTien = chiTiet.reduce((s, c) => s + (Number(c.thanh_tien) || 0), 0);
     const theadCells = [
       '#',
       t('phieuKho.form.itemCode'),
       t('phieuKho.form.itemName'),
-      t('phieuKho.form.unit'),
       t('phieuKho.form.quantity'),
+      t('phieuKho.form.unit'),
+      t('phieuKho.form.unitPrice'),
+      t('phieuKho.form.amount'),
       t('phieuKho.form.note'),
     ]
       .map(
@@ -91,16 +99,27 @@ export function buildPhieuKhoBodyHTML(phieu: PhieuKho, chiTiet: PhieuKhoChiTiet[
             <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${idx + 1}</td>
             <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${safeStr(c.ma_hang)}</td>
             <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${safeStr(c.ten_hang)}</td>
+            <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt;text-align:right">${formatNumberVN(c.so_luong)}</td>
             <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${safeStr(c.don_vi_tinh)}</td>
-            <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${c.so_luong}</td>
+            <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt;text-align:right">${formatNumberVN(c.don_gia)}</td>
+            <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt;text-align:right">${formatNumberVN(c.thanh_tien)}</td>
             <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${safeStr(c.ghi_chu)}</td>
           </tr>`
       )
       .join('');
+    const tfootRow = `<tr style="background:#f1f5f9;font-weight:600">
+      <td colspan="3" style="padding:6px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${t('phieuKho.preview.totalQty')} / ${t('phieuKho.preview.totalAmount')}</td>
+      <td style="padding:6px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt;text-align:right">${formatNumberVN(tongSoLuong)}</td>
+      <td style="padding:6px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt"></td>
+      <td style="padding:6px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt"></td>
+      <td style="padding:6px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt;text-align:right">${formatNumberVN(tongTien)}</td>
+      <td style="padding:6px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt"></td>
+    </tr>`;
     section2 = `
 <table style="width:100%;border-collapse:collapse;margin-top:12px;font-family:${FONT_STACK};font-size:10pt">
   <thead><tr>${theadCells}</tr></thead>
   <tbody>${tbodyRows}</tbody>
+  <tfoot>${tfootRow}</tfoot>
 </table>`;
   }
 

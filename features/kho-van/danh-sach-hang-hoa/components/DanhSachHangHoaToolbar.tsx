@@ -1,10 +1,11 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Tag } from 'lucide-react';
+import { Plus, Tag, Folder, FolderTree, Ruler } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import { useHangHoaStore } from '../store/useHangHoaStore';
+import { useDanhMucHangHoaList } from '../../danh-muc-hang-hoa/hooks/use-danh-muc-hang-hoa';
 import type { HangHoa } from '../core/types';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 
@@ -13,6 +14,7 @@ interface Props {
   selectedCount: number;
   onAdd: () => void;
   onDeleteMany: () => void;
+  onStatusChangeMany?: (status: 0 | 1) => void;
 }
 
 const DanhSachHangHoaToolbar: React.FC<Props> = ({
@@ -20,8 +22,10 @@ const DanhSachHangHoaToolbar: React.FC<Props> = ({
   selectedCount,
   onAdd,
   onDeleteMany,
+  onStatusChangeMany,
 }) => {
   const { t } = useTranslation();
+  const { data: danhMucList = [] } = useDanhMucHangHoaList();
   const {
     searchTerm,
     setSearchTerm,
@@ -34,15 +38,54 @@ const DanhSachHangHoaToolbar: React.FC<Props> = ({
     resetColumns,
   } = useHangHoaStore();
 
-  const activeFilterCount = useMemo(
-    () => (searchTerm ? 1 : 0) + (filters.status.length > 0 ? 1 : 0),
-    [searchTerm, filters.status.length]
+  const danhMucChaList = useMemo(
+    () => danhMucList.filter((d) => !d.id_cha || d.id_cha.trim() === ''),
+    [danhMucList]
+  );
+  const danhMucConList = useMemo(
+    () => danhMucList.filter((d) => d.id_cha && d.id_cha.trim() !== ''),
+    [danhMucList]
+  );
+  const chaById = useMemo(() => {
+    const m: Record<string, { ten_danh_muc: string }> = {};
+    danhMucChaList.forEach((d) => { m[d.id] = d; });
+    return m;
+  }, [danhMucChaList]);
+
+  const danhMucChaOptions = useMemo(
+    () =>
+      danhMucChaList.map((p) => ({
+        label: p.ten_danh_muc,
+        value: p.id,
+        count: data.filter((h) => h.danh_muc_cha_id === p.id).length,
+      })),
+    [danhMucChaList, data]
   );
 
-  const handleClearAllFilters = () => {
-    setSearchTerm('');
-    setFilter('status', []);
-  };
+  const danhMucConOptions = useMemo(
+    () =>
+      danhMucConList.map((c) => {
+        const tenCha = c.id_cha ? chaById[c.id_cha]?.ten_danh_muc : '';
+        const label = tenCha ? `${tenCha} / ${c.ten_danh_muc}` : c.ten_danh_muc;
+        return {
+          label,
+          value: c.id,
+          count: data.filter((h) => h.danh_muc_id === c.id).length,
+        };
+      }),
+    [danhMucConList, chaById, data]
+  );
+
+  const dvtOptions = useMemo(() => {
+    const counts: Record<string, number> = {};
+    data.forEach((h) => {
+      const d = h.dvt?.trim();
+      if (d) counts[d] = (counts[d] ?? 0) + 1;
+    });
+    return Object.entries(counts)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([value]) => ({ label: value, value, count: counts[value] }));
+  }, [data]);
 
   const statusOptions = useMemo(
     () => [
@@ -60,19 +103,93 @@ const DanhSachHangHoaToolbar: React.FC<Props> = ({
     [data, t]
   );
 
+  const activeFilterCount = useMemo(
+    () =>
+      (searchTerm ? 1 : 0) +
+      (filters.status.length > 0 ? 1 : 0) +
+      (filters.id_danh_muc_cha.length > 0 ? 1 : 0) +
+      (filters.id_danh_muc.length > 0 ? 1 : 0) +
+      (filters.dvt.length > 0 ? 1 : 0),
+    [
+      searchTerm,
+      filters.status.length,
+      filters.id_danh_muc_cha.length,
+      filters.id_danh_muc.length,
+      filters.dvt.length,
+    ]
+  );
+
+  const handleClearAllFilters = () => {
+    setSearchTerm('');
+    setFilter('status', []);
+    setFilter('id_danh_muc_cha', []);
+    setFilter('id_danh_muc', []);
+    setFilter('dvt', []);
+  };
+
   const renderFilters = (
-    <FilterChipMultiSelect
-      options={statusOptions}
-      value={filters.status}
-      onChange={(v) => setFilter('status', v)}
-      placeholder={t('common.status')}
-      icon={Tag}
-      className="w-full sm:w-[140px]"
-    />
+    <>
+      <FilterChipMultiSelect
+        options={danhMucChaOptions}
+        value={filters.id_danh_muc_cha}
+        onChange={(v) => setFilter('id_danh_muc_cha', v)}
+        placeholder={t('hangHoa.filters.danhMucCha')}
+        icon={Folder}
+        className="w-full sm:w-[180px]"
+      />
+      <FilterChipMultiSelect
+        options={danhMucConOptions}
+        value={filters.id_danh_muc}
+        onChange={(v) => setFilter('id_danh_muc', v)}
+        placeholder={t('hangHoa.filters.danhMucCon')}
+        icon={FolderTree}
+        className="w-full sm:w-[200px]"
+      />
+      <FilterChipMultiSelect
+        options={dvtOptions}
+        value={filters.dvt}
+        onChange={(v) => setFilter('dvt', v)}
+        placeholder={t('hangHoa.filters.dvt')}
+        icon={Ruler}
+        className="w-full sm:w-[140px]"
+      />
+      <FilterChipMultiSelect
+        options={statusOptions}
+        value={filters.status}
+        onChange={(v) => setFilter('status', v)}
+        placeholder={t('common.status')}
+        icon={Tag}
+        className="w-full sm:w-[140px]"
+      />
+    </>
   );
 
   const filterGroups = useMemo(
     () => [
+      {
+        key: 'id_danh_muc_cha',
+        label: t('hangHoa.filters.danhMucCha'),
+        icon: Folder,
+        options: danhMucChaOptions,
+        value: filters.id_danh_muc_cha,
+        onChange: (val: string[]) => setFilter('id_danh_muc_cha', val),
+      },
+      {
+        key: 'id_danh_muc',
+        label: t('hangHoa.filters.danhMucCon'),
+        icon: FolderTree,
+        options: danhMucConOptions,
+        value: filters.id_danh_muc,
+        onChange: (val: string[]) => setFilter('id_danh_muc', val),
+      },
+      {
+        key: 'dvt',
+        label: t('hangHoa.filters.dvt'),
+        icon: Ruler,
+        options: dvtOptions,
+        value: filters.dvt,
+        onChange: (val: string[]) => setFilter('dvt', val),
+      },
       {
         key: 'status',
         label: t('common.status'),
@@ -82,7 +199,18 @@ const DanhSachHangHoaToolbar: React.FC<Props> = ({
         onChange: (val: string[]) => setFilter('status', val),
       },
     ],
-    [filters.status, setFilter, t, statusOptions]
+    [
+      filters.id_danh_muc_cha,
+      filters.id_danh_muc,
+      filters.dvt,
+      filters.status,
+      setFilter,
+      t,
+      danhMucChaOptions,
+      danhMucConOptions,
+      dvtOptions,
+      statusOptions,
+    ]
   );
 
   const renderActions = (
@@ -100,6 +228,7 @@ const DanhSachHangHoaToolbar: React.FC<Props> = ({
     <GenericToolbar
       selectedCount={selectedCount}
       onDeleteMany={onDeleteMany}
+      onStatusChangeMany={onStatusChangeMany}
       searchTerm={searchTerm}
       onSearchChange={setSearchTerm}
       onClearSelection={clearSelection}

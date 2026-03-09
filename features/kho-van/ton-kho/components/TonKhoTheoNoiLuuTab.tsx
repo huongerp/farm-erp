@@ -398,6 +398,7 @@ const TonKhoTheoNoiLuuTab: React.FC = () => {
               <EmptyState
                 icon={<MapPin size={40} className="text-muted-foreground opacity-20" />}
                 title={t('tonKho.byLocation.empty')}
+                description={t('tonKho.emptyHint')}
               />
             </div>
           ) : (

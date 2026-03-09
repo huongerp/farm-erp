@@ -13,11 +13,11 @@ export const khoSchema = z.object({
     .max(255, i18n.t('kho.validation.nameMax')),
   dia_chi: z.string().optional(),
   mo_ta: z.string().optional(),
-  id_chi_nhanh: z.string().optional().nullable(),
+  id_chi_nhanh: z.string().min(1, i18n.t('kho.validation.branchRequired')),
   trang_thai: z.enum(['Đang hoạt động', 'Ngừng hoạt động'], {
     message: i18n.t('kho.validation.statusInvalid'),
   }),
-  thu_tu: z.coerce.number().min(0, i18n.t('kho.validation.sortOrderMin')),
+  thu_tu: z.coerce.number().min(1, i18n.t('kho.validation.sortOrderMin')),
 });
 
 export type KhoFormValues = z.infer<typeof khoSchema>;

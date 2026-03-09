@@ -26,7 +26,11 @@ interface MultiSelectProps {
   label?: string;
   className?: string;
   icon?: React.ElementType;
-  size?: 'sm' | 'md';
+  size?: 'sm' | 'md' | 'lg';
+  /** Hiển thị label phía trên ô chọn (giống Combobox), không in label trong ô trigger */
+  labelAbove?: boolean;
+  error?: string;
+  required?: boolean;
   /** Creatable: (label) => Promise<newOptionValue | null>. Khi có, hiện hàng "Tạo mới" nếu search không khớp option nào. */
   onCreateOption?: (label: string) => Promise<string | null>;
   /** Label cho hàng tạo mới, dùng %s thay cho searchTerm. VD: "Tạo mới: %s" */
@@ -44,6 +48,9 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
   className,
   icon: Icon,
   size = 'sm',
+  labelAbove = false,
+  error,
+  required,
   onCreateOption,
   createOptionLabel = "Tạo mới: %s",
   dropdownInPortal = false,
@@ -138,7 +145,9 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
   const firstName = value.length > 0 ? options.find(o => o.value === value[0])?.label : null;
   const extraCount = value.length - 1;
 
-  const heightClass = size === 'sm' ? 'h-7' : 'h-8';
+  const heightClass = size === 'sm' ? 'h-7' : size === 'md' ? 'h-8' : 'h-10';
+  const textSizeClass = size === 'lg' ? 'text-sm' : 'text-xs';
+  const showLabelAbove = labelAbove && label;
 
   const dropdownContent = (
     <>
@@ -240,7 +249,14 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
   const dropdownClassName = "bg-card border border-border rounded-xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 min-w-[200px]";
 
   return (
-    <div className={cn("relative min-w-[140px]", className)} ref={containerRef}>
+    <div className={cn("relative w-full", !showLabelAbove && "min-w-[140px]", className)} ref={containerRef}>
+      {showLabelAbove && (
+        <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mb-1.5 flex items-center gap-1.5 text-foreground">
+          {Icon && <span className="text-muted-foreground shrink-0"><Icon size={14} /></span>}
+          {label}
+          {required && <span className="text-red-500 ml-0.5">*</span>}
+        </label>
+      )}
       <button
         type="button"
         aria-expanded={isOpen}
@@ -248,21 +264,26 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
         aria-controls={listboxId}
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "w-full flex items-center justify-between px-2 text-xs border rounded-lg transition-all",
+          "w-full flex items-center justify-between rounded-lg border bg-background py-2 px-3 transition-all text-left",
+          size === 'lg' ? "min-h-10" : "px-2",
+          textSizeClass,
           heightClass,
-          isOpen ? "border-primary ring-2 ring-primary/10 bg-background" : hasValue ? "border-primary/40 bg-primary/[0.03]" : "border-border bg-background hover:bg-muted/50",
-          hasValue ? "text-foreground" : "text-muted-foreground"
+          "border",
+          isOpen ? "border-primary ring-2 ring-primary/20" : "border-border hover:border-border/80 focus-within:border-border/80",
+          hasValue ? "text-foreground" : "text-muted-foreground",
+          error ? "border-destructive focus-visible:ring-destructive" : "",
+          !showLabelAbove && label && "font-medium"
         )}
       >
         <div className="flex items-center gap-1.5 min-w-0 flex-1 mr-1">
-          {Icon && <Icon size={12} className={cn("shrink-0", hasValue ? "text-primary" : "text-muted-foreground")} />}
-          {label && <span className="font-medium text-foreground shrink-0">{label}:</span>}
+          {!showLabelAbove && Icon && <Icon size={size === 'lg' ? 14 : 12} className={cn("shrink-0", hasValue ? "text-primary" : "text-muted-foreground")} />}
+          {!showLabelAbove && label && <span className="text-foreground shrink-0">{label}:</span>}
 
           {!hasValue ? (
-            <span className="truncate text-muted-foreground">{placeholder}</span>
+            <span className="truncate">{placeholder}</span>
           ) : (
             <div className="flex items-center gap-1 min-w-0">
-              <span className="truncate text-xs font-medium">{firstName}</span>
+              <span className={cn("truncate font-medium", size === 'lg' ? "text-sm" : "text-xs")}>{firstName}</span>
               {extraCount > 0 && (
                 <span className="shrink-0 bg-primary/10 text-primary text-2xs font-bold px-1.5 py-0.5 rounded-full tabular-nums" title={value.map(v => options.find(o => o.value === v)?.label).filter(Boolean).join(', ')}>
                   +{extraCount}
@@ -271,18 +292,19 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
             </div>
           )}
         </div>
-        <div className="flex items-center gap-0.5 shrink-0">
+        <div className="flex items-center gap-1 shrink-0">
           {hasValue && (
             <div
               onClick={(e) => { e.stopPropagation(); onChange([]); }}
-              className="p-0.5 rounded-full hover:bg-muted text-muted-foreground"
+              className="p-1 rounded-full hover:bg-muted text-muted-foreground transition-colors"
             >
-              <X size={10} />
+              <X size={size === 'lg' ? 14 : 10} />
             </div>
           )}
-          <ChevronDown size={11} className={cn("text-muted-foreground transition-transform", isOpen && "rotate-180")} />
+          <ChevronDown size={size === 'lg' ? 16 : 11} className={cn("text-muted-foreground transition-transform", isOpen && "rotate-180")} />
         </div>
       </button>
+      {error && <p className="text-xs font-medium text-destructive mt-1.5 ml-1">{error}</p>}
 
       {isOpen &&
         (dropdownInPortal && dropdownRect && typeof document !== 'undefined'

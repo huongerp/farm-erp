@@ -42,7 +42,7 @@
   "danhMucHangHoa.validation.nameRequired": "Tên danh mục bắt buộc",
   "danhMucHangHoa.validation.nameMax": "Tên tối đa 255 ký tự",
   "danhMucHangHoa.validation.statusInvalid": "Trạng thái không hợp lệ",
-  "danhMucHangHoa.validation.thuTuMin": "Thứ tự phải lớn hơn hoặc bằng 0",
+  "danhMucHangHoa.validation.thuTuMin": "Thứ tự phải ≥ 1",
   "danhMucHangHoa.toast.createSuccess": "Thêm danh mục thành công",
   "danhMucHangHoa.toast.updateSuccess": "Cập nhật thành công",
   "danhMucHangHoa.toast.deleteSuccess": "Xóa thành công",

@@ -1,9 +1,10 @@
 import type { LoaiPhieuKho } from '../../phieu-kho/core/types';
 
+/** Giá trị loại phiếu phải khớp DB: 'nhập' | 'xuất' | 'chuyển'. */
 export const LOAI_PHIEU_OPTIONS: { value: LoaiPhieuKho; labelKey: string }[] = [
-  { value: 'nhap', labelKey: 'baoCaonhapXuatTon.loaiNhap' },
-  { value: 'xuat', labelKey: 'baoCaonhapXuatTon.loaiXuat' },
-  { value: 'chuyen', labelKey: 'baoCaonhapXuatTon.loaiChuyen' },
+  { value: 'nhập', labelKey: 'baoCaonhapXuatTon.loaiNhap' },
+  { value: 'xuất', labelKey: 'baoCaonhapXuatTon.loaiXuat' },
+  { value: 'chuyển', labelKey: 'baoCaonhapXuatTon.loaiChuyen' },
 ];
 
 /** 0 = Chờ duyệt, 1 = Đã duyệt, 2 = Không duyệt */

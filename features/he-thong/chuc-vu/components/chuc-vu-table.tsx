@@ -57,8 +57,11 @@ const PositionTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onS
         case 'ten_cap_bac':
             return (
                 <div className="flex flex-col gap-0.5">
-                    <span className="text-body-sm font-medium text-foreground">{item.ten_cap_bac || t('position.noDescription')}</span>
-                    <span className="text-xs text-muted-foreground">{t('position.subtitle')}</span>
+                    <span className="text-body-sm font-medium text-foreground">
+                        {item.cap_bac != null && item.ten_cap_bac
+                          ? `${item.cap_bac} - ${item.ten_cap_bac}`
+                          : (item.ten_cap_bac || t('position.noDescription'))}
+                    </span>
                 </div>
             );
         case 'ten_phong_ban':
@@ -143,7 +146,9 @@ const PositionTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onS
                     <div className="flex justify-between items-center pt-3 border-t border-border">
                         <div className="flex items-center gap-1.5 text-xs font-medium text-primary">
                             <UserCircle size={12} />
-                            {item.ten_cap_bac}
+                            {item.cap_bac != null && item.ten_cap_bac
+                              ? `${item.cap_bac} - ${item.ten_cap_bac}`
+                              : (item.ten_cap_bac || '—')}
                         </div>
                         <div className="flex gap-2">
                             <button onClick={e => { e.stopPropagation(); onEdit(item); }} className="p-2 text-primary bg-primary/10 rounded-xl"><Edit size={16} /></button>

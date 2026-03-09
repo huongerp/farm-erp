@@ -5,8 +5,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Users, FileText, ArrowUpFromLine, Power, Folder, MapPin, Phone, Mail } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
 import Textarea from '../../../../components/ui/Textarea';
+import LoaiToggleGroup from './LoaiToggleGroup';
 import StatusToggle from '../../../../components/ui/StatusToggle';
-import Select from '../../../../components/ui/Select';
+import Combobox from '../../../../components/ui/Combobox';
 import MultiSelect from '../../../../components/ui/MultiSelect';
 import { DoiTacFormValues, doiTacSchema } from '../core/schema';
 import type { DoiTac } from '../core/types';
@@ -19,27 +20,41 @@ import FormGrid from '../../../../components/shared/FormGrid';
 import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
 import type { LoaiDoiTac } from '../core/types';
 
+const ADD_NHOM_OPTION_VALUE = '__add_nhom__' as const;
+
 interface Props {
   initialData?: DoiTac | null;
   loaiDoiTac: LoaiDoiTac;
   nhomList: NhomDoiTac[];
   tagList: TagType[];
+  /** Khi tạo mới: thứ tự mặc định (tự tăng từ max + 1 theo danh sách cùng tab). */
+  defaultThuTu?: number;
   onClose: () => void;
+  /** Gọi khi user chọn "Thêm nhóm mới" trong dropdown; trả về nhóm vừa tạo hoặc null. Sau khi resolve, form sẽ chọn nhóm đó. */
+  onRequestAddNhom?: () => Promise<NhomDoiTac | null>;
+  /** Gọi khi tạo mới đối tác thành công (dùng khi mở form từ "Thêm NCC/KH" ở form khác). */
+  onSuccessCreate?: (item: DoiTac) => void;
 }
 
-const DoiTacForm: React.FC<Props> = ({ initialData, loaiDoiTac, nhomList, tagList, onClose }) => {
+const DoiTacForm: React.FC<Props> = ({ initialData, loaiDoiTac, nhomList, tagList, defaultThuTu, onClose, onRequestAddNhom, onSuccessCreate }) => {
   const { t } = useTranslation();
   const isEdit = !!initialData;
   const createMutation = useCreateDoiTac(onClose);
   const updateMutation = useUpdateDoiTac(onClose);
   const createTagMutation = useCreateTag();
 
-  const groupOptions = useMemo(
+  /** Tab Khách hàng chỉ chọn được nhóm loại khách hàng; tab NCC chỉ chọn được nhóm loại NCC. */
+  const nhomListTheoLoai = useMemo(
+    () => nhomList.filter((n) => n.loai === loaiDoiTac),
+    [nhomList, loaiDoiTac]
+  );
+
+  const groupOptionsWithAdd = useMemo(
     () => [
-      { value: '', label: t('doiTac.form.groupNone') },
-      ...nhomList.map((n) => ({ value: n.id, label: n.ten_nhom })),
+      { value: ADD_NHOM_OPTION_VALUE, label: `➕ ${t('doiTac.form.addGroupNew')}` },
+      ...nhomListTheoLoai.map((n) => ({ value: n.id, label: n.ten_nhom })),
     ],
-    [nhomList, t]
+    [nhomListTheoLoai, t]
   );
 
   const tagOptions = useMemo(
@@ -47,18 +62,26 @@ const DoiTacForm: React.FC<Props> = ({ initialData, loaiDoiTac, nhomList, tagLis
     [tagList]
   );
 
+  const loaiOptions = useMemo(
+    (): { value: LoaiDoiTac; label: string }[] => [
+      { value: 'nha_cung_cap', label: t('doiTac.tabs.nhaCungCap') },
+      { value: 'khach_hang', label: t('doiTac.tabs.khachHang') },
+    ],
+    [t]
+  );
+
   const defaultValues: Partial<DoiTacFormValues> = {
     ma_ncc: '',
     ten_ncc: '',
     loai_doi_tac: loaiDoiTac,
-    id_nhom: null,
+    id_nhom: '',
     dia_chi: '',
     dien_thoai: '',
     email: '',
     mo_ta: '',
     tag_ids: [],
     trang_thai: TRANG_THAI_DOI_TAC.DANG_HOAT_DONG,
-    thu_tu: 0,
+    thu_tu: defaultThuTu ?? 1,
   };
 
   const { register, handleSubmit, formState: { errors }, reset, control } = useForm<DoiTacFormValues>({
@@ -72,7 +95,7 @@ const DoiTacForm: React.FC<Props> = ({ initialData, loaiDoiTac, nhomList, tagLis
         ma_ncc: initialData.ma_ncc,
         ten_ncc: initialData.ten_ncc,
         loai_doi_tac: initialData.loai_doi_tac,
-        id_nhom: initialData.id_nhom ?? null,
+        id_nhom: initialData.id_nhom ?? '',
         dia_chi: initialData.dia_chi ?? '',
         dien_thoai: initialData.dien_thoai ?? '',
         email: initialData.email ?? '',
@@ -82,15 +105,15 @@ const DoiTacForm: React.FC<Props> = ({ initialData, loaiDoiTac, nhomList, tagLis
         thu_tu: initialData.thu_tu,
       });
     } else {
-      reset({ ...defaultValues, loai_doi_tac: loaiDoiTac });
+      reset({ ...defaultValues, loai_doi_tac: loaiDoiTac, thu_tu: defaultThuTu ?? 1 });
     }
-  }, [initialData, loaiDoiTac, reset]);
+  }, [initialData, loaiDoiTac, defaultThuTu, reset]);
 
   const onSubmit: SubmitHandler<DoiTacFormValues> = (data) => {
     const sanitized = {
       ...data,
       loai_doi_tac: data.loai_doi_tac,
-      id_nhom: data.id_nhom === '' || data.id_nhom === undefined ? null : data.id_nhom,
+      id_nhom: data.id_nhom,
       dia_chi: data.dia_chi?.trim() || undefined,
       dien_thoai: data.dien_thoai?.trim() || undefined,
       email: data.email?.trim() || undefined,
@@ -100,7 +123,15 @@ const DoiTacForm: React.FC<Props> = ({ initialData, loaiDoiTac, nhomList, tagLis
     if (isEdit && initialData) {
       updateMutation.mutate({ id: initialData.id, data: sanitized });
     } else {
-      createMutation.mutate(sanitized);
+      createMutation.mutate(sanitized, {
+        onSuccess: (created) => {
+          if (onSuccessCreate) {
+            onSuccessCreate(created);
+          } else {
+            onClose();
+          }
+        },
+      });
     }
   };
 
@@ -126,6 +157,15 @@ const DoiTacForm: React.FC<Props> = ({ initialData, loaiDoiTac, nhomList, tagLis
       <form id="doi-tac-form" onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <FormSection title={t('doiTac.detail.basicInfo')} icon={<Users size={14} />} variant="primary">
           <FormGrid cols={2}>
+            <div className="col-span-1 sm:col-span-2">
+              <LoaiToggleGroup
+                label={t('doiTac.danhMuc.form.loai')}
+                options={loaiOptions}
+                value={loaiDoiTac}
+                onChange={() => {}}
+                disabled
+              />
+            </div>
             <Input
               label={t('doiTac.form.code')}
               placeholder={t('doiTac.form.codePlaceholder')}
@@ -151,12 +191,26 @@ const DoiTacForm: React.FC<Props> = ({ initialData, loaiDoiTac, nhomList, tagLis
                 name="id_nhom"
                 control={control}
                 render={({ field }) => (
-                  <Select
+                  <Combobox
                     label={t('doiTac.form.group')}
                     icon={<Folder size={12} />}
-                    options={groupOptions}
+                    options={groupOptionsWithAdd}
                     value={field.value ?? ''}
-                    onChange={(e) => field.onChange(e.target.value === '' ? null : e.target.value)}
+                    onChange={(v) => {
+                      if (v === ADD_NHOM_OPTION_VALUE) {
+                        onRequestAddNhom?.().then((nhom) => {
+                          if (nhom) field.onChange(nhom.id);
+                        });
+                        return;
+                      }
+                      field.onChange(v ?? '');
+                    }}
+                    placeholder={t('doiTac.form.groupPlaceholder')}
+                    searchPlaceholder={t('doiTac.danhMuc.searchPlaceholder')}
+                    searchable
+                    dropdownInPortal
+                    required
+                    error={errors.id_nhom?.message}
                   />
                 )}
               />

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Package, FileText } from 'lucide-react';
-import { cn, formatDateShort } from '../../../../lib/utils';
+import { cn, formatDateShort, formatNumberVN } from '../../../../lib/utils';
 import { useChiTietPhieuKhoAll, usePhieuKhoById } from '../hooks/use-phieu-kho';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import { useChiTietPhieuKhoStore } from '../store/useChiTietPhieuKhoStore';
@@ -16,18 +16,19 @@ import ListPageSkeleton from '../../../../components/shared/ListPageSkeleton';
 import TablePaginationFooter from '../../../../components/shared/TablePaginationFooter';
 import { getColumnCellStyle } from '../../../../store/createGenericStore';
 import type { ColumnConfig } from '../../../../store/createGenericStore';
-import type { LoaiPhieuKho } from '../core/types';
+import type { LoaiPhieuKho, TrangThaiPhieuKho } from '../core/types';
+import { LOAI_DB_TO_TAB } from '../core/types';
 import { useDeletePhieuKho } from '../hooks/use-phieu-kho';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { CONFIRM_DELETE } from '../../../../lib/button-labels';
 
 function LoaiBadge({ loai }: { loai: LoaiPhieuKho }) {
   const { t } = useTranslation();
-  const label = loai === 'nhap' ? t('phieuKho.tabs.nhap') : loai === 'xuat' ? t('phieuKho.tabs.xuat') : t('phieuKho.tabs.chuyen');
+  const label = loai === 'nhập' ? t('phieuKho.tabs.nhap') : loai === 'xuất' ? t('phieuKho.tabs.xuat') : t('phieuKho.tabs.chuyen');
   const cls =
-    loai === 'nhap'
+    loai === 'nhập'
       ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
-      : loai === 'xuat'
+      : loai === 'xuất'
         ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
         : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20';
   return (
@@ -37,11 +38,11 @@ function LoaiBadge({ loai }: { loai: LoaiPhieuKho }) {
   );
 }
 
-function StatusBadge({ status }: { status: 0 | 1 | 2 }) {
+function StatusBadge({ status }: { status: TrangThaiPhieuKho }) {
   const { t } = useTranslation();
-  const label = status === 0 ? t('phieuKho.status.pending') : status === 1 ? t('phieuKho.status.approved') : t('phieuKho.status.rejected');
+  const label = status === 'Chờ duyệt' ? t('phieuKho.status.pending') : status === 'Đã duyệt' ? t('phieuKho.status.approved') : t('phieuKho.status.rejected');
   const cls =
-    status === 0 ? 'bg-amber-500/10 text-amber-600 border-amber-500/20' : status === 1 ? 'bg-primary/10 text-primary border-primary/20' : 'bg-rose-500/10 text-rose-600 border-rose-500/20';
+    status === 'Chờ duyệt' ? 'bg-amber-500/10 text-amber-600 border-amber-500/20' : status === 'Đã duyệt' ? 'bg-primary/10 text-primary border-primary/20' : 'bg-rose-500/10 text-rose-600 border-rose-500/20';
   return (
     <span className={cn('inline-flex px-2 py-0.5 rounded-full text-xs font-medium border', cls)}>
       {label}
@@ -67,7 +68,7 @@ const ChiTietPhieuKhoTab: React.FC = () => {
 
   const confirm = useConfirmStore((s) => s.confirm);
   const [viewingPhieuId, setViewingPhieuId] = useState<string | null>(null);
-  const [viewingLoai, setViewingLoai] = useState<LoaiPhieuKho>('nhap');
+  const [viewingLoai, setViewingLoai] = useState<'nhap' | 'xuat' | 'chuyen'>('nhap');
   const { data: viewingPhieu } = usePhieuKhoById(viewingPhieuId ?? undefined);
   const deleteMutation = useDeletePhieuKho();
 
@@ -93,7 +94,7 @@ const ChiTietPhieuKhoTab: React.FC = () => {
       const matchesLoai = (f.loai?.length ?? 0) === 0 || (f.loai ?? []).includes(row.loai);
       const rowDate = (row.ngay as string) || '';
       const matchesDate = rowDate >= range.start && rowDate <= range.end;
-      const matchesKho = (f.khoIds?.length ?? 0) === 0 || (f.khoIds ?? []).includes(row.id_kho);
+      const matchesKho = (f.khoIds?.length ?? 0) === 0 || (f.khoIds ?? []).includes(row.kho_id);
       return matchesSearch && matchesLoai && matchesDate && matchesKho;
     },
     []
@@ -142,7 +143,7 @@ const ChiTietPhieuKhoTab: React.FC = () => {
 
   const handleRowClick = useCallback((row: ChiTietPhieuKhoFlat) => {
     setViewingPhieuId(row.id_phieu_kho);
-    setViewingLoai(row.loai);
+    setViewingLoai(LOAI_DB_TO_TAB[row.loai]);
   }, []);
 
   const handleCloseDetail = useCallback(() => {
@@ -229,7 +230,19 @@ const ChiTietPhieuKhoTab: React.FC = () => {
       case 'so_luong':
         return (
           <td key={col.id} className="px-4 py-3 tabular-nums text-sm" style={getColumnCellStyle(col)}>
-            {row.so_luong}
+            {formatNumberVN(row.so_luong)}
+          </td>
+        );
+      case 'don_gia':
+        return (
+          <td key={col.id} className="px-4 py-3 tabular-nums text-sm text-muted-foreground" style={getColumnCellStyle(col)}>
+            {formatNumberVN(row.don_gia)}
+          </td>
+        );
+      case 'thanh_tien':
+        return (
+          <td key={col.id} className="px-4 py-3 tabular-nums text-sm" style={getColumnCellStyle(col)}>
+            {formatNumberVN(row.thanh_tien)}
           </td>
         );
       case 'don_vi_tinh':

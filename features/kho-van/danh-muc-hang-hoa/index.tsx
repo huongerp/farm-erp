@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
 import DanhMucHangHoaToolbar from './components/DanhMucHangHoaToolbar';
@@ -34,6 +34,10 @@ const DanhMucHangHoaPage: React.FC = () => {
   const [pageSize, setPageSize] = useState(20);
 
   const { data: list = [], isLoading } = useDanhMucHangHoaList();
+  const nextThuTu = useMemo(
+    () => (list.length === 0 ? 1 : Math.max(...list.map((d) => d.thu_tu ?? 0)) + 1),
+    [list]
+  );
   const deleteMutation = useDeleteDanhMucHangHoa();
   const deleteManyMutation = useDeleteDanhMucHangHoaMany();
 
@@ -169,6 +173,7 @@ const DanhMucHangHoaPage: React.FC = () => {
           <DanhMucHangHoaForm
             initialData={editingItem}
             allDanhMuc={list}
+            defaultThuTu={nextThuTu}
             onClose={handleCloseForm}
             defaultParentId={defaultParentId}
           />

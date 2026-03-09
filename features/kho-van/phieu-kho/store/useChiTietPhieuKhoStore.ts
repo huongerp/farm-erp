@@ -11,7 +11,7 @@ export interface ChiTietPhieuKhoFilters {
   datePreset: DatePresetId;
   customDateFrom: string;
   customDateEnd: string;
-  /** Kho (id_kho của phiếu) */
+  /** Kho (kho_id của phiếu) */
   khoIds: string[];
 }
 
@@ -26,8 +26,10 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'ma_hang', label: i18n.t('phieuKho.form.itemCode'), visible: true, minWidth: 100, maxWidth: 140, order: 7 },
   { id: 'ten_hang', label: i18n.t('phieuKho.form.itemName'), visible: true, minWidth: 140, maxWidth: 220, order: 8 },
   { id: 'so_luong', label: i18n.t('phieuKho.form.quantity'), visible: true, minWidth: 80, maxWidth: 100, order: 9 },
-  { id: 'don_vi_tinh', label: i18n.t('phieuKho.form.unit'), visible: true, minWidth: 60, maxWidth: 80, order: 10 },
-  { id: 'ghi_chu', label: i18n.t('phieuKho.form.note'), visible: true, minWidth: 100, maxWidth: 180, order: 11 },
+  { id: 'don_gia', label: i18n.t('phieuKho.form.unitPrice'), visible: true, minWidth: 90, maxWidth: 120, order: 10 },
+  { id: 'thanh_tien', label: i18n.t('phieuKho.form.amount'), visible: true, minWidth: 100, maxWidth: 140, order: 11 },
+  { id: 'don_vi_tinh', label: i18n.t('phieuKho.form.unit'), visible: true, minWidth: 60, maxWidth: 80, order: 12 },
+  { id: 'ghi_chu', label: i18n.t('phieuKho.form.note'), visible: true, minWidth: 100, maxWidth: 180, order: 13 },
 ];
 
 const initialFilters: ChiTietPhieuKhoFilters = {

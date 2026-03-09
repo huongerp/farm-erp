@@ -11,10 +11,12 @@ export interface Employee {
 
   id_phong_ban: string | null;
   id_chuc_vu: string | null;
-  id_chi_nhanh?: string | null;
+  /** Danh sách id chi nhánh (một nhân viên có thể thuộc nhiều chi nhánh) */
+  id_chi_nhanh?: string[];
 
   ten_phong_ban?: string;
   ten_chuc_vu?: string;
+  /** Tên chi nhánh (hiển thị, gộp nhiều chi nhánh) */
   ten_chi_nhanh?: string;
 
   gioi_tinh: Gender;

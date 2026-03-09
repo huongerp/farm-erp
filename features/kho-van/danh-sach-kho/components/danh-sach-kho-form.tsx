@@ -1,15 +1,17 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Warehouse, MapPin, FileText, ArrowUpFromLine, Power } from 'lucide-react';
+import { Warehouse, MapPin, FileText, ArrowUpFromLine, Power, Building2 } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
 import Textarea from '../../../../components/ui/Textarea';
+import Combobox from '../../../../components/ui/Combobox';
 import StatusToggle from '../../../../components/ui/StatusToggle';
 import { KhoFormValues, khoSchema } from '../core/schema';
 import { Kho } from '../core/types';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { useCreateKho, useUpdateKho } from '../hooks/use-kho';
+import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
 import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/GenericDrawer';
 import FormSection from '../../../../components/shared/FormSection';
 import FormGrid from '../../../../components/shared/FormGrid';
@@ -17,23 +19,34 @@ import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
 
 interface Props {
   initialData?: Kho | null;
+  /** Khi tạo mới: thứ tự mặc định (tự tăng từ max + 1). */
+  defaultThuTu?: number;
   onClose: () => void;
+  /** Gọi khi tạo mới thành công với kho vừa tạo (dùng khi mở form từ popup "Thêm kho" ở form khác). */
+  onSuccessCreate?: (kho: Kho) => void;
 }
 
-const DanhSachKhoForm: React.FC<Props> = ({ initialData, onClose }) => {
+const DanhSachKhoForm: React.FC<Props> = ({ initialData, defaultThuTu, onClose, onSuccessCreate }) => {
   const { t } = useTranslation();
   const isEdit = !!initialData;
   const createMutation = useCreateKho(onClose);
   const updateMutation = useUpdateKho(onClose);
+  const { data: branches = [] } = useBranches();
+
+  /** Chi nhánh bắt buộc: không có option "Không chọn". */
+  const branchOptions = useMemo(
+    () => branches.map((b) => ({ value: b.id, label: b.ten_chi_nhanh, subLabel: b.ma_chi_nhanh })),
+    [branches]
+  );
 
   const defaultValues: Partial<KhoFormValues> = {
     ma_kho: '',
     ten_kho: '',
     dia_chi: '',
     mo_ta: '',
-    id_chi_nhanh: null,
+    id_chi_nhanh: '',
     trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG,
-    thu_tu: 0,
+    thu_tu: defaultThuTu ?? 1,
   };
 
   const { register, handleSubmit, formState: { errors }, reset, control } = useForm<KhoFormValues>({
@@ -48,26 +61,34 @@ const DanhSachKhoForm: React.FC<Props> = ({ initialData, onClose }) => {
         ten_kho: initialData.ten_kho,
         dia_chi: initialData.dia_chi ?? '',
         mo_ta: initialData.mo_ta ?? '',
-        id_chi_nhanh: initialData.id_chi_nhanh ?? null,
+        id_chi_nhanh: initialData.id_chi_nhanh ?? '',
         trang_thai: initialData.trang_thai,
         thu_tu: initialData.thu_tu,
       });
     } else {
-      reset(defaultValues);
+      reset({ ...defaultValues, thu_tu: defaultThuTu ?? 1 });
     }
-  }, [initialData, reset]);
+  }, [initialData, defaultThuTu, reset]);
 
   const onSubmit: SubmitHandler<KhoFormValues> = (data) => {
     const sanitized = {
       ...data,
       dia_chi: data.dia_chi?.trim() || undefined,
       mo_ta: data.mo_ta?.trim() || undefined,
-      id_chi_nhanh: data.id_chi_nhanh === '' || data.id_chi_nhanh === undefined ? null : data.id_chi_nhanh,
+      id_chi_nhanh: data.id_chi_nhanh,
     };
     if (isEdit && initialData) {
       updateMutation.mutate({ id: initialData.id, data: sanitized });
     } else {
-      createMutation.mutate(sanitized);
+      createMutation.mutate(sanitized, {
+        onSuccess: (created) => {
+          if (onSuccessCreate) {
+            onSuccessCreate(created);
+          } else {
+            onClose();
+          }
+        },
+      });
     }
   };
 
@@ -113,6 +134,26 @@ const DanhSachKhoForm: React.FC<Props> = ({ initialData, onClose }) => {
               {...register('ten_kho')}
               error={errors.ten_kho?.message}
             />
+            <div className="col-span-1 sm:col-span-2">
+              <Controller
+                name="id_chi_nhanh"
+                control={control}
+                render={({ field }) => (
+                  <Combobox
+                    label={t('kho.form.branch')}
+                    icon={<Building2 size={12} />}
+                    options={branchOptions}
+                    value={field.value ?? ''}
+                    onChange={(v) => field.onChange(v ?? '')}
+                    placeholder={t('kho.form.branchPlaceholder')}
+                    searchable
+                    dropdownInPortal
+                    required
+                    error={errors.id_chi_nhanh?.message}
+                  />
+                )}
+              />
+            </div>
             <div className="col-span-1 sm:col-span-2">
               <Input
                 label={t('kho.form.address')}

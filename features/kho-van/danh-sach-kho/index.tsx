@@ -48,6 +48,10 @@ const DanhSachKhoPage: React.FC = () => {
   const [showImport, setShowImport] = useState(false);
 
   const { data: khoList = [], isLoading } = useKhoList();
+  const nextThuTu = useMemo(
+    () => (khoList.length === 0 ? 1 : Math.max(...khoList.map((k) => k.thu_tu ?? 0)) + 1),
+    [khoList]
+  );
   const deleteMutation = useDeleteKho();
   const deleteManyMutation = useDeleteKhoMany();
   const statusMutation = useUpdateKhoStatus();
@@ -57,6 +61,7 @@ const DanhSachKhoPage: React.FC = () => {
     () => [
       { key: 'ma_kho', label: t('kho.form.code'), required: true },
       { key: 'ten_kho', label: t('kho.form.name'), required: true },
+      { key: 'id_chi_nhanh', label: t('kho.form.branch') },
       { key: 'dia_chi', label: t('kho.form.address') },
       { key: 'mo_ta', label: t('kho.detail.description') },
       { key: 'thu_tu', label: t('kho.detail.order') },
@@ -81,10 +86,13 @@ const DanhSachKhoPage: React.FC = () => {
       !term ||
       item.ten_kho.toLowerCase().includes(searchLower) ||
       item.ma_kho.toLowerCase().includes(searchLower) ||
-      (item.dia_chi?.toLowerCase().includes(searchLower) ?? false);
+      (item.dia_chi?.toLowerCase().includes(searchLower) ?? false) ||
+      (item.ten_chi_nhanh?.toLowerCase().includes(searchLower) ?? false);
     const statusKey = item.trang_thai === 'Đang hoạt động' ? 'Active' : 'Inactive';
     const matchesStatus = f.status.length === 0 || f.status.includes(statusKey);
-    return matchesSearch && matchesStatus;
+    const matchesBranch =
+      f.id_chi_nhanh.length === 0 || (item.id_chi_nhanh != null && f.id_chi_nhanh.includes(item.id_chi_nhanh));
+    return matchesSearch && matchesStatus && matchesBranch;
   }, []);
 
   const filteredList = useListWithFilter(khoList, searchTerm, filters, filterFn);
@@ -107,6 +115,7 @@ const DanhSachKhoPage: React.FC = () => {
     () => [
       { key: 'ma_kho', label: t('kho.exportCode') },
       { key: 'ten_kho', label: t('kho.exportName') },
+      { key: 'ten_chi_nhanh', label: t('kho.form.branch') },
       { key: 'dia_chi', label: t('kho.form.address') },
       { key: 'mo_ta', label: t('kho.detail.description') },
       { key: 'thu_tu', label: t('kho.exportOrder') },
@@ -119,12 +128,13 @@ const DanhSachKhoPage: React.FC = () => {
     (item: Kho) => ({
       ma_kho: item.ma_kho,
       ten_kho: item.ten_kho,
+      ten_chi_nhanh: item.ten_chi_nhanh ?? '',
       dia_chi: item.dia_chi ?? '',
       mo_ta: item.mo_ta ?? '',
       thu_tu: item.thu_tu,
       trang_thai_text: item.trang_thai,
     }),
-    [t]
+    []
   );
 
   const {
@@ -197,19 +207,22 @@ const DanhSachKhoPage: React.FC = () => {
   };
 
   const handleImportData = async (data: Record<string, unknown>[]) => {
-    const rows: KhoFormValues[] = data.map((row) => {
+    const rows = data.map((row) => {
       const raw = row.trang_thai;
       const trangThai =
         raw === 0 || String(raw).trim() === '0' || String(raw).trim().toLowerCase() === 'ngừng hoạt động'
           ? TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG
           : TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
+      const idChiNhanh = row.id_chi_nhanh != null && String(row.id_chi_nhanh).trim() !== ''
+        ? String(row.id_chi_nhanh).trim()
+        : null;
       return {
         ma_kho: String(row.ma_kho ?? '').trim().toUpperCase(),
         ten_kho: String(row.ten_kho ?? '').trim(),
         dia_chi: row.dia_chi != null ? String(row.dia_chi).trim() : undefined,
         mo_ta: row.mo_ta != null ? String(row.mo_ta).trim() : undefined,
-        id_chi_nhanh: null,
-        thu_tu: Number(row.thu_tu) || 0,
+        id_chi_nhanh: idChiNhanh,
+        thu_tu: Math.max(1, Number(row.thu_tu) || 1),
         trang_thai: trangThai,
       };
     });
@@ -263,6 +276,7 @@ const DanhSachKhoPage: React.FC = () => {
         {showForm && (
           <DanhSachKhoForm
             initialData={editingItem}
+            defaultThuTu={nextThuTu}
             onClose={() => {
               setShowForm(false);
               setEditingItem(null);

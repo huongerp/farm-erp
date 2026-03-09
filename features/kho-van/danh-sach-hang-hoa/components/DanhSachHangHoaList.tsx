@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Edit, Trash2, Package } from 'lucide-react';
-import { cn, formatDateShort } from '../../../../lib/utils';
+import { cn, formatDateShort, formatNumberVN } from '../../../../lib/utils';
 import type { HangHoa } from '../core/types';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import EmptyState from '../../../../components/shared/EmptyState';
@@ -9,6 +9,9 @@ import ListPageSkeleton from '../../../../components/shared/ListPageSkeleton';
 import TablePaginationFooter from '../../../../components/shared/TablePaginationFooter';
 import type { ColumnConfig } from '../../../../store/createGenericStore';
 import { getColumnCellStyle } from '../../../../store/createGenericStore';
+
+/** Tổng định mức (sum ton_toi_thieu) và số kho có định mức, theo hang_hoa_id. */
+export type DinhMucSummaryMap = Record<string, { tong: number; soKho: number }>;
 
 interface Props {
   data: HangHoa[];
@@ -24,6 +27,8 @@ interface Props {
   onEdit: (item: HangHoa) => void;
   onDelete: (id: string) => void;
   onView?: (item: HangHoa) => void;
+  /** Map hang_hoa_id -> { tong, soKho } để hiển thị cột Tổng định mức (tab Danh sách). */
+  dinhMucSummaryMap?: DinhMucSummaryMap;
 }
 
 const DanhSachHangHoaList: React.FC<Props> = ({
@@ -40,6 +45,7 @@ const DanhSachHangHoaList: React.FC<Props> = ({
   onEdit,
   onDelete,
   onView,
+  dinhMucSummaryMap,
 }) => {
   const { t } = useTranslation();
 
@@ -65,36 +71,18 @@ const DanhSachHangHoaList: React.FC<Props> = ({
             <span className="text-sm text-muted-foreground">{item.thu_tu}</span>
           </td>
         );
-      case 'hinh_anh':
-        return (
-          <td key={col.id} className="px-4 py-3" style={getColumnCellStyle(col)}>
-            <div className="flex items-center justify-center">
-              {item.hinh_anh ? (
-                <img
-                  src={item.hinh_anh}
-                  alt={item.ten_hang}
-                  className="w-10 h-10 rounded-lg border border-border shadow-sm object-cover bg-muted"
-                />
-              ) : (
-                <div className="w-10 h-10 rounded-lg border border-dashed border-border bg-muted/50 flex items-center justify-center text-muted-foreground">
-                  <Package size={18} />
-                </div>
-              )}
-            </div>
-          </td>
-        );
-      case 'ma_hang':
+      case 'ma_hang_hoa':
         return (
           <td key={col.id} className="px-4 py-3" style={getColumnCellStyle(col)}>
             <span className="font-mono text-xs font-medium text-muted-foreground bg-muted px-2 py-1 rounded border border-border">
-              {item.ma_hang}
+              {item.ma_hang_hoa}
             </span>
           </td>
         );
-      case 'ten_hang':
+      case 'ten_hang_hoa':
         return (
           <td key={col.id} className="px-4 py-3" style={getColumnCellStyle(col)}>
-            <span className="font-medium text-foreground">{item.ten_hang}</span>
+            <span className="font-medium text-foreground">{item.ten_hang_hoa}</span>
           </td>
         );
       case 'ten_danh_muc':
@@ -103,24 +91,47 @@ const DanhSachHangHoaList: React.FC<Props> = ({
             <span className="text-sm text-muted-foreground">{item.ten_danh_muc ?? '—'}</span>
           </td>
         );
-      case 'don_vi_tinh':
+      case 'dvt':
         return (
           <td key={col.id} className="px-4 py-3" style={getColumnCellStyle(col)}>
-            <span className="text-sm text-muted-foreground">{item.don_vi_tinh ?? '—'}</span>
+            <span className="text-sm text-muted-foreground">{item.dvt ?? '—'}</span>
           </td>
         );
-      case 'ton_toi_thieu':
+      case 'don_gia':
         return (
           <td key={col.id} className="px-4 py-3 tabular-nums" style={getColumnCellStyle(col)}>
-            <span className="text-sm text-muted-foreground">{item.ton_toi_thieu != null ? item.ton_toi_thieu : '—'}</span>
+            <span className="text-sm text-muted-foreground">
+              {item.don_gia != null ? item.don_gia.toLocaleString('vi-VN') : '—'}
+            </span>
           </td>
         );
-      case 'mo_ta':
+      case 'tong_dinh_muc': {
+        const summary = dinhMucSummaryMap?.[item.id];
         return (
-          <td key={col.id} className="px-4 py-3 min-w-0" style={getColumnCellStyle(col)}>
-            <span className="text-xs text-muted-foreground line-clamp-2">{item.mo_ta ?? '—'}</span>
+          <td key={col.id} className="px-4 py-3 text-right tabular-nums" style={getColumnCellStyle(col)}>
+            {summary && summary.soKho > 0 ? (
+              <span className="text-sm" title={`${summary.soKho} kho`}>
+                {formatNumberVN(summary.tong)}
+              </span>
+            ) : (
+              <span className="text-muted-foreground">—</span>
+            )}
           </td>
         );
+      }
+      case 'so_kho_dinh_muc': {
+        const summary = dinhMucSummaryMap?.[item.id];
+        const soKho = summary?.soKho ?? 0;
+        return (
+          <td key={col.id} className="px-4 py-3 text-right tabular-nums" style={getColumnCellStyle(col)}>
+            {soKho > 0 ? (
+              <span className="text-sm">{soKho}</span>
+            ) : (
+              <span className="text-muted-foreground">—</span>
+            )}
+          </td>
+        );
+      }
       case 'trang_thai':
         return (
           <td key={col.id} className="px-4 py-3" style={getColumnCellStyle(col)}>
@@ -131,7 +142,7 @@ const DanhSachHangHoaList: React.FC<Props> = ({
                   : 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border'
               }
             >
-              {item.trang_thai}
+              {item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? t('hangHoa.active') : t('hangHoa.inactive')}
             </span>
           </td>
         );

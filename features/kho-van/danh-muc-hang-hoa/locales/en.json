@@ -42,7 +42,7 @@
   "danhMucHangHoa.validation.nameRequired": "Name is required",
   "danhMucHangHoa.validation.nameMax": "Name max 255 characters",
   "danhMucHangHoa.validation.statusInvalid": "Invalid status",
-  "danhMucHangHoa.validation.thuTuMin": "Order must be ≥ 0",
+  "danhMucHangHoa.validation.thuTuMin": "Order must be ≥ 1",
   "danhMucHangHoa.toast.createSuccess": "Category added",
   "danhMucHangHoa.toast.updateSuccess": "Updated successfully",
   "danhMucHangHoa.toast.deleteSuccess": "Deleted successfully",

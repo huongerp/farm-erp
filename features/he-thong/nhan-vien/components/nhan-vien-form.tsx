@@ -12,6 +12,7 @@ import {
 import Button from '../../../../components/ui/Button';
 import Input from '../../../../components/ui/Input';
 import Combobox from '../../../../components/ui/Combobox';
+import MultiSelect from '../../../../components/ui/MultiSelect';
 import RadioGroup from '../../../../components/ui/RadioGroup';
 import SingleImageInput from '../../../../components/ui/SingleImageInput';
 import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/GenericDrawer';
@@ -336,14 +337,18 @@ const EmployeeForm: React.FC<Props> = ({ initialData, prefillData, onClose }) =>
                         name="id_chi_nhanh"
                         control={control}
                         render={({ field }) => (
-                            <Combobox
+                            <MultiSelect
                                 label={t('employee.form.branch')}
                                 required
                                 options={branchOptions}
-                                value={field.value || ''}
+                                value={Array.isArray(field.value) ? field.value : []}
                                 onChange={field.onChange}
                                 placeholder={t('employee.form.branchPlaceholder')}
+                                icon={MapPin}
+                                size="lg"
+                                labelAbove
                                 error={errors.id_chi_nhanh?.message}
+                                dropdownInPortal
                             />
                         )}
                     />

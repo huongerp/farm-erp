@@ -573,8 +573,6 @@
   "page.khoVan.descs.chuyenKho": "Điều chuyển giữa các kho, vị trí lưu trữ.",
   "page.khoVan.modules.phieuKho": "Phiếu kho",
   "page.khoVan.descs.phieuKho": "Nhập kho, xuất kho, chuyển kho.",
-  "page.khoVan.modules.phieuDeXuatVatTu": "Phiếu đề xuất vật tư",
-  "page.khoVan.descs.phieuDeXuatVatTu": "Đề xuất vật tư theo nơi, người đề xuất, người duyệt.",
   "page.khoVan.modules.kiemKeKho": "Kiểm kê kho",
   "page.khoVan.descs.kiemKeKho": "Đợt kiểm kê, đối chiếu, điều chỉnh tồn.",
   "page.khoVan.modules.tonKho": "Tồn kho",

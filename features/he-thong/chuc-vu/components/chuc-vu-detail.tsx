@@ -105,7 +105,16 @@ const PositionDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onSt
           <DetailFieldGrid>
             {data.ma_chuc_vu && <DetailField label={t('position.form.code')} value={data.ma_chuc_vu} icon={<Briefcase size={12} />} />}
             <DetailField label={t('position.form.name')} value={data.ten_chuc_vu} icon={<Briefcase size={12} />} />
-            <DetailField label={t('position.detail.level')} value={data.ten_cap_bac ?? '—'} icon={<Layers size={12} />} emptyText="—" />
+            <DetailField
+              label={t('position.detail.level')}
+              value={
+                data.cap_bac != null && data.ten_cap_bac
+                  ? `${data.cap_bac} - ${data.ten_cap_bac}`
+                  : (data.ten_cap_bac ?? '—')
+              }
+              icon={<Layers size={12} />}
+              emptyText="—"
+            />
             <DetailField label={t('position.detail.department')} value={data.ten_phong_ban ?? '—'} icon={<Building2 size={12} />} emptyText="—" />
             <DetailField label={t('position.detail.description')} value={data.mo_ta ?? ''} icon={<FileText size={12} />} emptyText="—" />
             <DetailField label={t('common.status')} value={isActive ? t('position.active') : t('position.inactive')} icon={<Power size={12} />} />

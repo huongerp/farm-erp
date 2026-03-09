@@ -14,7 +14,12 @@ function normalizeTrangThai(val: unknown): TrangThaiHoatDong {
   return TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
 }
 
-function rowToPosition(row: Record<string, unknown>, deptMap: Map<string, string>, levelMap: Map<string, string>): Position {
+function rowToPosition(
+  row: Record<string, unknown>,
+  deptMap: Map<string, string>,
+  levelMap: Map<string, string>,
+  capBacNumberMap: Map<string, number>
+): Position {
   const phongBanId = row.phong_ban_id != null ? String(row.phong_ban_id) : null;
   const capBacId = row.cap_bac_id != null ? String(row.cap_bac_id) : null;
   return {
@@ -24,6 +29,7 @@ function rowToPosition(row: Record<string, unknown>, deptMap: Map<string, string
     cap_bac_id: capBacId,
     ten_phong_ban: phongBanId ? deptMap.get(phongBanId) : undefined,
     ten_cap_bac: capBacId ? levelMap.get(capBacId) : undefined,
+    cap_bac: capBacId ? capBacNumberMap.get(capBacId) : undefined,
     mo_ta: (row.mo_ta as string)?.trim() ?? null,
     tt: row.tt != null ? Number(row.tt) : 0,
     trang_thai: normalizeTrangThai(row.trang_thai),
@@ -37,6 +43,7 @@ async function buildLookupMaps() {
   return {
     deptMap: new Map(departments.map((d) => [d.id, d.ten_phong_ban])),
     levelMap: new Map(jobLevels.map((l) => [l.id, l.ten_cap_bac])),
+    capBacNumberMap: new Map(jobLevels.map((l) => [l.id, l.cap_bac])),
   };
 }
 
@@ -49,8 +56,8 @@ export const getPositions = async (): Promise<Position[]> => {
       .order('ten_chuc_vu', { ascending: true })
       .range(from, to)
   );
-  const { deptMap, levelMap } = await buildLookupMaps();
-  return data.map((row) => rowToPosition(row, deptMap, levelMap));
+  const { deptMap, levelMap, capBacNumberMap } = await buildLookupMaps();
+  return data.map((row) => rowToPosition(row, deptMap, levelMap, capBacNumberMap));
 };
 
 export const createPosition = async (data: PositionFormValues): Promise<Position> => {
@@ -72,8 +79,8 @@ export const createPosition = async (data: PositionFormValues): Promise<Position
     .single();
 
   if (error) throw new Error(error.message);
-  const { deptMap, levelMap } = await buildLookupMaps();
-  return rowToPosition(inserted, deptMap, levelMap);
+  const { deptMap, levelMap, capBacNumberMap } = await buildLookupMaps();
+  return rowToPosition(inserted, deptMap, levelMap, capBacNumberMap);
 };
 
 export const updatePosition = async (id: string, data: PositionFormValues): Promise<Position> => {
@@ -95,8 +102,8 @@ export const updatePosition = async (id: string, data: PositionFormValues): Prom
     .single();
 
   if (error) throw new Error(error.message ?? i18n.t('position.service.notFound'));
-  const { deptMap, levelMap } = await buildLookupMaps();
-  return rowToPosition(updated, deptMap, levelMap);
+  const { deptMap, levelMap, capBacNumberMap } = await buildLookupMaps();
+  return rowToPosition(updated, deptMap, levelMap, capBacNumberMap);
 };
 
 export const updatePositionStatus = async (ids: string[], status: TrangThai): Promise<Position | undefined> => {
@@ -110,8 +117,8 @@ export const updatePositionStatus = async (ids: string[], status: TrangThai): Pr
 
     if (error) throw new Error(error.message);
     if (!data) return undefined;
-    const { deptMap, levelMap } = await buildLookupMaps();
-    return rowToPosition(data, deptMap, levelMap);
+    const { deptMap, levelMap, capBacNumberMap } = await buildLookupMaps();
+    return rowToPosition(data, deptMap, levelMap, capBacNumberMap);
   }
 
   const { error } = await supabase

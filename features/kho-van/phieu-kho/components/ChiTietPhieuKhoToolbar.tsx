@@ -31,9 +31,9 @@ const ChiTietPhieuKhoToolbar: React.FC<Props> = ({ data, khoList }) => {
 
   const loaiOptions = useMemo(
     () => [
-      { value: 'nhap', label: t('phieuKho.tabs.nhap'), count: data.filter((d) => d.loai === 'nhap').length },
-      { value: 'xuat', label: t('phieuKho.tabs.xuat'), count: data.filter((d) => d.loai === 'xuat').length },
-      { value: 'chuyen', label: t('phieuKho.tabs.chuyen'), count: data.filter((d) => d.loai === 'chuyen').length },
+      { value: 'nhập', label: t('phieuKho.tabs.nhap'), count: data.filter((d) => d.loai === 'nhập').length },
+      { value: 'xuất', label: t('phieuKho.tabs.xuat'), count: data.filter((d) => d.loai === 'xuất').length },
+      { value: 'chuyển', label: t('phieuKho.tabs.chuyen'), count: data.filter((d) => d.loai === 'chuyển').length },
     ],
     [data, t]
   );
@@ -43,7 +43,7 @@ const ChiTietPhieuKhoToolbar: React.FC<Props> = ({ data, khoList }) => {
       khoList.map((k) => ({
         value: k.id,
         label: k.ten_kho,
-        count: data.filter((d) => d.id_kho === k.id).length,
+        count: data.filter((d) => d.kho_id === k.id).length,
       })),
     [khoList, data]
   );

@@ -186,6 +186,13 @@ export function formatCurrency(value: number) {
   }).format(value);
 }
 
+/** Định dạng số theo locale (phân tách hàng nghìn, phần thập phân tùy chọn). Dùng cho số lượng, đơn giá, thành tiền. */
+export function formatNumberVN(value: number | null | undefined, options?: { maxFractionDigits?: number; minFractionDigits?: number }): string {
+  if (value == null || Number.isNaN(value)) return '—';
+  const { maxFractionDigits = 4, minFractionDigits = 0 } = options ?? {};
+  return new Intl.NumberFormat('vi-VN', { minimumFractionDigits: minFractionDigits, maximumFractionDigits: maxFractionDigits }).format(value);
+}
+
 export function exportToExcel(data: any[], filename: string) {
   if (!data || !data.length) return;
   import('xlsx').then(XLSX => {

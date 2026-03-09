@@ -3,17 +3,17 @@
  */
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { formatDate, formatDateTime } from '../../../../lib/utils';
+import { formatDate, formatDateTime, formatNumberVN } from '../../../../lib/utils';
 import { useUIStore } from '../../../../store/useStore';
 import type { PhieuKho, PhieuKhoChiTiet, LoaiPhieuKho } from '../core/types';
 
 function getLoaiLabel(loai: LoaiPhieuKho, t: (k: string) => string): string {
-  const key = loai === 'nhap' ? 'phieuKho.tabs.nhap' : loai === 'xuat' ? 'phieuKho.tabs.xuat' : 'phieuKho.tabs.chuyen';
+  const key = loai === 'nhập' ? 'phieuKho.tabs.nhap' : loai === 'xuất' ? 'phieuKho.tabs.xuat' : 'phieuKho.tabs.chuyen';
   return t(key);
 }
 
-function getTrangThaiLabel(trangThai: 0 | 1 | 2, t: (k: string) => string): string {
-  const key = trangThai === 0 ? 'phieuKho.status.pending' : trangThai === 1 ? 'phieuKho.status.approved' : 'phieuKho.status.rejected';
+function getTrangThaiLabel(trangThai: string, t: (k: string) => string): string {
+  const key = trangThai === 'Chờ duyệt' ? 'phieuKho.status.pending' : trangThai === 'Đã duyệt' ? 'phieuKho.status.approved' : 'phieuKho.status.rejected';
   return t(key);
 }
 
@@ -95,14 +95,14 @@ const PhieuKhoPreviewContent: React.FC<Props> = ({ phieu }) => {
           <TableRow label={t('phieuKho.form.code')} value={phieu.so_phieu} />
           <TableRow label={t('phieuKho.form.date')} value={formatDate(phieu.ngay)} />
           <TableRow label={t('phieuKho.preview.loaiPhieu')} value={getLoaiLabel(phieu.loai, t)} />
-          <TableRow label={t('phieuKho.form.warehouse')} value={phieu.ten_kho ?? phieu.id_kho} />
-          {phieu.loai === 'chuyen' && (
+          <TableRow label={t('phieuKho.form.warehouse')} value={phieu.ten_kho ?? phieu.kho_id} />
+          {phieu.loai === 'chuyển' && (
             <TableRow label={t('phieuKho.store.khoDenCol')} value={phieu.ten_kho_den} />
           )}
-          {phieu.loai === 'nhap' && phieu.id_nha_cung_cap && (
+          {phieu.loai === 'nhập' && phieu.id_nha_cung_cap && (
             <TableRow label={t('phieuKho.detail.supplier')} value={phieu.ten_nha_cung_cap} />
           )}
-          {phieu.loai === 'xuat' && phieu.id_khach_hang && (
+          {phieu.loai === 'xuất' && phieu.id_khach_hang && (
             <TableRow label={t('phieuKho.form.customer')} value={phieu.ten_khach_hang} />
           )}
           <TableRow
@@ -110,6 +110,10 @@ const PhieuKhoPreviewContent: React.FC<Props> = ({ phieu }) => {
             value={getTrangThaiLabel(phieu.trang_thai, t)}
           />
           <TableRow label={t('phieuKho.form.description')} value={phieu.mo_ta} />
+          <TableRow label={t('phieuKho.preview.creator')} value={phieu.ten_nguoi_tao} />
+          <TableRow label={t('phieuKho.preview.relatedPerson')} value={undefined} />
+          <TableRow label={t('phieuKho.preview.checker')} value={undefined} />
+          <TableRow label={t('phieuKho.preview.approver')} value={undefined} />
         </tbody>
       </table>
 
@@ -132,10 +136,16 @@ const PhieuKhoPreviewContent: React.FC<Props> = ({ phieu }) => {
                     {t('phieuKho.form.itemName')}
                   </th>
                   <th className="border border-gray-300 bg-primary text-white p-1.5 text-left text-[9pt] font-bold">
+                    {t('phieuKho.form.quantity')}
+                  </th>
+                  <th className="border border-gray-300 bg-primary text-white p-1.5 text-left text-[9pt] font-bold">
                     {t('phieuKho.form.unit')}
                   </th>
                   <th className="border border-gray-300 bg-primary text-white p-1.5 text-left text-[9pt] font-bold">
-                    {t('phieuKho.form.quantity')}
+                    {t('phieuKho.form.unitPrice')}
+                  </th>
+                  <th className="border border-gray-300 bg-primary text-white p-1.5 text-left text-[9pt] font-bold">
+                    {t('phieuKho.form.amount')}
                   </th>
                   <th className="border border-gray-300 bg-primary text-white p-1.5 text-left text-[9pt] font-bold">
                     {t('phieuKho.form.note')}
@@ -150,14 +160,32 @@ const PhieuKhoPreviewContent: React.FC<Props> = ({ phieu }) => {
                       {c.ma_hang ?? '—'}
                     </td>
                     <td className="border border-gray-300 p-1.5 text-gray-900">{c.ten_hang ?? '—'}</td>
+                    <td className="border border-gray-300 p-1.5 text-gray-900 tabular-nums text-right">{formatNumberVN(c.so_luong)}</td>
                     <td className="border border-gray-300 p-1.5 text-gray-900">{c.don_vi_tinh ?? '—'}</td>
-                    <td className="border border-gray-300 p-1.5 text-gray-900 tabular-nums">{c.so_luong}</td>
+                    <td className="border border-gray-300 p-1.5 text-gray-900 tabular-nums text-right">{formatNumberVN(c.don_gia)}</td>
+                    <td className="border border-gray-300 p-1.5 text-gray-900 tabular-nums text-right">{formatNumberVN(c.thanh_tien)}</td>
                     <td className="border border-gray-300 p-1.5 text-gray-900 text-xs">
                       {c.ghi_chu ?? '—'}
                     </td>
                   </tr>
                 ))}
               </tbody>
+              <tfoot>
+                <tr className="bg-gray-100 font-semibold text-gray-900">
+                  <td colSpan={3} className="border border-gray-300 p-1.5 text-[10pt]">
+                    {t('phieuKho.preview.totalQty')} / {t('phieuKho.preview.totalAmount')}
+                  </td>
+                  <td className="border border-gray-300 p-1.5 text-[10pt] tabular-nums text-right">
+                    {formatNumberVN(chiTiet.reduce((s, c) => s + (Number(c.so_luong) || 0), 0))}
+                  </td>
+                  <td className="border border-gray-300 p-1.5" />
+                  <td className="border border-gray-300 p-1.5" />
+                  <td className="border border-gray-300 p-1.5 text-[10pt] tabular-nums text-right">
+                    {formatNumberVN(chiTiet.reduce((s, c) => s + (Number(c.thanh_tien) || 0), 0))}
+                  </td>
+                  <td className="border border-gray-300 p-1.5" />
+                </tr>
+              </tfoot>
             </table>
           </div>
         </>

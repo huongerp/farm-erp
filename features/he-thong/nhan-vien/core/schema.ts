@@ -34,7 +34,7 @@ export const employeeSchema = z.object({
     .regex(PHONE_REGEX, { message: i18n.t('employee.validation.phoneInvalid') }),
   id_chuc_vu: z.string().min(1, { message: i18n.t('employee.validation.positionRequired') }),
   id_phong_ban: z.string().min(1, { message: i18n.t('employee.validation.departmentRequired') }),
-  id_chi_nhanh: z.string().min(1, { message: i18n.t('employee.validation.branchRequired') }),
+  id_chi_nhanh: z.array(z.string()).min(1, { message: i18n.t('employee.validation.branchRequired') }),
   gioi_tinh: z.enum(['Nam', 'Nữ', 'Khác']),
   trang_thai: z.string().min(1, { message: i18n.t('employee.validation.workStatusRequired') }),
   ngay_vao_lam: z.string().min(1, { message: i18n.t('employee.validation.hireDateRequired') }).refine((val) => !isNaN(Date.parse(val)), {

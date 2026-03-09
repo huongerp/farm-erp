@@ -5,12 +5,12 @@ import Button from '../../../../components/ui/Button';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import { usePhieuKhoStore } from '../store/usePhieuKhoStore';
-import type { PhieuKho, LoaiPhieuKho } from '../core/types';
+import type { PhieuKho, LoaiPhieuKhoTab } from '../core/types';
 import type { Kho } from '../../danh-sach-kho/core/types';
 
 interface Props {
   data: PhieuKho[];
-  loai: LoaiPhieuKho;
+  loai: LoaiPhieuKhoTab;
   khoList: Kho[];
   selectedCount: number;
   onAdd: () => void;
@@ -56,9 +56,9 @@ const PhieuKhoToolbar: React.FC<Props> = ({ data, loai, khoList, selectedCount, 
 
   const statusOptions = useMemo(
     () => [
-      { label: t('phieuKho.status.pending'), value: 'Pending', count: data.filter((d) => d.trang_thai === 0).length },
-      { label: t('phieuKho.status.approved'), value: 'Approved', count: data.filter((d) => d.trang_thai === 1).length },
-      { label: t('phieuKho.status.rejected'), value: 'Rejected', count: data.filter((d) => d.trang_thai === 2).length },
+      { label: t('phieuKho.status.pending'), value: 'Pending', count: data.filter((d) => d.trang_thai === 'Chờ duyệt').length },
+      { label: t('phieuKho.status.approved'), value: 'Approved', count: data.filter((d) => d.trang_thai === 'Đã duyệt').length },
+      { label: t('phieuKho.status.rejected'), value: 'Rejected', count: data.filter((d) => d.trang_thai === 'Không duyệt').length },
     ],
     [data, t]
   );
@@ -68,7 +68,7 @@ const PhieuKhoToolbar: React.FC<Props> = ({ data, loai, khoList, selectedCount, 
       khoList.map((k) => ({
         value: k.id,
         label: k.ten_kho,
-        count: data.filter((d) => d.id_kho === k.id).length,
+        count: data.filter((d) => d.kho_id === k.id).length,
       })),
     [khoList, data]
   );
@@ -78,7 +78,7 @@ const PhieuKhoToolbar: React.FC<Props> = ({ data, loai, khoList, selectedCount, 
       khoList.map((k) => ({
         value: k.id,
         label: k.ten_kho,
-        count: data.filter((d) => d.id_kho_den === k.id).length,
+        count: data.filter((d) => d.kho_den_id === k.id).length,
       })),
     [khoList, data]
   );

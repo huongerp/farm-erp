@@ -28,7 +28,9 @@ function rowToEmployee(row: NhanVienRow): Employee {
     so_dien_thoai: (row.so_dien_thoai as string) ?? '',
     id_phong_ban: row.phong_ban_id != null ? String(row.phong_ban_id) : null,
     id_chuc_vu: row.chuc_vu_id != null ? String(row.chuc_vu_id) : null,
-    id_chi_nhanh: row.chi_nhanh_id != null ? String(row.chi_nhanh_id) : null,
+    id_chi_nhanh: (row.chi_nhanh_ids && Array.isArray(row.chi_nhanh_ids) && row.chi_nhanh_ids.length > 0)
+      ? (row.chi_nhanh_ids as unknown[]).map(String)
+      : (row.chi_nhanh_id != null ? [String(row.chi_nhanh_id)] : []),
     ten_phong_ban: (row.ten_phong_ban as string) ?? undefined,
     ten_chuc_vu: (row.ten_chuc_vu as string) ?? undefined,
     ten_chi_nhanh: (row.ten_chi_nhanh as string) ?? undefined,
@@ -82,7 +84,7 @@ function formToRow(data: EmployeeFormValues): NhanVienRow {
     trang_thai: data.trang_thai || null,
     phong_ban_id: data.id_phong_ban || null,
     chuc_vu_id: data.id_chuc_vu || null,
-    chi_nhanh_id: data.id_chi_nhanh || null,
+    chi_nhanh_ids: Array.isArray(data.id_chi_nhanh) && data.id_chi_nhanh.length > 0 ? data.id_chi_nhanh : [],
     email: data.email?.trim() || null,
     so_dien_thoai: data.so_dien_thoai?.trim() || null,
     gioi_tinh: data.gioi_tinh || null,
@@ -133,7 +135,9 @@ export const getEmployees = async (): Promise<Employee[]> => {
   employees.forEach((emp) => {
     emp.ten_chuc_vu = positions.find((p) => p.id === emp.id_chuc_vu)?.ten_chuc_vu;
     emp.ten_phong_ban = depts.find((d) => d.id === emp.id_phong_ban)?.ten_phong_ban;
-    emp.ten_chi_nhanh = branches.find((b) => b.id === emp.id_chi_nhanh)?.ten_chi_nhanh;
+    emp.ten_chi_nhanh = (emp.id_chi_nhanh?.length
+      ? emp.id_chi_nhanh.map((id) => branches.find((b) => b.id === id)?.ten_chi_nhanh).filter(Boolean).join(', ')
+      : undefined) ?? undefined;
   });
   return employees;
 };
@@ -151,7 +155,9 @@ export const getEmployeeById = async (id: string): Promise<Employee | undefined>
   const [positions, depts, branches] = await Promise.all([getPositions(), getDepartments(), getBranches()]);
   emp.ten_chuc_vu = positions.find((p) => p.id === emp.id_chuc_vu)?.ten_chuc_vu;
   emp.ten_phong_ban = depts.find((d) => d.id === emp.id_phong_ban)?.ten_phong_ban;
-  emp.ten_chi_nhanh = branches.find((b) => b.id === emp.id_chi_nhanh)?.ten_chi_nhanh;
+  emp.ten_chi_nhanh = (emp.id_chi_nhanh?.length
+    ? emp.id_chi_nhanh.map((id) => branches.find((b) => b.id === id)?.ten_chi_nhanh).filter(Boolean).join(', ')
+    : undefined) ?? undefined;
   return emp;
 };
 
@@ -169,7 +175,9 @@ export const getEmployeeByEmail = async (email: string): Promise<Employee | null
   const [positions, depts, branches] = await Promise.all([getPositions(), getDepartments(), getBranches()]);
   emp.ten_chuc_vu = positions.find((p) => p.id === emp.id_chuc_vu)?.ten_chuc_vu;
   emp.ten_phong_ban = depts.find((d) => d.id === emp.id_phong_ban)?.ten_phong_ban;
-  emp.ten_chi_nhanh = branches.find((b) => b.id === emp.id_chi_nhanh)?.ten_chi_nhanh;
+  emp.ten_chi_nhanh = (emp.id_chi_nhanh?.length
+    ? emp.id_chi_nhanh.map((id) => branches.find((b) => b.id === id)?.ten_chi_nhanh).filter(Boolean).join(', ')
+    : undefined) ?? undefined;
   return emp;
 };
 
@@ -203,7 +211,9 @@ export const createEmployee = async (data: EmployeeFormValues): Promise<Employee
   const [positions, depts, branches] = await Promise.all([getPositions(), getDepartments(), getBranches()]);
   emp.ten_chuc_vu = positions.find((p) => p.id === emp.id_chuc_vu)?.ten_chuc_vu;
   emp.ten_phong_ban = depts.find((d) => d.id === emp.id_phong_ban)?.ten_phong_ban;
-  emp.ten_chi_nhanh = branches.find((b) => b.id === emp.id_chi_nhanh)?.ten_chi_nhanh;
+  emp.ten_chi_nhanh = (emp.id_chi_nhanh?.length
+    ? emp.id_chi_nhanh.map((id) => branches.find((b) => b.id === id)?.ten_chi_nhanh).filter(Boolean).join(', ')
+    : undefined) ?? undefined;
   return emp;
 };
 
@@ -247,7 +257,9 @@ export const updateEmployee = async (id: string, data: EmployeeFormValues): Prom
   const [positions, depts, branches] = await Promise.all([getPositions(), getDepartments(), getBranches()]);
   emp.ten_chuc_vu = positions.find((p) => p.id === emp.id_chuc_vu)?.ten_chuc_vu;
   emp.ten_phong_ban = depts.find((d) => d.id === emp.id_phong_ban)?.ten_phong_ban;
-  emp.ten_chi_nhanh = branches.find((b) => b.id === emp.id_chi_nhanh)?.ten_chi_nhanh;
+  emp.ten_chi_nhanh = (emp.id_chi_nhanh?.length
+    ? emp.id_chi_nhanh.map((id) => branches.find((b) => b.id === id)?.ten_chi_nhanh).filter(Boolean).join(', ')
+    : undefined) ?? undefined;
   return emp;
 };
 
@@ -264,7 +276,7 @@ export const bulkUpdateEmployees = async (ids: string[], fields: Record<string, 
   const row: NhanVienRow = {};
   if (fields.id_phong_ban != null) row.phong_ban_id = fields.id_phong_ban;
   if (fields.id_chuc_vu != null) row.chuc_vu_id = fields.id_chuc_vu;
-  if (fields.id_chi_nhanh != null) row.chi_nhanh_id = fields.id_chi_nhanh;
+  if (fields.id_chi_nhanh != null) row.chi_nhanh_ids = Array.isArray(fields.id_chi_nhanh) ? fields.id_chi_nhanh : [fields.id_chi_nhanh as string];
   if (fields.id_cap_bac != null) row.cap_bac_id = fields.id_cap_bac;
   if (fields.trang_thai != null) row.trang_thai = fields.trang_thai;
   if (Object.keys(row).length === 0) return;

@@ -235,6 +235,11 @@ const DoiTacDetail: React.FC<Props> = ({
 
         <DetailSection title={t('doiTac.detail.basicInfo')} icon={<Users size={14} />} variant="primary">
           <DetailFieldGrid>
+            <DetailField
+              label={t('doiTac.danhMuc.form.loai')}
+              value={data.loai_doi_tac === 'nha_cung_cap' ? t('doiTac.tabs.nhaCungCap') : t('doiTac.tabs.khachHang')}
+              icon={<Users size={12} />}
+            />
             <DetailField label={t('doiTac.form.name')} value={data.ten_ncc} icon={<Users size={12} />} />
             <DetailField label={t('doiTac.form.code')} value={data.ma_ncc} icon={<Users size={12} />} />
             <DetailField

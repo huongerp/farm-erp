@@ -2,9 +2,7 @@ import type { LucideIcon } from 'lucide-react';
 import {
   PackagePlus,
   ClipboardCheck,
-  ClipboardList,
   Package,
-  MapPin,
   BarChart3,
   BookOpen,
   List,
@@ -35,7 +33,6 @@ export function getKhoVanModuleTitleKeyBySlug(slug: string): string {
 
 export const KHO_VAN_MODULE_SLUGS: string[] = [
   'phieu-kho',
-  'phieu-de-xuat-vat-tu',
   'kiem-ke-kho',
   'ton-kho',
   'bao-cao-nhap-xuat-ton',
@@ -81,13 +78,6 @@ export function getKhoVanGroups(
           descKey: 'page.khoVan.descs.phieuKho',
           icon: PackagePlus,
           color: 'bg-emerald-500',
-        }),
-        item({
-          slug: 'phieu-de-xuat-vat-tu',
-          titleKey: 'page.khoVan.modules.phieuDeXuatVatTu',
-          descKey: 'page.khoVan.descs.phieuDeXuatVatTu',
-          icon: ClipboardList,
-          color: 'bg-indigo-500',
         }),
         item({
           slug: 'kiem-ke-kho',

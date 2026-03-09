@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Edit, Trash2, Package } from 'lucide-react';
-import { cn, formatDateShort } from '../../../../lib/utils';
-import type { PhieuKho, LoaiPhieuKho } from '../core/types';
+import { cn, formatDateShort, formatNumberVN } from '../../../../lib/utils';
+import type { PhieuKho, LoaiPhieuKhoTab } from '../core/types';
 import EmptyState from '../../../../components/shared/EmptyState';
 import ListPageSkeleton from '../../../../components/shared/ListPageSkeleton';
 import TablePaginationFooter from '../../../../components/shared/TablePaginationFooter';
@@ -11,7 +11,7 @@ import { getColumnCellStyle } from '../../../../store/createGenericStore';
 
 interface Props {
   data: PhieuKho[];
-  loai: LoaiPhieuKho;
+  loai: LoaiPhieuKhoTab;
   columns: ColumnConfig[];
   selectedIds: Set<string>;
   onToggleSelection: (id: string) => void;
@@ -102,21 +102,33 @@ const PhieuKhoList: React.FC<Props> = ({
       case 'trang_thai':
         return (
           <td key={col.id} className="px-4 py-3" style={getColumnCellStyle(col)}>
-            {item.trang_thai === 0 && (
+            {item.trang_thai === 'Chờ duyệt' && (
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
                 {t('phieuKho.status.pending')}
               </span>
             )}
-            {item.trang_thai === 1 && (
+            {item.trang_thai === 'Đã duyệt' && (
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
                 {t('phieuKho.status.approved')}
               </span>
             )}
-            {item.trang_thai === 2 && (
+            {item.trang_thai === 'Không duyệt' && (
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
                 {t('phieuKho.status.rejected')}
               </span>
             )}
+          </td>
+        );
+      case 'tong_so_dong':
+        return (
+          <td key={col.id} className="px-4 py-3 tabular-nums text-right" style={getColumnCellStyle(col)}>
+            <span className="text-sm text-muted-foreground">{item.tong_so_dong != null ? formatNumberVN(item.tong_so_dong, { maxFractionDigits: 0 }) : '—'}</span>
+          </td>
+        );
+      case 'tong_tien':
+        return (
+          <td key={col.id} className="px-4 py-3 tabular-nums text-right" style={getColumnCellStyle(col)}>
+            <span className="text-sm font-medium text-foreground">{item.tong_tien != null ? formatNumberVN(item.tong_tien) : '—'}</span>
           </td>
         );
       case 'tg_cap_nhat':

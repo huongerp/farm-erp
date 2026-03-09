@@ -12,7 +12,7 @@ export const danhMucHangHoaSchema = z.object({
     .min(1, i18n.t('danhMucHangHoa.validation.nameRequired'))
     .max(255, i18n.t('danhMucHangHoa.validation.nameMax')),
   id_cha: z.string().optional().nullable(),
-  thu_tu: z.coerce.number().min(0, i18n.t('danhMucHangHoa.validation.thuTuMin')),
+  thu_tu: z.coerce.number().min(1, i18n.t('danhMucHangHoa.validation.thuTuMin')),
   mo_ta: z.string().optional(),
   trang_thai: z.enum(['Đang hoạt động', 'Ngừng hoạt động'], {
     message: i18n.t('danhMucHangHoa.validation.statusInvalid'),

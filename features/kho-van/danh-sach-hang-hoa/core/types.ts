@@ -1,20 +1,24 @@
 import type { TrangThaiHoatDong } from '../../../../lib/constants';
 
-/** Hàng hóa: liên kết Danh mục hàng hóa qua id_danh_muc; ten_danh_muc enrich từ service. */
+/** Hàng hóa: liên kết Danh mục cấp 2 (danh_muc_id), danh mục cấp 1 (danh_muc_cha_id). Hiển thị ten_danh_muc = "Cấp 1 / Cấp 2". */
 export interface HangHoa {
   id: string;
-  ma_hang: string;
-  ten_hang: string;
-  id_danh_muc: string | null;
-  ten_danh_muc?: string;
-  don_vi_tinh?: string;
-  /** Tồn tối thiểu – dùng để cảnh báo khi tồn thực tế thấp hơn */
-  ton_toi_thieu?: number;
-  mo_ta?: string;
-  /** URL hoặc base64 hình ảnh sản phẩm */
-  hinh_anh?: string | null;
-  trang_thai: TrangThaiHoatDong;
+  danh_muc_id: string | null;
+  danh_muc_cha_id: string | null;
+  ma_hang_hoa: string;
+  ten_hang_hoa: string;
+  dvt: string | null;
   thu_tu: number;
+  trang_thai: TrangThaiHoatDong;
+  don_gia: number | null;
   tg_tao: string;
   tg_cap_nhat: string;
+  /** Hiển thị "Tên cấp 1 / Tên cấp 2" (enrich từ service). */
+  ten_danh_muc?: string;
+  /** Bản đồ tương thích: dùng trong phiếu kho, báo cáo, tồn kho ( = ma_hang_hoa ). */
+  ma_hang: string;
+  /** Bản đồ tương thích ( = ten_hang_hoa ). */
+  ten_hang: string;
+  /** Bản đồ tương thích ( = dvt ). */
+  don_vi_tinh: string | null;
 }

@@ -64,6 +64,12 @@ const DanhSachKhoList: React.FC<Props> = ({
             <span className="text-sm text-muted-foreground">{item.thu_tu}</span>
           </td>
         );
+      case 'ten_chi_nhanh':
+        return (
+          <td key={col.id} className="px-4 py-3" style={getColumnCellStyle(col)}>
+            <span className="text-sm text-muted-foreground">{item.ten_chi_nhanh ?? '—'}</span>
+          </td>
+        );
       case 'ma_kho':
         return (
           <td key={col.id} className="px-4 py-3" style={getColumnCellStyle(col)}>

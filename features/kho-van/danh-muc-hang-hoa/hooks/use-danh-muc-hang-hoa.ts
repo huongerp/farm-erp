@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import {
   getAllDanhMucHangHoa,
   getDanhMucHangHoaById,
+  getDanhMucCap2WithParent,
   createDanhMucHangHoa,
   updateDanhMucHangHoa,
   deleteDanhMucHangHoa,
@@ -26,6 +27,15 @@ export const useDanhMucHangHoaById = (id: string | undefined) => {
     queryKey: [...QUERY_KEY, id],
     queryFn: () => getDanhMucHangHoaById(id!),
     enabled: !!id,
+  });
+};
+
+/** Danh mục cấp 2 (chỉ các mục có cha), kèm tên cha – dùng cho form Danh sách hàng hóa. */
+export const useDanhMucCap2WithParent = () => {
+  return useQuery({
+    queryKey: [...QUERY_KEY, 'cap2WithParent'],
+    queryFn: getDanhMucCap2WithParent,
+    staleTime: 1000 * 60 * 5,
   });
 };
 

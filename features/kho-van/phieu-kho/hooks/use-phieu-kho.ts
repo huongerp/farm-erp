@@ -8,13 +8,22 @@ import {
   deletePhieuKho,
   deletePhieuKhoMany,
   getChiTietPhieuKhoAll,
+  getNextSoPhieu,
+  updatePhieuKhoTrangThai,
 } from '../services/phieu-kho-service';
 import { getTonKhoTheoKho } from '../services/ton-kho-service';
 import type { PhieuKhoFormValues } from '../core/schema';
+import type { LoaiPhieuKhoTab } from '../core/types';
+import { LOAI_TAB_TO_DB } from '../core/types';
 import type { LoaiPhieuKho } from '../core/types';
 import i18n from '../../../../lib/i18n';
+import { TON_KHO_QUERY_KEY } from '../../ton-kho/hooks/use-ton-kho';
 
 const QUERY_KEY = ['phieuKho'] as const;
+
+const invalidateTonKho = (qc: ReturnType<typeof useQueryClient>) => {
+  qc.invalidateQueries({ queryKey: TON_KHO_QUERY_KEY });
+};
 
 export const usePhieuKhoList = () => {
   return useQuery({
@@ -43,23 +52,35 @@ export const usePhieuKhoById = (id: string | undefined) => {
   });
 };
 
-/** Tồn kho theo một kho (để hiển thị trong form phiếu). */
-export const useTonKhoTheoKho = (id_kho: string | undefined) => {
+/** Số phiếu tiếp theo khi tạo mới (Option B: RPC). Chỉ gọi khi đang tạo phiếu (enabled = true). */
+export const useNextSoPhieu = (loai: LoaiPhieuKhoTab, enabled: boolean) => {
+  const loaiDb = LOAI_TAB_TO_DB[loai];
   return useQuery({
-    queryKey: ['tonKho', id_kho],
-    queryFn: () => getTonKhoTheoKho(id_kho!),
-    enabled: !!id_kho,
+    queryKey: ['phieuKho', 'nextSoPhieu', loaiDb],
+    queryFn: () => getNextSoPhieu(loaiDb as LoaiPhieuKho),
+    enabled,
+    staleTime: 0,
+  });
+};
+
+/** Tồn kho theo một kho (để hiển thị trong form phiếu). */
+export const useTonKhoTheoKho = (kho_id: string | undefined) => {
+  return useQuery({
+    queryKey: ['tonKho', kho_id],
+    queryFn: () => getTonKhoTheoKho(kho_id!),
+    enabled: !!kho_id,
     staleTime: 1000 * 60,
   });
 };
 
-export const useCreatePhieuKho = (loai: LoaiPhieuKho, onSuccess?: () => void) => {
+export const useCreatePhieuKho = (loaiTab: LoaiPhieuKhoTab, onSuccess?: () => void) => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: PhieuKhoFormValues) => createPhieuKho(loai, data),
+    mutationFn: (data: PhieuKhoFormValues) => createPhieuKho(LOAI_TAB_TO_DB[loaiTab], data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY });
       qc.invalidateQueries({ queryKey: QUERY_KEY_CHI_TIET });
+      invalidateTonKho(qc);
       toast.success(i18n.t('phieuKho.toast.createSuccess'));
       onSuccess?.();
     },
@@ -74,6 +95,7 @@ export const useUpdatePhieuKho = (onSuccess?: () => void) => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY });
       qc.invalidateQueries({ queryKey: QUERY_KEY_CHI_TIET });
+      invalidateTonKho(qc);
       toast.success(i18n.t('phieuKho.toast.updateSuccess'));
       onSuccess?.();
     },
@@ -88,7 +110,24 @@ export const useDeletePhieuKho = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY });
       qc.invalidateQueries({ queryKey: QUERY_KEY_CHI_TIET });
+      invalidateTonKho(qc);
       toast.success(i18n.t('phieuKho.toast.deleteSuccess'));
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+};
+
+export const useUpdatePhieuKhoTrangThai = (onSuccess?: () => void) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, trang_thai, ghi_chu }: { id: string; trang_thai: import('../core/types').TrangThaiPhieuKho; ghi_chu?: string }) =>
+      updatePhieuKhoTrangThai(id, trang_thai, ghi_chu),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QUERY_KEY });
+      qc.invalidateQueries({ queryKey: QUERY_KEY_CHI_TIET });
+      invalidateTonKho(qc);
+      toast.success(i18n.t('phieuKho.toast.updateSuccess'));
+      onSuccess?.();
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -101,6 +140,7 @@ export const useDeletePhieuKhoMany = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY });
       qc.invalidateQueries({ queryKey: QUERY_KEY_CHI_TIET });
+      invalidateTonKho(qc);
       toast.success(i18n.t('phieuKho.toast.deleteSuccess'));
     },
     onError: (err: Error) => toast.error(err.message),

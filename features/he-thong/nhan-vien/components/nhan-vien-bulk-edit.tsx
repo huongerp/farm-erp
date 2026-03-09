@@ -6,6 +6,7 @@ import GenericDrawer from '../../../../components/shared/GenericDrawer';
 import FormSection from '../../../../components/shared/FormSection';
 import FormGrid from '../../../../components/shared/FormGrid';
 import Combobox from '../../../../components/ui/Combobox';
+import MultiSelect from '../../../../components/ui/MultiSelect';
 import Button from '../../../../components/ui/Button';
 import AvatarWithFallback from '../../../../components/ui/AvatarWithFallback';
 import { useDepartments } from '@/features/he-thong/phong-ban/hooks/use-phong-ban';
@@ -21,7 +22,7 @@ export interface BulkEditFields {
   id_phong_ban?: string;
   id_chuc_vu?: string;
   id_cap_bac?: string;
-  id_chi_nhanh?: string;
+  id_chi_nhanh?: string[];
   loai_hop_dong?: string;
   trang_thai?: string;
   noi_lam_viec?: string;
@@ -69,18 +70,24 @@ const BulkEditSheet: React.FC<Props> = ({ selectedEmployees, onClose, onSuccess 
 
   const handleSubmit = () => {
     const ids = selectedEmployees.map(e => e.id);
-    // Chỉ gửi các trường được kích hoạt
     const payload: Partial<BulkEditFields> = {};
     enabledFields.forEach(key => {
-      if (fields[key] !== undefined && fields[key] !== '') {
-        payload[key] = fields[key] as BulkEditFields[typeof key];
+      const val = fields[key];
+      if (val === undefined) return;
+      if (key === 'id_chi_nhanh') {
+        if (Array.isArray(val) && val.length > 0) payload[key] = val;
+      } else if (val !== '') {
+        payload[key] = val as BulkEditFields[typeof key];
       }
     });
     if (Object.keys(payload).length === 0) return;
     bulkMutation.mutate({ ids, fields: payload });
   };
 
-  const hasChanges = enabledFields.size > 0 && Array.from(enabledFields).some(k => fields[k] !== undefined && fields[k] !== '');
+  const hasChanges = enabledFields.size > 0 && Array.from(enabledFields).some(k => {
+    const v = fields[k];
+    return k === 'id_chi_nhanh' ? (Array.isArray(v) && v.length > 0) : (v !== undefined && v !== '');
+  });
 
   const renderFieldToggle = (field: keyof BulkEditFields, label: string) => (
     <label className="flex items-center gap-2 cursor-pointer group">
@@ -159,12 +166,13 @@ const BulkEditSheet: React.FC<Props> = ({ selectedEmployees, onClose, onSuccess 
             <div className="space-y-2">
               {renderFieldToggle('id_chi_nhanh', t('employee.bulk.changeBranch'))}
               {enabledFields.has('id_chi_nhanh') && (
-                <Combobox
+                <MultiSelect
                   options={branchOptions}
-                  value={fields.id_chi_nhanh || ''}
+                  value={Array.isArray(fields.id_chi_nhanh) ? fields.id_chi_nhanh : []}
                   onChange={(val) => setFields(prev => ({ ...prev, id_chi_nhanh: val }))}
                   placeholder={t('employee.form.branchPlaceholder')}
-                  icon={<MapPin size={16} className="text-muted-foreground" />}
+                  icon={MapPin}
+                  size="md"
                 />
               )}
             </div>

@@ -573,8 +573,6 @@
   "page.khoVan.descs.chuyenKho": "Transfer between warehouses and locations.",
   "page.khoVan.modules.phieuKho": "Warehouse Vouchers",
   "page.khoVan.descs.phieuKho": "Import, export, transfer.",
-  "page.khoVan.modules.phieuDeXuatVatTu": "Material Request",
-  "page.khoVan.descs.phieuDeXuatVatTu": "Material requests by location, requester, approver.",
   "page.khoVan.modules.kiemKeKho": "Stock Count",
   "page.khoVan.descs.kiemKeKho": "Count sessions, reconciliation, adjustment.",
   "page.khoVan.modules.tonKho": "Stock",

@@ -10,6 +10,8 @@ interface SectionProps {
   variant?: 'primary' | 'muted';
   /** Id cho anchor link (vd. TOC nhảy tới section) */
   id?: string;
+  /** Nút/hành động đặt cùng hàng với title (bên phải), chuẩn module Phòng ban. */
+  action?: React.ReactNode;
 }
 
 /**
@@ -17,7 +19,7 @@ interface SectionProps {
  * FormSection và DetailSection dùng chung component này.
  * Quy ước: tiêu đề section luôn màu primary (variant mặc định 'primary'). Xem docs/UI-CONVENTIONS.md.
  */
-const Section: React.FC<SectionProps> = ({ title, icon, children, className, variant = 'primary', id }) => {
+const Section: React.FC<SectionProps> = ({ title, icon, children, className, variant = 'primary', id, action }) => {
   const isPrimary = variant === 'primary';
 
   return (
@@ -29,17 +31,23 @@ const Section: React.FC<SectionProps> = ({ title, icon, children, className, var
         className
       )}
     >
-      <h4
+      <div
         className={cn(
-          'text-[11px] sm:text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 sm:gap-2 pb-2 sm:pb-2.5 border-b',
-          isPrimary
-            ? 'text-primary font-bold border-primary/20'
-            : 'text-muted-foreground border-border'
+          'flex items-center justify-between gap-2 pb-2 sm:pb-2.5 border-b',
+          isPrimary ? 'border-primary/20' : 'border-border'
         )}
       >
-        {icon}
-        {title}
-      </h4>
+        <h4
+          className={cn(
+            'text-[11px] sm:text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 sm:gap-2 min-w-0',
+            isPrimary ? 'text-primary font-bold' : 'text-muted-foreground'
+          )}
+        >
+          {icon}
+          {title}
+        </h4>
+        {action && <div className="shrink-0">{action}</div>}
+      </div>
       {children}
     </div>
   );

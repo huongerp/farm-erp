@@ -1,14 +1,19 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
-import { Truck, UserCircle } from 'lucide-react';
+import { Truck, UserCircle, FolderOpen, Tag } from 'lucide-react';
 import TabGroup from '../../../components/ui/TabGroup';
 import DoiTacToolbar from './components/DoiTacToolbar';
 import DoiTacList from './components/DoiTacList';
 import DoiTacForm from './components/DoiTacForm';
 import DoiTacDetail from './components/DoiTacDetail';
-import { useDoiTacList, useNhomDoiTacList, useTagList, useDeleteDoiTac, useDeleteDoiTacMany } from './hooks/use-doi-tac';
+import DanhMucTab from './components/DanhMucTab';
+import TagTab from './components/TagTab';
+import NhomFormDrawer from './components/NhomFormDrawer';
+import { useDoiTacList, useNhomDoiTacList, useTagList, useDeleteDoiTac, useDeleteDoiTacMany, useCreateNhomDoiTac } from './hooks/use-doi-tac';
+import type { NhomDoiTac } from './core/types';
+import type { NhomDoiTacFormValues } from './services/doi-tac-service';
 import { useDoiTacStore } from './store/useDoiTacStore';
 import { useConfirmStore } from '../../../store/useConfirmStore';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -19,7 +24,7 @@ import { useListWithFilter } from '../../../lib/hooks';
 import type { DoiTac } from './core/types';
 import type { PhieuKho } from '../phieu-kho/core/types';
 
-const VALID_TABS = ['nha_cung_cap', 'khach_hang'] as const;
+const VALID_TABS = ['nha_cung_cap', 'khach_hang', 'danh_muc', 'tag'] as const;
 type TabId = (typeof VALID_TABS)[number];
 
 const DanhSachDoiTacPage: React.FC = () => {
@@ -27,12 +32,12 @@ const DanhSachDoiTacPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const tabFromUrl = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState<TabId>(() => {
-    if (tabFromUrl === 'nha_cung_cap' || tabFromUrl === 'khach_hang') return tabFromUrl;
+    if (tabFromUrl === 'nha_cung_cap' || tabFromUrl === 'khach_hang' || tabFromUrl === 'danh_muc' || tabFromUrl === 'tag') return tabFromUrl;
     return 'nha_cung_cap';
   });
 
   useEffect(() => {
-    if (tabFromUrl === 'nha_cung_cap' || tabFromUrl === 'khach_hang') setActiveTab(tabFromUrl);
+    if (tabFromUrl === 'nha_cung_cap' || tabFromUrl === 'khach_hang' || tabFromUrl === 'danh_muc' || tabFromUrl === 'tag') setActiveTab(tabFromUrl);
   }, [tabFromUrl]);
 
   const confirm = useConfirmStore((s) => s.confirm);
@@ -53,7 +58,10 @@ const DanhSachDoiTacPage: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<DoiTac | null>(null);
   const [viewingItem, setViewingItem] = useState<DoiTac | null>(null);
+  const [showAddNhomFromDoiTac, setShowAddNhomFromDoiTac] = useState(false);
+  const addNhomResolveRef = useRef<(nhom: NhomDoiTac) => void | null>(null);
   const queryClient = useQueryClient();
+  const createNhomFromDoiTac = useCreateNhomDoiTac();
   const deletePhieuMutation = useDeletePhieuKho();
 
   const { data: listAll = [], isLoading } = useDoiTacList();
@@ -63,6 +71,15 @@ const DanhSachDoiTacPage: React.FC = () => {
   );
   const { data: nhomList = [] } = useNhomDoiTacList();
   const { data: tagList = [] } = useTagList();
+  const nextThuTuForAddNhom = useMemo(() => {
+    const nhomCungLoai = nhomList.filter((n) => n.loai === activeTab);
+    return nhomCungLoai.length === 0 ? 1 : Math.max(...nhomCungLoai.map((n) => n.thu_tu ?? 0)) + 1;
+  }, [nhomList, activeTab]);
+  /** Thứ tự tự tăng khi tạo mới đối tác (theo danh sách cùng tab). */
+  const nextThuTuForDoiTac = useMemo(() => {
+    if (activeTab !== 'nha_cung_cap' && activeTab !== 'khach_hang') return 1;
+    return filteredByTab.length === 0 ? 1 : Math.max(...filteredByTab.map((d) => d.thu_tu ?? 0)) + 1;
+  }, [activeTab, filteredByTab]);
   const deleteMutation = useDeleteDoiTac();
   const deleteManyMutation = useDeleteDoiTacMany();
 
@@ -83,7 +100,7 @@ const DanhSachDoiTacPage: React.FC = () => {
   }, [listAll, viewingItem?.id]);
 
   const handleTabChange = (id: string) => {
-    if (id === 'nha_cung_cap' || id === 'khach_hang') {
+    if (id === 'nha_cung_cap' || id === 'khach_hang' || id === 'danh_muc' || id === 'tag') {
       setActiveTab(id);
       setSearchParams((prev) => {
         const next = new URLSearchParams(prev);
@@ -97,6 +114,8 @@ const DanhSachDoiTacPage: React.FC = () => {
     () => [
       { id: 'nha_cung_cap', label: t('doiTac.tabs.nhaCungCap'), icon: Truck },
       { id: 'khach_hang', label: t('doiTac.tabs.khachHang'), icon: UserCircle },
+      { id: 'danh_muc', label: t('doiTac.tabs.danhMuc'), icon: FolderOpen },
+      { id: 'tag', label: t('doiTac.tabs.tag'), icon: Tag },
     ],
     [t]
   );
@@ -215,22 +234,34 @@ const DanhSachDoiTacPage: React.FC = () => {
     });
   };
 
+  const isDanhMucTab = activeTab === 'danh_muc';
+  const isTagTab = activeTab === 'tag';
+
   return (
     <div className="flex flex-col h-[calc(100dvh-3.75rem)] md:h-[calc(100dvh-4.5rem)] relative">
       <div className="shrink-0 relative z-0">
         <TabGroup tabs={tabs} activeTab={activeTab} onChange={handleTabChange} />
       </div>
-      <div className="flex-1 min-h-0 flex flex-col mt-1.5 rounded-xl border border-border bg-card shadow-sm overflow-hidden relative z-0">
-        <DoiTacToolbar
-          data={filteredByTab}
-          nhomList={nhomList}
-          selectedCount={selectedIds.size}
-          onAdd={handleAdd}
-          onDeleteMany={handleDeleteMany}
-        />
+      {isDanhMucTab ? (
+        <div className="flex-1 min-h-0 overflow-hidden mt-1.5">
+          <DanhMucTab />
+        </div>
+      ) : isTagTab ? (
+        <div className="flex-1 min-h-0 overflow-hidden mt-1.5">
+          <TagTab />
+        </div>
+      ) : (
+        <div className="flex-1 min-h-0 flex flex-col mt-1.5 rounded-xl border border-border bg-card shadow-sm overflow-hidden relative z-0">
+          <DoiTacToolbar
+            data={filteredByTab}
+            nhomList={nhomList}
+            selectedCount={selectedIds.size}
+            onAdd={handleAdd}
+            onDeleteMany={handleDeleteMany}
+          />
 
-        <div className="flex-1 min-h-0 flex flex-col px-4 pb-4 pt-1">
-          <DoiTacList
+          <div className="flex-1 min-h-0 flex flex-col px-4 pb-4 pt-1">
+            <DoiTacList
             data={filteredList}
             columns={columns}
             selectedIds={selectedIds}
@@ -246,7 +277,8 @@ const DanhSachDoiTacPage: React.FC = () => {
             onView={handleView}
           />
         </div>
-      </div>
+        </div>
+      )}
 
       <AnimatePresence>
         {showForm && (
@@ -255,7 +287,42 @@ const DanhSachDoiTacPage: React.FC = () => {
             loaiDoiTac={activeTab}
             nhomList={nhomList}
             tagList={tagList}
+            defaultThuTu={nextThuTuForDoiTac}
             onClose={handleCloseForm}
+            onRequestAddNhom={
+              activeTab === 'nha_cung_cap' || activeTab === 'khach_hang'
+                ? () =>
+                    new Promise<NhomDoiTac | null>((resolve) => {
+                      addNhomResolveRef.current = resolve;
+                      setShowAddNhomFromDoiTac(true);
+                    })
+                : undefined
+            }
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showAddNhomFromDoiTac && (activeTab === 'nha_cung_cap' || activeTab === 'khach_hang') && (
+          <NhomFormDrawer
+            initialData={null}
+            defaultThuTu={nextThuTuForAddNhom}
+            defaultLoai={activeTab}
+            onClose={() => {
+              setShowAddNhomFromDoiTac(false);
+              addNhomResolveRef.current?.(null);
+              addNhomResolveRef.current = null;
+            }}
+            onSave={(data: NhomDoiTacFormValues) => {
+              createNhomFromDoiTac.mutate(data, {
+                onSuccess: (nhom) => {
+                  addNhomResolveRef.current?.(nhom);
+                  setShowAddNhomFromDoiTac(false);
+                  addNhomResolveRef.current = null;
+                },
+              });
+            }}
+            isSaving={createNhomFromDoiTac.isPending}
           />
         )}
       </AnimatePresence>

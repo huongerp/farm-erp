@@ -64,6 +64,14 @@ const DoiTacList: React.FC<Props> = ({
             <span className="text-sm text-muted-foreground">{item.thu_tu}</span>
           </td>
         );
+      case 'loai_doi_tac':
+        return (
+          <td key={col.id} className="px-4 py-3" style={getColumnCellStyle(col)}>
+            <span className="text-sm text-muted-foreground">
+              {item.loai_doi_tac === 'nha_cung_cap' ? t('doiTac.tabs.nhaCungCap') : t('doiTac.tabs.khachHang')}
+            </span>
+          </td>
+        );
       case 'ma_ncc':
         return (
           <td key={col.id} className="px-4 py-3" style={getColumnCellStyle(col)}>

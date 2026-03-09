@@ -5,6 +5,7 @@ import {
   getHangHoaById,
   createHangHoa,
   updateHangHoa,
+  updateHangHoaStatus,
   deleteHangHoa,
   deleteHangHoaMany,
 } from '../services/hang-hoa-service';
@@ -50,6 +51,19 @@ export const useUpdateHangHoa = (onSuccess?: () => void) => {
       qc.invalidateQueries({ queryKey: QUERY_KEY });
       toast.success(i18n.t('hangHoa.toast.updateSuccess'));
       onSuccess?.();
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+};
+
+export const useUpdateHangHoaStatus = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: import('../core/types').HangHoa['trang_thai'] }) =>
+      updateHangHoaStatus(id, status),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QUERY_KEY });
+      toast.success(i18n.t('hangHoa.toast.updateSuccess'));
     },
     onError: (err: Error) => toast.error(err.message),
   });

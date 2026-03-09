@@ -2,7 +2,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Users, Building, Shield, ArrowUpDown, ListOrdered, Briefcase, Monitor, MapPin, ClipboardList } from 'lucide-react';
+import { Users, Building, Shield, ArrowUpDown, ListOrdered, Briefcase, Monitor, MapPin } from 'lucide-react';
 import ModuleDashboardLayout from '../../components/dashboard/ModuleDashboardLayout';
 
 const SystemDashboard: React.FC = () => {
@@ -16,7 +16,8 @@ const SystemDashboard: React.FC = () => {
         { title: t('page.systemDashboard.department'), description: t('page.systemDashboard.departmentDesc'), icon: Building, color: "bg-indigo-500", action: () => navigate('/phong-ban') },
         { title: t('page.systemDashboard.jobLevel'), description: t('page.systemDashboard.jobLevelDesc'), icon: ListOrdered, color: "bg-orange-500", action: () => navigate('/cap-bac') },
         { title: t('page.systemDashboard.position'), description: t('page.systemDashboard.positionDesc'), icon: Briefcase, color: "bg-blue-500", action: () => navigate('/chuc-vu') },
-        { title: t('page.systemDashboard.functionsTasks'), description: t('page.systemDashboard.functionsTasksDesc'), icon: ClipboardList, color: "bg-sky-500", action: () => navigate('/chuc-nang-nhiem-vu') },
+        // Ẩn: Chức năng nhiệm vụ
+        // { title: t('page.systemDashboard.functionsTasks'), description: t('page.systemDashboard.functionsTasksDesc'), icon: ClipboardList, color: "bg-sky-500", action: () => navigate('/chuc-nang-nhiem-vu') },
         { title: t('page.systemDashboard.employee'), description: t('page.systemDashboard.employeeDesc'), icon: Users, color: "bg-emerald-500", action: () => navigate('/nhan-vien') },
       ]
     },
