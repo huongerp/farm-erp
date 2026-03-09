@@ -8,6 +8,7 @@ import Textarea from '../../../../components/ui/Textarea';
 import StatusToggle from '../../../../components/ui/StatusToggle';
 import { KhoFormValues, khoSchema } from '../core/schema';
 import { Kho } from '../core/types';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { useCreateKho, useUpdateKho } from '../hooks/use-kho';
 import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/GenericDrawer';
 import FormSection from '../../../../components/shared/FormSection';
@@ -31,7 +32,7 @@ const DanhSachKhoForm: React.FC<Props> = ({ initialData, onClose }) => {
     dia_chi: '',
     mo_ta: '',
     id_chi_nhanh: null,
-    trang_thai: 1,
+    trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG,
     thu_tu: 0,
   };
 
@@ -148,6 +149,10 @@ const DanhSachKhoForm: React.FC<Props> = ({ initialData, onClose }) => {
                   label={t('common.status')}
                   value={field.value}
                   onChange={field.onChange}
+                  activeValue={TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG}
+                  inactiveValue={TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG}
+                  activeLabel={t('common.activeStatus')}
+                  inactiveLabel={t('common.inactiveStatus')}
                   icon={<Power size={12} />}
                   required
                 />

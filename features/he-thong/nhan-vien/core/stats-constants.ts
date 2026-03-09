@@ -5,9 +5,10 @@
 import i18n from '../../../../lib/i18n';
 import { TRANG_THAI_NV } from '../../../../lib/constants';
 
-export type DateRangePresetId = 'this_week' | 'last_week' | 'this_month' | 'last_month' | 'this_quarter' | 'last_quarter' | 'this_year' | 'custom';
+export type DateRangePresetId = 'all' | 'this_week' | 'last_week' | 'this_month' | 'last_month' | 'this_quarter' | 'last_quarter' | 'this_year' | 'custom';
 
 export const DATE_RANGE_PRESETS: { id: DateRangePresetId; label: string }[] = [
+  { id: 'all', get label() { return i18n.t('employee.stats.preset.all'); } },
   { id: 'this_week', get label() { return i18n.t('employee.stats.preset.thisWeek'); } },
   { id: 'last_week', get label() { return i18n.t('employee.stats.preset.lastWeek'); } },
   { id: 'this_month', get label() { return i18n.t('employee.stats.preset.thisMonth'); } },

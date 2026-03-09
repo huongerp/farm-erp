@@ -4,6 +4,7 @@ import { AnimatePresence } from 'framer-motion';
 import AdminFormToolbar from './admin-form-toolbar';
 import AdminFormTable from './admin-form-table';
 import AdminFormDetail from './admin-form-detail';
+import AdminFormForm from './admin-form-form';
 import {
   useAdminForms,
   useApproveAdminFormByManager,
@@ -16,6 +17,7 @@ import {
   useRejectAdminFormsByHcns,
   useDeleteAdminForm,
   useDeleteAdminForms,
+  useCancelAdminForm,
 } from '../hooks/use-admin-form';
 import { useAdminFormManagedStore } from '../store/useAdminFormManagedStore';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
@@ -47,6 +49,7 @@ const AdminFormManagedTab: React.FC = () => {
   } = useAdminFormManagedStore();
 
   const [viewingItem, setViewingItem] = useState<AdminFormRequest | null>(null);
+  const [editingItem, setEditingItem] = useState<AdminFormRequest | null>(null);
 
   const { data: forms = [], isLoading } = useAdminForms();
   const approveManagerMutation = useApproveAdminFormByManager();
@@ -59,6 +62,7 @@ const AdminFormManagedTab: React.FC = () => {
   const rejectManyHcnsMutation = useRejectAdminFormsByHcns();
   const deleteMutation = useDeleteAdminForm();
   const deleteManyMutation = useDeleteAdminForms();
+  const cancelMutation = useCancelAdminForm();
 
   useEffect(() => {
     return () => resetState();
@@ -159,6 +163,19 @@ const AdminFormManagedTab: React.FC = () => {
       confirmText: CONFIRM_YES(),
       onConfirm: async () => {
         deleteMutation.mutate(id);
+      },
+    });
+  };
+
+  const handleCancel = (id: string) => {
+    confirm({
+      title: t('adminForm.cancelTitle'),
+      message: t('adminForm.cancelMessage'),
+      variant: 'warning',
+      confirmText: CONFIRM_YES(),
+      onConfirm: async () => {
+        cancelMutation.mutate(id);
+        setViewingItem(null);
       },
     });
   };
@@ -279,6 +296,7 @@ const AdminFormManagedTab: React.FC = () => {
           data={sortedList}
           isLoading={isLoading}
           onView={(item) => setViewingItem(item)}
+          onEdit={(item) => setEditingItem(item)}
           onDelete={handleDelete}
           useStore={useAdminFormManagedStore}
         />
@@ -289,10 +307,25 @@ const AdminFormManagedTab: React.FC = () => {
           <AdminFormDetail
             data={viewingItem}
             onClose={() => setViewingItem(null)}
+            onEdit={(item) => {
+              setViewingItem(null);
+              setEditingItem(item);
+            }}
+            onDelete={handleDelete}
+            onCancel={handleCancel}
             onApproveManager={handleApproveManager}
             onRejectManager={handleRejectManager}
             onApproveHcns={handleApproveHcns}
             onRejectHcns={handleRejectHcns}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {editingItem && (
+          <AdminFormForm
+            initialData={editingItem}
+            onClose={() => setEditingItem(null)}
           />
         )}
       </AnimatePresence>

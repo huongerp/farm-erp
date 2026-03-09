@@ -44,6 +44,12 @@ export function getDateRangeFromPreset(
   let label: string;
 
   switch (preset) {
+    case 'all': {
+      start = new Date(2000, 0, 1);
+      end = new Date(2030, 11, 31);
+      label = i18n.t('employee.stats.preset.all');
+      break;
+    }
     case 'this_week': {
       const day = now.getDay();
       const mon = now.getDate() - (day === 0 ? 6 : day - 1);

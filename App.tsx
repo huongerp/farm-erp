@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useEffect } from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import Layout from './components/layout/Layout';
 import Login from './pages/Login';
@@ -77,6 +77,14 @@ const ProtectedRoute = ({ children }: { children?: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+/** Redirect /kho-van/:moduleId và /kho-van/:moduleId/huong-dan sang /mua-hang (module kho đã chuyển sang Mua hàng). */
+const NavigateToMuaHangModule = () => {
+  const { moduleId } = useParams<{ moduleId: string }>();
+  const location = useLocation();
+  const to = moduleId ? `/mua-hang/${moduleId}${location.pathname.endsWith('/huong-dan') ? '/huong-dan' : ''}` : '/mua-hang';
+  return <Navigate to={to} replace />;
+};
+
 /** Đồng bộ trạng thái đăng nhập với Supabase Auth khi load app (kể cả sau khi redirect từ Google OAuth). */
 function useAuthSync() {
   useEffect(() => {
@@ -118,8 +126,8 @@ const App = () => {
         <Route path="/ho-so-nhan-vien/:id" element={<ProtectedRoute><EmployeeProfilePreviewPage /></ProtectedRoute>} />
         <Route path="/ho-so-tai-san/:id" element={<ProtectedRoute><HoSoTaiSanPreviewPage /></ProtectedRoute>} />
         <Route path="/phieu-kiem-ke/:id" element={<ProtectedRoute><PhieuKiemKePreviewPage /></ProtectedRoute>} />
-        <Route path="/kho-van/kiem-ke-kho/preview/:id" element={<ProtectedRoute><PhieuKiemKeKhoPreviewPage /></ProtectedRoute>} />
-        <Route path="/kho-van/phieu-kho/preview/:id" element={<ProtectedRoute><PhieuKhoPreviewPage /></ProtectedRoute>} />
+        <Route path="/mua-hang/kiem-ke-kho/preview/:id" element={<ProtectedRoute><PhieuKiemKeKhoPreviewPage /></ProtectedRoute>} />
+        <Route path="/mua-hang/phieu-kho/preview/:id" element={<ProtectedRoute><PhieuKhoPreviewPage /></ProtectedRoute>} />
         <Route path="/mua-hang/phieu-de-xuat-vat-tu/preview/:id" element={<ProtectedRoute><PhieuDeXuatVatTuPreviewPage /></ProtectedRoute>} />
         <Route path="/mua-hang/don-dat-hang/preview/:id" element={<ProtectedRoute><DonDatHangPreviewPage /></ProtectedRoute>} />
         <Route path="/mua-hang/thanh-toan-doi-tac/preview/:id" element={<ProtectedRoute><ThanhToanDoiTacPreviewPage /></ProtectedRoute>} />
@@ -159,9 +167,9 @@ const App = () => {
                   <Route path="/mua-hang" element={<SubmenuPage />} />
                   <Route path="/mua-hang/:moduleId/huong-dan" element={<ModuleGuidePage />} />
                   <Route path="/mua-hang/:moduleId" element={<SubmenuPage />} />
-                  <Route path="/kho-van" element={<SubmenuPage />} />
-                  <Route path="/kho-van/:moduleId/huong-dan" element={<ModuleGuidePage />} />
-                  <Route path="/kho-van/:moduleId" element={<SubmenuPage />} />
+                  <Route path="/kho-van" element={<Navigate to="/mua-hang" replace />} />
+                  <Route path="/kho-van/:moduleId/huong-dan" element={<NavigateToMuaHangModule />} />
+                  <Route path="/kho-van/:moduleId" element={<NavigateToMuaHangModule />} />
                   <Route path="/dieu-hanh" element={<SubmenuPage />} />
                   <Route path="/dieu-hanh/phan-tich-doi-thu/:id" element={<ProtectedRoute><PhanTichDoiThuDetailPage /></ProtectedRoute>} />
                   <Route path="/dieu-hanh/:moduleId/huong-dan" element={<ModuleGuidePage />} />

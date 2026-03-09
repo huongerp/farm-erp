@@ -48,7 +48,7 @@ export const useUpdateAssetStorageLocation = (onSuccess?: () => void) => {
 export const useUpdateAssetStorageLocationStatus = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ ids, status }: { ids: string[]; status: 0 | 1 }) =>
+    mutationFn: ({ ids, status }: { ids: string[]; status: import('../../../../lib/constants').TrangThaiHoatDong }) =>
       updateAssetStorageLocationStatus(ids, status),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['assetStorageLocations'] });

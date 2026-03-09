@@ -9,6 +9,7 @@ import StatusToggle from '../../../../components/ui/StatusToggle';
 import ParentSelect from '../../../../components/ui/ParentSelect';
 import { danhMucHangHoaSchema, type DanhMucHangHoaFormValues } from '../core/schema';
 import type { DanhMucHangHoa } from '../core/types';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { useCreateDanhMucHangHoa, useUpdateDanhMucHangHoa } from '../hooks/use-danh-muc-hang-hoa';
 import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/GenericDrawer';
 import FormSection from '../../../../components/shared/FormSection';
@@ -43,7 +44,7 @@ const DanhMucHangHoaForm: React.FC<Props> = ({
     id_cha: '',
     thu_tu: 0,
     mo_ta: '',
-    trang_thai: 1,
+    trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG,
   };
 
   const { register, handleSubmit, formState: { errors }, reset, control } = useForm<
@@ -175,6 +176,10 @@ const DanhMucHangHoaForm: React.FC<Props> = ({
                   label={t('common.status')}
                   value={field.value}
                   onChange={field.onChange}
+                  activeValue={TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG}
+                  inactiveValue={TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG}
+                  activeLabel={t('common.activeStatus')}
+                  inactiveLabel={t('common.inactiveStatus')}
                   icon={<Power size={12} />}
                   required
                 />

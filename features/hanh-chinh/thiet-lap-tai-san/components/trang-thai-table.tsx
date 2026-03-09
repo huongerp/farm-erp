@@ -5,6 +5,7 @@ import GenericTable from '../../../../components/shared/GenericTable';
 import Tooltip from '../../../../components/ui/Tooltip';
 import { formatDateTimeShort } from '../../../../lib/utils';
 import { AssetStatus } from '../core/types';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { useTrangThaiStore } from '../store/useTrangThaiStore';
 
 interface Props {
@@ -29,14 +30,14 @@ const TrangThaiTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, on
     setSort,
   } = useTrangThaiStore();
 
-  const renderStatusBadge = (status: number) =>
-    status === 1 ? (
+  const renderStatusBadge = (status: string) =>
+    status === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? (
       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
-        {t('common.active')}
+        {status}
       </span>
     ) : (
       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border">
-        {t('common.inactive')}
+        {status}
       </span>
     );
 

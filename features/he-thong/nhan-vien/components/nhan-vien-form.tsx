@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
@@ -23,7 +23,7 @@ import { getTodayISO } from '../../../../lib/utils';
 import { Employee } from '../core/types';
 import { getDefaultEmployeeFormValues, employeeToFormValues } from '../utils/employee-to-form';
 import { useCreateEmployee, useUpdateEmployee } from '../hooks/use-nhan-vien';
-import { useDepartments } from '../../phong-ban/hooks/use-phong-ban';
+import { useDepartments } from '@/features/he-thong/phong-ban/hooks/use-phong-ban';
 import { usePositions } from '../../chuc-vu/hooks/use-chuc-vu';
 import { useJobLevels } from '../../cap-bac/hooks/use-cap-bac';
 import { useBranches } from '../../chi-nhanh/hooks/use-chi-nhanh';
@@ -58,37 +58,55 @@ const EmployeeForm: React.FC<Props> = ({ initialData, prefillData, onClose }) =>
     defaultValues,
   });
   const selectedPhongBanId = watch('id_phong_ban');
+  const selectedChucVuId = watch('id_chuc_vu');
+  const selectedPosition = selectedChucVuId ? positions.find((p) => p.id === selectedChucVuId) : undefined;
+  const capBacFromChucVu = !!selectedPosition?.cap_bac_id;
 
-  // Prepare options for Combobox
-  const departmentOptions = departments
-    .filter((d) => d.trang_thai === TRANG_THAI.DANG_DUNG)
-    .map((d) => ({
-      label: d.ten_phong_ban,
-      value: d.id,
-      subLabel: undefined,
-    }));
+  // Cấp bậc tra cứu theo chức vụ: đồng bộ id_cap_bac khi chọn chức vụ hoặc khi positions vừa load xong
+  useEffect(() => {
+    if (!selectedChucVuId || !positions.length) return;
+    const pos = positions.find((p) => p.id === selectedChucVuId);
+    if (pos?.cap_bac_id) {
+      setValue('id_cap_bac', pos.cap_bac_id, { shouldValidate: false });
+    }
+  }, [selectedChucVuId, positions, setValue]);
 
-  // Chức vụ: chỉ hiển thị theo phòng ban đã chọn (chọn phòng ban → sổ ra chức vụ)
-  const activePositions = positions.filter((p) => p.trang_thai === TRANG_THAI.DANG_DUNG);
+  // Prepare options for Combobox – hiển thị tất cả phòng ban và chức vụ (không lọc trạng thái Ngừng)
+  const departmentOptions = departments.map((d) => ({
+    label: d.ten_phong_ban,
+    value: d.id,
+    subLabel: undefined,
+  }));
+
+  // Chức vụ: hiển thị theo phòng ban đã chọn (chọn phòng ban → sổ ra chức vụ), hiển thị tất cả
   const positionOptions = selectedPhongBanId
-    ? activePositions
+    ? positions
         .filter((p) => p.phong_ban_id === selectedPhongBanId)
         .map((p) => ({
           label: p.ten_chuc_vu,
           value: p.id,
           subLabel: p.ten_cap_bac ?? p.ten_phong_ban ?? undefined,
         }))
-    : activePositions.map((p) => ({
+    : positions.map((p) => ({
         label: p.ten_chuc_vu,
         value: p.id,
         subLabel: p.ten_phong_ban ?? p.ten_cap_bac ?? undefined,
       }));
 
-  const jobLevelOptions = jobLevels.filter((l: any) => l.trang_thai === TRANG_THAI.DANG_DUNG).map((l: any) => ({
-      label: l.ten_cap_bac,
-      value: l.id,
-      subLabel: String(l.cap_bac),
-  }));
+  // Danh sách cấp bậc: luôn gồm cấp bậc đang chọn theo chức vụ để Combobox hiển thị đúng
+  const jobLevelOptions = useMemo(() => {
+    const active = jobLevels
+      .filter((l: any) => l.trang_thai === TRANG_THAI.DANG_DUNG)
+      .map((l: any) => ({ label: l.ten_cap_bac, value: l.id, subLabel: String(l.cap_bac) }));
+    const fromPosId = selectedPosition?.cap_bac_id;
+    if (fromPosId && !active.some((o) => o.value === fromPosId)) {
+      const level = jobLevels.find((l: any) => l.id === fromPosId);
+      const label = level?.ten_cap_bac ?? selectedPosition?.ten_cap_bac ?? fromPosId;
+      const subLabel = level?.cap_bac != null ? String(level.cap_bac) : undefined;
+      return [{ label, value: fromPosId, subLabel }, ...active];
+    }
+    return active;
+  }, [jobLevels, selectedPosition?.cap_bac_id, selectedPosition?.ten_cap_bac]);
 
   const branchOptions = branches
     .filter((b) => b.trang_thai === TRANG_THAI.DANG_DUNG)
@@ -291,7 +309,7 @@ const EmployeeForm: React.FC<Props> = ({ initialData, prefillData, onClose }) =>
                                 onChange={(val) => {
                                     field.onChange(val);
                                     const pos = positions.find((p) => p.id === val);
-                                    if (pos?.cap_bac_id) setValue('id_cap_bac', pos.cap_bac_id);
+                                    setValue('id_cap_bac', pos?.cap_bac_id ?? '');
                                 }}
                                 placeholder={selectedPhongBanId ? t('employee.form.positionPlaceholder') : t('employee.form.selectDepartmentFirst')}
                                 error={errors.id_chuc_vu?.message}
@@ -310,6 +328,7 @@ const EmployeeForm: React.FC<Props> = ({ initialData, prefillData, onClose }) =>
                                 value={field.value || ''}
                                 onChange={field.onChange}
                                 placeholder={t('employee.form.levelPlaceholder')}
+                                disabled={capBacFromChucVu}
                             />
                         )}
                     />
@@ -319,10 +338,12 @@ const EmployeeForm: React.FC<Props> = ({ initialData, prefillData, onClose }) =>
                         render={({ field }) => (
                             <Combobox
                                 label={t('employee.form.branch')}
+                                required
                                 options={branchOptions}
                                 value={field.value || ''}
                                 onChange={field.onChange}
                                 placeholder={t('employee.form.branchPlaceholder')}
+                                error={errors.id_chi_nhanh?.message}
                             />
                         )}
                     />
@@ -342,12 +363,14 @@ const EmployeeForm: React.FC<Props> = ({ initialData, prefillData, onClose }) =>
                         render={({ field }) => (
                             <Combobox
                                 label={t('employee.form.workStatus')}
+                                required
                                 options={statusOptions}
                                 value={field.value}
                                 onChange={(val) => field.onChange(val)}
                                 placeholder={t('employee.form.workStatusPlaceholder')}
                                 icon={<CircleDot size={16} className="text-muted-foreground" />}
                                 searchable={false}
+                                error={errors.trang_thai?.message}
                             />
                         )}
                     />

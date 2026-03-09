@@ -7,6 +7,7 @@ import FilterChipMultiSelect from '../../../../components/shared/FilterChipMulti
 import { useKiemKeKhoStore } from '../store/useKiemKeKhoStore';
 import { useEmployees } from '@/features/he-thong/nhan-vien/hooks/use-nhan-vien';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { TRANG_THAI_DOT_OPTIONS } from '../core/constants';
 import { useKiemKeKhoFilterCounts } from '../hooks/use-kiem-ke-kho-filter-counts';
 import type { DotKiemKeKho } from '../core/types';
@@ -67,7 +68,7 @@ const KiemKeKhoToolbar: React.FC<Props> = ({
   const idKhoOptions = useMemo(
     () =>
       khoList
-        .filter((k) => k.trang_thai === 1)
+        .filter((k) => k.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG)
         .map((k) => ({
           label: k.ten_kho,
           value: k.id,

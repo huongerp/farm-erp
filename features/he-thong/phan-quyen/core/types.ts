@@ -1,3 +1,4 @@
+import type { TrangThaiHoatDong } from '../../../../lib/constants';
 
 /** 6 quyền: Xem, Thêm, Sửa, Xoá, Quản trị, Tất cả */
 export type ActionType = 'view' | 'create' | 'update' | 'delete' | 'admin' | 'all';
@@ -19,7 +20,7 @@ export interface PositionPermission {
   mo_ta: string | null;
   so_nhan_vien: number;
   quyen_han: ModulePermission[];
-  trang_thai: 0 | 1;
+  trang_thai: TrangThaiHoatDong;
   tg_cap_nhat: string;
 }
 

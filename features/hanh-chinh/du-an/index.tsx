@@ -74,7 +74,7 @@ const DuAnPage: React.FC = () => {
         (item.ten_phong_ban && item.ten_phong_ban.toLowerCase().includes(searchLower)) ||
         (item.muc_tieu && item.muc_tieu.toLowerCase().includes(searchLower)) ||
         (item.mo_ta && item.mo_ta.toLowerCase().includes(searchLower));
-      const statusKey = item.trang_thai === 1 ? 'Active' : 'Inactive';
+      const statusKey = item.trang_thai === 'Đang hoạt động' ? 'Active' : 'Inactive';
       const statusArr = f.status ?? [];
       const phongBanArr = f.id_phong_ban ?? [];
       const namArr = f.nam_bat_dau ?? [];
@@ -183,7 +183,7 @@ const DuAnPage: React.FC = () => {
         [t('duAn.store.phongBanCol')]: d.ten_phong_ban ?? '—',
         [t('duAn.store.ngayBatDauCol')]: formatDate(d.ngay_bat_dau),
         [t('duAn.store.ngayKetThucCol')]: formatDate(d.ngay_ket_thuc),
-        [t('duAn.store.statusCol')]: d.trang_thai === 1 ? t('common.activeStatus') : t('common.inactiveStatus'),
+        [t('duAn.store.statusCol')]: d.trang_thai,
       })),
     [sortedList, t]
   );
@@ -201,7 +201,7 @@ const DuAnPage: React.FC = () => {
         ngay_ket_thuc: String(row.ngay_ket_thuc ?? '').trim(),
         muc_tieu: row.muc_tieu != null ? String(row.muc_tieu) : undefined,
         mo_ta: row.mo_ta != null ? String(row.mo_ta) : undefined,
-        trang_thai: row.trang_thai != null ? Number(row.trang_thai) : undefined,
+        trang_thai: row.trang_thai == null ? 'Đang hoạt động' : (row.trang_thai === 0 || String(row.trang_thai).trim() === 'Ngừng hoạt động' ? 'Ngừng hoạt động' : 'Đang hoạt động'),
       }));
       await importMutation.mutateAsync(rows);
     },

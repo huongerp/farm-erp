@@ -9,7 +9,6 @@ import { NHAN_SU_MODULE_SLUGS, getNhanSuModuleTitleKeyBySlug } from '../../lib/n
 import { MARKETING_MODULE_SLUGS, getMarketingModuleTitleKeyBySlug } from '../../lib/marketing-menu';
 import { TAI_CHINH_MODULE_SLUGS, getTaiChinhModuleTitleKeyBySlug } from '../../lib/tai-chinh-menu';
 import { MUA_HANG_MODULE_SLUGS, getMuaHangModuleTitleKeyBySlug } from '../../lib/mua-hang-menu';
-import { KHO_VAN_MODULE_SLUGS, getKhoVanModuleTitleKeyBySlug } from '../../lib/kho-van-menu';
 import { DIEU_HANH_MODULE_SLUGS, getDieuHanhModuleTitleKeyBySlug } from '../../lib/dieu-hanh-menu';
 
 interface RouteConfig {
@@ -50,12 +49,6 @@ interface RouteConfig {
       { label: t(getMuaHangModuleTitleKeyBySlug(slug)), parentPath: '/mua-hang' },
     ])
   );
-  const khoVanModuleRoutes = Object.fromEntries(
-    KHO_VAN_MODULE_SLUGS.map((slug) => [
-      `/kho-van/${slug}`,
-      { label: t(getKhoVanModuleTitleKeyBySlug(slug)), parentPath: '/kho-van' },
-    ])
-  );
   const dieuHanhModuleRoutes = Object.fromEntries(
     DIEU_HANH_MODULE_SLUGS.map((slug) => [
       `/dieu-hanh/${slug}`,
@@ -75,7 +68,6 @@ interface RouteConfig {
     '/marketing': { label: t('breadcrumb.marketing'), parentPath: '/' },
     '/tai-chinh': { label: t('breadcrumb.taiChinh'), parentPath: '/' },
     '/mua-hang': { label: t('breadcrumb.muaHang'), parentPath: '/' },
-    '/kho-van': { label: t('breadcrumb.khoVan'), parentPath: '/' },
     '/thiet-bi': { label: t('breadcrumb.deviceManagement') },
 
     // --- THIẾT BỊ ---
@@ -115,11 +107,8 @@ interface RouteConfig {
     // --- TÀI CHÍNH (module con) ---
     ...taiChinhModuleRoutes,
 
-    // --- MUA HÀNG (module con) ---
+    // --- MUA HÀNG (module con, gồm cả quản lý kho) ---
     ...muaHangModuleRoutes,
-
-    // --- KHO VẬN (module con) ---
-    ...khoVanModuleRoutes,
 
     // --- ĐIỀU HÀNH (module con) ---
     ...dieuHanhModuleRoutes,

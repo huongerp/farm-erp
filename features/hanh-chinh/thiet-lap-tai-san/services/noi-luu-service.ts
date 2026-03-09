@@ -3,8 +3,18 @@ import { AssetStorageLocationFormValues } from '../core/schema';
 import { MOCK_ASSET_STORAGE_LOCATIONS } from '@/mocks/hanh-chinh';
 import { getBranches } from '../../../he-thong/chi-nhanh/services/chi-nhanh-service';
 import i18n from '../../../../lib/i18n';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 
-let dbNoiLuu: AssetStorageLocation[] = JSON.parse(JSON.stringify(MOCK_ASSET_STORAGE_LOCATIONS));
+function normalizeTrangThai(val: unknown): import('../../../../lib/constants').TrangThaiHoatDong {
+  if (val === TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG) return TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG;
+  if (val === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG) return TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
+  return Number(val) === 0 ? TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG : TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
+}
+
+let dbNoiLuu: AssetStorageLocation[] = JSON.parse(JSON.stringify(MOCK_ASSET_STORAGE_LOCATIONS)).map((i: AssetStorageLocation) => ({
+  ...i,
+  trang_thai: normalizeTrangThai(i.trang_thai),
+}));
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -24,7 +34,7 @@ export const createAssetStorageLocation = async (
     id: `noi-luu-${Date.now()}`,
     ...data,
     ten_chi_nhanh: branchName,
-    trang_thai: data.trang_thai as 0 | 1,
+    trang_thai: data.trang_thai,
     tg_tao: now,
     tg_cap_nhat: now,
   };
@@ -45,7 +55,7 @@ export const updateAssetStorageLocation = async (
     ...dbNoiLuu[index],
     ...data,
     ten_chi_nhanh: branchName,
-    trang_thai: data.trang_thai as 0 | 1,
+    trang_thai: data.trang_thai,
     tg_cap_nhat: new Date().toISOString(),
   };
   dbNoiLuu[index] = updated;
@@ -54,7 +64,7 @@ export const updateAssetStorageLocation = async (
 
 export const updateAssetStorageLocationStatus = async (
   ids: string[],
-  status: 0 | 1
+  status: import('../../../../lib/constants').TrangThaiHoatDong
 ): Promise<void> => {
   await delay(600);
   dbNoiLuu = dbNoiLuu.map((i) =>

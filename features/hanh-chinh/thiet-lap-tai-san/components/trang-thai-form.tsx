@@ -13,13 +13,14 @@ import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
 import { AssetStatus } from '../core/types';
 import { AssetStatusFormValues, assetStatusSchema } from '../core/schema';
 import { useCreateAssetStatus, useUpdateAssetStatus } from '../hooks/use-trang-thai';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 
 const DEFAULT_VALUES: AssetStatusFormValues = {
   ma: '',
   ten: '',
   thu_tu: 0,
   ghi_chu: '',
-  trang_thai: 1,
+  trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG,
 };
 
 interface Props {

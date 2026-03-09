@@ -6,12 +6,14 @@ import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import { useTrangThaiDoiTacStore } from '../store/useTrangThaiDoiTacStore';
 import type { TrangThaiDoiTac } from '../core/types';
+import type { TrangThaiHoatDong } from '../../../../lib/constants';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 
 interface Props {
   items?: TrangThaiDoiTac[];
   onAdd: () => void;
   onDeleteMany: (ids: string[]) => void;
-  onStatusChangeMany: (ids: string[], status: 0 | 1) => void;
+  onStatusChangeMany: (ids: string[], status: TrangThaiHoatDong) => void;
 }
 
 const TrangThaiDoiTacToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onStatusChangeMany }) => {
@@ -35,8 +37,8 @@ const TrangThaiDoiTacToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMa
 
   const statusOptions = useMemo(
     () => [
-      { label: t('common.activeStatus'), value: 'Active', count: items.filter((i) => i.trang_thai === 1).length },
-      { label: t('common.inactiveStatus'), value: 'Inactive', count: items.filter((i) => i.trang_thai === 0).length },
+      { label: t('common.activeStatus'), value: 'Active', count: items.filter((i) => i.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG).length },
+      { label: t('common.inactiveStatus'), value: 'Inactive', count: items.filter((i) => i.trang_thai === TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG).length },
     ],
     [t, items]
   );
@@ -91,7 +93,7 @@ const TrangThaiDoiTacToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMa
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       onDeleteMany={() => onDeleteMany(Array.from(selectedIds))}
-      onStatusChangeMany={(status) => onStatusChangeMany(Array.from(selectedIds), status)}
+      onStatusChangeMany={(numStatus) => onStatusChangeMany(Array.from(selectedIds), numStatus === 1 ? TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG : TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG)}
       columns={columns}
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}

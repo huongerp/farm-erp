@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Edit, FileText, Trash2 } from 'lucide-react';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericTable from '../../../../components/shared/GenericTable';
-import { formatDateTimeShort } from '../../../../lib/utils';
+import { formatDate, formatDateTimeShort } from '../../../../lib/utils';
 import { AdminFormRequest } from '../core/types';
 import { getAdminFormShiftLabel, getAdminFormStatusLabel } from '../core/constants';
 import { getAdminFormTypeLabel } from '../../thiet-lap-cong-luong/core/constants';
@@ -112,7 +112,17 @@ const AdminFormTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, onDe
           </span>
         );
       case 'ngay':
-        return <span className="text-sm text-foreground tabular-nums">{item.ngay}</span>;
+        return (
+          <span className="text-sm text-foreground tabular-nums">
+            {item.ngay ? formatDate(item.ngay) : item.ngay}
+          </span>
+        );
+      case 'ly_do':
+        return (
+          <span className="text-sm text-foreground line-clamp-2 max-w-[280px]" title={item.ly_do || undefined}>
+            {item.ly_do || '—'}
+          </span>
+        );
       case 'trang_thai':
         return renderStatusBadge(item.trang_thai);
       case 'tg_cap_nhat':

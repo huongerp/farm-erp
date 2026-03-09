@@ -11,6 +11,7 @@ import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
 import FormSection from '../../../../components/shared/FormSection';
 import { functionSchema, type FunctionFormValues } from '../core/schema';
 import type { DeptFunction } from '../core/types';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { useCreateFunction, useUpdateFunction } from '../hooks/use-chuc-nang-nhiem-vu';
 import Combobox from '../../../../components/ui/Combobox';
 import { useDepartments } from '../../phong-ban/hooks/use-phong-ban';
@@ -21,7 +22,7 @@ const DEFAULT_VALUES: FunctionFormValues = {
   ten_chuc_nang: '',
   mo_ta: '',
   thu_tu: 0,
-  trang_thai: 1,
+  trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG,
 };
 
 interface Props {

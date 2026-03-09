@@ -4,6 +4,7 @@ import { Edit, Trash2, Power, ClipboardList } from 'lucide-react';
 import GenericTable from '../../../../components/shared/GenericTable';
 import { useTaskTableStore } from '../store/useFunctionTaskStore';
 import type { Task } from '../core/types';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 
 interface Props {
   data: Task[];
@@ -27,14 +28,14 @@ const TaskTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onStatu
     setSort,
   } = useTaskTableStore();
 
-  const renderStatusBadge = (status: number) =>
-    status === 1 ? (
+  const renderStatusBadge = (status: string) =>
+    status === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? (
       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
-        {t('chucNangNhiemVu.active')}
+        {status}
       </span>
     ) : (
       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border">
-        {t('chucNangNhiemVu.inactive')}
+        {status}
       </span>
     );
 

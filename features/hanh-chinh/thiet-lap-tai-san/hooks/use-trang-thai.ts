@@ -48,7 +48,7 @@ export const useUpdateAssetStatus = (onSuccess?: () => void) => {
 export const useUpdateAssetStatusStatus = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ ids, status }: { ids: string[]; status: 0 | 1 }) =>
+    mutationFn: ({ ids, status }: { ids: string[]; status: import('../../../../lib/constants').TrangThaiHoatDong }) =>
       updateAssetStatusStatus(ids, status),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['assetStatuses'] });

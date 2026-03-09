@@ -46,7 +46,7 @@ export const useUpdatePayrollAdminFormGroup = (onSuccess?: () => void) => {
 export const useUpdatePayrollAdminFormGroupStatus = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ ids, status }: { ids: string[]; status: 0 | 1 }) =>
+    mutationFn: ({ ids, status }: { ids: string[]; status: import('../../../../lib/constants').TrangThaiHoatDong }) =>
       updatePayrollAdminFormGroupStatus(ids, status),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['payrollAdminFormGroups'] });

@@ -122,6 +122,10 @@ const DepartmentForm: React.FC<Props> = ({ initialData, allDepartments, onClose 
                   label={t('common.status')}
                   value={field.value}
                   onChange={field.onChange}
+                  activeValue={TRANG_THAI.DANG_DUNG}
+                  inactiveValue={TRANG_THAI.NGUNG}
+                  activeLabel={t('department.active')}
+                  inactiveLabel={t('department.inactive')}
                   icon={<Power size={12} />}
                   required
                 />

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import i18n from '../../../../lib/i18n';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 
 export const nhaCungCapSchema = z.object({
   ma_ncc: z
@@ -17,9 +18,7 @@ export const nhaCungCapSchema = z.object({
   email: z.string().optional(),
   mo_ta: z.string().optional(),
   tag_ids: z.array(z.string()).default([]),
-  trang_thai: z.coerce.number().refine((val) => val === 0 || val === 1, {
-    message: i18n.t('nhaCungCap.validation.statusInvalid'),
-  }),
+  trang_thai: z.enum([TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG, TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG]),
   thu_tu: z.coerce.number().min(0, i18n.t('nhaCungCap.validation.thuTuMin')),
 });
 

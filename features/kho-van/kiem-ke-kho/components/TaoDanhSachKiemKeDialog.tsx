@@ -8,6 +8,7 @@ import { List, X } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import MultiSelect from '../../../../components/ui/MultiSelect';
 import { cn } from '../../../../lib/utils';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { getAllHangHoa } from '../../danh-sach-hang-hoa/services/hang-hoa-service';
 import { getAllDanhMucHangHoa } from '../../danh-muc-hang-hoa/services/danh-muc-hang-hoa-service';
 import { useQuery } from '@tanstack/react-query';
@@ -42,10 +43,10 @@ const TaoDanhSachKiemKeDialog: React.FC<Props> = ({
   });
 
   const hangHoaOptions = hangHoaList
-    .filter((h) => h.trang_thai === 1)
+    .filter((h) => h.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG)
     .map((h) => ({ label: h.ten_hang, value: h.id, subLabel: h.ma_hang }));
   const danhMucOptions = danhMucList
-    .filter((d) => d.trang_thai === 1)
+    .filter((d) => d.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG)
     .map((d) => ({ label: d.ten_danh_muc, value: d.id, subLabel: d.ma_danh_muc }));
 
   const handleConfirm = useCallback(() => {

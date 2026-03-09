@@ -1,3 +1,5 @@
+import type { TrangThaiHoatDong } from '../../../../lib/constants';
+
 /** Phiên đăng nhập trên thiết bị - quản lý tài khoản đã đăng nhập trên những thiết bị nào */
 
 export interface LoginDevice {
@@ -21,8 +23,8 @@ export interface LoginDevice {
   /** true = thiết bị hiện tại đang xem trang này */
   la_thiet_bi_hien_tai: boolean;
 
-  /** 1: Đang hoạt động | 0: Đã đăng xuất từ xa (vô hiệu hóa cho đến khi đăng nhập lại) */
-  trang_thai: 0 | 1;
+  /** Đang hoạt động | Ngừng hoạt động (lưu text trong DB) */
+  trang_thai: TrangThaiHoatDong;
 
   tg_tao?: string;
   tg_cap_nhat?: string;

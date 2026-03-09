@@ -1,14 +1,15 @@
 import type { NhaCungCap, NhomNhaCungCap, Tag } from '../core/types';
 import type { NhaCungCapFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const ts = () => new Date().toISOString();
 
 const seedNhom: NhomNhaCungCap[] = [
-  { id: 'nhom-1', ma_nhom: 'VT', ten_nhom: 'Vật tư', thu_tu: 0, trang_thai: 1 },
-  { id: 'nhom-2', ma_nhom: 'NL', ten_nhom: 'Nguyên liệu', thu_tu: 1, trang_thai: 1 },
-  { id: 'nhom-3', ma_nhom: 'DV', ten_nhom: 'Dịch vụ', thu_tu: 2, trang_thai: 1 },
+  { id: 'nhom-1', ma_nhom: 'VT', ten_nhom: 'Vật tư', thu_tu: 0, trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG },
+  { id: 'nhom-2', ma_nhom: 'NL', ten_nhom: 'Nguyên liệu', thu_tu: 1, trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG },
+  { id: 'nhom-3', ma_nhom: 'DV', ten_nhom: 'Dịch vụ', thu_tu: 2, trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG },
 ];
 
 const seedTag: Tag[] = [
@@ -99,7 +100,7 @@ export const createNhaCungCap = async (data: NhaCungCapFormValues): Promise<NhaC
     email: data.email?.trim() || undefined,
     mo_ta: data.mo_ta?.trim() || undefined,
     tag_ids: Array.isArray(data.tag_ids) ? data.tag_ids : [],
-    trang_thai: data.trang_thai as 0 | 1,
+    trang_thai: data.trang_thai,
     thu_tu: data.thu_tu ?? 0,
     tg_tao: ts(),
     tg_cap_nhat: ts(),
@@ -128,7 +129,7 @@ export const updateNhaCungCap = async (id: string, data: NhaCungCapFormValues): 
     email: data.email?.trim() || undefined,
     mo_ta: data.mo_ta?.trim() || undefined,
     tag_ids: Array.isArray(data.tag_ids) ? data.tag_ids : [],
-    trang_thai: data.trang_thai as 0 | 1,
+    trang_thai: data.trang_thai,
     thu_tu: data.thu_tu ?? dbNCC[index].thu_tu,
     tg_cap_nhat: ts(),
   };

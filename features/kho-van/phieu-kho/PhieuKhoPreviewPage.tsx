@@ -1,6 +1,6 @@
 /**
  * Trang preview phiếu kho (mở tab mới) – toolbar Đóng + Tải PDF + In.
- * Route: /kho-van/phieu-kho/preview/:id
+ * Route: /mua-hang/phieu-kho/preview/:id
  */
 import React, { useCallback, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';

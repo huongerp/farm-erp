@@ -10,6 +10,7 @@ import Select from '../../../../components/ui/Select';
 import MultiSelect from '../../../../components/ui/MultiSelect';
 import { DoiTacFormValues, doiTacSchema } from '../core/schema';
 import type { DoiTac } from '../core/types';
+import { TRANG_THAI_DOI_TAC } from '../core/types';
 import type { NhomDoiTac, Tag as TagType } from '../core/types';
 import { useCreateDoiTac, useUpdateDoiTac, useCreateTag } from '../hooks/use-doi-tac';
 import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/GenericDrawer';
@@ -56,7 +57,7 @@ const DoiTacForm: React.FC<Props> = ({ initialData, loaiDoiTac, nhomList, tagLis
     email: '',
     mo_ta: '',
     tag_ids: [],
-    trang_thai: 1,
+    trang_thai: TRANG_THAI_DOI_TAC.DANG_HOAT_DONG,
     thu_tu: 0,
   };
 
@@ -231,6 +232,10 @@ const DoiTacForm: React.FC<Props> = ({ initialData, loaiDoiTac, nhomList, tagLis
                   label={t('common.status')}
                   value={field.value}
                   onChange={field.onChange}
+                  activeValue={TRANG_THAI_DOI_TAC.DANG_HOAT_DONG}
+                  inactiveValue={TRANG_THAI_DOI_TAC.NGUNG_HOAT_DONG}
+                  activeLabel={t('common.activeStatus')}
+                  inactiveLabel={t('common.inactiveStatus')}
                   icon={<Power size={12} />}
                   required
                 />

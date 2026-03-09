@@ -7,6 +7,7 @@ import { formatDateTimeShort } from '../../../../lib/utils';
 import type { TrangThaiDoiTac } from '../core/types';
 import { useTrangThaiDoiTacStore } from '../store/useTrangThaiDoiTacStore';
 import { TRANG_THAI_MAU_DEFAULT } from '../core/constants';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 
 interface Props {
   data: TrangThaiDoiTac[];
@@ -30,16 +31,17 @@ const TrangThaiDoiTacTable: React.FC<Props> = ({ data, isLoading, onEdit, onDele
     setSort,
   } = useTrangThaiDoiTacStore();
 
-  const renderStatusBadge = (status: number) =>
-    status === 1 ? (
-      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
-        {t('common.activeStatus')}
-      </span>
-    ) : (
-      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border">
-        {t('common.inactiveStatus')}
-      </span>
-    );
+  const renderStatusBadge = (status: string) => (
+    <span
+      className={
+        status === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG
+          ? 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20'
+          : 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border'
+      }
+    >
+      {status}
+    </span>
+  );
 
   const renderCell = (colId: string, item: TrangThaiDoiTac) => {
     switch (colId) {

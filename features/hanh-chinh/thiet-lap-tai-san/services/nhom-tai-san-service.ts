@@ -2,8 +2,18 @@ import { AssetGroup } from '../core/types';
 import { AssetGroupFormValues } from '../core/schema';
 import { MOCK_ASSET_GROUPS } from '@/mocks/hanh-chinh';
 import i18n from '../../../../lib/i18n';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 
-let dbNhomTaiSan: AssetGroup[] = JSON.parse(JSON.stringify(MOCK_ASSET_GROUPS));
+function normalizeTrangThai(val: unknown): import('../../../../lib/constants').TrangThaiHoatDong {
+  if (val === TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG) return TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG;
+  if (val === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG) return TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
+  return Number(val) === 0 ? TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG : TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
+}
+
+let dbNhomTaiSan: AssetGroup[] = JSON.parse(JSON.stringify(MOCK_ASSET_GROUPS)).map((i: AssetGroup) => ({
+  ...i,
+  trang_thai: normalizeTrangThai(i.trang_thai),
+}));
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -20,7 +30,7 @@ export const createAssetGroup = async (
   const newItem: AssetGroup = {
     id: `nhom-ts-${Date.now()}`,
     ...data,
-    trang_thai: data.trang_thai as 0 | 1,
+    trang_thai: data.trang_thai,
     phuong_phap_khau_hao: data.phuong_phap_khau_hao,
     ty_le_khau_hao: data.ty_le_khau_hao ?? null,
     so_nam_su_dung: data.so_nam_su_dung ?? null,
@@ -41,7 +51,7 @@ export const updateAssetGroup = async (
   const updated: AssetGroup = {
     ...dbNhomTaiSan[index],
     ...data,
-    trang_thai: data.trang_thai as 0 | 1,
+    trang_thai: data.trang_thai,
     phuong_phap_khau_hao: data.phuong_phap_khau_hao,
     ty_le_khau_hao: data.ty_le_khau_hao ?? null,
     so_nam_su_dung: data.so_nam_su_dung ?? null,
@@ -53,7 +63,7 @@ export const updateAssetGroup = async (
 
 export const updateAssetGroupStatus = async (
   ids: string[],
-  status: 0 | 1
+  status: import('../../../../lib/constants').TrangThaiHoatDong
 ): Promise<void> => {
   await delay(600);
   dbNhomTaiSan = dbNhomTaiSan.map((i) =>

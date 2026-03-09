@@ -6,7 +6,7 @@ import Tooltip from '../../../../components/ui/Tooltip';
 import { useJobLevelStore } from '../store/useJobLevelStore';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
-import { TRANG_THAI, type TrangThai } from '../../../../lib/constants';
+import { TRANG_THAI_HOAT_DONG, type TrangThaiHoatDong } from '../../../../lib/constants';
 
 interface Props {
   items?: { trang_thai: string }[];
@@ -14,7 +14,7 @@ interface Props {
   onExport: () => void;
   onImport: () => void;
   onDeleteMany: (ids: string[]) => void;
-  onStatusChangeMany: (ids: string[], status: TrangThai) => void;
+  onStatusChangeMany: (ids: string[], status: TrangThaiHoatDong) => void;
 }
 
 const JobLevelToolbar: React.FC<Props> = ({
@@ -35,8 +35,8 @@ const JobLevelToolbar: React.FC<Props> = ({
 
   const statusOptions = useMemo(
     () => [
-      { label: t('common.activeStatus'), value: 'Active', count: items.filter((i) => i.trang_thai === TRANG_THAI.DANG_DUNG).length },
-      { label: t('common.inactiveStatus'), value: 'Inactive', count: items.filter((i) => i.trang_thai === TRANG_THAI.NGUNG).length },
+      { label: t('common.activeStatus'), value: 'Active', count: items.filter((i) => i.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG).length },
+      { label: t('common.inactiveStatus'), value: 'Inactive', count: items.filter((i) => i.trang_thai === TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG).length },
     ],
     [t, items]
   );
@@ -110,7 +110,7 @@ const JobLevelToolbar: React.FC<Props> = ({
         activeFilterCount={activeFilterCount}
         onClearAllFilters={handleClearAllFilters}
         onDeleteMany={() => onDeleteMany(Array.from(selectedIds))}
-        onStatusChangeMany={(numStatus) => onStatusChangeMany(Array.from(selectedIds), numStatus === 1 ? TRANG_THAI.DANG_DUNG : TRANG_THAI.NGUNG)}
+        onStatusChangeMany={(numStatus) => onStatusChangeMany(Array.from(selectedIds), numStatus === 1 ? TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG : TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG)}
         columns={columns}
         onToggleColumn={toggleColumn}
         onReorderColumns={reorderColumns}

@@ -15,6 +15,7 @@ import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_YES, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
 import { useListWithFilter } from '../../../../lib/hooks';
 import { getLanguage } from '../../../../lib/utils';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import type { TrangThaiDoiTac } from '../core/types';
 
 const TrangThaiDoiTacTab: React.FC = () => {
@@ -49,7 +50,7 @@ const TrangThaiDoiTacTab: React.FC = () => {
         item.ma.toLowerCase().includes(searchLower) ||
         item.ten.toLowerCase().includes(searchLower) ||
         (item.ghi_chu && item.ghi_chu.toLowerCase().includes(searchLower));
-      const statusKey = item.trang_thai === 1 ? 'Active' : 'Inactive';
+      const statusKey = item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? 'Active' : 'Inactive';
       const matchesStatus = f.status.length === 0 || f.status.includes(statusKey);
       return matchesSearch && matchesStatus;
     },
@@ -107,8 +108,8 @@ const TrangThaiDoiTacTab: React.FC = () => {
     });
   };
 
-  const handleStatusChangeMany = (ids: string[], status: 0 | 1) => {
-    const statusLabel = status === 1 ? t('common.activeStatus') : t('common.inactiveStatus');
+  const handleStatusChangeMany = (ids: string[], status: import('../../../../lib/constants').TrangThaiHoatDong) => {
+    const statusLabel = status === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? t('common.activeStatus') : t('common.inactiveStatus');
     confirm({
       title: t('thietLapDeXuatVatTu.doiTac.statusChangeTitle'),
       message: t('thietLapDeXuatVatTu.doiTac.statusChangeMessage', { count: ids.length, status: statusLabel }),

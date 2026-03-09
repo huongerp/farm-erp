@@ -3,6 +3,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Shield, Users, Edit, Trash2, ShieldCheck, ShieldAlert, Building2 } from 'lucide-react';
 import { PositionPermission } from '../core/types';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { useRoleStore } from '../store/useRoleStore';
 import GenericTable from '../../../../components/shared/GenericTable';
 
@@ -64,7 +65,7 @@ const RoleTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete }) => {
                 </div>
             );
         case 'trang_thai':
-            return item.trang_thai === 1 ? (
+            return item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium border border-primary/20"><ShieldCheck size={12}/> {t('permission.active')}</span>
             ) : (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-xs font-medium border border-border"><ShieldAlert size={12}/> {t('permission.inactive')}</span>

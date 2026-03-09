@@ -1,12 +1,18 @@
-import { supabase } from '../../../../lib/supabase';
+import { supabase, fetchAllRows } from '../../../../lib/supabase';
 import type { Position } from '../core/types';
 import type { PositionFormValues } from '../core/schema';
-import { TRANG_THAI, type TrangThai } from '../../../../lib/constants';
+import { TRANG_THAI, TRANG_THAI_HOAT_DONG, type TrangThaiHoatDong } from '../../../../lib/constants';
 import { getJobLevels } from '../../cap-bac/services/cap-bac-service';
 import { getDepartments } from '../../phong-ban/services/phong-ban-service';
 import i18n from '../../../../lib/i18n';
 
 const TABLE = 'fp_var_chuc_vu';
+
+function normalizeTrangThai(val: unknown): TrangThaiHoatDong {
+  const s = val != null ? String(val).trim() : '';
+  if (s === TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG || s === TRANG_THAI.NGUNG) return TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG;
+  return TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
+}
 
 function rowToPosition(row: Record<string, unknown>, deptMap: Map<string, string>, levelMap: Map<string, string>): Position {
   const phongBanId = row.phong_ban_id != null ? String(row.phong_ban_id) : null;
@@ -20,7 +26,7 @@ function rowToPosition(row: Record<string, unknown>, deptMap: Map<string, string
     ten_cap_bac: capBacId ? levelMap.get(capBacId) : undefined,
     mo_ta: (row.mo_ta as string)?.trim() ?? null,
     tt: row.tt != null ? Number(row.tt) : 0,
-    trang_thai: (row.trang_thai as TrangThai) ?? TRANG_THAI.DANG_DUNG,
+    trang_thai: normalizeTrangThai(row.trang_thai),
     tg_tao: row.tg_tao ? new Date(row.tg_tao as string).toISOString() : '',
     tg_cap_nhat: row.tg_cap_nhat ? new Date(row.tg_cap_nhat as string).toISOString() : '',
   };
@@ -35,15 +41,16 @@ async function buildLookupMaps() {
 }
 
 export const getPositions = async (): Promise<Position[]> => {
-  const { data, error } = await supabase
-    .from(TABLE)
-    .select('id, ten_chuc_vu, phong_ban_id, cap_bac_id, mo_ta, tt, trang_thai, tg_tao, tg_cap_nhat')
-    .order('tt', { ascending: true, nullsFirst: false })
-    .order('ten_chuc_vu', { ascending: true });
-
-  if (error) throw new Error(error.message ?? i18n.t('position.service.notFound'));
+  const data = await fetchAllRows<Record<string, unknown>>((from, to) =>
+    supabase
+      .from(TABLE)
+      .select('id, ten_chuc_vu, phong_ban_id, cap_bac_id, mo_ta, tt, trang_thai, tg_tao, tg_cap_nhat')
+      .order('tt', { ascending: true, nullsFirst: false })
+      .order('ten_chuc_vu', { ascending: true })
+      .range(from, to)
+  );
   const { deptMap, levelMap } = await buildLookupMaps();
-  return (data ?? []).map((row) => rowToPosition(row, deptMap, levelMap));
+  return data.map((row) => rowToPosition(row, deptMap, levelMap));
 };
 
 export const createPosition = async (data: PositionFormValues): Promise<Position> => {

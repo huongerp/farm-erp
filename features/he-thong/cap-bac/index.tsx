@@ -17,7 +17,7 @@ import { CONFIRM_DELETE, CONFIRM_YES, CONFIRM_DELETE_ALL } from '../../../lib/bu
 import { useListWithFilter } from '../../../lib/hooks';
 import { useExportData } from '../../../lib/useExportData';
 import { JobLevel } from './core/types';
-import { TRANG_THAI, type TrangThai } from '../../../lib/constants';
+import { TRANG_THAI_HOAT_DONG, type TrangThaiHoatDong } from '../../../lib/constants';
 
 const JobLevelPage: React.FC = () => {
   const { t } = useTranslation();
@@ -63,7 +63,7 @@ const JobLevelPage: React.FC = () => {
         item.ten_cap_bac.toLowerCase().includes(searchLower) ||
         (item.mo_ta && item.mo_ta.toLowerCase().includes(searchLower)) ||
         String(item.cap_bac).includes(term);
-      const statusKey = item.trang_thai === TRANG_THAI.DANG_DUNG ? 'Active' : 'Inactive';
+      const statusKey = item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? 'Active' : 'Inactive';
       const matchesStatus = f.status.length === 0 || f.status.includes(statusKey);
       return matchesSearch && matchesStatus;
     },
@@ -102,7 +102,7 @@ const JobLevelPage: React.FC = () => {
       ten_cap_bac: item.ten_cap_bac,
       mo_ta: item.mo_ta ?? '',
       trang_thai_text:
-        item.trang_thai === TRANG_THAI.DANG_DUNG ? t('jobLevel.active') : t('common.inactiveStatus'),
+        item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? t('jobLevel.active') : t('common.inactiveStatus'),
     }),
     [t]
   );
@@ -145,8 +145,8 @@ const JobLevelPage: React.FC = () => {
   };
 
   const handleStatusChange = (item: JobLevel) => {
-    const newStatus = item.trang_thai === TRANG_THAI.DANG_DUNG ? TRANG_THAI.NGUNG : TRANG_THAI.DANG_DUNG;
-    const statusLabel = newStatus === TRANG_THAI.DANG_DUNG ? t('jobLevel.active') : t('jobLevel.inactive');
+    const newStatus = item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG : TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
+    const statusLabel = newStatus === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? t('jobLevel.active') : t('jobLevel.inactive');
     confirm({
       title: t('jobLevel.statusChangeTitle'),
       message: `${t('jobLevel.statusChangeMessage', { count: 1 })} ${statusLabel}?`,
@@ -177,10 +177,10 @@ const JobLevelPage: React.FC = () => {
     });
   };
 
-  const handleStatusChangeMany = (ids: string[], status: TrangThai) => {
+  const handleStatusChangeMany = (ids: string[], status: TrangThaiHoatDong) => {
     confirm({
       title: t('jobLevel.statusChangeTitle'),
-      message: `${t('jobLevel.statusChangeMessage', { count: ids.length })} ${status === TRANG_THAI.DANG_DUNG ? t('jobLevel.active') : t('common.inactiveStatus')}?`,
+      message: `${t('jobLevel.statusChangeMessage', { count: ids.length })} ${status === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? t('jobLevel.active') : t('common.inactiveStatus')}?`,
       variant: 'warning',
       confirmText: CONFIRM_YES(),
       onConfirm: async () => {

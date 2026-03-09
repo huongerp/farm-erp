@@ -1,6 +1,7 @@
 import type { DuAn } from '../core/types';
 import type { DuAnFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { MOCK_DU_AN } from '../../../../mocks/cong-viec';
 
 const STORAGE_KEY = 'du_an_list';
@@ -64,7 +65,7 @@ export const createDuAn = async (
     ngay_ket_thuc: data.ngay_ket_thuc,
     muc_tieu: data.muc_tieu ?? '',
     mo_ta: data.mo_ta ?? '',
-    trang_thai: data.trang_thai as 0 | 1,
+    trang_thai: data.trang_thai,
     tg_tao: now,
     tg_cap_nhat: now,
   };
@@ -92,7 +93,7 @@ export const updateDuAn = async (
     ngay_ket_thuc: data.ngay_ket_thuc,
     muc_tieu: data.muc_tieu ?? '',
     mo_ta: data.mo_ta ?? '',
-    trang_thai: data.trang_thai as 0 | 1,
+    trang_thai: data.trang_thai,
     tg_cap_nhat: new Date().toISOString(),
   };
   list[index] = updated;
@@ -150,7 +151,7 @@ export const importDuAnList = async (
         ngay_ket_thuc: ngayKetThuc,
         muc_tieu: row.muc_tieu != null ? String(row.muc_tieu).trim() : '',
         mo_ta: row.mo_ta != null ? String(row.mo_ta).trim() : '',
-        trang_thai: Number(row.trang_thai) === 0 ? 0 : 1,
+        trang_thai: (row.trang_thai === 0 || String(row.trang_thai).trim() === 'Ngừng hoạt động') ? TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG : TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG,
         tg_tao: now,
         tg_cap_nhat: now,
       };

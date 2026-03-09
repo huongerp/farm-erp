@@ -1,4 +1,4 @@
-import type { TrangThai } from '../../../../lib/constants';
+import type { TrangThaiHoatDong } from '../../../../lib/constants';
 
 /** Chức vụ – đồng bộ bảng fp_var_chuc_vu (Supabase). Liên kết fp_var_phong_ban, fp_var_cap_bac. */
 export interface Position {
@@ -14,7 +14,7 @@ export interface Position {
 
   mo_ta: string | null;
   tt: number;
-  trang_thai: TrangThai;
+  trang_thai: TrangThaiHoatDong;
   tg_tao: string;
   tg_cap_nhat: string;
 }
@@ -25,5 +25,5 @@ export interface PositionFormState {
   cap_bac_id?: string;
   mo_ta: string | null;
   tt: number;
-  trang_thai: TrangThai;
+  trang_thai: TrangThaiHoatDong;
 }

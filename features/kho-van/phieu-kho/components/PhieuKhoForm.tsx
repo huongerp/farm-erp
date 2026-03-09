@@ -12,6 +12,7 @@ import { PhieuKhoFormValues, phieuKhoSchema } from '../core/schema';
 import type { PhieuKho, LoaiPhieuKho } from '../core/types';
 import type { Kho } from '../../danh-sach-kho/core/types';
 import type { HangHoa } from '../../danh-sach-hang-hoa/core/types';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { useCreatePhieuKho, useUpdatePhieuKho, useTonKhoTheoKho } from '../hooks/use-phieu-kho';
 import { useHangHoaList } from '../../danh-sach-hang-hoa/hooks/use-hang-hoa';
 import { useDoiTacList } from '../../danh-sach-doi-tac/hooks/use-doi-tac';
@@ -48,7 +49,7 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose }) 
   const hangHoaComboboxOptions = useMemo(
     () =>
       hangHoaList
-        .filter((h) => h.trang_thai === 1)
+        .filter((h) => h.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG)
         .map((h) => ({
           value: h.id,
           label: `${h.ma_hang} - ${h.ten_hang}`,
@@ -66,7 +67,7 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose }) 
   const nhaCungCapOptions = useMemo(
     () => [
       { value: '', label: t('phieuKho.form.supplierPlaceholder') },
-      ...nhaCungCapList.filter((n) => n.trang_thai === 1).map((n) => ({ value: n.id, label: `${n.ma_ncc} - ${n.ten_ncc}` })),
+      ...nhaCungCapList.filter((n) => n.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG).map((n) => ({ value: n.id, label: `${n.ma_ncc} - ${n.ten_ncc}` })),
     ],
     [nhaCungCapList, t]
   );
@@ -74,7 +75,7 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose }) 
   const khachHangOptions = useMemo(
     () => [
       { value: '', label: t('phieuKho.form.customerPlaceholder') },
-      ...khachHangList.filter((n) => n.trang_thai === 1).map((n) => ({ value: n.id, label: `${n.ma_ncc} - ${n.ten_ncc}` })),
+      ...khachHangList.filter((n) => n.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG).map((n) => ({ value: n.id, label: `${n.ma_ncc} - ${n.ten_ncc}` })),
     ],
     [khachHangList, t]
   );

@@ -11,6 +11,7 @@ import Select from '../../../../components/ui/Select';
 import { HangHoaFormValues, hangHoaSchema } from '../core/schema';
 import type { HangHoa } from '../core/types';
 import type { DanhMucHangHoa } from '../../danh-muc-hang-hoa/core/types';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { useCreateHangHoa, useUpdateHangHoa } from '../hooks/use-hang-hoa';
 import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/GenericDrawer';
 import FormSection from '../../../../components/shared/FormSection';
@@ -45,7 +46,7 @@ const DanhSachHangHoaForm: React.FC<Props> = ({ initialData, danhMucList, onClos
     ton_toi_thieu: undefined,
     mo_ta: '',
     hinh_anh: null,
-    trang_thai: 1,
+    trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG,
     thu_tu: 0,
   };
 
@@ -205,6 +206,8 @@ const DanhSachHangHoaForm: React.FC<Props> = ({ initialData, danhMucList, onClos
                   label={t('common.status')}
                   value={field.value}
                   onChange={field.onChange}
+                  activeValue={TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG}
+                  inactiveValue={TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG}
                   icon={<Power size={12} />}
                   required
                 />

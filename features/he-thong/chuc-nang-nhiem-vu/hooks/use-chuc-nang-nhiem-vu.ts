@@ -139,7 +139,7 @@ export const useDeleteFunctions = (onSuccess?: () => void) => {
 export const useUpdateFunctionStatus = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ ids, status }: { ids: string[]; status: 0 | 1 }) => updateFunctionStatus(ids, status),
+    mutationFn: ({ ids, status }: { ids: string[]; status: import('../../../../lib/constants').TrangThaiHoatDong }) => updateFunctionStatus(ids, status),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['functions'] });
       toast.success(t('chucNangNhiemVu.toast.statusUpdate'));
@@ -209,7 +209,7 @@ export const useDeleteTasks = (onSuccess?: () => void) => {
 export const useUpdateTaskStatus = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ ids, status }: { ids: string[]; status: 0 | 1 }) => updateTaskStatus(ids, status),
+    mutationFn: ({ ids, status }: { ids: string[]; status: import('../../../../lib/constants').TrangThaiHoatDong }) => updateTaskStatus(ids, status),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['tasks'] });
       toast.success(t('chucNangNhiemVu.toast.statusUpdate'));

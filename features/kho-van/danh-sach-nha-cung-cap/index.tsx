@@ -10,6 +10,7 @@ import { useNhaCungCapStore } from './store/useNhaCungCapStore';
 import { useConfirmStore } from '../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../lib/button-labels';
 import { useListWithFilter } from '../../../lib/hooks';
+import { TRANG_THAI_HOAT_DONG } from '../../../lib/constants';
 import type { NhaCungCap } from './core/types';
 
 const DanhSachNhaCungCapPage: React.FC = () => {
@@ -57,7 +58,7 @@ const DanhSachNhaCungCapPage: React.FC = () => {
         item.ten_ncc.toLowerCase().includes(searchLower) ||
         item.ma_ncc.toLowerCase().includes(searchLower) ||
         (item.ten_nhom?.toLowerCase().includes(searchLower) ?? false);
-      const statusKey = item.trang_thai === 1 ? 'Active' : 'Inactive';
+      const statusKey = item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? 'Active' : 'Inactive';
       const matchesStatus = f.status.length === 0 || f.status.includes(statusKey);
       const matchesNhom = f.id_nhom.length === 0 || (item.id_nhom != null && f.id_nhom.includes(item.id_nhom));
       return matchesSearch && matchesStatus && matchesNhom;

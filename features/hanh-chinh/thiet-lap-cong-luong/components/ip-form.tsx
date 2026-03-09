@@ -15,12 +15,13 @@ import { PayrollWifiIp } from '../core/types';
 import { PayrollWifiIpFormValues, payrollWifiIpSchema } from '../core/schema';
 import { useCreatePayrollWifiIp, useUpdatePayrollWifiIp } from '../hooks/use-payroll-wifi-ip';
 import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 
 const DEFAULT_VALUES: PayrollWifiIpFormValues = {
   id_chi_nhanh: '',
   ip_wifi: '',
   ghi_chu: '',
-  trang_thai: 1,
+  trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG,
 };
 
 interface Props {

@@ -2,8 +2,18 @@ import { AssetStatus } from '../core/types';
 import { AssetStatusFormValues } from '../core/schema';
 import { MOCK_ASSET_STATUSES } from '@/mocks/hanh-chinh';
 import i18n from '../../../../lib/i18n';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 
-let dbTrangThai: AssetStatus[] = JSON.parse(JSON.stringify(MOCK_ASSET_STATUSES));
+function normalizeTrangThai(val: unknown): import('../../../../lib/constants').TrangThaiHoatDong {
+  if (val === TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG) return TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG;
+  if (val === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG) return TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
+  return Number(val) === 0 ? TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG : TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
+}
+
+let dbTrangThai: AssetStatus[] = JSON.parse(JSON.stringify(MOCK_ASSET_STATUSES)).map((i: AssetStatus) => ({
+  ...i,
+  trang_thai: normalizeTrangThai(i.trang_thai),
+}));
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -20,7 +30,7 @@ export const createAssetStatus = async (
   const newItem: AssetStatus = {
     id: `trang-thai-${Date.now()}`,
     ...data,
-    trang_thai: data.trang_thai as 0 | 1,
+    trang_thai: data.trang_thai,
     tg_tao: now,
     tg_cap_nhat: now,
   };
@@ -38,7 +48,7 @@ export const updateAssetStatus = async (
   const updated: AssetStatus = {
     ...dbTrangThai[index],
     ...data,
-    trang_thai: data.trang_thai as 0 | 1,
+    trang_thai: data.trang_thai,
     tg_cap_nhat: new Date().toISOString(),
   };
   dbTrangThai[index] = updated;
@@ -47,7 +57,7 @@ export const updateAssetStatus = async (
 
 export const updateAssetStatusStatus = async (
   ids: string[],
-  status: 0 | 1
+  status: import('../../../../lib/constants').TrangThaiHoatDong
 ): Promise<void> => {
   await delay(600);
   dbTrangThai = dbTrangThai.map((i) =>

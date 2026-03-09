@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { useTranslation } from 'react-i18next';
 import { MapPin, Edit, Trash2 } from 'lucide-react';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
@@ -26,7 +27,7 @@ const NoiLuuDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete }) => {
     [taiSanList, data.id]
   );
   const viewAllHref = `/hanh-chinh/danh-muc-tai-san?id_noi_luu=${encodeURIComponent(data.id)}`;
-  const isActive = data.trang_thai === 1;
+  const isActive = data.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
 
   const renderFooter = (
     <div className="flex items-center justify-between w-full">

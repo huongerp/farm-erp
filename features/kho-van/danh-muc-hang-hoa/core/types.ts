@@ -1,3 +1,5 @@
+import type { TrangThaiHoatDong } from '../../../../lib/constants';
+
 /** Danh mục hàng hóa: 2 cấp (cha id_cha null, con id_cha = id cha). */
 export interface DanhMucHangHoa {
   id: string;
@@ -6,7 +8,7 @@ export interface DanhMucHangHoa {
   id_cha: string | null;
   thu_tu: number;
   mo_ta?: string;
-  trang_thai: 0 | 1;
+  trang_thai: TrangThaiHoatDong;
   tg_tao: string;
   tg_cap_nhat: string;
 }

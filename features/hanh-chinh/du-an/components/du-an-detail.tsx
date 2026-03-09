@@ -44,19 +44,19 @@ const DuAnDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onViewCo
   const congViecThuocDuAn = congViecList.filter((c) => c.id_du_an === displayData.id);
 
   const handleChangeStatus = () => {
-    let selectedStatus = displayData.trang_thai;
+    let selectedStatus: DuAn['trang_thai'] = displayData.trang_thai;
     confirm({
       title: t('duAn.detail.changeStatusTitle'),
       message: (
         <div className="space-y-4 text-left py-2">
           <p className="text-sm">{t('duAn.detail.changeStatusMessage')}</p>
           <Select
-            defaultValue={String(displayData.trang_thai)}
+            defaultValue={displayData.trang_thai}
             options={[
-              { label: t('common.activeStatus'), value: '1' },
-              { label: t('common.inactiveStatus'), value: '0' },
+              { label: t('common.activeStatus'), value: 'Đang hoạt động' },
+              { label: t('common.inactiveStatus'), value: 'Ngừng hoạt động' },
             ]}
-            onChange={(e) => { selectedStatus = parseInt(e.target.value, 10) as 0 | 1; }}
+            onChange={(e) => { selectedStatus = e.target.value as DuAn['trang_thai']; }}
           />
         </div>
       ),
@@ -186,7 +186,7 @@ const DuAnDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onViewCo
             <h2 className="text-base font-bold text-foreground leading-tight truncate">{displayData.ten_du_an}</h2>
             <p className="text-body-sm text-muted-foreground font-mono mt-0.5">{displayData.ma_du_an}</p>
             <div className="mt-1.5 flex flex-wrap items-center gap-2">
-              {displayData.trang_thai === 1 ? (
+              {displayData.trang_thai === 'Đang hoạt động' ? (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium border border-primary/20">
                   <span className="w-1.5 h-1.5 rounded-full bg-primary" /> {t('common.activeStatus')}
                 </span>
@@ -216,7 +216,7 @@ const DuAnDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onViewCo
             <DetailField label={t('duAn.form.ngayKetThuc')} value={formatDate(displayData.ngay_ket_thuc)} />
             <DetailField
               label={t('duAn.form.status')}
-              value={displayData.trang_thai === 1 ? t('common.activeStatus') : t('common.inactiveStatus')}
+              value={displayData.trang_thai === 'Đang hoạt động' ? t('common.activeStatus') : t('common.inactiveStatus')}
             />
             {displayData.muc_tieu ? (
               <div className="col-span-1 sm:col-span-2">

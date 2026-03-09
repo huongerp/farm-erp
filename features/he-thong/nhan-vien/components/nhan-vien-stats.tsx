@@ -14,7 +14,7 @@ import DateRangePicker from '../../../../components/ui/DateRangePicker';
 import DashboardToolbar from '../../../../components/shared/DashboardToolbar';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import ChartTooltip from '../../../../components/ui/ChartTooltip';
-import { useDepartments } from '../../phong-ban/hooks/use-phong-ban';
+import { useDepartments } from '@/features/he-thong/phong-ban/hooks/use-phong-ban';
 import { useAuthStore } from '../../../../store/useStore';
 import { Employee } from '../core/types';
 import { STATUS_OPTIONS } from '../core/constants';
@@ -69,7 +69,7 @@ const EmployeeStats: React.FC<EmployeeStatsProps> = ({
 
   const [filterDept, setFilterDept] = useState<string[]>([]);
   const [filterStatus, setFilterStatus] = useState<string[]>([]);
-  const [dateRangePreset, setDateRangePreset] = useState<DateRangePresetId>('this_month');
+  const [dateRangePreset, setDateRangePreset] = useState<DateRangePresetId>('all');
   const [customStart, setCustomStart] = useState<string>('');
   const [customEnd, setCustomEnd] = useState<string>('');
   const [chartsVisible, setChartsVisible] = useState(false);

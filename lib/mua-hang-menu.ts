@@ -1,7 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import {
   ShoppingCart,
-  Users,
   CreditCard,
   BarChart3,
   Settings,
@@ -9,6 +8,7 @@ import {
 } from 'lucide-react';
 import type { ModuleItem } from '../components/dashboard/SubModuleCard';
 import type { ModuleGroup } from '../components/dashboard/ModuleDashboardLayout';
+import { getKhoVanGroups, getKhoVanModuleTitleKeyBySlug, KHO_VAN_MODULE_SLUGS } from './kho-van-menu';
 
 const BASE_PATH = '/mua-hang';
 
@@ -25,17 +25,26 @@ function slugToTitleKey(slug: string): string {
 }
 
 export function getMuaHangModuleTitleKeyBySlug(slug: string): string {
+  if (KHO_VAN_MODULE_SLUGS.includes(slug)) {
+    return getKhoVanModuleTitleKeyBySlug(slug);
+  }
   const key = slugToTitleKey(slug);
   return `page.muaHang.modules.${key}`;
 }
 
-export const MUA_HANG_MODULE_SLUGS: string[] = [
+/** Slug thuộc Mua hàng (không trùng với module quản lý kho chuyển sang) */
+const MUA_HANG_ONLY_SLUGS: string[] = [
   'phieu-de-xuat-vat-tu',
   'don-dat-hang',
-  'danh-sach-doi-tac',
   'thanh-toan-doi-tac',
   'bao-cao-de-xuat-vat-tu',
   'thiet-lap-de-xuat-vat-tu',
+];
+
+/** Tất cả slug module Mua hàng (gồm cả module quản lý kho chuyển sang) */
+export const MUA_HANG_MODULE_SLUGS: string[] = [
+  ...MUA_HANG_ONLY_SLUGS,
+  ...KHO_VAN_MODULE_SLUGS.filter((s) => !MUA_HANG_ONLY_SLUGS.includes(s)),
 ];
 
 function buildItem(
@@ -54,7 +63,7 @@ function buildItem(
 }
 
 /**
- * Cấu hình nhóm và module cho submenu Mua hàng – nhóm Đề xuất vật tư.
+ * Cấu hình nhóm và module cho submenu Mua hàng (gồm Đề xuất vật tư + toàn bộ module quản lý kho).
  */
 export function getMuaHangGroups(
   t: (key: string) => string,
@@ -62,7 +71,7 @@ export function getMuaHangGroups(
 ): ModuleGroup[] {
   const item = (c: MuaHangModuleConfig) => buildItem(c, t, navigate);
 
-  return [
+  const deXuatGroups: ModuleGroup[] = [
     {
       groupTitle: t('page.muaHang.groupDeXuatVatTu'),
       items: [
@@ -79,13 +88,6 @@ export function getMuaHangGroups(
           descKey: 'page.muaHang.descs.donDatHang',
           icon: ShoppingCart,
           color: 'bg-blue-500',
-        }),
-        item({
-          slug: 'danh-sach-doi-tac',
-          titleKey: 'page.muaHang.modules.danhSachDoiTac',
-          descKey: 'page.muaHang.descs.danhSachDoiTac',
-          icon: Users,
-          color: 'bg-indigo-500',
         }),
         item({
           slug: 'thanh-toan-doi-tac',
@@ -111,4 +113,7 @@ export function getMuaHangGroups(
       ],
     },
   ];
+
+  const khoVanGroups = getKhoVanGroups(t, navigate, BASE_PATH);
+  return [...deXuatGroups, ...khoVanGroups];
 }

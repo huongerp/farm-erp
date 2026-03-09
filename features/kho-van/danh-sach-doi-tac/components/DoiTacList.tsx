@@ -112,7 +112,7 @@ const DoiTacList: React.FC<Props> = ({
       case 'trang_thai':
         return (
           <td key={col.id} className="px-4 py-3" style={getColumnCellStyle(col)}>
-            {item.trang_thai === 1 ? (
+            {item.trang_thai === 'Đang hoạt động' ? (
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
                 {t('common.activeStatus')}
               </span>

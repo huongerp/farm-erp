@@ -66,7 +66,7 @@ export function employeeToFormValues(emp: Employee): EmployeeFormValues {
     so_dien_thoai: emp.so_dien_thoai,
     id_chuc_vu: emp.id_chuc_vu ?? '',
     id_phong_ban: emp.id_phong_ban ?? '',
-    id_chi_nhanh: emp.id_chi_nhanh ?? undefined,
+    id_chi_nhanh: emp.id_chi_nhanh ?? '',
     gioi_tinh: emp.gioi_tinh,
     trang_thai: emp.trang_thai,
     ngay_vao_lam: emp.ngay_vao_lam,

@@ -4,14 +4,15 @@ import { Plus, Tag, Layers } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { useNhomTaiSanStore } from '../store/useNhomTaiSanStore';
 
 interface Props {
   /** Danh sách nhóm tài sản. Count filter chip đếm trên list này. */
-  items?: { trang_thai: number }[];
+  items?: { trang_thai: string }[];
   onAdd: () => void;
   onDeleteMany: (ids: string[]) => void;
-  onStatusChangeMany: (ids: string[], status: 0 | 1) => void;
+  onStatusChangeMany: (ids: string[], status: import('../../../../lib/constants').TrangThaiHoatDong) => void;
 }
 
 const NhomTaiSanToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onStatusChangeMany }) => {
@@ -35,8 +36,8 @@ const NhomTaiSanToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, o
 
   const statusOptions = useMemo(
     () => [
-      { label: t('common.activeStatus'), value: 'Active', count: items.filter((i) => i.trang_thai === 1).length },
-      { label: t('common.inactiveStatus'), value: 'Inactive', count: items.filter((i) => i.trang_thai === 0).length },
+      { label: t('common.activeStatus'), value: 'Active', count: items.filter((i) => i.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG).length },
+      { label: t('common.inactiveStatus'), value: 'Inactive', count: items.filter((i) => i.trang_thai === TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG).length },
     ],
     [t, items]
   );
@@ -77,7 +78,7 @@ const NhomTaiSanToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, o
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       onDeleteMany={() => onDeleteMany(Array.from(selectedIds))}
-      onStatusChangeMany={(status) => onStatusChangeMany(Array.from(selectedIds), status)}
+      onStatusChangeMany={(numStatus) => onStatusChangeMany(Array.from(selectedIds), numStatus === 1 ? TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG : TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG)}
       columns={columns}
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}

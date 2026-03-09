@@ -6,6 +6,7 @@ import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import { useHangHoaStore } from '../store/useHangHoaStore';
 import type { HangHoa } from '../core/types';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 
 interface Props {
   data: HangHoa[];
@@ -48,12 +49,12 @@ const DanhSachHangHoaToolbar: React.FC<Props> = ({
       {
         label: t('common.activeStatus'),
         value: 'Active',
-        count: data.filter((d) => d.trang_thai === 1).length,
+        count: data.filter((d) => d.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG).length,
       },
       {
         label: t('common.inactiveStatus'),
         value: 'Inactive',
-        count: data.filter((d) => d.trang_thai === 0).length,
+        count: data.filter((d) => d.trang_thai === TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG).length,
       },
     ],
     [data, t]

@@ -6,13 +6,13 @@ import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import { useThanhToanDoiTacStore } from '../store/useThanhToanDoiTacStore';
 import type { ThanhToanDoiTac } from '../core/types';
-import type { NhaCungCap } from '../../danh-sach-doi-tac/core/types';
+import type { DoiTac } from '../../../kho-van/danh-sach-doi-tac/core/types';
 import type { Department } from '../../../he-thong/phong-ban/core/types';
 import type { TrangThaiThanhToanDoiTac } from '../../thiet-lap-de-xuat-vat-tu/core/types';
 
 interface Props {
   data: ThanhToanDoiTac[];
-  doiTacList: NhaCungCap[];
+  doiTacList: DoiTac[];
   donViList: Department[];
   statusList: TrangThaiThanhToanDoiTac[];
   selectedCount: number;

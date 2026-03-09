@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Edit, Trash2, Truck, FileText, ArrowUpFromLine, Calendar, Power, Folder, MapPin, Phone, Mail } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import type { NhaCungCap } from '../core/types';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { formatDateShort } from '../../../../lib/utils';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
 import DetailSection from '../../../../components/shared/DetailSection';
@@ -24,7 +25,7 @@ const DanhSachNhaCungCapDetail: React.FC<Props> = ({
   onDelete,
 }) => {
   const { t } = useTranslation();
-  const isActive = data.trang_thai === 1;
+  const isActive = data.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
   const tags = data.ten_tags ?? [];
 
   const renderFooter = (

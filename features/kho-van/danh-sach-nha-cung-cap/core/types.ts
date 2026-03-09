@@ -1,10 +1,12 @@
+import type { TrangThaiHoatDong } from '../../../../lib/constants';
+
 /** Nhóm nhà cung cấp – dùng cho dropdown và filter. */
 export interface NhomNhaCungCap {
   id: string;
   ma_nhom: string;
   ten_nhom: string;
   thu_tu?: number;
-  trang_thai: 0 | 1;
+  trang_thai: TrangThaiHoatDong;
 }
 
 /** Tag – gắn vào NCC để quản lý (MultiSelect, chip). */
@@ -26,7 +28,7 @@ export interface NhaCungCap {
   mo_ta?: string;
   tag_ids: string[];
   ten_tags?: string[];
-  trang_thai: 0 | 1;
+  trang_thai: TrangThaiHoatDong;
   thu_tu: number;
   tg_tao: string;
   tg_cap_nhat: string;

@@ -3,8 +3,18 @@ import { PayrollWifiIpFormValues } from '../core/schema';
 import { MOCK_PAYROLL_WIFI_IPS } from '@/mocks/hanh-chinh';
 import { getBranches } from '../../../he-thong/chi-nhanh/services/chi-nhanh-service';
 import i18n from '../../../../lib/i18n';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 
-let dbWifiIps: PayrollWifiIp[] = JSON.parse(JSON.stringify(MOCK_PAYROLL_WIFI_IPS));
+function normalizeTrangThai(val: unknown): import('../../../../lib/constants').TrangThaiHoatDong {
+  if (val === TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG) return TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG;
+  if (val === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG) return TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
+  return Number(val) === 0 ? TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG : TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
+}
+
+let dbWifiIps: PayrollWifiIp[] = JSON.parse(JSON.stringify(MOCK_PAYROLL_WIFI_IPS)).map((i: PayrollWifiIp) => ({
+  ...i,
+  trang_thai: normalizeTrangThai(i.trang_thai),
+}));
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -22,7 +32,7 @@ export const createPayrollWifiIp = async (data: PayrollWifiIpFormValues): Promis
     id: `wifi-${Date.now()}`,
     ...data,
     ten_chi_nhanh: branchName,
-    trang_thai: data.trang_thai as 0 | 1,
+    trang_thai: data.trang_thai,
     tg_tao: now,
     tg_cap_nhat: now,
   };
@@ -40,7 +50,7 @@ export const updatePayrollWifiIp = async (id: string, data: PayrollWifiIpFormVal
     ...dbWifiIps[index],
     ...data,
     ten_chi_nhanh: branchName,
-    trang_thai: data.trang_thai as 0 | 1,
+    trang_thai: data.trang_thai,
     tg_cap_nhat: new Date().toISOString(),
   };
   dbWifiIps[index] = updated;
@@ -88,7 +98,7 @@ export const importPayrollWifiIps = async (rows: PayrollWifiIpFormValues[]): Pro
       id: `wifi-${Date.now()}-${i}`,
       ...row,
       ten_chi_nhanh: branchName,
-      trang_thai: row.trang_thai as 0 | 1,
+      trang_thai: normalizeTrangThai(row.trang_thai),
       tg_tao: stamp,
       tg_cap_nhat: stamp,
     };

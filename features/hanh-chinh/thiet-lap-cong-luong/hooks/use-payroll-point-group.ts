@@ -46,7 +46,7 @@ export const useUpdatePayrollPointGroup = (onSuccess?: () => void) => {
 export const useUpdatePayrollPointGroupStatus = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ ids, status }: { ids: string[]; status: 0 | 1 }) =>
+    mutationFn: ({ ids, status }: { ids: string[]; status: import('../../../../lib/constants').TrangThaiHoatDong }) =>
       updatePayrollPointGroupStatus(ids, status),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['payrollPointGroups'] });

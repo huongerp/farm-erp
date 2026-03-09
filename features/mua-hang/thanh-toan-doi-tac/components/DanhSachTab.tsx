@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
 import { useThanhToanDoiTacList, useThanhToanDoiTacById, useDeleteThanhToanDoiTac, useDeleteThanhToanDoiTacMany, useUpdateThanhToanDoiTac } from '../hooks/use-thanh-toan-doi-tac';
-import { useNhaCungCapList } from '../../danh-sach-doi-tac/hooks/use-nha-cung-cap';
+import { useDoiTacList } from '../../../kho-van/danh-sach-doi-tac/hooks/use-doi-tac';
 import { useDepartments } from '../../../he-thong/phong-ban/hooks/use-phong-ban';
 import { useEmployees } from '../../../he-thong/nhan-vien/hooks/use-nhan-vien';
 import { useTrangThaiThanhToanDoiTacList } from '../../thiet-lap-de-xuat-vat-tu/hooks/use-trang-thai-thanh-toan-doi-tac';
@@ -57,7 +57,7 @@ const DanhSachTab: React.FC = () => {
   const [viewingItem, setViewingItem] = useState<ThanhToanDoiTac | null>(null);
 
   const { data: allList = [], isLoading } = useThanhToanDoiTacList();
-  const { data: doiTacList = [] } = useNhaCungCapList();
+  const { data: doiTacList = [] } = useDoiTacList('nha_cung_cap');
   const { data: donViList = [] } = useDepartments();
   const { data: employees = [] } = useEmployees();
   const { data: statusList = [] } = useTrangThaiThanhToanDoiTacList();

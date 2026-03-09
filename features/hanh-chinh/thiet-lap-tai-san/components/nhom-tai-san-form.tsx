@@ -14,13 +14,14 @@ import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
 import { AssetGroup } from '../core/types';
 import { AssetGroupFormValues, assetGroupSchema } from '../core/schema';
 import { useCreateAssetGroup, useUpdateAssetGroup } from '../hooks/use-nhom-tai-san';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 
 const DEFAULT_VALUES: AssetGroupFormValues = {
   ma: '',
   ten: '',
   thu_tu: 0,
   ghi_chu: '',
-  trang_thai: 1,
+  trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG,
   phuong_phap_khau_hao: 'duong_thang',
   ty_le_khau_hao: undefined,
   so_nam_su_dung: undefined,

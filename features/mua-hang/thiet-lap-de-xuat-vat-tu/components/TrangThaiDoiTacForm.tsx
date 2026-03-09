@@ -13,6 +13,7 @@ import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
 import type { TrangThaiDoiTac } from '../core/types';
 import { TrangThaiDoiTacFormValues, trangThaiDoiTacSchema } from '../core/schema';
 import { TRANG_THAI_MAU_DEFAULT } from '../core/constants';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { useCreateTrangThaiDoiTac, useUpdateTrangThaiDoiTac } from '../hooks/use-trang-thai-doi-tac';
 
 const DEFAULT_VALUES: TrangThaiDoiTacFormValues = {
@@ -21,7 +22,7 @@ const DEFAULT_VALUES: TrangThaiDoiTacFormValues = {
   thu_tu: 0,
   mau: TRANG_THAI_MAU_DEFAULT,
   ghi_chu: '',
-  trang_thai: 1,
+  trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG,
 };
 
 interface Props {
@@ -151,6 +152,8 @@ const TrangThaiDoiTacForm: React.FC<Props> = ({ initialData, onClose }) => {
                   label={t('thietLapDeXuatVatTu.doiTac.form.status')}
                   value={field.value}
                   onChange={field.onChange}
+                  activeValue={TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG}
+                  inactiveValue={TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG}
                   icon={<Power size={12} />}
                   required
                 />

@@ -1,15 +1,22 @@
 import type { TrangThaiThanhToanDoiTac } from '../core/types';
 import type { TrangThaiThanhToanDoiTacFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 
 const STORAGE_KEY = 'thiet_lap_trang_thai_thanh_toan_doi_tac';
 
 const DEFAULT_SEED: TrangThaiThanhToanDoiTac[] = [
-  { id: 'tttt-1', ma: 'CHO_THANH_TOAN', ten: 'Chờ thanh toán', thu_tu: 1, mau: '#f59e0b', trang_thai: 1, tg_tao: '2025-01-01T08:00:00Z', tg_cap_nhat: '2025-01-01T08:00:00Z' },
-  { id: 'tttt-2', ma: 'DA_THANH_TOAN', ten: 'Đã thanh toán', thu_tu: 2, mau: '#22c55e', trang_thai: 1, tg_tao: '2025-01-01T08:00:00Z', tg_cap_nhat: '2025-01-01T08:00:00Z' },
-  { id: 'tttt-3', ma: 'QUA_HAN', ten: 'Quá hạn', thu_tu: 3, mau: '#ef4444', trang_thai: 1, tg_tao: '2025-01-01T08:00:00Z', tg_cap_nhat: '2025-01-01T08:00:00Z' },
-  { id: 'tttt-4', ma: 'DA_HUY', ten: 'Đã hủy', thu_tu: 4, mau: '#64748b', trang_thai: 1, tg_tao: '2025-01-01T08:00:00Z', tg_cap_nhat: '2025-01-01T08:00:00Z' },
+  { id: 'tttt-1', ma: 'CHO_THANH_TOAN', ten: 'Chờ thanh toán', thu_tu: 1, mau: '#f59e0b', trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG, tg_tao: '2025-01-01T08:00:00Z', tg_cap_nhat: '2025-01-01T08:00:00Z' },
+  { id: 'tttt-2', ma: 'DA_THANH_TOAN', ten: 'Đã thanh toán', thu_tu: 2, mau: '#22c55e', trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG, tg_tao: '2025-01-01T08:00:00Z', tg_cap_nhat: '2025-01-01T08:00:00Z' },
+  { id: 'tttt-3', ma: 'QUA_HAN', ten: 'Quá hạn', thu_tu: 3, mau: '#ef4444', trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG, tg_tao: '2025-01-01T08:00:00Z', tg_cap_nhat: '2025-01-01T08:00:00Z' },
+  { id: 'tttt-4', ma: 'DA_HUY', ten: 'Đã hủy', thu_tu: 4, mau: '#64748b', trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG, tg_tao: '2025-01-01T08:00:00Z', tg_cap_nhat: '2025-01-01T08:00:00Z' },
 ];
+
+function normalizeTrangThai(val: unknown): import('../../../../lib/constants').TrangThaiHoatDong {
+  if (val === TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG) return TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG;
+  if (val === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG) return TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
+  return Number(val) === 0 ? TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG : TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
+}
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -18,7 +25,7 @@ function loadFromStorage(): TrangThaiThanhToanDoiTac[] {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as TrangThaiThanhToanDoiTac[];
-      return Array.isArray(parsed) ? parsed : [...DEFAULT_SEED];
+      return Array.isArray(parsed) ? parsed.map((i) => ({ ...i, trang_thai: normalizeTrangThai(i.trang_thai) })) : [...DEFAULT_SEED];
     }
   } catch {
     // ignore
@@ -49,7 +56,7 @@ export const createTrangThaiThanhToanDoiTac = async (data: TrangThaiThanhToanDoi
     thu_tu: data.thu_tu,
     mau: data.mau?.trim() || undefined,
     ghi_chu: data.ghi_chu?.trim() || undefined,
-    trang_thai: data.trang_thai as 0 | 1,
+    trang_thai: data.trang_thai,
     tg_tao: now,
     tg_cap_nhat: now,
   };
@@ -70,7 +77,7 @@ export const updateTrangThaiThanhToanDoiTac = async (id: string, data: TrangThai
     thu_tu: data.thu_tu,
     mau: data.mau?.trim() || undefined,
     ghi_chu: data.ghi_chu?.trim() || undefined,
-    trang_thai: data.trang_thai as 0 | 1,
+    trang_thai: data.trang_thai,
     tg_cap_nhat: new Date().toISOString(),
   };
   db[idx] = updated;
@@ -78,7 +85,7 @@ export const updateTrangThaiThanhToanDoiTac = async (id: string, data: TrangThai
   return updated;
 };
 
-export const updateTrangThaiThanhToanDoiTacStatus = async (ids: string[], status: 0 | 1): Promise<void> => {
+export const updateTrangThaiThanhToanDoiTacStatus = async (ids: string[], status: import('../../../../lib/constants').TrangThaiHoatDong): Promise<void> => {
   await delay(300);
   db = loadFromStorage();
   db = db.map((i) => (ids.includes(i.id) ? { ...i, trang_thai: status, tg_cap_nhat: new Date().toISOString() } : i));

@@ -17,10 +17,14 @@ import { ADMIN_FORM_SHIFTS, getAdminFormShiftLabel } from '../core/constants';
 import { useCreateAdminForm, useUpdateAdminForm } from '../hooks/use-admin-form';
 import { useAuthStore } from '../../../../store/useStore';
 
+function getTodayDateString(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
 const DEFAULT_VALUES: AdminFormValues = {
-  loai_phieu: 'late_early',
+  ngay: getTodayDateString(),
+  loai_phieu: '',
   ca: 'morning',
-  ngay: '',
   ly_do: '',
 };
 
@@ -44,13 +48,13 @@ const AdminFormForm: React.FC<Props> = ({ initialData, onClose }) => {
   useEffect(() => {
     if (initialData) {
       reset({
+        ngay: initialData.ngay,
         loai_phieu: initialData.loai_phieu,
         ca: initialData.ca,
-        ngay: initialData.ngay,
         ly_do: initialData.ly_do,
       });
     } else {
-      reset(DEFAULT_VALUES);
+      reset({ ...DEFAULT_VALUES, ngay: getTodayDateString() });
     }
   }, [initialData, reset]);
 
@@ -61,8 +65,10 @@ const AdminFormForm: React.FC<Props> = ({ initialData, onClose }) => {
   );
 
   const onSubmit: SubmitHandler<AdminFormValues> = (data) => {
+    if (!data.loai_phieu) return;
     const sanitized: AdminFormValues = {
       ...data,
+      loai_phieu: data.loai_phieu as AdminFormValues['loai_phieu'],
       ly_do: data.ly_do.trim(),
     };
     if (isEdit && initialData) {
@@ -97,6 +103,14 @@ const AdminFormForm: React.FC<Props> = ({ initialData, onClose }) => {
       <form id="admin-form" onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <FormSection title={t('adminForm.form.basicInfo')} icon={<FileText size={14} />} variant="primary">
           <FormGrid cols={2}>
+            <Input
+              type="date"
+              label={t('adminForm.form.date')}
+              required
+              icon={<Calendar size={14} />}
+              {...register('ngay')}
+              error={errors.ngay?.message}
+            />
             <Controller
               name="loai_phieu"
               control={control}
@@ -108,6 +122,7 @@ const AdminFormForm: React.FC<Props> = ({ initialData, onClose }) => {
                   onChange={field.onChange}
                   placeholder={t('adminForm.form.typePlaceholder')}
                   icon={<FileText size={16} className="text-muted-foreground" />}
+                  required
                 />
               )}
             />
@@ -123,16 +138,9 @@ const AdminFormForm: React.FC<Props> = ({ initialData, onClose }) => {
                   placeholder={t('adminForm.form.shiftPlaceholder')}
                   icon={<Clock size={16} className="text-muted-foreground" />}
                   searchable={false}
+                  required
                 />
               )}
-            />
-            <Input
-              type="date"
-              label={t('adminForm.form.date')}
-              required
-              icon={<Calendar size={14} />}
-              {...register('ngay')}
-              error={errors.ngay?.message}
             />
             <div className="col-span-1 sm:col-span-2">
               <Textarea
@@ -141,6 +149,7 @@ const AdminFormForm: React.FC<Props> = ({ initialData, onClose }) => {
                 {...register('ly_do')}
                 error={errors.ly_do?.message}
                 icon={<MessageSquare size={14} />}
+                required
               />
             </div>
           </FormGrid>

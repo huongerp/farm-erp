@@ -11,6 +11,7 @@ import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
 import FormSection from '../../../../components/shared/FormSection';
 import { kpiIndicatorSchema, type KpiIndicatorFormValues } from '../core/schema';
 import type { KpiIndicator } from '../core/types';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { useCreateKpiIndicator, useUpdateKpiIndicator } from '../hooks/use-kpi';
 import Combobox from '../../../../components/ui/Combobox';
 import { useTasks } from '../hooks/use-chuc-nang-nhiem-vu';
@@ -22,7 +23,7 @@ const DEFAULT_VALUES: KpiIndicatorFormValues = {
   chi_tieu_nguong: '',
   chu_ky_danh_gia: 'month',
   thu_tu: 0,
-  trang_thai: 1,
+  trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG,
 };
 
 interface Props {

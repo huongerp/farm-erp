@@ -5,6 +5,7 @@ import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { usePayrollWifiIpStore } from '../store/usePayrollWifiIpStore';
 import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
 import type { PayrollWifiIp } from '../core/types';
@@ -16,7 +17,7 @@ interface Props {
   onImport: () => void;
   onExport: () => void;
   onDeleteMany: (ids: string[]) => void;
-  onStatusChangeMany: (ids: string[], status: 0 | 1) => void;
+  onStatusChangeMany: (ids: string[], status: import('../../../../lib/constants').TrangThaiHoatDong) => void;
 }
 
 const PayrollWifiIpToolbar: React.FC<Props> = ({ items = [], onAdd, onImport, onExport, onDeleteMany, onStatusChangeMany }) => {
@@ -39,7 +40,7 @@ const PayrollWifiIpToolbar: React.FC<Props> = ({ items = [], onAdd, onImport, on
     const statusCounts: Record<string, number> = { Active: 0, Inactive: 0 };
     const branchCounts: Record<string, number> = {};
     for (const item of items) {
-      const statusKey = item.trang_thai === 1 ? 'Active' : 'Inactive';
+      const statusKey = item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? 'Active' : 'Inactive';
       if (filters.id_chi_nhanh.length === 0 || filters.id_chi_nhanh.includes(item.id_chi_nhanh)) {
         statusCounts[statusKey] = (statusCounts[statusKey] || 0) + 1;
       }
@@ -172,7 +173,7 @@ const PayrollWifiIpToolbar: React.FC<Props> = ({ items = [], onAdd, onImport, on
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       onDeleteMany={() => onDeleteMany(Array.from(selectedIds))}
-      onStatusChangeMany={(status) => onStatusChangeMany(Array.from(selectedIds), status)}
+      onStatusChangeMany={(numStatus) => onStatusChangeMany(Array.from(selectedIds), numStatus === 1 ? TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG : TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG)}
       columns={columns}
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}

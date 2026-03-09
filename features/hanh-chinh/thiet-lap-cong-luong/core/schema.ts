@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import i18n from '../../../../lib/i18n';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { ADMIN_FORM_TYPES } from './constants';
 
 const IP_REGEX =
@@ -12,9 +13,7 @@ export const payrollWifiIpSchema = z.object({
     .min(7, { message: i18n.t('payrollIp.validation.ipRequired') })
     .regex(IP_REGEX, { message: i18n.t('payrollIp.validation.ipInvalid') }),
   ghi_chu: z.string().optional().nullable(),
-  trang_thai: z.coerce.number().refine((val) => val === 0 || val === 1, {
-    message: i18n.t('payrollIp.validation.statusInvalid'),
-  }),
+  trang_thai: z.enum([TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG, TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG]),
 });
 
 export type PayrollWifiIpFormValues = z.infer<typeof payrollWifiIpSchema>;
@@ -26,9 +25,7 @@ export const payrollAdminFormGroupSchema = z.object({
     .min(0, { message: i18n.t('payrollIp.groups.validation.quotaMin') })
     .max(999, { message: i18n.t('payrollIp.groups.validation.quotaMax') }),
   ghi_chu: z.string().optional().nullable(),
-  trang_thai: z.coerce.number().refine((val) => val === 0 || val === 1, {
-    message: i18n.t('payrollIp.groups.validation.statusInvalid'),
-  }),
+  trang_thai: z.enum([TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG, TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG]),
 });
 
 export type PayrollAdminFormGroupFormValues = z.infer<typeof payrollAdminFormGroupSchema>;
@@ -41,9 +38,7 @@ export const payrollPointGroupSchema = z.object({
   loai: z.enum(POINT_GROUP_TYPES, { errorMap: () => ({ message: i18n.t('payrollIp.pointGroups.validation.loaiRequired') }) }),
   thu_tu: z.coerce.number().min(0, { message: i18n.t('payrollIp.pointGroups.validation.thuTuMin') }),
   ghi_chu: z.string().optional().nullable(),
-  trang_thai: z.coerce.number().refine((val) => val === 0 || val === 1, {
-    message: i18n.t('payrollIp.pointGroups.validation.statusInvalid'),
-  }),
+  trang_thai: z.enum([TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG, TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG]),
 });
 
 export type PayrollPointGroupFormValues = z.infer<typeof payrollPointGroupSchema>;

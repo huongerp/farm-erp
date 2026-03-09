@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useId } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { ChevronDown, Check, X, Search, Plus, Loader2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
@@ -30,6 +31,8 @@ interface MultiSelectProps {
   onCreateOption?: (label: string) => Promise<string | null>;
   /** Label cho hàng tạo mới, dùng %s thay cho searchTerm. VD: "Tạo mới: %s" */
   createOptionLabel?: string;
+  /** Render dropdown qua portal vào body để tránh bị cắt bởi overflow (drawer, modal) */
+  dropdownInPortal?: boolean;
 }
 
 const MultiSelect: React.FC<MultiSelectProps> = ({
@@ -43,23 +46,54 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
   size = 'sm',
   onCreateOption,
   createOptionLabel = "Tạo mới: %s",
+  dropdownInPortal = false,
 }) => {
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+  const [dropdownRect, setDropdownRect] = useState<{ top: number; left: number; width: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const listboxId = useId();
 
+  const updateDropdownRect = () => {
+    const el = containerRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const listHeight = 280;
+    const spaceBelow = typeof window !== 'undefined' ? window.innerHeight - rect.bottom : listHeight;
+    const openAbove = spaceBelow < Math.min(listHeight, 200);
+    setDropdownRect({
+      top: openAbove ? rect.top - listHeight - 4 : rect.bottom + 4,
+      left: rect.left,
+      width: Math.max(rect.width, 200),
+    });
+  };
+
+  useEffect(() => {
+    if (!isOpen) return;
+    if (dropdownInPortal) {
+      updateDropdownRect();
+    }
+  }, [isOpen, dropdownInPortal]);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
+      const target = event.target as Node;
+      if (containerRef.current?.contains(target)) return;
+      if (dropdownInPortal && (target as Element).closest?.('[data-multiselect-dropdown]')) return;
+      setIsOpen(false);
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [dropdownInPortal]);
+
+  useEffect(() => {
+    if (!isOpen || !dropdownInPortal) return;
+    const close = () => setIsOpen(false);
+    window.addEventListener('scroll', close, true);
+    return () => window.removeEventListener('scroll', close, true);
+  }, [isOpen, dropdownInPortal]);
 
   const handleSelect = (optionValue: string) => {
     const isSelected = value.includes(optionValue);
@@ -106,6 +140,105 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
 
   const heightClass = size === 'sm' ? 'h-7' : 'h-8';
 
+  const dropdownContent = (
+    <>
+      <div className="p-1.5 border-b border-border">
+        <div className="relative">
+          <Search size={13} className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <input
+            type="text"
+            className="w-full pl-7 pr-3 py-1.5 text-xs text-foreground border border-border rounded-lg bg-background placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+            placeholder="Tìm kiếm..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            autoFocus
+          />
+        </div>
+      </div>
+      <div className="max-h-[220px] overflow-y-auto custom-scrollbar p-1">
+        {filteredOptions.length > 0 && (
+          <div className="flex items-center justify-between gap-2 px-2 py-1.5 text-xs font-medium text-muted-foreground border-b border-border mb-0.5">
+            <div
+              className="flex items-center flex-1 min-w-0 hover:bg-muted/50 rounded-lg cursor-pointer py-0.5 -my-0.5 px-1 -mx-1"
+              onClick={handleSelectAll}
+            >
+              <div className={cn(
+                "w-3.5 h-3.5 rounded border flex items-center justify-center mr-2 transition-colors shrink-0",
+                value.length === filteredOptions.length && filteredOptions.length > 0 ? "bg-primary border-primary text-primary-foreground" : "border-border bg-card"
+              )}>
+                {value.length === filteredOptions.length && filteredOptions.length > 0 ? <Check size={9} /> : null}
+              </div>
+              <span className="truncate">{t('common.selectAll')}</span>
+            </div>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onChange([]); }}
+              className="shrink-0 text-xs font-medium text-primary hover:underline py-0.5 px-1"
+            >
+              {t('common.clearSelection')}
+            </button>
+          </div>
+        )}
+        {filteredOptions.length === 0 && !showCreateOption ? (
+          <div className="py-3 text-center text-xs text-muted-foreground">Không tìm thấy</div>
+        ) : (
+          <>
+            {filteredOptions.map((option) => {
+              const isSelected = value.includes(option.value);
+              const hasCount = option.count !== undefined;
+              const isZeroCount = hasCount && option.count === 0 && !isSelected;
+              return (
+                <div
+                  key={option.value}
+                  onClick={() => !isZeroCount && handleSelect(option.value)}
+                  className={cn(
+                    "flex items-center px-2 py-1.5 text-xs rounded-lg transition-colors",
+                    isZeroCount ? "opacity-40 cursor-not-allowed" : "cursor-pointer",
+                    isSelected ? "bg-primary/5 text-primary" : !isZeroCount && "text-foreground hover:bg-muted/50"
+                  )}
+                >
+                  <div className={cn(
+                    "w-3.5 h-3.5 rounded border flex items-center justify-center mr-2 transition-colors shrink-0",
+                    isSelected ? "bg-primary border-primary text-primary-foreground" : "border-border bg-card"
+                  )}>
+                    {isSelected && <Check size={9} />}
+                  </div>
+                  {option.icon && <option.icon size={13} className="mr-1.5 text-muted-foreground" />}
+                  <span className="truncate">{option.label}</span>
+                  {hasCount && (
+                    <span className={cn("ml-auto shrink-0 text-2xs font-medium tabular-nums pl-2", isSelected ? "text-primary/70" : "text-muted-foreground")}>
+                      {option.count}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+            {showCreateOption && (
+              <div
+                onClick={isCreating ? undefined : handleCreateOption}
+                className={cn(
+                  "flex items-center gap-2 px-2 py-1.5 text-xs rounded-lg transition-colors",
+                  isCreating ? "opacity-60 cursor-wait" : "cursor-pointer text-primary hover:bg-primary/10"
+                )}
+              >
+                {isCreating ? <Loader2 size={14} className="animate-spin shrink-0" /> : <Plus size={14} className="shrink-0" />}
+                <span className="truncate">{createOptionLabel.replace(/%s/g, searchTrim)}</span>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+      {hasValue && (
+        <div className="px-2 py-1.5 bg-muted/30 border-t border-border flex justify-between items-center text-xs text-muted-foreground">
+          <span className="tabular-nums">{value.length} / {options.length} đã chọn</span>
+          <button type="button" onClick={() => setIsOpen(false)} className="text-primary font-medium hover:underline text-xs">Xong</button>
+        </div>
+      )}
+    </>
+  );
+
+  const dropdownClassName = "bg-card border border-border rounded-xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 min-w-[200px]";
+
   return (
     <div className={cn("relative min-w-[140px]", className)} ref={containerRef}>
       <button
@@ -151,119 +284,29 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
         </div>
       </button>
 
-      {isOpen && (
-        <div id={listboxId} role="listbox" className="absolute top-full left-0 mt-1 w-full min-w-[200px] bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-          {/* Search */}
-          <div className="p-1.5 border-b border-border">
-            <div className="relative">
-              <Search size={13} className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input
-                type="text"
-                className="w-full pl-7 pr-3 py-1.5 text-xs text-foreground border border-border rounded-lg bg-background placeholder:text-muted-foreground focus:outline-none focus:border-primary"
-                placeholder="Tìm kiếm..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                autoFocus
-              />
-            </div>
-          </div>
-          
-          {/* Options */}
-          <div className="max-h-[220px] overflow-y-auto custom-scrollbar p-1">
-            {filteredOptions.length > 0 && (
-              <div className="flex items-center justify-between gap-2 px-2 py-1.5 text-xs font-medium text-muted-foreground border-b border-border mb-0.5">
-                <div
-                  className="flex items-center flex-1 min-w-0 hover:bg-muted/50 rounded-lg cursor-pointer py-0.5 -my-0.5 px-1 -mx-1"
-                  onClick={handleSelectAll}
-                >
-                  <div className={cn(
-                    "w-3.5 h-3.5 rounded border flex items-center justify-center mr-2 transition-colors shrink-0",
-                    value.length === filteredOptions.length && filteredOptions.length > 0 ? "bg-primary border-primary text-primary-foreground" : "border-border bg-card"
-                  )}>
-                    {value.length === filteredOptions.length && filteredOptions.length > 0 && <Check size={9} />}
-                  </div>
-                  <span className="truncate">{t('common.selectAll')}</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); onChange([]); }}
-                  className="shrink-0 text-xs font-medium text-primary hover:underline py-0.5 px-1"
-                >
-                  {t('common.clearSelection')}
-                </button>
+      {isOpen &&
+        (dropdownInPortal && dropdownRect && typeof document !== 'undefined'
+          ? createPortal(
+              <div
+                id={listboxId}
+                role="listbox"
+                data-multiselect-dropdown
+                className={cn(dropdownClassName, "fixed z-[9999]")}
+                style={{
+                  top: dropdownRect.top,
+                  left: dropdownRect.left,
+                  width: dropdownRect.width,
+                }}
+              >
+                {dropdownContent}
+              </div>,
+              document.body
+            )
+          : (
+              <div id={listboxId} role="listbox" className={cn("absolute top-full left-0 mt-1 w-full z-50", dropdownClassName)}>
+                {dropdownContent}
               </div>
-            )}
-
-            {filteredOptions.length === 0 && !showCreateOption ? (
-              <div className="py-3 text-center text-xs text-muted-foreground">Không tìm thấy</div>
-            ) : (
-              <>
-              {filteredOptions.map((option) => {
-                const isSelected = value.includes(option.value);
-                const hasCount = option.count !== undefined;
-                const isZeroCount = hasCount && option.count === 0 && !isSelected;
-                return (
-                  <div
-                    key={option.value}
-                    onClick={() => !isZeroCount && handleSelect(option.value)}
-                    className={cn(
-                      "flex items-center px-2 py-1.5 text-xs rounded-lg transition-colors",
-                      isZeroCount
-                        ? "opacity-40 cursor-not-allowed"
-                        : "cursor-pointer",
-                      isSelected ? "bg-primary/5 text-primary" : !isZeroCount && "text-foreground hover:bg-muted/50"
-                    )}
-                  >
-                    <div className={cn(
-                      "w-3.5 h-3.5 rounded border flex items-center justify-center mr-2 transition-colors shrink-0",
-                      isSelected ? "bg-primary border-primary text-primary-foreground" : "border-border bg-card"
-                    )}>
-                      {isSelected && <Check size={9} />}
-                    </div>
-                    {option.icon && <option.icon size={13} className="mr-1.5 text-muted-foreground" />}
-                    <span className="truncate">{option.label}</span>
-                    {hasCount && (
-                      <span className={cn(
-                        "ml-auto shrink-0 text-2xs font-medium tabular-nums pl-2",
-                        isSelected ? "text-primary/70" : "text-muted-foreground"
-                      )}>
-                        {option.count}
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-              {showCreateOption && (
-                <div
-                  onClick={isCreating ? undefined : handleCreateOption}
-                  className={cn(
-                    "flex items-center gap-2 px-2 py-1.5 text-xs rounded-lg transition-colors",
-                    isCreating ? "opacity-60 cursor-wait" : "cursor-pointer text-primary hover:bg-primary/10"
-                  )}
-                >
-                  {isCreating ? (
-                    <Loader2 size={14} className="animate-spin shrink-0" />
-                  ) : (
-                    <Plus size={14} className="shrink-0" />
-                  )}
-                  <span className="truncate">
-                    {createOptionLabel.replace(/%s/g, searchTrim)}
-                  </span>
-                </div>
-              )}
-              </>
-            )}
-          </div>
-          
-          {/* Footer */}
-          {hasValue && (
-            <div className="px-2 py-1.5 bg-muted/30 border-t border-border flex justify-between items-center text-xs text-muted-foreground">
-              <span className="tabular-nums">{value.length} / {options.length} đã chọn</span>
-              <button onClick={() => setIsOpen(false)} className="text-primary font-medium hover:underline text-xs">Xong</button>
-            </div>
-          )}
-        </div>
-      )}
+            ))}
     </div>
   );
 };

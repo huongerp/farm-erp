@@ -11,6 +11,7 @@ import {
   importKho,
 } from '../services/kho-service';
 import type { KhoFormValues } from '../core/schema';
+import type { Kho } from '../core/types';
 import i18n from '../../../../lib/i18n';
 
 const QUERY_KEY = ['kho'] as const;
@@ -60,7 +61,7 @@ export const useUpdateKho = (onSuccess?: () => void) => {
 export const useUpdateKhoStatus = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, status }: { id: string; status: 0 | 1 }) => updateKhoStatus(id, status),
+    mutationFn: ({ id, status }: { id: string; status: Kho['trang_thai'] }) => updateKhoStatus(id, status),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY });
       toast.success(i18n.t('kho.toast.updateSuccess'));

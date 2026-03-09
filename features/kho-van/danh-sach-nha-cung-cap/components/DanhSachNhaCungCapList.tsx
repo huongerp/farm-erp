@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Edit, Trash2, Truck } from 'lucide-react';
 import { cn, formatDateShort } from '../../../../lib/utils';
 import type { NhaCungCap } from '../core/types';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import EmptyState from '../../../../components/shared/EmptyState';
 import ListPageSkeleton from '../../../../components/shared/ListPageSkeleton';
 import TablePaginationFooter from '../../../../components/shared/TablePaginationFooter';
@@ -112,15 +113,15 @@ const DanhSachNhaCungCapList: React.FC<Props> = ({
       case 'trang_thai':
         return (
           <td key={col.id} className="px-4 py-3" style={getColumnCellStyle(col)}>
-            {item.trang_thai === 1 ? (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
-                {t('common.activeStatus')}
-              </span>
-            ) : (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border">
-                {t('common.inactiveStatus')}
-              </span>
-            )}
+            <span
+              className={
+                item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG
+                  ? 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20'
+                  : 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border'
+              }
+            >
+              {item.trang_thai}
+            </span>
           </td>
         );
       case 'tg_cap_nhat':

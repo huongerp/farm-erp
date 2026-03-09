@@ -3,6 +3,13 @@ import type { TFunction } from 'i18next';
 export const ADMIN_FORM_SHIFTS = ['morning', 'afternoon', 'full'] as const;
 export type AdminFormShift = typeof ADMIN_FORM_SHIFTS[number];
 
+/** Hệ số tính định mức: ca sáng = 0.5, ca chiều = 0.5, cả ngày = 1 */
+export const ADMIN_FORM_SHIFT_WEIGHT: Record<AdminFormShift, number> = {
+  morning: 0.5,
+  afternoon: 0.5,
+  full: 1,
+};
+
 export const ADMIN_FORM_STATUSES = [
   'pending',
   'manager_approved',

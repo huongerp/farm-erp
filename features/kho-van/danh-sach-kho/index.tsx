@@ -20,6 +20,7 @@ import { useConfirmStore } from '../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL, CONFIRM_YES } from '../../../lib/button-labels';
 import { useListWithFilter } from '../../../lib/hooks';
 import { useExportData } from '../../../lib/useExportData';
+import { TRANG_THAI_HOAT_DONG } from '../../../lib/constants';
 import { Kho } from './core/types';
 import type { KhoFormValues } from './core/schema';
 
@@ -81,7 +82,7 @@ const DanhSachKhoPage: React.FC = () => {
       item.ten_kho.toLowerCase().includes(searchLower) ||
       item.ma_kho.toLowerCase().includes(searchLower) ||
       (item.dia_chi?.toLowerCase().includes(searchLower) ?? false);
-    const statusKey = item.trang_thai === 1 ? 'Active' : 'Inactive';
+    const statusKey = item.trang_thai === 'Đang hoạt động' ? 'Active' : 'Inactive';
     const matchesStatus = f.status.length === 0 || f.status.includes(statusKey);
     return matchesSearch && matchesStatus;
   }, []);
@@ -121,7 +122,7 @@ const DanhSachKhoPage: React.FC = () => {
       dia_chi: item.dia_chi ?? '',
       mo_ta: item.mo_ta ?? '',
       thu_tu: item.thu_tu,
-      trang_thai_text: item.trang_thai === 1 ? t('kho.active') : t('kho.inactive'),
+      trang_thai_text: item.trang_thai,
     }),
     [t]
   );
@@ -179,6 +180,7 @@ const DanhSachKhoPage: React.FC = () => {
 
   const handleStatusChangeMany = (status: 0 | 1) => {
     const ids = Array.from(selectedIds);
+    const statusText = status === 1 ? TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG : TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG;
     const statusLabel = status === 1 ? t('kho.active') : t('kho.inactive');
     confirm({
       title: t('kho.statusChangeTitle'),
@@ -187,7 +189,7 @@ const DanhSachKhoPage: React.FC = () => {
       confirmText: CONFIRM_YES(),
       onConfirm: async () => {
         for (const id of ids) {
-          await statusMutation.mutateAsync({ id, status });
+          await statusMutation.mutateAsync({ id, status: statusText });
         }
         clearSelection();
       },
@@ -195,15 +197,22 @@ const DanhSachKhoPage: React.FC = () => {
   };
 
   const handleImportData = async (data: Record<string, unknown>[]) => {
-    const rows: KhoFormValues[] = data.map((row) => ({
-      ma_kho: String(row.ma_kho ?? '').trim().toUpperCase(),
-      ten_kho: String(row.ten_kho ?? '').trim(),
-      dia_chi: row.dia_chi != null ? String(row.dia_chi).trim() : undefined,
-      mo_ta: row.mo_ta != null ? String(row.mo_ta).trim() : undefined,
-      id_chi_nhanh: null,
-      thu_tu: Number(row.thu_tu) || 0,
-      trang_thai: Number(row.trang_thai) === 0 ? 0 : 1,
-    }));
+    const rows: KhoFormValues[] = data.map((row) => {
+      const raw = row.trang_thai;
+      const trangThai =
+        raw === 0 || String(raw).trim() === '0' || String(raw).trim().toLowerCase() === 'ngừng hoạt động'
+          ? TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG
+          : TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
+      return {
+        ma_kho: String(row.ma_kho ?? '').trim().toUpperCase(),
+        ten_kho: String(row.ten_kho ?? '').trim(),
+        dia_chi: row.dia_chi != null ? String(row.dia_chi).trim() : undefined,
+        mo_ta: row.mo_ta != null ? String(row.mo_ta).trim() : undefined,
+        id_chi_nhanh: null,
+        thu_tu: Number(row.thu_tu) || 0,
+        trang_thai: trangThai,
+      };
+    });
     await importMutation.mutateAsync(rows);
   };
 

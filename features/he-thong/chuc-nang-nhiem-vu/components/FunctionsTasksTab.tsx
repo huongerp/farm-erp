@@ -16,6 +16,7 @@ import {
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { useAuthStore } from '../../../../store/useStore';
 import { CONFIRM_DELETE } from '../../../../lib/button-labels';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import MissionSection from './MissionSection';
 import FunctionWithTasksCard from './FunctionWithTasksCard';
 import FunctionDetailDrawer from './FunctionDetailDrawer';
@@ -124,8 +125,8 @@ const FunctionsTasksTab: React.FC = () => {
   };
 
   const handleStatusChangeFunction = (item: DeptFunction) => {
-    const newStatus = item.trang_thai === 1 ? 0 : 1;
-    updateFunctionStatusMutation.mutate({ ids: [item.id], status: newStatus as 0 | 1 });
+    const newStatus = item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG : TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
+    updateFunctionStatusMutation.mutate({ ids: [item.id], status: newStatus });
   };
 
   const handleAddTask = (idChucNang: string) => {
@@ -151,8 +152,8 @@ const FunctionsTasksTab: React.FC = () => {
   };
 
   const handleStatusChangeTask = (item: Task) => {
-    const newStatus = item.trang_thai === 1 ? 0 : 1;
-    updateTaskStatusMutation.mutate({ ids: [item.id], status: newStatus as 0 | 1 });
+    const newStatus = item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG : TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
+    updateTaskStatusMutation.mutate({ ids: [item.id], status: newStatus });
   };
 
   return (

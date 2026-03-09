@@ -194,10 +194,7 @@ const AdminFormMyTab: React.FC = () => {
           data={sortedList}
           isLoading={isLoading}
           onView={handleView}
-          onEdit={(item) => {
-            if (['approved', 'rejected', 'cancelled'].includes(item.trang_thai)) return;
-            handleEdit(item);
-          }}
+          onEdit={handleEdit}
           onDelete={handleDelete}
           useStore={useAdminFormMyStore}
         />
@@ -214,10 +211,8 @@ const AdminFormMyTab: React.FC = () => {
           <AdminFormDetail
             data={viewingItem}
             onClose={() => setViewingItem(null)}
-            onEdit={(item) => {
-              if (['approved', 'rejected', 'cancelled'].includes(item.trang_thai)) return;
-              handleEdit(item);
-            }}
+            onEdit={(item) => { setViewingItem(null); handleEdit(item); }}
+            onDelete={handleDelete}
             onCancel={handleCancel}
           />
         )}

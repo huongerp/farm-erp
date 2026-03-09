@@ -17,7 +17,7 @@ import { CONFIRM_DELETE, CONFIRM_YES, CONFIRM_DELETE_ALL } from '../../../lib/bu
 import { useListWithFilter } from '../../../lib/hooks';
 import { useExportData } from '../../../lib/useExportData';
 import { Position } from './core/types';
-import { TRANG_THAI, type TrangThai } from '../../../lib/constants';
+import { TRANG_THAI_HOAT_DONG, type TrangThaiHoatDong } from '../../../lib/constants';
 
 const PositionPage: React.FC = () => {
   const { t } = useTranslation();
@@ -63,7 +63,7 @@ const PositionPage: React.FC = () => {
         (item.ma_chuc_vu && item.ma_chuc_vu.toLowerCase().includes(searchLower)) ||
         item.ten_chuc_vu.toLowerCase().includes(searchLower) ||
         (item.mo_ta && item.mo_ta.toLowerCase().includes(searchLower));
-      const statusKey = item.trang_thai === TRANG_THAI.DANG_DUNG ? 'Active' : 'Inactive';
+      const statusKey = item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? 'Active' : 'Inactive';
       const matchesStatus = f.status.length === 0 || f.status.includes(statusKey);
       return matchesSearch && matchesStatus;
     },
@@ -107,7 +107,7 @@ const PositionPage: React.FC = () => {
       ten_cap_bac: item.ten_cap_bac ?? '',
       mo_ta: item.mo_ta ?? '',
       trang_thai_text:
-        item.trang_thai === TRANG_THAI.DANG_DUNG ? t('position.active') : t('common.inactive'),
+        item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? t('position.active') : t('common.inactive'),
     }),
     [t]
   );
@@ -182,10 +182,10 @@ const PositionPage: React.FC = () => {
     });
   };
 
-  const handleStatusChangeMany = (ids: string[], status: TrangThai) => {
+  const handleStatusChangeMany = (ids: string[], status: TrangThaiHoatDong) => {
     confirm({
       title: t('position.statusChangeTitle'),
-      message: `${t('position.statusChangeMessage', { count: ids.length })} ${status === TRANG_THAI.DANG_DUNG ? t('position.active') : t('common.inactive')}?`,
+      message: `${t('position.statusChangeMessage', { count: ids.length })} ${status === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? t('position.active') : t('common.inactive')}?`,
       variant: 'warning',
       confirmText: CONFIRM_YES(),
       onConfirm: async () => {

@@ -1,15 +1,16 @@
 import type { DanhMucHangHoa } from '../core/types';
 import type { DanhMucHangHoaFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const ts = () => new Date().toISOString();
 
 const seed: DanhMucHangHoa[] = [
-  { id: 'dmhh-1', ma_danh_muc: 'NHOM-01', ten_danh_muc: 'Vật tư văn phòng', id_cha: null, thu_tu: 0, trang_thai: 1, tg_tao: ts(), tg_cap_nhat: ts() },
-  { id: 'dmhh-2', ma_danh_muc: 'NHOM-02', ten_danh_muc: 'Nguyên vật liệu', id_cha: null, thu_tu: 1, trang_thai: 1, tg_tao: ts(), tg_cap_nhat: ts() },
-  { id: 'dmhh-3', ma_danh_muc: 'VT-001', ten_danh_muc: 'Giấy A4', id_cha: 'dmhh-1', thu_tu: 0, trang_thai: 1, tg_tao: ts(), tg_cap_nhat: ts() },
-  { id: 'dmhh-4', ma_danh_muc: 'VT-002', ten_danh_muc: 'Bút bi', id_cha: 'dmhh-1', thu_tu: 1, trang_thai: 1, tg_tao: ts(), tg_cap_nhat: ts() },
+  { id: 'dmhh-1', ma_danh_muc: 'NHOM-01', ten_danh_muc: 'Vật tư văn phòng', id_cha: null, thu_tu: 0, trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG, tg_tao: ts(), tg_cap_nhat: ts() },
+  { id: 'dmhh-2', ma_danh_muc: 'NHOM-02', ten_danh_muc: 'Nguyên vật liệu', id_cha: null, thu_tu: 1, trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG, tg_tao: ts(), tg_cap_nhat: ts() },
+  { id: 'dmhh-3', ma_danh_muc: 'VT-001', ten_danh_muc: 'Giấy A4', id_cha: 'dmhh-1', thu_tu: 0, trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG, tg_tao: ts(), tg_cap_nhat: ts() },
+  { id: 'dmhh-4', ma_danh_muc: 'VT-002', ten_danh_muc: 'Bút bi', id_cha: 'dmhh-1', thu_tu: 1, trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG, tg_tao: ts(), tg_cap_nhat: ts() },
 ];
 
 let db: DanhMucHangHoa[] = JSON.parse(JSON.stringify(seed));
@@ -36,7 +37,7 @@ export const createDanhMucHangHoa = async (
     id_cha: data.id_cha && data.id_cha.trim() ? data.id_cha : null,
     thu_tu: data.thu_tu ?? 0,
     mo_ta: data.mo_ta?.trim() || undefined,
-    trang_thai: data.trang_thai as 0 | 1,
+    trang_thai: data.trang_thai,
     tg_tao: ts(),
     tg_cap_nhat: ts(),
   };
@@ -59,7 +60,7 @@ export const updateDanhMucHangHoa = async (
     id_cha: data.id_cha && data.id_cha.trim() ? data.id_cha : null,
     thu_tu: data.thu_tu ?? existing.thu_tu,
     mo_ta: data.mo_ta?.trim() || undefined,
-    trang_thai: data.trang_thai as 0 | 1,
+    trang_thai: data.trang_thai,
     tg_cap_nhat: ts(),
   };
   db[index] = updated;

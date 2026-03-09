@@ -41,7 +41,7 @@ export const useUpdateJobLevel = (onSuccess?: () => void) => {
 export const useUpdateStatusJobLevel = () => {
     const queryClient = useQueryClient();
     return useMutation({
-      mutationFn: ({ ids, status }: { ids: string[], status: import('../../../../lib/constants').TrangThai }) => updateJobLevelStatus(ids, status),
+      mutationFn: ({ ids, status }: { ids: string[], status: import('../../../../lib/constants').TrangThaiHoatDong }) => updateJobLevelStatus(ids, status),
       onSuccess: (_, variables) => {
         queryClient.invalidateQueries({ queryKey: ['job-levels'] });
         toast.success(i18n.t('jobLevel.toast.statusUpdate', { count: variables.ids.length }));
