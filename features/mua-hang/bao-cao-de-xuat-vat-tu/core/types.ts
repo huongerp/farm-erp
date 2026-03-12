@@ -1,9 +1,12 @@
+/** Trạng thái phiếu đề xuất vật tư – lưu text trong DB */
+export type TrangThaiPhieuDeXuatVatTu = 'Chờ duyệt' | 'Đã duyệt' | 'Không duyệt';
+
 /** Bộ lọc chung cho báo cáo đề xuất vật tư */
 export interface BaoCaoDeXuatVatTuFilters {
   dateFrom: string;
   dateTo: string;
-  /** 0 Chờ duyệt, 1 Đã duyệt, 2 Không duyệt */
-  trangThaiIds: (0 | 1 | 2)[];
+  /** Trạng thái: Chờ duyệt, Đã duyệt, Không duyệt */
+  trangThaiIds: TrangThaiPhieuDeXuatVatTu[];
   noiDeXuatIds: string[];
   nguoiDeXuatIds: string[];
   nguoiDuyetIds: string[];
@@ -11,7 +14,7 @@ export interface BaoCaoDeXuatVatTuFilters {
 
 /** Dòng tổng hợp theo trạng thái */
 export interface TongHopByTrangThaiRow {
-  trang_thai: 0 | 1 | 2;
+  trang_thai: TrangThaiPhieuDeXuatVatTu;
   ten_trang_thai?: string;
   count: number;
 }
@@ -47,7 +50,7 @@ export interface ChiTietPhieuRow {
   ten_nguoi_de_xuat?: string;
   id_nguoi_duyet?: string | null;
   ten_nguoi_duyet?: string | null;
-  trang_thai: 0 | 1 | 2;
+  trang_thai: TrangThaiPhieuDeXuatVatTu;
   ghi_chu?: string;
 }
 
@@ -56,7 +59,7 @@ export interface LienKetDonHangRow {
   id_phieu: string;
   so_phieu: string;
   ngay: string;
-  trang_thai: 0 | 1 | 2;
+  trang_thai: TrangThaiPhieuDeXuatVatTu;
   ten_noi_de_xuat?: string;
   ten_nguoi_de_xuat?: string;
   da_chuyen_don: boolean;

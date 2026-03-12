@@ -1,6 +1,8 @@
-/** 0 = Chờ duyệt, 1 = Đã duyệt, 2 = Không duyệt */
-export const TRANG_THAI_PHIEU_OPTIONS: { value: 0 | 1 | 2; labelKey: string }[] = [
-  { value: 0, labelKey: 'baoCaodeXuatVatTu.trangThaiChoDuyet' },
-  { value: 1, labelKey: 'baoCaodeXuatVatTu.trangThaiDaDuyet' },
-  { value: 2, labelKey: 'baoCaodeXuatVatTu.trangThaiKhongDuyet' },
+import type { TrangThaiPhieuDeXuatVatTu } from './types';
+
+/** Trạng thái phiếu – value lưu thẳng text trong DB */
+export const TRANG_THAI_PHIEU_OPTIONS: { value: TrangThaiPhieuDeXuatVatTu; labelKey: string }[] = [
+  { value: 'Chờ duyệt', labelKey: 'baoCaodeXuatVatTu.trangThaiChoDuyet' },
+  { value: 'Đã duyệt', labelKey: 'baoCaodeXuatVatTu.trangThaiDaDuyet' },
+  { value: 'Không duyệt', labelKey: 'baoCaodeXuatVatTu.trangThaiKhongDuyet' },
 ];

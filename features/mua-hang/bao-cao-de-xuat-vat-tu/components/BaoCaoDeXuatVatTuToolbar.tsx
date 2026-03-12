@@ -85,7 +85,7 @@ const BaoCaoDeXuatVatTuToolbar: React.FC<BaoCaoDeXuatVatTuToolbarProps> = ({
     () =>
       TRANG_THAI_PHIEU_OPTIONS.map((o) => ({
         label: t(o.labelKey),
-        value: String(o.value),
+        value: o.value,
       })),
     [t]
   );
@@ -119,9 +119,9 @@ const BaoCaoDeXuatVatTuToolbar: React.FC<BaoCaoDeXuatVatTuToolbarProps> = ({
         label: t('baoCaodeXuatVatTu.filter.trangThai'),
         icon: Tag,
         options: trangThaiOptions.map((o) => ({ ...o, value: o.value })),
-        value: filters.trangThaiIds.map(String),
+        value: filters.trangThaiIds,
         onChange: (val: string[]) =>
-          onFiltersChange({ ...filters, trangThaiIds: val.map(Number) as (0 | 1 | 2)[] }),
+          onFiltersChange({ ...filters, trangThaiIds: val as BaoCaoDeXuatVatTuFilters['trangThaiIds'] }),
       },
       {
         key: 'noiDeXuatIds',
@@ -163,8 +163,8 @@ const BaoCaoDeXuatVatTuToolbar: React.FC<BaoCaoDeXuatVatTuToolbarProps> = ({
       />
       <FilterChipMultiSelect
         options={trangThaiOptions}
-        value={filters.trangThaiIds.map(String)}
-        onChange={(v) => onFiltersChange({ ...filters, trangThaiIds: v.map(Number) as (0 | 1 | 2)[] })}
+        value={filters.trangThaiIds}
+        onChange={(v) => onFiltersChange({ ...filters, trangThaiIds: v as BaoCaoDeXuatVatTuFilters['trangThaiIds'] })}
         placeholder={t('baoCaodeXuatVatTu.filter.trangThai')}
         icon={Tag}
         className="w-full sm:w-[160px]"

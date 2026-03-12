@@ -26,6 +26,8 @@ export interface SingleImageInputProps {
   aspectRatio?: string;
   className?: string;
   disabled?: boolean;
+  /** Nếu có: upload file lên server (vd Cloudinary) rồi gọi onChange(url). Nếu không: dùng base64. */
+  uploadFile?: (file: File) => Promise<string | null>;
 }
 
 const SingleImageInput: React.FC<SingleImageInputProps> = ({
@@ -43,6 +45,7 @@ const SingleImageInput: React.FC<SingleImageInputProps> = ({
   aspectRatio = '1/1',
   className,
   disabled = false,
+  uploadFile,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -72,6 +75,18 @@ const SingleImageInput: React.FC<SingleImageInputProps> = ({
       return;
     }
     setIsLoading(true);
+    if (uploadFile) {
+      uploadFile(file)
+        .then((url) => {
+          if (url) onChange(url);
+          setIsLoading(false);
+        })
+        .catch((err: Error) => {
+          setSizeError(err?.message ?? 'Upload thất bại');
+          setIsLoading(false);
+        });
+      return;
+    }
     const reader = new FileReader();
     reader.onloadend = () => {
       onChange(reader.result as string);
@@ -82,7 +97,7 @@ const SingleImageInput: React.FC<SingleImageInputProps> = ({
       setIsLoading(false);
     };
     reader.readAsDataURL(file);
-  }, [maxSizeMB, onChange]);
+  }, [maxSizeMB, onChange, uploadFile]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

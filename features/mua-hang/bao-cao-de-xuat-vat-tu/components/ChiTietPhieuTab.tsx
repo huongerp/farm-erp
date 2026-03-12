@@ -12,14 +12,17 @@ import EmptyState from '../../../../components/shared/EmptyState';
 import { BTN_CLOSE } from '../../../../lib/button-labels';
 import { cn } from '../../../../lib/utils';
 
-function getTrangThaiLabel(trang_thai: 0 | 1 | 2, t: (k: string) => string): string {
-  return trang_thai === 0 ? t('baoCaodeXuatVatTu.trangThaiChoDuyet') : trang_thai === 1 ? t('baoCaodeXuatVatTu.trangThaiDaDuyet') : t('baoCaodeXuatVatTu.trangThaiKhongDuyet');
+function getTrangThaiLabel(trang_thai: string, t: (k: string) => string): string {
+  if (trang_thai === 'Chờ duyệt') return t('baoCaodeXuatVatTu.trangThaiChoDuyet');
+  if (trang_thai === 'Đã duyệt') return t('baoCaodeXuatVatTu.trangThaiDaDuyet');
+  if (trang_thai === 'Không duyệt') return t('baoCaodeXuatVatTu.trangThaiKhongDuyet');
+  return trang_thai;
 }
 
-function TrangThaiBadge({ status }: { status: 0 | 1 | 2 }) {
+function TrangThaiBadge({ status }: { status: string }) {
   const { t } = useTranslation();
   const label = getTrangThaiLabel(status, t);
-  const cls = status === 0 ? 'bg-amber-500/10 text-amber-600' : status === 1 ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-600';
+  const cls = status === 'Chờ duyệt' ? 'bg-amber-500/10 text-amber-600' : status === 'Đã duyệt' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-600';
   return <span className={cn('inline-flex px-2 py-0.5 rounded-full text-xs font-medium', cls)}>{label}</span>;
 }
 

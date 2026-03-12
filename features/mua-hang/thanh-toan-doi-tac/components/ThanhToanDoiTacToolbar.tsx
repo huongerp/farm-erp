@@ -7,13 +7,13 @@ import FilterChipMultiSelect from '../../../../components/shared/FilterChipMulti
 import { useThanhToanDoiTacStore } from '../store/useThanhToanDoiTacStore';
 import type { ThanhToanDoiTac } from '../core/types';
 import type { DoiTac } from '../../../kho-van/danh-sach-doi-tac/core/types';
-import type { Department } from '../../../he-thong/phong-ban/core/types';
+import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
 import type { TrangThaiThanhToanDoiTac } from '../../thiet-lap-de-xuat-vat-tu/core/types';
 
 interface Props {
   data: ThanhToanDoiTac[];
   doiTacList: DoiTac[];
-  donViList: Department[];
+  chiNhanhList: Branch[];
   statusList: TrangThaiThanhToanDoiTac[];
   selectedCount: number;
   onAdd: () => void;
@@ -23,7 +23,7 @@ interface Props {
 const ThanhToanDoiTacToolbar: React.FC<Props> = ({
   data,
   doiTacList,
-  donViList,
+  chiNhanhList,
   statusList,
   selectedCount,
   onAdd,
@@ -64,12 +64,12 @@ const ThanhToanDoiTacToolbar: React.FC<Props> = ({
 
   const donViOptions = useMemo(
     () =>
-      donViList.map((d) => ({
-        value: d.id,
-        label: d.ten_phong_ban,
-        count: data.filter((x) => x.id_don_vi === d.id).length,
+      chiNhanhList.map((b) => ({
+        value: b.id,
+        label: b.ten_chi_nhanh,
+        count: data.filter((x) => x.id_don_vi === b.id).length,
       })),
-    [donViList, data]
+    [chiNhanhList, data]
   );
 
   const activeFilterCount = useMemo(

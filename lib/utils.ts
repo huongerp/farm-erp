@@ -193,6 +193,22 @@ export function formatNumberVN(value: number | null | undefined, options?: { max
   return new Intl.NumberFormat('vi-VN', { minimumFractionDigits: minFractionDigits, maximumFractionDigits: maxFractionDigits }).format(value);
 }
 
+/** Parse chuỗi số đã format (phân tách hàng nghìn) về number. Hỗ trợ vi-VN (1.234,56) và en-US (1,234.56). */
+export function parseFormattedNumber(str: string, locale?: string): number {
+  if (!str || typeof str !== 'string') return 0;
+  const s = str.trim();
+  if (!s) return 0;
+  const isVi = (locale ?? getLocale()).startsWith('vi');
+  let cleaned: string;
+  if (isVi) {
+    cleaned = s.replace(/\./g, '').replace(',', '.');
+  } else {
+    cleaned = s.replace(/,/g, '');
+  }
+  const num = parseFloat(cleaned);
+  return Number.isNaN(num) ? 0 : num;
+}
+
 export function exportToExcel(data: any[], filename: string) {
   if (!data || !data.length) return;
   import('xlsx').then(XLSX => {

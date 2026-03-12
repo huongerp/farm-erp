@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import i18n from '../../../../lib/i18n';
+import { TRANG_THAI_PHIEU_DE_XUAT_VAT_TU } from './constants';
 
 /** Schema cho một dòng chi tiết (dùng khi gửi API). */
 export const phieuDeXuatVatTuChiTietItemSchema = z.object({
@@ -29,8 +30,8 @@ export const phieuDeXuatVatTuSchema = z
     id_nguoi_de_xuat: z.string().min(1, i18n.t('phieuDeXuatVatTu.validation.requesterRequired')),
     id_nguoi_duyet: z.string().optional().nullable(),
     ghi_chu: z.string().optional(),
-    trang_thai: z.coerce.number().refine((val) => val === 0 || val === 1 || val === 2, {
-      message: i18n.t('phieuDeXuatVatTu.validation.statusInvalid'),
+    trang_thai: z.enum(TRANG_THAI_PHIEU_DE_XUAT_VAT_TU, {
+      errorMap: () => ({ message: i18n.t('phieuDeXuatVatTu.validation.statusInvalid') }),
     }),
     chi_tiet: z.array(phieuDeXuatVatTuChiTietFormItemSchema).default([]),
   })
@@ -42,6 +43,13 @@ export const phieuDeXuatVatTuSchema = z
       return hasItem;
     },
     { message: i18n.t('phieuDeXuatVatTu.validation.atLeastOneItem'), path: ['chi_tiet'] }
+  )
+  .refine(
+    (data) => {
+      if (!data.ngay || !data.ngay_can) return true;
+      return new Date(data.ngay_can) >= new Date(data.ngay);
+    },
+    { message: i18n.t('phieuDeXuatVatTu.validation.requiredDateNotBeforeDate'), path: ['ngay_can'] }
   );
 
 export type PhieuDeXuatVatTuChiTietFormItem = z.infer<typeof phieuDeXuatVatTuChiTietFormItemSchema>;

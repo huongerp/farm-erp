@@ -14,8 +14,11 @@ function formatDateDisplay(ymd: string): string {
   return `${d}/${m}/${y}`;
 }
 
-function getTrangThaiLabel(trang_thai: 0 | 1 | 2, t: (k: string) => string): string {
-  return trang_thai === 0 ? t('baoCaodeXuatVatTu.trangThaiChoDuyet') : trang_thai === 1 ? t('baoCaodeXuatVatTu.trangThaiDaDuyet') : t('baoCaodeXuatVatTu.trangThaiKhongDuyet');
+function getTrangThaiLabel(trang_thai: string, t: (k: string) => string): string {
+  if (trang_thai === 'Chờ duyệt') return t('baoCaodeXuatVatTu.trangThaiChoDuyet');
+  if (trang_thai === 'Đã duyệt') return t('baoCaodeXuatVatTu.trangThaiDaDuyet');
+  if (trang_thai === 'Không duyệt') return t('baoCaodeXuatVatTu.trangThaiKhongDuyet');
+  return trang_thai;
 }
 
 interface TongHopKyTabProps {

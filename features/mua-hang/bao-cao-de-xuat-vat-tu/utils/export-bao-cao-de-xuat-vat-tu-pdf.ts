@@ -10,8 +10,11 @@ import { getTongHopDeXuatKy, getPhieuDeXuatInPeriod } from '../services/bao-cao-
 
 const FONT_STACK = "'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif";
 
-function getTrangThaiLabel(trang_thai: 0 | 1 | 2, t: TFunction): string {
-  return trang_thai === 0 ? t('baoCaodeXuatVatTu.trangThaiChoDuyet') : trang_thai === 1 ? t('baoCaodeXuatVatTu.trangThaiDaDuyet') : t('baoCaodeXuatVatTu.trangThaiKhongDuyet');
+function getTrangThaiLabel(trang_thai: string, t: TFunction): string {
+  if (trang_thai === 'Chờ duyệt') return t('baoCaodeXuatVatTu.trangThaiChoDuyet');
+  if (trang_thai === 'Đã duyệt') return t('baoCaodeXuatVatTu.trangThaiDaDuyet');
+  if (trang_thai === 'Không duyệt') return t('baoCaodeXuatVatTu.trangThaiKhongDuyet');
+  return trang_thai;
 }
 
 function buildCompanyHeaderHTML(): string {
@@ -36,7 +39,7 @@ function buildCompanyHeaderHTML(): string {
 }
 
 function buildTableTrangThai(
-  rows: { trang_thai: 0 | 1 | 2; count: number }[],
+  rows: { trang_thai: string; count: number }[],
   t: TFunction
 ): string {
   if (rows.length === 0) return '';
@@ -85,7 +88,7 @@ function buildTableNoiDeXuat(
 }
 
 function buildTableChiTiet(
-  rows: { so_phieu: string; ngay: string; ten_noi_de_xuat?: string; ten_nguoi_de_xuat?: string; trang_thai: 0 | 1 | 2 }[],
+  rows: { so_phieu: string; ngay: string; ten_noi_de_xuat?: string; ten_nguoi_de_xuat?: string; trang_thai: string }[],
   t: TFunction
 ): string {
   if (rows.length === 0) return '';

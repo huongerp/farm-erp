@@ -2,8 +2,10 @@ import React, { useEffect, useMemo, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Package, ArrowUpFromLine, Power, Folder, DollarSign } from 'lucide-react';
+import { Package, ArrowUpFromLine, Power, Folder, DollarSign, FileText, Camera } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
+import SingleImageInput from '../../../../components/ui/SingleImageInput';
+import { uploadImageToCloudinary } from '../../../../lib/cloudinary';
 import StatusToggle from '../../../../components/ui/StatusToggle';
 import Combobox from '../../../../components/ui/Combobox';
 import CurrencyInput from '../../../../components/ui/CurrencyInput';
@@ -57,6 +59,8 @@ const DanhSachHangHoaForm: React.FC<Props> = ({ initialData, defaultThuTu, exist
     don_gia: undefined,
     trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG,
     thu_tu: defaultThuTu ?? 1,
+    mo_ta: null,
+    hinh_anh: null,
   };
 
   const { register, handleSubmit, formState: { errors }, reset, control } = useForm<HangHoaFormValues>({
@@ -74,6 +78,8 @@ const DanhSachHangHoaForm: React.FC<Props> = ({ initialData, defaultThuTu, exist
         don_gia: initialData.don_gia ?? undefined,
         trang_thai: initialData.trang_thai,
         thu_tu: initialData.thu_tu,
+        mo_ta: initialData.mo_ta ?? null,
+        hinh_anh: initialData.hinh_anh ?? null,
       });
     } else {
       reset({ ...defaultValues, thu_tu: defaultThuTu ?? 1 });
@@ -86,6 +92,8 @@ const DanhSachHangHoaForm: React.FC<Props> = ({ initialData, defaultThuTu, exist
       id_danh_muc_cap2: data.id_danh_muc_cap2 === '' || data.id_danh_muc_cap2 === undefined ? null : data.id_danh_muc_cap2,
       dvt: data.dvt?.trim() || null,
       don_gia: data.don_gia != null && !Number.isNaN(Number(data.don_gia)) && Number(data.don_gia) > 0 ? Number(data.don_gia) : null,
+      mo_ta: data.mo_ta?.trim() || null,
+      hinh_anh: data.hinh_anh?.trim() || null,
     };
     if (isEdit && initialData) {
       updateMutation.mutate({ id: initialData.id, data: sanitized });
@@ -219,6 +227,49 @@ const DanhSachHangHoaForm: React.FC<Props> = ({ initialData, defaultThuTu, exist
                     inactiveLabel={t('common.inactiveStatus')}
                     icon={<Power size={12} />}
                     required
+                  />
+                )}
+              />
+            </div>
+            <div className="col-span-1 sm:col-span-2">
+              <Controller
+                name="mo_ta"
+                control={control}
+                render={({ field }) => (
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+                      <FileText size={12} className="text-muted-foreground shrink-0" />
+                      {t('hangHoa.detail.description')}
+                    </label>
+                    <textarea
+                      {...field}
+                      value={field.value ?? ''}
+                      onChange={(e) => field.onChange(e.target.value || null)}
+                      placeholder={t('hangHoa.form.descriptionPlaceholder')}
+                      rows={2}
+                      className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-y min-h-[56px]"
+                    />
+                  </div>
+                )}
+              />
+            </div>
+            <div className="col-span-1 sm:col-span-2 flex justify-center">
+              <Controller
+                name="hinh_anh"
+                control={control}
+                render={({ field }) => (
+                  <SingleImageInput
+                    label={t('hangHoa.form.image')}
+                    icon={<Camera className="w-4 h-4" />}
+                    value={field.value ?? null}
+                    onChange={field.onChange}
+                    placeholder={t('hangHoa.form.imagePlaceholder')}
+                    hint={t('hangHoa.form.imageHint')}
+                    uploadFile={async (file) => uploadImageToCloudinary(file, 'farm-erp/hang-hoa')}
+                    shape="rounded"
+                    aspectRatio="1/1"
+                    maxSizeMB={2}
+                    className="w-[180px]"
                   />
                 )}
               />

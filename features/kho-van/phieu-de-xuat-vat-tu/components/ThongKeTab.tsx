@@ -14,6 +14,7 @@ import StatsCards from './stats/StatsCards';
 import StatsCharts from './stats/StatsCharts';
 import StatsTables from './stats/StatsTables';
 import type { PhieuDeXuatVatTu } from '../core/types';
+import { trangThaiToFilterKey } from '../core/constants';
 
 const ThongKeTab: React.FC = () => {
   const { t } = useTranslation();
@@ -24,7 +25,7 @@ const ThongKeTab: React.FC = () => {
   const statusCounts = useMemo(() => {
     const m: Record<string, number> = {};
     list.forEach((d) => {
-      const key = d.trang_thai === 0 ? 'Pending' : d.trang_thai === 1 ? 'Approved' : 'Rejected';
+      const key = trangThaiToFilterKey(d.trang_thai);
       m[key] = (m[key] ?? 0) + 1;
     });
     return m;
@@ -60,7 +61,7 @@ const ThongKeTab: React.FC = () => {
 
   const filteredList = useMemo(() => {
     return list.filter((d: PhieuDeXuatVatTu) => {
-      const statusKey = d.trang_thai === 0 ? 'Pending' : d.trang_thai === 1 ? 'Approved' : 'Rejected';
+      const statusKey = trangThaiToFilterKey(d.trang_thai);
       const matchStatus = filterStatus.length === 0 || filterStatus.includes(statusKey);
       const matchNoiDeXuat = filterNoiDeXuat.length === 0 || filterNoiDeXuat.includes(d.id_noi_de_xuat);
       const matchNguoiDeXuat = filterNguoiDeXuat.length === 0 || filterNguoiDeXuat.includes(d.id_nguoi_de_xuat);

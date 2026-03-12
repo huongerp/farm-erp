@@ -2,6 +2,7 @@
  * Xuất phiếu đề xuất vật tư ra PDF – header công ty + thông tin phiếu + bảng chi tiết hàng hóa.
  */
 import type { PhieuDeXuatVatTu, PhieuDeXuatVatTuChiTiet } from '../core/types';
+import { TRANG_THAI_CHO_DUYET, TRANG_THAI_DA_DUYET, TRANG_THAI_KHONG_DUYET } from '../core/constants';
 import { formatDate, formatDateTime, getTodayISODate } from '../../../../lib/utils';
 import i18n from '../../../../lib/i18n';
 import { useUIStore } from '../../../../store/useStore';
@@ -13,10 +14,11 @@ function safeStr(v: string | number | null | undefined): string {
   return String(v);
 }
 
-function getTrangThaiLabel(trangThai: 0 | 1 | 2, t: (k: string) => string): string {
-  const key =
-    trangThai === 0 ? 'phieuDeXuatVatTu.status.pending' : trangThai === 1 ? 'phieuDeXuatVatTu.status.approved' : 'phieuDeXuatVatTu.status.rejected';
-  return t(key);
+function getTrangThaiLabel(trangThai: string, t: (k: string) => string): string {
+  if (trangThai === TRANG_THAI_CHO_DUYET) return t('phieuDeXuatVatTu.status.pending');
+  if (trangThai === TRANG_THAI_DA_DUYET) return t('phieuDeXuatVatTu.status.approved');
+  if (trangThai === TRANG_THAI_KHONG_DUYET) return t('phieuDeXuatVatTu.status.rejected');
+  return trangThai;
 }
 
 function buildCompanyHeaderHTML(): string {

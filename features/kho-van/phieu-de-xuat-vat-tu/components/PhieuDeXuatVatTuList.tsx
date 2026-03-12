@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Edit, Trash2, FileText } from 'lucide-react';
 import { cn, formatDateShort } from '../../../../lib/utils';
 import type { PhieuDeXuatVatTu } from '../core/types';
+import { TRANG_THAI_CHO_DUYET, TRANG_THAI_DA_DUYET, TRANG_THAI_KHONG_DUYET } from '../core/constants';
 import EmptyState from '../../../../components/shared/EmptyState';
 import ListPageSkeleton from '../../../../components/shared/ListPageSkeleton';
 import TablePaginationFooter from '../../../../components/shared/TablePaginationFooter';
@@ -24,6 +25,7 @@ interface Props {
   onDelete: (id: string) => void;
   onView?: (item: PhieuDeXuatVatTu) => void;
   canEditItem?: (item: PhieuDeXuatVatTu) => boolean;
+  canDeleteItem?: (item: PhieuDeXuatVatTu) => boolean;
   isOverdue?: (item: PhieuDeXuatVatTu) => boolean;
 }
 
@@ -42,6 +44,7 @@ const PhieuDeXuatVatTuList: React.FC<Props> = ({
   onDelete,
   onView,
   canEditItem,
+  canDeleteItem,
   isOverdue,
 }) => {
   const { t } = useTranslation();
@@ -110,17 +113,17 @@ const PhieuDeXuatVatTuList: React.FC<Props> = ({
         return (
           <td key={col.id} className="px-4 py-3" style={getColumnCellStyle(col)}>
             <div className="flex flex-wrap items-center gap-1">
-              {item.trang_thai === 0 && (
+              {item.trang_thai === TRANG_THAI_CHO_DUYET && (
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
                   {t('phieuDeXuatVatTu.status.pending')}
                 </span>
               )}
-              {item.trang_thai === 1 && (
+              {item.trang_thai === TRANG_THAI_DA_DUYET && (
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
                   {t('phieuDeXuatVatTu.status.approved')}
                 </span>
               )}
-              {item.trang_thai === 2 && (
+              {item.trang_thai === TRANG_THAI_KHONG_DUYET && (
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
                   {t('phieuDeXuatVatTu.status.rejected')}
                 </span>
@@ -230,14 +233,16 @@ const PhieuDeXuatVatTuList: React.FC<Props> = ({
                           <Edit size={14} />
                         </button>
                       )}
-                      <button
-                        type="button"
-                        onClick={() => onDelete(item.id)}
-                        className="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-md"
-                        title={t('common.delete')}
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      {(!canDeleteItem || canDeleteItem(item)) && (
+                        <button
+                          type="button"
+                          onClick={() => onDelete(item.id)}
+                          className="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-md"
+                          title={t('common.delete')}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

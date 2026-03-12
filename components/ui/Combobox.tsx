@@ -187,16 +187,17 @@ const Combobox: React.FC<ComboboxProps> = ({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
               transition={{ duration: 0.15 }}
-              className="fixed z-[9999] bg-card border border-border rounded-xl shadow-xl overflow-hidden"
+              className="fixed z-[9999] flex flex-col bg-card border border-border rounded-xl shadow-xl overflow-hidden"
               style={{
                 top: dropdownRect.top,
                 left: dropdownRect.left,
                 width: Math.max(dropdownRect.width, 280),
                 maxHeight: 320,
+                height: 320,
               }}
             >
               {searchable && (
-                <div className="p-2 border-b border-border sticky top-0 bg-card z-10">
+                <div className="flex-none p-2 border-b border-border bg-card z-10">
                   <div className="relative">
                     <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <input
@@ -212,7 +213,7 @@ const Combobox: React.FC<ComboboxProps> = ({
                   </div>
                 </div>
               )}
-              <div className="max-h-[220px] overflow-y-auto custom-scrollbar p-1.5 space-y-1">
+              <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar p-1.5 space-y-1">
                 {filteredOptions.length === 0 ? (
                   <div className="py-8 text-center text-sm text-muted-foreground flex flex-col items-center">
                     <Search size={24} className="mb-2 opacity-20" />
@@ -260,10 +261,10 @@ const Combobox: React.FC<ComboboxProps> = ({
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 5, scale: 0.98 }}
               transition={{ duration: 0.15 }}
-              className="absolute z-50 w-full mt-1 bg-card border border-border rounded-xl shadow-xl overflow-hidden"
+              className="absolute z-50 w-full mt-1 bg-card border border-border rounded-xl shadow-xl overflow-hidden flex flex-col max-h-[320px]"
             >
               {searchable && (
-                <div className="p-2 border-b border-border sticky top-0 bg-card z-10">
+                <div className="flex-none p-2 border-b border-border bg-card z-10">
                   <div className="relative">
                     <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <input
@@ -279,7 +280,7 @@ const Combobox: React.FC<ComboboxProps> = ({
                   </div>
                 </div>
               )}
-              <div className="max-h-[250px] overflow-y-auto custom-scrollbar p-1.5 space-y-1">
+              <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar p-1.5 space-y-1">
                 {filteredOptions.length === 0 ? (
                   <div className="py-8 text-center text-sm text-muted-foreground flex flex-col items-center">
                     <Search size={24} className="mb-2 opacity-20" />

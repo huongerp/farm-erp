@@ -12,7 +12,7 @@ const ThanhToanDoiTacPreviewContent: React.FC<Props> = ({ data }) => {
   const { t } = useTranslation();
   const companyInfo = useUIStore((s) => s.companyInfo);
 
-  const TableRow = ({ label, value }: { label: string; value: string | number | null | undefined }) => (
+  const TableRow = ({ label, value }: { label: string; value: React.ReactNode }) => (
     <tr>
       <td className="w-[40%] border border-gray-300 p-1.5 text-[10pt] font-semibold text-gray-600 bg-gray-50/50">
         {label}
@@ -58,7 +58,13 @@ const ThanhToanDoiTacPreviewContent: React.FC<Props> = ({ data }) => {
         {t('thanhToanDoiTac.preview.title')}
       </h1>
       <p className="text-center text-[10pt] text-gray-500 mb-3">
-        {data.so_phieu} · {data.ten_trang_thai ?? '—'}
+        {data.so_phieu}
+        {' · '}
+        {data.mau_trang_thai ? (
+          <span style={{ color: data.mau_trang_thai, fontWeight: 600 }}>{data.ten_trang_thai ?? '—'}</span>
+        ) : (
+          (data.ten_trang_thai ?? '—')
+        )}
       </p>
       <hr className="border-t border-gray-300 my-3" />
 
@@ -76,7 +82,16 @@ const ThanhToanDoiTacPreviewContent: React.FC<Props> = ({ data }) => {
           <TableRow label={t('thanhToanDoiTac.form.ngay')} value={formatDate(data.ngay)} />
           <TableRow label={t('thanhToanDoiTac.form.donVi')} value={data.ten_don_vi ?? '—'} />
           <TableRow label={t('thanhToanDoiTac.form.doiTac')} value={data.ten_doi_tac} />
-          <TableRow label={t('thanhToanDoiTac.form.trangThai')} value={data.ten_trang_thai} />
+          <TableRow
+            label={t('thanhToanDoiTac.form.trangThai')}
+            value={
+              data.mau_trang_thai ? (
+                <span style={{ color: data.mau_trang_thai, fontWeight: 600 }}>{data.ten_trang_thai ?? '—'}</span>
+              ) : (
+                (data.ten_trang_thai ?? '—')
+              )
+            }
+          />
           <TableRow
             label={t('thanhToanDoiTac.form.soTien')}
             value={data.so_tien != null ? data.so_tien.toLocaleString('vi-VN') : null}

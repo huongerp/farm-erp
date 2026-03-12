@@ -87,16 +87,15 @@ const TrangThaiThanhToanDoiTacDetail: React.FC<Props> = ({ data, onClose, onEdit
             <DetailField label={t('thietLapDeXuatVatTu.thanhToan.form.ma')} value={data.ma} />
             <DetailField label={t('thietLapDeXuatVatTu.thanhToan.form.ten')} value={data.ten} />
             <DetailField label={t('thietLapDeXuatVatTu.thanhToan.form.thuTu')} value={String(data.thu_tu)} />
-            {data.mau ? (
-              <div className="flex items-center gap-2">
-                <DetailField label={t('thietLapDeXuatVatTu.thanhToan.store.mauCol')} value={data.mau} />
-                <span
-                  className="w-6 h-6 rounded border border-border shrink-0"
-                  style={{ backgroundColor: data.mau }}
-                  aria-hidden
-                />
-              </div>
-            ) : null}
+            <div className="flex items-center gap-3">
+              <DetailField label={t('thietLapDeXuatVatTu.thanhToan.store.mauCol')} value={data.mau || TRANG_THAI_MAU_DEFAULT} />
+              <span
+                className="w-10 h-10 rounded-lg border-2 border-border shrink-0 shadow-sm"
+                style={{ backgroundColor: data.mau || TRANG_THAI_MAU_DEFAULT }}
+                title={data.mau || TRANG_THAI_MAU_DEFAULT}
+                aria-hidden
+              />
+            </div>
             {data.ghi_chu ? (
               <div className="col-span-1 sm:col-span-2">
                 <DetailField label={t('thietLapDeXuatVatTu.thanhToan.form.ghiChu')} value={data.ghi_chu} />

@@ -1,4 +1,6 @@
 {
+  "thietLapDeXuatVatTu.tabs.trong": "Trống",
+  "thietLapDeXuatVatTu.tabs.emptyHint": "Chọn tab bên cạnh để cấu hình.",
   "thietLapDeXuatVatTu.tabs.trangThaiDoiTac": "Trạng thái đối tác",
   "thietLapDeXuatVatTu.tabs.trangThaiThanhToan": "Trạng thái thanh toán đối tác",
 
@@ -71,5 +73,6 @@
   "thietLapDeXuatVatTu.thanhToan.bulkDeleteMessage": "Bạn có chắc muốn xóa {{count}} trạng thái đã chọn?",
   "thietLapDeXuatVatTu.thanhToan.statusChangeTitle": "Đổi trạng thái",
   "thietLapDeXuatVatTu.thanhToan.statusChangeMessage": "Đổi {{count}} trạng thái sang \"{{status}}\"?",
-  "thietLapDeXuatVatTu.thanhToan.service.notFound": "Không tìm thấy trạng thái thanh toán"
+  "thietLapDeXuatVatTu.thanhToan.service.notFound": "Không tìm thấy trạng thái thanh toán",
+  "thietLapDeXuatVatTu.thanhToan.service.duplicateMa": "Mã trạng thái đã tồn tại"
 }

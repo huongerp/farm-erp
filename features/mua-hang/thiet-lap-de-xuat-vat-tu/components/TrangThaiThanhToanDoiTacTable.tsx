@@ -50,7 +50,17 @@ const TrangThaiThanhToanDoiTacTable: React.FC<Props> = ({ data, isLoading, onEdi
           <span className="font-mono text-sm font-medium text-foreground">{item.ma}</span>
         );
       case 'ten':
-        return <span className="text-sm text-foreground">{item.ten}</span>;
+        return (
+          <div className="flex items-center gap-2">
+            <span
+              className="inline-block w-4 h-4 rounded-full shrink-0 border border-border"
+              style={{ backgroundColor: item.mau || TRANG_THAI_MAU_DEFAULT }}
+              title={item.mau || TRANG_THAI_MAU_DEFAULT}
+              aria-hidden
+            />
+            <span className="text-sm text-foreground">{item.ten}</span>
+          </div>
+        );
       case 'thu_tu':
         return (
           <span className="text-sm font-semibold text-foreground tabular-nums">{item.thu_tu}</span>
@@ -59,8 +69,9 @@ const TrangThaiThanhToanDoiTacTable: React.FC<Props> = ({ data, isLoading, onEdi
         return (
           <div className="flex items-center gap-2">
             <span
-              className="inline-block w-6 h-6 rounded border border-border shrink-0"
+              className="inline-block w-8 h-8 rounded-lg border-2 border-border shrink-0 shadow-sm"
               style={{ backgroundColor: item.mau || TRANG_THAI_MAU_DEFAULT }}
+              title={item.mau || TRANG_THAI_MAU_DEFAULT}
               aria-hidden
             />
             <span className="text-xs text-muted-foreground font-mono">

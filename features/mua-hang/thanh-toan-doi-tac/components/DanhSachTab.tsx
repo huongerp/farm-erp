@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
 import { useThanhToanDoiTacList, useThanhToanDoiTacById, useDeleteThanhToanDoiTac, useDeleteThanhToanDoiTacMany, useUpdateThanhToanDoiTac } from '../hooks/use-thanh-toan-doi-tac';
 import { useDoiTacList } from '../../../kho-van/danh-sach-doi-tac/hooks/use-doi-tac';
-import { useDepartments } from '../../../he-thong/phong-ban/hooks/use-phong-ban';
+import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
 import { useEmployees } from '../../../he-thong/nhan-vien/hooks/use-nhan-vien';
 import { useTrangThaiThanhToanDoiTacList } from '../../thiet-lap-de-xuat-vat-tu/hooks/use-trang-thai-thanh-toan-doi-tac';
 import { useThanhToanDoiTacStore } from '../store/useThanhToanDoiTacStore';
@@ -13,7 +13,6 @@ import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-label
 import type { ThanhToanDoiTac } from '../core/types';
 import type { ThanhToanDoiTacFilters } from '../store/useThanhToanDoiTacStore';
 import type { ThanhToanDoiTacFormValues } from '../core/schema';
-import { MA_TRANG_THAI_DA_THANH_TOAN, MA_TRANG_THAI_DA_HUY } from '../core/constants';
 import { getTodayISO } from '../../../../lib/utils';
 import ThanhToanDoiTacToolbar from './ThanhToanDoiTacToolbar';
 import ThanhToanDoiTacList from './ThanhToanDoiTacList';
@@ -58,7 +57,8 @@ const DanhSachTab: React.FC = () => {
 
   const { data: allList = [], isLoading } = useThanhToanDoiTacList();
   const { data: doiTacList = [] } = useDoiTacList('nha_cung_cap');
-  const { data: donViList = [] } = useDepartments();
+  const { data: chiNhanhList = [] } = useBranches();
+  const donViList = chiNhanhList; // Đơn vị = chi nhánh (alias để tương thích)
   const { data: employees = [] } = useEmployees();
   const { data: statusList = [] } = useTrangThaiThanhToanDoiTacList();
   const { data: viewingFull } = useThanhToanDoiTacById(viewingItem?.id);
@@ -78,7 +78,7 @@ const DanhSachTab: React.FC = () => {
       (item.ghi_chu?.toLowerCase().includes(searchLower) ?? false);
     const matchesStatus = (f.statusIds?.length ?? 0) === 0 || (f.statusIds ?? []).includes(item.id_trang_thai_thanh_toan);
     const matchesDoiTac = (f.doiTacIds?.length ?? 0) === 0 || (f.doiTacIds ?? []).includes(item.id_doi_tac);
-    const matchesDonVi = (f.donViIds?.length ?? 0) === 0 || (item.id_don_vi != null && (f.donViIds ?? []).includes(item.id_don_vi));
+    const matchesDonVi = (f.donViIds?.length ?? 0) === 0 || (item.id_don_vi != null && (f.donViIds ?? []).includes(item.id_don_vi)); // id_don_vi = chi nhánh
     return matchesSearch && matchesStatus && matchesDoiTac && matchesDonVi;
   }, []);
 
@@ -109,25 +109,15 @@ const DanhSachTab: React.FC = () => {
     setEditingItem(null);
   };
 
-  const idTrangThaiDaThanhToan = useMemo(
-    () => statusList.find((s) => s.ma === MA_TRANG_THAI_DA_THANH_TOAN)?.id,
-    [statusList]
-  );
-  const idTrangThaiDaHuy = useMemo(
-    () => statusList.find((s) => s.ma === MA_TRANG_THAI_DA_HUY)?.id,
-    [statusList]
-  );
-
-  const handleApprove = useCallback(
-    (item: ThanhToanDoiTac, payload: { idTrangThai: string; ghiChu?: string }) => {
+  const handleChangeStatus = useCallback(
+    (item: ThanhToanDoiTac, payload: { idTrangThai: string; ngayXuLy?: string; ghiChu?: string }) => {
       const full = viewingFull ?? item;
       const mergedGhiChu = payload.ghiChu
-        ? (full.ghi_chu ? full.ghi_chu + '\n' : '') + `[Ghi chú phê duyệt]: ${payload.ghiChu}`
+        ? (full.ghi_chu ? full.ghi_chu + '\n' : '') + `[Ghi chú chuyển trạng thái]: ${payload.ghiChu}`
         : undefined;
-      const isDone = payload.idTrangThai === idTrangThaiDaThanhToan;
       const data = thanhToanToFormValues(full, {
         id_trang_thai_thanh_toan: payload.idTrangThai,
-        ngay_xu_ly: isDone ? getTodayISO().slice(0, 10) : full.ngay_xu_ly ?? null,
+        ngay_xu_ly: payload.ngayXuLy?.trim() || null,
         ghi_chu: mergedGhiChu ?? full.ghi_chu ?? null,
       });
       updateMutation.mutate(
@@ -135,7 +125,7 @@ const DanhSachTab: React.FC = () => {
         { onSuccess: () => setViewingItem(null) }
       );
     },
-    [updateMutation, viewingFull, idTrangThaiDaThanhToan]
+    [updateMutation, viewingFull]
   );
 
   const handleDelete = (id: string) => {
@@ -174,7 +164,7 @@ const DanhSachTab: React.FC = () => {
       <ThanhToanDoiTacToolbar
         data={filteredList}
         doiTacList={doiTacList}
-        donViList={donViList}
+        chiNhanhList={chiNhanhList}
         statusList={statusList}
         selectedCount={selectedIds.size}
         onAdd={() => {
@@ -205,10 +195,11 @@ const DanhSachTab: React.FC = () => {
         {showForm && (
           <ThanhToanDoiTacForm
             doiTacList={doiTacList}
-            donViList={donViList}
+            chiNhanhList={chiNhanhList}
             employees={employees}
             statusList={statusList}
             initialData={editingFull ?? editingItem}
+            existingSoPhieuList={allList.map((x) => x.so_phieu)}
             onClose={handleCloseForm}
           />
         )}
@@ -225,9 +216,8 @@ const DanhSachTab: React.FC = () => {
               setShowForm(true);
             }}
             onDelete={handleDelete}
-            onApprove={handleApprove}
-            idTrangThaiDaThanhToan={idTrangThaiDaThanhToan}
-            idTrangThaiDaHuy={idTrangThaiDaHuy}
+            onChangeStatus={handleChangeStatus}
+            statusList={statusList}
           />
         )}
       </AnimatePresence>

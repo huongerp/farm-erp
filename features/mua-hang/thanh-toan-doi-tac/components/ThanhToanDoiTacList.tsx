@@ -93,7 +93,14 @@ const ThanhToanDoiTacList: React.FC<Props> = ({
       case 'ten_trang_thai':
         return (
           <td key={col.id} className="px-4 py-3" style={getColumnCellStyle(col)}>
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border bg-muted/50 text-muted-foreground border-border">
+            <span
+              className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${!item.mau_trang_thai ? 'bg-muted/50 text-muted-foreground border-border' : ''}`}
+              style={
+                item.mau_trang_thai
+                  ? { backgroundColor: `${item.mau_trang_thai}20`, borderColor: item.mau_trang_thai, color: item.mau_trang_thai }
+                  : undefined
+              }
+            >
               {item.ten_trang_thai ?? '—'}
             </span>
           </td>

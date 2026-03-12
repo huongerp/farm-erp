@@ -6,6 +6,7 @@ import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import { usePhieuDeXuatVatTuStore } from '../store/usePhieuDeXuatVatTuStore';
 import type { PhieuDeXuatVatTu } from '../core/types';
+import { TRANG_THAI_CHO_DUYET, TRANG_THAI_DA_DUYET, TRANG_THAI_KHONG_DUYET } from '../core/constants';
 import type { Kho } from '../../danh-sach-kho/core/types';
 import type { Employee } from '../../../he-thong/nhan-vien/core/types';
 
@@ -13,6 +14,7 @@ interface Props {
   data: PhieuDeXuatVatTu[];
   khoList: Kho[];
   employees: Employee[];
+  currentUserId: string | null;
   selectedCount: number;
   onAdd: () => void;
   onDeleteMany: () => void;
@@ -22,6 +24,7 @@ const PhieuDeXuatVatTuToolbar: React.FC<Props> = ({
   data,
   khoList,
   employees,
+  currentUserId,
   selectedCount,
   onAdd,
   onDeleteMany,
@@ -53,6 +56,9 @@ const PhieuDeXuatVatTuToolbar: React.FC<Props> = ({
     [searchTerm, statusLen, noiDeXuatLen, nguoiDeXuatLen, nguoiDuyetLen]
   );
 
+  const mineCount = currentUserId ? data.filter((d) => d.id_nguoi_de_xuat === currentUserId).length : 0;
+  const toApproveCount = currentUserId ? data.filter((d) => d.id_nguoi_duyet === currentUserId).length : 0;
+
   const handleClearAllFilters = () => {
     setSearchTerm('');
     setFilter('status', []);
@@ -61,22 +67,34 @@ const PhieuDeXuatVatTuToolbar: React.FC<Props> = ({
     setFilter('nguoiDuyetIds', []);
   };
 
+  const filterMine = currentUserId && (filters.nguoiDeXuatIds ?? []).length === 1 && (filters.nguoiDeXuatIds ?? [])[0] === currentUserId;
+  const filterToApprove = currentUserId && (filters.nguoiDuyetIds ?? []).length === 1 && (filters.nguoiDuyetIds ?? [])[0] === currentUserId;
+
+  const toggleMine = () => {
+    if (filterMine) setFilter('nguoiDeXuatIds', []);
+    else if (currentUserId) setFilter('nguoiDeXuatIds', [currentUserId]);
+  };
+  const toggleToApprove = () => {
+    if (filterToApprove) setFilter('nguoiDuyetIds', []);
+    else if (currentUserId) setFilter('nguoiDuyetIds', [currentUserId]);
+  };
+
   const statusOptions = useMemo(
     () => [
       {
         label: t('phieuDeXuatVatTu.status.pending'),
         value: 'Pending',
-        count: data.filter((d) => d.trang_thai === 0).length,
+        count: data.filter((d) => d.trang_thai === TRANG_THAI_CHO_DUYET).length,
       },
       {
         label: t('phieuDeXuatVatTu.status.approved'),
         value: 'Approved',
-        count: data.filter((d) => d.trang_thai === 1).length,
+        count: data.filter((d) => d.trang_thai === TRANG_THAI_DA_DUYET).length,
       },
       {
         label: t('phieuDeXuatVatTu.status.rejected'),
         value: 'Rejected',
-        count: data.filter((d) => d.trang_thai === 2).length,
+        count: data.filter((d) => d.trang_thai === TRANG_THAI_KHONG_DUYET).length,
       },
     ],
     [data, t]
@@ -163,6 +181,42 @@ const PhieuDeXuatVatTuToolbar: React.FC<Props> = ({
 
   const renderFilters = (
     <>
+      {currentUserId && (
+        <>
+          <button
+            type="button"
+            onClick={toggleMine}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+              filterMine
+                ? 'bg-primary text-primary-foreground border-primary'
+                : 'bg-card border-border text-muted-foreground hover:bg-muted'
+            }`}
+            title={t('phieuDeXuatVatTu.filters.mineHint')}
+          >
+            <User className="w-3.5 h-3.5" />
+            {t('phieuDeXuatVatTu.tabs.mine')}
+            {mineCount > 0 && (
+              <span className="opacity-80">({mineCount})</span>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={toggleToApprove}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+              filterToApprove
+                ? 'bg-primary text-primary-foreground border-primary'
+                : 'bg-card border-border text-muted-foreground hover:bg-muted'
+            }`}
+            title={t('phieuDeXuatVatTu.filters.toApproveHint')}
+          >
+            <UserCheck className="w-3.5 h-3.5" />
+            {t('phieuDeXuatVatTu.tabs.toApprove')}
+            {toApproveCount > 0 && (
+              <span className="opacity-80">({toApproveCount})</span>
+            )}
+          </button>
+        </>
+      )}
       <FilterChipMultiSelect
         options={statusOptions}
         value={filters.status ?? []}

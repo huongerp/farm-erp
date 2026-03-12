@@ -6,11 +6,13 @@ import { useTranslation } from 'react-i18next';
 import { formatDateTime } from '../../../../lib/utils';
 import { useUIStore } from '../../../../store/useStore';
 import type { PhieuDeXuatVatTu } from '../core/types';
+import { TRANG_THAI_CHO_DUYET, TRANG_THAI_DA_DUYET, TRANG_THAI_KHONG_DUYET } from '../core/constants';
 
-function getTrangThaiLabel(trangThai: 0 | 1 | 2, t: (k: string) => string): string {
-  const key =
-    trangThai === 0 ? 'phieuDeXuatVatTu.status.pending' : trangThai === 1 ? 'phieuDeXuatVatTu.status.approved' : 'phieuDeXuatVatTu.status.rejected';
-  return t(key);
+function getTrangThaiLabel(trangThai: string, t: (k: string) => string): string {
+  if (trangThai === TRANG_THAI_CHO_DUYET) return t('phieuDeXuatVatTu.status.pending');
+  if (trangThai === TRANG_THAI_DA_DUYET) return t('phieuDeXuatVatTu.status.approved');
+  if (trangThai === TRANG_THAI_KHONG_DUYET) return t('phieuDeXuatVatTu.status.rejected');
+  return trangThai;
 }
 
 interface Props {

@@ -4,7 +4,7 @@ import { Tag, Building2, Building, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 import { useThanhToanDoiTacList } from '../hooks/use-thanh-toan-doi-tac';
 import { useDoiTacList } from '../../../kho-van/danh-sach-doi-tac/hooks/use-doi-tac';
-import { useDepartments } from '../../../he-thong/phong-ban/hooks/use-phong-ban';
+import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
 import { useTrangThaiThanhToanDoiTacList } from '../../thiet-lap-de-xuat-vat-tu/hooks/use-trang-thai-thanh-toan-doi-tac';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import EmptyState from '../../../../components/shared/EmptyState';
@@ -20,7 +20,7 @@ const ThongKeTab: React.FC = () => {
   const { t } = useTranslation();
   const { data: list = [], isLoading, isError } = useThanhToanDoiTacList();
   const { data: doiTacList = [] } = useDoiTacList('nha_cung_cap');
-  const { data: donViList = [] } = useDepartments();
+  const { data: chiNhanhList = [] } = useBranches();
   const { data: statusList = [] } = useTrangThaiThanhToanDoiTacList();
 
   const statusCounts = useMemo(() => {
@@ -88,15 +88,15 @@ const ThongKeTab: React.FC = () => {
   );
   const donViOptions = useMemo(
     () => [
-      ...donViList.map((d) => ({
-        label: d.ten_phong_ban,
-        value: d.id,
+      ...chiNhanhList.map((b) => ({
+        label: b.ten_chi_nhanh,
+        value: b.id,
         subLabel: undefined as string | undefined,
-        count: donViCounts[d.id] ?? 0,
+        count: donViCounts[b.id] ?? 0,
       })),
       { label: '—', value: '__null__', subLabel: undefined as string | undefined, count: donViCounts['__null__'] ?? 0 },
     ],
-    [donViList, donViCounts]
+    [chiNhanhList, donViCounts]
   );
 
   const activeFilterCount =

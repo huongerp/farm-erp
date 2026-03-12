@@ -7,7 +7,7 @@ const DEFAULT_CONFIG: CauHinhDeXuatVatTu = {
   bat_canh_bao_qua_han: true,
 
   tien_to_so_phieu: 'PDX-',
-  tu_sinh_so_phieu: false,
+  tu_sinh_so_phieu: true,
   do_dai_phan_so: 4,
   so_thu_tu_tiep_theo: 1,
   ngay_can_bat_buoc: true,
@@ -63,6 +63,15 @@ export const saveCauHinhDeXuatVatTu = async (
   const merged = mergeWithDefaults({ ...current, ...data });
   localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
   return merged;
+};
+
+/** Xem trước số phiếu tiếp theo (không tăng counter). Dùng để hiển thị khi mở form tạo mới. */
+export const getNextSoPhieuPreview = async (): Promise<string> => {
+  const config = await getCauHinhDeXuatVatTu();
+  if (!config.tu_sinh_so_phieu) return '';
+  const next = config.so_thu_tu_tiep_theo;
+  const padded = String(next).padStart(config.do_dai_phan_so, '0');
+  return `${config.tien_to_so_phieu || ''}${padded}`;
 };
 
 /** Trả về số phiếu tiếp theo (prefix + số pad) và tăng so_thu_tu_tiep_theo trong storage. */

@@ -18,6 +18,8 @@ interface HangHoaRow {
   thu_tu: number | null;
   trang_thai: string | null;
   don_gia: string | number | null;
+  mo_ta: string | null;
+  hinh_anh: string | null;
   tg_tao: string | null;
   tg_cap_nhat: string | null;
 }
@@ -43,6 +45,8 @@ function rowToHangHoa(row: HangHoaRow, tenDanhMuc?: string): HangHoa {
     ma_hang: ma,
     ten_hang: ten,
     don_vi_tinh: unit,
+    mo_ta: row.mo_ta ?? null,
+    hinh_anh: row.hinh_anh ?? null,
   };
 }
 
@@ -122,6 +126,8 @@ export const createHangHoa = async (data: HangHoaFormValues): Promise<HangHoa> =
     thu_tu: data.thu_tu != null ? Math.max(1, data.thu_tu) : nextThuTu,
     trang_thai: data.trang_thai,
     don_gia: data.don_gia != null && !Number.isNaN(Number(data.don_gia)) ? Number(data.don_gia) : null,
+    mo_ta: data.mo_ta?.trim() || null,
+    hinh_anh: data.hinh_anh?.trim() || null,
   };
 
   const { data: inserted, error } = await supabase.from(TABLE).insert(payload).select().single();
@@ -156,6 +162,8 @@ export const updateHangHoa = async (id: string, data: HangHoaFormValues): Promis
     thu_tu: Math.max(1, data.thu_tu ?? 1),
     trang_thai: data.trang_thai,
     don_gia: data.don_gia != null && !Number.isNaN(Number(data.don_gia)) ? Number(data.don_gia) : null,
+    mo_ta: data.mo_ta?.trim() || null,
+    hinh_anh: data.hinh_anh?.trim() || null,
     tg_cap_nhat: new Date().toISOString(),
   };
 

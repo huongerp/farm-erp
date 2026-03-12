@@ -60,8 +60,13 @@ const TrangThaiThanhToanDoiTacTab: React.FC = () => {
   const filteredList = useListWithFilter(list, searchTerm, filters, filterFn);
 
   const sortedList = useMemo(() => {
-    if (!sort.column || !sort.direction) return filteredList;
     const sorted = [...filteredList];
+    const byThuTu = (a: TrangThaiThanhToanDoiTac, b: TrangThaiThanhToanDoiTac) =>
+      a.thu_tu - b.thu_tu || (Number(a.id) - Number(b.id));
+    if (!sort.column || !sort.direction) {
+      sorted.sort(byThuTu);
+      return sorted;
+    }
     sorted.sort((a: TrangThaiThanhToanDoiTac, b: TrangThaiThanhToanDoiTac) => {
       const aVal = a[sort.column as keyof TrangThaiThanhToanDoiTac] ?? '';
       const bVal = b[sort.column as keyof TrangThaiThanhToanDoiTac] ?? '';

@@ -18,6 +18,8 @@ export interface ThanhToanDoiTac {
   id_trang_thai_thanh_toan: string;
   ten_trang_thai?: string;
   ma_trang_thai?: string;
+  /** Màu trạng thái (từ thiết lập) – dùng để tô màu hiển thị */
+  mau_trang_thai?: string;
   /** Số tiền (VNĐ) */
   so_tien: number;
   /** Ngày xử lý */

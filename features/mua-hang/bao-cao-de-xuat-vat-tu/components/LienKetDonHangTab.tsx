@@ -8,8 +8,11 @@ import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinner
 import EmptyState from '../../../../components/shared/EmptyState';
 import { cn } from '../../../../lib/utils';
 
-function getTrangThaiLabel(trang_thai: 0 | 1 | 2, t: (k: string) => string): string {
-  return trang_thai === 0 ? t('baoCaodeXuatVatTu.trangThaiChoDuyet') : trang_thai === 1 ? t('baoCaodeXuatVatTu.trangThaiDaDuyet') : t('baoCaodeXuatVatTu.trangThaiKhongDuyet');
+function getTrangThaiLabel(trang_thai: string, t: (k: string) => string): string {
+  if (trang_thai === 'Chờ duyệt') return t('baoCaodeXuatVatTu.trangThaiChoDuyet');
+  if (trang_thai === 'Đã duyệt') return t('baoCaodeXuatVatTu.trangThaiDaDuyet');
+  if (trang_thai === 'Không duyệt') return t('baoCaodeXuatVatTu.trangThaiKhongDuyet');
+  return trang_thai;
 }
 
 type LienKetFilter = 'all' | 'daChuyen' | 'chuaChuyen';
@@ -131,7 +134,7 @@ const LienKetDonHangTab: React.FC<LienKetDonHangTabProps> = ({ filters, onClearF
                         <span
                           className={cn(
                             'inline-flex px-2 py-0.5 rounded-full text-xs font-medium',
-                            row.trang_thai === 0 ? 'bg-amber-500/10 text-amber-600' : row.trang_thai === 1 ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-600'
+                            row.trang_thai === 'Chờ duyệt' ? 'bg-amber-500/10 text-amber-600' : row.trang_thai === 'Đã duyệt' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-600'
                           )}
                         >
                           {getTrangThaiLabel(row.trang_thai, t)}

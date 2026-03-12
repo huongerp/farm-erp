@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import type { PhieuDeXuatVatTu } from '../../core/types';
+import { TRANG_THAI_CHO_DUYET, TRANG_THAI_DA_DUYET, TRANG_THAI_KHONG_DUYET } from '../../core/constants';
 
 export interface PhieuDeXuatVatTuStatsSummary {
   total: number;
@@ -22,13 +23,13 @@ export interface StatsChartItem {
 
 export function usePhieuDeXuatVatTuStats(list: PhieuDeXuatVatTu[]) {
   return useMemo(() => {
-    const pending = list.filter((d) => d.trang_thai === 0).length;
-    const approved = list.filter((d) => d.trang_thai === 1).length;
-    const rejected = list.filter((d) => d.trang_thai === 2).length;
+    const pending = list.filter((d) => d.trang_thai === TRANG_THAI_CHO_DUYET).length;
+    const approved = list.filter((d) => d.trang_thai === TRANG_THAI_DA_DUYET).length;
+    const rejected = list.filter((d) => d.trang_thai === TRANG_THAI_KHONG_DUYET).length;
     const byTrangThai: PhieuDeXuatVatTuStatsByTrangThai[] = [
-      { id: '0', ten: 'status.pending', count: pending },
-      { id: '1', ten: 'status.approved', count: approved },
-      { id: '2', ten: 'status.rejected', count: rejected },
+      { id: TRANG_THAI_CHO_DUYET, ten: 'status.pending', count: pending },
+      { id: TRANG_THAI_DA_DUYET, ten: 'status.approved', count: approved },
+      { id: TRANG_THAI_KHONG_DUYET, ten: 'status.rejected', count: rejected },
     ];
 
     const byNoiDeXuatMap = new Map<string, { name: string; count: number }>();

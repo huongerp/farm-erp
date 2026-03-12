@@ -105,6 +105,28 @@ const DanhSachHangHoaList: React.FC<Props> = ({
             </span>
           </td>
         );
+      case 'mo_ta':
+        return (
+          <td key={col.id} className="px-4 py-3 max-w-[200px]" style={getColumnCellStyle(col)}>
+            <span className="text-sm text-muted-foreground line-clamp-2" title={item.mo_ta ?? undefined}>
+              {item.mo_ta ?? '—'}
+            </span>
+          </td>
+        );
+      case 'hinh_anh':
+        return (
+          <td key={col.id} className="px-4 py-3" style={getColumnCellStyle(col)}>
+            {item.hinh_anh ? (
+              <img
+                src={item.hinh_anh}
+                alt=""
+                className="w-10 h-10 rounded-lg object-cover border border-border"
+              />
+            ) : (
+              <span className="text-muted-foreground text-xs">—</span>
+            )}
+          </td>
+        );
       case 'tong_dinh_muc': {
         const summary = dinhMucSummaryMap?.[item.id];
         return (

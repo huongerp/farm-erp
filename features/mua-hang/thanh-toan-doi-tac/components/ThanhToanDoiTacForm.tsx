@@ -6,14 +6,19 @@ import { CreditCard, Calendar, Building2, Users, Tag, User, FileText } from 'luc
 import Input from '../../../../components/ui/Input';
 import Textarea from '../../../../components/ui/Textarea';
 import Combobox from '../../../../components/ui/Combobox';
+import NumberInput from '../../../../components/ui/NumberInput';
 import { thanhToanDoiTacSchema, type ThanhToanDoiTacFormValues } from '../core/schema';
 import type { ThanhToanDoiTac } from '../core/types';
 import type { DoiTac } from '../../../kho-van/danh-sach-doi-tac/core/types';
-import type { Department } from '../../../he-thong/phong-ban/core/types';
+import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
 import type { Employee } from '../../../he-thong/nhan-vien/core/types';
 import type { TrangThaiThanhToanDoiTac } from '../../thiet-lap-de-xuat-vat-tu/core/types';
 import { useCreateThanhToanDoiTac, useUpdateThanhToanDoiTac } from '../hooks/use-thanh-toan-doi-tac';
+import { useCauHinhSoPhieuThanhToan, useGetNextSoPhieuThanhToanAndIncrement } from '../hooks/use-cau-hinh-so-phieu-thanh-toan';
+import { getNextSoPhieuThanhToanPreview } from '../services/cau-hinh-so-phieu-thanh-toan.service';
 import { getTodayISO } from '../../../../lib/utils';
+import { TRANG_THAI_HOAT_DONG, TRANG_THAI } from '../../../../lib/constants';
+import { useAuthStore } from '../../../../store/useStore';
 import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/GenericDrawer';
 import FormSection from '../../../../components/shared/FormSection';
 import FormGrid from '../../../../components/shared/FormGrid';
@@ -21,30 +26,37 @@ import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
 
 interface Props {
   doiTacList: DoiTac[];
-  donViList: Department[];
+  chiNhanhList: Branch[];
   employees: Employee[];
   statusList: TrangThaiThanhToanDoiTac[];
   initialData?: ThanhToanDoiTac | null;
+  /** Danh sách số phiếu hiện có – dùng để đồng bộ số tiếp theo tăng dần */
+  existingSoPhieuList?: string[];
   onClose: () => void;
 }
 
 const ThanhToanDoiTacForm: React.FC<Props> = ({
   doiTacList,
-  donViList,
+  chiNhanhList,
   employees,
   statusList,
   initialData,
+  existingSoPhieuList,
   onClose,
 }) => {
   const { t } = useTranslation();
+  const user = useAuthStore((s) => s.user);
   const isEdit = !!initialData;
+  const isCreate = !isEdit;
   const createMutation = useCreateThanhToanDoiTac(onClose);
   const updateMutation = useUpdateThanhToanDoiTac(onClose);
+  const { data: config } = useCauHinhSoPhieuThanhToan();
+  const getNextSoPhieu = useGetNextSoPhieuThanhToanAndIncrement();
 
   const doiTacOptions = useMemo(
     () =>
       doiTacList
-        .filter((d) => d.trang_thai === 1)
+        .filter((d) => d.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG)
         .map((d) => ({ value: d.id, label: `${d.ma_ncc} - ${d.ten_ncc}` })),
     [doiTacList]
   );
@@ -52,18 +64,31 @@ const ThanhToanDoiTacForm: React.FC<Props> = ({
   const donViOptions = useMemo(
     () => [
       { value: '', label: t('thanhToanDoiTac.form.donViPlaceholder') },
-      ...donViList.map((d) => ({ value: d.id, label: d.ten_phong_ban })),
+      ...chiNhanhList
+        .filter((b) => b.trang_thai === TRANG_THAI.DANG_DUNG)
+        .map((b) => ({ value: b.id, label: b.ten_chi_nhanh })),
     ],
-    [donViList, t]
+    [chiNhanhList, t]
   );
 
-  const statusOptions = useMemo(
-    () =>
-      statusList
-        .filter((s) => s.trang_thai === 1)
-        .map((s) => ({ value: s.id, label: s.ten })),
-    [statusList]
-  );
+  /** Trạng thái có thu_tu nhỏ nhất (đang hoạt động) – dùng làm mặc định khi tạo mới */
+  const idTrangThaiMacDinh = useMemo(() => {
+    const active = statusList.filter((s) => s.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG);
+    if (active.length === 0) return '';
+    const min = active.reduce((best, s) => (s.thu_tu < best.thu_tu ? s : best), active[0]);
+    return min.id;
+  }, [statusList]);
+
+  const statusOptions = useMemo(() => {
+    const fromList = statusList
+      .filter((s) => s.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG)
+      .map((s) => ({ value: s.id, label: s.ten }));
+    const current = initialData?.id_trang_thai_thanh_toan;
+    if (current && !fromList.some((o) => o.value === current)) {
+      return [{ value: current, label: initialData?.ten_trang_thai ?? current }, ...fromList];
+    }
+    return fromList;
+  }, [statusList, initialData?.id_trang_thai_thanh_toan, initialData?.ten_trang_thai]);
 
   const nguoiTaoOptions = useMemo(
     () =>
@@ -78,7 +103,7 @@ const ThanhToanDoiTacForm: React.FC<Props> = ({
     so_phieu: '',
     hang_muc_thanh_toan: '',
     ngay: getTodayISO().slice(0, 10),
-    id_don_vi: null,
+    id_don_vi: '',
     id_doi_tac: '',
     id_trang_thai_thanh_toan: '',
     so_tien: 0,
@@ -87,7 +112,7 @@ const ThanhToanDoiTacForm: React.FC<Props> = ({
     id_nguoi_tao: '',
   };
 
-  const { register, handleSubmit, formState: { errors }, reset, control } = useForm<ThanhToanDoiTacFormValues>({
+  const { register, handleSubmit, formState: { errors }, reset, control, setValue } = useForm<ThanhToanDoiTacFormValues>({
     resolver: zodResolver(thanhToanDoiTacSchema) as any,
     defaultValues,
   });
@@ -98,7 +123,7 @@ const ThanhToanDoiTacForm: React.FC<Props> = ({
         so_phieu: initialData.so_phieu,
         hang_muc_thanh_toan: initialData.hang_muc_thanh_toan,
         ngay: initialData.ngay,
-        id_don_vi: initialData.id_don_vi ?? null,
+        id_don_vi: initialData.id_don_vi ?? '',
         id_doi_tac: initialData.id_doi_tac,
         id_trang_thai_thanh_toan: initialData.id_trang_thai_thanh_toan,
         so_tien: initialData.so_tien,
@@ -107,14 +132,47 @@ const ThanhToanDoiTacForm: React.FC<Props> = ({
         id_nguoi_tao: initialData.id_nguoi_tao,
       });
     } else {
-      reset(defaultValues);
+      reset({ ...defaultValues, ngay: getTodayISO().slice(0, 10) });
+      if (config?.tu_sinh_so_phieu) {
+        getNextSoPhieuThanhToanPreview().then((preview) => {
+          if (preview) setValue('so_phieu', preview);
+        });
+      }
+      if (user?.id_chi_nhanh) setValue('id_don_vi', user.id_chi_nhanh);
+      if (user?.id) setValue('id_nguoi_tao', user.id);
+      if (idTrangThaiMacDinh) setValue('id_trang_thai_thanh_toan', idTrangThaiMacDinh);
     }
-  }, [initialData, reset]);
+  }, [initialData, config?.tu_sinh_so_phieu, reset, setValue, user?.id, user?.id_chi_nhanh, idTrangThaiMacDinh]);
 
-  const onSubmit: SubmitHandler<ThanhToanDoiTacFormValues> = (data) => {
+  // Khi tạo mới và bật tự sinh: đảm bảo preview số phiếu luôn được điền (kể cả config load sau)
+  useEffect(() => {
+    if (!isCreate || !config?.tu_sinh_so_phieu) return;
+    getNextSoPhieuThanhToanPreview().then((preview) => {
+      if (preview) setValue('so_phieu', preview);
+    });
+  }, [isCreate, config?.tu_sinh_so_phieu, setValue]);
+
+  // Tạo mới: tự điền đơn vị (theo chi nhánh) và người tạo (nhân viên đang thao tác)
+  useEffect(() => {
+    if (!isCreate) return;
+    if (user?.id_chi_nhanh) setValue('id_don_vi', user.id_chi_nhanh);
+    if (user?.id) setValue('id_nguoi_tao', user.id);
+  }, [isCreate, user?.id, user?.id_chi_nhanh, setValue]);
+
+  const onSubmit: SubmitHandler<ThanhToanDoiTacFormValues> = async (data) => {
+    let soPhieu = data.so_phieu?.trim() ?? '';
+    if (isCreate && config?.tu_sinh_so_phieu) {
+      try {
+        soPhieu = await getNextSoPhieu.mutateAsync(existingSoPhieuList);
+        if (!soPhieu) soPhieu = data.so_phieu?.trim() ?? '';
+      } catch {
+        return;
+      }
+    }
     const sanitized: ThanhToanDoiTacFormValues = {
       ...data,
-      id_don_vi: data.id_don_vi === '' ? null : data.id_don_vi,
+      so_phieu: (soPhieu || data.so_phieu?.trim()) ?? '',
+      id_don_vi: data.id_don_vi || null,
       ngay_xu_ly: data.ngay_xu_ly === '' ? null : data.ngay_xu_ly,
       ghi_chu: data.ghi_chu === '' ? null : data.ghi_chu,
     };
@@ -125,7 +183,7 @@ const ThanhToanDoiTacForm: React.FC<Props> = ({
     }
   };
 
-  const isLoading = createMutation.isPending || updateMutation.isPending;
+  const isLoading = createMutation.isPending || updateMutation.isPending || getNextSoPhieu.isPending;
 
   return (
     <GenericDrawer
@@ -179,9 +237,10 @@ const ThanhToanDoiTacForm: React.FC<Props> = ({
                   label={t('thanhToanDoiTac.form.donVi')}
                   options={donViOptions}
                   value={field.value ?? ''}
-                  onChange={(v) => field.onChange(v === '' ? null : v)}
+                  onChange={field.onChange}
                   placeholder={t('thanhToanDoiTac.form.donViPlaceholder')}
                   icon={<Building2 size={12} />}
+                  required
                   error={errors.id_don_vi?.message}
                 />
               )}
@@ -218,15 +277,23 @@ const ThanhToanDoiTacForm: React.FC<Props> = ({
                 />
               )}
             />
-            <Input
-              label={t('thanhToanDoiTac.form.soTien')}
-              type="number"
-              min={0}
-              step={1000}
-              placeholder="0"
-              icon={<CreditCard size={12} />}
-              {...register('so_tien')}
-              error={errors.so_tien?.message}
+            <Controller
+              name="so_tien"
+              control={control}
+              render={({ field }) => (
+                <NumberInput
+                  label={t('thanhToanDoiTac.form.soTien')}
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  min={1}
+                  placeholder="0"
+                  icon={<CreditCard size={12} />}
+                  required
+                  error={errors.so_tien?.message}
+                  maxFractionDigits={0}
+                />
+              )}
             />
             <Input
               label={t('thanhToanDoiTac.form.ngayXuLy')}

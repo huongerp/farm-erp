@@ -12,7 +12,7 @@ import FormGrid from '../../../../components/shared/FormGrid';
 import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
 import type { TrangThaiThanhToanDoiTac } from '../core/types';
 import { TrangThaiThanhToanDoiTacFormValues, trangThaiThanhToanDoiTacSchema } from '../core/schema';
-import { TRANG_THAI_MAU_DEFAULT } from '../core/constants';
+import { TRANG_THAI_MAU_DEFAULT, TRANG_THAI_MAU_PRESETS } from '../core/constants';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { useCreateTrangThaiThanhToanDoiTac, useUpdateTrangThaiThanhToanDoiTac } from '../hooks/use-trang-thai-thanh-toan-doi-tac';
 
@@ -118,22 +118,42 @@ const TrangThaiThanhToanDoiTacForm: React.FC<Props> = ({ initialData, onClose })
               name="mau"
               control={control}
               render={({ field }) => (
-                <div className="flex gap-2 items-end">
-                  <Input
-                    label={t('thietLapDeXuatVatTu.thanhToan.form.mau')}
-                    placeholder="#6366f1"
-                    value={field.value || ''}
-                    onChange={(e) => field.onChange(e.target.value)}
-                    error={errors.mau?.message}
-                    className="flex-1"
-                  />
-                  <input
-                    type="color"
-                    value={field.value || TRANG_THAI_MAU_DEFAULT}
-                    onChange={(e) => field.onChange(e.target.value)}
-                    className="w-10 h-10 rounded border border-border cursor-pointer bg-transparent"
-                    title={t('thietLapDeXuatVatTu.thanhToan.form.mau')}
-                  />
+                <div className="col-span-1 sm:col-span-2 space-y-2">
+                  <label className="text-sm font-medium text-foreground">
+                    {t('thietLapDeXuatVatTu.thanhToan.form.mau')}
+                  </label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {TRANG_THAI_MAU_PRESETS.map((hex) => (
+                      <button
+                        key={hex}
+                        type="button"
+                        onClick={() => field.onChange(hex)}
+                        className={`w-8 h-8 rounded-md border-2 shrink-0 transition-all ${
+                          (field.value || TRANG_THAI_MAU_DEFAULT) === hex
+                            ? 'border-primary ring-2 ring-primary/30 scale-110'
+                            : 'border-border hover:border-muted-foreground/50'
+                        }`}
+                        style={{ backgroundColor: hex }}
+                        title={hex}
+                      />
+                    ))}
+                  </div>
+                  <div className="flex gap-2 items-end">
+                    <Input
+                      placeholder="#6366f1"
+                      value={field.value || ''}
+                      onChange={(e) => field.onChange(e.target.value)}
+                      error={errors.mau?.message}
+                      className="flex-1"
+                    />
+                    <input
+                      type="color"
+                      value={field.value || TRANG_THAI_MAU_DEFAULT}
+                      onChange={(e) => field.onChange(e.target.value)}
+                      className="w-10 h-10 rounded border border-border cursor-pointer bg-transparent"
+                      title={t('thietLapDeXuatVatTu.thanhToan.form.mau')}
+                    />
+                  </div>
                 </div>
               )}
             />

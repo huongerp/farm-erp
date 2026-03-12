@@ -6,16 +6,20 @@ import { toast } from 'sonner';
 import { FileText, Calendar, Warehouse, User, UserCheck, Package, Trash2 } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
 import Textarea from '../../../../components/ui/Textarea';
-import Select from '../../../../components/ui/Select';
 import Combobox from '../../../../components/ui/Combobox';
+import NumberInput from '../../../../components/ui/NumberInput';
 import { PhieuDeXuatVatTuFormValues, phieuDeXuatVatTuSchema } from '../core/schema';
 import type { PhieuDeXuatVatTu } from '../core/types';
+import { TRANG_THAI_CHO_DUYET, TRANG_THAI_DA_DUYET, TRANG_THAI_KHONG_DUYET } from '../core/constants';
 import type { Kho } from '../../danh-sach-kho/core/types';
 import type { HangHoa } from '../../danh-sach-hang-hoa/core/types';
 import type { Employee } from '../../../he-thong/nhan-vien/core/types';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
+import { useAuthStore } from '../../../../store/useStore';
 import { useCreatePhieuDeXuatVatTu, useUpdatePhieuDeXuatVatTu } from '../hooks/use-phieu-de-xuat-vat-tu';
 import { useHangHoaList } from '../../danh-sach-hang-hoa/hooks/use-hang-hoa';
 import { useCauHinhDeXuatVatTu, useGetNextSoPhieuAndIncrement } from '../../../mua-hang/thiet-lap-de-xuat-vat-tu/hooks/use-cau-hinh-de-xuat-vat-tu';
+import { getNextSoPhieuPreview } from '../../../mua-hang/thiet-lap-de-xuat-vat-tu/services/thiet-lap-de-xuat-vat-tu-service';
 import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/GenericDrawer';
 import FormSection from '../../../../components/shared/FormSection';
 import FormGrid from '../../../../components/shared/FormGrid';
@@ -37,8 +41,15 @@ interface Props {
   canEdit?: boolean;
 }
 
+/** Lấy id chi nhánh đầu tiên của user (User.id_chi_nhanh có thể là string hoặc string[]) */
+function getUserBranchId(user: { id_chi_nhanh?: string | string[] | null } | null): string | null {
+  if (!user?.id_chi_nhanh) return null;
+  return Array.isArray(user.id_chi_nhanh) ? user.id_chi_nhanh[0] ?? null : (user.id_chi_nhanh as string) ?? null;
+}
+
 const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData, onClose, canEdit = true }) => {
   const { t } = useTranslation();
+  const user = useAuthStore((s) => s.user);
   const isEdit = !!initialData;
   const createMutation = useCreatePhieuDeXuatVatTu(onClose);
   const updateMutation = useUpdatePhieuDeXuatVatTu(onClose);
@@ -46,35 +57,37 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
   const { data: config } = useCauHinhDeXuatVatTu();
   const getNextSoPhieu = useGetNextSoPhieuAndIncrement();
   const readOnly = isEdit && !canEdit;
+  const isCreate = !isEdit;
 
-  const khoOptions = useMemo(
-    () => [
-      { value: '', label: t('phieuDeXuatVatTu.form.placePlaceholder') },
-      ...khoList.map((k) => ({ value: k.id, label: k.ten_kho })),
-    ],
-    [khoList, t]
+  const khoComboboxOptions = useMemo(
+    () => khoList.map((k) => ({ value: k.id, label: k.ten_kho })),
+    [khoList]
   );
 
-  const requesterOptions = useMemo(
-    () => [
-      { value: '', label: t('phieuDeXuatVatTu.form.requesterPlaceholder') },
-      ...employees.map((e) => ({ value: e.id, label: `${e.ma_nhan_vien ?? ''} - ${e.ho_ten}` })),
-    ],
-    [employees, t]
+  const requesterComboboxOptions = useMemo(
+    () =>
+      employees.map((e) => ({
+        value: e.id,
+        label: `${e.ma_nhan_vien ?? ''} - ${e.ho_ten}`,
+        subLabel: e.ho_ten,
+      })),
+    [employees]
   );
 
-  const approverOptions = useMemo(
-    () => [
-      { value: '', label: t('phieuDeXuatVatTu.form.approverPlaceholder') },
-      ...employees.map((e) => ({ value: e.id, label: `${e.ma_nhan_vien ?? ''} - ${e.ho_ten}` })),
-    ],
-    [employees, t]
+  const approverComboboxOptions = useMemo(
+    () =>
+      employees.map((e) => ({
+        value: e.id,
+        label: `${e.ma_nhan_vien ?? ''} - ${e.ho_ten}`,
+        subLabel: e.ho_ten,
+      })),
+    [employees]
   );
 
   const hangHoaComboboxOptions = useMemo(
     () =>
       hangHoaList
-        .filter((h) => h.trang_thai === 1)
+        .filter((h) => h.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG)
         .map((h) => ({
           value: h.id,
           label: `${h.ma_hang} - ${h.ten_hang}`,
@@ -99,17 +112,23 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
     id_nguoi_de_xuat: '',
     id_nguoi_duyet: null,
     ghi_chu: '',
-    trang_thai: 0,
+    trang_thai: 'Chờ duyệt',
     chi_tiet: [],
   };
 
-  const { register, handleSubmit, formState: { errors }, reset, control, watch } = useForm<PhieuDeXuatVatTuFormValues>({
+  const { register, handleSubmit, formState: { errors }, reset, control, watch, setValue } = useForm<PhieuDeXuatVatTuFormValues>({
     resolver: zodResolver(phieuDeXuatVatTuSchema) as any,
     defaultValues,
   });
 
   const { fields, append, remove } = useFieldArray({ control, name: 'chi_tiet' });
   const chiTietValues = watch('chi_tiet') ?? [];
+
+  const defaultKhoByBranch = useMemo(() => {
+    const branchId = getUserBranchId(user);
+    if (!branchId) return null;
+    return khoList.find((k) => k.id_chi_nhanh === branchId) ?? null;
+  }, [user, khoList]);
 
   useEffect(() => {
     if (initialData) {
@@ -133,15 +152,32 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
       const today = new Date().toISOString().slice(0, 10);
       reset({
         ...defaultValues,
-        so_phieu: config.tu_sinh_so_phieu ? '…' : '',
+        so_phieu: '',
         ngay: today,
         ngay_can: addDays(today, config.so_ngay_mac_dinh_ngay_can ?? 0),
-        trang_thai: config.trang_thai_mac_dinh ?? 0,
+        trang_thai: TRANG_THAI_CHO_DUYET,
       });
+      if (config.tu_sinh_so_phieu) {
+        getNextSoPhieuPreview().then((preview) => {
+          if (preview) setValue('so_phieu', preview);
+        });
+      }
+      if (user?.id) setValue('id_nguoi_de_xuat', user.id);
+      if (defaultKhoByBranch?.id) setValue('id_noi_de_xuat', defaultKhoByBranch.id);
     } else {
       reset(defaultValues);
+      if (user?.id) setValue('id_nguoi_de_xuat', user.id);
+      if (defaultKhoByBranch?.id) setValue('id_noi_de_xuat', defaultKhoByBranch.id);
     }
-  }, [initialData, config, reset]);
+  }, [initialData, config, reset, user?.id, defaultKhoByBranch?.id, setValue]);
+
+  // Khi tạo mới và bật tự sinh số phiếu: đảm bảo preview luôn được điền (kể cả config load sau)
+  useEffect(() => {
+    if (isEdit || !config?.tu_sinh_so_phieu) return;
+    getNextSoPhieuPreview().then((preview) => {
+      if (preview) setValue('so_phieu', preview);
+    });
+  }, [isEdit, config?.tu_sinh_so_phieu, setValue]);
 
   const onSubmit: SubmitHandler<PhieuDeXuatVatTuFormValues> = async (data) => {
     const validChiTiet = (data.chi_tiet ?? []).filter(
@@ -249,16 +285,19 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
               name="id_noi_de_xuat"
               control={control}
               render={({ field }) => (
-                <Select
+                <Combobox
                   label={t('phieuDeXuatVatTu.form.place')}
-                  options={khoOptions}
-                  value={field.value}
-                  onChange={(e) => field.onChange(e.target.value)}
-                  onBlur={field.onBlur}
+                  options={khoComboboxOptions}
+                  value={field.value || null}
+                  onChange={(v) => field.onChange(v ?? '')}
+                  placeholder={t('phieuDeXuatVatTu.form.placePlaceholder')}
+                  searchPlaceholder={t('phieuDeXuatVatTu.form.itemSearchPlaceholder')}
                   icon={<Warehouse size={12} />}
                   required
                   disabled={readOnly}
                   error={errors.id_noi_de_xuat?.message}
+                  searchable
+                  dropdownInPortal
                 />
               )}
             />
@@ -266,35 +305,43 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
               name="id_nguoi_de_xuat"
               control={control}
               render={({ field }) => (
-                <Select
+                <Combobox
                   label={t('phieuDeXuatVatTu.form.requester')}
-                  options={requesterOptions}
-                  value={field.value}
-                  onChange={(e) => field.onChange(e.target.value)}
-                  onBlur={field.onBlur}
+                  options={requesterComboboxOptions}
+                  value={field.value || null}
+                  onChange={(v) => field.onChange(v ?? '')}
+                  placeholder={t('phieuDeXuatVatTu.form.requesterPlaceholder')}
+                  searchPlaceholder={t('phieuDeXuatVatTu.form.itemSearchPlaceholder')}
                   icon={<User size={12} />}
                   required
                   disabled={readOnly}
                   error={errors.id_nguoi_de_xuat?.message}
+                  searchable
+                  dropdownInPortal
                 />
               )}
             />
-            <Controller
-              name="id_nguoi_duyet"
-              control={control}
-              render={({ field }) => (
-                <Select
-                  label={t('phieuDeXuatVatTu.form.approver')}
-                  options={approverOptions}
-                  value={field.value ?? ''}
-                  onChange={(e) => field.onChange(e.target.value === '' ? null : e.target.value)}
-                  onBlur={field.onBlur}
-                  icon={<UserCheck size={12} />}
-                  disabled={readOnly}
-                  error={errors.id_nguoi_duyet?.message}
-                />
-              )}
-            />
+            {!isCreate && (
+              <Controller
+                name="id_nguoi_duyet"
+                control={control}
+                render={({ field }) => (
+                  <Combobox
+                    label={t('phieuDeXuatVatTu.form.approver')}
+                    options={approverComboboxOptions}
+                    value={field.value ?? null}
+                    onChange={(v) => field.onChange(v === '' || v == null ? null : v)}
+                    placeholder={t('phieuDeXuatVatTu.form.approverPlaceholder')}
+                    searchPlaceholder={t('phieuDeXuatVatTu.form.itemSearchPlaceholder')}
+                    icon={<UserCheck size={12} />}
+                    disabled={readOnly}
+                    error={errors.id_nguoi_duyet?.message}
+                    searchable
+                    dropdownInPortal
+                  />
+                )}
+              />
+            )}
             <div className="col-span-1 sm:col-span-2">
               <Textarea
                 label={t('phieuDeXuatVatTu.form.notes')}
@@ -306,26 +353,31 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
                 rows={2}
               />
             </div>
-            <div className="col-span-1 sm:col-span-2">
-              <Controller
-                name="trang_thai"
-                control={control}
-                render={({ field }) => (
-                  <Select
-                    label={t('phieuDeXuatVatTu.form.status')}
-                    options={[
-                      { value: '0', label: t('phieuDeXuatVatTu.status.pending') },
-                      { value: '1', label: t('phieuDeXuatVatTu.status.approved') },
-                      { value: '2', label: t('phieuDeXuatVatTu.status.rejected') },
-                    ]}
-                    value={String(field.value)}
-                    onChange={(e) => field.onChange(Number(e.target.value))}
-                    onBlur={field.onBlur}
-                    disabled={readOnly}
-                  />
-                )}
-              />
-            </div>
+            {!isCreate && (
+              <div className="col-span-1 sm:col-span-2">
+                <Controller
+                  name="trang_thai"
+                  control={control}
+                  render={({ field }) => (
+                    <Combobox
+                      label={t('phieuDeXuatVatTu.form.status')}
+                      options={[
+                        { value: TRANG_THAI_CHO_DUYET, label: t('phieuDeXuatVatTu.status.pending') },
+                        { value: TRANG_THAI_DA_DUYET, label: t('phieuDeXuatVatTu.status.approved') },
+                        { value: TRANG_THAI_KHONG_DUYET, label: t('phieuDeXuatVatTu.status.rejected') },
+                      ]}
+                      value={field.value ?? ''}
+                      onChange={(v) => field.onChange(v ?? TRANG_THAI_CHO_DUYET)}
+                      placeholder={t('phieuDeXuatVatTu.form.status')}
+                      searchPlaceholder={t('phieuDeXuatVatTu.form.itemSearchPlaceholder')}
+                      disabled={readOnly}
+                      searchable
+                      dropdownInPortal
+                    />
+                  )}
+                />
+              </div>
+            )}
           </FormGrid>
         </FormSection>
 
@@ -355,10 +407,10 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[64px]">
                 {t('phieuDeXuatVatTu.form.unit')}
               </th>
-              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[140px]">
+              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[200px]">
                 {t('phieuDeXuatVatTu.form.specs')}
               </th>
-              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[140px]">
+              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[200px]">
                 {t('phieuDeXuatVatTu.form.note')}
               </th>
               <th className="sticky right-0 z-[2] px-4 py-2 font-semibold text-foreground/80 text-xs text-center w-16 bg-muted border-l border-border">
@@ -399,29 +451,39 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
                       />
                     </td>
                     <td className="px-4 py-2.5 min-w-[100px] align-top">
-                      <Input
-                        type="number"
-                        min={0}
-                        step="any"
-                        inputMode="decimal"
-                        className="h-9 text-sm border-border w-full min-w-[6rem] max-w-[10rem] tabular-nums"
-                        {...register(`chi_tiet.${index}.so_luong`, { valueAsNumber: true })}
+                      <Controller
+                        name={`chi_tiet.${index}.so_luong`}
+                        control={control}
+                        render={({ field }) => (
+                          <NumberInput
+                            value={field.value}
+                            onChange={(v) => field.onChange(v)}
+                            onBlur={field.onBlur}
+                            min={0}
+                            maxFractionDigits={4}
+                            disabled={readOnly}
+                            className="min-w-[6rem] max-w-[10rem] border-border"
+                            compact
+                          />
+                        )}
                       />
                     </td>
                     <td className="px-4 py-2.5 text-xs text-muted-foreground">{donVi}</td>
-                    <td className="px-4 py-2.5 min-w-0 align-top">
-                      <Input
+                    <td className="px-4 py-2.5 min-w-[200px] align-top">
+                      <Textarea
                         placeholder={t('phieuDeXuatVatTu.form.specsPlaceholder')}
-                        className="h-9 text-sm border-border w-full min-w-0"
+                        className="min-h-[52px] text-sm border-border w-full resize-y"
                         disabled={readOnly}
+                        rows={2}
                         {...register(`chi_tiet.${index}.thong_so`)}
                       />
                     </td>
-                    <td className="px-4 py-2.5 min-w-0 align-top">
-                      <Input
+                    <td className="px-4 py-2.5 min-w-[200px] align-top">
+                      <Textarea
                         placeholder={t('phieuDeXuatVatTu.form.notePlaceholder')}
-                        className="h-9 text-sm border-border w-full min-w-0"
+                        className="min-h-[52px] text-sm border-border w-full resize-y"
                         disabled={readOnly}
+                        rows={2}
                         {...register(`chi_tiet.${index}.ghi_chu`)}
                       />
                     </td>

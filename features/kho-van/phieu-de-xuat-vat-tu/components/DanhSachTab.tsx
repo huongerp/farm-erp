@@ -6,14 +6,16 @@ import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import { useEmployees } from '../../../he-thong/nhan-vien/hooks/use-nhan-vien';
 import { useCauHinhDeXuatVatTu } from '../../../mua-hang/thiet-lap-de-xuat-vat-tu/hooks/use-cau-hinh-de-xuat-vat-tu';
 import { usePhieuDeXuatVatTuStore } from '../store/usePhieuDeXuatVatTuStore';
+import { useAuthStore } from '../../../../store/useStore';
 import { useListWithFilter } from '../../../../lib/hooks';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
 import type { PhieuDeXuatVatTu } from '../core/types';
 import type { PhieuDeXuatVatTuFormValues } from '../core/schema';
+import { TRANG_THAI_CHO_DUYET, TRANG_THAI_DA_DUYET, trangThaiToFilterKey } from '../core/constants';
 import type { PhieuDeXuatVatTuFilters } from '../store/usePhieuDeXuatVatTuStore';
 
-function phieuToFormValues(p: PhieuDeXuatVatTu, trangThai: 0 | 1 | 2, overrideGhiChu?: string): PhieuDeXuatVatTuFormValues {
+function phieuToFormValues(p: PhieuDeXuatVatTu, trangThai: PhieuDeXuatVatTu['trang_thai'], overrideGhiChu?: string): PhieuDeXuatVatTuFormValues {
   return {
     so_phieu: p.so_phieu,
     ngay: p.ngay,
@@ -26,6 +28,7 @@ function phieuToFormValues(p: PhieuDeXuatVatTu, trangThai: 0 | 1 | 2, overrideGh
     chi_tiet: (p.chi_tiet ?? []).map((ct) => ({
       id_hang_hoa: ct.id_hang_hoa,
       so_luong: ct.so_luong,
+      thong_so: ct.thong_so ?? '',
       ghi_chu: ct.ghi_chu ?? '',
     })),
   };
@@ -37,6 +40,7 @@ import PhieuDeXuatVatTuDetail, { type PhieuDeXuatVatTuApprovePayload } from './P
 
 const DanhSachTab: React.FC = () => {
   const { t } = useTranslation();
+  const user = useAuthStore((s) => s.user);
   const confirm = useConfirmStore((s) => s.confirm);
   const {
     searchTerm,
@@ -63,12 +67,12 @@ const DanhSachTab: React.FC = () => {
   const { data: config } = useCauHinhDeXuatVatTu();
 
   const canEditItem = useCallback(
-    (item: PhieuDeXuatVatTu) => !config || config.cho_phep_sua_sau_duyet || item.trang_thai !== 1,
+    (item: PhieuDeXuatVatTu) => !config || config.cho_phep_sua_sau_duyet || item.trang_thai !== TRANG_THAI_DA_DUYET,
     [config]
   );
   const isOverdue = useCallback(
     (item: PhieuDeXuatVatTu) =>
-      !!(config?.bat_canh_bao_qua_han && item.trang_thai === 0 && (Math.floor((Date.now() - new Date(item.tg_tao).getTime()) / 86400000) > (config.thoi_han_duyet_ngay ?? 0))),
+      !!(config?.bat_canh_bao_qua_han && item.trang_thai === TRANG_THAI_CHO_DUYET && (Math.floor((Date.now() - new Date(item.tg_tao).getTime()) / 86400000) > (config.thoi_han_duyet_ngay ?? 0))),
     [config]
   );
   const { data: viewingPhieuFull } = usePhieuDeXuatVatTuById(viewingItem?.id);
@@ -86,7 +90,7 @@ const DanhSachTab: React.FC = () => {
       (item.ten_nguoi_de_xuat?.toLowerCase().includes(searchLower) ?? false) ||
       (item.ten_nguoi_duyet?.toLowerCase().includes(searchLower) ?? false) ||
       (item.ghi_chu?.toLowerCase().includes(searchLower) ?? false);
-    const statusKey = item.trang_thai === 0 ? 'Pending' : item.trang_thai === 1 ? 'Approved' : 'Rejected';
+    const statusKey = trangThaiToFilterKey(item.trang_thai);
     const matchesStatus = (f.status?.length ?? 0) === 0 || (f.status ?? []).includes(statusKey);
     const matchesNoiDeXuat = (f.noiDeXuatIds?.length ?? 0) === 0 || (f.noiDeXuatIds ?? []).includes(item.id_noi_de_xuat);
     const matchesNguoiDeXuat = (f.nguoiDeXuatIds?.length ?? 0) === 0 || (f.nguoiDeXuatIds ?? []).includes(item.id_nguoi_de_xuat);
@@ -138,14 +142,10 @@ const DanhSachTab: React.FC = () => {
         ? (full.ghi_chu ? full.ghi_chu + '\n' : '') + `[Ghi chú phê duyệt]: ${payload.ghiChu}`
         : undefined;
       const data = phieuToFormValues(full, payload.trangThai, mergedGhiChu);
-      updateMutation.mutate(
-        { id: full.id, data },
-        {
-          onSuccess: () => setViewingItem(null),
-        }
-      );
+      if (user?.id) data.id_nguoi_duyet = user.id;
+      updateMutation.mutate({ id: full.id, data });
     },
-    [updateMutation, viewingPhieuFull]
+    [updateMutation, viewingPhieuFull, user?.id]
   );
 
   const handleDelete = (id: string) => {
@@ -185,6 +185,7 @@ const DanhSachTab: React.FC = () => {
         data={filteredList}
         khoList={khoList}
         employees={employees}
+        currentUserId={user?.id ?? null}
         selectedCount={selectedIds.size}
         onAdd={() => {
           setEditingItem(null);
@@ -208,7 +209,6 @@ const DanhSachTab: React.FC = () => {
           onEdit={handleEdit}
           onDelete={handleDelete}
           onView={setViewingItem}
-          canEditItem={canEditItem}
           isOverdue={isOverdue}
         />
       </div>
@@ -220,7 +220,7 @@ const DanhSachTab: React.FC = () => {
             employees={employees}
             initialData={editingPhieuFull ?? editingItem}
             onClose={handleCloseForm}
-            canEdit={!config || config.cho_phep_sua_sau_duyet || (editingItem?.trang_thai !== 1)}
+            canEdit
           />
         )}
       </AnimatePresence>
@@ -238,8 +238,9 @@ const DanhSachTab: React.FC = () => {
             }}
             onDelete={handleDelete}
             onApprove={handleApprove}
-            canEdit={!config || config.cho_phep_sua_sau_duyet || (viewingItem?.trang_thai !== 1)}
-            showOverdueBadge={!!(config?.bat_canh_bao_qua_han && viewingItem?.trang_thai === 0 && (Math.floor((Date.now() - new Date((viewingPhieuFull ?? viewingItem).tg_tao).getTime()) / 86400000) > (config.thoi_han_duyet_ngay ?? 0)))}
+            canEdit
+            canDelete
+            showOverdueBadge={!!(config?.bat_canh_bao_qua_han && viewingItem?.trang_thai === TRANG_THAI_CHO_DUYET && (Math.floor((Date.now() - new Date((viewingPhieuFull ?? viewingItem).tg_tao).getTime()) / 86400000) > (config.thoi_han_duyet_ngay ?? 0)))}
           />
         )}
       </AnimatePresence>

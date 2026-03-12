@@ -1,4 +1,6 @@
 {
+  "thietLapDeXuatVatTu.tabs.trong": "Empty",
+  "thietLapDeXuatVatTu.tabs.emptyHint": "Select the tab next to configure.",
   "thietLapDeXuatVatTu.tabs.trangThaiDoiTac": "Partner status",
   "thietLapDeXuatVatTu.tabs.trangThaiThanhToan": "Partner payment status",
 
@@ -71,5 +73,6 @@
   "thietLapDeXuatVatTu.thanhToan.bulkDeleteMessage": "Are you sure you want to delete {{count}} selected statuses?",
   "thietLapDeXuatVatTu.thanhToan.statusChangeTitle": "Change status",
   "thietLapDeXuatVatTu.thanhToan.statusChangeMessage": "Change {{count}} item(s) to \"{{status}}\"?",
-  "thietLapDeXuatVatTu.thanhToan.service.notFound": "Payment status not found"
+  "thietLapDeXuatVatTu.thanhToan.service.notFound": "Payment status not found",
+  "thietLapDeXuatVatTu.thanhToan.service.duplicateMa": "Status code already exists"
 }

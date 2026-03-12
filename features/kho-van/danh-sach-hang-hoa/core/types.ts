@@ -21,4 +21,8 @@ export interface HangHoa {
   ten_hang: string;
   /** Bản đồ tương thích ( = dvt ). */
   don_vi_tinh: string | null;
+  /** Mô tả hàng hóa (cột mo_ta trên Supabase). */
+  mo_ta?: string | null;
+  /** URL hình ảnh (cột hinh_anh, lưu từ Cloudinary). */
+  hinh_anh?: string | null;
 }
