@@ -126,7 +126,7 @@ const DanhSachTab: React.FC = () => {
   };
 
   const handleApprove = useCallback(
-    (item: DonDatHang, payload: { trangThai: 3 | 7; ghiChu?: string }) => {
+    (item: DonDatHang, payload: { trangThai: 'Đã xác nhận' | 'Hủy'; ghiChu?: string }) => {
       const full = viewingPoFull ?? item;
       const mergedGhiChu = payload.ghiChu
         ? (full.ghi_chu ? full.ghi_chu + '\n' : '') + `[Ghi chú phê duyệt]: ${payload.ghiChu}`

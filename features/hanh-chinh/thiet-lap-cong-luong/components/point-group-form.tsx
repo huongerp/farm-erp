@@ -14,14 +14,14 @@ import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
 import { PayrollPointGroup } from '../core/types';
 import { PayrollPointGroupFormValues, payrollPointGroupSchema } from '../core/schema';
 import { getPointGroupTypeOptions } from '../core/constants';
-import { useCreatePayrollPointGroup, useUpdatePayrollPointGroup } from '../hooks/use-payroll-point-group';
+import { usePayrollPointGroups, useCreatePayrollPointGroup, useUpdatePayrollPointGroup } from '../hooks/use-payroll-point-group';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 
 const DEFAULT_VALUES: PayrollPointGroupFormValues = {
   ma: '',
   ten: '',
   loai: 'cong',
-  thu_tu: 0,
+  thu_tu: 1,
   ghi_chu: '',
   trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG,
 };
@@ -34,6 +34,7 @@ interface Props {
 const PayrollPointGroupForm: React.FC<Props> = ({ initialData, onClose }) => {
   const { t } = useTranslation();
   const isEdit = !!initialData;
+  const { data: groups = [] } = usePayrollPointGroups();
   const createMutation = useCreatePayrollPointGroup(onClose);
   const updateMutation = useUpdatePayrollPointGroup(onClose);
 
@@ -53,9 +54,12 @@ const PayrollPointGroupForm: React.FC<Props> = ({ initialData, onClose }) => {
         trang_thai: initialData.trang_thai,
       });
     } else {
-      reset(DEFAULT_VALUES);
+      const nextThuTu = groups.length > 0
+        ? Math.max(0, ...groups.map((g) => g.thu_tu)) + 1
+        : 1;
+      reset({ ...DEFAULT_VALUES, thu_tu: nextThuTu });
     }
-  }, [initialData, reset]);
+  }, [initialData, reset, groups]);
 
   const typeOptions = useMemo(() => getPointGroupTypeOptions(t), [t]);
 
@@ -97,6 +101,7 @@ const PayrollPointGroupForm: React.FC<Props> = ({ initialData, onClose }) => {
               label={t('payrollIp.pointGroups.form.ma')}
               placeholder={t('payrollIp.pointGroups.form.maPlaceholder')}
               icon={<Hash size={14} />}
+              required
               {...register('ma')}
               error={errors.ma?.message}
             />
@@ -104,6 +109,7 @@ const PayrollPointGroupForm: React.FC<Props> = ({ initialData, onClose }) => {
               label={t('payrollIp.pointGroups.form.ten')}
               placeholder={t('payrollIp.pointGroups.form.tenPlaceholder')}
               icon={<Type size={14} />}
+              required
               {...register('ten')}
               error={errors.ten?.message}
             />
@@ -118,6 +124,7 @@ const PayrollPointGroupForm: React.FC<Props> = ({ initialData, onClose }) => {
                   onChange={field.onChange}
                   placeholder={t('payrollIp.pointGroups.form.loaiPlaceholder')}
                   icon={<Scale size={16} className="text-muted-foreground" />}
+                  required
                 />
               )}
             />
@@ -127,6 +134,7 @@ const PayrollPointGroupForm: React.FC<Props> = ({ initialData, onClose }) => {
               label={t('payrollIp.pointGroups.form.thuTu')}
               placeholder={t('payrollIp.pointGroups.form.thuTuPlaceholder')}
               icon={<Hash size={14} />}
+              required
               {...register('thu_tu')}
               error={errors.thu_tu?.message}
             />
@@ -146,6 +154,10 @@ const PayrollPointGroupForm: React.FC<Props> = ({ initialData, onClose }) => {
                   label={t('payrollIp.pointGroups.form.status')}
                   value={field.value}
                   onChange={field.onChange}
+                  activeValue={TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG}
+                  inactiveValue={TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG}
+                  activeLabel={t('common.activeStatus')}
+                  inactiveLabel={t('common.inactiveStatus')}
                   icon={<Power size={12} />}
                   required
                 />

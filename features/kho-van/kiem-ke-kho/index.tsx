@@ -1,3 +1,6 @@
+/**
+ * Kiểm kê kho – đợt kiểm kê + thống kê (fp_mh_dot_kiem_ke_kho, fp_mh_dot_kiem_ke_kho_chi_tiet).
+ */
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ClipboardCheck, BarChart3 } from 'lucide-react';
@@ -19,22 +22,13 @@ const KiemKeKhoPage: React.FC = () => {
 
   return (
     <div className="flex flex-col h-[calc(100dvh-3.75rem)] md:h-[calc(100dvh-4.5rem)] relative">
-      <div className="shrink-0 relative z-0">
-        <TabGroup tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
+      <div className="flex-1 min-h-0 flex flex-col mt-1.5 px-4">
+        <TabGroup tabs={tabs} activeTab={activeTab} onChange={setActiveTab} className="shrink-0 mb-2" />
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+          {activeTab === 'dots' && <DotTab />}
+          {activeTab === 'stats' && <ThongKeTab />}
+        </div>
       </div>
-
-      {activeTab === 'dots' && (
-        <div className="flex-1 min-h-0 flex flex-col mt-1.5">
-          <DotTab />
-        </div>
-      )}
-      {activeTab === 'stats' && (
-        <div className="flex-1 min-h-0 flex flex-col mt-1.5">
-          <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-            <ThongKeTab />
-          </div>
-        </div>
-      )}
     </div>
   );
 };

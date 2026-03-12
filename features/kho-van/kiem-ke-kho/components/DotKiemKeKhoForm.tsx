@@ -12,7 +12,7 @@ import FormSection from '../../../../components/shared/FormSection';
 import FormGrid from '../../../../components/shared/FormGrid';
 import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
 import { dotKiemKeKhoSchema, type DotKiemKeKhoFormValues } from '../core/schema';
-import { useCreateDotKiemKeKho, useUpdateDotKiemKeKho } from '../hooks/use-kiem-ke-kho';
+import { useCreateDotKiemKeKho, useUpdateDotKiemKeKho, useNextMaDotDotKiemKeKho, formatMaDotDotKiemKeKho } from '../hooks/use-kiem-ke-kho';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import { useEmployees } from '@/features/he-thong/nhan-vien/hooks/use-nhan-vien';
@@ -42,6 +42,7 @@ const DotKiemKeKhoForm: React.FC<Props> = ({ onClose, initialData, onSuccessAfte
     onClose();
     if (initialData) onSuccessAfterEdit?.(initialData);
   });
+  const nextMaDot = useNextMaDotDotKiemKeKho();
   const { data: khoList = [] } = useKhoList();
   const { data: employees = [] } = useEmployees();
 
@@ -57,7 +58,7 @@ const DotKiemKeKhoForm: React.FC<Props> = ({ onClose, initialData, onSuccessAfte
       }
     : DEFAULT_VALUES;
 
-  const { register, handleSubmit, formState: { errors }, control } = useForm<DotKiemKeKhoFormValues>({
+  const { register, handleSubmit, formState: { errors }, control, setValue } = useForm<DotKiemKeKhoFormValues>({
     resolver: zodResolver(dotKiemKeKhoSchema),
     defaultValues: defaultValuesFromData,
   });
@@ -67,6 +68,14 @@ const DotKiemKeKhoForm: React.FC<Props> = ({ onClose, initialData, onSuccessAfte
       control.reset(defaultValuesFromData);
     }
   }, [initialData?.id]);
+
+  useEffect(() => {
+    if (!isEdit && !nextMaDot.isSuccess) {
+      nextMaDot.mutate(undefined, {
+        onSuccess: (seq) => setValue('ma_dot', formatMaDotDotKiemKeKho(seq)),
+      });
+    }
+  }, [isEdit]);
 
   const onSubmit: SubmitHandler<DotKiemKeKhoFormValues> = (data) => {
     const payload = {
@@ -95,6 +104,7 @@ const DotKiemKeKhoForm: React.FC<Props> = ({ onClose, initialData, onSuccessAfte
   }));
 
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
+  const isLoadingMaDot = !isEdit && nextMaDot.isPending;
 
   return (
     <GenericDrawer
@@ -105,7 +115,7 @@ const DotKiemKeKhoForm: React.FC<Props> = ({ onClose, initialData, onSuccessAfte
         <FormDrawerFooter
           formId="dot-kiem-ke-kho-form"
           onCancel={onClose}
-          isLoading={isSubmitting}
+          isLoading={isSubmitting || isLoadingMaDot}
           isEdit={isEdit}
           saveLabel={t('common.save')}
           createLabel={t('kiemKeKho.form.create')}
@@ -120,7 +130,8 @@ const DotKiemKeKhoForm: React.FC<Props> = ({ onClose, initialData, onSuccessAfte
               {...register('ma_dot')}
               error={errors.ma_dot?.message}
               placeholder={t('kiemKeKho.form.maDotPlaceholder')}
-              required
+              disabled={!isEdit}
+              readOnly={!isEdit}
             />
             <Input
               label={t('kiemKeKho.store.tenDotCol')}
@@ -155,6 +166,7 @@ const DotKiemKeKhoForm: React.FC<Props> = ({ onClose, initialData, onSuccessAfte
                   placeholder={t('kiemKeKho.form.nguoiPhuTrachPlaceholder')}
                   error={errors.id_nguoi_phu_trach?.message}
                   icon={<User size={12} />}
+                  required
                 />
               )}
             />

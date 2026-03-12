@@ -123,12 +123,15 @@ export async function exportBaoCaoDeXuatVatTuToPdf(
   t: TFunction
 ): Promise<void> {
   const [tongHop, chiTietList] = await Promise.all([
-    filters.dateFrom && filters.dateTo ? getTongHopDeXuatKy(filters) : Promise.resolve(null),
-    filters.dateFrom && filters.dateTo ? getPhieuDeXuatInPeriod(filters) : Promise.resolve([]),
+    getTongHopDeXuatKy(filters),
+    getPhieuDeXuatInPeriod(filters),
   ]);
 
   const title = t('baoCaodeXuatVatTu.reportTitle');
-  const period = `${t('baoCaodeXuatVatTu.period')}: ${filters.dateFrom} – ${filters.dateTo}`;
+  const period =
+    filters.dateFrom && filters.dateTo
+      ? `${t('baoCaodeXuatVatTu.period')}: ${filters.dateFrom} – ${filters.dateTo}`
+      : `${t('baoCaodeXuatVatTu.period')}: ${t('baoCaodeXuatVatTu.preset.all')}`;
   const printedAt = formatDateTime(new Date());
 
   const table1 = tongHop ? buildTableTrangThai(tongHop.byTrangThai, t) : '';
@@ -170,7 +173,8 @@ ${table3}
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `bao_cao_de_xuat_vat_tu_${filters.dateFrom}_${filters.dateTo}_${getTodayISODate()}.pdf`;
+    const periodSuffix = filters.dateFrom && filters.dateTo ? `${filters.dateFrom}_${filters.dateTo}` : 'all';
+    a.download = `bao_cao_de_xuat_vat_tu_${periodSuffix}_${getTodayISODate()}.pdf`;
     a.click();
     URL.revokeObjectURL(url);
   } finally {

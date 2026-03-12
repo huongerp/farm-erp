@@ -63,6 +63,7 @@ import phieuKho from '@/features/kho-van/phieu-kho/locales/vi.json';
 import tonKho from '@/features/kho-van/ton-kho/locales/vi.json';
 import baoCaonhapXuatTon from '@/features/kho-van/bao-cao-nhap-xuat-ton/locales/vi.json';
 import kiemKeKho from '@/features/kho-van/kiem-ke-kho/locales/vi.json';
+import phieuKiemKe from '@/features/kho-van/phieu-kiem-ke/locales/vi.json';
 import phieuDeXuatVatTu from '@/features/kho-van/phieu-de-xuat-vat-tu/locales/vi.json';
 import donDatHang from '@/features/mua-hang/don-dat-hang/locales/vi.json';
 import thietLapDeXuatVatTu from '@/features/mua-hang/thiet-lap-de-xuat-vat-tu/locales/vi.json';
@@ -139,6 +140,7 @@ const vi = {
   ...(tonKho as Record<string, string>),
   ...(baoCaonhapXuatTon as Record<string, string>),
   ...(kiemKeKho as Record<string, string>),
+  ...(phieuKiemKe as Record<string, string>),
   ...(phieuDeXuatVatTu as Record<string, string>),
   ...(donDatHang as Record<string, string>),
   ...(thietLapDeXuatVatTu as Record<string, string>),

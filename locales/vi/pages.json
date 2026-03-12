@@ -574,7 +574,7 @@
   "page.khoVan.modules.phieuKho": "Phiếu kho",
   "page.khoVan.descs.phieuKho": "Nhập kho, xuất kho, chuyển kho.",
   "page.khoVan.modules.kiemKeKho": "Kiểm kê kho",
-  "page.khoVan.descs.kiemKeKho": "Đợt kiểm kê, đối chiếu, điều chỉnh tồn.",
+  "page.khoVan.descs.kiemKeKho": "Phiếu kiểm kê kho, số lượng sổ – thực tế – chênh lệch.",
   "page.khoVan.modules.tonKho": "Tồn kho",
   "page.khoVan.descs.tonKho": "Theo sản phẩm, theo nơi lưu và thống kê tồn kho.",
   "page.khoVan.modules.baoCaoNhapXuatTon": "Báo cáo nhập xuất tồn",

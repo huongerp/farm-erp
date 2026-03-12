@@ -9,7 +9,7 @@ import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinner
 import EmptyState from '../../../../components/shared/EmptyState';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import { useDonDatHangStats } from './stats/useDonDatHangStats';
-import { TRANG_THAI_KEY } from '../core/constants';
+import { TRANG_THAI_DON_DAT_HANG, TRANG_THAI_KEY } from '../core/constants';
 import StatsToolbar from './stats/StatsToolbar';
 import StatsCards from './stats/StatsCards';
 import StatsCharts from './stats/StatsCharts';
@@ -65,11 +65,11 @@ const ThongKeTab: React.FC = () => {
 
   const statusOptions = useMemo(
     () =>
-      ([0, 1, 2, 3, 4, 5, 6, 7] as const).map((s) => ({
+      TRANG_THAI_DON_DAT_HANG.map((s) => ({
         label: t(`donDatHang.status.${TRANG_THAI_KEY[s]}`),
-        value: String(s),
+        value: s,
         subLabel: undefined as string | undefined,
-        count: statusCounts[String(s)] ?? 0,
+        count: statusCounts[s] ?? 0,
       })),
     [t, statusCounts]
   );

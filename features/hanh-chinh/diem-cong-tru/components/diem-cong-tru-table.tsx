@@ -47,12 +47,11 @@ const DiemCongTruTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, 
     switch (colId) {
       case 'ten_nhan_vien':
         return (
-          <div className="flex flex-col gap-0.5 min-w-[140px]">
-            <span className="font-medium text-foreground text-sm">{item.ten_nhan_vien || '—'}</span>
-            {item.ma_nhan_vien && (
-              <span className="text-xs text-muted-foreground">{item.ma_nhan_vien}</span>
-            )}
-          </div>
+          <span className="text-sm text-foreground whitespace-nowrap">
+            {item.ma_nhan_vien && item.ten_nhan_vien
+              ? `${item.ma_nhan_vien} - ${item.ten_nhan_vien}`
+              : item.ten_nhan_vien || item.ma_nhan_vien || '—'}
+          </span>
         );
       case 'period':
         return (
@@ -137,7 +136,9 @@ const DiemCongTruTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, 
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
             <h4 className="font-semibold text-foreground text-sm truncate">
-              {item.ten_nhan_vien || '—'}
+              {item.ma_nhan_vien && item.ten_nhan_vien
+                ? `${item.ma_nhan_vien} - ${item.ten_nhan_vien}`
+                : item.ten_nhan_vien || item.ma_nhan_vien || '—'}
             </h4>
             <div onClick={(e) => e.stopPropagation()} className="shrink-0">
               <input

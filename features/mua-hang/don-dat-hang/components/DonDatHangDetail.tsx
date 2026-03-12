@@ -4,7 +4,8 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Edit, Trash2, FileText, Calendar, Building2, Warehouse, User, UserCheck, Package, CreditCard, CheckCircle, Printer, X } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Textarea from '../../../../components/ui/Textarea';
-import type { DonDatHang, DonDatHangTrangThai } from '../core/types';
+import type { DonDatHang } from '../core/types';
+import { TRANG_THAI_CHO_DUYET, TRANG_THAI_DA_XAC_NHAN, TRANG_THAI_HUY } from '../core/types';
 import { TRANG_THAI_KEY } from '../core/constants';
 import { formatDateTimeShort } from '../../../../lib/utils';
 import { cn } from '../../../../lib/utils';
@@ -18,9 +19,9 @@ import { BTN_CLOSE, BTN_EDIT, BTN_DELETE } from '../../../../lib/button-labels';
 
 const PREVIEW_BASE = '/mua-hang/don-dat-hang/preview';
 
-/** 3 = Đã xác nhận, 7 = Hủy */
+/** Kết quả phê duyệt: text như DB (giống đề xuất vật tư). */
 export interface DonDatHangApprovePayload {
-  trangThai: 3 | 7;
+  trangThai: typeof TRANG_THAI_DA_XAC_NHAN | typeof TRANG_THAI_HUY;
   ghiChu?: string;
 }
 
@@ -33,29 +34,27 @@ interface Props {
   onPrint?: (item: DonDatHang) => void;
 }
 
-const STATUS_VARIANTS: Record<number, string> = {
-  0: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20',
-  1: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
-  2: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
-  3: 'bg-primary/10 text-primary border-primary/20',
-  4: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20',
-  5: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
-  6: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
-  7: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20',
+const STATUS_VARIANTS: Record<string, string> = {
+  'Nháp': 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20',
+  'Chờ duyệt': 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
+  'Đã gửi': 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
+  'Đã xác nhận': 'bg-primary/10 text-primary border-primary/20',
+  'Đang giao': 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20',
+  'Đã nhận đủ': 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+  'Đã đóng': 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+  'Hủy': 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20',
 };
 
 const DonDatHangDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onApprove, onPrint }) => {
   const { t } = useTranslation();
-  const canApprove = data.trang_thai === 1 && !!onApprove;
+  const canApprove = data.trang_thai === TRANG_THAI_CHO_DUYET && !!onApprove;
   const [showApprovePopup, setShowApprovePopup] = useState(false);
-  const [approveTrangThai, setApproveTrangThai] = useState<3 | 7>(3);
   const [approveGhiChu, setApproveGhiChu] = useState('');
 
-  const handleApproveConfirm = () => {
-    onApprove?.(data, { trangThai: approveTrangThai, ghiChu: approveGhiChu.trim() || undefined });
+  const submitApprove = (trangThai: typeof TRANG_THAI_DA_XAC_NHAN | typeof TRANG_THAI_HUY) => {
+    onApprove?.(data, { trangThai, ghiChu: approveGhiChu.trim() || undefined });
     setShowApprovePopup(false);
     setApproveGhiChu('');
-    setApproveTrangThai(3);
   };
 
   const toolbarActions: DetailToolbarAction[] = useMemo(
@@ -83,7 +82,7 @@ const DonDatHangDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
     [canApprove, data, onApprove, onPrint, t]
   );
 
-  const statusLabel = t(`donDatHang.status.${TRANG_THAI_KEY[data.trang_thai as keyof typeof TRANG_THAI_KEY]}`);
+  const statusLabel = t(`donDatHang.status.${TRANG_THAI_KEY[data.trang_thai as keyof typeof TRANG_THAI_KEY] ?? 'draft'}`);
   const statusClass = STATUS_VARIANTS[data.trang_thai] ?? 'bg-muted text-muted-foreground border-border';
 
   const renderFooter = (
@@ -209,63 +208,58 @@ const DonDatHangDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
       </div>
     </GenericDrawer>
 
+      {/* Popup phê duyệt: hai nút Duyệt / Không duyệt + ghi chú (giống module đề xuất vật tư) */}
       <AnimatePresence>
         {showApprovePopup && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50"
+            transition={{ duration: 0.15 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
             onClick={() => setShowApprovePopup(false)}
           >
             <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
+              initial={{ scale: 0.96, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-card rounded-xl border border-border shadow-xl max-w-md w-full p-5"
+              exit={{ scale: 0.96, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="bg-card rounded-2xl border border-border shadow-2xl max-w-md w-full overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-foreground">
-                  {t('donDatHang.detail.approveDialogTitle')}
-                </h3>
-                <button
-                  type="button"
-                  onClick={() => setShowApprovePopup(false)}
-                  className="p-1.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
-                  aria-label={t('common.close')}
-                >
-                  <X size={18} />
-                </button>
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    {t('donDatHang.detail.approveDialogResult')}
-                  </label>
-                  <div className="flex gap-3">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="approveResult"
-                        checked={approveTrangThai === 3}
-                        onChange={() => setApproveTrangThai(3)}
-                        className="rounded-full border-border text-primary focus:ring-primary"
-                      />
-                      <span className="text-sm">{t('donDatHang.status.confirmed')}</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="approveResult"
-                        checked={approveTrangThai === 7}
-                        onChange={() => setApproveTrangThai(7)}
-                        className="rounded-full border-border text-primary focus:ring-primary"
-                      />
-                      <span className="text-sm">{t('donDatHang.status.cancelled')}</span>
-                    </label>
-                  </div>
+              <div className="px-6 pt-5 pb-4 border-b border-border bg-muted/30">
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-lg font-semibold text-foreground">
+                    {t('donDatHang.detail.approveDialogTitle')}
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setShowApprovePopup(false)}
+                    className="p-2 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                    aria-label={t('common.close')}
+                  >
+                    <X size={18} />
+                  </button>
                 </div>
+                <p className="text-sm text-muted-foreground mt-1">{data.so_po}</p>
+              </div>
+              <div className="px-6 py-4 flex items-center justify-center gap-3">
+                <Button
+                  onClick={() => submitApprove(TRANG_THAI_HUY)}
+                  className="bg-rose-600 text-white hover:bg-rose-700 border border-rose-600 shadow-sm"
+                >
+                  <X size={16} className="mr-2" />
+                  {t('donDatHang.detail.approveReject')}
+                </Button>
+                <Button
+                  onClick={() => submitApprove(TRANG_THAI_DA_XAC_NHAN)}
+                  className="bg-emerald-600 text-white hover:bg-emerald-700 border border-emerald-600 shadow-sm"
+                >
+                  <CheckCircle size={16} className="mr-2" />
+                  {t('donDatHang.detail.approveApprove')}
+                </Button>
+              </div>
+              <div className="px-6 pb-4">
                 <Textarea
                   label={t('donDatHang.detail.approveDialogNote')}
                   placeholder={t('donDatHang.detail.approveDialogNotePlaceholder')}
@@ -275,12 +269,13 @@ const DonDatHangDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
                   className="resize-none"
                 />
               </div>
-              <div className="flex justify-end gap-2 mt-5">
-                <Button variant="ghost" onClick={() => setShowApprovePopup(false)} className="border border-border">
+              <div className="px-6 pb-6 flex justify-end">
+                <Button
+                  variant="ghost"
+                  onClick={() => setShowApprovePopup(false)}
+                  className="border border-border text-muted-foreground"
+                >
                   {t('common.cancel')}
-                </Button>
-                <Button onClick={handleApproveConfirm} className="bg-primary text-white">
-                  {t('common.confirm')}
                 </Button>
               </div>
             </motion.div>

@@ -3,6 +3,7 @@
   "payrollIp.pageDescription": "Configure WiFi IPs by branch for attendance.",
   "payrollIp.tabs.ipSettings": "IP Setup",
   "payrollIp.tabs.adminFormGroups": "Admin Form Groups",
+  "payrollIp.tabs.pointGroupsSetup": "Add/Deduct Points Setup",
   "payrollIp.groupsComingSoon": "This feature is under development.",
   "payrollIp.groups.searchPlaceholder": "Search by form type or note...",
   "payrollIp.groups.loading": "Loading admin form groups...",
@@ -135,5 +136,6 @@
   "payrollIp.pointGroups.validation.statusInvalid": "Invalid status",
   "payrollIp.pointGroups.types.cong": "Bonus",
   "payrollIp.pointGroups.types.tru": "Deduction",
-  "payrollIp.pointGroups.service.notFound": "Point group not found"
+  "payrollIp.pointGroups.service.notFound": "Point group not found",
+  "payrollIp.pointGroups.service.duplicateMa": "Point group code already exists"
 }

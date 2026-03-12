@@ -574,7 +574,7 @@
   "page.khoVan.modules.phieuKho": "Warehouse Vouchers",
   "page.khoVan.descs.phieuKho": "Import, export, transfer.",
   "page.khoVan.modules.kiemKeKho": "Stock Count",
-  "page.khoVan.descs.kiemKeKho": "Count sessions, reconciliation, adjustment.",
+  "page.khoVan.descs.kiemKeKho": "Stocktaking vouchers, book vs actual, variance.",
   "page.khoVan.modules.tonKho": "Stock",
   "page.khoVan.descs.tonKho": "By product, by location and stock statistics.",
   "page.khoVan.modules.baoCaoNhapXuatTon": "In/Out/Stock Report",

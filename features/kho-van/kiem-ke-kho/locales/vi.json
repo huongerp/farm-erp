@@ -102,5 +102,12 @@
   "kiemKeKho.nhapKetQua.giongSo": "Giống sổ",
   "kiemKeKho.table.nhapKetQua": "Nhập kết quả",
   "kiemKeKho.detail.fillNote": "Điền ghi chú",
-  "kiemKeKho.detail.ghiChuDialogTitle": "Ghi chú đợt kiểm kê"
+  "kiemKeKho.detail.ghiChuDialogTitle": "Ghi chú đợt kiểm kê",
+  "kiemKeKho.service.notFound": "Không tìm thấy đợt kiểm kê",
+  "kiemKeKho.service.onlyEditDraft": "Chỉ được sửa đợt ở trạng thái Nháp",
+  "kiemKeKho.service.onlyDeleteDraft": "Chỉ được xóa đợt ở trạng thái Nháp",
+  "kiemKeKho.service.onlyTaoDanhSachWhenDraft": "Chỉ tạo danh sách khi đợt ở trạng thái Nháp",
+  "kiemKeKho.service.chiTietNotFound": "Không tìm thấy dòng chi tiết",
+  "kiemKeKho.service.noThucTeForDieuChinh": "Chưa có số lượng thực tế để điều chỉnh tồn",
+  "kiemKeKho.service.onlyHoanThanhWhenDangKiem": "Chỉ hoàn thành đợt đang kiểm kê"
 }

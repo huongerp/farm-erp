@@ -9,7 +9,7 @@ import type { DonDatHang } from '../core/types';
 import type { Kho } from '../../../kho-van/danh-sach-kho/core/types';
 import type { DoiTac } from '../../../kho-van/danh-sach-doi-tac/core/types';
 import type { Employee } from '../../../he-thong/nhan-vien/core/types';
-import { TRANG_THAI_KEY } from '../core/constants';
+import { TRANG_THAI_DON_DAT_HANG, TRANG_THAI_KEY } from '../core/constants';
 
 interface Props {
   data: DonDatHang[];
@@ -45,8 +45,8 @@ const DonDatHangToolbar: React.FC<Props> = ({
 
   const statusOptions = useMemo(
     () =>
-      ([0, 1, 2, 3, 4, 5, 6, 7] as const).map((s) => ({
-        value: String(s),
+      TRANG_THAI_DON_DAT_HANG.map((s) => ({
+        value: s,
         label: t(`donDatHang.status.${TRANG_THAI_KEY[s]}`),
         count: data.filter((d) => d.trang_thai === s).length,
       })),

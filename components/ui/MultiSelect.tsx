@@ -35,7 +35,7 @@ interface MultiSelectProps {
   onCreateOption?: (label: string) => Promise<string | null>;
   /** Label cho hàng tạo mới, dùng %s thay cho searchTerm. VD: "Tạo mới: %s" */
   createOptionLabel?: string;
-  /** Render dropdown qua portal vào body để tránh bị cắt bởi overflow (drawer, modal) */
+  /** Render dropdown qua portal vào body để tránh bị cắt và đảm bảo cuộn được. Mặc định true. */
   dropdownInPortal?: boolean;
 }
 
@@ -53,7 +53,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
   required,
   onCreateOption,
   createOptionLabel = "Tạo mới: %s",
-  dropdownInPortal = false,
+  dropdownInPortal = true,
 }) => {
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
@@ -97,9 +97,14 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
 
   useEffect(() => {
     if (!isOpen || !dropdownInPortal) return;
-    const close = () => setIsOpen(false);
-    window.addEventListener('scroll', close, true);
-    return () => window.removeEventListener('scroll', close, true);
+    const onScroll = (e: Event) => {
+      const target = e.target as Element | null;
+      if (target?.closest?.('[data-multiselect-dropdown]')) return;
+      if (containerRef.current?.contains(target as Node)) return;
+      setIsOpen(false);
+    };
+    window.addEventListener('scroll', onScroll, true);
+    return () => window.removeEventListener('scroll', onScroll, true);
   }, [isOpen, dropdownInPortal]);
 
   const handleSelect = (optionValue: string) => {
@@ -325,7 +330,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
               document.body
             )
           : (
-              <div id={listboxId} role="listbox" className={cn("absolute top-full left-0 mt-1 w-full z-50", dropdownClassName)}>
+              <div id={listboxId} role="listbox" data-multiselect-dropdown className={cn("absolute top-full left-0 mt-1 w-full z-50", dropdownClassName)}>
                 {dropdownContent}
               </div>
             ))}

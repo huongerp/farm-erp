@@ -21,9 +21,9 @@ export async function exportBaoCaoDeXuatVatTuToExcel(
   t: TFunction
 ): Promise<void> {
   const [tongHop, chiTietList, lienKetList] = await Promise.all([
-    filters.dateFrom && filters.dateTo ? getTongHopDeXuatKy(filters) : Promise.resolve(null),
-    filters.dateFrom && filters.dateTo ? getPhieuDeXuatInPeriod(filters) : Promise.resolve([]),
-    filters.dateFrom && filters.dateTo ? getLienKetDonHang(filters) : Promise.resolve([]),
+    getTongHopDeXuatKy(filters),
+    getPhieuDeXuatInPeriod(filters),
+    getLienKetDonHang(filters),
   ]);
 
   const XLSX = await import('xlsx');
@@ -98,5 +98,6 @@ export async function exportBaoCaoDeXuatVatTuToExcel(
     XLSX.utils.book_append_sheet(wb, ws, 'Report');
   }
 
-  XLSX.writeFile(wb, `${FILENAME_PREFIX}_${filters.dateFrom}_${filters.dateTo}_${getTodayISODate()}.xlsx`);
+  const periodSuffix = filters.dateFrom && filters.dateTo ? `${filters.dateFrom}_${filters.dateTo}` : 'all';
+  XLSX.writeFile(wb, `${FILENAME_PREFIX}_${periodSuffix}_${getTodayISODate()}.xlsx`);
 }

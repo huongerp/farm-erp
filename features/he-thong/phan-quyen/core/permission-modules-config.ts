@@ -36,6 +36,7 @@ export const PERMISSION_FUNCTIONS: PermissionFunction[] = [
       { groupTitleKey: 'page.hanhChinh.groupCongLuong', modules: [
         { id: BASE('hanh-chinh', 'cham-cong'), nameKey: 'page.hanhChinh.modules.chamCong' },
         { id: BASE('hanh-chinh', 'tong-hop-cham-cong'), nameKey: 'page.hanhChinh.modules.tongHopChamCong' },
+        { id: BASE('hanh-chinh', 'cong-viec'), nameKey: 'page.hanhChinh.modules.congViec' },
         { id: BASE('hanh-chinh', 'phieu-hanh-chinh'), nameKey: 'page.hanhChinh.modules.phieuHanhChinh' },
         { id: BASE('hanh-chinh', 'cham-diem-kpi'), nameKey: 'page.hanhChinh.modules.chamDiemKpi' },
         { id: BASE('hanh-chinh', 'bang-luong'), nameKey: 'page.hanhChinh.modules.bangLuong' },

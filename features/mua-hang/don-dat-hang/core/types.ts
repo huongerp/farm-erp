@@ -12,8 +12,25 @@ export interface DonDatHangChiTiet {
   ten_hang?: string;
 }
 
-/** Trạng thái: 0=Nháp, 1=Chờ duyệt, 2=Đã gửi, 3=Đã xác nhận, 4=Đang giao, 5=Đã nhận đủ, 6=Đã đóng, 7=Hủy */
-export type DonDatHangTrangThai = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
+/** Trạng thái đơn đặt hàng – text như DB (giống module đề xuất vật tư). */
+export const TRANG_THAI_NHAP = 'Nháp';
+export const TRANG_THAI_CHO_DUYET = 'Chờ duyệt';
+export const TRANG_THAI_DA_GUI = 'Đã gửi';
+export const TRANG_THAI_DA_XAC_NHAN = 'Đã xác nhận';
+export const TRANG_THAI_DANG_GIAO = 'Đang giao';
+export const TRANG_THAI_DA_NHAN_DU = 'Đã nhận đủ';
+export const TRANG_THAI_DA_DONG = 'Đã đóng';
+export const TRANG_THAI_HUY = 'Hủy';
+
+export type DonDatHangTrangThai =
+  | typeof TRANG_THAI_NHAP
+  | typeof TRANG_THAI_CHO_DUYET
+  | typeof TRANG_THAI_DA_GUI
+  | typeof TRANG_THAI_DA_XAC_NHAN
+  | typeof TRANG_THAI_DANG_GIAO
+  | typeof TRANG_THAI_DA_NHAN_DU
+  | typeof TRANG_THAI_DA_DONG
+  | typeof TRANG_THAI_HUY;
 
 export interface DonDatHang {
   id: string;

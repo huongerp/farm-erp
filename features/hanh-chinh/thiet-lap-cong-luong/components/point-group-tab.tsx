@@ -65,8 +65,13 @@ const PayrollPointGroupTab: React.FC = () => {
   const filteredList = useListWithFilter(groups, searchTerm, filters, filterFn);
 
   const sortedList = useMemo(() => {
-    if (!sort.column || !sort.direction) return filteredList;
     const sorted = [...filteredList];
+    const byThuTu = (a: PayrollPointGroup, b: PayrollPointGroup) =>
+      a.thu_tu - b.thu_tu || (Number(a.id) - Number(b.id));
+    if (!sort.column || !sort.direction) {
+      sorted.sort(byThuTu);
+      return sorted;
+    }
     sorted.sort((a: PayrollPointGroup, b: PayrollPointGroup) => {
       const aVal = a[sort.column as keyof PayrollPointGroup] ?? '';
       const bVal = b[sort.column as keyof PayrollPointGroup] ?? '';

@@ -1,7 +1,10 @@
 /**
  * Preset kỳ báo cáo: trả về dateFrom, dateTo (YYYY-MM-DD).
+ * 'all' = không giới hạn thời gian (dateFrom, dateTo rỗng).
  */
 export function getDateRangeFromPreset(presetId: string): { dateFrom: string; dateTo: string } {
+  if (presetId === 'all') return { dateFrom: '', dateTo: '' };
+
   const d = new Date();
   const y = d.getFullYear();
   const m = d.getMonth();
@@ -43,6 +46,7 @@ export function getDateRangeFromPreset(presetId: string): { dateFrom: string; da
 
 /** Kiểm tra (dateFrom, dateTo) có khớp preset không. */
 export function getPresetFromDates(dateFrom: string, dateTo: string): string {
+  if (!dateFrom && !dateTo) return 'all';
   if (!dateFrom || !dateTo) return 'custom';
   const ranges: Array<{ id: string; get: () => { dateFrom: string; dateTo: string } }> = [
     { id: 'thisMonth', get: () => getDateRangeFromPreset('thisMonth') },

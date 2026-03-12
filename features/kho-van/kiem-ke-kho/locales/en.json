@@ -102,5 +102,12 @@
   "kiemKeKho.nhapKetQua.giongSo": "Same as book",
   "kiemKeKho.table.nhapKetQua": "Enter result",
   "kiemKeKho.detail.fillNote": "Add note",
-  "kiemKeKho.detail.ghiChuDialogTitle": "Check round note"
+  "kiemKeKho.detail.ghiChuDialogTitle": "Check round note",
+  "kiemKeKho.service.notFound": "Stocktaking round not found",
+  "kiemKeKho.service.onlyEditDraft": "Only draft rounds can be edited",
+  "kiemKeKho.service.onlyDeleteDraft": "Only draft rounds can be deleted",
+  "kiemKeKho.service.onlyTaoDanhSachWhenDraft": "Create list only when round is draft",
+  "kiemKeKho.service.chiTietNotFound": "Detail row not found",
+  "kiemKeKho.service.noThucTeForDieuChinh": "No actual quantity to adjust stock",
+  "kiemKeKho.service.onlyHoanThanhWhenDangKiem": "Only rounds in progress can be completed"
 }

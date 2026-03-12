@@ -26,15 +26,15 @@ interface Props {
   onView?: (item: DonDatHang) => void;
 }
 
-const STATUS_VARIANTS: Record<number, string> = {
-  0: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20',
-  1: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
-  2: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
-  3: 'bg-primary/10 text-primary border-primary/20',
-  4: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20',
-  5: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
-  6: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
-  7: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20',
+const STATUS_VARIANTS: Record<string, string> = {
+  'Nháp': 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20',
+  'Chờ duyệt': 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
+  'Đã gửi': 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
+  'Đã xác nhận': 'bg-primary/10 text-primary border-primary/20',
+  'Đang giao': 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20',
+  'Đã nhận đủ': 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+  'Đã đóng': 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+  'Hủy': 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20',
 };
 
 const DonDatHangList: React.FC<Props> = ({
@@ -117,7 +117,7 @@ const DonDatHangList: React.FC<Props> = ({
                 STATUS_VARIANTS[item.trang_thai] ?? 'bg-muted text-muted-foreground border-border'
               )}
             >
-              {t(`donDatHang.status.${TRANG_THAI_KEY[item.trang_thai as keyof typeof TRANG_THAI_KEY]}`)}
+              {t(`donDatHang.status.${TRANG_THAI_KEY[item.trang_thai as keyof typeof TRANG_THAI_KEY] ?? 'draft'}`)}
             </span>
           </td>
         );

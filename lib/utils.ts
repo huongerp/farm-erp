@@ -131,6 +131,11 @@ export function getTodayISO(): string {
   return nowTz().format('YYYY-MM-DD')
 }
 
+/** Ngày cuối tháng hiện tại (YYYY-MM-DD) – dùng cho ngày giao dự kiến mặc định */
+export function getEndOfMonthISO(): string {
+  return nowTz().endOf('month').format('YYYY-MM-DD')
+}
+
 /** Giá trị ngày cho input type="date" (YYYY-MM-DD) */
 export function formatDateForInput(value: string | Date | dayjs.Dayjs | null | undefined): string {
   if (value == null) return ''

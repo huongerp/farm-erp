@@ -2,11 +2,11 @@ import React, { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useForm, Controller, SubmitHandler, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { FileText, Calendar, Building2, Warehouse, User, UserCheck, Package, CreditCard, Trash2 } from 'lucide-react';
+import { FileText, Calendar, Building2, Warehouse, User, Package, CreditCard, Trash2 } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
 import Textarea from '../../../../components/ui/Textarea';
-import Select from '../../../../components/ui/Select';
 import Combobox from '../../../../components/ui/Combobox';
+import NumberInput from '../../../../components/ui/NumberInput';
 import { DonDatHangFormValues, donDatHangSchema } from '../core/schema';
 import type { DonDatHang } from '../core/types';
 import type { DoiTac } from '../../../kho-van/danh-sach-doi-tac/core/types';
@@ -14,9 +14,11 @@ import type { Kho } from '../../../kho-van/danh-sach-kho/core/types';
 import type { HangHoa } from '../../../kho-van/danh-sach-hang-hoa/core/types';
 import type { Employee } from '../../../he-thong/nhan-vien/core/types';
 import type { PhieuDeXuatVatTu } from '../../../kho-van/phieu-de-xuat-vat-tu/core/types';
-import { useCreateDonDatHang, useUpdateDonDatHang } from '../hooks/use-don-dat-hang';
+import { useCreateDonDatHang, useUpdateDonDatHang, useNextSoPoDonDatHang } from '../hooks/use-don-dat-hang';
+import { useDoiTacList } from '../../../kho-van/danh-sach-doi-tac/hooks/use-doi-tac';
 import { useHangHoaList } from '../../../kho-van/danh-sach-hang-hoa/hooks/use-hang-hoa';
-import { TRANG_THAI_KEY } from '../core/constants';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
+import { getTodayISO, getEndOfMonthISO, formatNumberVN } from '../../../../lib/utils';
 import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/GenericDrawer';
 import FormSection from '../../../../components/shared/FormSection';
 import FormGrid from '../../../../components/shared/FormGrid';
@@ -24,7 +26,8 @@ import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
 import GenericSubTableSection from '../../../../components/shared/GenericSubTableSection';
 
 interface Props {
-  supplierList: DoiTac[];
+  /** Truyền từ ngoài hoặc form tự gọi useDoiTacList('nha_cung_cap') */
+  supplierList?: DoiTac[];
   khoList: Kho[];
   employees: Employee[];
   phieuDeXuatList?: PhieuDeXuatVatTu[];
@@ -33,7 +36,7 @@ interface Props {
 }
 
 const DonDatHangForm: React.FC<Props> = ({
-  supplierList,
+  supplierList: supplierListProp,
   khoList,
   employees,
   phieuDeXuatList = [],
@@ -44,68 +47,66 @@ const DonDatHangForm: React.FC<Props> = ({
   const isEdit = !!initialData;
   const createMutation = useCreateDonDatHang(onClose);
   const updateMutation = useUpdateDonDatHang(onClose);
+  const { data: nextSoPo, isLoading: loadingSoPo } = useNextSoPoDonDatHang(!isEdit);
   const { data: hangHoaList = [] } = useHangHoaList();
+  const { data: supplierListFromHook = [] } = useDoiTacList('nha_cung_cap');
+  const supplierList = (supplierListProp?.length ? supplierListProp : supplierListFromHook) as DoiTac[];
 
   const supplierOptions = useMemo(
-    () => [
-      { value: '', label: t('donDatHang.form.supplierPlaceholder') },
-      ...supplierList.filter((d) => d.trang_thai === 1).map((d) => ({ value: d.id, label: `${d.ma_ncc} - ${d.ten_ncc}` })),
-    ],
-    [supplierList, t]
+    () =>
+      supplierList
+        .filter((d) => d.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG)
+        .map((d) => ({ value: d.id, label: `${d.ma_ncc} - ${d.ten_ncc}` })),
+    [supplierList]
   );
 
-  const khoOptions = useMemo(
-    () => [
-      { value: '', label: t('donDatHang.form.warehousePlaceholder') },
-      ...khoList.map((k) => ({ value: k.id, label: k.ten_kho })),
-    ],
-    [khoList, t]
-  );
+  const khoOptions = useMemo(() => {
+    const activeKho = khoList.filter((k) => k.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG);
+    const base = [
+      { value: '' as const, label: t('donDatHang.form.warehousePlaceholder') },
+      ...activeKho.map((k) => ({ value: String(k.id), label: k.ten_kho })),
+    ];
+    // Khi sửa: nếu kho đã chọn không còn trong danh sách (vd. đã ẩn/xóa), vẫn hiển thị tên từ ten_kho_nhan
+    if (initialData?.id_kho_nhan && initialData.ten_kho_nhan) {
+      const idStr = String(initialData.id_kho_nhan);
+      if (!activeKho.some((k) => String(k.id) === idStr)) {
+        base.push({ value: idStr, label: initialData.ten_kho_nhan });
+      }
+    }
+    return base;
+  }, [khoList, t, initialData?.id_kho_nhan, initialData?.ten_kho_nhan]);
 
   const phieuDeXuatOptions = useMemo(
     () => [
       { value: '', label: t('donDatHang.form.linkRequestPlaceholder') },
-      ...phieuDeXuatList
-        .filter((p) => p.trang_thai === 1)
-        .map((p) => ({ value: p.id, label: `${p.so_phieu} - ${p.ngay}` })),
+      ...phieuDeXuatList.map((p) => ({ value: p.id, label: `${p.so_phieu} - ${p.ngay}` })),
     ],
     [phieuDeXuatList, t]
   );
 
   const buyerOptions = useMemo(
-    () => [
-      { value: '', label: t('donDatHang.form.buyerPlaceholder') },
-      ...employees.map((e) => ({ value: e.id, label: `${e.ma_nhan_vien ?? ''} - ${e.ho_ten}` })),
-    ],
-    [employees, t]
-  );
-
-  const approverOptions = useMemo(
-    () => [
-      { value: '', label: t('donDatHang.form.approverPlaceholder') },
-      ...employees.map((e) => ({ value: e.id, label: `${e.ma_nhan_vien ?? ''} - ${e.ho_ten}` })),
-    ],
-    [employees, t]
-  );
-
-  const statusOptions = useMemo(
     () =>
-      ([0, 1, 2, 3, 4, 5, 6, 7] as const).map((s) => ({
-        value: String(s),
-        label: t(`donDatHang.status.${TRANG_THAI_KEY[s]}`),
+      employees.map((e) => ({
+        value: e.id,
+        label: `${e.ma_nhan_vien ?? ''} - ${e.ho_ten}`,
       })),
-    [t]
+    [employees]
   );
 
   const hangHoaComboboxOptions = useMemo(
     () =>
       hangHoaList
-        .filter((h) => h.trang_thai === 1)
-        .map((h) => ({
-          value: h.id,
-          label: `${h.ma_hang} - ${h.ten_hang}`,
-          subLabel: h.don_vi_tinh ? `${t('donDatHang.form.unit')}: ${h.don_vi_tinh}` : undefined,
-        })),
+        .filter((h) => h.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG)
+        .map((h) => {
+          const ma = h.ma_hang ?? h.ma_hang_hoa ?? '';
+          const ten = h.ten_hang ?? h.ten_hang_hoa ?? '';
+          const dvt = h.don_vi_tinh ?? h.dvt ?? '';
+          return {
+            value: h.id,
+            label: ma && ten ? `${ma} - ${ten}` : ten || ma || h.id,
+            subLabel: dvt ? `${t('donDatHang.form.unit')}: ${dvt}` : undefined,
+          };
+        }),
     [hangHoaList, t]
   );
 
@@ -117,8 +118,8 @@ const DonDatHangForm: React.FC<Props> = ({
 
   const defaultValues: Partial<DonDatHangFormValues> = {
     so_po: '',
-    ngay_dat: '',
-    ngay_giao_dk: '',
+    ngay_dat: getTodayISO().slice(0, 10),
+    ngay_giao_dk: getEndOfMonthISO(),
     id_nha_cung_cap: '',
     id_kho_nhan: null,
     id_phieu_de_xuat_vat_tu: null,
@@ -126,17 +127,23 @@ const DonDatHangForm: React.FC<Props> = ({
     id_nguoi_duyet: null,
     dieu_khoan_thanh_toan: '',
     ghi_chu: '',
-    trang_thai: 0,
+    trang_thai: 'Nháp',
     chi_tiet: [],
   };
 
-  const { register, handleSubmit, formState: { errors }, reset, control, watch } = useForm<DonDatHangFormValues>({
+  const { register, handleSubmit, formState: { errors }, reset, control, watch, setValue } = useForm<DonDatHangFormValues>({
     resolver: zodResolver(donDatHangSchema) as any,
     defaultValues,
   });
 
   const { fields, append, remove } = useFieldArray({ control, name: 'chi_tiet' });
   const chiTietValues = watch('chi_tiet') ?? [];
+
+  useEffect(() => {
+    if (!isEdit && nextSoPo) {
+      setValue('so_po', nextSoPo);
+    }
+  }, [isEdit, nextSoPo, setValue]);
 
   useEffect(() => {
     if (initialData) {
@@ -160,7 +167,11 @@ const DonDatHangForm: React.FC<Props> = ({
         })),
       });
     } else {
-      reset(defaultValues);
+      reset({
+        ...defaultValues,
+        ngay_dat: getTodayISO().slice(0, 10),
+        ngay_giao_dk: getEndOfMonthISO(),
+      });
     }
   }, [initialData, reset]);
 
@@ -214,7 +225,7 @@ const DonDatHangForm: React.FC<Props> = ({
           <FormGrid cols={2}>
             <Input
               label={t('donDatHang.form.code')}
-              placeholder={t('donDatHang.form.codePlaceholder')}
+              placeholder={!isEdit && loadingSoPo ? t('donDatHang.form.codeLoading') : t('donDatHang.form.codePlaceholder')}
               icon={<FileText size={12} />}
               required
               {...register('so_po')}
@@ -240,15 +251,17 @@ const DonDatHangForm: React.FC<Props> = ({
               name="id_nha_cung_cap"
               control={control}
               render={({ field }) => (
-                <Select
+                <Combobox
                   label={t('donDatHang.form.supplier')}
                   options={supplierOptions}
                   value={field.value}
-                  onChange={(e) => field.onChange(e.target.value)}
-                  onBlur={field.onBlur}
+                  onChange={field.onChange}
+                  placeholder={t('donDatHang.form.supplierPlaceholder')}
                   icon={<Building2 size={12} />}
                   required
                   error={errors.id_nha_cung_cap?.message}
+                  searchable
+                  dropdownInPortal
                 />
               )}
             />
@@ -256,14 +269,16 @@ const DonDatHangForm: React.FC<Props> = ({
               name="id_kho_nhan"
               control={control}
               render={({ field }) => (
-                <Select
+                <Combobox
                   label={t('donDatHang.form.warehouse')}
                   options={khoOptions}
-                  value={field.value ?? ''}
-                  onChange={(e) => field.onChange(e.target.value === '' ? null : e.target.value)}
-                  onBlur={field.onBlur}
+                  value={field.value != null ? String(field.value) : ''}
+                  onChange={(v) => field.onChange(v === '' || v == null ? null : String(v))}
+                  placeholder={t('donDatHang.form.warehousePlaceholder')}
                   icon={<Warehouse size={12} />}
                   error={errors.id_kho_nhan?.message}
+                  searchable
+                  dropdownInPortal
                 />
               )}
             />
@@ -271,13 +286,16 @@ const DonDatHangForm: React.FC<Props> = ({
               name="id_phieu_de_xuat_vat_tu"
               control={control}
               render={({ field }) => (
-                <Select
+                <Combobox
                   label={t('donDatHang.form.linkRequest')}
                   options={phieuDeXuatOptions}
                   value={field.value ?? ''}
-                  onChange={(e) => field.onChange(e.target.value === '' ? null : e.target.value)}
-                  onBlur={field.onBlur}
+                  onChange={(v) => field.onChange(v === '' ? null : v)}
+                  placeholder={t('donDatHang.form.linkRequestPlaceholder')}
                   icon={<FileText size={12} />}
+                  error={errors.id_phieu_de_xuat_vat_tu?.message}
+                  searchable
+                  dropdownInPortal
                 />
               )}
             />
@@ -285,29 +303,17 @@ const DonDatHangForm: React.FC<Props> = ({
               name="id_nguoi_dat"
               control={control}
               render={({ field }) => (
-                <Select
+                <Combobox
                   label={t('donDatHang.form.buyer')}
                   options={buyerOptions}
                   value={field.value}
-                  onChange={(e) => field.onChange(e.target.value)}
-                  onBlur={field.onBlur}
+                  onChange={field.onChange}
+                  placeholder={t('donDatHang.form.buyerPlaceholder')}
                   icon={<User size={12} />}
                   required
                   error={errors.id_nguoi_dat?.message}
-                />
-              )}
-            />
-            <Controller
-              name="id_nguoi_duyet"
-              control={control}
-              render={({ field }) => (
-                <Select
-                  label={t('donDatHang.form.approver')}
-                  options={approverOptions}
-                  value={field.value ?? ''}
-                  onChange={(e) => field.onChange(e.target.value === '' ? null : e.target.value)}
-                  onBlur={field.onBlur}
-                  icon={<UserCheck size={12} />}
+                  searchable
+                  dropdownInPortal
                 />
               )}
             />
@@ -330,21 +336,6 @@ const DonDatHangForm: React.FC<Props> = ({
                 rows={2}
               />
             </div>
-            <div className="col-span-1 sm:col-span-2">
-              <Controller
-                name="trang_thai"
-                control={control}
-                render={({ field }) => (
-                  <Select
-                    label={t('donDatHang.form.status')}
-                    options={statusOptions}
-                    value={String(field.value)}
-                    onChange={(e) => field.onChange(Number(e.target.value))}
-                    onBlur={field.onBlur}
-                  />
-                )}
-              />
-            </div>
           </FormGrid>
         </FormSection>
 
@@ -362,8 +353,9 @@ const DonDatHangForm: React.FC<Props> = ({
             <tr>
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap w-10">#</th>
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[200px]">{t('donDatHang.form.item')}</th>
-              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[90px]">{t('donDatHang.form.quantity')}</th>
+              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[110px]">{t('donDatHang.form.quantity')}</th>
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[100px]">{t('donDatHang.form.unitPrice')}</th>
+              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[110px]">{t('donDatHang.form.amount')}</th>
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[64px]">{t('donDatHang.form.unit')}</th>
               <th className="sticky right-0 z-[2] px-4 py-2 font-semibold text-foreground/80 text-xs text-center w-16 bg-muted border-l border-border">{t('common.actions')}</th>
             </tr>
@@ -371,14 +363,18 @@ const DonDatHangForm: React.FC<Props> = ({
           <tbody className="[&>tr>td]:border-b [&>tr>td]:border-border">
             {fields.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-muted-foreground text-xs">
+                <td colSpan={7} className="px-4 py-6 text-center text-muted-foreground text-xs">
                   {t('donDatHang.form.noItems')}
                 </td>
               </tr>
             ) : (
               fields.map((field, index) => {
                 const idHangHoa = chiTietValues[index]?.id_hang_hoa ?? '';
-                const donVi = idHangHoa ? (hangHoaMap[idHangHoa]?.don_vi_tinh ?? '—') : '—';
+                const h = idHangHoa ? hangHoaMap[idHangHoa] : null;
+                const donVi = h ? (h.dvt ?? h.don_vi_tinh ?? '—') : '—';
+                const soLuong = Number(chiTietValues[index]?.so_luong) || 0;
+                const donGia = Number(chiTietValues[index]?.don_gia) || 0;
+                const thanhTien = soLuong * donGia;
                 return (
                   <tr key={field.id} className="hover:bg-muted/60 transition-colors">
                     <td className="px-4 py-2.5 text-muted-foreground tabular-nums">{index + 1}</td>
@@ -390,7 +386,11 @@ const DonDatHangForm: React.FC<Props> = ({
                           <Combobox
                             options={hangHoaComboboxOptions}
                             value={f.value || null}
-                            onChange={(v) => f.onChange(v ?? '')}
+                            onChange={(v) => {
+                              f.onChange(v ?? '');
+                              const dg = v ? (hangHoaMap[String(v)]?.don_gia ?? 0) : 0;
+                              setValue(`chi_tiet.${index}.don_gia`, dg);
+                            }}
                             placeholder={t('donDatHang.form.itemPlaceholder')}
                             searchPlaceholder={t('donDatHang.form.itemSearchPlaceholder')}
                             searchable
@@ -400,25 +400,42 @@ const DonDatHangForm: React.FC<Props> = ({
                         )}
                       />
                     </td>
-                    <td className="px-4 py-2.5 min-w-[90px] align-top">
-                      <Input
-                        type="number"
-                        min={0}
-                        step="any"
-                        inputMode="decimal"
-                        className="h-9 text-sm border-border w-full min-w-[5rem] max-w-[8rem] tabular-nums"
-                        {...register(`chi_tiet.${index}.so_luong`, { valueAsNumber: true })}
+                    <td className="px-4 py-2.5 min-w-[100px] align-top">
+                      <Controller
+                        name={`chi_tiet.${index}.so_luong`}
+                        control={control}
+                        render={({ field: f }) => (
+                          <NumberInput
+                            value={f.value}
+                            onChange={(v) => f.onChange(v)}
+                            onBlur={f.onBlur}
+                            min={0}
+                            maxFractionDigits={4}
+                            className="min-w-[6rem] max-w-[10rem] border-border h-9 text-sm"
+                            compact
+                          />
+                        )}
                       />
                     </td>
                     <td className="px-4 py-2.5 min-w-[100px] align-top">
-                      <Input
-                        type="number"
-                        min={0}
-                        step="any"
-                        inputMode="decimal"
-                        className="h-9 text-sm border-border w-full min-w-[5rem] max-w-[10rem] tabular-nums"
-                        {...register(`chi_tiet.${index}.don_gia`, { valueAsNumber: true })}
+                      <Controller
+                        name={`chi_tiet.${index}.don_gia`}
+                        control={control}
+                        render={({ field: f }) => (
+                          <NumberInput
+                            value={f.value}
+                            onChange={(v) => f.onChange(v)}
+                            onBlur={f.onBlur}
+                            min={0}
+                            maxFractionDigits={4}
+                            className="min-w-[6rem] max-w-[10rem] border-border h-9 text-sm"
+                            compact
+                          />
+                        )}
                       />
+                    </td>
+                    <td className="px-4 py-2.5 text-xs text-muted-foreground tabular-nums">
+                      {formatNumberVN(thanhTien)}
                     </td>
                     <td className="px-4 py-2.5 text-xs text-muted-foreground">{donVi}</td>
                     <td className="sticky right-0 z-[1] px-4 py-2.5 text-center bg-card border-l border-border/50">
@@ -435,6 +452,23 @@ const DonDatHangForm: React.FC<Props> = ({
                 );
               })
             )}
+            {fields.length > 0 && (() => {
+              const tongSoLuong = chiTietValues.reduce((s, r) => s + (Number(r?.so_luong) || 0), 0);
+              const tongTien = chiTietValues.reduce((s, r) => {
+                const sl = Number(r?.so_luong) || 0;
+                const dg = Number(r?.don_gia) || 0;
+                return s + sl * dg;
+              }, 0);
+              return (
+                <tr key="totals" className="bg-muted/50 border-t-2 border-border font-medium">
+                  <td colSpan={2} className="px-4 py-2.5 text-muted-foreground text-xs" />
+                  <td className="px-4 py-2.5 text-xs tabular-nums">{formatNumberVN(tongSoLuong)}</td>
+                  <td className="px-4 py-2.5 text-xs" />
+                  <td className="px-4 py-2.5 text-xs tabular-nums">{formatNumberVN(tongTien)}</td>
+                  <td colSpan={2} className="px-4 py-2.5 text-xs" />
+                </tr>
+              );
+            })()}
           </tbody>
         </GenericSubTableSection>
       </form>

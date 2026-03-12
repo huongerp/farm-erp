@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import i18n from '../../../../lib/i18n';
+import { TRANG_THAI_DON_DAT_HANG } from './constants';
 
 export const donDatHangChiTietItemSchema = z.object({
   id_hang_hoa: z.string().min(1, i18n.t('donDatHang.validation.itemRequired')),
@@ -30,7 +31,7 @@ export const donDatHangSchema = z
     id_nguoi_duyet: z.string().optional().nullable(),
     dieu_khoan_thanh_toan: z.string().optional(),
     ghi_chu: z.string().optional(),
-    trang_thai: z.coerce.number().refine((val) => val >= 0 && val <= 7, {
+    trang_thai: z.enum(TRANG_THAI_DON_DAT_HANG, {
       message: i18n.t('donDatHang.validation.statusInvalid'),
     }),
     chi_tiet: z.array(donDatHangChiTietFormItemSchema).default([]),

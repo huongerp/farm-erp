@@ -14,6 +14,7 @@ import {
   dieuChinhTonTheoDot,
   hoanThanhDot,
   changeTrangThaiDot,
+  getNextMaDotDotKiemKeKho,
 } from '../services/kiem-ke-kho-service';
 import type { TaoDanhSachKiemKeKhoFilters } from '../services/kiem-ke-kho-service';
 import type { DotKiemKeKhoCreate, ChiTietKiemKeKhoUpdate } from '../core/types';
@@ -189,3 +190,17 @@ export function useChangeTrangThaiDot(onSuccess?: () => void) {
     onError: (err: unknown) => toast.error((err as Error).message),
   });
 }
+
+/** Mã đợt tự sinh: KK-YYYY-NNNN */
+function formatMaDotDotKiemKeKho(seq: number): string {
+  const y = new Date().getFullYear();
+  return `KK-${y}-${String(seq).padStart(4, '0')}`;
+}
+
+export function useNextMaDotDotKiemKeKho() {
+  return useMutation({
+    mutationFn: getNextMaDotDotKiemKeKho,
+  });
+}
+
+export { formatMaDotDotKiemKeKho };

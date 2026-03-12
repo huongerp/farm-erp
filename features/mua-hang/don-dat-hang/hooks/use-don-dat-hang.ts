@@ -7,11 +7,22 @@ import {
   updateDonDatHang,
   deleteDonDatHang,
   deleteDonDatHangMany,
+  getNextSoPoFormatted,
 } from '../services/don-dat-hang-service';
 import type { DonDatHangFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
 
 const QUERY_KEY = ['donDatHang'] as const;
+
+/** Số PO tiếp theo khi tạo mới (format PO-YYYY-NNNNN). Chỉ gọi khi mở form tạo đơn (enabled = true). Có thể sửa mã trên form. */
+export const useNextSoPoDonDatHang = (enabled: boolean) => {
+  return useQuery({
+    queryKey: [...QUERY_KEY, 'nextSoPo'],
+    queryFn: getNextSoPoFormatted,
+    enabled,
+    staleTime: 0,
+  });
+};
 
 export const useDonDatHangList = () => {
   return useQuery({

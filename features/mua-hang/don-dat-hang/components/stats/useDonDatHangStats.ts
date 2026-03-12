@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import type { DonDatHang } from '../../core/types';
-import { TRANG_THAI_KEY } from '../../core/constants';
+import { TRANG_THAI_DON_DAT_HANG, TRANG_THAI_KEY } from '../../core/constants';
+import { TRANG_THAI_NHAP, TRANG_THAI_HUY } from '../../core/types';
 
 export interface DonDatHangStatsSummary {
   total: number;
@@ -23,13 +24,17 @@ export interface StatsChartItem {
 
 export function useDonDatHangStats(list: DonDatHang[]) {
   return useMemo(() => {
-    const draft = list.filter((d) => d.trang_thai === 0).length;
-    const inProgress = list.filter((d) => [1, 2, 3, 4].includes(d.trang_thai)).length;
-    const completed = list.filter((d) => [5, 6].includes(d.trang_thai)).length;
-    const cancelled = list.filter((d) => d.trang_thai === 7).length;
+    const draft = list.filter((d) => d.trang_thai === TRANG_THAI_NHAP).length;
+    const inProgress = list.filter((d) =>
+      ['Chờ duyệt', 'Đã gửi', 'Đã xác nhận', 'Đang giao'].includes(d.trang_thai)
+    ).length;
+    const completed = list.filter((d) =>
+      ['Đã nhận đủ', 'Đã đóng'].includes(d.trang_thai)
+    ).length;
+    const cancelled = list.filter((d) => d.trang_thai === TRANG_THAI_HUY).length;
 
-    const byTrangThai: DonDatHangStatsByTrangThai[] = ([0, 1, 2, 3, 4, 5, 6, 7] as const).map((s) => ({
-      id: String(s),
+    const byTrangThai: DonDatHangStatsByTrangThai[] = TRANG_THAI_DON_DAT_HANG.map((s) => ({
+      id: s,
       ten: `status.${TRANG_THAI_KEY[s]}`,
       count: list.filter((d) => d.trang_thai === s).length,
     }));

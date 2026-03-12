@@ -106,10 +106,12 @@ export function getHanhChinhGroups(
   return [
     {
       groupTitle: t('page.hanhChinh.groupCongLuong'),
-      // Chỉ hiển thị 3 module; các module khác ẩn trên menu (code/route vẫn giữ): cham-cong, tong-hop-cham-cong, cham-diem-kpi, diem-cong-tru
+      // Các module ẩn trên menu (code/route vẫn giữ): cham-cong, tong-hop-cham-cong, cham-diem-kpi
       items: [
+        item({ slug: 'cong-viec', titleKey: 'page.hanhChinh.modules.congViec', descKey: 'page.hanhChinh.descs.congViec', icon: ClipboardList, color: 'bg-amber-500' }),
         item({ slug: 'phieu-hanh-chinh', titleKey: 'page.hanhChinh.modules.phieuHanhChinh', descKey: 'page.hanhChinh.descs.phieuHanhChinh', icon: Receipt, color: 'bg-indigo-500' }),
         item({ slug: 'bang-luong', titleKey: 'page.hanhChinh.modules.bangLuong', descKey: 'page.hanhChinh.descs.bangLuong', icon: Banknote, color: 'bg-emerald-500' }),
+        item({ slug: 'diem-cong-tru', titleKey: 'page.hanhChinh.modules.diemCongTru', descKey: 'page.hanhChinh.descs.diemCongTru', icon: Scale, color: 'bg-violet-500' }),
         item({ slug: 'thiet-lap-cong-luong', titleKey: 'page.hanhChinh.modules.thietLapCongLuong', descKey: 'page.hanhChinh.descs.thietLapCongLuong', icon: Settings, color: 'bg-slate-500' }),
       ],
     },

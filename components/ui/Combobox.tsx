@@ -31,7 +31,7 @@ interface ComboboxProps {
   renderValue?: (option: Option) => React.ReactNode;
   /** Class cho ô trigger (mở dropdown) */
   triggerClassName?: string;
-  /** Render dropdown qua portal vào body để tránh bị cắt bởi overflow (bảng, drawer) */
+  /** Render dropdown qua portal vào body để tránh bị cắt và đảm bảo cuộn được. Mặc định true. */
   dropdownInPortal?: boolean;
 }
 
@@ -51,7 +51,7 @@ const Combobox: React.FC<ComboboxProps> = ({
   renderOption,
   renderValue,
   triggerClassName,
-  dropdownInPortal = false,
+  dropdownInPortal = true,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -93,12 +93,17 @@ const Combobox: React.FC<ComboboxProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [dropdownInPortal]);
 
-  // When dropdown in portal: close on scroll so it doesn't stay floating in wrong place
+  // When dropdown in portal: close on scroll of outside elements (not the dropdown itself)
   useEffect(() => {
     if (!isOpen || !dropdownInPortal) return;
-    const close = () => setIsOpen(false);
-    window.addEventListener('scroll', close, true);
-    return () => window.removeEventListener('scroll', close, true);
+    const onScroll = (e: Event) => {
+      const target = e.target as Element | null;
+      if (target?.closest?.('[data-combobox-dropdown]')) return;
+      if (containerRef.current?.contains(target as Node)) return;
+      setIsOpen(false);
+    };
+    window.addEventListener('scroll', onScroll, true);
+    return () => window.removeEventListener('scroll', onScroll, true);
   }, [isOpen, dropdownInPortal]);
 
   // Filter options based on search term (or show all when not searchable)
@@ -257,6 +262,7 @@ const Combobox: React.FC<ComboboxProps> = ({
             <motion.div
               id={listboxId}
               role="listbox"
+              data-combobox-dropdown
               initial={{ opacity: 0, y: 5, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 5, scale: 0.98 }}

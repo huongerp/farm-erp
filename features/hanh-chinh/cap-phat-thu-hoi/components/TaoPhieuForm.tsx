@@ -183,14 +183,14 @@ const TaoPhieuForm: React.FC<Props> = ({ onClose, defaultTaiSanId, initialData, 
             <div>
               <label className="block text-sm font-medium text-foreground mb-1.5">{t('capPhatThuHoi.form.loaiPhieu')}<RequiredStar /></label>
               <Controller name="loai_phieu" control={control} render={({ field }) => (
-                <Combobox value={field.value} onChange={field.onChange} options={loaiOptions} placeholder={t('capPhatThuHoi.form.loaiPhieuPlaceholder')} />
+                <Combobox value={field.value} onChange={field.onChange} options={loaiOptions} placeholder={t('capPhatThuHoi.form.loaiPhieuPlaceholder')} searchable dropdownInPortal />
               )} />
               {errors.loai_phieu && <p className="text-destructive text-xs mt-1">{errors.loai_phieu.message}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-foreground mb-1.5">{t('capPhatThuHoi.form.taiSan')}<RequiredStar /></label>
               <Controller name="id_tai_san" control={control} render={({ field }) => (
-                <Combobox value={field.value} onChange={field.onChange} options={assetOptions} placeholder={t('capPhatThuHoi.form.taiSanPlaceholder')} />
+                <Combobox value={field.value} onChange={field.onChange} options={assetOptions} placeholder={t('capPhatThuHoi.form.taiSanPlaceholder')} searchable dropdownInPortal />
               )} />
               {errors.id_tai_san && <p className="text-destructive text-xs mt-1">{errors.id_tai_san.message}</p>}
             </div>
@@ -202,7 +202,7 @@ const TaoPhieuForm: React.FC<Props> = ({ onClose, defaultTaiSanId, initialData, 
             <div>
               <label className="block text-sm font-medium text-foreground mb-1.5">{t('capPhatThuHoi.form.noiLuuTruoc')}<RequiredStar /></label>
               <Controller name="id_noi_luu_truoc" control={control} render={({ field }) => (
-                <Combobox value={field.value} onChange={field.onChange} options={locationOptions} placeholder={t('capPhatThuHoi.form.noiLuuTruocPlaceholder')} />
+                <Combobox value={field.value} onChange={field.onChange} options={locationOptions} placeholder={t('capPhatThuHoi.form.noiLuuTruocPlaceholder')} searchable dropdownInPortal />
               )} />
               {errors.id_noi_luu_truoc && <p className="text-destructive text-xs mt-1">{errors.id_noi_luu_truoc.message}</p>}
             </div>
@@ -210,7 +210,7 @@ const TaoPhieuForm: React.FC<Props> = ({ onClose, defaultTaiSanId, initialData, 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1.5">{t('capPhatThuHoi.form.noiLuuSau')}<RequiredStar /></label>
                 <Controller name="id_noi_luu_sau" control={control} render={({ field }) => (
-                  <Combobox value={field.value} onChange={field.onChange} options={locationOptions} placeholder={t('capPhatThuHoi.form.noiLuuSauPlaceholder')} />
+                  <Combobox value={field.value} onChange={field.onChange} options={locationOptions} placeholder={t('capPhatThuHoi.form.noiLuuSauPlaceholder')} searchable dropdownInPortal />
                 )} />
                 {errors.id_noi_luu_sau && <p className="text-destructive text-xs mt-1">{errors.id_noi_luu_sau.message}</p>}
               </div>
@@ -223,14 +223,14 @@ const TaoPhieuForm: React.FC<Props> = ({ onClose, defaultTaiSanId, initialData, 
             <div>
               <label className="block text-sm font-medium text-foreground mb-1.5">{t('capPhatThuHoi.form.nguoiGiuTruoc')}</label>
               <Controller name="id_nguoi_giu_truoc" control={control} render={({ field }) => (
-                <Combobox value={field.value ?? ''} onChange={(v) => field.onChange(v || null)} options={[{ value: '', label: '—' }, ...employeeOptions]} placeholder={t('capPhatThuHoi.form.nguoiGiuTruocPlaceholder')} />
+                <Combobox value={field.value ?? ''} onChange={(v) => field.onChange(v || null)} options={[{ value: '', label: '—' }, ...employeeOptions]} placeholder={t('capPhatThuHoi.form.nguoiGiuTruocPlaceholder')} searchable dropdownInPortal />
               )} />
             </div>
             {needNguoiGiuSau && (
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1.5">{t('capPhatThuHoi.form.nguoiGiuSau')}<RequiredStar /></label>
                 <Controller name="id_nguoi_giu_sau" control={control} render={({ field }) => (
-                  <Combobox value={field.value ?? ''} onChange={(v) => field.onChange(v || null)} options={employeeOptions} placeholder={t('capPhatThuHoi.form.nguoiGiuSauPlaceholder')} />
+                  <Combobox value={field.value ?? ''} onChange={(v) => field.onChange(v || null)} options={employeeOptions} placeholder={t('capPhatThuHoi.form.nguoiGiuSauPlaceholder')} searchable dropdownInPortal />
                 )} />
                 {errors.id_nguoi_giu_sau && <p className="text-destructive text-xs mt-1">{errors.id_nguoi_giu_sau.message}</p>}
               </div>
@@ -248,7 +248,7 @@ const TaoPhieuForm: React.FC<Props> = ({ onClose, defaultTaiSanId, initialData, 
             <div>
               <label className="block text-sm font-medium text-foreground mb-1.5">{t('capPhatThuHoi.form.nguoiThucHien')}<RequiredStar /></label>
               <Controller name="id_nguoi_thuc_hien" control={control} render={({ field }) => (
-                <Combobox value={field.value} onChange={field.onChange} options={employeeOptions} placeholder={t('capPhatThuHoi.form.nguoiThucHienPlaceholder')} />
+                <Combobox value={field.value} onChange={field.onChange} options={employeeOptions} placeholder={t('capPhatThuHoi.form.nguoiThucHienPlaceholder')} searchable dropdownInPortal />
               )} />
               {errors.id_nguoi_thuc_hien && <p className="text-destructive text-xs mt-1">{errors.id_nguoi_thuc_hien.message}</p>}
             </div>

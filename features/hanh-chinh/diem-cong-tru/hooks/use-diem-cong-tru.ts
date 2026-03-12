@@ -9,6 +9,7 @@ import {
   getPayrollPointGroupsForModule,
   getEmployeesForSelect,
 } from '../services/diem-cong-tru-service';
+import { useAuthStore } from '../../../../store/useStore';
 import { DiemCongTruFormValues } from '../core/schema';
 
 export const useDiemCongTruRecords = () =>
@@ -31,8 +32,9 @@ export const useEmployeesForDiemCongTru = () =>
 
 export const useCreateDiemCongTruRecord = (onSuccess?: () => void) => {
   const queryClient = useQueryClient();
+  const userId = useAuthStore((s) => s.user?.id);
   return useMutation({
-    mutationFn: (data: DiemCongTruFormValues) => createDiemCongTruRecord(data),
+    mutationFn: (data: DiemCongTruFormValues) => createDiemCongTruRecord(data, userId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['diemCongTruRecords'] });
       toast.success(i18n.t('diemCongTru.toast.createSuccess'));

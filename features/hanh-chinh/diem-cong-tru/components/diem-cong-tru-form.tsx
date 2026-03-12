@@ -15,6 +15,7 @@ import { DiemCongTruFormValues, diemCongTruSchema } from '../core/schema';
 import { getDiemCongTruLoaiOptions } from '../core/constants';
 import { useCreateDiemCongTruRecord, useUpdateDiemCongTruRecord } from '../hooks/use-diem-cong-tru';
 import { usePayrollPointGroupsForDiemCongTru, useEmployeesForDiemCongTru } from '../hooks/use-diem-cong-tru';
+import { TRANG_THAI_NV, TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 
 const currentYear = new Date().getFullYear();
 const currentMonth = new Date().getMonth() + 1;
@@ -68,13 +69,15 @@ const DiemCongTruForm: React.FC<Props> = ({ initialData, onClose }) => {
   const employeeOptions = useMemo(
     () =>
       employees
-        .filter((e) => e.trang_thai === 1)
+        .filter((e) => e.trang_thai === TRANG_THAI_NV.DANG_LAM_VIEC)
         .map((e) => ({ value: e.id, label: `${e.ho_ten}${e.ma_nhan_vien ? ` (${e.ma_nhan_vien})` : ''}` })),
     [employees]
   );
 
   const categoryOptionsByLoai = useMemo(() => {
-    const filtered = pointGroups.filter((g) => g.trang_thai === 1 && g.loai === selectedLoai);
+    const filtered = pointGroups.filter(
+      (g) => g.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG && g.loai === selectedLoai
+    );
     return filtered.map((g) => ({ value: g.id, label: `${g.ten} (${g.ma})` }));
   }, [pointGroups, selectedLoai]);
 
@@ -125,6 +128,7 @@ const DiemCongTruForm: React.FC<Props> = ({ initialData, onClose }) => {
                   onChange={field.onChange}
                   placeholder={t('diemCongTru.form.employeePlaceholder')}
                   icon={<User size={16} className="text-muted-foreground" />}
+                  required
                 />
               )}
             />
@@ -136,6 +140,7 @@ const DiemCongTruForm: React.FC<Props> = ({ initialData, onClose }) => {
                 label={t('diemCongTru.form.year')}
                 placeholder={t('diemCongTru.form.yearPlaceholder')}
                 icon={<Calendar size={14} />}
+                required
                 {...register('nam')}
                 error={errors.nam?.message}
               />
@@ -146,6 +151,7 @@ const DiemCongTruForm: React.FC<Props> = ({ initialData, onClose }) => {
                 label={t('diemCongTru.form.month')}
                 placeholder={t('diemCongTru.form.monthPlaceholder')}
                 icon={<Hash size={14} />}
+                required
                 {...register('thang')}
                 error={errors.thang?.message}
               />
@@ -161,6 +167,7 @@ const DiemCongTruForm: React.FC<Props> = ({ initialData, onClose }) => {
                   onChange={field.onChange}
                   placeholder={t('diemCongTru.form.loaiPlaceholder')}
                   icon={<Scale size={16} className="text-muted-foreground" />}
+                  required
                 />
               )}
             />
@@ -175,6 +182,7 @@ const DiemCongTruForm: React.FC<Props> = ({ initialData, onClose }) => {
                   onChange={field.onChange}
                   placeholder={t('diemCongTru.form.categoryPlaceholder')}
                   icon={<ListOrdered size={16} className="text-muted-foreground" />}
+                  required
                 />
               )}
             />
@@ -184,6 +192,7 @@ const DiemCongTruForm: React.FC<Props> = ({ initialData, onClose }) => {
               label={t('diemCongTru.form.diem')}
               placeholder={t('diemCongTru.form.diemPlaceholder')}
               icon={<Hash size={14} />}
+              required
               {...register('diem')}
               error={errors.diem?.message}
             />

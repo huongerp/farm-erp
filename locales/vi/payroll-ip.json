@@ -3,6 +3,7 @@
   "payrollIp.pageDescription": "Cấu hình danh sách IP wifi theo chi nhánh để chấm công.",
   "payrollIp.tabs.ipSettings": "Thiết lập IP",
   "payrollIp.tabs.adminFormGroups": "Nhóm phiếu hành chính",
+  "payrollIp.tabs.pointGroupsSetup": "Thiết lập điểm cộng trừ",
   "payrollIp.groupsComingSoon": "Tính năng đang được phát triển.",
   "payrollIp.groups.searchPlaceholder": "Tìm theo loại phiếu hoặc ghi chú...",
   "payrollIp.groups.loading": "Đang tải danh sách nhóm phiếu...",
@@ -135,5 +136,6 @@
   "payrollIp.pointGroups.validation.statusInvalid": "Trạng thái không hợp lệ",
   "payrollIp.pointGroups.types.cong": "Cộng",
   "payrollIp.pointGroups.types.tru": "Trừ",
-  "payrollIp.pointGroups.service.notFound": "Hạng mục không tồn tại"
+  "payrollIp.pointGroups.service.notFound": "Hạng mục không tồn tại",
+  "payrollIp.pointGroups.service.duplicateMa": "Mã hạng mục đã tồn tại"
 }

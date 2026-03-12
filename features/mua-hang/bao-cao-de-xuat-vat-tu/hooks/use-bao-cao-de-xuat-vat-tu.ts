@@ -12,7 +12,7 @@ export function usePhieuDeXuatInPeriod(filters: BaoCaoDeXuatVatTuFilters | null)
   return useQuery({
     queryKey: [...QUERY_KEY, 'phieuInPeriod', filters],
     queryFn: () => getPhieuDeXuatInPeriod(filters!),
-    enabled: !!filters && !!filters.dateFrom && !!filters.dateTo,
+    enabled: !!filters,
   });
 }
 
@@ -20,7 +20,7 @@ export function useTongHopDeXuatKy(filters: BaoCaoDeXuatVatTuFilters | null) {
   return useQuery({
     queryKey: [...QUERY_KEY, 'tongHopKy', filters],
     queryFn: () => getTongHopDeXuatKy(filters!),
-    enabled: !!filters && !!filters.dateFrom && !!filters.dateTo,
+    enabled: !!filters,
   });
 }
 
@@ -28,6 +28,6 @@ export function useLienKetDonHang(filters: BaoCaoDeXuatVatTuFilters | null) {
   return useQuery({
     queryKey: [...QUERY_KEY, 'lienKetDonHang', filters],
     queryFn: () => getLienKetDonHang(filters!),
-    enabled: !!filters && !!filters.dateFrom && !!filters.dateTo,
+    enabled: !!filters,
   });
 }
