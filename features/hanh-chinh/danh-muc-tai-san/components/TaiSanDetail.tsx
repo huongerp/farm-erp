@@ -16,6 +16,7 @@ import { getLoaiPhieuLabel } from '../../cap-phat-thu-hoi/core/constants';
 import { usePhieuBaoTriList } from '../../bao-tri-sua-chua/hooks/use-bao-tri-sua-chua';
 import { getHangMucLabel } from '../../bao-tri-sua-chua/core/constants';
 import type { TaiSan } from '../core/types';
+import BarcodeQRDisplay from './BarcodeQRDisplay';
 import type { PhieuCapPhatThuHoi } from '../../cap-phat-thu-hoi/core/types';
 import type { PhieuBaoTriSuaChua } from '../../bao-tri-sua-chua/core/types';
 
@@ -265,7 +266,22 @@ const TaiSanDetail: React.FC<Props> = ({
             <DetailField label={t('danhSachTaiSan.store.tenCol')} value={data.ten_tai_san} />
             <DetailField label={t('danhSachTaiSan.store.nhomCol')} value={data.ten_nhom || '—'} />
             <DetailField label={t('danhSachTaiSan.store.noiLuuCol')} value={data.ten_noi_luu || '—'} />
+            <DetailField label={t('danhSachTaiSan.store.chiNhanhCol')} value={data.ten_chi_nhanh || '—'} />
             <DetailField label={t('danhSachTaiSan.store.trangThaiCol')} value={data.ten_trang_thai || '—'} />
+            <DetailField label={t('danhSachTaiSan.store.thuongHieuCol')} value={data.thuong_hieu || '—'} />
+            <DetailField label={t('danhSachTaiSan.store.modelCol')} value={data.model || '—'} />
+            <DetailField label={t('danhSachTaiSan.store.serialCol')} value={data.serial || '—'} />
+            <DetailField label={t('danhSachTaiSan.store.xuatXuCol')} value={data.xuat_xu || '—'} />
+            {data.ma_barcode?.trim() ? (
+              <div className="col-span-1 sm:col-span-2">
+                <p className="text-xs font-medium text-muted-foreground mb-2">{t('danhSachTaiSan.store.maBarcodeCol')}</p>
+                <BarcodeQRDisplay value={data.ma_barcode} qrSize={120} barcodeHeight={48} />
+              </div>
+            ) : (
+              <DetailField label={t('danhSachTaiSan.store.maBarcodeCol')} value="—" />
+            )}
+            <DetailField label={t('danhSachTaiSan.store.nhaCungCapCol')} value={data.ten_nha_cung_cap || '—'} />
+            <DetailField label={t('danhSachTaiSan.store.nguoiTaoCol')} value={data.ten_nguoi_tao || '—'} />
             <DetailField
               label={t('danhSachTaiSan.store.nguoiGiuCol')}
               value={data.ten_nhan_vien_dang_giu ? `${data.ten_nhan_vien_dang_giu}${data.ma_nhan_vien_dang_giu ? ` (${data.ma_nhan_vien_dang_giu})` : ''}` : '—'}

@@ -1,5 +1,6 @@
 {
   "phieuDeXuatVatTu.tabs.list": "Danh sách",
+  "phieuDeXuatVatTu.tabs.detail": "Chi tiết",
   "phieuDeXuatVatTu.tabs.stats": "Thống kê",
   "phieuDeXuatVatTu.tabs.all": "Tất cả",
   "phieuDeXuatVatTu.tabs.mine": "Của tôi",
@@ -119,5 +120,14 @@
   "phieuDeXuatVatTu.stats.loading": "Đang tải thống kê...",
   "phieuDeXuatVatTu.stats.loadError": "Lỗi tải dữ liệu thống kê.",
   "phieuDeXuatVatTu.stats.dateFrom": "Từ ngày",
-  "phieuDeXuatVatTu.stats.dateTo": "Đến ngày"
+  "phieuDeXuatVatTu.stats.dateTo": "Đến ngày",
+  "phieuDeXuatVatTu.chiTietTab.stt": "STT",
+  "phieuDeXuatVatTu.chiTietTab.emptyTitle": "Chưa có dòng chi tiết",
+  "phieuDeXuatVatTu.chiTietTab.emptyDescription": "Dữ liệu từ bảng đề xuất vật tư chi tiết sẽ hiển thị tại đây khi có phiếu.",
+  "phieuDeXuatVatTu.chiTietTab.detailTitle": "Chi tiết dòng đề xuất",
+  "phieuDeXuatVatTu.chiTietTab.sectionPhieu": "Thông tin phiếu",
+  "phieuDeXuatVatTu.chiTietTab.sectionHangHoa": "Thông tin hàng hóa",
+  "phieuDeXuatVatTu.chiTietTab.editLineTitle": "Sửa dòng đề xuất",
+  "phieuDeXuatVatTu.chiTietTab.deleteLineConfirm": "Xóa dòng này khỏi phiếu?",
+  "phieuDeXuatVatTu.chiTietTab.lastLineCannotDelete": "Phiếu phải có ít nhất một dòng hàng hóa."
 }

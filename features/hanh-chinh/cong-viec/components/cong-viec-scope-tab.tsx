@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
-import { ClipboardList, Clock, MessageSquare, LayoutGrid, GanttChart } from 'lucide-react';
+import { ClipboardList, MessageSquare, LayoutGrid, GanttChart } from 'lucide-react';
 import TabGroup from '../../../../components/ui/TabGroup';
 import CongViecToolbar from './cong-viec-toolbar';
 import CongViecHierarchyTable from './cong-viec-hierarchy-table';
@@ -20,18 +20,16 @@ import { useCongViecList, useDeleteCongViecList, useImportCongViec } from '../ho
 import { useCongViecStore } from '../store/useCongViecStore';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { useAuthStore } from '../../../../store/useStore';
-import { useCauHinhCongViec } from '../../thiet-lap-cong-viec/hooks/use-cau-hinh-cong-viec';
-import { getDueStatus } from '../core/constants';
 import { filterCongViecByScope } from '../core/scope';
 import type { CongViecScope } from '../core/scope';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
 import { useListWithFilter } from '../../../../lib/hooks';
-import { getLanguage, exportToExcel, formatDate } from '../../../../lib/utils';
+import { getLanguage, exportToExcel } from '../../../../lib/utils';
 import { getTrangThaiLabel, getUuTienLabel } from '../core/constants';
 import type { CongViec } from '../core/types';
 import type { CongViecFilters } from '../store/useCongViecStore';
 
-const TAB_IDS = ['all', 'due', 'waitReport', 'kanban', 'gantt'] as const;
+const TAB_IDS = ['my', 'list', 'kanban', 'gantt'] as const;
 type TabId = (typeof TAB_IDS)[number];
 
 interface Props {
@@ -41,7 +39,6 @@ interface Props {
 const CongViecScopeTab: React.FC<Props> = ({ scope }) => {
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
-  const duAnFromQuery = searchParams.get('du_an');
   const detailIdFromQuery = searchParams.get('detail');
 
   const confirm = useConfirmStore((s) => s.confirm);
@@ -63,32 +60,28 @@ const CongViecScopeTab: React.FC<Props> = ({ scope }) => {
     toggleAllSelection,
   } = useCongViecStore();
 
-  const [activeTabId, setActiveTabId] = useState<TabId>('all');
+  const [activeTabId, setActiveTabId] = useState<TabId>('my');
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<CongViec | null>(null);
-  const [detailItem, setDetailItem] = useState<CongViec | null>(null);
-  const [formParentId, setFormParentId] = useState<string | null>(null);
+  /** Stack drawer: [0] = detail mở từ bảng, [1] = detail con mở từ bảng con, ... */
+  const [detailStack, setDetailStack] = useState<CongViec[]>([]);
+  const [formParentId, setFormParentId] = useState<number | string | null>(null);
   /** Id công việc đang mở form Sửa từ detail — khi Hủy sẽ mở lại detail */
-  const [openedFormFromDetailId, setOpenedFormFromDetailId] = useState<string | null>(null);
+  const [openedFormFromDetailId, setOpenedFormFromDetailId] = useState<number | string | null>(null);
 
   const { data: list = [], isLoading } = useCongViecList();
   const deleteMutation = useDeleteCongViecList();
   const importMutation = useImportCongViec(() => setShowImport(false));
   const [showImport, setShowImport] = useState(false);
-  const { data: cauHinh } = useCauHinhCongViec();
 
   const IMPORT_COLUMNS = useMemo(
     () => [
-      { key: 'ma_cong_viec', label: t('congViec.form.maCongViec'), required: true },
       { key: 'tieu_de', label: t('congViec.form.tieuDe'), required: true },
-      { key: 'id_du_an', label: t('congViec.form.duAn') },
-      { key: 'ten_du_an', label: t('congViec.store.duAnCol') },
-      { key: 'ngay_het_han', label: t('congViec.form.ngayHetHan'), required: true },
-      { key: 'uu_tien', label: t('congViec.form.uuTien'), required: true },
-      { key: 'trang_thai', label: t('congViec.form.trangThai'), required: true },
-      { key: 'phan_tram_hoan_thanh', label: t('congViec.form.tienDo') },
       { key: 'mo_ta', label: t('congViec.form.moTa') },
-      { key: 'danh_sach_nguoi_thuc_hien', label: t('congViec.form.nguoiThucHien') },
+      { key: 'uu_tien', label: t('congViec.form.uuTien') },
+      { key: 'trang_thai', label: t('congViec.form.trangThai') },
+      { key: 'trach_nhiem', label: t('congViec.form.trachNhiem') },
+      { key: 'nguoi_ho_tro', label: t('congViec.form.nguoiHoTro') },
     ],
     [t]
   );
@@ -99,40 +92,26 @@ const CongViecScopeTab: React.FC<Props> = ({ scope }) => {
   );
 
   const tabFilteredList = useMemo(() => {
-    if (activeTabId === 'all') return scopeList;
-    if (activeTabId === 'due') {
-      return scopeList.filter((c) => {
-        const s = getDueStatus(c.ngay_het_han, cauHinh ?? undefined);
-        return s === 'sap_han' || s === 'qua_han';
-      });
-    }
-    if (activeTabId === 'waitReport') {
-      return scopeList.filter((c) => c.trang_thai === 'cho_bao_cao');
-    }
+    if (activeTabId === 'my') return filterCongViecByScope(list, 'my', userId);
+    if (activeTabId === 'list') return scopeList;
     return scopeList;
-  }, [scopeList, activeTabId, cauHinh]);
+  }, [scopeList, list, activeTabId, userId]);
 
   const filterFn = useCallback(
     (item: CongViec, term: string, f: CongViecFilters) => {
-      const idDuAn = f.id_du_an ?? [];
       const trangThai = f.trang_thai ?? [];
       const uuTien = f.uu_tien ?? [];
-      const nguoiThucHien = f.nguoi_thuc_hien ?? [];
+      const trachNhiem = f.trach_nhiem ?? [];
       const searchLower = term.toLowerCase();
       const matchesSearch =
         !term ||
-        item.ma_cong_viec.toLowerCase().includes(searchLower) ||
         item.tieu_de.toLowerCase().includes(searchLower) ||
-        (item.ten_du_an && item.ten_du_an.toLowerCase().includes(searchLower)) ||
         (item.mo_ta && item.mo_ta.toLowerCase().includes(searchLower));
-      const matchesDuAn = idDuAn.length === 0 || idDuAn.includes(item.id_du_an ?? '');
       const matchesTrangThai = trangThai.length === 0 || trangThai.includes(item.trang_thai);
       const matchesUuTien = uuTien.length === 0 || uuTien.includes(item.uu_tien);
-      const matchesNguoi =
-        nguoiThucHien.length === 0 ||
-        (item.danh_sach_nguoi_thuc_hien &&
-          item.danh_sach_nguoi_thuc_hien.some((id) => nguoiThucHien.includes(id)));
-      return matchesSearch && matchesDuAn && matchesTrangThai && matchesUuTien && matchesNguoi;
+      const matchesTrachNhiem =
+        trachNhiem.length === 0 || (item.trach_nhiem != null && trachNhiem.includes(item.trach_nhiem));
+      return matchesSearch && matchesTrangThai && matchesUuTien && matchesTrachNhiem;
     },
     []
   );
@@ -184,30 +163,26 @@ const CongViecScopeTab: React.FC<Props> = ({ scope }) => {
   }, [resetState]);
 
   useEffect(() => {
-    if (duAnFromQuery) {
-      setFilter('id_du_an', [duAnFromQuery]);
-    }
-  }, [duAnFromQuery, setFilter]);
-
-  useEffect(() => {
     if (!detailIdFromQuery || !list.length) return;
-    const item = list.find((c) => c.id === detailIdFromQuery);
-    if (item) setDetailItem(item);
+    const numId = Number(detailIdFromQuery);
+    const item = list.find((c) => c.id === numId || String(c.id) === detailIdFromQuery);
+    if (item) setDetailStack([item]);
   }, [detailIdFromQuery, list]);
 
   useEffect(() => {
-    if (!detailItem || !list.length) return;
-    const next = list.find((c) => c.id === detailItem.id);
-    if (next && next !== detailItem) setDetailItem(next);
-  }, [list, detailItem?.id]);
+    if (!list.length) return;
+    setDetailStack((prev) => {
+      if (!prev.length) return prev;
+      return prev.map((it) => list.find((c) => c.id === it.id) ?? it).filter(Boolean) as CongViec[];
+    });
+  }, [list]);
 
   const tabs = useMemo(
     () => [
-      { id: 'all' as const, label: t('congViec.tabs.all'), icon: ClipboardList },
-      { id: 'due' as const, label: t('congViec.tabs.due'), icon: Clock },
-      { id: 'waitReport' as const, label: t('congViec.tabs.waitReport'), icon: MessageSquare },
-      { id: 'kanban' as const, label: t('congViec.tabs.viewKanban'), icon: LayoutGrid },
-      { id: 'gantt' as const, label: t('congViec.tabs.viewGantt'), icon: GanttChart },
+      { id: 'my' as const, label: t('congViec.tabs.cuaToi'), icon: MessageSquare },
+      { id: 'list' as const, label: t('congViec.tabs.danhSach'), icon: ClipboardList },
+      { id: 'kanban' as const, label: t('congViec.tabs.kanban'), icon: LayoutGrid },
+      { id: 'gantt' as const, label: t('congViec.tabs.gantt'), icon: GanttChart },
     ],
     [t]
   );
@@ -216,30 +191,26 @@ const CongViecScopeTab: React.FC<Props> = ({ scope }) => {
     setFormParentId(null);
     setEditingItem(item);
     setShowForm(true);
-    if (detailItem?.id === item.id) {
-      setOpenedFormFromDetailId(item.id);
-      setDetailItem(null);
-    } else {
-      setDetailItem(null);
-      setOpenedFormFromDetailId(null);
-    }
+    const fromDetail = detailStack.length > 0 && detailStack[detailStack.length - 1].id === item.id;
+    if (fromDetail) setOpenedFormFromDetailId(item.id);
+    else setOpenedFormFromDetailId(null);
+    setDetailStack([]);
   };
 
   const handleView = (item: CongViec) => {
     setEditingItem(null);
     setFormParentId(null);
     setShowForm(false);
-    setDetailItem(item);
+    setDetailStack([item]);
   };
 
-  const handleAddChild = (parentId: string) => {
+  const handleAddChild = (parentId: number | string) => {
     setEditingItem(null);
     setFormParentId(parentId);
     setShowForm(true);
-    // Giữ detail mở để sau khi tạo xong vẫn thấy công việc con trong tab
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = (id: number | string) => {
     confirm({
       title: t('congViec.deleteTitle'),
       message: t('congViec.deleteMessage'),
@@ -249,7 +220,7 @@ const CongViecScopeTab: React.FC<Props> = ({ scope }) => {
         deleteMutation.mutate([id], {
           onSuccess: () => {
             clearSelection();
-            if (detailItem?.id === id) setDetailItem(null);
+            setDetailStack((prev) => prev.filter((x) => x.id !== id));
           },
         });
       },
@@ -266,7 +237,7 @@ const CongViecScopeTab: React.FC<Props> = ({ scope }) => {
         deleteMutation.mutate(ids, {
           onSuccess: () => {
             clearSelection();
-            if (detailItem && ids.includes(detailItem.id)) setDetailItem(null);
+            setDetailStack((prev) => prev.filter((x) => !ids.includes(String(x.id))));
           },
         });
       },
@@ -283,28 +254,20 @@ const CongViecScopeTab: React.FC<Props> = ({ scope }) => {
     if (wasFromDetail && editingId) {
       const fresh = list.find((c) => c.id === editingId) ?? null;
       if (fresh && filterCongViecByScope([fresh], scope, userId).length > 0) {
-        setDetailItem(fresh);
+        setDetailStack([fresh]);
       }
     }
-  };
-
-  const handleCloseDetail = () => {
-    setDetailItem(null);
   };
 
   const exportData = useMemo(
     () =>
       sortedList.map((c) => ({
-        [t('congViec.form.maCongViec')]: c.ma_cong_viec,
         [t('congViec.form.tieuDe')]: c.tieu_de,
-        [t('congViec.form.duAn')]: c.id_du_an ?? '',
-        [t('congViec.store.duAnCol')]: c.ten_du_an ?? '',
-        [t('congViec.form.ngayHetHan')]: formatDate(c.ngay_het_han),
+        [t('congViec.form.moTa')]: c.mo_ta ?? '',
         [t('congViec.form.uuTien')]: c.uu_tien,
         [t('congViec.form.trangThai')]: c.trang_thai,
-        [t('congViec.form.tienDo')]: c.phan_tram_hoan_thanh,
-        [t('congViec.form.moTa')]: c.mo_ta ?? '',
-        [t('congViec.form.nguoiThucHien')]: (c.danh_sach_nguoi_thuc_hien ?? []).join(', '),
+        [t('congViec.form.trachNhiem')]: c.trach_nhiem ?? '',
+        [t('congViec.form.nguoiHoTro')]: (c.nguoi_ho_tro ?? []).join(', '),
       })),
     [sortedList, t]
   );
@@ -313,25 +276,21 @@ const CongViecScopeTab: React.FC<Props> = ({ scope }) => {
   }, [exportData]);
 
   const handleImportData = useCallback(
-    async (rows: Record<string, any>[]) => {
+    async (rows: Record<string, unknown>[]) => {
       const payload = rows.map((row) => ({
-        ma_cong_viec: String(row.ma_cong_viec ?? '').trim(),
         tieu_de: String(row.tieu_de ?? '').trim(),
-        id_du_an: row.id_du_an != null ? String(row.id_du_an).trim() : undefined,
-        ten_du_an: row.ten_du_an != null ? String(row.ten_du_an).trim() : undefined,
-        ngay_het_han: String(row.ngay_het_han ?? '').trim(),
+        mo_ta: row.mo_ta != null ? String(row.mo_ta).trim() : undefined,
         uu_tien: String(row.uu_tien ?? 'trung_binh').trim(),
         trang_thai: String(row.trang_thai ?? 'draft').trim(),
-        phan_tram_hoan_thanh: row.phan_tram_hoan_thanh != null ? Number(row.phan_tram_hoan_thanh) : undefined,
-        mo_ta: row.mo_ta != null ? String(row.mo_ta).trim() : undefined,
-        danh_sach_nguoi_thuc_hien: row.danh_sach_nguoi_thuc_hien != null ? String(row.danh_sach_nguoi_thuc_hien).trim() : undefined,
+        trach_nhiem: row.trach_nhiem != null ? String(row.trach_nhiem).trim() : undefined,
+        nguoi_ho_tro: row.nguoi_ho_tro != null ? String(row.nguoi_ho_tro).trim() : undefined,
       }));
       await importMutation.mutateAsync(payload);
     },
     [importMutation]
   );
 
-  const isListView = activeTabId === 'all' || activeTabId === 'due' || activeTabId === 'waitReport';
+  const isListView = activeTabId === 'my' || activeTabId === 'list';
   const isKanban = activeTabId === 'kanban';
   const isGantt = activeTabId === 'gantt';
   const dataForKanbanGantt = sortedListForKanbanGantt;
@@ -419,25 +378,28 @@ const CongViecScopeTab: React.FC<Props> = ({ scope }) => {
               initialData={editingItem ?? undefined}
               parentId={formParentId}
               onClose={handleCloseForm}
-              stackLevel={detailItem && formParentId ? 1 : 0}
+              stackLevel={detailStack.length > 0 && formParentId ? 1 : 0}
             />
           )}
         </AnimatePresence>
 
         <AnimatePresence>
-          {detailItem && (
+          {detailStack.map((item, i) => (
             <CongViecDetail
-              data={detailItem}
-              onClose={handleCloseDetail}
-              onEdit={(item) => {
-                setDetailItem(null);
-                handleEdit(item);
+              key={item.id}
+              data={item}
+              stackLevel={i}
+              onClose={() => setDetailStack((prev) => prev.slice(0, i))}
+              onEdit={(edited) => {
+                setDetailStack([]);
+                handleEdit(edited);
               }}
               onDelete={handleDelete}
               onAddChild={handleAddChild}
               onDeleteChild={handleDelete}
+              onViewChild={(child) => setDetailStack((prev) => [...prev.slice(0, i + 1), child])}
             />
-          )}
+          ))}
         </AnimatePresence>
 
         {showImport && (

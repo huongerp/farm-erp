@@ -1,77 +1,21 @@
-import { AssetGroup } from '../core/types';
-import { AssetGroupFormValues } from '../core/schema';
-import { MOCK_ASSET_GROUPS } from '@/mocks/hanh-chinh';
-import i18n from '../../../../lib/i18n';
-import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
+import type { AssetGroup } from '../core/types';
+import type { AssetGroupFormValues } from '../core/schema';
+import {
+  getAssetGroupsSupabase,
+  createAssetGroupSupabase,
+  updateAssetGroupSupabase,
+  updateAssetGroupStatusSupabase,
+  deleteAssetGroupsSupabase,
+} from './thiet-lap-tai-san-supabase.service';
 
-function normalizeTrangThai(val: unknown): import('../../../../lib/constants').TrangThaiHoatDong {
-  if (val === TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG) return TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG;
-  if (val === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG) return TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
-  return Number(val) === 0 ? TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG : TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
-}
+export const getAssetGroups = getAssetGroupsSupabase;
 
-let dbNhomTaiSan: AssetGroup[] = JSON.parse(JSON.stringify(MOCK_ASSET_GROUPS)).map((i: AssetGroup) => ({
-  ...i,
-  trang_thai: normalizeTrangThai(i.trang_thai),
-}));
+export const createAssetGroup = (data: AssetGroupFormValues): Promise<AssetGroup> =>
+  createAssetGroupSupabase(data);
 
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+export const updateAssetGroup = (id: string, data: AssetGroupFormValues): Promise<AssetGroup> =>
+  updateAssetGroupSupabase(id, data);
 
-export const getAssetGroups = async (): Promise<AssetGroup[]> => {
-  await delay(600);
-  return [...dbNhomTaiSan];
-};
+export const updateAssetGroupStatus = updateAssetGroupStatusSupabase;
 
-export const createAssetGroup = async (
-  data: AssetGroupFormValues
-): Promise<AssetGroup> => {
-  await delay(800);
-  const now = new Date().toISOString();
-  const newItem: AssetGroup = {
-    id: `nhom-ts-${Date.now()}`,
-    ...data,
-    trang_thai: data.trang_thai,
-    phuong_phap_khau_hao: data.phuong_phap_khau_hao,
-    ty_le_khau_hao: data.ty_le_khau_hao ?? null,
-    so_nam_su_dung: data.so_nam_su_dung ?? null,
-    tg_tao: now,
-    tg_cap_nhat: now,
-  };
-  dbNhomTaiSan = [newItem, ...dbNhomTaiSan];
-  return newItem;
-};
-
-export const updateAssetGroup = async (
-  id: string,
-  data: AssetGroupFormValues
-): Promise<AssetGroup> => {
-  await delay(800);
-  const index = dbNhomTaiSan.findIndex((i) => i.id === id);
-  if (index === -1) throw new Error(i18n.t('thietLapTaiSan.nhomTaiSan.service.notFound'));
-  const updated: AssetGroup = {
-    ...dbNhomTaiSan[index],
-    ...data,
-    trang_thai: data.trang_thai,
-    phuong_phap_khau_hao: data.phuong_phap_khau_hao,
-    ty_le_khau_hao: data.ty_le_khau_hao ?? null,
-    so_nam_su_dung: data.so_nam_su_dung ?? null,
-    tg_cap_nhat: new Date().toISOString(),
-  };
-  dbNhomTaiSan[index] = updated;
-  return updated;
-};
-
-export const updateAssetGroupStatus = async (
-  ids: string[],
-  status: import('../../../../lib/constants').TrangThaiHoatDong
-): Promise<void> => {
-  await delay(600);
-  dbNhomTaiSan = dbNhomTaiSan.map((i) =>
-    ids.includes(i.id) ? { ...i, trang_thai: status, tg_cap_nhat: new Date().toISOString() } : i
-  );
-};
-
-export const deleteAssetGroups = async (ids: string[]): Promise<void> => {
-  await delay(600);
-  dbNhomTaiSan = dbNhomTaiSan.filter((i) => !ids.includes(i.id));
-};
+export const deleteAssetGroups = deleteAssetGroupsSupabase;

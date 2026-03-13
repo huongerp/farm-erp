@@ -1,5 +1,6 @@
 {
   "phieuDeXuatVatTu.tabs.list": "List",
+  "phieuDeXuatVatTu.tabs.detail": "Details",
   "phieuDeXuatVatTu.tabs.stats": "Statistics",
   "phieuDeXuatVatTu.tabs.all": "All",
   "phieuDeXuatVatTu.tabs.mine": "Mine",
@@ -119,5 +120,14 @@
   "phieuDeXuatVatTu.stats.loading": "Loading statistics...",
   "phieuDeXuatVatTu.stats.loadError": "Error loading statistics.",
   "phieuDeXuatVatTu.stats.dateFrom": "From date",
-  "phieuDeXuatVatTu.stats.dateTo": "To date"
+  "phieuDeXuatVatTu.stats.dateTo": "To date",
+  "phieuDeXuatVatTu.chiTietTab.stt": "No.",
+  "phieuDeXuatVatTu.chiTietTab.emptyTitle": "No detail lines",
+  "phieuDeXuatVatTu.chiTietTab.emptyDescription": "Detail lines from material request detail table will appear here when there are requests.",
+  "phieuDeXuatVatTu.chiTietTab.detailTitle": "Detail line",
+  "phieuDeXuatVatTu.chiTietTab.sectionPhieu": "Request info",
+  "phieuDeXuatVatTu.chiTietTab.sectionHangHoa": "Item info",
+  "phieuDeXuatVatTu.chiTietTab.editLineTitle": "Edit line",
+  "phieuDeXuatVatTu.chiTietTab.deleteLineConfirm": "Remove this line from the request?",
+  "phieuDeXuatVatTu.chiTietTab.lastLineCannotDelete": "Request must have at least one item line."
 }

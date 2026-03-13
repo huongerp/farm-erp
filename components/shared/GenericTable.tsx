@@ -220,6 +220,7 @@ function GenericTable<T>({
 
   // Density padding
   const cellPy = density === 'compact' ? 'py-1.5' : density === 'comfortable' ? 'py-3' : 'py-2';
+  const headerPy = density === 'compact' ? 'py-1.5' : 'py-2';
 
   // Skeleton loading: strip icon xoay + chữ primary (Nhân sự, ...) rồi skeleton
   if (isLoading) {
@@ -336,7 +337,7 @@ function GenericTable<T>({
                 </tr>
               )}
               <tr className="bg-muted border-b border-border">
-                <th className="sticky left-0 z-[3] px-3 py-2 bg-muted border-b border-r border-border text-center" style={{ width: TABLE_CHECKBOX_WIDTH, minWidth: TABLE_CHECKBOX_WIDTH, maxWidth: TABLE_CHECKBOX_WIDTH }}>
+                <th className={cn("sticky left-0 z-[3] px-3 bg-muted border-b border-r border-border text-center", headerPy)} style={{ width: TABLE_CHECKBOX_WIDTH, minWidth: TABLE_CHECKBOX_WIDTH, maxWidth: TABLE_CHECKBOX_WIDTH }}>
                   <div className="flex items-center justify-center">
                     <input
                       type="checkbox"
@@ -361,9 +362,10 @@ function GenericTable<T>({
                   return (
                     <th
                       key={col.id}
-                      onClick={() => sortable && handleHeaderClick(col.id)}
+                        onClick={() => sortable && handleHeaderClick(col.id)}
                       className={cn(
-                        "px-4 py-2 font-semibold text-foreground/80 border-b border-border text-xs whitespace-nowrap transition-colors select-none relative",
+                        "px-4 font-semibold text-foreground/80 border-b border-border text-xs whitespace-nowrap transition-colors select-none relative",
+                        headerPy,
                         isSticky && "sticky z-[3] bg-muted border-r border-border",
                         sortable && "cursor-pointer hover:text-foreground group"
                       )}
@@ -398,7 +400,7 @@ function GenericTable<T>({
                   );
                 })}
 
-                <th className="sticky right-0 z-[3] px-3 py-2 bg-muted border-b border-l border-border text-center font-semibold text-foreground/80 text-xs" style={{ width: TABLE_ACTION_COLUMN_WIDTH }}>
+                <th className={cn("sticky right-0 z-[3] px-3 bg-muted border-b border-l border-border text-center font-semibold text-foreground/80 text-xs", headerPy)} style={{ width: TABLE_ACTION_COLUMN_WIDTH }}>
                   Thao tác
                 </th>
               </tr>

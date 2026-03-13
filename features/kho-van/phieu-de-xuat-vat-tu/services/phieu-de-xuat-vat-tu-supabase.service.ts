@@ -2,7 +2,7 @@
  * Service phiếu đề xuất vật tư – đọc/ghi Supabase (fp_mh_phieu_de_xuat_vat_tu, fp_mh_phieu_de_xuat_vat_tu_chi_tiet).
  */
 import { supabase, fetchAllRows } from '../../../../lib/supabase';
-import type { PhieuDeXuatVatTu, PhieuDeXuatVatTuChiTiet } from '../core/types';
+import type { PhieuDeXuatVatTu, PhieuDeXuatVatTuChiTiet, PhieuDeXuatVatTuChiTietRow } from '../core/types';
 import type { PhieuDeXuatVatTuFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
 import { getKhoList } from '../../danh-sach-kho/services/kho-service';
@@ -34,6 +34,17 @@ interface ChiTietDbRow {
   don_vi_tinh: string | null;
   thong_so: string | null;
   ghi_chu: string | null;
+}
+
+/** Hàng đầy đủ từ fp_mh_phieu_de_xuat_vat_tu_chi_tiet (có cột kéo từ phiếu). */
+interface ChiTietFullDbRow extends ChiTietDbRow {
+  so_phieu: string | null;
+  ngay: string | null;
+  ngay_can: string | null;
+  ten_noi_de_xuat: string | null;
+  ten_nguoi_de_xuat: string | null;
+  ten_nguoi_duyet: string | null;
+  trang_thai_phieu: string | null;
 }
 
 function toNum(s: string | null | undefined): number | null {
@@ -272,4 +283,44 @@ export async function deletePhieuDeXuatVatTuManySupabase(ids: string[]): Promise
   if (numIds.length === 0) return;
   const { error } = await supabase.from(TABLE_PHIEU).delete().in('id', numIds);
   if (error) throw new Error(error.message);
+}
+
+/** Lấy toàn bộ dòng chi tiết từ bảng fp_mh_phieu_de_xuat_vat_tu_chi_tiet (phục vụ tab Chi tiết). */
+export async function getAllPhieuDeXuatVatTuChiTietSupabase(): Promise<PhieuDeXuatVatTuChiTietRow[]> {
+  const [rows, hangHoaList] = await Promise.all([
+    fetchAllRows<ChiTietFullDbRow>((from, to) =>
+      supabase
+        .from(TABLE_CHI_TIET)
+        .select('*')
+        .order('id_phieu_de_xuat_vat_tu', { ascending: false })
+        .order('id', { ascending: true })
+        .range(from, to)
+    ),
+    getAllHangHoa(),
+  ]);
+  const hangHoaMap: Record<string, { ma_hang: string; ten_hang: string }> = {};
+  hangHoaList.forEach((h) => {
+    hangHoaMap[h.id] = { ma_hang: h.ma_hang ?? h.ma_hang_hoa ?? '', ten_hang: h.ten_hang_hoa ?? h.ten_hang ?? '' };
+  });
+  return rows.map((row) => {
+    const enrich = hangHoaMap[String(row.id_hang_hoa)];
+    return {
+      id: String(row.id),
+      id_phieu_de_xuat_vat_tu: String(row.id_phieu_de_xuat_vat_tu),
+      so_phieu: row.so_phieu ?? null,
+      ngay: row.ngay ?? null,
+      ngay_can: row.ngay_can ?? null,
+      ten_noi_de_xuat: row.ten_noi_de_xuat ?? null,
+      ten_nguoi_de_xuat: row.ten_nguoi_de_xuat ?? null,
+      ten_nguoi_duyet: row.ten_nguoi_duyet ?? null,
+      trang_thai_phieu: row.trang_thai_phieu ?? null,
+      id_hang_hoa: String(row.id_hang_hoa),
+      ma_hang: enrich?.ma_hang,
+      ten_hang: enrich?.ten_hang,
+      so_luong: Number(row.so_luong),
+      don_vi_tinh: row.don_vi_tinh ?? null,
+      thong_so: row.thong_so ?? null,
+      ghi_chu: row.ghi_chu ?? null,
+    };
+  });
 }

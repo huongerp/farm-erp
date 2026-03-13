@@ -2,12 +2,13 @@ import React, { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ClipboardList, Hash, Type, FolderOpen, Calendar, ListOrdered, Tag, User, Power, FileStack } from 'lucide-react';
+import { ClipboardList, Type, ListOrdered, Tag, User } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
 import Textarea from '../../../../components/ui/Textarea';
 import Combobox from '../../../../components/ui/Combobox';
 import MultiSelect from '../../../../components/ui/MultiSelect';
 import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/GenericDrawer';
+import { getDrawerWidthClass } from '../../../../lib/dialog-sizes';
 import FormSection from '../../../../components/shared/FormSection';
 import FormGrid from '../../../../components/shared/FormGrid';
 import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
@@ -15,43 +16,54 @@ import type { CongViec } from '../core/types';
 import { CongViecFormValues, congViecSchema } from '../core/schema';
 import { getTrangThaiOptions, getUuTienOptions } from '../core/constants';
 import { useCreateCongViec, useUpdateCongViec } from '../hooks/use-cong-viec';
-import { useDuAnList } from '../../du-an/hooks/use-du-an';
 import { useEmployees } from '../../../he-thong/nhan-vien/hooks/use-nhan-vien';
-import { useMauCongViecList } from '../../thiet-lap-cong-viec/hooks/use-mau-cong-viec';
-import { formatDateForInput } from '../../../../lib/utils';
+import { TRANG_THAI_NV } from '../../../../lib/constants';
+import { useAuthStore } from '../../../../store/useStore';
 
 const DEFAULT_VALUES: CongViecFormValues = {
-  ma_cong_viec: '',
   tieu_de: '',
   mo_ta: '',
-  id_du_an: null,
   id_cha: null,
-  danh_sach_nguoi_thuc_hien: [],
+  trach_nhiem: null,
+  nguoi_ho_tro: [],
   uu_tien: 'trung_binh',
   trang_thai: 'draft',
-  ngay_het_han: '',
-  phan_tram_hoan_thanh: 0,
-  id_mau_cong_viec: null,
 };
 
 interface Props {
   initialData?: CongViec | null;
-  parentId?: string | null;
-  /** Khi tạo mới: chọn sẵn dự án (vd: mở từ detail Dự án). */
-  defaultIdDuAn?: string | null;
+  parentId?: number | string | null;
   onClose: () => void;
-  /** Drawer chồng (vd: mở từ trang Dự án). */
   stackLevel?: number;
 }
 
-const CongViecForm: React.FC<Props> = ({ initialData, parentId, defaultIdDuAn, onClose, stackLevel = 0 }) => {
+/** Lấy id nhân viên (number) từ user đăng nhập: khớp theo user.id hoặc user.email. */
+function getCurrentUserEmployeeId(
+  employees: { id: string; email?: string }[],
+  userId: string | undefined,
+  userEmail: string | undefined
+): number | null {
+  if (!employees.length) return null;
+  const byId = userId ? employees.find((e) => String(e.id) === String(userId) || e.id === userId) : null;
+  const emp = byId ?? (userEmail ? employees.find((e) => e.email && e.email.toLowerCase() === userEmail.toLowerCase()) : null);
+  if (!emp) return null;
+  const raw = emp.id;
+  const n = typeof raw === 'number' ? raw : parseInt(String(raw), 10);
+  return Number.isNaN(n) || n <= 0 ? null : n;
+}
+
+const CongViecForm: React.FC<Props> = ({ initialData, parentId, onClose, stackLevel = 0 }) => {
   const { t } = useTranslation();
-  const { data: duAnList = [] } = useDuAnList();
+  const user = useAuthStore((s) => s.user);
   const { data: employees = [] } = useEmployees();
-  const { data: mauList = [] } = useMauCongViecList();
   const isEdit = !!initialData;
   const createMutation = useCreateCongViec(onClose);
   const updateMutation = useUpdateCongViec(onClose);
+
+  const currentUserEmployeeId = useMemo(
+    () => getCurrentUserEmployeeId(employees, user?.id, user?.email),
+    [employees, user?.id, user?.email]
+  );
 
   const { register, handleSubmit, formState: { errors }, reset, control } = useForm<CongViecFormValues>({
     resolver: zodResolver(congViecSchema),
@@ -61,90 +73,68 @@ const CongViecForm: React.FC<Props> = ({ initialData, parentId, defaultIdDuAn, o
   useEffect(() => {
     if (initialData) {
       reset({
-        ma_cong_viec: initialData.ma_cong_viec,
         tieu_de: initialData.tieu_de,
         mo_ta: initialData.mo_ta ?? '',
-        id_du_an: initialData.id_du_an,
         id_cha: initialData.id_cha,
-        danh_sach_nguoi_thuc_hien: initialData.danh_sach_nguoi_thuc_hien ?? [],
+        trach_nhiem: initialData.trach_nhiem ?? null,
+        nguoi_ho_tro: initialData.nguoi_ho_tro ?? [],
         uu_tien: initialData.uu_tien,
         trang_thai: initialData.trang_thai,
-        ngay_het_han: formatDateForInput(initialData.ngay_het_han),
-        phan_tram_hoan_thanh: initialData.phan_tram_hoan_thanh ?? 0,
-        id_mau_cong_viec: initialData.id_mau_cong_viec,
       });
-    } else if (parentId) {
+    } else if (parentId != null && parentId !== '') {
       reset({
         ...DEFAULT_VALUES,
-        id_cha: parentId,
-      });
-    } else if (defaultIdDuAn) {
-      reset({
-        ...DEFAULT_VALUES,
-        id_du_an: defaultIdDuAn,
+        id_cha: typeof parentId === 'string' ? Number(parentId) : parentId,
+        trach_nhiem: currentUserEmployeeId ?? null,
       });
     } else {
-      reset(DEFAULT_VALUES);
+      reset({
+        ...DEFAULT_VALUES,
+        trach_nhiem: currentUserEmployeeId ?? null,
+      });
     }
-  }, [initialData, parentId, defaultIdDuAn, reset]);
+  }, [initialData, parentId, reset, currentUserEmployeeId]);
 
-  const duAnOptions = useMemo(
-    () => [{ label: '—', value: '' }, ...duAnList.map((d) => ({ label: d.ten_du_an, value: d.id }))],
-    [duAnList]
-  );
-  const mauOptions = useMemo(
-    () => [{ label: t('congViec.form.fromTemplateNone'), value: '' }, ...mauList.map((m) => ({ label: m.ten_mau, value: m.id }))],
-    [mauList, t]
-  );
   const trangThaiOptions = useMemo(() => getTrangThaiOptions(t), [t]);
-
-  const handleSelectMau = (mauId: string) => {
-    if (!mauId) return;
-    const mau = mauList.find((m) => m.id === mauId);
-    if (!mau) return;
-    reset((prev) => ({
-      ...prev,
-      tieu_de: mau.tieu_de_mac_dinh,
-      mo_ta: mau.mo_ta_mac_dinh ?? '',
-      uu_tien: mau.uu_tien_mac_dinh,
-      trang_thai: mau.trang_thai_mac_dinh === 1 ? 'dang_thuc_hien' : 'draft',
-      id_mau_cong_viec: mau.id,
-    }));
-  };
   const uuTienOptions = useMemo(() => getUuTienOptions(t), [t]);
-  const employeeOptions = useMemo(
-    () => employees.slice(0, 300).map((e) => ({ label: e.full_name || e.ma_nhan_vien, value: e.id })),
-    [employees]
+  const employeeOptions = useMemo(() => {
+    return employees
+      .filter((e) => e.trang_thai === TRANG_THAI_NV.DANG_LAM_VIEC)
+      .slice(0, 300)
+      .map((e) => {
+        const numId = typeof e.id === 'number' ? e.id : parseInt(String(e.id).replace(/\D/g, ''), 10) || 0;
+        const label = e.ho_ten ? `${e.ho_ten}${e.ma_nhan_vien ? ` (${e.ma_nhan_vien})` : ''}` : e.ma_nhan_vien || String(e.id);
+        return { label, value: numId };
+      })
+      .filter((o) => o.value > 0);
+  }, [employees]);
+  const employeeOptionsForSelect = useMemo(
+    () => employeeOptions.map((o) => ({ label: o.label, value: String(o.value) })),
+    [employeeOptions]
   );
 
   const onSubmit: SubmitHandler<CongViecFormValues> = (data) => {
     const sanitized: CongViecFormValues = {
       ...data,
-      id_du_an: data.id_du_an || null,
-      id_cha: data.id_cha || null,
+      id_cha: data.id_cha ?? null,
+      trach_nhiem: data.trach_nhiem ?? null,
+      nguoi_ho_tro: Array.isArray(data.nguoi_ho_tro) ? data.nguoi_ho_tro : [],
       mo_ta: data.mo_ta?.trim() || '',
     };
-    const tenDuAn = data.id_du_an ? duAnList.find((d) => d.id === data.id_du_an)?.ten_du_an : null;
     if (isEdit && initialData) {
-      updateMutation.mutate({
-        id: initialData.id,
-        data: {
-          ...sanitized,
-          ngay_het_han: data.ngay_het_han,
-          phan_tram_hoan_thanh: data.phan_tram_hoan_thanh,
-        },
-        ten_du_an: tenDuAn ?? undefined,
-      });
+      updateMutation.mutate({ id: initialData.id, data: sanitized });
     } else {
-      createMutation.mutate({ data: sanitized, ten_du_an: tenDuAn ?? undefined });
+      createMutation.mutate(sanitized);
     }
   };
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
+  const drawerWidthClass = stackLevel > 0 ? getDrawerWidthClass(stackLevel) : DRAWER_WIDTH_FORM;
 
   return (
     <GenericDrawer
       title={isEdit ? t('congViec.form.editTitle') : t('congViec.form.createTitle')}
+      subtitle={isEdit && initialData ? initialData.tieu_de : t('congViec.form.createSubtitle')}
       icon={<ClipboardList size={20} />}
       onClose={onClose}
       footer={
@@ -157,41 +147,12 @@ const CongViecForm: React.FC<Props> = ({ initialData, parentId, defaultIdDuAn, o
           createLabel={t('congViec.form.create')}
         />
       }
-      maxWidthClass={DRAWER_WIDTH_FORM}
+      maxWidthClass={drawerWidthClass}
       stackLevel={stackLevel}
     >
       <form id="cong-viec-form" onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-        <FormSection title={t('congViec.form.basicInfo')} icon={<ClipboardList size={14} />} variant="primary">
+        <FormSection title={t('congViec.form.basicInfo')} icon={<ClipboardList size={14} />}>
           <FormGrid cols={2}>
-            {!isEdit && mauList.length > 0 && (
-              <div className="col-span-1 sm:col-span-2">
-                <Controller
-                  name="id_mau_cong_viec"
-                  control={control}
-                  render={({ field }) => (
-                    <Combobox
-                      label={t('congViec.form.fromTemplate')}
-                      options={mauOptions}
-                      value={field.value ?? ''}
-                      onChange={(v) => {
-                        field.onChange(v || null);
-                        handleSelectMau(v || '');
-                      }}
-                      placeholder={t('congViec.form.fromTemplatePlaceholder')}
-                      icon={<FileStack size={16} className="text-muted-foreground" />}
-                    />
-                  )}
-                />
-              </div>
-            )}
-            <Input
-              label={t('congViec.form.maCongViec')}
-              placeholder={t('congViec.form.maCongViecPlaceholder')}
-              icon={<Hash size={14} />}
-              required
-              {...register('ma_cong_viec')}
-              error={errors.ma_cong_viec?.message}
-            />
             <Input
               label={t('congViec.form.tieuDe')}
               placeholder={t('congViec.form.tieuDePlaceholder')}
@@ -201,22 +162,6 @@ const CongViecForm: React.FC<Props> = ({ initialData, parentId, defaultIdDuAn, o
               error={errors.tieu_de?.message}
             />
             <div className="col-span-1 sm:col-span-2">
-              <Controller
-                name="id_du_an"
-                control={control}
-                render={({ field }) => (
-                  <Combobox
-                    label={t('congViec.form.duAn')}
-                    options={duAnOptions}
-                    value={field.value ?? ''}
-                    onChange={(v) => field.onChange(v || null)}
-                    placeholder={t('congViec.form.duAnPlaceholder')}
-                    icon={<FolderOpen size={16} className="text-muted-foreground" />}
-                  />
-                )}
-              />
-            </div>
-            <div className="col-span-1 sm:col-span-2">
               <Textarea
                 label={t('congViec.form.moTa')}
                 placeholder={t('congViec.form.moTaPlaceholder')}
@@ -224,17 +169,33 @@ const CongViecForm: React.FC<Props> = ({ initialData, parentId, defaultIdDuAn, o
                 error={errors.mo_ta?.message}
               />
             </div>
+            <Controller
+              name="trach_nhiem"
+              control={control}
+              render={({ field }) => (
+                <Combobox
+                  label={t('congViec.form.trachNhiem')}
+                  options={[{ label: '—', value: '' }, ...employeeOptions.map((o) => ({ label: o.label, value: o.value }))]}
+                  value={field.value != null ? field.value : ''}
+                  onChange={(v) => field.onChange(v === '' || v == null ? null : Number(v))}
+                  placeholder={t('congViec.form.trachNhiemPlaceholder')}
+                  icon={<User size={16} className="text-muted-foreground" />}
+                  required
+                  error={errors.trach_nhiem?.message}
+                />
+              )}
+            />
             <div className="col-span-1 sm:col-span-2">
               <Controller
-                name="danh_sach_nguoi_thuc_hien"
+                name="nguoi_ho_tro"
                 control={control}
                 render={({ field }) => (
                   <MultiSelect
-                    label={t('congViec.form.nguoiThucHien')}
-                    options={employeeOptions}
-                    value={field.value}
-                    onChange={field.onChange}
-                    placeholder={t('congViec.form.nguoiThucHienPlaceholder')}
+                    label={t('congViec.form.nguoiHoTro')}
+                    options={employeeOptionsForSelect}
+                    value={(field.value ?? []).map(String)}
+                    onChange={(v) => field.onChange(v.map((x) => Number(x)).filter((n) => !Number.isNaN(n)))}
+                    placeholder={t('congViec.form.nguoiHoTroPlaceholder')}
                     icon={User}
                   />
                 )}
@@ -269,23 +230,6 @@ const CongViecForm: React.FC<Props> = ({ initialData, parentId, defaultIdDuAn, o
                   required
                 />
               )}
-            />
-            <Input
-              type="date"
-              label={t('congViec.form.ngayHetHan')}
-              icon={<Calendar size={14} />}
-              required
-              {...register('ngay_het_han')}
-              error={errors.ngay_het_han?.message}
-            />
-            <Input
-              type="number"
-              min={0}
-              max={100}
-              label={t('congViec.form.tienDo')}
-              icon={<Power size={14} />}
-              {...register('phan_tram_hoan_thanh')}
-              error={errors.phan_tram_hoan_thanh?.message}
             />
           </FormGrid>
         </FormSection>

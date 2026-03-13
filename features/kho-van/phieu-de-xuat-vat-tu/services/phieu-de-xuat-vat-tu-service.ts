@@ -9,9 +9,11 @@ import {
   updatePhieuDeXuatVatTuSupabase,
   deletePhieuDeXuatVatTuSupabase,
   deletePhieuDeXuatVatTuManySupabase,
+  getAllPhieuDeXuatVatTuChiTietSupabase,
 } from './phieu-de-xuat-vat-tu-supabase.service';
 
 export const getAllPhieuDeXuatVatTu = getAllPhieuDeXuatVatTuSupabase;
+export const getAllPhieuDeXuatVatTuChiTiet = getAllPhieuDeXuatVatTuChiTietSupabase;
 export const getPhieuDeXuatVatTuById = getPhieuDeXuatVatTuByIdSupabase;
 export const createPhieuDeXuatVatTu = (data: PhieuDeXuatVatTuFormValues) => createPhieuDeXuatVatTuSupabase(data);
 export const updatePhieuDeXuatVatTu = updatePhieuDeXuatVatTuSupabase;

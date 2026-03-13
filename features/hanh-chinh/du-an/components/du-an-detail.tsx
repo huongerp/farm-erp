@@ -86,7 +86,7 @@ const DuAnDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onViewCo
       onAddCongViec(displayData);
     } else {
       onClose();
-      navigate(`/hanh-chinh/cong-viec-cua-toi?du_an=${displayData.id}`);
+      navigate('/hanh-chinh/cong-viec');
     }
   };
 
@@ -110,13 +110,13 @@ const DuAnDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onViewCo
       onViewCongViec(c);
     } else {
       onClose();
-      navigate(`/hanh-chinh/cong-viec-cua-toi?detail=${c.id}`);
+      navigate(`/hanh-chinh/cong-viec?detail=${c.id}`);
     }
   };
 
   const handleEditCongViec = (c: CongViec) => {
     onClose();
-    navigate(`/hanh-chinh/cong-viec-cua-toi?detail=${c.id}`);
+    navigate(`/hanh-chinh/cong-viec?detail=${c.id}`);
   };
 
   const handleDeleteCongViec = (c: CongViec) => {

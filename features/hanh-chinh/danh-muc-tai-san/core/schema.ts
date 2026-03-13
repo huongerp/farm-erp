@@ -8,6 +8,13 @@ export const taiSanSchema = z.object({
   id_noi_luu: z.string().min(1, { message: i18n.t('danhSachTaiSan.validation.noiLuuRequired') }),
   id_trang_thai: z.string().min(1, { message: i18n.t('danhSachTaiSan.validation.trangThaiRequired') }),
   id_nhan_vien_dang_giu: z.string().optional().nullable(),
+  thuong_hieu: z.string().optional().nullable(),
+  model: z.string().optional().nullable(),
+  serial: z.string().optional().nullable(),
+  xuat_xu: z.string().optional().nullable(),
+  ma_barcode: z.string().optional().nullable(),
+  id_nha_cung_cap: z.string().optional().nullable(),
+  ten_nha_cung_cap: z.string().optional().nullable(),
   ngay_nhap: z.string().min(1, { message: i18n.t('danhSachTaiSan.validation.ngayNhapRequired') }),
   nguyen_gia: z.coerce.number().min(0).optional().nullable(),
   /** Ngày bắt đầu trích khấu hao (YYYY-MM-DD); để trống = ngay_nhap */
@@ -15,9 +22,6 @@ export const taiSanSchema = z.object({
   /** URL ảnh hoặc data URL (base64) từ upload/kéo thả/dán */
   hinh_anh: z.string().optional().nullable(),
   ghi_chu: z.string().optional().nullable(),
-  trang_thai: z.coerce.number().refine((val) => val === 0 || val === 1, {
-    message: i18n.t('danhSachTaiSan.validation.statusInvalid'),
-  }),
 });
 
 export type TaiSanFormValues = z.infer<typeof taiSanSchema>;

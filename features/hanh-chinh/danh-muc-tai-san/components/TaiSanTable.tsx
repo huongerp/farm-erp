@@ -103,6 +103,10 @@ const TaiSanTable: React.FC<Props> = ({
         ) : (
           <span className="text-sm text-foreground">—</span>
         );
+      case 'ten_chi_nhanh':
+        return (
+          <span className="text-sm text-foreground">{item.ten_chi_nhanh ?? '—'}</span>
+        );
       case 'ten_trang_thai':
         return item.id_trang_thai ? (
           <a
@@ -118,6 +122,34 @@ const TaiSanTable: React.FC<Props> = ({
           <span className="text-xs font-medium text-foreground px-2 py-0.5 rounded-full bg-muted/50 border border-border">
             —
           </span>
+        );
+      case 'thuong_hieu':
+        return (
+          <span className="text-sm text-foreground">{item.thuong_hieu ?? '—'}</span>
+        );
+      case 'model':
+        return (
+          <span className="text-sm text-foreground font-mono">{item.model ?? '—'}</span>
+        );
+      case 'serial':
+        return (
+          <span className="text-sm text-foreground font-mono">{item.serial ?? '—'}</span>
+        );
+      case 'xuat_xu':
+        return (
+          <span className="text-sm text-foreground">{item.xuat_xu ?? '—'}</span>
+        );
+      case 'ma_barcode':
+        return (
+          <span className="text-sm text-foreground font-mono">{item.ma_barcode ?? '—'}</span>
+        );
+      case 'ten_nha_cung_cap':
+        return (
+          <span className="text-sm text-foreground">{item.ten_nha_cung_cap ?? '—'}</span>
+        );
+      case 'ten_nguoi_tao':
+        return (
+          <span className="text-sm text-foreground">{item.ten_nguoi_tao ?? '—'}</span>
         );
       case 'ten_nhan_vien_dang_giu':
         return item.ten_nhan_vien_dang_giu ? (

@@ -225,31 +225,34 @@ const Combobox: React.FC<ComboboxProps> = ({
                     Không tìm thấy kết quả
                   </div>
                 ) : (
-                  filteredOptions.map((option) => (
-                    <div
-                      key={option.value}
-                      className={cn(
-                        "flex items-center justify-between px-3 py-2.5 rounded-lg text-sm cursor-pointer transition-colors",
-                        value === option.value
-                          ? "bg-primary/5 text-primary font-medium"
-                          : "text-foreground hover:bg-muted/50"
-                      )}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleSelect(option.value);
-                      }}
-                    >
-                      <div className="flex flex-col min-w-0 flex-1">
-                        {renderOption ? renderOption(option) : (
-                          <>
-                            <span>{option.label}</span>
-                            {option.subLabel && <span className="text-xs text-muted-foreground font-normal">{option.subLabel}</span>}
-                          </>
+                  filteredOptions.map((option) => {
+                    const customRender = renderOption ? renderOption(option) : undefined;
+                    return (
+                      <div
+                        key={option.value}
+                        className={cn(
+                          "flex items-center justify-between px-3 py-2.5 rounded-lg text-sm cursor-pointer transition-colors",
+                          value === option.value
+                            ? "bg-primary/5 text-primary font-medium"
+                            : "text-foreground hover:bg-muted/50"
                         )}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelect(option.value);
+                        }}
+                      >
+                        <div className="flex flex-col min-w-0 flex-1">
+                          {customRender ?? (
+                            <>
+                              <span>{option.label}</span>
+                              {option.subLabel && <span className="text-xs text-muted-foreground font-normal">{option.subLabel}</span>}
+                            </>
+                          )}
+                        </div>
+                        {value === option.value && <Check size={16} className="text-primary shrink-0" />}
                       </div>
-                      {value === option.value && <Check size={16} className="text-primary shrink-0" />}
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </motion.div>
@@ -293,31 +296,34 @@ const Combobox: React.FC<ComboboxProps> = ({
                     Không tìm thấy kết quả
                   </div>
                 ) : (
-                  filteredOptions.map((option) => (
-                    <div
-                      key={option.value}
-                      className={cn(
-                        "flex items-center justify-between px-3 py-2.5 rounded-lg text-sm cursor-pointer transition-colors",
-                        value === option.value
-                          ? "bg-primary/5 text-primary font-medium"
-                          : "text-foreground hover:bg-muted/50"
-                      )}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleSelect(option.value);
-                      }}
-                    >
-                      <div className="flex flex-col min-w-0 flex-1">
-                        {renderOption ? renderOption(option) : (
-                          <>
-                            <span>{option.label}</span>
-                            {option.subLabel && <span className="text-xs text-muted-foreground font-normal">{option.subLabel}</span>}
-                          </>
+                  filteredOptions.map((option) => {
+                    const customRender = renderOption ? renderOption(option) : undefined;
+                    return (
+                      <div
+                        key={option.value}
+                        className={cn(
+                          "flex items-center justify-between px-3 py-2.5 rounded-lg text-sm cursor-pointer transition-colors",
+                          value === option.value
+                            ? "bg-primary/5 text-primary font-medium"
+                            : "text-foreground hover:bg-muted/50"
                         )}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelect(option.value);
+                        }}
+                      >
+                        <div className="flex flex-col min-w-0 flex-1">
+                          {customRender ?? (
+                            <>
+                              <span>{option.label}</span>
+                              {option.subLabel && <span className="text-xs text-muted-foreground font-normal">{option.subLabel}</span>}
+                            </>
+                          )}
+                        </div>
+                        {value === option.value && <Check size={16} className="text-primary shrink-0" />}
                       </div>
-                      {value === option.value && <Check size={16} className="text-primary shrink-0" />}
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </motion.div>

@@ -8,8 +8,7 @@ import {
   type DragEndEvent,
 } from '@dnd-kit/core';
 import type { CongViec } from '../core/types';
-import { getTrangThaiLabel, getDueStatus } from '../core/constants';
-import { useCauHinhCongViec } from '../../thiet-lap-cong-viec/hooks/use-cau-hinh-cong-viec';
+import { getTrangThaiLabel } from '../core/constants';
 import { useUpdateCongViec } from '../hooks/use-cong-viec';
 import { CONG_VIEC_TRANG_THAI } from '../core/constants';
 import type { CongViecTrangThai } from '../core/types';
@@ -24,7 +23,6 @@ interface Props {
 
 const CongViecKanban: React.FC<Props> = ({ data, onView }) => {
   const { t } = useTranslation();
-  const { data: cauHinh } = useCauHinhCongViec();
   const updateMutation = useUpdateCongViec();
 
   const sensors = useSensors(
@@ -37,13 +35,9 @@ const CongViecKanban: React.FC<Props> = ({ data, onView }) => {
     const taskId = String(active.id);
     const newStatus = String(over.id) as CongViecTrangThai;
     if (!CONG_VIEC_TRANG_THAI.includes(newStatus)) return;
-    const task = data.find((c) => c.id === taskId);
+    const task = data.find((c) => String(c.id) === taskId || c.id === Number(taskId));
     if (!task || task.trang_thai === newStatus) return;
-    updateMutation.mutate({
-      id: taskId,
-      data: { trang_thai: newStatus },
-      ten_du_an: task.ten_du_an ?? undefined,
-    });
+    updateMutation.mutate({ id: task.id, data: { trang_thai: newStatus } });
   };
 
   const columns = CONG_VIEC_TRANG_THAI.map((status) => ({
@@ -74,7 +68,6 @@ const CongViecKanban: React.FC<Props> = ({ data, onView }) => {
               <KanbanCard
                 key={item.id}
                 item={item}
-                cauHinh={cauHinh ?? undefined}
                 onClick={() => onView(item)}
               />
             ))}

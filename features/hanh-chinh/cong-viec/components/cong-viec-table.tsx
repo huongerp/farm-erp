@@ -1,25 +1,25 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Edit, Trash2, ClipboardList } from 'lucide-react';
 import GenericTable from '../../../../components/shared/GenericTable';
 import Tooltip from '../../../../components/ui/Tooltip';
-import { formatDateTimeShort, formatDate } from '../../../../lib/utils';
+import { formatDateTimeShort } from '../../../../lib/utils';
 import type { CongViec } from '../core/types';
 import { useCongViecStore } from '../store/useCongViecStore';
-import { getTrangThaiLabel, getUuTienLabel, getDueStatus } from '../core/constants';
-import { useCauHinhCongViec } from '../../thiet-lap-cong-viec/hooks/use-cau-hinh-cong-viec';
+import { getTrangThaiLabel, getUuTienLabel } from '../core/constants';
+import { useEmployees } from '../../../he-thong/nhan-vien/hooks/use-nhan-vien';
 
 interface Props {
   data: CongViec[];
   isLoading: boolean;
   onEdit: (item: CongViec) => void;
-  onDelete: (id: string) => void;
+  onDelete: (id: number | string) => void;
   onView?: (item: CongViec) => void;
 }
 
 const CongViecTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onView }) => {
   const { t } = useTranslation();
-  const { data: cauHinh } = useCauHinhCongViec();
+  const { data: employees = [] } = useEmployees();
   const {
     columns,
     pagination,
@@ -31,6 +31,21 @@ const CongViecTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onV
     sort,
     setSort,
   } = useCongViecStore();
+
+  const employeeNameMap = useMemo(() => {
+    const m: Record<number, string> = {};
+    employees.forEach((e) => {
+      const id = typeof e.id === 'number' ? e.id : parseInt(String(e.id), 10);
+      if (!Number.isNaN(id) && id > 0) {
+        m[id] = e.ho_ten?.trim() || e.ma_nhan_vien || String(e.id);
+      }
+    });
+    return m;
+  }, [employees]);
+  const getEmployeeName = (id: number | null | undefined) => {
+    if (id == null) return '—';
+    return employeeNameMap[id] ?? String(id);
+  };
 
   const renderTrangThaiBadge = (trangThai: CongViec['trang_thai']) => {
     const label = getTrangThaiLabel(trangThai, t);
@@ -68,54 +83,40 @@ const CongViecTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onV
 
   const renderCell = (colId: string, item: CongViec) => {
     switch (colId) {
-      case 'ma_cong_viec':
-        return (
-          <span className="font-mono text-sm font-medium text-foreground">
-            {item.ma_cong_viec}
-          </span>
-        );
       case 'tieu_de':
         return (
-          <span className="text-sm text-foreground line-clamp-2 max-w-[280px]">
+          <span className="text-sm font-medium text-foreground line-clamp-1 max-w-[280px]">
             {item.tieu_de}
           </span>
         );
-      case 'ten_du_an':
+      case 'mo_ta':
         return (
-          <span className="text-sm text-muted-foreground">
-            {item.ten_du_an || '—'}
+          <span className="text-sm text-muted-foreground line-clamp-2 max-w-[320px]">
+            {item.mo_ta?.trim() || '—'}
+          </span>
+        );
+      case 'id_nguoi_giao':
+        return (
+          <span className="text-sm text-muted-foreground truncate block max-w-[140px]" title={getEmployeeName(item.id_nguoi_giao)}>
+            {getEmployeeName(item.id_nguoi_giao)}
+          </span>
+        );
+      case 'trach_nhiem':
+        return (
+          <span className="text-sm text-foreground truncate block max-w-[140px]" title={getEmployeeName(item.trach_nhiem)}>
+            {getEmployeeName(item.trach_nhiem)}
+          </span>
+        );
+      case 'nguoi_ho_tro':
+        return (
+          <span className="text-sm text-muted-foreground line-clamp-2 max-w-[200px]" title={(item.nguoi_ho_tro ?? []).map(getEmployeeName).join(', ')}>
+            {(item.nguoi_ho_tro ?? []).length === 0 ? '—' : (item.nguoi_ho_tro ?? []).map(getEmployeeName).join(', ')}
           </span>
         );
       case 'uu_tien':
         return renderUuTienBadge(item.uu_tien);
       case 'trang_thai':
         return renderTrangThaiBadge(item.trang_thai);
-      case 'ngay_het_han': {
-        const dueStatus = getDueStatus(item.ngay_het_han, cauHinh ?? undefined);
-        return (
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-sm text-foreground tabular-nums">
-              {formatDate(item.ngay_het_han)}
-            </span>
-            {dueStatus === 'sap_han' && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-100">
-                {t('congViec.dueSoon')}
-              </span>
-            )}
-            {dueStatus === 'qua_han' && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-rose-50 text-rose-700 border border-rose-100">
-                {t('congViec.overdue')}
-              </span>
-            )}
-          </div>
-        );
-      }
-      case 'phan_tram_hoan_thanh':
-        return (
-          <span className="text-sm font-medium tabular-nums">
-            {item.phan_tram_hoan_thanh}%
-          </span>
-        );
       case 'tg_cap_nhat':
         return (
           <span className="text-xs text-muted-foreground tabular-nums">
@@ -166,39 +167,41 @@ const CongViecTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onV
         isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'
       }`}
     >
-      <div className="flex items-center gap-3 mb-3">
-        <div className="h-11 w-11 rounded-lg bg-primary/15 border border-primary/20 flex items-center justify-center text-primary shrink-0">
-          <ClipboardList size={20} />
+      <div className="flex items-center gap-3 mb-2">
+        <div className="h-10 w-10 rounded-lg bg-primary/15 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+          <ClipboardList size={18} />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
-            <h4 className="font-semibold text-foreground text-sm truncate">{item.tieu_de}</h4>
+            <h4 className="font-semibold text-foreground text-sm line-clamp-2">{item.tieu_de}</h4>
             <div onClick={(e) => e.stopPropagation()} className="shrink-0">
               <input
                 type="checkbox"
                 checked={isSelected}
-                onChange={() => toggleSelection(item.id)}
+                onChange={() => toggleSelection(String(item.id))}
                 className="w-4 h-4 rounded border-border text-primary accent-primary cursor-pointer"
                 aria-label={t('common.select')}
               />
             </div>
           </div>
-          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-            <span className="text-xs font-mono text-muted-foreground">{item.ma_cong_viec}</span>
+          {item.mo_ta?.trim() && (
+            <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{item.mo_ta.trim()}</p>
+          )}
+          <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-xs text-muted-foreground">
+            <span><span className="font-medium text-foreground/80">{t('congViec.form.trachNhiem')}:</span> {getEmployeeName(item.trach_nhiem)}</span>
+            <span><span className="font-medium text-foreground/80">{t('congViec.form.nguoiGiao')}:</span> {getEmployeeName(item.id_nguoi_giao)}</span>
+            {(item.nguoi_ho_tro ?? []).length > 0 && (
+              <span><span className="font-medium text-foreground/80">{t('congViec.form.nguoiHoTro')}:</span> {(item.nguoi_ho_tro ?? []).map(getEmployeeName).join(', ')}</span>
+            )}
+          </div>
+          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
             {renderUuTienBadge(item.uu_tien)}
             {renderTrangThaiBadge(item.trang_thai)}
+            <span className="text-xs text-muted-foreground">{formatDateTimeShort(item.tg_cap_nhat)}</span>
           </div>
         </div>
       </div>
-      <div className="text-xs text-muted-foreground mb-2">{item.ten_du_an || '—'}</div>
       <div className="flex justify-between items-center pt-2.5 border-t border-border flex-wrap gap-1">
-        <span className="text-muted-foreground text-xs">{formatDate(item.ngay_het_han)} · {item.phan_tram_hoan_thanh}%</span>
-        {getDueStatus(item.ngay_het_han, cauHinh ?? undefined) === 'sap_han' && (
-          <span className="text-xs font-medium text-amber-600">{t('congViec.dueSoon')}</span>
-        )}
-        {getDueStatus(item.ngay_het_han, cauHinh ?? undefined) === 'qua_han' && (
-          <span className="text-xs font-medium text-rose-600">{t('congViec.overdue')}</span>
-        )}
         <div className="flex gap-1.5">
           <button
             type="button"
@@ -232,6 +235,7 @@ const CongViecTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onV
       data={data}
       columns={columns}
       isLoading={isLoading}
+      density="compact"
       loadingText={t('congViec.loading')}
       selectedIds={selectedIds}
       onToggleSelection={toggleSelection}
@@ -244,7 +248,7 @@ const CongViecTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onV
       onSort={setSort}
       renderCell={renderCell}
       renderMobileCard={renderMobileCard}
-      keyExtractor={(item) => item.id}
+      keyExtractor={(item) => String(item.id)}
       onRowClick={(item) => onView?.(item)}
       emptyTitle={t('congViec.empty')}
       emptyDescription={t('congViec.emptyHint')}

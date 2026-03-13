@@ -1,15 +1,15 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, FolderOpen, Tag, User, ListOrdered, List, LayoutGrid, GanttChart, Download, Upload } from 'lucide-react';
+import { Plus, Tag, User, ListOrdered, List, LayoutGrid, GanttChart, Download, Upload } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import { useCongViecStore } from '../store/useCongViecStore';
 import { getTrangThaiOptions, getUuTienOptions } from '../core/constants';
-import { useDuAnList } from '../../du-an/hooks/use-du-an';
 import { useEmployees } from '../../../he-thong/nhan-vien/hooks/use-nhan-vien';
 import { useCongViecFilterCounts } from '../hooks/use-cong-viec-filter-counts';
+import { TRANG_THAI_NV } from '../../../../lib/constants';
 import type { CongViec } from '../core/types';
 
 export type CongViecViewMode = 'list' | 'kanban' | 'gantt';
@@ -18,7 +18,7 @@ interface Props {
   /** Danh sách công việc người dùng được xem (sau scope). Count filter chip đếm trên list này. */
   items?: CongViec[];
   onAdd: () => void;
-  onDeleteMany: (ids: string[]) => void;
+  onDeleteMany: (ids: (number | string)[]) => void;
   onExport?: () => void;
   onImport?: () => void;
   viewMode?: CongViecViewMode;
@@ -29,7 +29,6 @@ interface Props {
 
 const CongViecToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onExport, onImport, viewMode = 'list', onViewModeChange, hideViewMode }) => {
   const { t } = useTranslation();
-  const { data: duAnList = [] } = useDuAnList();
   const { data: employees = [] } = useEmployees();
   const {
     searchTerm,
@@ -43,25 +42,19 @@ const CongViecToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onE
     selectedIds,
     clearSelection,
   } = useCongViecStore();
-  const { duAnCounts, trangThaiCounts, uuTienCounts, nguoiThucHienCounts } = useCongViecFilterCounts(items, filters);
+  const { trangThaiCounts, uuTienCounts, trachNhiemCounts } = useCongViecFilterCounts(items, filters);
 
   const selectedCount = selectedIds.size;
   const activeFilterCount =
-    (filters.id_du_an?.length ?? 0) +
     (filters.trang_thai?.length ?? 0) +
     (filters.uu_tien?.length ?? 0) +
-    (filters.nguoi_thuc_hien?.length ?? 0);
+    (filters.trach_nhiem?.length ?? 0);
   const handleClearAllFilters = () => {
-    setFilter('id_du_an', []);
     setFilter('trang_thai', []);
     setFilter('uu_tien', []);
-    setFilter('nguoi_thuc_hien', []);
+    setFilter('trach_nhiem', []);
   };
 
-  const duAnOptions = useMemo(
-    () => duAnList.map((d) => ({ label: d.ten_du_an, value: d.id, count: duAnCounts[d.id] ?? 0 })),
-    [duAnList, duAnCounts]
-  );
   const trangThaiOptions = useMemo(
     () => getTrangThaiOptions(t).map((o) => ({ ...o, count: trangThaiCounts[o.value] ?? 0 })),
     [t, trangThaiCounts]
@@ -70,21 +63,20 @@ const CongViecToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onE
     () => getUuTienOptions(t).map((o) => ({ ...o, count: uuTienCounts[o.value] ?? 0 })),
     [t, uuTienCounts]
   );
-  const nguoiThucHienOptions = useMemo(
-    () => employees.slice(0, 200).map((e) => ({ label: e.full_name || e.ma_nhan_vien, value: e.id, count: nguoiThucHienCounts[e.id] ?? 0 })),
-    [employees, nguoiThucHienCounts]
-  );
+  const trachNhiemOptions = useMemo(() => {
+    const toKey = (id: string | number) => String(typeof id === 'number' ? id : parseInt(String(id).replace(/\D/g, ''), 10) || 0);
+    return employees
+      .filter((e) => e.trang_thai === TRANG_THAI_NV.DANG_LAM_VIEC)
+      .slice(0, 200)
+      .map((e) => {
+        const key = toKey(e.id);
+        const label = e.ho_ten ? `${e.ho_ten}${e.ma_nhan_vien ? ` (${e.ma_nhan_vien})` : ''}` : e.ma_nhan_vien || key;
+        return { label, value: key, count: trachNhiemCounts[key] ?? 0 };
+      });
+  }, [employees, trachNhiemCounts]);
 
   const renderFilters = (
     <>
-      <FilterChipMultiSelect
-        options={duAnOptions}
-        value={filters.id_du_an ?? []}
-        onChange={(val) => setFilter('id_du_an', val)}
-        placeholder={t('congViec.form.duAn')}
-        icon={FolderOpen}
-        className="w-full sm:w-[160px]"
-      />
       <FilterChipMultiSelect
         options={trangThaiOptions}
         value={filters.trang_thai ?? []}
@@ -102,10 +94,10 @@ const CongViecToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onE
         className="w-full sm:w-[120px]"
       />
       <FilterChipMultiSelect
-        options={nguoiThucHienOptions}
-        value={filters.nguoi_thuc_hien ?? []}
-        onChange={(val) => setFilter('nguoi_thuc_hien', val)}
-        placeholder={t('congViec.form.nguoiThucHien')}
+        options={trachNhiemOptions}
+        value={(filters.trach_nhiem ?? []).map(String)}
+        onChange={(val) => setFilter('trach_nhiem', val.map(Number).filter((n) => !Number.isNaN(n)))}
+        placeholder={t('congViec.form.trachNhiem')}
         icon={User}
         className="w-full sm:w-[160px]"
       />

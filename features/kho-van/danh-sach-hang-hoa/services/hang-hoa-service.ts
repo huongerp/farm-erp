@@ -24,6 +24,12 @@ interface HangHoaRow {
   tg_cap_nhat: string | null;
 }
 
+/** Chuẩn hóa trang_thai từ DB: chỉ "Ngừng hoạt động" coi là ngừng, còn lại coi là Đang hoạt động (tránh lỗi không chọn được hàng khi DB null/khác chuỗi). */
+function normalizeTrangThaiHangHoa(raw: string | null): HangHoa['trang_thai'] {
+  const s = raw?.trim();
+  return s === TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG ? TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG : TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
+}
+
 function rowToHangHoa(row: HangHoaRow, tenDanhMuc?: string): HangHoa {
   const donGia = row.don_gia != null ? Number(row.don_gia) : null;
   const ma = row.ma_hang_hoa ?? '';
@@ -37,7 +43,7 @@ function rowToHangHoa(row: HangHoaRow, tenDanhMuc?: string): HangHoa {
     ten_hang_hoa: ten,
     dvt: unit,
     thu_tu: row.thu_tu != null ? Math.max(1, row.thu_tu) : 1,
-    trang_thai: (row.trang_thai as HangHoa['trang_thai']) ?? TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG,
+    trang_thai: normalizeTrangThaiHangHoa(row.trang_thai),
     don_gia: Number.isNaN(donGia) ? null : donGia,
     tg_tao: row.tg_tao ?? new Date().toISOString(),
     tg_cap_nhat: row.tg_cap_nhat ?? new Date().toISOString(),
@@ -60,7 +66,12 @@ function buildTenDanhMuc(danhMucList: { id: string; ten_danh_muc: string; id_cha
 }
 
 async function enrichWithTenDanhMuc(rows: HangHoaRow[]): Promise<HangHoa[]> {
-  const dmList = await getAllDanhMucHangHoa();
+  let dmList: Awaited<ReturnType<typeof getAllDanhMucHangHoa>> = [];
+  try {
+    dmList = await getAllDanhMucHangHoa();
+  } catch (e) {
+    console.warn('[hang-hoa-service] Không tải được danh mục hàng hóa – bỏ qua enrich:', e);
+  }
   return rows.map((row) => {
     const danh_muc_id = row.danh_muc_id != null ? String(row.danh_muc_id) : null;
     const danh_muc_cha_id = row.danh_muc_cha_id != null ? String(row.danh_muc_cha_id) : null;

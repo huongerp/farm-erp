@@ -33,7 +33,8 @@ export const useDeleteRoles = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['roles'] });
       toast.success(i18n.t('permission.toast.deleteSuccess'));
-    }
+    },
+    onError: (err: Error) => toast.error(err?.message ?? i18n.t('permission.matrix.loading')),
   });
 };
 

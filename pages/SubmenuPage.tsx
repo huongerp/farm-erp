@@ -24,8 +24,6 @@ import TaiLieuPage from '../features/hanh-chinh/tai-lieu';
 import LuuTruHoSoPage from '../features/hanh-chinh/luu-tru-ho-so';
 import DuAnPage from '../features/hanh-chinh/du-an';
 import CongViecPage from '../features/hanh-chinh/cong-viec';
-import CongViecCuaToiPage from '../features/hanh-chinh/cong-viec/cong-viec-cua-toi-page';
-import CongViecToiQuanLyPage from '../features/hanh-chinh/cong-viec/cong-viec-toi-quan-ly-page';
 import BaoCaoPage from '../features/hanh-chinh/bao-cao';
 import NoiQuanLyPage from '../features/hanh-chinh/noi-quan-ly';
 import ThietLapTaiSanPage from '../features/hanh-chinh/thiet-lap-tai-san';
@@ -174,7 +172,7 @@ const SubmenuPage: React.FC = () => {
     }
     if (basePath === '/hanh-chinh') {
       if (decodedSlug === 'giao-viec' || decodedSlug === 'theo-doi-tien-do') {
-        return <Navigate to="/hanh-chinh/cong-viec-cua-toi" replace />;
+        return <Navigate to="/hanh-chinh/cong-viec" replace />;
       }
       if (decodedSlug === 'bao-cao-cong-viec') {
         return <Navigate to="/hanh-chinh/bao-cao" replace />;
@@ -275,19 +273,9 @@ const SubmenuPage: React.FC = () => {
           </ErrorBoundary>
         );
       }
-      if (decodedSlug === 'cong-viec-cua-toi') {
-        return (
-          <ErrorBoundary>
-            <CongViecCuaToiPage />
-          </ErrorBoundary>
-        );
-      }
-      if (decodedSlug === 'cong-viec-toi-quan-ly') {
-        return (
-          <ErrorBoundary>
-            <CongViecToiQuanLyPage />
-          </ErrorBoundary>
-        );
+      if (decodedSlug === 'cong-viec-cua-toi' || decodedSlug === 'cong-viec-toi-quan-ly') {
+        const search = location.search || '';
+        return <Navigate to={`/hanh-chinh/cong-viec${search}`} replace />;
       }
       if (decodedSlug === 'bao-cao') {
         return (

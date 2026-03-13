@@ -112,7 +112,7 @@ export const useUIStore = create<UIState>()(
       companyInfo: {
         appName: 'Forpeasantz',
         appDescription: 'Hợp Tác Xã Nông Nghiệp Công Nghệ Cao FP - Forpeasantz',
-        appLogo: 'https://scontent.fhan4-5.fna.fbcdn.net/v/t39.30808-6/646547940_873439215698096_8760186466343055269_n.jpg?_nc_cat=103&ccb=1-7&_nc_sid=13d280&_nc_ohc=RAsKtIGtd-8Q7kNvwHyjEYV&_nc_oc=AdmPaglRA6w8umYrs4ELlGNy4mcwgbEmXig4eHfJHVpmlEkxBZBTaSnD3vaVn20o-Y4&_nc_zt=23&_nc_ht=scontent.fhan4-5.fna&_nc_gid=ZR7t3ad-E7IH_sTcGZ8tPQ&_nc_ss=8&oh=00_Afx9TruOr9KWk3qZWGBgUKCEX3O7--0UU6h9sjb98wlIqA&oe=69B09F87',
+        appLogo: 'https://ui-avatars.com/api/?name=FP&background=16a34a&color=fff&size=128',
         companyName: 'HỢP TÁC XÃ NÔNG NGHIỆP CÔNG NGHỆ CAO FP - FORPEASANTZ. Công ty TNHH XUẤT NHẬP KHẨU ForPeasantz',
         taxId: '',
         address: 'Trụ sở: 675 Hoàng Sa, Phường Võ Thị Sáu, Quận 3, TP. Hồ Chí Minh, Việt Nam. Trang trại: Làng Ring, Xã Ia Mơ, Huyện Chư Prông, Gia Lai.',
@@ -147,7 +147,7 @@ export const useUIStore = create<UIState>()(
             state.companyInfo = {
               appName: 'Forpeasantz',
               appDescription: 'Hợp Tác Xã Nông Nghiệp Công Nghệ Cao FP - Forpeasantz',
-              appLogo: 'https://scontent.fhan4-5.fna.fbcdn.net/v/t39.30808-6/646547940_873439215698096_8760186466343055269_n.jpg?_nc_cat=103&ccb=1-7&_nc_sid=13d280&_nc_ohc=RAsKtIGtd-8Q7kNvwHyjEYV&_nc_oc=AdmPaglRA6w8umYrs4ELlGNy4mcwgbEmXig4eHfJHVpmlEkxBZBTaSnD3vaVn20o-Y4&_nc_zt=23&_nc_ht=scontent.fhan4-5.fna&_nc_gid=ZR7t3ad-E7IH_sTcGZ8tPQ&_nc_ss=8&oh=00_Afx9TruOr9KWk3qZWGBgUKCEX3O7--0UU6h9sjb98wlIqA&oe=69B09F87',
+              appLogo: 'https://ui-avatars.com/api/?name=FP&background=16a34a&color=fff&size=128',
               companyName: 'HỢP TÁC XÃ NÔNG NGHIỆP CÔNG NGHỆ CAO FP - FORPEASANTZ. Công ty TNHH XUẤT NHẬP KHẨU ForPeasantz',
               taxId: '',
               address: 'Trụ sở: 675 Hoàng Sa, Phường Võ Thị Sáu, Quận 3, TP. Hồ Chí Minh, Việt Nam. Trang trại: Làng Ring, Xã Ia Mơ, Huyện Chư Prông, Gia Lai.',
@@ -155,6 +155,14 @@ export const useUIStore = create<UIState>()(
               email: 'info@forpeasantz.com',
               website: 'https://forpeasantz.com',
             };
+          }
+        }
+        // Thay logo Facebook CDN (403 hotlink) bằng fallback
+        if (persisted && typeof persisted === 'object') {
+          const state = persisted as Record<string, any>;
+          const ci = state.companyInfo;
+          if (ci?.appLogo && String(ci.appLogo).includes('fbcdn.net')) {
+            state.companyInfo = { ...ci, appLogo: 'https://ui-avatars.com/api/?name=FP&background=16a34a&color=fff&size=128' };
           }
         }
         return persisted as UIState;

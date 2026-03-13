@@ -289,7 +289,7 @@ const DuAnPage: React.FC = () => {
               onClose={() => setDetailCongViec(null)}
               onEdit={(item) => {
                 setDetailCongViec(null);
-                navigate(`/hanh-chinh/cong-viec-cua-toi?detail=${item.id}`);
+                navigate(`/hanh-chinh/cong-viec?detail=${item.id}`);
               }}
               stackLevel={1}
             />

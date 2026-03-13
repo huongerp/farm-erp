@@ -10,8 +10,6 @@ import {
   updateCongViec,
   deleteCongViecList,
   importCongViecList,
-  getBaoCaoByCongViecId,
-  createBaoCaoKetQua,
   getBinhLuanByCongViecId,
   createBinhLuan,
 } from '../services/cong-viec-service';
@@ -36,26 +34,16 @@ export const useCreateCongViec = (onSuccess?: () => void) => {
   const queryClient = useQueryClient();
   const user = useAuthStore((s) => s.user);
   return useMutation({
-    mutationFn: ({
-      data,
-      ten_du_an,
-    }: {
-      data: CongViecFormValues;
-      ten_du_an?: string | null;
-    }) =>
-      createCongViec(
-        data,
-        user?.id ?? 'emp-000',
-        user?.full_name,
-        ten_du_an
-      ),
+    mutationFn: (data: CongViecFormValues) =>
+      createCongViec(data, (user?.id as number | string) ?? 0),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: CONG_VIEC_QUERY_KEY });
       toast.success(i18n.t('congViec.toast.createSuccess'));
       const add = useNotificationStore.getState().add;
       const title = i18n.t('congViec.notif.assigned');
-      const link = `/hanh-chinh/cong-viec-cua-toi?detail=${data.id}`;
-      (data.danh_sach_nguoi_thuc_hien ?? []).forEach(() => {
+      const link = `/hanh-chinh/cong-viec?detail=${data.id}`;
+      const recipients = [data.trach_nhiem, ...(data.nguoi_ho_tro ?? [])].filter((id): id is number => id != null);
+      recipients.forEach(() => {
         add({ title, message: data.tieu_de, type: 'info', link });
       });
       onSuccess?.();
@@ -70,12 +58,10 @@ export const useUpdateCongViec = (onSuccess?: () => void) => {
     mutationFn: ({
       id,
       data,
-      ten_du_an,
     }: {
-      id: string;
-      data: Partial<CongViecFormValues> & { phan_tram_hoan_thanh?: number };
-      ten_du_an?: string | null;
-    }) => updateCongViec(id, data, ten_du_an),
+      id: number | string;
+      data: Partial<CongViecFormValues> & { trao_doi?: import('../core/types').TraoDoiEntry[]; ket_qua?: string | null; link_ket_qua?: string | null };
+    }) => updateCongViec(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: CONG_VIEC_QUERY_KEY });
       toast.success(i18n.t('congViec.toast.updateSuccess'));
@@ -88,7 +74,7 @@ export const useUpdateCongViec = (onSuccess?: () => void) => {
 export const useDeleteCongViecList = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (ids: string[]) => deleteCongViecList(ids),
+    mutationFn: (ids: (number | string)[]) => deleteCongViecList(ids),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: CONG_VIEC_QUERY_KEY });
       toast.success(i18n.t('congViec.toast.deleteSuccess', { count: variables.length }));
@@ -103,19 +89,14 @@ export const useImportCongViec = (onSuccess?: () => void) => {
   return useMutation({
     mutationFn: (
       rows: Array<{
-        ma_cong_viec: string;
         tieu_de: string;
-        id_du_an?: string;
-        ten_du_an?: string;
-        ngay_het_han: string;
-        uu_tien: string;
-        trang_thai: string;
-        phan_tram_hoan_thanh?: number;
         mo_ta?: string;
-        danh_sach_nguoi_thuc_hien?: string;
+        uu_tien?: string;
+        trang_thai?: string;
+        trach_nhiem?: string;
+        nguoi_ho_tro?: string;
       }>
-    ) =>
-      importCongViecList(rows, user?.id ?? 'emp-000', user?.full_name),
+    ) => importCongViecList(rows, (user?.id as number | string) ?? 0),
     onSuccess: (result, _variables) => {
       queryClient.invalidateQueries({ queryKey: CONG_VIEC_QUERY_KEY });
       const msg =
@@ -130,40 +111,19 @@ export const useImportCongViec = (onSuccess?: () => void) => {
   });
 };
 
-export const useBaoCaoByCongViecId = (id_cong_viec: string | null) =>
-  useQuery({
-    queryKey: [...CONG_VIEC_QUERY_KEY, 'baoCao', id_cong_viec],
-    queryFn: () => (id_cong_viec ? getBaoCaoByCongViecId(id_cong_viec) : Promise.resolve([])),
-    enabled: !!id_cong_viec,
-  });
-
-export const useCreateBaoCaoKetQua = (id_cong_viec: string, onSuccess?: () => void) => {
-  const queryClient = useQueryClient();
-  const user = useAuthStore((s) => s.user);
-  return useMutation({
-    mutationFn: (data: { noi_dung: string; links?: string[]; file_dinh_kem?: string }) =>
-      createBaoCaoKetQua(id_cong_viec, data, user?.id ?? 'emp-000', user?.full_name),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: CONG_VIEC_QUERY_KEY });
-      toast.success(i18n.t('congViec.baoCaoKetQua.toast.createSuccess'));
-      onSuccess?.();
-    },
-    onError: (err: unknown) => toast.error((err as Error).message),
-  });
-};
-
-export const useBinhLuanByCongViecId = (id_cong_viec: string | null) =>
+export const useBinhLuanByCongViecId = (id_cong_viec: number | string | null) =>
   useQuery({
     queryKey: [...CONG_VIEC_QUERY_KEY, 'binhLuan', id_cong_viec],
-    queryFn: () => (id_cong_viec ? getBinhLuanByCongViecId(id_cong_viec) : Promise.resolve([])),
-    enabled: !!id_cong_viec,
+    queryFn: () => (id_cong_viec != null ? getBinhLuanByCongViecId(id_cong_viec) : Promise.resolve([])),
+    enabled: id_cong_viec != null && id_cong_viec !== '',
   });
-export const useCreateBinhLuan = (id_cong_viec: string, onSuccess?: () => void) => {
+
+export const useCreateBinhLuan = (id_cong_viec: number | string, onSuccess?: () => void) => {
   const queryClient = useQueryClient();
   const user = useAuthStore((s) => s.user);
   return useMutation({
     mutationFn: (noi_dung: string) =>
-      createBinhLuan(id_cong_viec, noi_dung, user?.id ?? 'emp-000', user?.full_name),
+      createBinhLuan(id_cong_viec, noi_dung, String(user?.id ?? ''), user?.full_name),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: CONG_VIEC_QUERY_KEY });
       toast.success(i18n.t('congViec.binhLuan.toast.createSuccess'));

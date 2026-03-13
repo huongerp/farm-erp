@@ -48,7 +48,7 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose, on
   const createMutation = useCreatePhieuKho(loai, onClose);
   const updateMutation = useUpdatePhieuKho(onClose);
   const { data: nextSoPhieu, isLoading: loadingSoPhieu } = useNextSoPhieu(loai, !isEdit);
-  const { data: hangHoaList = [] } = useHangHoaList();
+  const { data: hangHoaList = [], isLoading: isLoadingHangHoa, isError: isErrorHangHoa } = useHangHoaList();
   const { data: nhaCungCapList = [] } = useDoiTacList('nha_cung_cap');
   const { data: khachHangList = [] } = useDoiTacList('khach_hang');
 
@@ -374,6 +374,12 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose, on
           </FormGrid>
         </FormSection>
 
+        {isErrorHangHoa && (
+          <div className="text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
+            {t('phieuKho.form.productLoadError', 'Không tải được danh sách hàng hoá. Vui lòng tải lại trang.')}
+          </div>
+        )}
+
         <GenericSubTableSection
           title={t('phieuKho.form.itemsSection')}
           icon={<Package size={14} className="text-primary" />}
@@ -432,19 +438,18 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose, on
                                 onRequestAddHangHoa?.().then((h) => {
                                   if (h) {
                                     setValue(`chi_tiet.${index}.id_hang_hoa`, h.id);
-                                    const dg = hangHoaMap[h.id]?.don_gia ?? 0;
-                                    setValue(`chi_tiet.${index}.don_gia`, dg);
+                                    setValue(`chi_tiet.${index}.don_gia`, hangHoaMap[h.id]?.don_gia ?? 0);
                                   }
                                 });
                                 return;
                               }
                               f.onChange(v ?? '');
-                              const dg = v ? (hangHoaMap[String(v)]?.don_gia ?? 0) : 0;
-                              setValue(`chi_tiet.${index}.don_gia`, dg);
+                              setValue(`chi_tiet.${index}.don_gia`, v ? (hangHoaMap[String(v)]?.don_gia ?? 0) : 0);
                             }}
-                            placeholder={t('phieuKho.form.itemPlaceholder')}
+                            placeholder={isLoadingHangHoa ? 'Đang tải...' : t('phieuKho.form.itemPlaceholder')}
                             searchPlaceholder={t('phieuKho.form.itemSearchPlaceholder')}
                             searchable
+                            disabled={isLoadingHangHoa}
                             triggerClassName="h-9 text-sm border-border rounded-md"
                             dropdownInPortal
                             renderOption={renderAddOption}

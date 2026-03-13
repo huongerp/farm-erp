@@ -91,6 +91,7 @@ const TrangThaiForm: React.FC<Props> = ({ initialData, onClose }) => {
               label={t('thietLapTaiSan.trangThai.form.ma')}
               placeholder={t('thietLapTaiSan.trangThai.form.maPlaceholder')}
               icon={<Hash size={14} />}
+              required
               {...register('ma')}
               error={errors.ma?.message}
             />
@@ -98,6 +99,7 @@ const TrangThaiForm: React.FC<Props> = ({ initialData, onClose }) => {
               label={t('thietLapTaiSan.trangThai.form.ten')}
               placeholder={t('thietLapTaiSan.trangThai.form.tenPlaceholder')}
               icon={<Type size={14} />}
+              required
               {...register('ten')}
               error={errors.ten?.message}
             />
@@ -127,6 +129,10 @@ const TrangThaiForm: React.FC<Props> = ({ initialData, onClose }) => {
                   label={t('thietLapTaiSan.trangThai.form.status')}
                   value={field.value}
                   onChange={field.onChange}
+                  activeValue={TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG}
+                  inactiveValue={TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG}
+                  activeLabel={TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG}
+                  inactiveLabel={TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG}
                   icon={<Power size={12} />}
                   required
                 />

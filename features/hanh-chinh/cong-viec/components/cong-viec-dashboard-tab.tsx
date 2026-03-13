@@ -1,16 +1,12 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { User, Clock, MessageSquare, ArrowLeft } from 'lucide-react';
+import { User, MessageSquare, ArrowLeft } from 'lucide-react';
 import TabGroup from '../../../../components/ui/TabGroup';
 import { useCongViecList, useDeleteCongViecList } from '../hooks/use-cong-viec';
 import { useAuthStore } from '../../../../store/useStore';
-import { useNotificationStore } from '../../../../store/useNotificationStore';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { CONFIRM_DELETE } from '../../../../lib/button-labels';
-import dayjs from 'dayjs';
-import { useCauHinhCongViec } from '../../thiet-lap-cong-viec/hooks/use-cau-hinh-cong-viec';
-import { getDueStatus } from '../core/constants';
 import CongViecTable from './cong-viec-table';
 import CongViecDetail from './cong-viec-detail';
 import EmptyState from '../../../../components/shared/EmptyState';
@@ -19,7 +15,7 @@ import type { CongViec } from '../core/types';
 import { ClipboardList } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 
-const DASHBOARD_VIEW = { my: 'my', due: 'due', waitReport: 'waitReport' } as const;
+const DASHBOARD_VIEW = { my: 'my', waitReport: 'waitReport' } as const;
 
 const CongViecDashboardTab: React.FC = () => {
   const { t } = useTranslation();
@@ -28,91 +24,47 @@ const CongViecDashboardTab: React.FC = () => {
   const user = useAuthStore((s) => s.user);
   const currentUserId = user?.id ?? '';
   const [activeView, setActiveView] = useState(DASHBOARD_VIEW.my);
-  const [detailItem, setDetailItem] = useState<CongViec | null>(null);
+  const [detailStack, setDetailStack] = useState<CongViec[]>([]);
 
   const { data: list = [], isLoading } = useCongViecList();
   const deleteMutation = useDeleteCongViecList();
-  const { data: cauHinh } = useCauHinhCongViec();
-  const soNgayCanhBao = cauHinh?.so_ngay_canh_bao_sap_han ?? 7;
-  const batCanhBaoQuaHan = cauHinh?.bat_canh_bao_qua_han ?? true;
 
-  const today = useMemo(() => {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    return d.getTime();
-  }, []);
-
-  const myList = useMemo(
-    () =>
-      list.filter(
-        (c) =>
-          c.danh_sach_nguoi_thuc_hien?.includes(currentUserId) || c.id_nguoi_giao === currentUserId
-      ),
-    [list, currentUserId]
-  );
-
-  const dueList = useMemo(() => {
-    const endOfRange = dayjs().add(soNgayCanhBao, 'day').endOf('day').valueOf();
-    return list.filter((c) => {
-      const due = dayjs(c.ngay_het_han, 'YYYY-MM-DD').startOf('day').valueOf();
-      if (due < today) return batCanhBaoQuaHan; // quá hạn
-      return due <= endOfRange; // sắp hạn trong N ngày
-    });
-  }, [list, today, soNgayCanhBao, batCanhBaoQuaHan]);
+  const myList = useMemo(() => {
+    const uid = currentUserId === '' ? null : currentUserId;
+    if (uid == null) return [];
+    const match = (id: number) => id === Number(uid) || String(id) === uid;
+    return list.filter(
+      (c) =>
+        match(c.id_nguoi_giao) ||
+        (c.trach_nhiem != null && match(c.trach_nhiem)) ||
+        (c.nguoi_ho_tro?.length && c.nguoi_ho_tro.some(match))
+    );
+  }, [list, currentUserId]);
 
   const waitReportList = useMemo(
     () => list.filter((c) => c.trang_thai === 'cho_bao_cao'),
     [list]
   );
 
-  useEffect(() => {
-    if (!myList.length || !cauHinh || !currentUserId) return;
-    if (sessionStorage.getItem('congViecDueNotifiedSession')) return;
-    let sapHan = 0;
-    let quaHan = 0;
-    myList.forEach((c) => {
-      const status = getDueStatus(c.ngay_het_han, cauHinh);
-      if (status === 'sap_han') sapHan += 1;
-      if (status === 'qua_han') quaHan += 1;
-    });
-    if (sapHan + quaHan > 0) {
-      sessionStorage.setItem('congViecDueNotifiedSession', '1');
-      useNotificationStore.getState().add({
-        title: t('congViec.dueSoon'),
-        message: t('congViec.notif.dueSoonSummary', { sapHan, quaHan }),
-        type: 'warning',
-        link: '/hanh-chinh/cong-viec-cua-toi',
-      });
-    }
-  }, [myList, cauHinh, currentUserId, t]);
-
-  const displayList =
-    activeView === DASHBOARD_VIEW.my
-      ? myList
-      : activeView === DASHBOARD_VIEW.due
-        ? dueList
-        : waitReportList;
+  const displayList = activeView === DASHBOARD_VIEW.my ? myList : waitReportList;
 
   const emptyConfig = useMemo(() => {
     if (activeView === DASHBOARD_VIEW.my)
       return { title: t('congViec.dashboard.emptyMy'), description: t('congViec.dashboard.emptyMyHint') };
-    if (activeView === DASHBOARD_VIEW.due)
-      return { title: t('congViec.dashboard.emptyDue'), description: t('congViec.dashboard.emptyDueHint') };
     return { title: t('congViec.dashboard.emptyWaitReport'), description: t('congViec.dashboard.emptyWaitReportHint') };
   }, [activeView, t]);
 
   const tabs = useMemo(
     () => [
       { id: DASHBOARD_VIEW.my, label: t('congViec.dashboard.cuaToi'), icon: User },
-      { id: DASHBOARD_VIEW.due, label: t('congViec.dashboard.denHan'), icon: Clock },
       { id: DASHBOARD_VIEW.waitReport, label: t('congViec.dashboard.choBaoCao'), icon: MessageSquare },
     ],
     [t]
   );
 
-  const handleEdit = (item: CongViec) => setDetailItem(item);
+  const handleEdit = (item: CongViec) => setDetailStack([item]);
 
-  const handleDelete = (id: string) => {
+  const handleDelete = (id: number | string) => {
     confirm({
       title: t('congViec.deleteTitle'),
       message: t('congViec.deleteMessage'),
@@ -121,7 +73,7 @@ const CongViecDashboardTab: React.FC = () => {
       onConfirm: async () => {
         deleteMutation.mutate([id], {
           onSuccess: () => {
-            if (detailItem?.id === id) setDetailItem(null);
+            setDetailStack((prev) => prev.filter((x) => x.id !== id && x.id !== Number(id)));
           },
         });
       },
@@ -154,7 +106,7 @@ const CongViecDashboardTab: React.FC = () => {
                 <Button
                   type="button"
                   size="sm"
-                  onClick={() => navigate('/hanh-chinh/cong-viec-cua-toi')}
+                  onClick={() => navigate('/hanh-chinh/cong-viec')}
                   className="bg-primary text-white hover:bg-primary/90"
                 >
                   {t('congViec.tabs.list')}
@@ -168,24 +120,27 @@ const CongViecDashboardTab: React.FC = () => {
             isLoading={isLoading}
             onEdit={handleEdit}
             onDelete={handleDelete}
-            onView={(item) => setDetailItem(item)}
+            onView={(item) => setDetailStack([item])}
           />
         )}
       </div>
 
       <AnimatePresence>
-        {detailItem && (
+        {detailStack.map((item, i) => (
           <CongViecDetail
-            data={detailItem}
-            onClose={() => setDetailItem(null)}
-            onEdit={(item) => {
-              setDetailItem(null);
-              handleEdit(item);
+            key={item.id}
+            data={item}
+            stackLevel={i}
+            onClose={() => setDetailStack((prev) => prev.slice(0, i))}
+            onEdit={(edited) => {
+              setDetailStack([]);
+              handleEdit(edited);
             }}
             onDelete={handleDelete}
             onDeleteChild={handleDelete}
+            onViewChild={(child) => setDetailStack((prev) => [...prev.slice(0, i + 1), child])}
           />
-        )}
+        ))}
       </AnimatePresence>
     </div>
   );

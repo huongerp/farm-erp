@@ -1,12 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
-import { List, BarChart3 } from 'lucide-react';
+import { List, FileSpreadsheet, BarChart3 } from 'lucide-react';
 import TabGroup from '../../../components/ui/TabGroup';
 import DanhSachTab from './components/DanhSachTab';
+import ChiTietTab from './components/ChiTietTab';
 import ThongKeTab from './components/ThongKeTab';
 
-const VALID_TABS = ['list', 'stats'] as const;
+const VALID_TABS = ['list', 'detail', 'stats'] as const;
 type TabId = (typeof VALID_TABS)[number];
 
 const PhieuDeXuatVatTuPage: React.FC = () => {
@@ -33,6 +34,7 @@ const PhieuDeXuatVatTuPage: React.FC = () => {
   const tabs = useMemo(
     () => [
       { id: 'list', label: t('phieuDeXuatVatTu.tabs.list'), icon: List },
+      { id: 'detail', label: t('phieuDeXuatVatTu.tabs.detail'), icon: FileSpreadsheet },
       { id: 'stats', label: t('phieuDeXuatVatTu.tabs.stats'), icon: BarChart3 },
     ],
     [t]
@@ -46,6 +48,7 @@ const PhieuDeXuatVatTuPage: React.FC = () => {
 
       <div className="flex-1 min-h-0 flex flex-col mt-1.5">
         {activeTab === 'list' && <DanhSachTab />}
+        {activeTab === 'detail' && <ChiTietTab />}
         {activeTab === 'stats' && (
           <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
             <ThongKeTab />

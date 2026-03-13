@@ -39,15 +39,15 @@ export default defineConfig(({ mode }) => {
             start_url: '/',
             icons: [
               {
-                src: 'https://scontent.fhan4-5.fna.fbcdn.net/v/t39.30808-6/646547940_873439215698096_8760186466343055269_n.jpg?_nc_cat=103&ccb=1-7&_nc_sid=13d280&_nc_ohc=RAsKtIGtd-8Q7kNvwHyjEYV&_nc_oc=AdmPaglRA6w8umYrs4ELlGNy4mcwgbEmXig4eHfJHVpmlEkxBZBTaSnD3vaVn20o-Y4&_nc_zt=23&_nc_ht=scontent.fhan4-5.fna&_nc_gid=ZR7t3ad-E7IH_sTcGZ8tPQ&_nc_ss=8&oh=00_Afx9TruOr9KWk3qZWGBgUKCEX3O7--0UU6h9sjb98wlIqA&oe=69B09F87',
+                src: 'https://ui-avatars.com/api/?name=FP&background=16a34a&color=fff&size=192',
                 sizes: '192x192',
-                type: 'image/jpeg',
+                type: 'image/png',
                 purpose: 'any',
               },
               {
-                src: 'https://scontent.fhan4-5.fna.fbcdn.net/v/t39.30808-6/646547940_873439215698096_8760186466343055269_n.jpg?_nc_cat=103&ccb=1-7&_nc_sid=13d280&_nc_ohc=RAsKtIGtd-8Q7kNvwHyjEYV&_nc_oc=AdmPaglRA6w8umYrs4ELlGNy4mcwgbEmXig4eHfJHVpmlEkxBZBTaSnD3vaVn20o-Y4&_nc_zt=23&_nc_ht=scontent.fhan4-5.fna&_nc_gid=ZR7t3ad-E7IH_sTcGZ8tPQ&_nc_ss=8&oh=00_Afx9TruOr9KWk3qZWGBgUKCEX3O7--0UU6h9sjb98wlIqA&oe=69B09F87',
+                src: 'https://ui-avatars.com/api/?name=FP&background=16a34a&color=fff&size=512',
                 sizes: '512x512',
-                type: 'image/jpeg',
+                type: 'image/png',
                 purpose: 'any maskable',
               },
             ],

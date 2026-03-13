@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import {
   getAllPhieuDeXuatVatTu,
   getPhieuDeXuatVatTuById,
+  getAllPhieuDeXuatVatTuChiTiet,
   createPhieuDeXuatVatTu,
   updatePhieuDeXuatVatTu,
   deletePhieuDeXuatVatTu,
@@ -17,6 +18,14 @@ export const usePhieuDeXuatVatTuList = () => {
   return useQuery({
     queryKey: QUERY_KEY,
     queryFn: getAllPhieuDeXuatVatTu,
+    staleTime: 1000 * 60 * 2,
+  });
+};
+
+export const usePhieuDeXuatVatTuChiTietAll = () => {
+  return useQuery({
+    queryKey: [...QUERY_KEY, 'chiTiet'],
+    queryFn: getAllPhieuDeXuatVatTuChiTiet,
     staleTime: 1000 * 60 * 2,
   });
 };

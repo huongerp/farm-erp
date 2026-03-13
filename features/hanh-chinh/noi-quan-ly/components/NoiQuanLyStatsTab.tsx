@@ -9,6 +9,7 @@ import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinner
 import NoiQuanLyStatsToolbar from './NoiQuanLyStatsToolbar';
 import type { AssetStorageLocation } from '../../thiet-lap-tai-san/core/types';
 import type { TaiSan } from '../../danh-muc-tai-san/core/types';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 
 /** Số tài sản theo id_noi_luu */
 function countAssetsByNoiLuu(assets: TaiSan[]): Map<string, number> {
@@ -46,8 +47,8 @@ const NoiQuanLyStatsTab: React.FC = () => {
   }, [locations, filterIdChiNhanh]);
 
   const stats = useMemo(() => {
-    const active = filteredLocations.filter((l: AssetStorageLocation) => l.trang_thai === 1).length;
-    const inactive = filteredLocations.filter((l: AssetStorageLocation) => l.trang_thai === 0).length;
+    const active = filteredLocations.filter((l: AssetStorageLocation) => l.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG).length;
+    const inactive = filteredLocations.filter((l: AssetStorageLocation) => l.trang_thai === TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG).length;
     const assetCountByNoiLuu = countAssetsByNoiLuu(assets);
     let totalAssetsInLocations = 0;
     for (const loc of filteredLocations) {
@@ -215,12 +216,12 @@ const NoiQuanLyStatsTab: React.FC = () => {
                     <td className="px-4 py-2.5">
                       <span
                         className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
-                          row.trang_thai === 1
+                          row.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG
                             ? 'bg-emerald-500/10 text-emerald-700'
                             : 'bg-muted text-muted-foreground'
                         }`}
                       >
-                        {row.trang_thai === 1 ? t('common.active') : t('common.inactive')}
+                        {row.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? t('common.active') : t('common.inactive')}
                       </span>
                     </td>
                     <td className="px-4 py-2.5 text-right font-medium tabular-nums">

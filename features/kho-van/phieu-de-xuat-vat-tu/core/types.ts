@@ -14,6 +14,26 @@ export interface PhieuDeXuatVatTuChiTiet {
   ten_hang?: string;
 }
 
+/** Một dòng trong tab Chi tiết – dữ liệu từ bảng đề xuất vật tư chi tiết (có cột kéo từ phiếu). */
+export interface PhieuDeXuatVatTuChiTietRow {
+  id: string;
+  id_phieu_de_xuat_vat_tu: string;
+  so_phieu: string | null;
+  ngay: string | null;
+  ngay_can: string | null;
+  ten_noi_de_xuat: string | null;
+  ten_nguoi_de_xuat: string | null;
+  ten_nguoi_duyet: string | null;
+  trang_thai_phieu: string | null;
+  id_hang_hoa: string;
+  ma_hang?: string;
+  ten_hang?: string;
+  so_luong: number;
+  don_vi_tinh: string | null;
+  thong_so: string | null;
+  ghi_chu: string | null;
+}
+
 export interface PhieuDeXuatVatTu {
   id: string;
   so_phieu: string;

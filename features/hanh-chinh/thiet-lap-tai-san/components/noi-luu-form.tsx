@@ -112,6 +112,7 @@ const NoiLuuForm: React.FC<Props> = ({ initialData, onClose }) => {
                   placeholder={t('thietLapTaiSan.noiLuu.form.branchPlaceholder')}
                   error={errors.id_chi_nhanh?.message}
                   icon={<MapPin size={12} />}
+                  required
                 />
               )}
             />
@@ -151,6 +152,10 @@ const NoiLuuForm: React.FC<Props> = ({ initialData, onClose }) => {
                   label={t('thietLapTaiSan.noiLuu.form.status')}
                   value={field.value}
                   onChange={field.onChange}
+                  activeValue={TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG}
+                  inactiveValue={TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG}
+                  activeLabel={TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG}
+                  inactiveLabel={TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG}
                   icon={<Power size={12} />}
                   required
                 />

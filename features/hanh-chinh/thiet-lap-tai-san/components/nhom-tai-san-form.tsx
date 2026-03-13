@@ -100,6 +100,7 @@ const NhomTaiSanForm: React.FC<Props> = ({ initialData, onClose }) => {
               label={t('thietLapTaiSan.nhomTaiSan.form.ma')}
               placeholder={t('thietLapTaiSan.nhomTaiSan.form.maPlaceholder')}
               icon={<Hash size={14} />}
+              required
               {...register('ma')}
               error={errors.ma?.message}
             />
@@ -107,6 +108,7 @@ const NhomTaiSanForm: React.FC<Props> = ({ initialData, onClose }) => {
               label={t('thietLapTaiSan.nhomTaiSan.form.ten')}
               placeholder={t('thietLapTaiSan.nhomTaiSan.form.tenPlaceholder')}
               icon={<Type size={14} />}
+              required
               {...register('ten')}
               error={errors.ten?.message}
             />
@@ -136,6 +138,10 @@ const NhomTaiSanForm: React.FC<Props> = ({ initialData, onClose }) => {
                   label={t('thietLapTaiSan.nhomTaiSan.form.status')}
                   value={field.value}
                   onChange={field.onChange}
+                  activeValue={TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG}
+                  inactiveValue={TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG}
+                  activeLabel={TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG}
+                  inactiveLabel={TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG}
                   icon={<Power size={12} />}
                   required
                 />
@@ -153,6 +159,7 @@ const NhomTaiSanForm: React.FC<Props> = ({ initialData, onClose }) => {
                   label={t('thietLapTaiSan.nhomTaiSan.form.phuongPhapKhauHao')}
                   value={field.value}
                   onChange={field.onChange}
+                  required
                   options={[
                     { value: 'duong_thang', label: t('thietLapTaiSan.nhomTaiSan.form.phuongPhapDuongThang') },
                     { value: 'so_du_giam_dan', label: t('thietLapTaiSan.nhomTaiSan.form.phuongPhapSoDuGiamDan') },

@@ -65,7 +65,7 @@ export function HierarchyTable<T>({
         <thead className="sticky top-0 z-[2]">
           <tr className="bg-muted border-b border-border">
             <th
-              className="sticky left-0 z-[3] w-11 px-3 py-2 bg-muted border-b border-r border-border text-center"
+              className="sticky left-0 z-[3] w-11 px-2 py-1.5 bg-muted border-b border-r border-border text-center"
               style={{ minWidth: 44, maxWidth: 44 }}
             >
               <input
@@ -81,13 +81,13 @@ export function HierarchyTable<T>({
             {columns.map((col) => (
               <th
                 key={col.id}
-                className="px-4 py-2 font-semibold text-foreground/80 border-b border-border text-xs whitespace-nowrap min-w-0"
+                className="px-3 py-1.5 font-semibold text-foreground/80 border-b border-border text-xs whitespace-nowrap min-w-0"
                 style={getColumnCellStyle(col)}
               >
                 {col.label}
               </th>
             ))}
-            <th className="sticky right-0 z-[3] w-20 min-w-[80px] px-3 py-2 bg-muted border-b border-l border-border text-center font-semibold text-foreground/80 text-xs">
+            <th className="sticky right-0 z-[3] w-20 min-w-[80px] px-2 py-1.5 bg-muted border-b border-l border-border text-center font-semibold text-foreground/80 text-xs">
               {actionsLabel}
             </th>
           </tr>
@@ -113,7 +113,7 @@ export function HierarchyTable<T>({
               >
                 <td
                   className={cn(
-                    'sticky left-0 z-[1] w-11 px-3 py-3.5 text-center border-r border-border transition-colors',
+                    'sticky left-0 z-[1] w-11 px-2 py-1.5 text-center border-r border-border transition-colors',
                     isRoot ? 'bg-muted/40' : 'bg-card',
                     isSelected && 'bg-primary/5',
                     'group-hover:bg-muted/80'
@@ -131,7 +131,7 @@ export function HierarchyTable<T>({
                 {columns.map((col) => renderCell(item, col))}
                 <td
                   className={cn(
-                    'sticky right-0 z-[1] w-20 min-w-[80px] px-2 py-3.5 border-l border-border text-center transition-colors',
+                    'sticky right-0 z-[1] w-20 min-w-[80px] px-2 py-1.5 border-l border-border text-center transition-colors',
                     isRoot ? 'bg-muted/40' : 'bg-card',
                     isSelected && 'bg-primary/5',
                     'group-hover:bg-muted/80'

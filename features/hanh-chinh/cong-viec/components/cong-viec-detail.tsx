@@ -1,85 +1,111 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useForm, useFieldArray, SubmitHandler } from 'react-hook-form';
+import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ClipboardList, Edit, FileText, MessageSquare, ListTree, Plus, Send, Link2, User, Trash2, Power, FileEdit } from 'lucide-react';
-import i18n from '../../../../lib/i18n';
-import GenericDrawer from '../../../../components/shared/GenericDrawer';
+import { ClipboardList, Edit, MessageSquare, ListTree, Plus, Send, User, Trash2, RefreshCw } from 'lucide-react';
+import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
+import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
+import { getDrawerWidthClass } from '../../../../lib/dialog-sizes';
 import DetailToolbar from '../../../../components/shared/DetailToolbar';
-import { useNotificationStore } from '../../../../store/useNotificationStore';
 import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';
+import GenericSubTableSection from '../../../../components/shared/GenericSubTableSection';
 import TabGroup from '../../../../components/ui/TabGroup';
 import Button from '../../../../components/ui/Button';
-import Input from '../../../../components/ui/Input';
+import Tooltip from '../../../../components/ui/Tooltip';
 import Textarea from '../../../../components/ui/Textarea';
-import { formatDate, formatDateTimeShort } from '../../../../lib/utils';
+import Input from '../../../../components/ui/Input';
+import Combobox from '../../../../components/ui/Combobox';
+import { formatDateTimeShort, cn } from '../../../../lib/utils';
 import { BTN_CLOSE, BTN_EDIT, BTN_DELETE } from '../../../../lib/button-labels';
-import type { CongViec, BaoCaoKetQua, BinhLuanCongViec } from '../core/types';
+import type { CongViec, TraoDoiEntry } from '../core/types';
 import type { CongViecTrangThai } from '../core/types';
 import { getTrangThaiLabel, getUuTienLabel, getTrangThaiOptions } from '../core/constants';
-import { BaoCaoKetQuaFormValues, baoCaoKetQuaSchema, BinhLuanFormValues, binhLuanSchema } from '../core/schema';
+import { BinhLuanFormValues, binhLuanSchema } from '../core/schema';
 import {
-  useBaoCaoByCongViecId,
-  useCreateBaoCaoKetQua,
   useBinhLuanByCongViecId,
   useCreateBinhLuan,
   useCongViecList,
   useUpdateCongViec,
 } from '../hooks/use-cong-viec';
-const TAB_IDS = { info: 'info', baoCao: 'baoCao', binhLuan: 'binhLuan', con: 'con' } as const;
+import { useEmployees } from '../../../he-thong/nhan-vien/hooks/use-nhan-vien';
+
+const TAB_IDS = { info: 'info', traoDoi: 'traoDoi' } as const;
 
 interface Props {
   data: CongViec;
   onClose: () => void;
   onEdit: (item: CongViec) => void;
-  /** Xóa công việc này (parent hiển thị confirm rồi gọi delete). */
-  onDelete?: (id: string) => void;
-  onAddChild?: (parentId: string) => void;
-  onDeleteChild?: (id: string) => void;
-  /** Drawer chồng (vd: mở từ detail Dự án). >= 1 để z-index cao hơn. */
+  onDelete?: (id: number | string) => void;
+  onAddChild?: (parentId: number | string) => void;
+  onDeleteChild?: (id: number | string) => void;
+  /** Bấm vào dòng con → mở drawer detail công việc đó (tham khảo module khác) */
+  onViewChild?: (item: CongViec) => void;
   stackLevel?: number;
 }
 
-const CongViecDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onAddChild, onDeleteChild, stackLevel = 0 }) => {
+const CongViecDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onAddChild, onDeleteChild, onViewChild, stackLevel = 0 }) => {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState(TAB_IDS.info);
-  const [showBaoCaoForm, setShowBaoCaoForm] = useState(false);
-  const [showTrangThaiDialog, setShowTrangThaiDialog] = useState(false);
+  const [showTrangThaiModal, setShowTrangThaiModal] = useState(false);
+  const [modalTrangThai, setModalTrangThai] = useState<CongViecTrangThai>(data.trang_thai);
+  const [modalKetQua, setModalKetQua] = useState(data.ket_qua ?? '');
+  const [modalLinkKetQua, setModalLinkKetQua] = useState(data.link_ket_qua ?? '');
+  const [modalGhiChu, setModalGhiChu] = useState(data.mo_ta ?? '');
 
-  const { data: baoCaoList = [] } = useBaoCaoByCongViecId(data.id);
-  const { data: binhLuanList = [] } = useBinhLuanByCongViecId(data.id);
+  useEffect(() => {
+    if (showTrangThaiModal) {
+      setModalTrangThai(data.trang_thai);
+      setModalKetQua(data.ket_qua ?? '');
+      setModalLinkKetQua(data.link_ket_qua ?? '');
+      setModalGhiChu(data.mo_ta ?? '');
+    }
+  }, [showTrangThaiModal, data.id, data.trang_thai, data.ket_qua, data.link_ket_qua, data.mo_ta]);
+
+  const { data: employees = [] } = useEmployees();
+  const { data: traoDoiList = [] } = useBinhLuanByCongViecId(data.id);
   const { data: allCongViec = [] } = useCongViecList();
   const children = allCongViec.filter((c) => c.id_cha === data.id);
-  const updateMutation = useUpdateCongViec(() => setShowTrangThaiDialog(false));
+  const updateMutation = useUpdateCongViec();
+
   const trangThaiOptions = useMemo(() => getTrangThaiOptions(t), [t]);
+  const trangThaiComboboxOptions = useMemo(
+    () => trangThaiOptions.map((o) => ({ label: o.label, value: o.value })),
+    [trangThaiOptions]
+  );
 
-  const createBaoCao = useCreateBaoCaoKetQua(data.id, () => {
-    setShowBaoCaoForm(false);
-    useNotificationStore.getState().add({
-      title: i18n.t('congViec.notif.reportSubmitted'),
-      message: data.tieu_de,
-      type: 'info',
-      link: `/hanh-chinh/cong-viec-cua-toi?detail=${data.id}`,
+  const handleOpenTrangThaiModal = () => setShowTrangThaiModal(true);
+  const handleCloseTrangThaiModal = () => setShowTrangThaiModal(false);
+  const handleSubmitTrangThaiModal = async () => {
+    await updateMutation.mutateAsync({
+      id: data.id,
+      data: {
+        trang_thai: modalTrangThai,
+        ket_qua: modalKetQua.trim() || null,
+        link_ket_qua: modalLinkKetQua.trim() || null,
+        mo_ta: modalGhiChu.trim() || '',
+      },
     });
-  });
+    handleCloseTrangThaiModal();
+  };
+
+  const employeeNameMap = useMemo(() => {
+    const m = new Map<string, string>();
+    employees.forEach((e) => {
+      const key = String(e.id);
+      const label = e.ho_ten ? `${e.ho_ten}${e.ma_nhan_vien ? ` (${e.ma_nhan_vien})` : ''}` : e.ma_nhan_vien || key;
+      m.set(key, label);
+    });
+    return m;
+  }, [employees]);
+
+  const getEmployeeName = (id: number | string | null | undefined): string => {
+    if (id == null) return '—';
+    const key = String(id);
+    return employeeNameMap.get(key) ?? key;
+  };
+
   const createBinhLuan = useCreateBinhLuan(data.id);
-
-  const {
-    register: regBaoCao,
-    handleSubmit: handleBaoCaoSubmit,
-    formState: { errors: errBaoCao },
-    reset: resetBaoCao,
-    control: controlBaoCao,
-  } = useForm<BaoCaoKetQuaFormValues>({
-    resolver: zodResolver(baoCaoKetQuaSchema),
-    defaultValues: { noi_dung: '', links: [], file_dinh_kem: '' },
-  });
-
-  const { fields: linkFields, append: appendLink, remove: removeLink } = useFieldArray({
-    control: controlBaoCao,
-    name: 'links',
-  });
 
   const {
     register: regBinhLuan,
@@ -91,27 +117,17 @@ const CongViecDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onAd
     defaultValues: { noi_dung: '' },
   });
 
-  const onBaoCaoSubmit: SubmitHandler<BaoCaoKetQuaFormValues> = (values) => {
-    const linksFiltered = (values.links ?? []).filter((u) => typeof u === 'string' && u.trim().length > 0);
-    createBaoCao.mutate(
-      {
-        noi_dung: values.noi_dung,
-        links: linksFiltered,
-        file_dinh_kem: values.file_dinh_kem ?? '',
-      },
-      { onSuccess: () => resetBaoCao() }
-    );
-  };
-
   const onBinhLuanSubmit: SubmitHandler<BinhLuanFormValues> = (values) => {
     createBinhLuan.mutate(values.noi_dung, { onSuccess: () => resetBinhLuan() });
   };
 
   const tabs = [
     { id: TAB_IDS.info, label: t('congViec.detail.tabInfo'), icon: ClipboardList },
-    { id: TAB_IDS.baoCao, label: t('congViec.detail.tabBaoCao'), icon: FileText },
-    { id: TAB_IDS.binhLuan, label: t('congViec.detail.tabBinhLuan'), icon: MessageSquare },
-    { id: TAB_IDS.con, label: t('congViec.detail.tabCon'), icon: ListTree },
+    {
+      id: TAB_IDS.traoDoi,
+      label: traoDoiList.length > 0 ? t('congViec.detail.tabTraoDoiWithCount', { count: traoDoiList.length }) : t('congViec.detail.tabTraoDoi'),
+      icon: MessageSquare,
+    },
   ];
 
   const renderFooter = (
@@ -142,246 +158,98 @@ const CongViecDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onAd
     </div>
   );
 
+  const subtitle = [getEmployeeName(data.trach_nhiem), getTrangThaiLabel(data.trang_thai, t)].filter(Boolean).join(' · ');
+
+  const drawerWidthClass = stackLevel > 0 ? getDrawerWidthClass(stackLevel) : DRAWER_WIDTH_DETAIL;
+
   return (
     <GenericDrawer
       title={data.tieu_de}
       icon={<ClipboardList size={20} />}
+      subtitle={subtitle || undefined}
       onClose={onClose}
       footer={renderFooter}
-      maxWidthClass="max-w-2xl"
+      maxWidthClass={drawerWidthClass}
       stackLevel={stackLevel}
     >
-      {/* Summary card — trên nội dung detail */}
-      <div className="bg-card p-4 rounded-xl border border-border/50 shadow-sm flex items-center gap-4 mb-4">
-        <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-white shadow-primary/20 shadow-lg shrink-0">
-          <ClipboardList size={24} className="text-white" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <h2 className="text-base font-bold text-foreground leading-tight truncate">{data.tieu_de}</h2>
-          <p className="text-body-sm text-muted-foreground font-mono mt-0.5">{data.ma_cong_viec}</p>
-          <div className="mt-1.5 flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted/80 text-muted-foreground text-xs font-medium border border-border">
-              {getTrangThaiLabel(data.trang_thai, t)}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              {t('congViec.form.ngayHetHan')}: {formatDate(data.ngay_het_han)}
-            </span>
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium tabular-nums bg-primary/10 text-primary border border-primary/20">
-              {data.phan_tram_hoan_thanh}%
-            </span>
+      <div className="space-y-5">
+        {/* Header summary card - chuẩn module Nhân viên */}
+        <div className="bg-card p-4 rounded-xl border border-border/50 shadow-sm flex items-center gap-4">
+          <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-white shadow-primary/20 shadow-lg shrink-0">
+            <ClipboardList size={24} className="text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-base font-bold text-foreground leading-tight truncate">{data.tieu_de}</h2>
+            <div className="mt-1.5 flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted/80 text-muted-foreground text-xs font-medium border border-border">
+                {getTrangThaiLabel(data.trang_thai, t)}
+              </span>
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium tabular-nums bg-primary/10 text-primary border border-primary/20">
+                {getUuTienLabel(data.uu_tien, t)}
+              </span>
+            </div>
           </div>
         </div>
-      </div>
 
-      <DetailToolbar
+        <DetailToolbar
         actions={[
           {
             label: t('congViec.detail.actionTrangThai'),
-            icon: <Power size={16} />,
-            onClick: () => setShowTrangThaiDialog(true),
-            variant: 'secondary',
-          },
-          {
-            label: t('congViec.detail.actionBaoCao'),
-            icon: <FileEdit size={16} />,
-            onClick: () => {
-              setActiveTab(TAB_IDS.baoCao);
-              setShowBaoCaoForm(true);
-            },
+            icon: <RefreshCw size={16} />,
+            onClick: handleOpenTrangThaiModal,
             variant: 'info',
           },
           {
             label: t('congViec.detail.addCon'),
             icon: <ListTree size={16} />,
-            onClick: () => {
-              setActiveTab(TAB_IDS.con);
-              onAddChild?.(data.id);
-            },
+            onClick: () => onAddChild?.(data.id),
             variant: 'primary',
           },
         ]}
-        className="mb-4"
+        className="bg-card rounded-xl border border-border mb-4"
       />
 
-      {showTrangThaiDialog && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50" style={{ margin: 0 }} onClick={() => setShowTrangThaiDialog(false)}>
-          <div className="bg-card border border-border rounded-xl shadow-xl max-w-sm w-full p-4 space-y-3" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-sm font-semibold text-foreground">{t('congViec.detail.actionTrangThai')}</h3>
-            <div className="flex flex-col gap-1.5">
-              {trangThaiOptions.map((opt) => (
-                <Button
-                  key={opt.value}
-                  type="button"
-                  variant={data.trang_thai === opt.value ? 'primary' : 'outline'}
-                  size="sm"
-                  className="justify-start"
-                  disabled={updateMutation.isPending}
-                  onClick={() => {
-                    updateMutation.mutate(
-                      { id: data.id, data: { trang_thai: opt.value as CongViecTrangThai } },
-                      { onSuccess: () => setShowTrangThaiDialog(false) }
-                    );
-                  }}
-                >
-                  {opt.label}
-                </Button>
-              ))}
-            </div>
-            <Button type="button" variant="ghost" size="sm" className="w-full" onClick={() => setShowTrangThaiDialog(false)}>
-              {t('common.cancel')}
-            </Button>
-          </div>
-        </div>
-      )}
+        <TabGroup tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
 
-      <TabGroup tabs={tabs} activeTab={activeTab} onChange={setActiveTab} className="mb-4" />
-
-      {activeTab === TAB_IDS.info && (
-        <div className="space-y-5">
-          <DetailSection title={t('congViec.form.basicInfo')} icon={<ClipboardList size={14} />} variant="primary">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <DetailField label={t('congViec.form.maCongViec')} value={data.ma_cong_viec} />
+        {activeTab === TAB_IDS.info && (
+          <DetailSection title={t('congViec.form.basicInfo')} icon={<ClipboardList size={14} />}>
+            <DetailFieldGrid>
               <DetailField label={t('congViec.form.tieuDe')} value={data.tieu_de} />
-              <DetailField label={t('congViec.form.duAn')} value={data.ten_du_an || '—'} />
-              <DetailField label={t('congViec.form.nguoiGiao')} value={data.ten_nguoi_giao || data.id_nguoi_giao} />
+              <DetailField label={t('congViec.form.nguoiGiao')} value={getEmployeeName(data.id_nguoi_giao)} icon={<User size={12} />} />
+              <DetailField label={t('congViec.form.trachNhiem')} value={getEmployeeName(data.trach_nhiem)} icon={<User size={12} />} />
               <DetailField
-                label={t('congViec.form.nguoiThucHien')}
+                label={t('congViec.form.nguoiHoTro')}
                 value={
-                  (data.ten_nguoi_thuc_hien && data.ten_nguoi_thuc_hien.length > 0
-                    ? data.ten_nguoi_thuc_hien.join(', ')
-                    : data.danh_sach_nguoi_thuc_hien?.length
-                      ? data.danh_sach_nguoi_thuc_hien.join(', ')
-                      : '—') as string
+                  data.nguoi_ho_tro?.length
+                    ? data.nguoi_ho_tro.map((id) => getEmployeeName(id)).join(', ')
+                    : '—'
                 }
+                icon={<User size={12} />}
               />
               <DetailField label={t('congViec.form.uuTien')} value={getUuTienLabel(data.uu_tien, t)} />
               <DetailField label={t('congViec.form.trangThai')} value={getTrangThaiLabel(data.trang_thai, t)} />
-              <DetailField label={t('congViec.form.ngayHetHan')} value={formatDate(data.ngay_het_han)} />
-              <DetailField label={t('congViec.form.tienDo')} value={`${data.phan_tram_hoan_thanh}%`} />
-              {data.mo_ta ? (
-                <div className="col-span-1 sm:col-span-2">
-                  <DetailField label={t('congViec.form.moTa')} value={data.mo_ta} />
-                </div>
-              ) : null}
               <DetailField label={t('congViec.store.updatedCol')} value={formatDateTimeShort(data.tg_cap_nhat)} />
-            </div>
+            </DetailFieldGrid>
+            <DetailFieldGrid cols={1} className="mt-4">
+              <DetailField label={t('congViec.form.moTa')} value={data.mo_ta || '—'} />
+              <DetailField label={t('congViec.detail.ketQua')} value={data.ket_qua || '—'} />
+              <DetailField
+                label={t('congViec.detail.linkKetQua')}
+                value={
+                  data.link_ket_qua ? (
+                    <a href={data.link_ket_qua} target="_blank" rel="noopener noreferrer" className="text-primary underline break-all">
+                      {data.link_ket_qua}
+                    </a>
+                  ) : (
+                    '—'
+                  )
+                }
+              />
+            </DetailFieldGrid>
           </DetailSection>
-        </div>
-      )}
+        )}
 
-      {activeTab === TAB_IDS.baoCao && (
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <span className="text-sm font-medium text-foreground">{t('congViec.baoCaoKetQua.list')}</span>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setShowBaoCaoForm(!showBaoCaoForm)}
-              className="gap-2"
-            >
-              <Plus size={14} />
-              {t('congViec.baoCaoKetQua.add')}
-            </Button>
-          </div>
-          {showBaoCaoForm && (
-            <form onSubmit={handleBaoCaoSubmit(onBaoCaoSubmit)} className="p-4 rounded-lg border border-border bg-muted/30 space-y-3">
-              <Textarea
-                label={t('congViec.baoCaoKetQua.form.noiDung')}
-                required
-                {...regBaoCao('noi_dung')}
-                error={errBaoCao.noi_dung?.message}
-              />
-              <div>
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <span className="text-sm font-medium text-foreground">{t('congViec.baoCaoKetQua.form.links')}</span>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => appendLink('')}
-                    className="gap-1"
-                  >
-                    <Plus size={14} />
-                    {t('congViec.baoCaoKetQua.form.addLink')}
-                  </Button>
-                </div>
-                {linkFields.map((field, index) => (
-                  <div key={field.id} className="flex gap-2 mb-2">
-                    <Input
-                      placeholder="https://..."
-                      className="flex-1"
-                      {...regBaoCao(`links.${index}`)}
-                      error={Array.isArray(errBaoCao.links) ? errBaoCao.links[index]?.message : undefined}
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeLink(index)}
-                      className="shrink-0 text-muted-foreground hover:text-rose-600"
-                      aria-label={t('common.delete')}
-                    >
-                      <Trash2 size={16} />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-              <Input
-                label={t('congViec.baoCaoKetQua.form.fileDinhKem')}
-                {...regBaoCao('file_dinh_kem')}
-                error={errBaoCao.file_dinh_kem?.message}
-              />
-              <div className="flex gap-2">
-                <Button type="submit" size="sm" loading={createBaoCao.isPending}>
-                  {t('congViec.baoCaoKetQua.submit')}
-                </Button>
-                <Button type="button" variant="outline" size="sm" onClick={() => setShowBaoCaoForm(false)}>
-                  {t('common.cancel')}
-                </Button>
-              </div>
-            </form>
-          )}
-          <ul className="space-y-3">
-            {baoCaoList.length === 0 && !showBaoCaoForm && (
-              <li className="text-sm text-muted-foreground py-4">{t('congViec.baoCaoKetQua.empty')}</li>
-            )}
-            {baoCaoList.map((b: BaoCaoKetQua) => (
-              <li key={b.id} className="p-3 rounded-lg border border-border bg-card text-sm">
-                <div className="flex justify-between gap-2 mb-1">
-                  <span className="font-medium text-foreground flex items-center gap-1.5">
-                    <User size={14} className="text-muted-foreground" />
-                    {b.ten_nguoi_bao_cao || b.nguoi_bao_cao_id}
-                  </span>
-                  <span className="text-xs text-muted-foreground tabular-nums">{formatDateTimeShort(b.tg_bao_cao)}</span>
-                </div>
-                <p className="text-foreground whitespace-pre-wrap">{b.noi_dung}</p>
-                {b.links && b.links.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {b.links.filter(Boolean).map((url, i) => (
-                      <a
-                        key={i}
-                        href={url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-                      >
-                        <Link2 size={12} />
-                        {url.slice(0, 40)}…
-                      </a>
-                    ))}
-                  </div>
-                )}
-                {b.file_dinh_kem && (
-                  <p className="mt-1 text-xs text-muted-foreground">{t('congViec.baoCaoKetQua.file')}: {b.file_dinh_kem}</p>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {activeTab === TAB_IDS.binhLuan && (
+      {activeTab === TAB_IDS.traoDoi && (
         <div className="space-y-4">
           <form onSubmit={handleBinhLuanSubmit(onBinhLuanSubmit)} className="flex gap-2">
             <Textarea
@@ -398,10 +266,10 @@ const CongViecDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onAd
             </Button>
           </form>
           <ul className="space-y-3">
-            {binhLuanList.length === 0 && (
+            {traoDoiList.length === 0 && (
               <li className="text-sm text-muted-foreground py-4">{t('congViec.binhLuan.empty')}</li>
             )}
-            {binhLuanList.map((c: BinhLuanCongViec) => (
+            {traoDoiList.map((c: TraoDoiEntry) => (
               <li key={c.id} className="p-3 rounded-lg border border-border bg-card text-sm">
                 <div className="flex justify-between gap-2 mb-1">
                   <span className="font-medium text-foreground flex items-center gap-1.5">
@@ -417,80 +285,132 @@ const CongViecDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onAd
         </div>
       )}
 
-      {activeTab === TAB_IDS.con && (
-        <DetailSection
+        {/* Section Công việc con – generic bảng con */}
+        <GenericSubTableSection
           title={t('congViec.detail.conList')}
-          icon={<ListTree size={14} />}
-          variant="primary"
+          icon={<ListTree size={14} className="text-primary" />}
+          count={children.length}
+          addLabel={t('congViec.detail.addCon')}
+          onAdd={() => onAddChild?.(data.id)}
+          emptyTitle={t('congViec.detail.conEmpty')}
+          emptyDescription={t('congViec.detail.conEmptyHint')}
+          maxTableHeight="320px"
         >
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-sm text-muted-foreground">
-                {children.length === 0
-                  ? t('congViec.detail.conEmpty')
-                  : t('congViec.detail.conCount', { count: children.length })}
-              </span>
+          {children.length > 0 && (
+            <>
+              <thead>
+                <tr className="border-b border-border bg-muted/50">
+                  <th className="text-left py-2 px-3 font-medium text-muted-foreground">{t('congViec.store.tieuDeCol')}</th>
+                  <th className="text-left py-2 px-3 font-medium text-muted-foreground">{t('congViec.store.trangThaiCol')}</th>
+                  <th className="text-right py-2 px-3 font-medium text-muted-foreground w-28">{t('common.actions')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {children.map((c) => (
+                  <tr
+                    key={c.id}
+                    role={onViewChild ? 'button' : undefined}
+                    tabIndex={onViewChild ? 0 : undefined}
+                    onClick={onViewChild ? () => onViewChild(c) : undefined}
+                    onKeyDown={onViewChild ? (e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onViewChild(c)) : undefined}
+                    className={cn(
+                      'border-b border-border/60 hover:bg-muted/30 transition-colors',
+                      onViewChild && 'cursor-pointer'
+                    )}
+                  >
+                    <td className="py-2 px-3 line-clamp-1 text-foreground">{c.tieu_de}</td>
+                    <td className="py-2 px-3">{getTrangThaiLabel(c.trang_thai, t)}</td>
+                    <td className="py-2 px-3 text-right">
+                      <div className="flex items-center justify-center gap-1">
+                        <Tooltip content={t('common.edit')} placement="left">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onEdit(c);
+                            }}
+                            className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-all"
+                            aria-label={t('common.edit')}
+                          >
+                            <Edit size={16} />
+                          </button>
+                        </Tooltip>
+                        {onDeleteChild && (
+                          <Tooltip content={t('common.delete')} placement="left">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDeleteChild(c.id);
+                              }}
+                              className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition-all"
+                              aria-label={t('common.delete')}
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </Tooltip>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </>
+          )}
+        </GenericSubTableSection>
+      </div>
+
+      {/* Modal đổi trạng thái: Combobox + báo cáo, link, ghi chú */}
+      {showTrangThaiModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50" onClick={handleCloseTrangThaiModal}>
+          <div
+            className="bg-card border border-border rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto p-5 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Combobox
+              label={t('congViec.form.trangThai')}
+              options={trangThaiComboboxOptions}
+              value={modalTrangThai}
+              onChange={(v) => setModalTrangThai(v as CongViecTrangThai)}
+              placeholder={t('congViec.form.trangThaiPlaceholder')}
+            />
+            <Textarea
+              label={t('congViec.detail.ketQua')}
+              placeholder={t('congViec.detail.ketQuaPlaceholder')}
+              value={modalKetQua}
+              onChange={(e) => setModalKetQua(e.target.value)}
+              rows={3}
+              className="resize-y min-h-[80px]"
+            />
+            <Input
+              label={t('congViec.detail.linkKetQua')}
+              placeholder={t('congViec.detail.linkKetQuaPlaceholder')}
+              value={modalLinkKetQua}
+              onChange={(e) => setModalLinkKetQua(e.target.value)}
+              type="url"
+            />
+            <Textarea
+              label={t('congViec.detail.ghiChu')}
+              placeholder={t('congViec.detail.ghiChuPlaceholder')}
+              value={modalGhiChu}
+              onChange={(e) => setModalGhiChu(e.target.value)}
+              rows={2}
+              className="resize-y min-h-[60px]"
+            />
+            <div className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="outline" onClick={handleCloseTrangThaiModal}>
+                {t('common.cancel')}
+              </Button>
               <Button
                 type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => onAddChild?.(data.id)}
-                className="gap-2 shrink-0"
+                onClick={handleSubmitTrangThaiModal}
+                loading={updateMutation.isPending}
               >
-                <Plus size={14} />
-                {t('congViec.detail.addCon')}
+                {t('common.confirm')}
               </Button>
             </div>
-            {children.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-6 text-center border border-dashed border-border rounded-lg bg-muted/20">
-                {t('congViec.detail.conEmpty')}
-              </p>
-            ) : (
-              <div className="overflow-x-auto rounded-lg border border-border">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="bg-muted/50 border-b border-border">
-                      <th className="text-left px-3 py-2 font-medium">{t('congViec.store.maCol')}</th>
-                      <th className="text-left px-3 py-2 font-medium">{t('congViec.store.tieuDeCol')}</th>
-                      <th className="text-left px-3 py-2 font-medium">{t('congViec.store.trangThaiCol')}</th>
-                      <th className="text-left px-3 py-2 font-medium">{t('congViec.store.ngayHetHanCol')}</th>
-                      <th className="text-right px-3 py-2 font-medium w-28">{t('common.actions')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {children.map((c) => (
-                      <tr key={c.id} className="border-b border-border/50 hover:bg-muted/30">
-                        <td className="px-3 py-2 font-mono text-xs">{c.ma_cong_viec}</td>
-                        <td className="px-3 py-2 line-clamp-1">{c.tieu_de}</td>
-                        <td className="px-3 py-2">{getTrangThaiLabel(c.trang_thai, t)}</td>
-                        <td className="px-3 py-2 tabular-nums">{formatDate(c.ngay_het_han)}</td>
-                        <td className="px-3 py-2 text-right">
-                          <div className="flex gap-1 justify-end">
-                            <Button type="button" variant="ghost" size="sm" onClick={() => onEdit(c)} className="h-8">
-                              {t('common.edit')}
-                            </Button>
-                            {onDeleteChild && (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => onDeleteChild(c.id)}
-                                className="h-8 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20"
-                              >
-                                <Trash2 size={14} />
-                                {t('common.delete')}
-                              </Button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
           </div>
-        </DetailSection>
+        </div>
       )}
     </GenericDrawer>
   );
