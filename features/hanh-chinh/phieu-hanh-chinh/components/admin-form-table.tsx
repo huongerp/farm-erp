@@ -16,9 +16,11 @@ interface Props {
   onEdit?: (item: AdminFormRequest) => void;
   onDelete?: (id: string) => void;
   useStore: () => GenericState<any>;
+  canUpdate?: boolean;
+  canDelete?: boolean;
 }
 
-const AdminFormTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, onDelete, useStore }) => {
+const AdminFormTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, onDelete, useStore, canUpdate = true, canDelete = true }) => {
   const { t } = useTranslation();
   const {
     columns,
@@ -134,7 +136,7 @@ const AdminFormTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, onDe
       case 'actions':
         return (
           <div className="flex items-center justify-center gap-1">
-            {onEdit && (
+            {canUpdate && onEdit && (
               <Tooltip content={t('common.edit')} placement="left">
                 <button
                   onClick={(e) => { e.stopPropagation(); onEdit(item); }}
@@ -145,7 +147,7 @@ const AdminFormTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, onDe
                 </button>
               </Tooltip>
             )}
-            {onDelete && (
+            {canDelete && onDelete && (
               <Tooltip content={t('common.delete')} placement="left">
                 <button
                   onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
@@ -211,7 +213,7 @@ const AdminFormTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, onDe
       <div className="flex justify-between items-center pt-2.5 border-t border-border">
         <span className="text-muted-foreground text-xs">{formatDateTimeShort(item.tg_cap_nhat)}</span>
         <div className="flex gap-1.5">
-          {onEdit && (
+          {canUpdate && onEdit && (
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onEdit(item); }}
@@ -221,7 +223,7 @@ const AdminFormTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, onDe
               <Edit size={14} />
             </button>
           )}
-          {onDelete && (
+          {canDelete && onDelete && (
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}

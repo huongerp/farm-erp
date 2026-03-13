@@ -32,6 +32,8 @@ interface Props {
   onRejectManager?: (id: string) => void;
   onApproveHcns?: (id: string) => void;
   onRejectHcns?: (id: string) => void;
+  canUpdate?: boolean;
+  canDelete?: boolean;
 }
 
 const AdminFormDetail: React.FC<Props> = ({
@@ -44,6 +46,8 @@ const AdminFormDetail: React.FC<Props> = ({
   onRejectManager,
   onApproveHcns,
   onRejectHcns,
+  canUpdate = true,
+  canDelete = true,
 }) => {
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
@@ -140,7 +144,7 @@ const AdminFormDetail: React.FC<Props> = ({
       onClick: openGhiChuModal,
       variant: 'secondary',
     });
-    if (onCancel && canCancel) {
+    if (canUpdate && onCancel && canCancel) {
       actions.push({
         label: t('adminForm.actions.cancel'),
         icon: <XCircle size={16} />,
@@ -149,7 +153,7 @@ const AdminFormDetail: React.FC<Props> = ({
       });
     }
     return actions;
-  }, [canCancel, canManagerApprove, canHcnsApprove, data.id, onApproveHcns, onRejectHcns, onCancel, t]);
+  }, [canCancel, canManagerApprove, canHcnsApprove, canUpdate, data.id, onApproveHcns, onRejectHcns, onCancel, t]);
 
   const renderFooter = (
     <div className="flex items-center justify-between w-full gap-2">
@@ -157,7 +161,7 @@ const AdminFormDetail: React.FC<Props> = ({
         {BTN_CLOSE()}
       </Button>
       <div className="flex items-center gap-2">
-        {onEdit && (
+        {canUpdate && onEdit && (
           <Button
             onClick={() => {
               onEdit(data);
@@ -168,7 +172,7 @@ const AdminFormDetail: React.FC<Props> = ({
             <FileText size={16} className="mr-2" /> {BTN_EDIT()}
           </Button>
         )}
-        {onDelete && (
+        {canDelete && onDelete && (
           <Button
             variant="outline"
             onClick={() => {

@@ -12,6 +12,12 @@ import {
   updateTaiSanLocationAndHolderSupabase,
   updateTaiSanFromKiemKeSupabase,
   deleteTaiSanSupabase,
+  getNextMaTaiSanSupabase,
+  checkMaTaiSanExistsSupabase,
+  getDistinctThuongHieuSupabase,
+  getDistinctModelSupabase,
+  getDistinctXuatXuSupabase,
+  getDistinctNhaCungCapSupabase,
 } from './danh-muc-tai-san-supabase.service';
 
 async function enrichTaiSan(items: TaiSan[]): Promise<TaiSan[]> {
@@ -92,3 +98,22 @@ export const updateTaiSanStatus = async (_ids: string[], _status: 0 | 1): Promis
 };
 
 export const deleteTaiSan = deleteTaiSanSupabase;
+
+/** Mã tài sản tiếp theo dạng TS00001 (cho form tạo mới, user có thể sửa). */
+export const getNextMaTaiSan = getNextMaTaiSanSupabase;
+
+/** Kiểm tra mã tài sản đã tồn tại; excludeId = id bản ghi đang sửa (khi edit). */
+export const checkMaTaiSanExists = (ma: string, excludeId?: string | null) =>
+  checkMaTaiSanExistsSupabase(ma, excludeId);
+
+/** Danh sách giá trị distinct thương hiệu (cho combobox enum + thêm mới). */
+export const getDistinctThuongHieu = getDistinctThuongHieuSupabase;
+
+/** Danh sách giá trị distinct model (cho combobox enum + thêm mới). */
+export const getDistinctModel = getDistinctModelSupabase;
+
+/** Danh sách giá trị distinct xuất xứ (cho combobox enum + thêm mới). */
+export const getDistinctXuatXu = getDistinctXuatXuSupabase;
+
+/** Danh sách giá trị distinct nhà cung cấp (cho combobox enum + thêm mới). */
+export const getDistinctNhaCungCap = getDistinctNhaCungCapSupabase;

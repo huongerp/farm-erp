@@ -3,9 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { Edit, Trash2 } from 'lucide-react';
 import GenericTable from '../../../../components/shared/GenericTable';
 import Tooltip from '../../../../components/ui/Tooltip';
-import { formatDateTimeShort, formatDate } from '../../../../lib/utils';
+import { formatDateTimeShort, formatDate, formatCurrency } from '../../../../lib/utils';
 import type { PhieuBaoTriSuaChua } from '../core/types';
-import { getHangMucLabel } from '../core/constants';
+import { getTrangThaiLabel } from '../core/constants';
 import { useBaoTriSuaChuaStore } from '../store/useBaoTriSuaChuaStore';
 
 interface Props {
@@ -31,16 +31,32 @@ const PhieuBaoTriTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, on
     setSort,
   } = useBaoTriSuaChuaStore();
 
-  const renderHangMucBadge = (hangMuc: PhieuBaoTriSuaChua['hang_muc']) => (
-    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
-      {getHangMucLabel(hangMuc, t)}
-    </span>
-  );
+  const renderTrangThaiBadge = (trangThai: PhieuBaoTriSuaChua['trang_thai']) => {
+    const style =
+      trangThai === 'da_duyet'
+        ? 'bg-primary/10 text-primary border-primary/20'
+        : trangThai === 'khong_duyet'
+          ? 'bg-destructive/10 text-destructive border-destructive/20'
+          : 'bg-muted text-muted-foreground border-border';
+    return (
+      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${style}`}>
+        {getTrangThaiLabel(trangThai, t)}
+      </span>
+    );
+  };
 
   const renderCell = (colId: string, item: PhieuBaoTriSuaChua) => {
     switch (colId) {
-      case 'hang_muc':
-        return renderHangMucBadge(item.hang_muc);
+      case 'ngay':
+        return (
+          <span className="text-sm tabular-nums">{formatDate(item.ngay)}</span>
+        );
+      case 'ten_hang_muc':
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+            {item.ten_hang_muc || item.id_hang_muc}
+          </span>
+        );
       case 'ten_tai_san':
         return (
           <div className="flex flex-col gap-0.5 min-w-[140px]">
@@ -50,19 +66,14 @@ const PhieuBaoTriTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, on
             )}
           </div>
         );
-      case 'ngay_yeu_cau':
-      case 'ngay_hen':
+      case 'so_tien':
         return (
-          <span className="text-sm tabular-nums">{formatDate(item[colId as keyof PhieuBaoTriSuaChua] as string)}</span>
+          <span className="text-sm tabular-nums font-medium">{formatCurrency(item.so_tien)}</span>
         );
-      case 'ten_nguoi_phu_trach':
-        return <span className="text-sm text-foreground">{item.ten_nguoi_phu_trach || '—'}</span>;
       case 'trang_thai':
-        return (
-          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${item.trang_thai === 1 ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-muted text-muted-foreground border border-border'}`}>
-            {item.trang_thai === 1 ? t('baoTriSuaChua.statusCompleted') : t('baoTriSuaChua.statusPending')}
-          </span>
-        );
+        return renderTrangThaiBadge(item.trang_thai);
+      case 'nguoi_duyet':
+        return <span className="text-sm text-foreground">{item.nguoi_duyet || '—'}</span>;
       case 'mo_ta':
         return (
           <span className="text-xs text-muted-foreground line-clamp-2 max-w-[200px]">
@@ -123,11 +134,11 @@ const PhieuBaoTriTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, on
       onClick={() => handleRowClick?.(item)}
     >
       <div className="flex justify-between items-start gap-2">
-        <span className="font-medium text-sm">{getHangMucLabel(item.hang_muc, t)}</span>
-        <span className="text-xs text-muted-foreground">{formatDate(item.ngay_yeu_cau)}</span>
+        <span className="font-medium text-sm">{item.ten_hang_muc || item.id_hang_muc}</span>
+        <span className="text-xs text-muted-foreground">{formatDate(item.ngay)}</span>
       </div>
       <p className="text-sm text-foreground mt-0.5">{item.ten_tai_san || item.ma_tai_san || '—'}</p>
-      <p className="text-xs text-muted-foreground">{item.ten_nguoi_phu_trach || '—'}</p>
+      <p className="text-xs text-muted-foreground">{formatCurrency(item.so_tien)} • {getTrangThaiLabel(item.trang_thai, t)}</p>
     </div>
   );
 

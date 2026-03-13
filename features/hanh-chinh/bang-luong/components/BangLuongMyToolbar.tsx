@@ -6,13 +6,15 @@ import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import { useBangLuongMyStore } from '../store/useBangLuongMyStore';
 
 interface Props {
-  onAdd: () => void;
+  onAdd?: () => void;
   onClearSelection: () => void;
   selectedCount: number;
   onDeleteMany?: (ids: string[]) => void;
+  canCreate?: boolean;
+  canDelete?: boolean;
 }
 
-const BangLuongMyToolbar: React.FC<Props> = ({ onAdd, onClearSelection, selectedCount, onDeleteMany }) => {
+const BangLuongMyToolbar: React.FC<Props> = ({ onAdd, onClearSelection, selectedCount, onDeleteMany, canCreate = true, canDelete = true }) => {
   const { t } = useTranslation();
   const {
     searchTerm,
@@ -41,7 +43,7 @@ const BangLuongMyToolbar: React.FC<Props> = ({ onAdd, onClearSelection, selected
     </div>
   );
 
-  const renderActions = (
+  const renderActions = canCreate && onAdd ? (
     <Button
       onClick={onAdd}
       size="sm"
@@ -50,7 +52,7 @@ const BangLuongMyToolbar: React.FC<Props> = ({ onAdd, onClearSelection, selected
       <Plus className="w-5 h-5 sm:w-4 sm:h-4 sm:mr-2" />
       <span className="hidden sm:inline">{t('common.addNew')}</span>
     </Button>
-  );
+  ) : null;
 
   return (
     <GenericToolbar
@@ -60,7 +62,7 @@ const BangLuongMyToolbar: React.FC<Props> = ({ onAdd, onClearSelection, selected
       onClearSelection={onClearSelection}
       actions={renderActions}
       filters={renderFilters}
-      onDeleteMany={onDeleteMany && selectedIds.size > 0 ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
+      onDeleteMany={canDelete && onDeleteMany && selectedIds.size > 0 ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
       filterGroups={[]}
       searchPlaceholder={t('bangLuong.my.searchPlaceholder')}
       activeFilterCount={activeFilterCount}

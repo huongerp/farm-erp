@@ -43,7 +43,7 @@ const StatsTables: React.FC<Props> = ({ byTrangThai }) => {
               byTrangThai.map((row) => (
                 <tr key={row.id} className="hover:bg-muted/20">
                   <td className="px-4 py-2 text-foreground">
-                    {t(`kiemKeTaiSan.${row.ten}`)}
+                    {row.ten}
                   </td>
                   <td className="px-3 py-2 text-right font-semibold tabular-nums">
                     {row.count}

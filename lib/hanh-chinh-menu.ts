@@ -69,7 +69,7 @@ export const HANH_CHINH_MODULE_SLUGS: string[] = [
   'thiet-lap-cong-viec',
   'danh-sach-tai-san',
   'cap-phat-thu-hoi',
-  'bao-tri-sua-chua',
+  'chi-phi-tai-san',
   'kiem-ke-tai-san',
   'khau-hao-tai-san',
   'noi-quan-ly',

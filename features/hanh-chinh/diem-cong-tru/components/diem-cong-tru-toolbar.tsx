@@ -12,11 +12,13 @@ import type { DiemCongTruRecord } from '../core/types';
 interface Props {
   /** Danh sách bản ghi để đếm count theo loại. */
   items?: DiemCongTruRecord[];
-  onAdd: () => void;
-  onDeleteMany: (ids: string[]) => void;
+  onAdd?: () => void;
+  onDeleteMany?: (ids: string[]) => void;
+  canCreate?: boolean;
+  canDelete?: boolean;
 }
 
-const DiemCongTruToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany }) => {
+const DiemCongTruToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, canCreate = true, canDelete = true }) => {
   const { t } = useTranslation();
   const {
     searchTerm,
@@ -66,7 +68,7 @@ const DiemCongTruToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany }
     </>
   );
 
-  const renderActions = (
+  const renderActions = canCreate && onAdd ? (
     <Button
       onClick={onAdd}
       size="sm"
@@ -75,7 +77,7 @@ const DiemCongTruToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany }
       <Plus className="w-5 h-5 sm:w-4 sm:h-4 sm:mr-2" />
       <span className="hidden sm:inline">{t('common.addNew')}</span>
     </Button>
-  );
+  ) : null;
 
   return (
     <GenericToolbar
@@ -86,11 +88,11 @@ const DiemCongTruToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany }
       actions={renderActions}
       filters={renderFilters}
       filterGroups={[]}
-      onAdd={onAdd}
+      onAdd={canCreate ? onAdd : undefined}
       searchPlaceholder={t('diemCongTru.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
-      onDeleteMany={() => onDeleteMany(Array.from(selectedIds))}
+      onDeleteMany={canDelete && onDeleteMany ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
       columns={columns}
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}

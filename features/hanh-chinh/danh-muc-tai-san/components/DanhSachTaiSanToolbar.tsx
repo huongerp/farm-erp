@@ -21,9 +21,12 @@ interface Props {
   onExportExcel?: () => void;
   /** Xuất danh sách hiện tại ra PDF */
   onExportPDF?: () => void;
+  canCreate?: boolean;
+  canUpdate?: boolean;
+  canDelete?: boolean;
 }
 
-const DanhSachTaiSanToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onStatusChangeMany, onExportExcel, onExportPDF }) => {
+const DanhSachTaiSanToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onStatusChangeMany, onExportExcel, onExportPDF, canCreate = true, canUpdate = true, canDelete = true }) => {
   const { t } = useTranslation();
   const {
     searchTerm,
@@ -169,14 +172,16 @@ const DanhSachTaiSanToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMan
           )}
         </div>
       )}
-      <Button
-        onClick={onAdd}
-        size="sm"
-        className="bg-primary text-white hover:bg-primary/90 shadow-md shadow-primary/20 h-9 px-3 sm:px-4"
-      >
-        <Plus className="w-5 h-5 sm:w-4 sm:h-4 sm:mr-2" />
-        <span className="hidden sm:inline">{t('common.addNew')}</span>
-      </Button>
+      {canCreate && (
+        <Button
+          onClick={onAdd}
+          size="sm"
+          className="bg-primary text-white hover:bg-primary/90 shadow-md shadow-primary/20 h-9 px-3 sm:px-4"
+        >
+          <Plus className="w-5 h-5 sm:w-4 sm:h-4 sm:mr-2" />
+          <span className="hidden sm:inline">{t('common.addNew')}</span>
+        </Button>
+      )}
     </>
   );
 
@@ -199,12 +204,12 @@ const DanhSachTaiSanToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMan
       actions={renderActions}
       filters={renderFilters}
       filterGroups={filterGroups}
-      onAdd={onAdd}
+      onAdd={canCreate ? onAdd : undefined}
       searchPlaceholder={t('danhSachTaiSan.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
-      onDeleteMany={() => onDeleteMany(Array.from(selectedIds))}
-      onStatusChangeMany={(status) => onStatusChangeMany(Array.from(selectedIds), status)}
+      onDeleteMany={canDelete ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
+      onStatusChangeMany={canUpdate ? (status) => onStatusChangeMany(Array.from(selectedIds), status) : undefined}
       columns={columns}
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}

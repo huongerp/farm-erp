@@ -14,9 +14,11 @@ interface Props {
   onEdit: (item: Branch) => void;
   onDelete: (id: string) => void;
   onView: (item: Branch) => void;
+  canUpdate?: boolean;
+  canDelete?: boolean;
 }
 
-const BranchTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onView }) => {
+const BranchTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onView, canUpdate = true, canDelete = true }) => {
   const { t } = useTranslation();
   const {
     columns,
@@ -77,24 +79,28 @@ const BranchTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onVie
       case 'actions':
         return (
           <div className="flex items-center justify-center gap-1">
-            <Tooltip content={t('common.edit')} placement="left">
-              <button
-                onClick={(e) => { e.stopPropagation(); onEdit(item); }}
-                className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-all"
-                aria-label={t('common.edit')}
-              >
-                <Edit size={16} />
-              </button>
-            </Tooltip>
-            <Tooltip content={t('common.delete')} placement="left">
-              <button
-                onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
-                className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition-all"
-                aria-label={t('common.delete')}
-              >
-                <Trash2 size={16} />
-              </button>
-            </Tooltip>
+            {canUpdate && (
+              <Tooltip content={t('common.edit')} placement="left">
+                <button
+                  onClick={(e) => { e.stopPropagation(); onEdit(item); }}
+                  className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-all"
+                  aria-label={t('common.edit')}
+                >
+                  <Edit size={16} />
+                </button>
+              </Tooltip>
+            )}
+            {canDelete && (
+              <Tooltip content={t('common.delete')} placement="left">
+                <button
+                  onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
+                  className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition-all"
+                  aria-label={t('common.delete')}
+                >
+                  <Trash2 size={16} />
+                </button>
+              </Tooltip>
+            )}
           </div>
         );
       default:
@@ -150,26 +156,32 @@ const BranchTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onVie
           <p className="font-medium text-foreground line-clamp-2">{item.dia_chi}</p>
         </div>
       </div>
-      <div className="flex justify-end items-center pt-2.5 border-t border-border">
-        <div className="flex gap-1.5">
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onEdit(item); }}
-            className="p-2 text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-all active:scale-90"
-            aria-label={t('common.edit')}
-          >
-            <Edit size={14} />
-          </button>
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
-            className="p-2 text-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 rounded-lg transition-all active:scale-90"
-            aria-label={t('common.delete')}
-          >
-            <Trash2 size={14} />
-          </button>
+      {(canUpdate || canDelete) && (
+        <div className="flex justify-end items-center pt-2.5 border-t border-border">
+          <div className="flex gap-1.5">
+            {canUpdate && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onEdit(item); }}
+                className="p-2 text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-all active:scale-90"
+                aria-label={t('common.edit')}
+              >
+                <Edit size={14} />
+              </button>
+            )}
+            {canDelete && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
+                className="p-2 text-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 rounded-lg transition-all active:scale-90"
+                aria-label={t('common.delete')}
+              >
+                <Trash2 size={14} />
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 

@@ -36,3 +36,13 @@ export const assetGroupSchema = z.object({
 });
 
 export type AssetGroupFormValues = z.infer<typeof assetGroupSchema>;
+
+export const loaiChiPhiSchema = z.object({
+  ma: z.string().min(1, { message: i18n.t('thietLapTaiSan.loaiChiPhi.validation.maRequired') }),
+  ten: z.string().min(1, { message: i18n.t('thietLapTaiSan.loaiChiPhi.validation.tenRequired') }),
+  thu_tu: z.coerce.number().min(0, { message: i18n.t('thietLapTaiSan.loaiChiPhi.validation.thuTuMin') }),
+  ghi_chu: z.string().optional().nullable(),
+  trang_thai: z.enum([TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG, TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG]),
+});
+
+export type LoaiChiPhiFormValues = z.infer<typeof loaiChiPhiSchema>;

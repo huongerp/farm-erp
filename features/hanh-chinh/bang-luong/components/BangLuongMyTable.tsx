@@ -13,12 +13,14 @@ interface Props {
   onView: (item: BangLuongRecord) => void;
   onEdit?: (item: BangLuongRecord) => void;
   onDelete?: (id: string) => void;
+  canUpdate?: boolean;
+  canDelete?: boolean;
 }
 
 const formatPeriod = (nam: number, thang: number) =>
   `${nam}-${String(thang).padStart(2, '0')}`;
 
-const BangLuongMyTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, onDelete }) => {
+const BangLuongMyTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, onDelete, canUpdate = true, canDelete = true }) => {
   const { t } = useTranslation();
   const {
     columns,
@@ -80,28 +82,32 @@ const BangLuongMyTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, on
           </span>
         );
       case 'actions':
-        return onEdit && onDelete ? (
+        return (canUpdate && onEdit) || (canDelete && onDelete) ? (
           <div className="flex items-center justify-center gap-1">
-            <Tooltip content={t('common.edit')} placement="left">
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); onEdit(item); }}
-                className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-all"
-                aria-label={t('common.edit')}
-              >
-                <Edit size={16} />
-              </button>
-            </Tooltip>
-            <Tooltip content={t('common.delete')} placement="left">
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
-                className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition-all"
-                aria-label={t('common.delete')}
-              >
-                <Trash2 size={16} />
-              </button>
-            </Tooltip>
+            {canUpdate && onEdit && (
+              <Tooltip content={t('common.edit')} placement="left">
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); onEdit(item); }}
+                  className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-all"
+                  aria-label={t('common.edit')}
+                >
+                  <Edit size={16} />
+                </button>
+              </Tooltip>
+            )}
+            {canDelete && onDelete && (
+              <Tooltip content={t('common.delete')} placement="left">
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
+                  className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition-all"
+                  aria-label={t('common.delete')}
+                >
+                  <Trash2 size={16} />
+                </button>
+              </Tooltip>
+            )}
           </div>
         ) : null;
       default:
@@ -161,8 +167,9 @@ const BangLuongMyTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, on
         <span className="text-muted-foreground text-xs">
           {formatDateTimeShort(item.tg_cap_nhat)}
         </span>
-        {onEdit && onDelete && (
+        {(canUpdate && onEdit) || (canDelete && onDelete) ? (
           <div className="flex gap-1.5">
+            {canUpdate && onEdit && (
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onEdit(item); }}
@@ -171,6 +178,8 @@ const BangLuongMyTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, on
             >
               <Edit size={14} />
             </button>
+            )}
+            {canDelete && onDelete && (
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
@@ -179,8 +188,9 @@ const BangLuongMyTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, on
             >
               <Trash2 size={14} />
             </button>
+            )}
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );

@@ -76,7 +76,7 @@ const PhieuKiemKePreviewContent: React.FC<Props> = ({ dot, chiTiet }) => {
         {t('kiemKeTaiSan.preview.title')}
       </h1>
       <p className="text-center text-[10pt] text-gray-500 mb-3">
-        {dot.ma_dot} · {dot.ten_dot} · {getTrangThaiDotLabel(dot.trang_thai, t)}
+        {dot.ma_dot} · {dot.ten_dot} · {getTrangThaiDotLabel(dot.trang_thai)}
       </p>
       <hr className="border-t border-gray-300 my-3" />
 
@@ -95,7 +95,7 @@ const PhieuKiemKePreviewContent: React.FC<Props> = ({ dot, chiTiet }) => {
           <TableRow label={t('kiemKeTaiSan.store.ngayKetThucCol')} value={formatDate(dot.ngay_ket_thuc)} />
           <TableRow
             label={t('kiemKeTaiSan.store.trangThaiCol')}
-            value={getTrangThaiDotLabel(dot.trang_thai, t)}
+            value={getTrangThaiDotLabel(dot.trang_thai)}
           />
           <TableRow
             label={t('kiemKeTaiSan.store.nguoiPhuTrachCol')}
@@ -141,7 +141,7 @@ const PhieuKiemKePreviewContent: React.FC<Props> = ({ dot, chiTiet }) => {
                       {c.ten_nguoi_giu_so ?? '—'}
                     </td>
                     <td className="border border-gray-300 p-1.5 text-gray-900">
-                      {getKetQuaLabel(c.ket_qua, t)}
+                      {getKetQuaLabel(c.ket_qua)}
                     </td>
                   </tr>
                 ))}

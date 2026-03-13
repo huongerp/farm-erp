@@ -44,7 +44,7 @@ export const PERMISSION_FUNCTIONS: PermissionFunction[] = [
       { groupTitleKey: 'page.hanhChinh.groupTaiSan', modules: [
         { id: BASE('hanh-chinh', 'danh-sach-tai-san'), nameKey: 'page.hanhChinh.modules.danhSachTaiSan' },
         { id: BASE('hanh-chinh', 'cap-phat-thu-hoi'), nameKey: 'page.hanhChinh.modules.capPhatThuHoi' },
-        { id: BASE('hanh-chinh', 'bao-tri-sua-chua'), nameKey: 'page.hanhChinh.modules.baoTriSuaChua' },
+        { id: BASE('hanh-chinh', 'chi-phi-tai-san'), nameKey: 'page.hanhChinh.modules.baoTriSuaChua' },
         { id: BASE('hanh-chinh', 'kiem-ke-tai-san'), nameKey: 'page.hanhChinh.modules.kiemKeTaiSan' },
         { id: BASE('hanh-chinh', 'khau-hao-tai-san'), nameKey: 'page.hanhChinh.modules.khauHaoTaiSan' },
         { id: BASE('hanh-chinh', 'noi-quan-ly'), nameKey: 'page.hanhChinh.modules.noiQuanLy' },
@@ -111,4 +111,43 @@ export function getAllPermissionModules(): { id: string; nameKey: string }[] {
     });
   });
   return list;
+}
+
+/** Path submenu có phân quyền (khớp với SIDEBAR_MENU) */
+const SUBMENU_PATHS_WITH_PERMISSION = ['/hanh-chinh', '/mua-hang', '/he-thong'] as const;
+
+/**
+ * Lấy danh sách module id thuộc một submenu theo path (vd: /hanh-chinh -> [hanh-chinh/cong-viec, ...]).
+ * Path không có trong PERMISSION_FUNCTIONS thì trả về [].
+ */
+export function getModuleIdsBySubmenuPath(path: string): string[] {
+  const normalized = path.startsWith('/') ? path.slice(1) : path;
+  const fn = PERMISSION_FUNCTIONS.find((f) => f.id === normalized);
+  if (!fn) return [];
+  const ids: string[] = [];
+  fn.groups.forEach((gr) => {
+    gr.modules.forEach((m) => ids.push(m.id));
+  });
+  return ids;
+}
+
+/** Trả về true nếu path là submenu dùng phân quyền (ẩn khi không có quyền xem module nào). */
+export function isSubmenuWithPermission(path: string): boolean {
+  return SUBMENU_PATHS_WITH_PERMISSION.includes(path as (typeof SUBMENU_PATHS_WITH_PERMISSION)[number]);
+}
+
+/** Slug thuộc nhóm kho-van trong config (URL /mua-hang nhưng module_id là kho-van/...) */
+const KHO_VAN_SLUGS = new Set([
+  'phieu-kho', 'kiem-ke-kho', 'ton-kho', 'bao-cao-nhap-xuat-ton',
+  'danh-muc-hang-hoa', 'danh-sach-hang-hoa', 'danh-sach-kho', 'danh-sach-doi-tac',
+]);
+
+/**
+ * Resolve (basePath, moduleSlug) từ URL sang permission module id.
+ * VD: ('/hanh-chinh','cong-viec') -> 'hanh-chinh/cong-viec'; ('/mua-hang','phieu-kho') -> 'kho-van/phieu-kho'.
+ */
+export function getPermissionModuleId(basePath: string, moduleSlug: string): string {
+  const base = basePath.startsWith('/') ? basePath.slice(1) : basePath;
+  if (base === 'mua-hang' && KHO_VAN_SLUGS.has(moduleSlug)) return `kho-van/${moduleSlug}`;
+  return `${base}/${moduleSlug}`;
 }

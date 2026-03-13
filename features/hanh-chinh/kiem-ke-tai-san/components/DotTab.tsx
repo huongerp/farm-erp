@@ -120,7 +120,7 @@ const DotTab: React.FC = () => {
             <p className="text-sm">{t('kiemKeTaiSan.changeStatusMessage')}</p>
             <Select
               defaultValue={dot.trang_thai}
-              options={TRANG_THAI_DOT_OPTIONS.map((o) => ({ value: o.value, label: t(o.labelKey) }))}
+              options={TRANG_THAI_DOT_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
               onChange={(e) => { selectedTrangThai = e.target.value as TrangThaiDotKiemKe; }}
             />
           </div>

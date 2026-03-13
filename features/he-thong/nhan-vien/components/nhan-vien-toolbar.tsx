@@ -24,10 +24,17 @@ interface Props {
   onDeleteMany: (ids: string[]) => void;
   onStatusChangeMany: (ids: string[], status: string) => void;
   onBulkEdit?: () => void;
+  /** Phân quyền: có quyền thêm (admin hoặc create) */
+  canCreate?: boolean;
+  /** Phân quyền: có quyền sửa (admin hoặc update) */
+  canUpdate?: boolean;
+  /** Phân quyền: có quyền xoá (admin hoặc delete) */
+  canDelete?: boolean;
 }
 
 const EmployeeToolbar: React.FC<Props> = ({ 
-    employees, onAdd, onExport, onImport, onDeleteMany, onStatusChangeMany, onBulkEdit
+    employees, onAdd, onExport, onImport, onDeleteMany, onStatusChangeMany, onBulkEdit,
+    canCreate = true, canUpdate = true, canDelete = true,
 }) => {
   const { t } = useTranslation();
   const { 
@@ -129,7 +136,7 @@ const EmployeeToolbar: React.FC<Props> = ({
 
   // Mobile: action items cho bottom sheet "Thao tác"
   const mobileActions = useMemo(() => [
-    ...(onBulkEdit && selectedIds.size > 0 ? [{
+    ...(onBulkEdit && canUpdate && selectedIds.size > 0 ? [{
       key: 'bulk-edit',
       label: t('employee.toolbar.bulkEdit'),
       icon: Pencil,
@@ -150,12 +157,12 @@ const EmployeeToolbar: React.FC<Props> = ({
       onClick: onExport,
       description: t('employee.toolbar.exportDesc'),
     },
-  ], [onImport, onExport, onBulkEdit, selectedIds.size, t]);
+  ], [onImport, onExport, onBulkEdit, canUpdate, selectedIds.size, t]);
 
-  // Desktop: action buttons (import, export, bulk edit, thêm)
+  // Desktop: action buttons (import, export, bulk edit, thêm) — ẩn theo phân quyền
   const renderActions = (
     <>
-        {onBulkEdit && selectedIds.size > 0 && (
+        {onBulkEdit && canUpdate && selectedIds.size > 0 && (
           <Tooltip content={t('employee.toolbar.bulkEdit')} placement="bottom">
             <Button variant="outline" size="sm" onClick={onBulkEdit} className="inline-flex h-8 px-2.5 items-center gap-1.5 border-primary/30 text-primary bg-primary/5 hover:bg-primary/10">
                 <Pencil className="w-3.5 h-3.5" />
@@ -173,10 +180,12 @@ const EmployeeToolbar: React.FC<Props> = ({
                 <Download className="w-4 h-4" />
             </Button>
         </Tooltip>
-        <Button onClick={onAdd} size="sm" className="bg-primary text-white hover:bg-primary/90 shadow-sm h-8 px-3">
-            <Plus className="w-4 h-4 mr-1.5" /> 
-            <span className="text-xs">{BTN_ADD()}</span>
-        </Button>
+        {canCreate && (
+          <Button onClick={onAdd} size="sm" className="bg-primary text-white hover:bg-primary/90 shadow-sm h-8 px-3">
+              <Plus className="w-4 h-4 mr-1.5" /> 
+              <span className="text-xs">{BTN_ADD()}</span>
+          </Button>
+        )}
     </>
   );
 
@@ -190,9 +199,9 @@ const EmployeeToolbar: React.FC<Props> = ({
         filters={renderFilters}
         filterGroups={filterGroups}
         mobileActions={mobileActions}
-        onAdd={onAdd}
-        onDeleteMany={() => onDeleteMany(Array.from(selectedIds))}
-        onStatusChangeMany={(numStatus) => onStatusChangeMany(Array.from(selectedIds), numStatus === 1 ? TRANG_THAI_NV.DANG_LAM_VIEC : TRANG_THAI_NV.NGHI_VIEC)}
+        onAdd={canCreate ? onAdd : undefined}
+        onDeleteMany={canDelete && selectedIds.size > 0 ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
+        onStatusChangeMany={canUpdate && selectedIds.size > 0 ? (numStatus) => onStatusChangeMany(Array.from(selectedIds), numStatus === 1 ? TRANG_THAI_NV.DANG_LAM_VIEC : TRANG_THAI_NV.NGHI_VIEC) : undefined}
         columns={columns}
         onToggleColumn={toggleColumn}
         onReorderColumns={reorderColumns}

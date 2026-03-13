@@ -46,7 +46,7 @@ const KiemKeTaiSanToolbar: React.FC<Props> = ({
   const trangThaiOptions = useMemo(
     () =>
       TRANG_THAI_DOT_OPTIONS.map((o) => ({
-        label: t(o.labelKey),
+        label: o.label,
         value: o.value as string,
         count: trangThaiCounts[o.value] ?? 0,
       })),

@@ -26,6 +26,8 @@ interface Props {
   onEdit: (item: Department) => void;
   onDelete: (id: string) => void;
   onView?: (item: Department) => void;
+  canUpdate?: boolean;
+  canDelete?: boolean;
 }
 
 /** 1 cấp: tất cả là root, sắp xếp theo tt */
@@ -40,6 +42,7 @@ const DepartmentList: React.FC<Props> = ({
   data, columns, selectedIds, onToggleSelection, onToggleAllSelection, isLoading,
   page, pageSize, onPageChange, onPageSizeChange,
   onEdit, onDelete, onView,
+  canUpdate = true, canDelete = true,
 }) => {
   const { t } = useTranslation();
 
@@ -182,24 +185,30 @@ const DepartmentList: React.FC<Props> = ({
       )}
       <div className="flex justify-between items-center pt-2.5 border-t border-border">
         <span className="text-muted-foreground text-xs">{t('department.detail.order')}: {dept.tt}</span>
-        <div className="flex gap-1.5">
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onEdit(dept); }}
-            className="p-2 text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-all active:scale-90"
-            aria-label={t('common.edit')}
-          >
-            <Edit size={14} />
-          </button>
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onDelete(dept.id); }}
-            className="p-2 text-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 rounded-lg transition-all active:scale-90"
-            aria-label={t('common.delete')}
-          >
-            <Trash2 size={14} />
-          </button>
-        </div>
+        {(canUpdate || canDelete) && (
+          <div className="flex gap-1.5">
+            {canUpdate && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onEdit(dept); }}
+                className="p-2 text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-all active:scale-90"
+                aria-label={t('common.edit')}
+              >
+                <Edit size={14} />
+              </button>
+            )}
+            {canDelete && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onDelete(dept.id); }}
+                className="p-2 text-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 rounded-lg transition-all active:scale-90"
+                aria-label={t('common.delete')}
+              >
+                <Trash2 size={14} />
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -217,8 +226,8 @@ const DepartmentList: React.FC<Props> = ({
             renderCell={renderCell}
             onToggleSelection={onToggleSelection}
             onToggleAllSelection={onToggleAllSelection}
-            onEdit={onEdit}
-            onDelete={onDelete}
+            onEdit={canUpdate ? onEdit : undefined}
+            onDelete={canDelete ? onDelete : undefined}
             onView={onView}
           />
         </div>

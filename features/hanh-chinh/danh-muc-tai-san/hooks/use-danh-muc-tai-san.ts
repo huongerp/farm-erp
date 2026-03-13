@@ -9,6 +9,12 @@ import {
   updateTaiSan,
   deleteTaiSan,
   updateTaiSanStatus,
+  getNextMaTaiSan,
+  checkMaTaiSanExists,
+  getDistinctThuongHieu,
+  getDistinctModel,
+  getDistinctXuatXu,
+  getDistinctNhaCungCap,
 } from '../services/danh-muc-tai-san-service';
 import { TaiSanFormValues } from '../core/schema';
 
@@ -41,6 +47,10 @@ export const useCreateTaiSan = (onSuccess?: () => void) => {
     mutationFn: createTaiSan,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['taiSanList'] });
+      queryClient.invalidateQueries({ queryKey: ['taiSanDistinctThuongHieu'] });
+      queryClient.invalidateQueries({ queryKey: ['taiSanDistinctModel'] });
+      queryClient.invalidateQueries({ queryKey: ['taiSanDistinctXuatXu'] });
+      queryClient.invalidateQueries({ queryKey: ['taiSanDistinctNhaCungCap'] });
       toast.success(i18n.t('danhSachTaiSan.toast.createSuccess'));
       if (onSuccess) onSuccess();
     },
@@ -54,6 +64,10 @@ export const useUpdateTaiSan = (onSuccess?: () => void) => {
     mutationFn: ({ id, data }: { id: string; data: TaiSanFormValues }) => updateTaiSan(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['taiSanList'] });
+      queryClient.invalidateQueries({ queryKey: ['taiSanDistinctThuongHieu'] });
+      queryClient.invalidateQueries({ queryKey: ['taiSanDistinctModel'] });
+      queryClient.invalidateQueries({ queryKey: ['taiSanDistinctXuatXu'] });
+      queryClient.invalidateQueries({ queryKey: ['taiSanDistinctNhaCungCap'] });
       toast.success(i18n.t('danhSachTaiSan.toast.updateSuccess'));
       if (onSuccess) onSuccess();
     },
@@ -84,3 +98,48 @@ export const useDeleteTaiSan = () => {
     onError: (err: unknown) => toast.error((err as Error).message),
   });
 };
+
+/** Mã tài sản tiếp theo (TS00001, TS00002...) – dùng khi mở form tạo mới. */
+export const useGetNextMaTaiSan = (enabled: boolean) => {
+  return useQuery({
+    queryKey: ['taiSanNextMa'],
+    queryFn: getNextMaTaiSan,
+    enabled,
+    staleTime: 1000 * 30,
+  });
+};
+
+/** Kiểm tra mã tài sản trùng (async). */
+export const checkMaTaiSanExistsAsync = checkMaTaiSanExists;
+
+/** Danh sách giá trị distinct thương hiệu – cho combobox enum có thể thêm mới. */
+export const useDistinctThuongHieu = () =>
+  useQuery({
+    queryKey: ['taiSanDistinctThuongHieu'],
+    queryFn: getDistinctThuongHieu,
+    staleTime: 1000 * 60 * 2,
+  });
+
+/** Danh sách giá trị distinct model – cho combobox enum có thể thêm mới. */
+export const useDistinctModel = () =>
+  useQuery({
+    queryKey: ['taiSanDistinctModel'],
+    queryFn: getDistinctModel,
+    staleTime: 1000 * 60 * 2,
+  });
+
+/** Danh sách giá trị distinct xuất xứ – cho combobox enum có thể thêm mới. */
+export const useDistinctXuatXu = () =>
+  useQuery({
+    queryKey: ['taiSanDistinctXuatXu'],
+    queryFn: getDistinctXuatXu,
+    staleTime: 1000 * 60 * 2,
+  });
+
+/** Danh sách giá trị distinct nhà cung cấp – cho combobox enum có thể thêm mới. */
+export const useDistinctNhaCungCap = () =>
+  useQuery({
+    queryKey: ['taiSanDistinctNhaCungCap'],
+    queryFn: getDistinctNhaCungCap,
+    staleTime: 1000 * 60 * 2,
+  });

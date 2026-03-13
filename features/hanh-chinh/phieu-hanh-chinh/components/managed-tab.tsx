@@ -28,11 +28,13 @@ import { getLanguage } from '../../../../lib/utils';
 import { AdminFormRequest } from '../core/types';
 import { getAdminFormTypeLabel } from '../../thiet-lap-cong-luong/core/constants';
 import { useAuthStore } from '../../../../store/useStore';
+import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 
 const AdminFormManagedTab: React.FC = () => {
   const { t } = useTranslation();
   const confirm = useConfirmStore((s) => s.confirm);
   const user = useAuthStore((s) => s.user);
+  const { canUpdate, canDelete } = useModulePermissionFromContext();
   const {
     searchTerm,
     filters,
@@ -240,7 +242,7 @@ const AdminFormManagedTab: React.FC = () => {
     });
   };
 
-  const bulkActions = selectedIds.size > 0 ? (
+  const bulkActions = selectedIds.size > 0 && canUpdate ? (
     <div className="flex items-center gap-2">
       <button
         onClick={() => handleApproveMany(Array.from(selectedIds))}
@@ -287,7 +289,7 @@ const AdminFormManagedTab: React.FC = () => {
         resetColumns={resetColumns}
         selectedIds={selectedIds}
         clearSelection={clearSelection}
-        onDeleteMany={handleDeleteMany}
+        onDeleteMany={canDelete ? handleDeleteMany : undefined}
         bulkActions={bulkActions}
         searchPlaceholder={t('adminForm.manage.searchPlaceholder')}
       />
@@ -299,6 +301,8 @@ const AdminFormManagedTab: React.FC = () => {
           onEdit={(item) => setEditingItem(item)}
           onDelete={handleDelete}
           useStore={useAdminFormManagedStore}
+          canUpdate={canUpdate}
+          canDelete={canDelete}
         />
       </div>
 
@@ -317,6 +321,8 @@ const AdminFormManagedTab: React.FC = () => {
             onRejectManager={handleRejectManager}
             onApproveHcns={handleApproveHcns}
             onRejectHcns={handleRejectHcns}
+            canUpdate={canUpdate}
+            canDelete={canDelete}
           />
         )}
       </AnimatePresence>

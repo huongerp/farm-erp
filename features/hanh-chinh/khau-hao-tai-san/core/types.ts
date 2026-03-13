@@ -16,6 +16,8 @@ export interface KyKhauHao {
   /** Tổng khấu hao kỳ (tính từ chi tiết) */
   tong_khau_hao_ky?: number | null;
   ghi_chu?: string | null;
+  id_nguoi_tao?: string | null;
+  ten_nguoi_tao?: string | null;
   tg_tao: string;
   tg_cap_nhat: string;
 }
@@ -36,6 +38,8 @@ export interface ChiTietKhauHao {
   gia_tri_con_lai_cuoi_ky: number;
   ten_noi_luu?: string | null;
   ten_nguoi_giu?: string | null;
+  id_nguoi_tao?: string | null;
+  ten_nguoi_tao?: string | null;
   tg_tao: string;
   tg_cap_nhat: string;
 }
@@ -45,4 +49,6 @@ export interface KyKhauHaoCreate {
   thang: number;
   nam: number;
   ghi_chu?: string | null;
+  id_nguoi_tao?: string | null;
+  ten_nguoi_tao?: string | null;
 }

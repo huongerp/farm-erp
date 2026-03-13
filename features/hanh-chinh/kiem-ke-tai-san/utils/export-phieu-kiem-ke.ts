@@ -47,14 +47,14 @@ function buildPhieuKiemKeBodyHTML(dot: DotKiemKe, chiTiet: ChiTietKiemKe[]): str
   const t = i18n.t.bind(i18n);
   const title = t('kiemKeTaiSan.preview.title');
   const printedAt = formatDateTime(new Date());
-  const subtitle = `${dot.ma_dot} · ${dot.ten_dot} · ${getTrangThaiDotLabel(dot.trang_thai, t)}`;
+  const subtitle = `${dot.ma_dot} · ${dot.ten_dot} · ${getTrangThaiDotLabel(dot.trang_thai)}`;
 
   const infoRows = [
     [t('kiemKeTaiSan.store.maDotCol'), dot.ma_dot],
     [t('kiemKeTaiSan.store.tenDotCol'), dot.ten_dot],
     [t('kiemKeTaiSan.store.ngayBatDauCol'), formatDate(dot.ngay_bat_dau)],
     [t('kiemKeTaiSan.store.ngayKetThucCol'), formatDate(dot.ngay_ket_thuc)],
-    [t('kiemKeTaiSan.store.trangThaiCol'), getTrangThaiDotLabel(dot.trang_thai, t)],
+    [t('kiemKeTaiSan.store.trangThaiCol'), getTrangThaiDotLabel(dot.trang_thai)],
     [t('kiemKeTaiSan.store.nguoiPhuTrachCol'), dot.ten_nguoi_phu_trach || dot.ma_nguoi_phu_trach || '—'],
     [t('kiemKeTaiSan.store.ghiChuCol'), dot.ghi_chu ?? '—'],
   ];
@@ -79,7 +79,7 @@ function buildPhieuKiemKeBodyHTML(dot: DotKiemKe, chiTiet: ChiTietKiemKe[]): str
             <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${safeStr(c.ten_tai_san || c.ma_tai_san)}</td>
             <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${safeStr(c.ten_noi_luu_so)}</td>
             <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${safeStr(c.ten_nguoi_giu_so)}</td>
-            <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${getKetQuaLabel(c.ket_qua, t)}</td>
+            <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${getKetQuaLabel(c.ket_qua)}</td>
           </tr>`
       )
       .join('');

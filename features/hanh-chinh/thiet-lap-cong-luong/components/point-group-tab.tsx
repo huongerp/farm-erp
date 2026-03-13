@@ -18,10 +18,12 @@ import { getLanguage } from '../../../../lib/utils';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { PayrollPointGroup } from '../core/types';
 import { getPointGroupTypeLabel } from '../core/constants';
+import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 
 const PayrollPointGroupTab: React.FC = () => {
   const { t } = useTranslation();
   const confirm = useConfirmStore((s) => s.confirm);
+  const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
   const {
     searchTerm,
     filters,
@@ -174,13 +176,12 @@ const PayrollPointGroupTab: React.FC = () => {
     <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
       <PayrollPointGroupToolbar
         items={groups}
-        onAdd={() => {
-          setDetailItem(null);
-          setEditingItem(null);
-          setShowForm(true);
-        }}
-        onDeleteMany={handleDeleteMany}
-        onStatusChangeMany={handleStatusChangeMany}
+        onAdd={canCreate ? () => { setDetailItem(null); setEditingItem(null); setShowForm(true); } : undefined}
+        onDeleteMany={canDelete ? handleDeleteMany : undefined}
+        onStatusChangeMany={canUpdate ? handleStatusChangeMany : undefined}
+        canCreate={canCreate}
+        canUpdate={canUpdate}
+        canDelete={canDelete}
       />
       <div className="flex-1 min-h-0">
         <PayrollPointGroupTable
@@ -189,6 +190,8 @@ const PayrollPointGroupTab: React.FC = () => {
           onEdit={handleEdit}
           onDelete={handleDelete}
           onView={handleView}
+          canUpdate={canUpdate}
+          canDelete={canDelete}
         />
       </div>
 
@@ -204,10 +207,9 @@ const PayrollPointGroupTab: React.FC = () => {
             data={detailItem}
             onClose={() => setDetailItem(null)}
             onEdit={(item) => handleEdit(item)}
-            onDelete={(id) => {
-              setDetailItem(null);
-              handleDelete(id);
-            }}
+            onDelete={(id) => { setDetailItem(null); handleDelete(id); }}
+            canUpdate={canUpdate}
+            canDelete={canDelete}
           />
         )}
       </AnimatePresence>

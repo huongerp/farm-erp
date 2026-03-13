@@ -2,20 +2,17 @@ import { z } from 'zod';
 import i18n from '../../../../lib/i18n';
 
 const hangMucEnum = z.enum(['bao_tri', 'sua_chua']);
-
-const trangThaiEnum = z.union([z.literal(0), z.literal(1)]);
+const trangThaiEnum = z.enum(['cho_duyet', 'da_duyet', 'khong_duyet']);
 
 export const phieuBaoTriSuaChuaSchema = z.object({
-  hang_muc: hangMucEnum,
+  ngay: z.string().min(1, { message: i18n.t('baoTriSuaChua.validation.ngayRequired') }),
   id_tai_san: z.string().min(1, { message: i18n.t('baoTriSuaChua.validation.assetRequired') }),
-  ngay_yeu_cau: z.string().min(1, { message: i18n.t('baoTriSuaChua.validation.ngayYeuCauRequired') }),
-  ngay_hen: z.string().min(1, { message: i18n.t('baoTriSuaChua.validation.ngayHenRequired') }),
-  ngay_bat_dau: z.string().optional().nullable(),
-  ngay_hoan_thanh: z.string().optional().nullable(),
+  id_hang_muc: hangMucEnum,
   mo_ta: z.string().min(1, { message: i18n.t('baoTriSuaChua.validation.moTaRequired') }),
+  so_tien: z.coerce.number().min(0, { message: i18n.t('baoTriSuaChua.validation.soTienMin') }),
   ghi_chu: z.string().optional().nullable(),
-  id_nguoi_phu_trach: z.string().optional().nullable(),
   trang_thai: trangThaiEnum.optional(),
+  nguoi_duyet: z.string().optional().nullable(),
 });
 
 export type PhieuBaoTriSuaChuaFormValues = z.infer<typeof phieuBaoTriSuaChuaSchema>;

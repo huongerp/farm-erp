@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
 import { Tag, Layers, MapPin } from 'lucide-react';
 import { useAuthStore } from '../../../../store/useStore';
+import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { useTaiSanList, useDeleteTaiSan, useUpdateTaiSanStatus, useUpdateTaiSan } from '../hooks/use-danh-muc-tai-san';
 import { useListWithFilter } from '../../../../lib/hooks';
@@ -108,6 +109,7 @@ function taiSanToFormValues(a: TaiSan, overrideIdTrangThai?: string): TaiSanForm
 
 const CuaToiTab: React.FC = () => {
   const { t } = useTranslation();
+  const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
   const user = useAuthStore((s) => s.user);
   const confirm = useConfirmStore((s) => s.confirm);
   const currentUserId = user?.id ?? '';
@@ -481,6 +483,9 @@ const CuaToiTab: React.FC = () => {
             onAdd={handleAdd}
             onDeleteMany={handleDeleteMany}
             onStatusChangeMany={handleStatusChangeMany}
+            canCreate={canCreate}
+            canUpdate={canUpdate}
+            canDelete={canDelete}
           />
         ) : (
           <GenericToolbar
@@ -504,6 +509,8 @@ const CuaToiTab: React.FC = () => {
             onEdit={handleEdit}
             onDelete={handleDelete}
             showActions={isAdmin}
+            canUpdate={canUpdate}
+            canDelete={canDelete}
           />
         </div>
       </div>
@@ -516,6 +523,8 @@ const CuaToiTab: React.FC = () => {
             onEdit={handleEdit}
             onDelete={handleDelete}
             showActions={isAdmin}
+            canUpdate={canUpdate}
+            canDelete={canDelete}
             onAddPhieu={handleAddPhieu}
             onEditPhieu={handleEditPhieu}
             onDeletePhieu={handleDeletePhieu}

@@ -17,19 +17,19 @@ const StatsCards: React.FC<Props> = ({ summary }) => {
       className: 'bg-primary/10 text-primary border-primary/20',
     },
     {
-      title: t('kiemKeTaiSan.trangThaiDot.draft'),
+      title: 'Nháp',
       value: summary.draft,
       icon: FileEdit,
       className: 'bg-muted text-muted-foreground border-border',
     },
     {
-      title: t('kiemKeTaiSan.trangThaiDot.dang_kiem_ke'),
+      title: 'Đang kiểm kê',
       value: summary.dangKiemKe,
       icon: Loader2,
       className: 'bg-amber-500/10 text-amber-700 border-amber-500/20',
     },
     {
-      title: t('kiemKeTaiSan.trangThaiDot.hoan_thanh'),
+      title: 'Hoàn thành',
       value: summary.hoanThanh,
       icon: CheckCircle,
       className: 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20',

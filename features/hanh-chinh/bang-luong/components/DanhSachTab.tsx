@@ -13,11 +13,13 @@ import BangLuongDetail from './BangLuongDetail';
 import BangLuongForm from './BangLuongForm';
 import { useBangLuongManagedStore } from '../store/useBangLuongManagedStore';
 import type { BangLuongRecord } from '../core/types';
+import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 
 const DanhSachTab: React.FC = () => {
   const { t } = useTranslation();
   const confirm = useConfirmStore((s) => s.confirm);
   const user = useAuthStore((s) => s.user);
+  const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
   const isAdmin = user?.role === 'admin';
   const myPhongBan = user?.id_phong_ban ?? '';
   const {
@@ -155,10 +157,12 @@ const DanhSachTab: React.FC = () => {
       <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
         <BangLuongManagedToolbar
           items={managedRecords}
-          onAdd={handleAdd}
+          onAdd={canCreate ? handleAdd : undefined}
           selectedCount={selectedIds.size}
           onClearSelection={clearSelection}
-          onDeleteMany={handleDeleteMany}
+          onDeleteMany={canDelete ? handleDeleteMany : undefined}
+          canCreate={canCreate}
+          canDelete={canDelete}
         />
         <div className="flex-1 min-h-0">
           <BangLuongManagedTable
@@ -167,6 +171,8 @@ const DanhSachTab: React.FC = () => {
             onView={handleView}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            canUpdate={canUpdate}
+            canDelete={canDelete}
           />
         </div>
       </div>
@@ -178,6 +184,8 @@ const DanhSachTab: React.FC = () => {
             onClose={() => setViewingRecord(null)}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            canUpdate={canUpdate}
+            canDelete={canDelete}
           />
         )}
       </AnimatePresence>

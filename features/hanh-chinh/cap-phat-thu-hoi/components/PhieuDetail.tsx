@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Package, Edit, Trash2, MapPin, User, FileText } from 'lucide-react';
+import { Package, Edit, Trash2, MapPin, User, FileText, Calendar } from 'lucide-react';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
 import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';
@@ -65,7 +65,7 @@ const PhieuDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete }) => {
       maxWidthClass={DRAWER_WIDTH_DETAIL}
     >
       <div className="space-y-5">
-        {/* Section 1: Thông tin chung */}
+        {/* 1. Thông tin chung: Loại phiếu, Mã tài sản, Tên tài sản */}
         <DetailSection
           title={t('capPhatThuHoi.detail.sectionGeneral')}
           icon={<Package size={18} />}
@@ -73,13 +73,12 @@ const PhieuDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete }) => {
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <DetailField label={t('capPhatThuHoi.store.loaiCol')} value={getLoaiPhieuLabel(data.loai_phieu, t)} />
-            <DetailField label={t('capPhatThuHoi.store.taiSanCol')} value={data.ten_tai_san || data.ma_tai_san || '—'} />
-            <DetailField label={t('capPhatThuHoi.store.ngayCol')} value={formatDate(data.ngay_thuc_hien)} />
-            <DetailField label={t('capPhatThuHoi.store.updatedCol')} value={formatDateTimeShort(data.tg_cap_nhat)} />
+            <DetailField label={t('capPhatThuHoi.store.maTaiSanCol')} value={data.ma_tai_san || '—'} />
+            <DetailField label={t('capPhatThuHoi.store.taiSanCol')} value={data.ten_tai_san || '—'} className="sm:col-span-2" />
           </div>
         </DetailSection>
 
-        {/* Section 2: Nơi lưu */}
+        {/* 2. Nơi lưu: Trước → Sau */}
         <DetailSection
           title={t('capPhatThuHoi.detail.sectionLocation')}
           icon={<MapPin size={18} />}
@@ -90,7 +89,7 @@ const PhieuDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete }) => {
           </div>
         </DetailSection>
 
-        {/* Section 3: Người giữ & Người thực hiện */}
+        {/* 3. Người giữ & Người thực hiện: Trước → Sau → Thực hiện → Người tạo (nếu có) */}
         <DetailSection
           title={t('capPhatThuHoi.detail.sectionHolder')}
           icon={<User size={18} />}
@@ -99,20 +98,30 @@ const PhieuDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete }) => {
             <DetailField label={t('capPhatThuHoi.store.nguoiGiuTruocCol')} value={data.ten_nguoi_giu_truoc || '—'} />
             <DetailField label={t('capPhatThuHoi.store.nguoiGiuSauCol')} value={data.ten_nguoi_giu_sau || '—'} />
             <DetailField label={t('capPhatThuHoi.store.nguoiThucHienCol')} value={data.ten_nguoi_thuc_hien || '—'} />
+            {data.ten_nguoi_tao ? (
+              <DetailField label={t('capPhatThuHoi.detail.nguoiTao')} value={data.ten_nguoi_tao} />
+            ) : null}
           </div>
         </DetailSection>
 
-        {/* Section 4: Ghi chú & Thời gian */}
+        {/* 4. Thời gian: Ngày thực hiện, Tạo, Cập nhật */}
+        <DetailSection
+          title={t('capPhatThuHoi.detail.sectionTime')}
+          icon={<Calendar size={18} />}
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <DetailField label={t('capPhatThuHoi.store.ngayCol')} value={formatDate(data.ngay_thuc_hien)} />
+            <DetailField label={t('capPhatThuHoi.store.updatedCol')} value={formatDateTimeShort(data.tg_cap_nhat)} />
+          </div>
+        </DetailSection>
+
+        {/* 5. Ghi chú */}
         <DetailSection
           title={t('capPhatThuHoi.detail.sectionOther')}
           icon={<FileText size={18} />}
         >
           <div className="grid grid-cols-1 gap-4">
-            {data.ghi_chu ? (
-              <DetailField label={t('capPhatThuHoi.store.ghiChuCol')} value={data.ghi_chu} />
-            ) : (
-              <DetailField label={t('capPhatThuHoi.store.ghiChuCol')} value="—" />
-            )}
+            <DetailField label={t('capPhatThuHoi.store.ghiChuCol')} value={data.ghi_chu || '—'} />
           </div>
         </DetailSection>
       </div>

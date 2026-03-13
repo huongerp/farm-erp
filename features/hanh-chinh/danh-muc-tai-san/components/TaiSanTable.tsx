@@ -14,6 +14,8 @@ interface Props {
   onDelete: (id: string) => void;
   onView?: (item: TaiSan) => void;
   showActions?: boolean;
+  canUpdate?: boolean;
+  canDelete?: boolean;
 }
 
 const TaiSanTable: React.FC<Props> = ({
@@ -23,6 +25,8 @@ const TaiSanTable: React.FC<Props> = ({
   onDelete,
   onView,
   showActions = true,
+  canUpdate = true,
+  canDelete = true,
 }) => {
   const { t } = useTranslation();
   const {
@@ -184,30 +188,34 @@ const TaiSanTable: React.FC<Props> = ({
         if (!showActions) return null;
         return (
           <div className="flex items-center justify-center gap-1">
-            <Tooltip content={t('common.edit')} placement="left">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit(item);
-                }}
-                className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-all"
-                aria-label={t('common.edit')}
-              >
-                <Edit size={16} />
-              </button>
-            </Tooltip>
-            <Tooltip content={t('common.delete')} placement="left">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(item.id);
-                }}
-                className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition-all"
-                aria-label={t('common.delete')}
-              >
-                <Trash2 size={16} />
-              </button>
-            </Tooltip>
+            {canUpdate && (
+              <Tooltip content={t('common.edit')} placement="left">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(item);
+                  }}
+                  className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-all"
+                  aria-label={t('common.edit')}
+                >
+                  <Edit size={16} />
+                </button>
+              </Tooltip>
+            )}
+            {canDelete && (
+              <Tooltip content={t('common.delete')} placement="left">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(item.id);
+                  }}
+                  className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition-all"
+                  aria-label={t('common.delete')}
+                >
+                  <Trash2 size={16} />
+                </button>
+              </Tooltip>
+            )}
           </div>
         );
       default:
@@ -269,28 +277,32 @@ const TaiSanTable: React.FC<Props> = ({
           <p className="font-medium truncate">{item.ten_nhan_vien_dang_giu || '—'}</p>
         </div>
       </div>
-      {showActions && (
+      {(showActions && (canUpdate || canDelete)) && (
         <div className="flex justify-end gap-1.5 pt-2 border-t border-border">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit(item);
-            }}
-            className="p-2 text-primary bg-primary/5 rounded-lg text-sm"
-          >
-            <Edit size={14} className="mr-1 inline" /> {t('common.edit')}
-          </button>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(item.id);
-            }}
-            className="p-2 text-rose-500 bg-rose-50 rounded-lg text-sm"
-          >
-            <Trash2 size={14} className="mr-1 inline" /> {t('common.delete')}
-          </button>
+          {canUpdate && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(item);
+              }}
+              className="p-2 text-primary bg-primary/5 rounded-lg text-sm"
+            >
+              <Edit size={14} className="mr-1 inline" /> {t('common.edit')}
+            </button>
+          )}
+          {canDelete && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(item.id);
+              }}
+              className="p-2 text-rose-500 bg-rose-50 rounded-lg text-sm"
+            >
+              <Trash2 size={14} className="mr-1 inline" /> {t('common.delete')}
+            </button>
+          )}
         </div>
       )}
     </div>

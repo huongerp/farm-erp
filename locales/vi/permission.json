@@ -81,5 +81,6 @@
   "permission.store.logResultCol": "Kết quả",
   "permission.toast.createSuccess": "Đã tạo vai trò mới thành công",
   "permission.toast.deleteSuccess": "Đã xóa các vai trò được chọn",
-  "permission.toast.updateSuccess": "Đã cập nhật phân quyền hệ thống"
+  "permission.toast.updateSuccess": "Đã cập nhật phân quyền hệ thống",
+  "permission.noAccessModule": "Bạn không có quyền xem module này."
 }

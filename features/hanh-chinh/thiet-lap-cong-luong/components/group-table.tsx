@@ -15,9 +15,11 @@ interface Props {
   onEdit: (item: PayrollAdminFormGroup) => void;
   onDelete: (id: string) => void;
   onView?: (item: PayrollAdminFormGroup) => void;
+  canUpdate?: boolean;
+  canDelete?: boolean;
 }
 
-const PayrollFormGroupTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onView }) => {
+const PayrollFormGroupTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onView, canUpdate = true, canDelete = true }) => {
   const { t } = useTranslation();
   const {
     columns,
@@ -78,6 +80,7 @@ const PayrollFormGroupTable: React.FC<Props> = ({ data, isLoading, onEdit, onDel
       case 'actions':
         return (
           <div className="flex items-center justify-center gap-1">
+            {canUpdate && (
             <Tooltip content={t('common.edit')} placement="left">
               <button
                 onClick={(e) => { e.stopPropagation(); onEdit(item); }}
@@ -87,6 +90,8 @@ const PayrollFormGroupTable: React.FC<Props> = ({ data, isLoading, onEdit, onDel
                 <Edit size={16} />
               </button>
             </Tooltip>
+            )}
+            {canDelete && (
             <Tooltip content={t('common.delete')} placement="left">
               <button
                 onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
@@ -96,6 +101,7 @@ const PayrollFormGroupTable: React.FC<Props> = ({ data, isLoading, onEdit, onDel
                 <Trash2 size={16} />
               </button>
             </Tooltip>
+            )}
           </div>
         );
       default:
@@ -154,6 +160,7 @@ const PayrollFormGroupTable: React.FC<Props> = ({ data, isLoading, onEdit, onDel
       <div className="flex justify-between items-center pt-2.5 border-t border-border">
         <span className="text-muted-foreground text-xs">{formatDateTimeShort(item.tg_cap_nhat)}</span>
         <div className="flex gap-1.5">
+          {canUpdate && (
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onEdit(item); }}
@@ -162,6 +169,8 @@ const PayrollFormGroupTable: React.FC<Props> = ({ data, isLoading, onEdit, onDel
           >
             <Edit size={14} />
           </button>
+          )}
+          {canDelete && (
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
@@ -170,6 +179,7 @@ const PayrollFormGroupTable: React.FC<Props> = ({ data, isLoading, onEdit, onDel
           >
             <Trash2 size={14} />
           </button>
+          )}
         </div>
       </div>
     </div>

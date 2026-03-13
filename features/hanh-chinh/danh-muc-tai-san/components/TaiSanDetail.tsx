@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Building2, Edit, Trash2, ArrowLeftRight, Plus, Power, Image as ImageIcon, Wrench, Printer, ClipboardCheck, Calculator, FileText, X } from 'lucide-react';
+import { Building2, Edit, Trash2, ArrowLeftRight, Plus, Power, Image as ImageIcon, Wrench, Printer, FileText, X } from 'lucide-react';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
 import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';
@@ -14,7 +14,7 @@ import { formatDateTimeShort, formatCurrency, formatDate, cn } from '../../../..
 import { usePhieuList } from '../../cap-phat-thu-hoi/hooks/use-cap-phat-thu-hoi';
 import { getLoaiPhieuLabel } from '../../cap-phat-thu-hoi/core/constants';
 import { usePhieuBaoTriList } from '../../bao-tri-sua-chua/hooks/use-bao-tri-sua-chua';
-import { getHangMucLabel } from '../../bao-tri-sua-chua/core/constants';
+import { getHangMucLabel, getTrangThaiLabel } from '../../bao-tri-sua-chua/core/constants';
 import type { TaiSan } from '../core/types';
 import BarcodeQRDisplay from './BarcodeQRDisplay';
 import type { PhieuCapPhatThuHoi } from '../../cap-phat-thu-hoi/core/types';
@@ -44,6 +44,8 @@ interface Props {
   onUpdateImage?: (item: TaiSan) => void;
   /** Điền ghi chú — parent gọi updateTaiSan với ghi_chu rồi cập nhật item */
   onUpdateGhiChu?: (taiSan: TaiSan, ghiChu: string) => void;
+  canUpdate?: boolean;
+  canDelete?: boolean;
 }
 
 const TaiSanDetail: React.FC<Props> = ({
@@ -52,6 +54,8 @@ const TaiSanDetail: React.FC<Props> = ({
   onEdit,
   onDelete,
   showActions = true,
+  canUpdate = true,
+  canDelete = true,
   onAddPhieu,
   onEditPhieu,
   onDeletePhieu,
@@ -81,9 +85,6 @@ const TaiSanDetail: React.FC<Props> = ({
   const getHoSoTaiSanPreviewUrl = (id: string) =>
     `/ho-so-tai-san/${encodeURIComponent(id)}`;
 
-  const getHanhChinhModuleUrl = (slug: string) =>
-    `/hanh-chinh/${slug}`;
-
   const toolbarActions: DetailToolbarAction[] = [
     {
       label: t('danhSachTaiSan.detail.printProfile'),
@@ -111,7 +112,7 @@ const TaiSanDetail: React.FC<Props> = ({
           },
         ]
       : []),
-    ...(onUpdateImage
+    ...(canUpdate && onUpdateImage
       ? [
           {
             label: t('danhSachTaiSan.detail.updateImage'),
@@ -121,7 +122,7 @@ const TaiSanDetail: React.FC<Props> = ({
           },
         ]
       : []),
-    ...(onStatusChange
+    ...(canUpdate && onStatusChange
       ? [
           {
             label: t('danhSachTaiSan.detail.changeStatus'),
@@ -131,7 +132,7 @@ const TaiSanDetail: React.FC<Props> = ({
           },
         ]
       : []),
-    ...(onUpdateGhiChu
+    ...(canUpdate && onUpdateGhiChu
       ? [
           {
             label: t('danhSachTaiSan.detail.fillNote'),
@@ -141,18 +142,6 @@ const TaiSanDetail: React.FC<Props> = ({
           },
         ]
       : []),
-    {
-      label: t('danhSachTaiSan.detail.linkKiemKe'),
-      icon: <ClipboardCheck size={16} />,
-      onClick: () => window.open(getHanhChinhModuleUrl('kiem-ke-tai-san'), '_blank', 'noopener,noreferrer'),
-      variant: 'default' as const,
-    },
-    {
-      label: t('danhSachTaiSan.detail.linkKhauHao'),
-      icon: <Calculator size={16} />,
-      onClick: () => window.open(getHanhChinhModuleUrl('khau-hao-tai-san'), '_blank', 'noopener,noreferrer'),
-      variant: 'default' as const,
-    },
   ];
   const { data: phieuList = [], isLoading: phieuLoading } = usePhieuList({ filter: 'all', id_tai_san: data.id });
   const phieuSorted = useMemo(
@@ -161,7 +150,7 @@ const TaiSanDetail: React.FC<Props> = ({
   );
   const { data: phieuBaoTriList = [], isLoading: phieuBaoTriLoading } = usePhieuBaoTriList({ id_tai_san: data.id });
   const phieuBaoTriSorted = useMemo(
-    () => [...phieuBaoTriList].sort((a, b) => (b.ngay_yeu_cau || '').localeCompare(a.ngay_yeu_cau || '')),
+    () => [...phieuBaoTriList].sort((a, b) => (b.ngay || '').localeCompare(a.ngay || '')),
     [phieuBaoTriList]
   );
 
@@ -175,16 +164,18 @@ const TaiSanDetail: React.FC<Props> = ({
         {BTN_CLOSE()}
       </Button>
       <div className="flex items-center gap-3 flex-wrap">
-        <Button
-          onClick={() => {
-            onEdit(data);
-            onClose();
-          }}
-          className="bg-primary text-white shadow-lg hover:bg-primary/90"
-        >
-          <Edit size={16} className="mr-2" /> {BTN_EDIT()}
-        </Button>
-        {onDelete && (
+        {canUpdate && (
+          <Button
+            onClick={() => {
+              onEdit(data);
+              onClose();
+            }}
+            className="bg-primary text-white shadow-lg hover:bg-primary/90"
+          >
+            <Edit size={16} className="mr-2" /> {BTN_EDIT()}
+          </Button>
+        )}
+        {canDelete && onDelete && (
           <Button
             variant="ghost"
             onClick={() => {
@@ -474,11 +465,11 @@ const TaiSanDetail: React.FC<Props> = ({
                 <table className="w-full text-sm text-left border-collapse">
                   <thead className="sticky top-0 z-[1] bg-muted border-b border-border">
                     <tr>
+                      <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap">{t('baoTriSuaChua.store.ngayCol')}</th>
                       <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap">{t('baoTriSuaChua.store.hangMucCol')}</th>
-                      <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap">{t('baoTriSuaChua.store.ngayYeuCauCol')}</th>
-                      <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap">{t('baoTriSuaChua.store.ngayHenCol')}</th>
-                      <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap">{t('baoTriSuaChua.store.nguoiPhuTrachCol')}</th>
+                      <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap">{t('baoTriSuaChua.store.soTienCol')}</th>
                       <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap">{t('baoTriSuaChua.store.trangThaiCol')}</th>
+                      <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap">{t('baoTriSuaChua.store.nguoiDuyetCol')}</th>
                       {(onEditPhieuBaoTri || onDeletePhieuBaoTri) && (
                         <th className="sticky right-0 z-[2] px-4 py-2 font-semibold text-foreground/80 text-xs text-center w-24 bg-muted border-l border-border min-w-[96px]">
                           {t('common.actions')}
@@ -489,19 +480,19 @@ const TaiSanDetail: React.FC<Props> = ({
                   <tbody className="[&>tr>td]:border-b [&>tr>td]:border-border">
                     {phieuBaoTriSorted.map((p) => (
                       <tr key={p.id} className="hover:bg-muted/60 transition-colors">
+                        <td className="px-4 py-2.5 tabular-nums text-muted-foreground">{formatDate(p.ngay)}</td>
                         <td className="px-4 py-2.5">
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
-                            {getHangMucLabel(p.hang_muc, t)}
+                            {getHangMucLabel(p.id_hang_muc, t)}
                           </span>
                         </td>
-                        <td className="px-4 py-2.5 tabular-nums text-muted-foreground">{formatDate(p.ngay_yeu_cau)}</td>
-                        <td className="px-4 py-2.5 tabular-nums text-muted-foreground">{formatDate(p.ngay_hen)}</td>
-                        <td className="px-4 py-2.5 text-foreground">{p.ten_nguoi_phu_trach || '—'}</td>
+                        <td className="px-4 py-2.5 tabular-nums font-medium">{formatCurrency(p.so_tien)}</td>
                         <td className="px-4 py-2.5">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${p.trang_thai === 1 ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-muted text-muted-foreground border border-border'}`}>
-                            {p.trang_thai === 1 ? t('baoTriSuaChua.statusCompleted') : t('baoTriSuaChua.statusPending')}
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${p.trang_thai === 'da_duyet' ? 'bg-primary/10 text-primary border border-primary/20' : p.trang_thai === 'khong_duyet' ? 'bg-destructive/10 text-destructive border border-destructive/20' : 'bg-muted text-muted-foreground border border-border'}`}>
+                            {getTrangThaiLabel(p.trang_thai, t)}
                           </span>
                         </td>
+                        <td className="px-4 py-2.5 text-foreground">{p.nguoi_duyet || '—'}</td>
                         {(onEditPhieuBaoTri || onDeletePhieuBaoTri) && (
                           <td className="sticky right-0 z-[1] px-4 py-2.5 text-center bg-card border-l border-border/50" onClick={(e) => e.stopPropagation()}>
                             <div className="flex items-center justify-center gap-0.5">

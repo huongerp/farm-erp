@@ -1,8 +1,8 @@
 -- =============================================================================
 -- Thiết lập tài sản (Asset setup) – Hành chính / Tài sản
 -- Chạy trong Supabase Dashboard → SQL Editor
--- Gồm: (1) Nhóm tài sản + tham số khấu hao, (2) Trạng thái tài sản.
--- Dùng trong module Danh sách tài sản, Khấu hao, Kiểm kê, Cấp phát thu hồi.
+-- Gồm: (1) Nhóm tài sản + tham số khấu hao, (2) Trạng thái tài sản, (3) Loại chi phí.
+-- Dùng trong module Danh sách tài sản, Khấu hao, Kiểm kê, Cấp phát thu hồi, Bảo trì sửa chữa.
 -- Trạng thái: text 'Đang hoạt động' | 'Ngừng hoạt động'.
 -- =============================================================================
 
@@ -142,3 +142,66 @@ VALUES
   ('THU_HOI', 'Đã thu hồi', 5, NULL, 'Đang hoạt động'),
   ('THANH_LY', 'Thanh lý', 6, 'Đã thanh lý', 'Đang hoạt động'),
   ('MAT_HONG', 'Mất / Hỏng', 7, NULL, 'Đang hoạt động');
+
+-- -----------------------------------------------------------------------------
+-- 3. Loại chi phí (dùng cho Bảo trì sửa chữa, chi phí tài sản...)
+-- -----------------------------------------------------------------------------
+
+DROP TABLE IF EXISTS public.fp_ts_loai_chi_phi;
+
+CREATE TABLE public.fp_ts_loai_chi_phi (
+  id           bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  ma           text NOT NULL,
+  ten          text NOT NULL,
+  thu_tu       integer NOT NULL DEFAULT 0,
+  ghi_chu      text,
+  trang_thai   text NOT NULL DEFAULT 'Đang hoạt động',
+  tg_tao       timestamptz DEFAULT now(),
+  tg_cap_nhat  timestamptz DEFAULT now()
+);
+
+COMMENT ON TABLE public.fp_ts_loai_chi_phi IS 'Danh mục loại chi phí – Thiết lập tài sản (VD: Sửa chữa, Bảo trì, Nâng cấp, Thay thế linh kiện). Dùng cho phiếu bảo trì sửa chữa, theo dõi chi phí tài sản.';
+COMMENT ON COLUMN public.fp_ts_loai_chi_phi.ma IS 'Mã loại chi phí (VD: SUA_CHUA, BAO_TRI, NANG_CAP, THAY_LINH_KIEN)';
+COMMENT ON COLUMN public.fp_ts_loai_chi_phi.ten IS 'Tên hiển thị loại chi phí';
+COMMENT ON COLUMN public.fp_ts_loai_chi_phi.thu_tu IS 'Thứ tự sắp xếp';
+COMMENT ON COLUMN public.fp_ts_loai_chi_phi.ghi_chu IS 'Ghi chú tùy chọn';
+COMMENT ON COLUMN public.fp_ts_loai_chi_phi.trang_thai IS 'Trạng thái hoạt động – text: Đang hoạt động | Ngừng hoạt động';
+
+CREATE UNIQUE INDEX idx_fp_ts_loai_chi_phi_ma ON public.fp_ts_loai_chi_phi(ma);
+CREATE INDEX idx_fp_ts_loai_chi_phi_thu_tu ON public.fp_ts_loai_chi_phi(thu_tu);
+CREATE INDEX idx_fp_ts_loai_chi_phi_trang_thai ON public.fp_ts_loai_chi_phi(trang_thai);
+
+CREATE OR REPLACE FUNCTION fp_ts_loai_chi_phi_tg_cap_nhat()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.tg_cap_nhat = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER tr_fp_ts_loai_chi_phi_tg_cap_nhat
+  BEFORE UPDATE ON public.fp_ts_loai_chi_phi
+  FOR EACH ROW EXECUTE PROCEDURE fp_ts_loai_chi_phi_tg_cap_nhat();
+
+ALTER TABLE public.fp_ts_loai_chi_phi ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow select fp_ts_loai_chi_phi" ON public.fp_ts_loai_chi_phi
+  FOR SELECT TO authenticated USING (true);
+
+CREATE POLICY "Allow insert fp_ts_loai_chi_phi" ON public.fp_ts_loai_chi_phi
+  FOR INSERT TO authenticated WITH CHECK (true);
+
+CREATE POLICY "Allow update fp_ts_loai_chi_phi" ON public.fp_ts_loai_chi_phi
+  FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
+
+CREATE POLICY "Allow delete fp_ts_loai_chi_phi" ON public.fp_ts_loai_chi_phi
+  FOR DELETE TO authenticated USING (true);
+
+-- Dữ liệu mẫu Loại chi phí (tùy chọn)
+INSERT INTO public.fp_ts_loai_chi_phi (ma, ten, thu_tu, ghi_chu, trang_thai)
+VALUES
+  ('SUA_CHUA', 'Sửa chữa', 1, 'Chi phí sửa chữa hỏng hóc', 'Đang hoạt động'),
+  ('BAO_TRI', 'Bảo trì', 2, 'Bảo trì định kỳ, bảo dưỡng', 'Đang hoạt động'),
+  ('NANG_CAP', 'Nâng cấp', 3, 'Nâng cấp phần cứng/phần mềm', 'Đang hoạt động'),
+  ('THAY_LINH_KIEN', 'Thay thế linh kiện', 4, 'Thay thế linh kiện thay thế', 'Đang hoạt động'),
+  ('KHAC', 'Khác', 5, 'Chi phí khác liên quan tài sản', 'Đang hoạt động');

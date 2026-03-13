@@ -78,8 +78,8 @@ const DotKiemKeDetail: React.FC<Props> = ({
 
   const existingTaiSanIds = useMemo(() => new Set(chiTiet.map((c) => c.id_tai_san)), [chiTiet]);
 
-  const isDraft = data.trang_thai === 'draft';
-  const isDangKiemKe = data.trang_thai === 'dang_kiem_ke';
+  const isDraft = data.trang_thai === 'Nháp';
+  const isDangKiemKe = data.trang_thai === 'Đang kiểm kê';
 
   const handleNhapKetQuaSave = useCallback(
     (payload: ChiTietKiemKeUpdate) => {
@@ -102,14 +102,14 @@ const DotKiemKeDetail: React.FC<Props> = ({
   );
 
   const stats = useMemo(() => {
-    const khop = chiTiet.filter((c) => c.ket_qua === 'khop').length;
+    const khop = chiTiet.filter((c) => c.ket_qua === 'Khớp').length;
     const chenh = chiTiet.filter(
       (c) =>
-        c.ket_qua === 'chenh_noi_luu' ||
-        c.ket_qua === 'chenh_nguoi_giu' ||
-        c.ket_qua === 'chenh_trang_thai'
+        c.ket_qua === 'Chênh nơi lưu' ||
+        c.ket_qua === 'Chênh người giữ' ||
+        c.ket_qua === 'Chênh trạng thái'
     ).length;
-    const chuaKiem = chiTiet.filter((c) => c.ket_qua === 'chua_kiem').length;
+    const chuaKiem = chiTiet.filter((c) => c.ket_qua === 'Chưa kiểm').length;
     return { khop, chenh, chuaKiem, total: chiTiet.length };
   }, [chiTiet]);
 
@@ -208,7 +208,7 @@ const DotKiemKeDetail: React.FC<Props> = ({
           <DetailField label={t('kiemKeTaiSan.store.ngayKetThucCol')} value={formatDate(data.ngay_ket_thuc)} />
           <DetailField
             label={t('kiemKeTaiSan.store.trangThaiCol')}
-            value={getTrangThaiDotLabel(data.trang_thai, t)}
+            value={getTrangThaiDotLabel(data.trang_thai)}
           />
           <DetailField
             label={t('kiemKeTaiSan.store.nguoiPhuTrachCol')}
@@ -224,7 +224,7 @@ const DotKiemKeDetail: React.FC<Props> = ({
             {t('kiemKeTaiSan.taoDanhSachHint')}
           </p>
         )}
-        {(isDangKiemKe || data.trang_thai === 'hoan_thanh') && chiTiet.length > 0 && (
+        {(isDangKiemKe || data.trang_thai === 'Hoàn thành') && chiTiet.length > 0 && (
           <>
             <div className="flex flex-wrap gap-2 mb-3">
               <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
@@ -281,14 +281,14 @@ const DotKiemKeDetail: React.FC<Props> = ({
                           <td className="px-3 py-2">
                             <span
                               className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
-                                c.ket_qua === 'khop'
+                                c.ket_qua === 'Khớp'
                                   ? 'bg-emerald-500/10 text-emerald-700'
-                                  : c.ket_qua === 'chua_kiem'
+                                  : c.ket_qua === 'Chưa kiểm'
                                     ? 'bg-muted text-muted-foreground'
                                     : 'bg-amber-500/10 text-amber-700'
                               }`}
                             >
-                              {getKetQuaLabel(c.ket_qua, t)}
+                              {getKetQuaLabel(c.ket_qua)}
                             </span>
                           </td>
                           {isDangKiemKe && (
@@ -305,9 +305,9 @@ const DotKiemKeDetail: React.FC<Props> = ({
                                 >
                                   <PenLine size={16} />
                                 </Button>
-                                {(c.ket_qua === 'chenh_noi_luu' ||
-                                  c.ket_qua === 'chenh_nguoi_giu' ||
-                                  c.ket_qua === 'chenh_trang_thai') &&
+                                {(c.ket_qua === 'Chênh nơi lưu' ||
+                                  c.ket_qua === 'Chênh người giữ' ||
+                                  c.ket_qua === 'Chênh trạng thái') &&
                                   (c.id_noi_luu_thuc_te != null ||
                                     c.id_nguoi_giu_thuc_te != null ||
                                     c.id_trang_thai_thuc_te != null) && (

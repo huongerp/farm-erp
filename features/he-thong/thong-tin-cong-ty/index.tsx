@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useUIStore } from '../../../store/useStore';
+import { useModulePermissionFromContext } from '../../../components/shared/ModulePermissionGuard';
 import CompanyInfoForm from './components/thong-tin-cong-ty-form';
 import type { CompanyFormValues } from './core/types';
 import { useCompanyInfo, useUpdateCompanyInfo, useFirstCompanyId } from './hooks/use-thong-tin-cong-ty';
@@ -8,6 +9,7 @@ import { toast } from 'sonner';
 
 const CompanyInfoPage: React.FC = () => {
   const { t } = useTranslation();
+  const { canUpdate } = useModulePermissionFromContext();
   const { companyInfo } = useUIStore();
   const { data: companyFromApi, isLoading } = useCompanyInfo();
   const { data: firstId } = useFirstCompanyId();
@@ -59,6 +61,7 @@ const CompanyInfoPage: React.FC = () => {
         <CompanyInfoForm
           initialValues={displayValues}
           onSubmit={handleSubmit}
+          canUpdate={canUpdate}
         />
       )}
     </div>

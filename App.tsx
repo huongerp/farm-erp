@@ -9,6 +9,7 @@ import Settings from './pages/Settings';
 import AiStudio from './pages/AiStudio';
 import ConfirmDialog from './components/shared/ConfirmDialog';
 import PwaRegister from './components/shared/PwaRegister';
+import ModulePermissionGuard from './components/shared/ModulePermissionGuard';
 
 import Home from './pages/Home';
 import LicenseInfo from './pages/LicenseInfo';
@@ -178,16 +179,16 @@ const App = () => {
                   {/* === DASHBOARDS === */}
                   <Route path="/he-thong" element={<SystemDashboard />} />
                   {/* === HỆ THỐNG === */}
-                  <Route path="/nhan-vien" element={<EmployeePage />} />
-                  <Route path="/phong-ban" element={<DepartmentPage />} />
-                  <Route path="/chuc-vu" element={<PositionPage />} />
+                  <Route path="/nhan-vien" element={<ModulePermissionGuard moduleId="he-thong/nhan-vien"><EmployeePage /></ModulePermissionGuard>} />
+                  <Route path="/phong-ban" element={<ModulePermissionGuard moduleId="he-thong/phong-ban"><DepartmentPage /></ModulePermissionGuard>} />
+                  <Route path="/chuc-vu" element={<ModulePermissionGuard moduleId="he-thong/chuc-vu"><PositionPage /></ModulePermissionGuard>} />
                   <Route path="/chuc-nang-nhiem-vu" element={<ChucNangNhiemVuPage />} />
-                  <Route path="/cap-bac" element={<JobLevelPage />} />
-                  <Route path="/thong-tin-cong-ty" element={<CompanyInfoPage />} />
-                  <Route path="/chi-nhanh" element={<BranchPage />} />
-                  <Route path="/sao-luu" element={<BackupPage />} />
-                  <Route path="/thiet-bi-dang-nhap" element={<LoginDevicePage />} />
-                  <Route path="/phan-quyen" element={<SecurityPage />} />
+                  <Route path="/cap-bac" element={<ModulePermissionGuard moduleId="he-thong/cap-bac"><JobLevelPage /></ModulePermissionGuard>} />
+                  <Route path="/thong-tin-cong-ty" element={<ModulePermissionGuard moduleId="he-thong/thong-tin-cong-ty"><CompanyInfoPage /></ModulePermissionGuard>} />
+                  <Route path="/chi-nhanh" element={<ModulePermissionGuard moduleId="he-thong/chi-nhanh"><BranchPage /></ModulePermissionGuard>} />
+                  <Route path="/sao-luu" element={<ModulePermissionGuard moduleId="he-thong/sao-luu"><BackupPage /></ModulePermissionGuard>} />
+                  <Route path="/thiet-bi-dang-nhap" element={<ModulePermissionGuard moduleId="he-thong/thiet-bi-dang-nhap"><LoginDevicePage /></ModulePermissionGuard>} />
+                  <Route path="/phan-quyen" element={<ModulePermissionGuard moduleId="he-thong/phan-quyen"><SecurityPage /></ModulePermissionGuard>} />
 
                   {/* === CHUNG === */}
                   <Route path="/tro-ly-ai" element={<AiStudio />} />

@@ -33,14 +33,14 @@ const DotKiemKeTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, onDe
 
   const renderTrangThaiBadge = (status: DotKiemKe['trang_thai']) => {
     const variant =
-      status === 'hoan_thanh'
+      status === 'Hoàn thành'
         ? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20'
-        : status === 'dang_kiem_ke'
+        : status === 'Đang kiểm kê'
           ? 'bg-amber-500/10 text-amber-700 border-amber-500/20'
           : 'bg-muted text-muted-foreground border-border';
     return (
       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${variant}`}>
-        {getTrangThaiDotLabel(status, t)}
+        {getTrangThaiDotLabel(status)}
       </span>
     );
   };
@@ -80,7 +80,7 @@ const DotKiemKeTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, onDe
         if (!showActions) return null;
         return (
           <div className="flex items-center justify-center gap-1">
-            {onEdit && item.trang_thai === 'draft' && (
+            {onEdit && item.trang_thai === 'Nháp' && (
               <Tooltip content={t('common.edit')} placement="left">
                 <button
                   type="button"
@@ -95,7 +95,7 @@ const DotKiemKeTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, onDe
                 </button>
               </Tooltip>
             )}
-            {onDelete && item.trang_thai === 'draft' && (
+            {onDelete && item.trang_thai === 'Nháp' && (
               <Tooltip content={t('common.delete')} placement="left">
                 <button
                   type="button"

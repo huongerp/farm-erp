@@ -1,9 +1,11 @@
 import React from 'react';
 
+import { useModulePermissionFromContext } from '../../../components/shared/ModulePermissionGuard';
 import PermissionMatrix from './components/permission-matrix';
 import { useRoles } from './hooks/use-phan-quyen';
 
 const SecurityPage: React.FC = () => {
+    const { canUpdate } = useModulePermissionFromContext();
     const { data: roles = [], isLoading: isLoadingRoles } = useRoles();
 
     return (
@@ -12,6 +14,7 @@ const SecurityPage: React.FC = () => {
                 <PermissionMatrix
                     roles={roles}
                     isLoading={isLoadingRoles}
+                    canUpdate={canUpdate}
                 />
             </div>
         </div>

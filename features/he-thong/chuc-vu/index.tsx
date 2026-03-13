@@ -4,6 +4,7 @@ import { AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { getLanguage } from '../../../lib/utils';
 
+import { useModulePermissionFromContext } from '../../../components/shared/ModulePermissionGuard';
 import PositionForm from './components/chuc-vu-form';
 import PositionDetail from './components/chuc-vu-detail';
 import PositionToolbar from './components/chuc-vu-toolbar';
@@ -21,6 +22,7 @@ import { TRANG_THAI_HOAT_DONG, type TrangThaiHoatDong } from '../../../lib/const
 
 const PositionPage: React.FC = () => {
   const { t } = useTranslation();
+  const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
 
   const [showForm, setShowForm] = useState(false);
@@ -224,6 +226,9 @@ const PositionPage: React.FC = () => {
           onImport={() => toast.info(t('position.importDeveloping'))}
           onDeleteMany={handleDeleteMany}
           onStatusChangeMany={handleStatusChangeMany}
+          canCreate={canCreate}
+          canUpdate={canUpdate}
+          canDelete={canDelete}
         />
 
         <div className="flex-1 min-h-0">
@@ -234,6 +239,8 @@ const PositionPage: React.FC = () => {
             onDelete={handleDelete}
             onStatusChange={handleStatusChange}
             onView={setViewingPos}
+            canUpdate={canUpdate}
+            canDelete={canDelete}
           />
         </div>
       </div>
@@ -252,6 +259,8 @@ const PositionPage: React.FC = () => {
             onEdit={handleEdit}
             onDelete={handleDelete}
             onStatusChange={handleStatusChange}
+            canUpdate={canUpdate}
+            canDelete={canDelete}
           />
         )}
       </AnimatePresence>

@@ -16,9 +16,11 @@ interface Props {
   onClose: () => void;
   onEdit: (item: PayrollPointGroup) => void;
   onDelete?: (id: string) => void;
+  canUpdate?: boolean;
+  canDelete?: boolean;
 }
 
-const PayrollPointGroupDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete }) => {
+const PayrollPointGroupDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, canUpdate = true, canDelete = true }) => {
   const { t } = useTranslation();
   const isActive = data.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
   const isCong = data.loai === 'cong';
@@ -33,6 +35,7 @@ const PayrollPointGroupDetail: React.FC<Props> = ({ data, onClose, onEdit, onDel
         {BTN_CLOSE()}
       </Button>
       <div className="flex items-center gap-3">
+        {canUpdate && (
         <Button
           onClick={() => {
             onEdit(data);
@@ -42,7 +45,8 @@ const PayrollPointGroupDetail: React.FC<Props> = ({ data, onClose, onEdit, onDel
         >
           <Edit size={16} className="mr-2" /> {BTN_EDIT()}
         </Button>
-        {onDelete && (
+        )}
+        {canDelete && onDelete && (
           <Button
             variant="ghost"
             onClick={() => {

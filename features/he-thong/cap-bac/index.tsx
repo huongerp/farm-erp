@@ -4,6 +4,7 @@ import { AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { getLanguage } from '../../../lib/utils';
 
+import { useModulePermissionFromContext } from '../../../components/shared/ModulePermissionGuard';
 import JobLevelForm from './components/cap-bac-form';
 import JobLevelDetail from './components/cap-bac-detail';
 import JobLevelToolbar from './components/cap-bac-toolbar';
@@ -21,6 +22,7 @@ import { TRANG_THAI_HOAT_DONG, type TrangThaiHoatDong } from '../../../lib/const
 
 const JobLevelPage: React.FC = () => {
   const { t } = useTranslation();
+  const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
 
   const [showForm, setShowForm] = useState(false);
@@ -219,6 +221,9 @@ const JobLevelPage: React.FC = () => {
           onImport={() => toast.info(t('jobLevel.importDeveloping'))}
           onDeleteMany={handleDeleteMany}
           onStatusChangeMany={handleStatusChangeMany}
+          canCreate={canCreate}
+          canUpdate={canUpdate}
+          canDelete={canDelete}
         />
 
         <div className="flex-1 min-h-0">
@@ -229,6 +234,8 @@ const JobLevelPage: React.FC = () => {
             onDelete={handleDelete}
             onStatusChange={handleStatusChange}
             onView={setViewingLevel}
+            canUpdate={canUpdate}
+            canDelete={canDelete}
           />
         </div>
       </div>
@@ -247,6 +254,8 @@ const JobLevelPage: React.FC = () => {
             onEdit={handleEdit}
             onDelete={handleDelete}
             onStatusChange={handleStatusChange}
+            canUpdate={canUpdate}
+            canDelete={canDelete}
           />
         )}
       </AnimatePresence>

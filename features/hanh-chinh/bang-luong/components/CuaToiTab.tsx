@@ -13,11 +13,13 @@ import BangLuongDetail from './BangLuongDetail';
 import BangLuongForm from './BangLuongForm';
 import { useBangLuongMyStore } from '../store/useBangLuongMyStore';
 import type { BangLuongRecord } from '../core/types';
+import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 
 const CuaToiTab: React.FC = () => {
   const { t } = useTranslation();
   const confirm = useConfirmStore((s) => s.confirm);
   const user = useAuthStore((s) => s.user);
+  const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
   const currentUserId = user?.id ?? '';
   const {
     searchTerm,
@@ -138,10 +140,12 @@ const CuaToiTab: React.FC = () => {
     <div className="flex flex-col h-full">
       <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
         <BangLuongMyToolbar
-          onAdd={handleAdd}
+          onAdd={canCreate ? handleAdd : undefined}
           selectedCount={selectedIds.size}
           onClearSelection={clearSelection}
-          onDeleteMany={handleDeleteMany}
+          onDeleteMany={canDelete ? handleDeleteMany : undefined}
+          canCreate={canCreate}
+          canDelete={canDelete}
         />
         <div className="flex-1 min-h-0">
           <BangLuongMyTable
@@ -150,6 +154,8 @@ const CuaToiTab: React.FC = () => {
             onView={handleView}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            canUpdate={canUpdate}
+            canDelete={canDelete}
           />
         </div>
       </div>
@@ -161,6 +167,8 @@ const CuaToiTab: React.FC = () => {
             onClose={() => setViewingRecord(null)}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            canUpdate={canUpdate}
+            canDelete={canDelete}
           />
         )}
       </AnimatePresence>

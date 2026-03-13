@@ -19,6 +19,7 @@ import ExportDialog from '../../../components/shared/ExportDialog';
 import { useEmployees, useDeleteWithUndo, useUpdateStatusEmployee } from './hooks/use-nhan-vien';
 import { useDepartments } from '@/features/he-thong/phong-ban/hooks/use-phong-ban';
 import { usePositions } from '@/features/he-thong/chuc-vu/hooks/use-chuc-vu';
+import { useModulePermissionFromContext } from '@/components/shared/ModulePermissionGuard';
 import { useEmployeeStore } from './store/useEmployeeStore';
 import { Employee } from './core/types';
 import { useConfirmStore } from '../../../store/useConfirmStore';
@@ -32,6 +33,7 @@ type FormOrigin = 'list' | 'detail';
 
 const EmployeePage: React.FC = () => {
   const { t } = useTranslation();
+  const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
 
   const IMPORT_COLUMNS = useMemo(() => [
     { key: 'ho_ten', label: t('employee.name'), required: true },
@@ -254,6 +256,9 @@ const EmployeePage: React.FC = () => {
             onDeleteMany={handleDeleteMany}
             onStatusChangeMany={handleStatusChangeMany}
             onBulkEdit={() => setShowBulkEdit(true)}
+            canCreate={canCreate}
+            canUpdate={canUpdate}
+            canDelete={canDelete}
           />
 
           <div className="flex-1 min-h-0">
@@ -265,6 +270,8 @@ const EmployeePage: React.FC = () => {
               onDelete={handleDelete}
               onStatusChange={handleStatusChange}
               positions={positions}
+              canUpdate={canUpdate}
+              canDelete={canDelete}
             />
           </div>
         </div>
@@ -309,6 +316,8 @@ const EmployeePage: React.FC = () => {
                 onClose={() => setViewingEmp(null)}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
+                canUpdate={canUpdate}
+                canDelete={canDelete}
             />
         )}
       </AnimatePresence>

@@ -11,13 +11,15 @@ import type { BangLuongRecord } from '../core/types';
 interface Props {
   /** Danh sách bản ghi bảng lương để đếm count theo phòng ban. */
   items?: BangLuongRecord[];
-  onAdd: () => void;
+  onAdd?: () => void;
   onClearSelection: () => void;
   selectedCount: number;
   onDeleteMany?: (ids: string[]) => void;
+  canCreate?: boolean;
+  canDelete?: boolean;
 }
 
-const BangLuongManagedToolbar: React.FC<Props> = ({ items = [], onAdd, onClearSelection, selectedCount, onDeleteMany }) => {
+const BangLuongManagedToolbar: React.FC<Props> = ({ items = [], onAdd, onClearSelection, selectedCount, onDeleteMany, canCreate = true, canDelete = true }) => {
   const { t } = useTranslation();
   const {
     searchTerm,
@@ -55,7 +57,7 @@ const BangLuongManagedToolbar: React.FC<Props> = ({ items = [], onAdd, onClearSe
     setFilter('phongBan', []);
   };
 
-  const renderActions = (
+  const renderActions = canCreate && onAdd ? (
     <Button
       onClick={onAdd}
       size="sm"
@@ -64,7 +66,7 @@ const BangLuongManagedToolbar: React.FC<Props> = ({ items = [], onAdd, onClearSe
       <Plus className="w-5 h-5 sm:w-4 sm:h-4 sm:mr-2" />
       <span className="hidden sm:inline">{t('common.addNew')}</span>
     </Button>
-  );
+  ) : null;
 
   const renderFilters = (
     <>
@@ -96,7 +98,7 @@ const BangLuongManagedToolbar: React.FC<Props> = ({ items = [], onAdd, onClearSe
       onClearSelection={onClearSelection}
       actions={renderActions}
       filters={renderFilters}
-      onDeleteMany={onDeleteMany && selectedIds.size > 0 ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
+      onDeleteMany={canDelete && onDeleteMany && selectedIds.size > 0 ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
       filterGroups={[]}
       searchPlaceholder={t('bangLuong.managed.searchPlaceholder')}
       activeFilterCount={activeFilterCount}

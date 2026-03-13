@@ -12,6 +12,7 @@ interface Props {
   data: LoginDevice[];
   isLoading: boolean;
   onLogout: (item: LoginDevice) => void;
+  canUpdate?: boolean;
 }
 
 const getDeviceTypeIcon = (loai: string) => {
@@ -25,7 +26,7 @@ const getDeviceTypeIcon = (loai: string) => {
   }
 };
 
-const LoginDeviceTable: React.FC<Props> = ({ data, isLoading, onLogout }) => {
+const LoginDeviceTable: React.FC<Props> = ({ data, isLoading, onLogout, canUpdate = true }) => {
   const { t } = useTranslation();
   const {
     columns,
@@ -98,36 +99,38 @@ const LoginDeviceTable: React.FC<Props> = ({ data, isLoading, onLogout }) => {
       case 'actions':
         return (
           <div className="flex items-center justify-center">
-            <Tooltip
-              content={
-                item.la_thiet_bi_hien_tai
-                  ? t('loginDevices.cannotLogoutCurrent')
-                  : item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG
-                    ? t('loginDevices.logoutDevice')
-                    : '—'
-              }
-              placement="left"
-            >
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (!item.la_thiet_bi_hien_tai && item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG) {
-                    onLogout(item);
-                  }
-                }}
-                disabled={item.la_thiet_bi_hien_tai || item.trang_thai === TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG}
-                className={`
-                  p-2 rounded-lg transition-all
-                  ${
-                    item.la_thiet_bi_hien_tai || item.trang_thai === TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG
-                      ? 'text-muted-foreground/40 cursor-not-allowed'
-                      : 'text-amber-600 hover:bg-amber-500/10 hover:text-amber-700'
-                  }
-                `}
+            {canUpdate ? (
+              <Tooltip
+                content={
+                  item.la_thiet_bi_hien_tai
+                    ? t('loginDevices.cannotLogoutCurrent')
+                    : item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG
+                      ? t('loginDevices.logoutDevice')
+                      : '—'
+                }
+                placement="left"
               >
-                <LogOut size={16} />
-              </button>
-            </Tooltip>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!item.la_thiet_bi_hien_tai && item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG) {
+                      onLogout(item);
+                    }
+                  }}
+                  disabled={item.la_thiet_bi_hien_tai || item.trang_thai === TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG}
+                  className={`
+                    p-2 rounded-lg transition-all
+                    ${
+                      item.la_thiet_bi_hien_tai || item.trang_thai === TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG
+                        ? 'text-muted-foreground/40 cursor-not-allowed'
+                        : 'text-amber-600 hover:bg-amber-500/10 hover:text-amber-700'
+                    }
+                  `}
+                >
+                  <LogOut size={16} />
+                </button>
+              </Tooltip>
+            ) : null}
           </div>
         );
       default:
@@ -175,18 +178,20 @@ const LoginDeviceTable: React.FC<Props> = ({ data, isLoading, onLogout }) => {
             </div>
             <div className="flex justify-between items-center pt-3 border-t border-border">
               <div className="scale-90 origin-left">{renderStatusBadge(item)}</div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (!item.la_thiet_bi_hien_tai && item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG) {
-                    onLogout(item);
-                  }
-                }}
-                disabled={item.la_thiet_bi_hien_tai || item.trang_thai === TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG}
-                className="p-2 text-amber-600 bg-amber-500/10 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <LogOut size={16} />
-              </button>
+              {canUpdate && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!item.la_thiet_bi_hien_tai && item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG) {
+                      onLogout(item);
+                    }
+                  }}
+                  disabled={item.la_thiet_bi_hien_tai || item.trang_thai === TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG}
+                  className="p-2 text-amber-600 bg-amber-500/10 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <LogOut size={16} />
+                </button>
+              )}
             </div>
           </div>
         </div>

@@ -17,17 +17,19 @@ export type CongViecViewMode = 'list' | 'kanban' | 'gantt';
 interface Props {
   /** Danh sách công việc người dùng được xem (sau scope). Count filter chip đếm trên list này. */
   items?: CongViec[];
-  onAdd: () => void;
-  onDeleteMany: (ids: (number | string)[]) => void;
+  onAdd?: () => void;
+  onDeleteMany?: (ids: (number | string)[]) => void;
   onExport?: () => void;
   onImport?: () => void;
   viewMode?: CongViecViewMode;
   onViewModeChange?: (mode: CongViecViewMode) => void;
   /** Ẩn nút chuyển List/Kanban/Gantt khi dùng tab riêng (vd. CongViecScopeTab) */
   hideViewMode?: boolean;
+  canCreate?: boolean;
+  canDelete?: boolean;
 }
 
-const CongViecToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onExport, onImport, viewMode = 'list', onViewModeChange, hideViewMode }) => {
+const CongViecToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onExport, onImport, viewMode = 'list', onViewModeChange, hideViewMode, canCreate = true, canDelete = true }) => {
   const { t } = useTranslation();
   const { data: employees = [] } = useEmployees();
   const {
@@ -106,7 +108,7 @@ const CongViecToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onE
 
   const renderActions = (
     <div className="flex items-center gap-2">
-      {onImport && (
+      {canCreate && onImport && (
         <Tooltip content={t('congViec.toolbar.importData')} placement="bottom">
           <Button
             type="button"
@@ -168,14 +170,16 @@ const CongViecToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onE
           </Tooltip>
         </div>
       )}
-      <Button
-        onClick={onAdd}
-        size="sm"
-        className="bg-primary text-white hover:bg-primary/90 shadow-md shadow-primary/20 h-9 px-3 sm:px-4"
-      >
-        <Plus className="w-5 h-5 sm:w-4 sm:h-4 sm:mr-2" />
-        <span className="hidden sm:inline">{t('common.addNew')}</span>
-      </Button>
+      {canCreate && onAdd && (
+        <Button
+          onClick={onAdd}
+          size="sm"
+          className="bg-primary text-white hover:bg-primary/90 shadow-md shadow-primary/20 h-9 px-3 sm:px-4"
+        >
+          <Plus className="w-5 h-5 sm:w-4 sm:h-4 sm:mr-2" />
+          <span className="hidden sm:inline">{t('common.addNew')}</span>
+        </Button>
+      )}
     </div>
   );
 
@@ -188,11 +192,11 @@ const CongViecToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onE
       actions={renderActions}
       filters={renderFilters}
       filterGroups={[]}
-      onAdd={onAdd}
+      onAdd={canCreate ? onAdd : undefined}
       searchPlaceholder={t('congViec.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
-      onDeleteMany={() => onDeleteMany(Array.from(selectedIds))}
+      onDeleteMany={canDelete && onDeleteMany ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
       columns={columns}
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}

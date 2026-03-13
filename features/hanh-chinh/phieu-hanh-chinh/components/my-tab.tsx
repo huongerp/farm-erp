@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
 import { Ban } from 'lucide-react';
+import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import AdminFormToolbar from './admin-form-toolbar';
 import AdminFormTable from './admin-form-table';
 import AdminFormForm from './admin-form-form';
@@ -24,6 +25,7 @@ import { useAuthStore } from '../../../../store/useStore';
 
 const AdminFormMyTab: React.FC = () => {
   const { t } = useTranslation();
+  const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
   const user = useAuthStore((s) => s.user);
   const {
@@ -156,7 +158,7 @@ const AdminFormMyTab: React.FC = () => {
     });
   };
 
-  const bulkActions = selectedIds.size > 0 ? (
+  const bulkActions = canUpdate && selectedIds.size > 0 ? (
     <button
       onClick={() => handleCancelMany(Array.from(selectedIds))}
       className="inline-flex items-center gap-1.5 px-2.5 h-8 rounded-lg border border-amber-200 text-amber-700 bg-amber-50 hover:bg-amber-100 transition-all active:scale-95 text-xs font-semibold"
@@ -184,8 +186,8 @@ const AdminFormMyTab: React.FC = () => {
         resetColumns={resetColumns}
         selectedIds={selectedIds}
         clearSelection={clearSelection}
-        onAdd={() => setShowForm(true)}
-        onDeleteMany={handleDeleteMany}
+        onAdd={canCreate ? () => setShowForm(true) : undefined}
+        onDeleteMany={canDelete ? handleDeleteMany : undefined}
         bulkActions={bulkActions}
         searchPlaceholder={t('adminForm.my.searchPlaceholder')}
       />
@@ -197,6 +199,8 @@ const AdminFormMyTab: React.FC = () => {
           onEdit={handleEdit}
           onDelete={handleDelete}
           useStore={useAdminFormMyStore}
+          canUpdate={canUpdate}
+          canDelete={canDelete}
         />
       </div>
 
@@ -214,6 +218,8 @@ const AdminFormMyTab: React.FC = () => {
             onEdit={(item) => { setViewingItem(null); handleEdit(item); }}
             onDelete={handleDelete}
             onCancel={handleCancel}
+            canUpdate={canUpdate}
+            canDelete={canDelete}
           />
         )}
       </AnimatePresence>

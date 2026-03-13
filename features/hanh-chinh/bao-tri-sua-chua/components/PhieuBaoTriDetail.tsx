@@ -1,14 +1,14 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Wrench, Edit, Trash2, User, FileText, Calendar } from 'lucide-react';
+import { Wrench, Edit, Trash2, User, FileText } from 'lucide-react';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
 import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';
 import Button from '../../../../components/ui/Button';
 import { BTN_CLOSE, BTN_EDIT, BTN_DELETE } from '../../../../lib/button-labels';
-import { formatDateTimeShort, formatDate } from '../../../../lib/utils';
+import { formatDateTimeShort, formatDate, formatCurrency } from '../../../../lib/utils';
 import type { PhieuBaoTriSuaChua } from '../core/types';
-import { getHangMucLabel } from '../core/constants';
+import { getTrangThaiLabel } from '../core/constants';
 
 interface Props {
   data: PhieuBaoTriSuaChua;
@@ -59,7 +59,7 @@ const PhieuBaoTriDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete })
     <GenericDrawer
       title={t('baoTriSuaChua.detail.title')}
       icon={<Wrench size={20} />}
-      subtitle={`${getHangMucLabel(data.hang_muc, t)} • ${data.ma_tai_san ?? data.id_tai_san}`}
+      subtitle={`${data.ten_hang_muc ?? data.id_hang_muc} • ${data.ma_tai_san ?? data.id_tai_san}`}
       onClose={onClose}
       footer={footer}
       maxWidthClass={DRAWER_WIDTH_DETAIL}
@@ -71,13 +71,13 @@ const PhieuBaoTriDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete })
           variant="primary"
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <DetailField label={t('baoTriSuaChua.store.hangMucCol')} value={getHangMucLabel(data.hang_muc, t)} />
+            <DetailField label={t('baoTriSuaChua.store.ngayCol')} value={formatDate(data.ngay)} />
+            <DetailField label={t('baoTriSuaChua.store.hangMucCol')} value={data.ten_hang_muc ?? data.id_hang_muc} />
             <DetailField label={t('baoTriSuaChua.store.taiSanCol')} value={data.ten_tai_san || data.ma_tai_san || '—'} />
-            <DetailField label={t('baoTriSuaChua.store.ngayYeuCauCol')} value={formatDate(data.ngay_yeu_cau)} />
-            <DetailField label={t('baoTriSuaChua.store.ngayHenCol')} value={formatDate(data.ngay_hen)} />
+            <DetailField label={t('baoTriSuaChua.store.soTienCol')} value={formatCurrency(data.so_tien)} />
             <DetailField
               label={t('baoTriSuaChua.store.trangThaiCol')}
-              value={data.trang_thai === 1 ? t('baoTriSuaChua.statusCompleted') : t('baoTriSuaChua.statusPending')}
+              value={getTrangThaiLabel(data.trang_thai, t)}
             />
             <DetailField label={t('baoTriSuaChua.store.updatedCol')} value={formatDateTimeShort(data.tg_cap_nhat)} />
           </div>
@@ -89,7 +89,7 @@ const PhieuBaoTriDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete })
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <DetailField label={t('baoTriSuaChua.store.nguoiTaoCol')} value={data.ten_nguoi_tao || '—'} />
-            <DetailField label={t('baoTriSuaChua.store.nguoiPhuTrachCol')} value={data.ten_nguoi_phu_trach || '—'} />
+            <DetailField label={t('baoTriSuaChua.store.nguoiDuyetCol')} value={data.nguoi_duyet || '—'} />
           </div>
         </DetailSection>
 
@@ -99,17 +99,7 @@ const PhieuBaoTriDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete })
         >
           <div className="grid grid-cols-1 gap-4">
             <DetailField label={t('baoTriSuaChua.store.moTaCol')} value={data.mo_ta || '—'} />
-            {data.ngay_bat_dau && (
-              <DetailField label={t('baoTriSuaChua.form.ngayBatDau')} value={formatDate(data.ngay_bat_dau)} />
-            )}
-            {data.ngay_hoan_thanh && (
-              <DetailField label={t('baoTriSuaChua.form.ngayHoanThanh')} value={formatDate(data.ngay_hoan_thanh)} />
-            )}
-            {data.ghi_chu ? (
-              <DetailField label={t('baoTriSuaChua.store.ghiChuCol')} value={data.ghi_chu} />
-            ) : (
-              <DetailField label={t('baoTriSuaChua.store.ghiChuCol')} value="—" />
-            )}
+            <DetailField label={t('baoTriSuaChua.store.ghiChuCol')} value={data.ghi_chu || '—'} />
           </div>
         </DetailSection>
       </div>

@@ -141,7 +141,7 @@ const GenericDrawer: React.FC<GenericDrawerProps> = ({
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto bg-muted/50 p-4 sm:p-5 custom-scrollbar">
+      <div className="flex-1 min-h-0 overflow-y-auto bg-muted/50 p-4 sm:p-5 custom-scrollbar">
         <div className="max-w-4xl mx-auto">
           {children}
         </div>

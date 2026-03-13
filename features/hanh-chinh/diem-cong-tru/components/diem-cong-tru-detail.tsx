@@ -15,12 +15,14 @@ interface Props {
   onClose: () => void;
   onEdit: (item: DiemCongTruRecord) => void;
   onDelete?: (id: string) => void;
+  canUpdate?: boolean;
+  canDelete?: boolean;
 }
 
 const formatPeriod = (nam: number, thang: number) =>
   `${nam}-${String(thang).padStart(2, '0')}`;
 
-const DiemCongTruDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete }) => {
+const DiemCongTruDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, canUpdate = true, canDelete = true }) => {
   const { t } = useTranslation();
   const subtitle = `${data.ten_nhan_vien || data.ma_nhan_vien || '—'} · ${formatPeriod(data.nam, data.thang)}`;
 
@@ -34,16 +36,18 @@ const DiemCongTruDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete })
         {BTN_CLOSE()}
       </Button>
       <div className="flex items-center gap-3">
-        <Button
-          onClick={() => {
-            onEdit(data);
-            onClose();
-          }}
-          className="bg-primary text-white shadow-lg hover:bg-primary/90"
-        >
-          <Edit size={16} className="mr-2" /> {BTN_EDIT()}
-        </Button>
-        {onDelete && (
+        {canUpdate && (
+          <Button
+            onClick={() => {
+              onEdit(data);
+              onClose();
+            }}
+            className="bg-primary text-white shadow-lg hover:bg-primary/90"
+          >
+            <Edit size={16} className="mr-2" /> {BTN_EDIT()}
+          </Button>
+        )}
+        {canDelete && onDelete && (
           <Button
             variant="ghost"
             onClick={() => {

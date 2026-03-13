@@ -15,9 +15,11 @@ interface Props {
   onEdit: (item: PayrollPointGroup) => void;
   onDelete: (id: string) => void;
   onView?: (item: PayrollPointGroup) => void;
+  canUpdate?: boolean;
+  canDelete?: boolean;
 }
 
-const PayrollPointGroupTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onView }) => {
+const PayrollPointGroupTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onView, canUpdate = true, canDelete = true }) => {
   const { t } = useTranslation();
   const {
     columns,
@@ -92,6 +94,7 @@ const PayrollPointGroupTable: React.FC<Props> = ({ data, isLoading, onEdit, onDe
       case 'actions':
         return (
           <div className="flex items-center justify-center gap-1">
+            {canUpdate && (
             <Tooltip content={t('common.edit')} placement="left">
               <button
                 onClick={(e) => {
@@ -104,6 +107,8 @@ const PayrollPointGroupTable: React.FC<Props> = ({ data, isLoading, onEdit, onDe
                 <Edit size={16} />
               </button>
             </Tooltip>
+            )}
+            {canDelete && (
             <Tooltip content={t('common.delete')} placement="left">
               <button
                 onClick={(e) => {
@@ -116,6 +121,7 @@ const PayrollPointGroupTable: React.FC<Props> = ({ data, isLoading, onEdit, onDe
                 <Trash2 size={16} />
               </button>
             </Tooltip>
+            )}
           </div>
         );
       default:
@@ -166,6 +172,7 @@ const PayrollPointGroupTable: React.FC<Props> = ({ data, isLoading, onEdit, onDe
       <div className="flex justify-between items-center pt-2.5 border-t border-border">
         <span className="text-muted-foreground text-xs">{formatDateTimeShort(item.tg_cap_nhat)}</span>
         <div className="flex gap-1.5">
+          {canUpdate && (
           <button
             type="button"
             onClick={(e) => {
@@ -177,6 +184,8 @@ const PayrollPointGroupTable: React.FC<Props> = ({ data, isLoading, onEdit, onDe
           >
             <Edit size={14} />
           </button>
+          )}
+          {canDelete && (
           <button
             type="button"
             onClick={(e) => {
@@ -188,6 +197,7 @@ const PayrollPointGroupTable: React.FC<Props> = ({ data, isLoading, onEdit, onDe
           >
             <Trash2 size={14} />
           </button>
+          )}
         </div>
       </div>
     </div>

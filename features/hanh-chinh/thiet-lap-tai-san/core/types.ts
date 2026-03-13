@@ -72,3 +72,23 @@ export interface AssetGroupFormState {
   ty_le_khau_hao?: number | null;
   so_nam_su_dung?: number | null;
 }
+
+/** Loại chi phí (dùng cho Bảo trì sửa chữa, theo dõi chi phí tài sản) */
+export interface LoaiChiPhi {
+  id: string;
+  ma: string;
+  ten: string;
+  thu_tu: number;
+  ghi_chu?: string;
+  trang_thai: TrangThaiHoatDong;
+  tg_tao: string;
+  tg_cap_nhat: string;
+}
+
+export interface LoaiChiPhiFormState {
+  ma: string;
+  ten: string;
+  thu_tu: number;
+  ghi_chu?: string;
+  trang_thai: TrangThaiHoatDong;
+}

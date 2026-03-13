@@ -16,13 +16,13 @@ export interface KiemKeStatsByTrangThai {
 
 export function useKiemKeStats(list: DotKiemKe[]) {
   return useMemo(() => {
-    const draft = list.filter((d) => d.trang_thai === 'draft').length;
-    const dangKiemKe = list.filter((d) => d.trang_thai === 'dang_kiem_ke').length;
-    const hoanThanh = list.filter((d) => d.trang_thai === 'hoan_thanh').length;
+    const draft = list.filter((d) => d.trang_thai === 'Nháp').length;
+    const dangKiemKe = list.filter((d) => d.trang_thai === 'Đang kiểm kê').length;
+    const hoanThanh = list.filter((d) => d.trang_thai === 'Hoàn thành').length;
     const byTrangThai: KiemKeStatsByTrangThai[] = [
-      { id: 'draft', ten: 'trangThaiDot.draft', count: draft },
-      { id: 'dang_kiem_ke', ten: 'trangThaiDot.dang_kiem_ke', count: dangKiemKe },
-      { id: 'hoan_thanh', ten: 'trangThaiDot.hoan_thanh', count: hoanThanh },
+      { id: 'Nháp', ten: 'Nháp', count: draft },
+      { id: 'Đang kiểm kê', ten: 'Đang kiểm kê', count: dangKiemKe },
+      { id: 'Hoàn thành', ten: 'Hoàn thành', count: hoanThanh },
     ];
     return {
       summary: {

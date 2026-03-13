@@ -60,12 +60,12 @@ export function usePhieuBaoTriStats(list: PhieuBaoTriSuaChua[]) {
     const weekStart = todayStart - 6 * oneDayMs;
 
     list.forEach((p) => {
-      const cur = byHangMuc.get(p.hang_muc);
+      const cur = byHangMuc.get(p.id_hang_muc);
       if (cur) {
         cur.count += 1;
-        byHangMuc.set(p.hang_muc, cur);
+        byHangMuc.set(p.id_hang_muc, cur);
       }
-      if (p.hang_muc === 'bao_tri') countBaoTri += 1;
+      if (p.id_hang_muc === 'bao_tri') countBaoTri += 1;
       else countSuaChua += 1;
 
       if (p.id_tai_san) {
@@ -76,10 +76,10 @@ export function usePhieuBaoTriStats(list: PhieuBaoTriSuaChua[]) {
         byTaiSan.set(p.id_tai_san, curTs);
       }
 
-      const monthKey = getMonthKey(p.ngay_yeu_cau);
+      const monthKey = getMonthKey(p.ngay);
       if (monthKey) byMonth.set(monthKey, (byMonth.get(monthKey) ?? 0) + 1);
 
-      const d = new Date(p.ngay_yeu_cau).getTime();
+      const d = new Date(p.ngay).getTime();
       if (d >= todayStart) countToday += 1;
       if (d >= weekStart) countThisWeek += 1;
     });

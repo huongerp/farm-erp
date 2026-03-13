@@ -12,12 +12,7 @@ import StatsToolbar from './stats/StatsToolbar';
 import StatsCards from './stats/StatsCards';
 import StatsTables from './stats/StatsTables';
 import type { DotKiemKe } from '../core/types';
-
-const TRANG_THAI_OPTIONS = [
-  { value: 'draft', labelKey: 'kiemKeTaiSan.trangThaiDot.draft' },
-  { value: 'dang_kiem_ke', labelKey: 'kiemKeTaiSan.trangThaiDot.dang_kiem_ke' },
-  { value: 'hoan_thanh', labelKey: 'kiemKeTaiSan.trangThaiDot.hoan_thanh' },
-];
+import { TRANG_THAI_DOT_OPTIONS } from '../core/constants';
 
 /** Đếm theo trạng thái và người phụ trách từ list (chuẩn như tab Danh sách / useKiemKeFilterCounts). */
 function useStatsFilterCounts(items: DotKiemKe[]) {
@@ -58,13 +53,13 @@ const ThongKeTab: React.FC = () => {
 
   const statusOptions = useMemo(
     () =>
-      TRANG_THAI_OPTIONS.map((o) => ({
-        label: t(o.labelKey),
+      TRANG_THAI_DOT_OPTIONS.map((o) => ({
+        label: o.label,
         value: o.value,
         subLabel: undefined as string | undefined,
         count: trangThaiCounts[o.value] ?? 0,
       })),
-    [t, trangThaiCounts]
+    [trangThaiCounts]
   );
   const nguoiPhuTrachOptions = useMemo(
     () =>

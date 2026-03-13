@@ -19,6 +19,8 @@ interface Props {
   onEdit: (item: CongViec) => void;
   onDelete: (id: number | string) => void;
   onView?: (item: CongViec) => void;
+  canUpdate?: boolean;
+  canDelete?: boolean;
 }
 
 const CongViecHierarchyTable: React.FC<Props> = ({
@@ -30,6 +32,8 @@ const CongViecHierarchyTable: React.FC<Props> = ({
   onEdit,
   onDelete,
   onView,
+  canUpdate = true,
+  canDelete = true,
 }) => {
   const { t } = useTranslation();
   const { data: employees = [] } = useEmployees();
@@ -146,8 +150,8 @@ const CongViecHierarchyTable: React.FC<Props> = ({
       renderCell={renderCell}
       onToggleSelection={onToggleSelection}
       onToggleAllSelection={onToggleAllSelection}
-      onEdit={(row) => onEdit(row.item)}
-      onDelete={(id) => onDelete(id)}
+      onEdit={canUpdate ? (row) => onEdit(row.item) : undefined}
+      onDelete={canDelete ? (id) => onDelete(id) : undefined}
       onView={onView ? (row) => onView(row.item) : undefined}
       className="flex-1 min-h-0 overflow-auto"
     />

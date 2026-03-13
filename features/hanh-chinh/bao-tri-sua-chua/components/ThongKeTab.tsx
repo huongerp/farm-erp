@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Wrench, Calendar, Package } from 'lucide-react';
+import { Wrench, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePhieuBaoTriList } from '../hooks/use-bao-tri-sua-chua';
 import { HANG_MUC_OPTIONS } from '../core/constants';
+import { getTrangThaiLabel } from '../core/constants';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import EmptyState from '../../../../components/shared/EmptyState';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
@@ -12,20 +13,20 @@ import StatsCards from './stats/StatsCards';
 import StatsCharts from './stats/StatsCharts';
 import StatsTables from './stats/StatsTables';
 import { usePhieuBaoTriStats } from './stats/usePhieuBaoTriStats';
-import { exportToExcel } from '../../../../lib/utils';
+import { exportToExcel, formatCurrency } from '../../../../lib/utils';
 import type { PhieuBaoTriSuaChua } from '../core/types';
 import type { HangMuc } from '../core/types';
 
 function phieuToExportRow(p: PhieuBaoTriSuaChua, t: (k: string) => string): Record<string, string> {
-  const hangMucLabel = p.hang_muc === 'bao_tri' ? t('baoTriSuaChua.hangMuc.bao_tri') : t('baoTriSuaChua.hangMuc.sua_chua');
+  const hangMucLabel = p.id_hang_muc === 'bao_tri' ? t('baoTriSuaChua.hangMuc.bao_tri') : t('baoTriSuaChua.hangMuc.sua_chua');
   return {
+    ngay: p.ngay,
     hang_muc: hangMucLabel,
     tai_san: p.ten_tai_san || p.ma_tai_san || '',
-    ngay_yeu_cau: p.ngay_yeu_cau,
-    ngay_hen: p.ngay_hen,
-    nguoi_phu_trach: p.ten_nguoi_phu_trach || '',
-    trang_thai: p.trang_thai === 1 ? t('baoTriSuaChua.statusCompleted') : t('baoTriSuaChua.statusPending'),
     mo_ta: p.mo_ta || '',
+    so_tien: formatCurrency(p.so_tien),
+    trang_thai: getTrangThaiLabel(p.trang_thai, t),
+    nguoi_duyet: p.nguoi_duyet || '',
   };
 }
 
@@ -39,9 +40,9 @@ const ThongKeTab: React.FC = () => {
 
   const filteredList = useMemo(() => {
     return list.filter((p: PhieuBaoTriSuaChua) => {
-      if (filterHangMuc.length > 0 && !filterHangMuc.includes(p.hang_muc)) return false;
-      if (filterDateFrom && p.ngay_yeu_cau < filterDateFrom) return false;
-      if (filterDateTo && p.ngay_yeu_cau > filterDateTo) return false;
+      if (filterHangMuc.length > 0 && !filterHangMuc.includes(p.id_hang_muc)) return false;
+      if (filterDateFrom && p.ngay < filterDateFrom) return false;
+      if (filterDateTo && p.ngay > filterDateTo) return false;
       return true;
     });
   }, [list, filterHangMuc, filterDateFrom, filterDateTo]);
@@ -50,7 +51,7 @@ const ThongKeTab: React.FC = () => {
 
   const countByHangMuc = useMemo(() => {
     const m: Record<string, number> = {};
-    list.forEach((p) => { m[p.hang_muc] = (m[p.hang_muc] ?? 0) + 1; });
+    list.forEach((p) => { m[p.id_hang_muc] = (m[p.id_hang_muc] ?? 0) + 1; });
     return m;
   }, [list]);
 
@@ -78,7 +79,7 @@ const ThongKeTab: React.FC = () => {
     <>
       <FilterChipMultiSelect<HangMuc>
         options={hangMucOptions}
-        value={filterHangMuc}
+        value={filterHangMuc as HangMuc[]}
         onChange={setFilterHangMuc}
         placeholder={t('baoTriSuaChua.store.hangMucCol')}
         icon={Wrench}
@@ -114,13 +115,13 @@ const ThongKeTab: React.FC = () => {
       return;
     }
     const headers = {
+      ngay: t('baoTriSuaChua.store.ngayCol'),
       hang_muc: t('baoTriSuaChua.store.hangMucCol'),
       tai_san: t('baoTriSuaChua.store.taiSanCol'),
-      ngay_yeu_cau: t('baoTriSuaChua.store.ngayYeuCauCol'),
-      ngay_hen: t('baoTriSuaChua.store.ngayHenCol'),
-      nguoi_phu_trach: t('baoTriSuaChua.store.nguoiPhuTrachCol'),
-      trang_thai: t('baoTriSuaChua.store.trangThaiCol'),
       mo_ta: t('baoTriSuaChua.store.moTaCol'),
+      so_tien: t('baoTriSuaChua.store.soTienCol'),
+      trang_thai: t('baoTriSuaChua.store.trangThaiCol'),
+      nguoi_duyet: t('baoTriSuaChua.store.nguoiDuyetCol'),
     };
     const dataForExport = filteredList.map((p) => {
       const row = phieuToExportRow(p, t);

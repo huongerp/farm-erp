@@ -2,17 +2,20 @@
  * Kiểm kê tài sản: Đợt kiểm kê + Chi tiết từng tài sản (sổ vs thực tế).
  */
 
-/** Trạng thái đợt kiểm kê */
-export type TrangThaiDotKiemKe = 'draft' | 'dang_kiem_ke' | 'hoan_thanh';
+/** Trạng thái đợt kiểm kê (lưu tiếng Việt trong DB) */
+export type TrangThaiDotKiemKe = 'Nháp' | 'Đang kiểm kê' | 'Hoàn thành';
 
-/** Kết quả kiểm kê từng dòng */
+/** Trạng thái hoạt động đợt (lưu tiếng Việt trong DB) */
+export type TrangThaiActive = 'Đang hoạt động' | 'Ngừng hoạt động';
+
+/** Kết quả kiểm kê từng dòng (lưu tiếng Việt trong DB) */
 export type KetQuaKiemKe =
-  | 'khop'
-  | 'chenh_noi_luu'
-  | 'chenh_nguoi_giu'
-  | 'chenh_trang_thai'
-  | 'thieu'
-  | 'chua_kiem';
+  | 'Chưa kiểm'
+  | 'Khớp'
+  | 'Chênh nơi lưu'
+  | 'Chênh người giữ'
+  | 'Chênh trạng thái'
+  | 'Thiếu';
 
 /** Đợt kiểm kê */
 export interface DotKiemKe {
@@ -30,7 +33,7 @@ export interface DotKiemKe {
   /** Phạm vi: id nơi lưu (rỗng = tất cả) */
   id_noi_luu: string[];
   ghi_chu?: string | null;
-  trang_thai_active: 0 | 1;
+  trang_thai_active: TrangThaiActive;
   tg_tao: string;
   tg_cap_nhat: string;
 }

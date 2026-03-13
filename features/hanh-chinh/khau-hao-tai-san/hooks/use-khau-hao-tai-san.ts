@@ -96,7 +96,7 @@ export const useChotKy = (idKy: string | null, onSuccess?: () => void) => {
         queryClient.invalidateQueries({ queryKey: queryKeyChiTiet(idKy) });
         queryClient.invalidateQueries({ queryKey: QUERY_KEY_KY });
       }
-      queryClient.invalidateQueries({ queryKey: ['assetList'] });
+      queryClient.invalidateQueries({ queryKey: ['taiSanList'] });
       toast.success(i18n.t('khauHaoTaiSan.toast.chotKySuccess'));
       onSuccess?.();
     },

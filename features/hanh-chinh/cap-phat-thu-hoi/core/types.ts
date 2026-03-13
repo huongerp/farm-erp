@@ -32,6 +32,8 @@ export interface PhieuCapPhatThuHoi {
   ngay_thuc_hien: string;
   id_nguoi_thuc_hien: string;
   ten_nguoi_thuc_hien?: string | null;
+  id_nguoi_tao?: string | null;
+  ten_nguoi_tao?: string | null;
   ghi_chu?: string | null;
   trang_thai: 0 | 1;
   tg_tao: string;

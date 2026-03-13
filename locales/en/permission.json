@@ -81,5 +81,6 @@
   "permission.store.logResultCol": "Result",
   "permission.toast.createSuccess": "New role created successfully",
   "permission.toast.deleteSuccess": "Selected roles deleted",
-  "permission.toast.updateSuccess": "System permissions updated"
+  "permission.toast.updateSuccess": "System permissions updated",
+  "permission.noAccessModule": "You do not have permission to view this module."
 }

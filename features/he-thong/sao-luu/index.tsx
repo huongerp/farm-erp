@@ -6,6 +6,7 @@ import {
   Users, Building2, Briefcase, Award, Clock, Wallet, Mail, Shield, Settings,
   Info
 } from 'lucide-react';
+import { useModulePermissionFromContext } from '../../../components/shared/ModulePermissionGuard';
 import TabGroup, { Tab } from '../../../components/ui/TabGroup';
 import GenericTable from '../../../components/shared/GenericTable';
 import GenericToolbar from '../../../components/shared/GenericToolbar';
@@ -309,7 +310,7 @@ const RestoreCollectionSelect: React.FC<{
 };
 
 /* ─── Restore Page: Chế độ → Tên bộ dữ liệu (1 bảng) → File → Khôi phục ─── */
-const RestorePageContent: React.FC = () => {
+const RestorePageContent: React.FC<{ canUpdate?: boolean }> = ({ canUpdate = true }) => {
   const [mode, setMode] = useState<RestoreMode>('upsert');
   const [selectedCollection, setSelectedCollection] = useState<string>('');
   const [file, setFile] = useState<File | null>(null);
@@ -442,18 +443,20 @@ const RestorePageContent: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex justify-end pt-2">
-              <Button
-                disabled={!canRestore}
-                isLoading={restoreMutation.isPending}
-                size="lg"
-                onClick={handleRestore}
-                className={cn("text-white shadow-lg h-11 px-6", mode === 'replace' ? "bg-red-500 hover:bg-red-600" : "bg-primary")}
-              >
-                <RotateCcw size={16} className="mr-2" />
-                Khôi phục
-              </Button>
-            </div>
+            {canUpdate && (
+              <div className="flex justify-end pt-2">
+                <Button
+                  disabled={!canRestore}
+                  isLoading={restoreMutation.isPending}
+                  size="lg"
+                  onClick={handleRestore}
+                  className={cn("text-white shadow-lg h-11 px-6", mode === 'replace' ? "bg-red-500 hover:bg-red-600" : "bg-primary")}
+                >
+                  <RotateCcw size={16} className="mr-2" />
+                  Khôi phục
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -465,6 +468,7 @@ const RestorePageContent: React.FC = () => {
 /* ═══             MAIN PAGE                  ═══ */
 /* ═══════════════════════════════════════════════ */
 const DataManagementPage: React.FC = () => {
+  const { canCreate, canUpdate } = useModulePermissionFromContext();
   const TABS: Tab[] = [
     { id: 'export', label: 'Sao lưu', icon: Download },
     { id: 'restore', label: 'Khôi phục', icon: RotateCcw },
@@ -564,17 +568,17 @@ const DataManagementPage: React.FC = () => {
       case 'so_ban_ghi':
         return <span className="text-sm font-medium text-foreground">{item.recordCount} bản ghi</span>;
       case 'actions':
-        return (
+        return canCreate ? (
           <ExportRowAction
             item={item}
             onExport={handleExportOne}
             isExporting={exportMutation.isPending && exportingSingleId === item.id}
           />
-        );
+        ) : null;
       default:
         return null;
     }
-  }, [handleExportOne, exportMutation.isPending, exportingSingleId]);
+  }, [canCreate, handleExportOne, exportMutation.isPending, exportingSingleId]);
 
   const renderMobileCard = useCallback((item: DataCollection) => (
     <div key={item.id} className="bg-card rounded-xl border border-border p-4 shadow-sm">
@@ -623,6 +627,7 @@ const DataManagementPage: React.FC = () => {
               />
             }
             actions={
+              canCreate ? (
               <div className="relative flex items-center gap-1" ref={exportToolbarRef}>
                 <Button
                   onClick={() => setExportToolbarOpen(o => !o)}
@@ -653,8 +658,10 @@ const DataManagementPage: React.FC = () => {
                   </div>
                 )}
               </div>
+            ) : null
             }
             bulkActions={
+              canCreate ? (
               <div className="relative flex items-center gap-1" ref={exportToolbarRef}>
                 <Button
                   onClick={() => setExportToolbarOpen(o => !o)}
@@ -685,6 +692,7 @@ const DataManagementPage: React.FC = () => {
                   </div>
                 )}
               </div>
+            ) : undefined
             }
           />
           <div className="flex-1 min-h-0">
@@ -708,7 +716,7 @@ const DataManagementPage: React.FC = () => {
         </div>
       )}
 
-      {activeTab === 'restore' && <RestorePageContent />}
+      {activeTab === 'restore' && <RestorePageContent canUpdate={canUpdate} />}
     </div>
   );
 };

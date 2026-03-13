@@ -19,6 +19,8 @@ import { useUpdateModulePermissions } from '../hooks/use-phan-quyen';
 interface Props {
   roles: PositionPermission[];
   isLoading: boolean;
+  /** Quyền sửa: khi false thì ẩn nút Lưu và vô hiệu hóa chỉnh sửa ô checkbox */
+  canUpdate?: boolean;
 }
 
 const DOT_COLOR: Record<string, string> = {
@@ -259,7 +261,7 @@ const MobileTriBtn: React.FC<{
 );
 
 /* ─── Main Component ─── */
-const PermissionMatrix: React.FC<Props> = ({ roles, isLoading }) => {
+const PermissionMatrix: React.FC<Props> = ({ roles, isLoading, canUpdate = true }) => {
   const { t } = useTranslation();
   const [selectedFunction, setSelectedFunction] = useState<PermissionFunction | null>(null);
   const [expandedFunctions, setExpandedFunctions] = useState<Set<string>>(() => new Set(PERMISSION_FUNCTIONS.map((f) => f.id)));
@@ -445,11 +447,13 @@ const PermissionMatrix: React.FC<Props> = ({ roles, isLoading }) => {
                 </h3>
                 <p className="text-[11px] text-muted-foreground mt-0.5">{t('permission.matrix.setupDesc')}</p>
               </div>
-              <Button onClick={handleSave} isLoading={updateMutation.isPending} className="bg-primary text-white shadow-xl h-9 px-4 lg:px-5 rounded-lg font-bold text-xs lg:text-sm shrink-0">
-                <Save size={14} className="mr-1.5" />
-                <span className="hidden sm:inline">{t('common.saveChanges')}</span>
-                <span className="sm:hidden">Lưu</span>
-              </Button>
+              {canUpdate && (
+                <Button onClick={handleSave} isLoading={updateMutation.isPending} className="bg-primary text-white shadow-xl h-9 px-4 lg:px-5 rounded-lg font-bold text-xs lg:text-sm shrink-0">
+                  <Save size={14} className="mr-1.5" />
+                  <span className="hidden sm:inline">{t('common.saveChanges')}</span>
+                  <span className="sm:hidden">Lưu</span>
+                </Button>
+              )}
             </div>
 
             {/* ─── Desktop: Table ─── */}
@@ -462,7 +466,7 @@ const PermissionMatrix: React.FC<Props> = ({ roles, isLoading }) => {
                   </tr>
                   <tr className="border-t border-border bg-muted/20">
                     <td className="px-6 py-2 text-[11px] font-bold text-primary/80">{t('permission.matrix.selectAll')}</td>
-                    {MATRIX_ACTIONS.map((a) => <td key={a} className="px-1 py-2 text-center"><TriCheck state={getActionState(allRoleIds, a)} onClick={() => toggleActionForRoles(allRoleIds, a)} /></td>)}
+                    {MATRIX_ACTIONS.map((a) => <td key={a} className="px-1 py-2 text-center"><TriCheck state={getActionState(allRoleIds, a)} disabled={!canUpdate} onClick={() => toggleActionForRoles(allRoleIds, a)} /></td>)}
                   </tr>
                 </thead>
                 <tbody>
@@ -472,7 +476,7 @@ const PermissionMatrix: React.FC<Props> = ({ roles, isLoading }) => {
                       <React.Fragment key={dept}>
                         <tr className="bg-muted/40 border-t-2 border-border">
                           <td className="px-6 py-2"><span className="flex items-center gap-1.5 font-bold text-[12px] text-foreground/80"><Building2 size={13} className="text-primary shrink-0" />{t(dept)}</span></td>
-                          {MATRIX_ACTIONS.map((a) => <td key={a} className="px-1 py-2 text-center"><TriCheck state={getActionState(dids, a)} onClick={() => toggleActionForRoles(dids, a)} /></td>)}
+                          {MATRIX_ACTIONS.map((a) => <td key={a} className="px-1 py-2 text-center"><TriCheck state={getActionState(dids, a)} disabled={!canUpdate} onClick={() => toggleActionForRoles(dids, a)} /></td>)}
                         </tr>
                         {dr.map((role, ri) => {
                           const cur = localPermissions[role.id] || []; const isLast = ri === dr.length - 1;
@@ -488,7 +492,7 @@ const PermissionMatrix: React.FC<Props> = ({ roles, isLoading }) => {
                                   {role.ten_chuc_vu}
                                 </span>
                               </td>
-                              {MATRIX_ACTIONS.map((a) => <td key={a} className="px-1 py-2 text-center"><TriCheck state={cur.includes(a) ? 'all' : 'none'} onClick={() => toggleOne(role.id, a)} /></td>)}
+                              {MATRIX_ACTIONS.map((a) => <td key={a} className="px-1 py-2 text-center"><TriCheck state={cur.includes(a) ? 'all' : 'none'} disabled={!canUpdate} onClick={() => toggleOne(role.id, a)} /></td>)}
                             </tr>
                           );
                         })}

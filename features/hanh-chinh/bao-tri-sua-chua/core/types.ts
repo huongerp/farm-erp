@@ -1,39 +1,38 @@
 /** Hạng mục phiếu: Bảo trì hoặc Sửa chữa */
 export type HangMuc = 'bao_tri' | 'sua_chua';
 
+/** Trạng thái phiếu: chờ duyệt, đã duyệt, không duyệt */
+export type TrangThaiPhieu = 'cho_duyet' | 'da_duyet' | 'khong_duyet';
+
 /** Phiếu bảo trì / sửa chữa – yêu cầu bảo trì hoặc sửa chữa tài sản */
 export interface PhieuBaoTriSuaChua {
   id: string;
-  hang_muc: HangMuc;
+  ngay: string;
   id_tai_san: string;
   ma_tai_san?: string;
   ten_tai_san?: string;
-  ngay_yeu_cau: string;
-  ngay_hen: string;
-  ngay_bat_dau?: string | null;
-  ngay_hoan_thanh?: string | null;
+  id_hang_muc: HangMuc;
+  ten_hang_muc?: string;
   mo_ta: string;
+  so_tien: number;
   ghi_chu?: string | null;
+  trang_thai: TrangThaiPhieu;
+  nguoi_duyet?: string | null;
   id_nguoi_tao: string;
   ten_nguoi_tao?: string | null;
-  id_nguoi_phu_trach?: string | null;
-  ten_nguoi_phu_trach?: string | null;
-  trang_thai: 0 | 1;
   tg_tao: string;
   tg_cap_nhat: string;
 }
 
 /** Payload tạo/sửa phiếu */
 export interface PhieuBaoTriSuaChuaCreate {
-  hang_muc: HangMuc;
+  ngay: string;
   id_tai_san: string;
-  ngay_yeu_cau: string;
-  ngay_hen: string;
-  ngay_bat_dau?: string | null;
-  ngay_hoan_thanh?: string | null;
+  id_hang_muc: HangMuc;
   mo_ta: string;
+  so_tien: number;
   ghi_chu?: string | null;
-  id_nguoi_phu_trach?: string | null;
   /** Chỉ dùng khi cập nhật phiếu */
-  trang_thai?: 0 | 1;
+  trang_thai?: TrangThaiPhieu;
+  nguoi_duyet?: string | null;
 }

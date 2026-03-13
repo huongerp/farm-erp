@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
+import { useModulePermissionFromContext } from '../../../components/shared/ModulePermissionGuard';
 import BranchToolbar from './components/chi-nhanh-toolbar';
 import BranchTable from './components/chi-nhanh-table';
 import BranchForm from './components/chi-nhanh-form';
@@ -16,6 +17,7 @@ import { Branch } from './core/types';
 
 const BranchPage: React.FC = () => {
   const { t } = useTranslation();
+  const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
   const {
     searchTerm,
@@ -166,6 +168,9 @@ const BranchPage: React.FC = () => {
           onAdd={() => setShowForm(true)}
           onDeleteMany={handleDeleteMany}
           onStatusChangeMany={handleStatusChangeMany}
+          canCreate={canCreate}
+          canUpdate={canUpdate}
+          canDelete={canDelete}
         />
 
         <div className="flex-1 min-h-0">
@@ -175,6 +180,8 @@ const BranchPage: React.FC = () => {
             onEdit={handleEdit}
             onDelete={handleDelete}
             onView={setViewingBranch}
+            canUpdate={canUpdate}
+            canDelete={canDelete}
           />
         </div>
       </div>
@@ -193,6 +200,8 @@ const BranchPage: React.FC = () => {
             onEdit={handleEdit}
             onDelete={handleDelete}
             onStatusChange={handleStatusChange}
+            canUpdate={canUpdate}
+            canDelete={canDelete}
           />
         )}
       </AnimatePresence>

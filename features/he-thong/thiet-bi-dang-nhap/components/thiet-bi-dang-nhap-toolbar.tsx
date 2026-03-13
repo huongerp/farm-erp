@@ -12,12 +12,14 @@ interface Props {
   devices: { id: string; trang_thai: string; la_thiet_bi_hien_tai: boolean }[];
   onExport: () => void;
   onLogoutMany: (ids: string[]) => void;
+  canUpdate?: boolean;
 }
 
 const LoginDeviceToolbar: React.FC<Props> = ({
   devices,
   onExport,
   onLogoutMany,
+  canUpdate = true,
 }) => {
   const { t } = useTranslation();
   const {
@@ -150,7 +152,7 @@ const LoginDeviceToolbar: React.FC<Props> = ({
       onSearchChange={setSearchTerm}
       onClearSelection={clearSelection}
       actions={renderActions}
-      bulkActions={bulkActions}
+      bulkActions={canUpdate ? bulkActions : undefined}
       filters={renderFilters}
       filterGroups={filterGroups}
       mobileActions={mobileActions}

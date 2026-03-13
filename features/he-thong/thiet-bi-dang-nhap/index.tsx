@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
+import { useModulePermissionFromContext } from '../../../components/shared/ModulePermissionGuard';
 import LoginDeviceToolbar from './components/thiet-bi-dang-nhap-toolbar';
 import LoginDeviceTable from './components/thiet-bi-dang-nhap-table';
 import ExportDialog from '../../../components/shared/ExportDialog';
@@ -21,6 +22,7 @@ import { TRANG_THAI_HOAT_DONG } from '../../../lib/constants';
 
 const LoginDevicePage: React.FC = () => {
   const { t } = useTranslation();
+  const { canUpdate } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
 
   const [showExport, setShowExport] = useState(false);
@@ -179,6 +181,7 @@ const LoginDevicePage: React.FC = () => {
           devices={devices}
           onExport={handleExport}
           onLogoutMany={handleLogoutMany}
+          canUpdate={canUpdate}
         />
 
         <div className="flex-1 min-h-0">
@@ -186,6 +189,7 @@ const LoginDevicePage: React.FC = () => {
             data={sortedDevices}
             isLoading={isLoading}
             onLogout={handleLogout}
+            canUpdate={canUpdate}
           />
         </div>
       </div>

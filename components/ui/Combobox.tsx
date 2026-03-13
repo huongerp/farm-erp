@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo, useId } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronDown, Check, Search, X } from 'lucide-react';
+import { ChevronDown, Check, Search, X, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../lib/utils';
 
@@ -33,6 +33,10 @@ interface ComboboxProps {
   triggerClassName?: string;
   /** Render dropdown qua portal vào body để tránh bị cắt và đảm bảo cuộn được. Mặc định true. */
   dropdownInPortal?: boolean;
+  /** Cho phép nhập giá trị mới không có trong options (chọn "Thêm mới: ..." trong dropdown). */
+  creatable?: boolean;
+  /** Nhãn cho hành động thêm giá trị mới (mặc định "Thêm mới"). */
+  creatableLabel?: string;
 }
 
 const Combobox: React.FC<ComboboxProps> = ({
@@ -52,6 +56,8 @@ const Combobox: React.FC<ComboboxProps> = ({
   renderValue,
   triggerClassName,
   dropdownInPortal = true,
+  creatable = false,
+  creatableLabel = 'Thêm mới',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -116,13 +122,26 @@ const Combobox: React.FC<ComboboxProps> = ({
     );
   }, [options, searchTerm, searchable]);
 
-  // Get selected option label
-  const selectedOption = options.find((opt) => opt.value === value);
+  // When creatable: show "Thêm mới: {searchTerm}" if searchTerm is non-empty and not exactly in options
+  const canCreateNew = creatable && searchTerm.trim() !== '' && !options.some((o) => String(o.value).toLowerCase() === searchTerm.trim().toLowerCase());
+
+  // Get selected option label (when creatable, value may not be in options)
+  const selectedOption = options.find((opt) => opt.value === value)
+    ?? (creatable && value != null && value !== '' ? { label: String(value), value } : undefined);
 
   const handleSelect = (optionValue: string | number) => {
     onChange(optionValue);
     setIsOpen(false);
     setSearchTerm('');
+  };
+
+  const handleCreateNew = () => {
+    const newVal = searchTerm.trim();
+    if (newVal) {
+      onChange(newVal);
+      setIsOpen(false);
+      setSearchTerm('');
+    }
   };
 
   const clearSelection = (e: React.MouseEvent) => {
@@ -219,7 +238,16 @@ const Combobox: React.FC<ComboboxProps> = ({
                 </div>
               )}
               <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar p-1.5 space-y-1">
-                {filteredOptions.length === 0 ? (
+                {canCreateNew && (
+                  <div
+                    className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm cursor-pointer transition-colors text-primary hover:bg-primary/10 border border-primary/20"
+                    onClick={(e) => { e.stopPropagation(); handleCreateNew(); }}
+                  >
+                    <Plus size={16} className="shrink-0" />
+                    <span>{creatableLabel}: &quot;{searchTerm.trim()}&quot;</span>
+                  </div>
+                )}
+                {filteredOptions.length === 0 && !canCreateNew ? (
                   <div className="py-8 text-center text-sm text-muted-foreground flex flex-col items-center">
                     <Search size={24} className="mb-2 opacity-20" />
                     Không tìm thấy kết quả
@@ -290,7 +318,16 @@ const Combobox: React.FC<ComboboxProps> = ({
                 </div>
               )}
               <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar p-1.5 space-y-1">
-                {filteredOptions.length === 0 ? (
+                {canCreateNew && (
+                  <div
+                    className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm cursor-pointer transition-colors text-primary hover:bg-primary/10 border border-primary/20"
+                    onClick={(e) => { e.stopPropagation(); handleCreateNew(); }}
+                  >
+                    <Plus size={16} className="shrink-0" />
+                    <span>{creatableLabel}: &quot;{searchTerm.trim()}&quot;</span>
+                  </div>
+                )}
+                {filteredOptions.length === 0 && !canCreateNew ? (
                   <div className="py-8 text-center text-sm text-muted-foreground flex flex-col items-center">
                     <Search size={24} className="mb-2 opacity-20" />
                     Không tìm thấy kết quả

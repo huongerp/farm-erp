@@ -19,9 +19,11 @@ export interface CompanyFormProps {
   initialValues: CompanyFormValues & { appLogo?: string | null };
   /** Callback khi submit thành công – nhận data form + logo preview */
   onSubmit: (data: CompanyFormValues & { appLogo: string | null }) => void;
+  /** Quyền sửa (ẩn nút Lưu và chỉ đọc khi false) */
+  canUpdate?: boolean;
 }
 
-const CompanyInfoForm: React.FC<CompanyFormProps> = ({ initialValues, onSubmit }) => {
+const CompanyInfoForm: React.FC<CompanyFormProps> = ({ initialValues, onSubmit, canUpdate = true }) => {
   const { t } = useTranslation();
   const [logoPreview, setLogoPreview] = useState<string | null>(initialValues.appLogo ?? null);
   const [isDragging, setIsDragging] = useState(false);
@@ -254,16 +256,18 @@ const CompanyInfoForm: React.FC<CompanyFormProps> = ({ initialValues, onSubmit }
           </div>
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="flex justify-end pt-2"
-        >
-          <Button type="submit" size="lg" className="w-full md:w-auto shadow-lg shadow-primary/20" isLoading={isSubmitting}>
-            <Save className="w-4 h-4 mr-2" /> {t('company.saveButton')}
-          </Button>
-        </motion.div>
+        {canUpdate && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="flex justify-end pt-2"
+          >
+            <Button type="submit" size="lg" className="w-full md:w-auto shadow-lg shadow-primary/20" isLoading={isSubmitting}>
+              <Save className="w-4 h-4 mr-2" /> {t('company.saveButton')}
+            </Button>
+          </motion.div>
+        )}
       </div>
     </form>
   );

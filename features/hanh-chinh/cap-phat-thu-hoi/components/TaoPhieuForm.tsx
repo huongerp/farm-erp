@@ -35,7 +35,6 @@ interface Props {
   onClose: () => void;
   defaultTaiSanId?: string;
   initialData?: PhieuCapPhatThuHoi | null;
-  /** Sau khi lưu sửa thành công: đóng form và mở detail bản ghi (finish view generic) */
   onSuccessAfterEdit?: (item: PhieuCapPhatThuHoi) => void;
 }
 
@@ -51,6 +50,8 @@ const TaoPhieuForm: React.FC<Props> = ({ onClose, defaultTaiSanId, initialData, 
     onClose();
     onSuccessAfterEdit?.(updatedItem);
   });
+
+  // Danh sách tài sản từ module Danh mục tài sản (Supabase)
   const { data: assets = [] } = useTaiSanList();
   const { data: locations = [] } = useAssetStorageLocations();
   const { data: employees = [] } = useEmployees();
@@ -77,6 +78,7 @@ const TaoPhieuForm: React.FC<Props> = ({ onClose, defaultTaiSanId, initialData, 
   const selectedLoai = useWatch({ control, name: 'loai_phieu', defaultValue: 'cap_phat' });
   const selectedTaiSanId = useWatch({ control, name: 'id_tai_san', defaultValue: '' });
 
+  // Khi chọn tài sản: tự điền nơi lưu trước và người giữ trước từ thông tin hiện tại của tài sản
   useEffect(() => {
     if (defaultTaiSanId) {
       setValue('id_tai_san', defaultTaiSanId);
@@ -89,7 +91,11 @@ const TaoPhieuForm: React.FC<Props> = ({ onClose, defaultTaiSanId, initialData, 
   }, [defaultTaiSanId, assets, setValue]);
 
   useEffect(() => {
-    if (!selectedTaiSanId) return;
+    if (!selectedTaiSanId) {
+      setValue('id_noi_luu_truoc', '');
+      setValue('id_nguoi_giu_truoc', null);
+      return;
+    }
     const asset = assets.find((a) => a.id === selectedTaiSanId);
     if (asset) {
       setValue('id_noi_luu_truoc', asset.id_noi_luu);
@@ -101,6 +107,11 @@ const TaoPhieuForm: React.FC<Props> = ({ onClose, defaultTaiSanId, initialData, 
     if (!currentUserId) return;
     setValue('id_nguoi_thuc_hien', currentUserId);
   }, [currentUserId, setValue]);
+
+  const selectedAsset = useMemo(
+    () => (selectedTaiSanId ? assets.find((a) => a.id === selectedTaiSanId) : null),
+    [selectedTaiSanId, assets]
+  );
 
   const assetOptions = useMemo(
     () => assets.filter((a) => a.trang_thai === 1).map((a) => ({
@@ -178,6 +189,7 @@ const TaoPhieuForm: React.FC<Props> = ({ onClose, defaultTaiSanId, initialData, 
       }
     >
       <form id="phieu-cap-phat-thu-hoi-form" onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
+        {/* 1. Loại phiếu & Tài sản (chọn từ danh sách tài sản) */}
         <FormSection title={t('capPhatThuHoi.form.sectionTypeAsset')} icon={<Package size={18} />} variant="primary">
           <FormGrid cols={1}>
             <div>
@@ -197,14 +209,16 @@ const TaoPhieuForm: React.FC<Props> = ({ onClose, defaultTaiSanId, initialData, 
           </FormGrid>
         </FormSection>
 
+        {/* 2. Hiện trạng tài sản: nơi lưu trước & người giữ trước (tự động theo tài sản đã chọn) */}
         <FormSection title={t('capPhatThuHoi.form.sectionLocation')} icon={<MapPin size={18} />}>
           <FormGrid cols={1}>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1.5">{t('capPhatThuHoi.form.noiLuuTruoc')}<RequiredStar /></label>
-              <Controller name="id_noi_luu_truoc" control={control} render={({ field }) => (
-                <Combobox value={field.value} onChange={field.onChange} options={locationOptions} placeholder={t('capPhatThuHoi.form.noiLuuTruocPlaceholder')} searchable dropdownInPortal />
-              )} />
-              {errors.id_noi_luu_truoc && <p className="text-destructive text-xs mt-1">{errors.id_noi_luu_truoc.message}</p>}
+              <label className="block text-sm font-medium text-foreground mb-1.5">{t('capPhatThuHoi.form.noiLuuTruoc')} <span className="text-muted-foreground font-normal text-xs">({t('capPhatThuHoi.form.noiLuuTruocAuto')})</span></label>
+              <Input
+                readOnly
+                value={selectedAsset ? (selectedAsset.ten_noi_luu ?? '—') : (t('capPhatThuHoi.form.noiLuuTruocPlaceholder'))}
+                className="bg-muted/50 cursor-default"
+              />
             </div>
             {needNoiLuuSau && (
               <div>
@@ -218,13 +232,18 @@ const TaoPhieuForm: React.FC<Props> = ({ onClose, defaultTaiSanId, initialData, 
           </FormGrid>
         </FormSection>
 
+        {/* 3. Người giữ: trước (tự động) & sau (chọn khi cấp phát / luân chuyển người) */}
         <FormSection title={t('capPhatThuHoi.form.sectionHolder')} icon={<User size={18} />}>
           <FormGrid cols={1}>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1.5">{t('capPhatThuHoi.form.nguoiGiuTruoc')}</label>
-              <Controller name="id_nguoi_giu_truoc" control={control} render={({ field }) => (
-                <Combobox value={field.value ?? ''} onChange={(v) => field.onChange(v || null)} options={[{ value: '', label: '—' }, ...employeeOptions]} placeholder={t('capPhatThuHoi.form.nguoiGiuTruocPlaceholder')} searchable dropdownInPortal />
-              )} />
+              <label className="block text-sm font-medium text-foreground mb-1.5">{t('capPhatThuHoi.form.nguoiGiuTruoc')} <span className="text-muted-foreground font-normal text-xs">({t('capPhatThuHoi.form.nguoiGiuTruocAuto')})</span></label>
+              <Input
+                readOnly
+                value={selectedAsset
+                  ? (selectedAsset.id_nhan_vien_dang_giu ? (selectedAsset.ten_nhan_vien_dang_giu ?? selectedAsset.ma_nhan_vien_dang_giu ?? '—') : t('capPhatThuHoi.form.atWarehouse'))
+                  : t('capPhatThuHoi.form.noiLuuTruocPlaceholder')}
+                className="bg-muted/50 cursor-default"
+              />
             </div>
             {needNguoiGiuSau && (
               <div>
@@ -238,6 +257,7 @@ const TaoPhieuForm: React.FC<Props> = ({ onClose, defaultTaiSanId, initialData, 
           </FormGrid>
         </FormSection>
 
+        {/* 4. Ngày thực hiện & Người thực hiện */}
         <FormSection title={t('capPhatThuHoi.form.sectionDatePerformer')} icon={<Calendar size={18} />}>
           <FormGrid cols={1}>
             <div>
@@ -255,6 +275,7 @@ const TaoPhieuForm: React.FC<Props> = ({ onClose, defaultTaiSanId, initialData, 
           </FormGrid>
         </FormSection>
 
+        {/* 5. Ghi chú */}
         <FormSection title={t('capPhatThuHoi.form.sectionNote')} icon={<FileText size={18} />}>
           <FormGrid cols={1}>
             <div>

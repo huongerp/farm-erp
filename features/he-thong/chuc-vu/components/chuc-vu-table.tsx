@@ -16,9 +16,11 @@ interface Props {
   onStatusChange: (item: Position) => void;
   /** Khi có: click row mở detail; không có: click row mở form sửa */
   onView?: (item: Position) => void;
+  canUpdate?: boolean;
+  canDelete?: boolean;
 }
 
-const PositionTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onStatusChange, onView }) => {
+const PositionTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onStatusChange, onView, canUpdate = true, canDelete = true }) => {
   const { t } = useTranslation();
   const { 
     columns, pagination, setPage, setPageSize,
@@ -86,24 +88,30 @@ const PositionTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onS
         case 'actions':
             return (
                 <div className="flex items-center justify-center gap-1">
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); onStatusChange(item); }}
-                        className={`p-2 rounded-lg transition-all ${item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? 'text-primary hover:bg-primary/10' : 'text-muted-foreground hover:bg-muted'}`}
-                    >
-                        <Power size={16} />
-                    </button>
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); onEdit(item); }}
-                        className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-all"
-                    >
-                        <Edit size={16} />
-                    </button>
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
-                        className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition-all"
-                    >
-                        <Trash2 size={16} />
-                    </button>
+                    {canUpdate && (
+                      <button 
+                          onClick={(e) => { e.stopPropagation(); onStatusChange(item); }}
+                          className={`p-2 rounded-lg transition-all ${item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? 'text-primary hover:bg-primary/10' : 'text-muted-foreground hover:bg-muted'}`}
+                      >
+                          <Power size={16} />
+                      </button>
+                    )}
+                    {canUpdate && (
+                      <button 
+                          onClick={(e) => { e.stopPropagation(); onEdit(item); }}
+                          className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-all"
+                      >
+                          <Edit size={16} />
+                      </button>
+                    )}
+                    {canDelete && (
+                      <button 
+                          onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
+                          className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition-all"
+                      >
+                          <Trash2 size={16} />
+                      </button>
+                    )}
                 </div>
             );
         default:
@@ -150,10 +158,12 @@ const PositionTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onS
                               ? `${item.cap_bac} - ${item.ten_cap_bac}`
                               : (item.ten_cap_bac || '—')}
                         </div>
-                        <div className="flex gap-2">
-                            <button onClick={e => { e.stopPropagation(); onEdit(item); }} className="p-2 text-primary bg-primary/10 rounded-xl"><Edit size={16} /></button>
-                            <button onClick={e => { e.stopPropagation(); onDelete(item.id); }} className="p-2 text-red-500 bg-red-50 dark:bg-red-950/30 rounded-xl"><Trash2 size={16} /></button>
-                        </div>
+                        {(canUpdate || canDelete) && (
+                          <div className="flex gap-2">
+                            {canUpdate && <button onClick={e => { e.stopPropagation(); onEdit(item); }} className="p-2 text-primary bg-primary/10 rounded-xl"><Edit size={16} /></button>}
+                            {canDelete && <button onClick={e => { e.stopPropagation(); onDelete(item.id); }} className="p-2 text-red-500 bg-red-50 dark:bg-red-950/30 rounded-xl"><Trash2 size={16} /></button>}
+                          </div>
+                        )}
                     </div>
                 </div>
             </div>

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
+import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { useTaiSanList, useDeleteTaiSan, useUpdateTaiSanStatus, useUpdateTaiSan, useAllowedTaiSanIds } from '../hooks/use-danh-muc-tai-san';
 import { useListWithFilter } from '../../../../lib/hooks';
@@ -104,6 +105,7 @@ function taiSanToFormValues(a: TaiSan, overrideIdTrangThai?: string): TaiSanForm
 
 const DanhSachTab: React.FC = () => {
   const { t } = useTranslation();
+  const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
   const [searchParams, setSearchParams] = useSearchParams();
   const {
@@ -422,6 +424,9 @@ const DanhSachTab: React.FC = () => {
               // no-op
             }
           }}
+          canCreate={canCreate}
+          canUpdate={canUpdate}
+          canDelete={canDelete}
         />
         <div className="flex-1 min-h-0">
           <TaiSanTable
@@ -431,6 +436,8 @@ const DanhSachTab: React.FC = () => {
             onEdit={handleEdit}
             onDelete={handleDelete}
             showActions
+            canUpdate={canUpdate}
+            canDelete={canDelete}
           />
         </div>
       </div>
@@ -443,6 +450,8 @@ const DanhSachTab: React.FC = () => {
             onEdit={handleEdit}
             onDelete={handleDelete}
             showActions
+            canUpdate={canUpdate}
+            canDelete={canDelete}
             onAddPhieu={handleAddPhieu}
             onEditPhieu={handleEditPhieu}
             onDeletePhieu={handleDeletePhieu}

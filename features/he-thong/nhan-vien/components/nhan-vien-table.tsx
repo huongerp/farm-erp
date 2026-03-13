@@ -26,9 +26,13 @@ interface Props {
     onView: (item: Employee) => void;
     /** Danh sách chức vụ để tra cứu cấp bậc theo chức vụ khi nhân viên chưa có ten_cap_bac */
     positions?: Position[];
+    /** Phân quyền: có quyền sửa (admin hoặc update) */
+    canUpdate?: boolean;
+    /** Phân quyền: có quyền xoá (admin hoặc delete) */
+    canDelete?: boolean;
 }
 
-const EmployeeTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onStatusChange, onView, positions = [] }) => {
+const EmployeeTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onStatusChange, onView, positions = [], canUpdate = true, canDelete = true }) => {
     const { t } = useTranslation();
     const {
         columns, pagination, setPage, setPageSize,
@@ -131,8 +135,8 @@ const EmployeeTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onS
             case 'actions':
                 return (
                     <div className="flex items-center justify-center gap-0.5">
-                        <button onClick={(e) => { e.stopPropagation(); onEdit(item); }} className="p-2 text-primary hover:bg-primary/10 rounded-md transition-all"><Edit size={15} /></button>
-                        <button onClick={(e) => { e.stopPropagation(); onDelete(item.id); }} className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-md transition-all"><Trash2 size={15} /></button>
+                        {canUpdate && <button onClick={(e) => { e.stopPropagation(); onEdit(item); }} className="p-2 text-primary hover:bg-primary/10 rounded-md transition-all"><Edit size={15} /></button>}
+                        {canDelete && <button onClick={(e) => { e.stopPropagation(); onDelete(item.id); }} className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-md transition-all"><Trash2 size={15} /></button>}
                     </div>
                 );
             default:
@@ -187,8 +191,8 @@ const EmployeeTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onS
                     <span>{item.so_dien_thoai}</span>
                 </div>
                 <div className="flex gap-1.5">
-                    <button onClick={e => { e.stopPropagation(); onEdit(item); }} className="p-2 text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-all active:scale-90"><Edit size={14} /></button>
-                    <button onClick={e => { e.stopPropagation(); onDelete(item.id); }} className="p-2 text-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 rounded-lg transition-all active:scale-90"><Trash2 size={14} /></button>
+                    {canUpdate && <button onClick={e => { e.stopPropagation(); onEdit(item); }} className="p-2 text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-all active:scale-90"><Edit size={14} /></button>}
+                    {canDelete && <button onClick={e => { e.stopPropagation(); onDelete(item.id); }} className="p-2 text-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 rounded-lg transition-all active:scale-90"><Trash2 size={14} /></button>}
                 </div>
             </div>
         </div>

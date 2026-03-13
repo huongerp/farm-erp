@@ -100,6 +100,108 @@ export async function getTaiSanListSupabase(): Promise<TaiSan[]> {
   return (data ?? []).map((row) => rowToTaiSan(row as DbTaiSanRow));
 }
 
+const MA_TAI_SAN_PREFIX = 'TS';
+const MA_TAI_SAN_PAD = 5;
+
+/**
+ * Lấy mã tài sản tiếp theo dạng TS00001, TS00002, ...
+ * Query các mã match pattern TS + số, lấy max rồi +1; không có thì trả về TS00001.
+ */
+export async function getNextMaTaiSanSupabase(): Promise<string> {
+  const { data, error } = await supabase
+    .from(TABLE)
+    .select('ma_tai_san')
+    .ilike('ma_tai_san', `${MA_TAI_SAN_PREFIX}%`)
+    .order('ma_tai_san', { ascending: false })
+    .limit(500);
+  if (error) throw new Error((error as { message?: string }).message ?? String(error));
+  const list = (data ?? []) as { ma_tai_san: string }[];
+  let maxNum = 0;
+  const prefixLower = MA_TAI_SAN_PREFIX.toLowerCase();
+  for (const row of list) {
+    const ma = (row.ma_tai_san || '').trim();
+    if (ma.length <= MA_TAI_SAN_PREFIX.length) continue;
+    const rest = ma.slice(MA_TAI_SAN_PREFIX.length);
+    if (!/^\d+$/.test(rest)) continue;
+    const n = parseInt(rest, 10);
+    if (!Number.isNaN(n) && n > maxNum) maxNum = n;
+  }
+  const next = maxNum + 1;
+  return `${MA_TAI_SAN_PREFIX}${String(next).padStart(MA_TAI_SAN_PAD, '0')}`;
+}
+
+/**
+ * Lấy danh sách giá trị distinct (enum) của cột thuong_hieu từ fp_ts_tai_san, dùng cho combobox có thể thêm mới.
+ */
+export async function getDistinctThuongHieuSupabase(): Promise<string[]> {
+  const { data, error } = await supabase.from(TABLE).select('thuong_hieu');
+  if (error) throw new Error((error as { message?: string }).message ?? String(error));
+  const set = new Set<string>();
+  (data ?? []).forEach((row: { thuong_hieu: string | null }) => {
+    const v = (row.thuong_hieu ?? '').trim();
+    if (v) set.add(v);
+  });
+  return Array.from(set).sort((a, b) => a.localeCompare(b, 'vi'));
+}
+
+/**
+ * Lấy danh sách giá trị distinct (enum) của cột model từ fp_ts_tai_san, dùng cho combobox có thể thêm mới.
+ */
+export async function getDistinctModelSupabase(): Promise<string[]> {
+  const { data, error } = await supabase.from(TABLE).select('model');
+  if (error) throw new Error((error as { message?: string }).message ?? String(error));
+  const set = new Set<string>();
+  (data ?? []).forEach((row: { model: string | null }) => {
+    const v = (row.model ?? '').trim();
+    if (v) set.add(v);
+  });
+  return Array.from(set).sort((a, b) => a.localeCompare(b, 'vi'));
+}
+
+/**
+ * Lấy danh sách giá trị distinct (enum) của cột xuat_xu từ fp_ts_tai_san, dùng cho combobox có thể thêm mới.
+ */
+export async function getDistinctXuatXuSupabase(): Promise<string[]> {
+  const { data, error } = await supabase.from(TABLE).select('xuat_xu');
+  if (error) throw new Error((error as { message?: string }).message ?? String(error));
+  const set = new Set<string>();
+  (data ?? []).forEach((row: { xuat_xu: string | null }) => {
+    const v = (row.xuat_xu ?? '').trim();
+    if (v) set.add(v);
+  });
+  return Array.from(set).sort((a, b) => a.localeCompare(b, 'vi'));
+}
+
+/**
+ * Lấy danh sách giá trị distinct (enum) của cột ten_nha_cung_cap từ fp_ts_tai_san, dùng cho combobox có thể thêm mới.
+ */
+export async function getDistinctNhaCungCapSupabase(): Promise<string[]> {
+  const { data, error } = await supabase.from(TABLE).select('ten_nha_cung_cap');
+  if (error) throw new Error((error as { message?: string }).message ?? String(error));
+  const set = new Set<string>();
+  (data ?? []).forEach((row: { ten_nha_cung_cap: string | null }) => {
+    const v = (row.ten_nha_cung_cap ?? '').trim();
+    if (v) set.add(v);
+  });
+  return Array.from(set).sort((a, b) => a.localeCompare(b, 'vi'));
+}
+
+/**
+ * Kiểm tra mã tài sản đã tồn tại (dùng khi tạo mới hoặc sửa để bỏ qua bản ghi hiện tại).
+ */
+export async function checkMaTaiSanExistsSupabase(ma: string, excludeId?: string | null): Promise<boolean> {
+  const trimmed = (ma || '').trim();
+  if (!trimmed) return false;
+  let query = supabase.from(TABLE).select('id').eq('ma_tai_san', trimmed).limit(1);
+  if (excludeId != null && excludeId !== '') {
+    const numId = Number(excludeId);
+    if (!Number.isNaN(numId)) query = query.neq('id', numId);
+  }
+  const { data, error } = await query;
+  if (error) throw new Error((error as { message?: string }).message ?? String(error));
+  return Array.isArray(data) && data.length > 0;
+}
+
 export async function createTaiSanSupabase(data: TaiSanFormValues): Promise<TaiSan> {
   const [groups, locations, statuses, employees] = await Promise.all([
     getAssetGroups(),

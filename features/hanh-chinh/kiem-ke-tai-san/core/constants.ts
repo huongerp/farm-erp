@@ -1,25 +1,26 @@
 import type { TrangThaiDotKiemKe, KetQuaKiemKe } from './types';
-import type { TFunction } from 'i18next';
 
-export function getTrangThaiDotLabel(status: TrangThaiDotKiemKe, t: TFunction): string {
-  return t(`kiemKeTaiSan.trangThaiDot.${status}`);
+/** Hiển thị trạng thái đợt (giá trị lưu DB là tiếng Việt, hiển thị luôn) */
+export function getTrangThaiDotLabel(status: TrangThaiDotKiemKe): string {
+  return status;
 }
 
-export function getKetQuaLabel(ketQua: KetQuaKiemKe, t: TFunction): string {
-  return t(`kiemKeTaiSan.ketQua.${ketQua}`);
+/** Hiển thị kết quả kiểm kê (giá trị lưu DB là tiếng Việt, hiển thị luôn) */
+export function getKetQuaLabel(ketQua: KetQuaKiemKe): string {
+  return ketQua;
 }
 
-export const TRANG_THAI_DOT_OPTIONS: { value: TrangThaiDotKiemKe; labelKey: string }[] = [
-  { value: 'draft', labelKey: 'kiemKeTaiSan.trangThaiDot.draft' },
-  { value: 'dang_kiem_ke', labelKey: 'kiemKeTaiSan.trangThaiDot.dang_kiem_ke' },
-  { value: 'hoan_thanh', labelKey: 'kiemKeTaiSan.trangThaiDot.hoan_thanh' },
+export const TRANG_THAI_DOT_OPTIONS: { value: TrangThaiDotKiemKe; label: string }[] = [
+  { value: 'Nháp', label: 'Nháp' },
+  { value: 'Đang kiểm kê', label: 'Đang kiểm kê' },
+  { value: 'Hoàn thành', label: 'Hoàn thành' },
 ];
 
-export const KET_QUA_OPTIONS: { value: KetQuaKiemKe; labelKey: string }[] = [
-  { value: 'chua_kiem', labelKey: 'kiemKeTaiSan.ketQua.chua_kiem' },
-  { value: 'khop', labelKey: 'kiemKeTaiSan.ketQua.khop' },
-  { value: 'chenh_noi_luu', labelKey: 'kiemKeTaiSan.ketQua.chenh_noi_luu' },
-  { value: 'chenh_nguoi_giu', labelKey: 'kiemKeTaiSan.ketQua.chenh_nguoi_giu' },
-  { value: 'chenh_trang_thai', labelKey: 'kiemKeTaiSan.ketQua.chenh_trang_thai' },
-  { value: 'thieu', labelKey: 'kiemKeTaiSan.ketQua.thieu' },
+export const KET_QUA_OPTIONS: { value: KetQuaKiemKe; label: string }[] = [
+  { value: 'Chưa kiểm', label: 'Chưa kiểm' },
+  { value: 'Khớp', label: 'Khớp' },
+  { value: 'Chênh nơi lưu', label: 'Chênh nơi lưu' },
+  { value: 'Chênh người giữ', label: 'Chênh người giữ' },
+  { value: 'Chênh trạng thái', label: 'Chênh trạng thái' },
+  { value: 'Thiếu', label: 'Thiếu' },
 ];

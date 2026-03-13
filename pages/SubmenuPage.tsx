@@ -2,6 +2,8 @@ import React from 'react';
 import { useParams, useLocation, Navigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import ErrorBoundary from '../components/shared/ErrorBoundary';
+import ModulePermissionGuard from '../components/shared/ModulePermissionGuard';
+import { getPermissionModuleId, getAllPermissionModules } from '../features/he-thong/phan-quyen/core/permission-modules-config';
 import SubmenuPlaceholder from '../components/placeholder/SubmenuPlaceholder';
 import ModulePlaceholder from '../components/placeholder/ModulePlaceholder';
 import HanhChinhDashboard from './dashboards/HanhChinhDashboard';
@@ -98,6 +100,15 @@ function getMenuIcon(path: string) {
   return SIDEBAR_MENU.find((m) => m.path === path)?.icon;
 }
 
+const PERMISSION_MODULE_IDS = new Set(getAllPermissionModules().map((m) => m.id));
+
+/** Bọc trang bằng ModulePermissionGuard nếu (basePath, slug) thuộc cấu hình phân quyền. */
+function wrapWithPermission(basePath: string, slug: string, node: React.ReactNode): React.ReactNode {
+  const id = getPermissionModuleId(basePath, slug);
+  if (!PERMISSION_MODULE_IDS.has(id)) return node;
+  return <ModulePermissionGuard moduleId={id}>{node}</ModulePermissionGuard>;
+}
+
 /**
  * Trang submenu hoặc module con.
  * - /hanh-chinh, /nhan-su, /marketing, /tai-chinh, /mua-hang, /kho-van -> Dashboard (danh sách nhóm module)
@@ -183,18 +194,18 @@ const SubmenuPage: React.FC = () => {
     }
     if (basePath === '/hanh-chinh' && HANH_CHINH_MODULE_SLUGS.includes(decodedSlug)) {
       if (decodedSlug === 'thiet-lap-cong-luong') {
-        return (
+        return wrapWithPermission(basePath ?? '', decodedSlug, (
           <ErrorBoundary>
             <PayrollSetupPage />
           </ErrorBoundary>
-        );
+        ));
       }
       if (decodedSlug === 'phieu-hanh-chinh') {
-        return (
+        return wrapWithPermission(basePath ?? '', decodedSlug, (
           <ErrorBoundary>
             <AdminFormPage />
           </ErrorBoundary>
-        );
+        ));
       }
       if (decodedSlug === 'cham-cong') {
         return (
@@ -211,11 +222,11 @@ const SubmenuPage: React.FC = () => {
         );
       }
       if (decodedSlug === 'diem-cong-tru') {
-        return (
+        return wrapWithPermission(basePath ?? '', decodedSlug, (
           <ErrorBoundary>
             <DiemCongTruPage />
           </ErrorBoundary>
-        );
+        ));
       }
       if (decodedSlug === 'cham-diem-kpi') {
         return (
@@ -225,18 +236,18 @@ const SubmenuPage: React.FC = () => {
         );
       }
       if (decodedSlug === 'bang-luong') {
-        return (
+        return wrapWithPermission(basePath ?? '', decodedSlug, (
           <ErrorBoundary>
             <BangLuongPage />
           </ErrorBoundary>
-        );
+        ));
       }
       if (decodedSlug === 'thiet-lap-cong-viec') {
-        return (
+        return wrapWithPermission(basePath ?? '', decodedSlug, (
           <ErrorBoundary>
             <ThietLapCongViecPage />
           </ErrorBoundary>
-        );
+        ));
       }
       if (decodedSlug === 'thiet-lap-tai-lieu') {
         return (
@@ -285,53 +296,53 @@ const SubmenuPage: React.FC = () => {
         );
       }
       if (decodedSlug === 'noi-quan-ly') {
-        return (
+        return wrapWithPermission(basePath ?? '', decodedSlug, (
           <ErrorBoundary>
             <NoiQuanLyPage />
           </ErrorBoundary>
-        );
+        ));
       }
       if (decodedSlug === 'thiet-lap-tai-san') {
-        return (
+        return wrapWithPermission(basePath ?? '', decodedSlug, (
           <ErrorBoundary>
             <ThietLapTaiSanPage />
           </ErrorBoundary>
-        );
+        ));
       }
       if (decodedSlug === 'danh-sach-tai-san') {
-        return (
+        return wrapWithPermission(basePath ?? '', decodedSlug, (
           <ErrorBoundary>
             <DanhSachTaiSanPage />
           </ErrorBoundary>
-        );
+        ));
       }
       if (decodedSlug === 'cap-phat-thu-hoi') {
-        return (
+        return wrapWithPermission(basePath ?? '', decodedSlug, (
           <ErrorBoundary>
             <CapPhatThuHoiPage />
           </ErrorBoundary>
-        );
+        ));
       }
-      if (decodedSlug === 'bao-tri-sua-chua') {
-        return (
+      if (decodedSlug === 'chi-phi-tai-san') {
+        return wrapWithPermission(basePath ?? '', decodedSlug, (
           <ErrorBoundary>
             <BaoTriSuaChuaPage />
           </ErrorBoundary>
-        );
+        ));
       }
       if (decodedSlug === 'kiem-ke-tai-san') {
-        return (
+        return wrapWithPermission(basePath ?? '', decodedSlug, (
           <ErrorBoundary>
             <KiemKeTaiSanPage />
           </ErrorBoundary>
-        );
+        ));
       }
       if (decodedSlug === 'khau-hao-tai-san') {
-        return (
+        return wrapWithPermission(basePath ?? '', decodedSlug, (
           <ErrorBoundary>
             <KhauHaoTaiSanPage />
           </ErrorBoundary>
-        );
+        ));
       }
       moduleTitle = t(getModuleTitleKeyBySlug(decodedSlug));
     }
@@ -470,35 +481,35 @@ const SubmenuPage: React.FC = () => {
     } else if (basePath === '/tai-chinh' && TAI_CHINH_MODULE_SLUGS.includes(decodedSlug)) {
       moduleTitle = t(getTaiChinhModuleTitleKeyBySlug(decodedSlug));
     } else if (basePath === '/mua-hang' && decodedSlug === 'phieu-de-xuat-vat-tu') {
-      return (
+      return wrapWithPermission(basePath ?? '', decodedSlug, (
         <ErrorBoundary>
           <PhieuDeXuatVatTuPage />
         </ErrorBoundary>
-      );
+      ));
     } else if (basePath === '/mua-hang' && decodedSlug === 'don-dat-hang') {
-      return (
+      return wrapWithPermission(basePath ?? '', decodedSlug, (
         <ErrorBoundary>
           <DonDatHangPage />
         </ErrorBoundary>
-      );
+      ));
     } else if (basePath === '/mua-hang' && decodedSlug === 'thiet-lap-de-xuat-vat-tu') {
-      return (
+      return wrapWithPermission(basePath ?? '', decodedSlug, (
         <ErrorBoundary>
           <ThietLapDeXuatVatTuPage />
         </ErrorBoundary>
-      );
+      ));
     } else if (basePath === '/mua-hang' && decodedSlug === 'thanh-toan-doi-tac') {
-      return (
+      return wrapWithPermission(basePath ?? '', decodedSlug, (
         <ErrorBoundary>
           <ThanhToanDoiTacPage />
         </ErrorBoundary>
-      );
+      ));
     } else if (basePath === '/mua-hang' && decodedSlug === 'bao-cao-de-xuat-vat-tu') {
-      return (
+      return wrapWithPermission(basePath ?? '', decodedSlug, (
         <ErrorBoundary>
           <BaoCaoDeXuatVatTuPage />
         </ErrorBoundary>
-      );
+      ));
     } else if (basePath === '/mua-hang' && MUA_HANG_MODULE_SLUGS.includes(decodedSlug)) {
       moduleTitle = t(getMuaHangModuleTitleKeyBySlug(decodedSlug));
     }
@@ -513,68 +524,33 @@ const SubmenuPage: React.FC = () => {
       decodedSlug === 'bao-cao-nhap-xuat-ton' ||
       decodedSlug === 'kiem-ke-kho';
     if ((basePath === '/kho-van' || basePath === '/mua-hang') && isKhoVanModule) {
+      const wrap = (node: React.ReactNode) => wrapWithPermission(basePath === '/kho-van' ? '/kho-van' : '/mua-hang', decodedSlug, node);
       if (decodedSlug === 'danh-muc-hang-hoa') {
-        return (
-          <ErrorBoundary>
-            <DanhMucHangHoaPage />
-          </ErrorBoundary>
-        );
+        return wrap(<ErrorBoundary><DanhMucHangHoaPage /></ErrorBoundary>);
       }
       if (decodedSlug === 'danh-sach-kho') {
-        return (
-          <ErrorBoundary>
-            <DanhSachKhoPage />
-          </ErrorBoundary>
-        );
+        return wrap(<ErrorBoundary><DanhSachKhoPage /></ErrorBoundary>);
       }
       if (decodedSlug === 'danh-sach-hang-hoa') {
-        return (
-          <ErrorBoundary>
-            <DanhSachHangHoaPage />
-          </ErrorBoundary>
-        );
+        return wrap(<ErrorBoundary><DanhSachHangHoaPage /></ErrorBoundary>);
       }
       if (decodedSlug === 'danh-sach-doi-tac') {
-        return (
-          <ErrorBoundary>
-            <DanhSachDoiTacPage />
-          </ErrorBoundary>
-        );
+        return wrap(<ErrorBoundary><DanhSachDoiTacPage /></ErrorBoundary>);
       }
       if (decodedSlug === 'phieu-kho') {
-        return (
-          <ErrorBoundary>
-            <PhieuKhoPage />
-          </ErrorBoundary>
-        );
+        return wrap(<ErrorBoundary><PhieuKhoPage /></ErrorBoundary>);
       }
       if (decodedSlug === 'phieu-de-xuat-vat-tu') {
-        return (
-          <ErrorBoundary>
-            <PhieuDeXuatVatTuPage />
-          </ErrorBoundary>
-        );
+        return wrap(<ErrorBoundary><PhieuDeXuatVatTuPage /></ErrorBoundary>);
       }
       if (decodedSlug === 'ton-kho') {
-        return (
-          <ErrorBoundary>
-            <TonKhoPage />
-          </ErrorBoundary>
-        );
+        return wrap(<ErrorBoundary><TonKhoPage /></ErrorBoundary>);
       }
       if (decodedSlug === 'bao-cao-nhap-xuat-ton') {
-        return (
-          <ErrorBoundary>
-            <BaoCaoNhapXuatTonPage />
-          </ErrorBoundary>
-        );
+        return wrap(<ErrorBoundary><BaoCaoNhapXuatTonPage /></ErrorBoundary>);
       }
       if (decodedSlug === 'kiem-ke-kho') {
-        return (
-          <ErrorBoundary>
-            <KiemKeKhoPage />
-          </ErrorBoundary>
-        );
+        return wrap(<ErrorBoundary><KiemKeKhoPage /></ErrorBoundary>);
       }
     } else if (basePath === '/dieu-hanh' && decodedSlug === 'su-menh-tam-nhin') {
       return (

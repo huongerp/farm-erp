@@ -20,9 +20,11 @@ interface Props {
   onClose: () => void;
   onEdit?: (item: BangLuongRecord) => void;
   onDelete?: (id: string) => void;
+  canUpdate?: boolean;
+  canDelete?: boolean;
 }
 
-const BangLuongDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete }) => {
+const BangLuongDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, canUpdate = true, canDelete = true }) => {
   const { t } = useTranslation();
   const periodStr = `${data.nam}-${String(data.thang).padStart(2, '0')}`;
 
@@ -45,7 +47,7 @@ const BangLuongDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete }) =
         {BTN_CLOSE()}
       </Button>
       <div className="flex gap-3">
-        {onEdit && (
+        {canUpdate && onEdit && (
           <Button
             onClick={() => { onEdit(data); onClose(); }}
             className="bg-primary text-white shadow-lg hover:bg-primary/90"
@@ -53,7 +55,7 @@ const BangLuongDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete }) =
             <Edit size={16} className="mr-2" /> {BTN_EDIT()}
           </Button>
         )}
-        {onDelete && (
+        {canDelete && onDelete && (
           <Button
             variant="ghost"
             onClick={() => { onDelete(data.id); onClose(); }}

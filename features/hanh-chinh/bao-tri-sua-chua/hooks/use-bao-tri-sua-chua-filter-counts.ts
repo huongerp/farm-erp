@@ -14,11 +14,11 @@ export function useBaoTriSuaChuaFilterCounts(
     const taiSanCounts: Record<string, number> = {};
 
     const matchHangMuc = (p: PhieuBaoTriSuaChua) =>
-      filters.hang_muc.length === 0 || filters.hang_muc.includes(p.hang_muc);
+      filters.hang_muc.length === 0 || filters.hang_muc.includes(p.id_hang_muc);
     const matchDateFrom = (p: PhieuBaoTriSuaChua) =>
-      !filters.dateFrom || p.ngay_yeu_cau >= filters.dateFrom;
+      !filters.dateFrom || p.ngay >= filters.dateFrom;
     const matchDateTo = (p: PhieuBaoTriSuaChua) =>
-      !filters.dateTo || p.ngay_yeu_cau <= filters.dateTo;
+      !filters.dateTo || p.ngay <= filters.dateTo;
     const matchTaiSan = (p: PhieuBaoTriSuaChua) =>
       filters.id_tai_san.length === 0 || filters.id_tai_san.includes(p.id_tai_san);
 
@@ -27,7 +27,7 @@ export function useBaoTriSuaChuaFilterCounts(
       const passTaiSan = matchTaiSan(p);
 
       if (passDate && passTaiSan) {
-        hangMucCounts[p.hang_muc] = (hangMucCounts[p.hang_muc] || 0) + 1;
+        hangMucCounts[p.id_hang_muc] = (hangMucCounts[p.id_hang_muc] || 0) + 1;
       }
       if (matchHangMuc(p) && passDate) {
         taiSanCounts[p.id_tai_san] = (taiSanCounts[p.id_tai_san] || 0) + 1;

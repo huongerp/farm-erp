@@ -18,9 +18,15 @@ interface Props {
   onImport: () => void;
   onDeleteMany: () => void;
   onStatusChangeMany: (status: TrangThai) => void;
+  canCreate?: boolean;
+  canUpdate?: boolean;
+  canDelete?: boolean;
 }
 
-const PhongBanToolbar: React.FC<Props> = ({ departments, selectedCount, onAdd, onExport, onImport, onDeleteMany, onStatusChangeMany }) => {
+const PhongBanToolbar: React.FC<Props> = ({
+  departments, selectedCount, onAdd, onExport, onImport, onDeleteMany, onStatusChangeMany,
+  canCreate = true, canUpdate = true, canDelete = true,
+}) => {
   const { t } = useTranslation();
   const {
     searchTerm,
@@ -152,22 +158,24 @@ const PhongBanToolbar: React.FC<Props> = ({ departments, selectedCount, onAdd, o
           </Button>
         </Tooltip>
       </div>
-      <Button
-        onClick={onAdd}
-        size="sm"
-        className="bg-primary text-white hover:bg-primary/90 shadow-md shadow-primary/20 h-9 px-3 sm:px-4"
-      >
-        <Plus className="w-5 h-5 sm:w-4 sm:h-4 sm:mr-2" />
-        <span className="hidden sm:inline">{t('common.addNew')}</span>
-      </Button>
+      {canCreate && (
+        <Button
+          onClick={onAdd}
+          size="sm"
+          className="bg-primary text-white hover:bg-primary/90 shadow-md shadow-primary/20 h-9 px-3 sm:px-4"
+        >
+          <Plus className="w-5 h-5 sm:w-4 sm:h-4 sm:mr-2" />
+          <span className="hidden sm:inline">{t('common.addNew')}</span>
+        </Button>
+      )}
     </>
   );
 
   return (
     <GenericToolbar
       selectedCount={selectedCount}
-      onDeleteMany={onDeleteMany}
-      onStatusChangeMany={(numStatus) => onStatusChangeMany(numStatus === 1 ? TRANG_THAI.DANG_DUNG : TRANG_THAI.NGUNG)}
+      onDeleteMany={canDelete ? onDeleteMany : undefined}
+      onStatusChangeMany={canUpdate ? ((numStatus) => onStatusChangeMany(numStatus === 1 ? TRANG_THAI.DANG_DUNG : TRANG_THAI.NGUNG)) : undefined}
       searchTerm={searchTerm}
       onSearchChange={setSearchTerm}
       onClearSelection={clearSelection}
@@ -175,7 +183,7 @@ const PhongBanToolbar: React.FC<Props> = ({ departments, selectedCount, onAdd, o
       filters={renderFilters}
       filterGroups={filterGroups}
       mobileActions={mobileActions}
-      onAdd={onAdd}
+      onAdd={canCreate ? onAdd : undefined}
       showBack
       searchPlaceholder={t('common.searchPlaceholder')}
       activeFilterCount={activeFilterCount}

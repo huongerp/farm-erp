@@ -2,7 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Wrench, Package, User, Calendar, FileText } from 'lucide-react';
+import { Wrench, FileText } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
 import Textarea from '../../../../components/ui/Textarea';
 import Combobox from '../../../../components/ui/Combobox';
@@ -13,19 +13,19 @@ import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
 import { phieuBaoTriSuaChuaSchema, type PhieuBaoTriSuaChuaFormValues } from '../core/schema';
 import { useCreatePhieuBaoTri, useUpdatePhieuBaoTri } from '../hooks/use-bao-tri-sua-chua';
 import { useTaiSanList } from '../../danh-muc-tai-san/hooks/use-danh-muc-tai-san';
-import { useEmployees } from '@/features/he-thong/nhan-vien/hooks/use-nhan-vien';
 import { useAuthStore } from '../../../../store/useStore';
-import { HANG_MUC_OPTIONS } from '../core/constants';
+import { HANG_MUC_OPTIONS, TRANG_THAI_OPTIONS } from '../core/constants';
 import type { PhieuBaoTriSuaChua } from '../core/types';
 
 const DEFAULT_VALUES: PhieuBaoTriSuaChuaFormValues = {
-  hang_muc: 'bao_tri',
+  ngay: new Date().toISOString().slice(0, 10),
   id_tai_san: '',
-  ngay_yeu_cau: new Date().toISOString().slice(0, 10),
-  ngay_hen: new Date().toISOString().slice(0, 10),
+  id_hang_muc: 'bao_tri',
   mo_ta: '',
+  so_tien: 0,
   ghi_chu: null,
-  id_nguoi_phu_trach: null,
+  trang_thai: undefined,
+  nguoi_duyet: null,
 };
 
 interface Props {
@@ -48,20 +48,17 @@ const TaoPhieuBaoTriForm: React.FC<Props> = ({ onClose, defaultTaiSanId, initial
     onSuccessAfterEdit?.(updatedItem);
   });
   const { data: assets = [] } = useTaiSanList();
-  const { data: employees = [] } = useEmployees();
 
   const defaultValuesFromData = initialData
     ? {
-        hang_muc: initialData.hang_muc,
+        ngay: initialData.ngay,
         id_tai_san: initialData.id_tai_san,
-        ngay_yeu_cau: initialData.ngay_yeu_cau,
-        ngay_hen: initialData.ngay_hen,
-        ngay_bat_dau: initialData.ngay_bat_dau ?? null,
-        ngay_hoan_thanh: initialData.ngay_hoan_thanh ?? null,
+        id_hang_muc: initialData.id_hang_muc,
         mo_ta: initialData.mo_ta,
+        so_tien: initialData.so_tien,
         ghi_chu: initialData.ghi_chu ?? null,
-        id_nguoi_phu_trach: initialData.id_nguoi_phu_trach ?? null,
         trang_thai: initialData.trang_thai,
+        nguoi_duyet: initialData.nguoi_duyet ?? null,
       }
     : { ...DEFAULT_VALUES, id_tai_san: defaultTaiSanId ?? '' };
 
@@ -78,31 +75,29 @@ const TaoPhieuBaoTriForm: React.FC<Props> = ({ onClose, defaultTaiSanId, initial
     })),
     [assets]
   );
-  const employeeOptions = React.useMemo(
-    () => employees.map((e) => ({ value: e.id, label: e.ho_ten, subLabel: e.ma_nhan_vien })),
-    [employees]
-  );
   const hangMucOptions = React.useMemo(
     () => HANG_MUC_OPTIONS.map((o) => ({ value: o.value, label: t(o.labelKey) })),
+    [t]
+  );
+  const trangThaiOptions = React.useMemo(
+    () => TRANG_THAI_OPTIONS.map((o) => ({ value: o.value, label: t(o.labelKey) })),
     [t]
   );
 
   const payload = (data: PhieuBaoTriSuaChuaFormValues) => {
     const base = {
-      hang_muc: data.hang_muc,
+      ngay: data.ngay,
       id_tai_san: data.id_tai_san,
-      ngay_yeu_cau: data.ngay_yeu_cau,
-      ngay_hen: data.ngay_hen,
+      id_hang_muc: data.id_hang_muc,
       mo_ta: data.mo_ta.trim(),
+      so_tien: Number(data.so_tien) || 0,
       ghi_chu: data.ghi_chu?.trim() || null,
-      id_nguoi_phu_trach: data.id_nguoi_phu_trach || null,
     };
     if (isEdit) {
       return {
         ...base,
-        ngay_bat_dau: data.ngay_bat_dau?.trim() || null,
-        ngay_hoan_thanh: data.ngay_hoan_thanh?.trim() || null,
         trang_thai: data.trang_thai,
+        nguoi_duyet: data.nguoi_duyet?.trim() || null,
       };
     }
     return base;
@@ -141,9 +136,14 @@ const TaoPhieuBaoTriForm: React.FC<Props> = ({ onClose, defaultTaiSanId, initial
         <FormSection title={t('baoTriSuaChua.form.sectionGeneral')} icon={<Wrench size={18} />} variant="primary">
           <FormGrid cols={1}>
             <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">{t('baoTriSuaChua.form.ngay')}<RequiredStar /></label>
+              <Input type="date" {...register('ngay')} className={errors.ngay ? 'border-destructive' : ''} />
+              {errors.ngay && <p className="text-destructive text-xs mt-1">{errors.ngay.message}</p>}
+            </div>
+            <div>
               <label className="block text-sm font-medium text-foreground mb-1.5">{t('baoTriSuaChua.form.hangMuc')}<RequiredStar /></label>
               <Controller
-                name="hang_muc"
+                name="id_hang_muc"
                 control={control}
                 render={({ field }) => (
                   <Combobox
@@ -154,7 +154,7 @@ const TaoPhieuBaoTriForm: React.FC<Props> = ({ onClose, defaultTaiSanId, initial
                   />
                 )}
               />
-              {errors.hang_muc && <p className="text-destructive text-xs mt-1">{errors.hang_muc.message}</p>}
+              {errors.id_hang_muc && <p className="text-destructive text-xs mt-1">{errors.id_hang_muc.message}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-foreground mb-1.5">{t('baoTriSuaChua.form.taiSan')}<RequiredStar /></label>
@@ -175,30 +175,22 @@ const TaoPhieuBaoTriForm: React.FC<Props> = ({ onClose, defaultTaiSanId, initial
           </FormGrid>
         </FormSection>
 
-        <FormSection title={t('baoTriSuaChua.form.sectionDate')} icon={<Calendar size={18} />}>
+        <FormSection title={t('baoTriSuaChua.form.sectionContent')} icon={<FileText size={18} />}>
           <FormGrid cols={1}>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1.5">{t('baoTriSuaChua.form.ngayYeuCau')}<RequiredStar /></label>
-              <Input type="date" {...register('ngay_yeu_cau')} className={errors.ngay_yeu_cau ? 'border-destructive' : ''} />
-              {errors.ngay_yeu_cau && <p className="text-destructive text-xs mt-1">{errors.ngay_yeu_cau.message}</p>}
+              <label className="block text-sm font-medium text-foreground mb-1.5">{t('baoTriSuaChua.form.moTa')}<RequiredStar /></label>
+              <Textarea {...register('mo_ta')} placeholder={t('baoTriSuaChua.form.moTaPlaceholder')} rows={3} className={errors.mo_ta ? 'border-destructive' : ''} />
+              {errors.mo_ta && <p className="text-destructive text-xs mt-1">{errors.mo_ta.message}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1.5">{t('baoTriSuaChua.form.ngayHen')}<RequiredStar /></label>
-              <Input type="date" {...register('ngay_hen')} className={errors.ngay_hen ? 'border-destructive' : ''} />
-              {errors.ngay_hen && <p className="text-destructive text-xs mt-1">{errors.ngay_hen.message}</p>}
+              <label className="block text-sm font-medium text-foreground mb-1.5">{t('baoTriSuaChua.form.soTien')}<RequiredStar /></label>
+              <Input type="number" min={0} step={1000} {...register('so_tien')} placeholder={t('baoTriSuaChua.form.soTienPlaceholder')} className={errors.so_tien ? 'border-destructive' : ''} />
+              {errors.so_tien && <p className="text-destructive text-xs mt-1">{errors.so_tien.message}</p>}
             </div>
-            {isEdit && (
-              <>
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1.5">{t('baoTriSuaChua.form.ngayBatDau')}</label>
-                  <Input type="date" {...register('ngay_bat_dau')} />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1.5">{t('baoTriSuaChua.form.ngayHoanThanh')}</label>
-                  <Input type="date" {...register('ngay_hoan_thanh')} />
-                </div>
-              </>
-            )}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">{t('baoTriSuaChua.form.ghiChu')}</label>
+              <Textarea {...register('ghi_chu')} placeholder={t('baoTriSuaChua.form.ghiChuPlaceholder')} rows={2} />
+            </div>
           </FormGrid>
         </FormSection>
 
@@ -212,49 +204,21 @@ const TaoPhieuBaoTriForm: React.FC<Props> = ({ onClose, defaultTaiSanId, initial
                   control={control}
                   render={({ field }) => (
                     <Combobox
-                      value={String(field.value ?? 0)}
-                      onChange={(v) => field.onChange(v === '1' ? 1 : 0)}
-                      options={[
-                        { value: '0', label: t('baoTriSuaChua.statusPending') },
-                        { value: '1', label: t('baoTriSuaChua.statusCompleted') },
-                      ]}
+                      value={field.value ?? ''}
+                      onChange={(v) => field.onChange(v || undefined)}
+                      options={trangThaiOptions}
                       placeholder={t('baoTriSuaChua.form.trangThaiPlaceholder')}
                     />
                   )}
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1.5">{t('baoTriSuaChua.form.nguoiDuyet')}</label>
+                <Input {...register('nguoi_duyet')} placeholder={t('baoTriSuaChua.form.nguoiDuyetPlaceholder')} />
+              </div>
             </FormGrid>
           </FormSection>
         )}
-
-        <FormSection title={t('baoTriSuaChua.form.sectionContent')} icon={<FileText size={18} />}>
-          <FormGrid cols={1}>
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1.5">{t('baoTriSuaChua.form.moTa')}<RequiredStar /></label>
-              <Textarea {...register('mo_ta')} placeholder={t('baoTriSuaChua.form.moTaPlaceholder')} rows={3} className={errors.mo_ta ? 'border-destructive' : ''} />
-              {errors.mo_ta && <p className="text-destructive text-xs mt-1">{errors.mo_ta.message}</p>}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1.5">{t('baoTriSuaChua.form.nguoiPhuTrach')}</label>
-              <Controller
-                name="id_nguoi_phu_trach"
-                control={control}
-                render={({ field }) => (
-                  <Combobox
-                    value={field.value ?? ''}
-                    onChange={(v) => field.onChange(v || null)}
-                    options={[{ value: '', label: '—' }, ...employeeOptions]}
-                    placeholder={t('baoTriSuaChua.form.nguoiPhuTrachPlaceholder')}
-                  />
-                )}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1.5">{t('baoTriSuaChua.form.ghiChu')}</label>
-              <Textarea {...register('ghi_chu')} placeholder={t('baoTriSuaChua.form.ghiChuPlaceholder')} rows={2} />
-            </div>
-          </FormGrid>
-        </FormSection>
       </form>
     </GenericDrawer>
   );

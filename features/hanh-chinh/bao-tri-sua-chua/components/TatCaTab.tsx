@@ -45,9 +45,9 @@ const TatCaTab: React.FC<Props> = ({ defaultTaiSanId }) => {
 
   const filteredList = useMemo(() => {
     return list.filter((p) => {
-      if (filters.hang_muc.length > 0 && !filters.hang_muc.includes(p.hang_muc)) return false;
-      if (filters.dateFrom && p.ngay_yeu_cau < filters.dateFrom) return false;
-      if (filters.dateTo && p.ngay_yeu_cau > filters.dateTo) return false;
+      if (filters.hang_muc.length > 0 && !filters.hang_muc.includes(p.id_hang_muc)) return false;
+      if (filters.dateFrom && p.ngay < filters.dateFrom) return false;
+      if (filters.dateTo && p.ngay > filters.dateTo) return false;
       if (filters.id_tai_san.length > 0 && !filters.id_tai_san.includes(p.id_tai_san)) return false;
       return true;
     });

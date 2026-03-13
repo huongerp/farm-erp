@@ -17,6 +17,7 @@ import Breadcrumbs from '../shared/Breadcrumbs';
 import LiveClock from './LiveClock';
 import MobileBottomNav from './MobileBottomNav';
 import { SIDEBAR_MENU } from '../../lib/sidebar-menu';
+import { useSubmenuVisible, isSubmenuWithPermission } from '../../features/he-thong/phan-quyen/hooks/use-module-permission';
 import { signOut, updatePassword } from '../../lib/auth';
 import { toast } from 'sonner';
 import { useCompanyInfo } from '../../features/he-thong/thong-tin-cong-ty/hooks/use-thong-tin-cong-ty';
@@ -128,7 +129,21 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     }
   };
 
-  const navItems = SIDEBAR_MENU.map(({ path, nameKey, icon }) => ({ name: t(nameKey), icon, path }));
+  const showHanhChinh = useSubmenuVisible('/hanh-chinh');
+  const showMuaHang = useSubmenuVisible('/mua-hang');
+  const showHeThong = useSubmenuVisible('/he-thong');
+  const visibleMenu = React.useMemo(
+    () =>
+      SIDEBAR_MENU.filter((m) => {
+        if (!isSubmenuWithPermission(m.path)) return true;
+        if (m.path === '/hanh-chinh') return showHanhChinh;
+        if (m.path === '/mua-hang') return showMuaHang;
+        if (m.path === '/he-thong') return showHeThong;
+        return true;
+      }),
+    [showHanhChinh, showMuaHang, showHeThong]
+  );
+  const navItems = visibleMenu.map(({ path, nameKey, icon }) => ({ name: t(nameKey), icon, path }));
 
   const sidebarTransition = { duration: 0.15, ease: "circOut" };
 

@@ -42,9 +42,12 @@ interface Props {
   /** Bấm vào dòng con → mở drawer detail công việc đó (tham khảo module khác) */
   onViewChild?: (item: CongViec) => void;
   stackLevel?: number;
+  canCreate?: boolean;
+  canUpdate?: boolean;
+  canDelete?: boolean;
 }
 
-const CongViecDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onAddChild, onDeleteChild, onViewChild, stackLevel = 0 }) => {
+const CongViecDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onAddChild, onDeleteChild, onViewChild, stackLevel = 0, canCreate = true, canUpdate = true, canDelete = true }) => {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState(TAB_IDS.info);
   const [showTrangThaiModal, setShowTrangThaiModal] = useState(false);
@@ -136,16 +139,18 @@ const CongViecDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onAd
         {BTN_CLOSE()}
       </Button>
       <div className="flex items-center gap-3">
-        <Button
-          onClick={() => {
-            onEdit(data);
-            onClose();
-          }}
-          className="bg-primary text-white shadow-lg hover:bg-primary/90"
-        >
-          <Edit size={16} className="mr-2" /> {BTN_EDIT()}
-        </Button>
-        {onDelete && (
+        {canUpdate && (
+          <Button
+            onClick={() => {
+              onEdit(data);
+              onClose();
+            }}
+            className="bg-primary text-white shadow-lg hover:bg-primary/90"
+          >
+            <Edit size={16} className="mr-2" /> {BTN_EDIT()}
+          </Button>
+        )}
+        {canDelete && onDelete && (
           <Button
             variant="ghost"
             onClick={() => onDelete(data.id)}
@@ -193,18 +198,18 @@ const CongViecDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onAd
 
         <DetailToolbar
         actions={[
-          {
+          ...(canUpdate ? [{
             label: t('congViec.detail.actionTrangThai'),
             icon: <RefreshCw size={16} />,
             onClick: handleOpenTrangThaiModal,
             variant: 'info',
-          },
-          {
+          }] : []),
+          ...(canCreate && onAddChild ? [{
             label: t('congViec.detail.addCon'),
             icon: <ListTree size={16} />,
-            onClick: () => onAddChild?.(data.id),
+            onClick: () => onAddChild(data.id),
             variant: 'primary',
-          },
+          }] : []),
         ]}
         className="bg-card rounded-xl border border-border mb-4"
       />
@@ -291,7 +296,7 @@ const CongViecDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onAd
           icon={<ListTree size={14} className="text-primary" />}
           count={children.length}
           addLabel={t('congViec.detail.addCon')}
-          onAdd={() => onAddChild?.(data.id)}
+          onAdd={canCreate && onAddChild ? () => onAddChild(data.id) : undefined}
           emptyTitle={t('congViec.detail.conEmpty')}
           emptyDescription={t('congViec.detail.conEmptyHint')}
           maxTableHeight="320px"
@@ -322,20 +327,22 @@ const CongViecDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onAd
                     <td className="py-2 px-3">{getTrangThaiLabel(c.trang_thai, t)}</td>
                     <td className="py-2 px-3 text-right">
                       <div className="flex items-center justify-center gap-1">
-                        <Tooltip content={t('common.edit')} placement="left">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onEdit(c);
-                            }}
-                            className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-all"
-                            aria-label={t('common.edit')}
-                          >
-                            <Edit size={16} />
-                          </button>
-                        </Tooltip>
-                        {onDeleteChild && (
+                        {canUpdate && (
+                          <Tooltip content={t('common.edit')} placement="left">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onEdit(c);
+                              }}
+                              className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-all"
+                              aria-label={t('common.edit')}
+                            >
+                              <Edit size={16} />
+                            </button>
+                          </Tooltip>
+                        )}
+                        {canDelete && onDeleteChild && (
                           <Tooltip content={t('common.delete')} placement="left">
                             <button
                               type="button"

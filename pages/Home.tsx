@@ -10,6 +10,7 @@ import EmptyState from '../components/shared/EmptyState';
 import type { ModuleGroup } from '../components/dashboard/ModuleDashboardLayout';
 import { useAuthStore } from '../store/useStore';
 import { SIDEBAR_MENU } from '../lib/sidebar-menu';
+import { useSubmenuVisible, isSubmenuWithPermission } from '../features/he-thong/phan-quyen/hooks/use-module-permission';
 import { useFavoriteModules } from '../lib/use-favorite-modules';
 import { getAllSubmenuGroups } from '../lib/all-submenu-groups';
 import 'dayjs/locale/vi';
@@ -66,17 +67,32 @@ const Home: React.FC = () => {
     show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } },
   };
 
-  /** Thẻ chức năng: bỏ Trang chủ (path === '/') */
+  const showHanhChinh = useSubmenuVisible('/hanh-chinh');
+  const showMuaHang = useSubmenuVisible('/mua-hang');
+  const showHeThong = useSubmenuVisible('/he-thong');
+  const visibleMenu = useMemo(
+    () =>
+      SIDEBAR_MENU.filter((m) => {
+        if (m.path === '/') return false;
+        if (!isSubmenuWithPermission(m.path)) return true;
+        if (m.path === '/hanh-chinh') return showHanhChinh;
+        if (m.path === '/mua-hang') return showMuaHang;
+        if (m.path === '/he-thong') return showHeThong;
+        return true;
+      }),
+    [showHanhChinh, showMuaHang, showHeThong]
+  );
+  /** Thẻ chức năng: bỏ Trang chủ (path === '/'), ẩn submenu không có quyền xem module nào */
   const modules = useMemo(
     () =>
-      SIDEBAR_MENU.filter((m) => m.path !== '/').map((m) => ({
+      visibleMenu.map((m) => ({
         title: t(m.nameKey),
         description: m.descriptionKey ? t(m.descriptionKey) : '',
         icon: m.icon,
         path: m.path,
         gradient: m.gradient,
       })),
-    [t]
+    [t, visibleMenu]
   );
 
   /** Tất cả nhóm module từ 6 submenu */

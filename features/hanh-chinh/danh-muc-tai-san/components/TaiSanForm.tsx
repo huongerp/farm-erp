@@ -15,13 +15,15 @@ import FormGrid from '../../../../components/shared/FormGrid';
 import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
 import { TaiSan } from '../core/types';
 import { TaiSanFormValues, taiSanSchema } from '../core/schema';
-import { useCreateTaiSan, useUpdateTaiSan } from '../hooks/use-danh-muc-tai-san';
+import { useCreateTaiSan, useUpdateTaiSan, useGetNextMaTaiSan, checkMaTaiSanExistsAsync, useDistinctThuongHieu, useDistinctModel, useDistinctXuatXu, useDistinctNhaCungCap } from '../hooks/use-danh-muc-tai-san';
 import { useAssetGroups } from '../../thiet-lap-tai-san/hooks/use-nhom-tai-san';
 import { useAssetStorageLocations } from '../../thiet-lap-tai-san/hooks/use-noi-luu';
 import { useAssetStatuses } from '../../thiet-lap-tai-san/hooks/use-trang-thai';
 import { useEmployees } from '@/features/he-thong/nhan-vien/hooks/use-nhan-vien';
 import { generateAssetBarcode } from '../utils/barcode';
 import BarcodeQRDisplay from './BarcodeQRDisplay';
+import CurrencyInput from '../../../../components/ui/CurrencyInput';
+import i18n from '../../../../lib/i18n';
 const DEFAULT_VALUES: TaiSanFormValues = {
   ma_tai_san: '',
   ten_tai_san: '',
@@ -55,10 +57,15 @@ const TaiSanForm: React.FC<Props> = ({ initialData, onClose }) => {
   const isEdit = !!initialData;
   const createMutation = useCreateTaiSan(onClose);
   const updateMutation = useUpdateTaiSan(onClose);
+  const { data: nextMa, isSuccess: nextMaSuccess } = useGetNextMaTaiSan(!isEdit);
   const { data: groups = [] } = useAssetGroups();
   const { data: locations = [] } = useAssetStorageLocations();
   const { data: statuses = [] } = useAssetStatuses();
   const { data: employees = [] } = useEmployees();
+  const { data: distinctThuongHieu = [] } = useDistinctThuongHieu();
+  const { data: distinctModel = [] } = useDistinctModel();
+  const { data: distinctXuatXu = [] } = useDistinctXuatXu();
+  const { data: distinctNhaCungCap = [] } = useDistinctNhaCungCap();
 
   const groupOptions = useMemo(
     () => groups.map((g) => ({ label: g.ten, value: g.id, subLabel: g.ma })),
@@ -82,12 +89,48 @@ const TaiSanForm: React.FC<Props> = ({ initialData, onClose }) => {
     [employees]
   );
 
-  const { register, handleSubmit, formState: { errors }, reset, control, setValue, watch } = useForm<TaiSanFormValues>({
+  const { register, handleSubmit, formState: { errors }, reset, control, setValue, setError, watch } = useForm<TaiSanFormValues>({
     resolver: zodResolver(taiSanSchema),
     defaultValues: DEFAULT_VALUES,
   });
   const maBarcode = watch('ma_barcode');
   const maTaiSan = watch('ma_tai_san');
+  const thuongHieuValue = watch('thuong_hieu');
+  const modelValue = watch('model');
+  const xuatXuValue = watch('xuat_xu');
+  const nhaCungCapValue = watch('ten_nha_cung_cap');
+
+  const thuongHieuOptions = useMemo(() => {
+    const opts = distinctThuongHieu.map((v) => ({ label: v, value: v }));
+    if (thuongHieuValue?.trim() && !opts.some((o) => o.value === thuongHieuValue.trim())) {
+      return [...opts, { label: thuongHieuValue.trim(), value: thuongHieuValue.trim() }];
+    }
+    return opts;
+  }, [distinctThuongHieu, thuongHieuValue]);
+
+  const modelOptions = useMemo(() => {
+    const opts = distinctModel.map((v) => ({ label: v, value: v }));
+    if (modelValue?.trim() && !opts.some((o) => o.value === modelValue.trim())) {
+      return [...opts, { label: modelValue.trim(), value: modelValue.trim() }];
+    }
+    return opts;
+  }, [distinctModel, modelValue]);
+
+  const xuatXuOptions = useMemo(() => {
+    const opts = distinctXuatXu.map((v) => ({ label: v, value: v }));
+    if (xuatXuValue?.trim() && !opts.some((o) => o.value === xuatXuValue.trim())) {
+      return [...opts, { label: xuatXuValue.trim(), value: xuatXuValue.trim() }];
+    }
+    return opts;
+  }, [distinctXuatXu, xuatXuValue]);
+
+  const nhaCungCapOptions = useMemo(() => {
+    const opts = distinctNhaCungCap.map((v) => ({ label: v, value: v }));
+    if (nhaCungCapValue?.trim() && !opts.some((o) => o.value === nhaCungCapValue.trim())) {
+      return [...opts, { label: nhaCungCapValue.trim(), value: nhaCungCapValue.trim() }];
+    }
+    return opts;
+  }, [distinctNhaCungCap, nhaCungCapValue]);
   const maTaiSanRegister = register('ma_tai_san');
   const handleGenerateBarcode = () => {
     setValue('ma_barcode', generateAssetBarcode(maTaiSan, initialData?.id));
@@ -150,7 +193,20 @@ const TaiSanForm: React.FC<Props> = ({ initialData, onClose }) => {
     }
   }, [initialData, reset]);
 
-  const onSubmit: SubmitHandler<TaiSanFormValues> = (data) => {
+  useEffect(() => {
+    if (!isEdit && nextMaSuccess && nextMa && typeof nextMa === 'string') {
+      setValue('ma_tai_san', nextMa);
+      lastMaTaiSanRef.current = nextMa;
+    }
+  }, [isEdit, nextMaSuccess, nextMa, setValue]);
+
+  const onSubmit: SubmitHandler<TaiSanFormValues> = async (data) => {
+    const ma = (data.ma_tai_san ?? '').trim();
+    const exists = await checkMaTaiSanExistsAsync(ma, isEdit ? initialData?.id : null);
+    if (exists) {
+      setError('ma_tai_san', { type: 'manual', message: i18n.t('danhSachTaiSan.validation.maDuplicate') });
+      return;
+    }
     const sanitized: TaiSanFormValues = {
       ...data,
       id_nhan_vien_dang_giu: data.id_nhan_vien_dang_giu || undefined,
@@ -190,6 +246,33 @@ const TaiSanForm: React.FC<Props> = ({ initialData, onClose }) => {
       maxWidthClass={DRAWER_WIDTH_FORM}
     >
       <form id="tai-san-form" onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        {/* Hình ảnh tài sản — một mình một dòng, trên cùng */}
+        <div className="rounded-xl border border-border bg-muted/30 p-5">
+          <Controller
+            name="hinh_anh"
+            control={control}
+            render={({ field }) => (
+              <div className="flex flex-col items-center w-full">
+                <SingleImageInput
+                  label={t('danhSachTaiSan.form.hinhAnh')}
+                  icon={<ImageIcon size={14} />}
+                  value={field.value || null}
+                  onChange={(v) => field.onChange(v ?? '')}
+                  placeholder={t('danhSachTaiSan.form.hinhAnhPlaceholder')}
+                  hint={t('danhSachTaiSan.form.hinhAnhHint')}
+                  shape="rounded"
+                  aspectRatio="1/1"
+                  maxSizeMB={3}
+                  className="w-[200px]"
+                />
+                {errors.hinh_anh?.message && (
+                  <p className="text-xs font-medium text-destructive mt-2 text-center">{errors.hinh_anh.message}</p>
+                )}
+              </div>
+            )}
+          />
+        </div>
+
         <FormSection title={t('danhSachTaiSan.form.basicInfo')} icon={<Building2 size={14} />} variant="primary">
           <FormGrid cols={2}>
             <Input
@@ -271,19 +354,39 @@ const TaiSanForm: React.FC<Props> = ({ initialData, onClose }) => {
                 />
               )}
             />
-            <Input
-              label={t('danhSachTaiSan.form.thuongHieu')}
-              placeholder={t('danhSachTaiSan.form.thuongHieuPlaceholder')}
-              icon={<Package size={12} />}
-              {...register('thuong_hieu')}
-              error={errors.thuong_hieu?.message}
+            <Controller
+              name="thuong_hieu"
+              control={control}
+              render={({ field }) => (
+                <Combobox
+                  label={t('danhSachTaiSan.form.thuongHieu')}
+                  options={thuongHieuOptions}
+                  value={field.value || ''}
+                  onChange={(v) => field.onChange(v ?? '')}
+                  placeholder={t('danhSachTaiSan.form.thuongHieuPlaceholder')}
+                  icon={<Package size={12} />}
+                  error={errors.thuong_hieu?.message}
+                  creatable
+                  creatableLabel={t('danhSachTaiSan.form.creatableNew')}
+                />
+              )}
             />
-            <Input
-              label={t('danhSachTaiSan.form.model')}
-              placeholder={t('danhSachTaiSan.form.modelPlaceholder')}
-              icon={<Package size={12} />}
-              {...register('model')}
-              error={errors.model?.message}
+            <Controller
+              name="model"
+              control={control}
+              render={({ field }) => (
+                <Combobox
+                  label={t('danhSachTaiSan.form.model')}
+                  options={modelOptions}
+                  value={field.value || ''}
+                  onChange={(v) => field.onChange(v ?? '')}
+                  placeholder={t('danhSachTaiSan.form.modelPlaceholder')}
+                  icon={<Package size={12} />}
+                  error={errors.model?.message}
+                  creatable
+                  creatableLabel={t('danhSachTaiSan.form.creatableNew')}
+                />
+              )}
             />
             <Input
               label={t('danhSachTaiSan.form.serial')}
@@ -292,12 +395,22 @@ const TaiSanForm: React.FC<Props> = ({ initialData, onClose }) => {
               {...register('serial')}
               error={errors.serial?.message}
             />
-            <Input
-              label={t('danhSachTaiSan.form.xuatXu')}
-              placeholder={t('danhSachTaiSan.form.xuatXuPlaceholder')}
-              icon={<Package size={12} />}
-              {...register('xuat_xu')}
-              error={errors.xuat_xu?.message}
+            <Controller
+              name="xuat_xu"
+              control={control}
+              render={({ field }) => (
+                <Combobox
+                  label={t('danhSachTaiSan.form.xuatXu')}
+                  options={xuatXuOptions}
+                  value={field.value || ''}
+                  onChange={(v) => field.onChange(v ?? '')}
+                  placeholder={t('danhSachTaiSan.form.xuatXuPlaceholder')}
+                  icon={<Package size={12} />}
+                  error={errors.xuat_xu?.message}
+                  creatable
+                  creatableLabel={t('danhSachTaiSan.form.creatableNew')}
+                />
+              )}
             />
             <div className="space-y-2">
               <div className="flex gap-2 items-end">
@@ -318,12 +431,22 @@ const TaiSanForm: React.FC<Props> = ({ initialData, onClose }) => {
                 <BarcodeQRDisplay value={maBarcode.trim()} qrSize={100} barcodeHeight={40} className="mt-2" />
               ) : null}
             </div>
-            <Input
-              label={t('danhSachTaiSan.form.nhaCungCap')}
-              placeholder={t('danhSachTaiSan.form.nhaCungCapPlaceholder')}
-              icon={<Truck size={12} />}
-              {...register('ten_nha_cung_cap')}
-              error={errors.ten_nha_cung_cap?.message}
+            <Controller
+              name="ten_nha_cung_cap"
+              control={control}
+              render={({ field }) => (
+                <Combobox
+                  label={t('danhSachTaiSan.form.nhaCungCap')}
+                  options={nhaCungCapOptions}
+                  value={field.value || ''}
+                  onChange={(v) => field.onChange(v ?? '')}
+                  placeholder={t('danhSachTaiSan.form.nhaCungCapPlaceholder')}
+                  icon={<Truck size={12} />}
+                  error={errors.ten_nha_cung_cap?.message}
+                  creatable
+                  creatableLabel={t('danhSachTaiSan.form.creatableNew')}
+                />
+              )}
             />
             <Input
               type="date"
@@ -332,15 +455,20 @@ const TaiSanForm: React.FC<Props> = ({ initialData, onClose }) => {
               error={errors.ngay_nhap?.message}
               icon={<Calendar size={12} />}
             />
-            <Input
-              type="number"
-              min={0}
-              step={1000}
-              label={t('danhSachTaiSan.form.nguyenGia')}
-              placeholder={t('danhSachTaiSan.form.nguyenGiaPlaceholder')}
-              icon={<DollarSign size={12} />}
-              {...register('nguyen_gia')}
-              error={errors.nguyen_gia?.message}
+            <Controller
+              name="nguyen_gia"
+              control={control}
+              render={({ field }) => (
+                <CurrencyInput
+                  label={t('danhSachTaiSan.form.nguyenGia')}
+                  placeholder={t('danhSachTaiSan.form.nguyenGiaPlaceholder')}
+                  icon={<DollarSign size={12} />}
+                  value={field.value ?? undefined}
+                  onChange={(n) => field.onChange(n)}
+                  suffix=""
+                  error={errors.nguyen_gia?.message}
+                />
+              )}
             />
             <Input
               type="date"
@@ -348,29 +476,6 @@ const TaiSanForm: React.FC<Props> = ({ initialData, onClose }) => {
               {...register('ngay_bat_dau_trich_khau_hao')}
               error={errors.ngay_bat_dau_trich_khau_hao?.message}
               icon={<Calendar size={12} />}
-            />
-            <Controller
-              name="hinh_anh"
-              control={control}
-              render={({ field }) => (
-                <div className="col-span-1 max-w-[120px]">
-                  <SingleImageInput
-                    label={t('danhSachTaiSan.form.hinhAnh')}
-                    icon={<ImageIcon size={12} />}
-                    value={field.value || null}
-                    onChange={(v) => field.onChange(v ?? '')}
-                    placeholder={t('danhSachTaiSan.form.hinhAnhPlaceholder')}
-                    hint={t('danhSachTaiSan.form.hinhAnhHint')}
-                    shape="rounded"
-                    aspectRatio="1/1"
-                    maxSizeMB={3}
-                    className="w-[100px]"
-                  />
-                  {errors.hinh_anh?.message && (
-                    <p className="text-xs font-medium text-destructive mt-1.5">{errors.hinh_anh.message}</p>
-                  )}
-                </div>
-              )}
             />
             <div className="col-span-1 sm:col-span-2">
               <Textarea

@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
+import { useModulePermissionFromContext } from '../../../components/shared/ModulePermissionGuard';
 import DiemCongTruToolbar from './components/diem-cong-tru-toolbar';
 import DiemCongTruTable from './components/diem-cong-tru-table';
 import DiemCongTruForm from './components/diem-cong-tru-form';
@@ -18,6 +19,7 @@ import { DiemCongTruRecord } from './core/types';
 
 const DiemCongTruPage: React.FC = () => {
   const { t } = useTranslation();
+  const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
   const {
     searchTerm,
@@ -149,12 +151,14 @@ const DiemCongTruPage: React.FC = () => {
       <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
         <DiemCongTruToolbar
           items={records}
-          onAdd={() => {
+          onAdd={canCreate ? () => {
             setDetailItem(null);
             setEditingItem(null);
             setShowForm(true);
-          }}
-          onDeleteMany={handleDeleteMany}
+          } : undefined}
+          onDeleteMany={canDelete ? handleDeleteMany : undefined}
+          canCreate={canCreate}
+          canDelete={canDelete}
         />
         <div className="flex-1 min-h-0">
           <DiemCongTruTable
@@ -163,6 +167,8 @@ const DiemCongTruPage: React.FC = () => {
             onEdit={handleEdit}
             onDelete={handleDelete}
             onView={handleView}
+            canUpdate={canUpdate}
+            canDelete={canDelete}
           />
         </div>
 
@@ -182,6 +188,8 @@ const DiemCongTruPage: React.FC = () => {
                 setDetailItem(null);
                 handleDelete(id);
               }}
+              canUpdate={canUpdate}
+              canDelete={canDelete}
             />
           )}
         </AnimatePresence>

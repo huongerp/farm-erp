@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { ClipboardList, MessageSquare, LayoutGrid, GanttChart } from 'lucide-react';
 import TabGroup from '../../../../components/ui/TabGroup';
+import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import CongViecToolbar from './cong-viec-toolbar';
 import CongViecHierarchyTable from './cong-viec-hierarchy-table';
 import CongViecKanban from './cong-viec-kanban';
@@ -38,6 +39,7 @@ interface Props {
 
 const CongViecScopeTab: React.FC<Props> = ({ scope }) => {
   const { t } = useTranslation();
+  const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
   const [searchParams] = useSearchParams();
   const detailIdFromQuery = searchParams.get('detail');
 
@@ -304,15 +306,17 @@ const CongViecScopeTab: React.FC<Props> = ({ scope }) => {
       <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
         <CongViecToolbar
           items={scopeList}
-          onAdd={() => {
+          onAdd={canCreate ? () => {
             setFormParentId(null);
             setEditingItem(null);
             setShowForm(true);
-          }}
-          onDeleteMany={handleDeleteMany}
+          } : undefined}
+          onDeleteMany={canDelete ? handleDeleteMany : undefined}
           onExport={handleExport}
-          onImport={() => setShowImport(true)}
+          onImport={canCreate ? () => setShowImport(true) : undefined}
           hideViewMode
+          canCreate={canCreate}
+          canDelete={canDelete}
         />
         <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
           {isLoading ? (
@@ -325,7 +329,7 @@ const CongViecScopeTab: React.FC<Props> = ({ scope }) => {
                 title={t('congViec.empty')}
                 description={t('congViec.emptyHint')}
                 icon={<ClipboardList className="w-10 h-10 text-muted-foreground" />}
-                action={
+                action={canCreate ? (
                   <Button
                     type="button"
                     size="sm"
@@ -338,7 +342,7 @@ const CongViecScopeTab: React.FC<Props> = ({ scope }) => {
                   >
                     {t('common.addNew')}
                   </Button>
-                }
+                ) : undefined}
               />
             </div>
           ) : isKanban ? (
@@ -356,6 +360,8 @@ const CongViecScopeTab: React.FC<Props> = ({ scope }) => {
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onView={handleView}
+                canUpdate={canUpdate}
+                canDelete={canDelete}
               />
               <div className="shrink-0 border-t border-border bg-muted/30">
                 <TablePaginationFooter
@@ -398,6 +404,9 @@ const CongViecScopeTab: React.FC<Props> = ({ scope }) => {
               onAddChild={handleAddChild}
               onDeleteChild={handleDelete}
               onViewChild={(child) => setDetailStack((prev) => [...prev.slice(0, i + 1), child])}
+              canCreate={canCreate}
+              canUpdate={canUpdate}
+              canDelete={canDelete}
             />
           ))}
         </AnimatePresence>
