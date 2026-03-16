@@ -233,6 +233,7 @@ const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap w-24">{t('phieuKho.form.quantity')}</th>
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[90px]">{t('phieuKho.form.unitPrice')}</th>
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[100px]">{t('phieuKho.form.amount')}</th>
+                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[90px]">{t('phieuKho.preview.soLot')}</th>
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[120px]">{t('phieuKho.form.note')}</th>
                 </tr>
               </thead>
@@ -246,6 +247,7 @@ const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete
                     <td className="px-4 py-2.5 tabular-nums">{formatNumberVN(ct.so_luong)}</td>
                     <td className="px-4 py-2.5 tabular-nums">{formatNumberVN(ct.don_gia)}</td>
                     <td className="px-4 py-2.5 tabular-nums">{formatNumberVN(ct.thanh_tien)}</td>
+                    <td className="px-4 py-2.5 text-xs text-muted-foreground">{ct.so_lot ?? '—'}</td>
                     <td className="px-4 py-2.5 text-xs text-muted-foreground">{ct.ghi_chu ?? '—'}</td>
                   </tr>
                 ))}

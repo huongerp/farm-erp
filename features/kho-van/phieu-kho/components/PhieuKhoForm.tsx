@@ -163,6 +163,7 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose, on
           id_hang_hoa: ct.id_hang_hoa,
           so_luong: ct.so_luong,
           don_gia: ct.don_gia,
+          so_lot: ct.so_lot ?? '',
           ghi_chu: ct.ghi_chu ?? '',
         })),
       });
@@ -201,6 +202,7 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose, on
         id_hang_hoa: c.id_hang_hoa.trim(),
         so_luong: Number(c.so_luong),
         don_gia: c.don_gia != null ? Number(c.don_gia) : undefined,
+        so_lot: c.so_lot?.trim() || undefined,
         ghi_chu: c.ghi_chu?.trim() || undefined,
       })),
     };
@@ -220,7 +222,7 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose, on
   const showCustomer = isXuat;
   const labelKho = isNhap ? t('phieuKho.form.warehouseTo') : t('phieuKho.form.warehouseFrom');
 
-  const chiTietValues: { id_hang_hoa?: string; so_luong?: number; don_gia?: number; ghi_chu?: string }[] = Array.isArray(watch('chi_tiet')) ? watch('chi_tiet') : [];
+  const chiTietValues: { id_hang_hoa?: string; so_luong?: number; don_gia?: number; so_lot?: string; ghi_chu?: string }[] = Array.isArray(watch('chi_tiet')) ? watch('chi_tiet') : [];
 
   return (
     <GenericDrawer
@@ -391,7 +393,7 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose, on
           icon={<Package size={14} className="text-primary" />}
           count={fields.length}
           addLabel={t('phieuKho.form.addRow')}
-          onAdd={() => append({ id_hang_hoa: '', so_luong: 0, don_gia: 0, ghi_chu: '' })}
+          onAdd={() => append({ id_hang_hoa: '', so_luong: 0, don_gia: 0, so_lot: '', ghi_chu: '' })}
           emptyTitle={t('phieuKho.form.noItems')}
           emptyDescription={t('phieuKho.form.noItemsHint')}
           maxTableHeight="320px"
@@ -405,6 +407,7 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose, on
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[110px]">{t('phieuKho.form.amount')}</th>
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[64px]">{t('phieuKho.form.unit')}</th>
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[90px]">{t('phieuKho.form.stockAtWarehouse')}</th>
+              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[90px]">{t('phieuKho.preview.soLot')}</th>
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[200px]">{t('phieuKho.form.note')}</th>
               {showTonKhoWarning && (
                 <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[100px]">{t('phieuKho.form.warning')}</th>
@@ -415,7 +418,7 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose, on
           <tbody className="[&>tr>td]:border-b [&>tr>td]:border-border">
             {fields.length === 0 ? (
               <tr>
-                <td colSpan={showTonKhoWarning ? 10 : 9} className="px-4 py-6 text-center text-muted-foreground text-xs">
+                <td colSpan={showTonKhoWarning ? 11 : 10} className="px-4 py-6 text-center text-muted-foreground text-xs">
                   {t('phieuKho.form.noItems')}
                 </td>
               </tr>
@@ -490,6 +493,13 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose, on
                     <td className="px-4 py-2.5 text-xs text-muted-foreground tabular-nums">
                       {idHangHoa ? `${ton} ${donVi !== '—' ? donVi : ''}` : '—'}
                     </td>
+                    <td className="px-4 py-2.5 min-w-[90px] align-top">
+                      <Input
+                        placeholder={t('phieuKho.preview.soLot')}
+                        className="h-9 text-sm border-border w-full"
+                        {...register(`chi_tiet.${index}.so_lot`)}
+                      />
+                    </td>
                     <td className="px-4 py-2.5 min-w-[200px] align-top">
                       <Textarea
                         placeholder={t('phieuKho.form.note')}
@@ -535,7 +545,7 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose, on
                   <td className="px-4 py-2.5 text-xs tabular-nums">{formatNumberVN(tongSoLuong)}</td>
                   <td className="px-4 py-2.5 text-xs" />
                   <td className="px-4 py-2.5 text-xs tabular-nums">{formatNumberVN(tongTien)}</td>
-                  <td colSpan={showTonKhoWarning ? 6 : 5} className="px-4 py-2.5 text-xs" />
+                  <td colSpan={showTonKhoWarning ? 7 : 6} className="px-4 py-2.5 text-xs" />
                 </tr>
               );
             })()}

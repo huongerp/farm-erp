@@ -119,5 +119,15 @@
   "phieuKho.preview.checker": "Checker",
   "phieuKho.preview.approver": "Approver",
   "phieuKho.preview.totalQty": "Total quantity",
-  "phieuKho.preview.totalAmount": "Total amount"
+  "phieuKho.preview.totalAmount": "Total amount",
+  "phieuKho.preview.noiDi": "From",
+  "phieuKho.preview.noiDen": "To",
+  "phieuKho.preview.danhMuc": "Category",
+  "phieuKho.preview.soLot": "LOT No.",
+  "phieuKho.preview.signCreator": "Created by",
+  "phieuKho.preview.signChecker": "Checker",
+  "phieuKho.preview.signRelated": "Related person",
+  "phieuKho.preview.signApprover": "Approver",
+  "phieuKho.preview.signHint": "(Sign and print name)",
+  "phieuKho.preview.danhSachChiTiet": "Details:"
 }

@@ -29,7 +29,8 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'don_gia', label: i18n.t('phieuKho.form.unitPrice'), visible: true, minWidth: 90, maxWidth: 120, order: 10 },
   { id: 'thanh_tien', label: i18n.t('phieuKho.form.amount'), visible: true, minWidth: 100, maxWidth: 140, order: 11 },
   { id: 'don_vi_tinh', label: i18n.t('phieuKho.form.unit'), visible: true, minWidth: 60, maxWidth: 80, order: 12 },
-  { id: 'ghi_chu', label: i18n.t('phieuKho.form.note'), visible: true, minWidth: 100, maxWidth: 180, order: 13 },
+  { id: 'so_lot', label: i18n.t('phieuKho.preview.soLot'), visible: true, minWidth: 80, maxWidth: 120, order: 13 },
+  { id: 'ghi_chu', label: i18n.t('phieuKho.form.note'), visible: true, minWidth: 100, maxWidth: 180, order: 14 },
 ];
 
 const initialFilters: ChiTietPhieuKhoFilters = {

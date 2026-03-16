@@ -1,205 +1,323 @@
 /**
- * Xuất phiếu đề xuất vật tư ra PDF – header công ty + thông tin phiếu + bảng chi tiết hàng hóa.
+ * Xuất phiếu đề xuất vật tư ra PDF, DOC, XLSX.
+ *
+ * - PDF  : html2canvas qua jsPDF (font Arial, hỗ trợ tiếng Việt).
+ * - DOC  : HTML table-based (Word) + UTF-8 BOM + Times New Roman.
+ * - XLSX : SheetJS aoa_to_sheet (Unicode).
  */
 import type { PhieuDeXuatVatTu, PhieuDeXuatVatTuChiTiet } from '../core/types';
-import { TRANG_THAI_CHO_DUYET, TRANG_THAI_DA_DUYET, TRANG_THAI_KHONG_DUYET } from '../core/constants';
-import { formatDate, formatDateTime, getTodayISODate } from '../../../../lib/utils';
+import {
+  formatDate,
+  formatDateVietnameseLong,
+  formatDateTime,
+  getTodayISODate,
+  formatNumberVN,
+} from '../../../../lib/utils';
 import i18n from '../../../../lib/i18n';
 import { useUIStore } from '../../../../store/useStore';
 
-const FONT_STACK = "'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif";
+/* ------------------------------------------------------------------ */
+/*  Helpers                                                            */
+/* ------------------------------------------------------------------ */
 
-function safeStr(v: string | number | null | undefined): string {
-  if (v == null) return '—';
+const FONT = "Arial, 'Helvetica Neue', sans-serif";
+const FONT_DOC = "'Times New Roman', Times, serif";
+
+function safe(v: string | number | null | undefined): string {
+  if (v == null || v === '') return '–';
   return String(v);
 }
 
-function getTrangThaiLabel(trangThai: string, t: (k: string) => string): string {
-  if (trangThai === TRANG_THAI_CHO_DUYET) return t('phieuDeXuatVatTu.status.pending');
-  if (trangThai === TRANG_THAI_DA_DUYET) return t('phieuDeXuatVatTu.status.approved');
-  if (trangThai === TRANG_THAI_KHONG_DUYET) return t('phieuDeXuatVatTu.status.rejected');
-  return trangThai;
-}
-
-function buildCompanyHeaderHTML(): string {
-  const info = useUIStore.getState().companyInfo;
-  const logoHtml = info.appLogo
-    ? `<img src="${info.appLogo}" alt="Logo" style="width:64px;height:64px;object-fit:contain;flex-shrink:0" />`
-    : '';
-  const addr = info.address ? `${i18n.t('company.address')}: ${info.address}` : '';
-  const contact: string[] = [];
-  if (info.email) contact.push(`${i18n.t('company.email')}: ${info.email}`);
-  if (info.phone) contact.push(`${i18n.t('company.phone')}: ${info.phone}`);
-  const contactLine = contact.join(' · ');
-  return `
-<div style="display:flex;align-items:flex-start;gap:16px;padding-bottom:16px;margin-bottom:16px;border-bottom:2px solid #333;font-family:${FONT_STACK}">
-  ${logoHtml}
-  <div style="flex:1;min-width:0">
-    <div style="font-size:14pt;font-weight:bold;color:#111;text-transform:uppercase;letter-spacing:0.02em">${info.companyName}</div>
-    ${addr ? `<p style="font-size:9pt;color:#444;margin:2px 0 0 0">${addr}</p>` : ''}
-    ${contactLine ? `<p style="font-size:9pt;color:#444;margin:2px 0 0 0">${contactLine}</p>` : ''}
-  </div>
-</div>`;
-}
-
-const TABLE_CELL =
-  (label: string, value: string) =>
-  `<tr><td style="padding:4px 6px;border:1px solid #ddd;font-weight:600;width:40%;color:#444;font-family:${FONT_STACK}">${label}</td><td style="padding:4px 6px;border:1px solid #ddd;font-family:${FONT_STACK}">${value}</td></tr>`;
-
-export function buildPhieuDeXuatVatTuBodyHTML(phieu: PhieuDeXuatVatTu, chiTiet: PhieuDeXuatVatTuChiTiet[]): string {
-  const t = i18n.t.bind(i18n);
-  const title = t('phieuDeXuatVatTu.preview.title');
-  const printedAt = formatDateTime(new Date());
-  const subtitle = `${phieu.so_phieu} · ${getTrangThaiLabel(phieu.trang_thai, t)}`;
-
-  const infoRows: [string, string][] = [
-    [t('phieuDeXuatVatTu.form.code'), phieu.so_phieu],
-    [t('phieuDeXuatVatTu.form.date'), formatDate(phieu.ngay)],
-    [t('phieuDeXuatVatTu.form.requiredDate'), formatDate(phieu.ngay_can)],
-    [t('phieuDeXuatVatTu.form.place'), phieu.ten_noi_de_xuat ?? '—'],
-    [t('phieuDeXuatVatTu.form.requester'), phieu.ten_nguoi_de_xuat ?? '—'],
-    [t('phieuDeXuatVatTu.form.approver'), phieu.ten_nguoi_duyet ?? '—'],
-    [t('phieuDeXuatVatTu.form.notes'), phieu.ghi_chu ?? '—'],
-    [t('phieuDeXuatVatTu.store.statusCol'), getTrangThaiLabel(phieu.trang_thai, t)],
-  ];
-
-  let section2 = '';
-  if (chiTiet.length > 0) {
-    const theadCells = [
-      '#',
-      t('phieuDeXuatVatTu.form.itemCode'),
-      t('phieuDeXuatVatTu.form.itemName'),
-      t('phieuDeXuatVatTu.form.unit'),
-      t('phieuDeXuatVatTu.form.quantity'),
-      t('phieuDeXuatVatTu.form.specs'),
-      t('phieuDeXuatVatTu.form.note'),
-    ]
-      .map(
-        (text) =>
-          `<th style="padding:6px 8px;border:1px solid #ddd;text-align:left;font-size:9pt;font-family:${FONT_STACK};background:#3b82f6;color:#fff">${text}</th>`
-      )
-      .join('');
-    const tbodyRows = chiTiet
-      .map(
-        (c, idx) =>
-          `<tr>
-            <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${idx + 1}</td>
-            <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${safeStr(c.ma_hang)}</td>
-            <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${safeStr(c.ten_hang)}</td>
-            <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${safeStr(c.don_vi_tinh)}</td>
-            <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${c.so_luong}</td>
-            <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${safeStr(c.thong_so)}</td>
-            <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${safeStr(c.ghi_chu)}</td>
-          </tr>`
-      )
-      .join('');
-    section2 = `
-<table style="width:100%;border-collapse:collapse;margin-top:12px;font-family:${FONT_STACK};font-size:10pt">
-  <thead><tr>${theadCells}</tr></thead>
-  <tbody>${tbodyRows}</tbody>
-</table>`;
-  }
-
-  return `
-<div style="font-family:${FONT_STACK};font-size:10pt;color:#222;padding:20px;min-width:600px">
-${buildCompanyHeaderHTML()}
-<h1 style="font-size:16pt;text-align:center;margin:0 0 8px;font-family:${FONT_STACK}">${title}</h1>
-<p style="font-size:10pt;color:#555;text-align:center;margin-bottom:12px;font-family:${FONT_STACK}">${subtitle}</p>
-<hr style="border:0;border-top:1px solid #ccc;margin:12px 0" />
-<table style="width:100%;border-collapse:collapse;margin-top:12px;font-family:${FONT_STACK};font-size:10pt">
-  <thead><tr style="background:#3b82f6;color:#fff"><th colspan="2" style="padding:6px;text-align:left;font-size:9pt">${t('phieuDeXuatVatTu.detail.basicInfo')}</th></tr></thead>
-  <tbody>${infoRows.map(([l, v]) => TABLE_CELL(l, safeStr(v))).join('')}</tbody>
-</table>
-${chiTiet.length > 0 ? `<h2 style="font-size:11pt;margin:16px 0 8px;font-family:${FONT_STACK}">${t('phieuDeXuatVatTu.form.itemsSection')}</h2>${section2}` : ''}
-<p style="font-size:7pt;color:#888;margin-top:20px;font-family:${FONT_STACK}">${t('phieuDeXuatVatTu.preview.printedAt')} ${printedAt}</p>
-</div>`;
-}
-
-function getFileName(phieu: PhieuDeXuatVatTu): string {
-  const slug = phieu.so_phieu.replace(/\s+/g, '_').replace(/[^\w\u00C0-\u024F\-_]/gi, '');
+function fileName(p: PhieuDeXuatVatTu): string {
+  const slug = p.so_phieu.replace(/\s+/g, '_').replace(/[^\w\u00C0-\u024F\-_]/gi, '');
   return `Phieu_de_xuat_vat_tu_${slug}_${getTodayISODate()}`;
 }
 
-export async function exportPhieuDeXuatVatTuToPDF(
-  phieu: PhieuDeXuatVatTu,
-  chiTiet: PhieuDeXuatVatTuChiTiet[]
-): Promise<void> {
-  const [{ default: jsPDF }] = await Promise.all([import('jspdf')]);
-  const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
-
-  const container = document.createElement('div');
-  container.style.cssText =
-    'position:fixed;left:-9999px;top:0;width:210mm;padding:20px;font-family:Segoe UI,Roboto,Arial,sans-serif;font-size:10pt;background:#fff';
-  container.innerHTML = buildPhieuDeXuatVatTuBodyHTML(phieu, chiTiet);
-  document.body.appendChild(container);
-
-  try {
-    await doc.html(container, {
-      callback: () => {},
-      html2canvas: { scale: 0.5, useCORS: true },
-      x: 10,
-      y: 10,
-      width: 190,
-      windowWidth: 794,
-    });
-
-    const blob = doc.output('blob');
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${getFileName(phieu)}.pdf`;
-    a.click();
-    URL.revokeObjectURL(url);
-  } finally {
-    document.body.removeChild(container);
-  }
+function colHeaders(t: (k: string) => string) {
+  return [
+    'TT',
+    t('phieuDeXuatVatTu.form.itemName'),
+    t('phieuDeXuatVatTu.form.specs'),
+    t('phieuDeXuatVatTu.form.unit'),
+    t('phieuDeXuatVatTu.form.quantity'),
+    t('phieuDeXuatVatTu.form.note'),
+  ];
 }
 
-/** Xuất phiếu đề xuất vật tư ra Word (HTML mở được bằng Word) */
-export function exportPhieuDeXuatVatTuToDoc(
-  phieu: PhieuDeXuatVatTu,
-  chiTiet: PhieuDeXuatVatTuChiTiet[]
-): void {
-  const body = buildPhieuDeXuatVatTuBodyHTML(phieu, chiTiet);
-  const html = `<!DOCTYPE html><html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="UTF-8"></head><body>${body}</body></html>`;
-  const blob = new Blob(['\ufeff' + html], { type: 'application/msword' });
+function download(blob: Blob, name: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `${getFileName(phieu)}.doc`;
+  a.download = name;
+  document.body.appendChild(a);
   a.click();
+  a.remove();
   URL.revokeObjectURL(url);
 }
 
-/** Xuất phiếu đề xuất vật tư ra Excel */
-export async function exportPhieuDeXuatVatTuToXLSX(
+/* ------------------------------------------------------------------ */
+/*  HTML builder – cho PDF (html2canvas)                               */
+/* ------------------------------------------------------------------ */
+
+export function buildPhieuDeXuatVatTuBodyHTML(
   phieu: PhieuDeXuatVatTu,
-  chiTiet: PhieuDeXuatVatTuChiTiet[]
-): Promise<void> {
+  chiTiet: PhieuDeXuatVatTuChiTiet[],
+): string {
   const t = i18n.t.bind(i18n);
-  const XLSX = await import('xlsx');
-  const infoRows: (string | number)[][] = [
-    [t('phieuDeXuatVatTu.form.code'), phieu.so_phieu],
-    [t('phieuDeXuatVatTu.form.date'), formatDate(phieu.ngay)],
-    [t('phieuDeXuatVatTu.form.requiredDate'), formatDate(phieu.ngay_can)],
-    [t('phieuDeXuatVatTu.form.place'), phieu.ten_noi_de_xuat ?? '—'],
-    [t('phieuDeXuatVatTu.form.requester'), phieu.ten_nguoi_de_xuat ?? '—'],
-    [t('phieuDeXuatVatTu.form.approver'), phieu.ten_nguoi_duyet ?? '—'],
-    [t('phieuDeXuatVatTu.form.notes'), phieu.ghi_chu ?? '—'],
-    [t('phieuDeXuatVatTu.store.statusCol'), getTrangThaiLabel(phieu.trang_thai, t)],
-  ];
-  const rows: (string | number)[][] = [...infoRows, []];
+  const F = FONT;
+  const info = useUIStore.getState().companyInfo;
+  const dateLine = formatDateVietnameseLong(phieu.ngay);
+  const printedAt = formatDateTime(new Date());
+
+  const logoHtml = info.appLogo
+    ? `<img src="${info.appLogo}" alt="" style="width:56px;height:56px;object-fit:contain;flex-shrink:0"/>`
+    : '';
+
+  let tableHTML = '';
   if (chiTiet.length > 0) {
-    rows.push(
-      ['#', t('phieuDeXuatVatTu.form.itemCode'), t('phieuDeXuatVatTu.form.itemName'), t('phieuDeXuatVatTu.form.unit'), t('phieuDeXuatVatTu.form.quantity'), t('phieuDeXuatVatTu.form.specs'), t('phieuDeXuatVatTu.form.note')]
-    );
+    const headers = colHeaders(t);
+    const ths = headers
+      .map(
+        (h, i) =>
+          `<th style="padding:6px 8px;border:1px solid #ccc;font-family:${F};font-size:9pt;background:#3b82f6;color:#fff;text-align:${i === 4 ? 'right' : i === 0 || i === 3 ? 'center' : 'left'}">${h}</th>`,
+      )
+      .join('');
+    const rows = chiTiet
+      .map(
+        (c, idx) => `<tr>
+<td style="padding:4px 8px;border:1px solid #ccc;font-family:${F};font-size:9pt;text-align:center">${idx + 1}</td>
+<td style="padding:4px 8px;border:1px solid #ccc;font-family:${F};font-size:9pt">${safe(c.ten_hang)}</td>
+<td style="padding:4px 8px;border:1px solid #ccc;font-family:${F};font-size:9pt">${safe(c.thong_so)}</td>
+<td style="padding:4px 8px;border:1px solid #ccc;font-family:${F};font-size:9pt;text-align:center">${safe(c.don_vi_tinh)}</td>
+<td style="padding:4px 8px;border:1px solid #ccc;font-family:${F};font-size:9pt;text-align:right">${formatNumberVN(c.so_luong)}</td>
+<td style="padding:4px 8px;border:1px solid #ccc;font-family:${F};font-size:9pt">${safe(c.ghi_chu)}</td>
+</tr>`,
+      )
+      .join('');
+    tableHTML = `
+<h2 style="font-size:11pt;margin:12px 0 8px;font-family:${F}">${t('phieuDeXuatVatTu.preview.danhSachChiTiet')}</h2>
+<table style="width:100%;border-collapse:collapse;font-family:${F};font-size:10pt">
+<thead><tr>${ths}</tr></thead><tbody>${rows}</tbody>
+</table>`;
+  } else {
+    tableHTML = `<p style="font-size:10pt;color:#666;font-style:italic;font-family:${F}">${t('phieuDeXuatVatTu.form.noItems')}</p>`;
+  }
+
+  const signBlock = (label: string) =>
+    `<div style="text-align:center;flex:1"><p style="font-size:10pt;font-weight:600;color:#333;margin-bottom:2px;font-family:${F}">${label}</p><p style="font-size:8pt;color:#666;font-family:${F}">${t('phieuDeXuatVatTu.preview.signHint')}</p></div>`;
+
+  return `
+<div style="font-family:${F};font-size:10pt;color:#222;padding:20px;min-width:600px;display:flex;flex-direction:column;min-height:100%">
+<div style="display:flex;align-items:flex-start;gap:16px;padding-bottom:16px;margin-bottom:16px;border-bottom:2px solid #333;font-family:${F}">
+  ${logoHtml}
+  <div style="flex:1;min-width:0">
+    <div style="font-size:14pt;font-weight:bold;color:#111;text-transform:uppercase">${info.companyName}</div>
+    ${info.address ? `<p style="font-size:9pt;color:#444;margin:2px 0 0 0">${i18n.t('company.address')}: ${info.address}</p>` : ''}
+    ${info.email || info.phone ? `<p style="font-size:9pt;color:#444;margin:2px 0 0 0">${[info.email, info.phone].filter(Boolean).join(' · ')}</p>` : ''}
+  </div>
+</div>
+<p style="font-size:10pt;color:#333;margin:0 0 4px;text-align:left">${dateLine}</p>
+<h1 style="font-size:16pt;text-align:center;margin:8px 0 4px;text-transform:uppercase">ĐỀ XUẤT VẬT TƯ</h1>
+<p style="font-size:10pt;color:#555;text-align:center;margin-bottom:12px">(${t('phieuDeXuatVatTu.form.code')}: ${phieu.so_phieu})</p>
+<div style="font-size:10pt;margin-bottom:12px">
+  <p style="margin:2px 0"><strong style="color:#444">${t('phieuDeXuatVatTu.preview.donVi')}:</strong> ${safe(phieu.ten_noi_de_xuat)}</p>
+  <p style="margin:2px 0"><strong style="color:#444">${t('phieuDeXuatVatTu.preview.nguoiTao')}:</strong> ${safe(phieu.ten_nguoi_de_xuat)} . ${t('phieuDeXuatVatTu.preview.boPhan')}: –</p>
+  <p style="margin:2px 0"><strong style="color:#444">${t('phieuDeXuatVatTu.preview.ngayLap')}</strong> ${formatDate(phieu.ngay)} (${t('phieuDeXuatVatTu.form.requiredDate')}: ${formatDate(phieu.ngay_can)})</p>
+  <p style="margin:2px 0"><strong style="color:#444">${t('phieuDeXuatVatTu.form.notes')}</strong> ${safe(phieu.ghi_chu)}</p>
+</div>
+${tableHTML}
+<div style="display:flex;gap:16px;margin-top:32px;padding-top:16px;border-top:1px solid #ccc">
+  ${signBlock(t('phieuDeXuatVatTu.preview.signCreator'))}
+  ${signBlock(t('phieuDeXuatVatTu.preview.signChecker'))}
+  ${signBlock(t('phieuDeXuatVatTu.preview.signRelated'))}
+  ${signBlock(t('phieuDeXuatVatTu.preview.signApprover'))}
+</div>
+<footer style="margin-top:auto;padding-top:16px;border-top:1px solid #ddd"><p style="font-size:7pt;color:#888;margin:0">${t('phieuDeXuatVatTu.preview.printedAt')} ${printedAt}</p></footer>
+</div>`;
+}
+
+/* ------------------------------------------------------------------ */
+/*  DOC: table-based HTML (Word)                                      */
+/* ------------------------------------------------------------------ */
+
+function buildDocHTML(phieu: PhieuDeXuatVatTu, chiTiet: PhieuDeXuatVatTuChiTiet[]): string {
+  const t = i18n.t.bind(i18n);
+  const info = useUIStore.getState().companyInfo;
+  const printedAt = formatDateTime(new Date());
+
+  let detailRows = '';
+  if (chiTiet.length > 0) {
+    const headers = colHeaders(t);
+    detailRows =
+      '<tr style="background:#2563eb;color:#fff;font-weight:bold">' +
+      headers.map((h) => `<td style="border:1px solid #999;padding:4px 6px">${h}</td>`).join('') +
+      '</tr>';
     chiTiet.forEach((c, idx) => {
-      rows.push([idx + 1, safeStr(c.ma_hang), safeStr(c.ten_hang), safeStr(c.don_vi_tinh), c.so_luong, safeStr(c.thong_so), safeStr(c.ghi_chu)]);
+      detailRows +=
+        '<tr>' +
+        [idx + 1, safe(c.ten_hang), safe(c.thong_so), safe(c.don_vi_tinh), formatNumberVN(c.so_luong), safe(c.ghi_chu)]
+          .map((v) => `<td style="border:1px solid #999;padding:4px 6px">${v}</td>`)
+          .join('') +
+        '</tr>';
     });
   }
+
+  const sign = (label: string) =>
+    `<td width="25%" style="text-align:center;padding:8px;vertical-align:top"><b>${label}</b><br/><span style="font-size:9pt;color:#666">${t('phieuDeXuatVatTu.preview.signHint')}</span></td>`;
+
+  return `
+<table width="100%" cellpadding="0" cellspacing="0" style="font-size:11pt">
+<tr><td style="padding-bottom:12px;border-bottom:2px solid #333">
+  <p style="margin:0;font-size:14pt;font-weight:bold">${info.companyName}</p>
+  ${info.address ? `<p style="margin:4px 0 0 0;font-size:9pt">${i18n.t('company.address')}: ${info.address}</p>` : ''}
+  ${info.email || info.phone ? `<p style="margin:2px 0 0 0;font-size:9pt">${[info.email, info.phone].filter(Boolean).join(' &middot; ')}</p>` : ''}
+</td></tr>
+<tr><td style="padding:8px 0 4px 0">${formatDateVietnameseLong(phieu.ngay)}</td></tr>
+<tr><td style="text-align:center;padding:8px 0"><b style="font-size:14pt">ĐỀ XUẤT VẬT TƯ</b><br/>(${t('phieuDeXuatVatTu.form.code')}: ${phieu.so_phieu})</td></tr>
+<tr><td style="padding:4px 0"><b>${t('phieuDeXuatVatTu.preview.donVi')}:</b> ${safe(phieu.ten_noi_de_xuat)}</td></tr>
+<tr><td style="padding:4px 0"><b>${t('phieuDeXuatVatTu.preview.nguoiTao')}:</b> ${safe(phieu.ten_nguoi_de_xuat)} . ${t('phieuDeXuatVatTu.preview.boPhan')}: –</td></tr>
+<tr><td style="padding:4px 0"><b>${t('phieuDeXuatVatTu.preview.ngayLap')}</b> ${formatDate(phieu.ngay)} (${t('phieuDeXuatVatTu.form.requiredDate')}: ${formatDate(phieu.ngay_can)})</td></tr>
+<tr><td style="padding:4px 0 12px 0"><b>${t('phieuDeXuatVatTu.form.notes')}:</b> ${safe(phieu.ghi_chu)}</td></tr>
+${detailRows ? `
+<tr><td style="padding:8px 0 4px 0"><b>${t('phieuDeXuatVatTu.preview.danhSachChiTiet')}</b></td></tr>
+<tr><td><table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:10pt">${detailRows}</table></td></tr>
+` : ''}
+<tr><td style="padding-top:24px;border-top:1px solid #ccc">
+  <table width="100%"><tr>${sign(t('phieuDeXuatVatTu.preview.signCreator'))}${sign(t('phieuDeXuatVatTu.preview.signChecker'))}${sign(t('phieuDeXuatVatTu.preview.signRelated'))}${sign(t('phieuDeXuatVatTu.preview.signApprover'))}</tr></table>
+</td></tr>
+<tr><td style="padding-top:12px;border-top:1px solid #ddd;font-size:8pt;color:#888">${t('phieuDeXuatVatTu.preview.printedAt')} ${printedAt}</td></tr>
+</table>`;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Export: PDF                                                        */
+/* ------------------------------------------------------------------ */
+
+export async function exportPhieuDeXuatVatTuToPDF(
+  phieu: PhieuDeXuatVatTu,
+  chiTiet: PhieuDeXuatVatTuChiTiet[],
+): Promise<void> {
+  const { default: jsPDF } = await import('jspdf');
+  const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+
+  const el = document.createElement('div');
+  el.style.cssText = [
+    'position:fixed',
+    'left:0',
+    'top:0',
+    'width:210mm',
+    'min-height:297mm',
+    'padding:20px',
+    `font-family:${FONT}`,
+    'font-size:10pt',
+    'background:#fff',
+    'color:#222',
+    'z-index:-1',
+    'box-sizing:border-box',
+  ].join(';');
+  el.innerHTML = buildPhieuDeXuatVatTuBodyHTML(phieu, chiTiet);
+  document.body.appendChild(el);
+
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+  try {
+    await doc.html(el, {
+      callback: () => {},
+      html2canvas: { scale: 0.264583, useCORS: true, backgroundColor: '#ffffff' },
+      x: 0,
+      y: 0,
+      width: 210,
+      windowWidth: el.scrollWidth,
+    });
+    download(doc.output('blob'), `${fileName(phieu)}.pdf`);
+  } finally {
+    document.body.removeChild(el);
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Export: DOC                                                        */
+/* ------------------------------------------------------------------ */
+
+export async function exportPhieuDeXuatVatTuToDoc(
+  phieu: PhieuDeXuatVatTu,
+  chiTiet: PhieuDeXuatVatTuChiTiet[],
+): Promise<void> {
+  const body = buildDocHTML(phieu, chiTiet);
+  const html = [
+    '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">',
+    '<head>',
+    '<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>',
+    `<style>body,td,th,p{font-family:${FONT_DOC};font-size:11pt;}</style>`,
+    '</head>',
+    `<body style="font-family:${FONT_DOC};margin:40px">${body}</body>`,
+    '</html>',
+  ].join('');
+  download(
+    new Blob(['\ufeff' + html], { type: 'application/msword;charset=utf-8' }),
+    `${fileName(phieu)}.doc`,
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Export: XLSX                                                       */
+/* ------------------------------------------------------------------ */
+
+export async function exportPhieuDeXuatVatTuToXLSX(
+  phieu: PhieuDeXuatVatTu,
+  chiTiet: PhieuDeXuatVatTuChiTiet[],
+): Promise<void> {
+  const XLSX = await import('xlsx');
+  const t = i18n.t.bind(i18n);
+  const info = useUIStore.getState().companyInfo;
+
+  const rows: (string | number)[][] = [
+    [info.companyName],
+    ...(info.address ? [[t('company.address'), info.address]] : []),
+    ...(info.email ? [[t('company.email'), info.email]] : []),
+    ...(info.phone ? [[t('company.phone'), info.phone]] : []),
+    [],
+    [formatDateVietnameseLong(phieu.ngay)],
+    ['ĐỀ XUẤT VẬT TƯ'],
+    [t('phieuDeXuatVatTu.form.code'), phieu.so_phieu],
+    [t('phieuDeXuatVatTu.preview.donVi'), phieu.ten_noi_de_xuat ?? '–'],
+    [t('phieuDeXuatVatTu.preview.nguoiTao'), phieu.ten_nguoi_de_xuat ?? '–'],
+    [t('phieuDeXuatVatTu.preview.ngayLap'), formatDate(phieu.ngay)],
+    [t('phieuDeXuatVatTu.form.requiredDate'), formatDate(phieu.ngay_can)],
+    [t('phieuDeXuatVatTu.form.notes'), safe(phieu.ghi_chu)],
+    [],
+    colHeaders(t),
+  ];
+
+  chiTiet.forEach((c, idx) => {
+    rows.push([
+      idx + 1,
+      safe(c.ten_hang),
+      safe(c.thong_so),
+      safe(c.don_vi_tinh),
+      Number(c.so_luong) || 0,
+      safe(c.ghi_chu),
+    ]);
+  });
+
+  rows.push([]);
+  rows.push([
+    t('phieuDeXuatVatTu.preview.signCreator'),
+    t('phieuDeXuatVatTu.preview.signChecker'),
+    t('phieuDeXuatVatTu.preview.signRelated'),
+    t('phieuDeXuatVatTu.preview.signApprover'),
+  ]);
+
   const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols'] = [{ wch: 20 }, { wch: 35 }];
+  ws['!cols'] = [
+    { wch: 18 },
+    { wch: 28 },
+    { wch: 20 },
+    { wch: 10 },
+    { wch: 12 },
+    { wch: 22 },
+  ];
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Phieu');
-  XLSX.writeFile(wb, `${getFileName(phieu)}.xlsx`);
+  XLSX.utils.book_append_sheet(wb, ws, 'Phieu_de_xuat');
+  XLSX.writeFile(wb, `${fileName(phieu)}.xlsx`);
 }

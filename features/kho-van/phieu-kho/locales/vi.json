@@ -119,5 +119,15 @@
   "phieuKho.preview.checker": "Người kiểm tra",
   "phieuKho.preview.approver": "Người duyệt",
   "phieuKho.preview.totalQty": "Tổng số lượng",
-  "phieuKho.preview.totalAmount": "Tổng thành tiền"
+  "phieuKho.preview.totalAmount": "Tổng thành tiền",
+  "phieuKho.preview.noiDi": "Nơi đi",
+  "phieuKho.preview.noiDen": "Nơi đến",
+  "phieuKho.preview.danhMuc": "Danh mục",
+  "phieuKho.preview.soLot": "Số LOT",
+  "phieuKho.preview.signCreator": "Người tạo",
+  "phieuKho.preview.signChecker": "Người kiểm tra",
+  "phieuKho.preview.signRelated": "Người liên quan",
+  "phieuKho.preview.signApprover": "Người phê duyệt",
+  "phieuKho.preview.signHint": "(Ký và ghi rõ họ tên)",
+  "phieuKho.preview.danhSachChiTiet": "Danh sách chi tiết:"
 }

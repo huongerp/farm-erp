@@ -66,6 +66,7 @@ interface ChiTietDbRow {
   so_luong: number;
   don_gia: number | null;
   thanh_tien: number | null;
+  so_lot: string | null;
   ghi_chu: string | null;
   nguoi_tao_id: number | null;
   ten_nguoi_tao: string | null;
@@ -97,7 +98,7 @@ function rowToPhieu(row: PhieuKhoDbRow, enrich?: { ten_kho?: string; ten_kho_den
   };
 }
 
-function rowToChiTiet(row: ChiTietDbRow, idPhieuKhoStr: string, enrich?: { ma_hang?: string }): PhieuKhoChiTiet {
+function rowToChiTiet(row: ChiTietDbRow, idPhieuKhoStr: string, enrich?: { ma_hang?: string; ten_danh_muc?: string }): PhieuKhoChiTiet {
   return {
     id: String(row.id),
     id_phieu_kho: idPhieuKhoStr,
@@ -107,6 +108,7 @@ function rowToChiTiet(row: ChiTietDbRow, idPhieuKhoStr: string, enrich?: { ma_ha
     don_gia: row.don_gia != null ? Number(row.don_gia) : undefined,
     thanh_tien: row.thanh_tien != null ? Number(row.thanh_tien) : undefined,
     don_vi_tinh: row.don_vi_tinh ?? undefined,
+    so_lot: row.so_lot ?? undefined,
     ghi_chu: row.ghi_chu ?? undefined,
     nguoi_tao_id: row.nguoi_tao_id ?? undefined,
     ten_nguoi_tao: row.ten_nguoi_tao ?? undefined,
@@ -114,6 +116,7 @@ function rowToChiTiet(row: ChiTietDbRow, idPhieuKhoStr: string, enrich?: { ma_ha
     tg_cap_nhat: row.tg_cap_nhat ?? undefined,
     ma_hang: enrich?.ma_hang,
     ten_hang: row.ten_hang_hoa ?? undefined,
+    ten_danh_muc: enrich?.ten_danh_muc,
   };
 }
 
@@ -201,8 +204,8 @@ export async function getPhieuKhoByIdSupabase(id: string): Promise<PhieuKho | nu
   doiTacList.forEach((d) => { doiTacMap[d.id] = d.ten_ncc; });
   const nvMap: Record<string, string> = {};
   employees.forEach((e) => { nvMap[e.id] = e.ho_ten; });
-  const hangHoaMap: Record<string, { ma_hang: string }> = {};
-  hangHoaList.forEach((h) => { hangHoaMap[h.id] = { ma_hang: h.ma_hang ?? h.ma_hang_hoa ?? '' }; });
+  const hangHoaMap: Record<string, { ma_hang: string; ten_danh_muc?: string }> = {};
+  hangHoaList.forEach((h) => { hangHoaMap[h.id] = { ma_hang: h.ma_hang ?? h.ma_hang_hoa ?? '', ten_danh_muc: h.ten_danh_muc }; });
 
   const p = row as PhieuKhoDbRow;
   const ten_kho = khoMap[String(p.kho_id)] ?? p.ten_kho ?? undefined;
@@ -213,8 +216,8 @@ export async function getPhieuKhoByIdSupabase(id: string): Promise<PhieuKho | nu
   const phieu = rowToPhieu(p, { ten_kho, ten_kho_den, ten_nha_cung_cap, ten_khach_hang, ten_nguoi_tao });
 
   const chi_tiet: PhieuKhoChiTiet[] = (ctRows as ChiTietDbRow[]).map((ct) => {
-    const enrich = hangHoaMap[String(ct.id_hang_hoa)];
-    return rowToChiTiet(ct, id, enrich);
+    const h = hangHoaMap[String(ct.id_hang_hoa)];
+    return rowToChiTiet(ct, id, { ma_hang: h?.ma_hang, ten_danh_muc: h?.ten_danh_muc });
   });
   phieu.chi_tiet = chi_tiet;
   return phieu;
@@ -272,6 +275,7 @@ export async function createPhieuKhoSupabase(loai: LoaiPhieuKho, data: PhieuKhoF
         so_luong: sl,
         don_gia: dg,
         thanh_tien: sl * dg,
+        so_lot: c.so_lot?.trim() || null,
         ghi_chu: c.ghi_chu?.trim() || null,
         nguoi_tao_id: nguoiTaoId,
         ten_nguoi_tao: nguoiTaoId != null ? (nvMap[String(nguoiTaoId)] ?? null) : null,
@@ -344,6 +348,7 @@ export async function updatePhieuKhoSupabase(id: string, data: PhieuKhoFormValue
         so_luong: sl,
         don_gia: dg,
         thanh_tien: sl * dg,
+        so_lot: c.so_lot?.trim() || null,
         ghi_chu: c.ghi_chu?.trim() || null,
         nguoi_tao_id: nguoiTaoId,
         ten_nguoi_tao: nguoiTaoId != null ? (nvMap[String(nguoiTaoId)] ?? null) : null,
@@ -457,6 +462,7 @@ export async function getChiTietPhieuKhoAllSupabase(): Promise<ChiTietPhieuKhoFl
       don_gia: ct.don_gia != null ? Number(ct.don_gia) : undefined,
       thanh_tien: ct.thanh_tien != null ? Number(ct.thanh_tien) : undefined,
       don_vi_tinh: ct.don_vi_tinh ?? undefined,
+      so_lot: ct.so_lot ?? undefined,
       ghi_chu: ct.ghi_chu ?? undefined,
     });
   }

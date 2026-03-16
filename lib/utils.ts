@@ -114,6 +114,13 @@ export function formatMonthYearShort(value: string | Date | dayjs.Dayjs | null |
   return toTz(value).format('MM/YY')
 }
 
+/** Ngày dạng phiếu in tiếng Việt: "Ngày dd tháng mm năm yyyy" */
+export function formatDateVietnameseLong(value: string | Date | dayjs.Dayjs | null | undefined): string {
+  if (value == null) return ''
+  const d = toTz(value)
+  return `Ngày ${d.format('DD')} tháng ${d.format('MM')} năm ${d.format('YYYY')}`
+}
+
 /** HH:mm + ngày tháng ngắn (vi: HH:mm DD/MM, en: HH:mm MM/DD) */
 export function formatTimeDateShort(value: string | Date | dayjs.Dayjs | null | undefined): string {
   if (value == null) return ''

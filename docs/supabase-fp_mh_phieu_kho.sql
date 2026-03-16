@@ -33,12 +33,15 @@ CREATE TABLE IF NOT EXISTS fp_mh_phieu_kho_chi_tiet (
   so_luong       numeric(18,4) NOT NULL CHECK (so_luong > 0),
   don_gia        numeric(18,4) DEFAULT 0,
   thanh_tien     numeric(18,4) DEFAULT 0,
+  so_lot         text,
   ghi_chu        text,
   nguoi_tao_id   bigint,
   ten_nguoi_tao  text,
   tg_tao         timestamptz DEFAULT now(),
   tg_cap_nhat    timestamptz DEFAULT now()
 );
+
+-- Nếu bảng đã tồn tại trước khi có so_lot, chạy: ALTER TABLE fp_mh_phieu_kho_chi_tiet ADD COLUMN IF NOT EXISTS so_lot text;
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_fp_mh_phieu_kho_so_phieu_loai ON fp_mh_phieu_kho(so_phieu, loai);
 CREATE INDEX IF NOT EXISTS idx_fp_mh_phieu_kho_ngay ON fp_mh_phieu_kho(ngay);

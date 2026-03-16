@@ -284,6 +284,12 @@ const ChiTietPhieuKhoTab: React.FC = () => {
             {row.don_vi_tinh ?? '—'}
           </td>
         );
+      case 'so_lot':
+        return (
+          <td key={col.id} className="px-4 py-3 text-xs text-muted-foreground" style={getColumnCellStyle(col)}>
+            {row.so_lot ?? '—'}
+          </td>
+        );
       case 'ghi_chu':
         return (
           <td key={col.id} className="px-4 py-3 text-xs text-muted-foreground max-w-[180px] truncate" style={getColumnCellStyle(col)} title={row.ghi_chu ?? ''}>

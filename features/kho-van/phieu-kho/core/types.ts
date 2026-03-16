@@ -45,6 +45,8 @@ export interface PhieuKhoChiTiet {
   don_gia?: number;
   thanh_tien?: number;
   don_vi_tinh?: string;
+  /** Số LOT (fp_mh_phieu_kho_chi_tiet.so_lot). */
+  so_lot?: string;
   ghi_chu?: string;
   /** Id người tạo dòng (fp_var_nhan_vien.id). */
   nguoi_tao_id?: number | null;
@@ -55,6 +57,8 @@ export interface PhieuKhoChiTiet {
   ma_hang?: string;
   /** Hiển thị: ten_hang_hoa hoặc enrich từ hàng hóa. */
   ten_hang?: string;
+  /** Danh mục hàng hóa (enrich từ fp_mh_danh_muc). */
+  ten_danh_muc?: string;
 }
 
 export interface PhieuKho {
@@ -115,5 +119,6 @@ export interface ChiTietPhieuKhoFlat {
   don_gia?: number;
   thanh_tien?: number;
   don_vi_tinh?: string;
+  so_lot?: string;
   ghi_chu?: string;
 }

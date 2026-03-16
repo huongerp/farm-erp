@@ -8,6 +8,7 @@ export const phieuKhoChiTietItemSchema = z.object({
   id_hang_hoa: z.string().min(1, i18n.t('phieuKho.validation.itemRequired')),
   so_luong: z.coerce.number().min(0.0001, i18n.t('phieuKho.validation.quantityMin')),
   don_gia: z.coerce.number().optional(),
+  so_lot: z.string().optional(),
   ghi_chu: z.string().optional(),
 });
 
@@ -16,6 +17,7 @@ export const phieuKhoChiTietFormItemSchema = z.object({
   id_hang_hoa: z.string(),
   so_luong: z.coerce.number(),
   don_gia: z.coerce.number().optional(),
+  so_lot: z.string().optional(),
   ghi_chu: z.string().optional(),
 });
 
