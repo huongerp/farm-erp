@@ -58,14 +58,14 @@ const DotKiemKeKhoForm: React.FC<Props> = ({ onClose, initialData, onSuccessAfte
       }
     : DEFAULT_VALUES;
 
-  const { register, handleSubmit, formState: { errors }, control, setValue } = useForm<DotKiemKeKhoFormValues>({
+  const { register, handleSubmit, formState: { errors }, control, setValue, reset } = useForm<DotKiemKeKhoFormValues>({
     resolver: zodResolver(dotKiemKeKhoSchema),
     defaultValues: defaultValuesFromData,
   });
 
   useEffect(() => {
     if (initialData) {
-      control.reset(defaultValuesFromData);
+      reset(defaultValuesFromData);
     }
   }, [initialData?.id]);
 
