@@ -5,6 +5,7 @@
   "baoCaonhapXuatTon.filter.dateFrom": "From date",
   "baoCaonhapXuatTon.filter.dateTo": "To date",
   "baoCaonhapXuatTon.filter.periodPlaceholder": "Select period",
+  "baoCaonhapXuatTon.preset.all": "All",
   "baoCaonhapXuatTon.preset.thisMonth": "This month",
   "baoCaonhapXuatTon.preset.lastMonth": "Last month",
   "baoCaonhapXuatTon.preset.thisQuarter": "This quarter",

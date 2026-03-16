@@ -53,6 +53,7 @@ const BaoCaoNXTToolbar: React.FC<BaoCaoNXTToolbarProps> = ({
 
   const dateRangePresets = useMemo(
     () => [
+      { id: 'all', label: t('baoCaonhapXuatTon.preset.all') },
       { id: 'thisMonth', label: t('baoCaonhapXuatTon.preset.thisMonth') },
       { id: 'lastMonth', label: t('baoCaonhapXuatTon.preset.lastMonth') },
       { id: 'thisQuarter', label: t('baoCaonhapXuatTon.preset.thisQuarter') },

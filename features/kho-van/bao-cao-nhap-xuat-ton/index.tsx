@@ -10,18 +10,12 @@ import TongHopNXTKyTab from './components/TongHopNXTKyTab';
 import ChiTietPhieuTab from './components/ChiTietPhieuTab';
 import TonTaiThoiDiemTab from './components/TonTaiThoiDiemTab';
 import type { NXTReportFilters } from './core/types';
+import { getDateRangeFromPreset } from './core/datePresets';
 import { getKhoList } from '../danh-sach-kho/services/kho-service';
 
-/**
- * Kỳ mặc định: tháng 3/2024 để trùng với dữ liệu mẫu phiếu kho (seed).
- * Khi có API thật, có thể đổi thành "tháng hiện tại" (first day of month → today).
- */
-function getDefaultDateRange(): { dateFrom: string; dateTo: string } {
-  return { dateFrom: '2024-03-01', dateTo: '2024-03-31' };
-}
-
+/** Kỳ mặc định: Tháng này. */
 const DEFAULT_FILTERS: NXTReportFilters = {
-  ...getDefaultDateRange(),
+  ...getDateRangeFromPreset('thisMonth'),
   warehouseIds: [],
   loaiPhieu: [],
   trangThaiPhieu: [],
@@ -67,7 +61,7 @@ const BaoCaoNhapXuatTonPage: React.FC = () => {
 
   const handleClearAllFilters = useCallback(() => {
     setFilters({
-      ...getDefaultDateRange(),
+      ...getDateRangeFromPreset('thisMonth'),
       warehouseIds: [],
       loaiPhieu: [],
       trangThaiPhieu: [],
