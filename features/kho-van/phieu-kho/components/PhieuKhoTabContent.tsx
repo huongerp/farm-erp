@@ -3,7 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import { usePhieuKhoList, usePhieuKhoById, useDeletePhieuKho, useDeletePhieuKhoMany } from '../hooks/use-phieu-kho';
+import { usePhieuKhoViewScope } from '../hooks/use-phieu-kho-view-scope';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
+import { useAuthStore } from '../../../../store/useStore';
 import { usePhieuKhoStore } from '../store/usePhieuKhoStore';
 import { useListWithFilter } from '../../../../lib/hooks';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
@@ -27,9 +29,12 @@ interface Props {
   loai: LoaiPhieuKhoTab;
 }
 
+const TRANG_THAI_DA_DUYET = 'Đã duyệt' as const;
+
 const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
   const loaiDb = LOAI_TAB_TO_DB[loaiTab];
   const { t } = useTranslation();
+  const user = useAuthStore((s) => s.user);
   const { canCreate, canUpdate, canDelete, canApprove } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
   const {
@@ -62,6 +67,7 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
   const { data: nhomList = [] } = useNhomDoiTacList();
   const { data: tagList = [] } = useTagList();
   const { data: doiTacListAll = [] } = useDoiTacList();
+  const viewScope = usePhieuKhoViewScope();
   const nextThuTuDoiTac = useMemo(() => {
     const list = showAddDoiTac ? doiTacListAll.filter((d) => d.loai_doi_tac === showAddDoiTac) : [];
     return list.length === 0 ? 1 : Math.max(...list.map((d) => d.thu_tu ?? 0)) + 1;
@@ -71,9 +77,36 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
   const deleteMutation = useDeletePhieuKho();
   const deleteManyMutation = useDeletePhieuKhoMany();
 
+  const viewableList = useMemo(() => {
+    if (viewScope.viewAll) return allList;
+    if (!viewScope.viewByBranch || viewScope.allowedBranchIds.length === 0) return [];
+    const khoIdToBranchId = new Map<string, string>();
+    khoList.forEach((k) => {
+      if (k.id_chi_nhanh != null) khoIdToBranchId.set(k.id, k.id_chi_nhanh);
+    });
+    const allowedSet = new Set(viewScope.allowedBranchIds);
+    return allList.filter((p) => {
+      const branchKho = khoIdToBranchId.get(p.kho_id);
+      const branchKhoDen = p.kho_den_id ? khoIdToBranchId.get(p.kho_den_id) : null;
+      if (p.kho_den_id == null || p.kho_den_id === '') {
+        return branchKho != null && allowedSet.has(branchKho);
+      }
+      return (branchKho != null && allowedSet.has(branchKho)) || (branchKhoDen != null && allowedSet.has(branchKhoDen));
+    });
+  }, [allList, khoList, viewScope.viewAll, viewScope.viewByBranch, viewScope.allowedBranchIds]);
+
+  /** Sửa: quan_tri/thu_tu=1 luôn được sửa; người tạo phiếu chỉ được sửa khi phiếu chưa duyệt (Chờ duyệt). */
+  const canEditItem = useCallback(
+    (item: PhieuKho) =>
+      canUpdate &&
+      (viewScope.viewAll ||
+        (String(item.nguoi_tao_id) === String(user?.id) && item.trang_thai !== TRANG_THAI_DA_DUYET)),
+    [canUpdate, viewScope.viewAll, user?.id]
+  );
+
   const listByLoai = useMemo(
-    () => allList.filter((p) => p.loai === loaiDb),
-    [allList, loaiDb]
+    () => viewableList.filter((p) => p.loai === loaiDb),
+    [viewableList, loaiDb]
   );
 
   const filterFn = useCallback((item: PhieuKho, term: string, f: PhieuKhoFilters) => {
@@ -109,9 +142,9 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
 
   useEffect(() => {
     if (!viewingItem) return;
-    const fresh = listByLoai.find((p) => p.id === viewingItem.id);
+    const fresh = viewableList.find((p) => p.id === viewingItem.id);
     if (fresh && fresh !== viewingItem) setViewingItem(fresh);
-  }, [listByLoai, viewingItem?.id]);
+  }, [viewableList, viewingItem?.id]);
 
   const handleEdit = (item: PhieuKho) => {
     setEditingItem(item);
@@ -198,6 +231,7 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
           onEdit={canUpdate ? handleEdit : undefined}
           onDelete={canDelete ? handleDelete : undefined}
           onView={setViewingItem}
+          canEditItem={canEditItem}
         />
       </div>
 
@@ -310,7 +344,7 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
             data={viewingPhieuFull ?? viewingItem}
             loai={loaiTab}
             onClose={() => setViewingItem(null)}
-            onEdit={canUpdate ? handleEdit : undefined}
+            onEdit={canUpdate && canEditItem(viewingPhieuFull ?? viewingItem) ? handleEdit : undefined}
             onDelete={canDelete ? handleDelete : undefined}
             onCopy={canCreate ? handleCopy : undefined}
             canApprove={canApprove}

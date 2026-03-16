@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Package, MapPin } from 'lucide-react';
 import { useAllTonKho } from '../hooks/use-ton-kho';
+import { useTonKhoViewScope } from '../hooks/use-ton-kho-view-scope';
+import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import { getKhoList } from '../../danh-sach-kho/services/kho-service';
 import { getAllHangHoa } from '../../danh-sach-hang-hoa/services/hang-hoa-service';
 import { useQuery } from '@tanstack/react-query';
@@ -18,17 +20,33 @@ import type { Kho } from '../../danh-sach-kho/core/types';
 
 const TonKhoThongKeTab: React.FC = () => {
   const { t } = useTranslation();
-  const { data: tonKhoList = [], isLoading, isError } = useAllTonKho();
+  const { data: tonKhoListRaw = [], isLoading, isError } = useAllTonKho();
   const { data: khoList = [] } = useQuery<Kho[]>({ queryKey: ['kho'], queryFn: getKhoList });
   const { data: hangHoaList = [] } = useQuery({ queryKey: ['hangHoa'], queryFn: getAllHangHoa });
+  const viewScope = useTonKhoViewScope();
+  const { data: khoListFromHook = [] } = useKhoList();
+
+  const viewableTonKhoList = useMemo(() => {
+    if (viewScope.viewAll) return tonKhoListRaw;
+    if (!viewScope.viewByBranch || viewScope.allowedBranchIds.length === 0) return [];
+    const khoIdToBranchId = new Map<string, string>();
+    khoListFromHook.forEach((k) => {
+      if (k.id_chi_nhanh != null) khoIdToBranchId.set(k.id, k.id_chi_nhanh);
+    });
+    const allowedSet = new Set(viewScope.allowedBranchIds);
+    return tonKhoListRaw.filter((r) => {
+      const branchId = khoIdToBranchId.get(r.id_kho);
+      return branchId != null && allowedSet.has(branchId);
+    });
+  }, [tonKhoListRaw, khoListFromHook, viewScope.viewAll, viewScope.viewByBranch, viewScope.allowedBranchIds]);
 
   const [filterWarehouseIds, setFilterWarehouseIds] = useState<string[]>([]);
 
   const filteredTonKho = useMemo(() => {
-    if ((filterWarehouseIds?.length ?? 0) === 0) return tonKhoList;
+    if ((filterWarehouseIds?.length ?? 0) === 0) return viewableTonKhoList;
     const set = new Set(filterWarehouseIds);
-    return tonKhoList.filter((r) => set.has(r.id_kho));
-  }, [tonKhoList, filterWarehouseIds]);
+    return viewableTonKhoList.filter((r) => set.has(r.id_kho));
+  }, [viewableTonKhoList, filterWarehouseIds]);
 
   const stats = useMemo(
     () => computeTonKhoStats(filteredTonKho, khoList, hangHoaList),
@@ -37,7 +55,7 @@ const TonKhoThongKeTab: React.FC = () => {
 
   const warehouseOptions = useMemo(() => {
     const countByKho: Record<string, number> = {};
-    tonKhoList.forEach((r) => {
+    viewableTonKhoList.forEach((r) => {
       countByKho[r.id_kho] = (countByKho[r.id_kho] ?? 0) + 1;
     });
     return khoList.map((k) => ({
@@ -45,7 +63,7 @@ const TonKhoThongKeTab: React.FC = () => {
       value: k.id,
       count: countByKho[k.id] ?? 0,
     }));
-  }, [tonKhoList, khoList]);
+  }, [viewableTonKhoList, khoList]);
 
   const activeFilterCount = filterWarehouseIds?.length ?? 0;
   const handleClearFilters = () => setFilterWarehouseIds([]);

@@ -133,9 +133,10 @@ export const getEmployees = async (): Promise<Employee[]> => {
   const employees = data.map(rowToEmployee);
   const [positions, depts, branches] = await Promise.all([getPositions(), getDepartments(), getBranches()]);
   employees.forEach((emp) => {
-    emp.ten_chuc_vu = positions.find((p) => p.id === emp.id_chuc_vu)?.ten_chuc_vu;
-    emp.ten_phong_ban = depts.find((d) => d.id === emp.id_phong_ban)?.ten_phong_ban;
-    emp.ten_chi_nhanh = (emp.id_chi_nhanh?.length
+    // Ưu tiên giá trị từ Supabase (đã sync bởi trigger); fallback enrich từ bảng tham chiếu
+    emp.ten_chuc_vu = emp.ten_chuc_vu ?? positions.find((p) => p.id === emp.id_chuc_vu)?.ten_chuc_vu;
+    emp.ten_phong_ban = emp.ten_phong_ban ?? depts.find((d) => d.id === emp.id_phong_ban)?.ten_phong_ban;
+    emp.ten_chi_nhanh = emp.ten_chi_nhanh ?? (emp.id_chi_nhanh?.length
       ? emp.id_chi_nhanh.map((id) => branches.find((b) => b.id === id)?.ten_chi_nhanh).filter(Boolean).join(', ')
       : undefined) ?? undefined;
   });
@@ -153,9 +154,9 @@ export const getEmployeeById = async (id: string): Promise<Employee | undefined>
   if (!data) return undefined;
   const emp = rowToEmployee(data);
   const [positions, depts, branches] = await Promise.all([getPositions(), getDepartments(), getBranches()]);
-  emp.ten_chuc_vu = positions.find((p) => p.id === emp.id_chuc_vu)?.ten_chuc_vu;
-  emp.ten_phong_ban = depts.find((d) => d.id === emp.id_phong_ban)?.ten_phong_ban;
-  emp.ten_chi_nhanh = (emp.id_chi_nhanh?.length
+  emp.ten_chuc_vu = emp.ten_chuc_vu ?? positions.find((p) => p.id === emp.id_chuc_vu)?.ten_chuc_vu;
+  emp.ten_phong_ban = emp.ten_phong_ban ?? depts.find((d) => d.id === emp.id_phong_ban)?.ten_phong_ban;
+  emp.ten_chi_nhanh = emp.ten_chi_nhanh ?? (emp.id_chi_nhanh?.length
     ? emp.id_chi_nhanh.map((id) => branches.find((b) => b.id === id)?.ten_chi_nhanh).filter(Boolean).join(', ')
     : undefined) ?? undefined;
   return emp;
@@ -173,9 +174,9 @@ export const getEmployeeByEmail = async (email: string): Promise<Employee | null
   if (!data) return null;
   const emp = rowToEmployee(data);
   const [positions, depts, branches] = await Promise.all([getPositions(), getDepartments(), getBranches()]);
-  emp.ten_chuc_vu = positions.find((p) => p.id === emp.id_chuc_vu)?.ten_chuc_vu;
-  emp.ten_phong_ban = depts.find((d) => d.id === emp.id_phong_ban)?.ten_phong_ban;
-  emp.ten_chi_nhanh = (emp.id_chi_nhanh?.length
+  emp.ten_chuc_vu = emp.ten_chuc_vu ?? positions.find((p) => p.id === emp.id_chuc_vu)?.ten_chuc_vu;
+  emp.ten_phong_ban = emp.ten_phong_ban ?? depts.find((d) => d.id === emp.id_phong_ban)?.ten_phong_ban;
+  emp.ten_chi_nhanh = emp.ten_chi_nhanh ?? (emp.id_chi_nhanh?.length
     ? emp.id_chi_nhanh.map((id) => branches.find((b) => b.id === id)?.ten_chi_nhanh).filter(Boolean).join(', ')
     : undefined) ?? undefined;
   return emp;
@@ -209,9 +210,9 @@ export const createEmployee = async (data: EmployeeFormValues): Promise<Employee
   const emp: Employee & { _authCreated?: boolean } = rowToEmployee(inserted);
   emp._authCreated = authCreated;
   const [positions, depts, branches] = await Promise.all([getPositions(), getDepartments(), getBranches()]);
-  emp.ten_chuc_vu = positions.find((p) => p.id === emp.id_chuc_vu)?.ten_chuc_vu;
-  emp.ten_phong_ban = depts.find((d) => d.id === emp.id_phong_ban)?.ten_phong_ban;
-  emp.ten_chi_nhanh = (emp.id_chi_nhanh?.length
+  emp.ten_chuc_vu = emp.ten_chuc_vu ?? positions.find((p) => p.id === emp.id_chuc_vu)?.ten_chuc_vu;
+  emp.ten_phong_ban = emp.ten_phong_ban ?? depts.find((d) => d.id === emp.id_phong_ban)?.ten_phong_ban;
+  emp.ten_chi_nhanh = emp.ten_chi_nhanh ?? (emp.id_chi_nhanh?.length
     ? emp.id_chi_nhanh.map((id) => branches.find((b) => b.id === id)?.ten_chi_nhanh).filter(Boolean).join(', ')
     : undefined) ?? undefined;
   return emp;
@@ -255,9 +256,9 @@ export const updateEmployee = async (id: string, data: EmployeeFormValues): Prom
   const emp: Employee & { _authCreated?: boolean } = rowToEmployee(updated);
   emp._authCreated = authCreated;
   const [positions, depts, branches] = await Promise.all([getPositions(), getDepartments(), getBranches()]);
-  emp.ten_chuc_vu = positions.find((p) => p.id === emp.id_chuc_vu)?.ten_chuc_vu;
-  emp.ten_phong_ban = depts.find((d) => d.id === emp.id_phong_ban)?.ten_phong_ban;
-  emp.ten_chi_nhanh = (emp.id_chi_nhanh?.length
+  emp.ten_chuc_vu = emp.ten_chuc_vu ?? positions.find((p) => p.id === emp.id_chuc_vu)?.ten_chuc_vu;
+  emp.ten_phong_ban = emp.ten_phong_ban ?? depts.find((d) => d.id === emp.id_phong_ban)?.ten_phong_ban;
+  emp.ten_chi_nhanh = emp.ten_chi_nhanh ?? (emp.id_chi_nhanh?.length
     ? emp.id_chi_nhanh.map((id) => branches.find((b) => b.id === id)?.ten_chi_nhanh).filter(Boolean).join(', ')
     : undefined) ?? undefined;
   return emp;

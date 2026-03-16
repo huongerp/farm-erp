@@ -217,3 +217,226 @@ export const deleteHangHoaMany = async (ids: string[]): Promise<void> => {
   const { error } = await supabase.from(TABLE).delete().in('id', idNums);
   if (error) throw new Error(error.message ?? i18n.t('hangHoa.service.notFound'));
 };
+
+/** Dòng dữ liệu import từ Excel (key theo cột đã map). */
+export interface HangHoaImportRow {
+  ma_hang_hoa?: string;
+  ten_hang_hoa?: string;
+  danh_muc?: string;
+  dvt?: string;
+  don_gia?: string | number;
+  mo_ta?: string;
+  trang_thai?: string;
+}
+
+export type ImportMode = 'create' | 'upsert';
+
+export interface ImportHangHoaResult {
+  created: number;
+  updated: number;
+  errors: Array<{ row: number; ma_hang_hoa: string; ten_hang_hoa: string; msg: string }>;
+}
+
+/**
+ * Resolve danh mục cấp 2 từ giá trị người dùng nhập (mã hoặc tên).
+ * Thử match: ma_danh_muc (exact uppercase) → ten_danh_muc (case-insensitive).
+ */
+function resolveDanhMucCap2(
+  input: string,
+  dmByMa: Map<string, { id: string; id_cha: string | null }>,
+  dmByTen: Map<string, { id: string; id_cha: string | null }>,
+): { danh_muc_id: number; danh_muc_cha_id: number | null } | null {
+  const s = input.trim();
+  if (!s) return null;
+  const byMa = dmByMa.get(s.toUpperCase());
+  if (byMa) return { danh_muc_id: Number(byMa.id), danh_muc_cha_id: byMa.id_cha ? Number(byMa.id_cha) : null };
+  const byTen = dmByTen.get(s.toLowerCase());
+  if (byTen) return { danh_muc_id: Number(byTen.id), danh_muc_cha_id: byTen.id_cha ? Number(byTen.id_cha) : null };
+  return null;
+}
+
+const BATCH_SIZE = 200;
+
+/**
+ * Import hàng hóa — batch validate + batch insert/upsert.
+ * Cột danh_muc: chấp nhận mã danh mục cấp 2 HOẶC tên danh mục cấp 2 (case-insensitive).
+ */
+export const importHangHoa = async (
+  rows: HangHoaImportRow[],
+  mode: ImportMode = 'create',
+): Promise<ImportHangHoaResult> => {
+  const errors: ImportHangHoaResult['errors'] = [];
+  let created = 0;
+  let updated = 0;
+
+  // Phase 1: Load reference data (1 request)
+  const dmList = await getAllDanhMucHangHoa();
+  const danhMucCap2 = dmList.filter((d) => d.id_cha != null && d.id_cha.trim() !== '');
+  const dmByMa = new Map(danhMucCap2.map((d) => [d.ma_danh_muc.trim().toUpperCase(), { id: d.id, id_cha: d.id_cha }]));
+  const dmByTen = new Map(danhMucCap2.map((d) => [d.ten_danh_muc.trim().toLowerCase(), { id: d.id, id_cha: d.id_cha }]));
+
+  // Phase 2: Load existing ma_hang_hoa for duplicate check (1 request)
+  const { data: existingRows } = await supabase.from(TABLE).select('id, ma_hang_hoa');
+  const existingByMa = new Map<string, number>();
+  (existingRows ?? []).forEach((r: { id: number; ma_hang_hoa: string | null }) => {
+    if (r.ma_hang_hoa) existingByMa.set(r.ma_hang_hoa.trim().toUpperCase(), r.id);
+  });
+
+  // Phase 3: Get current max thu_tu (1 request)
+  const { data: maxRow } = await supabase.from(TABLE).select('thu_tu').order('thu_tu', { ascending: false }).limit(1).maybeSingle();
+  let nextThuTu = Math.max(1, (maxRow?.thu_tu != null ? Number(maxRow.thu_tu) : 0) + 1);
+
+  // Phase 4: Validate all rows client-side
+  interface ValidatedInsert {
+    rowIdx: number;
+    payload: Record<string, unknown>;
+  }
+  interface ValidatedUpdate {
+    rowIdx: number;
+    existingId: number;
+    payload: Record<string, unknown>;
+  }
+  const toInsert: ValidatedInsert[] = [];
+  const toUpdate: ValidatedUpdate[] = [];
+  const seenMaCodes = new Set<string>();
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const ma = String(row.ma_hang_hoa ?? '').trim().toUpperCase();
+    const ten = String(row.ten_hang_hoa ?? '').trim();
+    const danhMucInput = String(row.danh_muc ?? '').trim();
+    const dvt = row.dvt != null && String(row.dvt).trim() !== '' ? String(row.dvt).trim() : null;
+    const rawTrangThai = String(row.trang_thai ?? '').trim();
+    const trangThai =
+      rawTrangThai === TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG ||
+      rawTrangThai.toLowerCase() === 'ngừng hoạt động' ||
+      rawTrangThai.toLowerCase() === 'ngừng' ||
+      rawTrangThai === '0'
+        ? TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG
+        : TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
+
+    const rowErrors: string[] = [];
+    if (!ma) rowErrors.push(i18n.t('hangHoa.validation.codeRequired'));
+    if (!ten) rowErrors.push(i18n.t('hangHoa.validation.nameRequired'));
+
+    const dm = resolveDanhMucCap2(danhMucInput, dmByMa, dmByTen);
+    if (!dm) rowErrors.push(i18n.t('hangHoa.import.categoryNotFound', { value: danhMucInput || '(trống)' }));
+    if (!dvt) rowErrors.push(i18n.t('hangHoa.validation.unitRequired'));
+
+    if (seenMaCodes.has(ma) && ma) {
+      rowErrors.push(i18n.t('hangHoa.import.duplicateInFile'));
+    }
+
+    if (rowErrors.length > 0) {
+      errors.push({ row: i + 2, ma_hang_hoa: ma, ten_hang_hoa: ten, msg: rowErrors.join('; ') });
+      continue;
+    }
+    seenMaCodes.add(ma);
+
+    const donGiaRaw = row.don_gia;
+    const donGia = donGiaRaw != null && donGiaRaw !== '' && !Number.isNaN(Number(donGiaRaw)) ? Number(donGiaRaw) : 0;
+
+    const existingId = existingByMa.get(ma);
+    if (existingId != null) {
+      if (mode === 'upsert') {
+        toUpdate.push({
+          rowIdx: i,
+          existingId,
+          payload: {
+            danh_muc_id: dm!.danh_muc_id,
+            danh_muc_cha_id: dm!.danh_muc_cha_id,
+            ma_hang_hoa: ma,
+            ten_hang_hoa: ten,
+            dvt,
+            trang_thai: trangThai,
+            don_gia: donGia,
+            mo_ta: row.mo_ta != null ? String(row.mo_ta).trim() || null : null,
+            tg_cap_nhat: new Date().toISOString(),
+          },
+        });
+      } else {
+        errors.push({ row: i + 2, ma_hang_hoa: ma, ten_hang_hoa: ten, msg: i18n.t('hangHoa.service.duplicateCode') });
+      }
+    } else {
+      toInsert.push({
+        rowIdx: i,
+        payload: {
+          danh_muc_id: dm!.danh_muc_id,
+          danh_muc_cha_id: dm!.danh_muc_cha_id,
+          ma_hang_hoa: ma,
+          ten_hang_hoa: ten,
+          dvt,
+          thu_tu: nextThuTu++,
+          trang_thai: trangThai,
+          don_gia: donGia,
+          mo_ta: row.mo_ta != null ? String(row.mo_ta).trim() || null : null,
+        },
+      });
+    }
+  }
+
+  // Phase 5: Batch insert (chunks of BATCH_SIZE)
+  for (let i = 0; i < toInsert.length; i += BATCH_SIZE) {
+    const chunk = toInsert.slice(i, i + BATCH_SIZE);
+    const { error } = await supabase.from(TABLE).insert(chunk.map((c) => c.payload));
+    if (error) {
+      chunk.forEach((c) => {
+        const row = rows[c.rowIdx];
+        errors.push({
+          row: c.rowIdx + 2,
+          ma_hang_hoa: String(row.ma_hang_hoa ?? ''),
+          ten_hang_hoa: String(row.ten_hang_hoa ?? ''),
+          msg: error.message,
+        });
+      });
+    } else {
+      created += chunk.length;
+    }
+  }
+
+  // Phase 6: Batch update for upsert (individual updates — Supabase doesn't support batch update by different IDs)
+  if (toUpdate.length > 0) {
+    const UPDATE_CHUNK = 50;
+    for (let i = 0; i < toUpdate.length; i += UPDATE_CHUNK) {
+      const chunk = toUpdate.slice(i, i + UPDATE_CHUNK);
+      const results = await Promise.allSettled(
+        chunk.map((c) =>
+          supabase.from(TABLE).update(c.payload).eq('id', c.existingId)
+        )
+      );
+      results.forEach((res, idx) => {
+        const c = chunk[idx];
+        const row = rows[c.rowIdx];
+        if (res.status === 'fulfilled' && !res.value.error) {
+          updated++;
+        } else {
+          const errMsg = res.status === 'rejected'
+            ? (res.reason as Error).message
+            : res.value.error?.message ?? 'Unknown error';
+          errors.push({
+            row: c.rowIdx + 2,
+            ma_hang_hoa: String(row.ma_hang_hoa ?? ''),
+            ten_hang_hoa: String(row.ten_hang_hoa ?? ''),
+            msg: errMsg,
+          });
+        }
+      });
+    }
+  }
+
+  return { created, updated, errors };
+};
+
+/** Lấy danh mục cấp 2 kèm tên cha (dùng cho sheet tham chiếu trong template import). */
+export const getDanhMucRefForImport = async (): Promise<Array<{ ma_danh_muc: string; ten_danh_muc: string; ten_cap1: string }>> => {
+  const dmList = await getAllDanhMucHangHoa();
+  const byId: Record<string, string> = {};
+  dmList.forEach((d) => { byId[d.id] = d.ten_danh_muc; });
+  return dmList
+    .filter((d) => d.id_cha != null && d.id_cha.trim() !== '')
+    .map((d) => ({
+      ma_danh_muc: d.ma_danh_muc,
+      ten_danh_muc: d.ten_danh_muc,
+      ten_cap1: (d.id_cha && byId[d.id_cha]) ?? '',
+    }));
+};

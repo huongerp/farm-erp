@@ -20,7 +20,17 @@ import { getLanguage } from '../../../../lib/utils';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { AssetStorageLocation } from '../core/types';
 
-const NoiLuuTab: React.FC = () => {
+export interface NoiLuuTabViewScope {
+  viewAll: false;
+  allowedBranchIds: string[];
+}
+
+interface NoiLuuTabProps {
+  /** Khi được truyền từ module Nơi quản lý: lọc nơi lưu theo chi nhánh khi !viewAll. */
+  viewScope?: NoiLuuTabViewScope;
+}
+
+const NoiLuuTab: React.FC<NoiLuuTabProps> = ({ viewScope }) => {
   const { t } = useTranslation();
   const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
@@ -41,6 +51,13 @@ const NoiLuuTab: React.FC = () => {
 
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: list = [], isLoading } = useAssetStorageLocations();
+
+  const viewableList = useMemo(() => {
+    if (!viewScope || viewScope.viewAll) return list;
+    const set = new Set(viewScope.allowedBranchIds);
+    return list.filter((l) => set.has(l.id_chi_nhanh));
+  }, [list, viewScope]);
+
   const deleteMutation = useDeleteAssetStorageLocations();
   const statusMutation = useUpdateAssetStorageLocationStatus();
 
@@ -50,11 +67,11 @@ const NoiLuuTab: React.FC = () => {
 
   const openId = searchParams.get('openId');
   useEffect(() => {
-    if (!openId || list.length === 0) return;
-    const item = list.find((l) => l.id === openId);
+    if (!openId || viewableList.length === 0) return;
+    const item = viewableList.find((l) => l.id === openId);
     if (item) setDetailItem(item);
     setSearchParams({}, { replace: true });
-  }, [openId, list, setSearchParams]);
+  }, [openId, viewableList, setSearchParams]);
 
   const filterFn = useCallback(
     (item: AssetStorageLocation, term: string, f: typeof filters) => {
@@ -73,7 +90,7 @@ const NoiLuuTab: React.FC = () => {
     []
   );
 
-  const filteredList = useListWithFilter(list, searchTerm, filters, filterFn);
+  const filteredList = useListWithFilter(viewableList, searchTerm, filters, filterFn);
 
   const sortedList = useMemo(() => {
     if (!sort.column || !sort.direction) return filteredList;
@@ -154,7 +171,7 @@ const NoiLuuTab: React.FC = () => {
             onSuccess: () => {
               clearSelection();
               if (detailItem && ids.includes(detailItem.id)) {
-                const next = list.find((x) => x.id === detailItem.id);
+                const next = viewableList.find((x) => x.id === detailItem.id);
                 if (next) setDetailItem(next);
               }
             },
@@ -171,7 +188,7 @@ const NoiLuuTab: React.FC = () => {
     setEditingItem(null);
     setOpenedFormFromDetailId(null);
     if (wasFromDetail && editingId) {
-      const fresh = list.find((r) => r.id === editingId) ?? null;
+      const fresh = viewableList.find((r) => r.id === editingId) ?? null;
       setDetailItem(fresh);
     }
   };
@@ -179,7 +196,7 @@ const NoiLuuTab: React.FC = () => {
   return (
     <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
       <NoiLuuToolbar
-        items={list}
+        items={viewableList}
         onAdd={() => {
           setDetailItem(null);
           setEditingItem(null);

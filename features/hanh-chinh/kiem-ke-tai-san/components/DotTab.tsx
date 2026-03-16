@@ -8,6 +8,8 @@ import DotKiemKeDetail from './DotKiemKeDetail';
 import DotKiemKeForm from './DotKiemKeForm';
 import TaoDanhSachKiemKeDialog from './TaoDanhSachKiemKeDialog';
 import { useDotKiemKeList, useDotKiemKeById, useChiTietByDot, useDeleteDotKiemKe, useTaoDanhSachKiemKe, useHoanThanhDot, useChangeTrangThaiDot } from '../hooks/use-kiem-ke-tai-san';
+import { useKiemKeTaiSanViewScope } from '../hooks/use-kiem-ke-tai-san-view-scope';
+import { useAuthStore } from '../../../../store/useStore';
 import { useKiemKeTaiSanStore } from '../store/useKiemKeTaiSanStore';
 import { getLanguage } from '../../../../lib/utils';
 import Select from '../../../../components/ui/Select';
@@ -20,6 +22,8 @@ const DotTab: React.FC = () => {
   const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
   const { searchTerm, filters, sort, resetState, selectedIds, clearSelection } = useKiemKeTaiSanStore();
+  const user = useAuthStore((s) => s.user);
+  const { viewAll } = useKiemKeTaiSanViewScope();
   const { data: list = [], isLoading } = useDotKiemKeList({
     q: searchTerm || undefined,
     trang_thai_dot: filters.trang_thai_dot.length ? filters.trang_thai_dot : undefined,
@@ -27,6 +31,13 @@ const DotTab: React.FC = () => {
     dateTo: filters.dateTo || undefined,
     id_nguoi_phu_trach: filters.id_nguoi_phu_trach.length ? filters.id_nguoi_phu_trach : undefined,
   });
+
+  const viewableList = useMemo(() => {
+    if (viewAll) return list;
+    const myId = user?.id ?? '';
+    return list.filter((d) => String(d.id_nguoi_phu_trach) === String(myId));
+  }, [list, viewAll, user?.id]);
+
   const deleteMutation = useDeleteDotKiemKe();
   const taoDanhSachMutation = useTaoDanhSachKiemKe();
   const hoanThanhMutation = useHoanThanhDot();
@@ -42,8 +53,8 @@ const DotTab: React.FC = () => {
   }, [resetState]);
 
   const sortedList = useMemo(() => {
-    if (!sort.column || !sort.direction) return list;
-    const sorted = [...list];
+    if (!sort.column || !sort.direction) return viewableList;
+    const sorted = [...viewableList];
     sorted.sort((a, b) => {
       const aVal = a[sort.column as keyof DotKiemKe] ?? '';
       const bVal = b[sort.column as keyof DotKiemKe] ?? '';
@@ -53,7 +64,7 @@ const DotTab: React.FC = () => {
       return sort.direction === 'desc' ? -cmp : cmp;
     });
     return sorted;
-  }, [list, sort]);
+  }, [viewableList, sort]);
 
   const handleAdd = useCallback(() => {
     setEditingDot(null);

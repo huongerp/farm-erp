@@ -6,25 +6,31 @@ import TabGroup from '../../../components/ui/TabGroup';
 import LichSuTab from './components/LichSuTab';
 import CuaToiTab from './components/CuaToiTab';
 import ThongKeTab from './components/ThongKeTab';
+import { useCapPhatThuHoiViewScope } from './hooks/use-cap-phat-thu-hoi-view-scope';
 
 const CapPhatThuHoiPage: React.FC = () => {
   const { t } = useTranslation();
+  const { viewAll } = useCapPhatThuHoiViewScope();
   const [searchParams] = useSearchParams();
   const taiSanIdFromQuery = searchParams.get('tai_san_id') ?? undefined;
   const [activeTab, setActiveTab] = useState('history');
 
-  useEffect(() => {
-    if (taiSanIdFromQuery) setActiveTab('history');
-  }, [taiSanIdFromQuery]);
-
-  const tabs = useMemo(
-    () => [
+  const tabs = useMemo(() => {
+    const all = [
       { id: 'history', label: t('capPhatThuHoi.tabs.history'), icon: History },
       { id: 'mine', label: t('capPhatThuHoi.tabs.mine'), icon: User },
       { id: 'stats', label: t('capPhatThuHoi.tabs.stats'), icon: BarChart3 },
-    ],
-    [t]
-  );
+    ];
+    return viewAll ? all : [all[1], all[2]];
+  }, [t, viewAll]);
+
+  useEffect(() => {
+    if (taiSanIdFromQuery && viewAll) setActiveTab('history');
+  }, [taiSanIdFromQuery, viewAll]);
+
+  useEffect(() => {
+    if (!viewAll && activeTab === 'history') setActiveTab('mine');
+  }, [viewAll, activeTab]);
 
   return (
     <div className="flex flex-col h-[calc(100dvh-3.75rem)] md:h-[calc(100dvh-4.5rem)] relative">

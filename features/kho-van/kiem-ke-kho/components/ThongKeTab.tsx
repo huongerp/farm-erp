@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { User, Calendar, Warehouse } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDotKiemKeKhoList } from '../hooks/use-kiem-ke-kho';
+import { useKiemKeKhoViewScope } from '../hooks/use-kiem-ke-kho-view-scope';
 import { useEmployees } from '@/features/he-thong/nhan-vien/hooks/use-nhan-vien';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
@@ -41,7 +42,26 @@ const ThongKeTab: React.FC = () => {
   const { data: list = [], isLoading, isError } = useDotKiemKeKhoList({});
   const { data: employees = [] } = useEmployees();
   const { data: khoList = [] } = useKhoList();
-  const { trangThaiCounts, nguoiPhuTrachCounts, idKhoCounts } = useStatsFilterCounts(list);
+  const viewScope = useKiemKeKhoViewScope();
+
+  const viewableList = useMemo(() => {
+    if (viewScope.viewAll) return list;
+    if (!viewScope.viewByBranch || viewScope.allowedBranchIds.length === 0) return [];
+    const khoIdToBranchId = new Map<string, string>();
+    khoList.forEach((k) => {
+      if (k.id_chi_nhanh != null) khoIdToBranchId.set(k.id, k.id_chi_nhanh);
+    });
+    const allowedSet = new Set(viewScope.allowedBranchIds);
+    return list.filter((d) => {
+      const idKho = d.id_kho ?? [];
+      return idKho.some((khoId) => {
+        const branchId = khoIdToBranchId.get(khoId);
+        return branchId != null && allowedSet.has(branchId);
+      });
+    });
+  }, [list, khoList, viewScope.viewAll, viewScope.viewByBranch, viewScope.allowedBranchIds]);
+
+  const { trangThaiCounts, nguoiPhuTrachCounts, idKhoCounts } = useStatsFilterCounts(viewableList);
 
   const [filterTrangThai, setFilterTrangThai] = useState<string[]>([]);
   const [filterNguoiPhuTrach, setFilterNguoiPhuTrach] = useState<string[]>([]);
@@ -50,7 +70,7 @@ const ThongKeTab: React.FC = () => {
   const [dateTo, setDateTo] = useState('');
 
   const filteredList = useMemo(() => {
-    return list.filter((d: DotKiemKeKho) => {
+    return viewableList.filter((d: DotKiemKeKho) => {
       const matchTrangThai = filterTrangThai.length === 0 || filterTrangThai.includes(d.trang_thai);
       const matchNguoi = filterNguoiPhuTrach.length === 0 || (d.id_nguoi_phu_trach && filterNguoiPhuTrach.includes(d.id_nguoi_phu_trach));
       const matchKho = filterIdKho.length === 0 || (d.id_kho && d.id_kho.some((k) => filterIdKho.includes(k)));
@@ -58,7 +78,7 @@ const ThongKeTab: React.FC = () => {
       const matchTo = !dateTo || (d.ngay_ket_thuc && d.ngay_ket_thuc <= dateTo);
       return matchTrangThai && matchNguoi && matchKho && matchFrom && matchTo;
     });
-  }, [list, filterTrangThai, filterNguoiPhuTrach, filterIdKho, dateFrom, dateTo]);
+  }, [viewableList, filterTrangThai, filterNguoiPhuTrach, filterIdKho, dateFrom, dateTo]);
 
   const stats = useKiemKeKhoStats(filteredList);
 

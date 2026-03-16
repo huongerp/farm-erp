@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { useAssetStorageLocations } from '../../thiet-lap-tai-san/hooks/use-noi-luu';
 import { useTaiSanList } from '../../danh-muc-tai-san/hooks/use-danh-muc-tai-san';
 import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
+import { useNoiQuanLyViewScope } from '../hooks/use-noi-quan-ly-view-scope';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import NoiQuanLyStatsToolbar from './NoiQuanLyStatsToolbar';
 import type { AssetStorageLocation } from '../../thiet-lap-tai-san/core/types';
@@ -24,6 +25,7 @@ function countAssetsByNoiLuu(assets: TaiSan[]): Map<string, number> {
 
 const NoiQuanLyStatsTab: React.FC = () => {
   const { t } = useTranslation();
+  const { viewAll, allowedBranchIds } = useNoiQuanLyViewScope();
   const [filterIdChiNhanh, setFilterIdChiNhanh] = useState<string[]>([]);
 
   const { data: locations = [], isLoading: loadingLocations } = useAssetStorageLocations();
@@ -31,6 +33,12 @@ const NoiQuanLyStatsTab: React.FC = () => {
   const { data: branches = [] } = useBranches();
 
   const isLoading = loadingLocations || loadingAssets;
+
+  const viewableLocations = useMemo(() => {
+    if (viewAll) return locations;
+    const set = new Set(allowedBranchIds);
+    return locations.filter((l: AssetStorageLocation) => set.has(l.id_chi_nhanh));
+  }, [locations, viewAll, allowedBranchIds]);
 
   const branchOptions = useMemo(
     () =>
@@ -41,10 +49,10 @@ const NoiQuanLyStatsTab: React.FC = () => {
   );
 
   const filteredLocations = useMemo(() => {
-    if (filterIdChiNhanh.length === 0) return locations;
+    if (filterIdChiNhanh.length === 0) return viewableLocations;
     const set = new Set(filterIdChiNhanh);
-    return locations.filter((l: AssetStorageLocation) => set.has(l.id_chi_nhanh));
-  }, [locations, filterIdChiNhanh]);
+    return viewableLocations.filter((l: AssetStorageLocation) => set.has(l.id_chi_nhanh));
+  }, [viewableLocations, filterIdChiNhanh]);
 
   const stats = useMemo(() => {
     const active = filteredLocations.filter((l: AssetStorageLocation) => l.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG).length;

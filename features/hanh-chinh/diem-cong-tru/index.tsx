@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
 import { useModulePermissionFromContext } from '../../../components/shared/ModulePermissionGuard';
+import { useAuthStore } from '../../../store/useStore';
 import DiemCongTruToolbar from './components/diem-cong-tru-toolbar';
 import DiemCongTruTable from './components/diem-cong-tru-table';
 import DiemCongTruForm from './components/diem-cong-tru-form';
@@ -10,6 +11,7 @@ import {
   useDiemCongTruRecords,
   useDeleteDiemCongTruRecords,
 } from './hooks/use-diem-cong-tru';
+import { useDiemCongTruViewScope } from './hooks/use-diem-cong-tru-view-scope';
 import { useDiemCongTruStore } from './store/useDiemCongTruStore';
 import { useConfirmStore } from '../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../lib/button-labels';
@@ -36,12 +38,24 @@ const DiemCongTruPage: React.FC = () => {
   /** Id bản ghi đang mở form Sửa từ detail — khi Hủy sẽ mở lại detail */
   const [openedFormFromDetailId, setOpenedFormFromDetailId] = useState<string | null>(null);
 
+  const user = useAuthStore((s) => s.user);
+  const { viewAll } = useDiemCongTruViewScope();
   const { data: records = [], isLoading } = useDiemCongTruRecords();
   const deleteMutation = useDeleteDiemCongTruRecords();
+
+  const viewableList = useMemo(() => {
+    if (viewAll) return records;
+    const myId = user?.id ?? '';
+    return records.filter((r) => String(r.id_nhan_vien) === String(myId));
+  }, [records, viewAll, user?.id]);
 
   useEffect(() => {
     return () => resetState();
   }, [resetState]);
+
+  useEffect(() => {
+    if (detailItem && !viewableList.some((r) => r.id === detailItem.id)) setDetailItem(null);
+  }, [viewableList, detailItem]);
 
   const filterFn = useCallback(
     (item: DiemCongTruRecord, term: string, f: typeof filters) => {
@@ -62,7 +76,7 @@ const DiemCongTruPage: React.FC = () => {
     []
   );
 
-  const filteredList = useListWithFilter(records, searchTerm, filters, filterFn);
+  const filteredList = useListWithFilter(viewableList, searchTerm, filters, filterFn);
 
   const sortedList = useMemo(() => {
     if (!sort.column || !sort.direction) return filteredList;
@@ -141,7 +155,7 @@ const DiemCongTruPage: React.FC = () => {
     setEditingItem(null);
     setOpenedFormFromDetailId(null);
     if (wasFromDetail && editingId) {
-      const fresh = records.find((r) => r.id === editingId) ?? null;
+      const fresh = viewableList.find((r) => r.id === editingId) ?? null;
       setDetailItem(fresh);
     }
   };
@@ -150,7 +164,7 @@ const DiemCongTruPage: React.FC = () => {
     <div className="flex flex-col h-[calc(100dvh-3.75rem)] md:h-[calc(100dvh-4.5rem)]">
       <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
         <DiemCongTruToolbar
-          items={records}
+          items={viewableList}
           onAdd={canCreate ? () => {
             setDetailItem(null);
             setEditingItem(null);

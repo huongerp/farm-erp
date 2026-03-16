@@ -3,13 +3,16 @@ import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { Tag, Layers, CircleDollarSign } from 'lucide-react';
 import TabGroup from '../../../components/ui/TabGroup';
+import EmptyState from '../../../components/shared/EmptyState';
 import TrangThaiTab from './components/trang-thai-tab';
 import NhomTaiSanTab from './components/nhom-tai-san-tab';
 import LoaiChiPhiTab from './components/loai-chi-phi-tab';
+import { useThietLapTaiSanViewScope } from './hooks/use-thiet-lap-tai-san-view-scope';
 
 /** Thiết lập tài sản: Nhóm tài sản, Trạng thái, Loại chi phí. Tab Nơi lưu đã chuyển sang module Nơi quản lý. */
 const ThietLapTaiSanPage: React.FC = () => {
   const { t } = useTranslation();
+  const { viewAll, isLoading: scopeLoading } = useThietLapTaiSanViewScope();
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('nhomtaisan');
 
@@ -26,6 +29,15 @@ const ThietLapTaiSanPage: React.FC = () => {
     ],
     [t]
   );
+
+  if (scopeLoading) return null;
+  if (!viewAll) {
+    return (
+      <div className="flex flex-col h-[calc(100dvh-3.75rem)] md:h-[calc(100dvh-4.5rem)] relative flex-1 min-h-0">
+        <EmptyState title={t('thietLapTaiSan.noViewAccess')} className="m-4" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-[calc(100dvh-3.75rem)] md:h-[calc(100dvh-4.5rem)] relative">

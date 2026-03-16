@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import BaoCaoDeXuatVatTuToolbar from './components/BaoCaoDeXuatVatTuToolbar';
 import TongHopDayDuTab from './components/TongHopDayDuTab';
 import type { BaoCaoDeXuatVatTuFilters } from './core/types';
+import { usePhieuDeXuatVatTuViewScope } from '../../kho-van/phieu-de-xuat-vat-tu/hooks/use-phieu-de-xuat-vat-tu-view-scope';
 import { getKhoList } from '../../kho-van/danh-sach-kho/services/kho-service';
 import { getEmployees } from '../../he-thong/nhan-vien/services/nhan-vien-service';
 
@@ -25,6 +26,14 @@ const BaoCaoDeXuatVatTuPage: React.FC = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [filters, setFilters] = useState<BaoCaoDeXuatVatTuFilters>(DEFAULT_FILTERS);
+  const viewScope = usePhieuDeXuatVatTuViewScope();
+
+  const effectiveFilters = useMemo((): BaoCaoDeXuatVatTuFilters => {
+    if (viewScope.viewByBranch && viewScope.allowedBranchIds.length > 0) {
+      return { ...filters, allowedBranchIds: viewScope.allowedBranchIds };
+    }
+    return filters;
+  }, [filters, viewScope.viewByBranch, viewScope.allowedBranchIds]);
 
   const { data: khoList = [] } = useQuery({ queryKey: ['kho'], queryFn: getKhoList });
   const { data: employees = [] } = useQuery({
@@ -56,17 +65,17 @@ const BaoCaoDeXuatVatTuPage: React.FC = () => {
       try {
         if (format === 'excel') {
           const { exportBaoCaoDeXuatVatTuToExcel } = await import('./utils/export-bao-cao-de-xuat-vat-tu-excel');
-          await exportBaoCaoDeXuatVatTuToExcel(filters, t);
+          await exportBaoCaoDeXuatVatTuToExcel(effectiveFilters, t);
         } else {
           const { exportBaoCaoDeXuatVatTuToPdf } = await import('./utils/export-bao-cao-de-xuat-vat-tu-pdf');
-          await exportBaoCaoDeXuatVatTuToPdf(filters, t);
+          await exportBaoCaoDeXuatVatTuToPdf(effectiveFilters, t);
         }
         toast.success(t('baoCaodeXuatVatTu.export.success'));
       } catch (e) {
         toast.error(e instanceof Error ? e.message : 'Export failed');
       }
     },
-    [filters, t]
+    [effectiveFilters, t]
   );
 
   return (
@@ -83,7 +92,7 @@ const BaoCaoDeXuatVatTuPage: React.FC = () => {
         />
       </div>
       <div className="flex-1 min-h-0 flex flex-col mt-1.5 overflow-hidden">
-        <TongHopDayDuTab filters={filters} onClearFilters={handleClearAllFilters} />
+        <TongHopDayDuTab filters={effectiveFilters} onClearFilters={handleClearAllFilters} />
       </div>
     </div>
   );

@@ -7,6 +7,8 @@ import KyKhauHaoTable from './KyKhauHaoTable';
 import KyKhauHaoDetail from './KyKhauHaoDetail';
 import KyKhauHaoForm from './KyKhauHaoForm';
 import { useKyKhauHaoList, useChiTietKhauHao, useTinhToanKhauHaoKy, useChotKy, useDeleteKyKhauHao } from '../hooks/use-khau-hao-tai-san';
+import { useKhauHaoTaiSanViewScope } from '../hooks/use-khau-hao-tai-san-view-scope';
+import { useAuthStore } from '../../../../store/useStore';
 import { useKhauHaoTaiSanStore } from '../store/useKhauHaoTaiSanStore';
 import { getLanguage } from '../../../../lib/utils';
 import { CONFIRM_DELETE } from '../../../../lib/button-labels';
@@ -16,8 +18,17 @@ const KyTab: React.FC = () => {
   const { t } = useTranslation();
   const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
+  const user = useAuthStore((s) => s.user);
+  const { viewAll } = useKhauHaoTaiSanViewScope();
   const { searchTerm, filters, sort, resetState } = useKhauHaoTaiSanStore();
   const { data: list = [], isLoading } = useKyKhauHaoList();
+
+  const viewableList = useMemo(() => {
+    if (viewAll) return list;
+    const myId = user?.id ?? '';
+    return list.filter((k) => String(k.id_nguoi_tao) === String(myId));
+  }, [list, viewAll, user?.id]);
+
   const deleteMutation = useDeleteKyKhauHao();
   const [detailItem, setDetailItem] = useState<KyKhauHao | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -46,7 +57,7 @@ const KyTab: React.FC = () => {
     [searchTerm, filters.nam, filters.thang, filters.trang_thai_ky]
   );
 
-  const filteredList = useMemo(() => list.filter(filterFn), [list, filterFn]);
+  const filteredList = useMemo(() => viewableList.filter(filterFn), [viewableList, filterFn]);
 
   const sortedList = useMemo(() => {
     if (!sort.column || !sort.direction) return filteredList;
@@ -132,7 +143,7 @@ const KyTab: React.FC = () => {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 gap-3">
-      <KhauHaoTaiSanToolbar items={list} onAdd={handleAdd} showAdd={canCreate} />
+      <KhauHaoTaiSanToolbar items={viewableList} onAdd={handleAdd} showAdd={canCreate} />
       <div className="flex-1 min-h-0 rounded-xl border border-border bg-card shadow-sm overflow-hidden">
         <KyKhauHaoTable
           data={sortedList}

@@ -28,6 +28,38 @@ function isTrangThaiTinhTon(p: { trang_thai?: string | null }): boolean {
   return (p.trang_thai ?? '').trim() !== 'Không duyệt';
 }
 
+/** Lọc phiếu theo chi nhánh: nhập/xuất theo kho_id; chuyển theo kho_id HOẶC kho_den_id. */
+function filterPhieuByBranch(
+  list: PhieuKho[],
+  khoIdToBranchId: Map<string, string>,
+  allowedBranchIds: string[]
+): PhieuKho[] {
+  if (!allowedBranchIds?.length) return list;
+  const allowedSet = new Set(allowedBranchIds);
+  return list.filter((p) => {
+    const branchKho = khoIdToBranchId.get(String(p.kho_id));
+    if (p.kho_den_id) {
+      const branchDen = khoIdToBranchId.get(String(p.kho_den_id));
+      return (branchKho != null && allowedSet.has(branchKho)) || (branchDen != null && allowedSet.has(branchDen));
+    }
+    return branchKho != null && allowedSet.has(branchKho);
+  });
+}
+
+/** Lọc tồn kho theo chi nhánh: id_kho → kho.id_chi_nhanh in allowedBranchIds. */
+function filterTonKhoByBranch<T extends { id_kho: string }>(
+  list: T[],
+  khoIdToBranchId: Map<string, string>,
+  allowedBranchIds: string[]
+): T[] {
+  if (!allowedBranchIds?.length) return list;
+  const allowedSet = new Set(allowedBranchIds);
+  return list.filter((r) => {
+    const branchId = khoIdToBranchId.get(String(r.id_kho));
+    return branchId != null && allowedSet.has(branchId);
+  });
+}
+
 function normalizeLoai(loai: string | undefined | null): 'nhập' | 'xuất' | 'chuyển' | null {
   const l = (loai ?? '').trim().toLowerCase();
   if (l === 'nhập' || l === 'nhap') return 'nhập';
@@ -58,7 +90,7 @@ const addMov = (map: Map<string, Mov>, key: string, nhap: number, xuat: number) 
  * Chỉ phiếu "Không duyệt" bị loại; "Chờ duyệt" + "Đã duyệt" đều tính.
  */
 export async function getNXTByPeriod(filters: NXTReportFilters): Promise<NXTByPeriodResult> {
-  const { dateFrom, dateTo, warehouseIds, loaiPhieu, hangHoaIds, categoryIds } = filters;
+  const { dateFrom, dateTo, warehouseIds, loaiPhieu, hangHoaIds, categoryIds, allowedBranchIds } = filters;
 
   // ── 1. Load all data in parallel (single bulk queries, no N+1) ──
   const [allPhieu, khoList, hangHoaList, tonKhoList, allCtRaw] = await Promise.all([
@@ -73,6 +105,13 @@ export async function getNXTByPeriod(filters: NXTReportFilters): Promise<NXTByPe
         .range(from, to)
     ),
   ]);
+
+  const khoIdToBranchId = new Map<string, string>();
+  khoList.forEach((k) => {
+    if (k.id_chi_nhanh != null) khoIdToBranchId.set(String(k.id), k.id_chi_nhanh);
+  });
+  const phieuForReport = filterPhieuByBranch(allPhieu, khoIdToBranchId, allowedBranchIds ?? []);
+  const tonKhoForReport = filterTonKhoByBranch(tonKhoList, khoIdToBranchId, allowedBranchIds ?? []);
 
   // ── 2. Report filter sets ──
   const warehouseSet = warehouseIds?.length ? new Set(warehouseIds) : null;
@@ -110,7 +149,7 @@ export async function getNXTByPeriod(filters: NXTReportFilters): Promise<NXTByPe
   const periodByKho = new Map<string, Mov>();
   const periodByHH = new Map<string, Mov>();
 
-  for (const p of allPhieu) {
+  for (const p of phieuForReport) {
     if (!isTrangThaiTinhTon(p)) continue;
     const d = (p.ngay ?? '').trim().slice(0, 10);
     if (!d) continue;
@@ -173,7 +212,7 @@ export async function getNXTByPeriod(filters: NXTReportFilters): Promise<NXTByPe
 
   // ── 6. Current stock from view (tồn hiện tại = thời điểm NOW, chưa phải cuối kỳ) ──
   const currentByKH = new Map<string, number>();
-  tonKhoList.forEach((r) => {
+  tonKhoForReport.forEach((r) => {
     const key = `${String(r.id_kho)}|${String(r.id_hang_hoa)}`;
     currentByKH.set(key, (currentByKH.get(key) ?? 0) + r.so_luong);
   });
@@ -218,7 +257,7 @@ export async function getNXTByPeriod(filters: NXTReportFilters): Promise<NXTByPe
   const byProductRows: NXTByProductRow[] = [];
   const hhIdsForReport = new Set<string>();
   periodByHH.forEach((_, id) => hhIdsForReport.add(id));
-  tonKhoList.forEach((r) => {
+  tonKhoForReport.forEach((r) => {
     const idHh = String(r.id_hang_hoa);
     if (productOk(idHh)) hhIdsForReport.add(idHh);
   });
@@ -274,8 +313,15 @@ const TRANG_THAI_NUM_TO_TEXT: Record<number, string> = {
  */
 export async function getPhieuInPeriod(filters: NXTReportFilters): Promise<PhieuKho[]> {
   await delay(250);
-  const { dateFrom, dateTo, warehouseIds, loaiPhieu, trangThaiPhieu } = filters;
+  const { dateFrom, dateTo, warehouseIds, loaiPhieu, trangThaiPhieu, allowedBranchIds } = filters;
   const allPhieu = await getAllPhieuKho();
+  const khoList = await getKhoList();
+  const khoIdToBranchId = new Map<string, string>();
+  khoList.forEach((k) => {
+    if (k.id_chi_nhanh != null) khoIdToBranchId.set(String(k.id), k.id_chi_nhanh);
+  });
+  const phieuForReport = filterPhieuByBranch(allPhieu, khoIdToBranchId, allowedBranchIds ?? []);
+
   const warehouseSet = warehouseIds.length > 0 ? new Set(warehouseIds) : null;
   const loaiSet = loaiPhieu.length > 0 ? new Set(loaiPhieu) : null;
   const allowedTrangThai =
@@ -283,7 +329,7 @@ export async function getPhieuInPeriod(filters: NXTReportFilters): Promise<Phieu
       ? new Set(trangThaiPhieu.map((n) => TRANG_THAI_NUM_TO_TEXT[n]))
       : null;
 
-  return allPhieu.filter((p) => {
+  return phieuForReport.filter((p) => {
     if (!inDateRange(p.ngay, dateFrom, dateTo)) return false;
     if (warehouseSet && !warehouseSet.has(p.kho_id)) return false;
     if (warehouseSet && p.kho_den_id && !warehouseSet.has(p.kho_den_id)) return false;
@@ -296,12 +342,18 @@ export async function getPhieuInPeriod(filters: NXTReportFilters): Promise<Phieu
 /**
  * Lấy bảng tồn tại thời điểm (hiện tại = tồn hiện tại từ view).
  */
-export async function getTonAtDate(filters: Pick<NXTReportFilters, 'warehouseIds' | 'hangHoaIds' | 'categoryIds'>): Promise<TonTaiThoiDiemRow[]> {
+export async function getTonAtDate(filters: Pick<NXTReportFilters, 'warehouseIds' | 'hangHoaIds' | 'categoryIds' | 'allowedBranchIds'>): Promise<TonTaiThoiDiemRow[]> {
   await delay(200);
-  const { warehouseIds, hangHoaIds, categoryIds } = filters;
+  const { warehouseIds, hangHoaIds, categoryIds, allowedBranchIds } = filters;
   const tonKhoList = await getAllTonKho();
   const khoList = await getKhoList();
   const hangHoaList = await getAllHangHoa();
+
+  const khoIdToBranchId = new Map<string, string>();
+  khoList.forEach((k) => {
+    if (k.id_chi_nhanh != null) khoIdToBranchId.set(String(k.id), k.id_chi_nhanh);
+  });
+  const tonKhoForReport = filterTonKhoByBranch(tonKhoList, khoIdToBranchId, allowedBranchIds ?? []);
 
   const warehouseSet = warehouseIds.length > 0 ? new Set(warehouseIds) : null;
   const hangHoaSet = hangHoaIds.length > 0 ? new Set(hangHoaIds) : null;
@@ -313,7 +365,7 @@ export async function getTonAtDate(filters: Pick<NXTReportFilters, 'warehouseIds
   hangHoaList.forEach((h) => { hangHoaMap[h.id] = h; });
 
   const rows: TonTaiThoiDiemRow[] = [];
-  tonKhoList.forEach((r) => {
+  tonKhoForReport.forEach((r) => {
     if (r.so_luong === 0) return;
     if (warehouseSet && !warehouseSet.has(r.id_kho)) return;
     if (hangHoaSet && !hangHoaSet.has(r.id_hang_hoa)) return;

@@ -1,23 +1,29 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { User, Users, BarChart3 } from 'lucide-react';
 import TabGroup from '../../../components/ui/TabGroup';
 import CuaToiTab from './components/CuaToiTab';
 import DanhSachTab from './components/DanhSachTab';
 import ThongKeTab from './components/ThongKeTab';
+import { useBangLuongViewScope } from './hooks/use-bang-luong-view-scope';
 
 const BangLuongPage: React.FC = () => {
   const { t } = useTranslation();
+  const { viewAll } = useBangLuongViewScope();
   const [activeTab, setActiveTab] = useState('my');
 
-  const tabs = useMemo(
-    () => [
+  const tabs = useMemo(() => {
+    const all = [
       { id: 'my', label: t('bangLuong.tabs.my'), icon: User },
       { id: 'list', label: t('bangLuong.tabs.list'), icon: Users },
       { id: 'stats', label: t('bangLuong.tabs.stats'), icon: BarChart3 },
-    ],
-    [t]
-  );
+    ];
+    return viewAll ? all : [all[0]];
+  }, [t, viewAll]);
+
+  useEffect(() => {
+    if (!viewAll && activeTab !== 'my') setActiveTab('my');
+  }, [viewAll, activeTab]);
 
   return (
     <div className="flex flex-col h-[calc(100dvh-3.75rem)] md:h-[calc(100dvh-4.5rem)] relative">

@@ -181,13 +181,13 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
           isMobile && !sidebarOpen ? "-translate-x-full" : "translate-x-0"
         )}
       >
-        {/* Logo Section */}
+        {/* Logo + tên app: lấy từ cài đặt module "Thông tin công ty" (companyInfo trong store, đồng bộ bởi useCompanyInfo) */}
         <div className="flex h-12 md:h-14 items-center px-3 shrink-0 overflow-hidden border-b border-border/50">
           <div className="flex items-center gap-3 min-w-[200px]">
             {companyInfo.appLogo && !logoError ? (
               <img
                 src={companyInfo.appLogo}
-                alt="App Logo"
+                alt={companyInfo.appName || 'App Logo'}
                 className="h-8 w-8 rounded-lg object-contain shadow-sm shrink-0 bg-card border border-border/50"
                 onError={() => setLogoError(true)}
               />

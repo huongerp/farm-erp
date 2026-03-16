@@ -16,6 +16,8 @@ import {
   useHoanThanhDot,
   useChangeTrangThaiDot,
 } from '../hooks/use-kiem-ke-kho';
+import { useKiemKeKhoViewScope } from '../hooks/use-kiem-ke-kho-view-scope';
+import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import { useKiemKeKhoStore } from '../store/useKiemKeKhoStore';
 import { getLanguage } from '../../../../lib/utils';
 import Select from '../../../../components/ui/Select';
@@ -36,6 +38,26 @@ const DotTab: React.FC = () => {
     id_nguoi_phu_trach: filters.id_nguoi_phu_trach.length ? filters.id_nguoi_phu_trach : undefined,
     id_kho: filters.id_kho.length ? filters.id_kho : undefined,
   });
+  const { data: khoList = [] } = useKhoList();
+  const viewScope = useKiemKeKhoViewScope();
+
+  const viewableList = useMemo(() => {
+    if (viewScope.viewAll) return list;
+    if (!viewScope.viewByBranch || viewScope.allowedBranchIds.length === 0) return [];
+    const khoIdToBranchId = new Map<string, string>();
+    khoList.forEach((k) => {
+      if (k.id_chi_nhanh != null) khoIdToBranchId.set(k.id, k.id_chi_nhanh);
+    });
+    const allowedSet = new Set(viewScope.allowedBranchIds);
+    return list.filter((d) => {
+      const idKho = d.id_kho ?? [];
+      return idKho.some((khoId) => {
+        const branchId = khoIdToBranchId.get(khoId);
+        return branchId != null && allowedSet.has(branchId);
+      });
+    });
+  }, [list, khoList, viewScope.viewAll, viewScope.viewByBranch, viewScope.allowedBranchIds]);
+
   const deleteMutation = useDeleteDotKiemKeKho();
   const taoDanhSachMutation = useTaoDanhSachKiemKe();
   const hoanThanhMutation = useHoanThanhDot();
@@ -51,8 +73,8 @@ const DotTab: React.FC = () => {
   }, [resetState]);
 
   const sortedList = useMemo(() => {
-    if (!sort.column || !sort.direction) return list;
-    const sorted = [...list];
+    if (!sort.column || !sort.direction) return viewableList;
+    const sorted = [...viewableList];
     sorted.sort((a, b) => {
       const aVal = a[sort.column as keyof DotKiemKeKho] ?? '';
       const bVal = b[sort.column as keyof DotKiemKeKho] ?? '';
@@ -63,7 +85,7 @@ const DotTab: React.FC = () => {
       return sort.direction === 'desc' ? -cmp : cmp;
     });
     return sorted;
-  }, [list, sort]);
+  }, [viewableList, sort]);
 
   const handleAdd = useCallback(() => {
     setEditingDot(null);

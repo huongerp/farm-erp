@@ -7,6 +7,9 @@ import PhieuBaoTriTable from './PhieuBaoTriTable';
 import PhieuBaoTriDetail from './PhieuBaoTriDetail';
 import TaoPhieuBaoTriForm from './TaoPhieuBaoTriForm';
 import { usePhieuBaoTriList, useDeletePhieuBaoTri } from '../hooks/use-bao-tri-sua-chua';
+import { useBaoTriSuaChuaViewScope } from '../hooks/use-bao-tri-sua-chua-view-scope';
+import { useAuthStore } from '../../../../store/useStore';
+import { useTaiSanList } from '../../danh-muc-tai-san/hooks/use-danh-muc-tai-san';
 import { useBaoTriSuaChuaStore } from '../store/useBaoTriSuaChuaStore';
 import { getLanguage } from '../../../../lib/utils';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
@@ -22,6 +25,9 @@ const TatCaTab: React.FC<Props> = ({ defaultTaiSanId }) => {
   const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
   const { searchTerm, filters, sort, resetState, selectedIds, clearSelection, setFilter } = useBaoTriSuaChuaStore();
+  const user = useAuthStore((s) => s.user);
+  const { viewAll } = useBaoTriSuaChuaViewScope();
+  const { data: taiSanList = [] } = useTaiSanList();
   const { data: list = [], isLoading } = usePhieuBaoTriList({
     q: searchTerm || undefined,
     hang_muc: filters.hang_muc.length > 0 ? filters.hang_muc : undefined,
@@ -29,6 +35,18 @@ const TatCaTab: React.FC<Props> = ({ defaultTaiSanId }) => {
     dateTo: filters.dateTo || undefined,
     id_tai_san: filters.id_tai_san.length > 0 ? filters.id_tai_san : undefined,
   });
+
+  const viewableList = useMemo(() => {
+    if (viewAll) return list;
+    const myId = user?.id ?? '';
+    const assetIdsHeldByUser = new Set(
+      taiSanList.filter((a) => String(a.id_nhan_vien_dang_giu) === String(myId)).map((a) => a.id)
+    );
+    return list.filter(
+      (p) => String(p.id_nguoi_tao) === String(myId) || assetIdsHeldByUser.has(p.id_tai_san)
+    );
+  }, [list, viewAll, user?.id, taiSanList]);
+
   const deleteMutation = useDeletePhieuBaoTri();
   const [detailItem, setDetailItem] = useState<PhieuBaoTriSuaChua | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -46,14 +64,14 @@ const TatCaTab: React.FC<Props> = ({ defaultTaiSanId }) => {
   }, [defaultTaiSanId, setFilter]);
 
   const filteredList = useMemo(() => {
-    return list.filter((p) => {
+    return viewableList.filter((p) => {
       if (filters.hang_muc.length > 0 && !filters.hang_muc.includes(p.id_hang_muc)) return false;
       if (filters.dateFrom && p.ngay < filters.dateFrom) return false;
       if (filters.dateTo && p.ngay > filters.dateTo) return false;
       if (filters.id_tai_san.length > 0 && !filters.id_tai_san.includes(p.id_tai_san)) return false;
       return true;
     });
-  }, [list, filters]);
+  }, [viewableList, filters]);
 
   const sortedList = useMemo(() => {
     if (!sort.column || !sort.direction) return filteredList;

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import { usePhieuDeXuatVatTuList, usePhieuDeXuatVatTuById, useDeletePhieuDeXuatVatTu, useDeletePhieuDeXuatVatTuMany, useUpdatePhieuDeXuatVatTu } from '../hooks/use-phieu-de-xuat-vat-tu';
+import { usePhieuDeXuatVatTuViewScope } from '../hooks/use-phieu-de-xuat-vat-tu-view-scope';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import { useEmployees } from '../../../he-thong/nhan-vien/hooks/use-nhan-vien';
 import { useCauHinhDeXuatVatTu } from '../../../mua-hang/thiet-lap-de-xuat-vat-tu/hooks/use-cau-hinh-de-xuat-vat-tu';
@@ -72,10 +73,29 @@ const DanhSachTab: React.FC = () => {
   const { data: khoList = [] } = useKhoList();
   const { data: employees = [] } = useEmployees();
   const { data: config } = useCauHinhDeXuatVatTu();
+  const viewScope = usePhieuDeXuatVatTuViewScope();
 
+  const viewableList = useMemo(() => {
+    if (viewScope.viewAll) return allList;
+    if (!viewScope.viewByBranch || viewScope.allowedBranchIds.length === 0) return [];
+    const khoIdToBranchId = new Map<string, string>();
+    khoList.forEach((k) => {
+      if (k.id_chi_nhanh != null) khoIdToBranchId.set(k.id, k.id_chi_nhanh);
+    });
+    const allowedSet = new Set(viewScope.allowedBranchIds);
+    return allList.filter((p) => {
+      const branchId = khoIdToBranchId.get(p.id_noi_de_xuat);
+      return branchId != null && allowedSet.has(branchId);
+    });
+  }, [allList, khoList, viewScope.viewAll, viewScope.viewByBranch, viewScope.allowedBranchIds]);
+
+  /** Sửa: quan_tri/thu_tu=1 luôn được sửa; người tạo phiếu chỉ được sửa khi phiếu chưa duyệt (Chờ duyệt). */
   const canEditItem = useCallback(
-    (item: PhieuDeXuatVatTu) => !config || config.cho_phep_sua_sau_duyet || item.trang_thai !== TRANG_THAI_DA_DUYET,
-    [config]
+    (item: PhieuDeXuatVatTu) =>
+      canUpdate &&
+      (viewScope.viewAll ||
+        (String(item.id_nguoi_de_xuat) === String(user?.id) && item.trang_thai !== TRANG_THAI_DA_DUYET)),
+    [canUpdate, viewScope.viewAll, user?.id]
   );
   const isOverdue = useCallback(
     (item: PhieuDeXuatVatTu) =>
@@ -107,7 +127,7 @@ const DanhSachTab: React.FC = () => {
     return matchesSearch && matchesStatus && matchesNoiDeXuat && matchesNguoiDeXuat && matchesNguoiDuyet;
   }, []);
 
-  const filteredList = useListWithFilter(allList, searchTerm, filters, filterFn);
+  const filteredList = useListWithFilter(viewableList, searchTerm, filters, filterFn);
 
   useEffect(() => {
     return () => resetState();
@@ -124,9 +144,9 @@ const DanhSachTab: React.FC = () => {
 
   useEffect(() => {
     if (!viewingItem) return;
-    const fresh = allList.find((p) => p.id === viewingItem.id);
+    const fresh = viewableList.find((p) => p.id === viewingItem.id);
     if (fresh && fresh !== viewingItem) setViewingItem(fresh);
-  }, [allList, viewingItem?.id]);
+  }, [viewableList, viewingItem?.id]);
 
   const handleEdit = (item: PhieuDeXuatVatTu) => {
     setEditingItem(item);
@@ -237,6 +257,7 @@ const DanhSachTab: React.FC = () => {
           onEdit={canUpdate ? handleEdit : undefined}
           onDelete={canDelete ? handleDelete : undefined}
           onView={setViewingItem}
+          canEditItem={canEditItem}
           isOverdue={isOverdue}
         />
       </div>
@@ -292,7 +313,7 @@ const DanhSachTab: React.FC = () => {
             } : undefined}
             onDelete={canDelete ? handleDelete : undefined}
             onApprove={canApprove ? handleApprove : undefined}
-            canEdit={canUpdate}
+            canEdit={canEditItem(viewingPhieuFull ?? viewingItem)}
             canDelete={canDelete}
             showOverdueBadge={!!(config?.bat_canh_bao_qua_han && viewingItem?.trang_thai === TRANG_THAI_CHO_DUYET && (Math.floor((Date.now() - new Date((viewingPhieuFull ?? viewingItem).tg_tao).getTime()) / 86400000) > (config.thoi_han_duyet_ngay ?? 0)))}
           />

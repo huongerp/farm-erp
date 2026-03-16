@@ -9,20 +9,27 @@ import DanhSachHangHoaList from './components/DanhSachHangHoaList';
 import DanhSachHangHoaForm from './components/DanhSachHangHoaForm';
 import DanhSachHangHoaDetail from './components/DanhSachHangHoaDetail';
 import DinhMucTonTab from './components/DinhMucTonTab';
+import ImportDialog from '../../../components/shared/ImportDialog';
+import type { ImportReferenceSheet, ImportSampleRow } from '../../../components/shared/ImportDialog';
+import ExportDialog from '../../../components/shared/ExportDialog';
 import {
   useHangHoaList,
   useDeleteHangHoa,
   useDeleteHangHoaMany,
   useUpdateHangHoaStatus,
+  useImportHangHoa,
 } from './hooks/use-hang-hoa';
 import { useDinhMucTonKho } from '../ton-kho/hooks/use-ton-kho';
+import { useDanhMucHangHoaList } from '../danh-muc-hang-hoa/hooks/use-danh-muc-hang-hoa';
 import { useHangHoaStore } from './store/useHangHoaStore';
 import { useConfirmStore } from '../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL, CONFIRM_YES } from '../../../lib/button-labels';
 import { useListWithFilter } from '../../../lib/hooks';
+import { useExportData } from '../../../lib/useExportData';
 import { TRANG_THAI_HOAT_DONG } from '../../../lib/constants';
 import type { HangHoa } from './core/types';
 import type { DinhMucSummaryMap } from './components/DanhSachHangHoaList';
+import type { HangHoaImportRow, ImportHangHoaResult } from './services/hang-hoa-service';
 
 const DanhSachHangHoaPage: React.FC = () => {
   const { t } = useTranslation();
@@ -44,10 +51,14 @@ const DanhSachHangHoaPage: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<'danhSach' | 'dinhMucTon'>('danhSach');
   const [showForm, setShowForm] = useState(false);
+  const [showImport, setShowImport] = useState(false);
+  const [showExport, setShowExport] = useState(false);
   const [editingItem, setEditingItem] = useState<HangHoa | null>(null);
   const [viewingItem, setViewingItem] = useState<HangHoa | null>(null);
+  const [importErrors, setImportErrors] = useState<ImportHangHoaResult['errors']>([]);
 
   const { data: list = [], isLoading } = useHangHoaList();
+  const { data: danhMucList = [] } = useDanhMucHangHoaList();
   const { data: dinhMucMap } = useDinhMucTonKho();
 
   /** Map hang_hoa_id -> { tong (sum ton_toi_thieu), soKho } cho cột Tổng định mức (tab Danh sách). */
@@ -77,6 +88,75 @@ const DanhSachHangHoaPage: React.FC = () => {
   const deleteMutation = useDeleteHangHoa();
   const deleteManyMutation = useDeleteHangHoaMany();
   const statusMutation = useUpdateHangHoaStatus();
+  const importMutation = useImportHangHoa(() => {});
+
+  const IMPORT_COLUMNS = useMemo(
+    () => [
+      { key: 'ma_hang_hoa', label: t('hangHoa.form.code'), required: true },
+      { key: 'ten_hang_hoa', label: t('hangHoa.form.name'), required: true },
+      { key: 'danh_muc', label: t('hangHoa.import.danhMucCol'), required: true },
+      { key: 'dvt', label: t('hangHoa.form.unit'), required: true },
+      { key: 'don_gia', label: t('hangHoa.form.price') },
+      { key: 'mo_ta', label: t('hangHoa.store.descCol') },
+      { key: 'trang_thai', label: t('hangHoa.store.statusCol') },
+    ],
+    [t]
+  );
+
+  const importSampleRows = useMemo<ImportSampleRow[]>(
+    () => [
+      ['SP-001', 'Giấy A4 70gsm', 'VPP', 'Ram', 50000, 'Giấy in chất lượng cao', 'Đang hoạt động'],
+      ['SP-002', 'Bút bi xanh', 'VPP', 'Cây', 5000, '', 'Đang hoạt động'],
+    ],
+    []
+  );
+
+  const importReferenceSheets = useMemo<ImportReferenceSheet[]>(() => {
+    const danhMucCha = danhMucList.filter((d) => !d.id_cha || d.id_cha.trim() === '');
+    const danhMucCon = danhMucList.filter((d) => d.id_cha && d.id_cha.trim() !== '');
+    const chaById: Record<string, string> = {};
+    danhMucCha.forEach((d) => { chaById[d.id] = d.ten_danh_muc; });
+
+    const dmData = danhMucCon.map((d) => [
+      d.ma_danh_muc,
+      d.ten_danh_muc,
+      d.id_cha ? chaById[d.id_cha] ?? '' : '',
+    ]);
+
+    const dvtSet = [...new Set(list.map((h) => h.dvt).filter((x): x is string => x != null && x.trim() !== ''))].sort();
+
+    const sheets: ImportReferenceSheet[] = [
+      {
+        name: t('hangHoa.import.refSheetDanhMuc'),
+        headers: [t('hangHoa.import.refMaDanhMuc'), t('hangHoa.import.refTenDanhMuc'), t('hangHoa.import.refTenCap1')],
+        data: dmData,
+      },
+    ];
+
+    if (dvtSet.length > 0) {
+      sheets.push({
+        name: t('hangHoa.import.refSheetDVT'),
+        headers: [t('hangHoa.form.unit')],
+        data: dvtSet.map((d) => [d]),
+      });
+    }
+
+    return sheets;
+  }, [danhMucList, list, t]);
+
+  const EXPORT_COLUMNS = useMemo(
+    () => [
+      { key: 'thu_tu', label: t('hangHoa.store.orderCol') },
+      { key: 'ma_hang_hoa', label: t('hangHoa.store.codeCol') },
+      { key: 'ten_hang_hoa', label: t('hangHoa.store.nameCol') },
+      { key: 'ten_danh_muc', label: t('hangHoa.store.categoryCol') },
+      { key: 'dvt', label: t('hangHoa.store.unitCol') },
+      { key: 'don_gia', label: t('hangHoa.store.priceCol') },
+      { key: 'mo_ta', label: t('hangHoa.store.descCol') },
+      { key: 'trang_thai_text', label: t('hangHoa.store.statusCol') },
+    ],
+    [t]
+  );
 
   useEffect(() => {
     return () => resetState();
@@ -128,6 +208,37 @@ const DanhSachHangHoaPage: React.FC = () => {
   useEffect(() => {
     if (pagination.page > maxPage) setPage(maxPage);
   }, [pagination.page, pagination.pageSize, maxPage, setPage]);
+
+  const exportPagination = useMemo(
+    () => ({ page: 1, pageSize: Math.max(filteredList.length, 1) }),
+    [filteredList.length]
+  );
+
+  const exportMapFn = useCallback(
+    (item: HangHoa) => ({
+      thu_tu: item.thu_tu,
+      ma_hang_hoa: item.ma_hang_hoa,
+      ten_hang_hoa: item.ten_hang_hoa,
+      ten_danh_muc: item.ten_danh_muc ?? '',
+      dvt: item.dvt ?? '',
+      don_gia: item.don_gia ?? '',
+      mo_ta: item.mo_ta ?? '',
+      trang_thai_text:
+        item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? t('hangHoa.active') : t('hangHoa.inactive'),
+    }),
+    [t]
+  );
+
+  const { exportData, paginatedData: paginatedExportData, selectedData: selectedExportData } = useExportData({
+    data: filteredList,
+    isOpen: showExport,
+    mapFn: exportMapFn,
+    pagination: exportPagination,
+    selectedIds,
+    keyExtractor: (item) => item.id,
+  });
+
+  const visibleColumnKeys = useMemo(() => EXPORT_COLUMNS.map((c) => c.key), [EXPORT_COLUMNS]);
 
   const handleEdit = (item: HangHoa) => {
     setEditingItem(item);
@@ -200,6 +311,26 @@ const DanhSachHangHoaPage: React.FC = () => {
     setEditingItem(null);
   };
 
+  const handleImportData = async (data: Record<string, unknown>[]) => {
+    setImportErrors([]);
+    const rows: HangHoaImportRow[] = data.map((row) => ({
+      ma_hang_hoa: row.ma_hang_hoa != null ? String(row.ma_hang_hoa) : undefined,
+      ten_hang_hoa: row.ten_hang_hoa != null ? String(row.ten_hang_hoa) : undefined,
+      danh_muc: row.danh_muc != null ? String(row.danh_muc) : undefined,
+      dvt: row.dvt != null ? String(row.dvt) : undefined,
+      don_gia: row.don_gia as string | number | undefined,
+      mo_ta: row.mo_ta != null ? String(row.mo_ta) : undefined,
+      trang_thai: row.trang_thai != null ? String(row.trang_thai) : undefined,
+    }));
+    const result = await importMutation.mutateAsync(rows);
+    if (result.errors.length > 0) {
+      setImportErrors(result.errors);
+    }
+    if (result.created > 0 || result.updated > 0) {
+      if (result.errors.length === 0) setShowImport(false);
+    }
+  };
+
   const tabs = useMemo(
     () => [
       { id: 'danhSach', label: t('hangHoa.tabs.danhSach'), icon: Package },
@@ -220,6 +351,8 @@ const DanhSachHangHoaPage: React.FC = () => {
               data={list}
               selectedCount={selectedIds.size}
               onAdd={handleAdd}
+              onExport={() => setShowExport(true)}
+              onImport={() => setShowImport(true)}
               onDeleteMany={handleDeleteMany}
               onStatusChangeMany={handleStatusChangeMany}
               canCreate={canCreate}
@@ -271,6 +404,36 @@ const DanhSachHangHoaPage: React.FC = () => {
             onClose={() => setViewingItem(null)}
             onEdit={canUpdate ? (item) => { setViewingItem(null); handleEdit(item); } : undefined}
             onDelete={canDelete ? (id) => { setViewingItem(null); handleDelete(id); } : undefined}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showImport && (
+          <ImportDialog
+            open={showImport}
+            onClose={() => { setShowImport(false); setImportErrors([]); }}
+            columns={IMPORT_COLUMNS}
+            onImport={handleImportData}
+            templateFileName={t('hangHoa.import.templateName')}
+            referenceSheets={importReferenceSheets}
+            sampleRows={importSampleRows}
+            importErrors={importErrors}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showExport && (
+          <ExportDialog
+            open={showExport}
+            onClose={() => setShowExport(false)}
+            columns={EXPORT_COLUMNS}
+            data={exportData}
+            paginatedData={paginatedExportData}
+            selectedData={selectedExportData}
+            fileName={t('hangHoa.export.fileName')}
+            visibleColumnKeys={visibleColumnKeys}
           />
         )}
       </AnimatePresence>

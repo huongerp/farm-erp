@@ -9,11 +9,30 @@ import type {
 import { TRANG_THAI_CHO_DUYET, TRANG_THAI_DA_DUYET, TRANG_THAI_KHONG_DUYET } from '../../../kho-van/phieu-de-xuat-vat-tu/core/constants';
 import { getAllPhieuDeXuatVatTu } from '../../../kho-van/phieu-de-xuat-vat-tu/services/phieu-de-xuat-vat-tu-service';
 import { getAllDonDatHang } from '../../don-dat-hang/services/don-dat-hang-service';
+import { getKhoList } from '../../../kho-van/danh-sach-kho/services/kho-service';
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 function inDateRange(ngay: string, dateFrom: string, dateTo: string): boolean {
   return !!ngay && ngay >= dateFrom && ngay <= dateTo;
+}
+
+/** Lọc phiếu theo chi nhánh (id_noi_de_xuat → kho.id_chi_nhanh in allowedBranchIds) khi filters.allowedBranchIds có giá trị. */
+async function filterByBranch(
+  list: Awaited<ReturnType<typeof getAllPhieuDeXuatVatTu>>,
+  allowedBranchIds: string[] | undefined
+): Promise<Awaited<ReturnType<typeof getAllPhieuDeXuatVatTu>>> {
+  if (!allowedBranchIds?.length) return list;
+  const khoList = await getKhoList();
+  const noiDeXuatToBranchId = new Map<string, string>();
+  khoList.forEach((k) => {
+    if (k.id_chi_nhanh != null) noiDeXuatToBranchId.set(k.id, k.id_chi_nhanh);
+  });
+  const allowedSet = new Set(allowedBranchIds);
+  return list.filter((p) => {
+    const branchId = p.id_noi_de_xuat ? noiDeXuatToBranchId.get(p.id_noi_de_xuat) : undefined;
+    return branchId != null && allowedSet.has(branchId);
+  });
 }
 
 function applyFilters(
@@ -40,7 +59,8 @@ export async function getPhieuDeXuatInPeriod(
 ): Promise<ChiTietPhieuRow[]> {
   await delay(300);
   const all = await getAllPhieuDeXuatVatTu();
-  const filtered = applyFilters(all, filters);
+  const byBranch = await filterByBranch(all, filters.allowedBranchIds);
+  const filtered = applyFilters(byBranch, filters);
   return filtered.map((p) => ({
     id: p.id,
     so_phieu: p.so_phieu,
@@ -63,7 +83,8 @@ export async function getTongHopDeXuatKy(
 ): Promise<TongHopDeXuatKyResult> {
   await delay(300);
   const all = await getAllPhieuDeXuatVatTu();
-  const filtered = applyFilters(all, filters);
+  const byBranch = await filterByBranch(all, filters.allowedBranchIds);
+  const filtered = applyFilters(byBranch, filters);
 
   const choDuyet = filtered.filter((p) => p.trang_thai === TRANG_THAI_CHO_DUYET).length;
   const daDuyet = filtered.filter((p) => p.trang_thai === TRANG_THAI_DA_DUYET).length;
@@ -122,7 +143,8 @@ export async function getLienKetDonHang(
 ): Promise<LienKetDonHangRow[]> {
   await delay(300);
   const allPhieu = await getAllPhieuDeXuatVatTu();
-  const filtered = applyFilters(allPhieu, filters);
+  const byBranch = await filterByBranch(allPhieu, filters.allowedBranchIds);
+  const filtered = applyFilters(byBranch, filters);
   const allDon = await getAllDonDatHang();
 
   const phieuToDonMap = new Map<string, { so_phieu: string; id: string }>();

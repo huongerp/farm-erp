@@ -2,7 +2,10 @@ import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MapPin, Package, Warehouse, Layers, History, FolderOpen } from 'lucide-react';
 import { useAllTonKho, useLichSuNhapXuatByKho } from '../hooks/use-ton-kho';
+import { useTonKhoViewScope } from '../hooks/use-ton-kho-view-scope';
+import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import { getKhoList } from '../../danh-sach-kho/services/kho-service';
+import type { TonKhoRecord } from '../../phieu-kho/services/ton-kho-service';
 import { getAllHangHoa } from '../../danh-sach-hang-hoa/services/hang-hoa-service';
 import { useQuery } from '@tanstack/react-query';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
@@ -48,8 +51,9 @@ export type RowKho = {
   tong_so_luong: number;
 };
 
-function useKhoRows() {
-  const { data: tonKhoList = [], isLoading } = useAllTonKho();
+function useKhoRows(tonKhoListOverride?: TonKhoRecord[]) {
+  const { data: tonKhoListRaw = [], isLoading } = useAllTonKho();
+  const tonKhoList = tonKhoListOverride !== undefined ? tonKhoListOverride : tonKhoListRaw;
   const { data: khoList = [] } = useQuery<Kho[]>({ queryKey: ['kho'], queryFn: getKhoList });
   const byKho = useMemo(() => {
     const totalByKho = new Map<string, number>();
@@ -270,7 +274,23 @@ const TonKhoTheoNoiLuuTab: React.FC = () => {
     setPageSize,
     resetState,
   } = useTonKhoByLocationStore();
-  const { rows, isLoading } = useKhoRows();
+  const { data: tonKhoListRaw = [] } = useAllTonKho();
+  const { data: khoList = [] } = useKhoList();
+  const viewScope = useTonKhoViewScope();
+  const viewableTonKhoList = useMemo(() => {
+    if (viewScope.viewAll) return tonKhoListRaw;
+    if (!viewScope.viewByBranch || viewScope.allowedBranchIds.length === 0) return [];
+    const khoIdToBranchId = new Map<string, string>();
+    khoList.forEach((k) => {
+      if (k.id_chi_nhanh != null) khoIdToBranchId.set(k.id, k.id_chi_nhanh);
+    });
+    const allowedSet = new Set(viewScope.allowedBranchIds);
+    return tonKhoListRaw.filter((r) => {
+      const branchId = khoIdToBranchId.get(r.id_kho);
+      return branchId != null && allowedSet.has(branchId);
+    });
+  }, [tonKhoListRaw, khoList, viewScope.viewAll, viewScope.viewByBranch, viewScope.allowedBranchIds]);
+  const { rows, isLoading } = useKhoRows(viewableTonKhoList);
 
   const filterFn = useCallback((item: RowKho, term: string, f: TonKhoFilters) => {
     if (term.trim()) {

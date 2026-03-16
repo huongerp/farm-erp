@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { User, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDotKiemKeList } from '../hooks/use-kiem-ke-tai-san';
+import { useKiemKeTaiSanViewScope } from '../hooks/use-kiem-ke-tai-san-view-scope';
+import { useAuthStore } from '../../../../store/useStore';
 import { useEmployees } from '@/features/he-thong/nhan-vien/hooks/use-nhan-vien';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import EmptyState from '../../../../components/shared/EmptyState';
@@ -30,9 +32,18 @@ function useStatsFilterCounts(items: DotKiemKe[]) {
 
 const ThongKeTab: React.FC = () => {
   const { t } = useTranslation();
+  const user = useAuthStore((s) => s.user);
+  const { viewAll } = useKiemKeTaiSanViewScope();
   const { data: list = [], isLoading, isError } = useDotKiemKeList({});
   const { data: employees = [] } = useEmployees();
-  const { trangThaiCounts, nguoiPhuTrachCounts } = useStatsFilterCounts(list);
+
+  const viewableList = useMemo(() => {
+    if (viewAll) return list;
+    const myId = user?.id ?? '';
+    return list.filter((d) => String(d.id_nguoi_phu_trach) === String(myId));
+  }, [list, viewAll, user?.id]);
+
+  const { trangThaiCounts, nguoiPhuTrachCounts } = useStatsFilterCounts(viewableList);
 
   const [filterTrangThai, setFilterTrangThai] = useState<string[]>([]);
   const [filterNguoiPhuTrach, setFilterNguoiPhuTrach] = useState<string[]>([]);
@@ -40,14 +51,14 @@ const ThongKeTab: React.FC = () => {
   const [dateTo, setDateTo] = useState('');
 
   const filteredList = useMemo(() => {
-    return list.filter((d: DotKiemKe) => {
+    return viewableList.filter((d: DotKiemKe) => {
       const matchTrangThai = filterTrangThai.length === 0 || filterTrangThai.includes(d.trang_thai);
       const matchNguoi = filterNguoiPhuTrach.length === 0 || (d.id_nguoi_phu_trach && filterNguoiPhuTrach.includes(d.id_nguoi_phu_trach));
       const matchFrom = !dateFrom || (d.ngay_bat_dau && d.ngay_bat_dau >= dateFrom);
       const matchTo = !dateTo || (d.ngay_ket_thuc && d.ngay_ket_thuc <= dateTo);
       return matchTrangThai && matchNguoi && matchFrom && matchTo;
     });
-  }, [list, filterTrangThai, filterNguoiPhuTrach, dateFrom, dateTo]);
+  }, [viewableList, filterTrangThai, filterNguoiPhuTrach, dateFrom, dateTo]);
 
   const stats = useKiemKeStats(filteredList);
 

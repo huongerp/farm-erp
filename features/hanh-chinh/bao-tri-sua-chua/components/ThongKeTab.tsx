@@ -3,6 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { Wrench, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePhieuBaoTriList } from '../hooks/use-bao-tri-sua-chua';
+import { useBaoTriSuaChuaViewScope } from '../hooks/use-bao-tri-sua-chua-view-scope';
+import { useAuthStore } from '../../../../store/useStore';
+import { useTaiSanList } from '../../danh-muc-tai-san/hooks/use-danh-muc-tai-san';
 import { HANG_MUC_OPTIONS } from '../core/constants';
 import { getTrangThaiLabel } from '../core/constants';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
@@ -32,28 +35,42 @@ function phieuToExportRow(p: PhieuBaoTriSuaChua, t: (k: string) => string): Reco
 
 const ThongKeTab: React.FC = () => {
   const { t } = useTranslation();
+  const user = useAuthStore((s) => s.user);
+  const { viewAll } = useBaoTriSuaChuaViewScope();
+  const { data: taiSanList = [] } = useTaiSanList();
   const { data: list = [], isLoading, isError } = usePhieuBaoTriList({});
+
+  const viewableList = useMemo(() => {
+    if (viewAll) return list;
+    const myId = user?.id ?? '';
+    const assetIdsHeldByUser = new Set(
+      taiSanList.filter((a) => String(a.id_nhan_vien_dang_giu) === String(myId)).map((a) => a.id)
+    );
+    return list.filter(
+      (p) => String(p.id_nguoi_tao) === String(myId) || assetIdsHeldByUser.has(p.id_tai_san)
+    );
+  }, [list, viewAll, user?.id, taiSanList]);
 
   const [filterHangMuc, setFilterHangMuc] = useState<string[]>([]);
   const [filterDateFrom, setFilterDateFrom] = useState('');
   const [filterDateTo, setFilterDateTo] = useState('');
 
   const filteredList = useMemo(() => {
-    return list.filter((p: PhieuBaoTriSuaChua) => {
+    return viewableList.filter((p: PhieuBaoTriSuaChua) => {
       if (filterHangMuc.length > 0 && !filterHangMuc.includes(p.id_hang_muc)) return false;
       if (filterDateFrom && p.ngay < filterDateFrom) return false;
       if (filterDateTo && p.ngay > filterDateTo) return false;
       return true;
     });
-  }, [list, filterHangMuc, filterDateFrom, filterDateTo]);
+  }, [viewableList, filterHangMuc, filterDateFrom, filterDateTo]);
 
   const stats = usePhieuBaoTriStats(filteredList);
 
   const countByHangMuc = useMemo(() => {
     const m: Record<string, number> = {};
-    list.forEach((p) => { m[p.id_hang_muc] = (m[p.id_hang_muc] ?? 0) + 1; });
+    viewableList.forEach((p) => { m[p.id_hang_muc] = (m[p.id_hang_muc] ?? 0) + 1; });
     return m;
-  }, [list]);
+  }, [viewableList]);
 
   const hangMucOptions = useMemo(
     () => HANG_MUC_OPTIONS.map((o) => ({ label: t(o.labelKey), value: o.value, count: countByHangMuc[o.value] ?? 0 })),

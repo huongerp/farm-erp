@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Tag, Folder, FolderTree, Ruler } from 'lucide-react';
+import { Plus, Download, Upload, Tag, Folder, FolderTree, Ruler } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
+import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import { useHangHoaStore } from '../store/useHangHoaStore';
@@ -13,6 +14,8 @@ interface Props {
   data: HangHoa[];
   selectedCount: number;
   onAdd: () => void;
+  onExport?: () => void;
+  onImport?: () => void;
   onDeleteMany: () => void;
   onStatusChangeMany?: (status: 0 | 1) => void;
   canCreate?: boolean;
@@ -24,6 +27,8 @@ const DanhSachHangHoaToolbar: React.FC<Props> = ({
   data,
   selectedCount,
   onAdd,
+  onExport,
+  onImport,
   onDeleteMany,
   onStatusChangeMany,
   canCreate = true,
@@ -219,16 +224,72 @@ const DanhSachHangHoaToolbar: React.FC<Props> = ({
     ]
   );
 
-  const renderActions = canCreate ? (
-    <Button
-      onClick={onAdd}
-      size="sm"
-      className="bg-primary text-white hover:bg-primary/90 shadow-md shadow-primary/20 h-9 px-3 sm:px-4"
-    >
-      <Plus className="w-5 h-5 sm:w-4 sm:h-4 sm:mr-2" />
-      <span className="hidden sm:inline">{t('common.addNew')}</span>
-    </Button>
-  ) : null;
+  const mobileActions = useMemo(
+    () => [
+      ...(onImport
+        ? [
+            {
+              key: 'import',
+              label: t('hangHoa.toolbar.importData'),
+              icon: Upload,
+              onClick: onImport,
+              description: t('hangHoa.toolbar.importDesc'),
+            },
+          ]
+        : []),
+      ...(onExport
+        ? [
+            {
+              key: 'export',
+              label: t('hangHoa.toolbar.exportData'),
+              icon: Download,
+              onClick: onExport,
+              description: t('hangHoa.toolbar.exportDesc'),
+            },
+          ]
+        : []),
+    ],
+    [onImport, onExport, t]
+  );
+
+  const renderActions = (
+    <>
+      {onImport && (
+        <Tooltip content={t('hangHoa.toolbar.importData')} placement="bottom">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onImport}
+            className="inline-flex min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-8 w-8 p-0 items-center justify-center border-border text-muted-foreground hover:bg-muted"
+          >
+            <Upload className="w-4 h-4" />
+          </Button>
+        </Tooltip>
+      )}
+      {onExport && (
+        <Tooltip content={t('hangHoa.toolbar.exportData')} placement="bottom">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onExport}
+            className="inline-flex min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-8 w-8 p-0 items-center justify-center border-border text-muted-foreground hover:bg-muted"
+          >
+            <Download className="w-4 h-4" />
+          </Button>
+        </Tooltip>
+      )}
+      {canCreate && (
+        <Button
+          onClick={onAdd}
+          size="sm"
+          className="bg-primary text-white hover:bg-primary/90 shadow-md shadow-primary/20 h-9 px-3 sm:px-4"
+        >
+          <Plus className="w-5 h-5 sm:w-4 sm:h-4 sm:mr-2" />
+          <span className="hidden sm:inline">{t('common.addNew')}</span>
+        </Button>
+      )}
+    </>
+  );
 
   return (
     <GenericToolbar
@@ -241,6 +302,7 @@ const DanhSachHangHoaToolbar: React.FC<Props> = ({
       actions={renderActions}
       filters={renderFilters}
       filterGroups={filterGroups}
+      mobileActions={mobileActions}
       onAdd={canCreate ? onAdd : undefined}
       showBack
       searchPlaceholder={t('hangHoa.searchPlaceholder')}

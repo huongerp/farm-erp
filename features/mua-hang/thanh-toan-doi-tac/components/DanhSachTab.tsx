@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import { useThanhToanDoiTacList, useThanhToanDoiTacById, useDeleteThanhToanDoiTac, useDeleteThanhToanDoiTacMany, useUpdateThanhToanDoiTac } from '../hooks/use-thanh-toan-doi-tac';
+import { useThanhToanDoiTacViewScope } from '../hooks/use-thanh-toan-doi-tac-view-scope';
 import { useDoiTacList } from '../../../kho-van/danh-sach-doi-tac/hooks/use-doi-tac';
 import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
 import { useEmployees } from '../../../he-thong/nhan-vien/hooks/use-nhan-vien';
@@ -63,6 +64,15 @@ const DanhSachTab: React.FC = () => {
   const donViList = chiNhanhList; // Đơn vị = chi nhánh (alias để tương thích)
   const { data: employees = [] } = useEmployees();
   const { data: statusList = [] } = useTrangThaiThanhToanDoiTacList();
+  const viewScope = useThanhToanDoiTacViewScope();
+
+  const viewableList = useMemo(() => {
+    if (viewScope.viewAll) return allList;
+    if (!viewScope.viewByBranch || viewScope.allowedBranchIds.length === 0) return [];
+    const allowedSet = new Set(viewScope.allowedBranchIds);
+    return allList.filter((p) => p.id_don_vi != null && allowedSet.has(p.id_don_vi));
+  }, [allList, viewScope.viewAll, viewScope.viewByBranch, viewScope.allowedBranchIds]);
+
   const { data: viewingFull } = useThanhToanDoiTacById(viewingItem?.id);
   const { data: editingFull } = useThanhToanDoiTacById(editingItem?.id);
   const deleteMutation = useDeleteThanhToanDoiTac();
@@ -84,7 +94,7 @@ const DanhSachTab: React.FC = () => {
     return matchesSearch && matchesStatus && matchesDoiTac && matchesDonVi;
   }, []);
 
-  const filteredList = useListWithFilter(allList, searchTerm, filters, filterFn);
+  const filteredList = useListWithFilter(viewableList, searchTerm, filters, filterFn);
 
   useEffect(() => resetState(), [resetState]);
   useEffect(() => {
@@ -96,9 +106,9 @@ const DanhSachTab: React.FC = () => {
   }, [pagination.page, pagination.pageSize, maxPage, setPage]);
   useEffect(() => {
     if (!viewingItem) return;
-    const fresh = allList.find((p) => p.id === viewingItem.id);
+    const fresh = viewableList.find((p) => p.id === viewingItem.id);
     if (fresh && fresh !== viewingItem) setViewingItem(fresh);
-  }, [allList, viewingItem?.id]);
+  }, [viewableList, viewingItem?.id]);
 
   const handleEdit = (item: ThanhToanDoiTac) => {
     setEditingItem(item);

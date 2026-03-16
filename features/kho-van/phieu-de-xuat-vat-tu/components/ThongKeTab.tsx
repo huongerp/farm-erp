@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { User, UserCheck, Calendar, Warehouse, Tag } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePhieuDeXuatVatTuList } from '../hooks/use-phieu-de-xuat-vat-tu';
+import { usePhieuDeXuatVatTuViewScope } from '../hooks/use-phieu-de-xuat-vat-tu-view-scope';
 import { useEmployees } from '../../../he-thong/nhan-vien/hooks/use-nhan-vien';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
@@ -21,36 +22,51 @@ const ThongKeTab: React.FC = () => {
   const { data: list = [], isLoading, isError } = usePhieuDeXuatVatTuList();
   const { data: employees = [] } = useEmployees();
   const { data: khoList = [] } = useKhoList();
+  const viewScope = usePhieuDeXuatVatTuViewScope();
+
+  const viewableList = useMemo(() => {
+    if (viewScope.viewAll) return list;
+    if (!viewScope.viewByBranch || viewScope.allowedBranchIds.length === 0) return [];
+    const khoIdToBranchId = new Map<string, string>();
+    khoList.forEach((k) => {
+      if (k.id_chi_nhanh != null) khoIdToBranchId.set(k.id, k.id_chi_nhanh);
+    });
+    const allowedSet = new Set(viewScope.allowedBranchIds);
+    return list.filter((d) => {
+      const branchId = khoIdToBranchId.get(d.id_noi_de_xuat);
+      return branchId != null && allowedSet.has(branchId);
+    });
+  }, [list, khoList, viewScope.viewAll, viewScope.viewByBranch, viewScope.allowedBranchIds]);
 
   const statusCounts = useMemo(() => {
     const m: Record<string, number> = {};
-    list.forEach((d) => {
+    viewableList.forEach((d) => {
       const key = trangThaiToFilterKey(d.trang_thai);
       m[key] = (m[key] ?? 0) + 1;
     });
     return m;
-  }, [list]);
+  }, [viewableList]);
   const noiDeXuatCounts = useMemo(() => {
     const m: Record<string, number> = {};
-    list.forEach((d) => {
+    viewableList.forEach((d) => {
       m[d.id_noi_de_xuat] = (m[d.id_noi_de_xuat] ?? 0) + 1;
     });
     return m;
-  }, [list]);
+  }, [viewableList]);
   const nguoiDeXuatCounts = useMemo(() => {
     const m: Record<string, number> = {};
-    list.forEach((d) => {
+    viewableList.forEach((d) => {
       m[d.id_nguoi_de_xuat] = (m[d.id_nguoi_de_xuat] ?? 0) + 1;
     });
     return m;
-  }, [list]);
+  }, [viewableList]);
   const nguoiDuyetCounts = useMemo(() => {
     const m: Record<string, number> = {};
-    list.forEach((d) => {
+    viewableList.forEach((d) => {
       if (d.id_nguoi_duyet) m[d.id_nguoi_duyet] = (m[d.id_nguoi_duyet] ?? 0) + 1;
     });
     return m;
-  }, [list]);
+  }, [viewableList]);
 
   const [filterStatus, setFilterStatus] = useState<string[]>([]);
   const [filterNoiDeXuat, setFilterNoiDeXuat] = useState<string[]>([]);
@@ -60,7 +76,7 @@ const ThongKeTab: React.FC = () => {
   const [dateTo, setDateTo] = useState('');
 
   const filteredList = useMemo(() => {
-    return list.filter((d: PhieuDeXuatVatTu) => {
+    return viewableList.filter((d: PhieuDeXuatVatTu) => {
       const statusKey = trangThaiToFilterKey(d.trang_thai);
       const matchStatus = filterStatus.length === 0 || filterStatus.includes(statusKey);
       const matchNoiDeXuat = filterNoiDeXuat.length === 0 || filterNoiDeXuat.includes(d.id_noi_de_xuat);
@@ -72,7 +88,7 @@ const ThongKeTab: React.FC = () => {
       const matchTo = !dateTo || (d.ngay && d.ngay <= dateTo);
       return matchStatus && matchNoiDeXuat && matchNguoiDeXuat && matchNguoiDuyet && matchFrom && matchTo;
     });
-  }, [list, filterStatus, filterNoiDeXuat, filterNguoiDeXuat, filterNguoiDuyet, dateFrom, dateTo]);
+  }, [viewableList, filterStatus, filterNoiDeXuat, filterNguoiDeXuat, filterNguoiDuyet, dateFrom, dateTo]);
 
   const stats = usePhieuDeXuatVatTuStats(filteredList);
 

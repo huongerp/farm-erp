@@ -10,6 +10,8 @@ export interface BaoCaoDeXuatVatTuFilters {
   noiDeXuatIds: string[];
   nguoiDeXuatIds: string[];
   nguoiDuyetIds: string[];
+  /** Khi có: chỉ lấy phiếu có id_noi_de_xuat → kho.id_chi_nhanh thuộc danh sách (phân quyền xem theo chi nhánh) */
+  allowedBranchIds?: string[];
 }
 
 /** Dòng tổng hợp theo trạng thái */

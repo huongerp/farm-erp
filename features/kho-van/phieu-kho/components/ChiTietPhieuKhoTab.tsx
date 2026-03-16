@@ -2,7 +2,8 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Package, FileText } from 'lucide-react';
 import { cn, formatDateShort, formatNumberVN } from '../../../../lib/utils';
-import { useChiTietPhieuKhoAll, usePhieuKhoById } from '../hooks/use-phieu-kho';
+import { useChiTietPhieuKhoAll, usePhieuKhoById, usePhieuKhoList } from '../hooks/use-phieu-kho';
+import { usePhieuKhoViewScope } from '../hooks/use-phieu-kho-view-scope';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import { useChiTietPhieuKhoStore } from '../store/useChiTietPhieuKhoStore';
 import type { ChiTietPhieuKhoFlat } from '../core/types';
@@ -54,6 +55,38 @@ const ChiTietPhieuKhoTab: React.FC = () => {
   const { t } = useTranslation();
   const { data: allRows = [], isLoading } = useChiTietPhieuKhoAll();
   const { data: khoList = [] } = useKhoList();
+  const { data: allList = [] } = usePhieuKhoList();
+  const viewScope = usePhieuKhoViewScope();
+
+  const viewablePhieuIds = useMemo(() => {
+    if (viewScope.viewAll) {
+      return new Set(allList.map((p) => p.id));
+    }
+    if (!viewScope.viewByBranch || viewScope.allowedBranchIds.length === 0) return new Set<string>();
+    const khoIdToBranchId = new Map<string, string>();
+    khoList.forEach((k) => {
+      if (k.id_chi_nhanh != null) khoIdToBranchId.set(k.id, k.id_chi_nhanh);
+    });
+    const allowedSet = new Set(viewScope.allowedBranchIds);
+    return new Set(
+      allList
+        .filter((p) => {
+          const branchKho = khoIdToBranchId.get(p.kho_id);
+          const branchKhoDen = p.kho_den_id ? khoIdToBranchId.get(p.kho_den_id) : null;
+          if (p.kho_den_id == null || p.kho_den_id === '') {
+            return branchKho != null && allowedSet.has(branchKho);
+          }
+          return (branchKho != null && allowedSet.has(branchKho)) || (branchKhoDen != null && allowedSet.has(branchKhoDen));
+        })
+        .map((p) => p.id)
+    );
+  }, [allList, khoList, viewScope.viewAll, viewScope.viewByBranch, viewScope.allowedBranchIds]);
+
+  const viewableRows = useMemo(
+    () => allRows.filter((r) => viewablePhieuIds.has(r.id_phieu_kho)),
+    [allRows, viewablePhieuIds]
+  );
+
   const {
     searchTerm,
     filters,
@@ -101,8 +134,8 @@ const ChiTietPhieuKhoTab: React.FC = () => {
   );
 
   const filteredList = useMemo(() => {
-    return allRows.filter((row) => filterFn(row, searchTerm, filters, dateRangeStr));
-  }, [allRows, searchTerm, filters, dateRangeStr, filterFn]);
+    return viewableRows.filter((row) => filterFn(row, searchTerm, filters, dateRangeStr));
+  }, [viewableRows, searchTerm, filters, dateRangeStr, filterFn]);
 
   const sortedList = useMemo(() => {
     if (!sort.column || !sort.direction) return filteredList;
@@ -268,7 +301,7 @@ const ChiTietPhieuKhoTab: React.FC = () => {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 mt-1.5 rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-      <ChiTietPhieuKhoToolbar data={allRows} khoList={khoList} />
+      <ChiTietPhieuKhoToolbar data={viewableRows} khoList={khoList} />
 
       <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
         {filteredList.length === 0 ? (

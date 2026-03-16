@@ -4,7 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
 import { FileText, Edit, Trash2, Package } from 'lucide-react';
 import { toast } from 'sonner';
-import { usePhieuDeXuatVatTuChiTietAll, usePhieuDeXuatVatTuById, useUpdatePhieuDeXuatVatTu } from '../hooks/use-phieu-de-xuat-vat-tu';
+import { usePhieuDeXuatVatTuChiTietAll, usePhieuDeXuatVatTuById, usePhieuDeXuatVatTuList, useUpdatePhieuDeXuatVatTu } from '../hooks/use-phieu-de-xuat-vat-tu';
+import { usePhieuDeXuatVatTuViewScope } from '../hooks/use-phieu-de-xuat-vat-tu-view-scope';
+import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import { useChiTietTabStore } from '../store/useChiTietTabStore';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { useAuthStore } from '../../../../store/useStore';
@@ -62,6 +64,34 @@ const ChiTietTab: React.FC = () => {
     });
   }, [setSearchParams]);
   const { data: rows = [], isLoading } = usePhieuDeXuatVatTuChiTietAll();
+  const { data: allList = [] } = usePhieuDeXuatVatTuList();
+  const { data: khoList = [] } = useKhoList();
+  const viewScope = usePhieuDeXuatVatTuViewScope();
+
+  const viewablePhieuIds = useMemo(() => {
+    if (viewScope.viewAll) {
+      return new Set(allList.map((p) => p.id));
+    }
+    if (!viewScope.viewByBranch || viewScope.allowedBranchIds.length === 0) return new Set<string>();
+    const khoIdToBranchId = new Map<string, string>();
+    khoList.forEach((k) => {
+      if (k.id_chi_nhanh != null) khoIdToBranchId.set(k.id, k.id_chi_nhanh);
+    });
+    const allowedSet = new Set(viewScope.allowedBranchIds);
+    return new Set(
+      allList
+        .filter((p) => {
+          const branchId = khoIdToBranchId.get(p.id_noi_de_xuat);
+          return branchId != null && allowedSet.has(branchId);
+        })
+        .map((p) => p.id)
+    );
+  }, [allList, khoList, viewScope.viewAll, viewScope.viewByBranch, viewScope.allowedBranchIds]);
+
+  const viewableRows = useMemo(
+    () => rows.filter((r) => viewablePhieuIds.has(r.id_phieu_de_xuat_vat_tu)),
+    [rows, viewablePhieuIds]
+  );
   const [viewingRow, setViewingRow] = useState<PhieuDeXuatVatTuChiTietRow | null>(null);
   const [editingRow, setEditingRow] = useState<PhieuDeXuatVatTuChiTietRow | null>(null);
   const [showChuyenTienDoModal, setShowChuyenTienDoModal] = useState(false);
@@ -118,7 +148,7 @@ const ChiTietTab: React.FC = () => {
     async (result: ChuyenTienDoResult) => {
       const selectedRows = singleRowForChuyenTienDo
         ? [singleRowForChuyenTienDo]
-        : rows.filter((r) => selectedIds.has(r.id));
+        : viewableRows.filter((r) => selectedIds.has(r.id));
       if (selectedRows.length === 0) return;
       const byPhieu = new Map<string, PhieuDeXuatVatTuChiTietRow[]>();
       selectedRows.forEach((r) => {
@@ -174,7 +204,7 @@ const ChiTietTab: React.FC = () => {
         toast.error((e as Error).message);
       }
     },
-    [selectedIds, rows, singleRowForChuyenTienDo, updateMutation, clearSelection, t]
+    [selectedIds, viewableRows, singleRowForChuyenTienDo, updateMutation, clearSelection, t]
   );
 
   const handleDelete = useCallback(
@@ -218,9 +248,9 @@ const ChiTietTab: React.FC = () => {
   );
 
   const sortedRows = useMemo(() => {
-    if (!sort.column || !sort.direction) return [...rows];
+    if (!sort.column || !sort.direction) return [...viewableRows];
     const key = sort.column as keyof PhieuDeXuatVatTuChiTietRow;
-    return [...rows].sort((a, b) => {
+    return [...viewableRows].sort((a, b) => {
       const va = a[key];
       const vb = b[key];
       const aVal = va == null ? '' : String(va);
@@ -228,7 +258,7 @@ const ChiTietTab: React.FC = () => {
       if (sort.direction === 'asc') return aVal.localeCompare(bVal, undefined, { numeric: true });
       return bVal.localeCompare(aVal, undefined, { numeric: true });
     });
-  }, [rows, sort.column, sort.direction]);
+  }, [viewableRows, sort.column, sort.direction]);
 
   const filteredRows = useMemo(() => {
     let result = sortedRows;
@@ -435,7 +465,7 @@ const ChiTietTab: React.FC = () => {
     );
   }
 
-  if (rows.length === 0) {
+  if (viewableRows.length === 0) {
     return (
       <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
         <ChiTietTabToolbar

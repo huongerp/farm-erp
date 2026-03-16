@@ -11,6 +11,7 @@ import ChiTietPhieuTab from './components/ChiTietPhieuTab';
 import TonTaiThoiDiemTab from './components/TonTaiThoiDiemTab';
 import type { NXTReportFilters } from './core/types';
 import { getDateRangeFromPreset } from './core/datePresets';
+import { usePhieuKhoViewScope } from '../phieu-kho/hooks/use-phieu-kho-view-scope';
 import { getKhoList } from '../danh-sach-kho/services/kho-service';
 
 /** Kỳ mặc định: Tháng này. */
@@ -32,6 +33,14 @@ const BaoCaoNhapXuatTonPage: React.FC = () => {
   const queryClient = useQueryClient();
   const [filters, setFilters] = useState<NXTReportFilters>(DEFAULT_FILTERS);
   const [activeTab, setActiveTab] = useState<TabId>('tongHop');
+  const viewScope = usePhieuKhoViewScope();
+
+  const effectiveFilters = useMemo((): NXTReportFilters => {
+    if (viewScope.viewByBranch && viewScope.allowedBranchIds.length > 0) {
+      return { ...filters, allowedBranchIds: viewScope.allowedBranchIds };
+    }
+    return filters;
+  }, [filters, viewScope.viewByBranch, viewScope.allowedBranchIds]);
 
   const tabFromUrl = searchParams.get('tab');
   React.useEffect(() => {
@@ -77,22 +86,22 @@ const BaoCaoNhapXuatTonPage: React.FC = () => {
   const handleExportExcel = useCallback(async () => {
     try {
       const { exportBaoCaoNXTToExcel } = await import('./utils/export-bao-cao-nxt-excel');
-      await exportBaoCaoNXTToExcel(filters, t);
+      await exportBaoCaoNXTToExcel(effectiveFilters, t);
       toast.success(t('baoCaonhapXuatTon.exportSuccess'));
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Export failed');
     }
-  }, [filters, t]);
+  }, [effectiveFilters, t]);
 
   const handleExportPdf = useCallback(async () => {
     try {
       const { exportBaoCaoNXTToPdf } = await import('./utils/export-bao-cao-nxt-pdf');
-      await exportBaoCaoNXTToPdf(filters, t);
+      await exportBaoCaoNXTToPdf(effectiveFilters, t);
       toast.success(t('baoCaonhapXuatTon.exportSuccess'));
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Export failed');
     }
-  }, [filters, t]);
+  }, [effectiveFilters, t]);
 
   const handlePrint = useCallback(() => {
     window.print();
@@ -126,9 +135,9 @@ const BaoCaoNhapXuatTonPage: React.FC = () => {
         />
       </div>
       <div className="flex-1 min-h-0 flex flex-col mt-1.5 overflow-hidden">
-        {activeTab === 'tongHop' && <TongHopNXTKyTab filters={filters} onClearFilters={handleClearAllFilters} />}
-        {activeTab === 'chiTietPhieu' && <ChiTietPhieuTab filters={filters} />}
-        {activeTab === 'tonThoiDiem' && <TonTaiThoiDiemTab filters={filters} />}
+        {activeTab === 'tongHop' && <TongHopNXTKyTab filters={effectiveFilters} onClearFilters={handleClearAllFilters} />}
+        {activeTab === 'chiTietPhieu' && <ChiTietPhieuTab filters={effectiveFilters} />}
+        {activeTab === 'tonThoiDiem' && <TonTaiThoiDiemTab filters={effectiveFilters} />}
       </div>
     </div>
   );

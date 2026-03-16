@@ -4,13 +4,20 @@ import { List, BarChart3 } from 'lucide-react';
 import TabGroup from '../../../components/ui/TabGroup';
 import NoiLuuTab from '../thiet-lap-tai-san/components/noi-luu-tab';
 import NoiQuanLyStatsTab from './components/NoiQuanLyStatsTab';
+import { useNoiQuanLyViewScope } from './hooks/use-noi-quan-ly-view-scope';
 
 /**
  * Module Nơi quản lý: Danh sách nơi lưu (chuyển từ Thiết lập tài sản) + Thống kê.
  */
 const NoiQuanLyPage: React.FC = () => {
   const { t } = useTranslation();
+  const { viewAll, allowedBranchIds } = useNoiQuanLyViewScope();
   const [activeTab, setActiveTab] = useState('danhsach');
+
+  const viewScope = useMemo(
+    () => (viewAll ? undefined : { viewAll: false as const, allowedBranchIds }),
+    [viewAll, allowedBranchIds]
+  );
 
   const tabs = useMemo(
     () => [
@@ -28,7 +35,7 @@ const NoiQuanLyPage: React.FC = () => {
 
       {activeTab === 'danhsach' ? (
         <div className="flex-1 min-h-0 flex flex-col mt-1.5">
-          <NoiLuuTab />
+          <NoiLuuTab viewScope={viewScope} />
         </div>
       ) : (
         <div className="flex-1 min-h-0 flex flex-col mt-1.5 rounded-xl border border-border bg-card shadow-sm overflow-hidden">

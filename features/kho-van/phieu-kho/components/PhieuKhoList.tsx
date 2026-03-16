@@ -21,6 +21,8 @@ interface Props {
   onEdit?: (item: PhieuKho) => void;
   onDelete?: (id: string) => void;
   onView?: (item: PhieuKho) => void;
+  /** Nếu có: chỉ hiển thị nút Sửa khi canEditItem(item) === true. */
+  canEditItem?: (item: PhieuKho) => boolean;
 }
 
 const PhieuKhoList: React.FC<Props> = ({
@@ -38,6 +40,7 @@ const PhieuKhoList: React.FC<Props> = ({
   onEdit,
   onDelete,
   onView,
+  canEditItem,
 }) => {
   const { t } = useTranslation();
 
@@ -118,7 +121,7 @@ const PhieuKhoList: React.FC<Props> = ({
       case 'actions':
         return (
           <div className="flex items-center justify-end gap-0.5">
-            {onEdit && (
+            {onEdit && (!canEditItem || canEditItem(item)) && (
               <button
                 type="button"
                 onClick={(e) => {
@@ -183,7 +186,7 @@ const PhieuKhoList: React.FC<Props> = ({
       <div className="flex justify-between items-center pt-2 border-t border-border">
         <span className="text-xs text-muted-foreground">{formatDateShort(item.tg_cap_nhat)}</span>
         <div className="flex gap-1">
-          {onEdit && (
+          {onEdit && (!canEditItem || canEditItem(item)) && (
             <button
               type="button"
               onClick={(e) => {
