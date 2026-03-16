@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
+import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import { useDonDatHangList, useDonDatHangById, useDeleteDonDatHang, useDeleteDonDatHangMany, useUpdateDonDatHang } from '../hooks/use-don-dat-hang';
 import { useDoiTacList } from '../../../kho-van/danh-sach-doi-tac/hooks/use-doi-tac';
 import { useKhoList } from '../../../kho-van/danh-sach-kho/hooks/use-kho';
@@ -46,6 +47,7 @@ import DonDatHangDetail from './DonDatHangDetail';
 
 const DanhSachTab: React.FC = () => {
   const { t } = useTranslation();
+  const { canCreate, canUpdate, canDelete, canApprove } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
   const {
     searchTerm,
@@ -185,6 +187,8 @@ const DanhSachTab: React.FC = () => {
           setShowForm(true);
         }}
         onDeleteMany={handleDeleteMany}
+        canCreate={canCreate}
+        canDelete={canDelete}
       />
       <div className="flex-1 min-h-0 flex flex-col px-4 pb-4 pt-1">
         <DonDatHangList
@@ -198,8 +202,8 @@ const DanhSachTab: React.FC = () => {
           pageSize={pagination.pageSize}
           onPageChange={setPage}
           onPageSizeChange={setPageSize}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
+          onEdit={canUpdate ? handleEdit : undefined}
+          onDelete={canDelete ? handleDelete : undefined}
           onView={setViewingItem}
         />
       </div>
@@ -222,14 +226,14 @@ const DanhSachTab: React.FC = () => {
           <DonDatHangDetail
             data={viewingPoFull ?? viewingItem}
             onClose={() => setViewingItem(null)}
-            onEdit={(item) => {
+            onEdit={canUpdate ? (item) => {
               setOpenedFormFromDetailId(item.id);
               setViewingItem(null);
               setEditingItem(item);
               setShowForm(true);
-            }}
-            onDelete={handleDelete}
-            onApprove={handleApprove}
+            } : undefined}
+            onDelete={canDelete ? handleDelete : undefined}
+            onApprove={canApprove ? handleApprove : undefined}
           />
         )}
       </AnimatePresence>

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
+import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import LoaiChiPhiToolbar from './loai-chi-phi-toolbar';
 import LoaiChiPhiTable from './loai-chi-phi-table';
 import LoaiChiPhiForm from './loai-chi-phi-form';
@@ -21,6 +22,7 @@ import { LoaiChiPhi } from '../core/types';
 
 const LoaiChiPhiTab: React.FC = () => {
   const { t } = useTranslation();
+  const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
   const {
     searchTerm,
@@ -182,13 +184,16 @@ const LoaiChiPhiTab: React.FC = () => {
         }}
         onDeleteMany={handleDeleteMany}
         onStatusChangeMany={handleStatusChangeMany}
+        canCreate={canCreate}
+        canUpdate={canUpdate}
+        canDelete={canDelete}
       />
       <div className="flex-1 min-h-0">
         <LoaiChiPhiTable
           data={sortedList}
           isLoading={isLoading}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
+          onEdit={canUpdate ? handleEdit : undefined}
+          onDelete={canDelete ? handleDelete : undefined}
           onView={handleView}
         />
       </div>
@@ -202,11 +207,11 @@ const LoaiChiPhiTab: React.FC = () => {
           <LoaiChiPhiDetail
             data={detailItem}
             onClose={() => setDetailItem(null)}
-            onEdit={(item) => handleEdit(item)}
-            onDelete={(id) => {
+            onEdit={canUpdate ? (item) => handleEdit(item) : undefined}
+            onDelete={canDelete ? (id) => {
               setDetailItem(null);
               handleDelete(id);
-            }}
+            } : undefined}
           />
         )}
       </AnimatePresence>

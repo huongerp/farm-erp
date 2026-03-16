@@ -12,10 +12,11 @@ import FormSection from '../../../../components/shared/FormSection';
 import FormGrid from '../../../../components/shared/FormGrid';
 import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
 import { dotKiemKeSchema, type DotKiemKeFormValues } from '../core/schema';
-import { useCreateDotKiemKe, useUpdateDotKiemKe } from '../hooks/use-kiem-ke-tai-san';
+import { useCreateDotKiemKe, useUpdateDotKiemKe, useNextMaDotDotKiemKeTaiSan, formatMaDotDotKiemKeTaiSan } from '../hooks/use-kiem-ke-tai-san';
 import { useAssetGroups } from '../../thiet-lap-tai-san/hooks/use-nhom-tai-san';
 import { useAssetStorageLocations } from '../../thiet-lap-tai-san/hooks/use-noi-luu';
 import { useEmployees } from '@/features/he-thong/nhan-vien/hooks/use-nhan-vien';
+import { useAuthStore } from '../../../../store/useStore';
 import type { DotKiemKe } from '../core/types';
 
 const DEFAULT_VALUES: DotKiemKeFormValues = {
@@ -26,6 +27,7 @@ const DEFAULT_VALUES: DotKiemKeFormValues = {
   id_nguoi_phu_trach: '',
   id_nhom: [],
   id_noi_luu: [],
+  id_nguoi_giu: [],
   ghi_chu: null,
 };
 
@@ -39,12 +41,14 @@ const RequiredStar = () => <span className="text-destructive ml-0.5">*</span>;
 
 const DotKiemKeForm: React.FC<Props> = ({ onClose, initialData, onSuccessAfterEdit }) => {
   const { t } = useTranslation();
+  const user = useAuthStore((s) => s.user);
   const isEdit = !!initialData;
   const createMutation = useCreateDotKiemKe(onClose);
   const updateMutation = useUpdateDotKiemKe(() => {
     onClose();
     if (initialData) onSuccessAfterEdit?.(initialData);
   });
+  const nextMaDot = useNextMaDotDotKiemKeTaiSan();
   const { data: groups = [] } = useAssetGroups();
   const { data: locations = [] } = useAssetStorageLocations();
   const { data: employees = [] } = useEmployees();
@@ -58,11 +62,12 @@ const DotKiemKeForm: React.FC<Props> = ({ onClose, initialData, onSuccessAfterEd
         id_nguoi_phu_trach: initialData.id_nguoi_phu_trach,
         id_nhom: initialData.id_nhom ?? [],
         id_noi_luu: initialData.id_noi_luu ?? [],
+        id_nguoi_giu: initialData.id_nguoi_giu ?? [],
         ghi_chu: initialData.ghi_chu ?? null,
       }
     : DEFAULT_VALUES;
 
-  const { register, handleSubmit, formState: { errors }, control } = useForm<DotKiemKeFormValues>({
+  const { register, handleSubmit, formState: { errors }, control, setValue } = useForm<DotKiemKeFormValues>({
     resolver: zodResolver(dotKiemKeSchema),
     defaultValues: defaultValuesFromData,
   });
@@ -73,6 +78,20 @@ const DotKiemKeForm: React.FC<Props> = ({ onClose, initialData, onSuccessAfterEd
     }
   }, [initialData?.id]);
 
+  useEffect(() => {
+    if (!isEdit && !nextMaDot.isSuccess) {
+      nextMaDot.mutate(undefined, {
+        onSuccess: (seq) => setValue('ma_dot', formatMaDotDotKiemKeTaiSan(seq)),
+      });
+    }
+  }, [isEdit]);
+
+  useEffect(() => {
+    if (!isEdit && user?.id) {
+      setValue('id_nguoi_phu_trach', String(user.id));
+    }
+  }, [isEdit, user?.id]);
+
   const onSubmit: SubmitHandler<DotKiemKeFormValues> = (data) => {
     const payload = {
       ma_dot: data.ma_dot.trim(),
@@ -82,6 +101,7 @@ const DotKiemKeForm: React.FC<Props> = ({ onClose, initialData, onSuccessAfterEd
       id_nguoi_phu_trach: data.id_nguoi_phu_trach,
       id_nhom: data.id_nhom ?? [],
       id_noi_luu: data.id_noi_luu ?? [],
+      id_nguoi_giu: data.id_nguoi_giu ?? [],
       ghi_chu: data.ghi_chu?.trim() || null,
     };
     if (isEdit && initialData) {
@@ -91,8 +111,21 @@ const DotKiemKeForm: React.FC<Props> = ({ onClose, initialData, onSuccessAfterEd
     }
   };
 
-  const groupOptions = groups.map((g) => ({ label: g.ten_nhom, value: g.id }));
-  const locationOptions = locations.map((l) => ({ label: l.ten_noi_luu, value: l.id }));
+  const groupOptions = groups.map((g) => {
+    const ma = g.ma ?? '';
+    const ten = g.ten ?? '';
+    const label = [ma, ten].filter(Boolean).join(' – ') || String(g.id);
+    return { label, value: g.id };
+  });
+  const locationOptions = locations.map((l) => {
+    const label = [l.ma_noi_luu, l.ten_noi_luu].filter(Boolean).join(' – ') || l.ten_noi_luu || l.id;
+    return { label, value: l.id };
+  });
+  const holderOptions = employees.map((e) => ({
+    label: e.ho_ten,
+    value: e.id,
+    subLabel: e.ma_nhan_vien,
+  }));
   const employeeOptions = employees.map((e) => ({
     label: e.ho_ten,
     value: e.id,
@@ -180,32 +213,50 @@ const DotKiemKeForm: React.FC<Props> = ({ onClose, initialData, onSuccessAfterEd
         </FormSection>
         <FormSection title={t('kiemKeTaiSan.form.phamViSection')} icon={<Layers size={14} />} variant="primary">
           <p className="text-sm text-muted-foreground mb-3">{t('kiemKeTaiSan.form.phamViHint')}</p>
-          <Controller
-            name="id_nhom"
-            control={control}
-            render={({ field }) => (
-              <MultiSelect
-                label={t('kiemKeTaiSan.form.idNhom')}
-                options={groupOptions}
-                value={field.value}
-                onChange={field.onChange}
-                placeholder={t('kiemKeTaiSan.form.idNhomPlaceholder')}
-              />
-            )}
-          />
-          <Controller
-            name="id_noi_luu"
-            control={control}
-            render={({ field }) => (
-              <MultiSelect
-                label={t('kiemKeTaiSan.form.idNoiLuu')}
-                options={locationOptions}
-                value={field.value}
-                onChange={field.onChange}
-                placeholder={t('kiemKeTaiSan.form.idNoiLuuPlaceholder')}
-              />
-            )}
-          />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Controller
+              name="id_nhom"
+              control={control}
+              render={({ field }) => (
+                <MultiSelect
+                  label={t('kiemKeTaiSan.form.idNhom')}
+                  options={groupOptions}
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder={t('kiemKeTaiSan.form.idNhomPlaceholder')}
+                  labelAbove
+                />
+              )}
+            />
+            <Controller
+              name="id_noi_luu"
+              control={control}
+              render={({ field }) => (
+                <MultiSelect
+                  label={t('kiemKeTaiSan.form.idNoiLuu')}
+                  options={locationOptions}
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder={t('kiemKeTaiSan.form.idNoiLuuPlaceholder')}
+                  labelAbove
+                />
+              )}
+            />
+            <Controller
+              name="id_nguoi_giu"
+              control={control}
+              render={({ field }) => (
+                <MultiSelect
+                  label={t('kiemKeTaiSan.form.idNguoiGiu')}
+                  options={holderOptions}
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder={t('kiemKeTaiSan.form.idNguoiGiuPlaceholder')}
+                  labelAbove
+                />
+              )}
+            />
+          </div>
         </FormSection>
       </form>
     </GenericDrawer>

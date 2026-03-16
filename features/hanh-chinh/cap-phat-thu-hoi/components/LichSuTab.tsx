@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import CapPhatThuHoiToolbar from './CapPhatThuHoiToolbar';
 import PhieuTable from './PhieuTable';
@@ -17,6 +18,7 @@ interface Props {
 
 const LichSuTab: React.FC<Props> = ({ defaultTaiSanId }) => {
   const { t } = useTranslation();
+  const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
   const { searchTerm, filters, sort, resetState, selectedIds, clearSelection, pagination } = useCapPhatThuHoiStore();
   const { data: list = [], isLoading } = usePhieuList({
@@ -140,15 +142,16 @@ const LichSuTab: React.FC<Props> = ({ defaultTaiSanId }) => {
           items={list}
           onAdd={handleAdd}
           onDeleteMany={handleDeleteMany}
-          showAdd
+          showAdd={canCreate}
+          canDelete={canDelete}
         />
         <div className="flex-1 min-h-0 overflow-auto">
           <PhieuTable
             data={sortedList}
             isLoading={isLoading}
             onView={handleView}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
+            onEdit={canUpdate ? handleEdit : undefined}
+            onDelete={canDelete ? handleDelete : undefined}
           />
         </div>
       </div>
@@ -156,11 +159,11 @@ const LichSuTab: React.FC<Props> = ({ defaultTaiSanId }) => {
         <PhieuDetail
           data={detailItem}
           onClose={() => setDetailItem(null)}
-          onEdit={handleEdit}
-          onDelete={(id) => {
+          onEdit={canUpdate ? handleEdit : undefined}
+          onDelete={canDelete ? (id) => {
             setDetailItem(null);
             deleteMutation.mutate([id]);
-          }}
+          } : undefined}
         />
       )}
       {showForm && (

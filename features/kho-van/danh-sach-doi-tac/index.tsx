@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { Truck, UserCircle, FolderOpen, Tag } from 'lucide-react';
+import { useModulePermissionFromContext } from '../../../components/shared/ModulePermissionGuard';
 import TabGroup from '../../../components/ui/TabGroup';
 import DoiTacToolbar from './components/DoiTacToolbar';
 import DoiTacList from './components/DoiTacList';
@@ -29,6 +30,7 @@ type TabId = (typeof VALID_TABS)[number];
 
 const DanhSachDoiTacPage: React.FC = () => {
   const { t } = useTranslation();
+  const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
   const [searchParams, setSearchParams] = useSearchParams();
   const tabFromUrl = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState<TabId>(() => {
@@ -258,6 +260,8 @@ const DanhSachDoiTacPage: React.FC = () => {
             selectedCount={selectedIds.size}
             onAdd={handleAdd}
             onDeleteMany={handleDeleteMany}
+            canCreate={canCreate}
+            canDelete={canDelete}
           />
 
           <div className="flex-1 min-h-0 flex flex-col px-4 pb-4 pt-1">
@@ -272,8 +276,8 @@ const DanhSachDoiTacPage: React.FC = () => {
             pageSize={pagination.pageSize}
             onPageChange={setPage}
             onPageSizeChange={setPageSize}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
+            onEdit={canUpdate ? handleEdit : undefined}
+            onDelete={canDelete ? handleDelete : undefined}
             onView={handleView}
           />
         </div>
@@ -334,14 +338,14 @@ const DanhSachDoiTacPage: React.FC = () => {
             phieuKhoList={phieuKhoList}
             phieuKhoLoading={phieuKhoLoading}
             onClose={() => setViewingItem(null)}
-            onEdit={(item) => {
+            onEdit={canUpdate ? (item) => {
               setViewingItem(null);
               handleEdit(item);
-            }}
-            onDelete={(id) => {
+            } : undefined}
+            onDelete={canDelete ? (id) => {
               setViewingItem(null);
               handleDelete(id);
-            }}
+            } : undefined}
             onViewPhieu={handleViewPhieu}
             onEditPhieu={handleEditPhieu}
             onDeletePhieu={handleDeletePhieu}

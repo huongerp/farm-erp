@@ -18,6 +18,8 @@ interface Props {
   selectedCount: number;
   onAdd: () => void;
   onDeleteMany: () => void;
+  canCreate?: boolean;
+  canDelete?: boolean;
 }
 
 const ThanhToanDoiTacToolbar: React.FC<Props> = ({
@@ -28,6 +30,8 @@ const ThanhToanDoiTacToolbar: React.FC<Props> = ({
   selectedCount,
   onAdd,
   onDeleteMany,
+  canCreate = true,
+  canDelete = true,
 }) => {
   const { t } = useTranslation();
   const {
@@ -147,7 +151,7 @@ const ThanhToanDoiTacToolbar: React.FC<Props> = ({
     </>
   );
 
-  const renderActions = (
+  const renderActions = canCreate ? (
     <Button
       onClick={onAdd}
       size="sm"
@@ -156,19 +160,19 @@ const ThanhToanDoiTacToolbar: React.FC<Props> = ({
       <Plus className="w-5 h-5 sm:w-4 sm:h-4 sm:mr-2" />
       <span className="hidden sm:inline">{t('common.addNew')}</span>
     </Button>
-  );
+  ) : null;
 
   return (
     <GenericToolbar
       selectedCount={selectedCount}
-      onDeleteMany={onDeleteMany}
+      onDeleteMany={canDelete ? onDeleteMany : undefined}
       searchTerm={searchTerm}
       onSearchChange={setSearchTerm}
       onClearSelection={clearSelection}
       actions={renderActions}
       filters={renderFilters}
       filterGroups={filterGroups}
-      onAdd={onAdd}
+      onAdd={canCreate ? onAdd : undefined}
       showBack
       searchPlaceholder={t('thanhToanDoiTac.searchPlaceholder')}
       activeFilterCount={activeFilterCount}

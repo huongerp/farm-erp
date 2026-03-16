@@ -7,7 +7,6 @@ import {
   Settings,
   PanelLeftClose, PanelLeft, ChevronDown
 } from 'lucide-react';
-import { NotificationBell } from '../notification';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore, useUIStore } from '../../store/useStore';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -311,10 +310,9 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
             </div>
           </div>
 
-          {/* Right: Clock + Notification + User */}
+          {/* Right: Clock + User */}
           <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
             <LiveClock />
-            <NotificationBell />
 
             {/* User Profile Dropdown */}
             <div className="relative" ref={userMenuRef}>
@@ -390,7 +388,7 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
         </div>
       </main>
 
-      {/* Bottom nav: Back | Trang chủ | Notification (chỉ mobile) */}
+      {/* Bottom nav: Back | Trang chủ (chỉ mobile) */}
       <MobileBottomNav />
 
       {/* Change Password Modal */}

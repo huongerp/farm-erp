@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
+import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import NoiLuuToolbar from './noi-luu-toolbar';
 import NoiLuuTable from './noi-luu-table';
 import NoiLuuForm from './noi-luu-form';
@@ -21,6 +22,7 @@ import { AssetStorageLocation } from '../core/types';
 
 const NoiLuuTab: React.FC = () => {
   const { t } = useTranslation();
+  const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
   const {
     searchTerm,
@@ -185,13 +187,16 @@ const NoiLuuTab: React.FC = () => {
         }}
         onDeleteMany={handleDeleteMany}
         onStatusChangeMany={handleStatusChangeMany}
+        canCreate={canCreate}
+        canUpdate={canUpdate}
+        canDelete={canDelete}
       />
       <div className="flex-1 min-h-0">
         <NoiLuuTable
           data={sortedList}
           isLoading={isLoading}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
+          onEdit={canUpdate ? handleEdit : undefined}
+          onDelete={canDelete ? handleDelete : undefined}
           onView={handleView}
         />
       </div>
@@ -205,11 +210,11 @@ const NoiLuuTab: React.FC = () => {
           <NoiLuuDetail
             data={detailItem}
             onClose={() => setDetailItem(null)}
-            onEdit={(item) => handleEdit(item)}
-            onDelete={(id) => {
+            onEdit={canUpdate ? (item) => handleEdit(item) : undefined}
+            onDelete={canDelete ? (id) => {
               setDetailItem(null);
               handleDelete(id);
-            }}
+            } : undefined}
           />
         )}
       </AnimatePresence>

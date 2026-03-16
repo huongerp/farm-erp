@@ -1,13 +1,15 @@
 /**
- * Popup chọn phạm vi (chi nhánh, vị trí, người giữ) trước khi tạo danh sách kiểm kê.
+ * Popup chọn phạm vi (chi nhánh, nơi lưu, người giữ) trước khi tạo danh sách kiểm kê.
+ * Chỉ lọc thêm trong phạm vi đợt; để trống = lấy tất cả theo phạm vi đợt.
  */
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { List, X } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import MultiSelect from '../../../../components/ui/MultiSelect';
 import { cn } from '../../../../lib/utils';
+import { TRANG_THAI, TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
 import { useAssetStorageLocations } from '../../thiet-lap-tai-san/hooks/use-noi-luu';
 import { useEmployees } from '@/features/he-thong/nhan-vien/hooks/use-nhan-vien';
@@ -35,17 +37,34 @@ const TaoDanhSachKiemKeDialog: React.FC<Props> = ({
   const { data: locations = [] } = useAssetStorageLocations();
   const { data: employees = [] } = useEmployees();
 
-  const branchOptions = branches
-    .filter((b) => b.trang_thai === 1)
-    .map((b) => ({ label: b.ten_chi_nhanh, value: b.id, subLabel: b.ma_chi_nhanh }));
-  const locationOptions = locations
-    .filter((l) => l.trang_thai === 1)
-    .map((l) => ({ label: l.ten_noi_luu, value: l.id, subLabel: l.ten_chi_nhanh }));
-  const employeeOptions = employees.map((e) => ({
-    label: e.ho_ten,
-    value: e.id,
-    subLabel: e.ma_nhan_vien,
-  }));
+  const branchOptions = useMemo(
+    () =>
+      branches
+        .filter((b) => b.trang_thai === TRANG_THAI.DANG_DUNG)
+        .map((b) => {
+          const label = [b.ma_chi_nhanh, b.ten_chi_nhanh].filter(Boolean).join(' – ') || b.id;
+          return { label, value: b.id };
+        }),
+    [branches]
+  );
+  const locationOptions = useMemo(
+    () =>
+      locations
+        .filter((l) => l.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG)
+        .map((l) => {
+          const label = [l.ma_noi_luu, l.ten_noi_luu].filter(Boolean).join(' – ') || l.id;
+          return { label, value: l.id };
+        }),
+    [locations]
+  );
+  const employeeOptions = useMemo(
+    () =>
+      employees.map((e) => {
+        const label = [e.ma_nhan_vien, e.ho_ten].filter(Boolean).join(' – ') || e.id;
+        return { label, value: e.id };
+      }),
+    [employees]
+  );
 
   const handleConfirm = useCallback(() => {
     const hasAny =
@@ -121,6 +140,7 @@ const TaoDanhSachKiemKeDialog: React.FC<Props> = ({
               value={id_chi_nhanh}
               onChange={setIdChiNhanh}
               placeholder={t('kiemKeTaiSan.taoDanhSachDialog.chiNhanhPlaceholder')}
+              labelAbove
             />
             <MultiSelect
               label={t('kiemKeTaiSan.taoDanhSachDialog.viTri')}
@@ -128,6 +148,7 @@ const TaoDanhSachKiemKeDialog: React.FC<Props> = ({
               value={id_noi_luu}
               onChange={setIdNoiLuu}
               placeholder={t('kiemKeTaiSan.taoDanhSachDialog.viTriPlaceholder')}
+              labelAbove
             />
             <MultiSelect
               label={t('kiemKeTaiSan.taoDanhSachDialog.nguoiGiu')}
@@ -135,6 +156,7 @@ const TaoDanhSachKiemKeDialog: React.FC<Props> = ({
               value={id_nguoi_giu}
               onChange={setIdNguoiGiu}
               placeholder={t('kiemKeTaiSan.taoDanhSachDialog.nguoiGiuPlaceholder')}
+              labelAbove
             />
           </div>
 

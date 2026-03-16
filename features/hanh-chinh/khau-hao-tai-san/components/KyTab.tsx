@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import KhauHaoTaiSanToolbar from './KhauHaoTaiSanToolbar';
 import KyKhauHaoTable from './KyKhauHaoTable';
@@ -13,6 +14,7 @@ import type { KyKhauHao } from '../core/types';
 
 const KyTab: React.FC = () => {
   const { t } = useTranslation();
+  const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
   const { searchTerm, filters, sort, resetState } = useKhauHaoTaiSanStore();
   const { data: list = [], isLoading } = useKyKhauHaoList();
@@ -130,14 +132,14 @@ const KyTab: React.FC = () => {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 gap-3">
-      <KhauHaoTaiSanToolbar items={list} onAdd={handleAdd} showAdd />
+      <KhauHaoTaiSanToolbar items={list} onAdd={handleAdd} showAdd={canCreate} />
       <div className="flex-1 min-h-0 rounded-xl border border-border bg-card shadow-sm overflow-hidden">
         <KyKhauHaoTable
           data={sortedList}
           isLoading={isLoading}
           onView={handleView}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
+          onEdit={canUpdate ? handleEdit : undefined}
+          onDelete={canDelete ? handleDelete : undefined}
           showActions
         />
       </div>
@@ -153,7 +155,7 @@ const KyTab: React.FC = () => {
           chiTiet={chiTiet}
           chiTietLoading={chiTietLoading}
           onClose={() => setDetailItem(null)}
-          onEdit={handleEdit}
+          onEdit={canUpdate ? handleEdit : undefined}
           onTinhToan={handleTinhToan}
           onChotKy={handleChotKy}
           tinhToanLoading={tinhToanMutation.isPending}

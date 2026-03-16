@@ -1,6 +1,7 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
+import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import { usePhieuDeXuatVatTuList, usePhieuDeXuatVatTuById, useDeletePhieuDeXuatVatTu, useDeletePhieuDeXuatVatTuMany, useUpdatePhieuDeXuatVatTu } from '../hooks/use-phieu-de-xuat-vat-tu';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import { useEmployees } from '../../../he-thong/nhan-vien/hooks/use-nhan-vien';
@@ -14,6 +15,8 @@ import type { PhieuDeXuatVatTu } from '../core/types';
 import type { PhieuDeXuatVatTuFormValues } from '../core/schema';
 import { TRANG_THAI_CHO_DUYET, TRANG_THAI_DA_DUYET, trangThaiToFilterKey } from '../core/constants';
 import type { PhieuDeXuatVatTuFilters } from '../store/usePhieuDeXuatVatTuStore';
+import type { HangHoa } from '../../danh-sach-hang-hoa/core/types';
+import DanhSachHangHoaForm from '../../danh-sach-hang-hoa/components/DanhSachHangHoaForm';
 
 function phieuToFormValues(p: PhieuDeXuatVatTu, trangThai: PhieuDeXuatVatTu['trang_thai'], overrideGhiChu?: string): PhieuDeXuatVatTuFormValues {
   return {
@@ -40,6 +43,7 @@ import PhieuDeXuatVatTuDetail, { type PhieuDeXuatVatTuApprovePayload } from './P
 
 const DanhSachTab: React.FC = () => {
   const { t } = useTranslation();
+  const { canCreate, canUpdate, canDelete, canApprove } = useModulePermissionFromContext();
   const user = useAuthStore((s) => s.user);
   const confirm = useConfirmStore((s) => s.confirm);
   const {
@@ -58,8 +62,11 @@ const DanhSachTab: React.FC = () => {
 
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<PhieuDeXuatVatTu | null>(null);
+  const [isCopyMode, setIsCopyMode] = useState(false);
   const [viewingItem, setViewingItem] = useState<PhieuDeXuatVatTu | null>(null);
   const [openedFormFromDetailId, setOpenedFormFromDetailId] = useState<string | null>(null);
+  const [showAddHangHoa, setShowAddHangHoa] = useState(false);
+  const addHangHoaResolveRef = useRef<(h: HangHoa | null) => void>(null);
 
   const { data: allList = [], isLoading } = usePhieuDeXuatVatTuList();
   const { data: khoList = [] } = useKhoList();
@@ -123,6 +130,24 @@ const DanhSachTab: React.FC = () => {
 
   const handleEdit = (item: PhieuDeXuatVatTu) => {
     setEditingItem(item);
+    setIsCopyMode(false);
+    setViewingItem(null);
+    setShowForm(true);
+  };
+
+  const handleCopy = (item: PhieuDeXuatVatTu) => {
+    const copy: PhieuDeXuatVatTu = {
+      ...item,
+      id: '',
+      so_phieu: '',
+      trang_thai: TRANG_THAI_CHO_DUYET,
+      id_nguoi_duyet: null,
+      ten_nguoi_duyet: undefined,
+      ngay: new Date().toISOString().slice(0, 10),
+      ngay_can: '',
+    };
+    setEditingItem(copy);
+    setIsCopyMode(true);
     setViewingItem(null);
     setShowForm(true);
   };
@@ -133,6 +158,7 @@ const DanhSachTab: React.FC = () => {
       setOpenedFormFromDetailId(null);
     }
     setEditingItem(null);
+    setIsCopyMode(false);
   };
 
   const handleApprove = useCallback(
@@ -193,6 +219,8 @@ const DanhSachTab: React.FC = () => {
           setShowForm(true);
         }}
         onDeleteMany={handleDeleteMany}
+        canCreate={canCreate}
+        canDelete={canDelete}
       />
       <div className="flex-1 min-h-0 flex flex-col px-4 pb-4 pt-1">
         <PhieuDeXuatVatTuList
@@ -206,8 +234,8 @@ const DanhSachTab: React.FC = () => {
           pageSize={pagination.pageSize}
           onPageChange={setPage}
           onPageSizeChange={setPageSize}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
+          onEdit={canUpdate ? handleEdit : undefined}
+          onDelete={canDelete ? handleDelete : undefined}
           onView={setViewingItem}
           isOverdue={isOverdue}
         />
@@ -218,9 +246,34 @@ const DanhSachTab: React.FC = () => {
           <PhieuDeXuatVatTuForm
             khoList={khoList}
             employees={employees}
-            initialData={editingPhieuFull ?? editingItem}
+            initialData={isCopyMode ? editingItem : (editingPhieuFull ?? editingItem)}
             onClose={handleCloseForm}
             canEdit
+            onRequestAddHangHoa={
+              () =>
+                new Promise<HangHoa | null>((resolve) => {
+                  addHangHoaResolveRef.current = resolve;
+                  setShowAddHangHoa(true);
+                })
+            }
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showAddHangHoa && (
+          <DanhSachHangHoaForm
+            initialData={null}
+            onClose={() => {
+              setShowAddHangHoa(false);
+              addHangHoaResolveRef.current?.(null);
+              addHangHoaResolveRef.current = null;
+            }}
+            onSuccessCreate={(hangHoa) => {
+              addHangHoaResolveRef.current?.(hangHoa);
+              setShowAddHangHoa(false);
+              addHangHoaResolveRef.current = null;
+            }}
           />
         )}
       </AnimatePresence>
@@ -230,16 +283,17 @@ const DanhSachTab: React.FC = () => {
           <PhieuDeXuatVatTuDetail
             data={viewingPhieuFull ?? viewingItem}
             onClose={() => setViewingItem(null)}
-            onEdit={(item) => {
+            onCopy={canCreate ? handleCopy : undefined}
+            onEdit={canUpdate ? (item) => {
               setOpenedFormFromDetailId(item.id);
               setViewingItem(null);
               setEditingItem(item);
               setShowForm(true);
-            }}
-            onDelete={handleDelete}
-            onApprove={handleApprove}
-            canEdit
-            canDelete
+            } : undefined}
+            onDelete={canDelete ? handleDelete : undefined}
+            onApprove={canApprove ? handleApprove : undefined}
+            canEdit={canUpdate}
+            canDelete={canDelete}
             showOverdueBadge={!!(config?.bat_canh_bao_qua_han && viewingItem?.trang_thai === TRANG_THAI_CHO_DUYET && (Math.floor((Date.now() - new Date((viewingPhieuFull ?? viewingItem).tg_tao).getTime()) / 86400000) > (config.thoi_han_duyet_ngay ?? 0)))}
           />
         )}

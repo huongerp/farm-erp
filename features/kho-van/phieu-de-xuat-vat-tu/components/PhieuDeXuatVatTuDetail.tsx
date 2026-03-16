@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Edit, Trash2, FileText, Calendar, Warehouse, User, UserCheck, Package, CheckCircle, Printer, X } from 'lucide-react';
+import { Edit, Trash2, FileText, Calendar, Warehouse, User, UserCheck, Package, CheckCircle, Printer, X, Copy } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Textarea from '../../../../components/ui/Textarea';
 import type { PhieuDeXuatVatTu } from '../core/types';
@@ -27,6 +27,7 @@ interface Props {
   onClose: () => void;
   onEdit: (item: PhieuDeXuatVatTu) => void;
   onDelete: (id: string) => void;
+  onCopy?: (item: PhieuDeXuatVatTu) => void;
   onApprove?: (item: PhieuDeXuatVatTu, payload: PhieuDeXuatVatTuApprovePayload) => void;
   onPrint?: (item: PhieuDeXuatVatTu) => void;
   canEdit?: boolean;
@@ -39,6 +40,7 @@ const PhieuDeXuatVatTuDetail: React.FC<Props> = ({
   onClose,
   onEdit,
   onDelete,
+  onCopy,
   onApprove,
   onPrint,
   canEdit = true,
@@ -68,6 +70,15 @@ const PhieuDeXuatVatTuDetail: React.FC<Props> = ({
             },
           ]
         : []),
+      ...(onCopy
+        ? [
+            {
+              label: t('phieuDeXuatVatTu.detail.toolbar.copy'),
+              icon: <Copy size={16} />,
+              onClick: () => { onCopy(data); onClose(); },
+            },
+          ]
+        : []),
       {
         label: t('phieuDeXuatVatTu.detail.toolbar.print'),
         icon: <Printer size={16} />,
@@ -78,7 +89,7 @@ const PhieuDeXuatVatTuDetail: React.FC<Props> = ({
         variant: 'primary' as const,
       },
     ],
-    [canApprove, data, onApprove, onPrint, t]
+    [canApprove, data, onApprove, onCopy, onClose, onPrint, t]
   );
 
   const statusLabel =

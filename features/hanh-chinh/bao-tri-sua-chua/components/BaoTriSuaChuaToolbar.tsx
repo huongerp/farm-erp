@@ -17,6 +17,7 @@ interface Props {
   onAdd: () => void;
   onDeleteMany: (ids: string[]) => void;
   showAdd?: boolean;
+  canDelete?: boolean;
 }
 
 const BaoTriSuaChuaToolbar: React.FC<Props> = ({
@@ -24,6 +25,7 @@ const BaoTriSuaChuaToolbar: React.FC<Props> = ({
   onAdd,
   onDeleteMany,
   showAdd = true,
+  canDelete = true,
 }) => {
   const { t } = useTranslation();
   const {
@@ -153,7 +155,7 @@ const BaoTriSuaChuaToolbar: React.FC<Props> = ({
       searchPlaceholder={t('baoTriSuaChua.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
-      onDeleteMany={selectedCount > 0 ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
+      onDeleteMany={canDelete && selectedCount > 0 ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
       columns={columns}
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}

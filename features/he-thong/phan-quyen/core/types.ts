@@ -1,7 +1,7 @@
 import type { TrangThaiHoatDong } from '../../../../lib/constants';
 
-/** 6 quyền: Xem, Thêm, Sửa, Xoá, Quản trị, Tất cả */
-export type ActionType = 'view' | 'create' | 'update' | 'delete' | 'admin' | 'all';
+/** 7 quyền: Xem, Thêm, Sửa, Xoá, Phê duyệt (một số module), Quản trị, Tất cả */
+export type ActionType = 'view' | 'create' | 'update' | 'delete' | 'approve' | 'admin' | 'all';
 
 export interface ModulePermission {
   module_id: string;

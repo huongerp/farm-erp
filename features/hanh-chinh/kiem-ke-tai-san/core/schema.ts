@@ -9,6 +9,7 @@ export const dotKiemKeSchema = z.object({
   id_nguoi_phu_trach: z.string().min(1, { message: i18n.t('kiemKeTaiSan.validation.nguoiPhuTrachRequired') }),
   id_nhom: z.array(z.string()),
   id_noi_luu: z.array(z.string()),
+  id_nguoi_giu: z.array(z.string()),
   ghi_chu: z.string().nullable().optional(),
 }).refine(
   (data) => !data.ngay_bat_dau || !data.ngay_ket_thuc || data.ngay_bat_dau <= data.ngay_ket_thuc,

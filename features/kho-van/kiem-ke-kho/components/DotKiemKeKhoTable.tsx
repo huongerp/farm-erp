@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Edit, Trash2 } from 'lucide-react';
 import GenericTable from '../../../../components/shared/GenericTable';
 import Tooltip from '../../../../components/ui/Tooltip';
-import { formatDateTimeShort, formatDate } from '../../../../lib/utils';
+import { formatDateTimeShort, formatDate, cn } from '../../../../lib/utils';
 import type { DotKiemKeKho } from '../core/types';
 import { getTrangThaiDotLabel } from '../core/constants';
 import { useKiemKeKhoStore } from '../store/useKiemKeKhoStore';
@@ -58,6 +58,27 @@ const DotKiemKeKhoTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, o
         );
       case 'trang_thai':
         return renderTrangThaiBadge(item.trang_thai);
+      case 'so_kho':
+        return (
+          <span className="text-sm tabular-nums font-medium">
+            {item.so_kho != null ? item.so_kho : (item.id_kho?.length ?? 0)}
+          </span>
+        );
+      case 'so_hang_hoa':
+        return (
+          <span className="text-sm tabular-nums">
+            {item.so_hang_hoa != null ? item.so_hang_hoa : '—'}
+          </span>
+        );
+      case 'so_lech':
+        return (
+          <span className={cn(
+            'text-sm tabular-nums font-medium',
+            (item.so_lech ?? 0) > 0 && 'text-amber-600 dark:text-amber-400'
+          )}>
+            {item.so_lech != null ? item.so_lech : '—'}
+          </span>
+        );
       case 'ten_nguoi_phu_trach':
         return (
           <span className="text-sm text-foreground">
@@ -80,7 +101,7 @@ const DotKiemKeKhoTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, o
         if (!showActions) return null;
         return (
           <div className="flex items-center justify-center gap-1">
-            {onEdit && item.trang_thai === 'draft' && (
+            {onEdit && item.trang_thai !== 'hoan_thanh' && (
               <Tooltip content={t('common.edit')} placement="left">
                 <button
                   type="button"
@@ -95,7 +116,7 @@ const DotKiemKeKhoTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, o
                 </button>
               </Tooltip>
             )}
-            {onDelete && item.trang_thai === 'draft' && (
+            {onDelete && item.trang_thai !== 'hoan_thanh' && (
               <Tooltip content={t('common.delete')} placement="left">
                 <button
                   type="button"
@@ -131,6 +152,13 @@ const DotKiemKeKhoTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, o
       <p className="text-xs text-muted-foreground">
         {formatDate(item.ngay_bat_dau)} → {formatDate(item.ngay_ket_thuc)} · {item.ten_nguoi_phu_trach || '—'}
       </p>
+      <div className="flex gap-3 mt-1.5 text-xs text-muted-foreground">
+        <span>{t('kiemKeKho.store.soKhoCol')}: {item.so_kho ?? item.id_kho?.length ?? 0}</span>
+        <span>{t('kiemKeKho.store.soHangHoaCol')}: {item.so_hang_hoa ?? '—'}</span>
+        {(item.so_lech ?? 0) > 0 && (
+          <span className="text-amber-600 dark:text-amber-400">{t('kiemKeKho.store.soLechCol')}: {item.so_lech}</span>
+        )}
+      </div>
     </div>
   );
 

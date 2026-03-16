@@ -32,6 +32,8 @@ export interface DotKiemKe {
   id_nhom: string[];
   /** Phạm vi: id nơi lưu (rỗng = tất cả) */
   id_noi_luu: string[];
+  /** Phạm vi: id người giữ (rỗng = tất cả) */
+  id_nguoi_giu: string[];
   ghi_chu?: string | null;
   trang_thai_active: TrangThaiActive;
   tg_tao: string;
@@ -78,6 +80,7 @@ export interface DotKiemKeCreate {
   id_nguoi_phu_trach: string;
   id_nhom: string[];
   id_noi_luu: string[];
+  id_nguoi_giu: string[];
   ghi_chu?: string | null;
 }
 

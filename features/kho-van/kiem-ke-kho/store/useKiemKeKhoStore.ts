@@ -15,9 +15,12 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'ngay_bat_dau', label: i18n.t('kiemKeKho.store.ngayBatDauCol'), visible: true, minWidth: 110, order: 2 },
   { id: 'ngay_ket_thuc', label: i18n.t('kiemKeKho.store.ngayKetThucCol'), visible: true, minWidth: 110, order: 3 },
   { id: 'trang_thai', label: i18n.t('kiemKeKho.store.trangThaiCol'), visible: true, minWidth: 120, order: 4 },
-  { id: 'ten_nguoi_phu_trach', label: i18n.t('kiemKeKho.store.nguoiPhuTrachCol'), visible: true, minWidth: 140, order: 5 },
-  { id: 'ghi_chu', label: i18n.t('kiemKeKho.store.ghiChuCol'), visible: false, minWidth: 160, order: 6 },
-  { id: 'tg_cap_nhat', label: i18n.t('kiemKeKho.store.updatedCol'), visible: true, minWidth: 130, order: 7 },
+  { id: 'so_kho', label: i18n.t('kiemKeKho.store.soKhoCol'), visible: true, minWidth: 80, order: 5 },
+  { id: 'so_hang_hoa', label: i18n.t('kiemKeKho.store.soHangHoaCol'), visible: true, minWidth: 100, order: 6 },
+  { id: 'so_lech', label: i18n.t('kiemKeKho.store.soLechCol'), visible: true, minWidth: 80, order: 7 },
+  { id: 'ten_nguoi_phu_trach', label: i18n.t('kiemKeKho.store.nguoiPhuTrachCol'), visible: true, minWidth: 140, order: 8 },
+  { id: 'ghi_chu', label: i18n.t('kiemKeKho.store.ghiChuCol'), visible: false, minWidth: 160, order: 9 },
+  { id: 'tg_cap_nhat', label: i18n.t('kiemKeKho.store.updatedCol'), visible: true, minWidth: 130, order: 10 },
 ];
 
 const initialFilters: KiemKeKhoFilters = {

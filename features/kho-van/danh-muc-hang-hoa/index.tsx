@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
+import { useModulePermissionFromContext } from '../../../components/shared/ModulePermissionGuard';
 import DanhMucHangHoaToolbar from './components/DanhMucHangHoaToolbar';
 import DanhMucHangHoaList from './components/DanhMucHangHoaList';
 import DanhMucHangHoaForm from './components/DanhMucHangHoaForm';
@@ -14,6 +15,7 @@ import type { DanhMucHangHoa } from './core/types';
 
 const DanhMucHangHoaPage: React.FC = () => {
   const { t } = useTranslation();
+  const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
   const {
     searchTerm,
@@ -146,6 +148,8 @@ const DanhMucHangHoaPage: React.FC = () => {
           selectedCount={selectedIds.size}
           onAdd={handleAdd}
           onDeleteMany={handleDeleteMany}
+          canCreate={canCreate}
+          canDelete={canDelete}
         />
 
         <div className="flex-1 min-h-0 flex flex-col px-4 pb-4 pt-1">
@@ -160,9 +164,9 @@ const DanhMucHangHoaPage: React.FC = () => {
             pageSize={pageSize}
             onPageChange={setPage}
             onPageSizeChange={setPageSize}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onAddChild={handleAddChild}
+            onEdit={canUpdate ? handleEdit : undefined}
+            onDelete={canDelete ? handleDelete : undefined}
+            onAddChild={canCreate ? handleAddChild : undefined}
             onView={handleView}
           />
         </div>
@@ -186,15 +190,9 @@ const DanhMucHangHoaPage: React.FC = () => {
             data={viewingItem}
             allDanhMuc={list}
             onClose={() => setViewingItem(null)}
-            onEdit={(item) => {
-              setViewingItem(null);
-              handleEdit(item);
-            }}
-            onDelete={(id) => {
-              setViewingItem(null);
-              handleDelete(id);
-            }}
-            onAddChild={handleAddChild}
+            onEdit={canUpdate ? (item) => { setViewingItem(null); handleEdit(item); } : undefined}
+            onDelete={canDelete ? (id) => { setViewingItem(null); handleDelete(id); } : undefined}
+            onAddChild={canCreate ? handleAddChild : undefined}
           />
         )}
       </AnimatePresence>

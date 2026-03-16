@@ -17,6 +17,8 @@ import {
   deleteDotKiemKeKhoSupabase,
   changeTrangThaiDotSupabase,
   taoDanhSachKiemKeSupabase,
+  createChiTietKiemKeSupabase,
+  deleteChiTietKiemKeSupabase,
   updateChiTietKetQuaSupabase,
   dieuChinhTonTheoKetQuaSupabase,
   dieuChinhTonTheoDotSupabase,
@@ -37,10 +39,11 @@ export interface GetDotKiemKeKhoListParams {
   id_kho?: string[];
 }
 
-/** Bộ lọc phạm vi khi tạo danh sách kiểm kê (hàng hóa, danh mục — tùy chọn) */
+/** Bộ lọc phạm vi khi tạo danh sách kiểm kê (kho, danh mục, hàng hóa — tùy chọn) */
 export interface TaoDanhSachKiemKeKhoFilters {
-  id_hang_hoa?: string[];
+  id_kho?: string[];
   id_danh_muc?: string[];
+  id_hang_hoa?: string[];
 }
 
 function toSupabaseParams(p: GetDotKiemKeKhoListParams): GetDotKiemKeKhoListParamsSupabase {
@@ -71,11 +74,13 @@ export async function taoDanhSachKiemKe(
   filters?: TaoDanhSachKiemKeKhoFilters
 ): Promise<ChiTietKiemKeKho[]> {
   const supabaseFilters: TaoDanhSachKiemKeKhoFiltersSupabase | undefined = filters
-    ? { id_hang_hoa: filters.id_hang_hoa, id_danh_muc: filters.id_danh_muc }
+    ? { id_kho: filters.id_kho, id_danh_muc: filters.id_danh_muc, id_hang_hoa: filters.id_hang_hoa }
     : undefined;
   return taoDanhSachKiemKeSupabase(id_dot_kiem_ke_kho, supabaseFilters);
 }
 
+export const createChiTietKiemKe = createChiTietKiemKeSupabase;
+export const deleteChiTietKiemKe = deleteChiTietKiemKeSupabase;
 export const updateChiTietKetQua = updateChiTietKetQuaSupabase;
 export const dieuChinhTonTheoKetQua = dieuChinhTonTheoKetQuaSupabase;
 export const dieuChinhTonTheoDot = dieuChinhTonTheoDotSupabase;

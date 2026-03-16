@@ -25,6 +25,12 @@ export interface DotKiemKeKho {
   trang_thai_active: 0 | 1;
   tg_tao: string;
   tg_cap_nhat: string;
+  /** Số kho trong đợt ( = id_kho.length, có thể từ list) */
+  so_kho?: number;
+  /** Tổng số dòng hàng hóa trong danh sách kiểm kê */
+  so_hang_hoa?: number;
+  /** Số dòng lệch (thieu + thua) */
+  so_lech?: number;
 }
 
 /** Chi tiết kiểm kê — một dòng = một (kho, hàng hóa) trong đợt */

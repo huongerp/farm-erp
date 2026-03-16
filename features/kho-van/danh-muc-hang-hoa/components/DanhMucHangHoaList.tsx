@@ -30,8 +30,8 @@ interface Props {
   pageSize: number;
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
-  onEdit: (item: DanhMucHangHoa) => void;
-  onDelete: (id: string) => void;
+  onEdit?: (item: DanhMucHangHoa) => void;
+  onDelete?: (id: string) => void;
   onAddChild?: (parent: DanhMucHangHoa) => void;
   onView?: (item: DanhMucHangHoa) => void;
 }
@@ -310,24 +310,28 @@ const DanhMucHangHoaList: React.FC<Props> = ({
                               </button>
                             </Tooltip>
                           )}
-                          <Tooltip content={t('common.edit')} placement="top">
-                            <button
-                              type="button"
-                              onClick={() => onEdit(item)}
-                              className="p-1.5 text-primary hover:bg-primary/10 rounded-md transition-all active:scale-95 shrink-0"
-                            >
-                              <Edit size={15} />
-                            </button>
-                          </Tooltip>
-                          <Tooltip content={t('common.delete')} placement="top">
-                            <button
-                              type="button"
-                              onClick={() => onDelete(id)}
-                              className="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-md transition-all active:scale-95 shrink-0"
-                            >
-                              <Trash2 size={15} />
-                            </button>
-                          </Tooltip>
+                          {onEdit && (
+                            <Tooltip content={t('common.edit')} placement="top">
+                              <button
+                                type="button"
+                                onClick={() => onEdit(item)}
+                                className="p-1.5 text-primary hover:bg-primary/10 rounded-md transition-all active:scale-95 shrink-0"
+                              >
+                                <Edit size={15} />
+                              </button>
+                            </Tooltip>
+                          )}
+                          {onDelete && (
+                            <Tooltip content={t('common.delete')} placement="top">
+                              <button
+                                type="button"
+                                onClick={() => onDelete(id)}
+                                className="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-md transition-all active:scale-95 shrink-0"
+                              >
+                                <Trash2 size={15} />
+                              </button>
+                            </Tooltip>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -378,20 +382,24 @@ const DanhMucHangHoaList: React.FC<Props> = ({
                         {t('danhMucHangHoa.detail.addChild')}
                       </button>
                     )}
-                    <button
-                      type="button"
-                      onClick={() => onEdit(item)}
-                      className="p-2 text-primary hover:bg-primary/10 rounded-lg"
-                    >
-                      <Edit size={14} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onDelete(item.id)}
-                      className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg"
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                    {onEdit && (
+                      <button
+                        type="button"
+                        onClick={() => onEdit(item)}
+                        className="p-2 text-primary hover:bg-primary/10 rounded-lg"
+                      >
+                        <Edit size={14} />
+                      </button>
+                    )}
+                    {onDelete && (
+                      <button
+                        type="button"
+                        onClick={() => onDelete(item.id)}
+                        className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
                   </div>
                 </div>
               );

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
 import { Package, ClipboardList } from 'lucide-react';
 import TabGroup from '../../../components/ui/TabGroup';
+import { useModulePermissionFromContext } from '../../../components/shared/ModulePermissionGuard';
 import DanhSachHangHoaToolbar from './components/DanhSachHangHoaToolbar';
 import DanhSachHangHoaList from './components/DanhSachHangHoaList';
 import DanhSachHangHoaForm from './components/DanhSachHangHoaForm';
@@ -25,6 +26,7 @@ import type { DinhMucSummaryMap } from './components/DanhSachHangHoaList';
 
 const DanhSachHangHoaPage: React.FC = () => {
   const { t } = useTranslation();
+  const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
   const {
     searchTerm,
@@ -220,6 +222,9 @@ const DanhSachHangHoaPage: React.FC = () => {
               onAdd={handleAdd}
               onDeleteMany={handleDeleteMany}
               onStatusChangeMany={handleStatusChangeMany}
+              canCreate={canCreate}
+              canUpdate={canUpdate}
+              canDelete={canDelete}
             />
             <div className="flex-1 min-h-0 flex flex-col">
               <DanhSachHangHoaList
@@ -233,8 +238,8 @@ const DanhSachHangHoaPage: React.FC = () => {
                 pageSize={pagination.pageSize}
                 onPageChange={setPage}
                 onPageSizeChange={setPageSize}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
+                onEdit={canUpdate ? handleEdit : undefined}
+                onDelete={canDelete ? handleDelete : undefined}
                 onView={handleView}
                 dinhMucSummaryMap={dinhMucSummaryMap}
               />
@@ -264,14 +269,8 @@ const DanhSachHangHoaPage: React.FC = () => {
           <DanhSachHangHoaDetail
             data={viewingItem}
             onClose={() => setViewingItem(null)}
-            onEdit={(item) => {
-              setViewingItem(null);
-              handleEdit(item);
-            }}
-            onDelete={(id) => {
-              setViewingItem(null);
-              handleDelete(id);
-            }}
+            onEdit={canUpdate ? (item) => { setViewingItem(null); handleEdit(item); } : undefined}
+            onDelete={canDelete ? (id) => { setViewingItem(null); handleDelete(id); } : undefined}
           />
         )}
       </AnimatePresence>

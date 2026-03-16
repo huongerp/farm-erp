@@ -19,6 +19,7 @@ interface Props {
   onAdd: () => void;
   onDeleteMany: (ids: string[]) => void;
   showAdd?: boolean;
+  canDelete?: boolean;
 }
 
 const CapPhatThuHoiToolbar: React.FC<Props> = ({
@@ -26,6 +27,7 @@ const CapPhatThuHoiToolbar: React.FC<Props> = ({
   onAdd,
   onDeleteMany,
   showAdd = true,
+  canDelete = true,
 }) => {
   const { t } = useTranslation();
   const {
@@ -177,7 +179,7 @@ const CapPhatThuHoiToolbar: React.FC<Props> = ({
       searchPlaceholder={t('capPhatThuHoi.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
-      onDeleteMany={selectedCount > 0 ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
+      onDeleteMany={canDelete && selectedCount > 0 ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
       columns={columns}
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}

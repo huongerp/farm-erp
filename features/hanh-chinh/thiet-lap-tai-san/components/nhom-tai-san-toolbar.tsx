@@ -13,9 +13,12 @@ interface Props {
   onAdd: () => void;
   onDeleteMany: (ids: string[]) => void;
   onStatusChangeMany: (ids: string[], status: import('../../../../lib/constants').TrangThaiHoatDong) => void;
+  canCreate?: boolean;
+  canUpdate?: boolean;
+  canDelete?: boolean;
 }
 
-const NhomTaiSanToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onStatusChangeMany }) => {
+const NhomTaiSanToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onStatusChangeMany, canCreate = true, canUpdate = true, canDelete = true }) => {
   const { t } = useTranslation();
   const {
     searchTerm,
@@ -53,7 +56,7 @@ const NhomTaiSanToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, o
     />
   );
 
-  const renderActions = (
+  const renderActions = canCreate ? (
     <Button
       onClick={onAdd}
       size="sm"
@@ -62,7 +65,7 @@ const NhomTaiSanToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, o
       <Plus className="w-5 h-5 sm:w-4 sm:h-4 sm:mr-2" />
       <span className="hidden sm:inline">{t('common.addNew')}</span>
     </Button>
-  );
+  ) : null;
 
   return (
     <GenericToolbar
@@ -73,12 +76,12 @@ const NhomTaiSanToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, o
       actions={renderActions}
       filters={renderFilters}
       filterGroups={[{ key: 'status', label: t('common.status'), icon: Layers, options: statusOptions, value: filters.status, onChange: (val: string[]) => setFilter('status', val) }]}
-      onAdd={onAdd}
+      onAdd={canCreate ? onAdd : undefined}
       searchPlaceholder={t('thietLapTaiSan.nhomTaiSan.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
-      onDeleteMany={() => onDeleteMany(Array.from(selectedIds))}
-      onStatusChangeMany={(numStatus) => onStatusChangeMany(Array.from(selectedIds), numStatus === 1 ? TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG : TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG)}
+      onDeleteMany={canDelete ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
+      onStatusChangeMany={canUpdate ? (numStatus) => onStatusChangeMany(Array.from(selectedIds), numStatus === 1 ? TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG : TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG) : undefined}
       columns={columns}
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}

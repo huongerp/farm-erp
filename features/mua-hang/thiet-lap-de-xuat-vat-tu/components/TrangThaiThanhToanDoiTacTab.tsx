@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
+import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import TrangThaiThanhToanDoiTacToolbar from './TrangThaiThanhToanDoiTacToolbar';
 import TrangThaiThanhToanDoiTacTable from './TrangThaiThanhToanDoiTacTable';
 import TrangThaiThanhToanDoiTacForm from './TrangThaiThanhToanDoiTacForm';
@@ -20,6 +21,7 @@ import type { TrangThaiThanhToanDoiTac } from '../core/types';
 
 const TrangThaiThanhToanDoiTacTab: React.FC = () => {
   const { t } = useTranslation();
+  const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
   const {
     searchTerm,
@@ -139,13 +141,15 @@ const TrangThaiThanhToanDoiTacTab: React.FC = () => {
         }}
         onDeleteMany={handleDeleteMany}
         onStatusChangeMany={handleStatusChangeMany}
+        canCreate={canCreate}
+        canDelete={canDelete}
       />
       <div className="flex-1 min-h-0 overflow-auto px-2 pb-2">
         <TrangThaiThanhToanDoiTacTable
           data={sortedList}
           isLoading={isLoading}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
+          onEdit={canUpdate ? handleEdit : undefined}
+          onDelete={canDelete ? handleDelete : undefined}
           onRowClick={handleView}
         />
       </div>
@@ -159,8 +163,8 @@ const TrangThaiThanhToanDoiTacTab: React.FC = () => {
           <TrangThaiThanhToanDoiTacDetail
             data={detailItem}
             onClose={() => setDetailItem(null)}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
+            onEdit={canUpdate ? handleEdit : undefined}
+            onDelete={canDelete ? handleDelete : undefined}
           />
         )}
       </AnimatePresence>

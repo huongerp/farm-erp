@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
+import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import { useThanhToanDoiTacList, useThanhToanDoiTacById, useDeleteThanhToanDoiTac, useDeleteThanhToanDoiTacMany, useUpdateThanhToanDoiTac } from '../hooks/use-thanh-toan-doi-tac';
 import { useDoiTacList } from '../../../kho-van/danh-sach-doi-tac/hooks/use-doi-tac';
 import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
@@ -36,6 +37,7 @@ function thanhToanToFormValues(item: ThanhToanDoiTac, override?: Partial<ThanhTo
 
 const DanhSachTab: React.FC = () => {
   const { t } = useTranslation();
+  const { canCreate, canUpdate, canDelete, canApprove } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
   const {
     searchTerm,
@@ -172,6 +174,8 @@ const DanhSachTab: React.FC = () => {
           setShowForm(true);
         }}
         onDeleteMany={handleDeleteMany}
+        canCreate={canCreate}
+        canDelete={canDelete}
       />
       <div className="flex-1 min-h-0 flex flex-col px-4 pb-4 pt-1">
         <ThanhToanDoiTacList
@@ -185,8 +189,8 @@ const DanhSachTab: React.FC = () => {
           pageSize={pagination.pageSize}
           onPageChange={setPage}
           onPageSizeChange={setPageSize}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
+          onEdit={canUpdate ? handleEdit : undefined}
+          onDelete={canDelete ? handleDelete : undefined}
           onView={setViewingItem}
         />
       </div>
@@ -210,13 +214,13 @@ const DanhSachTab: React.FC = () => {
           <ThanhToanDoiTacDetail
             data={viewingFull ?? viewingItem}
             onClose={() => setViewingItem(null)}
-            onEdit={(item) => {
+            onEdit={canUpdate ? (item) => {
               setViewingItem(null);
               setEditingItem(item);
               setShowForm(true);
-            }}
-            onDelete={handleDelete}
-            onChangeStatus={handleChangeStatus}
+            } : undefined}
+            onDelete={canDelete ? handleDelete : undefined}
+            onChangeStatus={canApprove ? handleChangeStatus : undefined}
             statusList={statusList}
           />
         )}

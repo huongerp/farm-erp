@@ -124,12 +124,13 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
     }
   };
 
-  const filteredOptions = options.filter((option) =>
-    option.label.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredOptions = options.filter((option) => {
+    const label = option?.label ?? option?.value ?? '';
+    return String(label).toLowerCase().includes(searchTerm.toLowerCase());
+  });
 
   const searchTrim = searchTerm.trim();
-  const hasExactMatch = searchTrim && options.some((o) => o.label.toLowerCase() === searchTrim.toLowerCase());
+  const hasExactMatch = searchTrim && options.some((o) => (o.label ?? '').toLowerCase() === searchTrim.toLowerCase());
   const showCreateOption = !!onCreateOption && searchTrim.length > 0 && !hasExactMatch;
 
   const handleCreateOption = async () => {
@@ -208,7 +209,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
                   className={cn(
                     "flex items-center px-2 py-1.5 text-xs rounded-lg transition-colors",
                     isZeroCount ? "opacity-40 cursor-not-allowed" : "cursor-pointer",
-                    isSelected ? "bg-primary/5 text-primary" : !isZeroCount && "text-foreground hover:bg-muted/50"
+                    isSelected ? "bg-primary/10 text-foreground font-medium border border-primary/20" : !isZeroCount && "text-foreground hover:bg-muted/50"
                   )}
                 >
                   <div className={cn(
@@ -218,9 +219,9 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
                     {isSelected && <Check size={9} />}
                   </div>
                   {option.icon && <option.icon size={13} className="mr-1.5 text-muted-foreground" />}
-                  <span className="truncate">{option.label}</span>
+                  <span className="truncate text-gray-900 dark:text-gray-100">{option.label ?? option.value}</span>
                   {hasCount && (
-                    <span className={cn("ml-auto shrink-0 text-2xs font-medium tabular-nums pl-2", isSelected ? "text-primary/70" : "text-muted-foreground")}>
+                    <span className={cn("ml-auto shrink-0 text-2xs font-medium tabular-nums pl-2", isSelected ? "text-foreground/80" : "text-muted-foreground")}>
                       {option.count}
                     </span>
                   )}
@@ -288,7 +289,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
             <span className="truncate">{placeholder}</span>
           ) : (
             <div className="flex items-center gap-1 min-w-0">
-              <span className={cn("truncate font-medium", size === 'lg' ? "text-sm" : "text-xs")}>{firstName}</span>
+              <span className={cn("truncate font-medium text-gray-900 dark:text-gray-100", size === 'lg' ? "text-sm" : "text-xs")}>{firstName ?? placeholder}</span>
               {extraCount > 0 && (
                 <span className="shrink-0 bg-primary/10 text-primary text-2xs font-bold px-1.5 py-0.5 rounded-full tabular-nums" title={value.map(v => options.find(o => o.value === v)?.label).filter(Boolean).join(', ')}>
                   +{extraCount}

@@ -1,26 +1,18 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { LayoutDashboard, CreditCard } from 'lucide-react';
+import { Package, CreditCard } from 'lucide-react';
 import TabGroup from '../../../components/ui/TabGroup';
 import ErrorBoundary from '../../../components/shared/ErrorBoundary';
+import TienDoMuaHangTab from './components/TienDoMuaHangTab';
 import TrangThaiThanhToanDoiTacTab from './components/TrangThaiThanhToanDoiTacTab';
-
-const TabTrong: React.FC = () => {
-  const { t } = useTranslation();
-  return (
-    <div className="flex-1 flex items-center justify-center text-muted-foreground">
-      <p className="text-sm">{t('thietLapDeXuatVatTu.tabs.emptyHint')}</p>
-    </div>
-  );
-};
 
 const ThietLapDeXuatVatTuPage: React.FC = () => {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState('trang-thai-thanh-toan');
+  const [activeTab, setActiveTab] = useState('tien-do-mh');
 
   const tabs = useMemo(
     () => [
-      { id: 'trong', label: t('thietLapDeXuatVatTu.tabs.trong'), icon: LayoutDashboard },
+      { id: 'tien-do-mh', label: t('thietLapDeXuatVatTu.tabs.tienDoMh'), icon: Package },
       { id: 'trang-thai-thanh-toan', label: t('thietLapDeXuatVatTu.tabs.trangThaiThanhToan'), icon: CreditCard },
     ],
     [t]
@@ -33,7 +25,7 @@ const ThietLapDeXuatVatTuPage: React.FC = () => {
           <TabGroup tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
         </div>
         <div className="flex-1 min-h-0 flex flex-col mt-1.5">
-          {activeTab === 'trong' && <TabTrong />}
+          {activeTab === 'tien-do-mh' && <TienDoMuaHangTab />}
           {activeTab === 'trang-thai-thanh-toan' && <TrangThaiThanhToanDoiTacTab />}
         </div>
       </div>

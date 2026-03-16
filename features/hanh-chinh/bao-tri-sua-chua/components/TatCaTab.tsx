@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import BaoTriSuaChuaToolbar from './BaoTriSuaChuaToolbar';
 import PhieuBaoTriTable from './PhieuBaoTriTable';
@@ -18,6 +19,7 @@ interface Props {
 
 const TatCaTab: React.FC<Props> = ({ defaultTaiSanId }) => {
   const { t } = useTranslation();
+  const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
   const { searchTerm, filters, sort, resetState, selectedIds, clearSelection, setFilter } = useBaoTriSuaChuaStore();
   const { data: list = [], isLoading } = usePhieuBaoTriList({
@@ -128,14 +130,14 @@ const TatCaTab: React.FC<Props> = ({ defaultTaiSanId }) => {
   return (
     <>
       <div className="flex flex-col flex-1 min-h-0 rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-        <BaoTriSuaChuaToolbar items={list} onAdd={handleAdd} onDeleteMany={handleDeleteMany} showAdd />
+        <BaoTriSuaChuaToolbar items={list} onAdd={handleAdd} onDeleteMany={handleDeleteMany} showAdd={canCreate} canDelete={canDelete} />
         <div className="flex-1 min-h-0 overflow-auto">
           <PhieuBaoTriTable
             data={sortedList}
             isLoading={isLoading}
             onView={handleView}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
+            onEdit={canUpdate ? handleEdit : undefined}
+            onDelete={canDelete ? handleDelete : undefined}
           />
         </div>
       </div>
@@ -143,11 +145,11 @@ const TatCaTab: React.FC<Props> = ({ defaultTaiSanId }) => {
         <PhieuBaoTriDetail
           data={detailItem}
           onClose={() => setDetailItem(null)}
-          onEdit={handleEdit}
-          onDelete={(id) => {
+          onEdit={canUpdate ? handleEdit : undefined}
+          onDelete={canDelete ? (id) => {
             setDetailItem(null);
             deleteMutation.mutate([id]);
-          }}
+          } : undefined}
         />
       )}
       {showForm && (

@@ -278,11 +278,11 @@ const SubmenuPage: React.FC = () => {
         );
       }
       if (decodedSlug === 'cong-viec') {
-        return (
+        return wrapWithPermission(basePath ?? '', decodedSlug, (
           <ErrorBoundary>
             <CongViecPage />
           </ErrorBoundary>
-        );
+        ));
       }
       if (decodedSlug === 'cong-viec-cua-toi' || decodedSlug === 'cong-viec-toi-quan-ly') {
         const search = location.search || '';

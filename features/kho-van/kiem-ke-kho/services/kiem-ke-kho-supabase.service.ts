@@ -23,8 +23,9 @@ export interface GetDotKiemKeKhoListParamsSupabase {
 }
 
 export interface TaoDanhSachKiemKeKhoFiltersSupabase {
-  id_hang_hoa?: string[];
+  id_kho?: string[];
   id_danh_muc?: string[];
+  id_hang_hoa?: string[];
 }
 import { getTonKhoTheoKho } from '../../phieu-kho/services/ton-kho-service';
 import { getKhoList } from '../../danh-sach-kho/services/kho-service';
@@ -72,7 +73,8 @@ interface ChiTietRow {
 function rowToDot(
   row: DotRow,
   idKhoList: string[],
-  enrich?: { ten_nguoi_phu_trach?: string | null; ma_nguoi_phu_trach?: string | null }
+  enrich?: { ten_nguoi_phu_trach?: string | null; ma_nguoi_phu_trach?: string | null },
+  stats?: { so_hang_hoa: number; so_lech: number }
 ): DotKiemKeKho {
   return {
     id: String(row.id),
@@ -89,6 +91,9 @@ function rowToDot(
     trang_thai_active: 1,
     tg_tao: row.tg_tao ?? new Date().toISOString(),
     tg_cap_nhat: row.tg_cap_nhat ?? new Date().toISOString(),
+    so_kho: idKhoList.length,
+    so_hang_hoa: stats?.so_hang_hoa ?? 0,
+    so_lech: stats?.so_lech ?? 0,
   };
 }
 
@@ -160,6 +165,25 @@ export async function getDotKiemKeKhoListSupabase(
   if (error) throw new Error(error.message);
   const dotRows = (rows ?? []) as DotRow[];
 
+  const dotIds = dotRows.map((r) => r.id);
+  const chiTietCounts: Record<number, { so_hang_hoa: number; so_lech: number }> = {};
+  if (dotIds.length > 0) {
+    const { data: chiTietRows } = await supabase
+      .from(TABLE_CHI_TIET)
+      .select('id_dot_kiem_ke_kho, ket_qua')
+      .in('id_dot_kiem_ke_kho', dotIds);
+    const rows = (chiTietRows ?? []) as { id_dot_kiem_ke_kho: number; ket_qua: string | null }[];
+    for (const r of rows) {
+      if (!chiTietCounts[r.id_dot_kiem_ke_kho]) {
+        chiTietCounts[r.id_dot_kiem_ke_kho] = { so_hang_hoa: 0, so_lech: 0 };
+      }
+      chiTietCounts[r.id_dot_kiem_ke_kho].so_hang_hoa += 1;
+      if (r.ket_qua === 'thieu' || r.ket_qua === 'thua') {
+        chiTietCounts[r.id_dot_kiem_ke_kho].so_lech += 1;
+      }
+    }
+  }
+
   const result: DotKiemKeKho[] = [];
   for (const row of dotRows) {
     const idKhoList = await getDotKhoIds(row.id);
@@ -175,7 +199,10 @@ export async function getDotKiemKeKhoListSupabase(
         continue;
     }
     const emp = empMap.get(String(row.id_nguoi_phu_trach));
-    result.push(rowToDot(row, idKhoList, { ten_nguoi_phu_trach: emp?.ho_ten ?? null, ma_nguoi_phu_trach: emp?.ma_nhan_vien ?? null }));
+    const stats = chiTietCounts[row.id];
+    result.push(
+      rowToDot(row, idKhoList, { ten_nguoi_phu_trach: emp?.ho_ten ?? null, ma_nguoi_phu_trach: emp?.ma_nhan_vien ?? null }, stats)
+    );
   }
   return result;
 }
@@ -209,24 +236,6 @@ export async function getChiTietByDotSupabase(id_dot_kiem_ke_kho: string): Promi
   const khoMap = new Map(khoList.map((k) => [k.id, { ten: k.ten_kho, ma: k.ma_kho }]));
   const hhMap = new Map(hangHoaList.map((h) => [h.id, { ma: h.ma_hang_hoa ?? h.ma_hang, ten: h.ten_hang_hoa ?? h.ten_hang, dvt: h.dvt ?? h.don_vi_tinh }]));
   const empMap = new Map(employees.map((e) => [e.id, e.ho_ten]));
-  return (rows ?? []).map((r: ChiTietRow) => {
-    const kho = khoMap.get(String(r.id_kho));
-    const hh = hhMap.get(String(r.id_hang_hoa));
-    const tenNguoiKiem = r.id_nguoi_kiem != null ? empMap.get(String(r.id_nguoi_kiem)) ?? null : null;
-    return rowToChiTiet(r, {
-      ten_kho: kho?.ten ?? undefined,
-      ma_kho: kho?.ma ?? undefined,
-      ma_hang: hh?.ma ?? undefined,
-      ten_hang: hh?.ten ?? undefined,
-      don_vi_tinh: hh?.dvt ?? undefined,
-    }).then ? undefined : rowToChiTiet(r, {
-      ten_kho: kho?.ten ?? undefined,
-      ma_kho: kho?.ma ?? undefined,
-      ma_hang: hh?.ma ?? undefined,
-      ten_hang: hh?.ten ?? undefined,
-      don_vi_tinh: hh?.dvt ?? undefined,
-    }) as ChiTietKiemKeKho;
-  }) as ChiTietKiemKeKho[];
   const out: ChiTietKiemKeKho[] = [];
   for (const r of rows ?? []) {
     const row = r as ChiTietRow;
@@ -278,7 +287,7 @@ export async function updateDotKiemKeKhoSupabase(id: string, data: Partial<DotKi
   if (Number.isNaN(idNum)) throw new Error(i18n.t('kiemKeKho.service.notFound'));
   const existing = await getDotKiemKeKhoByIdSupabase(id);
   if (!existing) throw new Error(i18n.t('kiemKeKho.service.notFound'));
-  if (existing.trang_thai !== 'draft') {
+  if (existing.trang_thai === 'hoan_thanh') {
     const onlyGhiChu = data.ghi_chu !== undefined && Object.keys(data).length === 1;
     if (!onlyGhiChu) throw new Error(i18n.t('kiemKeKho.service.onlyEditDraft'));
   }
@@ -311,8 +320,8 @@ export async function deleteDotKiemKeKhoSupabase(ids: string[]): Promise<void> {
   const idNums = ids.map((s) => Number(s)).filter((n) => !Number.isNaN(n));
   if (idNums.length === 0) return;
   const { data: dots } = await supabase.from(TABLE_DOT).select('id, trang_thai').in('id', idNums);
-  const notDraft = (dots ?? []).filter((d: { trang_thai: string }) => d.trang_thai !== 'draft');
-  if (notDraft.length > 0) throw new Error(i18n.t('kiemKeKho.service.onlyDeleteDraft'));
+  const completed = (dots ?? []).filter((d: { trang_thai: string }) => d.trang_thai === 'hoan_thanh');
+  if (completed.length > 0) throw new Error(i18n.t('kiemKeKho.service.onlyDeleteNotCompleted'));
   const { error } = await supabase.from(TABLE_DOT).delete().in('id', idNums);
   if (error) throw new Error(error.message);
 }
@@ -333,43 +342,112 @@ export async function taoDanhSachKiemKeSupabase(
 ): Promise<ChiTietKiemKeKho[]> {
   const dot = await getDotKiemKeKhoByIdSupabase(id_dot_kiem_ke_kho);
   if (!dot) throw new Error(i18n.t('kiemKeKho.service.notFound'));
-  if (dot.trang_thai !== 'draft') throw new Error(i18n.t('kiemKeKho.service.onlyTaoDanhSachWhenDraft'));
+  if (dot.trang_thai === 'hoan_thanh') throw new Error(i18n.t('kiemKeKho.service.onlyTaoDanhSachWhenDraft'));
+  if (!dot.id_kho?.length) throw new Error(i18n.t('kiemKeKho.service.dotChuaChonKho'));
+
   const [hangHoaList, khoList] = await Promise.all([getAllHangHoa(), getKhoList()]);
-  const hangHoaMap = new Map(hangHoaList.map((h) => [h.id, h]));
-  const khoMap = new Map(khoList.map((k) => [k.id, k]));
   const existing = await getChiTietByDotSupabase(id_dot_kiem_ke_kho);
   const existingKeys = new Set(existing.map((c) => `${c.id_kho}|${c.id_hang_hoa}`));
   const idDotNum = Number(id_dot_kiem_ke_kho);
-  const toInsert: { id_dot_kiem_ke_kho: number; id_kho: number; id_hang_hoa: number; so_luong_so: number; ket_qua: string }[] = [];
-  for (const id_kho of dot.id_kho) {
+  const khoIdsToProcess = (filters?.id_kho?.length
+    ? filters.id_kho.filter((k) => dot.id_kho.includes(k))
+    : dot.id_kho) as string[];
+
+  const activeHangHoa = hangHoaList.filter((h) => {
+    if (h.trang_thai === 'Ngừng hoạt động') return false;
+    if (filters?.id_hang_hoa?.length && !filters.id_hang_hoa.includes(h.id)) return false;
+    if (filters?.id_danh_muc?.length && (!h.danh_muc_id || !filters.id_danh_muc.includes(h.danh_muc_id))) return false;
+    return true;
+  });
+
+  const tonByKho = new Map<string, Map<string, number>>();
+  for (const id_kho of khoIdsToProcess) {
     const tonTheoKho = await getTonKhoTheoKho(id_kho);
+    const m = new Map<string, number>();
     for (const { id_hang_hoa, so_luong } of tonTheoKho) {
-      if (so_luong <= 0) continue;
-      const key = `${id_kho}|${id_hang_hoa}`;
+      m.set(id_hang_hoa, so_luong);
+    }
+    tonByKho.set(id_kho, m);
+  }
+
+  const toInsert: { id_dot_kiem_ke_kho: number; id_kho: number; id_hang_hoa: number; so_luong_so: number; ket_qua: string }[] = [];
+  for (const id_kho of khoIdsToProcess) {
+    const tonMap = tonByKho.get(id_kho) ?? new Map<string, number>();
+    for (const hh of activeHangHoa) {
+      const key = `${id_kho}|${hh.id}`;
       if (existingKeys.has(key)) continue;
-      if (filters?.id_hang_hoa?.length && !filters.id_hang_hoa.includes(id_hang_hoa)) continue;
-      const hh = hangHoaMap.get(id_hang_hoa);
-      if (filters?.id_danh_muc?.length && (!hh?.danh_muc_id || !filters.id_danh_muc.includes(hh.danh_muc_id))) continue;
+      const so_luong_so = tonMap.get(hh.id) ?? 0;
       toInsert.push({
         id_dot_kiem_ke_kho: idDotNum,
         id_kho: Number(id_kho),
-        id_hang_hoa: Number(id_hang_hoa),
-        so_luong_so: so_luong,
+        id_hang_hoa: Number(hh.id),
+        so_luong_so,
         ket_qua: 'chua_kiem',
       });
       existingKeys.add(key);
     }
   }
-  if (toInsert.length > 0) {
-    const { error } = await supabase.from(TABLE_CHI_TIET).insert(toInsert);
-    if (error) throw new Error(error.message);
+
+  if (toInsert.length === 0) {
+    throw new Error(i18n.t('kiemKeKho.service.taoDanhSachEmpty'));
   }
+  const { error } = await supabase.from(TABLE_CHI_TIET).insert(toInsert);
+  if (error) throw new Error(error.message);
   const { error: updateDotErr } = await supabase
     .from(TABLE_DOT)
     .update({ trang_thai: 'dang_kiem_ke' })
     .eq('id', idDotNum);
   if (updateDotErr) throw new Error(updateDotErr.message);
   return getChiTietByDotSupabase(id_dot_kiem_ke_kho);
+}
+
+export async function createChiTietKiemKeSupabase(
+  id_dot_kiem_ke_kho: string,
+  id_kho: string,
+  id_hang_hoa: string
+): Promise<ChiTietKiemKeKho> {
+  const dot = await getDotKiemKeKhoByIdSupabase(id_dot_kiem_ke_kho);
+  if (!dot) throw new Error(i18n.t('kiemKeKho.service.notFound'));
+  if (dot.trang_thai === 'hoan_thanh') throw new Error(i18n.t('kiemKeKho.service.onlyEditDraft'));
+  if (!dot.id_kho.includes(id_kho)) throw new Error(i18n.t('kiemKeKho.service.khoNotInDot'));
+  const existing = await getChiTietByDotSupabase(id_dot_kiem_ke_kho);
+  if (existing.some((c) => c.id_kho === id_kho && c.id_hang_hoa === id_hang_hoa))
+    throw new Error(i18n.t('kiemKeKho.service.chiTietAlreadyExists'));
+  const tonTheoKho = await getTonKhoTheoKho(id_kho);
+  const ton = tonTheoKho.find((t) => t.id_hang_hoa === id_hang_hoa);
+  const so_luong_so = ton?.so_luong ?? 0;
+  const { data: row, error } = await supabase
+    .from(TABLE_CHI_TIET)
+    .insert({
+      id_dot_kiem_ke_kho: Number(id_dot_kiem_ke_kho),
+      id_kho: Number(id_kho),
+      id_hang_hoa: Number(id_hang_hoa),
+      so_luong_so,
+      so_luong_thuc_te: null,
+      ket_qua: 'chua_kiem',
+      ghi_chu_dong: null,
+      id_nguoi_kiem: null,
+      ngay_kiem: null,
+    })
+    .select('*')
+    .single();
+  if (error) throw new Error(error.message);
+  const list = await getChiTietByDotSupabase(id_dot_kiem_ke_kho);
+  const found = list.find((c) => c.id === String((row as ChiTietRow).id));
+  if (!found) throw new Error(i18n.t('kiemKeKho.service.chiTietNotFound'));
+  return found;
+}
+
+export async function deleteChiTietKiemKeSupabase(id_chi_tiet: string): Promise<void> {
+  const idNum = Number(id_chi_tiet);
+  if (Number.isNaN(idNum)) throw new Error(i18n.t('kiemKeKho.service.chiTietNotFound'));
+  const { data: row, error: fetchErr } = await supabase.from(TABLE_CHI_TIET).select('id_dot_kiem_ke_kho').eq('id', idNum).maybeSingle();
+  if (fetchErr || !row) throw new Error(i18n.t('kiemKeKho.service.chiTietNotFound'));
+  const dot = await getDotKiemKeKhoByIdSupabase(String((row as { id_dot_kiem_ke_kho: number }).id_dot_kiem_ke_kho));
+  if (!dot) throw new Error(i18n.t('kiemKeKho.service.notFound'));
+  if (dot.trang_thai === 'hoan_thanh') throw new Error(i18n.t('kiemKeKho.service.onlyEditDraft'));
+  const { error } = await supabase.from(TABLE_CHI_TIET).delete().eq('id', idNum);
+  if (error) throw new Error(error.message);
 }
 
 export async function updateChiTietKetQuaSupabase(

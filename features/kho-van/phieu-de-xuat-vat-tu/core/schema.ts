@@ -8,6 +8,9 @@ export const phieuDeXuatVatTuChiTietItemSchema = z.object({
   so_luong: z.coerce.number().min(0.0001, i18n.t('phieuDeXuatVatTu.validation.quantityMin')),
   thong_so: z.string().optional(),
   ghi_chu: z.string().optional(),
+  id_tien_do_mh: z.string().optional().nullable(),
+  ten_tien_do_mh: z.string().optional().nullable(),
+  trao_doi: z.string().optional().nullable(),
 });
 
 /** Form cho phép dòng trống (id_hang_hoa rỗng, so_luong 0); filter khi submit. */
@@ -16,6 +19,9 @@ export const phieuDeXuatVatTuChiTietFormItemSchema = z.object({
   so_luong: z.coerce.number(),
   thong_so: z.string().optional(),
   ghi_chu: z.string().optional(),
+  id_tien_do_mh: z.string().optional().nullable(),
+  ten_tien_do_mh: z.string().optional().nullable(),
+  trao_doi: z.string().optional().nullable(),
 });
 
 export const phieuDeXuatVatTuSchema = z

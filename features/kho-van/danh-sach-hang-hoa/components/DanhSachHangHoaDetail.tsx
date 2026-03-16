@@ -25,8 +25,8 @@ import { CONFIRM_DELETE } from '../../../../lib/button-labels';
 interface Props {
   data: HangHoa;
   onClose: () => void;
-  onEdit: (item: HangHoa) => void;
-  onDelete: (id: string) => void;
+  onEdit?: (item: HangHoa) => void;
+  onDelete?: (id: string) => void;
 }
 
 const DanhSachHangHoaDetail: React.FC<Props> = ({
@@ -79,25 +79,29 @@ const DanhSachHangHoaDetail: React.FC<Props> = ({
         {BTN_CLOSE()}
       </Button>
       <div className="flex items-center gap-3">
-        <Button
-          onClick={() => {
-            onEdit(data);
-            onClose();
-          }}
-          className="bg-primary text-white shadow-lg hover:bg-primary/90"
-        >
-          <Edit size={16} className="mr-2" /> {BTN_EDIT()}
-        </Button>
-        <Button
-          variant="ghost"
-          onClick={() => {
-            onDelete(data.id);
-            onClose();
-          }}
-          className="text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/50 dark:text-rose-400 border border-rose-200 hover:border-rose-300 dark:border-rose-800 dark:hover:border-rose-700"
-        >
-          <Trash2 size={16} className="mr-2" /> {BTN_DELETE()}
-        </Button>
+        {onEdit && (
+          <Button
+            onClick={() => {
+              onEdit(data);
+              onClose();
+            }}
+            className="bg-primary text-white shadow-lg hover:bg-primary/90"
+          >
+            <Edit size={16} className="mr-2" /> {BTN_EDIT()}
+          </Button>
+        )}
+        {onDelete && (
+          <Button
+            variant="ghost"
+            onClick={() => {
+              onDelete(data.id);
+              onClose();
+            }}
+            className="text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/50 dark:text-rose-400 border border-rose-200 hover:border-rose-300 dark:border-rose-800 dark:hover:border-rose-700"
+          >
+            <Trash2 size={16} className="mr-2" /> {BTN_DELETE()}
+          </Button>
+        )}
       </div>
     </div>
   );

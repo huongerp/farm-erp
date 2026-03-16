@@ -8,6 +8,7 @@ import Button from '../../../../components/ui/Button';
 import Input from '../../../../components/ui/Input';
 import { roleSchema, RoleFormValues } from '../core/schema';
 import { PositionPermission, ModulePermission, ActionType } from '../core/types';
+import { hasApproveFeature } from '../core/permission-modules-config';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { SYSTEM_MODULES_CONFIG } from '../services/phan-quyen-service';
 import { useCreateRole } from '../hooks/use-phan-quyen';
@@ -22,12 +23,13 @@ const RoleForm: React.FC<Props> = ({ initialData, onClose }) => {
   const { t } = useTranslation();
   const isEdit = !!initialData;
 
-  // 6 quyền: Xem, Thêm, Sửa, Xoá, Quản trị, Tất cả
+  // 6 quyền cơ bản + Phê duyệt (chỉ hiển thị cho module có chức năng phê duyệt)
   const ALL_ACTION_COLUMNS: { id: ActionType; label: string; isSpecial?: boolean }[] = [
     { id: 'view', label: t('permission.form.view') },
     { id: 'create', label: t('permission.form.add') },
     { id: 'update', label: t('permission.form.edit') },
     { id: 'delete', label: t('permission.form.delete') },
+    { id: 'approve', label: t('permission.form.approve') },
     { id: 'admin', label: t('permission.matrix.admin'), isSpecial: true },
     { id: 'all', label: t('permission.form.all'), isSpecial: true },
   ];
@@ -155,7 +157,7 @@ const RoleForm: React.FC<Props> = ({ initialData, onClose }) => {
                                             </div>
                                         </td>
                                         {ALL_ACTION_COLUMNS.map(col => {
-                                            const isAllowed = moduleConfig.allowedActions.includes(col.id);
+                                            const isAllowed = col.id === 'approve' ? hasApproveFeature(moduleConfig.id) : moduleConfig.allowedActions.includes(col.id);
                                             const isChecked = userPerm?.actions.includes(col.id);
                                             
                                             if (!isAllowed) {

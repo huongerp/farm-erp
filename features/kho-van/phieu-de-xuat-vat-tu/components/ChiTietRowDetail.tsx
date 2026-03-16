@@ -1,24 +1,43 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FileText, Calendar, Warehouse, User, UserCheck, Package, Edit, Trash2 } from 'lucide-react';
+import { FileText, Calendar, Warehouse, User, UserCheck, Package, Edit, Trash2, TrendingUp } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import type { PhieuDeXuatVatTuChiTietRow } from '../core/types';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
+import DetailToolbar, { type DetailToolbarAction } from '../../../../components/shared/DetailToolbar';
 import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';
 import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
 import { BTN_CLOSE, BTN_EDIT, BTN_DELETE } from '../../../../lib/button-labels';
 import { cn } from '../../../../lib/utils';
+import { getTienDoMhBadgeClass } from '../core/constants';
 
 interface Props {
   data: PhieuDeXuatVatTuChiTietRow;
   onClose: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  /** Mở popup chuyển tiến độ cho đúng dòng này */
+  onChuyenTienDo?: () => void;
 }
 
-const ChiTietRowDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete }) => {
+const ChiTietRowDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onChuyenTienDo }) => {
   const { t } = useTranslation();
+
+  const detailToolbarActions: DetailToolbarAction[] = useMemo(
+    () =>
+      onChuyenTienDo
+        ? [
+            {
+              label: t('phieuDeXuatVatTu.chiTietTab.tienDoAction'),
+              icon: <TrendingUp size={16} />,
+              onClick: onChuyenTienDo,
+              variant: 'secondary' as const,
+            },
+          ]
+        : [],
+    [t, onChuyenTienDo]
+  );
 
   const statusVariant =
     data.trang_thai_phieu === 'Đã duyệt'
@@ -113,9 +132,21 @@ const ChiTietRowDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete }) 
                 />{' '}
                 {statusLabel}
               </span>
+              {data.ten_tien_do_mh ? (
+                <span className={cn('inline-flex px-2 py-0.5 rounded-full text-xs font-medium border', getTienDoMhBadgeClass(data.ten_tien_do_mh))}>
+                  {data.ten_tien_do_mh}
+                </span>
+              ) : null}
             </div>
           </div>
         </div>
+
+        {detailToolbarActions.length > 0 && (
+          <DetailToolbar
+            actions={detailToolbarActions}
+            className="bg-card rounded-xl border border-border"
+          />
+        )}
 
         <DetailSection
           title={t('phieuDeXuatVatTu.chiTietTab.sectionPhieu')}
@@ -181,8 +212,36 @@ const ChiTietRowDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete }) 
               icon={<Package size={12} />}
             />
             <DetailField
+              label={t('phieuDeXuatVatTu.form.tienDoMh')}
+              value={
+                data.ten_tien_do_mh ? (
+                  <span className={cn('inline-flex px-2 py-0.5 rounded-full text-xs font-medium border', getTienDoMhBadgeClass(data.ten_tien_do_mh))}>
+                    {data.ten_tien_do_mh}
+                  </span>
+                ) : (
+                  '—'
+                )
+              }
+              icon={<Package size={12} />}
+            />
+            <DetailField
               label={t('phieuDeXuatVatTu.form.specs')}
               value={data.thong_so ?? '—'}
+              icon={<FileText size={12} />}
+              className="col-span-1 sm:col-span-2"
+            />
+          </DetailFieldGrid>
+        </DetailSection>
+
+        <DetailSection
+          title={t('phieuDeXuatVatTu.chiTietTab.traoDoiGhiChuSection')}
+          icon={<FileText size={14} />}
+          variant="primary"
+        >
+          <DetailFieldGrid>
+            <DetailField
+              label={t('phieuDeXuatVatTu.chiTietTab.traoDoiLabel')}
+              value={data.trao_doi ?? '—'}
               icon={<FileText size={12} />}
               className="col-span-1 sm:col-span-2"
             />

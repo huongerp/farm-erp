@@ -47,6 +47,8 @@ const TABLE_CT = 'fp_ts_dot_kiem_ke_tai_san_chi_tiet';
 const TRANG_THAI_NHAP: TrangThaiDotKiemKe = 'Nháp';
 const TRANG_THAI_DANG_KIEM_KE: TrangThaiDotKiemKe = 'Đang kiểm kê';
 const TRANG_THAI_HOAN_THANH: TrangThaiDotKiemKe = 'Hoàn thành';
+const CAN_EDIT_DOT: TrangThaiDotKiemKe[] = [TRANG_THAI_NHAP, TRANG_THAI_DANG_KIEM_KE];
+const CAN_DELETE_DOT: TrangThaiDotKiemKe[] = [TRANG_THAI_NHAP, TRANG_THAI_DANG_KIEM_KE];
 const TRANG_THAI_ACTIVE_DEFAULT = 'Đang hoạt động';
 const KET_QUA_CHUA_KIEM: KetQuaKiemKe = 'Chưa kiểm';
 
@@ -68,6 +70,7 @@ function toNumList(arr: string[] | null | undefined): number[] {
   return arr.map((s) => Number(s)).filter((n) => !Number.isNaN(n));
 }
 
+/** Khớp cột bảng fp_ts_dot_kiem_ke_tai_san – select('*') lấy đủ, map hết qua rowToDot */
 interface DbDotRow {
   id: number;
   ma_dot: string;
@@ -78,12 +81,14 @@ interface DbDotRow {
   id_nguoi_phu_trach: number;
   id_nhom: number[] | null;
   id_noi_luu: number[] | null;
+  id_nguoi_giu?: number[] | null;
   ghi_chu: string | null;
   trang_thai_active: string;
   tg_tao: string | null;
   tg_cap_nhat: string | null;
 }
 
+/** Khớp cột bảng fp_ts_dot_kiem_ke_tai_san_chi_tiet – select('*') lấy đủ, map hết qua rowToChiTiet; ten_nguoi_kiem enrich từ getEmployees */
 interface DbChiTietRow {
   id: number;
   id_dot_kiem_ke: number;
@@ -123,6 +128,7 @@ function rowToDot(row: DbDotRow, enrich?: { ten_nguoi_phu_trach?: string | null;
     ma_nguoi_phu_trach: enrich?.ma_nguoi_phu_trach ?? null,
     id_nhom: toIdList(row.id_nhom ?? []),
     id_noi_luu: toIdList(row.id_noi_luu ?? []),
+    id_nguoi_giu: toIdList((row as DbDotRow).id_nguoi_giu ?? []),
     ghi_chu: row.ghi_chu ?? null,
     trang_thai_active: (row.trang_thai_active || TRANG_THAI_ACTIVE_DEFAULT) as DotKiemKe['trang_thai_active'],
     tg_tao: row.tg_tao ?? '',
@@ -196,6 +202,13 @@ function computeKetQua(c: ChiTietKiemKe): KetQuaKiemKe {
   return 'Khớp';
 }
 
+/** Trả về số thứ tự tiếp theo cho mã đợt (app format: KK-TS-NNN) */
+export async function getNextMaDotDotKiemKeTaiSan(): Promise<number> {
+  const { data, error } = await supabase.rpc('get_next_ma_dot_dot_kiem_ke_tai_san');
+  if (error) throw new Error(error.message);
+  return typeof data === 'number' ? data : Number(data) ?? 1;
+}
+
 export async function getDotKiemKeListSupabase(params: GetDotKiemKeListParams = {}): Promise<DotKiemKe[]> {
   let query = supabase.from(TABLE_DOT).select('*').order('tg_cap_nhat', { ascending: false });
   if (params.filter === 'mine' && params.id_nguoi) {
@@ -252,6 +265,7 @@ export async function createDotKiemKeSupabase(data: DotKiemKeCreate): Promise<Do
     id_nguoi_phu_trach: toNum(data.id_nguoi_phu_trach)!,
     id_nhom: toNumList(data.id_nhom ?? []),
     id_noi_luu: toNumList(data.id_noi_luu ?? []),
+    id_nguoi_giu: toNumList(data.id_nguoi_giu ?? []),
     ghi_chu: data.ghi_chu ?? null,
     trang_thai_active: TRANG_THAI_ACTIVE_DEFAULT,
   };
@@ -266,8 +280,9 @@ export async function updateDotKiemKeSupabase(id: string, data: Partial<DotKiemK
   if (numId == null) throw new Error('Đợt kiểm kê không tồn tại');
   const { data: current, error: e0 } = await supabase.from(TABLE_DOT).select('trang_thai').eq('id', numId).single();
   if (e0 || !current) throw new Error('Đợt kiểm kê không tồn tại');
-  if ((current as { trang_thai: string }).trang_thai !== TRANG_THAI_NHAP) {
-    throw new Error('Chỉ được sửa đợt ở trạng thái Nháp');
+  const trangThai = (current as { trang_thai: string }).trang_thai as TrangThaiDotKiemKe;
+  if (!CAN_EDIT_DOT.includes(trangThai)) {
+    throw new Error('Chỉ được sửa đợt ở trạng thái Nháp hoặc Đang kiểm kê');
   }
   const payload: Record<string, unknown> = {};
   if (data.ma_dot != null) payload.ma_dot = data.ma_dot;
@@ -277,6 +292,7 @@ export async function updateDotKiemKeSupabase(id: string, data: Partial<DotKiemK
   if (data.id_nguoi_phu_trach != null) payload.id_nguoi_phu_trach = toNum(data.id_nguoi_phu_trach);
   if (data.id_nhom != null) payload.id_nhom = toNumList(data.id_nhom);
   if (data.id_noi_luu != null) payload.id_noi_luu = toNumList(data.id_noi_luu);
+  if (data.id_nguoi_giu != null) payload.id_nguoi_giu = toNumList(data.id_nguoi_giu);
   if (data.ghi_chu !== undefined) payload.ghi_chu = data.ghi_chu;
   const { error } = await supabase.from(TABLE_DOT).update(payload).eq('id', numId);
   if (error) throw new Error((error as { message?: string }).message ?? String(error));
@@ -289,9 +305,11 @@ export async function deleteDotKiemKeSupabase(ids: string[]): Promise<void> {
   const numIds = ids.map((s) => toNum(s)).filter((n): n is number => n != null);
   if (numIds.length === 0) return;
   const { data: rows } = await supabase.from(TABLE_DOT).select('id, trang_thai').in('id', numIds);
-  const drafts = (rows ?? []).filter((r: { trang_thai: string }) => r.trang_thai === TRANG_THAI_NHAP);
-  if (drafts.length !== numIds.length) {
-    throw new Error('Chỉ được xóa đợt ở trạng thái Nháp');
+  const allowed = (rows ?? []).filter((r: { trang_thai: string }) =>
+    CAN_DELETE_DOT.includes(r.trang_thai as TrangThaiDotKiemKe)
+  );
+  if (allowed.length !== numIds.length) {
+    throw new Error('Chỉ được xóa đợt ở trạng thái Nháp hoặc Đang kiểm kê');
   }
   const { error } = await supabase.from(TABLE_DOT).delete().in('id', numIds);
   if (error) throw new Error((error as { message?: string }).message ?? String(error));
@@ -313,7 +331,7 @@ export async function taoDanhSachKiemKeSupabase(
 ): Promise<ChiTietKiemKe[]> {
   const dot = await getDotKiemKeByIdSupabase(id_dot_kiem_ke);
   if (!dot) throw new Error('Đợt kiểm kê không tồn tại');
-  if (dot.trang_thai !== TRANG_THAI_NHAP) throw new Error('Chỉ tạo danh sách khi đợt ở trạng thái Nháp');
+  if (!CAN_EDIT_DOT.includes(dot.trang_thai)) throw new Error('Chỉ tạo danh sách khi đợt ở trạng thái Nháp hoặc Đang kiểm kê');
   const [assets, locations] = await Promise.all([getTaiSanList(), getAssetStorageLocations()]);
   let filtered = assets.filter((a) => (a as { trang_thai?: number }).trang_thai === 1);
   if (dot.id_nhom.length) {
@@ -321,6 +339,9 @@ export async function taoDanhSachKiemKeSupabase(
   }
   if (dot.id_noi_luu.length) {
     filtered = filtered.filter((a) => dot.id_noi_luu.includes(a.id_noi_luu));
+  }
+  if (dot.id_nguoi_giu?.length) {
+    filtered = filtered.filter((a) => a.id_nhan_vien_dang_giu != null && dot.id_nguoi_giu!.includes(a.id_nhan_vien_dang_giu));
   }
   if (filters?.id_chi_nhanh?.length) {
     const noiLuuIdsInBranches = new Set(
@@ -422,6 +443,22 @@ export async function updateChiTietKetQuaSupabase(
   const { data: after } = await supabase.from(TABLE_CT).select('*').eq('id', numCtId).single();
   const [out] = await enrichChiTietList([rowToChiTiet((after ?? row) as DbChiTietRow)]);
   return out;
+}
+
+export async function deleteChiTietKiemKeSupabase(id_chi_tiet: string): Promise<void> {
+  const numId = toNum(id_chi_tiet);
+  if (numId == null) throw new Error('Không tìm thấy dòng chi tiết');
+  const { data: row, error: fetchErr } = await supabase
+    .from(TABLE_CT)
+    .select('id_dot_kiem_ke')
+    .eq('id', numId)
+    .maybeSingle();
+  if (fetchErr || !row) throw new Error('Không tìm thấy dòng chi tiết');
+  const dot = await getDotKiemKeByIdSupabase(String((row as { id_dot_kiem_ke: number }).id_dot_kiem_ke));
+  if (!dot) throw new Error('Đợt kiểm kê không tồn tại');
+  if (dot.trang_thai === TRANG_THAI_HOAN_THANH) throw new Error('Chỉ được xóa dòng khi đợt ở trạng thái Nháp hoặc Đang kiểm kê');
+  const { error } = await supabase.from(TABLE_CT).delete().eq('id', numId);
+  if (error) throw new Error((error as { message?: string }).message ?? String(error));
 }
 
 export async function themChiTietPhatHienSupabase(

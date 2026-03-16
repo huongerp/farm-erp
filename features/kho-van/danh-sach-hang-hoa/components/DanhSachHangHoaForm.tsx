@@ -107,7 +107,7 @@ const DanhSachHangHoaForm: React.FC<Props> = ({ initialData, defaultThuTu, exist
       ...data,
       id_danh_muc_cap2: data.id_danh_muc_cap2 === '' || data.id_danh_muc_cap2 === undefined ? null : data.id_danh_muc_cap2,
       dvt: data.dvt?.trim() || null,
-      don_gia: data.don_gia != null && !Number.isNaN(Number(data.don_gia)) && Number(data.don_gia) > 0 ? Number(data.don_gia) : null,
+      don_gia: data.don_gia != null && !Number.isNaN(Number(data.don_gia)) && Number(data.don_gia) >= 0 ? Number(data.don_gia) : null,
       mo_ta: data.mo_ta?.trim() || null,
       hinh_anh: data.hinh_anh?.trim() || null,
     };
@@ -183,6 +183,7 @@ const DanhSachHangHoaForm: React.FC<Props> = ({ initialData, defaultThuTu, exist
                     placeholder={t('hangHoa.form.categoryPlaceholderCap2')}
                     searchable
                     dropdownInPortal
+                    required
                     error={errors.id_danh_muc_cap2?.message}
                   />
                 )}
@@ -194,6 +195,7 @@ const DanhSachHangHoaForm: React.FC<Props> = ({ initialData, defaultThuTu, exist
                 placeholder={t('hangHoa.form.unitPlaceholder')}
                 icon={<Package size={12} />}
                 list={dvtListId}
+                required
                 {...register('dvt')}
                 error={errors.dvt?.message}
               />
@@ -214,7 +216,8 @@ const DanhSachHangHoaForm: React.FC<Props> = ({ initialData, defaultThuTu, exist
                   placeholder={t('hangHoa.form.pricePlaceholder')}
                   icon={<DollarSign size={12} />}
                   value={field.value ?? 0}
-                  onChange={(n) => field.onChange(n === 0 ? null : n)}
+                  onChange={(n) => field.onChange(n != null && !Number.isNaN(n) ? n : undefined)}
+                  required
                   error={errors.don_gia?.message}
                   suffix=""
                 />

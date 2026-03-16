@@ -14,9 +14,11 @@ interface Props {
   onAdd: () => void;
   onDeleteMany: (ids: string[]) => void;
   onStatusChangeMany: (ids: string[], status: TrangThaiHoatDong) => void;
+  canCreate?: boolean;
+  canDelete?: boolean;
 }
 
-const TrangThaiThanhToanDoiTacToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onStatusChangeMany }) => {
+const TrangThaiThanhToanDoiTacToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onStatusChangeMany, canCreate = true, canDelete = true }) => {
   const { t } = useTranslation();
   const {
     searchTerm,
@@ -68,7 +70,7 @@ const TrangThaiThanhToanDoiTacToolbar: React.FC<Props> = ({ items = [], onAdd, o
     />
   );
 
-  const renderActions = (
+  const renderActions = canCreate ? (
     <Button
       onClick={onAdd}
       size="sm"
@@ -77,7 +79,7 @@ const TrangThaiThanhToanDoiTacToolbar: React.FC<Props> = ({ items = [], onAdd, o
       <Plus className="w-5 h-5 sm:w-4 sm:h-4 sm:mr-2" />
       <span className="hidden sm:inline">{t('common.addNew')}</span>
     </Button>
-  );
+  ) : null;
 
   return (
     <GenericToolbar
@@ -88,12 +90,12 @@ const TrangThaiThanhToanDoiTacToolbar: React.FC<Props> = ({ items = [], onAdd, o
       actions={renderActions}
       filters={renderFilters}
       filterGroups={filterGroups}
-      onAdd={onAdd}
+      onAdd={canCreate ? onAdd : undefined}
       searchPlaceholder={t('thietLapDeXuatVatTu.thanhToan.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
-      onDeleteMany={() => onDeleteMany(Array.from(selectedIds))}
-      onStatusChangeMany={(numStatus) => onStatusChangeMany(Array.from(selectedIds), numStatus === 1 ? TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG : TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG)}
+      onDeleteMany={canDelete ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
+      onStatusChangeMany={canDelete ? (numStatus) => onStatusChangeMany(Array.from(selectedIds), numStatus === 1 ? TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG : TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG) : undefined}
       columns={columns}
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}

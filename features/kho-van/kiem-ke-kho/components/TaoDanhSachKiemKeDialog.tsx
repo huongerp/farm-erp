@@ -1,7 +1,7 @@
 /**
- * Dialog chọn phạm vi (hàng hóa, danh mục) trước khi tạo danh sách kiểm kê kho.
+ * Dialog chọn phạm vi (kho, danh mục, hàng hóa) trước khi tạo danh sách kiểm kê kho.
  */
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { List, X } from 'lucide-react';
@@ -12,13 +12,19 @@ import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { getAllHangHoa } from '../../danh-sach-hang-hoa/services/hang-hoa-service';
 import { getAllDanhMucHangHoa } from '../../danh-muc-hang-hoa/services/danh-muc-hang-hoa-service';
 import { useQuery } from '@tanstack/react-query';
+import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import type { TaoDanhSachKiemKeKhoFilters } from '../services/kiem-ke-kho-service';
 
 interface Props {
   open: boolean;
   onClose: () => void;
-  onConfirm: (filters: TaoDanhSachKiemKeKhoFilters | undefined) => void;
+  /** (id_dot_kiem_ke_kho, filters) — luôn truyền id đợt khi xác nhận để tránh state cũ. */
+  onConfirm: (id_dot_kiem_ke_kho: string, filters: TaoDanhSachKiemKeKhoFilters | undefined) => void;
   isLoading?: boolean;
+  /** Id đợt kiểm kê đang mở (bắt buộc khi tạo danh sách). */
+  dotId: string | null;
+  /** Kho thuộc đợt (để chọn phạm vi). Để trống = tất cả kho. */
+  idKhoOfDot?: string[];
 }
 
 const TaoDanhSachKiemKeDialog: React.FC<Props> = ({
@@ -26,11 +32,15 @@ const TaoDanhSachKiemKeDialog: React.FC<Props> = ({
   onClose,
   onConfirm,
   isLoading = false,
+  dotId,
+  idKhoOfDot = [],
 }) => {
   const { t } = useTranslation();
-  const [id_hang_hoa, setIdHangHoa] = useState<string[]>([]);
+  const [id_kho, setIdKho] = useState<string[]>([]);
   const [id_danh_muc, setIdDanhMuc] = useState<string[]>([]);
+  const [id_hang_hoa, setIdHangHoa] = useState<string[]>([]);
 
+  const { data: khoList = [] } = useKhoList();
   const { data: hangHoaList = [] } = useQuery({
     queryKey: ['hangHoaList'],
     queryFn: getAllHangHoa,
@@ -42,28 +52,38 @@ const TaoDanhSachKiemKeDialog: React.FC<Props> = ({
     enabled: open,
   });
 
+  const khoOptions = useMemo(() => {
+    const ids = idKhoOfDot.length > 0 ? idKhoOfDot : khoList.map((k) => k.id);
+    return khoList
+      .filter((k) => ids.includes(k.id) && k.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG)
+      .map((k) => ({ label: k.ten_kho, value: k.id, subLabel: k.ma_kho }));
+  }, [khoList, idKhoOfDot]);
+
   const hangHoaOptions = hangHoaList
     .filter((h) => h.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG)
-    .map((h) => ({ label: h.ten_hang, value: h.id, subLabel: h.ma_hang }));
+    .map((h) => ({ label: h.ten_hang ?? h.ten_hang_hoa, value: h.id, subLabel: h.ma_hang ?? h.ma_hang_hoa }));
   const danhMucOptions = danhMucList
     .filter((d) => d.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG)
     .map((d) => ({ label: d.ten_danh_muc, value: d.id, subLabel: d.ma_danh_muc }));
 
   const handleConfirm = useCallback(() => {
-    const hasAny = id_hang_hoa.length > 0 || id_danh_muc.length > 0;
+    if (!dotId) return;
+    const hasAny = id_kho.length > 0 || id_danh_muc.length > 0 || id_hang_hoa.length > 0;
     const filters: TaoDanhSachKiemKeKhoFilters | undefined = hasAny
       ? {
-          ...(id_hang_hoa.length > 0 && { id_hang_hoa }),
+          ...(id_kho.length > 0 && { id_kho }),
           ...(id_danh_muc.length > 0 && { id_danh_muc }),
+          ...(id_hang_hoa.length > 0 && { id_hang_hoa }),
         }
       : undefined;
-    onConfirm(filters);
-  }, [id_hang_hoa, id_danh_muc, onConfirm]);
+    onConfirm(dotId, filters);
+  }, [dotId, id_kho, id_danh_muc, id_hang_hoa, onConfirm]);
 
   const handleClose = useCallback(() => {
     if (isLoading) return;
-    setIdHangHoa([]);
+    setIdKho([]);
     setIdDanhMuc([]);
+    setIdHangHoa([]);
     onClose();
   }, [isLoading, onClose]);
 
@@ -114,19 +134,28 @@ const TaoDanhSachKiemKeDialog: React.FC<Props> = ({
           </div>
 
           <div className="flex-1 min-h-[320px] overflow-visible p-5 space-y-5">
-            <MultiSelect
-              label={t('kiemKeKho.taoDanhSachDialog.hangHoa')}
-              options={hangHoaOptions}
-              value={id_hang_hoa}
-              onChange={setIdHangHoa}
-              placeholder={t('kiemKeKho.taoDanhSachDialog.hangHoaPlaceholder')}
-            />
+            {khoOptions.length > 0 && (
+              <MultiSelect
+                label={t('kiemKeKho.taoDanhSachDialog.kho')}
+                options={khoOptions}
+                value={id_kho}
+                onChange={setIdKho}
+                placeholder={t('kiemKeKho.taoDanhSachDialog.khoPlaceholder')}
+              />
+            )}
             <MultiSelect
               label={t('kiemKeKho.taoDanhSachDialog.danhMuc')}
               options={danhMucOptions}
               value={id_danh_muc}
               onChange={setIdDanhMuc}
               placeholder={t('kiemKeKho.taoDanhSachDialog.danhMucPlaceholder')}
+            />
+            <MultiSelect
+              label={t('kiemKeKho.taoDanhSachDialog.hangHoa')}
+              options={hangHoaOptions}
+              value={id_hang_hoa}
+              onChange={setIdHangHoa}
+              placeholder={t('kiemKeKho.taoDanhSachDialog.hangHoaPlaceholder')}
             />
           </div>
 
@@ -136,6 +165,7 @@ const TaoDanhSachKiemKeDialog: React.FC<Props> = ({
             </Button>
             <Button
               onClick={handleConfirm}
+              disabled={!dotId}
               isLoading={isLoading}
               className="bg-primary text-white"
             >

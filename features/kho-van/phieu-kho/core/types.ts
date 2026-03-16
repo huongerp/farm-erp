@@ -75,6 +75,8 @@ export interface PhieuKho {
   /** Text: "Chờ duyệt" | "Đã duyệt" | "Không duyệt" */
   trang_thai: TrangThaiPhieuKho;
   mo_ta?: string;
+  /** Nội dung trao đổi / ghi chú duyệt. */
+  trao_doi?: string;
   /** Id người tạo (fp_var_nhan_vien.id, int8). */
   nguoi_tao_id?: number | null;
   ten_nguoi_tao?: string;

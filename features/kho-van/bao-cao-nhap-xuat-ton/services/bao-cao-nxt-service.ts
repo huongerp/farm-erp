@@ -8,177 +8,259 @@ import type {
   NXTByProductRow,
   TonTaiThoiDiemRow,
 } from '../core/types';
-import { getAllPhieuKho, getPhieuKhoById } from '../../phieu-kho/services/phieu-kho-service';
+import { getAllPhieuKho } from '../../phieu-kho/services/phieu-kho-service';
 import { getAllTonKho } from '../../phieu-kho/services/ton-kho-service';
 import { getKhoList } from '../../danh-sach-kho/services/kho-service';
 import { getAllHangHoa } from '../../danh-sach-hang-hoa/services/hang-hoa-service';
+import { supabase, fetchAllRows } from '../../../../lib/supabase';
+
+/* ────────────────────────── helpers ────────────────────────── */
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 function inDateRange(ngay: string, dateFrom: string, dateTo: string): boolean {
-  return ngay >= dateFrom && ngay <= dateTo;
+  if (!ngay || !dateFrom || !dateTo) return false;
+  const d = ngay.trim().slice(0, 10);
+  return d >= dateFrom && d <= dateTo;
 }
 
-/** Trạng thái phiếu: DB lưu text 'Chờ duyệt' | 'Đã duyệt' | 'Không duyệt'. Chỉ phiếu Không duyệt không tính tồn. */
-const TRANG_THAI_KHONG_DUYET = 'Không duyệt';
+function isTrangThaiTinhTon(p: { trang_thai?: string | null }): boolean {
+  return (p.trang_thai ?? '').trim() !== 'Không duyệt';
+}
+
+function normalizeLoai(loai: string | undefined | null): 'nhập' | 'xuất' | 'chuyển' | null {
+  const l = (loai ?? '').trim().toLowerCase();
+  if (l === 'nhập' || l === 'nhap') return 'nhập';
+  if (l === 'xuất' || l === 'xuat') return 'xuất';
+  if (l === 'chuyển' || l === 'chuyen') return 'chuyển';
+  return null;
+}
+
+type Mov = { nhap: number; xuat: number };
+const zeroMov = (): Mov => ({ nhap: 0, xuat: 0 });
+const addMov = (map: Map<string, Mov>, key: string, nhap: number, xuat: number) => {
+  const cur = map.get(key) ?? zeroMov();
+  cur.nhap += nhap;
+  cur.xuat += xuat;
+  map.set(key, cur);
+};
+
+/* ────────────────────────── main report ────────────────────────── */
 
 /**
- * Lấy báo cáo tổng hợp NXT theo kỳ.
- * Tính phiếu Chờ duyệt + Đã duyệt cho nhập/xuất; chỉ Không duyệt không tính. Tồn cuối từ view fp_mh_ton_kho.
+ * Báo cáo tổng hợp NXT theo kỳ.
+ *
+ * Công thức cốt lõi (áp dụng cho mỗi cặp kho × hàng hóa):
+ *   tồn_cuối_kỳ  = tồn_hiện_tại − nhập_sau_kỳ + xuất_sau_kỳ
+ *   tồn_đầu_kỳ   = tồn_cuối_kỳ  − nhập_trong_kỳ + xuất_trong_kỳ
+ *
+ * Đảm bảo: Tồn đầu + Tổng nhập − Tổng xuất ≡ Tồn cuối.
+ * Chỉ phiếu "Không duyệt" bị loại; "Chờ duyệt" + "Đã duyệt" đều tính.
  */
 export async function getNXTByPeriod(filters: NXTReportFilters): Promise<NXTByPeriodResult> {
-  await delay(300);
   const { dateFrom, dateTo, warehouseIds, loaiPhieu, hangHoaIds, categoryIds } = filters;
-  const allPhieu = await getAllPhieuKho();
-  const khoList = await getKhoList();
-  const hangHoaList = await getAllHangHoa();
-  const tonKhoList = await getAllTonKho();
 
-  const warehouseSet = warehouseIds.length > 0 ? new Set(warehouseIds) : null;
-  const loaiSet = loaiPhieu.length > 0 ? new Set(loaiPhieu) : null;
-  const hangHoaSet = hangHoaIds.length > 0 ? new Set(hangHoaIds) : null;
-  const categorySet = categoryIds.length > 0 ? new Set(categoryIds) : null;
+  // ── 1. Load all data in parallel (single bulk queries, no N+1) ──
+  const [allPhieu, khoList, hangHoaList, tonKhoList, allCtRaw] = await Promise.all([
+    getAllPhieuKho(),
+    getKhoList(),
+    getAllHangHoa(),
+    getAllTonKho(),
+    fetchAllRows<{ id_phieu_kho: number; id_hang_hoa: number; so_luong: number }>((from, to) =>
+      supabase
+        .from('fp_mh_phieu_kho_chi_tiet')
+        .select('id_phieu_kho, id_hang_hoa, so_luong')
+        .range(from, to)
+    ),
+  ]);
 
-  const phieuInRange = allPhieu.filter((p) => {
-    if (!inDateRange(p.ngay, dateFrom, dateTo)) return false;
-    if (p.trang_thai === TRANG_THAI_KHONG_DUYET) return false; // chỉ phiếu Không duyệt không tính
-    if (warehouseSet && !warehouseSet.has(p.kho_id)) return false;
-    if (warehouseSet && p.kho_den_id && !warehouseSet.has(p.kho_den_id)) return false;
-    if (loaiSet && !loaiSet.has(p.loai)) return false;
-    return true;
-  });
+  // ── 2. Report filter sets ──
+  const warehouseSet = warehouseIds?.length ? new Set(warehouseIds) : null;
+  const loaiSet = loaiPhieu?.length ? new Set(loaiPhieu) : null;
+  const hangHoaSet = hangHoaIds?.length ? new Set(hangHoaIds) : null;
+  const categorySet = categoryIds?.length ? new Set(categoryIds) : null;
 
+  // ── 3. Lookup maps ──
   const khoMap: Record<string, Kho> = {};
-  khoList.forEach((k) => { khoMap[k.id] = k; });
+  khoList.forEach((k) => { khoMap[String(k.id)] = k; });
   const hangHoaMap: Record<string, HangHoa> = {};
-  hangHoaList.forEach((h) => { hangHoaMap[h.id] = h; });
+  hangHoaList.forEach((h) => { hangHoaMap[String(h.id)] = h; });
 
-  const tonMap = new Map<string, number>();
-  tonKhoList.forEach((r) => tonMap.set(`${r.id_kho}|${r.id_hang_hoa}`, r.so_luong));
-
-  type Movement = { nhap: number; xuat: number };
-  const byKhoHang = new Map<string, Movement>();
-  const byWarehouse = new Map<string, Movement>();
-  const byProduct = new Map<string, Movement>();
-
-  for (const p of phieuInRange) {
-    const full = await getPhieuKhoById(p.id);
-    const chiTiet = full?.chi_tiet ?? [];
-    for (const ct of chiTiet) {
-      if (hangHoaSet && !hangHoaSet.has(ct.id_hang_hoa)) continue;
-      const h = hangHoaMap[ct.id_hang_hoa];
-      if (categorySet && h?.danh_muc_id && !categorySet.has(h.danh_muc_id)) continue;
-
-      const qty = ct.so_luong;
-      if (p.loai === 'nhập') {
-        const keyKho = `${p.kho_id}|${ct.id_hang_hoa}`;
-        const cur = byKhoHang.get(keyKho) ?? { nhap: 0, xuat: 0 };
-        cur.nhap += qty;
-        byKhoHang.set(keyKho, cur);
-        const kw = byWarehouse.get(p.kho_id) ?? { nhap: 0, xuat: 0 };
-        kw.nhap += qty;
-        byWarehouse.set(p.kho_id, kw);
-        const kp = byProduct.get(ct.id_hang_hoa) ?? { nhap: 0, xuat: 0 };
-        kp.nhap += qty;
-        byProduct.set(ct.id_hang_hoa, kp);
-      } else if (p.loai === 'xuất') {
-        const keyKho = `${p.kho_id}|${ct.id_hang_hoa}`;
-        const cur = byKhoHang.get(keyKho) ?? { nhap: 0, xuat: 0 };
-        cur.xuat += qty;
-        byKhoHang.set(keyKho, cur);
-        const kw = byWarehouse.get(p.kho_id) ?? { nhap: 0, xuat: 0 };
-        kw.xuat += qty;
-        byWarehouse.set(p.kho_id, kw);
-        const kp = byProduct.get(ct.id_hang_hoa) ?? { nhap: 0, xuat: 0 };
-        kp.xuat += qty;
-        byProduct.set(ct.id_hang_hoa, kp);
-      } else if (p.loai === 'chuyển' && p.kho_den_id) {
-        const keyFrom = `${p.kho_id}|${ct.id_hang_hoa}`;
-        const keyTo = `${p.kho_den_id}|${ct.id_hang_hoa}`;
-        const curFrom = byKhoHang.get(keyFrom) ?? { nhap: 0, xuat: 0 };
-        curFrom.xuat += qty;
-        byKhoHang.set(keyFrom, curFrom);
-        const curTo = byKhoHang.get(keyTo) ?? { nhap: 0, xuat: 0 };
-        curTo.nhap += qty;
-        byKhoHang.set(keyTo, curTo);
-        const kwFrom = byWarehouse.get(p.kho_id) ?? { nhap: 0, xuat: 0 };
-        kwFrom.xuat += qty;
-        byWarehouse.set(p.kho_id, kwFrom);
-        const kwTo = byWarehouse.get(p.kho_den_id) ?? { nhap: 0, xuat: 0 };
-        kwTo.nhap += qty;
-        byWarehouse.set(p.kho_den_id, kwTo);
-      }
-    }
+  // ── 4. Group chi_tiet by phieu (bulk, no N+1) ──
+  const ctByPhieu = new Map<string, { idHh: string; qty: number }[]>();
+  for (const ct of allCtRaw) {
+    const key = String(ct.id_phieu_kho);
+    const item = { idHh: String(ct.id_hang_hoa), qty: Number(ct.so_luong) || 0 };
+    const arr = ctByPhieu.get(key);
+    if (arr) arr.push(item); else ctByPhieu.set(key, [item]);
   }
 
-  const productPassesFilter = (id_hang_hoa: string): boolean => {
-    if (hangHoaSet && !hangHoaSet.has(id_hang_hoa)) return false;
-    const h = hangHoaMap[id_hang_hoa];
+  const productOk = (idHh: string): boolean => {
+    if (hangHoaSet && !hangHoaSet.has(idHh)) return false;
+    const h = hangHoaMap[idHh];
     if (categorySet && h?.danh_muc_id && !categorySet.has(h.danh_muc_id)) return false;
     return true;
   };
 
+  // ── 5. Aggregate movements ──
+  // afterByKH : phát sinh SAU kỳ (tất cả, không filter) → dùng để trừ ngược từ tồn hiện tại
+  // periodByKH: phát sinh TRONG kỳ (có filter) → hiển thị nhập/xuất + tính tồn đầu
+  const afterByKH = new Map<string, Mov>();
+  const periodByKH = new Map<string, Mov>();
+  const periodByKho = new Map<string, Mov>();
+  const periodByHH = new Map<string, Mov>();
+
+  for (const p of allPhieu) {
+    if (!isTrangThaiTinhTon(p)) continue;
+    const d = (p.ngay ?? '').trim().slice(0, 10);
+    if (!d) continue;
+
+    const isIn = d >= dateFrom && d <= dateTo;
+    const isAfter = d > dateTo;
+    if (!isIn && !isAfter) continue;
+
+    const loai = normalizeLoai(p.loai);
+    if (!loai) continue;
+    const khoId = String(p.kho_id);
+    const khoDenId = p.kho_den_id ? String(p.kho_den_id) : null;
+    const items = ctByPhieu.get(String(p.id)) ?? [];
+
+    for (const ct of items) {
+      if (ct.qty <= 0) continue;
+
+      // ── After-period: aggregate ALL movements (no report filters) ──
+      if (isAfter) {
+        if (loai === 'nhập') {
+          addMov(afterByKH, `${khoId}|${ct.idHh}`, ct.qty, 0);
+        } else if (loai === 'xuất') {
+          addMov(afterByKH, `${khoId}|${ct.idHh}`, 0, ct.qty);
+        } else if (loai === 'chuyển' && khoDenId) {
+          addMov(afterByKH, `${khoId}|${ct.idHh}`, 0, ct.qty);
+          addMov(afterByKH, `${khoDenId}|${ct.idHh}`, ct.qty, 0);
+        }
+        continue;
+      }
+
+      // ── In-period: apply report filters ──
+      if (!productOk(ct.idHh)) continue;
+      if (loaiSet && !loaiSet.has(loai)) continue;
+
+      if (loai === 'nhập') {
+        if (warehouseSet && !warehouseSet.has(khoId)) continue;
+        addMov(periodByKH, `${khoId}|${ct.idHh}`, ct.qty, 0);
+        addMov(periodByKho, khoId, ct.qty, 0);
+        addMov(periodByHH, ct.idHh, ct.qty, 0);
+      } else if (loai === 'xuất') {
+        if (warehouseSet && !warehouseSet.has(khoId)) continue;
+        addMov(periodByKH, `${khoId}|${ct.idHh}`, 0, ct.qty);
+        addMov(periodByKho, khoId, 0, ct.qty);
+        addMov(periodByHH, ct.idHh, 0, ct.qty);
+      } else if (loai === 'chuyển' && khoDenId) {
+        const fromOk = !warehouseSet || warehouseSet.has(khoId);
+        const toOk = !warehouseSet || warehouseSet.has(khoDenId);
+        if (!fromOk && !toOk) continue;
+        if (fromOk) {
+          addMov(periodByKH, `${khoId}|${ct.idHh}`, 0, ct.qty);
+          addMov(periodByKho, khoId, 0, ct.qty);
+        }
+        if (toOk) {
+          addMov(periodByKH, `${khoDenId}|${ct.idHh}`, ct.qty, 0);
+          addMov(periodByKho, khoDenId, ct.qty, 0);
+        }
+      }
+    }
+  }
+
+  // ── 6. Current stock from view (tồn hiện tại = thời điểm NOW, chưa phải cuối kỳ) ──
+  const currentByKH = new Map<string, number>();
+  tonKhoList.forEach((r) => {
+    const key = `${String(r.id_kho)}|${String(r.id_hang_hoa)}`;
+    currentByKH.set(key, (currentByKH.get(key) ?? 0) + r.so_luong);
+  });
+  afterByKH.forEach((_, key) => { if (!currentByKH.has(key)) currentByKH.set(key, 0); });
+  periodByKH.forEach((_, key) => { if (!currentByKH.has(key)) currentByKH.set(key, 0); });
+
+  // ── 7. Build by-warehouse rows ──
   const byWarehouseRows: NXTByWarehouseRow[] = [];
-  const khoIdsForReport = warehouseSet ? Array.from(warehouseSet) : khoList.map((k) => k.id);
-  for (const id_kho of khoIdsForReport) {
-    const k = khoMap[id_kho];
-    const mov = byWarehouse.get(id_kho) ?? { nhap: 0, xuat: 0 };
-    let ton_dau = 0;
-    let ton_cuoi = 0;
-    tonKhoList.filter((r) => r.id_kho === id_kho && productPassesFilter(r.id_hang_hoa)).forEach((r) => {
-      ton_cuoi += r.so_luong;
-      const m = byKhoHang.get(`${id_kho}|${r.id_hang_hoa}`) ?? { nhap: 0, xuat: 0 };
-      ton_dau += r.so_luong - m.nhap + m.xuat;
+  const khoIdsForReport = warehouseSet
+    ? Array.from(warehouseSet)
+    : [...new Set([...khoList.map((k) => String(k.id)), ...periodByKho.keys()])];
+
+  for (const idKho of khoIdsForReport) {
+    const k = khoMap[idKho];
+    const pMov = periodByKho.get(idKho) ?? zeroMov();
+    let ton_cuoi_ky = 0;
+    let ton_dau_ky = 0;
+
+    currentByKH.forEach((currentQty, key) => {
+      const [kho, hh] = key.split('|');
+      if (kho !== idKho || !productOk(hh)) return;
+      const after = afterByKH.get(key) ?? zeroMov();
+      const period = periodByKH.get(key) ?? zeroMov();
+      const endQty = currentQty - after.nhap + after.xuat;
+      const startQty = endQty - period.nhap + period.xuat;
+      ton_cuoi_ky += endQty;
+      ton_dau_ky += startQty;
     });
+
     byWarehouseRows.push({
-      id_kho,
-      ma_kho: k?.ma_kho ?? id_kho,
-      ten_kho: k?.ten_kho ?? id_kho,
-      ton_dau_ky: ton_dau,
-      tong_nhap: mov.nhap,
-      tong_xuat: mov.xuat,
-      ton_cuoi_ky: ton_cuoi,
+      id_kho: idKho,
+      ma_kho: k?.ma_kho ?? idKho,
+      ten_kho: k?.ten_kho ?? idKho,
+      ton_dau_ky,
+      tong_nhap: pMov.nhap,
+      tong_xuat: pMov.xuat,
+      ton_cuoi_ky,
     });
   }
 
+  // ── 8. Build by-product rows ──
   const byProductRows: NXTByProductRow[] = [];
-  const productIds = new Set<string>();
-  byProduct.forEach((_, id) => productIds.add(id));
-  tonKhoList.forEach((r) => productIds.add(r.id_hang_hoa));
-  productIds.forEach((id_hang_hoa) => {
-    const h = hangHoaMap[id_hang_hoa];
-    if (hangHoaSet && !hangHoaSet.has(id_hang_hoa)) return;
-    if (categorySet && h?.danh_muc_id && !categorySet.has(h.danh_muc_id)) return;
-    const mov = byProduct.get(id_hang_hoa) ?? { nhap: 0, xuat: 0 };
-    let ton_cuoi = 0;
-    let ton_dau = 0;
-    const tonRowsForProduct = tonKhoList.filter((r) => {
-      if (r.id_hang_hoa !== id_hang_hoa) return false;
-      if (warehouseSet && !warehouseSet.has(r.id_kho)) return false;
-      return true;
+  const hhIdsForReport = new Set<string>();
+  periodByHH.forEach((_, id) => hhIdsForReport.add(id));
+  tonKhoList.forEach((r) => {
+    const idHh = String(r.id_hang_hoa);
+    if (productOk(idHh)) hhIdsForReport.add(idHh);
+  });
+
+  hhIdsForReport.forEach((idHh) => {
+    if (!productOk(idHh)) return;
+    const h = hangHoaMap[idHh];
+    const pMov = periodByHH.get(idHh) ?? zeroMov();
+    let ton_cuoi_ky = 0;
+    let ton_dau_ky = 0;
+
+    currentByKH.forEach((currentQty, key) => {
+      const [kho, hh] = key.split('|');
+      if (hh !== idHh) return;
+      if (warehouseSet && !warehouseSet.has(kho)) return;
+      const after = afterByKH.get(key) ?? zeroMov();
+      const period = periodByKH.get(key) ?? zeroMov();
+      const endQty = currentQty - after.nhap + after.xuat;
+      const startQty = endQty - period.nhap + period.xuat;
+      ton_cuoi_ky += endQty;
+      ton_dau_ky += startQty;
     });
-    tonRowsForProduct.forEach((r) => {
-      ton_cuoi += r.so_luong;
-      const m = byKhoHang.get(`${r.id_kho}|${id_hang_hoa}`) ?? { nhap: 0, xuat: 0 };
-      ton_dau += r.so_luong - m.nhap + m.xuat;
-    });
-    const maHang = h?.ma_hang ?? h?.ma_hang_hoa ?? id_hang_hoa;
-    const tenHang = h?.ten_hang ?? h?.ten_hang_hoa ?? '—';
+
+    const maHang = h?.ma_hang ?? (h as any)?.ma_hang_hoa ?? idHh;
+    const tenHang = h?.ten_hang ?? (h as any)?.ten_hang_hoa ?? '—';
     byProductRows.push({
-      id_hang_hoa,
+      id_hang_hoa: idHh,
       ma_hang: maHang,
       ten_hang: tenHang,
       ten_danh_muc: h?.ten_danh_muc,
-      don_vi_tinh: h?.dvt ?? h?.don_vi_tinh ?? '—',
-      ton_dau_ky: ton_dau,
-      tong_nhap: mov.nhap,
-      tong_xuat: mov.xuat,
-      ton_cuoi_ky: ton_cuoi,
+      don_vi_tinh: (h as any)?.dvt ?? h?.don_vi_tinh ?? '—',
+      ton_dau_ky,
+      tong_nhap: pMov.nhap,
+      tong_xuat: pMov.xuat,
+      ton_cuoi_ky,
     });
   });
 
   return { byWarehouse: byWarehouseRows, byProduct: byProductRows };
 }
+
+/* ────────────────────────── other exports ────────────────────────── */
 
 /** Map trạng thái số (UI filter) sang text DB. */
 const TRANG_THAI_NUM_TO_TEXT: Record<number, string> = {
@@ -212,7 +294,7 @@ export async function getPhieuInPeriod(filters: NXTReportFilters): Promise<Phieu
 }
 
 /**
- * Lấy bảng tồn tại thời điểm (hiện tại mock = tồn hiện tại).
+ * Lấy bảng tồn tại thời điểm (hiện tại = tồn hiện tại từ view).
  */
 export async function getTonAtDate(filters: Pick<NXTReportFilters, 'warehouseIds' | 'hangHoaIds' | 'categoryIds'>): Promise<TonTaiThoiDiemRow[]> {
   await delay(200);

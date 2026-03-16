@@ -14,7 +14,7 @@ import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 interface Props {
   data: TrangThaiThanhToanDoiTac;
   onClose: () => void;
-  onEdit: (item: TrangThaiThanhToanDoiTac) => void;
+  onEdit?: (item: TrangThaiThanhToanDoiTac) => void;
   onDelete?: (id: string) => void;
 }
 
@@ -27,15 +27,17 @@ const TrangThaiThanhToanDoiTacDetail: React.FC<Props> = ({ data, onClose, onEdit
         {BTN_CLOSE()}
       </Button>
       <div className="flex items-center gap-3">
-        <Button
-          onClick={() => {
-            onEdit(data);
-            onClose();
-          }}
-          className="bg-primary text-white shadow-lg hover:bg-primary/90"
-        >
-          <Edit size={16} className="mr-2" /> {BTN_EDIT()}
-        </Button>
+        {onEdit && (
+          <Button
+            onClick={() => {
+              onEdit(data);
+              onClose();
+            }}
+            className="bg-primary text-white shadow-lg hover:bg-primary/90"
+          >
+            <Edit size={16} className="mr-2" /> {BTN_EDIT()}
+          </Button>
+        )}
         {onDelete && (
           <Button
             variant="ghost"

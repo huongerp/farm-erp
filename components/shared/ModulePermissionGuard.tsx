@@ -16,6 +16,7 @@ export function useModulePermissionFromContext(): ModulePermissionFlags {
     canCreate: true,
     canUpdate: true,
     canDelete: true,
+    canApprove: true,
     isLoading: false,
   };
 }
@@ -30,7 +31,7 @@ interface ModulePermissionGuardProps {
  */
 const ModulePermissionGuard: React.FC<ModulePermissionGuardProps> = ({ moduleId, children }) => {
   const { t } = useTranslation();
-  const { canView, canCreate, canUpdate, canDelete, isLoading } = useModulePermission(moduleId);
+  const { canView, canCreate, canUpdate, canDelete, canApprove, isLoading } = useModulePermission(moduleId);
 
   if (!isLoading && !canView) {
     return (
@@ -42,7 +43,7 @@ const ModulePermissionGuard: React.FC<ModulePermissionGuardProps> = ({ moduleId,
 
   return (
     <ModulePermissionContext.Provider
-      value={{ canView, canCreate, canUpdate, canDelete, isLoading }}
+      value={{ canView, canCreate, canUpdate, canDelete, canApprove, isLoading }}
     >
       {children}
     </ModulePermissionContext.Provider>

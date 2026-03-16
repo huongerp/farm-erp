@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import KiemKeKhoToolbar from './KiemKeKhoToolbar';
 import DotKiemKeKhoTable from './DotKiemKeKhoTable';
@@ -24,6 +25,7 @@ import type { DotKiemKeKho, TrangThaiDotKiemKeKho } from '../core/types';
 
 const DotTab: React.FC = () => {
   const { t } = useTranslation();
+  const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
   const { searchTerm, filters, sort, resetState, selectedIds, clearSelection } = useKiemKeKhoStore();
   const { data: list = [], isLoading } = useDotKiemKeKhoList({
@@ -155,15 +157,17 @@ const DotTab: React.FC = () => {
         items={sortedList}
         onAdd={handleAdd}
         onDeleteMany={handleDeleteMany}
-        showAdd
+        showAdd={canCreate}
+        canCreate={canCreate}
+        canDelete={canDelete}
       />
       <div className="flex-1 min-h-0 mt-1.5">
         <DotKiemKeKhoTable
           data={sortedList}
           isLoading={isLoading}
           onView={handleView}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
+          onEdit={canUpdate ? handleEdit : undefined}
+          onDelete={canDelete ? handleDelete : undefined}
           showActions
         />
       </div>
@@ -174,13 +178,13 @@ const DotTab: React.FC = () => {
           chiTiet={chiTiet}
           chiTietLoading={chiTietLoading}
           onClose={() => setDetailItem(null)}
-          onEdit={handleEdit}
-          onTaoDanhSach={() => {
+          onEdit={canUpdate ? handleEdit : undefined}
+          onTaoDanhSach={canUpdate ? () => {
             setDotIdForTaoDanhSach(detailData.id);
             setShowTaoDanhSachDialog(true);
-          }}
-          onHoanThanh={() => hoanThanhMutation.mutate(detailData.id)}
-          onStatusChange={handleStatusChange}
+          } : undefined}
+          onHoanThanh={canUpdate ? () => hoanThanhMutation.mutate(detailData.id) : undefined}
+          onStatusChange={canUpdate ? handleStatusChange : undefined}
           taoDanhSachLoading={taoDanhSachMutation.isPending}
           hoanThanhLoading={hoanThanhMutation.isPending}
         />
@@ -203,20 +207,20 @@ const DotTab: React.FC = () => {
           setShowTaoDanhSachDialog(false);
           setDotIdForTaoDanhSach(null);
         }}
-        onConfirm={(filters) => {
-          if (dotIdForTaoDanhSach) {
-            taoDanhSachMutation.mutate(
-              { id_dot_kiem_ke_kho: dotIdForTaoDanhSach, filters },
-              {
-                onSettled: () => {
-                  setShowTaoDanhSachDialog(false);
-                  setDotIdForTaoDanhSach(null);
-                },
-              }
-            );
-          }
+        onConfirm={(id_dot_kiem_ke_kho, filters) => {
+          taoDanhSachMutation.mutate(
+            { id_dot_kiem_ke_kho, filters },
+            {
+              onSettled: () => {
+                setShowTaoDanhSachDialog(false);
+                setDotIdForTaoDanhSach(null);
+              },
+            }
+          );
         }}
         isLoading={taoDanhSachMutation.isPending}
+        dotId={dotIdForTaoDanhSach ?? detailData?.id ?? null}
+        idKhoOfDot={detailData?.id_kho}
       />
     </div>
   );

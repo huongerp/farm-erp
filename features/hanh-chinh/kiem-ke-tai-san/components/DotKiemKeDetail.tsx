@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ClipboardCheck, List, CheckCircle, Edit, Printer, Power, PenLine, PackagePlus, RefreshCw, FileText, X } from 'lucide-react';
+import { ClipboardCheck, List, CheckCircle, Edit, Printer, Power, PackagePlus, Plus, RefreshCw, FileText, X } from 'lucide-react';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
 import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';
@@ -11,12 +11,14 @@ import Textarea from '../../../../components/ui/Textarea';
 import { BTN_CLOSE, BTN_EDIT } from '../../../../lib/button-labels';
 import { formatDate, cn } from '../../../../lib/utils';
 import { useAuthStore } from '../../../../store/useStore';
-import { getTrangThaiDotLabel, getKetQuaLabel } from '../core/constants';
+import { useConfirmStore } from '../../../../store/useConfirmStore';
+import { getTrangThaiDotLabel } from '../core/constants';
 import type { DotKiemKe, ChiTietKiemKe, ChiTietKiemKeUpdate } from '../core/types';
-import { useUpdateChiTietKetQua, useThemChiTietPhatHien, useCapNhatSoTheoKetQua, useUpdateDotKiemKe } from '../hooks/use-kiem-ke-tai-san';
+import { useUpdateChiTietKetQua, useDeleteChiTietKiemKe, useThemChiTietPhatHien, useCapNhatSoTheoKetQua, useUpdateDotKiemKe } from '../hooks/use-kiem-ke-tai-san';
 import type { ThemChiTietPhatHienPayload } from '../services/kiem-ke-tai-san-service';
 import NhapKetQuaKiemKeDialog from './NhapKetQuaKiemKeDialog';
 import ThemTaiSanThucTeDialog from './ThemTaiSanThucTeDialog';
+import ChiTietKiemKeTaiSanTable from './ChiTietKiemKeTaiSanTable';
 
 /** URL trang preview phiếu kiểm kê (mở tab mới). App dùng HashRouter nên route nằm sau # */
 const getPhieuKiemKePreviewUrl = (id: string) =>
@@ -75,6 +77,8 @@ const DotKiemKeDetail: React.FC<Props> = ({
     setThemTaiSanThucTeOpen(false);
   }, []));
   const capNhatSoMutation = useCapNhatSoTheoKetQua(data.id);
+  const deleteChiTietMutation = useDeleteChiTietKiemKe(data.id);
+  const confirm = useConfirmStore((s) => s.confirm);
 
   const existingTaiSanIds = useMemo(() => new Set(chiTiet.map((c) => c.id_tai_san)), [chiTiet]);
 
@@ -128,7 +132,7 @@ const DotKiemKeDetail: React.FC<Props> = ({
         variant: 'outline',
       },
     ];
-    if (isDraft && onTaoDanhSach) {
+    if ((isDraft || isDangKiemKe) && onTaoDanhSach) {
       actions.push({
         label: t('kiemKeTaiSan.taoDanhSach'),
         icon: <List size={16} />,
@@ -138,13 +142,6 @@ const DotKiemKeDetail: React.FC<Props> = ({
       });
     }
     if (isDangKiemKe) {
-      actions.push({
-        label: t('kiemKeTaiSan.themTaiSanThucTe'),
-        icon: <PackagePlus size={16} />,
-        onClick: () => setThemTaiSanThucTeOpen(true),
-        variant: 'secondary',
-        disabled: themPhatHienMutation.isPending,
-      });
       if (onHoanThanh) {
         actions.push({
           label: t('kiemKeTaiSan.hoanThanh'),
@@ -164,7 +161,7 @@ const DotKiemKeDetail: React.FC<Props> = ({
       });
     }
     return actions;
-  }, [data, chiTiet, isDraft, isDangKiemKe, onTaoDanhSach, onHoanThanh, onStatusChange, taoDanhSachLoading, hoanThanhLoading, themPhatHienMutation.isPending, t]);
+  }, [data, isDraft, isDangKiemKe, onTaoDanhSach, onHoanThanh, onStatusChange, taoDanhSachLoading, hoanThanhLoading, t]);
 
   const renderFooter = (
     <div className="flex items-center justify-between w-full flex-wrap gap-2">
@@ -176,7 +173,7 @@ const DotKiemKeDetail: React.FC<Props> = ({
         {BTN_CLOSE()}
       </Button>
       <div className="flex items-center gap-3 flex-wrap">
-        {isDraft && onEdit && (
+        {(isDraft || isDangKiemKe) && onEdit && (
           <Button
             onClick={() => onEdit(data)}
             className="bg-primary text-white shadow-lg hover:bg-primary/90"
@@ -218,123 +215,79 @@ const DotKiemKeDetail: React.FC<Props> = ({
         </div>
       </DetailSection>
 
-      <DetailSection title={t('kiemKeTaiSan.chiTietSection')} icon={<List size={14} />} variant="primary">
+      <DetailSection
+        title={t('kiemKeTaiSan.chiTietSection')}
+        icon={<List size={14} />}
+        variant="primary"
+        action={
+          (isDraft || isDangKiemKe) ? (
+            isDraft && onTaoDanhSach ? (
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => onTaoDanhSach(data.id)}
+                className="bg-primary text-white hover:bg-primary/90 shadow-sm h-8 px-3"
+                disabled={taoDanhSachLoading}
+              >
+                <Plus size={14} className="mr-1.5" />
+                {t('kiemKeTaiSan.taoDanhSach')}
+              </Button>
+            ) : isDangKiemKe ? (
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => setThemTaiSanThucTeOpen(true)}
+                className="bg-primary text-white hover:bg-primary/90 shadow-sm h-8 px-3"
+                disabled={themPhatHienMutation.isPending}
+              >
+                <PackagePlus size={14} className="mr-1.5" />
+                {t('kiemKeTaiSan.themTaiSanThucTe')}
+              </Button>
+            ) : undefined
+          ) : undefined
+        }
+      >
         {isDraft && chiTiet.length === 0 && (
           <p className="text-sm text-muted-foreground py-4">
             {t('kiemKeTaiSan.taoDanhSachHint')}
           </p>
         )}
-        {(isDangKiemKe || data.trang_thai === 'Hoàn thành') && chiTiet.length > 0 && (
-          <>
-            <div className="flex flex-wrap gap-2 mb-3">
-              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                {t('kiemKeTaiSan.stats.total')}: {stats.total}
-              </span>
-              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-700">
-                {t('kiemKeTaiSan.ketQua.khop')}: {stats.khop}
-              </span>
-              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-700">
-                {t('kiemKeTaiSan.stats.chenh')}: {stats.chenh}
-              </span>
-              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground">
-                {t('kiemKeTaiSan.ketQua.chua_kiem')}: {stats.chuaKiem}
-              </span>
-            </div>
-            {chiTietLoading ? (
-              <p className="text-sm text-muted-foreground py-4">{t('kiemKeTaiSan.loading')}</p>
-            ) : (
-              <div className="rounded-xl border border-border overflow-hidden">
-                <div className="overflow-x-auto max-h-[320px] overflow-y-auto custom-scrollbar">
-                  <table className="w-full text-sm text-left border-collapse">
-                    <thead className="sticky top-0 z-[1] bg-muted border-b border-border">
-                      <tr>
-                        <th className="px-3 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap">
-                          {t('kiemKeTaiSan.store.taiSanCol')}
-                        </th>
-                        <th className="px-3 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap">
-                          {t('kiemKeTaiSan.store.noiLuuSoCol')}
-                        </th>
-                        <th className="px-3 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap">
-                          {t('kiemKeTaiSan.store.nguoiGiuSoCol')}
-                        </th>
-                        <th className="px-3 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap">
-                          {t('kiemKeTaiSan.store.ketQuaCol')}
-                        </th>
-                        {isDangKiemKe && (
-                          <th className="px-3 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap w-[120px]">
-                            {t('common.actions')}
-                          </th>
-                        )}
-                      </tr>
-                    </thead>
-                    <tbody className="[&>tr>td]:border-b [&>tr>td]:border-border">
-                      {chiTiet.map((c) => (
-                        <tr key={c.id}>
-                          <td className="px-3 py-2">
-                            <span className="font-medium">{c.ten_tai_san || c.ma_tai_san || '—'}</span>
-                            {c.ma_tai_san && (
-                              <span className="text-xs text-muted-foreground block">{c.ma_tai_san}</span>
-                            )}
-                          </td>
-                          <td className="px-3 py-2 text-foreground">{c.ten_noi_luu_so || '—'}</td>
-                          <td className="px-3 py-2 text-foreground">{c.ten_nguoi_giu_so || '—'}</td>
-                          <td className="px-3 py-2">
-                            <span
-                              className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
-                                c.ket_qua === 'Khớp'
-                                  ? 'bg-emerald-500/10 text-emerald-700'
-                                  : c.ket_qua === 'Chưa kiểm'
-                                    ? 'bg-muted text-muted-foreground'
-                                    : 'bg-amber-500/10 text-amber-700'
-                              }`}
-                            >
-                              {getKetQuaLabel(c.ket_qua)}
-                            </span>
-                          </td>
-                          {isDangKiemKe && (
-                            <td className="px-3 py-2">
-                              <div className="flex items-center gap-1">
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="icon"
-                                  className="shrink-0 border-border"
-                                  onClick={() => setNhapKetQuaRow(c)}
-                                  disabled={updateKetQuaMutation.isPending}
-                                  title={t('kiemKeTaiSan.table.nhapKetQua')}
-                                >
-                                  <PenLine size={16} />
-                                </Button>
-                                {(c.ket_qua === 'Chênh nơi lưu' ||
-                                  c.ket_qua === 'Chênh người giữ' ||
-                                  c.ket_qua === 'Chênh trạng thái') &&
-                                  (c.id_noi_luu_thuc_te != null ||
-                                    c.id_nguoi_giu_thuc_te != null ||
-                                    c.id_trang_thai_thuc_te != null) && (
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="icon"
-                                    className="shrink-0 border-border"
-                                    onClick={() => capNhatSoMutation.mutate(c.id)}
-                                    disabled={capNhatSoMutation.isPending}
-                                    title={t('kiemKeTaiSan.capNhatSoTheoKetQua')}
-                                  >
-                                    <RefreshCw size={16} />
-                                  </Button>
-                                )}
-                              </div>
-                            </td>
-                          )}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-          </>
+        {chiTiet.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-3">
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
+              {t('kiemKeTaiSan.stats.total')}: {stats.total}
+            </span>
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-700">
+              {t('kiemKeTaiSan.ketQua.khop')}: {stats.khop}
+            </span>
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-700">
+              {t('kiemKeTaiSan.stats.chenh')}: {stats.chenh}
+            </span>
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground">
+              {t('kiemKeTaiSan.ketQua.chua_kiem')}: {stats.chuaKiem}
+            </span>
+          </div>
         )}
+        <ChiTietKiemKeTaiSanTable
+          data={chiTiet}
+          isLoading={chiTietLoading}
+          showActions={isDraft || isDangKiemKe}
+          isDangKiemKe={isDangKiemKe}
+          onNhapKetQua={(item) => setNhapKetQuaRow(item)}
+          onCapNhatSo={(id) => capNhatSoMutation.mutate(id)}
+          onDelete={(item) => {
+            confirm({
+              title: t('kiemKeTaiSan.table.xoaDong'),
+              message: t('kiemKeTaiSan.detail.deleteLineConfirm'),
+              variant: 'danger',
+              confirmText: t('common.delete'),
+              onConfirm: () => deleteChiTietMutation.mutate(item.id),
+            });
+          }}
+          capNhatSoLoading={capNhatSoMutation.isPending}
+          nhapKetQuaLoading={updateKetQuaMutation.isPending}
+          deleteLoading={deleteChiTietMutation.isPending}
+        />
       </DetailSection>
 
       <NhapKetQuaKiemKeDialog

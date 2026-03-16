@@ -19,6 +19,7 @@ import { useAuthStore } from '../../../../store/useStore';
 import { useCreatePhieuDeXuatVatTu, useUpdatePhieuDeXuatVatTu } from '../hooks/use-phieu-de-xuat-vat-tu';
 import { useHangHoaList } from '../../danh-sach-hang-hoa/hooks/use-hang-hoa';
 import { useCauHinhDeXuatVatTu, useGetNextSoPhieuAndIncrement } from '../../../mua-hang/thiet-lap-de-xuat-vat-tu/hooks/use-cau-hinh-de-xuat-vat-tu';
+import { useTienDoMuaHangList } from '../../../mua-hang/thiet-lap-de-xuat-vat-tu/hooks/use-tien-do-mua-hang';
 import { getNextSoPhieuPreview } from '../../../mua-hang/thiet-lap-de-xuat-vat-tu/services/thiet-lap-de-xuat-vat-tu-service';
 import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/GenericDrawer';
 import FormSection from '../../../../components/shared/FormSection';
@@ -32,6 +33,8 @@ function addDays(dateStr: string, days: number): string {
   return d.toISOString().slice(0, 10);
 }
 
+const ADD_HANG_HOA = '__add_hang_hoa__';
+
 interface Props {
   khoList: Kho[];
   employees: Employee[];
@@ -39,6 +42,8 @@ interface Props {
   onClose: () => void;
   /** When false (e.g. approved and config disallows edit), form is read-only */
   canEdit?: boolean;
+  /** Gọi khi user chọn "Thêm hàng hóa mới" trong dropdown hàng hóa (như phiếu kho). */
+  onRequestAddHangHoa?: () => Promise<HangHoa | null>;
 }
 
 /** Lấy id chi nhánh đầu tiên của user (User.id_chi_nhanh có thể là string hoặc string[]) */
@@ -47,13 +52,14 @@ function getUserBranchId(user: { id_chi_nhanh?: string | string[] | null } | nul
   return Array.isArray(user.id_chi_nhanh) ? user.id_chi_nhanh[0] ?? null : (user.id_chi_nhanh as string) ?? null;
 }
 
-const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData, onClose, canEdit = true }) => {
+const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData, onClose, canEdit = true, onRequestAddHangHoa }) => {
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
-  const isEdit = !!initialData;
+  const isEdit = !!initialData?.id;
   const createMutation = useCreatePhieuDeXuatVatTu(onClose);
   const updateMutation = useUpdatePhieuDeXuatVatTu(onClose);
   const { data: hangHoaList = [] } = useHangHoaList();
+  const { data: tienDoMuaHangList = [] } = useTienDoMuaHangList();
   const { data: config } = useCauHinhDeXuatVatTu();
   const getNextSoPhieu = useGetNextSoPhieuAndIncrement();
   const readOnly = isEdit && !canEdit;
@@ -96,6 +102,17 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
     [hangHoaList, t]
   );
 
+  const hangHoaComboboxOptionsWithAdd = useMemo(
+    () => [
+      ...(onRequestAddHangHoa ? [{ value: ADD_HANG_HOA, label: `➕ ${t('phieuDeXuatVatTu.form.addProduct')}`, subLabel: undefined }] : []),
+      ...hangHoaComboboxOptions,
+    ],
+    [hangHoaComboboxOptions, onRequestAddHangHoa, t]
+  );
+
+  const renderAddOption = (opt: { value: string | number; label: string }) =>
+    opt.value === ADD_HANG_HOA ? <span className="text-primary font-medium">{opt.label}</span> : undefined;
+
   const hangHoaMap = useMemo(() => {
     const m: Record<string, HangHoa> = {};
     hangHoaList.forEach((h) => {
@@ -103,6 +120,22 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
     });
     return m;
   }, [hangHoaList]);
+
+  /** Tiến độ mua hàng có thứ tự nhỏ nhất (mặc định khi thêm dòng mới) */
+  const defaultTienDoMuaHang = useMemo(() => {
+    const sorted = [...tienDoMuaHangList].filter((t) => t.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG);
+    sorted.sort((a, b) => a.thu_tu - b.thu_tu);
+    return sorted[0] ?? null;
+  }, [tienDoMuaHangList]);
+
+  const tienDoMuaHangOptions = useMemo(
+    () =>
+      tienDoMuaHangList
+        .filter((t) => t.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG)
+        .sort((a, b) => a.thu_tu - b.thu_tu)
+        .map((t) => ({ value: t.id, label: t.ten })),
+    [tienDoMuaHangList]
+  );
 
   const defaultValues: Partial<PhieuDeXuatVatTuFormValues> = {
     so_phieu: '',
@@ -130,8 +163,10 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
     return khoList.find((k) => k.id_chi_nhanh === branchId) ?? null;
   }, [user, khoList]);
 
+  const isCopy = !!initialData && !initialData.id;
+
   useEffect(() => {
-    if (initialData) {
+    if (initialData && !isCopy) {
       reset({
         so_phieu: initialData.so_phieu,
         ngay: initialData.ngay,
@@ -146,8 +181,37 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
           so_luong: ct.so_luong,
           thong_so: ct.thong_so ?? '',
           ghi_chu: ct.ghi_chu ?? '',
+          id_tien_do_mh: ct.id_tien_do_mh ?? null,
+          ten_tien_do_mh: ct.ten_tien_do_mh ?? null,
+          trao_doi: ct.trao_doi ?? null,
         })),
       });
+    } else if (isCopy) {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      reset({
+        so_phieu: '',
+        ngay: todayStr,
+        ngay_can: config ? addDays(todayStr, config.so_ngay_mac_dinh_ngay_can ?? 0) : '',
+        id_noi_de_xuat: initialData.id_noi_de_xuat,
+        id_nguoi_de_xuat: user?.id ?? initialData.id_nguoi_de_xuat,
+        id_nguoi_duyet: null,
+        ghi_chu: '',
+        trang_thai: TRANG_THAI_CHO_DUYET,
+        chi_tiet: (initialData.chi_tiet ?? []).map((ct) => ({
+          id_hang_hoa: ct.id_hang_hoa,
+          so_luong: ct.so_luong,
+          thong_so: ct.thong_so ?? '',
+          ghi_chu: ct.ghi_chu ?? '',
+          id_tien_do_mh: ct.id_tien_do_mh ?? defaultTienDoMuaHang?.id ?? null,
+          ten_tien_do_mh: ct.ten_tien_do_mh ?? defaultTienDoMuaHang?.ten ?? null,
+          trao_doi: null,
+        })),
+      });
+      if (config?.tu_sinh_so_phieu) {
+        getNextSoPhieuPreview().then((preview) => {
+          if (preview) setValue('so_phieu', preview);
+        });
+      }
     } else if (config) {
       const today = new Date().toISOString().slice(0, 10);
       reset({
@@ -169,7 +233,7 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
       if (user?.id) setValue('id_nguoi_de_xuat', user.id);
       if (defaultKhoByBranch?.id) setValue('id_noi_de_xuat', defaultKhoByBranch.id);
     }
-  }, [initialData, config, reset, user?.id, defaultKhoByBranch?.id, setValue]);
+  }, [initialData, config, reset, user?.id, defaultKhoByBranch?.id, setValue, defaultTienDoMuaHang]);
 
   // Khi tạo mới và bật tự sinh số phiếu: đảm bảo preview luôn được điền (kể cả config load sau)
   useEffect(() => {
@@ -213,6 +277,9 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
         so_luong: Number(c.so_luong),
         thong_so: c.thong_so?.trim() || undefined,
         ghi_chu: c.ghi_chu?.trim() || undefined,
+        id_tien_do_mh: c.id_tien_do_mh?.trim() || null,
+        ten_tien_do_mh: c.ten_tien_do_mh?.trim() || null,
+        trao_doi: c.trao_doi?.trim() || null,
       })),
     };
     if (isEdit && initialData) {
@@ -389,7 +456,14 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
           onAdd={readOnly ? undefined : () => {
             const maxLines = config?.so_dong_toi_da ?? 0;
             if (maxLines > 0 && fields.length >= maxLines) return;
-            append({ id_hang_hoa: '', so_luong: 0, thong_so: '', ghi_chu: '' });
+            append({
+              id_hang_hoa: '',
+              so_luong: 0,
+              thong_so: '',
+              ghi_chu: '',
+              id_tien_do_mh: defaultTienDoMuaHang?.id ?? null,
+              ten_tien_do_mh: defaultTienDoMuaHang?.ten ?? null,
+            });
           }}
           emptyTitle={t('phieuDeXuatVatTu.form.noItems')}
           emptyDescription={t('phieuDeXuatVatTu.form.noItemsHint')}
@@ -407,6 +481,9 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[64px]">
                 {t('phieuDeXuatVatTu.form.unit')}
               </th>
+              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[140px]">
+                {t('phieuDeXuatVatTu.form.tienDoMh')}
+              </th>
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[200px]">
                 {t('phieuDeXuatVatTu.form.specs')}
               </th>
@@ -421,7 +498,7 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
           <tbody className="[&>tr>td]:border-b [&>tr>td]:border-border">
             {fields.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-6 text-center text-muted-foreground text-xs">
+                <td colSpan={8} className="px-4 py-6 text-center text-muted-foreground text-xs">
                   {t('phieuDeXuatVatTu.form.noItems')}
                 </td>
               </tr>
@@ -438,14 +515,23 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
                         control={control}
                         render={({ field: f }) => (
                           <Combobox
-                            options={hangHoaComboboxOptions}
+                            options={hangHoaComboboxOptionsWithAdd}
                             value={f.value || null}
-                            onChange={(v) => f.onChange(v ?? '')}
+                            onChange={(v) => {
+                              if (v === ADD_HANG_HOA) {
+                                onRequestAddHangHoa?.().then((h) => {
+                                  if (h) setValue(`chi_tiet.${index}.id_hang_hoa`, h.id);
+                                });
+                                return;
+                              }
+                              f.onChange(v ?? '');
+                            }}
                             placeholder={t('phieuDeXuatVatTu.form.itemPlaceholder')}
                             searchPlaceholder={t('phieuDeXuatVatTu.form.itemSearchPlaceholder')}
                             searchable
                             triggerClassName="h-9 text-sm border-border rounded-md"
                             dropdownInPortal
+                            renderOption={renderAddOption}
                           />
                         )}
                       />
@@ -469,6 +555,29 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
                       />
                     </td>
                     <td className="px-4 py-2.5 text-xs text-muted-foreground">{donVi}</td>
+                    <td className="px-4 py-2.5 min-w-[140px] align-top">
+                      <Controller
+                        name={`chi_tiet.${index}.id_tien_do_mh`}
+                        control={control}
+                        render={({ field: f }) => (
+                          <Combobox
+                            options={tienDoMuaHangOptions}
+                            value={f.value ?? null}
+                            onChange={(v) => {
+                              const item = tienDoMuaHangList.find((t) => t.id === v);
+                              f.onChange(v ?? null);
+                              if (item) setValue(`chi_tiet.${index}.ten_tien_do_mh`, item.ten);
+                            }}
+                            placeholder={t('phieuDeXuatVatTu.form.tienDoMhPlaceholder')}
+                            searchPlaceholder={t('phieuDeXuatVatTu.form.itemSearchPlaceholder')}
+                            searchable
+                            triggerClassName="h-9 text-sm border-border rounded-md"
+                            dropdownInPortal
+                            disabled={readOnly}
+                          />
+                        )}
+                      />
+                    </td>
                     <td className="px-4 py-2.5 min-w-[200px] align-top">
                       <Textarea
                         placeholder={t('phieuDeXuatVatTu.form.specsPlaceholder')}

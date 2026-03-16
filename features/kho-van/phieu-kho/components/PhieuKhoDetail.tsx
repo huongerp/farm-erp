@@ -1,8 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Edit, Trash2, FileText, Calendar, Warehouse, ArrowRightLeft, Package, Truck, Printer, CheckCircle } from 'lucide-react';
+import { Edit, Trash2, FileText, Calendar, Warehouse, ArrowRightLeft, Package, Truck, Printer, CheckCircle, XCircle, Copy } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Textarea from '../../../../components/ui/Textarea';
+import { cn } from '../../../../lib/utils';
 import type { PhieuKho, LoaiPhieuKhoTab } from '../core/types';
 import { formatDateTimeShort, formatNumberVN } from '../../../../lib/utils';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
@@ -18,14 +19,18 @@ interface Props {
   data: PhieuKho;
   loai: LoaiPhieuKhoTab;
   onClose: () => void;
-  onEdit: (item: PhieuKho) => void;
-  onDelete: (id: string) => void;
+  onEdit?: (item: PhieuKho) => void;
+  onDelete?: (id: string) => void;
+  onCopy?: (item: PhieuKho) => void;
+  /** Có quyền phê duyệt – ẩn nút Duyệt khi false */
+  canApprove?: boolean;
 }
 
-const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete }) => {
+const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete, onCopy, canApprove = true }) => {
   const { t } = useTranslation();
   const [showDuyetPopup, setShowDuyetPopup] = useState(false);
   const [duyetGhiChu, setDuyetGhiChu] = useState('');
+  const [duyetOption, setDuyetOption] = useState<'Đã duyệt' | 'Không duyệt'>('Đã duyệt');
   const updateTrangThaiMutation = useUpdatePhieuKhoTrangThai(() => setShowDuyetPopup(false));
 
   const statusLabel =
@@ -40,25 +45,34 @@ const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete
   const isNhap = loai === 'nhap';
   const isXuat = loai === 'xuat';
 
-  const detailToolbarActions: DetailToolbarAction[] = useMemo(
-    () => [
-      {
+  const detailToolbarActions: DetailToolbarAction[] = useMemo(() => {
+    const actions: DetailToolbarAction[] = [];
+    if (canApprove) {
+      actions.push({
         label: t('phieuKho.approveAction'),
         icon: <CheckCircle size={16} />,
         onClick: () => {
           setDuyetGhiChu('');
+          setDuyetOption(data.trang_thai === 'Không duyệt' ? 'Đã duyệt' : data.trang_thai === 'Đã duyệt' ? 'Không duyệt' : 'Đã duyệt');
           setShowDuyetPopup(true);
         },
         variant: 'primary',
-      },
-      {
-        label: t('phieuKho.printAction'),
-        icon: <Printer size={16} />,
-        onClick: () => window.open(`/mua-hang/phieu-kho/preview/${data.id}`, '_blank', 'noopener,noreferrer'),
-      },
-    ],
-    [data.id, data.trang_thai, t]
-  );
+      });
+    }
+    if (onCopy) {
+      actions.push({
+        label: t('phieuKho.copyAction'),
+        icon: <Copy size={16} />,
+        onClick: () => { onCopy(data); onClose(); },
+      });
+    }
+    actions.push({
+      label: t('phieuKho.printAction'),
+      icon: <Printer size={16} />,
+      onClick: () => window.open(`/mua-hang/phieu-kho/preview/${data.id}`, '_blank', 'noopener,noreferrer'),
+    });
+    return actions;
+  }, [data, canApprove, onCopy, onClose, t]);
 
   const renderFooter = (
     <div className="flex items-center justify-between w-full">
@@ -70,25 +84,29 @@ const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete
         {BTN_CLOSE()}
       </Button>
       <div className="flex items-center gap-3">
-        <Button
-          onClick={() => {
-            onEdit(data);
-            onClose();
-          }}
-          className="bg-primary text-white shadow-lg hover:bg-primary/90"
-        >
-          <Edit size={16} className="mr-2" /> {BTN_EDIT()}
-        </Button>
-        <Button
-          variant="ghost"
-          onClick={() => {
-            onDelete(data.id);
-            onClose();
-          }}
-          className="text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/50 dark:text-rose-400 border border-rose-200 hover:border-rose-300 dark:border-rose-800 dark:hover:border-rose-700"
-        >
-          <Trash2 size={16} className="mr-2" /> {BTN_DELETE()}
-        </Button>
+        {onEdit && (
+          <Button
+            onClick={() => {
+              onEdit(data);
+              onClose();
+            }}
+            className="bg-primary text-white shadow-lg hover:bg-primary/90"
+          >
+            <Edit size={16} className="mr-2" /> {BTN_EDIT()}
+          </Button>
+        )}
+        {onDelete && (
+          <Button
+            variant="ghost"
+            onClick={() => {
+              onDelete(data.id);
+              onClose();
+            }}
+            className="text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/50 dark:text-rose-400 border border-rose-200 hover:border-rose-300 dark:border-rose-800 dark:hover:border-rose-700"
+          >
+            <Trash2 size={16} className="mr-2" /> {BTN_DELETE()}
+          </Button>
+        )}
       </div>
     </div>
   );
@@ -180,6 +198,14 @@ const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete
               icon={<FileText size={12} />}
               className="col-span-1 sm:col-span-2"
             />
+            {data.trao_doi && (
+              <DetailField
+                label={t('phieuKho.detail.traoDoi')}
+                value={data.trao_doi}
+                icon={<FileText size={12} />}
+                className="col-span-1 sm:col-span-2"
+              />
+            )}
             <DetailField
               label={t('phieuKho.detail.creator')}
               value={data.ten_nguoi_tao ?? '—'}
@@ -251,6 +277,40 @@ const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-lg font-semibold text-foreground">{t('phieuKho.approveDialog.title')}</h3>
+
+            <div className="grid grid-cols-2 gap-2.5">
+              {([
+                { value: 'Đã duyệt' as const, icon: <CheckCircle size={15} />, color: 'emerald' },
+                { value: 'Không duyệt' as const, icon: <XCircle size={15} />, color: 'rose' },
+              ]).map((opt) => {
+                const selected = duyetOption === opt.value;
+                const label = opt.value === 'Đã duyệt' ? t('phieuKho.approveDialog.approveButton') : t('phieuKho.approveDialog.rejectButton');
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setDuyetOption(opt.value)}
+                    className={cn(
+                      'flex items-center gap-2 rounded-lg border px-3.5 py-2.5 text-sm font-medium transition-all duration-150 cursor-pointer',
+                      selected && opt.color === 'emerald' && 'border-emerald-500/60 bg-emerald-50 text-emerald-700 shadow-sm dark:bg-emerald-950/25 dark:text-emerald-400 dark:border-emerald-700/50',
+                      selected && opt.color === 'rose' && 'border-rose-500/60 bg-rose-50 text-rose-700 shadow-sm dark:bg-rose-950/25 dark:text-rose-400 dark:border-rose-700/50',
+                      !selected && 'border-border bg-card text-muted-foreground hover:bg-muted/50 hover:text-foreground',
+                    )}
+                  >
+                    <span className={cn(
+                      'shrink-0',
+                      selected && opt.color === 'emerald' && 'text-emerald-600 dark:text-emerald-400',
+                      selected && opt.color === 'rose' && 'text-rose-600 dark:text-rose-400',
+                      !selected && 'text-muted-foreground/60',
+                    )}>
+                      {opt.icon}
+                    </span>
+                    <span>{label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
             <Textarea
               label={t('phieuKho.approveDialog.note')}
               placeholder={t('phieuKho.approveDialog.notePlaceholder')}
@@ -258,36 +318,22 @@ const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete
               onChange={(e) => setDuyetGhiChu(e.target.value)}
               rows={3}
             />
-            <div className="flex flex-wrap items-center justify-end gap-2 pt-2">
+
+            <div className="flex items-center justify-end gap-2 pt-1">
               <Button variant="ghost" onClick={() => setShowDuyetPopup(false)} className="border border-border">
                 {BTN_CLOSE()}
               </Button>
               <Button
-                variant="outline"
                 onClick={() => {
-                  setDuyetTrangThai('Không duyệt');
                   updateTrangThaiMutation.mutate(
-                    { id: data.id, trang_thai: 'Không duyệt', ghi_chu: duyetGhiChu.trim() || undefined },
-                    { onSuccess: () => setShowDuyetPopup(false) }
-                  );
-                }}
-                disabled={updateTrangThaiMutation.isPending}
-                className="border-rose-500 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30"
-              >
-                {updateTrangThaiMutation.isPending ? '...' : t('phieuKho.approveDialog.rejectButton')}
-              </Button>
-              <Button
-                onClick={() => {
-                  setDuyetTrangThai('Đã duyệt');
-                  updateTrangThaiMutation.mutate(
-                    { id: data.id, trang_thai: 'Đã duyệt', ghi_chu: duyetGhiChu.trim() || undefined },
+                    { id: data.id, trang_thai: duyetOption, ghi_chu: duyetGhiChu.trim() || undefined },
                     { onSuccess: () => setShowDuyetPopup(false) }
                   );
                 }}
                 disabled={updateTrangThaiMutation.isPending}
                 className="bg-primary text-white shadow-lg hover:bg-primary/90"
               >
-                {updateTrangThaiMutation.isPending ? '...' : t('phieuKho.approveDialog.approveButton')}
+                {updateTrangThaiMutation.isPending ? '...' : t('phieuKho.approveDialog.submit')}
               </Button>
             </div>
           </div>

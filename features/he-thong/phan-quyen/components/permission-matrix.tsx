@@ -10,6 +10,7 @@ import {
   SYSTEM_MODULES_CONFIG,
   type PermissionFunction,
 } from '../services/phan-quyen-service';
+import { APPROVE_ACTION, hasApproveFeature } from '../core/permission-modules-config';
 import { PositionPermission, ActionType } from '../core/types';
 import Button from '../../../../components/ui/Button';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
@@ -273,6 +274,12 @@ const PermissionMatrix: React.FC<Props> = ({ roles, isLoading, canUpdate = true 
   const selectedModule = useMemo(() => SYSTEM_MODULES_CONFIG.find((m) => m.id === selectedModuleId), [selectedModuleId]);
   const displayModuleName = selectedModule ? t(selectedModule.nameKey) : selectedModuleId;
 
+  /** Cột hành động hiển thị: thêm "Phê duyệt" chỉ khi module có chức năng phê duyệt */
+  const displayActions = useMemo(
+    () => (hasApproveFeature(selectedModuleId) ? [...MATRIX_ACTIONS, APPROVE_ACTION] : MATRIX_ACTIONS),
+    [selectedModuleId]
+  );
+
   useEffect(() => {
     const p: Record<string, ActionType[]> = {};
     roles.forEach((role) => {
@@ -286,6 +293,7 @@ const PermissionMatrix: React.FC<Props> = ({ roles, isLoading, canUpdate = true 
     view: t('permission.form.view'), create: t('permission.form.add'),
     update: t('permission.form.edit'), delete: t('permission.form.delete'),
     admin: t('permission.matrix.admin'), all: t('permission.form.all'),
+    approve: t('permission.form.approve'),
   };
 
   const filteredFunctions = useMemo(() => selectedFunction ? PERMISSION_FUNCTIONS.filter((f) => f.id === selectedFunction.id) : PERMISSION_FUNCTIONS, [selectedFunction]);
@@ -462,11 +470,11 @@ const PermissionMatrix: React.FC<Props> = ({ roles, isLoading, canUpdate = true 
                 <thead className="sticky top-0 z-10 bg-card/95 backdrop-blur-md border-b-2 border-border">
                   <tr>
                     <th className="px-6 py-2.5 text-left text-[11px] font-semibold text-muted-foreground w-[220px]">{t('permission.matrix.position')}</th>
-                    {MATRIX_ACTIONS.map((a) => <th key={a} className="px-2 py-2.5 text-center text-[11px] font-semibold text-muted-foreground">{actionLabels[a]}</th>)}
+                    {displayActions.map((a) => <th key={a} className="px-2 py-2.5 text-center text-[11px] font-semibold text-muted-foreground">{actionLabels[a]}</th>)}
                   </tr>
                   <tr className="border-t border-border bg-muted/20">
                     <td className="px-6 py-2 text-[11px] font-bold text-primary/80">{t('permission.matrix.selectAll')}</td>
-                    {MATRIX_ACTIONS.map((a) => <td key={a} className="px-1 py-2 text-center"><TriCheck state={getActionState(allRoleIds, a)} disabled={!canUpdate} onClick={() => toggleActionForRoles(allRoleIds, a)} /></td>)}
+                    {displayActions.map((a) => <td key={a} className="px-1 py-2 text-center"><TriCheck state={getActionState(allRoleIds, a)} disabled={!canUpdate} onClick={() => toggleActionForRoles(allRoleIds, a)} /></td>)}
                   </tr>
                 </thead>
                 <tbody>
@@ -476,7 +484,7 @@ const PermissionMatrix: React.FC<Props> = ({ roles, isLoading, canUpdate = true 
                       <React.Fragment key={dept}>
                         <tr className="bg-muted/40 border-t-2 border-border">
                           <td className="px-6 py-2"><span className="flex items-center gap-1.5 font-bold text-[12px] text-foreground/80"><Building2 size={13} className="text-primary shrink-0" />{t(dept)}</span></td>
-                          {MATRIX_ACTIONS.map((a) => <td key={a} className="px-1 py-2 text-center"><TriCheck state={getActionState(dids, a)} disabled={!canUpdate} onClick={() => toggleActionForRoles(dids, a)} /></td>)}
+                          {displayActions.map((a) => <td key={a} className="px-1 py-2 text-center"><TriCheck state={getActionState(dids, a)} disabled={!canUpdate} onClick={() => toggleActionForRoles(dids, a)} /></td>)}
                         </tr>
                         {dr.map((role, ri) => {
                           const cur = localPermissions[role.id] || []; const isLast = ri === dr.length - 1;
@@ -492,7 +500,7 @@ const PermissionMatrix: React.FC<Props> = ({ roles, isLoading, canUpdate = true 
                                   {role.ten_chuc_vu}
                                 </span>
                               </td>
-                              {MATRIX_ACTIONS.map((a) => <td key={a} className="px-1 py-2 text-center"><TriCheck state={cur.includes(a) ? 'all' : 'none'} disabled={!canUpdate} onClick={() => toggleOne(role.id, a)} /></td>)}
+                              {displayActions.map((a) => <td key={a} className="px-1 py-2 text-center"><TriCheck state={cur.includes(a) ? 'all' : 'none'} disabled={!canUpdate} onClick={() => toggleOne(role.id, a)} /></td>)}
                             </tr>
                           );
                         })}
@@ -512,7 +520,7 @@ const PermissionMatrix: React.FC<Props> = ({ roles, isLoading, canUpdate = true 
                   <span className="text-[12px] font-bold text-primary">{t('permission.matrix.selectAll')}</span>
                 </div>
                 <div className="grid grid-cols-3 gap-1.5">
-                  {MATRIX_ACTIONS.map((a) => <MobileTriBtn key={a} label={actionLabels[a]} state={getActionState(allRoleIds, a)} onClick={() => toggleActionForRoles(allRoleIds, a)} />)}
+                  {displayActions.map((a) => <MobileTriBtn key={a} label={actionLabels[a]} state={getActionState(allRoleIds, a)} onClick={() => toggleActionForRoles(allRoleIds, a)} />)}
                 </div>
               </div>
 
@@ -526,7 +534,7 @@ const PermissionMatrix: React.FC<Props> = ({ roles, isLoading, canUpdate = true 
                         <span className="text-[12px] font-bold text-foreground/80 flex-1 truncate">{t(dept)}</span>
                       </div>
                       <div className="grid grid-cols-3 gap-1.5">
-                        {MATRIX_ACTIONS.map((a) => <MobileTriBtn key={a} label={actionLabels[a]} state={getActionState(dids, a)} onClick={() => toggleActionForRoles(dids, a)} />)}
+                        {displayActions.map((a) => <MobileTriBtn key={a} label={actionLabels[a]} state={getActionState(dids, a)} onClick={() => toggleActionForRoles(dids, a)} />)}
                       </div>
                     </div>
                     {dr.map((role) => {
@@ -539,7 +547,7 @@ const PermissionMatrix: React.FC<Props> = ({ roles, isLoading, canUpdate = true 
                             <span className="text-[9px] font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{role.ma_chuc_vu}</span>
                           </div>
                           <div className="grid grid-cols-3 gap-1.5">
-                            {MATRIX_ACTIONS.map((a) => (
+                            {displayActions.map((a) => (
                               <MobileTriBtn key={a} label={actionLabels[a]} state={cur.includes(a) ? 'all' : 'none'} onClick={() => toggleOne(role.id, a)} />
                             ))}
                           </div>

@@ -34,6 +34,9 @@ interface ChiTietDbRow {
   don_vi_tinh: string | null;
   thong_so: string | null;
   ghi_chu: string | null;
+  id_tien_do_mh: number | null;
+  ten_tien_do_mh: string | null;
+  trao_doi: string | null;
 }
 
 /** Hàng đầy đủ từ fp_mh_phieu_de_xuat_vat_tu_chi_tiet (có cột kéo từ phiếu). */
@@ -88,6 +91,9 @@ function rowToChiTiet(row: ChiTietDbRow, idPhieuStr: string, enrich?: { ma_hang?
     ghi_chu: row.ghi_chu ?? undefined,
     ma_hang: enrich?.ma_hang,
     ten_hang: enrich?.ten_hang,
+    id_tien_do_mh: row.id_tien_do_mh != null ? String(row.id_tien_do_mh) : null,
+    ten_tien_do_mh: row.ten_tien_do_mh ?? null,
+    trao_doi: row.trao_doi ?? null,
   };
 }
 
@@ -138,7 +144,7 @@ export async function getPhieuDeXuatVatTuByIdSupabase(id: string): Promise<Phieu
     getEmployees(),
     supabase
       .from(TABLE_CHI_TIET)
-      .select('id, id_phieu_de_xuat_vat_tu, id_hang_hoa, so_luong, don_vi_tinh, thong_so, ghi_chu')
+      .select('id, id_phieu_de_xuat_vat_tu, id_hang_hoa, so_luong, don_vi_tinh, thong_so, ghi_chu, id_tien_do_mh, ten_tien_do_mh, trao_doi')
       .eq('id_phieu_de_xuat_vat_tu', idNum)
       .order('id', { ascending: true })
       .then((r) => r.data ?? []),
@@ -194,11 +200,20 @@ export async function createPhieuDeXuatVatTuSupabase(data: PhieuDeXuatVatTuFormV
   const idPhieu = (inserted as PhieuDbRow).id;
   const idStr = String(idPhieu);
 
-  const hangHoaList = await getAllHangHoa();
+  const [hangHoaList, khoList, employees] = await Promise.all([
+    getAllHangHoa(),
+    getKhoList(),
+    getEmployees(),
+  ]);
   const hangHoaMap: Record<string, string> = {};
   hangHoaList.forEach((h) => {
     hangHoaMap[h.id] = h.don_vi_tinh ?? '';
   });
+  const tenNoiDeXuat = khoList.find((k) => String(k.id) === String(data.id_noi_de_xuat))?.ten_kho ?? null;
+  const tenNguoiDeXuat = employees.find((e) => String(e.id) === String(data.id_nguoi_de_xuat))?.ho_ten ?? null;
+  const tenNguoiDuyet = data.id_nguoi_duyet
+    ? (employees.find((e) => String(e.id) === String(data.id_nguoi_duyet))?.ho_ten ?? null)
+    : null;
 
   const chiTietPayload = (data.chi_tiet ?? []).filter((ct) => ct.id_hang_hoa?.trim() && Number(ct.so_luong) > 0);
   if (chiTietPayload.length > 0) {
@@ -209,6 +224,16 @@ export async function createPhieuDeXuatVatTuSupabase(data: PhieuDeXuatVatTuFormV
       don_vi_tinh: hangHoaMap[c.id_hang_hoa.trim()] ?? null,
       thong_so: c.thong_so?.trim() || null,
       ghi_chu: c.ghi_chu?.trim() || null,
+      id_tien_do_mh: c.id_tien_do_mh ? Number(c.id_tien_do_mh) : null,
+      ten_tien_do_mh: c.ten_tien_do_mh?.trim() || null,
+      trao_doi: c.trao_doi?.trim() || null,
+      so_phieu: soPhieu,
+      ngay: data.ngay.trim() || null,
+      ngay_can: data.ngay_can.trim() || null,
+      ten_noi_de_xuat: tenNoiDeXuat,
+      ten_nguoi_de_xuat: tenNguoiDeXuat,
+      ten_nguoi_duyet: tenNguoiDuyet,
+      trang_thai_phieu: data.trang_thai,
     }));
     const { error: errCt } = await supabase.from(TABLE_CHI_TIET).insert(ctRows);
     if (errCt) throw new Error(errCt.message);
@@ -246,11 +271,20 @@ export async function updatePhieuDeXuatVatTuSupabase(id: string, data: PhieuDeXu
 
   await supabase.from(TABLE_CHI_TIET).delete().eq('id_phieu_de_xuat_vat_tu', idNum);
 
-  const hangHoaList = await getAllHangHoa();
+  const [hangHoaList, khoList, employees] = await Promise.all([
+    getAllHangHoa(),
+    getKhoList(),
+    getEmployees(),
+  ]);
   const hangHoaMap: Record<string, string> = {};
   hangHoaList.forEach((h) => {
     hangHoaMap[h.id] = h.don_vi_tinh ?? '';
   });
+  const tenNoiDeXuat = khoList.find((k) => String(k.id) === String(data.id_noi_de_xuat))?.ten_kho ?? null;
+  const tenNguoiDeXuat = employees.find((e) => String(e.id) === String(data.id_nguoi_de_xuat))?.ho_ten ?? null;
+  const tenNguoiDuyet = data.id_nguoi_duyet
+    ? (employees.find((e) => String(e.id) === String(data.id_nguoi_duyet))?.ho_ten ?? null)
+    : null;
 
   const chiTietPayload = (data.chi_tiet ?? []).filter((ct) => ct.id_hang_hoa?.trim() && Number(ct.so_luong) > 0);
   if (chiTietPayload.length > 0) {
@@ -261,6 +295,16 @@ export async function updatePhieuDeXuatVatTuSupabase(id: string, data: PhieuDeXu
       don_vi_tinh: hangHoaMap[c.id_hang_hoa.trim()] ?? null,
       thong_so: c.thong_so?.trim() || null,
       ghi_chu: c.ghi_chu?.trim() || null,
+      id_tien_do_mh: c.id_tien_do_mh ? Number(c.id_tien_do_mh) : null,
+      ten_tien_do_mh: c.ten_tien_do_mh?.trim() || null,
+      trao_doi: c.trao_doi?.trim() || null,
+      so_phieu: soPhieu,
+      ngay: data.ngay.trim() || null,
+      ngay_can: data.ngay_can.trim() || null,
+      ten_noi_de_xuat: tenNoiDeXuat,
+      ten_nguoi_de_xuat: tenNguoiDeXuat,
+      ten_nguoi_duyet: tenNguoiDuyet,
+      trang_thai_phieu: data.trang_thai,
     }));
     const { error: errCt } = await supabase.from(TABLE_CHI_TIET).insert(ctRows);
     if (errCt) throw new Error(errCt.message);
@@ -285,9 +329,9 @@ export async function deletePhieuDeXuatVatTuManySupabase(ids: string[]): Promise
   if (error) throw new Error(error.message);
 }
 
-/** Lấy toàn bộ dòng chi tiết từ bảng fp_mh_phieu_de_xuat_vat_tu_chi_tiet (phục vụ tab Chi tiết). */
+/** Lấy toàn bộ dòng chi tiết từ bảng fp_mh_phieu_de_xuat_vat_tu_chi_tiet (phục vụ tab Chi tiết). Làm giàu ten_noi_de_xuat, ten_nguoi_de_xuat, ten_nguoi_duyet từ phiếu nếu chi tiết chưa có. */
 export async function getAllPhieuDeXuatVatTuChiTietSupabase(): Promise<PhieuDeXuatVatTuChiTietRow[]> {
-  const [rows, hangHoaList] = await Promise.all([
+  const [rows, hangHoaList, khoList, employees] = await Promise.all([
     fetchAllRows<ChiTietFullDbRow>((from, to) =>
       supabase
         .from(TABLE_CHI_TIET)
@@ -297,23 +341,59 @@ export async function getAllPhieuDeXuatVatTuChiTietSupabase(): Promise<PhieuDeXu
         .range(from, to)
     ),
     getAllHangHoa(),
+    getKhoList(),
+    getEmployees(),
   ]);
+
+  const phieuIds = [...new Set(rows.map((r) => r.id_phieu_de_xuat_vat_tu))];
+  const phieuRows: PhieuDbRow[] = [];
+  if (phieuIds.length > 0) {
+    const { data: phieuData } = await supabase.from(TABLE_PHIEU).select('*').in('id', phieuIds);
+    if (phieuData) phieuRows.push(...(phieuData as PhieuDbRow[]));
+  }
+  const nvMap: Record<string, { ho_ten: string }> = {};
+  employees.forEach((e) => {
+    nvMap[String(e.id)] = { ho_ten: e.ho_ten ?? '' };
+  });
+  const khoMap: Record<string, string> = {};
+  khoList.forEach((k) => {
+    khoMap[String(k.id)] = k.ten_kho ?? '';
+  });
+  const phieuEnrich: Record<
+    number,
+    { so_phieu: string; ngay: string; ngay_can: string; ten_noi_de_xuat: string; ten_nguoi_de_xuat: string; ten_nguoi_duyet: string | null; trang_thai_phieu: string }
+  > = {};
+  phieuRows.forEach((p) => {
+    phieuEnrich[p.id] = {
+      so_phieu: p.so_phieu ?? '',
+      ngay: p.ngay ?? '',
+      ngay_can: p.ngay_can ?? '',
+      ten_noi_de_xuat: khoMap[String(p.id_noi_de_xuat)] ?? '',
+      ten_nguoi_de_xuat: nvMap[String(p.id_nguoi_de_xuat)]?.ho_ten ?? '',
+      ten_nguoi_duyet: p.id_nguoi_duyet != null ? (nvMap[String(p.id_nguoi_duyet)]?.ho_ten ?? null) : null,
+      trang_thai_phieu: p.trang_thai ?? '',
+    };
+  });
+
   const hangHoaMap: Record<string, { ma_hang: string; ten_hang: string }> = {};
   hangHoaList.forEach((h) => {
     hangHoaMap[h.id] = { ma_hang: h.ma_hang ?? h.ma_hang_hoa ?? '', ten_hang: h.ten_hang_hoa ?? h.ten_hang ?? '' };
   });
   return rows.map((row) => {
     const enrich = hangHoaMap[String(row.id_hang_hoa)];
+    const ct = row as ChiTietDbRow;
+    const full = row as ChiTietFullDbRow;
+    const fromPhieu = phieuEnrich[row.id_phieu_de_xuat_vat_tu];
     return {
       id: String(row.id),
       id_phieu_de_xuat_vat_tu: String(row.id_phieu_de_xuat_vat_tu),
-      so_phieu: row.so_phieu ?? null,
-      ngay: row.ngay ?? null,
-      ngay_can: row.ngay_can ?? null,
-      ten_noi_de_xuat: row.ten_noi_de_xuat ?? null,
-      ten_nguoi_de_xuat: row.ten_nguoi_de_xuat ?? null,
-      ten_nguoi_duyet: row.ten_nguoi_duyet ?? null,
-      trang_thai_phieu: row.trang_thai_phieu ?? null,
+      so_phieu: full.so_phieu ?? fromPhieu?.so_phieu ?? null,
+      ngay: full.ngay ?? fromPhieu?.ngay ?? null,
+      ngay_can: full.ngay_can ?? fromPhieu?.ngay_can ?? null,
+      ten_noi_de_xuat: full.ten_noi_de_xuat ?? fromPhieu?.ten_noi_de_xuat ?? null,
+      ten_nguoi_de_xuat: full.ten_nguoi_de_xuat ?? fromPhieu?.ten_nguoi_de_xuat ?? null,
+      ten_nguoi_duyet: full.ten_nguoi_duyet ?? fromPhieu?.ten_nguoi_duyet ?? null,
+      trang_thai_phieu: full.trang_thai_phieu ?? fromPhieu?.trang_thai_phieu ?? null,
       id_hang_hoa: String(row.id_hang_hoa),
       ma_hang: enrich?.ma_hang,
       ten_hang: enrich?.ten_hang,
@@ -321,6 +401,9 @@ export async function getAllPhieuDeXuatVatTuChiTietSupabase(): Promise<PhieuDeXu
       don_vi_tinh: row.don_vi_tinh ?? null,
       thong_so: row.thong_so ?? null,
       ghi_chu: row.ghi_chu ?? null,
+      id_tien_do_mh: ct.id_tien_do_mh != null ? String(ct.id_tien_do_mh) : null,
+      ten_tien_do_mh: ct.ten_tien_do_mh ?? null,
+      trao_doi: ct.trao_doi ?? null,
     };
   });
 }

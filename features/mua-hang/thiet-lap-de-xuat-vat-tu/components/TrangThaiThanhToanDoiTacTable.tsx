@@ -12,8 +12,8 @@ import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 interface Props {
   data: TrangThaiThanhToanDoiTac[];
   isLoading: boolean;
-  onEdit: (item: TrangThaiThanhToanDoiTac) => void;
-  onDelete: (id: string) => void;
+  onEdit?: (item: TrangThaiThanhToanDoiTac) => void;
+  onDelete?: (id: string) => void;
   onRowClick?: (item: TrangThaiThanhToanDoiTac) => void;
 }
 
@@ -96,32 +96,36 @@ const TrangThaiThanhToanDoiTacTable: React.FC<Props> = ({ data, isLoading, onEdi
       case 'actions':
         return (
           <div className="flex items-center justify-center gap-1">
-            <Tooltip content={t('common.edit')} placement="left">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit(item);
-                }}
-                className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-all"
-                aria-label={t('common.edit')}
-              >
-                <Edit size={16} />
-              </button>
-            </Tooltip>
-            <Tooltip content={t('common.delete')} placement="left">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(item.id);
-                }}
-                className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition-all"
-                aria-label={t('common.delete')}
-              >
-                <Trash2 size={16} />
-              </button>
-            </Tooltip>
+            {onEdit && (
+              <Tooltip content={t('common.edit')} placement="left">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(item);
+                  }}
+                  className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-all"
+                  aria-label={t('common.edit')}
+                >
+                  <Edit size={16} />
+                </button>
+              </Tooltip>
+            )}
+            {onDelete && (
+              <Tooltip content={t('common.delete')} placement="left">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(item.id);
+                  }}
+                  className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition-all"
+                  aria-label={t('common.delete')}
+                >
+                  <Trash2 size={16} />
+                </button>
+              </Tooltip>
+            )}
           </div>
         );
       default:
@@ -167,12 +171,16 @@ const TrangThaiThanhToanDoiTacTable: React.FC<Props> = ({ data, isLoading, onEdi
       <div className="flex justify-between items-center pt-2.5 border-t border-border">
         <span className="text-muted-foreground text-xs line-clamp-1">{item.ghi_chu || '—'}</span>
         <div className="flex gap-1.5 shrink-0">
-          <button type="button" onClick={(e) => { e.stopPropagation(); onEdit(item); }} className="p-2 text-primary bg-primary/5 hover:bg-primary/10 rounded-lg" aria-label={t('common.edit')}>
-            <Edit size={14} />
-          </button>
-          <button type="button" onClick={(e) => { e.stopPropagation(); onDelete(item.id); }} className="p-2 text-rose-500 bg-rose-50 hover:bg-rose-100 dark:hover:bg-rose-950/30 rounded-lg" aria-label={t('common.delete')}>
-            <Trash2 size={14} />
-          </button>
+          {onEdit && (
+            <button type="button" onClick={(e) => { e.stopPropagation(); onEdit(item); }} className="p-2 text-primary bg-primary/5 hover:bg-primary/10 rounded-lg" aria-label={t('common.edit')}>
+              <Edit size={14} />
+            </button>
+          )}
+          {onDelete && (
+            <button type="button" onClick={(e) => { e.stopPropagation(); onDelete(item.id); }} className="p-2 text-rose-500 bg-rose-50 hover:bg-rose-100 dark:hover:bg-rose-950/30 rounded-lg" aria-label={t('common.delete')}>
+              <Trash2 size={14} />
+            </button>
+          )}
         </div>
       </div>
     </div>

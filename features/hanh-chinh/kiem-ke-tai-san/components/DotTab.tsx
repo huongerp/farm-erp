@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import KiemKeTaiSanToolbar from './KiemKeTaiSanToolbar';
 import DotKiemKeTable from './DotKiemKeTable';
@@ -16,6 +17,7 @@ import type { DotKiemKe, TrangThaiDotKiemKe } from '../core/types';
 
 const DotTab: React.FC = () => {
   const { t } = useTranslation();
+  const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
   const { searchTerm, filters, sort, resetState, selectedIds, clearSelection } = useKiemKeTaiSanStore();
   const { data: list = [], isLoading } = useDotKiemKeList({
@@ -145,15 +147,16 @@ const DotTab: React.FC = () => {
         items={sortedList}
         onAdd={handleAdd}
         onDeleteMany={handleDeleteMany}
-        showAdd
+        showAdd={canCreate}
+        canDelete={canDelete}
       />
       <div className="flex-1 min-h-0 mt-1.5">
         <DotKiemKeTable
           data={sortedList}
           isLoading={isLoading}
           onView={handleView}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
+          onEdit={canUpdate ? handleEdit : undefined}
+          onDelete={canDelete ? handleDelete : undefined}
           showActions
         />
       </div>
@@ -164,7 +167,7 @@ const DotTab: React.FC = () => {
           chiTiet={chiTiet}
           chiTietLoading={chiTietLoading}
           onClose={() => setDetailItem(null)}
-          onEdit={handleEdit}
+          onEdit={canUpdate ? handleEdit : undefined}
           onTaoDanhSach={() => {
             setDotIdForTaoDanhSach(detailData.id);
             setShowTaoDanhSachDialog(true);

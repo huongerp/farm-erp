@@ -15,7 +15,7 @@ import type { AssetGroup } from '../core/types';
 interface Props {
   data: AssetGroup;
   onClose: () => void;
-  onEdit: (item: AssetGroup) => void;
+  onEdit?: (item: AssetGroup) => void;
   onDelete?: (id: string) => void;
 }
 
@@ -39,15 +39,17 @@ const NhomTaiSanDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete }) 
         {BTN_CLOSE()}
       </Button>
       <div className="flex items-center gap-3">
-        <Button
-          onClick={() => {
-            onEdit(data);
-            onClose();
-          }}
-          className="bg-primary text-white shadow-lg hover:bg-primary/90"
-        >
-          <Edit size={16} className="mr-2" /> {BTN_EDIT()}
-        </Button>
+        {onEdit && (
+          <Button
+            onClick={() => {
+              onEdit(data);
+              onClose();
+            }}
+            className="bg-primary text-white shadow-lg hover:bg-primary/90"
+          >
+            <Edit size={16} className="mr-2" /> {BTN_EDIT()}
+          </Button>
+        )}
         {onDelete && (
           <Button
             variant="ghost"

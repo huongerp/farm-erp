@@ -49,6 +49,7 @@ interface PhieuKhoDbRow {
   id_khach_hang: number | null;
   trang_thai: string;
   mo_ta: string | null;
+  trao_doi: string | null;
   nguoi_tao_id: number | null;
   ten_nguoi_tao: string | null;
   tg_tao: string | null;
@@ -88,6 +89,7 @@ function rowToPhieu(row: PhieuKhoDbRow, enrich?: { ten_kho?: string; ten_kho_den
     ten_khach_hang: enrich?.ten_khach_hang,
     trang_thai: (row.trang_thai as TrangThaiPhieuKho) || 'Chờ duyệt',
     mo_ta: row.mo_ta ?? undefined,
+    trao_doi: row.trao_doi ?? undefined,
     nguoi_tao_id: row.nguoi_tao_id ?? undefined,
     ten_nguoi_tao: enrich?.ten_nguoi_tao ?? row.ten_nguoi_tao ?? undefined,
     tg_tao: row.tg_tao ?? new Date().toISOString(),
@@ -223,20 +225,28 @@ export async function createPhieuKhoSupabase(loai: LoaiPhieuKho, data: PhieuKhoF
   const { data: existing } = await supabase.from(TABLE_PHIEU).select('id').eq('so_phieu', soPhieu).eq('loai', loai).maybeSingle();
   if (existing) throw new Error(i18n.t('phieuKho.service.duplicateCode'));
 
+  const [khoList, employees] = await Promise.all([getKhoList(), getEmployees()]);
+  const khoMap: Record<string, string> = {};
+  khoList.forEach((k) => { khoMap[k.id] = k.ten_kho; });
+  const nvMap: Record<string, string> = {};
+  employees.forEach((e) => { nvMap[e.id] = e.ho_ten; });
+
+  const nguoiTaoId = data.nguoi_tao_id != null ? Number(data.nguoi_tao_id) : null;
+
   const payload = {
     so_phieu: soPhieu,
     ngay: data.ngay.trim(),
     loai,
     kho_id: Number(data.kho_id),
-    ten_kho: null as string | null,
+    ten_kho: khoMap[String(data.kho_id)] ?? null,
     kho_den_id: loai === 'chuyển' && data.kho_den_id ? Number(data.kho_den_id) : null,
-    ten_kho_den: null as string | null,
+    ten_kho_den: loai === 'chuyển' && data.kho_den_id ? (khoMap[String(data.kho_den_id)] ?? null) : null,
     id_nha_cung_cap: toNum(data.id_nha_cung_cap),
     id_khach_hang: toNum(data.id_khach_hang),
     trang_thai: data.trang_thai,
     mo_ta: data.mo_ta?.trim() || null,
-    nguoi_tao_id: data.nguoi_tao_id != null ? Number(data.nguoi_tao_id) : null,
-    ten_nguoi_tao: null as string | null,
+    nguoi_tao_id: nguoiTaoId,
+    ten_nguoi_tao: nguoiTaoId != null ? (nvMap[String(nguoiTaoId)] ?? null) : null,
   };
 
   const { data: inserted, error } = await supabase.from(TABLE_PHIEU).insert(payload).select('*').single();
@@ -263,8 +273,8 @@ export async function createPhieuKhoSupabase(loai: LoaiPhieuKho, data: PhieuKhoF
         don_gia: dg,
         thanh_tien: sl * dg,
         ghi_chu: c.ghi_chu?.trim() || null,
-        nguoi_tao_id: null as number | null,
-        ten_nguoi_tao: null as string | null,
+        nguoi_tao_id: nguoiTaoId,
+        ten_nguoi_tao: nguoiTaoId != null ? (nvMap[String(nguoiTaoId)] ?? null) : null,
       };
     });
     const { error: errCt } = await supabase.from(TABLE_CHI_TIET).insert(ctRows);
@@ -287,16 +297,28 @@ export async function updatePhieuKhoSupabase(id: string, data: PhieuKhoFormValue
   const { data: other } = await supabase.from(TABLE_PHIEU).select('id').eq('so_phieu', soPhieu).eq('loai', (oldRow as PhieuKhoDbRow).loai).neq('id', idNum).maybeSingle();
   if (other) throw new Error(i18n.t('phieuKho.service.duplicateCode'));
 
+  const [khoList, employees] = await Promise.all([getKhoList(), getEmployees()]);
+  const khoMap: Record<string, string> = {};
+  khoList.forEach((k) => { khoMap[k.id] = k.ten_kho; });
+  const nvMap: Record<string, string> = {};
+  employees.forEach((e) => { nvMap[e.id] = e.ho_ten; });
+
+  const loaiDb = (oldRow as PhieuKhoDbRow).loai as LoaiPhieuKho;
+  const nguoiTaoId = data.nguoi_tao_id != null ? Number(data.nguoi_tao_id) : null;
+
   const payload = {
     so_phieu: soPhieu,
     ngay: data.ngay.trim(),
     kho_id: Number(data.kho_id),
-    kho_den_id: (oldRow as PhieuKhoDbRow).loai === 'chuyển' && data.kho_den_id ? Number(data.kho_den_id) : null,
+    ten_kho: khoMap[String(data.kho_id)] ?? null,
+    kho_den_id: loaiDb === 'chuyển' && data.kho_den_id ? Number(data.kho_den_id) : null,
+    ten_kho_den: loaiDb === 'chuyển' && data.kho_den_id ? (khoMap[String(data.kho_den_id)] ?? null) : null,
     id_nha_cung_cap: toNum(data.id_nha_cung_cap),
     id_khach_hang: toNum(data.id_khach_hang),
     trang_thai: data.trang_thai,
     mo_ta: data.mo_ta?.trim() || null,
-    nguoi_tao_id: data.nguoi_tao_id != null ? Number(data.nguoi_tao_id) : null,
+    nguoi_tao_id: nguoiTaoId,
+    ten_nguoi_tao: nguoiTaoId != null ? (nvMap[String(nguoiTaoId)] ?? null) : null,
   };
 
   const { error: updateErr } = await supabase.from(TABLE_PHIEU).update(payload).eq('id', idNum);
@@ -323,8 +345,8 @@ export async function updatePhieuKhoSupabase(id: string, data: PhieuKhoFormValue
         don_gia: dg,
         thanh_tien: sl * dg,
         ghi_chu: c.ghi_chu?.trim() || null,
-        nguoi_tao_id: null as number | null,
-        ten_nguoi_tao: null as string | null,
+        nguoi_tao_id: nguoiTaoId,
+        ten_nguoi_tao: nguoiTaoId != null ? (nvMap[String(nguoiTaoId)] ?? null) : null,
       };
     });
     const { error: errCt } = await supabase.from(TABLE_CHI_TIET).insert(ctRows);
@@ -336,7 +358,7 @@ export async function updatePhieuKhoSupabase(id: string, data: PhieuKhoFormValue
   return got;
 }
 
-/** Cập nhật chỉ trạng thái (và ghi chú duyệt); dùng cho nút Duyệt trong detail. */
+/** Cập nhật chỉ trạng thái (và ghi chú duyệt → cột trao_doi); dùng cho nút Duyệt trong detail. */
 export async function updatePhieuKhoTrangThaiSupabase(
   id: string,
   trang_thai: TrangThaiPhieuKho,
@@ -344,14 +366,17 @@ export async function updatePhieuKhoTrangThaiSupabase(
 ): Promise<void> {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('phieuKho.service.notFound'));
-  const { data: row } = await supabase.from(TABLE_PHIEU).select('mo_ta').eq('id', idNum).maybeSingle();
-  const existingMoTa = (row as { mo_ta?: string } | null)?.mo_ta ?? '';
-  const newMoTa = ghi_chu?.trim()
-    ? (existingMoTa ? existingMoTa + '\n[Ghi chú duyệt] ' + ghi_chu.trim() : '[Ghi chú duyệt] ' + ghi_chu.trim())
-    : existingMoTa;
+  const { data: row } = await supabase.from(TABLE_PHIEU).select('trao_doi').eq('id', idNum).maybeSingle();
+  const existing = (row as { trao_doi?: string } | null)?.trao_doi ?? '';
+  const timestamp = new Date().toLocaleString('vi-VN');
+  const statusLabel = trang_thai === 'Đã duyệt' ? 'Duyệt' : 'Từ chối';
+  const entry = ghi_chu?.trim()
+    ? `[${timestamp}] ${statusLabel}: ${ghi_chu.trim()}`
+    : `[${timestamp}] ${statusLabel}`;
+  const newTraoDoi = existing ? existing + '\n' + entry : entry;
   const { error } = await supabase
     .from(TABLE_PHIEU)
-    .update({ trang_thai, mo_ta: newMoTa || null })
+    .update({ trang_thai, trao_doi: newTraoDoi })
     .eq('id', idNum);
   if (error) throw new Error(error.message);
 }

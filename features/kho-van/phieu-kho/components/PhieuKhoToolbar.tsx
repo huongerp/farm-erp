@@ -15,9 +15,11 @@ interface Props {
   selectedCount: number;
   onAdd: () => void;
   onDeleteMany: () => void;
+  canCreate?: boolean;
+  canDelete?: boolean;
 }
 
-const PhieuKhoToolbar: React.FC<Props> = ({ data, loai, khoList, selectedCount, onAdd, onDeleteMany }) => {
+const PhieuKhoToolbar: React.FC<Props> = ({ data, loai, khoList, selectedCount, onAdd, onDeleteMany, canCreate = true, canDelete = true }) => {
   const { t } = useTranslation();
   const {
     searchTerm,
@@ -157,7 +159,7 @@ const PhieuKhoToolbar: React.FC<Props> = ({ data, loai, khoList, selectedCount, 
     </>
   );
 
-  const renderActions = (
+  const renderActions = canCreate ? (
     <Button
       onClick={onAdd}
       size="sm"
@@ -166,19 +168,19 @@ const PhieuKhoToolbar: React.FC<Props> = ({ data, loai, khoList, selectedCount, 
       <Plus className="w-5 h-5 sm:w-4 sm:h-4 sm:mr-2" />
       <span className="hidden sm:inline">{t('common.addNew')}</span>
     </Button>
-  );
+  ) : null;
 
   return (
     <GenericToolbar
       selectedCount={selectedCount}
-      onDeleteMany={onDeleteMany}
+      onDeleteMany={canDelete ? onDeleteMany : undefined}
       searchTerm={searchTerm}
       onSearchChange={setSearchTerm}
       onClearSelection={clearSelection}
       actions={renderActions}
       filters={renderFilters}
       filterGroups={filterGroups}
-      onAdd={onAdd}
+      onAdd={canCreate ? onAdd : undefined}
       showBack
       searchPlaceholder={t('phieuKho.searchPlaceholder')}
       activeFilterCount={activeFilterCount}

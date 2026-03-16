@@ -19,6 +19,8 @@ interface Props {
   onAdd: () => void;
   onDeleteMany: (ids: string[]) => void;
   showAdd?: boolean;
+  canCreate?: boolean;
+  canDelete?: boolean;
 }
 
 const KiemKeKhoToolbar: React.FC<Props> = ({
@@ -26,6 +28,8 @@ const KiemKeKhoToolbar: React.FC<Props> = ({
   onAdd,
   onDeleteMany,
   showAdd = true,
+  canCreate = true,
+  canDelete = true,
 }) => {
   const { t } = useTranslation();
   const {
@@ -96,6 +100,24 @@ const KiemKeKhoToolbar: React.FC<Props> = ({
         className="w-full sm:w-[160px]"
         size="md"
       />
+      <FilterChipMultiSelect
+        options={idKhoOptions}
+        value={filters.id_kho}
+        onChange={(v) => setFilter('id_kho', v)}
+        placeholder={t('kiemKeKho.store.khoCol')}
+        icon={Warehouse}
+        className="w-full sm:w-[160px]"
+        size="md"
+      />
+      <FilterChipMultiSelect
+        options={nguoiPhuTrachOptions}
+        value={filters.id_nguoi_phu_trach}
+        onChange={(v) => setFilter('id_nguoi_phu_trach', v)}
+        placeholder={t('kiemKeKho.store.nguoiPhuTrachCol')}
+        icon={User}
+        className="w-full sm:w-[180px]"
+        size="md"
+      />
       <div className="relative w-full sm:w-[140px]">
         <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
         <input
@@ -116,24 +138,6 @@ const KiemKeKhoToolbar: React.FC<Props> = ({
           placeholder={t('kiemKeKho.filter.dateTo')}
         />
       </div>
-      <FilterChipMultiSelect
-        options={idKhoOptions}
-        value={filters.id_kho}
-        onChange={(v) => setFilter('id_kho', v)}
-        placeholder={t('kiemKeKho.store.khoCol')}
-        icon={Warehouse}
-        className="w-full sm:w-[160px]"
-        size="md"
-      />
-      <FilterChipMultiSelect
-        options={nguoiPhuTrachOptions}
-        value={filters.id_nguoi_phu_trach}
-        onChange={(v) => setFilter('id_nguoi_phu_trach', v)}
-        placeholder={t('kiemKeKho.store.nguoiPhuTrachCol')}
-        icon={User}
-        className="w-full sm:w-[180px]"
-        size="md"
-      />
     </>
   );
 
@@ -146,9 +150,10 @@ const KiemKeKhoToolbar: React.FC<Props> = ({
     [trangThaiOptions, idKhoOptions, nguoiPhuTrachOptions, filters.trang_thai_dot, filters.id_kho, filters.id_nguoi_phu_trach, setFilter, t]
   );
 
+  const showAddButton = showAdd && canCreate;
   const renderActions = (
     <div className="flex items-center gap-2">
-      {showAdd && (
+      {showAddButton && (
         <Button
           onClick={onAdd}
           size="sm"
@@ -162,8 +167,8 @@ const KiemKeKhoToolbar: React.FC<Props> = ({
   );
 
   const mobileActions: ActionItem[] = useMemo(
-    () => [{ label: t('kiemKeKho.addDot'), icon: Plus, onClick: onAdd }],
-    [t, onAdd]
+    () => (showAddButton ? [{ label: t('kiemKeKho.addDot'), icon: Plus, onClick: onAdd }] : []),
+    [t, onAdd, showAddButton]
   );
 
   return (
@@ -175,11 +180,11 @@ const KiemKeKhoToolbar: React.FC<Props> = ({
       actions={renderActions}
       filters={renderFilters}
       filterGroups={filterGroups}
-      onAdd={onAdd}
+      onAdd={canCreate ? onAdd : undefined}
       searchPlaceholder={t('kiemKeKho.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
-      onDeleteMany={selectedCount > 0 ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
+      onDeleteMany={canDelete && selectedCount > 0 ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
       columns={columns}
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}

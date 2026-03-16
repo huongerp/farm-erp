@@ -15,6 +15,9 @@ interface Props {
   onAdd: () => void;
   onDeleteMany: () => void;
   onStatusChangeMany?: (status: 0 | 1) => void;
+  canCreate?: boolean;
+  canUpdate?: boolean;
+  canDelete?: boolean;
 }
 
 const DanhSachHangHoaToolbar: React.FC<Props> = ({
@@ -23,6 +26,9 @@ const DanhSachHangHoaToolbar: React.FC<Props> = ({
   onAdd,
   onDeleteMany,
   onStatusChangeMany,
+  canCreate = true,
+  canUpdate = true,
+  canDelete = true,
 }) => {
   const { t } = useTranslation();
   const { data: danhMucList = [] } = useDanhMucHangHoaList();
@@ -213,7 +219,7 @@ const DanhSachHangHoaToolbar: React.FC<Props> = ({
     ]
   );
 
-  const renderActions = (
+  const renderActions = canCreate ? (
     <Button
       onClick={onAdd}
       size="sm"
@@ -222,20 +228,20 @@ const DanhSachHangHoaToolbar: React.FC<Props> = ({
       <Plus className="w-5 h-5 sm:w-4 sm:h-4 sm:mr-2" />
       <span className="hidden sm:inline">{t('common.addNew')}</span>
     </Button>
-  );
+  ) : null;
 
   return (
     <GenericToolbar
       selectedCount={selectedCount}
-      onDeleteMany={onDeleteMany}
-      onStatusChangeMany={onStatusChangeMany}
+      onDeleteMany={canDelete ? onDeleteMany : undefined}
+      onStatusChangeMany={canUpdate ? onStatusChangeMany : undefined}
       searchTerm={searchTerm}
       onSearchChange={setSearchTerm}
       onClearSelection={clearSelection}
       actions={renderActions}
       filters={renderFilters}
       filterGroups={filterGroups}
-      onAdd={onAdd}
+      onAdd={canCreate ? onAdd : undefined}
       showBack
       searchPlaceholder={t('hangHoa.searchPlaceholder')}
       activeFilterCount={activeFilterCount}

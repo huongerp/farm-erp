@@ -17,6 +17,9 @@ interface Props {
   onImport: () => void;
   onDeleteMany: () => void;
   onStatusChangeMany: (status: 0 | 1) => void;
+  canCreate?: boolean;
+  canUpdate?: boolean;
+  canDelete?: boolean;
 }
 
 const DanhSachKhoToolbar: React.FC<Props> = ({
@@ -27,6 +30,9 @@ const DanhSachKhoToolbar: React.FC<Props> = ({
   onImport,
   onDeleteMany,
   onStatusChangeMany,
+  canCreate = true,
+  canUpdate = true,
+  canDelete = true,
 }) => {
   const { t } = useTranslation();
   const { data: branches = [] } = useBranches();
@@ -169,22 +175,24 @@ const DanhSachKhoToolbar: React.FC<Props> = ({
           </Button>
         </Tooltip>
       </div>
-      <Button
-        onClick={onAdd}
-        size="sm"
-        className="bg-primary text-white hover:bg-primary/90 shadow-md shadow-primary/20 h-9 px-3 sm:px-4"
-      >
-        <Plus className="w-5 h-5 sm:w-4 sm:h-4 sm:mr-2" />
-        <span className="hidden sm:inline">{t('common.addNew')}</span>
-      </Button>
+      {canCreate && (
+        <Button
+          onClick={onAdd}
+          size="sm"
+          className="bg-primary text-white hover:bg-primary/90 shadow-md shadow-primary/20 h-9 px-3 sm:px-4"
+        >
+          <Plus className="w-5 h-5 sm:w-4 sm:h-4 sm:mr-2" />
+          <span className="hidden sm:inline">{t('common.addNew')}</span>
+        </Button>
+      )}
     </>
   );
 
   return (
     <GenericToolbar
       selectedCount={selectedCount}
-      onDeleteMany={onDeleteMany}
-      onStatusChangeMany={onStatusChangeMany}
+      onDeleteMany={canDelete ? onDeleteMany : undefined}
+      onStatusChangeMany={canUpdate ? onStatusChangeMany : undefined}
       searchTerm={searchTerm}
       onSearchChange={setSearchTerm}
       onClearSelection={clearSelection}
@@ -192,7 +200,7 @@ const DanhSachKhoToolbar: React.FC<Props> = ({
       filters={renderFilters}
       filterGroups={filterGroups}
       mobileActions={mobileActions}
-      onAdd={onAdd}
+      onAdd={canCreate ? onAdd : undefined}
       showBack
       searchPlaceholder={t('kho.searchPlaceholder')}
       activeFilterCount={activeFilterCount}

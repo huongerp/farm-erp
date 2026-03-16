@@ -8,8 +8,10 @@ import {
   createDotKiemKe,
   updateDotKiemKe,
   deleteDotKiemKe,
+  getNextMaDotDotKiemKeTaiSan,
   taoDanhSachKiemKe,
   updateChiTietKetQua,
+  deleteChiTietKiemKe,
   themChiTietPhatHien,
   capNhatSoTheoKetQua,
   hoanThanhDot,
@@ -137,6 +139,20 @@ export function useUpdateChiTietKetQua(id_dot: string, onSuccess?: () => void) {
   });
 }
 
+export function useDeleteChiTietKiemKe(id_dot: string, onSuccess?: () => void) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id_chi_tiet: string) => deleteChiTietKiemKe(id_chi_tiet),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['chiTietKiemKe', id_dot] });
+      qc.invalidateQueries({ queryKey: ['dotKiemKe', id_dot] });
+      toast.success(i18n.t('kiemKeTaiSan.toast.deleteChiTietSuccess'));
+      onSuccess?.();
+    },
+    onError: (err: unknown) => toast.error((err as Error).message),
+  });
+}
+
 export function useThemChiTietPhatHien(id_dot: string, onSuccess?: () => void) {
   const qc = useQueryClient();
   return useMutation({
@@ -196,5 +212,16 @@ export function useChangeTrangThaiDot(onSuccess?: () => void) {
       onSuccess?.();
     },
     onError: (err: unknown) => toast.error((err as Error).message),
+  });
+}
+
+/** Mã đợt tự đề xuất: KK-TS-001, KK-TS-002, ... */
+export function formatMaDotDotKiemKeTaiSan(seq: number): string {
+  return `KK-TS-${String(seq).padStart(3, '0')}`;
+}
+
+export function useNextMaDotDotKiemKeTaiSan() {
+  return useMutation({
+    mutationFn: getNextMaDotDotKiemKeTaiSan,
   });
 }

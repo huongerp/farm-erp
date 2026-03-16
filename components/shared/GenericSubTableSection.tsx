@@ -82,8 +82,12 @@ const GenericSubTableSection: React.FC<GenericSubTableSectionProps> = ({
           <Button
             type="button"
             size="sm"
-            onClick={onAdd}
-            className="bg-primary text-white hover:bg-primary/90 shadow-sm h-8 px-3 shrink-0"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onAdd();
+            }}
+            className="bg-primary text-white hover:bg-primary/90 shadow-sm min-h-[44px] h-8 sm:h-8 px-3 shrink-0 touch-manipulation"
           >
             <Plus size={14} className="mr-1.5" />
             {addLabel}
@@ -104,7 +108,12 @@ const GenericSubTableSection: React.FC<GenericSubTableSectionProps> = ({
           icon={emptyIcon}
           action={
             onAdd && addLabel ? (
-              <Button type="button" size="sm" onClick={onAdd} className="bg-primary text-white hover:bg-primary/90">
+              <Button
+                type="button"
+                size="sm"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); onAdd(); }}
+                className="bg-primary text-white hover:bg-primary/90 min-h-[44px] touch-manipulation"
+              >
                 <Plus size={14} className="mr-2" />
                 {addLabel}
               </Button>

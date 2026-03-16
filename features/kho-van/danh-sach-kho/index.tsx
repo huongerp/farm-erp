@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import { useModulePermissionFromContext } from '../../../components/shared/ModulePermissionGuard';
 import DanhSachKhoToolbar from './components/danh-sach-kho-toolbar';
 import DanhSachKhoList from './components/danh-sach-kho-list';
 import DanhSachKhoForm from './components/danh-sach-kho-form';
@@ -26,6 +27,7 @@ import type { KhoFormValues } from './core/schema';
 
 const DanhSachKhoPage: React.FC = () => {
   const { t } = useTranslation();
+  const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
   const {
     searchTerm,
@@ -251,6 +253,9 @@ const DanhSachKhoPage: React.FC = () => {
           onImport={() => setShowImport(true)}
           onDeleteMany={handleDeleteMany}
           onStatusChangeMany={handleStatusChangeMany}
+          canCreate={canCreate}
+          canUpdate={canUpdate}
+          canDelete={canDelete}
         />
 
         <div className="flex-1 min-h-0 flex flex-col">
@@ -265,8 +270,8 @@ const DanhSachKhoPage: React.FC = () => {
             pageSize={pagination.pageSize}
             onPageChange={setPage}
             onPageSizeChange={setPageSize}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
+            onEdit={canUpdate ? handleEdit : undefined}
+            onDelete={canDelete ? handleDelete : undefined}
             onView={setViewingItem}
           />
         </div>
@@ -290,8 +295,8 @@ const DanhSachKhoPage: React.FC = () => {
           <DanhSachKhoDetail
             data={viewingItem}
             onClose={() => setViewingItem(null)}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
+            onEdit={canUpdate ? handleEdit : undefined}
+            onDelete={canDelete ? handleDelete : undefined}
           />
         )}
       </AnimatePresence>

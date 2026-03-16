@@ -1,13 +1,10 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Edit, Trash2, Users } from 'lucide-react';
+import { Edit, Trash2 } from 'lucide-react';
 import { cn, formatDateShort } from '../../../../lib/utils';
 import type { DoiTac } from '../core/types';
-import EmptyState from '../../../../components/shared/EmptyState';
-import ListPageSkeleton from '../../../../components/shared/ListPageSkeleton';
-import TablePaginationFooter from '../../../../components/shared/TablePaginationFooter';
+import GenericTable from '../../../../components/shared/GenericTable';
 import type { ColumnConfig } from '../../../../store/createGenericStore';
-import { getColumnCellStyle } from '../../../../store/createGenericStore';
 
 interface Props {
   data: DoiTac[];
@@ -20,8 +17,8 @@ interface Props {
   pageSize: number;
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
-  onEdit: (item: DoiTac) => void;
-  onDelete: (id: string) => void;
+  onEdit?: (item: DoiTac) => void;
+  onDelete?: (id: string) => void;
   onView?: (item: DoiTac) => void;
 }
 
@@ -47,223 +44,145 @@ const DoiTacList: React.FC<Props> = ({
     [columns]
   );
 
-  const totalRecords = data.length;
-  const paginatedData = useMemo(() => {
-    const start = (page - 1) * pageSize;
-    return data.slice(start, start + pageSize);
-  }, [data, page, pageSize]);
-
-  const allIds = useMemo(() => paginatedData.map((n) => n.id), [paginatedData]);
-  const allSelected = allIds.length > 0 && allIds.every((id) => selectedIds.has(id));
-
-  const renderCell = (item: DoiTac, col: ColumnConfig) => {
-    switch (col.id) {
+  const renderCell = (colId: string, item: DoiTac) => {
+    switch (colId) {
       case 'thu_tu':
-        return (
-          <td key={col.id} className="px-4 py-3" style={getColumnCellStyle(col)}>
-            <span className="text-sm text-muted-foreground">{item.thu_tu}</span>
-          </td>
-        );
+        return <span className="text-sm text-muted-foreground">{item.thu_tu}</span>;
       case 'loai_doi_tac':
         return (
-          <td key={col.id} className="px-4 py-3" style={getColumnCellStyle(col)}>
-            <span className="text-sm text-muted-foreground">
-              {item.loai_doi_tac === 'nha_cung_cap' ? t('doiTac.tabs.nhaCungCap') : t('doiTac.tabs.khachHang')}
-            </span>
-          </td>
+          <span className="text-sm text-muted-foreground">
+            {item.loai_doi_tac === 'nha_cung_cap' ? t('doiTac.tabs.nhaCungCap') : t('doiTac.tabs.khachHang')}
+          </span>
         );
       case 'ma_ncc':
         return (
-          <td key={col.id} className="px-4 py-3" style={getColumnCellStyle(col)}>
-            <span className="font-mono text-xs font-medium text-muted-foreground bg-muted px-2 py-1 rounded border border-border">
-              {item.ma_ncc}
-            </span>
-          </td>
+          <span className="font-mono text-xs font-medium text-muted-foreground bg-muted px-2 py-1 rounded border border-border">
+            {item.ma_ncc}
+          </span>
         );
       case 'ten_ncc':
-        return (
-          <td key={col.id} className="px-4 py-3" style={getColumnCellStyle(col)}>
-            <span className="font-medium text-foreground">{item.ten_ncc}</span>
-          </td>
-        );
+        return <span className="font-medium text-foreground">{item.ten_ncc}</span>;
       case 'ten_nhom':
-        return (
-          <td key={col.id} className="px-4 py-3 min-w-0" style={getColumnCellStyle(col)}>
-            <span className="text-sm text-muted-foreground">{item.ten_nhom ?? '—'}</span>
-          </td>
-        );
+        return <span className="text-sm text-muted-foreground">{item.ten_nhom ?? '—'}</span>;
       case 'dien_thoai':
-        return (
-          <td key={col.id} className="px-4 py-3" style={getColumnCellStyle(col)}>
-            <span className="text-sm text-muted-foreground">{item.dien_thoai ?? '—'}</span>
-          </td>
-        );
+        return <span className="text-sm text-muted-foreground">{item.dien_thoai ?? '—'}</span>;
       case 'tags':
         return (
-          <td key={col.id} className="px-4 py-3 min-w-0" style={getColumnCellStyle(col)}>
-            <div className="flex flex-wrap gap-1">
-              {(item.ten_tags ?? []).length === 0 ? (
-                <span className="text-xs text-muted-foreground">—</span>
-              ) : (
-                (item.ten_tags ?? []).map((name) => (
-                  <span
-                    key={name}
-                    className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-primary/10 text-primary border border-primary/20"
-                  >
-                    {name}
-                  </span>
-                ))
-              )}
-            </div>
-          </td>
+          <div className="flex flex-wrap gap-1">
+            {(item.ten_tags ?? []).length === 0 ? (
+              <span className="text-xs text-muted-foreground">—</span>
+            ) : (
+              (item.ten_tags ?? []).map((name) => (
+                <span
+                  key={name}
+                  className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-primary/10 text-primary border border-primary/20"
+                >
+                  {name}
+                </span>
+              ))
+            )}
+          </div>
         );
       case 'trang_thai':
-        return (
-          <td key={col.id} className="px-4 py-3" style={getColumnCellStyle(col)}>
-            {item.trang_thai === 'Đang hoạt động' ? (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
-                {t('common.activeStatus')}
-              </span>
-            ) : (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border">
-                {t('common.inactiveStatus')}
-              </span>
-            )}
-          </td>
+        return item.trang_thai === 'Đang hoạt động' ? (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+            {t('common.activeStatus')}
+          </span>
+        ) : (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border">
+            {t('common.inactiveStatus')}
+          </span>
         );
       case 'tg_cap_nhat':
+        return <span className="text-xs text-muted-foreground">{formatDateShort(item.tg_cap_nhat)}</span>;
+      case 'actions':
         return (
-          <td key={col.id} className="px-4 py-3" style={getColumnCellStyle(col)}>
-            <span className="text-xs text-muted-foreground">{formatDateShort(item.tg_cap_nhat)}</span>
-          </td>
+          <div className="flex items-center justify-end gap-0.5">
+            {onEdit && (
+              <button type="button" onClick={(e) => { e.stopPropagation(); onEdit(item); }} className="p-1.5 text-primary hover:bg-primary/10 rounded-md" title={t('common.edit')} aria-label={t('common.edit')}>
+                <Edit size={14} />
+              </button>
+            )}
+            {onDelete && (
+              <button type="button" onClick={(e) => { e.stopPropagation(); onDelete(item.id); }} className="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-md" title={t('common.delete')} aria-label={t('common.delete')}>
+                <Trash2 size={14} />
+              </button>
+            )}
+          </div>
         );
       default:
-        return <td key={col.id} className="px-4 py-3" style={getColumnCellStyle(col)} />;
+        return null;
     }
   };
 
-  if (isLoading) {
-    return (
-      <ListPageSkeleton
-        loadingText={t('doiTac.loading')}
-        tableColumns={visibleColumns.length + 2}
-        tableRowCount={5}
-        tableColumnWithSubline={0}
-        cardCount={3}
-      />
-    );
-  }
-
-  if (data.length === 0) {
-    return (
-      <div className="flex-1 min-h-0 flex items-center justify-center p-4">
-        <EmptyState
-          title={t('doiTac.empty')}
-          description={t('doiTac.emptyHint')}
-          icon={<Users className="w-10 h-10 text-muted-foreground" />}
-        />
+  const renderMobileCard = (item: DoiTac, isSelected: boolean) => (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => onView?.(item)}
+      onKeyDown={(e) => e.key === 'Enter' && onView?.(item)}
+      className={cn(
+        'bg-card rounded-xl border p-3.5 shadow-sm transition-all active:scale-[0.98]',
+        isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'
+      )}
+    >
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <span className="font-mono text-xs font-medium text-muted-foreground bg-muted px-2 py-1 rounded border border-border">
+          {item.ma_ncc}
+        </span>
+        <span className="text-xs text-muted-foreground">
+          {item.loai_doi_tac === 'nha_cung_cap' ? t('doiTac.tabs.nhaCungCap') : t('doiTac.tabs.khachHang')}
+        </span>
       </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col h-full min-h-0 bg-card overflow-hidden">
-      <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-        <div className="flex-1 min-h-0 overflow-auto custom-scrollbar">
-          <table className="w-full text-sm text-left border-collapse">
-            <thead className="sticky top-0 z-10 bg-muted/95 border-b border-border">
-              <tr>
-                <th className="px-4 py-3 w-10" style={{ minWidth: 40 }}>
-                  <input
-                    type="checkbox"
-                    checked={allSelected}
-                    onChange={() => onToggleAllSelection(allIds)}
-                    className="w-4 h-4 rounded border-border text-primary accent-primary cursor-pointer"
-                    aria-label={t('common.selectAll')}
-                  />
-                </th>
-                {visibleColumns.map((col) => (
-                  <th
-                    key={col.id}
-                    className="px-4 py-3 font-semibold text-muted-foreground text-xs whitespace-nowrap"
-                    style={getColumnCellStyle(col)}
-                  >
-                    {col.label}
-                  </th>
-                ))}
-                <th className="px-4 py-3 font-semibold text-muted-foreground text-xs text-right w-24">
-                  {t('common.actions')}
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border [&>tr:last-child>td]:border-b [&>tr:last-child>td]:border-border">
-              {paginatedData.map((item) => (
-                <tr
-                  key={item.id}
-                  className={cn(
-                    'group hover:bg-muted/50 transition-colors',
-                    onView && 'cursor-pointer'
-                  )}
-                  onClick={onView ? () => onView(item) : undefined}
-                  onKeyDown={
-                    onView
-                      ? (e) => e.key === 'Enter' && onView(item)
-                      : undefined
-                  }
-                  role={onView ? 'button' : undefined}
-                  tabIndex={onView ? 0 : undefined}
-                >
-                  <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.has(item.id)}
-                      onChange={() => onToggleSelection(item.id)}
-                      className="w-4 h-4 rounded border-border text-primary accent-primary cursor-pointer"
-                      aria-label={t('common.select')}
-                    />
-                  </td>
-                  {visibleColumns.map((col) => renderCell(item, col))}
-                  <td
-                    className="px-4 py-3 text-right"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div className="flex items-center justify-end gap-0.5">
-                      <button
-                        type="button"
-                        onClick={() => onEdit(item)}
-                        className="p-1.5 text-primary hover:bg-primary/10 rounded-md"
-                        title={t('common.edit')}
-                      >
-                        <Edit size={14} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onDelete(item.id)}
-                        className="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-md"
-                        title={t('common.delete')}
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <div className="font-medium text-foreground text-sm mb-1">{item.ten_ncc}</div>
+      <div className="text-xs text-muted-foreground mb-2">{item.ten_nhom ?? '—'} {item.dien_thoai ? `· ${item.dien_thoai}` : ''}</div>
+      {(item.ten_tags ?? []).length > 0 && (
+        <div className="flex flex-wrap gap-1 mb-2">
+          {(item.ten_tags ?? []).map((name) => (
+            <span key={name} className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+              {name}
+            </span>
+          ))}
+        </div>
+      )}
+      <div className="flex justify-between items-center pt-2 border-t border-border">
+        <span className="text-xs text-muted-foreground">{formatDateShort(item.tg_cap_nhat)}</span>
+        <div className="flex gap-1">
+          {onEdit && (
+            <button type="button" onClick={(e) => { e.stopPropagation(); onEdit(item); }} className="p-2 text-primary hover:bg-primary/10 rounded-lg" aria-label={t('common.edit')}>
+              <Edit size={14} />
+            </button>
+          )}
+          {onDelete && (
+            <button type="button" onClick={(e) => { e.stopPropagation(); onDelete(item.id); }} className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg" aria-label={t('common.delete')}>
+              <Trash2 size={14} />
+            </button>
+          )}
         </div>
       </div>
-      <div className="shrink-0 border-t border-border bg-muted/30">
-        <TablePaginationFooter
-          totalRecords={totalRecords}
-          page={page}
-          pageSize={pageSize}
-          onPageChange={onPageChange}
-          onPageSizeChange={onPageSizeChange}
-          selectedCount={selectedIds.size}
-          recordsLabel={t('doiTac.footerRecords')}
-        />
-      </div>
     </div>
+  );
+
+  return (
+    <GenericTable<DoiTac>
+      data={data}
+      columns={visibleColumns}
+      isLoading={isLoading}
+      loadingText={t('doiTac.loading')}
+      selectedIds={selectedIds}
+      onToggleSelection={onToggleSelection}
+      onToggleAll={onToggleAllSelection}
+      page={page}
+      pageSize={pageSize}
+      onPageChange={onPageChange}
+      onPageSizeChange={onPageSizeChange}
+      renderCell={renderCell}
+      renderMobileCard={renderMobileCard}
+      keyExtractor={(item) => item.id}
+      onRowClick={onView}
+      emptyTitle={t('doiTac.empty')}
+      emptyDescription={t('doiTac.emptyHint')}
+    />
   );
 };
 

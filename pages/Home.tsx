@@ -10,7 +10,12 @@ import EmptyState from '../components/shared/EmptyState';
 import type { ModuleGroup } from '../components/dashboard/ModuleDashboardLayout';
 import { useAuthStore } from '../store/useStore';
 import { SIDEBAR_MENU } from '../lib/sidebar-menu';
-import { useSubmenuVisible, isSubmenuWithPermission } from '../features/he-thong/phan-quyen/hooks/use-module-permission';
+import {
+  useSubmenuVisible,
+  isSubmenuWithPermission,
+  useModulesWithViewPermission,
+  getPermissionModuleIdFromPath,
+} from '../features/he-thong/phan-quyen/hooks/use-module-permission';
 import { useFavoriteModules } from '../lib/use-favorite-modules';
 import { getAllSubmenuGroups } from '../lib/all-submenu-groups';
 import 'dayjs/locale/vi';
@@ -70,6 +75,12 @@ const Home: React.FC = () => {
   const showHanhChinh = useSubmenuVisible('/hanh-chinh');
   const showMuaHang = useSubmenuVisible('/mua-hang');
   const showHeThong = useSubmenuVisible('/he-thong');
+  const viewableHanhChinh = useModulesWithViewPermission('/hanh-chinh');
+  const viewableMuaHang = useModulesWithViewPermission('/mua-hang');
+  const viewableIds = useMemo(
+    () => new Set([...viewableHanhChinh, ...viewableMuaHang]),
+    [viewableHanhChinh, viewableMuaHang]
+  );
   const visibleMenu = useMemo(
     () =>
       SIDEBAR_MENU.filter((m) => {
@@ -95,8 +106,19 @@ const Home: React.FC = () => {
     [t, visibleMenu]
   );
 
-  /** Tất cả nhóm module từ 6 submenu */
-  const allGroups = useMemo(() => getAllSubmenuGroups(t, navigate), [t, navigate]);
+  /** Tất cả nhóm module (Hành chính + Mua hàng), chỉ hiển thị module user có quyền xem */
+  const allGroups = useMemo(() => {
+    const raw = getAllSubmenuGroups(t, navigate);
+    return raw
+      .map((g) => ({
+        ...g,
+        items: g.items.filter((it) => {
+          const permId = it.moduleId ? getPermissionModuleIdFromPath(it.moduleId) : '';
+          return !permId || viewableIds.has(permId);
+        }),
+      }))
+      .filter((g) => g.items.length > 0);
+  }, [t, navigate, viewableIds]);
 
   /** Nhóm module đã đánh dấu, bỏ nhóm rỗng */
   const bookmarkGroups = useMemo(() => {

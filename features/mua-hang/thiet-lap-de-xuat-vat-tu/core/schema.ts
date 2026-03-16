@@ -16,3 +16,6 @@ export type TrangThaiDoiTacFormValues = z.infer<typeof trangThaiDoiTacSchema>;
 
 export const trangThaiThanhToanDoiTacSchema = z.object(statusSchema);
 export type TrangThaiThanhToanDoiTacFormValues = z.infer<typeof trangThaiThanhToanDoiTacSchema>;
+
+export const tienDoMuaHangSchema = z.object(statusSchema);
+export type TienDoMuaHangFormValues = z.infer<typeof tienDoMuaHangSchema>;

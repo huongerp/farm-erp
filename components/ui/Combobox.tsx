@@ -65,6 +65,8 @@ const Combobox: React.FC<ComboboxProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const listboxId = useId();
+  /** Trên mobile, scroll (keyboard/viewport) khi mở dropdown khiến listener đóng ngay → nháy. Bỏ qua scroll trong 400ms đầu. */
+  const openedAtRef = useRef<number>(0);
 
   const updateDropdownRect = () => {
     const el = containerRef.current;
@@ -89,20 +91,25 @@ const Combobox: React.FC<ComboboxProps> = ({
 
   // Close when clicking outside (portal: also ignore clicks inside the portaled dropdown)
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Node;
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      const target = (event.target as Node);
       if (containerRef.current?.contains(target)) return;
       if (dropdownInPortal && (target as Element).closest?.('[data-combobox-dropdown]')) return;
       setIsOpen(false);
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside as (e: MouseEvent) => void);
+    document.addEventListener('touchstart', handleClickOutside as (e: TouchEvent) => void, { passive: true });
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside as (e: MouseEvent) => void);
+      document.removeEventListener('touchstart', handleClickOutside as (e: TouchEvent) => void);
+    };
   }, [dropdownInPortal]);
 
-  // When dropdown in portal: close on scroll of outside elements (not the dropdown itself)
+  // When dropdown in portal: close on scroll of outside elements. Trên mobile bỏ qua scroll trong 400ms sau khi mở để tránh nháy.
   useEffect(() => {
     if (!isOpen || !dropdownInPortal) return;
     const onScroll = (e: Event) => {
+      if (Date.now() - openedAtRef.current < 400) return;
       const target = e.target as Element | null;
       if (target?.closest?.('[data-combobox-dropdown]')) return;
       if (containerRef.current?.contains(target as Node)) return;
@@ -173,7 +180,12 @@ const Combobox: React.FC<ComboboxProps> = ({
           disabled ? "opacity-50 cursor-not-allowed bg-muted" : "",
           triggerClassName
         )}
-        onClick={() => !disabled && setIsOpen(!isOpen)}
+        onClick={() => {
+          if (disabled) return;
+          const next = !isOpen;
+          if (next) openedAtRef.current = Date.now();
+          setIsOpen(next);
+        }}
       >
         <span className={cn("truncate flex-1 min-w-0", !selectedOption && "text-muted-foreground")}>
           {selectedOption ? (renderValue ? renderValue(selectedOption) : selectedOption.label) : placeholder}
@@ -261,7 +273,7 @@ const Combobox: React.FC<ComboboxProps> = ({
                         className={cn(
                           "flex items-center justify-between px-3 py-2.5 rounded-lg text-sm cursor-pointer transition-colors",
                           value === option.value
-                            ? "bg-primary/5 text-primary font-medium"
+                            ? "bg-primary/10 text-foreground font-medium border border-primary/20"
                             : "text-foreground hover:bg-muted/50"
                         )}
                         onClick={(e) => {
@@ -341,7 +353,7 @@ const Combobox: React.FC<ComboboxProps> = ({
                         className={cn(
                           "flex items-center justify-between px-3 py-2.5 rounded-lg text-sm cursor-pointer transition-colors",
                           value === option.value
-                            ? "bg-primary/5 text-primary font-medium"
+                            ? "bg-primary/10 text-foreground font-medium border border-primary/20"
                             : "text-foreground hover:bg-muted/50"
                         )}
                         onClick={(e) => {

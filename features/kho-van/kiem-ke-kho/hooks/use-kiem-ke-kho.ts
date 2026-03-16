@@ -9,6 +9,8 @@ import {
   updateDotKiemKeKho,
   deleteDotKiemKeKho,
   taoDanhSachKiemKe,
+  createChiTietKiemKe,
+  deleteChiTietKiemKe,
   updateChiTietKetQua,
   dieuChinhTonTheoKetQua,
   dieuChinhTonTheoDot,
@@ -110,6 +112,42 @@ export function useTaoDanhSachKiemKe(onSuccess?: () => void) {
       qc.invalidateQueries({ queryKey: ['dotKiemKeKho', id_dot_kiem_ke_kho] });
       qc.invalidateQueries({ queryKey: ['dotKiemKeKhoList'] });
       toast.success(i18n.t('kiemKeKho.toast.taoDanhSachSuccess'));
+      onSuccess?.();
+    },
+    onError: (err: unknown) => toast.error((err as Error).message),
+  });
+}
+
+export function useCreateChiTietKiemKe(id_dot: string, onSuccess?: () => void) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id_kho,
+      id_hang_hoa,
+    }: {
+      id_kho: string;
+      id_hang_hoa: string;
+    }) => createChiTietKiemKe(id_dot, id_kho, id_hang_hoa),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['chiTietKiemKeKho', id_dot] });
+      qc.invalidateQueries({ queryKey: ['dotKiemKeKho', id_dot] });
+      qc.invalidateQueries({ queryKey: ['dotKiemKeKhoList'] });
+      toast.success(i18n.t('kiemKeKho.toast.addChiTietSuccess'));
+      onSuccess?.();
+    },
+    onError: (err: unknown) => toast.error((err as Error).message),
+  });
+}
+
+export function useDeleteChiTietKiemKe(id_dot: string, onSuccess?: () => void) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id_chi_tiet: string) => deleteChiTietKiemKe(id_chi_tiet),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['chiTietKiemKeKho', id_dot] });
+      qc.invalidateQueries({ queryKey: ['dotKiemKeKho', id_dot] });
+      qc.invalidateQueries({ queryKey: ['dotKiemKeKhoList'] });
+      toast.success(i18n.t('kiemKeKho.toast.deleteChiTietSuccess'));
       onSuccess?.();
     },
     onError: (err: unknown) => toast.error((err as Error).message),

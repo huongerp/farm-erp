@@ -41,3 +41,16 @@ export interface TrangThaiThanhToanDoiTac {
   tg_tao: string;
   tg_cap_nhat: string;
 }
+
+/** Trạng thái tiến độ mua hàng (tab Tiến độ mh - thiết lập đề xuất vật tư) */
+export interface TienDoMuaHang {
+  id: string;
+  ma: string;
+  ten: string;
+  thu_tu: number;
+  mau?: string;
+  ghi_chu?: string;
+  trang_thai: TrangThaiHoatDong;
+  tg_tao: string;
+  tg_cap_nhat: string;
+}

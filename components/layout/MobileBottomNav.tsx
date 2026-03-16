@@ -1,9 +1,8 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Bell, ChevronLeft, Home } from 'lucide-react';
+import { ChevronLeft, Home } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { getParentPath } from '../shared/Breadcrumbs';
-import { useNotificationStore } from '../../store/useNotificationStore';
 import { cn } from '../../lib/utils';
 
 const useIsMobile = (breakpoint = 768) => {
@@ -20,7 +19,7 @@ const useIsMobile = (breakpoint = 768) => {
   return isMobile;
 };
 
-/** Bottom nav mobile: Trái Back | Giữa Trang chủ | Phải Notification. Chỉ hiện khi isMobile. */
+/** Bottom nav mobile: Trái Back | Giữa Trang chủ. Chỉ hiện khi isMobile. */
 const MobileBottomNav: React.FC = () => {
   const { t } = useTranslation();
   const location = useLocation();
@@ -32,9 +31,6 @@ const MobileBottomNav: React.FC = () => {
     [location.pathname, t]
   );
   const showBack = parentPath !== undefined;
-  const unreadCount = useNotificationStore((s) =>
-    s.notifications.filter((n) => !n.read).length
-  );
 
   if (!isMobile) return null;
 
@@ -78,27 +74,9 @@ const MobileBottomNav: React.FC = () => {
           </Link>
         </div>
 
-        {/* Phải: Notification – bấm mở trang thông báo */}
-        <div className="flex-1 flex justify-center items-center min-w-0">
-          <Link
-            to="/thong-bao"
-            aria-label={t('nav.notification')}
-            aria-current={location.pathname === '/thong-bao' ? 'page' : undefined}
-            className={cn(
-              'relative min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground active:scale-95 transition-all',
-              location.pathname === '/thong-bao' && 'bg-primary/10 text-primary'
-            )}
-          >
-            <Bell size={24} strokeWidth={1.8} className="shrink-0" />
-            {unreadCount > 0 && (
-              <span
-                className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-primary text-[10px] font-semibold text-primary-foreground rounded-full shadow-sm ring-2 ring-card"
-                aria-hidden
-              >
-                {unreadCount > 99 ? '99+' : unreadCount}
-              </span>
-            )}
-          </Link>
+        {/* Phải: placeholder (notification ẩn) */}
+        <div className="flex-1 flex justify-center items-center min-w-0" aria-hidden>
+          <div className="min-w-[44px] min-h-[44px]" />
         </div>
       </div>
     </nav>

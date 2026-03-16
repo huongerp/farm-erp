@@ -20,9 +20,11 @@ import {
   changeTrangThaiDotSupabase,
   taoDanhSachKiemKeSupabase,
   updateChiTietKetQuaSupabase,
+  deleteChiTietKiemKeSupabase,
   themChiTietPhatHienSupabase,
   capNhatSoTheoKetQuaSupabase,
   hoanThanhDotSupabase,
+  getNextMaDotDotKiemKeTaiSan,
   type GetDotKiemKeListParams,
   type TaoDanhSachKiemKeFilters,
   type ThemChiTietPhatHienPayload,
@@ -83,6 +85,10 @@ export async function updateChiTietKetQua(
   return updateChiTietKetQuaSupabase(id_chi_tiet, data, id_nguoi_kiem);
 }
 
+export async function deleteChiTietKiemKe(id_chi_tiet: string): Promise<void> {
+  return deleteChiTietKiemKeSupabase(id_chi_tiet);
+}
+
 export async function themChiTietPhatHien(
   id_dot_kiem_ke: string,
   payload: ThemChiTietPhatHienPayload,
@@ -98,3 +104,5 @@ export async function capNhatSoTheoKetQua(id_chi_tiet: string): Promise<void> {
 export async function hoanThanhDot(id_dot_kiem_ke: string): Promise<DotKiemKe> {
   return hoanThanhDotSupabase(id_dot_kiem_ke);
 }
+
+export { getNextMaDotDotKiemKeTaiSan };

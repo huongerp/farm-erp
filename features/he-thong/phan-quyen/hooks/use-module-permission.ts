@@ -2,7 +2,11 @@ import { useMemo } from 'react';
 import { useAuthStore } from '../../../../store/useStore';
 import { useRoles } from './use-phan-quyen';
 import type { ActionType } from '../core/types';
-import { getModuleIdsBySubmenuPath, isSubmenuWithPermission } from '../core/permission-modules-config';
+import {
+  getModuleIdsBySubmenuPath,
+  isSubmenuWithPermission,
+  getPermissionModuleIdFromPath,
+} from '../core/permission-modules-config';
 
 export interface ModulePermissionFlags {
   /** Có quyền xem (admin | all | view) */
@@ -13,6 +17,8 @@ export interface ModulePermissionFlags {
   canUpdate: boolean;
   /** Có quyền xoá (admin | all | delete) */
   canDelete: boolean;
+  /** Có quyền phê duyệt (admin | all | approve) – chỉ ý nghĩa với module có chức năng phê duyệt */
+  canApprove: boolean;
   /** Đang tải dữ liệu phân quyền */
   isLoading: boolean;
 }
@@ -31,6 +37,7 @@ export function useModulePermission(moduleId: string): ModulePermissionFlags {
       canCreate: false,
       canUpdate: false,
       canDelete: false,
+      canApprove: false,
       isLoading,
     };
 
@@ -51,6 +58,7 @@ export function useModulePermission(moduleId: string): ModulePermissionFlags {
       canCreate: hasAdminOrAll || has('create'),
       canUpdate: hasAdminOrAll || has('update'),
       canDelete: hasAdminOrAll || has('delete'),
+      canApprove: hasAdminOrAll || has('approve'),
       isLoading,
     };
   }, [moduleId, user?.id_chuc_vu, roles, isLoading]);
@@ -88,4 +96,36 @@ export function useSubmenuVisible(path: string): boolean {
   }, [path, user?.id_chuc_vu, roles, isLoading]);
 }
 
-export { isSubmenuWithPermission, getModuleIdsBySubmenuPath };
+/**
+ * Trả về Set các module id mà user có quyền xem trong submenu (path).
+ * Dùng để lọc thẻ module trên dashboard (chỉ hiển thị module user được xem).
+ */
+export function useModulesWithViewPermission(path: string): Set<string> {
+  const user = useAuthStore((s) => s.user);
+  const { data: roles = [], isLoading } = useRoles();
+
+  return useMemo(() => {
+    const viewable = new Set<string>();
+    if (!isSubmenuWithPermission(path)) return viewable;
+    if (isLoading) return viewable;
+
+    const chucVuId = user?.id_chuc_vu ?? null;
+    if (!chucVuId) return viewable;
+
+    const moduleIds = getModuleIdsBySubmenuPath(path);
+    const role = roles.find((r) => String(r.id_chuc_vu) === String(chucVuId));
+    if (!role) return viewable;
+
+    const hasView = (actions: ActionType[]) =>
+      actions.includes('admin') || actions.includes('all') || actions.includes('view');
+
+    moduleIds.forEach((moduleId) => {
+      const modulePerm = role.quyen_han?.find((q) => q.module_id === moduleId);
+      const actions: ActionType[] = modulePerm?.actions ?? [];
+      if (hasView(actions)) viewable.add(moduleId);
+    });
+    return viewable;
+  }, [path, user?.id_chuc_vu, roles, isLoading]);
+}
+
+export { isSubmenuWithPermission, getModuleIdsBySubmenuPath, getPermissionModuleIdFromPath };

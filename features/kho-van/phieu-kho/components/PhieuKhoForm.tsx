@@ -17,6 +17,7 @@ import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { useCreatePhieuKho, useUpdatePhieuKho, useTonKhoTheoKho, useNextSoPhieu } from '../hooks/use-phieu-kho';
 import { useHangHoaList } from '../../danh-sach-hang-hoa/hooks/use-hang-hoa';
 import { useDoiTacList } from '../../danh-sach-doi-tac/hooks/use-doi-tac';
+import { useAuthStore } from '../../../../store/useStore';
 import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/GenericDrawer';
 import FormSection from '../../../../components/shared/FormSection';
 import FormGrid from '../../../../components/shared/FormGrid';
@@ -44,7 +45,8 @@ const today = () => new Date().toISOString().slice(0, 10);
 
 const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose, onRequestAddKho, onRequestAddHangHoa, onRequestAddNcc, onRequestAddKh }) => {
   const { t } = useTranslation();
-  const isEdit = !!initialData;
+  const user = useAuthStore((s) => s.user);
+  const isEdit = !!initialData?.id;
   const createMutation = useCreatePhieuKho(loai, onClose);
   const updateMutation = useUpdatePhieuKho(onClose);
   const { data: nextSoPhieu, isLoading: loadingSoPhieu } = useNextSoPhieu(loai, !isEdit);
@@ -164,10 +166,14 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose, on
           ghi_chu: ct.ghi_chu ?? '',
         })),
       });
+      if (!initialData.id && user?.id) {
+        setValue('nguoi_tao_id', Number(user.id));
+      }
     } else {
       reset({ ...defaultValues, ngay: today() });
+      if (user?.id) setValue('nguoi_tao_id', Number(user.id));
     }
-  }, [initialData, reset]);
+  }, [initialData, reset, user?.id, setValue]);
 
   useEffect(() => {
     if (!isEdit && nextSoPhieu) {

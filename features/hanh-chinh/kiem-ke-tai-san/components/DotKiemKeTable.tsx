@@ -80,7 +80,7 @@ const DotKiemKeTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, onDe
         if (!showActions) return null;
         return (
           <div className="flex items-center justify-center gap-1">
-            {onEdit && item.trang_thai === 'Nháp' && (
+            {onEdit && (item.trang_thai === 'Nháp' || item.trang_thai === 'Đang kiểm kê') && (
               <Tooltip content={t('common.edit')} placement="left">
                 <button
                   type="button"
@@ -95,7 +95,7 @@ const DotKiemKeTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, onDe
                 </button>
               </Tooltip>
             )}
-            {onDelete && item.trang_thai === 'Nháp' && (
+            {onDelete && (item.trang_thai === 'Nháp' || item.trang_thai === 'Đang kiểm kê') && (
               <Tooltip content={t('common.delete')} placement="left">
                 <button
                   type="button"

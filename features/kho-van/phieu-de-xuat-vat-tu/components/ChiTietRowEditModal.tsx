@@ -1,17 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Input from '../../../../components/ui/Input';
 import Textarea from '../../../../components/ui/Textarea';
+import Combobox from '../../../../components/ui/Combobox';
 import { BTN_CANCEL, BTN_SAVE } from '../../../../lib/button-labels';
 import type { PhieuDeXuatVatTuChiTietRow } from '../core/types';
+import { useTienDoMuaHangList } from '../../../mua-hang/thiet-lap-de-xuat-vat-tu/hooks/use-tien-do-mua-hang';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 
 export interface ChiTietRowEditPayload {
   so_luong: number;
   thong_so: string;
   ghi_chu: string;
+  id_tien_do_mh: string | null;
+  ten_tien_do_mh: string | null;
 }
 
 interface Props {
@@ -23,15 +28,29 @@ interface Props {
 
 const ChiTietRowEditModal: React.FC<Props> = ({ open, initialData, onClose, onSave }) => {
   const { t } = useTranslation();
+  const { data: tienDoMuaHangList = [] } = useTienDoMuaHangList();
   const [soLuong, setSoLuong] = useState('');
   const [thongSo, setThongSo] = useState('');
   const [ghiChu, setGhiChu] = useState('');
+  const [idTienDoMh, setIdTienDoMh] = useState<string | null>(null);
+  const [tenTienDoMh, setTenTienDoMh] = useState<string | null>(null);
+
+  const tienDoOptions = useMemo(
+    () =>
+      tienDoMuaHangList
+        .filter((t) => t.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG)
+        .sort((a, b) => a.thu_tu - b.thu_tu)
+        .map((t) => ({ value: t.id, label: t.ten })),
+    [tienDoMuaHangList]
+  );
 
   useEffect(() => {
     if (open && initialData) {
       setSoLuong(String(initialData.so_luong ?? ''));
       setThongSo(initialData.thong_so ?? '');
       setGhiChu(initialData.ghi_chu ?? '');
+      setIdTienDoMh(initialData.id_tien_do_mh ?? null);
+      setTenTienDoMh(initialData.ten_tien_do_mh ?? null);
     }
   }, [open, initialData]);
 
@@ -41,7 +60,13 @@ const ChiTietRowEditModal: React.FC<Props> = ({ open, initialData, onClose, onSa
     if (Number.isNaN(num) || num <= 0) {
       return;
     }
-    onSave({ so_luong: num, thong_so: thongSo.trim(), ghi_chu: ghiChu.trim() });
+    onSave({
+      so_luong: num,
+      thong_so: thongSo.trim(),
+      ghi_chu: ghiChu.trim(),
+      id_tien_do_mh: idTienDoMh,
+      ten_tien_do_mh: tenTienDoMh,
+    });
     onClose();
   };
 
@@ -108,6 +133,19 @@ const ChiTietRowEditModal: React.FC<Props> = ({ open, initialData, onClose, onSa
               value={ghiChu}
               onChange={(e) => setGhiChu(e.target.value)}
               rows={2}
+            />
+            <Combobox
+              label={t('phieuDeXuatVatTu.form.tienDoMh')}
+              options={tienDoOptions}
+              value={idTienDoMh}
+              onChange={(v) => {
+                const item = tienDoMuaHangList.find((t) => t.id === v);
+                setIdTienDoMh(v ?? null);
+                setTenTienDoMh(item?.ten ?? null);
+              }}
+              placeholder={t('phieuDeXuatVatTu.form.tienDoMhPlaceholder')}
+              searchPlaceholder={t('phieuDeXuatVatTu.form.itemSearchPlaceholder')}
+              searchable
             />
             <div className="flex justify-end gap-2 pt-2">
               <Button type="button" variant="ghost" onClick={onClose} className="border border-border">

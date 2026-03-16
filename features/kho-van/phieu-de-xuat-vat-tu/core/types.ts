@@ -12,6 +12,11 @@ export interface PhieuDeXuatVatTuChiTiet {
   /** Enrich từ danh sách hàng hóa */
   ma_hang?: string;
   ten_hang?: string;
+  /** Tiến độ mua hàng */
+  id_tien_do_mh?: string | null;
+  ten_tien_do_mh?: string | null;
+  /** Trao đổi / ghi chú tiến độ (log chuyển tiến độ, ghi chú duyệt, v.v.) */
+  trao_doi?: string | null;
 }
 
 /** Một dòng trong tab Chi tiết – dữ liệu từ bảng đề xuất vật tư chi tiết (có cột kéo từ phiếu). */
@@ -32,6 +37,9 @@ export interface PhieuDeXuatVatTuChiTietRow {
   don_vi_tinh: string | null;
   thong_so: string | null;
   ghi_chu: string | null;
+  id_tien_do_mh: string | null;
+  ten_tien_do_mh: string | null;
+  trao_doi: string | null;
 }
 
 export interface PhieuDeXuatVatTu {

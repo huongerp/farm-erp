@@ -71,15 +71,9 @@ const EmployeeTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onS
                 );
             case 'ten_chuc_vu':
                 return (
-                    <div className="flex flex-col gap-0.5">
-                        <div className="flex items-center gap-1.5 text-body-sm font-semibold text-foreground">
-                            <Briefcase size={11} className="text-primary shrink-0" />
-                            <span className="truncate">{item.ten_chuc_vu || t('employee.unassigned')}</span>
-                        </div>
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <Building2 size={10} className="shrink-0" />
-                            <span className="truncate">{item.ten_phong_ban || '--'}</span>
-                        </div>
+                    <div className="flex items-center gap-1.5 text-body-sm font-semibold text-foreground">
+                        <Briefcase size={11} className="text-primary shrink-0" />
+                        <span className="truncate">{item.ten_chuc_vu || t('employee.unassigned')}</span>
                     </div>
                 );
             case 'ten_phong_ban':

@@ -1,6 +1,8 @@
 -- =============================================================================
 -- Kiểm kê tài sản (Asset inventory) – Hành chính / Tài sản
--- Chạy trong Supabase Dashboard → SQL Editor
+-- Chạy trong Supabase Dashboard → SQL Editor (Project → SQL Editor → New query → dán script → Run)
+-- Sau khi chạy xong, bảng public.fp_ts_dot_kiem_ke_tai_san và fp_ts_dot_kiem_ke_tai_san_chi_tiet
+-- sẽ có trong schema; nếu app vẫn báo "not in schema cache", reload trang hoặc đợi vài giây.
 -- Kết nối với: fp_ts_tai_san, fp_ts_nhom_tai_san, fp_ts_trang_thai_tai_san,
 --              fp_hc_noi_quan_ly, fp_var_nhan_vien.
 -- Gồm: (1) Đợt kiểm kê tài sản, (2) Chi tiết kiểm kê từng tài sản (sổ vs thực tế).
@@ -9,7 +11,7 @@
 -- Kết quả chi tiết (tiếng Việt): Chưa kiểm | Khớp | Chênh nơi lưu | Chênh người giữ | Chênh trạng thái | Thiếu.
 -- =============================================================================
 
--- Xóa bảng con trước (có FK tới bảng đợt)
+-- Xóa bảng con trước (có FK tới bảng đợt), rồi bảng đợt
 DROP TABLE IF EXISTS public.fp_ts_dot_kiem_ke_tai_san_chi_tiet;
 DROP TABLE IF EXISTS public.fp_ts_dot_kiem_ke_tai_san;
 
@@ -27,6 +29,7 @@ CREATE TABLE public.fp_ts_dot_kiem_ke_tai_san (
   id_nguoi_phu_trach     bigint NOT NULL,
   id_nhom                bigint[] DEFAULT '{}',
   id_noi_luu             bigint[] DEFAULT '{}',
+  id_nguoi_giu           bigint[] DEFAULT '{}',
   ghi_chu                text,
   trang_thai_active      text NOT NULL DEFAULT 'Đang hoạt động',
   tg_tao                 timestamptz DEFAULT now(),
@@ -42,6 +45,7 @@ COMMENT ON COLUMN public.fp_ts_dot_kiem_ke_tai_san.trang_thai IS 'Nháp | Đang 
 COMMENT ON COLUMN public.fp_ts_dot_kiem_ke_tai_san.id_nguoi_phu_trach IS 'Người phụ trách → fp_var_nhan_vien(id)';
 COMMENT ON COLUMN public.fp_ts_dot_kiem_ke_tai_san.id_nhom IS 'Phạm vi nhóm tài sản (mảng ID); rỗng = tất cả nhóm';
 COMMENT ON COLUMN public.fp_ts_dot_kiem_ke_tai_san.id_noi_luu IS 'Phạm vi nơi lưu (mảng ID); rỗng = tất cả nơi lưu';
+COMMENT ON COLUMN public.fp_ts_dot_kiem_ke_tai_san.id_nguoi_giu IS 'Phạm vi người giữ (mảng ID nhân viên); rỗng = tất cả';
 COMMENT ON COLUMN public.fp_ts_dot_kiem_ke_tai_san.trang_thai_active IS 'Đang hoạt động | Ngừng hoạt động';
 
 CREATE UNIQUE INDEX idx_fp_ts_dot_kiem_ke_tai_san_ma_dot ON public.fp_ts_dot_kiem_ke_tai_san(ma_dot);
@@ -151,13 +155,31 @@ CREATE POLICY "Allow delete fp_ts_dot_kiem_ke_tai_san_chi_tiet" ON public.fp_ts_
   FOR DELETE TO authenticated USING (true);
 
 -- =============================================================================
--- (Tùy chọn) Hàm sinh mã đợt tiếp theo – dùng từ app khi tạo đợt mới
--- Format gợi ý: KK-YYYY-NNN (VD: KK-2025-001). App có thể gọi RPC hoặc tự sinh.
+-- Mã đợt tự đề xuất, tăng dần – app gọi RPC get_next_ma_dot_dot_kiem_ke_tai_san(), format KK-TS-NNN
 -- =============================================================================
+CREATE SEQUENCE IF NOT EXISTS public.fp_ts_dot_kiem_ke_tai_san_ma_seq START 1;
 
--- CREATE OR REPLACE FUNCTION get_next_ma_dot_dot_kiem_ke_tai_san()
--- RETURNS text AS $$
---   SELECT 'KK-' || to_char(now(), 'YYYY') || '-' || lpad((COALESCE(MAX(CAST(SUBSTRING(ma_dot FROM 10) AS integer)), 0) + 1)::text, 3, '0')
---   FROM public.fp_ts_dot_kiem_ke_tai_san
---   WHERE ma_dot LIKE 'KK-' || to_char(now(), 'YYYY') || '-%';
--- $$ LANGUAGE sql STABLE;
+CREATE OR REPLACE FUNCTION public.get_next_ma_dot_dot_kiem_ke_tai_san()
+RETURNS bigint
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  next_val bigint;
+BEGIN
+  SELECT nextval('public.fp_ts_dot_kiem_ke_tai_san_ma_seq') INTO next_val;
+  RETURN next_val;
+END;
+$$;
+
+COMMENT ON FUNCTION public.get_next_ma_dot_dot_kiem_ke_tai_san() IS 'Trả về số thứ tự tiếp theo cho mã đợt kiểm kê tài sản (app format: KK-TS- + pad 3 chữ số)';
+
+GRANT USAGE ON SEQUENCE public.fp_ts_dot_kiem_ke_tai_san_ma_seq TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_next_ma_dot_dot_kiem_ke_tai_san() TO authenticated;
+
+-- -----------------------------------------------------------------------------
+-- Bổ sung cột id_nguoi_giu (phạm vi theo người giữ) – chạy nếu bảng đã tồn tại
+-- -----------------------------------------------------------------------------
+ALTER TABLE public.fp_ts_dot_kiem_ke_tai_san
+  ADD COLUMN IF NOT EXISTS id_nguoi_giu bigint[] DEFAULT '{}';
+
+COMMENT ON COLUMN public.fp_ts_dot_kiem_ke_tai_san.id_nguoi_giu IS 'Phạm vi người giữ (mảng ID nhân viên); rỗng = tất cả';

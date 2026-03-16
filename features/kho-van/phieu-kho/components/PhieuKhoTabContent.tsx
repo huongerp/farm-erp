@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
+import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import { usePhieuKhoList, usePhieuKhoById, useDeletePhieuKho, useDeletePhieuKhoMany } from '../hooks/use-phieu-kho';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import { usePhieuKhoStore } from '../store/usePhieuKhoStore';
@@ -29,6 +30,7 @@ interface Props {
 const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
   const loaiDb = LOAI_TAB_TO_DB[loaiTab];
   const { t } = useTranslation();
+  const { canCreate, canUpdate, canDelete, canApprove } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
   const {
     searchTerm,
@@ -46,6 +48,7 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
 
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<PhieuKho | null>(null);
+  const [isCopyMode, setIsCopyMode] = useState(false);
   const [viewingItem, setViewingItem] = useState<PhieuKho | null>(null);
   const [showAddKho, setShowAddKho] = useState(false);
   const [showAddHangHoa, setShowAddHangHoa] = useState(false);
@@ -112,6 +115,24 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
 
   const handleEdit = (item: PhieuKho) => {
     setEditingItem(item);
+    setIsCopyMode(false);
+    setShowForm(true);
+  };
+
+  const handleCopy = (item: PhieuKho) => {
+    const copy: PhieuKho = {
+      ...item,
+      id: '',
+      so_phieu: '',
+      trang_thai: 'Chờ duyệt',
+      trao_doi: undefined,
+      nguoi_tao_id: undefined,
+      ten_nguoi_tao: undefined,
+      ngay: new Date().toISOString().slice(0, 10),
+    };
+    setEditingItem(copy);
+    setIsCopyMode(true);
+    setViewingItem(null);
     setShowForm(true);
   };
 
@@ -158,6 +179,8 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
           setShowForm(true);
         }}
         onDeleteMany={handleDeleteMany}
+        canCreate={canCreate}
+        canDelete={canDelete}
       />
       <div className="flex-1 min-h-0 flex flex-col px-4 pb-4 pt-1">
         <PhieuKhoList
@@ -172,8 +195,8 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
           pageSize={pagination.pageSize}
           onPageChange={setPage}
           onPageSizeChange={setPageSize}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
+          onEdit={canUpdate ? handleEdit : undefined}
+          onDelete={canDelete ? handleDelete : undefined}
           onView={setViewingItem}
         />
       </div>
@@ -183,10 +206,11 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
           <PhieuKhoForm
             loai={loaiTab}
             khoList={khoList}
-            initialData={editingPhieuFull ?? editingItem}
+            initialData={isCopyMode ? editingItem : (editingPhieuFull ?? editingItem)}
             onClose={() => {
               setShowForm(false);
               setEditingItem(null);
+              setIsCopyMode(false);
             }}
             onRequestAddKho={
               () =>
@@ -286,8 +310,10 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
             data={viewingPhieuFull ?? viewingItem}
             loai={loaiTab}
             onClose={() => setViewingItem(null)}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
+            onEdit={canUpdate ? handleEdit : undefined}
+            onDelete={canDelete ? handleDelete : undefined}
+            onCopy={canCreate ? handleCopy : undefined}
+            canApprove={canApprove}
           />
         )}
       </AnimatePresence>
