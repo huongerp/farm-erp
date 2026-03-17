@@ -213,7 +213,6 @@ const DanhSachTab: React.FC = () => {
             employees={employees}
             statusList={statusList}
             initialData={editingFull ?? editingItem}
-            existingSoPhieuList={allList.map((x) => x.so_phieu)}
             onClose={handleCloseForm}
           />
         )}

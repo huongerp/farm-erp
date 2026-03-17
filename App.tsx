@@ -25,6 +25,7 @@ import JobLevelPage from './features/he-thong/cap-bac/index';
 import PayslipPreviewPage from './features/hanh-chinh/bang-luong/PayslipPreviewPage';
 import EmployeeProfilePreviewPage from './features/he-thong/nhan-vien/EmployeeProfilePreviewPage';
 import HoSoTaiSanPreviewPage from './features/hanh-chinh/danh-muc-tai-san/HoSoTaiSanPreviewPage';
+import PhieuCPTHPreviewPage from './features/hanh-chinh/cap-phat-thu-hoi/PhieuCPTHPreviewPage';
 import PhieuKiemKePreviewPage from './features/hanh-chinh/kiem-ke-tai-san/PhieuKiemKePreviewPage';
 import PhieuKiemKeKhoPreviewPage from './features/kho-van/kiem-ke-kho/PhieuKiemKeKhoPreviewPage';
 import PhieuKhoPreviewPage from './features/kho-van/phieu-kho/PhieuKhoPreviewPage';
@@ -126,6 +127,7 @@ const App = () => {
         <Route path="/phieu-luong/:id" element={<ProtectedRoute><PayslipPreviewPage /></ProtectedRoute>} />
         <Route path="/ho-so-nhan-vien/:id" element={<ProtectedRoute><EmployeeProfilePreviewPage /></ProtectedRoute>} />
         <Route path="/ho-so-tai-san/:id" element={<ProtectedRoute><HoSoTaiSanPreviewPage /></ProtectedRoute>} />
+        <Route path="/hanh-chinh/cap-phat-thu-hoi/preview/:id" element={<ProtectedRoute><PhieuCPTHPreviewPage /></ProtectedRoute>} />
         <Route path="/phieu-kiem-ke/:id" element={<ProtectedRoute><PhieuKiemKePreviewPage /></ProtectedRoute>} />
         <Route path="/mua-hang/kiem-ke-kho/preview/:id" element={<ProtectedRoute><PhieuKiemKeKhoPreviewPage /></ProtectedRoute>} />
         <Route path="/mua-hang/phieu-kho/preview/:id" element={<ProtectedRoute><PhieuKhoPreviewPage /></ProtectedRoute>} />

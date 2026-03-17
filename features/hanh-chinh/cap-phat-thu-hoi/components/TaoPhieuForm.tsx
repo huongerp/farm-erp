@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useForm, Controller, SubmitHandler, useWatch } from 'react-hook-form';
+import { useForm, Controller, SubmitHandler, useFieldArray, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Package, MapPin, User, Calendar, FileText } from 'lucide-react';
+import { Package, User, Calendar, FileText, Trash2 } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
 import Textarea from '../../../../components/ui/Textarea';
 import Combobox from '../../../../components/ui/Combobox';
@@ -10,6 +10,7 @@ import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/
 import FormSection from '../../../../components/shared/FormSection';
 import FormGrid from '../../../../components/shared/FormGrid';
 import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
+import GenericSubTableSection from '../../../../components/shared/GenericSubTableSection';
 import { phieuCapPhatThuHoiSchema, type PhieuCapPhatThuHoiFormValues } from '../core/schema';
 import { useCreatePhieuAndExecute, useUpdatePhieu } from '../hooks/use-cap-phat-thu-hoi';
 import { useTaiSanList } from '../../danh-muc-tai-san/hooks/use-danh-muc-tai-san';
@@ -21,14 +22,12 @@ import type { PhieuCapPhatThuHoi } from '../core/types';
 
 const DEFAULT_VALUES: PhieuCapPhatThuHoiFormValues = {
   loai_phieu: 'cap_phat',
-  id_tai_san: '',
-  id_noi_luu_truoc: '',
-  id_noi_luu_sau: '',
   id_nguoi_giu_truoc: null,
   id_nguoi_giu_sau: null,
   ngay_thuc_hien: new Date().toISOString().slice(0, 10),
   id_nguoi_thuc_hien: '',
   ghi_chu: null,
+  chi_tiet: [{ id_tai_san: '', id_noi_luu_truoc: '', id_noi_luu_sau: '', ghi_chu: '' }],
 };
 
 interface Props {
@@ -48,70 +47,60 @@ const TaoPhieuForm: React.FC<Props> = ({ onClose, defaultTaiSanId, initialData, 
   const createMutation = useCreatePhieuAndExecute(onClose);
   const updateMutation = useUpdatePhieu((updatedItem) => {
     onClose();
-    onSuccessAfterEdit?.(updatedItem);
+    if (updatedItem) onSuccessAfterEdit?.(updatedItem);
   });
 
-  // Danh sách tài sản từ module Danh mục tài sản (Supabase)
   const { data: assets = [] } = useTaiSanList();
   const { data: locations = [] } = useAssetStorageLocations();
   const { data: employees = [] } = useEmployees();
 
-  const defaultValuesFromData = initialData
+  const defaultValuesFromData: PhieuCapPhatThuHoiFormValues = initialData
     ? {
         loai_phieu: initialData.loai_phieu,
-        id_tai_san: initialData.id_tai_san,
-        id_noi_luu_truoc: initialData.id_noi_luu_truoc,
-        id_noi_luu_sau: initialData.id_noi_luu_sau,
         id_nguoi_giu_truoc: initialData.id_nguoi_giu_truoc ?? null,
         id_nguoi_giu_sau: initialData.id_nguoi_giu_sau ?? null,
         ngay_thuc_hien: initialData.ngay_thuc_hien,
         id_nguoi_thuc_hien: initialData.id_nguoi_thuc_hien,
         ghi_chu: initialData.ghi_chu ?? null,
+        chi_tiet: (initialData.chi_tiet ?? []).map((ct) => ({
+          id_tai_san: ct.id_tai_san,
+          id_noi_luu_truoc: ct.id_noi_luu_truoc ?? '',
+          id_noi_luu_sau: ct.id_noi_luu_sau ?? '',
+          ghi_chu: ct.ghi_chu ?? '',
+        })),
       }
-    : { ...DEFAULT_VALUES, id_tai_san: defaultTaiSanId ?? '' };
+    : defaultTaiSanId
+      ? {
+          ...DEFAULT_VALUES,
+          chi_tiet: [{ id_tai_san: defaultTaiSanId, id_noi_luu_truoc: '', id_noi_luu_sau: '', ghi_chu: '' }],
+        }
+      : DEFAULT_VALUES;
 
   const { register, handleSubmit, formState: { errors }, control, setValue } = useForm<PhieuCapPhatThuHoiFormValues>({
     resolver: zodResolver(phieuCapPhatThuHoiSchema),
     defaultValues: defaultValuesFromData,
   });
 
+  const { fields, append, remove } = useFieldArray({ control, name: 'chi_tiet' });
+
   const selectedLoai = useWatch({ control, name: 'loai_phieu', defaultValue: 'cap_phat' });
-  const selectedTaiSanId = useWatch({ control, name: 'id_tai_san', defaultValue: '' });
-
-  // Khi chọn tài sản: tự điền nơi lưu trước và người giữ trước từ thông tin hiện tại của tài sản
-  useEffect(() => {
-    if (defaultTaiSanId) {
-      setValue('id_tai_san', defaultTaiSanId);
-      const asset = assets.find((a) => a.id === defaultTaiSanId);
-      if (asset) {
-        setValue('id_noi_luu_truoc', asset.id_noi_luu);
-        setValue('id_nguoi_giu_truoc', asset.id_nhan_vien_dang_giu ?? null);
-      }
-    }
-  }, [defaultTaiSanId, assets, setValue]);
-
-  useEffect(() => {
-    if (!selectedTaiSanId) {
-      setValue('id_noi_luu_truoc', '');
-      setValue('id_nguoi_giu_truoc', null);
-      return;
-    }
-    const asset = assets.find((a) => a.id === selectedTaiSanId);
-    if (asset) {
-      setValue('id_noi_luu_truoc', asset.id_noi_luu);
-      setValue('id_nguoi_giu_truoc', asset.id_nhan_vien_dang_giu ?? null);
-    }
-  }, [selectedTaiSanId, assets, setValue]);
+  const chiTietValues = useWatch({ control, name: 'chi_tiet' });
 
   useEffect(() => {
     if (!currentUserId) return;
     setValue('id_nguoi_thuc_hien', currentUserId);
   }, [currentUserId, setValue]);
 
-  const selectedAsset = useMemo(
-    () => (selectedTaiSanId ? assets.find((a) => a.id === selectedTaiSanId) : null),
-    [selectedTaiSanId, assets]
-  );
+  useEffect(() => {
+    if (!chiTietValues) return;
+    chiTietValues.forEach((ct, idx) => {
+      if (!ct.id_tai_san) return;
+      const asset = assets.find((a) => a.id === ct.id_tai_san);
+      if (asset && ct.id_noi_luu_truoc !== asset.id_noi_luu) {
+        setValue(`chi_tiet.${idx}.id_noi_luu_truoc`, asset.id_noi_luu);
+      }
+    });
+  }, [chiTietValues, assets, setValue]);
 
   const assetOptions = useMemo(
     () => assets.filter((a) => a.trang_thai === 1).map((a) => ({
@@ -138,38 +127,36 @@ const TaoPhieuForm: React.FC<Props> = ({ onClose, defaultTaiSanId, initialData, 
     selectedLoai === 'cap_phat' ||
     selectedLoai === 'luan_chuyen_nguoi' ||
     selectedLoai === 'luan_chuyen_ca_hai';
-  const needNoiLuuSau = selectedLoai !== 'thu_hoi' || true;
-
-  const payload = (data: PhieuCapPhatThuHoiFormValues) => ({
-    loai_phieu: data.loai_phieu,
-    id_tai_san: data.id_tai_san,
-    id_noi_luu_truoc: data.id_noi_luu_truoc,
-    id_noi_luu_sau: data.id_noi_luu_sau,
-    id_nguoi_giu_truoc: data.id_nguoi_giu_truoc || null,
-    id_nguoi_giu_sau: data.id_nguoi_giu_sau || null,
-    ngay_thuc_hien: data.ngay_thuc_hien,
-    id_nguoi_thuc_hien: data.id_nguoi_thuc_hien,
-    ghi_chu: data.ghi_chu?.trim() || null,
-  });
 
   const onSubmit: SubmitHandler<PhieuCapPhatThuHoiFormValues> = (data) => {
     if (!currentUserId) return;
-    const body = payload(data);
+    const validLines = data.chi_tiet.filter((ct) => ct.id_tai_san && ct.id_noi_luu_sau);
+    const body = {
+      loai_phieu: data.loai_phieu,
+      id_nguoi_giu_truoc: data.id_nguoi_giu_truoc || null,
+      id_nguoi_giu_sau: data.id_nguoi_giu_sau || null,
+      ngay_thuc_hien: data.ngay_thuc_hien,
+      id_nguoi_thuc_hien: data.id_nguoi_thuc_hien,
+      ghi_chu: data.ghi_chu?.trim() || null,
+      chi_tiet: validLines.map((ct) => ({
+        id_tai_san: ct.id_tai_san,
+        id_noi_luu_sau: ct.id_noi_luu_sau,
+        ghi_chu: ct.ghi_chu?.trim() || null,
+      })),
+    };
     if (isEdit && initialData) {
-      updateMutation.mutate({
-        id: initialData.id,
-        data: body,
-        id_nguoi_thuc_hien: currentUserId,
-      });
+      updateMutation.mutate({ id: initialData.id, data: body, id_nguoi_thuc_hien: currentUserId });
     } else {
-      createMutation.mutate({
-        data: body,
-        id_nguoi_thuc_hien: currentUserId,
-      });
+      createMutation.mutate({ data: body, id_nguoi_thuc_hien: currentUserId });
     }
   };
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
+
+  const getAssetNameForLine = (idTaiSan: string) => {
+    const asset = assets.find((a) => a.id === idTaiSan);
+    return asset ? (asset.ten_noi_luu ?? '—') : '';
+  };
 
   return (
     <GenericDrawer
@@ -189,7 +176,7 @@ const TaoPhieuForm: React.FC<Props> = ({ onClose, defaultTaiSanId, initialData, 
       }
     >
       <form id="phieu-cap-phat-thu-hoi-form" onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
-        {/* 1. Loại phiếu & Tài sản (chọn từ danh sách tài sản) */}
+        {/* 1. Loại phiếu */}
         <FormSection title={t('capPhatThuHoi.form.sectionTypeAsset')} icon={<Package size={18} />} variant="primary">
           <FormGrid cols={1}>
             <div>
@@ -199,51 +186,17 @@ const TaoPhieuForm: React.FC<Props> = ({ onClose, defaultTaiSanId, initialData, 
               )} />
               {errors.loai_phieu && <p className="text-destructive text-xs mt-1">{errors.loai_phieu.message}</p>}
             </div>
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1.5">{t('capPhatThuHoi.form.taiSan')}<RequiredStar /></label>
-              <Controller name="id_tai_san" control={control} render={({ field }) => (
-                <Combobox value={field.value} onChange={field.onChange} options={assetOptions} placeholder={t('capPhatThuHoi.form.taiSanPlaceholder')} searchable dropdownInPortal />
-              )} />
-              {errors.id_tai_san && <p className="text-destructive text-xs mt-1">{errors.id_tai_san.message}</p>}
-            </div>
           </FormGrid>
         </FormSection>
 
-        {/* 2. Hiện trạng tài sản: nơi lưu trước & người giữ trước (tự động theo tài sản đã chọn) */}
-        <FormSection title={t('capPhatThuHoi.form.sectionLocation')} icon={<MapPin size={18} />}>
-          <FormGrid cols={1}>
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1.5">{t('capPhatThuHoi.form.noiLuuTruoc')} <span className="text-muted-foreground font-normal text-xs">({t('capPhatThuHoi.form.noiLuuTruocAuto')})</span></label>
-              <Input
-                readOnly
-                value={selectedAsset ? (selectedAsset.ten_noi_luu ?? '—') : (t('capPhatThuHoi.form.noiLuuTruocPlaceholder'))}
-                className="bg-muted/50 cursor-default"
-              />
-            </div>
-            {needNoiLuuSau && (
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">{t('capPhatThuHoi.form.noiLuuSau')}<RequiredStar /></label>
-                <Controller name="id_noi_luu_sau" control={control} render={({ field }) => (
-                  <Combobox value={field.value} onChange={field.onChange} options={locationOptions} placeholder={t('capPhatThuHoi.form.noiLuuSauPlaceholder')} searchable dropdownInPortal />
-                )} />
-                {errors.id_noi_luu_sau && <p className="text-destructive text-xs mt-1">{errors.id_noi_luu_sau.message}</p>}
-              </div>
-            )}
-          </FormGrid>
-        </FormSection>
-
-        {/* 3. Người giữ: trước (tự động) & sau (chọn khi cấp phát / luân chuyển người) */}
+        {/* 2. Người giữ */}
         <FormSection title={t('capPhatThuHoi.form.sectionHolder')} icon={<User size={18} />}>
           <FormGrid cols={1}>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1.5">{t('capPhatThuHoi.form.nguoiGiuTruoc')} <span className="text-muted-foreground font-normal text-xs">({t('capPhatThuHoi.form.nguoiGiuTruocAuto')})</span></label>
-              <Input
-                readOnly
-                value={selectedAsset
-                  ? (selectedAsset.id_nhan_vien_dang_giu ? (selectedAsset.ten_nhan_vien_dang_giu ?? selectedAsset.ma_nhan_vien_dang_giu ?? '—') : t('capPhatThuHoi.form.atWarehouse'))
-                  : t('capPhatThuHoi.form.noiLuuTruocPlaceholder')}
-                className="bg-muted/50 cursor-default"
-              />
+              <label className="block text-sm font-medium text-foreground mb-1.5">{t('capPhatThuHoi.form.nguoiGiuTruoc')}</label>
+              <Controller name="id_nguoi_giu_truoc" control={control} render={({ field }) => (
+                <Combobox value={field.value ?? ''} onChange={(v) => field.onChange(v || null)} options={employeeOptions} placeholder={t('capPhatThuHoi.form.nguoiGiuTruocPlaceholder')} searchable dropdownInPortal />
+              )} />
             </div>
             {needNguoiGiuSau && (
               <div>
@@ -257,7 +210,7 @@ const TaoPhieuForm: React.FC<Props> = ({ onClose, defaultTaiSanId, initialData, 
           </FormGrid>
         </FormSection>
 
-        {/* 4. Ngày thực hiện & Người thực hiện */}
+        {/* 3. Ngày & Người thực hiện */}
         <FormSection title={t('capPhatThuHoi.form.sectionDatePerformer')} icon={<Calendar size={18} />}>
           <FormGrid cols={1}>
             <div>
@@ -274,6 +227,105 @@ const TaoPhieuForm: React.FC<Props> = ({ onClose, defaultTaiSanId, initialData, 
             </div>
           </FormGrid>
         </FormSection>
+
+        {/* 4. Chi tiết tài sản – bảng con dạng list (theo chuẩn phiếu kho) */}
+        <GenericSubTableSection
+          title={t('capPhatThuHoi.form.sectionChiTiet')}
+          icon={<Package size={14} className="text-primary" />}
+          count={fields.length}
+          addLabel={t('capPhatThuHoi.form.addAssetLine')}
+          onAdd={() => append({ id_tai_san: '', id_noi_luu_truoc: '', id_noi_luu_sau: '', ghi_chu: '' })}
+          emptyTitle={t('capPhatThuHoi.empty')}
+          emptyDescription={t('capPhatThuHoi.emptyHint')}
+          maxTableHeight="320px"
+        >
+          <thead className="sticky top-0 z-[1] bg-muted border-b border-border">
+            <tr>
+              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap w-10">#</th>
+              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[200px]">{t('capPhatThuHoi.form.taiSan')}</th>
+              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[140px]">{t('capPhatThuHoi.form.noiLuuTruoc')}</th>
+              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[140px]">{t('capPhatThuHoi.form.noiLuuSau')}</th>
+              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[120px]">{t('capPhatThuHoi.form.ghiChu')}</th>
+              <th className="sticky right-0 z-[2] px-4 py-2 font-semibold text-foreground/80 text-xs text-center w-16 bg-muted border-l border-border">{t('common.actions')}</th>
+            </tr>
+          </thead>
+          <tbody className="[&>tr>td]:border-b [&>tr>td]:border-border">
+            {fields.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="px-4 py-6 text-center text-muted-foreground text-xs">
+                  {t('capPhatThuHoi.empty')}
+                </td>
+              </tr>
+            ) : (
+              fields.map((field, index) => (
+                <tr key={field.id} className="hover:bg-muted/60 transition-colors">
+                  <td className="px-4 py-2.5 text-muted-foreground tabular-nums">{index + 1}</td>
+                  <td className="px-4 py-2.5 min-w-0 align-top">
+                    <Controller
+                      name={`chi_tiet.${index}.id_tai_san`}
+                      control={control}
+                      render={({ field: f }) => (
+                        <Combobox
+                          value={f.value}
+                          onChange={f.onChange}
+                          options={assetOptions}
+                          placeholder={t('capPhatThuHoi.form.taiSanPlaceholder')}
+                          searchable
+                          dropdownInPortal
+                          triggerClassName="h-9 text-sm border-border rounded-md"
+                        />
+                      )}
+                    />
+                  </td>
+                  <td className="px-4 py-2.5 align-top">
+                    <Input
+                      readOnly
+                      value={getAssetNameForLine(chiTietValues?.[index]?.id_tai_san ?? '')}
+                      className="h-9 text-sm bg-muted/50 cursor-default border-border w-full"
+                    />
+                  </td>
+                  <td className="px-4 py-2.5 min-w-0 align-top">
+                    <Controller
+                      name={`chi_tiet.${index}.id_noi_luu_sau`}
+                      control={control}
+                      render={({ field: f }) => (
+                        <Combobox
+                          value={f.value}
+                          onChange={f.onChange}
+                          options={locationOptions}
+                          placeholder={t('capPhatThuHoi.form.noiLuuSauPlaceholder')}
+                          searchable
+                          dropdownInPortal
+                          triggerClassName="h-9 text-sm border-border rounded-md"
+                        />
+                      )}
+                    />
+                  </td>
+                  <td className="px-4 py-2.5 min-w-0 align-top">
+                    <Input
+                      {...register(`chi_tiet.${index}.ghi_chu`)}
+                      placeholder={t('capPhatThuHoi.form.ghiChuPlaceholder')}
+                      className="h-9 text-sm border-border w-full"
+                    />
+                  </td>
+                  <td className="sticky right-0 z-[1] px-4 py-2.5 text-center bg-card border-l border-border/50">
+                    <button
+                      type="button"
+                      onClick={() => remove(index)}
+                      className="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-md"
+                      title={t('common.delete')}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </GenericSubTableSection>
+        {errors.chi_tiet && typeof errors.chi_tiet.message === 'string' && (
+          <p className="text-destructive text-xs -mt-2">{errors.chi_tiet.message}</p>
+        )}
 
         {/* 5. Ghi chú */}
         <FormSection title={t('capPhatThuHoi.form.sectionNote')} icon={<FileText size={18} />}>

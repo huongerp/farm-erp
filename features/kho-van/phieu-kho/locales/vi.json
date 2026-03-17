@@ -28,6 +28,7 @@
   "phieuKho.form.editTitle": "Sửa phiếu kho",
   "phieuKho.form.code": "Số phiếu",
   "phieuKho.form.codePlaceholder": "Nhập số phiếu",
+  "phieuKho.form.autoCodePlaceholder": "Tự sinh khi lưu",
   "phieuKho.form.date": "Ngày",
   "phieuKho.form.warehouse": "Kho",
   "phieuKho.form.warehouseFrom": "Kho đi",

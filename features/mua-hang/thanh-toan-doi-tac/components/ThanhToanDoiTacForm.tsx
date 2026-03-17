@@ -14,8 +14,9 @@ import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
 import type { Employee } from '../../../he-thong/nhan-vien/core/types';
 import type { TrangThaiThanhToanDoiTac } from '../../thiet-lap-de-xuat-vat-tu/core/types';
 import { useCreateThanhToanDoiTac, useUpdateThanhToanDoiTac } from '../hooks/use-thanh-toan-doi-tac';
-import { useCauHinhSoPhieuThanhToan, useGetNextSoPhieuThanhToanAndIncrement } from '../hooks/use-cau-hinh-so-phieu-thanh-toan';
+import { useCauHinhSoPhieuThanhToan } from '../hooks/use-cau-hinh-so-phieu-thanh-toan';
 import { getNextSoPhieuThanhToanPreview } from '../services/cau-hinh-so-phieu-thanh-toan.service';
+import { getNextSoPhieuThanhToanDoiTacRpc } from '../services/thanh-toan-doi-tac-supabase.service';
 import { getTodayISO } from '../../../../lib/utils';
 import { TRANG_THAI_HOAT_DONG, TRANG_THAI } from '../../../../lib/constants';
 import { useAuthStore } from '../../../../store/useStore';
@@ -30,8 +31,6 @@ interface Props {
   employees: Employee[];
   statusList: TrangThaiThanhToanDoiTac[];
   initialData?: ThanhToanDoiTac | null;
-  /** Danh sách số phiếu hiện có – dùng để đồng bộ số tiếp theo tăng dần */
-  existingSoPhieuList?: string[];
   onClose: () => void;
 }
 
@@ -41,7 +40,6 @@ const ThanhToanDoiTacForm: React.FC<Props> = ({
   employees,
   statusList,
   initialData,
-  existingSoPhieuList,
   onClose,
 }) => {
   const { t } = useTranslation();
@@ -51,7 +49,6 @@ const ThanhToanDoiTacForm: React.FC<Props> = ({
   const createMutation = useCreateThanhToanDoiTac(onClose);
   const updateMutation = useUpdateThanhToanDoiTac(onClose);
   const { data: config } = useCauHinhSoPhieuThanhToan();
-  const getNextSoPhieu = useGetNextSoPhieuThanhToanAndIncrement();
 
   const doiTacOptions = useMemo(
     () =>
@@ -163,8 +160,10 @@ const ThanhToanDoiTacForm: React.FC<Props> = ({
     let soPhieu = data.so_phieu?.trim() ?? '';
     if (isCreate && config?.tu_sinh_so_phieu) {
       try {
-        soPhieu = await getNextSoPhieu.mutateAsync(existingSoPhieuList);
-        if (!soPhieu) soPhieu = data.so_phieu?.trim() ?? '';
+        soPhieu = await getNextSoPhieuThanhToanDoiTacRpc({
+          tien_to_so_phieu: config.tien_to_so_phieu ?? 'TTO-',
+          do_dai_phan_so: config.do_dai_phan_so ?? 4,
+        });
       } catch {
         return;
       }
@@ -183,7 +182,7 @@ const ThanhToanDoiTacForm: React.FC<Props> = ({
     }
   };
 
-  const isLoading = createMutation.isPending || updateMutation.isPending || getNextSoPhieu.isPending;
+  const isLoading = createMutation.isPending || updateMutation.isPending;
 
   return (
     <GenericDrawer

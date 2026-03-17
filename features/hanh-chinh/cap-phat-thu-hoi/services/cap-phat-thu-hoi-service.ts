@@ -1,30 +1,20 @@
-import type { PhieuCapPhatThuHoi, PhieuCapPhatThuHoiCreate } from '../core/types';
+import type { PhieuCapPhatThuHoi, PhieuCapPhatThuHoiCreate, PhieuChiTietWithHeader, PhieuChiTietRow } from '../core/types';
 import {
   getPhieuListSupabase,
   getPhieuByIdSupabase,
   createPhieuSupabase,
   updatePhieuSupabase,
   deletePhieuSupabase,
+  getPhieuChiTietByTaiSanIdSupabase,
+  getAllPhieuChiTietSupabase,
 } from './cap-phat-thu-hoi-supabase.service';
-import { getTaiSanList } from '../../danh-muc-tai-san/services/danh-muc-tai-san-service';
-import { getAssetStorageLocations } from '../../thiet-lap-tai-san/services/noi-luu-service';
 import { getEmployees } from '@/features/he-thong/nhan-vien/services/nhan-vien-service';
 
 async function enrichPhieu(items: PhieuCapPhatThuHoi[]): Promise<PhieuCapPhatThuHoi[]> {
-  const [assets, locations, employees] = await Promise.all([
-    getTaiSanList(),
-    getAssetStorageLocations(),
-    getEmployees(),
-  ]);
-  const assetMap = new Map(assets.map((a) => [a.id, { ma: a.ma_tai_san, ten: a.ten_tai_san }]));
-  const locationMap = new Map(locations.map((l) => [l.id, l.ten_noi_luu]));
+  const employees = await getEmployees();
   const employeeMap = new Map(employees.map((e) => [e.id, { ten: e.ho_ten, ma: e.ma_nhan_vien }]));
   return items.map((item) => ({
     ...item,
-    ma_tai_san: item.ma_tai_san ?? assetMap.get(item.id_tai_san)?.ma,
-    ten_tai_san: item.ten_tai_san ?? assetMap.get(item.id_tai_san)?.ten,
-    ten_noi_luu_truoc: item.ten_noi_luu_truoc ?? locationMap.get(item.id_noi_luu_truoc),
-    ten_noi_luu_sau: item.ten_noi_luu_sau ?? locationMap.get(item.id_noi_luu_sau),
     ten_nguoi_giu_truoc: item.id_nguoi_giu_truoc
       ? (item.ten_nguoi_giu_truoc ?? employeeMap.get(item.id_nguoi_giu_truoc)?.ten ?? null)
       : null,
@@ -72,12 +62,7 @@ export const createPhieuAndExecute = async (
   id_nguoi_tao?: string | null,
   ten_nguoi_tao?: string | null
 ): Promise<PhieuCapPhatThuHoi> => {
-  const created = await createPhieuSupabase(
-    data,
-    id_nguoi_thuc_hien,
-    id_nguoi_tao,
-    ten_nguoi_tao
-  );
+  const created = await createPhieuSupabase(data, id_nguoi_thuc_hien, id_nguoi_tao, ten_nguoi_tao);
   const [enriched] = await enrichPhieu([created]);
   return enriched;
 };
@@ -90,4 +75,16 @@ export const updatePhieu = async (
   const updated = await updatePhieuSupabase(id, data, id_nguoi_thuc_hien);
   const [enriched] = await enrichPhieu([updated]);
   return enriched;
+};
+
+/** Lấy lịch sử cấp phát/thu hồi của 1 tài sản – dùng cho TaiSanDetail */
+export const getPhieuChiTietByTaiSan = async (
+  idTaiSan: string
+): Promise<PhieuChiTietWithHeader[]> => {
+  return getPhieuChiTietByTaiSanIdSupabase(idTaiSan);
+};
+
+/** Lấy toàn bộ dòng chi tiết kèm header – dùng cho tab "Chi tiết" tổng hợp */
+export const getAllPhieuChiTiet = async (): Promise<PhieuChiTietRow[]> => {
+  return getAllPhieuChiTietSupabase();
 };

@@ -11,6 +11,22 @@ import { getEmployees } from '../../../he-thong/nhan-vien/services/nhan-vien-ser
 
 const TABLE_PHIEU = 'fp_mh_phieu_de_xuat_vat_tu';
 const TABLE_CHI_TIET = 'fp_mh_phieu_de_xuat_vat_tu_chi_tiet';
+const RPC_NEXT_SO_PHIEU = 'get_next_so_phieu_phieu_de_xuat_vat_tu';
+
+export interface NextSoPhieuConfig {
+  tien_to_so_phieu: string;
+  do_dai_phan_so: number;
+}
+
+/** Gọi RPC Supabase lấy số thứ tự tiếp theo, format thành mã phiếu (tiền tố + pad). Nguồn sự thật duy nhất, tránh trùng khi nhiều user. */
+export async function getNextSoPhieuPhieuDeXuatVatTuRpc(config: NextSoPhieuConfig): Promise<string> {
+  const { data, error } = await supabase.rpc(RPC_NEXT_SO_PHIEU);
+  if (error) throw new Error(error.message);
+  const nextNum = Number(data);
+  if (Number.isNaN(nextNum) || nextNum < 1) throw new Error('Invalid next number from RPC');
+  const padded = String(nextNum).padStart(config.do_dai_phan_so, '0');
+  return `${config.tien_to_so_phieu || ''}${padded}`;
+}
 
 interface PhieuDbRow {
   id: number;

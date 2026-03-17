@@ -7,15 +7,17 @@ import {
   deletePhieu,
   createPhieuAndExecute,
   updatePhieu,
+  getPhieuChiTietByTaiSan,
+  getAllPhieuChiTiet,
   type GetPhieuListParams,
 } from '../services/cap-phat-thu-hoi-service';
-import type { PhieuCapPhatThuHoi, PhieuCapPhatThuHoiCreate } from '../core/types';
+import type { PhieuCapPhatThuHoi, PhieuCapPhatThuHoiCreate, PhieuChiTietWithHeader, PhieuChiTietRow } from '../core/types';
 
 const QUERY_KEY = ['phieuCapPhatThuHoi'] as const;
 
 export const usePhieuList = (params: GetPhieuListParams = {}) =>
   useQuery({
-    queryKey: [...QUERY_KEY, params.filter ?? 'all', params.id_nguoi ?? '', params.q ?? '', params.id_tai_san ?? ''],
+    queryKey: [...QUERY_KEY, params.filter ?? 'all', params.id_nguoi ?? '', params.q ?? ''],
     queryFn: () => getPhieuList(params),
   });
 
@@ -24,6 +26,21 @@ export const usePhieuById = (id: string | null) =>
     queryKey: [...QUERY_KEY, 'detail', id],
     queryFn: () => (id ? getPhieuById(id) : Promise.resolve(null)),
     enabled: !!id,
+  });
+
+/** Lịch sử cấp phát / thu hồi theo tài sản – dùng trong TaiSanDetail */
+export const usePhieuChiTietByTaiSan = (idTaiSan: string | null) =>
+  useQuery<PhieuChiTietWithHeader[]>({
+    queryKey: [...QUERY_KEY, 'byTaiSan', idTaiSan],
+    queryFn: () => (idTaiSan ? getPhieuChiTietByTaiSan(idTaiSan) : Promise.resolve([])),
+    enabled: !!idTaiSan,
+  });
+
+/** Toàn bộ dòng chi tiết kèm header – dùng cho tab "Chi tiết" */
+export const useAllPhieuChiTiet = () =>
+  useQuery<PhieuChiTietRow[]>({
+    queryKey: [...QUERY_KEY, 'allChiTiet'],
+    queryFn: getAllPhieuChiTiet,
   });
 
 export const useDeletePhieu = (onSuccess?: () => void) => {

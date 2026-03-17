@@ -106,6 +106,49 @@ CREATE POLICY "Allow delete for authenticated details" ON fp_mh_phieu_kho_chi_ti
   FOR DELETE TO authenticated USING (true);
 
 -- =============================================================================
--- Đánh số phiếu tự động (Option B: bảng counter + RPC)
+-- Số phiếu tự động theo loại (RPC – sequence per loại)
+-- App gọi get_next_so_phieu(p_loai) với p_loai = 'nhập' | 'xuất' | 'chuyển'.
 -- =============================================================================
- 
+
+CREATE SEQUENCE IF NOT EXISTS fp_mh_phieu_kho_so_seq_nhap START 1;
+CREATE SEQUENCE IF NOT EXISTS fp_mh_phieu_kho_so_seq_xuat START 1;
+CREATE SEQUENCE IF NOT EXISTS fp_mh_phieu_kho_so_seq_chuyen START 1;
+
+CREATE OR REPLACE FUNCTION get_next_so_phieu(p_loai text)
+RETURNS text
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  next_val bigint;
+  prefix text;
+BEGIN
+  IF p_loai = 'nhập' THEN
+    next_val := nextval('fp_mh_phieu_kho_so_seq_nhap');
+    prefix := 'NK-';
+  ELSIF p_loai = 'xuất' THEN
+    next_val := nextval('fp_mh_phieu_kho_so_seq_xuat');
+    prefix := 'XK-';
+  ELSIF p_loai = 'chuyển' THEN
+    next_val := nextval('fp_mh_phieu_kho_so_seq_chuyen');
+    prefix := 'CK-';
+  ELSE
+    RAISE EXCEPTION 'Invalid loai: %', p_loai;
+  END IF;
+  RETURN prefix || lpad(next_val::text, 4, '0');
+END;
+$$;
+
+COMMENT ON FUNCTION get_next_so_phieu(text) IS 'Trả về mã phiếu tiếp theo theo loại (NK-0001, XK-0001, CK-0001)';
+
+GRANT USAGE ON SEQUENCE fp_mh_phieu_kho_so_seq_nhap TO authenticated;
+GRANT USAGE ON SEQUENCE fp_mh_phieu_kho_so_seq_xuat TO authenticated;
+GRANT USAGE ON SEQUENCE fp_mh_phieu_kho_so_seq_chuyen TO authenticated;
+GRANT EXECUTE ON FUNCTION get_next_so_phieu(text) TO authenticated;
+
+-- Nếu đã có phiếu, đồng bộ sequence (thay N = max(số) + 1 cho từng loại):
+-- ALTER SEQUENCE fp_mh_phieu_kho_so_seq_nhap RESTART WITH N;
+-- ALTER SEQUENCE fp_mh_phieu_kho_so_seq_xuat RESTART WITH N;
+-- ALTER SEQUENCE fp_mh_phieu_kho_so_seq_chuyen RESTART WITH N;
+

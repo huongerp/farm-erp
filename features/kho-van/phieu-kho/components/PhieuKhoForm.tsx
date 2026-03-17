@@ -10,11 +10,13 @@ import Select from '../../../../components/ui/Select';
 import Combobox from '../../../../components/ui/Combobox';
 import { PhieuKhoFormValues, phieuKhoSchema } from '../core/schema';
 import type { PhieuKho, LoaiPhieuKhoTab } from '../core/types';
+import { LOAI_TAB_TO_DB } from '../core/types';
 import { formatNumberVN } from '../../../../lib/utils';
 import type { Kho } from '../../danh-sach-kho/core/types';
 import type { HangHoa } from '../../danh-sach-hang-hoa/core/types';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
-import { useCreatePhieuKho, useUpdatePhieuKho, useTonKhoTheoKho, useNextSoPhieu } from '../hooks/use-phieu-kho';
+import { useCreatePhieuKho, useUpdatePhieuKho, useTonKhoTheoKho } from '../hooks/use-phieu-kho';
+import { getNextSoPhieu } from '../services/phieu-kho-service';
 import { useHangHoaList } from '../../danh-sach-hang-hoa/hooks/use-hang-hoa';
 import { useDoiTacList } from '../../danh-sach-doi-tac/hooks/use-doi-tac';
 import { useAuthStore } from '../../../../store/useStore';
@@ -49,7 +51,6 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose, on
   const isEdit = !!initialData?.id;
   const createMutation = useCreatePhieuKho(loai, onClose);
   const updateMutation = useUpdatePhieuKho(onClose);
-  const { data: nextSoPhieu, isLoading: loadingSoPhieu } = useNextSoPhieu(loai, !isEdit);
   const { data: hangHoaList = [], isLoading: isLoadingHangHoa, isError: isErrorHangHoa } = useHangHoaList();
   const { data: nhaCungCapList = [] } = useDoiTacList('nha_cung_cap');
   const { data: khachHangList = [] } = useDoiTacList('khach_hang');
@@ -176,13 +177,7 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose, on
     }
   }, [initialData, reset, user?.id, setValue]);
 
-  useEffect(() => {
-    if (!isEdit && nextSoPhieu) {
-      setValue('so_phieu', nextSoPhieu);
-    }
-  }, [isEdit, nextSoPhieu, setValue]);
-
-  const onSubmit: SubmitHandler<PhieuKhoFormValues> = (data) => {
+  const onSubmit: SubmitHandler<PhieuKhoFormValues> = async (data) => {
     if (loai === 'chuyen' && !data.kho_den_id) {
       toast.error(t('phieuKho.validation.warehouseToRequired'));
       return;
@@ -192,8 +187,18 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose, on
       toast.error(t('phieuKho.validation.atLeastOneItem'));
       return;
     }
+    let soPhieu = data.so_phieu?.trim() ?? '';
+    if (!isEdit) {
+      try {
+        soPhieu = await getNextSoPhieu(LOAI_TAB_TO_DB[loai]);
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : t('phieuKho.validation.codeRequired'));
+        return;
+      }
+    }
     const sanitized: PhieuKhoFormValues = {
       ...data,
+      so_phieu: soPhieu || data.so_phieu?.trim() || '',
       kho_den_id: data.kho_den_id === '' || data.kho_den_id === undefined ? null : data.kho_den_id,
       id_nha_cung_cap: data.id_nha_cung_cap === '' || data.id_nha_cung_cap === undefined ? null : data.id_nha_cung_cap,
       id_khach_hang: data.id_khach_hang === '' || data.id_khach_hang === undefined ? null : data.id_khach_hang,
@@ -246,11 +251,11 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose, on
           <FormGrid cols={2}>
             <Input
               label={t('phieuKho.form.code')}
-              placeholder={t('phieuKho.form.codePlaceholder')}
+              placeholder={!isEdit ? t('phieuKho.form.autoCodePlaceholder') : t('phieuKho.form.codePlaceholder')}
               icon={<FileText size={12} />}
-              required
+              required={isEdit}
               readOnly={!isEdit}
-              disabled={!isEdit && loadingSoPhieu}
+              disabled={!isEdit}
               {...register('so_phieu')}
               error={errors.so_phieu?.message}
             />

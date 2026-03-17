@@ -1,11 +1,10 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Package, MapPin, User, Calendar } from 'lucide-react';
+import { Plus, Package, User, Calendar } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import { useCapPhatThuHoiStore } from '../store/useCapPhatThuHoiStore';
-import { useAssetStorageLocations } from '../../thiet-lap-tai-san/hooks/use-noi-luu';
 import { useEmployees } from '@/features/he-thong/nhan-vien/hooks/use-nhan-vien';
 import { LOAI_PHIEU_OPTIONS } from '../core/constants';
 import { useCapPhatThuHoiFilterCounts } from '../hooks/use-cap-phat-thu-hoi-filter-counts';
@@ -14,7 +13,6 @@ import type { PhieuCapPhatThuHoi } from '../core/types';
 import type { ActionItem } from '../../../../components/ui/MobileActionsSheet';
 
 interface Props {
-  /** Danh sách phiếu người dùng được xem (sau phân quyền). Count filter chip đếm trên list này. */
   items?: PhieuCapPhatThuHoi[];
   onAdd: () => void;
   onDeleteMany: (ids: string[]) => void;
@@ -43,9 +41,8 @@ const CapPhatThuHoiToolbar: React.FC<Props> = ({
     selectedIds,
     clearSelection,
   } = useCapPhatThuHoiStore();
-  const { data: locations = [] } = useAssetStorageLocations();
   const { data: employees = [] } = useEmployees();
-  const { loaiCounts, noiLuuCounts, nguoiThucHienCounts } = useCapPhatThuHoiFilterCounts(items, filters);
+  const { loaiCounts, nguoiThucHienCounts } = useCapPhatThuHoiFilterCounts(items, filters);
 
   const selectedCount = selectedIds.size;
   const loaiOptions = useMemo(
@@ -56,16 +53,6 @@ const CapPhatThuHoiToolbar: React.FC<Props> = ({
         count: loaiCounts[o.value] ?? 0,
       })),
     [t, loaiCounts]
-  );
-  const noiLuuOptions = useMemo(
-    () =>
-      locations.map((l) => ({
-        label: l.ten_noi_luu,
-        value: l.id,
-        subLabel: l.ma_noi_luu,
-        count: noiLuuCounts[l.id] ?? 0,
-      })),
-    [locations, noiLuuCounts]
   );
   const nguoiThucHienOptions = useMemo(
     () =>
@@ -79,7 +66,6 @@ const CapPhatThuHoiToolbar: React.FC<Props> = ({
   );
   const activeFilterCount =
     filters.loai_phieu.length +
-    filters.id_noi_luu_truoc.length +
     filters.id_nguoi_thuc_hien.length +
     (filters.dateFrom ? 1 : 0) +
     (filters.dateTo ? 1 : 0);
@@ -117,15 +103,6 @@ const CapPhatThuHoiToolbar: React.FC<Props> = ({
         />
       </div>
       <FilterChipMultiSelect
-        options={noiLuuOptions}
-        value={filters.id_noi_luu_truoc}
-        onChange={(v) => setFilter('id_noi_luu_truoc', v)}
-        placeholder={t('capPhatThuHoi.store.noiLuuTruocCol')}
-        icon={MapPin}
-        className="w-full sm:w-[160px]"
-        size="md"
-      />
-      <FilterChipMultiSelect
         options={nguoiThucHienOptions}
         value={filters.id_nguoi_thuc_hien}
         onChange={(v) => setFilter('id_nguoi_thuc_hien', v)}
@@ -140,10 +117,9 @@ const CapPhatThuHoiToolbar: React.FC<Props> = ({
   const filterGroups = useMemo(
     () => [
       { key: 'loai_phieu', label: t('capPhatThuHoi.store.loaiCol'), icon: Package, options: loaiOptions, value: filters.loai_phieu, onChange: (val: string[]) => setFilter('loai_phieu', val) },
-      { key: 'id_noi_luu_truoc', label: t('capPhatThuHoi.store.noiLuuTruocCol'), icon: MapPin, options: noiLuuOptions, value: filters.id_noi_luu_truoc, onChange: (val: string[]) => setFilter('id_noi_luu_truoc', val) },
       { key: 'id_nguoi_thuc_hien', label: t('capPhatThuHoi.store.nguoiThucHienCol'), icon: User, options: nguoiThucHienOptions, value: filters.id_nguoi_thuc_hien, onChange: (val: string[]) => setFilter('id_nguoi_thuc_hien', val) },
     ],
-    [loaiOptions, noiLuuOptions, nguoiThucHienOptions, filters.loai_phieu, filters.id_noi_luu_truoc, filters.id_nguoi_thuc_hien, setFilter, t]
+    [loaiOptions, nguoiThucHienOptions, filters.loai_phieu, filters.id_nguoi_thuc_hien, setFilter, t]
   );
 
   const renderActions = (

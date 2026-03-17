@@ -22,10 +22,8 @@ export const phieuKhoChiTietFormItemSchema = z.object({
 });
 
 export const phieuKhoSchema = z.object({
-  so_phieu: z
-    .string()
-    .min(1, i18n.t('phieuKho.validation.codeRequired'))
-    .max(50, i18n.t('phieuKho.validation.codeMax')),
+  /** Để trống khi tạo mới: mã lấy từ RPC lúc Lưu. */
+  so_phieu: z.string().max(50, i18n.t('phieuKho.validation.codeMax')),
   ngay: z.string().min(1, i18n.t('phieuKho.validation.dateRequired')),
   kho_id: z.string().min(1, i18n.t('phieuKho.validation.warehouseRequired')),
   kho_den_id: z.string().optional().nullable(),

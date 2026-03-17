@@ -8,19 +8,27 @@ export type LoaiPhieu =
   | 'luan_chuyen_nguoi'
   | 'luan_chuyen_ca_hai';
 
-/** Phiếu cấp phát / thu hồi / luân chuyển – lịch sử thay đổi nơi lưu và người giữ tài sản */
-export interface PhieuCapPhatThuHoi {
+/** Dòng chi tiết – 1 tài sản trong phiếu */
+export interface PhieuCapPhatThuHoiChiTiet {
   id: string;
-  loai_phieu: LoaiPhieu;
+  id_phieu: string;
   id_tai_san: string;
   ma_tai_san?: string;
   ten_tai_san?: string;
-  /** Nơi lưu trước (để hiển thị) */
-  id_noi_luu_truoc: string;
-  ten_noi_luu_truoc?: string;
-  /** Nơi lưu sau */
-  id_noi_luu_sau: string;
-  ten_noi_luu_sau?: string;
+  id_noi_luu_truoc?: string | null;
+  ten_noi_luu_truoc?: string | null;
+  id_noi_luu_sau?: string | null;
+  ten_noi_luu_sau?: string | null;
+  ghi_chu?: string | null;
+  tg_tao?: string;
+  tg_cap_nhat?: string;
+}
+
+/** Phiếu cấp phát / thu hồi / luân chuyển – header (master) */
+export interface PhieuCapPhatThuHoi {
+  id: string;
+  ma_phieu: string;
+  loai_phieu: LoaiPhieu;
   /** Người giữ trước (null = kho) */
   id_nguoi_giu_truoc?: string | null;
   ten_nguoi_giu_truoc?: string | null;
@@ -38,17 +46,43 @@ export interface PhieuCapPhatThuHoi {
   trang_thai: 0 | 1;
   tg_tao: string;
   tg_cap_nhat: string;
+  /** Chi tiết (populated khi getById) */
+  chi_tiet?: PhieuCapPhatThuHoiChiTiet[];
 }
 
-/** Payload tạo phiếu – các trường bắt buộc/tùy chọn theo loại */
+/** Dòng chi tiết khi tạo/sửa phiếu */
+export interface PhieuCapPhatThuHoiChiTietCreate {
+  id_tai_san: string;
+  id_noi_luu_sau: string;
+  ghi_chu?: string | null;
+}
+
+/** Payload tạo phiếu – header + chi tiết */
 export interface PhieuCapPhatThuHoiCreate {
   loai_phieu: LoaiPhieu;
-  id_tai_san: string;
-  id_noi_luu_truoc: string;
-  id_noi_luu_sau: string;
   id_nguoi_giu_truoc?: string | null;
   id_nguoi_giu_sau?: string | null;
   ngay_thuc_hien: string;
   id_nguoi_thuc_hien: string;
   ghi_chu?: string | null;
+  chi_tiet: PhieuCapPhatThuHoiChiTietCreate[];
+}
+
+/** Dòng chi tiết enriched với thông tin header – dùng cho TaiSanDetail history */
+export interface PhieuChiTietWithHeader extends PhieuCapPhatThuHoiChiTiet {
+  ma_phieu: string;
+  loai_phieu: LoaiPhieu;
+  ngay_thuc_hien: string;
+  ten_nguoi_giu_sau?: string | null;
+  ten_nguoi_thuc_hien?: string | null;
+}
+
+/** Dòng chi tiết flat (kèm header) – dùng cho tab "Chi tiết" tổng hợp */
+export interface PhieuChiTietRow extends PhieuCapPhatThuHoiChiTiet {
+  ma_phieu: string;
+  loai_phieu: LoaiPhieu;
+  ngay_thuc_hien: string;
+  ten_nguoi_giu_truoc?: string | null;
+  ten_nguoi_giu_sau?: string | null;
+  ten_nguoi_thuc_hien?: string | null;
 }

@@ -1,15 +1,14 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Package, MapPin, User } from 'lucide-react';
+import { Package, User } from 'lucide-react';
 import type { StatsByType, StatsByGroup } from './usePhieuStats';
 
 interface Props {
   byType: StatsByType[];
-  byNoiLuu: StatsByGroup[];
   byNguoiThucHien: StatsByGroup[];
 }
 
-const StatsTables: React.FC<Props> = ({ byType, byNoiLuu, byNguoiThucHien }) => {
+const StatsTables: React.FC<Props> = ({ byType, byNguoiThucHien }) => {
   const { t } = useTranslation();
 
   const renderTable = (
@@ -64,17 +63,11 @@ const StatsTables: React.FC<Props> = ({ byType, byNoiLuu, byNguoiThucHien }) => 
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
       {renderTable(
         t('capPhatThuHoi.stats.byType'),
         <Package size={14} className="text-primary" />,
         byType,
-        'capPhatThuHoi.stats.noData'
-      )}
-      {renderTable(
-        t('capPhatThuHoi.stats.byLocation'),
-        <MapPin size={14} className="text-primary" />,
-        byNoiLuu,
         'capPhatThuHoi.stats.noData'
       )}
       {renderTable(

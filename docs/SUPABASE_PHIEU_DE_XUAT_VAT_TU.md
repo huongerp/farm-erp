@@ -15,24 +15,21 @@ Script sẽ:
 
 Sau khi chạy, không cần chỉnh gì thêm trong Supabase cho phần bảng và RLS.
 
-## 2. Số phiếu tự tăng (tùy chọn)
+## 2. Số phiếu tự tăng (RPC Supabase – mặc định)
 
 Cuối file SQL có block:
 
 - **Sequence**: `fp_mh_phieu_de_xuat_vat_tu_so_seq`
 - **Function**: `get_next_so_phieu_phieu_de_xuat_vat_tu()` → trả về `bigint` (số thứ tự tiếp theo)
 
-Nếu bạn bật **“Tự sinh số phiếu”** trong cấu hình đề xuất vật tư, hiện tại app vẫn dùng counter trong **localStorage**. Để dùng counter trên Supabase (tránh trùng khi nhiều user):
+Khi bật **“Tự sinh số phiếu”** trong cấu hình đề xuất vật tư, app dùng **RPC Supabase** làm nguồn duy nhất (không còn counter localStorage). Cần:
 
-1. Đảm bảo đã chạy cả block “TÙY CHỌN” trong file SQL (sequence + function + grant).
-2. Trong app, khi tạo phiếu mới với “tự sinh số phiếu”, có thể gọi RPC:
-
-   ```ts
-   const { data: nextNum } = await supabase.rpc('get_next_so_phieu_phieu_de_xuat_vat_tu');
-   const soPhieu = `${config.tien_to_so_phieu}${String(nextNum).padStart(config.do_dai_phan_so, '0')}`;
+1. Chạy **cả block “TÙY CHỌN”** trong file SQL (sequence + function + grant).
+2. **Nếu DB đã có sẵn phiếu** (vd. PDX-0001 … PDX-0008), đồng bộ sequence để số tiếp theo là 9:
+   ```sql
+   ALTER SEQUENCE fp_mh_phieu_de_xuat_vat_tu_so_seq RESTART WITH 9;
    ```
-
-Nếu không dùng RPC, app tiếp tục dùng localStorage; chỉ cần chạy phần tạo bảng + RLS là đủ.
+   (Thay `9` = max(số trong mã phiếu) + 1.)
 
 ## 3. Liên kết bảng
 
@@ -47,4 +44,4 @@ Nếu tên bảng nhân viên/chi nhánh của bạn khác, chỉ cần đảm b
 - Form tạo mới: tự điền **người đề xuất** (user đăng nhập) và **nơi đề xuất** (kho theo chi nhánh user); ẩn **Trạng thái** và **Người duyệt** khi tạo.
 - Validation: **ngày cần** ≥ **ngày lập**.
 - Tab danh sách: **Tất cả** / **Của tôi** / **Tôi duyệt** (lọc theo user).
-- Số phiếu: vẫn theo cấu hình (tiền tố + độ dài); có thể chuyển sang RPC Supabase như trên khi cần.
+- Số phiếu: tự sinh qua RPC `get_next_so_phieu_phieu_de_xuat_vat_tu()`; tiền tố và độ dài lấy từ cấu hình (Thiết lập đề xuất vật tư).

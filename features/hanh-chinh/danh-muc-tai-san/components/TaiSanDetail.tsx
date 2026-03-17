@@ -11,13 +11,13 @@ import Button from '../../../../components/ui/Button';
 import Textarea from '../../../../components/ui/Textarea';
 import { BTN_CLOSE, BTN_EDIT, BTN_DELETE } from '../../../../lib/button-labels';
 import { formatDateTimeShort, formatCurrency, formatDate, cn } from '../../../../lib/utils';
-import { usePhieuList } from '../../cap-phat-thu-hoi/hooks/use-cap-phat-thu-hoi';
+import { usePhieuChiTietByTaiSan } from '../../cap-phat-thu-hoi/hooks/use-cap-phat-thu-hoi';
 import { getLoaiPhieuLabel } from '../../cap-phat-thu-hoi/core/constants';
 import { usePhieuBaoTriList } from '../../bao-tri-sua-chua/hooks/use-bao-tri-sua-chua';
 import { getHangMucLabel, getTrangThaiLabel } from '../../bao-tri-sua-chua/core/constants';
 import type { TaiSan } from '../core/types';
 import BarcodeQRDisplay from './BarcodeQRDisplay';
-import type { PhieuCapPhatThuHoi } from '../../cap-phat-thu-hoi/core/types';
+import type { PhieuCapPhatThuHoi, PhieuChiTietWithHeader } from '../../cap-phat-thu-hoi/core/types';
 import type { PhieuBaoTriSuaChua } from '../../bao-tri-sua-chua/core/types';
 
 interface Props {
@@ -143,7 +143,7 @@ const TaiSanDetail: React.FC<Props> = ({
         ]
       : []),
   ];
-  const { data: phieuList = [], isLoading: phieuLoading } = usePhieuList({ filter: 'all', id_tai_san: data.id });
+  const { data: phieuList = [], isLoading: phieuLoading } = usePhieuChiTietByTaiSan(data.id);
   const phieuSorted = useMemo(
     () => [...phieuList].sort((a, b) => (b.ngay_thuc_hien || '').localeCompare(a.ngay_thuc_hien || '')),
     [phieuList]
@@ -355,22 +355,19 @@ const TaiSanDetail: React.FC<Props> = ({
                 <table className="w-full text-sm text-left border-collapse">
                   <thead className="sticky top-0 z-[1] bg-muted border-b border-border">
                     <tr>
+                      <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap">{t('capPhatThuHoi.store.maPhieuCol')}</th>
                       <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap">{t('capPhatThuHoi.store.loaiCol')}</th>
                       <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap">{t('capPhatThuHoi.store.noiLuuTruocCol')}</th>
                       <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap">{t('capPhatThuHoi.store.noiLuuSauCol')}</th>
                       <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap">{t('capPhatThuHoi.store.nguoiGiuSauCol')}</th>
                       <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap">{t('capPhatThuHoi.store.ngayCol')}</th>
                       <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap">{t('capPhatThuHoi.store.nguoiThucHienCol')}</th>
-                      {(onEditPhieu || onDeletePhieu) && (
-                        <th className="sticky right-0 z-[2] px-4 py-2 font-semibold text-foreground/80 text-xs text-center w-24 bg-muted border-l border-border min-w-[96px]">
-                          {t('common.actions')}
-                        </th>
-                      )}
                     </tr>
                   </thead>
                   <tbody className="[&>tr>td]:border-b [&>tr>td]:border-border">
                     {phieuSorted.map((p) => (
                       <tr key={p.id} className="hover:bg-muted/60 transition-colors">
+                        <td className="px-4 py-2.5 font-medium text-primary text-xs">{p.ma_phieu}</td>
                         <td className="px-4 py-2.5">
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
                             {getLoaiPhieuLabel(p.loai_phieu, t)}
@@ -381,32 +378,6 @@ const TaiSanDetail: React.FC<Props> = ({
                         <td className="px-4 py-2.5 text-foreground">{p.ten_nguoi_giu_sau || '—'}</td>
                         <td className="px-4 py-2.5 tabular-nums text-muted-foreground">{formatDate(p.ngay_thuc_hien)}</td>
                         <td className="px-4 py-2.5 text-foreground">{p.ten_nguoi_thuc_hien || '—'}</td>
-                        {(onEditPhieu || onDeletePhieu) && (
-                          <td className="sticky right-0 z-[1] px-4 py-2.5 text-center bg-card border-l border-border/50" onClick={(e) => e.stopPropagation()}>
-                            <div className="flex items-center justify-center gap-0.5">
-                              {onEditPhieu && (
-                                <button
-                                  type="button"
-                                  onClick={() => onEditPhieu(p)}
-                                  className="p-1.5 text-primary hover:bg-primary/10 rounded-md transition-all"
-                                  title={t('common.edit')}
-                                >
-                                  <Edit size={14} />
-                                </button>
-                              )}
-                              {onDeletePhieu && (
-                                <button
-                                  type="button"
-                                  onClick={() => onDeletePhieu(p)}
-                                  className="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-md transition-all"
-                                  title={t('common.delete')}
-                                >
-                                  <Trash2 size={14} />
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        )}
                       </tr>
                     ))}
                   </tbody>

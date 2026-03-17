@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Package, Edit, Trash2, MapPin, User, FileText, Calendar } from 'lucide-react';
+import { Package, Edit, Trash2, User, FileText, Calendar, Printer } from 'lucide-react';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
 import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';
+import DetailToolbar, { type DetailToolbarAction } from '../../../../components/shared/DetailToolbar';
+import GenericSubTableSection from '../../../../components/shared/GenericSubTableSection';
 import Button from '../../../../components/ui/Button';
 import { BTN_CLOSE, BTN_EDIT, BTN_DELETE } from '../../../../lib/button-labels';
 import { formatDateTimeShort, formatDate } from '../../../../lib/utils';
@@ -19,6 +21,17 @@ interface Props {
 
 const PhieuDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete }) => {
   const { t } = useTranslation();
+  const chiTiet = data.chi_tiet ?? [];
+
+  const detailToolbarActions: DetailToolbarAction[] = useMemo(() => {
+    const actions: DetailToolbarAction[] = [];
+    actions.push({
+      label: t('capPhatThuHoi.detail.printPhieu'),
+      icon: <Printer size={16} />,
+      onClick: () => window.open(`/hanh-chinh/cap-phat-thu-hoi/preview/${data.id}`, '_blank', 'noopener,noreferrer'),
+    });
+    return actions;
+  }, [data.id, t]);
 
   const footer = (
     <div className="flex items-center justify-between w-full flex-wrap gap-2">
@@ -59,41 +72,27 @@ const PhieuDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete }) => {
     <GenericDrawer
       title={t('capPhatThuHoi.detail.title')}
       icon={<Package size={20} />}
-      subtitle={`${getLoaiPhieuLabel(data.loai_phieu, t)} • ${data.ma_tai_san ?? data.id_tai_san}`}
+      subtitle={`${data.ma_phieu} • ${getLoaiPhieuLabel(data.loai_phieu, t)}`}
       onClose={onClose}
       footer={footer}
       maxWidthClass={DRAWER_WIDTH_DETAIL}
     >
       <div className="space-y-5">
-        {/* 1. Thông tin chung: Loại phiếu, Mã tài sản, Tên tài sản */}
-        <DetailSection
-          title={t('capPhatThuHoi.detail.sectionGeneral')}
-          icon={<Package size={18} />}
-          variant="primary"
-        >
+        <DetailToolbar
+          actions={detailToolbarActions}
+          className="bg-card rounded-xl border border-border"
+        />
+
+        {/* 1. Thông tin chung */}
+        <DetailSection title={t('capPhatThuHoi.detail.sectionGeneral')} icon={<Package size={18} />} variant="primary">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <DetailField label={t('capPhatThuHoi.store.maPhieuCol')} value={data.ma_phieu} />
             <DetailField label={t('capPhatThuHoi.store.loaiCol')} value={getLoaiPhieuLabel(data.loai_phieu, t)} />
-            <DetailField label={t('capPhatThuHoi.store.maTaiSanCol')} value={data.ma_tai_san || '—'} />
-            <DetailField label={t('capPhatThuHoi.store.taiSanCol')} value={data.ten_tai_san || '—'} className="sm:col-span-2" />
           </div>
         </DetailSection>
 
-        {/* 2. Nơi lưu: Trước → Sau */}
-        <DetailSection
-          title={t('capPhatThuHoi.detail.sectionLocation')}
-          icon={<MapPin size={18} />}
-        >
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <DetailField label={t('capPhatThuHoi.store.noiLuuTruocCol')} value={data.ten_noi_luu_truoc || '—'} />
-            <DetailField label={t('capPhatThuHoi.store.noiLuuSauCol')} value={data.ten_noi_luu_sau || '—'} />
-          </div>
-        </DetailSection>
-
-        {/* 3. Người giữ & Người thực hiện: Trước → Sau → Thực hiện → Người tạo (nếu có) */}
-        <DetailSection
-          title={t('capPhatThuHoi.detail.sectionHolder')}
-          icon={<User size={18} />}
-        >
+        {/* 2. Người giữ & Người thực hiện */}
+        <DetailSection title={t('capPhatThuHoi.detail.sectionHolder')} icon={<User size={18} />}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <DetailField label={t('capPhatThuHoi.store.nguoiGiuTruocCol')} value={data.ten_nguoi_giu_truoc || '—'} />
             <DetailField label={t('capPhatThuHoi.store.nguoiGiuSauCol')} value={data.ten_nguoi_giu_sau || '—'} />
@@ -104,22 +103,53 @@ const PhieuDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete }) => {
           </div>
         </DetailSection>
 
-        {/* 4. Thời gian: Ngày thực hiện, Tạo, Cập nhật */}
-        <DetailSection
-          title={t('capPhatThuHoi.detail.sectionTime')}
-          icon={<Calendar size={18} />}
-        >
+        {/* 3. Thời gian */}
+        <DetailSection title={t('capPhatThuHoi.detail.sectionTime')} icon={<Calendar size={18} />}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <DetailField label={t('capPhatThuHoi.store.ngayCol')} value={formatDate(data.ngay_thuc_hien)} />
             <DetailField label={t('capPhatThuHoi.store.updatedCol')} value={formatDateTimeShort(data.tg_cap_nhat)} />
           </div>
         </DetailSection>
 
-        {/* 5. Ghi chú */}
-        <DetailSection
-          title={t('capPhatThuHoi.detail.sectionOther')}
-          icon={<FileText size={18} />}
+        {/* 4. Danh sách tài sản */}
+        <GenericSubTableSection
+          title={t('capPhatThuHoi.detail.sectionAssets')}
+          icon={<Package size={14} className="text-primary" />}
+          count={chiTiet.length}
+          emptyTitle={t('capPhatThuHoi.empty')}
+          emptyDescription={t('capPhatThuHoi.emptyHint')}
+          maxTableHeight="320px"
         >
+          {chiTiet.length > 0 && (
+            <>
+              <thead className="sticky top-0 z-[1] bg-muted border-b border-border">
+                <tr>
+                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap w-10">#</th>
+                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[90px]">{t('capPhatThuHoi.store.maTaiSanCol')}</th>
+                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[140px]">{t('capPhatThuHoi.store.taiSanCol')}</th>
+                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[120px]">{t('capPhatThuHoi.store.noiLuuTruocCol')}</th>
+                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[120px]">{t('capPhatThuHoi.store.noiLuuSauCol')}</th>
+                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[100px]">{t('capPhatThuHoi.store.ghiChuCol')}</th>
+                </tr>
+              </thead>
+              <tbody className="[&>tr>td]:border-b [&>tr>td]:border-border">
+                {chiTiet.map((ct, idx) => (
+                  <tr key={ct.id} className="hover:bg-muted/60 transition-colors">
+                    <td className="px-4 py-2.5 text-muted-foreground tabular-nums">{idx + 1}</td>
+                    <td className="px-4 py-2.5 font-mono text-xs">{ct.ma_tai_san || '—'}</td>
+                    <td className="px-4 py-2.5 text-sm">{ct.ten_tai_san || '—'}</td>
+                    <td className="px-4 py-2.5 text-sm">{ct.ten_noi_luu_truoc || '—'}</td>
+                    <td className="px-4 py-2.5 text-sm">{ct.ten_noi_luu_sau || '—'}</td>
+                    <td className="px-4 py-2.5 text-xs text-muted-foreground">{ct.ghi_chu || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </>
+          )}
+        </GenericSubTableSection>
+
+        {/* 5. Ghi chú */}
+        <DetailSection title={t('capPhatThuHoi.detail.sectionOther')} icon={<FileText size={18} />}>
           <div className="grid grid-cols-1 gap-4">
             <DetailField label={t('capPhatThuHoi.store.ghiChuCol')} value={data.ghi_chu || '—'} />
           </div>

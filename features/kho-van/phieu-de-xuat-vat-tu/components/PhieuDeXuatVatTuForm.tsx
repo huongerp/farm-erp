@@ -18,9 +18,9 @@ import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { useAuthStore } from '../../../../store/useStore';
 import { useCreatePhieuDeXuatVatTu, useUpdatePhieuDeXuatVatTu } from '../hooks/use-phieu-de-xuat-vat-tu';
 import { useHangHoaList } from '../../danh-sach-hang-hoa/hooks/use-hang-hoa';
-import { useCauHinhDeXuatVatTu, useGetNextSoPhieuAndIncrement } from '../../../mua-hang/thiet-lap-de-xuat-vat-tu/hooks/use-cau-hinh-de-xuat-vat-tu';
+import { useCauHinhDeXuatVatTu } from '../../../mua-hang/thiet-lap-de-xuat-vat-tu/hooks/use-cau-hinh-de-xuat-vat-tu';
 import { useTienDoMuaHangList } from '../../../mua-hang/thiet-lap-de-xuat-vat-tu/hooks/use-tien-do-mua-hang';
-import { getNextSoPhieuPreview } from '../../../mua-hang/thiet-lap-de-xuat-vat-tu/services/thiet-lap-de-xuat-vat-tu-service';
+import { getNextSoPhieuPhieuDeXuatVatTuRpc } from '../services/phieu-de-xuat-vat-tu-supabase.service';
 import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/GenericDrawer';
 import FormSection from '../../../../components/shared/FormSection';
 import FormGrid from '../../../../components/shared/FormGrid';
@@ -61,7 +61,6 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
   const { data: hangHoaList = [] } = useHangHoaList();
   const { data: tienDoMuaHangList = [] } = useTienDoMuaHangList();
   const { data: config } = useCauHinhDeXuatVatTu();
-  const getNextSoPhieu = useGetNextSoPhieuAndIncrement();
   const readOnly = isEdit && !canEdit;
   const isCreate = !isEdit;
 
@@ -207,11 +206,7 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
           trao_doi: null,
         })),
       });
-      if (config?.tu_sinh_so_phieu) {
-        getNextSoPhieuPreview().then((preview) => {
-          if (preview) setValue('so_phieu', preview);
-        });
-      }
+      // Không gọi RPC khi mở form (tránh tốn số). Mã phiếu sinh khi bấm Lưu.
     } else if (config) {
       const today = new Date().toISOString().slice(0, 10);
       reset({
@@ -221,11 +216,7 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
         ngay_can: addDays(today, config.so_ngay_mac_dinh_ngay_can ?? 0),
         trang_thai: TRANG_THAI_CHO_DUYET,
       });
-      if (config.tu_sinh_so_phieu) {
-        getNextSoPhieuPreview().then((preview) => {
-          if (preview) setValue('so_phieu', preview);
-        });
-      }
+      // Không gọi RPC khi mở form (tránh tốn số). Mã phiếu sinh khi bấm Lưu.
       if (user?.id) setValue('id_nguoi_de_xuat', user.id);
       if (defaultKhoByBranch?.id) setValue('id_noi_de_xuat', defaultKhoByBranch.id);
     } else {
@@ -235,13 +226,7 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
     }
   }, [initialData, config, reset, user?.id, defaultKhoByBranch?.id, setValue, defaultTienDoMuaHang]);
 
-  // Khi tạo mới và bật tự sinh số phiếu: đảm bảo preview luôn được điền (kể cả config load sau)
-  useEffect(() => {
-    if (isEdit || !config?.tu_sinh_so_phieu) return;
-    getNextSoPhieuPreview().then((preview) => {
-      if (preview) setValue('so_phieu', preview);
-    });
-  }, [isEdit, config?.tu_sinh_so_phieu, setValue]);
+  // Không gọi RPC khi mở form — chỉ gọi khi submit để tránh tốn số sequence mỗi lần bấm Thêm phiếu.
 
   const onSubmit: SubmitHandler<PhieuDeXuatVatTuFormValues> = async (data) => {
     const validChiTiet = (data.chi_tiet ?? []).filter(
@@ -260,8 +245,10 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
     let soPhieu = data.so_phieu?.trim() ?? '';
     if (!isEdit && config?.tu_sinh_so_phieu) {
       try {
-        soPhieu = await getNextSoPhieu.mutateAsync();
-        if (!soPhieu) soPhieu = data.so_phieu?.trim() ?? '';
+        soPhieu = await getNextSoPhieuPhieuDeXuatVatTuRpc({
+          tien_to_so_phieu: config.tien_to_so_phieu ?? 'PDX-',
+          do_dai_phan_so: config.do_dai_phan_so ?? 4,
+        });
       } catch {
         toast.error(t('phieuDeXuatVatTu.service.duplicateCode'));
         return;
@@ -301,7 +288,7 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
           <FormDrawerFooter
             formId="phieu-de-xuat-vat-tu-form"
             onCancel={onClose}
-            isLoading={isLoading || getNextSoPhieu.isPending}
+            isLoading={isLoading}
             isEdit={isEdit}
             saveLabel={t('phieuDeXuatVatTu.form.save')}
             createLabel={t('phieuDeXuatVatTu.form.create')}

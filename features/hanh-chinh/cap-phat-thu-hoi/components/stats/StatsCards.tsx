@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Package, Calendar, CalendarDays, CalendarRange, ArrowDownCircle, ArrowUpCircle, Repeat, Boxes } from 'lucide-react';
+import { Package, Calendar, CalendarDays, CalendarRange, ArrowDownCircle, ArrowUpCircle, Repeat } from 'lucide-react';
 import type { PhieuStatsSummary } from './usePhieuStats';
 
 interface Props {
@@ -93,17 +93,7 @@ const StatsCards: React.FC<Props> = ({ summary }) => {
           </div>
         </div>
       </div>
-      <div className={cardClass}>
-        <div className="flex items-center gap-2.5">
-          <div className={iconWrapClass}>
-            <Boxes size={15} className={iconClass} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-2xs text-muted-foreground truncate">{t('capPhatThuHoi.stats.uniqueAssets')}</p>
-            <p className="text-lg font-bold text-foreground tabular-nums mt-0.5">{summary.uniqueTaiSan}</p>
-          </div>
-        </div>
-      </div>
+      
     </div>
   );
 };

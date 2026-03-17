@@ -4,7 +4,6 @@ import type { CapPhatThuHoiFilters } from '../store/useCapPhatThuHoiStore';
 
 /**
  * Đếm số phiếu theo từng giá trị filter (exclude-self) để hiển thị count trong filter chip.
- * list = danh sách phiếu người dùng được xem (sau phân quyền, đã lọc search nếu API hỗ trợ).
  */
 export function useCapPhatThuHoiFilterCounts(
   list: PhieuCapPhatThuHoi[],
@@ -12,7 +11,6 @@ export function useCapPhatThuHoiFilterCounts(
 ) {
   return useMemo(() => {
     const loaiCounts: Record<string, number> = {};
-    const noiLuuCounts: Record<string, number> = {};
     const nguoiThucHienCounts: Record<string, number> = {};
 
     const matchLoai = (p: PhieuCapPhatThuHoi) =>
@@ -21,8 +19,6 @@ export function useCapPhatThuHoiFilterCounts(
       !filters.dateFrom || p.ngay_thuc_hien >= filters.dateFrom;
     const matchDateTo = (p: PhieuCapPhatThuHoi) =>
       !filters.dateTo || p.ngay_thuc_hien <= filters.dateTo;
-    const matchNoiLuu = (p: PhieuCapPhatThuHoi) =>
-      filters.id_noi_luu_truoc.length === 0 || filters.id_noi_luu_truoc.includes(p.id_noi_luu_truoc);
     const matchNguoiThucHien = (p: PhieuCapPhatThuHoi) =>
       filters.id_nguoi_thuc_hien.length === 0 ||
       filters.id_nguoi_thuc_hien.includes(p.id_nguoi_thuc_hien);
@@ -30,21 +26,17 @@ export function useCapPhatThuHoiFilterCounts(
     for (const p of list) {
       const passLoai = matchLoai(p);
       const passDate = matchDateFrom(p) && matchDateTo(p);
-      const passNoiLuu = matchNoiLuu(p);
       const passNguoi = matchNguoiThucHien(p);
 
-      if (passDate && passNoiLuu && passNguoi) {
+      if (passDate && passNguoi) {
         loaiCounts[p.loai_phieu] = (loaiCounts[p.loai_phieu] || 0) + 1;
       }
-      if (passLoai && passDate && passNguoi) {
-        noiLuuCounts[p.id_noi_luu_truoc] = (noiLuuCounts[p.id_noi_luu_truoc] || 0) + 1;
-      }
-      if (passLoai && passDate && passNoiLuu) {
+      if (passLoai && passDate) {
         nguoiThucHienCounts[p.id_nguoi_thuc_hien] =
           (nguoiThucHienCounts[p.id_nguoi_thuc_hien] || 0) + 1;
       }
     }
 
-    return { loaiCounts, noiLuuCounts, nguoiThucHienCounts };
+    return { loaiCounts, nguoiThucHienCounts };
   }, [list, filters]);
 }

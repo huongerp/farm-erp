@@ -6,7 +6,7 @@ import CapPhatThuHoiToolbar from './CapPhatThuHoiToolbar';
 import PhieuTable from './PhieuTable';
 import PhieuDetail from './PhieuDetail';
 import TaoPhieuForm from './TaoPhieuForm';
-import { usePhieuList, useDeletePhieu } from '../hooks/use-cap-phat-thu-hoi';
+import { usePhieuList, usePhieuById, useDeletePhieu } from '../hooks/use-cap-phat-thu-hoi';
 import { useCapPhatThuHoiStore } from '../store/useCapPhatThuHoiStore';
 import { getLanguage } from '../../../../lib/utils';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
@@ -49,7 +49,6 @@ const LichSuTab: React.FC<Props> = ({ defaultTaiSanId }) => {
       if (filters.loai_phieu.length > 0 && !filters.loai_phieu.includes(p.loai_phieu)) return false;
       if (filters.dateFrom && p.ngay_thuc_hien < filters.dateFrom) return false;
       if (filters.dateTo && p.ngay_thuc_hien > filters.dateTo) return false;
-      if (filters.id_noi_luu_truoc.length > 0 && !filters.id_noi_luu_truoc.includes(p.id_noi_luu_truoc)) return false;
       if (filters.id_nguoi_thuc_hien.length > 0 && !filters.id_nguoi_thuc_hien.includes(p.id_nguoi_thuc_hien)) return false;
       return true;
     });
@@ -74,7 +73,10 @@ const LichSuTab: React.FC<Props> = ({ defaultTaiSanId }) => {
     setDefaultAssetId(undefined);
     setShowForm(true);
   }, []);
-  /** Click dòng → xem detail (generic) */
+  const { data: detailFull } = usePhieuById(detailItem?.id ?? null);
+  const detailData = detailFull ?? detailItem;
+
+  /** Click dòng → xem detail (fetch chi tiết) */
   const handleView = useCallback((item: PhieuCapPhatThuHoi) => {
     setDetailItem(item);
     setEditingPhieu(null);
@@ -155,9 +157,9 @@ const LichSuTab: React.FC<Props> = ({ defaultTaiSanId }) => {
           />
         </div>
       </div>
-      {detailItem && !showForm && (
+      {detailData && !showForm && (
         <PhieuDetail
-          data={detailItem}
+          data={detailData}
           onClose={() => setDetailItem(null)}
           onEdit={canUpdate ? handleEdit : undefined}
           onDelete={canDelete ? (id) => {

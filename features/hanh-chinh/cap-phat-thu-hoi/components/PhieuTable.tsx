@@ -39,20 +39,10 @@ const PhieuTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, onDelete
 
   const renderCell = (colId: string, item: PhieuCapPhatThuHoi) => {
     switch (colId) {
+      case 'ma_phieu':
+        return <span className="font-medium text-foreground text-sm">{item.ma_phieu}</span>;
       case 'loai_phieu':
         return renderLoaiBadge(item.loai_phieu);
-      case 'ten_tai_san':
-        return (
-          <div className="flex flex-col gap-0.5 min-w-[140px]">
-            <span className="font-medium text-foreground text-sm">{item.ten_tai_san || item.ma_tai_san || '—'}</span>
-            {item.ma_tai_san && item.ten_tai_san && (
-              <span className="text-xs text-muted-foreground">{item.ma_tai_san}</span>
-            )}
-          </div>
-        );
-      case 'ten_noi_luu_truoc':
-      case 'ten_noi_luu_sau':
-        return <span className="text-sm text-foreground">{item[colId as keyof PhieuCapPhatThuHoi] || '—'}</span>;
       case 'ten_nguoi_giu_truoc':
       case 'ten_nguoi_giu_sau':
       case 'ten_nguoi_thuc_hien':
@@ -80,7 +70,7 @@ const PhieuTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, onDelete
       case 'actions':
         if (!showActions) return null;
         return (
-          <div className="flex items-center justify-center gap-1">
+          <div className="flex flex-col gap-1">
             {onEdit && (
               <Tooltip content={t('common.edit')} placement="left">
                 <button
@@ -125,12 +115,12 @@ const PhieuTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, onDelete
       onClick={() => handleRowClick?.(item)}
     >
       <div className="flex justify-between items-start gap-2">
-        <span className="font-medium text-sm">{getLoaiPhieuLabel(item.loai_phieu, t)}</span>
+        <span className="font-medium text-sm">{item.ma_phieu}</span>
         <span className="text-xs text-muted-foreground">{formatDate(item.ngay_thuc_hien)}</span>
       </div>
-      <p className="text-sm text-foreground mt-0.5">{item.ten_tai_san || item.ma_tai_san || '—'}</p>
+      <p className="text-sm text-foreground mt-0.5">{getLoaiPhieuLabel(item.loai_phieu, t)}</p>
       <p className="text-xs text-muted-foreground">
-        {item.ten_noi_luu_truoc} → {item.ten_noi_luu_sau}
+        {item.ten_nguoi_giu_truoc ?? '—'} → {item.ten_nguoi_giu_sau ?? '—'}
       </p>
     </div>
   );

@@ -26,10 +26,8 @@ export const phieuDeXuatVatTuChiTietFormItemSchema = z.object({
 
 export const phieuDeXuatVatTuSchema = z
   .object({
-    so_phieu: z
-      .string()
-      .min(1, i18n.t('phieuDeXuatVatTu.validation.codeRequired'))
-      .max(50, i18n.t('phieuDeXuatVatTu.validation.codeMax')),
+    /** Để trống khi tạo mới + bật tự sinh: mã lấy từ RPC lúc Lưu. */
+    so_phieu: z.string().max(50, i18n.t('phieuDeXuatVatTu.validation.codeMax')),
     ngay: z.string().min(1, i18n.t('phieuDeXuatVatTu.validation.dateRequired')),
     ngay_can: z.string().min(1, i18n.t('phieuDeXuatVatTu.validation.requiredDateRequired')),
     id_noi_de_xuat: z.string().min(1, i18n.t('phieuDeXuatVatTu.validation.placeRequired')),

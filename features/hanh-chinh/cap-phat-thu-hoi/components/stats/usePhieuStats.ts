@@ -24,7 +24,6 @@ export interface PhieuStatsSummary {
   countCapPhat: number;
   countThuHoi: number;
   countLuanChuyen: number;
-  uniqueTaiSan: number;
 }
 
 function getMonthKey(dateStr: string): string {
@@ -58,10 +57,8 @@ export function usePhieuStats(list: PhieuCapPhatThuHoi[]) {
       byType.set(loai, { ten: getLoaiPhieuLabel(loai, i18n.t), count: 0 });
     });
 
-    const byNoiLuu = new Map<string, { ten: string; count: number }>();
     const byNguoiThucHien = new Map<string, { ten: string; count: number }>();
     const byMonth = new Map<string, number>();
-    const taiSanIds = new Set<string>();
 
     let countThisMonth = 0;
     let countToday = 0;
@@ -84,13 +81,6 @@ export function usePhieuStats(list: PhieuCapPhatThuHoi[]) {
       else if (p.loai_phieu === 'thu_hoi') countThuHoi += 1;
       else countLuanChuyen += 1;
 
-      if (p.id_tai_san) taiSanIds.add(p.id_tai_san);
-
-      const tenNoiLuu = p.ten_noi_luu_sau || p.id_noi_luu_sau || '—';
-      const curNoi = byNoiLuu.get(p.id_noi_luu_sau) || { ten: tenNoiLuu, count: 0 };
-      curNoi.count += 1;
-      byNoiLuu.set(p.id_noi_luu_sau, curNoi);
-
       const tenNguoi = p.ten_nguoi_thuc_hien || p.id_nguoi_thuc_hien || '—';
       const curNguoi = byNguoiThucHien.get(p.id_nguoi_thuc_hien) || { ten: tenNguoi, count: 0 };
       curNguoi.count += 1;
@@ -108,7 +98,6 @@ export function usePhieuStats(list: PhieuCapPhatThuHoi[]) {
     });
 
     const byTypeList: StatsByType[] = Array.from(byType.entries()).map(([id, v]) => ({ id, ...v }));
-    const byNoiLuuList: StatsByGroup[] = Array.from(byNoiLuu.entries()).map(([id, v]) => ({ id, ...v }));
     const byNguoiThucHienList: StatsByGroup[] = Array.from(byNguoiThucHien.entries()).map(([id, v]) => ({ id, ...v }));
 
     const monthKeys = Array.from(byMonth.keys()).sort();
@@ -126,13 +115,10 @@ export function usePhieuStats(list: PhieuCapPhatThuHoi[]) {
         countCapPhat,
         countThuHoi,
         countLuanChuyen,
-        uniqueTaiSan: taiSanIds.size,
       } as PhieuStatsSummary,
       byType: byTypeList,
-      byNoiLuu: byNoiLuuList,
       byNguoiThucHien: byNguoiThucHienList,
       chartByType: byTypeList.map((x) => ({ name: x.ten, value: x.count })),
-      chartByNoiLuu: byNoiLuuList.map((x) => ({ name: x.ten, value: x.count })),
       chartByNguoiThucHien: byNguoiThucHienList.map((x) => ({ name: x.ten, value: x.count })),
       chartByMonth,
     };
