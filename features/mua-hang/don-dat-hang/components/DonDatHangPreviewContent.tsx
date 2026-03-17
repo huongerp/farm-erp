@@ -1,9 +1,10 @@
 /**
- * Nội dung in đơn đặt hàng A4 – header công ty + thông tin đơn + bảng chi tiết hàng hóa.
+ * Nội dung in đơn đặt hàng A4 – theo mẫu phiếu đề xuất vật tư.
+ * Bố cục: header công ty, ngày tiếng Việt, tiêu đề + mã PO, thông tin cơ bản, bảng chi tiết hàng hóa, 4 ô chữ ký, footer (In lúc).
  */
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { formatDate, formatDateTime } from '../../../../lib/utils';
+import { formatDate, formatDateTime, formatDateVietnameseLong } from '../../../../lib/utils';
 import { useUIStore } from '../../../../store/useStore';
 import type { DonDatHang } from '../core/types';
 import { TRANG_THAI_KEY } from '../core/constants';
@@ -20,6 +21,7 @@ interface Props {
 const DonDatHangPreviewContent: React.FC<Props> = ({ po }) => {
   const { t } = useTranslation();
   const companyInfo = useUIStore((s) => s.companyInfo);
+  const printedAt = formatDateTime(new Date());
   const chiTiet = po.chi_tiet ?? [];
 
   const TableRow = ({
@@ -38,7 +40,8 @@ const DonDatHangPreviewContent: React.FC<Props> = ({ po }) => {
   );
 
   return (
-    <div className="don-dat-hang-preview bg-white text-gray-900 font-sans text-[10pt] p-5 min-h-full">
+    <div className="don-dat-hang-preview-content don-dat-hang-preview bg-white text-gray-900 font-sans text-[10pt] p-5 min-h-full flex flex-col">
+      {/* Header công ty */}
       <div className="flex items-start gap-4 pb-4 mb-4 border-b-2 border-gray-300">
         {companyInfo.appLogo && (
           <img src={companyInfo.appLogo} alt="Logo" className="w-16 h-16 object-contain shrink-0" />
@@ -70,13 +73,18 @@ const DonDatHangPreviewContent: React.FC<Props> = ({ po }) => {
         </div>
       </div>
 
-      <h1 className="text-center text-[16pt] font-bold mb-2 uppercase">
+      {/* Ngày dạng "Ngày dd tháng mm năm yyyy" */}
+      <p className="text-[10pt] text-gray-700 mb-1 text-left font-normal not-italic">
+        {formatDateVietnameseLong(po.ngay_dat)}
+      </p>
+
+      {/* Tiêu đề: ĐƠN ĐẶT HÀNG */}
+      <h1 className="text-center text-[16pt] font-bold mb-1 uppercase">
         {t('donDatHang.preview.title')}
       </h1>
-      <p className="text-center text-[10pt] text-gray-500 mb-3">
-        {po.so_po} · {getTrangThaiLabel(po.trang_thai, t)}
+      <p className="text-center text-[10pt] text-gray-600 mb-4">
+        ({t('donDatHang.form.code')}: {po.so_po}) · {getTrangThaiLabel(po.trang_thai, t)}
       </p>
-      <hr className="border-t border-gray-300 my-3" />
 
       <table className="w-full border-collapse mt-3 text-[10pt]">
         <thead>
@@ -106,14 +114,14 @@ const DonDatHangPreviewContent: React.FC<Props> = ({ po }) => {
           <h3 className="text-[11pt] font-bold mt-4 mb-2">{t('donDatHang.form.itemsSection')}</h3>
           <table className="w-full border-collapse text-[10pt]">
             <thead>
-              <tr className="bg-gray-100">
-                <th className="border border-gray-300 p-1.5 text-left font-semibold w-8">#</th>
-                <th className="border border-gray-300 p-1.5 text-left font-semibold min-w-[80px]">{t('donDatHang.form.item')} (mã)</th>
-                <th className="border border-gray-300 p-1.5 text-left font-semibold min-w-[120px]">{t('donDatHang.form.item')} (tên)</th>
-                <th className="border border-gray-300 p-1.5 text-center font-semibold w-16">{t('donDatHang.form.unit')}</th>
-                <th className="border border-gray-300 p-1.5 text-right font-semibold w-20">{t('donDatHang.form.quantity')}</th>
-                <th className="border border-gray-300 p-1.5 text-right font-semibold w-24">{t('donDatHang.form.unitPrice')}</th>
-                <th className="border border-gray-300 p-1.5 text-right font-semibold w-28">Thành tiền</th>
+              <tr>
+                <th className="border border-gray-300 bg-primary text-white p-1.5 text-center text-[9pt] font-bold w-8">#</th>
+                <th className="border border-gray-300 bg-primary text-white p-1.5 text-left text-[9pt] font-bold min-w-[80px]">{t('donDatHang.form.item')} (mã)</th>
+                <th className="border border-gray-300 bg-primary text-white p-1.5 text-left text-[9pt] font-bold min-w-[120px]">{t('donDatHang.form.item')} (tên)</th>
+                <th className="border border-gray-300 bg-primary text-white p-1.5 text-center text-[9pt] font-bold w-16">{t('donDatHang.form.unit')}</th>
+                <th className="border border-gray-300 bg-primary text-white p-1.5 text-right text-[9pt] font-bold w-20">{t('donDatHang.form.quantity')}</th>
+                <th className="border border-gray-300 bg-primary text-white p-1.5 text-right text-[9pt] font-bold w-24">{t('donDatHang.form.unitPrice')}</th>
+                <th className="border border-gray-300 bg-primary text-white p-1.5 text-right text-[9pt] font-bold w-28">Thành tiền</th>
               </tr>
             </thead>
             <tbody>
@@ -132,9 +140,33 @@ const DonDatHangPreviewContent: React.FC<Props> = ({ po }) => {
           </table>
         </>
       )}
-      <p className="text-[7pt] text-gray-500 mt-6 font-sans">
-        {t('donDatHang.preview.printedAt')} {formatDateTime(new Date())}
-      </p>
+
+      {/* Bốn ô chữ ký */}
+      <div className="grid grid-cols-4 gap-4 mt-8 pt-4 border-t border-gray-300">
+        <div className="text-center">
+          <p className="text-[10pt] font-semibold text-gray-800 mb-0.5">{t('donDatHang.preview.signCreator')}</p>
+          <p className="text-[8pt] text-gray-500">{t('donDatHang.preview.signHint')}</p>
+        </div>
+        <div className="text-center">
+          <p className="text-[10pt] font-semibold text-gray-800 mb-0.5">{t('donDatHang.preview.signChecker')}</p>
+          <p className="text-[8pt] text-gray-500">{t('donDatHang.preview.signHint')}</p>
+        </div>
+        <div className="text-center">
+          <p className="text-[10pt] font-semibold text-gray-800 mb-0.5">{t('donDatHang.preview.signRelated')}</p>
+          <p className="text-[8pt] text-gray-500">{t('donDatHang.preview.signHint')}</p>
+        </div>
+        <div className="text-center">
+          <p className="text-[10pt] font-semibold text-gray-800 mb-0.5">{t('donDatHang.preview.signApprover')}</p>
+          <p className="text-[8pt] text-gray-500">{t('donDatHang.preview.signHint')}</p>
+        </div>
+      </div>
+
+      {/* Footer: In lúc */}
+      <footer className="mt-auto pt-4 border-t border-gray-200 print:mt-8">
+        <p className="text-[7pt] text-gray-500 text-left">
+          {t('donDatHang.preview.printedAt')} {printedAt}
+        </p>
+      </footer>
     </div>
   );
 };

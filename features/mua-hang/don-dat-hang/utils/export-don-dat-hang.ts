@@ -1,17 +1,41 @@
 /**
- * Xuất đơn đặt hàng ra PDF – header công ty + thông tin đơn + bảng chi tiết hàng hóa.
+ * Xuất đơn đặt hàng ra PDF, DOC, XLSX – toàn bộ từ source (po, chiTiet), không phụ thuộc trang preview.
+ *
+ * - PDF: Tạo tài liệu HTML từ buildDonDatHangBodyHTML, render trong iframe rồi chụp bằng html2canvas
+ *        → chèn ảnh vào jsPDF. Chữ màu đen (#222), font Arial, đúng tiếng Việt.
+ * - DOC: HTML table-based, UTF-8 BOM, Times New Roman.
+ * - XLSX: SheetJS, Unicode.
  */
 import type { DonDatHang, DonDatHangChiTiet } from '../core/types';
 import { TRANG_THAI_KEY } from '../core/constants';
-import { formatDate, formatDateTime, getTodayISODate } from '../../../../lib/utils';
+import {
+  formatDate,
+  formatDateTime,
+  formatDateVietnameseLong,
+  formatNumberVN,
+  getTodayISODate,
+} from '../../../../lib/utils';
 import i18n from '../../../../lib/i18n';
 import { useUIStore } from '../../../../store/useStore';
 
-const FONT_STACK = "'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif";
+/** Font cho PDF (Arial hỗ trợ tiếng Việt trong canvas) */
+const FONT = "Arial, 'Helvetica Neue', sans-serif";
+const FONT_DOC = "'Times New Roman', Times, serif";
 
-function safeStr(v: string | number | null | undefined): string {
-  if (v == null) return '—';
+function safe(v: string | number | null | undefined): string {
+  if (v == null || v === '') return '–';
   return String(v);
+}
+
+function download(blob: Blob, name: string): void {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
 function getTrangThaiLabel(trangThai: DonDatHang['trang_thai'], t: (k: string) => string): string {
@@ -19,100 +43,101 @@ function getTrangThaiLabel(trangThai: DonDatHang['trang_thai'], t: (k: string) =
   return key ? t(`donDatHang.status.${key}`) : String(trangThai);
 }
 
-function buildCompanyHeaderHTML(): string {
+function buildCompanyHeaderHTML(F: string): string {
   const info = useUIStore.getState().companyInfo;
   const logoHtml = info.appLogo
-    ? `<img src="${info.appLogo}" alt="Logo" style="width:64px;height:64px;object-fit:contain;flex-shrink:0" />`
+    ? `<img src="${info.appLogo}" alt="" style="width:56px;height:56px;object-fit:contain;flex-shrink:0"/>`
     : '';
   const addr = info.address ? `${i18n.t('company.address')}: ${info.address}` : '';
-  const contact: string[] = [];
-  if (info.email) contact.push(`${i18n.t('company.email')}: ${info.email}`);
-  if (info.phone) contact.push(`${i18n.t('company.phone')}: ${info.phone}`);
-  const contactLine = contact.join(' · ');
+  const contact = [info.email, info.phone].filter(Boolean).join(' · ');
   return `
-<div style="display:flex;align-items:flex-start;gap:16px;padding-bottom:16px;margin-bottom:16px;border-bottom:2px solid #333;font-family:${FONT_STACK}">
+<div style="display:flex;align-items:flex-start;gap:16px;padding-bottom:16px;margin-bottom:16px;border-bottom:2px solid #333;font-family:${F}">
   ${logoHtml}
   <div style="flex:1;min-width:0">
-    <div style="font-size:14pt;font-weight:bold;color:#111;text-transform:uppercase;letter-spacing:0.02em">${info.companyName}</div>
+    <div style="font-size:14pt;font-weight:bold;color:#111;text-transform:uppercase">${info.companyName}</div>
     ${addr ? `<p style="font-size:9pt;color:#444;margin:2px 0 0 0">${addr}</p>` : ''}
-    ${contactLine ? `<p style="font-size:9pt;color:#444;margin:2px 0 0 0">${contactLine}</p>` : ''}
+    ${contact ? `<p style="font-size:9pt;color:#444;margin:2px 0 0 0">${contact}</p>` : ''}
   </div>
 </div>`;
 }
 
-const TABLE_CELL =
-  (label: string, value: string) =>
-  `<tr><td style="padding:4px 6px;border:1px solid #ddd;font-weight:600;width:40%;color:#444;font-family:${FONT_STACK}">${label}</td><td style="padding:4px 6px;border:1px solid #ddd;font-family:${FONT_STACK}">${value}</td></tr>`;
+const TABLE_CELL = (F: string) => (label: string, value: string) =>
+  `<tr><td style="padding:4px 6px;border:1px solid #ccc;font-weight:600;width:40%;color:#444;font-family:${F}">${label}</td><td style="padding:4px 6px;border:1px solid #ccc;font-family:${F}">${value}</td></tr>`;
 
 export function buildDonDatHangBodyHTML(po: DonDatHang, chiTiet: DonDatHangChiTiet[]): string {
   const t = i18n.t.bind(i18n);
-  const title = t('donDatHang.preview.title');
+  const F = FONT;
+  const info = useUIStore.getState().companyInfo;
+  const dateLine = formatDateVietnameseLong(po.ngay_dat);
   const printedAt = formatDateTime(new Date());
-  const subtitle = `${po.so_po} · ${getTrangThaiLabel(po.trang_thai, t)}`;
 
   const infoRows: [string, string][] = [
     [t('donDatHang.form.code'), po.so_po],
     [t('donDatHang.form.orderDate'), formatDate(po.ngay_dat)],
     [t('donDatHang.form.deliveryDate'), formatDate(po.ngay_giao_dk)],
-    [t('donDatHang.form.supplier'), po.ten_nha_cung_cap ?? '—'],
-    [t('donDatHang.form.warehouse'), po.ten_kho_nhan ?? '—'],
-    [t('donDatHang.form.linkRequest'), po.so_phieu_de_xuat ?? '—'],
-    [t('donDatHang.form.buyer'), po.ten_nguoi_dat ?? '—'],
-    [t('donDatHang.form.approver'), po.ten_nguoi_duyet ?? '—'],
-    [t('donDatHang.form.paymentTerms'), po.dieu_khoan_thanh_toan ?? '—'],
-    [t('donDatHang.form.notes'), po.ghi_chu ?? '—'],
+    [t('donDatHang.form.supplier'), safe(po.ten_nha_cung_cap)],
+    [t('donDatHang.form.warehouse'), safe(po.ten_kho_nhan)],
+    [t('donDatHang.form.linkRequest'), safe(po.so_phieu_de_xuat)],
+    [t('donDatHang.form.buyer'), safe(po.ten_nguoi_dat)],
+    [t('donDatHang.form.approver'), safe(po.ten_nguoi_duyet)],
+    [t('donDatHang.form.paymentTerms'), safe(po.dieu_khoan_thanh_toan)],
+    [t('donDatHang.form.notes'), safe(po.ghi_chu)],
     [t('donDatHang.store.statusCol'), getTrangThaiLabel(po.trang_thai, t)],
   ];
 
-  let section2 = '';
+  const rowCell = TABLE_CELL(F);
+  let tableHTML = '';
   if (chiTiet.length > 0) {
-    const theadCells = [
-      '#',
-      t('donDatHang.form.item') + ' (mã)',
-      t('donDatHang.form.item') + ' (tên)',
-      t('donDatHang.form.unit'),
-      t('donDatHang.form.quantity'),
-      t('donDatHang.form.unitPrice'),
-      'Thành tiền',
-    ]
+    const headers = ['#', t('donDatHang.form.item') + ' (mã)', t('donDatHang.form.item') + ' (tên)', t('donDatHang.form.unit'), t('donDatHang.form.quantity'), t('donDatHang.form.unitPrice'), 'Thành tiền'];
+    const ths = headers
       .map(
-        (text) =>
-          `<th style="padding:6px 8px;border:1px solid #ddd;text-align:left;font-size:9pt;font-family:${FONT_STACK};background:#3b82f6;color:#fff">${text}</th>`
+        (h, i) =>
+          `<th style="padding:6px 8px;border:1px solid #ccc;font-family:${F};font-size:9pt;background:#3b82f6;color:#fff;text-align:${i >= 4 ? 'right' : i === 0 || i === 3 ? 'center' : 'left'}">${h}</th>`,
       )
       .join('');
-    const tbodyRows = chiTiet
+    const rows = chiTiet
       .map(
-        (c, idx) =>
-          `<tr>
-            <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${idx + 1}</td>
-            <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${safeStr(c.ma_hang)}</td>
-            <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${safeStr(c.ten_hang)}</td>
-            <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${safeStr(c.don_vi_tinh)}</td>
-            <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${c.so_luong}</td>
-            <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt;text-align:right">${c.don_gia != null ? c.don_gia.toLocaleString() : '—'}</td>
-            <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt;text-align:right">${c.thanh_tien != null ? c.thanh_tien.toLocaleString() : '—'}</td>
-          </tr>`
+        (c, idx) => `<tr>
+<td style="padding:4px 8px;border:1px solid #ccc;font-family:${F};font-size:9pt;text-align:center">${idx + 1}</td>
+<td style="padding:4px 8px;border:1px solid #ccc;font-family:${F};font-size:9pt">${safe(c.ma_hang)}</td>
+<td style="padding:4px 8px;border:1px solid #ccc;font-family:${F};font-size:9pt">${safe(c.ten_hang)}</td>
+<td style="padding:4px 8px;border:1px solid #ccc;font-family:${F};font-size:9pt;text-align:center">${safe(c.don_vi_tinh)}</td>
+<td style="padding:4px 8px;border:1px solid #ccc;font-family:${F};font-size:9pt;text-align:right">${formatNumberVN(c.so_luong)}</td>
+<td style="padding:4px 8px;border:1px solid #ccc;font-family:${F};font-size:9pt;text-align:right">${c.don_gia != null ? formatNumberVN(c.don_gia) : '–'}</td>
+<td style="padding:4px 8px;border:1px solid #ccc;font-family:${F};font-size:9pt;text-align:right">${c.thanh_tien != null ? formatNumberVN(c.thanh_tien) : '–'}</td>
+</tr>`,
       )
       .join('');
-    section2 = `
-<table style="width:100%;border-collapse:collapse;margin-top:12px;font-family:${FONT_STACK};font-size:10pt">
-  <thead><tr>${theadCells}</tr></thead>
-  <tbody>${tbodyRows}</tbody>
+    tableHTML = `
+<h2 style="font-size:11pt;margin:12px 0 8px;font-family:${F}">${t('donDatHang.form.itemsSection')}</h2>
+<table style="width:100%;border-collapse:collapse;font-family:${F};font-size:10pt">
+<thead><tr>${ths}</tr></thead><tbody>${rows}</tbody>
 </table>`;
+  } else {
+    tableHTML = `<p style="font-size:10pt;color:#666;font-style:italic;font-family:${F}">${t('donDatHang.form.noItems')}</p>`;
   }
 
+  const signBlock = (label: string) =>
+    `<div style="text-align:center;flex:1"><p style="font-size:10pt;font-weight:600;color:#333;margin-bottom:2px;font-family:${F}">${label}</p><p style="font-size:8pt;color:#666;font-family:${F}">${t('donDatHang.preview.signHint')}</p></div>`;
+
   return `
-<div style="font-family:${FONT_STACK};font-size:10pt;color:#222;padding:20px;min-width:600px">
-${buildCompanyHeaderHTML()}
-<h1 style="font-size:16pt;text-align:center;margin:0 0 8px;font-family:${FONT_STACK}">${title}</h1>
-<p style="font-size:10pt;color:#555;text-align:center;margin-bottom:12px;font-family:${FONT_STACK}">${subtitle}</p>
-<hr style="border:0;border-top:1px solid #ccc;margin:12px 0" />
-<table style="width:100%;border-collapse:collapse;margin-top:12px;font-family:${FONT_STACK};font-size:10pt">
-  <thead><tr style="background:#3b82f6;color:#fff"><th colspan="2" style="padding:6px;text-align:left;font-size:9pt">${t('donDatHang.detail.basicInfo')}</th></tr></thead>
-  <tbody>${infoRows.map(([l, v]) => TABLE_CELL(l, safeStr(v))).join('')}</tbody>
+<div style="font-family:${F};font-size:10pt;color:#222;padding:20px;min-width:600px;display:flex;flex-direction:column;min-height:100%">
+${buildCompanyHeaderHTML(F)}
+<p style="font-size:10pt;color:#333;margin:0 0 4px;text-align:left;font-family:${F}">${dateLine}</p>
+<h1 style="font-size:16pt;text-align:center;margin:8px 0 4px;text-transform:uppercase;font-family:${F}">${t('donDatHang.preview.title')}</h1>
+<p style="font-size:10pt;color:#555;text-align:center;margin-bottom:12px;font-family:${F}">(${t('donDatHang.form.code')}: ${po.so_po}) · ${getTrangThaiLabel(po.trang_thai, t)}</p>
+<table style="width:100%;border-collapse:collapse;margin-top:12px;font-family:${F};font-size:10pt">
+<thead><tr style="background:#3b82f6;color:#fff"><th colspan="2" style="padding:6px 8px;text-align:left;font-size:9pt;font-family:${F}">${t('donDatHang.detail.basicInfo')}</th></tr></thead>
+<tbody>${infoRows.map(([l, v]) => rowCell(l, v)).join('')}</tbody>
 </table>
-${chiTiet.length > 0 ? `<h2 style="font-size:11pt;margin:16px 0 8px;font-family:${FONT_STACK}">${t('donDatHang.form.itemsSection')}</h2>${section2}` : ''}
-<p style="font-size:7pt;color:#888;margin-top:20px;font-family:${FONT_STACK}">${t('donDatHang.preview.printedAt')} ${printedAt}</p>
+${tableHTML}
+<div style="display:flex;gap:16px;margin-top:32px;padding-top:16px;border-top:1px solid #ccc">
+  ${signBlock(t('donDatHang.preview.signCreator'))}
+  ${signBlock(t('donDatHang.preview.signChecker'))}
+  ${signBlock(t('donDatHang.preview.signRelated'))}
+  ${signBlock(t('donDatHang.preview.signApprover'))}
+</div>
+<footer style="margin-top:auto;padding-top:16px;border-top:1px solid #ddd"><p style="font-size:7pt;color:#888;margin:0;font-family:${F}">${t('donDatHang.preview.printedAt')} ${printedAt}</p></footer>
 </div>`;
 }
 
@@ -121,49 +146,161 @@ function getFileName(po: DonDatHang): string {
   return `Don_dat_hang_${slug}_${getTodayISODate()}`;
 }
 
-export async function exportDonDatHangToPDF(po: DonDatHang, chiTiet: DonDatHangChiTiet[]): Promise<void> {
-  const [{ default: jsPDF }] = await Promise.all([import('jspdf')]);
-  const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+/** HTML table-based body cho DOC (Word), font Times New Roman qua style. */
+function buildDonDatHangDocBody(po: DonDatHang, chiTiet: DonDatHangChiTiet[]): string {
+  const t = i18n.t.bind(i18n);
+  const info = useUIStore.getState().companyInfo;
+  const printedAt = formatDateTime(new Date());
 
-  const container = document.createElement('div');
-  container.style.cssText =
-    'position:fixed;left:-9999px;top:0;width:210mm;padding:20px;font-family:Segoe UI,Roboto,Arial,sans-serif;font-size:10pt;background:#fff';
-  container.innerHTML = buildDonDatHangBodyHTML(po, chiTiet);
-  document.body.appendChild(container);
+  let detailRows = '';
+  if (chiTiet.length > 0) {
+    const headers = ['#', t('donDatHang.form.item') + ' (mã)', t('donDatHang.form.item') + ' (tên)', t('donDatHang.form.unit'), t('donDatHang.form.quantity'), t('donDatHang.form.unitPrice'), 'Thành tiền'];
+    detailRows =
+      '<tr style="background:#2563eb;color:#fff;font-weight:bold">' +
+      headers.map((h) => `<td style="border:1px solid #999;padding:4px 6px">${h}</td>`).join('') +
+      '</tr>';
+    chiTiet.forEach((c, idx) => {
+      detailRows +=
+        '<tr>' +
+        [
+          idx + 1,
+          safe(c.ma_hang),
+          safe(c.ten_hang),
+          safe(c.don_vi_tinh),
+          formatNumberVN(c.so_luong),
+          c.don_gia != null ? formatNumberVN(c.don_gia) : '–',
+          c.thanh_tien != null ? formatNumberVN(c.thanh_tien) : '–',
+        ]
+          .map((v) => `<td style="border:1px solid #999;padding:4px 6px">${v}</td>`)
+          .join('') +
+        '</tr>';
+    });
+  }
+
+  const sign = (label: string) =>
+    `<td width="25%" style="text-align:center;padding:8px;vertical-align:top"><b>${label}</b><br/><span style="font-size:9pt;color:#666">${t('donDatHang.preview.signHint')}</span></td>`;
+
+  const infoRows: [string, string][] = [
+    [t('donDatHang.form.code'), po.so_po],
+    [t('donDatHang.form.orderDate'), formatDate(po.ngay_dat)],
+    [t('donDatHang.form.deliveryDate'), formatDate(po.ngay_giao_dk)],
+    [t('donDatHang.form.supplier'), safe(po.ten_nha_cung_cap)],
+    [t('donDatHang.form.warehouse'), safe(po.ten_kho_nhan)],
+    [t('donDatHang.form.linkRequest'), safe(po.so_phieu_de_xuat)],
+    [t('donDatHang.form.buyer'), safe(po.ten_nguoi_dat)],
+    [t('donDatHang.form.approver'), safe(po.ten_nguoi_duyet)],
+    [t('donDatHang.form.paymentTerms'), safe(po.dieu_khoan_thanh_toan)],
+    [t('donDatHang.form.notes'), safe(po.ghi_chu)],
+    [t('donDatHang.store.statusCol'), getTrangThaiLabel(po.trang_thai, t)],
+  ];
+  const infoTableRows = infoRows
+    .map(([l, v]) => `<tr><td style="border:1px solid #999;padding:4px 6px;font-weight:600;width:40%">${l}</td><td style="border:1px solid #999;padding:4px 6px">${v}</td></tr>`)
+    .join('');
+
+  return `
+<table width="100%" cellpadding="0" cellspacing="0" style="font-size:11pt">
+<tr><td style="padding-bottom:12px;border-bottom:2px solid #333">
+  <p style="margin:0;font-size:14pt;font-weight:bold">${info.companyName}</p>
+  ${info.address ? `<p style="margin:4px 0 0 0;font-size:9pt">${i18n.t('company.address')}: ${info.address}</p>` : ''}
+  ${info.email || info.phone ? `<p style="margin:2px 0 0 0;font-size:9pt">${[info.email, info.phone].filter(Boolean).join(' &middot; ')}</p>` : ''}
+</td></tr>
+<tr><td style="padding:8px 0 4px 0">${formatDateVietnameseLong(po.ngay_dat)}</td></tr>
+<tr><td style="text-align:center;padding:8px 0"><b style="font-size:14pt">${t('donDatHang.preview.title')}</b><br/>(${t('donDatHang.form.code')}: ${po.so_po}) · ${getTrangThaiLabel(po.trang_thai, t)}</td></tr>
+<tr><td style="padding:4px 0"><b>${t('donDatHang.detail.basicInfo')}</b></td></tr>
+<tr><td><table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:10pt">${infoTableRows}</table></td></tr>
+${detailRows ? `<tr><td style="padding:8px 0 4px 0"><b>${t('donDatHang.form.itemsSection')}</b></td></tr><tr><td><table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:10pt">${detailRows}</table></td></tr>` : ''}
+<tr><td style="padding-top:24px;border-top:1px solid #ccc">
+  <table width="100%"><tr>${sign(t('donDatHang.preview.signCreator'))}${sign(t('donDatHang.preview.signChecker'))}${sign(t('donDatHang.preview.signRelated'))}${sign(t('donDatHang.preview.signApprover'))}</tr></table>
+</td></tr>
+<tr><td style="padding-top:12px;border-top:1px solid #ddd;font-size:8pt;color:#888">${t('donDatHang.preview.printedAt')} ${printedAt}</td></tr>
+</table>`;
+}
+
+/**
+ * Xuất PDF từ source: tạo tài liệu HTML độc lập (iframe), chụp bằng html2canvas, chèn vào jsPDF.
+ * Không dùng DOM trang preview; chữ màu đen (#222), nền trắng, font Arial.
+ */
+export async function exportDonDatHangToPDF(po: DonDatHang, chiTiet: DonDatHangChiTiet[]): Promise<void> {
+  const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
+    import('jspdf'),
+    import('html2canvas'),
+  ]);
+
+  const bodyContent = buildDonDatHangBodyHTML(po, chiTiet);
+  const fullHtml = [
+    '<!DOCTYPE html><html><head><meta charset="UTF-8">',
+    `<style>
+      * { box-sizing: border-box; }
+      body { margin: 0; padding: 0; background: #fff; color: #222; font-family: ${FONT}; font-size: 10pt; }
+      img { max-width: 100%; }
+    </style></head><body>`,
+    bodyContent,
+    '</body></html>',
+  ].join('');
+
+  const iframe = document.createElement('iframe');
+  iframe.setAttribute('srcdoc', fullHtml);
+  iframe.style.cssText = [
+    'position:fixed',
+    'left:0',
+    'top:0',
+    'width:794px',
+    'height:1123px',
+    'border:0',
+    'z-index:-1',
+  ].join(';');
+  document.body.appendChild(iframe);
+
+  const onLoad = new Promise<void>((resolve, reject) => {
+    iframe.onload = () => resolve();
+    iframe.onerror = () => reject(new Error('iframe load failed'));
+  });
+
+  await onLoad;
+  await new Promise((r) => setTimeout(r, 100));
 
   try {
-    await doc.html(container, {
-      callback: () => {},
-      html2canvas: { scale: 0.5, useCORS: true },
-      x: 10,
-      y: 10,
-      width: 190,
-      windowWidth: 794,
+    const docEl = iframe.contentDocument?.body;
+    if (!docEl) throw new Error('iframe body not available');
+
+    const canvas = await html2canvas(docEl, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      logging: false,
     });
 
-    const blob = doc.output('blob');
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${getFileName(po)}.pdf`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const imgData = canvas.toDataURL('image/png');
+    const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+    const pageW = 210;
+    const pageH = 297;
+    const pxToMm = 25.4 / 96;
+    const wMm = (canvas.width / 2) * pxToMm;
+    const hMm = (canvas.height / 2) * pxToMm;
+    const scale = Math.min(pageW / wMm, pageH / hMm, 1);
+    doc.addImage(imgData, 'PNG', 0, 0, wMm * scale, hMm * scale);
+    download(doc.output('blob'), `${getFileName(po)}.pdf`);
   } finally {
-    document.body.removeChild(container);
+    if (iframe.parentNode) document.body.removeChild(iframe);
   }
 }
 
-/** Xuất đơn đặt hàng ra Word */
+/** Xuất đơn đặt hàng ra Word (UTF-8 BOM + Times New Roman, tham chiếu phiếu đề xuất vật tư) */
 export function exportDonDatHangToDoc(po: DonDatHang, chiTiet: DonDatHangChiTiet[]): void {
-  const body = buildDonDatHangBodyHTML(po, chiTiet);
-  const html = `<!DOCTYPE html><html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="UTF-8"></head><body>${body}</body></html>`;
-  const blob = new Blob(['\ufeff' + html], { type: 'application/msword' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${getFileName(po)}.doc`;
-  a.click();
-  URL.revokeObjectURL(url);
+  const body = buildDonDatHangDocBody(po, chiTiet);
+  const html = [
+    '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">',
+    '<head>',
+    '<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>',
+    `<style>body,td,th,p{font-family:${FONT_DOC};font-size:11pt;}</style>`,
+    '</head>',
+    `<body style="font-family:${FONT_DOC};margin:40px">${body}</body>`,
+    '</html>',
+  ].join('');
+  download(
+    new Blob(['\ufeff' + html], { type: 'application/msword;charset=utf-8' }),
+    `${getFileName(po)}.doc`,
+  );
 }
 
 /** Xuất đơn đặt hàng ra Excel */
@@ -191,12 +328,12 @@ export async function exportDonDatHangToXLSX(po: DonDatHang, chiTiet: DonDatHang
     chiTiet.forEach((c, idx) => {
       rows.push([
         idx + 1,
-        safeStr(c.ma_hang),
-        safeStr(c.ten_hang),
-        safeStr(c.don_vi_tinh),
+        safe(c.ma_hang),
+        safe(c.ten_hang),
+        safe(c.don_vi_tinh),
         c.so_luong,
-        c.don_gia != null ? c.don_gia : '—',
-        c.thanh_tien != null ? c.thanh_tien : '—',
+        c.don_gia != null ? c.don_gia : '–',
+        c.thanh_tien != null ? c.thanh_tien : '–',
       ]);
     });
   }

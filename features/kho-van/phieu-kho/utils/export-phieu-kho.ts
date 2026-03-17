@@ -242,45 +242,61 @@ ${detailRows ? `
 /*  Export: PDF                                                        */
 /* ------------------------------------------------------------------ */
 
+/**
+ * Xuất PDF từ source: HTML từ buildPhieuKhoBodyHTML → iframe → html2canvas → jsPDF.
+ * Chữ màu đen, nền trắng, không phụ thuộc trang preview.
+ */
 export async function exportPhieuKhoToPDF(
   phieu: PhieuKho,
   chiTiet: PhieuKhoChiTiet[],
 ): Promise<void> {
-  const { default: jsPDF } = await import('jspdf');
-  const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+  const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
+    import('jspdf'),
+    import('html2canvas'),
+  ]);
 
-  const el = document.createElement('div');
-  el.style.cssText = [
-    'position:fixed',
-    'left:0',
-    'top:0',
-    `width:210mm`,
-    'min-height:297mm',
-    'padding:20px',
-    `font-family:${FONT}`,
-    'font-size:10pt',
-    'background:#fff',
-    'color:#222',
-    'z-index:-1',
-    'box-sizing:border-box',
-  ].join(';');
-  el.innerHTML = buildPhieuKhoBodyHTML(phieu, chiTiet);
-  document.body.appendChild(el);
+  const bodyContent = buildPhieuKhoBodyHTML(phieu, chiTiet);
+  const fullHtml = [
+    '<!DOCTYPE html><html><head><meta charset="UTF-8">',
+    `<style>*{box-sizing:border-box}body{margin:0;padding:0;background:#fff;color:#222;font-family:${FONT};font-size:10pt}img{max-width:100%}</style></head><body>`,
+    bodyContent,
+    '</body></html>',
+  ].join('');
 
-  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+  const iframe = document.createElement('iframe');
+  iframe.setAttribute('srcdoc', fullHtml);
+  iframe.style.cssText = 'position:fixed;left:0;top:0;width:794px;height:1123px;border:0;z-index:-1';
+  document.body.appendChild(iframe);
+
+  await new Promise<void>((resolve, reject) => {
+    iframe.onload = () => resolve();
+    iframe.onerror = () => reject(new Error('iframe load failed'));
+  });
+  await new Promise((r) => setTimeout(r, 100));
 
   try {
-    await doc.html(el, {
-      callback: () => {},
-      html2canvas: { scale: 0.264583, useCORS: true, backgroundColor: '#ffffff' },
-      x: 0,
-      y: 0,
-      width: 210,
-      windowWidth: el.scrollWidth,
+    const docEl = iframe.contentDocument?.body;
+    if (!docEl) throw new Error('iframe body not available');
+    const canvas = await html2canvas(docEl, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      logging: false,
     });
+    if (iframe.parentNode) document.body.removeChild(iframe);
+
+    const imgData = canvas.toDataURL('image/png');
+    const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+    const pageW = 210;
+    const pageH = 297;
+    const pxToMm = 25.4 / 96;
+    const wMm = (canvas.width / 2) * pxToMm;
+    const hMm = (canvas.height / 2) * pxToMm;
+    const scale = Math.min(pageW / wMm, pageH / hMm, 1);
+    doc.addImage(imgData, 'PNG', 0, 0, wMm * scale, hMm * scale);
     download(doc.output('blob'), `${fileName(phieu)}.pdf`);
   } finally {
-    document.body.removeChild(el);
+    if (iframe.parentNode) document.body.removeChild(iframe);
   }
 }
 
