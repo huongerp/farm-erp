@@ -19,6 +19,8 @@ export interface ModulePermissionFlags {
   canDelete: boolean;
   /** Có quyền phê duyệt (admin | all | approve) – chỉ ý nghĩa với module có chức năng phê duyệt */
   canApprove: boolean;
+  /** Có quyền quản trị (chỉ admin | all) – dùng cho hành động đặc biệt như chuyển trạng thái */
+  canAdmin: boolean;
   /** Đang tải dữ liệu phân quyền */
   isLoading: boolean;
 }
@@ -38,6 +40,7 @@ export function useModulePermission(moduleId: string): ModulePermissionFlags {
       canUpdate: false,
       canDelete: false,
       canApprove: false,
+      canAdmin: false,
       isLoading,
     };
 
@@ -59,6 +62,7 @@ export function useModulePermission(moduleId: string): ModulePermissionFlags {
       canUpdate: hasAdminOrAll || has('update'),
       canDelete: hasAdminOrAll || has('delete'),
       canApprove: hasAdminOrAll || has('approve'),
+      canAdmin: hasAdminOrAll,
       isLoading,
     };
   }, [moduleId, user?.id_chuc_vu, roles, isLoading]);

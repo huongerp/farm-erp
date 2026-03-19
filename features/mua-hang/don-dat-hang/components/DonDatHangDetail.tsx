@@ -1,12 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Edit, Trash2, FileText, Calendar, Building2, Warehouse, User, UserCheck, Package, CreditCard, CheckCircle, Printer, X } from 'lucide-react';
+import { Edit, Trash2, FileText, Calendar, Building2, Warehouse, User, UserCheck, Package, CreditCard, CheckCircle, Printer, X, RefreshCw } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Textarea from '../../../../components/ui/Textarea';
-import type { DonDatHang } from '../core/types';
+import Combobox from '../../../../components/ui/Combobox';
+import type { DonDatHang, DonDatHangTrangThai } from '../core/types';
 import { TRANG_THAI_CHO_DUYET, TRANG_THAI_DA_XAC_NHAN, TRANG_THAI_HUY } from '../core/types';
-import { TRANG_THAI_KEY } from '../core/constants';
+import { TRANG_THAI_KEY, TRANG_THAI_DON_DAT_HANG } from '../core/constants';
 import { formatDateTimeShort } from '../../../../lib/utils';
 import { cn } from '../../../../lib/utils';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
@@ -25,12 +26,20 @@ export interface DonDatHangApprovePayload {
   ghiChu?: string;
 }
 
+/** Payload khi chuyển trạng thái từ popup (chọn trạng thái bất kỳ + ghi chú). */
+export interface DonDatHangChangeStatusPayload {
+  trangThai: DonDatHangTrangThai;
+  ghiChu?: string;
+}
+
 interface Props {
   data: DonDatHang;
   onClose: () => void;
   onEdit?: (item: DonDatHang) => void;
   onDelete?: (id: string) => void;
   onApprove?: (item: DonDatHang, payload: DonDatHangApprovePayload) => void;
+  /** Gọi khi bấm Chuyển trạng thái và xác nhận trong popup */
+  onChangeStatus?: (item: DonDatHang, payload: DonDatHangChangeStatusPayload) => void;
   onPrint?: (item: DonDatHang) => void;
 }
 
@@ -45,11 +54,23 @@ const STATUS_VARIANTS: Record<string, string> = {
   'Hủy': 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20',
 };
 
-const DonDatHangDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onApprove, onPrint }) => {
+const DonDatHangDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onApprove, onChangeStatus, onPrint }) => {
   const { t } = useTranslation();
   const canApprove = data.trang_thai === TRANG_THAI_CHO_DUYET && !!onApprove;
   const [showApprovePopup, setShowApprovePopup] = useState(false);
   const [approveGhiChu, setApproveGhiChu] = useState('');
+  const [showChangeStatusPopup, setShowChangeStatusPopup] = useState(false);
+  const [changeStatusTrangThai, setChangeStatusTrangThai] = useState<DonDatHangTrangThai>(data.trang_thai);
+  const [changeStatusGhiChu, setChangeStatusGhiChu] = useState('');
+
+  const statusOptions = useMemo(
+    () =>
+      TRANG_THAI_DON_DAT_HANG.map((s) => ({
+        value: s,
+        label: t(`donDatHang.status.${TRANG_THAI_KEY[s] ?? 'draft'}`),
+      })),
+    [t]
+  );
 
   const submitApprove = (trangThai: typeof TRANG_THAI_DA_XAC_NHAN | typeof TRANG_THAI_HUY) => {
     onApprove?.(data, { trangThai, ghiChu: approveGhiChu.trim() || undefined });
@@ -57,8 +78,32 @@ const DonDatHangDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
     setApproveGhiChu('');
   };
 
+  const handleChangeStatusConfirm = () => {
+    onChangeStatus?.(data, {
+      trangThai: changeStatusTrangThai,
+      ghiChu: changeStatusGhiChu.trim() || undefined,
+    });
+    setShowChangeStatusPopup(false);
+  };
+
+  const showChangeStatusButton = !!onChangeStatus;
+
   const toolbarActions: DetailToolbarAction[] = useMemo(
     () => [
+      ...(showChangeStatusButton
+        ? [
+            {
+              label: t('donDatHang.detail.toolbar.changeStatus'),
+              icon: <RefreshCw size={16} />,
+              onClick: () => {
+                setChangeStatusTrangThai(data.trang_thai);
+                setChangeStatusGhiChu('');
+                setShowChangeStatusPopup(true);
+              },
+              variant: 'primary' as const,
+            },
+          ]
+        : []),
       ...(canApprove
         ? [
             {
@@ -79,7 +124,7 @@ const DonDatHangDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
         variant: 'primary' as const,
       },
     ],
-    [canApprove, data, onApprove, onPrint, t]
+    [showChangeStatusButton, canApprove, data, onApprove, onChangeStatus, onPrint, t]
   );
 
   const statusLabel = t(`donDatHang.status.${TRANG_THAI_KEY[data.trang_thai as keyof typeof TRANG_THAI_KEY] ?? 'draft'}`);
@@ -280,6 +325,64 @@ const DonDatHangDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
                   className="border border-border text-muted-foreground"
                 >
                   {t('common.cancel')}
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* Popup Chuyển trạng thái */}
+        {showChangeStatusPopup && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50"
+            onClick={() => setShowChangeStatusPopup(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-card rounded-xl border border-border shadow-xl max-w-md w-full p-5"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-foreground">
+                  {t('donDatHang.detail.changeStatusTitle')}
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setShowChangeStatusPopup(false)}
+                  className="p-1.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+                  aria-label={t('common.close')}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="space-y-4">
+                <Combobox
+                  label={t('donDatHang.form.status')}
+                  options={statusOptions}
+                  value={changeStatusTrangThai}
+                  onChange={(v) => setChangeStatusTrangThai(v as DonDatHangTrangThai)}
+                  placeholder={t('donDatHang.detail.changeStatusSelectStatus')}
+                />
+                <Textarea
+                  label={t('donDatHang.detail.changeStatusDialogNote')}
+                  placeholder={t('donDatHang.detail.approveDialogNotePlaceholder')}
+                  value={changeStatusGhiChu}
+                  onChange={(e) => setChangeStatusGhiChu(e.target.value)}
+                  rows={3}
+                  className="resize-none"
+                />
+              </div>
+              <div className="flex justify-end gap-2 mt-5">
+                <Button variant="ghost" onClick={() => setShowChangeStatusPopup(false)} className="border border-border">
+                  {t('common.cancel')}
+                </Button>
+                <Button onClick={handleChangeStatusConfirm} className="bg-primary text-white">
+                  {t('common.confirm')}
                 </Button>
               </div>
             </motion.div>

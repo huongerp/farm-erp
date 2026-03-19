@@ -48,7 +48,7 @@ import DonDatHangDetail from './DonDatHangDetail';
 
 const DanhSachTab: React.FC = () => {
   const { t } = useTranslation();
-  const { canCreate, canUpdate, canDelete, canApprove } = useModulePermissionFromContext();
+  const { canCreate, canUpdate, canDelete, canApprove, canAdmin } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
   const {
     searchTerm,
@@ -160,6 +160,18 @@ const DanhSachTab: React.FC = () => {
     [updateMutation, viewingPoFull]
   );
 
+  const handleChangeStatus = useCallback(
+    (item: DonDatHang, payload: { trangThai: DonDatHang['trang_thai']; ghiChu?: string }) => {
+      const full = viewingPoFull ?? item;
+      const mergedGhiChu = payload.ghiChu
+        ? (full.ghi_chu ? full.ghi_chu + '\n' : '') + `[Chuyển trạng thái]: ${payload.ghiChu}`
+        : undefined;
+      const data = donDatHangToFormValues(full, payload.trangThai, mergedGhiChu);
+      updateMutation.mutate({ id: full.id, data });
+    },
+    [updateMutation, viewingPoFull]
+  );
+
   const handleDelete = (id: string) => {
     confirm({
       title: t('donDatHang.deleteTitle'),
@@ -252,6 +264,7 @@ const DanhSachTab: React.FC = () => {
             } : undefined}
             onDelete={canDelete ? handleDelete : undefined}
             onApprove={canApprove ? handleApprove : undefined}
+            onChangeStatus={canAdmin ? handleChangeStatus : undefined}
           />
         )}
       </AnimatePresence>
