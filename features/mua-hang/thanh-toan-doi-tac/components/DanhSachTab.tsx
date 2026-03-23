@@ -4,6 +4,7 @@ import { AnimatePresence } from 'framer-motion';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import { useThanhToanDoiTacList, useThanhToanDoiTacById, useDeleteThanhToanDoiTac, useDeleteThanhToanDoiTacMany, useUpdateThanhToanDoiTac } from '../hooks/use-thanh-toan-doi-tac';
 import { useThanhToanDoiTacViewScope } from '../hooks/use-thanh-toan-doi-tac-view-scope';
+import { filterThanhToanDoiTacListByViewScope } from '../utils/thanh-toan-doi-tac-view-scope-filter';
 import { useDoiTacList } from '../../../kho-van/danh-sach-doi-tac/hooks/use-doi-tac';
 import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
 import { useEmployees } from '../../../he-thong/nhan-vien/hooks/use-nhan-vien';
@@ -66,12 +67,10 @@ const DanhSachTab: React.FC = () => {
   const { data: statusList = [] } = useTrangThaiThanhToanDoiTacList();
   const viewScope = useThanhToanDoiTacViewScope();
 
-  const viewableList = useMemo(() => {
-    if (viewScope.viewAll) return allList;
-    if (!viewScope.viewByBranch || viewScope.allowedBranchIds.length === 0) return [];
-    const allowedSet = new Set(viewScope.allowedBranchIds);
-    return allList.filter((p) => p.id_don_vi != null && allowedSet.has(p.id_don_vi));
-  }, [allList, viewScope.viewAll, viewScope.viewByBranch, viewScope.allowedBranchIds]);
+  const viewableList = useMemo(
+    () => filterThanhToanDoiTacListByViewScope(allList, viewScope),
+    [allList, viewScope]
+  );
 
   const { data: viewingFull } = useThanhToanDoiTacById(viewingItem?.id);
   const { data: editingFull } = useThanhToanDoiTacById(editingItem?.id);

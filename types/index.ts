@@ -11,7 +11,7 @@ export interface User {
   id_phong_ban?: string | null;
   /** Id chức vụ (chuc_vu_id từ fp_var_nhan_vien) */
   id_chuc_vu?: string | null;
-  /** Id chi nhánh (chi_nhanh_id từ fp_var_nhan_vien) */
+  /** Chi nhánh mặc định (phần tử đầu của chi_nhanh_ids / fp_var_nhan_vien) */
   id_chi_nhanh?: string | null;
   /** Cấp bậc số (cap_bac từ fp_var_nhan_vien) */
   cap_bac?: number | null;

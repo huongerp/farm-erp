@@ -46,8 +46,11 @@ const PhieuKhoList: React.FC<Props> = ({
 
   const visibleColumns = useMemo(() => {
     const base = columns.filter((c) => c.visible).sort((a, b) => a.order - b.order);
-    if (loai !== 'chuyen') return base.filter((c) => c.id !== 'ten_kho_den');
-    return base;
+    let out = base;
+    if (loai !== 'chuyen') out = out.filter((c) => c.id !== 'ten_kho_den');
+    if (loai !== 'nhap') out = out.filter((c) => c.id !== 'ten_nha_cung_cap');
+    if (loai !== 'xuat') out = out.filter((c) => c.id !== 'ten_khach_hang');
+    return out;
   }, [columns, loai]);
 
   const getColumnLabel = (col: ColumnConfig) => {
@@ -100,6 +103,14 @@ const PhieuKhoList: React.FC<Props> = ({
         return <span className="text-sm text-muted-foreground">{item.ten_kho ?? '—'}</span>;
       case 'ten_kho_den':
         return <span className="text-sm text-muted-foreground">{item.ten_kho_den ?? '—'}</span>;
+      case 'ten_nha_cung_cap':
+        return <span className="text-sm text-muted-foreground">{item.ten_nha_cung_cap ?? '—'}</span>;
+      case 'ten_khach_hang':
+        return <span className="text-sm text-muted-foreground">{item.ten_khach_hang ?? '—'}</span>;
+      case 'ten_nguoi_tao':
+        return <span className="text-sm text-muted-foreground">{item.ten_nguoi_tao ?? '—'}</span>;
+      case 'tg_tao':
+        return <span className="text-xs text-muted-foreground">{formatDateShort(item.tg_tao)}</span>;
       case 'mo_ta':
         return <span className="text-xs text-muted-foreground line-clamp-2">{item.mo_ta ?? '—'}</span>;
       case 'trang_thai':
@@ -176,6 +187,17 @@ const PhieuKhoList: React.FC<Props> = ({
       <div className="text-xs text-muted-foreground mb-1">{item.ngay} · {item.ten_kho ?? '—'}</div>
       {loai === 'chuyen' && item.ten_kho_den && (
         <div className="text-xs text-muted-foreground mb-1">→ {item.ten_kho_den}</div>
+      )}
+      {loai === 'nhap' && item.ten_nha_cung_cap && (
+        <div className="text-xs text-muted-foreground mb-1">{item.ten_nha_cung_cap}</div>
+      )}
+      {loai === 'xuat' && item.ten_khach_hang && (
+        <div className="text-xs text-muted-foreground mb-1">{item.ten_khach_hang}</div>
+      )}
+      {(item.ten_nguoi_tao || item.tg_tao) && (
+        <div className="text-xs text-muted-foreground mb-1">
+          {[item.ten_nguoi_tao, formatDateShort(item.tg_tao)].filter(Boolean).join(' · ') || '—'}
+        </div>
       )}
       <div className="font-medium tabular-nums text-sm text-foreground mb-2">
         {item.tong_tien != null ? formatNumberVN(item.tong_tien) : '—'}

@@ -4,6 +4,7 @@ import { AnimatePresence } from 'framer-motion';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import { useDonDatHangList, useDonDatHangById, useDeleteDonDatHang, useDeleteDonDatHangMany, useUpdateDonDatHang } from '../hooks/use-don-dat-hang';
 import { useDonDatHangViewScope } from '../hooks/use-don-dat-hang-view-scope';
+import { filterDonDatHangListByViewScope } from '../utils/don-dat-hang-view-scope-filter';
 import { useDoiTacList } from '../../../kho-van/danh-sach-doi-tac/hooks/use-doi-tac';
 import { useKhoList } from '../../../kho-van/danh-sach-kho/hooks/use-kho';
 import { useEmployees } from '../../../he-thong/nhan-vien/hooks/use-nhan-vien';
@@ -76,20 +77,10 @@ const DanhSachTab: React.FC = () => {
   const { data: phieuDeXuatList = [] } = usePhieuDeXuatVatTuList();
   const viewScope = useDonDatHangViewScope();
 
-  const viewableList = useMemo(() => {
-    if (viewScope.viewAll) return allList;
-    if (!viewScope.viewByBranch || viewScope.allowedBranchIds.length === 0) return [];
-    const khoIdToBranchId = new Map<string, string>();
-    khoList.forEach((k) => {
-      if (k.id_chi_nhanh != null) khoIdToBranchId.set(k.id, k.id_chi_nhanh);
-    });
-    const allowedSet = new Set(viewScope.allowedBranchIds);
-    return allList.filter((p) => {
-      if (p.id_kho_nhan == null || p.id_kho_nhan === '') return false;
-      const branchId = khoIdToBranchId.get(p.id_kho_nhan);
-      return branchId != null && allowedSet.has(branchId);
-    });
-  }, [allList, khoList, viewScope.viewAll, viewScope.viewByBranch, viewScope.allowedBranchIds]);
+  const viewableList = useMemo(
+    () => filterDonDatHangListByViewScope(allList, khoList, viewScope),
+    [allList, khoList, viewScope]
+  );
 
   const { data: viewingPoFull } = useDonDatHangById(viewingItem?.id);
   const { data: editingPoFull } = useDonDatHangById(editingItem?.id);

@@ -12,6 +12,8 @@ export interface BaoCaoDeXuatVatTuFilters {
   nguoiDuyetIds: string[];
   /** Khi có: chỉ lấy phiếu có id_noi_de_xuat → kho.id_chi_nhanh thuộc danh sách (phân quyền xem theo chi nhánh) */
   allowedBranchIds?: string[];
+  /** Phân quyền hẹp: luôn gồm phiếu do user này đề xuất (id_nguoi_de_xuat). */
+  allowedCreatorUserId?: string;
 }
 
 /** Dòng tổng hợp theo trạng thái */

@@ -4,6 +4,7 @@ import { Tag, Building2, Building, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 import { useThanhToanDoiTacList } from '../hooks/use-thanh-toan-doi-tac';
 import { useThanhToanDoiTacViewScope } from '../hooks/use-thanh-toan-doi-tac-view-scope';
+import { filterThanhToanDoiTacListByViewScope } from '../utils/thanh-toan-doi-tac-view-scope-filter';
 import { useDoiTacList } from '../../../kho-van/danh-sach-doi-tac/hooks/use-doi-tac';
 import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
 import { useTrangThaiThanhToanDoiTacList } from '../../thiet-lap-de-xuat-vat-tu/hooks/use-trang-thai-thanh-toan-doi-tac';
@@ -25,12 +26,10 @@ const ThongKeTab: React.FC = () => {
   const { data: statusList = [] } = useTrangThaiThanhToanDoiTacList();
   const viewScope = useThanhToanDoiTacViewScope();
 
-  const viewableList = useMemo(() => {
-    if (viewScope.viewAll) return list;
-    if (!viewScope.viewByBranch || viewScope.allowedBranchIds.length === 0) return [];
-    const allowedSet = new Set(viewScope.allowedBranchIds);
-    return list.filter((d) => d.id_don_vi != null && allowedSet.has(d.id_don_vi));
-  }, [list, viewScope.viewAll, viewScope.viewByBranch, viewScope.allowedBranchIds]);
+  const viewableList = useMemo(
+    () => filterThanhToanDoiTacListByViewScope(list, viewScope),
+    [list, viewScope]
+  );
 
   const statusCounts = useMemo(() => {
     const m: Record<string, number> = {};

@@ -17,21 +17,30 @@ function inDateRange(ngay: string, dateFrom: string, dateTo: string): boolean {
   return !!ngay && ngay >= dateFrom && ngay <= dateTo;
 }
 
-/** Lọc phiếu theo chi nhánh (id_noi_de_xuat → kho.id_chi_nhanh in allowedBranchIds) khi filters.allowedBranchIds có giá trị. */
-async function filterByBranch(
+/** Chi nhánh (kho nơi đề xuất) và/hoặc người đề xuất — giống module phiếu đề xuất. */
+async function filterPhieuDeXuatForViewScope(
   list: Awaited<ReturnType<typeof getAllPhieuDeXuatVatTu>>,
-  allowedBranchIds: string[] | undefined
+  opts: { allowedBranchIds?: string[]; allowedCreatorUserId?: string }
 ): Promise<Awaited<ReturnType<typeof getAllPhieuDeXuatVatTu>>> {
-  if (!allowedBranchIds?.length) return list;
+  const scopeOn =
+    opts.allowedBranchIds !== undefined || Boolean((opts.allowedCreatorUserId ?? '').trim());
+  if (!scopeOn) return list;
+
   const khoList = await getKhoList();
   const noiDeXuatToBranchId = new Map<string, string>();
   khoList.forEach((k) => {
     if (k.id_chi_nhanh != null) noiDeXuatToBranchId.set(k.id, k.id_chi_nhanh);
   });
-  const allowedSet = new Set(allowedBranchIds);
+  const branches = opts.allowedBranchIds ?? [];
+  const hasBranch = branches.length > 0;
+  const allowedSet = hasBranch ? new Set(branches) : null;
+  const creator = (opts.allowedCreatorUserId ?? '').trim();
+
   return list.filter((p) => {
+    if (creator && String(p.id_nguoi_de_xuat) === creator) return true;
+    if (!hasBranch) return false;
     const branchId = p.id_noi_de_xuat ? noiDeXuatToBranchId.get(p.id_noi_de_xuat) : undefined;
-    return branchId != null && allowedSet.has(branchId);
+    return branchId != null && allowedSet!.has(branchId);
   });
 }
 
@@ -59,8 +68,11 @@ export async function getPhieuDeXuatInPeriod(
 ): Promise<ChiTietPhieuRow[]> {
   await delay(300);
   const all = await getAllPhieuDeXuatVatTu();
-  const byBranch = await filterByBranch(all, filters.allowedBranchIds);
-  const filtered = applyFilters(byBranch, filters);
+  const scoped = await filterPhieuDeXuatForViewScope(all, {
+    allowedBranchIds: filters.allowedBranchIds,
+    allowedCreatorUserId: filters.allowedCreatorUserId,
+  });
+  const filtered = applyFilters(scoped, filters);
   return filtered.map((p) => ({
     id: p.id,
     so_phieu: p.so_phieu,
@@ -83,8 +95,11 @@ export async function getTongHopDeXuatKy(
 ): Promise<TongHopDeXuatKyResult> {
   await delay(300);
   const all = await getAllPhieuDeXuatVatTu();
-  const byBranch = await filterByBranch(all, filters.allowedBranchIds);
-  const filtered = applyFilters(byBranch, filters);
+  const scoped = await filterPhieuDeXuatForViewScope(all, {
+    allowedBranchIds: filters.allowedBranchIds,
+    allowedCreatorUserId: filters.allowedCreatorUserId,
+  });
+  const filtered = applyFilters(scoped, filters);
 
   const choDuyet = filtered.filter((p) => p.trang_thai === TRANG_THAI_CHO_DUYET).length;
   const daDuyet = filtered.filter((p) => p.trang_thai === TRANG_THAI_DA_DUYET).length;
@@ -143,8 +158,11 @@ export async function getLienKetDonHang(
 ): Promise<LienKetDonHangRow[]> {
   await delay(300);
   const allPhieu = await getAllPhieuDeXuatVatTu();
-  const byBranch = await filterByBranch(allPhieu, filters.allowedBranchIds);
-  const filtered = applyFilters(byBranch, filters);
+  const scoped = await filterPhieuDeXuatForViewScope(allPhieu, {
+    allowedBranchIds: filters.allowedBranchIds,
+    allowedCreatorUserId: filters.allowedCreatorUserId,
+  });
+  const filtered = applyFilters(scoped, filters);
   const allDon = await getAllDonDatHang();
 
   const phieuToDonMap = new Map<string, { so_phieu: string; id: string }>();

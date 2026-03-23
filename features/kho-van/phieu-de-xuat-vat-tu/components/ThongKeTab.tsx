@@ -4,6 +4,7 @@ import { User, UserCheck, Calendar, Warehouse, Tag } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePhieuDeXuatVatTuList } from '../hooks/use-phieu-de-xuat-vat-tu';
 import { usePhieuDeXuatVatTuViewScope } from '../hooks/use-phieu-de-xuat-vat-tu-view-scope';
+import { filterPhieuDeXuatListByViewScope } from '../utils/phieu-de-xuat-view-scope-filter';
 import { useEmployees } from '../../../he-thong/nhan-vien/hooks/use-nhan-vien';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
@@ -24,19 +25,10 @@ const ThongKeTab: React.FC = () => {
   const { data: khoList = [] } = useKhoList();
   const viewScope = usePhieuDeXuatVatTuViewScope();
 
-  const viewableList = useMemo(() => {
-    if (viewScope.viewAll) return list;
-    if (!viewScope.viewByBranch || viewScope.allowedBranchIds.length === 0) return [];
-    const khoIdToBranchId = new Map<string, string>();
-    khoList.forEach((k) => {
-      if (k.id_chi_nhanh != null) khoIdToBranchId.set(k.id, k.id_chi_nhanh);
-    });
-    const allowedSet = new Set(viewScope.allowedBranchIds);
-    return list.filter((d) => {
-      const branchId = khoIdToBranchId.get(d.id_noi_de_xuat);
-      return branchId != null && allowedSet.has(branchId);
-    });
-  }, [list, khoList, viewScope.viewAll, viewScope.viewByBranch, viewScope.allowedBranchIds]);
+  const viewableList = useMemo(
+    () => filterPhieuDeXuatListByViewScope(list, khoList, viewScope),
+    [list, khoList, viewScope]
+  );
 
   const statusCounts = useMemo(() => {
     const m: Record<string, number> = {};

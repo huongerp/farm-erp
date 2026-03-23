@@ -96,6 +96,8 @@ const PhieuDeXuatVatTuList: React.FC<Props> = ({
         return <span className="text-sm text-muted-foreground">{item.ten_nguoi_duyet ?? '—'}</span>;
       case 'ghi_chu':
         return <span className="text-xs text-muted-foreground line-clamp-2">{item.ghi_chu ?? '—'}</span>;
+      case 'tg_tao':
+        return <span className="text-xs text-muted-foreground">{formatDateShort(item.tg_tao)}</span>;
       case 'trang_thai':
         return renderStatusBadges(item);
       case 'tg_cap_nhat':

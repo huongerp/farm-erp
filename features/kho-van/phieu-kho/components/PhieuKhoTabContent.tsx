@@ -4,6 +4,7 @@ import { AnimatePresence } from 'framer-motion';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import { usePhieuKhoList, usePhieuKhoById, useDeletePhieuKho, useDeletePhieuKhoMany } from '../hooks/use-phieu-kho';
 import { usePhieuKhoViewScope } from '../hooks/use-phieu-kho-view-scope';
+import { filterPhieuKhoListByViewScope } from '../utils/phieu-kho-view-scope-filter';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import { useAuthStore } from '../../../../store/useStore';
 import { usePhieuKhoStore } from '../store/usePhieuKhoStore';
@@ -77,23 +78,10 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
   const deleteMutation = useDeletePhieuKho();
   const deleteManyMutation = useDeletePhieuKhoMany();
 
-  const viewableList = useMemo(() => {
-    if (viewScope.viewAll) return allList;
-    if (!viewScope.viewByBranch || viewScope.allowedBranchIds.length === 0) return [];
-    const khoIdToBranchId = new Map<string, string>();
-    khoList.forEach((k) => {
-      if (k.id_chi_nhanh != null) khoIdToBranchId.set(k.id, k.id_chi_nhanh);
-    });
-    const allowedSet = new Set(viewScope.allowedBranchIds);
-    return allList.filter((p) => {
-      const branchKho = khoIdToBranchId.get(p.kho_id);
-      const branchKhoDen = p.kho_den_id ? khoIdToBranchId.get(p.kho_den_id) : null;
-      if (p.kho_den_id == null || p.kho_den_id === '') {
-        return branchKho != null && allowedSet.has(branchKho);
-      }
-      return (branchKho != null && allowedSet.has(branchKho)) || (branchKhoDen != null && allowedSet.has(branchKhoDen));
-    });
-  }, [allList, khoList, viewScope.viewAll, viewScope.viewByBranch, viewScope.allowedBranchIds]);
+  const viewableList = useMemo(
+    () => filterPhieuKhoListByViewScope(allList, viewScope, khoList),
+    [allList, khoList, viewScope]
+  );
 
   /** Sửa: quan_tri/thu_tu=1 luôn được sửa; người tạo phiếu chỉ được sửa khi phiếu chưa duyệt (Chờ duyệt). */
   const canEditItem = useCallback(

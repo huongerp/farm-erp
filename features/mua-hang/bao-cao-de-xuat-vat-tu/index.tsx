@@ -29,11 +29,13 @@ const BaoCaoDeXuatVatTuPage: React.FC = () => {
   const viewScope = usePhieuDeXuatVatTuViewScope();
 
   const effectiveFilters = useMemo((): BaoCaoDeXuatVatTuFilters => {
-    if (viewScope.viewByBranch && viewScope.allowedBranchIds.length > 0) {
-      return { ...filters, allowedBranchIds: viewScope.allowedBranchIds };
-    }
-    return filters;
-  }, [filters, viewScope.viewByBranch, viewScope.allowedBranchIds]);
+    if (viewScope.viewAll) return filters;
+    return {
+      ...filters,
+      allowedBranchIds: viewScope.allowedBranchIds,
+      allowedCreatorUserId: viewScope.currentEmployeeId ?? undefined,
+    };
+  }, [filters, viewScope.viewAll, viewScope.allowedBranchIds, viewScope.currentEmployeeId]);
 
   const { data: khoList = [] } = useQuery({ queryKey: ['kho'], queryFn: getKhoList });
   const { data: employees = [] } = useQuery({

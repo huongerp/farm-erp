@@ -6,6 +6,7 @@ import { FileText, Edit, Trash2, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePhieuDeXuatVatTuChiTietAll, usePhieuDeXuatVatTuById, usePhieuDeXuatVatTuList, useUpdatePhieuDeXuatVatTu } from '../hooks/use-phieu-de-xuat-vat-tu';
 import { usePhieuDeXuatVatTuViewScope } from '../hooks/use-phieu-de-xuat-vat-tu-view-scope';
+import { filterPhieuDeXuatListByViewScope } from '../utils/phieu-de-xuat-view-scope-filter';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import { useChiTietTabStore } from '../store/useChiTietTabStore';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
@@ -69,24 +70,9 @@ const ChiTietTab: React.FC = () => {
   const viewScope = usePhieuDeXuatVatTuViewScope();
 
   const viewablePhieuIds = useMemo(() => {
-    if (viewScope.viewAll) {
-      return new Set(allList.map((p) => p.id));
-    }
-    if (!viewScope.viewByBranch || viewScope.allowedBranchIds.length === 0) return new Set<string>();
-    const khoIdToBranchId = new Map<string, string>();
-    khoList.forEach((k) => {
-      if (k.id_chi_nhanh != null) khoIdToBranchId.set(k.id, k.id_chi_nhanh);
-    });
-    const allowedSet = new Set(viewScope.allowedBranchIds);
-    return new Set(
-      allList
-        .filter((p) => {
-          const branchId = khoIdToBranchId.get(p.id_noi_de_xuat);
-          return branchId != null && allowedSet.has(branchId);
-        })
-        .map((p) => p.id)
-    );
-  }, [allList, khoList, viewScope.viewAll, viewScope.viewByBranch, viewScope.allowedBranchIds]);
+    const visible = filterPhieuDeXuatListByViewScope(allList, khoList, viewScope);
+    return new Set(visible.map((p) => p.id));
+  }, [allList, khoList, viewScope]);
 
   const viewableRows = useMemo(
     () => rows.filter((r) => viewablePhieuIds.has(r.id_phieu_de_xuat_vat_tu)),

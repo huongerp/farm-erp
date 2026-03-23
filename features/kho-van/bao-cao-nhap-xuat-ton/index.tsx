@@ -36,11 +36,13 @@ const BaoCaoNhapXuatTonPage: React.FC = () => {
   const viewScope = usePhieuKhoViewScope();
 
   const effectiveFilters = useMemo((): NXTReportFilters => {
-    if (viewScope.viewByBranch && viewScope.allowedBranchIds.length > 0) {
-      return { ...filters, allowedBranchIds: viewScope.allowedBranchIds };
-    }
-    return filters;
-  }, [filters, viewScope.viewByBranch, viewScope.allowedBranchIds]);
+    if (viewScope.viewAll) return filters;
+    return {
+      ...filters,
+      allowedBranchIds: viewScope.allowedBranchIds,
+      allowedCreatorUserId: viewScope.ownPhieuCreatorId ?? undefined,
+    };
+  }, [filters, viewScope.viewAll, viewScope.allowedBranchIds, viewScope.ownPhieuCreatorId]);
 
   const tabFromUrl = searchParams.get('tab');
   React.useEffect(() => {

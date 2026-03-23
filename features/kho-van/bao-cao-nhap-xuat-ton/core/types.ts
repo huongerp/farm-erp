@@ -11,8 +11,10 @@ export interface NXTReportFilters {
   /** Lọc theo hàng hóa (id) hoặc danh mục – cho tổng hợp theo sản phẩm / tồn tại thời điểm */
   hangHoaIds: string[];
   categoryIds: string[];
-  /** Khi có: chỉ phiếu/tồn thuộc chi nhánh được phân (phân quyền xem theo chi nhánh). Phiếu: kho_id / kho_den_id → kho.id_chi_nhanh; tồn: id_kho → kho.id_chi_nhanh. */
+  /** Khi có: chỉ phiếu/tồn thuộc chi nhánh được phân (phân quyền xem theo chi nhánh). Phiếu: kho_id / kho_den_id → kho.id_chi_nhanh; tồn: id_kho → kho.id_chi_nhanh. Mảng rỗng = không có kho thuộc chi nhánh được phân (tồn báo cáo = rỗng). */
   allowedBranchIds?: string[];
+  /** Khi phân quyền hẹp: luôn gồm phiếu do user này tạo (fp_var_nhan_vien.id = nguoi_tao_id). */
+  allowedCreatorUserId?: string;
 }
 
 /** Dòng báo cáo tổng hợp NXT theo kho */

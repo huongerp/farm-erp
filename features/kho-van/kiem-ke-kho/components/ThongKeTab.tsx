@@ -4,6 +4,7 @@ import { User, Calendar, Warehouse } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDotKiemKeKhoList } from '../hooks/use-kiem-ke-kho';
 import { useKiemKeKhoViewScope } from '../hooks/use-kiem-ke-kho-view-scope';
+import { filterDotKiemKeListByViewScope } from '../utils/dot-kiem-ke-view-scope-filter';
 import { useEmployees } from '@/features/he-thong/nhan-vien/hooks/use-nhan-vien';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
@@ -44,22 +45,10 @@ const ThongKeTab: React.FC = () => {
   const { data: khoList = [] } = useKhoList();
   const viewScope = useKiemKeKhoViewScope();
 
-  const viewableList = useMemo(() => {
-    if (viewScope.viewAll) return list;
-    if (!viewScope.viewByBranch || viewScope.allowedBranchIds.length === 0) return [];
-    const khoIdToBranchId = new Map<string, string>();
-    khoList.forEach((k) => {
-      if (k.id_chi_nhanh != null) khoIdToBranchId.set(k.id, k.id_chi_nhanh);
-    });
-    const allowedSet = new Set(viewScope.allowedBranchIds);
-    return list.filter((d) => {
-      const idKho = d.id_kho ?? [];
-      return idKho.some((khoId) => {
-        const branchId = khoIdToBranchId.get(khoId);
-        return branchId != null && allowedSet.has(branchId);
-      });
-    });
-  }, [list, khoList, viewScope.viewAll, viewScope.viewByBranch, viewScope.allowedBranchIds]);
+  const viewableList = useMemo(
+    () => filterDotKiemKeListByViewScope(list, khoList, viewScope),
+    [list, khoList, viewScope]
+  );
 
   const { trangThaiCounts, nguoiPhuTrachCounts, idKhoCounts } = useStatsFilterCounts(viewableList);
 

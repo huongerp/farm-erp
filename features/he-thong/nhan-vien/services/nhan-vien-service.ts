@@ -12,6 +12,30 @@ const TABLE = 'fp_var_nhan_vien';
 
 type NhanVienRow = Record<string, unknown>;
 
+/**
+ * Chuẩn hoá chi_nhanh_ids từ fp_var_nhan_vien: jsonb/array hoặc chuỗi JSON ["12","10",...].
+ */
+export function normalizeChiNhanhIdsFromRow(raw: unknown): string[] {
+  if (raw == null) return [];
+  if (Array.isArray(raw)) {
+    return raw.map((x) => String(x)).filter((s) => s.length > 0);
+  }
+  if (typeof raw === 'string') {
+    const s = raw.trim();
+    if (!s) return [];
+    try {
+      const parsed = JSON.parse(s) as unknown;
+      if (Array.isArray(parsed)) {
+        return parsed.map((x) => String(x)).filter((t) => t.length > 0);
+      }
+    } catch {
+      /* cột text không phải JSON */
+    }
+    return [];
+  }
+  return [];
+}
+
 function dateToIso(val: unknown): string | undefined {
   if (val == null) return undefined;
   if (typeof val === 'string') return val;
@@ -28,9 +52,12 @@ function rowToEmployee(row: NhanVienRow): Employee {
     so_dien_thoai: (row.so_dien_thoai as string) ?? '',
     id_phong_ban: row.phong_ban_id != null ? String(row.phong_ban_id) : null,
     id_chuc_vu: row.chuc_vu_id != null ? String(row.chuc_vu_id) : null,
-    id_chi_nhanh: (row.chi_nhanh_ids && Array.isArray(row.chi_nhanh_ids) && row.chi_nhanh_ids.length > 0)
-      ? (row.chi_nhanh_ids as unknown[]).map(String)
-      : (row.chi_nhanh_id != null ? [String(row.chi_nhanh_id)] : []),
+    id_chi_nhanh: (() => {
+      const fromIds = normalizeChiNhanhIdsFromRow(row.chi_nhanh_ids);
+      if (fromIds.length > 0) return fromIds;
+      if (row.chi_nhanh_id != null) return [String(row.chi_nhanh_id)];
+      return [];
+    })(),
     ten_phong_ban: (row.ten_phong_ban as string) ?? undefined,
     ten_chuc_vu: (row.ten_chuc_vu as string) ?? undefined,
     ten_chi_nhanh: (row.ten_chi_nhanh as string) ?? undefined,

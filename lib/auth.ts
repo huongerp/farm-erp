@@ -5,7 +5,7 @@ import { getEmployeeByEmail } from '../features/he-thong/nhan-vien/services/nhan
 
 /**
  * Chuyển bản ghi nhân viên (fp_var_nhan_vien) sang User để lưu store.
- * App nhận diện user bằng email so với Supabase Auth; sau đăng nhập lưu id, ho_va_ten, phong_ban_id, chuc_vu_id, chi_nhanh_id, cap_bac.
+ * App nhận diện user bằng email so với Supabase Auth; sau đăng nhập lưu id, ho_va_ten, phong_ban_id, chuc_vu_id, id_chi_nhanh (chi nhánh mặc định = phần tử đầu của chi_nhanh_ids), cap_bac.
  */
 export function employeeToUser(emp: Employee): User {
   return {
@@ -18,7 +18,7 @@ export function employeeToUser(emp: Employee): User {
     created_at: new Date().toISOString(),
     id_phong_ban: emp.id_phong_ban ?? null,
     id_chuc_vu: emp.id_chuc_vu ?? null,
-    id_chi_nhanh: emp.id_chi_nhanh ?? null,
+    id_chi_nhanh: emp.id_chi_nhanh?.[0] ?? null,
     cap_bac: emp.cap_bac ?? (emp.id_cap_bac != null ? Number(emp.id_cap_bac) : null),
   };
 }

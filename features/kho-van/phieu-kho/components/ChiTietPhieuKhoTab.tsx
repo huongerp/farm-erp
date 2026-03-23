@@ -4,6 +4,7 @@ import { Package, FileText } from 'lucide-react';
 import { cn, formatDateShort, formatNumberVN } from '../../../../lib/utils';
 import { useChiTietPhieuKhoAll, usePhieuKhoById, usePhieuKhoList } from '../hooks/use-phieu-kho';
 import { usePhieuKhoViewScope } from '../hooks/use-phieu-kho-view-scope';
+import { filterPhieuKhoListByViewScope } from '../utils/phieu-kho-view-scope-filter';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import { useChiTietPhieuKhoStore } from '../store/useChiTietPhieuKhoStore';
 import type { ChiTietPhieuKhoFlat } from '../core/types';
@@ -59,28 +60,9 @@ const ChiTietPhieuKhoTab: React.FC = () => {
   const viewScope = usePhieuKhoViewScope();
 
   const viewablePhieuIds = useMemo(() => {
-    if (viewScope.viewAll) {
-      return new Set(allList.map((p) => p.id));
-    }
-    if (!viewScope.viewByBranch || viewScope.allowedBranchIds.length === 0) return new Set<string>();
-    const khoIdToBranchId = new Map<string, string>();
-    khoList.forEach((k) => {
-      if (k.id_chi_nhanh != null) khoIdToBranchId.set(k.id, k.id_chi_nhanh);
-    });
-    const allowedSet = new Set(viewScope.allowedBranchIds);
-    return new Set(
-      allList
-        .filter((p) => {
-          const branchKho = khoIdToBranchId.get(p.kho_id);
-          const branchKhoDen = p.kho_den_id ? khoIdToBranchId.get(p.kho_den_id) : null;
-          if (p.kho_den_id == null || p.kho_den_id === '') {
-            return branchKho != null && allowedSet.has(branchKho);
-          }
-          return (branchKho != null && allowedSet.has(branchKho)) || (branchKhoDen != null && allowedSet.has(branchKhoDen));
-        })
-        .map((p) => p.id)
-    );
-  }, [allList, khoList, viewScope.viewAll, viewScope.viewByBranch, viewScope.allowedBranchIds]);
+    const visible = filterPhieuKhoListByViewScope(allList, viewScope, khoList);
+    return new Set(visible.map((p) => p.id));
+  }, [allList, khoList, viewScope]);
 
   const viewableRows = useMemo(
     () => allRows.filter((r) => viewablePhieuIds.has(r.id_phieu_kho)),

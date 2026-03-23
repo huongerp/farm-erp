@@ -26,31 +26,51 @@ function isTrangThaiTinhTon(p: { trang_thai?: string | null }): boolean {
   return (p.trang_thai ?? '').trim() !== 'Không duyệt';
 }
 
-/** Lọc phiếu theo chi nhánh: nhập/xuất theo kho_id; chuyển theo kho_id HOẶC kho_den_id. */
-function filterPhieuByBranch(
+/**
+ * Lọc phiếu theo chi nhánh và/hoặc người tạo (phân quyền xem phiếu kho).
+ * - allowedBranchIds === undefined và không có creator → không lọc (toàn quyền).
+ * - Có creator → luôn giữ phiếu do user đó tạo.
+ * - allowedBranchIds là mảng (kể cả rỗng): áp lọc chi nhánh khi mảng không rỗng.
+ */
+function filterPhieuForRestrictedView(
   list: PhieuKho[],
   khoIdToBranchId: Map<string, string>,
-  allowedBranchIds: string[]
+  allowedBranchIds: string[] | undefined,
+  allowedCreatorUserId?: string | null
 ): PhieuKho[] {
-  if (!allowedBranchIds?.length) return list;
-  const allowedSet = new Set(allowedBranchIds);
-  return list.filter((p) => {
+  const creator = (allowedCreatorUserId ?? '').trim();
+  const scopeOn = allowedBranchIds !== undefined || Boolean(creator);
+  if (!scopeOn) return list;
+
+  const branches = allowedBranchIds ?? [];
+  const hasBranch = branches.length > 0;
+  const allowedSet = hasBranch ? new Set(branches) : null;
+
+  const branchMatch = (p: PhieuKho): boolean => {
+    if (!allowedSet) return false;
     const branchKho = khoIdToBranchId.get(String(p.kho_id));
     if (p.kho_den_id) {
       const branchDen = khoIdToBranchId.get(String(p.kho_den_id));
       return (branchKho != null && allowedSet.has(branchKho)) || (branchDen != null && allowedSet.has(branchDen));
     }
     return branchKho != null && allowedSet.has(branchKho);
+  };
+
+  return list.filter((p) => {
+    if (creator && String(p.nguoi_tao_id ?? '') === creator) return true;
+    if (!hasBranch) return false;
+    return branchMatch(p);
   });
 }
 
-/** Lọc tồn kho theo chi nhánh: id_kho → kho.id_chi_nhanh in allowedBranchIds. */
-function filterTonKhoByBranch<T extends { id_kho: string }>(
+/** Lọc tồn kho theo chi nhánh. undefined = không lọc; [] = không có kho được phép. */
+function filterTonKhoForScope<T extends { id_kho: string }>(
   list: T[],
   khoIdToBranchId: Map<string, string>,
-  allowedBranchIds: string[]
+  allowedBranchIds: string[] | undefined
 ): T[] {
-  if (!allowedBranchIds?.length) return list;
+  if (allowedBranchIds === undefined) return list;
+  if (allowedBranchIds.length === 0) return [];
   const allowedSet = new Set(allowedBranchIds);
   return list.filter((r) => {
     const branchId = khoIdToBranchId.get(String(r.id_kho));
@@ -88,7 +108,8 @@ const addMov = (map: Map<string, Mov>, key: string, nhap: number, xuat: number) 
  * Chỉ phiếu "Không duyệt" bị loại; "Chờ duyệt" + "Đã duyệt" đều tính.
  */
 export async function getNXTByPeriod(filters: NXTReportFilters): Promise<NXTByPeriodResult> {
-  const { dateFrom, dateTo, warehouseIds, loaiPhieu, hangHoaIds, categoryIds, allowedBranchIds } = filters;
+  const { dateFrom, dateTo, warehouseIds, loaiPhieu, hangHoaIds, categoryIds, allowedBranchIds, allowedCreatorUserId } =
+    filters;
 
   // ── 1. Load all data in parallel (single bulk queries, no N+1) ──
   const [allPhieu, khoList, hangHoaList, tonKhoList, allCtRaw] = await Promise.all([
@@ -108,8 +129,17 @@ export async function getNXTByPeriod(filters: NXTReportFilters): Promise<NXTByPe
   khoList.forEach((k) => {
     if (k.id_chi_nhanh != null) khoIdToBranchId.set(String(k.id), k.id_chi_nhanh);
   });
-  const phieuForReport = filterPhieuByBranch(allPhieu, khoIdToBranchId, allowedBranchIds ?? []);
-  const tonKhoForReport = filterTonKhoByBranch(tonKhoList, khoIdToBranchId, allowedBranchIds ?? []);
+  const scopeOn = allowedBranchIds !== undefined || Boolean((allowedCreatorUserId ?? '').trim());
+  const phieuForReport = scopeOn
+    ? filterPhieuForRestrictedView(allPhieu, khoIdToBranchId, allowedBranchIds, allowedCreatorUserId)
+    : allPhieu;
+  const tonKhoForReport = scopeOn
+    ? filterTonKhoForScope(
+        tonKhoList,
+        khoIdToBranchId,
+        allowedBranchIds !== undefined ? allowedBranchIds : []
+      )
+    : tonKhoList;
 
   // ── 2. Report filter sets ──
   const warehouseSet = warehouseIds?.length ? new Set(warehouseIds) : null;
@@ -321,6 +351,7 @@ export async function getPhieuInPeriod(filters: NXTReportFilters): Promise<Phieu
     hangHoaIds,
     categoryIds,
     allowedBranchIds,
+    allowedCreatorUserId,
   } = filters;
 
   const needsProductFilter = (hangHoaIds?.length ?? 0) > 0 || (categoryIds?.length ?? 0) > 0;
@@ -343,7 +374,10 @@ export async function getPhieuInPeriod(filters: NXTReportFilters): Promise<Phieu
   khoList.forEach((k) => {
     if (k.id_chi_nhanh != null) khoIdToBranchId.set(String(k.id), k.id_chi_nhanh);
   });
-  const phieuForReport = filterPhieuByBranch(allPhieu, khoIdToBranchId, allowedBranchIds ?? []);
+  const scopeOn = allowedBranchIds !== undefined || Boolean((allowedCreatorUserId ?? '').trim());
+  const phieuForReport = scopeOn
+    ? filterPhieuForRestrictedView(allPhieu, khoIdToBranchId, allowedBranchIds, allowedCreatorUserId)
+    : allPhieu;
 
   const warehouseSet = warehouseIds.length > 0 ? new Set(warehouseIds.map(String)) : null;
   const loaiSet = loaiPhieu.length > 0 ? new Set(loaiPhieu) : null;
@@ -416,7 +450,10 @@ export async function getTonAtDate(filters: Pick<NXTReportFilters, 'warehouseIds
   khoList.forEach((k) => {
     if (k.id_chi_nhanh != null) khoIdToBranchId.set(String(k.id), k.id_chi_nhanh);
   });
-  const tonKhoForReport = filterTonKhoByBranch(tonKhoList, khoIdToBranchId, allowedBranchIds ?? []);
+  const tonKhoForReport =
+    allowedBranchIds === undefined
+      ? tonKhoList
+      : filterTonKhoForScope(tonKhoList, khoIdToBranchId, allowedBranchIds);
 
   const warehouseSet = warehouseIds.length > 0 ? new Set(warehouseIds) : null;
   const hangHoaSet = hangHoaIds.length > 0 ? new Set(hangHoaIds) : null;

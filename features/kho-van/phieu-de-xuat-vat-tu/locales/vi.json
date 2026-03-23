@@ -14,6 +14,7 @@
   "phieuDeXuatVatTu.store.nguoiDeXuatCol": "Người đề xuất",
   "phieuDeXuatVatTu.store.nguoiDuyetCol": "Người duyệt",
   "phieuDeXuatVatTu.store.notesCol": "Ghi chú",
+  "phieuDeXuatVatTu.store.createdAtCol": "Ngày tạo",
   "phieuDeXuatVatTu.store.statusCol": "Trạng thái",
   "phieuDeXuatVatTu.store.updatedCol": "Cập nhật",
   "phieuDeXuatVatTu.form.createTitle": "Thêm phiếu đề xuất vật tư",

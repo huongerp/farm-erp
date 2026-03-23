@@ -14,6 +14,7 @@
   "phieuDeXuatVatTu.store.nguoiDeXuatCol": "Requester",
   "phieuDeXuatVatTu.store.nguoiDuyetCol": "Approver",
   "phieuDeXuatVatTu.store.notesCol": "Notes",
+  "phieuDeXuatVatTu.store.createdAtCol": "Created at",
   "phieuDeXuatVatTu.store.statusCol": "Status",
   "phieuDeXuatVatTu.store.updatedCol": "Updated",
   "phieuDeXuatVatTu.form.createTitle": "Add material request",

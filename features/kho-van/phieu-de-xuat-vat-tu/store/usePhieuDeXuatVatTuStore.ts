@@ -16,8 +16,9 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'ten_nguoi_de_xuat', label: i18n.t('phieuDeXuatVatTu.store.nguoiDeXuatCol'), visible: true, minWidth: 140, maxWidth: 220, order: 4 },
   { id: 'ten_nguoi_duyet', label: i18n.t('phieuDeXuatVatTu.store.nguoiDuyetCol'), visible: true, minWidth: 140, maxWidth: 220, order: 5 },
   { id: 'ghi_chu', label: i18n.t('phieuDeXuatVatTu.store.notesCol'), visible: true, minWidth: 140, maxWidth: 260, order: 6 },
-  { id: 'trang_thai', label: i18n.t('phieuDeXuatVatTu.store.statusCol'), visible: true, minWidth: 100, maxWidth: 140, order: 7 },
-  { id: 'tg_cap_nhat', label: i18n.t('phieuDeXuatVatTu.store.updatedCol'), visible: true, minWidth: 100, maxWidth: 140, order: 8 },
+  { id: 'tg_tao', label: i18n.t('phieuDeXuatVatTu.store.createdAtCol'), visible: true, minWidth: 100, maxWidth: 140, order: 7 },
+  { id: 'trang_thai', label: i18n.t('phieuDeXuatVatTu.store.statusCol'), visible: true, minWidth: 100, maxWidth: 140, order: 8 },
+  { id: 'tg_cap_nhat', label: i18n.t('phieuDeXuatVatTu.store.updatedCol'), visible: true, minWidth: 100, maxWidth: 140, order: 9 },
 ];
 
 const initialFilters: PhieuDeXuatVatTuFilters = {
