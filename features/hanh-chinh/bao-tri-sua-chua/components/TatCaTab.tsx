@@ -22,7 +22,7 @@ interface Props {
 
 const TatCaTab: React.FC<Props> = ({ defaultTaiSanId }) => {
   const { t } = useTranslation();
-  const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
+  const { canCreate, canUpdate, canDelete, canAdmin } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
   const { searchTerm, filters, sort, resetState, selectedIds, clearSelection, setFilter } = useBaoTriSuaChuaStore();
   const user = useAuthStore((s) => s.user);
@@ -163,6 +163,7 @@ const TatCaTab: React.FC<Props> = ({ defaultTaiSanId }) => {
         <PhieuBaoTriDetail
           data={detailItem}
           onClose={() => setDetailItem(null)}
+          canAdmin={canAdmin}
           onEdit={canUpdate ? handleEdit : undefined}
           onDelete={canDelete ? (id) => {
             setDetailItem(null);

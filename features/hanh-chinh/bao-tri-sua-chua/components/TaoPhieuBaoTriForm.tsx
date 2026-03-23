@@ -4,6 +4,7 @@ import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Wrench, FileText } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
+import NumberInput from '../../../../components/ui/NumberInput';
 import Textarea from '../../../../components/ui/Textarea';
 import Combobox from '../../../../components/ui/Combobox';
 import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/GenericDrawer';
@@ -13,20 +14,29 @@ import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
 import { phieuBaoTriSuaChuaSchema, type PhieuBaoTriSuaChuaFormValues } from '../core/schema';
 import { useCreatePhieuBaoTri, useUpdatePhieuBaoTri } from '../hooks/use-bao-tri-sua-chua';
 import { useTaiSanList } from '../../danh-muc-tai-san/hooks/use-danh-muc-tai-san';
+import { useLoaiChiPhiList } from '../../thiet-lap-tai-san/hooks/use-loai-chi-phi';
 import { useAuthStore } from '../../../../store/useStore';
-import { HANG_MUC_OPTIONS, TRANG_THAI_OPTIONS } from '../core/constants';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
+import { TRANG_THAI_OPTIONS, getHangMucLabel } from '../core/constants';
 import type { PhieuBaoTriSuaChua } from '../core/types';
+import type { LoaiChiPhi } from '../../thiet-lap-tai-san/core/types';
 
 const DEFAULT_VALUES: PhieuBaoTriSuaChuaFormValues = {
   ngay: new Date().toISOString().slice(0, 10),
   id_tai_san: '',
-  id_hang_muc: 'bao_tri',
+  id_hang_muc: '',
   mo_ta: '',
   so_tien: 0,
   ghi_chu: null,
   trang_thai: undefined,
   nguoi_duyet: null,
 };
+
+function resolveTenHangMuc(id: string, loai: LoaiChiPhi[], t: (k: string) => string): string {
+  const found = loai.find((l) => l.id === id);
+  if (found) return found.ten;
+  return getHangMucLabel(id, t);
+}
 
 interface Props {
   onClose: () => void;
@@ -48,6 +58,13 @@ const TaoPhieuBaoTriForm: React.FC<Props> = ({ onClose, defaultTaiSanId, initial
     onSuccessAfterEdit?.(updatedItem);
   });
   const { data: assets = [] } = useTaiSanList();
+  const { data: loaiChiPhi = [] } = useLoaiChiPhiList();
+
+  const activeLoai = React.useMemo(
+    () => loaiChiPhi.filter((l) => l.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG),
+    [loaiChiPhi]
+  );
+  const firstLoaiId = activeLoai[0]?.id ?? '';
 
   const defaultValuesFromData = initialData
     ? {
@@ -62,10 +79,15 @@ const TaoPhieuBaoTriForm: React.FC<Props> = ({ onClose, defaultTaiSanId, initial
       }
     : { ...DEFAULT_VALUES, id_tai_san: defaultTaiSanId ?? '' };
 
-  const { register, handleSubmit, formState: { errors }, control } = useForm<PhieuBaoTriSuaChuaFormValues>({
+  const { register, handleSubmit, formState: { errors }, control, setValue, getValues } = useForm<PhieuBaoTriSuaChuaFormValues>({
     resolver: zodResolver(phieuBaoTriSuaChuaSchema),
     defaultValues: defaultValuesFromData,
   });
+
+  React.useEffect(() => {
+    if (isEdit || !firstLoaiId) return;
+    if (!getValues('id_hang_muc')) setValue('id_hang_muc', firstLoaiId);
+  }, [isEdit, firstLoaiId, getValues, setValue]);
 
   const assetOptions = React.useMemo(
     () => assets.filter((a) => a.trang_thai === 1).map((a) => ({
@@ -75,20 +97,32 @@ const TaoPhieuBaoTriForm: React.FC<Props> = ({ onClose, defaultTaiSanId, initial
     })),
     [assets]
   );
-  const hangMucOptions = React.useMemo(
-    () => HANG_MUC_OPTIONS.map((o) => ({ value: o.value, label: t(o.labelKey) })),
-    [t]
-  );
+
+  const hangMucOptions = React.useMemo(() => {
+    const base = activeLoai.map((l) => ({
+      value: l.id,
+      label: `${l.ten} (${l.ma})`,
+    }));
+    if (initialData?.id_hang_muc && !base.some((o) => o.value === initialData.id_hang_muc)) {
+      const label =
+        initialData.ten_hang_muc ?? getHangMucLabel(initialData.id_hang_muc, t);
+      return [{ value: initialData.id_hang_muc, label }, ...base];
+    }
+    return base;
+  }, [activeLoai, initialData, t]);
+
   const trangThaiOptions = React.useMemo(
     () => TRANG_THAI_OPTIONS.map((o) => ({ value: o.value, label: t(o.labelKey) })),
     [t]
   );
 
   const payload = (data: PhieuBaoTriSuaChuaFormValues) => {
+    const ten_hang_muc = resolveTenHangMuc(data.id_hang_muc, loaiChiPhi, t);
     const base = {
       ngay: data.ngay,
       id_tai_san: data.id_tai_san,
       id_hang_muc: data.id_hang_muc,
+      ten_hang_muc,
       mo_ta: data.mo_ta.trim(),
       so_tien: Number(data.so_tien) || 0,
       ghi_chu: data.ghi_chu?.trim() || null,
@@ -109,7 +143,8 @@ const TaoPhieuBaoTriForm: React.FC<Props> = ({ onClose, defaultTaiSanId, initial
       updateMutation.mutate({ id: initialData.id, data: body });
     } else {
       if (!currentUserId) return;
-      createMutation.mutate({ data: body, id_nguoi_tao: currentUserId });
+      const tenNguoiTao = user?.ho_va_ten?.trim() || user?.full_name?.trim() || null;
+      createMutation.mutate({ data: body, id_nguoi_tao: currentUserId, ten_nguoi_tao: tenNguoiTao });
     }
   };
 
@@ -184,8 +219,22 @@ const TaoPhieuBaoTriForm: React.FC<Props> = ({ onClose, defaultTaiSanId, initial
             </div>
             <div>
               <label className="block text-sm font-medium text-foreground mb-1.5">{t('baoTriSuaChua.form.soTien')}<RequiredStar /></label>
-              <Input type="number" min={0} step={1000} {...register('so_tien')} placeholder={t('baoTriSuaChua.form.soTienPlaceholder')} className={errors.so_tien ? 'border-destructive' : ''} />
-              {errors.so_tien && <p className="text-destructive text-xs mt-1">{errors.so_tien.message}</p>}
+              <Controller
+                name="so_tien"
+                control={control}
+                render={({ field }) => (
+                  <NumberInput
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    min={0}
+                    maxFractionDigits={2}
+                    placeholder={t('baoTriSuaChua.form.soTienPlaceholder')}
+                    error={errors.so_tien?.message}
+                    className={errors.so_tien ? 'border-destructive' : undefined}
+                  />
+                )}
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-foreground mb-1.5">{t('baoTriSuaChua.form.ghiChu')}</label>

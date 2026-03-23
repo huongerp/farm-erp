@@ -1,6 +1,7 @@
 import type { PhieuBaoTriSuaChua, PhieuBaoTriSuaChuaCreate } from '../core/types';
 import { getTaiSanList } from '../../danh-muc-tai-san/services/danh-muc-tai-san-service';
 import { getEmployees } from '@/features/he-thong/nhan-vien/services/nhan-vien-service';
+import { getLoaiChiPhiList } from '../../thiet-lap-tai-san/services/loai-chi-phi-service';
 import { getHangMucLabel } from '../core/constants';
 import i18n from '../../../../lib/i18n';
 import {
@@ -13,19 +14,30 @@ import {
 } from './chi-phi-tai-san-supabase.service';
 
 async function enrichPhieu(items: PhieuBaoTriSuaChua[]): Promise<PhieuBaoTriSuaChua[]> {
-  const [assets, employees] = await Promise.all([
+  const [assets, employees, loaiChiPhi] = await Promise.all([
     getTaiSanList(),
     getEmployees(),
+    getLoaiChiPhiList(),
   ]);
-  const assetMap = new Map(assets.map((a) => [a.id, { ma: a.ma_tai_san, ten: a.ten_tai_san }]));
-  const employeeMap = new Map(employees.map((e) => [e.id, { ten: e.ho_ten }]));
-  return items.map((item) => ({
-    ...item,
-    ma_tai_san: item.ma_tai_san ?? assetMap.get(item.id_tai_san)?.ma,
-    ten_tai_san: item.ten_tai_san ?? assetMap.get(item.id_tai_san)?.ten,
-    ten_hang_muc: item.ten_hang_muc ?? getHangMucLabel(item.id_hang_muc, i18n.t),
-    ten_nguoi_tao: item.ten_nguoi_tao ?? employeeMap.get(item.id_nguoi_tao)?.ten ?? null,
-  }));
+  const assetMap = new Map(assets.map((a) => [String(a.id), { ma: a.ma_tai_san, ten: a.ten_tai_san }]));
+  const employeeMap = new Map(employees.map((e) => [String(e.id), { ten: e.ho_ten }]));
+  const loaiTenById = new Map(loaiChiPhi.map((l) => [l.id, l.ten]));
+  return items.map((item) => {
+    const aid = String(item.id_tai_san);
+    const fromAsset = assetMap.get(aid);
+    return {
+      ...item,
+      /** Luôn ưu tiên danh mục tài sản hiện tại để hiển thị đúng khi đổi mã/tên tài sản */
+      ma_tai_san: fromAsset?.ma ?? item.ma_tai_san,
+      ten_tai_san: fromAsset?.ten ?? item.ten_tai_san,
+      ten_hang_muc:
+        item.ten_hang_muc ?? loaiTenById.get(item.id_hang_muc) ?? getHangMucLabel(item.id_hang_muc, i18n.t),
+      ten_nguoi_tao:
+        item.ten_nguoi_tao ??
+        (item.id_nguoi_tao ? employeeMap.get(String(item.id_nguoi_tao))?.ten : undefined) ??
+        null,
+    };
+  });
 }
 
 export type GetPhieuBaoTriListParams = GetPhieuChiPhiListParams;
@@ -50,11 +62,13 @@ export const deletePhieuBaoTri = async (ids: string[]): Promise<void> => {
 
 export const createPhieuBaoTri = async (
   data: PhieuBaoTriSuaChuaCreate,
-  id_nguoi_tao: string
+  id_nguoi_tao: string,
+  options?: { ten_nguoi_tao?: string | null }
 ): Promise<PhieuBaoTriSuaChua> => {
   const created = await createPhieuChiPhiSupabase(
     { ...data, trang_thai: data.trang_thai ?? 'cho_duyet' },
-    id_nguoi_tao
+    id_nguoi_tao,
+    options
   );
   const [enriched] = await enrichPhieu([created]);
   return enriched;

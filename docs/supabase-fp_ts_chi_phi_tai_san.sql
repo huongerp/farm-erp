@@ -93,7 +93,7 @@ COMMENT ON COLUMN public.fp_ts_chi_phi_tai_san.ngay IS 'Ngày phiếu';
 COMMENT ON COLUMN public.fp_ts_chi_phi_tai_san.id_tai_san IS 'ID tài sản (tham chiếu fp_ts_tai_san.id, không FK để linh hoạt)';
 COMMENT ON COLUMN public.fp_ts_chi_phi_tai_san.ma_tai_san IS 'Mã tài sản (lưu tắt khi tạo/cập nhật)';
 COMMENT ON COLUMN public.fp_ts_chi_phi_tai_san.ten_tai_san IS 'Tên tài sản (lưu tắt khi tạo/cập nhật)';
-COMMENT ON COLUMN public.fp_ts_chi_phi_tai_san.id_hang_muc IS 'Hạng mục: bao_tri | sua_chua (text)';
+COMMENT ON COLUMN public.fp_ts_chi_phi_tai_san.id_hang_muc IS 'ID loại chi phí (fp_ts_loai_chi_phi.id, dạng text) hoặc legacy bao_tri | sua_chua';
 COMMENT ON COLUMN public.fp_ts_chi_phi_tai_san.ten_hang_muc IS 'Tên hạng mục (lưu tắt)';
 COMMENT ON COLUMN public.fp_ts_chi_phi_tai_san.mo_ta IS 'Mô tả nội dung chi phí';
 COMMENT ON COLUMN public.fp_ts_chi_phi_tai_san.so_tien IS 'Số tiền';
@@ -147,3 +147,30 @@ CREATE POLICY "Allow update fp_ts_chi_phi_tai_san" ON public.fp_ts_chi_phi_tai_s
   FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Allow delete fp_ts_chi_phi_tai_san" ON public.fp_ts_chi_phi_tai_san
   FOR DELETE TO authenticated USING (true);
+
+-- -----------------------------------------------------------------------------
+-- 3. Đồng bộ ma_tai_san / ten_tai_san trên phiếu chi phí khi đổi mã hoặc tên tài sản
+-- (bảng fp_ts_tai_san phải đã tồn tại). Chạy thêm block này nếu DB đã deploy trước đó.
+-- -----------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.fp_ts_tai_san_sync_chi_phi_ma_ten()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF TG_OP = 'UPDATE' AND (
+    OLD.ma_tai_san IS DISTINCT FROM NEW.ma_tai_san
+    OR OLD.ten_tai_san IS DISTINCT FROM NEW.ten_tai_san
+  ) THEN
+    UPDATE public.fp_ts_chi_phi_tai_san
+    SET
+      ma_tai_san = NEW.ma_tai_san,
+      ten_tai_san = NEW.ten_tai_san
+    WHERE id_tai_san = NEW.id;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS tr_fp_ts_tai_san_sync_chi_phi_ma_ten ON public.fp_ts_tai_san;
+CREATE TRIGGER tr_fp_ts_tai_san_sync_chi_phi_ma_ten
+  AFTER UPDATE OF ma_tai_san, ten_tai_san ON public.fp_ts_tai_san
+  FOR EACH ROW
+  EXECUTE PROCEDURE public.fp_ts_tai_san_sync_chi_phi_ma_ten();

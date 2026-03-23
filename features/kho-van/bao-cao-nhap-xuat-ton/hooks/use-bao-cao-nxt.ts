@@ -18,10 +18,15 @@ export function usePhieuInPeriod(filters: NXTReportFilters | null) {
   });
 }
 
-export function useTonAtDate(filters: Pick<NXTReportFilters, 'warehouseIds' | 'hangHoaIds' | 'categoryIds'> | null) {
+export function useTonAtDate(
+  filters: Pick<NXTReportFilters, 'warehouseIds' | 'hangHoaIds' | 'categoryIds' | 'allowedBranchIds'> | null
+) {
   return useQuery({
     queryKey: ['baoCaonhapXuatTon', 'tonAtDate', filters],
-    queryFn: () => getTonAtDate(filters ?? { warehouseIds: [], hangHoaIds: [], categoryIds: [] }),
+    queryFn: () =>
+      getTonAtDate(
+        filters ?? { warehouseIds: [], hangHoaIds: [], categoryIds: [] }
+      ),
     enabled: true,
   });
 }

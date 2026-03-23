@@ -64,7 +64,9 @@ const BaoCaoNhapXuatTonPage: React.FC = () => {
     return (
       filters.warehouseIds.length +
       filters.loaiPhieu.length +
-      filters.trangThaiPhieu.length
+      filters.trangThaiPhieu.length +
+      filters.hangHoaIds.length +
+      filters.categoryIds.length
     );
   }, [filters]);
 

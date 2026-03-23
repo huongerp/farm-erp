@@ -10,7 +10,7 @@ const CARD_CLASS = 'bg-card rounded-xl border border-border p-3 sm:p-4 transitio
 const ICON_WRAP = 'w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 text-primary';
 
 interface TonTaiThoiDiemTabProps {
-  filters: Pick<NXTReportFilters, 'warehouseIds' | 'hangHoaIds' | 'categoryIds'> | null;
+  filters: NXTReportFilters | null;
 }
 
 const TonTaiThoiDiemTab: React.FC<TonTaiThoiDiemTabProps> = ({ filters }) => {

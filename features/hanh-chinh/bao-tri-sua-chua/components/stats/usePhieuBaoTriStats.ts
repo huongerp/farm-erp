@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
 import type { PhieuBaoTriSuaChua } from '../../core/types';
-import type { HangMuc } from '../../core/types';
+import type { LoaiChiPhi } from '../../../thiet-lap-tai-san/core/types';
 import { getHangMucLabel } from '../../core/constants';
 import i18n from '../../../../../lib/i18n';
 
 export interface StatsByHangMuc {
-  id: HangMuc;
+  id: string;
   ten: string;
   count: number;
 }
@@ -39,12 +39,12 @@ function formatMonthLabel(key: string): string {
   return `${m}/${y}`;
 }
 
-export function usePhieuBaoTriStats(list: PhieuBaoTriSuaChua[]) {
+export function usePhieuBaoTriStats(list: PhieuBaoTriSuaChua[], loaiChiPhi: LoaiChiPhi[] = []) {
   return useMemo(() => {
-    const byHangMuc = new Map<HangMuc, { ten: string; count: number }>();
-    (['bao_tri', 'sua_chua'] as HangMuc[]).forEach((hm) => {
-      byHangMuc.set(hm, { ten: getHangMucLabel(hm, i18n.t), count: 0 });
-    });
+    const idToMa = new Map(loaiChiPhi.map((l) => [l.id, l.ma]));
+    const idToTen = new Map(loaiChiPhi.map((l) => [l.id, l.ten]));
+
+    const byHangMuc = new Map<string, { ten: string; count: number }>();
     const byTaiSan = new Map<string, { ten: string; count: number }>();
     const byMonth = new Map<string, number>();
     const taiSanIds = new Set<string>();
@@ -60,18 +60,22 @@ export function usePhieuBaoTriStats(list: PhieuBaoTriSuaChua[]) {
     const weekStart = todayStart - 6 * oneDayMs;
 
     list.forEach((p) => {
-      const cur = byHangMuc.get(p.id_hang_muc);
-      if (cur) {
-        cur.count += 1;
-        byHangMuc.set(p.id_hang_muc, cur);
-      }
-      if (p.id_hang_muc === 'bao_tri') countBaoTri += 1;
-      else countSuaChua += 1;
+      const id = p.id_hang_muc;
+      const ten =
+        p.ten_hang_muc ?? idToTen.get(id) ?? getHangMucLabel(id, i18n.t);
+      const curHm = byHangMuc.get(id) ?? { ten, count: 0 };
+      curHm.count += 1;
+      curHm.ten = ten;
+      byHangMuc.set(id, curHm);
+
+      const ma = idToMa.get(id);
+      if (p.id_hang_muc === 'bao_tri' || ma === 'BAO_TRI') countBaoTri += 1;
+      else if (p.id_hang_muc === 'sua_chua' || ma === 'SUA_CHUA') countSuaChua += 1;
 
       if (p.id_tai_san) {
         taiSanIds.add(p.id_tai_san);
-        const ten = p.ten_tai_san || p.ma_tai_san || p.id_tai_san;
-        const curTs = byTaiSan.get(p.id_tai_san) || { ten, count: 0 };
+        const tenTs = p.ten_tai_san || p.ma_tai_san || p.id_tai_san;
+        const curTs = byTaiSan.get(p.id_tai_san) || { ten: tenTs, count: 0 };
         curTs.count += 1;
         byTaiSan.set(p.id_tai_san, curTs);
       }
@@ -84,7 +88,10 @@ export function usePhieuBaoTriStats(list: PhieuBaoTriSuaChua[]) {
       if (d >= weekStart) countThisWeek += 1;
     });
 
-    const byHangMucList: StatsByHangMuc[] = Array.from(byHangMuc.entries()).map(([id, v]) => ({ id, ...v }));
+    const byHangMucList: StatsByHangMuc[] = Array.from(byHangMuc.entries()).map(([hid, v]) => ({
+      id: hid,
+      ...v,
+    }));
     const byTaiSanList: StatsByGroup[] = Array.from(byTaiSan.entries()).map(([id, v]) => ({ id, ...v }));
 
     const monthKeys = Array.from(byMonth.keys()).sort();
@@ -108,5 +115,5 @@ export function usePhieuBaoTriStats(list: PhieuBaoTriSuaChua[]) {
       chartByMonth,
       chartByTaiSan: byTaiSanList.map((x) => ({ name: x.ten, value: x.count })),
     };
-  }, [list]);
+  }, [list, loaiChiPhi]);
 }

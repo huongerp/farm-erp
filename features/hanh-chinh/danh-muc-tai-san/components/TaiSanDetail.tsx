@@ -454,7 +454,7 @@ const TaiSanDetail: React.FC<Props> = ({
                         <td className="px-4 py-2.5 tabular-nums text-muted-foreground">{formatDate(p.ngay)}</td>
                         <td className="px-4 py-2.5">
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
-                            {getHangMucLabel(p.id_hang_muc, t)}
+                            {p.ten_hang_muc || getHangMucLabel(p.id_hang_muc, t)}
                           </span>
                         </td>
                         <td className="px-4 py-2.5 tabular-nums font-medium">{formatCurrency(p.so_tien)}</td>

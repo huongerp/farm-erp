@@ -16,8 +16,6 @@ import { supabase, fetchAllRows } from '../../../../lib/supabase';
 
 /* ────────────────────────── helpers ────────────────────────── */
 
-const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
 function inDateRange(ngay: string, dateFrom: string, dateTo: string): boolean {
   if (!ngay || !dateFrom || !dateTo) return false;
   const d = ngay.trim().slice(0, 10);
@@ -137,7 +135,9 @@ export async function getNXTByPeriod(filters: NXTReportFilters): Promise<NXTByPe
   const productOk = (idHh: string): boolean => {
     if (hangHoaSet && !hangHoaSet.has(idHh)) return false;
     const h = hangHoaMap[idHh];
-    if (categorySet && h?.danh_muc_id && !categorySet.has(h.danh_muc_id)) return false;
+    if (categorySet) {
+      if (!h?.danh_muc_id || !categorySet.has(h.danh_muc_id)) return false;
+    }
     return true;
   };
 
@@ -312,29 +312,93 @@ const TRANG_THAI_NUM_TO_TEXT: Record<number, string> = {
  * Lấy danh sách phiếu trong kỳ (không kèm chi_tiet; gọi getPhieuKhoById khi cần chi tiết).
  */
 export async function getPhieuInPeriod(filters: NXTReportFilters): Promise<PhieuKho[]> {
-  await delay(250);
-  const { dateFrom, dateTo, warehouseIds, loaiPhieu, trangThaiPhieu, allowedBranchIds } = filters;
-  const allPhieu = await getAllPhieuKho();
-  const khoList = await getKhoList();
+  const {
+    dateFrom,
+    dateTo,
+    warehouseIds,
+    loaiPhieu,
+    trangThaiPhieu,
+    hangHoaIds,
+    categoryIds,
+    allowedBranchIds,
+  } = filters;
+
+  const needsProductFilter = (hangHoaIds?.length ?? 0) > 0 || (categoryIds?.length ?? 0) > 0;
+
+  const [allPhieu, khoList, hangHoaList, allCtRaw] = await Promise.all([
+    getAllPhieuKho(),
+    getKhoList(),
+    needsProductFilter ? getAllHangHoa() : Promise.resolve<HangHoa[]>([]),
+    needsProductFilter
+      ? fetchAllRows<{ id_phieu_kho: number; id_hang_hoa: number }>((from, to) =>
+          supabase
+            .from('fp_mh_phieu_kho_chi_tiet')
+            .select('id_phieu_kho, id_hang_hoa')
+            .range(from, to)
+        )
+      : Promise.resolve([]),
+  ]);
+
   const khoIdToBranchId = new Map<string, string>();
   khoList.forEach((k) => {
     if (k.id_chi_nhanh != null) khoIdToBranchId.set(String(k.id), k.id_chi_nhanh);
   });
   const phieuForReport = filterPhieuByBranch(allPhieu, khoIdToBranchId, allowedBranchIds ?? []);
 
-  const warehouseSet = warehouseIds.length > 0 ? new Set(warehouseIds) : null;
+  const warehouseSet = warehouseIds.length > 0 ? new Set(warehouseIds.map(String)) : null;
   const loaiSet = loaiPhieu.length > 0 ? new Set(loaiPhieu) : null;
   const allowedTrangThai =
     trangThaiPhieu.length > 0
       ? new Set(trangThaiPhieu.map((n) => TRANG_THAI_NUM_TO_TEXT[n]))
       : null;
 
+  const hangHoaSet = hangHoaIds?.length ? new Set(hangHoaIds.map(String)) : null;
+  const categorySet = categoryIds?.length ? new Set(categoryIds.map(String)) : null;
+
+  const hangHoaMap: Record<string, HangHoa> = {};
+  if (needsProductFilter) {
+    hangHoaList.forEach((h) => {
+      hangHoaMap[String(h.id)] = h;
+    });
+  }
+
+  const productLineMatches = (idHh: string): boolean => {
+    if (hangHoaSet && !hangHoaSet.has(idHh)) return false;
+    const h = hangHoaMap[idHh];
+    if (categorySet) {
+      if (!h?.danh_muc_id || !categorySet.has(h.danh_muc_id)) return false;
+    }
+    return true;
+  };
+
+  const phieuIdsWithProduct = new Set<string>();
+  if (needsProductFilter) {
+    for (const ct of allCtRaw) {
+      const idHh = String(ct.id_hang_hoa);
+      if (productLineMatches(idHh)) {
+        phieuIdsWithProduct.add(String(ct.id_phieu_kho));
+      }
+    }
+  }
+
+  const warehouseMatches = (p: PhieuKho): boolean => {
+    if (!warehouseSet) return true;
+    const khoId = String(p.kho_id);
+    if (p.loai === 'chuyển') {
+      const toId = p.kho_den_id ? String(p.kho_den_id) : '';
+      const fromOk = warehouseSet.has(khoId);
+      const toOk = toId ? warehouseSet.has(toId) : false;
+      return fromOk || toOk;
+    }
+    return warehouseSet.has(khoId);
+  };
+
   return phieuForReport.filter((p) => {
     if (!inDateRange(p.ngay, dateFrom, dateTo)) return false;
-    if (warehouseSet && !warehouseSet.has(p.kho_id)) return false;
-    if (warehouseSet && p.kho_den_id && !warehouseSet.has(p.kho_den_id)) return false;
+    if (!warehouseMatches(p)) return false;
     if (loaiSet && !loaiSet.has(p.loai)) return false;
     if (allowedTrangThai && !allowedTrangThai.has(p.trang_thai)) return false;
+    if (needsProductFilter && !phieuIdsWithProduct.has(String(p.id))) return false;
     return true;
   });
 }
@@ -343,7 +407,6 @@ export async function getPhieuInPeriod(filters: NXTReportFilters): Promise<Phieu
  * Lấy bảng tồn tại thời điểm (hiện tại = tồn hiện tại từ view).
  */
 export async function getTonAtDate(filters: Pick<NXTReportFilters, 'warehouseIds' | 'hangHoaIds' | 'categoryIds' | 'allowedBranchIds'>): Promise<TonTaiThoiDiemRow[]> {
-  await delay(200);
   const { warehouseIds, hangHoaIds, categoryIds, allowedBranchIds } = filters;
   const tonKhoList = await getAllTonKho();
   const khoList = await getKhoList();
@@ -370,7 +433,9 @@ export async function getTonAtDate(filters: Pick<NXTReportFilters, 'warehouseIds
     if (warehouseSet && !warehouseSet.has(r.id_kho)) return;
     if (hangHoaSet && !hangHoaSet.has(r.id_hang_hoa)) return;
     const h = hangHoaMap[r.id_hang_hoa];
-    if (categorySet && h?.danh_muc_id && !categorySet.has(h.danh_muc_id)) return;
+    if (categorySet) {
+      if (!h?.danh_muc_id || !categorySet.has(h.danh_muc_id)) return;
+    }
     const k = khoMap[r.id_kho];
     const maHang = h?.ma_hang ?? (h as any)?.ma_hang_hoa ?? r.id_hang_hoa;
     const tenHang = h?.ten_hang ?? (h as any)?.ten_hang_hoa ?? '—';

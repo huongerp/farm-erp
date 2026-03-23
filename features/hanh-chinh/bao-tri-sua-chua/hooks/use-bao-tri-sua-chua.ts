@@ -52,10 +52,12 @@ export const useCreatePhieuBaoTri = (onSuccess?: () => void) => {
     mutationFn: ({
       data,
       id_nguoi_tao,
+      ten_nguoi_tao,
     }: {
       data: PhieuBaoTriSuaChuaCreate;
       id_nguoi_tao: string;
-    }) => createPhieuBaoTri(data, id_nguoi_tao),
+      ten_nguoi_tao?: string | null;
+    }) => createPhieuBaoTri(data, id_nguoi_tao, { ten_nguoi_tao }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEY });
       toast.success(i18n.t('baoTriSuaChua.toast.createSuccess'));

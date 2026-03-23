@@ -104,16 +104,16 @@ function PhieuDetailDrawer({
             <div className="rounded-xl border border-border overflow-hidden">
               <div className="px-3 py-2 bg-muted/50 border-b border-border flex items-center gap-2">
                 <Package size={14} />
-                <span className="text-sm font-medium">Chi tiết hàng hóa</span>
+                <span className="text-sm font-medium">{t('baoCaonhapXuatTon.chiTiet.bangHangHoa')}</span>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-muted/30 border-b border-border">
-                      <th className="px-3 py-2 text-left font-semibold text-xs">Mã hàng</th>
-                      <th className="px-3 py-2 text-left font-semibold text-xs">Tên hàng</th>
-                      <th className="px-3 py-2 text-right font-semibold text-xs">Số lượng</th>
-                      <th className="px-3 py-2 text-left font-semibold text-xs">Đơn vị</th>
+                      <th className="px-3 py-2 text-left font-semibold text-xs">{t('baoCaonhapXuatTon.byProduct.maHang')}</th>
+                      <th className="px-3 py-2 text-left font-semibold text-xs">{t('baoCaonhapXuatTon.byProduct.tenHang')}</th>
+                      <th className="px-3 py-2 text-right font-semibold text-xs">{t('baoCaonhapXuatTon.tonThoiDiem.soLuong')}</th>
+                      <th className="px-3 py-2 text-left font-semibold text-xs">{t('baoCaonhapXuatTon.byProduct.donViTinh')}</th>
                     </tr>
                   </thead>
                   <tbody>

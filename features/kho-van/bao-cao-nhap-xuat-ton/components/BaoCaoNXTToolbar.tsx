@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FileDown, Printer, RefreshCw, ChevronDown, Warehouse, ClipboardList } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { FileDown, Printer, RefreshCw, ChevronDown, Warehouse, ClipboardList, Tags, Package } from 'lucide-react';
 import DashboardToolbar from '../../../../components/shared/DashboardToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import DateRangePicker from '../../../../components/ui/DateRangePicker';
@@ -12,6 +13,8 @@ import type { Kho } from '../../danh-sach-kho/core/types';
 import { LOAI_PHIEU_OPTIONS, TRANG_THAI_PHIEU_OPTIONS } from '../core/constants';
 import { getDateRangeFromPreset, getPresetFromDates } from '../core/datePresets';
 import { cn } from '../../../../lib/utils';
+import { getAllHangHoa } from '../../danh-sach-hang-hoa/services/hang-hoa-service';
+import { useDanhMucCap2WithParent } from '../../danh-muc-hang-hoa/hooks/use-danh-muc-hang-hoa';
 
 interface BaoCaoNXTToolbarProps {
   filters: NXTReportFilters;
@@ -41,6 +44,25 @@ const BaoCaoNXTToolbar: React.FC<BaoCaoNXTToolbarProps> = ({
   const { t } = useTranslation();
   const [exportOpen, setExportOpen] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
+
+  const { data: hangHoaList = [], isLoading: hangHoaLoading } = useQuery({
+    queryKey: ['hangHoa'],
+    queryFn: getAllHangHoa,
+    staleTime: 1000 * 60 * 2,
+  });
+  const { data: danhMucCap2 = [] } = useDanhMucCap2WithParent();
+
+  useEffect(() => {
+    if (!filters.categoryIds.length) return;
+    if (hangHoaLoading) return;
+    const catSet = new Set(filters.categoryIds);
+    const allowed = new Set(
+      hangHoaList.filter((h) => h.danh_muc_id != null && catSet.has(h.danh_muc_id)).map((h) => String(h.id))
+    );
+    const next = filters.hangHoaIds.filter((id) => allowed.has(String(id)));
+    if (next.length === filters.hangHoaIds.length) return;
+    onFiltersChange({ ...filters, hangHoaIds: next });
+  }, [filters.categoryIds, filters.hangHoaIds, hangHoaList, hangHoaLoading, filters, onFiltersChange]);
 
   useEffect(() => {
     if (!exportOpen) return;
@@ -93,6 +115,29 @@ const BaoCaoNXTToolbar: React.FC<BaoCaoNXTToolbarProps> = ({
     [t]
   );
 
+  const categoryOptions = useMemo(
+    () =>
+      danhMucCap2.map((d) => ({
+        label: d.ten_danh_muc_cha ? `${d.ten_danh_muc_cha} / ${d.ten_danh_muc}` : d.ten_danh_muc,
+        value: d.id,
+      })),
+    [danhMucCap2]
+  );
+
+  const productOptions = useMemo(() => {
+    const catSet = filters.categoryIds.length > 0 ? new Set(filters.categoryIds) : null;
+    return hangHoaList
+      .filter((h) => {
+        if (!catSet) return true;
+        return h.danh_muc_id != null && catSet.has(h.danh_muc_id);
+      })
+      .map((h) => ({
+        label: h.ten_hang ?? h.ten_hang_hoa,
+        value: String(h.id),
+        subLabel: h.ma_hang ?? h.ma_hang_hoa,
+      }));
+  }, [hangHoaList, filters.categoryIds]);
+
   const filterGroups: FilterGroup[] = useMemo(
     () => [
       {
@@ -120,8 +165,33 @@ const BaoCaoNXTToolbar: React.FC<BaoCaoNXTToolbarProps> = ({
         onChange: (val: string[]) =>
           onFiltersChange({ ...filters, trangThaiPhieu: val.map(Number) as (0 | 1 | 2)[] }),
       },
+      {
+        key: 'categoryIds',
+        label: t('baoCaonhapXuatTon.filter.category'),
+        icon: Tags,
+        options: categoryOptions,
+        value: filters.categoryIds,
+        onChange: (val: string[]) => onFiltersChange({ ...filters, categoryIds: val }),
+      },
+      {
+        key: 'hangHoaIds',
+        label: t('baoCaonhapXuatTon.filter.product'),
+        icon: Package,
+        options: productOptions,
+        value: filters.hangHoaIds,
+        onChange: (val: string[]) => onFiltersChange({ ...filters, hangHoaIds: val }),
+      },
     ],
-    [t, filters, warehouseOptions, loaiOptions, trangThaiOptions, onFiltersChange]
+    [
+      t,
+      filters,
+      warehouseOptions,
+      loaiOptions,
+      trangThaiOptions,
+      categoryOptions,
+      productOptions,
+      onFiltersChange,
+    ]
   );
 
   const renderFilters = (
@@ -139,7 +209,7 @@ const BaoCaoNXTToolbar: React.FC<BaoCaoNXTToolbarProps> = ({
         value={filters.warehouseIds}
         onChange={(v) => onFiltersChange({ ...filters, warehouseIds: v })}
         placeholder={t('baoCaonhapXuatTon.filter.warehousePlaceholder')}
-        icon={FileDown}
+        icon={Warehouse}
         className="w-full sm:w-[180px]"
         size="md"
       />
@@ -148,8 +218,37 @@ const BaoCaoNXTToolbar: React.FC<BaoCaoNXTToolbarProps> = ({
         value={filters.loaiPhieu}
         onChange={(v) => onFiltersChange({ ...filters, loaiPhieu: v })}
         placeholder={t('baoCaonhapXuatTon.filter.loaiPhieuPlaceholder')}
-        icon={FileDown}
+        icon={ClipboardList}
         className="w-full sm:w-[160px]"
+        size="md"
+      />
+      <FilterChipMultiSelect
+        options={trangThaiOptions.map((o) => ({ label: o.label, value: String(o.value) }))}
+        value={filters.trangThaiPhieu.map(String)}
+        onChange={(v) =>
+          onFiltersChange({ ...filters, trangThaiPhieu: v.map(Number) as (0 | 1 | 2)[] })
+        }
+        placeholder={t('baoCaonhapXuatTon.filter.trangThaiPlaceholder')}
+        icon={ClipboardList}
+        className="w-full sm:w-[150px]"
+        size="md"
+      />
+      <FilterChipMultiSelect
+        options={categoryOptions}
+        value={filters.categoryIds}
+        onChange={(v) => onFiltersChange({ ...filters, categoryIds: v })}
+        placeholder={t('baoCaonhapXuatTon.filter.categoryPlaceholder')}
+        icon={Tags}
+        className="w-full sm:w-[200px]"
+        size="md"
+      />
+      <FilterChipMultiSelect
+        options={productOptions}
+        value={filters.hangHoaIds}
+        onChange={(v) => onFiltersChange({ ...filters, hangHoaIds: v })}
+        placeholder={t('baoCaonhapXuatTon.filter.productPlaceholder')}
+        icon={Package}
+        className="w-full sm:w-[200px]"
         size="md"
       />
     </>

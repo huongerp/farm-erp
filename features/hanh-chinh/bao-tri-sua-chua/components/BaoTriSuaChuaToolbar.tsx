@@ -6,9 +6,10 @@ import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import { useBaoTriSuaChuaStore } from '../store/useBaoTriSuaChuaStore';
 import { useTaiSanList } from '../../danh-muc-tai-san/hooks/use-danh-muc-tai-san';
-import { HANG_MUC_OPTIONS } from '../core/constants';
+import { useLoaiChiPhiList } from '../../thiet-lap-tai-san/hooks/use-loai-chi-phi';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
+import { getHangMucLabel } from '../core/constants';
 import { useBaoTriSuaChuaFilterCounts } from '../hooks/use-bao-tri-sua-chua-filter-counts';
-import type { HangMuc } from '../core/types';
 import type { PhieuBaoTriSuaChua } from '../core/types';
 import type { ActionItem } from '../../../../components/ui/MobileActionsSheet';
 
@@ -42,18 +43,30 @@ const BaoTriSuaChuaToolbar: React.FC<Props> = ({
     clearSelection,
   } = useBaoTriSuaChuaStore();
   const { data: assets = [] } = useTaiSanList();
+  const { data: loaiChiPhi = [] } = useLoaiChiPhiList();
   const { hangMucCounts, taiSanCounts } = useBaoTriSuaChuaFilterCounts(items, filters);
 
-  const selectedCount = selectedIds.size;
-  const hangMucOptions = useMemo(
-    () =>
-      HANG_MUC_OPTIONS.map((o) => ({
-        label: t(o.labelKey),
-        value: o.value,
-        count: hangMucCounts[o.value] ?? 0,
-      })),
-    [t, hangMucCounts]
+  const activeLoai = useMemo(
+    () => loaiChiPhi.filter((l) => l.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG),
+    [loaiChiPhi]
   );
+
+  const selectedCount = selectedIds.size;
+  const hangMucOptions = useMemo(() => {
+    const idsSeen = new Set<string>();
+    const fromLoai = activeLoai.map((l) => {
+      idsSeen.add(l.id);
+      return { label: `${l.ten} (${l.ma})`, value: l.id, count: hangMucCounts[l.id] ?? 0 };
+    });
+    const legacyExtras = Object.keys(hangMucCounts)
+      .filter((id) => !idsSeen.has(id))
+      .map((id) => ({
+        label: getHangMucLabel(id, t),
+        value: id,
+        count: hangMucCounts[id] ?? 0,
+      }));
+    return [...fromLoai, ...legacyExtras];
+  }, [activeLoai, hangMucCounts, t]);
   const taiSanOptions = useMemo(
     () =>
       assets.map((a) => ({
@@ -73,7 +86,7 @@ const BaoTriSuaChuaToolbar: React.FC<Props> = ({
 
   const renderFilters = (
     <>
-      <FilterChipMultiSelect<HangMuc>
+      <FilterChipMultiSelect
         options={hangMucOptions}
         value={filters.hang_muc}
         onChange={(v) => setFilter('hang_muc', v)}

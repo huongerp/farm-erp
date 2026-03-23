@@ -1,6 +1,3 @@
-/** Hạng mục phiếu: Bảo trì hoặc Sửa chữa */
-export type HangMuc = 'bao_tri' | 'sua_chua';
-
 /** Trạng thái phiếu: chờ duyệt, đã duyệt, không duyệt */
 export type TrangThaiPhieu = 'cho_duyet' | 'da_duyet' | 'khong_duyet';
 
@@ -11,7 +8,8 @@ export interface PhieuBaoTriSuaChua {
   id_tai_san: string;
   ma_tai_san?: string;
   ten_tai_san?: string;
-  id_hang_muc: HangMuc;
+  /** ID loại chi phí (fp_ts_loai_chi_phi) hoặc giá trị legacy: bao_tri | sua_chua */
+  id_hang_muc: string;
   ten_hang_muc?: string;
   mo_ta: string;
   so_tien: number;
@@ -28,7 +26,9 @@ export interface PhieuBaoTriSuaChua {
 export interface PhieuBaoTriSuaChuaCreate {
   ngay: string;
   id_tai_san: string;
-  id_hang_muc: HangMuc;
+  id_hang_muc: string;
+  /** Lưu tắt theo thiết lập loại chi phí khi tạo/cập nhật */
+  ten_hang_muc?: string | null;
   mo_ta: string;
   so_tien: number;
   ghi_chu?: string | null;

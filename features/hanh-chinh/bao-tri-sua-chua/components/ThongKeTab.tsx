@@ -6,8 +6,9 @@ import { usePhieuBaoTriList } from '../hooks/use-bao-tri-sua-chua';
 import { useBaoTriSuaChuaViewScope } from '../hooks/use-bao-tri-sua-chua-view-scope';
 import { useAuthStore } from '../../../../store/useStore';
 import { useTaiSanList } from '../../danh-muc-tai-san/hooks/use-danh-muc-tai-san';
-import { HANG_MUC_OPTIONS } from '../core/constants';
-import { getTrangThaiLabel } from '../core/constants';
+import { useLoaiChiPhiList } from '../../thiet-lap-tai-san/hooks/use-loai-chi-phi';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
+import { getTrangThaiLabel, getHangMucLabel } from '../core/constants';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import EmptyState from '../../../../components/shared/EmptyState';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
@@ -18,10 +19,9 @@ import StatsTables from './stats/StatsTables';
 import { usePhieuBaoTriStats } from './stats/usePhieuBaoTriStats';
 import { exportToExcel, formatCurrency } from '../../../../lib/utils';
 import type { PhieuBaoTriSuaChua } from '../core/types';
-import type { HangMuc } from '../core/types';
 
 function phieuToExportRow(p: PhieuBaoTriSuaChua, t: (k: string) => string): Record<string, string> {
-  const hangMucLabel = p.id_hang_muc === 'bao_tri' ? t('baoTriSuaChua.hangMuc.bao_tri') : t('baoTriSuaChua.hangMuc.sua_chua');
+  const hangMucLabel = p.ten_hang_muc || getHangMucLabel(p.id_hang_muc, t);
   return {
     ngay: p.ngay,
     hang_muc: hangMucLabel,
@@ -38,7 +38,13 @@ const ThongKeTab: React.FC = () => {
   const user = useAuthStore((s) => s.user);
   const { viewAll } = useBaoTriSuaChuaViewScope();
   const { data: taiSanList = [] } = useTaiSanList();
+  const { data: loaiChiPhi = [] } = useLoaiChiPhiList();
   const { data: list = [], isLoading, isError } = usePhieuBaoTriList({});
+
+  const activeLoai = useMemo(
+    () => loaiChiPhi.filter((l) => l.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG),
+    [loaiChiPhi]
+  );
 
   const viewableList = useMemo(() => {
     if (viewAll) return list;
@@ -64,7 +70,7 @@ const ThongKeTab: React.FC = () => {
     });
   }, [viewableList, filterHangMuc, filterDateFrom, filterDateTo]);
 
-  const stats = usePhieuBaoTriStats(filteredList);
+  const stats = usePhieuBaoTriStats(filteredList, loaiChiPhi);
 
   const countByHangMuc = useMemo(() => {
     const m: Record<string, number> = {};
@@ -72,10 +78,21 @@ const ThongKeTab: React.FC = () => {
     return m;
   }, [viewableList]);
 
-  const hangMucOptions = useMemo(
-    () => HANG_MUC_OPTIONS.map((o) => ({ label: t(o.labelKey), value: o.value, count: countByHangMuc[o.value] ?? 0 })),
-    [t, countByHangMuc]
-  );
+  const hangMucOptions = useMemo(() => {
+    const idsSeen = new Set<string>();
+    const fromLoai = activeLoai.map((l) => {
+      idsSeen.add(l.id);
+      return { label: `${l.ten} (${l.ma})`, value: l.id, count: countByHangMuc[l.id] ?? 0 };
+    });
+    const legacyExtras = Object.keys(countByHangMuc)
+      .filter((id) => !idsSeen.has(id))
+      .map((id) => ({
+        label: getHangMucLabel(id, t),
+        value: id,
+        count: countByHangMuc[id] ?? 0,
+      }));
+    return [...fromLoai, ...legacyExtras];
+  }, [activeLoai, countByHangMuc, t]);
 
   const activeFilterCount =
     filterHangMuc.length + (filterDateFrom ? 1 : 0) + (filterDateTo ? 1 : 0);
@@ -94,9 +111,9 @@ const ThongKeTab: React.FC = () => {
 
   const renderFilters = (
     <>
-      <FilterChipMultiSelect<HangMuc>
+      <FilterChipMultiSelect
         options={hangMucOptions}
-        value={filterHangMuc as HangMuc[]}
+        value={filterHangMuc}
         onChange={setFilterHangMuc}
         placeholder={t('baoTriSuaChua.store.hangMucCol')}
         icon={Wrench}
