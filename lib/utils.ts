@@ -235,23 +235,31 @@ export function exportToPDF(data: any[], filename: string, title?: string) {
   if (!data || !data.length) return;
   Promise.all([
     import('jspdf'),
-    import('jspdf-autotable')
-  ]).then(([jspdfModule, autoTableModule]) => {
-    const jsPDF = (jspdfModule as { default?: typeof import('jspdf') }).default;
-    if (!jsPDF) return;
-    const headers = Object.keys(data[0]);
-    const doc = new jsPDF({ orientation: headers.length > 5 ? 'l' : 'p', unit: 'mm', format: 'a4' });
-    if (title) { doc.setFontSize(12); doc.text(title, 14, 15); }
-    const autoTable = autoTableModule.default;
-    autoTable(doc, {
-      head: [headers],
-      body: data.map(row => headers.map(h => String(row[h] ?? ''))),
-      startY: title ? 22 : 10,
-      styles: { fontSize: 7, cellPadding: 2 },
-      headStyles: { fillColor: [59, 130, 246] },
-    });
-    doc.save(`${filename}_${getTodayISODate()}.pdf`);
-  }).catch(() => {});
+    import('jspdf-autotable'),
+    import('./jspdf-vietnamese-font'),
+  ])
+    .then(async ([jspdfModule, autoTableModule, viMod]) => {
+      const jsPDF = (jspdfModule as { default?: typeof import('jspdf') }).default;
+      if (!jsPDF) return;
+      const headers = Object.keys(data[0]);
+      const doc = new jsPDF({ orientation: headers.length > 5 ? 'l' : 'p', unit: 'mm', format: 'a4' });
+      await viMod.ensureJsPDFVietnameseFont(doc);
+      const font = viMod.JSPDF_VI_FONT_FAMILY;
+      if (title) {
+        doc.setFontSize(12);
+        doc.text(title, 14, 15);
+      }
+      const autoTable = autoTableModule.default;
+      autoTable(doc, {
+        head: [headers],
+        body: data.map((row) => headers.map((h) => String(row[h] ?? ''))),
+        startY: title ? 22 : 10,
+        styles: { font, fontSize: 7, cellPadding: 2 },
+        headStyles: { font, fillColor: [59, 130, 246], fontStyle: 'bold' },
+      });
+      doc.save(`${filename}_${getTodayISODate()}.pdf`);
+    })
+    .catch(() => {});
 }
 
 export function exportToCSV(data: any[], filename: string) {

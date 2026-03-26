@@ -23,27 +23,32 @@ function getDeXuatLabel(value: string | null | undefined): string {
 }
 
 export function exportPhieuDanhGiaPVToPDF(data: LichPhongVan): Promise<void> {
-  return Promise.all([import('jspdf'), import('jspdf-autotable')]).then(
-    ([{ jsPDF }, autoTableModule]) => {
-      const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
-      const autoTable = autoTableModule.default;
-      const t = i18n.t.bind(i18n);
+  return Promise.all([
+    import('jspdf'),
+    import('jspdf-autotable'),
+    import('../../../../lib/jspdf-vietnamese-font'),
+  ]).then(async ([{ jsPDF }, autoTableModule, viMod]) => {
+    const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+    await viMod.ensureJsPDFVietnameseFont(doc);
+    const F = viMod.JSPDF_VI_FONT_FAMILY;
+    const autoTable = autoTableModule.default;
+    const t = i18n.t.bind(i18n);
 
-      doc.setFontSize(14);
-      doc.text(t('lichPhongVan.export.phieuTitle'), 14, 15);
-      doc.setFontSize(10);
-      doc.text(
-        `${data.ten_ung_vien ?? data.id_ung_vien} · ${t('lichPhongVan.detail.lichColVong')} ${data.so_vong}`,
-        14,
-        22
-      );
+    doc.setFontSize(14);
+    doc.text(t('lichPhongVan.export.phieuTitle'), 14, 15);
+    doc.setFontSize(10);
+    doc.text(
+      `${data.ten_ung_vien ?? data.id_ung_vien} · ${t('lichPhongVan.detail.lichColVong')} ${data.so_vong}`,
+      14,
+      22
+    );
 
-      const tableOpts = {
-        startY: 28 as number,
-        styles: { fontSize: 9, cellPadding: 3 },
-        headStyles: { fillColor: [59, 130, 246] },
-        columnStyles: { 0: { cellWidth: 50 }, 1: { cellWidth: 130 } },
-      };
+    const tableOpts = {
+      startY: 28 as number,
+      styles: { font: F, fontSize: 9, cellPadding: 3 },
+      headStyles: { font: F, fillColor: [59, 130, 246], fontStyle: 'bold' as const },
+      columnStyles: { 0: { cellWidth: 50 }, 1: { cellWidth: 130 } },
+    };
 
       const chiTiet = parseDanhGiaChiTiet(data.danh_gia_chi_tiet);
       const hasChiTiet = chiTiet != null;
@@ -74,13 +79,13 @@ export function exportPhieuDanhGiaPVToPDF(data: LichPhongVan): Promise<void> {
       if (hasChiTiet) {
         const addSection = (title: string, rows: [string, string][]) => {
           doc.setFontSize(10);
-          doc.setFont(undefined, 'bold');
+          doc.setFont(F, 'bold');
           doc.text(title, 14, startY);
           startY += 6;
           autoTable(doc, {
             body: rows,
             startY,
-            styles: { fontSize: 9, cellPadding: 3 },
+            styles: { font: F, fontSize: 9, cellPadding: 3 },
             columnStyles: { 0: { cellWidth: 50 }, 1: { cellWidth: 130 } },
           });
           startY = (doc as { lastAutoTable?: { finalY?: number } }).lastAutoTable?.finalY ?? startY;
@@ -115,7 +120,7 @@ export function exportPhieuDanhGiaPVToPDF(data: LichPhongVan): Promise<void> {
             [t('lichPhongVan.form.danhGiaNhanXet'), data.danh_gia_nhan_xet ?? '—'],
           ],
           startY,
-          styles: { fontSize: 9, cellPadding: 3 },
+          styles: { font: F, fontSize: 9, cellPadding: 3 },
           columnStyles: { 0: { cellWidth: 50 }, 1: { cellWidth: 130 } },
         });
         startY = (doc as { lastAutoTable?: { finalY?: number } }).lastAutoTable?.finalY ?? startY;
@@ -124,7 +129,7 @@ export function exportPhieuDanhGiaPVToPDF(data: LichPhongVan): Promise<void> {
 
       // Kết quả (mức lịch)
       doc.setFontSize(10);
-      doc.setFont(undefined, 'bold');
+      doc.setFont(F, 'bold');
       doc.text(t('lichPhongVan.store.ketQuaCol'), 14, startY);
       startY += 6;
       const ketQuaRows: [string, string][] = [[t('lichPhongVan.store.ketQuaCol'), data.ket_qua ?? '—']];
@@ -134,7 +139,7 @@ export function exportPhieuDanhGiaPVToPDF(data: LichPhongVan): Promise<void> {
       autoTable(doc, {
         body: ketQuaRows,
         startY,
-        styles: { fontSize: 9, cellPadding: 3 },
+        styles: { font: F, fontSize: 9, cellPadding: 3 },
         columnStyles: { 0: { cellWidth: 50 }, 1: { cellWidth: 130 } },
       });
 
@@ -142,16 +147,16 @@ export function exportPhieuDanhGiaPVToPDF(data: LichPhongVan): Promise<void> {
       if (hasChiTiet && data.ghi_chu && data.ghi_chu.trim() !== '') {
         finalY += 8;
         doc.setFontSize(10);
-        doc.setFont(undefined, 'bold');
+        doc.setFont(F, 'bold');
         doc.text(t('lichPhongVan.form.ghiChu'), 14, finalY);
         finalY += 6;
-        doc.setFont(undefined, 'normal');
+        doc.setFont(F, 'normal');
         const ghiChuLines = doc.splitTextToSize(data.ghi_chu, 170);
         doc.setFontSize(9);
         doc.text(ghiChuLines, 14, finalY);
         finalY += ghiChuLines.length * 5 + 4;
       }
-      doc.setFont(undefined, 'normal');
+      doc.setFont(F, 'normal');
       doc.setFontSize(8);
       doc.text(
         `${t('lichPhongVan.export.printedAt')}: ${formatDateTimeShort(new Date().toISOString())}`,
@@ -160,6 +165,5 @@ export function exportPhieuDanhGiaPVToPDF(data: LichPhongVan): Promise<void> {
       );
 
       doc.save(`phieu_danh_gia_phong_van_${data.id}_${getTodayISODate()}.pdf`);
-    }
-  );
+  });
 }

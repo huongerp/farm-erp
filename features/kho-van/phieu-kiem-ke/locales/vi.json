@@ -6,6 +6,8 @@
   "phieuKiemKe.store.performerCol": "Người thực hiện",
   "phieuKiemKe.store.approverCol": "Người duyệt",
   "phieuKiemKe.store.notesCol": "Ghi chú",
+  "phieuKiemKe.store.lineItemsCol": "Số mặt hàng",
+  "phieuKiemKe.store.totalBookQtyCol": "Tổng SL sổ",
   "phieuKiemKe.store.statusCol": "Trạng thái",
   "phieuKiemKe.store.updatedCol": "Cập nhật",
   "phieuKiemKe.form.createTitle": "Thêm phiếu kiểm kê",

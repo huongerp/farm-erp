@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
-import { FileText, Edit, Trash2, Package } from 'lucide-react';
+import { FileText, Edit, Trash2, Package, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePhieuDeXuatVatTuChiTietAll, usePhieuDeXuatVatTuById, usePhieuDeXuatVatTuList, useUpdatePhieuDeXuatVatTu } from '../hooks/use-phieu-de-xuat-vat-tu';
 import { usePhieuDeXuatVatTuViewScope } from '../hooks/use-phieu-de-xuat-vat-tu-view-scope';
@@ -13,11 +13,15 @@ import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { useAuthStore } from '../../../../store/useStore';
 import { useEmployees } from '../../../he-thong/nhan-vien/hooks/use-nhan-vien';
 import { getPhieuDeXuatVatTuById } from '../services/phieu-de-xuat-vat-tu-service';
+import type { Kho } from '../../danh-sach-kho/core/types';
 import type { PhieuDeXuatVatTu, PhieuDeXuatVatTuChiTietRow } from '../core/types';
 import type { PhieuDeXuatVatTuFormValues } from '../core/schema';
 import { trangThaiToFilterKey, getTienDoMhBadgeClass } from '../core/constants';
 import ChiTietTabToolbar from './ChiTietTabToolbar';
+import ExportDialog from '../../../../components/shared/ExportDialog';
 import GenericTable from '../../../../components/shared/GenericTable';
+import { useExportData } from '../../../../lib/useExportData';
+import { CHI_TIET_EXPORT_KEYS, getChiTietExportColumns, mapChiTietRowToExport } from '../utils/chi-tiet-export';
 import Tooltip from '../../../../components/ui/Tooltip';
 import Button from '../../../../components/ui/Button';
 import EmptyState from '../../../../components/shared/EmptyState';
@@ -78,9 +82,11 @@ const ChiTietTab: React.FC = () => {
     () => rows.filter((r) => viewablePhieuIds.has(r.id_phieu_de_xuat_vat_tu)),
     [rows, viewablePhieuIds]
   );
+
   const [viewingRow, setViewingRow] = useState<PhieuDeXuatVatTuChiTietRow | null>(null);
   const [editingRow, setEditingRow] = useState<PhieuDeXuatVatTuChiTietRow | null>(null);
   const [showChuyenTienDoModal, setShowChuyenTienDoModal] = useState(false);
+  const [showExport, setShowExport] = useState(false);
   /** Khi mở "Chuyển tiến độ" từ drawer chi tiết 1 dòng */
   const [singleRowForChuyenTienDo, setSingleRowForChuyenTienDo] = useState<PhieuDeXuatVatTuChiTietRow | null>(null);
 
@@ -291,6 +297,35 @@ const ChiTietTab: React.FC = () => {
     return result;
   }, [sortedRows, searchTerm, filters.status, filters.noiDeXuat, filters.nguoiDeXuat, filters.nguoiDuyet, filters.tienDoMh]);
 
+  const phieuById = useMemo(() => {
+    const m = new Map<string, PhieuDeXuatVatTu>();
+    allList.forEach((p) => m.set(p.id, p));
+    return m;
+  }, [allList]);
+
+  const khoById = useMemo(() => {
+    const m = new Map<string, Kho>();
+    khoList.forEach((k) => m.set(k.id, k));
+    return m;
+  }, [khoList]);
+
+  const exportColumns = useMemo(() => getChiTietExportColumns(t), [t]);
+
+  const exportMapFn = useCallback(
+    (row: PhieuDeXuatVatTuChiTietRow) =>
+      mapChiTietRowToExport(row, phieuById.get(row.id_phieu_de_xuat_vat_tu), employees, khoById),
+    [phieuById, employees, khoById]
+  );
+
+  const { exportData, paginatedData: paginatedExportData, selectedData: selectedExportData } = useExportData({
+    data: filteredRows,
+    isOpen: showExport,
+    mapFn: exportMapFn,
+    pagination,
+    selectedIds,
+    keyExtractor: (r) => r.id,
+  });
+
   const maxPage = Math.max(1, Math.ceil(filteredRows.length / pagination.pageSize));
   useEffect(() => {
     if (pagination.page > maxPage) setPage(maxPage);
@@ -472,16 +507,30 @@ const ChiTietTab: React.FC = () => {
   }
 
   const bulkActions = hasSelection ? (
-    <Button
-      type="button"
-      size="sm"
-      variant="secondary"
-      onClick={() => setShowChuyenTienDoModal(true)}
-      className="h-8 px-3 flex items-center gap-1.5 border border-border bg-card hover:bg-muted"
-    >
-      <Package size={14} className="shrink-0" />
-      <span className="text-xs font-medium">{t('phieuDeXuatVatTu.chiTietTab.tienDoAction')}</span>
-    </Button>
+    <>
+      <Tooltip content={t('common.export')} placement="bottom">
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() => setShowExport(true)}
+          disabled={filteredRows.length === 0}
+          className="h-8 w-8 p-0 flex items-center justify-center border-border text-muted-foreground hover:bg-muted/50 shrink-0 disabled:opacity-40"
+        >
+          <Download size={16} className="shrink-0" />
+        </Button>
+      </Tooltip>
+      <Button
+        type="button"
+        size="sm"
+        variant="secondary"
+        onClick={() => setShowChuyenTienDoModal(true)}
+        className="h-8 px-3 flex items-center gap-1.5 border border-border bg-card hover:bg-muted"
+      >
+        <Package size={14} className="shrink-0" />
+        <span className="text-xs font-medium">{t('phieuDeXuatVatTu.chiTietTab.tienDoAction')}</span>
+      </Button>
+    </>
   ) : null;
 
   return (
@@ -494,6 +543,8 @@ const ChiTietTab: React.FC = () => {
           selectedCount={selectedIds.size}
           onBack={handleBack}
           bulkActions={bulkActions}
+          onExport={() => setShowExport(true)}
+          exportDisabled={filteredRows.length === 0}
         />
         <GenericTable<PhieuDeXuatVatTuChiTietRow>
           data={filteredRows}
@@ -533,6 +584,17 @@ const ChiTietTab: React.FC = () => {
           setSingleRowForChuyenTienDo(null);
         }}
         onConfirm={handleChuyenTienDoConfirm}
+      />
+
+      <ExportDialog
+        open={showExport}
+        onClose={() => setShowExport(false)}
+        columns={exportColumns}
+        data={exportData}
+        paginatedData={paginatedExportData}
+        selectedData={selectedExportData}
+        fileName="Phieu_De_Xuat_Vat_Tu_Chi_Tiet"
+        visibleColumnKeys={CHI_TIET_EXPORT_KEYS}
       />
 
       <AnimatePresence>

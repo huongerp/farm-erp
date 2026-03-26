@@ -7,6 +7,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import Button from '../ui/Button';
 import { cn, getTodayISODate } from '../../lib/utils';
+import { ensureJsPDFVietnameseFont, JSPDF_VI_FONT_FAMILY } from '../../lib/jspdf-vietnamese-font';
 import { DIALOG_SIZE } from '../../lib/dialog-sizes';
 
 export interface ExportColumn {
@@ -96,6 +97,7 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
         }
       } else if (format === 'pdf') {
         const doc = new jsPDF({ orientation: exportCols.length > 5 ? 'l' : 'p', unit: 'mm', format: 'a4' });
+        await ensureJsPDFVietnameseFont(doc);
 
         // Title
         doc.setFontSize(12);
@@ -108,9 +110,14 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
           head: [exportCols.map(c => c.label)],
           body: rows.map(row => exportCols.map(c => String(row[c.key] ?? ''))),
           startY: 26,
-          styles: { fontSize: 7, cellPadding: 2 },
-          headStyles: { fillColor: [59, 130, 246], fontSize: 7, fontStyle: 'bold' },
-          alternateRowStyles: { fillColor: [248, 250, 252] },
+          styles: { font: JSPDF_VI_FONT_FAMILY, fontSize: 7, cellPadding: 2 },
+          headStyles: {
+            font: JSPDF_VI_FONT_FAMILY,
+            fillColor: [59, 130, 246],
+            fontSize: 7,
+            fontStyle: 'bold',
+          },
+          alternateRowStyles: { fillColor: [248, 250, 252], font: JSPDF_VI_FONT_FAMILY },
         });
 
         doc.save(`${fullName}.pdf`);

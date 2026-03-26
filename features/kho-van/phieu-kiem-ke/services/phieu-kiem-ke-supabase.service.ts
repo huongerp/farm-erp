@@ -82,8 +82,26 @@ function rowToChiTiet(
   };
 }
 
+async function getChiTietAggregatesKiemKe(): Promise<Record<string, { so_dong: number; tong_so_luong: number }>> {
+  const ctRows = await fetchAllRows<{ id_phieu_kiem_ke: number; so_luong_so: number | string | null }>((from, to) =>
+    supabase
+      .from(TABLE_CHI_TIET)
+      .select('id_phieu_kiem_ke, so_luong_so')
+      .order('id', { ascending: true })
+      .range(from, to)
+  );
+  const agg: Record<string, { so_dong: number; tong_so_luong: number }> = {};
+  ctRows.forEach((r) => {
+    const key = String(r.id_phieu_kiem_ke);
+    if (!agg[key]) agg[key] = { so_dong: 0, tong_so_luong: 0 };
+    agg[key].so_dong += 1;
+    agg[key].tong_so_luong += Number(r.so_luong_so) || 0;
+  });
+  return agg;
+}
+
 export async function getAllPhieuKiemKeSupabase(): Promise<PhieuKiemKe[]> {
-  const [rows, khoList, employees] = await Promise.all([
+  const [rows, khoList, employees, aggregates] = await Promise.all([
     fetchAllRows<PhieuDbRow>((from, to) =>
       supabase
         .from(TABLE_PHIEU)
@@ -94,6 +112,7 @@ export async function getAllPhieuKiemKeSupabase(): Promise<PhieuKiemKe[]> {
     ),
     getKhoList(),
     getEmployees(),
+    getChiTietAggregatesKiemKe(),
   ]);
   const khoMap: Record<string, string> = {};
   khoList.forEach((k) => {
@@ -107,7 +126,11 @@ export async function getAllPhieuKiemKeSupabase(): Promise<PhieuKiemKe[]> {
     const ten_kho = khoMap[String(row.id_kho)];
     const ten_nguoi_thuc_hien = nvMap[String(row.id_nguoi_thuc_hien)];
     const ten_nguoi_duyet = row.id_nguoi_duyet != null ? nvMap[String(row.id_nguoi_duyet)] ?? null : null;
-    return rowToPhieu(row, { ten_kho, ten_nguoi_thuc_hien, ten_nguoi_duyet });
+    const phieu = rowToPhieu(row, { ten_kho, ten_nguoi_thuc_hien, ten_nguoi_duyet });
+    const a = aggregates[String(row.id)];
+    phieu.tong_so_dong = a?.so_dong ?? 0;
+    phieu.tong_so_luong = a?.tong_so_luong ?? 0;
+    return phieu;
   });
 }
 
@@ -158,6 +181,8 @@ export async function getPhieuKiemKeByIdSupabase(id: string): Promise<PhieuKiemK
     return rowToChiTiet(ct, id, enrich);
   });
   phieu.chi_tiet = chi_tiet;
+  phieu.tong_so_dong = chi_tiet.length;
+  phieu.tong_so_luong = chi_tiet.reduce((s, c) => s + (Number(c.so_luong_so) || 0), 0);
   return phieu;
 }
 
@@ -279,5 +304,7 @@ export async function deletePhieuKiemKeManySupabase(ids: string[]): Promise<void
 export async function getNextSoPhieuPhieuKiemKe(): Promise<number> {
   const { data, error } = await supabase.rpc('get_next_so_phieu_phieu_kiem_ke');
   if (error) throw new Error(error.message);
-  return typeof data === 'number' ? data : Number(data) ?? 1;
+  if (typeof data === 'number' && Number.isFinite(data)) return data;
+  const n = Number(data);
+  return Number.isFinite(n) ? n : 1;
 }

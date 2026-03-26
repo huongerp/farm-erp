@@ -167,24 +167,6 @@ const TongHopDayDuTab: React.FC<TongHopDayDuTabProps> = ({ filters, onClearFilte
     return lienKetList.filter((r: LienKetDonHangRow) => !r.da_chuyen_don);
   }, [lienKetList, linkFilter]);
 
-  if (isError) {
-    return (
-      <div className="flex-1 flex items-center justify-center p-6">
-        <p className="text-sm text-destructive">{t('common.error') || 'Có lỗi khi tải dữ liệu.'}</p>
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex-1 flex flex-col min-h-0">
-        <div className="shrink-0 py-6 px-4">
-          <LoadingSpinnerWithText text={t('baoCaodeXuatVatTu.loading')} centered />
-        </div>
-      </div>
-    );
-  }
-
   const total = tongHopData?.total ?? 0;
   const choDuyet = tongHopData?.choDuyet ?? 0;
   const daDuyet = tongHopData?.daDuyet ?? 0;
@@ -193,33 +175,6 @@ const TongHopDayDuTab: React.FC<TongHopDayDuTabProps> = ({ filters, onClearFilte
   const byNoiDeXuat = tongHopData?.byNoiDeXuat ?? [];
   const byMonth = tongHopData?.byMonth ?? [];
   const hasAnyData = total > 0 || phieuList.length > 0 || lienKetList.length > 0;
-
-  if (!hasAnyData) {
-    return (
-      <div className="flex-1 flex items-center justify-center p-6">
-        <EmptyState
-          title={t('baoCaodeXuatVatTu.empty')}
-          description={t('baoCaodeXuatVatTu.emptyHint')}
-          icon={<BarChart3 size={48} className="text-muted-foreground/30" />}
-          action={
-            onClearFilters ? (
-              <button type="button" onClick={onClearFilters} className="text-sm font-medium text-primary hover:underline">
-                {t('common.clearFilters', { count: 1 })}
-              </button>
-            ) : undefined
-          }
-        />
-      </div>
-    );
-  }
-
-  const periodLabel =
-    filters.dateFrom && filters.dateTo
-      ? t('baoCaodeXuatVatTu.periodLabel', {
-          from: formatDateDisplay(filters.dateFrom),
-          to: formatDateDisplay(filters.dateTo),
-        })
-      : null;
 
   const daChuyenCount = useMemo(() => lienKetList.filter((r: LienKetDonHangRow) => r.da_chuyen_don).length, [lienKetList]);
   const chuaChuyenCount = useMemo(() => lienKetList.filter((r: LienKetDonHangRow) => !r.da_chuyen_don).length, [lienKetList]);
@@ -251,12 +206,58 @@ const TongHopDayDuTab: React.FC<TongHopDayDuTabProps> = ({ filters, onClearFilte
   );
 
   const pieLienKetData = useMemo(
-    () => [
-      { name: t('baoCaodeXuatVatTu.kpi.daChuyenDon'), value: daChuyenCount },
-      { name: t('baoCaodeXuatVatTu.kpi.chuaChuyenDon'), value: chuaChuyenCount },
-    ].filter((d) => d.value > 0),
+    () =>
+      [
+        { name: t('baoCaodeXuatVatTu.kpi.daChuyenDon'), value: daChuyenCount },
+        { name: t('baoCaodeXuatVatTu.kpi.chuaChuyenDon'), value: chuaChuyenCount },
+      ].filter((d) => d.value > 0),
     [daChuyenCount, chuaChuyenCount, t]
   );
+
+  const periodLabel =
+    filters?.dateFrom && filters?.dateTo
+      ? t('baoCaodeXuatVatTu.periodLabel', {
+          from: formatDateDisplay(filters.dateFrom),
+          to: formatDateDisplay(filters.dateTo),
+        })
+      : null;
+
+  if (isError) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-6">
+        <p className="text-sm text-destructive">{t('common.error') || 'Có lỗi khi tải dữ liệu.'}</p>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 flex flex-col min-h-0">
+        <div className="shrink-0 py-6 px-4">
+          <LoadingSpinnerWithText text={t('baoCaodeXuatVatTu.loading')} centered />
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasAnyData) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-6">
+        <EmptyState
+          title={t('baoCaodeXuatVatTu.empty')}
+          description={t('baoCaodeXuatVatTu.emptyHint')}
+          icon={<BarChart3 size={48} className="text-muted-foreground/30" />}
+          action={
+            onClearFilters ? (
+              <button type="button" onClick={onClearFilters} className="text-sm font-medium text-primary hover:underline">
+                {t('common.clearFilters', { count: 1 })}
+              </button>
+            ) : undefined
+          }
+        />
+      </div>
+    );
+  }
 
   const cards = [
     { labelKey: 'baoCaodeXuatVatTu.tongHop.totalPhieu', value: total, icon: FileText, iconClass: 'bg-primary/10 text-primary' },

@@ -45,7 +45,7 @@ export async function signInWithPassword(
     employee = await getEmployeeByEmail(authEmail);
   } catch (e) {
     const msg = e instanceof Error ? e.message : '';
-    throw new Error(msg || 'Không thể tải hồ sơ nhân viên.');
+    throw new Error(msg || 'Không thể tải hồ sơ nhân viên.', { cause: e });
   }
   if (!employee) {
     throw new Error(

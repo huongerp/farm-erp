@@ -6,6 +6,8 @@
   "phieuKiemKe.store.performerCol": "Performer",
   "phieuKiemKe.store.approverCol": "Approver",
   "phieuKiemKe.store.notesCol": "Notes",
+  "phieuKiemKe.store.lineItemsCol": "Line items",
+  "phieuKiemKe.store.totalBookQtyCol": "Total book qty",
   "phieuKiemKe.store.statusCol": "Status",
   "phieuKiemKe.store.updatedCol": "Updated",
   "phieuKiemKe.form.createTitle": "Add stocktaking",

@@ -135,14 +135,24 @@ export async function getNextSoPhieuSupabase(loai: LoaiPhieuKho): Promise<string
   return data;
 }
 
-/** Aggregate chi tiết: id_phieu_kho -> { so_dong, tong_tien } */
-async function getChiTietAggregates(): Promise<Record<string, { so_dong: number; tong_tien: number }>> {
-  const { data: ctRows } = await supabase.from(TABLE_CHI_TIET).select('id_phieu_kho, thanh_tien');
-  const agg: Record<string, { so_dong: number; tong_tien: number }> = {};
-  (ctRows ?? []).forEach((r: { id_phieu_kho: number; thanh_tien: number | null }) => {
+/** Aggregate chi tiết: id_phieu_kho -> { so_dong, tong_so_luong, tong_tien } (fetchAllRows: vượt giới hạn 1000 dòng PostgREST). */
+async function getChiTietAggregates(): Promise<
+  Record<string, { so_dong: number; tong_so_luong: number; tong_tien: number }>
+> {
+  const ctRows = await fetchAllRows<{ id_phieu_kho: number; so_luong: number | string | null; thanh_tien: number | null }>(
+    (from, to) =>
+      supabase
+        .from(TABLE_CHI_TIET)
+        .select('id_phieu_kho, so_luong, thanh_tien')
+        .order('id', { ascending: true })
+        .range(from, to)
+  );
+  const agg: Record<string, { so_dong: number; tong_so_luong: number; tong_tien: number }> = {};
+  ctRows.forEach((r) => {
     const key = String(r.id_phieu_kho);
-    if (!agg[key]) agg[key] = { so_dong: 0, tong_tien: 0 };
+    if (!agg[key]) agg[key] = { so_dong: 0, tong_so_luong: 0, tong_tien: 0 };
     agg[key].so_dong += 1;
+    agg[key].tong_so_luong += Number(r.so_luong) || 0;
     agg[key].tong_tien += Number(r.thanh_tien) || 0;
   });
   return agg;
@@ -172,10 +182,9 @@ export async function getAllPhieuKhoSupabase(): Promise<PhieuKho[]> {
     const ten_nguoi_tao = row.nguoi_tao_id != null ? nvMap[String(row.nguoi_tao_id)] : undefined;
     const phieu = rowToPhieu(row, { ten_kho, ten_kho_den, ten_nha_cung_cap, ten_khach_hang, ten_nguoi_tao });
     const agg = aggregates[String(row.id)];
-    if (agg) {
-      phieu.tong_so_dong = agg.so_dong;
-      phieu.tong_tien = agg.tong_tien;
-    }
+    phieu.tong_so_dong = agg?.so_dong ?? 0;
+    phieu.tong_so_luong = agg?.tong_so_luong ?? 0;
+    phieu.tong_tien = agg?.tong_tien ?? 0;
     return phieu;
   });
 }
@@ -220,6 +229,9 @@ export async function getPhieuKhoByIdSupabase(id: string): Promise<PhieuKho | nu
     return rowToChiTiet(ct, id, { ma_hang: h?.ma_hang, ten_danh_muc: h?.ten_danh_muc });
   });
   phieu.chi_tiet = chi_tiet;
+  phieu.tong_so_dong = chi_tiet.length;
+  phieu.tong_so_luong = chi_tiet.reduce((s, c) => s + (Number(c.so_luong) || 0), 0);
+  phieu.tong_tien = chi_tiet.reduce((s, c) => s + (Number(c.thanh_tien) || 0), 0);
   return phieu;
 }
 

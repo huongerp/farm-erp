@@ -76,8 +76,11 @@ export function exportPhieuToPDF(phieu: PhieuCapPhatThuHoi): Promise<void> {
   return Promise.all([
     import('jspdf'),
     import('jspdf-autotable'),
-  ]).then(([{ jsPDF }, autoTableModule]) => {
+    import('../../../../lib/jspdf-vietnamese-font'),
+  ]).then(async ([{ jsPDF }, autoTableModule, viMod]) => {
     const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+    await viMod.ensureJsPDFVietnameseFont(doc);
+    const F = viMod.JSPDF_VI_FONT_FAMILY;
     const autoTable = autoTableModule.default;
     const loaiLabel = getLoaiPhieuLabel(phieu.loai_phieu, i18n.t);
 
@@ -98,8 +101,8 @@ export function exportPhieuToPDF(phieu: PhieuCapPhatThuHoi): Promise<void> {
       head: [['Trường', 'Nội dung']],
       body: infoRows,
       startY: 34,
-      styles: { fontSize: 9, cellPadding: 3 },
-      headStyles: { fillColor: [59, 130, 246] },
+      styles: { font: F, fontSize: 9, cellPadding: 3 },
+      headStyles: { font: F, fillColor: [59, 130, 246], fontStyle: 'bold' },
       columnStyles: { 0: { cellWidth: 45 }, 1: { cellWidth: 135 } },
     });
 
@@ -121,8 +124,8 @@ export function exportPhieuToPDF(phieu: PhieuCapPhatThuHoi): Promise<void> {
         head: [['STT', 'Mã TS', 'Tên tài sản', 'Nơi lưu trước', 'Nơi lưu sau', 'Ghi chú']],
         body: detailRows,
         startY: finalY + 12,
-        styles: { fontSize: 8, cellPadding: 2.5 },
-        headStyles: { fillColor: [59, 130, 246] },
+        styles: { font: F, fontSize: 8, cellPadding: 2.5 },
+        headStyles: { font: F, fillColor: [59, 130, 246], fontStyle: 'bold' },
         columnStyles: {
           0: { cellWidth: 12 },
           1: { cellWidth: 25 },

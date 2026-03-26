@@ -90,6 +90,15 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ onViewDetail }) => {
     return days;
   }, [yearMonth, startPad, daysInMonth, startOfMonth, endOfMonth]);
 
+  const hasAnyEventInView = useMemo(() => {
+    return list.some((item) => {
+      const key = normalizeNgayToKey(item.ngay);
+      if (!key) return false;
+      const [y, m] = key.split('-').map(Number);
+      return y === viewDate.year() && m === viewDate.month() + 1;
+    });
+  }, [list, viewDate]);
+
   const goPrev = () => setViewDate((d) => d.subtract(1, 'month'));
   const goNext = () => setViewDate((d) => d.add(1, 'month'));
   const goToday = () => setViewDate(dayjs());
@@ -102,14 +111,6 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ onViewDetail }) => {
     );
   }
 
-  const hasAnyEventInView = useMemo(() => {
-    return list.some((item) => {
-      const key = normalizeNgayToKey(item.ngay);
-      if (!key) return false;
-      const [y, m] = key.split('-').map(Number);
-      return y === viewDate.year() && m === viewDate.month() + 1;
-    });
-  }, [list, viewDate]);
   const isEmptyMonth = list.length === 0;
   const noEventsThisMonth = !isEmptyMonth && !hasAnyEventInView;
 

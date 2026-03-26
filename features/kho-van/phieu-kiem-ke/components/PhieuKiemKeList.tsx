@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Edit, Trash2, FileText } from 'lucide-react';
-import { cn, formatDateShort } from '../../../../lib/utils';
+import { cn, formatDateShort, formatNumberVN } from '../../../../lib/utils';
 import type { PhieuKiemKe } from '../core/types';
 import { TRANG_THAI_KIEM_KE } from '../core/constants';
 import EmptyState from '../../../../components/shared/EmptyState';
@@ -104,6 +104,22 @@ const PhieuKiemKeList: React.FC<Props> = ({
         return (
           <td key={col.id} className="px-4 py-3 min-w-0" style={getColumnCellStyle(col)}>
             <span className="text-sm text-muted-foreground">{item.ten_nguoi_duyet ?? '—'}</span>
+          </td>
+        );
+      case 'tong_so_dong':
+        return (
+          <td key={col.id} className="px-4 py-3" style={getColumnCellStyle(col)}>
+            <span className="text-sm text-muted-foreground tabular-nums">
+              {formatNumberVN(item.tong_so_dong ?? 0, { maxFractionDigits: 0 })}
+            </span>
+          </td>
+        );
+      case 'tong_so_luong':
+        return (
+          <td key={col.id} className="px-4 py-3" style={getColumnCellStyle(col)}>
+            <span className="text-sm text-muted-foreground tabular-nums">
+              {formatNumberVN(item.tong_so_luong ?? 0)}
+            </span>
           </td>
         );
       case 'ghi_chu':

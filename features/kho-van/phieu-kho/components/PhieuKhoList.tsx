@@ -118,13 +118,19 @@ const PhieuKhoList: React.FC<Props> = ({
       case 'tong_so_dong':
         return (
           <span className="text-sm text-muted-foreground tabular-nums">
-            {item.tong_so_dong != null ? formatNumberVN(item.tong_so_dong, { maxFractionDigits: 0 }) : '—'}
+            {formatNumberVN(item.tong_so_dong ?? 0, { maxFractionDigits: 0 })}
+          </span>
+        );
+      case 'tong_so_luong':
+        return (
+          <span className="text-sm text-muted-foreground tabular-nums">
+            {formatNumberVN(item.tong_so_luong ?? 0)}
           </span>
         );
       case 'tong_tien':
         return (
           <span className="text-sm font-medium text-foreground tabular-nums">
-            {item.tong_tien != null ? formatNumberVN(item.tong_tien) : '—'}
+            {formatNumberVN(item.tong_tien ?? 0)}
           </span>
         );
       case 'tg_cap_nhat':
@@ -199,8 +205,11 @@ const PhieuKhoList: React.FC<Props> = ({
           {[item.ten_nguoi_tao, formatDateShort(item.tg_tao)].filter(Boolean).join(' · ') || '—'}
         </div>
       )}
+      <div className="text-xs text-muted-foreground tabular-nums mb-1">
+        {t('phieuKho.list.totalItems')}: {formatNumberVN(item.tong_so_dong ?? 0, { maxFractionDigits: 0 })} · {t('phieuKho.list.totalQuantity')}: {formatNumberVN(item.tong_so_luong ?? 0)}
+      </div>
       <div className="font-medium tabular-nums text-sm text-foreground mb-2">
-        {item.tong_tien != null ? formatNumberVN(item.tong_tien) : '—'}
+        {formatNumberVN(item.tong_tien ?? 0)}
       </div>
       {item.mo_ta && (
         <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{item.mo_ta}</p>

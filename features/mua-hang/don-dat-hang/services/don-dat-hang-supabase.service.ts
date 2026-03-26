@@ -370,5 +370,7 @@ export async function deleteDonDatHangManySupabase(ids: string[]): Promise<void>
 export async function getNextSoPoDonDatHangSupabase(): Promise<number> {
   const { data, error } = await supabase.rpc('get_next_so_po_don_dat_hang');
   if (error) throw new Error(error.message);
-  return Number(data) ?? 1;
+  if (typeof data === 'number' && Number.isFinite(data)) return data;
+  const n = Number(data);
+  return Number.isFinite(n) ? n : 1;
 }

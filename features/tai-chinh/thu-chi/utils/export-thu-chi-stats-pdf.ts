@@ -4,6 +4,7 @@
 import type { ThuChiStatsByLoai, ThuChiStatsByTaiKhoan, ThuChiStatsByDanhMuc } from '../services/thu-chi-service';
 import { formatCurrency } from '../../../../lib/utils';
 import i18n from '../../../../lib/i18n';
+import { ensureJsPDFVietnameseFont, JSPDF_VI_FONT_FAMILY } from '../../../../lib/jspdf-vietnamese-font';
 
 export interface ThuChiStatsExportMeta {
   dateRangeLabel: string;
@@ -30,17 +31,18 @@ export async function exportThuChiStatsToPdf(
   const autoTable = autoTableModule.default;
 
   const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+  await ensureJsPDFVietnameseFont(doc);
   const pageWidth = doc.internal.pageSize.getWidth();
   const marginX = 14;
   let y = 14;
 
   doc.setFontSize(14);
-  doc.setFont('helvetica', 'bold');
+  doc.setFont(JSPDF_VI_FONT_FAMILY, 'bold');
   doc.text(i18n.t('thuChi.stats.pdfTitle'), pageWidth / 2, y, { align: 'center' });
   y += 8;
 
   doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
+  doc.setFont(JSPDF_VI_FONT_FAMILY, 'normal');
   doc.setTextColor(100);
   doc.text(
     `${i18n.t('thuChi.stats.pdfPeriod')} ${meta.dateRangeLabel}  •  ${i18n.t('thuChi.stats.pdfExportDate')} ${meta.exportedAt}`,
@@ -70,8 +72,8 @@ export async function exportThuChiStatsToPdf(
     head: [loaiHead],
     body: loaiBody,
     theme: 'grid',
-    styles: { fontSize: 8, cellPadding: 2 },
-    headStyles: { fillColor: [59, 130, 246], fontSize: 8, fontStyle: 'bold', textColor: 255 },
+    styles: { font: JSPDF_VI_FONT_FAMILY, fontSize: 8, cellPadding: 2 },
+    headStyles: { font: JSPDF_VI_FONT_FAMILY, fillColor: [59, 130, 246], fontSize: 8, fontStyle: 'bold', textColor: 255 },
     margin: { left: marginX, right: marginX },
   });
 
@@ -85,7 +87,7 @@ export async function exportThuChiStatsToPdf(
       y = 14;
     }
     doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
+    doc.setFont(JSPDF_VI_FONT_FAMILY, 'bold');
     doc.text(i18n.t('thuChi.stats.byTaiKhoan'), marginX, y);
     y += 6;
 
@@ -107,8 +109,8 @@ export async function exportThuChiStatsToPdf(
       head: [tkHead],
       body: tkBody,
       theme: 'grid',
-      styles: { fontSize: 7, cellPadding: 2 },
-      headStyles: { fillColor: [59, 130, 246], fontSize: 7, fontStyle: 'bold', textColor: 255 },
+      styles: { font: JSPDF_VI_FONT_FAMILY, fontSize: 7, cellPadding: 2 },
+      headStyles: { font: JSPDF_VI_FONT_FAMILY, fillColor: [59, 130, 246], fontSize: 7, fontStyle: 'bold', textColor: 255 },
       margin: { left: marginX, right: marginX },
     });
 
@@ -123,7 +125,7 @@ export async function exportThuChiStatsToPdf(
       y = 14;
     }
     doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
+    doc.setFont(JSPDF_VI_FONT_FAMILY, 'bold');
     doc.text(i18n.t('thuChi.stats.byDanhMuc'), marginX, y);
     y += 6;
 
@@ -145,8 +147,8 @@ export async function exportThuChiStatsToPdf(
       head: [dmHead],
       body: dmBody,
       theme: 'grid',
-      styles: { fontSize: 7, cellPadding: 2 },
-      headStyles: { fillColor: [59, 130, 246], fontSize: 7, fontStyle: 'bold', textColor: 255 },
+      styles: { font: JSPDF_VI_FONT_FAMILY, fontSize: 7, cellPadding: 2 },
+      headStyles: { font: JSPDF_VI_FONT_FAMILY, fillColor: [59, 130, 246], fontSize: 7, fontStyle: 'bold', textColor: 255 },
       margin: { left: marginX, right: marginX },
     });
   }

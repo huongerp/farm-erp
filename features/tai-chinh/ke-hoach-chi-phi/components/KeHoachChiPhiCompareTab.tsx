@@ -21,7 +21,7 @@ function aggregatePlanByDanhMuc(rows: KeHoachChiPhi[]): MonthlyBudgetRow[] {
     const entry = byDanhMuc.get(r.id_danh_muc)!;
     for (let m = 1; m <= 12; m++) {
       const key = THANG_KEYS[m - 1];
-      entry.thang[m] = (entry.thang[m] ?? 0) + (Number(r[key]) ?? 0);
+      entry.thang[m] = (entry.thang[m] ?? 0) + (Number(r[key]) || 0);
     }
   }
   const result: MonthlyBudgetRow[] = [];

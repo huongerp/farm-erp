@@ -39,7 +39,7 @@ function rowToGroup(row: Row): PayrollAdminFormGroup {
   return {
     id: String(row.id),
     loai_phieu,
-    so_luong_thang: Number(row.so_luong_thang) ?? 0,
+    so_luong_thang: Number(row.so_luong_thang) || 0,
     ghi_chu: (row.ghi_chu as string) ?? undefined,
     trang_thai: normalizeTrangThai(row.trang_thai),
     tg_tao: (row.tg_tao as string) ?? new Date().toISOString(),

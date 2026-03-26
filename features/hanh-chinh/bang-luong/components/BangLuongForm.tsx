@@ -274,7 +274,10 @@ const BangLuongForm: React.FC<Props> = ({ initialRecord, defaultEmployeeId, onCl
               min={0}
               max={1}
               value={ty_le_kpi_khong_dat}
-              onChange={(e) => setTyLeKpiKhongDat(Number(e.target.value) ?? 0.7)}
+              onChange={(e) => {
+                const n = Number(e.target.value);
+                setTyLeKpiKhongDat(Number.isFinite(n) ? n : 0.7);
+              }}
               className="mt-1"
             />
           </div>

@@ -65,4 +65,8 @@ export interface PhieuDeXuatVatTu {
   tg_tao: string;
   tg_cap_nhat: string;
   chi_tiet?: PhieuDeXuatVatTuChiTiet[];
+  /** Tổng số dòng chi tiết (list). */
+  tong_so_dong?: number;
+  /** Tổng số lượng các dòng (list). */
+  tong_so_luong?: number;
 }

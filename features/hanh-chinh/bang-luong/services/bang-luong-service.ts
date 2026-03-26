@@ -61,7 +61,7 @@ function rowToRecord(
     luong_kpi: Number(row.luong_kpi) || 0,
     diem_kpi: Number(row.diem_kpi) || 0,
     kpi_dat: Boolean(row.kpi_dat),
-    ty_le_kpi_khong_dat: Number(row.ty_le_kpi_khong_dat) ?? 0.7,
+    ty_le_kpi_khong_dat: Number(row.ty_le_kpi_khong_dat) || 0.7,
     luong_kpi_tinh: Number(row.luong_kpi_tinh) || 0,
     luong_trach_nhiem: Number(row.luong_trach_nhiem) || 0,
     luong_trach_nhiem_tinh: Number(row.luong_trach_nhiem_tinh) || 0,

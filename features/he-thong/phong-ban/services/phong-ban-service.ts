@@ -20,7 +20,7 @@ function rowToDepartment(row: Record<string, unknown>): Department {
     id: String(row.id),
     ten_phong_ban: (row.ten_phong_ban as string) ?? '',
     chuc_nang: (row.chuc_nang as string) ?? null,
-    tt: Number(row.tt) ?? 0,
+    tt: Number(row.tt) || 0,
     trang_thai: normalizeTrangThai(row.trang_thai),
     tg_tao: (row.tg_tao as string) ?? new Date().toISOString(),
     tg_cap_nhat: (row.tg_cap_nhat as string) ?? null,

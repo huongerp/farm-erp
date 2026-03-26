@@ -112,7 +112,7 @@ export const getPlanRowsAggregatedByNam = async (nam: number): Promise<PlanRowAg
     const entry = byDanhMuc.get(r.id_danh_muc)!;
     for (let m = 1; m <= 12; m++) {
       const key = `thang_${m}` as keyof KeHoachChiPhi;
-      entry.thang[m] = (entry.thang[m] ?? 0) + (Number(r[key]) ?? 0);
+      entry.thang[m] = (entry.thang[m] ?? 0) + (Number(r[key]) || 0);
     }
   }
   const result: PlanRowAggregated[] = [];

@@ -89,6 +89,8 @@ export interface PhieuKho {
   chi_tiet?: PhieuKhoChiTiet[];
   /** Tổng số dòng chi tiết (dùng ở list). */
   tong_so_dong?: number;
+  /** Tổng số lượng (cộng dồn so_luong các dòng, dùng ở list). */
+  tong_so_luong?: number;
   /** Tổng thành tiền các dòng (dùng ở list). */
   tong_tien?: number;
 }

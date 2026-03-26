@@ -113,8 +113,27 @@ function rowToChiTiet(row: ChiTietDbRow, idPhieuStr: string, enrich?: { ma_hang?
   };
 }
 
+/** Gộp chi tiết cho danh sách phiếu (fetchAllRows tránh giới hạn 1000 dòng PostgREST). */
+async function getChiTietAggregatesDeXuat(): Promise<Record<string, { so_dong: number; tong_so_luong: number }>> {
+  const ctRows = await fetchAllRows<{ id_phieu_de_xuat_vat_tu: number; so_luong: number | string | null }>((from, to) =>
+    supabase
+      .from(TABLE_CHI_TIET)
+      .select('id_phieu_de_xuat_vat_tu, so_luong')
+      .order('id', { ascending: true })
+      .range(from, to)
+  );
+  const agg: Record<string, { so_dong: number; tong_so_luong: number }> = {};
+  ctRows.forEach((r) => {
+    const key = String(r.id_phieu_de_xuat_vat_tu);
+    if (!agg[key]) agg[key] = { so_dong: 0, tong_so_luong: 0 };
+    agg[key].so_dong += 1;
+    agg[key].tong_so_luong += Number(r.so_luong) || 0;
+  });
+  return agg;
+}
+
 export async function getAllPhieuDeXuatVatTuSupabase(): Promise<PhieuDeXuatVatTu[]> {
-  const [rows, khoList, employees] = await Promise.all([
+  const [rows, khoList, employees, aggregates] = await Promise.all([
     fetchAllRows<PhieuDbRow>((from, to) =>
       supabase
         .from(TABLE_PHIEU)
@@ -125,6 +144,7 @@ export async function getAllPhieuDeXuatVatTuSupabase(): Promise<PhieuDeXuatVatTu
     ),
     getKhoList(),
     getEmployees(),
+    getChiTietAggregatesDeXuat(),
   ]);
   const khoMap: Record<string, string> = {};
   khoList.forEach((k) => {
@@ -140,7 +160,11 @@ export async function getAllPhieuDeXuatVatTuSupabase(): Promise<PhieuDeXuatVatTu
     const ma_nguoi_de_xuat = nvMap[String(row.id_nguoi_de_xuat)]?.ma_nhan_vien;
     const ten_nguoi_duyet = row.id_nguoi_duyet != null ? nvMap[String(row.id_nguoi_duyet)]?.ho_ten ?? null : null;
     const ma_nguoi_duyet = row.id_nguoi_duyet != null ? nvMap[String(row.id_nguoi_duyet)]?.ma_nhan_vien ?? null : null;
-    return rowToPhieu(row, { ten_noi_de_xuat, ten_nguoi_de_xuat, ma_nguoi_de_xuat, ten_nguoi_duyet, ma_nguoi_duyet });
+    const phieu = rowToPhieu(row, { ten_noi_de_xuat, ten_nguoi_de_xuat, ma_nguoi_de_xuat, ten_nguoi_duyet, ma_nguoi_duyet });
+    const a = aggregates[String(row.id)];
+    phieu.tong_so_dong = a?.so_dong ?? 0;
+    phieu.tong_so_luong = a?.tong_so_luong ?? 0;
+    return phieu;
   });
 }
 
@@ -192,6 +216,8 @@ export async function getPhieuDeXuatVatTuByIdSupabase(id: string): Promise<Phieu
     return rowToChiTiet(ct, id, enrich);
   });
   phieu.chi_tiet = chi_tiet;
+  phieu.tong_so_dong = chi_tiet.length;
+  phieu.tong_so_luong = chi_tiet.reduce((s, c) => s + (Number(c.so_luong) || 0), 0);
   return phieu;
 }
 

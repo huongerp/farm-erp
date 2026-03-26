@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Edit, Trash2 } from 'lucide-react';
-import { cn, formatDateShort } from '../../../../lib/utils';
+import { cn, formatDateShort, formatNumberVN } from '../../../../lib/utils';
 import type { PhieuDeXuatVatTu } from '../core/types';
 import { TRANG_THAI_CHO_DUYET, TRANG_THAI_DA_DUYET, TRANG_THAI_KHONG_DUYET } from '../core/constants';
 import GenericTable from '../../../../components/shared/GenericTable';
@@ -94,6 +94,18 @@ const PhieuDeXuatVatTuList: React.FC<Props> = ({
         return <span className="text-sm text-muted-foreground">{item.ten_nguoi_de_xuat ?? '—'}</span>;
       case 'ten_nguoi_duyet':
         return <span className="text-sm text-muted-foreground">{item.ten_nguoi_duyet ?? '—'}</span>;
+      case 'tong_so_dong':
+        return (
+          <span className="text-sm text-muted-foreground tabular-nums">
+            {formatNumberVN(item.tong_so_dong ?? 0, { maxFractionDigits: 0 })}
+          </span>
+        );
+      case 'tong_so_luong':
+        return (
+          <span className="text-sm text-muted-foreground tabular-nums">
+            {formatNumberVN(item.tong_so_luong ?? 0)}
+          </span>
+        );
       case 'ghi_chu':
         return <span className="text-xs text-muted-foreground line-clamp-2">{item.ghi_chu ?? '—'}</span>;
       case 'tg_tao':
@@ -141,6 +153,9 @@ const PhieuDeXuatVatTuList: React.FC<Props> = ({
       </div>
       <div className="text-xs text-muted-foreground mb-1">{item.ngay} · {item.ten_noi_de_xuat ?? '—'}</div>
       <div className="text-sm text-foreground mb-1">{item.ten_nguoi_de_xuat ?? '—'}</div>
+      <div className="text-xs text-muted-foreground tabular-nums mb-1">
+        {t('phieuDeXuatVatTu.store.lineItemsCol')}: {formatNumberVN(item.tong_so_dong ?? 0, { maxFractionDigits: 0 })} · {t('phieuDeXuatVatTu.store.totalQuantityCol')}: {formatNumberVN(item.tong_so_luong ?? 0)}
+      </div>
       {item.ghi_chu && <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{item.ghi_chu}</p>}
       <div className="flex justify-between items-center pt-2 border-t border-border">
         <span className="text-xs text-muted-foreground">{formatDateShort(item.tg_cap_nhat)}</span>

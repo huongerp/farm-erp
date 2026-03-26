@@ -27,4 +27,7 @@ export interface PhieuKiemKe {
   tg_tao: string;
   tg_cap_nhat: string;
   chi_tiet?: PhieuKiemKeChiTiet[];
+  tong_so_dong?: number;
+  /** Tổng số lượng sổ (cộng so_luong_so), dùng ở list. */
+  tong_so_luong?: number;
 }

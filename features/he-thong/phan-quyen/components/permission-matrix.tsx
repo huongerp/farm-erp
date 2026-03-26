@@ -185,7 +185,14 @@ const MobileModulePicker: React.FC<{
           return (
             <div key={fn.id}>
               <button
-                onClick={() => setExpanded((prev) => { const n = new Set(prev); n.has(fn.id) ? n.delete(fn.id) : n.add(fn.id); return n; })}
+                onClick={() =>
+                  setExpanded((prev) => {
+                    const n = new Set(prev);
+                    if (n.has(fn.id)) n.delete(fn.id);
+                    else n.add(fn.id);
+                    return n;
+                  })
+                }
                 className={cn('w-full flex items-center gap-2.5 px-4 py-3 text-left border-b border-border/50', isExp ? 'bg-primary/[0.04]' : '')}
               >
                 <div className={cn('w-1 h-5 rounded-full shrink-0', isExp ? 'bg-primary' : 'bg-border')} />
@@ -353,7 +360,12 @@ const PermissionMatrix: React.FC<Props> = ({ roles, isLoading, canUpdate = true 
   };
 
   const toggleFunctionExpand = (id: string) => {
-    setExpandedFunctions((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+    setExpandedFunctions((prev) => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
   };
 
   const allRoleIds = roles.map((r) => r.id);

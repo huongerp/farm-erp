@@ -7,6 +7,7 @@ import type { DeptSummaryRow } from '../core/stats-types';
 import type { KpiItem } from '../core/stats-types';
 import { getTodayISODate } from '../../../../lib/utils';
 import i18n from '../../../../lib/i18n';
+import { ensureJsPDFVietnameseFont, JSPDF_VI_FONT_FAMILY } from '../../../../lib/jspdf-vietnamese-font';
 
 const PRIMARY_COLOR: [number, number, number] = [59, 130, 246];
 
@@ -78,17 +79,18 @@ export async function exportStatsToPdf(
   const autoTable = autoTableModule.default;
 
   const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+  await ensureJsPDFVietnameseFont(doc);
   const pageWidth = doc.internal.pageSize.getWidth();
   const marginX = 14;
   let y = 14;
 
   doc.setFontSize(14);
-  doc.setFont('helvetica', 'bold');
+  doc.setFont(JSPDF_VI_FONT_FAMILY, 'bold');
   doc.text(i18n.t('employee.report.pdfTitle'), pageWidth / 2, y, { align: 'center' });
   y += 8;
 
   doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
+  doc.setFont(JSPDF_VI_FONT_FAMILY, 'normal');
   doc.setTextColor(100);
   doc.text(`${i18n.t('employee.report.pdfPeriod')} ${meta.dateRangeLabel}  •  ${i18n.t('employee.report.pdfExportDate')} ${meta.exportedAt}`, pageWidth / 2, y, { align: 'center' });
   doc.setTextColor(0);
@@ -112,8 +114,8 @@ export async function exportStatsToPdf(
     head: [[i18n.t('employee.report.indicator'), i18n.t('employee.report.value'), i18n.t('employee.report.ratio')]],
     body: kpis.map((k) => [k.label, String(k.value), k.pct ?? '—']),
     theme: 'grid',
-    styles: { fontSize: 8, cellPadding: 2 },
-    headStyles: { fillColor: PRIMARY_COLOR, fontSize: 8, fontStyle: 'bold', textColor: 255 },
+    styles: { font: JSPDF_VI_FONT_FAMILY, fontSize: 8, cellPadding: 2 },
+    headStyles: { font: JSPDF_VI_FONT_FAMILY, fillColor: PRIMARY_COLOR, fontSize: 8, fontStyle: 'bold', textColor: 255 },
     margin: { left: marginX, right: marginX },
   });
 
@@ -126,7 +128,7 @@ export async function exportStatsToPdf(
       y = 14;
     }
     doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
+    doc.setFont(JSPDF_VI_FONT_FAMILY, 'bold');
     doc.text(i18n.t('employee.report.pdfByDepartment'), marginX, y);
     y += 6;
 
@@ -135,8 +137,8 @@ export async function exportStatsToPdf(
       head: [[i18n.t('employee.stats.department'), i18n.t('employee.stats.total'), i18n.t('employee.stats.workingShort'), i18n.t('employee.stats.probation'), i18n.t('employee.stats.leave'), i18n.t('employee.report.activeRatePercent')]],
       body: deptSummary.map((r) => [r.name, String(r.total), String(r.active), String(r.probation), String(r.inactive), r.rate]),
       theme: 'grid',
-      styles: { fontSize: 7, cellPadding: 2 },
-      headStyles: { fillColor: PRIMARY_COLOR, fontSize: 7, fontStyle: 'bold', textColor: 255 },
+      styles: { font: JSPDF_VI_FONT_FAMILY, fontSize: 7, cellPadding: 2 },
+      headStyles: { font: JSPDF_VI_FONT_FAMILY, fillColor: PRIMARY_COLOR, fontSize: 7, fontStyle: 'bold', textColor: 255 },
       margin: { left: marginX, right: marginX },
     });
   }

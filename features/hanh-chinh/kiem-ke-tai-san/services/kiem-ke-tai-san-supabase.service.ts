@@ -206,7 +206,9 @@ function computeKetQua(c: ChiTietKiemKe): KetQuaKiemKe {
 export async function getNextMaDotDotKiemKeTaiSan(): Promise<number> {
   const { data, error } = await supabase.rpc('get_next_ma_dot_dot_kiem_ke_tai_san');
   if (error) throw new Error(error.message);
-  return typeof data === 'number' ? data : Number(data) ?? 1;
+  if (typeof data === 'number' && Number.isFinite(data)) return data;
+  const n = Number(data);
+  return Number.isFinite(n) ? n : 1;
 }
 
 export async function getDotKiemKeListSupabase(params: GetDotKiemKeListParams = {}): Promise<DotKiemKe[]> {

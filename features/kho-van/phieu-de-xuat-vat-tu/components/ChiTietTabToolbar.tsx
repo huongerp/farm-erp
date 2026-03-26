@@ -1,6 +1,8 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Tag, Warehouse, User, UserCheck, Package } from 'lucide-react';
+import { Tag, Warehouse, User, UserCheck, Package, Download } from 'lucide-react';
+import Button from '../../../../components/ui/Button';
+import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import { useChiTietTabStore } from '../store/useChiTietTabStore';
@@ -17,6 +19,9 @@ interface Props {
   onBack?: () => void;
   /** Nút hành động khi có chọn dòng (vd. Tiến độ). */
   bulkActions?: React.ReactNode;
+  /** Xuất file (tab Chi tiết) — chuẩn ExportDialog. */
+  onExport?: () => void;
+  exportDisabled?: boolean;
 }
 
 const ChiTietTabToolbar: React.FC<Props> = ({
@@ -26,6 +31,8 @@ const ChiTietTabToolbar: React.FC<Props> = ({
   bulkActions,
   selectedCount,
   onBack,
+  onExport,
+  exportDisabled,
 }) => {
   const { t } = useTranslation();
   const {
@@ -302,6 +309,40 @@ const ChiTietTabToolbar: React.FC<Props> = ({
     </>
   );
 
+  const exportAction =
+    onExport != null ? (
+      <div className="hidden sm:flex items-center">
+        <Tooltip content={t('common.export')} placement="bottom">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onExport}
+            disabled={exportDisabled}
+            className="inline-flex min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-9 w-9 p-0 items-center justify-center border-border text-muted-foreground hover:bg-muted/50 disabled:opacity-40"
+          >
+            <Download className="w-4 h-4" />
+          </Button>
+        </Tooltip>
+      </div>
+    ) : null;
+
+  const mobileActions =
+    onExport != null
+      ? [
+          {
+            key: 'export',
+            label: t('common.export'),
+            icon: Download,
+            onClick: () => {
+              if (exportDisabled) return;
+              onExport();
+            },
+            description: '',
+          },
+        ]
+      : undefined;
+
   return (
     <GenericToolbar
       selectedCount={selectedCount}
@@ -311,6 +352,8 @@ const ChiTietTabToolbar: React.FC<Props> = ({
       filters={renderFilters}
       filterGroups={filterGroups}
       bulkActions={bulkActions}
+      actions={exportAction}
+      mobileActions={mobileActions}
       showBack={!!onBack}
       onBack={onBack}
       searchPlaceholder={t('phieuDeXuatVatTu.searchPlaceholder')}
