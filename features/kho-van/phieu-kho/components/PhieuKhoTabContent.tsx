@@ -6,7 +6,6 @@ import { usePhieuKhoList, usePhieuKhoById, useDeletePhieuKho, useDeletePhieuKhoM
 import { usePhieuKhoViewScope } from '../hooks/use-phieu-kho-view-scope';
 import { filterPhieuKhoListByViewScope } from '../utils/phieu-kho-view-scope-filter';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
-import { useAuthStore } from '../../../../store/useStore';
 import { usePhieuKhoStore } from '../store/usePhieuKhoStore';
 import { useListWithFilter } from '../../../../lib/hooks';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
@@ -30,12 +29,9 @@ interface Props {
   loai: LoaiPhieuKhoTab;
 }
 
-const TRANG_THAI_DA_DUYET = 'Đã duyệt' as const;
-
 const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
   const loaiDb = LOAI_TAB_TO_DB[loaiTab];
   const { t } = useTranslation();
-  const user = useAuthStore((s) => s.user);
   const { canCreate, canUpdate, canDelete, canApprove } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
   const {
@@ -81,15 +77,6 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
   const viewableList = useMemo(
     () => filterPhieuKhoListByViewScope(allList, viewScope, khoList),
     [allList, khoList, viewScope]
-  );
-
-  /** Sửa: quan_tri/thu_tu=1 luôn được sửa; người tạo phiếu chỉ được sửa khi phiếu chưa duyệt (Chờ duyệt). */
-  const canEditItem = useCallback(
-    (item: PhieuKho) =>
-      canUpdate &&
-      (viewScope.viewAll ||
-        (String(item.nguoi_tao_id) === String(user?.id) && item.trang_thai !== TRANG_THAI_DA_DUYET)),
-    [canUpdate, viewScope.viewAll, user?.id]
   );
 
   const listByLoai = useMemo(
@@ -219,7 +206,6 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
           onEdit={canUpdate ? handleEdit : undefined}
           onDelete={canDelete ? handleDelete : undefined}
           onView={setViewingItem}
-          canEditItem={canEditItem}
         />
       </div>
 
@@ -332,7 +318,7 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
             data={viewingPhieuFull ?? viewingItem}
             loai={loaiTab}
             onClose={() => setViewingItem(null)}
-            onEdit={canUpdate && canEditItem(viewingPhieuFull ?? viewingItem) ? handleEdit : undefined}
+            onEdit={canUpdate ? handleEdit : undefined}
             onDelete={canDelete ? handleDelete : undefined}
             onCopy={canCreate ? handleCopy : undefined}
             canApprove={canApprove}

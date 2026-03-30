@@ -15,7 +15,7 @@ import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
 import type { PhieuDeXuatVatTu } from '../core/types';
 import type { PhieuDeXuatVatTuFormValues } from '../core/schema';
-import { TRANG_THAI_CHO_DUYET, TRANG_THAI_DA_DUYET, trangThaiToFilterKey } from '../core/constants';
+import { TRANG_THAI_CHO_DUYET, trangThaiToFilterKey } from '../core/constants';
 import type { PhieuDeXuatVatTuFilters } from '../store/usePhieuDeXuatVatTuStore';
 import type { HangHoa } from '../../danh-sach-hang-hoa/core/types';
 import DanhSachHangHoaForm from '../../danh-sach-hang-hoa/components/DanhSachHangHoaForm';
@@ -81,14 +81,6 @@ const DanhSachTab: React.FC = () => {
     [allList, khoList, viewScope]
   );
 
-  /** Sửa: quan_tri/thu_tu=1 luôn được sửa; người tạo phiếu chỉ được sửa khi phiếu chưa duyệt (Chờ duyệt). */
-  const canEditItem = useCallback(
-    (item: PhieuDeXuatVatTu) =>
-      canUpdate &&
-      (viewScope.viewAll ||
-        (String(item.id_nguoi_de_xuat) === String(user?.id) && item.trang_thai !== TRANG_THAI_DA_DUYET)),
-    [canUpdate, viewScope.viewAll, user?.id]
-  );
   const isOverdue = useCallback(
     (item: PhieuDeXuatVatTu) =>
       !!(config?.bat_canh_bao_qua_han && item.trang_thai === TRANG_THAI_CHO_DUYET && (Math.floor((Date.now() - new Date(item.tg_tao).getTime()) / 86400000) > (config.thoi_han_duyet_ngay ?? 0))),
@@ -249,7 +241,6 @@ const DanhSachTab: React.FC = () => {
           onEdit={canUpdate ? handleEdit : undefined}
           onDelete={canDelete ? handleDelete : undefined}
           onView={setViewingItem}
-          canEditItem={canEditItem}
           isOverdue={isOverdue}
         />
       </div>
@@ -305,7 +296,7 @@ const DanhSachTab: React.FC = () => {
             } : undefined}
             onDelete={canDelete ? handleDelete : undefined}
             onApprove={canApprove ? handleApprove : undefined}
-            canEdit={canEditItem(viewingPhieuFull ?? viewingItem)}
+            canEdit={!!canUpdate}
             canDelete={canDelete}
             showOverdueBadge={!!(config?.bat_canh_bao_qua_han && viewingItem?.trang_thai === TRANG_THAI_CHO_DUYET && (Math.floor((Date.now() - new Date((viewingPhieuFull ?? viewingItem).tg_tao).getTime()) / 86400000) > (config.thoi_han_duyet_ngay ?? 0)))}
           />

@@ -1,18 +1,28 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Package, FileText } from 'lucide-react';
+import { AnimatePresence } from 'framer-motion';
+import { Package } from 'lucide-react';
 import { cn, formatDateShort, formatNumberVN } from '../../../../lib/utils';
+import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import { useChiTietPhieuKhoAll, usePhieuKhoById, usePhieuKhoList } from '../hooks/use-phieu-kho';
 import { usePhieuKhoViewScope } from '../hooks/use-phieu-kho-view-scope';
 import { filterPhieuKhoListByViewScope } from '../utils/phieu-kho-view-scope-filter';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
+import { useNhomDoiTacList, useTagList, useDoiTacList } from '../../danh-sach-doi-tac/hooks/use-doi-tac';
 import { useChiTietPhieuKhoStore } from '../store/useChiTietPhieuKhoStore';
-import type { ChiTietPhieuKhoFlat } from '../core/types';
+import type { ChiTietPhieuKhoFlat, PhieuKho, LoaiPhieuKhoTab } from '../core/types';
 import type { ChiTietPhieuKhoFilters } from '../store/useChiTietPhieuKhoStore';
+import type { Kho } from '../../danh-sach-kho/core/types';
+import type { HangHoa } from '../../danh-sach-hang-hoa/core/types';
+import type { DoiTac } from '../../danh-sach-doi-tac/core/types';
 import { getDateRangeFromPreset } from '../../../he-thong/nhan-vien/utils/stats-date-range';
 import type { DateRangePresetId } from '../../../he-thong/nhan-vien/core/stats-constants';
 import ChiTietPhieuKhoToolbar from './ChiTietPhieuKhoToolbar';
 import PhieuKhoDetail from './PhieuKhoDetail';
+import PhieuKhoForm from './PhieuKhoForm';
+import DanhSachKhoForm from '../../danh-sach-kho/components/danh-sach-kho-form';
+import DanhSachHangHoaForm from '../../danh-sach-hang-hoa/components/DanhSachHangHoaForm';
+import DoiTacForm from '../../danh-sach-doi-tac/components/DoiTacForm';
 import EmptyState from '../../../../components/shared/EmptyState';
 import ListPageSkeleton from '../../../../components/shared/ListPageSkeleton';
 import TablePaginationFooter from '../../../../components/shared/TablePaginationFooter';
@@ -54,9 +64,13 @@ function StatusBadge({ status }: { status: TrangThaiPhieuKho }) {
 
 const ChiTietPhieuKhoTab: React.FC = () => {
   const { t } = useTranslation();
+  const { canCreate, canUpdate, canDelete, canApprove } = useModulePermissionFromContext();
   const { data: allRows = [], isLoading } = useChiTietPhieuKhoAll();
   const { data: khoList = [] } = useKhoList();
   const { data: allList = [] } = usePhieuKhoList();
+  const { data: nhomList = [] } = useNhomDoiTacList();
+  const { data: tagList = [] } = useTagList();
+  const { data: doiTacListAll = [] } = useDoiTacList();
   const viewScope = usePhieuKhoViewScope();
 
   const viewablePhieuIds = useMemo(() => {
@@ -84,8 +98,25 @@ const ChiTietPhieuKhoTab: React.FC = () => {
   const confirm = useConfirmStore((s) => s.confirm);
   const [viewingPhieuId, setViewingPhieuId] = useState<string | null>(null);
   const [viewingLoai, setViewingLoai] = useState<'nhap' | 'xuat' | 'chuyen'>('nhap');
+  const [showForm, setShowForm] = useState(false);
+  const [editingItem, setEditingItem] = useState<PhieuKho | null>(null);
+  const [editingLoai, setEditingLoai] = useState<LoaiPhieuKhoTab>('nhap');
+  const [isCopyMode, setIsCopyMode] = useState(false);
+  const [showAddKho, setShowAddKho] = useState(false);
+  const [showAddHangHoa, setShowAddHangHoa] = useState(false);
+  const [showAddDoiTac, setShowAddDoiTac] = useState<'nha_cung_cap' | 'khach_hang' | null>(null);
+  const addKhoResolveRef = useRef<(k: Kho | null) => void>(null);
+  const addHangHoaResolveRef = useRef<(h: HangHoa | null) => void>(null);
+  const addDoiTacResolveRef = useRef<(d: DoiTac | null) => void>(null);
+
   const { data: viewingPhieu } = usePhieuKhoById(viewingPhieuId ?? undefined);
+  const { data: editingPhieuFull } = usePhieuKhoById(editingItem?.id);
   const deleteMutation = useDeletePhieuKho();
+
+  const nextThuTuDoiTac = useMemo(() => {
+    const list = showAddDoiTac ? doiTacListAll.filter((d) => d.loai_doi_tac === showAddDoiTac) : [];
+    return list.length === 0 ? 1 : Math.max(...list.map((d) => d.thu_tu ?? 0)) + 1;
+  }, [doiTacListAll, showAddDoiTac]);
 
   const dateRangeStr = useMemo(() => {
     const range = getDateRangeFromPreset(
@@ -165,7 +196,32 @@ const ChiTietPhieuKhoTab: React.FC = () => {
     setViewingPhieuId(null);
   }, []);
 
-  const handleDeleteFromDetail = useCallback(
+  const handleEdit = useCallback((item: PhieuKho) => {
+    setEditingItem(item);
+    setEditingLoai(LOAI_DB_TO_TAB[item.loai]);
+    setIsCopyMode(false);
+    setShowForm(true);
+  }, []);
+
+  const handleCopy = useCallback((item: PhieuKho) => {
+    const copy: PhieuKho = {
+      ...item,
+      id: '',
+      so_phieu: '',
+      trang_thai: 'Chờ duyệt',
+      trao_doi: undefined,
+      nguoi_tao_id: undefined,
+      ten_nguoi_tao: undefined,
+      ngay: new Date().toISOString().slice(0, 10),
+    };
+    setEditingItem(copy);
+    setEditingLoai(LOAI_DB_TO_TAB[item.loai]);
+    setIsCopyMode(true);
+    setViewingPhieuId(null);
+    setShowForm(true);
+  }, []);
+
+  const handleDelete = useCallback(
     (id: string) => {
       confirm({
         title: t('phieuKho.deleteTitle'),
@@ -343,13 +399,118 @@ const ChiTietPhieuKhoTab: React.FC = () => {
         )}
       </div>
 
-      {viewingPhieu && (
+      <AnimatePresence>
+        {showForm && (
+          <PhieuKhoForm
+            loai={editingLoai}
+            khoList={khoList}
+            initialData={isCopyMode ? editingItem : (editingPhieuFull ?? editingItem)}
+            onClose={() => {
+              setShowForm(false);
+              setEditingItem(null);
+              setIsCopyMode(false);
+            }}
+            onRequestAddKho={
+              () =>
+                new Promise<Kho | null>((resolve) => {
+                  addKhoResolveRef.current = resolve;
+                  setShowAddKho(true);
+                })
+            }
+            onRequestAddHangHoa={
+              () =>
+                new Promise<HangHoa | null>((resolve) => {
+                  addHangHoaResolveRef.current = resolve;
+                  setShowAddHangHoa(true);
+                })
+            }
+            onRequestAddNcc={
+              editingLoai === 'nhap'
+                ? () =>
+                    new Promise<DoiTac | null>((resolve) => {
+                      addDoiTacResolveRef.current = resolve;
+                      setShowAddDoiTac('nha_cung_cap');
+                    })
+                : undefined
+            }
+            onRequestAddKh={
+              editingLoai === 'xuat'
+                ? () =>
+                    new Promise<DoiTac | null>((resolve) => {
+                      addDoiTacResolveRef.current = resolve;
+                      setShowAddDoiTac('khach_hang');
+                    })
+                : undefined
+            }
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showAddKho && (
+          <DanhSachKhoForm
+            initialData={null}
+            onClose={() => {
+              setShowAddKho(false);
+              addKhoResolveRef.current?.(null);
+              addKhoResolveRef.current = null;
+            }}
+            onSuccessCreate={(kho) => {
+              addKhoResolveRef.current?.(kho);
+              setShowAddKho(false);
+              addKhoResolveRef.current = null;
+            }}
+          />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {showAddHangHoa && (
+          <DanhSachHangHoaForm
+            initialData={null}
+            onClose={() => {
+              setShowAddHangHoa(false);
+              addHangHoaResolveRef.current?.(null);
+              addHangHoaResolveRef.current = null;
+            }}
+            onSuccessCreate={(item) => {
+              addHangHoaResolveRef.current?.(item);
+              setShowAddHangHoa(false);
+              addHangHoaResolveRef.current = null;
+            }}
+          />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {showAddDoiTac && (
+          <DoiTacForm
+            initialData={null}
+            loaiDoiTac={showAddDoiTac}
+            nhomList={nhomList}
+            tagList={tagList}
+            defaultThuTu={nextThuTuDoiTac}
+            onClose={() => {
+              setShowAddDoiTac(null);
+              addDoiTacResolveRef.current?.(null);
+              addDoiTacResolveRef.current = null;
+            }}
+            onSuccessCreate={(item) => {
+              addDoiTacResolveRef.current?.(item);
+              setShowAddDoiTac(null);
+              addDoiTacResolveRef.current = null;
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      {viewingPhieu && !showForm && (
         <PhieuKhoDetail
           data={viewingPhieu}
           loai={viewingLoai}
           onClose={handleCloseDetail}
-          onEdit={() => handleCloseDetail()}
-          onDelete={handleDeleteFromDetail}
+          onEdit={canUpdate ? handleEdit : undefined}
+          onDelete={canDelete ? handleDelete : undefined}
+          onCopy={canCreate ? handleCopy : undefined}
+          canApprove={canApprove}
         />
       )}
     </div>
