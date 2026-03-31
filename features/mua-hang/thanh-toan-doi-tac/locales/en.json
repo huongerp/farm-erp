@@ -28,6 +28,7 @@
   "thanhToanDoiTac.stats.noDataHint": "Add payments in the List tab.",
   "thanhToanDoiTac.store.soPhieuCol": "Ref #",
   "thanhToanDoiTac.store.hangMucCol": "Payment item",
+  "thanhToanDoiTac.store.ngayXuLyCol": "Processed date",
   "thanhToanDoiTac.store.ngayCol": "Date",
   "thanhToanDoiTac.store.donViCol": "Unit",
   "thanhToanDoiTac.store.doiTacCol": "Partner",

@@ -67,6 +67,8 @@ const ThanhToanDoiTacList: React.FC<Props> = ({
         );
       case 'hang_muc_thanh_toan':
         return <span className="text-sm text-foreground truncate block">{item.hang_muc_thanh_toan}</span>;
+      case 'ngay_xu_ly':
+        return <span className="text-sm text-muted-foreground">{item.ngay_xu_ly ?? '—'}</span>;
       case 'ngay':
         return <span className="text-sm text-muted-foreground">{item.ngay}</span>;
       case 'ten_don_vi':

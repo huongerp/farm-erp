@@ -281,9 +281,18 @@ const PermissionMatrix: React.FC<Props> = ({ roles, isLoading, canUpdate = true 
   const selectedModule = useMemo(() => SYSTEM_MODULES_CONFIG.find((m) => m.id === selectedModuleId), [selectedModuleId]);
   const displayModuleName = selectedModule ? t(selectedModule.nameKey) : selectedModuleId;
 
-  /** Cột hành động hiển thị: thêm "Phê duyệt" chỉ khi module có chức năng phê duyệt */
+  /** Cột hành động hiển thị: thêm "Phê duyệt" chỉ khi module có chức năng phê duyệt, đặt trước "Quản trị" */
   const displayActions = useMemo(
-    () => (hasApproveFeature(selectedModuleId) ? [...MATRIX_ACTIONS, APPROVE_ACTION] : MATRIX_ACTIONS),
+    () => {
+      if (!hasApproveFeature(selectedModuleId)) return MATRIX_ACTIONS;
+      // Chèn approve trước admin: view, create, update, delete, approve, admin, all
+      const result: ActionType[] = [];
+      for (const a of MATRIX_ACTIONS) {
+        if (a === 'admin') result.push(APPROVE_ACTION as ActionType);
+        result.push(a);
+      }
+      return result;
+    },
     [selectedModuleId]
   );
 

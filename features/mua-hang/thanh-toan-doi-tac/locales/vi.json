@@ -28,6 +28,7 @@
   "thanhToanDoiTac.stats.noDataHint": "Thêm phiếu thanh toán ở tab Danh sách.",
   "thanhToanDoiTac.store.soPhieuCol": "Số phiếu",
   "thanhToanDoiTac.store.hangMucCol": "Hạng mục thanh toán",
+  "thanhToanDoiTac.store.ngayXuLyCol": "Ngày xử lý",
   "thanhToanDoiTac.store.ngayCol": "Ngày",
   "thanhToanDoiTac.store.donViCol": "Đơn vị",
   "thanhToanDoiTac.store.doiTacCol": "Đối tác",

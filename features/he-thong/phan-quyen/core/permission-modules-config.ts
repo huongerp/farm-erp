@@ -31,7 +31,8 @@ export const APPROVE_ACTION = 'approve' as const;
 /** Module có chức năng phê duyệt (nút Duyệt/Phê duyệt trên giao diện) */
 export const MODULES_WITH_APPROVE = new Set<string>([
   'kho-van/phieu-kho',
-  'kho-van/phieu-de-xuat-vat-tu',
+  /** Phiếu đề xuất vật tư: module_id trong phân quyền là mua-hang/... (URL /mua-hang/phieu-de-xuat-vat-tu) */
+  'mua-hang/phieu-de-xuat-vat-tu',
   'mua-hang/don-dat-hang',
   'mua-hang/thanh-toan-doi-tac',
 ]);
