@@ -78,9 +78,7 @@ export function farmThuHoachToKeHoachForm(row: FarmThuHoach): ThuHoachKeHoachFor
 }
 
 export function farmThuHoachToThucTeForm(row: FarmThuHoach): ThuHoachThucTeFormValues {
-  const v: Record<string, unknown> = {
-    trao_doi: row.trao_doi ?? '',
-  };
+  const v: Record<string, unknown> = {};
   for (const s of THU_HOACH_DAY_SUFFIXES) {
     v[`thuc_te_${s}`] = row[`thuc_te_${s}` as keyof FarmThuHoach] as number;
   }

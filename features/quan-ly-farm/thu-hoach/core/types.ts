@@ -28,6 +28,8 @@ export interface FarmThuHoach {
   ghi_chu: string | null;
   trao_doi: string | null;
   id_nguoi_tao: string | null;
+  /** Họ tên hiển thị — gắn từ danh mục nhân viên khi tải danh sách/chi tiết */
+  ten_nguoi_tao: string | null;
   tg_tao: string;
   tg_cap_nhat: string;
 }

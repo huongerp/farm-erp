@@ -2,6 +2,7 @@
  * Thu hoạch — Supabase fp_farm_thu_hoach
  */
 import { supabase, fetchAllRows } from '../../../../lib/supabase';
+import i18n from '../../../../lib/i18n';
 import type { FarmThuHoach } from '../core/types';
 import { THU_HOACH_DAY_SUFFIXES } from '../core/types';
 import type { ThuHoachKeHoachFormValues, ThuHoachThucTeFormValues } from '../core/schema';
@@ -66,6 +67,7 @@ function rowToModel(row: DbRow): FarmThuHoach {
     ghi_chu: row.ghi_chu ?? null,
     trao_doi: row.trao_doi ?? null,
     id_nguoi_tao: row.id_nguoi_tao != null ? String(row.id_nguoi_tao) : null,
+    ten_nguoi_tao: null,
     tg_tao: row.tg_tao ?? new Date().toISOString(),
     tg_cap_nhat: row.tg_cap_nhat ?? new Date().toISOString(),
   };
@@ -87,13 +89,48 @@ function keHoachPayload(values: ThuHoachKeHoachFormValues): Record<string, unkno
 }
 
 function thucTePayload(values: ThuHoachThucTeFormValues): Record<string, unknown> {
-  const p: Record<string, unknown> = {
-    trao_doi: values.trao_doi ?? null,
-  };
+  const p: Record<string, unknown> = {};
   for (const s of THU_HOACH_DAY_SUFFIXES) {
     p[`thuc_te_${s}`] = values[`thuc_te_${s}` as keyof ThuHoachThucTeFormValues] ?? 0;
   }
   return p;
+}
+
+/** Cùng định dạng dòng trao đổi phiếu kho: dd/mm/yyyy hh:mm:ss (24h). */
+function formatThuHoachTraoDoiTimestamp(d: Date = new Date()): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
+/** Nối thêm một dòng trao đổi (không ghi đè lịch sử). */
+export async function appendThuHoachTraoDoiSupabase(
+  id: string,
+  noiDung: string,
+  tenNguoiGhi: string
+): Promise<FarmThuHoach> {
+  const numId = Number(id);
+  if (!Number.isFinite(numId)) throw new Error('Invalid id');
+  const text = noiDung.trim();
+  if (!text) throw new Error(i18n.t('thuHoach.validation.traoDoiNoiDungRequired'));
+
+  const { data: rowCur, error: eSel } = await supabase.from(TABLE).select('trao_doi').eq('id', numId).maybeSingle();
+  if (eSel) throw new Error(eSel.message);
+  if (rowCur == null) throw new Error(i18n.t('thuHoach.service.notFound'));
+
+  const existing = String((rowCur as { trao_doi?: string | null }).trao_doi ?? '').trim();
+  const ts = formatThuHoachTraoDoiTimestamp();
+  const who = tenNguoiGhi.trim() || 'Người dùng';
+  const entry = `${ts} — ${who}: ${text}`;
+  const newTraoDoi = existing ? `${existing}\n${entry}` : entry;
+
+  const { data, error } = await supabase
+    .from(TABLE)
+    .update({ trao_doi: newTraoDoi })
+    .eq('id', numId)
+    .select('*')
+    .single();
+  if (error) throw new Error(error.message);
+  return rowToModel(data as DbRow);
 }
 
 export async function getAllThuHoachSupabase(): Promise<FarmThuHoach[]> {

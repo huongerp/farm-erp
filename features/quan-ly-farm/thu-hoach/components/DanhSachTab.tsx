@@ -76,6 +76,7 @@ const DanhSachTab: React.FC = () => {
     const matchesSearch =
       !q ||
       (item.ten_chi_nhanh?.toLowerCase().includes(q) ?? false) ||
+      (item.ten_nguoi_tao?.toLowerCase().includes(q) ?? false) ||
       (item.ghi_chu?.toLowerCase().includes(q) ?? false) ||
       String(item.nam).includes(q) ||
       String(item.tuan).includes(q);

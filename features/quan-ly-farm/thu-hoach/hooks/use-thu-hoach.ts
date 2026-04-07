@@ -10,6 +10,7 @@ import {
   updateThuHoachThucTe,
   deleteThuHoach,
   deleteThuHoachMany,
+  appendThuHoachTraoDoi,
 } from '../services/thu-hoach-service';
 import type { ThuHoachKeHoachFormValues, ThuHoachThucTeFormValues } from '../core/schema';
 
@@ -82,6 +83,28 @@ export function useDeleteThuHoach() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY_THU_HOACH });
       toast.success(i18n.t('thuHoach.toast.deleteSuccess'));
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+}
+
+export function useAppendThuHoachTraoDoi(onSuccess?: () => void) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      noiDung,
+      tenNguoiGhi,
+    }: {
+      id: string;
+      noiDung: string;
+      tenNguoiGhi: string;
+    }) => appendThuHoachTraoDoi(id, noiDung, tenNguoiGhi),
+    onSuccess: (_row, { id }) => {
+      qc.invalidateQueries({ queryKey: QUERY_KEY_THU_HOACH });
+      qc.invalidateQueries({ queryKey: [...QUERY_KEY_THU_HOACH, id] });
+      toast.success(i18n.t('thuHoach.toast.traoDoiSuccess'));
+      onSuccess?.();
     },
     onError: (err: Error) => toast.error(err.message),
   });

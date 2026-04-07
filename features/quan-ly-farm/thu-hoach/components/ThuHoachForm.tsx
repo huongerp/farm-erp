@@ -9,6 +9,8 @@ import Combobox from '../../../../components/ui/Combobox';
 import NumberInput from '../../../../components/ui/NumberInput';
 import { thuHoachKeHoachFormSchema, type ThuHoachKeHoachFormValues } from '../core/schema';
 import type { FarmThuHoach } from '../core/types';
+import { sumKeHoachWeek } from '../core/utils';
+import { formatNumberVN } from '../../../../lib/utils';
 import { THU_HOACH_DAY_SUFFIXES } from '../core/types';
 import {
   DAY_FORM_LABEL_KEY,
@@ -92,6 +94,11 @@ const ThuHoachForm: React.FC<Props> = ({
   });
 
   const idChiNhanh = watch('id_chi_nhanh');
+  const watchedForm = watch();
+  const tongKeHoachTuan = useMemo(
+    () => sumKeHoachWeek(watchedForm as Pick<FarmThuHoach, `ke_hoach_${(typeof THU_HOACH_DAY_SUFFIXES)[number]}`>),
+    [watchedForm]
+  );
 
   useEffect(() => {
     reset(defaultValues);
@@ -246,6 +253,10 @@ const ThuHoachForm: React.FC<Props> = ({
               />
             ))}
           </FormGrid>
+          <div className="mt-4 rounded-lg border border-border bg-muted/30 px-3 py-2.5 flex items-center justify-between gap-3">
+            <span className="text-sm font-medium text-foreground">{t('thuHoach.form.tongTuanKeHoach')}</span>
+            <span className="text-sm tabular-nums font-semibold text-primary">{formatNumberVN(tongKeHoachTuan)}</span>
+          </div>
         </FormSection>
       </form>
     </GenericDrawer>

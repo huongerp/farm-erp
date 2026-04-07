@@ -61,10 +61,19 @@ export const thuHoachKeHoachFormSchema = z.object({
 
 export type ThuHoachKeHoachFormValues = z.infer<typeof thuHoachKeHoachFormSchema>;
 
-/** Popup Thực tế */
+/** Popup Thực tế — chỉ cập nhật thực tế theo ngày (trao đổi chỉnh qua popup riêng trên detail). */
 export const thuHoachThucTeFormSchema = z.object({
   ...thucTeShape(),
-  trao_doi: z.string().optional(),
 });
 
 export type ThuHoachThucTeFormValues = z.infer<typeof thuHoachThucTeFormSchema>;
+
+/** Popup thêm dòng trao đổi (nối vào lịch sử). */
+export const thuHoachTraoDoiAppendSchema = z.object({
+  noi_dung: z
+    .string()
+    .trim()
+    .min(1, { message: reqMsg('thuHoach.validation.traoDoiNoiDungRequired') }),
+});
+
+export type ThuHoachTraoDoiAppendValues = z.infer<typeof thuHoachTraoDoiAppendSchema>;

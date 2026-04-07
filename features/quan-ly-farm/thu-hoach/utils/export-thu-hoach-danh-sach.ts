@@ -32,6 +32,7 @@ export function mapFarmThuHoachListRow(p: FarmThuHoach): Record<string, unknown>
   row.ghi_chu = p.ghi_chu ?? '';
   row.trao_doi = p.trao_doi ?? '';
   row.id_nguoi_tao = p.id_nguoi_tao ?? '';
+  row.ten_nguoi_tao = p.ten_nguoi_tao ?? '';
   row.tg_tao = p.tg_tao ?? '';
   row.tg_cap_nhat = p.tg_cap_nhat ?? '';
   return row;
@@ -60,6 +61,7 @@ export function getExportColumnsThuHoachList(t: TFunction): ExportColumn[] {
     { key: 'ghi_chu', label: t('thuHoach.export.list.ghi_chu') },
     { key: 'trao_doi', label: t('thuHoach.export.list.trao_doi') },
     { key: 'id_nguoi_tao', label: t('thuHoach.export.list.id_nguoi_tao') },
+    { key: 'ten_nguoi_tao', label: t('thuHoach.export.list.ten_nguoi_tao') },
     { key: 'tg_tao', label: t('thuHoach.export.list.tg_tao') },
     { key: 'tg_cap_nhat', label: t('thuHoach.export.list.tg_cap_nhat') }
   );

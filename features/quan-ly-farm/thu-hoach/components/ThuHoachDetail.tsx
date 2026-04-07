@@ -1,12 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
-import { Edit, Trash2, Sprout, ClipboardList } from 'lucide-react';
+import { Edit, Trash2, Sprout, ClipboardList, MessageSquare } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import type { FarmThuHoach } from '../core/types';
 import { THU_HOACH_DAY_SUFFIXES } from '../core/types';
-import { DAY_FORM_LABEL_KEY } from '../core/form-mappers';
-import { formatDateTimeShort, formatNumberVN } from '../../../../lib/utils';
+import { cn, formatDateTimeShort, formatNumberVN } from '../../../../lib/utils';
+import { sumKeHoachWeek, sumThucTeWeek, sumChenhLechWeek, thuHoachDayColumnLabel } from '../core/utils';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
 import DetailToolbar, { type DetailToolbarAction } from '../../../../components/shared/DetailToolbar';
 import DetailSection from '../../../../components/shared/DetailSection';
@@ -14,6 +14,7 @@ import DetailField from '../../../../components/shared/DetailField';
 import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
 import { BTN_CLOSE, BTN_EDIT, BTN_DELETE } from '../../../../lib/button-labels';
 import ThucTeDialog from './ThucTeDialog';
+import ThuHoachTraoDoiDialog from './ThuHoachTraoDoiDialog';
 
 interface Props {
   data: FarmThuHoach;
@@ -34,6 +35,7 @@ const ThuHoachDetail: React.FC<Props> = ({
 }) => {
   const { t } = useTranslation();
   const [showThucTe, setShowThucTe] = useState(false);
+  const [showTraoDoi, setShowTraoDoi] = useState(false);
 
   const toolbarActions: DetailToolbarAction[] = useMemo(() => {
     const actions: DetailToolbarAction[] = [];
@@ -43,6 +45,12 @@ const ThuHoachDetail: React.FC<Props> = ({
         icon: <ClipboardList size={16} />,
         onClick: () => setShowThucTe(true),
         variant: 'info',
+      });
+      actions.push({
+        label: t('thuHoach.detail.toolbar.traoDoi'),
+        icon: <MessageSquare size={16} />,
+        onClick: () => setShowTraoDoi(true),
+        variant: 'secondary',
       });
     }
     return actions;
@@ -100,36 +108,126 @@ const ThuHoachDetail: React.FC<Props> = ({
             <DetailFieldGrid cols={2}>
               <DetailField label={t('thuHoach.store.colNam')} value={String(data.nam)} />
               <DetailField label={t('thuHoach.store.colTuan')} value={String(data.tuan)} />
-              <DetailField label={t('thuHoach.store.colBranch')} value={data.ten_chi_nhanh ?? '—'} />
+              <DetailField
+                label={t('thuHoach.store.colBranch')}
+                value={data.ten_chi_nhanh ?? '—'}
+                className="sm:col-span-2"
+              />
             </DetailFieldGrid>
-            <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {THU_HOACH_DAY_SUFFIXES.map((s) => (
-                <DetailField
-                  key={s}
-                  label={t(DAY_FORM_LABEL_KEY[s])}
-                  value={formatNumberVN(Number(data[`ke_hoach_${s}` as keyof FarmThuHoach] ?? 0))}
-                />
-              ))}
-            </div>
           </DetailSection>
 
-          <DetailSection title={t('thuHoach.detail.thucTe')} icon={<ClipboardList size={14} />} variant="primary">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {THU_HOACH_DAY_SUFFIXES.map((s) => (
-                <DetailField
-                  key={s}
-                  label={t(DAY_FORM_LABEL_KEY[s])}
-                  value={formatNumberVN(Number(data[`thuc_te_${s}` as keyof FarmThuHoach] ?? 0))}
-                />
-              ))}
+          <DetailSection title={t('thuHoach.detail.dailyBreakdown')} icon={<ClipboardList size={14} />} variant="primary">
+            <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border border-border bg-muted/25 px-3 py-2 text-sm tabular-nums">
+              <span className="font-medium text-foreground shrink-0">{t('thuHoach.detail.weekTotals')}</span>
+              <span className="whitespace-nowrap">
+                <span className="text-muted-foreground">{t('thuHoach.stats.abbrKH')}</span>{' '}
+                {formatNumberVN(sumKeHoachWeek(data))}
+              </span>
+              <span className="whitespace-nowrap">
+                <span className="text-muted-foreground">{t('thuHoach.stats.abbrTT')}</span>{' '}
+                {formatNumberVN(sumThucTeWeek(data))}
+              </span>
+              <span
+                className={cn(
+                  'whitespace-nowrap font-medium',
+                  sumChenhLechWeek(data) >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+                )}
+              >
+                <span className="text-muted-foreground font-normal">{t('thuHoach.stats.abbrCL')}</span>{' '}
+                {formatNumberVN(sumChenhLechWeek(data))}
+              </span>
+            </div>
+            <div className="overflow-x-auto rounded-lg border border-border/80 bg-card -mx-0.5">
+              <table className="w-full min-w-[520px] text-sm border-collapse">
+                <thead>
+                  <tr className="border-b border-border bg-muted/40">
+                    <th
+                      scope="col"
+                      className="sticky left-0 z-[1] bg-muted/40 px-2 py-2 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap"
+                    >
+                      {t('thuHoach.detail.dailyTableMetric')}
+                    </th>
+                    {THU_HOACH_DAY_SUFFIXES.map((s) => (
+                      <th
+                        key={s}
+                        scope="col"
+                        className="px-2 py-2 text-center text-xs font-semibold text-foreground tabular-nums whitespace-nowrap"
+                      >
+                        {thuHoachDayColumnLabel(s)}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b border-border/70">
+                    <th
+                      scope="row"
+                      className="sticky left-0 z-[1] bg-card px-2 py-2 text-left text-xs font-medium text-muted-foreground whitespace-nowrap border-r border-border/50"
+                    >
+                      {t('thuHoach.detail.keHoach')}
+                    </th>
+                    {THU_HOACH_DAY_SUFFIXES.map((s) => (
+                      <td key={s} className="px-2 py-2 text-center tabular-nums text-foreground">
+                        {formatNumberVN(Number(data[`ke_hoach_${s}` as keyof FarmThuHoach] ?? 0))}
+                      </td>
+                    ))}
+                  </tr>
+                  <tr className="border-b border-border/70">
+                    <th
+                      scope="row"
+                      className="sticky left-0 z-[1] bg-card px-2 py-2 text-left text-xs font-medium text-muted-foreground whitespace-nowrap border-r border-border/50"
+                    >
+                      {t('thuHoach.detail.thucTe')}
+                    </th>
+                    {THU_HOACH_DAY_SUFFIXES.map((s) => (
+                      <td key={s} className="px-2 py-2 text-center tabular-nums text-foreground">
+                        {formatNumberVN(Number(data[`thuc_te_${s}` as keyof FarmThuHoach] ?? 0))}
+                      </td>
+                    ))}
+                  </tr>
+                  <tr>
+                    <th
+                      scope="row"
+                      className="sticky left-0 z-[1] bg-card px-2 py-2 text-left text-xs font-medium text-muted-foreground whitespace-nowrap border-r border-border/50"
+                    >
+                      {t('thuHoach.detail.chenhLechRow')}
+                    </th>
+                    {THU_HOACH_DAY_SUFFIXES.map((s) => {
+                      const kh = Number(data[`ke_hoach_${s}` as keyof FarmThuHoach] ?? 0);
+                      const tt = Number(data[`thuc_te_${s}` as keyof FarmThuHoach] ?? 0);
+                      const cl = tt - kh;
+                      return (
+                        <td
+                          key={s}
+                          className={cn(
+                            'px-2 py-2 text-center tabular-nums font-medium',
+                            cl >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+                          )}
+                        >
+                          {formatNumberVN(cl)}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </DetailSection>
 
           <DetailSection title={t('thuHoach.form.ghiChu')} variant="muted">
             <DetailFieldGrid cols={1}>
               <DetailField label={t('thuHoach.form.ghiChu')} value={data.ghi_chu ?? ''} emptyText="—" />
-              <DetailField label={t('thuHoach.detail.traoDoi')} value={data.trao_doi ?? ''} emptyText="—" />
             </DetailFieldGrid>
+          </DetailSection>
+
+          <DetailSection title={t('thuHoach.detail.traoDoi')} icon={<MessageSquare size={14} />} variant="muted">
+            {(data.trao_doi ?? '').trim() ? (
+              <pre className="text-sm whitespace-pre-wrap break-words text-foreground font-sans m-0 leading-relaxed">
+                {data.trao_doi}
+              </pre>
+            ) : (
+              <p className="text-sm text-muted-foreground/70 italic m-0">—</p>
+            )}
           </DetailSection>
 
           <DetailSection title={t('thuHoach.store.colUpdated')} variant="muted">
@@ -140,6 +238,7 @@ const ThuHoachDetail: React.FC<Props> = ({
 
       <AnimatePresence>
         {showThucTe && <ThucTeDialog data={data} onClose={() => setShowThucTe(false)} />}
+        {showTraoDoi && <ThuHoachTraoDoiDialog data={data} onClose={() => setShowTraoDoi(false)} />}
       </AnimatePresence>
     </>
   );
