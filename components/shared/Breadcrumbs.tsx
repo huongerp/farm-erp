@@ -9,6 +9,7 @@ import { NHAN_SU_MODULE_SLUGS, getNhanSuModuleTitleKeyBySlug } from '../../lib/n
 import { MARKETING_MODULE_SLUGS, getMarketingModuleTitleKeyBySlug } from '../../lib/marketing-menu';
 import { TAI_CHINH_MODULE_SLUGS, getTaiChinhModuleTitleKeyBySlug } from '../../lib/tai-chinh-menu';
 import { MUA_HANG_MODULE_SLUGS, getMuaHangModuleTitleKeyBySlug } from '../../lib/mua-hang-menu';
+import { QUAN_LY_FARM_MODULE_SLUGS, getQuanLyFarmModuleTitleKeyBySlug } from '../../lib/quan-ly-farm-menu';
 import { DIEU_HANH_MODULE_SLUGS, getDieuHanhModuleTitleKeyBySlug } from '../../lib/dieu-hanh-menu';
 
 interface RouteConfig {
@@ -49,6 +50,12 @@ interface RouteConfig {
       { label: t(getMuaHangModuleTitleKeyBySlug(slug)), parentPath: '/mua-hang' },
     ])
   );
+  const quanLyFarmModuleRoutes = Object.fromEntries(
+    QUAN_LY_FARM_MODULE_SLUGS.map((slug) => [
+      `/quan-ly-farm/${slug}`,
+      { label: t(getQuanLyFarmModuleTitleKeyBySlug(slug)), parentPath: '/quan-ly-farm' },
+    ])
+  );
   const dieuHanhModuleRoutes = Object.fromEntries(
     DIEU_HANH_MODULE_SLUGS.map((slug) => [
       `/dieu-hanh/${slug}`,
@@ -68,6 +75,7 @@ interface RouteConfig {
     '/marketing': { label: t('breadcrumb.marketing'), parentPath: '/' },
     '/tai-chinh': { label: t('breadcrumb.taiChinh'), parentPath: '/' },
     '/mua-hang': { label: t('breadcrumb.muaHang'), parentPath: '/' },
+    '/quan-ly-farm': { label: t('breadcrumb.quanLyFarm'), parentPath: '/' },
     '/thiet-bi': { label: t('breadcrumb.deviceManagement') },
 
     // --- THIẾT BỊ ---
@@ -109,6 +117,9 @@ interface RouteConfig {
 
     // --- MUA HÀNG (module con, gồm cả quản lý kho) ---
     ...muaHangModuleRoutes,
+
+    // --- QUẢN LÝ FARM (module con) ---
+    ...quanLyFarmModuleRoutes,
 
     // --- ĐIỀU HÀNH (module con) ---
     ...dieuHanhModuleRoutes,

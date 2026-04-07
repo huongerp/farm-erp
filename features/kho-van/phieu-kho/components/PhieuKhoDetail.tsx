@@ -14,6 +14,7 @@ import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
 import GenericSubTableSection from '../../../../components/shared/GenericSubTableSection';
 import { BTN_CLOSE, BTN_EDIT, BTN_DELETE } from '../../../../lib/button-labels';
 import { useUpdatePhieuKhoTrangThai } from '../hooks/use-phieu-kho';
+import { useAuthStore } from '../../../../store/useStore';
 
 interface Props {
   data: PhieuKho;
@@ -28,6 +29,11 @@ interface Props {
 
 const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete, onCopy, canApprove = true }) => {
   const { t } = useTranslation();
+  const user = useAuthStore((s) => s.user);
+  const nguoiDuyetId = user?.id != null ? Number(user.id) : null;
+  const nguoiDuyetIdValid = nguoiDuyetId != null && !Number.isNaN(nguoiDuyetId) ? nguoiDuyetId : null;
+  const nguoiDuyetTen =
+    user?.ho_va_ten?.trim() || user?.full_name?.trim() || user?.email?.trim() || '';
   const [showDuyetPopup, setShowDuyetPopup] = useState(false);
   const [duyetGhiChu, setDuyetGhiChu] = useState('');
   const [duyetOption, setDuyetOption] = useState<'Đã duyệt' | 'Không duyệt'>('Đã duyệt');
@@ -201,7 +207,7 @@ const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete
             {data.trao_doi && (
               <DetailField
                 label={t('phieuKho.detail.traoDoi')}
-                value={data.trao_doi}
+                value={<span className="whitespace-pre-line break-words">{data.trao_doi}</span>}
                 icon={<FileText size={12} />}
                 className="col-span-1 sm:col-span-2"
               />
@@ -211,6 +217,13 @@ const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete
               value={data.ten_nguoi_tao ?? '—'}
               icon={<FileText size={12} />}
             />
+            {(data.ten_nguoi_duyet != null && data.ten_nguoi_duyet !== '') || data.id_nguoi_duyet != null ? (
+              <DetailField
+                label={t('phieuKho.detail.approver')}
+                value={data.ten_nguoi_duyet ?? (data.id_nguoi_duyet != null ? `#${data.id_nguoi_duyet}` : '—')}
+                icon={<CheckCircle size={12} />}
+              />
+            ) : null}
           </DetailFieldGrid>
         </DetailSection>
 
@@ -328,7 +341,13 @@ const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete
               <Button
                 onClick={() => {
                   updateTrangThaiMutation.mutate(
-                    { id: data.id, trang_thai: duyetOption, ghi_chu: duyetGhiChu.trim() || undefined },
+                    {
+                      id: data.id,
+                      trang_thai: duyetOption,
+                      ghi_chu: duyetGhiChu.trim() || undefined,
+                      id_nguoi_duyet: nguoiDuyetIdValid,
+                      ten_nguoi_duyet_hien_thi: nguoiDuyetTen || undefined,
+                    },
                     { onSuccess: () => setShowDuyetPopup(false) }
                   );
                 }}

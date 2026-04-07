@@ -4,6 +4,7 @@ import {
   Copyright,
   FileText,
   ShoppingCart,
+  Sprout,
   Layers,
   Sparkles,
 } from 'lucide-react';
@@ -44,6 +45,13 @@ export const SIDEBAR_MENU: MenuItem[] = [
     icon: ShoppingCart,
     gradient: 'bg-gradient-to-br from-orange-600 to-orange-800',
   },
+  {
+    path: '/quan-ly-farm',
+    nameKey: 'nav.quanLyFarm',
+    descriptionKey: 'page.home.quanLyFarmDesc',
+    icon: Sprout,
+    gradient: 'bg-gradient-to-br from-emerald-600 to-emerald-900',
+  },
   // Kho vận đã chuyển vào submenu Mua hàng
   // Ẩn: Điều hành
   // { path: '/dieu-hanh', nameKey: 'nav.dieuHanh', ... },
@@ -74,6 +82,7 @@ export const SIDEBAR_MENU: MenuItem[] = [
 export const SUBMENU_PATHS = [
   '/hanh-chinh',
   '/mua-hang',
+  '/quan-ly-farm',
 ];
 
 export function isSubmenuPath(path: string): boolean {

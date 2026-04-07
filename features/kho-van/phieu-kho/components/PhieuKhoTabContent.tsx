@@ -1,13 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import { usePhieuKhoList, usePhieuKhoById, useDeletePhieuKho, useDeletePhieuKhoMany } from '../hooks/use-phieu-kho';
 import { usePhieuKhoViewScope } from '../hooks/use-phieu-kho-view-scope';
 import { filterPhieuKhoListByViewScope } from '../utils/phieu-kho-view-scope-filter';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import { usePhieuKhoStore } from '../store/usePhieuKhoStore';
-import { useListWithFilter } from '../../../../lib/hooks';
+import { getDateRangeFromPreset } from '../../../he-thong/nhan-vien/utils/stats-date-range';
+import type { DateRangePresetId } from '../../../he-thong/nhan-vien/core/stats-constants';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
 import type { PhieuKho, LoaiPhieuKhoTab } from '../core/types';
@@ -24,9 +26,22 @@ import DanhSachKhoForm from '../../danh-sach-kho/components/danh-sach-kho-form';
 import DanhSachHangHoaForm from '../../danh-sach-hang-hoa/components/DanhSachHangHoaForm';
 import DoiTacForm from '../../danh-sach-doi-tac/components/DoiTacForm';
 import { useNhomDoiTacList, useTagList, useDoiTacList } from '../../danh-sach-doi-tac/hooks/use-doi-tac';
+import ExportDialog from '../../../../components/shared/ExportDialog';
+import { useExportData } from '../../../../lib/useExportData';
+import {
+  mapPhieuKhoListRow,
+  getExportColumnsPhieuKhoList,
+  exportFileNamePhieuKhoTab,
+} from '../utils/export-phieu-kho-danh-sach';
 
 interface Props {
   loai: LoaiPhieuKhoTab;
+}
+
+function strFilterArray(v: unknown): string[] {
+  if (v == null) return [];
+  if (Array.isArray(v)) return v.filter((x): x is string => typeof x === 'string');
+  return [];
 }
 
 const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
@@ -55,6 +70,7 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
   const [showAddKho, setShowAddKho] = useState(false);
   const [showAddHangHoa, setShowAddHangHoa] = useState(false);
   const [showAddDoiTac, setShowAddDoiTac] = useState<'nha_cung_cap' | 'khach_hang' | null>(null);
+  const [showExport, setShowExport] = useState(false);
   const addKhoResolveRef = useRef<(k: Kho | null) => void>(null);
   const addHangHoaResolveRef = useRef<(h: HangHoa | null) => void>(null);
   const addDoiTacResolveRef = useRef<(d: DoiTac | null) => void>(null);
@@ -84,23 +100,103 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
     [viewableList, loaiDb]
   );
 
-  const filterFn = useCallback((item: PhieuKho, term: string, f: PhieuKhoFilters) => {
-    const searchLower = term.toLowerCase();
-    const matchesSearch =
-      !term ||
-      item.so_phieu.toLowerCase().includes(searchLower) ||
-      (item.ten_kho?.toLowerCase().includes(searchLower) ?? false) ||
-      (item.ten_kho_den?.toLowerCase().includes(searchLower) ?? false) ||
-      (item.mo_ta?.toLowerCase().includes(searchLower) ?? false);
-    const statusKey = item.trang_thai === 'Chờ duyệt' ? 'Pending' : item.trang_thai === 'Đã duyệt' ? 'Approved' : 'Rejected';
-    const matchesStatus = f.status.length === 0 || f.status.includes(statusKey);
-    const matchesKho = (f.khoIds?.length ?? 0) === 0 || (f.khoIds ?? []).includes(item.kho_id);
-    const matchesKhoDen =
-      (f.khoDenIds?.length ?? 0) === 0 || (item.kho_den_id != null && (f.khoDenIds ?? []).includes(item.kho_den_id));
-    return matchesSearch && matchesStatus && matchesKho && matchesKhoDen;
-  }, []);
+  const dateRangeStr = useMemo(() => {
+    const dp = typeof filters.datePreset === 'string' ? filters.datePreset : 'all';
+    const cf = typeof filters.customDateFrom === 'string' ? filters.customDateFrom : '';
+    const ce = typeof filters.customDateEnd === 'string' ? filters.customDateEnd : '';
+    const range = getDateRangeFromPreset(
+      dp as DateRangePresetId,
+      cf ? new Date(cf) : undefined,
+      ce ? new Date(ce) : undefined
+    );
+    const toYyyyMmDd = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    return { start: toYyyyMmDd(range.start), end: toYyyyMmDd(range.end) };
+  }, [filters.datePreset, filters.customDateFrom, filters.customDateEnd]);
 
-  const filteredList = useListWithFilter(listByLoai, searchTerm, filters, filterFn);
+  const filterFn = useCallback(
+    (item: PhieuKho, term: string, f: PhieuKhoFilters, range: { start: string; end: string }) => {
+      const st = strFilterArray(f.status);
+      const kIds = strFilterArray(f.khoIds);
+      const kDen = strFilterArray(f.khoDenIds);
+      const nt = strFilterArray(f.nguoiTaoIds);
+      const nd = strFilterArray(f.nguoiDuyetIds);
+      const dt = strFilterArray(f.doiTacIds);
+
+      const searchLower = term.toLowerCase();
+      const soPhieu = String(item.so_phieu ?? '').toLowerCase();
+      const matchesSearch =
+        !term ||
+        soPhieu.includes(searchLower) ||
+        (item.ten_kho?.toLowerCase().includes(searchLower) ?? false) ||
+        (item.ten_kho_den?.toLowerCase().includes(searchLower) ?? false) ||
+        (item.mo_ta?.toLowerCase().includes(searchLower) ?? false) ||
+        (typeof item.ten_nguoi_tao === 'string' && item.ten_nguoi_tao.toLowerCase().includes(searchLower)) ||
+        (typeof item.ten_nguoi_duyet === 'string' && item.ten_nguoi_duyet.toLowerCase().includes(searchLower)) ||
+        (loaiTab === 'nhap' &&
+          typeof item.ten_nha_cung_cap === 'string' &&
+          item.ten_nha_cung_cap.toLowerCase().includes(searchLower)) ||
+        (loaiTab === 'xuat' &&
+          typeof item.ten_khach_hang === 'string' &&
+          item.ten_khach_hang.toLowerCase().includes(searchLower));
+      const statusKey = item.trang_thai === 'Chờ duyệt' ? 'Pending' : item.trang_thai === 'Đã duyệt' ? 'Approved' : 'Rejected';
+      const matchesStatus = st.length === 0 || st.includes(statusKey);
+      const matchesKho = kIds.length === 0 || kIds.includes(item.kho_id);
+      const matchesKhoDen = kDen.length === 0 || (item.kho_den_id != null && kDen.includes(item.kho_den_id));
+      const rowDate = item.ngay || '';
+      const matchesDate = rowDate >= range.start && rowDate <= range.end;
+      const matchesNguoiTao =
+        nt.length === 0 || (item.nguoi_tao_id != null && nt.includes(String(item.nguoi_tao_id)));
+      const matchesNguoiDuyet =
+        nd.length === 0 || (item.id_nguoi_duyet != null && nd.includes(String(item.id_nguoi_duyet)));
+      let matchesDoiTac = true;
+      if (dt.length > 0) {
+        if (loaiTab === 'nhap') {
+          matchesDoiTac = item.id_nha_cung_cap != null && dt.includes(item.id_nha_cung_cap);
+        } else if (loaiTab === 'xuat') {
+          matchesDoiTac = item.id_khach_hang != null && dt.includes(item.id_khach_hang);
+        } else {
+          matchesDoiTac = false;
+        }
+      }
+      return (
+        matchesSearch &&
+        matchesStatus &&
+        matchesKho &&
+        matchesKhoDen &&
+        matchesDate &&
+        matchesNguoiTao &&
+        matchesNguoiDuyet &&
+        matchesDoiTac
+      );
+    },
+    [loaiTab]
+  );
+
+  const filteredList = useMemo(
+    () => listByLoai.filter((item) => filterFn(item, searchTerm, filters, dateRangeStr)),
+    [listByLoai, searchTerm, filters, dateRangeStr, filterFn]
+  );
+
+  const exportColumnsPhieuKho = useMemo(() => getExportColumnsPhieuKhoList(t), [t]);
+  const exportMapPhieuKho = useCallback((item: PhieuKho) => mapPhieuKhoListRow(item), []);
+  const { exportData, paginatedData: paginatedExportData, selectedData: selectedExportData } =
+    useExportData({
+      data: filteredList,
+      isOpen: showExport,
+      mapFn: exportMapPhieuKho,
+      pagination,
+      selectedIds,
+      keyExtractor: (p) => p.id,
+    });
+
+  const handleExport = useCallback(() => {
+    if (filteredList.length === 0) {
+      toast.warning(t('phieuKho.noExportData'));
+      return;
+    }
+    setShowExport(true);
+  }, [filteredList.length, t]);
 
   useEffect(() => {
     return () => resetState();
@@ -134,6 +230,8 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
       so_phieu: '',
       trang_thai: 'Chờ duyệt',
       trao_doi: undefined,
+      id_nguoi_duyet: undefined,
+      ten_nguoi_duyet: undefined,
       nguoi_tao_id: undefined,
       ten_nguoi_tao: undefined,
       ngay: new Date().toISOString().slice(0, 10),
@@ -178,7 +276,7 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
   return (
     <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
       <PhieuKhoToolbar
-        data={filteredList}
+        data={listByLoai}
         loai={loaiTab}
         khoList={khoList}
         selectedCount={selectedIds.size}
@@ -187,6 +285,7 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
           setShowForm(true);
         }}
         onDeleteMany={handleDeleteMany}
+        onExport={handleExport}
         canCreate={canCreate}
         canDelete={canDelete}
       />
@@ -322,6 +421,20 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
             onDelete={canDelete ? handleDelete : undefined}
             onCopy={canCreate ? handleCopy : undefined}
             canApprove={canApprove}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showExport && (
+          <ExportDialog
+            open={showExport}
+            onClose={() => setShowExport(false)}
+            columns={exportColumnsPhieuKho}
+            data={exportData}
+            paginatedData={paginatedExportData}
+            selectedData={selectedExportData}
+            fileName={exportFileNamePhieuKhoTab(loaiTab)}
           />
         )}
       </AnimatePresence>

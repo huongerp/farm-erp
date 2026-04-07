@@ -7,7 +7,7 @@ import EmptyState from './EmptyState';
 import LoadingSpinnerWithText from './LoadingSpinnerWithText';
 import { cn } from '../../lib/utils';
 import type { ColumnConfig, SortState } from '../../store/createGenericStore';
-import { getColumnCellStyle } from '../../store/createGenericStore';
+import { getColumnCellStyle, getEffectiveColumnMinWidth, usesColumnSizingPreset } from '../../store/createGenericStore';
 
 /** Ngưỡng kích hoạt virtual scroll tự động (số dòng trên trang) */
 const VIRTUAL_THRESHOLD = 50;
@@ -107,7 +107,10 @@ function GenericTable<T>({
 
   /** Tổng minWidth của bảng để luôn cuộn ngang khi nhiều cột, tránh ép cột xuống dòng */
   const tableMinWidth = useMemo(() => {
-    const cols = dataColumns.reduce((sum, c) => sum + (c.width ?? c.minWidth ?? DEFAULT_COLUMN_MIN_WIDTH), 0);
+    const cols = dataColumns.reduce(
+      (sum, c) => sum + (c.width ?? getEffectiveColumnMinWidth(c, DEFAULT_COLUMN_MIN_WIDTH)),
+      0
+    );
     return TABLE_CHECKBOX_WIDTH + cols + TABLE_ACTION_COLUMN_WIDTH;
   }, [dataColumns]);
 
@@ -118,7 +121,7 @@ function GenericTable<T>({
     for (let i = 0; i < stickyLeftCount && i < dataColumns.length; i++) {
       offsets.push(acc);
       const col = dataColumns[i];
-      acc += col.width ?? col.minWidth ?? DEFAULT_COLUMN_MIN_WIDTH;
+      acc += col.width ?? getEffectiveColumnMinWidth(col, DEFAULT_COLUMN_MIN_WIDTH);
     }
     return offsets;
   }, [dataColumns, stickyLeftCount]);
@@ -481,7 +484,12 @@ function GenericTable<T>({
                                   )}
                                   style={tdStyle}
                                 >
-                                  <div className="min-w-0 max-w-full overflow-hidden">
+                                  <div
+                                    className={cn(
+                                      'min-w-0 max-w-full overflow-hidden',
+                                      usesColumnSizingPreset(col.id) && 'whitespace-nowrap tabular-nums'
+                                    )}
+                                  >
                                     {renderCell(col.id, item)}
                                   </div>
                                 </td>

@@ -1,6 +1,6 @@
 /**
  * Cấu hình module phân quyền theo 3 cấp: Chức năng → Nhóm module → Module.
- * Chỉ giữ các module đang hiển thị trên submenu: hanh-chinh, mua-hang (gồm kho-van), he-thong.
+ * Chỉ giữ các module đang hiển thị trên submenu: hanh-chinh, mua-hang (gồm kho-van), quan-ly-farm, he-thong.
  * Các module đã ẩn (nhan-su, kinh-doanh, marketing, tai-chinh, dieu-hanh) đã được xoá.
  */
 
@@ -97,6 +97,16 @@ export const PERMISSION_FUNCTIONS: PermissionFunction[] = [
     ],
   },
   {
+    id: 'quan-ly-farm',
+    nameKey: 'nav.quanLyFarm',
+    color: 'emerald',
+    groups: [
+      { groupTitleKey: 'page.quanLyFarm.groupKeHoach', modules: [
+        { id: BASE('quan-ly-farm', 'thu-hoach'), nameKey: 'page.quanLyFarm.modules.thuHoach' },
+      ]},
+    ],
+  },
+  {
     id: 'he-thong',
     nameKey: 'nav.system',
     color: 'slate',
@@ -130,7 +140,7 @@ export function getAllPermissionModules(): { id: string; nameKey: string }[] {
 }
 
 /** Path submenu có phân quyền (khớp với SIDEBAR_MENU) */
-const SUBMENU_PATHS_WITH_PERMISSION = ['/hanh-chinh', '/mua-hang', '/he-thong'] as const;
+const SUBMENU_PATHS_WITH_PERMISSION = ['/hanh-chinh', '/mua-hang', '/quan-ly-farm', '/he-thong'] as const;
 
 /**
  * Lấy danh sách module id thuộc một submenu theo path (vd: /hanh-chinh -> [hanh-chinh/cong-viec, ...]).

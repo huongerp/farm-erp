@@ -81,6 +81,10 @@ export interface PhieuKho {
   mo_ta?: string;
   /** Nội dung trao đổi / ghi chú duyệt. */
   trao_doi?: string;
+  /** Id người duyệt / từ chối gần nhất (fp_var_nhan_vien.id). */
+  id_nguoi_duyet?: number | null;
+  /** Tên người duyệt (enrich từ danh sách nhân viên). */
+  ten_nguoi_duyet?: string;
   /** Id người tạo (fp_var_nhan_vien.id, int8). */
   nguoi_tao_id?: number | null;
   ten_nguoi_tao?: string;
@@ -112,6 +116,19 @@ export interface ChiTietPhieuKhoFlat {
   id_khach_hang?: string | null;
   ten_khach_hang?: string;
   trang_thai: TrangThaiPhieuKho;
+  /** Mô tả phiếu (fp_mh_phieu_kho.mo_ta). */
+  mo_ta?: string;
+  /** Trao đổi / ghi chú duyệt trên phiếu. */
+  trao_doi?: string;
+  /** Thời gian tạo / cập nhật phiếu. */
+  phieu_tg_tao?: string;
+  phieu_tg_cap_nhat?: string;
+  /** Người duyệt / từ chối gần nhất (theo phiếu). */
+  id_nguoi_duyet?: number | null;
+  ten_nguoi_duyet?: string;
+  /** Người tạo phiếu (theo phiếu). */
+  nguoi_tao_id?: number | null;
+  ten_nguoi_tao?: string;
   /** Chi tiết dòng */
   id_hang_hoa: string;
   ten_hang_hoa?: string;
@@ -123,4 +140,9 @@ export interface ChiTietPhieuKhoFlat {
   don_vi_tinh?: string;
   so_lot?: string;
   ghi_chu?: string;
+  /** Audit dòng chi tiết (fp_mh_phieu_kho_chi_tiet). */
+  chi_tiet_nguoi_tao_id?: number | null;
+  chi_tiet_ten_nguoi_tao?: string;
+  chi_tiet_tg_tao?: string;
+  chi_tiet_tg_cap_nhat?: string;
 }

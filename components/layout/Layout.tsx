@@ -130,6 +130,7 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
 
   const showHanhChinh = useSubmenuVisible('/hanh-chinh');
   const showMuaHang = useSubmenuVisible('/mua-hang');
+  const showQuanLyFarm = useSubmenuVisible('/quan-ly-farm');
   const showHeThong = useSubmenuVisible('/he-thong');
   const visibleMenu = React.useMemo(
     () =>
@@ -137,10 +138,11 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
         if (!isSubmenuWithPermission(m.path)) return true;
         if (m.path === '/hanh-chinh') return showHanhChinh;
         if (m.path === '/mua-hang') return showMuaHang;
+        if (m.path === '/quan-ly-farm') return showQuanLyFarm;
         if (m.path === '/he-thong') return showHeThong;
         return true;
       }),
-    [showHanhChinh, showMuaHang, showHeThong]
+    [showHanhChinh, showMuaHang, showQuanLyFarm, showHeThong]
   );
   const navItems = visibleMenu.map(({ path, nameKey, icon }) => ({ name: t(nameKey), icon, path }));
 

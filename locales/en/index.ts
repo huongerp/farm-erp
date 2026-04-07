@@ -75,6 +75,7 @@ import chienLuoc from '@/features/dieu-hanh/chien-luoc/locales/en.json';
 import hanhDongCotLoi from '@/features/dieu-hanh/hanh-dong-cot-loi/locales/en.json';
 import tieuChiKpi from '@/features/dieu-hanh/tieu-chi-kpi/locales/en.json';
 import theoDoiDanhGia from '@/features/dieu-hanh/theo-doi-danh-gia/locales/en.json';
+import thuHoach from '@/features/quan-ly-farm/thu-hoach/locales/en.json';
 import kho from './kho.json';
 
 const en = {
@@ -153,6 +154,7 @@ const en = {
   ...(hanhDongCotLoi as Record<string, string>),
   ...(tieuChiKpi as Record<string, string>),
   ...(theoDoiDanhGia as Record<string, string>),
+  ...(thuHoach as Record<string, string>),
   ...(kho as Record<string, string>),
 };
 

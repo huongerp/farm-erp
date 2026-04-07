@@ -17,6 +17,7 @@ import {
   getLichSuNhapXuatByKhoSupabase,
   getNextSoPhieuSupabase,
   updatePhieuKhoTrangThaiSupabase,
+  type UpdatePhieuKhoTrangThaiOptions,
 } from './phieu-kho-supabase.service';
 
 export type { LichSuNhapXuatRow, LichSuNhapXuatByKhoRow } from './phieu-kho-supabase.service';
@@ -32,5 +33,7 @@ export const getChiTietPhieuKhoAll = getChiTietPhieuKhoAllSupabase;
 export const getLichSuNhapXuatByHangHoa = getLichSuNhapXuatByHangHoaSupabase;
 export const getLichSuNhapXuatByKho = getLichSuNhapXuatByKhoSupabase;
 export const getNextSoPhieu = getNextSoPhieuSupabase;
-export const updatePhieuKhoTrangThai = (id: string, trang_thai: TrangThaiPhieuKho, ghi_chu?: string) =>
-  updatePhieuKhoTrangThaiSupabase(id, trang_thai, ghi_chu);
+export type { UpdatePhieuKhoTrangThaiOptions };
+
+export const updatePhieuKhoTrangThai = (id: string, trang_thai: TrangThaiPhieuKho, opts?: UpdatePhieuKhoTrangThaiOptions) =>
+  updatePhieuKhoTrangThaiSupabase(id, trang_thai, opts);

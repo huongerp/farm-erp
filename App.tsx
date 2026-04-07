@@ -170,6 +170,9 @@ const App = () => {
                   <Route path="/mua-hang" element={<SubmenuPage />} />
                   <Route path="/mua-hang/:moduleId/huong-dan" element={<ModuleGuidePage />} />
                   <Route path="/mua-hang/:moduleId" element={<SubmenuPage />} />
+                  <Route path="/quan-ly-farm" element={<SubmenuPage />} />
+                  <Route path="/quan-ly-farm/:moduleId/huong-dan" element={<ModuleGuidePage />} />
+                  <Route path="/quan-ly-farm/:moduleId" element={<SubmenuPage />} />
                   <Route path="/kho-van" element={<Navigate to="/mua-hang" replace />} />
                   <Route path="/kho-van/:moduleId/huong-dan" element={<NavigateToMuaHangModule />} />
                   <Route path="/kho-van/:moduleId" element={<NavigateToMuaHangModule />} />

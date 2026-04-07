@@ -76,6 +76,7 @@ import chienLuoc from '@/features/dieu-hanh/chien-luoc/locales/vi.json';
 import hanhDongCotLoi from '@/features/dieu-hanh/hanh-dong-cot-loi/locales/vi.json';
 import tieuChiKpi from '@/features/dieu-hanh/tieu-chi-kpi/locales/vi.json';
 import theoDoiDanhGia from '@/features/dieu-hanh/theo-doi-danh-gia/locales/vi.json';
+import thuHoach from '@/features/quan-ly-farm/thu-hoach/locales/vi.json';
 import kho from './kho.json';
 
 const vi = {
@@ -153,6 +154,7 @@ const vi = {
   ...(hanhDongCotLoi as Record<string, string>),
   ...(tieuChiKpi as Record<string, string>),
   ...(theoDoiDanhGia as Record<string, string>),
+  ...(thuHoach as Record<string, string>),
   ...(kho as Record<string, string>),
 };
 

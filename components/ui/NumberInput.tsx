@@ -18,6 +18,11 @@ export interface NumberInputProps {
   icon?: React.ReactNode;
   /** Cho ô nhập trong bảng (compact) */
   compact?: boolean;
+  /**
+   * Khi true: hiển thị "0" đã format (vd. vi-VN "0") khi không focus; mặc định để trống cho 0.
+   * Dùng cho form số lượng/tiền cần thấy phân tách hàng nghìn rõ ràng.
+   */
+  showZeroFormatted?: boolean;
 }
 
 /**
@@ -38,16 +43,17 @@ const NumberInput: React.FC<NumberInputProps> = ({
   label,
   icon,
   compact = false,
+  showZeroFormatted = false,
 }) => {
   const numValue = typeof value === 'string' ? parseFloat(value) : (value ?? 0);
   const safeNum = Number.isNaN(numValue) ? 0 : numValue;
 
   const formatDisplay = useCallback(
     (n: number): string => {
-      if (n === 0) return '';
+      if (n === 0 && !showZeroFormatted) return '';
       return formatNumberVN(n, { maxFractionDigits, minFractionDigits: 0 });
     },
-    [maxFractionDigits]
+    [maxFractionDigits, showZeroFormatted]
   );
 
   const [displayValue, setDisplayValue] = useState(() => formatDisplay(safeNum));

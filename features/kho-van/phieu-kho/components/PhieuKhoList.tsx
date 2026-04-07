@@ -115,6 +115,12 @@ const PhieuKhoList: React.FC<Props> = ({
         return <span className="text-xs text-muted-foreground line-clamp-2">{item.mo_ta ?? '—'}</span>;
       case 'trang_thai':
         return renderStatusBadge(item);
+      case 'ten_nguoi_duyet':
+        return (
+          <span className="text-sm text-muted-foreground">
+            {item.ten_nguoi_duyet ?? (item.id_nguoi_duyet != null ? `#${item.id_nguoi_duyet}` : '—')}
+          </span>
+        );
       case 'tong_so_dong':
         return (
           <span className="text-sm text-muted-foreground tabular-nums">
@@ -190,6 +196,11 @@ const PhieuKhoList: React.FC<Props> = ({
         </span>
         {renderStatusBadge(item)}
       </div>
+      {(item.ten_nguoi_duyet || item.id_nguoi_duyet != null) && (
+        <div className="text-xs text-muted-foreground mb-1">
+          {t('phieuKho.store.approverCol')}: {item.ten_nguoi_duyet ?? `#${item.id_nguoi_duyet}`}
+        </div>
+      )}
       <div className="text-xs text-muted-foreground mb-1">{item.ngay} · {item.ten_kho ?? '—'}</div>
       {loai === 'chuyen' && item.ten_kho_den && (
         <div className="text-xs text-muted-foreground mb-1">→ {item.ten_kho_den}</div>

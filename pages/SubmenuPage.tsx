@@ -12,6 +12,7 @@ import KinDoanhDashboard from './dashboards/KinhDoanhDashboard';
 import MarketingDashboard from './dashboards/MarketingDashboard';
 import TaiChinhDashboard from './dashboards/TaiChinhDashboard';
 import MuaHangDashboard from './dashboards/MuaHangDashboard';
+import QuanLyFarmDashboard from './dashboards/QuanLyFarmDashboard';
 import DieuHanhDashboard from './dashboards/DieuHanhDashboard';
 import PayrollSetupPage from '../features/hanh-chinh/thiet-lap-cong-luong';
 import AdminFormPage from '../features/hanh-chinh/phieu-hanh-chinh';
@@ -59,6 +60,7 @@ import KeHoachChiPhiPage from '../features/tai-chinh/ke-hoach-chi-phi';
 import ThuChiPage from '../features/tai-chinh/thu-chi';
 import BaoCaoTaiChinhPage from '../features/tai-chinh/bao-cao-tai-chinh';
 import { getMuaHangModuleTitleKeyBySlug, MUA_HANG_MODULE_SLUGS } from '../lib/mua-hang-menu';
+import { getQuanLyFarmModuleTitleKeyBySlug, QUAN_LY_FARM_MODULE_SLUGS } from '../lib/quan-ly-farm-menu';
 import { getKhoVanModuleTitleKeyBySlug, KHO_VAN_MODULE_SLUGS } from '../lib/kho-van-menu';
 import { getDieuHanhModuleTitleKeyBySlug, DIEU_HANH_MODULE_SLUGS } from '../lib/dieu-hanh-menu';
 import DanhSachKhoPage from '../features/kho-van/danh-sach-kho';
@@ -83,6 +85,7 @@ import HanhDongCotLoiPage from '../features/dieu-hanh/hanh-dong-cot-loi';
 import TieuChiKpiPage from '../features/dieu-hanh/tieu-chi-kpi';
 import TheoDoiDanhGiaPage from '../features/dieu-hanh/theo-doi-danh-gia';
 import ThietLapCrmPage from '../features/kinh-doanh/thiet-lap-crm';
+import ThuHoachPage from '../features/quan-ly-farm/thu-hoach';
 
 const PATH_TO_BREADCRUMB_KEY: Record<string, string> = {
   '/hanh-chinh': 'breadcrumb.hanhChinh',
@@ -91,6 +94,7 @@ const PATH_TO_BREADCRUMB_KEY: Record<string, string> = {
   '/marketing': 'breadcrumb.marketing',
   '/tai-chinh': 'breadcrumb.taiChinh',
   '/mua-hang': 'breadcrumb.muaHang',
+  '/quan-ly-farm': 'breadcrumb.quanLyFarm',
   '/kho-van': 'breadcrumb.khoVan',
   '/dieu-hanh': 'breadcrumb.dieuHanh',
 };
@@ -167,6 +171,13 @@ const SubmenuPage: React.FC = () => {
       </ErrorBoundary>
     );
   }
+  if (basePath === '/quan-ly-farm' && !moduleId) {
+    return (
+      <ErrorBoundary>
+        <QuanLyFarmDashboard />
+      </ErrorBoundary>
+    );
+  }
   if (basePath === '/dieu-hanh' && !moduleId) {
     return (
       <ErrorBoundary>
@@ -191,6 +202,13 @@ const SubmenuPage: React.FC = () => {
       if (decodedSlug === 'van-ban-den' || decodedSlug === 'van-ban-di') {
         return <Navigate to="/hanh-chinh/danh-sach-tai-lieu?tab=den_di" replace />;
       }
+    }
+    if (basePath === '/quan-ly-farm' && decodedSlug === 'thu-hoach') {
+      return wrapWithPermission(basePath ?? '', decodedSlug, (
+        <ErrorBoundary>
+          <ThuHoachPage />
+        </ErrorBoundary>
+      ));
     }
     if (basePath === '/hanh-chinh' && HANH_CHINH_MODULE_SLUGS.includes(decodedSlug)) {
       if (decodedSlug === 'thiet-lap-cong-luong') {
@@ -602,6 +620,8 @@ const SubmenuPage: React.FC = () => {
       );
     } else if (basePath === '/dieu-hanh' && DIEU_HANH_MODULE_SLUGS.includes(decodedSlug)) {
       moduleTitle = t(getDieuHanhModuleTitleKeyBySlug(decodedSlug));
+    } else if (basePath === '/quan-ly-farm' && QUAN_LY_FARM_MODULE_SLUGS.includes(decodedSlug)) {
+      moduleTitle = t(getQuanLyFarmModuleTitleKeyBySlug(decodedSlug));
     }
     return (
       <ModulePlaceholder

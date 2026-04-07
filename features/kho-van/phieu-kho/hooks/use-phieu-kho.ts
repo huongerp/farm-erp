@@ -120,8 +120,24 @@ export const useDeletePhieuKho = () => {
 export const useUpdatePhieuKhoTrangThai = (onSuccess?: () => void) => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, trang_thai, ghi_chu }: { id: string; trang_thai: import('../core/types').TrangThaiPhieuKho; ghi_chu?: string }) =>
-      updatePhieuKhoTrangThai(id, trang_thai, ghi_chu),
+    mutationFn: ({
+      id,
+      trang_thai,
+      ghi_chu,
+      id_nguoi_duyet,
+      ten_nguoi_duyet_hien_thi,
+    }: {
+      id: string;
+      trang_thai: import('../core/types').TrangThaiPhieuKho;
+      ghi_chu?: string;
+      id_nguoi_duyet?: number | null;
+      ten_nguoi_duyet_hien_thi?: string;
+    }) =>
+      updatePhieuKhoTrangThai(id, trang_thai, {
+        ghi_chu,
+        id_nguoi_duyet,
+        ten_nguoi_duyet_hien_thi,
+      }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY });
       qc.invalidateQueries({ queryKey: QUERY_KEY_CHI_TIET });

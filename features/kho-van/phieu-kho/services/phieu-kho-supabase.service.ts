@@ -50,6 +50,8 @@ interface PhieuKhoDbRow {
   trang_thai: string;
   mo_ta: string | null;
   trao_doi: string | null;
+  /** Cột mới trên Supabase; có thể chưa có trên bản DB cũ. */
+  id_nguoi_duyet?: number | null;
   nguoi_tao_id: number | null;
   ten_nguoi_tao: string | null;
   tg_tao: string | null;
@@ -74,7 +76,17 @@ interface ChiTietDbRow {
   tg_cap_nhat: string | null;
 }
 
-function rowToPhieu(row: PhieuKhoDbRow, enrich?: { ten_kho?: string; ten_kho_den?: string; ten_nha_cung_cap?: string; ten_khach_hang?: string; ten_nguoi_tao?: string }): PhieuKho {
+function rowToPhieu(
+  row: PhieuKhoDbRow,
+  enrich?: {
+    ten_kho?: string;
+    ten_kho_den?: string;
+    ten_nha_cung_cap?: string;
+    ten_khach_hang?: string;
+    ten_nguoi_tao?: string;
+    ten_nguoi_duyet?: string;
+  }
+): PhieuKho {
   return {
     id: String(row.id),
     so_phieu: row.so_phieu ?? '',
@@ -91,6 +103,8 @@ function rowToPhieu(row: PhieuKhoDbRow, enrich?: { ten_kho?: string; ten_kho_den
     trang_thai: (row.trang_thai as TrangThaiPhieuKho) || 'Chờ duyệt',
     mo_ta: row.mo_ta ?? undefined,
     trao_doi: row.trao_doi ?? undefined,
+    id_nguoi_duyet: row.id_nguoi_duyet != null ? row.id_nguoi_duyet : undefined,
+    ten_nguoi_duyet: enrich?.ten_nguoi_duyet,
     nguoi_tao_id: row.nguoi_tao_id ?? undefined,
     ten_nguoi_tao: enrich?.ten_nguoi_tao ?? row.ten_nguoi_tao ?? undefined,
     tg_tao: row.tg_tao ?? new Date().toISOString(),
@@ -180,7 +194,8 @@ export async function getAllPhieuKhoSupabase(): Promise<PhieuKho[]> {
     const ten_nha_cung_cap = row.id_nha_cung_cap != null ? doiTacMap[String(row.id_nha_cung_cap)] : undefined;
     const ten_khach_hang = row.id_khach_hang != null ? doiTacMap[String(row.id_khach_hang)] : undefined;
     const ten_nguoi_tao = row.nguoi_tao_id != null ? nvMap[String(row.nguoi_tao_id)] : undefined;
-    const phieu = rowToPhieu(row, { ten_kho, ten_kho_den, ten_nha_cung_cap, ten_khach_hang, ten_nguoi_tao });
+    const ten_nguoi_duyet = row.id_nguoi_duyet != null ? nvMap[String(row.id_nguoi_duyet)] : undefined;
+    const phieu = rowToPhieu(row, { ten_kho, ten_kho_den, ten_nha_cung_cap, ten_khach_hang, ten_nguoi_tao, ten_nguoi_duyet });
     const agg = aggregates[String(row.id)];
     phieu.tong_so_dong = agg?.so_dong ?? 0;
     phieu.tong_so_luong = agg?.tong_so_luong ?? 0;
@@ -222,7 +237,8 @@ export async function getPhieuKhoByIdSupabase(id: string): Promise<PhieuKho | nu
   const ten_nha_cung_cap = p.id_nha_cung_cap != null ? doiTacMap[String(p.id_nha_cung_cap)] : undefined;
   const ten_khach_hang = p.id_khach_hang != null ? doiTacMap[String(p.id_khach_hang)] : undefined;
   const ten_nguoi_tao = p.nguoi_tao_id != null ? nvMap[String(p.nguoi_tao_id)] : undefined;
-  const phieu = rowToPhieu(p, { ten_kho, ten_kho_den, ten_nha_cung_cap, ten_khach_hang, ten_nguoi_tao });
+  const ten_nguoi_duyet = p.id_nguoi_duyet != null ? nvMap[String(p.id_nguoi_duyet)] : undefined;
+  const phieu = rowToPhieu(p, { ten_kho, ten_kho_den, ten_nha_cung_cap, ten_khach_hang, ten_nguoi_tao, ten_nguoi_duyet });
 
   const chi_tiet: PhieuKhoChiTiet[] = (ctRows as ChiTietDbRow[]).map((ct) => {
     const h = hangHoaMap[String(ct.id_hang_hoa)];
@@ -375,25 +391,47 @@ export async function updatePhieuKhoSupabase(id: string, data: PhieuKhoFormValue
   return got;
 }
 
-/** Cập nhật chỉ trạng thái (và ghi chú duyệt → cột trao_doi); dùng cho nút Duyệt trong detail. */
+/** Định dạng thời điểm ghi vào cột trao_doi: dd/mm/yyyy hh:mm:ss (24h). */
+function formatPhieuKhoTraoDoiTimestamp(d: Date = new Date()): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
+export interface UpdatePhieuKhoTrangThaiOptions {
+  ghi_chu?: string;
+  id_nguoi_duyet?: number | null;
+  /** Tên hiển thị khi ghi dòng trao_doi (ưu tiên hơn map nhân viên lúc ghi). */
+  ten_nguoi_duyet_hien_thi?: string;
+}
+
+/** Cập nhật chỉ trạng thái, id_nguoi_duyet và trao_doi; không đụng bảng chi tiết. */
 export async function updatePhieuKhoTrangThaiSupabase(
   id: string,
   trang_thai: TrangThaiPhieuKho,
-  ghi_chu?: string
+  options?: UpdatePhieuKhoTrangThaiOptions
 ): Promise<void> {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('phieuKho.service.notFound'));
+  const ghi_chu = options?.ghi_chu;
+  const idNguoiDuyet =
+    options?.id_nguoi_duyet != null && Number.isFinite(options.id_nguoi_duyet) && !Number.isNaN(options.id_nguoi_duyet)
+      ? options.id_nguoi_duyet
+      : null;
+
   const { data: row } = await supabase.from(TABLE_PHIEU).select('trao_doi').eq('id', idNum).maybeSingle();
   const existing = (row as { trao_doi?: string } | null)?.trao_doi ?? '';
-  const timestamp = new Date().toLocaleString('vi-VN');
-  const statusLabel = trang_thai === 'Đã duyệt' ? 'Duyệt' : 'Từ chối';
+  const ts = formatPhieuKhoTraoDoiTimestamp();
+  const who =
+    options?.ten_nguoi_duyet_hien_thi?.trim() ||
+    (idNguoiDuyet != null ? `Nhân viên #${idNguoiDuyet}` : 'Người dùng');
+  const actionVerb = trang_thai === 'Đã duyệt' ? 'đã duyệt' : 'không duyệt';
   const entry = ghi_chu?.trim()
-    ? `[${timestamp}] ${statusLabel}: ${ghi_chu.trim()}`
-    : `[${timestamp}] ${statusLabel}`;
+    ? `${ts} — ${who} ${actionVerb}. Ghi chú: ${ghi_chu.trim()}`
+    : `${ts} — ${who} ${actionVerb}.`;
   const newTraoDoi = existing ? existing + '\n' + entry : entry;
   const { error } = await supabase
     .from(TABLE_PHIEU)
-    .update({ trang_thai, trao_doi: newTraoDoi })
+    .update({ trang_thai, trao_doi: newTraoDoi, id_nguoi_duyet: idNguoiDuyet })
     .eq('id', idNum);
   if (error) throw new Error(error.message);
 }
@@ -422,7 +460,7 @@ export async function getPhieuKhoByDoiTacSupabase(idDoiTac: string, loaiDoiTac: 
 }
 
 export async function getChiTietPhieuKhoAllSupabase(): Promise<ChiTietPhieuKhoFlat[]> {
-  const [ctRows, phieuRows, khoList, doiTacList, hangHoaList] = await Promise.all([
+  const [ctRows, phieuRows, khoList, doiTacList, hangHoaList, employees] = await Promise.all([
     fetchAllRows<ChiTietDbRow>((from, to) =>
       supabase.from(TABLE_CHI_TIET).select('*').order('id', { ascending: false }).range(from, to)
     ),
@@ -432,6 +470,7 @@ export async function getChiTietPhieuKhoAllSupabase(): Promise<ChiTietPhieuKhoFl
     getKhoList(),
     getAllDoiTac(),
     getAllHangHoa(),
+    getEmployees(),
   ]);
   const phieuById = new Map<number, PhieuKhoDbRow>();
   phieuRows.forEach((p) => phieuById.set(p.id, p));
@@ -441,6 +480,8 @@ export async function getChiTietPhieuKhoAllSupabase(): Promise<ChiTietPhieuKhoFl
   doiTacList.forEach((d) => { doiTacMap[d.id] = d.ten_ncc; });
   const hangHoaMap: Record<string, { ma_hang: string }> = {};
   hangHoaList.forEach((h) => { hangHoaMap[h.id] = { ma_hang: h.ma_hang ?? h.ma_hang_hoa ?? '' }; });
+  const nvMap: Record<string, string> = {};
+  employees.forEach((e) => { nvMap[e.id] = e.ho_ten; });
 
   const flat: ChiTietPhieuKhoFlat[] = [];
   for (const ct of ctRows) {
@@ -451,6 +492,11 @@ export async function getChiTietPhieuKhoAllSupabase(): Promise<ChiTietPhieuKhoFl
     const ten_nha_cung_cap = p.id_nha_cung_cap != null ? doiTacMap[String(p.id_nha_cung_cap)] : undefined;
     const ten_khach_hang = p.id_khach_hang != null ? doiTacMap[String(p.id_khach_hang)] : undefined;
     const enrich = hangHoaMap[String(ct.id_hang_hoa)];
+    const lineNvId = ct.nguoi_tao_id != null ? ct.nguoi_tao_id : undefined;
+    const lineTenNv =
+      (typeof ct.ten_nguoi_tao === 'string' && ct.ten_nguoi_tao.trim() !== ''
+        ? ct.ten_nguoi_tao.trim()
+        : undefined) ?? (lineNvId != null ? nvMap[String(lineNvId)] : undefined);
     flat.push({
       id: String(ct.id),
       id_phieu_kho: String(p.id),
@@ -466,6 +512,14 @@ export async function getChiTietPhieuKhoAllSupabase(): Promise<ChiTietPhieuKhoFl
       id_khach_hang: p.id_khach_hang != null ? String(p.id_khach_hang) : undefined,
       ten_khach_hang,
       trang_thai: (p.trang_thai as TrangThaiPhieuKho) || 'Chờ duyệt',
+      mo_ta: p.mo_ta ?? undefined,
+      trao_doi: p.trao_doi ?? undefined,
+      phieu_tg_tao: p.tg_tao ?? undefined,
+      phieu_tg_cap_nhat: p.tg_cap_nhat ?? undefined,
+      id_nguoi_duyet: p.id_nguoi_duyet != null ? p.id_nguoi_duyet : undefined,
+      ten_nguoi_duyet: p.id_nguoi_duyet != null ? nvMap[String(p.id_nguoi_duyet)] : undefined,
+      nguoi_tao_id: p.nguoi_tao_id != null ? p.nguoi_tao_id : undefined,
+      ten_nguoi_tao: p.nguoi_tao_id != null ? nvMap[String(p.nguoi_tao_id)] : undefined,
       id_hang_hoa: String(ct.id_hang_hoa),
       ten_hang_hoa: ct.ten_hang_hoa ?? undefined,
       ma_hang: enrich?.ma_hang,
@@ -476,6 +530,10 @@ export async function getChiTietPhieuKhoAllSupabase(): Promise<ChiTietPhieuKhoFl
       don_vi_tinh: ct.don_vi_tinh ?? undefined,
       so_lot: ct.so_lot ?? undefined,
       ghi_chu: ct.ghi_chu ?? undefined,
+      chi_tiet_nguoi_tao_id: lineNvId,
+      chi_tiet_ten_nguoi_tao: lineTenNv,
+      chi_tiet_tg_tao: ct.tg_tao ?? undefined,
+      chi_tiet_tg_cap_nhat: ct.tg_cap_nhat ?? undefined,
     });
   }
   flat.sort((a, b) => (b.ngay || '').localeCompare(a.ngay || '') || (a.so_phieu || '').localeCompare(b.so_phieu || '') || (a.ma_hang ?? '').localeCompare(b.ma_hang ?? ''));

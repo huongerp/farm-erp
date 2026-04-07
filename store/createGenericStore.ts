@@ -21,18 +21,89 @@ export interface ColumnConfig {
 /** Giá trị maxWidth mặc định khi cột không khai báo (tránh cột trải quá rộng). */
 export const DEFAULT_COLUMN_MAX_WIDTH = 400;
 
-/** Input cho getColumnCellStyle: cột đầy đủ hoặc bảng con chỉ cần minWidth/maxWidth. */
-export type ColumnStyleInput = Pick<ColumnConfig, 'minWidth' | 'maxWidth'>;
+/** Cột chỉ ngày (date): đủ một dòng cho DD/MM/YYYY và header tiếng Việt. */
+export const COLUMN_WIDTH_DATE_MIN = 132;
+export const COLUMN_WIDTH_DATE_MAX = 168;
+
+/** Cột ngày giờ (timestamptz / tg_*). */
+export const COLUMN_WIDTH_DATETIME_MIN = 160;
+export const COLUMN_WIDTH_DATETIME_MAX = 240;
+
+/** Số tiền (locale vi-VN, có dấu chấm phân tách). */
+export const COLUMN_WIDTH_MONEY_MIN = 120;
+export const COLUMN_WIDTH_MONEY_MAX = 184;
+
+const MONEY_COLUMN_IDS = new Set(['so_tien', 'tong_tien', 'thanh_tien']);
+
+/** Trạng thái / badge — tránh ép hẹp khiến nhãn xuống dòng. */
+export const COLUMN_WIDTH_STATUS_MIN = 116;
+export const COLUMN_WIDTH_STATUS_MAX = 196;
+
+function isStatusColumnId(id: string): boolean {
+  return id === 'trang_thai' || id === 'ten_trang_thai' || id.endsWith('_trang_thai');
+}
+
+/**
+ * Preset min/max theo id cột (quy ước naming trong app): ngày, tg_*, số tiền, trạng thái.
+ * Dùng cho style bảng, minWidth khi cuộn ngang, nowrap ô dữ liệu, và giới hạn resize.
+ */
+export function inferColumnSizingPreset(id: string | undefined): { minWidth: number; maxWidth: number } | null {
+  if (!id) return null;
+  if (id.startsWith('tg_')) {
+    return { minWidth: COLUMN_WIDTH_DATETIME_MIN, maxWidth: COLUMN_WIDTH_DATETIME_MAX };
+  }
+  if (id === 'ngay' || id.startsWith('ngay_')) {
+    return { minWidth: COLUMN_WIDTH_DATE_MIN, maxWidth: COLUMN_WIDTH_DATE_MAX };
+  }
+  if (MONEY_COLUMN_IDS.has(id)) {
+    return { minWidth: COLUMN_WIDTH_MONEY_MIN, maxWidth: COLUMN_WIDTH_MONEY_MAX };
+  }
+  if (isStatusColumnId(id)) {
+    return { minWidth: COLUMN_WIDTH_STATUS_MIN, maxWidth: COLUMN_WIDTH_STATUS_MAX };
+  }
+  return null;
+}
+
+/** Min width hiệu dụng (đồng bộ với getColumnCellStyle) — dùng cho tableMinWidth / sticky offset. */
+export function getEffectiveColumnMinWidth(col: Pick<ColumnConfig, 'id' | 'minWidth'>, fallback = 120): number {
+  const preset = inferColumnSizingPreset(col.id);
+  const base = col.minWidth ?? fallback;
+  return preset ? Math.max(base, preset.minWidth) : base;
+}
+
+/** Min/max khi kéo resize cột — tôn trọng preset. */
+export function getEffectiveColumnResizeBounds(col: ColumnConfig): { min: number; max: number } {
+  const preset = inferColumnSizingPreset(col.id);
+  const minBase = col.minWidth ?? 50;
+  const min = preset ? Math.max(minBase, preset.minWidth) : minBase;
+  const maxBase = col.maxWidth ?? DEFAULT_COLUMN_MAX_WIDTH;
+  const max = preset ? Math.max(maxBase, preset.maxWidth) : maxBase;
+  return { min, max };
+}
+
+/** Cột có preset sizing (ngày / giờ / tiền) — nên giữ một dòng trong GenericTable. */
+export function usesColumnSizingPreset(id: string): boolean {
+  return inferColumnSizingPreset(id) != null;
+}
+
+/** Input cho getColumnCellStyle: có thể kèm id để áp preset ngày/giờ. */
+export type ColumnStyleInput = Pick<ColumnConfig, 'minWidth' | 'maxWidth'> & { id?: string };
 
 /**
  * Style áp dụng cho th/td theo ColumnConfig (minWidth + maxWidth).
- * Dùng thống nhất ở mọi list/table (kể cả bảng con) để cột có kích thước phù hợp.
+ * Cột có inferColumnSizingPreset được nới tối thiểu & tối đa để tránh xuống dòng.
  */
 export function getColumnCellStyle(col: ColumnStyleInput): CSSProperties {
+  const preset = inferColumnSizingPreset(col.id);
   const style: CSSProperties = {};
-  if (col.minWidth != null) style.minWidth = col.minWidth;
-  if (col.maxWidth != null) style.maxWidth = col.maxWidth;
-  else style.maxWidth = DEFAULT_COLUMN_MAX_WIDTH;
+  if (preset) {
+    style.minWidth = col.minWidth != null ? Math.max(col.minWidth, preset.minWidth) : preset.minWidth;
+    style.maxWidth = col.maxWidth != null ? Math.max(col.maxWidth, preset.maxWidth) : preset.maxWidth;
+  } else {
+    if (col.minWidth != null) style.minWidth = col.minWidth;
+    if (col.maxWidth != null) style.maxWidth = col.maxWidth;
+    else style.maxWidth = DEFAULT_COLUMN_MAX_WIDTH;
+  }
   return style;
 }
 
@@ -149,8 +220,7 @@ export const createGenericStore = <TFilters>(
   resizeColumn: (id, width) => set((state) => ({
     columns: state.columns.map(col => {
       if (col.id !== id) return col;
-      const min = col.minWidth ?? 50;
-      const max = col.maxWidth ?? DEFAULT_COLUMN_MAX_WIDTH;
+      const { min, max } = getEffectiveColumnResizeBounds(col);
       return { ...col, width: Math.min(Math.max(width, min), max) };
     })
   })),

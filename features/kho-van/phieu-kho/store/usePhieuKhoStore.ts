@@ -1,5 +1,6 @@
 import { createGenericStore, type ColumnConfig } from '../../../../store/createGenericStore';
 import i18n from '../../../../lib/i18n';
+import type { DateRangePresetId } from '../../../he-thong/nhan-vien/core/stats-constants';
 
 export interface PhieuKhoFilters {
   status: string[];
@@ -7,6 +8,16 @@ export interface PhieuKhoFilters {
   khoIds: string[];
   /** Chỉ dùng tab Chuyển kho: Kho đến */
   khoDenIds: string[];
+  /** Lọc theo ngày phiếu (cột ngay) */
+  datePreset: DateRangePresetId;
+  customDateFrom: string;
+  customDateEnd: string;
+  /** Id người tạo (chuỗi) */
+  nguoiTaoIds: string[];
+  /** Id người duyệt gần nhất */
+  nguoiDuyetIds: string[];
+  /** Tab nhập: NCC; tab xuất: KH */
+  doiTacIds: string[];
 }
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
@@ -23,13 +34,20 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'ten_nguoi_tao', label: i18n.t('phieuKho.store.creatorCol'), visible: true, minWidth: 120, maxWidth: 180, order: 10 },
   { id: 'tg_tao', label: i18n.t('phieuKho.store.createdAtCol'), visible: true, minWidth: 100, maxWidth: 140, order: 11 },
   { id: 'trang_thai', label: i18n.t('phieuKho.store.statusCol'), visible: true, minWidth: 100, maxWidth: 140, order: 12 },
-  { id: 'tg_cap_nhat', label: i18n.t('phieuKho.store.updatedCol'), visible: true, minWidth: 100, maxWidth: 140, order: 13 },
+  { id: 'ten_nguoi_duyet', label: i18n.t('phieuKho.store.approverCol'), visible: true, minWidth: 120, maxWidth: 200, order: 13 },
+  { id: 'tg_cap_nhat', label: i18n.t('phieuKho.store.updatedCol'), visible: true, minWidth: 100, maxWidth: 140, order: 14 },
 ];
 
 const initialFilters: PhieuKhoFilters = {
   status: [],
   khoIds: [],
   khoDenIds: [],
+  datePreset: 'all',
+  customDateFrom: '',
+  customDateEnd: '',
+  nguoiTaoIds: [],
+  nguoiDuyetIds: [],
+  doiTacIds: [],
 };
 
 export const usePhieuKhoStore = createGenericStore<PhieuKhoFilters>(initialFilters, DEFAULT_COLUMNS);

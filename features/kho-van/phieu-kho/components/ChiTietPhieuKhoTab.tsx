@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 import { Package } from 'lucide-react';
 import { cn, formatDateShort, formatNumberVN } from '../../../../lib/utils';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
@@ -33,6 +34,12 @@ import { LOAI_DB_TO_TAB } from '../core/types';
 import { useDeletePhieuKho } from '../hooks/use-phieu-kho';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { CONFIRM_DELETE } from '../../../../lib/button-labels';
+import ExportDialog from '../../../../components/shared/ExportDialog';
+import { useExportData } from '../../../../lib/useExportData';
+import {
+  mapChiTietPhieuKhoFlatRow,
+  getExportColumnsChiTietPhieuKho,
+} from '../utils/export-phieu-kho-danh-sach';
 
 function LoaiBadge({ loai }: { loai: LoaiPhieuKho }) {
   const { t } = useTranslation();
@@ -96,6 +103,8 @@ const ChiTietPhieuKhoTab: React.FC = () => {
   } = useChiTietPhieuKhoStore();
 
   const confirm = useConfirmStore((s) => s.confirm);
+  const emptySelectedIds = useMemo(() => new Set<string>(), []);
+  const [showExport, setShowExport] = useState(false);
   const [viewingPhieuId, setViewingPhieuId] = useState<string | null>(null);
   const [viewingLoai, setViewingLoai] = useState<'nhap' | 'xuat' | 'chuyen'>('nhap');
   const [showForm, setShowForm] = useState(false);
@@ -136,12 +145,44 @@ const ChiTietPhieuKhoTab: React.FC = () => {
         !term ||
         row.so_phieu.toLowerCase().includes(searchLower) ||
         (row.ma_hang?.toLowerCase().includes(searchLower) ?? false) ||
-        (row.ten_hang?.toLowerCase().includes(searchLower) ?? false);
+        (row.ten_hang?.toLowerCase().includes(searchLower) ?? false) ||
+        (row.ten_nguoi_tao?.toLowerCase().includes(searchLower) ?? false) ||
+        (row.ten_nguoi_duyet?.toLowerCase().includes(searchLower) ?? false) ||
+        (row.ten_nha_cung_cap?.toLowerCase().includes(searchLower) ?? false) ||
+        (row.ten_khach_hang?.toLowerCase().includes(searchLower) ?? false);
       const matchesLoai = (f.loai?.length ?? 0) === 0 || (f.loai ?? []).includes(row.loai);
       const rowDate = (row.ngay as string) || '';
       const matchesDate = rowDate >= range.start && rowDate <= range.end;
       const matchesKho = (f.khoIds?.length ?? 0) === 0 || (f.khoIds ?? []).includes(row.kho_id);
-      return matchesSearch && matchesLoai && matchesDate && matchesKho;
+      const matchesKhoDen =
+        (f.khoDenIds?.length ?? 0) === 0 ||
+        (row.kho_den_id != null && (f.khoDenIds ?? []).includes(row.kho_den_id));
+      const statusKey =
+        row.trang_thai === 'Chờ duyệt' ? 'Pending' : row.trang_thai === 'Đã duyệt' ? 'Approved' : 'Rejected';
+      const matchesTrangThai = (f.trangThaiKeys?.length ?? 0) === 0 || (f.trangThaiKeys ?? []).includes(statusKey);
+      const matchesNguoiTao =
+        (f.nguoiTaoIds?.length ?? 0) === 0 ||
+        (row.nguoi_tao_id != null && (f.nguoiTaoIds ?? []).includes(String(row.nguoi_tao_id)));
+      const matchesNguoiDuyet =
+        (f.nguoiDuyetIds?.length ?? 0) === 0 ||
+        (row.id_nguoi_duyet != null && (f.nguoiDuyetIds ?? []).includes(String(row.id_nguoi_duyet)));
+      let matchesDoiTac = true;
+      if ((f.doiTacIds?.length ?? 0) > 0) {
+        const ncc = row.id_nha_cung_cap != null && (f.doiTacIds ?? []).includes(row.id_nha_cung_cap);
+        const kh = row.id_khach_hang != null && (f.doiTacIds ?? []).includes(row.id_khach_hang);
+        matchesDoiTac = ncc || kh;
+      }
+      return (
+        matchesSearch &&
+        matchesLoai &&
+        matchesDate &&
+        matchesKho &&
+        matchesKhoDen &&
+        matchesTrangThai &&
+        matchesNguoiTao &&
+        matchesNguoiDuyet &&
+        matchesDoiTac
+      );
     },
     []
   );
@@ -187,6 +228,26 @@ const ChiTietPhieuKhoTab: React.FC = () => {
     return sortedList.slice(start, start + pagination.pageSize);
   }, [sortedList, pagination.page, pagination.pageSize]);
 
+  const exportColumnsChiTiet = useMemo(() => getExportColumnsChiTietPhieuKho(t), [t]);
+  const exportMapChiTiet = useCallback((row: ChiTietPhieuKhoFlat) => mapChiTietPhieuKhoFlatRow(row), []);
+  const { exportData, paginatedData: paginatedExportData, selectedData: selectedExportData } =
+    useExportData({
+      data: sortedList,
+      isOpen: showExport,
+      mapFn: exportMapChiTiet,
+      pagination,
+      selectedIds: emptySelectedIds,
+      keyExtractor: (row) => row.id,
+    });
+
+  const handleExport = useCallback(() => {
+    if (sortedList.length === 0) {
+      toast.warning(t('phieuKho.noExportData'));
+      return;
+    }
+    setShowExport(true);
+  }, [sortedList.length, t]);
+
   const handleRowClick = useCallback((row: ChiTietPhieuKhoFlat) => {
     setViewingPhieuId(row.id_phieu_kho);
     setViewingLoai(LOAI_DB_TO_TAB[row.loai]);
@@ -210,6 +271,8 @@ const ChiTietPhieuKhoTab: React.FC = () => {
       so_phieu: '',
       trang_thai: 'Chờ duyệt',
       trao_doi: undefined,
+      id_nguoi_duyet: undefined,
+      ten_nguoi_duyet: undefined,
       nguoi_tao_id: undefined,
       ten_nguoi_tao: undefined,
       ngay: new Date().toISOString().slice(0, 10),
@@ -334,6 +397,12 @@ const ChiTietPhieuKhoTab: React.FC = () => {
             {row.ghi_chu ?? '—'}
           </td>
         );
+      case 'ten_nguoi_duyet':
+        return (
+          <td key={col.id} className="px-4 py-3 text-sm text-muted-foreground" style={getColumnCellStyle(col)}>
+            {row.ten_nguoi_duyet ?? (row.id_nguoi_duyet != null ? `#${row.id_nguoi_duyet}` : '—')}
+          </td>
+        );
       default:
         return <td key={col.id} className="px-4 py-3 text-sm" style={getColumnCellStyle(col)}>—</td>;
     }
@@ -345,7 +414,7 @@ const ChiTietPhieuKhoTab: React.FC = () => {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 mt-1.5 rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-      <ChiTietPhieuKhoToolbar data={viewableRows} khoList={khoList} />
+      <ChiTietPhieuKhoToolbar data={viewableRows} khoList={khoList} onExport={handleExport} />
 
       <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
         {filteredList.length === 0 ? (
@@ -513,6 +582,20 @@ const ChiTietPhieuKhoTab: React.FC = () => {
           canApprove={canApprove}
         />
       )}
+
+      <AnimatePresence>
+        {showExport && (
+          <ExportDialog
+            open={showExport}
+            onClose={() => setShowExport(false)}
+            columns={exportColumnsChiTiet}
+            data={exportData}
+            paginatedData={paginatedExportData}
+            selectedData={selectedExportData}
+            fileName="Phieu_kho_chi_tiet"
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };
