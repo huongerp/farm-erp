@@ -7,7 +7,7 @@ import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import { useCongViecStore } from '../store/useCongViecStore';
 import { getTrangThaiOptions, getUuTienOptions } from '../core/constants';
-import { useEmployees } from '../../../he-thong/nhan-vien/hooks/use-nhan-vien';
+import { useEmployeesRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
 import { useCongViecFilterCounts } from '../hooks/use-cong-viec-filter-counts';
 import { TRANG_THAI_NV } from '../../../../lib/constants';
 import type { CongViec } from '../core/types';
@@ -31,7 +31,7 @@ interface Props {
 
 const CongViecToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onExport, onImport, viewMode = 'list', onViewModeChange, hideViewMode, canCreate = true, canDelete = true }) => {
   const { t } = useTranslation();
-  const { data: employees = [] } = useEmployees();
+  const { data: employees = [] } = useEmployeesRefQuery();
   const {
     searchTerm,
     setSearchTerm,

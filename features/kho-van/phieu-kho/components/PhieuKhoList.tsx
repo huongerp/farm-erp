@@ -23,6 +23,8 @@ interface Props {
   onView?: (item: PhieuKho) => void;
   /** Nếu có: chỉ hiển thị nút Sửa khi canEditItem(item) === true. */
   canEditItem?: (item: PhieuKho) => boolean;
+  /** Phân trang server: tổng bản ghi khớp lọc (khác `data.length` khi `data` chỉ một trang). */
+  serverTotalCount?: number;
 }
 
 const PhieuKhoList: React.FC<Props> = ({
@@ -41,6 +43,7 @@ const PhieuKhoList: React.FC<Props> = ({
   onDelete,
   onView,
   canEditItem,
+  serverTotalCount,
 }) => {
   const { t } = useTranslation();
 
@@ -272,6 +275,7 @@ const PhieuKhoList: React.FC<Props> = ({
       pageSize={pageSize}
       onPageChange={onPageChange}
       onPageSizeChange={onPageSizeChange}
+      totalRecordsOverride={serverTotalCount}
       renderCell={renderCell}
       renderMobileCard={renderMobileCard}
       keyExtractor={(item) => item.id}

@@ -2,7 +2,7 @@ import type { TFunction } from 'i18next';
 import type { ExportColumn } from '../../../../lib/useExportData';
 import type { Kho } from '../../danh-sach-kho/core/types';
 import type { PhieuDeXuatVatTu, PhieuDeXuatVatTuChiTietRow } from '../core/types';
-import type { Employee } from '../../../he-thong/nhan-vien/core/types';
+import type { EmployeeRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
 
 function formatExportDateTime(iso: string | undefined | null): string {
   if (iso == null || iso === '') return '';
@@ -56,7 +56,7 @@ export const CHI_TIET_EXPORT_KEYS: string[] = [
   'trao_doi',
 ];
 
-function employeesToMap(employees: Employee[]): Record<string, { ho_ten: string; ma_nhan_vien: string }> {
+function employeesToMap(employees: EmployeeRef[]): Record<string, { ho_ten: string; ma_nhan_vien: string }> {
   const m: Record<string, { ho_ten: string; ma_nhan_vien: string }> = {};
   employees.forEach((e) => {
     m[e.id] = { ho_ten: e.ho_ten ?? '', ma_nhan_vien: e.ma_nhan_vien ?? '' };
@@ -105,7 +105,7 @@ export function getChiTietExportColumns(t: TFunction): ExportColumn[] {
 export function mapChiTietRowToExport(
   row: PhieuDeXuatVatTuChiTietRow,
   phieu: PhieuDeXuatVatTu | undefined,
-  employees: Employee[],
+  employees: EmployeeRef[],
   khoById?: Map<string, Kho>
 ): Record<string, string | number> {
   const nv = employeesToMap(employees);

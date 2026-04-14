@@ -13,6 +13,7 @@ import {
 import type { KhoFormValues } from '../core/schema';
 import type { Kho } from '../core/types';
 import i18n from '../../../../lib/i18n';
+import { invalidateRefCache } from '../../../../lib/ref-cache';
 
 const QUERY_KEY = ['kho'] as const;
 
@@ -20,7 +21,7 @@ export const useKhoList = () => {
   return useQuery({
     queryKey: QUERY_KEY,
     queryFn: getKhoList,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 30,
   });
 };
 
@@ -37,6 +38,7 @@ export const useCreateKho = (onSuccess?: () => void) => {
   return useMutation({
     mutationFn: createKho,
     onSuccess: () => {
+      invalidateRefCache('kho');
       qc.invalidateQueries({ queryKey: QUERY_KEY });
       toast.success(i18n.t('kho.toast.createSuccess'));
       onSuccess?.();
@@ -50,6 +52,7 @@ export const useUpdateKho = (onSuccess?: () => void) => {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: KhoFormValues }) => updateKho(id, data),
     onSuccess: () => {
+      invalidateRefCache('kho');
       qc.invalidateQueries({ queryKey: QUERY_KEY });
       toast.success(i18n.t('kho.toast.updateSuccess'));
       onSuccess?.();
@@ -63,6 +66,7 @@ export const useUpdateKhoStatus = () => {
   return useMutation({
     mutationFn: ({ id, status }: { id: string; status: Kho['trang_thai'] }) => updateKhoStatus(id, status),
     onSuccess: () => {
+      invalidateRefCache('kho');
       qc.invalidateQueries({ queryKey: QUERY_KEY });
       toast.success(i18n.t('kho.toast.updateSuccess'));
     },
@@ -75,6 +79,7 @@ export const useDeleteKho = () => {
   return useMutation({
     mutationFn: deleteKho,
     onSuccess: () => {
+      invalidateRefCache('kho');
       qc.invalidateQueries({ queryKey: QUERY_KEY });
       toast.success(i18n.t('kho.toast.deleteSuccess'));
     },
@@ -87,6 +92,7 @@ export const useDeleteKhoMany = () => {
   return useMutation({
     mutationFn: deleteKhoMany,
     onSuccess: () => {
+      invalidateRefCache('kho');
       qc.invalidateQueries({ queryKey: QUERY_KEY });
       toast.success(i18n.t('kho.toast.deleteSuccess'));
     },
@@ -99,6 +105,7 @@ export const useImportKho = (onSuccess?: () => void) => {
   return useMutation({
     mutationFn: importKho,
     onSuccess: (result) => {
+      invalidateRefCache('kho');
       qc.invalidateQueries({ queryKey: QUERY_KEY });
       if (result.created > 0)
         toast.success(i18n.t('kho.toast.importSuccess', { count: result.created }));

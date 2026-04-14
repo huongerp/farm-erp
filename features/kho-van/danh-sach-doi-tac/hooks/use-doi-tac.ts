@@ -22,6 +22,8 @@ import type { DoiTacFormValues } from '../core/schema';
 import type { NhomDoiTacFormValues } from '../services/doi-tac-service';
 import type { LoaiDoiTac } from '../core/types';
 import i18n from '../../../../lib/i18n';
+import { DOI_TAC_REF_QUERY_KEY } from '../../../../lib/hooks/use-supabase-ref-queries';
+import { invalidateRefCache } from '../../../../lib/ref-cache';
 
 const QUERY_KEY_DOI_TAC = ['doiTac'] as const;
 const QUERY_KEY_NHOM = ['nhomDoiTac'] as const;
@@ -31,7 +33,7 @@ export const useDoiTacList = (loai?: LoaiDoiTac) => {
   return useQuery({
     queryKey: [...QUERY_KEY_DOI_TAC, loai ?? 'all'],
     queryFn: () => getAllDoiTac(loai),
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 15,
   });
 };
 
@@ -47,7 +49,7 @@ export const useNhomDoiTacList = () => {
   return useQuery({
     queryKey: QUERY_KEY_NHOM,
     queryFn: getAllNhomDoiTac,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 30,
   });
 };
 
@@ -55,7 +57,7 @@ export const useTagList = () => {
   return useQuery({
     queryKey: QUERY_KEY_TAG,
     queryFn: getAllTag,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 30,
   });
 };
 
@@ -78,6 +80,8 @@ export const useDeleteTag = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY_TAG });
       qc.invalidateQueries({ queryKey: QUERY_KEY_DOI_TAC });
+      qc.invalidateQueries({ queryKey: DOI_TAC_REF_QUERY_KEY });
+      invalidateRefCache('doiTac');
       toast.success(i18n.t('doiTac.toast.tagDeleteSuccess'));
     },
     onError: (err: Error) => toast.error(err.message),
@@ -91,6 +95,8 @@ export const useUpdateTag = (onSuccess?: () => void) => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY_TAG });
       qc.invalidateQueries({ queryKey: QUERY_KEY_DOI_TAC });
+      qc.invalidateQueries({ queryKey: DOI_TAC_REF_QUERY_KEY });
+      invalidateRefCache('doiTac');
       toast.success(i18n.t('doiTac.toast.tagUpdateSuccess'));
       onSuccess?.();
     },
@@ -105,6 +111,8 @@ export const useCreateNhomDoiTac = (onSuccess?: () => void) => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY_NHOM });
       qc.invalidateQueries({ queryKey: QUERY_KEY_DOI_TAC });
+      qc.invalidateQueries({ queryKey: DOI_TAC_REF_QUERY_KEY });
+      invalidateRefCache('doiTac');
       toast.success(i18n.t('doiTac.toast.nhomCreateSuccess'));
       onSuccess?.();
     },
@@ -119,6 +127,8 @@ export const useUpdateNhomDoiTac = (onSuccess?: () => void) => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY_NHOM });
       qc.invalidateQueries({ queryKey: QUERY_KEY_DOI_TAC });
+      qc.invalidateQueries({ queryKey: DOI_TAC_REF_QUERY_KEY });
+      invalidateRefCache('doiTac');
       toast.success(i18n.t('doiTac.toast.nhomUpdateSuccess'));
       onSuccess?.();
     },
@@ -133,6 +143,8 @@ export const useDeleteNhomDoiTac = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY_NHOM });
       qc.invalidateQueries({ queryKey: QUERY_KEY_DOI_TAC });
+      qc.invalidateQueries({ queryKey: DOI_TAC_REF_QUERY_KEY });
+      invalidateRefCache('doiTac');
       toast.success(i18n.t('doiTac.toast.nhomDeleteSuccess'));
     },
     onError: (err: Error) => toast.error(err.message),
@@ -146,6 +158,8 @@ export const useDeleteNhomDoiTacMany = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY_NHOM });
       qc.invalidateQueries({ queryKey: QUERY_KEY_DOI_TAC });
+      qc.invalidateQueries({ queryKey: DOI_TAC_REF_QUERY_KEY });
+      invalidateRefCache('doiTac');
       toast.success(i18n.t('doiTac.toast.nhomDeleteSuccess'));
     },
     onError: (err: Error) => toast.error(err.message),
@@ -159,6 +173,8 @@ export const useDeleteTagMany = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY_TAG });
       qc.invalidateQueries({ queryKey: QUERY_KEY_DOI_TAC });
+      qc.invalidateQueries({ queryKey: DOI_TAC_REF_QUERY_KEY });
+      invalidateRefCache('doiTac');
       toast.success(i18n.t('doiTac.toast.tagDeleteSuccess'));
     },
     onError: (err: Error) => toast.error(err.message),
@@ -171,6 +187,8 @@ export const useCreateDoiTac = (onSuccess?: () => void) => {
     mutationFn: createDoiTac,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY_DOI_TAC });
+      qc.invalidateQueries({ queryKey: DOI_TAC_REF_QUERY_KEY });
+      invalidateRefCache('doiTac');
       toast.success(i18n.t('doiTac.toast.createSuccess'));
       onSuccess?.();
     },
@@ -184,6 +202,8 @@ export const useUpdateDoiTac = (onSuccess?: () => void) => {
     mutationFn: ({ id, data }: { id: string; data: DoiTacFormValues }) => updateDoiTac(id, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY_DOI_TAC });
+      qc.invalidateQueries({ queryKey: DOI_TAC_REF_QUERY_KEY });
+      invalidateRefCache('doiTac');
       toast.success(i18n.t('doiTac.toast.updateSuccess'));
       onSuccess?.();
     },
@@ -197,6 +217,8 @@ export const useDeleteDoiTac = () => {
     mutationFn: deleteDoiTac,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY_DOI_TAC });
+      qc.invalidateQueries({ queryKey: DOI_TAC_REF_QUERY_KEY });
+      invalidateRefCache('doiTac');
       toast.success(i18n.t('doiTac.toast.deleteSuccess'));
     },
     onError: (err: Error) => toast.error(err.message),
@@ -209,6 +231,8 @@ export const useDeleteDoiTacMany = () => {
     mutationFn: deleteDoiTacMany,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY_DOI_TAC });
+      qc.invalidateQueries({ queryKey: DOI_TAC_REF_QUERY_KEY });
+      invalidateRefCache('doiTac');
       toast.success(i18n.t('doiTac.toast.deleteSuccess'));
     },
     onError: (err: Error) => toast.error(err.message),

@@ -3,6 +3,7 @@ import { useAllTonKho } from '../../hooks/use-ton-kho';
 import { getKhoList } from '../../../danh-sach-kho/services/kho-service';
 import { getAllHangHoa } from '../../../danh-sach-hang-hoa/services/hang-hoa-service';
 import { useQuery } from '@tanstack/react-query';
+import { HANG_HOA_QUERY_KEY } from '../../../danh-sach-hang-hoa/hooks/use-hang-hoa';
 import type { TonKhoRecord } from '../../../phieu-kho/services/ton-kho-service';
 import type { Kho } from '../../../danh-sach-kho/core/types';
 import type { HangHoa } from '../../../danh-sach-hang-hoa/core/types';
@@ -61,8 +62,16 @@ export function computeTonKhoStats(
 
 export function useTonKhoStats(): { stats: TonKhoStats | null; isLoading: boolean } {
   const { data: tonKhoList = [], isLoading: loadingTonKho } = useAllTonKho();
-  const { data: khoList = [] } = useQuery<Kho[]>({ queryKey: ['kho'], queryFn: getKhoList });
-  const { data: hangHoaList = [] } = useQuery<HangHoa[]>({ queryKey: ['hangHoa'], queryFn: getAllHangHoa });
+  const { data: khoList = [] } = useQuery<Kho[]>({
+    queryKey: ['kho'],
+    queryFn: getKhoList,
+    staleTime: 1000 * 60 * 30,
+  });
+  const { data: hangHoaList = [] } = useQuery<HangHoa[]>({
+    queryKey: HANG_HOA_QUERY_KEY,
+    queryFn: getAllHangHoa,
+    staleTime: 1000 * 60 * 15,
+  });
 
   const stats = useMemo(
     () => computeTonKhoStats(tonKhoList, khoList, hangHoaList),

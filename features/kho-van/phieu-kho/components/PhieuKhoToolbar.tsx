@@ -14,7 +14,7 @@ import { getDateRangeFromPreset } from '../../../he-thong/nhan-vien/utils/stats-
 import type { DateRangePresetId } from '../../../he-thong/nhan-vien/core/stats-constants';
 
 interface Props {
-  /** Toàn bộ phiếu trong tab (chưa lọc chip) — dùng cho số đếm trên chip */
+  /** Phiếu trong tab — dùng cho số đếm chip khi `chipCountsMode` = fromRows */
   data: PhieuKho[];
   loai: LoaiPhieuKhoTab;
   khoList: Kho[];
@@ -24,6 +24,12 @@ interface Props {
   onExport: () => void;
   canCreate?: boolean;
   canDelete?: boolean;
+  /** fromRows: đếm từ `data`. unweighted: chip luôn hiện (count=1), dùng khi danh sách chỉ một trang server. */
+  chipCountsMode?: 'fromRows' | 'unweighted';
+  /** Bắt buộc khi unweighted — nguồn chip người tạo/duyệt */
+  employeesForChips?: { id: string; ho_ten: string }[];
+  /** Bắt buộc khi unweighted + tab nhập/xuất — chip đối tác */
+  doiTacForChips?: { id: string; ten_ncc: string }[];
 }
 
 /** Tránh crash MultiSelect khi state/HMR để filter không phải mảng. */
@@ -43,6 +49,9 @@ const PhieuKhoToolbar: React.FC<Props> = ({
   onExport,
   canCreate = true,
   canDelete = true,
+  chipCountsMode = 'fromRows',
+  employeesForChips = [],
+  doiTacForChips = [],
 }) => {
   const data = Array.isArray(dataProp) ? dataProp : [];
   const khoList = Array.isArray(khoListProp) ? khoListProp : [];
@@ -125,13 +134,27 @@ const PhieuKhoToolbar: React.FC<Props> = ({
     setFilter('doiTacIds', []);
   };
 
+  const unweighted = chipCountsMode === 'unweighted';
+
   const statusOptions = useMemo(
     () => [
-      { label: t('phieuKho.status.pending'), value: 'Pending', count: data.filter((d) => d.trang_thai === 'Chờ duyệt').length },
-      { label: t('phieuKho.status.approved'), value: 'Approved', count: data.filter((d) => d.trang_thai === 'Đã duyệt').length },
-      { label: t('phieuKho.status.rejected'), value: 'Rejected', count: data.filter((d) => d.trang_thai === 'Không duyệt').length },
+      {
+        label: t('phieuKho.status.pending'),
+        value: 'Pending',
+        count: unweighted ? 1 : data.filter((d) => d.trang_thai === 'Chờ duyệt').length,
+      },
+      {
+        label: t('phieuKho.status.approved'),
+        value: 'Approved',
+        count: unweighted ? 1 : data.filter((d) => d.trang_thai === 'Đã duyệt').length,
+      },
+      {
+        label: t('phieuKho.status.rejected'),
+        value: 'Rejected',
+        count: unweighted ? 1 : data.filter((d) => d.trang_thai === 'Không duyệt').length,
+      },
     ],
-    [data, t]
+    [data, t, unweighted]
   );
 
   const khoOptions = useMemo(
@@ -139,9 +162,9 @@ const PhieuKhoToolbar: React.FC<Props> = ({
       khoList.map((k) => ({
         value: k.id,
         label: (k.ten_kho != null && String(k.ten_kho).trim() !== '' ? String(k.ten_kho) : null) ?? String(k.id),
-        count: data.filter((d) => d.kho_id === k.id).length,
+        count: unweighted ? 1 : data.filter((d) => d.kho_id === k.id).length,
       })),
-    [khoList, data]
+    [khoList, data, unweighted]
   );
 
   const khoDenOptions = useMemo(
@@ -149,12 +172,17 @@ const PhieuKhoToolbar: React.FC<Props> = ({
       khoList.map((k) => ({
         value: k.id,
         label: (k.ten_kho != null && String(k.ten_kho).trim() !== '' ? String(k.ten_kho) : null) ?? String(k.id),
-        count: data.filter((d) => d.kho_den_id === k.id).length,
+        count: unweighted ? 1 : data.filter((d) => d.kho_den_id === k.id).length,
       })),
-    [khoList, data]
+    [khoList, data, unweighted]
   );
 
   const nguoiTaoOptions = useMemo(() => {
+    if (unweighted && employeesForChips.length) {
+      return [...employeesForChips]
+        .map((e) => ({ value: e.id, label: e.ho_ten.trim() || `#${e.id}`, count: 1 }))
+        .sort((a, b) => a.label.localeCompare(b.label, 'vi'));
+    }
     const map = new Map<string, { label: string; count: number }>();
     for (const d of data) {
       if (d.nguoi_tao_id == null) continue;
@@ -167,9 +195,14 @@ const PhieuKhoToolbar: React.FC<Props> = ({
     return [...map.entries()]
       .map(([value, { label, count }]) => ({ value, label, count }))
       .sort((a, b) => a.label.localeCompare(b.label, 'vi'));
-  }, [data]);
+  }, [data, unweighted, employeesForChips]);
 
   const nguoiDuyetOptions = useMemo(() => {
+    if (unweighted && employeesForChips.length) {
+      return [...employeesForChips]
+        .map((e) => ({ value: e.id, label: e.ho_ten.trim() || `#${e.id}`, count: 1 }))
+        .sort((a, b) => a.label.localeCompare(b.label, 'vi'));
+    }
     const map = new Map<string, { label: string; count: number }>();
     for (const d of data) {
       if (d.id_nguoi_duyet == null) continue;
@@ -182,9 +215,14 @@ const PhieuKhoToolbar: React.FC<Props> = ({
     return [...map.entries()]
       .map(([value, { label, count }]) => ({ value, label, count }))
       .sort((a, b) => a.label.localeCompare(b.label, 'vi'));
-  }, [data]);
+  }, [data, unweighted, employeesForChips]);
 
   const doiTacOptions = useMemo(() => {
+    if (unweighted && doiTacForChips.length) {
+      return [...doiTacForChips]
+        .map((d) => ({ value: d.id, label: d.ten_ncc.trim() || d.id, count: 1 }))
+        .sort((a, b) => a.label.localeCompare(b.label, 'vi'));
+    }
     const map = new Map<string, { label: string; count: number }>();
     if (isNhap) {
       for (const d of data) {
@@ -208,7 +246,7 @@ const PhieuKhoToolbar: React.FC<Props> = ({
     return [...map.entries()]
       .map(([value, { label, count }]) => ({ value, label, count }))
       .sort((a, b) => a.label.localeCompare(b.label, 'vi'));
-  }, [data, isNhap, isXuat]);
+  }, [data, isNhap, isXuat, unweighted, doiTacForChips]);
 
   const mobileActions = useMemo(
     () => [

@@ -1,14 +1,14 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
 import { User, Calendar, Building2, Tag } from 'lucide-react';
 import { toast } from 'sonner';
-import { useDonDatHangList } from '../hooks/use-don-dat-hang';
-import { useDoiTacList } from '../../../kho-van/danh-sach-doi-tac/hooks/use-doi-tac';
-import { useEmployees } from '../../../he-thong/nhan-vien/hooks/use-nhan-vien';
+import { useDoiTacRefQuery, useEmployeesRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
+import { getAllDonDatHangSupabase, fetchDonDatHangThongKeFromRpc } from '../services/don-dat-hang-supabase.service';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import EmptyState from '../../../../components/shared/EmptyState';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
-import { useDonDatHangStats } from './stats/useDonDatHangStats';
+import { computeDonDatHangStats } from './stats/useDonDatHangStats';
 import { TRANG_THAI_DON_DAT_HANG, TRANG_THAI_KEY } from '../core/constants';
 import StatsToolbar from './stats/StatsToolbar';
 import StatsCards from './stats/StatsCards';
@@ -18,31 +18,8 @@ import type { DonDatHang } from '../core/types';
 
 const ThongKeTab: React.FC = () => {
   const { t } = useTranslation();
-  const { data: list = [], isLoading, isError } = useDonDatHangList();
-  const { data: supplierList = [] } = useDoiTacList('nha_cung_cap');
-  const { data: employees = [] } = useEmployees();
-
-  const statusCounts = useMemo(() => {
-    const m: Record<string, number> = {};
-    list.forEach((d) => {
-      m[String(d.trang_thai)] = (m[String(d.trang_thai)] ?? 0) + 1;
-    });
-    return m;
-  }, [list]);
-  const supplierCounts = useMemo(() => {
-    const m: Record<string, number> = {};
-    list.forEach((d) => {
-      m[d.id_nha_cung_cap] = (m[d.id_nha_cung_cap] ?? 0) + 1;
-    });
-    return m;
-  }, [list]);
-  const buyerCounts = useMemo(() => {
-    const m: Record<string, number> = {};
-    list.forEach((d) => {
-      m[d.id_nguoi_dat] = (m[d.id_nguoi_dat] ?? 0) + 1;
-    });
-    return m;
-  }, [list]);
+  const { data: supplierList = [] } = useDoiTacRefQuery('nha_cung_cap');
+  const { data: employees = [] } = useEmployeesRefQuery();
 
   const [filterStatus, setFilterStatus] = useState<string[]>([]);
   const [filterSupplier, setFilterSupplier] = useState<string[]>([]);
@@ -50,18 +27,85 @@ const ThongKeTab: React.FC = () => {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
 
-  const filteredList = useMemo(() => {
-    return list.filter((d: DonDatHang) => {
-      const matchStatus = filterStatus.length === 0 || filterStatus.includes(String(d.trang_thai));
-      const matchSupplier = filterSupplier.length === 0 || filterSupplier.includes(d.id_nha_cung_cap);
-      const matchBuyer = filterBuyer.length === 0 || filterBuyer.includes(d.id_nguoi_dat);
-      const matchFrom = !dateFrom || (d.ngay_dat && d.ngay_dat >= dateFrom);
-      const matchTo = !dateTo || (d.ngay_dat && d.ngay_dat <= dateTo);
-      return matchStatus && matchSupplier && matchBuyer && matchFrom && matchTo;
-    });
-  }, [list, filterStatus, filterSupplier, filterBuyer, dateFrom, dateTo]);
+  const { data: thongKe, isLoading, isError } = useQuery({
+    queryKey: ['donDatHang', 'thongKe', filterStatus, filterSupplier, filterBuyer, dateFrom, dateTo],
+    queryFn: async () => {
+      const rpc = await fetchDonDatHangThongKeFromRpc({
+        dateFrom,
+        dateTo,
+        filterStatus,
+        filterSupplier,
+        filterBuyer,
+      });
+      if (rpc) return { kind: 'rpc' as const, rpc };
+      const list = await getAllDonDatHangSupabase();
+      const filteredList = list.filter((d: DonDatHang) => {
+        const matchStatus = filterStatus.length === 0 || filterStatus.includes(String(d.trang_thai));
+        const matchSupplier = filterSupplier.length === 0 || filterSupplier.includes(d.id_nha_cung_cap);
+        const matchBuyer = filterBuyer.length === 0 || filterBuyer.includes(d.id_nguoi_dat);
+        const matchFrom = !dateFrom || (d.ngay_dat && d.ngay_dat >= dateFrom);
+        const matchTo = !dateTo || (d.ngay_dat && d.ngay_dat <= dateTo);
+        return matchStatus && matchSupplier && matchBuyer && matchFrom && matchTo;
+      });
+      return { kind: 'fallback' as const, list, filteredList };
+    },
+    staleTime: 60_000,
+  });
 
-  const stats = useDonDatHangStats(filteredList);
+  const stats = useMemo(() => {
+    if (!thongKe) return null;
+    if (thongKe.kind === 'rpc') {
+      const r = thongKe.rpc;
+      return {
+        summary: r.summary,
+        byTrangThai: r.byTrangThai,
+        bySupplier: r.bySupplier,
+        byBuyer: r.byBuyer,
+        byMonth: r.byMonth,
+      };
+    }
+    return computeDonDatHangStats(thongKe.filteredList);
+  }, [thongKe]);
+
+  const statusCounts = useMemo(() => {
+    if (!thongKe) return {} as Record<string, number>;
+    if (thongKe.kind === 'rpc') return thongKe.rpc.chipByTrangThai;
+    const m: Record<string, number> = {};
+    thongKe.list.forEach((d) => {
+      m[String(d.trang_thai)] = (m[String(d.trang_thai)] ?? 0) + 1;
+    });
+    return m;
+  }, [thongKe]);
+
+  const supplierCounts = useMemo(() => {
+    if (!thongKe) return {} as Record<string, number>;
+    if (thongKe.kind === 'rpc') {
+      const o = thongKe.rpc.chipBySupplierId;
+      const m: Record<string, number> = {};
+      Object.entries(o).forEach(([k, v]) => { m[String(k)] = Number(v) || 0; });
+      return m;
+    }
+    const m: Record<string, number> = {};
+    thongKe.list.forEach((d) => {
+      m[d.id_nha_cung_cap] = (m[d.id_nha_cung_cap] ?? 0) + 1;
+    });
+    return m;
+  }, [thongKe]);
+
+  const buyerCounts = useMemo(() => {
+    if (!thongKe) return {} as Record<string, number>;
+    if (thongKe.kind === 'rpc') {
+      const o = thongKe.rpc.chipByBuyerId;
+      const m: Record<string, number> = {};
+      Object.entries(o).forEach(([k, v]) => { m[String(k)] = Number(v) || 0; });
+      return m;
+    }
+    const m: Record<string, number> = {};
+    thongKe.list.forEach((d) => {
+      m[d.id_nguoi_dat] = (m[d.id_nguoi_dat] ?? 0) + 1;
+    });
+    return m;
+  }, [thongKe]);
 
   const statusOptions = useMemo(
     () =>
@@ -204,7 +248,7 @@ const ThongKeTab: React.FC = () => {
     );
   }
 
-  const isEmpty = filteredList.length === 0;
+  const isEmpty = !stats || stats.summary.total === 0;
 
   return (
     <div className="flex flex-col h-full">
@@ -243,17 +287,17 @@ const ThongKeTab: React.FC = () => {
           ) : (
             <>
               <h3 className="text-sm font-semibold text-primary">{t('donDatHang.stats.title')}</h3>
-              <StatsCards summary={stats.summary} />
+              <StatsCards summary={stats!.summary} />
               <StatsCharts
-                byTrangThai={stats.byTrangThai}
-                bySupplier={stats.bySupplier}
-                byBuyer={stats.byBuyer}
-                byMonth={stats.byMonth}
+                byTrangThai={stats!.byTrangThai}
+                bySupplier={stats!.bySupplier}
+                byBuyer={stats!.byBuyer}
+                byMonth={stats!.byMonth}
               />
               <StatsTables
-                byTrangThai={stats.byTrangThai}
-                bySupplier={stats.bySupplier}
-                byBuyer={stats.byBuyer}
+                byTrangThai={stats!.byTrangThai}
+                bySupplier={stats!.bySupplier}
+                byBuyer={stats!.byBuyer}
               />
             </>
           )}

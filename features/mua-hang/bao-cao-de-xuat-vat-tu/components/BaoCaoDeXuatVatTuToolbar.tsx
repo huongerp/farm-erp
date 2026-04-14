@@ -8,7 +8,7 @@ import type { DateRangeValue } from '../../../../components/ui/DateRangePicker';
 import type { FilterGroup } from '../../../../components/ui/MobileFilterSheet';
 import type { BaoCaoDeXuatVatTuFilters } from '../core/types';
 import type { Kho } from '../../../kho-van/danh-sach-kho/core/types';
-import type { Employee } from '../../../he-thong/nhan-vien/core/types';
+import type { EmployeeRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
 import { TRANG_THAI_PHIEU_OPTIONS } from '../core/constants';
 import { getDateRangeFromPreset, getPresetFromDates } from '../core/datePresets';
 import BaoCaoExportDropdown from './BaoCaoExportDropdown';
@@ -17,7 +17,7 @@ interface BaoCaoDeXuatVatTuToolbarProps {
   filters: BaoCaoDeXuatVatTuFilters;
   onFiltersChange: (next: BaoCaoDeXuatVatTuFilters) => void;
   khoList: Kho[];
-  employees: Employee[];
+  employees: EmployeeRef[];
   activeFilterCount: number;
   onClearAllFilters: () => void;
   onExport: (format: 'excel' | 'pdf') => Promise<void>;

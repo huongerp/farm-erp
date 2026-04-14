@@ -12,7 +12,7 @@ import { cn } from '../../../../lib/utils';
 import { TRANG_THAI, TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
 import { useAssetStorageLocations } from '../../thiet-lap-tai-san/hooks/use-noi-luu';
-import { useEmployees } from '@/features/he-thong/nhan-vien/hooks/use-nhan-vien';
+import { useEmployeesRefQuery } from '@/lib/hooks/use-supabase-ref-queries';
 import type { TaoDanhSachKiemKeFilters } from '../services/kiem-ke-tai-san-service';
 
 interface Props {
@@ -35,7 +35,7 @@ const TaoDanhSachKiemKeDialog: React.FC<Props> = ({
 
   const { data: branches = [] } = useBranches();
   const { data: locations = [] } = useAssetStorageLocations();
-  const { data: employees = [] } = useEmployees();
+  const { data: employees = [] } = useEmployeesRefQuery();
 
   const branchOptions = useMemo(
     () =>

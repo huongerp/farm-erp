@@ -33,6 +33,8 @@ interface GenericTableProps<T> {
   pageSize: number;
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
+  /** Khi có: `data` là một trang đã lọc từ server; tổng bản ghi dùng giá trị này (không slice trong bảng). */
+  totalRecordsOverride?: number;
 
   // Sort
   sort?: SortState;
@@ -80,6 +82,7 @@ function GenericTable<T>({
   data, columns, isLoading,
   selectedIds, onToggleSelection, onToggleAll,
   page, pageSize, onPageChange, onPageSizeChange,
+  totalRecordsOverride,
   sort, onSort,
   renderCell, renderMobileCard,
   onRowClick, keyExtractor,
@@ -125,13 +128,14 @@ function GenericTable<T>({
     }
     return offsets;
   }, [dataColumns, stickyLeftCount]);
-  const totalRecords = data.length;
-  const totalPages = Math.ceil(totalRecords / pageSize);
+  const totalRecords = totalRecordsOverride ?? data.length;
+  const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
 
   const paginatedData = useMemo(() => {
+    if (totalRecordsOverride != null) return data;
     const start = (page - 1) * pageSize;
     return data.slice(start, start + pageSize);
-  }, [data, page, pageSize]);
+  }, [data, page, pageSize, totalRecordsOverride]);
 
   const currentPageIds = paginatedData.map(keyExtractor);
   const isAllSelected = currentPageIds.length > 0 && currentPageIds.every(id => selectedIds.has(id));

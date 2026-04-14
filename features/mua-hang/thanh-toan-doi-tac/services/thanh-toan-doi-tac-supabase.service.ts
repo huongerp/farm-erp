@@ -7,8 +7,8 @@ import type { ThanhToanDoiTac } from '../core/types';
 import type { ThanhToanDoiTacFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
 import { getBranches } from '../../../he-thong/chi-nhanh/services/chi-nhanh-service';
-import { getAllDoiTac } from '../../../kho-van/danh-sach-doi-tac/services/doi-tac-service';
-import { getEmployees } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
+import { getDoiTacRef } from '../../../kho-van/danh-sach-doi-tac/services/doi-tac-service';
+import { getEmployeesRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
 import { getTrangThaiThanhToanDoiTacList } from '../../thiet-lap-de-xuat-vat-tu/services/trang-thai-thanh-toan-doi-tac-service';
 
 const TABLE = 'fp_mh_thanh_toan_doi_tac';
@@ -104,8 +104,8 @@ export async function getAllThanhToanDoiTac(): Promise<ThanhToanDoiTac[]> {
         .range(from, to)
     ),
     getBranches(),
-    getAllDoiTac('nha_cung_cap'),
-    getEmployees(),
+    getDoiTacRef('nha_cung_cap'),
+    getEmployeesRef(),
     getTrangThaiThanhToanDoiTacList(),
   ]);
 
@@ -167,8 +167,8 @@ export async function getThanhToanDoiTacById(id: string): Promise<ThanhToanDoiTa
 
   const [branches, doiTacList, employees, statusList] = await Promise.all([
     getBranches(),
-    getAllDoiTac('nha_cung_cap'),
-    getEmployees(),
+    getDoiTacRef('nha_cung_cap'),
+    getEmployeesRef(),
     getTrangThaiThanhToanDoiTacList(),
   ]);
 

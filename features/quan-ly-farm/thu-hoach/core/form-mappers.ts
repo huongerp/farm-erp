@@ -53,6 +53,8 @@ export function defaultKeHoachFormValues(): ThuHoachKeHoachFormValues {
     tuan: 1,
     id_chi_nhanh: '',
     ten_chi_nhanh: '',
+    du_thu_tuan: 0,
+    thu_du_kien: [],
     ghi_chu: '',
     trao_doi: '',
   };
@@ -68,6 +70,8 @@ export function farmThuHoachToKeHoachForm(row: FarmThuHoach): ThuHoachKeHoachFor
     tuan: row.tuan,
     id_chi_nhanh: row.id_chi_nhanh ?? '',
     ten_chi_nhanh: row.ten_chi_nhanh ?? '',
+    du_thu_tuan: row.du_thu_tuan ?? 0,
+    thu_du_kien: [...(row.thu_du_kien ?? [])],
     ghi_chu: row.ghi_chu ?? '',
     trao_doi: row.trao_doi ?? '',
   };

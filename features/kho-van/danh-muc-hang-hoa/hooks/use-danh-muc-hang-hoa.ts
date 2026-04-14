@@ -18,7 +18,7 @@ export const useDanhMucHangHoaList = () => {
   return useQuery({
     queryKey: QUERY_KEY,
     queryFn: getAllDanhMucHangHoa,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 30,
   });
 };
 
@@ -35,7 +35,7 @@ export const useDanhMucCap2WithParent = () => {
   return useQuery({
     queryKey: [...QUERY_KEY, 'cap2WithParent'],
     queryFn: getDanhMucCap2WithParent,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 30,
   });
 };
 

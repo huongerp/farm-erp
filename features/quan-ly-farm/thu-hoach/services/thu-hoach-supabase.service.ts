@@ -6,7 +6,7 @@ import i18n from '../../../../lib/i18n';
 import type { FarmThuHoach } from '../core/types';
 import { THU_HOACH_DAY_SUFFIXES } from '../core/types';
 import type { ThuHoachKeHoachFormValues, ThuHoachThucTeFormValues } from '../core/schema';
-import { parseIdToInt8 } from '../core/utils';
+import { parseIdToInt8, parseThuDuKienFromDb } from '../core/utils';
 
 const TABLE = 'fp_farm_thu_hoach';
 
@@ -35,6 +35,8 @@ interface DbRow {
   tg_tao: string | null;
   tg_cap_nhat: string | null;
   trao_doi: string | null;
+  du_thu_tuan?: string | number | null;
+  thu_du_kien?: unknown;
 }
 
 function num(v: string | number | null | undefined): number {
@@ -64,6 +66,8 @@ function rowToModel(row: DbRow): FarmThuHoach {
     thuc_te_t6: num(row.thuc_te_t6),
     thuc_te_t7: num(row.thuc_te_t7),
     thuc_te_cn: num(row.thuc_te_cn),
+    du_thu_tuan: num(row.du_thu_tuan),
+    thu_du_kien: parseThuDuKienFromDb(row.thu_du_kien),
     ghi_chu: row.ghi_chu ?? null,
     trao_doi: row.trao_doi ?? null,
     id_nguoi_tao: row.id_nguoi_tao != null ? String(row.id_nguoi_tao) : null,
@@ -81,6 +85,8 @@ function keHoachPayload(values: ThuHoachKeHoachFormValues): Record<string, unkno
     ten_chi_nhanh: values.ten_chi_nhanh ?? null,
     ghi_chu: values.ghi_chu ?? null,
     trao_doi: values.trao_doi ?? null,
+    du_thu_tuan: values.du_thu_tuan ?? 0,
+    thu_du_kien: values.thu_du_kien ?? [],
   };
   for (const s of THU_HOACH_DAY_SUFFIXES) {
     p[`ke_hoach_${s}`] = values[`ke_hoach_${s}` as keyof ThuHoachKeHoachFormValues] ?? 0;

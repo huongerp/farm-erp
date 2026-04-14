@@ -3,7 +3,7 @@ import type { DeXuatChiPhiFormValues } from '../core/schema';
 import { MOCK_DE_XUAT_CHI_PHI } from '../../../../mocks/tai-chinh';
 import { MOCK_TAI_KHOAN } from '../../../../mocks/tai-chinh';
 import { MOCK_DANH_MUC_TAI_CHINH } from '../../../../mocks/tai-chinh';
-import { getEmployees } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
+import { getEmployeesRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
 import i18n from '../../../../lib/i18n';
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -22,7 +22,7 @@ function getTenTaiKhoan(id: string | null): string | null {
 
 async function getTenNguoiDeXuat(id: string): Promise<string> {
   try {
-    const employees = await getEmployees();
+    const employees = await getEmployeesRef();
     const emp = employees.find((e) => e.id === id);
     return emp?.ho_ten ?? id;
   } catch {

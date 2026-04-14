@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { usePhieuDeXuatVatTuList } from '../hooks/use-phieu-de-xuat-vat-tu';
 import { usePhieuDeXuatVatTuViewScope } from '../hooks/use-phieu-de-xuat-vat-tu-view-scope';
 import { filterPhieuDeXuatListByViewScope } from '../utils/phieu-de-xuat-view-scope-filter';
-import { useEmployees } from '../../../he-thong/nhan-vien/hooks/use-nhan-vien';
+import { useEmployeesRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import EmptyState from '../../../../components/shared/EmptyState';
@@ -21,7 +21,7 @@ import { trangThaiToFilterKey } from '../core/constants';
 const ThongKeTab: React.FC = () => {
   const { t } = useTranslation();
   const { data: list = [], isLoading, isError } = usePhieuDeXuatVatTuList();
-  const { data: employees = [] } = useEmployees();
+  const { data: employees = [] } = useEmployeesRefQuery();
   const { data: khoList = [] } = useKhoList();
   const viewScope = usePhieuDeXuatVatTuViewScope();
 

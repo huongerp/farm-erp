@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { useDotKiemKeList } from '../hooks/use-kiem-ke-tai-san';
 import { useKiemKeTaiSanViewScope } from '../hooks/use-kiem-ke-tai-san-view-scope';
 import { useAuthStore } from '../../../../store/useStore';
-import { useEmployees } from '@/features/he-thong/nhan-vien/hooks/use-nhan-vien';
+import { useEmployeesRefQuery } from '@/lib/hooks/use-supabase-ref-queries';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import EmptyState from '../../../../components/shared/EmptyState';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
@@ -35,7 +35,7 @@ const ThongKeTab: React.FC = () => {
   const user = useAuthStore((s) => s.user);
   const { viewAll } = useKiemKeTaiSanViewScope();
   const { data: list = [], isLoading, isError } = useDotKiemKeList({});
-  const { data: employees = [] } = useEmployees();
+  const { data: employees = [] } = useEmployeesRefQuery();
 
   const viewableList = useMemo(() => {
     if (viewAll) return list;

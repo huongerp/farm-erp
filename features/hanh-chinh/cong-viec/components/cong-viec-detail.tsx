@@ -28,7 +28,7 @@ import {
   useCongViecList,
   useUpdateCongViec,
 } from '../hooks/use-cong-viec';
-import { useEmployees } from '../../../he-thong/nhan-vien/hooks/use-nhan-vien';
+import { useEmployeesRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
 
 const TAB_IDS = { info: 'info', traoDoi: 'traoDoi' } as const;
 
@@ -65,7 +65,7 @@ const CongViecDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onAd
     }
   }, [showTrangThaiModal, data.id, data.trang_thai, data.ket_qua, data.link_ket_qua, data.mo_ta]);
 
-  const { data: employees = [] } = useEmployees();
+  const { data: employees = [] } = useEmployeesRefQuery();
   const { data: traoDoiList = [] } = useBinhLuanByCongViecId(data.id);
   const { data: allCongViec = [] } = useCongViecList();
   const children = allCongViec.filter((c) => c.id_cha === data.id);

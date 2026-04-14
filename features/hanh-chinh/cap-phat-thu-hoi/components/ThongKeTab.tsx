@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Package, User } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePhieuList } from '../hooks/use-cap-phat-thu-hoi';
-import { useEmployees } from '@/features/he-thong/nhan-vien/hooks/use-nhan-vien';
+import { useEmployeesRefQuery } from '@/lib/hooks/use-supabase-ref-queries';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import EmptyState from '../../../../components/shared/EmptyState';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
@@ -20,7 +20,7 @@ import type { PhieuCapPhatThuHoi } from '../core/types';
 const ThongKeTab: React.FC = () => {
   const { t } = useTranslation();
   const { data: list = [], isLoading, isError } = usePhieuList({ filter: 'all' });
-  const { data: employees = [] } = useEmployees();
+  const { data: employees = [] } = useEmployeesRefQuery();
 
   const [filterLoai, setFilterLoai] = useState<string[]>([]);
   const [filterNguoiThucHien, setFilterNguoiThucHien] = useState<string[]>([]);

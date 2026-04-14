@@ -5,7 +5,7 @@ import Button from '../../../../components/ui/Button';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import { useCapPhatThuHoiStore } from '../store/useCapPhatThuHoiStore';
-import { useEmployees } from '@/features/he-thong/nhan-vien/hooks/use-nhan-vien';
+import { useEmployeesRefQuery } from '@/lib/hooks/use-supabase-ref-queries';
 import { LOAI_PHIEU_OPTIONS } from '../core/constants';
 import { useCapPhatThuHoiFilterCounts } from '../hooks/use-cap-phat-thu-hoi-filter-counts';
 import type { LoaiPhieu } from '../core/types';
@@ -41,7 +41,7 @@ const CapPhatThuHoiToolbar: React.FC<Props> = ({
     selectedIds,
     clearSelection,
   } = useCapPhatThuHoiStore();
-  const { data: employees = [] } = useEmployees();
+  const { data: employees = [] } = useEmployeesRefQuery();
   const { loaiCounts, nguoiThucHienCounts } = useCapPhatThuHoiFilterCounts(items, filters);
 
   const selectedCount = selectedIds.size;

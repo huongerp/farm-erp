@@ -14,7 +14,7 @@ import type {
 } from '../core/types';
 import { getTaiSanList, updateTaiSanLocationAndHolder } from '../../danh-muc-tai-san/services/danh-muc-tai-san-service';
 import { getAssetStorageLocations } from '../../thiet-lap-tai-san/services/noi-luu-service';
-import { getEmployees } from '@/features/he-thong/nhan-vien/services/nhan-vien-service';
+import { getEmployeesRef } from '@/features/he-thong/nhan-vien/services/nhan-vien-service';
 
 const TABLE = 'fp_ts_phieu_cap_phat_thu_hoi';
 const TABLE_CT = 'fp_ts_phieu_cap_phat_thu_hoi_ct';
@@ -296,7 +296,7 @@ async function buildHeaderPayload(
   id_nguoi_tao?: string | null,
   ten_nguoi_tao?: string | null
 ): Promise<Record<string, unknown>> {
-  const employees = await getEmployees();
+  const employees = await getEmployeesRef();
   const getEmp = (id: string | null | undefined) => {
     if (!id) return { ten: null, ma: null };
     const e = employees.find((x) => x.id === id);

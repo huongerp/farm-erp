@@ -16,7 +16,7 @@ import type { CongViec } from '../core/types';
 import { CongViecFormValues, congViecSchema } from '../core/schema';
 import { getTrangThaiOptions, getUuTienOptions } from '../core/constants';
 import { useCreateCongViec, useUpdateCongViec } from '../hooks/use-cong-viec';
-import { useEmployees } from '../../../he-thong/nhan-vien/hooks/use-nhan-vien';
+import { useEmployeesRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
 import { TRANG_THAI_NV } from '../../../../lib/constants';
 import { useAuthStore } from '../../../../store/useStore';
 
@@ -55,7 +55,7 @@ function getCurrentUserEmployeeId(
 const CongViecForm: React.FC<Props> = ({ initialData, parentId, onClose, stackLevel = 0 }) => {
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
-  const { data: employees = [] } = useEmployees();
+  const { data: employees = [] } = useEmployeesRefQuery();
   const isEdit = !!initialData;
   const createMutation = useCreateCongViec(onClose);
   const updateMutation = useUpdateCongViec(onClose);

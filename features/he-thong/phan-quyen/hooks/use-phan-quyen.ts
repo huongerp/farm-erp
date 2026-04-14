@@ -54,6 +54,7 @@ export const useAccessLogs = () => {
   return useQuery({
     queryKey: ['access-logs'],
     queryFn: getLogs,
-    refetchInterval: 30000, // Refresh mỗi 30s
+    refetchInterval: 2 * 60 * 1000,
+    refetchIntervalInBackground: false,
   });
 };

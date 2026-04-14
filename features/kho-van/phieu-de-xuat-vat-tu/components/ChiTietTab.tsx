@@ -4,19 +4,23 @@ import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
 import { FileText, Edit, Trash2, Package, Download } from 'lucide-react';
 import { toast } from 'sonner';
-import { usePhieuDeXuatVatTuChiTietAll, usePhieuDeXuatVatTuById, usePhieuDeXuatVatTuList, useUpdatePhieuDeXuatVatTu } from '../hooks/use-phieu-de-xuat-vat-tu';
+import { usePhieuDeXuatVatTuChiTietPaged, usePhieuDeXuatVatTuById, useUpdatePhieuDeXuatVatTu } from '../hooks/use-phieu-de-xuat-vat-tu';
 import { usePhieuDeXuatVatTuViewScope } from '../hooks/use-phieu-de-xuat-vat-tu-view-scope';
-import { filterPhieuDeXuatListByViewScope } from '../utils/phieu-de-xuat-view-scope-filter';
+import {
+  buildPhieuDeXuatChiTietListServerQuery,
+  fetchAllPhieuDeXuatVatTuChiTietForListQuery,
+  getPhieuDeXuatVatTuById,
+} from '../services/phieu-de-xuat-vat-tu-service';
+import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import { useChiTietTabStore } from '../store/useChiTietTabStore';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { useAuthStore } from '../../../../store/useStore';
-import { useEmployees } from '../../../he-thong/nhan-vien/hooks/use-nhan-vien';
-import { getPhieuDeXuatVatTuById } from '../services/phieu-de-xuat-vat-tu-service';
+import { useEmployeesRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
 import type { Kho } from '../../danh-sach-kho/core/types';
 import type { PhieuDeXuatVatTu, PhieuDeXuatVatTuChiTietRow } from '../core/types';
 import type { PhieuDeXuatVatTuFormValues } from '../core/schema';
-import { trangThaiToFilterKey, getTienDoMhBadgeClass } from '../core/constants';
+import { getTienDoMhBadgeClass } from '../core/constants';
 import ChiTietTabToolbar from './ChiTietTabToolbar';
 import ExportDialog from '../../../../components/shared/ExportDialog';
 import GenericTable from '../../../../components/shared/GenericTable';
@@ -24,7 +28,6 @@ import { useExportData } from '../../../../lib/useExportData';
 import { CHI_TIET_EXPORT_KEYS, getChiTietExportColumns, mapChiTietRowToExport } from '../utils/chi-tiet-export';
 import Tooltip from '../../../../components/ui/Tooltip';
 import Button from '../../../../components/ui/Button';
-import EmptyState from '../../../../components/shared/EmptyState';
 import ListPageSkeleton from '../../../../components/shared/ListPageSkeleton';
 import ChiTietRowDetail from './ChiTietRowDetail';
 import ChiTietRowEditModal, { type ChiTietRowEditPayload } from './ChiTietRowEditModal';
@@ -59,7 +62,7 @@ const ChiTietTab: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const confirm = useConfirmStore((s) => s.confirm);
   const user = useAuthStore((s) => s.user);
-  const { data: employees = [] } = useEmployees();
+  const { data: employees = [] } = useEmployeesRefQuery();
 
   const handleBack = useCallback(() => {
     setSearchParams((prev) => {
@@ -68,25 +71,15 @@ const ChiTietTab: React.FC = () => {
       return next;
     });
   }, [setSearchParams]);
-  const { data: rows = [], isLoading } = usePhieuDeXuatVatTuChiTietAll();
-  const { data: allList = [] } = usePhieuDeXuatVatTuList();
   const { data: khoList = [] } = useKhoList();
   const viewScope = usePhieuDeXuatVatTuViewScope();
-
-  const viewablePhieuIds = useMemo(() => {
-    const visible = filterPhieuDeXuatListByViewScope(allList, khoList, viewScope);
-    return new Set(visible.map((p) => p.id));
-  }, [allList, khoList, viewScope]);
-
-  const viewableRows = useMemo(
-    () => rows.filter((r) => viewablePhieuIds.has(r.id_phieu_de_xuat_vat_tu)),
-    [rows, viewablePhieuIds]
-  );
 
   const [viewingRow, setViewingRow] = useState<PhieuDeXuatVatTuChiTietRow | null>(null);
   const [editingRow, setEditingRow] = useState<PhieuDeXuatVatTuChiTietRow | null>(null);
   const [showChuyenTienDoModal, setShowChuyenTienDoModal] = useState(false);
   const [showExport, setShowExport] = useState(false);
+  const [exportRows, setExportRows] = useState<PhieuDeXuatVatTuChiTietRow[]>([]);
+  const [exportLoading, setExportLoading] = useState(false);
   /** Khi mở "Chuyển tiến độ" từ drawer chi tiết 1 dòng */
   const [singleRowForChuyenTienDo, setSingleRowForChuyenTienDo] = useState<PhieuDeXuatVatTuChiTietRow | null>(null);
 
@@ -113,7 +106,51 @@ const ChiTietTab: React.FC = () => {
     resetState,
   } = useChiTietTabStore();
 
+  const listServerQuery = useMemo(
+    () =>
+      buildPhieuDeXuatChiTietListServerQuery({
+        searchTerm,
+        filters,
+        viewScope,
+        khoList,
+      }),
+    [searchTerm, filters, viewScope, khoList]
+  );
+  const listQueryKey = useMemo(() => stableListQueryKeyPart(listServerQuery), [listServerQuery]);
+  const pageIndex = Math.max(0, pagination.page - 1);
+  const pageQuery = usePhieuDeXuatVatTuChiTietPaged(pageIndex, listServerQuery);
+  const tableRows = pageQuery.data?.data ?? [];
+  const totalCount = pageQuery.data?.totalCount ?? 0;
+  const isLoading = pageQuery.isPending || pageQuery.isFetching;
+
   useEffect(() => () => resetState(), [resetState]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [listQueryKey, setPage]);
+
+  useEffect(() => {
+    if (!showExport) {
+      setExportRows([]);
+      setExportLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setExportLoading(true);
+    fetchAllPhieuDeXuatVatTuChiTietForListQuery(listServerQuery)
+      .then((rows) => {
+        if (!cancelled) setExportRows(rows);
+      })
+      .catch(() => {
+        if (!cancelled) setExportRows([]);
+      })
+      .finally(() => {
+        if (!cancelled) setExportLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [showExport, listQueryKey, listServerQuery]);
 
   const hasSelection = selectedIds.size > 0;
 
@@ -140,7 +177,7 @@ const ChiTietTab: React.FC = () => {
     async (result: ChuyenTienDoResult) => {
       const selectedRows = singleRowForChuyenTienDo
         ? [singleRowForChuyenTienDo]
-        : viewableRows.filter((r) => selectedIds.has(r.id));
+        : tableRows.filter((r) => selectedIds.has(r.id));
       if (selectedRows.length === 0) return;
       const byPhieu = new Map<string, PhieuDeXuatVatTuChiTietRow[]>();
       selectedRows.forEach((r) => {
@@ -196,7 +233,7 @@ const ChiTietTab: React.FC = () => {
         toast.error((e as Error).message);
       }
     },
-    [selectedIds, viewableRows, singleRowForChuyenTienDo, updateMutation, clearSelection, t]
+    [selectedIds, tableRows, singleRowForChuyenTienDo, updateMutation, clearSelection, t]
   );
 
   const handleDelete = useCallback(
@@ -240,9 +277,9 @@ const ChiTietTab: React.FC = () => {
   );
 
   const sortedRows = useMemo(() => {
-    if (!sort.column || !sort.direction) return [...viewableRows];
+    if (!sort.column || !sort.direction) return [...tableRows];
     const key = sort.column as keyof PhieuDeXuatVatTuChiTietRow;
-    return [...viewableRows].sort((a, b) => {
+    return [...tableRows].sort((a, b) => {
       const va = a[key];
       const vb = b[key];
       const aVal = va == null ? '' : String(va);
@@ -250,58 +287,9 @@ const ChiTietTab: React.FC = () => {
       if (sort.direction === 'asc') return aVal.localeCompare(bVal, undefined, { numeric: true });
       return bVal.localeCompare(aVal, undefined, { numeric: true });
     });
-  }, [viewableRows, sort.column, sort.direction]);
+  }, [tableRows, sort.column, sort.direction]);
 
-  const filteredRows = useMemo(() => {
-    let result = sortedRows;
-
-    const term = (searchTerm ?? '').trim().toLowerCase();
-    if (term) {
-      result = result.filter((row) => {
-        const soPhieu = (row.so_phieu ?? '').toLowerCase();
-        const maHang = (row.ma_hang ?? '').toLowerCase();
-        const tenHang = (row.ten_hang ?? '').toLowerCase();
-        const tenNoi = (row.ten_noi_de_xuat ?? '').toLowerCase();
-        const tenNguoiDeXuat = (row.ten_nguoi_de_xuat ?? '').toLowerCase();
-        const ghiChu = (row.ghi_chu ?? '').toLowerCase();
-        const thongSo = (row.thong_so ?? '').toLowerCase();
-        const tenTienDo = (row.ten_tien_do_mh ?? '').toLowerCase();
-        return [soPhieu, maHang, tenHang, tenNoi, tenNguoiDeXuat, ghiChu, thongSo, tenTienDo].some((s) => s.includes(term));
-      });
-    }
-
-    const statusList = filters.status ?? [];
-    if (statusList.length > 0) {
-      result = result.filter((row) => {
-        const key = trangThaiToFilterKey(row.trang_thai_phieu ?? '');
-        return statusList.includes(key);
-      });
-    }
-    const noiDeXuatList = filters.noiDeXuat ?? [];
-    if (noiDeXuatList.length > 0) {
-      result = result.filter((row) => noiDeXuatList.includes(row.ten_noi_de_xuat ?? ''));
-    }
-    const nguoiDeXuatList = filters.nguoiDeXuat ?? [];
-    if (nguoiDeXuatList.length > 0) {
-      result = result.filter((row) => nguoiDeXuatList.includes(row.ten_nguoi_de_xuat ?? ''));
-    }
-    const nguoiDuyetList = filters.nguoiDuyet ?? [];
-    if (nguoiDuyetList.length > 0) {
-      result = result.filter((row) => nguoiDuyetList.includes(row.ten_nguoi_duyet ?? ''));
-    }
-    const tienDoMhList = filters.tienDoMh ?? [];
-    if (tienDoMhList.length > 0) {
-      result = result.filter((row) => tienDoMhList.includes(row.ten_tien_do_mh ?? ''));
-    }
-
-    return result;
-  }, [sortedRows, searchTerm, filters.status, filters.noiDeXuat, filters.nguoiDeXuat, filters.nguoiDuyet, filters.tienDoMh]);
-
-  const phieuById = useMemo(() => {
-    const m = new Map<string, PhieuDeXuatVatTu>();
-    allList.forEach((p) => m.set(p.id, p));
-    return m;
-  }, [allList]);
+  const phieuById = useMemo(() => new Map<string, PhieuDeXuatVatTu>(), []);
 
   const khoById = useMemo(() => {
     const m = new Map<string, Kho>();
@@ -318,15 +306,15 @@ const ChiTietTab: React.FC = () => {
   );
 
   const { exportData, paginatedData: paginatedExportData, selectedData: selectedExportData } = useExportData({
-    data: filteredRows,
-    isOpen: showExport,
+    data: exportRows,
+    isOpen: showExport && !exportLoading,
     mapFn: exportMapFn,
     pagination,
     selectedIds,
-    keyExtractor: (r) => r.id,
+    keyExtractor: (r: PhieuDeXuatVatTuChiTietRow) => r.id,
   });
 
-  const maxPage = Math.max(1, Math.ceil(filteredRows.length / pagination.pageSize));
+  const maxPage = Math.max(1, Math.ceil(totalCount / pagination.pageSize));
   useEffect(() => {
     if (pagination.page > maxPage) setPage(maxPage);
   }, [pagination.page, pagination.pageSize, maxPage, setPage]);
@@ -471,37 +459,18 @@ const ChiTietTab: React.FC = () => {
     [renderStatusBadge, renderTienDoBadge]
   );
 
-  if (isLoading) {
+  if (pageQuery.isPending && !pageQuery.data) {
     return (
       <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
         <ChiTietTabToolbar
           data={[]}
+          khoList={khoList}
           employees={employees}
           currentUserId={user?.id ?? null}
           selectedCount={0}
           onBack={handleBack}
         />
         <ListPageSkeleton />
-      </div>
-    );
-  }
-
-  if (viewableRows.length === 0) {
-    return (
-      <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-        <ChiTietTabToolbar
-          data={[]}
-          employees={employees}
-          currentUserId={user?.id ?? null}
-          selectedCount={0}
-          onBack={handleBack}
-        />
-        <div className="flex-1 min-h-0 flex items-center justify-center p-4">
-          <EmptyState
-            title={t('phieuDeXuatVatTu.chiTietTab.emptyTitle')}
-            description={t('phieuDeXuatVatTu.chiTietTab.emptyDescription')}
-          />
-        </div>
       </div>
     );
   }
@@ -514,7 +483,7 @@ const ChiTietTab: React.FC = () => {
           size="sm"
           variant="outline"
           onClick={() => setShowExport(true)}
-          disabled={filteredRows.length === 0}
+          disabled={totalCount === 0}
           className="h-8 w-8 p-0 flex items-center justify-center border-border text-muted-foreground hover:bg-muted/50 shrink-0 disabled:opacity-40"
         >
           <Download size={16} className="shrink-0" />
@@ -538,18 +507,21 @@ const ChiTietTab: React.FC = () => {
       <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
         <ChiTietTabToolbar
           data={sortedRows}
+          khoList={khoList}
+          chipCountsMode="unweighted"
           employees={employees}
           currentUserId={user?.id ?? null}
           selectedCount={selectedIds.size}
           onBack={handleBack}
           bulkActions={bulkActions}
           onExport={() => setShowExport(true)}
-          exportDisabled={filteredRows.length === 0}
+          exportDisabled={totalCount === 0}
         />
         <GenericTable<PhieuDeXuatVatTuChiTietRow>
-          data={filteredRows}
+          data={sortedRows}
           columns={columns}
-          isLoading={false}
+          isLoading={isLoading}
+          totalRecordsOverride={totalCount}
           selectedIds={selectedIds}
           onToggleSelection={toggleSelection}
           onToggleAll={toggleAllSelection}

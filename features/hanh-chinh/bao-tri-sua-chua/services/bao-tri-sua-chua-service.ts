@@ -1,6 +1,6 @@
 import type { PhieuBaoTriSuaChua, PhieuBaoTriSuaChuaCreate } from '../core/types';
 import { getTaiSanList } from '../../danh-muc-tai-san/services/danh-muc-tai-san-service';
-import { getEmployees } from '@/features/he-thong/nhan-vien/services/nhan-vien-service';
+import { getEmployeesRef } from '@/features/he-thong/nhan-vien/services/nhan-vien-service';
 import { getLoaiChiPhiList } from '../../thiet-lap-tai-san/services/loai-chi-phi-service';
 import { getHangMucLabel } from '../core/constants';
 import i18n from '../../../../lib/i18n';
@@ -16,7 +16,7 @@ import {
 async function enrichPhieu(items: PhieuBaoTriSuaChua[]): Promise<PhieuBaoTriSuaChua[]> {
   const [assets, employees, loaiChiPhi] = await Promise.all([
     getTaiSanList(),
-    getEmployees(),
+    getEmployeesRef(),
     getLoaiChiPhiList(),
   ]);
   const assetMap = new Map(assets.map((a) => [String(a.id), { ma: a.ma_tai_san, ten: a.ten_tai_san }]));

@@ -9,9 +9,9 @@ import Combobox from '../../../../components/ui/Combobox';
 import NumberInput from '../../../../components/ui/NumberInput';
 import { thanhToanDoiTacSchema, type ThanhToanDoiTacFormValues } from '../core/schema';
 import type { ThanhToanDoiTac } from '../core/types';
-import type { DoiTac } from '../../../kho-van/danh-sach-doi-tac/core/types';
+import type { DoiTacRefLite } from '../../../kho-van/danh-sach-doi-tac/services/doi-tac-service';
 import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
-import type { Employee } from '../../../he-thong/nhan-vien/core/types';
+import type { EmployeeRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
 import type { TrangThaiThanhToanDoiTac } from '../../thiet-lap-de-xuat-vat-tu/core/types';
 import { useCreateThanhToanDoiTac, useUpdateThanhToanDoiTac } from '../hooks/use-thanh-toan-doi-tac';
 import { useCauHinhSoPhieuThanhToan } from '../hooks/use-cau-hinh-so-phieu-thanh-toan';
@@ -26,9 +26,9 @@ import FormGrid from '../../../../components/shared/FormGrid';
 import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
 
 interface Props {
-  doiTacList: DoiTac[];
+  doiTacList: DoiTacRefLite[];
   chiNhanhList: Branch[];
-  employees: Employee[];
+  employees: EmployeeRef[];
   statusList: TrangThaiThanhToanDoiTac[];
   initialData?: ThanhToanDoiTac | null;
   onClose: () => void;

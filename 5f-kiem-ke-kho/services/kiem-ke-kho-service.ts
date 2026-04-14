@@ -7,9 +7,9 @@ import type {
   KetQuaKiemKeKho,
 } from '../core/types';
 import { getTonKhoTheoKho, capNhatTonKho } from '@/features/kho-van/phieu-kho/services/ton-kho-service';
-import { getKhoList } from '@/features/kho-van/danh-sach-kho/services/kho-service';
-import { getAllHangHoa } from '@/features/kho-van/danh-sach-hang-hoa/services/hang-hoa-service';
-import { getEmployees } from '@/features/he-thong/nhan-vien/services/nhan-vien-service';
+import { getKhoRef } from '@/features/kho-van/danh-sach-kho/services/kho-service';
+import { getHangHoaRef } from '@/features/kho-van/danh-sach-hang-hoa/services/hang-hoa-service';
+import { getEmployeesRef } from '@/features/he-thong/nhan-vien/services/nhan-vien-service';
 import { createRepository } from '@/lib/data/create-repository';
 
 /** Bộ lọc phạm vi khi tạo danh sách kiểm kê (hàng hóa, danh mục — tùy chọn) */
@@ -148,7 +148,7 @@ const repoChiTiet = createRepository<ChiTietKiemKeKho>({
 });
 
 async function enrichDot(dots: DotKiemKeKho[]): Promise<DotKiemKeKho[]> {
-  const employees = await getEmployees();
+  const employees = await getEmployeesRef();
   const empMap = new Map(employees.map((e) => [e.id, { ten: e.ho_ten, ma: e.ma_nhan_vien }]));
   return dots.map((d) => ({
     ...d,
@@ -217,7 +217,7 @@ export async function getChiTietByDot(id_dot_kiem_ke_kho: string): Promise<ChiTi
 
 export async function createDotKiemKeKho(data: DotKiemKeKhoCreate): Promise<DotKiemKeKho> {
   await delay(500);
-  const employees = await getEmployees();
+  const employees = await getEmployeesRef();
   const emp = employees.find((e) => e.id === data.id_nguoi_phu_trach);
   const dot: Omit<DotKiemKeKho, 'id'> & { id?: string } = {
     ma_dot: data.ma_dot,
@@ -287,7 +287,7 @@ export async function taoDanhSachKiemKe(
   const dot = await repoDot.getById(id_dot_kiem_ke_kho);
   if (!dot) throw new Error('Đợt kiểm kê không tồn tại');
   if (dot.trang_thai !== 'draft') throw new Error('Chỉ tạo danh sách khi đợt ở trạng thái Nháp');
-  const [hangHoaList, khoList, allCt] = await Promise.all([getAllHangHoa(), getKhoList(), repoChiTiet.getAll()]);
+  const [hangHoaList, khoList, allCt] = await Promise.all([getHangHoaRef(), getKhoRef(), repoChiTiet.getAll()]);
   const hangHoaMap = new Map(hangHoaList.map((h) => [h.id, h]));
   const khoMap = new Map(khoList.map((k) => [k.id, k]));
 
@@ -307,7 +307,7 @@ export async function taoDanhSachKiemKe(
       if (existingKeys.has(key)) continue;
       if (filters?.id_hang_hoa?.length && !filters.id_hang_hoa.includes(id_hang_hoa)) continue;
       const hh = hangHoaMap.get(id_hang_hoa);
-      if (filters?.id_danh_muc?.length && (!hh?.id_danh_muc || !filters.id_danh_muc.includes(hh.id_danh_muc))) continue;
+      if (filters?.id_danh_muc?.length && (!hh?.danh_muc_id || !filters.id_danh_muc.includes(hh.danh_muc_id))) continue;
 
       await repoChiTiet.insert({
         id_dot_kiem_ke_kho,
@@ -351,7 +351,7 @@ export async function updateChiTietKetQua(
   await delay(300);
   const current = await repoChiTiet.getById(id_chi_tiet);
   if (!current) throw new Error('Chi tiết không tồn tại');
-  const employees = await getEmployees();
+  const employees = await getEmployeesRef();
   const emp = employees.find((e) => e.id === id_nguoi_kiem);
   const so_luong_thuc_te = data.so_luong_thuc_te !== undefined ? data.so_luong_thuc_te : current.so_luong_thuc_te;
   const ghi_chu_dong = data.ghi_chu_dong !== undefined ? data.ghi_chu_dong : current.ghi_chu_dong;

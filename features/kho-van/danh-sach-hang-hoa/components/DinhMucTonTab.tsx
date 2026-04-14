@@ -22,6 +22,7 @@ import DetailField from '../../../../components/shared/DetailField';
 import { useDinhMucList, useCreateDinhMucTonKho, useUpdateDinhMucTonKho, useDeleteDinhMucTonKho } from '../../ton-kho/hooks/use-ton-kho';
 import { getKhoList } from '../../danh-sach-kho/services/kho-service';
 import { getAllHangHoa } from '../services/hang-hoa-service';
+import { HANG_HOA_QUERY_KEY } from '../hooks/use-hang-hoa';
 import type { DinhMucTonKhoRow } from '../../phieu-kho/services/ton-kho-service';
 import type { Kho } from '../../danh-sach-kho/core/types';
 import type { HangHoa } from '../core/types';
@@ -61,8 +62,16 @@ const DinhMucTonTab: React.FC<DinhMucTonTabProps> = ({ onBack }) => {
   } = useDinhMucTonStore();
 
   const { data: list = [], isLoading } = useDinhMucList();
-  const { data: khoList = [] } = useQuery<Kho[]>({ queryKey: ['kho'], queryFn: getKhoList });
-  const { data: hangHoaList = [] } = useQuery<HangHoa[]>({ queryKey: ['hangHoa'], queryFn: getAllHangHoa });
+  const { data: khoList = [] } = useQuery<Kho[]>({
+    queryKey: ['kho'],
+    queryFn: getKhoList,
+    staleTime: 1000 * 60 * 30,
+  });
+  const { data: hangHoaList = [] } = useQuery<HangHoa[]>({
+    queryKey: HANG_HOA_QUERY_KEY,
+    queryFn: getAllHangHoa,
+    staleTime: 1000 * 60 * 15,
+  });
 
   const [showForm, setShowForm] = useState(false);
   const [editingRow, setEditingRow] = useState<DinhMucTonKhoRow | null>(null);

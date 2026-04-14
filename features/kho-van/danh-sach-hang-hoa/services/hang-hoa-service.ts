@@ -1,4 +1,5 @@
 import { supabase, fetchAllRows } from '../../../../lib/supabase';
+import { getCachedRef, REF_CACHE_KEYS } from '../../../../lib/ref-cache';
 import type { HangHoa } from '../core/types';
 import type { HangHoaFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
@@ -90,6 +91,58 @@ export const getAllHangHoa = async (): Promise<HangHoa[]> => {
       .range(from, to)
   );
   return enrichWithTenDanhMuc(rows);
+};
+
+/** Danh sách hàng hóa tối thiểu (không gọi danh mục enrich) — dùng map ma/ten/dvt trong phiếu kho, PO, kiểm kê. */
+export type HangHoaRefLite = {
+  id: string;
+  ma_hang: string;
+  ma_hang_hoa: string;
+  ten_hang: string;
+  ten_hang_hoa: string;
+  don_vi_tinh: string | undefined;
+  dvt: string | null;
+  danh_muc_id: string | null;
+  ten_danh_muc?: string;
+  /** Đơn giá mặc định (phiếu kho / đơn đặt hàng). */
+  don_gia: number | null;
+  /** Chuẩn hóa giống HangHoa — dùng lọc tạo danh sách kiểm kê kho. */
+  trang_thai: HangHoa['trang_thai'];
+};
+
+export const getHangHoaRef = async (): Promise<HangHoaRefLite[]> => {
+  return getCachedRef(REF_CACHE_KEYS.hangHoa, async () => {
+    const rows = await fetchAllRows<HangHoaRow>((from, to) =>
+      supabase
+        .from(TABLE)
+        .select('id, ma_hang_hoa, ten_hang_hoa, dvt, danh_muc_id, danh_muc_cha_id, thu_tu, trang_thai, don_gia')
+        .order('thu_tu', { ascending: true })
+        .order('ma_hang_hoa', { ascending: true })
+        .range(from, to)
+    );
+    return rows.map((row) => {
+      const ma = row.ma_hang_hoa ?? '';
+      const ten = row.ten_hang_hoa ?? '';
+      const unit = row.dvt ?? undefined;
+      const donGiaRaw = row.don_gia;
+      const donGia =
+        donGiaRaw != null && donGiaRaw !== ''
+          ? Number(donGiaRaw)
+          : null;
+      return {
+        id: String(row.id),
+        ma_hang: ma,
+        ma_hang_hoa: ma,
+        ten_hang: ten,
+        ten_hang_hoa: ten,
+        don_vi_tinh: unit,
+        dvt: row.dvt ?? null,
+        danh_muc_id: row.danh_muc_id != null ? String(row.danh_muc_id) : null,
+        don_gia: Number.isFinite(donGia) ? donGia : null,
+        trang_thai: normalizeTrangThaiHangHoa(row.trang_thai),
+      };
+    });
+  });
 };
 
 export const getHangHoaById = async (id: string): Promise<HangHoa | null> => {

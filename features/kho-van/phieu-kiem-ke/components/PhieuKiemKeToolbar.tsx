@@ -7,13 +7,13 @@ import FilterChipMultiSelect from '../../../../components/shared/FilterChipMulti
 import { usePhieuKiemKeStore } from '../store/usePhieuKiemKeStore';
 import type { PhieuKiemKe } from '../core/types';
 import type { Kho } from '../../danh-sach-kho/core/types';
-import type { Employee } from '../../../he-thong/nhan-vien/core/types';
+import type { EmployeeRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
 import { TRANG_THAI_KIEM_KE } from '../core/constants';
 
 interface Props {
   data: PhieuKiemKe[];
   khoList: Kho[];
-  employees: Employee[];
+  employees: EmployeeRef[];
   selectedCount: number;
   onAdd: () => void;
   onDeleteMany: () => void;

@@ -19,7 +19,7 @@ import { useCreateTaiSan, useUpdateTaiSan, useGetNextMaTaiSan, checkMaTaiSanExis
 import { useAssetGroups } from '../../thiet-lap-tai-san/hooks/use-nhom-tai-san';
 import { useAssetStorageLocations } from '../../thiet-lap-tai-san/hooks/use-noi-luu';
 import { useAssetStatuses } from '../../thiet-lap-tai-san/hooks/use-trang-thai';
-import { useEmployees } from '@/features/he-thong/nhan-vien/hooks/use-nhan-vien';
+import { useEmployeesRefQuery } from '@/lib/hooks/use-supabase-ref-queries';
 import { generateAssetBarcode } from '../utils/barcode';
 import BarcodeQRDisplay from './BarcodeQRDisplay';
 import CurrencyInput from '../../../../components/ui/CurrencyInput';
@@ -61,7 +61,7 @@ const TaiSanForm: React.FC<Props> = ({ initialData, onClose }) => {
   const { data: groups = [] } = useAssetGroups();
   const { data: locations = [] } = useAssetStorageLocations();
   const { data: statuses = [] } = useAssetStatuses();
-  const { data: employees = [] } = useEmployees();
+  const { data: employees = [] } = useEmployeesRefQuery();
   const { data: distinctThuongHieu = [] } = useDistinctThuongHieu();
   const { data: distinctModel = [] } = useDistinctModel();
   const { data: distinctXuatXu = [] } = useDistinctXuatXu();

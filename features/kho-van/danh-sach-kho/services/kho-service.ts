@@ -1,4 +1,5 @@
 import { supabase, fetchAllRows } from '../../../../lib/supabase';
+import { getCachedRef, REF_CACHE_KEYS } from '../../../../lib/ref-cache';
 import { getBranches } from '../../../he-thong/chi-nhanh/services/chi-nhanh-service';
 import type { Kho } from '../core/types';
 import type { KhoFormValues } from '../core/schema';
@@ -57,6 +58,33 @@ export const getKhoList = async (): Promise<Kho[]> => {
   return rows.map((row) => {
     const tenChiNhanh = row.chi_nhanh_id != null ? branchMap[String(row.chi_nhanh_id)] : undefined;
     return rowToKho(row, tenChiNhanh);
+  });
+};
+
+/** Kho tối thiểu (không enrich tên chi nhánh) — map tên kho trong phiếu kho/PO. */
+export type KhoRefLite = {
+  id: string;
+  ma_kho: string;
+  ten_kho: string;
+  id_chi_nhanh: string | null;
+};
+
+export const getKhoRef = async (): Promise<KhoRefLite[]> => {
+  return getCachedRef(REF_CACHE_KEYS.kho, async () => {
+    const rows = await fetchAllRows<Pick<KhoRow, 'id' | 'ma_kho' | 'ten_kho' | 'chi_nhanh_id' | 'thu_tu'>>((from, to) =>
+      supabase
+        .from(TABLE)
+        .select('id, ma_kho, ten_kho, chi_nhanh_id, thu_tu')
+        .order('thu_tu', { ascending: true })
+        .order('ma_kho', { ascending: true })
+        .range(from, to)
+    );
+    return rows.map((row) => ({
+      id: String(row.id),
+      ma_kho: row.ma_kho ?? '',
+      ten_kho: row.ten_kho ?? '',
+      id_chi_nhanh: row.chi_nhanh_id != null ? String(row.chi_nhanh_id) : null,
+    }));
   });
 };
 

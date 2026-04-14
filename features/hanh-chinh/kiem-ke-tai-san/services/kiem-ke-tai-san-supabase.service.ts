@@ -38,11 +38,17 @@ export interface ThemChiTietPhatHienPayload {
 }
 import { getTaiSanList, updateTaiSanFromKiemKe } from '../../danh-muc-tai-san/services/danh-muc-tai-san-service';
 import { getAssetStorageLocations } from '../../thiet-lap-tai-san/services/noi-luu-service';
-import { getEmployees } from '@/features/he-thong/nhan-vien/services/nhan-vien-service';
+import { getEmployeesRef } from '@/features/he-thong/nhan-vien/services/nhan-vien-service';
 import { getAssetStatuses } from '../../thiet-lap-tai-san/services/trang-thai-service';
 
 const TABLE_DOT = 'fp_ts_dot_kiem_ke_tai_san';
 const TABLE_CT = 'fp_ts_dot_kiem_ke_tai_san_chi_tiet';
+
+const DOT_LIST_SELECT =
+  'id, ma_dot, ten_dot, ngay_bat_dau, ngay_ket_thuc, trang_thai, id_nguoi_phu_trach, id_nhom, id_noi_luu, id_nguoi_giu, ghi_chu, trang_thai_active, tg_tao, tg_cap_nhat';
+
+const CT_LIST_SELECT =
+  'id, id_dot_kiem_ke, id_tai_san, ma_tai_san, ten_tai_san, id_noi_luu_so, ten_noi_luu_so, id_nguoi_giu_so, ten_nguoi_giu_so, id_trang_thai_so, ten_trang_thai_so, id_noi_luu_thuc_te, ten_noi_luu_thuc_te, id_nguoi_giu_thuc_te, ten_nguoi_giu_thuc_te, id_trang_thai_thuc_te, ten_trang_thai_thuc_te, ket_qua, ghi_chu_dong, id_nguoi_kiem, ngay_kiem, tg_tao, tg_cap_nhat';
 
 const TRANG_THAI_NHAP: TrangThaiDotKiemKe = 'Nháp';
 const TRANG_THAI_DANG_KIEM_KE: TrangThaiDotKiemKe = 'Đang kiểm kê';
@@ -167,7 +173,7 @@ function rowToChiTiet(row: DbChiTietRow): ChiTietKiemKe {
 
 async function enrichDots(dots: DotKiemKe[]): Promise<DotKiemKe[]> {
   if (dots.length === 0) return dots;
-  const employees = await getEmployees();
+  const employees = await getEmployeesRef();
   const empMap = new Map(employees.map((e) => [e.id, { ten: e.ho_ten, ma: e.ma_nhan_vien }]));
   return dots.map((d) => ({
     ...d,
@@ -178,7 +184,7 @@ async function enrichDots(dots: DotKiemKe[]): Promise<DotKiemKe[]> {
 
 async function enrichChiTietList(items: ChiTietKiemKe[]): Promise<ChiTietKiemKe[]> {
   if (items.length === 0) return items;
-  const employees = await getEmployees();
+  const employees = await getEmployeesRef();
   const empMap = new Map(employees.map((e) => [e.id, e.ho_ten]));
   return items.map((c) => ({
     ...c,
@@ -212,7 +218,7 @@ export async function getNextMaDotDotKiemKeTaiSan(): Promise<number> {
 }
 
 export async function getDotKiemKeListSupabase(params: GetDotKiemKeListParams = {}): Promise<DotKiemKe[]> {
-  let query = supabase.from(TABLE_DOT).select('*').order('tg_cap_nhat', { ascending: false });
+  let query = supabase.from(TABLE_DOT).select(DOT_LIST_SELECT).order('tg_cap_nhat', { ascending: false });
   if (params.filter === 'mine' && params.id_nguoi) {
     query = query.eq('id_nguoi_phu_trach', toNum(params.id_nguoi)!);
   }
@@ -249,7 +255,7 @@ export async function getChiTietByDotSupabase(id_dot_kiem_ke: string): Promise<C
   if (numDot == null) return [];
   const { data, error } = await supabase
     .from(TABLE_CT)
-    .select('*')
+    .select(CT_LIST_SELECT)
     .eq('id_dot_kiem_ke', numDot)
     .order('id', { ascending: true });
   if (error) throw new Error((error as { message?: string }).message ?? String(error));
@@ -405,7 +411,7 @@ export async function updateChiTietKetQuaSupabase(
   const current = rowToChiTiet(row as DbChiTietRow);
   const [locations, employees, statuses] = await Promise.all([
     getAssetStorageLocations(),
-    getEmployees(),
+    getEmployeesRef(),
     getAssetStatuses(),
   ]);
   const locMap = new Map(locations.map((l) => [l.id, l.ten_noi_luu]));
@@ -478,7 +484,7 @@ export async function themChiTietPhatHienSupabase(
   if (!asset) throw new Error('Tài sản không tồn tại');
   const [locations, employees, statuses] = await Promise.all([
     getAssetStorageLocations(),
-    getEmployees(),
+    getEmployeesRef(),
     getAssetStatuses(),
   ]);
   const locMap = new Map(locations.map((l) => [l.id, l.ten_noi_luu]));

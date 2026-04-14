@@ -28,6 +28,18 @@ export function filterKeyToTrangThai(key: TrangThaiFilterKey): TrangThaiPhieuDeX
   return TRANG_THAI_KHONG_DUYET;
 }
 
+/** Các nhãn tiến độ MH dùng cho chip lọc khi không có đủ dòng trên một trang server. */
+export const TIEN_DO_MH_KNOWN_LABELS = [
+  'Chưa mua',
+  'Đã mua',
+  'Trích quỹ',
+  'Điều chuyển',
+  'Đang xử lý',
+  'Trao đổi',
+  'Từ chối',
+  'VP điều về',
+] as const;
+
 /** Màu badge cho tiến độ mua hàng (list + detail tab Chi tiết) */
 const TIEN_DO_MH_COLORS: Record<string, string> = {
   'Chưa mua': 'bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20',

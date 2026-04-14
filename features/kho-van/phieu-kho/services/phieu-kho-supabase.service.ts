@@ -3,7 +3,7 @@
  * Trên DB không có FK; app liên kết và enrich với: danh sách kho, danh sách hàng hóa,
  * nhân viên, danh sách đối tác.
  */
-import { supabase, fetchAllRows } from '../../../../lib/supabase';
+import { supabase, fetchAllRows, fetchTablePage, type PaginatedTableResult } from '../../../../lib/supabase';
 import type { PhieuKho, PhieuKhoChiTiet, LoaiPhieuKho, ChiTietPhieuKhoFlat, TrangThaiPhieuKho } from '../core/types';
 import type { PhieuKhoFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
@@ -27,13 +27,30 @@ export interface LichSuNhapXuatByKhoRow extends LichSuNhapXuatRow {
   ma_hang?: string;
   ten_hang?: string;
 }
-import { getKhoList } from '../../danh-sach-kho/services/kho-service';
-import { getAllDoiTac } from '../../danh-sach-doi-tac/services/doi-tac-service';
-import { getAllHangHoa } from '../../danh-sach-hang-hoa/services/hang-hoa-service';
-import { getEmployees } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
+import { getKhoRef } from '../../danh-sach-kho/services/kho-service';
+import { getDoiTacRef } from '../../danh-sach-doi-tac/services/doi-tac-service';
+import { getHangHoaRef } from '../../danh-sach-hang-hoa/services/hang-hoa-service';
+import { getEmployeesRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
+import type { BranchListScope } from '../../../../lib/branch-scope-query';
+import type { ChiTietPhieuKhoListServerQuery, PhieuKhoListServerQuery } from './phieu-kho-list-query';
 
 const TABLE_PHIEU = 'fp_mh_phieu_kho';
 const TABLE_CHI_TIET = 'fp_mh_phieu_kho_chi_tiet';
+
+const PHIEU_KHO_CHI_TIET_ROW_SELECT =
+  'id, id_phieu_kho, id_hang_hoa, ten_hang_hoa, don_vi_tinh, so_luong, don_gia, thanh_tien, so_lot, ghi_chu, nguoi_tao_id, ten_nguoi_tao, tg_tao, tg_cap_nhat';
+
+/** Cột view summary (tránh select('*') — giảm egress). */
+const PHIEU_KHO_SUMMARY_SELECT =
+  'id, so_phieu, ngay, loai, kho_id, ten_kho, kho_den_id, ten_kho_den, id_nha_cung_cap, id_khach_hang, trang_thai, mo_ta, trao_doi, id_nguoi_duyet, nguoi_tao_id, ten_nguoi_tao, tg_tao, tg_cap_nhat, so_dong, tong_so_luong, tong_tien, ref_ten_kho, ref_ten_kho_den, ref_ten_nha_cung_cap, ref_ten_khach_hang, ref_ten_nguoi_tao, ref_ten_nguoi_duyet';
+
+const PHIEU_KHO_HEADER_ROW_SELECT =
+  'id, so_phieu, ngay, loai, kho_id, ten_kho, kho_den_id, ten_kho_den, id_nha_cung_cap, id_khach_hang, trang_thai, mo_ta, trao_doi, id_nguoi_duyet, nguoi_tao_id, ten_nguoi_tao, tg_tao, tg_cap_nhat';
+
+/** View DB: chạy docs/supabase-v_phieu_kho_summary.sql trên Supabase. */
+const VIEW_PHIEU_KHO_SUMMARY = 'v_phieu_kho_summary';
+/** View DB: chạy docs/supabase-v_phieu_kho_chi_tiet_flat.sql trên Supabase. */
+const VIEW_PHIEU_KHO_CHI_TIET_FLAT = 'v_phieu_kho_chi_tiet_flat';
 
 /** Row fp_mh_phieu_kho từ Supabase */
 interface PhieuKhoDbRow {
@@ -75,6 +92,74 @@ interface ChiTietDbRow {
   tg_tao: string | null;
   tg_cap_nhat: string | null;
 }
+
+/** Row từ v_phieu_kho_summary (= header + aggregate + cột ref_* từ JOIN khi view đã migrate). */
+type PhieuKhoSummaryRow = PhieuKhoDbRow & {
+  so_dong: number;
+  tong_so_luong: number | string | null;
+  tong_tien: number | string | null;
+  ref_ten_kho?: string | null;
+  ref_ten_kho_den?: string | null;
+  ref_ten_nha_cung_cap?: string | null;
+  ref_ten_khach_hang?: string | null;
+  ref_ten_nguoi_tao?: string | null;
+  ref_ten_nguoi_duyet?: string | null;
+};
+
+/** Map một dòng summary (đã JOIN tên trên DB) → PhieuKho — không gọi get*Ref. */
+function mapPhieuKhoSummaryRowToPhieu(row: PhieuKhoSummaryRow): PhieuKho {
+  const ten_kho = row.ref_ten_kho ?? row.ten_kho ?? undefined;
+  const ten_kho_den = row.kho_den_id != null ? (row.ref_ten_kho_den ?? row.ten_kho_den ?? undefined) : undefined;
+  const ten_nha_cung_cap = row.id_nha_cung_cap != null ? (row.ref_ten_nha_cung_cap ?? undefined) : undefined;
+  const ten_khach_hang = row.id_khach_hang != null ? (row.ref_ten_khach_hang ?? undefined) : undefined;
+  const ten_nguoi_tao = row.nguoi_tao_id != null ? (row.ten_nguoi_tao ?? row.ref_ten_nguoi_tao ?? undefined) : undefined;
+  const ten_nguoi_duyet = row.id_nguoi_duyet != null ? (row.ref_ten_nguoi_duyet ?? undefined) : undefined;
+  const phieu = rowToPhieu(row as PhieuKhoDbRow, { ten_kho, ten_kho_den, ten_nha_cung_cap, ten_khach_hang, ten_nguoi_tao, ten_nguoi_duyet });
+  phieu.tong_so_dong = Number(row.so_dong) || 0;
+  phieu.tong_so_luong = Number(row.tong_so_luong) || 0;
+  phieu.tong_tien = Number(row.tong_tien) || 0;
+  return phieu;
+}
+
+/** Row từ v_phieu_kho_chi_tiet_flat. */
+interface PhieuKhoChiTietFlatViewRow {
+  chi_tiet_id: number;
+  id_phieu_kho: number;
+  id_hang_hoa: number;
+  ten_hang_hoa: string | null;
+  don_vi_tinh: string | null;
+  so_luong: number | string | null;
+  don_gia: number | string | null;
+  thanh_tien: number | string | null;
+  so_lot: string | null;
+  ghi_chu: string | null;
+  chi_tiet_nguoi_tao_id: number | null;
+  chi_tiet_ten_nguoi_tao: string | null;
+  chi_tiet_tg_tao: string | null;
+  chi_tiet_tg_cap_nhat: string | null;
+  phieu_id: number;
+  so_phieu: string;
+  ngay: string;
+  loai: string;
+  kho_id: number;
+  ten_kho: string | null;
+  kho_den_id: number | null;
+  ten_kho_den: string | null;
+  id_nha_cung_cap: number | null;
+  id_khach_hang: number | null;
+  trang_thai: string;
+  mo_ta: string | null;
+  trao_doi: string | null;
+  phieu_nguoi_tao_id: number | null;
+  phieu_ten_nguoi_tao: string | null;
+  id_nguoi_duyet: number | null;
+  phieu_tg_tao: string | null;
+  phieu_tg_cap_nhat: string | null;
+  ma_hang: string | null;
+}
+
+const PHIEU_KHO_CHI_TIET_FLAT_SELECT =
+  'chi_tiet_id, id_phieu_kho, id_hang_hoa, ten_hang_hoa, don_vi_tinh, so_luong, don_gia, thanh_tien, so_lot, ghi_chu, chi_tiet_nguoi_tao_id, chi_tiet_ten_nguoi_tao, chi_tiet_tg_tao, chi_tiet_tg_cap_nhat, phieu_id, so_phieu, ngay, loai, kho_id, ten_kho, kho_den_id, ten_kho_den, id_nha_cung_cap, id_khach_hang, trang_thai, mo_ta, trao_doi, phieu_nguoi_tao_id, phieu_ten_nguoi_tao, id_nguoi_duyet, phieu_tg_tao, phieu_tg_cap_nhat, ma_hang';
 
 function rowToPhieu(
   row: PhieuKhoDbRow,
@@ -149,59 +234,16 @@ export async function getNextSoPhieuSupabase(loai: LoaiPhieuKho): Promise<string
   return data;
 }
 
-/** Aggregate chi tiết: id_phieu_kho -> { so_dong, tong_so_luong, tong_tien } (fetchAllRows: vượt giới hạn 1000 dòng PostgREST). */
-async function getChiTietAggregates(): Promise<
-  Record<string, { so_dong: number; tong_so_luong: number; tong_tien: number }>
-> {
-  const ctRows = await fetchAllRows<{ id_phieu_kho: number; so_luong: number | string | null; thanh_tien: number | null }>(
-    (from, to) =>
-      supabase
-        .from(TABLE_CHI_TIET)
-        .select('id_phieu_kho, so_luong, thanh_tien')
-        .order('id', { ascending: true })
-        .range(from, to)
-  );
-  const agg: Record<string, { so_dong: number; tong_so_luong: number; tong_tien: number }> = {};
-  ctRows.forEach((r) => {
-    const key = String(r.id_phieu_kho);
-    if (!agg[key]) agg[key] = { so_dong: 0, tong_so_luong: 0, tong_tien: 0 };
-    agg[key].so_dong += 1;
-    agg[key].tong_so_luong += Number(r.so_luong) || 0;
-    agg[key].tong_tien += Number(r.thanh_tien) || 0;
-  });
-  return agg;
-}
-
 export async function getAllPhieuKhoSupabase(): Promise<PhieuKho[]> {
-  const [rows, khoList, doiTacList, employees, aggregates] = await Promise.all([
-    fetchAllRows<PhieuKhoDbRow>((from, to) =>
-      supabase.from(TABLE_PHIEU).select('*').order('ngay', { ascending: false }).order('so_phieu', { ascending: false }).range(from, to)
-    ),
-    getKhoList(),
-    getAllDoiTac(),
-    getEmployees(),
-    getChiTietAggregates(),
-  ]);
-  const khoMap: Record<string, string> = {};
-  khoList.forEach((k) => { khoMap[k.id] = k.ten_kho; });
-  const doiTacMap: Record<string, string> = {};
-  doiTacList.forEach((d) => { doiTacMap[d.id] = d.ten_ncc; });
-  const nvMap: Record<string, string> = {};
-  employees.forEach((e) => { nvMap[e.id] = e.ho_ten; });
-  return rows.map((row) => {
-    const ten_kho = khoMap[String(row.kho_id)] ?? row.ten_kho ?? undefined;
-    const ten_kho_den = row.kho_den_id != null ? (khoMap[String(row.kho_den_id)] ?? row.ten_kho_den ?? undefined) : undefined;
-    const ten_nha_cung_cap = row.id_nha_cung_cap != null ? doiTacMap[String(row.id_nha_cung_cap)] : undefined;
-    const ten_khach_hang = row.id_khach_hang != null ? doiTacMap[String(row.id_khach_hang)] : undefined;
-    const ten_nguoi_tao = row.nguoi_tao_id != null ? nvMap[String(row.nguoi_tao_id)] : undefined;
-    const ten_nguoi_duyet = row.id_nguoi_duyet != null ? nvMap[String(row.id_nguoi_duyet)] : undefined;
-    const phieu = rowToPhieu(row, { ten_kho, ten_kho_den, ten_nha_cung_cap, ten_khach_hang, ten_nguoi_tao, ten_nguoi_duyet });
-    const agg = aggregates[String(row.id)];
-    phieu.tong_so_dong = agg?.so_dong ?? 0;
-    phieu.tong_so_luong = agg?.tong_so_luong ?? 0;
-    phieu.tong_tien = agg?.tong_tien ?? 0;
-    return phieu;
-  });
+  const rows = await fetchAllRows<PhieuKhoSummaryRow>((from, to) =>
+    supabase
+      .from(VIEW_PHIEU_KHO_SUMMARY)
+      .select(PHIEU_KHO_SUMMARY_SELECT)
+      .order('ngay', { ascending: false })
+      .order('so_phieu', { ascending: false })
+      .range(from, to)
+  );
+  return rows.map((row) => mapPhieuKhoSummaryRowToPhieu(row));
 }
 
 export async function getPhieuKhoByIdSupabase(id: string): Promise<PhieuKho | null> {
@@ -209,18 +251,23 @@ export async function getPhieuKhoByIdSupabase(id: string): Promise<PhieuKho | nu
   if (Number.isNaN(idNum)) return null;
   const { data: row, error } = await supabase
     .from(TABLE_PHIEU)
-    .select('*')
+    .select(PHIEU_KHO_HEADER_ROW_SELECT)
     .eq('id', idNum)
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!row) return null;
 
   const [khoList, doiTacList, employees, ctRows, hangHoaList] = await Promise.all([
-    getKhoList(),
-    getAllDoiTac(),
-    getEmployees(),
-    supabase.from(TABLE_CHI_TIET).select('*').eq('id_phieu_kho', idNum).order('id', { ascending: true }).then((r) => r.data ?? []),
-    getAllHangHoa(),
+    getKhoRef(),
+    getDoiTacRef(),
+    getEmployeesRef(),
+    supabase
+      .from(TABLE_CHI_TIET)
+      .select(PHIEU_KHO_CHI_TIET_ROW_SELECT)
+      .eq('id_phieu_kho', idNum)
+      .order('id', { ascending: true })
+      .then((r) => r.data ?? []),
+    getHangHoaRef(),
   ]);
   const khoMap: Record<string, string> = {};
   khoList.forEach((k) => { khoMap[k.id] = k.ten_kho; });
@@ -256,7 +303,7 @@ export async function createPhieuKhoSupabase(loai: LoaiPhieuKho, data: PhieuKhoF
   const { data: existing } = await supabase.from(TABLE_PHIEU).select('id').eq('so_phieu', soPhieu).eq('loai', loai).maybeSingle();
   if (existing) throw new Error(i18n.t('phieuKho.service.duplicateCode'));
 
-  const [khoList, employees] = await Promise.all([getKhoList(), getEmployees()]);
+  const [khoList, employees] = await Promise.all([getKhoRef(), getEmployeesRef()]);
   const khoMap: Record<string, string> = {};
   khoList.forEach((k) => { khoMap[k.id] = k.ten_kho; });
   const nvMap: Record<string, string> = {};
@@ -280,12 +327,12 @@ export async function createPhieuKhoSupabase(loai: LoaiPhieuKho, data: PhieuKhoF
     ten_nguoi_tao: nguoiTaoId != null ? (nvMap[String(nguoiTaoId)] ?? null) : null,
   };
 
-  const { data: inserted, error } = await supabase.from(TABLE_PHIEU).insert(payload).select('*').single();
+  const { data: inserted, error } = await supabase.from(TABLE_PHIEU).insert(payload).select(PHIEU_KHO_HEADER_ROW_SELECT).single();
   if (error) throw new Error(error.message);
   const idPhieu = (inserted as PhieuKhoDbRow).id;
   const idStr = String(idPhieu);
 
-  const hangHoaList = await getAllHangHoa();
+  const hangHoaList = await getHangHoaRef();
   const hangHoaMap: Record<string, { ten_hang_hoa: string; don_vi_tinh?: string }> = {};
   hangHoaList.forEach((h) => { hangHoaMap[h.id] = { ten_hang_hoa: h.ten_hang_hoa ?? h.ten_hang ?? '', don_vi_tinh: h.don_vi_tinh ?? undefined }; });
 
@@ -322,14 +369,14 @@ export async function updatePhieuKhoSupabase(id: string, data: PhieuKhoFormValue
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('phieuKho.service.notFound'));
 
-  const { data: oldRow, error: fetchErr } = await supabase.from(TABLE_PHIEU).select('*').eq('id', idNum).maybeSingle();
+  const { data: oldRow, error: fetchErr } = await supabase.from(TABLE_PHIEU).select(PHIEU_KHO_HEADER_ROW_SELECT).eq('id', idNum).maybeSingle();
   if (fetchErr || !oldRow) throw new Error(i18n.t('phieuKho.service.notFound'));
 
   const soPhieu = data.so_phieu.trim();
   const { data: other } = await supabase.from(TABLE_PHIEU).select('id').eq('so_phieu', soPhieu).eq('loai', (oldRow as PhieuKhoDbRow).loai).neq('id', idNum).maybeSingle();
   if (other) throw new Error(i18n.t('phieuKho.service.duplicateCode'));
 
-  const [khoList, employees] = await Promise.all([getKhoList(), getEmployees()]);
+  const [khoList, employees] = await Promise.all([getKhoRef(), getEmployeesRef()]);
   const khoMap: Record<string, string> = {};
   khoList.forEach((k) => { khoMap[k.id] = k.ten_kho; });
   const nvMap: Record<string, string> = {};
@@ -358,7 +405,7 @@ export async function updatePhieuKhoSupabase(id: string, data: PhieuKhoFormValue
 
   await supabase.from(TABLE_CHI_TIET).delete().eq('id_phieu_kho', idNum);
 
-  const hangHoaList = await getAllHangHoa();
+  const hangHoaList = await getHangHoaRef();
   const hangHoaMap: Record<string, { ten_hang_hoa: string; don_vi_tinh?: string }> = {};
   hangHoaList.forEach((h) => { hangHoaMap[h.id] = { ten_hang_hoa: h.ten_hang_hoa ?? h.ten_hang ?? '', don_vi_tinh: h.don_vi_tinh ?? undefined }; });
 
@@ -451,104 +498,233 @@ export async function deletePhieuKhoManySupabase(ids: string[]): Promise<void> {
 }
 
 export async function getPhieuKhoByDoiTacSupabase(idDoiTac: string, loaiDoiTac: 'nha_cung_cap' | 'khach_hang'): Promise<PhieuKho[]> {
-  const all = await getAllPhieuKhoSupabase();
-  const filtered =
-    loaiDoiTac === 'nha_cung_cap'
-      ? all.filter((p) => p.loai === 'nhập' && p.id_nha_cung_cap === idDoiTac)
-      : all.filter((p) => p.loai === 'xuất' && p.id_khach_hang === idDoiTac);
-  return filtered.sort((a, b) => (b.ngay || '').localeCompare(a.ngay || '') || a.so_phieu.localeCompare(b.so_phieu));
+  const idNum = Number(idDoiTac);
+  if (Number.isNaN(idNum)) return [];
+  const loaiDb: LoaiPhieuKho = loaiDoiTac === 'nha_cung_cap' ? 'nhập' : 'xuất';
+  const col = loaiDoiTac === 'nha_cung_cap' ? 'id_nha_cung_cap' : 'id_khach_hang';
+  const { data, error } = await supabase
+    .from(VIEW_PHIEU_KHO_SUMMARY)
+    .select(PHIEU_KHO_SUMMARY_SELECT)
+    .eq('loai', loaiDb)
+    .eq(col, idNum)
+    .order('ngay', { ascending: false })
+    .order('so_phieu', { ascending: false });
+  if (error) throw new Error(error.message);
+  const rows = (data ?? []) as PhieuKhoSummaryRow[];
+  return rows.map((row) => mapPhieuKhoSummaryRowToPhieu(row));
+}
+
+function mapPhieuKhoChiTietFlatViewRows(
+  flatRows: PhieuKhoChiTietFlatViewRow[],
+  khoMap: Record<string, string>,
+  doiTacMap: Record<string, string>,
+  nvMap: Record<string, string>
+): ChiTietPhieuKhoFlat[] {
+  const flat: ChiTietPhieuKhoFlat[] = flatRows.map((r) => {
+    const ten_kho = khoMap[String(r.kho_id)] ?? r.ten_kho ?? undefined;
+    const ten_kho_den = r.kho_den_id != null ? (khoMap[String(r.kho_den_id)] ?? r.ten_kho_den ?? undefined) : undefined;
+    const ten_nha_cung_cap = r.id_nha_cung_cap != null ? doiTacMap[String(r.id_nha_cung_cap)] : undefined;
+    const ten_khach_hang = r.id_khach_hang != null ? doiTacMap[String(r.id_khach_hang)] : undefined;
+    const lineNvId = r.chi_tiet_nguoi_tao_id != null ? r.chi_tiet_nguoi_tao_id : undefined;
+    const lineTenNv =
+      (typeof r.chi_tiet_ten_nguoi_tao === 'string' && r.chi_tiet_ten_nguoi_tao.trim() !== ''
+        ? r.chi_tiet_ten_nguoi_tao.trim()
+        : undefined) ?? (lineNvId != null ? nvMap[String(lineNvId)] : undefined);
+    const maHang = r.ma_hang?.trim() ? r.ma_hang.trim() : undefined;
+    return {
+      id: String(r.chi_tiet_id),
+      id_phieu_kho: String(r.phieu_id),
+      so_phieu: r.so_phieu,
+      ngay: r.ngay,
+      loai: r.loai as LoaiPhieuKho,
+      kho_id: String(r.kho_id),
+      ten_kho,
+      kho_den_id: r.kho_den_id != null ? String(r.kho_den_id) : undefined,
+      ten_kho_den,
+      id_nha_cung_cap: r.id_nha_cung_cap != null ? String(r.id_nha_cung_cap) : undefined,
+      ten_nha_cung_cap,
+      id_khach_hang: r.id_khach_hang != null ? String(r.id_khach_hang) : undefined,
+      ten_khach_hang,
+      trang_thai: (r.trang_thai as TrangThaiPhieuKho) || 'Chờ duyệt',
+      mo_ta: r.mo_ta ?? undefined,
+      trao_doi: r.trao_doi ?? undefined,
+      phieu_tg_tao: r.phieu_tg_tao ?? undefined,
+      phieu_tg_cap_nhat: r.phieu_tg_cap_nhat ?? undefined,
+      id_nguoi_duyet: r.id_nguoi_duyet != null ? r.id_nguoi_duyet : undefined,
+      ten_nguoi_duyet: r.id_nguoi_duyet != null ? nvMap[String(r.id_nguoi_duyet)] : undefined,
+      nguoi_tao_id: r.phieu_nguoi_tao_id != null ? r.phieu_nguoi_tao_id : undefined,
+      ten_nguoi_tao: r.phieu_nguoi_tao_id != null ? nvMap[String(r.phieu_nguoi_tao_id)] : undefined,
+      id_hang_hoa: String(r.id_hang_hoa),
+      ten_hang_hoa: r.ten_hang_hoa ?? undefined,
+      ma_hang: maHang,
+      ten_hang: r.ten_hang_hoa ?? undefined,
+      so_luong: Number(r.so_luong),
+      don_gia: r.don_gia != null ? Number(r.don_gia) : undefined,
+      thanh_tien: r.thanh_tien != null ? Number(r.thanh_tien) : undefined,
+      don_vi_tinh: r.don_vi_tinh ?? undefined,
+      so_lot: r.so_lot ?? undefined,
+      ghi_chu: r.ghi_chu ?? undefined,
+      chi_tiet_nguoi_tao_id: lineNvId,
+      chi_tiet_ten_nguoi_tao: lineTenNv,
+      chi_tiet_tg_tao: r.chi_tiet_tg_tao ?? undefined,
+      chi_tiet_tg_cap_nhat: r.chi_tiet_tg_cap_nhat ?? undefined,
+    };
+  });
+  flat.sort((a, b) => (b.ngay || '').localeCompare(a.ngay || '') || (a.so_phieu || '').localeCompare(b.so_phieu || '') || (a.ma_hang ?? '').localeCompare(b.ma_hang ?? ''));
+  return flat;
 }
 
 export async function getChiTietPhieuKhoAllSupabase(): Promise<ChiTietPhieuKhoFlat[]> {
-  const [ctRows, phieuRows, khoList, doiTacList, hangHoaList, employees] = await Promise.all([
-    fetchAllRows<ChiTietDbRow>((from, to) =>
-      supabase.from(TABLE_CHI_TIET).select('*').order('id', { ascending: false }).range(from, to)
+  const [flatRows, khoList, doiTacList, employees] = await Promise.all([
+    fetchAllRows<PhieuKhoChiTietFlatViewRow>((from, to) =>
+      supabase
+        .from(VIEW_PHIEU_KHO_CHI_TIET_FLAT)
+        .select(PHIEU_KHO_CHI_TIET_FLAT_SELECT)
+        .order('ngay', { ascending: false })
+        .order('so_phieu', { ascending: false })
+        .order('chi_tiet_id', { ascending: false })
+        .range(from, to)
     ),
-    fetchAllRows<PhieuKhoDbRow>((from, to) =>
-      supabase.from(TABLE_PHIEU).select('*').order('ngay', { ascending: false }).order('so_phieu', { ascending: false }).range(from, to)
-    ),
-    getKhoList(),
-    getAllDoiTac(),
-    getAllHangHoa(),
-    getEmployees(),
+    getKhoRef(),
+    getDoiTacRef(),
+    getEmployeesRef(),
   ]);
-  const phieuById = new Map<number, PhieuKhoDbRow>();
-  phieuRows.forEach((p) => phieuById.set(p.id, p));
   const khoMap: Record<string, string> = {};
   khoList.forEach((k) => { khoMap[k.id] = k.ten_kho; });
   const doiTacMap: Record<string, string> = {};
   doiTacList.forEach((d) => { doiTacMap[d.id] = d.ten_ncc; });
-  const hangHoaMap: Record<string, { ma_hang: string }> = {};
-  hangHoaList.forEach((h) => { hangHoaMap[h.id] = { ma_hang: h.ma_hang ?? h.ma_hang_hoa ?? '' }; });
   const nvMap: Record<string, string> = {};
   employees.forEach((e) => { nvMap[e.id] = e.ho_ten; });
+  return mapPhieuKhoChiTietFlatViewRows(flatRows, khoMap, doiTacMap, nvMap);
+}
 
-  const flat: ChiTietPhieuKhoFlat[] = [];
-  for (const ct of ctRows) {
-    const p = phieuById.get(ct.id_phieu_kho);
-    if (!p) continue;
-    const ten_kho = khoMap[String(p.kho_id)] ?? p.ten_kho ?? undefined;
-    const ten_kho_den = p.kho_den_id != null ? (khoMap[String(p.kho_den_id)] ?? p.ten_kho_den ?? undefined) : undefined;
-    const ten_nha_cung_cap = p.id_nha_cung_cap != null ? doiTacMap[String(p.id_nha_cung_cap)] : undefined;
-    const ten_khach_hang = p.id_khach_hang != null ? doiTacMap[String(p.id_khach_hang)] : undefined;
-    const enrich = hangHoaMap[String(ct.id_hang_hoa)];
-    const lineNvId = ct.nguoi_tao_id != null ? ct.nguoi_tao_id : undefined;
-    const lineTenNv =
-      (typeof ct.ten_nguoi_tao === 'string' && ct.ten_nguoi_tao.trim() !== ''
-        ? ct.ten_nguoi_tao.trim()
-        : undefined) ?? (lineNvId != null ? nvMap[String(lineNvId)] : undefined);
-    flat.push({
-      id: String(ct.id),
-      id_phieu_kho: String(p.id),
-      so_phieu: p.so_phieu,
-      ngay: p.ngay,
-      loai: p.loai as LoaiPhieuKho,
-      kho_id: String(p.kho_id),
-      ten_kho,
-      kho_den_id: p.kho_den_id != null ? String(p.kho_den_id) : undefined,
-      ten_kho_den,
-      id_nha_cung_cap: p.id_nha_cung_cap != null ? String(p.id_nha_cung_cap) : undefined,
-      ten_nha_cung_cap,
-      id_khach_hang: p.id_khach_hang != null ? String(p.id_khach_hang) : undefined,
-      ten_khach_hang,
-      trang_thai: (p.trang_thai as TrangThaiPhieuKho) || 'Chờ duyệt',
-      mo_ta: p.mo_ta ?? undefined,
-      trao_doi: p.trao_doi ?? undefined,
-      phieu_tg_tao: p.tg_tao ?? undefined,
-      phieu_tg_cap_nhat: p.tg_cap_nhat ?? undefined,
-      id_nguoi_duyet: p.id_nguoi_duyet != null ? p.id_nguoi_duyet : undefined,
-      ten_nguoi_duyet: p.id_nguoi_duyet != null ? nvMap[String(p.id_nguoi_duyet)] : undefined,
-      nguoi_tao_id: p.nguoi_tao_id != null ? p.nguoi_tao_id : undefined,
-      ten_nguoi_tao: p.nguoi_tao_id != null ? nvMap[String(p.nguoi_tao_id)] : undefined,
-      id_hang_hoa: String(ct.id_hang_hoa),
-      ten_hang_hoa: ct.ten_hang_hoa ?? undefined,
-      ma_hang: enrich?.ma_hang,
-      ten_hang: ct.ten_hang_hoa ?? undefined,
-      so_luong: Number(ct.so_luong),
-      don_gia: ct.don_gia != null ? Number(ct.don_gia) : undefined,
-      thanh_tien: ct.thanh_tien != null ? Number(ct.thanh_tien) : undefined,
-      don_vi_tinh: ct.don_vi_tinh ?? undefined,
-      so_lot: ct.so_lot ?? undefined,
-      ghi_chu: ct.ghi_chu ?? undefined,
-      chi_tiet_nguoi_tao_id: lineNvId,
-      chi_tiet_ten_nguoi_tao: lineTenNv,
-      chi_tiet_tg_tao: ct.tg_tao ?? undefined,
-      chi_tiet_tg_cap_nhat: ct.tg_cap_nhat ?? undefined,
-    });
+const IMPOSSIBLE_NUM_ID = -2147483647;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyScopePhieuKhoSummary(q: any, scope: BranchListScope): any {
+  let b = q;
+  if (scope.viewAll) return b;
+  const own = scope.ownEmployeeIdNum;
+  if (!scope.viewByBranch) {
+    if (own != null) return b.eq('nguoi_tao_id', own);
+    return b.eq('id', IMPOSSIBLE_NUM_ID);
   }
-  flat.sort((a, b) => (b.ngay || '').localeCompare(a.ngay || '') || (a.so_phieu || '').localeCompare(b.so_phieu || '') || (a.ma_hang ?? '').localeCompare(b.ma_hang ?? ''));
-  return flat;
+  const ids = scope.allowedKhoNumericIds;
+  const parts: string[] = [];
+  if (own != null) parts.push(`nguoi_tao_id.eq.${own}`);
+  if (ids.length > 0) {
+    const inl = `(${ids.join(',')})`;
+    parts.push(`kho_id.in.${inl}`);
+    parts.push(`kho_den_id.in.${inl}`);
+  }
+  if (parts.length === 0) return b.eq('id', IMPOSSIBLE_NUM_ID);
+  return b.or(parts.join(','));
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyScopePhieuKhoChiTietFlat(q: any, scope: BranchListScope): any {
+  let b = q;
+  if (scope.viewAll) return b;
+  const own = scope.ownEmployeeIdNum;
+  if (!scope.viewByBranch) {
+    if (own != null) return b.eq('phieu_nguoi_tao_id', own);
+    return b.eq('phieu_id', IMPOSSIBLE_NUM_ID);
+  }
+  const ids = scope.allowedKhoNumericIds;
+  const parts: string[] = [];
+  if (own != null) parts.push(`phieu_nguoi_tao_id.eq.${own}`);
+  if (ids.length > 0) {
+    const inl = `(${ids.join(',')})`;
+    parts.push(`kho_id.in.${inl}`);
+    parts.push(`kho_den_id.in.${inl}`);
+  }
+  if (parts.length === 0) return b.eq('phieu_id', IMPOSSIBLE_NUM_ID);
+  return b.or(parts.join(','));
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyPhieuKhoListQueryToSummarySelect(q: any, query: PhieuKhoListServerQuery): any {
+  let b = applyScopePhieuKhoSummary(q, query.scope);
+  b = b.eq('loai', query.loaiDb);
+  if (query.trangThaiViet.length) b = b.in('trang_thai', query.trangThaiViet);
+  if (query.khoIds.length) b = b.in('kho_id', query.khoIds);
+  if (query.khoDenIds.length) b = b.in('kho_den_id', query.khoDenIds);
+  if (query.ngayFrom) b = b.gte('ngay', query.ngayFrom);
+  if (query.ngayTo) b = b.lte('ngay', query.ngayTo);
+  if (query.nguoiTaoIds.length) b = b.in('nguoi_tao_id', query.nguoiTaoIds);
+  if (query.nguoiDuyetIds.length) b = b.in('id_nguoi_duyet', query.nguoiDuyetIds);
+  if (query.doiTacColumn && query.doiTacIds.length) b = b.in(query.doiTacColumn, query.doiTacIds);
+  const term = (query.searchTerm ?? '').trim();
+  if (term) {
+    const esc = term.replace(/%/g, '\\%').replace(/_/g, '\\_');
+    const pat = `%${esc}%`;
+    b = b.or(`so_phieu.ilike.${pat},mo_ta.ilike.${pat},ten_kho.ilike.${pat},ten_kho_den.ilike.${pat}`);
+  }
+  return b;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyChiTietPhieuKhoListQueryToFlatSelect(q: any, query: ChiTietPhieuKhoListServerQuery): any {
+  let b = applyScopePhieuKhoChiTietFlat(q, query.scope);
+  if (query.loaiDb.length) b = b.in('loai', query.loaiDb);
+  if (query.trangThaiViet.length) b = b.in('trang_thai', query.trangThaiViet);
+  if (query.khoIds.length) b = b.in('kho_id', query.khoIds);
+  if (query.khoDenIds.length) b = b.in('kho_den_id', query.khoDenIds);
+  if (query.ngayFrom) b = b.gte('ngay', query.ngayFrom);
+  if (query.ngayTo) b = b.lte('ngay', query.ngayTo);
+  if (query.nguoiTaoIds.length) b = b.in('phieu_nguoi_tao_id', query.nguoiTaoIds);
+  if (query.nguoiDuyetIds.length) b = b.in('id_nguoi_duyet', query.nguoiDuyetIds);
+  if (query.doiTacIds.length) {
+    const inl = `(${query.doiTacIds.join(',')})`;
+    b = b.or(`id_nha_cung_cap.in.${inl},id_khach_hang.in.${inl}`);
+  }
+  const term = (query.searchTerm ?? '').trim();
+  if (term) {
+    const esc = term.replace(/%/g, '\\%').replace(/_/g, '\\_');
+    const pat = `%${esc}%`;
+    b = b.or(`so_phieu.ilike.${pat},ten_hang_hoa.ilike.${pat},mo_ta.ilike.${pat},ghi_chu.ilike.${pat}`);
+  }
+  return b;
+}
+
+const CHI_TIET_PHIEU_KHO_PAGE_SIZE_DEFAULT = 100;
+
+/** Một trang chi tiết phiếu kho phẳng (server-side). */
+export async function getChiTietPhieuKhoPageSupabase(
+  page: number,
+  pageSize: number = CHI_TIET_PHIEU_KHO_PAGE_SIZE_DEFAULT,
+  listQuery?: ChiTietPhieuKhoListServerQuery
+): Promise<PaginatedTableResult<ChiTietPhieuKhoFlat>> {
+  const pageResult = await fetchTablePage<PhieuKhoChiTietFlatViewRow>(page, pageSize, async (from, to) => {
+    let sel = supabase.from(VIEW_PHIEU_KHO_CHI_TIET_FLAT).select(PHIEU_KHO_CHI_TIET_FLAT_SELECT, { count: 'exact' });
+    if (listQuery) sel = applyChiTietPhieuKhoListQueryToFlatSelect(sel, listQuery);
+    const res = await sel
+      .order('ngay', { ascending: false })
+      .order('so_phieu', { ascending: false })
+      .order('chi_tiet_id', { ascending: false })
+      .range(from, to);
+    return { data: res.data as PhieuKhoChiTietFlatViewRow[] | null, error: res.error, count: res.count };
+  });
+  const [khoList, doiTacList, employees] = await Promise.all([getKhoRef(), getDoiTacRef(), getEmployeesRef()]);
+  const khoMap: Record<string, string> = {};
+  khoList.forEach((k) => { khoMap[k.id] = k.ten_kho; });
+  const doiTacMap: Record<string, string> = {};
+  doiTacList.forEach((d) => { doiTacMap[d.id] = d.ten_ncc; });
+  const nvMap: Record<string, string> = {};
+  employees.forEach((e) => { nvMap[e.id] = e.ho_ten; });
+  const data = mapPhieuKhoChiTietFlatViewRows(pageResult.data, khoMap, doiTacMap, nvMap);
+  return { data, totalCount: pageResult.totalCount, page: pageResult.page, pageSize: pageResult.pageSize };
 }
 
 export async function getLichSuNhapXuatByHangHoaSupabase(id_hang_hoa: string): Promise<LichSuNhapXuatRow[]> {
   const idHhNum = Number(id_hang_hoa);
   if (Number.isNaN(idHhNum)) return [];
-  const { data: ctRows } = await supabase.from(TABLE_CHI_TIET).select('*').eq('id_hang_hoa', idHhNum);
+  const { data: ctRows } = await supabase.from(TABLE_CHI_TIET).select(PHIEU_KHO_CHI_TIET_ROW_SELECT).eq('id_hang_hoa', idHhNum);
   if (!ctRows?.length) return [];
   const phieuIds = [...new Set((ctRows as ChiTietDbRow[]).map((c) => c.id_phieu_kho))];
-  const { data: phieuRows } = await supabase.from(TABLE_PHIEU).select('*').in('id', phieuIds);
+  const { data: phieuRows } = await supabase.from(TABLE_PHIEU).select(PHIEU_KHO_HEADER_ROW_SELECT).in('id', phieuIds);
   if (!phieuRows?.length) return [];
-  const khoList = await getKhoList();
+  const khoList = await getKhoRef();
   const khoMap: Record<string, string> = {};
   khoList.forEach((k) => { khoMap[k.id] = k.ten_kho; });
   const phieuById = new Map<number, PhieuKhoDbRow>();
@@ -574,17 +750,17 @@ export async function getLichSuNhapXuatByHangHoaSupabase(id_hang_hoa: string): P
 export async function getLichSuNhapXuatByKhoSupabase(id_kho: string): Promise<LichSuNhapXuatByKhoRow[]> {
   const idKhoNum = Number(id_kho);
   if (Number.isNaN(idKhoNum)) return [];
-  const { data: phieuRows } = await supabase.from(TABLE_PHIEU).select('*').or(`kho_id.eq.${idKhoNum},kho_den_id.eq.${idKhoNum}`);
+  const { data: phieuRows } = await supabase.from(TABLE_PHIEU).select(PHIEU_KHO_HEADER_ROW_SELECT).or(`kho_id.eq.${idKhoNum},kho_den_id.eq.${idKhoNum}`);
   if (!phieuRows?.length) return [];
   const phieuIds = (phieuRows as PhieuKhoDbRow[]).map((p) => p.id);
-  const { data: ctRows } = await supabase.from(TABLE_CHI_TIET).select('*').in('id_phieu_kho', phieuIds);
+  const { data: ctRows } = await supabase.from(TABLE_CHI_TIET).select(PHIEU_KHO_CHI_TIET_ROW_SELECT).in('id_phieu_kho', phieuIds);
   if (!ctRows?.length) return [];
-  const hangHoaList = await getAllHangHoa();
+  const hangHoaList = await getHangHoaRef();
   const hangHoaMap: Record<string, { ma_hang: string; ten_hang: string }> = {};
   hangHoaList.forEach((h) => { hangHoaMap[h.id] = { ma_hang: h.ma_hang ?? '', ten_hang: h.ten_hang ?? '' }; });
   const phieuById = new Map<number, PhieuKhoDbRow>();
   (phieuRows as PhieuKhoDbRow[]).forEach((p) => phieuById.set(p.id, p));
-  const khoList = await getKhoList();
+  const khoList = await getKhoRef();
   const khoMap: Record<string, string> = {};
   khoList.forEach((k) => { khoMap[k.id] = k.ten_kho; });
 
@@ -607,4 +783,57 @@ export async function getLichSuNhapXuatByKhoSupabase(id_kho: string): Promise<Li
     };
   });
   return rows.sort((a, b) => (b.ngay || '').localeCompare(a.ngay || '') || (a.so_phieu || '').localeCompare(b.so_phieu || ''));
+}
+
+/** Một trang danh sách phiếu kho (server-side pagination). */
+export async function getPhieuKhoPageSupabase(
+  page: number,
+  pageSize: number,
+  listQuery?: PhieuKhoListServerQuery
+): Promise<PaginatedTableResult<PhieuKho>> {
+  const pageResult = await fetchTablePage<PhieuKhoSummaryRow>(page, pageSize, async (from, to) => {
+    let sel = supabase.from(VIEW_PHIEU_KHO_SUMMARY).select(PHIEU_KHO_SUMMARY_SELECT, { count: 'exact' });
+    if (listQuery) sel = applyPhieuKhoListQueryToSummarySelect(sel, listQuery);
+    const res = await sel
+      .order('ngay', { ascending: false })
+      .order('so_phieu', { ascending: false })
+      .range(from, to);
+    return { data: (res.data ?? null) as PhieuKhoSummaryRow[] | null, error: res.error, count: res.count };
+  });
+  const data = pageResult.data.map((row) => mapPhieuKhoSummaryRowToPhieu(row));
+  return { data, totalCount: pageResult.totalCount, page: pageResult.page, pageSize: pageResult.pageSize };
+}
+
+/** Gom tối đa `maxRows` phiếu khớp `listQuery` (lặp trang server) — dùng export. */
+export async function fetchAllPhieuKhoForListQuerySupabase(
+  listQuery: PhieuKhoListServerQuery,
+  pageSize = 500,
+  maxRows = 25000
+): Promise<PhieuKho[]> {
+  const out: PhieuKho[] = [];
+  let page = 0;
+  while (out.length < maxRows) {
+    const { data, totalCount } = await getPhieuKhoPageSupabase(page, pageSize, listQuery);
+    out.push(...data);
+    if (data.length === 0 || out.length >= totalCount) break;
+    page += 1;
+  }
+  return out;
+}
+
+/** Gom tối đa `maxRows` dòng chi tiết phẳng khớp `listQuery` — dùng export. */
+export async function fetchAllChiTietPhieuKhoForListQuerySupabase(
+  listQuery: ChiTietPhieuKhoListServerQuery,
+  pageSize = 500,
+  maxRows = 25000
+): Promise<ChiTietPhieuKhoFlat[]> {
+  const out: ChiTietPhieuKhoFlat[] = [];
+  let page = 0;
+  while (out.length < maxRows) {
+    const { data, totalCount } = await getChiTietPhieuKhoPageSupabase(page, pageSize, listQuery);
+    out.push(...data);
+    if (data.length === 0 || out.length >= totalCount) break;
+    page += 1;
+  }
+  return out;
 }

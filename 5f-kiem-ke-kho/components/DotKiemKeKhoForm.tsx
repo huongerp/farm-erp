@@ -14,7 +14,7 @@ import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
 import { dotKiemKeKhoSchema, type DotKiemKeKhoFormValues } from '../core/schema';
 import { useCreateDotKiemKeKho, useUpdateDotKiemKeKho } from '../hooks/use-kiem-ke-kho';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
-import { useEmployees } from '@/features/he-thong/nhan-vien/hooks/use-nhan-vien';
+import { useEmployeesRefQuery } from '@/lib/hooks/use-supabase-ref-queries';
 import type { DotKiemKeKho } from '../core/types';
 
 const DEFAULT_VALUES: DotKiemKeKhoFormValues = {
@@ -42,7 +42,7 @@ const DotKiemKeKhoForm: React.FC<Props> = ({ onClose, initialData, onSuccessAfte
     if (initialData) onSuccessAfterEdit?.(initialData);
   });
   const { data: khoList = [] } = useKhoList();
-  const { data: employees = [] } = useEmployees();
+  const { data: employees = [] } = useEmployeesRefQuery();
 
   const defaultValuesFromData = initialData
     ? {

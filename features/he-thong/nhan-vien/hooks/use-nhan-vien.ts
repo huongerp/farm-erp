@@ -5,12 +5,16 @@ import { EmployeeFormValues } from "../core/schema";
 import { Employee } from "../core/types";
 import { toast } from "sonner";
 import i18n from '../../../../lib/i18n';
+import { EMPLOYEES_REF_QUERY_KEY } from '../../../../lib/hooks/use-supabase-ref-queries';
+import { invalidateRefCache } from '../../../../lib/ref-cache';
+
+export const EMPLOYEES_QUERY_KEY = ['employees'] as const;
 
 export const useEmployees = () => {
   return useQuery({
-    queryKey: ['employees'],
+    queryKey: EMPLOYEES_QUERY_KEY,
     queryFn: getEmployees,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 15,
   });
 };
 
@@ -27,7 +31,11 @@ export const useCreateEmployee = (onSuccess?: () => void) => {
   return useMutation({
     mutationFn: createEmployee,
     onSuccess: (emp: Employee & { _authCreated?: boolean }) => {
-      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      queryClient.setQueryData(EMPLOYEES_QUERY_KEY, (old: Employee[] | undefined) =>
+        old ? [emp, ...old] : [emp]
+      );
+      queryClient.invalidateQueries({ queryKey: EMPLOYEES_REF_QUERY_KEY });
+      invalidateRefCache('employees');
       toast.success(i18n.t('employee.toast.createSuccess'));
       if (emp._authCreated) {
         toast.info(i18n.t('employee.toast.authUserCreated', { email: emp.email }));
@@ -43,7 +51,12 @@ export const useUpdateEmployee = (onSuccess?: () => void) => {
   return useMutation({
     mutationFn: ({ id, data }: { id: string, data: EmployeeFormValues }) => updateEmployee(id, data),
     onSuccess: (emp: Employee & { _authCreated?: boolean }) => {
-      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      queryClient.setQueryData(EMPLOYEES_QUERY_KEY, (old: Employee[] | undefined) =>
+        old?.map((e) => (String(e.id) === String(emp.id) ? emp : e)) ?? [emp]
+      );
+      queryClient.setQueryData(['employee', String(emp.id)], emp);
+      queryClient.invalidateQueries({ queryKey: EMPLOYEES_REF_QUERY_KEY });
+      invalidateRefCache('employees');
       toast.success(i18n.t('employee.toast.updateSuccess'));
       if (emp._authCreated) {
         toast.info(i18n.t('employee.toast.authUserCreated', { email: emp.email }));
@@ -59,7 +72,9 @@ export const useUpdateStatusEmployee = () => {
     return useMutation({
       mutationFn: ({ ids, status }: { ids: string[], status: string }) => updateEmployeeStatus(ids, status),
       onSuccess: (_, variables) => {
-        queryClient.invalidateQueries({ queryKey: ['employees'] });
+        queryClient.invalidateQueries({ queryKey: EMPLOYEES_QUERY_KEY });
+        queryClient.invalidateQueries({ queryKey: EMPLOYEES_REF_QUERY_KEY });
+        invalidateRefCache('employees');
         toast.success(i18n.t('employee.toast.statusUpdateSuccess', { count: variables.ids.length }));
       },
       onError: (err: any) => toast.error(`Lỗi: ${err.message}`)
@@ -72,7 +87,9 @@ export const useBulkUpdateEmployees = (onSuccess?: () => void) => {
     mutationFn: ({ ids, fields }: { ids: string[]; fields: Record<string, any> }) =>
       bulkUpdateEmployees(ids, fields),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      queryClient.invalidateQueries({ queryKey: EMPLOYEES_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: EMPLOYEES_REF_QUERY_KEY });
+      invalidateRefCache('employees');
       toast.success(i18n.t('employee.toast.bulkUpdateSuccess', { count: variables.ids.length }));
       onSuccess?.();
     },
@@ -85,7 +102,12 @@ export const useDeleteEmployees = () => {
   return useMutation({
     mutationFn: (ids: string[]) => deleteEmployees(ids),
     onSuccess: (_, ids) => {
-      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      queryClient.setQueryData(EMPLOYEES_QUERY_KEY, (old: Employee[] | undefined) =>
+        old?.filter((e) => !ids.includes(String(e.id))) ?? []
+      );
+      ids.forEach((id) => queryClient.removeQueries({ queryKey: ['employee', id] }));
+      queryClient.invalidateQueries({ queryKey: EMPLOYEES_REF_QUERY_KEY });
+      invalidateRefCache('employees');
       toast.success(i18n.t('employee.toast.deleteSuccess', { count: ids.length }));
     },
     onError: (err: any) => toast.error(err.message)
@@ -102,7 +124,9 @@ export const useDeleteWithUndo = () => {
   const deleteMut = useMutation({
     mutationFn: (ids: string[]) => deleteEmployees(ids),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      queryClient.invalidateQueries({ queryKey: EMPLOYEES_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: EMPLOYEES_REF_QUERY_KEY });
+      invalidateRefCache('employees');
     },
     onError: (err: any) => toast.error(err.message),
   });
@@ -110,7 +134,9 @@ export const useDeleteWithUndo = () => {
   const restoreMut = useMutation({
     mutationFn: (employees: Employee[]) => restoreEmployees(employees),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      queryClient.invalidateQueries({ queryKey: EMPLOYEES_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: EMPLOYEES_REF_QUERY_KEY });
+      invalidateRefCache('employees');
       toast.success(i18n.t('employee.toast.undoSuccess'));
     },
   });

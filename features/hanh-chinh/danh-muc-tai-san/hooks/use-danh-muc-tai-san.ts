@@ -17,6 +17,9 @@ import {
   getDistinctNhaCungCap,
 } from '../services/danh-muc-tai-san-service';
 import { TaiSanFormValues } from '../core/schema';
+import type { TaiSan } from '../core/types';
+
+export const TAI_SAN_LIST_QUERY_KEY = ['taiSanList'] as const;
 
 /**
  * Phạm vi tài sản user được phép xem (tab Danh sách).
@@ -35,9 +38,9 @@ export function useAllowedTaiSanIds(): Set<string> | null {
 
 export const useTaiSanList = () => {
   return useQuery({
-    queryKey: ['taiSanList'],
+    queryKey: TAI_SAN_LIST_QUERY_KEY,
     queryFn: getTaiSanList,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 15,
   });
 };
 
@@ -45,8 +48,10 @@ export const useCreateTaiSan = (onSuccess?: () => void) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createTaiSan,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['taiSanList'] });
+    onSuccess: (created: TaiSan) => {
+      queryClient.setQueryData(TAI_SAN_LIST_QUERY_KEY, (old: TaiSan[] | undefined) =>
+        old ? [created, ...old] : [created]
+      );
       queryClient.invalidateQueries({ queryKey: ['taiSanDistinctThuongHieu'] });
       queryClient.invalidateQueries({ queryKey: ['taiSanDistinctModel'] });
       queryClient.invalidateQueries({ queryKey: ['taiSanDistinctXuatXu'] });
@@ -62,8 +67,10 @@ export const useUpdateTaiSan = (onSuccess?: () => void) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: TaiSanFormValues }) => updateTaiSan(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['taiSanList'] });
+    onSuccess: (updated: TaiSan) => {
+      queryClient.setQueryData(TAI_SAN_LIST_QUERY_KEY, (old: TaiSan[] | undefined) =>
+        old?.map((t) => (t.id === updated.id ? updated : t)) ?? [updated]
+      );
       queryClient.invalidateQueries({ queryKey: ['taiSanDistinctThuongHieu'] });
       queryClient.invalidateQueries({ queryKey: ['taiSanDistinctModel'] });
       queryClient.invalidateQueries({ queryKey: ['taiSanDistinctXuatXu'] });
@@ -80,7 +87,9 @@ export const useUpdateTaiSanStatus = () => {
   return useMutation({
     mutationFn: ({ ids, status }: { ids: string[]; status: 0 | 1 }) => updateTaiSanStatus(ids, status),
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['taiSanList'] });
+      queryClient.setQueryData(TAI_SAN_LIST_QUERY_KEY, (old: TaiSan[] | undefined) =>
+        old?.map((t) => (variables.ids.includes(t.id) ? { ...t, trang_thai: variables.status } : t)) ?? []
+      );
       toast.success(i18n.t('danhSachTaiSan.toast.statusUpdate', { count: variables.ids.length }));
     },
     onError: (err: unknown) => toast.error((err as Error).message),
@@ -92,7 +101,10 @@ export const useDeleteTaiSan = () => {
   return useMutation({
     mutationFn: (ids: string[]) => deleteTaiSan(ids),
     onSuccess: (_data, ids) => {
-      queryClient.invalidateQueries({ queryKey: ['taiSanList'] });
+      const set = new Set(ids);
+      queryClient.setQueryData(TAI_SAN_LIST_QUERY_KEY, (old: TaiSan[] | undefined) =>
+        old?.filter((t) => !set.has(t.id)) ?? []
+      );
       toast.success(i18n.t('danhSachTaiSan.toast.deleteSuccess', { count: ids.length }));
     },
     onError: (err: unknown) => toast.error((err as Error).message),

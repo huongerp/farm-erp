@@ -4,7 +4,7 @@ import { Edit, Trash2 } from 'lucide-react';
 import { cn, formatDateShort, formatNumberVN } from '../../../../lib/utils';
 import type { FarmThuHoach, ThuHoachDaySuffix } from '../core/types';
 import { THU_HOACH_DAY_SUFFIXES } from '../core/types';
-import { sumKeHoachWeek, sumThucTeWeek } from '../core/utils';
+import { sumKeHoachWeek, sumThucTeWeek, formatThuDuKienShort } from '../core/utils';
 import GenericTable from '../../../../components/shared/GenericTable';
 import type { ColumnConfig } from '../../../../store/createGenericStore';
 
@@ -75,6 +75,34 @@ const ThuHoachList: React.FC<Props> = ({
         return <span className="text-sm font-medium">{item.nam}</span>;
       case 'tuan':
         return <span className="text-sm text-muted-foreground">{item.tuan}</span>;
+      case 'du_thu_tuan':
+        return <span className="text-sm tabular-nums">{formatNumberVN(item.du_thu_tuan ?? 0)}</span>;
+      case 'thu_du_kien': {
+        const txt = formatThuDuKienShort(item.thu_du_kien ?? []);
+        return (
+          <span className="text-xs text-muted-foreground whitespace-normal" title={txt === '—' ? undefined : txt}>
+            {txt}
+          </span>
+        );
+      }
+      case 'so_sanh_tuan': {
+        const dt = Number(item.du_thu_tuan ?? 0);
+        const kh = sumKeHoachWeek(item);
+        const tt = sumThucTeWeek(item);
+        return (
+          <div className="text-xs tabular-nums leading-snug py-0.5">
+            <div className="whitespace-nowrap">
+              <span className="text-muted-foreground">{t('thuHoach.stats.abbrDT')}</span> {formatNumberVN(dt)}
+            </div>
+            <div className="whitespace-nowrap">
+              <span className="text-muted-foreground">{t('thuHoach.stats.abbrKH')}</span> {formatNumberVN(kh)}
+            </div>
+            <div className="whitespace-nowrap">
+              <span className="text-muted-foreground">{t('thuHoach.stats.abbrTT')}</span> {formatNumberVN(tt)}
+            </div>
+          </div>
+        );
+      }
       case 'ten_chi_nhanh':
         return <span className="text-sm text-muted-foreground">{item.ten_chi_nhanh ?? '—'}</span>;
       case 'tong_ke_hoach':
@@ -155,14 +183,22 @@ const ThuHoachList: React.FC<Props> = ({
           {t('thuHoach.store.colNguoiTao')}: {item.ten_nguoi_tao}
         </div>
       )}
-      <div className="text-xs text-muted-foreground flex gap-3">
+      <div className="text-xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-1">
         <span>
-          KH: {formatNumberVN(sumKeHoachWeek(item))}
+          {t('thuHoach.stats.abbrDT')} {formatNumberVN(item.du_thu_tuan ?? 0)}
         </span>
         <span>
-          TT: {formatNumberVN(sumThucTeWeek(item))}
+          {t('thuHoach.stats.abbrKH')} {formatNumberVN(sumKeHoachWeek(item))}
+        </span>
+        <span>
+          {t('thuHoach.stats.abbrTT')} {formatNumberVN(sumThucTeWeek(item))}
         </span>
       </div>
+      {(item.thu_du_kien?.length ?? 0) > 0 && (
+        <div className="text-xs text-muted-foreground mt-1">
+          {t('thuHoach.form.thuDuKien')}: {formatThuDuKienShort(item.thu_du_kien ?? [])}
+        </div>
+      )}
       <div className="flex justify-end gap-1 pt-2 border-t border-border mt-2">
         {onEdit && (
           <button

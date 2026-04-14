@@ -1,4 +1,5 @@
 import { supabase, fetchAllRows } from '../../../../lib/supabase';
+import { getCachedRef, REF_CACHE_KEYS } from '../../../../lib/ref-cache';
 import { ensureAuthUser } from '../../../../lib/ensure-auth-user';
 import type { Employee } from '../core/types';
 import type { EmployeeFormValues } from '../core/schema';
@@ -168,6 +169,31 @@ export const getEmployees = async (): Promise<Employee[]> => {
       : undefined) ?? undefined;
   });
   return employees;
+};
+
+/** Danh sách nhẹ (id, ho_ten, ma_nhan_vien, email) — map tên trong phiếu kho/đơn hàng, không tải 60+ cột và không gọi phòng ban/chức vụ/chi nhánh. */
+export type EmployeeRef = {
+  id: string;
+  ho_ten: string;
+  ma_nhan_vien: string;
+  email?: string | null;
+  /** Cần cho filter dropdown (công việc); vẫn nhẹ hơn select('*'). */
+  trang_thai: TrangThaiNV;
+};
+
+export const getEmployeesRef = async (): Promise<EmployeeRef[]> => {
+  return getCachedRef(REF_CACHE_KEYS.employees, async () => {
+    const data = await fetchAllRows<{ id: number; ho_va_ten: string | null; email: string | null; trang_thai: unknown }>((from, to) =>
+      supabase.from(TABLE).select('id, ho_va_ten, email, trang_thai').order('id', { ascending: false }).range(from, to)
+    );
+    return data.map((row) => ({
+      id: String(row.id),
+      ho_ten: (row.ho_va_ten as string) ?? '',
+      ma_nhan_vien: 'NV' + String(row.id),
+      email: row.email ?? null,
+      trang_thai: (row.trang_thai as TrangThaiNV) ?? TRANG_THAI_NV.DANG_LAM_VIEC,
+    }));
+  });
 };
 
 export const getEmployeeById = async (id: string): Promise<Employee | undefined> => {

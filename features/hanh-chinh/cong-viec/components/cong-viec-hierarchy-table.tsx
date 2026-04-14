@@ -6,7 +6,7 @@ import { getColumnCellStyle } from '../../../../store/createGenericStore';
 import type { ColumnConfig } from '../../../../store/createGenericStore';
 import type { CongViec } from '../core/types';
 import { getTrangThaiLabel, getUuTienLabel } from '../core/constants';
-import { useEmployees } from '../../../he-thong/nhan-vien/hooks/use-nhan-vien';
+import { useEmployeesRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
 
 export type CongViecRow = { item: CongViec; level: number };
 
@@ -36,7 +36,7 @@ const CongViecHierarchyTable: React.FC<Props> = ({
   canDelete = true,
 }) => {
   const { t } = useTranslation();
-  const { data: employees = [] } = useEmployees();
+  const { data: employees = [] } = useEmployeesRefQuery();
   const employeeNameMap = useMemo(() => {
     const m: Record<number, string> = {};
     employees.forEach((e) => {

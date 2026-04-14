@@ -10,11 +10,11 @@ import {
   deleteThuHoachManySupabase,
   appendThuHoachTraoDoiSupabase,
 } from './thu-hoach-supabase.service';
-import { getEmployees } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
+import { getEmployeesRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
 
 async function enrichTenNguoiTao(items: FarmThuHoach[]): Promise<FarmThuHoach[]> {
   if (items.length === 0) return items;
-  const employees = await getEmployees();
+  const employees = await getEmployeesRef();
   const hoTenById = new Map(employees.map((e) => [String(e.id), e.ho_ten]));
   return items.map((item) => ({
     ...item,

@@ -12,7 +12,7 @@ import { cn } from '../../../../lib/utils';
 import { useTaiSanList } from '../../danh-muc-tai-san/hooks/use-danh-muc-tai-san';
 import { useAssetStorageLocations } from '../../thiet-lap-tai-san/hooks/use-noi-luu';
 import { useAssetStatuses } from '../../thiet-lap-tai-san/hooks/use-trang-thai';
-import { useEmployees } from '@/features/he-thong/nhan-vien/hooks/use-nhan-vien';
+import { useEmployeesRefQuery } from '@/lib/hooks/use-supabase-ref-queries';
 import type { ThemChiTietPhatHienPayload } from '../services/kiem-ke-tai-san-service';
 
 interface Props {
@@ -40,7 +40,7 @@ const ThemTaiSanThucTeDialog: React.FC<Props> = ({
   const { data: assets = [] } = useTaiSanList();
   const { data: locations = [] } = useAssetStorageLocations();
   const { data: statuses = [] } = useAssetStatuses();
-  const { data: employees = [] } = useEmployees();
+  const { data: employees = [] } = useEmployeesRefQuery();
 
   const assetOptions = assets
     .filter((a) => a.trang_thai === 1 && !existingTaiSanIds.has(a.id))

@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { useThanhToanDoiTacList } from '../hooks/use-thanh-toan-doi-tac';
 import { useThanhToanDoiTacViewScope } from '../hooks/use-thanh-toan-doi-tac-view-scope';
 import { filterThanhToanDoiTacListByViewScope } from '../utils/thanh-toan-doi-tac-view-scope-filter';
-import { useDoiTacList } from '../../../kho-van/danh-sach-doi-tac/hooks/use-doi-tac';
+import { useDoiTacRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
 import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
 import { useTrangThaiThanhToanDoiTacList } from '../../thiet-lap-de-xuat-vat-tu/hooks/use-trang-thai-thanh-toan-doi-tac';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
@@ -21,7 +21,7 @@ import type { ThanhToanDoiTac } from '../core/types';
 const ThongKeTab: React.FC = () => {
   const { t } = useTranslation();
   const { data: list = [], isLoading, isError } = useThanhToanDoiTacList();
-  const { data: doiTacList = [] } = useDoiTacList('nha_cung_cap');
+  const { data: doiTacList = [] } = useDoiTacRefQuery('nha_cung_cap');
   const { data: chiNhanhList = [] } = useBranches();
   const { data: statusList = [] } = useTrangThaiThanhToanDoiTacList();
   const viewScope = useThanhToanDoiTacViewScope();

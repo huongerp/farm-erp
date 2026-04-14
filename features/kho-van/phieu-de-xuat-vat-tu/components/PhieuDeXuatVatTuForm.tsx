@@ -13,11 +13,11 @@ import type { PhieuDeXuatVatTu } from '../core/types';
 import { TRANG_THAI_CHO_DUYET, TRANG_THAI_DA_DUYET, TRANG_THAI_KHONG_DUYET } from '../core/constants';
 import type { Kho } from '../../danh-sach-kho/core/types';
 import type { HangHoa } from '../../danh-sach-hang-hoa/core/types';
-import type { Employee } from '../../../he-thong/nhan-vien/core/types';
+import type { EmployeeRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { useAuthStore } from '../../../../store/useStore';
 import { useCreatePhieuDeXuatVatTu, useUpdatePhieuDeXuatVatTu } from '../hooks/use-phieu-de-xuat-vat-tu';
-import { useHangHoaList } from '../../danh-sach-hang-hoa/hooks/use-hang-hoa';
+import { useHangHoaRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
 import { useCauHinhDeXuatVatTu } from '../../../mua-hang/thiet-lap-de-xuat-vat-tu/hooks/use-cau-hinh-de-xuat-vat-tu';
 import { useTienDoMuaHangList } from '../../../mua-hang/thiet-lap-de-xuat-vat-tu/hooks/use-tien-do-mua-hang';
 import { getNextSoPhieuPhieuDeXuatVatTuRpc } from '../services/phieu-de-xuat-vat-tu-supabase.service';
@@ -37,7 +37,7 @@ const ADD_HANG_HOA = '__add_hang_hoa__';
 
 interface Props {
   khoList: Kho[];
-  employees: Employee[];
+  employees: EmployeeRef[];
   initialData?: PhieuDeXuatVatTu | null;
   onClose: () => void;
   /** When false (e.g. approved and config disallows edit), form is read-only */
@@ -58,7 +58,7 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
   const isEdit = !!initialData?.id;
   const createMutation = useCreatePhieuDeXuatVatTu(onClose);
   const updateMutation = useUpdatePhieuDeXuatVatTu(onClose);
-  const { data: hangHoaList = [] } = useHangHoaList();
+  const { data: hangHoaList = [] } = useHangHoaRefQuery();
   const { data: tienDoMuaHangList = [] } = useTienDoMuaHangList();
   const { data: config } = useCauHinhDeXuatVatTu();
   const readOnly = isEdit && !canEdit;

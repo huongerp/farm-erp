@@ -5,9 +5,8 @@ import { useModulePermissionFromContext } from '../../../../components/shared/Mo
 import { useThanhToanDoiTacList, useThanhToanDoiTacById, useDeleteThanhToanDoiTac, useDeleteThanhToanDoiTacMany, useUpdateThanhToanDoiTac } from '../hooks/use-thanh-toan-doi-tac';
 import { useThanhToanDoiTacViewScope } from '../hooks/use-thanh-toan-doi-tac-view-scope';
 import { filterThanhToanDoiTacListByViewScope } from '../utils/thanh-toan-doi-tac-view-scope-filter';
-import { useDoiTacList } from '../../../kho-van/danh-sach-doi-tac/hooks/use-doi-tac';
+import { useDoiTacRefQuery, useEmployeesRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
 import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
-import { useEmployees } from '../../../he-thong/nhan-vien/hooks/use-nhan-vien';
 import { useTrangThaiThanhToanDoiTacList } from '../../thiet-lap-de-xuat-vat-tu/hooks/use-trang-thai-thanh-toan-doi-tac';
 import { useThanhToanDoiTacStore } from '../store/useThanhToanDoiTacStore';
 import { useListWithFilter } from '../../../../lib/hooks';
@@ -60,10 +59,10 @@ const DanhSachTab: React.FC = () => {
   const [viewingItem, setViewingItem] = useState<ThanhToanDoiTac | null>(null);
 
   const { data: allList = [], isLoading } = useThanhToanDoiTacList();
-  const { data: doiTacList = [] } = useDoiTacList('nha_cung_cap');
+  const { data: doiTacList = [] } = useDoiTacRefQuery('nha_cung_cap');
   const { data: chiNhanhList = [] } = useBranches();
   const donViList = chiNhanhList; // Đơn vị = chi nhánh (alias để tương thích)
-  const { data: employees = [] } = useEmployees();
+  const { data: employees = [] } = useEmployeesRefQuery();
   const { data: statusList = [] } = useTrangThaiThanhToanDoiTacList();
   const viewScope = useThanhToanDoiTacViewScope();
 

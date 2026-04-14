@@ -9,7 +9,7 @@ import type {
 import { TRANG_THAI_CHO_DUYET, TRANG_THAI_DA_DUYET, TRANG_THAI_KHONG_DUYET } from '../../../kho-van/phieu-de-xuat-vat-tu/core/constants';
 import { getAllPhieuDeXuatVatTu } from '../../../kho-van/phieu-de-xuat-vat-tu/services/phieu-de-xuat-vat-tu-service';
 import { getAllDonDatHang } from '../../don-dat-hang/services/don-dat-hang-service';
-import { getKhoList } from '../../../kho-van/danh-sach-kho/services/kho-service';
+import { getKhoRef } from '../../../kho-van/danh-sach-kho/services/kho-service';
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -26,7 +26,7 @@ async function filterPhieuDeXuatForViewScope(
     opts.allowedBranchIds !== undefined || Boolean((opts.allowedCreatorUserId ?? '').trim());
   if (!scopeOn) return list;
 
-  const khoList = await getKhoList();
+  const khoList = await getKhoRef();
   const noiDeXuatToBranchId = new Map<string, string>();
   khoList.forEach((k) => {
     if (k.id_chi_nhanh != null) noiDeXuatToBranchId.set(k.id, k.id_chi_nhanh);

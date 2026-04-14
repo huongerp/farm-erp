@@ -9,6 +9,7 @@ import FormSection from '../../../../components/shared/FormSection';
 import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
 import { useSaveBangLuong, useCreateBangLuongFromRecord } from '../hooks/use-bang-luong';
 import { getEmployees } from '@/features/he-thong/nhan-vien/services/nhan-vien-service';
+import { EMPLOYEES_QUERY_KEY } from '@/features/he-thong/nhan-vien/hooks/use-nhan-vien';
 import { useQuery } from '@tanstack/react-query';
 import type { BangLuongRecord } from '../core/types';
 
@@ -66,8 +67,9 @@ const BangLuongForm: React.FC<Props> = ({ initialRecord, defaultEmployeeId, onCl
   const [ghi_chu, setGhiChu] = useState('');
 
   const { data: employees = [] } = useQuery({
-    queryKey: ['employees-bang-luong'],
+    queryKey: EMPLOYEES_QUERY_KEY,
     queryFn: getEmployees,
+    staleTime: 1000 * 60 * 15,
   });
 
   const employeeOptions = useMemo(

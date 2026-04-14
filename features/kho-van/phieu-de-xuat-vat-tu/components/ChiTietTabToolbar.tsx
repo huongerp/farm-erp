@@ -7,12 +7,14 @@ import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import { useChiTietTabStore } from '../store/useChiTietTabStore';
 import type { PhieuDeXuatVatTuChiTietRow } from '../core/types';
-import { TRANG_THAI_CHO_DUYET, TRANG_THAI_DA_DUYET, TRANG_THAI_KHONG_DUYET } from '../core/constants';
-import type { Employee } from '../../../he-thong/nhan-vien/core/types';
+import { TRANG_THAI_CHO_DUYET, TRANG_THAI_DA_DUYET, TRANG_THAI_KHONG_DUYET, TIEN_DO_MH_KNOWN_LABELS } from '../core/constants';
+import type { EmployeeRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
+import type { Kho } from '../../danh-sach-kho/core/types';
 
 interface Props {
   data: PhieuDeXuatVatTuChiTietRow[];
-  employees: Employee[];
+  khoList: Kho[];
+  employees: EmployeeRef[];
   currentUserId: string | null;
   selectedCount: number;
   /** Khi có: bấm Back gọi callback (vd. về tab Danh sách). Khi không có: không hiện nút Back. */
@@ -22,10 +24,12 @@ interface Props {
   /** Xuất file (tab Chi tiết) — chuẩn ExportDialog. */
   onExport?: () => void;
   exportDisabled?: boolean;
+  chipCountsMode?: 'fromRows' | 'unweighted';
 }
 
 const ChiTietTabToolbar: React.FC<Props> = ({
   data,
+  khoList,
   employees,
   currentUserId,
   bulkActions,
@@ -33,8 +37,10 @@ const ChiTietTabToolbar: React.FC<Props> = ({
   onBack,
   onExport,
   exportDisabled,
+  chipCountsMode = 'fromRows',
 }) => {
   const { t } = useTranslation();
+  const unweighted = chipCountsMode === 'unweighted';
   const {
     searchTerm,
     setSearchTerm,
@@ -76,6 +82,7 @@ const ChiTietTabToolbar: React.FC<Props> = ({
     () => (currentUserHoTen ? data.filter((r) => (r.ten_nguoi_duyet ?? '') === currentUserHoTen).length : 0),
     [data, currentUserHoTen]
   );
+  const showMineApproveCounts = !unweighted;
 
   const handleClearAllFilters = () => {
     setSearchTerm('');
@@ -105,23 +112,30 @@ const ChiTietTabToolbar: React.FC<Props> = ({
       {
         label: t('phieuDeXuatVatTu.status.pending'),
         value: 'Pending',
-        count: data.filter((r) => r.trang_thai_phieu === TRANG_THAI_CHO_DUYET).length,
+        count: unweighted ? 1 : data.filter((r) => r.trang_thai_phieu === TRANG_THAI_CHO_DUYET).length,
       },
       {
         label: t('phieuDeXuatVatTu.status.approved'),
         value: 'Approved',
-        count: data.filter((r) => r.trang_thai_phieu === TRANG_THAI_DA_DUYET).length,
+        count: unweighted ? 1 : data.filter((r) => r.trang_thai_phieu === TRANG_THAI_DA_DUYET).length,
       },
       {
         label: t('phieuDeXuatVatTu.status.rejected'),
         value: 'Rejected',
-        count: data.filter((r) => r.trang_thai_phieu === TRANG_THAI_KHONG_DUYET).length,
+        count: unweighted ? 1 : data.filter((r) => r.trang_thai_phieu === TRANG_THAI_KHONG_DUYET).length,
       },
     ],
-    [data, t]
+    [data, t, unweighted]
   );
 
   const noiDeXuatOptions = useMemo(() => {
+    if (unweighted) {
+      return khoList
+        .map((k) => (k.ten_kho ?? '').trim())
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b))
+        .map((label) => ({ value: label, label, count: 1 }));
+    }
     const seen = new Set<string>();
     return data
       .map((r) => r.ten_noi_de_xuat ?? '')
@@ -132,9 +146,16 @@ const ChiTietTabToolbar: React.FC<Props> = ({
         label,
         count: data.filter((r) => (r.ten_noi_de_xuat ?? '') === label).length,
       }));
-  }, [data]);
+  }, [data, khoList, unweighted]);
 
   const nguoiDeXuatOptions = useMemo(() => {
+    if (unweighted) {
+      return employees
+        .map((e) => (e.ho_ten ?? '').trim())
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b))
+        .map((label) => ({ value: label, label, count: 1 }));
+    }
     const seen = new Set<string>();
     return data
       .map((r) => r.ten_nguoi_de_xuat ?? '')
@@ -145,9 +166,16 @@ const ChiTietTabToolbar: React.FC<Props> = ({
         label,
         count: data.filter((r) => (r.ten_nguoi_de_xuat ?? '') === label).length,
       }));
-  }, [data]);
+  }, [data, employees, unweighted]);
 
   const nguoiDuyetOptions = useMemo(() => {
+    if (unweighted) {
+      return employees
+        .map((e) => (e.ho_ten ?? '').trim())
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b))
+        .map((label) => ({ value: label, label, count: 1 }));
+    }
     const seen = new Set<string>();
     return data
       .map((r) => r.ten_nguoi_duyet ?? '')
@@ -158,9 +186,12 @@ const ChiTietTabToolbar: React.FC<Props> = ({
         label,
         count: data.filter((r) => (r.ten_nguoi_duyet ?? '') === label).length,
       }));
-  }, [data]);
+  }, [data, employees, unweighted]);
 
   const tienDoMhOptions = useMemo(() => {
+    if (unweighted) {
+      return [...TIEN_DO_MH_KNOWN_LABELS].map((label) => ({ value: label, label, count: 1 }));
+    }
     const seen = new Set<string>();
     return data
       .map((r) => r.ten_tien_do_mh ?? '')
@@ -171,7 +202,7 @@ const ChiTietTabToolbar: React.FC<Props> = ({
         label,
         count: data.filter((r) => (r.ten_tien_do_mh ?? '') === label).length,
       }));
-  }, [data]);
+  }, [data, unweighted]);
 
   const filterGroups = useMemo(
     () => [
@@ -248,7 +279,7 @@ const ChiTietTabToolbar: React.FC<Props> = ({
           >
             <User className="w-3.5 h-3.5" />
             {t('phieuDeXuatVatTu.tabs.mine')}
-            {mineCount > 0 && <span className="opacity-80">({mineCount})</span>}
+            {showMineApproveCounts && mineCount > 0 && <span className="opacity-80">({mineCount})</span>}
           </button>
           <button
             type="button"
@@ -262,7 +293,7 @@ const ChiTietTabToolbar: React.FC<Props> = ({
           >
             <UserCheck className="w-3.5 h-3.5" />
             {t('phieuDeXuatVatTu.tabs.toApprove')}
-            {toApproveCount > 0 && <span className="opacity-80">({toApproveCount})</span>}
+            {showMineApproveCounts && toApproveCount > 0 && <span className="opacity-80">({toApproveCount})</span>}
           </button>
         </>
       )}

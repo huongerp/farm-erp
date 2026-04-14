@@ -8,10 +8,10 @@ import {
   getPhieuChiTietByTaiSanIdSupabase,
   getAllPhieuChiTietSupabase,
 } from './cap-phat-thu-hoi-supabase.service';
-import { getEmployees } from '@/features/he-thong/nhan-vien/services/nhan-vien-service';
+import { getEmployeesRef } from '@/features/he-thong/nhan-vien/services/nhan-vien-service';
 
 async function enrichPhieu(items: PhieuCapPhatThuHoi[]): Promise<PhieuCapPhatThuHoi[]> {
-  const employees = await getEmployees();
+  const employees = await getEmployeesRef();
   const employeeMap = new Map(employees.map((e) => [e.id, { ten: e.ho_ten, ma: e.ma_nhan_vien }]));
   return items.map((item) => ({
     ...item,

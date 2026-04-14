@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { User, Calendar, Warehouse } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDotKiemKeKhoList } from '../hooks/use-kiem-ke-kho';
-import { useEmployees } from '@/features/he-thong/nhan-vien/hooks/use-nhan-vien';
+import { useEmployeesRefQuery } from '@/lib/hooks/use-supabase-ref-queries';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import EmptyState from '../../../../components/shared/EmptyState';
@@ -39,7 +39,7 @@ function useStatsFilterCounts(items: DotKiemKeKho[]) {
 const ThongKeTab: React.FC = () => {
   const { t } = useTranslation();
   const { data: list = [], isLoading, isError } = useDotKiemKeKhoList({});
-  const { data: employees = [] } = useEmployees();
+  const { data: employees = [] } = useEmployeesRefQuery();
   const { data: khoList = [] } = useKhoList();
   const { trangThaiCounts, nguoiPhuTrachCounts, idKhoCounts } = useStatsFilterCounts(list);
 

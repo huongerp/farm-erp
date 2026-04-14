@@ -10,6 +10,7 @@ import type { TonKhoRecord } from '../../phieu-kho/services/ton-kho-service';
 import { getKhoList } from '../../danh-sach-kho/services/kho-service';
 import { getAllHangHoa } from '../../danh-sach-hang-hoa/services/hang-hoa-service';
 import { useQuery } from '@tanstack/react-query';
+import { HANG_HOA_QUERY_KEY } from '../../danh-sach-hang-hoa/hooks/use-hang-hoa';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
 import Button from '../../../../components/ui/Button';
 import EmptyState from '../../../../components/shared/EmptyState';
@@ -44,8 +45,9 @@ function useProductRows(tonKhoListOverride?: TonKhoRecord[]) {
   const tonKhoList = tonKhoListOverride !== undefined ? tonKhoListOverride : tonKhoListRaw;
   const { data: dinhMucMap, isLoading: loadingDinhMuc } = useDinhMucTonKho();
   const { data: hangHoaList = [] } = useQuery({
-    queryKey: ['hangHoa'],
+    queryKey: HANG_HOA_QUERY_KEY,
     queryFn: getAllHangHoa,
+    staleTime: 1000 * 60 * 15,
   });
   const byProduct = useMemo(() => {
     const map = new Map<string, number>();

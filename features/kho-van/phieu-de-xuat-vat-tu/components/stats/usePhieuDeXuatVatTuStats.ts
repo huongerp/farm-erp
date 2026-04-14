@@ -21,8 +21,7 @@ export interface StatsChartItem {
   value: number;
 }
 
-export function usePhieuDeXuatVatTuStats(list: PhieuDeXuatVatTu[]) {
-  return useMemo(() => {
+export function computePhieuDeXuatVatTuStats(list: PhieuDeXuatVatTu[]) {
     const pending = list.filter((d) => d.trang_thai === TRANG_THAI_CHO_DUYET).length;
     const approved = list.filter((d) => d.trang_thai === TRANG_THAI_DA_DUYET).length;
     const rejected = list.filter((d) => d.trang_thai === TRANG_THAI_KHONG_DUYET).length;
@@ -93,5 +92,8 @@ export function usePhieuDeXuatVatTuStats(list: PhieuDeXuatVatTu[]) {
       byNguoiDuyet,
       byMonth,
     };
-  }, [list]);
+}
+
+export function usePhieuDeXuatVatTuStats(list: PhieuDeXuatVatTu[]) {
+  return useMemo(() => computePhieuDeXuatVatTuStats(list), [list]);
 }

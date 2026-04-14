@@ -18,7 +18,7 @@ export function useAllTonKho() {
   return useQuery({
     queryKey: TON_KHO_QUERY_KEY,
     queryFn: getAllTonKho,
-    staleTime: 1000 * 60 * 2,
+    staleTime: 1000 * 60 * 5,
   });
 }
 
@@ -26,7 +26,7 @@ export function useDinhMucTonKho() {
   return useQuery({
     queryKey: [...TON_KHO_QUERY_KEY, 'dinhMuc'],
     queryFn: getDinhMucTonKho,
-    staleTime: 1000 * 60 * 2,
+    staleTime: 1000 * 60 * 5,
   });
 }
 
@@ -34,7 +34,7 @@ export function useDinhMucList() {
   return useQuery({
     queryKey: DINH_MUC_LIST_KEY,
     queryFn: getDinhMucList,
-    staleTime: 1000 * 60 * 2,
+    staleTime: 1000 * 60 * 5,
   });
 }
 

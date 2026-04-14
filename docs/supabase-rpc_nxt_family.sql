@@ -1,0 +1,17 @@
+-- =============================================================================
+-- RPC gia đình báo cáo NXT (P1-C) — mẫu tham số & triển khai dần trên Postgres.
+-- App đã gọi thử RPC trước, lỗi / chưa deploy → fallback logic client (bao-cao-nxt-service.ts).
+--
+-- Kỳ vọng chữ ký (đề xuất):
+--   rpc_nxt_by_period(p_filters jsonb) RETURNS jsonb
+--     → { "byWarehouse": [...], "byProduct": [...] } khớp NXTByPeriodResult
+--   rpc_phieu_in_period(p_filters jsonb) RETURNS jsonb (mảng phiếu đã map)
+--   rpc_ton_at_date(p_filters jsonb) RETURNS jsonb (mảng TonTaiThoiDiemRow)
+--
+-- Triển khai SQL nên mirror filterPhieuForRestrictedView + công thức tồn đầu/cuối kỳ
+-- trong TypeScript (xem features/kho-van/bao-cao-nhap-xuat-ton/services/bao-cao-nxt-service.ts).
+-- =============================================================================
+
+-- Ví dụ khung (COMMENT OUT cho tới khi logic SQL hoàn chỉnh):
+-- CREATE OR REPLACE FUNCTION public.rpc_nxt_by_period(p_filters jsonb)
+-- RETURNS jsonb LANGUAGE sql STABLE AS $$ SELECT '{"byWarehouse":[],"byProduct":[]}'::jsonb $$;

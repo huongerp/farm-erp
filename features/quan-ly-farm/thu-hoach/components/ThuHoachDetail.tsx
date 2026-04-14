@@ -6,7 +6,13 @@ import Button from '../../../../components/ui/Button';
 import type { FarmThuHoach } from '../core/types';
 import { THU_HOACH_DAY_SUFFIXES } from '../core/types';
 import { cn, formatDateTimeShort, formatNumberVN } from '../../../../lib/utils';
-import { sumKeHoachWeek, sumThucTeWeek, sumChenhLechWeek, thuHoachDayColumnLabel } from '../core/utils';
+import {
+  sumKeHoachWeek,
+  sumThucTeWeek,
+  sumChenhLechWeek,
+  thuHoachDayColumnLabel,
+  formatThuDuKienShort,
+} from '../core/utils';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
 import DetailToolbar, { type DetailToolbarAction } from '../../../../components/shared/DetailToolbar';
 import DetailSection from '../../../../components/shared/DetailSection';
@@ -109,6 +115,15 @@ const ThuHoachDetail: React.FC<Props> = ({
               <DetailField label={t('thuHoach.store.colNam')} value={String(data.nam)} />
               <DetailField label={t('thuHoach.store.colTuan')} value={String(data.tuan)} />
               <DetailField
+                label={t('thuHoach.form.duThuTuan')}
+                value={formatNumberVN(data.du_thu_tuan ?? 0)}
+              />
+              <DetailField
+                label={t('thuHoach.form.thuDuKien')}
+                value={(data.thu_du_kien?.length ?? 0) > 0 ? formatThuDuKienShort(data.thu_du_kien ?? []) : ''}
+                emptyText="—"
+              />
+              <DetailField
                 label={t('thuHoach.store.colBranch')}
                 value={data.ten_chi_nhanh ?? '—'}
                 className="sm:col-span-2"
@@ -119,6 +134,10 @@ const ThuHoachDetail: React.FC<Props> = ({
           <DetailSection title={t('thuHoach.detail.dailyBreakdown')} icon={<ClipboardList size={14} />} variant="primary">
             <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border border-border bg-muted/25 px-3 py-2 text-sm tabular-nums">
               <span className="font-medium text-foreground shrink-0">{t('thuHoach.detail.weekTotals')}</span>
+              <span className="whitespace-nowrap">
+                <span className="text-muted-foreground">{t('thuHoach.stats.abbrDT')}</span>{' '}
+                {formatNumberVN(data.du_thu_tuan ?? 0)}
+              </span>
               <span className="whitespace-nowrap">
                 <span className="text-muted-foreground">{t('thuHoach.stats.abbrKH')}</span>{' '}
                 {formatNumberVN(sumKeHoachWeek(data))}

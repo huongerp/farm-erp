@@ -24,6 +24,7 @@ interface Props {
   canEditItem?: (item: PhieuDeXuatVatTu) => boolean;
   canDeleteItem?: (item: PhieuDeXuatVatTu) => boolean;
   isOverdue?: (item: PhieuDeXuatVatTu) => boolean;
+  serverTotalCount?: number;
 }
 
 const PhieuDeXuatVatTuList: React.FC<Props> = ({
@@ -43,6 +44,7 @@ const PhieuDeXuatVatTuList: React.FC<Props> = ({
   canEditItem,
   canDeleteItem,
   isOverdue,
+  serverTotalCount,
 }) => {
   const { t } = useTranslation();
 
@@ -188,6 +190,7 @@ const PhieuDeXuatVatTuList: React.FC<Props> = ({
       pageSize={pageSize}
       onPageChange={onPageChange}
       onPageSizeChange={onPageSizeChange}
+      totalRecordsOverride={serverTotalCount}
       renderCell={renderCell}
       renderMobileCard={renderMobileCard}
       keyExtractor={(item) => item.id}

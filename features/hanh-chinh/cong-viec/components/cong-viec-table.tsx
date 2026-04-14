@@ -7,7 +7,7 @@ import { formatDateTimeShort } from '../../../../lib/utils';
 import type { CongViec } from '../core/types';
 import { useCongViecStore } from '../store/useCongViecStore';
 import { getTrangThaiLabel, getUuTienLabel } from '../core/constants';
-import { useEmployees } from '../../../he-thong/nhan-vien/hooks/use-nhan-vien';
+import { useEmployeesRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
 
 interface Props {
   data: CongViec[];
@@ -19,7 +19,7 @@ interface Props {
 
 const CongViecTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onView }) => {
   const { t } = useTranslation();
-  const { data: employees = [] } = useEmployees();
+  const { data: employees = [] } = useEmployeesRefQuery();
   const {
     columns,
     pagination,

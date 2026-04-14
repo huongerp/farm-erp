@@ -10,6 +10,7 @@ import MultiSelect from '../../../../components/ui/MultiSelect';
 import { cn } from '../../../../lib/utils';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { getAllHangHoa } from '../../danh-sach-hang-hoa/services/hang-hoa-service';
+import { HANG_HOA_QUERY_KEY } from '../../danh-sach-hang-hoa/hooks/use-hang-hoa';
 import { getAllDanhMucHangHoa } from '../../danh-muc-hang-hoa/services/danh-muc-hang-hoa-service';
 import { useQuery } from '@tanstack/react-query';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
@@ -42,7 +43,7 @@ const TaoDanhSachKiemKeDialog: React.FC<Props> = ({
 
   const { data: khoList = [] } = useKhoList();
   const { data: hangHoaList = [] } = useQuery({
-    queryKey: ['hangHoaList'],
+    queryKey: HANG_HOA_QUERY_KEY,
     queryFn: getAllHangHoa,
     enabled: open,
   });

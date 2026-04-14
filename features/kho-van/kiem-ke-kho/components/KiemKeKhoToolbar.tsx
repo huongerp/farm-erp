@@ -5,7 +5,7 @@ import Button from '../../../../components/ui/Button';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import { useKiemKeKhoStore } from '../store/useKiemKeKhoStore';
-import { useEmployees } from '@/features/he-thong/nhan-vien/hooks/use-nhan-vien';
+import { useEmployeesRefQuery } from '@/lib/hooks/use-supabase-ref-queries';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { TRANG_THAI_DOT_OPTIONS } from '../core/constants';
@@ -45,7 +45,7 @@ const KiemKeKhoToolbar: React.FC<Props> = ({
     selectedIds,
     clearSelection,
   } = useKiemKeKhoStore();
-  const { data: employees = [] } = useEmployees();
+  const { data: employees = [] } = useEmployeesRefQuery();
   const { data: khoList = [] } = useKhoList();
   const { trangThaiCounts, nguoiPhuTrachCounts, idKhoCounts } = useKiemKeKhoFilterCounts(items, filters);
 

@@ -1,17 +1,28 @@
 /**
  * Service phiếu đề xuất vật tư – đọc/ghi Supabase (fp_mh_phieu_de_xuat_vat_tu, fp_mh_phieu_de_xuat_vat_tu_chi_tiet).
  */
-import { supabase, fetchAllRows } from '../../../../lib/supabase';
+import { supabase, fetchAllRows, fetchTablePage, type PaginatedTableResult } from '../../../../lib/supabase';
 import type { PhieuDeXuatVatTu, PhieuDeXuatVatTuChiTiet, PhieuDeXuatVatTuChiTietRow } from '../core/types';
 import type { PhieuDeXuatVatTuFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
-import { getKhoList } from '../../danh-sach-kho/services/kho-service';
-import { getAllHangHoa } from '../../danh-sach-hang-hoa/services/hang-hoa-service';
-import { getEmployees } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
+import { getKhoRef } from '../../danh-sach-kho/services/kho-service';
+import { getHangHoaRef } from '../../danh-sach-hang-hoa/services/hang-hoa-service';
+import { getEmployeesRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
+import type { BranchListScope } from '../../../../lib/branch-scope-query';
+import type { PhieuDeXuatChiTietListServerQuery, PhieuDeXuatVatTuListServerQuery } from './phieu-de-xuat-list-query';
 
 const TABLE_PHIEU = 'fp_mh_phieu_de_xuat_vat_tu';
 const TABLE_CHI_TIET = 'fp_mh_phieu_de_xuat_vat_tu_chi_tiet';
 const RPC_NEXT_SO_PHIEU = 'get_next_so_phieu_phieu_de_xuat_vat_tu';
+
+/** View DB: chạy docs/supabase-v_phieu_de_xuat_vat_tu_summary.sql trên Supabase. */
+const VIEW_PHIEU_DE_XUAT_SUMMARY = 'v_phieu_de_xuat_vat_tu_summary';
+
+const PHIEU_DE_XUAT_HEADER_SELECT =
+  'id, so_phieu, ngay, ngay_can, id_noi_de_xuat, id_nguoi_de_xuat, id_nguoi_duyet, ghi_chu, trang_thai, tg_tao, tg_cap_nhat';
+
+const CHI_TIET_TAB_SELECT =
+  'id, id_phieu_de_xuat_vat_tu, id_hang_hoa, so_luong, don_vi_tinh, thong_so, ghi_chu, id_tien_do_mh, ten_tien_do_mh, trao_doi, so_phieu, ngay, ngay_can, ten_noi_de_xuat, ten_nguoi_de_xuat, ten_nguoi_duyet, trang_thai_phieu';
 
 export interface NextSoPhieuConfig {
   tien_to_so_phieu: string;
@@ -26,6 +37,29 @@ export async function getNextSoPhieuPhieuDeXuatVatTuRpc(config: NextSoPhieuConfi
   if (Number.isNaN(nextNum) || nextNum < 1) throw new Error('Invalid next number from RPC');
   const padded = String(nextNum).padStart(config.do_dai_phan_so, '0');
   return `${config.tien_to_so_phieu || ''}${padded}`;
+}
+
+type PhieuDeXuatSummaryRow = PhieuDbRow & {
+  so_dong: number;
+  tong_so_luong: number | string | null;
+  ref_ten_noi_de_xuat?: string | null;
+  ref_ten_nguoi_de_xuat?: string | null;
+  ref_ma_nguoi_de_xuat?: string | null;
+  ref_ten_nguoi_duyet?: string | null;
+  ref_ma_nguoi_duyet?: string | null;
+};
+
+function mapPhieuDeXuatSummaryRowToPhieu(row: PhieuDeXuatSummaryRow): PhieuDeXuatVatTu {
+  const phieu = rowToPhieu(row, {
+    ten_noi_de_xuat: row.ref_ten_noi_de_xuat ?? undefined,
+    ten_nguoi_de_xuat: row.ref_ten_nguoi_de_xuat ?? undefined,
+    ma_nguoi_de_xuat: row.ref_ma_nguoi_de_xuat ?? undefined,
+    ten_nguoi_duyet: row.ref_ten_nguoi_duyet ?? null,
+    ma_nguoi_duyet: row.ref_ma_nguoi_duyet ?? null,
+  });
+  phieu.tong_so_dong = Number(row.so_dong) || 0;
+  phieu.tong_so_luong = Number(row.tong_so_luong) || 0;
+  return phieu;
 }
 
 interface PhieuDbRow {
@@ -113,59 +147,132 @@ function rowToChiTiet(row: ChiTietDbRow, idPhieuStr: string, enrich?: { ma_hang?
   };
 }
 
-/** Gộp chi tiết cho danh sách phiếu (fetchAllRows tránh giới hạn 1000 dòng PostgREST). */
-async function getChiTietAggregatesDeXuat(): Promise<Record<string, { so_dong: number; tong_so_luong: number }>> {
-  const ctRows = await fetchAllRows<{ id_phieu_de_xuat_vat_tu: number; so_luong: number | string | null }>((from, to) =>
+export async function getAllPhieuDeXuatVatTuSupabase(): Promise<PhieuDeXuatVatTu[]> {
+  const rows = await fetchAllRows<PhieuDeXuatSummaryRow>((from, to) =>
     supabase
-      .from(TABLE_CHI_TIET)
-      .select('id_phieu_de_xuat_vat_tu, so_luong')
-      .order('id', { ascending: true })
+      .from(VIEW_PHIEU_DE_XUAT_SUMMARY)
+      .select('*')
+      .order('ngay', { ascending: false })
+      .order('so_phieu', { ascending: false })
       .range(from, to)
   );
-  const agg: Record<string, { so_dong: number; tong_so_luong: number }> = {};
-  ctRows.forEach((r) => {
-    const key = String(r.id_phieu_de_xuat_vat_tu);
-    if (!agg[key]) agg[key] = { so_dong: 0, tong_so_luong: 0 };
-    agg[key].so_dong += 1;
-    agg[key].tong_so_luong += Number(r.so_luong) || 0;
-  });
-  return agg;
+  return rows.map((row) => mapPhieuDeXuatSummaryRowToPhieu(row));
 }
 
-export async function getAllPhieuDeXuatVatTuSupabase(): Promise<PhieuDeXuatVatTu[]> {
-  const [rows, khoList, employees, aggregates] = await Promise.all([
-    fetchAllRows<PhieuDbRow>((from, to) =>
-      supabase
-        .from(TABLE_PHIEU)
-        .select('*')
-        .order('ngay', { ascending: false })
-        .order('so_phieu', { ascending: false })
-        .range(from, to)
-    ),
-    getKhoList(),
-    getEmployees(),
-    getChiTietAggregatesDeXuat(),
-  ]);
-  const khoMap: Record<string, string> = {};
-  khoList.forEach((k) => {
-    khoMap[k.id] = k.ten_kho;
+const PHIEU_DE_XUAT_PAGE_SIZE_DEFAULT = 50;
+const IMPOSSIBLE_NUM_ID = -2147483647;
+const PHIEU_ID_IN_CHUNK = 200;
+
+function chunkNumericIds(ids: number[], size: number): number[][] {
+  const out: number[][] = [];
+  for (let i = 0; i < ids.length; i += size) out.push(ids.slice(i, i + size));
+  return out;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyPhieuDeXuatHeaderScope(q: any, scope: BranchListScope): any {
+  let b = q;
+  if (scope.viewAll) return b;
+  const own = scope.ownEmployeeIdNum;
+  if (!scope.viewByBranch) {
+    if (own != null) return b.eq('id_nguoi_de_xuat', own);
+    return b.eq('id', IMPOSSIBLE_NUM_ID);
+  }
+  const ids = scope.allowedKhoNumericIds;
+  const parts: string[] = [];
+  if (own != null) parts.push(`id_nguoi_de_xuat.eq.${own}`);
+  if (ids.length > 0) {
+    const inl = `(${ids.join(',')})`;
+    parts.push(`id_noi_de_xuat.in.${inl}`);
+  }
+  if (parts.length === 0) return b.eq('id', IMPOSSIBLE_NUM_ID);
+  return b.or(parts.join(','));
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyPhieuDeXuatVatTuListQuery(q: any, query: PhieuDeXuatVatTuListServerQuery): any {
+  let b = applyPhieuDeXuatHeaderScope(q, query.scope);
+  if (query.trangThaiViet.length) b = b.in('trang_thai', query.trangThaiViet);
+  if (query.idNoiDeXuat.length) b = b.in('id_noi_de_xuat', query.idNoiDeXuat);
+  if (query.idNguoiDeXuat.length) b = b.in('id_nguoi_de_xuat', query.idNguoiDeXuat);
+  if (query.idNguoiDuyet.length) b = b.in('id_nguoi_duyet', query.idNguoiDuyet);
+  const term = (query.searchTerm ?? '').trim();
+  if (term) {
+    const esc = term.replace(/%/g, '\\%').replace(/_/g, '\\_');
+    const pat = `%${esc}%`;
+    b = b.or(`so_phieu.ilike.${pat},ghi_chu.ilike.${pat}`);
+  }
+  return b;
+}
+
+async function fetchPhieuIdsMatchingScope(scope: BranchListScope): Promise<number[]> {
+  const rows = await fetchAllRows<{ id: number }>((from, to) => {
+    const base = supabase.from(VIEW_PHIEU_DE_XUAT_SUMMARY).select('id');
+    const scoped = applyPhieuDeXuatHeaderScope(base, scope);
+    return scoped.order('id', { ascending: true }).range(from, to);
   });
-  const nvMap: Record<string, { ho_ten: string; ma_nhan_vien: string }> = {};
-  employees.forEach((e) => {
-    nvMap[e.id] = { ho_ten: e.ho_ten, ma_nhan_vien: e.ma_nhan_vien ?? '' };
+  return rows.map((r) => r.id);
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyPhieuIdConstraint(q: any, phieuIds: number[] | null): any {
+  if (phieuIds == null) return q;
+  if (phieuIds.length === 0) return q.eq('id', IMPOSSIBLE_NUM_ID);
+  if (phieuIds.length <= PHIEU_ID_IN_CHUNK) return q.in('id_phieu_de_xuat_vat_tu', phieuIds);
+  const parts = chunkNumericIds(phieuIds, PHIEU_ID_IN_CHUNK).map(
+    (ch) => `id_phieu_de_xuat_vat_tu.in.(${ch.join(',')})`
+  );
+  return q.or(parts.join(','));
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyPhieuDeXuatChiTietRowFilters(q: any, query: PhieuDeXuatChiTietListServerQuery): any {
+  let b = q;
+  if (query.trangThaiPhieuViet.length) b = b.in('trang_thai_phieu', query.trangThaiPhieuViet);
+  if (query.tenNoiDeXuat.length) b = b.in('ten_noi_de_xuat', query.tenNoiDeXuat);
+  if (query.tenNguoiDeXuat.length) b = b.in('ten_nguoi_de_xuat', query.tenNguoiDeXuat);
+  if (query.tenNguoiDuyet.length) b = b.in('ten_nguoi_duyet', query.tenNguoiDuyet);
+  if (query.tenTienDoMh.length) b = b.in('ten_tien_do_mh', query.tenTienDoMh);
+  const term = (query.searchTerm ?? '').trim();
+  if (term) {
+    const esc = term.replace(/%/g, '\\%').replace(/_/g, '\\_');
+    const pat = `%${esc}%`;
+    b = b.or(
+      `so_phieu.ilike.${pat},ghi_chu.ilike.${pat},thong_so.ilike.${pat},ten_noi_de_xuat.ilike.${pat},ten_nguoi_de_xuat.ilike.${pat},ten_nguoi_duyet.ilike.${pat},ten_tien_do_mh.ilike.${pat},trao_doi.ilike.${pat}`
+    );
+  }
+  return b;
+}
+
+export async function getPhieuDeXuatVatTuPageSupabase(
+  page: number,
+  pageSize: number = PHIEU_DE_XUAT_PAGE_SIZE_DEFAULT,
+  listQuery?: PhieuDeXuatVatTuListServerQuery
+): Promise<PaginatedTableResult<PhieuDeXuatVatTu>> {
+  const pageResult = await fetchTablePage<PhieuDeXuatSummaryRow>(page, pageSize, async (from, to) => {
+    let sel = supabase.from(VIEW_PHIEU_DE_XUAT_SUMMARY).select('*', { count: 'exact' });
+    if (listQuery) sel = applyPhieuDeXuatVatTuListQuery(sel, listQuery);
+    const res = await sel.order('ngay', { ascending: false }).order('so_phieu', { ascending: false }).range(from, to);
+    return { data: res.data as PhieuDeXuatSummaryRow[] | null, error: res.error, count: res.count };
   });
-  return rows.map((row) => {
-    const ten_noi_de_xuat = khoMap[String(row.id_noi_de_xuat)];
-    const ten_nguoi_de_xuat = nvMap[String(row.id_nguoi_de_xuat)]?.ho_ten;
-    const ma_nguoi_de_xuat = nvMap[String(row.id_nguoi_de_xuat)]?.ma_nhan_vien;
-    const ten_nguoi_duyet = row.id_nguoi_duyet != null ? nvMap[String(row.id_nguoi_duyet)]?.ho_ten ?? null : null;
-    const ma_nguoi_duyet = row.id_nguoi_duyet != null ? nvMap[String(row.id_nguoi_duyet)]?.ma_nhan_vien ?? null : null;
-    const phieu = rowToPhieu(row, { ten_noi_de_xuat, ten_nguoi_de_xuat, ma_nguoi_de_xuat, ten_nguoi_duyet, ma_nguoi_duyet });
-    const a = aggregates[String(row.id)];
-    phieu.tong_so_dong = a?.so_dong ?? 0;
-    phieu.tong_so_luong = a?.tong_so_luong ?? 0;
-    return phieu;
-  });
+  const data = pageResult.data.map((row) => mapPhieuDeXuatSummaryRowToPhieu(row));
+  return { data, totalCount: pageResult.totalCount, page: pageResult.page, pageSize: pageResult.pageSize };
+}
+
+export async function fetchAllPhieuDeXuatVatTuForListQuerySupabase(
+  listQuery: PhieuDeXuatVatTuListServerQuery,
+  pageSize = 500,
+  maxRows = 25000
+): Promise<PhieuDeXuatVatTu[]> {
+  const out: PhieuDeXuatVatTu[] = [];
+  let page = 0;
+  while (out.length < maxRows) {
+    const { data, totalCount } = await getPhieuDeXuatVatTuPageSupabase(page, pageSize, listQuery);
+    out.push(...data);
+    if (data.length === 0 || out.length >= totalCount) break;
+    page += 1;
+  }
+  return out;
 }
 
 export async function getPhieuDeXuatVatTuByIdSupabase(id: string): Promise<PhieuDeXuatVatTu | null> {
@@ -173,22 +280,22 @@ export async function getPhieuDeXuatVatTuByIdSupabase(id: string): Promise<Phieu
   if (Number.isNaN(idNum)) return null;
   const { data: row, error } = await supabase
     .from(TABLE_PHIEU)
-    .select('*')
+    .select(PHIEU_DE_XUAT_HEADER_SELECT)
     .eq('id', idNum)
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!row) return null;
 
   const [khoList, employees, ctRows, hangHoaList] = await Promise.all([
-    getKhoList(),
-    getEmployees(),
+    getKhoRef(),
+    getEmployeesRef(),
     supabase
       .from(TABLE_CHI_TIET)
       .select('id, id_phieu_de_xuat_vat_tu, id_hang_hoa, so_luong, don_vi_tinh, thong_so, ghi_chu, id_tien_do_mh, ten_tien_do_mh, trao_doi')
       .eq('id_phieu_de_xuat_vat_tu', idNum)
       .order('id', { ascending: true })
       .then((r) => r.data ?? []),
-    getAllHangHoa(),
+    getHangHoaRef(),
   ]);
   const khoMap: Record<string, string> = {};
   khoList.forEach((k) => {
@@ -237,15 +344,15 @@ export async function createPhieuDeXuatVatTuSupabase(data: PhieuDeXuatVatTuFormV
     trang_thai: data.trang_thai,
   };
 
-  const { data: inserted, error } = await supabase.from(TABLE_PHIEU).insert(payload).select('*').single();
+  const { data: inserted, error } = await supabase.from(TABLE_PHIEU).insert(payload).select(PHIEU_DE_XUAT_HEADER_SELECT).single();
   if (error) throw new Error(error.message);
   const idPhieu = (inserted as PhieuDbRow).id;
   const idStr = String(idPhieu);
 
   const [hangHoaList, khoList, employees] = await Promise.all([
-    getAllHangHoa(),
-    getKhoList(),
-    getEmployees(),
+    getHangHoaRef(),
+    getKhoRef(),
+    getEmployeesRef(),
   ]);
   const hangHoaMap: Record<string, string> = {};
   hangHoaList.forEach((h) => {
@@ -290,7 +397,7 @@ export async function updatePhieuDeXuatVatTuSupabase(id: string, data: PhieuDeXu
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('phieuDeXuatVatTu.service.notFound'));
 
-  const { data: oldRow, error: fetchErr } = await supabase.from(TABLE_PHIEU).select('*').eq('id', idNum).maybeSingle();
+  const { data: oldRow, error: fetchErr } = await supabase.from(TABLE_PHIEU).select(PHIEU_DE_XUAT_HEADER_SELECT).eq('id', idNum).maybeSingle();
   if (fetchErr || !oldRow) throw new Error(i18n.t('phieuDeXuatVatTu.service.notFound'));
 
   const soPhieu = data.so_phieu.trim();
@@ -314,9 +421,9 @@ export async function updatePhieuDeXuatVatTuSupabase(id: string, data: PhieuDeXu
   await supabase.from(TABLE_CHI_TIET).delete().eq('id_phieu_de_xuat_vat_tu', idNum);
 
   const [hangHoaList, khoList, employees] = await Promise.all([
-    getAllHangHoa(),
-    getKhoList(),
-    getEmployees(),
+    getHangHoaRef(),
+    getKhoRef(),
+    getEmployeesRef(),
   ]);
   const hangHoaMap: Record<string, string> = {};
   hangHoaList.forEach((h) => {
@@ -371,26 +478,15 @@ export async function deletePhieuDeXuatVatTuManySupabase(ids: string[]): Promise
   if (error) throw new Error(error.message);
 }
 
-/** Lấy toàn bộ dòng chi tiết từ bảng fp_mh_phieu_de_xuat_vat_tu_chi_tiet (phục vụ tab Chi tiết). Làm giàu ten_noi_de_xuat, ten_nguoi_de_xuat, ten_nguoi_duyet từ phiếu nếu chi tiết chưa có. */
-export async function getAllPhieuDeXuatVatTuChiTietSupabase(): Promise<PhieuDeXuatVatTuChiTietRow[]> {
-  const [rows, hangHoaList, khoList, employees] = await Promise.all([
-    fetchAllRows<ChiTietFullDbRow>((from, to) =>
-      supabase
-        .from(TABLE_CHI_TIET)
-        .select('*')
-        .order('id_phieu_de_xuat_vat_tu', { ascending: false })
-        .order('id', { ascending: true })
-        .range(from, to)
-    ),
-    getAllHangHoa(),
-    getKhoList(),
-    getEmployees(),
-  ]);
+/** Map DB chi tiết + ref → dòng tab Chi tiết. */
+async function mapPhieuDeXuatChiTietDbRowsToRows(rows: ChiTietFullDbRow[]): Promise<PhieuDeXuatVatTuChiTietRow[]> {
+  if (rows.length === 0) return [];
+  const [hangHoaList, khoList, employees] = await Promise.all([getHangHoaRef(), getKhoRef(), getEmployeesRef()]);
 
   const phieuIds = [...new Set(rows.map((r) => r.id_phieu_de_xuat_vat_tu))];
   const phieuRows: PhieuDbRow[] = [];
   if (phieuIds.length > 0) {
-    const { data: phieuData } = await supabase.from(TABLE_PHIEU).select('*').in('id', phieuIds);
+    const { data: phieuData } = await supabase.from(TABLE_PHIEU).select(PHIEU_DE_XUAT_HEADER_SELECT).in('id', phieuIds);
     if (phieuData) phieuRows.push(...(phieuData as PhieuDbRow[]));
   }
   const nvMap: Record<string, { ho_ten: string }> = {};
@@ -448,4 +544,80 @@ export async function getAllPhieuDeXuatVatTuChiTietSupabase(): Promise<PhieuDeXu
       trao_doi: ct.trao_doi ?? null,
     };
   });
+}
+
+/** Lấy toàn bộ dòng chi tiết từ bảng fp_mh_phieu_de_xuat_vat_tu_chi_tiet (phục vụ tab Chi tiết). Làm giàu ten_noi_de_xuat, ten_nguoi_de_xuat, ten_nguoi_duyet từ phiếu nếu chi tiết chưa có. */
+export async function getAllPhieuDeXuatVatTuChiTietSupabase(): Promise<PhieuDeXuatVatTuChiTietRow[]> {
+  const rows = await fetchAllRows<ChiTietFullDbRow>((from, to) =>
+    supabase
+      .from(TABLE_CHI_TIET)
+      .select(CHI_TIET_TAB_SELECT)
+      .order('id_phieu_de_xuat_vat_tu', { ascending: false })
+      .order('id', { ascending: true })
+      .range(from, to)
+  );
+  return mapPhieuDeXuatChiTietDbRowsToRows(rows);
+}
+
+const CHI_TIET_DE_XUAT_PAGE_SIZE_DEFAULT = 100;
+
+/** Một trang chi tiết đề xuất (server-side). */
+export async function getPhieuDeXuatVatTuChiTietPageSupabase(
+  page: number,
+  pageSize: number = CHI_TIET_DE_XUAT_PAGE_SIZE_DEFAULT,
+  listQuery?: PhieuDeXuatChiTietListServerQuery
+): Promise<PaginatedTableResult<PhieuDeXuatVatTuChiTietRow>> {
+  let phieuIds: number[] | null = null;
+  if (listQuery && !listQuery.scope.viewAll) {
+    phieuIds = await fetchPhieuIdsMatchingScope(listQuery.scope);
+    if (phieuIds.length === 0) {
+      return { data: [], totalCount: 0, page, pageSize };
+    }
+  }
+
+  const pageResult = await fetchTablePage<ChiTietFullDbRow>(page, pageSize, async (from, to) => {
+    let sel = supabase.from(TABLE_CHI_TIET).select(CHI_TIET_TAB_SELECT, { count: 'exact' });
+    sel = applyPhieuIdConstraint(sel, phieuIds);
+    if (listQuery) sel = applyPhieuDeXuatChiTietRowFilters(sel, listQuery);
+    const res = await sel
+      .order('id_phieu_de_xuat_vat_tu', { ascending: false })
+      .order('id', { ascending: true })
+      .range(from, to);
+    return { data: res.data as ChiTietFullDbRow[] | null, error: res.error, count: res.count };
+  });
+  const data = await mapPhieuDeXuatChiTietDbRowsToRows(pageResult.data);
+  return { data, totalCount: pageResult.totalCount, page: pageResult.page, pageSize: pageResult.pageSize };
+}
+
+/** Chỉ id + số phiếu + ngày — dropdown liên kết PO (giảm egress so với full list). */
+export type PhieuDeXuatSoPhieuOption = { id: string; so_phieu: string; ngay: string };
+
+export async function listPhieuDeXuatSoPhieuMinimalSupabase(limit = 2500): Promise<PhieuDeXuatSoPhieuOption[]> {
+  const { data, error } = await supabase
+    .from(TABLE_PHIEU)
+    .select('id, so_phieu, ngay')
+    .order('id', { ascending: false })
+    .limit(limit);
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((r: { id: number; so_phieu: string | null; ngay: string | null }) => ({
+    id: String(r.id),
+    so_phieu: r.so_phieu ?? '',
+    ngay: r.ngay ?? '',
+  }));
+}
+
+export async function fetchAllPhieuDeXuatVatTuChiTietForListQuerySupabase(
+  listQuery: PhieuDeXuatChiTietListServerQuery,
+  pageSize = 500,
+  maxRows = 25000
+): Promise<PhieuDeXuatVatTuChiTietRow[]> {
+  const out: PhieuDeXuatVatTuChiTietRow[] = [];
+  let page = 0;
+  while (out.length < maxRows) {
+    const { data, totalCount } = await getPhieuDeXuatVatTuChiTietPageSupabase(page, pageSize, listQuery);
+    out.push(...data);
+    if (data.length === 0 || out.length >= totalCount) break;
+    page += 1;
+  }
+  return out;
 }

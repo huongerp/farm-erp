@@ -17,10 +17,18 @@ import {
   getLichSuNhapXuatByKhoSupabase,
   getNextSoPhieuSupabase,
   updatePhieuKhoTrangThaiSupabase,
+  getPhieuKhoPageSupabase,
+  getChiTietPhieuKhoPageSupabase,
+  fetchAllPhieuKhoForListQuerySupabase,
+  fetchAllChiTietPhieuKhoForListQuerySupabase,
   type UpdatePhieuKhoTrangThaiOptions,
 } from './phieu-kho-supabase.service';
 
+export type { PhieuKhoListServerQuery, ChiTietPhieuKhoListServerQuery } from './phieu-kho-list-query';
+export { buildPhieuKhoListServerQuery, buildChiTietPhieuKhoListServerQuery } from './phieu-kho-list-query';
+
 export type { LichSuNhapXuatRow, LichSuNhapXuatByKhoRow } from './phieu-kho-supabase.service';
+export type { PaginatedTableResult } from '../../../../lib/supabase';
 
 export const getAllPhieuKho = getAllPhieuKhoSupabase;
 export const getPhieuKhoById = getPhieuKhoByIdSupabase;
@@ -37,3 +45,8 @@ export type { UpdatePhieuKhoTrangThaiOptions };
 
 export const updatePhieuKhoTrangThai = (id: string, trang_thai: TrangThaiPhieuKho, opts?: UpdatePhieuKhoTrangThaiOptions) =>
   updatePhieuKhoTrangThaiSupabase(id, trang_thai, opts);
+
+export const getPhieuKhoPage = getPhieuKhoPageSupabase;
+export const getChiTietPhieuKhoPage = getChiTietPhieuKhoPageSupabase;
+export const fetchAllPhieuKhoForListQuery = fetchAllPhieuKhoForListQuerySupabase;
+export const fetchAllChiTietPhieuKhoForListQuery = fetchAllChiTietPhieuKhoForListQuerySupabase;

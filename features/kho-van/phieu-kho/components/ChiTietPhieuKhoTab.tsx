@@ -5,14 +5,15 @@ import { toast } from 'sonner';
 import { Package } from 'lucide-react';
 import { cn, formatDateShort, formatNumberVN } from '../../../../lib/utils';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
-import { useChiTietPhieuKhoAll, usePhieuKhoById, usePhieuKhoList } from '../hooks/use-phieu-kho';
+import { useChiTietPhieuKhoPaged, usePhieuKhoById, useDeletePhieuKho } from '../hooks/use-phieu-kho';
 import { usePhieuKhoViewScope } from '../hooks/use-phieu-kho-view-scope';
-import { filterPhieuKhoListByViewScope } from '../utils/phieu-kho-view-scope-filter';
+import { buildChiTietPhieuKhoListServerQuery, fetchAllChiTietPhieuKhoForListQuery } from '../services/phieu-kho-service';
+import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
+import { useEmployeesRefQuery, useDoiTacRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import { useNhomDoiTacList, useTagList, useDoiTacList } from '../../danh-sach-doi-tac/hooks/use-doi-tac';
 import { useChiTietPhieuKhoStore } from '../store/useChiTietPhieuKhoStore';
 import type { ChiTietPhieuKhoFlat, PhieuKho, LoaiPhieuKhoTab } from '../core/types';
-import type { ChiTietPhieuKhoFilters } from '../store/useChiTietPhieuKhoStore';
 import type { Kho } from '../../danh-sach-kho/core/types';
 import type { HangHoa } from '../../danh-sach-hang-hoa/core/types';
 import type { DoiTac } from '../../danh-sach-doi-tac/core/types';
@@ -31,7 +32,6 @@ import { getColumnCellStyle } from '../../../../store/createGenericStore';
 import type { ColumnConfig } from '../../../../store/createGenericStore';
 import type { LoaiPhieuKho, TrangThaiPhieuKho } from '../core/types';
 import { LOAI_DB_TO_TAB } from '../core/types';
-import { useDeletePhieuKho } from '../hooks/use-phieu-kho';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { CONFIRM_DELETE } from '../../../../lib/button-labels';
 import ExportDialog from '../../../../components/shared/ExportDialog';
@@ -72,23 +72,14 @@ function StatusBadge({ status }: { status: TrangThaiPhieuKho }) {
 const ChiTietPhieuKhoTab: React.FC = () => {
   const { t } = useTranslation();
   const { canCreate, canUpdate, canDelete, canApprove } = useModulePermissionFromContext();
-  const { data: allRows = [], isLoading } = useChiTietPhieuKhoAll();
   const { data: khoList = [] } = useKhoList();
-  const { data: allList = [] } = usePhieuKhoList();
+  const { data: empRef = [] } = useEmployeesRefQuery();
+  const { data: doiTacNccRef = [] } = useDoiTacRefQuery('nha_cung_cap');
+  const { data: doiTacKhRef = [] } = useDoiTacRefQuery('khach_hang');
   const { data: nhomList = [] } = useNhomDoiTacList();
   const { data: tagList = [] } = useTagList();
   const { data: doiTacListAll = [] } = useDoiTacList();
   const viewScope = usePhieuKhoViewScope();
-
-  const viewablePhieuIds = useMemo(() => {
-    const visible = filterPhieuKhoListByViewScope(allList, viewScope, khoList);
-    return new Set(visible.map((p) => p.id));
-  }, [allList, khoList, viewScope]);
-
-  const viewableRows = useMemo(
-    () => allRows.filter((r) => viewablePhieuIds.has(r.id_phieu_kho)),
-    [allRows, viewablePhieuIds]
-  );
 
   const {
     searchTerm,
@@ -105,6 +96,8 @@ const ChiTietPhieuKhoTab: React.FC = () => {
   const confirm = useConfirmStore((s) => s.confirm);
   const emptySelectedIds = useMemo(() => new Set<string>(), []);
   const [showExport, setShowExport] = useState(false);
+  const [exportRows, setExportRows] = useState<ChiTietPhieuKhoFlat[]>([]);
+  const [exportLoading, setExportLoading] = useState(false);
   const [viewingPhieuId, setViewingPhieuId] = useState<string | null>(null);
   const [viewingLoai, setViewingLoai] = useState<'nhap' | 'xuat' | 'chuyen'>('nhap');
   const [showForm, setShowForm] = useState(false);
@@ -138,63 +131,31 @@ const ChiTietPhieuKhoTab: React.FC = () => {
     return { start: toYyyyMmDd(range.start), end: toYyyyMmDd(range.end) };
   }, [filters.datePreset, filters.customDateFrom, filters.customDateEnd]);
 
-  const filterFn = useCallback(
-    (row: ChiTietPhieuKhoFlat, term: string, f: ChiTietPhieuKhoFilters, range: { start: string; end: string }) => {
-      const searchLower = term.toLowerCase();
-      const matchesSearch =
-        !term ||
-        row.so_phieu.toLowerCase().includes(searchLower) ||
-        (row.ma_hang?.toLowerCase().includes(searchLower) ?? false) ||
-        (row.ten_hang?.toLowerCase().includes(searchLower) ?? false) ||
-        (row.ten_nguoi_tao?.toLowerCase().includes(searchLower) ?? false) ||
-        (row.ten_nguoi_duyet?.toLowerCase().includes(searchLower) ?? false) ||
-        (row.ten_nha_cung_cap?.toLowerCase().includes(searchLower) ?? false) ||
-        (row.ten_khach_hang?.toLowerCase().includes(searchLower) ?? false);
-      const matchesLoai = (f.loai?.length ?? 0) === 0 || (f.loai ?? []).includes(row.loai);
-      const rowDate = (row.ngay as string) || '';
-      const matchesDate = rowDate >= range.start && rowDate <= range.end;
-      const matchesKho = (f.khoIds?.length ?? 0) === 0 || (f.khoIds ?? []).includes(row.kho_id);
-      const matchesKhoDen =
-        (f.khoDenIds?.length ?? 0) === 0 ||
-        (row.kho_den_id != null && (f.khoDenIds ?? []).includes(row.kho_den_id));
-      const statusKey =
-        row.trang_thai === 'Chờ duyệt' ? 'Pending' : row.trang_thai === 'Đã duyệt' ? 'Approved' : 'Rejected';
-      const matchesTrangThai = (f.trangThaiKeys?.length ?? 0) === 0 || (f.trangThaiKeys ?? []).includes(statusKey);
-      const matchesNguoiTao =
-        (f.nguoiTaoIds?.length ?? 0) === 0 ||
-        (row.nguoi_tao_id != null && (f.nguoiTaoIds ?? []).includes(String(row.nguoi_tao_id)));
-      const matchesNguoiDuyet =
-        (f.nguoiDuyetIds?.length ?? 0) === 0 ||
-        (row.id_nguoi_duyet != null && (f.nguoiDuyetIds ?? []).includes(String(row.id_nguoi_duyet)));
-      let matchesDoiTac = true;
-      if ((f.doiTacIds?.length ?? 0) > 0) {
-        const ncc = row.id_nha_cung_cap != null && (f.doiTacIds ?? []).includes(row.id_nha_cung_cap);
-        const kh = row.id_khach_hang != null && (f.doiTacIds ?? []).includes(row.id_khach_hang);
-        matchesDoiTac = ncc || kh;
-      }
-      return (
-        matchesSearch &&
-        matchesLoai &&
-        matchesDate &&
-        matchesKho &&
-        matchesKhoDen &&
-        matchesTrangThai &&
-        matchesNguoiTao &&
-        matchesNguoiDuyet &&
-        matchesDoiTac
-      );
-    },
-    []
+  const listServerQuery = useMemo(
+    () =>
+      buildChiTietPhieuKhoListServerQuery({
+        searchTerm,
+        filters,
+        ngayFrom: dateRangeStr.start,
+        ngayTo: dateRangeStr.end,
+        viewScope,
+        khoList,
+      }),
+    [searchTerm, filters, dateRangeStr.start, dateRangeStr.end, viewScope, khoList]
   );
 
-  const filteredList = useMemo(() => {
-    return viewableRows.filter((row) => filterFn(row, searchTerm, filters, dateRangeStr));
-  }, [viewableRows, searchTerm, filters, dateRangeStr, filterFn]);
+  const listQueryKey = useMemo(() => stableListQueryKeyPart(listServerQuery), [listServerQuery]);
 
-  const sortedList = useMemo(() => {
-    if (!sort.column || !sort.direction) return filteredList;
+  const pageIndex = Math.max(0, pagination.page - 1);
+  const pageQuery = useChiTietPhieuKhoPaged(pageIndex, listServerQuery);
+  const tableRows = pageQuery.data?.data ?? [];
+  const totalCount = pageQuery.data?.totalCount ?? 0;
+  const isLoading = pageQuery.isPending || pageQuery.isFetching;
+
+  const sortedPageRows = useMemo(() => {
+    if (!sort.column || !sort.direction) return tableRows;
     const dir = sort.direction === 'asc' ? 1 : -1;
-    return [...filteredList].sort((a, b) => {
+    return [...tableRows].sort((a, b) => {
       const aVal = (a as Record<string, unknown>)[sort.column!];
       const bVal = (b as Record<string, unknown>)[sort.column!];
       if (aVal == null && bVal == null) return 0;
@@ -203,7 +164,7 @@ const ChiTietPhieuKhoTab: React.FC = () => {
       const cmp = String(aVal).localeCompare(String(bVal), undefined, { numeric: true });
       return cmp * dir;
     });
-  }, [filteredList, sort.column, sort.direction]);
+  }, [tableRows, sort.column, sort.direction]);
 
   useEffect(() => {
     return () => resetState();
@@ -211,9 +172,9 @@ const ChiTietPhieuKhoTab: React.FC = () => {
 
   useEffect(() => {
     setPage(1);
-  }, [filteredList.length, setPage]);
+  }, [listQueryKey, setPage]);
 
-  const maxPage = Math.max(1, Math.ceil(sortedList.length / pagination.pageSize));
+  const maxPage = Math.max(1, Math.ceil(totalCount / pagination.pageSize));
   useEffect(() => {
     if (pagination.page > maxPage) setPage(maxPage);
   }, [pagination.page, pagination.pageSize, maxPage, setPage]);
@@ -223,30 +184,66 @@ const ChiTietPhieuKhoTab: React.FC = () => {
     [columns]
   );
 
-  const paginatedData = useMemo(() => {
-    const start = (pagination.page - 1) * pagination.pageSize;
-    return sortedList.slice(start, start + pagination.pageSize);
-  }, [sortedList, pagination.page, pagination.pageSize]);
+  const paginatedData = sortedPageRows;
+
+  const doiTacForChips = useMemo(() => {
+    const out: { id: string; ten_ncc: string }[] = [];
+    const seen = new Set<string>();
+    for (const d of doiTacNccRef) {
+      if (seen.has(d.id)) continue;
+      seen.add(d.id);
+      out.push({ id: d.id, ten_ncc: d.ten_ncc });
+    }
+    for (const d of doiTacKhRef) {
+      if (seen.has(d.id)) continue;
+      seen.add(d.id);
+      out.push({ id: d.id, ten_ncc: d.ten_ncc });
+    }
+    return out;
+  }, [doiTacNccRef, doiTacKhRef]);
 
   const exportColumnsChiTiet = useMemo(() => getExportColumnsChiTietPhieuKho(t), [t]);
   const exportMapChiTiet = useCallback((row: ChiTietPhieuKhoFlat) => mapChiTietPhieuKhoFlatRow(row), []);
   const { exportData, paginatedData: paginatedExportData, selectedData: selectedExportData } =
     useExportData({
-      data: sortedList,
-      isOpen: showExport,
+      data: exportRows,
+      isOpen: showExport && !exportLoading,
       mapFn: exportMapChiTiet,
       pagination,
       selectedIds: emptySelectedIds,
       keyExtractor: (row) => row.id,
     });
 
+  useEffect(() => {
+    if (!showExport) {
+      setExportRows([]);
+      setExportLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setExportLoading(true);
+    fetchAllChiTietPhieuKhoForListQuery(listServerQuery)
+      .then((rows) => {
+        if (!cancelled) setExportRows(rows);
+      })
+      .catch(() => {
+        if (!cancelled) setExportRows([]);
+      })
+      .finally(() => {
+        if (!cancelled) setExportLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [showExport, listQueryKey, listServerQuery]);
+
   const handleExport = useCallback(() => {
-    if (sortedList.length === 0) {
+    if (totalCount === 0) {
       toast.warning(t('phieuKho.noExportData'));
       return;
     }
     setShowExport(true);
-  }, [sortedList.length, t]);
+  }, [totalCount, t]);
 
   const handleRowClick = useCallback((row: ChiTietPhieuKhoFlat) => {
     setViewingPhieuId(row.id_phieu_kho);
@@ -414,10 +411,17 @@ const ChiTietPhieuKhoTab: React.FC = () => {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 mt-1.5 rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-      <ChiTietPhieuKhoToolbar data={viewableRows} khoList={khoList} onExport={handleExport} />
+      <ChiTietPhieuKhoToolbar
+        data={tableRows}
+        chipCountsMode="unweighted"
+        employeesForChips={empRef}
+        doiTacForChips={doiTacForChips}
+        khoList={khoList}
+        onExport={handleExport}
+      />
 
       <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-        {filteredList.length === 0 ? (
+        {totalCount === 0 ? (
           <EmptyState
             icon={<Package size={48} className="text-muted-foreground/50" />}
             title={t('phieuKho.chiTietTab.empty')}
@@ -457,7 +461,7 @@ const ChiTietPhieuKhoTab: React.FC = () => {
             </div>
 
             <TablePaginationFooter
-              totalRecords={sortedList.length}
+              totalRecords={totalCount}
               page={pagination.page}
               pageSize={pagination.pageSize}
               onPageChange={setPage}

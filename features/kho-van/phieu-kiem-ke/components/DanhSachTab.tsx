@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
 import { usePhieuKiemKeList, usePhieuKiemKeById, useDeletePhieuKiemKe, useDeletePhieuKiemKeMany, useUpdatePhieuKiemKe } from '../hooks/use-phieu-kiem-ke';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
-import { useEmployees } from '../../../he-thong/nhan-vien/hooks/use-nhan-vien';
+import { useEmployeesRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
 import { usePhieuKiemKeStore } from '../store/usePhieuKiemKeStore';
 import { useListWithFilter } from '../../../../lib/hooks';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
@@ -61,7 +61,7 @@ const DanhSachTab: React.FC = () => {
 
   const { data: allList = [], isLoading } = usePhieuKiemKeList();
   const { data: khoList = [] } = useKhoList();
-  const { data: employees = [] } = useEmployees();
+  const { data: employees = [] } = useEmployeesRefQuery();
   const { data: viewingPhieuFull } = usePhieuKiemKeById(viewingItem?.id);
   const { data: editingPhieuFull } = usePhieuKiemKeById(editingItem?.id);
   const deleteMutation = useDeletePhieuKiemKe();

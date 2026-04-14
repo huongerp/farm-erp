@@ -33,3 +33,31 @@ export async function fetchAllRows<T>(
   }
   return all;
 }
+
+/** Kết quả một trang server-side (PostgREST `count: 'exact'` + `range`). */
+export type PaginatedTableResult<T> = {
+  data: T[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+};
+
+/**
+ * Một trang dữ liệu — callback phải dùng `.select(..., { count: 'exact' }).range(from, to)`.
+ */
+export async function fetchTablePage<T>(
+  page: number,
+  pageSize: number,
+  run: (
+    from: number,
+    to: number
+  ) => Promise<{ data: T[] | null; error: { message: string } | null; count: number | null }>
+): Promise<PaginatedTableResult<T>> {
+  const size = Math.max(1, pageSize);
+  const p = Math.max(0, page);
+  const from = p * size;
+  const to = from + size - 1;
+  const { data, error, count } = await run(from, to);
+  if (error) throw new Error(error.message);
+  return { data: data ?? [], totalCount: count ?? 0, page: p, pageSize: size };
+}

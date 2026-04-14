@@ -17,6 +17,9 @@ interface Props {
   data: ChiTietPhieuKhoFlat[];
   khoList: Kho[];
   onExport: () => void;
+  chipCountsMode?: 'fromRows' | 'unweighted';
+  employeesForChips?: { id: string; ho_ten: string }[];
+  doiTacForChips?: { id: string; ten_ncc: string }[];
 }
 
 const PhieuStatus = {
@@ -25,7 +28,15 @@ const PhieuStatus = {
   rejected: 'Rejected',
 } as const;
 
-const ChiTietPhieuKhoToolbar: React.FC<Props> = ({ data, khoList, onExport }) => {
+const ChiTietPhieuKhoToolbar: React.FC<Props> = ({
+  data,
+  khoList,
+  onExport,
+  chipCountsMode = 'fromRows',
+  employeesForChips = [],
+  doiTacForChips = [],
+}) => {
+  const unweighted = chipCountsMode === 'unweighted';
   const { t } = useTranslation();
   const {
     searchTerm,
@@ -40,20 +51,32 @@ const ChiTietPhieuKhoToolbar: React.FC<Props> = ({ data, khoList, onExport }) =>
 
   const loaiOptions = useMemo(
     () => [
-      { value: 'nhập', label: t('phieuKho.tabs.nhap'), count: data.filter((d) => d.loai === 'nhập').length },
-      { value: 'xuất', label: t('phieuKho.tabs.xuat'), count: data.filter((d) => d.loai === 'xuất').length },
-      { value: 'chuyển', label: t('phieuKho.tabs.chuyen'), count: data.filter((d) => d.loai === 'chuyển').length },
+      { value: 'nhập', label: t('phieuKho.tabs.nhap'), count: unweighted ? 1 : data.filter((d) => d.loai === 'nhập').length },
+      { value: 'xuất', label: t('phieuKho.tabs.xuat'), count: unweighted ? 1 : data.filter((d) => d.loai === 'xuất').length },
+      { value: 'chuyển', label: t('phieuKho.tabs.chuyen'), count: unweighted ? 1 : data.filter((d) => d.loai === 'chuyển').length },
     ],
-    [data, t]
+    [data, t, unweighted]
   );
 
   const trangThaiOptions = useMemo(
     () => [
-      { label: t('phieuKho.status.pending'), value: PhieuStatus.pending, count: data.filter((d) => d.trang_thai === 'Chờ duyệt').length },
-      { label: t('phieuKho.status.approved'), value: PhieuStatus.approved, count: data.filter((d) => d.trang_thai === 'Đã duyệt').length },
-      { label: t('phieuKho.status.rejected'), value: PhieuStatus.rejected, count: data.filter((d) => d.trang_thai === 'Không duyệt').length },
+      {
+        label: t('phieuKho.status.pending'),
+        value: PhieuStatus.pending,
+        count: unweighted ? 1 : data.filter((d) => d.trang_thai === 'Chờ duyệt').length,
+      },
+      {
+        label: t('phieuKho.status.approved'),
+        value: PhieuStatus.approved,
+        count: unweighted ? 1 : data.filter((d) => d.trang_thai === 'Đã duyệt').length,
+      },
+      {
+        label: t('phieuKho.status.rejected'),
+        value: PhieuStatus.rejected,
+        count: unweighted ? 1 : data.filter((d) => d.trang_thai === 'Không duyệt').length,
+      },
     ],
-    [data, t]
+    [data, t, unweighted]
   );
 
   const khoOptions = useMemo(
@@ -61,9 +84,9 @@ const ChiTietPhieuKhoToolbar: React.FC<Props> = ({ data, khoList, onExport }) =>
       khoList.map((k) => ({
         value: k.id,
         label: k.ten_kho,
-        count: data.filter((d) => d.kho_id === k.id).length,
+        count: unweighted ? 1 : data.filter((d) => d.kho_id === k.id).length,
       })),
-    [khoList, data]
+    [khoList, data, unweighted]
   );
 
   const khoDenOptions = useMemo(
@@ -71,12 +94,17 @@ const ChiTietPhieuKhoToolbar: React.FC<Props> = ({ data, khoList, onExport }) =>
       khoList.map((k) => ({
         value: k.id,
         label: k.ten_kho,
-        count: data.filter((d) => d.kho_den_id === k.id).length,
+        count: unweighted ? 1 : data.filter((d) => d.kho_den_id === k.id).length,
       })),
-    [khoList, data]
+    [khoList, data, unweighted]
   );
 
   const nguoiTaoOptions = useMemo(() => {
+    if (unweighted && employeesForChips.length) {
+      return [...employeesForChips]
+        .map((e) => ({ value: e.id, label: e.ho_ten.trim() || `#${e.id}`, count: 1 }))
+        .sort((a, b) => a.label.localeCompare(b.label, 'vi'));
+    }
     const map = new Map<string, { label: string; count: number }>();
     for (const d of data) {
       if (d.nguoi_tao_id == null) continue;
@@ -89,9 +117,14 @@ const ChiTietPhieuKhoToolbar: React.FC<Props> = ({ data, khoList, onExport }) =>
     return [...map.entries()]
       .map(([value, { label, count }]) => ({ value, label, count }))
       .sort((a, b) => a.label.localeCompare(b.label, 'vi'));
-  }, [data]);
+  }, [data, unweighted, employeesForChips]);
 
   const nguoiDuyetOptions = useMemo(() => {
+    if (unweighted && employeesForChips.length) {
+      return [...employeesForChips]
+        .map((e) => ({ value: e.id, label: e.ho_ten.trim() || `#${e.id}`, count: 1 }))
+        .sort((a, b) => a.label.localeCompare(b.label, 'vi'));
+    }
     const map = new Map<string, { label: string; count: number }>();
     for (const d of data) {
       if (d.id_nguoi_duyet == null) continue;
@@ -104,9 +137,14 @@ const ChiTietPhieuKhoToolbar: React.FC<Props> = ({ data, khoList, onExport }) =>
     return [...map.entries()]
       .map(([value, { label, count }]) => ({ value, label, count }))
       .sort((a, b) => a.label.localeCompare(b.label, 'vi'));
-  }, [data]);
+  }, [data, unweighted, employeesForChips]);
 
   const doiTacOptions = useMemo(() => {
+    if (unweighted && doiTacForChips.length) {
+      return [...doiTacForChips]
+        .map((d) => ({ value: d.id, label: d.ten_ncc.trim() || d.id, count: 1 }))
+        .sort((a, b) => a.label.localeCompare(b.label, 'vi'));
+    }
     const map = new Map<string, { label: string; count: number }>();
     for (const d of data) {
       if (d.loai === 'nhập' && d.id_nha_cung_cap) {
@@ -127,7 +165,7 @@ const ChiTietPhieuKhoToolbar: React.FC<Props> = ({ data, khoList, onExport }) =>
     return [...map.entries()]
       .map(([value, { label, count }]) => ({ value, label, count }))
       .sort((a, b) => a.label.localeCompare(b.label, 'vi'));
-  }, [data]);
+  }, [data, unweighted, doiTacForChips]);
 
   const dateRangeLabel = useMemo(() => {
     const range = getDateRangeFromPreset(

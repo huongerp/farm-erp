@@ -108,6 +108,17 @@ const addMov = (map: Map<string, Mov>, key: string, nhap: number, xuat: number) 
  * Chỉ phiếu "Không duyệt" bị loại; "Chờ duyệt" + "Đã duyệt" đều tính.
  */
 export async function getNXTByPeriod(filters: NXTReportFilters): Promise<NXTByPeriodResult> {
+  try {
+    const { data, error } = await supabase.rpc('rpc_nxt_by_period', {
+      p_filters: filters as unknown as Record<string, unknown>,
+    });
+    if (!error && data != null && typeof data === 'object' && Array.isArray((data as NXTByPeriodResult).byWarehouse)) {
+      return data as NXTByPeriodResult;
+    }
+  } catch {
+    /* RPC chưa tạo trên Supabase — xem docs/supabase-rpc_nxt_family.sql */
+  }
+
   const { dateFrom, dateTo, warehouseIds, loaiPhieu, hangHoaIds, categoryIds, allowedBranchIds, allowedCreatorUserId } =
     filters;
 
@@ -342,6 +353,14 @@ const TRANG_THAI_NUM_TO_TEXT: Record<number, string> = {
  * Lấy danh sách phiếu trong kỳ (không kèm chi_tiet; gọi getPhieuKhoById khi cần chi tiết).
  */
 export async function getPhieuInPeriod(filters: NXTReportFilters): Promise<PhieuKho[]> {
+  try {
+    const { data, error } = await supabase.rpc('rpc_phieu_in_period', {
+      p_filters: filters as unknown as Record<string, unknown>,
+    });
+    if (!error && Array.isArray(data)) return data as PhieuKho[];
+  } catch {
+    /* RPC chưa deploy */
+  }
   const {
     dateFrom,
     dateTo,
@@ -441,6 +460,14 @@ export async function getPhieuInPeriod(filters: NXTReportFilters): Promise<Phieu
  * Lấy bảng tồn tại thời điểm (hiện tại = tồn hiện tại từ view).
  */
 export async function getTonAtDate(filters: Pick<NXTReportFilters, 'warehouseIds' | 'hangHoaIds' | 'categoryIds' | 'allowedBranchIds'>): Promise<TonTaiThoiDiemRow[]> {
+  try {
+    const { data, error } = await supabase.rpc('rpc_ton_at_date', {
+      p_filters: filters as unknown as Record<string, unknown>,
+    });
+    if (!error && Array.isArray(data)) return data as TonTaiThoiDiemRow[];
+  } catch {
+    /* fallback */
+  }
   const { warehouseIds, hangHoaIds, categoryIds, allowedBranchIds } = filters;
   const tonKhoList = await getAllTonKho();
   const khoList = await getKhoList();

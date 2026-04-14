@@ -11,7 +11,7 @@ import {
 } from '@/features/nhan-su/khoa-dao-tao/thiet-lap/services/thiet-lap-khoa-service';
 import type { KhoaDaoTao } from '@/features/nhan-su/khoa-dao-tao/core/types';
 import type { ChuongKhoaHoc, BaiHoc, BaiTest, CauHoi } from '@/features/nhan-su/khoa-dao-tao/thiet-lap/core/types';
-import { getEmployees } from '@/features/he-thong/nhan-vien/services/nhan-vien-service';
+import { getEmployeesRef } from '@/features/he-thong/nhan-vien/services/nhan-vien-service';
 import { MOCK_KHOA_DAO_TAO } from '@/mocks/nhan-su';
 import i18n from '../../../../lib/i18n';
 
@@ -159,7 +159,7 @@ async function doGetDangKyList(params?: {
 
   let nhanVienMap: Map<string, string>;
   try {
-    const employees = await getEmployees();
+    const employees = await getEmployeesRef();
     nhanVienMap = new Map(employees.map((e) => [e.id, e.ho_ten ?? e.email ?? e.id]));
   } catch {
     nhanVienMap = getFallbackNhanVienMap();

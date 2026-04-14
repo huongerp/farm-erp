@@ -1,7 +1,8 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
   getAllDonDatHang,
+  getDonDatHangPage,
   getDonDatHangById,
   createDonDatHang,
   updateDonDatHang,
@@ -9,8 +10,11 @@ import {
   deleteDonDatHangMany,
   getNextSoPoFormatted,
 } from '../services/don-dat-hang-service';
+import type { DonDatHangListServerQuery } from '../services/don-dat-hang-list-query';
 import type { DonDatHangFormValues } from '../core/schema';
+import type { DonDatHang } from '../core/types';
 import i18n from '../../../../lib/i18n';
+import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
 
 const QUERY_KEY = ['donDatHang'] as const;
 
@@ -28,7 +32,20 @@ export const useDonDatHangList = () => {
   return useQuery({
     queryKey: QUERY_KEY,
     queryFn: getAllDonDatHang,
-    staleTime: 1000 * 60 * 2,
+    staleTime: 1000 * 60 * 15,
+  });
+};
+
+const DON_DAT_HANG_PAGE_SIZE = 50;
+
+/** Danh sách đơn đặt hàng theo trang (server-side). `pageIndex` 0-based. */
+export const useDonDatHangListPaged = (pageIndex: number, listQuery: DonDatHangListServerQuery) => {
+  const qPart = stableListQueryKeyPart(listQuery);
+  return useQuery({
+    queryKey: [...QUERY_KEY, 'paged', pageIndex, DON_DAT_HANG_PAGE_SIZE, qPart] as const,
+    queryFn: () => getDonDatHangPage(pageIndex, DON_DAT_HANG_PAGE_SIZE, listQuery),
+    staleTime: 1000 * 60 * 15,
+    placeholderData: keepPreviousData,
   });
 };
 
@@ -44,8 +61,9 @@ export const useCreateDonDatHang = (onSuccess?: () => void) => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: DonDatHangFormValues) => createDonDatHang(data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: QUERY_KEY });
+    onSuccess: (created) => {
+      qc.setQueryData(QUERY_KEY, (old: DonDatHang[] | undefined) => (old ? [created, ...old] : [created]));
+      qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
       toast.success(i18n.t('donDatHang.toast.createSuccess'));
       onSuccess?.();
     },
@@ -58,8 +76,12 @@ export const useUpdateDonDatHang = (onSuccess?: () => void) => {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: DonDatHangFormValues }) =>
       updateDonDatHang(id, data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: QUERY_KEY });
+    onSuccess: (updated) => {
+      qc.setQueryData(QUERY_KEY, (old: DonDatHang[] | undefined) =>
+        old?.map((d) => (d.id === updated.id ? updated : d)) ?? [updated]
+      );
+      qc.setQueryData([...QUERY_KEY, updated.id], updated);
+      qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
       toast.success(i18n.t('donDatHang.toast.updateSuccess'));
       onSuccess?.();
     },
@@ -71,8 +93,10 @@ export const useDeleteDonDatHang = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: deleteDonDatHang,
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: QUERY_KEY });
+    onSuccess: (_void, id) => {
+      qc.setQueryData(QUERY_KEY, (old: DonDatHang[] | undefined) => old?.filter((d) => d.id !== id) ?? []);
+      qc.removeQueries({ queryKey: [...QUERY_KEY, id] });
+      qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
       toast.success(i18n.t('donDatHang.toast.deleteSuccess'));
     },
     onError: (err: Error) => toast.error(err.message),
@@ -83,8 +107,11 @@ export const useDeleteDonDatHangMany = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: deleteDonDatHangMany,
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: QUERY_KEY });
+    onSuccess: (_void, ids) => {
+      const set = new Set(ids);
+      qc.setQueryData(QUERY_KEY, (old: DonDatHang[] | undefined) => old?.filter((d) => !set.has(d.id)) ?? []);
+      ids.forEach((id) => qc.removeQueries({ queryKey: [...QUERY_KEY, id] }));
+      qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
       toast.success(i18n.t('donDatHang.toast.deleteSuccess'));
     },
     onError: (err: Error) => toast.error(err.message),

@@ -25,6 +25,8 @@ export interface FarmThuHoach {
   thuc_te_t6: number;
   thuc_te_t7: number;
   thuc_te_cn: number;
+  du_thu_tuan: number;
+  thu_du_kien: ThuHoachDaySuffix[];
   ghi_chu: string | null;
   trao_doi: string | null;
   id_nguoi_tao: string | null;

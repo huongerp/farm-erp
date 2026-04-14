@@ -54,6 +54,8 @@ export const thuHoachKeHoachFormSchema = z.object({
   ),
   id_chi_nhanh: z.string().min(1, { message: reqMsg('thuHoach.validation.branchRequired') }),
   ten_chi_nhanh: z.string().optional(),
+  du_thu_tuan: dayNum,
+  thu_du_kien: z.array(z.enum(['t2', 't3', 't4', 't5', 't6', 't7', 'cn'])).default([]),
   ghi_chu: z.string().optional(),
   trao_doi: z.string().optional(),
   ...keHoachShape(),

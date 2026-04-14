@@ -1,5 +1,6 @@
 import { supabase, fetchAllRows } from '../../../../lib/supabase';
-import type { DoiTac, LoaiDoiTac, NhomDoiTac, Tag } from '../core/types';
+import { getCachedRef, REF_CACHE_KEYS } from '../../../../lib/ref-cache';
+import type { DoiTac, LoaiDoiTac, NhomDoiTac, Tag, TrangThaiDoiTac } from '../core/types';
 import { TRANG_THAI_DOI_TAC } from '../core/types';
 import type { DoiTacFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
@@ -213,27 +214,16 @@ export const updateTag = async (id: string, ten_tag: string): Promise<Tag> => {
 
 export const deleteTag = async (id: string): Promise<void> => {
   const numId = Number(id);
-  const { data: partners } = await supabase.from(TABLE_DOI_TAC).select('id, tag_ids').not('tag_ids', 'is', null);
-  const toUpdate = (partners ?? []).filter((p: { tag_ids: number[] }) => (p.tag_ids ?? []).includes(numId));
-  for (const p of toUpdate) {
-    const newIds = ((p as { tag_ids: number[] }).tag_ids ?? []).filter((tid) => tid !== numId);
-    await supabase.from(TABLE_DOI_TAC).update({ tag_ids: newIds }).eq('id', (p as { id: number }).id);
-  }
+  const { error: rpcErr } = await supabase.rpc('remove_tag_from_partners', { p_tag_id: numId });
+  if (rpcErr) throw new Error(rpcErr.message);
   const { error } = await supabase.from(TABLE_TAG).delete().eq('id', numId);
   if (error) throw new Error(error.message);
 };
 
 export const deleteTagMany = async (ids: string[]): Promise<void> => {
   const numIds = ids.map(Number);
-  const { data: partners } = await supabase.from(TABLE_DOI_TAC).select('id, tag_ids').not('tag_ids', 'is', null);
-  const setNum = new Set(numIds);
-  for (const p of partners ?? []) {
-    const row = p as { id: number; tag_ids: number[] };
-    const newIds = (row.tag_ids ?? []).filter((tid) => !setNum.has(tid));
-    if (newIds.length !== (row.tag_ids ?? []).length) {
-      await supabase.from(TABLE_DOI_TAC).update({ tag_ids: newIds }).eq('id', row.id);
-    }
-  }
+  const { error: rpcErr } = await supabase.rpc('remove_tags_from_partners', { p_tag_ids: numIds });
+  if (rpcErr) throw new Error(rpcErr.message);
   const { error } = await supabase.from(TABLE_TAG).delete().in('id', numIds);
   if (error) throw new Error(error.message);
 };
@@ -253,6 +243,37 @@ export const getAllDoiTac = async (loai?: LoaiDoiTac): Promise<DoiTac[]> => {
     return q;
   });
   return enrichDoiTacList(list, nhomList, tagList);
+};
+
+/** Đối tác tối thiểu (không enrich nhóm/tag) — map tên NCC/KH trong phiếu kho. */
+export type DoiTacRefLite = {
+  id: string;
+  ma_ncc: string;
+  ten_ncc: string;
+  loai_doi_tac: LoaiDoiTac;
+  trang_thai: TrangThaiDoiTac;
+};
+
+export const getDoiTacRef = async (loai?: LoaiDoiTac): Promise<DoiTacRefLite[]> => {
+  return getCachedRef(REF_CACHE_KEYS.doiTac(loai), async () => {
+    const list = await fetchAllRows<Pick<DoiTacRow, 'id' | 'ma_doi_tac' | 'ten_doi_tac' | 'loai_doi_tac' | 'trang_thai'>>((from, to) => {
+      let q = supabase
+        .from(TABLE_DOI_TAC)
+        .select('id, ma_doi_tac, ten_doi_tac, loai_doi_tac, trang_thai')
+        .order('thu_tu', { ascending: true })
+        .order('ma_doi_tac', { ascending: true })
+        .range(from, to);
+      if (loai) q = q.eq('loai_doi_tac', loai);
+      return q;
+    });
+    return list.map((row) => ({
+      id: String(row.id),
+      ma_ncc: row.ma_doi_tac ?? '',
+      ten_ncc: row.ten_doi_tac ?? '',
+      loai_doi_tac: row.loai_doi_tac as LoaiDoiTac,
+      trang_thai: (row.trang_thai as TrangThaiDoiTac) ?? TRANG_THAI_DOI_TAC.DANG_HOAT_DONG,
+    }));
+  });
 };
 
 export const getDoiTacById = async (id: string): Promise<DoiTac | null> => {

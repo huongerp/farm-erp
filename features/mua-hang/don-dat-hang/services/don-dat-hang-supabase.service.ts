@@ -2,24 +2,45 @@
  * Service đơn đặt hàng – đọc/ghi Supabase (fp_mh_don_dat_hang, fp_mh_don_dat_hang_chi_tiet).
  * Trạng thái DB và app đều dùng text (giống module đề xuất vật tư).
  */
-import { supabase, fetchAllRows } from '../../../../lib/supabase';
+import { supabase, fetchAllRows, fetchTablePage, type PaginatedTableResult } from '../../../../lib/supabase';
 import type { DonDatHang, DonDatHangChiTiet, DonDatHangTrangThai } from '../core/types';
 import type { DonDatHangFormValues } from '../core/schema';
 import { TRANG_THAI_NHAP } from '../core/types';
 import i18n from '../../../../lib/i18n';
-import { getKhoList } from '../../../kho-van/danh-sach-kho/services/kho-service';
-import { getAllDoiTac } from '../../../kho-van/danh-sach-doi-tac/services/doi-tac-service';
-import { getEmployees } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
-import { getAllHangHoa } from '../../../kho-van/danh-sach-hang-hoa/services/hang-hoa-service';
-import { getPhieuDeXuatVatTuById } from '../../../kho-van/phieu-de-xuat-vat-tu/services/phieu-de-xuat-vat-tu-service';
-
+import { getKhoRef } from '../../../kho-van/danh-sach-kho/services/kho-service';
+import { getDoiTacRef } from '../../../kho-van/danh-sach-doi-tac/services/doi-tac-service';
+import { getEmployeesRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
+import { getHangHoaRef } from '../../../kho-van/danh-sach-hang-hoa/services/hang-hoa-service';
+import type { BranchListScope } from '../../../../lib/branch-scope-query';
+import type { DonDatHangListServerQuery } from './don-dat-hang-list-query';
+import { TRANG_THAI_DON_DAT_HANG, TRANG_THAI_KEY } from '../core/constants';
+import type {
+  DonDatHangStatsByTrangThai,
+  DonDatHangStatsSummary,
+  StatsChartItem,
+} from '../components/stats/useDonDatHangStats';
 const TABLE_DON = 'fp_mh_don_dat_hang';
 const TABLE_CHI_TIET = 'fp_mh_don_dat_hang_chi_tiet';
+
+/** View DB: chạy docs/supabase-v_don_dat_hang_summary.sql trên Supabase. */
+const VIEW_DON_DAT_HANG_SUMMARY = 'v_don_dat_hang_summary';
 
 function trangThaiFromDb(s: string | null): DonDatHangTrangThai {
   if (s == null || s === '') return TRANG_THAI_NHAP;
   return s as DonDatHangTrangThai;
 }
+
+/** Dòng từ view summary (cột đơn + so phiếu đề xuất + ref_* khi view đã migrate). */
+type DonSummaryRow = DonDbRow & {
+  so_phieu_de_xuat_ref?: string | null;
+  ref_ma_nha_cung_cap?: string | null;
+  ref_ten_nha_cung_cap?: string | null;
+  ref_ten_kho_nhan?: string | null;
+  ref_ten_nguoi_dat?: string | null;
+  ref_ma_nguoi_dat?: string | null;
+  ref_ten_nguoi_duyet?: string | null;
+  ref_ma_nguoi_duyet?: string | null;
+};
 
 interface DonDbRow {
   id: number;
@@ -107,59 +128,108 @@ function rowToChiTiet(row: ChiTietDbRow, idDonStr: string, enrich?: { ma_hang?: 
   };
 }
 
+/** Map một dòng view summary (đã JOIN trên DB) → DonDatHang — không gọi getKhoRef/getDoiTacRef/getEmployeesRef. */
+function mapDonSummaryRowToDon(row: DonSummaryRow): DonDatHang {
+  const so_phieu_de_xuat =
+    row.so_phieu_de_xuat_ref != null && String(row.so_phieu_de_xuat_ref).trim() !== ''
+      ? String(row.so_phieu_de_xuat_ref).trim()
+      : null;
+  const ten_nha_cung_cap = row.ref_ten_nha_cung_cap ?? row.ten_nha_cung_cap ?? undefined;
+  const ten_kho_nhan = row.ref_ten_kho_nhan ?? row.ten_kho_nhan ?? null;
+  const don = rowToDon(row, {
+    ma_nha_cung_cap: row.ref_ma_nha_cung_cap ?? undefined,
+    so_phieu_de_xuat,
+    ten_nguoi_dat: row.ref_ten_nguoi_dat,
+    ma_nguoi_dat: row.ref_ma_nguoi_dat,
+    ten_nguoi_duyet: row.ref_ten_nguoi_duyet ?? null,
+    ma_nguoi_duyet: row.ref_ma_nguoi_duyet ?? null,
+  });
+  if (ten_nha_cung_cap != null) don.ten_nha_cung_cap = ten_nha_cung_cap;
+  if (ten_kho_nhan != null) don.ten_kho_nhan = ten_kho_nhan;
+  return don;
+}
+
 export async function getAllDonDatHangSupabase(): Promise<DonDatHang[]> {
-  const [rows, khoList, doiTacList, employees] = await Promise.all([
-    fetchAllRows<DonDbRow>((from, to) =>
-      supabase
-        .from(TABLE_DON)
-        .select('*')
-        .order('ngay_dat', { ascending: false })
-        .order('so_po', { ascending: false })
-        .range(from, to)
-    ),
-    getKhoList(),
-    getAllDoiTac('nha_cung_cap'),
-    getEmployees(),
-  ]);
+  const rows = await fetchAllRows<DonSummaryRow>((from, to) =>
+    supabase
+      .from(VIEW_DON_DAT_HANG_SUMMARY)
+      .select('*')
+      .order('ngay_dat', { ascending: false })
+      .order('so_po', { ascending: false })
+      .range(from, to)
+  );
+  return rows.map((row) => mapDonSummaryRowToDon(row));
+}
 
-  const khoMap: Record<string, string> = {};
-  khoList.forEach((k) => { khoMap[k.id] = k.ten_kho; });
-  const nccMap: Record<string, { ten: string; ma: string }> = {};
-  doiTacList.forEach((d) => { nccMap[d.id] = { ten: d.ten_ncc, ma: d.ma_ncc }; });
-  const nvMap: Record<string, { ho_ten: string; ma_nhan_vien: string }> = {};
-  employees.forEach((e) => { nvMap[e.id] = { ho_ten: e.ho_ten, ma_nhan_vien: e.ma_nhan_vien ?? '' }; });
+const DON_DAT_HANG_PAGE_SIZE_DEFAULT = 50;
+const IMPOSSIBLE_NUM_ID = -2147483647;
 
-  const result: DonDatHang[] = [];
-  for (const row of rows) {
-    const ten_nha_cung_cap = row.ten_nha_cung_cap ?? nccMap[String(row.id_nha_cung_cap)]?.ten;
-    const ten_kho_nhan = row.ten_kho_nhan ?? (row.id_kho_nhan != null ? khoMap[String(row.id_kho_nhan)] : null);
-    let so_phieu_de_xuat: string | null = null;
-    if (row.id_phieu_de_xuat_vat_tu != null) {
-      try {
-        const pdx = await getPhieuDeXuatVatTuById(String(row.id_phieu_de_xuat_vat_tu));
-        so_phieu_de_xuat = pdx?.so_phieu ?? null;
-      } catch {
-        // ignore
-      }
-    }
-    const ten_nguoi_dat = nvMap[String(row.id_nguoi_dat)]?.ho_ten;
-    const ma_nguoi_dat = nvMap[String(row.id_nguoi_dat)]?.ma_nhan_vien;
-    const ten_nguoi_duyet = row.id_nguoi_duyet != null ? nvMap[String(row.id_nguoi_duyet)]?.ho_ten ?? null : null;
-    const ma_nguoi_duyet = row.id_nguoi_duyet != null ? nvMap[String(row.id_nguoi_duyet)]?.ma_nhan_vien ?? null : null;
-
-    result.push(rowToDon(row, {
-      ma_nha_cung_cap: nccMap[String(row.id_nha_cung_cap)]?.ma,
-      so_phieu_de_xuat,
-      ten_nguoi_dat,
-      ma_nguoi_dat,
-      ten_nguoi_duyet,
-      ma_nguoi_duyet,
-    }));
-    const last = result[result.length - 1];
-    if (ten_nha_cung_cap != null) last.ten_nha_cung_cap = ten_nha_cung_cap;
-    if (ten_kho_nhan != null) last.ten_kho_nhan = ten_kho_nhan;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyDonDatHangScope(q: any, scope: BranchListScope): any {
+  let b = q;
+  if (scope.viewAll) return b;
+  const own = scope.ownEmployeeIdNum;
+  if (!scope.viewByBranch) {
+    if (own != null) return b.eq('id_nguoi_dat', own);
+    return b.eq('id', IMPOSSIBLE_NUM_ID);
   }
-  return result;
+  const ids = scope.allowedKhoNumericIds;
+  const parts: string[] = [];
+  if (own != null) parts.push(`id_nguoi_dat.eq.${own}`);
+  if (ids.length > 0) {
+    const inl = `(${ids.join(',')})`;
+    parts.push(`id_kho_nhan.in.${inl}`);
+  }
+  if (parts.length === 0) return b.eq('id', IMPOSSIBLE_NUM_ID);
+  return b.or(parts.join(','));
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyDonDatHangListQuery(q: any, query: DonDatHangListServerQuery): any {
+  let b = applyDonDatHangScope(q, query.scope);
+  if (query.trangThaiViet.length) b = b.in('trang_thai', query.trangThaiViet);
+  if (query.idNhaCungCap.length) b = b.in('id_nha_cung_cap', query.idNhaCungCap);
+  if (query.idKhoNhan.length) b = b.in('id_kho_nhan', query.idKhoNhan);
+  if (query.idNguoiDat.length) b = b.in('id_nguoi_dat', query.idNguoiDat);
+  const term = (query.searchTerm ?? '').trim();
+  if (term) {
+    const esc = term.replace(/%/g, '\\%').replace(/_/g, '\\_');
+    const pat = `%${esc}%`;
+    b = b.or(`so_po.ilike.${pat},ghi_chu.ilike.${pat},ten_nha_cung_cap.ilike.${pat},ten_kho_nhan.ilike.${pat}`);
+  }
+  return b;
+}
+
+/** Một trang danh sách đơn đặt hàng (server-side). */
+export async function getDonDatHangPageSupabase(
+  page: number,
+  pageSize: number = DON_DAT_HANG_PAGE_SIZE_DEFAULT,
+  listQuery?: DonDatHangListServerQuery
+): Promise<PaginatedTableResult<DonDatHang>> {
+  const pageResult = await fetchTablePage<DonSummaryRow>(page, pageSize, async (from, to) => {
+    let sel = supabase.from(VIEW_DON_DAT_HANG_SUMMARY).select('*', { count: 'exact' });
+    if (listQuery) sel = applyDonDatHangListQuery(sel, listQuery);
+    const res = await sel.order('ngay_dat', { ascending: false }).order('so_po', { ascending: false }).range(from, to);
+    return { data: res.data as DonSummaryRow[] | null, error: res.error, count: res.count };
+  });
+  const data = pageResult.data.map((row) => mapDonSummaryRowToDon(row));
+  return { data, totalCount: pageResult.totalCount, page: pageResult.page, pageSize: pageResult.pageSize };
+}
+
+export async function fetchAllDonDatHangForListQuerySupabase(
+  listQuery: DonDatHangListServerQuery,
+  pageSize = 500,
+  maxRows = 25000
+): Promise<DonDatHang[]> {
+  const out: DonDatHang[] = [];
+  let page = 0;
+  while (out.length < maxRows) {
+    const { data, totalCount } = await getDonDatHangPageSupabase(page, pageSize, listQuery);
+    out.push(...data);
+    if (data.length === 0 || out.length >= totalCount) break;
+    page += 1;
+  }
+  return out;
 }
 
 export async function getDonDatHangByIdSupabase(id: string): Promise<DonDatHang | null> {
@@ -167,32 +237,23 @@ export async function getDonDatHangByIdSupabase(id: string): Promise<DonDatHang 
   if (Number.isNaN(idNum)) return null;
 
   const { data: row, error } = await supabase
-    .from(TABLE_DON)
+    .from(VIEW_DON_DAT_HANG_SUMMARY)
     .select('*')
     .eq('id', idNum)
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!row) return null;
 
-  const [khoList, doiTacList, employees, ctRows, hangHoaList] = await Promise.all([
-    getKhoList(),
-    getAllDoiTac('nha_cung_cap'),
-    getEmployees(),
+  const [ctRows, hangHoaList] = await Promise.all([
     supabase
       .from(TABLE_CHI_TIET)
       .select('id, id_don_dat_hang, id_hang_hoa, so_luong, don_vi_tinh, don_gia, thanh_tien, ghi_chu')
       .eq('id_don_dat_hang', idNum)
       .order('id', { ascending: true })
       .then((r) => r.data ?? []),
-    getAllHangHoa(),
+    getHangHoaRef(),
   ]);
 
-  const khoMap: Record<string, string> = {};
-  khoList.forEach((k) => { khoMap[k.id] = k.ten_kho; });
-  const nccMap: Record<string, { ten: string; ma: string }> = {};
-  doiTacList.forEach((d) => { nccMap[d.id] = { ten: d.ten_ncc, ma: d.ma_ncc }; });
-  const nvMap: Record<string, { ho_ten: string; ma_nhan_vien: string }> = {};
-  employees.forEach((e) => { nvMap[e.id] = { ho_ten: e.ho_ten, ma_nhan_vien: e.ma_nhan_vien ?? '' }; });
   const hangHoaMap: Record<string, { ma_hang: string; ten_hang: string; dvt: string }> = {};
   hangHoaList.forEach((h) => {
     hangHoaMap[h.id] = {
@@ -202,27 +263,8 @@ export async function getDonDatHangByIdSupabase(id: string): Promise<DonDatHang 
     };
   });
 
-  const p = row as DonDbRow;
-  let so_phieu_de_xuat: string | null = null;
-  if (p.id_phieu_de_xuat_vat_tu != null) {
-    try {
-      const pdx = await getPhieuDeXuatVatTuById(String(p.id_phieu_de_xuat_vat_tu));
-      so_phieu_de_xuat = pdx?.so_phieu ?? null;
-    } catch {
-      // ignore
-    }
-  }
-
-  const don = rowToDon(p, {
-    ma_nha_cung_cap: nccMap[String(p.id_nha_cung_cap)]?.ma,
-    so_phieu_de_xuat,
-    ten_nguoi_dat: nvMap[String(p.id_nguoi_dat)]?.ho_ten,
-    ma_nguoi_dat: nvMap[String(p.id_nguoi_dat)]?.ma_nhan_vien,
-    ten_nguoi_duyet: p.id_nguoi_duyet != null ? nvMap[String(p.id_nguoi_duyet)]?.ho_ten ?? null : null,
-    ma_nguoi_duyet: p.id_nguoi_duyet != null ? nvMap[String(p.id_nguoi_duyet)]?.ma_nhan_vien ?? null : null,
-  });
-  if (p.ten_nha_cung_cap) don.ten_nha_cung_cap = p.ten_nha_cung_cap;
-  if (p.ten_kho_nhan) don.ten_kho_nhan = p.ten_kho_nhan;
+  const p = row as DonSummaryRow;
+  const don = mapDonSummaryRowToDon(p);
 
   const chi_tiet: DonDatHangChiTiet[] = (ctRows as ChiTietDbRow[]).map((ct) => {
     const enrich = hangHoaMap[String(ct.id_hang_hoa)];
@@ -238,8 +280,8 @@ export async function createDonDatHangSupabase(data: DonDatHangFormValues): Prom
   if (existing) throw new Error(i18n.t('donDatHang.service.duplicateCode'));
 
   const [doiTacList, khoList] = await Promise.all([
-    getAllDoiTac('nha_cung_cap'),
-    getKhoList(),
+    getDoiTacRef('nha_cung_cap'),
+    getKhoRef(),
   ]);
   const nccMap: Record<string, string> = {};
   doiTacList.forEach((d) => { nccMap[d.id] = d.ten_ncc; });
@@ -266,7 +308,7 @@ export async function createDonDatHangSupabase(data: DonDatHangFormValues): Prom
   const idDon = (inserted as DonDbRow).id;
   const idStr = String(idDon);
 
-  const hangHoaList = await getAllHangHoa();
+  const hangHoaList = await getHangHoaRef();
   const hangHoaMap: Record<string, string> = {};
   hangHoaList.forEach((h) => { hangHoaMap[h.id] = h.dvt ?? ''; });
 
@@ -301,8 +343,8 @@ export async function updateDonDatHangSupabase(id: string, data: DonDatHangFormV
   if (other) throw new Error(i18n.t('donDatHang.service.duplicateCode'));
 
   const [doiTacList, khoList] = await Promise.all([
-    getAllDoiTac('nha_cung_cap'),
-    getKhoList(),
+    getDoiTacRef('nha_cung_cap'),
+    getKhoRef(),
   ]);
   const nccMap: Record<string, string> = {};
   doiTacList.forEach((d) => { nccMap[d.id] = d.ten_ncc; });
@@ -329,7 +371,7 @@ export async function updateDonDatHangSupabase(id: string, data: DonDatHangFormV
 
   await supabase.from(TABLE_CHI_TIET).delete().eq('id_don_dat_hang', idNum);
 
-  const hangHoaList = await getAllHangHoa();
+  const hangHoaList = await getHangHoaRef();
   const hangHoaMap: Record<string, string> = {};
   hangHoaList.forEach((h) => { hangHoaMap[h.id] = h.dvt ?? ''; });
 
@@ -373,4 +415,68 @@ export async function getNextSoPoDonDatHangSupabase(): Promise<number> {
   if (typeof data === 'number' && Number.isFinite(data)) return data;
   const n = Number(data);
   return Number.isFinite(n) ? n : 1;
+}
+
+/** Kết quả Thống kê (giống computeDonDatHangStats + chip counts). */
+export type DonDatHangThongKeRpcResult = {
+  summary: DonDatHangStatsSummary;
+  byTrangThai: DonDatHangStatsByTrangThai[];
+  bySupplier: StatsChartItem[];
+  byBuyer: StatsChartItem[];
+  byMonth: StatsChartItem[];
+  chipByTrangThai: Record<string, number>;
+  chipBySupplierId: Record<string, number>;
+  chipByBuyerId: Record<string, number>;
+};
+
+type RpcDonStatsJson = {
+  summary: DonDatHangThongKeRpcResult['summary'];
+  byTrangThai: { id: string; count: number }[];
+  bySupplier: StatsChartItem[];
+  byBuyer: StatsChartItem[];
+  byMonth: StatsChartItem[];
+  chipByTrangThai: Record<string, number>;
+  chipBySupplierId: Record<string, number>;
+  chipByBuyerId: Record<string, number>;
+};
+
+/** Gọi rpc_don_dat_hang_stats (docs/supabase-rpc_don_dat_hang_stats.sql). Trả null nếu RPC chưa deploy / lỗi. */
+export async function fetchDonDatHangThongKeFromRpc(params: {
+  dateFrom: string;
+  dateTo: string;
+  filterStatus: string[];
+  filterSupplier: string[];
+  filterBuyer: string[];
+}): Promise<DonDatHangThongKeRpcResult | null> {
+  const toDate = (s: string) => (s && s.trim() !== '' ? s.trim().slice(0, 10) : null);
+  const pSupplier = params.filterSupplier.map((x) => Number(x)).filter((n) => !Number.isNaN(n));
+  const pBuyer = params.filterBuyer.map((x) => Number(x)).filter((n) => !Number.isNaN(n));
+  const { data, error } = await supabase.rpc('rpc_don_dat_hang_stats', {
+    p_date_from: toDate(params.dateFrom),
+    p_date_to: toDate(params.dateTo),
+    p_trang_thai: params.filterStatus.length ? params.filterStatus : null,
+    p_supplier_ids: pSupplier.length ? pSupplier : null,
+    p_buyer_ids: pBuyer.length ? pBuyer : null,
+  });
+  if (error || data == null || typeof data !== 'object') return null;
+  const j = data as RpcDonStatsJson;
+  if (!j.summary || !Array.isArray(j.byTrangThai)) return null;
+  const byTrangThai: DonDatHangStatsByTrangThai[] = TRANG_THAI_DON_DAT_HANG.map((s) => {
+    const row = j.byTrangThai.find((r) => r.id === s);
+    return {
+      id: s,
+      ten: `status.${TRANG_THAI_KEY[s]}`,
+      count: row?.count ?? 0,
+    };
+  });
+  return {
+    summary: j.summary,
+    byTrangThai,
+    bySupplier: Array.isArray(j.bySupplier) ? j.bySupplier : [],
+    byBuyer: Array.isArray(j.byBuyer) ? j.byBuyer : [],
+    byMonth: Array.isArray(j.byMonth) ? j.byMonth : [],
+    chipByTrangThai: j.chipByTrangThai && typeof j.chipByTrangThai === 'object' ? j.chipByTrangThai : {},
+    chipBySupplierId: j.chipBySupplierId && typeof j.chipBySupplierId === 'object' ? j.chipBySupplierId : {},
+    chipByBuyerId: j.chipByBuyerId && typeof j.chipByBuyerId === 'object' ? j.chipByBuyerId : {},
+  };
 }

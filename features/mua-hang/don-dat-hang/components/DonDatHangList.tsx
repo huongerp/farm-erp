@@ -21,6 +21,8 @@ interface Props {
   onEdit?: (item: DonDatHang) => void;
   onDelete?: (id: string) => void;
   onView?: (item: DonDatHang) => void;
+  /** Khi có: phân trang theo tổng server, không cắt `data` theo trang cục bộ. */
+  serverTotalCount?: number;
 }
 
 const STATUS_VARIANTS: Record<string, string> = {
@@ -48,6 +50,7 @@ const DonDatHangList: React.FC<Props> = ({
   onEdit,
   onDelete,
   onView,
+  serverTotalCount,
 }) => {
   const { t } = useTranslation();
 
@@ -159,6 +162,7 @@ const DonDatHangList: React.FC<Props> = ({
       pageSize={pageSize}
       onPageChange={onPageChange}
       onPageSizeChange={onPageSizeChange}
+      totalRecordsOverride={serverTotalCount}
       renderCell={renderCell}
       renderMobileCard={renderMobileCard}
       keyExtractor={(item) => item.id}

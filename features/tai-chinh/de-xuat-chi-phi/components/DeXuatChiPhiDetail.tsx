@@ -14,7 +14,7 @@ import DetailField from '../../../../components/shared/DetailField';
 import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
 import GenericSubTableSection from '../../../../components/shared/GenericSubTableSection';
 import { BTN_CLOSE, BTN_EDIT, BTN_DELETE } from '../../../../lib/button-labels';
-import { useEmployees } from '../../../he-thong/nhan-vien/hooks/use-nhan-vien';
+import { useEmployeesRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
 
 function getTongTien(data: DeXuatChiPhi): number {
   if (!data.chi_tiet?.length) return 0;
@@ -39,7 +39,7 @@ const DeXuatChiPhiDetail: React.FC<DeXuatChiPhiDetailProps> = ({
   onReject,
 }) => {
   const { t } = useTranslation();
-  const { data: employees = [] } = useEmployees();
+  const { data: employees = [] } = useEmployeesRefQuery();
   const canApprove = data.trang_thai === 0 && !!onApprove;
   const canReject = data.trang_thai === 0 && !!onReject;
 

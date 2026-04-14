@@ -8,8 +8,9 @@ import { List, X } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import MultiSelect from '../../../../components/ui/MultiSelect';
 import { cn } from '../../../../lib/utils';
-import { getAllHangHoa } from '../../danh-sach-hang-hoa/services/hang-hoa-service';
-import { getAllDanhMucHangHoa } from '../../danh-muc-hang-hoa/services/danh-muc-hang-hoa-service';
+import { getAllHangHoa } from '../../features/kho-van/danh-sach-hang-hoa/services/hang-hoa-service';
+import { HANG_HOA_QUERY_KEY } from '../../features/kho-van/danh-sach-hang-hoa/hooks/use-hang-hoa';
+import { getAllDanhMucHangHoa } from '../../features/kho-van/danh-muc-hang-hoa/services/danh-muc-hang-hoa-service';
 import { useQuery } from '@tanstack/react-query';
 import type { TaoDanhSachKiemKeKhoFilters } from '../services/kiem-ke-kho-service';
 
@@ -31,7 +32,7 @@ const TaoDanhSachKiemKeDialog: React.FC<Props> = ({
   const [id_danh_muc, setIdDanhMuc] = useState<string[]>([]);
 
   const { data: hangHoaList = [] } = useQuery({
-    queryKey: ['hangHoaList'],
+    queryKey: HANG_HOA_QUERY_KEY,
     queryFn: getAllHangHoa,
     enabled: open,
   });

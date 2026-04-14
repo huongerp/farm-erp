@@ -8,18 +8,19 @@ import { usePhieuDeXuatVatTuStore } from '../store/usePhieuDeXuatVatTuStore';
 import type { PhieuDeXuatVatTu } from '../core/types';
 import { TRANG_THAI_CHO_DUYET, TRANG_THAI_DA_DUYET, TRANG_THAI_KHONG_DUYET } from '../core/constants';
 import type { Kho } from '../../danh-sach-kho/core/types';
-import type { Employee } from '../../../he-thong/nhan-vien/core/types';
+import type { EmployeeRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
 
 interface Props {
   data: PhieuDeXuatVatTu[];
   khoList: Kho[];
-  employees: Employee[];
+  employees: EmployeeRef[];
   currentUserId: string | null;
   selectedCount: number;
   onAdd: () => void;
   onDeleteMany: () => void;
   canCreate?: boolean;
   canDelete?: boolean;
+  chipCountsMode?: 'fromRows' | 'unweighted';
 }
 
 const PhieuDeXuatVatTuToolbar: React.FC<Props> = ({
@@ -32,8 +33,10 @@ const PhieuDeXuatVatTuToolbar: React.FC<Props> = ({
   onDeleteMany,
   canCreate = true,
   canDelete = true,
+  chipCountsMode = 'fromRows',
 }) => {
   const { t } = useTranslation();
+  const unweighted = chipCountsMode === 'unweighted';
   const {
     searchTerm,
     setSearchTerm,
@@ -62,6 +65,7 @@ const PhieuDeXuatVatTuToolbar: React.FC<Props> = ({
 
   const mineCount = currentUserId ? data.filter((d) => d.id_nguoi_de_xuat === currentUserId).length : 0;
   const toApproveCount = currentUserId ? data.filter((d) => d.id_nguoi_duyet === currentUserId).length : 0;
+  const showMineApproveCounts = !unweighted;
 
   const handleClearAllFilters = () => {
     setSearchTerm('');
@@ -88,20 +92,20 @@ const PhieuDeXuatVatTuToolbar: React.FC<Props> = ({
       {
         label: t('phieuDeXuatVatTu.status.pending'),
         value: 'Pending',
-        count: data.filter((d) => d.trang_thai === TRANG_THAI_CHO_DUYET).length,
+        count: unweighted ? 1 : data.filter((d) => d.trang_thai === TRANG_THAI_CHO_DUYET).length,
       },
       {
         label: t('phieuDeXuatVatTu.status.approved'),
         value: 'Approved',
-        count: data.filter((d) => d.trang_thai === TRANG_THAI_DA_DUYET).length,
+        count: unweighted ? 1 : data.filter((d) => d.trang_thai === TRANG_THAI_DA_DUYET).length,
       },
       {
         label: t('phieuDeXuatVatTu.status.rejected'),
         value: 'Rejected',
-        count: data.filter((d) => d.trang_thai === TRANG_THAI_KHONG_DUYET).length,
+        count: unweighted ? 1 : data.filter((d) => d.trang_thai === TRANG_THAI_KHONG_DUYET).length,
       },
     ],
-    [data, t]
+    [data, t, unweighted]
   );
 
   const noiDeXuatOptions = useMemo(
@@ -109,9 +113,9 @@ const PhieuDeXuatVatTuToolbar: React.FC<Props> = ({
       khoList.map((k) => ({
         value: k.id,
         label: k.ten_kho,
-        count: data.filter((d) => d.id_noi_de_xuat === k.id).length,
+        count: unweighted ? 1 : data.filter((d) => d.id_noi_de_xuat === k.id).length,
       })),
-    [khoList, data]
+    [khoList, data, unweighted]
   );
 
   const nguoiDeXuatOptions = useMemo(
@@ -119,9 +123,9 @@ const PhieuDeXuatVatTuToolbar: React.FC<Props> = ({
       employees.map((e) => ({
         value: e.id,
         label: e.ho_ten,
-        count: data.filter((d) => d.id_nguoi_de_xuat === e.id).length,
+        count: unweighted ? 1 : data.filter((d) => d.id_nguoi_de_xuat === e.id).length,
       })),
-    [employees, data]
+    [employees, data, unweighted]
   );
 
   const nguoiDuyetOptions = useMemo(
@@ -129,9 +133,9 @@ const PhieuDeXuatVatTuToolbar: React.FC<Props> = ({
       employees.map((e) => ({
         value: e.id,
         label: e.ho_ten,
-        count: data.filter((d) => d.id_nguoi_duyet === e.id).length,
+        count: unweighted ? 1 : data.filter((d) => d.id_nguoi_duyet === e.id).length,
       })),
-    [employees, data]
+    [employees, data, unweighted]
   );
 
   const filterGroups = useMemo(
@@ -199,7 +203,7 @@ const PhieuDeXuatVatTuToolbar: React.FC<Props> = ({
           >
             <User className="w-3.5 h-3.5" />
             {t('phieuDeXuatVatTu.tabs.mine')}
-            {mineCount > 0 && (
+            {showMineApproveCounts && mineCount > 0 && (
               <span className="opacity-80">({mineCount})</span>
             )}
           </button>
@@ -215,7 +219,7 @@ const PhieuDeXuatVatTuToolbar: React.FC<Props> = ({
           >
             <UserCheck className="w-3.5 h-3.5" />
             {t('phieuDeXuatVatTu.tabs.toApprove')}
-            {toApproveCount > 0 && (
+            {showMineApproveCounts && toApproveCount > 0 && (
               <span className="opacity-80">({toApproveCount})</span>
             )}
           </button>

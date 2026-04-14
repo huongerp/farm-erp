@@ -9,11 +9,11 @@ import Combobox from '../../../../components/ui/Combobox';
 import { PhieuKiemKeFormValues, phieuKiemKeSchema } from '../core/schema';
 import type { PhieuKiemKe } from '../core/types';
 import type { Kho } from '../../danh-sach-kho/core/types';
-import type { Employee } from '../../../he-thong/nhan-vien/core/types';
+import type { EmployeeRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
 import { TRANG_THAI_KIEM_KE } from '../core/constants';
 import { useAuthStore } from '../../../../store/useStore';
 import { useCreatePhieuKiemKe, useUpdatePhieuKiemKe, useNextSoPhieuPhieuKiemKe } from '../hooks/use-phieu-kiem-ke';
-import { useHangHoaList } from '../../danh-sach-hang-hoa/hooks/use-hang-hoa';
+import { useHangHoaRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
 import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/GenericDrawer';
 import FormSection from '../../../../components/shared/FormSection';
 import FormGrid from '../../../../components/shared/FormGrid';
@@ -27,7 +27,7 @@ function formatSoPhieuKiemKe(seq: number): string {
 
 interface Props {
   khoList: Kho[];
-  employees: Employee[];
+  employees: EmployeeRef[];
   initialData?: PhieuKiemKe | null;
   onClose: () => void;
 }
@@ -39,7 +39,7 @@ const PhieuKiemKeForm: React.FC<Props> = ({ khoList, employees, initialData, onC
   const createMutation = useCreatePhieuKiemKe(onClose);
   const updateMutation = useUpdatePhieuKiemKe(onClose);
   const nextSoPhieu = useNextSoPhieuPhieuKiemKe();
-  const { data: hangHoaList = [] } = useHangHoaList();
+  const { data: hangHoaList = [] } = useHangHoaRefQuery();
 
   const khoOptions = useMemo(() => khoList.map((k) => ({ value: k.id, label: k.ten_kho })), [khoList]);
   const performerOptions = useMemo(

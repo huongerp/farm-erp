@@ -5,9 +5,9 @@ import { supabase, fetchAllRows } from '../../../../lib/supabase';
 import type { PhieuKiemKe, PhieuKiemKeChiTiet } from '../core/types';
 import type { PhieuKiemKeFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
-import { getKhoList } from '../../danh-sach-kho/services/kho-service';
-import { getEmployees } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
-import { getAllHangHoa } from '../../danh-sach-hang-hoa/services/hang-hoa-service';
+import { getKhoRef } from '../../danh-sach-kho/services/kho-service';
+import { getEmployeesRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
+import { getHangHoaRef } from '../../danh-sach-hang-hoa/services/hang-hoa-service';
 
 const TABLE_PHIEU = 'fp_mh_phieu_kiem_ke';
 const TABLE_CHI_TIET = 'fp_mh_phieu_kiem_ke_chi_tiet';
@@ -110,8 +110,8 @@ export async function getAllPhieuKiemKeSupabase(): Promise<PhieuKiemKe[]> {
         .order('so_phieu', { ascending: false })
         .range(from, to)
     ),
-    getKhoList(),
-    getEmployees(),
+    getKhoRef(),
+    getEmployeesRef(),
     getChiTietAggregatesKiemKe(),
   ]);
   const khoMap: Record<string, string> = {};
@@ -146,15 +146,15 @@ export async function getPhieuKiemKeByIdSupabase(id: string): Promise<PhieuKiemK
   if (!row) return null;
 
   const [khoList, employees, ctRows, hangHoaList] = await Promise.all([
-    getKhoList(),
-    getEmployees(),
+    getKhoRef(),
+    getEmployeesRef(),
     supabase
       .from(TABLE_CHI_TIET)
       .select('id, id_phieu_kiem_ke, id_hang_hoa, so_luong_so, so_luong_thuc_te, chenh_lech, don_vi_tinh, ghi_chu')
       .eq('id_phieu_kiem_ke', idNum)
       .order('id', { ascending: true })
       .then((r) => r.data ?? []),
-    getAllHangHoa(),
+    getHangHoaRef(),
   ]);
   const khoMap: Record<string, string> = {};
   khoList.forEach((k) => {
@@ -205,7 +205,7 @@ export async function createPhieuKiemKeSupabase(data: PhieuKiemKeFormValues): Pr
   if (error) throw new Error(error.message);
   const idPhieu = (inserted as PhieuDbRow).id;
 
-  const hangHoaList = await getAllHangHoa();
+  const hangHoaList = await getHangHoaRef();
   const hangHoaMap: Record<string, string> = {};
   hangHoaList.forEach((h) => {
     hangHoaMap[h.id] = h.don_vi_tinh ?? '';
@@ -259,7 +259,7 @@ export async function updatePhieuKiemKeSupabase(id: string, data: PhieuKiemKeFor
 
   await supabase.from(TABLE_CHI_TIET).delete().eq('id_phieu_kiem_ke', idNum);
 
-  const hangHoaList = await getAllHangHoa();
+  const hangHoaList = await getHangHoaRef();
   const hangHoaMap: Record<string, string> = {};
   hangHoaList.forEach((h) => {
     hangHoaMap[h.id] = h.don_vi_tinh ?? '';

@@ -8,6 +8,7 @@ import { getKhoList } from '../../danh-sach-kho/services/kho-service';
 import type { TonKhoRecord } from '../../phieu-kho/services/ton-kho-service';
 import { getAllHangHoa } from '../../danh-sach-hang-hoa/services/hang-hoa-service';
 import { useQuery } from '@tanstack/react-query';
+import { HANG_HOA_QUERY_KEY } from '../../danh-sach-hang-hoa/hooks/use-hang-hoa';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
 import Button from '../../../../components/ui/Button';
 import EmptyState from '../../../../components/shared/EmptyState';
@@ -54,7 +55,11 @@ export type RowKho = {
 function useKhoRows(tonKhoListOverride?: TonKhoRecord[]) {
   const { data: tonKhoListRaw = [], isLoading } = useAllTonKho();
   const tonKhoList = tonKhoListOverride !== undefined ? tonKhoListOverride : tonKhoListRaw;
-  const { data: khoList = [] } = useQuery<Kho[]>({ queryKey: ['kho'], queryFn: getKhoList });
+  const { data: khoList = [] } = useQuery<Kho[]>({
+    queryKey: ['kho'],
+    queryFn: getKhoList,
+    staleTime: 1000 * 60 * 30,
+  });
   const byKho = useMemo(() => {
     const totalByKho = new Map<string, number>();
     const idHangHoaByKho = new Map<string, Set<string>>();
@@ -102,7 +107,11 @@ function KhoDetailDrawer({
   const { t } = useTranslation();
   const { id_kho, ma_kho, ten_kho, so_mat_hang, tong_so_luong } = row;
   const { data: tonKhoList = [] } = useAllTonKho();
-  const { data: hangHoaList = [] } = useQuery({ queryKey: ['hangHoa'], queryFn: getAllHangHoa });
+  const { data: hangHoaList = [] } = useQuery({
+    queryKey: HANG_HOA_QUERY_KEY,
+    queryFn: getAllHangHoa,
+    staleTime: 1000 * 60 * 15,
+  });
   const { data: lichSu = [], isLoading: loadingLichSu } = useLichSuNhapXuatByKho(id_kho);
   const loading = loadingLichSu;
   const itemsAtKho = useMemo(() => {

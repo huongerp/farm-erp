@@ -3,7 +3,7 @@ import { TaiSanFormValues } from '../core/schema';
 import { getAssetGroups } from '../../thiet-lap-tai-san/services/nhom-tai-san-service';
 import { getAssetStorageLocations } from '../../thiet-lap-tai-san/services/noi-luu-service';
 import { getAssetStatuses } from '../../thiet-lap-tai-san/services/trang-thai-service';
-import { getEmployees } from '@/features/he-thong/nhan-vien/services/nhan-vien-service';
+import { getEmployeesRef } from '@/features/he-thong/nhan-vien/services/nhan-vien-service';
 import {
   getTaiSanListSupabase,
   createTaiSanSupabase,
@@ -25,7 +25,7 @@ async function enrichTaiSan(items: TaiSan[]): Promise<TaiSan[]> {
     getAssetGroups(),
     getAssetStorageLocations(),
     getAssetStatuses(),
-    getEmployees(),
+    getEmployeesRef(),
   ]);
   const groupMap = new Map(groups.map((g) => [g.id, g.ten]));
   const locationMap = new Map(locations.map((l) => [l.id, { ten_noi_luu: l.ten_noi_luu, id_chi_nhanh: l.id_chi_nhanh, ten_chi_nhanh: l.ten_chi_nhanh }]));

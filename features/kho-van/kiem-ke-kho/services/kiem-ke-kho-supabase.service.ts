@@ -1,7 +1,7 @@
 /**
  * Service đợt kiểm kê kho – Supabase (fp_mh_dot_kiem_ke_kho, fp_mh_dot_kiem_ke_kho_kho, fp_mh_dot_kiem_ke_kho_chi_tiet).
  */
-import { supabase, fetchAllRows } from '../../../../lib/supabase';
+import { supabase } from '../../../../lib/supabase';
 import type {
   DotKiemKeKho,
   ChiTietKiemKeKho,
@@ -28,9 +28,9 @@ export interface TaoDanhSachKiemKeKhoFiltersSupabase {
   id_hang_hoa?: string[];
 }
 import { getTonKhoTheoKho } from '../../phieu-kho/services/ton-kho-service';
-import { getKhoList } from '../../danh-sach-kho/services/kho-service';
-import { getAllHangHoa } from '../../danh-sach-hang-hoa/services/hang-hoa-service';
-import { getEmployees } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
+import { getKhoRef } from '../../danh-sach-kho/services/kho-service';
+import { getHangHoaRef } from '../../danh-sach-hang-hoa/services/hang-hoa-service';
+import { getEmployeesRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
 import i18n from '../../../../lib/i18n';
 
 const TABLE_DOT = 'fp_mh_dot_kiem_ke_kho';
@@ -143,7 +143,7 @@ async function getDotKhoIds(idDot: number): Promise<string[]> {
 export async function getDotKiemKeKhoListSupabase(
   params: GetDotKiemKeKhoListParamsSupabase = {}
 ): Promise<DotKiemKeKho[]> {
-  const employees = await getEmployees();
+  const employees = await getEmployeesRef();
   const empMap = new Map(employees.map((e) => [e.id, { ten: e.ho_ten, ma: e.ma_nhan_vien }]));
 
   let query = supabase.from(TABLE_DOT).select('*').order('ngay_ket_thuc', { ascending: false });
@@ -214,7 +214,7 @@ export async function getDotKiemKeKhoByIdSupabase(id: string): Promise<DotKiemKe
   if (error) throw new Error(error.message);
   if (!row) return null;
   const idKhoList = await getDotKhoIds((row as DotRow).id);
-  const employees = await getEmployees();
+  const employees = await getEmployeesRef();
   const emp = employees.find((e) => e.id === String((row as DotRow).id_nguoi_phu_trach));
   return rowToDot(row as DotRow, idKhoList, {
     ten_nguoi_phu_trach: emp?.ho_ten ?? null,
@@ -232,7 +232,7 @@ export async function getChiTietByDotSupabase(id_dot_kiem_ke_kho: string): Promi
     .order('id_kho')
     .order('id_hang_hoa');
   if (error) throw new Error(error.message);
-  const [khoList, hangHoaList, employees] = await Promise.all([getKhoList(), getAllHangHoa(), getEmployees()]);
+  const [khoList, hangHoaList, employees] = await Promise.all([getKhoRef(), getHangHoaRef(), getEmployeesRef()]);
   const khoMap = new Map(khoList.map((k) => [k.id, { ten: k.ten_kho, ma: k.ma_kho }]));
   const hhMap = new Map(hangHoaList.map((h) => [h.id, { ma: h.ma_hang_hoa ?? h.ma_hang, ten: h.ten_hang_hoa ?? h.ten_hang, dvt: h.dvt ?? h.don_vi_tinh }]));
   const empMap = new Map(employees.map((e) => [e.id, e.ho_ten]));
@@ -345,7 +345,7 @@ export async function taoDanhSachKiemKeSupabase(
   if (dot.trang_thai === 'hoan_thanh') throw new Error(i18n.t('kiemKeKho.service.onlyTaoDanhSachWhenDraft'));
   if (!dot.id_kho?.length) throw new Error(i18n.t('kiemKeKho.service.dotChuaChonKho'));
 
-  const [hangHoaList, khoList] = await Promise.all([getAllHangHoa(), getKhoList()]);
+  const hangHoaList = await getHangHoaRef();
   const existing = await getChiTietByDotSupabase(id_dot_kiem_ke_kho);
   const existingKeys = new Set(existing.map((c) => `${c.id_kho}|${c.id_hang_hoa}`));
   const idDotNum = Number(id_dot_kiem_ke_kho);

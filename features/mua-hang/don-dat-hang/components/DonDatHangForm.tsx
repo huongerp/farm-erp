@@ -9,14 +9,13 @@ import Combobox from '../../../../components/ui/Combobox';
 import NumberInput from '../../../../components/ui/NumberInput';
 import { DonDatHangFormValues, donDatHangSchema } from '../core/schema';
 import type { DonDatHang } from '../core/types';
-import type { DoiTac } from '../../../kho-van/danh-sach-doi-tac/core/types';
 import type { Kho } from '../../../kho-van/danh-sach-kho/core/types';
-import type { HangHoa } from '../../../kho-van/danh-sach-hang-hoa/core/types';
-import type { Employee } from '../../../he-thong/nhan-vien/core/types';
-import type { PhieuDeXuatVatTu } from '../../../kho-van/phieu-de-xuat-vat-tu/core/types';
+import type { EmployeeRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
+import type { DoiTacRefLite } from '../../../kho-van/danh-sach-doi-tac/services/doi-tac-service';
+import type { HangHoaRefLite } from '../../../kho-van/danh-sach-hang-hoa/services/hang-hoa-service';
+import type { PhieuDeXuatSoPhieuOption } from '../../../kho-van/phieu-de-xuat-vat-tu/services/phieu-de-xuat-vat-tu-supabase.service';
 import { useCreateDonDatHang, useUpdateDonDatHang, useNextSoPoDonDatHang } from '../hooks/use-don-dat-hang';
-import { useDoiTacList } from '../../../kho-van/danh-sach-doi-tac/hooks/use-doi-tac';
-import { useHangHoaList } from '../../../kho-van/danh-sach-hang-hoa/hooks/use-hang-hoa';
+import { useDoiTacRefQuery, useHangHoaRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { getTodayISO, getEndOfMonthISO, formatNumberVN } from '../../../../lib/utils';
 import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/GenericDrawer';
@@ -26,11 +25,11 @@ import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
 import GenericSubTableSection from '../../../../components/shared/GenericSubTableSection';
 
 interface Props {
-  /** Truyền từ ngoài hoặc form tự gọi useDoiTacList('nha_cung_cap') */
-  supplierList?: DoiTac[];
+  /** Truyền từ ngoài hoặc form tự gọi useDoiTacRefQuery('nha_cung_cap') */
+  supplierList?: DoiTacRefLite[];
   khoList: Kho[];
-  employees: Employee[];
-  phieuDeXuatList?: PhieuDeXuatVatTu[];
+  employees: EmployeeRef[];
+  phieuDeXuatList?: PhieuDeXuatSoPhieuOption[];
   initialData?: DonDatHang | null;
   onClose: () => void;
 }
@@ -48,9 +47,9 @@ const DonDatHangForm: React.FC<Props> = ({
   const createMutation = useCreateDonDatHang(onClose);
   const updateMutation = useUpdateDonDatHang(onClose);
   const { data: nextSoPo, isLoading: loadingSoPo } = useNextSoPoDonDatHang(!isEdit);
-  const { data: hangHoaList = [] } = useHangHoaList();
-  const { data: supplierListFromHook = [] } = useDoiTacList('nha_cung_cap');
-  const supplierList = (supplierListProp?.length ? supplierListProp : supplierListFromHook) as DoiTac[];
+  const { data: hangHoaList = [] } = useHangHoaRefQuery();
+  const { data: supplierListFromHook = [] } = useDoiTacRefQuery('nha_cung_cap');
+  const supplierList = (supplierListProp?.length ? supplierListProp : supplierListFromHook) as DoiTacRefLite[];
 
   const supplierOptions = useMemo(
     () =>
@@ -111,7 +110,7 @@ const DonDatHangForm: React.FC<Props> = ({
   );
 
   const hangHoaMap = useMemo(() => {
-    const m: Record<string, HangHoa> = {};
+    const m: Record<string, HangHoaRefLite> = {};
     hangHoaList.forEach((h) => { m[h.id] = h; });
     return m;
   }, [hangHoaList]);

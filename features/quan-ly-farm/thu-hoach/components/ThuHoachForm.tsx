@@ -202,6 +202,57 @@ const ThuHoachForm: React.FC<Props> = ({
           </FormGrid>
           <div className="mt-3">
             <Controller
+              name="du_thu_tuan"
+              control={control}
+              render={({ field }) => (
+                <NumberInput
+                  label={t('thuHoach.form.duThuTuan')}
+                  value={field.value as number}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  min={0}
+                  maxFractionDigits={2}
+                  showZeroFormatted
+                  error={errors.du_thu_tuan?.message}
+                />
+              )}
+            />
+          </div>
+          <div className="mt-3">
+            <p className="text-sm font-medium text-foreground mb-2">{t('thuHoach.form.thuDuKien')}</p>
+            <Controller
+              name="thu_du_kien"
+              control={control}
+              render={({ field }) => (
+                <div className="flex flex-wrap gap-x-4 gap-y-2 rounded-lg border border-border bg-muted/20 px-3 py-2.5">
+                  {THU_HOACH_DAY_SUFFIXES.map((s) => {
+                    const checked = (field.value ?? []).includes(s);
+                    return (
+                      <label
+                        key={s}
+                        className="inline-flex items-center gap-2 cursor-pointer text-sm text-foreground select-none"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) => {
+                            const cur = new Set(field.value ?? []);
+                            if (e.target.checked) cur.add(s);
+                            else cur.delete(s);
+                            field.onChange(THU_HOACH_DAY_SUFFIXES.filter((d) => cur.has(d)));
+                          }}
+                          className="w-4 h-4 rounded border-border text-primary accent-primary cursor-pointer shrink-0"
+                        />
+                        <span>{t(DAY_FORM_LABEL_KEY[s])}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+            />
+          </div>
+          <div className="mt-3">
+            <Controller
               name="id_chi_nhanh"
               control={control}
               render={({ field: { onChange, onBlur, value } }) => (

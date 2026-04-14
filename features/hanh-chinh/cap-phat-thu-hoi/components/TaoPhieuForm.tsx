@@ -15,7 +15,7 @@ import { phieuCapPhatThuHoiSchema, type PhieuCapPhatThuHoiFormValues } from '../
 import { useCreatePhieuAndExecute, useUpdatePhieu } from '../hooks/use-cap-phat-thu-hoi';
 import { useTaiSanList } from '../../danh-muc-tai-san/hooks/use-danh-muc-tai-san';
 import { useAssetStorageLocations } from '../../thiet-lap-tai-san/hooks/use-noi-luu';
-import { useEmployees } from '@/features/he-thong/nhan-vien/hooks/use-nhan-vien';
+import { useEmployeesRefQuery } from '@/lib/hooks/use-supabase-ref-queries';
 import { useAuthStore } from '../../../../store/useStore';
 import { LOAI_PHIEU_OPTIONS } from '../core/constants';
 import type { PhieuCapPhatThuHoi } from '../core/types';
@@ -52,7 +52,7 @@ const TaoPhieuForm: React.FC<Props> = ({ onClose, defaultTaiSanId, initialData, 
 
   const { data: assets = [] } = useTaiSanList();
   const { data: locations = [] } = useAssetStorageLocations();
-  const { data: employees = [] } = useEmployees();
+  const { data: employees = [] } = useEmployeesRefQuery();
 
   const defaultValuesFromData: PhieuCapPhatThuHoiFormValues = initialData
     ? {

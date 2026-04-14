@@ -14,6 +14,7 @@ import { LOAI_PHIEU_OPTIONS, TRANG_THAI_PHIEU_OPTIONS } from '../core/constants'
 import { getDateRangeFromPreset, getPresetFromDates } from '../core/datePresets';
 import { cn } from '../../../../lib/utils';
 import { getAllHangHoa } from '../../danh-sach-hang-hoa/services/hang-hoa-service';
+import { HANG_HOA_QUERY_KEY } from '../../danh-sach-hang-hoa/hooks/use-hang-hoa';
 import { useDanhMucCap2WithParent } from '../../danh-muc-hang-hoa/hooks/use-danh-muc-hang-hoa';
 
 interface BaoCaoNXTToolbarProps {
@@ -46,9 +47,9 @@ const BaoCaoNXTToolbar: React.FC<BaoCaoNXTToolbarProps> = ({
   const exportRef = useRef<HTMLDivElement>(null);
 
   const { data: hangHoaList = [], isLoading: hangHoaLoading } = useQuery({
-    queryKey: ['hangHoa'],
+    queryKey: HANG_HOA_QUERY_KEY,
     queryFn: getAllHangHoa,
-    staleTime: 1000 * 60 * 2,
+    staleTime: 1000 * 60 * 15,
   });
   const { data: danhMucCap2 = [] } = useDanhMucCap2WithParent();
 

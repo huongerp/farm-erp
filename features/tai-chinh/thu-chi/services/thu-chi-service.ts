@@ -2,7 +2,7 @@ import type { ThuChi } from '../../core/types';
 import type { ThuChiFormValues } from '../core/schema';
 import { MOCK_THU_CHI } from '../../../../mocks/tai-chinh';
 import { MOCK_TAI_KHOAN, MOCK_DANH_MUC_TAI_CHINH } from '../../../../mocks/tai-chinh';
-import { getEmployees } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
+import { getEmployeesRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
 import i18n from '../../../../lib/i18n';
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -20,7 +20,7 @@ function getTenDanhMuc(id: string): string {
 
 async function getTenNhanVien(id: string): Promise<string> {
   try {
-    const employees = await getEmployees();
+    const employees = await getEmployeesRef();
     const emp = employees.find((e) => e.id === id);
     return emp?.ho_ten ?? id;
   } catch {

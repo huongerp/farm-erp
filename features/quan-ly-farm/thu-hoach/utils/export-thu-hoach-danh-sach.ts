@@ -4,6 +4,7 @@
 import type { TFunction } from 'i18next';
 import type { FarmThuHoach } from '../core/types';
 import { THU_HOACH_DAY_SUFFIXES } from '../core/types';
+import { formatThuDuKienShort } from '../core/utils';
 import type { ExportColumn } from '../../../../components/shared/ExportDialog';
 import { DAY_FORM_LABEL_KEY } from '../core/form-mappers';
 
@@ -14,6 +15,10 @@ export function mapFarmThuHoachListRow(p: FarmThuHoach): Record<string, unknown>
     tuan: p.tuan,
     id_chi_nhanh: p.id_chi_nhanh ?? '',
     ten_chi_nhanh: p.ten_chi_nhanh ?? '',
+    du_thu_tuan: Number(p.du_thu_tuan ?? 0),
+    thu_du_kien_ma: (p.thu_du_kien ?? []).join(','),
+    thu_du_kien_label:
+      (p.thu_du_kien ?? []).length > 0 ? formatThuDuKienShort(p.thu_du_kien ?? []) : '',
   };
   let tongKh = 0;
   let tongTt = 0;
@@ -29,6 +34,8 @@ export function mapFarmThuHoachListRow(p: FarmThuHoach): Record<string, unknown>
   row.tong_ke_hoach_tuan = tongKh;
   row.tong_thuc_te_tuan = tongTt;
   row.chenh_lech_tuan = tongTt - tongKh;
+  row.chenh_lech_du_vs_kh = tongKh - Number(p.du_thu_tuan ?? 0);
+  row.chenh_lech_tt_vs_du = tongTt - Number(p.du_thu_tuan ?? 0);
   row.ghi_chu = p.ghi_chu ?? '';
   row.trao_doi = p.trao_doi ?? '';
   row.id_nguoi_tao = p.id_nguoi_tao ?? '';
@@ -45,6 +52,9 @@ export function getExportColumnsThuHoachList(t: TFunction): ExportColumn[] {
     { key: 'tuan', label: t('thuHoach.export.list.tuan') },
     { key: 'id_chi_nhanh', label: t('thuHoach.export.list.id_chi_nhanh') },
     { key: 'ten_chi_nhanh', label: t('thuHoach.export.list.ten_chi_nhanh') },
+    { key: 'du_thu_tuan', label: t('thuHoach.export.list.du_thu_tuan') },
+    { key: 'thu_du_kien_ma', label: t('thuHoach.export.list.thu_du_kien_ma') },
+    { key: 'thu_du_kien_label', label: t('thuHoach.export.list.thu_du_kien_label') },
   ];
   for (const d of THU_HOACH_DAY_SUFFIXES) {
     const day = t(DAY_FORM_LABEL_KEY[d]);
@@ -58,6 +68,8 @@ export function getExportColumnsThuHoachList(t: TFunction): ExportColumn[] {
     { key: 'tong_ke_hoach_tuan', label: t('thuHoach.export.list.tong_ke_hoach_tuan') },
     { key: 'tong_thuc_te_tuan', label: t('thuHoach.export.list.tong_thuc_te_tuan') },
     { key: 'chenh_lech_tuan', label: t('thuHoach.export.list.chenh_lech_tuan') },
+    { key: 'chenh_lech_du_vs_kh', label: t('thuHoach.export.list.chenh_lech_du_vs_kh') },
+    { key: 'chenh_lech_tt_vs_du', label: t('thuHoach.export.list.chenh_lech_tt_vs_du') },
     { key: 'ghi_chu', label: t('thuHoach.export.list.ghi_chu') },
     { key: 'trao_doi', label: t('thuHoach.export.list.trao_doi') },
     { key: 'id_nguoi_tao', label: t('thuHoach.export.list.id_nguoi_tao') },

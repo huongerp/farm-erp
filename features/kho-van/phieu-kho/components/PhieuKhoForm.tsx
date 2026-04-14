@@ -14,11 +14,11 @@ import { LOAI_TAB_TO_DB } from '../core/types';
 import { formatNumberVN } from '../../../../lib/utils';
 import type { Kho } from '../../danh-sach-kho/core/types';
 import type { HangHoa } from '../../danh-sach-hang-hoa/core/types';
+import type { HangHoaRefLite } from '../../danh-sach-hang-hoa/services/hang-hoa-service';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { useCreatePhieuKho, useUpdatePhieuKho, useTonKhoTheoKho } from '../hooks/use-phieu-kho';
 import { getNextSoPhieu } from '../services/phieu-kho-service';
-import { useHangHoaList } from '../../danh-sach-hang-hoa/hooks/use-hang-hoa';
-import { useDoiTacList } from '../../danh-sach-doi-tac/hooks/use-doi-tac';
+import { useHangHoaRefQuery, useDoiTacRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
 import { useAuthStore } from '../../../../store/useStore';
 import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/GenericDrawer';
 import FormSection from '../../../../components/shared/FormSection';
@@ -51,9 +51,9 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose, on
   const isEdit = !!initialData?.id;
   const createMutation = useCreatePhieuKho(loai, onClose);
   const updateMutation = useUpdatePhieuKho(onClose);
-  const { data: hangHoaList = [], isLoading: isLoadingHangHoa, isError: isErrorHangHoa } = useHangHoaList();
-  const { data: nhaCungCapList = [] } = useDoiTacList('nha_cung_cap');
-  const { data: khachHangList = [] } = useDoiTacList('khach_hang');
+  const { data: hangHoaList = [], isLoading: isLoadingHangHoa, isError: isErrorHangHoa } = useHangHoaRefQuery();
+  const { data: nhaCungCapList = [] } = useDoiTacRefQuery('nha_cung_cap');
+  const { data: khachHangList = [] } = useDoiTacRefQuery('khach_hang');
 
   const defaultValues: Partial<PhieuKhoFormValues> = {
     so_phieu: '',
@@ -128,7 +128,7 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose, on
   );
 
   const hangHoaMap = useMemo(() => {
-    const m: Record<string, HangHoa> = {};
+    const m: Record<string, HangHoaRefLite> = {};
     hangHoaList.forEach((h) => { m[h.id] = h; });
     return m;
   }, [hangHoaList]);

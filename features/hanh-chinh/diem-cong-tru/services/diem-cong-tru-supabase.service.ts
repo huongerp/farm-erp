@@ -6,7 +6,7 @@ import { supabase, fetchAllRows } from '../../../../lib/supabase';
 import type { DiemCongTruRecord } from '../core/types';
 import type { DiemCongTruFormValues } from '../core/schema';
 import { getPayrollPointGroups } from '../../thiet-lap-cong-luong/services/payroll-point-group-service';
-import { getEmployees } from '@/features/he-thong/nhan-vien/services/nhan-vien-service';
+import { getEmployeesRef } from '@/features/he-thong/nhan-vien/services/nhan-vien-service';
 import i18n from '../../../../lib/i18n';
 
 const TABLE = 'fp_hr_diem_cong_tru';
@@ -67,7 +67,7 @@ export async function getDiemCongTruRecords(): Promise<DiemCongTruRecord[]> {
         .range(from, to)
     ),
     getPayrollPointGroups(),
-    getEmployees(),
+    getEmployeesRef(),
   ]);
 
   const employeeMap = new Map(employees.map((e) => [e.id, { ho_ten: e.ho_ten, ma_nhan_vien: e.ma_nhan_vien }]));
@@ -109,7 +109,7 @@ export async function createDiemCongTruRecord(
   const { data: inserted, error } = await supabase.from(TABLE).insert(payload).select('*').single();
   if (error) throw new Error(error.message);
 
-  const [groups, employees] = await Promise.all([getPayrollPointGroups(), getEmployees()]);
+  const [groups, employees] = await Promise.all([getPayrollPointGroups(), getEmployeesRef()]);
   const employeeMap = new Map(employees.map((e) => [e.id, { ho_ten: e.ho_ten, ma_nhan_vien: e.ma_nhan_vien }]));
   const hangMucMap = new Map(groups.map((g) => [g.id, { ten: g.ten, ma: g.ma }]));
 
@@ -150,7 +150,7 @@ export async function updateDiemCongTruRecord(
   const { data: row, error: fetchErr } = await supabase.from(TABLE).select('*').eq('id', idNum).single();
   if (fetchErr || !row) throw new Error(i18n.t('diemCongTru.service.notFound'));
 
-  const [groups, employees] = await Promise.all([getPayrollPointGroups(), getEmployees()]);
+  const [groups, employees] = await Promise.all([getPayrollPointGroups(), getEmployeesRef()]);
   const employeeMap = new Map(employees.map((e) => [e.id, { ho_ten: e.ho_ten, ma_nhan_vien: e.ma_nhan_vien }]));
   const hangMucMap = new Map(groups.map((g) => [g.id, { ten: g.ten, ma: g.ma }]));
 

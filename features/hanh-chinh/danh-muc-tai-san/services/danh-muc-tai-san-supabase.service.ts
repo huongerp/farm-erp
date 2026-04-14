@@ -9,7 +9,7 @@ import i18n from '../../../../lib/i18n';
 import { getAssetGroups } from '../../thiet-lap-tai-san/services/nhom-tai-san-service';
 import { getAssetStorageLocations } from '../../thiet-lap-tai-san/services/noi-luu-service';
 import { getAssetStatuses } from '../../thiet-lap-tai-san/services/trang-thai-service';
-import { getEmployees } from '@/features/he-thong/nhan-vien/services/nhan-vien-service';
+import { getEmployeesRef } from '@/features/he-thong/nhan-vien/services/nhan-vien-service';
 import { generateAssetBarcode } from '../utils/barcode';
 
 const TABLE = 'fp_ts_tai_san';
@@ -207,7 +207,7 @@ export async function createTaiSanSupabase(data: TaiSanFormValues): Promise<TaiS
     getAssetGroups(),
     getAssetStorageLocations(),
     getAssetStatuses(),
-    getEmployees(),
+    getEmployeesRef(),
   ]);
   const ten_nhom = groups.find((g) => g.id === data.id_nhom)?.ten ?? null;
   const loc = locations.find((l) => l.id === data.id_noi_luu);
@@ -266,7 +266,7 @@ export async function updateTaiSanSupabase(id: string, data: TaiSanFormValues): 
     getAssetGroups(),
     getAssetStorageLocations(),
     getAssetStatuses(),
-    getEmployees(),
+    getEmployeesRef(),
   ]);
   const ten_nhom = groups.find((g) => g.id === data.id_nhom)?.ten ?? null;
   const loc = locations.find((l) => l.id === data.id_noi_luu);
@@ -353,7 +353,7 @@ export async function updateTaiSanLocationAndHolderSupabase(
   if (payload.id_nhan_vien_dang_giu !== undefined) {
     updates.id_nhan_vien = toNum(payload.id_nhan_vien_dang_giu);
     if (payload.id_nhan_vien_dang_giu) {
-      const employees = await getEmployees();
+      const employees = await getEmployeesRef();
       const emp = employees.find((e) => e.id === payload.id_nhan_vien_dang_giu);
       updates.ten_nhan_vien = emp?.ho_ten ?? null;
     } else {
@@ -391,7 +391,7 @@ export async function updateTaiSanFromKiemKeSupabase(
   if (payload.id_nhan_vien_dang_giu !== undefined) {
     updates.id_nhan_vien = toNum(payload.id_nhan_vien_dang_giu);
     if (payload.id_nhan_vien_dang_giu) {
-      const employees = await getEmployees();
+      const employees = await getEmployeesRef();
       const emp = employees.find((e) => e.id === payload.id_nhan_vien_dang_giu);
       updates.ten_nhan_vien = emp?.ho_ten ?? null;
     } else {

@@ -7,20 +7,22 @@ import FilterChipMultiSelect from '../../../../components/shared/FilterChipMulti
 import { useDonDatHangStore } from '../store/useDonDatHangStore';
 import type { DonDatHang } from '../core/types';
 import type { Kho } from '../../../kho-van/danh-sach-kho/core/types';
-import type { DoiTac } from '../../../kho-van/danh-sach-doi-tac/core/types';
-import type { Employee } from '../../../he-thong/nhan-vien/core/types';
+import type { DoiTacRefLite } from '../../../kho-van/danh-sach-doi-tac/services/doi-tac-service';
+import type { EmployeeRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
 import { TRANG_THAI_DON_DAT_HANG, TRANG_THAI_KEY } from '../core/constants';
 
 interface Props {
   data: DonDatHang[];
-  supplierList: DoiTac[];
+  supplierList: DoiTacRefLite[];
   khoList: Kho[];
-  employees: Employee[];
+  employees: EmployeeRef[];
   selectedCount: number;
   onAdd: () => void;
   onDeleteMany: () => void;
   canCreate?: boolean;
   canDelete?: boolean;
+  /** fromRows: đếm từ `data`. unweighted: chip luôn hiện khi danh sách chỉ một trang server. */
+  chipCountsMode?: 'fromRows' | 'unweighted';
 }
 
 const DonDatHangToolbar: React.FC<Props> = ({
@@ -33,8 +35,10 @@ const DonDatHangToolbar: React.FC<Props> = ({
   onDeleteMany,
   canCreate = true,
   canDelete = true,
+  chipCountsMode = 'fromRows',
 }) => {
   const { t } = useTranslation();
+  const unweighted = chipCountsMode === 'unweighted';
   const {
     searchTerm,
     setSearchTerm,
@@ -52,9 +56,9 @@ const DonDatHangToolbar: React.FC<Props> = ({
       TRANG_THAI_DON_DAT_HANG.map((s) => ({
         value: s,
         label: t(`donDatHang.status.${TRANG_THAI_KEY[s]}`),
-        count: data.filter((d) => d.trang_thai === s).length,
+        count: unweighted ? 1 : data.filter((d) => d.trang_thai === s).length,
       })),
-    [data, t]
+    [data, t, unweighted]
   );
 
   const supplierOptions = useMemo(
@@ -62,9 +66,9 @@ const DonDatHangToolbar: React.FC<Props> = ({
       supplierList.map((d) => ({
         value: d.id,
         label: d.ten_ncc,
-        count: data.filter((x) => x.id_nha_cung_cap === d.id).length,
+        count: unweighted ? 1 : data.filter((x) => x.id_nha_cung_cap === d.id).length,
       })),
-    [supplierList, data]
+    [supplierList, data, unweighted]
   );
 
   const khoOptions = useMemo(
@@ -72,9 +76,9 @@ const DonDatHangToolbar: React.FC<Props> = ({
       khoList.map((k) => ({
         value: k.id,
         label: k.ten_kho,
-        count: data.filter((x) => x.id_kho_nhan === k.id).length,
+        count: unweighted ? 1 : data.filter((x) => x.id_kho_nhan === k.id).length,
       })),
-    [khoList, data]
+    [khoList, data, unweighted]
   );
 
   const buyerOptions = useMemo(
@@ -82,9 +86,9 @@ const DonDatHangToolbar: React.FC<Props> = ({
       employees.map((e) => ({
         value: e.id,
         label: e.ho_ten,
-        count: data.filter((x) => x.id_nguoi_dat === e.id).length,
+        count: unweighted ? 1 : data.filter((x) => x.id_nguoi_dat === e.id).length,
       })),
-    [employees, data]
+    [employees, data, unweighted]
   );
 
   const activeFilterCount = useMemo(

@@ -12,7 +12,7 @@ import type { ThuChi } from '../../core/types';
 import { useCreateThuChi, useUpdateThuChi } from '../hooks/use-thu-chi';
 import { useDanhMucTaiChinh } from '../../danh-muc-tai-chinh/hooks/use-danh-muc-tai-chinh';
 import { useTaiKhoan } from '../../tai-khoan/hooks/use-tai-khoan';
-import { useEmployees } from '../../../he-thong/nhan-vien/hooks/use-nhan-vien';
+import { useEmployeesRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
 import { useDeXuatChiPhiList } from '../../de-xuat-chi-phi/hooks/use-de-xuat-chi-phi';
 import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/GenericDrawer';
 import FormSection from '../../../../components/shared/FormSection';
@@ -33,7 +33,7 @@ const ThuChiForm: React.FC<Props> = ({ initialData, onClose }) => {
 
   const { data: allDanhMuc = [] } = useDanhMucTaiChinh();
   const { data: taiKhoanList = [] } = useTaiKhoan();
-  const { data: employees = [] } = useEmployees();
+  const { data: employees = [] } = useEmployeesRefQuery();
   const { data: deXuatList = [] } = useDeXuatChiPhiList();
 
   const taiKhoanOptions = useMemo(

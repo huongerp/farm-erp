@@ -9,7 +9,7 @@ import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
 import Select from '../../../../components/ui/Select';
 import { useCreateDangKyGiao } from '../hooks/use-dang-ky-dao-tao';
 import { useKhoaDaoTaos } from '@/features/nhan-su/khoa-dao-tao/hooks/use-khoa-dao-tao';
-import { useEmployees } from '@/features/he-thong/nhan-vien/hooks/use-nhan-vien';
+import { useEmployeesRefQuery } from '@/lib/hooks/use-supabase-ref-queries';
 import { giaoKhoaSchema, type GiaoKhoaFormValues } from '../core/schema';
 
 interface Props {
@@ -20,7 +20,7 @@ interface Props {
 const GiaoKhoaForm: React.FC<Props> = ({ onClose, idNguoiGiao }) => {
   const { t } = useTranslation();
   const { data: khoaList = [] } = useKhoaDaoTaos();
-  const { data: employees = [] } = useEmployees();
+  const { data: employees = [] } = useEmployeesRefQuery();
   const createMutation = useCreateDangKyGiao(onClose);
 
   const {

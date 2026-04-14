@@ -22,8 +22,8 @@ export interface StatsChartItem {
   value: number;
 }
 
-export function useDonDatHangStats(list: DonDatHang[]) {
-  return useMemo(() => {
+/** Logic thuần (dùng cho Thống kê RPC + fallback client). */
+export function computeDonDatHangStats(list: DonDatHang[]) {
     const draft = list.filter((d) => d.trang_thai === TRANG_THAI_NHAP).length;
     const inProgress = list.filter((d) =>
       ['Chờ duyệt', 'Đã gửi', 'Đã xác nhận', 'Đang giao'].includes(d.trang_thai)
@@ -87,5 +87,8 @@ export function useDonDatHangStats(list: DonDatHang[]) {
       byBuyer,
       byMonth,
     };
-  }, [list]);
+}
+
+export function useDonDatHangStats(list: DonDatHang[]) {
+  return useMemo(() => computeDonDatHangStats(list), [list]);
 }

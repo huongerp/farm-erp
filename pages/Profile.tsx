@@ -28,14 +28,14 @@ import {
 import { canEditProfile } from '../lib/profile-permissions';
 import type { Employee } from '../features/he-thong/nhan-vien/core/types';
 import { TRANG_THAI_NV } from '../lib/constants';
-import { useEmployees } from '../features/he-thong/nhan-vien/hooks/use-nhan-vien';
+import { useEmployeesRefQuery } from '@/lib/hooks/use-supabase-ref-queries';
 import { useUpdateEmployee } from '../features/he-thong/nhan-vien/hooks/use-nhan-vien';
 import { employeeToFormValues } from '../features/he-thong/nhan-vien/utils/employee-to-form';
 
 const Profile: React.FC = () => {
   const { t } = useTranslation();
   const { user, login } = useAuthStore();
-  const { data: employees = [] } = useEmployees();
+  const { data: employees = [] } = useEmployeesRefQuery();
   const updateEmployeeMutation = useUpdateEmployee();
 
   const currentEmployee = useMemo(

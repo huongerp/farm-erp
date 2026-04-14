@@ -2,21 +2,20 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
-import { usePhieuDeXuatVatTuList, usePhieuDeXuatVatTuById, useDeletePhieuDeXuatVatTu, useDeletePhieuDeXuatVatTuMany, useUpdatePhieuDeXuatVatTu } from '../hooks/use-phieu-de-xuat-vat-tu';
+import { usePhieuDeXuatVatTuListPaged, usePhieuDeXuatVatTuById, useDeletePhieuDeXuatVatTu, useDeletePhieuDeXuatVatTuMany, useUpdatePhieuDeXuatVatTu } from '../hooks/use-phieu-de-xuat-vat-tu';
 import { usePhieuDeXuatVatTuViewScope } from '../hooks/use-phieu-de-xuat-vat-tu-view-scope';
-import { filterPhieuDeXuatListByViewScope } from '../utils/phieu-de-xuat-view-scope-filter';
+import { buildPhieuDeXuatVatTuListServerQuery } from '../services/phieu-de-xuat-vat-tu-service';
+import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
-import { useEmployees } from '../../../he-thong/nhan-vien/hooks/use-nhan-vien';
+import { useEmployeesRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
 import { useCauHinhDeXuatVatTu } from '../../../mua-hang/thiet-lap-de-xuat-vat-tu/hooks/use-cau-hinh-de-xuat-vat-tu';
 import { usePhieuDeXuatVatTuStore } from '../store/usePhieuDeXuatVatTuStore';
 import { useAuthStore } from '../../../../store/useStore';
-import { useListWithFilter } from '../../../../lib/hooks';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
 import type { PhieuDeXuatVatTu } from '../core/types';
 import type { PhieuDeXuatVatTuFormValues } from '../core/schema';
-import { TRANG_THAI_CHO_DUYET, trangThaiToFilterKey } from '../core/constants';
-import type { PhieuDeXuatVatTuFilters } from '../store/usePhieuDeXuatVatTuStore';
+import { TRANG_THAI_CHO_DUYET } from '../core/constants';
 import type { HangHoa } from '../../danh-sach-hang-hoa/core/types';
 import DanhSachHangHoaForm from '../../danh-sach-hang-hoa/components/DanhSachHangHoaForm';
 
@@ -70,16 +69,27 @@ const DanhSachTab: React.FC = () => {
   const [showAddHangHoa, setShowAddHangHoa] = useState(false);
   const addHangHoaResolveRef = useRef<(h: HangHoa | null) => void>(null);
 
-  const { data: allList = [], isLoading } = usePhieuDeXuatVatTuList();
   const { data: khoList = [] } = useKhoList();
-  const { data: employees = [] } = useEmployees();
+  const { data: employees = [] } = useEmployeesRefQuery();
   const { data: config } = useCauHinhDeXuatVatTu();
   const viewScope = usePhieuDeXuatVatTuViewScope();
 
-  const viewableList = useMemo(
-    () => filterPhieuDeXuatListByViewScope(allList, khoList, viewScope),
-    [allList, khoList, viewScope]
+  const listServerQuery = useMemo(
+    () =>
+      buildPhieuDeXuatVatTuListServerQuery({
+        searchTerm,
+        filters,
+        viewScope,
+        khoList,
+      }),
+    [searchTerm, filters, viewScope, khoList]
   );
+  const listQueryKey = useMemo(() => stableListQueryKeyPart(listServerQuery), [listServerQuery]);
+  const pageIndex = Math.max(0, pagination.page - 1);
+  const pageQuery = usePhieuDeXuatVatTuListPaged(pageIndex, listServerQuery);
+  const tableRows = pageQuery.data?.data ?? [];
+  const totalCount = pageQuery.data?.totalCount ?? 0;
+  const isLoading = pageQuery.isPending || pageQuery.isFetching;
 
   const isOverdue = useCallback(
     (item: PhieuDeXuatVatTu) =>
@@ -92,45 +102,24 @@ const DanhSachTab: React.FC = () => {
   const deleteManyMutation = useDeletePhieuDeXuatVatTuMany();
   const updateMutation = useUpdatePhieuDeXuatVatTu();
 
-  const filterFn = useCallback((item: PhieuDeXuatVatTu, term: string, f: PhieuDeXuatVatTuFilters) => {
-    const searchLower = term.toLowerCase();
-    const matchesSearch =
-      !term ||
-      item.so_phieu.toLowerCase().includes(searchLower) ||
-      (item.ten_noi_de_xuat?.toLowerCase().includes(searchLower) ?? false) ||
-      (item.ten_nguoi_de_xuat?.toLowerCase().includes(searchLower) ?? false) ||
-      (item.ten_nguoi_duyet?.toLowerCase().includes(searchLower) ?? false) ||
-      (item.ghi_chu?.toLowerCase().includes(searchLower) ?? false);
-    const statusKey = trangThaiToFilterKey(item.trang_thai);
-    const matchesStatus = (f.status?.length ?? 0) === 0 || (f.status ?? []).includes(statusKey);
-    const matchesNoiDeXuat = (f.noiDeXuatIds?.length ?? 0) === 0 || (f.noiDeXuatIds ?? []).includes(item.id_noi_de_xuat);
-    const matchesNguoiDeXuat = (f.nguoiDeXuatIds?.length ?? 0) === 0 || (f.nguoiDeXuatIds ?? []).includes(item.id_nguoi_de_xuat);
-    const matchesNguoiDuyet =
-      (f.nguoiDuyetIds?.length ?? 0) === 0 ||
-      (item.id_nguoi_duyet != null && (f.nguoiDuyetIds ?? []).includes(item.id_nguoi_duyet));
-    return matchesSearch && matchesStatus && matchesNoiDeXuat && matchesNguoiDeXuat && matchesNguoiDuyet;
-  }, []);
-
-  const filteredList = useListWithFilter(viewableList, searchTerm, filters, filterFn);
-
   useEffect(() => {
     return () => resetState();
   }, [resetState]);
 
   useEffect(() => {
     setPage(1);
-  }, [filteredList.length, setPage]);
+  }, [listQueryKey, setPage]);
 
-  const maxPage = Math.max(1, Math.ceil(filteredList.length / pagination.pageSize));
+  const maxPage = Math.max(1, Math.ceil(totalCount / pagination.pageSize));
   useEffect(() => {
     if (pagination.page > maxPage) setPage(maxPage);
   }, [pagination.page, pagination.pageSize, maxPage, setPage]);
 
   useEffect(() => {
     if (!viewingItem) return;
-    const fresh = viewableList.find((p) => p.id === viewingItem.id);
+    const fresh = tableRows.find((p) => p.id === viewingItem.id);
     if (fresh && fresh !== viewingItem) setViewingItem(fresh);
-  }, [viewableList, viewingItem?.id]);
+  }, [tableRows, viewingItem]);
 
   const handleEdit = (item: PhieuDeXuatVatTu) => {
     setEditingItem(item);
@@ -212,7 +201,8 @@ const DanhSachTab: React.FC = () => {
   return (
     <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
       <PhieuDeXuatVatTuToolbar
-        data={filteredList}
+        data={tableRows}
+        chipCountsMode="unweighted"
         khoList={khoList}
         employees={employees}
         currentUserId={user?.id ?? null}
@@ -228,7 +218,7 @@ const DanhSachTab: React.FC = () => {
       />
       <div className="flex-1 min-h-0 flex flex-col px-4 pb-4 pt-1">
         <PhieuDeXuatVatTuList
-          data={filteredList}
+          data={tableRows}
           columns={columns}
           selectedIds={selectedIds}
           onToggleSelection={toggleSelection}
@@ -242,6 +232,7 @@ const DanhSachTab: React.FC = () => {
           onDelete={canDelete ? handleDelete : undefined}
           onView={setViewingItem}
           isOverdue={isOverdue}
+          serverTotalCount={totalCount}
         />
       </div>
 

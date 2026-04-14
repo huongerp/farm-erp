@@ -5,7 +5,7 @@ import Button from '../../../../components/ui/Button';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import { useKiemKeTaiSanStore } from '../store/useKiemKeTaiSanStore';
-import { useEmployees } from '@/features/he-thong/nhan-vien/hooks/use-nhan-vien';
+import { useEmployeesRefQuery } from '@/lib/hooks/use-supabase-ref-queries';
 import { TRANG_THAI_DOT_OPTIONS } from '../core/constants';
 import { useKiemKeFilterCounts } from '../hooks/use-kiem-ke-filter-counts';
 import type { DotKiemKe } from '../core/types';
@@ -41,7 +41,7 @@ const KiemKeTaiSanToolbar: React.FC<Props> = ({
     selectedIds,
     clearSelection,
   } = useKiemKeTaiSanStore();
-  const { data: employees = [] } = useEmployees();
+  const { data: employees = [] } = useEmployeesRefQuery();
   const { trangThaiCounts, nguoiPhuTrachCounts } = useKiemKeFilterCounts(items, filters);
 
   const selectedCount = selectedIds.size;

@@ -1,0 +1,14 @@
+-- =============================================================================
+-- RPC: rpc_phieu_de_xuat_stats (P1-A — tab Thống kê phiếu đề xuất vật tư)
+-- App hiện vẫn có thể dùng client computePhieuDeXuatVatTuStats; triển khai RPC
+-- tương tự rpc_don_dat_hang_stats (lọc ngày + filter id kho / NV) khi cần thêm.
+-- =============================================================================
+
+-- CREATE OR REPLACE FUNCTION public.rpc_phieu_de_xuat_stats(
+--   p_date_from date DEFAULT NULL,
+--   p_date_to date DEFAULT NULL,
+--   p_trang_thai text[] DEFAULT NULL,
+--   p_id_noi_de_xuat bigint[] DEFAULT NULL,
+--   p_id_nguoi_de_xuat bigint[] DEFAULT NULL,
+--   p_id_nguoi_duyet bigint[] DEFAULT NULL
+-- ) RETURNS jsonb LANGUAGE sql STABLE AS $$ ... $$;

@@ -5,7 +5,7 @@ import Input from '../../../../components/ui/Input';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import { useDuAnList } from '../../du-an/hooks/use-du-an';
 import { useDepartments } from '../../../he-thong/phong-ban/hooks/use-phong-ban';
-import { useEmployees } from '../../../he-thong/nhan-vien/hooks/use-nhan-vien';
+import { useEmployeesRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
 import type { BaoCaoCongViecFilters } from '../core/types';
 import type { FilterGroup } from '../../../../components/ui/MobileFilterSheet';
 
@@ -17,7 +17,7 @@ export const BaoCaoToolbarFilters: React.FC<Pick<Props, 'filters' | 'onFiltersCh
   const { t } = useTranslation();
   const { data: duAnList = [] } = useDuAnList();
   const { data: departments = [] } = useDepartments();
-  const { data: employees = [] } = useEmployees();
+  const { data: employees = [] } = useEmployeesRefQuery();
 
   const duAnOptions = useMemo(
     () => duAnList.map((d) => ({ label: d.ten_du_an, value: d.id })),
@@ -28,7 +28,7 @@ export const BaoCaoToolbarFilters: React.FC<Pick<Props, 'filters' | 'onFiltersCh
     [departments]
   );
   const nguoiOptions = useMemo(
-    () => employees.slice(0, 200).map((e) => ({ label: e.full_name || e.ma_nhan_vien, value: e.id })),
+    () => employees.slice(0, 200).map((e) => ({ label: e.ho_ten || e.ma_nhan_vien, value: e.id })),
     [employees]
   );
 
@@ -90,7 +90,7 @@ export function useBaoCaoFilterGroups(
   const { t } = useTranslation();
   const { data: duAnList = [] } = useDuAnList();
   const { data: departments = [] } = useDepartments();
-  const { data: employees = [] } = useEmployees();
+  const { data: employees = [] } = useEmployeesRefQuery();
 
   const duAnOptions = useMemo(
     () => duAnList.map((d) => ({ label: d.ten_du_an, value: d.id })),
@@ -101,7 +101,7 @@ export function useBaoCaoFilterGroups(
     [departments]
   );
   const nguoiOptions = useMemo(
-    () => employees.slice(0, 200).map((e) => ({ label: e.full_name || e.ma_nhan_vien, value: e.id })),
+    () => employees.slice(0, 200).map((e) => ({ label: e.ho_ten || e.ma_nhan_vien, value: e.id })),
     [employees]
   );
 

@@ -15,7 +15,7 @@ import { dotKiemKeSchema, type DotKiemKeFormValues } from '../core/schema';
 import { useCreateDotKiemKe, useUpdateDotKiemKe, useNextMaDotDotKiemKeTaiSan, formatMaDotDotKiemKeTaiSan } from '../hooks/use-kiem-ke-tai-san';
 import { useAssetGroups } from '../../thiet-lap-tai-san/hooks/use-nhom-tai-san';
 import { useAssetStorageLocations } from '../../thiet-lap-tai-san/hooks/use-noi-luu';
-import { useEmployees } from '@/features/he-thong/nhan-vien/hooks/use-nhan-vien';
+import { useEmployeesRefQuery } from '@/lib/hooks/use-supabase-ref-queries';
 import { useAuthStore } from '../../../../store/useStore';
 import type { DotKiemKe } from '../core/types';
 
@@ -51,7 +51,7 @@ const DotKiemKeForm: React.FC<Props> = ({ onClose, initialData, onSuccessAfterEd
   const nextMaDot = useNextMaDotDotKiemKeTaiSan();
   const { data: groups = [] } = useAssetGroups();
   const { data: locations = [] } = useAssetStorageLocations();
-  const { data: employees = [] } = useEmployees();
+  const { data: employees = [] } = useEmployeesRefQuery();
 
   const defaultValuesFromData = initialData
     ? {

@@ -11,7 +11,7 @@ import Textarea from '../../../../components/ui/Textarea';
 import { cn } from '../../../../lib/utils';
 import { useAssetStorageLocations } from '../../thiet-lap-tai-san/hooks/use-noi-luu';
 import { useAssetStatuses } from '../../thiet-lap-tai-san/hooks/use-trang-thai';
-import { useEmployees } from '@/features/he-thong/nhan-vien/hooks/use-nhan-vien';
+import { useEmployeesRefQuery } from '@/lib/hooks/use-supabase-ref-queries';
 import type { ChiTietKiemKe, ChiTietKiemKeUpdate } from '../core/types';
 
 interface Props {
@@ -37,7 +37,7 @@ const NhapKetQuaKiemKeDialog: React.FC<Props> = ({
 
   const { data: locations = [] } = useAssetStorageLocations();
   const { data: statuses = [] } = useAssetStatuses();
-  const { data: employees = [] } = useEmployees();
+  const { data: employees = [] } = useEmployeesRefQuery();
 
   const locationOptions = locations
     .filter((l) => l.trang_thai === 1)
