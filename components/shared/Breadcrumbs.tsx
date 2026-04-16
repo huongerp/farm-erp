@@ -5,12 +5,8 @@ import { ChevronRight, Home } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { TFunction } from 'i18next';
 import { HANH_CHINH_MODULE_SLUGS, getModuleTitleKeyBySlug } from '../../lib/hanh-chinh-menu';
-import { NHAN_SU_MODULE_SLUGS, getNhanSuModuleTitleKeyBySlug } from '../../lib/nhan-su-menu';
-import { MARKETING_MODULE_SLUGS, getMarketingModuleTitleKeyBySlug } from '../../lib/marketing-menu';
-import { TAI_CHINH_MODULE_SLUGS, getTaiChinhModuleTitleKeyBySlug } from '../../lib/tai-chinh-menu';
 import { MUA_HANG_MODULE_SLUGS, getMuaHangModuleTitleKeyBySlug } from '../../lib/mua-hang-menu';
 import { QUAN_LY_FARM_MODULE_SLUGS, getQuanLyFarmModuleTitleKeyBySlug } from '../../lib/quan-ly-farm-menu';
-import { DIEU_HANH_MODULE_SLUGS, getDieuHanhModuleTitleKeyBySlug } from '../../lib/dieu-hanh-menu';
 
 interface RouteConfig {
   label: string;
@@ -26,24 +22,6 @@ interface RouteConfig {
       { label: t(getModuleTitleKeyBySlug(slug)), parentPath: '/hanh-chinh' },
     ])
   );
-  const nhanSuModuleRoutes = Object.fromEntries(
-    NHAN_SU_MODULE_SLUGS.map((slug) => [
-      `/nhan-su/${slug}`,
-      { label: t(getNhanSuModuleTitleKeyBySlug(slug)), parentPath: '/nhan-su' },
-    ])
-  );
-  const marketingModuleRoutes = Object.fromEntries(
-    MARKETING_MODULE_SLUGS.map((slug) => [
-      `/marketing/${slug}`,
-      { label: t(getMarketingModuleTitleKeyBySlug(slug)), parentPath: '/marketing' },
-    ])
-  );
-  const taiChinhModuleRoutes = Object.fromEntries(
-    TAI_CHINH_MODULE_SLUGS.map((slug) => [
-      `/tai-chinh/${slug}`,
-      { label: t(getTaiChinhModuleTitleKeyBySlug(slug)), parentPath: '/tai-chinh' },
-    ])
-  );
   const muaHangModuleRoutes = Object.fromEntries(
     MUA_HANG_MODULE_SLUGS.map((slug) => [
       `/mua-hang/${slug}`,
@@ -56,73 +34,34 @@ interface RouteConfig {
       { label: t(getQuanLyFarmModuleTitleKeyBySlug(slug)), parentPath: '/quan-ly-farm' },
     ])
   );
-  const dieuHanhModuleRoutes = Object.fromEntries(
-    DIEU_HANH_MODULE_SLUGS.map((slug) => [
-      `/dieu-hanh/${slug}`,
-      { label: t(getDieuHanhModuleTitleKeyBySlug(slug)), parentPath: '/dieu-hanh' },
-    ])
-  );
   return {
     // --- GỐC ---
     '/': { label: t('breadcrumb.home') },
     '/thong-tin-ban-quyen': { label: t('breadcrumb.licenseInfo'), parentPath: '/' },
 
     // --- DASHBOARDS / SUBMENU (parent = Trang chủ) ---
-    '/dieu-hanh': { label: t('breadcrumb.dieuHanh'), parentPath: '/' },
     '/he-thong': { label: t('breadcrumb.systemAdmin'), parentPath: '/' },
     '/hanh-chinh': { label: t('breadcrumb.hanhChinh'), parentPath: '/' },
-    '/nhan-su': { label: t('breadcrumb.nhanSu'), parentPath: '/' },
-    '/marketing': { label: t('breadcrumb.marketing'), parentPath: '/' },
-    '/tai-chinh': { label: t('breadcrumb.taiChinh'), parentPath: '/' },
     '/mua-hang': { label: t('breadcrumb.muaHang'), parentPath: '/' },
     '/quan-ly-farm': { label: t('breadcrumb.quanLyFarm'), parentPath: '/' },
-    '/thiet-bi': { label: t('breadcrumb.deviceManagement') },
-
-    // --- THIẾT BỊ ---
-    '/thiet-bi/danh-sach': { label: t('breadcrumb.deviceList'), parentPath: '/thiet-bi' },
-    '/thiet-bi/nhom-tai-san': { label: t('breadcrumb.assetGroup'), parentPath: '/thiet-bi' },
-    '/thiet-bi/kiem-ke': { label: t('breadcrumb.inventoryCheck'), parentPath: '/thiet-bi' },
-    '/thiet-bi/in-tem': { label: t('breadcrumb.barcodePrint'), parentPath: '/thiet-bi' },
-    '/thiet-bi/bao-tri': { label: t('breadcrumb.maintenance'), parentPath: '/thiet-bi' },
-    '/thiet-bi/linh-kien': { label: t('breadcrumb.spareParts'), parentPath: '/thiet-bi' },
-    '/thiet-bi/tra-cuu': { label: t('breadcrumb.quickSearch'), parentPath: '/thiet-bi' },
-    '/thiet-bi/bao-cao-khau-hao': { label: t('breadcrumb.depreciationReport'), parentPath: '/thiet-bi' },
-    '/thiet-bi/bao-cao': { label: t('breadcrumb.operationReport'), parentPath: '/thiet-bi' },
-    '/thiet-bi/vi-tri': { label: t('breadcrumb.locationSetup'), parentPath: '/thiet-bi' },
-    '/thiet-bi/luan-chuyen': { label: t('breadcrumb.transferHandover'), parentPath: '/thiet-bi' },
 
     // --- HỆ THỐNG ---
     '/nhan-vien': { label: t('breadcrumb.employee'), parentPath: '/he-thong' },
     '/phong-ban': { label: t('breadcrumb.department'), parentPath: '/he-thong' },
     '/chuc-vu': { label: t('breadcrumb.position'), parentPath: '/he-thong' },
-    '/chuc-nang-nhiem-vu': { label: t('breadcrumb.chucNangNhiemVu'), parentPath: '/he-thong' },
     '/cap-bac': { label: t('breadcrumb.jobLevel'), parentPath: '/he-thong' },
     '/thong-tin-cong-ty': { label: t('breadcrumb.companyInfo'), parentPath: '/he-thong' },
     '/chi-nhanh': { label: t('breadcrumb.branch'), parentPath: '/he-thong' },
-    '/sao-luu': { label: t('breadcrumb.backup'), parentPath: '/he-thong' },
-    '/thiet-bi-dang-nhap': { label: t('breadcrumb.loginDevices'), parentPath: '/he-thong' },
     '/phan-quyen': { label: t('breadcrumb.permission'), parentPath: '/he-thong' },
 
     // --- HÀNH CHÍNH (module con) ---
     ...hanhChinhModuleRoutes,
-
-    // --- NHÂN SỰ (module con) ---
-    ...nhanSuModuleRoutes,
-
-    // --- MARKETING (module con) ---
-    ...marketingModuleRoutes,
-
-    // --- TÀI CHÍNH (module con) ---
-    ...taiChinhModuleRoutes,
 
     // --- MUA HÀNG (module con, gồm cả quản lý kho) ---
     ...muaHangModuleRoutes,
 
     // --- QUẢN LÝ FARM (module con) ---
     ...quanLyFarmModuleRoutes,
-
-    // --- ĐIỀU HÀNH (module con) ---
-    ...dieuHanhModuleRoutes,
 
     // --- KHÁC ---
     '/tro-ly-ai': { label: t('breadcrumb.aiAssistant'), parentPath: '/' },
@@ -157,33 +96,6 @@ const Breadcrumbs: React.FC = () => {
   const breadcrumbs = useMemo<BreadcrumbItem[]>(() => {
     const currentPath = location.pathname;
     const items: BreadcrumbItem[] = [];
-
-    // Thiết lập khóa học: Nhân sự > Khóa đào tạo > Thiết lập
-    const thietLapMatch = currentPath.match(/^\/nhan-su\/khoa-dao-tao\/thiet-lap\/[^/]+$/);
-    if (thietLapMatch) {
-      const nhanSuLabel = ROUTE_CONFIG['/nhan-su']?.label ?? t('breadcrumb.nhanSu');
-      const khoaDaoTaoLabel = ROUTE_CONFIG['/nhan-su/khoa-dao-tao']?.label ?? t('page.nhanSu.modules.khoaDaoTao');
-      items.push(
-        { label: ROUTE_CONFIG['/']?.label ?? t('breadcrumb.home'), to: '/', isLast: false },
-        { label: nhanSuLabel, to: '/nhan-su', isLast: false },
-        { label: khoaDaoTaoLabel, to: '/nhan-su/khoa-dao-tao', isLast: false },
-        { label: t('thietLapKhoa.breadcrumb'), to: currentPath, isLast: true }
-      );
-      return items;
-    }
-    // Học khóa: Nhân sự > Đăng ký đào tạo > Học khóa
-    const hocKhoaMatch = currentPath.match(/^\/nhan-su\/dang-ky-dao-tao\/hoc\/[^/]+$/);
-    if (hocKhoaMatch) {
-      const nhanSuLabel = ROUTE_CONFIG['/nhan-su']?.label ?? t('breadcrumb.nhanSu');
-      const dangKyLabel = ROUTE_CONFIG['/nhan-su/dang-ky-dao-tao']?.label ?? t('page.nhanSu.modules.dangKyDaoTao');
-      items.push(
-        { label: ROUTE_CONFIG['/']?.label ?? t('breadcrumb.home'), to: '/', isLast: false },
-        { label: nhanSuLabel, to: '/nhan-su', isLast: false },
-        { label: dangKyLabel, to: '/nhan-su/dang-ky-dao-tao', isLast: false },
-        { label: t('dangKyDaoTao.hoc.breadcrumb'), to: currentPath, isLast: true }
-      );
-      return items;
-    }
 
     let currentConfig = ROUTE_CONFIG[currentPath];
     if (!currentConfig && currentPath.endsWith('/huong-dan')) {

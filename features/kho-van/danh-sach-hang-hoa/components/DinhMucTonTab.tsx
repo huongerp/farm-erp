@@ -21,11 +21,10 @@ import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';
 import { useDinhMucList, useCreateDinhMucTonKho, useUpdateDinhMucTonKho, useDeleteDinhMucTonKho } from '../../ton-kho/hooks/use-ton-kho';
 import { getKhoList } from '../../danh-sach-kho/services/kho-service';
-import { getAllHangHoa } from '../services/hang-hoa-service';
-import { HANG_HOA_QUERY_KEY } from '../hooks/use-hang-hoa';
+import type { HangHoaRefLite } from '../services/hang-hoa-service';
+import { useHangHoaRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
 import type { DinhMucTonKhoRow } from '../../phieu-kho/services/ton-kho-service';
 import type { Kho } from '../../danh-sach-kho/core/types';
-import type { HangHoa } from '../core/types';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { useDinhMucTonStore } from '../store/useDinhMucTonStore';
 import { formatNumberVN } from '../../../../lib/utils';
@@ -67,11 +66,7 @@ const DinhMucTonTab: React.FC<DinhMucTonTabProps> = ({ onBack }) => {
     queryFn: getKhoList,
     staleTime: 1000 * 60 * 30,
   });
-  const { data: hangHoaList = [] } = useQuery<HangHoa[]>({
-    queryKey: HANG_HOA_QUERY_KEY,
-    queryFn: getAllHangHoa,
-    staleTime: 1000 * 60 * 15,
-  });
+  const { data: hangHoaList = [] } = useHangHoaRefQuery();
 
   const [showForm, setShowForm] = useState(false);
   const [editingRow, setEditingRow] = useState<DinhMucTonKhoRow | null>(null);
@@ -83,7 +78,7 @@ const DinhMucTonTab: React.FC<DinhMucTonTabProps> = ({ onBack }) => {
     return m;
   }, [khoList]);
   const hangHoaMap = useMemo(() => {
-    const m: Record<string, HangHoa> = {};
+    const m: Record<string, HangHoaRefLite> = {};
     hangHoaList.forEach((h) => { m[h.id] = h; });
     return m;
   }, [hangHoaList]);
@@ -464,7 +459,7 @@ const DinhMucTonTab: React.FC<DinhMucTonTabProps> = ({ onBack }) => {
 interface DinhMucTonDetailDrawerProps {
   row: DinhMucTonKhoRow;
   khoMap: Record<string, Kho>;
-  hangHoaMap: Record<string, HangHoa>;
+  hangHoaMap: Record<string, HangHoaRefLite>;
   onClose: () => void;
   onEdit: () => void;
   onDelete: () => void;
@@ -532,7 +527,7 @@ const DinhMucTonDetailDrawer: React.FC<DinhMucTonDetailDrawerProps> = ({
 
 interface DinhMucTonFormDrawerProps {
   khoList: Kho[];
-  hangHoaList: HangHoa[];
+  hangHoaList: HangHoaRefLite[];
   editingRow: DinhMucTonKhoRow | null;
   onClose: () => void;
   onCreate: (payload: { kho_id: string; hang_hoa_id: string; ton_toi_thieu: number }) => void;
@@ -593,7 +588,7 @@ const DinhMucTonFormDrawer: React.FC<DinhMucTonFormDrawerProps> = ({
     return m;
   }, [khoList]);
   const hangHoaMap = useMemo(() => {
-    const m: Record<string, HangHoa> = {};
+    const m: Record<string, HangHoaRefLite> = {};
     hangHoaList.forEach((h) => { m[h.id] = h; });
     return m;
   }, [hangHoaList]);

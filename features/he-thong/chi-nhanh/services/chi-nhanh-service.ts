@@ -7,6 +7,9 @@ import i18n from '../../../../lib/i18n';
 
 const TABLE = 'fp_var_chi_nhanh';
 
+const CHI_NHANH_COLUMNS =
+  'id,ma_chi_nhanh,ten_chi_nhanh,dia_chi,tinh_thanh,quan_huyen,vi_do,kinh_do,duong_dan_map,trang_thai,tg_tao,tg_cap_nhat';
+
 function rowToBranch(row: Record<string, unknown>): Branch {
   return {
     id: String(row.id),
@@ -26,7 +29,7 @@ function rowToBranch(row: Record<string, unknown>): Branch {
 
 export async function getBranches(): Promise<Branch[]> {
   const data = await fetchAllRows<Record<string, unknown>>((from, to) =>
-    supabase.from(TABLE).select('*').order('ten_chi_nhanh', { ascending: true }).range(from, to)
+    supabase.from(TABLE).select(CHI_NHANH_COLUMNS).order('ten_chi_nhanh', { ascending: true }).range(from, to)
   );
   return data.map(rowToBranch);
 }
@@ -47,7 +50,7 @@ export async function createBranch(data: BranchFormValues): Promise<Branch> {
   const { data: inserted, error } = await supabase
     .from(TABLE)
     .insert(row)
-    .select()
+    .select(CHI_NHANH_COLUMNS)
     .single();
 
   if (error) throw new Error(error.message);
@@ -72,7 +75,7 @@ export async function updateBranch(id: string, data: BranchFormValues): Promise<
     .from(TABLE)
     .update(row)
     .eq('id', id)
-    .select()
+    .select(CHI_NHANH_COLUMNS)
     .single();
 
   if (error) throw new Error(error.message ?? i18n.t('branch.service.notFound'));
@@ -87,7 +90,7 @@ export async function updateBranchStatus(ids: string[], status: TrangThai): Prom
       .from(TABLE)
       .update(updatePayload)
       .eq('id', ids[0])
-      .select()
+      .select(CHI_NHANH_COLUMNS)
       .single();
     if (error) throw new Error(error.message ?? i18n.t('branch.service.notFound'));
     return data ? rowToBranch(data) : undefined;

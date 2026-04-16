@@ -25,6 +25,12 @@ const TABLE_CHI_TIET = 'fp_mh_don_dat_hang_chi_tiet';
 /** View DB: chạy docs/supabase-v_don_dat_hang_summary.sql trên Supabase. */
 const VIEW_DON_DAT_HANG_SUMMARY = 'v_don_dat_hang_summary';
 
+const VIEW_DON_DAT_HANG_SUMMARY_COLUMNS =
+  'id,so_po,ngay_dat,ngay_giao_dk,id_nha_cung_cap,ten_nha_cung_cap,id_kho_nhan,ten_kho_nhan,id_phieu_de_xuat_vat_tu,id_nguoi_dat,id_nguoi_duyet,ghi_chu,trang_thai,tg_tao,tg_cap_nhat,so_phieu_de_xuat_ref,ref_ma_nha_cung_cap,ref_ten_nha_cung_cap,ref_ten_kho_nhan,ref_ten_nguoi_dat,ref_ma_nguoi_dat,ref_ten_nguoi_duyet,ref_ma_nguoi_duyet';
+
+const DON_DAT_HANG_ROW_COLUMNS =
+  'id,so_po,ngay_dat,ngay_giao_dk,id_nha_cung_cap,ten_nha_cung_cap,id_kho_nhan,ten_kho_nhan,id_phieu_de_xuat_vat_tu,id_nguoi_dat,id_nguoi_duyet,ghi_chu,trang_thai,tg_tao,tg_cap_nhat';
+
 function trangThaiFromDb(s: string | null): DonDatHangTrangThai {
   if (s == null || s === '') return TRANG_THAI_NHAP;
   return s as DonDatHangTrangThai;
@@ -153,7 +159,7 @@ export async function getAllDonDatHangSupabase(): Promise<DonDatHang[]> {
   const rows = await fetchAllRows<DonSummaryRow>((from, to) =>
     supabase
       .from(VIEW_DON_DAT_HANG_SUMMARY)
-      .select('*')
+      .select(VIEW_DON_DAT_HANG_SUMMARY_COLUMNS)
       .order('ngay_dat', { ascending: false })
       .order('so_po', { ascending: false })
       .range(from, to)
@@ -207,7 +213,7 @@ export async function getDonDatHangPageSupabase(
   listQuery?: DonDatHangListServerQuery
 ): Promise<PaginatedTableResult<DonDatHang>> {
   const pageResult = await fetchTablePage<DonSummaryRow>(page, pageSize, async (from, to) => {
-    let sel = supabase.from(VIEW_DON_DAT_HANG_SUMMARY).select('*', { count: 'exact' });
+    let sel = supabase.from(VIEW_DON_DAT_HANG_SUMMARY).select(VIEW_DON_DAT_HANG_SUMMARY_COLUMNS, { count: 'exact' });
     if (listQuery) sel = applyDonDatHangListQuery(sel, listQuery);
     const res = await sel.order('ngay_dat', { ascending: false }).order('so_po', { ascending: false }).range(from, to);
     return { data: res.data as DonSummaryRow[] | null, error: res.error, count: res.count };
@@ -238,7 +244,7 @@ export async function getDonDatHangByIdSupabase(id: string): Promise<DonDatHang 
 
   const { data: row, error } = await supabase
     .from(VIEW_DON_DAT_HANG_SUMMARY)
-    .select('*')
+    .select(VIEW_DON_DAT_HANG_SUMMARY_COLUMNS)
     .eq('id', idNum)
     .maybeSingle();
   if (error) throw new Error(error.message);
@@ -303,7 +309,7 @@ export async function createDonDatHangSupabase(data: DonDatHangFormValues): Prom
     trang_thai: data.trang_thai,
   };
 
-  const { data: inserted, error } = await supabase.from(TABLE_DON).insert(payload).select('*').single();
+  const { data: inserted, error } = await supabase.from(TABLE_DON).insert(payload).select(DON_DAT_HANG_ROW_COLUMNS).single();
   if (error) throw new Error(error.message);
   const idDon = (inserted as DonDbRow).id;
   const idStr = String(idDon);
@@ -335,7 +341,7 @@ export async function updateDonDatHangSupabase(id: string, data: DonDatHangFormV
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('donDatHang.service.notFound'));
 
-  const { data: oldRow, error: fetchErr } = await supabase.from(TABLE_DON).select('*').eq('id', idNum).maybeSingle();
+  const { data: oldRow, error: fetchErr } = await supabase.from(TABLE_DON).select(DON_DAT_HANG_ROW_COLUMNS).eq('id', idNum).maybeSingle();
   if (fetchErr || !oldRow) throw new Error(i18n.t('donDatHang.service.notFound'));
 
   const soPo = data.so_po.trim();

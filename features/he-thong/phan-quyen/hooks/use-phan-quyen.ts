@@ -10,6 +10,7 @@ export const useRoles = () => {
   return useQuery({
     queryKey: ['roles'],
     queryFn: getRoles,
+    staleTime: 30 * 60 * 1000,
   });
 };
 

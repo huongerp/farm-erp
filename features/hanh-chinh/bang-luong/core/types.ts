@@ -79,3 +79,19 @@ export interface BangLuongRecord {
   tg_tao: string;
   tg_cap_nhat: string;
 }
+
+/** Điểm KPI theo kỳ — trước đây lấy từ module chấm điểm KPI; có thể nối Supabase sau. */
+export interface ChamDiemKpiRecord {
+  id_nhan_vien: string;
+  nam: number;
+  thang: number;
+  tong_kpi: number;
+}
+
+/** Tổng hợp ngày công — trước đây từ module chấm công. */
+export interface EmployeeAttendanceRow {
+  user_id: string;
+  user_name?: string;
+  department_name?: string | null;
+  total_days: number;
+}

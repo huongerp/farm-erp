@@ -8,9 +8,8 @@ import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import { dinhMucKey } from '../../phieu-kho/services/ton-kho-service';
 import type { TonKhoRecord } from '../../phieu-kho/services/ton-kho-service';
 import { getKhoList } from '../../danh-sach-kho/services/kho-service';
-import { getAllHangHoa } from '../../danh-sach-hang-hoa/services/hang-hoa-service';
 import { useQuery } from '@tanstack/react-query';
-import { HANG_HOA_QUERY_KEY } from '../../danh-sach-hang-hoa/hooks/use-hang-hoa';
+import { useHangHoaRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
 import Button from '../../../../components/ui/Button';
 import EmptyState from '../../../../components/shared/EmptyState';
@@ -24,7 +23,7 @@ import type { TonKhoFilters } from '../store/useTonKhoStore';
 import { useListWithFilter } from '../../../../lib/hooks';
 import { getColumnCellStyle } from '../../../../store/createGenericStore';
 import type { ColumnConfig } from '../../../../store/createGenericStore';
-import type { HangHoa } from '../../danh-sach-hang-hoa/core/types';
+import type { HangHoaRefLite } from '../../danh-sach-hang-hoa/services/hang-hoa-service';
 import type { LoaiPhieuKho } from '../../phieu-kho/core/types';
 import { BTN_CLOSE } from '../../../../lib/button-labels';
 import { cn } from '../../../../lib/utils';
@@ -44,11 +43,7 @@ function useProductRows(tonKhoListOverride?: TonKhoRecord[]) {
   const { data: tonKhoListRaw = [], isLoading } = useAllTonKho();
   const tonKhoList = tonKhoListOverride !== undefined ? tonKhoListOverride : tonKhoListRaw;
   const { data: dinhMucMap, isLoading: loadingDinhMuc } = useDinhMucTonKho();
-  const { data: hangHoaList = [] } = useQuery({
-    queryKey: HANG_HOA_QUERY_KEY,
-    queryFn: getAllHangHoa,
-    staleTime: 1000 * 60 * 15,
-  });
+  const { data: hangHoaList = [] } = useHangHoaRefQuery();
   const byProduct = useMemo(() => {
     const map = new Map<string, number>();
     tonKhoList.forEach((r) => {
@@ -57,7 +52,7 @@ function useProductRows(tonKhoListOverride?: TonKhoRecord[]) {
     return map;
   }, [tonKhoList]);
   const hangHoaMap = useMemo(() => {
-    const m: Record<string, HangHoa> = {};
+    const m: Record<string, HangHoaRefLite> = {};
     hangHoaList.forEach((h) => { m[h.id] = h; });
     return m;
   }, [hangHoaList]);

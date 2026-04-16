@@ -12,8 +12,6 @@ import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import { toast } from 'sonner';
 import { signInWithPassword, employeeToUser, requestPasswordReset, signInWithGoogle } from '../lib/auth';
-import { supabase } from '../lib/supabase';
-import { upsertCurrentLoginDevice } from '../features/he-thong/thiet-bi-dang-nhap/services/thiet-bi-dang-nhap-service';
 
 const REMEMBER_EMAIL_KEY = 'remember_login_email';
 
@@ -63,8 +61,6 @@ const Login: React.FC = () => {
       const employee = await signInWithPassword(data.email, data.password);
       const user = employeeToUser(employee);
       login(user);
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) upsertCurrentLoginDevice(session, employee).catch(() => {});
       if (rememberMe) localStorage.setItem(REMEMBER_EMAIL_KEY, data.email.trim());
       else localStorage.removeItem(REMEMBER_EMAIL_KEY);
       toast.success(t('page.login.loginSuccess'));

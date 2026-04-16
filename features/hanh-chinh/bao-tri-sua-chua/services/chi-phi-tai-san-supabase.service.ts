@@ -13,6 +13,9 @@ const TABLE_TRANG_THAI = 'fp_ts_trang_thai_chi_phi_tai_san';
 const TABLE_TAI_SAN = 'fp_ts_tai_san';
 const TABLE_NHAN_VIEN = 'fp_var_nhan_vien';
 
+const PHIEU_CHI_PHI_ROW_COLUMNS =
+  'id,ngay,id_tai_san,ma_tai_san,ten_tai_san,id_hang_muc,ten_hang_muc,mo_ta,so_tien,ghi_chu,id_trang_thai,ten_trang_thai,nguoi_duyet,id_nguoi_tao,ten_nguoi_tao,tg_tao,tg_cap_nhat';
+
 function parseNguoiTaoDbId(idNguoiTao: string): number | null {
   const t = idNguoiTao.trim();
   if (!t || !/^\d+$/.test(t)) return null;
@@ -107,7 +110,7 @@ export async function getPhieuChiPhiListSupabase(
 ): Promise<PhieuBaoTriSuaChua[]> {
   let query = supabase
     .from(TABLE_PHIEU)
-    .select('*')
+    .select(PHIEU_CHI_PHI_ROW_COLUMNS)
     .order('ngay', { ascending: false })
     .order('id', { ascending: false });
 
@@ -148,7 +151,7 @@ export async function getPhieuChiPhiListSupabase(
 export async function getPhieuChiPhiByIdSupabase(id: string): Promise<PhieuBaoTriSuaChua | null> {
   const numId = parseInt(id, 10);
   if (Number.isNaN(numId)) return null;
-  const { data, error } = await supabase.from(TABLE_PHIEU).select('*').eq('id', numId).single();
+  const { data, error } = await supabase.from(TABLE_PHIEU).select(PHIEU_CHI_PHI_ROW_COLUMNS).eq('id', numId).single();
   if (error || !data) return null;
   return rowToPhieu(data as DbPhieuRow);
 }
@@ -186,7 +189,7 @@ export async function createPhieuChiPhiSupabase(
     id_nguoi_tao: idNguoiNum,
     ten_nguoi_tao: tenNguoi,
   };
-  const { data: inserted, error } = await supabase.from(TABLE_PHIEU).insert(payload).select('*').single();
+  const { data: inserted, error } = await supabase.from(TABLE_PHIEU).insert(payload).select(PHIEU_CHI_PHI_ROW_COLUMNS).single();
   if (error) throw new Error((error as { message?: string }).message ?? String(error));
   return rowToPhieu(inserted as DbPhieuRow);
 }
@@ -215,7 +218,7 @@ export async function updatePhieuChiPhiSupabase(
 
   const { error } = await supabase.from(TABLE_PHIEU).update(payload).eq('id', numId);
   if (error) throw new Error((error as { message?: string }).message ?? String(error));
-  const { data: updated, error: err2 } = await supabase.from(TABLE_PHIEU).select('*').eq('id', numId).single();
+  const { data: updated, error: err2 } = await supabase.from(TABLE_PHIEU).select(PHIEU_CHI_PHI_ROW_COLUMNS).eq('id', numId).single();
   if (err2 || !updated) throw new Error(i18n.t('baoTriSuaChua.service.notFound', { defaultValue: 'Phiếu không tồn tại' }));
   return rowToPhieu(updated as DbPhieuRow);
 }

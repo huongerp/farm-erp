@@ -121,8 +121,6 @@ export const PERMISSION_FUNCTIONS: PermissionFunction[] = [
         { id: 'he-thong/thong-tin-cong-ty', nameKey: 'permission.module.companyInfo' },
         { id: 'he-thong/chi-nhanh', nameKey: 'permission.module.branch' },
         { id: 'he-thong/phan-quyen', nameKey: 'permission.module.permission' },
-        { id: 'he-thong/sao-luu', nameKey: 'permission.module.dataSecurity' },
-        { id: 'he-thong/thiet-bi-dang-nhap', nameKey: 'permission.module.loginDevice' },
       ]},
     ],
   },

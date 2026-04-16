@@ -12,6 +12,11 @@ const TABLE_NHOM = 'fp_ts_nhom_tai_san';
 const TABLE_TRANG_THAI = 'fp_ts_trang_thai_tai_san';
 const TABLE_LOAI_CHI_PHI = 'fp_ts_loai_chi_phi';
 
+const NHOM_COLUMNS =
+  'id,ma,ten,thu_tu,ghi_chu,phuong_phap_khau_hao,ty_le_khau_hao,so_nam_su_dung,trang_thai,tg_tao,tg_cap_nhat';
+const TRANG_THAI_COLUMNS = 'id,ma,ten,thu_tu,ghi_chu,trang_thai,tg_tao,tg_cap_nhat';
+const LOAI_CHI_PHI_COLUMNS = 'id,ma,ten,thu_tu,ghi_chu,trang_thai,tg_tao,tg_cap_nhat';
+
 function normalizeTrangThai(val: unknown): TrangThaiHoatDong {
   if (val === TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG) return TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG;
   if (val === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG) return TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
@@ -55,7 +60,7 @@ function rowToAssetGroup(row: DbNhomRow): AssetGroup {
 export async function getAssetGroupsSupabase(): Promise<AssetGroup[]> {
   const { data, error } = await supabase
     .from(TABLE_NHOM)
-    .select('*')
+    .select(NHOM_COLUMNS)
     .order('thu_tu', { ascending: true })
     .order('id', { ascending: true });
   if (error) throw new Error((error as { message?: string }).message ?? String(error));
@@ -73,7 +78,7 @@ export async function createAssetGroupSupabase(data: AssetGroupFormValues): Prom
     so_nam_su_dung: data.so_nam_su_dung ?? null,
     trang_thai: data.trang_thai ?? TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG,
   };
-  const { data: inserted, error } = await supabase.from(TABLE_NHOM).insert(payload).select('*').single();
+  const { data: inserted, error } = await supabase.from(TABLE_NHOM).insert(payload).select(NHOM_COLUMNS).single();
   if (error) throw new Error((error as { message?: string }).message ?? String(error));
   return rowToAssetGroup(inserted as DbNhomRow);
 }
@@ -93,7 +98,7 @@ export async function updateAssetGroupSupabase(id: string, data: AssetGroupFormV
   };
   const { error } = await supabase.from(TABLE_NHOM).update(payload).eq('id', numId);
   if (error) throw new Error((error as { message?: string }).message ?? String(error));
-  const { data: updated, error: err2 } = await supabase.from(TABLE_NHOM).select('*').eq('id', numId).single();
+  const { data: updated, error: err2 } = await supabase.from(TABLE_NHOM).select(NHOM_COLUMNS).eq('id', numId).single();
   if (err2 || !updated) throw new Error(i18n.t('thietLapTaiSan.nhomTaiSan.service.notFound'));
   return rowToAssetGroup(updated as DbNhomRow);
 }
@@ -144,7 +149,7 @@ function rowToAssetStatus(row: DbTrangThaiRow): AssetStatus {
 export async function getAssetStatusesSupabase(): Promise<AssetStatus[]> {
   const { data, error } = await supabase
     .from(TABLE_TRANG_THAI)
-    .select('*')
+    .select(TRANG_THAI_COLUMNS)
     .order('thu_tu', { ascending: true })
     .order('id', { ascending: true });
   if (error) throw new Error((error as { message?: string }).message ?? String(error));
@@ -159,7 +164,7 @@ export async function createAssetStatusSupabase(data: AssetStatusFormValues): Pr
     ghi_chu: data.ghi_chu ?? null,
     trang_thai: data.trang_thai ?? TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG,
   };
-  const { data: inserted, error } = await supabase.from(TABLE_TRANG_THAI).insert(payload).select('*').single();
+  const { data: inserted, error } = await supabase.from(TABLE_TRANG_THAI).insert(payload).select(TRANG_THAI_COLUMNS).single();
   if (error) throw new Error((error as { message?: string }).message ?? String(error));
   return rowToAssetStatus(inserted as DbTrangThaiRow);
 }
@@ -176,7 +181,7 @@ export async function updateAssetStatusSupabase(id: string, data: AssetStatusFor
   };
   const { error } = await supabase.from(TABLE_TRANG_THAI).update(payload).eq('id', numId);
   if (error) throw new Error((error as { message?: string }).message ?? String(error));
-  const { data: updated, error: err2 } = await supabase.from(TABLE_TRANG_THAI).select('*').eq('id', numId).single();
+  const { data: updated, error: err2 } = await supabase.from(TABLE_TRANG_THAI).select(TRANG_THAI_COLUMNS).eq('id', numId).single();
   if (err2 || !updated) throw new Error(i18n.t('thietLapTaiSan.trangThai.service.notFound'));
   return rowToAssetStatus(updated as DbTrangThaiRow);
 }
@@ -227,7 +232,7 @@ function rowToLoaiChiPhi(row: DbLoaiChiPhiRow): LoaiChiPhi {
 export async function getLoaiChiPhiListSupabase(): Promise<LoaiChiPhi[]> {
   const { data, error } = await supabase
     .from(TABLE_LOAI_CHI_PHI)
-    .select('*')
+    .select(LOAI_CHI_PHI_COLUMNS)
     .order('thu_tu', { ascending: true })
     .order('id', { ascending: true });
   if (error) throw new Error((error as { message?: string }).message ?? String(error));
@@ -242,7 +247,7 @@ export async function createLoaiChiPhiSupabase(data: LoaiChiPhiFormValues): Prom
     ghi_chu: data.ghi_chu ?? null,
     trang_thai: data.trang_thai ?? TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG,
   };
-  const { data: inserted, error } = await supabase.from(TABLE_LOAI_CHI_PHI).insert(payload).select('*').single();
+  const { data: inserted, error } = await supabase.from(TABLE_LOAI_CHI_PHI).insert(payload).select(LOAI_CHI_PHI_COLUMNS).single();
   if (error) throw new Error((error as { message?: string }).message ?? String(error));
   return rowToLoaiChiPhi(inserted as DbLoaiChiPhiRow);
 }
@@ -259,7 +264,7 @@ export async function updateLoaiChiPhiSupabase(id: string, data: LoaiChiPhiFormV
   };
   const { error } = await supabase.from(TABLE_LOAI_CHI_PHI).update(payload).eq('id', numId);
   if (error) throw new Error((error as { message?: string }).message ?? String(error));
-  const { data: updated, error: err2 } = await supabase.from(TABLE_LOAI_CHI_PHI).select('*').eq('id', numId).single();
+  const { data: updated, error: err2 } = await supabase.from(TABLE_LOAI_CHI_PHI).select(LOAI_CHI_PHI_COLUMNS).eq('id', numId).single();
   if (err2 || !updated) throw new Error(i18n.t('thietLapTaiSan.loaiChiPhi.service.notFound'));
   return rowToLoaiChiPhi(updated as DbLoaiChiPhiRow);
 }

@@ -9,6 +9,8 @@ import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 
 const TABLE = 'fp_hr_thiet_lap_diem_cong_tru';
 
+const ROW_COLUMNS = 'id,ma,ten,loai,thu_tu,ghi_chu,trang_thai,tg_tao,tg_cap_nhat';
+
 interface DbRow {
   id: number;
   ma: string;
@@ -45,7 +47,7 @@ export async function getPayrollPointGroups(): Promise<PayrollPointGroup[]> {
   const rows = await fetchAllRows<DbRow>((from, to) =>
     supabase
       .from(TABLE)
-      .select('*')
+      .select(ROW_COLUMNS)
       .order('thu_tu', { ascending: true })
       .order('id', { ascending: true })
       .range(from, to)
@@ -69,7 +71,7 @@ export async function createPayrollPointGroup(
     trang_thai: data.trang_thai,
   };
 
-  const { data: inserted, error } = await supabase.from(TABLE).insert(payload).select('*').single();
+  const { data: inserted, error } = await supabase.from(TABLE).insert(payload).select(ROW_COLUMNS).single();
   if (error) throw new Error(error.message);
   return rowToItem(inserted as DbRow);
 }
@@ -97,7 +99,7 @@ export async function updatePayrollPointGroup(
   const { error } = await supabase.from(TABLE).update(payload).eq('id', idNum);
   if (error) throw new Error(error.message);
 
-  const { data: row, error: fetchErr } = await supabase.from(TABLE).select('*').eq('id', idNum).single();
+  const { data: row, error: fetchErr } = await supabase.from(TABLE).select(ROW_COLUMNS).eq('id', idNum).single();
   if (fetchErr || !row) throw new Error(i18n.t('payrollIp.pointGroups.service.notFound'));
   return rowToItem(row as DbRow);
 }

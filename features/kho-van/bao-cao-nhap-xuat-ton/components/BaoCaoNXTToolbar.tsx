@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
 import { FileDown, Printer, RefreshCw, ChevronDown, Warehouse, ClipboardList, Tags, Package } from 'lucide-react';
 import DashboardToolbar from '../../../../components/shared/DashboardToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
@@ -13,8 +12,7 @@ import type { Kho } from '../../danh-sach-kho/core/types';
 import { LOAI_PHIEU_OPTIONS, TRANG_THAI_PHIEU_OPTIONS } from '../core/constants';
 import { getDateRangeFromPreset, getPresetFromDates } from '../core/datePresets';
 import { cn } from '../../../../lib/utils';
-import { getAllHangHoa } from '../../danh-sach-hang-hoa/services/hang-hoa-service';
-import { HANG_HOA_QUERY_KEY } from '../../danh-sach-hang-hoa/hooks/use-hang-hoa';
+import { useHangHoaRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
 import { useDanhMucCap2WithParent } from '../../danh-muc-hang-hoa/hooks/use-danh-muc-hang-hoa';
 
 interface BaoCaoNXTToolbarProps {
@@ -46,11 +44,7 @@ const BaoCaoNXTToolbar: React.FC<BaoCaoNXTToolbarProps> = ({
   const [exportOpen, setExportOpen] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
 
-  const { data: hangHoaList = [], isLoading: hangHoaLoading } = useQuery({
-    queryKey: HANG_HOA_QUERY_KEY,
-    queryFn: getAllHangHoa,
-    staleTime: 1000 * 60 * 15,
-  });
+  const { data: hangHoaList = [], isLoading: hangHoaLoading } = useHangHoaRefQuery();
   const { data: danhMucCap2 = [] } = useDanhMucCap2WithParent();
 
   useEffect(() => {

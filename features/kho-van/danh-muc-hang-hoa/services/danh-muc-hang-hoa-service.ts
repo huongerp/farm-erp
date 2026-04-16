@@ -6,6 +6,9 @@ import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 
 const TABLE = 'fp_mh_danh_muc_hang_hoa';
 
+const DM_HH_COLUMNS =
+  'id,ma_danh_muc,ten_danh_muc,danh_muc_cha_id,thu_tu,mo_ta,trang_thai,tg_tao,tg_cap_nhat';
+
 /** Row từ Supabase fp_mh_danh_muc_hang_hoa */
 interface DanhMucHangHoaRow {
   id: number;
@@ -37,7 +40,7 @@ export const getAllDanhMucHangHoa = async (): Promise<DanhMucHangHoa[]> => {
   const data = await fetchAllRows<DanhMucHangHoaRow>((from, to) =>
     supabase
       .from(TABLE)
-      .select('*')
+      .select(DM_HH_COLUMNS)
       .order('thu_tu', { ascending: true })
       .order('ma_danh_muc', { ascending: true })
       .range(from, to)
@@ -75,7 +78,7 @@ export const getDanhMucHangHoaById = async (id: string): Promise<DanhMucHangHoa 
   if (Number.isNaN(idNum)) return null;
   const { data: row, error } = await supabase
     .from(TABLE)
-    .select('*')
+    .select(DM_HH_COLUMNS)
     .eq('id', idNum)
     .maybeSingle();
   if (error) throw new Error(error.message);
@@ -95,7 +98,7 @@ export const createDanhMucHangHoa = async (
     trang_thai: data.trang_thai,
   };
 
-  const { data: inserted, error } = await supabase.from(TABLE).insert(payload).select().single();
+  const { data: inserted, error } = await supabase.from(TABLE).insert(payload).select(DM_HH_COLUMNS).single();
   if (error) throw new Error(error.message);
   return rowToDanhMuc(inserted as DanhMucHangHoaRow);
 };
@@ -121,7 +124,7 @@ export const updateDanhMucHangHoa = async (
     .from(TABLE)
     .update(payload)
     .eq('id', idNum)
-    .select()
+    .select(DM_HH_COLUMNS)
     .single();
   if (error) throw new Error(error.message ?? i18n.t('danhMucHangHoa.service.notFound'));
   return rowToDanhMuc(updated as DanhMucHangHoaRow);

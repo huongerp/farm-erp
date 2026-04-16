@@ -19,6 +19,11 @@ import { getEmployeesRef } from '@/features/he-thong/nhan-vien/services/nhan-vie
 const TABLE = 'fp_ts_phieu_cap_phat_thu_hoi';
 const TABLE_CT = 'fp_ts_phieu_cap_phat_thu_hoi_ct';
 
+const PHIEU_CP_TH_COLUMNS =
+  'id,ma_phieu,loai_phieu,id_nguoi_giu_truoc,ten_nguoi_giu_truoc,ma_nguoi_giu_truoc,id_nguoi_giu_sau,ten_nguoi_giu_sau,ma_nguoi_giu_sau,ngay_thuc_hien,id_nguoi_thuc_hien,ten_nguoi_thuc_hien,id_nguoi_tao,ten_nguoi_tao,ghi_chu,trang_thai,tg_tao,tg_cap_nhat';
+const PHIEU_CP_CT_COLUMNS =
+  'id,id_phieu,id_tai_san,ma_tai_san,ten_tai_san,id_noi_luu_truoc,ten_noi_luu_truoc,id_noi_luu_sau,ten_noi_luu_sau,ghi_chu,tg_tao,tg_cap_nhat';
+
 // ---------------------------------------------------------------------------
 // Loại phiếu mapping: app key ↔ DB text
 // ---------------------------------------------------------------------------
@@ -153,7 +158,7 @@ export interface GetPhieuListParams {
 export async function getPhieuListSupabase(
   params: GetPhieuListParams = {}
 ): Promise<PhieuCapPhatThuHoi[]> {
-  let query = supabase.from(TABLE).select('*').order('tg_tao', { ascending: false });
+  let query = supabase.from(TABLE).select(PHIEU_CP_TH_COLUMNS).order('tg_tao', { ascending: false });
 
   const { data, error } = await query;
   if (error) throw new Error((error as { message?: string }).message ?? String(error));
@@ -189,12 +194,12 @@ export async function getPhieuByIdSupabase(id: string): Promise<PhieuCapPhatThuH
   const numId = Number(id);
   if (Number.isNaN(numId)) return null;
 
-  const { data, error } = await supabase.from(TABLE).select('*').eq('id', numId).single();
+  const { data, error } = await supabase.from(TABLE).select(PHIEU_CP_TH_COLUMNS).eq('id', numId).single();
   if (error || !data) return null;
 
   const { data: ctData } = await supabase
     .from(TABLE_CT)
-    .select('*')
+    .select(PHIEU_CP_CT_COLUMNS)
     .eq('id_phieu', numId)
     .order('id', { ascending: true });
 
@@ -214,7 +219,7 @@ export async function getPhieuChiTietByTaiSanIdSupabase(
 
   const { data: ctRows, error } = await supabase
     .from(TABLE_CT)
-    .select('*')
+    .select(PHIEU_CP_CT_COLUMNS)
     .eq('id_tai_san', numTs)
     .order('id', { ascending: false });
 
@@ -223,7 +228,7 @@ export async function getPhieuChiTietByTaiSanIdSupabase(
   const phieuIds = [...new Set((ctRows as DbPhieuChiTietRow[]).map((r) => r.id_phieu))];
   const { data: headerRows } = await supabase
     .from(TABLE)
-    .select('*')
+    .select(PHIEU_CP_TH_COLUMNS)
     .in('id', phieuIds);
 
   const headerMap = new Map<number, DbPhieuRow>();
@@ -253,7 +258,7 @@ export async function getPhieuChiTietByTaiSanIdSupabase(
 export async function getAllPhieuChiTietSupabase(): Promise<PhieuChiTietRow[]> {
   const { data: headers, error: hErr } = await supabase
     .from(TABLE)
-    .select('*')
+    .select(PHIEU_CP_TH_COLUMNS)
     .order('tg_tao', { ascending: false });
   if (hErr) throw new Error((hErr as { message?: string }).message ?? String(hErr));
   if (!headers?.length) return [];
@@ -263,7 +268,7 @@ export async function getAllPhieuChiTietSupabase(): Promise<PhieuChiTietRow[]> {
 
   const { data: ctRows, error: cErr } = await supabase
     .from(TABLE_CT)
-    .select('*')
+    .select(PHIEU_CP_CT_COLUMNS)
     .order('id_phieu', { ascending: false });
   if (cErr) throw new Error((cErr as { message?: string }).message ?? String(cErr));
   if (!ctRows?.length) return [];
@@ -370,7 +375,7 @@ export async function createPhieuSupabase(
   const { data: inserted, error } = await supabase
     .from(TABLE)
     .insert({ ...headerPayload, ma_phieu })
-    .select('*')
+    .select(PHIEU_CP_TH_COLUMNS)
     .single();
   if (error) throw new Error((error as { message?: string }).message ?? String(error));
 

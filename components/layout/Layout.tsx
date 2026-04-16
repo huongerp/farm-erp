@@ -383,7 +383,7 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
         {/* Content Area - scroll trên main nên sticky hoạt động */}
         <div className="flex-1 min-h-0">
           <div className="p-1.5 md:p-2 min-h-full pb-[calc(4rem+env(safe-area-inset-bottom,0px))] md:pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-            <div key={location.pathname} className="h-full">
+            <div className="h-full">
               {children}
             </div>
           </div>

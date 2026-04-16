@@ -37,6 +37,11 @@ const TABLE_DOT = 'fp_mh_dot_kiem_ke_kho';
 const TABLE_DOT_KHO = 'fp_mh_dot_kiem_ke_kho_kho';
 const TABLE_CHI_TIET = 'fp_mh_dot_kiem_ke_kho_chi_tiet';
 
+const DOT_KK_KHO_COLUMNS =
+  'id,ma_dot,ten_dot,ngay_bat_dau,ngay_ket_thuc,trang_thai,id_nguoi_phu_trach,ghi_chu,tg_tao,tg_cap_nhat';
+const CHI_TIET_KK_KHO_COLUMNS =
+  'id,id_dot_kiem_ke_kho,id_kho,id_hang_hoa,so_luong_so,so_luong_thuc_te,ket_qua,ghi_chu_dong,id_nguoi_kiem,ngay_kiem,tg_tao,tg_cap_nhat';
+
 interface DotRow {
   id: number;
   ma_dot: string | null;
@@ -146,7 +151,7 @@ export async function getDotKiemKeKhoListSupabase(
   const employees = await getEmployeesRef();
   const empMap = new Map(employees.map((e) => [e.id, { ten: e.ho_ten, ma: e.ma_nhan_vien }]));
 
-  let query = supabase.from(TABLE_DOT).select('*').order('ngay_ket_thuc', { ascending: false });
+  let query = supabase.from(TABLE_DOT).select(DOT_KK_KHO_COLUMNS).order('ngay_ket_thuc', { ascending: false });
 
   if (params.trang_thai_dot?.length) {
     query = query.in('trang_thai', params.trang_thai_dot);
@@ -210,7 +215,7 @@ export async function getDotKiemKeKhoListSupabase(
 export async function getDotKiemKeKhoByIdSupabase(id: string): Promise<DotKiemKeKho | null> {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) return null;
-  const { data: row, error } = await supabase.from(TABLE_DOT).select('*').eq('id', idNum).maybeSingle();
+  const { data: row, error } = await supabase.from(TABLE_DOT).select(DOT_KK_KHO_COLUMNS).eq('id', idNum).maybeSingle();
   if (error) throw new Error(error.message);
   if (!row) return null;
   const idKhoList = await getDotKhoIds((row as DotRow).id);
@@ -227,7 +232,7 @@ export async function getChiTietByDotSupabase(id_dot_kiem_ke_kho: string): Promi
   if (Number.isNaN(idNum)) return [];
   const { data: rows, error } = await supabase
     .from(TABLE_CHI_TIET)
-    .select('*')
+    .select(CHI_TIET_KK_KHO_COLUMNS)
     .eq('id_dot_kiem_ke_kho', idNum)
     .order('id_kho')
     .order('id_hang_hoa');
@@ -267,7 +272,7 @@ export async function createDotKiemKeKhoSupabase(data: DotKiemKeKhoCreate): Prom
       id_nguoi_phu_trach: Number(data.id_nguoi_phu_trach),
       ghi_chu: data.ghi_chu?.trim() || null,
     })
-    .select('*')
+    .select(DOT_KK_KHO_COLUMNS)
     .single();
   if (error) throw new Error(error.message);
   const idDot = (row as DotRow).id;
@@ -429,7 +434,7 @@ export async function createChiTietKiemKeSupabase(
       id_nguoi_kiem: null,
       ngay_kiem: null,
     })
-    .select('*')
+    .select(CHI_TIET_KK_KHO_COLUMNS)
     .single();
   if (error) throw new Error(error.message);
   const list = await getChiTietByDotSupabase(id_dot_kiem_ke_kho);
@@ -457,7 +462,7 @@ export async function updateChiTietKetQuaSupabase(
 ): Promise<ChiTietKiemKeKho> {
   const idNum = Number(id_chi_tiet);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('kiemKeKho.service.chiTietNotFound'));
-  const { data: row, error: fetchErr } = await supabase.from(TABLE_CHI_TIET).select('*').eq('id', idNum).maybeSingle();
+  const { data: row, error: fetchErr } = await supabase.from(TABLE_CHI_TIET).select(CHI_TIET_KK_KHO_COLUMNS).eq('id', idNum).maybeSingle();
   if (fetchErr || !row) throw new Error(i18n.t('kiemKeKho.service.chiTietNotFound'));
   const r = row as ChiTietRow;
   const soLuongThucTe = data.so_luong_thuc_te !== undefined ? data.so_luong_thuc_te : r.so_luong_thuc_te;

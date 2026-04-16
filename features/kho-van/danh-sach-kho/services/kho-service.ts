@@ -8,6 +8,9 @@ import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 
 const TABLE = 'fp_mh_danh_sach_kho';
 
+const KHO_ROW_COLUMNS =
+  'id,chi_nhanh_id,ma_kho,ten_kho,dia_chi,mo_ta,thu_tu,trang_thai,tg_tao,tg_cap_nhat';
+
 /** Row từ Supabase fp_mh_danh_sach_kho */
 interface KhoRow {
   id: number;
@@ -44,7 +47,7 @@ export const getKhoList = async (): Promise<Kho[]> => {
     fetchAllRows<KhoRow>((from, to) =>
       supabase
         .from(TABLE)
-        .select('*')
+        .select(KHO_ROW_COLUMNS)
         .order('thu_tu', { ascending: true })
         .order('ma_kho', { ascending: true })
         .range(from, to)
@@ -93,7 +96,7 @@ export const getKhoById = async (id: string): Promise<Kho | null> => {
   if (Number.isNaN(idNum)) return null;
   const { data: row, error } = await supabase
     .from(TABLE)
-    .select('*')
+    .select(KHO_ROW_COLUMNS)
     .eq('id', idNum)
     .maybeSingle();
   if (error) throw new Error(error.message);
@@ -124,7 +127,7 @@ export const createKho = async (data: KhoFormValues): Promise<Kho> => {
     trang_thai: data.trang_thai,
   };
 
-  const { data: inserted, error } = await supabase.from(TABLE).insert(payload).select().single();
+  const { data: inserted, error } = await supabase.from(TABLE).insert(payload).select(KHO_ROW_COLUMNS).single();
   if (error) throw new Error(error.message);
   const branches = await getBranches();
   const tenChiNhanh =
@@ -161,7 +164,7 @@ export const updateKho = async (id: string, data: KhoFormValues): Promise<Kho> =
     .from(TABLE)
     .update(payload)
     .eq('id', idNum)
-    .select()
+    .select(KHO_ROW_COLUMNS)
     .single();
   if (error) throw new Error(error.message ?? i18n.t('kho.service.notFound'));
   const branches = await getBranches();
@@ -179,7 +182,7 @@ export const updateKhoStatus = async (id: string, status: Kho['trang_thai']): Pr
     .from(TABLE)
     .update({ trang_thai: status, tg_cap_nhat: new Date().toISOString() })
     .eq('id', idNum)
-    .select()
+    .select(KHO_ROW_COLUMNS)
     .single();
   if (error) throw new Error(error.message ?? i18n.t('kho.service.notFound'));
   const branches = await getBranches();

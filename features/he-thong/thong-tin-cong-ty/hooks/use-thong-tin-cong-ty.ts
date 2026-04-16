@@ -19,7 +19,7 @@ export function useCompanyInfo() {
       if (data) setCompanyInfo(data);
       return data;
     },
-    staleTime: 1000 * 60 * 5, // 5 phút
+    staleTime: 1000 * 60 * 60,
   });
   return query;
 }

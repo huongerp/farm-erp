@@ -9,6 +9,11 @@ const TABLE_NHOM = 'fp_mh_nhom_doi_tac';
 const TABLE_TAG = 'fp_mh_tag_doi_tac';
 const TABLE_DOI_TAC = 'fp_mh_danh_sach_doi_tac';
 
+const NHOM_DOI_TAC_COLUMNS = 'id,ma_nhom,ten_nhom,loai,thu_tu,trang_thai,tg_tao,tg_cap_nhat';
+const TAG_DOI_TAC_COLUMNS = 'id,ten_tag';
+const DOI_TAC_ROW_COLUMNS =
+  'id,ma_doi_tac,ten_doi_tac,loai_doi_tac,id_nhom,dia_chi,dien_thoai,email,mo_ta,tag_ids,trang_thai,thu_tu,tg_tao,tg_cap_nhat';
+
 /** Row từ Supabase fp_mh_nhom_doi_tac */
 interface NhomRow {
   id: number;
@@ -108,7 +113,7 @@ function enrichDoiTacList(
 
 export const getAllNhomDoiTac = async (): Promise<NhomDoiTac[]> => {
   const data = await fetchAllRows<NhomRow>((from, to) =>
-    supabase.from(TABLE_NHOM).select('*').order('thu_tu', { ascending: true }).range(from, to)
+    supabase.from(TABLE_NHOM).select(NHOM_DOI_TAC_COLUMNS).order('thu_tu', { ascending: true }).range(from, to)
   );
   return data.map(rowToNhom);
 };
@@ -135,7 +140,7 @@ export const createNhomDoiTac = async (data: NhomDoiTacFormValues): Promise<Nhom
     trang_thai: data.trang_thai || null,
   };
 
-  const { data: inserted, error } = await supabase.from(TABLE_NHOM).insert(row).select().single();
+  const { data: inserted, error } = await supabase.from(TABLE_NHOM).insert(row).select(NHOM_DOI_TAC_COLUMNS).single();
   if (error) throw new Error(error.message);
   return rowToNhom(inserted as NhomRow);
 };
@@ -158,7 +163,7 @@ export const updateNhomDoiTac = async (id: string, data: NhomDoiTacFormValues): 
     .from(TABLE_NHOM)
     .update(row)
     .eq('id', Number(id))
-    .select()
+    .select(NHOM_DOI_TAC_COLUMNS)
     .single();
   if (error) throw new Error(error.message ?? i18n.t('doiTac.service.nhomNotFound'));
   return rowToNhom(updated as NhomRow);
@@ -179,7 +184,7 @@ export const deleteNhomDoiTacMany = async (ids: string[]): Promise<void> => {
 
 export const getAllTag = async (): Promise<Tag[]> => {
   const data = await fetchAllRows<TagRow>((from, to) =>
-    supabase.from(TABLE_TAG).select('*').range(from, to)
+    supabase.from(TABLE_TAG).select(TAG_DOI_TAC_COLUMNS).range(from, to)
   );
   return data.map(rowToTag);
 };
@@ -189,12 +194,12 @@ export const createTag = async (ten_tag: string): Promise<Tag> => {
   if (!name) throw new Error(i18n.t('doiTac.validation.tagNameRequired'));
   const { data: existing } = await supabase
     .from(TABLE_TAG)
-    .select('*')
+    .select(TAG_DOI_TAC_COLUMNS)
     .ilike('ten_tag', name)
     .maybeSingle();
   if (existing) return rowToTag(existing as TagRow);
 
-  const { data: inserted, error } = await supabase.from(TABLE_TAG).insert({ ten_tag: name }).select().single();
+  const { data: inserted, error } = await supabase.from(TABLE_TAG).insert({ ten_tag: name }).select(TAG_DOI_TAC_COLUMNS).single();
   if (error) throw new Error(error.message);
   return rowToTag(inserted as TagRow);
 };
@@ -206,7 +211,7 @@ export const updateTag = async (id: string, ten_tag: string): Promise<Tag> => {
     .from(TABLE_TAG)
     .update({ ten_tag: name })
     .eq('id', Number(id))
-    .select()
+    .select(TAG_DOI_TAC_COLUMNS)
     .single();
   if (error) throw new Error(error.message ?? i18n.t('doiTac.service.tagNotFound'));
   return rowToTag(updated as TagRow);
@@ -235,7 +240,7 @@ export const getAllDoiTac = async (loai?: LoaiDoiTac): Promise<DoiTac[]> => {
   const list = await fetchAllRows<DoiTacRow>((from, to) => {
     let q = supabase
       .from(TABLE_DOI_TAC)
-      .select('*')
+      .select(DOI_TAC_ROW_COLUMNS)
       .order('thu_tu', { ascending: true })
       .order('ma_doi_tac', { ascending: true })
       .range(from, to);
@@ -279,7 +284,7 @@ export const getDoiTacRef = async (loai?: LoaiDoiTac): Promise<DoiTacRefLite[]> 
 export const getDoiTacById = async (id: string): Promise<DoiTac | null> => {
   const { data: row, error } = await supabase
     .from(TABLE_DOI_TAC)
-    .select('*')
+    .select(DOI_TAC_ROW_COLUMNS)
     .eq('id', Number(id))
     .maybeSingle();
   if (error) throw new Error(error.message);
@@ -308,7 +313,7 @@ export const createDoiTac = async (data: DoiTacFormValues): Promise<DoiTac> => {
     thu_tu: Math.max(1, data.thu_tu ?? 1),
   };
 
-  const { data: inserted, error } = await supabase.from(TABLE_DOI_TAC).insert(row).select().single();
+  const { data: inserted, error } = await supabase.from(TABLE_DOI_TAC).insert(row).select(DOI_TAC_ROW_COLUMNS).single();
   if (error) throw new Error(error.message);
   const [nhomList, tagList] = await Promise.all([getAllNhomDoiTac(), getAllTag()]);
   const [enriched] = enrichDoiTacList([inserted as DoiTacRow], nhomList, tagList);
@@ -345,7 +350,7 @@ export const updateDoiTac = async (id: string, data: DoiTacFormValues): Promise<
     .from(TABLE_DOI_TAC)
     .update(row)
     .eq('id', numId)
-    .select()
+    .select(DOI_TAC_ROW_COLUMNS)
     .single();
   if (error) throw new Error(error.message ?? i18n.t('doiTac.service.notFound'));
   const [nhomList, tagList] = await Promise.all([getAllNhomDoiTac(), getAllTag()]);

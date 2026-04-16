@@ -8,6 +8,9 @@ import i18n from '../../../../lib/i18n';
 
 const TABLE = 'fp_hc_cong_viec';
 
+const ROW_COLUMNS =
+  'id,tieu_de,mo_ta,id_cha,id_nguoi_giao,trach_nhiem,nguoi_ho_tro,uu_tien,trang_thai,tg_tao,tg_cap_nhat,trao_doi,ket_qua,link_ket_qua';
+
 interface DbRow {
   id: number;
   tieu_de: string;
@@ -67,7 +70,7 @@ export async function getCongViecList(): Promise<CongViec[]> {
   const rows = await fetchAllRows<DbRow>((from, to) =>
     supabase
       .from(TABLE)
-      .select('*')
+      .select(ROW_COLUMNS)
       .order('tg_tao', { ascending: false })
       .order('id', { ascending: false })
       .range(from, to)
@@ -77,7 +80,7 @@ export async function getCongViecList(): Promise<CongViec[]> {
 
 export async function getCongViecById(id: number | string): Promise<CongViec | null> {
   const n = toNumericId(id);
-  const { data, error } = await supabase.from(TABLE).select('*').eq('id', n).single();
+  const { data, error } = await supabase.from(TABLE).select(ROW_COLUMNS).eq('id', n).single();
   if (error) {
     if ((error as { code?: string }).code === 'PGRST116') return null;
     throw new Error((error as { message?: string }).message ?? String(error));
@@ -100,7 +103,7 @@ export async function createCongViec(
     uu_tien: data.uu_tien ?? 'trung_binh',
     trang_thai: data.trang_thai ?? 'draft',
   };
-  const { data: inserted, error } = await supabase.from(TABLE).insert(payload).select('*').single();
+  const { data: inserted, error } = await supabase.from(TABLE).insert(payload).select(ROW_COLUMNS).single();
   if (error) throw new Error((error as { message?: string }).message ?? String(error));
   return rowToCongViec(inserted as DbRow);
 }

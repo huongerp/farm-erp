@@ -10,6 +10,9 @@ const TABLE = 'fp_hr_phieu_hanh_chinh';
 const TABLE_NHOM = 'fp_hr_nhom_phieu_hanh_chinh';
 const TABLE_NHAN_VIEN = 'fp_var_nhan_vien';
 
+const ADMIN_FORM_ROW_COLUMNS =
+  'id,loai_phieu_id,ngay,ca,ly_do,trang_thai,ghi_chu,nguoi_tao_id,tg_tao,tg_cap_nhat';
+
 /** Loại phiếu: tiếng Việt (DB) <-> mã (app) */
 const LOAI_PHIEU_VI_TO_APP: Record<string, AdminFormType> = {
   'Đi muộn / về sớm': 'late_early',
@@ -123,7 +126,7 @@ async function fetchMaps(rows: Row[]): Promise<{ mapLoaiPhieu: Record<number, st
 
 export async function getAdminForms(): Promise<AdminFormRequest[]> {
   const rows = await fetchAllRows<Row>(async (from, to) =>
-    supabase.from(TABLE).select('*').order('ngay', { ascending: false }).range(from, to)
+    supabase.from(TABLE).select(ADMIN_FORM_ROW_COLUMNS).order('ngay', { ascending: false }).range(from, to)
   );
   const { mapLoaiPhieu, mapTenNhanVien } = await fetchMaps(rows);
   return rows.map((r) => rowToRequest(r, mapLoaiPhieu, mapTenNhanVien));
@@ -140,7 +143,7 @@ export async function getAdminFormsByUserAndMonth(
     isNum
       ? supabase
           .from(TABLE)
-          .select('*')
+          .select(ADMIN_FORM_ROW_COLUMNS)
           .eq('nguoi_tao_id', nguoiTaoId)
           .gte('ngay', prefix + '01')
           .lte('ngay', prefix + '31')
@@ -148,7 +151,7 @@ export async function getAdminFormsByUserAndMonth(
           .range(from, to)
       : supabase
           .from(TABLE)
-          .select('*')
+          .select(ADMIN_FORM_ROW_COLUMNS)
           .gte('ngay', prefix + '01')
           .lte('ngay', prefix + '31')
           .order('ngay', { ascending: false })
@@ -197,7 +200,7 @@ export async function createAdminForm(
     tg_cap_nhat: null,
   };
 
-  const { data: inserted, error } = await supabase.from(TABLE).insert(row).select('*').single();
+  const { data: inserted, error } = await supabase.from(TABLE).insert(row).select(ADMIN_FORM_ROW_COLUMNS).single();
   if (error) throw new Error(error.message);
   const insertedRow = inserted as Row;
   const { mapLoaiPhieu, mapTenNhanVien } = await fetchMaps([insertedRow]);
@@ -219,7 +222,7 @@ export async function updateAdminForm(id: string, data: AdminFormValues): Promis
     .from(TABLE)
     .update(row)
     .eq('id', idNum)
-    .select('*')
+    .select(ADMIN_FORM_ROW_COLUMNS)
     .single();
   if (error) throw new Error(error.message ?? i18n.t('adminForm.service.notFound'));
   const updatedRow = updated as Row;
@@ -321,7 +324,7 @@ export async function createAdminFormSystem(data: {
     nguoi_tao_id: nguoiTaoId,
     tg_cap_nhat: null,
   };
-  const { data: inserted, error } = await supabase.from(TABLE).insert(row).select('*').single();
+  const { data: inserted, error } = await supabase.from(TABLE).insert(row).select(ADMIN_FORM_ROW_COLUMNS).single();
   if (error) throw new Error(error.message);
   const out = inserted as Row;
   const { mapLoaiPhieu, mapTenNhanVien } = await fetchMaps([out]);

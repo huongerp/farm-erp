@@ -10,6 +10,9 @@ import { parseIdToInt8, parseThuDuKienFromDb } from '../core/utils';
 
 const TABLE = 'fp_farm_thu_hoach';
 
+const THU_HOACH_ROW_COLUMNS =
+  'id,nam,tuan,id_chi_nhanh,ten_chi_nhanh,ke_hoach_t2,ke_hoach_t3,ke_hoach_t4,ke_hoach_t5,ke_hoach_t6,ke_hoach_t7,ke_hoach_cn,thuc_te_t2,thuc_te_t3,thuc_te_t4,thuc_te_t5,thuc_te_t6,thuc_te_t7,thuc_te_cn,ghi_chu,id_nguoi_tao,tg_tao,tg_cap_nhat,trao_doi,du_thu_tuan,thu_du_kien';
+
 interface DbRow {
   id: number;
   nam: number;
@@ -133,7 +136,7 @@ export async function appendThuHoachTraoDoiSupabase(
     .from(TABLE)
     .update({ trao_doi: newTraoDoi })
     .eq('id', numId)
-    .select('*')
+    .select(THU_HOACH_ROW_COLUMNS)
     .single();
   if (error) throw new Error(error.message);
   return rowToModel(data as DbRow);
@@ -143,7 +146,7 @@ export async function getAllThuHoachSupabase(): Promise<FarmThuHoach[]> {
   const rows = await fetchAllRows<DbRow>((from, to) =>
     supabase
       .from(TABLE)
-      .select('*')
+      .select(THU_HOACH_ROW_COLUMNS)
       .order('nam', { ascending: false })
       .order('tuan', { ascending: false })
       .order('tg_cap_nhat', { ascending: false })
@@ -155,7 +158,7 @@ export async function getAllThuHoachSupabase(): Promise<FarmThuHoach[]> {
 export async function getThuHoachByIdSupabase(id: string): Promise<FarmThuHoach | null> {
   const numId = Number(id);
   if (!Number.isFinite(numId)) return null;
-  const { data, error } = await supabase.from(TABLE).select('*').eq('id', numId).maybeSingle();
+  const { data, error } = await supabase.from(TABLE).select(THU_HOACH_ROW_COLUMNS).eq('id', numId).maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) return null;
   return rowToModel(data as DbRow);
@@ -169,7 +172,7 @@ export async function createThuHoachSupabase(
     ...keHoachPayload(values),
     id_nguoi_tao: parseIdToInt8(idNguoiTao),
   };
-  const { data, error } = await supabase.from(TABLE).insert(payload).select('*').single();
+  const { data, error } = await supabase.from(TABLE).insert(payload).select(THU_HOACH_ROW_COLUMNS).single();
   if (error) throw new Error(error.message);
   return rowToModel(data as DbRow);
 }
@@ -181,7 +184,7 @@ export async function updateThuHoachKeHoachSupabase(
   const numId = Number(id);
   if (!Number.isFinite(numId)) throw new Error('Invalid id');
   const payload = keHoachPayload(values);
-  const { data, error } = await supabase.from(TABLE).update(payload).eq('id', numId).select('*').single();
+  const { data, error } = await supabase.from(TABLE).update(payload).eq('id', numId).select(THU_HOACH_ROW_COLUMNS).single();
   if (error) throw new Error(error.message);
   return rowToModel(data as DbRow);
 }
@@ -193,7 +196,7 @@ export async function updateThuHoachThucTeSupabase(
   const numId = Number(id);
   if (!Number.isFinite(numId)) throw new Error('Invalid id');
   const payload = thucTePayload(values);
-  const { data, error } = await supabase.from(TABLE).update(payload).eq('id', numId).select('*').single();
+  const { data, error } = await supabase.from(TABLE).update(payload).eq('id', numId).select(THU_HOACH_ROW_COLUMNS).single();
   if (error) throw new Error(error.message);
   return rowToModel(data as DbRow);
 }

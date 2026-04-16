@@ -1,13 +1,13 @@
-import type { BangLuongRecord, CongTruLuongItem, LuongNhanVienConfig } from '../core/types';
-import type { ChamDiemKpiRecord } from '../../cham-diem-kpi/core/types';
-import type { EmployeeAttendanceRow } from '../../cham-cong/core/types';
-import { NGAY_CONG_CHUAN_THANG, TY_LE_LUONG_KPI_KHONG_DAT } from '../core/constants';
-import { NGUONG_DAT_KPI } from '../../cham-diem-kpi/core/constants';
-import { getEmployeeAttendance } from '../../cham-cong/services/attendance-service';
-import { getChamDiemKpiRecords } from '../../cham-diem-kpi/services/cham-diem-kpi-service';
+import type {
+  BangLuongRecord,
+  ChamDiemKpiRecord,
+  CongTruLuongItem,
+  EmployeeAttendanceRow,
+  LuongNhanVienConfig,
+} from '../core/types';
+import { NGAY_CONG_CHUAN_THANG, NGUONG_DAT_KPI, TY_LE_LUONG_KPI_KHONG_DAT } from '../core/constants';
 import { getEmployees } from '@/features/he-thong/nhan-vien/services/nhan-vien-service';
 import type { Employee } from '@/features/he-thong/nhan-vien/core/types';
-import { MOCK_LUONG_NHAN_VIEN, MOCK_BANG_LUONG_CONG_TRU } from '@/mocks/hanh-chinh';
 import { supabase } from '../../../../lib/supabase';
 import i18n from '../../../../lib/i18n';
 
@@ -15,9 +15,22 @@ const TABLE = 'fp_hr_bang_luong';
 const TABLE_NHAN_VIEN = 'fp_var_nhan_vien';
 const TABLE_PHONG_BAN = 'fp_var_phong_ban';
 
+const BANG_LUONG_ROW_COLUMNS =
+  'id,nhan_vien_id,nam,thang,ngay_cong,ngay_cong_chuan,luong_co_ban,luong_co_ban_tinh,luong_kpi,diem_kpi,kpi_dat,ty_le_kpi_khong_dat,luong_kpi_tinh,luong_trach_nhiem,luong_trach_nhiem_tinh,phu_cap,phu_cap_tinh,cong_tru_khac,cong_tru_net,tong_luong,ghi_chu,tg_tao,tg_cap_nhat';
+
 type Row = Record<string, unknown>;
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** Không còn module chấm điểm KPI — trả rỗng; có thể nối bảng Supabase sau. */
+async function getChamDiemKpiRecords(): Promise<ChamDiemKpiRecord[]> {
+  return [];
+}
+
+/** Không còn module chấm công — trả rỗng; có thể nối bảng Supabase sau. */
+async function getEmployeeAttendance(_monthKey: string): Promise<EmployeeAttendanceRow[]> {
+  return [];
+}
 
 /** DB lưu cong_tru_khac là numeric; đọc ra chuyển thành mảng 1 phần tử cho UI. */
 function parseCongTruKhac(val: unknown): CongTruLuongItem[] {
@@ -126,23 +139,16 @@ function buildKpiMap(records: ChamDiemKpiRecord[]): Map<string, ChamDiemKpiRecor
   return map;
 }
 
-function getSalaryConfig(id_nhan_vien: string): LuongNhanVienConfig | null {
-  return MOCK_LUONG_NHAN_VIEN.find((c) => c.id_nhan_vien === id_nhan_vien) ?? null;
+function getSalaryConfig(_id_nhan_vien: string): LuongNhanVienConfig | null {
+  return null;
 }
 
 function getCongTruForPeriod(
-  id_nhan_vien: string,
-  nam: number,
-  thang: number
+  _id_nhan_vien: string,
+  _nam: number,
+  _thang: number
 ): CongTruLuongItem[] {
-  return MOCK_BANG_LUONG_CONG_TRU.filter(
-    (r) => r.id_nhan_vien === id_nhan_vien && r.nam === nam && r.thang === thang
-  ).map((r) => ({
-    id: r.id,
-    loai: r.loai,
-    so_tien: r.so_tien,
-    ly_do: r.ly_do,
-  }));
+  return [];
 }
 
 function computeCongTruNet(items: CongTruLuongItem[]): number {
@@ -250,7 +256,7 @@ async function seedDb(): Promise<void> {
 export async function getBangLuongRecords(): Promise<BangLuongRecord[]> {
   const { data: rows, error } = await supabase
     .from(TABLE)
-    .select('*')
+    .select(BANG_LUONG_ROW_COLUMNS)
     .order('nam', { ascending: false })
     .order('thang', { ascending: false });
   if (error) throw new Error(error.message ?? i18n.t('bangLuong.service.error'));
@@ -263,7 +269,7 @@ export async function getBangLuongRecords(): Promise<BangLuongRecord[]> {
 export async function getBangLuongById(id: string): Promise<BangLuongRecord | null> {
   const idNum = parseInt(id, 10);
   if (Number.isNaN(idNum)) return null;
-  const { data: row, error } = await supabase.from(TABLE).select('*').eq('id', idNum).maybeSingle();
+  const { data: row, error } = await supabase.from(TABLE).select(BANG_LUONG_ROW_COLUMNS).eq('id', idNum).maybeSingle();
   if (error) throw new Error(error.message ?? i18n.t('bangLuong.service.error'));
   if (!row) return null;
   const nvId = Number((row as Row).nhan_vien_id);
@@ -280,7 +286,7 @@ export async function getBangLuongByNhanVienPeriod(
   if (Number.isNaN(nvId)) return null;
   const { data: row, error } = await supabase
     .from(TABLE)
-    .select('*')
+    .select(BANG_LUONG_ROW_COLUMNS)
     .eq('nhan_vien_id', nvId)
     .eq('nam', nam)
     .eq('thang', thang)
@@ -359,7 +365,7 @@ export async function addBangLuong(
     tong_luong: record.tong_luong,
     tg_cap_nhat: null,
   };
-  const { data: inserted, error } = await supabase.from(TABLE).insert(row).select('*').single();
+  const { data: inserted, error } = await supabase.from(TABLE).insert(row).select(BANG_LUONG_ROW_COLUMNS).single();
   if (error) throw new Error(error.message ?? i18n.t('bangLuong.service.error'));
   const { nhanVienMap, phongBanMap } = await fetchNhanVienPhongBanMaps([nvId]);
   return rowToRecord(inserted as Row, nhanVienMap, phongBanMap);
@@ -399,7 +405,7 @@ export async function saveBangLuong(record: BangLuongRecord): Promise<BangLuongR
       tg_cap_nhat: new Date().toISOString(),
     })
     .eq('id', idNum)
-    .select('*')
+    .select(BANG_LUONG_ROW_COLUMNS)
     .single();
   if (error) throw new Error(error.message ?? i18n.t('bangLuong.service.error'));
   const nvId = Number((updated as Row).nhan_vien_id);
@@ -444,7 +450,7 @@ export async function createBangLuongFromRecord(
     tong_luong,
     ghi_chu: record.ghi_chu ?? null,
   };
-  const { data: inserted, error } = await supabase.from(TABLE).insert(row).select('*').single();
+  const { data: inserted, error } = await supabase.from(TABLE).insert(row).select(BANG_LUONG_ROW_COLUMNS).single();
   if (error) throw new Error(error.message ?? i18n.t('bangLuong.service.error'));
   const { nhanVienMap, phongBanMap } = await fetchNhanVienPhongBanMaps([nvId]);
   return rowToRecord(inserted as Row, nhanVienMap, phongBanMap);

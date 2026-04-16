@@ -1,12 +1,10 @@
 import { useMemo } from 'react';
 import { useAllTonKho } from '../../hooks/use-ton-kho';
 import { getKhoList } from '../../../danh-sach-kho/services/kho-service';
-import { getAllHangHoa } from '../../../danh-sach-hang-hoa/services/hang-hoa-service';
 import { useQuery } from '@tanstack/react-query';
-import { HANG_HOA_QUERY_KEY } from '../../../danh-sach-hang-hoa/hooks/use-hang-hoa';
+import { useHangHoaRefQuery } from '../../../../../lib/hooks/use-supabase-ref-queries';
 import type { TonKhoRecord } from '../../../phieu-kho/services/ton-kho-service';
 import type { Kho } from '../../../danh-sach-kho/core/types';
-import type { HangHoa } from '../../../danh-sach-hang-hoa/core/types';
 
 export interface TonKhoStatsSummary {
   totalStock: number;
@@ -24,7 +22,7 @@ export interface TonKhoStats {
 export function computeTonKhoStats(
   tonKhoList: TonKhoRecord[],
   khoList: Kho[],
-  hangHoaList: HangHoa[]
+  hangHoaList: { id: string; ma_hang: string; ten_hang: string }[]
 ): TonKhoStats | null {
   if (!tonKhoList.length) return null;
   let total = 0;
@@ -67,11 +65,7 @@ export function useTonKhoStats(): { stats: TonKhoStats | null; isLoading: boolea
     queryFn: getKhoList,
     staleTime: 1000 * 60 * 30,
   });
-  const { data: hangHoaList = [] } = useQuery<HangHoa[]>({
-    queryKey: HANG_HOA_QUERY_KEY,
-    queryFn: getAllHangHoa,
-    staleTime: 1000 * 60 * 15,
-  });
+  const { data: hangHoaList = [] } = useHangHoaRefQuery();
 
   const stats = useMemo(
     () => computeTonKhoStats(tonKhoList, khoList, hangHoaList),

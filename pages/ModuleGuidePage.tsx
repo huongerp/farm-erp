@@ -15,15 +15,11 @@ import { cn } from '../lib/utils';
 import DashboardToolbar from '../components/shared/DashboardToolbar';
 import Section from '../components/shared/Section';
 import { getModuleTitleKeyBySlug, HANH_CHINH_MODULE_SLUGS } from '../lib/hanh-chinh-menu';
-import { getNhanSuModuleTitleKeyBySlug, NHAN_SU_MODULE_SLUGS } from '../lib/nhan-su-menu';
-import { getMarketingModuleTitleKeyBySlug, MARKETING_MODULE_SLUGS } from '../lib/marketing-menu';
-import { getTaiChinhModuleTitleKeyBySlug, TAI_CHINH_MODULE_SLUGS } from '../lib/tai-chinh-menu';
 import { getMuaHangModuleTitleKeyBySlug, MUA_HANG_MODULE_SLUGS } from '../lib/mua-hang-menu';
 import { KHO_VAN_MODULE_SLUGS } from '../lib/kho-van-menu';
 import { getQuanLyFarmModuleTitleKeyBySlug, QUAN_LY_FARM_MODULE_SLUGS } from '../lib/quan-ly-farm-menu';
-import { getDieuHanhModuleTitleKeyBySlug, DIEU_HANH_MODULE_SLUGS } from '../lib/dieu-hanh-menu';
 
-const SUBMENU_PATH = ['hanh-chinh', 'nhan-su', 'marketing', 'tai-chinh', 'mua-hang', 'quan-ly-farm', 'dieu-hanh'] as const;
+const SUBMENU_PATH = ['hanh-chinh', 'mua-hang', 'quan-ly-farm'] as const;
 
 /** Convert slug (cham-cong) to camelCase (chamCong) for i18n key */
 function slugToCamel(slug: string): string {
@@ -40,23 +36,11 @@ function getModuleTitle(
   if (submenu === 'hanh-chinh' && HANH_CHINH_MODULE_SLUGS.includes(decoded)) {
     return t(getModuleTitleKeyBySlug(decoded));
   }
-  if (submenu === 'nhan-su' && NHAN_SU_MODULE_SLUGS.includes(decoded)) {
-    return t(getNhanSuModuleTitleKeyBySlug(decoded));
-  }
-  if (submenu === 'marketing' && MARKETING_MODULE_SLUGS.includes(decoded)) {
-    return t(getMarketingModuleTitleKeyBySlug(decoded));
-  }
-  if (submenu === 'tai-chinh' && TAI_CHINH_MODULE_SLUGS.includes(decoded)) {
-    return t(getTaiChinhModuleTitleKeyBySlug(decoded));
-  }
   if (submenu === 'mua-hang' && MUA_HANG_MODULE_SLUGS.includes(decoded)) {
     return t(getMuaHangModuleTitleKeyBySlug(decoded));
   }
   if (submenu === 'quan-ly-farm' && QUAN_LY_FARM_MODULE_SLUGS.includes(decoded)) {
     return t(getQuanLyFarmModuleTitleKeyBySlug(decoded));
-  }
-  if (submenu === 'dieu-hanh' && DIEU_HANH_MODULE_SLUGS.includes(decoded)) {
-    return t(getDieuHanhModuleTitleKeyBySlug(decoded));
   }
   return decoded;
 }

@@ -1,7 +1,0 @@
-{
-  "keHoachDaoTao.pageTitle": "Kế hoạch đào tạo",
-  "keHoachDaoTao.description": "Kế hoạch năm, quý, chủ đề, ngân sách đào tạo. Liên kết với Khóa đào tạo để tạo và quản lý khóa.",
-  "keHoachDaoTao.linkKhoaDaoTao": "Quản lý khóa đào tạo",
-  "keHoachDaoTao.linkKhoaHint": "Tạo khóa học, thiết lập chương trình, phân quyền xem.",
-  "keHoachDaoTao.placeholder": "Phần kế hoạch chi tiết (năm, quý, ngân sách) sẽ được bổ sung sau."
-}

@@ -1,6 +1,5 @@
 import type { PhieuKho } from '../../phieu-kho/core/types';
 import type { Kho } from '../../danh-sach-kho/core/types';
-import type { HangHoa } from '../../danh-sach-hang-hoa/core/types';
 import type {
   NXTReportFilters,
   NXTByPeriodResult,
@@ -11,7 +10,7 @@ import type {
 import { getAllPhieuKho } from '../../phieu-kho/services/phieu-kho-service';
 import { getAllTonKho } from '../../phieu-kho/services/ton-kho-service';
 import { getKhoList } from '../../danh-sach-kho/services/kho-service';
-import { getAllHangHoa } from '../../danh-sach-hang-hoa/services/hang-hoa-service';
+import { getHangHoaRef, type HangHoaRefLite } from '../../danh-sach-hang-hoa/services/hang-hoa-service';
 import { supabase, fetchAllRows } from '../../../../lib/supabase';
 
 /* ────────────────────────── helpers ────────────────────────── */
@@ -123,10 +122,11 @@ export async function getNXTByPeriod(filters: NXTReportFilters): Promise<NXTByPe
     filters;
 
   // ── 1. Load all data in parallel (single bulk queries, no N+1) ──
+  console.warn('[bao-cao-nxt] RPC rpc_nxt_by_period failed or missing — using client fallback');
   const [allPhieu, khoList, hangHoaList, tonKhoList, allCtRaw] = await Promise.all([
     getAllPhieuKho(),
     getKhoList(),
-    getAllHangHoa(),
+    getHangHoaRef(),
     getAllTonKho(),
     fetchAllRows<{ id_phieu_kho: number; id_hang_hoa: number; so_luong: number }>((from, to) =>
       supabase
@@ -161,7 +161,7 @@ export async function getNXTByPeriod(filters: NXTReportFilters): Promise<NXTByPe
   // ── 3. Lookup maps ──
   const khoMap: Record<string, Kho> = {};
   khoList.forEach((k) => { khoMap[String(k.id)] = k; });
-  const hangHoaMap: Record<string, HangHoa> = {};
+  const hangHoaMap: Record<string, HangHoaRefLite> = {};
   hangHoaList.forEach((h) => { hangHoaMap[String(h.id)] = h; });
 
   // ── 4. Group chi_tiet by phieu (bulk, no N+1) ──
@@ -375,10 +375,11 @@ export async function getPhieuInPeriod(filters: NXTReportFilters): Promise<Phieu
 
   const needsProductFilter = (hangHoaIds?.length ?? 0) > 0 || (categoryIds?.length ?? 0) > 0;
 
+  console.warn('[bao-cao-nxt] RPC rpc_phieu_in_period failed or missing — using client fallback');
   const [allPhieu, khoList, hangHoaList, allCtRaw] = await Promise.all([
     getAllPhieuKho(),
     getKhoList(),
-    needsProductFilter ? getAllHangHoa() : Promise.resolve<HangHoa[]>([]),
+    needsProductFilter ? getHangHoaRef() : Promise.resolve<HangHoaRefLite[]>([]),
     needsProductFilter
       ? fetchAllRows<{ id_phieu_kho: number; id_hang_hoa: number }>((from, to) =>
           supabase
@@ -408,7 +409,7 @@ export async function getPhieuInPeriod(filters: NXTReportFilters): Promise<Phieu
   const hangHoaSet = hangHoaIds?.length ? new Set(hangHoaIds.map(String)) : null;
   const categorySet = categoryIds?.length ? new Set(categoryIds.map(String)) : null;
 
-  const hangHoaMap: Record<string, HangHoa> = {};
+  const hangHoaMap: Record<string, HangHoaRefLite> = {};
   if (needsProductFilter) {
     hangHoaList.forEach((h) => {
       hangHoaMap[String(h.id)] = h;
@@ -468,10 +469,11 @@ export async function getTonAtDate(filters: Pick<NXTReportFilters, 'warehouseIds
   } catch {
     /* fallback */
   }
+  console.warn('[bao-cao-nxt] RPC rpc_ton_at_date failed or missing — using client fallback');
   const { warehouseIds, hangHoaIds, categoryIds, allowedBranchIds } = filters;
   const tonKhoList = await getAllTonKho();
   const khoList = await getKhoList();
-  const hangHoaList = await getAllHangHoa();
+  const hangHoaList = await getHangHoaRef();
 
   const khoIdToBranchId = new Map<string, string>();
   khoList.forEach((k) => {
@@ -488,7 +490,7 @@ export async function getTonAtDate(filters: Pick<NXTReportFilters, 'warehouseIds
 
   const khoMap: Record<string, Kho> = {};
   khoList.forEach((k) => { khoMap[k.id] = k; });
-  const hangHoaMap: Record<string, HangHoa> = {};
+  const hangHoaMap: Record<string, HangHoaRefLite> = {};
   hangHoaList.forEach((h) => { hangHoaMap[h.id] = h; });
 
   const rows: TonTaiThoiDiemRow[] = [];

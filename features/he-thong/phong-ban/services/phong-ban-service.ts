@@ -7,6 +7,8 @@ import i18n from '../../../../lib/i18n';
 
 const TABLE = 'fp_var_phong_ban';
 
+const PHONG_BAN_COLUMNS = 'id,ten_phong_ban,chuc_nang,tt,trang_thai,tg_tao,tg_cap_nhat';
+
 /** Chuẩn hóa giá trị trạng thái từ DB (0/1 hoặc text) sang TrangThai text */
 function normalizeTrangThai(value: unknown): TrangThai {
   if (value === 1 || value === '1') return TRANG_THAI.DANG_DUNG;
@@ -29,7 +31,7 @@ function rowToDepartment(row: Record<string, unknown>): Department {
 
 export const getDepartments = async (): Promise<Department[]> => {
   const data = await fetchAllRows<Record<string, unknown>>((from, to) =>
-    supabase.from(TABLE).select('*').order('tt', { ascending: true }).range(from, to)
+    supabase.from(TABLE).select(PHONG_BAN_COLUMNS).order('tt', { ascending: true }).range(from, to)
   );
   return data.map(rowToDepartment);
 };
@@ -45,7 +47,7 @@ export const createDepartment = async (data: DepartmentFormValues): Promise<Depa
   const { data: inserted, error } = await supabase
     .from(TABLE)
     .insert(row)
-    .select()
+    .select(PHONG_BAN_COLUMNS)
     .single();
 
   if (error) throw new Error(error.message);
@@ -65,7 +67,7 @@ export const updateDepartment = async (id: string, data: DepartmentFormValues): 
     .from(TABLE)
     .update(row)
     .eq('id', id)
-    .select()
+    .select(PHONG_BAN_COLUMNS)
     .single();
 
   if (error) throw new Error(error.message ?? i18n.t('department.service.notFound'));
@@ -77,7 +79,7 @@ export const updateDepartmentStatus = async (id: string, status: TrangThai): Pro
     .from(TABLE)
     .update({ trang_thai: status, tg_cap_nhat: new Date().toISOString() })
     .eq('id', id)
-    .select()
+    .select(PHONG_BAN_COLUMNS)
     .single();
 
   if (error) throw new Error(error.message ?? i18n.t('department.service.notFound'));

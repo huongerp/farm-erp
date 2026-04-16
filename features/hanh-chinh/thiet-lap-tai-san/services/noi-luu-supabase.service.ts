@@ -11,6 +11,9 @@ import i18n from '../../../../lib/i18n';
 
 const TABLE = 'fp_hc_noi_quan_ly';
 
+const ROW_COLUMNS =
+  'id,id_chi_nhanh,ten_chi_nhanh,ma,ten,thu_tu,ghi_chu,trang_thai,tg_tao,tg_cap_nhat';
+
 interface DbRow {
   id: number;
   id_chi_nhanh: number;
@@ -50,7 +53,7 @@ export async function getAssetStorageLocationsSupabase(): Promise<AssetStorageLo
   const data = await fetchAllRows<DbRow>((from, to) =>
     supabase
       .from(TABLE)
-      .select('*')
+      .select(ROW_COLUMNS)
       .order('thu_tu', { ascending: true })
       .order('id', { ascending: true })
       .range(from, to)
@@ -69,7 +72,7 @@ export async function createAssetStorageLocationSupabase(
     ghi_chu: data.ghi_chu?.trim() || null,
     trang_thai: data.trang_thai ?? TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG,
   };
-  const { data: inserted, error } = await supabase.from(TABLE).insert(payload).select('*').single();
+  const { data: inserted, error } = await supabase.from(TABLE).insert(payload).select(ROW_COLUMNS).single();
   if (error) throw new Error((error as { message?: string }).message ?? String(error));
   return rowToAssetStorageLocation(inserted as DbRow);
 }
@@ -89,7 +92,7 @@ export async function updateAssetStorageLocationSupabase(
   };
   const { error } = await supabase.from(TABLE).update(payload).eq('id', numId);
   if (error) throw new Error((error as { message?: string }).message ?? String(error));
-  const { data: updated, error: err2 } = await supabase.from(TABLE).select('*').eq('id', numId).single();
+  const { data: updated, error: err2 } = await supabase.from(TABLE).select(ROW_COLUMNS).eq('id', numId).single();
   if (err2 || !updated) throw new Error(i18n.t('thietLapTaiSan.noiLuu.service.notFound'));
   return rowToAssetStorageLocation(updated as DbRow);
 }

@@ -6,9 +6,8 @@ import { useAllTonKho } from '../hooks/use-ton-kho';
 import { useTonKhoViewScope } from '../hooks/use-ton-kho-view-scope';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import { getKhoList } from '../../danh-sach-kho/services/kho-service';
-import { getAllHangHoa } from '../../danh-sach-hang-hoa/services/hang-hoa-service';
 import { useQuery } from '@tanstack/react-query';
-import { HANG_HOA_QUERY_KEY } from '../../danh-sach-hang-hoa/hooks/use-hang-hoa';
+import { useHangHoaRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import EmptyState from '../../../../components/shared/EmptyState';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
@@ -27,11 +26,7 @@ const TonKhoThongKeTab: React.FC = () => {
     queryFn: getKhoList,
     staleTime: 1000 * 60 * 30,
   });
-  const { data: hangHoaList = [] } = useQuery({
-    queryKey: HANG_HOA_QUERY_KEY,
-    queryFn: getAllHangHoa,
-    staleTime: 1000 * 60 * 15,
-  });
+  const { data: hangHoaList = [] } = useHangHoaRefQuery();
   const viewScope = useTonKhoViewScope();
   const { data: khoListFromHook = [] } = useKhoList();
 

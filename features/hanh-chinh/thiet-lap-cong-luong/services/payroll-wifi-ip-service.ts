@@ -1,6 +1,5 @@
 import { PayrollWifiIp } from '../core/types';
 import { PayrollWifiIpFormValues } from '../core/schema';
-import { MOCK_PAYROLL_WIFI_IPS } from '@/mocks/hanh-chinh';
 import { getBranches } from '../../../he-thong/chi-nhanh/services/chi-nhanh-service';
 import i18n from '../../../../lib/i18n';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
@@ -11,10 +10,7 @@ function normalizeTrangThai(val: unknown): import('../../../../lib/constants').T
   return Number(val) === 0 ? TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG : TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
 }
 
-let dbWifiIps: PayrollWifiIp[] = JSON.parse(JSON.stringify(MOCK_PAYROLL_WIFI_IPS)).map((i: PayrollWifiIp) => ({
-  ...i,
-  trang_thai: normalizeTrangThai(i.trang_thai),
-}));
+let dbWifiIps: PayrollWifiIp[] = [];
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 

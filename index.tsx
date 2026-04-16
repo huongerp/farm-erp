@@ -21,7 +21,8 @@ if (sentryDsn && typeof sentryDsn === 'string' && sentryDsn.trim() !== '') {
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
+      staleTime: 1000 * 60 * 5, // 5 minutes — dữ liệu coi là “mới” trong 5 phút
+      gcTime: 1000 * 60 * 30, // 30 minutes — giữ cache khi rời trang, giảm refetch khi quay lại
       refetchOnWindowFocus: false,
     },
   },

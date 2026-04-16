@@ -18,6 +18,10 @@ const RPC_NEXT_SO_PHIEU = 'get_next_so_phieu_phieu_de_xuat_vat_tu';
 /** View DB: chạy docs/supabase-v_phieu_de_xuat_vat_tu_summary.sql trên Supabase. */
 const VIEW_PHIEU_DE_XUAT_SUMMARY = 'v_phieu_de_xuat_vat_tu_summary';
 
+/** Cột view summary (đủ cho `mapPhieuDeXuatSummaryRowToPhieu`). */
+const VIEW_PHIEU_DE_XUAT_SUMMARY_COLUMNS =
+  'id,so_phieu,ngay,ngay_can,id_noi_de_xuat,id_nguoi_de_xuat,id_nguoi_duyet,ghi_chu,trang_thai,tg_tao,tg_cap_nhat,so_dong,tong_so_luong,ref_ten_noi_de_xuat,ref_ten_nguoi_de_xuat,ref_ma_nguoi_de_xuat,ref_ten_nguoi_duyet,ref_ma_nguoi_duyet';
+
 const PHIEU_DE_XUAT_HEADER_SELECT =
   'id, so_phieu, ngay, ngay_can, id_noi_de_xuat, id_nguoi_de_xuat, id_nguoi_duyet, ghi_chu, trang_thai, tg_tao, tg_cap_nhat';
 
@@ -151,7 +155,7 @@ export async function getAllPhieuDeXuatVatTuSupabase(): Promise<PhieuDeXuatVatTu
   const rows = await fetchAllRows<PhieuDeXuatSummaryRow>((from, to) =>
     supabase
       .from(VIEW_PHIEU_DE_XUAT_SUMMARY)
-      .select('*')
+      .select(VIEW_PHIEU_DE_XUAT_SUMMARY_COLUMNS)
       .order('ngay', { ascending: false })
       .order('so_phieu', { ascending: false })
       .range(from, to)

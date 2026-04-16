@@ -12,6 +12,9 @@ import { getHangHoaRef } from '../../danh-sach-hang-hoa/services/hang-hoa-servic
 const TABLE_PHIEU = 'fp_mh_phieu_kiem_ke';
 const TABLE_CHI_TIET = 'fp_mh_phieu_kiem_ke_chi_tiet';
 
+const PHIEU_KIEM_KE_ROW_COLUMNS =
+  'id,so_phieu,ngay,id_kho,id_nguoi_thuc_hien,id_nguoi_duyet,ghi_chu,trang_thai,tg_tao,tg_cap_nhat';
+
 interface PhieuDbRow {
   id: number;
   so_phieu: string;
@@ -105,7 +108,7 @@ export async function getAllPhieuKiemKeSupabase(): Promise<PhieuKiemKe[]> {
     fetchAllRows<PhieuDbRow>((from, to) =>
       supabase
         .from(TABLE_PHIEU)
-        .select('*')
+        .select(PHIEU_KIEM_KE_ROW_COLUMNS)
         .order('ngay', { ascending: false })
         .order('so_phieu', { ascending: false })
         .range(from, to)
@@ -139,7 +142,7 @@ export async function getPhieuKiemKeByIdSupabase(id: string): Promise<PhieuKiemK
   if (Number.isNaN(idNum)) return null;
   const { data: row, error } = await supabase
     .from(TABLE_PHIEU)
-    .select('*')
+    .select(PHIEU_KIEM_KE_ROW_COLUMNS)
     .eq('id', idNum)
     .maybeSingle();
   if (error) throw new Error(error.message);
@@ -201,7 +204,7 @@ export async function createPhieuKiemKeSupabase(data: PhieuKiemKeFormValues): Pr
     trang_thai: data.trang_thai,
   };
 
-  const { data: inserted, error } = await supabase.from(TABLE_PHIEU).insert(payload).select('*').single();
+  const { data: inserted, error } = await supabase.from(TABLE_PHIEU).insert(payload).select(PHIEU_KIEM_KE_ROW_COLUMNS).single();
   if (error) throw new Error(error.message);
   const idPhieu = (inserted as PhieuDbRow).id;
 
@@ -237,7 +240,7 @@ export async function updatePhieuKiemKeSupabase(id: string, data: PhieuKiemKeFor
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('phieuKiemKe.service.notFound'));
 
-  const { data: oldRow, error: fetchErr } = await supabase.from(TABLE_PHIEU).select('*').eq('id', idNum).maybeSingle();
+  const { data: oldRow, error: fetchErr } = await supabase.from(TABLE_PHIEU).select(PHIEU_KIEM_KE_ROW_COLUMNS).eq('id', idNum).maybeSingle();
   if (fetchErr || !oldRow) throw new Error(i18n.t('phieuKiemKe.service.notFound'));
 
   const soPhieu = data.so_phieu.trim();

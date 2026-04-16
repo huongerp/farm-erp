@@ -8,6 +8,9 @@ import { getAllDanhMucHangHoa } from '../../danh-muc-hang-hoa/services/danh-muc-
 
 const TABLE = 'fp_mh_danh_sach_hang_hoa';
 
+const HANG_HOA_ROW_COLUMNS =
+  'id,danh_muc_id,danh_muc_cha_id,ma_hang_hoa,ten_hang_hoa,dvt,thu_tu,trang_thai,don_gia,mo_ta,hinh_anh,tg_tao,tg_cap_nhat';
+
 /** Row từ Supabase fp_mh_danh_sach_hang_hoa */
 interface HangHoaRow {
   id: number;
@@ -85,7 +88,7 @@ export const getAllHangHoa = async (): Promise<HangHoa[]> => {
   const rows = await fetchAllRows<HangHoaRow>((from, to) =>
     supabase
       .from(TABLE)
-      .select('*')
+      .select(HANG_HOA_ROW_COLUMNS)
       .order('thu_tu', { ascending: true })
       .order('ma_hang_hoa', { ascending: true })
       .range(from, to)
@@ -150,7 +153,7 @@ export const getHangHoaById = async (id: string): Promise<HangHoa | null> => {
   if (Number.isNaN(idNum)) return null;
   const { data: row, error } = await supabase
     .from(TABLE)
-    .select('*')
+    .select(HANG_HOA_ROW_COLUMNS)
     .eq('id', idNum)
     .maybeSingle();
   if (error) throw new Error(error.message);
@@ -194,7 +197,7 @@ export const createHangHoa = async (data: HangHoaFormValues): Promise<HangHoa> =
     hinh_anh: data.hinh_anh?.trim() || null,
   };
 
-  const { data: inserted, error } = await supabase.from(TABLE).insert(payload).select().single();
+  const { data: inserted, error } = await supabase.from(TABLE).insert(payload).select(HANG_HOA_ROW_COLUMNS).single();
   if (error) throw new Error(error.message);
   const [enriched] = await enrichWithTenDanhMuc([inserted as HangHoaRow]);
   return enriched;
@@ -235,7 +238,7 @@ export const updateHangHoa = async (id: string, data: HangHoaFormValues): Promis
     .from(TABLE)
     .update(payload)
     .eq('id', idNum)
-    .select()
+    .select(HANG_HOA_ROW_COLUMNS)
     .single();
   if (error) throw new Error(error.message ?? i18n.t('hangHoa.service.notFound'));
   const [enriched] = await enrichWithTenDanhMuc([updated as HangHoaRow]);
@@ -249,7 +252,7 @@ export const updateHangHoaStatus = async (id: string, status: HangHoa['trang_tha
     .from(TABLE)
     .update({ trang_thai: status, tg_cap_nhat: new Date().toISOString() })
     .eq('id', idNum)
-    .select()
+    .select(HANG_HOA_ROW_COLUMNS)
     .single();
   if (error) throw new Error(error.message ?? i18n.t('hangHoa.service.notFound'));
   const [enriched] = await enrichWithTenDanhMuc([updated as HangHoaRow]);

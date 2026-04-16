@@ -6,9 +6,7 @@ import Button from '../../../../components/ui/Button';
 import { cn } from '../../../../lib/utils';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
-import { useQuery } from '@tanstack/react-query';
-import { getAllHangHoa } from '../../danh-sach-hang-hoa/services/hang-hoa-service';
-import { HANG_HOA_QUERY_KEY } from '../../danh-sach-hang-hoa/hooks/use-hang-hoa';
+import { useHangHoaRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
 import Select from '../../../../components/ui/Select';
 import type { ChiTietKiemKeKho } from '../core/types';
 
@@ -36,11 +34,7 @@ const ThemDongKiemKeDialog: React.FC<Props> = ({
   const [id_kho, setIdKho] = useState('');
 
   const { data: khoList = [] } = useKhoList();
-  const { data: hangHoaList = [] } = useQuery({
-    queryKey: HANG_HOA_QUERY_KEY,
-    queryFn: getAllHangHoa,
-    enabled: open,
-  });
+  const { data: hangHoaList = [] } = useHangHoaRefQuery();
 
   const existingKeys = useMemo(
     () => new Set(chiTiet.map((c) => `${c.id_kho}|${c.id_hang_hoa}`)),

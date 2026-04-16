@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Users, Building, Shield, ArrowUpDown, ListOrdered, Briefcase, Monitor, MapPin } from 'lucide-react';
+import { Users, Building, Shield, ListOrdered, Briefcase, MapPin } from 'lucide-react';
 import ModuleDashboardLayout from '../../components/dashboard/ModuleDashboardLayout';
 import { useModulesWithViewPermission } from '../../features/he-thong/phan-quyen/hooks/use-module-permission';
 
@@ -27,8 +27,6 @@ const SystemDashboard: React.FC = () => {
           { title: t('page.systemDashboard.companyInfo'), description: t('page.systemDashboard.companyInfoDesc'), icon: Building, color: 'bg-violet-500', action: () => navigate('/thong-tin-cong-ty'), moduleId: 'he-thong/thong-tin-cong-ty' },
           { title: t('page.systemDashboard.branch'), description: t('page.systemDashboard.branchDesc'), icon: MapPin, color: 'bg-fuchsia-500', action: () => navigate('/chi-nhanh'), moduleId: 'he-thong/chi-nhanh' },
           { title: t('page.systemDashboard.permission'), description: t('page.systemDashboard.permissionDesc'), icon: Shield, color: 'bg-rose-500', action: () => navigate('/phan-quyen'), moduleId: 'he-thong/phan-quyen' },
-          { title: t('page.systemDashboard.backup'), description: t('page.systemDashboard.backupDesc'), icon: ArrowUpDown, color: 'bg-cyan-500', action: () => navigate('/sao-luu'), moduleId: 'he-thong/sao-luu' },
-          { title: t('page.systemDashboard.loginDevices'), description: t('page.systemDashboard.loginDevicesDesc'), icon: Monitor, color: 'bg-teal-500', action: () => navigate('/thiet-bi-dang-nhap'), moduleId: 'he-thong/thiet-bi-dang-nhap' },
         ],
       },
     ],

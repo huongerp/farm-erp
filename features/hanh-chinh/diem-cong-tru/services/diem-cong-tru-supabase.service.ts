@@ -11,6 +11,9 @@ import i18n from '../../../../lib/i18n';
 
 const TABLE = 'fp_hr_diem_cong_tru';
 
+const ROW_COLUMNS =
+  'id,id_nhan_vien,nam,thang,loai,id_hang_muc,ten_hang_muc,diem,mo_ta,ghi_chu,id_nguoi_tao,tg_tao,tg_cap_nhat';
+
 interface DbRow {
   id: number;
   id_nhan_vien: number;
@@ -60,7 +63,7 @@ export async function getDiemCongTruRecords(): Promise<DiemCongTruRecord[]> {
     fetchAllRows<DbRow>((from, to) =>
       supabase
         .from(TABLE)
-        .select('*')
+        .select(ROW_COLUMNS)
         .order('nam', { ascending: false })
         .order('thang', { ascending: false })
         .order('id', { ascending: false })
@@ -106,7 +109,7 @@ export async function createDiemCongTruRecord(
     id_nguoi_tao: idNguoiTaoNum,
   };
 
-  const { data: inserted, error } = await supabase.from(TABLE).insert(payload).select('*').single();
+  const { data: inserted, error } = await supabase.from(TABLE).insert(payload).select(ROW_COLUMNS).single();
   if (error) throw new Error(error.message);
 
   const [groups, employees] = await Promise.all([getPayrollPointGroups(), getEmployeesRef()]);
@@ -147,7 +150,7 @@ export async function updateDiemCongTruRecord(
   const { error } = await supabase.from(TABLE).update(payload).eq('id', idNum);
   if (error) throw new Error(error.message);
 
-  const { data: row, error: fetchErr } = await supabase.from(TABLE).select('*').eq('id', idNum).single();
+  const { data: row, error: fetchErr } = await supabase.from(TABLE).select(ROW_COLUMNS).eq('id', idNum).single();
   if (fetchErr || !row) throw new Error(i18n.t('diemCongTru.service.notFound'));
 
   const [groups, employees] = await Promise.all([getPayrollPointGroups(), getEmployeesRef()]);

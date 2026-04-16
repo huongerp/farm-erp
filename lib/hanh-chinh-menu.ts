@@ -49,24 +49,15 @@ export function getModuleTitleKeyBySlug(slug: string): string {
   return `page.hanhChinh.modules.${key}`;
 }
 
-/** Danh sách tất cả slug module (để breadcrumb / resolve title) */
+/** Slug module Hành chính còn dùng (khớp phân quyền + redirect công việc). */
 export const HANH_CHINH_MODULE_SLUGS: string[] = [
-  'cham-cong',
-  'tong-hop-cham-cong',
   'phieu-hanh-chinh',
-  'cham-diem-kpi',
   'bang-luong',
   'diem-cong-tru',
   'thiet-lap-cong-luong',
-  'luu-tru-ho-so',
-  'thiet-lap-tai-lieu',
-  'danh-sach-tai-lieu',
-  'du-an',
   'cong-viec',
   'cong-viec-cua-toi',
   'cong-viec-toi-quan-ly',
-  'bao-cao',
-  'thiet-lap-cong-viec',
   'danh-sach-tai-san',
   'cap-phat-thu-hoi',
   'chi-phi-tai-san',
@@ -74,12 +65,6 @@ export const HANH_CHINH_MODULE_SLUGS: string[] = [
   'khau-hao-tai-san',
   'noi-quan-ly',
   'thiet-lap-tai-san',
-  'danh-sach-xe',
-  'dang-ky-su-dung-xe',
-  'lich-bao-duong',
-  'phieu-xang-chi-phi-xe',
-  'quan-ly-lai-xe',
-  'thiet-lap-quan-ly-xe',
 ];
 
 function buildItem(config: HanhChinhModuleConfig, t: (key: string) => string, navigate: (path: string) => void): ModuleItem {
@@ -106,7 +91,6 @@ export function getHanhChinhGroups(
   return [
     {
       groupTitle: t('page.hanhChinh.groupCongLuong'),
-      // Các module ẩn trên menu (code/route vẫn giữ): cham-cong, tong-hop-cham-cong, cham-diem-kpi
       items: [
         item({ slug: 'cong-viec', titleKey: 'page.hanhChinh.modules.congViec', descKey: 'page.hanhChinh.descs.congViec', icon: ClipboardList, color: 'bg-amber-500' }),
         item({ slug: 'phieu-hanh-chinh', titleKey: 'page.hanhChinh.modules.phieuHanhChinh', descKey: 'page.hanhChinh.descs.phieuHanhChinh', icon: Receipt, color: 'bg-indigo-500' }),
@@ -131,7 +115,5 @@ export function getHanhChinhGroups(
         item(thietLapTaiSanMenuConfig),
       ],
     },
-    // Nhóm Quản lý xe ẩn trên menu (code/route vẫn giữ)
-    // { groupTitle: t('page.hanhChinh.groupQuanLyXe'), items: [ danh-sach-xe, dang-ky-su-dung-xe, lich-bao-duong, phieu-xang-chi-phi-xe, quan-ly-lai-xe, thiet-lap-quan-ly-xe ] },
   ];
 }

@@ -13,6 +13,11 @@ import i18n from '../../../../lib/i18n';
 const TABLE_KY = 'fp_ts_ky_khau_hao';
 const TABLE_CHI_TIET = 'fp_ts_chi_tiet_khau_hao';
 
+const KY_KHAU_HAO_COLUMNS =
+  'id,thang,nam,trang_thai,tong_nguyen_gia,tong_khau_hao_ky,ghi_chu,id_nguoi_tao,ten_nguoi_tao,tg_tao,tg_cap_nhat';
+const CHI_TIET_KHAU_HAO_COLUMNS =
+  'id,id_ky_khau_hao,id_tai_san,ma_tai_san,ten_tai_san,id_nhom,ten_nhom,nguyen_gia,gia_tri_con_lai_dau_ky,khau_hao_ky,khau_hao_luy_ke,gia_tri_con_lai_cuoi_ky,ten_noi_luu,ten_nguoi_giu,id_nguoi_tao,ten_nguoi_tao,tg_tao,tg_cap_nhat';
+
 export interface DbKyKhauHaoRow {
   id: number;
   thang: number;
@@ -131,7 +136,7 @@ function tinhKhauHaoKy(
 export async function getKyKhauHaoListSupabase(): Promise<KyKhauHao[]> {
   const { data, error } = await supabase
     .from(TABLE_KY)
-    .select('*')
+    .select(KY_KHAU_HAO_COLUMNS)
     .order('nam', { ascending: false })
     .order('thang', { ascending: false });
   if (error) throw new Error((error as { message?: string }).message ?? String(error));
@@ -141,7 +146,7 @@ export async function getKyKhauHaoListSupabase(): Promise<KyKhauHao[]> {
 export async function getKyKhauHaoByIdSupabase(id: string): Promise<KyKhauHao | null> {
   const numId = toNum(id);
   if (numId == null) return null;
-  const { data, error } = await supabase.from(TABLE_KY).select('*').eq('id', numId).maybeSingle();
+  const { data, error } = await supabase.from(TABLE_KY).select(KY_KHAU_HAO_COLUMNS).eq('id', numId).maybeSingle();
   if (error) throw new Error((error as { message?: string }).message ?? String(error));
   return data ? rowToKy(data as DbKyKhauHaoRow) : null;
 }
@@ -163,7 +168,7 @@ export async function createKyKhauHaoSupabase(data: KyKhauHaoCreate): Promise<Ky
     id_nguoi_tao: toNum(data.id_nguoi_tao ?? null),
     ten_nguoi_tao: data.ten_nguoi_tao?.trim() || null,
   };
-  const { data: inserted, error } = await supabase.from(TABLE_KY).insert(payload).select('*').single();
+  const { data: inserted, error } = await supabase.from(TABLE_KY).insert(payload).select(KY_KHAU_HAO_COLUMNS).single();
   if (error) throw new Error((error as { message?: string }).message ?? String(error));
   return rowToKy(inserted as DbKyKhauHaoRow);
 }
@@ -194,7 +199,7 @@ export async function updateKyKhauHaoSupabase(id: string, data: KyKhauHaoCreate)
   };
   const { error } = await supabase.from(TABLE_KY).update(payload).eq('id', numId);
   if (error) throw new Error((error as { message?: string }).message ?? String(error));
-  const { data: updated, error: err2 } = await supabase.from(TABLE_KY).select('*').eq('id', numId).single();
+  const { data: updated, error: err2 } = await supabase.from(TABLE_KY).select(KY_KHAU_HAO_COLUMNS).eq('id', numId).single();
   if (err2 || !updated) throw new Error(i18n.t('khauHaoTaiSan.service.kyNotFound'));
   return rowToKy(updated as DbKyKhauHaoRow);
 }
@@ -204,7 +209,7 @@ export async function getChiTietKhauHaoSupabase(idKy: string): Promise<ChiTietKh
   if (numKy == null) return [];
   const { data, error } = await supabase
     .from(TABLE_CHI_TIET)
-    .select('*')
+    .select(CHI_TIET_KHAU_HAO_COLUMNS)
     .eq('id_ky_khau_hao', numKy)
     .order('id_tai_san');
   if (error) throw new Error((error as { message?: string }).message ?? String(error));
@@ -341,7 +346,7 @@ export async function updateKyKhauHaoGhiChuSupabase(id: string, ghi_chu: string 
     .from(TABLE_KY)
     .update({ ghi_chu: ghi_chu?.trim() || null })
     .eq('id', numId)
-    .select('*')
+    .select(KY_KHAU_HAO_COLUMNS)
     .single();
   if (error || !data) throw new Error((error as { message?: string })?.message ?? i18n.t('khauHaoTaiSan.service.kyNotFound'));
   return rowToKy(data as DbKyKhauHaoRow);
@@ -362,7 +367,7 @@ export async function updateKyKhauHaoTrangThaiSupabase(
     .from(TABLE_KY)
     .update({ trang_thai: 'draft' })
     .eq('id', numId)
-    .select('*')
+    .select(KY_KHAU_HAO_COLUMNS)
     .single();
   if (error || !data) throw new Error((error as { message?: string })?.message ?? i18n.t('khauHaoTaiSan.service.kyNotFound'));
   return rowToKy(data as DbKyKhauHaoRow);

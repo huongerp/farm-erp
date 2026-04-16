@@ -6,9 +6,8 @@ import { useTonKhoViewScope } from '../hooks/use-ton-kho-view-scope';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import { getKhoList } from '../../danh-sach-kho/services/kho-service';
 import type { TonKhoRecord } from '../../phieu-kho/services/ton-kho-service';
-import { getAllHangHoa } from '../../danh-sach-hang-hoa/services/hang-hoa-service';
 import { useQuery } from '@tanstack/react-query';
-import { HANG_HOA_QUERY_KEY } from '../../danh-sach-hang-hoa/hooks/use-hang-hoa';
+import { useHangHoaRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
 import Button from '../../../../components/ui/Button';
 import EmptyState from '../../../../components/shared/EmptyState';
@@ -23,7 +22,7 @@ import { useListWithFilter } from '../../../../lib/hooks';
 import { getColumnCellStyle } from '../../../../store/createGenericStore';
 import type { ColumnConfig } from '../../../../store/createGenericStore';
 import type { Kho } from '../../danh-sach-kho/core/types';
-import type { HangHoa } from '../../danh-sach-hang-hoa/core/types';
+import type { HangHoaRefLite } from '../../danh-sach-hang-hoa/services/hang-hoa-service';
 import type { LoaiPhieuKho } from '../../phieu-kho/core/types';
 import { BTN_CLOSE } from '../../../../lib/button-labels';
 import { cn } from '../../../../lib/utils';
@@ -107,11 +106,7 @@ function KhoDetailDrawer({
   const { t } = useTranslation();
   const { id_kho, ma_kho, ten_kho, so_mat_hang, tong_so_luong } = row;
   const { data: tonKhoList = [] } = useAllTonKho();
-  const { data: hangHoaList = [] } = useQuery({
-    queryKey: HANG_HOA_QUERY_KEY,
-    queryFn: getAllHangHoa,
-    staleTime: 1000 * 60 * 15,
-  });
+  const { data: hangHoaList = [] } = useHangHoaRefQuery();
   const { data: lichSu = [], isLoading: loadingLichSu } = useLichSuNhapXuatByKho(id_kho);
   const loading = loadingLichSu;
   const itemsAtKho = useMemo(() => {
@@ -120,7 +115,7 @@ function KhoDetailDrawer({
       .map((r) => ({ id_hang_hoa: r.id_hang_hoa, so_luong: r.so_luong }));
   }, [tonKhoList, id_kho]);
   const hangHoaMap = useMemo(() => {
-    const m: Record<string, HangHoa> = {};
+    const m: Record<string, HangHoaRefLite> = {};
     hangHoaList.forEach((h) => { m[h.id] = h; });
     return m;
   }, [hangHoaList]);

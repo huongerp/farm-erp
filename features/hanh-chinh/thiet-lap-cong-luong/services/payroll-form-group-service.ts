@@ -7,6 +7,8 @@ import { TRANG_THAI_HOAT_DONG, type TrangThaiHoatDong } from '../../../../lib/co
 
 const TABLE = 'fp_hr_nhom_phieu_hanh_chinh';
 
+const ROW_COLUMNS = 'id,loai_phieu,so_luong_thang,ghi_chu,trang_thai,tg_tao,tg_cap_nhat';
+
 function normalizeTrangThai(val: unknown): TrangThaiHoatDong {
   if (val === TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG) return TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG;
   if (val === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG) return TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
@@ -49,7 +51,7 @@ function rowToGroup(row: Row): PayrollAdminFormGroup {
 
 export async function getPayrollAdminFormGroups(): Promise<PayrollAdminFormGroup[]> {
   const rows = await fetchAllRows<Row>((from, to) =>
-    supabase.from(TABLE).select('*').order('tg_tao', { ascending: false }).range(from, to)
+    supabase.from(TABLE).select(ROW_COLUMNS).order('tg_tao', { ascending: false }).range(from, to)
   );
   return rows.map(rowToGroup);
 }
@@ -92,7 +94,7 @@ export async function updatePayrollAdminFormGroup(
     .from(TABLE)
     .update(row)
     .eq('id', idNum)
-    .select()
+    .select(ROW_COLUMNS)
     .single();
 
   if (error) throw new Error(error.message ?? i18n.t('payrollIp.groups.service.notFound'));

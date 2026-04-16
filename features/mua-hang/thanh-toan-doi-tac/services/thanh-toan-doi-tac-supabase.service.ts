@@ -14,6 +14,9 @@ import { getTrangThaiThanhToanDoiTacList } from '../../thiet-lap-de-xuat-vat-tu/
 const TABLE = 'fp_mh_thanh_toan_doi_tac';
 const RPC_NEXT_SO_PHIEU = 'get_next_so_phieu_thanh_toan_doi_tac';
 
+const THANH_TOAN_ROW_COLUMNS =
+  'id,so_phieu,hang_muc_thanh_toan,ngay,id_don_vi,id_doi_tac,id_trang_thai_thanh_toan,trang_thai,so_tien,ngay_xu_ly,ghi_chu,id_nguoi_tao,tg_tao,tg_cap_nhat';
+
 export interface NextSoPhieuTtoConfig {
   tien_to_so_phieu: string;
   do_dai_phan_so: number;
@@ -98,7 +101,7 @@ export async function getAllThanhToanDoiTac(): Promise<ThanhToanDoiTac[]> {
     fetchAllRows<DbRow>((from, to) =>
       supabase
         .from(TABLE)
-        .select('*')
+        .select(THANH_TOAN_ROW_COLUMNS)
         .order('ngay', { ascending: false })
         .order('so_phieu', { ascending: false })
         .range(from, to)
@@ -158,7 +161,7 @@ export async function getThanhToanDoiTacById(id: string): Promise<ThanhToanDoiTa
 
   const { data: row, error } = await supabase
     .from(TABLE)
-    .select('*')
+    .select(THANH_TOAN_ROW_COLUMNS)
     .eq('id', idNum)
     .maybeSingle();
 
@@ -239,7 +242,7 @@ export async function createThanhToanDoiTac(data: ThanhToanDoiTacFormValues): Pr
     id_nguoi_tao: toNum(data.id_nguoi_tao),
   };
 
-  const { data: inserted, error } = await supabase.from(TABLE).insert(payload).select('*').single();
+  const { data: inserted, error } = await supabase.from(TABLE).insert(payload).select(THANH_TOAN_ROW_COLUMNS).single();
   if (error) throw new Error(error.message);
 
   const got = await getThanhToanDoiTacById(String((inserted as DbRow).id));

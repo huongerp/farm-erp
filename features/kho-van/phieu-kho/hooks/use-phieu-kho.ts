@@ -33,7 +33,7 @@ export const usePhieuKhoList = () => {
   return useQuery({
     queryKey: QUERY_KEY,
     queryFn: getAllPhieuKho,
-    staleTime: 1000 * 60 * 2,
+    staleTime: 1000 * 60 * 10,
   });
 };
 

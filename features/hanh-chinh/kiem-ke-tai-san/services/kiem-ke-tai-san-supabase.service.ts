@@ -76,7 +76,7 @@ function toNumList(arr: string[] | null | undefined): number[] {
   return arr.map((s) => Number(s)).filter((n) => !Number.isNaN(n));
 }
 
-/** Khớp cột bảng fp_ts_dot_kiem_ke_tai_san – select('*') lấy đủ, map hết qua rowToDot */
+/** Khớp cột bảng fp_ts_dot_kiem_ke_tai_san — dùng `DOT_LIST_SELECT`, map qua rowToDot */
 interface DbDotRow {
   id: number;
   ma_dot: string;
@@ -94,7 +94,7 @@ interface DbDotRow {
   tg_cap_nhat: string | null;
 }
 
-/** Khớp cột bảng fp_ts_dot_kiem_ke_tai_san_chi_tiet – select('*') lấy đủ, map hết qua rowToChiTiet; ten_nguoi_kiem enrich từ getEmployees */
+/** Khớp cột bảng fp_ts_dot_kiem_ke_tai_san_chi_tiet — dùng `CT_LIST_SELECT`, map qua rowToChiTiet; ten_nguoi_kiem enrich từ getEmployees */
 interface DbChiTietRow {
   id: number;
   id_dot_kiem_ke: number;
@@ -244,7 +244,7 @@ export async function getDotKiemKeListSupabase(params: GetDotKiemKeListParams = 
 export async function getDotKiemKeByIdSupabase(id: string): Promise<DotKiemKe | null> {
   const numId = toNum(id);
   if (numId == null) return null;
-  const { data, error } = await supabase.from(TABLE_DOT).select('*').eq('id', numId).single();
+  const { data, error } = await supabase.from(TABLE_DOT).select(DOT_LIST_SELECT).eq('id', numId).single();
   if (error || !data) return null;
   const [enriched] = await enrichDots([rowToDot(data as DbDotRow)]);
   return enriched;
@@ -277,7 +277,7 @@ export async function createDotKiemKeSupabase(data: DotKiemKeCreate): Promise<Do
     ghi_chu: data.ghi_chu ?? null,
     trang_thai_active: TRANG_THAI_ACTIVE_DEFAULT,
   };
-  const { data: inserted, error } = await supabase.from(TABLE_DOT).insert(payload).select('*').single();
+  const { data: inserted, error } = await supabase.from(TABLE_DOT).insert(payload).select(DOT_LIST_SELECT).single();
   if (error) throw new Error((error as { message?: string }).message ?? String(error));
   const [enriched] = await enrichDots([rowToDot(inserted as DbDotRow)]);
   return enriched;
@@ -406,7 +406,7 @@ export async function updateChiTietKetQuaSupabase(
 ): Promise<ChiTietKiemKe> {
   const numCtId = toNum(id_chi_tiet);
   if (numCtId == null) throw new Error('Chi tiết không tồn tại');
-  const { data: row, error: e0 } = await supabase.from(TABLE_CT).select('*').eq('id', numCtId).single();
+  const { data: row, error: e0 } = await supabase.from(TABLE_CT).select(CT_LIST_SELECT).eq('id', numCtId).single();
   if (e0 || !row) throw new Error('Chi tiết không tồn tại');
   const current = rowToChiTiet(row as DbChiTietRow);
   const [locations, employees, statuses] = await Promise.all([
@@ -448,7 +448,7 @@ export async function updateChiTietKetQuaSupabase(
   };
   const { error } = await supabase.from(TABLE_CT).update(payload).eq('id', numCtId);
   if (error) throw new Error((error as { message?: string }).message ?? String(error));
-  const { data: after } = await supabase.from(TABLE_CT).select('*').eq('id', numCtId).single();
+  const { data: after } = await supabase.from(TABLE_CT).select(CT_LIST_SELECT).eq('id', numCtId).single();
   const [out] = await enrichChiTietList([rowToChiTiet((after ?? row) as DbChiTietRow)]);
   return out;
 }
@@ -538,7 +538,7 @@ export async function themChiTietPhatHienSupabase(
     id_nguoi_kiem: toNum(id_nguoi_kiem),
     ngay_kiem: c.ngay_kiem,
   };
-  const { data: inserted, error } = await supabase.from(TABLE_CT).insert(insertRow).select('*').single();
+  const { data: inserted, error } = await supabase.from(TABLE_CT).insert(insertRow).select(CT_LIST_SELECT).single();
   if (error) throw new Error((error as { message?: string }).message ?? String(error));
   const [out] = await enrichChiTietList([rowToChiTiet(inserted as DbChiTietRow)]);
   return out;
@@ -547,7 +547,7 @@ export async function themChiTietPhatHienSupabase(
 export async function capNhatSoTheoKetQuaSupabase(id_chi_tiet: string): Promise<void> {
   const numCtId = toNum(id_chi_tiet);
   if (numCtId == null) throw new Error('Chi tiết không tồn tại');
-  const { data: row, error } = await supabase.from(TABLE_CT).select('*').eq('id', numCtId).single();
+  const { data: row, error } = await supabase.from(TABLE_CT).select(CT_LIST_SELECT).eq('id', numCtId).single();
   if (error || !row) throw new Error('Chi tiết không tồn tại');
   const c = rowToChiTiet(row as DbChiTietRow);
   if (
