@@ -1,21 +1,52 @@
-
+import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getEmployees, getEmployeeById, createEmployee, updateEmployee, deleteEmployees, updateEmployeeStatus, bulkUpdateEmployees, restoreEmployees } from "../services/nhan-vien-service";
+import {
+  fetchEmployeeRows,
+  enrichEmployeesWithRefData,
+  getEmployeeById,
+  createEmployee,
+  updateEmployee,
+  deleteEmployees,
+  updateEmployeeStatus,
+  bulkUpdateEmployees,
+  restoreEmployees,
+} from "../services/nhan-vien-service";
 import { EmployeeFormValues } from "../core/schema";
 import { Employee } from "../core/types";
 import { toast } from "sonner";
 import i18n from '../../../../lib/i18n';
 import { EMPLOYEES_REF_QUERY_KEY } from '../../../../lib/hooks/use-supabase-ref-queries';
 import { invalidateRefCache } from '../../../../lib/ref-cache';
+import { usePositions } from '../../chuc-vu/hooks/use-chuc-vu';
+import { useDepartments } from '../../phong-ban/hooks/use-phong-ban';
+import { useBranches } from '../../chi-nhanh/hooks/use-chi-nhanh';
 
 export const EMPLOYEES_QUERY_KEY = ['employees'] as const;
 
+/**
+ * Danh sách nhân viên: tải rows một lần, gộp tên từ cache React Query (phòng ban/chức vụ/chi nhánh) — tránh gọi trùng API với toolbar/form.
+ */
 export const useEmployees = () => {
-  return useQuery({
+  const rowsQuery = useQuery({
     queryKey: EMPLOYEES_QUERY_KEY,
-    queryFn: getEmployees,
+    queryFn: fetchEmployeeRows,
     staleTime: 1000 * 60 * 15,
   });
+  const { data: positions = [] } = usePositions();
+  const { data: departments = [] } = useDepartments();
+  const { data: branches = [] } = useBranches();
+
+  const data = useMemo(() => {
+    if (!rowsQuery.data) return undefined;
+    const emps = rowsQuery.data.map((e) => ({ ...e }));
+    enrichEmployeesWithRefData(emps, positions, departments, branches);
+    return emps;
+  }, [rowsQuery.data, positions, departments, branches]);
+
+  return {
+    ...rowsQuery,
+    data,
+  };
 };
 
 export const useEmployee = (id: string | null) => {
@@ -72,7 +103,13 @@ export const useUpdateStatusEmployee = () => {
     return useMutation({
       mutationFn: ({ ids, status }: { ids: string[], status: string }) => updateEmployeeStatus(ids, status),
       onSuccess: (_, variables) => {
-        queryClient.invalidateQueries({ queryKey: EMPLOYEES_QUERY_KEY });
+        queryClient.setQueryData(EMPLOYEES_QUERY_KEY, (old: Employee[] | undefined) => {
+          if (!old) return old;
+          const idSet = new Set(variables.ids.map(String));
+          return old.map((e) =>
+            idSet.has(String(e.id)) ? { ...e, trang_thai: variables.status as Employee['trang_thai'] } : e
+          );
+        });
         queryClient.invalidateQueries({ queryKey: EMPLOYEES_REF_QUERY_KEY });
         invalidateRefCache('employees');
         toast.success(i18n.t('employee.toast.statusUpdateSuccess', { count: variables.ids.length }));

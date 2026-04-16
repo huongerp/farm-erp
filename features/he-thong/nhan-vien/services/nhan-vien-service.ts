@@ -7,6 +7,9 @@ import { TRANG_THAI_NV, type TrangThaiNV } from '../../../../lib/constants';
 import { getPositions } from '../../chuc-vu/services/chuc-vu-service';
 import { getDepartments } from '../../phong-ban/services/phong-ban-service';
 import { getBranches } from '../../chi-nhanh/services/chi-nhanh-service';
+import type { Position } from '../../chuc-vu/core/types';
+import type { Department } from '../../phong-ban/core/types';
+import type { Branch } from '../../chi-nhanh/core/types';
 import i18n from '../../../../lib/i18n';
 
 const TABLE = 'fp_var_nhan_vien';
@@ -161,20 +164,82 @@ const EMPLOYEE_LIST_SELECT =
 const EMPLOYEE_DETAIL_SELECT =
   'id,ho_va_ten,email,so_dien_thoai,phong_ban_id,chuc_vu_id,chi_nhanh_ids,ten_phong_ban,ten_chuc_vu,ten_chi_nhanh,hinh_anh,cap_bac_id,cap_bac,ten_cap_bac,gioi_tinh,trang_thai,ngay_vao_lam,ngay_sinh,cmnd_cccd,ngay_cap_cccd,noi_cap_cccd,quoc_tich,dan_toc,ton_giao,tinh_thanh,quan_huyen,phuong_xa,dia_chi_cu_the,dia_chi_tam_tru,loai_hop_dong,ngay_het_han_hd,noi_lam_viec,nguoi_lien_he_khan_cap,sdt_khan_cap,quan_he_khan_cap,tinh_trang_hon_nhan,so_nguoi_phu_thuoc,trinh_do_hoc_van,chuyen_nganh,truong_hoc,nam_tot_nghiep,chung_chi,so_tai_khoan,ten_ngan_hang,chi_nhanh_nh,ma_so_thue_ca_nhan,so_bhxh,so_bhyt,ngay_tham_gia_bh,noi_dang_ky_kcb';
 
-export const getEmployees = async (): Promise<Employee[]> => {
+/** Cần gọi API chức vụ khi có id nhưng chưa có tên (null/undefined — giữ nguyên hành vi ??). */
+function needsPositionEnrichment(e: Employee): boolean {
+  return !!e.id_chuc_vu && e.ten_chuc_vu == null;
+}
+
+function needsDepartmentEnrichment(e: Employee): boolean {
+  return !!e.id_phong_ban && e.ten_phong_ban == null;
+}
+
+function needsBranchEnrichment(e: Employee): boolean {
+  return (e.id_chi_nhanh?.length ?? 0) > 0 && e.ten_chi_nhanh == null;
+}
+
+/**
+ * Gán ten_chuc_vu / ten_phong_ban / ten_chi_nhanh từ danh sách tham chiếu (Map O(1)).
+ * Dùng trong UI với dữ liệu đã có từ React Query để tránh gọi trùng API.
+ */
+export function enrichEmployeesWithRefData(
+  employees: Employee[],
+  positions: Position[],
+  departments: Department[],
+  branches: Branch[]
+): void {
+  const positionById = new Map(positions.map((p) => [p.id, p.ten_chuc_vu]));
+  const deptById = new Map(departments.map((d) => [d.id, d.ten_phong_ban]));
+  const branchById = new Map(branches.map((b) => [b.id, b.ten_chi_nhanh]));
+
+  for (const emp of employees) {
+    emp.ten_chuc_vu = emp.ten_chuc_vu ?? (emp.id_chuc_vu ? positionById.get(emp.id_chuc_vu) : undefined);
+    emp.ten_phong_ban = emp.ten_phong_ban ?? (emp.id_phong_ban ? deptById.get(emp.id_phong_ban) : undefined);
+    emp.ten_chi_nhanh =
+      emp.ten_chi_nhanh ??
+      (emp.id_chi_nhanh?.length
+        ? emp.id_chi_nhanh
+            .map((id) => branchById.get(id))
+            .filter((t): t is string => t != null && t !== '')
+            .join(', ')
+        : undefined) ??
+      undefined;
+  }
+}
+
+/** Chỉ fetch bảng tham chiếu khi còn thiếu tên hiển thị (trigger DB đã đủ thì bỏ qua). */
+async function enrichEmployeesWithRefDataAsync(employees: Employee[]): Promise<void> {
+  if (employees.length === 0) return;
+
+  const needPos = employees.some(needsPositionEnrichment);
+  const needDept = employees.some(needsDepartmentEnrichment);
+  const needBranch = employees.some(needsBranchEnrichment);
+  if (!needPos && !needDept && !needBranch) return;
+
+  const [positions, depts, branches] = await Promise.all([
+    needPos ? getPositions() : Promise.resolve([] as Position[]),
+    needDept ? getDepartments() : Promise.resolve([] as Department[]),
+    needBranch ? getBranches() : Promise.resolve([] as Branch[]),
+  ]);
+  enrichEmployeesWithRefData(employees, positions, depts, branches);
+}
+
+/**
+ * Chỉ đọc fp_var_nhan_vien (không enrich). Dùng với React Query + enrichEmployeesWithRefData ở hook.
+ *
+ * @see enrichEmployeesWithRefData — gộp tên từ cache phòng ban/chức vụ/chi nhánh
+ * @future Khi danh sách rất lớn: thay bằng phân trang/filter phía Supabase (.range + điều kiện), không fetchAllRows toàn bộ.
+ */
+export async function fetchEmployeeRows(): Promise<Employee[]> {
   const data = await fetchAllRows<NhanVienRow>((from, to) =>
     supabase.from(TABLE).select(EMPLOYEE_LIST_SELECT).order('id', { ascending: false }).range(from, to)
   );
-  const employees = data.map(rowToEmployee);
-  const [positions, depts, branches] = await Promise.all([getPositions(), getDepartments(), getBranches()]);
-  employees.forEach((emp) => {
-    // Ưu tiên giá trị từ Supabase (đã sync bởi trigger); fallback enrich từ bảng tham chiếu
-    emp.ten_chuc_vu = emp.ten_chuc_vu ?? positions.find((p) => p.id === emp.id_chuc_vu)?.ten_chuc_vu;
-    emp.ten_phong_ban = emp.ten_phong_ban ?? depts.find((d) => d.id === emp.id_phong_ban)?.ten_phong_ban;
-    emp.ten_chi_nhanh = emp.ten_chi_nhanh ?? (emp.id_chi_nhanh?.length
-      ? emp.id_chi_nhanh.map((id) => branches.find((b) => b.id === id)?.ten_chi_nhanh).filter(Boolean).join(', ')
-      : undefined) ?? undefined;
-  });
+  return data.map(rowToEmployee);
+}
+
+/** Toàn bộ nhân viên + enrich (cho caller không dùng React: báo cáo, v.v.). */
+export const getEmployees = async (): Promise<Employee[]> => {
+  const employees = await fetchEmployeeRows();
+  await enrichEmployeesWithRefDataAsync(employees);
   return employees;
 };
 
@@ -213,17 +278,12 @@ export const getEmployeeById = async (id: string): Promise<Employee | undefined>
   if (error) throw new Error(error.message);
   if (!data) return undefined;
   const emp = rowToEmployee(data);
-  const [positions, depts, branches] = await Promise.all([getPositions(), getDepartments(), getBranches()]);
-  emp.ten_chuc_vu = emp.ten_chuc_vu ?? positions.find((p) => p.id === emp.id_chuc_vu)?.ten_chuc_vu;
-  emp.ten_phong_ban = emp.ten_phong_ban ?? depts.find((d) => d.id === emp.id_phong_ban)?.ten_phong_ban;
-  emp.ten_chi_nhanh = emp.ten_chi_nhanh ?? (emp.id_chi_nhanh?.length
-    ? emp.id_chi_nhanh.map((id) => branches.find((b) => b.id === id)?.ten_chi_nhanh).filter(Boolean).join(', ')
-    : undefined) ?? undefined;
+  await enrichEmployeesWithRefDataAsync([emp]);
   return emp;
 };
 
 const EMPLOYEE_AUTH_SELECT =
-  'id, ho_va_ten, email, so_dien_thoai, phong_ban_id, chuc_vu_id, chi_nhanh_ids, hinh_anh, cap_bac_id, cap_bac, trang_thai, gioi_tinh, ngay_vao_lam';
+  'id, ho_va_ten, email, so_dien_thoai, phong_ban_id, chuc_vu_id, chi_nhanh_ids, ten_phong_ban, ten_chuc_vu, ten_chi_nhanh, hinh_anh, cap_bac_id, cap_bac, trang_thai, gioi_tinh, ngay_vao_lam';
 
 export const getEmployeeByEmail = async (email: string): Promise<Employee | null> => {
   if (!email?.trim()) return null;
@@ -236,12 +296,7 @@ export const getEmployeeByEmail = async (email: string): Promise<Employee | null
   if (error) throw new Error(error.message);
   if (!data) return null;
   const emp = rowToEmployee(data);
-  const [positions, depts, branches] = await Promise.all([getPositions(), getDepartments(), getBranches()]);
-  emp.ten_chuc_vu = emp.ten_chuc_vu ?? positions.find((p) => p.id === emp.id_chuc_vu)?.ten_chuc_vu;
-  emp.ten_phong_ban = emp.ten_phong_ban ?? depts.find((d) => d.id === emp.id_phong_ban)?.ten_phong_ban;
-  emp.ten_chi_nhanh = emp.ten_chi_nhanh ?? (emp.id_chi_nhanh?.length
-    ? emp.id_chi_nhanh.map((id) => branches.find((b) => b.id === id)?.ten_chi_nhanh).filter(Boolean).join(', ')
-    : undefined) ?? undefined;
+  await enrichEmployeesWithRefDataAsync([emp]);
   return emp;
 };
 
@@ -272,12 +327,7 @@ export const createEmployee = async (data: EmployeeFormValues): Promise<Employee
   if (error) throw new Error(error.message);
   const emp: Employee & { _authCreated?: boolean } = rowToEmployee(inserted);
   emp._authCreated = authCreated;
-  const [positions, depts, branches] = await Promise.all([getPositions(), getDepartments(), getBranches()]);
-  emp.ten_chuc_vu = emp.ten_chuc_vu ?? positions.find((p) => p.id === emp.id_chuc_vu)?.ten_chuc_vu;
-  emp.ten_phong_ban = emp.ten_phong_ban ?? depts.find((d) => d.id === emp.id_phong_ban)?.ten_phong_ban;
-  emp.ten_chi_nhanh = emp.ten_chi_nhanh ?? (emp.id_chi_nhanh?.length
-    ? emp.id_chi_nhanh.map((id) => branches.find((b) => b.id === id)?.ten_chi_nhanh).filter(Boolean).join(', ')
-    : undefined) ?? undefined;
+  await enrichEmployeesWithRefDataAsync([emp]);
   return emp;
 };
 
@@ -318,12 +368,7 @@ export const updateEmployee = async (id: string, data: EmployeeFormValues): Prom
   if (error) throw new Error(error.message ?? i18n.t('employee.service.notFound'));
   const emp: Employee & { _authCreated?: boolean } = rowToEmployee(updated);
   emp._authCreated = authCreated;
-  const [positions, depts, branches] = await Promise.all([getPositions(), getDepartments(), getBranches()]);
-  emp.ten_chuc_vu = emp.ten_chuc_vu ?? positions.find((p) => p.id === emp.id_chuc_vu)?.ten_chuc_vu;
-  emp.ten_phong_ban = emp.ten_phong_ban ?? depts.find((d) => d.id === emp.id_phong_ban)?.ten_phong_ban;
-  emp.ten_chi_nhanh = emp.ten_chi_nhanh ?? (emp.id_chi_nhanh?.length
-    ? emp.id_chi_nhanh.map((id) => branches.find((b) => b.id === id)?.ten_chi_nhanh).filter(Boolean).join(', ')
-    : undefined) ?? undefined;
+  await enrichEmployeesWithRefDataAsync([emp]);
   return emp;
 };
 

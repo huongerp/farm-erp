@@ -17,8 +17,8 @@ import ImportDialog from '../../../components/shared/ImportDialog';
 import ExportDialog from '../../../components/shared/ExportDialog';
 
 import { useEmployees, useDeleteWithUndo, useUpdateStatusEmployee } from './hooks/use-nhan-vien';
-import { useDepartments } from '@/features/he-thong/phong-ban/hooks/use-phong-ban';
 import { usePositions } from '@/features/he-thong/chuc-vu/hooks/use-chuc-vu';
+import { employeeMatchesSearch } from './utils/employee-search';
 import { useModulePermissionFromContext } from '@/components/shared/ModulePermissionGuard';
 import { useEmployeeStore } from './store/useEmployeeStore';
 import { Employee } from './core/types';
@@ -73,8 +73,7 @@ const EmployeePage: React.FC = () => {
   const { searchTerm, filters, sort, resetState, clearSelection, selectedIds, pagination, columns, setFilter } = useEmployeeStore();
 
   const { data: employees = [], isLoading } = useEmployees();
-  useDepartments(); // Prefetch danh sách phòng ban để form và toolbar có sẵn options
-  const { data: positions = [] } = usePositions(); // Tra cứu cấp bậc theo chức vụ ở bảng
+  const { data: positions = [] } = usePositions(); // Tra cứu cấp bậc theo chức vụ ở bảng (useEmployees đã prefetch phòng ban/chi nhánh)
   const { deleteWithUndo } = useDeleteWithUndo();
   const statusMutation = useUpdateStatusEmployee();
   const confirm = useConfirmStore(state => state.confirm);
@@ -91,15 +90,7 @@ const EmployeePage: React.FC = () => {
   }, [employees, viewingEmp?.id]);
 
   const filterFn = useCallback((emp: Employee, term: string, f: typeof filters) => {
-    const searchLower = term.toLowerCase();
-    const matchesSearch = !term ||
-      emp.ho_ten.toLowerCase().includes(searchLower) ||
-      emp.ma_nhan_vien.toLowerCase().includes(searchLower) ||
-      emp.email.toLowerCase().includes(searchLower) ||
-      emp.so_dien_thoai.includes(searchLower) ||
-      (emp.ten_chuc_vu && emp.ten_chuc_vu.toLowerCase().includes(searchLower)) ||
-      (emp.ten_phong_ban && emp.ten_phong_ban.toLowerCase().includes(searchLower)) ||
-      (emp.ten_chi_nhanh && emp.ten_chi_nhanh.toLowerCase().includes(searchLower));
+    const matchesSearch = employeeMatchesSearch(emp, term);
     const matchesStatus = f.trang_thai.length === 0 || f.trang_thai.includes(String(emp.trang_thai));
     const matchesDept = f.id_phong_ban.length === 0 || (emp.id_phong_ban && f.id_phong_ban.includes(emp.id_phong_ban));
     const matchesPosition = f.position.length === 0 || (emp.id_chuc_vu && f.position.includes(emp.id_chuc_vu));
@@ -111,17 +102,19 @@ const EmployeePage: React.FC = () => {
   // Client-side sort
   const sortedEmployees = useMemo(() => {
     if (!sort.column || !sort.direction) return filteredEmployees;
+    const col = sort.column;
+    const direction = sort.direction;
     const sorted = [...filteredEmployees];
-    sorted.sort((a: any, b: any) => {
-      const aVal = a[sort.column!] ?? '';
-      const bVal = b[sort.column!] ?? '';
+    sorted.sort((a, b) => {
+      const aVal = (a as Record<string, unknown>)[col];
+      const bVal = (b as Record<string, unknown>)[col];
       let cmp = 0;
       if (typeof aVal === 'number' && typeof bVal === 'number') {
         cmp = aVal - bVal;
       } else {
-        cmp = String(aVal).localeCompare(String(bVal), getLanguage());
+        cmp = String(aVal ?? '').localeCompare(String(bVal ?? ''), getLanguage());
       }
-      return sort.direction === 'desc' ? -cmp : cmp;
+      return direction === 'desc' ? -cmp : cmp;
     });
     return sorted;
   }, [filteredEmployees, sort]);

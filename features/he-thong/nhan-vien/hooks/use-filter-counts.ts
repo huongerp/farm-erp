@@ -1,6 +1,7 @@
 
 import { useMemo } from 'react';
 import type { Employee, EmployeeFilters } from '../core/types';
+import { employeeMatchesSearch } from '../utils/employee-search';
 
 /**
  * Tính count cho từng giá trị filter theo chiến lược "exclude-self":
@@ -14,16 +15,7 @@ export function useFilterCounts(
   filters: EmployeeFilters,
 ) {
   return useMemo(() => {
-    const searchLower = searchTerm.toLowerCase();
-
-    const matchesSearch = (emp: Employee) =>
-      !searchTerm ||
-      emp.ho_ten.toLowerCase().includes(searchLower) ||
-      emp.ma_nhan_vien.toLowerCase().includes(searchLower) ||
-      emp.email.toLowerCase().includes(searchLower) ||
-      emp.so_dien_thoai.includes(searchLower) ||
-      (emp.ten_chuc_vu && emp.ten_chuc_vu.toLowerCase().includes(searchLower)) ||
-      (emp.ten_phong_ban && emp.ten_phong_ban.toLowerCase().includes(searchLower));
+    const matchesSearch = (emp: Employee) => employeeMatchesSearch(emp, searchTerm);
 
     const matchesDept = (emp: Employee) =>
       filters.id_phong_ban.length === 0 ||
