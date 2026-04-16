@@ -155,11 +155,11 @@ function formToRow(data: EmployeeFormValues): NhanVienRow {
 }
 
 const EMPLOYEE_LIST_SELECT =
-  'id, ho_va_ten, email, so_dien_thoai, phong_ban_id, chuc_vu_id, chi_nhanh_ids, chi_nhanh_id, hinh_anh, cap_bac_id, cap_bac, trang_thai, gioi_tinh, ngay_vao_lam, ten_phong_ban, ten_chuc_vu, ten_chi_nhanh, ten_cap_bac, loai_hop_dong, ngay_het_han_hd, noi_lam_viec';
+  'id, ho_va_ten, email, so_dien_thoai, phong_ban_id, chuc_vu_id, chi_nhanh_ids, hinh_anh, cap_bac_id, cap_bac, trang_thai, gioi_tinh, ngay_vao_lam, ten_phong_ban, ten_chuc_vu, ten_chi_nhanh, ten_cap_bac, loai_hop_dong, ngay_het_han_hd, noi_lam_viec';
 
 /** Đủ cột cho `rowToEmployee` (hồ sơ đầy đủ) — tránh select('*'). */
 const EMPLOYEE_DETAIL_SELECT =
-  'id,ho_va_ten,email,so_dien_thoai,phong_ban_id,chuc_vu_id,chi_nhanh_ids,chi_nhanh_id,ten_phong_ban,ten_chuc_vu,ten_chi_nhanh,hinh_anh,cap_bac_id,cap_bac,ten_cap_bac,gioi_tinh,trang_thai,ngay_vao_lam,ngay_sinh,cmnd_cccd,ngay_cap_cccd,noi_cap_cccd,quoc_tich,dan_toc,ton_giao,tinh_thanh,quan_huyen,phuong_xa,dia_chi_cu_the,dia_chi_tam_tru,loai_hop_dong,ngay_het_han_hd,noi_lam_viec,nguoi_lien_he_khan_cap,sdt_khan_cap,quan_he_khan_cap,tinh_trang_hon_nhan,so_nguoi_phu_thuoc,trinh_do_hoc_van,chuyen_nganh,truong_hoc,nam_tot_nghiep,chung_chi,so_tai_khoan,ten_ngan_hang,chi_nhanh_nh,ma_so_thue_ca_nhan,so_bhxh,so_bhyt,ngay_tham_gia_bh,noi_dang_ky_kcb';
+  'id,ho_va_ten,email,so_dien_thoai,phong_ban_id,chuc_vu_id,chi_nhanh_ids,ten_phong_ban,ten_chuc_vu,ten_chi_nhanh,hinh_anh,cap_bac_id,cap_bac,ten_cap_bac,gioi_tinh,trang_thai,ngay_vao_lam,ngay_sinh,cmnd_cccd,ngay_cap_cccd,noi_cap_cccd,quoc_tich,dan_toc,ton_giao,tinh_thanh,quan_huyen,phuong_xa,dia_chi_cu_the,dia_chi_tam_tru,loai_hop_dong,ngay_het_han_hd,noi_lam_viec,nguoi_lien_he_khan_cap,sdt_khan_cap,quan_he_khan_cap,tinh_trang_hon_nhan,so_nguoi_phu_thuoc,trinh_do_hoc_van,chuyen_nganh,truong_hoc,nam_tot_nghiep,chung_chi,so_tai_khoan,ten_ngan_hang,chi_nhanh_nh,ma_so_thue_ca_nhan,so_bhxh,so_bhyt,ngay_tham_gia_bh,noi_dang_ky_kcb';
 
 export const getEmployees = async (): Promise<Employee[]> => {
   const data = await fetchAllRows<NhanVienRow>((from, to) =>
@@ -223,7 +223,7 @@ export const getEmployeeById = async (id: string): Promise<Employee | undefined>
 };
 
 const EMPLOYEE_AUTH_SELECT =
-  'id, ho_va_ten, email, so_dien_thoai, phong_ban_id, chuc_vu_id, chi_nhanh_ids, chi_nhanh_id, hinh_anh, cap_bac_id, cap_bac, trang_thai, gioi_tinh, ngay_vao_lam';
+  'id, ho_va_ten, email, so_dien_thoai, phong_ban_id, chuc_vu_id, chi_nhanh_ids, hinh_anh, cap_bac_id, cap_bac, trang_thai, gioi_tinh, ngay_vao_lam';
 
 export const getEmployeeByEmail = async (email: string): Promise<Employee | null> => {
   if (!email?.trim()) return null;
