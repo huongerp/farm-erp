@@ -28,7 +28,6 @@ const SubmenuPage = lazy(() => import('./pages/SubmenuPage'));
 const ModuleGuidePage = lazy(() => import('./pages/ModuleGuidePage'));
 const Profile = lazy(() => import('./pages/Profile'));
 const Settings = lazy(() => import('./pages/Settings'));
-const AiStudio = lazy(() => import('./pages/AiStudio'));
 
 const DepartmentPage = lazy(() => import('./features/he-thong/phong-ban/index'));
 const PositionPage = lazy(() => import('./features/he-thong/chuc-vu/index'));
@@ -145,7 +144,6 @@ const App = () => {
                   <Route path="/chi-nhanh" element={<ModulePermissionGuard moduleId="he-thong/chi-nhanh"><BranchPage /></ModulePermissionGuard>} />
                   <Route path="/phan-quyen" element={<ModulePermissionGuard moduleId="he-thong/phan-quyen"><SecurityPage /></ModulePermissionGuard>} />
 
-                  <Route path="/tro-ly-ai" element={<AiStudio />} />
                   <Route path="/ho-so" element={<Profile />} />
                   <Route path="/cai-dat" element={<Settings />} />
                   <Route path="/thong-bao" element={<NotificationPage />} />

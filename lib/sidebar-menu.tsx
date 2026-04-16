@@ -6,7 +6,6 @@ import {
   ShoppingCart,
   Sprout,
   Layers,
-  Sparkles,
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -17,7 +16,7 @@ export interface MenuItem {
   gradient: string;
 }
 
-/** Cấu hình menu sidebar và thẻ trên Trang chủ (Trang chủ, Hành chính, Nhân sự, ..., Hệ thống, Trợ lý AI) */
+/** Cấu hình menu sidebar và thẻ trên Trang chủ */
 export const SIDEBAR_MENU: MenuItem[] = [
   {
     path: '/',
@@ -61,13 +60,6 @@ export const SIDEBAR_MENU: MenuItem[] = [
     descriptionKey: 'page.home.systemModuleDesc',
     icon: Layers,
     gradient: 'bg-gradient-to-br from-slate-600 to-slate-800 dark:from-slate-500 dark:to-slate-700',
-  },
-  {
-    path: '/tro-ly-ai',
-    nameKey: 'nav.aiAssistant',
-    descriptionKey: 'page.home.systemModuleDesc',
-    icon: Sparkles,
-    gradient: 'bg-gradient-to-br from-indigo-600 to-indigo-800',
   },
   {
     path: '/thong-tin-ban-quyen',

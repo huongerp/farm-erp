@@ -64,7 +64,6 @@ interface RouteConfig {
     ...quanLyFarmModuleRoutes,
 
     // --- KHÁC ---
-    '/tro-ly-ai': { label: t('breadcrumb.aiAssistant'), parentPath: '/' },
     '/ho-so': { label: t('breadcrumb.profile') },
     '/cai-dat': { label: t('breadcrumb.settings') },
     '/thong-bao': { label: t('notification.title') },
