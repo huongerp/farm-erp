@@ -77,6 +77,7 @@ export const PERMISSION_FUNCTIONS: PermissionFunction[] = [
         { id: BASE('mua-hang', 'phieu-de-xuat-vat-tu'), nameKey: 'page.muaHang.modules.phieuDeXuatVatTu' },
         { id: BASE('mua-hang', 'don-dat-hang'), nameKey: 'page.muaHang.modules.donDatHang' },
         { id: BASE('mua-hang', 'thanh-toan-doi-tac'), nameKey: 'page.muaHang.modules.thanhToanDoiTac' },
+        { id: BASE('mua-hang', 'quan-ly-hop-dong'), nameKey: 'page.muaHang.modules.quanLyHopDong' },
         { id: BASE('mua-hang', 'bao-cao-de-xuat-vat-tu'), nameKey: 'page.muaHang.modules.baoCaoDeXuatVatTu' },
         { id: BASE('mua-hang', 'thiet-lap-de-xuat-vat-tu'), nameKey: 'page.muaHang.modules.thietLapDeXuatVatTu' },
       ]},

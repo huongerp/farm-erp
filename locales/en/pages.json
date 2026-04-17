@@ -551,6 +551,8 @@
   "page.muaHang.descs.danhSachDoiTac": "Manage suppliers for purchasing.",
   "page.muaHang.modules.thanhToanDoiTac": "Partner Payment",
   "page.muaHang.descs.thanhToanDoiTac": "Payment and reconciliation with partners.",
+  "page.muaHang.modules.quanLyHopDong": "Contract Management",
+  "page.muaHang.descs.quanLyHopDong": "Track and manage purchase contracts with partners.",
   "page.muaHang.modules.baoCaoDeXuatVatTu": "Material Request Report",
   "page.muaHang.descs.baoCaoDeXuatVatTu": "Statistics on requests, orders, materials.",
   "page.muaHang.modules.thietLapDeXuatVatTu": "Material Request Settings",

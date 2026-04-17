@@ -551,6 +551,8 @@
   "page.muaHang.descs.danhSachDoiTac": "Quản lý nhà cung cấp phục vụ mua hàng.",
   "page.muaHang.modules.thanhToanDoiTac": "Thanh toán đối tác",
   "page.muaHang.descs.thanhToanDoiTac": "Thanh toán, đối soát với đối tác.",
+  "page.muaHang.modules.quanLyHopDong": "Quản lý hợp đồng",
+  "page.muaHang.descs.quanLyHopDong": "Theo dõi, quản lý hợp đồng mua hàng với đối tác.",
   "page.muaHang.modules.baoCaoDeXuatVatTu": "Báo cáo đề xuất vật tư",
   "page.muaHang.descs.baoCaoDeXuatVatTu": "Thống kê đề xuất, đơn hàng, vật tư.",
   "page.muaHang.modules.thietLapDeXuatVatTu": "Thiết lập đề xuất vật tư",

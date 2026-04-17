@@ -5,6 +5,7 @@ import {
   BarChart3,
   Settings,
   ClipboardList,
+  FileText,
 } from 'lucide-react';
 import type { ModuleItem } from '../components/dashboard/SubModuleCard';
 import type { ModuleGroup } from '../components/dashboard/ModuleDashboardLayout';
@@ -37,6 +38,7 @@ const MUA_HANG_ONLY_SLUGS: string[] = [
   'phieu-de-xuat-vat-tu',
   'don-dat-hang',
   'thanh-toan-doi-tac',
+  'quan-ly-hop-dong',
   'bao-cao-de-xuat-vat-tu',
   'thiet-lap-de-xuat-vat-tu',
 ];
@@ -95,6 +97,13 @@ export function getMuaHangGroups(
           descKey: 'page.muaHang.descs.thanhToanDoiTac',
           icon: CreditCard,
           color: 'bg-emerald-500',
+        }),
+        item({
+          slug: 'quan-ly-hop-dong',
+          titleKey: 'page.muaHang.modules.quanLyHopDong',
+          descKey: 'page.muaHang.descs.quanLyHopDong',
+          icon: FileText,
+          color: 'bg-amber-600',
         }),
         item({
           slug: 'bao-cao-de-xuat-vat-tu',

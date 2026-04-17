@@ -26,6 +26,7 @@ export const SUBMENU_MODULE_IMPORTS = {
   'don-dat-hang': () => import('../features/mua-hang/don-dat-hang'),
   'thiet-lap-de-xuat-vat-tu': () => import('../features/mua-hang/thiet-lap-de-xuat-vat-tu'),
   'thanh-toan-doi-tac': () => import('../features/mua-hang/thanh-toan-doi-tac'),
+  'quan-ly-hop-dong': () => import('../features/mua-hang/quan-ly-hop-dong'),
   'bao-cao-de-xuat-vat-tu': () => import('../features/mua-hang/bao-cao-de-xuat-vat-tu'),
   'thu-hoach': () => import('../features/quan-ly-farm/thu-hoach'),
 } as const;

@@ -38,6 +38,7 @@ import donDatHang from '@/features/mua-hang/don-dat-hang/locales/en.json';
 import thietLapDeXuatVatTu from '@/features/mua-hang/thiet-lap-de-xuat-vat-tu/locales/en.json';
 import thanhToanDoiTac from '@/features/mua-hang/thanh-toan-doi-tac/locales/en.json';
 import baoCaodeXuatVatTu from '@/features/mua-hang/bao-cao-de-xuat-vat-tu/locales/en.json';
+import hopDong from '@/features/mua-hang/quan-ly-hop-dong/locales/en.json';
 import thuHoach from '@/features/quan-ly-farm/thu-hoach/locales/en.json';
 import kho from './kho.json';
 
@@ -79,6 +80,7 @@ const en = {
   ...(thietLapDeXuatVatTu as Record<string, string>),
   ...(thanhToanDoiTac as Record<string, string>),
   ...(baoCaodeXuatVatTu as Record<string, string>),
+  ...(hopDong as Record<string, string>),
   ...(thuHoach as Record<string, string>),
   ...(kho as Record<string, string>),
 };

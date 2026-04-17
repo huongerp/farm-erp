@@ -173,6 +173,11 @@ const SubmenuPage: React.FC = () => {
         <ErrorBoundary>{renderLazySubmenuModule('thanh-toan-doi-tac')}</ErrorBoundary>
       ));
     }
+    if (basePath === '/mua-hang' && decodedSlug === 'quan-ly-hop-dong') {
+      return wrapWithPermission(basePath ?? '', decodedSlug, (
+        <ErrorBoundary>{renderLazySubmenuModule('quan-ly-hop-dong')}</ErrorBoundary>
+      ));
+    }
     if (basePath === '/mua-hang' && decodedSlug === 'bao-cao-de-xuat-vat-tu') {
       return wrapWithPermission(basePath ?? '', decodedSlug, (
         <ErrorBoundary>{renderLazySubmenuModule('bao-cao-de-xuat-vat-tu')}</ErrorBoundary>
