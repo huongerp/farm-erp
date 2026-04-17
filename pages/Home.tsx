@@ -17,6 +17,7 @@ import {
   getPermissionModuleIdFromPath,
 } from '../features/he-thong/phan-quyen/hooks/use-module-permission';
 import { useFavoriteModules } from '../lib/use-favorite-modules';
+import { warmupNavigationTarget } from '../lib/submenu-prefetch';
 import { getAllSubmenuGroups } from '../lib/all-submenu-groups';
 import 'dayjs/locale/vi';
 
@@ -222,6 +223,7 @@ const Home: React.FC = () => {
                   icon={mod.icon}
                   gradient={mod.gradient}
                   onClick={() => navigate(mod.path)}
+                  onPointerEnter={() => warmupNavigationTarget(mod.path)}
                 />
               </motion.div>
             ))}

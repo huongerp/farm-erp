@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { NavLink, useLocation, useNavigate, Link } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate, Link, useNavigation } from 'react-router-dom';
 import {
   User, Sparkles, LogOut, Lock, Eye, EyeOff,
   Settings,
@@ -20,6 +20,7 @@ import { useSubmenuVisible, isSubmenuWithPermission } from '../../features/he-th
 import { signOut, updatePassword } from '../../lib/auth';
 import { toast } from 'sonner';
 import { useCompanyInfo } from '../../features/he-thong/thong-tin-cong-ty/hooks/use-thong-tin-cong-ty';
+import { warmupNavigationTarget } from '../../lib/submenu-prefetch';
 
 /** Sidebar width: expanded 240px (gọn), collapsed 64px (4rem, 8px grid) */
 const SIDEBAR_WIDTH_EXPANDED = 240;
@@ -47,6 +48,7 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   useCompanyInfo();
   const location = useLocation();
   const navigate = useNavigate();
+  const navigation = useNavigation();
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const [changePasswordNew, setChangePasswordNew] = useState('');
@@ -222,6 +224,7 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                   onClick={() => {
                     if (isMobile && sidebarOpen) toggleSidebar();
                   }}
+                  onPointerEnter={() => warmupNavigationTarget(item.path)}
                   onMouseEnter={(e) => {
                     if (!sidebarOpen) {
                       const rect = e.currentTarget.getBoundingClientRect();
@@ -289,6 +292,14 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
           {sidebarTooltip.name}
         </div>,
         document.body
+      )}
+
+      {/* Thanh trạng thái chuyển route — phản hồi tức thì khi URL đang đổi (lazy chunk). */}
+      {navigation.state === 'loading' && (
+        <div
+          className="fixed top-0 left-0 right-0 z-[100] h-1 bg-primary/40 animate-pulse pointer-events-none"
+          aria-hidden
+        />
       )}
 
       {/* ===== MAIN CONTENT ===== */}

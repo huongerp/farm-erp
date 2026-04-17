@@ -28,6 +28,42 @@ export function getModuleName(moduleId: string): string {
   return m?.nameKey ?? moduleId;
 }
 
+/** Quyền + thứ tự chức vụ cho phiên đăng nhập hiện tại (truy vấn nhẹ, không tải toàn bộ ma trận). */
+export interface CurrentRoleContextData {
+  quyenHan: ModulePermission[];
+  thuTuChucVu: number;
+}
+
+/**
+ * Chỉ đọc fp_var_phan_quyen theo chuc_vu_id và một dòng fp_var_chuc_vu (tt).
+ * Dùng cho sidebar, guard module, dashboard — thay cho getRoles() toàn phần.
+ */
+export async function getCurrentRoleContext(chucVuId: string): Promise<CurrentRoleContextData> {
+  const cvId = Number(chucVuId);
+  if (Number.isNaN(cvId)) {
+    return { quyenHan: [], thuTuChucVu: 999 };
+  }
+
+  const [pqRes, cvRes] = await Promise.all([
+    supabase.from(TABLE_PHAN_QUYEN).select('module_id, actions').eq('chuc_vu_id', cvId),
+    supabase.from(TABLE_CHUC_VU).select('tt').eq('id', cvId).maybeSingle(),
+  ]);
+
+  if (pqRes.error) throw new Error(pqRes.error.message);
+
+  const quyenHan: ModulePermission[] = (pqRes.data ?? []).map((row: { module_id: string; actions?: string[] }) => ({
+    module_id: row.module_id,
+    module_name: getModuleName(row.module_id),
+    actions: (row.actions ?? []) as ActionType[],
+  }));
+
+  const rawTt = cvRes.data?.tt;
+  const thuTuChucVu =
+    rawTt != null && !Number.isNaN(Number(rawTt)) ? Number(rawTt) : 999;
+
+  return { quyenHan, thuTuChucVu };
+}
+
 /** Lấy danh sách chức vụ kèm quyền từ Supabase: fp_var_chuc_vu + fp_var_phan_quyen. */
 export const getRoles = async (): Promise<PositionPermission[]> => {
   const [positions, departments, phanQuyenRows] = await Promise.all([

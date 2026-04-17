@@ -5,6 +5,7 @@ import { ChevronRight, HelpCircle, Star } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { usePrimaryColor } from '../../lib/theme-utils';
 import { useFavoriteModules } from '../../lib/use-favorite-modules';
+import { warmupNavigationTarget } from '../../lib/submenu-prefetch';
 
 export interface ModuleItem {
   title: string;
@@ -65,11 +66,17 @@ const SubModuleCard: React.FC<ModuleItem> = ({ title, description, icon: Icon, c
     e.stopPropagation();
   };
 
+  const handlePrefetch = () => {
+    if (moduleId) warmupNavigationTarget(moduleId);
+  };
+
   return (
     <motion.div
       whileHover={{ y: -4, boxShadow: '0 10px 30px -10px rgba(0, 0, 0, 0.15)' }}
       whileTap={{ scale: 0.98 }}
       onClick={action}
+      onPointerEnter={handlePrefetch}
+      onFocus={handlePrefetch}
       className="group relative bg-card rounded-xl p-4 md:p-5 border border-border hover:border-primary/30 shadow-soft transition-all cursor-pointer flex items-start gap-3 md:gap-4"
     >
       {moduleId && (
@@ -107,6 +114,7 @@ const SubModuleCard: React.FC<ModuleItem> = ({ title, description, icon: Icon, c
         <Link
           to={guidePath}
           onClick={handleGuideClick}
+          onPointerEnter={() => warmupNavigationTarget(guidePath)}
           className="absolute bottom-3 right-3 z-10 p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30"
           aria-label={t('guide.buttonTitle')}
           title={t('guide.buttonTitle')}

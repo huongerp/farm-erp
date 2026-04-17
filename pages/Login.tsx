@@ -12,6 +12,9 @@ import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import { toast } from 'sonner';
 import { signInWithPassword, employeeToUser, requestPasswordReset, signInWithGoogle } from '../lib/auth';
+import { queryClient } from '../lib/query-client';
+import { getCurrentRoleContext } from '../features/he-thong/phan-quyen/services/phan-quyen-service';
+import { CURRENT_ROLE_CONTEXT_KEY } from '../features/he-thong/phan-quyen/hooks/use-phan-quyen';
 
 const REMEMBER_EMAIL_KEY = 'remember_login_email';
 
@@ -61,6 +64,12 @@ const Login: React.FC = () => {
       const employee = await signInWithPassword(data.email, data.password);
       const user = employeeToUser(employee);
       login(user);
+      if (user.id_chuc_vu != null) {
+        await queryClient.prefetchQuery({
+          queryKey: [CURRENT_ROLE_CONTEXT_KEY, String(user.id_chuc_vu)],
+          queryFn: () => getCurrentRoleContext(String(user.id_chuc_vu)),
+        });
+      }
       if (rememberMe) localStorage.setItem(REMEMBER_EMAIL_KEY, data.email.trim());
       else localStorage.removeItem(REMEMBER_EMAIL_KEY);
       toast.success(t('page.login.loginSuccess'));

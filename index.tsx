@@ -4,8 +4,9 @@ import { BrowserRouter as Router } from 'react-router-dom';
 import * as Sentry from '@sentry/react';
 import './index.css';
 import App from './App';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import ErrorBoundary from './components/shared/ErrorBoundary';
+import { queryClient } from './lib/query-client';
 
 const sentryDsn = import.meta.env.VITE_SENTRY_DSN;
 if (sentryDsn && typeof sentryDsn === 'string' && sentryDsn.trim() !== '') {
@@ -17,16 +18,6 @@ if (sentryDsn && typeof sentryDsn === 'string' && sentryDsn.trim() !== '') {
 }
 
 // PWA: đăng ký SW + toast cập nhật/offline trong App (PwaRegister)
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes — dữ liệu coi là “mới” trong 5 phút
-      gcTime: 1000 * 60 * 30, // 30 minutes — giữ cache khi rời trang, giảm refetch khi quay lại
-      refetchOnWindowFocus: false,
-    },
-  },
-});
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {

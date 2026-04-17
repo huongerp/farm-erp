@@ -7,6 +7,10 @@ import ResetPassword from './pages/ResetPassword';
 import ConfirmDialog from './components/shared/ConfirmDialog';
 import PwaRegister from './components/shared/PwaRegister';
 import ModulePermissionGuard from './components/shared/ModulePermissionGuard';
+import AppPermissionGate from './components/auth/AppPermissionGate';
+import { queryClient } from './lib/query-client';
+import { getCurrentRoleContext } from './features/he-thong/phan-quyen/services/phan-quyen-service';
+import { CURRENT_ROLE_CONTEXT_KEY } from './features/he-thong/phan-quyen/hooks/use-phan-quyen';
 
 import { useAuthStore } from './store/useStore';
 import {
@@ -72,10 +76,16 @@ const NavigateToMuaHangModule = () => {
 
 function useAuthSync() {
   useEffect(() => {
-    getSessionEmployee().then((emp) => {
+    getSessionEmployee().then(async (emp) => {
       const { login, logout } = useAuthStore.getState();
       if (emp) {
         login(employeeToUser(emp));
+        if (emp.id_chuc_vu != null) {
+          await queryClient.prefetchQuery({
+            queryKey: [CURRENT_ROLE_CONTEXT_KEY, String(emp.id_chuc_vu)],
+            queryFn: () => getCurrentRoleContext(String(emp.id_chuc_vu)),
+          });
+        }
       } else {
         logout();
         supabase.auth.getSession().then(({ data: { session } }) => {
@@ -116,6 +126,7 @@ const App = () => {
         <Route path="/bao-cao-khau-hao/:id" element={<ProtectedRoute><Suspense fallback={<PageFallback />}><BaoCaoKhauHaoPreviewPage /></Suspense></ProtectedRoute>} />
         <Route path="/*" element={
             <ProtectedRoute>
+              <AppPermissionGate>
               <Layout>
                 <Suspense fallback={<PageFallback />}>
                   <Routes>
@@ -151,6 +162,7 @@ const App = () => {
                   </Routes>
                 </Suspense>
               </Layout>
+              </AppPermissionGate>
             </ProtectedRoute>
           }
         />

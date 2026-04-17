@@ -123,6 +123,12 @@ export const getHangHoaRef = async (): Promise<HangHoaRefLite[]> => {
         .order('ma_hang_hoa', { ascending: true })
         .range(from, to)
     );
+    let dmList: Awaited<ReturnType<typeof getAllDanhMucHangHoa>> = [];
+    try {
+      dmList = await getAllDanhMucHangHoa();
+    } catch (e) {
+      console.warn('[hang-hoa-service] getHangHoaRef: không tải được danh mục hàng hóa – cột Danh mục có thể trống:', e);
+    }
     return rows.map((row) => {
       const ma = row.ma_hang_hoa ?? '';
       const ten = row.ten_hang_hoa ?? '';
@@ -132,6 +138,9 @@ export const getHangHoaRef = async (): Promise<HangHoaRefLite[]> => {
         donGiaRaw != null && donGiaRaw !== ''
           ? Number(donGiaRaw)
           : null;
+      const danh_muc_id = row.danh_muc_id != null ? String(row.danh_muc_id) : null;
+      const danh_muc_cha_id = row.danh_muc_cha_id != null ? String(row.danh_muc_cha_id) : null;
+      const ten_danh_muc = dmList.length ? buildTenDanhMuc(dmList, danh_muc_id, danh_muc_cha_id) : undefined;
       return {
         id: String(row.id),
         ma_hang: ma,
@@ -140,7 +149,8 @@ export const getHangHoaRef = async (): Promise<HangHoaRefLite[]> => {
         ten_hang_hoa: ten,
         don_vi_tinh: unit,
         dvt: row.dvt ?? null,
-        danh_muc_id: row.danh_muc_id != null ? String(row.danh_muc_id) : null,
+        danh_muc_id,
+        ten_danh_muc,
         don_gia: Number.isFinite(donGia) ? donGia : null,
         trang_thai: normalizeTrangThaiHangHoa(row.trang_thai),
       };

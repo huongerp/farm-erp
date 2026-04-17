@@ -80,5 +80,7 @@
   "permission.toast.createSuccess": "Đã tạo vai trò mới thành công",
   "permission.toast.deleteSuccess": "Đã xóa các vai trò được chọn",
   "permission.toast.updateSuccess": "Đã cập nhật phân quyền hệ thống",
-  "permission.noAccessModule": "Bạn không có quyền xem module này."
+  "permission.noAccessModule": "Bạn không có quyền xem module này.",
+  "permission.bootstrapLoading": "Đang tải quyền truy cập…",
+  "permission.bootstrapError": "Không tải được quyền truy cập. Vui lòng thử lại."
 }

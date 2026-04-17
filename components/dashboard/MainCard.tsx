@@ -8,17 +8,21 @@ interface MainCardProps {
   icon: React.ElementType;
   gradient: string;
   onClick: () => void;
+  /** Prefetch route + chunk khi hover (giảm trễ sau khi click). */
+  onPointerEnter?: () => void;
 }
 
 /**
  * Thẻ chức năng Trang chủ: nền trắng/card, chỉ ô icon có màu gradient.
  * Mô tả luôn hiển thị, giao diện sạch.
  */
-const MainCard: React.FC<MainCardProps> = ({ title, description, icon: Icon, gradient, onClick }) => (
+const MainCard: React.FC<MainCardProps> = ({ title, description, icon: Icon, gradient, onClick, onPointerEnter }) => (
   <motion.div
     whileHover={{ y: -4, transition: { duration: 0.2 } }}
     whileTap={{ scale: 0.98 }}
     onClick={onClick}
+    onPointerEnter={onPointerEnter}
+    onFocus={onPointerEnter}
     className="group relative rounded-2xl border border-border bg-card p-5 shadow-sm hover:shadow-md hover:border-primary/20 transition-all duration-200 cursor-pointer flex flex-col items-center text-center"
   >
     {/* Mũi tên góc phải - hiện khi hover */}

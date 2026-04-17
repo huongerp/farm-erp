@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useAuthStore } from '../../../../store/useStore';
-import { useRoles } from './use-phan-quyen';
+import { useCurrentRoleContext } from './use-phan-quyen';
 import type { ActionType } from '../core/types';
 import {
   getModuleIdsBySubmenuPath,
@@ -9,29 +9,22 @@ import {
 } from '../core/permission-modules-config';
 
 export interface ModulePermissionFlags {
-  /** Có quyền xem (admin | all | view) */
   canView: boolean;
-  /** Có quyền thêm (admin | all | create) */
   canCreate: boolean;
-  /** Có quyền sửa (admin | all | update) */
   canUpdate: boolean;
-  /** Có quyền xoá (admin | all | delete) */
   canDelete: boolean;
-  /** Có quyền phê duyệt (admin | all | approve) – chỉ ý nghĩa với module có chức năng phê duyệt */
   canApprove: boolean;
-  /** Có quyền quản trị (chỉ admin | all) – dùng cho hành động đặc biệt như chuyển trạng thái */
   canAdmin: boolean;
-  /** Đang tải dữ liệu phân quyền */
   isLoading: boolean;
 }
 
 /**
  * Kiểm tra quyền theo module của user đăng nhập (dựa trên chức vụ id_chuc_vu).
- * Quy tắc: quan_tri (admin) hoặc all = đủ mọi quyền; ngoài ra cần từng action view/create/update/delete.
+ * Dữ liệu từ getCurrentRoleContext (nhẹ), không tải getRoles toàn phần.
  */
 export function useModulePermission(moduleId: string): ModulePermissionFlags {
   const user = useAuthStore((s) => s.user);
-  const { data: roles = [], isLoading } = useRoles();
+  const { data, isPending } = useCurrentRoleContext();
 
   return useMemo(() => {
     const noPermission: ModulePermissionFlags = {
@@ -41,16 +34,16 @@ export function useModulePermission(moduleId: string): ModulePermissionFlags {
       canDelete: false,
       canApprove: false,
       canAdmin: false,
-      isLoading,
+      isLoading: !!user?.id_chuc_vu && isPending,
     };
 
-    if (isLoading) return noPermission;
+    if (user?.id_chuc_vu && isPending) return noPermission;
 
     const chucVuId = user?.id_chuc_vu ?? null;
-    if (!chucVuId) return noPermission;
+    if (!chucVuId) return { ...noPermission, isLoading: false };
 
-    const role = roles.find((r) => String(r.id_chuc_vu) === String(chucVuId));
-    const modulePerm = role?.quyen_han?.find((q) => q.module_id === moduleId);
+    const quyenHan = data?.quyenHan ?? [];
+    const modulePerm = quyenHan.find((q) => q.module_id === moduleId);
     const actions: ActionType[] = modulePerm?.actions ?? [];
 
     const has = (key: ActionType) => actions.includes(key);
@@ -63,22 +56,18 @@ export function useModulePermission(moduleId: string): ModulePermissionFlags {
       canDelete: hasAdminOrAll || has('delete'),
       canApprove: hasAdminOrAll || has('approve'),
       canAdmin: hasAdminOrAll,
-      isLoading,
+      isLoading: false,
     };
-  }, [moduleId, user?.id_chuc_vu, roles, isLoading]);
+  }, [moduleId, user?.id_chuc_vu, data, isPending]);
 }
 
-/**
- * Trả về true nếu submenu (path) nên hiển thị: không dùng phân quyền thì luôn true;
- * nếu dùng phân quyền thì true khi có ít nhất một module trong submenu mà user có quyền xem.
- */
 export function useSubmenuVisible(path: string): boolean {
   const user = useAuthStore((s) => s.user);
-  const { data: roles = [], isLoading } = useRoles();
+  const { data, isPending } = useCurrentRoleContext();
 
   return useMemo(() => {
     if (!isSubmenuWithPermission(path)) return true;
-    if (isLoading) return true; // Trong lúc tải: hiển thị, tránh nháy
+    if (user?.id_chuc_vu && isPending) return false;
 
     const chucVuId = user?.id_chuc_vu ?? null;
     if (!chucVuId) return false;
@@ -86,50 +75,44 @@ export function useSubmenuVisible(path: string): boolean {
     const moduleIds = getModuleIdsBySubmenuPath(path);
     if (moduleIds.length === 0) return true;
 
-    const role = roles.find((r) => String(r.id_chuc_vu) === String(chucVuId));
-    if (!role) return false;
+    const quyenHan = data?.quyenHan ?? [];
 
     const hasView = (actions: ActionType[]) =>
       actions.includes('admin') || actions.includes('all') || actions.includes('view');
 
     return moduleIds.some((moduleId) => {
-      const modulePerm = role.quyen_han?.find((q) => q.module_id === moduleId);
+      const modulePerm = quyenHan.find((q) => q.module_id === moduleId);
       const actions: ActionType[] = modulePerm?.actions ?? [];
       return hasView(actions);
     });
-  }, [path, user?.id_chuc_vu, roles, isLoading]);
+  }, [path, user?.id_chuc_vu, data, isPending]);
 }
 
-/**
- * Trả về Set các module id mà user có quyền xem trong submenu (path).
- * Dùng để lọc thẻ module trên dashboard (chỉ hiển thị module user được xem).
- */
 export function useModulesWithViewPermission(path: string): Set<string> {
   const user = useAuthStore((s) => s.user);
-  const { data: roles = [], isLoading } = useRoles();
+  const { data, isPending } = useCurrentRoleContext();
 
   return useMemo(() => {
     const viewable = new Set<string>();
     if (!isSubmenuWithPermission(path)) return viewable;
-    if (isLoading) return viewable;
+    if (user?.id_chuc_vu && isPending) return viewable;
 
     const chucVuId = user?.id_chuc_vu ?? null;
     if (!chucVuId) return viewable;
 
     const moduleIds = getModuleIdsBySubmenuPath(path);
-    const role = roles.find((r) => String(r.id_chuc_vu) === String(chucVuId));
-    if (!role) return viewable;
+    const quyenHan = data?.quyenHan ?? [];
 
     const hasView = (actions: ActionType[]) =>
       actions.includes('admin') || actions.includes('all') || actions.includes('view');
 
     moduleIds.forEach((moduleId) => {
-      const modulePerm = role.quyen_han?.find((q) => q.module_id === moduleId);
+      const modulePerm = quyenHan.find((q) => q.module_id === moduleId);
       const actions: ActionType[] = modulePerm?.actions ?? [];
       if (hasView(actions)) viewable.add(moduleId);
     });
     return viewable;
-  }, [path, user?.id_chuc_vu, roles, isLoading]);
+  }, [path, user?.id_chuc_vu, data, isPending]);
 }
 
 export { isSubmenuWithPermission, getModuleIdsBySubmenuPath, getPermissionModuleIdFromPath };
