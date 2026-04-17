@@ -15,7 +15,9 @@ export const useBranches = () => {
   return useQuery({
     queryKey: ['branches'],
     queryFn: getBranches,
-    staleTime: 1000 * 60 * 5,
+    // Ref tĩnh: chi nhánh hiếm khi thay đổi trong phiên. Mutation CRUD đã invalidate khi sửa.
+    staleTime: 1000 * 60 * 60 * 4, // 4h
+    gcTime: 1000 * 60 * 60 * 24, // 24h (đồng bộ persister)
   });
 };
 

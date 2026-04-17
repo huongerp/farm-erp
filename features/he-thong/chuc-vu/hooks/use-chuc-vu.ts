@@ -8,7 +8,8 @@ export const usePositions = () => {
   return useQuery({
     queryKey: ['positions'],
     queryFn: getPositions,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 60 * 4,
+    gcTime: 1000 * 60 * 60 * 24,
   });
 };
 

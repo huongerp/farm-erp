@@ -7,7 +7,7 @@ import TongHopDayDuTab from './components/TongHopDayDuTab';
 import type { BaoCaoDeXuatVatTuFilters } from './core/types';
 import { usePhieuDeXuatVatTuViewScope } from '../../kho-van/phieu-de-xuat-vat-tu/hooks/use-phieu-de-xuat-vat-tu-view-scope';
 import { getKhoList } from '../../kho-van/danh-sach-kho/services/kho-service';
-import { getEmployees } from '../../he-thong/nhan-vien/services/nhan-vien-service';
+import { getEmployeesRef } from '../../he-thong/nhan-vien/services/nhan-vien-service';
 
 /** Mặc định kỳ = Tất cả (không giới hạn thời gian), giống module nhân viên. */
 function getDefaultDateRange(): { dateFrom: string; dateTo: string } {
@@ -38,9 +38,11 @@ const BaoCaoDeXuatVatTuPage: React.FC = () => {
   }, [filters, viewScope.viewAll, viewScope.allowedBranchIds, viewScope.currentEmployeeId]);
 
   const { data: khoList = [] } = useQuery({ queryKey: ['kho'], queryFn: getKhoList });
+  // Dùng ref-query (id, ho_ten, email, trang_thai) — đủ cho filter "Người đề xuất/duyệt",
+  // tránh trùng `queryKey: ['employees']` với trang quản trị nhân viên (gây refetch chéo).
   const { data: employees = [] } = useQuery({
-    queryKey: ['employees'],
-    queryFn: getEmployees,
+    queryKey: ['employees', 'ref'],
+    queryFn: getEmployeesRef,
   });
 
   const activeFilterCount = useMemo(

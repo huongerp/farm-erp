@@ -28,20 +28,16 @@ import {
 import { canEditProfile } from '../lib/profile-permissions';
 import type { Employee } from '../features/he-thong/nhan-vien/core/types';
 import { TRANG_THAI_NV } from '../lib/constants';
-import { useEmployeesRefQuery } from '@/lib/hooks/use-supabase-ref-queries';
-import { useUpdateEmployee } from '../features/he-thong/nhan-vien/hooks/use-nhan-vien';
+import { useEmployee, useUpdateEmployee } from '../features/he-thong/nhan-vien/hooks/use-nhan-vien';
 import { employeeToFormValues } from '../features/he-thong/nhan-vien/utils/employee-to-form';
 
 const Profile: React.FC = () => {
   const { t } = useTranslation();
   const { user, login } = useAuthStore();
-  const { data: employees = [] } = useEmployeesRefQuery();
+  // Trước đây dùng `useEmployeesRefQuery()` rồi `.find(email===user.email)` — kéo toàn bộ bảng
+  // `fp_var_nhan_vien` chỉ để tìm 1 dòng (rất tốn egress). Nay chỉ fetch 1 nhân viên theo id.
+  const { data: currentEmployee = null } = useEmployee(user?.id ?? '');
   const updateEmployeeMutation = useUpdateEmployee();
-
-  const currentEmployee = useMemo(
-    () => (user?.email ? employees.find((e) => e.email === user.email) ?? null : null),
-    [employees, user?.email],
-  );
 
   const displayData: Employee = useMemo(() => {
     if (currentEmployee) return currentEmployee;

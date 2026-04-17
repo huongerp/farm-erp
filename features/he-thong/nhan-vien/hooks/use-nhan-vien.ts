@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   fetchEmployeeRows,
+  fetchEmployeeRowsPage,
   enrichEmployeesWithRefData,
   getEmployeeById,
   createEmployee,
@@ -10,6 +11,7 @@ import {
   updateEmployeeStatus,
   bulkUpdateEmployees,
   restoreEmployees,
+  type EmployeeListQuery,
 } from "../services/nhan-vien-service";
 import { EmployeeFormValues } from "../core/schema";
 import { Employee } from "../core/types";
@@ -46,6 +48,42 @@ export const useEmployees = () => {
   return {
     ...rowsQuery,
     data,
+  };
+};
+
+/**
+ * Server-side pagination cho danh sách nhân viên: chỉ tải đúng 1 trang từ Supabase
+ * (dùng `.range` + `count: 'exact'`) — giảm egress tuyệt đối so với `useEmployees()`
+ * fetch toàn bộ bảng.
+ *
+ * Query key chứa params → đổi `page/pageSize/q/trangThai` sẽ tạo cache entry mới,
+ * không đụng cache của `useEmployees()`.
+ */
+export const useEmployeesPage = (query: EmployeeListQuery) => {
+  const rowsQuery = useQuery({
+    queryKey: ['employees', 'page', query] as const,
+    queryFn: () => fetchEmployeeRowsPage(query),
+    staleTime: 1000 * 60 * 5,
+    // Giữ trang cũ khi chuyển page để tránh nhấp nháy UI (React Query v5 `placeholderData`).
+    placeholderData: (previous) => previous,
+  });
+  const { data: positions = [] } = usePositions();
+  const { data: departments = [] } = useDepartments();
+  const { data: branches = [] } = useBranches();
+
+  const enriched = useMemo(() => {
+    if (!rowsQuery.data) return undefined;
+    const emps = rowsQuery.data.data.map((e) => ({ ...e }));
+    enrichEmployeesWithRefData(emps, positions, departments, branches);
+    return {
+      ...rowsQuery.data,
+      data: emps,
+    };
+  }, [rowsQuery.data, positions, departments, branches]);
+
+  return {
+    ...rowsQuery,
+    data: enriched,
   };
 };
 

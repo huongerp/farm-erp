@@ -5,13 +5,10 @@ import {
   deleteDiemCongTruRecords as deleteDiemCongTruRecordsSupabase,
 } from './diem-cong-tru-supabase.service';
 import { getPayrollPointGroups } from '../../thiet-lap-cong-luong/services/payroll-point-group-service';
-import { getEmployees } from '@/features/he-thong/nhan-vien/services/nhan-vien-service';
 
 export const getDiemCongTruRecords = getDiemCongTruRecordsSupabase;
 
 export const getPayrollPointGroupsForModule = getPayrollPointGroups;
-
-export const getEmployeesForSelect = getEmployees;
 
 export const createDiemCongTruRecord = (
   data: Parameters<typeof createDiemCongTruRecordSupabase>[0],

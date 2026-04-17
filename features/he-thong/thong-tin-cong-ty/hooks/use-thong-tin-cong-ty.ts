@@ -19,7 +19,8 @@ export function useCompanyInfo() {
       if (data) setCompanyInfo(data);
       return data;
     },
-    staleTime: 1000 * 60 * 60,
+    staleTime: 1000 * 60 * 60 * 4, // 4h — thông tin công ty hầu như không đổi trong phiên.
+    gcTime: 1000 * 60 * 60 * 24,
   });
   return query;
 }

@@ -8,8 +8,7 @@ import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/
 import FormSection from '../../../../components/shared/FormSection';
 import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
 import { useSaveBangLuong, useCreateBangLuongFromRecord } from '../hooks/use-bang-luong';
-import { getEmployees } from '@/features/he-thong/nhan-vien/services/nhan-vien-service';
-import { EMPLOYEES_QUERY_KEY } from '@/features/he-thong/nhan-vien/hooks/use-nhan-vien';
+import { getEmployeesRef } from '@/features/he-thong/nhan-vien/services/nhan-vien-service';
 import { useQuery } from '@tanstack/react-query';
 import type { BangLuongRecord } from '../core/types';
 
@@ -66,9 +65,12 @@ const BangLuongForm: React.FC<Props> = ({ initialRecord, defaultEmployeeId, onCl
   const [cong_tru_khac, setCongTruKhac] = useState(defaultNumbers.cong_tru_net);
   const [ghi_chu, setGhiChu] = useState('');
 
+  // Dropdown chọn nhân viên: dùng ref-query (id, ho_ten, ma_nhan_vien, email, trang_thai)
+  // thay cho `getEmployees` (60+ cột + base64). Key `['employees','ref']` để tránh đụng
+  // `EMPLOYEES_QUERY_KEY = ['employees']` của trang quản trị nhân viên.
   const { data: employees = [] } = useQuery({
-    queryKey: EMPLOYEES_QUERY_KEY,
-    queryFn: getEmployees,
+    queryKey: ['employees', 'ref'] as const,
+    queryFn: getEmployeesRef,
     staleTime: 1000 * 60 * 15,
   });
 

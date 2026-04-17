@@ -91,20 +91,20 @@ export const getRoles = async (): Promise<PositionPermission[]> => {
     });
   });
 
+  // Đếm nhân viên theo chức vụ qua RPC thay vì fetchAllRows('fp_var_nhan_vien','chuc_vu_id').
+  // Trước đây kéo N dòng (có thể hàng nghìn) chỉ để GROUP BY ở client → rất tốn egress.
+  // RPC trả về tối đa số chức vụ (vài chục dòng) → <1 KB. Xem docs/supabase-rpc_count_nhan_vien_by_chuc_vu.sql.
   let nhanVienCountMap: Record<string, number> = {};
   try {
-    const nvRows = await fetchAllRows<{ chuc_vu_id: number | null }>((from, to) =>
-      supabase.from('fp_var_nhan_vien').select('chuc_vu_id').order('id', { ascending: true }).range(from, to)
-    );
-    nhanVienCountMap = nvRows
-      .filter((r) => r.chuc_vu_id != null)
-      .reduce<Record<string, number>>((acc, r) => {
-        const id = String(r.chuc_vu_id);
-        acc[id] = (acc[id] ?? 0) + 1;
-        return acc;
-      }, {});
+    const { data: countRows, error: countErr } = await supabase.rpc('rpc_count_nhan_vien_by_chuc_vu');
+    if (countErr) throw countErr;
+    nhanVienCountMap = (countRows ?? []).reduce<Record<string, number>>((acc, r: { chuc_vu_id: number | string; so_nhan_vien: number | string }) => {
+      const id = String(r.chuc_vu_id);
+      acc[id] = Number(r.so_nhan_vien) || 0;
+      return acc;
+    }, {});
   } catch {
-    // Bảng nhan_vien có thể chưa tồn tại hoặc không có quyền
+    // RPC chưa được tạo hoặc quyền chưa cấp → an toàn trả 0 cho mọi chức vụ, không block getRoles.
   }
 
   return positions.map((pos) => {

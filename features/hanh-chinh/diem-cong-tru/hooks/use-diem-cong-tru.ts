@@ -7,8 +7,8 @@ import {
   updateDiemCongTruRecord,
   deleteDiemCongTruRecords,
   getPayrollPointGroupsForModule,
-  getEmployeesForSelect,
 } from '../services/diem-cong-tru-service';
+import { getEmployeesRef } from '@/features/he-thong/nhan-vien/services/nhan-vien-service';
 import { useAuthStore } from '../../../../store/useStore';
 import { DiemCongTruFormValues } from '../core/schema';
 
@@ -24,10 +24,15 @@ export const usePayrollPointGroupsForDiemCongTru = () =>
     queryFn: getPayrollPointGroupsForModule,
   });
 
+/**
+ * Dùng danh sách ref (nhẹ, không kéo phòng ban/chức vụ/chi nhánh) cho dropdown.
+ * Trước đây dùng `queryKey: ['employees']` + `getEmployees` (60+ cột, base64 avatar) — trùng
+ * key với useEmployees trang admin gây refetch chéo. Đổi sang `['employees','ref']` + `getEmployeesRef`.
+ */
 export const useEmployeesForDiemCongTru = () =>
   useQuery({
-    queryKey: ['employees'],
-    queryFn: getEmployeesForSelect,
+    queryKey: ['employees', 'ref'],
+    queryFn: getEmployeesRef,
   });
 
 export const useCreateDiemCongTruRecord = (onSuccess?: () => void) => {

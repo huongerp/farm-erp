@@ -11,10 +11,11 @@ import { useAuthStore, useUIStore } from '../store/useStore';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import { toast } from 'sonner';
-import { signInWithPassword, employeeToUser, requestPasswordReset, signInWithGoogle } from '../lib/auth';
+import { signInWithPassword, employeeToUser, requestPasswordReset, signInWithGoogle, getSessionBootstrap } from '../lib/auth';
 import { queryClient } from '../lib/query-client';
 import { getCurrentRoleContext } from '../features/he-thong/phan-quyen/services/phan-quyen-service';
 import { CURRENT_ROLE_CONTEXT_KEY } from '../features/he-thong/phan-quyen/hooks/use-phan-quyen';
+import { COMPANY_INFO_QUERY_KEY } from '../features/he-thong/thong-tin-cong-ty/hooks/use-thong-tin-cong-ty';
 
 const REMEMBER_EMAIL_KEY = 'remember_login_email';
 
@@ -27,7 +28,7 @@ const Login: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { login } = useAuthStore();
-  const { companyInfo } = useUIStore();
+  const { companyInfo, setCompanyInfo } = useUIStore();
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -64,11 +65,23 @@ const Login: React.FC = () => {
       const employee = await signInWithPassword(data.email, data.password);
       const user = employeeToUser(employee);
       login(user);
-      if (user.id_chuc_vu != null) {
+      // Gọi RPC bootstrap để seed cache phân quyền + công ty trong 1 request, thay cho
+      // prefetchQuery getCurrentRoleContext (trước đây thêm 2 request fp_var_phan_quyen + fp_var_chuc_vu).
+      const bootstrap = await getSessionBootstrap();
+      if (bootstrap.roleContext && user.id_chuc_vu != null) {
+        queryClient.setQueryData(
+          [CURRENT_ROLE_CONTEXT_KEY, String(user.id_chuc_vu)],
+          bootstrap.roleContext,
+        );
+      } else if (user.id_chuc_vu != null) {
         await queryClient.prefetchQuery({
           queryKey: [CURRENT_ROLE_CONTEXT_KEY, String(user.id_chuc_vu)],
           queryFn: () => getCurrentRoleContext(String(user.id_chuc_vu)),
         });
+      }
+      if (bootstrap.company) {
+        queryClient.setQueryData(COMPANY_INFO_QUERY_KEY, bootstrap.company);
+        setCompanyInfo(bootstrap.company);
       }
       if (rememberMe) localStorage.setItem(REMEMBER_EMAIL_KEY, data.email.trim());
       else localStorage.removeItem(REMEMBER_EMAIL_KEY);

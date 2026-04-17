@@ -1,4 +1,4 @@
-import { supabase, fetchAllRows } from '../../../../lib/supabase';
+import { supabase, fetchAllRows, fetchTablePage, type PaginatedTableResult } from '../../../../lib/supabase';
 import { getCachedRef, REF_CACHE_KEYS } from '../../../../lib/ref-cache';
 import { ensureAuthUser } from '../../../../lib/ensure-auth-user';
 import type { Employee } from '../core/types';
@@ -116,7 +116,8 @@ function formToRow(data: EmployeeFormValues): NhanVienRow {
     phong_ban_id: data.id_phong_ban || null,
     chuc_vu_id: data.id_chuc_vu || null,
     chi_nhanh_ids: Array.isArray(data.id_chi_nhanh) && data.id_chi_nhanh.length > 0 ? data.id_chi_nhanh : [],
-    email: data.email?.trim() || null,
+    // Chuẩn hoá lowercase ngay khi insert/update để `.eq('email', lower(x))` dùng index B-tree.
+    email: data.email?.trim().toLowerCase() || null,
     so_dien_thoai: data.so_dien_thoai?.trim() || null,
     gioi_tinh: data.gioi_tinh || null,
     ngay_vao_lam: data.ngay_vao_lam || null,
@@ -157,8 +158,13 @@ function formToRow(data: EmployeeFormValues): NhanVienRow {
   };
 }
 
+/**
+ * Cột cho danh sách (bảng nhân viên). CỐ Ý bỏ `hinh_anh` để tránh kéo base64 ~100-500KB/dòng
+ * (giảm egress ≥90%). Avatar chỉ load khi mở form chi tiết / cập nhật 1 nhân viên (EMPLOYEE_DETAIL_SELECT).
+ * UI dùng AvatarWithFallback → khi không có base64 sẽ render initials/seed.
+ */
 const EMPLOYEE_LIST_SELECT =
-  'id, ho_va_ten, email, so_dien_thoai, phong_ban_id, chuc_vu_id, chi_nhanh_ids, hinh_anh, cap_bac_id, cap_bac, trang_thai, gioi_tinh, ngay_vao_lam, ten_phong_ban, ten_chuc_vu, ten_chi_nhanh, ten_cap_bac, loai_hop_dong, ngay_het_han_hd, noi_lam_viec';
+  'id, ho_va_ten, email, so_dien_thoai, phong_ban_id, chuc_vu_id, chi_nhanh_ids, cap_bac_id, cap_bac, trang_thai, gioi_tinh, ngay_vao_lam, ten_phong_ban, ten_chuc_vu, ten_chi_nhanh, ten_cap_bac, loai_hop_dong, ngay_het_han_hd, noi_lam_viec';
 
 /** Đủ cột cho `rowToEmployee` (hồ sơ đầy đủ) — tránh select('*'). */
 const EMPLOYEE_DETAIL_SELECT =
@@ -236,6 +242,64 @@ export async function fetchEmployeeRows(): Promise<Employee[]> {
   return data.map(rowToEmployee);
 }
 
+/** Tham số query phân trang server-side cho danh sách nhân viên. */
+export interface EmployeeListQuery {
+  /** 0-based. */
+  page: number;
+  pageSize: number;
+  /** Từ khoá tìm kiếm (khớp ho_va_ten / email / so_dien_thoai — dùng ilike trên 3 cột). */
+  q?: string;
+  /** Lọc trạng thái nhân viên (có thể nhiều). */
+  trangThai?: TrangThaiNV[] | string[];
+  /** Lọc theo phòng ban. */
+  phongBanIds?: string[];
+  /** Lọc theo chức vụ. */
+  chucVuIds?: string[];
+}
+
+/**
+ * Phân trang server-side cho danh sách nhân viên — thay thế dần `fetchEmployeeRows()` ở các view
+ * hiển thị hàng nghìn dòng. Dùng `.range + count: 'exact'` để chỉ tải đúng 1 trang.
+ *
+ * Tiết kiệm egress đáng kể khi công ty có > 500 nhân viên; payload mỗi trang chỉ ~50-100 KB
+ * (pageSize 50) so với toàn bộ bảng.
+ */
+export async function fetchEmployeeRowsPage(
+  query: EmployeeListQuery
+): Promise<PaginatedTableResult<Employee>> {
+  const { page, pageSize, q, trangThai, phongBanIds, chucVuIds } = query;
+  const result = await fetchTablePage<NhanVienRow>(page, pageSize, async (from, to) => {
+    let sel = supabase
+      .from(TABLE)
+      .select(EMPLOYEE_LIST_SELECT, { count: 'exact' });
+
+    if (trangThai && trangThai.length > 0) {
+      sel = sel.in('trang_thai', trangThai as string[]);
+    }
+    if (phongBanIds && phongBanIds.length > 0) {
+      sel = sel.in('phong_ban_id', phongBanIds);
+    }
+    if (chucVuIds && chucVuIds.length > 0) {
+      sel = sel.in('chuc_vu_id', chucVuIds);
+    }
+    if (q && q.trim().length > 0) {
+      const needle = `%${q.trim()}%`;
+      // `.or` với ilike — server-side, tránh kéo toàn bộ rồi filter ở client.
+      sel = sel.or(`ho_va_ten.ilike.${needle},email.ilike.${needle},so_dien_thoai.ilike.${needle}`);
+    }
+
+    const res = await sel.order('id', { ascending: false }).range(from, to);
+    return { data: (res.data as NhanVienRow[] | null) ?? null, error: res.error, count: res.count };
+  });
+
+  return {
+    data: result.data.map(rowToEmployee),
+    totalCount: result.totalCount,
+    page: result.page,
+    pageSize: result.pageSize,
+  };
+}
+
 /** Toàn bộ nhân viên + enrich (cho caller không dùng React: báo cáo, v.v.). */
 export const getEmployees = async (): Promise<Employee[]> => {
   const employees = await fetchEmployeeRows();
@@ -253,18 +317,38 @@ export type EmployeeRef = {
   trang_thai: TrangThaiNV;
 };
 
+/**
+ * Đọc từ VIEW `v_nhan_vien_ref` (xem `docs/supabase-v_nhan_vien_ref.sql`) thay vì
+ * `fp_var_nhan_vien` trực tiếp. View chỉ có 4 cột → payload nhỏ hơn, dễ áp RLS sau này.
+ * Nếu view chưa được tạo, fallback về bảng gốc để app không gãy trên môi trường cũ.
+ */
+const VIEW_NHAN_VIEN_REF = 'v_nhan_vien_ref';
 export const getEmployeesRef = async (): Promise<EmployeeRef[]> => {
   return getCachedRef(REF_CACHE_KEYS.employees, async () => {
-    const data = await fetchAllRows<{ id: number; ho_va_ten: string | null; email: string | null; trang_thai: unknown }>((from, to) =>
-      supabase.from(TABLE).select('id, ho_va_ten, email, trang_thai').order('id', { ascending: false }).range(from, to)
-    );
-    return data.map((row) => ({
-      id: String(row.id),
-      ho_ten: (row.ho_va_ten as string) ?? '',
-      ma_nhan_vien: 'NV' + String(row.id),
-      email: row.email ?? null,
-      trang_thai: (row.trang_thai as TrangThaiNV) ?? TRANG_THAI_NV.DANG_LAM_VIEC,
-    }));
+    try {
+      const data = await fetchAllRows<{ id: number; ho_va_ten: string | null; email: string | null; trang_thai: unknown }>((from, to) =>
+        supabase.from(VIEW_NHAN_VIEN_REF).select('id, ho_va_ten, email, trang_thai').order('id', { ascending: false }).range(from, to)
+      );
+      return data.map((row) => ({
+        id: String(row.id),
+        ho_ten: (row.ho_va_ten as string) ?? '',
+        ma_nhan_vien: 'NV' + String(row.id),
+        email: row.email ?? null,
+        trang_thai: (row.trang_thai as TrangThaiNV) ?? TRANG_THAI_NV.DANG_LAM_VIEC,
+      }));
+    } catch {
+      // Fallback: view chưa tạo → dùng bảng gốc với đúng cột tối giản.
+      const data = await fetchAllRows<{ id: number; ho_va_ten: string | null; email: string | null; trang_thai: unknown }>((from, to) =>
+        supabase.from(TABLE).select('id, ho_va_ten, email, trang_thai').order('id', { ascending: false }).range(from, to)
+      );
+      return data.map((row) => ({
+        id: String(row.id),
+        ho_ten: (row.ho_va_ten as string) ?? '',
+        ma_nhan_vien: 'NV' + String(row.id),
+        email: row.email ?? null,
+        trang_thai: (row.trang_thai as TrangThaiNV) ?? TRANG_THAI_NV.DANG_LAM_VIEC,
+      }));
+    }
   });
 };
 
@@ -282,20 +366,38 @@ export const getEmployeeById = async (id: string): Promise<Employee | undefined>
   return emp;
 };
 
+/**
+ * Select cho phiên đăng nhập (getEmployeeByEmail). Bỏ `hinh_anh` base64 để giảm payload auth
+ * từ ~500KB xuống vài KB. Avatar lấy riêng khi mở trang Hồ sơ/Profile (qua getEmployeeById).
+ */
 const EMPLOYEE_AUTH_SELECT =
-  'id, ho_va_ten, email, so_dien_thoai, phong_ban_id, chuc_vu_id, chi_nhanh_ids, ten_phong_ban, ten_chuc_vu, ten_chi_nhanh, hinh_anh, cap_bac_id, cap_bac, trang_thai, gioi_tinh, ngay_vao_lam';
+  'id, ho_va_ten, email, so_dien_thoai, phong_ban_id, chuc_vu_id, chi_nhanh_ids, ten_phong_ban, ten_chuc_vu, ten_chi_nhanh, cap_bac_id, cap_bac, trang_thai, gioi_tinh, ngay_vao_lam';
 
 export const getEmployeeByEmail = async (email: string): Promise<Employee | null> => {
   if (!email?.trim()) return null;
+  const normalized = email.trim().toLowerCase();
+  // `.eq` trên cột đã chuẩn hoá lowercase → dùng B-tree index (nhanh hơn `.ilike` nhiều lần).
+  // Với dữ liệu cũ có thể còn email lẫn HOA/thường, làm thêm 1 lần .ilike fallback.
   const { data, error } = await supabase
     .from(TABLE)
     .select(EMPLOYEE_AUTH_SELECT)
-    .ilike('email', email.trim())
+    .eq('email', normalized)
     .maybeSingle();
-
   if (error) throw new Error(error.message);
-  if (!data) return null;
-  const emp = rowToEmployee(data);
+  if (data) {
+    const emp = rowToEmployee(data);
+    await enrichEmployeesWithRefDataAsync([emp]);
+    return emp;
+  }
+  // Fallback dữ liệu cũ (chưa chuẩn hoá lowercase) — sau khi migrate có thể xoá đoạn này.
+  const fallback = await supabase
+    .from(TABLE)
+    .select(EMPLOYEE_AUTH_SELECT)
+    .ilike('email', normalized)
+    .maybeSingle();
+  if (fallback.error) throw new Error(fallback.error.message);
+  if (!fallback.data) return null;
+  const emp = rowToEmployee(fallback.data);
   await enrichEmployeesWithRefDataAsync([emp]);
   return emp;
 };
@@ -303,10 +405,11 @@ export const getEmployeeByEmail = async (email: string): Promise<Employee | null
 export const createEmployee = async (data: EmployeeFormValues): Promise<Employee & { _authCreated?: boolean }> => {
   const emailVal = data.email?.trim().toLowerCase();
   if (emailVal) {
+    // `.eq` nhanh hơn `.ilike` vì dùng được index (xem docs/supabase-fp_var_nhan_vien email lowercase).
     const { data: dup } = await supabase
       .from(TABLE)
       .select('id')
-      .ilike('email', emailVal)
+      .eq('email', emailVal)
       .maybeSingle();
     if (dup) throw new Error(i18n.t('employee.validation.emailDuplicate'));
   }
@@ -339,7 +442,7 @@ export const updateEmployee = async (id: string, data: EmployeeFormValues): Prom
     const { data: current } = await supabase
       .from(TABLE)
       .select('id, email')
-      .ilike('email', newEmail)
+      .eq('email', newEmail)
       .maybeSingle();
     if (current && String((current as Record<string, unknown>).id) !== id) {
       throw new Error(i18n.t('employee.validation.emailDuplicate'));

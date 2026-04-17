@@ -11,15 +11,16 @@ import AppPermissionGate from './components/auth/AppPermissionGate';
 import { queryClient } from './lib/query-client';
 import { getCurrentRoleContext } from './features/he-thong/phan-quyen/services/phan-quyen-service';
 import { CURRENT_ROLE_CONTEXT_KEY } from './features/he-thong/phan-quyen/hooks/use-phan-quyen';
+import { COMPANY_INFO_QUERY_KEY } from './features/he-thong/thong-tin-cong-ty/hooks/use-thong-tin-cong-ty';
 
-import { useAuthStore } from './store/useStore';
+import { useAuthStore, useUIStore } from './store/useStore';
 import {
   ThemeSynchronizer,
   MetadataSynchronizer,
   LanguageSynchronizer,
   useResolvedTheme,
 } from './lib/app-sync';
-import { getSessionEmployee, employeeToUser } from './lib/auth';
+import { getSessionBootstrap, employeeToUser } from './lib/auth';
 import { supabase } from './lib/supabase';
 import { toast } from 'sonner';
 import i18n from './lib/i18n';
@@ -76,15 +77,27 @@ const NavigateToMuaHangModule = () => {
 
 function useAuthSync() {
   useEffect(() => {
-    getSessionEmployee().then(async (emp) => {
+    // 1 RPC duy nhất thay cho getSessionEmployee + prefetch getCurrentRoleContext (2 request)
+    // + useCompanyInfo (1 request). Sau khi có dữ liệu, seed thẳng vào React Query cache &
+    // UI store để các hook (useCurrentRoleContext / useCompanyInfo) không gọi lại API.
+    getSessionBootstrap().then(async ({ employee, roleContext, company }) => {
       const { login, logout } = useAuthStore.getState();
-      if (emp) {
-        login(employeeToUser(emp));
-        if (emp.id_chuc_vu != null) {
+      const { setCompanyInfo } = useUIStore.getState();
+      if (employee) {
+        login(employeeToUser(employee));
+        if (roleContext && employee.id_chuc_vu != null) {
+          // Seed cache cho useCurrentRoleContext — không cần prefetch thêm.
+          queryClient.setQueryData([CURRENT_ROLE_CONTEXT_KEY, String(employee.id_chuc_vu)], roleContext);
+        } else if (employee.id_chuc_vu != null) {
+          // Fallback: nếu RPC chưa trả roleContext (vd RPC chưa deploy), prefetch như cũ.
           await queryClient.prefetchQuery({
-            queryKey: [CURRENT_ROLE_CONTEXT_KEY, String(emp.id_chuc_vu)],
-            queryFn: () => getCurrentRoleContext(String(emp.id_chuc_vu)),
+            queryKey: [CURRENT_ROLE_CONTEXT_KEY, String(employee.id_chuc_vu)],
+            queryFn: () => getCurrentRoleContext(String(employee.id_chuc_vu)),
           });
+        }
+        if (company) {
+          queryClient.setQueryData(COMPANY_INFO_QUERY_KEY, company);
+          setCompanyInfo(company);
         }
       } else {
         logout();

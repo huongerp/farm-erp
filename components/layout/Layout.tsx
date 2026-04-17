@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { NavLink, useLocation, useNavigate, Link, useNavigation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate, Link } from 'react-router-dom';
 import {
   User, Sparkles, LogOut, Lock, Eye, EyeOff,
   Settings,
@@ -48,7 +48,15 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   useCompanyInfo();
   const location = useLocation();
   const navigate = useNavigate();
-  const navigation = useNavigation();
+  // NOTE: không dùng `useNavigation()` vì ứng dụng đang dùng <BrowserRouter>
+  // (legacy router) chứ không phải data router (createBrowserRouter).
+  // Thay vào đó, phát hiện "đang chuyển route" bằng `useLocation` + React Suspense.
+  const [isRouteLoading, setIsRouteLoading] = useState(false);
+  useEffect(() => {
+    setIsRouteLoading(true);
+    const id = window.setTimeout(() => setIsRouteLoading(false), 400);
+    return () => window.clearTimeout(id);
+  }, [location.pathname]);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const [changePasswordNew, setChangePasswordNew] = useState('');
@@ -295,7 +303,7 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
       )}
 
       {/* Thanh trạng thái chuyển route — phản hồi tức thì khi URL đang đổi (lazy chunk). */}
-      {navigation.state === 'loading' && (
+      {isRouteLoading && (
         <div
           className="fixed top-0 left-0 right-0 z-[100] h-1 bg-primary/40 animate-pulse pointer-events-none"
           aria-hidden

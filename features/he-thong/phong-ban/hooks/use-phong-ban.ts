@@ -8,7 +8,8 @@ export const useDepartments = () => {
   return useQuery({
     queryKey: ['departments'],
     queryFn: getDepartments,
-    staleTime: 1000 * 60 * 30,
+    staleTime: 1000 * 60 * 60 * 4,
+    gcTime: 1000 * 60 * 60 * 24,
   });
 };
 
