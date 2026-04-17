@@ -1,6 +1,7 @@
+import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  getAllTonKho,
+  getTonKhoMatrixSupabase,
   getTonKhoTheoHangHoa,
   getDinhMucTonKho,
   getDinhMucList,
@@ -8,18 +9,60 @@ import {
   createDinhMucTonKho,
   updateDinhMucTonKho,
   deleteDinhMucTonKho,
+  type TonKhoMatrixScope,
 } from '../../phieu-kho/services/ton-kho-service';
 import { getLichSuNhapXuatByHangHoa, getLichSuNhapXuatByKho } from '../../phieu-kho/services/phieu-kho-service';
+import { useTonKhoViewScope } from './use-ton-kho-view-scope';
+import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 
 export const TON_KHO_QUERY_KEY = ['tonKho'] as const;
 const DINH_MUC_LIST_KEY = [...TON_KHO_QUERY_KEY, 'dinhMucList'] as const;
 
+function tonKhoMatrixQueryKey(scope: TonKhoMatrixScope | 'wait'): readonly unknown[] {
+  if (scope === 'wait') return [...TON_KHO_QUERY_KEY, 'matrix', 'wait'];
+  if (scope.kind === 'all') return [...TON_KHO_QUERY_KEY, 'matrix', 'all'];
+  if (scope.kind === 'none') return [...TON_KHO_QUERY_KEY, 'matrix', 'none'];
+  return [...TON_KHO_QUERY_KEY, 'matrix', 'ids', [...scope.ids].sort().join(',')];
+}
+
+/**
+ * Ma trận tồn kho theo phân quyền chi nhánh — chỉ tải dữ liệu kho được phép (giảm egress).
+ * staleTime không đổi: dữ liệu vẫn được invalidate sau nhập/xuất như trước.
+ */
 export function useAllTonKho() {
-  return useQuery({
-    queryKey: TON_KHO_QUERY_KEY,
-    queryFn: getAllTonKho,
+  const scope = useTonKhoViewScope();
+  const { data: khoList = [], isLoading: khoLoading } = useKhoList();
+
+  const matrixScope = useMemo((): TonKhoMatrixScope | 'wait' => {
+    if (scope.isLoading) return 'wait';
+    if (scope.viewAll) return { kind: 'all' };
+    if (!scope.viewByBranch || scope.allowedBranchIds.length === 0) return { kind: 'none' };
+    const allowed = new Set(scope.allowedBranchIds);
+    const ids = khoList
+      .filter((k) => k.id_chi_nhanh != null && allowed.has(k.id_chi_nhanh))
+      .map((k) => k.id);
+    return { kind: 'ids', ids };
+  }, [scope, khoList]);
+
+  const blocked =
+    matrixScope === 'wait' || (matrixScope !== 'wait' && matrixScope.kind === 'ids' && khoLoading);
+  const enabled = !blocked;
+
+  const q = useQuery({
+    queryKey: tonKhoMatrixQueryKey(matrixScope),
+    queryFn: () => {
+      if (matrixScope === 'wait') return Promise.resolve([]);
+      return getTonKhoMatrixSupabase(matrixScope);
+    },
+    enabled,
     staleTime: 1000 * 60 * 5,
   });
+
+  return {
+    ...q,
+    /** Chờ phân quyền / danh sách kho — coi như đang tải để UI không nháy dữ liệu rỗng. */
+    isLoading: blocked || q.isPending || q.isFetching,
+  };
 }
 
 export function useDinhMucTonKho() {

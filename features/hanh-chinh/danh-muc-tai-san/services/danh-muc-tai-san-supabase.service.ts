@@ -138,14 +138,24 @@ export async function getNextMaTaiSanSupabase(): Promise<string> {
   return `${MA_TAI_SAN_PREFIX}${String(next).padStart(MA_TAI_SAN_PAD, '0')}`;
 }
 
+function parseDistinctJsonb(data: unknown): string[] | null {
+  if (!Array.isArray(data)) return null;
+  const out = data.map((x) => String(x).trim()).filter((s) => s.length > 0);
+  return out.sort((a, b) => a.localeCompare(b, 'vi'));
+}
+
 /**
  * Lấy danh sách giá trị distinct (enum) của cột thuong_hieu từ fp_ts_tai_san, dùng cho combobox có thể thêm mới.
+ * Ưu tiên RPC `rpc_fp_ts_distinct_thuong_hieu` (docs/supabase-rpc_fp_ts_distinct.sql); fallback tải cột nếu RPC chưa có.
  */
 export async function getDistinctThuongHieuSupabase(): Promise<string[]> {
-  const { data, error } = await supabase.from(TABLE).select('thuong_hieu');
-  if (error) throw new Error((error as { message?: string }).message ?? String(error));
+  const { data, error } = await supabase.rpc('rpc_fp_ts_distinct_thuong_hieu');
+  const parsed = !error && data != null ? parseDistinctJsonb(data as unknown) : null;
+  if (parsed) return parsed;
+  const { data: rows, error: e2 } = await supabase.from(TABLE).select('thuong_hieu');
+  if (e2) throw new Error((e2 as { message?: string }).message ?? String(e2));
   const set = new Set<string>();
-  (data ?? []).forEach((row: { thuong_hieu: string | null }) => {
+  (rows ?? []).forEach((row: { thuong_hieu: string | null }) => {
     const v = (row.thuong_hieu ?? '').trim();
     if (v) set.add(v);
   });
@@ -156,10 +166,13 @@ export async function getDistinctThuongHieuSupabase(): Promise<string[]> {
  * Lấy danh sách giá trị distinct (enum) của cột model từ fp_ts_tai_san, dùng cho combobox có thể thêm mới.
  */
 export async function getDistinctModelSupabase(): Promise<string[]> {
-  const { data, error } = await supabase.from(TABLE).select('model');
-  if (error) throw new Error((error as { message?: string }).message ?? String(error));
+  const { data, error } = await supabase.rpc('rpc_fp_ts_distinct_model');
+  const parsed = !error && data != null ? parseDistinctJsonb(data as unknown) : null;
+  if (parsed) return parsed;
+  const { data: rows, error: e2 } = await supabase.from(TABLE).select('model');
+  if (e2) throw new Error((e2 as { message?: string }).message ?? String(e2));
   const set = new Set<string>();
-  (data ?? []).forEach((row: { model: string | null }) => {
+  (rows ?? []).forEach((row: { model: string | null }) => {
     const v = (row.model ?? '').trim();
     if (v) set.add(v);
   });
@@ -170,10 +183,13 @@ export async function getDistinctModelSupabase(): Promise<string[]> {
  * Lấy danh sách giá trị distinct (enum) của cột xuat_xu từ fp_ts_tai_san, dùng cho combobox có thể thêm mới.
  */
 export async function getDistinctXuatXuSupabase(): Promise<string[]> {
-  const { data, error } = await supabase.from(TABLE).select('xuat_xu');
-  if (error) throw new Error((error as { message?: string }).message ?? String(error));
+  const { data, error } = await supabase.rpc('rpc_fp_ts_distinct_xuat_xu');
+  const parsed = !error && data != null ? parseDistinctJsonb(data as unknown) : null;
+  if (parsed) return parsed;
+  const { data: rows, error: e2 } = await supabase.from(TABLE).select('xuat_xu');
+  if (e2) throw new Error((e2 as { message?: string }).message ?? String(e2));
   const set = new Set<string>();
-  (data ?? []).forEach((row: { xuat_xu: string | null }) => {
+  (rows ?? []).forEach((row: { xuat_xu: string | null }) => {
     const v = (row.xuat_xu ?? '').trim();
     if (v) set.add(v);
   });
@@ -184,10 +200,13 @@ export async function getDistinctXuatXuSupabase(): Promise<string[]> {
  * Lấy danh sách giá trị distinct (enum) của cột ten_nha_cung_cap từ fp_ts_tai_san, dùng cho combobox có thể thêm mới.
  */
 export async function getDistinctNhaCungCapSupabase(): Promise<string[]> {
-  const { data, error } = await supabase.from(TABLE).select('ten_nha_cung_cap');
-  if (error) throw new Error((error as { message?: string }).message ?? String(error));
+  const { data, error } = await supabase.rpc('rpc_fp_ts_distinct_ten_nha_cung_cap');
+  const parsed = !error && data != null ? parseDistinctJsonb(data as unknown) : null;
+  if (parsed) return parsed;
+  const { data: rows, error: e2 } = await supabase.from(TABLE).select('ten_nha_cung_cap');
+  if (e2) throw new Error((e2 as { message?: string }).message ?? String(e2));
   const set = new Set<string>();
-  (data ?? []).forEach((row: { ten_nha_cung_cap: string | null }) => {
+  (rows ?? []).forEach((row: { ten_nha_cung_cap: string | null }) => {
     const v = (row.ten_nha_cung_cap ?? '').trim();
     if (v) set.add(v);
   });

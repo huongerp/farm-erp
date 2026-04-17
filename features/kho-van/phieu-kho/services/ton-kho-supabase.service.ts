@@ -42,12 +42,67 @@ function rowToTonKho(r: TonKhoViewRow): TonKhoRecord {
   };
 }
 
-/** Lấy toàn bộ tồn từ view fp_mh_ton_kho. */
-export async function getAllTonKhoSupabase(): Promise<TonKhoRecord[]> {
-  const rows = await fetchAllRows<TonKhoViewRow>((from, to) =>
-    supabase.from(VIEW_TON_KHO).select('kho_id, id_hang_hoa, so_luong').range(from, to)
-  );
+/** Phạm vi tải ma trận tồn (giảm egress khi chỉ xem một số chi nhánh). */
+export type TonKhoMatrixScope =
+  | { kind: 'all' }
+  | { kind: 'none' }
+  | { kind: 'ids'; ids: string[] };
+
+function tonKhoMatrixFromRpcPayload(raw: unknown): TonKhoRecord[] {
+  if (!Array.isArray(raw)) return [];
+  const out: TonKhoRecord[] = [];
+  for (const item of raw) {
+    if (item == null || typeof item !== 'object') continue;
+    const o = item as { kho_id?: unknown; id_hang_hoa?: unknown; so_luong?: unknown };
+    out.push({
+      id_kho: String(o.kho_id),
+      id_hang_hoa: String(o.id_hang_hoa),
+      so_luong: Number(o.so_luong),
+    });
+  }
+  return out;
+}
+
+/** REST fallback khi RPC chưa deploy hoặc lỗi — vẫn hỗ trợ lọc kho. */
+async function fetchTonKhoMatrixViaRest(scope: TonKhoMatrixScope): Promise<TonKhoRecord[]> {
+  if (scope.kind === 'none') return [];
+  const idsOnly = scope.kind === 'ids' ? scope.ids : null;
+  if (idsOnly !== null && idsOnly.length === 0) return [];
+  const nums =
+    idsOnly !== null ? idsOnly.map(Number).filter((n) => !Number.isNaN(n)) : null;
+  const rows = await fetchAllRows<TonKhoViewRow>((from, to) => {
+    let q = supabase.from(VIEW_TON_KHO).select('kho_id, id_hang_hoa, so_luong');
+    if (nums !== null && nums.length > 0) q = q.in('kho_id', nums);
+    return q.range(from, to);
+  });
   return rows.map(rowToTonKho);
+}
+
+/**
+ * Ma trận tồn — ưu tiên RPC `rpc_ton_kho_matrix` (một response, có lọc kho).
+ * @see docs/supabase-rpc_ton_kho_matrix.sql
+ */
+export async function getTonKhoMatrixSupabase(scope: TonKhoMatrixScope): Promise<TonKhoRecord[]> {
+  if (scope.kind === 'none') return [];
+  if (scope.kind === 'ids' && scope.ids.length === 0) return [];
+
+  const pKhoIds =
+    scope.kind === 'all' ? null : scope.ids.map(Number).filter((n) => !Number.isNaN(n));
+
+  const { data, error } = await supabase.rpc('rpc_ton_kho_matrix', {
+    p_kho_ids: scope.kind === 'all' ? null : pKhoIds,
+  });
+
+  if (!error && data != null) {
+    return tonKhoMatrixFromRpcPayload(data as unknown);
+  }
+
+  return fetchTonKhoMatrixViaRest(scope);
+}
+
+/** Toàn bộ tồn (báo cáo NXT, …) — không lọc kho. */
+export async function getAllTonKhoSupabase(): Promise<TonKhoRecord[]> {
+  return getTonKhoMatrixSupabase({ kind: 'all' });
 }
 
 /** Lấy tồn tại (kho, hàng). Trả về 0 nếu không có. */

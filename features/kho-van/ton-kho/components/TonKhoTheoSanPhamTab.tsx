@@ -3,8 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { Package, Warehouse, History, AlertTriangle, FolderOpen } from 'lucide-react';
 import { useAllTonKho, useDinhMucTonKho } from '../hooks/use-ton-kho';
 import { useTonKhoTheoHangHoa, useLichSuNhapXuatByHangHoa } from '../hooks/use-ton-kho';
-import { useTonKhoViewScope } from '../hooks/use-ton-kho-view-scope';
-import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import { dinhMucKey } from '../../phieu-kho/services/ton-kho-service';
 import type { TonKhoRecord } from '../../phieu-kho/services/ton-kho-service';
 import { getKhoList } from '../../danh-sach-kho/services/kho-service';
@@ -326,23 +324,7 @@ const TonKhoTheoSanPhamTab: React.FC = () => {
     setPageSize,
     resetState,
   } = useTonKhoByProductStore();
-  const { data: tonKhoListRaw = [] } = useAllTonKho();
-  const { data: khoList = [] } = useKhoList();
-  const viewScope = useTonKhoViewScope();
-  const viewableTonKhoList = useMemo(() => {
-    if (viewScope.viewAll) return tonKhoListRaw;
-    if (!viewScope.viewByBranch || viewScope.allowedBranchIds.length === 0) return [];
-    const khoIdToBranchId = new Map<string, string>();
-    khoList.forEach((k) => {
-      if (k.id_chi_nhanh != null) khoIdToBranchId.set(k.id, k.id_chi_nhanh);
-    });
-    const allowedSet = new Set(viewScope.allowedBranchIds);
-    return tonKhoListRaw.filter((r) => {
-      const branchId = khoIdToBranchId.get(r.id_kho);
-      return branchId != null && allowedSet.has(branchId);
-    });
-  }, [tonKhoListRaw, khoList, viewScope.viewAll, viewScope.viewByBranch, viewScope.allowedBranchIds]);
-  const { rows, isLoading } = useProductRows(viewableTonKhoList);
+  const { rows, isLoading } = useProductRows();
 
   const filterFn = useCallback((item: RowProduct, term: string, f: TonKhoFilters) => {
     if (term.trim()) {

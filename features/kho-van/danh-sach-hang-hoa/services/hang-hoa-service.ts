@@ -4,7 +4,10 @@ import type { HangHoa } from '../core/types';
 import type { HangHoaFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
-import { getAllDanhMucHangHoa } from '../../danh-muc-hang-hoa/services/danh-muc-hang-hoa-service';
+import {
+  getAllDanhMucHangHoa,
+  getDanhMucHangHoaRefRows,
+} from '../../danh-muc-hang-hoa/services/danh-muc-hang-hoa-service';
 
 const TABLE = 'fp_mh_danh_sach_hang_hoa';
 
@@ -120,20 +123,20 @@ export type HangHoaRefLite = {
 
 export const getHangHoaRef = async (): Promise<HangHoaRefLite[]> => {
   return getCachedRef(REF_CACHE_KEYS.hangHoa, async () => {
-    const rows = await fetchAllRows<HangHoaRow>((from, to) =>
-      supabase
-        .from(TABLE)
-        .select('id, ma_hang_hoa, ten_hang_hoa, dvt, danh_muc_id, danh_muc_cha_id, thu_tu, trang_thai, don_gia')
-        .order('thu_tu', { ascending: true })
-        .order('ma_hang_hoa', { ascending: true })
-        .range(from, to)
-    );
-    let dmList: Awaited<ReturnType<typeof getAllDanhMucHangHoa>> = [];
-    try {
-      dmList = await getAllDanhMucHangHoa();
-    } catch (e) {
-      console.warn('[hang-hoa-service] getHangHoaRef: không tải được danh mục hàng hóa – cột Danh mục có thể trống:', e);
-    }
+    const [rows, dmList] = await Promise.all([
+      fetchAllRows<HangHoaRow>((from, to) =>
+        supabase
+          .from(TABLE)
+          .select('id, ma_hang_hoa, ten_hang_hoa, dvt, danh_muc_id, danh_muc_cha_id, thu_tu, trang_thai, don_gia')
+          .order('thu_tu', { ascending: true })
+          .order('ma_hang_hoa', { ascending: true })
+          .range(from, to)
+      ),
+      getDanhMucHangHoaRefRows().catch((e) => {
+        console.warn('[hang-hoa-service] getHangHoaRef: không tải được danh mục hàng hóa – cột Danh mục có thể trống:', e);
+        return [] as Awaited<ReturnType<typeof getDanhMucHangHoaRefRows>>;
+      }),
+    ]);
     return rows.map((row) => {
       const ma = row.ma_hang_hoa ?? '';
       const ten = row.ten_hang_hoa ?? '';

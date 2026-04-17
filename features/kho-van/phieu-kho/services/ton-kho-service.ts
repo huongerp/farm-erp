@@ -5,6 +5,7 @@
 
 import {
   getAllTonKhoSupabase,
+  getTonKhoMatrixSupabase,
   getTonKhoSupabase,
   getTonKhoTheoKhoSupabase,
   getTonKhoTheoHangHoaSupabase,
@@ -16,7 +17,13 @@ import {
   deleteDinhMucTonKhoSupabase,
 } from './ton-kho-supabase.service';
 
-export type { TonKhoRecord, DinhMucTonKhoMap, DinhMucTonKhoRow } from './ton-kho-supabase.service';
+export type {
+  TonKhoRecord,
+  TonKhoMatrixScope,
+  DinhMucTonKhoMap,
+  DinhMucTonKhoRow,
+} from './ton-kho-supabase.service';
+export { getTonKhoMatrixSupabase } from './ton-kho-supabase.service';
 export { dinhMucKey } from './ton-kho-supabase.service';
 
 /** Lấy số lượng tồn tại (kho, hàng). Trả về 0 nếu chưa có. */

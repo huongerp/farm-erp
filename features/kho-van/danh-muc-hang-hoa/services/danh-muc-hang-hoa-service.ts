@@ -36,6 +36,28 @@ function rowToDanhMuc(row: DanhMucHangHoaRow): DanhMucHangHoa {
   };
 }
 
+const DM_HH_REF_COLUMNS = 'id, ten_danh_muc, danh_muc_cha_id';
+
+/** Chỉ cột cần cho buildTenDanhMuc trong ref hàng hóa — nhẹ hơn getAllDanhMucHangHoa. */
+export async function getDanhMucHangHoaRefRows(): Promise<
+  { id: string; ten_danh_muc: string; id_cha: string | null }[]
+> {
+  const data = await fetchAllRows<Pick<DanhMucHangHoaRow, 'id' | 'ten_danh_muc' | 'danh_muc_cha_id'>>(
+    (from, to) =>
+      supabase
+        .from(TABLE)
+        .select(DM_HH_REF_COLUMNS)
+        .order('thu_tu', { ascending: true })
+        .order('ma_danh_muc', { ascending: true })
+        .range(from, to)
+  );
+  return data.map((row) => ({
+    id: String(row.id),
+    ten_danh_muc: row.ten_danh_muc ?? '',
+    id_cha: row.danh_muc_cha_id != null ? String(row.danh_muc_cha_id) : null,
+  }));
+}
+
 export const getAllDanhMucHangHoa = async (): Promise<DanhMucHangHoa[]> => {
   const data = await fetchAllRows<DanhMucHangHoaRow>((from, to) =>
     supabase
