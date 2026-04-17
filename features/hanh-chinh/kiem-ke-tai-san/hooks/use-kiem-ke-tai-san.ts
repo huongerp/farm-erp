@@ -23,6 +23,7 @@ import type {
 } from '../services/kiem-ke-tai-san-service';
 import type { DotKiemKeCreate, ChiTietKiemKeUpdate } from '../core/types';
 import type { TrangThaiDotKiemKe } from '../core/types';
+import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
 
 export interface UseDotKiemKeListParams {
   filter?: 'all' | 'mine';
@@ -35,8 +36,9 @@ export interface UseDotKiemKeListParams {
 }
 
 export function useDotKiemKeList(params: UseDotKiemKeListParams = {}) {
+  const { q: _qIgnored, ...paramsForKey } = params;
   return useQuery({
-    queryKey: ['dotKiemKeList', params],
+    queryKey: ['dotKiemKeList', stableListQueryKeyPart(paramsForKey)],
     queryFn: () => getDotKiemKeList(params),
     staleTime: 1000 * 60 * 2,
   });

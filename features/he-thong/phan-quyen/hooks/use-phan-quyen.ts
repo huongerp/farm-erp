@@ -79,7 +79,6 @@ export const useAccessLogs = () => {
   return useQuery({
     queryKey: ['access-logs'],
     queryFn: getLogs,
-    refetchInterval: 2 * 60 * 1000,
-    refetchIntervalInBackground: false,
+    staleTime: 1000 * 60 * 5,
   });
 };

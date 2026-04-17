@@ -6,6 +6,7 @@ import { useDonDatHangListPaged, useDonDatHangById, useDeleteDonDatHang, useDele
 import { useDonDatHangViewScope } from '../hooks/use-don-dat-hang-view-scope';
 import { buildDonDatHangListServerQuery } from '../services/don-dat-hang-service';
 import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
+import { useDebouncedValue } from '../../../../lib/hooks/use-debounced-value';
 import { useDoiTacRefQuery, useEmployeesRefQuery, usePhieuDeXuatSoPhieuMinimalQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
 import { useKhoList } from '../../../kho-van/danh-sach-kho/hooks/use-kho';
 import { useDonDatHangStore } from '../store/useDonDatHangStore';
@@ -72,16 +73,17 @@ const DanhSachTab: React.FC = () => {
   const { data: employees = [] } = useEmployeesRefQuery();
   const { data: phieuDeXuatList = [] } = usePhieuDeXuatSoPhieuMinimalQuery();
   const viewScope = useDonDatHangViewScope();
+  const debouncedSearchTerm = useDebouncedValue(searchTerm);
 
   const listServerQuery = useMemo(
     () =>
       buildDonDatHangListServerQuery({
-        searchTerm,
+        searchTerm: debouncedSearchTerm,
         filters,
         viewScope,
         khoList,
       }),
-    [searchTerm, filters, viewScope, khoList]
+    [debouncedSearchTerm, filters, viewScope, khoList]
   );
   const listQueryKey = useMemo(() => stableListQueryKeyPart(listServerQuery), [listServerQuery]);
   const pageIndex = Math.max(0, pagination.page - 1);

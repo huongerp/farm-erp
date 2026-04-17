@@ -17,7 +17,7 @@ export const usePhieuBaoTriList = (params: GetPhieuBaoTriListParams = {}) =>
   useQuery({
     queryKey: [
       ...QUERY_KEY,
-      params.q ?? '',
+      // q chỉ lọc client — không đưa vào queryKey
       params.hang_muc?.join(',') ?? '',
       params.dateFrom ?? '',
       params.dateTo ?? '',

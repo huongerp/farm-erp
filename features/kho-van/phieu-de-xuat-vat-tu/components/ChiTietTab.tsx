@@ -12,6 +12,7 @@ import {
   getPhieuDeXuatVatTuById,
 } from '../services/phieu-de-xuat-vat-tu-service';
 import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
+import { useDebouncedValue } from '../../../../lib/hooks/use-debounced-value';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import { useChiTietTabStore } from '../store/useChiTietTabStore';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
@@ -106,15 +107,17 @@ const ChiTietTab: React.FC = () => {
     resetState,
   } = useChiTietTabStore();
 
+  const debouncedSearchTerm = useDebouncedValue(searchTerm);
+
   const listServerQuery = useMemo(
     () =>
       buildPhieuDeXuatChiTietListServerQuery({
-        searchTerm,
+        searchTerm: debouncedSearchTerm,
         filters,
         viewScope,
         khoList,
       }),
-    [searchTerm, filters, viewScope, khoList]
+    [debouncedSearchTerm, filters, viewScope, khoList]
   );
   const listQueryKey = useMemo(() => stableListQueryKeyPart(listServerQuery), [listServerQuery]);
   const pageIndex = Math.max(0, pagination.page - 1);

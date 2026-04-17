@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   fetchEmployeeRows,
   fetchEmployeeRowsPage,
+  fetchEmployeeRowsLiteForCounts,
   enrichEmployeesWithRefData,
   getEmployeeById,
   createEmployee,
@@ -13,6 +14,7 @@ import {
   restoreEmployees,
   type EmployeeListQuery,
 } from "../services/nhan-vien-service";
+import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
 import { EmployeeFormValues } from "../core/schema";
 import { Employee } from "../core/types";
 import { toast } from "sonner";
@@ -25,14 +27,29 @@ import { useBranches } from '../../chi-nhanh/hooks/use-chi-nhanh';
 
 export const EMPLOYEES_QUERY_KEY = ['employees'] as const;
 
+/** Query key cho bản lite phục vụ đếm filter chip — không dùng cho bảng chính. */
+export const EMPLOYEES_LITE_COUNTS_QUERY_KEY = ['employees', 'lite-for-filter-counts'] as const;
+
+/**
+ * Chỉ các cột tối thiểu để đếm filter (phòng ban/chức vụ/trạng thái) — tránh refetch full list khi gõ search.
+ */
+export const useEmployeesLiteForCounts = () =>
+  useQuery({
+    queryKey: EMPLOYEES_LITE_COUNTS_QUERY_KEY,
+    queryFn: fetchEmployeeRowsLiteForCounts,
+    staleTime: 1000 * 60 * 5,
+  });
+
 /**
  * Danh sách nhân viên: tải rows một lần, gộp tên từ cache React Query (phòng ban/chức vụ/chi nhánh) — tránh gọi trùng API với toolbar/form.
+ * Dùng `enabled: false` khi không cần (vd chỉ tab thống kê mới tải full).
  */
-export const useEmployees = () => {
+export const useEmployees = (options?: { enabled?: boolean }) => {
   const rowsQuery = useQuery({
     queryKey: EMPLOYEES_QUERY_KEY,
     queryFn: fetchEmployeeRows,
     staleTime: 1000 * 60 * 15,
+    enabled: options?.enabled !== false,
   });
   const { data: positions = [] } = usePositions();
   const { data: departments = [] } = useDepartments();
@@ -61,7 +78,7 @@ export const useEmployees = () => {
  */
 export const useEmployeesPage = (query: EmployeeListQuery) => {
   const rowsQuery = useQuery({
-    queryKey: ['employees', 'page', query] as const,
+    queryKey: ['employees', 'page', stableListQueryKeyPart(query)] as const,
     queryFn: () => fetchEmployeeRowsPage(query),
     staleTime: 1000 * 60 * 5,
     // Giữ trang cũ khi chuyển page để tránh nhấp nháy UI (React Query v5 `placeholderData`).

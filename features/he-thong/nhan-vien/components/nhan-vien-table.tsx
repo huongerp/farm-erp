@@ -19,6 +19,8 @@ import { TRANG_THAI_NV } from '../../../../lib/constants';
 
 interface Props {
     data: Employee[];
+    /** Khi phân trang server: tổng số bản ghi (khác độ dài `data`). */
+    totalRecordsOverride?: number;
     isLoading: boolean;
     onEdit: (item: Employee) => void;
     onDelete: (id: string) => void;
@@ -195,6 +197,7 @@ const EmployeeTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onS
     return (
         <GenericTable
             data={data}
+            totalRecordsOverride={totalRecordsOverride}
             columns={columns}
             isLoading={isLoading}
             loadingText={t('common.loadingData')}

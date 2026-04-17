@@ -166,6 +166,10 @@ function formToRow(data: EmployeeFormValues): NhanVienRow {
 const EMPLOYEE_LIST_SELECT =
   'id, ho_va_ten, email, so_dien_thoai, phong_ban_id, chuc_vu_id, chi_nhanh_ids, cap_bac_id, cap_bac, trang_thai, gioi_tinh, ngay_vao_lam, ten_phong_ban, ten_chuc_vu, ten_chi_nhanh, ten_cap_bac, loai_hop_dong, ngay_het_han_hd, noi_lam_viec';
 
+/** Chỉ đủ cho useFilterCounts + employeeMatchesSearch — nhẹ hơn EMPLOYEE_LIST_SELECT. */
+const EMPLOYEE_LITE_FOR_COUNTS_SELECT =
+  'id, phong_ban_id, chuc_vu_id, trang_thai, ho_va_ten, email, so_dien_thoai';
+
 /** Đủ cột cho `rowToEmployee` (hồ sơ đầy đủ) — tránh select('*'). */
 const EMPLOYEE_DETAIL_SELECT =
   'id,ho_va_ten,email,so_dien_thoai,phong_ban_id,chuc_vu_id,chi_nhanh_ids,ten_phong_ban,ten_chuc_vu,ten_chi_nhanh,hinh_anh,cap_bac_id,cap_bac,ten_cap_bac,gioi_tinh,trang_thai,ngay_vao_lam,ngay_sinh,cmnd_cccd,ngay_cap_cccd,noi_cap_cccd,quoc_tich,dan_toc,ton_giao,tinh_thanh,quan_huyen,phuong_xa,dia_chi_cu_the,dia_chi_tam_tru,loai_hop_dong,ngay_het_han_hd,noi_lam_viec,nguoi_lien_he_khan_cap,sdt_khan_cap,quan_he_khan_cap,tinh_trang_hon_nhan,so_nguoi_phu_thuoc,trinh_do_hoc_van,chuyen_nganh,truong_hoc,nam_tot_nghiep,chung_chi,so_tai_khoan,ten_ngan_hang,chi_nhanh_nh,ma_so_thue_ca_nhan,so_bhxh,so_bhyt,ngay_tham_gia_bh,noi_dang_ky_kcb';
@@ -213,7 +217,7 @@ export function enrichEmployeesWithRefData(
 }
 
 /** Chỉ fetch bảng tham chiếu khi còn thiếu tên hiển thị (trigger DB đã đủ thì bỏ qua). */
-async function enrichEmployeesWithRefDataAsync(employees: Employee[]): Promise<void> {
+export async function enrichEmployeesWithRefDataAsync(employees: Employee[]): Promise<void> {
   if (employees.length === 0) return;
 
   const needPos = employees.some(needsPositionEnrichment);
@@ -232,12 +236,24 @@ async function enrichEmployeesWithRefDataAsync(employees: Employee[]): Promise<v
 /**
  * Chỉ đọc fp_var_nhan_vien (không enrich). Dùng với React Query + enrichEmployeesWithRefData ở hook.
  *
+ * Trang danh sách chính dùng `fetchEmployeeRowsPage` / `useEmployeesPage` — **không** dùng hook này cho list,
+ * tránh kéo toàn bộ bảng. Giữ `fetchEmployeeRows` cho tab thống kê / export / nơi cần full snapshot.
+ *
  * @see enrichEmployeesWithRefData — gộp tên từ cache phòng ban/chức vụ/chi nhánh
- * @future Khi danh sách rất lớn: thay bằng phân trang/filter phía Supabase (.range + điều kiện), không fetchAllRows toàn bộ.
  */
 export async function fetchEmployeeRows(): Promise<Employee[]> {
   const data = await fetchAllRows<NhanVienRow>((from, to) =>
     supabase.from(TABLE).select(EMPLOYEE_LIST_SELECT).order('id', { ascending: false }).range(from, to)
+  );
+  return data.map(rowToEmployee);
+}
+
+/**
+ * Tải tối thiểu cột để đếm filter chip (phòng ban/chức vụ/trạng thái) — không dùng cho bảng chính.
+ */
+export async function fetchEmployeeRowsLiteForCounts(): Promise<Employee[]> {
+  const data = await fetchAllRows<NhanVienRow>((from, to) =>
+    supabase.from(TABLE).select(EMPLOYEE_LITE_FOR_COUNTS_SELECT).order('id', { ascending: false }).range(from, to)
   );
   return data.map(rowToEmployee);
 }
@@ -298,6 +314,33 @@ export async function fetchEmployeeRowsPage(
     page: result.page,
     pageSize: result.pageSize,
   };
+}
+
+/**
+ * Mọi dòng khớp filter (không phân trang) — dùng export / báo cáo; có thể nặng nếu không lọc.
+ */
+export async function fetchEmployeeRowsAllMatching(
+  query: Pick<EmployeeListQuery, 'q' | 'trangThai' | 'phongBanIds' | 'chucVuIds'>
+): Promise<Employee[]> {
+  const { q, trangThai, phongBanIds, chucVuIds } = query;
+  const data = await fetchAllRows<NhanVienRow>((from, to) => {
+    let sel = supabase.from(TABLE).select(EMPLOYEE_LIST_SELECT);
+    if (trangThai && trangThai.length > 0) {
+      sel = sel.in('trang_thai', trangThai as string[]);
+    }
+    if (phongBanIds && phongBanIds.length > 0) {
+      sel = sel.in('phong_ban_id', phongBanIds);
+    }
+    if (chucVuIds && chucVuIds.length > 0) {
+      sel = sel.in('chuc_vu_id', chucVuIds);
+    }
+    if (q && q.trim().length > 0) {
+      const needle = `%${q.trim()}%`;
+      sel = sel.or(`ho_va_ten.ilike.${needle},email.ilike.${needle},so_dien_thoai.ilike.${needle}`);
+    }
+    return sel.order('id', { ascending: false }).range(from, to);
+  });
+  return data.map(rowToEmployee);
 }
 
 /** Toàn bộ nhân viên + enrich (cho caller không dùng React: báo cáo, v.v.). */

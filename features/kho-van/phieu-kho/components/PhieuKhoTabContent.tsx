@@ -8,6 +8,7 @@ import { usePhieuKhoViewScope } from '../hooks/use-phieu-kho-view-scope';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import { buildPhieuKhoListServerQuery, fetchAllPhieuKhoForListQuery } from '../services/phieu-kho-service';
 import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
+import { useDebouncedValue } from '../../../../lib/hooks/use-debounced-value';
 import { useEmployeesRefQuery, useDoiTacRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
 import { usePhieuKhoStore } from '../store/usePhieuKhoStore';
 import { getDateRangeFromPreset } from '../../../he-thong/nhan-vien/utils/stats-date-range';
@@ -89,6 +90,8 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
   const deleteMutation = useDeletePhieuKho();
   const deleteManyMutation = useDeletePhieuKhoMany();
 
+  const debouncedSearchTerm = useDebouncedValue(searchTerm);
+
   const dateRangeStr = useMemo(() => {
     const dp = typeof filters.datePreset === 'string' ? filters.datePreset : 'all';
     const cf = typeof filters.customDateFrom === 'string' ? filters.customDateFrom : '';
@@ -107,14 +110,14 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
     () =>
       buildPhieuKhoListServerQuery({
         loaiTab,
-        searchTerm,
+        searchTerm: debouncedSearchTerm,
         filters,
         ngayFrom: dateRangeStr.start,
         ngayTo: dateRangeStr.end,
         viewScope,
         khoList,
       }),
-    [loaiTab, searchTerm, filters, dateRangeStr.start, dateRangeStr.end, viewScope, khoList]
+    [loaiTab, debouncedSearchTerm, filters, dateRangeStr.start, dateRangeStr.end, viewScope, khoList]
   );
 
   const listQueryKey = useMemo(() => stableListQueryKeyPart(listServerQuery), [listServerQuery]);

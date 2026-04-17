@@ -75,39 +75,43 @@ const NavigateToMuaHangModule = () => {
   return <Navigate to={to} replace />;
 };
 
+/** Dedupe StrictMode double mount: một promise bootstrap, không gọi RPC 2 lần (dev). */
+let authBootstrapPromise: Promise<void> | null = null;
+
 function useAuthSync() {
   useEffect(() => {
-    // 1 RPC duy nhất thay cho getSessionEmployee + prefetch getCurrentRoleContext (2 request)
-    // + useCompanyInfo (1 request). Sau khi có dữ liệu, seed thẳng vào React Query cache &
-    // UI store để các hook (useCurrentRoleContext / useCompanyInfo) không gọi lại API.
-    getSessionBootstrap().then(async ({ employee, roleContext, company }) => {
-      const { login, logout } = useAuthStore.getState();
-      const { setCompanyInfo } = useUIStore.getState();
-      if (employee) {
-        login(employeeToUser(employee));
-        if (roleContext && employee.id_chuc_vu != null) {
-          // Seed cache cho useCurrentRoleContext — không cần prefetch thêm.
-          queryClient.setQueryData([CURRENT_ROLE_CONTEXT_KEY, String(employee.id_chuc_vu)], roleContext);
-        } else if (employee.id_chuc_vu != null) {
-          // Fallback: nếu RPC chưa trả roleContext (vd RPC chưa deploy), prefetch như cũ.
-          await queryClient.prefetchQuery({
-            queryKey: [CURRENT_ROLE_CONTEXT_KEY, String(employee.id_chuc_vu)],
-            queryFn: () => getCurrentRoleContext(String(employee.id_chuc_vu)),
-          });
-        }
-        if (company) {
-          queryClient.setQueryData(COMPANY_INFO_QUERY_KEY, company);
-          setCompanyInfo(company);
-        }
-      } else {
-        logout();
-        supabase.auth.getSession().then(({ data: { session } }) => {
+    if (authBootstrapPromise == null) {
+      // 1 RPC duy nhất thay cho getSessionEmployee + prefetch getCurrentRoleContext (2 request)
+      // + useCompanyInfo (1 request). Sau khi có dữ liệu, seed thẳng vào React Query cache &
+      // UI store để các hook (useCurrentRoleContext / useCompanyInfo) không gọi lại API.
+      authBootstrapPromise = (async () => {
+        const { employee, roleContext, company } = await getSessionBootstrap();
+        const { login, logout } = useAuthStore.getState();
+        const { setCompanyInfo } = useUIStore.getState();
+        if (employee) {
+          login(employeeToUser(employee));
+          if (roleContext && employee.id_chuc_vu != null) {
+            queryClient.setQueryData([CURRENT_ROLE_CONTEXT_KEY, String(employee.id_chuc_vu)], roleContext);
+          } else if (employee.id_chuc_vu != null) {
+            await queryClient.prefetchQuery({
+              queryKey: [CURRENT_ROLE_CONTEXT_KEY, String(employee.id_chuc_vu)],
+              queryFn: () => getCurrentRoleContext(String(employee.id_chuc_vu)),
+            });
+          }
+          if (company) {
+            queryClient.setQueryData(COMPANY_INFO_QUERY_KEY, company);
+            setCompanyInfo(company);
+          }
+        } else {
+          logout();
+          const { data: { session } } = await supabase.auth.getSession();
           if (session?.user?.email) {
             toast.info(i18n.t('page.login.googleNoEmployee'));
           }
-        });
-      }
-    });
+        }
+      })();
+    }
+    void authBootstrapPromise;
   }, []);
 }
 

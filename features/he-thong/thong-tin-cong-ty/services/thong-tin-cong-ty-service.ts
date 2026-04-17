@@ -3,6 +3,9 @@ import i18n from '../../../../lib/i18n';
 
 const TABLE = 'fp_var_tt_cong_ty';
 
+const COMPANY_ROW_COLUMNS =
+  'id, ten_ung_dung, mo_ta, logo, ten_cong_ty, ma_so_thue, dia_chi, so_dien_thoai, email, trang_web, tg_tao, tg_cap_nhat';
+
 /** Dòng bảng fp_var_tt_cong_ty (tên cột tiếng Việt) */
 export interface TTCongTyRow {
   id: number;
@@ -87,7 +90,7 @@ export async function updateCompanyInfo(
     .from(TABLE)
     .update(row)
     .eq('id', id)
-    .select()
+    .select(COMPANY_ROW_COLUMNS)
     .single();
 
   if (error) throw new Error(error.message ?? i18n.t('company.service.updateError'));

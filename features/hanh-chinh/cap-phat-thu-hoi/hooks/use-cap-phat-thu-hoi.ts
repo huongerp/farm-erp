@@ -17,7 +17,8 @@ const QUERY_KEY = ['phieuCapPhatThuHoi'] as const;
 
 export const usePhieuList = (params: GetPhieuListParams = {}) =>
   useQuery({
-    queryKey: [...QUERY_KEY, params.filter ?? 'all', params.id_nguoi ?? '', params.q ?? ''],
+    // q chỉ lọc client — không đưa vào queryKey để tránh refetch full bảng mỗi ký tự gõ
+    queryKey: [...QUERY_KEY, params.filter ?? 'all', params.id_nguoi ?? ''],
     queryFn: () => getPhieuList(params),
   });
 

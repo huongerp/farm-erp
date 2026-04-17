@@ -21,6 +21,7 @@ import {
 import type { TaoDanhSachKiemKeKhoFilters } from '../services/kiem-ke-kho-service';
 import type { DotKiemKeKhoCreate, ChiTietKiemKeKhoUpdate } from '../core/types';
 import type { TrangThaiDotKiemKeKho } from '../core/types';
+import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
 
 export interface UseDotKiemKeKhoListParams {
   filter?: 'all' | 'mine';
@@ -34,8 +35,9 @@ export interface UseDotKiemKeKhoListParams {
 }
 
 export function useDotKiemKeKhoList(params: UseDotKiemKeKhoListParams = {}) {
+  const { q: _qIgnored, ...paramsForKey } = params;
   return useQuery({
-    queryKey: ['dotKiemKeKhoList', params],
+    queryKey: ['dotKiemKeKhoList', stableListQueryKeyPart(paramsForKey)],
     queryFn: () => getDotKiemKeKhoList(params),
     staleTime: 1000 * 60 * 2,
   });

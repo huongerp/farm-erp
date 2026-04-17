@@ -254,7 +254,7 @@ export async function getPhieuDeXuatVatTuPageSupabase(
   listQuery?: PhieuDeXuatVatTuListServerQuery
 ): Promise<PaginatedTableResult<PhieuDeXuatVatTu>> {
   const pageResult = await fetchTablePage<PhieuDeXuatSummaryRow>(page, pageSize, async (from, to) => {
-    let sel = supabase.from(VIEW_PHIEU_DE_XUAT_SUMMARY).select('*', { count: 'exact' });
+    let sel = supabase.from(VIEW_PHIEU_DE_XUAT_SUMMARY).select(VIEW_PHIEU_DE_XUAT_SUMMARY_COLUMNS, { count: 'exact' });
     if (listQuery) sel = applyPhieuDeXuatVatTuListQuery(sel, listQuery);
     const res = await sel.order('ngay', { ascending: false }).order('so_phieu', { ascending: false }).range(from, to);
     return { data: res.data as PhieuDeXuatSummaryRow[] | null, error: res.error, count: res.count };

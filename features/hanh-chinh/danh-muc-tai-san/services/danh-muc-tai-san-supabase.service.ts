@@ -91,13 +91,18 @@ function toNum(val: string | undefined | null): number | null {
   return Number.isNaN(n) ? null : n;
 }
 
-const TAI_SAN_LIST_COLUMNS =
+/** Đủ cột gồm hinh_anh — insert/update/chi tiết. */
+const TAI_SAN_DETAIL_COLUMNS =
   'id,ma_tai_san,ten_tai_san,id_nhom,ten_nhom,id_noi_luu,ten_noi_luu,id_chi_nhanh,ten_chi_nhanh,id_trang_thai,ten_trang_thai,id_nhan_vien,ten_nhan_vien,thuong_hieu,model,serial,xuat_xu,ma_barcode,ten_nha_cung_cap,id_nguoi_tao,ten_nguoi_tao,ngay_nhap,nguyen_gia,ngay_bat_dau_trich_khau_hao,gia_tri_con_lai,khau_hao_luy_ke,hinh_anh,ghi_chu,tg_tao,tg_cap_nhat';
+
+/** Danh sách — bỏ hinh_anh (base64) để giảm egress. */
+const TAI_SAN_LIST_LITE =
+  'id,ma_tai_san,ten_tai_san,id_nhom,ten_nhom,id_noi_luu,ten_noi_luu,id_chi_nhanh,ten_chi_nhanh,id_trang_thai,ten_trang_thai,id_nhan_vien,ten_nhan_vien,thuong_hieu,model,serial,xuat_xu,ma_barcode,ten_nha_cung_cap,id_nguoi_tao,ten_nguoi_tao,ngay_nhap,nguyen_gia,ngay_bat_dau_trich_khau_hao,gia_tri_con_lai,khau_hao_luy_ke,ghi_chu,tg_tao,tg_cap_nhat';
 
 export async function getTaiSanListSupabase(): Promise<TaiSan[]> {
   const { data, error } = await supabase
     .from(TABLE)
-    .select(TAI_SAN_LIST_COLUMNS)
+    .select(TAI_SAN_LIST_LITE)
     .order('tg_cap_nhat', { ascending: false });
   if (error) throw new Error((error as { message?: string }).message ?? String(error));
   return (data ?? []).map((row) => rowToTaiSan(row as DbTaiSanRow));
@@ -256,7 +261,7 @@ export async function createTaiSanSupabase(data: TaiSanFormValues): Promise<TaiS
     ghi_chu: data.ghi_chu?.trim() || null,
   };
 
-  const { data: inserted, error } = await supabase.from(TABLE).insert(payload).select(TAI_SAN_LIST_COLUMNS).single();
+  const { data: inserted, error } = await supabase.from(TABLE).insert(payload).select(TAI_SAN_DETAIL_COLUMNS).single();
   if (error) throw new Error((error as { message?: string }).message ?? String(error));
   return rowToTaiSan(inserted as DbTaiSanRow);
 }
@@ -313,7 +318,7 @@ export async function updateTaiSanSupabase(id: string, data: TaiSanFormValues): 
 
   const { error } = await supabase.from(TABLE).update(payload).eq('id', numId);
   if (error) throw new Error((error as { message?: string }).message ?? String(error));
-  const { data: updated, error: err2 } = await supabase.from(TABLE).select(TAI_SAN_LIST_COLUMNS).eq('id', numId).single();
+  const { data: updated, error: err2 } = await supabase.from(TABLE).select(TAI_SAN_DETAIL_COLUMNS).eq('id', numId).single();
   if (err2 || !updated) throw new Error(i18n.t('danhSachTaiSan.service.notFound'));
   return rowToTaiSan(updated as DbTaiSanRow);
 }
@@ -332,7 +337,7 @@ export async function updateTaiSanKhauHaoSupabase(
     })
     .eq('id', numId);
   if (error) throw new Error((error as { message?: string }).message ?? String(error));
-  const { data: updated, error: err2 } = await supabase.from(TABLE).select(TAI_SAN_LIST_COLUMNS).eq('id', numId).single();
+  const { data: updated, error: err2 } = await supabase.from(TABLE).select(TAI_SAN_DETAIL_COLUMNS).eq('id', numId).single();
   if (err2 || !updated) throw new Error(i18n.t('danhSachTaiSan.service.notFound'));
   return rowToTaiSan(updated as DbTaiSanRow);
 }
@@ -364,13 +369,13 @@ export async function updateTaiSanLocationAndHolderSupabase(
     }
   }
   if (Object.keys(updates).length === 0) {
-    const { data: row } = await supabase.from(TABLE).select(TAI_SAN_LIST_COLUMNS).eq('id', numId).single();
+    const { data: row } = await supabase.from(TABLE).select(TAI_SAN_DETAIL_COLUMNS).eq('id', numId).single();
     if (!row) throw new Error(i18n.t('danhSachTaiSan.service.notFound'));
     return rowToTaiSan(row as DbTaiSanRow);
   }
   const { error } = await supabase.from(TABLE).update(updates).eq('id', numId);
   if (error) throw new Error((error as { message?: string }).message ?? String(error));
-  const { data: updated, error: err2 } = await supabase.from(TABLE).select(TAI_SAN_LIST_COLUMNS).eq('id', numId).single();
+  const { data: updated, error: err2 } = await supabase.from(TABLE).select(TAI_SAN_DETAIL_COLUMNS).eq('id', numId).single();
   if (err2 || !updated) throw new Error(i18n.t('danhSachTaiSan.service.notFound'));
   return rowToTaiSan(updated as DbTaiSanRow);
 }
@@ -408,13 +413,13 @@ export async function updateTaiSanFromKiemKeSupabase(
     updates.ten_trang_thai = st?.ten ?? null;
   }
   if (Object.keys(updates).length === 0) {
-    const { data: row } = await supabase.from(TABLE).select(TAI_SAN_LIST_COLUMNS).eq('id', numId).single();
+    const { data: row } = await supabase.from(TABLE).select(TAI_SAN_DETAIL_COLUMNS).eq('id', numId).single();
     if (!row) throw new Error(i18n.t('danhSachTaiSan.service.notFound'));
     return rowToTaiSan(row as DbTaiSanRow);
   }
   const { error } = await supabase.from(TABLE).update(updates).eq('id', numId);
   if (error) throw new Error((error as { message?: string }).message ?? String(error));
-  const { data: updated, error: err2 } = await supabase.from(TABLE).select(TAI_SAN_LIST_COLUMNS).eq('id', numId).single();
+  const { data: updated, error: err2 } = await supabase.from(TABLE).select(TAI_SAN_DETAIL_COLUMNS).eq('id', numId).single();
   if (err2 || !updated) throw new Error(i18n.t('danhSachTaiSan.service.notFound'));
   return rowToTaiSan(updated as DbTaiSanRow);
 }

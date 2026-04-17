@@ -3,6 +3,7 @@ import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
 
 import { List, BarChart3 } from 'lucide-react';
 import TabGroup, { Tab } from '../../../components/ui/TabGroup';
@@ -16,20 +17,30 @@ import BulkEditSheet from './components/nhan-vien-bulk-edit';
 import ImportDialog from '../../../components/shared/ImportDialog';
 import ExportDialog from '../../../components/shared/ExportDialog';
 
-import { useEmployees, useDeleteWithUndo, useUpdateStatusEmployee } from './hooks/use-nhan-vien';
+import {
+  useEmployees,
+  useEmployeesPage,
+  useEmployeesLiteForCounts,
+  useDeleteWithUndo,
+  useUpdateStatusEmployee,
+} from './hooks/use-nhan-vien';
+import { fetchEmployeeRowsAllMatching, enrichEmployeesWithRefDataAsync } from './services/nhan-vien-service';
+import type { EmployeeListQuery } from './services/nhan-vien-service';
 import { usePositions } from '@/features/he-thong/chuc-vu/hooks/use-chuc-vu';
-import { employeeMatchesSearch } from './utils/employee-search';
 import { useModulePermissionFromContext } from '@/components/shared/ModulePermissionGuard';
 import { useEmployeeStore } from './store/useEmployeeStore';
 import { Employee } from './core/types';
 import { useConfirmStore } from '../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL, CONFIRM_YES } from '../../../lib/button-labels';
 import { formatDate, getLanguage } from '../../../lib/utils';
-import { useListWithFilter } from '../../../lib/hooks';
 import { useExportData } from '../../../lib/useExportData';
-import { TRANG_THAI_NV } from '../../../lib/constants';
+import { TRANG_THAI_NV, type TrangThaiNV } from '../../../lib/constants';
+import { useDebouncedValue } from '../../../lib/hooks/use-debounced-value';
+import { stableListQueryKeyPart } from '../../../lib/list-query-key';
 
 type FormOrigin = 'list' | 'detail';
+
+const EMPTY_EMPLOYEES: Employee[] = [];
 
 const EmployeePage: React.FC = () => {
   const { t } = useTranslation();
@@ -72,11 +83,61 @@ const EmployeePage: React.FC = () => {
 
   const { searchTerm, filters, sort, resetState, clearSelection, selectedIds, pagination, columns, setFilter } = useEmployeeStore();
 
-  const { data: employees = [], isLoading } = useEmployees();
-  const { data: positions = [] } = usePositions(); // Tra cứu cấp bậc theo chức vụ ở bảng (useEmployees đã prefetch phòng ban/chi nhánh)
+  const debouncedSearchTerm = useDebouncedValue(searchTerm);
+
+  const listQueryKeyPart = useMemo(
+    () =>
+      stableListQueryKeyPart({
+        q: debouncedSearchTerm,
+        trangThai: filters.trang_thai,
+        phongBanIds: filters.id_phong_ban,
+        chucVuIds: filters.position,
+      }),
+    [debouncedSearchTerm, filters.trang_thai, filters.id_phong_ban, filters.position]
+  );
+
+  const listQuery: EmployeeListQuery = useMemo(
+    () => ({
+      page: Math.max(0, pagination.page - 1),
+      pageSize: pagination.pageSize,
+      q: debouncedSearchTerm,
+      trangThai: filters.trang_thai as TrangThaiNV[],
+      phongBanIds: filters.id_phong_ban,
+      chucVuIds: filters.position,
+    }),
+    [pagination.page, pagination.pageSize, debouncedSearchTerm, filters.trang_thai, filters.id_phong_ban, filters.position]
+  );
+
+  const pageQuery = useEmployeesPage(listQuery);
+  const employees = pageQuery.data?.data ?? EMPTY_EMPLOYEES;
+  const totalListCount = pageQuery.data?.totalCount ?? 0;
+  const isLoading = pageQuery.isPending || pageQuery.isFetching;
+
+  const { data: employeesForCounts = [] } = useEmployeesLiteForCounts();
+  const { data: allForStats = [], isLoading: statsLoading } = useEmployees({ enabled: activeTab === 'stats' });
+
+  const { data: positions = [] } = usePositions(); // Tra cứu cấp bậc theo chức vụ ở bảng
   const { deleteWithUndo } = useDeleteWithUndo();
   const statusMutation = useUpdateStatusEmployee();
   const confirm = useConfirmStore(state => state.confirm);
+
+  const exportQuery = useQuery({
+    queryKey: ['employees', 'export', listQueryKeyPart] as const,
+    queryFn: async () => {
+      const rows = await fetchEmployeeRowsAllMatching({
+        q: debouncedSearchTerm,
+        trangThai: filters.trang_thai as TrangThaiNV[],
+        phongBanIds: filters.id_phong_ban,
+        chucVuIds: filters.position,
+      });
+      await enrichEmployeesWithRefDataAsync(rows);
+      return rows;
+    },
+    enabled: showExport,
+    staleTime: 0,
+  });
+
+  const exportRows = exportQuery.data ?? [];
 
   useEffect(() => {
     return () => resetState();
@@ -87,37 +148,26 @@ const EmployeePage: React.FC = () => {
     if (!viewingEmp) return;
     const fresh = employees.find((e) => e.id === viewingEmp.id);
     if (fresh && fresh !== viewingEmp) setViewingEmp(fresh);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ sync khi id hoặc danh sách trang đổi
   }, [employees, viewingEmp?.id]);
 
-  const filterFn = useCallback((emp: Employee, term: string, f: typeof filters) => {
-    const matchesSearch = employeeMatchesSearch(emp, term);
-    const matchesStatus = f.trang_thai.length === 0 || f.trang_thai.includes(String(emp.trang_thai));
-    const matchesDept = f.id_phong_ban.length === 0 || (emp.id_phong_ban && f.id_phong_ban.includes(emp.id_phong_ban));
-    const matchesPosition = f.position.length === 0 || (emp.id_chuc_vu && f.position.includes(emp.id_chuc_vu));
-    return matchesSearch && matchesStatus && matchesDept && matchesPosition;
-  }, []);
-
-  const filteredEmployees = useListWithFilter(employees, searchTerm, filters, filterFn);
-
-  // Client-side sort
+  // Client-side sort (trên trang hiện tại — lọc đã chạy server)
   const sortedEmployees = useMemo(() => {
-    if (!sort.column || !sort.direction) return filteredEmployees;
+    if (!sort.column || !sort.direction) return employees;
     const col = sort.column;
     const direction = sort.direction;
-    const sorted = [...filteredEmployees];
+    const sorted = [...employees];
     sorted.sort((a, b) => {
       const aVal = (a as Record<string, unknown>)[col];
       const bVal = (b as Record<string, unknown>)[col];
-      let cmp = 0;
-      if (typeof aVal === 'number' && typeof bVal === 'number') {
-        cmp = aVal - bVal;
-      } else {
-        cmp = String(aVal ?? '').localeCompare(String(bVal ?? ''), getLanguage());
-      }
+      const cmp =
+        typeof aVal === 'number' && typeof bVal === 'number'
+          ? aVal - bVal
+          : String(aVal ?? '').localeCompare(String(bVal ?? ''), getLanguage());
       return direction === 'desc' ? -cmp : cmp;
     });
     return sorted;
-  }, [filteredEmployees, sort]);
+  }, [employees, sort]);
 
   // Export data — hook tái sử dụng, lazy khi showExport
   const exportMapFn = useCallback((emp: Employee) => ({
@@ -134,7 +184,7 @@ const EmployeePage: React.FC = () => {
   }), [t]);
 
   const { exportData, paginatedData: paginatedExportData, selectedData: selectedExportData } = useExportData({
-    data: filteredEmployees,
+    data: exportRows,
     isOpen: showExport,
     mapFn: exportMapFn,
     pagination,
@@ -227,7 +277,7 @@ const EmployeePage: React.FC = () => {
       });
   };
 
-  const handleImportData = async (data: Record<string, any>[]) => {
+  const handleImportData = async (data: Record<string, unknown>[]) => {
     // In real app, call API to bulk create employees
     toast.success(t('employee.importSuccess', { count: data.length }));
   };
@@ -242,7 +292,7 @@ const EmployeePage: React.FC = () => {
       {activeTab === 'list' ? (
         <div className="flex-1 min-h-0 flex flex-col mt-1.5 rounded-xl border border-border bg-card shadow-sm overflow-hidden relative z-0">
           <EmployeeToolbar
-            employees={employees}
+            employees={employeesForCounts}
             onAdd={() => { setFormOrigin('list'); setShowForm(true); }}
             onExport={() => setShowExport(true)}
             onImport={() => setShowImport(true)}
@@ -257,6 +307,7 @@ const EmployeePage: React.FC = () => {
           <div className="flex-1 min-h-0">
             <EmployeeTable
               data={sortedEmployees}
+              totalRecordsOverride={totalListCount}
               isLoading={isLoading}
               onEdit={handleEdit}
               onView={handleView}
@@ -271,8 +322,8 @@ const EmployeePage: React.FC = () => {
       ) : (
         <div className="flex-1 min-h-0 flex flex-col mt-1.5 rounded-xl border border-border bg-card shadow-sm overflow-hidden">
           <EmployeeStats
-            employees={employees}
-            isLoading={isLoading}
+            employees={allForStats}
+            isLoading={statsLoading}
             onDrillDownDept={(deptId) => {
               setFilter('id_phong_ban', [deptId]);
               setActiveTab('list');
