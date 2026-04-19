@@ -6,7 +6,6 @@ import { usePhieuDeXuatVatTuListPaged, usePhieuDeXuatVatTuById, useDeletePhieuDe
 import { usePhieuDeXuatVatTuViewScope } from '../hooks/use-phieu-de-xuat-vat-tu-view-scope';
 import { buildPhieuDeXuatVatTuListServerQuery } from '../services/phieu-de-xuat-vat-tu-service';
 import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
-import { useDebouncedValue } from '../../../../lib/hooks/use-debounced-value';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import { useEmployeesRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
 import { useCauHinhDeXuatVatTu } from '../../../mua-hang/thiet-lap-de-xuat-vat-tu/hooks/use-cau-hinh-de-xuat-vat-tu';
@@ -74,24 +73,23 @@ const DanhSachTab: React.FC = () => {
   const { data: employees = [] } = useEmployeesRefQuery();
   const { data: config } = useCauHinhDeXuatVatTu();
   const viewScope = usePhieuDeXuatVatTuViewScope();
-  const debouncedSearchTerm = useDebouncedValue(searchTerm);
-
   const listServerQuery = useMemo(
     () =>
       buildPhieuDeXuatVatTuListServerQuery({
-        searchTerm: debouncedSearchTerm,
+        searchTerm,
         filters,
         viewScope,
         khoList,
       }),
-    [debouncedSearchTerm, filters, viewScope, khoList]
+    [searchTerm, filters, viewScope, khoList]
   );
   const listQueryKey = useMemo(() => stableListQueryKeyPart(listServerQuery), [listServerQuery]);
   const pageIndex = Math.max(0, pagination.page - 1);
   const pageQuery = usePhieuDeXuatVatTuListPaged(pageIndex, listServerQuery);
   const tableRows = pageQuery.data?.data ?? [];
   const totalCount = pageQuery.data?.totalCount ?? 0;
-  const isLoading = pageQuery.isPending || pageQuery.isFetching;
+  const isInitialLoading = !pageQuery.data && pageQuery.isPending;
+  const isFetchingOverlay = !!pageQuery.data && pageQuery.isFetching;
 
   const isOverdue = useCallback(
     (item: PhieuDeXuatVatTu) =>
@@ -225,7 +223,8 @@ const DanhSachTab: React.FC = () => {
           selectedIds={selectedIds}
           onToggleSelection={toggleSelection}
           onToggleAllSelection={toggleAllSelection}
-          isLoading={isLoading}
+          isLoading={isInitialLoading}
+          isFetching={isFetchingOverlay}
           page={pagination.page}
           pageSize={pagination.pageSize}
           onPageChange={setPage}

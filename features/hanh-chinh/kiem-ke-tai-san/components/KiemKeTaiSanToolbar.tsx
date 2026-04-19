@@ -4,6 +4,7 @@ import { Plus, User, Calendar } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useKiemKeTaiSanStore } from '../store/useKiemKeTaiSanStore';
 import { useEmployeesRefQuery } from '@/lib/hooks/use-supabase-ref-queries';
 import { TRANG_THAI_DOT_OPTIONS } from '../core/constants';
@@ -28,19 +29,16 @@ const KiemKeTaiSanToolbar: React.FC<Props> = ({
   canDelete = true,
 }) => {
   const { t } = useTranslation();
-  const {
-    searchTerm,
-    setSearchTerm,
-    filters,
-    setFilter,
-    resetFilters,
-    columns,
-    toggleColumn,
-    reorderColumns,
-    resetColumns,
-    selectedIds,
-    clearSelection,
-  } = useKiemKeTaiSanStore();
+  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useKiemKeTaiSanStore);
+  const filters = useKiemKeTaiSanStore((s) => s.filters);
+  const setFilter = useKiemKeTaiSanStore((s) => s.setFilter);
+  const resetFilters = useKiemKeTaiSanStore((s) => s.resetFilters);
+  const columns = useKiemKeTaiSanStore((s) => s.columns);
+  const toggleColumn = useKiemKeTaiSanStore((s) => s.toggleColumn);
+  const reorderColumns = useKiemKeTaiSanStore((s) => s.reorderColumns);
+  const resetColumns = useKiemKeTaiSanStore((s) => s.resetColumns);
+  const selectedIds = useKiemKeTaiSanStore((s) => s.selectedIds);
+  const clearSelection = useKiemKeTaiSanStore((s) => s.clearSelection);
   const { data: employees = [] } = useEmployeesRefQuery();
   const { trangThaiCounts, nguoiPhuTrachCounts } = useKiemKeFilterCounts(items, filters);
 
@@ -145,8 +143,8 @@ const KiemKeTaiSanToolbar: React.FC<Props> = ({
   return (
     <GenericToolbar
       selectedCount={selectedCount}
-      searchTerm={searchTerm}
-      onSearchChange={setSearchTerm}
+      searchTerm={searchInput}
+      onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
       actions={renderActions}
       filters={renderFilters}

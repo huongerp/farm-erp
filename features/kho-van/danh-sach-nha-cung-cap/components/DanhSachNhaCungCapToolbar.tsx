@@ -4,6 +4,7 @@ import { Plus, Tag, Folder } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useNhaCungCapStore } from '../store/useNhaCungCapStore';
 import type { NhaCungCap } from '../core/types';
 import type { NhomNhaCungCap } from '../core/types';
@@ -25,28 +26,25 @@ const DanhSachNhaCungCapToolbar: React.FC<Props> = ({
   onDeleteMany,
 }) => {
   const { t } = useTranslation();
-  const {
-    searchTerm,
-    setSearchTerm,
-    filters,
-    setFilter,
-    clearSelection,
-    columns,
-    toggleColumn,
-    reorderColumns,
-    resetColumns,
-  } = useNhaCungCapStore();
+  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useNhaCungCapStore);
+  const filters = useNhaCungCapStore((s) => s.filters);
+  const setFilter = useNhaCungCapStore((s) => s.setFilter);
+  const clearSelection = useNhaCungCapStore((s) => s.clearSelection);
+  const columns = useNhaCungCapStore((s) => s.columns);
+  const toggleColumn = useNhaCungCapStore((s) => s.toggleColumn);
+  const reorderColumns = useNhaCungCapStore((s) => s.reorderColumns);
+  const resetColumns = useNhaCungCapStore((s) => s.resetColumns);
 
   const activeFilterCount = useMemo(
     () =>
-      (searchTerm ? 1 : 0) +
+      (searchInput.trim() ? 1 : 0) +
       (filters.status.length > 0 ? 1 : 0) +
       (filters.id_nhom.length > 0 ? 1 : 0),
-    [searchTerm, filters.status.length, filters.id_nhom.length]
+    [searchInput, filters.status.length, filters.id_nhom.length]
   );
 
   const handleClearAllFilters = () => {
-    setSearchTerm('');
+    commitSearchTerm('');
     setFilter('status', []);
     setFilter('id_nhom', []);
   };
@@ -135,8 +133,8 @@ const DanhSachNhaCungCapToolbar: React.FC<Props> = ({
     <GenericToolbar
       selectedCount={selectedCount}
       onDeleteMany={onDeleteMany}
-      searchTerm={searchTerm}
-      onSearchChange={setSearchTerm}
+      searchTerm={searchInput}
+      onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
       actions={renderActions}
       filters={renderFilters}

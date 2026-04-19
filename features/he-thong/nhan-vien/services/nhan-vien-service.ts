@@ -11,6 +11,7 @@ import type { Position } from '../../chuc-vu/core/types';
 import type { Department } from '../../phong-ban/core/types';
 import type { Branch } from '../../chi-nhanh/core/types';
 import i18n from '../../../../lib/i18n';
+import { postgrestQuotedIlikePattern } from '../../../../lib/postgrest-or-ilike';
 
 const TABLE = 'fp_var_nhan_vien';
 
@@ -299,7 +300,8 @@ export async function fetchEmployeeRowsPage(
       sel = sel.in('chuc_vu_id', chucVuIds);
     }
     if (q && q.trim().length > 0) {
-      const needle = `%${q.trim()}%`;
+      const t = q.trim().replace(/%/g, '\\%').replace(/_/g, '\\_');
+      const needle = postgrestQuotedIlikePattern(`%${t}%`);
       // `.or` với ilike — server-side, tránh kéo toàn bộ rồi filter ở client.
       sel = sel.or(`ho_va_ten.ilike.${needle},email.ilike.${needle},so_dien_thoai.ilike.${needle}`);
     }
@@ -335,7 +337,8 @@ export async function fetchEmployeeRowsAllMatching(
       sel = sel.in('chuc_vu_id', chucVuIds);
     }
     if (q && q.trim().length > 0) {
-      const needle = `%${q.trim()}%`;
+      const t = q.trim().replace(/%/g, '\\%').replace(/_/g, '\\_');
+      const needle = postgrestQuotedIlikePattern(`%${t}%`);
       sel = sel.or(`ho_va_ten.ilike.${needle},email.ilike.${needle},so_dien_thoai.ilike.${needle}`);
     }
     return sel.order('id', { ascending: false }).range(from, to);

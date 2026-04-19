@@ -4,6 +4,7 @@ import { Plus, Tag, Warehouse, User, UserCheck } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { usePhieuKiemKeStore } from '../store/usePhieuKiemKeStore';
 import type { PhieuKiemKe } from '../core/types';
 import type { Kho } from '../../danh-sach-kho/core/types';
@@ -28,17 +29,14 @@ const PhieuKiemKeToolbar: React.FC<Props> = ({
   onDeleteMany,
 }) => {
   const { t } = useTranslation();
-  const {
-    searchTerm,
-    setSearchTerm,
-    filters,
-    setFilter,
-    clearSelection,
-    columns,
-    toggleColumn,
-    reorderColumns,
-    resetColumns,
-  } = usePhieuKiemKeStore();
+  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(usePhieuKiemKeStore);
+  const filters = usePhieuKiemKeStore((s) => s.filters);
+  const setFilter = usePhieuKiemKeStore((s) => s.setFilter);
+  const clearSelection = usePhieuKiemKeStore((s) => s.clearSelection);
+  const columns = usePhieuKiemKeStore((s) => s.columns);
+  const toggleColumn = usePhieuKiemKeStore((s) => s.toggleColumn);
+  const reorderColumns = usePhieuKiemKeStore((s) => s.reorderColumns);
+  const resetColumns = usePhieuKiemKeStore((s) => s.resetColumns);
 
   const statusLen = filters.status?.length ?? 0;
   const khoLen = filters.khoIds?.length ?? 0;
@@ -46,16 +44,16 @@ const PhieuKiemKeToolbar: React.FC<Props> = ({
   const nguoiDuyetLen = filters.nguoiDuyetIds?.length ?? 0;
   const activeFilterCount = useMemo(
     () =>
-      (searchTerm ? 1 : 0) +
+      (searchInput.trim() ? 1 : 0) +
       (statusLen > 0 ? 1 : 0) +
       (khoLen > 0 ? 1 : 0) +
       (nguoiThucHienLen > 0 ? 1 : 0) +
       (nguoiDuyetLen > 0 ? 1 : 0),
-    [searchTerm, statusLen, khoLen, nguoiThucHienLen, nguoiDuyetLen]
+    [searchInput, statusLen, khoLen, nguoiThucHienLen, nguoiDuyetLen]
   );
 
   const handleClearAllFilters = () => {
-    setSearchTerm('');
+    commitSearchTerm('');
     setFilter('status', []);
     setFilter('khoIds', []);
     setFilter('nguoiThucHienIds', []);
@@ -200,8 +198,8 @@ const PhieuKiemKeToolbar: React.FC<Props> = ({
     <GenericToolbar
       selectedCount={selectedCount}
       onDeleteMany={onDeleteMany}
-      searchTerm={searchTerm}
-      onSearchChange={setSearchTerm}
+      searchTerm={searchInput}
+      onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
       actions={renderActions}
       filters={renderFilters}

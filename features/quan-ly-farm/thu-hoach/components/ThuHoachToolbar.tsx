@@ -5,6 +5,7 @@ import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useThuHoachStore, type ThuHoachFilters } from '../store/useThuHoachStore';
 import type { FarmThuHoach } from '../core/types';
 import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
@@ -31,17 +32,14 @@ const ThuHoachToolbar: React.FC<Props> = ({
   canDelete = true,
 }) => {
   const { t } = useTranslation();
-  const {
-    searchTerm,
-    setSearchTerm,
-    filters,
-    setFilter,
-    clearSelection,
-    columns,
-    toggleColumn,
-    reorderColumns,
-    resetColumns,
-  } = useThuHoachStore();
+  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useThuHoachStore);
+  const filters = useThuHoachStore((s) => s.filters);
+  const setFilter = useThuHoachStore((s) => s.setFilter);
+  const clearSelection = useThuHoachStore((s) => s.clearSelection);
+  const columns = useThuHoachStore((s) => s.columns);
+  const toggleColumn = useThuHoachStore((s) => s.toggleColumn);
+  const reorderColumns = useThuHoachStore((s) => s.reorderColumns);
+  const resetColumns = useThuHoachStore((s) => s.resetColumns);
 
   const namOptions = useMemo(() => {
     const set = new Set<number>();
@@ -81,15 +79,15 @@ const ThuHoachToolbar: React.FC<Props> = ({
   const activeFilterCount = useMemo(() => {
     const f = filters as ThuHoachFilters;
     return (
-      (searchTerm ? 1 : 0) +
+      (searchInput.trim() ? 1 : 0) +
       (f.nam?.length ?? 0) +
       (f.tuan?.length ?? 0) +
       (f.id_chi_nhanh?.length ?? 0)
     );
-  }, [searchTerm, filters]);
+  }, [searchInput, filters]);
 
   const handleClearAllFilters = () => {
-    setSearchTerm('');
+    commitSearchTerm('');
     setFilter('nam', []);
     setFilter('tuan', []);
     setFilter('id_chi_nhanh', []);
@@ -201,8 +199,8 @@ const ThuHoachToolbar: React.FC<Props> = ({
     <GenericToolbar
       selectedCount={selectedCount}
       onDeleteMany={canDelete ? onDeleteMany : undefined}
-      searchTerm={searchTerm}
-      onSearchChange={setSearchTerm}
+      searchTerm={searchInput}
+      onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
       actions={renderActions}
       filters={renderFilters}

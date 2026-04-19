@@ -14,6 +14,7 @@ interface Props {
   onToggleSelection: (id: string) => void;
   onToggleAllSelection: (ids: string[]) => void;
   isLoading: boolean;
+  isFetching?: boolean;
   page: number;
   pageSize: number;
   onPageChange: (page: number) => void;
@@ -34,6 +35,7 @@ const PhieuDeXuatVatTuList: React.FC<Props> = ({
   onToggleSelection,
   onToggleAllSelection,
   isLoading,
+  isFetching,
   page,
   pageSize,
   onPageChange,
@@ -182,6 +184,7 @@ const PhieuDeXuatVatTuList: React.FC<Props> = ({
       data={data}
       columns={visibleColumns}
       isLoading={isLoading}
+      isFetching={isFetching}
       loadingText={t('phieuDeXuatVatTu.loading')}
       selectedIds={selectedIds}
       onToggleSelection={onToggleSelection}

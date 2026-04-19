@@ -4,6 +4,7 @@ import { Plus, Tag } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useDanhMucHangHoaStore } from '../store/useDanhMucHangHoaStore';
 import type { DanhMucHangHoa } from '../core/types';
 
@@ -25,25 +26,22 @@ const DanhMucHangHoaToolbar: React.FC<Props> = ({
   canDelete = true,
 }) => {
   const { t } = useTranslation();
-  const {
-    searchTerm,
-    setSearchTerm,
-    filters,
-    setFilter,
-    clearSelection,
-    columns,
-    toggleColumn,
-    reorderColumns,
-    resetColumns,
-  } = useDanhMucHangHoaStore();
+  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useDanhMucHangHoaStore);
+  const filters = useDanhMucHangHoaStore((s) => s.filters);
+  const setFilter = useDanhMucHangHoaStore((s) => s.setFilter);
+  const clearSelection = useDanhMucHangHoaStore((s) => s.clearSelection);
+  const columns = useDanhMucHangHoaStore((s) => s.columns);
+  const toggleColumn = useDanhMucHangHoaStore((s) => s.toggleColumn);
+  const reorderColumns = useDanhMucHangHoaStore((s) => s.reorderColumns);
+  const resetColumns = useDanhMucHangHoaStore((s) => s.resetColumns);
 
   const activeFilterCount = useMemo(
-    () => (searchTerm ? 1 : 0) + (filters.status.length > 0 ? 1 : 0),
-    [searchTerm, filters.status.length]
+    () => (searchInput.trim() ? 1 : 0) + (filters.status.length > 0 ? 1 : 0),
+    [searchInput, filters.status.length]
   );
 
   const handleClearAllFilters = () => {
-    setSearchTerm('');
+    commitSearchTerm('');
     setFilter('status', []);
   };
 
@@ -103,8 +101,8 @@ const DanhMucHangHoaToolbar: React.FC<Props> = ({
     <GenericToolbar
       selectedCount={selectedCount}
       onDeleteMany={canDelete ? onDeleteMany : undefined}
-      searchTerm={searchTerm}
-      onSearchChange={setSearchTerm}
+      searchTerm={searchInput}
+      onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
       actions={renderActions}
       filters={renderFilters}

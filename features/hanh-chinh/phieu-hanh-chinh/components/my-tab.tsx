@@ -14,6 +14,7 @@ import {
   useDeleteAdminForms,
   useCancelAdminForms,
 } from '../hooks/use-admin-form';
+import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useAdminFormMyStore } from '../store/useAdminFormMyStore';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_YES } from '../../../../lib/button-labels';
@@ -28,20 +29,18 @@ const AdminFormMyTab: React.FC = () => {
   const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
   const user = useAuthStore((s) => s.user);
-  const {
-    searchTerm,
-    filters,
-    sort,
-    resetState,
-    clearSelection,
-    selectedIds,
-    columns,
-    setSearchTerm,
-    setFilter,
-    toggleColumn,
-    reorderColumns,
-    resetColumns,
-  } = useAdminFormMyStore();
+  const { searchInput, setSearchInput } = useGenericToolbarSearch(useAdminFormMyStore);
+  const searchTerm = useAdminFormMyStore((s) => s.searchTerm);
+  const filters = useAdminFormMyStore((s) => s.filters);
+  const sort = useAdminFormMyStore((s) => s.sort);
+  const resetState = useAdminFormMyStore((s) => s.resetState);
+  const clearSelection = useAdminFormMyStore((s) => s.clearSelection);
+  const selectedIds = useAdminFormMyStore((s) => s.selectedIds);
+  const columns = useAdminFormMyStore((s) => s.columns);
+  const setFilter = useAdminFormMyStore((s) => s.setFilter);
+  const toggleColumn = useAdminFormMyStore((s) => s.toggleColumn);
+  const reorderColumns = useAdminFormMyStore((s) => s.reorderColumns);
+  const resetColumns = useAdminFormMyStore((s) => s.resetColumns);
 
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<AdminFormRequest | null>(null);
@@ -176,8 +175,8 @@ const AdminFormMyTab: React.FC = () => {
     <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
       <AdminFormToolbar
         items={myForms}
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
+        searchTerm={searchInput}
+        setSearchTerm={setSearchInput}
         filters={filters}
         setFilter={setFilter as any}
         columns={columns}

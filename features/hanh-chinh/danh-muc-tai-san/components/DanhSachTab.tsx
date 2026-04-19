@@ -108,16 +108,13 @@ const DanhSachTab: React.FC = () => {
   const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
   const [searchParams, setSearchParams] = useSearchParams();
-  const {
-    searchTerm,
-    setSearchTerm,
-    filters,
-    setFilter,
-    sort,
-    resetState,
-    clearSelection,
-    selectedIds,
-  } = useDanhSachTaiSanStore();
+  const searchTerm = useDanhSachTaiSanStore((s) => s.searchTerm);
+  const filters = useDanhSachTaiSanStore((s) => s.filters);
+  const setFilter = useDanhSachTaiSanStore((s) => s.setFilter);
+  const sort = useDanhSachTaiSanStore((s) => s.sort);
+  const resetState = useDanhSachTaiSanStore((s) => s.resetState);
+  const clearSelection = useDanhSachTaiSanStore((s) => s.clearSelection);
+  const selectedIds = useDanhSachTaiSanStore((s) => s.selectedIds);
   const deleteMutation = useDeleteTaiSan();
   const statusMutation = useUpdateTaiSanStatus();
   const updateMutation = useUpdateTaiSan();

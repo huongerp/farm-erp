@@ -4,6 +4,7 @@ import { Plus, Calendar, ListOrdered } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useDiemCongTruStore } from '../store/useDiemCongTruStore';
 import { useDiemCongTruFilterCounts } from '../hooks/use-diem-cong-tru-filter-counts';
 import { getDiemCongTruLoaiOptions } from '../core/constants';
@@ -20,18 +21,15 @@ interface Props {
 
 const DiemCongTruToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, canCreate = true, canDelete = true }) => {
   const { t } = useTranslation();
-  const {
-    searchTerm,
-    setSearchTerm,
-    filters,
-    setFilter,
-    columns,
-    toggleColumn,
-    reorderColumns,
-    resetColumns,
-    selectedIds,
-    clearSelection,
-  } = useDiemCongTruStore();
+  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useDiemCongTruStore);
+  const filters = useDiemCongTruStore((s) => s.filters);
+  const setFilter = useDiemCongTruStore((s) => s.setFilter);
+  const columns = useDiemCongTruStore((s) => s.columns);
+  const toggleColumn = useDiemCongTruStore((s) => s.toggleColumn);
+  const reorderColumns = useDiemCongTruStore((s) => s.reorderColumns);
+  const resetColumns = useDiemCongTruStore((s) => s.resetColumns);
+  const selectedIds = useDiemCongTruStore((s) => s.selectedIds);
+  const clearSelection = useDiemCongTruStore((s) => s.clearSelection);
   const { typeCounts } = useDiemCongTruFilterCounts(items, filters);
 
   const selectedCount = selectedIds.size;
@@ -82,8 +80,8 @@ const DiemCongTruToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, 
   return (
     <GenericToolbar
       selectedCount={selectedCount}
-      searchTerm={searchTerm}
-      onSearchChange={setSearchTerm}
+      searchTerm={searchInput}
+      onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
       actions={renderActions}
       filters={renderFilters}

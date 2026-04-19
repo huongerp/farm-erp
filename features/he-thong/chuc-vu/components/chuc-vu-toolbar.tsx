@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Plus, Download, Upload, Tag } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
+import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { usePositionStore } from '../store/usePositionStore';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
@@ -26,12 +27,15 @@ const PositionToolbar: React.FC<Props> = ({
   canCreate = true, canUpdate = true, canDelete = true,
 }) => {
   const { t } = useTranslation();
-  const {
-    searchTerm, setSearchTerm,
-    filters, setFilter,
-    columns, toggleColumn, reorderColumns, resetColumns,
-    selectedIds, clearSelection
-  } = usePositionStore();
+  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(usePositionStore);
+  const filters = usePositionStore((s) => s.filters);
+  const setFilter = usePositionStore((s) => s.setFilter);
+  const columns = usePositionStore((s) => s.columns);
+  const toggleColumn = usePositionStore((s) => s.toggleColumn);
+  const reorderColumns = usePositionStore((s) => s.reorderColumns);
+  const resetColumns = usePositionStore((s) => s.resetColumns);
+  const selectedIds = usePositionStore((s) => s.selectedIds);
+  const clearSelection = usePositionStore((s) => s.clearSelection);
 
   const selectedCount = selectedIds.size;
   const activeFilterCount = filters.status.length;
@@ -104,8 +108,8 @@ const PositionToolbar: React.FC<Props> = ({
   return (
     <GenericToolbar
         selectedCount={selectedCount}
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
+        searchTerm={searchInput}
+        onSearchChange={setSearchInput}
         onClearSelection={clearSelection}
         actions={renderActions}
         filters={renderFilters}

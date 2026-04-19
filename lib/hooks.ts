@@ -19,6 +19,9 @@ export function useTreeFlatten<T>(
  * Hook chuẩn để lọc danh sách theo searchTerm và filters.
  * Tránh lặp lại logic useMemo + filter trong mỗi trang list.
  *
+ * `searchTerm` nên là giá trị đã commit (toolbar dùng useSearchInputCommit);
+ * không debounce thêm trong hook để tránh trễ gấp đôi.
+ *
  * @param data - Danh sách gốc
  * @param searchTerm - Chuỗi tìm kiếm
  * @param filters - Object filter (từ store)

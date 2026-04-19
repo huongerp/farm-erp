@@ -4,6 +4,7 @@ import { Plus, Package } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useTienDoMuaHangStore } from '../store/useTienDoMuaHangStore';
 import type { TienDoMuaHang } from '../core/types';
 import type { TrangThaiHoatDong } from '../../../../lib/constants';
@@ -20,18 +21,15 @@ interface Props {
 
 const TienDoMuaHangToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onStatusChangeMany, canCreate = true, canDelete = true }) => {
   const { t } = useTranslation();
-  const {
-    searchTerm,
-    setSearchTerm,
-    filters,
-    setFilter,
-    columns,
-    toggleColumn,
-    reorderColumns,
-    resetColumns,
-    selectedIds,
-    clearSelection,
-  } = useTienDoMuaHangStore();
+  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useTienDoMuaHangStore);
+  const filters = useTienDoMuaHangStore((s) => s.filters);
+  const setFilter = useTienDoMuaHangStore((s) => s.setFilter);
+  const columns = useTienDoMuaHangStore((s) => s.columns);
+  const toggleColumn = useTienDoMuaHangStore((s) => s.toggleColumn);
+  const reorderColumns = useTienDoMuaHangStore((s) => s.reorderColumns);
+  const resetColumns = useTienDoMuaHangStore((s) => s.resetColumns);
+  const selectedIds = useTienDoMuaHangStore((s) => s.selectedIds);
+  const clearSelection = useTienDoMuaHangStore((s) => s.clearSelection);
 
   const selectedCount = selectedIds.size;
   const activeFilterCount = filters.status.length;
@@ -84,8 +82,8 @@ const TienDoMuaHangToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany
   return (
     <GenericToolbar
       selectedCount={selectedCount}
-      searchTerm={searchTerm}
-      onSearchChange={setSearchTerm}
+      searchTerm={searchInput}
+      onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
       actions={renderActions}
       filters={renderFilters}

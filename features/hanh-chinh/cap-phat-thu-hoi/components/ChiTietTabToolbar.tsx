@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Tag } from 'lucide-react';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useChiTietTabStore } from '../store/useChiTietTabStore';
 import { LOAI_PHIEU_OPTIONS } from '../core/constants';
 import type { PhieuChiTietRow } from '../core/types';
@@ -14,25 +15,22 @@ interface Props {
 
 const ChiTietTabToolbar: React.FC<Props> = ({ data, onBack }) => {
   const { t } = useTranslation();
-  const {
-    searchTerm,
-    setSearchTerm,
-    filters,
-    setFilter,
-    columns,
-    toggleColumn,
-    reorderColumns,
-    resetColumns,
-  } = useChiTietTabStore();
+  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useChiTietTabStore);
+  const filters = useChiTietTabStore((s) => s.filters);
+  const setFilter = useChiTietTabStore((s) => s.setFilter);
+  const columns = useChiTietTabStore((s) => s.columns);
+  const toggleColumn = useChiTietTabStore((s) => s.toggleColumn);
+  const reorderColumns = useChiTietTabStore((s) => s.reorderColumns);
+  const resetColumns = useChiTietTabStore((s) => s.resetColumns);
 
   const loaiPhieuLen = filters.loaiPhieu?.length ?? 0;
   const activeFilterCount = useMemo(
-    () => (searchTerm ? 1 : 0) + (loaiPhieuLen > 0 ? 1 : 0),
-    [searchTerm, loaiPhieuLen]
+    () => (searchInput.trim() ? 1 : 0) + (loaiPhieuLen > 0 ? 1 : 0),
+    [searchInput, loaiPhieuLen]
   );
 
   const handleClearAllFilters = () => {
-    setSearchTerm('');
+    commitSearchTerm('');
     setFilter('loaiPhieu', []);
   };
 
@@ -74,8 +72,8 @@ const ChiTietTabToolbar: React.FC<Props> = ({ data, onBack }) => {
   return (
     <GenericToolbar
       selectedCount={0}
-      searchTerm={searchTerm}
-      onSearchChange={setSearchTerm}
+      searchTerm={searchInput}
+      onSearchChange={setSearchInput}
       onClearSelection={() => {}}
       filters={renderFilters}
       filterGroups={filterGroups}

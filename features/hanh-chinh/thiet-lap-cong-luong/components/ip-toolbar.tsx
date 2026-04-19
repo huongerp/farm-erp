@@ -6,6 +6,7 @@ import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
+import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { usePayrollWifiIpStore } from '../store/usePayrollWifiIpStore';
 import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
 import type { PayrollWifiIp } from '../core/types';
@@ -22,18 +23,15 @@ interface Props {
 
 const PayrollWifiIpToolbar: React.FC<Props> = ({ items = [], onAdd, onImport, onExport, onDeleteMany, onStatusChangeMany }) => {
   const { t } = useTranslation();
-  const {
-    searchTerm,
-    setSearchTerm,
-    filters,
-    setFilter,
-    columns,
-    toggleColumn,
-    reorderColumns,
-    resetColumns,
-    selectedIds,
-    clearSelection,
-  } = usePayrollWifiIpStore();
+  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(usePayrollWifiIpStore);
+  const filters = usePayrollWifiIpStore((s) => s.filters);
+  const setFilter = usePayrollWifiIpStore((s) => s.setFilter);
+  const columns = usePayrollWifiIpStore((s) => s.columns);
+  const toggleColumn = usePayrollWifiIpStore((s) => s.toggleColumn);
+  const reorderColumns = usePayrollWifiIpStore((s) => s.reorderColumns);
+  const resetColumns = usePayrollWifiIpStore((s) => s.resetColumns);
+  const selectedIds = usePayrollWifiIpStore((s) => s.selectedIds);
+  const clearSelection = usePayrollWifiIpStore((s) => s.clearSelection);
   const { data: branches = [] } = useBranches();
 
   const counts = useMemo(() => {
@@ -161,8 +159,8 @@ const PayrollWifiIpToolbar: React.FC<Props> = ({ items = [], onAdd, onImport, on
   return (
     <GenericToolbar
       selectedCount={selectedCount}
-      searchTerm={searchTerm}
-      onSearchChange={setSearchTerm}
+      searchTerm={searchInput}
+      onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
       actions={renderActions}
       filters={renderFilters}

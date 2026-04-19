@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Plus, Download, Upload, Tag } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
+import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useJobLevelStore } from '../store/useJobLevelStore';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
@@ -26,12 +27,15 @@ const JobLevelToolbar: React.FC<Props> = ({
   canCreate = true, canUpdate = true, canDelete = true,
 }) => {
   const { t } = useTranslation();
-  const {
-    searchTerm, setSearchTerm,
-    filters, setFilter,
-    columns, toggleColumn, reorderColumns, resetColumns,
-    selectedIds, clearSelection
-  } = useJobLevelStore();
+  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useJobLevelStore);
+  const filters = useJobLevelStore((s) => s.filters);
+  const setFilter = useJobLevelStore((s) => s.setFilter);
+  const columns = useJobLevelStore((s) => s.columns);
+  const toggleColumn = useJobLevelStore((s) => s.toggleColumn);
+  const reorderColumns = useJobLevelStore((s) => s.reorderColumns);
+  const resetColumns = useJobLevelStore((s) => s.resetColumns);
+  const selectedIds = useJobLevelStore((s) => s.selectedIds);
+  const clearSelection = useJobLevelStore((s) => s.clearSelection);
 
   const selectedCount = selectedIds.size;
   const activeFilterCount = filters.status.length;
@@ -104,8 +108,8 @@ const JobLevelToolbar: React.FC<Props> = ({
   return (
     <GenericToolbar
         selectedCount={selectedCount}
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
+        searchTerm={searchInput}
+        onSearchChange={setSearchInput}
         onClearSelection={clearSelection}
         actions={renderActions}
         filters={renderFilters}

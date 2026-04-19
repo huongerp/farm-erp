@@ -5,6 +5,7 @@ import Button from '../../../../components/ui/Button';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
+import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useTrangThaiStore } from '../store/useTrangThaiStore';
 
 interface Props {
@@ -20,18 +21,15 @@ interface Props {
 
 const TrangThaiToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onStatusChangeMany, canCreate = true, canUpdate = true, canDelete = true }) => {
   const { t } = useTranslation();
-  const {
-    searchTerm,
-    setSearchTerm,
-    filters,
-    setFilter,
-    columns,
-    toggleColumn,
-    reorderColumns,
-    resetColumns,
-    selectedIds,
-    clearSelection,
-  } = useTrangThaiStore();
+  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useTrangThaiStore);
+  const filters = useTrangThaiStore((s) => s.filters);
+  const setFilter = useTrangThaiStore((s) => s.setFilter);
+  const columns = useTrangThaiStore((s) => s.columns);
+  const toggleColumn = useTrangThaiStore((s) => s.toggleColumn);
+  const reorderColumns = useTrangThaiStore((s) => s.reorderColumns);
+  const resetColumns = useTrangThaiStore((s) => s.resetColumns);
+  const selectedIds = useTrangThaiStore((s) => s.selectedIds);
+  const clearSelection = useTrangThaiStore((s) => s.clearSelection);
 
   const selectedCount = selectedIds.size;
   const activeFilterCount = filters.status.length;
@@ -70,8 +68,8 @@ const TrangThaiToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, on
   return (
     <GenericToolbar
       selectedCount={selectedCount}
-      searchTerm={searchTerm}
-      onSearchChange={setSearchTerm}
+      searchTerm={searchInput}
+      onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
       actions={renderActions}
       filters={renderFilters}

@@ -19,6 +19,7 @@ import TaoPhieuForm from '../../cap-phat-thu-hoi/components/TaoPhieuForm';
 import { useDeletePhieu } from '../../cap-phat-thu-hoi/hooks/use-cap-phat-thu-hoi';
 import TaoPhieuBaoTriForm from '../../bao-tri-sua-chua/components/TaoPhieuBaoTriForm';
 import { useDeletePhieuBaoTri } from '../../bao-tri-sua-chua/hooks/use-bao-tri-sua-chua';
+import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useDanhSachTaiSanStore } from '../store/useDanhSachTaiSanStore';
 import { useAssetGroups } from '../../thiet-lap-tai-san/hooks/use-nhom-tai-san';
 import { useAssetStorageLocations } from '../../thiet-lap-tai-san/hooks/use-noi-luu';
@@ -114,16 +115,14 @@ const CuaToiTab: React.FC = () => {
   const confirm = useConfirmStore((s) => s.confirm);
   const currentUserId = user?.id ?? '';
   const isAdmin = user?.role === 'admin';
-  const {
-    searchTerm,
-    setSearchTerm,
-    filters,
-    setFilter,
-    sort,
-    resetState,
-    clearSelection,
-    selectedIds,
-  } = useDanhSachTaiSanStore();
+  const { searchInput, setSearchInput } = useGenericToolbarSearch(useDanhSachTaiSanStore);
+  const searchTerm = useDanhSachTaiSanStore((s) => s.searchTerm);
+  const filters = useDanhSachTaiSanStore((s) => s.filters);
+  const setFilter = useDanhSachTaiSanStore((s) => s.setFilter);
+  const sort = useDanhSachTaiSanStore((s) => s.sort);
+  const resetState = useDanhSachTaiSanStore((s) => s.resetState);
+  const clearSelection = useDanhSachTaiSanStore((s) => s.clearSelection);
+  const selectedIds = useDanhSachTaiSanStore((s) => s.selectedIds);
   const deleteMutation = useDeleteTaiSan();
   const statusMutation = useUpdateTaiSanStatus();
   const updateMutation = useUpdateTaiSan();
@@ -490,8 +489,8 @@ const CuaToiTab: React.FC = () => {
         ) : (
           <GenericToolbar
             selectedCount={0}
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
+            searchTerm={searchInput}
+            onSearchChange={setSearchInput}
             onClearSelection={() => {}}
             filters={renderFilters}
             filterGroups={filterGroups}

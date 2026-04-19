@@ -20,6 +20,11 @@ export interface LichSuNhapXuatRow {
   ghi_chu?: string;
   ten_kho?: string;
   ten_kho_den?: string;
+  /** Kho nguồn trên phiếu (fp_mh_phieu_kho.kho_id) — dùng lọc theo kho. */
+  kho_id: string;
+  kho_den_id?: string | null;
+  /** Thời gian tạo phiếu — ưu tiên hiển thị thay cho chỉ có ngày chứng từ. */
+  tg_tao?: string | null;
 }
 
 /** Dòng lịch sử theo kho (có thêm ma_hang, ten_hang). */
@@ -32,6 +37,7 @@ import { getDoiTacRef } from '../../danh-sach-doi-tac/services/doi-tac-service';
 import { getHangHoaRef } from '../../danh-sach-hang-hoa/services/hang-hoa-service';
 import { getEmployeesRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
 import type { BranchListScope } from '../../../../lib/branch-scope-query';
+import { postgrestQuotedIlikePattern } from '../../../../lib/postgrest-or-ilike';
 import type { ChiTietPhieuKhoListServerQuery, PhieuKhoListServerQuery } from './phieu-kho-list-query';
 
 const TABLE_PHIEU = 'fp_mh_phieu_kho';
@@ -516,6 +522,37 @@ export async function getPhieuKhoByDoiTacSupabase(idDoiTac: string, loaiDoiTac: 
   return rows.map((row) => mapPhieuKhoSummaryRowToPhieu(row));
 }
 
+/** Cache một lần/session — tránh gọi getKhoRef + getDoiTacRef + getEmployeesRef mỗi lần đổi trang chi tiết phiếu. */
+type ChiTietEnrichmentMaps = {
+  khoMap: Record<string, string>;
+  doiTacMap: Record<string, string>;
+  nvMap: Record<string, string>;
+};
+
+let chiTietEnrichmentMapsPromise: Promise<ChiTietEnrichmentMaps> | null = null;
+
+async function getChiTietEnrichmentMaps(): Promise<ChiTietEnrichmentMaps> {
+  if (!chiTietEnrichmentMapsPromise) {
+    chiTietEnrichmentMapsPromise = (async () => {
+      const [khoList, doiTacList, employees] = await Promise.all([getKhoRef(), getDoiTacRef(), getEmployeesRef()]);
+      const khoMap: Record<string, string> = {};
+      khoList.forEach((k) => {
+        khoMap[k.id] = k.ten_kho;
+      });
+      const doiTacMap: Record<string, string> = {};
+      doiTacList.forEach((d) => {
+        doiTacMap[d.id] = d.ten_ncc;
+      });
+      const nvMap: Record<string, string> = {};
+      employees.forEach((e) => {
+        nvMap[e.id] = e.ho_ten;
+      });
+      return { khoMap, doiTacMap, nvMap };
+    })();
+  }
+  return chiTietEnrichmentMapsPromise;
+}
+
 function mapPhieuKhoChiTietFlatViewRows(
   flatRows: PhieuKhoChiTietFlatViewRow[],
   khoMap: Record<string, string>,
@@ -577,7 +614,7 @@ function mapPhieuKhoChiTietFlatViewRows(
 }
 
 export async function getChiTietPhieuKhoAllSupabase(): Promise<ChiTietPhieuKhoFlat[]> {
-  const [flatRows, khoList, doiTacList, employees] = await Promise.all([
+  const [flatRows, maps] = await Promise.all([
     fetchAllRows<PhieuKhoChiTietFlatViewRow>((from, to) =>
       supabase
         .from(VIEW_PHIEU_KHO_CHI_TIET_FLAT)
@@ -587,17 +624,9 @@ export async function getChiTietPhieuKhoAllSupabase(): Promise<ChiTietPhieuKhoFl
         .order('chi_tiet_id', { ascending: false })
         .range(from, to)
     ),
-    getKhoRef(),
-    getDoiTacRef(),
-    getEmployeesRef(),
+    getChiTietEnrichmentMaps(),
   ]);
-  const khoMap: Record<string, string> = {};
-  khoList.forEach((k) => { khoMap[k.id] = k.ten_kho; });
-  const doiTacMap: Record<string, string> = {};
-  doiTacList.forEach((d) => { doiTacMap[d.id] = d.ten_ncc; });
-  const nvMap: Record<string, string> = {};
-  employees.forEach((e) => { nvMap[e.id] = e.ho_ten; });
-  return mapPhieuKhoChiTietFlatViewRows(flatRows, khoMap, doiTacMap, nvMap);
+  return mapPhieuKhoChiTietFlatViewRows(flatRows, maps.khoMap, maps.doiTacMap, maps.nvMap);
 }
 
 const IMPOSSIBLE_NUM_ID = -2147483647;
@@ -659,7 +688,7 @@ function applyPhieuKhoListQueryToSummarySelect(q: any, query: PhieuKhoListServer
   const term = (query.searchTerm ?? '').trim();
   if (term) {
     const esc = term.replace(/%/g, '\\%').replace(/_/g, '\\_');
-    const pat = `%${esc}%`;
+    const pat = postgrestQuotedIlikePattern(`%${esc}%`);
     b = b.or(`so_phieu.ilike.${pat},mo_ta.ilike.${pat},ten_kho.ilike.${pat},ten_kho_den.ilike.${pat}`);
   }
   return b;
@@ -683,7 +712,7 @@ function applyChiTietPhieuKhoListQueryToFlatSelect(q: any, query: ChiTietPhieuKh
   const term = (query.searchTerm ?? '').trim();
   if (term) {
     const esc = term.replace(/%/g, '\\%').replace(/_/g, '\\_');
-    const pat = `%${esc}%`;
+    const pat = postgrestQuotedIlikePattern(`%${esc}%`);
     b = b.or(`so_phieu.ilike.${pat},ten_hang_hoa.ilike.${pat},mo_ta.ilike.${pat},ghi_chu.ilike.${pat}`);
   }
   return b;
@@ -697,24 +726,20 @@ export async function getChiTietPhieuKhoPageSupabase(
   pageSize: number = CHI_TIET_PHIEU_KHO_PAGE_SIZE_DEFAULT,
   listQuery?: ChiTietPhieuKhoListServerQuery
 ): Promise<PaginatedTableResult<ChiTietPhieuKhoFlat>> {
-  const pageResult = await fetchTablePage<PhieuKhoChiTietFlatViewRow>(page, pageSize, async (from, to) => {
-    let sel = supabase.from(VIEW_PHIEU_KHO_CHI_TIET_FLAT).select(PHIEU_KHO_CHI_TIET_FLAT_SELECT, { count: 'exact' });
-    if (listQuery) sel = applyChiTietPhieuKhoListQueryToFlatSelect(sel, listQuery);
-    const res = await sel
-      .order('ngay', { ascending: false })
-      .order('so_phieu', { ascending: false })
-      .order('chi_tiet_id', { ascending: false })
-      .range(from, to);
-    return { data: res.data as PhieuKhoChiTietFlatViewRow[] | null, error: res.error, count: res.count };
-  });
-  const [khoList, doiTacList, employees] = await Promise.all([getKhoRef(), getDoiTacRef(), getEmployeesRef()]);
-  const khoMap: Record<string, string> = {};
-  khoList.forEach((k) => { khoMap[k.id] = k.ten_kho; });
-  const doiTacMap: Record<string, string> = {};
-  doiTacList.forEach((d) => { doiTacMap[d.id] = d.ten_ncc; });
-  const nvMap: Record<string, string> = {};
-  employees.forEach((e) => { nvMap[e.id] = e.ho_ten; });
-  const data = mapPhieuKhoChiTietFlatViewRows(pageResult.data, khoMap, doiTacMap, nvMap);
+  const [pageResult, maps] = await Promise.all([
+    fetchTablePage<PhieuKhoChiTietFlatViewRow>(page, pageSize, async (from, to) => {
+      let sel = supabase.from(VIEW_PHIEU_KHO_CHI_TIET_FLAT).select(PHIEU_KHO_CHI_TIET_FLAT_SELECT, { count: 'exact' });
+      if (listQuery) sel = applyChiTietPhieuKhoListQueryToFlatSelect(sel, listQuery);
+      const res = await sel
+        .order('ngay', { ascending: false })
+        .order('so_phieu', { ascending: false })
+        .order('chi_tiet_id', { ascending: false })
+        .range(from, to);
+      return { data: res.data as PhieuKhoChiTietFlatViewRow[] | null, error: res.error, count: res.count };
+    }),
+    getChiTietEnrichmentMaps(),
+  ]);
+  const data = mapPhieuKhoChiTietFlatViewRows(pageResult.data, maps.khoMap, maps.doiTacMap, maps.nvMap);
   return { data, totalCount: pageResult.totalCount, page: pageResult.page, pageSize: pageResult.pageSize };
 }
 
@@ -744,9 +769,20 @@ export async function getLichSuNhapXuatByHangHoaSupabase(id_hang_hoa: string): P
       ghi_chu: ct.ghi_chu ?? undefined,
       ten_kho: p ? (khoMap[String(p.kho_id)] ?? p.ten_kho ?? undefined) : undefined,
       ten_kho_den: p?.kho_den_id != null ? (khoMap[String(p.kho_den_id)] ?? p.ten_kho_den ?? undefined) : undefined,
+      kho_id: p != null ? String(p.kho_id) : '',
+      kho_den_id: p?.kho_den_id != null ? String(p.kho_den_id) : null,
+      tg_tao: p?.tg_tao ?? null,
     };
   });
-  return rows.sort((a, b) => (b.ngay || '').localeCompare(a.ngay || '') || (a.so_phieu || '').localeCompare(b.so_phieu || ''));
+  return rows.sort((a, b) => {
+    const byNgay = (b.ngay || '').localeCompare(a.ngay || '');
+    if (byNgay !== 0) return byNgay;
+    const byTg = (b.tg_tao || '').localeCompare(a.tg_tao || '');
+    if (byTg !== 0) return byTg;
+    const byPhieu = (b.so_phieu || '').localeCompare(a.so_phieu || '');
+    if (byPhieu !== 0) return byPhieu;
+    return (b.id_chi_tiet || '').localeCompare(a.id_chi_tiet || '');
+  });
 }
 
 export async function getLichSuNhapXuatByKhoSupabase(id_kho: string): Promise<LichSuNhapXuatByKhoRow[]> {
@@ -780,11 +816,22 @@ export async function getLichSuNhapXuatByKhoSupabase(id_kho: string): Promise<Li
       ghi_chu: ct.ghi_chu ?? undefined,
       ten_kho: p ? (khoMap[String(p.kho_id)] ?? p.ten_kho ?? undefined) : undefined,
       ten_kho_den: p?.kho_den_id != null ? (khoMap[String(p.kho_den_id)] ?? p.ten_kho_den ?? undefined) : undefined,
+      kho_id: p != null ? String(p.kho_id) : '',
+      kho_den_id: p?.kho_den_id != null ? String(p.kho_den_id) : null,
+      tg_tao: p?.tg_tao ?? null,
       ma_hang: h?.ma_hang,
       ten_hang: h?.ten_hang ?? ct.ten_hang_hoa ?? undefined,
     };
   });
-  return rows.sort((a, b) => (b.ngay || '').localeCompare(a.ngay || '') || (a.so_phieu || '').localeCompare(b.so_phieu || ''));
+  return rows.sort((a, b) => {
+    const byNgay = (b.ngay || '').localeCompare(a.ngay || '');
+    if (byNgay !== 0) return byNgay;
+    const byTg = (b.tg_tao || '').localeCompare(a.tg_tao || '');
+    if (byTg !== 0) return byTg;
+    const byPhieu = (b.so_phieu || '').localeCompare(a.so_phieu || '');
+    if (byPhieu !== 0) return byPhieu;
+    return (b.id_chi_tiet || '').localeCompare(a.id_chi_tiet || '');
+  });
 }
 
 /** Một trang danh sách phiếu kho (server-side pagination). */

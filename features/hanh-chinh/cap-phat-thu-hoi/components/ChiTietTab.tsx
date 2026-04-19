@@ -15,7 +15,6 @@ import EmptyState from '../../../../components/shared/EmptyState';
 import ListPageSkeleton from '../../../../components/shared/ListPageSkeleton';
 import Tooltip from '../../../../components/ui/Tooltip';
 import { formatDate } from '../../../../lib/utils';
-
 const ChiTietTab: React.FC = () => {
   const { t } = useTranslation();
   const [, setSearchParams] = useSearchParams();

@@ -4,6 +4,7 @@ import { Plus, User, Calendar, Warehouse } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useKiemKeKhoStore } from '../store/useKiemKeKhoStore';
 import { useEmployeesRefQuery } from '@/lib/hooks/use-supabase-ref-queries';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
@@ -32,19 +33,16 @@ const KiemKeKhoToolbar: React.FC<Props> = ({
   canDelete = true,
 }) => {
   const { t } = useTranslation();
-  const {
-    searchTerm,
-    setSearchTerm,
-    filters,
-    setFilter,
-    resetFilters,
-    columns,
-    toggleColumn,
-    reorderColumns,
-    resetColumns,
-    selectedIds,
-    clearSelection,
-  } = useKiemKeKhoStore();
+  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useKiemKeKhoStore);
+  const filters = useKiemKeKhoStore((s) => s.filters);
+  const setFilter = useKiemKeKhoStore((s) => s.setFilter);
+  const resetFilters = useKiemKeKhoStore((s) => s.resetFilters);
+  const columns = useKiemKeKhoStore((s) => s.columns);
+  const toggleColumn = useKiemKeKhoStore((s) => s.toggleColumn);
+  const reorderColumns = useKiemKeKhoStore((s) => s.reorderColumns);
+  const resetColumns = useKiemKeKhoStore((s) => s.resetColumns);
+  const selectedIds = useKiemKeKhoStore((s) => s.selectedIds);
+  const clearSelection = useKiemKeKhoStore((s) => s.clearSelection);
   const { data: employees = [] } = useEmployeesRefQuery();
   const { data: khoList = [] } = useKhoList();
   const { trangThaiCounts, nguoiPhuTrachCounts, idKhoCounts } = useKiemKeKhoFilterCounts(items, filters);
@@ -174,8 +172,8 @@ const KiemKeKhoToolbar: React.FC<Props> = ({
   return (
     <GenericToolbar
       selectedCount={selectedCount}
-      searchTerm={searchTerm}
-      onSearchChange={setSearchTerm}
+      searchTerm={searchInput}
+      onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
       actions={renderActions}
       filters={renderFilters}

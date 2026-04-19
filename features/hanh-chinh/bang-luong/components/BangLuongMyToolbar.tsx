@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Calendar, Plus } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
+import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useBangLuongMyStore } from '../store/useBangLuongMyStore';
 
 interface Props {
@@ -16,17 +17,14 @@ interface Props {
 
 const BangLuongMyToolbar: React.FC<Props> = ({ onAdd, onClearSelection, selectedCount, onDeleteMany, canCreate = true, canDelete = true }) => {
   const { t } = useTranslation();
-  const {
-    searchTerm,
-    setSearchTerm,
-    filters,
-    setFilter,
-    columns,
-    toggleColumn,
-    reorderColumns,
-    resetColumns,
-    selectedIds,
-  } = useBangLuongMyStore();
+  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useBangLuongMyStore);
+  const filters = useBangLuongMyStore((s) => s.filters);
+  const setFilter = useBangLuongMyStore((s) => s.setFilter);
+  const columns = useBangLuongMyStore((s) => s.columns);
+  const toggleColumn = useBangLuongMyStore((s) => s.toggleColumn);
+  const reorderColumns = useBangLuongMyStore((s) => s.reorderColumns);
+  const resetColumns = useBangLuongMyStore((s) => s.resetColumns);
+  const selectedIds = useBangLuongMyStore((s) => s.selectedIds);
 
   const activeFilterCount = filters.yearMonth ? 1 : 0;
   const handleClearAllFilters = () => setFilter('yearMonth', '');
@@ -57,8 +55,8 @@ const BangLuongMyToolbar: React.FC<Props> = ({ onAdd, onClearSelection, selected
   return (
     <GenericToolbar
       selectedCount={selectedCount}
-      searchTerm={searchTerm}
-      onSearchChange={setSearchTerm}
+      searchTerm={searchInput}
+      onSearchChange={setSearchInput}
       onClearSelection={onClearSelection}
       actions={renderActions}
       filters={renderFilters}

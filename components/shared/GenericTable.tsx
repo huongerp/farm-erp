@@ -21,7 +21,10 @@ const DEFAULT_COLUMN_MIN_WIDTH = 120;
 interface GenericTableProps<T> {
   data: T[];
   columns: ColumnConfig[];
+  /** Skeleton toàn bảng — nên chỉ lần đầu không có dữ liệu (vd. `isPending && !data`). */
   isLoading: boolean;
+  /** Đang refetch nhưng đã có dữ liệu: overlay nhẹ, không thay bằng skeleton. */
+  isFetching?: boolean;
 
   // Selection
   selectedIds: Set<string>;
@@ -79,7 +82,7 @@ interface GenericTableProps<T> {
  */
 
 function GenericTable<T>({
-  data, columns, isLoading,
+  data, columns, isLoading, isFetching = false,
   selectedIds, onToggleSelection, onToggleAll,
   page, pageSize, onPageChange, onPageSizeChange,
   totalRecordsOverride,
@@ -173,7 +176,7 @@ function GenericTable<T>({
     const ro = new ResizeObserver(updateScrollShadow);
     ro.observe(el);
     return () => { el.removeEventListener('scroll', updateScrollShadow); ro.disconnect(); };
-  }, [updateScrollShadow, isLoading]);
+  }, [updateScrollShadow, isLoading, isFetching]);
 
   // Go-to-page
   const [editingPage, setEditingPage] = useState(false);
@@ -287,7 +290,19 @@ function GenericTable<T>({
   }
 
   return (
-    <div className="flex flex-col h-full bg-card overflow-hidden">
+    <div className="flex flex-col h-full bg-card overflow-hidden relative">
+      {isFetching ? (
+        <div
+          className="absolute inset-0 z-[25] pointer-events-none flex items-start justify-center pt-3 bg-background/30 backdrop-blur-[1px]"
+          aria-busy="true"
+          aria-live="polite"
+        >
+          <div
+            className="h-6 w-6 rounded-full border-2 border-primary/35 border-t-primary animate-spin shadow-sm"
+            aria-hidden
+          />
+        </div>
+      ) : null}
 
       {/* 1. DESKTOP VIEW with scroll shadows */}
       <div className="hidden md:block flex-1 min-h-0 relative">

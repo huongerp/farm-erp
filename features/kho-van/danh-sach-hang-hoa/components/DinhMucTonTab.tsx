@@ -26,6 +26,7 @@ import { useHangHoaRefQuery } from '../../../../lib/hooks/use-supabase-ref-queri
 import type { DinhMucTonKhoRow } from '../../phieu-kho/services/ton-kho-service';
 import type { Kho } from '../../danh-sach-kho/core/types';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
+import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useDinhMucTonStore } from '../store/useDinhMucTonStore';
 import { formatNumberVN } from '../../../../lib/utils';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
@@ -41,24 +42,22 @@ interface DinhMucTonTabProps {
 const DinhMucTonTab: React.FC<DinhMucTonTabProps> = ({ onBack }) => {
   const { t } = useTranslation();
   const confirm = useConfirmStore((s) => s.confirm);
-  const {
-    searchTerm,
-    setSearchTerm,
-    filters,
-    setFilter,
-    columns,
-    toggleColumn,
-    reorderColumns,
-    resetColumns,
-    pagination,
-    setPage,
-    setPageSize,
-    resetState,
-    selectedIds,
-    toggleSelection,
-    toggleAllSelection,
-    clearSelection,
-  } = useDinhMucTonStore();
+  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useDinhMucTonStore);
+  const searchTerm = useDinhMucTonStore((s) => s.searchTerm);
+  const filters = useDinhMucTonStore((s) => s.filters);
+  const setFilter = useDinhMucTonStore((s) => s.setFilter);
+  const columns = useDinhMucTonStore((s) => s.columns);
+  const toggleColumn = useDinhMucTonStore((s) => s.toggleColumn);
+  const reorderColumns = useDinhMucTonStore((s) => s.reorderColumns);
+  const resetColumns = useDinhMucTonStore((s) => s.resetColumns);
+  const pagination = useDinhMucTonStore((s) => s.pagination);
+  const setPage = useDinhMucTonStore((s) => s.setPage);
+  const setPageSize = useDinhMucTonStore((s) => s.setPageSize);
+  const resetState = useDinhMucTonStore((s) => s.resetState);
+  const selectedIds = useDinhMucTonStore((s) => s.selectedIds);
+  const toggleSelection = useDinhMucTonStore((s) => s.toggleSelection);
+  const toggleAllSelection = useDinhMucTonStore((s) => s.toggleAllSelection);
+  const clearSelection = useDinhMucTonStore((s) => s.clearSelection);
 
   const { data: list = [], isLoading } = useDinhMucList();
   const { data: khoList = [] } = useQuery<Kho[]>({
@@ -111,9 +110,9 @@ const DinhMucTonTab: React.FC<DinhMucTonTabProps> = ({ onBack }) => {
     [khoList, list]
   );
 
-  const activeFilterCount = (filters.warehouseIds?.length ?? 0) + (searchTerm ? 1 : 0);
+  const activeFilterCount = (filters.warehouseIds?.length ?? 0) + (searchInput.trim() ? 1 : 0);
   const handleClearAllFilters = () => {
-    setSearchTerm('');
+    commitSearchTerm('');
     setFilter('warehouseIds', []);
   };
 
@@ -273,8 +272,8 @@ const DinhMucTonTab: React.FC<DinhMucTonTabProps> = ({ onBack }) => {
         <GenericToolbar
           selectedCount={selectedIds.size}
           onDeleteMany={selectedIds.size > 0 ? handleDeleteMany : undefined}
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
+          searchTerm={searchInput}
+          onSearchChange={setSearchInput}
           onClearSelection={clearSelection}
           showBack
           onBack={onBack}

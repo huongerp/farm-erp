@@ -12,6 +12,7 @@ import { getDoiTacRef } from '../../../kho-van/danh-sach-doi-tac/services/doi-ta
 import { getEmployeesRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
 import { getHangHoaRef } from '../../../kho-van/danh-sach-hang-hoa/services/hang-hoa-service';
 import type { BranchListScope } from '../../../../lib/branch-scope-query';
+import { postgrestQuotedIlikePattern } from '../../../../lib/postgrest-or-ilike';
 import type { DonDatHangListServerQuery } from './don-dat-hang-list-query';
 import { TRANG_THAI_DON_DAT_HANG, TRANG_THAI_KEY } from '../core/constants';
 import type {
@@ -200,7 +201,7 @@ function applyDonDatHangListQuery(q: any, query: DonDatHangListServerQuery): any
   const term = (query.searchTerm ?? '').trim();
   if (term) {
     const esc = term.replace(/%/g, '\\%').replace(/_/g, '\\_');
-    const pat = `%${esc}%`;
+    const pat = postgrestQuotedIlikePattern(`%${esc}%`);
     b = b.or(`so_po.ilike.${pat},ghi_chu.ilike.${pat},ten_nha_cung_cap.ilike.${pat},ten_kho_nhan.ilike.${pat}`);
   }
   return b;

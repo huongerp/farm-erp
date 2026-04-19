@@ -15,6 +15,7 @@ import TablePaginationFooter from '../../../../components/shared/TablePagination
 import GenericSubTableSection from '../../../../components/shared/GenericSubTableSection';
 import TonKhoToolbar from './TonKhoToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import { useSearchInputCommit } from '../../../../lib/hooks/use-search-input-commit';
 import { useTonKhoByLocationStore } from '../store/useTonKhoStore';
 import type { TonKhoFilters } from '../store/useTonKhoStore';
 import { useListWithFilter } from '../../../../lib/hooks';
@@ -22,25 +23,9 @@ import { getColumnCellStyle } from '../../../../store/createGenericStore';
 import type { ColumnConfig } from '../../../../store/createGenericStore';
 import type { Kho } from '../../danh-sach-kho/core/types';
 import type { HangHoaRefLite } from '../../danh-sach-hang-hoa/services/hang-hoa-service';
-import type { LoaiPhieuKho } from '../../phieu-kho/core/types';
 import { BTN_CLOSE } from '../../../../lib/button-labels';
-import { cn } from '../../../../lib/utils';
-
-function LoaiBadge({ loai }: { loai: LoaiPhieuKho }) {
-  const { t } = useTranslation();
-  const label = loai === 'nhap' ? t('tonKho.history.typeNhap') : loai === 'xuat' ? t('tonKho.history.typeXuat') : t('tonKho.history.typeChuyen');
-  const cls =
-    loai === 'nhap'
-      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
-      : loai === 'xuat'
-        ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
-        : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20';
-  return (
-    <span className={cn('inline-flex px-2 py-0.5 rounded-full text-xs font-medium border', cls)}>
-      {label}
-    </span>
-  );
-}
+import { cn, formatDateTime } from '../../../../lib/utils';
+import { TonKhoLoaiBadge } from './TonKhoLoaiBadge';
 
 export type RowKho = {
   id_kho: string;
@@ -51,7 +36,7 @@ export type RowKho = {
 };
 
 function useKhoRows(tonKhoListOverride?: TonKhoRecord[]) {
-  const { data: tonKhoListRaw = [], isLoading } = useAllTonKho();
+  const { data: tonKhoListRaw = [], isLoading, isFetchingOverlay } = useAllTonKho();
   const tonKhoList = tonKhoListOverride !== undefined ? tonKhoListOverride : tonKhoListRaw;
   const { data: khoList = [] } = useQuery<Kho[]>({
     queryKey: ['kho'],
@@ -92,7 +77,7 @@ function useKhoRows(tonKhoListOverride?: TonKhoRecord[]) {
       })
       .sort((a, b) => b.tong_so_luong - a.tong_so_luong);
   }, [tonKhoList, khoMap, byKho]);
-  return { rows, isLoading };
+  return { rows, isLoading, isFetchingOverlay };
 }
 
 function KhoDetailDrawer({
@@ -220,7 +205,7 @@ function KhoDetailDrawer({
             <>
               <thead className="sticky top-0 z-[1] bg-muted border-b border-border">
                 <tr>
-                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[90px]">{t('tonKho.history.date')}</th>
+                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[140px]">{t('tonKho.history.dateTime')}</th>
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[100px]">{t('tonKho.history.voucherNo')}</th>
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[80px]">{t('tonKho.history.type')}</th>
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[140px]">{t('tonKho.byLocation.product')}</th>
@@ -234,10 +219,10 @@ function KhoDetailDrawer({
               <tbody className="[&>tr>td]:border-b [&>tr>td]:border-border">
                 {lichSu.map((row) => (
                   <tr key={row.id_chi_tiet} className="hover:bg-muted/60 transition-colors">
-                    <td className="px-4 py-2.5 text-sm">{row.ngay}</td>
+                    <td className="px-4 py-2.5 text-sm tabular-nums">{formatDateTime(row.tg_tao ?? row.ngay) || '—'}</td>
                     <td className="px-4 py-2.5 font-mono text-xs">{row.so_phieu}</td>
                     <td className="px-4 py-2.5">
-                      <LoaiBadge loai={row.loai} />
+                      <TonKhoLoaiBadge loai={row.loai} />
                     </td>
                     <td className="px-4 py-2.5 text-sm text-muted-foreground">
                       {row.ma_hang && row.ten_hang ? `${row.ma_hang} - ${row.ten_hang}` : '—'}
@@ -261,21 +246,25 @@ function KhoDetailDrawer({
 const TonKhoTheoNoiLuuTab: React.FC = () => {
   const { t } = useTranslation();
   const [detailKho, setDetailKho] = useState<RowKho | null>(null);
-  const {
-    searchTerm,
-    setSearchTerm,
-    filters,
-    setFilter,
-    columns,
-    toggleColumn,
-    reorderColumns,
-    resetColumns,
-    pagination,
-    setPage,
-    setPageSize,
-    resetState,
-  } = useTonKhoByLocationStore();
-  const { rows, isLoading } = useKhoRows();
+  const searchTerm = useTonKhoByLocationStore((s) => s.searchTerm);
+  const commitSearchTerm = useTonKhoByLocationStore((s) => s.commitSearchTerm);
+  const filters = useTonKhoByLocationStore((s) => s.filters);
+  const setFilter = useTonKhoByLocationStore((s) => s.setFilter);
+  const columns = useTonKhoByLocationStore((s) => s.columns);
+  const toggleColumn = useTonKhoByLocationStore((s) => s.toggleColumn);
+  const reorderColumns = useTonKhoByLocationStore((s) => s.reorderColumns);
+  const resetColumns = useTonKhoByLocationStore((s) => s.resetColumns);
+  const pagination = useTonKhoByLocationStore((s) => s.pagination);
+  const setPage = useTonKhoByLocationStore((s) => s.setPage);
+  const setPageSize = useTonKhoByLocationStore((s) => s.setPageSize);
+  const resetState = useTonKhoByLocationStore((s) => s.resetState);
+
+  const { inputValue: searchInput, setInputValue: setSearchInput } = useSearchInputCommit({
+    committedTerm: searchTerm,
+    commit: commitSearchTerm,
+  });
+
+  const { rows, isLoading, isFetchingOverlay } = useKhoRows();
 
   const filterFn = useCallback((item: RowKho, term: string, f: TonKhoFilters) => {
     if (term.trim()) {
@@ -376,8 +365,8 @@ const TonKhoTheoNoiLuuTab: React.FC = () => {
     <div className="flex flex-col h-full min-h-0">
       <div className="flex-1 min-h-0 flex flex-col mt-1.5 rounded-xl border border-border bg-card shadow-sm overflow-hidden relative z-0">
         <TonKhoToolbar
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
+          searchTerm={searchInput}
+          onSearchChange={setSearchInput}
           searchPlaceholder={t('tonKho.byLocation.searchPlaceholder')}
           columns={columns}
           onToggleColumn={toggleColumn}
@@ -389,7 +378,19 @@ const TonKhoTheoNoiLuuTab: React.FC = () => {
           filterGroups={filterGroups}
         />
 
-        <div className="flex-1 min-h-0 flex flex-col bg-card overflow-hidden">
+        <div className="flex-1 min-h-0 flex flex-col bg-card overflow-hidden relative">
+          {isFetchingOverlay && !isLoading ? (
+            <div
+              className="absolute inset-0 z-[25] pointer-events-none flex items-start justify-center pt-3 bg-background/30 backdrop-blur-[1px]"
+              aria-busy="true"
+              aria-live="polite"
+            >
+              <div
+                className="h-6 w-6 rounded-full border-2 border-primary/35 border-t-primary animate-spin shadow-sm"
+                aria-hidden
+              />
+            </div>
+          ) : null}
           {isLoading ? (
             <ListPageSkeleton
               loadingText={t('tonKho.loading')}

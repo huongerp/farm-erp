@@ -6,6 +6,7 @@ import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import DateRangePicker from '../../../../components/ui/DateRangePicker';
+import { useSearchInputCommit } from '../../../../lib/hooks/use-search-input-commit';
 import { useChiTietPhieuKhoStore, type DatePresetId } from '../store/useChiTietPhieuKhoStore';
 import type { ChiTietPhieuKhoFlat } from '../core/types';
 import type { Kho } from '../../danh-sach-kho/core/types';
@@ -38,16 +39,19 @@ const ChiTietPhieuKhoToolbar: React.FC<Props> = ({
 }) => {
   const unweighted = chipCountsMode === 'unweighted';
   const { t } = useTranslation();
-  const {
-    searchTerm,
-    setSearchTerm,
-    filters,
-    setFilter,
-    columns,
-    toggleColumn,
-    reorderColumns,
-    resetColumns,
-  } = useChiTietPhieuKhoStore();
+  const searchTerm = useChiTietPhieuKhoStore((s) => s.searchTerm);
+  const commitSearchTerm = useChiTietPhieuKhoStore((s) => s.commitSearchTerm);
+  const filters = useChiTietPhieuKhoStore((s) => s.filters);
+  const setFilter = useChiTietPhieuKhoStore((s) => s.setFilter);
+  const columns = useChiTietPhieuKhoStore((s) => s.columns);
+  const toggleColumn = useChiTietPhieuKhoStore((s) => s.toggleColumn);
+  const reorderColumns = useChiTietPhieuKhoStore((s) => s.reorderColumns);
+  const resetColumns = useChiTietPhieuKhoStore((s) => s.resetColumns);
+
+  const { inputValue: searchInput, setInputValue: setSearchInput } = useSearchInputCommit({
+    committedTerm: searchTerm,
+    commit: commitSearchTerm,
+  });
 
   const loaiOptions = useMemo(
     () => [
@@ -169,7 +173,7 @@ const ChiTietPhieuKhoToolbar: React.FC<Props> = ({
 
   const dateRangeLabel = useMemo(() => {
     const range = getDateRangeFromPreset(
-      (filters.datePreset ?? 'this_month') as DateRangePresetId,
+      (filters.datePreset ?? 'all') as DateRangePresetId,
       filters.customDateFrom ? new Date(filters.customDateFrom) : undefined,
       filters.customDateEnd ? new Date(filters.customDateEnd) : undefined
     );
@@ -178,7 +182,7 @@ const ChiTietPhieuKhoToolbar: React.FC<Props> = ({
 
   const dateFilterActive = useMemo(
     () =>
-      (filters.datePreset && filters.datePreset !== 'this_month') ||
+      (filters.datePreset && filters.datePreset !== 'all') ||
       !!(filters.customDateFrom ?? '').trim() ||
       !!(filters.customDateEnd ?? '').trim(),
     [filters.datePreset, filters.customDateFrom, filters.customDateEnd]
@@ -186,7 +190,7 @@ const ChiTietPhieuKhoToolbar: React.FC<Props> = ({
 
   const activeFilterCount = useMemo(
     () =>
-      (searchTerm ? 1 : 0) +
+      (searchInput.trim() ? 1 : 0) +
       (filters.loai?.length ?? 0 ? 1 : 0) +
       (dateFilterActive ? 1 : 0) +
       (filters.khoIds?.length ?? 0 ? 1 : 0) +
@@ -196,7 +200,7 @@ const ChiTietPhieuKhoToolbar: React.FC<Props> = ({
       (filters.nguoiDuyetIds?.length ?? 0 ? 1 : 0) +
       (filters.doiTacIds?.length ?? 0 ? 1 : 0),
     [
-      searchTerm,
+      searchInput,
       filters.loai?.length,
       dateFilterActive,
       filters.khoIds?.length,
@@ -288,7 +292,7 @@ const ChiTietPhieuKhoToolbar: React.FC<Props> = ({
   );
 
   const dateRangePickerPresets = useMemo(
-    () => DATE_RANGE_PRESETS.filter((p) => p.id !== 'all').map((p) => ({ id: p.id, label: p.label })),
+    () => DATE_RANGE_PRESETS.map((p) => ({ id: p.id, label: p.label })),
     []
   );
 
@@ -341,7 +345,7 @@ const ChiTietPhieuKhoToolbar: React.FC<Props> = ({
       <DateRangePicker
         presets={dateRangePickerPresets}
         value={{
-          preset: filters.datePreset ?? 'this_month',
+          preset: filters.datePreset ?? 'all',
           customStart: filters.customDateFrom ?? '',
           customEnd: filters.customDateEnd ?? '',
         }}
@@ -400,8 +404,8 @@ const ChiTietPhieuKhoToolbar: React.FC<Props> = ({
   return (
     <GenericToolbar
       selectedCount={0}
-      searchTerm={searchTerm}
-      onSearchChange={setSearchTerm}
+      searchTerm={searchInput}
+      onSearchChange={setSearchInput}
       onClearSelection={() => {}}
       actions={renderActions}
       filters={renderFilters}
@@ -411,10 +415,10 @@ const ChiTietPhieuKhoToolbar: React.FC<Props> = ({
       searchPlaceholder={t('phieuKho.chiTietTab.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={() => {
-        setSearchTerm('');
+        commitSearchTerm('');
         setFilter('loai', []);
         setFilter('trangThaiKeys', []);
-        setFilter('datePreset', 'this_month');
+        setFilter('datePreset', 'all');
         setFilter('customDateFrom', '');
         setFilter('customDateEnd', '');
         setFilter('khoIds', []);

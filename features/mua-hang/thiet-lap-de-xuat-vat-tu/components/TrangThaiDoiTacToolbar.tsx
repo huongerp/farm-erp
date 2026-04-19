@@ -4,6 +4,7 @@ import { Plus, Tag } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useTrangThaiDoiTacStore } from '../store/useTrangThaiDoiTacStore';
 import type { TrangThaiDoiTac } from '../core/types';
 import type { TrangThaiHoatDong } from '../../../../lib/constants';
@@ -18,18 +19,15 @@ interface Props {
 
 const TrangThaiDoiTacToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onStatusChangeMany }) => {
   const { t } = useTranslation();
-  const {
-    searchTerm,
-    setSearchTerm,
-    filters,
-    setFilter,
-    columns,
-    toggleColumn,
-    reorderColumns,
-    resetColumns,
-    selectedIds,
-    clearSelection,
-  } = useTrangThaiDoiTacStore();
+  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useTrangThaiDoiTacStore);
+  const filters = useTrangThaiDoiTacStore((s) => s.filters);
+  const setFilter = useTrangThaiDoiTacStore((s) => s.setFilter);
+  const columns = useTrangThaiDoiTacStore((s) => s.columns);
+  const toggleColumn = useTrangThaiDoiTacStore((s) => s.toggleColumn);
+  const reorderColumns = useTrangThaiDoiTacStore((s) => s.reorderColumns);
+  const resetColumns = useTrangThaiDoiTacStore((s) => s.resetColumns);
+  const selectedIds = useTrangThaiDoiTacStore((s) => s.selectedIds);
+  const clearSelection = useTrangThaiDoiTacStore((s) => s.clearSelection);
 
   const selectedCount = selectedIds.size;
   const activeFilterCount = filters.status.length;
@@ -82,8 +80,8 @@ const TrangThaiDoiTacToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMa
   return (
     <GenericToolbar
       selectedCount={selectedCount}
-      searchTerm={searchTerm}
-      onSearchChange={setSearchTerm}
+      searchTerm={searchInput}
+      onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
       actions={renderActions}
       filters={renderFilters}

@@ -5,6 +5,7 @@ import Button from '../../../../components/ui/Button';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
+import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useLoaiChiPhiStore } from '../store/useLoaiChiPhiStore';
 
 interface Props {
@@ -19,18 +20,15 @@ interface Props {
 
 const LoaiChiPhiToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onStatusChangeMany, canCreate = true, canUpdate = true, canDelete = true }) => {
   const { t } = useTranslation();
-  const {
-    searchTerm,
-    setSearchTerm,
-    filters,
-    setFilter,
-    columns,
-    toggleColumn,
-    reorderColumns,
-    resetColumns,
-    selectedIds,
-    clearSelection,
-  } = useLoaiChiPhiStore();
+  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useLoaiChiPhiStore);
+  const filters = useLoaiChiPhiStore((s) => s.filters);
+  const setFilter = useLoaiChiPhiStore((s) => s.setFilter);
+  const columns = useLoaiChiPhiStore((s) => s.columns);
+  const toggleColumn = useLoaiChiPhiStore((s) => s.toggleColumn);
+  const reorderColumns = useLoaiChiPhiStore((s) => s.reorderColumns);
+  const resetColumns = useLoaiChiPhiStore((s) => s.resetColumns);
+  const selectedIds = useLoaiChiPhiStore((s) => s.selectedIds);
+  const clearSelection = useLoaiChiPhiStore((s) => s.clearSelection);
 
   const selectedCount = selectedIds.size;
   const activeFilterCount = filters.status.length;
@@ -69,8 +67,8 @@ const LoaiChiPhiToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, o
   return (
     <GenericToolbar
       selectedCount={selectedCount}
-      searchTerm={searchTerm}
-      onSearchChange={setSearchTerm}
+      searchTerm={searchInput}
+      onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
       actions={renderActions}
       filters={renderFilters}

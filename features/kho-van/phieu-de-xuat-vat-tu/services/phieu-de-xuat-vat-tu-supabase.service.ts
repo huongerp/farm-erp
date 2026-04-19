@@ -9,6 +9,7 @@ import { getKhoRef } from '../../danh-sach-kho/services/kho-service';
 import { getHangHoaRef } from '../../danh-sach-hang-hoa/services/hang-hoa-service';
 import { getEmployeesRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
 import type { BranchListScope } from '../../../../lib/branch-scope-query';
+import { postgrestQuotedIlikePattern } from '../../../../lib/postgrest-or-ilike';
 import type { PhieuDeXuatChiTietListServerQuery, PhieuDeXuatVatTuListServerQuery } from './phieu-de-xuat-list-query';
 
 const TABLE_PHIEU = 'fp_mh_phieu_de_xuat_vat_tu';
@@ -203,7 +204,7 @@ function applyPhieuDeXuatVatTuListQuery(q: any, query: PhieuDeXuatVatTuListServe
   const term = (query.searchTerm ?? '').trim();
   if (term) {
     const esc = term.replace(/%/g, '\\%').replace(/_/g, '\\_');
-    const pat = `%${esc}%`;
+    const pat = postgrestQuotedIlikePattern(`%${esc}%`);
     b = b.or(`so_phieu.ilike.${pat},ghi_chu.ilike.${pat}`);
   }
   return b;
@@ -240,7 +241,7 @@ function applyPhieuDeXuatChiTietRowFilters(q: any, query: PhieuDeXuatChiTietList
   const term = (query.searchTerm ?? '').trim();
   if (term) {
     const esc = term.replace(/%/g, '\\%').replace(/_/g, '\\_');
-    const pat = `%${esc}%`;
+    const pat = postgrestQuotedIlikePattern(`%${esc}%`);
     b = b.or(
       `so_phieu.ilike.${pat},ghi_chu.ilike.${pat},thong_so.ilike.${pat},ten_noi_de_xuat.ilike.${pat},ten_nguoi_de_xuat.ilike.${pat},ten_nguoi_duyet.ilike.${pat},ten_tien_do_mh.ilike.${pat},trao_doi.ilike.${pat}`
     );

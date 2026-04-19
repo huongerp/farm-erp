@@ -5,6 +5,7 @@ import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import { useSearchInputCommit } from '../../../../lib/hooks/use-search-input-commit';
 import { useChiTietTabStore } from '../store/useChiTietTabStore';
 import type { PhieuDeXuatVatTuChiTietRow } from '../core/types';
 import { TRANG_THAI_CHO_DUYET, TRANG_THAI_DA_DUYET, TRANG_THAI_KHONG_DUYET, TIEN_DO_MH_KNOWN_LABELS } from '../core/constants';
@@ -41,17 +42,20 @@ const ChiTietTabToolbar: React.FC<Props> = ({
 }) => {
   const { t } = useTranslation();
   const unweighted = chipCountsMode === 'unweighted';
-  const {
-    searchTerm,
-    setSearchTerm,
-    filters,
-    setFilter,
-    clearSelection,
-    columns,
-    toggleColumn,
-    reorderColumns,
-    resetColumns,
-  } = useChiTietTabStore();
+  const searchTerm = useChiTietTabStore((s) => s.searchTerm);
+  const commitSearchTerm = useChiTietTabStore((s) => s.commitSearchTerm);
+  const filters = useChiTietTabStore((s) => s.filters);
+  const setFilter = useChiTietTabStore((s) => s.setFilter);
+  const clearSelection = useChiTietTabStore((s) => s.clearSelection);
+  const columns = useChiTietTabStore((s) => s.columns);
+  const toggleColumn = useChiTietTabStore((s) => s.toggleColumn);
+  const reorderColumns = useChiTietTabStore((s) => s.reorderColumns);
+  const resetColumns = useChiTietTabStore((s) => s.resetColumns);
+
+  const { inputValue: searchInput, setInputValue: setSearchInput } = useSearchInputCommit({
+    committedTerm: searchTerm,
+    commit: commitSearchTerm,
+  });
 
   const statusLen = filters.status?.length ?? 0;
   const noiDeXuatLen = filters.noiDeXuat?.length ?? 0;
@@ -60,13 +64,13 @@ const ChiTietTabToolbar: React.FC<Props> = ({
   const tienDoMhLen = filters.tienDoMh?.length ?? 0;
   const activeFilterCount = useMemo(
     () =>
-      (searchTerm ? 1 : 0) +
+      (searchInput.trim() ? 1 : 0) +
       statusLen +
       (noiDeXuatLen > 0 ? 1 : 0) +
       (nguoiDeXuatLen > 0 ? 1 : 0) +
       (nguoiDuyetLen > 0 ? 1 : 0) +
       (tienDoMhLen > 0 ? 1 : 0),
-    [searchTerm, statusLen, noiDeXuatLen, nguoiDeXuatLen, nguoiDuyetLen, tienDoMhLen]
+    [searchInput, statusLen, noiDeXuatLen, nguoiDeXuatLen, nguoiDuyetLen, tienDoMhLen]
   );
 
   const currentUserHoTen = useMemo(
@@ -85,7 +89,7 @@ const ChiTietTabToolbar: React.FC<Props> = ({
   const showMineApproveCounts = !unweighted;
 
   const handleClearAllFilters = () => {
-    setSearchTerm('');
+    commitSearchTerm('');
     setFilter('status', []);
     setFilter('noiDeXuat', []);
     setFilter('nguoiDeXuat', []);
@@ -377,8 +381,8 @@ const ChiTietTabToolbar: React.FC<Props> = ({
   return (
     <GenericToolbar
       selectedCount={selectedCount}
-      searchTerm={searchTerm}
-      onSearchChange={setSearchTerm}
+      searchTerm={searchInput}
+      onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
       filters={renderFilters}
       filterGroups={filterGroups}

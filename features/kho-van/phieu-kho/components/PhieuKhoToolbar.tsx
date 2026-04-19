@@ -6,6 +6,7 @@ import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import DateRangePicker from '../../../../components/ui/DateRangePicker';
+import { useSearchInputCommit } from '../../../../lib/hooks/use-search-input-commit';
 import { usePhieuKhoStore } from '../store/usePhieuKhoStore';
 import type { PhieuKho, LoaiPhieuKhoTab } from '../core/types';
 import type { Kho } from '../../danh-sach-kho/core/types';
@@ -56,17 +57,20 @@ const PhieuKhoToolbar: React.FC<Props> = ({
   const data = Array.isArray(dataProp) ? dataProp : [];
   const khoList = Array.isArray(khoListProp) ? khoListProp : [];
   const { t } = useTranslation();
-  const {
-    searchTerm,
-    setSearchTerm,
-    filters,
-    setFilter,
-    clearSelection,
-    columns,
-    toggleColumn,
-    reorderColumns,
-    resetColumns,
-  } = usePhieuKhoStore();
+  const searchTerm = usePhieuKhoStore((s) => s.searchTerm);
+  const commitSearchTerm = usePhieuKhoStore((s) => s.commitSearchTerm);
+  const filters = usePhieuKhoStore((s) => s.filters);
+  const setFilter = usePhieuKhoStore((s) => s.setFilter);
+  const clearSelection = usePhieuKhoStore((s) => s.clearSelection);
+  const columns = usePhieuKhoStore((s) => s.columns);
+  const toggleColumn = usePhieuKhoStore((s) => s.toggleColumn);
+  const reorderColumns = usePhieuKhoStore((s) => s.reorderColumns);
+  const resetColumns = usePhieuKhoStore((s) => s.resetColumns);
+
+  const { inputValue: searchInput, setInputValue: setSearchInput } = useSearchInputCommit({
+    committedTerm: searchTerm,
+    commit: commitSearchTerm,
+  });
 
   const isChuyen = loai === 'chuyen';
   const isNhap = loai === 'nhap';
@@ -110,7 +114,7 @@ const PhieuKhoToolbar: React.FC<Props> = ({
 
   const activeFilterCount = useMemo(
     () =>
-      (searchTerm ? 1 : 0) +
+      (searchInput.trim() ? 1 : 0) +
       (statusLen > 0 ? 1 : 0) +
       (khoIdsLen > 0 ? 1 : 0) +
       (khoDenIdsLen > 0 ? 1 : 0) +
@@ -118,11 +122,11 @@ const PhieuKhoToolbar: React.FC<Props> = ({
       (nguoiTaoLen > 0 ? 1 : 0) +
       (nguoiDuyetLen > 0 ? 1 : 0) +
       (doiTacLen > 0 ? 1 : 0),
-    [searchTerm, statusLen, khoIdsLen, khoDenIdsLen, dateFilterActive, nguoiTaoLen, nguoiDuyetLen, doiTacLen]
+    [searchInput, statusLen, khoIdsLen, khoDenIdsLen, dateFilterActive, nguoiTaoLen, nguoiDuyetLen, doiTacLen]
   );
 
   const handleClearAllFilters = () => {
-    setSearchTerm('');
+    commitSearchTerm('');
     setFilter('status', []);
     setFilter('khoIds', []);
     setFilter('khoDenIds', []);
@@ -455,8 +459,8 @@ const PhieuKhoToolbar: React.FC<Props> = ({
     <GenericToolbar
       selectedCount={selectedCount}
       onDeleteMany={canDelete ? onDeleteMany : undefined}
-      searchTerm={searchTerm}
-      onSearchChange={setSearchTerm}
+      searchTerm={searchInput}
+      onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
       actions={renderActions}
       filters={renderFilters}

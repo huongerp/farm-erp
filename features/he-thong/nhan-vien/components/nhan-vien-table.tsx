@@ -22,6 +22,7 @@ interface Props {
     /** Khi phân trang server: tổng số bản ghi (khác độ dài `data`). */
     totalRecordsOverride?: number;
     isLoading: boolean;
+    isFetching?: boolean;
     onEdit: (item: Employee) => void;
     onDelete: (id: string) => void;
     onStatusChange: (item: Employee) => void;
@@ -34,7 +35,7 @@ interface Props {
     canDelete?: boolean;
 }
 
-const EmployeeTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onStatusChange, onView, positions = [], canUpdate = true, canDelete = true }) => {
+const EmployeeTable: React.FC<Props> = ({ data, totalRecordsOverride, isLoading, isFetching, onEdit, onDelete, onStatusChange, onView, positions = [], canUpdate = true, canDelete = true }) => {
     const { t } = useTranslation();
     const {
         columns, pagination, setPage, setPageSize,
@@ -200,6 +201,7 @@ const EmployeeTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onS
             totalRecordsOverride={totalRecordsOverride}
             columns={columns}
             isLoading={isLoading}
+            isFetching={isFetching}
             loadingText={t('common.loadingData')}
             selectedIds={selectedIds}
             onToggleSelection={toggleSelection}

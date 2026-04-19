@@ -4,6 +4,7 @@ import { Plus, Tag, Building2, Users } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useThanhToanDoiTacStore } from '../store/useThanhToanDoiTacStore';
 import type { ThanhToanDoiTac } from '../core/types';
 import type { DoiTacRefLite } from '../../../kho-van/danh-sach-doi-tac/services/doi-tac-service';
@@ -34,17 +35,14 @@ const ThanhToanDoiTacToolbar: React.FC<Props> = ({
   canDelete = true,
 }) => {
   const { t } = useTranslation();
-  const {
-    searchTerm,
-    setSearchTerm,
-    filters,
-    setFilter,
-    clearSelection,
-    columns,
-    toggleColumn,
-    reorderColumns,
-    resetColumns,
-  } = useThanhToanDoiTacStore();
+  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useThanhToanDoiTacStore);
+  const filters = useThanhToanDoiTacStore((s) => s.filters);
+  const setFilter = useThanhToanDoiTacStore((s) => s.setFilter);
+  const clearSelection = useThanhToanDoiTacStore((s) => s.clearSelection);
+  const columns = useThanhToanDoiTacStore((s) => s.columns);
+  const toggleColumn = useThanhToanDoiTacStore((s) => s.toggleColumn);
+  const reorderColumns = useThanhToanDoiTacStore((s) => s.reorderColumns);
+  const resetColumns = useThanhToanDoiTacStore((s) => s.resetColumns);
 
   const statusOptions = useMemo(
     () =>
@@ -78,15 +76,15 @@ const ThanhToanDoiTacToolbar: React.FC<Props> = ({
 
   const activeFilterCount = useMemo(
     () =>
-      (searchTerm ? 1 : 0) +
+      (searchInput.trim() ? 1 : 0) +
       (filters.statusIds?.length ?? 0) +
       (filters.doiTacIds?.length ?? 0) +
       (filters.donViIds?.length ?? 0),
-    [searchTerm, filters.statusIds, filters.doiTacIds, filters.donViIds]
+    [searchInput, filters.statusIds, filters.doiTacIds, filters.donViIds]
   );
 
   const handleClearAllFilters = () => {
-    setSearchTerm('');
+    commitSearchTerm('');
     setFilter('statusIds', []);
     setFilter('doiTacIds', []);
     setFilter('donViIds', []);
@@ -166,8 +164,8 @@ const ThanhToanDoiTacToolbar: React.FC<Props> = ({
     <GenericToolbar
       selectedCount={selectedCount}
       onDeleteMany={canDelete ? onDeleteMany : undefined}
-      searchTerm={searchTerm}
-      onSearchChange={setSearchTerm}
+      searchTerm={searchInput}
+      onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
       actions={renderActions}
       filters={renderFilters}

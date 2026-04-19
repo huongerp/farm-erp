@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Plus, Download, Upload, Tag, MapPin } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
+import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useKhoStore } from '../store/useKhoStore';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
@@ -36,28 +37,25 @@ const DanhSachKhoToolbar: React.FC<Props> = ({
 }) => {
   const { t } = useTranslation();
   const { data: branches = [] } = useBranches();
-  const {
-    searchTerm,
-    setSearchTerm,
-    filters,
-    setFilter,
-    clearSelection,
-    columns,
-    toggleColumn,
-    reorderColumns,
-    resetColumns,
-  } = useKhoStore();
+  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useKhoStore);
+  const filters = useKhoStore((s) => s.filters);
+  const setFilter = useKhoStore((s) => s.setFilter);
+  const clearSelection = useKhoStore((s) => s.clearSelection);
+  const columns = useKhoStore((s) => s.columns);
+  const toggleColumn = useKhoStore((s) => s.toggleColumn);
+  const reorderColumns = useKhoStore((s) => s.reorderColumns);
+  const resetColumns = useKhoStore((s) => s.resetColumns);
 
   const activeFilterCount = useMemo(
     () =>
-      (searchTerm ? 1 : 0) +
+      (searchInput.trim() ? 1 : 0) +
       (filters.status.length > 0 ? 1 : 0) +
       (filters.id_chi_nhanh.length > 0 ? 1 : 0),
-    [searchTerm, filters.status.length, filters.id_chi_nhanh.length]
+    [searchInput, filters.status.length, filters.id_chi_nhanh.length]
   );
 
   const handleClearAllFilters = () => {
-    setSearchTerm('');
+    commitSearchTerm('');
     setFilter('status', []);
     setFilter('id_chi_nhanh', []);
   };
@@ -193,8 +191,8 @@ const DanhSachKhoToolbar: React.FC<Props> = ({
       selectedCount={selectedCount}
       onDeleteMany={canDelete ? onDeleteMany : undefined}
       onStatusChangeMany={canUpdate ? onStatusChangeMany : undefined}
-      searchTerm={searchTerm}
-      onSearchChange={setSearchTerm}
+      searchTerm={searchInput}
+      onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
       actions={renderActions}
       filters={renderFilters}

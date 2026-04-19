@@ -5,6 +5,7 @@ import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useHangHoaStore } from '../store/useHangHoaStore';
 import { useDanhMucHangHoaList } from '../../danh-muc-hang-hoa/hooks/use-danh-muc-hang-hoa';
 import type { HangHoa } from '../core/types';
@@ -37,17 +38,14 @@ const DanhSachHangHoaToolbar: React.FC<Props> = ({
 }) => {
   const { t } = useTranslation();
   const { data: danhMucList = [] } = useDanhMucHangHoaList();
-  const {
-    searchTerm,
-    setSearchTerm,
-    filters,
-    setFilter,
-    clearSelection,
-    columns,
-    toggleColumn,
-    reorderColumns,
-    resetColumns,
-  } = useHangHoaStore();
+  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useHangHoaStore);
+  const filters = useHangHoaStore((s) => s.filters);
+  const setFilter = useHangHoaStore((s) => s.setFilter);
+  const clearSelection = useHangHoaStore((s) => s.clearSelection);
+  const columns = useHangHoaStore((s) => s.columns);
+  const toggleColumn = useHangHoaStore((s) => s.toggleColumn);
+  const reorderColumns = useHangHoaStore((s) => s.reorderColumns);
+  const resetColumns = useHangHoaStore((s) => s.resetColumns);
 
   const danhMucChaList = useMemo(
     () => danhMucList.filter((d) => !d.id_cha || d.id_cha.trim() === ''),
@@ -116,13 +114,13 @@ const DanhSachHangHoaToolbar: React.FC<Props> = ({
 
   const activeFilterCount = useMemo(
     () =>
-      (searchTerm ? 1 : 0) +
+      (searchInput.trim() ? 1 : 0) +
       (filters.status.length > 0 ? 1 : 0) +
       (filters.id_danh_muc_cha.length > 0 ? 1 : 0) +
       (filters.id_danh_muc.length > 0 ? 1 : 0) +
       (filters.dvt.length > 0 ? 1 : 0),
     [
-      searchTerm,
+      searchInput,
       filters.status.length,
       filters.id_danh_muc_cha.length,
       filters.id_danh_muc.length,
@@ -131,7 +129,7 @@ const DanhSachHangHoaToolbar: React.FC<Props> = ({
   );
 
   const handleClearAllFilters = () => {
-    setSearchTerm('');
+    commitSearchTerm('');
     setFilter('status', []);
     setFilter('id_danh_muc_cha', []);
     setFilter('id_danh_muc', []);
@@ -296,8 +294,8 @@ const DanhSachHangHoaToolbar: React.FC<Props> = ({
       selectedCount={selectedCount}
       onDeleteMany={canDelete ? onDeleteMany : undefined}
       onStatusChangeMany={canUpdate ? onStatusChangeMany : undefined}
-      searchTerm={searchTerm}
-      onSearchChange={setSearchTerm}
+      searchTerm={searchInput}
+      onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
       actions={renderActions}
       filters={renderFilters}

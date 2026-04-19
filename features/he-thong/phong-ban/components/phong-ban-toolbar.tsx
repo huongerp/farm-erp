@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Plus, Download, Upload, Tag, Building2 } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
+import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useDepartmentStore } from '../store/useDepartmentStore';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
@@ -28,17 +29,14 @@ const PhongBanToolbar: React.FC<Props> = ({
   canCreate = true, canUpdate = true, canDelete = true,
 }) => {
   const { t } = useTranslation();
-  const {
-    searchTerm,
-    setSearchTerm,
-    filters,
-    setFilter,
-    clearSelection,
-    columns,
-    toggleColumn,
-    reorderColumns,
-    resetColumns,
-  } = useDepartmentStore();
+  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useDepartmentStore);
+  const filters = useDepartmentStore((s) => s.filters);
+  const setFilter = useDepartmentStore((s) => s.setFilter);
+  const clearSelection = useDepartmentStore((s) => s.clearSelection);
+  const columns = useDepartmentStore((s) => s.columns);
+  const toggleColumn = useDepartmentStore((s) => s.toggleColumn);
+  const reorderColumns = useDepartmentStore((s) => s.reorderColumns);
+  const resetColumns = useDepartmentStore((s) => s.resetColumns);
 
   /** 1 cấp: tất cả là "root", getParentId luôn null */
   const phongOptionsWithCount = useHierarchyRootFilter({
@@ -51,14 +49,14 @@ const PhongBanToolbar: React.FC<Props> = ({
 
   const activeFilterCount = useMemo(
     () =>
-      (searchTerm ? 1 : 0) +
+      (searchInput.trim() ? 1 : 0) +
       (filters.status.length > 0 ? 1 : 0) +
       (filters.id_phong_goc.length > 0 ? 1 : 0),
-    [searchTerm, filters.status.length, filters.id_phong_goc.length]
+    [searchInput, filters.status.length, filters.id_phong_goc.length]
   );
 
   const handleClearAllFilters = () => {
-    setSearchTerm('');
+    commitSearchTerm('');
     setFilter('status', []);
     setFilter('id_phong_goc', []);
   };
@@ -176,8 +174,8 @@ const PhongBanToolbar: React.FC<Props> = ({
       selectedCount={selectedCount}
       onDeleteMany={canDelete ? onDeleteMany : undefined}
       onStatusChangeMany={canUpdate ? ((numStatus) => onStatusChangeMany(numStatus === 1 ? TRANG_THAI.DANG_DUNG : TRANG_THAI.NGUNG)) : undefined}
-      searchTerm={searchTerm}
-      onSearchChange={setSearchTerm}
+      searchTerm={searchInput}
+      onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
       actions={renderActions}
       filters={renderFilters}

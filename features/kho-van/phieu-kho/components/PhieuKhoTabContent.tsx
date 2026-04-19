@@ -8,7 +8,6 @@ import { usePhieuKhoViewScope } from '../hooks/use-phieu-kho-view-scope';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import { buildPhieuKhoListServerQuery, fetchAllPhieuKhoForListQuery } from '../services/phieu-kho-service';
 import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
-import { useDebouncedValue } from '../../../../lib/hooks/use-debounced-value';
 import { useEmployeesRefQuery, useDoiTacRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
 import { usePhieuKhoStore } from '../store/usePhieuKhoStore';
 import { getDateRangeFromPreset } from '../../../he-thong/nhan-vien/utils/stats-date-range';
@@ -45,19 +44,17 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
   const { t } = useTranslation();
   const { canCreate, canUpdate, canDelete, canApprove } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
-  const {
-    searchTerm,
-    filters,
-    resetState,
-    selectedIds,
-    columns,
-    clearSelection,
-    toggleSelection,
-    toggleAllSelection,
-    pagination,
-    setPage,
-    setPageSize,
-  } = usePhieuKhoStore();
+  const searchTerm = usePhieuKhoStore((s) => s.searchTerm);
+  const filters = usePhieuKhoStore((s) => s.filters);
+  const resetState = usePhieuKhoStore((s) => s.resetState);
+  const selectedIds = usePhieuKhoStore((s) => s.selectedIds);
+  const columns = usePhieuKhoStore((s) => s.columns);
+  const clearSelection = usePhieuKhoStore((s) => s.clearSelection);
+  const toggleSelection = usePhieuKhoStore((s) => s.toggleSelection);
+  const toggleAllSelection = usePhieuKhoStore((s) => s.toggleAllSelection);
+  const pagination = usePhieuKhoStore((s) => s.pagination);
+  const setPage = usePhieuKhoStore((s) => s.setPage);
+  const setPageSize = usePhieuKhoStore((s) => s.setPageSize);
 
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<PhieuKho | null>(null);
@@ -90,8 +87,6 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
   const deleteMutation = useDeletePhieuKho();
   const deleteManyMutation = useDeletePhieuKhoMany();
 
-  const debouncedSearchTerm = useDebouncedValue(searchTerm);
-
   const dateRangeStr = useMemo(() => {
     const dp = typeof filters.datePreset === 'string' ? filters.datePreset : 'all';
     const cf = typeof filters.customDateFrom === 'string' ? filters.customDateFrom : '';
@@ -110,14 +105,14 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
     () =>
       buildPhieuKhoListServerQuery({
         loaiTab,
-        searchTerm: debouncedSearchTerm,
+        searchTerm,
         filters,
         ngayFrom: dateRangeStr.start,
         ngayTo: dateRangeStr.end,
         viewScope,
         khoList,
       }),
-    [loaiTab, debouncedSearchTerm, filters, dateRangeStr.start, dateRangeStr.end, viewScope, khoList]
+    [loaiTab, searchTerm, filters, dateRangeStr.start, dateRangeStr.end, viewScope, khoList]
   );
 
   const listQueryKey = useMemo(() => stableListQueryKeyPart(listServerQuery), [listServerQuery]);
@@ -126,7 +121,8 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
   const pageQuery = usePhieuKhoListPaged(pageIndex, listServerQuery);
   const tableRows = pageQuery.data?.data ?? [];
   const totalCount = pageQuery.data?.totalCount ?? 0;
-  const isLoading = pageQuery.isPending || pageQuery.isFetching;
+  const isInitialLoading = !pageQuery.data && pageQuery.isPending;
+  const isFetchingOverlay = !!pageQuery.data && pageQuery.isFetching;
 
   const doiTacForChips = useMemo(() => {
     if (loaiTab === 'nhap') return doiTacNccRef.map((d) => ({ id: d.id, ten_ncc: d.ten_ncc }));
@@ -280,7 +276,8 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
           selectedIds={selectedIds}
           onToggleSelection={toggleSelection}
           onToggleAllSelection={toggleAllSelection}
-          isLoading={isLoading}
+          isLoading={isInitialLoading}
+          isFetching={isFetchingOverlay}
           page={pagination.page}
           pageSize={pagination.pageSize}
           onPageChange={setPage}

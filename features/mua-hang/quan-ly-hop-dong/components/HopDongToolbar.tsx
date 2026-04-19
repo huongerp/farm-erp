@@ -4,6 +4,7 @@ import { Plus, Tag, Building2 } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import { useSearchInputCommit } from '../../../../lib/hooks/use-search-input-commit';
 import { useHopDongStore } from '../store/useHopDongStore';
 import type { HopDong } from '../core/types';
 import type { DoiTacRefLite } from '../../../kho-van/danh-sach-doi-tac/services/doi-tac-service';
@@ -30,17 +31,20 @@ const HopDongToolbar: React.FC<Props> = ({
   canDelete = true,
 }) => {
   const { t } = useTranslation();
-  const {
-    searchTerm,
-    setSearchTerm,
-    filters,
-    setFilter,
-    clearSelection,
-    columns,
-    toggleColumn,
-    reorderColumns,
-    resetColumns,
-  } = useHopDongStore();
+  const searchTerm = useHopDongStore((s) => s.searchTerm);
+  const commitSearchTerm = useHopDongStore((s) => s.commitSearchTerm);
+  const filters = useHopDongStore((s) => s.filters);
+  const setFilter = useHopDongStore((s) => s.setFilter);
+  const clearSelection = useHopDongStore((s) => s.clearSelection);
+  const columns = useHopDongStore((s) => s.columns);
+  const toggleColumn = useHopDongStore((s) => s.toggleColumn);
+  const reorderColumns = useHopDongStore((s) => s.reorderColumns);
+  const resetColumns = useHopDongStore((s) => s.resetColumns);
+
+  const { inputValue: searchInput, setInputValue: setSearchInput } = useSearchInputCommit({
+    committedTerm: searchTerm,
+    commit: commitSearchTerm,
+  });
 
   const statusOptions = useMemo(
     () =>
@@ -64,12 +68,12 @@ const HopDongToolbar: React.FC<Props> = ({
 
   const activeFilterCount = useMemo(
     () =>
-      (searchTerm ? 1 : 0) + (filters.trangThai?.length ?? 0) + (filters.nccIds?.length ?? 0),
-    [searchTerm, filters.trangThai, filters.nccIds]
+      (searchInput.trim() ? 1 : 0) + (filters.trangThai?.length ?? 0) + (filters.nccIds?.length ?? 0),
+    [searchInput, filters.trangThai, filters.nccIds]
   );
 
   const handleClearAllFilters = () => {
-    setSearchTerm('');
+    commitSearchTerm('');
     setFilter('trangThai', []);
     setFilter('nccIds', []);
   };
@@ -132,8 +136,8 @@ const HopDongToolbar: React.FC<Props> = ({
     <GenericToolbar
       selectedCount={selectedCount}
       onDeleteMany={canDelete ? onDeleteMany : undefined}
-      searchTerm={searchTerm}
-      onSearchChange={setSearchTerm}
+      searchTerm={searchInput}
+      onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
       actions={renderActions}
       filters={renderFilters}

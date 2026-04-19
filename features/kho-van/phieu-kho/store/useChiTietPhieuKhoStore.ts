@@ -1,7 +1,16 @@
 import { createGenericStore, type ColumnConfig } from '../../../../store/createGenericStore';
 import i18n from '../../../../lib/i18n';
 
-export type DatePresetId = 'this_week' | 'last_week' | 'this_month' | 'last_month' | 'this_quarter' | 'last_quarter' | 'this_year' | 'custom';
+export type DatePresetId =
+  | 'all'
+  | 'this_week'
+  | 'last_week'
+  | 'this_month'
+  | 'last_month'
+  | 'this_quarter'
+  | 'last_quarter'
+  | 'this_year'
+  | 'custom';
 
 export interface ChiTietPhieuKhoFilters {
   /** Loại phiếu: nhap, xuat, chuyen */
@@ -43,7 +52,7 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
 
 const initialFilters: ChiTietPhieuKhoFilters = {
   loai: [],
-  datePreset: 'this_month',
+  datePreset: 'all',
   customDateFrom: '',
   customDateEnd: '',
   khoIds: [],

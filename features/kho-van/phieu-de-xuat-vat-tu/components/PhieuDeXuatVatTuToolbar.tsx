@@ -4,6 +4,7 @@ import { Plus, Tag, Warehouse, User, UserCheck } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import { useSearchInputCommit } from '../../../../lib/hooks/use-search-input-commit';
 import { usePhieuDeXuatVatTuStore } from '../store/usePhieuDeXuatVatTuStore';
 import type { PhieuDeXuatVatTu } from '../core/types';
 import { TRANG_THAI_CHO_DUYET, TRANG_THAI_DA_DUYET, TRANG_THAI_KHONG_DUYET } from '../core/constants';
@@ -37,17 +38,20 @@ const PhieuDeXuatVatTuToolbar: React.FC<Props> = ({
 }) => {
   const { t } = useTranslation();
   const unweighted = chipCountsMode === 'unweighted';
-  const {
-    searchTerm,
-    setSearchTerm,
-    filters,
-    setFilter,
-    clearSelection,
-    columns,
-    toggleColumn,
-    reorderColumns,
-    resetColumns,
-  } = usePhieuDeXuatVatTuStore();
+  const searchTerm = usePhieuDeXuatVatTuStore((s) => s.searchTerm);
+  const commitSearchTerm = usePhieuDeXuatVatTuStore((s) => s.commitSearchTerm);
+  const filters = usePhieuDeXuatVatTuStore((s) => s.filters);
+  const setFilter = usePhieuDeXuatVatTuStore((s) => s.setFilter);
+  const clearSelection = usePhieuDeXuatVatTuStore((s) => s.clearSelection);
+  const columns = usePhieuDeXuatVatTuStore((s) => s.columns);
+  const toggleColumn = usePhieuDeXuatVatTuStore((s) => s.toggleColumn);
+  const reorderColumns = usePhieuDeXuatVatTuStore((s) => s.reorderColumns);
+  const resetColumns = usePhieuDeXuatVatTuStore((s) => s.resetColumns);
+
+  const { inputValue: searchInput, setInputValue: setSearchInput } = useSearchInputCommit({
+    committedTerm: searchTerm,
+    commit: commitSearchTerm,
+  });
 
   const statusLen = filters.status?.length ?? 0;
   const noiDeXuatLen = filters.noiDeXuatIds?.length ?? 0;
@@ -55,12 +59,12 @@ const PhieuDeXuatVatTuToolbar: React.FC<Props> = ({
   const nguoiDuyetLen = filters.nguoiDuyetIds?.length ?? 0;
   const activeFilterCount = useMemo(
     () =>
-      (searchTerm ? 1 : 0) +
+      (searchInput.trim() ? 1 : 0) +
       (statusLen > 0 ? 1 : 0) +
       (noiDeXuatLen > 0 ? 1 : 0) +
       (nguoiDeXuatLen > 0 ? 1 : 0) +
       (nguoiDuyetLen > 0 ? 1 : 0),
-    [searchTerm, statusLen, noiDeXuatLen, nguoiDeXuatLen, nguoiDuyetLen]
+    [searchInput, statusLen, noiDeXuatLen, nguoiDeXuatLen, nguoiDuyetLen]
   );
 
   const mineCount = currentUserId ? data.filter((d) => d.id_nguoi_de_xuat === currentUserId).length : 0;
@@ -68,7 +72,7 @@ const PhieuDeXuatVatTuToolbar: React.FC<Props> = ({
   const showMineApproveCounts = !unweighted;
 
   const handleClearAllFilters = () => {
-    setSearchTerm('');
+    commitSearchTerm('');
     setFilter('status', []);
     setFilter('noiDeXuatIds', []);
     setFilter('nguoiDeXuatIds', []);
@@ -275,8 +279,8 @@ const PhieuDeXuatVatTuToolbar: React.FC<Props> = ({
     <GenericToolbar
       selectedCount={selectedCount}
       onDeleteMany={canDelete ? onDeleteMany : undefined}
-      searchTerm={searchTerm}
-      onSearchChange={setSearchTerm}
+      searchTerm={searchInput}
+      onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
       actions={renderActions}
       filters={renderFilters}

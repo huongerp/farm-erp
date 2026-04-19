@@ -4,6 +4,7 @@ import { Plus, Tag, Layers, MapPin, FileSpreadsheet, FileDown, ChevronDown } fro
 import Button from '../../../../components/ui/Button';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useDanhSachTaiSanStore } from '../store/useDanhSachTaiSanStore';
 import { useAssetGroups } from '../../thiet-lap-tai-san/hooks/use-nhom-tai-san';
 import { useAssetStorageLocations } from '../../thiet-lap-tai-san/hooks/use-noi-luu';
@@ -28,18 +29,15 @@ interface Props {
 
 const DanhSachTaiSanToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onStatusChangeMany, onExportExcel, onExportPDF, canCreate = true, canUpdate = true, canDelete = true }) => {
   const { t } = useTranslation();
-  const {
-    searchTerm,
-    setSearchTerm,
-    filters,
-    setFilter,
-    columns,
-    toggleColumn,
-    reorderColumns,
-    resetColumns,
-    selectedIds,
-    clearSelection,
-  } = useDanhSachTaiSanStore();
+  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useDanhSachTaiSanStore);
+  const filters = useDanhSachTaiSanStore((s) => s.filters);
+  const setFilter = useDanhSachTaiSanStore((s) => s.setFilter);
+  const columns = useDanhSachTaiSanStore((s) => s.columns);
+  const toggleColumn = useDanhSachTaiSanStore((s) => s.toggleColumn);
+  const reorderColumns = useDanhSachTaiSanStore((s) => s.reorderColumns);
+  const resetColumns = useDanhSachTaiSanStore((s) => s.resetColumns);
+  const selectedIds = useDanhSachTaiSanStore((s) => s.selectedIds);
+  const clearSelection = useDanhSachTaiSanStore((s) => s.clearSelection);
   const { data: groups = [] } = useAssetGroups();
   const { data: locations = [] } = useAssetStorageLocations();
   const { data: statuses = [] } = useAssetStatuses();
@@ -198,8 +196,8 @@ const DanhSachTaiSanToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMan
   return (
     <GenericToolbar
       selectedCount={selectedCount}
-      searchTerm={searchTerm}
-      onSearchChange={setSearchTerm}
+      searchTerm={searchInput}
+      onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
       actions={renderActions}
       filters={renderFilters}

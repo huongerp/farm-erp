@@ -33,7 +33,10 @@ export const useChiTietKiemKeStore = create<GenericState<ChiTietKiemKeFilters>>(
   selectedIds: new Set(),
   columns: DEFAULT_COLUMNS.map((col, i) => ({ ...col, order: col.order ?? i })),
 
-  setSearchTerm: (term) => set((state) => ({ searchTerm: term, pagination: { page: 1, pageSize: state.pagination.pageSize } })),
+  commitSearchTerm: (term) =>
+    set((state) => ({ searchTerm: term, pagination: { page: 1, pageSize: state.pagination.pageSize } })),
+  setSearchTerm: (term) =>
+    set((state) => ({ searchTerm: term, pagination: { page: 1, pageSize: state.pagination.pageSize } })),
   setFilter: (key, value) => set((state) => ({ filters: { ...state.filters, [key]: value }, pagination: { ...state.pagination, page: 1 } })),
   resetFilters: () => set((state) => ({ filters: initialFilters, pagination: { ...state.pagination, page: 1 } })),
   setPage: (page) => set((state) => ({ pagination: { ...state.pagination, page } })),

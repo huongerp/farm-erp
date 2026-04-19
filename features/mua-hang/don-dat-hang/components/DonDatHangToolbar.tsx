@@ -4,6 +4,7 @@ import { Plus, Tag, Building2, Warehouse, User } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import { useSearchInputCommit } from '../../../../lib/hooks/use-search-input-commit';
 import { useDonDatHangStore } from '../store/useDonDatHangStore';
 import type { DonDatHang } from '../core/types';
 import type { Kho } from '../../../kho-van/danh-sach-kho/core/types';
@@ -39,17 +40,20 @@ const DonDatHangToolbar: React.FC<Props> = ({
 }) => {
   const { t } = useTranslation();
   const unweighted = chipCountsMode === 'unweighted';
-  const {
-    searchTerm,
-    setSearchTerm,
-    filters,
-    setFilter,
-    clearSelection,
-    columns,
-    toggleColumn,
-    reorderColumns,
-    resetColumns,
-  } = useDonDatHangStore();
+  const searchTerm = useDonDatHangStore((s) => s.searchTerm);
+  const commitSearchTerm = useDonDatHangStore((s) => s.commitSearchTerm);
+  const filters = useDonDatHangStore((s) => s.filters);
+  const setFilter = useDonDatHangStore((s) => s.setFilter);
+  const clearSelection = useDonDatHangStore((s) => s.clearSelection);
+  const columns = useDonDatHangStore((s) => s.columns);
+  const toggleColumn = useDonDatHangStore((s) => s.toggleColumn);
+  const reorderColumns = useDonDatHangStore((s) => s.reorderColumns);
+  const resetColumns = useDonDatHangStore((s) => s.resetColumns);
+
+  const { inputValue: searchInput, setInputValue: setSearchInput } = useSearchInputCommit({
+    committedTerm: searchTerm,
+    commit: commitSearchTerm,
+  });
 
   const statusOptions = useMemo(
     () =>
@@ -93,16 +97,16 @@ const DonDatHangToolbar: React.FC<Props> = ({
 
   const activeFilterCount = useMemo(
     () =>
-      (searchTerm ? 1 : 0) +
+      (searchInput.trim() ? 1 : 0) +
       (filters.status?.length ?? 0) +
       (filters.nhaCungCapIds?.length ?? 0) +
       (filters.khoNhanIds?.length ?? 0) +
       (filters.nguoiDatIds?.length ?? 0),
-    [searchTerm, filters.status, filters.nhaCungCapIds, filters.khoNhanIds, filters.nguoiDatIds]
+    [searchInput, filters.status, filters.nhaCungCapIds, filters.khoNhanIds, filters.nguoiDatIds]
   );
 
   const handleClearAllFilters = () => {
-    setSearchTerm('');
+    commitSearchTerm('');
     setFilter('status', []);
     setFilter('nhaCungCapIds', []);
     setFilter('khoNhanIds', []);
@@ -210,8 +214,8 @@ const DonDatHangToolbar: React.FC<Props> = ({
     <GenericToolbar
       selectedCount={selectedCount}
       onDeleteMany={canDelete ? onDeleteMany : undefined}
-      searchTerm={searchTerm}
-      onSearchChange={setSearchTerm}
+      searchTerm={searchInput}
+      onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
       actions={renderActions}
       filters={renderFilters}

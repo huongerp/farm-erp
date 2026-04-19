@@ -35,8 +35,8 @@ import { CONFIRM_DELETE, CONFIRM_DELETE_ALL, CONFIRM_YES } from '../../../lib/bu
 import { formatDate, getLanguage } from '../../../lib/utils';
 import { useExportData } from '../../../lib/useExportData';
 import { TRANG_THAI_NV, type TrangThaiNV } from '../../../lib/constants';
-import { useDebouncedValue } from '../../../lib/hooks/use-debounced-value';
 import { stableListQueryKeyPart } from '../../../lib/list-query-key';
+import { useShallow } from 'zustand/react/shallow';
 
 type FormOrigin = 'list' | 'detail';
 
@@ -81,37 +81,49 @@ const EmployeePage: React.FC = () => {
   const [showExport, setShowExport] = useState(false);
   const [showBulkEdit, setShowBulkEdit] = useState(false);
 
-  const { searchTerm, filters, sort, resetState, clearSelection, selectedIds, pagination, columns, setFilter } = useEmployeeStore();
-
-  const debouncedSearchTerm = useDebouncedValue(searchTerm);
+  const { searchTerm, filters, sort, resetState, clearSelection, selectedIds, pagination, columns, setFilter } =
+    useEmployeeStore(
+      useShallow((s) => ({
+        searchTerm: s.searchTerm,
+        filters: s.filters,
+        sort: s.sort,
+        resetState: s.resetState,
+        clearSelection: s.clearSelection,
+        selectedIds: s.selectedIds,
+        pagination: s.pagination,
+        columns: s.columns,
+        setFilter: s.setFilter,
+      }))
+    );
 
   const listQueryKeyPart = useMemo(
     () =>
       stableListQueryKeyPart({
-        q: debouncedSearchTerm,
+        q: searchTerm,
         trangThai: filters.trang_thai,
         phongBanIds: filters.id_phong_ban,
         chucVuIds: filters.position,
       }),
-    [debouncedSearchTerm, filters.trang_thai, filters.id_phong_ban, filters.position]
+    [searchTerm, filters.trang_thai, filters.id_phong_ban, filters.position]
   );
 
   const listQuery: EmployeeListQuery = useMemo(
     () => ({
       page: Math.max(0, pagination.page - 1),
       pageSize: pagination.pageSize,
-      q: debouncedSearchTerm,
+      q: searchTerm,
       trangThai: filters.trang_thai as TrangThaiNV[],
       phongBanIds: filters.id_phong_ban,
       chucVuIds: filters.position,
     }),
-    [pagination.page, pagination.pageSize, debouncedSearchTerm, filters.trang_thai, filters.id_phong_ban, filters.position]
+    [pagination.page, pagination.pageSize, searchTerm, filters.trang_thai, filters.id_phong_ban, filters.position]
   );
 
   const pageQuery = useEmployeesPage(listQuery);
   const employees = pageQuery.data?.data ?? EMPTY_EMPLOYEES;
   const totalListCount = pageQuery.data?.totalCount ?? 0;
-  const isLoading = pageQuery.isPending || pageQuery.isFetching;
+  const isInitialLoading = !pageQuery.data && pageQuery.isPending;
+  const isFetchingOverlay = !!pageQuery.data && pageQuery.isFetching;
 
   const { data: employeesForCounts = [] } = useEmployeesLiteForCounts();
   const { data: allForStats = [], isLoading: statsLoading } = useEmployees({ enabled: activeTab === 'stats' });
@@ -125,7 +137,7 @@ const EmployeePage: React.FC = () => {
     queryKey: ['employees', 'export', listQueryKeyPart] as const,
     queryFn: async () => {
       const rows = await fetchEmployeeRowsAllMatching({
-        q: debouncedSearchTerm,
+        q: searchTerm,
         trangThai: filters.trang_thai as TrangThaiNV[],
         phongBanIds: filters.id_phong_ban,
         chucVuIds: filters.position,
@@ -308,7 +320,8 @@ const EmployeePage: React.FC = () => {
             <EmployeeTable
               data={sortedEmployees}
               totalRecordsOverride={totalListCount}
-              isLoading={isLoading}
+              isLoading={isInitialLoading}
+              isFetching={isFetchingOverlay}
               onEdit={handleEdit}
               onView={handleView}
               onDelete={handleDelete}

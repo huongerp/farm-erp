@@ -5,6 +5,7 @@ import Button from '../../../../components/ui/Button';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
+import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { usePayrollPointGroupStore } from '../store/usePayrollPointGroupStore';
 import { getPointGroupTypeOptions } from '../core/constants';
 import type { PayrollPointGroup } from '../core/types';
@@ -22,18 +23,15 @@ interface Props {
 
 const PayrollPointGroupToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onStatusChangeMany, canCreate = true, canUpdate = true, canDelete = true }) => {
   const { t } = useTranslation();
-  const {
-    searchTerm,
-    setSearchTerm,
-    filters,
-    setFilter,
-    columns,
-    toggleColumn,
-    reorderColumns,
-    resetColumns,
-    selectedIds,
-    clearSelection,
-  } = usePayrollPointGroupStore();
+  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(usePayrollPointGroupStore);
+  const filters = usePayrollPointGroupStore((s) => s.filters);
+  const setFilter = usePayrollPointGroupStore((s) => s.setFilter);
+  const columns = usePayrollPointGroupStore((s) => s.columns);
+  const toggleColumn = usePayrollPointGroupStore((s) => s.toggleColumn);
+  const reorderColumns = usePayrollPointGroupStore((s) => s.reorderColumns);
+  const resetColumns = usePayrollPointGroupStore((s) => s.resetColumns);
+  const selectedIds = usePayrollPointGroupStore((s) => s.selectedIds);
+  const clearSelection = usePayrollPointGroupStore((s) => s.clearSelection);
 
   const counts = useMemo(() => {
     const statusCounts: Record<string, number> = { Active: 0, Inactive: 0 };
@@ -126,8 +124,8 @@ const PayrollPointGroupToolbar: React.FC<Props> = ({ items = [], onAdd, onDelete
   return (
     <GenericToolbar
       selectedCount={selectedCount}
-      searchTerm={searchTerm}
-      onSearchChange={setSearchTerm}
+      searchTerm={searchInput}
+      onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
       actions={renderActions}
       filters={renderFilters}

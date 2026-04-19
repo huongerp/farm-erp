@@ -19,6 +19,7 @@ import {
   useDeleteAdminForms,
   useCancelAdminForm,
 } from '../hooks/use-admin-form';
+import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useAdminFormManagedStore } from '../store/useAdminFormManagedStore';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { CONFIRM_YES } from '../../../../lib/button-labels';
@@ -35,20 +36,18 @@ const AdminFormManagedTab: React.FC = () => {
   const confirm = useConfirmStore((s) => s.confirm);
   const user = useAuthStore((s) => s.user);
   const { canUpdate, canDelete } = useModulePermissionFromContext();
-  const {
-    searchTerm,
-    filters,
-    sort,
-    resetState,
-    clearSelection,
-    selectedIds,
-    columns,
-    setSearchTerm,
-    setFilter,
-    toggleColumn,
-    reorderColumns,
-    resetColumns,
-  } = useAdminFormManagedStore();
+  const { searchInput, setSearchInput } = useGenericToolbarSearch(useAdminFormManagedStore);
+  const searchTerm = useAdminFormManagedStore((s) => s.searchTerm);
+  const filters = useAdminFormManagedStore((s) => s.filters);
+  const sort = useAdminFormManagedStore((s) => s.sort);
+  const resetState = useAdminFormManagedStore((s) => s.resetState);
+  const clearSelection = useAdminFormManagedStore((s) => s.clearSelection);
+  const selectedIds = useAdminFormManagedStore((s) => s.selectedIds);
+  const columns = useAdminFormManagedStore((s) => s.columns);
+  const setFilter = useAdminFormManagedStore((s) => s.setFilter);
+  const toggleColumn = useAdminFormManagedStore((s) => s.toggleColumn);
+  const reorderColumns = useAdminFormManagedStore((s) => s.reorderColumns);
+  const resetColumns = useAdminFormManagedStore((s) => s.resetColumns);
 
   const [viewingItem, setViewingItem] = useState<AdminFormRequest | null>(null);
   const [editingItem, setEditingItem] = useState<AdminFormRequest | null>(null);
@@ -279,8 +278,8 @@ const AdminFormManagedTab: React.FC = () => {
     <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
       <AdminFormToolbar
         items={managedForms}
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
+        searchTerm={searchInput}
+        setSearchTerm={setSearchInput}
         filters={filters}
         setFilter={setFilter as any}
         columns={columns}

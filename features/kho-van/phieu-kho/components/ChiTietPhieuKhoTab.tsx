@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -91,7 +92,19 @@ const ChiTietPhieuKhoTab: React.FC = () => {
     sort,
     setSort,
     columns,
-  } = useChiTietPhieuKhoStore();
+  } = useChiTietPhieuKhoStore(
+    useShallow((s) => ({
+      searchTerm: s.searchTerm,
+      filters: s.filters,
+      resetState: s.resetState,
+      pagination: s.pagination,
+      setPage: s.setPage,
+      setPageSize: s.setPageSize,
+      sort: s.sort,
+      setSort: s.setSort,
+      columns: s.columns,
+    }))
+  );
 
   const confirm = useConfirmStore((s) => s.confirm);
   const emptySelectedIds = useMemo(() => new Set<string>(), []);
@@ -121,8 +134,11 @@ const ChiTietPhieuKhoTab: React.FC = () => {
   }, [doiTacListAll, showAddDoiTac]);
 
   const dateRangeStr = useMemo(() => {
+    if ((filters.datePreset ?? 'all') === 'all') {
+      return { start: '', end: '' };
+    }
     const range = getDateRangeFromPreset(
-      (filters.datePreset ?? 'this_month') as DateRangePresetId,
+      (filters.datePreset ?? 'all') as DateRangePresetId,
       filters.customDateFrom ? new Date(filters.customDateFrom) : undefined,
       filters.customDateEnd ? new Date(filters.customDateEnd) : undefined
     );
@@ -150,7 +166,9 @@ const ChiTietPhieuKhoTab: React.FC = () => {
   const pageQuery = useChiTietPhieuKhoPaged(pageIndex, listServerQuery);
   const tableRows = pageQuery.data?.data ?? [];
   const totalCount = pageQuery.data?.totalCount ?? 0;
-  const isLoading = pageQuery.isPending || pageQuery.isFetching;
+  /** Chỉ skeleton lần đầu; overlay khi refetch (keepPreviousData). */
+  const isLoading = !pageQuery.data && pageQuery.isPending;
+  const isFetchingOverlay = !!pageQuery.data && pageQuery.isFetching;
 
   const sortedPageRows = useMemo(() => {
     if (!sort.column || !sort.direction) return tableRows;
@@ -420,7 +438,19 @@ const ChiTietPhieuKhoTab: React.FC = () => {
         onExport={handleExport}
       />
 
-      <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden relative">
+        {isFetchingOverlay ? (
+          <div
+            className="absolute inset-0 z-[25] pointer-events-none flex items-start justify-center pt-3 bg-background/30 backdrop-blur-[1px]"
+            aria-busy="true"
+            aria-live="polite"
+          >
+            <div
+              className="h-6 w-6 rounded-full border-2 border-primary/35 border-t-primary animate-spin shadow-sm"
+              aria-hidden
+            />
+          </div>
+        ) : null}
         {totalCount === 0 ? (
           <EmptyState
             icon={<Package size={48} className="text-muted-foreground/50" />}

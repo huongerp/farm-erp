@@ -5,6 +5,7 @@ import Button from '../../../../components/ui/Button';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import GenericTable from '../../../../components/shared/GenericTable';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useDanhMucDoiTacStore } from '../store/useDanhMucDoiTacStore';
 import { useNhomDoiTacList, useCreateNhomDoiTac, useUpdateNhomDoiTac, useDeleteNhomDoiTac, useDeleteNhomDoiTacMany } from '../hooks/use-doi-tac';
 import { useListWithFilter } from '../../../../lib/hooks';
@@ -18,21 +19,19 @@ import NhomDetailDrawer from './NhomDetailDrawer';
 const DanhMucTab: React.FC = () => {
   const { t } = useTranslation();
   const confirm = useConfirmStore((s) => s.confirm);
-  const {
-    searchTerm,
-    setSearchTerm,
-    filters,
-    setFilter,
-    resetState,
-    selectedIds,
-    columns,
-    clearSelection,
-    toggleSelection,
-    toggleAllSelection,
-    pagination,
-    setPage,
-    setPageSize,
-  } = useDanhMucDoiTacStore();
+  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useDanhMucDoiTacStore);
+  const searchTerm = useDanhMucDoiTacStore((s) => s.searchTerm);
+  const filters = useDanhMucDoiTacStore((s) => s.filters);
+  const setFilter = useDanhMucDoiTacStore((s) => s.setFilter);
+  const resetState = useDanhMucDoiTacStore((s) => s.resetState);
+  const selectedIds = useDanhMucDoiTacStore((s) => s.selectedIds);
+  const columns = useDanhMucDoiTacStore((s) => s.columns);
+  const clearSelection = useDanhMucDoiTacStore((s) => s.clearSelection);
+  const toggleSelection = useDanhMucDoiTacStore((s) => s.toggleSelection);
+  const toggleAllSelection = useDanhMucDoiTacStore((s) => s.toggleAllSelection);
+  const pagination = useDanhMucDoiTacStore((s) => s.pagination);
+  const setPage = useDanhMucDoiTacStore((s) => s.setPage);
+  const setPageSize = useDanhMucDoiTacStore((s) => s.setPageSize);
 
   const { data: nhomList = [], isLoading } = useNhomDoiTacList();
   const createNhom = useCreateNhomDoiTac();
@@ -85,9 +84,9 @@ const DanhMucTab: React.FC = () => {
     [nhomList, t]
   );
 
-  const activeFilterCount = (searchTerm ? 1 : 0) + (filters.status.length > 0 ? 1 : 0);
+  const activeFilterCount = (searchInput.trim() ? 1 : 0) + (filters.status.length > 0 ? 1 : 0);
   const handleClearAllFilters = () => {
-    setSearchTerm('');
+    commitSearchTerm('');
     setFilter('status', []);
   };
 
@@ -283,8 +282,8 @@ const DanhMucTab: React.FC = () => {
         <GenericToolbar
           selectedCount={selectedIds.size}
           onClearSelection={clearSelection}
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
+          searchTerm={searchInput}
+          onSearchChange={setSearchInput}
           searchPlaceholder={t('doiTac.danhMuc.searchPlaceholder')}
           activeFilterCount={activeFilterCount}
           onClearAllFilters={handleClearAllFilters}

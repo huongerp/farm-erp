@@ -9,23 +9,22 @@ import { useAuthStore } from '../../../../store/useStore';
 import { getAdminFormTypeLabel } from '../../thiet-lap-cong-luong/core/constants';
 import { ADMIN_FORM_SHIFT_WEIGHT } from '../core/constants';
 import { AdminFormQuotaRow } from '../core/types';
+import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 
 const AdminFormQuotaTab: React.FC = () => {
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
-  const {
-    searchTerm,
-    setSearchTerm,
-    filters,
-    setFilter,
-    columns,
-    toggleColumn,
-    reorderColumns,
-    resetColumns,
-    selectedIds,
-    clearSelection,
-    resetState,
-  } = useAdminFormQuotaStore();
+  const { searchInput, setSearchInput } = useGenericToolbarSearch(useAdminFormQuotaStore);
+  const searchTerm = useAdminFormQuotaStore((s) => s.searchTerm);
+  const filters = useAdminFormQuotaStore((s) => s.filters);
+  const setFilter = useAdminFormQuotaStore((s) => s.setFilter);
+  const columns = useAdminFormQuotaStore((s) => s.columns);
+  const toggleColumn = useAdminFormQuotaStore((s) => s.toggleColumn);
+  const reorderColumns = useAdminFormQuotaStore((s) => s.reorderColumns);
+  const resetColumns = useAdminFormQuotaStore((s) => s.resetColumns);
+  const selectedIds = useAdminFormQuotaStore((s) => s.selectedIds);
+  const clearSelection = useAdminFormQuotaStore((s) => s.clearSelection);
+  const resetState = useAdminFormQuotaStore((s) => s.resetState);
 
   const { data: forms = [], isLoading } = useAdminForms();
   const { data: groups = [] } = usePayrollAdminFormGroups();
@@ -79,8 +78,8 @@ const AdminFormQuotaTab: React.FC = () => {
     <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
       <AdminFormQuotaToolbar
         items={rows}
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
+        searchTerm={searchInput}
+        setSearchTerm={setSearchInput}
         filters={filters}
         setFilter={setFilter as any}
         columns={columns}

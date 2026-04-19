@@ -58,10 +58,15 @@ export function useAllTonKho() {
     staleTime: 1000 * 60 * 5,
   });
 
+  const isLoading = blocked || (!q.data && q.isPending);
+  const isFetchingOverlay = !blocked && !!q.data && q.isFetching;
+
   return {
     ...q,
-    /** Chờ phân quyền / danh sách kho — coi như đang tải để UI không nháy dữ liệu rỗng. */
-    isLoading: blocked || q.isPending || q.isFetching,
+    /** Skeleton toàn trang — chặn phân quyền / lần đầu không có dữ liệu. */
+    isLoading,
+    /** Đã có ma trận, đang refetch — overlay nhẹ. */
+    isFetchingOverlay,
   };
 }
 

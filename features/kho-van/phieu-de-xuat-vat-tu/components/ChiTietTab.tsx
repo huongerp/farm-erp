@@ -12,7 +12,6 @@ import {
   getPhieuDeXuatVatTuById,
 } from '../services/phieu-de-xuat-vat-tu-service';
 import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
-import { useDebouncedValue } from '../../../../lib/hooks/use-debounced-value';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import { useChiTietTabStore } from '../store/useChiTietTabStore';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
@@ -89,7 +88,6 @@ const ChiTietTab: React.FC = () => {
 
   const {
     searchTerm,
-    setSearchTerm,
     filters,
     columns,
     pagination,
@@ -107,24 +105,23 @@ const ChiTietTab: React.FC = () => {
     resetState,
   } = useChiTietTabStore();
 
-  const debouncedSearchTerm = useDebouncedValue(searchTerm);
-
   const listServerQuery = useMemo(
     () =>
       buildPhieuDeXuatChiTietListServerQuery({
-        searchTerm: debouncedSearchTerm,
+        searchTerm,
         filters,
         viewScope,
         khoList,
       }),
-    [debouncedSearchTerm, filters, viewScope, khoList]
+    [searchTerm, filters, viewScope, khoList]
   );
   const listQueryKey = useMemo(() => stableListQueryKeyPart(listServerQuery), [listServerQuery]);
   const pageIndex = Math.max(0, pagination.page - 1);
   const pageQuery = usePhieuDeXuatVatTuChiTietPaged(pageIndex, listServerQuery);
   const tableRows = pageQuery.data?.data ?? [];
   const totalCount = pageQuery.data?.totalCount ?? 0;
-  const isLoading = pageQuery.isPending || pageQuery.isFetching;
+  const isInitialLoading = !pageQuery.data && pageQuery.isPending;
+  const isFetchingOverlay = !!pageQuery.data && pageQuery.isFetching;
 
   useEffect(() => () => resetState(), [resetState]);
 
@@ -523,7 +520,8 @@ const ChiTietTab: React.FC = () => {
         <GenericTable<PhieuDeXuatVatTuChiTietRow>
           data={sortedRows}
           columns={columns}
-          isLoading={isLoading}
+          isLoading={isInitialLoading}
+          isFetching={isFetchingOverlay}
           totalRecordsOverride={totalCount}
           selectedIds={selectedIds}
           onToggleSelection={toggleSelection}

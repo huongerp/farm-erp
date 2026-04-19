@@ -16,15 +16,24 @@ import TablePaginationFooter from '../../../../components/shared/TablePagination
 import GenericSubTableSection from '../../../../components/shared/GenericSubTableSection';
 import TonKhoToolbar from './TonKhoToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import { useSearchInputCommit } from '../../../../lib/hooks/use-search-input-commit';
 import { useTonKhoByProductStore } from '../store/useTonKhoStore';
 import type { TonKhoFilters } from '../store/useTonKhoStore';
 import { useListWithFilter } from '../../../../lib/hooks';
 import { getColumnCellStyle } from '../../../../store/createGenericStore';
 import type { ColumnConfig } from '../../../../store/createGenericStore';
 import type { HangHoaRefLite } from '../../danh-sach-hang-hoa/services/hang-hoa-service';
-import type { LoaiPhieuKho } from '../../phieu-kho/core/types';
+import type { LichSuNhapXuatRow } from '../../phieu-kho/services/phieu-kho-service';
 import { BTN_CLOSE } from '../../../../lib/button-labels';
-import { cn } from '../../../../lib/utils';
+import { cn, formatDateTime } from '../../../../lib/utils';
+import { TonKhoLoaiBadge } from './TonKhoLoaiBadge';
+
+function lichSuRowTouchesKho(row: LichSuNhapXuatRow, idKho: string): boolean {
+  if (row.loai === 'chuyển') {
+    return row.kho_id === idKho || (row.kho_den_id != null && row.kho_den_id === idKho);
+  }
+  return row.kho_id === idKho;
+}
 
 export type RowProduct = {
   id_hang_hoa: string;
@@ -38,7 +47,7 @@ export type RowProduct = {
 };
 
 function useProductRows(tonKhoListOverride?: TonKhoRecord[]) {
-  const { data: tonKhoListRaw = [], isLoading } = useAllTonKho();
+  const { data: tonKhoListRaw = [], isLoading: tonLoading, isFetchingOverlay: tonFetching } = useAllTonKho();
   const tonKhoList = tonKhoListOverride !== undefined ? tonKhoListOverride : tonKhoListRaw;
   const { data: dinhMucMap, isLoading: loadingDinhMuc } = useDinhMucTonKho();
   const { data: hangHoaList = [] } = useHangHoaRefQuery();
@@ -85,23 +94,11 @@ function useProductRows(tonKhoListOverride?: TonKhoRecord[]) {
       .filter((r) => r.tong_so_luong !== 0)
       .sort((a, b) => b.tong_so_luong - a.tong_so_luong);
   }, [byProduct, hangHoaMap, tonKhoList, dinhMucMap]);
-  return { rows, isLoading: isLoading || loadingDinhMuc };
-}
-
-function LoaiBadge({ loai }: { loai: LoaiPhieuKho }) {
-  const { t } = useTranslation();
-  const label = loai === 'nhap' ? t('tonKho.history.typeNhap') : loai === 'xuat' ? t('tonKho.history.typeXuat') : t('tonKho.history.typeChuyen');
-  const cls =
-    loai === 'nhap'
-      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
-      : loai === 'xuat'
-        ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
-        : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20';
-  return (
-    <span className={cn('inline-flex px-2 py-0.5 rounded-full text-xs font-medium border', cls)}>
-      {label}
-    </span>
-  );
+  return {
+    rows,
+    isLoading: tonLoading || loadingDinhMuc,
+    isFetchingOverlay: tonFetching && !loadingDinhMuc,
+  };
 }
 
 function ProductDetailDrawer({
@@ -115,6 +112,14 @@ function ProductDetailDrawer({
   const { id_hang_hoa, ma_hang, ten_hang, tong_so_luong, ton_toi_thieu, canh_bao } = row;
   const { data: byKho = [], isLoading: loadingTonKho } = useTonKhoTheoHangHoa(id_hang_hoa);
   const { data: lichSu = [], isLoading: loadingLichSu } = useLichSuNhapXuatByHangHoa(id_hang_hoa);
+  const [selectedKhoId, setSelectedKhoId] = useState<string | null>(null);
+  useEffect(() => {
+    setSelectedKhoId(null);
+  }, [id_hang_hoa]);
+  const lichSuFiltered = useMemo(() => {
+    if (!selectedKhoId) return lichSu;
+    return lichSu.filter((r) => lichSuRowTouchesKho(r, selectedKhoId));
+  }, [lichSu, selectedKhoId]);
   const { data: khoList = [] } = useQuery({ queryKey: ['kho'], queryFn: getKhoList });
   const khoMap = useMemo(() => {
     const m: Record<string, string> = {};
@@ -236,6 +241,7 @@ function ProductDetailDrawer({
         >
           {byKho.length > 0 && (
             <>
+              <p className="text-xs text-muted-foreground px-1 pb-2">{t('tonKho.byProduct.historyFilterHint')}</p>
               <thead className="sticky top-0 z-[1] bg-muted border-b border-border">
                 <tr>
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap w-10">#</th>
@@ -245,7 +251,24 @@ function ProductDetailDrawer({
               </thead>
               <tbody className="[&>tr>td]:border-b [&>tr>td]:border-border">
                 {byKho.map((r, idx) => (
-                  <tr key={r.id_kho} className="hover:bg-muted/60 transition-colors">
+                  <tr
+                    key={r.id_kho}
+                    role="button"
+                    tabIndex={0}
+                    className={cn(
+                      'transition-colors cursor-pointer',
+                      selectedKhoId === r.id_kho
+                        ? 'bg-primary/10 ring-1 ring-inset ring-primary/25'
+                        : 'hover:bg-muted/60'
+                    )}
+                    onClick={() => setSelectedKhoId((prev) => (prev === r.id_kho ? null : r.id_kho))}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setSelectedKhoId((prev) => (prev === r.id_kho ? null : r.id_kho));
+                      }
+                    }}
+                  >
                     <td className="px-4 py-2.5 text-muted-foreground tabular-nums">{idx + 1}</td>
                     <td className="px-4 py-2.5 flex items-center gap-2">
                       <Warehouse size={14} className="text-muted-foreground shrink-0" />
@@ -262,17 +285,17 @@ function ProductDetailDrawer({
         <GenericSubTableSection
           title={t('tonKho.byProduct.sectionHistory')}
           icon={<History size={14} className="text-primary" />}
-          count={lichSu.length}
-          emptyTitle={t('tonKho.byProduct.emptyHistory')}
+          count={lichSuFiltered.length}
+          emptyTitle={lichSu.length === 0 ? t('tonKho.byProduct.emptyHistory') : t('tonKho.byProduct.historyFilteredEmpty')}
           loading={loading}
           loadingText={t('tonKho.loading')}
           maxTableHeight="280px"
         >
-          {lichSu.length > 0 && (
+          {lichSu.length > 0 && lichSuFiltered.length > 0 ? (
             <>
               <thead className="sticky top-0 z-[1] bg-muted border-b border-border">
                 <tr>
-                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[90px]">{t('tonKho.history.date')}</th>
+                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[140px]">{t('tonKho.history.dateTime')}</th>
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[100px]">{t('tonKho.history.voucherNo')}</th>
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[80px]">{t('tonKho.history.type')}</th>
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[120px]">{t('tonKho.history.warehouseFrom')}</th>
@@ -283,23 +306,25 @@ function ProductDetailDrawer({
                 </tr>
               </thead>
               <tbody className="[&>tr>td]:border-b [&>tr>td]:border-border">
-                {lichSu.map((row) => (
-                  <tr key={row.id_chi_tiet} className="hover:bg-muted/60 transition-colors">
-                    <td className="px-4 py-2.5 text-sm">{row.ngay}</td>
-                    <td className="px-4 py-2.5 font-mono text-xs">{row.so_phieu}</td>
-                    <td className="px-4 py-2.5">
-                      <LoaiBadge loai={row.loai} />
+                {lichSuFiltered.map((histRow) => (
+                  <tr key={histRow.id_chi_tiet} className="hover:bg-muted/60 transition-colors">
+                    <td className="px-4 py-2.5 text-sm tabular-nums">
+                      {formatDateTime(histRow.tg_tao ?? histRow.ngay) || '—'}
                     </td>
-                    <td className="px-4 py-2.5 text-sm text-muted-foreground">{row.ten_kho ?? '—'}</td>
-                    <td className="px-4 py-2.5 text-sm text-muted-foreground">{row.ten_kho_den ?? '—'}</td>
-                    <td className="px-4 py-2.5 text-right font-medium tabular-nums">{row.so_luong.toLocaleString()}</td>
-                    <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.don_vi_tinh ?? '—'}</td>
-                    <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.ghi_chu ?? '—'}</td>
+                    <td className="px-4 py-2.5 font-mono text-xs">{histRow.so_phieu}</td>
+                    <td className="px-4 py-2.5">
+                      <TonKhoLoaiBadge loai={histRow.loai} />
+                    </td>
+                    <td className="px-4 py-2.5 text-sm text-muted-foreground">{histRow.ten_kho ?? '—'}</td>
+                    <td className="px-4 py-2.5 text-sm text-muted-foreground">{histRow.ten_kho_den ?? '—'}</td>
+                    <td className="px-4 py-2.5 text-right font-medium tabular-nums">{histRow.so_luong.toLocaleString()}</td>
+                    <td className="px-4 py-2.5 text-xs text-muted-foreground">{histRow.don_vi_tinh ?? '—'}</td>
+                    <td className="px-4 py-2.5 text-xs text-muted-foreground">{histRow.ghi_chu ?? '—'}</td>
                   </tr>
                 ))}
               </tbody>
             </>
-          )}
+          ) : null}
         </GenericSubTableSection>
       </div>
     </GenericDrawer>
@@ -309,22 +334,26 @@ function ProductDetailDrawer({
 const TonKhoTheoSanPhamTab: React.FC = () => {
   const { t } = useTranslation();
   const [detailProduct, setDetailProduct] = useState<RowProduct | null>(null);
-  const {
-    searchTerm,
-    setSearchTerm,
-    filters,
-    setFilter,
-    resetFilters,
-    columns,
-    toggleColumn,
-    reorderColumns,
-    resetColumns,
-    pagination,
-    setPage,
-    setPageSize,
-    resetState,
-  } = useTonKhoByProductStore();
-  const { rows, isLoading } = useProductRows();
+  const searchTerm = useTonKhoByProductStore((s) => s.searchTerm);
+  const commitSearchTerm = useTonKhoByProductStore((s) => s.commitSearchTerm);
+  const filters = useTonKhoByProductStore((s) => s.filters);
+  const setFilter = useTonKhoByProductStore((s) => s.setFilter);
+  const resetFilters = useTonKhoByProductStore((s) => s.resetFilters);
+  const columns = useTonKhoByProductStore((s) => s.columns);
+  const toggleColumn = useTonKhoByProductStore((s) => s.toggleColumn);
+  const reorderColumns = useTonKhoByProductStore((s) => s.reorderColumns);
+  const resetColumns = useTonKhoByProductStore((s) => s.resetColumns);
+  const pagination = useTonKhoByProductStore((s) => s.pagination);
+  const setPage = useTonKhoByProductStore((s) => s.setPage);
+  const setPageSize = useTonKhoByProductStore((s) => s.setPageSize);
+  const resetState = useTonKhoByProductStore((s) => s.resetState);
+
+  const { inputValue: searchInput, setInputValue: setSearchInput } = useSearchInputCommit({
+    committedTerm: searchTerm,
+    commit: commitSearchTerm,
+  });
+
+  const { rows, isLoading, isFetchingOverlay } = useProductRows();
 
   const filterFn = useCallback((item: RowProduct, term: string, f: TonKhoFilters) => {
     if (term.trim()) {
@@ -482,8 +511,8 @@ const TonKhoTheoSanPhamTab: React.FC = () => {
     <div className="flex flex-col h-full min-h-0">
       <div className="flex-1 min-h-0 flex flex-col mt-1.5 rounded-xl border border-border bg-card shadow-sm overflow-hidden relative z-0">
         <TonKhoToolbar
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
+          searchTerm={searchInput}
+          onSearchChange={setSearchInput}
           searchPlaceholder={t('tonKho.byProduct.searchPlaceholder')}
           columns={columns}
           onToggleColumn={toggleColumn}
@@ -495,7 +524,19 @@ const TonKhoTheoSanPhamTab: React.FC = () => {
           filterGroups={filterGroups}
         />
 
-        <div className="flex-1 min-h-0 flex flex-col bg-card overflow-hidden">
+        <div className="flex-1 min-h-0 flex flex-col bg-card overflow-hidden relative">
+          {isFetchingOverlay && !isLoading ? (
+            <div
+              className="absolute inset-0 z-[25] pointer-events-none flex items-start justify-center pt-3 bg-background/30 backdrop-blur-[1px]"
+              aria-busy="true"
+              aria-live="polite"
+            >
+              <div
+                className="h-6 w-6 rounded-full border-2 border-primary/35 border-t-primary animate-spin shadow-sm"
+                aria-hidden
+              />
+            </div>
+          ) : null}
           {isLoading ? (
             <ListPageSkeleton
               loadingText={t('tonKho.loading')}

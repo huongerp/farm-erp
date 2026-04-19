@@ -4,6 +4,7 @@ import { Plus, Package, User, Calendar } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useCapPhatThuHoiStore } from '../store/useCapPhatThuHoiStore';
 import { useEmployeesRefQuery } from '@/lib/hooks/use-supabase-ref-queries';
 import { LOAI_PHIEU_OPTIONS } from '../core/constants';
@@ -28,19 +29,16 @@ const CapPhatThuHoiToolbar: React.FC<Props> = ({
   canDelete = true,
 }) => {
   const { t } = useTranslation();
-  const {
-    searchTerm,
-    setSearchTerm,
-    filters,
-    setFilter,
-    resetFilters,
-    columns,
-    toggleColumn,
-    reorderColumns,
-    resetColumns,
-    selectedIds,
-    clearSelection,
-  } = useCapPhatThuHoiStore();
+  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useCapPhatThuHoiStore);
+  const filters = useCapPhatThuHoiStore((s) => s.filters);
+  const setFilter = useCapPhatThuHoiStore((s) => s.setFilter);
+  const resetFilters = useCapPhatThuHoiStore((s) => s.resetFilters);
+  const columns = useCapPhatThuHoiStore((s) => s.columns);
+  const toggleColumn = useCapPhatThuHoiStore((s) => s.toggleColumn);
+  const reorderColumns = useCapPhatThuHoiStore((s) => s.reorderColumns);
+  const resetColumns = useCapPhatThuHoiStore((s) => s.resetColumns);
+  const selectedIds = useCapPhatThuHoiStore((s) => s.selectedIds);
+  const clearSelection = useCapPhatThuHoiStore((s) => s.clearSelection);
   const { data: employees = [] } = useEmployeesRefQuery();
   const { loaiCounts, nguoiThucHienCounts } = useCapPhatThuHoiFilterCounts(items, filters);
 
@@ -145,8 +143,8 @@ const CapPhatThuHoiToolbar: React.FC<Props> = ({
   return (
     <GenericToolbar
       selectedCount={selectedCount}
-      searchTerm={searchTerm}
-      onSearchChange={setSearchTerm}
+      searchTerm={searchInput}
+      onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
       actions={renderActions}
       filters={renderFilters}

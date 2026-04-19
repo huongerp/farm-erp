@@ -4,6 +4,7 @@ import { Plus, CreditCard } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useTrangThaiThanhToanDoiTacStore } from '../store/useTrangThaiThanhToanDoiTacStore';
 import type { TrangThaiThanhToanDoiTac } from '../core/types';
 import type { TrangThaiHoatDong } from '../../../../lib/constants';
@@ -20,18 +21,15 @@ interface Props {
 
 const TrangThaiThanhToanDoiTacToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onStatusChangeMany, canCreate = true, canDelete = true }) => {
   const { t } = useTranslation();
-  const {
-    searchTerm,
-    setSearchTerm,
-    filters,
-    setFilter,
-    columns,
-    toggleColumn,
-    reorderColumns,
-    resetColumns,
-    selectedIds,
-    clearSelection,
-  } = useTrangThaiThanhToanDoiTacStore();
+  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useTrangThaiThanhToanDoiTacStore);
+  const filters = useTrangThaiThanhToanDoiTacStore((s) => s.filters);
+  const setFilter = useTrangThaiThanhToanDoiTacStore((s) => s.setFilter);
+  const columns = useTrangThaiThanhToanDoiTacStore((s) => s.columns);
+  const toggleColumn = useTrangThaiThanhToanDoiTacStore((s) => s.toggleColumn);
+  const reorderColumns = useTrangThaiThanhToanDoiTacStore((s) => s.reorderColumns);
+  const resetColumns = useTrangThaiThanhToanDoiTacStore((s) => s.resetColumns);
+  const selectedIds = useTrangThaiThanhToanDoiTacStore((s) => s.selectedIds);
+  const clearSelection = useTrangThaiThanhToanDoiTacStore((s) => s.clearSelection);
 
   const selectedCount = selectedIds.size;
   const activeFilterCount = filters.status.length;
@@ -84,8 +82,8 @@ const TrangThaiThanhToanDoiTacToolbar: React.FC<Props> = ({ items = [], onAdd, o
   return (
     <GenericToolbar
       selectedCount={selectedCount}
-      searchTerm={searchTerm}
-      onSearchChange={setSearchTerm}
+      searchTerm={searchInput}
+      onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
       actions={renderActions}
       filters={renderFilters}

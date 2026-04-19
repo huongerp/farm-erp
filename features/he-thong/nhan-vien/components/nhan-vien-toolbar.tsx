@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Plus, Download, Upload, Building2, Briefcase, Tag, Pencil } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
+import { useSearchInputCommit } from '../../../../lib/hooks/use-search-input-commit';
 import { useEmployeeStore } from '../store/useEmployeeStore';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import { BTN_ADD } from '../../../../lib/button-labels';
@@ -37,12 +38,21 @@ const EmployeeToolbar: React.FC<Props> = ({
     canCreate = true, canUpdate = true, canDelete = true,
 }) => {
   const { t } = useTranslation();
-  const { 
-    searchTerm, setSearchTerm, 
-    filters, setFilter, 
-    columns, toggleColumn, reorderColumns, resetColumns,
-    selectedIds, clearSelection
-  } = useEmployeeStore();
+  const searchTerm = useEmployeeStore((s) => s.searchTerm);
+  const commitSearchTerm = useEmployeeStore((s) => s.commitSearchTerm);
+  const filters = useEmployeeStore((s) => s.filters);
+  const setFilter = useEmployeeStore((s) => s.setFilter);
+  const columns = useEmployeeStore((s) => s.columns);
+  const toggleColumn = useEmployeeStore((s) => s.toggleColumn);
+  const reorderColumns = useEmployeeStore((s) => s.reorderColumns);
+  const resetColumns = useEmployeeStore((s) => s.resetColumns);
+  const selectedIds = useEmployeeStore((s) => s.selectedIds);
+  const clearSelection = useEmployeeStore((s) => s.clearSelection);
+
+  const { inputValue: searchInput, setInputValue: setSearchInput } = useSearchInputCommit({
+    committedTerm: searchTerm,
+    commit: commitSearchTerm,
+  });
 
   const { data: departments = [] } = useDepartments();
   const { data: positions = [] } = usePositions();
@@ -63,14 +73,14 @@ const EmployeeToolbar: React.FC<Props> = ({
   );
 
   const activeFilterCount = useMemo(() => {
-    return (searchTerm ? 1 : 0)
+    return (searchInput.trim() ? 1 : 0)
       + (filters.id_phong_ban.length > 0 ? 1 : 0)
       + (filters.position.length > 0 ? 1 : 0)
       + (filters.trang_thai.length > 0 ? 1 : 0);
-  }, [searchTerm, filters]);
+  }, [searchInput, filters]);
 
   const handleClearAllFilters = () => {
-    setSearchTerm('');
+    commitSearchTerm('');
     setFilter('id_phong_ban', []);
     setFilter('position', []);
     setFilter('trang_thai', []);
@@ -192,8 +202,8 @@ const EmployeeToolbar: React.FC<Props> = ({
   return (
     <GenericToolbar
         selectedCount={selectedIds.size}
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
+        searchTerm={searchInput}
+        onSearchChange={setSearchInput}
         onClearSelection={clearSelection}
         actions={renderActions}
         filters={renderFilters}

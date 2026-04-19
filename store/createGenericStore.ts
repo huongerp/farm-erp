@@ -128,7 +128,8 @@ export interface GenericState<TFilters> {
   selectedIds: Set<string>;
   columns: ColumnConfig[];
   
-  // Actions
+  // Actions — commitSearchTerm / setSearchTerm: cập nhật search + reset trang 1 (gọi sau debounce từ toolbar)
+  commitSearchTerm: (term: string) => void;
   setSearchTerm: (term: string) => void;
   setFilter: (key: keyof TFilters, value: any) => void;
   resetFilters: () => void;
@@ -162,7 +163,16 @@ export const createGenericStore = <TFilters>(
   selectedIds: new Set(),
   columns: defaultColumns.map((col, i) => ({ ...col, order: col.order ?? i })),
 
-  setSearchTerm: (term) => set((state) => ({ searchTerm: term, pagination: { page: 1, pageSize: state.pagination.pageSize } })),
+  commitSearchTerm: (term) =>
+    set((state) => ({
+      searchTerm: term,
+      pagination: { page: 1, pageSize: state.pagination.pageSize },
+    })),
+  setSearchTerm: (term) =>
+    set((state) => ({
+      searchTerm: term,
+      pagination: { page: 1, pageSize: state.pagination.pageSize },
+    })),
   
   setFilter: (key, value) => set((state) => ({
     filters: { ...state.filters, [key]: value },

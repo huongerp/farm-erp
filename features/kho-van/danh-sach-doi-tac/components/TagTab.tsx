@@ -4,6 +4,7 @@ import { Plus, Edit, Trash2 } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import GenericTable from '../../../../components/shared/GenericTable';
+import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useTagDoiTacStore } from '../store/useTagDoiTacStore';
 import { useTagList, useCreateTag, useUpdateTag, useDeleteTag, useDeleteTagMany } from '../hooks/use-doi-tac';
 import { useListWithFilter } from '../../../../lib/hooks';
@@ -16,19 +17,17 @@ import TagDetailDrawer from './TagDetailDrawer';
 const TagTab: React.FC = () => {
   const { t } = useTranslation();
   const confirm = useConfirmStore((s) => s.confirm);
-  const {
-    searchTerm,
-    setSearchTerm,
-    resetState,
-    selectedIds,
-    columns,
-    clearSelection,
-    toggleSelection,
-    toggleAllSelection,
-    pagination,
-    setPage,
-    setPageSize,
-  } = useTagDoiTacStore();
+  const { searchInput, setSearchInput } = useGenericToolbarSearch(useTagDoiTacStore);
+  const searchTerm = useTagDoiTacStore((s) => s.searchTerm);
+  const resetState = useTagDoiTacStore((s) => s.resetState);
+  const selectedIds = useTagDoiTacStore((s) => s.selectedIds);
+  const columns = useTagDoiTacStore((s) => s.columns);
+  const clearSelection = useTagDoiTacStore((s) => s.clearSelection);
+  const toggleSelection = useTagDoiTacStore((s) => s.toggleSelection);
+  const toggleAllSelection = useTagDoiTacStore((s) => s.toggleAllSelection);
+  const pagination = useTagDoiTacStore((s) => s.pagination);
+  const setPage = useTagDoiTacStore((s) => s.setPage);
+  const setPageSize = useTagDoiTacStore((s) => s.setPageSize);
 
   const { data: tagList = [], isLoading } = useTagList();
   const createTag = useCreateTag();
@@ -185,8 +184,8 @@ const TagTab: React.FC = () => {
         <GenericToolbar
           selectedCount={selectedIds.size}
           onClearSelection={clearSelection}
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
+          searchTerm={searchInput}
+          onSearchChange={setSearchInput}
           searchPlaceholder={t('doiTac.danhMuc.tagSearchPlaceholder')}
           actions={
             <Button

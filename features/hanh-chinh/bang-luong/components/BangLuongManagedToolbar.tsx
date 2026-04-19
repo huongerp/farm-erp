@@ -4,6 +4,7 @@ import { Calendar, Building2, Plus } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useBangLuongManagedStore } from '../store/useBangLuongManagedStore';
 import { useDepartments } from '../../../he-thong/phong-ban/hooks/use-phong-ban';
 import type { BangLuongRecord } from '../core/types';
@@ -21,17 +22,14 @@ interface Props {
 
 const BangLuongManagedToolbar: React.FC<Props> = ({ items = [], onAdd, onClearSelection, selectedCount, onDeleteMany, canCreate = true, canDelete = true }) => {
   const { t } = useTranslation();
-  const {
-    searchTerm,
-    setSearchTerm,
-    filters,
-    setFilter,
-    columns,
-    toggleColumn,
-    reorderColumns,
-    resetColumns,
-    selectedIds,
-  } = useBangLuongManagedStore();
+  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useBangLuongManagedStore);
+  const filters = useBangLuongManagedStore((s) => s.filters);
+  const setFilter = useBangLuongManagedStore((s) => s.setFilter);
+  const columns = useBangLuongManagedStore((s) => s.columns);
+  const toggleColumn = useBangLuongManagedStore((s) => s.toggleColumn);
+  const reorderColumns = useBangLuongManagedStore((s) => s.reorderColumns);
+  const resetColumns = useBangLuongManagedStore((s) => s.resetColumns);
+  const selectedIds = useBangLuongManagedStore((s) => s.selectedIds);
   const { data: departments = [] } = useDepartments();
 
   const phongCounts = useMemo(() => {
@@ -93,8 +91,8 @@ const BangLuongManagedToolbar: React.FC<Props> = ({ items = [], onAdd, onClearSe
   return (
     <GenericToolbar
       selectedCount={selectedCount}
-      searchTerm={searchTerm}
-      onSearchChange={setSearchTerm}
+      searchTerm={searchInput}
+      onSearchChange={setSearchInput}
       onClearSelection={onClearSelection}
       actions={renderActions}
       filters={renderFilters}
