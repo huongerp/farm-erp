@@ -11,9 +11,9 @@ import {
 
 const TABLE = 'fp_mh_danh_sach_hang_hoa';
 
-/** Danh sách — bỏ mo_ta, hinh_anh (payload nặng). */
+/** Danh sách — có mo_ta cho cột mô tả; vẫn bỏ hinh_anh (base64 nặng). */
 const HANG_HOA_LIST_COLUMNS =
-  'id,danh_muc_id,danh_muc_cha_id,ma_hang_hoa,ten_hang_hoa,dvt,thu_tu,trang_thai,don_gia,tg_tao,tg_cap_nhat';
+  'id,danh_muc_id,danh_muc_cha_id,ma_hang_hoa,ten_hang_hoa,dvt,thu_tu,trang_thai,don_gia,mo_ta,tg_tao,tg_cap_nhat';
 
 /** Chi tiết form/preview — đủ mo_ta, hinh_anh. */
 const HANG_HOA_DETAIL_COLUMNS =
@@ -180,7 +180,7 @@ export const getHangHoaById = async (id: string): Promise<HangHoa | null> => {
   return enriched;
 };
 
-/** Chi tiết đủ mo_ta, hinh_anh — form/preview; danh sách dùng getAllHangHoa (lite). */
+/** Chi tiết đủ mo_ta, hinh_anh — form/preview; danh sách getAllHangHoa có mo_ta, không hinh_anh. */
 export const getHangHoaDetail = getHangHoaById;
 
 /** Thứ tự mới khi tạo: max(thu_tu) + 1, tối thiểu 1. */

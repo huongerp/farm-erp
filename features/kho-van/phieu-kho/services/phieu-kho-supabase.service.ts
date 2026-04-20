@@ -46,9 +46,9 @@ const TABLE_CHI_TIET = 'fp_mh_phieu_kho_chi_tiet';
 const PHIEU_KHO_CHI_TIET_ROW_SELECT =
   'id, id_phieu_kho, id_hang_hoa, ten_hang_hoa, don_vi_tinh, so_luong, don_gia, thanh_tien, so_lot, ghi_chu, nguoi_tao_id, ten_nguoi_tao, tg_tao, tg_cap_nhat';
 
-/** Cột view summary — bỏ mo_ta/trao_doi (text dài); chi tiết phiếu load khi mở form/detail. */
+/** Cột view summary — có mo_ta cho list; vẫn bỏ trao_doi (dài, chỉ cần khi mở chi tiết). */
 const PHIEU_KHO_SUMMARY_SELECT =
-  'id, so_phieu, ngay, loai, kho_id, ten_kho, kho_den_id, ten_kho_den, id_nha_cung_cap, id_khach_hang, trang_thai, id_nguoi_duyet, nguoi_tao_id, ten_nguoi_tao, tg_tao, tg_cap_nhat, so_dong, tong_so_luong, tong_tien, ref_ten_kho, ref_ten_kho_den, ref_ten_nha_cung_cap, ref_ten_khach_hang, ref_ten_nguoi_tao, ref_ten_nguoi_duyet';
+  'id, so_phieu, ngay, loai, kho_id, ten_kho, kho_den_id, ten_kho_den, id_nha_cung_cap, id_khach_hang, trang_thai, mo_ta, id_nguoi_duyet, nguoi_tao_id, ten_nguoi_tao, tg_tao, tg_cap_nhat, so_dong, tong_so_luong, tong_tien, ref_ten_kho, ref_ten_kho_den, ref_ten_nha_cung_cap, ref_ten_khach_hang, ref_ten_nguoi_tao, ref_ten_nguoi_duyet';
 
 const PHIEU_KHO_HEADER_ROW_SELECT =
   'id, so_phieu, ngay, loai, kho_id, ten_kho, kho_den_id, ten_kho_den, id_nha_cung_cap, id_khach_hang, trang_thai, mo_ta, trao_doi, id_nguoi_duyet, nguoi_tao_id, ten_nguoi_tao, tg_tao, tg_cap_nhat';
@@ -71,7 +71,6 @@ interface PhieuKhoDbRow {
   id_nha_cung_cap: number | null;
   id_khach_hang: number | null;
   trang_thai: string;
-  /** Optional khi chỉ load summary list (không select mo_ta). */
   mo_ta?: string | null;
   /** Optional khi chỉ load summary list (không select trao_doi). */
   trao_doi?: string | null;

@@ -30,7 +30,7 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'tong_so_dong', label: i18n.t('phieuKho.list.totalItems'), visible: true, minWidth: 90, maxWidth: 120, order: 6 },
   { id: 'tong_so_luong', label: i18n.t('phieuKho.list.totalQuantity'), visible: true, minWidth: 100, maxWidth: 130, order: 7 },
   { id: 'tong_tien', label: i18n.t('phieuKho.list.totalValue'), visible: true, minWidth: 110, maxWidth: 160, order: 8 },
-  { id: 'mo_ta', label: i18n.t('phieuKho.store.descCol'), visible: true, minWidth: 140, maxWidth: 260, order: 9 },
+  { id: 'mo_ta', label: i18n.t('phieuKho.store.descCol'), visible: true, minWidth: 180, maxWidth: 400, order: 9 },
   { id: 'ten_nguoi_tao', label: i18n.t('phieuKho.store.creatorCol'), visible: true, minWidth: 120, maxWidth: 180, order: 10 },
   { id: 'tg_tao', label: i18n.t('phieuKho.store.createdAtCol'), visible: true, minWidth: 100, maxWidth: 140, order: 11 },
   { id: 'trang_thai', label: i18n.t('phieuKho.store.statusCol'), visible: true, minWidth: 100, maxWidth: 140, order: 12 },
