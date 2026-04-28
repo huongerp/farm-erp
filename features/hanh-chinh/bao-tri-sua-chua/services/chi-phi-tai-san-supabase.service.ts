@@ -4,6 +4,7 @@
  * Map: id_trang_thai + ten_trang_thai (DB) <-> trang_thai enum (app: cho_duyet | da_duyet | khong_duyet).
  */
 import { supabase } from '../../../../lib/supabase';
+import { formatDate, formatDateShort } from '../../../../lib/utils';
 import type { PhieuBaoTriSuaChua, PhieuBaoTriSuaChuaCreate } from '../core/types';
 import type { TrangThaiPhieu } from '../core/types';
 import i18n from '../../../../lib/i18n';
@@ -76,6 +77,47 @@ interface DbPhieuRow {
   tg_cap_nhat: string | null;
 }
 
+/** Tìm nhanh theo mọi trường hiển thị / xuất (không phân biệt hoa thường). */
+function phieuMatchesSearchQuery(p: PhieuBaoTriSuaChua, qRaw: string): boolean {
+  const q = qRaw.trim().toLowerCase();
+  if (!q) return true;
+
+  const ngayDisp = [p.ngay, formatDate(p.ngay), formatDateShort(p.ngay)]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+  const tien = p.so_tien ?? 0;
+  const tienStr = String(tien).toLowerCase();
+  const tienLocale = tien.toLocaleString('vi-VN').toLowerCase().replace(/\s/g, '');
+  const statusLabels = (['cho_duyet', 'da_duyet', 'khong_duyet'] as const).map((k) =>
+    String(i18n.t(`baoTriSuaChua.trangThai.${k}`)).toLowerCase()
+  );
+
+  const haystack = [
+    p.id,
+    ngayDisp,
+    p.id_tai_san,
+    p.ma_tai_san,
+    p.ten_tai_san,
+    p.id_hang_muc,
+    p.ten_hang_muc,
+    p.mo_ta,
+    tienStr,
+    tienLocale,
+    p.ghi_chu,
+    p.trang_thai,
+    ...statusLabels,
+    p.nguoi_duyet,
+    p.ten_nguoi_tao,
+    p.id_nguoi_tao,
+  ]
+    .filter((x) => x != null && String(x).trim() !== '')
+    .map((x) => String(x).toLowerCase())
+    .join(' ');
+
+  return haystack.includes(q);
+}
+
 function rowToPhieu(row: DbPhieuRow): PhieuBaoTriSuaChua {
   return {
     id: String(row.id),
@@ -134,15 +176,8 @@ export async function getPhieuChiPhiListSupabase(
   let list = (data ?? []).map((r) => rowToPhieu(r as DbPhieuRow));
 
   if (params.q?.trim()) {
-    const q = params.q.trim().toLowerCase();
-    list = list.filter(
-      (p) =>
-        (p.ma_tai_san && p.ma_tai_san.toLowerCase().includes(q)) ||
-        (p.ten_tai_san && p.ten_tai_san.toLowerCase().includes(q)) ||
-        (p.mo_ta && p.mo_ta.toLowerCase().includes(q)) ||
-        (p.ten_nguoi_tao && p.ten_nguoi_tao.toLowerCase().includes(q)) ||
-        (p.nguoi_duyet && p.nguoi_duyet.toLowerCase().includes(q))
-    );
+    const q = params.q.trim();
+    list = list.filter((p) => phieuMatchesSearchQuery(p, q));
   }
 
   return list;

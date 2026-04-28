@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Tag, Warehouse, User, UserCheck } from 'lucide-react';
+import { Plus, Tag, Warehouse, User, UserCheck, Download } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
+import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import { useSearchInputCommit } from '../../../../lib/hooks/use-search-input-commit';
@@ -19,6 +20,8 @@ interface Props {
   selectedCount: number;
   onAdd: () => void;
   onDeleteMany: () => void;
+  /** Xuất danh sách (ExportDialog) — bắt buộc tab Danh sách. */
+  onExport: () => void;
   canCreate?: boolean;
   canDelete?: boolean;
   chipCountsMode?: 'fromRows' | 'unweighted';
@@ -32,6 +35,7 @@ const PhieuDeXuatVatTuToolbar: React.FC<Props> = ({
   selectedCount,
   onAdd,
   onDeleteMany,
+  onExport,
   canCreate = true,
   canDelete = true,
   chipCountsMode = 'fromRows',
@@ -140,6 +144,53 @@ const PhieuDeXuatVatTuToolbar: React.FC<Props> = ({
         count: unweighted ? 1 : data.filter((d) => d.id_nguoi_duyet === e.id).length,
       })),
     [employees, data, unweighted]
+  );
+
+  const mobileActions = useMemo(
+    () => [
+      {
+        key: 'export',
+        label: t('common.export'),
+        icon: Download,
+        onClick: onExport,
+        description: '',
+      },
+    ],
+    [onExport, t]
+  );
+
+  const bulkExport = useMemo(
+    () => (
+      <Tooltip content={t('common.export')} placement="bottom">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={onExport}
+          className="min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-8 w-8 sm:w-auto sm:px-2.5 p-0 sm:p-0 inline-flex items-center justify-center gap-1.5 border-border text-muted-foreground hover:bg-muted/50"
+          aria-label={t('common.export')}
+        >
+          <Download className="w-4 h-4 shrink-0" />
+          <span className="hidden sm:inline text-xs font-medium pr-0.5">{t('common.export')}</span>
+        </Button>
+      </Tooltip>
+    ),
+    [onExport, t]
+  );
+
+  const searchTrailingExport = (
+    <Tooltip content={t('common.export')} placement="bottom">
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={onExport}
+        className="sm:hidden shrink-0 inline-flex min-h-[44px] min-w-[44px] h-9 w-9 p-0 items-center justify-center border-border text-muted-foreground hover:bg-muted/50"
+        aria-label={t('common.export')}
+      >
+        <Download className="w-4 h-4" />
+      </Button>
+    </Tooltip>
   );
 
   const filterGroups = useMemo(
@@ -264,16 +315,35 @@ const PhieuDeXuatVatTuToolbar: React.FC<Props> = ({
     </>
   );
 
-  const renderActions = canCreate ? (
-    <Button
-      onClick={onAdd}
-      size="sm"
-      className="bg-primary text-white hover:bg-primary/90 shadow-md shadow-primary/20 h-9 px-3 sm:px-4"
-    >
-      <Plus className="w-5 h-5 sm:w-4 sm:h-4 sm:mr-2" />
-      <span className="hidden sm:inline">{t('common.addNew')}</span>
-    </Button>
-  ) : null;
+  const renderActions = (
+    <>
+      <div className="hidden sm:flex items-center gap-2">
+        <Tooltip content={t('common.export')} placement="bottom">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onExport}
+            className="inline-flex min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-9 px-2 sm:px-2.5 gap-1.5 items-center justify-center border-border text-muted-foreground hover:bg-muted/50"
+            aria-label={t('common.export')}
+          >
+            <Download className="w-4 h-4 shrink-0" />
+            <span className="text-xs font-medium">{t('common.export')}</span>
+          </Button>
+        </Tooltip>
+      </div>
+      {canCreate ? (
+        <Button
+          onClick={onAdd}
+          size="sm"
+          className="bg-primary text-white hover:bg-primary/90 shadow-md shadow-primary/20 h-9 px-3 sm:px-4"
+        >
+          <Plus className="w-5 h-5 sm:w-4 sm:h-4 sm:mr-2" />
+          <span className="hidden sm:inline">{t('common.addNew')}</span>
+        </Button>
+      ) : null}
+    </>
+  );
 
   return (
     <GenericToolbar
@@ -283,8 +353,11 @@ const PhieuDeXuatVatTuToolbar: React.FC<Props> = ({
       onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
       actions={renderActions}
+      bulkActions={bulkExport}
       filters={renderFilters}
       filterGroups={filterGroups}
+      mobileActions={mobileActions}
+      searchTrailing={searchTrailingExport}
       onAdd={canCreate ? onAdd : undefined}
       showBack
       searchPlaceholder={t('phieuDeXuatVatTu.searchPlaceholder')}

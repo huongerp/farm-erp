@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import { usePhieuDeXuatVatTuListPaged, usePhieuDeXuatVatTuById, useDeletePhieuDeXuatVatTu, useDeletePhieuDeXuatVatTuMany, useUpdatePhieuDeXuatVatTu } from '../hooks/use-phieu-de-xuat-vat-tu';
 import { usePhieuDeXuatVatTuViewScope } from '../hooks/use-phieu-de-xuat-vat-tu-view-scope';
-import { buildPhieuDeXuatVatTuListServerQuery } from '../services/phieu-de-xuat-vat-tu-service';
+import { buildPhieuDeXuatVatTuListServerQuery, fetchAllPhieuDeXuatVatTuForListQuery } from '../services/phieu-de-xuat-vat-tu-service';
 import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import { useEmployeesRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
@@ -41,6 +42,15 @@ import PhieuDeXuatVatTuToolbar from './PhieuDeXuatVatTuToolbar';
 import PhieuDeXuatVatTuList from './PhieuDeXuatVatTuList';
 import PhieuDeXuatVatTuForm from './PhieuDeXuatVatTuForm';
 import PhieuDeXuatVatTuDetail, { type PhieuDeXuatVatTuApprovePayload } from './PhieuDeXuatVatTuDetail';
+import ExportDialog from '../../../../components/shared/ExportDialog';
+import { useExportData } from '../../../../lib/useExportData';
+import {
+  PHIEU_DE_XUAT_VAT_TU_LIST_EXPORT_KEYS,
+  LIST_EXPORT_SHEET_NAME,
+  mapPhieuDeXuatVatTuListRow,
+  getExportColumnsPhieuDeXuatVatTuList,
+  exportFileNamePhieuDeXuatVatTuList,
+} from '../utils/export-phieu-de-xuat-vat-tu-danh-sach';
 
 const DanhSachTab: React.FC = () => {
   const { t } = useTranslation();
@@ -68,6 +78,9 @@ const DanhSachTab: React.FC = () => {
   const [openedFormFromDetailId, setOpenedFormFromDetailId] = useState<string | null>(null);
   const [showAddHangHoa, setShowAddHangHoa] = useState(false);
   const addHangHoaResolveRef = useRef<(h: HangHoa | null) => void>(null);
+  const [showExport, setShowExport] = useState(false);
+  const [exportRows, setExportRows] = useState<PhieuDeXuatVatTu[]>([]);
+  const [exportLoading, setExportLoading] = useState(false);
 
   const { data: khoList = [] } = useKhoList();
   const { data: employees = [] } = useEmployeesRefQuery();
@@ -120,6 +133,48 @@ const DanhSachTab: React.FC = () => {
     const fresh = tableRows.find((p) => p.id === viewingItem.id);
     if (fresh && fresh !== viewingItem) setViewingItem(fresh);
   }, [tableRows, viewingItem]);
+
+  const exportColumnsList = useMemo(() => getExportColumnsPhieuDeXuatVatTuList(t), [t]);
+  const exportMapList = useCallback((item: PhieuDeXuatVatTu) => mapPhieuDeXuatVatTuListRow(item), []);
+  const { exportData, paginatedData: paginatedExportData, selectedData: selectedExportData } = useExportData({
+    data: exportRows,
+    isOpen: showExport && !exportLoading,
+    mapFn: exportMapList,
+    pagination,
+    selectedIds,
+    keyExtractor: (p) => p.id,
+  });
+
+  useEffect(() => {
+    if (!showExport) {
+      setExportRows([]);
+      setExportLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setExportLoading(true);
+    fetchAllPhieuDeXuatVatTuForListQuery(listServerQuery)
+      .then((rows) => {
+        if (!cancelled) setExportRows(rows);
+      })
+      .catch(() => {
+        if (!cancelled) setExportRows([]);
+      })
+      .finally(() => {
+        if (!cancelled) setExportLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [showExport, listQueryKey, listServerQuery]);
+
+  const handleExport = useCallback(() => {
+    if (totalCount === 0) {
+      toast.warning(t('phieuDeXuatVatTu.noExportData'));
+      return;
+    }
+    setShowExport(true);
+  }, [totalCount, t]);
 
   const handleEdit = (item: PhieuDeXuatVatTu) => {
     setEditingItem(item);
@@ -213,6 +268,7 @@ const DanhSachTab: React.FC = () => {
           setShowForm(true);
         }}
         onDeleteMany={handleDeleteMany}
+        onExport={handleExport}
         canCreate={canCreate}
         canDelete={canDelete}
       />
@@ -252,6 +308,23 @@ const DanhSachTab: React.FC = () => {
                   setShowAddHangHoa(true);
                 })
             }
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showExport && (
+          <ExportDialog
+            key={`pdxvt-export-${listQueryKey}`}
+            open={showExport}
+            onClose={() => setShowExport(false)}
+            columns={exportColumnsList}
+            data={exportData}
+            paginatedData={paginatedExportData}
+            selectedData={selectedExportData}
+            fileName={exportFileNamePhieuDeXuatVatTuList()}
+            visibleColumnKeys={[...PHIEU_DE_XUAT_VAT_TU_LIST_EXPORT_KEYS]}
+            sheetName={LIST_EXPORT_SHEET_NAME}
           />
         )}
       </AnimatePresence>

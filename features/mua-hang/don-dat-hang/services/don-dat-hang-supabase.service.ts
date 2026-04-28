@@ -3,7 +3,7 @@
  * Trạng thái DB và app đều dùng text (giống module đề xuất vật tư).
  */
 import { supabase, fetchAllRows, fetchTablePage, type PaginatedTableResult } from '../../../../lib/supabase';
-import type { DonDatHang, DonDatHangChiTiet, DonDatHangTrangThai } from '../core/types';
+import type { ChiTietDonDatHangFlat, DonDatHang, DonDatHangChiTiet, DonDatHangTrangThai } from '../core/types';
 import type { DonDatHangFormValues } from '../core/schema';
 import { TRANG_THAI_NHAP } from '../core/types';
 import i18n from '../../../../lib/i18n';
@@ -25,6 +25,9 @@ const TABLE_CHI_TIET = 'fp_mh_don_dat_hang_chi_tiet';
 
 /** View DB: chạy docs/supabase-v_don_dat_hang_summary.sql trên Supabase. */
 const VIEW_DON_DAT_HANG_SUMMARY = 'v_don_dat_hang_summary';
+
+/** View DB: chạy docs/supabase-v_don_dat_hang_chi_tiet_flat.sql trên Supabase. */
+const VIEW_DON_DAT_HANG_CHI_TIET_FLAT = 'v_don_dat_hang_chi_tiet_flat';
 
 const VIEW_DON_DAT_HANG_SUMMARY_COLUMNS =
   'id,so_po,ngay_dat,ngay_giao_dk,id_nha_cung_cap,ten_nha_cung_cap,id_kho_nhan,ten_kho_nhan,id_phieu_de_xuat_vat_tu,id_nguoi_dat,id_nguoi_duyet,ghi_chu,trang_thai,tg_tao,tg_cap_nhat,so_phieu_de_xuat_ref,ref_ma_nha_cung_cap,ref_ten_nha_cung_cap,ref_ten_kho_nhan,ref_ten_nguoi_dat,ref_ma_nguoi_dat,ref_ten_nguoi_duyet,ref_ma_nguoi_duyet';
@@ -202,10 +205,165 @@ function applyDonDatHangListQuery(q: any, query: DonDatHangListServerQuery): any
   if (term) {
     const esc = term.replace(/%/g, '\\%').replace(/_/g, '\\_');
     const pat = postgrestQuotedIlikePattern(`%${esc}%`);
-    b = b.or(`so_po.ilike.${pat},ghi_chu.ilike.${pat},ten_nha_cung_cap.ilike.${pat},ten_kho_nhan.ilike.${pat}`);
+    const parts = [
+      `so_po.ilike.${pat}`,
+      `ghi_chu.ilike.${pat}`,
+      `ten_nha_cung_cap.ilike.${pat}`,
+      `ten_kho_nhan.ilike.${pat}`,
+      `trang_thai.ilike.${pat}`,
+      `so_phieu_de_xuat_ref.ilike.${pat}`,
+      `ref_ma_nha_cung_cap.ilike.${pat}`,
+      `ref_ten_nha_cung_cap.ilike.${pat}`,
+      `ref_ten_kho_nhan.ilike.${pat}`,
+      `ref_ten_nguoi_dat.ilike.${pat}`,
+      `ref_ma_nguoi_dat.ilike.${pat}`,
+      `ref_ten_nguoi_duyet.ilike.${pat}`,
+      `ref_ma_nguoi_duyet.ilike.${pat}`,
+    ];
+    if (/^\d+$/.test(term)) {
+      const n = Number(term);
+      if (Number.isSafeInteger(n)) parts.push(`id.eq.${n}`);
+    }
+    b = b.or(parts.join(','));
   }
   return b;
 }
+
+/** Tab chi tiết: cùng scope/filter danh sách + tìm thêm mã/tên hàng, ghi chú dòng. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyChiTietDonDatHangFlatListQuery(q: any, query: DonDatHangListServerQuery): any {
+  let b = applyDonDatHangScope(q, query.scope);
+  if (query.trangThaiViet.length) b = b.in('trang_thai', query.trangThaiViet);
+  if (query.idNhaCungCap.length) b = b.in('id_nha_cung_cap', query.idNhaCungCap);
+  if (query.idKhoNhan.length) b = b.in('id_kho_nhan', query.idKhoNhan);
+  if (query.idNguoiDat.length) b = b.in('id_nguoi_dat', query.idNguoiDat);
+  const term = (query.searchTerm ?? '').trim();
+  if (term) {
+    const esc = term.replace(/%/g, '\\%').replace(/_/g, '\\_');
+    const pat = postgrestQuotedIlikePattern(`%${esc}%`);
+    const parts = [
+      `so_po.ilike.${pat}`,
+      `ghi_chu.ilike.${pat}`,
+      `ten_nha_cung_cap.ilike.${pat}`,
+      `ten_kho_nhan.ilike.${pat}`,
+      `ma_hang.ilike.${pat}`,
+      `ten_hang.ilike.${pat}`,
+      `chi_tiet_ghi_chu.ilike.${pat}`,
+      `don_vi_tinh.ilike.${pat}`,
+      `trang_thai.ilike.${pat}`,
+      `so_phieu_de_xuat_ref.ilike.${pat}`,
+      `ref_ma_nha_cung_cap.ilike.${pat}`,
+      `ref_ten_nha_cung_cap.ilike.${pat}`,
+      `ref_ten_kho_nhan.ilike.${pat}`,
+      `ref_ten_nguoi_dat.ilike.${pat}`,
+      `ref_ma_nguoi_dat.ilike.${pat}`,
+      `ref_ten_nguoi_duyet.ilike.${pat}`,
+      `ref_ma_nguoi_duyet.ilike.${pat}`,
+    ];
+    if (/^\d+$/.test(term)) {
+      const n = Number(term);
+      if (Number.isSafeInteger(n)) {
+        parts.push(`id.eq.${n}`, `chi_tiet_id.eq.${n}`, `id_hang_hoa.eq.${n}`);
+      }
+    }
+    b = b.or(parts.join(','));
+  }
+  return b;
+}
+
+/** Row từ v_don_dat_hang_chi_tiet_flat (PostgREST). `id` là id đơn (header). */
+interface DonDatHangChiTietFlatViewRow {
+  chi_tiet_id: number;
+  id: number;
+  id_don_dat_hang: number;
+  id_hang_hoa: number;
+  so_luong: number | string | null;
+  don_vi_tinh: string | null;
+  don_gia: number | string | null;
+  thanh_tien: number | string | null;
+  chi_tiet_ghi_chu: string | null;
+  ma_hang: string | null;
+  ten_hang: string | null;
+  so_po: string;
+  ngay_dat: string;
+  ngay_giao_dk: string;
+  id_nha_cung_cap: number;
+  ten_nha_cung_cap: string | null;
+  id_kho_nhan: number | null;
+  ten_kho_nhan: string | null;
+  id_phieu_de_xuat_vat_tu: number | null;
+  id_nguoi_dat: number;
+  id_nguoi_duyet: number | null;
+  ghi_chu: string | null;
+  trang_thai: string;
+  tg_tao: string | null;
+  tg_cap_nhat: string | null;
+  so_phieu_de_xuat_ref?: string | null;
+  ref_ma_nha_cung_cap?: string | null;
+  ref_ten_nha_cung_cap?: string | null;
+  ref_ten_kho_nhan?: string | null;
+  ref_ten_nguoi_dat?: string | null;
+  ref_ma_nguoi_dat?: string | null;
+  ref_ten_nguoi_duyet?: string | null;
+  ref_ma_nguoi_duyet?: string | null;
+}
+
+const DON_DAT_HANG_CHI_TIET_FLAT_SELECT =
+  'chi_tiet_id,id,id_don_dat_hang,id_hang_hoa,so_luong,don_vi_tinh,don_gia,thanh_tien,chi_tiet_ghi_chu,ma_hang,ten_hang,so_po,ngay_dat,ngay_giao_dk,id_nha_cung_cap,ten_nha_cung_cap,id_kho_nhan,ten_kho_nhan,id_phieu_de_xuat_vat_tu,id_nguoi_dat,id_nguoi_duyet,ghi_chu,trang_thai,tg_tao,tg_cap_nhat,so_phieu_de_xuat_ref,ref_ma_nha_cung_cap,ref_ten_nha_cung_cap,ref_ten_kho_nhan,ref_ten_nguoi_dat,ref_ma_nguoi_dat,ref_ten_nguoi_duyet,ref_ma_nguoi_duyet';
+
+function mapDonDatHangChiTietFlatViewRow(row: DonDatHangChiTietFlatViewRow): ChiTietDonDatHangFlat {
+  const so_phieu_de_xuat =
+    row.so_phieu_de_xuat_ref != null && String(row.so_phieu_de_xuat_ref).trim() !== ''
+      ? String(row.so_phieu_de_xuat_ref).trim()
+      : null;
+  const ten_ncc = row.ref_ten_nha_cung_cap ?? row.ten_nha_cung_cap ?? undefined;
+  const ten_kho = row.ref_ten_kho_nhan ?? row.ten_kho_nhan ?? null;
+  return {
+    id: String(row.chi_tiet_id),
+    id_don_dat_hang: String(row.id),
+    so_po: row.so_po ?? '',
+    ngay_dat: row.ngay_dat ?? '',
+    ngay_giao_dk: row.ngay_giao_dk ?? '',
+    id_nha_cung_cap: String(row.id_nha_cung_cap),
+    ten_nha_cung_cap: ten_ncc,
+    ma_nha_cung_cap: row.ref_ma_nha_cung_cap ?? undefined,
+    id_kho_nhan: row.id_kho_nhan != null ? String(row.id_kho_nhan) : null,
+    ten_kho_nhan: ten_kho,
+    id_phieu_de_xuat_vat_tu: row.id_phieu_de_xuat_vat_tu != null ? String(row.id_phieu_de_xuat_vat_tu) : null,
+    so_phieu_de_xuat,
+    id_nguoi_dat: String(row.id_nguoi_dat),
+    ten_nguoi_dat: row.ref_ten_nguoi_dat,
+    ma_nguoi_dat: row.ref_ma_nguoi_dat ?? undefined,
+    id_nguoi_duyet: row.id_nguoi_duyet != null ? String(row.id_nguoi_duyet) : null,
+    ten_nguoi_duyet: row.ref_ten_nguoi_duyet ?? null,
+    ma_nguoi_duyet: row.ref_ma_nguoi_duyet ?? null,
+    don_ghi_chu: row.ghi_chu ?? undefined,
+    trang_thai: trangThaiFromDb(row.trang_thai),
+    don_tg_tao: row.tg_tao ?? '',
+    don_tg_cap_nhat: row.tg_cap_nhat ?? '',
+    id_hang_hoa: String(row.id_hang_hoa),
+    ma_hang: row.ma_hang?.trim() ? row.ma_hang.trim() : undefined,
+    ten_hang: row.ten_hang ?? undefined,
+    so_luong: Number(row.so_luong),
+    don_gia: row.don_gia != null ? Number(row.don_gia) : undefined,
+    thanh_tien: row.thanh_tien != null ? Number(row.thanh_tien) : undefined,
+    don_vi_tinh: row.don_vi_tinh ?? undefined,
+    ghi_chu: row.chi_tiet_ghi_chu ?? undefined,
+  };
+}
+
+function mapDonDatHangChiTietFlatViewRows(flatRows: DonDatHangChiTietFlatViewRow[]): ChiTietDonDatHangFlat[] {
+  const out = flatRows.map(mapDonDatHangChiTietFlatViewRow);
+  out.sort(
+    (a, b) =>
+      (b.ngay_dat || '').localeCompare(a.ngay_dat || '') ||
+      (b.so_po || '').localeCompare(a.so_po || '') ||
+      String(b.id).localeCompare(String(a.id), undefined, { numeric: true })
+  );
+  return out;
+}
+
+const CHI_TIET_DON_DAT_HANG_PAGE_SIZE_DEFAULT = 100;
 
 /** Một trang danh sách đơn đặt hàng (server-side). */
 export async function getDonDatHangPageSupabase(
@@ -232,6 +390,43 @@ export async function fetchAllDonDatHangForListQuerySupabase(
   let page = 0;
   while (out.length < maxRows) {
     const { data, totalCount } = await getDonDatHangPageSupabase(page, pageSize, listQuery);
+    out.push(...data);
+    if (data.length === 0 || out.length >= totalCount) break;
+    page += 1;
+  }
+  return out;
+}
+
+/** Một trang chi tiết đơn đặt hàng phẳng (server-side). */
+export async function getChiTietDonDatHangPageSupabase(
+  page: number,
+  pageSize: number = CHI_TIET_DON_DAT_HANG_PAGE_SIZE_DEFAULT,
+  listQuery?: DonDatHangListServerQuery
+): Promise<PaginatedTableResult<ChiTietDonDatHangFlat>> {
+  const pageResult = await fetchTablePage<DonDatHangChiTietFlatViewRow>(page, pageSize, async (from, to) => {
+    let sel = supabase.from(VIEW_DON_DAT_HANG_CHI_TIET_FLAT).select(DON_DAT_HANG_CHI_TIET_FLAT_SELECT, { count: 'exact' });
+    if (listQuery) sel = applyChiTietDonDatHangFlatListQuery(sel, listQuery);
+    const res = await sel
+      .order('ngay_dat', { ascending: false })
+      .order('so_po', { ascending: false })
+      .order('chi_tiet_id', { ascending: false })
+      .range(from, to);
+    return { data: res.data as DonDatHangChiTietFlatViewRow[] | null, error: res.error, count: res.count };
+  });
+  const data = mapDonDatHangChiTietFlatViewRows(pageResult.data);
+  return { data, totalCount: pageResult.totalCount, page: pageResult.page, pageSize: pageResult.pageSize };
+}
+
+/** Gom tối đa `maxRows` dòng chi tiết phẳng khớp `listQuery` — dùng export. */
+export async function fetchAllChiTietDonDatHangForListQuerySupabase(
+  listQuery: DonDatHangListServerQuery,
+  pageSize = 500,
+  maxRows = 25000
+): Promise<ChiTietDonDatHangFlat[]> {
+  const out: ChiTietDonDatHangFlat[] = [];
+  let page = 0;
+  while (out.length < maxRows) {
+    const { data, totalCount } = await getChiTietDonDatHangPageSupabase(page, pageSize, listQuery);
     out.push(...data);
     if (data.length === 0 || out.length >= totalCount) break;
     page += 1;

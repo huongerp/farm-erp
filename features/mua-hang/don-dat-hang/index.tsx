@@ -1,12 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
-import { List, BarChart3 } from 'lucide-react';
+import { List, LayoutList, BarChart3 } from 'lucide-react';
 import TabGroup from '../../../components/ui/TabGroup';
 import DanhSachTab from './components/DanhSachTab';
+import ChiTietDonDatHangTab from './components/ChiTietDonDatHangTab';
 import ThongKeTab from './components/ThongKeTab';
 
-const VALID_TABS = ['list', 'stats'] as const;
+const VALID_TABS = ['list', 'chiTiet', 'stats'] as const;
 type TabId = (typeof VALID_TABS)[number];
 
 const DonDatHangPage: React.FC = () => {
@@ -33,6 +34,7 @@ const DonDatHangPage: React.FC = () => {
   const tabs = useMemo(
     () => [
       { id: 'list', label: t('donDatHang.tabs.list'), icon: List },
+      { id: 'chiTiet', label: t('donDatHang.tabs.chiTiet'), icon: LayoutList },
       { id: 'stats', label: t('donDatHang.tabs.stats'), icon: BarChart3 },
     ],
     [t]
@@ -46,6 +48,7 @@ const DonDatHangPage: React.FC = () => {
 
       <div className="flex-1 min-h-0 flex flex-col mt-1.5">
         {activeTab === 'list' && <DanhSachTab />}
+        {activeTab === 'chiTiet' && <ChiTietDonDatHangTab />}
         {activeTab === 'stats' && (
           <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
             <ThongKeTab />

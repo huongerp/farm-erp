@@ -205,7 +205,21 @@ function applyPhieuDeXuatVatTuListQuery(q: any, query: PhieuDeXuatVatTuListServe
   if (term) {
     const esc = term.replace(/%/g, '\\%').replace(/_/g, '\\_');
     const pat = postgrestQuotedIlikePattern(`%${esc}%`);
-    b = b.or(`so_phieu.ilike.${pat},ghi_chu.ilike.${pat}`);
+    const parts = [
+      `so_phieu.ilike.${pat}`,
+      `ghi_chu.ilike.${pat}`,
+      `trang_thai.ilike.${pat}`,
+      `ref_ten_noi_de_xuat.ilike.${pat}`,
+      `ref_ten_nguoi_de_xuat.ilike.${pat}`,
+      `ref_ma_nguoi_de_xuat.ilike.${pat}`,
+      `ref_ten_nguoi_duyet.ilike.${pat}`,
+      `ref_ma_nguoi_duyet.ilike.${pat}`,
+    ];
+    if (/^\d+$/.test(term)) {
+      const n = Number(term);
+      if (Number.isSafeInteger(n)) parts.push(`id.eq.${n}`);
+    }
+    b = b.or(parts.join(','));
   }
   return b;
 }
@@ -242,9 +256,25 @@ function applyPhieuDeXuatChiTietRowFilters(q: any, query: PhieuDeXuatChiTietList
   if (term) {
     const esc = term.replace(/%/g, '\\%').replace(/_/g, '\\_');
     const pat = postgrestQuotedIlikePattern(`%${esc}%`);
-    b = b.or(
-      `so_phieu.ilike.${pat},ghi_chu.ilike.${pat},thong_so.ilike.${pat},ten_noi_de_xuat.ilike.${pat},ten_nguoi_de_xuat.ilike.${pat},ten_nguoi_duyet.ilike.${pat},ten_tien_do_mh.ilike.${pat},trao_doi.ilike.${pat}`
-    );
+    const parts = [
+      `so_phieu.ilike.${pat}`,
+      `ghi_chu.ilike.${pat}`,
+      `thong_so.ilike.${pat}`,
+      `ten_noi_de_xuat.ilike.${pat}`,
+      `ten_nguoi_de_xuat.ilike.${pat}`,
+      `ten_nguoi_duyet.ilike.${pat}`,
+      `ten_tien_do_mh.ilike.${pat}`,
+      `trao_doi.ilike.${pat}`,
+      `don_vi_tinh.ilike.${pat}`,
+      `trang_thai_phieu.ilike.${pat}`,
+    ];
+    if (/^\d+$/.test(term)) {
+      const n = Number(term);
+      if (Number.isSafeInteger(n)) {
+        parts.push(`id.eq.${n}`, `id_phieu_de_xuat_vat_tu.eq.${n}`, `id_hang_hoa.eq.${n}`);
+      }
+    }
+    b = b.or(parts.join(','));
   }
   return b;
 }

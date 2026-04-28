@@ -346,7 +346,7 @@ const ChiTietTabToolbar: React.FC<Props> = ({
 
   const exportAction =
     onExport != null ? (
-      <div className="hidden sm:flex items-center">
+      <div className="hidden sm:flex items-center gap-2">
         <Tooltip content={t('common.export')} placement="bottom">
           <Button
             type="button"
@@ -354,29 +354,51 @@ const ChiTietTabToolbar: React.FC<Props> = ({
             size="sm"
             onClick={onExport}
             disabled={exportDisabled}
-            className="inline-flex min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-9 w-9 p-0 items-center justify-center border-border text-muted-foreground hover:bg-muted/50 disabled:opacity-40"
+            className="inline-flex min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-9 px-2 sm:px-2.5 gap-1.5 items-center justify-center border-border text-muted-foreground hover:bg-muted/50 disabled:opacity-40"
+            aria-label={t('common.export')}
           >
-            <Download className="w-4 h-4" />
+            <Download className="w-4 h-4 shrink-0" />
+            <span className="text-xs font-medium">{t('common.export')}</span>
           </Button>
         </Tooltip>
       </div>
     ) : null;
 
-  const mobileActions =
-    onExport != null
-      ? [
-          {
-            key: 'export',
-            label: t('common.export'),
-            icon: Download,
-            onClick: () => {
-              if (exportDisabled) return;
-              onExport();
-            },
-            description: '',
-          },
-        ]
-      : undefined;
+  const searchTrailingExport =
+    onExport != null ? (
+      <Tooltip content={t('common.export')} placement="bottom">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            if (exportDisabled) return;
+            onExport();
+          }}
+          disabled={exportDisabled}
+          className="sm:hidden shrink-0 inline-flex min-h-[44px] min-w-[44px] h-9 w-9 p-0 items-center justify-center border-border text-muted-foreground hover:bg-muted/50 disabled:opacity-40"
+          aria-label={t('common.export')}
+        >
+          <Download className="w-4 h-4" />
+        </Button>
+      </Tooltip>
+    ) : undefined;
+
+  const mobileActions = useMemo(() => {
+    if (onExport == null) return undefined;
+    return [
+      {
+        key: 'export',
+        label: t('common.export'),
+        icon: Download,
+        onClick: () => {
+          if (exportDisabled) return;
+          onExport();
+        },
+        description: '',
+      },
+    ];
+  }, [onExport, exportDisabled, t]);
 
   return (
     <GenericToolbar
@@ -389,6 +411,7 @@ const ChiTietTabToolbar: React.FC<Props> = ({
       bulkActions={bulkActions}
       actions={exportAction}
       mobileActions={mobileActions}
+      searchTrailing={searchTrailingExport}
       showBack={!!onBack}
       onBack={onBack}
       searchPlaceholder={t('phieuDeXuatVatTu.searchPlaceholder')}

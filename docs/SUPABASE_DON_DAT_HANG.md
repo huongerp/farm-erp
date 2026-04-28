@@ -6,6 +6,11 @@ Trong **Supabase Dashboard → SQL Editor**, chạy toàn bộ file:
 
 - `docs/supabase-fp_mh_don_dat_hang.sql`
 
+**View (danh sách / chi tiết phẳng trong app):** sau bảng và dữ liệu cơ bản, chạy thêm (theo thứ tự):
+
+- `docs/supabase-v_don_dat_hang_summary.sql` — `v_don_dat_hang_summary`
+- `docs/supabase-v_don_dat_hang_chi_tiet_flat.sql` — `v_don_dat_hang_chi_tiet_flat` (cần view summary trước)
+
 Script sẽ:
 
 - Xóa bảng cũ (nếu có): `fp_mh_don_dat_hang_chi_tiet`, `fp_mh_don_dat_hang`

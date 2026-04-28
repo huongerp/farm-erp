@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import {
   getAllDonDatHang,
   getDonDatHangPage,
+  getChiTietDonDatHangPage,
   getDonDatHangById,
   createDonDatHang,
   updateDonDatHang,
@@ -37,6 +38,7 @@ export const useDonDatHangList = () => {
 };
 
 const DON_DAT_HANG_PAGE_SIZE = 50;
+const CHI_TIET_DON_DAT_HANG_PAGE_SIZE = 100;
 
 /** Danh sách đơn đặt hàng theo trang (server-side). `pageIndex` 0-based. */
 export const useDonDatHangListPaged = (pageIndex: number, listQuery: DonDatHangListServerQuery) => {
@@ -44,6 +46,17 @@ export const useDonDatHangListPaged = (pageIndex: number, listQuery: DonDatHangL
   return useQuery({
     queryKey: [...QUERY_KEY, 'paged', pageIndex, DON_DAT_HANG_PAGE_SIZE, qPart] as const,
     queryFn: () => getDonDatHangPage(pageIndex, DON_DAT_HANG_PAGE_SIZE, listQuery),
+    staleTime: 1000 * 60 * 15,
+    placeholderData: keepPreviousData,
+  });
+};
+
+/** Chi tiết phẳng (mỗi dòng = một dòng hàng trên đơn), server-side. `pageIndex` 0-based. */
+export const useChiTietDonDatHangListPaged = (pageIndex: number, listQuery: DonDatHangListServerQuery) => {
+  const qPart = stableListQueryKeyPart(listQuery);
+  return useQuery({
+    queryKey: [...QUERY_KEY, 'chiTietPaged', pageIndex, CHI_TIET_DON_DAT_HANG_PAGE_SIZE, qPart] as const,
+    queryFn: () => getChiTietDonDatHangPage(pageIndex, CHI_TIET_DON_DAT_HANG_PAGE_SIZE, listQuery),
     staleTime: 1000 * 60 * 15,
     placeholderData: keepPreviousData,
   });
@@ -64,6 +77,7 @@ export const useCreateDonDatHang = (onSuccess?: () => void) => {
     onSuccess: (created) => {
       qc.setQueryData(QUERY_KEY, (old: DonDatHang[] | undefined) => (old ? [created, ...old] : [created]));
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
+      qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'chiTietPaged'] });
       toast.success(i18n.t('donDatHang.toast.createSuccess'));
       onSuccess?.();
     },
@@ -82,6 +96,7 @@ export const useUpdateDonDatHang = (onSuccess?: () => void) => {
       );
       qc.setQueryData([...QUERY_KEY, updated.id], updated);
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
+      qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'chiTietPaged'] });
       toast.success(i18n.t('donDatHang.toast.updateSuccess'));
       onSuccess?.();
     },
@@ -97,6 +112,7 @@ export const useDeleteDonDatHang = () => {
       qc.setQueryData(QUERY_KEY, (old: DonDatHang[] | undefined) => old?.filter((d) => d.id !== id) ?? []);
       qc.removeQueries({ queryKey: [...QUERY_KEY, id] });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
+      qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'chiTietPaged'] });
       toast.success(i18n.t('donDatHang.toast.deleteSuccess'));
     },
     onError: (err: Error) => toast.error(err.message),
@@ -112,6 +128,7 @@ export const useDeleteDonDatHangMany = () => {
       qc.setQueryData(QUERY_KEY, (old: DonDatHang[] | undefined) => old?.filter((d) => !set.has(d.id)) ?? []);
       ids.forEach((id) => qc.removeQueries({ queryKey: [...QUERY_KEY, id] }));
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
+      qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'chiTietPaged'] });
       toast.success(i18n.t('donDatHang.toast.deleteSuccess'));
     },
     onError: (err: Error) => toast.error(err.message),

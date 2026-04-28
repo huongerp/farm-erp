@@ -1,58 +1,45 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Tag, Building2, Warehouse, User, Download } from 'lucide-react';
+import { Tag, Building2, Warehouse, User, Download } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import { useSearchInputCommit } from '../../../../lib/hooks/use-search-input-commit';
-import { useDonDatHangStore } from '../store/useDonDatHangStore';
-import type { DonDatHang } from '../core/types';
+import { useChiTietDonDatHangStore } from '../store/useChiTietDonDatHangStore';
+import type { ChiTietDonDatHangFlat } from '../core/types';
 import type { Kho } from '../../../kho-van/danh-sach-kho/core/types';
 import type { DoiTacRefLite } from '../../../kho-van/danh-sach-doi-tac/services/doi-tac-service';
 import type { EmployeeRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
 import { TRANG_THAI_DON_DAT_HANG, TRANG_THAI_KEY } from '../core/constants';
 
 interface Props {
-  data: DonDatHang[];
+  data: ChiTietDonDatHangFlat[];
   supplierList: DoiTacRefLite[];
   khoList: Kho[];
   employees: EmployeeRef[];
-  selectedCount: number;
-  onAdd: () => void;
-  onDeleteMany: () => void;
-  /** Xuất danh sách (ExportDialog) — tab Danh sách bắt buộc truyền; giống Phiếu kho. */
   onExport: () => void;
-  canCreate?: boolean;
-  canDelete?: boolean;
-  /** fromRows: đếm từ `data`. unweighted: chip luôn hiện khi danh sách chỉ một trang server. */
   chipCountsMode?: 'fromRows' | 'unweighted';
 }
 
-const DonDatHangToolbar: React.FC<Props> = ({
+const ChiTietDonDatHangToolbar: React.FC<Props> = ({
   data,
   supplierList,
   khoList,
   employees,
-  selectedCount,
-  onAdd,
-  onDeleteMany,
   onExport,
-  canCreate = true,
-  canDelete = true,
   chipCountsMode = 'fromRows',
 }) => {
   const { t } = useTranslation();
   const unweighted = chipCountsMode === 'unweighted';
-  const searchTerm = useDonDatHangStore((s) => s.searchTerm);
-  const commitSearchTerm = useDonDatHangStore((s) => s.commitSearchTerm);
-  const filters = useDonDatHangStore((s) => s.filters);
-  const setFilter = useDonDatHangStore((s) => s.setFilter);
-  const clearSelection = useDonDatHangStore((s) => s.clearSelection);
-  const columns = useDonDatHangStore((s) => s.columns);
-  const toggleColumn = useDonDatHangStore((s) => s.toggleColumn);
-  const reorderColumns = useDonDatHangStore((s) => s.reorderColumns);
-  const resetColumns = useDonDatHangStore((s) => s.resetColumns);
+  const searchTerm = useChiTietDonDatHangStore((s) => s.searchTerm);
+  const commitSearchTerm = useChiTietDonDatHangStore((s) => s.commitSearchTerm);
+  const filters = useChiTietDonDatHangStore((s) => s.filters);
+  const setFilter = useChiTietDonDatHangStore((s) => s.setFilter);
+  const columns = useChiTietDonDatHangStore((s) => s.columns);
+  const toggleColumn = useChiTietDonDatHangStore((s) => s.toggleColumn);
+  const reorderColumns = useChiTietDonDatHangStore((s) => s.reorderColumns);
+  const resetColumns = useChiTietDonDatHangStore((s) => s.resetColumns);
 
   const { inputValue: searchInput, setInputValue: setSearchInput } = useSearchInputCommit({
     committedTerm: searchTerm,
@@ -116,39 +103,6 @@ const DonDatHangToolbar: React.FC<Props> = ({
     setFilter('khoNhanIds', []);
     setFilter('nguoiDatIds', []);
   };
-
-  const mobileActions = useMemo(
-    () => [
-      {
-        key: 'export',
-        label: t('common.export'),
-        icon: Download,
-        onClick: onExport,
-        description: '',
-      },
-    ],
-    [onExport, t]
-  );
-
-  /** Khi chọn dòng: GenericToolbar ẩn primary-actions — giữ export trong bulk (giống cần thấy nút). */
-  const bulkExport = useMemo(
-    () => (
-      <Tooltip content={t('common.export')} placement="bottom">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={onExport}
-          className="min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-8 w-8 sm:w-auto sm:px-2.5 p-0 sm:p-0 inline-flex items-center justify-center gap-1.5 border-border text-muted-foreground hover:bg-muted/50"
-          aria-label={t('common.export')}
-        >
-          <Download className="w-4 h-4 shrink-0" />
-          <span className="hidden sm:inline text-xs font-medium pr-0.5">{t('common.export')}</span>
-        </Button>
-      </Tooltip>
-    ),
-    [onExport, t]
-  );
 
   const filterGroups = useMemo(
     () => [
@@ -236,68 +190,46 @@ const DonDatHangToolbar: React.FC<Props> = ({
     </>
   );
 
-  /** Mobile: nút export cạnh ô tìm; desktop: nút export trong hàng actions (giống Phiếu kho). */
-  const searchTrailingExport = (
-    <Tooltip content={t('common.export')} placement="bottom">
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        onClick={onExport}
-        className="sm:hidden shrink-0 inline-flex min-h-[44px] min-w-[44px] h-9 w-9 p-0 items-center justify-center border-border text-muted-foreground hover:bg-muted/50"
-        aria-label={t('common.export')}
-      >
-        <Download className="w-4 h-4" />
-      </Button>
-    </Tooltip>
+  const mobileActions = useMemo(
+    () => [
+      {
+        key: 'export',
+        label: t('common.export'),
+        icon: Download,
+        onClick: onExport,
+        description: '',
+      },
+    ],
+    [onExport, t]
   );
 
   const renderActions = (
-    <>
-      <div className="hidden sm:flex items-center gap-2">
-        <Tooltip content={t('common.export')} placement="bottom">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={onExport}
-            className="inline-flex min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-9 px-2 sm:px-2.5 gap-1.5 items-center justify-center border-border text-muted-foreground hover:bg-muted/50"
-            aria-label={t('common.export')}
-          >
-            <Download className="w-4 h-4 shrink-0" />
-            <span className="text-xs font-medium">{t('common.export')}</span>
-          </Button>
-        </Tooltip>
-      </div>
-      {canCreate ? (
+    <div className="hidden sm:flex items-center gap-2">
+      <Tooltip content={t('common.export')} placement="bottom">
         <Button
-          onClick={onAdd}
+          variant="outline"
           size="sm"
-          className="bg-primary text-white hover:bg-primary/90 shadow-md shadow-primary/20 h-9 px-3 sm:px-4"
+          onClick={onExport}
+          className="inline-flex min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-9 w-9 p-0 items-center justify-center border-border text-muted-foreground hover:bg-muted/50"
         >
-          <Plus className="w-5 h-5 sm:w-4 sm:h-4 sm:mr-2" />
-          <span className="hidden sm:inline">{t('common.addNew')}</span>
+          <Download className="w-4 h-4" />
         </Button>
-      ) : null}
-    </>
+      </Tooltip>
+    </div>
   );
 
   return (
     <GenericToolbar
-      selectedCount={selectedCount}
-      onDeleteMany={canDelete ? onDeleteMany : undefined}
+      selectedCount={0}
       searchTerm={searchInput}
       onSearchChange={setSearchInput}
-      onClearSelection={clearSelection}
+      onClearSelection={() => {}}
       actions={renderActions}
-      bulkActions={bulkExport}
       filters={renderFilters}
       filterGroups={filterGroups}
       mobileActions={mobileActions}
-      searchTrailing={searchTrailingExport}
-      onAdd={canCreate ? onAdd : undefined}
       showBack
-      searchPlaceholder={t('donDatHang.searchPlaceholder')}
+      searchPlaceholder={t('donDatHang.chiTietTab.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       columns={columns}
@@ -308,4 +240,4 @@ const DonDatHangToolbar: React.FC<Props> = ({
   );
 };
 
-export default DonDatHangToolbar;
+export default ChiTietDonDatHangToolbar;

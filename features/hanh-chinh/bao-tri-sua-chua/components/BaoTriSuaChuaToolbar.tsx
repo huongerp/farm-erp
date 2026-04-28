@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Wrench, Calendar, Package } from 'lucide-react';
+import { Plus, Wrench, Calendar, Package, Download } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
+import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
@@ -18,6 +19,8 @@ interface Props {
   items?: PhieuBaoTriSuaChua[];
   onAdd: () => void;
   onDeleteMany: (ids: string[]) => void;
+  /** Xuất danh sách (ExportDialog) — giống Đơn đặt hàng / Phiếu kho. */
+  onExport: () => void;
   showAdd?: boolean;
   canDelete?: boolean;
 }
@@ -26,6 +29,7 @@ const BaoTriSuaChuaToolbar: React.FC<Props> = ({
   items = [],
   onAdd,
   onDeleteMany,
+  onExport,
   showAdd = true,
   canDelete = true,
 }) => {
@@ -76,11 +80,15 @@ const BaoTriSuaChuaToolbar: React.FC<Props> = ({
     [assets, taiSanCounts]
   );
   const activeFilterCount =
+    (searchInput.trim() ? 1 : 0) +
     filters.hang_muc.length +
     filters.id_tai_san.length +
     (filters.dateFrom ? 1 : 0) +
     (filters.dateTo ? 1 : 0);
-  const handleClearAllFilters = () => resetFilters();
+  const handleClearAllFilters = () => {
+    commitSearchTerm('');
+    resetFilters();
+  };
 
   const renderFilters = (
     <>
@@ -149,8 +157,67 @@ const BaoTriSuaChuaToolbar: React.FC<Props> = ({
   );
 
   const mobileActions: ActionItem[] = useMemo(
-    () => [{ label: t('baoTriSuaChua.form.addPhieu'), icon: Plus, onClick: onAdd }],
-    [t, onAdd]
+    () => [
+      { label: t('common.export'), icon: Download, onClick: onExport, description: '' },
+      { label: t('baoTriSuaChua.form.addPhieu'), icon: Plus, onClick: onAdd },
+    ],
+    [t, onAdd, onExport]
+  );
+
+  const exportIconButtonClass =
+    'inline-flex min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-9 w-9 p-0 items-center justify-center border-border text-muted-foreground hover:bg-muted/50';
+
+  const bulkExport = useMemo(
+    () => (
+      <Tooltip content={t('common.export')} placement="bottom">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={onExport}
+          className={exportIconButtonClass}
+          aria-label={t('common.export')}
+        >
+          <Download className="w-4 h-4" />
+        </Button>
+      </Tooltip>
+    ),
+    [onExport, t]
+  );
+
+  const searchTrailingExport = (
+    <Tooltip content={t('common.export')} placement="bottom">
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={onExport}
+        className="sm:hidden shrink-0 inline-flex min-h-[44px] min-w-[44px] h-9 w-9 p-0 items-center justify-center border-border text-muted-foreground hover:bg-muted/50"
+        aria-label={t('common.export')}
+      >
+        <Download className="w-4 h-4" />
+      </Button>
+    </Tooltip>
+  );
+
+  const renderActionsWithExport = (
+    <div className="flex items-center gap-2">
+      <div className="hidden sm:flex items-center gap-2">
+        <Tooltip content={t('common.export')} placement="bottom">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onExport}
+            className={exportIconButtonClass}
+            aria-label={t('common.export')}
+          >
+            <Download className="w-4 h-4" />
+          </Button>
+        </Tooltip>
+      </div>
+      {renderActions}
+    </div>
   );
 
   return (
@@ -159,7 +226,9 @@ const BaoTriSuaChuaToolbar: React.FC<Props> = ({
       searchTerm={searchInput}
       onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
-      actions={renderActions}
+      actions={renderActionsWithExport}
+      bulkActions={bulkExport}
+      searchTrailing={searchTrailingExport}
       filters={renderFilters}
       filterGroups={filterGroups}
       onAdd={onAdd}

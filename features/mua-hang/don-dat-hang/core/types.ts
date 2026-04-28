@@ -57,3 +57,40 @@ export interface DonDatHang {
   tg_cap_nhat: string;
   chi_tiet?: DonDatHangChiTiet[];
 }
+
+/** Một dòng tab "Chi tiết" (view v_don_dat_hang_chi_tiet_flat): header đơn + một dòng hàng. */
+export interface ChiTietDonDatHangFlat {
+  /** Id dòng chi tiết (unique trong bảng). */
+  id: string;
+  id_don_dat_hang: string;
+  so_po: string;
+  ngay_dat: string;
+  ngay_giao_dk: string;
+  id_nha_cung_cap: string;
+  ten_nha_cung_cap?: string;
+  ma_nha_cung_cap?: string;
+  id_kho_nhan?: string | null;
+  ten_kho_nhan?: string | null;
+  id_phieu_de_xuat_vat_tu?: string | null;
+  so_phieu_de_xuat?: string | null;
+  id_nguoi_dat: string;
+  ten_nguoi_dat?: string;
+  ma_nguoi_dat?: string;
+  id_nguoi_duyet?: string | null;
+  ten_nguoi_duyet?: string | null;
+  ma_nguoi_duyet?: string | null;
+  /** Ghi chú trên đơn (header). */
+  don_ghi_chu?: string;
+  trang_thai: DonDatHangTrangThai;
+  don_tg_tao: string;
+  don_tg_cap_nhat: string;
+  id_hang_hoa: string;
+  ma_hang?: string;
+  ten_hang?: string;
+  so_luong: number;
+  don_gia?: number;
+  thanh_tien?: number;
+  don_vi_tinh?: string;
+  /** Ghi chú dòng chi tiết. */
+  ghi_chu?: string;
+}

@@ -3,12 +3,14 @@
  */
 import type { DonDatHangFormValues } from '../core/schema';
 import type { PaginatedTableResult } from '../../../../lib/supabase';
-import type { DonDatHang } from '../core/types';
+import type { ChiTietDonDatHangFlat, DonDatHang } from '../core/types';
 import {
   getAllDonDatHangSupabase,
   getDonDatHangByIdSupabase,
   getDonDatHangPageSupabase,
   fetchAllDonDatHangForListQuerySupabase,
+  getChiTietDonDatHangPageSupabase,
+  fetchAllChiTietDonDatHangForListQuerySupabase,
   createDonDatHangSupabase,
   updateDonDatHangSupabase,
   deleteDonDatHangSupabase,
@@ -37,6 +39,16 @@ export async function getDonDatHangPage(
 }
 
 export const fetchAllDonDatHangForListQuery = fetchAllDonDatHangForListQuerySupabase;
+
+export async function getChiTietDonDatHangPage(
+  page: number,
+  pageSize?: number,
+  listQuery?: DonDatHangListServerQuery
+): Promise<PaginatedTableResult<ChiTietDonDatHangFlat>> {
+  return getChiTietDonDatHangPageSupabase(page, pageSize ?? 100, listQuery);
+}
+
+export const fetchAllChiTietDonDatHangForListQuery = fetchAllChiTietDonDatHangForListQuerySupabase;
 export const getNextSoPoDonDatHang = getNextSoPoFormatted;
 export const getDonDatHangById = getDonDatHangByIdSupabase;
 export const createDonDatHang = (data: DonDatHangFormValues) => createDonDatHangSupabase(data);

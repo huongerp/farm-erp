@@ -484,9 +484,11 @@ const ChiTietTab: React.FC = () => {
           variant="outline"
           onClick={() => setShowExport(true)}
           disabled={totalCount === 0}
-          className="h-8 w-8 p-0 flex items-center justify-center border-border text-muted-foreground hover:bg-muted/50 shrink-0 disabled:opacity-40"
+          className="h-8 w-8 sm:w-auto sm:px-2.5 p-0 sm:p-0 flex items-center justify-center gap-1.5 border-border text-muted-foreground hover:bg-muted/50 shrink-0 disabled:opacity-40"
+          aria-label={t('common.export')}
         >
           <Download size={16} className="shrink-0" />
+          <span className="hidden sm:inline text-xs font-medium">{t('common.export')}</span>
         </Button>
       </Tooltip>
       <Button

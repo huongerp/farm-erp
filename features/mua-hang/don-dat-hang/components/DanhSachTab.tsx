@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import { useDonDatHangListPaged, useDonDatHangById, useDeleteDonDatHang, useDeleteDonDatHangMany, useUpdateDonDatHang } from '../hooks/use-don-dat-hang';
 import { useDonDatHangViewScope } from '../hooks/use-don-dat-hang-view-scope';
-import { buildDonDatHangListServerQuery } from '../services/don-dat-hang-service';
+import { buildDonDatHangListServerQuery, fetchAllDonDatHangForListQuery } from '../services/don-dat-hang-service';
 import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
 import { useDoiTacRefQuery, useEmployeesRefQuery, usePhieuDeXuatSoPhieuMinimalQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
 import { useKhoList } from '../../../kho-van/danh-sach-kho/hooks/use-kho';
@@ -12,37 +13,20 @@ import { useDonDatHangStore } from '../store/useDonDatHangStore';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
 import type { DonDatHang } from '../core/types';
-import type { DonDatHangFormValues } from '../core/schema';
+import { donDatHangToFormValues } from '../core/don-dat-hang-to-form-values';
 import DonDatHangToolbar from './DonDatHangToolbar';
-
-function donDatHangToFormValues(
-  p: DonDatHang,
-  trangThai: DonDatHang['trang_thai'],
-  overrideGhiChu?: string
-): DonDatHangFormValues {
-  return {
-    so_po: p.so_po,
-    ngay_dat: p.ngay_dat,
-    ngay_giao_dk: p.ngay_giao_dk,
-    id_nha_cung_cap: p.id_nha_cung_cap,
-    id_kho_nhan: p.id_kho_nhan ?? undefined,
-    id_phieu_de_xuat_vat_tu: p.id_phieu_de_xuat_vat_tu ?? undefined,
-    id_nguoi_dat: p.id_nguoi_dat,
-    id_nguoi_duyet: p.id_nguoi_duyet ?? undefined,
-    dieu_khoan_thanh_toan: p.dieu_khoan_thanh_toan ?? '',
-    ghi_chu: overrideGhiChu !== undefined ? overrideGhiChu : (p.ghi_chu ?? ''),
-    trang_thai: trangThai,
-    chi_tiet: (p.chi_tiet ?? []).map((ct) => ({
-      id_hang_hoa: ct.id_hang_hoa,
-      so_luong: ct.so_luong,
-      don_gia: ct.don_gia,
-      ghi_chu: ct.ghi_chu ?? '',
-    })),
-  };
-}
 import DonDatHangList from './DonDatHangList';
 import DonDatHangForm from './DonDatHangForm';
 import DonDatHangDetail from './DonDatHangDetail';
+import ExportDialog from '../../../../components/shared/ExportDialog';
+import { useExportData } from '../../../../lib/useExportData';
+import {
+  DON_DAT_HANG_LIST_EXPORT_KEYS,
+  LIST_EXPORT_SHEET_NAME,
+  mapDonDatHangListRow,
+  getExportColumnsDonDatHangList,
+  exportFileNameDonDatHangList,
+} from '../utils/export-don-dat-hang-danh-sach';
 
 const DanhSachTab: React.FC = () => {
   const { t } = useTranslation();
@@ -66,6 +50,9 @@ const DanhSachTab: React.FC = () => {
   const [editingItem, setEditingItem] = useState<DonDatHang | null>(null);
   const [viewingItem, setViewingItem] = useState<DonDatHang | null>(null);
   const [openedFormFromDetailId, setOpenedFormFromDetailId] = useState<string | null>(null);
+  const [showExport, setShowExport] = useState(false);
+  const [exportRows, setExportRows] = useState<DonDatHang[]>([]);
+  const [exportLoading, setExportLoading] = useState(false);
 
   const { data: supplierList = [] } = useDoiTacRefQuery('nha_cung_cap');
   const { data: khoList = [] } = useKhoList();
@@ -114,6 +101,49 @@ const DanhSachTab: React.FC = () => {
     const fresh = tableRows.find((p) => p.id === viewingItem.id);
     if (fresh && fresh !== viewingItem) setViewingItem(fresh);
   }, [tableRows, viewingItem]);
+
+  const exportColumnsList = useMemo(() => getExportColumnsDonDatHangList(t), [t]);
+  const exportMapList = useCallback((item: DonDatHang) => mapDonDatHangListRow(item), []);
+  const { exportData, paginatedData: paginatedExportData, selectedData: selectedExportData } =
+    useExportData({
+      data: exportRows,
+      isOpen: showExport && !exportLoading,
+      mapFn: exportMapList,
+      pagination,
+      selectedIds,
+      keyExtractor: (p) => p.id,
+    });
+
+  useEffect(() => {
+    if (!showExport) {
+      setExportRows([]);
+      setExportLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setExportLoading(true);
+    fetchAllDonDatHangForListQuery(listServerQuery)
+      .then((rows) => {
+        if (!cancelled) setExportRows(rows);
+      })
+      .catch(() => {
+        if (!cancelled) setExportRows([]);
+      })
+      .finally(() => {
+        if (!cancelled) setExportLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [showExport, listQueryKey, listServerQuery]);
+
+  const handleExport = useCallback(() => {
+    if (totalCount === 0) {
+      toast.warning(t('donDatHang.noExportData'));
+      return;
+    }
+    setShowExport(true);
+  }, [totalCount, t]);
 
   const handleEdit = (item: DonDatHang) => {
     setEditingItem(item);
@@ -200,6 +230,7 @@ const DanhSachTab: React.FC = () => {
           setShowForm(true);
         }}
         onDeleteMany={handleDeleteMany}
+        onExport={handleExport}
         canCreate={canCreate}
         canDelete={canDelete}
       />
@@ -232,6 +263,23 @@ const DanhSachTab: React.FC = () => {
             phieuDeXuatList={phieuDeXuatList}
             initialData={editingPoFull ?? editingItem}
             onClose={handleCloseForm}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showExport && (
+          <ExportDialog
+            key={`ddh-export-${listQueryKey}`}
+            open={showExport}
+            onClose={() => setShowExport(false)}
+            columns={exportColumnsList}
+            data={exportData}
+            paginatedData={paginatedExportData}
+            selectedData={selectedExportData}
+            fileName={exportFileNameDonDatHangList()}
+            visibleColumnKeys={listExportVisibleKeys}
+            sheetName={LIST_EXPORT_SHEET_NAME}
           />
         )}
       </AnimatePresence>

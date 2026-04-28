@@ -1,7 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
+import ExportDialog from '../../../../components/shared/ExportDialog';
+import { useExportData } from '../../../../lib/useExportData';
 import BaoTriSuaChuaToolbar from './BaoTriSuaChuaToolbar';
 import PhieuBaoTriTable from './PhieuBaoTriTable';
 import PhieuBaoTriDetail from './PhieuBaoTriDetail';
@@ -14,6 +18,13 @@ import { useBaoTriSuaChuaStore } from '../store/useBaoTriSuaChuaStore';
 import { getLanguage } from '../../../../lib/utils';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
 import type { PhieuBaoTriSuaChua } from '../core/types';
+import {
+  CHI_PHI_TAI_SAN_LIST_EXPORT_KEYS,
+  LIST_EXPORT_SHEET_NAME,
+  mapPhieuChiPhiTaiSanListRow,
+  getExportColumnsPhieuChiPhiTaiSanList,
+  exportFileNamePhieuChiPhiTaiSanList,
+} from '../utils/export-bao-tri-sua-chua-danh-sach';
 
 interface Props {
   /** Từ URL ?tai_san_id=... (vd: link từ chi tiết tài sản): lọc theo tài sản và mở form Thêm phiếu với tài sản mặc định */
@@ -24,7 +35,17 @@ const TatCaTab: React.FC<Props> = ({ defaultTaiSanId }) => {
   const { t } = useTranslation();
   const { canCreate, canUpdate, canDelete, canAdmin } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
-  const { searchTerm, filters, sort, resetState, selectedIds, clearSelection, setFilter } = useBaoTriSuaChuaStore();
+  const {
+    searchTerm,
+    filters,
+    sort,
+    resetState,
+    selectedIds,
+    clearSelection,
+    setFilter,
+    columns,
+    pagination,
+  } = useBaoTriSuaChuaStore();
   const user = useAuthStore((s) => s.user);
   const { viewAll } = useBaoTriSuaChuaViewScope();
   const { data: taiSanList = [] } = useTaiSanList();
@@ -48,6 +69,7 @@ const TatCaTab: React.FC<Props> = ({ defaultTaiSanId }) => {
   }, [list, viewAll, user?.id, taiSanList]);
 
   const deleteMutation = useDeletePhieuBaoTri();
+  const [showExport, setShowExport] = useState(false);
   const [detailItem, setDetailItem] = useState<PhieuBaoTriSuaChua | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editingPhieu, setEditingPhieu] = useState<PhieuBaoTriSuaChua | null>(null);
@@ -86,6 +108,32 @@ const TatCaTab: React.FC<Props> = ({ defaultTaiSanId }) => {
     });
     return sorted;
   }, [filteredList, sort]);
+
+  const exportColumnsList = useMemo(() => getExportColumnsPhieuChiPhiTaiSanList(t), [t]);
+  const exportMapList = useCallback((item: PhieuBaoTriSuaChua) => mapPhieuChiPhiTaiSanListRow(item, t), [t]);
+  const { exportData, paginatedData: paginatedExportData, selectedData: selectedExportData } =
+    useExportData<PhieuBaoTriSuaChua>({
+      data: sortedList,
+      isOpen: showExport,
+      mapFn: exportMapList,
+      pagination,
+      selectedIds,
+      keyExtractor: (p) => p.id,
+    });
+
+  const listExportVisibleKeys = useMemo(() => {
+    const allowed = new Set<string>(CHI_PHI_TAI_SAN_LIST_EXPORT_KEYS as unknown as string[]);
+    const picked = columns.filter((c) => c.visible && allowed.has(c.id)).map((c) => c.id);
+    return picked.length > 0 ? picked : undefined;
+  }, [columns]);
+
+  const handleExport = useCallback(() => {
+    if (sortedList.length === 0) {
+      toast.warning(t('baoTriSuaChua.noExportData'));
+      return;
+    }
+    setShowExport(true);
+  }, [sortedList.length, t]);
 
   const handleAdd = useCallback(() => {
     setEditingPhieu(null);
@@ -148,7 +196,14 @@ const TatCaTab: React.FC<Props> = ({ defaultTaiSanId }) => {
   return (
     <>
       <div className="flex flex-col flex-1 min-h-0 rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-        <BaoTriSuaChuaToolbar items={list} onAdd={handleAdd} onDeleteMany={handleDeleteMany} showAdd={canCreate} canDelete={canDelete} />
+        <BaoTriSuaChuaToolbar
+          items={list}
+          onAdd={handleAdd}
+          onDeleteMany={handleDeleteMany}
+          onExport={handleExport}
+          showAdd={canCreate}
+          canDelete={canDelete}
+        />
         <div className="flex-1 min-h-0 overflow-auto">
           <PhieuBaoTriTable
             data={sortedList}
@@ -171,6 +226,22 @@ const TatCaTab: React.FC<Props> = ({ defaultTaiSanId }) => {
           } : undefined}
         />
       )}
+      <AnimatePresence>
+        {showExport && (
+          <ExportDialog
+            open={showExport}
+            onClose={() => setShowExport(false)}
+            columns={exportColumnsList}
+            data={exportData}
+            paginatedData={paginatedExportData}
+            selectedData={selectedExportData}
+            fileName={exportFileNamePhieuChiPhiTaiSanList()}
+            visibleColumnKeys={listExportVisibleKeys}
+            sheetName={LIST_EXPORT_SHEET_NAME}
+          />
+        )}
+      </AnimatePresence>
+
       {showForm && (
         <TaoPhieuBaoTriForm
           key={editingPhieu?.id ?? 'create'}

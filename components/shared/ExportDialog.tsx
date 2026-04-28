@@ -4,6 +4,19 @@ import { motion } from 'framer-motion';
 import { Download, X, FileSpreadsheet, FileText, Check } from 'lucide-react';
 import Button from '../ui/Button';
 import { cn, getTodayISODate } from '../../lib/utils';
+
+function escapeCsvCell(val: unknown): string {
+  let cell = val == null ? '' : String(val);
+  cell = cell.replace(/"/g, '""');
+  if (cell.search(/("|,|\n|\r)/g) >= 0) return `"${cell}"`;
+  return cell;
+}
+
+/** Excel giới hạn 31 ký tự; không dùng [] * ? : \\ / */
+function safeExcelSheetName(name: string): string {
+  const t = name.replace(/[[\]*?:\\/]/g, '_').trim() || 'Data';
+  return t.length > 31 ? t.slice(0, 31) : t;
+}
 import { ensureJsPDFVietnameseFont, JSPDF_VI_FONT_FAMILY } from '../../lib/jspdf-vietnamese-font';
 import { DIALOG_SIZE } from '../../lib/dialog-sizes';
 
@@ -24,17 +37,33 @@ interface ExportDialogProps {
   paginatedData?: Record<string, any>[];
   fileName: string;
   visibleColumnKeys?: string[];
+  /** Tên sheet Excel (mặc định Data). Tối đa 31 ký tự sau khi làm sạch. */
+  sheetName?: string;
 }
 
 const ExportDialog: React.FC<ExportDialogProps> = ({
-  open, onClose, columns, data, selectedData = [], paginatedData = [], fileName, visibleColumnKeys
+  open,
+  onClose,
+  columns,
+  data,
+  selectedData = [],
+  paginatedData = [],
+  fileName,
+  visibleColumnKeys,
+  sheetName,
 }) => {
   const { t } = useTranslation();
   const [format, setFormat] = useState<ExportFormat>('xlsx');
   const [scope, setScope] = useState<ExportScope>('all');
-  const [selectedCols, setSelectedCols] = useState<Set<string>>(
-    new Set(visibleColumnKeys || columns.map(c => c.key))
-  );
+  const [selectedCols, setSelectedCols] = useState<Set<string>>(() => {
+    const allKeys = columns.map((c) => c.key);
+    if (visibleColumnKeys != null && visibleColumnKeys.length > 0) {
+      const allowed = new Set(allKeys);
+      const picked = visibleColumnKeys.filter((k) => allowed.has(k));
+      return new Set(picked.length > 0 ? picked : allKeys);
+    }
+    return new Set(allKeys);
+  });
   const [exporting, setExporting] = useState(false);
 
   const toggleCol = (key: string) => {
@@ -75,23 +104,36 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
       if (format === 'xlsx' || format === 'csv') {
         const XLSX = await import('xlsx');
         const wsData = [
-          exportCols.map(c => c.label),
-          ...rows.map(row => exportCols.map(c => row[c.key] ?? ''))
+          exportCols.map((c) => c.label),
+          ...rows.map((row) => exportCols.map((c) => row[c.key] ?? '')),
         ];
-        const ws = XLSX.utils.aoa_to_sheet(wsData);
 
-        // Auto column widths
-        ws['!cols'] = exportCols.map(col => ({
-          wch: Math.max(col.label.length, ...rows.slice(0, 50).map(r => String(r[col.key] ?? '').length)) + 2
-        }));
-
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'Data');
-
-        if (format === 'xlsx') {
-          XLSX.writeFile(wb, `${fullName}.xlsx`);
+        if (format === 'csv') {
+          const headerLine = exportCols.map((c) => escapeCsvCell(c.label)).join(',');
+          const dataLines = rows.map((row) =>
+            exportCols.map((c) => escapeCsvCell(row[c.key] ?? '')).join(',')
+          );
+          const blob = new Blob([`\uFEFF${[headerLine, ...dataLines].join('\n')}`], {
+            type: 'text/csv;charset=utf-8;',
+          });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${fullName}.csv`;
+          a.click();
+          URL.revokeObjectURL(url);
         } else {
-          XLSX.writeFile(wb, `${fullName}.csv`, { bookType: 'csv' });
+          const ws = XLSX.utils.aoa_to_sheet(wsData);
+          ws['!cols'] = exportCols.map((col) => ({
+            wch:
+              Math.max(
+                col.label.length,
+                ...rows.slice(0, 50).map((r) => String(r[col.key] ?? '').length)
+              ) + 2,
+          }));
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, safeExcelSheetName(sheetName ?? 'Data'));
+          XLSX.writeFile(wb, `${fullName}.xlsx`);
         }
       } else if (format === 'pdf') {
         const [{ jsPDF }, autoTableMod] = await Promise.all([
