@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Tag, Layers, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
@@ -14,7 +14,7 @@ import EmptyState from '../../../../components/shared/EmptyState';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import StatsToolbar from './stats/StatsToolbar';
 import StatsCards from './stats/StatsCards';
-import StatsCharts from './stats/StatsCharts';
+const StatsCharts = lazy(() => import('./stats/StatsCharts'));
 import StatsTables from './stats/StatsTables';
 import type { TaiSan } from '../core/types';
 
@@ -239,11 +239,13 @@ const ThongKeTab: React.FC = () => {
           ) : (
             <>
               <StatsCards summary={stats.summary} />
-              <StatsCharts
-                chartByNhom={stats.chartByNhom}
-                chartByNoiLuu={stats.chartByNoiLuu}
-                chartByTrangThai={stats.chartByTrangThai}
-              />
+              <Suspense fallback={<LoadingSpinnerWithText text={t('common.loading')} className="py-8" centered />}>
+                <StatsCharts
+                  chartByNhom={stats.chartByNhom}
+                  chartByNoiLuu={stats.chartByNoiLuu}
+                  chartByTrangThai={stats.chartByTrangThai}
+                />
+              </Suspense>
               <StatsTables
                 byNhom={stats.byNhom}
                 byNoiLuu={stats.byNoiLuu}

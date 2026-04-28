@@ -1,10 +1,10 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { User, Users, BarChart3 } from 'lucide-react';
 import TabGroup from '../../../components/ui/TabGroup';
 import CuaToiTab from './components/CuaToiTab';
 import DanhSachTab from './components/DanhSachTab';
-import ThongKeTab from './components/ThongKeTab';
+const ThongKeTab = lazy(() => import('./components/ThongKeTab'));
 import { useBangLuongViewScope } from './hooks/use-bang-luong-view-scope';
 
 const BangLuongPage: React.FC = () => {
@@ -41,7 +41,15 @@ const BangLuongPage: React.FC = () => {
         </div>
       ) : (
         <div className="flex-1 min-h-0 flex flex-col mt-1.5 rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-          <ThongKeTab />
+          <Suspense
+            fallback={
+              <div className="flex flex-1 min-h-[240px] items-center justify-center text-sm text-muted-foreground" aria-busy="true">
+                {t('bangLuong.tabs.stats')}…
+              </div>
+            }
+          >
+            <ThongKeTab />
+          </Suspense>
         </div>
       )}
     </div>

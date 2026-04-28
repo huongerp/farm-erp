@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Tag, Building2, Building, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
@@ -14,7 +14,7 @@ import FilterChipMultiSelect from '../../../../components/shared/FilterChipMulti
 import { useThanhToanDoiTacStats } from './stats/useThanhToanDoiTacStats';
 import StatsToolbar from './stats/StatsToolbar';
 import StatsCards from './stats/StatsCards';
-import StatsCharts from './stats/StatsCharts';
+const StatsCharts = lazy(() => import('./stats/StatsCharts'));
 import StatsTables from './stats/StatsTables';
 import type { ThanhToanDoiTac } from '../core/types';
 
@@ -257,13 +257,15 @@ const ThongKeTab: React.FC = () => {
             <>
               <h3 className="text-sm font-semibold text-primary">{t('thanhToanDoiTac.stats.title')}</h3>
               <StatsCards summary={stats.summary} />
-              <StatsCharts
-                byTrangThai={stats.byTrangThai}
-                byDoiTac={stats.byDoiTac}
-                byDonVi={stats.byDonVi}
-                byMonth={stats.byMonth}
-                byMonthAmount={stats.byMonthAmount}
-              />
+              <Suspense fallback={<LoadingSpinnerWithText text={t('common.loading')} className="py-8" centered />}>
+                <StatsCharts
+                  byTrangThai={stats.byTrangThai}
+                  byDoiTac={stats.byDoiTac}
+                  byDonVi={stats.byDonVi}
+                  byMonth={stats.byMonth}
+                  byMonthAmount={stats.byMonthAmount}
+                />
+              </Suspense>
               <StatsTables byTrangThai={stats.byTrangThai} byDoiTac={stats.byDoiTac} byDonVi={stats.byDonVi} />
             </>
           )}

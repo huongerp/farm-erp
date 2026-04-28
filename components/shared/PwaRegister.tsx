@@ -9,7 +9,7 @@ import { toast } from 'sonner';
  * (kiểm tra qua localStorage). Lần sau bạn deploy bản vá thực sự, bump tiếp
  * giá trị này hoặc giữ nguyên.
  */
-const SW_UNREGISTER_BUSTER = 'v1-egress-fix-2026-04';
+const SW_UNREGISTER_BUSTER = 'v2-pwa-precache-shell-2026-04';
 const SW_UNREGISTER_LS_KEY = 'pwa-sw-unregistered-once';
 
 async function unregisterLegacyServiceWorkersOnce(): Promise<void> {

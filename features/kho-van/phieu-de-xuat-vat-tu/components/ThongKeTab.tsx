@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { User, UserCheck, Calendar, Warehouse, Tag } from 'lucide-react';
 import { toast } from 'sonner';
@@ -13,7 +13,7 @@ import FilterChipMultiSelect from '../../../../components/shared/FilterChipMulti
 import { usePhieuDeXuatVatTuStats } from './stats/usePhieuDeXuatVatTuStats';
 import StatsToolbar from './stats/StatsToolbar';
 import StatsCards from './stats/StatsCards';
-import StatsCharts from './stats/StatsCharts';
+const StatsCharts = lazy(() => import('./stats/StatsCharts'));
 import StatsTables from './stats/StatsTables';
 import type { PhieuDeXuatVatTu } from '../core/types';
 import { trangThaiToFilterKey } from '../core/constants';
@@ -285,13 +285,15 @@ const ThongKeTab: React.FC = () => {
             <>
               <h3 className="text-sm font-semibold text-primary">{t('phieuDeXuatVatTu.stats.title')}</h3>
               <StatsCards summary={stats.summary} />
-              <StatsCharts
-                byTrangThai={stats.byTrangThai}
-                byNoiDeXuat={stats.byNoiDeXuat}
-                byNguoiDeXuat={stats.byNguoiDeXuat}
-                byNguoiDuyet={stats.byNguoiDuyet}
-                byMonth={stats.byMonth}
-              />
+              <Suspense fallback={<LoadingSpinnerWithText text={t('common.loading')} className="py-8" centered />}>
+                <StatsCharts
+                  byTrangThai={stats.byTrangThai}
+                  byNoiDeXuat={stats.byNoiDeXuat}
+                  byNguoiDeXuat={stats.byNguoiDeXuat}
+                  byNguoiDuyet={stats.byNguoiDuyet}
+                  byMonth={stats.byMonth}
+                />
+              </Suspense>
               <StatsTables
                 byTrangThai={stats.byTrangThai}
                 byNoiDeXuat={stats.byNoiDeXuat}

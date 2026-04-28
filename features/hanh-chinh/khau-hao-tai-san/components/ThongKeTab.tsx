@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Layers, MapPin, Tag } from 'lucide-react';
 import { toast } from 'sonner';
@@ -13,7 +13,7 @@ import FilterChipMultiSelect from '../../../../components/shared/FilterChipMulti
 import { useKhauHaoStats } from './stats/useKhauHaoStats';
 import StatsToolbar from './stats/StatsToolbar';
 import StatsCards from './stats/StatsCards';
-import StatsCharts from './stats/StatsCharts';
+const StatsCharts = lazy(() => import('./stats/StatsCharts'));
 import StatsTables from './stats/StatsTables';
 import type { TaiSan } from '../../danh-muc-tai-san/core/types';
 
@@ -186,7 +186,9 @@ const ThongKeTab: React.FC = () => {
           ) : (
             <>
               <StatsCards summary={stats.summary} />
-              <StatsCharts chartByNhom={stats.chartByNhom} />
+              <Suspense fallback={<LoadingSpinnerWithText text={t('common.loading')} className="py-8" centered />}>
+                <StatsCharts chartByNhom={stats.chartByNhom} />
+              </Suspense>
               <StatsTables byNhom={stats.byNhom} />
             </>
           )}

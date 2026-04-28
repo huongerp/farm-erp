@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { User, Calendar, Building2, Tag } from 'lucide-react';
@@ -12,7 +12,7 @@ import { computeDonDatHangStats } from './stats/useDonDatHangStats';
 import { TRANG_THAI_DON_DAT_HANG, TRANG_THAI_KEY } from '../core/constants';
 import StatsToolbar from './stats/StatsToolbar';
 import StatsCards from './stats/StatsCards';
-import StatsCharts from './stats/StatsCharts';
+const StatsCharts = lazy(() => import('./stats/StatsCharts'));
 import StatsTables from './stats/StatsTables';
 import type { DonDatHang } from '../core/types';
 
@@ -288,12 +288,14 @@ const ThongKeTab: React.FC = () => {
             <>
               <h3 className="text-sm font-semibold text-primary">{t('donDatHang.stats.title')}</h3>
               <StatsCards summary={stats!.summary} />
-              <StatsCharts
-                byTrangThai={stats!.byTrangThai}
-                bySupplier={stats!.bySupplier}
-                byBuyer={stats!.byBuyer}
-                byMonth={stats!.byMonth}
-              />
+              <Suspense fallback={<LoadingSpinnerWithText text={t('common.loading')} className="py-8" centered />}>
+                <StatsCharts
+                  byTrangThai={stats!.byTrangThai}
+                  bySupplier={stats!.bySupplier}
+                  byBuyer={stats!.byBuyer}
+                  byMonth={stats!.byMonth}
+                />
+              </Suspense>
               <StatsTables
                 byTrangThai={stats!.byTrangThai}
                 bySupplier={stats!.bySupplier}

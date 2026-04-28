@@ -2,7 +2,6 @@ import React, { useState, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Upload, FileSpreadsheet, X, AlertCircle, CheckCircle2, Download, ArrowRight, FileWarning } from 'lucide-react';
-import * as XLSX from 'xlsx';
 import Button from '../ui/Button';
 import { cn } from '../../lib/utils';
 import { DIALOG_SIZE } from '../../lib/dialog-sizes';
@@ -72,6 +71,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
   const parseFile = useCallback(async (f: File) => {
     setFile(f);
     try {
+      const XLSX = await import('xlsx');
       const buffer = await f.arrayBuffer();
       const workbook = XLSX.read(buffer, { type: 'array' });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -103,7 +103,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
       setResult({ success: 0, errors: [t('shared.import.cannotReadFile')] });
       setStep('result');
     }
-  }, [columns]);
+  }, [columns, t]);
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -162,7 +162,8 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
     setImporting(false);
   };
 
-  const downloadTemplate = () => {
+  const downloadTemplate = async () => {
+    const XLSX = await import('xlsx');
     const wb = XLSX.utils.book_new();
     const headerRow = columns.map(c => c.label);
     const templateData: any[][] = [headerRow];
@@ -195,8 +196,9 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
     XLSX.writeFile(wb, `${templateFileName}.xlsx`);
   };
 
-  const downloadErrorReport = () => {
+  const downloadErrorReport = async () => {
     if (!importErrors || importErrors.length === 0) return;
+    const XLSX = await import('xlsx');
     const headers = [t('shared.import.errorReportRow'), t('shared.import.errorReportCode'), t('shared.import.errorReportName'), t('shared.import.errorReportMsg')];
     const data = importErrors.map((e) => [e.row, e.ma_hang_hoa ?? '', e.ten_hang_hoa ?? '', e.msg]);
     const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);

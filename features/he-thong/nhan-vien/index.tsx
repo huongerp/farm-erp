@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, lazy, Suspense } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
@@ -12,7 +12,7 @@ import EmployeeForm from './components/nhan-vien-form';
 import EmployeeDetail from './components/nhan-vien-detail';
 import EmployeeToolbar from './components/nhan-vien-toolbar';
 import EmployeeTable from './components/nhan-vien-table';
-import EmployeeStats from './components/nhan-vien-stats';
+const EmployeeStats = lazy(() => import('./components/nhan-vien-stats'));
 import BulkEditSheet from './components/nhan-vien-bulk-edit';
 import ImportDialog from '../../../components/shared/ImportDialog';
 import ExportDialog from '../../../components/shared/ExportDialog';
@@ -334,18 +334,26 @@ const EmployeePage: React.FC = () => {
         </div>
       ) : (
         <div className="flex-1 min-h-0 flex flex-col mt-1.5 rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-          <EmployeeStats
-            employees={allForStats}
-            isLoading={statsLoading}
-            onDrillDownDept={(deptId) => {
-              setFilter('id_phong_ban', [deptId]);
-              setActiveTab('list');
-            }}
-            onDrillDownStatus={(status) => {
-              setFilter('trang_thai', [String(status)]);
-              setActiveTab('list');
-            }}
-          />
+          <Suspense
+            fallback={
+              <div className="flex flex-1 min-h-[240px] items-center justify-center text-sm text-muted-foreground" aria-busy="true">
+                {t('employee.tabStats')}…
+              </div>
+            }
+          >
+            <EmployeeStats
+              employees={allForStats}
+              isLoading={statsLoading}
+              onDrillDownDept={(deptId) => {
+                setFilter('id_phong_ban', [deptId]);
+                setActiveTab('list');
+              }}
+              onDrillDownStatus={(status) => {
+                setFilter('trang_thai', [String(status)]);
+                setActiveTab('list');
+              }}
+            />
+          </Suspense>
         </div>
       )}
 

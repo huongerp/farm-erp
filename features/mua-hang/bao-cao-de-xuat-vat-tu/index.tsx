@@ -1,9 +1,9 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import BaoCaoDeXuatVatTuToolbar from './components/BaoCaoDeXuatVatTuToolbar';
-import TongHopDayDuTab from './components/TongHopDayDuTab';
+const TongHopDayDuTab = lazy(() => import('./components/TongHopDayDuTab'));
 import type { BaoCaoDeXuatVatTuFilters } from './core/types';
 import { usePhieuDeXuatVatTuViewScope } from '../../kho-van/phieu-de-xuat-vat-tu/hooks/use-phieu-de-xuat-vat-tu-view-scope';
 import { getKhoList } from '../../kho-van/danh-sach-kho/services/kho-service';
@@ -96,7 +96,15 @@ const BaoCaoDeXuatVatTuPage: React.FC = () => {
         />
       </div>
       <div className="flex-1 min-h-0 flex flex-col mt-1.5 overflow-hidden">
-        <TongHopDayDuTab filters={effectiveFilters} onClearFilters={handleClearAllFilters} />
+        <Suspense
+          fallback={
+            <div className="flex flex-1 min-h-[200px] items-center justify-center text-sm text-muted-foreground" aria-busy="true">
+              {t('common.loading')}
+            </div>
+          }
+        >
+          <TongHopDayDuTab filters={effectiveFilters} onClearFilters={handleClearAllFilters} />
+        </Suspense>
       </div>
     </div>
   );

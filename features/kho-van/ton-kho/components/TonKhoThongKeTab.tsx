@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Package, MapPin } from 'lucide-react';
@@ -11,7 +11,7 @@ import EmptyState from '../../../../components/shared/EmptyState';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import StatsToolbar from './stats/StatsToolbar';
 import StatsCards from './stats/StatsCards';
-import StatsCharts from './stats/StatsCharts';
+const StatsCharts = lazy(() => import('./stats/StatsCharts'));
 import StatsTables from './stats/StatsTables';
 import { computeTonKhoStats } from './stats/useTonKhoStats';
 import type { Kho } from '../../danh-sach-kho/core/types';
@@ -178,7 +178,9 @@ const TonKhoThongKeTab: React.FC = () => {
           ) : (
             <>
               <StatsCards summary={stats.summary} />
-              <StatsCharts byWarehouse={stats.byWarehouse} topProducts={stats.topProducts} />
+              <Suspense fallback={<LoadingSpinnerWithText text={t('common.loading')} className="py-8" centered />}>
+                <StatsCharts byWarehouse={stats.byWarehouse} topProducts={stats.topProducts} />
+              </Suspense>
               <StatsTables byWarehouse={stats.byWarehouse} topProducts={stats.topProducts} />
             </>
           )}

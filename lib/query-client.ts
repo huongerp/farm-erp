@@ -1,6 +1,7 @@
 import { QueryClient, type Query } from '@tanstack/react-query';
-import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
+import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 import { persistQueryClient } from '@tanstack/react-query-persist-client';
+import { get, set, del } from 'idb-keyval';
 
 /**
  * gcTime phải ≥ maxAge để persister có thể khôi phục cache sau F5 (TanStack v5).
@@ -21,7 +22,8 @@ export const queryClient = new QueryClient({
 
 /**
  * Whitelist cache cần persist qua F5. Đây là các REF TĨNH / ít đổi, nên giữ trong
- * localStorage để tránh mỗi F5 là gọi lại Supabase — nguyên nhân chính đốt egress.
+ * IndexedDB (async) để tránh mỗi F5 là gọi lại Supabase — nguyên nhân chính đốt egress,
+ * và tránh `localStorage.setItem` đồng bộ gây jank main thread.
  *
  * Blacklist (KHÔNG persist):
  * - Danh sách phiếu động (phieuKho, phieuDeXuatVatTu, bangLuong, kiemKe, donDatHang…)
@@ -55,15 +57,28 @@ function shouldPersistQuery(query: Query): boolean {
   return true;
 }
 
+const RQ_CACHE_IDB_KEY = 'farm-erp-rq-cache';
+
 if (typeof window !== 'undefined') {
-  const persister = createSyncStoragePersister({
-    storage: window.localStorage,
-    key: 'farm-erp-rq-cache',
-    throttleTime: 1000,
+  const persister = createAsyncStoragePersister({
+    storage: {
+      getItem: async (key) => {
+        const v = await get<string>(key);
+        return v ?? null;
+      },
+      setItem: async (key, value) => {
+        await set(key, value);
+      },
+      removeItem: async (key) => {
+        await del(key);
+      },
+    },
+    key: RQ_CACHE_IDB_KEY,
+    throttleTime: 2000,
   });
   // Buster: đổi chuỗi này khi schema cache không tương thích (sau migration lớn).
-  // Mỗi lần bump → client sẽ drop cache cũ.
-  const CACHE_BUSTER = 'v1-egress-fix-2026-04';
+  // Bump khi đổi storage (localStorage → IndexedDB).
+  const CACHE_BUSTER = 'v2-idb-persist-2026-04';
   persistQueryClient({
     queryClient,
     persister,

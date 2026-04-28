@@ -1,7 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter as Router } from 'react-router-dom';
-import * as Sentry from '@sentry/react';
 import './index.css';
 import App from './App';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -10,10 +9,12 @@ import { queryClient } from './lib/query-client';
 
 const sentryDsn = import.meta.env.VITE_SENTRY_DSN;
 if (sentryDsn && typeof sentryDsn === 'string' && sentryDsn.trim() !== '') {
-  Sentry.init({
-    dsn: sentryDsn,
-    environment: import.meta.env.MODE || 'production',
-    enabled: true,
+  void import('@sentry/react').then((Sentry) => {
+    Sentry.init({
+      dsn: sentryDsn,
+      environment: import.meta.env.MODE || 'production',
+      enabled: true,
+    });
   });
 }
 

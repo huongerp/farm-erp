@@ -2,9 +2,6 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Download, X, FileSpreadsheet, FileText, Check } from 'lucide-react';
-import * as XLSX from 'xlsx';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import Button from '../ui/Button';
 import { cn, getTodayISODate } from '../../lib/utils';
 import { ensureJsPDFVietnameseFont, JSPDF_VI_FONT_FAMILY } from '../../lib/jspdf-vietnamese-font';
@@ -76,6 +73,7 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
 
     try {
       if (format === 'xlsx' || format === 'csv') {
+        const XLSX = await import('xlsx');
         const wsData = [
           exportCols.map(c => c.label),
           ...rows.map(row => exportCols.map(c => row[c.key] ?? ''))
@@ -96,6 +94,11 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
           XLSX.writeFile(wb, `${fullName}.csv`, { bookType: 'csv' });
         }
       } else if (format === 'pdf') {
+        const [{ jsPDF }, autoTableMod] = await Promise.all([
+          import('jspdf'),
+          import('jspdf-autotable'),
+        ]);
+        const autoTable = autoTableMod.default;
         const doc = new jsPDF({ orientation: exportCols.length > 5 ? 'l' : 'p', unit: 'mm', format: 'a4' });
         await ensureJsPDFVietnameseFont(doc);
 

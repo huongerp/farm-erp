@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Wrench, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
@@ -14,7 +14,7 @@ import EmptyState from '../../../../components/shared/EmptyState';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import StatsToolbar from './stats/StatsToolbar';
 import StatsCards from './stats/StatsCards';
-import StatsCharts from './stats/StatsCharts';
+const StatsCharts = lazy(() => import('./stats/StatsCharts'));
 import StatsTables from './stats/StatsTables';
 import { usePhieuBaoTriStats } from './stats/usePhieuBaoTriStats';
 import { exportToExcel, formatCurrency } from '../../../../lib/utils';
@@ -244,11 +244,13 @@ const ThongKeTab: React.FC = () => {
           ) : (
             <>
               <StatsCards summary={stats.summary} />
-              <StatsCharts
-                chartByHangMuc={stats.chartByHangMuc}
-                chartByMonth={stats.chartByMonth}
-                chartByTaiSan={stats.chartByTaiSan}
-              />
+              <Suspense fallback={<LoadingSpinnerWithText text={t('common.loading')} className="py-8" centered />}>
+                <StatsCharts
+                  chartByHangMuc={stats.chartByHangMuc}
+                  chartByMonth={stats.chartByMonth}
+                  chartByTaiSan={stats.chartByTaiSan}
+                />
+              </Suspense>
               <StatsTables
                 byHangMuc={stats.byHangMuc}
                 byTaiSan={stats.byTaiSan}
