@@ -44,6 +44,7 @@
   "donDatHang.form.noItems": "Chưa có dòng nào",
   "donDatHang.form.noItemsHint": "Bấm Thêm dòng để thêm hàng hóa",
   "donDatHang.form.note": "Ghi chú",
+  "donDatHang.form.notePlaceholder": "Ghi chú dòng...",
   "donDatHang.form.save": "Lưu",
   "donDatHang.form.create": "Tạo đơn",
   "donDatHang.status.draft": "Nháp",

@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Edit, Trash2, FileText, Calendar, Warehouse, User, UserCheck, Package, CheckCircle, Printer, X, Copy } from 'lucide-react';
+import { Edit, Trash2, FileText, Calendar, Warehouse, User, UserCheck, Package, CheckCircle, Printer, X, Copy, ShoppingCart } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Textarea from '../../../../components/ui/Textarea';
 import type { PhieuDeXuatVatTu } from '../core/types';
@@ -30,6 +30,7 @@ interface Props {
   onCopy?: (item: PhieuDeXuatVatTu) => void;
   onApprove?: (item: PhieuDeXuatVatTu, payload: PhieuDeXuatVatTuApprovePayload) => void;
   onPrint?: (item: PhieuDeXuatVatTu) => void;
+  onCreateDonDatHang?: (item: PhieuDeXuatVatTu) => void;
   canEdit?: boolean;
   canDelete?: boolean;
   showOverdueBadge?: boolean;
@@ -43,6 +44,7 @@ const PhieuDeXuatVatTuDetail: React.FC<Props> = ({
   onCopy,
   onApprove,
   onPrint,
+  onCreateDonDatHang,
   canEdit = true,
   canDelete = true,
   showOverdueBadge = false,
@@ -79,6 +81,15 @@ const PhieuDeXuatVatTuDetail: React.FC<Props> = ({
             },
           ]
         : []),
+      ...(onCreateDonDatHang
+        ? [
+            {
+              label: t('phieuDeXuatVatTu.detail.toolbar.createOrder'),
+              icon: <ShoppingCart size={16} />,
+              onClick: () => onCreateDonDatHang(data),
+            },
+          ]
+        : []),
       {
         label: t('phieuDeXuatVatTu.detail.toolbar.print'),
         icon: <Printer size={16} />,
@@ -89,7 +100,7 @@ const PhieuDeXuatVatTuDetail: React.FC<Props> = ({
         variant: 'primary' as const,
       },
     ],
-    [canApprove, data, onApprove, onCopy, onClose, onPrint, t]
+    [canApprove, data, onApprove, onCopy, onClose, onPrint, onCreateDonDatHang, t]
   );
 
   const statusLabel =

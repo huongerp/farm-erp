@@ -75,6 +75,7 @@
   "phieuDeXuatVatTu.detail.title": "Chi tiết phiếu đề xuất vật tư",
   "phieuDeXuatVatTu.detail.toolbar.approve": "Phê duyệt",
   "phieuDeXuatVatTu.detail.toolbar.copy": "Sao chép phiếu",
+  "phieuDeXuatVatTu.detail.toolbar.createOrder": "Tạo đơn đặt hàng",
   "phieuDeXuatVatTu.detail.toolbar.print": "In phiếu",
   "phieuDeXuatVatTu.detail.approveDialogTitle": "Phê duyệt phiếu đề xuất",
   "phieuDeXuatVatTu.detail.approveDialogResult": "Kết quả",

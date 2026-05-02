@@ -229,6 +229,7 @@ const DonDatHangDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap w-20">{t('donDatHang.form.quantity')}</th>
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap w-24">{t('donDatHang.form.unitPrice')}</th>
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap w-28">Thành tiền</th>
+                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[140px]">{t('donDatHang.form.note')}</th>
                 </tr>
               </thead>
               <tbody className="[&>tr>td]:border-b [&>tr>td]:border-border">
@@ -241,6 +242,7 @@ const DonDatHangDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
                     <td className="px-4 py-2.5 tabular-nums">{ct.so_luong}</td>
                     <td className="px-4 py-2.5 tabular-nums text-right">{ct.don_gia != null ? ct.don_gia.toLocaleString() : '—'}</td>
                     <td className="px-4 py-2.5 tabular-nums text-right font-medium">{ct.thanh_tien != null ? ct.thanh_tien.toLocaleString() : '—'}</td>
+                    <td className="px-4 py-2.5 text-xs text-muted-foreground">{ct.ghi_chu ?? '—'}</td>
                   </tr>
                 ))}
               </tbody>

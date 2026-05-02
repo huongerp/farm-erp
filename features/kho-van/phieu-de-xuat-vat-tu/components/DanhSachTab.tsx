@@ -19,6 +19,9 @@ import type { PhieuDeXuatVatTuFormValues } from '../core/schema';
 import { TRANG_THAI_CHO_DUYET } from '../core/constants';
 import type { HangHoa } from '../../danh-sach-hang-hoa/core/types';
 import DanhSachHangHoaForm from '../../danh-sach-hang-hoa/components/DanhSachHangHoaForm';
+import DonDatHangForm from '../../../mua-hang/don-dat-hang/components/DonDatHangForm';
+import type { DonDatHangFormValues } from '../../../mua-hang/don-dat-hang/core/schema';
+import type { PhieuDeXuatSoPhieuOption } from '../services/phieu-de-xuat-vat-tu-supabase.service';
 
 function phieuToFormValues(p: PhieuDeXuatVatTu, trangThai: PhieuDeXuatVatTu['trang_thai'], overrideGhiChu?: string): PhieuDeXuatVatTuFormValues {
   return {
@@ -81,6 +84,7 @@ const DanhSachTab: React.FC = () => {
   const [showExport, setShowExport] = useState(false);
   const [exportRows, setExportRows] = useState<PhieuDeXuatVatTu[]>([]);
   const [exportLoading, setExportLoading] = useState(false);
+  const [createDonDatHangFrom, setCreateDonDatHangFrom] = useState<PhieuDeXuatVatTu | null>(null);
 
   const { data: khoList = [] } = useKhoList();
   const { data: employees = [] } = useEmployeesRefQuery();
@@ -361,11 +365,37 @@ const DanhSachTab: React.FC = () => {
             } : undefined}
             onDelete={canDelete ? handleDelete : undefined}
             onApprove={canApprove ? handleApprove : undefined}
+            onCreateDonDatHang={canCreate ? (item) => setCreateDonDatHangFrom(viewingPhieuFull ?? item) : undefined}
             canEdit={!!canUpdate}
             canDelete={canDelete}
             showOverdueBadge={!!(config?.bat_canh_bao_qua_han && viewingItem?.trang_thai === TRANG_THAI_CHO_DUYET && (Math.floor((Date.now() - new Date((viewingPhieuFull ?? viewingItem).tg_tao).getTime()) / 86400000) > (config.thoi_han_duyet_ngay ?? 0)))}
           />
         )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {createDonDatHangFrom && (() => {
+          const phieu = createDonDatHangFrom;
+          const phieuDeXuatOption: PhieuDeXuatSoPhieuOption = { id: phieu.id, so_phieu: phieu.so_phieu, ngay: phieu.ngay };
+          const prefill: Partial<DonDatHangFormValues> = {
+            id_phieu_de_xuat_vat_tu: phieu.id,
+            ngay_giao_dk: phieu.ngay_can,
+            chi_tiet: (phieu.chi_tiet ?? []).map((ct) => ({
+              id_hang_hoa: ct.id_hang_hoa,
+              so_luong: ct.so_luong,
+              ghi_chu: '',
+            })),
+          };
+          return (
+            <DonDatHangForm
+              khoList={khoList}
+              employees={employees}
+              phieuDeXuatList={[phieuDeXuatOption]}
+              prefillValues={prefill}
+              onClose={() => setCreateDonDatHangFrom(null)}
+            />
+          );
+        })()}
       </AnimatePresence>
     </div>
   );

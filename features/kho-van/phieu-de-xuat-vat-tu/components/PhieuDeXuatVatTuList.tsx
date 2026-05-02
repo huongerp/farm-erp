@@ -89,15 +89,15 @@ const PhieuDeXuatVatTuList: React.FC<Props> = ({
           </span>
         );
       case 'ngay':
-        return <span className="text-sm text-muted-foreground">{item.ngay}</span>;
+        return <span className="text-sm text-muted-foreground whitespace-nowrap">{item.ngay}</span>;
       case 'ngay_can':
-        return <span className="text-sm text-muted-foreground">{item.ngay_can}</span>;
+        return <span className="text-sm text-muted-foreground whitespace-nowrap">{item.ngay_can}</span>;
       case 'ten_noi_de_xuat':
-        return <span className="text-sm text-muted-foreground">{item.ten_noi_de_xuat ?? '—'}</span>;
+        return <span className="text-sm text-muted-foreground whitespace-nowrap">{item.ten_noi_de_xuat ?? '—'}</span>;
       case 'ten_nguoi_de_xuat':
-        return <span className="text-sm text-muted-foreground">{item.ten_nguoi_de_xuat ?? '—'}</span>;
+        return <span className="text-sm text-muted-foreground whitespace-nowrap">{item.ten_nguoi_de_xuat ?? '—'}</span>;
       case 'ten_nguoi_duyet':
-        return <span className="text-sm text-muted-foreground">{item.ten_nguoi_duyet ?? '—'}</span>;
+        return <span className="text-sm text-muted-foreground whitespace-nowrap">{item.ten_nguoi_duyet ?? '—'}</span>;
       case 'tong_so_dong':
         return (
           <span className="text-sm text-muted-foreground tabular-nums">
@@ -111,7 +111,11 @@ const PhieuDeXuatVatTuList: React.FC<Props> = ({
           </span>
         );
       case 'ghi_chu':
-        return <span className="text-xs text-muted-foreground line-clamp-2">{item.ghi_chu ?? '—'}</span>;
+        return (
+          <span className="text-xs text-muted-foreground whitespace-nowrap overflow-hidden text-ellipsis block max-w-full" title={item.ghi_chu ?? ''}>
+            {item.ghi_chu ?? '—'}
+          </span>
+        );
       case 'tg_tao':
         return <span className="text-xs text-muted-foreground">{formatDateShort(item.tg_tao)}</span>;
       case 'trang_thai':

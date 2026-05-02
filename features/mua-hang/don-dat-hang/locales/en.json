@@ -44,6 +44,7 @@
   "donDatHang.form.noItems": "No items",
   "donDatHang.form.noItemsHint": "Click Add row to add items",
   "donDatHang.form.note": "Note",
+  "donDatHang.form.notePlaceholder": "Line note...",
   "donDatHang.form.save": "Save",
   "donDatHang.form.create": "Create PO",
   "donDatHang.status.draft": "Draft",

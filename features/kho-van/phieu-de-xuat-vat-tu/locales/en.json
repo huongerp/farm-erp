@@ -75,6 +75,7 @@
   "phieuDeXuatVatTu.detail.title": "Material request detail",
   "phieuDeXuatVatTu.detail.toolbar.approve": "Approve",
   "phieuDeXuatVatTu.detail.toolbar.copy": "Copy request",
+  "phieuDeXuatVatTu.detail.toolbar.createOrder": "Create Purchase Order",
   "phieuDeXuatVatTu.detail.toolbar.print": "Print",
   "phieuDeXuatVatTu.detail.approveDialogTitle": "Approve material request",
   "phieuDeXuatVatTu.detail.approveDialogResult": "Result",

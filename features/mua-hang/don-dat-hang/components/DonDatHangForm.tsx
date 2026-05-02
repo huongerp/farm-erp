@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useForm, Controller, SubmitHandler, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -14,6 +14,7 @@ import type { EmployeeRef } from '../../../he-thong/nhan-vien/services/nhan-vien
 import type { DoiTacRefLite } from '../../../kho-van/danh-sach-doi-tac/services/doi-tac-service';
 import type { HangHoaRefLite } from '../../../kho-van/danh-sach-hang-hoa/services/hang-hoa-service';
 import type { PhieuDeXuatSoPhieuOption } from '../../../kho-van/phieu-de-xuat-vat-tu/services/phieu-de-xuat-vat-tu-supabase.service';
+import { usePhieuDeXuatVatTuById } from '../../../kho-van/phieu-de-xuat-vat-tu/hooks/use-phieu-de-xuat-vat-tu';
 import { useCreateDonDatHang, useUpdateDonDatHang, useNextSoPoDonDatHang } from '../hooks/use-don-dat-hang';
 import { useDoiTacRefQuery, useHangHoaRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
@@ -31,6 +32,8 @@ interface Props {
   employees: EmployeeRef[];
   phieuDeXuatList?: PhieuDeXuatSoPhieuOption[];
   initialData?: DonDatHang | null;
+  /** Giá trị điền sẵn khi tạo mới (ví dụ: từ phiếu đề xuất vật tư) */
+  prefillValues?: Partial<DonDatHangFormValues>;
   onClose: () => void;
 }
 
@@ -40,6 +43,7 @@ const DonDatHangForm: React.FC<Props> = ({
   employees,
   phieuDeXuatList = [],
   initialData,
+  prefillValues,
   onClose,
 }) => {
   const { t } = useTranslation();
@@ -135,7 +139,13 @@ const DonDatHangForm: React.FC<Props> = ({
     defaultValues,
   });
 
-  const { fields, append, remove } = useFieldArray({ control, name: 'chi_tiet' });
+  const { fields, append, remove, replace } = useFieldArray({ control, name: 'chi_tiet' });
+
+  const [autoFillPhieuId, setAutoFillPhieuId] = useState<string | null>(null);
+  const { data: phieuForAutoFill } = usePhieuDeXuatVatTuById(
+    !isEdit ? (autoFillPhieuId ?? undefined) : undefined
+  );
+  const appliedPhieuIdRef = useRef<string | null>(null);
   const chiTietValues = watch('chi_tiet') ?? [];
 
   useEffect(() => {
@@ -143,6 +153,20 @@ const DonDatHangForm: React.FC<Props> = ({
       setValue('so_po', nextSoPo);
     }
   }, [isEdit, nextSoPo, setValue]);
+
+  useEffect(() => {
+    if (!phieuForAutoFill?.chi_tiet?.length) return;
+    if (phieuForAutoFill.id === appliedPhieuIdRef.current) return;
+    appliedPhieuIdRef.current = phieuForAutoFill.id;
+    replace(
+      phieuForAutoFill.chi_tiet.map((ct) => ({
+        id_hang_hoa: ct.id_hang_hoa,
+        so_luong: ct.so_luong,
+        don_gia: undefined,
+        ghi_chu: '',
+      }))
+    );
+  }, [phieuForAutoFill, replace]);
 
   useEffect(() => {
     if (initialData) {
@@ -168,8 +192,9 @@ const DonDatHangForm: React.FC<Props> = ({
     } else {
       reset({
         ...defaultValues,
+        ...prefillValues,
         ngay_dat: getTodayISO().slice(0, 10),
-        ngay_giao_dk: getEndOfMonthISO(),
+        ngay_giao_dk: prefillValues?.ngay_giao_dk ?? getEndOfMonthISO(),
       });
     }
   }, [initialData, reset]);
@@ -289,9 +314,13 @@ const DonDatHangForm: React.FC<Props> = ({
                   label={t('donDatHang.form.linkRequest')}
                   options={phieuDeXuatOptions}
                   value={field.value ?? ''}
-                  onChange={(v) => field.onChange(v === '' ? null : v)}
+                  onChange={(v) => {
+                    field.onChange(v === '' ? null : v);
+                    if (!isEdit) setAutoFillPhieuId(v || null);
+                  }}
                   placeholder={t('donDatHang.form.linkRequestPlaceholder')}
                   icon={<FileText size={12} />}
+                  disabled={isEdit}
                   error={errors.id_phieu_de_xuat_vat_tu?.message}
                   searchable
                   dropdownInPortal
@@ -356,13 +385,14 @@ const DonDatHangForm: React.FC<Props> = ({
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[100px]">{t('donDatHang.form.unitPrice')}</th>
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[110px]">{t('donDatHang.form.amount')}</th>
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[64px]">{t('donDatHang.form.unit')}</th>
+              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[160px]">{t('donDatHang.form.note')}</th>
               <th className="sticky right-0 z-[2] px-4 py-2 font-semibold text-foreground/80 text-xs text-center w-16 bg-muted border-l border-border">{t('common.actions')}</th>
             </tr>
           </thead>
           <tbody className="[&>tr>td]:border-b [&>tr>td]:border-border">
             {fields.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-6 text-center text-muted-foreground text-xs">
+                <td colSpan={8} className="px-4 py-6 text-center text-muted-foreground text-xs">
                   {t('donDatHang.form.noItems')}
                 </td>
               </tr>
@@ -437,6 +467,14 @@ const DonDatHangForm: React.FC<Props> = ({
                       {formatNumberVN(thanhTien)}
                     </td>
                     <td className="px-4 py-2.5 text-xs text-muted-foreground">{donVi}</td>
+                    <td className="px-4 py-2.5 min-w-[180px] align-top">
+                      <textarea
+                        {...register(`chi_tiet.${index}.ghi_chu`)}
+                        placeholder={t('donDatHang.form.notePlaceholder')}
+                        rows={2}
+                        className="w-full min-h-[2.25rem] px-3 py-1.5 text-sm border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring resize-y"
+                      />
+                    </td>
                     <td className="sticky right-0 z-[1] px-4 py-2.5 text-center bg-card border-l border-border/50">
                       <button
                         type="button"
@@ -464,7 +502,7 @@ const DonDatHangForm: React.FC<Props> = ({
                   <td className="px-4 py-2.5 text-xs tabular-nums">{formatNumberVN(tongSoLuong)}</td>
                   <td className="px-4 py-2.5 text-xs" />
                   <td className="px-4 py-2.5 text-xs tabular-nums">{formatNumberVN(tongTien)}</td>
-                  <td colSpan={2} className="px-4 py-2.5 text-xs" />
+                  <td colSpan={3} className="px-4 py-2.5 text-xs" />
                 </tr>
               );
             })()}
