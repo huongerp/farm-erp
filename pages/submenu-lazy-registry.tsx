@@ -29,6 +29,9 @@ export const SUBMENU_MODULE_IMPORTS = {
   'quan-ly-hop-dong': () => import('../features/mua-hang/quan-ly-hop-dong'),
   'bao-cao-de-xuat-vat-tu': () => import('../features/mua-hang/bao-cao-de-xuat-vat-tu'),
   'thu-hoach': () => import('../features/quan-ly-farm/thu-hoach'),
+  'hang-hoa-phan-thuoc': () => import('../features/quan-ly-farm/hang-hoa-phan-thuoc'),
+  'phieu-kho-phan-thuoc': () => import('../features/quan-ly-farm/phieu-kho-phan-thuoc'),
+  'ton-kho-phan-thuoc': () => import('../features/quan-ly-farm/ton-kho-phan-thuoc'),
 } as const;
 
 export type SubmenuLazySlug = keyof typeof SUBMENU_MODULE_IMPORTS;

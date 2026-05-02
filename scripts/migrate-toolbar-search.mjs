@@ -26,6 +26,8 @@ const files = [
   'features/hanh-chinh/cap-phat-thu-hoi/components/ChiTietTabToolbar.tsx',
   'features/mua-hang/thanh-toan-doi-tac/components/ThanhToanDoiTacToolbar.tsx',
   'features/quan-ly-farm/thu-hoach/components/ThuHoachToolbar.tsx',
+  'features/quan-ly-farm/hang-hoa-phan-thuoc/components/DanhMucToolbar.tsx',
+  'features/quan-ly-farm/hang-hoa-phan-thuoc/components/HangHoaToolbar.tsx',
   'features/mua-hang/thiet-lap-de-xuat-vat-tu/components/TrangThaiDoiTacToolbar.tsx',
   'features/mua-hang/thiet-lap-de-xuat-vat-tu/components/TrangThaiThanhToanDoiTacToolbar.tsx',
   'features/mua-hang/thiet-lap-de-xuat-vat-tu/components/TienDoMuaHangToolbar.tsx',

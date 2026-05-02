@@ -31,6 +31,7 @@ export const APPROVE_ACTION = 'approve' as const;
 /** Module có chức năng phê duyệt (nút Duyệt/Phê duyệt trên giao diện) */
 export const MODULES_WITH_APPROVE = new Set<string>([
   'kho-van/phieu-kho',
+  'quan-ly-farm/phieu-kho-phan-thuoc',
   /** Phiếu đề xuất vật tư: module_id trong phân quyền là mua-hang/... (URL /mua-hang/phieu-de-xuat-vat-tu) */
   'mua-hang/phieu-de-xuat-vat-tu',
   'mua-hang/don-dat-hang',
@@ -104,6 +105,28 @@ export const PERMISSION_FUNCTIONS: PermissionFunction[] = [
     groups: [
       { groupTitleKey: 'page.quanLyFarm.groupKeHoach', modules: [
         { id: BASE('quan-ly-farm', 'thu-hoach'), nameKey: 'page.quanLyFarm.modules.thuHoach' },
+      ]},
+      /**
+       * Kho phân thuốc — bố cục nhóm giống Kho vận (Mua hàng): nhập xuất / báo cáo / danh mục.
+       * module_id không đổi (tránh migrate quyen_han).
+       *
+       * Gợi ý gán quyền (view / create / update / delete / admin / all; approve chỉ cho phiếu):
+       * - Thủ kho farm: phiếu — view+create+update+approve (+ delete nếu quy trình cho); tồn/NXT — view; hàng — view+create+update.
+       * - Kế toán / chỉ đọc báo cáo: phiếu — view; tồn/NXT — view (+ export theo nội quy); hàng — view.
+       * - Quản trị: all (hoặc admin) trên cả ba module.
+       * - Giám sát: view trên cả ba.
+       *
+       * Dữ liệu kho chung: UI tồn/NXT farm đọc danh sách kho từ Kho vận — nếu cần hạn chế sửa “danh mục kho”,
+       * gán thêm quyền kho-van/danh-sach-kho (submenu Mua hàng), không nằm trong các module farm dưới đây.
+       */
+      { groupTitleKey: 'page.quanLyFarm.groupKhoPhanThuocNhapXuat', modules: [
+        { id: BASE('quan-ly-farm', 'phieu-kho-phan-thuoc'), nameKey: 'page.quanLyFarm.modules.phieuKhoPhanThuoc' },
+      ]},
+      { groupTitleKey: 'page.quanLyFarm.groupKhoPhanThuocBaoCao', modules: [
+        { id: BASE('quan-ly-farm', 'ton-kho-phan-thuoc'), nameKey: 'page.quanLyFarm.modules.tonKhoPhanThuoc' },
+      ]},
+      { groupTitleKey: 'page.quanLyFarm.groupKhoPhanThuocDanhMuc', modules: [
+        { id: BASE('quan-ly-farm', 'hang-hoa-phan-thuoc'), nameKey: 'page.quanLyFarm.modules.hangHoaPhanThuoc' },
       ]},
     ],
   },

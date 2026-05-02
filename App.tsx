@@ -45,6 +45,7 @@ const PhieuCPTHPreviewPage = lazy(() => import('./features/hanh-chinh/cap-phat-t
 const PhieuKiemKePreviewPage = lazy(() => import('./features/hanh-chinh/kiem-ke-tai-san/PhieuKiemKePreviewPage'));
 const PhieuKiemKeKhoPreviewPage = lazy(() => import('./features/kho-van/kiem-ke-kho/PhieuKiemKeKhoPreviewPage'));
 const PhieuKhoPreviewPage = lazy(() => import('./features/kho-van/phieu-kho/PhieuKhoPreviewPage'));
+const PhieuKhoPTPreviewPage = lazy(() => import('./features/quan-ly-farm/phieu-kho-phan-thuoc/PhieuKhoPTPreviewPage'));
 const PhieuDeXuatVatTuPreviewPage = lazy(() => import('./features/kho-van/phieu-de-xuat-vat-tu/PhieuDeXuatVatTuPreviewPage'));
 const DonDatHangPreviewPage = lazy(() => import('./features/mua-hang/don-dat-hang/DonDatHangPreviewPage'));
 const ThanhToanDoiTacPreviewPage = lazy(() => import('./features/mua-hang/thanh-toan-doi-tac/ThanhToanDoiTacPreviewPage'));
@@ -137,6 +138,18 @@ const App = () => {
         <Route path="/phieu-kiem-ke/:id" element={<ProtectedRoute><Suspense fallback={<PageFallback />}><PhieuKiemKePreviewPage /></Suspense></ProtectedRoute>} />
         <Route path="/mua-hang/kiem-ke-kho/preview/:id" element={<ProtectedRoute><Suspense fallback={<PageFallback />}><PhieuKiemKeKhoPreviewPage /></Suspense></ProtectedRoute>} />
         <Route path="/mua-hang/phieu-kho/preview/:id" element={<ProtectedRoute><Suspense fallback={<PageFallback />}><PhieuKhoPreviewPage /></Suspense></ProtectedRoute>} />
+        <Route
+          path="/quan-ly-farm/phieu-kho-phan-thuoc/preview/:id"
+          element={
+            <ProtectedRoute>
+              <ModulePermissionGuard moduleId="quan-ly-farm/phieu-kho-phan-thuoc">
+                <Suspense fallback={<PageFallback />}>
+                  <PhieuKhoPTPreviewPage />
+                </Suspense>
+              </ModulePermissionGuard>
+            </ProtectedRoute>
+          }
+        />
         <Route path="/mua-hang/phieu-de-xuat-vat-tu/preview/:id" element={<ProtectedRoute><Suspense fallback={<PageFallback />}><PhieuDeXuatVatTuPreviewPage /></Suspense></ProtectedRoute>} />
         <Route path="/mua-hang/don-dat-hang/preview/:id" element={<ProtectedRoute><Suspense fallback={<PageFallback />}><DonDatHangPreviewPage /></Suspense></ProtectedRoute>} />
         <Route path="/mua-hang/thanh-toan-doi-tac/preview/:id" element={<ProtectedRoute><Suspense fallback={<PageFallback />}><ThanhToanDoiTacPreviewPage /></Suspense></ProtectedRoute>} />

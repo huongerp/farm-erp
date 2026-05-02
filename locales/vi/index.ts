@@ -40,6 +40,9 @@ import thanhToanDoiTac from '@/features/mua-hang/thanh-toan-doi-tac/locales/vi.j
 import baoCaodeXuatVatTu from '@/features/mua-hang/bao-cao-de-xuat-vat-tu/locales/vi.json';
 import hopDong from '@/features/mua-hang/quan-ly-hop-dong/locales/vi.json';
 import thuHoach from '@/features/quan-ly-farm/thu-hoach/locales/vi.json';
+import hangHoaPhanThuoc from '@/features/quan-ly-farm/hang-hoa-phan-thuoc/locales/vi.json';
+import phieuKhoPhanThuoc from '@/features/quan-ly-farm/phieu-kho-phan-thuoc/locales/vi.json';
+import tonKhoPhanThuoc from '@/features/quan-ly-farm/ton-kho-phan-thuoc/locales/vi.json';
 import kho from './kho.json';
 
 const vi = {
@@ -82,6 +85,9 @@ const vi = {
   ...(baoCaodeXuatVatTu as Record<string, string>),
   ...(hopDong as Record<string, string>),
   ...(thuHoach as Record<string, string>),
+  ...(hangHoaPhanThuoc as Record<string, string>),
+  ...(phieuKhoPhanThuoc as Record<string, string>),
+  ...(tonKhoPhanThuoc as Record<string, string>),
   ...(kho as Record<string, string>),
 };
 

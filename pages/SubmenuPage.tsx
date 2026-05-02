@@ -87,9 +87,40 @@ const SubmenuPage: React.FC = () => {
         return <Navigate to="/hanh-chinh/cong-viec" replace />;
       }
     }
-    if (basePath === '/quan-ly-farm' && decodedSlug === 'thu-hoach') {
+    if (basePath === '/quan-ly-farm' && decodedSlug === 'kiem-ke-kho-phan-thuoc') {
+      return <Navigate to="/quan-ly-farm" replace />;
+    }
+    if (basePath === '/quan-ly-farm' && QUAN_LY_FARM_MODULE_SLUGS.includes(decodedSlug)) {
+      if (decodedSlug === 'thu-hoach') {
+        return wrapWithPermission(basePath ?? '', decodedSlug, (
+          <ErrorBoundary>{renderLazySubmenuModule('thu-hoach')}</ErrorBoundary>
+        ));
+      }
+      if (decodedSlug === 'hang-hoa-phan-thuoc') {
+        return wrapWithPermission(basePath ?? '', decodedSlug, (
+          <ErrorBoundary>{renderLazySubmenuModule('hang-hoa-phan-thuoc')}</ErrorBoundary>
+        ));
+      }
+      if (decodedSlug === 'phieu-kho-phan-thuoc') {
+        return wrapWithPermission(basePath ?? '', decodedSlug, (
+          <ErrorBoundary>{renderLazySubmenuModule('phieu-kho-phan-thuoc')}</ErrorBoundary>
+        ));
+      }
+      if (decodedSlug === 'ton-kho-phan-thuoc') {
+        return wrapWithPermission(basePath ?? '', decodedSlug, (
+          <ErrorBoundary>{renderLazySubmenuModule('ton-kho-phan-thuoc')}</ErrorBoundary>
+        ));
+      }
+      const farmTitle = t(getQuanLyFarmModuleTitleKeyBySlug(decodedSlug));
       return wrapWithPermission(basePath ?? '', decodedSlug, (
-        <ErrorBoundary>{renderLazySubmenuModule('thu-hoach')}</ErrorBoundary>
+        <ErrorBoundary>
+          <ModulePlaceholder
+            submenuPath={basePath ?? '/'}
+            submenuTitle={title}
+            moduleTitle={farmTitle}
+            icon={icon}
+          />
+        </ErrorBoundary>
       ));
     }
     if (basePath === '/hanh-chinh' && HANH_CHINH_MODULE_SLUGS.includes(decodedSlug)) {
@@ -182,9 +213,6 @@ const SubmenuPage: React.FC = () => {
       return wrapWithPermission(basePath ?? '', decodedSlug, (
         <ErrorBoundary>{renderLazySubmenuModule('bao-cao-de-xuat-vat-tu')}</ErrorBoundary>
       ));
-    }
-    if (basePath === '/quan-ly-farm' && QUAN_LY_FARM_MODULE_SLUGS.includes(decodedSlug)) {
-      moduleTitle = t(getQuanLyFarmModuleTitleKeyBySlug(decodedSlug));
     }
     return (
       <ModulePlaceholder
