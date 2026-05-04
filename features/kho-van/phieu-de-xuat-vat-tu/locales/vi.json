@@ -107,7 +107,7 @@
   "phieuDeXuatVatTu.toast.createSuccess": "Tạo phiếu đề xuất vật tư thành công",
   "phieuDeXuatVatTu.toast.updateSuccess": "Cập nhật phiếu đề xuất vật tư thành công",
   "phieuDeXuatVatTu.toast.deleteSuccess": "Xóa phiếu đề xuất vật tư thành công",
-  "phieuDeXuatVatTu.searchPlaceholder": "Tìm theo số phiếu, ghi chú, trạng thái, nơi đề xuất, người đề xuất/duyệt, mã NV...",
+  "phieuDeXuatVatTu.searchPlaceholder": "tìm kiếm...",
   "phieuDeXuatVatTu.noExportData": "Không có dữ liệu để xuất.",
   "phieuDeXuatVatTu.export.list.so_phieu": "Số phiếu",
   "phieuDeXuatVatTu.export.list.ngay": "Ngày",

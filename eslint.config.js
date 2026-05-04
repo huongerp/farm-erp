@@ -7,6 +7,17 @@ import prettierConfig from 'eslint-config-prettier';
 
 export default [
   { ignores: ['dist/**', 'node_modules/**', '*.min.js', '.npm-cache/**'] },
+  {
+    files: ['scripts/**/*.mjs'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      globals: {
+        console: 'readonly',
+        process: 'readonly',
+      },
+    },
+  },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
   prettierConfig,

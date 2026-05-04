@@ -14,14 +14,16 @@ import type { PhieuDeXuatChiTietListServerQuery, PhieuDeXuatVatTuListServerQuery
 
 const TABLE_PHIEU = 'fp_mh_phieu_de_xuat_vat_tu';
 const TABLE_CHI_TIET = 'fp_mh_phieu_de_xuat_vat_tu_chi_tiet';
+/** View: docs/supabase-v_phieu_de_xuat_vat_tu_chi_tiet_flat.sql — JOIN mã/tên HH cho tìm kiếm tab Chi tiết. */
+const VIEW_CHI_TIET_FLAT = 'v_phieu_de_xuat_vat_tu_chi_tiet_flat';
 const RPC_NEXT_SO_PHIEU = 'get_next_so_phieu_phieu_de_xuat_vat_tu';
 
-/** View DB: chạy docs/supabase-v_phieu_de_xuat_vat_tu_summary.sql trên Supabase. */
+/** View DB: chạy docs/supabase-v_phieu_de_xuat_vat_tu_summary.sql; chi tiết đọc VIEW_CHI_TIET_FLAT (script trong docs). */
 const VIEW_PHIEU_DE_XUAT_SUMMARY = 'v_phieu_de_xuat_vat_tu_summary';
 
 /** Cột view summary (đủ cho `mapPhieuDeXuatSummaryRowToPhieu`). */
 const VIEW_PHIEU_DE_XUAT_SUMMARY_COLUMNS =
-  'id,so_phieu,ngay,ngay_can,id_noi_de_xuat,id_nguoi_de_xuat,id_nguoi_duyet,ghi_chu,trang_thai,tg_tao,tg_cap_nhat,so_dong,tong_so_luong,ref_ten_noi_de_xuat,ref_ten_nguoi_de_xuat,ref_ma_nguoi_de_xuat,ref_ten_nguoi_duyet,ref_ma_nguoi_duyet';
+  'id,so_phieu,ngay,ngay_can,id_noi_de_xuat,id_nguoi_de_xuat,id_nguoi_duyet,ghi_chu,trang_thai,tg_tao,tg_cap_nhat,so_dong,tong_so_luong,ref_ten_noi_de_xuat,ref_ten_nguoi_de_xuat,ref_ma_nguoi_de_xuat,ref_ten_nguoi_duyet,ref_ma_nguoi_duyet,ref_chi_tiet_tim_kiem,ref_ngay_va_thoi_gian_tim_kiem';
 
 const PHIEU_DE_XUAT_HEADER_SELECT =
   'id, so_phieu, ngay, ngay_can, id_noi_de_xuat, id_nguoi_de_xuat, id_nguoi_duyet, ghi_chu, trang_thai, tg_tao, tg_cap_nhat';
@@ -52,6 +54,8 @@ type PhieuDeXuatSummaryRow = PhieuDbRow & {
   ref_ma_nguoi_de_xuat?: string | null;
   ref_ten_nguoi_duyet?: string | null;
   ref_ma_nguoi_duyet?: string | null;
+  ref_chi_tiet_tim_kiem?: string | null;
+  ref_ngay_va_thoi_gian_tim_kiem?: string | null;
 };
 
 function mapPhieuDeXuatSummaryRowToPhieu(row: PhieuDeXuatSummaryRow): PhieuDeXuatVatTu {
@@ -214,6 +218,8 @@ function applyPhieuDeXuatVatTuListQuery(q: any, query: PhieuDeXuatVatTuListServe
       `ref_ma_nguoi_de_xuat.ilike.${pat}`,
       `ref_ten_nguoi_duyet.ilike.${pat}`,
       `ref_ma_nguoi_duyet.ilike.${pat}`,
+      `ref_chi_tiet_tim_kiem.ilike.${pat}`,
+      `ref_ngay_va_thoi_gian_tim_kiem.ilike.${pat}`,
     ];
     if (/^\d+$/.test(term)) {
       const n = Number(term);
@@ -267,6 +273,8 @@ function applyPhieuDeXuatChiTietRowFilters(q: any, query: PhieuDeXuatChiTietList
       `trao_doi.ilike.${pat}`,
       `don_vi_tinh.ilike.${pat}`,
       `trang_thai_phieu.ilike.${pat}`,
+      `ref_ma_hang_hoa.ilike.${pat}`,
+      `ref_ten_hang_hoa.ilike.${pat}`,
     ];
     if (/^\d+$/.test(term)) {
       const n = Number(term);
@@ -585,7 +593,7 @@ async function mapPhieuDeXuatChiTietDbRowsToRows(rows: ChiTietFullDbRow[]): Prom
 export async function getAllPhieuDeXuatVatTuChiTietSupabase(): Promise<PhieuDeXuatVatTuChiTietRow[]> {
   const rows = await fetchAllRows<ChiTietFullDbRow>((from, to) =>
     supabase
-      .from(TABLE_CHI_TIET)
+      .from(VIEW_CHI_TIET_FLAT)
       .select(CHI_TIET_TAB_SELECT)
       .order('id_phieu_de_xuat_vat_tu', { ascending: false })
       .order('id', { ascending: true })
@@ -611,7 +619,7 @@ export async function getPhieuDeXuatVatTuChiTietPageSupabase(
   }
 
   const pageResult = await fetchTablePage<ChiTietFullDbRow>(page, pageSize, async (from, to) => {
-    let sel = supabase.from(TABLE_CHI_TIET).select(CHI_TIET_TAB_SELECT, { count: 'exact' });
+    let sel = supabase.from(VIEW_CHI_TIET_FLAT).select(CHI_TIET_TAB_SELECT, { count: 'exact' });
     sel = applyPhieuIdConstraint(sel, phieuIds);
     if (listQuery) sel = applyPhieuDeXuatChiTietRowFilters(sel, listQuery);
     const res = await sel

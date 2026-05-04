@@ -1,7 +1,7 @@
 import { createGenericStore, type ColumnConfig } from '../../../../store/createGenericStore';
 import i18n from '../../../../lib/i18n';
 
-export interface FarmDanhMucFilters {}
+export type FarmDanhMucFilters = Record<string, never>;
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'thu_tu', label: i18n.t('farmHangHoaPhanThuoc.danhMuc.store.orderCol'), visible: true, minWidth: 80, maxWidth: 100, order: 0 },

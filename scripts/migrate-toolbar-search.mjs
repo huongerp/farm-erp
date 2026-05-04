@@ -68,9 +68,6 @@ function migrate(content, hookName) {
   let out = content.replace(re, replacement);
   if (!out.includes('use-generic-toolbar-search')) {
     const lines = out.split('\n');
-    const storeImportIdx = lines.findIndex(
-      (l) => l.includes('from') && l.includes(hookName.replace('use', '').toLowerCase().split('store')[0] || 'store')
-    );
     const idx = lines.findIndex((l) => l.trim().startsWith('import') && l.includes(hookName));
     const insertAt = idx >= 0 ? idx : 1;
     lines.splice(insertAt, 0, importLine);

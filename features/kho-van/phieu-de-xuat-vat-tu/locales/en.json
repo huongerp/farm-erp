@@ -107,7 +107,7 @@
   "phieuDeXuatVatTu.toast.createSuccess": "Material request created successfully",
   "phieuDeXuatVatTu.toast.updateSuccess": "Material request updated successfully",
   "phieuDeXuatVatTu.toast.deleteSuccess": "Material request deleted successfully",
-  "phieuDeXuatVatTu.searchPlaceholder": "Search by code, notes, status, location, requester/approver, employee code...",
+  "phieuDeXuatVatTu.searchPlaceholder": "Search...",
   "phieuDeXuatVatTu.noExportData": "No data to export.",
   "phieuDeXuatVatTu.export.list.so_phieu": "Code",
   "phieuDeXuatVatTu.export.list.ngay": "Date",

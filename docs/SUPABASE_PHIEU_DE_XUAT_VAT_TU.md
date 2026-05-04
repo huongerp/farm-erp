@@ -39,7 +39,18 @@ Khi bật **“Tự sinh số phiếu”** trong cấu hình đề xuất vật 
 
 Nếu tên bảng nhân viên/chi nhánh của bạn khác, chỉ cần đảm bảo app truyền đúng `id`; không bắt buộc tạo FK trên Supabase.
 
-## 4. Tóm tắt thay đổi app (đã làm)
+## 4. View danh sách + tìm kiếm (mã/tên vật tư trong chi tiết)
+
+App đọc `v_phieu_de_xuat_vat_tu_summary` (tab **Danh sách**) và `v_phieu_de_xuat_vat_tu_chi_tiet_flat` (tab **Chi tiết**). Chạy lần lượt trong SQL Editor:
+
+1. `docs/supabase-v_phieu_de_xuat_vat_tu_summary.sql` — cột `ref_chi_tiet_tim_kiem`, `ref_ngay_va_thoi_gian_tim_kiem` phục vụ tìm theo tên/mã hàng trong dòng chi tiết và theo ngày/thời gian.
+2. `docs/supabase-v_phieu_de_xuat_vat_tu_chi_tiet_flat.sql` — JOIN `fp_mh_danh_sach_hang_hoa` để tìm theo `ref_ten_hang_hoa` / `ref_ma_hang_hoa`.
+
+## 5. Index tìm kiếm (ILIKE, tùy chọn)
+
+Sau `pg_trgm`, chạy `docs/supabase-phieu-de-xuat-vat-tu-search-indexes.sql` để tạo GIN `gin_trgm_ops` trên các cột text thường dùng trong filter (phiếu, chi tiết, hàng hóa, nhân viên, kho). Xem thêm `docs/supabase-search-ilike-indexes.sql`.
+
+## 6. Tóm tắt thay đổi app (đã làm)
 
 - Form tạo mới: tự điền **người đề xuất** (user đăng nhập) và **nơi đề xuất** (kho theo chi nhánh user); ẩn **Trạng thái** và **Người duyệt** khi tạo.
 - Validation: **ngày cần** ≥ **ngày lập**.
