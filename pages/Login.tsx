@@ -11,7 +11,14 @@ import { useAuthStore, useUIStore } from '../store/useStore';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import { toast } from 'sonner';
-import { signInWithPassword, employeeToUser, requestPasswordReset, signInWithGoogle, getSessionBootstrap } from '../lib/auth';
+import {
+  signInWithPassword,
+  employeeToUser,
+  requestPasswordReset,
+  signInWithGoogle,
+  getSessionBootstrap,
+  ResignedEmployeeAuthError,
+} from '../lib/auth';
 import { queryClient } from '../lib/query-client';
 import { getCurrentRoleContext } from '../features/he-thong/phan-quyen/services/phan-quyen-service';
 import { CURRENT_ROLE_CONTEXT_KEY } from '../features/he-thong/phan-quyen/hooks/use-phan-quyen';
@@ -88,8 +95,12 @@ const Login: React.FC = () => {
       toast.success(t('page.login.loginSuccess'));
       navigate('/');
     } catch (err) {
-      const message = err instanceof Error ? err.message : t('page.login.loginError');
-      toast.error(message);
+      if (err instanceof ResignedEmployeeAuthError) {
+        toast.error(t('page.login.accountLocked'));
+      } else {
+        const message = err instanceof Error ? err.message : t('page.login.loginError');
+        toast.error(message);
+      }
     } finally {
       setIsLoading(false);
     }

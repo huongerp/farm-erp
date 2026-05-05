@@ -237,6 +237,7 @@
   "page.login.loginError": "Đăng nhập thất bại. Kiểm tra email và mật khẩu.",
   "page.login.googleNotConfigured": "Đăng nhập Google chưa được cấu hình. Vui lòng dùng email/mật khẩu.",
   "page.login.googleNoEmployee": "Tài khoản Google chưa có trong danh sách nhân viên. Vui lòng dùng email/mật khẩu hoặc liên hệ quản trị.",
+  "page.login.accountLocked": "Tài khoản bị khóa.",
   "page.login.googleUser": "Google User",
   "page.login.googleSuccess": "Đăng nhập bằng Google thành công!",
   "page.login.heading": "Quản lý doanh nghiệp",

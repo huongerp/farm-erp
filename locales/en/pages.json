@@ -237,6 +237,7 @@
   "page.login.loginError": "Login failed. Check your email and password.",
   "page.login.googleNotConfigured": "Google sign-in is not configured. Please use email and password.",
   "page.login.googleNoEmployee": "This Google account is not in the employee list. Please use email/password or contact your administrator.",
+  "page.login.accountLocked": "This account has been locked.",
   "page.login.googleUser": "Google User",
   "page.login.googleSuccess": "Google login successful!",
   "page.login.heading": "Enterprise management",

@@ -8,6 +8,24 @@ import type { CurrentRoleContextData } from '../features/he-thong/phan-quyen/ser
 import { getModuleName } from '../features/he-thong/phan-quyen/services/phan-quyen-service';
 import type { CompanyInfoPayload } from '../features/he-thong/thong-tin-cong-ty/services/thong-tin-cong-ty-service';
 
+/** Ném khi nhân viên `trang_thai === Nghỉ việc` — UI map sang i18n `page.login.accountLocked`. */
+export class ResignedEmployeeAuthError extends Error {
+  constructor() {
+    super('ResignedEmployeeAuth');
+    this.name = 'ResignedEmployeeAuthError';
+  }
+}
+
+async function resolveEmployeeOrSignOutIfResigned(
+  employee: Employee | null
+): Promise<{ employee: Employee | null; lockoutReason: 'resigned' | null }> {
+  if (employee?.trang_thai === TRANG_THAI_NV.NGHI_VIEC) {
+    await supabase.auth.signOut();
+    return { employee: null, lockoutReason: 'resigned' };
+  }
+  return { employee, lockoutReason: null };
+}
+
 /**
  * Chuyển bản ghi nhân viên (fp_var_nhan_vien) sang User để lưu store.
  * App nhận diện user bằng email so với Supabase Auth; sau đăng nhập lưu id, ho_va_ten, phong_ban_id, chuc_vu_id, id_chi_nhanh (chi nhánh mặc định = phần tử đầu của chi_nhanh_ids), cap_bac.
@@ -60,7 +78,9 @@ export async function signInWithPassword(
     );
   }
 
-  return employee;
+  const gated = await resolveEmployeeOrSignOutIfResigned(employee);
+  if (gated.lockoutReason === 'resigned') throw new ResignedEmployeeAuthError();
+  return gated.employee!;
 }
 
 /**
@@ -79,7 +99,9 @@ export async function getSessionEmployee(): Promise<Employee | null> {
   const email = session?.user?.email;
   if (!email) return null;
 
-  return getEmployeeByEmail(email);
+  const employee = await getEmployeeByEmail(email);
+  const gated = await resolveEmployeeOrSignOutIfResigned(employee);
+  return gated.employee;
 }
 
 /**
@@ -96,6 +118,8 @@ export interface SessionBootstrap {
   employee: Employee | null;
   roleContext: CurrentRoleContextData | null;
   company: CompanyInfoPayload | null;
+  /** Có khi nhân viên trùng email đang ở trạng thái Nghỉ việc — phiên Auth đã bị xóa. */
+  lockoutReason?: 'resigned';
 }
 
 /** Chuẩn hoá bản ghi nhân viên trả về từ RPC (JSONB) — chỉ có các cột cần cho auth/guard. */
@@ -160,7 +184,12 @@ export async function getSessionBootstrap(): Promise<SessionBootstrap> {
       company: Record<string, unknown> | null;
     } | null;
 
-    const employee = bootstrapEmployeeFromRpc(payload?.employee ?? null);
+    let employee = bootstrapEmployeeFromRpc(payload?.employee ?? null);
+    const gated = await resolveEmployeeOrSignOutIfResigned(employee);
+    if (gated.lockoutReason === 'resigned') {
+      return { employee: null, roleContext: null, company: null, lockoutReason: 'resigned' };
+    }
+    employee = gated.employee;
     const company = bootstrapCompanyFromRpc(payload?.company ?? null);
     const roleContext: CurrentRoleContextData | null = employee
       ? {
@@ -179,7 +208,11 @@ export async function getSessionBootstrap(): Promise<SessionBootstrap> {
   } catch {
     // RPC chưa được tạo hoặc quyền chưa cấp → fallback request truyền thống để app không gãy.
     const employee = await getEmployeeByEmail(email);
-    return { employee, roleContext: null, company: null };
+    const gated = await resolveEmployeeOrSignOutIfResigned(employee);
+    if (gated.lockoutReason === 'resigned') {
+      return { employee: null, roleContext: null, company: null, lockoutReason: 'resigned' };
+    }
+    return { employee: gated.employee, roleContext: null, company: null };
   }
 }
 

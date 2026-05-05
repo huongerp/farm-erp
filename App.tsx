@@ -86,7 +86,7 @@ function useAuthSync() {
       // + useCompanyInfo (1 request). Sau khi có dữ liệu, seed thẳng vào React Query cache &
       // UI store để các hook (useCurrentRoleContext / useCompanyInfo) không gọi lại API.
       authBootstrapPromise = (async () => {
-        const { employee, roleContext, company } = await getSessionBootstrap();
+        const { employee, roleContext, company, lockoutReason } = await getSessionBootstrap();
         const { login, logout } = useAuthStore.getState();
         const { setCompanyInfo } = useUIStore.getState();
         if (employee) {
@@ -105,9 +105,13 @@ function useAuthSync() {
           }
         } else {
           logout();
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session?.user?.email) {
-            toast.info(i18n.t('page.login.googleNoEmployee'));
+          if (lockoutReason === 'resigned') {
+            toast.error(i18n.t('page.login.accountLocked'));
+          } else {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user?.email) {
+              toast.info(i18n.t('page.login.googleNoEmployee'));
+            }
           }
         }
       })();
