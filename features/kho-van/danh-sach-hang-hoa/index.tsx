@@ -85,6 +85,13 @@ const DanhSachHangHoaPage: React.FC = () => {
       ),
     [list]
   );
+  const existingPhanLoaiList = useMemo(
+    () =>
+      [...new Set(list.map((h) => h.phan_loai).filter((x): x is string => x != null && x.trim() !== ''))].sort((a, b) =>
+        a.localeCompare(b)
+      ),
+    [list]
+  );
   const deleteMutation = useDeleteHangHoa();
   const deleteManyMutation = useDeleteHangHoaMany();
   const statusMutation = useUpdateHangHoaStatus();
@@ -95,6 +102,7 @@ const DanhSachHangHoaPage: React.FC = () => {
       { key: 'ma_hang_hoa', label: t('hangHoa.form.code'), required: true },
       { key: 'ten_hang_hoa', label: t('hangHoa.form.name'), required: true },
       { key: 'danh_muc', label: t('hangHoa.import.danhMucCol'), required: true },
+      { key: 'phan_loai', label: t('hangHoa.store.classificationCol') },
       { key: 'dvt', label: t('hangHoa.form.unit'), required: true },
       { key: 'don_gia', label: t('hangHoa.form.price') },
       { key: 'mo_ta', label: t('hangHoa.store.descCol') },
@@ -105,8 +113,8 @@ const DanhSachHangHoaPage: React.FC = () => {
 
   const importSampleRows = useMemo<ImportSampleRow[]>(
     () => [
-      ['SP-001', 'Giấy A4 70gsm', 'VPP', 'Ram', 50000, 'Giấy in chất lượng cao', 'Đang hoạt động'],
-      ['SP-002', 'Bút bi xanh', 'VPP', 'Cây', 5000, '', 'Đang hoạt động'],
+      ['SP-001', 'Giấy A4 70gsm', 'VPP', 'Văn phòng phẩm', 'Ram', 50000, 'Giấy in chất lượng cao', 'Đang hoạt động'],
+      ['SP-002', 'Bút bi xanh', 'VPP', 'Văn phòng phẩm', 'Cây', 5000, '', 'Đang hoạt động'],
     ],
     []
   );
@@ -150,6 +158,7 @@ const DanhSachHangHoaPage: React.FC = () => {
       { key: 'ma_hang_hoa', label: t('hangHoa.store.codeCol') },
       { key: 'ten_hang_hoa', label: t('hangHoa.store.nameCol') },
       { key: 'ten_danh_muc', label: t('hangHoa.store.categoryCol') },
+      { key: 'phan_loai', label: t('hangHoa.store.classificationCol') },
       { key: 'dvt', label: t('hangHoa.store.unitCol') },
       { key: 'don_gia', label: t('hangHoa.store.priceCol') },
       { key: 'mo_ta', label: t('hangHoa.store.descCol') },
@@ -176,6 +185,7 @@ const DanhSachHangHoaPage: React.FC = () => {
         item.ten_hang_hoa.toLowerCase().includes(searchLower) ||
         item.ma_hang_hoa.toLowerCase().includes(searchLower) ||
         (item.ten_danh_muc?.toLowerCase().includes(searchLower) ?? false) ||
+        (item.phan_loai?.toLowerCase().includes(searchLower) ?? false) ||
         (item.dvt?.toLowerCase().includes(searchLower) ?? false);
       const statusKey = item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? 'Active' : 'Inactive';
       const matchesStatus = f.status.length === 0 || f.status.includes(statusKey);
@@ -185,6 +195,9 @@ const DanhSachHangHoaPage: React.FC = () => {
       const matchesDanhMucCon =
         f.id_danh_muc.length === 0 ||
         (item.danh_muc_id != null && f.id_danh_muc.includes(item.danh_muc_id));
+      const matchesPhanLoai =
+        f.phan_loai.length === 0 ||
+        (item.phan_loai != null && item.phan_loai.trim() !== '' && f.phan_loai.includes(item.phan_loai.trim()));
       const matchesDvt =
         f.dvt.length === 0 || (item.dvt != null && item.dvt.trim() !== '' && f.dvt.includes(item.dvt.trim()));
       return (
@@ -192,6 +205,7 @@ const DanhSachHangHoaPage: React.FC = () => {
         matchesStatus &&
         matchesDanhMucCha &&
         matchesDanhMucCon &&
+        matchesPhanLoai &&
         matchesDvt
       );
     },
@@ -220,6 +234,7 @@ const DanhSachHangHoaPage: React.FC = () => {
       ma_hang_hoa: item.ma_hang_hoa,
       ten_hang_hoa: item.ten_hang_hoa,
       ten_danh_muc: item.ten_danh_muc ?? '',
+      phan_loai: item.phan_loai ?? '',
       dvt: item.dvt ?? '',
       don_gia: item.don_gia ?? '',
       mo_ta: item.mo_ta ?? '',
@@ -317,6 +332,7 @@ const DanhSachHangHoaPage: React.FC = () => {
       ma_hang_hoa: row.ma_hang_hoa != null ? String(row.ma_hang_hoa) : undefined,
       ten_hang_hoa: row.ten_hang_hoa != null ? String(row.ten_hang_hoa) : undefined,
       danh_muc: row.danh_muc != null ? String(row.danh_muc) : undefined,
+      phan_loai: row.phan_loai != null ? String(row.phan_loai) : undefined,
       dvt: row.dvt != null ? String(row.dvt) : undefined,
       don_gia: row.don_gia as string | number | undefined,
       mo_ta: row.mo_ta != null ? String(row.mo_ta) : undefined,
@@ -392,6 +408,7 @@ const DanhSachHangHoaPage: React.FC = () => {
             initialData={editingItem}
             defaultThuTu={nextThuTu}
             existingDvtList={existingDvtList}
+            existingPhanLoaiList={existingPhanLoaiList}
             onClose={handleCloseForm}
           />
         )}

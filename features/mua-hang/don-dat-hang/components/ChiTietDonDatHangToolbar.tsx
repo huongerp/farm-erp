@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Tag, Building2, Warehouse, User, Download } from 'lucide-react';
+import { Tag, Building2, Warehouse, User, Download, Folder, FolderTree } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
@@ -13,11 +13,16 @@ import type { DoiTacRefLite } from '../../../kho-van/danh-sach-doi-tac/services/
 import type { EmployeeRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
 import { TRANG_THAI_DON_DAT_HANG, TRANG_THAI_KEY } from '../core/constants';
 
+type FilterOption = { label: string; value: string; count?: number };
+
 interface Props {
   data: ChiTietDonDatHangFlat[];
   supplierList: DoiTacRefLite[];
   khoList: Kho[];
   employees: EmployeeRef[];
+  danhMucCap1Options: FilterOption[];
+  danhMucCap2Options: FilterOption[];
+  phanLoaiOptions: FilterOption[];
   onExport: () => void;
   chipCountsMode?: 'fromRows' | 'unweighted';
 }
@@ -27,6 +32,9 @@ const ChiTietDonDatHangToolbar: React.FC<Props> = ({
   supplierList,
   khoList,
   employees,
+  danhMucCap1Options,
+  danhMucCap2Options,
+  phanLoaiOptions,
   onExport,
   chipCountsMode = 'fromRows',
 }) => {
@@ -92,8 +100,20 @@ const ChiTietDonDatHangToolbar: React.FC<Props> = ({
       (filters.status?.length ?? 0) +
       (filters.nhaCungCapIds?.length ?? 0) +
       (filters.khoNhanIds?.length ?? 0) +
-      (filters.nguoiDatIds?.length ?? 0),
-    [searchInput, filters.status, filters.nhaCungCapIds, filters.khoNhanIds, filters.nguoiDatIds]
+      (filters.nguoiDatIds?.length ?? 0) +
+      (filters.danhMucCap1Ids?.length ?? 0) +
+      (filters.danhMucCap2Ids?.length ?? 0) +
+      (filters.phanLoai?.length ?? 0),
+    [
+      searchInput,
+      filters.status,
+      filters.nhaCungCapIds,
+      filters.khoNhanIds,
+      filters.nguoiDatIds,
+      filters.danhMucCap1Ids,
+      filters.danhMucCap2Ids,
+      filters.phanLoai,
+    ]
   );
 
   const handleClearAllFilters = () => {
@@ -102,6 +122,9 @@ const ChiTietDonDatHangToolbar: React.FC<Props> = ({
     setFilter('nhaCungCapIds', []);
     setFilter('khoNhanIds', []);
     setFilter('nguoiDatIds', []);
+    setFilter('danhMucCap1Ids', []);
+    setFilter('danhMucCap2Ids', []);
+    setFilter('phanLoai', []);
   };
 
   const filterGroups = useMemo(
@@ -131,6 +154,30 @@ const ChiTietDonDatHangToolbar: React.FC<Props> = ({
         onChange: (val: string[]) => setFilter('khoNhanIds', val),
       },
       {
+        key: 'danhMucCap1Ids',
+        label: t('donDatHang.chiTietTab.categoryLevel1Col'),
+        icon: Folder,
+        options: danhMucCap1Options,
+        value: filters.danhMucCap1Ids ?? [],
+        onChange: (val: string[]) => setFilter('danhMucCap1Ids', val),
+      },
+      {
+        key: 'danhMucCap2Ids',
+        label: t('donDatHang.chiTietTab.categoryLevel2Col'),
+        icon: FolderTree,
+        options: danhMucCap2Options,
+        value: filters.danhMucCap2Ids ?? [],
+        onChange: (val: string[]) => setFilter('danhMucCap2Ids', val),
+      },
+      {
+        key: 'phanLoai',
+        label: t('donDatHang.chiTietTab.classificationCol'),
+        icon: Tag,
+        options: phanLoaiOptions,
+        value: filters.phanLoai ?? [],
+        onChange: (val: string[]) => setFilter('phanLoai', val),
+      },
+      {
         key: 'nguoiDatIds',
         label: t('donDatHang.form.buyer'),
         icon: User,
@@ -144,11 +191,17 @@ const ChiTietDonDatHangToolbar: React.FC<Props> = ({
       statusOptions,
       supplierOptions,
       khoOptions,
+      danhMucCap1Options,
+      danhMucCap2Options,
       buyerOptions,
+      phanLoaiOptions,
       filters.status,
       filters.nhaCungCapIds,
       filters.khoNhanIds,
       filters.nguoiDatIds,
+      filters.danhMucCap1Ids,
+      filters.danhMucCap2Ids,
+      filters.phanLoai,
       setFilter,
     ]
   );
@@ -178,6 +231,30 @@ const ChiTietDonDatHangToolbar: React.FC<Props> = ({
         placeholder={t('donDatHang.form.warehouse')}
         icon={Warehouse}
         className="w-full sm:w-[160px]"
+      />
+      <FilterChipMultiSelect
+        options={danhMucCap1Options}
+        value={filters.danhMucCap1Ids ?? []}
+        onChange={(v) => setFilter('danhMucCap1Ids', v)}
+        placeholder={t('donDatHang.chiTietTab.categoryLevel1Col')}
+        icon={Folder}
+        className="w-full sm:w-[170px]"
+      />
+      <FilterChipMultiSelect
+        options={danhMucCap2Options}
+        value={filters.danhMucCap2Ids ?? []}
+        onChange={(v) => setFilter('danhMucCap2Ids', v)}
+        placeholder={t('donDatHang.chiTietTab.categoryLevel2Col')}
+        icon={FolderTree}
+        className="w-full sm:w-[170px]"
+      />
+      <FilterChipMultiSelect
+        options={phanLoaiOptions}
+        value={filters.phanLoai ?? []}
+        onChange={(v) => setFilter('phanLoai', v)}
+        placeholder={t('donDatHang.chiTietTab.classificationCol')}
+        icon={Tag}
+        className="w-full sm:w-[150px]"
       />
       <FilterChipMultiSelect
         options={buyerOptions}

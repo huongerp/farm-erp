@@ -15,7 +15,7 @@ import {
 import { useDonDatHangViewScope } from '../hooks/use-don-dat-hang-view-scope';
 import { buildDonDatHangListServerQuery, fetchAllChiTietDonDatHangForListQuery } from '../services/don-dat-hang-service';
 import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
-import { useDoiTacRefQuery, useEmployeesRefQuery, usePhieuDeXuatSoPhieuMinimalQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
+import { useDoiTacRefQuery, useEmployeesRefQuery, useHangHoaRefQuery, usePhieuDeXuatSoPhieuMinimalQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
 import { useKhoList } from '../../../kho-van/danh-sach-kho/hooks/use-kho';
 import { useChiTietDonDatHangStore } from '../store/useChiTietDonDatHangStore';
 import type { ChiTietDonDatHangFlat, DonDatHang } from '../core/types';
@@ -69,6 +69,7 @@ const ChiTietDonDatHangTab: React.FC = () => {
   const { data: khoList = [] } = useKhoList();
   const { data: supplierList = [] } = useDoiTacRefQuery('nha_cung_cap');
   const { data: employees = [] } = useEmployeesRefQuery();
+  const { data: hangHoaList = [] } = useHangHoaRefQuery();
   const { data: phieuDeXuatList = [] } = usePhieuDeXuatSoPhieuMinimalQuery();
   const viewScope = useDonDatHangViewScope();
 
@@ -130,6 +131,47 @@ const ChiTietDonDatHangTab: React.FC = () => {
   const deleteMutation = useDeleteDonDatHang();
   const updateMutation = useUpdateDonDatHang();
 
+  const phanLoaiOptions = useMemo(() => {
+    const counts: Record<string, number> = {};
+    hangHoaList.forEach((h) => {
+      const p = h.phan_loai?.trim();
+      if (p) counts[p] = (counts[p] ?? 0) + 1;
+    });
+    return Object.entries(counts)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([value]) => ({ label: value, value, count: counts[value] }));
+  }, [hangHoaList]);
+
+  const danhMucCap1Options = useMemo(() => {
+    const counts: Record<string, number> = {};
+    const labels: Record<string, string> = {};
+    hangHoaList.forEach((h) => {
+      const id = h.danh_muc_cha_id?.trim();
+      if (!id) return;
+      counts[id] = (counts[id] ?? 0) + 1;
+      labels[id] = h.ten_danh_muc_cap1?.trim() || id;
+    });
+    return Object.entries(counts)
+      .sort(([a], [b]) => (labels[a] ?? a).localeCompare(labels[b] ?? b))
+      .map(([value]) => ({ label: labels[value] ?? value, value, count: counts[value] }));
+  }, [hangHoaList]);
+
+  const danhMucCap2Options = useMemo(() => {
+    const counts: Record<string, number> = {};
+    const labels: Record<string, string> = {};
+    hangHoaList.forEach((h) => {
+      const id = h.danh_muc_id?.trim();
+      if (!id) return;
+      counts[id] = (counts[id] ?? 0) + 1;
+      const cap1 = h.ten_danh_muc_cap1?.trim();
+      const cap2 = h.ten_danh_muc_cap2?.trim() || id;
+      labels[id] = cap1 ? `${cap1} / ${cap2}` : cap2;
+    });
+    return Object.entries(counts)
+      .sort(([a], [b]) => (labels[a] ?? a).localeCompare(labels[b] ?? b))
+      .map(([value]) => ({ label: labels[value] ?? value, value, count: counts[value] }));
+  }, [hangHoaList]);
+
   const sortedPageRows = useMemo(() => {
     if (!sort.column || !sort.direction) return tableRows;
     const dir = sort.direction === 'asc' ? 1 : -1;
@@ -155,7 +197,8 @@ const ChiTietDonDatHangTab: React.FC = () => {
   useEffect(() => {
     const hasCategoryColumns =
       columns.some((c) => c.id === 'ten_danh_muc_cap1') &&
-      columns.some((c) => c.id === 'ten_danh_muc_cap2');
+      columns.some((c) => c.id === 'ten_danh_muc_cap2') &&
+      columns.some((c) => c.id === 'phan_loai');
     if (!hasCategoryColumns) resetColumns();
   }, [columns, resetColumns]);
 
@@ -320,13 +363,14 @@ const ChiTietDonDatHangTab: React.FC = () => {
         );
       case 'ten_danh_muc_cap1':
       case 'ten_danh_muc_cap2':
+      case 'phan_loai':
         return (
           <td key={col.id} className="px-4 py-3 text-sm text-muted-foreground" style={getColumnCellStyle(col)}>
             <span
               className="block truncate whitespace-nowrap"
-              title={row[col.id as 'ten_danh_muc_cap1' | 'ten_danh_muc_cap2'] ?? ''}
+              title={row[col.id as 'ten_danh_muc_cap1' | 'ten_danh_muc_cap2' | 'phan_loai'] ?? ''}
             >
-              {row[col.id as 'ten_danh_muc_cap1' | 'ten_danh_muc_cap2'] ?? '—'}
+              {row[col.id as 'ten_danh_muc_cap1' | 'ten_danh_muc_cap2' | 'phan_loai'] ?? '—'}
             </span>
           </td>
         );
@@ -418,6 +462,9 @@ const ChiTietDonDatHangTab: React.FC = () => {
         supplierList={supplierList}
         khoList={khoList}
         employees={employees}
+        danhMucCap1Options={danhMucCap1Options}
+        danhMucCap2Options={danhMucCap2Options}
+        phanLoaiOptions={phanLoaiOptions}
         onExport={handleExport}
       />
 

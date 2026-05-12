@@ -24,6 +24,10 @@ export type DonDatHangListServerQuery = {
   idNhaCungCap: number[];
   idKhoNhan: number[];
   idNguoiDat: number[];
+  idDanhMucCap1: string[];
+  idDanhMucCap2: string[];
+  phanLoai: string[];
+  idHangHoaByProductFilters?: number[] | null;
   scope: BranchListScope;
 };
 
@@ -47,6 +51,10 @@ export function buildDonDatHangListServerQuery(params: {
     idNhaCungCap: toNumIds(strArr(filters.nhaCungCapIds)),
     idKhoNhan: toNumIds(strArr(filters.khoNhanIds)),
     idNguoiDat: toNumIds(strArr(filters.nguoiDatIds)),
+    idDanhMucCap1: [...new Set(strArr(filters.danhMucCap1Ids).map((x) => x.trim()).filter(Boolean))].sort(),
+    idDanhMucCap2: [...new Set(strArr(filters.danhMucCap2Ids).map((x) => x.trim()).filter(Boolean))].sort(),
+    phanLoai: [...new Set(strArr(filters.phanLoai).map((x) => x.trim()).filter(Boolean))].sort(),
+    idHangHoaByProductFilters: null,
     scope,
   };
 }

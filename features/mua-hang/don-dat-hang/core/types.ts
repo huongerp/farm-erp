@@ -10,6 +10,7 @@ export interface DonDatHangChiTiet {
   ghi_chu?: string;
   ten_danh_muc_cap1?: string;
   ten_danh_muc_cap2?: string;
+  phan_loai?: string | null;
   ma_hang?: string;
   ten_hang?: string;
 }
@@ -89,6 +90,7 @@ export interface ChiTietDonDatHangFlat {
   id_hang_hoa: string;
   ten_danh_muc_cap1?: string;
   ten_danh_muc_cap2?: string;
+  phan_loai?: string | null;
   ma_hang?: string;
   ten_hang?: string;
   so_luong: number;

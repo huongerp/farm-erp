@@ -6,6 +6,9 @@ export interface DonDatHangFilters {
   nhaCungCapIds: string[];
   khoNhanIds: string[];
   nguoiDatIds: string[];
+  danhMucCap1Ids?: string[];
+  danhMucCap2Ids?: string[];
+  phanLoai?: string[];
 }
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
@@ -24,6 +27,9 @@ const initialFilters: DonDatHangFilters = {
   nhaCungCapIds: [],
   khoNhanIds: [],
   nguoiDatIds: [],
+  danhMucCap1Ids: [],
+  danhMucCap2Ids: [],
+  phanLoai: [],
 };
 
 export const useDonDatHangStore = createGenericStore<DonDatHangFilters>(

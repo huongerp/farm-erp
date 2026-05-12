@@ -16,7 +16,20 @@ import StatsToolbar from './stats/StatsToolbar';
 import StatsCards from './stats/StatsCards';
 const StatsCharts = lazy(() => import('./stats/StatsCharts'));
 import StatsTables from './stats/StatsTables';
+import {
+  exportThanhToanDoiTacReportToXLSX,
+  printThanhToanDoiTacReport,
+  type ThanhToanDoiTacReportFilters,
+} from '../utils/export-thanh-toan-doi-tac-report';
 import type { ThanhToanDoiTac } from '../core/types';
+
+type ReportFilterOption = { label: string; value: string };
+
+function getSelectedLabels(options: ReportFilterOption[], values: string[]): string[] {
+  if (values.length === 0) return [];
+  const labelMap = new Map(options.map((option) => [option.value, option.label]));
+  return values.map((value) => labelMap.get(value) ?? value);
+}
 
 const ThongKeTab: React.FC = () => {
   const { t } = useTranslation();
@@ -182,12 +195,42 @@ const ThongKeTab: React.FC = () => {
     </>
   );
 
-  const handleExportReport = () => {
-    toast.info(t('thanhToanDoiTac.stats.exportReport') + ' – Đang phát triển');
+  const getReportFilters = (): ThanhToanDoiTacReportFilters => ({
+    dateFrom,
+    dateTo,
+    statusLabels: getSelectedLabels(statusOptions, filterStatus),
+    doiTacLabels: getSelectedLabels(doiTacOptions, filterDoiTac),
+    donViLabels: getSelectedLabels(donViOptions, filterDonVi),
+  });
+
+  const handleExportReport = async () => {
+    const toastId = toast.loading(t('thanhToanDoiTac.report.exporting'));
+    try {
+      await exportThanhToanDoiTacReportToXLSX({
+        list: filteredList,
+        stats,
+        filters: getReportFilters(),
+        t,
+      });
+      toast.success(t('thanhToanDoiTac.report.exportSuccess'), { id: toastId });
+    } catch (error) {
+      console.error('Failed to export partner payment report', error);
+      toast.error(t('thanhToanDoiTac.report.exportError'), { id: toastId });
+    }
   };
 
   const handlePrintReport = () => {
-    window.print();
+    try {
+      printThanhToanDoiTacReport({
+        list: filteredList,
+        stats,
+        filters: getReportFilters(),
+        t,
+      });
+    } catch (error) {
+      console.error('Failed to print partner payment report', error);
+      toast.error(t('thanhToanDoiTac.report.printError'));
+    }
   };
 
   if (isError) {

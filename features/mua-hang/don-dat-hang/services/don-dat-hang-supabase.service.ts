@@ -81,7 +81,20 @@ interface ChiTietDbRow {
   ghi_chu: string | null;
 }
 
-type HangHoaLineEnrich = Pick<HangHoaRefLite, 'ma_hang' | 'ma_hang_hoa' | 'ten_hang' | 'ten_hang_hoa' | 'dvt' | 'don_vi_tinh' | 'ten_danh_muc_cap1' | 'ten_danh_muc_cap2'>;
+type HangHoaLineEnrich = Pick<
+  HangHoaRefLite,
+  | 'ma_hang'
+  | 'ma_hang_hoa'
+  | 'ten_hang'
+  | 'ten_hang_hoa'
+  | 'dvt'
+  | 'don_vi_tinh'
+  | 'danh_muc_id'
+  | 'danh_muc_cha_id'
+  | 'ten_danh_muc_cap1'
+  | 'ten_danh_muc_cap2'
+  | 'phan_loai'
+>;
 
 function toNum(s: string | null | undefined): number | null {
   if (s == null || s === '') return null;
@@ -137,6 +150,7 @@ function rowToChiTiet(row: ChiTietDbRow, idDonStr: string, enrich?: HangHoaLineE
     ghi_chu: row.ghi_chu ?? undefined,
     ten_danh_muc_cap1: enrich?.ten_danh_muc_cap1,
     ten_danh_muc_cap2: enrich?.ten_danh_muc_cap2,
+    phan_loai: enrich?.phan_loai ?? null,
     ma_hang: enrich?.ma_hang,
     ten_hang: enrich?.ten_hang,
   };
@@ -241,6 +255,7 @@ function applyChiTietDonDatHangFlatListQuery(q: any, query: DonDatHangListServer
   if (query.idNhaCungCap.length) b = b.in('id_nha_cung_cap', query.idNhaCungCap);
   if (query.idKhoNhan.length) b = b.in('id_kho_nhan', query.idKhoNhan);
   if (query.idNguoiDat.length) b = b.in('id_nguoi_dat', query.idNguoiDat);
+  if (query.idHangHoaByProductFilters?.length) b = b.in('id_hang_hoa', query.idHangHoaByProductFilters);
   const term = (query.searchTerm ?? '').trim();
   if (term) {
     const esc = term.replace(/%/g, '\\%').replace(/_/g, '\\_');
@@ -348,6 +363,7 @@ function mapDonDatHangChiTietFlatViewRow(row: DonDatHangChiTietFlatViewRow, enri
     id_hang_hoa: String(row.id_hang_hoa),
     ten_danh_muc_cap1: enrich?.ten_danh_muc_cap1,
     ten_danh_muc_cap2: enrich?.ten_danh_muc_cap2,
+    phan_loai: enrich?.phan_loai ?? null,
     ma_hang: row.ma_hang?.trim() ? row.ma_hang.trim() : (enrich?.ma_hang ?? enrich?.ma_hang_hoa ?? undefined),
     ten_hang: row.ten_hang ?? enrich?.ten_hang_hoa ?? enrich?.ten_hang ?? undefined,
     so_luong: Number(row.so_luong),
@@ -364,6 +380,36 @@ function buildHangHoaLineMap(hangHoaList: HangHoaRefLite[]): Record<string, Hang
     hangHoaMap[h.id] = h;
   });
   return hangHoaMap;
+}
+
+async function resolveChiTietHangHoaFilters(
+  query?: DonDatHangListServerQuery
+): Promise<{ query?: DonDatHangListServerQuery; hangHoaList?: HangHoaRefLite[] }> {
+  const hasProductFilter =
+    !!query?.phanLoai?.length ||
+    !!query?.idDanhMucCap1?.length ||
+    !!query?.idDanhMucCap2?.length;
+  if (!query || !hasProductFilter) return { query };
+  const hangHoaList = await getHangHoaRef();
+  const selectedPhanLoai = new Set(query.phanLoai.map((x) => x.trim()).filter(Boolean));
+  const selectedCap1 = new Set(query.idDanhMucCap1.map((x) => x.trim()).filter(Boolean));
+  const selectedCap2 = new Set(query.idDanhMucCap2.map((x) => x.trim()).filter(Boolean));
+  const ids = hangHoaList
+    .filter((h) => {
+      const matchPhanLoai = selectedPhanLoai.size === 0 || (h.phan_loai != null && selectedPhanLoai.has(h.phan_loai.trim()));
+      const matchCap1 = selectedCap1.size === 0 || (h.danh_muc_cha_id != null && selectedCap1.has(h.danh_muc_cha_id));
+      const matchCap2 = selectedCap2.size === 0 || (h.danh_muc_id != null && selectedCap2.has(h.danh_muc_id));
+      return matchPhanLoai && matchCap1 && matchCap2;
+    })
+    .map((h) => Number(h.id))
+    .filter((id) => Number.isSafeInteger(id));
+  return {
+    query: {
+      ...query,
+      idHangHoaByProductFilters: ids.length > 0 ? ids : [IMPOSSIBLE_NUM_ID],
+    },
+    hangHoaList,
+  };
 }
 
 function mapDonDatHangChiTietFlatViewRows(
@@ -420,9 +466,10 @@ export async function getChiTietDonDatHangPageSupabase(
   pageSize: number = CHI_TIET_DON_DAT_HANG_PAGE_SIZE_DEFAULT,
   listQuery?: DonDatHangListServerQuery
 ): Promise<PaginatedTableResult<ChiTietDonDatHangFlat>> {
+  const { query: effectiveQuery, hangHoaList: preloadedHangHoaList } = await resolveChiTietHangHoaFilters(listQuery);
   const pageResult = await fetchTablePage<DonDatHangChiTietFlatViewRow>(page, pageSize, async (from, to) => {
     let sel = supabase.from(VIEW_DON_DAT_HANG_CHI_TIET_FLAT).select(DON_DAT_HANG_CHI_TIET_FLAT_SELECT, { count: 'exact' });
-    if (listQuery) sel = applyChiTietDonDatHangFlatListQuery(sel, listQuery);
+    if (effectiveQuery) sel = applyChiTietDonDatHangFlatListQuery(sel, effectiveQuery);
     const res = await sel
       .order('ngay_dat', { ascending: false })
       .order('so_po', { ascending: false })
@@ -430,7 +477,7 @@ export async function getChiTietDonDatHangPageSupabase(
       .range(from, to);
     return { data: res.data as DonDatHangChiTietFlatViewRow[] | null, error: res.error, count: res.count };
   });
-  const hangHoaMap = pageResult.data.length > 0 ? buildHangHoaLineMap(await getHangHoaRef()) : {};
+  const hangHoaMap = pageResult.data.length > 0 ? buildHangHoaLineMap(preloadedHangHoaList ?? (await getHangHoaRef())) : {};
   const data = mapDonDatHangChiTietFlatViewRows(pageResult.data, hangHoaMap);
   return { data, totalCount: pageResult.totalCount, page: pageResult.page, pageSize: pageResult.pageSize };
 }
