@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
+import { useModulePermission } from '../../../he-thong/phan-quyen/hooks/use-module-permission';
 import { usePhieuKhoListPaged, usePhieuKhoById, useDeletePhieuKho, useDeletePhieuKhoMany } from '../hooks/use-phieu-kho';
 import { usePhieuKhoViewScope } from '../hooks/use-phieu-kho-view-scope';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
@@ -43,6 +44,7 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
   const loaiDb = LOAI_TAB_TO_DB[loaiTab];
   const { t } = useTranslation();
   const { canCreate, canUpdate, canDelete, canApprove } = useModulePermissionFromContext();
+  const { canCreate: canCreateHangHoa } = useModulePermission('kho-van/danh-sach-hang-hoa');
   const confirm = useConfirmStore((s) => s.confirm);
   const searchTerm = usePhieuKhoStore((s) => s.searchTerm);
   const filters = usePhieuKhoStore((s) => s.filters);
@@ -307,11 +309,13 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
                 })
             }
             onRequestAddHangHoa={
-              () =>
-                new Promise<HangHoa | null>((resolve) => {
-                  addHangHoaResolveRef.current = resolve;
-                  setShowAddHangHoa(true);
-                })
+              canCreateHangHoa
+                ? () =>
+                    new Promise<HangHoa | null>((resolve) => {
+                      addHangHoaResolveRef.current = resolve;
+                      setShowAddHangHoa(true);
+                    })
+                : undefined
             }
             onRequestAddNcc={
               loaiTab === 'nhap'

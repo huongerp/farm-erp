@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
+import { useModulePermission } from '../../../he-thong/phan-quyen/hooks/use-module-permission';
 import {
   usePhieuKhoPTListPaged,
   usePhieuKhoPTById,
@@ -34,6 +35,7 @@ import type { FarmHangHoa } from '../../hang-hoa-phan-thuoc/core/types';
 const DanhSachTab: React.FC = () => {
   const { t } = useTranslation();
   const { canCreate, canUpdate, canDelete, canApprove } = useModulePermissionFromContext();
+  const { canCreate: canCreateHangHoa } = useModulePermission('quan-ly-farm/hang-hoa-phan-thuoc');
   const confirm = useConfirmStore((s) => s.confirm);
   const searchTerm = usePhieuKhoPTStore((s) => s.searchTerm);
   const filters = usePhieuKhoPTStore((s) => s.filters);
@@ -273,11 +275,14 @@ const DanhSachTab: React.FC = () => {
                 setShowAddKho(true);
               })
             }
-            onRequestAddHangHoa={() =>
-              new Promise<FarmHangHoa | null>((resolve) => {
-                addHangHoaResolveRef.current = resolve;
-                setShowAddHangHoa(true);
-              })
+            onRequestAddHangHoa={
+              canCreateHangHoa
+                ? () =>
+                    new Promise<FarmHangHoa | null>((resolve) => {
+                      addHangHoaResolveRef.current = resolve;
+                      setShowAddHangHoa(true);
+                    })
+                : undefined
             }
           />
         )}

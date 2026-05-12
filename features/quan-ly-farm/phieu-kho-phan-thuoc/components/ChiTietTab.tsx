@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
+import { useModulePermission } from '../../../he-thong/phan-quyen/hooks/use-module-permission';
 import {
   useChiTietPhieuKhoPTPaged,
   usePhieuKhoPTById,
@@ -38,6 +39,7 @@ import { CONFIRM_DELETE } from '../../../../lib/button-labels';
 const ChiTietTab: React.FC = () => {
   const { t } = useTranslation();
   const { canCreate, canUpdate, canDelete, canApprove } = useModulePermissionFromContext();
+  const { canCreate: canCreateHangHoa } = useModulePermission('quan-ly-farm/hang-hoa-phan-thuoc');
   const { data: khoList = [] } = useKhoList();
   const { data: empRef = [] } = useEmployeesRefQuery();
   const confirm = useConfirmStore((s) => s.confirm);
@@ -266,11 +268,14 @@ const ChiTietTab: React.FC = () => {
                 setShowAddKho(true);
               })
             }
-            onRequestAddHangHoa={() =>
-              new Promise<FarmHangHoa | null>((resolve) => {
-                addHangHoaResolveRef.current = resolve;
-                setShowAddHangHoa(true);
-              })
+            onRequestAddHangHoa={
+              canCreateHangHoa
+                ? () =>
+                    new Promise<FarmHangHoa | null>((resolve) => {
+                      addHangHoaResolveRef.current = resolve;
+                      setShowAddHangHoa(true);
+                    })
+                : undefined
             }
           />
         )}

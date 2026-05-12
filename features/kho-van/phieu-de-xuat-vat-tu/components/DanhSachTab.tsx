@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
+import { useModulePermission } from '../../../he-thong/phan-quyen/hooks/use-module-permission';
 import { usePhieuDeXuatVatTuListPaged, usePhieuDeXuatVatTuById, useDeletePhieuDeXuatVatTu, useDeletePhieuDeXuatVatTuMany, useUpdatePhieuDeXuatVatTu } from '../hooks/use-phieu-de-xuat-vat-tu';
 import { usePhieuDeXuatVatTuViewScope } from '../hooks/use-phieu-de-xuat-vat-tu-view-scope';
 import { buildPhieuDeXuatVatTuListServerQuery, fetchAllPhieuDeXuatVatTuForListQuery } from '../services/phieu-de-xuat-vat-tu-service';
@@ -60,6 +61,7 @@ import {
 const DanhSachTab: React.FC = () => {
   const { t } = useTranslation();
   const { canCreate, canUpdate, canDelete, canApprove } = useModulePermissionFromContext();
+  const { canCreate: canCreateHangHoa } = useModulePermission('kho-van/danh-sach-hang-hoa');
   const user = useAuthStore((s) => s.user);
   const confirm = useConfirmStore((s) => s.confirm);
   const {
@@ -321,11 +323,13 @@ const DanhSachTab: React.FC = () => {
             onClose={handleCloseForm}
             canEdit
             onRequestAddHangHoa={
-              () =>
-                new Promise<HangHoa | null>((resolve) => {
-                  addHangHoaResolveRef.current = resolve;
-                  setShowAddHangHoa(true);
-                })
+              canCreateHangHoa
+                ? () =>
+                    new Promise<HangHoa | null>((resolve) => {
+                      addHangHoaResolveRef.current = resolve;
+                      setShowAddHangHoa(true);
+                    })
+                : undefined
             }
           />
         )}

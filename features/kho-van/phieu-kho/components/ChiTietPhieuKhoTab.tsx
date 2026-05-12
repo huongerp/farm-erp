@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { Package } from 'lucide-react';
 import { cn, formatDateShort, formatNumberVN } from '../../../../lib/utils';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
+import { useModulePermission } from '../../../he-thong/phan-quyen/hooks/use-module-permission';
 import { useChiTietPhieuKhoPaged, usePhieuKhoById, useDeletePhieuKho } from '../hooks/use-phieu-kho';
 import { usePhieuKhoViewScope } from '../hooks/use-phieu-kho-view-scope';
 import { buildChiTietPhieuKhoListServerQuery, fetchAllChiTietPhieuKhoForListQuery } from '../services/phieu-kho-service';
@@ -73,6 +74,7 @@ function StatusBadge({ status }: { status: TrangThaiPhieuKho }) {
 const ChiTietPhieuKhoTab: React.FC = () => {
   const { t } = useTranslation();
   const { canCreate, canUpdate, canDelete, canApprove } = useModulePermissionFromContext();
+  const { canCreate: canCreateHangHoa } = useModulePermission('kho-van/danh-sach-hang-hoa');
   const { data: khoList = [] } = useKhoList();
   const { data: empRef = [] } = useEmployeesRefQuery();
   const { data: doiTacNccRef = [] } = useDoiTacRefQuery('nha_cung_cap');
@@ -521,11 +523,13 @@ const ChiTietPhieuKhoTab: React.FC = () => {
                 })
             }
             onRequestAddHangHoa={
-              () =>
-                new Promise<HangHoa | null>((resolve) => {
-                  addHangHoaResolveRef.current = resolve;
-                  setShowAddHangHoa(true);
-                })
+              canCreateHangHoa
+                ? () =>
+                    new Promise<HangHoa | null>((resolve) => {
+                      addHangHoaResolveRef.current = resolve;
+                      setShowAddHangHoa(true);
+                    })
+                : undefined
             }
             onRequestAddNcc={
               editingLoai === 'nhap'
