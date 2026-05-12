@@ -459,22 +459,22 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
           <thead className="sticky top-0 z-[1] bg-muted border-b border-border">
             <tr>
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap w-10">#</th>
-              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[200px]">
+              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[320px]">
                 {t('phieuDeXuatVatTu.form.item')}
               </th>
-              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[110px]">
+              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[130px]">
                 {t('phieuDeXuatVatTu.form.quantity')}
               </th>
-              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[64px]">
+              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[90px]">
                 {t('phieuDeXuatVatTu.form.unit')}
               </th>
-              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[140px]">
+              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[180px]">
                 {t('phieuDeXuatVatTu.form.tienDoMh')}
               </th>
-              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[200px]">
+              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[240px]">
                 {t('phieuDeXuatVatTu.form.specs')}
               </th>
-              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[200px]">
+              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[240px]">
                 {t('phieuDeXuatVatTu.form.note')}
               </th>
               <th className="sticky right-0 z-[2] px-4 py-2 font-semibold text-foreground/80 text-xs text-center w-16 bg-muted border-l border-border">
@@ -496,7 +496,7 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
                 return (
                   <tr key={field.id} className="hover:bg-muted/60 transition-colors">
                     <td className="px-4 py-2.5 text-muted-foreground tabular-nums">{index + 1}</td>
-                    <td className="px-4 py-2.5 min-w-0 align-top">
+                    <td className="px-4 py-2.5 min-w-[320px] align-top">
                       <Controller
                         name={`chi_tiet.${index}.id_hang_hoa`}
                         control={control}
@@ -523,7 +523,7 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
                         )}
                       />
                     </td>
-                    <td className="px-4 py-2.5 min-w-[100px] align-top">
+                    <td className="px-4 py-2.5 min-w-[130px] align-top">
                       <Controller
                         name={`chi_tiet.${index}.so_luong`}
                         control={control}
@@ -541,8 +541,8 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
                         )}
                       />
                     </td>
-                    <td className="px-4 py-2.5 text-xs text-muted-foreground">{donVi}</td>
-                    <td className="px-4 py-2.5 min-w-[140px] align-top">
+                    <td className="px-4 py-2.5 min-w-[90px] text-xs text-muted-foreground whitespace-nowrap">{donVi}</td>
+                    <td className="px-4 py-2.5 min-w-[180px] align-top">
                       <Controller
                         name={`chi_tiet.${index}.id_tien_do_mh`}
                         control={control}
@@ -565,7 +565,7 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
                         )}
                       />
                     </td>
-                    <td className="px-4 py-2.5 min-w-[200px] align-top">
+                    <td className="px-4 py-2.5 min-w-[240px] align-top">
                       <Textarea
                         placeholder={t('phieuDeXuatVatTu.form.specsPlaceholder')}
                         className="min-h-[52px] text-sm border-border w-full resize-y"
@@ -574,7 +574,7 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
                         {...register(`chi_tiet.${index}.thong_so`)}
                       />
                     </td>
-                    <td className="px-4 py-2.5 min-w-[200px] align-top">
+                    <td className="px-4 py-2.5 min-w-[240px] align-top">
                       <Textarea
                         placeholder={t('phieuDeXuatVatTu.form.notePlaceholder')}
                         className="min-h-[52px] text-sm border-border w-full resize-y"

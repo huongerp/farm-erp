@@ -7,6 +7,7 @@
   "phieuDeXuatVatTu.tabs.toApprove": "To approve",
   "phieuDeXuatVatTu.filters.mineHint": "Only requests I created",
   "phieuDeXuatVatTu.filters.toApproveHint": "Only requests I am approver for",
+  "phieuDeXuatVatTu.filters.datePhieu": "Period",
   "phieuDeXuatVatTu.store.soPhieuCol": "Code",
   "phieuDeXuatVatTu.store.ngayCol": "Date",
   "phieuDeXuatVatTu.store.ngayCanCol": "Required date",

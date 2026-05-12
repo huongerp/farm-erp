@@ -223,6 +223,8 @@ const DonDatHangDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
               <thead className="sticky top-0 z-[1] bg-muted border-b border-border">
                 <tr>
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap w-10">#</th>
+                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[120px]">{t('donDatHang.chiTietTab.categoryLevel1Col')}</th>
+                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[120px]">{t('donDatHang.chiTietTab.categoryLevel2Col')}</th>
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[80px]">{t('donDatHang.form.item')} (mã)</th>
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[120px]">{t('donDatHang.form.item')} (tên)</th>
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap w-16">{t('donDatHang.form.unit')}</th>
@@ -236,6 +238,8 @@ const DonDatHangDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
                 {data.chi_tiet.map((ct, idx) => (
                   <tr key={ct.id} className="hover:bg-muted/60 transition-colors">
                     <td className="px-4 py-2.5 text-muted-foreground tabular-nums">{idx + 1}</td>
+                    <td className="px-4 py-2.5 text-xs text-muted-foreground">{ct.ten_danh_muc_cap1 ?? '—'}</td>
+                    <td className="px-4 py-2.5 text-xs text-muted-foreground">{ct.ten_danh_muc_cap2 ?? '—'}</td>
                     <td className="px-4 py-2.5 font-mono text-xs">{ct.ma_hang ?? '—'}</td>
                     <td className="px-4 py-2.5 text-sm">{ct.ten_hang ?? '—'}</td>
                     <td className="px-4 py-2.5 text-xs text-muted-foreground">{ct.don_vi_tinh ?? '—'}</td>

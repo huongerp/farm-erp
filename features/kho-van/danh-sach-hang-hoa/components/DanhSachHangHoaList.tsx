@@ -55,8 +55,8 @@ const DanhSachHangHoaList: React.FC<Props> = ({
     <span
       className={
         item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG
-          ? 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20'
-          : 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border'
+          ? 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20 whitespace-nowrap'
+          : 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border whitespace-nowrap'
       }
     >
       {item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? t('hangHoa.active') : t('hangHoa.inactive')}
@@ -66,28 +66,36 @@ const DanhSachHangHoaList: React.FC<Props> = ({
   const renderCell = (colId: string, item: HangHoa) => {
     switch (colId) {
       case 'thu_tu':
-        return <span className="text-sm text-muted-foreground">{item.thu_tu}</span>;
+        return <span className="text-sm text-muted-foreground tabular-nums whitespace-nowrap">{item.thu_tu}</span>;
       case 'ma_hang_hoa':
         return (
-          <span className="font-mono text-xs font-medium text-muted-foreground bg-muted px-2 py-1 rounded border border-border">
+          <span className="font-mono text-xs font-medium text-muted-foreground bg-muted px-2 py-1 rounded border border-border whitespace-nowrap">
             {item.ma_hang_hoa}
           </span>
         );
       case 'ten_hang_hoa':
-        return <span className="font-medium text-foreground">{item.ten_hang_hoa}</span>;
+        return (
+          <span className="block truncate whitespace-nowrap font-medium text-foreground" title={item.ten_hang_hoa}>
+            {item.ten_hang_hoa}
+          </span>
+        );
       case 'ten_danh_muc':
-        return <span className="text-sm text-muted-foreground">{item.ten_danh_muc ?? '—'}</span>;
+        return (
+          <span className="block truncate whitespace-nowrap text-sm text-muted-foreground" title={item.ten_danh_muc ?? ''}>
+            {item.ten_danh_muc ?? '—'}
+          </span>
+        );
       case 'dvt':
-        return <span className="text-sm text-muted-foreground">{item.dvt ?? '—'}</span>;
+        return <span className="block truncate whitespace-nowrap text-sm text-muted-foreground" title={item.dvt ?? ''}>{item.dvt ?? '—'}</span>;
       case 'don_gia':
         return (
-          <span className="text-sm text-muted-foreground tabular-nums">
+          <span className="text-sm text-muted-foreground tabular-nums whitespace-nowrap">
             {item.don_gia != null ? item.don_gia.toLocaleString('vi-VN') : '—'}
           </span>
         );
       case 'mo_ta':
         return (
-          <span className="text-sm text-muted-foreground line-clamp-2 max-w-[200px]" title={item.mo_ta ?? undefined}>
+          <span className="block truncate whitespace-nowrap text-sm text-muted-foreground" title={item.mo_ta ?? undefined}>
             {item.mo_ta ?? '—'}
           </span>
         );
@@ -104,7 +112,7 @@ const DanhSachHangHoaList: React.FC<Props> = ({
       case 'tong_dinh_muc': {
         const summary = dinhMucSummaryMap?.[item.id];
         return summary && summary.soKho > 0 ? (
-          <span className="text-sm tabular-nums" title={`${summary.soKho} kho`}>
+          <span className="text-sm tabular-nums whitespace-nowrap" title={`${summary.soKho} kho`}>
             {formatNumberVN(summary.tong)}
           </span>
         ) : (
@@ -115,7 +123,7 @@ const DanhSachHangHoaList: React.FC<Props> = ({
         const summary = dinhMucSummaryMap?.[item.id];
         const soKho = summary?.soKho ?? 0;
         return soKho > 0 ? (
-          <span className="text-sm tabular-nums">{soKho}</span>
+          <span className="text-sm tabular-nums whitespace-nowrap">{soKho}</span>
         ) : (
           <span className="text-muted-foreground">—</span>
         );
@@ -123,7 +131,7 @@ const DanhSachHangHoaList: React.FC<Props> = ({
       case 'trang_thai':
         return renderStatusBadge(item);
       case 'tg_cap_nhat':
-        return <span className="text-xs text-muted-foreground">{formatDateShort(item.tg_cap_nhat)}</span>;
+        return <span className="text-xs text-muted-foreground whitespace-nowrap">{formatDateShort(item.tg_cap_nhat)}</span>;
       case 'actions':
         return (
           <div className="flex items-center justify-end gap-0.5">

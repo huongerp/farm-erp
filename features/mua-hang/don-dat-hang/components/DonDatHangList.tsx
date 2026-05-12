@@ -64,7 +64,7 @@ const DonDatHangList: React.FC<Props> = ({
   const renderStatusBadge = (item: DonDatHang) => (
     <span
       className={cn(
-        'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border',
+        'inline-flex items-center whitespace-nowrap px-2 py-0.5 rounded-full text-xs font-medium border',
         STATUS_VARIANTS[item.trang_thai] ?? 'bg-muted text-muted-foreground border-border'
       )}
     >
@@ -76,24 +76,24 @@ const DonDatHangList: React.FC<Props> = ({
     switch (colId) {
       case 'so_po':
         return (
-          <span className="font-mono text-xs font-medium text-muted-foreground bg-muted px-2 py-1 rounded border border-border">
+          <span className="inline-block max-w-full truncate whitespace-nowrap font-mono text-xs font-medium text-muted-foreground bg-muted px-2 py-1 rounded border border-border">
             {item.so_po}
           </span>
         );
       case 'ngay_dat':
-        return <span className="text-sm text-muted-foreground">{item.ngay_dat}</span>;
+        return <span className="block truncate whitespace-nowrap text-sm text-muted-foreground">{item.ngay_dat}</span>;
       case 'ngay_giao_dk':
-        return <span className="text-sm text-muted-foreground">{item.ngay_giao_dk}</span>;
+        return <span className="block truncate whitespace-nowrap text-sm text-muted-foreground">{item.ngay_giao_dk}</span>;
       case 'ten_nha_cung_cap':
-        return <span className="text-sm text-muted-foreground">{item.ten_nha_cung_cap ?? '—'}</span>;
+        return <span className="block truncate whitespace-nowrap text-sm text-muted-foreground">{item.ten_nha_cung_cap ?? '—'}</span>;
       case 'ten_kho_nhan':
-        return <span className="text-sm text-muted-foreground">{item.ten_kho_nhan ?? '—'}</span>;
+        return <span className="block truncate whitespace-nowrap text-sm text-muted-foreground">{item.ten_kho_nhan ?? '—'}</span>;
       case 'ten_nguoi_dat':
-        return <span className="text-sm text-muted-foreground">{item.ten_nguoi_dat ?? '—'}</span>;
+        return <span className="block truncate whitespace-nowrap text-sm text-muted-foreground">{item.ten_nguoi_dat ?? '—'}</span>;
       case 'trang_thai':
         return renderStatusBadge(item);
       case 'tg_cap_nhat':
-        return <span className="text-xs text-muted-foreground">{formatDateShort(item.tg_cap_nhat)}</span>;
+        return <span className="block truncate whitespace-nowrap text-xs text-muted-foreground">{formatDateShort(item.tg_cap_nhat)}</span>;
       case 'actions':
         return (
           <div className="flex items-center justify-end gap-0.5">

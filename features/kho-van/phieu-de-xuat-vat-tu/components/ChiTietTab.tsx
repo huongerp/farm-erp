@@ -17,6 +17,8 @@ import { useChiTietTabStore } from '../store/useChiTietTabStore';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { useAuthStore } from '../../../../store/useStore';
 import { useEmployeesRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
+import { getDateRangeFromPreset } from '../../../he-thong/nhan-vien/utils/stats-date-range';
+import type { DateRangePresetId } from '../../../he-thong/nhan-vien/core/stats-constants';
 import type { Kho } from '../../danh-sach-kho/core/types';
 import type { PhieuDeXuatVatTu, PhieuDeXuatVatTuChiTietRow } from '../core/types';
 import type { PhieuDeXuatVatTuFormValues } from '../core/schema';
@@ -105,15 +107,29 @@ const ChiTietTab: React.FC = () => {
     resetState,
   } = useChiTietTabStore();
 
+  const dateRangeStr = useMemo(() => {
+    if ((filters.datePreset ?? 'all') === 'all') return { start: '', end: '' };
+    const range = getDateRangeFromPreset(
+      (filters.datePreset ?? 'all') as DateRangePresetId,
+      filters.customDateFrom ? new Date(filters.customDateFrom) : undefined,
+      filters.customDateEnd ? new Date(filters.customDateEnd) : undefined
+    );
+    const toYyyyMmDd = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    return { start: toYyyyMmDd(range.start), end: toYyyyMmDd(range.end) };
+  }, [filters.datePreset, filters.customDateFrom, filters.customDateEnd]);
+
   const listServerQuery = useMemo(
     () =>
       buildPhieuDeXuatChiTietListServerQuery({
         searchTerm,
         filters,
+        ngayFrom: dateRangeStr.start,
+        ngayTo: dateRangeStr.end,
         viewScope,
         khoList,
       }),
-    [searchTerm, filters, viewScope, khoList]
+    [searchTerm, filters, dateRangeStr.start, dateRangeStr.end, viewScope, khoList]
   );
   const listQueryKey = useMemo(() => stableListQueryKeyPart(listServerQuery), [listServerQuery]);
   const pageIndex = Math.max(0, pagination.page - 1);
@@ -324,7 +340,7 @@ const ChiTietTab: React.FC = () => {
     return (
       <span
         className={cn(
-          'inline-flex px-2 py-0.5 rounded-full text-xs font-medium border',
+          'inline-flex px-2 py-0.5 rounded-full text-xs font-medium border whitespace-nowrap',
           status === 'Đã duyệt' && 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20',
           status === 'Chờ duyệt' && 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20',
           status === 'Không duyệt' && 'bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/20',
@@ -339,7 +355,7 @@ const ChiTietTab: React.FC = () => {
   const renderTienDoBadge = useCallback((tenTienDo: string | null | undefined) => {
     if (tenTienDo == null || tenTienDo === '') return <span className="text-muted-foreground text-sm">—</span>;
     return (
-      <span className={cn('inline-flex px-2 py-0.5 rounded-full text-xs font-medium border', getTienDoMhBadgeClass(tenTienDo))}>
+      <span className={cn('inline-flex px-2 py-0.5 rounded-full text-xs font-medium border whitespace-nowrap', getTienDoMhBadgeClass(tenTienDo))}>
         {tenTienDo}
       </span>
     );
@@ -356,30 +372,38 @@ const ChiTietTab: React.FC = () => {
           );
         case 'ngay':
         case 'ngay_can':
-          return <span className="text-sm text-muted-foreground">{item[colId as keyof PhieuDeXuatVatTuChiTietRow] ?? '—'}</span>;
+          return <span className="text-sm text-muted-foreground whitespace-nowrap">{item[colId as keyof PhieuDeXuatVatTuChiTietRow] ?? '—'}</span>;
         case 'ten_noi_de_xuat':
         case 'ten_nguoi_de_xuat':
         case 'ten_nguoi_duyet':
-          return <span className="text-sm">{String(item[colId as keyof PhieuDeXuatVatTuChiTietRow] ?? '—')}</span>;
+          return (
+            <span className="block truncate whitespace-nowrap text-sm" title={String(item[colId as keyof PhieuDeXuatVatTuChiTietRow] ?? '')}>
+              {String(item[colId as keyof PhieuDeXuatVatTuChiTietRow] ?? '—')}
+            </span>
+          );
         case 'trang_thai_phieu':
           return renderStatusBadge(item.trang_thai_phieu);
         case 'ma_hang':
-          return <span className="text-sm font-mono">{item.ma_hang ?? '—'}</span>;
+          return <span className="text-sm font-mono whitespace-nowrap">{item.ma_hang ?? '—'}</span>;
         case 'ten_hang':
-          return <span className="text-sm line-clamp-2">{item.ten_hang ?? '—'}</span>;
+          return (
+            <span className="block truncate whitespace-nowrap text-sm" title={item.ten_hang ?? ''}>
+              {item.ten_hang ?? '—'}
+            </span>
+          );
         case 'so_luong':
-          return <span className="text-sm text-right tabular-nums">{Number(item.so_luong).toLocaleString()}</span>;
+          return <span className="block text-sm text-right tabular-nums whitespace-nowrap">{Number(item.so_luong).toLocaleString()}</span>;
         case 'don_vi_tinh':
-          return <span className="text-sm text-muted-foreground">{item.don_vi_tinh ?? '—'}</span>;
+          return <span className="block truncate whitespace-nowrap text-sm text-muted-foreground" title={item.don_vi_tinh ?? ''}>{item.don_vi_tinh ?? '—'}</span>;
         case 'ten_tien_do_mh':
           return renderTienDoBadge(item.ten_tien_do_mh);
         case 'thong_so':
           return (
-            <span className="text-xs text-muted-foreground line-clamp-2 max-w-[140px]">{item.thong_so ?? '—'}</span>
+            <span className="block truncate whitespace-nowrap text-xs text-muted-foreground" title={item.thong_so ?? ''}>{item.thong_so ?? '—'}</span>
           );
         case 'ghi_chu':
           return (
-            <span className="text-xs text-muted-foreground line-clamp-2 max-w-[160px]">{item.ghi_chu ?? '—'}</span>
+            <span className="block truncate whitespace-nowrap text-xs text-muted-foreground" title={item.ghi_chu ?? ''}>{item.ghi_chu ?? '—'}</span>
           );
         case 'actions':
           return (
@@ -484,11 +508,10 @@ const ChiTietTab: React.FC = () => {
           variant="outline"
           onClick={() => setShowExport(true)}
           disabled={totalCount === 0}
-          className="h-8 w-8 sm:w-auto sm:px-2.5 p-0 sm:p-0 flex items-center justify-center gap-1.5 border-border text-muted-foreground hover:bg-muted/50 shrink-0 disabled:opacity-40"
+          className="h-8 w-8 p-0 flex items-center justify-center border-border text-muted-foreground hover:bg-muted/50 shrink-0 disabled:opacity-40"
           aria-label={t('common.export')}
         >
-          <Download size={16} className="shrink-0" />
-          <span className="hidden sm:inline text-xs font-medium">{t('common.export')}</span>
+          <Download size={16} />
         </Button>
       </Tooltip>
       <Button

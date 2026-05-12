@@ -10,6 +10,8 @@ import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import { useEmployeesRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
 import { useCauHinhDeXuatVatTu } from '../../../mua-hang/thiet-lap-de-xuat-vat-tu/hooks/use-cau-hinh-de-xuat-vat-tu';
+import { getDateRangeFromPreset } from '../../../he-thong/nhan-vien/utils/stats-date-range';
+import type { DateRangePresetId } from '../../../he-thong/nhan-vien/core/stats-constants';
 import { usePhieuDeXuatVatTuStore } from '../store/usePhieuDeXuatVatTuStore';
 import { useAuthStore } from '../../../../store/useStore';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
@@ -90,15 +92,28 @@ const DanhSachTab: React.FC = () => {
   const { data: employees = [] } = useEmployeesRefQuery();
   const { data: config } = useCauHinhDeXuatVatTu();
   const viewScope = usePhieuDeXuatVatTuViewScope();
+  const dateRangeStr = useMemo(() => {
+    if ((filters.datePreset ?? 'all') === 'all') return { start: '', end: '' };
+    const range = getDateRangeFromPreset(
+      (filters.datePreset ?? 'all') as DateRangePresetId,
+      filters.customDateFrom ? new Date(filters.customDateFrom) : undefined,
+      filters.customDateEnd ? new Date(filters.customDateEnd) : undefined
+    );
+    const toYyyyMmDd = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    return { start: toYyyyMmDd(range.start), end: toYyyyMmDd(range.end) };
+  }, [filters.datePreset, filters.customDateFrom, filters.customDateEnd]);
   const listServerQuery = useMemo(
     () =>
       buildPhieuDeXuatVatTuListServerQuery({
         searchTerm,
         filters,
+        ngayFrom: dateRangeStr.start,
+        ngayTo: dateRangeStr.end,
         viewScope,
         khoList,
       }),
-    [searchTerm, filters, viewScope, khoList]
+    [searchTerm, filters, dateRangeStr.start, dateRangeStr.end, viewScope, khoList]
   );
   const listQueryKey = useMemo(() => stableListQueryKeyPart(listServerQuery), [listServerQuery]);
   const pageIndex = Math.max(0, pagination.page - 1);

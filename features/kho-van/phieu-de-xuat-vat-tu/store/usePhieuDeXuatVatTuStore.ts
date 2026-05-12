@@ -1,8 +1,12 @@
 import { createGenericStore, type ColumnConfig } from '../../../../store/createGenericStore';
 import i18n from '../../../../lib/i18n';
+import type { DateRangePresetId } from '../../../he-thong/nhan-vien/core/stats-constants';
 
 export interface PhieuDeXuatVatTuFilters {
   status: string[];
+  datePreset: DateRangePresetId;
+  customDateFrom: string;
+  customDateEnd: string;
   noiDeXuatIds: string[];
   nguoiDeXuatIds: string[];
   nguoiDuyetIds: string[];
@@ -25,6 +29,9 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
 
 const initialFilters: PhieuDeXuatVatTuFilters = {
   status: [],
+  datePreset: 'all',
+  customDateFrom: '',
+  customDateEnd: '',
   noiDeXuatIds: [],
   nguoiDeXuatIds: [],
   nguoiDuyetIds: [],

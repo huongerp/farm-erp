@@ -27,7 +27,7 @@ import DonDatHangForm from './DonDatHangForm';
 import EmptyState from '../../../../components/shared/EmptyState';
 import ListPageSkeleton from '../../../../components/shared/ListPageSkeleton';
 import TablePaginationFooter from '../../../../components/shared/TablePaginationFooter';
-import { getColumnCellStyle } from '../../../../store/createGenericStore';
+import { getColumnCellStyle, getEffectiveColumnMinWidth } from '../../../../store/createGenericStore';
 import type { ColumnConfig } from '../../../../store/createGenericStore';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { CONFIRM_DELETE } from '../../../../lib/button-labels';
@@ -56,7 +56,7 @@ function StatusBadge({ status, t }: { status: DonDatHang['trang_thai']; t: (k: s
   const label = t(`donDatHang.status.${key}`);
   const cls = STATUS_VARIANTS[status] ?? 'bg-muted text-muted-foreground border-border';
   return (
-    <span className={cn('inline-flex px-2 py-0.5 rounded-full text-xs font-medium border', cls)}>
+    <span className={cn('inline-flex whitespace-nowrap px-2 py-0.5 rounded-full text-xs font-medium border', cls)}>
       {label}
     </span>
   );
@@ -82,6 +82,7 @@ const ChiTietDonDatHangTab: React.FC = () => {
     sort,
     setSort,
     columns,
+    resetColumns,
   } = useChiTietDonDatHangStore(
     useShallow((s) => ({
       searchTerm: s.searchTerm,
@@ -93,6 +94,7 @@ const ChiTietDonDatHangTab: React.FC = () => {
       sort: s.sort,
       setSort: s.setSort,
       columns: s.columns,
+      resetColumns: s.resetColumns,
     }))
   );
 
@@ -150,6 +152,13 @@ const ChiTietDonDatHangTab: React.FC = () => {
     setPage(1);
   }, [listQueryKey, setPage]);
 
+  useEffect(() => {
+    const hasCategoryColumns =
+      columns.some((c) => c.id === 'ten_danh_muc_cap1') &&
+      columns.some((c) => c.id === 'ten_danh_muc_cap2');
+    if (!hasCategoryColumns) resetColumns();
+  }, [columns, resetColumns]);
+
   const maxPage = Math.max(1, Math.ceil(totalCount / pagination.pageSize));
   useEffect(() => {
     if (pagination.page > maxPage) setPage(maxPage);
@@ -158,6 +167,10 @@ const ChiTietDonDatHangTab: React.FC = () => {
   const visibleColumns = useMemo(
     () => columns.filter((c) => c.visible).sort((a, b) => a.order - b.order),
     [columns]
+  );
+  const tableMinWidth = useMemo(
+    () => visibleColumns.reduce((sum, col) => sum + (col.width ?? getEffectiveColumnMinWidth(col, 120)), 0),
+    [visibleColumns]
   );
 
   const exportColumnsChiTiet = useMemo(() => getExportColumnsChiTietDonDatHang(t), [t]);
@@ -275,8 +288,9 @@ const ChiTietDonDatHangTab: React.FC = () => {
         return (
           <td key={col.id} className="px-4 py-3" style={getColumnCellStyle(col)}>
             <span
-              className="font-mono text-xs font-medium text-primary cursor-pointer hover:underline"
+              className="inline-block max-w-full truncate whitespace-nowrap font-mono text-xs font-medium text-primary cursor-pointer hover:underline"
               onClick={() => handleRowClick(row)}
+              title={row.so_po}
             >
               {row.so_po}
             </span>
@@ -284,56 +298,78 @@ const ChiTietDonDatHangTab: React.FC = () => {
         );
       case 'ngay_dat':
         return (
-          <td key={col.id} className="px-4 py-3 text-muted-foreground text-sm" style={getColumnCellStyle(col)}>
+          <td key={col.id} className="px-4 py-3 whitespace-nowrap text-muted-foreground text-sm" style={getColumnCellStyle(col)}>
             {formatDateShort(row.ngay_dat)}
           </td>
         );
       case 'ten_nha_cung_cap':
         return (
           <td key={col.id} className="px-4 py-3 text-sm" style={getColumnCellStyle(col)}>
-            {row.ten_nha_cung_cap ?? '—'}
+            <span className="block truncate whitespace-nowrap" title={row.ten_nha_cung_cap ?? ''}>
+              {row.ten_nha_cung_cap ?? '—'}
+            </span>
           </td>
         );
       case 'ten_kho_nhan':
         return (
           <td key={col.id} className="px-4 py-3 text-sm text-muted-foreground" style={getColumnCellStyle(col)}>
-            {row.ten_kho_nhan ?? '—'}
+            <span className="block truncate whitespace-nowrap" title={row.ten_kho_nhan ?? ''}>
+              {row.ten_kho_nhan ?? '—'}
+            </span>
+          </td>
+        );
+      case 'ten_danh_muc_cap1':
+      case 'ten_danh_muc_cap2':
+        return (
+          <td key={col.id} className="px-4 py-3 text-sm text-muted-foreground" style={getColumnCellStyle(col)}>
+            <span
+              className="block truncate whitespace-nowrap"
+              title={row[col.id as 'ten_danh_muc_cap1' | 'ten_danh_muc_cap2'] ?? ''}
+            >
+              {row[col.id as 'ten_danh_muc_cap1' | 'ten_danh_muc_cap2'] ?? '—'}
+            </span>
           </td>
         );
       case 'ma_hang':
         return (
           <td key={col.id} className="px-4 py-3 font-mono text-xs" style={getColumnCellStyle(col)}>
-            {row.ma_hang ?? '—'}
+            <span className="block truncate whitespace-nowrap" title={row.ma_hang ?? ''}>
+              {row.ma_hang ?? '—'}
+            </span>
           </td>
         );
       case 'ten_hang':
         return (
           <td key={col.id} className="px-4 py-3 text-sm" style={getColumnCellStyle(col)}>
-            {row.ten_hang ?? '—'}
+            <span className="block truncate whitespace-nowrap" title={row.ten_hang ?? ''}>
+              {row.ten_hang ?? '—'}
+            </span>
           </td>
         );
       case 'so_luong':
         return (
-          <td key={col.id} className="px-4 py-3 tabular-nums text-sm" style={getColumnCellStyle(col)}>
+          <td key={col.id} className="px-4 py-3 whitespace-nowrap tabular-nums text-sm" style={getColumnCellStyle(col)}>
             {formatNumberVN(row.so_luong)}
           </td>
         );
       case 'don_gia':
         return (
-          <td key={col.id} className="px-4 py-3 tabular-nums text-sm text-muted-foreground" style={getColumnCellStyle(col)}>
+          <td key={col.id} className="px-4 py-3 whitespace-nowrap tabular-nums text-sm text-muted-foreground" style={getColumnCellStyle(col)}>
             {formatNumberVN(row.don_gia)}
           </td>
         );
       case 'thanh_tien':
         return (
-          <td key={col.id} className="px-4 py-3 tabular-nums text-sm" style={getColumnCellStyle(col)}>
+          <td key={col.id} className="px-4 py-3 whitespace-nowrap tabular-nums text-sm" style={getColumnCellStyle(col)}>
             {formatNumberVN(row.thanh_tien)}
           </td>
         );
       case 'don_vi_tinh':
         return (
           <td key={col.id} className="px-4 py-3 text-xs text-muted-foreground" style={getColumnCellStyle(col)}>
-            {row.don_vi_tinh ?? '—'}
+            <span className="block truncate whitespace-nowrap" title={row.don_vi_tinh ?? ''}>
+              {row.don_vi_tinh ?? '—'}
+            </span>
           </td>
         );
       case 'trang_thai':
@@ -345,7 +381,9 @@ const ChiTietDonDatHangTab: React.FC = () => {
       case 'ten_nguoi_dat':
         return (
           <td key={col.id} className="px-4 py-3 text-sm text-muted-foreground" style={getColumnCellStyle(col)}>
-            {row.ten_nguoi_dat ?? '—'}
+            <span className="block truncate whitespace-nowrap" title={row.ten_nguoi_dat ?? ''}>
+              {row.ten_nguoi_dat ?? '—'}
+            </span>
           </td>
         );
       case 'ghi_chu':
@@ -405,7 +443,7 @@ const ChiTietDonDatHangTab: React.FC = () => {
         ) : (
           <>
             <div className="flex-1 min-h-0 overflow-auto">
-              <table className="w-full border-collapse">
+              <table className="w-full border-collapse" style={{ minWidth: tableMinWidth }}>
                 <thead className="sticky top-0 z-10 bg-muted/95 backdrop-blur border-b border-border">
                   <tr>
                     {visibleColumns.map((col) => (

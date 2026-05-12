@@ -5,7 +5,10 @@ import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import DateRangePicker from '../../../../components/ui/DateRangePicker';
 import { useSearchInputCommit } from '../../../../lib/hooks/use-search-input-commit';
+import { DATE_RANGE_PRESETS, type DateRangePresetId } from '../../../he-thong/nhan-vien/core/stats-constants';
+import { getDateRangeFromPreset } from '../../../he-thong/nhan-vien/utils/stats-date-range';
 import { usePhieuDeXuatVatTuStore } from '../store/usePhieuDeXuatVatTuStore';
 import type { PhieuDeXuatVatTu } from '../core/types';
 import { TRANG_THAI_CHO_DUYET, TRANG_THAI_DA_DUYET, TRANG_THAI_KHONG_DUYET } from '../core/constants';
@@ -57,6 +60,23 @@ const PhieuDeXuatVatTuToolbar: React.FC<Props> = ({
     commit: commitSearchTerm,
   });
 
+  const datePreset = typeof filters.datePreset === 'string' ? filters.datePreset : 'all';
+  const customDateFrom = typeof filters.customDateFrom === 'string' ? filters.customDateFrom : '';
+  const customDateEnd = typeof filters.customDateEnd === 'string' ? filters.customDateEnd : '';
+  const dateFilterActive = useMemo(
+    () => datePreset !== 'all' || !!customDateFrom.trim() || !!customDateEnd.trim(),
+    [datePreset, customDateFrom, customDateEnd]
+  );
+  const dateRangeLabel = useMemo(() => {
+    const range = getDateRangeFromPreset(
+      datePreset as DateRangePresetId,
+      customDateFrom ? new Date(customDateFrom) : undefined,
+      customDateEnd ? new Date(customDateEnd) : undefined
+    );
+    return range.label;
+  }, [datePreset, customDateFrom, customDateEnd]);
+  const dateRangePickerPresets = useMemo(() => DATE_RANGE_PRESETS.map((p) => ({ id: p.id, label: p.label })), []);
+
   const statusLen = filters.status?.length ?? 0;
   const noiDeXuatLen = filters.noiDeXuatIds?.length ?? 0;
   const nguoiDeXuatLen = filters.nguoiDeXuatIds?.length ?? 0;
@@ -65,10 +85,11 @@ const PhieuDeXuatVatTuToolbar: React.FC<Props> = ({
     () =>
       (searchInput.trim() ? 1 : 0) +
       (statusLen > 0 ? 1 : 0) +
+      (dateFilterActive ? 1 : 0) +
       (noiDeXuatLen > 0 ? 1 : 0) +
       (nguoiDeXuatLen > 0 ? 1 : 0) +
       (nguoiDuyetLen > 0 ? 1 : 0),
-    [searchInput, statusLen, noiDeXuatLen, nguoiDeXuatLen, nguoiDuyetLen]
+    [searchInput, statusLen, dateFilterActive, noiDeXuatLen, nguoiDeXuatLen, nguoiDuyetLen]
   );
 
   const mineCount = currentUserId ? data.filter((d) => d.id_nguoi_de_xuat === currentUserId).length : 0;
@@ -78,6 +99,9 @@ const PhieuDeXuatVatTuToolbar: React.FC<Props> = ({
   const handleClearAllFilters = () => {
     commitSearchTerm('');
     setFilter('status', []);
+    setFilter('datePreset', 'all');
+    setFilter('customDateFrom', '');
+    setFilter('customDateEnd', '');
     setFilter('noiDeXuatIds', []);
     setFilter('nguoiDeXuatIds', []);
     setFilter('nguoiDuyetIds', []);
@@ -146,6 +170,9 @@ const PhieuDeXuatVatTuToolbar: React.FC<Props> = ({
     [employees, data, unweighted]
   );
 
+  const exportIconButtonClass =
+    'inline-flex min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-9 w-9 p-0 items-center justify-center border-border text-muted-foreground hover:bg-muted/50';
+
   const mobileActions = useMemo(
     () => [
       {
@@ -167,15 +194,14 @@ const PhieuDeXuatVatTuToolbar: React.FC<Props> = ({
           variant="outline"
           size="sm"
           onClick={onExport}
-          className="min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-8 w-8 sm:w-auto sm:px-2.5 p-0 sm:p-0 inline-flex items-center justify-center gap-1.5 border-border text-muted-foreground hover:bg-muted/50"
+          className={exportIconButtonClass}
           aria-label={t('common.export')}
         >
-          <Download className="w-4 h-4 shrink-0" />
-          <span className="hidden sm:inline text-xs font-medium pr-0.5">{t('common.export')}</span>
+          <Download className="w-4 h-4" />
         </Button>
       </Tooltip>
     ),
-    [onExport, t]
+    [exportIconButtonClass, onExport, t]
   );
 
   const searchTrailingExport = (
@@ -288,6 +314,22 @@ const PhieuDeXuatVatTuToolbar: React.FC<Props> = ({
         icon={Tag}
         className="w-full sm:w-[140px]"
       />
+      <DateRangePicker
+        presets={dateRangePickerPresets}
+        value={{
+          preset: datePreset,
+          customStart: customDateFrom,
+          customEnd: customDateEnd,
+        }}
+        onChange={(v) => {
+          setFilter('datePreset', v.preset as DateRangePresetId);
+          setFilter('customDateFrom', v.customStart);
+          setFilter('customDateEnd', v.customEnd);
+        }}
+        displayLabel={dateRangeLabel}
+        placeholder={t('phieuDeXuatVatTu.filters.datePhieu')}
+        className="w-full sm:w-auto"
+      />
       <FilterChipMultiSelect
         options={noiDeXuatOptions}
         value={filters.noiDeXuatIds ?? []}
@@ -324,11 +366,10 @@ const PhieuDeXuatVatTuToolbar: React.FC<Props> = ({
             variant="outline"
             size="sm"
             onClick={onExport}
-            className="inline-flex min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-9 px-2 sm:px-2.5 gap-1.5 items-center justify-center border-border text-muted-foreground hover:bg-muted/50"
+            className={exportIconButtonClass}
             aria-label={t('common.export')}
           >
-            <Download className="w-4 h-4 shrink-0" />
-            <span className="text-xs font-medium">{t('common.export')}</span>
+            <Download className="w-4 h-4" />
           </Button>
         </Tooltip>
       </div>

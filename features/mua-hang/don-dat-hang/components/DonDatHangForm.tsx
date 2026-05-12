@@ -2,12 +2,13 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useForm, Controller, SubmitHandler, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { FileText, Calendar, Building2, Warehouse, User, Package, CreditCard, Trash2 } from 'lucide-react';
+import { FileText, Calendar, Building2, Warehouse, User, Package, CreditCard, Edit, Trash2 } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
 import Textarea from '../../../../components/ui/Textarea';
 import Combobox from '../../../../components/ui/Combobox';
 import NumberInput from '../../../../components/ui/NumberInput';
-import { DonDatHangFormValues, donDatHangSchema } from '../core/schema';
+import Button from '../../../../components/ui/Button';
+import { DonDatHangFormValues, donDatHangSchema, type DonDatHangChiTietFormItem } from '../core/schema';
 import type { DonDatHang } from '../core/types';
 import type { Kho } from '../../../kho-van/danh-sach-kho/core/types';
 import type { EmployeeRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
@@ -24,6 +25,185 @@ import FormSection from '../../../../components/shared/FormSection';
 import FormGrid from '../../../../components/shared/FormGrid';
 import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
 import GenericSubTableSection from '../../../../components/shared/GenericSubTableSection';
+
+interface ChiTietLineDrawerProps {
+  open: boolean;
+  mode: 'add' | 'edit';
+  initialData: DonDatHangChiTietFormItem;
+  hangHoaOptions: Array<{ value: string; label: string; subLabel?: string }>;
+  hangHoaMap: Record<string, HangHoaRefLite>;
+  onClose: () => void;
+  onSave: (value: DonDatHangChiTietFormItem) => void;
+}
+
+const EMPTY_LINE: DonDatHangChiTietFormItem = {
+  id_hang_hoa: '',
+  so_luong: 0,
+  don_gia: undefined,
+  ghi_chu: '',
+};
+
+const ChiTietLineDrawer: React.FC<ChiTietLineDrawerProps> = ({
+  open,
+  mode,
+  initialData,
+  hangHoaOptions,
+  hangHoaMap,
+  onClose,
+  onSave,
+}) => {
+  const { t } = useTranslation();
+  const [formValue, setFormValue] = useState<DonDatHangChiTietFormItem>(initialData);
+  const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    setFormValue(initialData);
+    setSubmitted(false);
+  }, [initialData, open]);
+
+  if (!open) return null;
+
+  const selectedHangHoa = formValue.id_hang_hoa ? hangHoaMap[formValue.id_hang_hoa] : null;
+  const soLuong = Number(formValue.so_luong) || 0;
+  const donGia = Number(formValue.don_gia) || 0;
+  const thanhTien = soLuong * donGia;
+  const itemInvalid = submitted && !formValue.id_hang_hoa;
+  const quantityInvalid = submitted && soLuong <= 0;
+
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    setSubmitted(true);
+    if (!formValue.id_hang_hoa || soLuong <= 0) return;
+    onSave({
+      id_hang_hoa: formValue.id_hang_hoa,
+      so_luong: soLuong,
+      don_gia: formValue.don_gia != null ? Number(formValue.don_gia) : undefined,
+      ghi_chu: formValue.ghi_chu?.trim() || undefined,
+    });
+  };
+
+  return (
+    <GenericDrawer
+      title={mode === 'add' ? t('donDatHang.form.addLineTitle') : t('donDatHang.form.editLineTitle')}
+      icon={<Package size={18} />}
+      onClose={onClose}
+      maxWidthClass={DRAWER_WIDTH_FORM}
+      stackLevel={1}
+      footer={
+        <div className="flex items-center justify-between w-full">
+          <Button type="button" variant="ghost" onClick={onClose} className="border border-border">
+            {t('common.cancel')}
+          </Button>
+          <Button type="submit" form="don-dat-hang-line-form" className="bg-primary text-white hover:bg-primary/90">
+            {t('common.save')}
+          </Button>
+        </div>
+      }
+    >
+      <form id="don-dat-hang-line-form" className="space-y-4" onSubmit={handleSubmit}>
+        <FormSection title={t('donDatHang.form.itemsSection')} icon={<Package size={14} />} variant="primary">
+          <FormGrid cols={2}>
+            <div className="col-span-1 sm:col-span-2">
+              <Combobox
+                label={t('donDatHang.form.item')}
+                options={hangHoaOptions}
+                value={formValue.id_hang_hoa || null}
+                onChange={(v) => {
+                  const id = v ? String(v) : '';
+                  const h = id ? hangHoaMap[id] : null;
+                  setFormValue((prev) => ({
+                    ...prev,
+                    id_hang_hoa: id,
+                    don_gia: h?.don_gia ?? 0,
+                  }));
+                }}
+                placeholder={t('donDatHang.form.itemPlaceholder')}
+                searchPlaceholder={t('donDatHang.form.itemSearchPlaceholder')}
+                searchable
+                dropdownInPortal
+                error={itemInvalid ? t('donDatHang.validation.itemRequired') : undefined}
+              />
+            </div>
+            <Input
+              label={t('donDatHang.chiTietTab.categoryLevel1Col')}
+              value={selectedHangHoa?.ten_danh_muc_cap1 ?? ''}
+              readOnly
+              placeholder="—"
+            />
+            <Input
+              label={t('donDatHang.chiTietTab.categoryLevel2Col')}
+              value={selectedHangHoa?.ten_danh_muc_cap2 ?? ''}
+              readOnly
+              placeholder="—"
+            />
+            <Input
+              label={t('donDatHang.chiTietTab.itemCodeCol')}
+              value={selectedHangHoa?.ma_hang ?? selectedHangHoa?.ma_hang_hoa ?? ''}
+              readOnly
+              placeholder="—"
+            />
+            <Input
+              label={t('donDatHang.chiTietTab.itemNameCol')}
+              value={selectedHangHoa?.ten_hang ?? selectedHangHoa?.ten_hang_hoa ?? ''}
+              readOnly
+              placeholder="—"
+            />
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">
+                {t('donDatHang.form.quantity')} <span className="text-destructive">*</span>
+              </label>
+              <NumberInput
+                value={formValue.so_luong}
+                onChange={(v) => setFormValue((prev) => ({ ...prev, so_luong: v }))}
+                min={0}
+                maxFractionDigits={4}
+                className="w-full border-border h-9 text-sm"
+                compact
+              />
+              {quantityInvalid && (
+                <p className="text-xs text-destructive mt-1">{t('donDatHang.validation.quantityMin')}</p>
+              )}
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">
+                {t('donDatHang.form.unitPrice')}
+              </label>
+              <NumberInput
+                value={formValue.don_gia}
+                onChange={(v) => setFormValue((prev) => ({ ...prev, don_gia: v }))}
+                min={0}
+                maxFractionDigits={4}
+                className="w-full border-border h-9 text-sm"
+                compact
+              />
+            </div>
+            <Input
+              label={t('donDatHang.form.amount')}
+              value={formatNumberVN(thanhTien)}
+              readOnly
+            />
+            <Input
+              label={t('donDatHang.form.unit')}
+              value={selectedHangHoa?.dvt ?? selectedHangHoa?.don_vi_tinh ?? ''}
+              readOnly
+              placeholder="—"
+            />
+            <div className="col-span-1 sm:col-span-2">
+              <Textarea
+                label={t('donDatHang.form.note')}
+                value={formValue.ghi_chu ?? ''}
+                onChange={(e) => setFormValue((prev) => ({ ...prev, ghi_chu: e.target.value }))}
+                placeholder={t('donDatHang.form.notePlaceholder')}
+                rows={3}
+              />
+            </div>
+          </FormGrid>
+        </FormSection>
+      </form>
+    </GenericDrawer>
+  );
+};
 
 interface Props {
   /** Truyền từ ngoài hoặc form tự gọi useDoiTacRefQuery('nha_cung_cap') */
@@ -139,9 +319,11 @@ const DonDatHangForm: React.FC<Props> = ({
     defaultValues,
   });
 
-  const { fields, append, remove, replace } = useFieldArray({ control, name: 'chi_tiet' });
+  const { fields, append, remove, replace, update } = useFieldArray({ control, name: 'chi_tiet' });
 
   const [autoFillPhieuId, setAutoFillPhieuId] = useState<string | null>(null);
+  const [editingLineIndex, setEditingLineIndex] = useState<number | null>(null);
+  const [lineDrawerOpen, setLineDrawerOpen] = useState(false);
   const { data: phieuForAutoFill } = usePhieuDeXuatVatTuById(
     !isEdit ? (autoFillPhieuId ?? undefined) : undefined
   );
@@ -225,25 +407,55 @@ const DonDatHangForm: React.FC<Props> = ({
     }
   };
 
+  const handleAddLine = () => {
+    setEditingLineIndex(null);
+    setLineDrawerOpen(true);
+  };
+
+  const handleEditLine = (index: number) => {
+    setEditingLineIndex(index);
+    setLineDrawerOpen(true);
+  };
+
+  const handleSaveLine = (value: DonDatHangChiTietFormItem) => {
+    if (editingLineIndex == null) {
+      append(value);
+    } else {
+      update(editingLineIndex, value);
+    }
+    setLineDrawerOpen(false);
+    setEditingLineIndex(null);
+  };
+
   const isLoading = createMutation.isPending || updateMutation.isPending;
+  const lineDrawerInitialData =
+    editingLineIndex != null
+      ? {
+          id_hang_hoa: chiTietValues[editingLineIndex]?.id_hang_hoa ?? '',
+          so_luong: Number(chiTietValues[editingLineIndex]?.so_luong) || 0,
+          don_gia: chiTietValues[editingLineIndex]?.don_gia,
+          ghi_chu: chiTietValues[editingLineIndex]?.ghi_chu ?? '',
+        }
+      : EMPTY_LINE;
 
   return (
-    <GenericDrawer
-      title={isEdit ? t('donDatHang.form.editTitle') : t('donDatHang.form.createTitle')}
-      icon={<FileText size={20} />}
-      onClose={onClose}
-      footer={
-        <FormDrawerFooter
-          formId="don-dat-hang-form"
-          onCancel={onClose}
-          isLoading={isLoading}
-          isEdit={isEdit}
-          saveLabel={t('donDatHang.form.save')}
-          createLabel={t('donDatHang.form.create')}
-        />
-      }
-      maxWidthClass={DRAWER_WIDTH_FORM}
-    >
+    <>
+      <GenericDrawer
+        title={isEdit ? t('donDatHang.form.editTitle') : t('donDatHang.form.createTitle')}
+        icon={<FileText size={20} />}
+        onClose={onClose}
+        footer={
+          <FormDrawerFooter
+            formId="don-dat-hang-form"
+            onCancel={onClose}
+            isLoading={isLoading}
+            isEdit={isEdit}
+            saveLabel={t('donDatHang.form.save')}
+            createLabel={t('donDatHang.form.create')}
+          />
+        }
+        maxWidthClass={DRAWER_WIDTH_FORM}
+      >
       <form id="don-dat-hang-form" onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <FormSection title={t('donDatHang.detail.basicInfo')} icon={<FileText size={14} />} variant="primary">
           <FormGrid cols={2}>
@@ -372,7 +584,7 @@ const DonDatHangForm: React.FC<Props> = ({
           icon={<Package size={14} className="text-primary" />}
           count={fields.length}
           addLabel={t('donDatHang.form.addRow')}
-          onAdd={() => append({ id_hang_hoa: '', so_luong: 0, don_gia: undefined, ghi_chu: '' })}
+          onAdd={handleAddLine}
           emptyTitle={t('donDatHang.form.noItems')}
           emptyDescription={t('donDatHang.form.noItemsHint')}
           maxTableHeight="320px"
@@ -380,19 +592,22 @@ const DonDatHangForm: React.FC<Props> = ({
           <thead className="sticky top-0 z-[1] bg-muted border-b border-border">
             <tr>
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap w-10">#</th>
-              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[200px]">{t('donDatHang.form.item')}</th>
+              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[120px]">{t('donDatHang.chiTietTab.categoryLevel1Col')}</th>
+              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[120px]">{t('donDatHang.chiTietTab.categoryLevel2Col')}</th>
+              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[100px]">{t('donDatHang.chiTietTab.itemCodeCol')}</th>
+              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[180px]">{t('donDatHang.chiTietTab.itemNameCol')}</th>
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[110px]">{t('donDatHang.form.quantity')}</th>
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[100px]">{t('donDatHang.form.unitPrice')}</th>
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[110px]">{t('donDatHang.form.amount')}</th>
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[64px]">{t('donDatHang.form.unit')}</th>
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[160px]">{t('donDatHang.form.note')}</th>
-              <th className="sticky right-0 z-[2] px-4 py-2 font-semibold text-foreground/80 text-xs text-center w-16 bg-muted border-l border-border">{t('common.actions')}</th>
+              <th className="sticky right-0 z-[2] px-4 py-2 font-semibold text-foreground/80 text-xs text-center min-w-[88px] bg-muted border-l border-border">{t('common.actions')}</th>
             </tr>
           </thead>
           <tbody className="[&>tr>td]:border-b [&>tr>td]:border-border">
             {fields.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-4 py-6 text-center text-muted-foreground text-xs">
+                <td colSpan={11} className="px-4 py-6 text-center text-muted-foreground text-xs">
                   {t('donDatHang.form.noItems')}
                 </td>
               </tr>
@@ -401,89 +616,46 @@ const DonDatHangForm: React.FC<Props> = ({
                 const idHangHoa = chiTietValues[index]?.id_hang_hoa ?? '';
                 const h = idHangHoa ? hangHoaMap[idHangHoa] : null;
                 const donVi = h ? (h.dvt ?? h.don_vi_tinh ?? '—') : '—';
+                const maHang = h ? (h.ma_hang ?? h.ma_hang_hoa ?? '—') : '—';
+                const tenHang = h ? (h.ten_hang ?? h.ten_hang_hoa ?? '—') : '—';
                 const soLuong = Number(chiTietValues[index]?.so_luong) || 0;
                 const donGia = Number(chiTietValues[index]?.don_gia) || 0;
                 const thanhTien = soLuong * donGia;
                 return (
                   <tr key={field.id} className="hover:bg-muted/60 transition-colors">
                     <td className="px-4 py-2.5 text-muted-foreground tabular-nums">{index + 1}</td>
-                    <td className="px-4 py-2.5 min-w-0 align-top">
-                      <Controller
-                        name={`chi_tiet.${index}.id_hang_hoa`}
-                        control={control}
-                        render={({ field: f }) => (
-                          <Combobox
-                            options={hangHoaComboboxOptions}
-                            value={f.value || null}
-                            onChange={(v) => {
-                              f.onChange(v ?? '');
-                              const dg = v ? (hangHoaMap[String(v)]?.don_gia ?? 0) : 0;
-                              setValue(`chi_tiet.${index}.don_gia`, dg);
-                            }}
-                            placeholder={t('donDatHang.form.itemPlaceholder')}
-                            searchPlaceholder={t('donDatHang.form.itemSearchPlaceholder')}
-                            searchable
-                            triggerClassName="h-9 text-sm border-border rounded-md"
-                            dropdownInPortal
-                          />
-                        )}
-                      />
-                    </td>
-                    <td className="px-4 py-2.5 min-w-[100px] align-top">
-                      <Controller
-                        name={`chi_tiet.${index}.so_luong`}
-                        control={control}
-                        render={({ field: f }) => (
-                          <NumberInput
-                            value={f.value}
-                            onChange={(v) => f.onChange(v)}
-                            onBlur={f.onBlur}
-                            min={0}
-                            maxFractionDigits={4}
-                            className="min-w-[6rem] max-w-[10rem] border-border h-9 text-sm"
-                            compact
-                          />
-                        )}
-                      />
-                    </td>
-                    <td className="px-4 py-2.5 min-w-[100px] align-top">
-                      <Controller
-                        name={`chi_tiet.${index}.don_gia`}
-                        control={control}
-                        render={({ field: f }) => (
-                          <NumberInput
-                            value={f.value}
-                            onChange={(v) => f.onChange(v)}
-                            onBlur={f.onBlur}
-                            min={0}
-                            maxFractionDigits={4}
-                            className="min-w-[6rem] max-w-[10rem] border-border h-9 text-sm"
-                            compact
-                          />
-                        )}
-                      />
-                    </td>
+                    <td className="px-4 py-2.5 text-xs text-muted-foreground">{h?.ten_danh_muc_cap1 ?? '—'}</td>
+                    <td className="px-4 py-2.5 text-xs text-muted-foreground">{h?.ten_danh_muc_cap2 ?? '—'}</td>
+                    <td className="px-4 py-2.5 font-mono text-xs">{maHang}</td>
+                    <td className="px-4 py-2.5 text-sm">{tenHang}</td>
+                    <td className="px-4 py-2.5 text-xs tabular-nums">{formatNumberVN(soLuong)}</td>
+                    <td className="px-4 py-2.5 text-xs text-muted-foreground tabular-nums">{formatNumberVN(donGia)}</td>
                     <td className="px-4 py-2.5 text-xs text-muted-foreground tabular-nums">
                       {formatNumberVN(thanhTien)}
                     </td>
                     <td className="px-4 py-2.5 text-xs text-muted-foreground">{donVi}</td>
-                    <td className="px-4 py-2.5 min-w-[180px] align-top">
-                      <textarea
-                        {...register(`chi_tiet.${index}.ghi_chu`)}
-                        placeholder={t('donDatHang.form.notePlaceholder')}
-                        rows={2}
-                        className="w-full min-h-[2.25rem] px-3 py-1.5 text-sm border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring resize-y"
-                      />
+                    <td className="px-4 py-2.5 text-xs text-muted-foreground max-w-[180px] truncate" title={chiTietValues[index]?.ghi_chu ?? ''}>
+                      {chiTietValues[index]?.ghi_chu || '—'}
                     </td>
-                    <td className="sticky right-0 z-[1] px-4 py-2.5 text-center bg-card border-l border-border/50">
-                      <button
-                        type="button"
-                        onClick={() => remove(index)}
-                        className="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-md"
-                        title={t('common.delete')}
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                    <td className="sticky right-0 z-[1] px-4 py-2.5 bg-card border-l border-border/50">
+                      <div className="flex items-center justify-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleEditLine(index)}
+                          className="p-1.5 text-primary hover:bg-primary/10 rounded-md"
+                          title={t('common.edit')}
+                        >
+                          <Edit size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => remove(index)}
+                          className="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-md"
+                          title={t('common.delete')}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -498,7 +670,7 @@ const DonDatHangForm: React.FC<Props> = ({
               }, 0);
               return (
                 <tr key="totals" className="bg-muted/50 border-t-2 border-border font-medium">
-                  <td colSpan={2} className="px-4 py-2.5 text-muted-foreground text-xs" />
+                  <td colSpan={5} className="px-4 py-2.5 text-muted-foreground text-xs" />
                   <td className="px-4 py-2.5 text-xs tabular-nums">{formatNumberVN(tongSoLuong)}</td>
                   <td className="px-4 py-2.5 text-xs" />
                   <td className="px-4 py-2.5 text-xs tabular-nums">{formatNumberVN(tongTien)}</td>
@@ -509,7 +681,21 @@ const DonDatHangForm: React.FC<Props> = ({
           </tbody>
         </GenericSubTableSection>
       </form>
-    </GenericDrawer>
+      </GenericDrawer>
+
+      <ChiTietLineDrawer
+        open={lineDrawerOpen}
+        mode={editingLineIndex == null ? 'add' : 'edit'}
+        initialData={lineDrawerInitialData}
+        hangHoaOptions={hangHoaComboboxOptions}
+        hangHoaMap={hangHoaMap}
+        onClose={() => {
+          setLineDrawerOpen(false);
+          setEditingLineIndex(null);
+        }}
+        onSave={handleSaveLine}
+      />
+    </>
   );
 };
 

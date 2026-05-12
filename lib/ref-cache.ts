@@ -10,7 +10,7 @@ export const REF_CACHE_TTL_MS = 5 * 60 * 1000;
 export const REF_CACHE_KEYS = {
   kho: 'ref:kho',
   employees: 'ref:employees',
-  hangHoa: 'ref:hang_hoa',
+  hangHoa: 'ref:hang_hoa:v2',
   doiTac: (loai?: string) => `ref:doi_tac:${loai ?? 'all'}`,
 } as const;
 

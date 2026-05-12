@@ -245,22 +245,22 @@ const PhieuDeXuatVatTuDetail: React.FC<Props> = ({
               <thead className="sticky top-0 z-[1] bg-muted border-b border-border">
                 <tr>
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap w-10">#</th>
-                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[100px]">
+                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[130px]">
                     {t('phieuDeXuatVatTu.form.itemCode')}
                   </th>
-                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[140px]">
+                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[300px]">
                     {t('phieuDeXuatVatTu.form.itemName')}
                   </th>
-                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap w-20">
+                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[90px]">
                     {t('phieuDeXuatVatTu.form.unit')}
                   </th>
-                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap w-24">
+                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[110px]">
                     {t('phieuDeXuatVatTu.form.quantity')}
                   </th>
-                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[120px]">
+                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[220px]">
                     {t('phieuDeXuatVatTu.form.specs')}
                   </th>
-                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[120px]">
+                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[220px]">
                     {t('phieuDeXuatVatTu.form.note')}
                   </th>
                 </tr>
@@ -269,12 +269,12 @@ const PhieuDeXuatVatTuDetail: React.FC<Props> = ({
                 {data.chi_tiet.map((ct, idx) => (
                   <tr key={ct.id} className="hover:bg-muted/60 transition-colors">
                     <td className="px-4 py-2.5 text-muted-foreground tabular-nums">{idx + 1}</td>
-                    <td className="px-4 py-2.5 font-mono text-xs">{ct.ma_hang ?? '—'}</td>
-                    <td className="px-4 py-2.5 text-sm">{ct.ten_hang ?? '—'}</td>
-                    <td className="px-4 py-2.5 text-xs text-muted-foreground">{ct.don_vi_tinh ?? '—'}</td>
-                    <td className="px-4 py-2.5 tabular-nums">{ct.so_luong}</td>
-                    <td className="px-4 py-2.5 text-xs text-muted-foreground">{ct.thong_so ?? '—'}</td>
-                    <td className="px-4 py-2.5 text-xs text-muted-foreground">{ct.ghi_chu ?? '—'}</td>
+                    <td className="px-4 py-2.5 font-mono text-xs whitespace-nowrap">{ct.ma_hang ?? '—'}</td>
+                    <td className="px-4 py-2.5 text-sm whitespace-nowrap">{ct.ten_hang ?? '—'}</td>
+                    <td className="px-4 py-2.5 text-xs text-muted-foreground whitespace-nowrap">{ct.don_vi_tinh ?? '—'}</td>
+                    <td className="px-4 py-2.5 tabular-nums whitespace-nowrap">{ct.so_luong}</td>
+                    <td className="px-4 py-2.5 text-xs text-muted-foreground whitespace-nowrap">{ct.thong_so ?? '—'}</td>
+                    <td className="px-4 py-2.5 text-xs text-muted-foreground whitespace-nowrap">{ct.ghi_chu ?? '—'}</td>
                   </tr>
                 ))}
               </tbody>

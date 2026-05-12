@@ -5,7 +5,10 @@ import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import DateRangePicker from '../../../../components/ui/DateRangePicker';
 import { useSearchInputCommit } from '../../../../lib/hooks/use-search-input-commit';
+import { DATE_RANGE_PRESETS, type DateRangePresetId } from '../../../he-thong/nhan-vien/core/stats-constants';
+import { getDateRangeFromPreset } from '../../../he-thong/nhan-vien/utils/stats-date-range';
 import { useChiTietTabStore } from '../store/useChiTietTabStore';
 import type { PhieuDeXuatVatTuChiTietRow } from '../core/types';
 import { TRANG_THAI_CHO_DUYET, TRANG_THAI_DA_DUYET, TRANG_THAI_KHONG_DUYET, TIEN_DO_MH_KNOWN_LABELS } from '../core/constants';
@@ -57,6 +60,23 @@ const ChiTietTabToolbar: React.FC<Props> = ({
     commit: commitSearchTerm,
   });
 
+  const datePreset = typeof filters.datePreset === 'string' ? filters.datePreset : 'all';
+  const customDateFrom = typeof filters.customDateFrom === 'string' ? filters.customDateFrom : '';
+  const customDateEnd = typeof filters.customDateEnd === 'string' ? filters.customDateEnd : '';
+  const dateFilterActive = useMemo(
+    () => datePreset !== 'all' || !!customDateFrom.trim() || !!customDateEnd.trim(),
+    [datePreset, customDateFrom, customDateEnd]
+  );
+  const dateRangeLabel = useMemo(() => {
+    const range = getDateRangeFromPreset(
+      datePreset as DateRangePresetId,
+      customDateFrom ? new Date(customDateFrom) : undefined,
+      customDateEnd ? new Date(customDateEnd) : undefined
+    );
+    return range.label;
+  }, [datePreset, customDateFrom, customDateEnd]);
+  const dateRangePickerPresets = useMemo(() => DATE_RANGE_PRESETS.map((p) => ({ id: p.id, label: p.label })), []);
+
   const statusLen = filters.status?.length ?? 0;
   const noiDeXuatLen = filters.noiDeXuat?.length ?? 0;
   const nguoiDeXuatLen = filters.nguoiDeXuat?.length ?? 0;
@@ -66,11 +86,12 @@ const ChiTietTabToolbar: React.FC<Props> = ({
     () =>
       (searchInput.trim() ? 1 : 0) +
       statusLen +
+      (dateFilterActive ? 1 : 0) +
       (noiDeXuatLen > 0 ? 1 : 0) +
       (nguoiDeXuatLen > 0 ? 1 : 0) +
       (nguoiDuyetLen > 0 ? 1 : 0) +
       (tienDoMhLen > 0 ? 1 : 0),
-    [searchInput, statusLen, noiDeXuatLen, nguoiDeXuatLen, nguoiDuyetLen, tienDoMhLen]
+    [searchInput, statusLen, dateFilterActive, noiDeXuatLen, nguoiDeXuatLen, nguoiDuyetLen, tienDoMhLen]
   );
 
   const currentUserHoTen = useMemo(
@@ -91,6 +112,9 @@ const ChiTietTabToolbar: React.FC<Props> = ({
   const handleClearAllFilters = () => {
     commitSearchTerm('');
     setFilter('status', []);
+    setFilter('datePreset', 'all');
+    setFilter('customDateFrom', '');
+    setFilter('customDateEnd', '');
     setFilter('noiDeXuat', []);
     setFilter('nguoiDeXuat', []);
     setFilter('nguoiDuyet', []);
@@ -309,6 +333,22 @@ const ChiTietTabToolbar: React.FC<Props> = ({
         icon={Tag}
         className="w-full sm:w-[140px]"
       />
+      <DateRangePicker
+        presets={dateRangePickerPresets}
+        value={{
+          preset: datePreset,
+          customStart: customDateFrom,
+          customEnd: customDateEnd,
+        }}
+        onChange={(v) => {
+          setFilter('datePreset', v.preset as DateRangePresetId);
+          setFilter('customDateFrom', v.customStart);
+          setFilter('customDateEnd', v.customEnd);
+        }}
+        displayLabel={dateRangeLabel}
+        placeholder={t('phieuDeXuatVatTu.filters.datePhieu')}
+        className="w-full sm:w-auto"
+      />
       <FilterChipMultiSelect
         options={noiDeXuatOptions}
         value={filters.noiDeXuat ?? []}
@@ -354,11 +394,10 @@ const ChiTietTabToolbar: React.FC<Props> = ({
             size="sm"
             onClick={onExport}
             disabled={exportDisabled}
-            className="inline-flex min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-9 px-2 sm:px-2.5 gap-1.5 items-center justify-center border-border text-muted-foreground hover:bg-muted/50 disabled:opacity-40"
+            className="inline-flex min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-9 w-9 p-0 items-center justify-center border-border text-muted-foreground hover:bg-muted/50 disabled:opacity-40"
             aria-label={t('common.export')}
           >
-            <Download className="w-4 h-4 shrink-0" />
-            <span className="text-xs font-medium">{t('common.export')}</span>
+            <Download className="w-4 h-4" />
           </Button>
         </Tooltip>
       </div>

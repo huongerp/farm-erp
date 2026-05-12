@@ -42,7 +42,7 @@ function normalizeTrangThaiHangHoa(raw: string | null): HangHoa['trang_thai'] {
   return s === TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG ? TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG : TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
 }
 
-function rowToHangHoa(row: HangHoaRow, tenDanhMuc?: string): HangHoa {
+function rowToHangHoa(row: HangHoaRow, danhMuc?: { ten_danh_muc?: string; ten_danh_muc_cap1?: string; ten_danh_muc_cap2?: string }): HangHoa {
   const donGia = row.don_gia != null ? Number(row.don_gia) : null;
   const ma = row.ma_hang_hoa ?? '';
   const ten = row.ten_hang_hoa ?? '';
@@ -59,7 +59,9 @@ function rowToHangHoa(row: HangHoaRow, tenDanhMuc?: string): HangHoa {
     don_gia: Number.isNaN(donGia) ? null : donGia,
     tg_tao: row.tg_tao ?? new Date().toISOString(),
     tg_cap_nhat: row.tg_cap_nhat ?? new Date().toISOString(),
-    ten_danh_muc: tenDanhMuc,
+    ten_danh_muc: danhMuc?.ten_danh_muc,
+    ten_danh_muc_cap1: danhMuc?.ten_danh_muc_cap1,
+    ten_danh_muc_cap2: danhMuc?.ten_danh_muc_cap2,
     ma_hang: ma,
     ten_hang: ten,
     don_vi_tinh: unit,
@@ -68,13 +70,20 @@ function rowToHangHoa(row: HangHoaRow, tenDanhMuc?: string): HangHoa {
   };
 }
 
-function buildTenDanhMuc(danhMucList: { id: string; ten_danh_muc: string; id_cha: string | null }[], danh_muc_id: string | null, danh_muc_cha_id: string | null): string | undefined {
-  if (!danh_muc_id) return undefined;
+function buildDanhMucNames(
+  danhMucList: { id: string; ten_danh_muc: string; id_cha: string | null }[],
+  danh_muc_id: string | null,
+  danh_muc_cha_id: string | null
+): { ten_danh_muc?: string; ten_danh_muc_cap1?: string; ten_danh_muc_cap2?: string } {
+  if (!danh_muc_id) return {};
   const cap2 = danhMucList.find((d) => d.id === danh_muc_id);
+  if (!cap2) return {};
   const cap1 = danh_muc_cha_id ? danhMucList.find((d) => d.id === danh_muc_cha_id) : null;
-  if (!cap2) return undefined;
-  if (cap1) return `${cap1.ten_danh_muc} / ${cap2.ten_danh_muc}`;
-  return cap2.ten_danh_muc;
+  return {
+    ten_danh_muc: cap1 ? `${cap1.ten_danh_muc} / ${cap2.ten_danh_muc}` : cap2.ten_danh_muc,
+    ten_danh_muc_cap1: cap1?.ten_danh_muc,
+    ten_danh_muc_cap2: cap2.ten_danh_muc,
+  };
 }
 
 async function enrichWithTenDanhMuc(rows: HangHoaRow[]): Promise<HangHoa[]> {
@@ -87,8 +96,8 @@ async function enrichWithTenDanhMuc(rows: HangHoaRow[]): Promise<HangHoa[]> {
   return rows.map((row) => {
     const danh_muc_id = row.danh_muc_id != null ? String(row.danh_muc_id) : null;
     const danh_muc_cha_id = row.danh_muc_cha_id != null ? String(row.danh_muc_cha_id) : null;
-    const ten_danh_muc = buildTenDanhMuc(dmList, danh_muc_id, danh_muc_cha_id);
-    return rowToHangHoa(row, ten_danh_muc);
+    const danhMuc = buildDanhMucNames(dmList, danh_muc_id, danh_muc_cha_id);
+    return rowToHangHoa(row, danhMuc);
   });
 }
 
@@ -115,6 +124,8 @@ export type HangHoaRefLite = {
   dvt: string | null;
   danh_muc_id: string | null;
   ten_danh_muc?: string;
+  ten_danh_muc_cap1?: string;
+  ten_danh_muc_cap2?: string;
   /** Đơn giá mặc định (phiếu kho / đơn đặt hàng). */
   don_gia: number | null;
   /** Chuẩn hóa giống HangHoa — dùng lọc tạo danh sách kiểm kê kho. */
@@ -148,7 +159,7 @@ export const getHangHoaRef = async (): Promise<HangHoaRefLite[]> => {
           : null;
       const danh_muc_id = row.danh_muc_id != null ? String(row.danh_muc_id) : null;
       const danh_muc_cha_id = row.danh_muc_cha_id != null ? String(row.danh_muc_cha_id) : null;
-      const ten_danh_muc = dmList.length ? buildTenDanhMuc(dmList, danh_muc_id, danh_muc_cha_id) : undefined;
+      const danhMuc = dmList.length ? buildDanhMucNames(dmList, danh_muc_id, danh_muc_cha_id) : {};
       return {
         id: String(row.id),
         ma_hang: ma,
@@ -158,7 +169,9 @@ export const getHangHoaRef = async (): Promise<HangHoaRefLite[]> => {
         don_vi_tinh: unit,
         dvt: row.dvt ?? null,
         danh_muc_id,
-        ten_danh_muc,
+        ten_danh_muc: danhMuc.ten_danh_muc,
+        ten_danh_muc_cap1: danhMuc.ten_danh_muc_cap1,
+        ten_danh_muc_cap2: danhMuc.ten_danh_muc_cap2,
         don_gia: Number.isFinite(donGia) ? donGia : null,
         trang_thai: normalizeTrangThaiHangHoa(row.trang_thai),
       };

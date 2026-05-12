@@ -10,7 +10,7 @@ import i18n from '../../../../lib/i18n';
 import { getKhoRef } from '../../../kho-van/danh-sach-kho/services/kho-service';
 import { getDoiTacRef } from '../../../kho-van/danh-sach-doi-tac/services/doi-tac-service';
 import { getEmployeesRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
-import { getHangHoaRef } from '../../../kho-van/danh-sach-hang-hoa/services/hang-hoa-service';
+import { getHangHoaRef, type HangHoaRefLite } from '../../../kho-van/danh-sach-hang-hoa/services/hang-hoa-service';
 import type { BranchListScope } from '../../../../lib/branch-scope-query';
 import { postgrestQuotedIlikePattern } from '../../../../lib/postgrest-or-ilike';
 import type { DonDatHangListServerQuery } from './don-dat-hang-list-query';
@@ -81,6 +81,8 @@ interface ChiTietDbRow {
   ghi_chu: string | null;
 }
 
+type HangHoaLineEnrich = Pick<HangHoaRefLite, 'ma_hang' | 'ma_hang_hoa' | 'ten_hang' | 'ten_hang_hoa' | 'dvt' | 'don_vi_tinh' | 'ten_danh_muc_cap1' | 'ten_danh_muc_cap2'>;
+
 function toNum(s: string | null | undefined): number | null {
   if (s == null || s === '') return null;
   const n = Number(s);
@@ -123,7 +125,7 @@ function rowToDon(
   };
 }
 
-function rowToChiTiet(row: ChiTietDbRow, idDonStr: string, enrich?: { ma_hang?: string; ten_hang?: string; don_vi_tinh?: string }): DonDatHangChiTiet {
+function rowToChiTiet(row: ChiTietDbRow, idDonStr: string, enrich?: HangHoaLineEnrich): DonDatHangChiTiet {
   return {
     id: String(row.id),
     id_don_dat_hang: idDonStr,
@@ -133,6 +135,8 @@ function rowToChiTiet(row: ChiTietDbRow, idDonStr: string, enrich?: { ma_hang?: 
     don_gia: row.don_gia != null ? Number(row.don_gia) : undefined,
     thanh_tien: row.thanh_tien != null ? Number(row.thanh_tien) : undefined,
     ghi_chu: row.ghi_chu ?? undefined,
+    ten_danh_muc_cap1: enrich?.ten_danh_muc_cap1,
+    ten_danh_muc_cap2: enrich?.ten_danh_muc_cap2,
     ma_hang: enrich?.ma_hang,
     ten_hang: enrich?.ten_hang,
   };
@@ -311,7 +315,7 @@ interface DonDatHangChiTietFlatViewRow {
 const DON_DAT_HANG_CHI_TIET_FLAT_SELECT =
   'chi_tiet_id,id,id_don_dat_hang,id_hang_hoa,so_luong,don_vi_tinh,don_gia,thanh_tien,chi_tiet_ghi_chu,ma_hang,ten_hang,so_po,ngay_dat,ngay_giao_dk,id_nha_cung_cap,ten_nha_cung_cap,id_kho_nhan,ten_kho_nhan,id_phieu_de_xuat_vat_tu,id_nguoi_dat,id_nguoi_duyet,ghi_chu,trang_thai,tg_tao,tg_cap_nhat,so_phieu_de_xuat_ref,ref_ma_nha_cung_cap,ref_ten_nha_cung_cap,ref_ten_kho_nhan,ref_ten_nguoi_dat,ref_ma_nguoi_dat,ref_ten_nguoi_duyet,ref_ma_nguoi_duyet';
 
-function mapDonDatHangChiTietFlatViewRow(row: DonDatHangChiTietFlatViewRow): ChiTietDonDatHangFlat {
+function mapDonDatHangChiTietFlatViewRow(row: DonDatHangChiTietFlatViewRow, enrich?: HangHoaLineEnrich): ChiTietDonDatHangFlat {
   const so_phieu_de_xuat =
     row.so_phieu_de_xuat_ref != null && String(row.so_phieu_de_xuat_ref).trim() !== ''
       ? String(row.so_phieu_de_xuat_ref).trim()
@@ -342,8 +346,10 @@ function mapDonDatHangChiTietFlatViewRow(row: DonDatHangChiTietFlatViewRow): Chi
     don_tg_tao: row.tg_tao ?? '',
     don_tg_cap_nhat: row.tg_cap_nhat ?? '',
     id_hang_hoa: String(row.id_hang_hoa),
-    ma_hang: row.ma_hang?.trim() ? row.ma_hang.trim() : undefined,
-    ten_hang: row.ten_hang ?? undefined,
+    ten_danh_muc_cap1: enrich?.ten_danh_muc_cap1,
+    ten_danh_muc_cap2: enrich?.ten_danh_muc_cap2,
+    ma_hang: row.ma_hang?.trim() ? row.ma_hang.trim() : (enrich?.ma_hang ?? enrich?.ma_hang_hoa ?? undefined),
+    ten_hang: row.ten_hang ?? enrich?.ten_hang_hoa ?? enrich?.ten_hang ?? undefined,
     so_luong: Number(row.so_luong),
     don_gia: row.don_gia != null ? Number(row.don_gia) : undefined,
     thanh_tien: row.thanh_tien != null ? Number(row.thanh_tien) : undefined,
@@ -352,8 +358,19 @@ function mapDonDatHangChiTietFlatViewRow(row: DonDatHangChiTietFlatViewRow): Chi
   };
 }
 
-function mapDonDatHangChiTietFlatViewRows(flatRows: DonDatHangChiTietFlatViewRow[]): ChiTietDonDatHangFlat[] {
-  const out = flatRows.map(mapDonDatHangChiTietFlatViewRow);
+function buildHangHoaLineMap(hangHoaList: HangHoaRefLite[]): Record<string, HangHoaLineEnrich> {
+  const hangHoaMap: Record<string, HangHoaLineEnrich> = {};
+  hangHoaList.forEach((h) => {
+    hangHoaMap[h.id] = h;
+  });
+  return hangHoaMap;
+}
+
+function mapDonDatHangChiTietFlatViewRows(
+  flatRows: DonDatHangChiTietFlatViewRow[],
+  hangHoaMap: Record<string, HangHoaLineEnrich> = {}
+): ChiTietDonDatHangFlat[] {
+  const out = flatRows.map((row) => mapDonDatHangChiTietFlatViewRow(row, hangHoaMap[String(row.id_hang_hoa)]));
   out.sort(
     (a, b) =>
       (b.ngay_dat || '').localeCompare(a.ngay_dat || '') ||
@@ -413,7 +430,8 @@ export async function getChiTietDonDatHangPageSupabase(
       .range(from, to);
     return { data: res.data as DonDatHangChiTietFlatViewRow[] | null, error: res.error, count: res.count };
   });
-  const data = mapDonDatHangChiTietFlatViewRows(pageResult.data);
+  const hangHoaMap = pageResult.data.length > 0 ? buildHangHoaLineMap(await getHangHoaRef()) : {};
+  const data = mapDonDatHangChiTietFlatViewRows(pageResult.data, hangHoaMap);
   return { data, totalCount: pageResult.totalCount, page: pageResult.page, pageSize: pageResult.pageSize };
 }
 
@@ -456,14 +474,7 @@ export async function getDonDatHangByIdSupabase(id: string): Promise<DonDatHang 
     getHangHoaRef(),
   ]);
 
-  const hangHoaMap: Record<string, { ma_hang: string; ten_hang: string; dvt: string }> = {};
-  hangHoaList.forEach((h) => {
-    hangHoaMap[h.id] = {
-      ma_hang: h.ma_hang ?? h.ma_hang_hoa ?? '',
-      ten_hang: h.ten_hang_hoa ?? h.ten_hang ?? '',
-      dvt: h.dvt ?? '',
-    };
-  });
+  const hangHoaMap = buildHangHoaLineMap(hangHoaList);
 
   const p = row as DonSummaryRow;
   const don = mapDonSummaryRowToDon(p);

@@ -116,6 +116,8 @@ const DonDatHangPreviewContent: React.FC<Props> = ({ po }) => {
             <thead>
               <tr>
                 <th className="border border-gray-300 bg-primary text-white p-1.5 text-center text-[9pt] font-bold w-8">#</th>
+                <th className="border border-gray-300 bg-primary text-white p-1.5 text-left text-[9pt] font-bold min-w-[80px]">{t('donDatHang.chiTietTab.categoryLevel1Col')}</th>
+                <th className="border border-gray-300 bg-primary text-white p-1.5 text-left text-[9pt] font-bold min-w-[80px]">{t('donDatHang.chiTietTab.categoryLevel2Col')}</th>
                 <th className="border border-gray-300 bg-primary text-white p-1.5 text-left text-[9pt] font-bold min-w-[80px]">{t('donDatHang.form.item')} (mã)</th>
                 <th className="border border-gray-300 bg-primary text-white p-1.5 text-left text-[9pt] font-bold min-w-[120px]">{t('donDatHang.form.item')} (tên)</th>
                 <th className="border border-gray-300 bg-primary text-white p-1.5 text-center text-[9pt] font-bold w-16">{t('donDatHang.form.unit')}</th>
@@ -128,6 +130,8 @@ const DonDatHangPreviewContent: React.FC<Props> = ({ po }) => {
               {chiTiet.map((ct, idx) => (
                 <tr key={ct.id}>
                   <td className="border border-gray-300 p-1.5 text-gray-600">{idx + 1}</td>
+                  <td className="border border-gray-300 p-1.5 text-gray-600">{ct.ten_danh_muc_cap1 ?? '—'}</td>
+                  <td className="border border-gray-300 p-1.5 text-gray-600">{ct.ten_danh_muc_cap2 ?? '—'}</td>
                   <td className="border border-gray-300 p-1.5 font-mono text-xs">{ct.ma_hang ?? '—'}</td>
                   <td className="border border-gray-300 p-1.5">{ct.ten_hang ?? '—'}</td>
                   <td className="border border-gray-300 p-1.5 text-center text-gray-600">{ct.don_vi_tinh ?? '—'}</td>

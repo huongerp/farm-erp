@@ -35,6 +35,8 @@ function trangThaiKeysToDb(statusKeys: string[]): string[] {
 export type PhieuDeXuatVatTuListServerQuery = {
   searchTerm: string;
   trangThaiViet: string[];
+  ngayFrom: string;
+  ngayTo: string;
   idNoiDeXuat: number[];
   idNguoiDeXuat: number[];
   idNguoiDuyet: number[];
@@ -44,10 +46,12 @@ export type PhieuDeXuatVatTuListServerQuery = {
 export function buildPhieuDeXuatVatTuListServerQuery(params: {
   searchTerm: string;
   filters: PhieuDeXuatVatTuFilters;
+  ngayFrom: string;
+  ngayTo: string;
   viewScope: EmployeeBranchModuleScope;
   khoList: Kho[];
 }): PhieuDeXuatVatTuListServerQuery {
-  const { searchTerm, filters, viewScope, khoList } = params;
+  const { searchTerm, filters, ngayFrom, ngayTo, viewScope, khoList } = params;
   const scope = buildEmployeeBranchScopeForServer(
     viewScope.viewAll,
     viewScope.viewByBranch,
@@ -59,6 +63,8 @@ export function buildPhieuDeXuatVatTuListServerQuery(params: {
   return {
     searchTerm: (searchTerm ?? '').trim(),
     trangThaiViet: trangThaiKeysToDb(stKeys),
+    ngayFrom,
+    ngayTo,
     idNoiDeXuat: toNumIds(strArr(filters.noiDeXuatIds)),
     idNguoiDeXuat: toNumIds(strArr(filters.nguoiDeXuatIds)),
     idNguoiDuyet: toNumIds(strArr(filters.nguoiDuyetIds)),
@@ -70,6 +76,8 @@ export function buildPhieuDeXuatVatTuListServerQuery(params: {
 export type PhieuDeXuatChiTietListServerQuery = {
   searchTerm: string;
   trangThaiPhieuViet: string[];
+  ngayFrom: string;
+  ngayTo: string;
   tenNoiDeXuat: string[];
   tenNguoiDeXuat: string[];
   tenNguoiDuyet: string[];
@@ -80,10 +88,12 @@ export type PhieuDeXuatChiTietListServerQuery = {
 export function buildPhieuDeXuatChiTietListServerQuery(params: {
   searchTerm: string;
   filters: ChiTietTabFilters;
+  ngayFrom: string;
+  ngayTo: string;
   viewScope: EmployeeBranchModuleScope;
   khoList: Kho[];
 }): PhieuDeXuatChiTietListServerQuery {
-  const { searchTerm, filters, viewScope, khoList } = params;
+  const { searchTerm, filters, ngayFrom, ngayTo, viewScope, khoList } = params;
   const scope = buildEmployeeBranchScopeForServer(
     viewScope.viewAll,
     viewScope.viewByBranch,
@@ -94,6 +104,8 @@ export function buildPhieuDeXuatChiTietListServerQuery(params: {
   return {
     searchTerm: (searchTerm ?? '').trim(),
     trangThaiPhieuViet: trangThaiKeysToDb(strArr(filters.status)),
+    ngayFrom,
+    ngayTo,
     tenNoiDeXuat: [...new Set(strArr(filters.noiDeXuat).map((s) => s.trim()).filter(Boolean))].sort(),
     tenNguoiDeXuat: [...new Set(strArr(filters.nguoiDeXuat).map((s) => s.trim()).filter(Boolean))].sort(),
     tenNguoiDuyet: [...new Set(strArr(filters.nguoiDuyet).map((s) => s.trim()).filter(Boolean))].sort(),

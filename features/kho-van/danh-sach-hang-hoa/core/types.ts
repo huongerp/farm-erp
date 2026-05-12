@@ -15,6 +15,10 @@ export interface HangHoa {
   tg_cap_nhat: string;
   /** Hiển thị "Tên cấp 1 / Tên cấp 2" (enrich từ service). */
   ten_danh_muc?: string;
+  /** Tên danh mục cấp 1 (enrich từ service). */
+  ten_danh_muc_cap1?: string;
+  /** Tên danh mục cấp 2 (enrich từ service). */
+  ten_danh_muc_cap2?: string;
   /** Bản đồ tương thích: dùng trong phiếu kho, báo cáo, tồn kho ( = ma_hang_hoa ). */
   ma_hang: string;
   /** Bản đồ tương thích ( = ten_hang_hoa ). */
