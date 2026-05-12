@@ -14,8 +14,6 @@ export const hangHoaSchema = z.object({
     .max(255, i18n.t('hangHoa.validation.nameMax')),
   /** Chỉ chọn danh mục cấp 2; danh_muc_cha_id sẽ được set tự động từ danh mục cấp 2. */
   id_danh_muc_cap2: z.preprocess((v) => (v == null ? '' : v), z.string().min(1, i18n.t('hangHoa.validation.categoryRequired'))),
-  /** Phân loại hàng hóa, cho phép nhập mới từ combobox. */
-  phan_loai: z.string().optional().nullable(),
   dvt: z.preprocess((v) => (v == null ? '' : v), z.string().min(1, i18n.t('hangHoa.validation.unitRequired'))),
   don_gia: z.preprocess(
     (val) => (val === '' || val === null || val === undefined ? undefined : Number(val)),

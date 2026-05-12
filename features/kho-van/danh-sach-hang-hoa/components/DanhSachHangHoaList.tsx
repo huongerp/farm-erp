@@ -85,12 +85,6 @@ const DanhSachHangHoaList: React.FC<Props> = ({
             {item.ten_danh_muc ?? '—'}
           </span>
         );
-      case 'phan_loai':
-        return (
-          <span className="block truncate whitespace-nowrap text-sm text-muted-foreground" title={item.phan_loai ?? ''}>
-            {item.phan_loai ?? '—'}
-          </span>
-        );
       case 'dvt':
         return <span className="block truncate whitespace-nowrap text-sm text-muted-foreground" title={item.dvt ?? ''}>{item.dvt ?? '—'}</span>;
       case 'don_gia':
@@ -189,7 +183,7 @@ const DanhSachHangHoaList: React.FC<Props> = ({
       </div>
       <div className="font-medium text-foreground text-sm mb-1">{item.ten_hang_hoa}</div>
       <div className="text-xs text-muted-foreground mb-2">
-        {[item.ten_danh_muc ?? '—', item.phan_loai ?? '—', item.dvt ?? '—'].join(' · ')}
+        {[item.ten_danh_muc ?? '—', item.dvt ?? '—'].join(' · ')}
       </div>
       {item.don_gia != null && (
         <div className="text-sm tabular-nums text-muted-foreground mb-2">

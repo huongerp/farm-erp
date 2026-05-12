@@ -13,11 +13,11 @@ const TABLE = 'fp_mh_danh_sach_hang_hoa';
 
 /** Danh sách — có mo_ta cho cột mô tả; vẫn bỏ hinh_anh (base64 nặng). */
 const HANG_HOA_LIST_COLUMNS =
-  'id,danh_muc_id,danh_muc_cha_id,ma_hang_hoa,ten_hang_hoa,phan_loai,dvt,thu_tu,trang_thai,don_gia,mo_ta,tg_tao,tg_cap_nhat';
+  'id,danh_muc_id,danh_muc_cha_id,ma_hang_hoa,ten_hang_hoa,dvt,thu_tu,trang_thai,don_gia,mo_ta,tg_tao,tg_cap_nhat';
 
 /** Chi tiết form/preview — đủ mo_ta, hinh_anh. */
 const HANG_HOA_DETAIL_COLUMNS =
-  'id,danh_muc_id,danh_muc_cha_id,ma_hang_hoa,ten_hang_hoa,phan_loai,dvt,thu_tu,trang_thai,don_gia,mo_ta,hinh_anh,tg_tao,tg_cap_nhat';
+  'id,danh_muc_id,danh_muc_cha_id,ma_hang_hoa,ten_hang_hoa,dvt,thu_tu,trang_thai,don_gia,mo_ta,hinh_anh,tg_tao,tg_cap_nhat';
 
 /** Row từ Supabase fp_mh_danh_sach_hang_hoa */
 interface HangHoaRow {
@@ -26,7 +26,6 @@ interface HangHoaRow {
   danh_muc_cha_id: number | null;
   ma_hang_hoa: string | null;
   ten_hang_hoa: string | null;
-  phan_loai: string | null;
   dvt: string | null;
   thu_tu: number | null;
   trang_thai: string | null;
@@ -54,7 +53,6 @@ function rowToHangHoa(row: HangHoaRow, danhMuc?: { ten_danh_muc?: string; ten_da
     danh_muc_cha_id: row.danh_muc_cha_id != null ? String(row.danh_muc_cha_id) : null,
     ma_hang_hoa: ma,
     ten_hang_hoa: ten,
-    phan_loai: row.phan_loai ?? null,
     dvt: unit,
     thu_tu: row.thu_tu != null ? Math.max(1, row.thu_tu) : 1,
     trang_thai: normalizeTrangThaiHangHoa(row.trang_thai),
@@ -126,7 +124,6 @@ export type HangHoaRefLite = {
   dvt: string | null;
   danh_muc_id: string | null;
   danh_muc_cha_id: string | null;
-  phan_loai: string | null;
   ten_danh_muc?: string;
   ten_danh_muc_cap1?: string;
   ten_danh_muc_cap2?: string;
@@ -142,7 +139,7 @@ export const getHangHoaRef = async (): Promise<HangHoaRefLite[]> => {
       fetchAllRows<HangHoaRow>((from, to) =>
         supabase
           .from(TABLE)
-          .select('id, ma_hang_hoa, ten_hang_hoa, phan_loai, dvt, danh_muc_id, danh_muc_cha_id, thu_tu, trang_thai, don_gia')
+          .select('id, ma_hang_hoa, ten_hang_hoa, dvt, danh_muc_id, danh_muc_cha_id, thu_tu, trang_thai, don_gia')
           .order('thu_tu', { ascending: true })
           .order('ma_hang_hoa', { ascending: true })
           .range(from, to)
@@ -174,7 +171,6 @@ export const getHangHoaRef = async (): Promise<HangHoaRefLite[]> => {
         dvt: row.dvt ?? null,
         danh_muc_id,
         danh_muc_cha_id,
-        phan_loai: row.phan_loai ?? null,
         ten_danh_muc: danhMuc.ten_danh_muc,
         ten_danh_muc_cap1: danhMuc.ten_danh_muc_cap1,
         ten_danh_muc_cap2: danhMuc.ten_danh_muc_cap2,
@@ -229,7 +225,6 @@ export const createHangHoa = async (data: HangHoaFormValues): Promise<HangHoa> =
     danh_muc_cha_id,
     ma_hang_hoa: data.ma_hang_hoa.trim().toUpperCase(),
     ten_hang_hoa: data.ten_hang_hoa.trim(),
-    phan_loai: data.phan_loai?.trim() || null,
     dvt: data.dvt?.trim() || null,
     thu_tu: data.thu_tu != null ? Math.max(1, data.thu_tu) : nextThuTu,
     trang_thai: data.trang_thai,
@@ -266,7 +261,6 @@ export const updateHangHoa = async (id: string, data: HangHoaFormValues): Promis
     danh_muc_cha_id,
     ma_hang_hoa: data.ma_hang_hoa.trim().toUpperCase(),
     ten_hang_hoa: data.ten_hang_hoa.trim(),
-    phan_loai: data.phan_loai?.trim() || null,
     dvt: data.dvt?.trim() || null,
     thu_tu: Math.max(1, data.thu_tu ?? 1),
     trang_thai: data.trang_thai,
@@ -321,7 +315,6 @@ export interface HangHoaImportRow {
   ma_hang_hoa?: string;
   ten_hang_hoa?: string;
   danh_muc?: string;
-  phan_loai?: string;
   dvt?: string;
   don_gia?: string | number;
   mo_ta?: string;
@@ -446,7 +439,6 @@ export const importHangHoa = async (
             danh_muc_cha_id: dm!.danh_muc_cha_id,
             ma_hang_hoa: ma,
             ten_hang_hoa: ten,
-            phan_loai: row.phan_loai != null ? String(row.phan_loai).trim() || null : null,
             dvt,
             trang_thai: trangThai,
             don_gia: donGia,
@@ -465,7 +457,6 @@ export const importHangHoa = async (
           danh_muc_cha_id: dm!.danh_muc_cha_id,
           ma_hang_hoa: ma,
           ten_hang_hoa: ten,
-          phan_loai: row.phan_loai != null ? String(row.phan_loai).trim() || null : null,
           dvt,
           thu_tu: nextThuTu++,
           trang_thai: trangThai,

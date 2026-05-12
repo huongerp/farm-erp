@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useForm, Controller, SubmitHandler, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { FileText, Calendar, Building2, Warehouse, User, Package, CreditCard, Edit, Trash2 } from 'lucide-react';
+import { FileText, Calendar, Building2, Warehouse, User, Package, CreditCard, Edit, Trash2, Tag } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
 import Textarea from '../../../../components/ui/Textarea';
 import Combobox from '../../../../components/ui/Combobox';
@@ -16,7 +16,7 @@ import type { DoiTacRefLite } from '../../../kho-van/danh-sach-doi-tac/services/
 import type { HangHoaRefLite } from '../../../kho-van/danh-sach-hang-hoa/services/hang-hoa-service';
 import type { PhieuDeXuatSoPhieuOption } from '../../../kho-van/phieu-de-xuat-vat-tu/services/phieu-de-xuat-vat-tu-supabase.service';
 import { usePhieuDeXuatVatTuById } from '../../../kho-van/phieu-de-xuat-vat-tu/hooks/use-phieu-de-xuat-vat-tu';
-import { useCreateDonDatHang, useUpdateDonDatHang, useNextSoPoDonDatHang } from '../hooks/use-don-dat-hang';
+import { useCreateDonDatHang, useUpdateDonDatHang, useNextSoPoDonDatHang, usePhanLoaiDonDatHangChiTiet } from '../hooks/use-don-dat-hang';
 import { useDoiTacRefQuery, useHangHoaRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { getTodayISO, getEndOfMonthISO, formatNumberVN } from '../../../../lib/utils';
@@ -31,6 +31,7 @@ interface ChiTietLineDrawerProps {
   mode: 'add' | 'edit';
   initialData: DonDatHangChiTietFormItem;
   hangHoaOptions: Array<{ value: string; label: string; subLabel?: string }>;
+  phanLoaiOptions: Array<{ value: string; label: string }>;
   hangHoaMap: Record<string, HangHoaRefLite>;
   onClose: () => void;
   onSave: (value: DonDatHangChiTietFormItem) => void;
@@ -38,6 +39,7 @@ interface ChiTietLineDrawerProps {
 
 const EMPTY_LINE: DonDatHangChiTietFormItem = {
   id_hang_hoa: '',
+  phan_loai: null,
   so_luong: 0,
   don_gia: undefined,
   ghi_chu: '',
@@ -48,6 +50,7 @@ const ChiTietLineDrawer: React.FC<ChiTietLineDrawerProps> = ({
   mode,
   initialData,
   hangHoaOptions,
+  phanLoaiOptions,
   hangHoaMap,
   onClose,
   onSave,
@@ -77,6 +80,7 @@ const ChiTietLineDrawer: React.FC<ChiTietLineDrawerProps> = ({
     if (!formValue.id_hang_hoa || soLuong <= 0) return;
     onSave({
       id_hang_hoa: formValue.id_hang_hoa,
+      phan_loai: formValue.phan_loai?.trim() || null,
       so_luong: soLuong,
       don_gia: formValue.don_gia != null ? Number(formValue.don_gia) : undefined,
       ghi_chu: formValue.ghi_chu?.trim() || undefined,
@@ -136,6 +140,19 @@ const ChiTietLineDrawer: React.FC<ChiTietLineDrawerProps> = ({
               value={selectedHangHoa?.ten_danh_muc_cap2 ?? ''}
               readOnly
               placeholder="—"
+            />
+            <Combobox
+              label={t('donDatHang.chiTietTab.classificationCol')}
+              icon={<Tag size={12} />}
+              options={phanLoaiOptions}
+              value={formValue.phan_loai ?? ''}
+              onChange={(v) => setFormValue((prev) => ({ ...prev, phan_loai: typeof v === 'string' ? v : String(v ?? '') }))}
+              placeholder={t('donDatHang.form.classificationPlaceholder')}
+              searchPlaceholder={t('donDatHang.form.classificationSearchPlaceholder')}
+              creatable
+              creatableLabel={t('donDatHang.form.creatableNew')}
+              searchable
+              dropdownInPortal
             />
             <Input
               label={t('donDatHang.chiTietTab.itemCodeCol')}
@@ -232,6 +249,7 @@ const DonDatHangForm: React.FC<Props> = ({
   const updateMutation = useUpdateDonDatHang(onClose);
   const { data: nextSoPo, isLoading: loadingSoPo } = useNextSoPoDonDatHang(!isEdit);
   const { data: hangHoaList = [] } = useHangHoaRefQuery();
+  const { data: phanLoaiList = [] } = usePhanLoaiDonDatHangChiTiet();
   const { data: supplierListFromHook = [] } = useDoiTacRefQuery('nha_cung_cap');
   const supplierList = (supplierListProp?.length ? supplierListProp : supplierListFromHook) as DoiTacRefLite[];
 
@@ -299,6 +317,11 @@ const DonDatHangForm: React.FC<Props> = ({
     return m;
   }, [hangHoaList]);
 
+  const phanLoaiOptions = useMemo(
+    () => phanLoaiList.map((value) => ({ value, label: value })),
+    [phanLoaiList]
+  );
+
   const defaultValues: Partial<DonDatHangFormValues> = {
     so_po: '',
     ngay_dat: getTodayISO().slice(0, 10),
@@ -343,6 +366,7 @@ const DonDatHangForm: React.FC<Props> = ({
     replace(
       phieuForAutoFill.chi_tiet.map((ct) => ({
         id_hang_hoa: ct.id_hang_hoa,
+        phan_loai: null,
         so_luong: ct.so_luong,
         don_gia: undefined,
         ghi_chu: '',
@@ -366,6 +390,7 @@ const DonDatHangForm: React.FC<Props> = ({
         trang_thai: initialData.trang_thai,
         chi_tiet: (initialData.chi_tiet ?? []).map((ct) => ({
           id_hang_hoa: ct.id_hang_hoa,
+          phan_loai: ct.phan_loai ?? null,
           so_luong: ct.so_luong,
           don_gia: ct.don_gia,
           ghi_chu: ct.ghi_chu ?? '',
@@ -395,6 +420,7 @@ const DonDatHangForm: React.FC<Props> = ({
       ghi_chu: data.ghi_chu?.trim() || undefined,
       chi_tiet: validChiTiet.map((c) => ({
         id_hang_hoa: c.id_hang_hoa.trim(),
+        phan_loai: c.phan_loai?.trim() || null,
         so_luong: Number(c.so_luong),
         don_gia: c.don_gia,
         ghi_chu: c.ghi_chu?.trim() || undefined,
@@ -432,6 +458,7 @@ const DonDatHangForm: React.FC<Props> = ({
     editingLineIndex != null
       ? {
           id_hang_hoa: chiTietValues[editingLineIndex]?.id_hang_hoa ?? '',
+          phan_loai: chiTietValues[editingLineIndex]?.phan_loai ?? null,
           so_luong: Number(chiTietValues[editingLineIndex]?.so_luong) || 0,
           don_gia: chiTietValues[editingLineIndex]?.don_gia,
           ghi_chu: chiTietValues[editingLineIndex]?.ghi_chu ?? '',
@@ -594,6 +621,7 @@ const DonDatHangForm: React.FC<Props> = ({
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap w-10">#</th>
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[120px]">{t('donDatHang.chiTietTab.categoryLevel1Col')}</th>
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[120px]">{t('donDatHang.chiTietTab.categoryLevel2Col')}</th>
+              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[140px]">{t('donDatHang.chiTietTab.classificationCol')}</th>
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[100px]">{t('donDatHang.chiTietTab.itemCodeCol')}</th>
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[180px]">{t('donDatHang.chiTietTab.itemNameCol')}</th>
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[110px]">{t('donDatHang.form.quantity')}</th>
@@ -607,7 +635,7 @@ const DonDatHangForm: React.FC<Props> = ({
           <tbody className="[&>tr>td]:border-b [&>tr>td]:border-border">
             {fields.length === 0 ? (
               <tr>
-                <td colSpan={11} className="px-4 py-6 text-center text-muted-foreground text-xs">
+                <td colSpan={12} className="px-4 py-6 text-center text-muted-foreground text-xs">
                   {t('donDatHang.form.noItems')}
                 </td>
               </tr>
@@ -626,6 +654,9 @@ const DonDatHangForm: React.FC<Props> = ({
                     <td className="px-4 py-2.5 text-muted-foreground tabular-nums">{index + 1}</td>
                     <td className="px-4 py-2.5 text-xs text-muted-foreground">{h?.ten_danh_muc_cap1 ?? '—'}</td>
                     <td className="px-4 py-2.5 text-xs text-muted-foreground">{h?.ten_danh_muc_cap2 ?? '—'}</td>
+                    <td className="px-4 py-2.5 text-xs text-muted-foreground max-w-[160px] truncate" title={chiTietValues[index]?.phan_loai ?? ''}>
+                      {chiTietValues[index]?.phan_loai || '—'}
+                    </td>
                     <td className="px-4 py-2.5 font-mono text-xs">{maHang}</td>
                     <td className="px-4 py-2.5 text-sm">{tenHang}</td>
                     <td className="px-4 py-2.5 text-xs tabular-nums">{formatNumberVN(soLuong)}</td>
@@ -670,7 +701,7 @@ const DonDatHangForm: React.FC<Props> = ({
               }, 0);
               return (
                 <tr key="totals" className="bg-muted/50 border-t-2 border-border font-medium">
-                  <td colSpan={5} className="px-4 py-2.5 text-muted-foreground text-xs" />
+                  <td colSpan={6} className="px-4 py-2.5 text-muted-foreground text-xs" />
                   <td className="px-4 py-2.5 text-xs tabular-nums">{formatNumberVN(tongSoLuong)}</td>
                   <td className="px-4 py-2.5 text-xs" />
                   <td className="px-4 py-2.5 text-xs tabular-nums">{formatNumberVN(tongTien)}</td>
@@ -688,6 +719,7 @@ const DonDatHangForm: React.FC<Props> = ({
         mode={editingLineIndex == null ? 'add' : 'edit'}
         initialData={lineDrawerInitialData}
         hangHoaOptions={hangHoaComboboxOptions}
+        phanLoaiOptions={phanLoaiOptions}
         hangHoaMap={hangHoaMap}
         onClose={() => {
           setLineDrawerOpen(false);

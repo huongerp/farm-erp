@@ -96,17 +96,6 @@ const DanhSachHangHoaToolbar: React.FC<Props> = ({
       .map(([value]) => ({ label: value, value, count: counts[value] }));
   }, [data]);
 
-  const phanLoaiOptions = useMemo(() => {
-    const counts: Record<string, number> = {};
-    data.forEach((h) => {
-      const p = h.phan_loai?.trim();
-      if (p) counts[p] = (counts[p] ?? 0) + 1;
-    });
-    return Object.entries(counts)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([value]) => ({ label: value, value, count: counts[value] }));
-  }, [data]);
-
   const statusOptions = useMemo(
     () => [
       {
@@ -129,14 +118,12 @@ const DanhSachHangHoaToolbar: React.FC<Props> = ({
       (filters.status.length > 0 ? 1 : 0) +
       (filters.id_danh_muc_cha.length > 0 ? 1 : 0) +
       (filters.id_danh_muc.length > 0 ? 1 : 0) +
-      (filters.phan_loai.length > 0 ? 1 : 0) +
       (filters.dvt.length > 0 ? 1 : 0),
     [
       searchInput,
       filters.status.length,
       filters.id_danh_muc_cha.length,
       filters.id_danh_muc.length,
-      filters.phan_loai.length,
       filters.dvt.length,
     ]
   );
@@ -146,7 +133,6 @@ const DanhSachHangHoaToolbar: React.FC<Props> = ({
     setFilter('status', []);
     setFilter('id_danh_muc_cha', []);
     setFilter('id_danh_muc', []);
-    setFilter('phan_loai', []);
     setFilter('dvt', []);
   };
 
@@ -167,14 +153,6 @@ const DanhSachHangHoaToolbar: React.FC<Props> = ({
         placeholder={t('hangHoa.filters.danhMucCon')}
         icon={FolderTree}
         className="w-full sm:w-[200px]"
-      />
-      <FilterChipMultiSelect
-        options={phanLoaiOptions}
-        value={filters.phan_loai}
-        onChange={(v) => setFilter('phan_loai', v)}
-        placeholder={t('hangHoa.filters.phanLoai')}
-        icon={Tag}
-        className="w-full sm:w-[160px]"
       />
       <FilterChipMultiSelect
         options={dvtOptions}
@@ -214,14 +192,6 @@ const DanhSachHangHoaToolbar: React.FC<Props> = ({
         onChange: (val: string[]) => setFilter('id_danh_muc', val),
       },
       {
-        key: 'phan_loai',
-        label: t('hangHoa.filters.phanLoai'),
-        icon: Tag,
-        options: phanLoaiOptions,
-        value: filters.phan_loai,
-        onChange: (val: string[]) => setFilter('phan_loai', val),
-      },
-      {
         key: 'dvt',
         label: t('hangHoa.filters.dvt'),
         icon: Ruler,
@@ -241,14 +211,12 @@ const DanhSachHangHoaToolbar: React.FC<Props> = ({
     [
       filters.id_danh_muc_cha,
       filters.id_danh_muc,
-      filters.phan_loai,
       filters.dvt,
       filters.status,
       setFilter,
       t,
       danhMucChaOptions,
       danhMucConOptions,
-      phanLoaiOptions,
       dvtOptions,
       statusOptions,
     ]

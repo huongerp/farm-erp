@@ -39,7 +39,8 @@ SELECT
   s.ref_ten_nguoi_dat,
   s.ref_ma_nguoi_dat,
   s.ref_ten_nguoi_duyet,
-  s.ref_ma_nguoi_duyet
+  s.ref_ma_nguoi_duyet,
+  ct.phan_loai
 FROM fp_mh_don_dat_hang_chi_tiet ct
 JOIN v_don_dat_hang_summary s ON s.id = ct.id_don_dat_hang
 LEFT JOIN fp_mh_danh_sach_hang_hoa hh ON hh.id = ct.id_hang_hoa;

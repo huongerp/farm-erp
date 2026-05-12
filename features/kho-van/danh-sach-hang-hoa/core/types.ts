@@ -7,8 +7,6 @@ export interface HangHoa {
   danh_muc_cha_id: string | null;
   ma_hang_hoa: string;
   ten_hang_hoa: string;
-  /** Phân loại hàng hóa (cột phan_loai trên Supabase). */
-  phan_loai: string | null;
   dvt: string | null;
   thu_tu: number;
   trang_thai: TrangThaiHoatDong;

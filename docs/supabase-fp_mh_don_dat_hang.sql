@@ -53,6 +53,7 @@ CREATE TABLE fp_mh_don_dat_hang_chi_tiet (
   don_vi_tinh            text,
   don_gia                numeric(18,4) DEFAULT 0,
   thanh_tien             numeric(18,4) DEFAULT 0,
+  phan_loai              text,
   ghi_chu                text,
   -- Kéo từ đơn (để xuất DB dễ đọc)
   so_po                  text,

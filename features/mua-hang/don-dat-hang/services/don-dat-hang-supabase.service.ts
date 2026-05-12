@@ -74,6 +74,7 @@ interface ChiTietDbRow {
   id: number;
   id_don_dat_hang: number;
   id_hang_hoa: number;
+  phan_loai: string | null;
   so_luong: number;
   don_vi_tinh: string | null;
   don_gia: number | null;
@@ -93,7 +94,6 @@ type HangHoaLineEnrich = Pick<
   | 'danh_muc_cha_id'
   | 'ten_danh_muc_cap1'
   | 'ten_danh_muc_cap2'
-  | 'phan_loai'
 >;
 
 function toNum(s: string | null | undefined): number | null {
@@ -150,7 +150,7 @@ function rowToChiTiet(row: ChiTietDbRow, idDonStr: string, enrich?: HangHoaLineE
     ghi_chu: row.ghi_chu ?? undefined,
     ten_danh_muc_cap1: enrich?.ten_danh_muc_cap1,
     ten_danh_muc_cap2: enrich?.ten_danh_muc_cap2,
-    phan_loai: enrich?.phan_loai ?? null,
+    phan_loai: row.phan_loai ?? null,
     ma_hang: enrich?.ma_hang,
     ten_hang: enrich?.ten_hang,
   };
@@ -255,6 +255,7 @@ function applyChiTietDonDatHangFlatListQuery(q: any, query: DonDatHangListServer
   if (query.idNhaCungCap.length) b = b.in('id_nha_cung_cap', query.idNhaCungCap);
   if (query.idKhoNhan.length) b = b.in('id_kho_nhan', query.idKhoNhan);
   if (query.idNguoiDat.length) b = b.in('id_nguoi_dat', query.idNguoiDat);
+  if (query.phanLoai.length) b = b.in('phan_loai', query.phanLoai);
   if (query.idHangHoaByProductFilters?.length) b = b.in('id_hang_hoa', query.idHangHoaByProductFilters);
   const term = (query.searchTerm ?? '').trim();
   if (term) {
@@ -268,6 +269,7 @@ function applyChiTietDonDatHangFlatListQuery(q: any, query: DonDatHangListServer
       `ma_hang.ilike.${pat}`,
       `ten_hang.ilike.${pat}`,
       `chi_tiet_ghi_chu.ilike.${pat}`,
+      `phan_loai.ilike.${pat}`,
       `don_vi_tinh.ilike.${pat}`,
       `trang_thai.ilike.${pat}`,
       `so_phieu_de_xuat_ref.ilike.${pat}`,
@@ -300,6 +302,7 @@ interface DonDatHangChiTietFlatViewRow {
   don_vi_tinh: string | null;
   don_gia: number | string | null;
   thanh_tien: number | string | null;
+  phan_loai: string | null;
   chi_tiet_ghi_chu: string | null;
   ma_hang: string | null;
   ten_hang: string | null;
@@ -328,7 +331,7 @@ interface DonDatHangChiTietFlatViewRow {
 }
 
 const DON_DAT_HANG_CHI_TIET_FLAT_SELECT =
-  'chi_tiet_id,id,id_don_dat_hang,id_hang_hoa,so_luong,don_vi_tinh,don_gia,thanh_tien,chi_tiet_ghi_chu,ma_hang,ten_hang,so_po,ngay_dat,ngay_giao_dk,id_nha_cung_cap,ten_nha_cung_cap,id_kho_nhan,ten_kho_nhan,id_phieu_de_xuat_vat_tu,id_nguoi_dat,id_nguoi_duyet,ghi_chu,trang_thai,tg_tao,tg_cap_nhat,so_phieu_de_xuat_ref,ref_ma_nha_cung_cap,ref_ten_nha_cung_cap,ref_ten_kho_nhan,ref_ten_nguoi_dat,ref_ma_nguoi_dat,ref_ten_nguoi_duyet,ref_ma_nguoi_duyet';
+  'chi_tiet_id,id,id_don_dat_hang,id_hang_hoa,so_luong,don_vi_tinh,don_gia,thanh_tien,phan_loai,chi_tiet_ghi_chu,ma_hang,ten_hang,so_po,ngay_dat,ngay_giao_dk,id_nha_cung_cap,ten_nha_cung_cap,id_kho_nhan,ten_kho_nhan,id_phieu_de_xuat_vat_tu,id_nguoi_dat,id_nguoi_duyet,ghi_chu,trang_thai,tg_tao,tg_cap_nhat,so_phieu_de_xuat_ref,ref_ma_nha_cung_cap,ref_ten_nha_cung_cap,ref_ten_kho_nhan,ref_ten_nguoi_dat,ref_ma_nguoi_dat,ref_ten_nguoi_duyet,ref_ma_nguoi_duyet';
 
 function mapDonDatHangChiTietFlatViewRow(row: DonDatHangChiTietFlatViewRow, enrich?: HangHoaLineEnrich): ChiTietDonDatHangFlat {
   const so_phieu_de_xuat =
@@ -363,7 +366,7 @@ function mapDonDatHangChiTietFlatViewRow(row: DonDatHangChiTietFlatViewRow, enri
     id_hang_hoa: String(row.id_hang_hoa),
     ten_danh_muc_cap1: enrich?.ten_danh_muc_cap1,
     ten_danh_muc_cap2: enrich?.ten_danh_muc_cap2,
-    phan_loai: enrich?.phan_loai ?? null,
+    phan_loai: row.phan_loai ?? null,
     ma_hang: row.ma_hang?.trim() ? row.ma_hang.trim() : (enrich?.ma_hang ?? enrich?.ma_hang_hoa ?? undefined),
     ten_hang: row.ten_hang ?? enrich?.ten_hang_hoa ?? enrich?.ten_hang ?? undefined,
     so_luong: Number(row.so_luong),
@@ -386,20 +389,17 @@ async function resolveChiTietHangHoaFilters(
   query?: DonDatHangListServerQuery
 ): Promise<{ query?: DonDatHangListServerQuery; hangHoaList?: HangHoaRefLite[] }> {
   const hasProductFilter =
-    !!query?.phanLoai?.length ||
     !!query?.idDanhMucCap1?.length ||
     !!query?.idDanhMucCap2?.length;
   if (!query || !hasProductFilter) return { query };
   const hangHoaList = await getHangHoaRef();
-  const selectedPhanLoai = new Set(query.phanLoai.map((x) => x.trim()).filter(Boolean));
   const selectedCap1 = new Set(query.idDanhMucCap1.map((x) => x.trim()).filter(Boolean));
   const selectedCap2 = new Set(query.idDanhMucCap2.map((x) => x.trim()).filter(Boolean));
   const ids = hangHoaList
     .filter((h) => {
-      const matchPhanLoai = selectedPhanLoai.size === 0 || (h.phan_loai != null && selectedPhanLoai.has(h.phan_loai.trim()));
       const matchCap1 = selectedCap1.size === 0 || (h.danh_muc_cha_id != null && selectedCap1.has(h.danh_muc_cha_id));
       const matchCap2 = selectedCap2.size === 0 || (h.danh_muc_id != null && selectedCap2.has(h.danh_muc_id));
-      return matchPhanLoai && matchCap1 && matchCap2;
+      return matchCap1 && matchCap2;
     })
     .map((h) => Number(h.id))
     .filter((id) => Number.isSafeInteger(id));
@@ -499,6 +499,18 @@ export async function fetchAllChiTietDonDatHangForListQuerySupabase(
   return out;
 }
 
+export async function getPhanLoaiDonDatHangChiTietSupabase(): Promise<string[]> {
+  const rows = await fetchAllRows<{ phan_loai: string | null }>((from, to) =>
+    supabase
+      .from(TABLE_CHI_TIET)
+      .select('phan_loai')
+      .not('phan_loai', 'is', null)
+      .range(from, to)
+  );
+  return [...new Set(rows.map((row) => row.phan_loai?.trim()).filter((value): value is string => !!value))]
+    .sort((a, b) => a.localeCompare(b));
+}
+
 export async function getDonDatHangByIdSupabase(id: string): Promise<DonDatHang | null> {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) return null;
@@ -514,7 +526,7 @@ export async function getDonDatHangByIdSupabase(id: string): Promise<DonDatHang 
   const [ctRows, hangHoaList] = await Promise.all([
     supabase
       .from(TABLE_CHI_TIET)
-      .select('id, id_don_dat_hang, id_hang_hoa, so_luong, don_vi_tinh, don_gia, thanh_tien, ghi_chu')
+      .select('id, id_don_dat_hang, id_hang_hoa, phan_loai, so_luong, don_vi_tinh, don_gia, thanh_tien, ghi_chu')
       .eq('id_don_dat_hang', idNum)
       .order('id', { ascending: true })
       .then((r) => r.data ?? []),
@@ -577,6 +589,7 @@ export async function createDonDatHangSupabase(data: DonDatHangFormValues): Prom
     const ctRows = chiTietPayload.map((c) => ({
       id_don_dat_hang: idDon,
       id_hang_hoa: Number(c.id_hang_hoa),
+      phan_loai: c.phan_loai?.trim() || null,
       so_luong: Number(c.so_luong),
       don_vi_tinh: hangHoaMap[c.id_hang_hoa.trim()] ?? null,
       don_gia: Number(c.don_gia ?? 0),
@@ -640,6 +653,7 @@ export async function updateDonDatHangSupabase(id: string, data: DonDatHangFormV
     const ctRows = chiTietPayload.map((c) => ({
       id_don_dat_hang: idNum,
       id_hang_hoa: Number(c.id_hang_hoa),
+      phan_loai: c.phan_loai?.trim() || null,
       so_luong: Number(c.so_luong),
       don_vi_tinh: hangHoaMap[c.id_hang_hoa.trim()] ?? null,
       don_gia: Number(c.don_gia ?? 0),

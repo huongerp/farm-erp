@@ -9,6 +9,7 @@ import {
   updateDonDatHang,
   deleteDonDatHang,
   deleteDonDatHangMany,
+  getPhanLoaiDonDatHangChiTiet,
   getNextSoPoFormatted,
 } from '../services/don-dat-hang-service';
 import type { DonDatHangListServerQuery } from '../services/don-dat-hang-list-query';
@@ -18,6 +19,7 @@ import i18n from '../../../../lib/i18n';
 import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
 
 const QUERY_KEY = ['donDatHang'] as const;
+const PHAN_LOAI_CHI_TIET_QUERY_KEY = [...QUERY_KEY, 'phanLoaiChiTiet'] as const;
 
 /** Số PO tiếp theo khi tạo mới (format PO-YYYY-NNNNN). Chỉ gọi khi mở form tạo đơn (enabled = true). Có thể sửa mã trên form. */
 export const useNextSoPoDonDatHang = (enabled: boolean) => {
@@ -33,6 +35,14 @@ export const useDonDatHangList = () => {
   return useQuery({
     queryKey: QUERY_KEY,
     queryFn: getAllDonDatHang,
+    staleTime: 1000 * 60 * 15,
+  });
+};
+
+export const usePhanLoaiDonDatHangChiTiet = () => {
+  return useQuery({
+    queryKey: PHAN_LOAI_CHI_TIET_QUERY_KEY,
+    queryFn: getPhanLoaiDonDatHangChiTiet,
     staleTime: 1000 * 60 * 15,
   });
 };
@@ -78,6 +88,7 @@ export const useCreateDonDatHang = (onSuccess?: () => void) => {
       qc.setQueryData(QUERY_KEY, (old: DonDatHang[] | undefined) => (old ? [created, ...old] : [created]));
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'chiTietPaged'] });
+      qc.invalidateQueries({ queryKey: PHAN_LOAI_CHI_TIET_QUERY_KEY });
       toast.success(i18n.t('donDatHang.toast.createSuccess'));
       onSuccess?.();
     },
@@ -97,6 +108,7 @@ export const useUpdateDonDatHang = (onSuccess?: () => void) => {
       qc.setQueryData([...QUERY_KEY, updated.id], updated);
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'chiTietPaged'] });
+      qc.invalidateQueries({ queryKey: PHAN_LOAI_CHI_TIET_QUERY_KEY });
       toast.success(i18n.t('donDatHang.toast.updateSuccess'));
       onSuccess?.();
     },
@@ -113,6 +125,7 @@ export const useDeleteDonDatHang = () => {
       qc.removeQueries({ queryKey: [...QUERY_KEY, id] });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'chiTietPaged'] });
+      qc.invalidateQueries({ queryKey: PHAN_LOAI_CHI_TIET_QUERY_KEY });
       toast.success(i18n.t('donDatHang.toast.deleteSuccess'));
     },
     onError: (err: Error) => toast.error(err.message),
@@ -129,6 +142,7 @@ export const useDeleteDonDatHangMany = () => {
       ids.forEach((id) => qc.removeQueries({ queryKey: [...QUERY_KEY, id] }));
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'chiTietPaged'] });
+      qc.invalidateQueries({ queryKey: PHAN_LOAI_CHI_TIET_QUERY_KEY });
       toast.success(i18n.t('donDatHang.toast.deleteSuccess'));
     },
     onError: (err: Error) => toast.error(err.message),

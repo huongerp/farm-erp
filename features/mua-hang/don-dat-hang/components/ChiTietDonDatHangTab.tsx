@@ -11,6 +11,7 @@ import {
   useDonDatHangById,
   useDeleteDonDatHang,
   useUpdateDonDatHang,
+  usePhanLoaiDonDatHangChiTiet,
 } from '../hooks/use-don-dat-hang';
 import { useDonDatHangViewScope } from '../hooks/use-don-dat-hang-view-scope';
 import { buildDonDatHangListServerQuery, fetchAllChiTietDonDatHangForListQuery } from '../services/don-dat-hang-service';
@@ -70,6 +71,7 @@ const ChiTietDonDatHangTab: React.FC = () => {
   const { data: supplierList = [] } = useDoiTacRefQuery('nha_cung_cap');
   const { data: employees = [] } = useEmployeesRefQuery();
   const { data: hangHoaList = [] } = useHangHoaRefQuery();
+  const { data: phanLoaiList = [] } = usePhanLoaiDonDatHangChiTiet();
   const { data: phieuDeXuatList = [] } = usePhieuDeXuatSoPhieuMinimalQuery();
   const viewScope = useDonDatHangViewScope();
 
@@ -132,15 +134,8 @@ const ChiTietDonDatHangTab: React.FC = () => {
   const updateMutation = useUpdateDonDatHang();
 
   const phanLoaiOptions = useMemo(() => {
-    const counts: Record<string, number> = {};
-    hangHoaList.forEach((h) => {
-      const p = h.phan_loai?.trim();
-      if (p) counts[p] = (counts[p] ?? 0) + 1;
-    });
-    return Object.entries(counts)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([value]) => ({ label: value, value, count: counts[value] }));
-  }, [hangHoaList]);
+    return phanLoaiList.map((value) => ({ label: value, value, count: 1 }));
+  }, [phanLoaiList]);
 
   const danhMucCap1Options = useMemo(() => {
     const counts: Record<string, number> = {};

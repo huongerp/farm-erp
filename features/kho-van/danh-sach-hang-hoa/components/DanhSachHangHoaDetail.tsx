@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Edit, Trash2, Package, ArrowUpFromLine, Calendar, Power, Folder, DollarSign, Plus, Warehouse, FileText, Tag } from 'lucide-react';
+import { Edit, Trash2, Package, ArrowUpFromLine, Calendar, Power, Folder, DollarSign, Plus, Warehouse, FileText } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import type { HangHoa } from '../core/types';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
@@ -154,12 +154,6 @@ const DanhSachHangHoaDetail: React.FC<Props> = ({
               value={data.ten_danh_muc ?? ''}
               icon={<Folder size={12} />}
               emptyText={t('hangHoa.detail.noCategory')}
-            />
-            <DetailField
-              label={t('hangHoa.detail.classification')}
-              value={data.phan_loai ?? ''}
-              icon={<Tag size={12} />}
-              emptyText="—"
             />
             <DetailField
               label={t('hangHoa.detail.unit')}

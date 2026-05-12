@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useId, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Package, ArrowUpFromLine, Power, Folder, DollarSign, FileText, Camera, Tag } from 'lucide-react';
+import { Package, ArrowUpFromLine, Power, Folder, DollarSign, FileText, Camera } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
 import SingleImageInput from '../../../../components/ui/SingleImageInput';
 import { uploadImageToCloudinary } from '../../../../lib/cloudinary';
@@ -29,8 +29,6 @@ interface Props {
   defaultThuTu?: number;
   /** Các đơn vị tính đã có trong bảng – dùng gợi ý khi nhập DVT. */
   existingDvtList?: string[];
-  /** Các phân loại đã có trong bảng – dùng làm gợi ý, vẫn cho phép nhập mới. */
-  existingPhanLoaiList?: string[];
   onClose: () => void;
   /** Gọi khi tạo mới thành công với hàng hóa vừa tạo. */
   onSuccessCreate?: (item: HangHoa) => void;
@@ -40,7 +38,6 @@ const DanhSachHangHoaForm: React.FC<Props> = ({
   initialData,
   defaultThuTu,
   existingDvtList = [],
-  existingPhanLoaiList = [],
   onClose,
   onSuccessCreate,
 }) => {
@@ -64,16 +61,10 @@ const DanhSachHangHoaForm: React.FC<Props> = ({
     [danhMucCap2List, t]
   );
 
-  const phanLoaiOptions = useMemo(
-    () => existingPhanLoaiList.map((value) => ({ value, label: value })),
-    [existingPhanLoaiList]
-  );
-
   const defaultValues: Partial<HangHoaFormValues> = {
     ma_hang_hoa: '',
     ten_hang_hoa: '',
     id_danh_muc_cap2: null,
-    phan_loai: null,
     dvt: '',
     don_gia: undefined,
     trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG,
@@ -105,7 +96,6 @@ const DanhSachHangHoaForm: React.FC<Props> = ({
         ma_hang_hoa: initialData.ma_hang_hoa,
         ten_hang_hoa: initialData.ten_hang_hoa,
         id_danh_muc_cap2: initialData.danh_muc_id ?? null,
-        phan_loai: initialData.phan_loai ?? null,
         dvt: initialData.dvt ?? '',
         don_gia: initialData.don_gia ?? undefined,
         trang_thai: initialData.trang_thai,
@@ -122,7 +112,6 @@ const DanhSachHangHoaForm: React.FC<Props> = ({
     const sanitized = {
       ...data,
       id_danh_muc_cap2: data.id_danh_muc_cap2 === '' || data.id_danh_muc_cap2 === undefined ? null : data.id_danh_muc_cap2,
-      phan_loai: data.phan_loai?.trim() || null,
       dvt: data.dvt?.trim() || null,
       don_gia: data.don_gia != null && !Number.isNaN(Number(data.don_gia)) && Number(data.don_gia) >= 0 ? Number(data.don_gia) : null,
       mo_ta: data.mo_ta?.trim() || null,
@@ -206,26 +195,6 @@ const DanhSachHangHoaForm: React.FC<Props> = ({
                 )}
               />
             </div>
-            <Controller
-              name="phan_loai"
-              control={control}
-              render={({ field }) => (
-                <Combobox
-                  label={t('hangHoa.form.classification')}
-                  icon={<Tag size={12} />}
-                  options={phanLoaiOptions}
-                  value={field.value ?? ''}
-                  onChange={(v) => field.onChange(typeof v === 'string' ? v : String(v ?? ''))}
-                  placeholder={t('hangHoa.form.classificationPlaceholder')}
-                  searchPlaceholder={t('hangHoa.form.classificationSearchPlaceholder')}
-                  creatable
-                  creatableLabel={t('hangHoa.form.creatableNew')}
-                  searchable
-                  dropdownInPortal
-                  error={errors.phan_loai?.message}
-                />
-              )}
-            />
             <div className="relative">
               <Input
                 label={t('hangHoa.form.unit')}

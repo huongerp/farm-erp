@@ -11,6 +11,7 @@ import {
   fetchAllDonDatHangForListQuerySupabase,
   getChiTietDonDatHangPageSupabase,
   fetchAllChiTietDonDatHangForListQuerySupabase,
+  getPhanLoaiDonDatHangChiTietSupabase,
   createDonDatHangSupabase,
   updateDonDatHangSupabase,
   deleteDonDatHangSupabase,
@@ -49,6 +50,7 @@ export async function getChiTietDonDatHangPage(
 }
 
 export const fetchAllChiTietDonDatHangForListQuery = fetchAllChiTietDonDatHangForListQuerySupabase;
+export const getPhanLoaiDonDatHangChiTiet = getPhanLoaiDonDatHangChiTietSupabase;
 export const getNextSoPoDonDatHang = getNextSoPoFormatted;
 export const getDonDatHangById = getDonDatHangByIdSupabase;
 export const createDonDatHang = (data: DonDatHangFormValues) => createDonDatHangSupabase(data);
