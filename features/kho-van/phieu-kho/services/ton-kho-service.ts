@@ -51,11 +51,3 @@ export const getDinhMucByHangHoa = getDinhMucByHangHoaSupabase;
 export const createDinhMucTonKho = createDinhMucTonKhoSupabase;
 export const updateDinhMucTonKho = updateDinhMucTonKhoSupabase;
 export const deleteDinhMucTonKho = deleteDinhMucTonKhoSupabase;
-
-/**
- * Không cập nhật gì — tồn lấy từ view Supabase.
- * Giữ hàm để tương thích với module kiểm kê; kiểm kê có thể cần flow riêng (ghi bảng khác / điều chỉnh).
- */
-export function capNhatTonKho(_id_kho: string, _id_hang_hoa: string, _bien_dong: number): void {
-  // no-op: tồn thật từ view fp_mh_ton_kho
-}

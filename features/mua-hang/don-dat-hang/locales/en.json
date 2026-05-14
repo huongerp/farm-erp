@@ -74,6 +74,7 @@
   "donDatHang.detail.toolbar.approve": "Approve",
   "donDatHang.detail.toolbar.changeStatus": "Change status",
   "donDatHang.detail.toolbar.print": "Print",
+  "donDatHang.detail.toolbar.createPhieuNhapKho": "Create warehouse receipt",
   "donDatHang.detail.changeStatusTitle": "Change order status",
   "donDatHang.detail.changeStatusSelectStatus": "Select status",
   "donDatHang.detail.changeStatusDialogNote": "Note",

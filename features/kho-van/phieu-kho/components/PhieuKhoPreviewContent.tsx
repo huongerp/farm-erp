@@ -96,6 +96,13 @@ const PhieuKhoPreviewContent: React.FC<Props> = ({ phieu }) => {
         ({t('phieuKho.form.code')}: {phieu.so_phieu})
       </p>
 
+      {phieu.loai === 'nhập' && (phieu.so_po_don_dat_hang?.trim() || phieu.id_don_dat_hang) ? (
+        <p className="text-center text-[10pt] text-gray-700 mb-3">
+          <span className="font-semibold">{t('phieuKho.detail.linkPo')}: </span>
+          <span className="font-mono">{phieu.so_po_don_dat_hang?.trim() || (phieu.id_don_dat_hang ? `#${phieu.id_don_dat_hang}` : '—')}</span>
+        </p>
+      ) : null}
+
       {/* Nơi đi – Nơi đến (một dòng) */}
       <div className="grid grid-cols-2 gap-4 text-[10pt] mb-3">
         <div>

@@ -2,7 +2,8 @@
 -- Phiếu kho (nhập / xuất / chuyển) – khớp với script đã chạy trên Supabase
 -- Trên DB không có FK; trên app liên kết: kho_id → fp_mh_danh_sach_kho,
 -- id_hang_hoa → fp_mh_danh_sach_hang_hoa, nguoi_tao_id → fp_var_nhan_vien,
--- id_nha_cung_cap / id_khach_hang → fp_mh_danh_sach_doi_tac
+-- id_nha_cung_cap / id_khach_hang → fp_mh_danh_sach_doi_tac,
+-- id_don_dat_hang (phiếu nhập) → fp_mh_don_dat_hang(id) — thêm bằng docs/supabase-update-phieu-kho-id-don-dat-hang.sql
 -- =============================================================================
 
 CREATE TABLE IF NOT EXISTS fp_mh_phieu_kho (

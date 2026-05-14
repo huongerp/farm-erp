@@ -7,7 +7,7 @@ import Input from '../../../../components/ui/Input';
 import Textarea from '../../../../components/ui/Textarea';
 import Combobox from '../../../../components/ui/Combobox';
 import MultiSelect from '../../../../components/ui/MultiSelect';
-import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/GenericDrawer';
+import GenericDrawer, { DRAWER_WIDTH_KIEM_KE_KHO } from '../../../../components/shared/GenericDrawer';
 import FormSection from '../../../../components/shared/FormSection';
 import FormGrid from '../../../../components/shared/FormGrid';
 import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
@@ -110,7 +110,7 @@ const DotKiemKeKhoForm: React.FC<Props> = ({ onClose, initialData, onSuccessAfte
     <GenericDrawer
       title={isEdit ? t('kiemKeKho.form.editTitle') : t('kiemKeKho.form.createTitle')}
       onClose={onClose}
-      maxWidthClass={DRAWER_WIDTH_FORM}
+      maxWidthClass={DRAWER_WIDTH_KIEM_KE_KHO}
       footer={
         <FormDrawerFooter
           formId="dot-kiem-ke-kho-form"

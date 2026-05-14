@@ -41,6 +41,8 @@ interface Props {
   /** Gọi khi bấm Chuyển trạng thái và xác nhận trong popup */
   onChangeStatus?: (item: DonDatHang, payload: DonDatHangChangeStatusPayload) => void;
   onPrint?: (item: DonDatHang) => void;
+  /** Mở form phiếu nhập kho với dữ liệu từ đơn (tab Mua hàng). */
+  onCreatePhieuNhapKho?: (item: DonDatHang) => void;
 }
 
 const STATUS_VARIANTS: Record<string, string> = {
@@ -54,7 +56,7 @@ const STATUS_VARIANTS: Record<string, string> = {
   'Hủy': 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20',
 };
 
-const DonDatHangDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onApprove, onChangeStatus, onPrint }) => {
+const DonDatHangDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onApprove, onChangeStatus, onPrint, onCreatePhieuNhapKho }) => {
   const { t } = useTranslation();
   const canApprove = data.trang_thai === TRANG_THAI_CHO_DUYET && !!onApprove;
   const [showApprovePopup, setShowApprovePopup] = useState(false);
@@ -114,6 +116,15 @@ const DonDatHangDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
             },
           ]
         : []),
+      ...(onCreatePhieuNhapKho
+        ? [
+            {
+              label: t('donDatHang.detail.toolbar.createPhieuNhapKho'),
+              icon: <Warehouse size={16} />,
+              onClick: () => onCreatePhieuNhapKho(data),
+            },
+          ]
+        : []),
       {
         label: t('donDatHang.detail.toolbar.print'),
         icon: <Printer size={16} />,
@@ -124,7 +135,7 @@ const DonDatHangDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
         variant: 'primary' as const,
       },
     ],
-    [showChangeStatusButton, canApprove, data, onApprove, onChangeStatus, onPrint, t]
+    [showChangeStatusButton, canApprove, data, onApprove, onChangeStatus, onPrint, onCreatePhieuNhapKho, t]
   );
 
   const statusLabel = t(`donDatHang.status.${TRANG_THAI_KEY[data.trang_thai as keyof typeof TRANG_THAI_KEY] ?? 'draft'}`);

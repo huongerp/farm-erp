@@ -176,8 +176,8 @@ const ChiTietPhieuKhoTab: React.FC = () => {
     if (!sort.column || !sort.direction) return tableRows;
     const dir = sort.direction === 'asc' ? 1 : -1;
     return [...tableRows].sort((a, b) => {
-      const aVal = (a as Record<string, unknown>)[sort.column!];
-      const bVal = (b as Record<string, unknown>)[sort.column!];
+      const aVal = (a as unknown as Record<string, unknown>)[sort.column!];
+      const bVal = (b as unknown as Record<string, unknown>)[sort.column!];
       if (aVal == null && bVal == null) return 0;
       if (aVal == null) return dir;
       if (bVal == null) return -dir;
@@ -225,7 +225,7 @@ const ChiTietPhieuKhoTab: React.FC = () => {
   const exportColumnsChiTiet = useMemo(() => getExportColumnsChiTietPhieuKho(t), [t]);
   const exportMapChiTiet = useCallback((row: ChiTietPhieuKhoFlat) => mapChiTietPhieuKhoFlatRow(row), []);
   const { exportData, paginatedData: paginatedExportData, selectedData: selectedExportData } =
-    useExportData({
+    useExportData<ChiTietPhieuKhoFlat>({
       data: exportRows,
       isOpen: showExport && !exportLoading,
       mapFn: exportMapChiTiet,
@@ -358,6 +358,14 @@ const ChiTietPhieuKhoTab: React.FC = () => {
         return (
           <td key={col.id} className="px-4 py-3 text-sm text-muted-foreground" style={getColumnCellStyle(col)}>
             {row.ten_nha_cung_cap ?? '—'}
+          </td>
+        );
+      case 'so_po_don_dat_hang':
+        return (
+          <td key={col.id} className="px-4 py-3 text-xs text-muted-foreground font-mono" style={getColumnCellStyle(col)}>
+            {row.loai === 'nhập'
+              ? (row.so_po_don_dat_hang?.trim() || (row.id_don_dat_hang ? `#${row.id_don_dat_hang}` : '—'))
+              : '—'}
           </td>
         );
       case 'trang_thai':

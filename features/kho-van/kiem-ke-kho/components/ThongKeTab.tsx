@@ -15,6 +15,7 @@ import StatsToolbar from './stats/StatsToolbar';
 import StatsCards from './stats/StatsCards';
 import StatsTables from './stats/StatsTables';
 import type { DotKiemKeKho } from '../core/types';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 
 const TRANG_THAI_OPTIONS = [
   { value: 'draft', labelKey: 'kiemKeKho.trangThaiDot.draft' },
@@ -94,7 +95,7 @@ const ThongKeTab: React.FC = () => {
   const idKhoOptions = useMemo(
     () =>
       khoList
-        .filter((k) => k.trang_thai === 1)
+        .filter((k) => k.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG)
         .map((k) => ({
           label: k.ten_kho,
           value: k.id,

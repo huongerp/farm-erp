@@ -29,9 +29,11 @@ export const phieuKhoSchema = z.object({
   kho_den_id: z.string().optional().nullable(),
   id_nha_cung_cap: z.string().optional().nullable(),
   id_khach_hang: z.string().optional().nullable(),
+  /** Đơn đặt hàng nguồn (phiếu nhập); tùy chọn. */
+  id_don_dat_hang: z.string().optional().nullable(),
   mo_ta: z.string().optional(),
   trang_thai: z.enum(TRANG_THAI_VALUES, {
-    errorMap: () => ({ message: i18n.t('phieuKho.validation.statusInvalid') }),
+    message: i18n.t('phieuKho.validation.statusInvalid'),
   }),
   nguoi_tao_id: z.coerce.number().optional().nullable(),
   chi_tiet: z.array(phieuKhoChiTietFormItemSchema).default([]),

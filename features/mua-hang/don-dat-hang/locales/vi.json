@@ -74,6 +74,7 @@
   "donDatHang.detail.toolbar.approve": "Phê duyệt",
   "donDatHang.detail.toolbar.changeStatus": "Chuyển trạng thái",
   "donDatHang.detail.toolbar.print": "In đơn",
+  "donDatHang.detail.toolbar.createPhieuNhapKho": "Tạo phiếu nhập kho",
   "donDatHang.detail.changeStatusTitle": "Chuyển trạng thái đơn đặt hàng",
   "donDatHang.detail.changeStatusSelectStatus": "Chọn trạng thái",
   "donDatHang.detail.changeStatusDialogNote": "Ghi chú",

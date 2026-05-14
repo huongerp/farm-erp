@@ -19,15 +19,16 @@ import {
   getNextMaDotDotKiemKeKho,
 } from '../services/kiem-ke-kho-service';
 import type { TaoDanhSachKiemKeKhoFilters } from '../services/kiem-ke-kho-service';
-import type { DotKiemKeKhoCreate, ChiTietKiemKeKhoUpdate } from '../core/types';
-import type { TrangThaiDotKiemKeKho } from '../core/types';
+import type { DotKiemKeKhoCreate, ChiTietKiemKeKhoUpdate, TrangThaiDotKiemKeKho } from '../core/types';
 import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
+import { useAuthStore } from '../../../../store/useStore';
+import { TON_KHO_QUERY_KEY } from '../../ton-kho/hooks/use-ton-kho';
 
 export interface UseDotKiemKeKhoListParams {
   filter?: 'all' | 'mine';
   id_nguoi?: string;
   q?: string;
-  trang_thai_dot?: string[];
+  trang_thai_dot?: TrangThaiDotKiemKeKho[];
   dateFrom?: string;
   dateTo?: string;
   id_nguoi_phu_trach?: string[];
@@ -179,9 +180,15 @@ export function useUpdateChiTietKetQua(id_dot: string, onSuccess?: () => void) {
 export function useDieuChinhTonTheoKetQua(id_dot: string, onSuccess?: () => void) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id_chi_tiet: string) => dieuChinhTonTheoKetQua(id_chi_tiet),
+    mutationFn: (id_chi_tiet: string) => {
+      const uid = useAuthStore.getState().user?.id;
+      const nv = uid != null ? Number(uid) : NaN;
+      return dieuChinhTonTheoKetQua(id_chi_tiet, Number.isFinite(nv) ? nv : null);
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['chiTietKiemKeKho', id_dot] });
+      qc.invalidateQueries({ queryKey: ['phieuKho'] });
+      qc.invalidateQueries({ queryKey: TON_KHO_QUERY_KEY });
       toast.success(i18n.t('kiemKeKho.toast.dieuChinhTonSuccess'));
       onSuccess?.();
     },
@@ -192,9 +199,15 @@ export function useDieuChinhTonTheoKetQua(id_dot: string, onSuccess?: () => void
 export function useDieuChinhTonTheoDot(id_dot: string, onSuccess?: () => void) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => dieuChinhTonTheoDot(id_dot),
+    mutationFn: () => {
+      const uid = useAuthStore.getState().user?.id;
+      const nv = uid != null ? Number(uid) : NaN;
+      return dieuChinhTonTheoDot(id_dot, Number.isFinite(nv) ? nv : null);
+    },
     onSuccess: (count) => {
       qc.invalidateQueries({ queryKey: ['chiTietKiemKeKho', id_dot] });
+      qc.invalidateQueries({ queryKey: ['phieuKho'] });
+      qc.invalidateQueries({ queryKey: TON_KHO_QUERY_KEY });
       toast.success(i18n.t('kiemKeKho.toast.dieuChinhTonDotSuccess', { count }));
       onSuccess?.();
     },

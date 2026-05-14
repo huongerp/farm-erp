@@ -48,10 +48,10 @@ const PHIEU_KHO_CHI_TIET_ROW_SELECT =
 
 /** Cột view summary — có mo_ta cho list; vẫn bỏ trao_doi (dài, chỉ cần khi mở chi tiết). */
 const PHIEU_KHO_SUMMARY_SELECT =
-  'id, so_phieu, ngay, loai, kho_id, ten_kho, kho_den_id, ten_kho_den, id_nha_cung_cap, id_khach_hang, trang_thai, mo_ta, id_nguoi_duyet, nguoi_tao_id, ten_nguoi_tao, tg_tao, tg_cap_nhat, so_dong, tong_so_luong, tong_tien, ref_ten_kho, ref_ten_kho_den, ref_ten_nha_cung_cap, ref_ten_khach_hang, ref_ten_nguoi_tao, ref_ten_nguoi_duyet';
+  'id, so_phieu, ngay, loai, kho_id, ten_kho, kho_den_id, ten_kho_den, id_nha_cung_cap, id_khach_hang, id_don_dat_hang, trang_thai, mo_ta, id_nguoi_duyet, nguoi_tao_id, ten_nguoi_tao, tg_tao, tg_cap_nhat, so_dong, tong_so_luong, tong_tien, ref_ten_kho, ref_ten_kho_den, ref_ten_nha_cung_cap, ref_ten_khach_hang, ref_ten_nguoi_tao, ref_ten_nguoi_duyet, ref_so_po_don_dat_hang';
 
 const PHIEU_KHO_HEADER_ROW_SELECT =
-  'id, so_phieu, ngay, loai, kho_id, ten_kho, kho_den_id, ten_kho_den, id_nha_cung_cap, id_khach_hang, trang_thai, mo_ta, trao_doi, id_nguoi_duyet, nguoi_tao_id, ten_nguoi_tao, tg_tao, tg_cap_nhat';
+  'id, so_phieu, ngay, loai, kho_id, ten_kho, kho_den_id, ten_kho_den, id_nha_cung_cap, id_khach_hang, id_don_dat_hang, trang_thai, mo_ta, trao_doi, id_nguoi_duyet, nguoi_tao_id, ten_nguoi_tao, tg_tao, tg_cap_nhat';
 
 /** View DB: chạy docs/supabase-v_phieu_kho_summary.sql trên Supabase. */
 const VIEW_PHIEU_KHO_SUMMARY = 'v_phieu_kho_summary';
@@ -76,6 +76,8 @@ interface PhieuKhoDbRow {
   trao_doi?: string | null;
   /** Cột mới trên Supabase; có thể chưa có trên bản DB cũ. */
   id_nguoi_duyet?: number | null;
+  /** Liên kết đơn đặt hàng (phiếu nhập). */
+  id_don_dat_hang?: number | null;
   nguoi_tao_id: number | null;
   ten_nguoi_tao: string | null;
   tg_tao: string | null;
@@ -111,6 +113,7 @@ type PhieuKhoSummaryRow = PhieuKhoDbRow & {
   ref_ten_khach_hang?: string | null;
   ref_ten_nguoi_tao?: string | null;
   ref_ten_nguoi_duyet?: string | null;
+  ref_so_po_don_dat_hang?: string | null;
 };
 
 /** Map một dòng summary (đã JOIN tên trên DB) → PhieuKho — không gọi get*Ref. */
@@ -121,7 +124,19 @@ function mapPhieuKhoSummaryRowToPhieu(row: PhieuKhoSummaryRow): PhieuKho {
   const ten_khach_hang = row.id_khach_hang != null ? (row.ref_ten_khach_hang ?? undefined) : undefined;
   const ten_nguoi_tao = row.nguoi_tao_id != null ? (row.ten_nguoi_tao ?? row.ref_ten_nguoi_tao ?? undefined) : undefined;
   const ten_nguoi_duyet = row.id_nguoi_duyet != null ? (row.ref_ten_nguoi_duyet ?? undefined) : undefined;
-  const phieu = rowToPhieu(row as PhieuKhoDbRow, { ten_kho, ten_kho_den, ten_nha_cung_cap, ten_khach_hang, ten_nguoi_tao, ten_nguoi_duyet });
+  const soPoDon =
+    row.ref_so_po_don_dat_hang != null && String(row.ref_so_po_don_dat_hang).trim() !== ''
+      ? String(row.ref_so_po_don_dat_hang).trim()
+      : undefined;
+  const phieu = rowToPhieu(row as PhieuKhoDbRow, {
+    ten_kho,
+    ten_kho_den,
+    ten_nha_cung_cap,
+    ten_khach_hang,
+    ten_nguoi_tao,
+    ten_nguoi_duyet,
+    so_po_don_dat_hang: soPoDon,
+  });
   phieu.tong_so_dong = Number(row.so_dong) || 0;
   phieu.tong_so_luong = Number(row.tong_so_luong) || 0;
   phieu.tong_tien = Number(row.tong_tien) || 0;
@@ -162,11 +177,13 @@ interface PhieuKhoChiTietFlatViewRow {
   id_nguoi_duyet: number | null;
   phieu_tg_tao: string | null;
   phieu_tg_cap_nhat: string | null;
+  id_don_dat_hang?: number | null;
   ma_hang: string | null;
+  so_po_don_dat_hang?: string | null;
 }
 
 const PHIEU_KHO_CHI_TIET_FLAT_SELECT =
-  'chi_tiet_id, id_phieu_kho, id_hang_hoa, ten_hang_hoa, don_vi_tinh, so_luong, don_gia, thanh_tien, so_lot, ghi_chu, chi_tiet_nguoi_tao_id, chi_tiet_ten_nguoi_tao, chi_tiet_tg_tao, chi_tiet_tg_cap_nhat, phieu_id, so_phieu, ngay, loai, kho_id, ten_kho, kho_den_id, ten_kho_den, id_nha_cung_cap, id_khach_hang, trang_thai, mo_ta, trao_doi, phieu_nguoi_tao_id, phieu_ten_nguoi_tao, id_nguoi_duyet, phieu_tg_tao, phieu_tg_cap_nhat, ma_hang';
+  'chi_tiet_id, id_phieu_kho, id_hang_hoa, ten_hang_hoa, don_vi_tinh, so_luong, don_gia, thanh_tien, so_lot, ghi_chu, chi_tiet_nguoi_tao_id, chi_tiet_ten_nguoi_tao, chi_tiet_tg_tao, chi_tiet_tg_cap_nhat, phieu_id, so_phieu, ngay, loai, kho_id, ten_kho, kho_den_id, ten_kho_den, id_nha_cung_cap, id_khach_hang, trang_thai, mo_ta, trao_doi, phieu_nguoi_tao_id, phieu_ten_nguoi_tao, id_nguoi_duyet, phieu_tg_tao, phieu_tg_cap_nhat, id_don_dat_hang, ma_hang, so_po_don_dat_hang';
 
 function rowToPhieu(
   row: PhieuKhoDbRow,
@@ -177,6 +194,7 @@ function rowToPhieu(
     ten_khach_hang?: string;
     ten_nguoi_tao?: string;
     ten_nguoi_duyet?: string;
+    so_po_don_dat_hang?: string;
   }
 ): PhieuKho {
   return {
@@ -192,6 +210,8 @@ function rowToPhieu(
     ten_nha_cung_cap: enrich?.ten_nha_cung_cap,
     id_khach_hang: row.id_khach_hang != null ? String(row.id_khach_hang) : null,
     ten_khach_hang: enrich?.ten_khach_hang,
+    id_don_dat_hang: row.id_don_dat_hang != null ? String(row.id_don_dat_hang) : null,
+    so_po_don_dat_hang: enrich?.so_po_don_dat_hang ?? null,
     trang_thai: (row.trang_thai as TrangThaiPhieuKho) || 'Chờ duyệt',
     mo_ta: row.mo_ta ?? undefined,
     trao_doi: row.trao_doi ?? undefined,
@@ -286,13 +306,23 @@ export async function getPhieuKhoByIdSupabase(id: string): Promise<PhieuKho | nu
   hangHoaList.forEach((h) => { hangHoaMap[h.id] = { ma_hang: h.ma_hang ?? h.ma_hang_hoa ?? '', ten_danh_muc: h.ten_danh_muc }; });
 
   const p = row as PhieuKhoDbRow;
+  let soPoDon: string | undefined;
+  if (p.id_don_dat_hang != null) {
+    const { data: dh } = await supabase
+      .from('fp_mh_don_dat_hang')
+      .select('so_po')
+      .eq('id', p.id_don_dat_hang)
+      .maybeSingle();
+    const raw = (dh as { so_po?: string | null } | null)?.so_po;
+    if (raw != null && String(raw).trim() !== '') soPoDon = String(raw).trim();
+  }
   const ten_kho = khoMap[String(p.kho_id)] ?? p.ten_kho ?? undefined;
   const ten_kho_den = p.kho_den_id != null ? (khoMap[String(p.kho_den_id)] ?? p.ten_kho_den ?? undefined) : undefined;
   const ten_nha_cung_cap = p.id_nha_cung_cap != null ? doiTacMap[String(p.id_nha_cung_cap)] : undefined;
   const ten_khach_hang = p.id_khach_hang != null ? doiTacMap[String(p.id_khach_hang)] : undefined;
   const ten_nguoi_tao = p.nguoi_tao_id != null ? nvMap[String(p.nguoi_tao_id)] : undefined;
   const ten_nguoi_duyet = p.id_nguoi_duyet != null ? nvMap[String(p.id_nguoi_duyet)] : undefined;
-  const phieu = rowToPhieu(p, { ten_kho, ten_kho_den, ten_nha_cung_cap, ten_khach_hang, ten_nguoi_tao, ten_nguoi_duyet });
+  const phieu = rowToPhieu(p, { ten_kho, ten_kho_den, ten_nha_cung_cap, ten_khach_hang, ten_nguoi_tao, ten_nguoi_duyet, so_po_don_dat_hang: soPoDon });
 
   const chi_tiet: PhieuKhoChiTiet[] = (ctRows as ChiTietDbRow[]).map((ct) => {
     const h = hangHoaMap[String(ct.id_hang_hoa)];
@@ -328,6 +358,7 @@ export async function createPhieuKhoSupabase(loai: LoaiPhieuKho, data: PhieuKhoF
     ten_kho_den: loai === 'chuyển' && data.kho_den_id ? (khoMap[String(data.kho_den_id)] ?? null) : null,
     id_nha_cung_cap: toNum(data.id_nha_cung_cap),
     id_khach_hang: toNum(data.id_khach_hang),
+    id_don_dat_hang: loai === 'nhập' ? toNum(data.id_don_dat_hang) : null,
     trang_thai: data.trang_thai,
     mo_ta: data.mo_ta?.trim() || null,
     nguoi_tao_id: nguoiTaoId,
@@ -401,6 +432,7 @@ export async function updatePhieuKhoSupabase(id: string, data: PhieuKhoFormValue
     ten_kho_den: loaiDb === 'chuyển' && data.kho_den_id ? (khoMap[String(data.kho_den_id)] ?? null) : null,
     id_nha_cung_cap: toNum(data.id_nha_cung_cap),
     id_khach_hang: toNum(data.id_khach_hang),
+    id_don_dat_hang: loaiDb === 'nhập' ? toNum(data.id_don_dat_hang) : null,
     trang_thai: data.trang_thai,
     mo_ta: data.mo_ta?.trim() || null,
     nguoi_tao_id: nguoiTaoId,
@@ -583,6 +615,11 @@ function mapPhieuKhoChiTietFlatViewRows(
       ten_nha_cung_cap,
       id_khach_hang: r.id_khach_hang != null ? String(r.id_khach_hang) : undefined,
       ten_khach_hang,
+      id_don_dat_hang: r.id_don_dat_hang != null ? String(r.id_don_dat_hang) : null,
+      so_po_don_dat_hang:
+        r.so_po_don_dat_hang != null && String(r.so_po_don_dat_hang).trim() !== ''
+          ? String(r.so_po_don_dat_hang).trim()
+          : null,
       trang_thai: (r.trang_thai as TrangThaiPhieuKho) || 'Chờ duyệt',
       mo_ta: r.mo_ta ?? undefined,
       trao_doi: r.trao_doi ?? undefined,
@@ -688,7 +725,7 @@ function applyPhieuKhoListQueryToSummarySelect(q: any, query: PhieuKhoListServer
   if (term) {
     const esc = term.replace(/%/g, '\\%').replace(/_/g, '\\_');
     const pat = postgrestQuotedIlikePattern(`%${esc}%`);
-    b = b.or(`so_phieu.ilike.${pat},mo_ta.ilike.${pat},ten_kho.ilike.${pat},ten_kho_den.ilike.${pat}`);
+    b = b.or(`so_phieu.ilike.${pat},mo_ta.ilike.${pat},ten_kho.ilike.${pat},ten_kho_den.ilike.${pat},ref_so_po_don_dat_hang.ilike.${pat}`);
   }
   return b;
 }
@@ -712,7 +749,7 @@ function applyChiTietPhieuKhoListQueryToFlatSelect(q: any, query: ChiTietPhieuKh
   if (term) {
     const esc = term.replace(/%/g, '\\%').replace(/_/g, '\\_');
     const pat = postgrestQuotedIlikePattern(`%${esc}%`);
-    b = b.or(`so_phieu.ilike.${pat},ten_hang_hoa.ilike.${pat},mo_ta.ilike.${pat},ghi_chu.ilike.${pat}`);
+    b = b.or(`so_phieu.ilike.${pat},ten_hang_hoa.ilike.${pat},mo_ta.ilike.${pat},ghi_chu.ilike.${pat},so_po_don_dat_hang.ilike.${pat}`);
   }
   return b;
 }

@@ -16,7 +16,7 @@ Script này sẽ:
 - **Tạo** 3 bảng trong schema **`public`** (để Supabase nhận đúng):
   - **`public.fp_mh_dot_kiem_ke_kho`**: Đợt kiểm kê (mã đợt tự sinh, tên, ngày, trạng thái, **người phụ trách bắt buộc**, ghi chú).
   - **`public.fp_mh_dot_kiem_ke_kho_kho`**: Phạm vi kho (một đợt nhiều kho).
-  - **`public.fp_mh_dot_kiem_ke_kho_chi_tiet`**: Chi tiết từng dòng (đợt, kho, hàng hóa, SL sổ, SL thực tế, kết quả).
+  - **`public.fp_mh_dot_kiem_ke_kho_chi_tiet`**: Chi tiết từng dòng (đợt, kho, hàng hóa, SL sổ, SL thực tế, kết quả; sau khi chạy script điều chỉnh tồn thêm cột liên kết phiếu kho).
 - **Mã đợt tự tăng**: sequence `fp_mh_dot_kiem_ke_kho_ma_seq` + RPC **`get_next_ma_dot_dot_kiem_ke_kho()`** (app format: `KK-YYYY-NNNN`).
 - **Index**, **trigger** `tg_cap_nhat`, **RLS** và **policy** cho `authenticated`.
 
@@ -35,9 +35,21 @@ Bảng **`fp_mh_phieu_kiem_ke`** (và chi tiết) vẫn nằm trong project (mod
 
 Flow **Tạo danh sách kiểm kê** lấy tồn theo kho từ **view `fp_mh_ton_kho`** (đã có sẵn). Không cần tạo thêm bảng/view mới cho tồn.
 
-### 4. Điều chỉnh tồn sau kiểm kê
+### 4. Điều chỉnh tồn sau kiểm kê (phiếu kho + RPC)
 
-Hiện tại **Điều chỉnh tồn** (theo dòng hoặc theo đợt) gọi `capNhatTonKho(id_kho, id_hang_hoa, bien_dong)` trong `ton-kho-service`. Hàm này đang **no-op** (tồn đọc từ view). Nếu bạn muốn ghi nhận điều chỉnh thật (ví dụ bảng nhật ký tồn hoặc bảng biến động), cần bổ sung logic trong backend/Supabase (function/trigger hoặc API) và cập nhật `capNhatTonKho` tương ứng.
+Tồn kho trên hệ thống là **view `fp_mh_ton_kho`** (tổng hợp từ `fp_mh_phieu_kho` / `fp_mh_phieu_kho_chi_tiet`). Để **ghi nhận điều chỉnh thật**, app gọi RPC trên Supabase (transaction một lần):
+
+- **`docs/supabase-fp_mh_dot_kiem_ke_kho_dieu_chinh_ton.sql`** (chạy **sau** script đợt kiểm kê và script phiếu kho `docs/supabase-fp_mh_phieu_kho.sql` — cần `get_next_so_phieu`).
+
+Script này:
+
+1. **`ALTER TABLE`** `fp_mh_dot_kiem_ke_kho_chi_tiet`: thêm `id_phieu_kho_dieu_chinh`, `so_luong_dieu_chinh`, `tg_dieu_chinh_ton`.
+2. **`kiem_ke_apply_dieu_chinh_chi_tiet(p_id_chi_tiet, p_nguoi_tao_id)`** — một dòng lệch → **một** phiếu nhập hoặc xuất (`trang_thai = 'Đã duyệt'`), `mo_ta`/`ghi_chu` theo chuỗi “Điều chỉnh tồn kiểm kê”.
+3. **`kiem_ke_apply_dieu_chinh_dot(p_id_dot, p_nguoi_tao_id)`** — toàn đợt: **gộp** theo `(kho, loại nhập/xuất)` — tối đa 2 phiếu/kho mỗi lần bấm; cập nhật từng dòng chi tiết trỏ về cùng phiếu nếu cùng nhóm.
+
+App (`kiem-ke-kho-supabase.service.ts`) gọi hai RPC trên; không dùng `capNhatTonKho` (đã bỏ khỏi luồng kiểm kê).
+
+**Lưu ý:** Dòng đã có `id_phieu_kho_dieu_chinh` không được post lại; dòng khớp (`thực tế = sổ`) bị bỏ qua khi điều chỉnh toàn đợt (trả về số dòng đã cập nhật, có thể là 0).
 
 ---
 
@@ -45,9 +57,9 @@ Hiện tại **Điều chỉnh tồn** (theo dòng hoặc theo đợt) gọi `ca
 
 | Phần | Thay đổi |
 |------|----------|
-| **Supabase** | Chạy `docs/supabase-fp_mh_dot_kiem_ke_kho.sql` để tạo bảng đợt + phạm vi kho + chi tiết. |
-| **Module Kiểm kê kho** | 2 tab: **Đợt kiểm kê** (DotTab) và **Thống kê** (ThongKeTab). |
-| **Service** | `kiem-ke-kho-service.ts` gọi Supabase qua `kiem-ke-kho-supabase.service.ts` (CRUD đợt, tạo danh sách từ tồn, nhập kết quả, điều chỉnh tồn, hoàn thành đợt). |
-| **Flow** | Tạo đợt (draft) → Chọn phạm vi kho → **Tạo danh sách** (lấy tồn theo từng kho, có lọc hàng hóa/danh mục) → Đợt chuyển **Đang kiểm kê** → Nhập **số lượng thực tế** từng dòng → (Tùy chọn) **Điều chỉnh tồn** → **Hoàn thành đợt**. |
+| **Supabase** | (1) `docs/supabase-fp_mh_dot_kiem_ke_kho.sql` — bảng đợt + phạm vi kho + chi tiết. (2) `docs/supabase-fp_mh_dot_kiem_ke_kho_dieu_chinh_ton.sql` — cột điều chỉnh + RPC `kiem_ke_apply_dieu_chinh_chi_tiet` / `kiem_ke_apply_dieu_chinh_dot`. |
+| **Module Kiểm kê kho** | 2 tab: **Đợt kiểm kê** (DotTab) và **Thống kê** (ThongKeTab). Xác nhận trước khi điều chỉnh tồn; hiển thị trạng thái/SL điều chỉnh và link xem phiếu. |
+| **Service** | `kiem-ke-kho-service.ts` → `kiem-ke-kho-supabase.service.ts` (CRUD đợt, tạo danh sách, nhập kết quả, **RPC điều chỉnh tồn**, hoàn thành đợt). |
+| **Flow** | Tạo đợt (draft) → Chọn phạm vi kho → **Tạo danh sách** (lấy tồn theo từng kho, có lọc hàng hóa/danh mục) → Đợt chuyển **Đang kiểm kê** → Nhập **số lượng thực tế** từng dòng → (Tùy chọn) **Điều chỉnh tồn** (tạo phiếu nhập/xuất, cập nhật view tồn) → **Hoàn thành đợt**. |
 
-Sau khi chạy xong script SQL trên Supabase, module Kiểm kê kho sẽ hoạt động đúng theo flow gốc.
+Sau khi chạy đủ script SQL trên Supabase (đợt kiểm kê + điều chỉnh tồn), module Kiểm kê kho ghi nhận điều chỉnh qua **phiếu kho** và hiển thị trạng thái từng dòng.

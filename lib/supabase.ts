@@ -74,12 +74,18 @@ if (typeof window !== 'undefined' && isLoggerEnabled()) {
 /** Kích thước trang khi tải hết (Supabase/PostgREST mặc định tối đa 1000 dòng/request) */
 const SUPABASE_PAGE_SIZE = 1000;
 
+/** PostgREST builder trả về thenable, không phải `Promise<...>` thuần — cho phép `await` giống Promise. */
+type SupabasePageResult<T> = PromiseLike<{
+  data: T[] | null;
+  error: { message: string } | null;
+}>;
+
 /**
  * Gọi một query Supabase theo từng trang (range) và gộp tất cả dòng về.
  * Dùng khi cần tải hết dữ liệu vượt quá giới hạn 1000 dòng mặc định.
  */
 export async function fetchAllRows<T>(
-  run: (from: number, to: number) => Promise<{ data: T[] | null; error: { message: string } | null }>
+  run: (from: number, to: number) => SupabasePageResult<T>
 ): Promise<T[]> {
   const all: T[] = [];
   let from = 0;
@@ -105,13 +111,16 @@ export type PaginatedTableResult<T> = {
 /**
  * Một trang dữ liệu — callback phải dùng `.select(..., { count: 'exact' }).range(from, to)`.
  */
+type SupabaseTablePageResult<T> = PromiseLike<{
+  data: T[] | null;
+  error: { message: string } | null;
+  count: number | null;
+}>;
+
 export async function fetchTablePage<T>(
   page: number,
   pageSize: number,
-  run: (
-    from: number,
-    to: number
-  ) => Promise<{ data: T[] | null; error: { message: string } | null; count: number | null }>
+  run: (from: number, to: number) => SupabaseTablePageResult<T>
 ): Promise<PaginatedTableResult<T>> {
   const size = Math.max(1, pageSize);
   const p = Math.max(0, page);

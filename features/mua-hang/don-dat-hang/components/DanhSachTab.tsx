@@ -19,6 +19,9 @@ import DonDatHangList from './DonDatHangList';
 import DonDatHangForm from './DonDatHangForm';
 import DonDatHangDetail from './DonDatHangDetail';
 import ExportDialog from '../../../../components/shared/ExportDialog';
+import PhieuKhoForm from '../../../kho-van/phieu-kho/components/PhieuKhoForm';
+import type { PhieuKhoFormValues } from '../../../kho-van/phieu-kho/core/schema';
+import type { DonDatHangSoPoOption } from '../services/don-dat-hang-supabase.service';
 import { useExportData } from '../../../../lib/useExportData';
 import {
   DON_DAT_HANG_LIST_EXPORT_KEYS,
@@ -53,6 +56,7 @@ const DanhSachTab: React.FC = () => {
   const [showExport, setShowExport] = useState(false);
   const [exportRows, setExportRows] = useState<DonDatHang[]>([]);
   const [exportLoading, setExportLoading] = useState(false);
+  const [createPhieuNhapFrom, setCreatePhieuNhapFrom] = useState<DonDatHang | null>(null);
 
   const { data: supplierList = [] } = useDoiTacRefQuery('nha_cung_cap');
   const { data: khoList = [] } = useKhoList();
@@ -105,7 +109,7 @@ const DanhSachTab: React.FC = () => {
   const exportColumnsList = useMemo(() => getExportColumnsDonDatHangList(t), [t]);
   const exportMapList = useCallback((item: DonDatHang) => mapDonDatHangListRow(item), []);
   const { exportData, paginatedData: paginatedExportData, selectedData: selectedExportData } =
-    useExportData({
+    useExportData<DonDatHang>({
       data: exportRows,
       isOpen: showExport && !exportLoading,
       mapFn: exportMapList,
@@ -278,7 +282,7 @@ const DanhSachTab: React.FC = () => {
             paginatedData={paginatedExportData}
             selectedData={selectedExportData}
             fileName={exportFileNameDonDatHangList()}
-            visibleColumnKeys={listExportVisibleKeys}
+            visibleColumnKeys={DON_DAT_HANG_LIST_EXPORT_KEYS}
             sheetName={LIST_EXPORT_SHEET_NAME}
           />
         )}
@@ -298,8 +302,46 @@ const DanhSachTab: React.FC = () => {
             onDelete={canDelete ? handleDelete : undefined}
             onApprove={canApprove ? handleApprove : undefined}
             onChangeStatus={canAdmin ? handleChangeStatus : undefined}
+            onCreatePhieuNhapKho={canCreate ? (item) => setCreatePhieuNhapFrom(viewingPoFull ?? item) : undefined}
           />
         )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {createPhieuNhapFrom && (() => {
+          const don = createPhieuNhapFrom;
+          const donOpt: DonDatHangSoPoOption = {
+            id: don.id,
+            so_po: don.so_po,
+            ngay: (don.ngay_dat ?? '').slice(0, 10),
+          };
+          const prefill: Partial<PhieuKhoFormValues> = {
+            id_don_dat_hang: don.id,
+            ngay: (don.ngay_dat ?? '').slice(0, 10),
+            kho_id: don.id_kho_nhan ?? '',
+            id_nha_cung_cap: don.id_nha_cung_cap ?? null,
+            mo_ta: don.so_po ? `Nhập theo đơn ${don.so_po}` : undefined,
+            chi_tiet: (don.chi_tiet ?? [])
+              .filter((c) => c.id_hang_hoa?.trim() && Number(c.so_luong) > 0)
+              .map((c) => ({
+                id_hang_hoa: c.id_hang_hoa,
+                so_luong: c.so_luong,
+                don_gia: c.don_gia,
+                so_lot: '',
+                ghi_chu: c.ghi_chu ?? '',
+              })),
+          };
+          return (
+            <PhieuKhoForm
+              key={`phieu-nhap-from-ddh-${don.id}`}
+              loai="nhap"
+              khoList={khoList}
+              prefillValues={prefill}
+              donDatHangExtraOptions={[donOpt]}
+              onClose={() => setCreatePhieuNhapFrom(null)}
+            />
+          );
+        })()}
       </AnimatePresence>
     </div>
   );

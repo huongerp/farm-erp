@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useForm, Controller, SubmitHandler, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { FileText, Calendar, Warehouse, ArrowRightLeft, Package, Trash2, AlertTriangle, Truck } from 'lucide-react';
+import { FileText, Calendar, Warehouse, ArrowRightLeft, Package, Trash2, AlertTriangle, Truck, ShoppingCart } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
 import Textarea from '../../../../components/ui/Textarea';
 import Select from '../../../../components/ui/Select';
@@ -18,7 +18,8 @@ import type { HangHoaRefLite } from '../../danh-sach-hang-hoa/services/hang-hoa-
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { useCreatePhieuKho, useUpdatePhieuKho, useTonKhoTheoKho } from '../hooks/use-phieu-kho';
 import { getNextSoPhieu } from '../services/phieu-kho-service';
-import { useHangHoaRefQuery, useDoiTacRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
+import { useHangHoaRefQuery, useDoiTacRefQuery, useDonDatHangSoPoMinimalQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
+import type { DonDatHangSoPoOption } from '../../../mua-hang/don-dat-hang/services/don-dat-hang-supabase.service';
 import { useAuthStore } from '../../../../store/useStore';
 import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/GenericDrawer';
 import FormSection from '../../../../components/shared/FormSection';
@@ -36,6 +37,10 @@ interface Props {
   loai: LoaiPhieuKhoTab;
   khoList: Kho[];
   initialData?: PhieuKho | null;
+  /** Giá trị điền sẵn khi tạo mới (ví dụ từ đơn đặt hàng). */
+  prefillValues?: Partial<PhieuKhoFormValues>;
+  /** Đơn đặt hàng bổ sung cho combobox (luôn hiện dù chưa có trong danh sách minimal). */
+  donDatHangExtraOptions?: DonDatHangSoPoOption[];
   onClose: () => void;
   onRequestAddKho?: () => Promise<Kho | null>;
   onRequestAddHangHoa?: () => Promise<HangHoa | null>;
@@ -45,7 +50,18 @@ interface Props {
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose, onRequestAddKho, onRequestAddHangHoa, onRequestAddNcc, onRequestAddKh }) => {
+const PhieuKhoForm: React.FC<Props> = ({
+  loai,
+  khoList,
+  initialData,
+  prefillValues,
+  donDatHangExtraOptions = [],
+  onClose,
+  onRequestAddKho,
+  onRequestAddHangHoa,
+  onRequestAddNcc,
+  onRequestAddKh,
+}) => {
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const isEdit = !!initialData?.id;
@@ -54,6 +70,7 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose, on
   const { data: hangHoaList = [], isLoading: isLoadingHangHoa, isError: isErrorHangHoa } = useHangHoaRefQuery();
   const { data: nhaCungCapList = [] } = useDoiTacRefQuery('nha_cung_cap');
   const { data: khachHangList = [] } = useDoiTacRefQuery('khach_hang');
+  const { data: donDatHangMinimal = [] } = useDonDatHangSoPoMinimalQuery();
 
   const defaultValues: Partial<PhieuKhoFormValues> = {
     so_phieu: '',
@@ -62,6 +79,7 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose, on
     kho_den_id: null,
     id_nha_cung_cap: null,
     id_khach_hang: null,
+    id_don_dat_hang: null,
     mo_ta: '',
     trang_thai: 'Chờ duyệt',
     chi_tiet: [],
@@ -157,6 +175,7 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose, on
         kho_den_id: initialData.kho_den_id ?? null,
         id_nha_cung_cap: initialData.id_nha_cung_cap ?? null,
         id_khach_hang: initialData.id_khach_hang ?? null,
+        id_don_dat_hang: initialData.id_don_dat_hang ?? null,
         mo_ta: initialData.mo_ta ?? '',
         trang_thai: initialData.trang_thai,
         nguoi_tao_id: initialData.nguoi_tao_id ?? null,
@@ -172,10 +191,16 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose, on
         setValue('nguoi_tao_id', Number(user.id));
       }
     } else {
-      reset({ ...defaultValues, ngay: today() });
+      reset({
+        ...defaultValues,
+        ...prefillValues,
+        ngay: prefillValues?.ngay ?? today(),
+        id_don_dat_hang: prefillValues?.id_don_dat_hang ?? null,
+        chi_tiet: prefillValues?.chi_tiet?.length ? prefillValues.chi_tiet : [],
+      });
       if (user?.id) setValue('nguoi_tao_id', Number(user.id));
     }
-  }, [initialData, reset, user?.id, setValue]);
+  }, [initialData, prefillValues, reset, user?.id, setValue]);
 
   const onSubmit: SubmitHandler<PhieuKhoFormValues> = async (data) => {
     if (loai === 'chuyen' && !data.kho_den_id) {
@@ -202,6 +227,8 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose, on
       kho_den_id: data.kho_den_id === '' || data.kho_den_id === undefined ? null : data.kho_den_id,
       id_nha_cung_cap: data.id_nha_cung_cap === '' || data.id_nha_cung_cap === undefined ? null : data.id_nha_cung_cap,
       id_khach_hang: data.id_khach_hang === '' || data.id_khach_hang === undefined ? null : data.id_khach_hang,
+      id_don_dat_hang:
+        isNhap && data.id_don_dat_hang !== '' && data.id_don_dat_hang != null ? data.id_don_dat_hang : null,
       mo_ta: data.mo_ta?.trim() || undefined,
       chi_tiet: validChiTiet.map((c) => ({
         id_hang_hoa: c.id_hang_hoa.trim(),
@@ -222,6 +249,22 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose, on
   const isChuyen = loai === 'chuyen';
   const isNhap = loai === 'nhap';
   const isXuat = loai === 'xuat';
+
+  const donDatHangComboboxOptions = useMemo(() => {
+    if (!isNhap) return [{ value: '', label: t('phieuKho.form.linkPoPlaceholder') }];
+    const byId = new Map<string, DonDatHangSoPoOption>();
+    donDatHangMinimal.forEach((d) => byId.set(d.id, d));
+    donDatHangExtraOptions.forEach((d) => byId.set(d.id, d));
+    const merged = Array.from(byId.values()).sort((a, b) => Number(b.id) - Number(a.id));
+    return [
+      { value: '', label: t('phieuKho.form.linkPoPlaceholder') },
+      ...merged.map((d) => ({
+        value: d.id,
+        label: d.so_po && d.ngay ? `${d.so_po} — ${d.ngay}` : d.so_po || d.id,
+      })),
+    ];
+  }, [isNhap, donDatHangMinimal, donDatHangExtraOptions, t]);
+
   const showTonKhoWarning = loai === 'xuat' || loai === 'chuyen';
   const showSupplier = isNhap;
   const showCustomer = isXuat;
@@ -344,6 +387,25 @@ const PhieuKhoForm: React.FC<Props> = ({ loai, khoList, initialData, onClose, on
                     icon={<Truck size={12} />}
                     error={errors.id_nha_cung_cap?.message}
                     renderOption={renderAddOption}
+                  />
+                )}
+              />
+            )}
+            {isNhap && (
+              <Controller
+                name="id_don_dat_hang"
+                control={control}
+                render={({ field }) => (
+                  <Combobox
+                    label={t('phieuKho.form.linkPo')}
+                    options={donDatHangComboboxOptions}
+                    value={field.value ?? ''}
+                    onChange={(v) => field.onChange(v === '' || v == null ? null : String(v))}
+                    placeholder={t('phieuKho.form.linkPoPlaceholder')}
+                    icon={<ShoppingCart size={12} />}
+                    error={errors.id_don_dat_hang?.message}
+                    searchable
+                    dropdownInPortal
                   />
                 )}
               />

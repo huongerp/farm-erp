@@ -6,11 +6,12 @@ import {
   getDrawerWidthClass,
   DRAWER_WIDTH_FORM,
   DRAWER_WIDTH_DETAIL,
+  DRAWER_WIDTH_KIEM_KE_KHO,
   DRAWER_Z_BASE,
   DRAWER_Z_CONTENT_BASE,
 } from '../../lib/dialog-sizes';
 
-export { DRAWER_WIDTH_FORM, DRAWER_WIDTH_DETAIL };
+export { DRAWER_WIDTH_FORM, DRAWER_WIDTH_DETAIL, DRAWER_WIDTH_KIEM_KE_KHO };
 
 const useIsMobile = (breakpoint = 768) => {
   const [isMobile, setIsMobile] = useState(() =>

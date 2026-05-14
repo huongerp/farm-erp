@@ -53,7 +53,7 @@ const PhieuKhoList: React.FC<Props> = ({
     const base = columns.filter((c) => c.visible).sort((a, b) => a.order - b.order);
     let out = base;
     if (loai !== 'chuyen') out = out.filter((c) => c.id !== 'ten_kho_den');
-    if (loai !== 'nhap') out = out.filter((c) => c.id !== 'ten_nha_cung_cap');
+    if (loai !== 'nhap') out = out.filter((c) => c.id !== 'ten_nha_cung_cap' && c.id !== 'so_po_don_dat_hang');
     if (loai !== 'xuat') out = out.filter((c) => c.id !== 'ten_khach_hang');
     return out;
   }, [columns, loai]);
@@ -110,6 +110,8 @@ const PhieuKhoList: React.FC<Props> = ({
         return <span className="text-sm text-muted-foreground">{item.ten_kho_den ?? '—'}</span>;
       case 'ten_nha_cung_cap':
         return <span className="text-sm text-muted-foreground">{item.ten_nha_cung_cap ?? '—'}</span>;
+      case 'so_po_don_dat_hang':
+        return <span className="text-sm text-muted-foreground font-mono">{item.so_po_don_dat_hang ?? '—'}</span>;
       case 'ten_khach_hang':
         return <span className="text-sm text-muted-foreground">{item.ten_khach_hang ?? '—'}</span>;
       case 'ten_nguoi_tao':
@@ -212,6 +214,9 @@ const PhieuKhoList: React.FC<Props> = ({
       )}
       {loai === 'nhap' && item.ten_nha_cung_cap && (
         <div className="text-xs text-muted-foreground mb-1">{item.ten_nha_cung_cap}</div>
+      )}
+      {loai === 'nhap' && item.so_po_don_dat_hang && (
+        <div className="text-xs text-muted-foreground mb-1 font-mono">{item.so_po_don_dat_hang}</div>
       )}
       {loai === 'xuat' && item.ten_khach_hang && (
         <div className="text-xs text-muted-foreground mb-1">{item.ten_khach_hang}</div>

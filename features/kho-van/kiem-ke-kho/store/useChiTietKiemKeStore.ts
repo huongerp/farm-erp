@@ -9,13 +9,23 @@ export interface ChiTietKiemKeFilters {
 }
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
-  { id: 'ten_kho', label: i18n.t('kiemKeKho.store.khoCol'), visible: true, minWidth: 120, order: 0 },
-  { id: 'ten_hang', label: i18n.t('kiemKeKho.store.hangHoaCol'), visible: true, minWidth: 160, order: 1 },
+  { id: 'ten_kho', label: i18n.t('kiemKeKho.store.khoCol'), visible: true, minWidth: 180, width: 200, order: 0 },
+  {
+    id: 'ten_hang',
+    label: i18n.t('kiemKeKho.store.hangHoaCol'),
+    visible: true,
+    minWidth: 280,
+    maxWidth: 720,
+    width: 380,
+    order: 1,
+  },
   { id: 'so_luong_so', label: i18n.t('kiemKeKho.store.soLuongSoCol'), visible: true, minWidth: 80, order: 2 },
   { id: 'so_luong_thuc_te', label: i18n.t('kiemKeKho.store.soLuongThucTeCol'), visible: true, minWidth: 80, order: 3 },
   { id: 'ket_qua', label: i18n.t('kiemKeKho.store.ketQuaCol'), visible: true, minWidth: 90, order: 4 },
-  { id: 'don_vi_tinh', label: i18n.t('kiemKeKho.store.dvtCol'), visible: false, minWidth: 70, order: 5 },
-  { id: 'ghi_chu_dong', label: i18n.t('kiemKeKho.store.ghiChuCol'), visible: false, minWidth: 120, order: 6 },
+  { id: 'dieu_chinh_ton', label: i18n.t('kiemKeKho.store.dieuChinhCol'), visible: true, minWidth: 100, order: 5 },
+  { id: 'so_luong_dieu_chinh', label: i18n.t('kiemKeKho.store.soLuongDieuChinhCol'), visible: true, minWidth: 90, order: 6 },
+  { id: 'don_vi_tinh', label: i18n.t('kiemKeKho.store.dvtCol'), visible: false, minWidth: 70, order: 7 },
+  { id: 'ghi_chu_dong', label: i18n.t('kiemKeKho.store.ghiChuCol'), visible: false, minWidth: 120, order: 8 },
 ];
 
 const initialFilters: ChiTietKiemKeFilters = {

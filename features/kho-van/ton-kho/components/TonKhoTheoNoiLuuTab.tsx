@@ -213,7 +213,7 @@ function KhoDetailDrawer({
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[100px]">{t('tonKho.history.warehouseTo')}</th>
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[72px] text-right">{t('tonKho.history.quantity')}</th>
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[56px]">{t('tonKho.history.unit')}</th>
-                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[100px]">{t('tonKho.history.note')}</th>
+                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs text-left min-w-[min(420px,38vw)] w-[38%]">{t('tonKho.history.note')}</th>
                 </tr>
               </thead>
               <tbody className="[&>tr>td]:border-b [&>tr>td]:border-border">
@@ -231,7 +231,9 @@ function KhoDetailDrawer({
                     <td className="px-4 py-2.5 text-sm text-muted-foreground">{row.ten_kho_den ?? '—'}</td>
                     <td className="px-4 py-2.5 text-right font-medium tabular-nums">{row.so_luong.toLocaleString()}</td>
                     <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.don_vi_tinh ?? '—'}</td>
-                    <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.ghi_chu ?? '—'}</td>
+                    <td className="px-4 py-2.5 text-sm text-muted-foreground align-top min-w-[min(420px,38vw)] w-[38%] max-w-[min(560px,42vw)] whitespace-normal break-words">
+                      {row.ghi_chu ?? '—'}
+                    </td>
                   </tr>
                 ))}
               </tbody>

@@ -191,6 +191,13 @@ const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete
                 icon={<Truck size={12} />}
               />
             )}
+            {isNhap && (data.id_don_dat_hang || (data.so_po_don_dat_hang && data.so_po_don_dat_hang.trim() !== '')) && (
+              <DetailField
+                label={t('phieuKho.detail.linkPo')}
+                value={data.so_po_don_dat_hang?.trim() || (data.id_don_dat_hang ? `#${data.id_don_dat_hang}` : '—')}
+                icon={<Package size={12} />}
+              />
+            )}
             {isXuat && data.id_khach_hang && (
               <DetailField
                 label={t('phieuKho.form.customer')}

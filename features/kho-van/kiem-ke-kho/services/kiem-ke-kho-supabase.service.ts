@@ -40,7 +40,7 @@ const TABLE_CHI_TIET = 'fp_mh_dot_kiem_ke_kho_chi_tiet';
 const DOT_KK_KHO_COLUMNS =
   'id,ma_dot,ten_dot,ngay_bat_dau,ngay_ket_thuc,trang_thai,id_nguoi_phu_trach,ghi_chu,tg_tao,tg_cap_nhat';
 const CHI_TIET_KK_KHO_COLUMNS =
-  'id,id_dot_kiem_ke_kho,id_kho,id_hang_hoa,so_luong_so,so_luong_thuc_te,ket_qua,ghi_chu_dong,id_nguoi_kiem,ngay_kiem,tg_tao,tg_cap_nhat';
+  'id,id_dot_kiem_ke_kho,id_kho,id_hang_hoa,so_luong_so,so_luong_thuc_te,ket_qua,ghi_chu_dong,id_nguoi_kiem,ngay_kiem,tg_tao,tg_cap_nhat,id_phieu_kho_dieu_chinh,so_luong_dieu_chinh,tg_dieu_chinh_ton';
 
 interface DotRow {
   id: number;
@@ -73,6 +73,9 @@ interface ChiTietRow {
   ngay_kiem: string | null;
   tg_tao: string | null;
   tg_cap_nhat: string | null;
+  id_phieu_kho_dieu_chinh?: number | null;
+  so_luong_dieu_chinh?: number | null;
+  tg_dieu_chinh_ton?: string | null;
 }
 
 function rowToDot(
@@ -125,6 +128,11 @@ function rowToChiTiet(
     ngay_kiem: row.ngay_kiem ?? null,
     tg_tao: row.tg_tao ?? new Date().toISOString(),
     tg_cap_nhat: row.tg_cap_nhat ?? new Date().toISOString(),
+    id_phieu_kho_dieu_chinh:
+      row.id_phieu_kho_dieu_chinh != null ? String(row.id_phieu_kho_dieu_chinh) : null,
+    so_luong_dieu_chinh:
+      row.so_luong_dieu_chinh != null ? Number(row.so_luong_dieu_chinh) : null,
+    tg_dieu_chinh_ton: row.tg_dieu_chinh_ton ?? null,
   };
 }
 
@@ -206,7 +214,7 @@ export async function getDotKiemKeKhoListSupabase(
     const emp = empMap.get(String(row.id_nguoi_phu_trach));
     const stats = chiTietCounts[row.id];
     result.push(
-      rowToDot(row, idKhoList, { ten_nguoi_phu_trach: emp?.ho_ten ?? null, ma_nguoi_phu_trach: emp?.ma_nhan_vien ?? null }, stats)
+      rowToDot(row, idKhoList, { ten_nguoi_phu_trach: emp?.ten ?? null, ma_nguoi_phu_trach: emp?.ma ?? null }, stats)
     );
   }
   return result;
@@ -485,27 +493,47 @@ export async function updateChiTietKetQuaSupabase(
   return found;
 }
 
-export async function dieuChinhTonTheoKetQuaSupabase(id_chi_tiet: string): Promise<void> {
-  const idNum = Number(id_chi_tiet);
-  if (Number.isNaN(idNum)) throw new Error(i18n.t('kiemKeKho.service.chiTietNotFound'));
-  const { data: row, error } = await supabase.from(TABLE_CHI_TIET).select('id_kho, id_hang_hoa, so_luong_so, so_luong_thuc_te').eq('id', idNum).maybeSingle();
-  if (error || !row) throw new Error(i18n.t('kiemKeKho.service.chiTietNotFound'));
-  const r = row as { id_kho: number; id_hang_hoa: number; so_luong_so: number; so_luong_thuc_te: number | null };
-  if (r.so_luong_thuc_te == null) throw new Error(i18n.t('kiemKeKho.service.noThucTeForDieuChinh'));
-  const { capNhatTonKho } = await import('../../phieu-kho/services/ton-kho-service');
-  const bienDong = r.so_luong_thuc_te - r.so_luong_so;
-  capNhatTonKho(String(r.id_kho), String(r.id_hang_hoa), bienDong);
+function throwKiemKeRpcError(err: { message?: string }): never {
+  const m = String(err.message ?? '');
+  if (m.includes('kiem_ke_chi_tiet_not_found')) throw new Error(i18n.t('kiemKeKho.service.rpcChiTietNotFound'));
+  if (m.includes('kiem_ke_dot_not_found')) throw new Error(i18n.t('kiemKeKho.service.rpcDotNotFound'));
+  if (m.includes('kiem_ke_dot_not_dang_kiem_ke')) throw new Error(i18n.t('kiemKeKho.service.rpcDotNotDangKiemKe'));
+  if (m.includes('kiem_ke_already_adjusted')) throw new Error(i18n.t('kiemKeKho.service.rpcAlreadyAdjusted'));
+  if (m.includes('kiem_ke_no_thuc_te')) throw new Error(i18n.t('kiemKeKho.service.noThucTeForDieuChinh'));
+  if (m.includes('kiem_ke_no_variance')) throw new Error(i18n.t('kiemKeKho.service.rpcNoVariance'));
+  throw new Error(m || i18n.t('kiemKeKho.service.rpcUnknown'));
 }
 
-export async function dieuChinhTonTheoDotSupabase(id_dot_kiem_ke_kho: string): Promise<number> {
-  const chiTiets = await getChiTietByDotSupabase(id_dot_kiem_ke_kho);
-  const withThucTe = chiTiets.filter((c) => c.so_luong_thuc_te != null);
-  const { capNhatTonKho } = await import('../../phieu-kho/services/ton-kho-service');
-  for (const c of withThucTe) {
-    const bienDong = c.so_luong_thuc_te! - c.so_luong_so;
-    capNhatTonKho(c.id_kho, c.id_hang_hoa, bienDong);
-  }
-  return withThucTe.length;
+export async function dieuChinhTonTheoKetQuaSupabase(
+  id_chi_tiet: string,
+  p_nguoi_tao_id?: number | null
+): Promise<void> {
+  const idNum = Number(id_chi_tiet);
+  if (Number.isNaN(idNum)) throw new Error(i18n.t('kiemKeKho.service.chiTietNotFound'));
+  const nv =
+    p_nguoi_tao_id != null && Number.isFinite(Number(p_nguoi_tao_id)) ? Number(p_nguoi_tao_id) : null;
+  const { error } = await supabase.rpc('kiem_ke_apply_dieu_chinh_chi_tiet', {
+    p_id_chi_tiet: idNum,
+    p_nguoi_tao_id: nv,
+  });
+  if (error) throwKiemKeRpcError(error);
+}
+
+export async function dieuChinhTonTheoDotSupabase(
+  id_dot_kiem_ke_kho: string,
+  p_nguoi_tao_id?: number | null
+): Promise<number> {
+  const idNum = Number(id_dot_kiem_ke_kho);
+  if (Number.isNaN(idNum)) throw new Error(i18n.t('kiemKeKho.service.notFound'));
+  const nv =
+    p_nguoi_tao_id != null && Number.isFinite(Number(p_nguoi_tao_id)) ? Number(p_nguoi_tao_id) : null;
+  const { data, error } = await supabase.rpc('kiem_ke_apply_dieu_chinh_dot', {
+    p_id_dot: idNum,
+    p_nguoi_tao_id: nv,
+  });
+  if (error) throwKiemKeRpcError(error);
+  const n = typeof data === 'number' ? data : Number(data);
+  return Number.isFinite(n) ? n : 0;
 }
 
 export async function hoanThanhDotSupabase(id_dot_kiem_ke_kho: string): Promise<DotKiemKeKho> {

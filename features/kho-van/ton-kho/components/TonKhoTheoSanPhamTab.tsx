@@ -241,7 +241,6 @@ function ProductDetailDrawer({
         >
           {byKho.length > 0 && (
             <>
-              <p className="text-xs text-muted-foreground px-1 pb-2">{t('tonKho.byProduct.historyFilterHint')}</p>
               <thead className="sticky top-0 z-[1] bg-muted border-b border-border">
                 <tr>
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap w-10">#</th>
@@ -302,7 +301,7 @@ function ProductDetailDrawer({
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[120px]">{t('tonKho.history.warehouseTo')}</th>
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[72px] text-right">{t('tonKho.history.quantity')}</th>
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[56px]">{t('tonKho.history.unit')}</th>
-                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[100px]">{t('tonKho.history.note')}</th>
+                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs text-left min-w-[min(420px,38vw)] w-[38%]">{t('tonKho.history.note')}</th>
                 </tr>
               </thead>
               <tbody className="[&>tr>td]:border-b [&>tr>td]:border-border">
@@ -319,7 +318,9 @@ function ProductDetailDrawer({
                     <td className="px-4 py-2.5 text-sm text-muted-foreground">{histRow.ten_kho_den ?? '—'}</td>
                     <td className="px-4 py-2.5 text-right font-medium tabular-nums">{histRow.so_luong.toLocaleString()}</td>
                     <td className="px-4 py-2.5 text-xs text-muted-foreground">{histRow.don_vi_tinh ?? '—'}</td>
-                    <td className="px-4 py-2.5 text-xs text-muted-foreground">{histRow.ghi_chu ?? '—'}</td>
+                    <td className="px-4 py-2.5 text-sm text-muted-foreground align-top min-w-[min(420px,38vw)] w-[38%] max-w-[min(560px,42vw)] whitespace-normal break-words">
+                      {histRow.ghi_chu ?? '—'}
+                    </td>
                   </tr>
                 ))}
               </tbody>

@@ -754,3 +754,20 @@ export async function fetchDonDatHangThongKeFromRpc(params: {
     chipByBuyerId: j.chipByBuyerId && typeof j.chipByBuyerId === 'object' ? j.chipByBuyerId : {},
   };
 }
+
+/** Chỉ id + số PO + ngày đặt — dropdown liên kết phiếu nhập ↔ đơn đặt hàng (giảm egress). */
+export type DonDatHangSoPoOption = { id: string; so_po: string; ngay: string };
+
+export async function listDonDatHangSoPoMinimalSupabase(limit = 2500): Promise<DonDatHangSoPoOption[]> {
+  const { data, error } = await supabase
+    .from(TABLE_DON)
+    .select('id, so_po, ngay_dat')
+    .order('id', { ascending: false })
+    .limit(limit);
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((r: { id: number; so_po: string | null; ngay_dat: string | null }) => ({
+    id: String(r.id),
+    so_po: r.so_po ?? '',
+    ngay: r.ngay_dat ?? '',
+  }));
+}

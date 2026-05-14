@@ -1,10 +1,15 @@
 -- =============================================================================
 -- View: v_phieu_kho_chi_tiet_flat
--- Mục đích: JOIN chi tiết + header + mã hàng — một nguồn cho tab "Chi tiết phiếu"
---           thay vì tải song song 2 bảng lớn + enrich nhiều bảng tham chiếu.
+-- Mục đích: JOIN chi tiết + header + mã hàng (+ đơn đặt hàng nếu có)
+--
+-- Khuyến nghị: chạy docs/supabase-update-phieu-kho-id-don-dat-hang.sql một lần.
+--
+-- Nếu chạy riêng file này: fp_mh_phieu_kho phải đã có cột id_don_dat_hang (ALTER trước).
 -- =============================================================================
 
-CREATE OR REPLACE VIEW v_phieu_kho_chi_tiet_flat AS
+DROP VIEW IF EXISTS public.v_phieu_kho_chi_tiet_flat CASCADE;
+
+CREATE VIEW public.v_phieu_kho_chi_tiet_flat AS
 SELECT
   ct.id AS chi_tiet_id,
   ct.id_phieu_kho,
@@ -38,14 +43,17 @@ SELECT
   pk.id_nguoi_duyet,
   pk.tg_tao AS phieu_tg_tao,
   pk.tg_cap_nhat AS phieu_tg_cap_nhat,
-  hh.ma_hang_hoa AS ma_hang
-FROM fp_mh_phieu_kho_chi_tiet ct
-JOIN fp_mh_phieu_kho pk ON pk.id = ct.id_phieu_kho
-LEFT JOIN fp_mh_danh_sach_hang_hoa hh ON hh.id = ct.id_hang_hoa;
+  pk.id_don_dat_hang,
+  hh.ma_hang_hoa AS ma_hang,
+  dd.so_po AS so_po_don_dat_hang
+FROM public.fp_mh_phieu_kho_chi_tiet ct
+JOIN public.fp_mh_phieu_kho pk ON pk.id = ct.id_phieu_kho
+LEFT JOIN public.fp_mh_danh_sach_hang_hoa hh ON hh.id = ct.id_hang_hoa
+LEFT JOIN public.fp_mh_don_dat_hang dd ON dd.id = pk.id_don_dat_hang;
 
-COMMENT ON VIEW v_phieu_kho_chi_tiet_flat IS 'Chi tiết phiếu kho phẳng (JOIN header + mã HH)';
+COMMENT ON VIEW public.v_phieu_kho_chi_tiet_flat IS 'Chi tiết phiếu kho phẳng (JOIN header + mã HH + đơn đặt hàng)';
 
-ALTER VIEW v_phieu_kho_chi_tiet_flat SET (security_invoker = true);
+ALTER VIEW public.v_phieu_kho_chi_tiet_flat SET (security_invoker = true);
 
-GRANT SELECT ON v_phieu_kho_chi_tiet_flat TO authenticated;
-GRANT SELECT ON v_phieu_kho_chi_tiet_flat TO anon;
+GRANT SELECT ON public.v_phieu_kho_chi_tiet_flat TO authenticated;
+GRANT SELECT ON public.v_phieu_kho_chi_tiet_flat TO anon;

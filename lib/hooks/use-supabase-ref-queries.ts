@@ -9,6 +9,7 @@ import { getDoiTacRef } from '@/features/kho-van/danh-sach-doi-tac/services/doi-
 import type { LoaiDoiTac } from '@/features/kho-van/danh-sach-doi-tac/core/types';
 import { getKhoRef } from '@/features/kho-van/danh-sach-kho/services/kho-service';
 import { listPhieuDeXuatSoPhieuMinimalSupabase } from '@/features/kho-van/phieu-de-xuat-vat-tu/services/phieu-de-xuat-vat-tu-supabase.service';
+import { listDonDatHangSoPoMinimalSupabase } from '@/features/mua-hang/don-dat-hang/services/don-dat-hang-supabase.service';
 
 const STALE_REF_MS = 30 * 60 * 1000;
 
@@ -17,6 +18,7 @@ export const HANG_HOA_REF_QUERY_KEY = ['hangHoa', 'ref'] as const;
 export const DOI_TAC_REF_QUERY_KEY = ['doiTac', 'ref'] as const;
 export const KHO_REF_QUERY_KEY = ['kho', 'ref'] as const;
 export const PHIEU_DE_XUAT_SO_PHIEU_QUERY_KEY = ['phieuDeXuatVatTu', 'soPhieuMinimal'] as const;
+export const DON_DAT_HANG_SO_PO_QUERY_KEY = ['donDatHang', 'soPoMinimal'] as const;
 
 export function useEmployeesRefQuery() {
   return useQuery({
@@ -55,6 +57,15 @@ export function usePhieuDeXuatSoPhieuMinimalQuery() {
   return useQuery({
     queryKey: PHIEU_DE_XUAT_SO_PHIEU_QUERY_KEY,
     queryFn: () => listPhieuDeXuatSoPhieuMinimalSupabase(),
+    staleTime: STALE_REF_MS,
+  });
+}
+
+/** Dropdown liên kết phiếu nhập kho ↔ đơn đặt hàng (id + số PO + ngày). */
+export function useDonDatHangSoPoMinimalQuery() {
+  return useQuery({
+    queryKey: DON_DAT_HANG_SO_PO_QUERY_KEY,
+    queryFn: () => listDonDatHangSoPoMinimalSupabase(),
     staleTime: STALE_REF_MS,
   });
 }

@@ -2,7 +2,7 @@ import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ClipboardCheck, List, CheckCircle, Edit, Printer, Power, RefreshCw, FileText, X, Plus } from 'lucide-react';
-import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
+import GenericDrawer, { DRAWER_WIDTH_KIEM_KE_KHO } from '../../../../components/shared/GenericDrawer';
 import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';
 import DetailToolbar, { DetailToolbarAction } from '../../../../components/shared/DetailToolbar';
@@ -96,9 +96,36 @@ const DotKiemKeKhoDetail: React.FC<Props> = ({
     return { khop, thieu, thua, chuaKiem, total: chiTiet.length };
   }, [chiTiet]);
 
-  const hasAnyThucTe = useMemo(
-    () => chiTiet.some((c) => c.so_luong_thuc_te != null),
+  const pendingDieuChinhCount = useMemo(
+    () =>
+      chiTiet.filter(
+        (c) =>
+          c.so_luong_thuc_te != null &&
+          c.so_luong_thuc_te !== c.so_luong_so &&
+          !c.id_phieu_kho_dieu_chinh
+      ).length,
     [chiTiet]
+  );
+
+  const handleDieuChinhDotClick = useCallback(() => {
+    confirm({
+      title: t('kiemKeKho.confirm.dieuChinhDotTitle'),
+      message: t('kiemKeKho.confirm.dieuChinhDotMessage', { count: pendingDieuChinhCount }),
+      variant: 'warning',
+      onConfirm: () => dieuChinhDotMutation.mutate(),
+    });
+  }, [confirm, t, pendingDieuChinhCount, dieuChinhDotMutation]);
+
+  const handleDieuChinhRow = useCallback(
+    (id: string) => {
+      confirm({
+        title: t('kiemKeKho.confirm.dieuChinhRowTitle'),
+        message: t('kiemKeKho.confirm.dieuChinhRowMessage'),
+        variant: 'warning',
+        onConfirm: () => dieuChinhRowMutation.mutate(id),
+      });
+    },
+    [confirm, t, dieuChinhRowMutation]
   );
 
   const handleSaveGhiChu = useCallback(() => {
@@ -120,7 +147,7 @@ const DotKiemKeKhoDetail: React.FC<Props> = ({
         label: t('kiemKeKho.detail.fillNote'),
         icon: <FileText size={16} />,
         onClick: () => setGhiChuOpen(true),
-        variant: 'outline',
+        variant: 'secondary',
       },
     ];
     if ((isDraft || isDangKiemKe) && onTaoDanhSach) {
@@ -132,23 +159,23 @@ const DotKiemKeKhoDetail: React.FC<Props> = ({
         disabled: taoDanhSachLoading,
       });
     }
-    if (isDangKiemKe && hasAnyThucTe) {
+    if (isDangKiemKe && pendingDieuChinhCount > 0) {
       actions.push({
         label: t('kiemKeKho.dieuChinhTonDot'),
         icon: <RefreshCw size={16} />,
-        onClick: () => dieuChinhDotMutation.mutate(),
+        onClick: handleDieuChinhDotClick,
         variant: 'secondary',
         disabled: dieuChinhDotMutation.isPending,
       });
-      if (onHoanThanh) {
-        actions.push({
-          label: t('kiemKeKho.hoanThanh'),
-          icon: <CheckCircle size={16} />,
-          onClick: () => onHoanThanh(data.id),
-          variant: 'success',
-          disabled: hoanThanhLoading,
-        });
-      }
+    }
+    if (isDangKiemKe && onHoanThanh) {
+      actions.push({
+        label: t('kiemKeKho.hoanThanh'),
+        icon: <CheckCircle size={16} />,
+        onClick: () => onHoanThanh(data.id),
+        variant: 'success',
+        disabled: hoanThanhLoading,
+      });
     }
     if (onStatusChange) {
       actions.push({
@@ -163,7 +190,8 @@ const DotKiemKeKhoDetail: React.FC<Props> = ({
     data,
     isDraft,
     isDangKiemKe,
-    hasAnyThucTe,
+    pendingDieuChinhCount,
+    handleDieuChinhDotClick,
     onTaoDanhSach,
     onHoanThanh,
     onStatusChange,
@@ -201,7 +229,7 @@ const DotKiemKeKhoDetail: React.FC<Props> = ({
       subtitle={data.ten_dot}
       icon={<ClipboardCheck size={20} className="text-primary" />}
       onClose={onClose}
-      maxWidthClass={DRAWER_WIDTH_DETAIL}
+      maxWidthClass={DRAWER_WIDTH_KIEM_KE_KHO}
       footer={renderFooter}
     >
       {toolbarActions.length > 0 && (
@@ -269,7 +297,7 @@ const DotKiemKeKhoDetail: React.FC<Props> = ({
           showActions={isDraft || isDangKiemKe}
           isDangKiemKe={isDangKiemKe}
           onNhapKetQua={(item) => setNhapKetQuaRow(item)}
-          onDieuChinh={(id) => dieuChinhRowMutation.mutate(id)}
+          onDieuChinh={handleDieuChinhRow}
           onDelete={(item) => {
             confirm({
               title: t('kiemKeKho.table.xoaDong'),

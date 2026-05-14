@@ -76,6 +76,10 @@ export interface PhieuKho {
   /** Khách hàng (phiếu xuất). */
   id_khach_hang?: string | null;
   ten_khach_hang?: string;
+  /** Đơn đặt hàng (phiếu nhập), tùy chọn → fp_mh_don_dat_hang(id). */
+  id_don_dat_hang?: string | null;
+  /** Số PO từ view / enrich. */
+  so_po_don_dat_hang?: string | null;
   /** Text: "Chờ duyệt" | "Đã duyệt" | "Không duyệt" */
   trang_thai: TrangThaiPhieuKho;
   mo_ta?: string;
@@ -115,6 +119,9 @@ export interface ChiTietPhieuKhoFlat {
   ten_nha_cung_cap?: string;
   id_khach_hang?: string | null;
   ten_khach_hang?: string;
+  /** Liên kết đơn đặt hàng (phiếu nhập). */
+  id_don_dat_hang?: string | null;
+  so_po_don_dat_hang?: string | null;
   trang_thai: TrangThaiPhieuKho;
   /** Mô tả phiếu (fp_mh_phieu_kho.mo_ta). */
   mo_ta?: string;

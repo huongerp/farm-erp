@@ -135,7 +135,7 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
   const exportColumnsPhieuKho = useMemo(() => getExportColumnsPhieuKhoList(t), [t]);
   const exportMapPhieuKho = useCallback((item: PhieuKho) => mapPhieuKhoListRow(item), []);
   const { exportData, paginatedData: paginatedExportData, selectedData: selectedExportData } =
-    useExportData({
+    useExportData<PhieuKho>({
       data: exportRows,
       isOpen: showExport && !exportLoading,
       mapFn: exportMapPhieuKho,

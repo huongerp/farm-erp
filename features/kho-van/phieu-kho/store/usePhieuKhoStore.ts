@@ -26,6 +26,7 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'ten_kho', label: i18n.t('phieuKho.store.khoCol'), visible: true, minWidth: 140, maxWidth: 220, order: 2 },
   { id: 'ten_kho_den', label: i18n.t('phieuKho.store.khoDenCol'), visible: true, minWidth: 140, maxWidth: 220, order: 3 },
   { id: 'ten_nha_cung_cap', label: i18n.t('phieuKho.store.supplierCol'), visible: true, minWidth: 140, maxWidth: 220, order: 4 },
+  { id: 'so_po_don_dat_hang', label: i18n.t('phieuKho.store.poCol'), visible: true, minWidth: 120, maxWidth: 180, order: 4.5 },
   { id: 'ten_khach_hang', label: i18n.t('phieuKho.store.customerCol'), visible: true, minWidth: 140, maxWidth: 220, order: 5 },
   { id: 'tong_so_dong', label: i18n.t('phieuKho.list.totalItems'), visible: true, minWidth: 90, maxWidth: 120, order: 6 },
   { id: 'tong_so_luong', label: i18n.t('phieuKho.list.totalQuantity'), visible: true, minWidth: 100, maxWidth: 130, order: 7 },

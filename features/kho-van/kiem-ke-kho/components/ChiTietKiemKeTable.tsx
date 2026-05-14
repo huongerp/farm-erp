@@ -1,12 +1,15 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { PenLine, RefreshCw, Trash2, Package } from 'lucide-react';
+import { PenLine, RefreshCw, Trash2, Package, ExternalLink } from 'lucide-react';
 import GenericTable from '../../../../components/shared/GenericTable';
 import Tooltip from '../../../../components/ui/Tooltip';
 import { cn } from '../../../../lib/utils';
 import { getKetQuaLabel } from '../core/constants';
 import { useChiTietKiemKeStore } from '../store/useChiTietKiemKeStore';
 import type { ChiTietKiemKeKho } from '../core/types';
+
+const getPhieuKhoDieuChinhPreviewUrl = (idPhieu: string) =>
+  `/mua-hang/phieu-kho/preview/${encodeURIComponent(idPhieu)}`;
 
 interface Props {
   data: ChiTietKiemKeKho[];
@@ -63,7 +66,7 @@ const ChiTietKiemKeTable: React.FC<Props> = ({
         return <span className="font-medium text-sm">{item.ten_kho || item.ma_kho || '—'}</span>;
       case 'ten_hang':
         return (
-          <div>
+          <div className="min-w-0 break-words">
             <span className="font-medium text-sm">{item.ten_hang || item.ma_hang || '—'}</span>
             {item.ma_hang && (
               <span className="text-xs text-muted-foreground block">{item.ma_hang}</span>
@@ -80,6 +83,40 @@ const ChiTietKiemKeTable: React.FC<Props> = ({
         );
       case 'ket_qua':
         return renderKetQuaBadge(item.ket_qua);
+      case 'dieu_chinh_ton': {
+        if (item.id_phieu_kho_dieu_chinh) {
+          return (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+                {t('kiemKeKho.dieuChinhStatus.done')}
+              </span>
+              <Tooltip content={t('kiemKeKho.table.xemPhieuDieuChinh')} placement="top">
+                <a
+                  href={getPhieuKhoDieuChinhPreviewUrl(item.id_phieu_kho_dieu_chinh)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-1 text-primary hover:bg-primary/10 rounded-md inline-flex"
+                  aria-label={t('kiemKeKho.table.xemPhieuDieuChinh')}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <ExternalLink size={14} />
+                </a>
+              </Tooltip>
+            </div>
+          );
+        }
+        return (
+          <span className="text-xs text-muted-foreground tabular-nums">
+            {t('kiemKeKho.dieuChinhStatus.pending')}
+          </span>
+        );
+      }
+      case 'so_luong_dieu_chinh':
+        return (
+          <span className="text-sm tabular-nums">
+            {item.so_luong_dieu_chinh != null ? item.so_luong_dieu_chinh : '—'}
+          </span>
+        );
       case 'don_vi_tinh':
         return <span className="text-sm text-muted-foreground">{item.don_vi_tinh || '—'}</span>;
       case 'ghi_chu_dong':
@@ -105,7 +142,11 @@ const ChiTietKiemKeTable: React.FC<Props> = ({
                 </button>
               </Tooltip>
             )}
-            {isDangKiemKe && onDieuChinh && item.so_luong_thuc_te != null && item.so_luong_thuc_te !== item.so_luong_so && (
+            {isDangKiemKe &&
+              onDieuChinh &&
+              !item.id_phieu_kho_dieu_chinh &&
+              item.so_luong_thuc_te != null &&
+              item.so_luong_thuc_te !== item.so_luong_so && (
               <Tooltip content={t('kiemKeKho.dieuChinhTonTheoKetQua')} placement="left">
                 <button
                   type="button"
@@ -134,7 +175,9 @@ const ChiTietKiemKeTable: React.FC<Props> = ({
           </div>
         );
       default:
-        return <span className="text-sm">{String((item as Record<string, unknown>)[colId] ?? '—')}</span>;
+        return (
+          <span className="text-sm">{String((item as unknown as Record<string, unknown>)[colId] ?? '—')}</span>
+        );
     }
   };
 
@@ -158,17 +201,56 @@ const ChiTietKiemKeTable: React.FC<Props> = ({
           {t('kiemKeKho.store.soLuongThucTeCol')}:{' '}
           <strong className="text-foreground">{item.so_luong_thuc_te != null ? item.so_luong_thuc_te : '—'}</strong>
         </span>
+        {item.so_luong_dieu_chinh != null && (
+          <span>
+            {t('kiemKeKho.store.soLuongDieuChinhCol')}:{' '}
+            <strong className="text-foreground">{item.so_luong_dieu_chinh}</strong>
+          </span>
+        )}
         {item.don_vi_tinh && <span>{item.don_vi_tinh}</span>}
       </div>
       {showActions && (
         <div className="flex gap-1.5 mt-2 pt-2 border-t border-border justify-end">
           {isDangKiemKe && onNhapKetQua && (
-            <button type="button" onClick={(e) => { e.stopPropagation(); onNhapKetQua(item); }} className="p-1.5 text-primary bg-primary/5 hover:bg-primary/10 rounded-md" aria-label={t('kiemKeKho.table.nhapKetQua')}>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onNhapKetQua(item);
+              }}
+              className="p-1.5 text-primary bg-primary/5 hover:bg-primary/10 rounded-md"
+              aria-label={t('kiemKeKho.table.nhapKetQua')}
+            >
               <PenLine size={14} />
             </button>
           )}
+          {isDangKiemKe &&
+            onDieuChinh &&
+            !item.id_phieu_kho_dieu_chinh &&
+            item.so_luong_thuc_te != null &&
+            item.so_luong_thuc_te !== item.so_luong_so && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDieuChinh(item.id);
+                }}
+                className="p-1.5 text-secondary-foreground bg-muted hover:bg-muted/80 rounded-md"
+                aria-label={t('kiemKeKho.dieuChinhTonTheoKetQua')}
+              >
+                <RefreshCw size={14} />
+              </button>
+            )}
           {onDelete && (
-            <button type="button" onClick={(e) => { e.stopPropagation(); onDelete(item); }} className="p-1.5 text-rose-500 bg-rose-50 hover:bg-rose-100 dark:hover:bg-rose-950/30 rounded-md" aria-label={t('kiemKeKho.table.xoaDong')}>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(item);
+              }}
+              className="p-1.5 text-rose-500 bg-rose-50 hover:bg-rose-100 dark:hover:bg-rose-950/30 rounded-md"
+              aria-label={t('kiemKeKho.table.xoaDong')}
+            >
               <Trash2 size={14} />
             </button>
           )}
