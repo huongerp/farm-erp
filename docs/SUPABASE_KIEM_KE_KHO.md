@@ -47,6 +47,13 @@ Script này:
 2. **`kiem_ke_apply_dieu_chinh_chi_tiet(p_id_chi_tiet, p_nguoi_tao_id)`** — một dòng lệch → **một** phiếu nhập hoặc xuất (`trang_thai = 'Đã duyệt'`), `mo_ta`/`ghi_chu` theo chuỗi “Điều chỉnh tồn kiểm kê”.
 3. **`kiem_ke_apply_dieu_chinh_dot(p_id_dot, p_nguoi_tao_id)`** — toàn đợt: **gộp** theo `(kho, loại nhập/xuất)` — tối đa 2 phiếu/kho mỗi lần bấm; cập nhật từng dòng chi tiết trỏ về cùng phiếu nếu cùng nhóm.
 
+**Quy tắc loại phiếu (đưa tồn sổ trên hệ thống khớp số lượng thực tế đã kiểm, `delta = SL thực tế − SL sổ` trên dòng):**
+
+- **Thừa** (`delta > 0`): tạo phiếu **nhập** — tăng tồn sổ cho bằng thực tế.
+- **Thiếu** (`delta < 0`): tạo phiếu **xuất** — giảm tồn sổ cho bằng thực tế.
+
+Sau khi sửa script, cần chạy lại `CREATE OR REPLACE FUNCTION` trên Supabase (hoặc toàn bộ file `docs/supabase-fp_mh_dot_kiem_ke_kho_dieu_chinh_ton.sql`) để DB áp dụng quy tắc mới. Các phiếu đã tạo trước đó vẫn giữ loại cũ.
+
 App (`kiem-ke-kho-supabase.service.ts`) gọi hai RPC trên; không dùng `capNhatTonKho` (đã bỏ khỏi luồng kiểm kê).
 
 **Lưu ý:** Dòng đã có `id_phieu_kho_dieu_chinh` không được post lại; dòng khớp (`thực tế = sổ`) bị bỏ qua khi điều chỉnh toàn đợt (trả về số dòng đã cập nhật, có thể là 0).

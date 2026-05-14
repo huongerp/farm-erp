@@ -5,7 +5,16 @@ export interface DetailToolbarAction {
     label: string;
     icon: React.ReactNode;
     onClick: () => void;
-    variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'success' | 'warning' | 'info';
+    variant?:
+        | 'primary'
+        | 'secondary'
+        | 'danger'
+        | 'ghost'
+        | 'success'
+        | 'warning'
+        | 'info'
+        | 'default'
+        | 'outline';
     disabled?: boolean;
 }
 
@@ -49,7 +58,9 @@ const DetailToolbar: React.FC<DetailToolbarProps> = ({ actions, columns, classNa
                                     action.variant === 'warning' ? "bg-amber-50 dark:bg-amber-950/30 text-amber-600 border-amber-100 dark:border-amber-900 hover:bg-amber-500 hover:text-white" :
                                         action.variant === 'info' ? "bg-primary/10 text-primary border-primary/20 hover:bg-primary hover:text-white" :
                                             action.variant === 'ghost' ? "bg-transparent text-muted-foreground hover:bg-muted" :
-                                                "bg-muted/50 text-foreground hover:bg-muted"
+                                                action.variant === 'outline' ? "bg-background text-foreground border-border hover:bg-muted" :
+                                                    action.variant === 'secondary' ? "bg-secondary/40 text-secondary-foreground border-border hover:bg-secondary/70" :
+                                                        "bg-muted/50 text-foreground hover:bg-muted"
                     )}>
                         {React.cloneElement(action.icon as React.ReactElement, { size: 16, strokeWidth: 2 })}
                     </div>
@@ -60,7 +71,8 @@ const DetailToolbar: React.FC<DetailToolbarProps> = ({ actions, columns, classNa
                                 action.variant === 'success' ? "text-emerald-600" :
                                     action.variant === 'warning' ? "text-amber-600" :
                                         action.variant === 'info' ? "text-primary" :
-                                            "text-muted-foreground"
+                                            action.variant === 'outline' || action.variant === 'secondary' ? "text-foreground" :
+                                                "text-muted-foreground"
                     )}>
                         {action.label}
                     </span>

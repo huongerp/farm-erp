@@ -112,7 +112,7 @@ const DotKiemKeKhoDetail: React.FC<Props> = ({
       title: t('kiemKeKho.confirm.dieuChinhDotTitle'),
       message: t('kiemKeKho.confirm.dieuChinhDotMessage', { count: pendingDieuChinhCount }),
       variant: 'warning',
-      onConfirm: () => dieuChinhDotMutation.mutate(),
+      onConfirm: () => dieuChinhDotMutation.mutateAsync(),
     });
   }, [confirm, t, pendingDieuChinhCount, dieuChinhDotMutation]);
 
@@ -122,7 +122,7 @@ const DotKiemKeKhoDetail: React.FC<Props> = ({
         title: t('kiemKeKho.confirm.dieuChinhRowTitle'),
         message: t('kiemKeKho.confirm.dieuChinhRowMessage'),
         variant: 'warning',
-        onConfirm: () => dieuChinhRowMutation.mutate(id),
+        onConfirm: () => dieuChinhRowMutation.mutateAsync(id),
       });
     },
     [confirm, t, dieuChinhRowMutation]
@@ -304,7 +304,7 @@ const DotKiemKeKhoDetail: React.FC<Props> = ({
               message: t('kiemKeKho.detail.deleteLineConfirm'),
               variant: 'danger',
               confirmText: t('common.delete'),
-              onConfirm: () => deleteChiTietMutation.mutate(item.id),
+              onConfirm: () => deleteChiTietMutation.mutateAsync(item.id),
             });
           }}
           dieuChinhLoading={dieuChinhRowMutation.isPending}

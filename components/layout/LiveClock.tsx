@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type FC } from 'react';
 import { Clock, Calendar } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useUIStore } from '../../store/useStore';
@@ -47,7 +47,7 @@ const formatDateWithDayNames = (date: Date, tz: string, dayNames: string[]): Liv
  * Đồng hồ realtime trên header: cập nhật mỗi giây, có đủ giờ:phút:giây.
  * Dùng timezone từ Cài đặt. Component duy nhất hiển thị thời gian realtime toàn app.
  */
-const LiveClock: React.FC = () => {
+const LiveClock: FC = () => {
   const { t } = useTranslation();
   const timezone = useUIStore((s) => s.timezone);
 

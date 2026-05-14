@@ -153,7 +153,6 @@ export function useDeleteChiTietKiemKe(id_dot: string, onSuccess?: () => void) {
       toast.success(i18n.t('kiemKeKho.toast.deleteChiTietSuccess'));
       onSuccess?.();
     },
-    onError: (err: unknown) => toast.error((err as Error).message),
   });
 }
 
@@ -192,7 +191,6 @@ export function useDieuChinhTonTheoKetQua(id_dot: string, onSuccess?: () => void
       toast.success(i18n.t('kiemKeKho.toast.dieuChinhTonSuccess'));
       onSuccess?.();
     },
-    onError: (err: unknown) => toast.error((err as Error).message),
   });
 }
 
@@ -211,7 +209,6 @@ export function useDieuChinhTonTheoDot(id_dot: string, onSuccess?: () => void) {
       toast.success(i18n.t('kiemKeKho.toast.dieuChinhTonDotSuccess', { count }));
       onSuccess?.();
     },
-    onError: (err: unknown) => toast.error((err as Error).message),
   });
 }
 

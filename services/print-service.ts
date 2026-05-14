@@ -1,6 +1,45 @@
-import { AuditTicket } from "../features/thiet-bi/kiem-ke/core/types";
-import { MaintenanceTicket } from "../features/thiet-bi/bao-tri/core/types";
-import { formatCurrency, formatDate, formatDateTime } from "../lib/utils";
+import { formatCurrency, formatDate, formatDateTime } from '../lib/utils';
+
+/** In-layout types cho in phiếu (module thiết bị cũ đã đổi đường dẫn) */
+export interface AuditTicketChiTiet {
+  ma_san_pham: string;
+  ten_san_pham: string;
+  ton_he_thong: number;
+  ton_thuc_te: number;
+  ly_do?: string | null;
+}
+
+export interface AuditTicket {
+  ma_phieu: string;
+  ten_phieu?: string | null;
+  ngay_kiem: string;
+  ten_kho: string;
+  nguoi_kiem: string;
+  chi_tiet: AuditTicketChiTiet[];
+}
+
+export interface MaintenanceSparePart {
+  ten_linh_kien: string;
+  don_vi_tinh: string;
+  so_luong: number;
+  don_gia: number;
+  thanh_tien: number;
+}
+
+export interface MaintenanceTicket {
+  ma_phieu: string;
+  ngay_bao_cao: string;
+  nguoi_bao_cao: string;
+  nha_cung_cap_dv?: string | null;
+  nguoi_thuc_hien?: string | null;
+  ten_tai_san: string;
+  ma_tai_san: string;
+  mo_ta_su_co: string;
+  giai_phap_khac_phuc?: string | null;
+  linh_kien_su_dung?: MaintenanceSparePart[];
+  chi_phi_nhan_cong: number;
+  chi_phi_tong: number;
+}
 
 const printHTML = (title: string, content: string, companyInfo?: any) => {
   const printWindow = window.open('', '_blank');

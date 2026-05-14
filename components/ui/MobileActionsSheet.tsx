@@ -2,13 +2,13 @@ import React, { useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
-import { X, Settings2 } from 'lucide-react';
+import { X, Settings2, type LucideIcon } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 export interface ActionItem {
   key: string;
   label: string;
-  icon: React.ElementType;
+  icon: LucideIcon;
   onClick: () => void;
   variant?: 'default' | 'danger' | 'success';
   description?: string;

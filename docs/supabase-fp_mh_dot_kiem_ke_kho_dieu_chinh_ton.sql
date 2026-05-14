@@ -1,5 +1,8 @@
 -- =============================================================================
--- Kiểm kê kho: điều chỉnh tồn qua phiếu nhập/xuất + cột liên kết trên chi tiết
+-- Kiểm kê kho: điều chỉnh sổ (tồn trên hệ thống) về khớp SL thực tế — qua phiếu nhập/xuất + cột liên kết trên chi tiết
+-- Quy tắc (delta = thực tế - sổ trên dòng kiểm kê):
+--   Thừa (delta > 0): phiếu NHẬP — tăng tồn sổ cho khớp thực tế
+--   Thiếu (delta < 0): phiếu XUẤT — giảm tồn sổ cho khớp thực tế
 -- Chạy sau docs/supabase-fp_mh_dot_kiem_ke_kho.sql và docs/supabase-fp_mh_phieu_kho.sql
 -- (cần bảng fp_mh_phieu_kho, RPC get_next_so_phieu, fp_mh_danh_sach_kho, fp_mh_danh_sach_hang_hoa)
 -- =============================================================================
@@ -14,7 +17,7 @@ ALTER TABLE public.fp_mh_dot_kiem_ke_kho_chi_tiet
 ALTER TABLE public.fp_mh_dot_kiem_ke_kho_chi_tiet
   ADD COLUMN IF NOT EXISTS tg_dieu_chinh_ton timestamptz;
 
-COMMENT ON COLUMN public.fp_mh_dot_kiem_ke_kho_chi_tiet.id_phieu_kho_dieu_chinh IS 'Phiếu kho sinh khi điều chỉnh tồn (nhập thiếu / xuất thừa); nhiều dòng có thể cùng phiếu nếu gộp theo kho';
+COMMENT ON COLUMN public.fp_mh_dot_kiem_ke_kho_chi_tiet.id_phieu_kho_dieu_chinh IS 'Phiếu kho điều chỉnh: thừa → nhập, thiếu → xuất; nhiều dòng có thể cùng phiếu nếu gộp theo kho';
 COMMENT ON COLUMN public.fp_mh_dot_kiem_ke_kho_chi_tiet.so_luong_dieu_chinh IS '|thực tế - sổ| đã post';
 COMMENT ON COLUMN public.fp_mh_dot_kiem_ke_kho_chi_tiet.tg_dieu_chinh_ton IS 'Thời điểm post điều chỉnh';
 
@@ -102,9 +105,9 @@ BEGIN
   END IF;
 
   IF v_delta > 0 THEN
-    v_loai := 'xuất';
-  ELSE
     v_loai := 'nhập';
+  ELSE
+    v_loai := 'xuất';
   END IF;
 
   SELECT k.ten_kho INTO v_ten_kho FROM public.fp_mh_danh_sach_kho k WHERE k.id = v_id_kho;
@@ -181,7 +184,7 @@ END;
 $$;
 
 COMMENT ON FUNCTION public.kiem_ke_apply_dieu_chinh_chi_tiet(bigint, bigint) IS
-  'Tạo phiếu nhập/xuất điều chỉnh theo 1 dòng kiểm kê; cập nhật id_phieu_kho_dieu_chinh trên dòng';
+  'Một dòng lệch: thừa (TT>so) → nhập, thiếu (TT<so) → xuất; cập nhật id_phieu_kho_dieu_chinh';
 
 -- -----------------------------------------------------------------------------
 -- Điều chỉnh toàn đợt: gộp theo (kho, loại phiếu), tối đa 2 phiếu/kho (NK + XK)
@@ -239,7 +242,7 @@ BEGIN
   FOR rec_grp IN
     SELECT DISTINCT
       ct.id_kho,
-      CASE WHEN (ct.so_luong_thuc_te - ct.so_luong_so) > 0 THEN 'xuất'::text ELSE 'nhập'::text END AS loai
+      CASE WHEN (ct.so_luong_thuc_te - ct.so_luong_so) > 0 THEN 'nhập'::text ELSE 'xuất'::text END AS loai
     FROM public.fp_mh_dot_kiem_ke_kho_chi_tiet ct
     WHERE ct.id_dot_kiem_ke_kho = p_id_dot
       AND ct.id_phieu_kho_dieu_chinh IS NULL
@@ -290,8 +293,8 @@ BEGIN
         AND ct.so_luong_thuc_te IS NOT NULL
         AND (ct.so_luong_thuc_te - ct.so_luong_so) <> 0
         AND (
-          (rec_grp.loai = 'xuất' AND (ct.so_luong_thuc_te - ct.so_luong_so) > 0)
-          OR (rec_grp.loai = 'nhập' AND (ct.so_luong_thuc_te - ct.so_luong_so) < 0)
+          (rec_grp.loai = 'nhập' AND (ct.so_luong_thuc_te - ct.so_luong_so) > 0)
+          OR (rec_grp.loai = 'xuất' AND (ct.so_luong_thuc_te - ct.so_luong_so) < 0)
         )
       ORDER BY ct.id
     LOOP
@@ -336,7 +339,7 @@ END;
 $$;
 
 COMMENT ON FUNCTION public.kiem_ke_apply_dieu_chinh_dot(bigint, bigint) IS
-  'Điều chỉnh tồn toàn đợt: phiếu gộp theo kho + loại (nhập/xuất); trả về số dòng đã cập nhật';
+  'Toàn đợt: gộp theo kho + loại — thừa nhập, thiếu xuất; trả về số dòng đã cập nhật';
 
 GRANT EXECUTE ON FUNCTION public.kiem_ke_apply_dieu_chinh_chi_tiet(bigint, bigint) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.kiem_ke_apply_dieu_chinh_dot(bigint, bigint) TO authenticated;

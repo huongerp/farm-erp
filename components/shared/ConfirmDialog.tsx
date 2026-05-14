@@ -2,10 +2,12 @@
 import React, { useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertTriangle, Trash2, Info, X } from 'lucide-react';
+import { toast } from 'sonner';
 import Button from '../ui/Button';
 import { useConfirmStore } from '../../store/useConfirmStore';
 import { DIALOG_SIZE } from '../../lib/dialog-sizes';
 import { cn } from '../../lib/utils';
+import i18n from '../../lib/i18n';
 
 const ConfirmDialog: React.FC = () => {
   const { isOpen, options, close, isLoading, setLoading } = useConfirmStore();
@@ -18,7 +20,9 @@ const ConfirmDialog: React.FC = () => {
       await onConfirm();
       close();
     } catch (error) {
-      if (import.meta.env.DEV) console.error("Confirm action failed", error);
+      if (import.meta.env.DEV) console.error('Confirm action failed', error);
+      const msg = error instanceof Error && error.message.trim() ? error.message.trim() : '';
+      toast.error(msg || i18n.t('common.error'));
       setLoading(false);
     }
   };

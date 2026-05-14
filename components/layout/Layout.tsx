@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore, useUIStore } from '../../store/useStore';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, type Transition } from 'framer-motion';
 import Button from '../ui/Button';
 import { cn } from '../../lib/utils';
 import Breadcrumbs from '../shared/Breadcrumbs';
@@ -156,7 +156,7 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   );
   const navItems = visibleMenu.map(({ path, nameKey, icon }) => ({ name: t(nameKey), icon, path }));
 
-  const sidebarTransition = { duration: 0.15, ease: "circOut" };
+  const sidebarTransition: Transition = { duration: 0.15, ease: 'circOut' };
 
   return (
     <div className="flex h-[100dvh] bg-background font-sans text-foreground selection:bg-primary/20 selection:text-primary overflow-x-hidden min-h-0">

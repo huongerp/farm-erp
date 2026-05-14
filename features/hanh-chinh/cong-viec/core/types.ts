@@ -31,6 +31,9 @@ export interface CongViec {
   trao_doi: TraoDoiEntry[];
   ket_qua: string | null;
   link_ket_qua: string | null;
+  /** Gantt / báo cáo — có thể có từ API hoặc enrich */
+  ngay_het_han?: string | null;
+  ma_cong_viec?: string | null;
 }
 
 export interface CongViecFormState {

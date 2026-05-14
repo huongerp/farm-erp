@@ -493,14 +493,22 @@ export async function updateChiTietKetQuaSupabase(
   return found;
 }
 
-function throwKiemKeRpcError(err: { message?: string }): never {
+function throwKiemKeRpcError(err: { message?: string; code?: string }): never {
   const m = String(err.message ?? '');
+  const lower = m.toLowerCase();
   if (m.includes('kiem_ke_chi_tiet_not_found')) throw new Error(i18n.t('kiemKeKho.service.rpcChiTietNotFound'));
   if (m.includes('kiem_ke_dot_not_found')) throw new Error(i18n.t('kiemKeKho.service.rpcDotNotFound'));
   if (m.includes('kiem_ke_dot_not_dang_kiem_ke')) throw new Error(i18n.t('kiemKeKho.service.rpcDotNotDangKiemKe'));
   if (m.includes('kiem_ke_already_adjusted')) throw new Error(i18n.t('kiemKeKho.service.rpcAlreadyAdjusted'));
   if (m.includes('kiem_ke_no_thuc_te')) throw new Error(i18n.t('kiemKeKho.service.noThucTeForDieuChinh'));
   if (m.includes('kiem_ke_no_variance')) throw new Error(i18n.t('kiemKeKho.service.rpcNoVariance'));
+  if (
+    err.code === 'PGRST202' ||
+    /could not find the function/i.test(m) ||
+    (lower.includes('schema cache') && lower.includes('function'))
+  ) {
+    throw new Error(i18n.t('kiemKeKho.service.rpcFunctionNotFound'));
+  }
   throw new Error(m || i18n.t('kiemKeKho.service.rpcUnknown'));
 }
 

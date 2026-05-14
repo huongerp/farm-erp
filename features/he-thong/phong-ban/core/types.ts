@@ -9,6 +9,8 @@ export interface Department {
   trang_thai: TrangThai;
   tg_tao: string;
   tg_cap_nhat: string | null;
+  /** Cấp đơn vị (vd. 1 = phòng) — từ Supabase nếu có */
+  cap_do?: number | null;
 }
 
 export interface DepartmentFormState {

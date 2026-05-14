@@ -56,7 +56,7 @@ export interface ChiTietKiemKeKho {
   ngay_kiem?: string | null;
   tg_tao: string;
   tg_cap_nhat: string;
-  /** Phiếu nhập/xuất điều chỉnh tồn (sau khi post) */
+  /** Phiếu điều chỉnh: thừa → nhập, thiếu → xuất (sau khi post) */
   id_phieu_kho_dieu_chinh?: string | null;
   /** |thực tế − sổ| đã ghi nhận lên phiếu */
   so_luong_dieu_chinh?: number | null;

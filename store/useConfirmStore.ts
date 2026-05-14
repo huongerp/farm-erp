@@ -1,7 +1,7 @@
 import React from 'react';
 import { create } from 'zustand';
 
-type ConfirmVariant = 'danger' | 'warning' | 'info';
+type ConfirmVariant = 'danger' | 'warning' | 'info' | 'default';
 
 interface ConfirmOptions {
   title: string;

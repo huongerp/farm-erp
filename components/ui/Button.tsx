@@ -6,17 +6,21 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
   size?: 'default' | 'sm' | 'lg' | 'icon';
   isLoading?: boolean;
+  /** Alias của `isLoading` (một số màn dùng tên này) */
+  loading?: boolean;
 }
 
 const Button: React.FC<ButtonProps> = React.memo(({ 
   className, 
   variant = 'default', 
   size = 'default', 
-  isLoading = false,
+  isLoading: isLoadingProp = false,
+  loading = false,
   children, 
   disabled,
   ...props 
 }) => {
+  const isLoading = isLoadingProp || loading;
   const variants = {
     default: "bg-primary text-primary-foreground hover:bg-primary/90",
     destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
