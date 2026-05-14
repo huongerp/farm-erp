@@ -32,6 +32,7 @@
   "tonKho.history.warehouseFrom": "Kho đi",
   "tonKho.history.warehouseTo": "Kho đến",
   "tonKho.history.quantity": "Số lượng",
+  "tonKho.history.stockAfter": "Tồn",
   "tonKho.history.unit": "Đơn vị",
   "tonKho.history.note": "Ghi chú",
   "tonKho.history.typeNhap": "Nhập",

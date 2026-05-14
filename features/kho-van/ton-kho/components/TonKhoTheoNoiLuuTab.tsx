@@ -26,6 +26,7 @@ import type { HangHoaRefLite } from '../../danh-sach-hang-hoa/services/hang-hoa-
 import { BTN_CLOSE } from '../../../../lib/button-labels';
 import { cn, formatDateTime } from '../../../../lib/utils';
 import { TonKhoLoaiBadge } from './TonKhoLoaiBadge';
+import { computeTonSauByChiTiet } from '../utils/lich-su-ton-sau';
 
 export type RowKho = {
   id_kho: string;
@@ -93,6 +94,10 @@ function KhoDetailDrawer({
   const { data: hangHoaList = [] } = useHangHoaRefQuery();
   const { data: lichSu = [], isLoading: loadingLichSu } = useLichSuNhapXuatByKho(id_kho);
   const loading = loadingLichSu || loadingTonKho;
+  const tonSauByChiTiet = useMemo(
+    () => computeTonSauByChiTiet(lichSu, 'byKho', id_kho),
+    [lichSu, id_kho]
+  );
   const itemsAtKho = useMemo(() => {
     return tonRows.map((r) => ({ id_hang_hoa: r.id_hang_hoa, so_luong: r.so_luong }));
   }, [tonRows]);
@@ -212,12 +217,15 @@ function KhoDetailDrawer({
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[100px]">{t('tonKho.history.warehouseFrom')}</th>
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[100px]">{t('tonKho.history.warehouseTo')}</th>
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[72px] text-right">{t('tonKho.history.quantity')}</th>
+                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[80px] text-right">{t('tonKho.history.stockAfter')}</th>
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[56px]">{t('tonKho.history.unit')}</th>
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs text-left min-w-[min(420px,38vw)] w-[38%]">{t('tonKho.history.note')}</th>
                 </tr>
               </thead>
               <tbody className="[&>tr>td]:border-b [&>tr>td]:border-border">
-                {lichSu.map((row) => (
+                {lichSu.map((row) => {
+                  const tonSau = tonSauByChiTiet.get(row.id_chi_tiet);
+                  return (
                   <tr key={row.id_chi_tiet} className="hover:bg-muted/60 transition-colors">
                     <td className="px-4 py-2.5 text-sm tabular-nums">{formatDateTime(row.tg_tao ?? row.ngay) || '—'}</td>
                     <td className="px-4 py-2.5 font-mono text-xs">{row.so_phieu}</td>
@@ -230,12 +238,16 @@ function KhoDetailDrawer({
                     <td className="px-4 py-2.5 text-sm text-muted-foreground">{row.ten_kho ?? '—'}</td>
                     <td className="px-4 py-2.5 text-sm text-muted-foreground">{row.ten_kho_den ?? '—'}</td>
                     <td className="px-4 py-2.5 text-right font-medium tabular-nums">{row.so_luong.toLocaleString()}</td>
+                    <td className="px-4 py-2.5 text-right font-medium tabular-nums text-muted-foreground">
+                      {tonSau !== undefined ? tonSau.toLocaleString() : '—'}
+                    </td>
                     <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.don_vi_tinh ?? '—'}</td>
                     <td className="px-4 py-2.5 text-sm text-muted-foreground align-top min-w-[min(420px,38vw)] w-[38%] max-w-[min(560px,42vw)] whitespace-normal break-words">
                       {row.ghi_chu ?? '—'}
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </>
           )}

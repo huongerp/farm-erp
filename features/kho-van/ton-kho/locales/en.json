@@ -32,6 +32,7 @@
   "tonKho.history.warehouseFrom": "From",
   "tonKho.history.warehouseTo": "To",
   "tonKho.history.quantity": "Qty",
+  "tonKho.history.stockAfter": "Balance",
   "tonKho.history.unit": "Unit",
   "tonKho.history.note": "Note",
   "tonKho.history.typeNhap": "Import",

@@ -96,6 +96,7 @@
   "tonKhoPhanThuoc.detail.historyNx.colLoai": "Type",
   "tonKhoPhanThuoc.detail.historyNx.colKho": "Warehouse",
   "tonKhoPhanThuoc.detail.historyNx.colSl": "Qty",
+  "tonKhoPhanThuoc.detail.historyNx.colTon": "Balance",
   "tonKhoPhanThuoc.detail.historyNx.colTrangThai": "Status",
   "tonKhoPhanThuoc.detail.historyNx.loaiNhap": "Receipt",
   "tonKhoPhanThuoc.detail.historyNx.loaiXuat": "Issue",

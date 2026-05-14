@@ -5,6 +5,8 @@ import GenericSubTableSection from '../../../../components/shared/GenericSubTabl
 import { useFarmPhieuKhoPTHangNxHistory } from '../hooks/use-farm-ton-kho-pt';
 import type { TonKhoPTHangNxHistoryRow } from '../core/types';
 import { formatNumberVN } from '../../../../lib/utils';
+import { computeTonSauByChiTiet } from '../../../kho-van/ton-kho/utils/lich-su-ton-sau';
+import { farmNxHistoryToLichSuRows } from '../utils/farm-nx-history-to-lich-su';
 
 function formatNgayVN(ymd: string): string {
   const d = (ymd ?? '').slice(0, 10);
@@ -40,6 +42,11 @@ const TonKhoPTHangNxHistorySection: React.FC<Props> = ({ idHangHoa }) => {
 
   const errMsg = useMemo(() => (error instanceof Error ? error.message : String(error ?? '')), [error]);
 
+  const tonSauByChiTiet = useMemo(() => {
+    if (!data.length) return new Map<string, number>();
+    return computeTonSauByChiTiet(farmNxHistoryToLichSuRows(data, idHangHoa), 'byProductGlobal');
+  }, [data, idHangHoa]);
+
   return (
     <GenericSubTableSection
       title={t('tonKhoPhanThuoc.detail.historyNx.title')}
@@ -70,13 +77,18 @@ const TonKhoPTHangNxHistorySection: React.FC<Props> = ({ idHangHoa }) => {
               <th className="text-right px-3 py-2 text-xs font-semibold whitespace-nowrap">
                 {t('tonKhoPhanThuoc.detail.historyNx.colSl')}
               </th>
+              <th className="text-right px-3 py-2 text-xs font-semibold whitespace-nowrap">
+                {t('tonKhoPhanThuoc.detail.historyNx.colTon')}
+              </th>
               <th className="text-left px-3 py-2 text-xs font-semibold whitespace-nowrap">
                 {t('tonKhoPhanThuoc.detail.historyNx.colTrangThai')}
               </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border/70">
-            {data.map((row) => (
+            {data.map((row) => {
+              const tonSau = tonSauByChiTiet.get(String(row.chi_tiet_id));
+              return (
               <tr key={row.chi_tiet_id} className="border-b border-border/70">
                 <td className="px-3 py-2 tabular-nums text-muted-foreground whitespace-nowrap">{formatNgayVN(row.ngay)}</td>
                 <td className="px-3 py-2 font-mono text-xs">{row.so_phieu}</td>
@@ -88,9 +100,13 @@ const TonKhoPTHangNxHistorySection: React.FC<Props> = ({ idHangHoa }) => {
                     <span className="text-muted-foreground text-xs ml-1">{row.don_vi_tinh}</span>
                   ) : null}
                 </td>
+                <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
+                  {tonSau !== undefined ? formatNumberVN(tonSau) : '—'}
+                </td>
                 <td className="px-3 py-2 text-xs">{row.trang_thai || '—'}</td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </>
       ) : undefined}

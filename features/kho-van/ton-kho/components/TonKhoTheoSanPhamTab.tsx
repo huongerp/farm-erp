@@ -27,6 +27,7 @@ import type { LichSuNhapXuatRow } from '../../phieu-kho/services/phieu-kho-servi
 import { BTN_CLOSE } from '../../../../lib/button-labels';
 import { cn, formatDateTime } from '../../../../lib/utils';
 import { TonKhoLoaiBadge } from './TonKhoLoaiBadge';
+import { computeTonSauByChiTiet } from '../utils/lich-su-ton-sau';
 
 function lichSuRowTouchesKho(row: LichSuNhapXuatRow, idKho: string): boolean {
   if (row.loai === 'chuyển') {
@@ -120,6 +121,15 @@ function ProductDetailDrawer({
     if (!selectedKhoId) return lichSu;
     return lichSu.filter((r) => lichSuRowTouchesKho(r, selectedKhoId));
   }, [lichSu, selectedKhoId]);
+  const tonSauByChiTiet = useMemo(
+    () =>
+      computeTonSauByChiTiet(
+        lichSu,
+        selectedKhoId ? 'byProductAtKho' : 'byProductGlobal',
+        selectedKhoId ?? undefined
+      ),
+    [lichSu, selectedKhoId]
+  );
   const { data: khoList = [] } = useQuery({ queryKey: ['kho'], queryFn: getKhoList });
   const khoMap = useMemo(() => {
     const m: Record<string, string> = {};
@@ -300,12 +310,15 @@ function ProductDetailDrawer({
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[120px]">{t('tonKho.history.warehouseFrom')}</th>
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[120px]">{t('tonKho.history.warehouseTo')}</th>
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[72px] text-right">{t('tonKho.history.quantity')}</th>
+                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[80px] text-right">{t('tonKho.history.stockAfter')}</th>
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[56px]">{t('tonKho.history.unit')}</th>
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs text-left min-w-[min(420px,38vw)] w-[38%]">{t('tonKho.history.note')}</th>
                 </tr>
               </thead>
               <tbody className="[&>tr>td]:border-b [&>tr>td]:border-border">
-                {lichSuFiltered.map((histRow) => (
+                {lichSuFiltered.map((histRow) => {
+                  const tonSau = tonSauByChiTiet.get(histRow.id_chi_tiet);
+                  return (
                   <tr key={histRow.id_chi_tiet} className="hover:bg-muted/60 transition-colors">
                     <td className="px-4 py-2.5 text-sm tabular-nums">
                       {formatDateTime(histRow.tg_tao ?? histRow.ngay) || '—'}
@@ -317,12 +330,16 @@ function ProductDetailDrawer({
                     <td className="px-4 py-2.5 text-sm text-muted-foreground">{histRow.ten_kho ?? '—'}</td>
                     <td className="px-4 py-2.5 text-sm text-muted-foreground">{histRow.ten_kho_den ?? '—'}</td>
                     <td className="px-4 py-2.5 text-right font-medium tabular-nums">{histRow.so_luong.toLocaleString()}</td>
+                    <td className="px-4 py-2.5 text-right font-medium tabular-nums text-muted-foreground">
+                      {tonSau !== undefined ? tonSau.toLocaleString() : '—'}
+                    </td>
                     <td className="px-4 py-2.5 text-xs text-muted-foreground">{histRow.don_vi_tinh ?? '—'}</td>
                     <td className="px-4 py-2.5 text-sm text-muted-foreground align-top min-w-[min(420px,38vw)] w-[38%] max-w-[min(560px,42vw)] whitespace-normal break-words">
                       {histRow.ghi_chu ?? '—'}
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </>
           ) : null}

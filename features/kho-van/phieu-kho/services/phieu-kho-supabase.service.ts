@@ -12,6 +12,8 @@ import i18n from '../../../../lib/i18n';
 export interface LichSuNhapXuatRow {
   id_phieu_kho: string;
   id_chi_tiet: string;
+  /** Hàng hóa của dòng chi tiết — partition luỹ kế tồn theo kho. */
+  id_hang_hoa: string;
   so_phieu: string;
   ngay: string;
   loai: LoaiPhieuKho;
@@ -797,6 +799,7 @@ export async function getLichSuNhapXuatByHangHoaSupabase(id_hang_hoa: string): P
     return {
       id_phieu_kho: String(ct.id_phieu_kho),
       id_chi_tiet: String(ct.id),
+      id_hang_hoa: String(ct.id_hang_hoa),
       so_phieu: p?.so_phieu ?? '',
       ngay: p?.ngay ?? '',
       loai: (p?.loai as LoaiPhieuKho) ?? 'nhập',
@@ -844,6 +847,7 @@ export async function getLichSuNhapXuatByKhoSupabase(id_kho: string): Promise<Li
     return {
       id_phieu_kho: String(ct.id_phieu_kho),
       id_chi_tiet: String(ct.id),
+      id_hang_hoa: String(ct.id_hang_hoa),
       so_phieu: p?.so_phieu ?? '',
       ngay: p?.ngay ?? '',
       loai: (p?.loai as LoaiPhieuKho) ?? 'nhập',

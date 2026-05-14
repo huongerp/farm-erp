@@ -102,6 +102,10 @@ export interface TonKhoPTHangNxHistoryRow {
   so_phieu: string;
   ngay: string;
   loai: string;
+  kho_id: string;
+  kho_den_id: string | null;
+  /** Thời gian tạo phiếu — sắp xếp luỹ kế tồn */
+  phieu_tg_tao?: string | null;
   ten_kho: string | null;
   ten_kho_den: string | null;
   trang_thai: string;

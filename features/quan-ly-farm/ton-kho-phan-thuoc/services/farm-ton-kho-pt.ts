@@ -26,7 +26,7 @@ const FLAT_SELECT =
   'id_phieu_kho, so_phieu, ngay, loai, kho_id, kho_den_id, trang_thai, id_hang_hoa, so_luong, ma_hang';
 
 const HANG_NX_HISTORY_SELECT =
-  'chi_tiet_id, id_phieu_kho, so_phieu, ngay, loai, ten_kho, ten_kho_den, trang_thai, so_luong, don_vi_tinh';
+  'chi_tiet_id, id_phieu_kho, so_phieu, ngay, loai, kho_id, kho_den_id, phieu_tg_tao, ten_kho, ten_kho_den, trang_thai, so_luong, don_vi_tinh';
 
 interface HangNxHistoryDbRow {
   chi_tiet_id: number;
@@ -34,6 +34,9 @@ interface HangNxHistoryDbRow {
   so_phieu: string;
   ngay: string;
   loai: string;
+  kho_id: number;
+  kho_den_id: number | null;
+  phieu_tg_tao: string | null;
   ten_kho: string | null;
   ten_kho_den: string | null;
   trang_thai: string;
@@ -111,6 +114,9 @@ export async function getPhieuKhoPTHangNxHistory(idHangHoa: string): Promise<Ton
     so_phieu: r.so_phieu ?? '',
     ngay: (r.ngay ?? '').trim().slice(0, 10),
     loai: (r.loai ?? '').trim(),
+    kho_id: String(r.kho_id),
+    kho_den_id: r.kho_den_id != null ? String(r.kho_den_id) : null,
+    phieu_tg_tao: r.phieu_tg_tao ?? null,
     ten_kho: r.ten_kho,
     ten_kho_den: r.ten_kho_den,
     trang_thai: (r.trang_thai ?? '').trim(),
