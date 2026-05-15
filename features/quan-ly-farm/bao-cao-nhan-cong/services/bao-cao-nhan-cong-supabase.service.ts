@@ -11,7 +11,7 @@ const TABLE_CHA = 'fp_farm_bao_cao_nhan_cong';
 const TABLE_CT = 'fp_farm_bao_cao_nhan_cong_ct';
 
 const ROW_CHA =
-  'id,ngay,id_chi_nhanh,ten_chi_nhanh,ghi_chu,id_nguoi_tao,trang_thai,tg_tao,tg_cap_nhat';
+  'id,ngay,id_chi_nhanh,ten_chi_nhanh,ghi_chu,hinh_anh_urls,id_nguoi_tao,trang_thai,tg_tao,tg_cap_nhat';
 
 const ROW_CT =
   'id,id_bao_cao,loai_chuyen,sl_cong_ngay,sl_cong_nua,sl_tang_ca,so_gio_tc,ghi_chu,thu_tu';
@@ -43,12 +43,21 @@ function num(v: string | number | null | undefined): number {
   return Number.isFinite(n) ? n : 0;
 }
 
+function parseHinhAnhUrls(raw: unknown): string[] {
+  if (raw == null) return [];
+  if (Array.isArray(raw)) {
+    return raw.filter((x): x is string => typeof x === 'string' && x.trim().length > 0);
+  }
+  return [];
+}
+
 interface DbRowCha {
   id: number;
   ngay: string;
   id_chi_nhanh: number | null;
   ten_chi_nhanh: string | null;
   ghi_chu: string | null;
+  hinh_anh_urls?: unknown;
   id_nguoi_tao: number | null;
   trang_thai: string | null;
   tg_tao: string | null;
@@ -92,6 +101,7 @@ function chaRowToModel(row: DbRowCha, chi: FarmBaoCaoNhanCongCt[]): FarmBaoCaoNh
     id_chi_nhanh: row.id_chi_nhanh != null ? String(row.id_chi_nhanh) : null,
     ten_chi_nhanh: row.ten_chi_nhanh ?? null,
     ghi_chu: row.ghi_chu ?? null,
+    hinh_anh_urls: parseHinhAnhUrls(row.hinh_anh_urls),
     id_nguoi_tao: row.id_nguoi_tao != null ? String(row.id_nguoi_tao) : null,
     ten_nguoi_tao: null,
     trang_thai: normalizeTrangThaiDb(row.trang_thai),
@@ -145,6 +155,7 @@ function chaPayloadCreate(values: BaoCaoNhanCongFormValues, idNguoiTao: string |
     id_chi_nhanh: parseIdToInt8(values.id_chi_nhanh),
     ten_chi_nhanh: values.ten_chi_nhanh?.trim() || null,
     ghi_chu: values.ghi_chu?.trim() || null,
+    hinh_anh_urls: values.hinh_anh_urls ?? [],
     id_nguoi_tao: parseIdToInt8(idNguoiTao),
     trang_thai: TRANG_THAI_BAO_CAO_NHAN_CONG.MO,
     tg_cap_nhat: new Date().toISOString(),
@@ -157,6 +168,7 @@ function chaPayloadUpdate(values: BaoCaoNhanCongFormValues) {
     id_chi_nhanh: parseIdToInt8(values.id_chi_nhanh),
     ten_chi_nhanh: values.ten_chi_nhanh?.trim() || null,
     ghi_chu: values.ghi_chu?.trim() || null,
+    hinh_anh_urls: values.hinh_anh_urls ?? [],
     tg_cap_nhat: new Date().toISOString(),
   };
 }

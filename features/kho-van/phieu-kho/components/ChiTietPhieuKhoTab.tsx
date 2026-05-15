@@ -75,6 +75,7 @@ const ChiTietPhieuKhoTab: React.FC = () => {
   const { t } = useTranslation();
   const { canCreate, canUpdate, canDelete, canApprove } = useModulePermissionFromContext();
   const { canCreate: canCreateHangHoa } = useModulePermission('kho-van/danh-sach-hang-hoa');
+  const { canUpdate: canUpdateDoiTac } = useModulePermission('kho-van/danh-sach-doi-tac');
   const { data: khoList = [] } = useKhoList();
   const { data: empRef = [] } = useEmployeesRefQuery();
   const { data: doiTacNccRef = [] } = useDoiTacRefQuery('nha_cung_cap');
@@ -122,6 +123,7 @@ const ChiTietPhieuKhoTab: React.FC = () => {
   const [showAddKho, setShowAddKho] = useState(false);
   const [showAddHangHoa, setShowAddHangHoa] = useState(false);
   const [showAddDoiTac, setShowAddDoiTac] = useState<'nha_cung_cap' | 'khach_hang' | null>(null);
+  const [editingDoiTacNested, setEditingDoiTacNested] = useState<DoiTac | null>(null);
   const addKhoResolveRef = useRef<(k: Kho | null) => void>(null);
   const addHangHoaResolveRef = useRef<(h: HangHoa | null) => void>(null);
   const addDoiTacResolveRef = useRef<(d: DoiTac | null) => void>(null);
@@ -265,6 +267,18 @@ const ChiTietPhieuKhoTab: React.FC = () => {
     setShowExport(true);
   }, [totalCount, t]);
 
+  const openEditDoiTac = useCallback(
+    (id: string) => {
+      const d = doiTacListAll.find((x) => x.id === id);
+      if (!d) {
+        toast.error(t('phieuKho.form.partnerEditNotFound'));
+        return;
+      }
+      setEditingDoiTacNested(d);
+    },
+    [doiTacListAll, t]
+  );
+
   const handleRowClick = useCallback((row: ChiTietPhieuKhoFlat) => {
     setViewingPhieuId(row.id_phieu_kho);
     setViewingLoai(LOAI_DB_TO_TAB[row.loai]);
@@ -360,14 +374,19 @@ const ChiTietPhieuKhoTab: React.FC = () => {
             {row.ten_nha_cung_cap ?? '—'}
           </td>
         );
-      case 'so_po_don_dat_hang':
+      case 'so_po_don_dat_hang': {
+        const poText =
+          row.loai === 'nhập'
+            ? row.so_po_don_dat_hang?.trim() || (row.id_don_dat_hang ? `#${row.id_don_dat_hang}` : '—')
+            : '—';
         return (
           <td key={col.id} className="px-4 py-3 text-xs text-muted-foreground font-mono" style={getColumnCellStyle(col)}>
-            {row.loai === 'nhập'
-              ? (row.so_po_don_dat_hang?.trim() || (row.id_don_dat_hang ? `#${row.id_don_dat_hang}` : '—'))
-              : '—'}
+            <span className="whitespace-nowrap" title={poText !== '—' ? poText : undefined}>
+              {poText}
+            </span>
           </td>
         );
+      }
       case 'trang_thai':
         return (
           <td key={col.id} className="px-4 py-3" style={getColumnCellStyle(col)}>
@@ -476,7 +495,7 @@ const ChiTietPhieuKhoTab: React.FC = () => {
                     {visibleColumns.map((col) => (
                       <th
                         key={col.id}
-                        className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap cursor-pointer hover:bg-muted/80"
+                        className="px-4 py-2.5 text-left text-xs font-semibold text-foreground/80 border-b border-border whitespace-nowrap cursor-pointer hover:bg-muted/80"
                         style={getColumnCellStyle(col)}
                         onClick={() => setSort(col.id, sort.column === col.id && sort.direction === 'asc' ? 'desc' : 'asc')}
                       >
@@ -557,6 +576,8 @@ const ChiTietPhieuKhoTab: React.FC = () => {
                     })
                 : undefined
             }
+            onRequestEditNcc={editingLoai === 'nhap' && canUpdateDoiTac ? openEditDoiTac : undefined}
+            onRequestEditKh={editingLoai === 'xuat' && canUpdateDoiTac ? openEditDoiTac : undefined}
           />
         )}
       </AnimatePresence>
@@ -598,6 +619,7 @@ const ChiTietPhieuKhoTab: React.FC = () => {
       <AnimatePresence>
         {showAddDoiTac && (
           <DoiTacForm
+            stackLevel={1}
             initialData={null}
             loaiDoiTac={showAddDoiTac}
             nhomList={nhomList}
@@ -613,6 +635,19 @@ const ChiTietPhieuKhoTab: React.FC = () => {
               setShowAddDoiTac(null);
               addDoiTacResolveRef.current = null;
             }}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {editingDoiTacNested && (
+          <DoiTacForm
+            stackLevel={1}
+            initialData={editingDoiTacNested}
+            loaiDoiTac={editingDoiTacNested.loai_doi_tac}
+            nhomList={nhomList}
+            tagList={tagList}
+            onClose={() => setEditingDoiTacNested(null)}
           />
         )}
       </AnimatePresence>

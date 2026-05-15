@@ -22,6 +22,7 @@ export function donDatHangToFormValues(
     chi_tiet: (p.chi_tiet ?? []).map((ct) => ({
       id_hang_hoa: ct.id_hang_hoa,
       phan_loai: ct.phan_loai ?? null,
+      muc_dich_su_dung: ct.muc_dich_su_dung?.trim() || null,
       so_luong: ct.so_luong,
       don_gia: ct.don_gia,
       ghi_chu: ct.ghi_chu ?? '',

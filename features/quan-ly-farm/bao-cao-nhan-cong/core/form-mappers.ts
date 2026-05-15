@@ -20,6 +20,7 @@ export function defaultFormValues(): BaoCaoNhanCongFormValues {
     id_chi_nhanh: '',
     ten_chi_nhanh: null,
     ghi_chu: null,
+    hinh_anh_urls: [],
     chi_tiet: defaultChiTietRows(),
   };
 }
@@ -43,6 +44,7 @@ export function farmBaoCaoNhanCongToForm(row: FarmBaoCaoNhanCong): BaoCaoNhanCon
     id_chi_nhanh: row.id_chi_nhanh != null && String(row.id_chi_nhanh).trim() !== '' ? String(row.id_chi_nhanh) : '',
     ten_chi_nhanh: row.ten_chi_nhanh,
     ghi_chu: row.ghi_chu,
+    hinh_anh_urls: Array.isArray(row.hinh_anh_urls) ? [...row.hinh_anh_urls] : [],
     chi_tiet,
   };
 }

@@ -11,6 +11,8 @@ export interface DonDatHangChiTiet {
   ten_danh_muc_cap1?: string;
   ten_danh_muc_cap2?: string;
   phan_loai?: string | null;
+  /** Mục đích sử dụng (dòng chi tiết). */
+  muc_dich_su_dung?: string | null;
   ma_hang?: string;
   ten_hang?: string;
 }
@@ -91,6 +93,7 @@ export interface ChiTietDonDatHangFlat {
   ten_danh_muc_cap1?: string;
   ten_danh_muc_cap2?: string;
   phan_loai?: string | null;
+  muc_dich_su_dung?: string | null;
   ma_hang?: string;
   ten_hang?: string;
   so_luong: number;

@@ -54,6 +54,7 @@ CREATE TABLE fp_mh_don_dat_hang_chi_tiet (
   don_gia                numeric(18,4) DEFAULT 0,
   thanh_tien             numeric(18,4) DEFAULT 0,
   phan_loai              text,
+  muc_dich_su_dung        text,
   ghi_chu                text,
   -- Kéo từ đơn (để xuất DB dễ đọc)
   so_po                  text,
@@ -67,6 +68,8 @@ CREATE TABLE fp_mh_don_dat_hang_chi_tiet (
 );
 
 COMMENT ON TABLE fp_mh_don_dat_hang_chi_tiet IS 'Chi tiết từng dòng hàng đơn đặt hàng; so_po, ngay_dat, ten_nha_cung_cap... kéo từ đơn';
+COMMENT ON COLUMN fp_mh_don_dat_hang_chi_tiet.phan_loai IS 'Phân loại dòng (tùy chọn)';
+COMMENT ON COLUMN fp_mh_don_dat_hang_chi_tiet.muc_dich_su_dung IS 'Mục đích sử dụng (dòng chi tiết)';
 COMMENT ON COLUMN fp_mh_don_dat_hang_chi_tiet.id_hang_hoa IS '→ fp_mh_danh_sach_hang_hoa(id)';
 
 -- Indexes

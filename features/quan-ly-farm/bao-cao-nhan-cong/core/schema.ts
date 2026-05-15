@@ -21,6 +21,8 @@ export const baoCaoNhanCongFormSchema = z.object({
   ),
   ten_chi_nhanh: z.string().optional().nullable(),
   ghi_chu: z.string().max(8000).optional().nullable(),
+  /** URL ảnh (https), từ Cloudinary */
+  hinh_anh_urls: z.array(z.string().url()).max(20).default([]),
   chi_tiet: z.array(chiTietRowSchema).length(LOAI_CHUYEN_CODES.length),
 });
 

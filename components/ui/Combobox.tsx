@@ -23,6 +23,8 @@ interface ComboboxProps {
   searchPlaceholder?: string;
   /** Icon hiển thị bên trái ô trigger */
   icon?: React.ReactNode;
+  /** Nội dung cạnh nhãn (vd. nút hành động phụ) */
+  labelEnd?: React.ReactNode;
   /** Khi true (mặc định) hiển thị ô tìm kiếm trong dropdown */
   searchable?: boolean;
   /** Custom render cho từng option (vd. preview font) */
@@ -51,6 +53,7 @@ const Combobox: React.FC<ComboboxProps> = ({
   className,
   disabled = false,
   icon,
+  labelEnd,
   searchable = true,
   renderOption,
   renderValue,
@@ -159,10 +162,13 @@ const Combobox: React.FC<ComboboxProps> = ({
   return (
     <div className={cn("w-full relative", className)} ref={containerRef}>
       {label && (
-        <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mb-1.5 flex items-center gap-1.5 text-foreground">
+        <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mb-1.5 flex items-center gap-1.5 text-foreground flex-wrap">
           {icon && <span className="text-muted-foreground shrink-0">{icon}</span>}
-          {label}
-          {required && <span className="text-red-500 ml-0.5">*</span>}
+          <span className="inline-flex items-center gap-1 min-w-0">
+            {label}
+            {required && <span className="text-red-500 ml-0.5">*</span>}
+            {labelEnd}
+          </span>
         </label>
       )}
       

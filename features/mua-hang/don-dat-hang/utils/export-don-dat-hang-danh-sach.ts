@@ -119,6 +119,7 @@ export const CHI_TIET_DON_DAT_HANG_EXPORT_KEYS = [
   'don_gia',
   'thanh_tien',
   'don_vi_tinh',
+  'muc_dich_su_dung',
   'ghi_chu',
 ] as const;
 
@@ -156,6 +157,7 @@ export function mapChiTietDonDatHangFlatRow(row: ChiTietDonDatHangFlat): Record<
     don_gia: row.don_gia ?? '',
     thanh_tien: row.thanh_tien ?? '',
     don_vi_tinh: (row.don_vi_tinh ?? '').trim(),
+    muc_dich_su_dung: (row.muc_dich_su_dung ?? '').trim(),
     ghi_chu: (row.ghi_chu ?? '').trim(),
   };
 }

@@ -31,6 +31,8 @@ export interface MultiImageInputProps {
   aspectRatio?: string;
   className?: string;
   disabled?: boolean;
+  /** Nếu có: upload từng file (vd Cloudinary) rồi thêm preview bằng URL; không dùng base64. */
+  uploadFile?: (file: File) => Promise<string | null>;
 }
 
 /** Tạo unique id đơn giản (không cần nanoid) */
@@ -52,6 +54,7 @@ const MultiImageInput: React.FC<MultiImageInputProps> = ({
   aspectRatio = '1/1',
   className,
   disabled = false,
+  uploadFile,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [loadingCount, setLoadingCount] = useState(0);
@@ -100,6 +103,25 @@ const MultiImageInput: React.FC<MultiImageInputProps> = ({
 
     setLoadingCount((c) => c + validFiles.length);
 
+    if (uploadFile) {
+      (async () => {
+        const newItems: ImageItem[] = [];
+        const uploadErrors: string[] = [];
+        for (const file of validFiles) {
+          try {
+            const url = await uploadFile(file);
+            if (url) newItems.push({ id: uid(), src: url, name: file.name });
+          } catch (e) {
+            uploadErrors.push(`"${file.name}": ${e instanceof Error ? e.message : String(e)}`);
+          }
+        }
+        if (uploadErrors.length) setFileErrors([...errors, ...uploadErrors]);
+        if (newItems.length > 0) onChange([...value, ...newItems]);
+        setLoadingCount((c) => c - validFiles.length);
+      })();
+      return;
+    }
+
     const newItems: ImageItem[] = [];
     let processed = 0;
 
@@ -127,7 +149,7 @@ const MultiImageInput: React.FC<MultiImageInputProps> = ({
       };
       reader.readAsDataURL(file);
     });
-  }, [maxSizeMB, maxFiles, value, onChange]);
+  }, [maxSizeMB, maxFiles, value, onChange, uploadFile]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;

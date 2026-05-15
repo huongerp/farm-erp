@@ -23,7 +23,7 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'ten_nguoi_duyet', label: i18n.t('phieuDeXuatVatTu.store.nguoiDuyetCol'), visible: true, minWidth: 150, maxWidth: 220, order: 5 },
   { id: 'trang_thai_phieu', label: i18n.t('phieuDeXuatVatTu.store.statusCol'), visible: true, minWidth: 120, maxWidth: 180, order: 6 },
   { id: 'ma_hang', label: i18n.t('phieuDeXuatVatTu.form.itemCode'), visible: true, minWidth: 130, maxWidth: 180, order: 7 },
-  { id: 'ten_hang', label: i18n.t('phieuDeXuatVatTu.form.itemName'), visible: true, minWidth: 280, maxWidth: 420, order: 8 },
+  { id: 'ten_hang', label: i18n.t('phieuDeXuatVatTu.form.itemName'), visible: true, minWidth: 320, maxWidth: 520, order: 8 },
   { id: 'so_luong', label: i18n.t('phieuDeXuatVatTu.form.quantity'), visible: true, minWidth: 100, maxWidth: 130, order: 9 },
   { id: 'don_vi_tinh', label: i18n.t('phieuDeXuatVatTu.form.unit'), visible: true, minWidth: 90, maxWidth: 120, order: 10 },
   { id: 'ten_tien_do_mh', label: i18n.t('phieuDeXuatVatTu.form.tienDoMh'), visible: true, minWidth: 140, maxWidth: 200, order: 11 },

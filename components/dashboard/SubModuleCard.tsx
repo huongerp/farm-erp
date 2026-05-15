@@ -20,19 +20,27 @@ export interface ModuleItem {
 
 // Map bg-* class to icon color (hex) and background (rgba) – ensures icons are always visible, no Tailwind purge
 const COLOR_MAP: Record<string, { icon: string; bg: string }> = {
-  'bg-blue-500':    { icon: '#2563eb', bg: 'rgba(37, 99, 235, 0.12)' },
+  'bg-blue-500': { icon: '#2563eb', bg: 'rgba(37, 99, 235, 0.12)' },
   'bg-indigo-500': { icon: '#4f46e5', bg: 'rgba(79, 70, 229, 0.12)' },
+  'bg-indigo-600': { icon: '#4f46e5', bg: 'rgba(79, 70, 229, 0.14)' },
   'bg-purple-500': { icon: '#7c3aed', bg: 'rgba(124, 58, 237, 0.12)' },
   'bg-violet-500': { icon: '#7c3aed', bg: 'rgba(124, 58, 237, 0.12)' },
-  'bg-teal-500':   { icon: '#0d9488', bg: 'rgba(13, 148, 136, 0.12)' },
-  'bg-cyan-500':   { icon: '#0891b2', bg: 'rgba(8, 145, 178, 0.12)' },
+  'bg-violet-600': { icon: '#7c3aed', bg: 'rgba(124, 58, 237, 0.14)' },
+  'bg-teal-500': { icon: '#0d9488', bg: 'rgba(13, 148, 136, 0.12)' },
+  'bg-teal-600': { icon: '#0d9488', bg: 'rgba(13, 148, 136, 0.14)' },
+  'bg-cyan-500': { icon: '#0891b2', bg: 'rgba(8, 145, 178, 0.12)' },
+  'bg-cyan-600': { icon: '#0891b2', bg: 'rgba(8, 145, 178, 0.14)' },
+  'bg-sky-600': { icon: '#0284c7', bg: 'rgba(2, 132, 199, 0.14)' },
   'bg-emerald-500': { icon: '#059669', bg: 'rgba(5, 150, 105, 0.12)' },
-  'bg-rose-500':   { icon: '#e11d48', bg: 'rgba(225, 29, 72, 0.12)' },
-  'bg-pink-500':   { icon: '#db2777', bg: 'rgba(219, 39, 119, 0.12)' },
-  'bg-amber-500':  { icon: '#d97706', bg: 'rgba(217, 119, 6, 0.12)' },
+  'bg-rose-500': { icon: '#e11d48', bg: 'rgba(225, 29, 72, 0.12)' },
+  'bg-pink-500': { icon: '#db2777', bg: 'rgba(219, 39, 119, 0.12)' },
+  'bg-amber-500': { icon: '#d97706', bg: 'rgba(217, 119, 6, 0.12)' },
+  'bg-amber-600': { icon: '#d97706', bg: 'rgba(217, 119, 6, 0.14)' },
   'bg-orange-500': { icon: '#ea580c', bg: 'rgba(234, 88, 12, 0.12)' },
-  'bg-red-500':    { icon: '#dc2626', bg: 'rgba(220, 38, 38, 0.12)' },
-  'bg-slate-500':  { icon: '#475569', bg: 'rgba(71, 85, 105, 0.12)' },
+  'bg-red-500': { icon: '#dc2626', bg: 'rgba(220, 38, 38, 0.12)' },
+  'bg-slate-500': { icon: '#475569', bg: 'rgba(71, 85, 105, 0.12)' },
+  'bg-lime-600': { icon: '#65a30d', bg: 'rgba(101, 163, 13, 0.14)' },
+  'bg-fuchsia-600': { icon: '#c026d3', bg: 'rgba(192, 38, 211, 0.14)' },
 };
 
 function hexToRgba(hex: string, alpha: number): string {

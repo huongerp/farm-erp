@@ -3,15 +3,24 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useForm, Controller, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Building2, Users } from 'lucide-react';
+import { Building2, Users, Images } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
 import Textarea from '../../../../components/ui/Textarea';
 import Combobox from '../../../../components/ui/Combobox';
 import NumberInput from '../../../../components/ui/NumberInput';
+import MultiImageInput, { type ImageItem } from '../../../../components/ui/MultiImageInput';
+import { uploadImageToCloudinary } from '../../../../lib/cloudinary';
 import { baoCaoNhanCongFormSchema, type BaoCaoNhanCongFormValues } from '../core/schema';
 import type { FarmBaoCaoNhanCong } from '../core/types';
 import type { LoaiChuyen } from '../core/types';
-import { chuyenTtLabelByThuTu, sumChiTietNumericPart } from '../core/types';
+import {
+  chuyenTtLabelByThuTu,
+  sumChiTietNumericPart,
+  sumTongCongQuyDoiTuChiTiet,
+  sumTongGioTangCaTichTuChiTiet,
+  tongCongQuyDoiNgayVaNua,
+  tongGioTangCaTichMotDong,
+} from '../core/types';
 import { formatNumberVN } from '../../../../lib/utils';
 import {
   defaultFormValues,
@@ -25,6 +34,17 @@ import GenericDrawer, { DRAWER_WIDTH_BAO_CAO_NHAN_CONG } from '../../../../compo
 import FormSection from '../../../../components/shared/FormSection';
 import FormGrid from '../../../../components/shared/FormGrid';
 import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
+
+const CLOUDINARY_READY =
+  Boolean(import.meta.env.VITE_CLOUDINARY_CLOUD_NAME) && Boolean(import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
+
+function urlsToImageItems(urls: string[]): ImageItem[] {
+  return urls.map((src) => ({ id: src, src }));
+}
+
+function imageItemsToUrls(items: ImageItem[]): string[] {
+  return items.map((i) => i.src).filter((s): s is string => typeof s === 'string' && s.trim().length > 0);
+}
 
 interface Props {
   branches: Branch[];
@@ -134,18 +154,25 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
     () => sumChiTietNumericPart([ivAgg, rowV ?? {}]),
     [ivAgg, rowV]
   );
+  const ivQuyDoi = useMemo(() => sumTongCongQuyDoiTuChiTiet(productionSlice), [productionSlice]);
+  const vQuyDoi = useMemo(() => tongCongQuyDoiNgayVaNua(rowV ?? {}), [rowV]);
+  const tongQuyDoiPhieu = useMemo(() => sumTongCongQuyDoiTuChiTiet(chiTiet ?? []), [chiTiet]);
+  const ivGioTich = useMemo(() => sumTongGioTangCaTichTuChiTiet(productionSlice), [productionSlice]);
+  const tongGioTichPhieu = useMemo(() => sumTongGioTangCaTichTuChiTiet(chiTiet ?? []), [chiTiet]);
 
   const vIndex = 5;
   const vCode = (rowV?.loai_chuyen ?? 'CONG_DINH_BIEN_KHONG_SAN_XUAT') as LoaiChuyen;
   const vLabelKey = `baoCaoNhanCong.chuyen.${vCode}` as const;
 
-  const readOnlyNum = useCallback((n: number) => {
+  const readOnlyFormulaNum = useCallback((n: number) => {
     return (
-      <span className="block w-full text-right tabular-nums text-muted-foreground py-1.5 px-1">
+      <span className="block w-full text-right tabular-nums font-bold text-primary py-1.5 px-1">
         {formatNumberVN(n)}
       </span>
     );
   }, []);
+
+  const handleUploadImage = useCallback((file: File) => uploadImageToCloudinary(file, 'farm-erp/bao-cao-nhan-cong'), []);
 
   return (
     <GenericDrawer
@@ -211,20 +238,50 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
               />
             )}
           />
+          <Controller
+            name="hinh_anh_urls"
+            control={control}
+            render={({ field }) => (
+              <MultiImageInput
+                label={t('baoCaoNhanCong.form.hinhAnh')}
+                icon={<Images className="w-4 h-4 text-muted-foreground" />}
+                value={urlsToImageItems(field.value ?? [])}
+                onChange={(items) => field.onChange(imageItemsToUrls(items))}
+                uploadFile={CLOUDINARY_READY ? handleUploadImage : undefined}
+                disabled={!CLOUDINARY_READY}
+                hint={
+                  CLOUDINARY_READY
+                    ? t('baoCaoNhanCong.form.hinhAnhHint')
+                    : t('baoCaoNhanCong.form.hinhAnhCloudinaryHint')
+                }
+                maxFiles={20}
+                maxSizeMB={5}
+                columns={4}
+                className="mt-3"
+                error={errors.hinh_anh_urls?.message as string | undefined}
+              />
+            )}
+          />
         </FormSection>
 
         <FormSection title={t('baoCaoNhanCong.form.sectionChuyen')} icon={<Users size={14} />} variant="primary">
           <div className="overflow-x-auto rounded-lg border border-border">
-            <table className="w-full text-sm min-w-[72rem]">
+            <table className="w-full text-sm min-w-[86rem]">
               <thead>
                 <tr className="bg-muted/50 border-b border-border">
                   <th className="text-center px-2 py-2 font-medium w-14">{t('baoCaoNhanCong.form.colTt')}</th>
                   <th className="text-left px-3 py-2 font-medium min-w-[9rem]">{t('baoCaoNhanCong.form.colChuyen')}</th>
-                  <th className="text-right px-2 py-2 font-medium w-[7rem]">{t('baoCaoNhanCong.form.colSlNgay')}</th>
-                  <th className="text-right px-2 py-2 font-medium w-[7rem]">{t('baoCaoNhanCong.form.colSlNua')}</th>
-                  <th className="text-right px-2 py-2 font-medium w-[7rem]">{t('baoCaoNhanCong.form.colSlTangCa')}</th>
-                  <th className="text-right px-2 py-2 font-medium w-[6rem]">{t('baoCaoNhanCong.form.colGioTc')}</th>
-                  <th className="text-left px-2 py-2 font-medium min-w-[22rem] w-[24rem]">{t('baoCaoNhanCong.form.colGhiChu')}</th>
+                  <th className="text-right px-2 py-2 font-medium w-[6.25rem]">{t('baoCaoNhanCong.form.colSlNgay')}</th>
+                  <th className="text-right px-2 py-2 font-medium w-[6.25rem]">{t('baoCaoNhanCong.form.colSlNua')}</th>
+                  <th className="text-right px-2 py-2 font-semibold text-primary w-[6.5rem] bg-primary/[0.08] dark:bg-primary/15">
+                    {t('baoCaoNhanCong.form.colTongCongQuyDoi')}
+                  </th>
+                  <th className="text-right px-2 py-2 font-medium w-[6.25rem]">{t('baoCaoNhanCong.form.colSlTangCa')}</th>
+                  <th className="text-right px-2 py-2 font-medium w-[6.5rem]">{t('baoCaoNhanCong.form.colGioTangCa')}</th>
+                  <th className="text-right px-2 py-2 font-semibold text-primary w-[6.5rem] bg-primary/[0.08] dark:bg-primary/15">
+                    {t('baoCaoNhanCong.form.colTongGioTangCa')}
+                  </th>
+                  <th className="text-left px-2 py-2 font-medium min-w-[20rem] w-[22rem]">{t('baoCaoNhanCong.form.colGhiChu')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -269,6 +326,7 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
                           )}
                         />
                       </td>
+                      <td className="px-2 py-1.5 align-top bg-primary/[0.06] dark:bg-primary/10">{readOnlyFormulaNum(tongCongQuyDoiNgayVaNua(chiTiet?.[index] ?? {}))}</td>
                       <td className="px-2 py-1.5 align-top">
                         <Controller
                           name={`chi_tiet.${index}.sl_tang_ca`}
@@ -299,6 +357,9 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
                           )}
                         />
                       </td>
+                      <td className="px-2 py-1.5 align-top bg-primary/[0.06] dark:bg-primary/10">
+                        {readOnlyFormulaNum(tongGioTangCaTichMotDong(chiTiet?.[index] ?? {}))}
+                      </td>
                       <td className="px-2 py-1.5 align-top min-w-[20rem] max-w-[32rem]">
                         <Controller
                           name={`chi_tiet.${index}.ghi_chu`}
@@ -322,8 +383,14 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
                   <td className="px-3 py-2 align-top font-bold text-primary">{t('baoCaoNhanCong.form.rowCongNhanDinhBien')}</td>
                   <td className="px-2 py-1.5 align-top text-right tabular-nums font-bold text-primary">{formatNumberVN(ivAgg.sl_cong_ngay)}</td>
                   <td className="px-2 py-1.5 align-top text-right tabular-nums font-bold text-primary">{formatNumberVN(ivAgg.sl_cong_nua)}</td>
+                  <td className="px-2 py-1.5 align-top text-right tabular-nums font-bold text-primary bg-primary/[0.06] dark:bg-primary/10">
+                    {formatNumberVN(ivQuyDoi)}
+                  </td>
                   <td className="px-2 py-1.5 align-top text-right tabular-nums font-bold text-primary">{formatNumberVN(ivAgg.sl_tang_ca)}</td>
                   <td className="px-2 py-1.5 align-top text-right tabular-nums font-bold text-primary">{formatNumberVN(ivAgg.so_gio_tc)}</td>
+                  <td className="px-2 py-1.5 align-top text-right tabular-nums font-bold text-primary bg-primary/[0.06] dark:bg-primary/10">
+                    {formatNumberVN(ivGioTich)}
+                  </td>
                   <td className="px-3 py-2 align-top text-muted-foreground text-xs">—</td>
                 </tr>
                 <tr key={vCode} className="border-b border-border/80">
@@ -361,6 +428,7 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
                       )}
                     />
                   </td>
+                  <td className="px-2 py-1.5 align-top bg-primary/[0.06] dark:bg-primary/10">{readOnlyFormulaNum(tongCongQuyDoiNgayVaNua(chiTiet?.[vIndex] ?? {}))}</td>
                   <td className="px-2 py-1.5 align-top">
                     <Controller
                       name={`chi_tiet.${vIndex}.sl_tang_ca`}
@@ -391,6 +459,9 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
                       )}
                     />
                   </td>
+                  <td className="px-2 py-1.5 align-top bg-primary/[0.06] dark:bg-primary/10">
+                    {readOnlyFormulaNum(tongGioTangCaTichMotDong(chiTiet?.[vIndex] ?? {}))}
+                  </td>
                   <td className="px-2 py-1.5 align-top min-w-[20rem] max-w-[32rem]">
                     <Controller
                       name={`chi_tiet.${vIndex}.ghi_chu`}
@@ -417,11 +488,17 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
                   <td className="px-2 py-2 align-top text-right tabular-nums font-bold text-primary text-base">
                     {formatNumberVN(tongAgg.sl_cong_nua)}
                   </td>
+                  <td className="px-2 py-2 align-top text-right tabular-nums font-bold text-primary text-base bg-primary/[0.08] dark:bg-primary/15">
+                    {formatNumberVN(tongQuyDoiPhieu)}
+                  </td>
                   <td className="px-2 py-2 align-top text-right tabular-nums font-bold text-primary text-base">
                     {formatNumberVN(tongAgg.sl_tang_ca)}
                   </td>
                   <td className="px-2 py-2 align-top text-right tabular-nums font-bold text-primary text-base">
                     {formatNumberVN(tongAgg.so_gio_tc)}
+                  </td>
+                  <td className="px-2 py-2 align-top text-right tabular-nums font-bold text-primary text-base bg-primary/[0.08] dark:bg-primary/15">
+                    {formatNumberVN(tongGioTichPhieu)}
                   </td>
                   <td className="px-3 py-2 align-top text-muted-foreground text-xs">—</td>
                 </tr>

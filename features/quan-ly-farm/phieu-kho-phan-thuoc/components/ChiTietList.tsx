@@ -241,7 +241,7 @@ const ChiTietList: React.FC<Props> = ({
               {visibleColumns.map((col) => (
                 <th
                   key={col.id}
-                  className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap cursor-pointer hover:bg-muted/80"
+                  className="px-4 py-2.5 text-left text-xs font-semibold text-foreground/80 border-b border-border whitespace-nowrap cursor-pointer hover:bg-muted/80"
                   style={getColumnCellStyle(col)}
                   onClick={() => setSort(col.id, sort.column === col.id && sort.direction === 'asc' ? 'desc' : 'asc')}
                 >

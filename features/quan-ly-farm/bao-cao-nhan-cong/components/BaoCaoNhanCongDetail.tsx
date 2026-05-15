@@ -1,11 +1,25 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Copy, Edit, Lock, Trash2, Unlock, Users } from 'lucide-react';
+import { Copy, Edit, Lock, Trash2, Unlock, Users, Images } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import type { FarmBaoCaoNhanCong } from '../core/types';
 import type { LoaiChuyen } from '../core/types';
-import { chuyenTtLabelByThuTu, sumSlCongNgay, normalizeChiTietForDisplay, sumChiTietNumericPart } from '../core/types';
-import { formatDateShort, formatDateTimeShort, formatNumberVN } from '../../../../lib/utils';
+import {
+  chuyenTtLabelByThuTu,
+  sumSlCongNgay,
+  sumSlCongNua,
+  sumSlTangCa,
+  sumSoGioTc,
+  sumTongCongQuyDoiPhieu,
+  sumTongCongQuyDoiTuChiTiet,
+  sumTongGioTangCaTichPhieu,
+  sumTongGioTangCaTichTuChiTiet,
+  tongCongQuyDoiNgayVaNua,
+  tongGioTangCaTichMotDong,
+  normalizeChiTietForDisplay,
+  sumChiTietNumericPart,
+} from '../core/types';
+import { cn, formatDateShort, formatDateTimeShort, formatNumberVN } from '../../../../lib/utils';
 import GenericDrawer, { DRAWER_WIDTH_BAO_CAO_NHAN_CONG } from '../../../../components/shared/GenericDrawer';
 import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';
@@ -87,6 +101,10 @@ const BaoCaoNhanCongDetail: React.FC<Props> = ({
   const { production, vRow } = normalizeChiTietForDisplay(data.chi_tiet ?? []);
   const ivAgg = sumChiTietNumericPart(production);
   const tongAgg = sumChiTietNumericPart([ivAgg, vRow]);
+  const ivQuyDoi = sumTongCongQuyDoiTuChiTiet(production);
+  const vQuyDoi = tongCongQuyDoiNgayVaNua(vRow);
+  const tongQuyDoiPhieu = sumTongCongQuyDoiPhieu(data);
+  const ivGioTich = sumTongGioTangCaTichTuChiTiet(production);
 
   const toolbarActions: DetailToolbarAction[] = [];
   if (canCopyNextDay) {
@@ -166,13 +184,35 @@ const BaoCaoNhanCongDetail: React.FC<Props> = ({
             <DetailField
               label={t('baoCaoNhanCong.store.colTrangThai')}
               value={
-                data.trang_thai === TRANG_THAI_BAO_CAO_NHAN_CONG.KHOA
-                  ? t('baoCaoNhanCong.trangThai.khoa')
-                  : t('baoCaoNhanCong.trangThai.mo')
+                <span
+                  className={cn(
+                    'inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium tabular-nums',
+                    data.trang_thai === TRANG_THAI_BAO_CAO_NHAN_CONG.KHOA
+                      ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-100'
+                      : 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-100'
+                  )}
+                >
+                  {data.trang_thai === TRANG_THAI_BAO_CAO_NHAN_CONG.KHOA
+                    ? t('baoCaoNhanCong.trangThai.khoa')
+                    : t('baoCaoNhanCong.trangThai.mo')}
+                </span>
               }
             />
             <DetailField label={t('baoCaoNhanCong.store.colTongCongNgay')} value={formatNumberVN(sumSlCongNgay(data))} />
+            <DetailField label={t('baoCaoNhanCong.store.colTongCongNua')} value={formatNumberVN(sumSlCongNua(data))} />
+            <DetailField
+              label={t('baoCaoNhanCong.store.colTongCongQuyDoi')}
+              value={<span className="font-bold tabular-nums text-primary">{formatNumberVN(sumTongCongQuyDoiPhieu(data))}</span>}
+            />
+            <DetailField label={t('baoCaoNhanCong.store.colTongTangCa')} value={formatNumberVN(sumSlTangCa(data))} />
+            <DetailField label={t('baoCaoNhanCong.store.colGioTangCa')} value={formatNumberVN(sumSoGioTc(data))} />
+            <DetailField
+              label={t('baoCaoNhanCong.store.colTongGioTangCa')}
+              value={<span className="font-bold tabular-nums text-primary">{formatNumberVN(sumTongGioTangCaTichPhieu(data))}</span>}
+            />
             <DetailField label={t('baoCaoNhanCong.store.colNguoiTao')} value={data.ten_nguoi_tao ?? '—'} />
+            <DetailField label={t('baoCaoNhanCong.store.colTgTao')} value={formatDateTimeShort(data.tg_tao)} />
+            <DetailField label={t('baoCaoNhanCong.store.colUpdated')} value={formatDateTimeShort(data.tg_cap_nhat)} />
             <DetailField
               label={t('baoCaoNhanCong.form.ghiChuPhieu')}
               value={
@@ -185,22 +225,45 @@ const BaoCaoNhanCongDetail: React.FC<Props> = ({
               emptyText="—"
               className="sm:col-span-2"
             />
-            <DetailField label={t('baoCaoNhanCong.store.colUpdated')} value={formatDateTimeShort(data.tg_cap_nhat)} />
           </DetailFieldGrid>
         </DetailSection>
 
+        {(data.hinh_anh_urls?.length ?? 0) > 0 && (
+          <DetailSection title={t('baoCaoNhanCong.detail.sectionHinhAnh')} icon={<Images size={14} />} variant="primary">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+              {data.hinh_anh_urls.map((url) => (
+                <a
+                  key={url}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block rounded-lg overflow-hidden border border-border bg-muted/20 aspect-square hover:ring-2 hover:ring-primary/30 transition-shadow"
+                >
+                  <img src={url} alt="" className="w-full h-full object-cover" loading="lazy" />
+                </a>
+              ))}
+            </div>
+          </DetailSection>
+        )}
+
         <DetailSection title={t('baoCaoNhanCong.form.sectionChuyen')} variant="primary">
           <div className="overflow-x-auto rounded-lg border border-border">
-            <table className="w-full text-sm min-w-[72rem]">
+            <table className="w-full text-sm min-w-[86rem]">
               <thead>
                 <tr className="bg-muted/50 border-b border-border">
                   <th className="text-center px-2 py-2 font-medium w-14">{t('baoCaoNhanCong.form.colTt')}</th>
                   <th className="text-left px-3 py-2 font-medium min-w-[9rem]">{t('baoCaoNhanCong.form.colChuyen')}</th>
                   <th className="text-right px-2 py-2 font-medium">{t('baoCaoNhanCong.form.colSlNgay')}</th>
                   <th className="text-right px-2 py-2 font-medium">{t('baoCaoNhanCong.form.colSlNua')}</th>
+                  <th className="text-right px-2 py-2 font-semibold text-primary bg-primary/[0.08] dark:bg-primary/15">
+                    {t('baoCaoNhanCong.form.colTongCongQuyDoi')}
+                  </th>
                   <th className="text-right px-2 py-2 font-medium">{t('baoCaoNhanCong.form.colSlTangCa')}</th>
-                  <th className="text-right px-2 py-2 font-medium">{t('baoCaoNhanCong.form.colGioTc')}</th>
-                  <th className="text-left px-2 py-2 font-medium min-w-[22rem] w-[24rem]">{t('baoCaoNhanCong.form.colGhiChu')}</th>
+                  <th className="text-right px-2 py-2 font-medium">{t('baoCaoNhanCong.form.colGioTangCa')}</th>
+                  <th className="text-right px-2 py-2 font-semibold text-primary bg-primary/[0.08] dark:bg-primary/15">
+                    {t('baoCaoNhanCong.form.colTongGioTangCa')}
+                  </th>
+                  <th className="text-left px-2 py-2 font-medium min-w-[20rem] w-[22rem]">{t('baoCaoNhanCong.form.colGhiChu')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -212,10 +275,16 @@ const BaoCaoNhanCongDetail: React.FC<Props> = ({
                     <tr key={row.id || code} className="border-b border-border/80">
                       <td className="px-2 py-2 text-center font-medium text-muted-foreground tabular-nums">{tt}</td>
                       <td className="px-3 py-2 text-muted-foreground">{t(labelKey)}</td>
-                      <td className="px-2 py-2 text-right tabular-nums">{formatNumberVN(row.sl_cong_ngay)}</td>
-                      <td className="px-2 py-2 text-right tabular-nums">{formatNumberVN(row.sl_cong_nua)}</td>
-                      <td className="px-2 py-2 text-right tabular-nums">{formatNumberVN(row.sl_tang_ca)}</td>
-                      <td className="px-2 py-2 text-right tabular-nums">{formatNumberVN(row.so_gio_tc)}</td>
+                      <td className="px-2 py-2 text-right text-sm tabular-nums">{formatNumberVN(row.sl_cong_ngay)}</td>
+                      <td className="px-2 py-2 text-right text-sm tabular-nums">{formatNumberVN(row.sl_cong_nua)}</td>
+                      <td className="px-2 py-2 text-right text-sm tabular-nums bg-primary/[0.06] dark:bg-primary/10 font-bold text-primary">
+                        {formatNumberVN(tongCongQuyDoiNgayVaNua(row))}
+                      </td>
+                      <td className="px-2 py-2 text-right text-sm tabular-nums">{formatNumberVN(row.sl_tang_ca)}</td>
+                      <td className="px-2 py-2 text-right text-sm tabular-nums">{formatNumberVN(row.so_gio_tc)}</td>
+                      <td className="px-2 py-2 text-right text-sm tabular-nums bg-primary/[0.06] dark:bg-primary/10 font-bold text-primary">
+                        {formatNumberVN(tongGioTangCaTichMotDong(row))}
+                      </td>
                       <td className="px-2 py-2 text-muted-foreground min-w-[20rem] max-w-[32rem] align-top">
                         {row.ghi_chu?.trim() ? (
                           <div className="whitespace-pre-wrap text-sm leading-snug">{row.ghi_chu}</div>
@@ -229,10 +298,16 @@ const BaoCaoNhanCongDetail: React.FC<Props> = ({
                 <tr className="border-b border-border/80 bg-primary/10 dark:bg-primary/15">
                   <td className="px-2 py-2 text-center font-bold text-primary tabular-nums">IV</td>
                   <td className="px-3 py-2 font-bold text-primary">{t('baoCaoNhanCong.form.rowCongNhanDinhBien')}</td>
-                  <td className="px-2 py-2 text-right tabular-nums font-bold text-primary">{formatNumberVN(ivAgg.sl_cong_ngay)}</td>
-                  <td className="px-2 py-2 text-right tabular-nums font-bold text-primary">{formatNumberVN(ivAgg.sl_cong_nua)}</td>
-                  <td className="px-2 py-2 text-right tabular-nums font-bold text-primary">{formatNumberVN(ivAgg.sl_tang_ca)}</td>
-                  <td className="px-2 py-2 text-right tabular-nums font-bold text-primary">{formatNumberVN(ivAgg.so_gio_tc)}</td>
+                  <td className="px-2 py-2 text-right text-sm tabular-nums font-bold text-primary">{formatNumberVN(ivAgg.sl_cong_ngay)}</td>
+                  <td className="px-2 py-2 text-right text-sm tabular-nums font-bold text-primary">{formatNumberVN(ivAgg.sl_cong_nua)}</td>
+                  <td className="px-2 py-2 text-right text-sm tabular-nums font-bold text-primary bg-primary/[0.08] dark:bg-primary/15">
+                    {formatNumberVN(ivQuyDoi)}
+                  </td>
+                  <td className="px-2 py-2 text-right text-sm tabular-nums font-bold text-primary">{formatNumberVN(ivAgg.sl_tang_ca)}</td>
+                  <td className="px-2 py-2 text-right text-sm tabular-nums font-bold text-primary">{formatNumberVN(ivAgg.so_gio_tc)}</td>
+                  <td className="px-2 py-2 text-right text-sm tabular-nums font-bold text-primary bg-primary/[0.08] dark:bg-primary/15">
+                    {formatNumberVN(ivGioTich)}
+                  </td>
                   <td className="px-2 py-2 text-muted-foreground text-sm">—</td>
                 </tr>
                 <tr className="border-b border-border/80">
@@ -240,10 +315,16 @@ const BaoCaoNhanCongDetail: React.FC<Props> = ({
                   <td className="px-3 py-2 text-muted-foreground">
                     {t('baoCaoNhanCong.chuyen.CONG_DINH_BIEN_KHONG_SAN_XUAT')}
                   </td>
-                  <td className="px-2 py-2 text-right tabular-nums">{formatNumberVN(vRow.sl_cong_ngay)}</td>
-                  <td className="px-2 py-2 text-right tabular-nums">{formatNumberVN(vRow.sl_cong_nua)}</td>
-                  <td className="px-2 py-2 text-right tabular-nums">{formatNumberVN(vRow.sl_tang_ca)}</td>
-                  <td className="px-2 py-2 text-right tabular-nums">{formatNumberVN(vRow.so_gio_tc)}</td>
+                  <td className="px-2 py-2 text-right text-sm tabular-nums">{formatNumberVN(vRow.sl_cong_ngay)}</td>
+                  <td className="px-2 py-2 text-right text-sm tabular-nums">{formatNumberVN(vRow.sl_cong_nua)}</td>
+                  <td className="px-2 py-2 text-right text-sm tabular-nums bg-primary/[0.06] dark:bg-primary/10 font-bold text-primary">
+                    {formatNumberVN(vQuyDoi)}
+                  </td>
+                  <td className="px-2 py-2 text-right text-sm tabular-nums">{formatNumberVN(vRow.sl_tang_ca)}</td>
+                  <td className="px-2 py-2 text-right text-sm tabular-nums">{formatNumberVN(vRow.so_gio_tc)}</td>
+                  <td className="px-2 py-2 text-right text-sm tabular-nums bg-primary/[0.06] dark:bg-primary/10 font-bold text-primary">
+                    {formatNumberVN(tongGioTangCaTichMotDong(vRow))}
+                  </td>
                   <td className="px-2 py-2 text-muted-foreground min-w-[20rem] max-w-[32rem] align-top">
                     {vRow.ghi_chu?.trim() ? (
                       <div className="whitespace-pre-wrap text-sm leading-snug">{vRow.ghi_chu}</div>
@@ -256,17 +337,23 @@ const BaoCaoNhanCongDetail: React.FC<Props> = ({
                   <td className="px-2 py-2.5 text-left font-bold text-primary sm:pl-3 tracking-tight" colSpan={2}>
                     {t('baoCaoNhanCong.form.rowTongNgay')}
                   </td>
-                  <td className="px-2 py-2.5 text-right tabular-nums font-bold text-primary text-base">
+                  <td className="px-2 py-2.5 text-right text-sm tabular-nums font-bold text-primary text-base">
                     {formatNumberVN(tongAgg.sl_cong_ngay)}
                   </td>
-                  <td className="px-2 py-2.5 text-right tabular-nums font-bold text-primary text-base">
+                  <td className="px-2 py-2.5 text-right text-sm tabular-nums font-bold text-primary text-base">
                     {formatNumberVN(tongAgg.sl_cong_nua)}
                   </td>
-                  <td className="px-2 py-2.5 text-right tabular-nums font-bold text-primary text-base">
+                  <td className="px-2 py-2.5 text-right text-sm tabular-nums font-bold text-primary text-base bg-primary/[0.1] dark:bg-primary/20">
+                    {formatNumberVN(tongQuyDoiPhieu)}
+                  </td>
+                  <td className="px-2 py-2.5 text-right text-sm tabular-nums font-bold text-primary text-base">
                     {formatNumberVN(tongAgg.sl_tang_ca)}
                   </td>
-                  <td className="px-2 py-2.5 text-right tabular-nums font-bold text-primary text-base">
+                  <td className="px-2 py-2.5 text-right text-sm tabular-nums font-bold text-primary text-base">
                     {formatNumberVN(tongAgg.so_gio_tc)}
+                  </td>
+                  <td className="px-2 py-2.5 text-right text-sm tabular-nums font-bold text-primary text-base bg-primary/[0.1] dark:bg-primary/20">
+                    {formatNumberVN(sumTongGioTangCaTichPhieu(data))}
                   </td>
                   <td className="px-2 py-2 text-muted-foreground text-sm">—</td>
                 </tr>

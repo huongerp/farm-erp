@@ -88,11 +88,23 @@ export function buildDonDatHangBodyHTML(po: DonDatHang, chiTiet: DonDatHangChiTi
   const rowCell = TABLE_CELL(F);
   let tableHTML = '';
   if (chiTiet.length > 0) {
-    const headers = ['#', t('donDatHang.form.item') + ' (mã)', t('donDatHang.form.item') + ' (tên)', t('donDatHang.form.unit'), t('donDatHang.form.quantity'), t('donDatHang.form.unitPrice'), 'Thành tiền'];
+    const headers = [
+      '#',
+      t('donDatHang.form.item') + ' (mã)',
+      t('donDatHang.form.item') + ' (tên)',
+      t('donDatHang.form.unit'),
+      t('donDatHang.form.quantity'),
+      t('donDatHang.form.unitPrice'),
+      'Thành tiền',
+      t('donDatHang.chiTietTab.purposeOfUseCol'),
+      t('donDatHang.form.note'),
+    ];
+    const thAlign = (i: number) =>
+      i === 0 ? 'center' : i === 3 ? 'center' : i >= 4 && i <= 6 ? 'right' : 'left';
     const ths = headers
       .map(
         (h, i) =>
-          `<th style="padding:6px 8px;border:1px solid #ccc;font-family:${F};font-size:9pt;background:#3b82f6;color:#fff;text-align:${i >= 4 ? 'right' : i === 0 || i === 3 ? 'center' : 'left'}">${h}</th>`,
+          `<th style="padding:6px 8px;border:1px solid #ccc;font-family:${F};font-size:9pt;background:#3b82f6;color:#fff;text-align:${thAlign(i)}">${h}</th>`,
       )
       .join('');
     const rows = chiTiet
@@ -105,6 +117,8 @@ export function buildDonDatHangBodyHTML(po: DonDatHang, chiTiet: DonDatHangChiTi
 <td style="padding:4px 8px;border:1px solid #ccc;font-family:${F};font-size:9pt;text-align:right">${formatNumberVN(c.so_luong)}</td>
 <td style="padding:4px 8px;border:1px solid #ccc;font-family:${F};font-size:9pt;text-align:right">${c.don_gia != null ? formatNumberVN(c.don_gia) : '–'}</td>
 <td style="padding:4px 8px;border:1px solid #ccc;font-family:${F};font-size:9pt;text-align:right">${c.thanh_tien != null ? formatNumberVN(c.thanh_tien) : '–'}</td>
+<td style="padding:4px 8px;border:1px solid #ccc;font-family:${F};font-size:9pt">${safe(c.muc_dich_su_dung)}</td>
+<td style="padding:4px 8px;border:1px solid #ccc;font-family:${F};font-size:9pt">${safe(c.ghi_chu)}</td>
 </tr>`,
       )
       .join('');
@@ -154,7 +168,17 @@ function buildDonDatHangDocBody(po: DonDatHang, chiTiet: DonDatHangChiTiet[]): s
 
   let detailRows = '';
   if (chiTiet.length > 0) {
-    const headers = ['#', t('donDatHang.form.item') + ' (mã)', t('donDatHang.form.item') + ' (tên)', t('donDatHang.form.unit'), t('donDatHang.form.quantity'), t('donDatHang.form.unitPrice'), 'Thành tiền'];
+    const headers = [
+      '#',
+      t('donDatHang.form.item') + ' (mã)',
+      t('donDatHang.form.item') + ' (tên)',
+      t('donDatHang.form.unit'),
+      t('donDatHang.form.quantity'),
+      t('donDatHang.form.unitPrice'),
+      'Thành tiền',
+      t('donDatHang.chiTietTab.purposeOfUseCol'),
+      t('donDatHang.form.note'),
+    ];
     detailRows =
       '<tr style="background:#2563eb;color:#fff;font-weight:bold">' +
       headers.map((h) => `<td style="border:1px solid #999;padding:4px 6px">${h}</td>`).join('') +
@@ -170,6 +194,8 @@ function buildDonDatHangDocBody(po: DonDatHang, chiTiet: DonDatHangChiTiet[]): s
           formatNumberVN(c.so_luong),
           c.don_gia != null ? formatNumberVN(c.don_gia) : '–',
           c.thanh_tien != null ? formatNumberVN(c.thanh_tien) : '–',
+          safe(c.muc_dich_su_dung),
+          safe(c.ghi_chu),
         ]
           .map((v) => `<td style="border:1px solid #999;padding:4px 6px">${v}</td>`)
           .join('') +
@@ -323,7 +349,17 @@ export async function exportDonDatHangToXLSX(po: DonDatHang, chiTiet: DonDatHang
   const rows: (string | number)[][] = [...infoRows, []];
   if (chiTiet.length > 0) {
     rows.push(
-      ['#', t('donDatHang.form.item') + ' (mã)', t('donDatHang.form.item') + ' (tên)', t('donDatHang.form.unit'), t('donDatHang.form.quantity'), t('donDatHang.form.unitPrice'), 'Thành tiền']
+      [
+        '#',
+        t('donDatHang.form.item') + ' (mã)',
+        t('donDatHang.form.item') + ' (tên)',
+        t('donDatHang.form.unit'),
+        t('donDatHang.form.quantity'),
+        t('donDatHang.form.unitPrice'),
+        'Thành tiền',
+        t('donDatHang.chiTietTab.purposeOfUseCol'),
+        t('donDatHang.form.note'),
+      ]
     );
     chiTiet.forEach((c, idx) => {
       rows.push([
@@ -334,6 +370,8 @@ export async function exportDonDatHangToXLSX(po: DonDatHang, chiTiet: DonDatHang
         c.so_luong,
         c.don_gia != null ? c.don_gia : '–',
         c.thanh_tien != null ? c.thanh_tien : '–',
+        safe(c.muc_dich_su_dung),
+        safe(c.ghi_chu),
       ]);
     });
   }

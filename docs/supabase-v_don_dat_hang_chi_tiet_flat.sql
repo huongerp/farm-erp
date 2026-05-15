@@ -40,12 +40,13 @@ SELECT
   s.ref_ma_nguoi_dat,
   s.ref_ten_nguoi_duyet,
   s.ref_ma_nguoi_duyet,
-  ct.phan_loai
+  ct.phan_loai,
+  ct.muc_dich_su_dung
 FROM fp_mh_don_dat_hang_chi_tiet ct
 JOIN v_don_dat_hang_summary s ON s.id = ct.id_don_dat_hang
 LEFT JOIN fp_mh_danh_sach_hang_hoa hh ON hh.id = ct.id_hang_hoa;
 
-COMMENT ON VIEW v_don_dat_hang_chi_tiet_flat IS 'Chi tiết đơn đặt hàng phẳng (JOIN summary + mã HH)';
+COMMENT ON VIEW v_don_dat_hang_chi_tiet_flat IS 'Chi tiết đơn đặt hàng phẳng (JOIN summary + mã HH + phân loại + mục đích sử dụng)';
 
 ALTER VIEW v_don_dat_hang_chi_tiet_flat SET (security_invoker = true);
 

@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { Sprout, PackagePlus, Package, BookOpen, Users, Layers, PackageCheck, Boxes, Gauge } from 'lucide-react';
+import { Sprout, PackagePlus, Package, BookOpen, Users, Layers, Boxes, Gauge } from 'lucide-react';
 import type { ModuleItem } from '../components/dashboard/SubModuleCard';
 import type { ModuleGroup } from '../components/dashboard/ModuleDashboardLayout';
 
@@ -27,7 +27,6 @@ export const QUAN_LY_FARM_MODULE_SLUGS: string[] = [
   'thu-hoach',
   'bao-cao-nhan-cong',
   'bao-cao-so-che',
-  'bao-cao-thanh-pham',
   'du-bao-sl-dong-thung',
   'thuong-kpi',
   'phieu-kho-phan-thuoc',
@@ -83,13 +82,6 @@ export function getQuanLyFarmGroups(
           descKey: 'page.quanLyFarm.descs.baoCaoSoChe',
           icon: Layers,
           color: 'bg-sky-600',
-        }),
-        item({
-          slug: 'bao-cao-thanh-pham',
-          titleKey: 'page.quanLyFarm.modules.baoCaoThanhPham',
-          descKey: 'page.quanLyFarm.descs.baoCaoThanhPham',
-          icon: PackageCheck,
-          color: 'bg-indigo-600',
         }),
         item({
           slug: 'du-bao-sl-dong-thung',

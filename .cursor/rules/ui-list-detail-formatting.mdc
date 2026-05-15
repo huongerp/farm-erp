@@ -1,0 +1,16 @@
+---
+description: Đồng bộ định dạng hiển thị dữ liệu giữa list/table và màn chi tiết (drawer/modal)
+alwaysApply: true
+---
+
+# List view và Detail — định dạng thống nhất
+
+Khi một module có **danh sách (bảng / list)** và **chi tiết (drawer, trang detail, preview)** hiển thị cùng loại dữ liệu:
+
+1. **Cùng hàm format** từ `lib/utils.ts` (hoặc helper dùng chung trong feature): ví dụ `formatDateShort` cho ngày báo cáo, `formatDateTimeShort` cho mọi `timestamptz` (tạo / cập nhật), `formatNumberVN` cho số thập phân trong nghiệp vụ VN.
+2. **Cùng tập trường tổng hợp**: nếu list có cột tổng (tổng SL công ngày, nửa, tăng ca, giờ TC, …) thì phần **tổng quan** (hoặc bảng tương ứng) trên detail cũng phải hiển thị các giá trị đó với cùng cách tính và cùng nhãn i18n (`store.col*` hoặc key thống nhất).
+3. **Trạng thái / badge**: nếu list dùng badge (màu nền + chữ), detail không được chỉ hiển thị plain text — dùng cùng markup/class hoặc component tái sử dụng.
+4. **Số trong bảng**: dùng `tabular-nums` và cỡ chữ đồng bộ (ví dụ `text-sm` cho ô số) giữa list và bảng trong detail khi cùng một loại lưới dữ liệu.
+5. **i18n**: nhãn cột list (`*.store.col*`) và nhãn trên detail cho cùng một trường phải trỏ cùng key (tránh hai bản dịch khác nhau cho cùng một cột).
+
+Khi thêm cột mới trên list: kiểm tra detail (và ngược lại) trong cùng PR / cùng thay đổi.

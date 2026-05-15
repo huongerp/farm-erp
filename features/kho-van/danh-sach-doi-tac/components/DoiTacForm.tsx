@@ -29,6 +29,8 @@ interface Props {
   tagList: TagType[];
   /** Khi tạo mới: thứ tự mặc định (tự tăng từ max + 1 theo danh sách cùng tab). */
   defaultThuTu?: number;
+  /** Drawer chồng (vd. mở từ form phiếu kho). */
+  stackLevel?: number;
   onClose: () => void;
   /** Gọi khi user chọn "Thêm nhóm mới" trong dropdown; trả về nhóm vừa tạo hoặc null. Sau khi resolve, form sẽ chọn nhóm đó. */
   onRequestAddNhom?: () => Promise<NhomDoiTac | null>;
@@ -36,7 +38,7 @@ interface Props {
   onSuccessCreate?: (item: DoiTac) => void;
 }
 
-const DoiTacForm: React.FC<Props> = ({ initialData, loaiDoiTac, nhomList, tagList, defaultThuTu, onClose, onRequestAddNhom, onSuccessCreate }) => {
+const DoiTacForm: React.FC<Props> = ({ initialData, loaiDoiTac, nhomList, tagList, defaultThuTu, stackLevel = 0, onClose, onRequestAddNhom, onSuccessCreate }) => {
   const { t } = useTranslation();
   const isEdit = !!initialData;
   const createMutation = useCreateDoiTac(onClose);
@@ -142,6 +144,7 @@ const DoiTacForm: React.FC<Props> = ({ initialData, loaiDoiTac, nhomList, tagLis
       title={isEdit ? t('doiTac.form.editTitle') : t('doiTac.form.createTitle')}
       icon={<Users size={20} />}
       onClose={onClose}
+      stackLevel={stackLevel}
       footer={
         <FormDrawerFooter
           formId="doi-tac-form"
@@ -198,9 +201,12 @@ const DoiTacForm: React.FC<Props> = ({ initialData, loaiDoiTac, nhomList, tagLis
                     value={field.value ?? ''}
                     onChange={(v) => {
                       if (v === ADD_NHOM_OPTION_VALUE) {
-                        onRequestAddNhom?.().then((nhom) => {
-                          if (nhom) field.onChange(nhom.id);
-                        });
+                        const p = onRequestAddNhom?.();
+                        if (p) {
+                          p.then((nhom) => {
+                            if (nhom) field.onChange(nhom.id);
+                          });
+                        }
                         return;
                       }
                       field.onChange(v ?? '');

@@ -107,6 +107,8 @@ export interface FarmBaoCaoNhanCong {
   id_chi_nhanh: string | null;
   ten_chi_nhanh: string | null;
   ghi_chu: string | null;
+  /** URL ảnh Cloudinary (theo thứ tự) */
+  hinh_anh_urls: string[];
   id_nguoi_tao: string | null;
   ten_nguoi_tao: string | null;
   trang_thai: TrangThaiBaoCaoNhanCongPhieu;
@@ -129,4 +131,32 @@ export function sumSlTangCa(item: FarmBaoCaoNhanCong): number {
 
 export function sumSoGioTc(item: FarmBaoCaoNhanCong): number {
   return (item.chi_tiet ?? []).reduce((s, r) => s + Number(r.so_gio_tc ?? 0), 0);
+}
+
+/** Tổng giờ tăng ca theo dòng: SL tăng ca × giờ tăng ca (một dòng chuyền). */
+export function tongGioTangCaTichMotDong(row: Partial<ChiTietNumericFields>): number {
+  return numChiTiet(row.sl_tang_ca) * numChiTiet(row.so_gio_tc);
+}
+
+/** Cộng dồn theo từng dòng (không nhân tổng SL với tổng giờ). */
+export function sumTongGioTangCaTichTuChiTiet(rows: Partial<ChiTietNumericFields>[]): number {
+  return rows.reduce((s, r) => s + tongGioTangCaTichMotDong(r), 0);
+}
+
+export function sumTongGioTangCaTichPhieu(item: FarmBaoCaoNhanCong): number {
+  return sumTongGioTangCaTichTuChiTiet(item.chi_tiet ?? []);
+}
+
+/** 1 công ngày + ½ công nửa (nửa công ÷ 2), theo từng dòng chuyền. */
+export function tongCongQuyDoiNgayVaNua(row: Partial<ChiTietNumericFields>): number {
+  return numChiTiet(row.sl_cong_ngay) + numChiTiet(row.sl_cong_nua) / 2;
+}
+
+/** Cộng dồn quy đổi nhiều dòng (cộng theo từng dòng, không gộp tổng rồi chia 2). */
+export function sumTongCongQuyDoiTuChiTiet(rows: Partial<ChiTietNumericFields>[]): number {
+  return rows.reduce((s, r) => s + tongCongQuyDoiNgayVaNua(r), 0);
+}
+
+export function sumTongCongQuyDoiPhieu(item: FarmBaoCaoNhanCong): number {
+  return sumTongCongQuyDoiTuChiTiet(item.chi_tiet ?? []);
 }

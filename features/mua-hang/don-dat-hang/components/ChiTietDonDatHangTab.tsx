@@ -373,6 +373,17 @@ const ChiTietDonDatHangTab: React.FC = () => {
             </span>
           </td>
         );
+      case 'muc_dich_su_dung':
+        return (
+          <td
+            key={col.id}
+            className="px-4 py-3 text-sm text-muted-foreground max-w-xl truncate min-w-[10rem]"
+            style={getColumnCellStyle(col)}
+            title={row.muc_dich_su_dung ?? ''}
+          >
+            {row.muc_dich_su_dung?.trim() || '—'}
+          </td>
+        );
       case 'ma_hang':
         return (
           <td key={col.id} className="px-4 py-3 font-mono text-xs" style={getColumnCellStyle(col)}>
@@ -383,7 +394,7 @@ const ChiTietDonDatHangTab: React.FC = () => {
         );
       case 'ten_hang':
         return (
-          <td key={col.id} className="px-4 py-3 text-sm" style={getColumnCellStyle(col)}>
+          <td key={col.id} className="px-4 py-3 text-sm min-w-[12rem]" style={getColumnCellStyle(col)}>
             <span className="block truncate whitespace-nowrap" title={row.ten_hang ?? ''}>
               {row.ten_hang ?? '—'}
             </span>
@@ -433,7 +444,7 @@ const ChiTietDonDatHangTab: React.FC = () => {
         return (
           <td
             key={col.id}
-            className="px-4 py-3 text-xs text-muted-foreground max-w-[180px] truncate"
+            className="px-4 py-3 text-xs text-muted-foreground max-w-xl truncate min-w-[10rem]"
             style={getColumnCellStyle(col)}
             title={row.ghi_chu ?? ''}
           >
@@ -495,7 +506,7 @@ const ChiTietDonDatHangTab: React.FC = () => {
                     {visibleColumns.map((col) => (
                       <th
                         key={col.id}
-                        className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap cursor-pointer hover:bg-muted/80"
+                        className="px-4 py-2.5 text-left text-xs font-semibold text-foreground/80 border-b border-border whitespace-nowrap cursor-pointer hover:bg-muted/80"
                         style={getColumnCellStyle(col)}
                         onClick={() => setSort(col.id, sort.column === col.id && sort.direction === 'asc' ? 'desc' : 'asc')}
                       >

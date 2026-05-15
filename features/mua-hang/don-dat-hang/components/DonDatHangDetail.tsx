@@ -234,16 +234,17 @@ const DonDatHangDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
               <thead className="sticky top-0 z-[1] bg-muted border-b border-border">
                 <tr>
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap w-10">#</th>
-                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[120px]">{t('donDatHang.chiTietTab.categoryLevel1Col')}</th>
-                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[120px]">{t('donDatHang.chiTietTab.categoryLevel2Col')}</th>
-                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[120px]">{t('donDatHang.chiTietTab.classificationCol')}</th>
-                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[80px]">{t('donDatHang.form.item')} (mã)</th>
-                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[120px]">{t('donDatHang.form.item')} (tên)</th>
-                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap w-16">{t('donDatHang.form.unit')}</th>
-                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap w-20">{t('donDatHang.form.quantity')}</th>
-                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap w-24">{t('donDatHang.form.unitPrice')}</th>
-                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap w-28">Thành tiền</th>
-                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[140px]">{t('donDatHang.form.note')}</th>
+                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[140px]">{t('donDatHang.chiTietTab.categoryLevel1Col')}</th>
+                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[140px]">{t('donDatHang.chiTietTab.categoryLevel2Col')}</th>
+                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[150px]">{t('donDatHang.chiTietTab.classificationCol')}</th>
+                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[96px]">{t('donDatHang.form.item')} (mã)</th>
+                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[260px]">{t('donDatHang.form.item')} (tên)</th>
+                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[88px]">{t('donDatHang.form.unit')}</th>
+                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[100px]">{t('donDatHang.form.quantity')}</th>
+                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[104px]">{t('donDatHang.form.unitPrice')}</th>
+                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[116px]">Thành tiền</th>
+                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[200px]">{t('donDatHang.chiTietTab.purposeOfUseCol')}</th>
+                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[200px]">{t('donDatHang.form.note')}</th>
                 </tr>
               </thead>
               <tbody className="[&>tr>td]:border-b [&>tr>td]:border-border">
@@ -252,14 +253,17 @@ const DonDatHangDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
                     <td className="px-4 py-2.5 text-muted-foreground tabular-nums">{idx + 1}</td>
                     <td className="px-4 py-2.5 text-xs text-muted-foreground">{ct.ten_danh_muc_cap1 ?? '—'}</td>
                     <td className="px-4 py-2.5 text-xs text-muted-foreground">{ct.ten_danh_muc_cap2 ?? '—'}</td>
-                    <td className="px-4 py-2.5 text-xs text-muted-foreground">{ct.phan_loai ?? '—'}</td>
+                    <td className="px-4 py-2.5 text-xs text-muted-foreground max-w-[200px] truncate" title={ct.phan_loai ?? ''}>{ct.phan_loai ?? '—'}</td>
                     <td className="px-4 py-2.5 font-mono text-xs">{ct.ma_hang ?? '—'}</td>
-                    <td className="px-4 py-2.5 text-sm">{ct.ten_hang ?? '—'}</td>
+                    <td className="px-4 py-2.5 text-sm min-w-[12rem] max-w-md truncate" title={ct.ten_hang ?? ''}>{ct.ten_hang ?? '—'}</td>
                     <td className="px-4 py-2.5 text-xs text-muted-foreground">{ct.don_vi_tinh ?? '—'}</td>
-                    <td className="px-4 py-2.5 tabular-nums">{ct.so_luong}</td>
-                    <td className="px-4 py-2.5 tabular-nums text-right">{ct.don_gia != null ? ct.don_gia.toLocaleString() : '—'}</td>
-                    <td className="px-4 py-2.5 tabular-nums text-right font-medium">{ct.thanh_tien != null ? ct.thanh_tien.toLocaleString() : '—'}</td>
-                    <td className="px-4 py-2.5 text-xs text-muted-foreground">{ct.ghi_chu ?? '—'}</td>
+                    <td className="px-4 py-2.5 tabular-nums text-sm">{ct.so_luong}</td>
+                    <td className="px-4 py-2.5 tabular-nums text-right text-sm">{ct.don_gia != null ? ct.don_gia.toLocaleString() : '—'}</td>
+                    <td className="px-4 py-2.5 tabular-nums text-right font-medium text-sm">{ct.thanh_tien != null ? ct.thanh_tien.toLocaleString() : '—'}</td>
+                    <td className="px-4 py-2.5 text-xs text-muted-foreground max-w-xs truncate" title={ct.muc_dich_su_dung ?? ''}>
+                      {ct.muc_dich_su_dung?.trim() || '—'}
+                    </td>
+                    <td className="px-4 py-2.5 text-xs text-muted-foreground max-w-sm truncate" title={ct.ghi_chu ?? ''}>{ct.ghi_chu ?? '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -267,7 +271,7 @@ const DonDatHangDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
           )}
         </GenericSubTableSection>
 
-        <DetailSection title={t('donDatHang.detail.systemInfo')} icon={<Calendar size={14} />} variant="secondary">
+        <DetailSection title={t('donDatHang.detail.systemInfo')} icon={<Calendar size={14} />} variant="muted">
           <DetailFieldGrid>
             <DetailField label={t('donDatHang.detail.createdAt')} value={formatDateTimeShort(data.tg_tao)} icon={<Calendar size={12} />} />
             <DetailField label={t('donDatHang.detail.updatedAt')} value={formatDateTimeShort(data.tg_cap_nhat)} icon={<Calendar size={12} />} />

@@ -282,7 +282,7 @@ const DanhSachTab: React.FC = () => {
             paginatedData={paginatedExportData}
             selectedData={selectedExportData}
             fileName={exportFileNameDonDatHangList()}
-            visibleColumnKeys={DON_DAT_HANG_LIST_EXPORT_KEYS}
+            visibleColumnKeys={[...DON_DAT_HANG_LIST_EXPORT_KEYS]}
             sheetName={LIST_EXPORT_SHEET_NAME}
           />
         )}

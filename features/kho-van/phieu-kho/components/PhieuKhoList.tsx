@@ -111,7 +111,14 @@ const PhieuKhoList: React.FC<Props> = ({
       case 'ten_nha_cung_cap':
         return <span className="text-sm text-muted-foreground">{item.ten_nha_cung_cap ?? '—'}</span>;
       case 'so_po_don_dat_hang':
-        return <span className="text-sm text-muted-foreground font-mono">{item.so_po_don_dat_hang ?? '—'}</span>;
+        return (
+          <span
+            className="text-sm text-muted-foreground font-mono whitespace-nowrap"
+            title={item.so_po_don_dat_hang ?? undefined}
+          >
+            {item.so_po_don_dat_hang ?? '—'}
+          </span>
+        );
       case 'ten_khach_hang':
         return <span className="text-sm text-muted-foreground">{item.ten_khach_hang ?? '—'}</span>;
       case 'ten_nguoi_tao':

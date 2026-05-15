@@ -75,6 +75,7 @@ interface ChiTietDbRow {
   id_don_dat_hang: number;
   id_hang_hoa: number;
   phan_loai: string | null;
+  muc_dich_su_dung?: string | null;
   so_luong: number;
   don_vi_tinh: string | null;
   don_gia: number | null;
@@ -151,6 +152,7 @@ function rowToChiTiet(row: ChiTietDbRow, idDonStr: string, enrich?: HangHoaLineE
     ten_danh_muc_cap1: enrich?.ten_danh_muc_cap1,
     ten_danh_muc_cap2: enrich?.ten_danh_muc_cap2,
     phan_loai: row.phan_loai ?? null,
+    muc_dich_su_dung: row.muc_dich_su_dung?.trim() ? row.muc_dich_su_dung.trim() : null,
     ma_hang: enrich?.ma_hang,
     ten_hang: enrich?.ten_hang,
   };
@@ -270,6 +272,7 @@ function applyChiTietDonDatHangFlatListQuery(q: any, query: DonDatHangListServer
       `ten_hang.ilike.${pat}`,
       `chi_tiet_ghi_chu.ilike.${pat}`,
       `phan_loai.ilike.${pat}`,
+      `muc_dich_su_dung.ilike.${pat}`,
       `don_vi_tinh.ilike.${pat}`,
       `trang_thai.ilike.${pat}`,
       `so_phieu_de_xuat_ref.ilike.${pat}`,
@@ -303,6 +306,7 @@ interface DonDatHangChiTietFlatViewRow {
   don_gia: number | string | null;
   thanh_tien: number | string | null;
   phan_loai: string | null;
+  muc_dich_su_dung?: string | null;
   chi_tiet_ghi_chu: string | null;
   ma_hang: string | null;
   ten_hang: string | null;
@@ -331,7 +335,7 @@ interface DonDatHangChiTietFlatViewRow {
 }
 
 const DON_DAT_HANG_CHI_TIET_FLAT_SELECT =
-  'chi_tiet_id,id,id_don_dat_hang,id_hang_hoa,so_luong,don_vi_tinh,don_gia,thanh_tien,phan_loai,chi_tiet_ghi_chu,ma_hang,ten_hang,so_po,ngay_dat,ngay_giao_dk,id_nha_cung_cap,ten_nha_cung_cap,id_kho_nhan,ten_kho_nhan,id_phieu_de_xuat_vat_tu,id_nguoi_dat,id_nguoi_duyet,ghi_chu,trang_thai,tg_tao,tg_cap_nhat,so_phieu_de_xuat_ref,ref_ma_nha_cung_cap,ref_ten_nha_cung_cap,ref_ten_kho_nhan,ref_ten_nguoi_dat,ref_ma_nguoi_dat,ref_ten_nguoi_duyet,ref_ma_nguoi_duyet';
+  'chi_tiet_id,id,id_don_dat_hang,id_hang_hoa,so_luong,don_vi_tinh,don_gia,thanh_tien,phan_loai,muc_dich_su_dung,chi_tiet_ghi_chu,ma_hang,ten_hang,so_po,ngay_dat,ngay_giao_dk,id_nha_cung_cap,ten_nha_cung_cap,id_kho_nhan,ten_kho_nhan,id_phieu_de_xuat_vat_tu,id_nguoi_dat,id_nguoi_duyet,ghi_chu,trang_thai,tg_tao,tg_cap_nhat,so_phieu_de_xuat_ref,ref_ma_nha_cung_cap,ref_ten_nha_cung_cap,ref_ten_kho_nhan,ref_ten_nguoi_dat,ref_ma_nguoi_dat,ref_ten_nguoi_duyet,ref_ma_nguoi_duyet';
 
 function mapDonDatHangChiTietFlatViewRow(row: DonDatHangChiTietFlatViewRow, enrich?: HangHoaLineEnrich): ChiTietDonDatHangFlat {
   const so_phieu_de_xuat =
@@ -367,6 +371,7 @@ function mapDonDatHangChiTietFlatViewRow(row: DonDatHangChiTietFlatViewRow, enri
     ten_danh_muc_cap1: enrich?.ten_danh_muc_cap1,
     ten_danh_muc_cap2: enrich?.ten_danh_muc_cap2,
     phan_loai: row.phan_loai ?? null,
+    muc_dich_su_dung: row.muc_dich_su_dung?.trim() ? row.muc_dich_su_dung.trim() : null,
     ma_hang: row.ma_hang?.trim() ? row.ma_hang.trim() : (enrich?.ma_hang ?? enrich?.ma_hang_hoa ?? undefined),
     ten_hang: row.ten_hang ?? enrich?.ten_hang_hoa ?? enrich?.ten_hang ?? undefined,
     so_luong: Number(row.so_luong),
@@ -526,7 +531,7 @@ export async function getDonDatHangByIdSupabase(id: string): Promise<DonDatHang 
   const [ctRows, hangHoaList] = await Promise.all([
     supabase
       .from(TABLE_CHI_TIET)
-      .select('id, id_don_dat_hang, id_hang_hoa, phan_loai, so_luong, don_vi_tinh, don_gia, thanh_tien, ghi_chu')
+      .select('id, id_don_dat_hang, id_hang_hoa, phan_loai, muc_dich_su_dung, so_luong, don_vi_tinh, don_gia, thanh_tien, ghi_chu')
       .eq('id_don_dat_hang', idNum)
       .order('id', { ascending: true })
       .then((r) => r.data ?? []),
@@ -590,6 +595,7 @@ export async function createDonDatHangSupabase(data: DonDatHangFormValues): Prom
       id_don_dat_hang: idDon,
       id_hang_hoa: Number(c.id_hang_hoa),
       phan_loai: c.phan_loai?.trim() || null,
+      muc_dich_su_dung: c.muc_dich_su_dung?.trim() || null,
       so_luong: Number(c.so_luong),
       don_vi_tinh: hangHoaMap[c.id_hang_hoa.trim()] ?? null,
       don_gia: Number(c.don_gia ?? 0),
@@ -654,6 +660,7 @@ export async function updateDonDatHangSupabase(id: string, data: DonDatHangFormV
       id_don_dat_hang: idNum,
       id_hang_hoa: Number(c.id_hang_hoa),
       phan_loai: c.phan_loai?.trim() || null,
+      muc_dich_su_dung: c.muc_dich_su_dung?.trim() || null,
       so_luong: Number(c.so_luong),
       don_vi_tinh: hangHoaMap[c.id_hang_hoa.trim()] ?? null,
       don_gia: Number(c.don_gia ?? 0),

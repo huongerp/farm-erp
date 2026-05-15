@@ -45,6 +45,7 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
   const { t } = useTranslation();
   const { canCreate, canUpdate, canDelete, canApprove } = useModulePermissionFromContext();
   const { canCreate: canCreateHangHoa } = useModulePermission('kho-van/danh-sach-hang-hoa');
+  const { canUpdate: canUpdateDoiTac } = useModulePermission('kho-van/danh-sach-doi-tac');
   const confirm = useConfirmStore((s) => s.confirm);
   const searchTerm = usePhieuKhoStore((s) => s.searchTerm);
   const filters = usePhieuKhoStore((s) => s.filters);
@@ -65,6 +66,7 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
   const [showAddKho, setShowAddKho] = useState(false);
   const [showAddHangHoa, setShowAddHangHoa] = useState(false);
   const [showAddDoiTac, setShowAddDoiTac] = useState<'nha_cung_cap' | 'khach_hang' | null>(null);
+  const [editingDoiTacNested, setEditingDoiTacNested] = useState<DoiTac | null>(null);
   const [showExport, setShowExport] = useState(false);
   const [exportRows, setExportRows] = useState<PhieuKho[]>([]);
   const [exportLoading, setExportLoading] = useState(false);
@@ -174,6 +176,18 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
     }
     setShowExport(true);
   }, [totalCount, t]);
+
+  const openEditDoiTac = useCallback(
+    (id: string) => {
+      const d = doiTacListAll.find((x) => x.id === id);
+      if (!d) {
+        toast.error(t('phieuKho.form.partnerEditNotFound'));
+        return;
+      }
+      setEditingDoiTacNested(d);
+    },
+    [doiTacListAll, t]
+  );
 
   useEffect(() => {
     return () => resetState();
@@ -335,6 +349,8 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
                     })
                 : undefined
             }
+            onRequestEditNcc={loaiTab === 'nhap' && canUpdateDoiTac ? openEditDoiTac : undefined}
+            onRequestEditKh={loaiTab === 'xuat' && canUpdateDoiTac ? openEditDoiTac : undefined}
           />
         )}
       </AnimatePresence>
@@ -376,6 +392,7 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
       <AnimatePresence>
         {showAddDoiTac && (
           <DoiTacForm
+            stackLevel={1}
             initialData={null}
             loaiDoiTac={showAddDoiTac}
             nhomList={nhomList}
@@ -391,6 +408,19 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
               setShowAddDoiTac(null);
               addDoiTacResolveRef.current = null;
             }}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {editingDoiTacNested && (
+          <DoiTacForm
+            stackLevel={1}
+            initialData={editingDoiTacNested}
+            loaiDoiTac={editingDoiTacNested.loai_doi_tac}
+            nhomList={nhomList}
+            tagList={tagList}
+            onClose={() => setEditingDoiTacNested(null)}
           />
         )}
       </AnimatePresence>

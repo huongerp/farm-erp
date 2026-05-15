@@ -5,6 +5,7 @@ import { TRANG_THAI_DON_DAT_HANG } from './constants';
 export const donDatHangChiTietItemSchema = z.object({
   id_hang_hoa: z.string().min(1, i18n.t('donDatHang.validation.itemRequired')),
   phan_loai: z.string().optional().nullable(),
+  muc_dich_su_dung: z.string().optional().nullable(),
   so_luong: z.coerce.number().min(0.0001, i18n.t('donDatHang.validation.quantityMin')),
   don_gia: z.coerce.number().min(0).optional(),
   ghi_chu: z.string().optional(),
@@ -13,6 +14,7 @@ export const donDatHangChiTietItemSchema = z.object({
 export const donDatHangChiTietFormItemSchema = z.object({
   id_hang_hoa: z.string(),
   phan_loai: z.string().optional().nullable(),
+  muc_dich_su_dung: z.string().optional().nullable(),
   so_luong: z.coerce.number(),
   don_gia: z.coerce.number().optional(),
   ghi_chu: z.string().optional(),

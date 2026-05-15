@@ -40,6 +40,7 @@ interface ChiTietLineDrawerProps {
 const EMPTY_LINE: DonDatHangChiTietFormItem = {
   id_hang_hoa: '',
   phan_loai: null,
+  muc_dich_su_dung: null,
   so_luong: 0,
   don_gia: undefined,
   ghi_chu: '',
@@ -81,6 +82,7 @@ const ChiTietLineDrawer: React.FC<ChiTietLineDrawerProps> = ({
     onSave({
       id_hang_hoa: formValue.id_hang_hoa,
       phan_loai: formValue.phan_loai?.trim() || null,
+      muc_dich_su_dung: formValue.muc_dich_su_dung?.trim() || null,
       so_luong: soLuong,
       don_gia: formValue.don_gia != null ? Number(formValue.don_gia) : undefined,
       ghi_chu: formValue.ghi_chu?.trim() || undefined,
@@ -206,6 +208,15 @@ const ChiTietLineDrawer: React.FC<ChiTietLineDrawerProps> = ({
               readOnly
               placeholder="—"
             />
+            <div className="col-span-1 sm:col-span-2">
+              <Textarea
+                label={t('donDatHang.chiTietTab.purposeOfUseCol')}
+                value={formValue.muc_dich_su_dung ?? ''}
+                onChange={(e) => setFormValue((prev) => ({ ...prev, muc_dich_su_dung: e.target.value }))}
+                placeholder={t('donDatHang.form.purposeOfUsePlaceholder')}
+                rows={2}
+              />
+            </div>
             <div className="col-span-1 sm:col-span-2">
               <Textarea
                 label={t('donDatHang.form.note')}
@@ -367,6 +378,7 @@ const DonDatHangForm: React.FC<Props> = ({
       phieuForAutoFill.chi_tiet.map((ct) => ({
         id_hang_hoa: ct.id_hang_hoa,
         phan_loai: null,
+        muc_dich_su_dung: null,
         so_luong: ct.so_luong,
         don_gia: undefined,
         ghi_chu: '',
@@ -391,6 +403,7 @@ const DonDatHangForm: React.FC<Props> = ({
         chi_tiet: (initialData.chi_tiet ?? []).map((ct) => ({
           id_hang_hoa: ct.id_hang_hoa,
           phan_loai: ct.phan_loai ?? null,
+          muc_dich_su_dung: ct.muc_dich_su_dung ?? null,
           so_luong: ct.so_luong,
           don_gia: ct.don_gia,
           ghi_chu: ct.ghi_chu ?? '',
@@ -421,6 +434,7 @@ const DonDatHangForm: React.FC<Props> = ({
       chi_tiet: validChiTiet.map((c) => ({
         id_hang_hoa: c.id_hang_hoa.trim(),
         phan_loai: c.phan_loai?.trim() || null,
+        muc_dich_su_dung: c.muc_dich_su_dung?.trim() || null,
         so_luong: Number(c.so_luong),
         don_gia: c.don_gia,
         ghi_chu: c.ghi_chu?.trim() || undefined,
@@ -459,6 +473,7 @@ const DonDatHangForm: React.FC<Props> = ({
       ? {
           id_hang_hoa: chiTietValues[editingLineIndex]?.id_hang_hoa ?? '',
           phan_loai: chiTietValues[editingLineIndex]?.phan_loai ?? null,
+          muc_dich_su_dung: chiTietValues[editingLineIndex]?.muc_dich_su_dung ?? null,
           so_luong: Number(chiTietValues[editingLineIndex]?.so_luong) || 0,
           don_gia: chiTietValues[editingLineIndex]?.don_gia,
           ghi_chu: chiTietValues[editingLineIndex]?.ghi_chu ?? '',
@@ -619,23 +634,24 @@ const DonDatHangForm: React.FC<Props> = ({
           <thead className="sticky top-0 z-[1] bg-muted border-b border-border">
             <tr>
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap w-10">#</th>
-              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[120px]">{t('donDatHang.chiTietTab.categoryLevel1Col')}</th>
-              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[120px]">{t('donDatHang.chiTietTab.categoryLevel2Col')}</th>
-              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[140px]">{t('donDatHang.chiTietTab.classificationCol')}</th>
-              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[100px]">{t('donDatHang.chiTietTab.itemCodeCol')}</th>
-              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[180px]">{t('donDatHang.chiTietTab.itemNameCol')}</th>
-              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[110px]">{t('donDatHang.form.quantity')}</th>
-              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[100px]">{t('donDatHang.form.unitPrice')}</th>
-              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[110px]">{t('donDatHang.form.amount')}</th>
-              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[64px]">{t('donDatHang.form.unit')}</th>
-              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[160px]">{t('donDatHang.form.note')}</th>
+              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[140px]">{t('donDatHang.chiTietTab.categoryLevel1Col')}</th>
+              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[140px]">{t('donDatHang.chiTietTab.categoryLevel2Col')}</th>
+              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[150px]">{t('donDatHang.chiTietTab.classificationCol')}</th>
+              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[112px]">{t('donDatHang.chiTietTab.itemCodeCol')}</th>
+              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[260px]">{t('donDatHang.chiTietTab.itemNameCol')}</th>
+              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[112px]">{t('donDatHang.form.quantity')}</th>
+              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[104px]">{t('donDatHang.form.unitPrice')}</th>
+              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[116px]">{t('donDatHang.form.amount')}</th>
+              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[88px]">{t('donDatHang.form.unit')}</th>
+              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[200px]">{t('donDatHang.chiTietTab.purposeOfUseCol')}</th>
+              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[200px]">{t('donDatHang.form.note')}</th>
               <th className="sticky right-0 z-[2] px-4 py-2 font-semibold text-foreground/80 text-xs text-center min-w-[88px] bg-muted border-l border-border">{t('common.actions')}</th>
             </tr>
           </thead>
           <tbody className="[&>tr>td]:border-b [&>tr>td]:border-border">
             {fields.length === 0 ? (
               <tr>
-                <td colSpan={12} className="px-4 py-6 text-center text-muted-foreground text-xs">
+                <td colSpan={13} className="px-4 py-6 text-center text-muted-foreground text-xs">
                   {t('donDatHang.form.noItems')}
                 </td>
               </tr>
@@ -654,18 +670,21 @@ const DonDatHangForm: React.FC<Props> = ({
                     <td className="px-4 py-2.5 text-muted-foreground tabular-nums">{index + 1}</td>
                     <td className="px-4 py-2.5 text-xs text-muted-foreground">{h?.ten_danh_muc_cap1 ?? '—'}</td>
                     <td className="px-4 py-2.5 text-xs text-muted-foreground">{h?.ten_danh_muc_cap2 ?? '—'}</td>
-                    <td className="px-4 py-2.5 text-xs text-muted-foreground max-w-[160px] truncate" title={chiTietValues[index]?.phan_loai ?? ''}>
+                    <td className="px-4 py-2.5 text-xs text-muted-foreground max-w-[180px] truncate" title={chiTietValues[index]?.phan_loai ?? ''}>
                       {chiTietValues[index]?.phan_loai || '—'}
                     </td>
                     <td className="px-4 py-2.5 font-mono text-xs">{maHang}</td>
-                    <td className="px-4 py-2.5 text-sm">{tenHang}</td>
+                    <td className="px-4 py-2.5 text-sm min-w-[12rem] max-w-md truncate" title={tenHang}>{tenHang}</td>
                     <td className="px-4 py-2.5 text-xs tabular-nums">{formatNumberVN(soLuong)}</td>
                     <td className="px-4 py-2.5 text-xs text-muted-foreground tabular-nums">{formatNumberVN(donGia)}</td>
                     <td className="px-4 py-2.5 text-xs text-muted-foreground tabular-nums">
                       {formatNumberVN(thanhTien)}
                     </td>
                     <td className="px-4 py-2.5 text-xs text-muted-foreground">{donVi}</td>
-                    <td className="px-4 py-2.5 text-xs text-muted-foreground max-w-[180px] truncate" title={chiTietValues[index]?.ghi_chu ?? ''}>
+                    <td className="px-4 py-2.5 text-xs text-muted-foreground max-w-xs truncate" title={chiTietValues[index]?.muc_dich_su_dung ?? ''}>
+                      {chiTietValues[index]?.muc_dich_su_dung?.trim() || '—'}
+                    </td>
+                    <td className="px-4 py-2.5 text-xs text-muted-foreground max-w-sm truncate" title={chiTietValues[index]?.ghi_chu ?? ''}>
                       {chiTietValues[index]?.ghi_chu || '—'}
                     </td>
                     <td className="sticky right-0 z-[1] px-4 py-2.5 bg-card border-l border-border/50">

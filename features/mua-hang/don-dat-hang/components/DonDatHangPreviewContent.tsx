@@ -116,14 +116,16 @@ const DonDatHangPreviewContent: React.FC<Props> = ({ po }) => {
             <thead>
               <tr>
                 <th className="border border-gray-300 bg-primary text-white p-1.5 text-center text-[9pt] font-bold w-8">#</th>
-                <th className="border border-gray-300 bg-primary text-white p-1.5 text-left text-[9pt] font-bold min-w-[80px]">{t('donDatHang.chiTietTab.categoryLevel1Col')}</th>
-                <th className="border border-gray-300 bg-primary text-white p-1.5 text-left text-[9pt] font-bold min-w-[80px]">{t('donDatHang.chiTietTab.categoryLevel2Col')}</th>
+                <th className="border border-gray-300 bg-primary text-white p-1.5 text-left text-[9pt] font-bold min-w-[88px]">{t('donDatHang.chiTietTab.categoryLevel1Col')}</th>
+                <th className="border border-gray-300 bg-primary text-white p-1.5 text-left text-[9pt] font-bold min-w-[88px]">{t('donDatHang.chiTietTab.categoryLevel2Col')}</th>
                 <th className="border border-gray-300 bg-primary text-white p-1.5 text-left text-[9pt] font-bold min-w-[80px]">{t('donDatHang.form.item')} (mã)</th>
-                <th className="border border-gray-300 bg-primary text-white p-1.5 text-left text-[9pt] font-bold min-w-[120px]">{t('donDatHang.form.item')} (tên)</th>
+                <th className="border border-gray-300 bg-primary text-white p-1.5 text-left text-[9pt] font-bold min-w-[200px]">{t('donDatHang.form.item')} (tên)</th>
                 <th className="border border-gray-300 bg-primary text-white p-1.5 text-center text-[9pt] font-bold w-16">{t('donDatHang.form.unit')}</th>
                 <th className="border border-gray-300 bg-primary text-white p-1.5 text-right text-[9pt] font-bold w-20">{t('donDatHang.form.quantity')}</th>
                 <th className="border border-gray-300 bg-primary text-white p-1.5 text-right text-[9pt] font-bold w-24">{t('donDatHang.form.unitPrice')}</th>
                 <th className="border border-gray-300 bg-primary text-white p-1.5 text-right text-[9pt] font-bold w-28">Thành tiền</th>
+                <th className="border border-gray-300 bg-primary text-white p-1.5 text-left text-[9pt] font-bold min-w-[120px]">{t('donDatHang.chiTietTab.purposeOfUseCol')}</th>
+                <th className="border border-gray-300 bg-primary text-white p-1.5 text-left text-[9pt] font-bold min-w-[120px]">{t('donDatHang.form.note')}</th>
               </tr>
             </thead>
             <tbody>
@@ -133,11 +135,17 @@ const DonDatHangPreviewContent: React.FC<Props> = ({ po }) => {
                   <td className="border border-gray-300 p-1.5 text-gray-600">{ct.ten_danh_muc_cap1 ?? '—'}</td>
                   <td className="border border-gray-300 p-1.5 text-gray-600">{ct.ten_danh_muc_cap2 ?? '—'}</td>
                   <td className="border border-gray-300 p-1.5 font-mono text-xs">{ct.ma_hang ?? '—'}</td>
-                  <td className="border border-gray-300 p-1.5">{ct.ten_hang ?? '—'}</td>
+                  <td className="border border-gray-300 p-1.5 min-w-[10rem] max-w-[14rem] truncate" title={ct.ten_hang ?? ''}>{ct.ten_hang ?? '—'}</td>
                   <td className="border border-gray-300 p-1.5 text-center text-gray-600">{ct.don_vi_tinh ?? '—'}</td>
                   <td className="border border-gray-300 p-1.5 text-right tabular-nums">{ct.so_luong}</td>
                   <td className="border border-gray-300 p-1.5 text-right tabular-nums">{ct.don_gia != null ? ct.don_gia.toLocaleString() : '—'}</td>
                   <td className="border border-gray-300 p-1.5 text-right tabular-nums font-medium">{ct.thanh_tien != null ? ct.thanh_tien.toLocaleString() : '—'}</td>
+                  <td className="border border-gray-300 p-1.5 text-gray-600 text-xs max-w-[10rem] truncate" title={ct.muc_dich_su_dung ?? ''}>
+                    {ct.muc_dich_su_dung?.trim() || '—'}
+                  </td>
+                  <td className="border border-gray-300 p-1.5 text-gray-600 text-xs max-w-[10rem] truncate" title={ct.ghi_chu ?? ''}>
+                    {ct.ghi_chu?.trim() || '—'}
+                  </td>
                 </tr>
               ))}
             </tbody>

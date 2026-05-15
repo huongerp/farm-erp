@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useForm, Controller, SubmitHandler, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { FileText, Calendar, Warehouse, ArrowRightLeft, Package, Trash2, AlertTriangle, Truck, ShoppingCart } from 'lucide-react';
+import { FileText, Calendar, Warehouse, ArrowRightLeft, Package, Trash2, AlertTriangle, Truck, ShoppingCart, Edit } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
 import Textarea from '../../../../components/ui/Textarea';
 import Select from '../../../../components/ui/Select';
@@ -33,6 +33,10 @@ const ADD_NCC = '__add_ncc__';
 const ADD_KH = '__add_kh__';
 const ADD_HANG_HOA = '__add_hang_hoa__';
 
+/** Giống nút Sửa cột thao tác trong `PhieuKhoList`, thu nhỏ (p-1 + icon 12) cho cùng cỡ với `text-xs` tiêu đề cột. */
+const partnerFieldEditBtnClass =
+  'inline-flex items-center justify-center p-1 text-primary hover:bg-primary/10 rounded-md transition-all';
+
 interface Props {
   loai: LoaiPhieuKhoTab;
   khoList: Kho[];
@@ -46,6 +50,9 @@ interface Props {
   onRequestAddHangHoa?: () => Promise<HangHoa | null>;
   onRequestAddNcc?: () => Promise<import('../../danh-sach-doi-tac/core/types').DoiTac | null>;
   onRequestAddKh?: () => Promise<import('../../danh-sach-doi-tac/core/types').DoiTac | null>;
+  /** Mở form sửa đối tác đang chọn (NCC / KH). */
+  onRequestEditNcc?: (id: string) => void;
+  onRequestEditKh?: (id: string) => void;
 }
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -61,6 +68,8 @@ const PhieuKhoForm: React.FC<Props> = ({
   onRequestAddHangHoa,
   onRequestAddNcc,
   onRequestAddKh,
+  onRequestEditNcc,
+  onRequestEditKh,
 }) => {
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
@@ -91,6 +100,8 @@ const PhieuKhoForm: React.FC<Props> = ({
   });
 
   const khoIdWatch = watch('kho_id');
+  const idNhaCungCapWatch = watch('id_nha_cung_cap');
+  const idKhachHangWatch = watch('id_khach_hang');
 
   const khoOptions = useMemo(
     () => [
@@ -385,6 +396,23 @@ const PhieuKhoForm: React.FC<Props> = ({
                     searchable
                     dropdownInPortal
                     icon={<Truck size={12} />}
+                    labelEnd={
+                      onRequestEditNcc && idNhaCungCapWatch != null && idNhaCungCapWatch !== '' ? (
+                        <button
+                          type="button"
+                          className={partnerFieldEditBtnClass}
+                          title={t('phieuKho.form.editSelectedSupplier')}
+                          aria-label={t('phieuKho.form.editSelectedSupplier')}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            onRequestEditNcc(String(idNhaCungCapWatch));
+                          }}
+                        >
+                          <Edit size={12} className="shrink-0" aria-hidden />
+                        </button>
+                      ) : undefined
+                    }
                     error={errors.id_nha_cung_cap?.message}
                     renderOption={renderAddOption}
                   />
@@ -430,6 +458,23 @@ const PhieuKhoForm: React.FC<Props> = ({
                     searchable
                     dropdownInPortal
                     icon={<Truck size={12} />}
+                    labelEnd={
+                      onRequestEditKh && idKhachHangWatch != null && idKhachHangWatch !== '' ? (
+                        <button
+                          type="button"
+                          className={partnerFieldEditBtnClass}
+                          title={t('phieuKho.form.editSelectedCustomer')}
+                          aria-label={t('phieuKho.form.editSelectedCustomer')}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            onRequestEditKh(String(idKhachHangWatch));
+                          }}
+                        >
+                          <Edit size={12} className="shrink-0" aria-hidden />
+                        </button>
+                      ) : undefined
+                    }
                     error={errors.id_khach_hang?.message}
                     renderOption={renderAddOption}
                   />
