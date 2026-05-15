@@ -317,13 +317,13 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
                     </tr>
                   );
                 })}
-                <tr className="border-b border-border/80 bg-muted/30">
-                  <td className="px-2 py-2 text-center font-semibold text-muted-foreground tabular-nums align-top">IV</td>
-                  <td className="px-3 py-2 align-top font-medium text-muted-foreground">{t('baoCaoNhanCong.form.rowCongNhanDinhBien')}</td>
-                  <td className="px-2 py-1.5 align-top">{readOnlyNum(ivAgg.sl_cong_ngay)}</td>
-                  <td className="px-2 py-1.5 align-top">{readOnlyNum(ivAgg.sl_cong_nua)}</td>
-                  <td className="px-2 py-1.5 align-top">{readOnlyNum(ivAgg.sl_tang_ca)}</td>
-                  <td className="px-2 py-1.5 align-top">{readOnlyNum(ivAgg.so_gio_tc)}</td>
+                <tr className="border-b border-border/80 bg-primary/10 dark:bg-primary/15">
+                  <td className="px-2 py-2 text-center font-bold text-primary tabular-nums align-top">IV</td>
+                  <td className="px-3 py-2 align-top font-bold text-primary">{t('baoCaoNhanCong.form.rowCongNhanDinhBien')}</td>
+                  <td className="px-2 py-1.5 align-top text-right tabular-nums font-bold text-primary">{formatNumberVN(ivAgg.sl_cong_ngay)}</td>
+                  <td className="px-2 py-1.5 align-top text-right tabular-nums font-bold text-primary">{formatNumberVN(ivAgg.sl_cong_nua)}</td>
+                  <td className="px-2 py-1.5 align-top text-right tabular-nums font-bold text-primary">{formatNumberVN(ivAgg.sl_tang_ca)}</td>
+                  <td className="px-2 py-1.5 align-top text-right tabular-nums font-bold text-primary">{formatNumberVN(ivAgg.so_gio_tc)}</td>
                   <td className="px-3 py-2 align-top text-muted-foreground text-xs">—</td>
                 </tr>
                 <tr key={vCode} className="border-b border-border/80">
@@ -407,14 +407,22 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
                     />
                   </td>
                 </tr>
-                <tr className="border-b border-border/80 bg-muted/40 last:border-0">
-                  <td className="px-2 py-2 text-left font-semibold text-foreground align-top sm:pl-3" colSpan={2}>
+                <tr className="border-b border-border/80 bg-primary/15 dark:bg-primary/20 last:border-0">
+                  <td className="px-2 py-2.5 text-left font-bold text-primary align-top sm:pl-3 tracking-tight" colSpan={2}>
                     {t('baoCaoNhanCong.form.rowTongNgay')}
                   </td>
-                  <td className="px-2 py-1.5 align-top">{readOnlyNum(tongAgg.sl_cong_ngay)}</td>
-                  <td className="px-2 py-1.5 align-top">{readOnlyNum(tongAgg.sl_cong_nua)}</td>
-                  <td className="px-2 py-1.5 align-top">{readOnlyNum(tongAgg.sl_tang_ca)}</td>
-                  <td className="px-2 py-1.5 align-top">{readOnlyNum(tongAgg.so_gio_tc)}</td>
+                  <td className="px-2 py-2 align-top text-right tabular-nums font-bold text-primary text-base">
+                    {formatNumberVN(tongAgg.sl_cong_ngay)}
+                  </td>
+                  <td className="px-2 py-2 align-top text-right tabular-nums font-bold text-primary text-base">
+                    {formatNumberVN(tongAgg.sl_cong_nua)}
+                  </td>
+                  <td className="px-2 py-2 align-top text-right tabular-nums font-bold text-primary text-base">
+                    {formatNumberVN(tongAgg.sl_tang_ca)}
+                  </td>
+                  <td className="px-2 py-2 align-top text-right tabular-nums font-bold text-primary text-base">
+                    {formatNumberVN(tongAgg.so_gio_tc)}
+                  </td>
                   <td className="px-3 py-2 align-top text-muted-foreground text-xs">—</td>
                 </tr>
               </tbody>

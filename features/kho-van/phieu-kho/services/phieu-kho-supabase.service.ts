@@ -44,6 +44,22 @@ import type { ChiTietPhieuKhoListServerQuery, PhieuKhoListServerQuery } from './
 
 const TABLE_PHIEU = 'fp_mh_phieu_kho';
 const TABLE_CHI_TIET = 'fp_mh_phieu_kho_chi_tiet';
+/** Chi tiết đợt kiểm kê kho — cột id_phieu_kho_dieu_chinh trỏ tới phiếu điều chỉnh tồn. */
+const TABLE_DOT_KK_KHO_CHI_TIET = 'fp_mh_dot_kiem_ke_kho_chi_tiet';
+
+/** Trước khi xóa phiếu kho: gỡ 3 cột liên kết điều chỉnh tồn trên kiểm kê (trùng với trigger DB / reconcile đọc). */
+async function clearKiemKeKhoDieuChinhLinksByPhieuIds(phieuIds: number[]): Promise<void> {
+  if (phieuIds.length === 0) return;
+  const { error } = await supabase
+    .from(TABLE_DOT_KK_KHO_CHI_TIET)
+    .update({
+      id_phieu_kho_dieu_chinh: null,
+      so_luong_dieu_chinh: null,
+      tg_dieu_chinh_ton: null,
+    })
+    .in('id_phieu_kho_dieu_chinh', phieuIds);
+  if (error) throwSupabaseError(error);
+}
 
 const PHIEU_KHO_CHI_TIET_ROW_SELECT =
   'id, id_phieu_kho, id_hang_hoa, ten_hang_hoa, don_vi_tinh, so_luong, don_gia, thanh_tien, so_lot, ghi_chu, nguoi_tao_id, ten_nguoi_tao, tg_tao, tg_cap_nhat';
@@ -527,6 +543,7 @@ export async function updatePhieuKhoTrangThaiSupabase(
 export async function deletePhieuKhoSupabase(id: string): Promise<void> {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('phieuKho.service.notFound'));
+  await clearKiemKeKhoDieuChinhLinksByPhieuIds([idNum]);
   const { error } = await supabase.from(TABLE_PHIEU).delete().eq('id', idNum);
   if (error) throwSupabaseError(error);
 }
@@ -534,6 +551,7 @@ export async function deletePhieuKhoSupabase(id: string): Promise<void> {
 export async function deletePhieuKhoManySupabase(ids: string[]): Promise<void> {
   const numIds = ids.map((id) => Number(id)).filter((n) => !Number.isNaN(n));
   if (numIds.length === 0) return;
+  await clearKiemKeKhoDieuChinhLinksByPhieuIds(numIds);
   const { error } = await supabase.from(TABLE_PHIEU).delete().in('id', numIds);
   if (error) throwSupabaseError(error);
 }

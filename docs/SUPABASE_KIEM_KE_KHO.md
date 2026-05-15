@@ -40,6 +40,7 @@ Flow **Tạo danh sách kiểm kê** lấy tồn theo kho từ **view `fp_mh_ton
 Tồn kho trên hệ thống là **view `fp_mh_ton_kho`** (tổng hợp từ `fp_mh_phieu_kho` / `fp_mh_phieu_kho_chi_tiet`). Để **ghi nhận điều chỉnh thật**, app gọi RPC trên Supabase (transaction một lần):
 
 - **`docs/supabase-fp_mh_dot_kiem_ke_kho_dieu_chinh_ton.sql`** (chạy **sau** script đợt kiểm kê và script phiếu kho `docs/supabase-fp_mh_phieu_kho.sql` — cần `get_next_so_phieu`).
+- **`docs/supabase-fp_mh_dot_kiem_ke_kho_chi_tiet_clear_on_phieu_delete.sql`** (chạy **sau** file điều chỉnh tồn): dọn orphan, FK `ON DELETE SET NULL`, trigger **BEFORE DELETE** trên `fp_mh_phieu_kho` để khi xóa phiếu điều chỉnh thì chi tiết kiểm kê gỡ sạch 3 cột liên kết (UI cho điều chỉnh lại).
 
 Script này:
 

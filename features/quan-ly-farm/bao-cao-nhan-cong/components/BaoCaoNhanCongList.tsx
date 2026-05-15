@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Edit, Trash2 } from 'lucide-react';
-import { cn, formatDateShort, formatNumberVN } from '../../../../lib/utils';
+import { cn, formatDateShort, formatDateTimeShort, formatNumberVN } from '../../../../lib/utils';
 import type { FarmBaoCaoNhanCong } from '../core/types';
-import { sumSlCongNgay } from '../core/types';
+import { sumSlCongNgay, sumSlCongNua, sumSlTangCa, sumSoGioTc } from '../core/types';
 import GenericTable from '../../../../components/shared/GenericTable';
 import type { ColumnConfig } from '../../../../store/createGenericStore';
 
@@ -21,6 +21,9 @@ interface Props {
   onEdit?: (item: FarmBaoCaoNhanCong) => void;
   onDelete?: (id: string) => void;
   onView?: (item: FarmBaoCaoNhanCong) => void;
+  /** Khi trả về false, ẩn nút sửa trên dòng đó (vẫn có thể xem chi tiết). */
+  canEditRow?: (item: FarmBaoCaoNhanCong) => boolean;
+  canDeleteRow?: (item: FarmBaoCaoNhanCong) => boolean;
 }
 
 const BaoCaoNhanCongList: React.FC<Props> = ({
@@ -37,8 +40,13 @@ const BaoCaoNhanCongList: React.FC<Props> = ({
   onEdit,
   onDelete,
   onView,
+  canEditRow,
+  canDeleteRow,
 }) => {
   const { t } = useTranslation();
+
+  const allowEdit = (item: FarmBaoCaoNhanCong) => canEditRow?.(item) ?? true;
+  const allowDelete = (item: FarmBaoCaoNhanCong) => canDeleteRow?.(item) ?? true;
 
   const visibleColumns = useMemo(
     () => columns.filter((c) => c.visible).sort((a, b) => a.order - b.order),
@@ -51,8 +59,29 @@ const BaoCaoNhanCongList: React.FC<Props> = ({
         return <span className="text-sm font-medium tabular-nums">{formatDateShort(item.ngay)}</span>;
       case 'ten_chi_nhanh':
         return <span className="text-sm text-muted-foreground">{item.ten_chi_nhanh ?? '—'}</span>;
+      case 'trang_thai': {
+        const locked = item.trang_thai === 'khoa';
+        return (
+          <span
+            className={cn(
+              'inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium tabular-nums',
+              locked
+                ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-100'
+                : 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-100'
+            )}
+          >
+            {locked ? t('baoCaoNhanCong.trangThai.khoa') : t('baoCaoNhanCong.trangThai.mo')}
+          </span>
+        );
+      }
       case 'tong_cong_ngay':
         return <span className="text-sm tabular-nums">{formatNumberVN(sumSlCongNgay(item))}</span>;
+      case 'tong_cong_nua':
+        return <span className="text-sm tabular-nums">{formatNumberVN(sumSlCongNua(item))}</span>;
+      case 'tong_tang_ca':
+        return <span className="text-sm tabular-nums">{formatNumberVN(sumSlTangCa(item))}</span>;
+      case 'tong_gio_tc':
+        return <span className="text-sm tabular-nums">{formatNumberVN(sumSoGioTc(item))}</span>;
       case 'ghi_chu':
         return (
           <div
@@ -68,12 +97,22 @@ const BaoCaoNhanCongList: React.FC<Props> = ({
             {item.ten_nguoi_tao?.trim() ? item.ten_nguoi_tao : '—'}
           </span>
         );
+      case 'tg_tao':
+        return (
+          <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap" title={item.tg_tao}>
+            {formatDateTimeShort(item.tg_tao)}
+          </span>
+        );
       case 'tg_cap_nhat':
-        return <span className="text-xs text-muted-foreground">{formatDateShort(item.tg_cap_nhat)}</span>;
+        return (
+          <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap" title={item.tg_cap_nhat}>
+            {formatDateTimeShort(item.tg_cap_nhat)}
+          </span>
+        );
       case 'actions':
         return (
           <div className="flex items-center justify-end gap-0.5">
-            {onEdit && (
+            {onEdit && allowEdit(item) && (
               <button
                 type="button"
                 onClick={(e) => {
@@ -87,7 +126,7 @@ const BaoCaoNhanCongList: React.FC<Props> = ({
                 <Edit size={14} />
               </button>
             )}
-            {onDelete && (
+            {onDelete && allowDelete(item) && (
               <button
                 type="button"
                 onClick={(e) => {
@@ -122,7 +161,22 @@ const BaoCaoNhanCongList: React.FC<Props> = ({
       <div className="text-sm font-semibold tabular-nums mb-1">{formatDateShort(item.ngay)}</div>
       <div className="text-sm text-foreground mb-1">{item.ten_chi_nhanh ?? '—'}</div>
       <div className="text-xs text-muted-foreground mb-1">
+        {t('baoCaoNhanCong.store.colTrangThai')}:{' '}
+        {item.trang_thai === 'khoa' ? t('baoCaoNhanCong.trangThai.khoa') : t('baoCaoNhanCong.trangThai.mo')}
+      </div>
+      <div className="text-xs text-muted-foreground mb-1">
         {t('baoCaoNhanCong.store.colTongCongNgay')}: {formatNumberVN(sumSlCongNgay(item))}
+      </div>
+      <div className="text-xs text-muted-foreground mb-1">
+        {t('baoCaoNhanCong.store.colTongCongNua')}: {formatNumberVN(sumSlCongNua(item))} ·{' '}
+        {t('baoCaoNhanCong.store.colTongTangCa')}: {formatNumberVN(sumSlTangCa(item))} ·{' '}
+        {t('baoCaoNhanCong.store.colTongGioTc')}: {formatNumberVN(sumSoGioTc(item))}
+      </div>
+      <div className="text-xs text-muted-foreground mb-1">
+        {t('baoCaoNhanCong.store.colTgTao')}: {formatDateTimeShort(item.tg_tao)}
+      </div>
+      <div className="text-xs text-muted-foreground mb-1">
+        {t('baoCaoNhanCong.store.colUpdated')}: {formatDateTimeShort(item.tg_cap_nhat)}
       </div>
       {(item.ten_nguoi_tao?.trim() ?? '') !== '' && (
         <div className="text-xs text-muted-foreground mb-1">
@@ -130,7 +184,7 @@ const BaoCaoNhanCongList: React.FC<Props> = ({
         </div>
       )}
       <div className="flex justify-end gap-1 pt-2 border-t border-border mt-2">
-        {onEdit && (
+        {onEdit && allowEdit(item) && (
           <button
             type="button"
             onClick={(e) => {
@@ -143,7 +197,7 @@ const BaoCaoNhanCongList: React.FC<Props> = ({
             <Edit size={14} />
           </button>
         )}
-        {onDelete && (
+        {onDelete && allowDelete(item) && (
           <button
             type="button"
             onClick={(e) => {

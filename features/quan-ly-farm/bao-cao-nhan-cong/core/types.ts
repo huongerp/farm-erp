@@ -92,6 +92,14 @@ export function normalizeChiTietForDisplay(ct: FarmBaoCaoNhanCongCt[]): {
   return { production, vRow };
 }
 
+/** `mo` = đang mở, `khoa` = đã khóa (chỉ quản trị sửa/xóa). */
+export type TrangThaiBaoCaoNhanCongPhieu = 'mo' | 'khoa';
+
+export const TRANG_THAI_BAO_CAO_NHAN_CONG = {
+  MO: 'mo' as const,
+  KHOA: 'khoa' as const,
+} as const;
+
 export interface FarmBaoCaoNhanCong {
   id: string;
   /** ISO date yyyy-mm-dd */
@@ -101,6 +109,7 @@ export interface FarmBaoCaoNhanCong {
   ghi_chu: string | null;
   id_nguoi_tao: string | null;
   ten_nguoi_tao: string | null;
+  trang_thai: TrangThaiBaoCaoNhanCongPhieu;
   tg_tao: string;
   tg_cap_nhat: string;
   chi_tiet: FarmBaoCaoNhanCongCt[];
@@ -108,4 +117,16 @@ export interface FarmBaoCaoNhanCong {
 
 export function sumSlCongNgay(item: FarmBaoCaoNhanCong): number {
   return (item.chi_tiet ?? []).reduce((s, r) => s + Number(r.sl_cong_ngay ?? 0), 0);
+}
+
+export function sumSlCongNua(item: FarmBaoCaoNhanCong): number {
+  return (item.chi_tiet ?? []).reduce((s, r) => s + Number(r.sl_cong_nua ?? 0), 0);
+}
+
+export function sumSlTangCa(item: FarmBaoCaoNhanCong): number {
+  return (item.chi_tiet ?? []).reduce((s, r) => s + Number(r.sl_tang_ca ?? 0), 0);
+}
+
+export function sumSoGioTc(item: FarmBaoCaoNhanCong): number {
+  return (item.chi_tiet ?? []).reduce((s, r) => s + Number(r.so_gio_tc ?? 0), 0);
 }

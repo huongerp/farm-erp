@@ -3,14 +3,15 @@
  */
 import { supabase, throwSupabaseError, formatSupabaseError } from '../../../../lib/supabase';
 import i18n from '../../../../lib/i18n';
-import type { FarmBaoCaoNhanCong, FarmBaoCaoNhanCongCt } from '../core/types';
+import type { FarmBaoCaoNhanCong, FarmBaoCaoNhanCongCt, TrangThaiBaoCaoNhanCongPhieu } from '../core/types';
+import { TRANG_THAI_BAO_CAO_NHAN_CONG } from '../core/types';
 import type { BaoCaoNhanCongFormValues } from '../core/schema';
 
 const TABLE_CHA = 'fp_farm_bao_cao_nhan_cong';
 const TABLE_CT = 'fp_farm_bao_cao_nhan_cong_ct';
 
 const ROW_CHA =
-  'id,ngay,id_chi_nhanh,ten_chi_nhanh,ghi_chu,id_nguoi_tao,tg_tao,tg_cap_nhat';
+  'id,ngay,id_chi_nhanh,ten_chi_nhanh,ghi_chu,id_nguoi_tao,trang_thai,tg_tao,tg_cap_nhat';
 
 const ROW_CT =
   'id,id_bao_cao,loai_chuyen,sl_cong_ngay,sl_cong_nua,sl_tang_ca,so_gio_tc,ghi_chu,thu_tu';
@@ -49,6 +50,7 @@ interface DbRowCha {
   ten_chi_nhanh: string | null;
   ghi_chu: string | null;
   id_nguoi_tao: number | null;
+  trang_thai: string | null;
   tg_tao: string | null;
   tg_cap_nhat: string | null;
 }
@@ -79,6 +81,10 @@ function ctRowToModel(row: DbRowCt): FarmBaoCaoNhanCongCt {
   };
 }
 
+function normalizeTrangThaiDb(v: string | null | undefined): TrangThaiBaoCaoNhanCongPhieu {
+  return v === TRANG_THAI_BAO_CAO_NHAN_CONG.KHOA ? TRANG_THAI_BAO_CAO_NHAN_CONG.KHOA : TRANG_THAI_BAO_CAO_NHAN_CONG.MO;
+}
+
 function chaRowToModel(row: DbRowCha, chi: FarmBaoCaoNhanCongCt[]): FarmBaoCaoNhanCong {
   return {
     id: String(row.id),
@@ -88,6 +94,7 @@ function chaRowToModel(row: DbRowCha, chi: FarmBaoCaoNhanCongCt[]): FarmBaoCaoNh
     ghi_chu: row.ghi_chu ?? null,
     id_nguoi_tao: row.id_nguoi_tao != null ? String(row.id_nguoi_tao) : null,
     ten_nguoi_tao: null,
+    trang_thai: normalizeTrangThaiDb(row.trang_thai),
     tg_tao: row.tg_tao ?? new Date().toISOString(),
     tg_cap_nhat: row.tg_cap_nhat ?? new Date().toISOString(),
     chi_tiet: chi.sort((a, b) => a.thu_tu - b.thu_tu),
@@ -139,6 +146,7 @@ function chaPayloadCreate(values: BaoCaoNhanCongFormValues, idNguoiTao: string |
     ten_chi_nhanh: values.ten_chi_nhanh?.trim() || null,
     ghi_chu: values.ghi_chu?.trim() || null,
     id_nguoi_tao: parseIdToInt8(idNguoiTao),
+    trang_thai: TRANG_THAI_BAO_CAO_NHAN_CONG.MO,
     tg_cap_nhat: new Date().toISOString(),
   };
 }
@@ -214,4 +222,19 @@ export async function deleteBaoCaoNhanCongManySupabase(ids: string[]): Promise<v
   if (numIds.length === 0) return;
   const { error } = await supabase.from(TABLE_CHA).delete().in('id', numIds);
   if (error) throwSupabaseError(error, { resource: `${TABLE_CHA}.deleteMany` });
+}
+
+export async function updateBaoCaoNhanCongTrangThaiSupabase(
+  id: string,
+  trang_thai: TrangThaiBaoCaoNhanCongPhieu
+): Promise<FarmBaoCaoNhanCong> {
+  const numId = Number(id);
+  if (!Number.isFinite(numId)) throw new Error('Invalid id');
+  const next = trang_thai === TRANG_THAI_BAO_CAO_NHAN_CONG.KHOA ? TRANG_THAI_BAO_CAO_NHAN_CONG.KHOA : TRANG_THAI_BAO_CAO_NHAN_CONG.MO;
+  const { error } = await supabase
+    .from(TABLE_CHA)
+    .update({ trang_thai: next, tg_cap_nhat: new Date().toISOString() })
+    .eq('id', numId);
+  if (error) throwSupabaseError(error, { resource: `${TABLE_CHA}.updateTrangThai` });
+  return (await getBaoCaoNhanCongByIdSupabase(id))!;
 }

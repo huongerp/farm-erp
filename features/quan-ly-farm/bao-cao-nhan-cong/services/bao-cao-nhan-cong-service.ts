@@ -1,5 +1,5 @@
 import type { BaoCaoNhanCongFormValues } from '../core/schema';
-import type { FarmBaoCaoNhanCong } from '../core/types';
+import type { FarmBaoCaoNhanCong, TrangThaiBaoCaoNhanCongPhieu } from '../core/types';
 import { getEmployeesRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
 import {
   getAllBaoCaoNhanCongSupabase,
@@ -8,6 +8,7 @@ import {
   updateBaoCaoNhanCongSupabase,
   deleteBaoCaoNhanCongSupabase,
   deleteBaoCaoNhanCongManySupabase,
+  updateBaoCaoNhanCongTrangThaiSupabase,
 } from './bao-cao-nhan-cong-supabase.service';
 
 async function enrichTenNguoiTao(items: FarmBaoCaoNhanCong[]): Promise<FarmBaoCaoNhanCong[]> {
@@ -59,4 +60,13 @@ export async function deleteBaoCaoNhanCong(id: string): Promise<void> {
 
 export async function deleteBaoCaoNhanCongMany(ids: string[]): Promise<void> {
   await deleteBaoCaoNhanCongManySupabase(ids);
+}
+
+export async function updateBaoCaoNhanCongTrangThai(
+  id: string,
+  trang_thai: TrangThaiBaoCaoNhanCongPhieu
+): Promise<FarmBaoCaoNhanCong> {
+  const row = await updateBaoCaoNhanCongTrangThaiSupabase(id, trang_thai);
+  const [enriched] = await enrichTenNguoiTao([row]);
+  return enriched;
 }

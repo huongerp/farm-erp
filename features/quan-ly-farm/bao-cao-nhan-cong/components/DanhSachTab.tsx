@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { AnimatePresence } from 'framer-motion';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import {
@@ -15,6 +16,11 @@ import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
 import type { FarmBaoCaoNhanCong } from '../core/types';
 import { getPreferredBranchFromUserLastRecords } from '../core/form-mappers';
+import {
+  canCopyBaoCaoNhanCongToNextDay,
+  canMutateBaoCaoNhanCong,
+  canToggleTrangThaiBaoCaoNhanCong,
+} from '../core/permissions';
 import { useAuthStore } from '../../../../store/useStore';
 import BaoCaoNhanCongToolbar from './BaoCaoNhanCongToolbar';
 import BaoCaoNhanCongList from './BaoCaoNhanCongList';
@@ -95,7 +101,20 @@ const DanhSachTab: React.FC = () => {
     if (!fresh) setViewingItem(null);
   }, [allList, viewingItem]);
 
+  const canEditRow = useCallback(
+    (item: FarmBaoCaoNhanCong) => canMutateBaoCaoNhanCong(user, item, canUpdate),
+    [user, canUpdate]
+  );
+  const canDeleteRow = useCallback(
+    (item: FarmBaoCaoNhanCong) => canMutateBaoCaoNhanCong(user, item, canDelete),
+    [user, canDelete]
+  );
+
   const handleEdit = (item: FarmBaoCaoNhanCong) => {
+    if (!canEditRow(item)) {
+      toast.message(t('baoCaoNhanCong.toast.editNotAllowed'));
+      return;
+    }
     setEditingItem(item);
     setViewingItem(null);
     setShowForm(true);
@@ -107,6 +126,11 @@ const DanhSachTab: React.FC = () => {
   };
 
   const handleDelete = (id: string) => {
+    const item = allList.find((r) => r.id === id);
+    if (!item || !canDeleteRow(item)) {
+      toast.message(t('baoCaoNhanCong.toast.deleteNotAllowed'));
+      return;
+    }
     confirm({
       title: t('baoCaoNhanCong.deleteTitle'),
       message: t('baoCaoNhanCong.deleteMessage'),
@@ -124,18 +148,53 @@ const DanhSachTab: React.FC = () => {
 
   const handleDeleteMany = () => {
     const ids = Array.from(selectedIds);
+    const allowedIds = ids.filter((id) => {
+      const item = allList.find((r) => r.id === id);
+      return item && canDeleteRow(item);
+    });
+    if (allowedIds.length === 0) {
+      toast.message(t('baoCaoNhanCong.toast.deleteManyNoneAllowed'));
+      return;
+    }
+    const skippedCount = ids.length - allowedIds.length;
     confirm({
       title: t('baoCaoNhanCong.deleteTitle'),
-      message: t('common.deleteManyConfirm', { count: ids.length }),
+      message: t('common.deleteManyConfirm', { count: allowedIds.length }),
       variant: 'danger',
       confirmText: CONFIRM_DELETE_ALL(),
       onConfirm: async () => {
-        await deleteManyMutation.mutateAsync(ids);
+        await deleteManyMutation.mutateAsync(allowedIds);
+        if (skippedCount > 0) {
+          toast.message(t('baoCaoNhanCong.toast.deleteManyPartial'));
+        }
         clearSelection();
-        if (viewingItem && ids.includes(viewingItem.id)) setViewingItem(null);
+        if (viewingItem && allowedIds.includes(viewingItem.id)) setViewingItem(null);
       },
     });
   };
+
+  const canBulkDeleteSelection = useMemo(() => {
+    if (!canDelete) return false;
+    if (selectedIds.size === 0) return true;
+    return Array.from(selectedIds).some((id) => {
+      const item = allList.find((r) => r.id === id);
+      return item && canDeleteRow(item);
+    });
+  }, [canDelete, selectedIds, allList, canDeleteRow]);
+
+  const viewedRow = viewingFull ?? viewingItem;
+  const detailCanUpdate = useMemo(() => {
+    if (!viewedRow) return false;
+    return canMutateBaoCaoNhanCong(user, viewedRow, canUpdate);
+  }, [viewedRow, user, canUpdate]);
+  const detailCanDelete = useMemo(() => {
+    if (!viewedRow) return false;
+    return canMutateBaoCaoNhanCong(user, viewedRow, canDelete);
+  }, [viewedRow, user, canDelete]);
+  const detailCanCopyNextDay = useMemo(() => {
+    if (!viewedRow) return false;
+    return canCopyBaoCaoNhanCongToNextDay(user, viewedRow, canCreate);
+  }, [viewedRow, user, canCreate]);
 
   return (
     <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
@@ -147,7 +206,7 @@ const DanhSachTab: React.FC = () => {
           setEditingItem(null);
           setShowForm(true);
         }}
-        onDeleteMany={handleDeleteMany}
+        onDeleteMany={canBulkDeleteSelection ? handleDeleteMany : undefined}
         canCreate={canCreate}
         canDelete={canDelete}
       />
@@ -163,9 +222,11 @@ const DanhSachTab: React.FC = () => {
           pageSize={pagination.pageSize}
           onPageChange={setPage}
           onPageSizeChange={setPageSize}
-          onEdit={canUpdate ? handleEdit : undefined}
-          onDelete={canDelete ? handleDelete : undefined}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
           onView={setViewingItem}
+          canEditRow={canEditRow}
+          canDeleteRow={canDeleteRow}
         />
       </div>
 
@@ -188,7 +249,7 @@ const DanhSachTab: React.FC = () => {
             existingList={allList}
             onClose={() => setViewingItem(null)}
             onEdit={
-              canUpdate
+              detailCanUpdate
                 ? (item) => {
                     setViewingItem(null);
                     setEditingItem(item);
@@ -196,7 +257,7 @@ const DanhSachTab: React.FC = () => {
                   }
                 : undefined
             }
-            onDelete={canDelete ? handleDelete : undefined}
+            onDelete={detailCanDelete ? handleDelete : undefined}
             onAfterCopyToNextDay={
               canCreate
                 ? (newItem) => {
@@ -207,8 +268,10 @@ const DanhSachTab: React.FC = () => {
                 : undefined
             }
             canCreate={canCreate}
-            canUpdate={canUpdate}
-            canDelete={canDelete}
+            canUpdate={detailCanUpdate}
+            canDelete={detailCanDelete}
+            canCopyNextDay={detailCanCopyNextDay}
+            canToggleTrangThai={canToggleTrangThaiBaoCaoNhanCong(user)}
           />
         )}
       </AnimatePresence>

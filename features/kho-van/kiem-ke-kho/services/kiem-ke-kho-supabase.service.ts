@@ -36,6 +36,7 @@ import i18n from '../../../../lib/i18n';
 const TABLE_DOT = 'fp_mh_dot_kiem_ke_kho';
 const TABLE_DOT_KHO = 'fp_mh_dot_kiem_ke_kho_kho';
 const TABLE_CHI_TIET = 'fp_mh_dot_kiem_ke_kho_chi_tiet';
+const TABLE_PHIEU_KHO = 'fp_mh_phieu_kho';
 
 const DOT_KK_KHO_COLUMNS =
   'id,ma_dot,ten_dot,ngay_bat_dau,ngay_ket_thuc,trang_thai,id_nguoi_phu_trach,ghi_chu,tg_tao,tg_cap_nhat';
@@ -134,6 +135,43 @@ function rowToChiTiet(
       row.so_luong_dieu_chinh != null ? Number(row.so_luong_dieu_chinh) : null,
     tg_dieu_chinh_ton: row.tg_dieu_chinh_ton ?? null,
   };
+}
+
+/** Dòng chi tiết trỏ tới phiếu kho đã xóa → cập nhật DB + bản in-memory để UI/RPC khớp. */
+async function reconcileKiemKeChiTietOrphanPhieuLinks(rows: ChiTietRow[]): Promise<void> {
+  const phieuIds = [
+    ...new Set(
+      rows
+        .map((r) => r.id_phieu_kho_dieu_chinh)
+        .filter((id): id is number => id != null && !Number.isNaN(Number(id)))
+        .map((id) => Number(id))
+    ),
+  ];
+  if (phieuIds.length === 0) return;
+  const { data: phieuRows, error: phieuErr } = await supabase.from(TABLE_PHIEU_KHO).select('id').in('id', phieuIds);
+  if (phieuErr) throwSupabaseError(phieuErr);
+  const existing = new Set((phieuRows ?? []).map((p: { id: number }) => Number(p.id)));
+  const orphanLineIds = rows
+    .filter((r) => r.id_phieu_kho_dieu_chinh != null && !existing.has(Number(r.id_phieu_kho_dieu_chinh)))
+    .map((r) => r.id);
+  if (orphanLineIds.length === 0) return;
+  const { error: upErr } = await supabase
+    .from(TABLE_CHI_TIET)
+    .update({
+      id_phieu_kho_dieu_chinh: null,
+      so_luong_dieu_chinh: null,
+      tg_dieu_chinh_ton: null,
+    })
+    .in('id', orphanLineIds);
+  if (upErr) throwSupabaseError(upErr);
+  const orphanSet = new Set(orphanLineIds);
+  for (const r of rows) {
+    if (orphanSet.has(r.id)) {
+      r.id_phieu_kho_dieu_chinh = null;
+      r.so_luong_dieu_chinh = null;
+      r.tg_dieu_chinh_ton = null;
+    }
+  }
 }
 
 function computeKetQua(soLuongSo: number, soLuongThucTe: number | null): KetQuaKiemKeKho {
@@ -245,12 +283,14 @@ export async function getChiTietByDotSupabase(id_dot_kiem_ke_kho: string): Promi
     .order('id_kho')
     .order('id_hang_hoa');
   if (error) throwSupabaseError(error);
+  const rawRows = (rows ?? []) as ChiTietRow[];
+  await reconcileKiemKeChiTietOrphanPhieuLinks(rawRows);
   const [khoList, hangHoaList, employees] = await Promise.all([getKhoRef(), getHangHoaRef(), getEmployeesRef()]);
   const khoMap = new Map(khoList.map((k) => [k.id, { ten: k.ten_kho, ma: k.ma_kho }]));
   const hhMap = new Map(hangHoaList.map((h) => [h.id, { ma: h.ma_hang_hoa ?? h.ma_hang, ten: h.ten_hang_hoa ?? h.ten_hang, dvt: h.dvt ?? h.don_vi_tinh }]));
   const empMap = new Map(employees.map((e) => [e.id, e.ho_ten]));
   const out: ChiTietKiemKeKho[] = [];
-  for (const r of rows ?? []) {
+  for (const r of rawRows) {
     const row = r as ChiTietRow;
     const kho = khoMap.get(String(row.id_kho));
     const hh = hhMap.get(String(row.id_hang_hoa));

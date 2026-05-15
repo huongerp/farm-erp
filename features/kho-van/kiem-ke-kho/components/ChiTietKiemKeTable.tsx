@@ -1,8 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { PenLine, Trash2, Package, ExternalLink } from 'lucide-react';
+import { PenLine, Trash2, Package, ExternalLink, RefreshCw } from 'lucide-react';
 import GenericTable from '../../../../components/shared/GenericTable';
-import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import { cn } from '../../../../lib/utils';
 import { getKetQuaLabel } from '../core/constants';
@@ -117,26 +116,9 @@ const ChiTietKiemKeTable: React.FC<Props> = ({
           );
         }
         return (
-          <div className="flex flex-col items-stretch sm:items-start gap-2 min-w-0">
-            <span className="text-xs text-muted-foreground tabular-nums">
-              {t('kiemKeKho.dieuChinhStatus.pending')}
-            </span>
-            {rowCanDieuChinh(item) && onDieuChinh && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-8 text-xs shrink-0 w-full sm:w-auto max-w-full"
-                disabled={dieuChinhLoading}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDieuChinh(item.id);
-                }}
-              >
-                {t('kiemKeKho.dieuChinhTonTheoKetQua')}
-              </Button>
-            )}
-          </div>
+          <span className="text-xs text-muted-foreground tabular-nums">
+            {t('kiemKeKho.dieuChinhStatus.pending')}
+          </span>
         );
       }
       case 'so_luong_dieu_chinh':
@@ -157,6 +139,22 @@ const ChiTietKiemKeTable: React.FC<Props> = ({
         if (!showActions) return null;
         return (
           <div className="flex items-center justify-center gap-0.5">
+            {rowCanDieuChinh(item) && onDieuChinh && (
+              <Tooltip content={t('kiemKeKho.dieuChinhTonTheoKetQua')} placement="left">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDieuChinh(item.id);
+                  }}
+                  disabled={dieuChinhLoading}
+                  className="p-1.5 text-secondary-foreground hover:bg-muted rounded-md transition-all"
+                  aria-label={t('kiemKeKho.dieuChinhTonTheoKetQua')}
+                >
+                  <RefreshCw size={15} />
+                </button>
+              </Tooltip>
+            )}
             {isDangKiemKe && onNhapKetQua && (
               <Tooltip content={t('kiemKeKho.table.nhapKetQua')} placement="left">
                 <button
@@ -220,25 +218,22 @@ const ChiTietKiemKeTable: React.FC<Props> = ({
         )}
         {item.don_vi_tinh && <span>{item.don_vi_tinh}</span>}
       </div>
-      {rowCanDieuChinh(item) && onDieuChinh && (
-        <div className="mt-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-8 text-xs w-full"
-            disabled={dieuChinhLoading}
-            onClick={(e) => {
-              e.stopPropagation();
-              onDieuChinh(item.id);
-            }}
-          >
-            {t('kiemKeKho.dieuChinhTonTheoKetQua')}
-          </Button>
-        </div>
-      )}
       {showActions && (
         <div className="flex gap-1.5 mt-2 pt-2 border-t border-border justify-end">
+          {rowCanDieuChinh(item) && onDieuChinh && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDieuChinh(item.id);
+              }}
+              disabled={dieuChinhLoading}
+              className="p-1.5 text-secondary-foreground bg-muted hover:bg-muted/80 rounded-md"
+              aria-label={t('kiemKeKho.dieuChinhTonTheoKetQua')}
+            >
+              <RefreshCw size={14} />
+            </button>
+          )}
           {isDangKiemKe && onNhapKetQua && (
             <button
               type="button"
@@ -291,7 +286,7 @@ const ChiTietKiemKeTable: React.FC<Props> = ({
       renderMobileCard={renderMobileCard}
       keyExtractor={(item) => item.id}
       showActionsColumn={showActions}
-      actionsColumnWidth={112}
+      actionsColumnWidth={120}
     />
   );
 };

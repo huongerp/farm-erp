@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Copy, Edit, Trash2, Users } from 'lucide-react';
+import { Copy, Edit, Lock, Trash2, Unlock, Users } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import type { FarmBaoCaoNhanCong } from '../core/types';
 import type { LoaiChuyen } from '../core/types';
@@ -11,8 +11,10 @@ import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';
 import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
 import DetailToolbar, { type DetailToolbarAction } from '../../../../components/shared/DetailToolbar';
-import { BTN_CLOSE, BTN_EDIT, BTN_DELETE } from '../../../../lib/button-labels';
-import { useCopyBaoCaoNhanCongToNextDay } from '../hooks/use-bao-cao-nhan-cong';
+import { BTN_CLOSE, BTN_EDIT, BTN_DELETE, CONFIRM_YES } from '../../../../lib/button-labels';
+import { useConfirmStore } from '../../../../store/useConfirmStore';
+import { useCopyBaoCaoNhanCongToNextDay, useUpdateBaoCaoNhanCongTrangThai } from '../hooks/use-bao-cao-nhan-cong';
+import { TRANG_THAI_BAO_CAO_NHAN_CONG } from '../core/types';
 
 interface Props {
   data: FarmBaoCaoNhanCong;
@@ -25,6 +27,10 @@ interface Props {
   canCreate?: boolean;
   canUpdate?: boolean;
   canDelete?: boolean;
+  /** Sao chép sang ngày kế (đã tính khóa / quyền). */
+  canCopyNextDay?: boolean;
+  /** Đổi trạng thái khóa — chỉ quản trị. */
+  canToggleTrangThai?: boolean;
 }
 
 const BaoCaoNhanCongDetail: React.FC<Props> = ({
@@ -37,9 +43,13 @@ const BaoCaoNhanCongDetail: React.FC<Props> = ({
   canCreate = true,
   canUpdate = true,
   canDelete = true,
+  canCopyNextDay = true,
+  canToggleTrangThai = false,
 }) => {
   const { t } = useTranslation();
+  const confirm = useConfirmStore((s) => s.confirm);
   const copyMutation = useCopyBaoCaoNhanCongToNextDay();
+  const trangThaiMutation = useUpdateBaoCaoNhanCongTrangThai();
 
   const renderFooter = (
     <div className="flex items-center justify-between w-full">
@@ -78,27 +88,63 @@ const BaoCaoNhanCongDetail: React.FC<Props> = ({
   const ivAgg = sumChiTietNumericPart(production);
   const tongAgg = sumChiTietNumericPart([ivAgg, vRow]);
 
-  const toolbarActions: DetailToolbarAction[] =
-    canCreate
-      ? [
+  const toolbarActions: DetailToolbarAction[] = [];
+  if (canCopyNextDay) {
+    toolbarActions.push({
+      label: t('baoCaoNhanCong.detail.copyNextDay'),
+      icon: <Copy size={16} />,
+      variant: 'outline',
+      disabled: copyMutation.isPending || trangThaiMutation.isPending,
+      onClick: () => {
+        copyMutation.mutate(
+          { source: data, existingList },
           {
-            label: t('baoCaoNhanCong.detail.copyNextDay'),
-            icon: <Copy size={16} />,
-            variant: 'outline',
-            disabled: copyMutation.isPending,
-            onClick: () => {
-              copyMutation.mutate(
-                { source: data, existingList },
-                {
-                  onSuccess: (newItem) => {
-                    onAfterCopyToNextDay?.(newItem);
-                  },
-                }
-              );
+            onSuccess: (newItem) => {
+              onAfterCopyToNextDay?.(newItem);
             },
-          },
-        ]
-      : [];
+          }
+        );
+      },
+    });
+  }
+  if (canToggleTrangThai) {
+    const locked = data.trang_thai === TRANG_THAI_BAO_CAO_NHAN_CONG.KHOA;
+    toolbarActions.push({
+      label: locked ? t('baoCaoNhanCong.detail.toggleUnlock') : t('baoCaoNhanCong.detail.toggleLock'),
+      icon: locked ? <Unlock size={16} /> : <Lock size={16} />,
+      variant: 'outline',
+      disabled: trangThaiMutation.isPending || copyMutation.isPending,
+      onClick: () => {
+        if (locked) {
+          confirm({
+            title: t('baoCaoNhanCong.confirmUnlockTitle'),
+            message: t('baoCaoNhanCong.confirmUnlockMessage'),
+            variant: 'warning',
+            confirmText: CONFIRM_YES(),
+            onConfirm: () => {
+              trangThaiMutation.mutate({
+                id: data.id,
+                trang_thai: TRANG_THAI_BAO_CAO_NHAN_CONG.MO,
+              });
+            },
+          });
+        } else {
+          confirm({
+            title: t('baoCaoNhanCong.confirmLockTitle'),
+            message: t('baoCaoNhanCong.confirmLockMessage'),
+            variant: 'warning',
+            confirmText: CONFIRM_YES(),
+            onConfirm: () => {
+              trangThaiMutation.mutate({
+                id: data.id,
+                trang_thai: TRANG_THAI_BAO_CAO_NHAN_CONG.KHOA,
+              });
+            },
+          });
+        }
+      },
+    });
+  }
 
   return (
     <GenericDrawer
@@ -117,6 +163,14 @@ const BaoCaoNhanCongDetail: React.FC<Props> = ({
           <DetailFieldGrid cols={2}>
             <DetailField label={t('baoCaoNhanCong.form.ngay')} value={formatDateShort(data.ngay)} />
             <DetailField label={t('baoCaoNhanCong.form.branch')} value={data.ten_chi_nhanh ?? '—'} />
+            <DetailField
+              label={t('baoCaoNhanCong.store.colTrangThai')}
+              value={
+                data.trang_thai === TRANG_THAI_BAO_CAO_NHAN_CONG.KHOA
+                  ? t('baoCaoNhanCong.trangThai.khoa')
+                  : t('baoCaoNhanCong.trangThai.mo')
+              }
+            />
             <DetailField label={t('baoCaoNhanCong.store.colTongCongNgay')} value={formatNumberVN(sumSlCongNgay(data))} />
             <DetailField label={t('baoCaoNhanCong.store.colNguoiTao')} value={data.ten_nguoi_tao ?? '—'} />
             <DetailField
@@ -172,13 +226,13 @@ const BaoCaoNhanCongDetail: React.FC<Props> = ({
                     </tr>
                   );
                 })}
-                <tr className="border-b border-border/80 bg-muted/30">
-                  <td className="px-2 py-2 text-center font-semibold text-muted-foreground tabular-nums">IV</td>
-                  <td className="px-3 py-2 font-medium text-muted-foreground">{t('baoCaoNhanCong.form.rowCongNhanDinhBien')}</td>
-                  <td className="px-2 py-2 text-right tabular-nums font-medium">{formatNumberVN(ivAgg.sl_cong_ngay)}</td>
-                  <td className="px-2 py-2 text-right tabular-nums font-medium">{formatNumberVN(ivAgg.sl_cong_nua)}</td>
-                  <td className="px-2 py-2 text-right tabular-nums font-medium">{formatNumberVN(ivAgg.sl_tang_ca)}</td>
-                  <td className="px-2 py-2 text-right tabular-nums font-medium">{formatNumberVN(ivAgg.so_gio_tc)}</td>
+                <tr className="border-b border-border/80 bg-primary/10 dark:bg-primary/15">
+                  <td className="px-2 py-2 text-center font-bold text-primary tabular-nums">IV</td>
+                  <td className="px-3 py-2 font-bold text-primary">{t('baoCaoNhanCong.form.rowCongNhanDinhBien')}</td>
+                  <td className="px-2 py-2 text-right tabular-nums font-bold text-primary">{formatNumberVN(ivAgg.sl_cong_ngay)}</td>
+                  <td className="px-2 py-2 text-right tabular-nums font-bold text-primary">{formatNumberVN(ivAgg.sl_cong_nua)}</td>
+                  <td className="px-2 py-2 text-right tabular-nums font-bold text-primary">{formatNumberVN(ivAgg.sl_tang_ca)}</td>
+                  <td className="px-2 py-2 text-right tabular-nums font-bold text-primary">{formatNumberVN(ivAgg.so_gio_tc)}</td>
                   <td className="px-2 py-2 text-muted-foreground text-sm">—</td>
                 </tr>
                 <tr className="border-b border-border/80">
@@ -198,14 +252,22 @@ const BaoCaoNhanCongDetail: React.FC<Props> = ({
                     )}
                   </td>
                 </tr>
-                <tr className="border-b border-border/80 bg-muted/40 last:border-0">
-                  <td className="px-2 py-2 text-left font-semibold text-foreground sm:pl-3" colSpan={2}>
+                <tr className="border-b border-border/80 bg-primary/15 dark:bg-primary/20 last:border-0">
+                  <td className="px-2 py-2.5 text-left font-bold text-primary sm:pl-3 tracking-tight" colSpan={2}>
                     {t('baoCaoNhanCong.form.rowTongNgay')}
                   </td>
-                  <td className="px-2 py-2 text-right tabular-nums font-semibold">{formatNumberVN(tongAgg.sl_cong_ngay)}</td>
-                  <td className="px-2 py-2 text-right tabular-nums font-semibold">{formatNumberVN(tongAgg.sl_cong_nua)}</td>
-                  <td className="px-2 py-2 text-right tabular-nums font-semibold">{formatNumberVN(tongAgg.sl_tang_ca)}</td>
-                  <td className="px-2 py-2 text-right tabular-nums font-semibold">{formatNumberVN(tongAgg.so_gio_tc)}</td>
+                  <td className="px-2 py-2.5 text-right tabular-nums font-bold text-primary text-base">
+                    {formatNumberVN(tongAgg.sl_cong_ngay)}
+                  </td>
+                  <td className="px-2 py-2.5 text-right tabular-nums font-bold text-primary text-base">
+                    {formatNumberVN(tongAgg.sl_cong_nua)}
+                  </td>
+                  <td className="px-2 py-2.5 text-right tabular-nums font-bold text-primary text-base">
+                    {formatNumberVN(tongAgg.sl_tang_ca)}
+                  </td>
+                  <td className="px-2 py-2.5 text-right tabular-nums font-bold text-primary text-base">
+                    {formatNumberVN(tongAgg.so_gio_tc)}
+                  </td>
                   <td className="px-2 py-2 text-muted-foreground text-sm">—</td>
                 </tr>
               </tbody>

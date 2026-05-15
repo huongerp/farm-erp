@@ -9,10 +9,11 @@ import {
   updateBaoCaoNhanCong,
   deleteBaoCaoNhanCong,
   deleteBaoCaoNhanCongMany,
+  updateBaoCaoNhanCongTrangThai,
 } from '../services/bao-cao-nhan-cong-service';
 import { findBaoCaoDuplicateByBranchAndDate, farmBaoCaoNhanCongToFormNextDay } from '../core/form-mappers';
 import type { BaoCaoNhanCongFormValues } from '../core/schema';
-import type { FarmBaoCaoNhanCong } from '../core/types';
+import type { FarmBaoCaoNhanCong, TrangThaiBaoCaoNhanCongPhieu } from '../core/types';
 
 export const QUERY_KEY_BAO_CAO_NHAN_CONG = ['baoCaoNhanCong'] as const;
 
@@ -112,6 +113,20 @@ export function useDeleteBaoCaoNhanCongMany() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY_BAO_CAO_NHAN_CONG });
       toast.success(i18n.t('baoCaoNhanCong.toast.deleteManySuccess'));
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+}
+
+export function useUpdateBaoCaoNhanCongTrangThai() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, trang_thai }: { id: string; trang_thai: TrangThaiBaoCaoNhanCongPhieu }) =>
+      updateBaoCaoNhanCongTrangThai(id, trang_thai),
+    onSuccess: (_row, { id }) => {
+      qc.invalidateQueries({ queryKey: QUERY_KEY_BAO_CAO_NHAN_CONG });
+      qc.invalidateQueries({ queryKey: [...QUERY_KEY_BAO_CAO_NHAN_CONG, id] });
+      toast.success(i18n.t('baoCaoNhanCong.toast.trangThaiUpdated'));
     },
     onError: (err: Error) => toast.error(err.message),
   });

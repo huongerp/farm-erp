@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS public.fp_farm_bao_cao_nhan_cong (
   ten_chi_nhanh text,
   ghi_chu text,
   id_nguoi_tao bigint REFERENCES public.fp_var_nhan_vien(id) ON DELETE SET NULL,
+  trang_thai text NOT NULL DEFAULT 'mo' CHECK (trang_thai IN ('mo', 'khoa')),
   tg_tao timestamptz NOT NULL DEFAULT now(),
   tg_cap_nhat timestamptz NOT NULL DEFAULT now()
 );
@@ -19,6 +20,7 @@ COMMENT ON TABLE public.fp_farm_bao_cao_nhan_cong IS 'Báo cáo nhân công theo
 COMMENT ON COLUMN public.fp_farm_bao_cao_nhan_cong.ngay IS 'Ngày báo cáo';
 COMMENT ON COLUMN public.fp_farm_bao_cao_nhan_cong.ten_chi_nhanh IS 'Denormalize tên chi nhánh để list không cần join';
 COMMENT ON COLUMN public.fp_farm_bao_cao_nhan_cong.ghi_chu IS 'Ghi chú phiếu; cho phép nhiều dòng (text)';
+COMMENT ON COLUMN public.fp_farm_bao_cao_nhan_cong.trang_thai IS 'mo = đang mở (người tạo sửa/xóa); khoa = đã khóa (chỉ quản trị sửa/xóa trên app)';
 
 CREATE INDEX IF NOT EXISTS idx_fp_farm_bcnc_ngay ON public.fp_farm_bao_cao_nhan_cong(ngay DESC);
 CREATE INDEX IF NOT EXISTS idx_fp_farm_bcnc_chi_nhanh ON public.fp_farm_bao_cao_nhan_cong(id_chi_nhanh);
