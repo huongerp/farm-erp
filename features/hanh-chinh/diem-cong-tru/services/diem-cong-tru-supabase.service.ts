@@ -2,7 +2,7 @@
  * Service điểm cộng trừ – đọc/ghi Supabase (fp_hr_diem_cong_tru).
  * Bảng liên kết: id_hang_muc → fp_hr_thiet_lap_diem_cong_tru(id); id_nhan_vien → fp_var_nhan_vien(id).
  */
-import { supabase, fetchAllRows } from '../../../../lib/supabase';
+import { supabase, fetchAllRows, throwSupabaseError } from '../../../../lib/supabase';
 import type { DiemCongTruRecord } from '../core/types';
 import type { DiemCongTruFormValues } from '../core/schema';
 import { getPayrollPointGroups } from '../../thiet-lap-cong-luong/services/payroll-point-group-service';
@@ -110,7 +110,7 @@ export async function createDiemCongTruRecord(
   };
 
   const { data: inserted, error } = await supabase.from(TABLE).insert(payload).select(ROW_COLUMNS).single();
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
 
   const [groups, employees] = await Promise.all([getPayrollPointGroups(), getEmployeesRef()]);
   const employeeMap = new Map(employees.map((e) => [e.id, { ho_ten: e.ho_ten, ma_nhan_vien: e.ma_nhan_vien }]));
@@ -148,7 +148,7 @@ export async function updateDiemCongTruRecord(
   };
 
   const { error } = await supabase.from(TABLE).update(payload).eq('id', idNum);
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
 
   const { data: row, error: fetchErr } = await supabase.from(TABLE).select(ROW_COLUMNS).eq('id', idNum).single();
   if (fetchErr || !row) throw new Error(i18n.t('diemCongTru.service.notFound'));
@@ -164,5 +164,5 @@ export async function deleteDiemCongTruRecords(ids: string[]): Promise<void> {
   const numIds = ids.map((s) => Number(s)).filter((n) => !Number.isNaN(n));
   if (numIds.length === 0) return;
   const { error } = await supabase.from(TABLE).delete().in('id', numIds);
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
 }

@@ -2,7 +2,7 @@
  * Service Nơi lưu / Nơi quản lý – đọc/ghi Supabase bảng fp_hc_noi_quan_ly.
  * Map sang AssetStorageLocation (ma → ma_noi_luu, ten → ten_noi_luu) cho tương thích UI.
  */
-import { supabase, fetchAllRows } from '../../../../lib/supabase';
+import { supabase, fetchAllRows, throwSupabaseError } from '../../../../lib/supabase';
 import type { AssetStorageLocation } from '../core/types';
 import type { AssetStorageLocationFormValues } from '../core/schema';
 import type { TrangThaiHoatDong } from '../../../../lib/constants';
@@ -73,7 +73,7 @@ export async function createAssetStorageLocationSupabase(
     trang_thai: data.trang_thai ?? TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG,
   };
   const { data: inserted, error } = await supabase.from(TABLE).insert(payload).select(ROW_COLUMNS).single();
-  if (error) throw new Error((error as { message?: string }).message ?? String(error));
+  if (error) throwSupabaseError(error);
   return rowToAssetStorageLocation(inserted as DbRow);
 }
 
@@ -91,7 +91,7 @@ export async function updateAssetStorageLocationSupabase(
     trang_thai: data.trang_thai ?? TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG,
   };
   const { error } = await supabase.from(TABLE).update(payload).eq('id', numId);
-  if (error) throw new Error((error as { message?: string }).message ?? String(error));
+  if (error) throwSupabaseError(error);
   const { data: updated, error: err2 } = await supabase.from(TABLE).select(ROW_COLUMNS).eq('id', numId).single();
   if (err2 || !updated) throw new Error(i18n.t('thietLapTaiSan.noiLuu.service.notFound'));
   return rowToAssetStorageLocation(updated as DbRow);
@@ -104,12 +104,12 @@ export async function updateAssetStorageLocationStatusSupabase(
   const numIds = ids.map((x) => Number(x)).filter((n) => !Number.isNaN(n));
   if (numIds.length === 0) return;
   const { error } = await supabase.from(TABLE).update({ trang_thai: status }).in('id', numIds);
-  if (error) throw new Error((error as { message?: string }).message ?? String(error));
+  if (error) throwSupabaseError(error);
 }
 
 export async function deleteAssetStorageLocationsSupabase(ids: string[]): Promise<void> {
   const numIds = ids.map((x) => Number(x)).filter((n) => !Number.isNaN(n));
   if (numIds.length === 0) return;
   const { error } = await supabase.from(TABLE).delete().in('id', numIds);
-  if (error) throw new Error((error as { message?: string }).message ?? String(error));
+  if (error) throwSupabaseError(error);
 }

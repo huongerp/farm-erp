@@ -25,6 +25,9 @@ export const DRAWER_WIDTH_DETAIL = DRAWER_WIDTH_FORM;
 /** Kiểm kê kho: form + detail cùng rộng hơn chuẩn (54rem ≈ 864px) cho bảng chi tiết */
 export const DRAWER_WIDTH_KIEM_KE_KHO = 'sm:w-[54rem] sm:min-w-[54rem] sm:max-w-[54rem]';
 
+/** Báo cáo nhân công: form + detail rộng hơn chút cho bảng chuyền */
+export const DRAWER_WIDTH_BAO_CAO_NHAN_CONG = 'sm:w-[60rem] sm:min-w-[60rem] sm:max-w-[60rem]';
+
 /** Drawer rộng cho form phức tạp cần panel phụ bên trái (82rem ≈ 1312px) */
 export const DRAWER_WIDTH_WIDE = 'sm:w-[82rem] sm:min-w-[82rem] sm:max-w-[82rem]';
 

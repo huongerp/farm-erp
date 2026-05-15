@@ -3,7 +3,7 @@
  * Trạng thái lưu tiếng Việt: Nháp | Đang kiểm kê | Hoàn thành; Đang hoạt động | Ngừng hoạt động;
  * Kết quả: Chưa kiểm | Khớp | Chênh nơi lưu | Chênh người giữ | Chênh trạng thái | Thiếu.
  */
-import { supabase } from '../../../../lib/supabase';
+import { supabase, throwSupabaseError } from '../../../../lib/supabase';
 import type {
   DotKiemKe,
   ChiTietKiemKe,
@@ -211,7 +211,7 @@ function computeKetQua(c: ChiTietKiemKe): KetQuaKiemKe {
 /** Trả về số thứ tự tiếp theo cho mã đợt (app format: KK-TS-NNN) */
 export async function getNextMaDotDotKiemKeTaiSan(): Promise<number> {
   const { data, error } = await supabase.rpc('get_next_ma_dot_dot_kiem_ke_tai_san');
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
   if (typeof data === 'number' && Number.isFinite(data)) return data;
   const n = Number(data);
   return Number.isFinite(n) ? n : 1;
@@ -236,7 +236,7 @@ export async function getDotKiemKeListSupabase(params: GetDotKiemKeListParams = 
     if (ids.length) query = query.in('id_nguoi_phu_trach', ids);
   }
   const { data, error } = await query;
-  if (error) throw new Error((error as { message?: string }).message ?? String(error));
+  if (error) throwSupabaseError(error);
   const list = (data ?? []).map((row) => rowToDot(row as DbDotRow));
   return enrichDots(list);
 }
@@ -258,7 +258,7 @@ export async function getChiTietByDotSupabase(id_dot_kiem_ke: string): Promise<C
     .select(CT_LIST_SELECT)
     .eq('id_dot_kiem_ke', numDot)
     .order('id', { ascending: true });
-  if (error) throw new Error((error as { message?: string }).message ?? String(error));
+  if (error) throwSupabaseError(error);
   const list = (data ?? []).map((row) => rowToChiTiet(row as DbChiTietRow));
   return enrichChiTietList(list);
 }
@@ -278,7 +278,7 @@ export async function createDotKiemKeSupabase(data: DotKiemKeCreate): Promise<Do
     trang_thai_active: TRANG_THAI_ACTIVE_DEFAULT,
   };
   const { data: inserted, error } = await supabase.from(TABLE_DOT).insert(payload).select(DOT_LIST_SELECT).single();
-  if (error) throw new Error((error as { message?: string }).message ?? String(error));
+  if (error) throwSupabaseError(error);
   const [enriched] = await enrichDots([rowToDot(inserted as DbDotRow)]);
   return enriched;
 }
@@ -303,7 +303,7 @@ export async function updateDotKiemKeSupabase(id: string, data: Partial<DotKiemK
   if (data.id_nguoi_giu != null) payload.id_nguoi_giu = toNumList(data.id_nguoi_giu);
   if (data.ghi_chu !== undefined) payload.ghi_chu = data.ghi_chu;
   const { error } = await supabase.from(TABLE_DOT).update(payload).eq('id', numId);
-  if (error) throw new Error((error as { message?: string }).message ?? String(error));
+  if (error) throwSupabaseError(error);
   const updated = await getDotKiemKeByIdSupabase(id);
   if (!updated) throw new Error('Đợt kiểm kê không tồn tại');
   return updated;
@@ -320,14 +320,14 @@ export async function deleteDotKiemKeSupabase(ids: string[]): Promise<void> {
     throw new Error('Chỉ được xóa đợt ở trạng thái Nháp hoặc Đang kiểm kê');
   }
   const { error } = await supabase.from(TABLE_DOT).delete().in('id', numIds);
-  if (error) throw new Error((error as { message?: string }).message ?? String(error));
+  if (error) throwSupabaseError(error);
 }
 
 export async function changeTrangThaiDotSupabase(id: string, trang_thai: TrangThaiDotKiemKe): Promise<DotKiemKe> {
   const numId = toNum(id);
   if (numId == null) throw new Error('Đợt kiểm kê không tồn tại');
   const { error } = await supabase.from(TABLE_DOT).update({ trang_thai }).eq('id', numId);
-  if (error) throw new Error((error as { message?: string }).message ?? String(error));
+  if (error) throwSupabaseError(error);
   const updated = await getDotKiemKeByIdSupabase(id);
   if (!updated) throw new Error('Đợt kiểm kê không tồn tại');
   return updated;
@@ -393,7 +393,7 @@ export async function taoDanhSachKiemKeSupabase(
   }));
   if (rows.length) {
     const { error } = await supabase.from(TABLE_CT).insert(rows);
-    if (error) throw new Error((error as { message?: string }).message ?? String(error));
+    if (error) throwSupabaseError(error);
   }
   await supabase.from(TABLE_DOT).update({ trang_thai: TRANG_THAI_DANG_KIEM_KE }).eq('id', numDot);
   return getChiTietByDotSupabase(id_dot_kiem_ke);
@@ -447,7 +447,7 @@ export async function updateChiTietKetQuaSupabase(
     ngay_kiem: updated.ngay_kiem,
   };
   const { error } = await supabase.from(TABLE_CT).update(payload).eq('id', numCtId);
-  if (error) throw new Error((error as { message?: string }).message ?? String(error));
+  if (error) throwSupabaseError(error);
   const { data: after } = await supabase.from(TABLE_CT).select(CT_LIST_SELECT).eq('id', numCtId).single();
   const [out] = await enrichChiTietList([rowToChiTiet((after ?? row) as DbChiTietRow)]);
   return out;
@@ -466,7 +466,7 @@ export async function deleteChiTietKiemKeSupabase(id_chi_tiet: string): Promise<
   if (!dot) throw new Error('Đợt kiểm kê không tồn tại');
   if (dot.trang_thai === TRANG_THAI_HOAN_THANH) throw new Error('Chỉ được xóa dòng khi đợt ở trạng thái Nháp hoặc Đang kiểm kê');
   const { error } = await supabase.from(TABLE_CT).delete().eq('id', numId);
-  if (error) throw new Error((error as { message?: string }).message ?? String(error));
+  if (error) throwSupabaseError(error);
 }
 
 export async function themChiTietPhatHienSupabase(
@@ -539,7 +539,7 @@ export async function themChiTietPhatHienSupabase(
     ngay_kiem: c.ngay_kiem,
   };
   const { data: inserted, error } = await supabase.from(TABLE_CT).insert(insertRow).select(CT_LIST_SELECT).single();
-  if (error) throw new Error((error as { message?: string }).message ?? String(error));
+  if (error) throwSupabaseError(error);
   const [out] = await enrichChiTietList([rowToChiTiet(inserted as DbChiTietRow)]);
   return out;
 }
@@ -570,7 +570,7 @@ export async function hoanThanhDotSupabase(id_dot_kiem_ke: string): Promise<DotK
   if (dot.trang_thai !== TRANG_THAI_DANG_KIEM_KE) throw new Error('Chỉ hoàn thành đợt đang kiểm kê');
   const numId = toNum(id_dot_kiem_ke)!;
   const { error } = await supabase.from(TABLE_DOT).update({ trang_thai: TRANG_THAI_HOAN_THANH }).eq('id', numId);
-  if (error) throw new Error((error as { message?: string }).message ?? String(error));
+  if (error) throwSupabaseError(error);
   const updated = await getDotKiemKeByIdSupabase(id_dot_kiem_ke);
   if (!updated) throw new Error('Đợt kiểm kê không tồn tại');
   return updated;

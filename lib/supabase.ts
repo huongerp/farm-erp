@@ -1,4 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
+import { throwSupabaseError } from './supabase-errors';
+
+export { throwSupabaseError, formatSupabaseError } from './supabase-errors';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL ?? '';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY ?? '';
@@ -91,7 +94,7 @@ export async function fetchAllRows<T>(
   let from = 0;
   while (true) {
     const { data, error } = await run(from, from + SUPABASE_PAGE_SIZE - 1);
-    if (error) throw new Error(error.message);
+    if (error) throwSupabaseError(error);
     const list = data ?? [];
     all.push(...list);
     if (list.length < SUPABASE_PAGE_SIZE) break;
@@ -127,6 +130,6 @@ export async function fetchTablePage<T>(
   const from = p * size;
   const to = from + size - 1;
   const { data, error, count } = await run(from, to);
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
   return { data: data ?? [], totalCount: count ?? 0, page: p, pageSize: size };
 }

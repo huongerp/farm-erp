@@ -2,7 +2,7 @@
  * Service đơn đặt hàng – đọc/ghi Supabase (fp_mh_don_dat_hang, fp_mh_don_dat_hang_chi_tiet).
  * Trạng thái DB và app đều dùng text (giống module đề xuất vật tư).
  */
-import { supabase, fetchAllRows, fetchTablePage, type PaginatedTableResult } from '../../../../lib/supabase';
+import { supabase, fetchAllRows, fetchTablePage, type PaginatedTableResult, throwSupabaseError } from '../../../../lib/supabase';
 import type { ChiTietDonDatHangFlat, DonDatHang, DonDatHangChiTiet, DonDatHangTrangThai } from '../core/types';
 import type { DonDatHangFormValues } from '../core/schema';
 import { TRANG_THAI_NHAP } from '../core/types';
@@ -520,7 +520,7 @@ export async function getDonDatHangByIdSupabase(id: string): Promise<DonDatHang 
     .select(VIEW_DON_DAT_HANG_SUMMARY_COLUMNS)
     .eq('id', idNum)
     .maybeSingle();
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
   if (!row) return null;
 
   const [ctRows, hangHoaList] = await Promise.all([
@@ -576,7 +576,7 @@ export async function createDonDatHangSupabase(data: DonDatHangFormValues): Prom
   };
 
   const { data: inserted, error } = await supabase.from(TABLE_DON).insert(payload).select(DON_DAT_HANG_ROW_COLUMNS).single();
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
   const idDon = (inserted as DonDbRow).id;
   const idStr = String(idDon);
 
@@ -596,7 +596,7 @@ export async function createDonDatHangSupabase(data: DonDatHangFormValues): Prom
       ghi_chu: c.ghi_chu?.trim() || null,
     }));
     const { error: errCt } = await supabase.from(TABLE_CHI_TIET).insert(ctRows);
-    if (errCt) throw new Error(errCt.message);
+    if (errCt) throwSupabaseError(errCt);
   }
 
   const got = await getDonDatHangByIdSupabase(idStr);
@@ -640,7 +640,7 @@ export async function updateDonDatHangSupabase(id: string, data: DonDatHangFormV
   };
 
   const { error: updateErr } = await supabase.from(TABLE_DON).update(payload).eq('id', idNum);
-  if (updateErr) throw new Error(updateErr.message);
+  if (updateErr) throwSupabaseError(updateErr);
 
   await supabase.from(TABLE_CHI_TIET).delete().eq('id_don_dat_hang', idNum);
 
@@ -660,7 +660,7 @@ export async function updateDonDatHangSupabase(id: string, data: DonDatHangFormV
       ghi_chu: c.ghi_chu?.trim() || null,
     }));
     const { error: errCt } = await supabase.from(TABLE_CHI_TIET).insert(ctRows);
-    if (errCt) throw new Error(errCt.message);
+    if (errCt) throwSupabaseError(errCt);
   }
 
   const got = await getDonDatHangByIdSupabase(id);
@@ -672,20 +672,20 @@ export async function deleteDonDatHangSupabase(id: string): Promise<void> {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('donDatHang.service.notFound'));
   const { error } = await supabase.from(TABLE_DON).delete().eq('id', idNum);
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
 }
 
 export async function deleteDonDatHangManySupabase(ids: string[]): Promise<void> {
   const numIds = ids.map((s) => Number(s)).filter((n) => !Number.isNaN(n));
   if (numIds.length === 0) return;
   const { error } = await supabase.from(TABLE_DON).delete().in('id', numIds);
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
 }
 
 /** Gọi RPC lấy số thứ tự tiếp theo cho so_po (app format: PO-YYYY- + pad). */
 export async function getNextSoPoDonDatHangSupabase(): Promise<number> {
   const { data, error } = await supabase.rpc('get_next_so_po_don_dat_hang');
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
   if (typeof data === 'number' && Number.isFinite(data)) return data;
   const n = Number(data);
   return Number.isFinite(n) ? n : 1;
@@ -764,7 +764,7 @@ export async function listDonDatHangSoPoMinimalSupabase(limit = 2500): Promise<D
     .select('id, so_po, ngay_dat')
     .order('id', { ascending: false })
     .limit(limit);
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
   return (data ?? []).map((r: { id: number; so_po: string | null; ngay_dat: string | null }) => ({
     id: String(r.id),
     so_po: r.so_po ?? '',

@@ -2,7 +2,7 @@
  * Tồn kho từ view fp_mh_ton_kho (Supabase) và định mức từ bảng fp_mh_dinh_muc_ton_kho.
  */
 
-import { supabase, fetchAllRows } from '../../../../lib/supabase';
+import { supabase, fetchAllRows, throwSupabaseError } from '../../../../lib/supabase';
 
 const VIEW_TON_KHO = 'fp_mh_ton_kho';
 
@@ -116,7 +116,7 @@ export async function getTonKhoSupabase(id_kho: string, id_hang_hoa: string): Pr
     .eq('kho_id', khoNum)
     .eq('id_hang_hoa', hhNum)
     .maybeSingle();
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
   return data != null ? Number(data.so_luong) : 0;
 }
 
@@ -130,7 +130,7 @@ export async function getTonKhoTheoKhoSupabase(
     .from(VIEW_TON_KHO)
     .select('id_hang_hoa, so_luong')
     .eq('kho_id', khoNum);
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
   return (data ?? []).map((r: { id_hang_hoa: number; so_luong: number }) => ({
     id_hang_hoa: String(r.id_hang_hoa),
     so_luong: Number(r.so_luong),
@@ -147,7 +147,7 @@ export async function getTonKhoTheoHangHoaSupabase(
     .from(VIEW_TON_KHO)
     .select('kho_id, so_luong')
     .eq('id_hang_hoa', hhNum);
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
   return (data ?? []).map((r: { kho_id: number; so_luong: number }) => ({
     id_kho: String(r.kho_id),
     so_luong: Number(r.so_luong),
@@ -199,7 +199,7 @@ export async function getDinhMucByHangHoaSupabase(hang_hoa_id: string): Promise<
     .from(TABLE_DINH_MUC)
     .select('id, kho_id, hang_hoa_id, ton_toi_thieu')
     .eq('hang_hoa_id', num);
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
   return (data ?? []).map((r: DinhMucDbRow) => rowToDinhMuc(r));
 }
 
@@ -218,7 +218,7 @@ export async function createDinhMucTonKhoSupabase(payload: {
     })
     .select('id, kho_id, hang_hoa_id, ton_toi_thieu')
     .single();
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
   return rowToDinhMuc(data as DinhMucDbRow);
 }
 
@@ -233,14 +233,14 @@ export async function updateDinhMucTonKhoSupabase(
     .eq('id', Number(id))
     .select('id, kho_id, hang_hoa_id, ton_toi_thieu')
     .single();
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
   return rowToDinhMuc(data as DinhMucDbRow);
 }
 
 /** Xóa định mức tồn kho. */
 export async function deleteDinhMucTonKhoSupabase(id: string): Promise<void> {
   const { error } = await supabase.from(TABLE_DINH_MUC).delete().eq('id', Number(id));
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
 }
 
 export { dinhMucKey };

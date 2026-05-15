@@ -1,7 +1,8 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { PenLine, RefreshCw, Trash2, Package, ExternalLink } from 'lucide-react';
+import { PenLine, Trash2, Package, ExternalLink } from 'lucide-react';
 import GenericTable from '../../../../components/shared/GenericTable';
+import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import { cn } from '../../../../lib/utils';
 import { getKetQuaLabel } from '../core/constants';
@@ -48,6 +49,16 @@ const ChiTietKiemKeTable: React.FC<Props> = ({
     sort,
     setSort,
   } = useChiTietKiemKeStore();
+
+  const rowCanDieuChinh = (item: ChiTietKiemKeKho) =>
+    Boolean(
+      isDangKiemKe &&
+        onDieuChinh &&
+        showActions &&
+        !item.id_phieu_kho_dieu_chinh &&
+        item.so_luong_thuc_te != null &&
+        item.so_luong_thuc_te !== item.so_luong_so
+    );
 
   const renderKetQuaBadge = (ket_qua: string) => {
     const cls = cn(
@@ -106,9 +117,26 @@ const ChiTietKiemKeTable: React.FC<Props> = ({
           );
         }
         return (
-          <span className="text-xs text-muted-foreground tabular-nums">
-            {t('kiemKeKho.dieuChinhStatus.pending')}
-          </span>
+          <div className="flex flex-col items-stretch sm:items-start gap-2 min-w-0">
+            <span className="text-xs text-muted-foreground tabular-nums">
+              {t('kiemKeKho.dieuChinhStatus.pending')}
+            </span>
+            {rowCanDieuChinh(item) && onDieuChinh && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs shrink-0 w-full sm:w-auto max-w-full"
+                disabled={dieuChinhLoading}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDieuChinh(item.id);
+                }}
+              >
+                {t('kiemKeKho.dieuChinhTonTheoKetQua')}
+              </Button>
+            )}
+          </div>
         );
       }
       case 'so_luong_dieu_chinh':
@@ -139,23 +167,6 @@ const ChiTietKiemKeTable: React.FC<Props> = ({
                   aria-label={t('kiemKeKho.table.nhapKetQua')}
                 >
                   <PenLine size={15} />
-                </button>
-              </Tooltip>
-            )}
-            {isDangKiemKe &&
-              onDieuChinh &&
-              !item.id_phieu_kho_dieu_chinh &&
-              item.so_luong_thuc_te != null &&
-              item.so_luong_thuc_te !== item.so_luong_so && (
-              <Tooltip content={t('kiemKeKho.dieuChinhTonTheoKetQua')} placement="left">
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); onDieuChinh(item.id); }}
-                  disabled={dieuChinhLoading}
-                  className="p-1.5 text-secondary-foreground hover:bg-muted rounded-md transition-all"
-                  aria-label={t('kiemKeKho.dieuChinhTonTheoKetQua')}
-                >
-                  <RefreshCw size={15} />
                 </button>
               </Tooltip>
             )}
@@ -209,6 +220,23 @@ const ChiTietKiemKeTable: React.FC<Props> = ({
         )}
         {item.don_vi_tinh && <span>{item.don_vi_tinh}</span>}
       </div>
+      {rowCanDieuChinh(item) && onDieuChinh && (
+        <div className="mt-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-8 text-xs w-full"
+            disabled={dieuChinhLoading}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDieuChinh(item.id);
+            }}
+          >
+            {t('kiemKeKho.dieuChinhTonTheoKetQua')}
+          </Button>
+        </div>
+      )}
       {showActions && (
         <div className="flex gap-1.5 mt-2 pt-2 border-t border-border justify-end">
           {isDangKiemKe && onNhapKetQua && (
@@ -224,23 +252,6 @@ const ChiTietKiemKeTable: React.FC<Props> = ({
               <PenLine size={14} />
             </button>
           )}
-          {isDangKiemKe &&
-            onDieuChinh &&
-            !item.id_phieu_kho_dieu_chinh &&
-            item.so_luong_thuc_te != null &&
-            item.so_luong_thuc_te !== item.so_luong_so && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDieuChinh(item.id);
-                }}
-                className="p-1.5 text-secondary-foreground bg-muted hover:bg-muted/80 rounded-md"
-                aria-label={t('kiemKeKho.dieuChinhTonTheoKetQua')}
-              >
-                <RefreshCw size={14} />
-              </button>
-            )}
           {onDelete && (
             <button
               type="button"
@@ -279,6 +290,8 @@ const ChiTietKiemKeTable: React.FC<Props> = ({
       renderCell={renderCell}
       renderMobileCard={renderMobileCard}
       keyExtractor={(item) => item.id}
+      showActionsColumn={showActions}
+      actionsColumnWidth={112}
     />
   );
 };

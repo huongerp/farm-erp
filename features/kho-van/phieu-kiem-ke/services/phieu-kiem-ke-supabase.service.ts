@@ -1,7 +1,7 @@
 /**
  * Service phiếu kiểm kê – đọc/ghi Supabase (fp_mh_phieu_kiem_ke, fp_mh_phieu_kiem_ke_chi_tiet).
  */
-import { supabase, fetchAllRows } from '../../../../lib/supabase';
+import { supabase, fetchAllRows, throwSupabaseError } from '../../../../lib/supabase';
 import type { PhieuKiemKe, PhieuKiemKeChiTiet } from '../core/types';
 import type { PhieuKiemKeFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
@@ -145,7 +145,7 @@ export async function getPhieuKiemKeByIdSupabase(id: string): Promise<PhieuKiemK
     .select(PHIEU_KIEM_KE_ROW_COLUMNS)
     .eq('id', idNum)
     .maybeSingle();
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
   if (!row) return null;
 
   const [khoList, employees, ctRows, hangHoaList] = await Promise.all([
@@ -205,7 +205,7 @@ export async function createPhieuKiemKeSupabase(data: PhieuKiemKeFormValues): Pr
   };
 
   const { data: inserted, error } = await supabase.from(TABLE_PHIEU).insert(payload).select(PHIEU_KIEM_KE_ROW_COLUMNS).single();
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
   const idPhieu = (inserted as PhieuDbRow).id;
 
   const hangHoaList = await getHangHoaRef();
@@ -228,7 +228,7 @@ export async function createPhieuKiemKeSupabase(data: PhieuKiemKeFormValues): Pr
       };
     });
     const { error: errCt } = await supabase.from(TABLE_CHI_TIET).insert(ctRows);
-    if (errCt) throw new Error(errCt.message);
+    if (errCt) throwSupabaseError(errCt);
   }
 
   const got = await getPhieuKiemKeByIdSupabase(String(idPhieu));
@@ -258,7 +258,7 @@ export async function updatePhieuKiemKeSupabase(id: string, data: PhieuKiemKeFor
   };
 
   const { error: updateErr } = await supabase.from(TABLE_PHIEU).update(payload).eq('id', idNum);
-  if (updateErr) throw new Error(updateErr.message);
+  if (updateErr) throwSupabaseError(updateErr);
 
   await supabase.from(TABLE_CHI_TIET).delete().eq('id_phieu_kiem_ke', idNum);
 
@@ -282,7 +282,7 @@ export async function updatePhieuKiemKeSupabase(id: string, data: PhieuKiemKeFor
       };
     });
     const { error: errCt } = await supabase.from(TABLE_CHI_TIET).insert(ctRows);
-    if (errCt) throw new Error(errCt.message);
+    if (errCt) throwSupabaseError(errCt);
   }
 
   const got = await getPhieuKiemKeByIdSupabase(id);
@@ -294,19 +294,19 @@ export async function deletePhieuKiemKeSupabase(id: string): Promise<void> {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('phieuKiemKe.service.notFound'));
   const { error } = await supabase.from(TABLE_PHIEU).delete().eq('id', idNum);
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
 }
 
 export async function deletePhieuKiemKeManySupabase(ids: string[]): Promise<void> {
   const numIds = ids.map((s) => Number(s)).filter((n) => !Number.isNaN(n));
   if (numIds.length === 0) return;
   const { error } = await supabase.from(TABLE_PHIEU).delete().in('id', numIds);
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
 }
 
 export async function getNextSoPhieuPhieuKiemKe(): Promise<number> {
   const { data, error } = await supabase.rpc('get_next_so_phieu_phieu_kiem_ke');
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
   if (typeof data === 'number' && Number.isFinite(data)) return data;
   const n = Number(data);
   return Number.isFinite(n) ? n : 1;

@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { formatSupabaseError } from './supabase-errors';
 import type { User } from '../types';
 import type { Employee } from '../features/he-thong/nhan-vien/core/types';
 import { getEmployeeByEmail, normalizeChiNhanhIdsFromRow } from '../features/he-thong/nhan-vien/services/nhan-vien-service';
@@ -59,7 +60,7 @@ export async function signInWithPassword(
     password,
   });
 
-  if (authError) throw new Error(authError.message);
+  if (authError) throw new Error(formatSupabaseError(authError, { resource: 'auth.signInWithPassword' }));
   const authEmail = authData?.user?.email;
   if (!authEmail) throw new Error('Không lấy được email từ phiên đăng nhập.');
 
@@ -225,13 +226,13 @@ export async function requestPasswordReset(email: string): Promise<void> {
   const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
     redirectTo,
   });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(formatSupabaseError(error, { resource: 'auth.resetPasswordForEmail' }));
 }
 
 /** Đặt lại mật khẩu (sau khi user mở link từ email trên trang /dat-lai-mat-khau). */
 export async function updatePassword(newPassword: string): Promise<void> {
   const { error } = await supabase.auth.updateUser({ password: newPassword });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(formatSupabaseError(error, { resource: 'auth.updateUser' }));
 }
 
 /**
@@ -247,5 +248,5 @@ export async function signInWithGoogle(): Promise<void> {
     provider: 'google',
     options: { redirectTo },
   });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(formatSupabaseError(error, { resource: 'auth.signInWithOAuth' }));
 }

@@ -1,7 +1,7 @@
 /**
  * Service phiếu đề xuất vật tư – đọc/ghi Supabase (fp_mh_phieu_de_xuat_vat_tu, fp_mh_phieu_de_xuat_vat_tu_chi_tiet).
  */
-import { supabase, fetchAllRows, fetchTablePage, type PaginatedTableResult } from '../../../../lib/supabase';
+import { supabase, fetchAllRows, fetchTablePage, type PaginatedTableResult, throwSupabaseError } from '../../../../lib/supabase';
 import type { PhieuDeXuatVatTu, PhieuDeXuatVatTuChiTiet, PhieuDeXuatVatTuChiTietRow } from '../core/types';
 import type { PhieuDeXuatVatTuFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
@@ -39,7 +39,7 @@ export interface NextSoPhieuConfig {
 /** Gọi RPC Supabase lấy số thứ tự tiếp theo, format thành mã phiếu (tiền tố + pad). Nguồn sự thật duy nhất, tránh trùng khi nhiều user. */
 export async function getNextSoPhieuPhieuDeXuatVatTuRpc(config: NextSoPhieuConfig): Promise<string> {
   const { data, error } = await supabase.rpc(RPC_NEXT_SO_PHIEU);
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
   const nextNum = Number(data);
   if (Number.isNaN(nextNum) || nextNum < 1) throw new Error('Invalid next number from RPC');
   const padded = String(nextNum).padStart(config.do_dai_phan_so, '0');
@@ -330,7 +330,7 @@ export async function getPhieuDeXuatVatTuByIdSupabase(id: string): Promise<Phieu
     .select(PHIEU_DE_XUAT_HEADER_SELECT)
     .eq('id', idNum)
     .maybeSingle();
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
   if (!row) return null;
 
   const [khoList, employees, ctRows, hangHoaList] = await Promise.all([
@@ -392,7 +392,7 @@ export async function createPhieuDeXuatVatTuSupabase(data: PhieuDeXuatVatTuFormV
   };
 
   const { data: inserted, error } = await supabase.from(TABLE_PHIEU).insert(payload).select(PHIEU_DE_XUAT_HEADER_SELECT).single();
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
   const idPhieu = (inserted as PhieuDbRow).id;
   const idStr = String(idPhieu);
 
@@ -432,7 +432,7 @@ export async function createPhieuDeXuatVatTuSupabase(data: PhieuDeXuatVatTuFormV
       trang_thai_phieu: data.trang_thai,
     }));
     const { error: errCt } = await supabase.from(TABLE_CHI_TIET).insert(ctRows);
-    if (errCt) throw new Error(errCt.message);
+    if (errCt) throwSupabaseError(errCt);
   }
 
   const got = await getPhieuDeXuatVatTuByIdSupabase(idStr);
@@ -463,7 +463,7 @@ export async function updatePhieuDeXuatVatTuSupabase(id: string, data: PhieuDeXu
   };
 
   const { error: updateErr } = await supabase.from(TABLE_PHIEU).update(payload).eq('id', idNum);
-  if (updateErr) throw new Error(updateErr.message);
+  if (updateErr) throwSupabaseError(updateErr);
 
   await supabase.from(TABLE_CHI_TIET).delete().eq('id_phieu_de_xuat_vat_tu', idNum);
 
@@ -503,7 +503,7 @@ export async function updatePhieuDeXuatVatTuSupabase(id: string, data: PhieuDeXu
       trang_thai_phieu: data.trang_thai,
     }));
     const { error: errCt } = await supabase.from(TABLE_CHI_TIET).insert(ctRows);
-    if (errCt) throw new Error(errCt.message);
+    if (errCt) throwSupabaseError(errCt);
   }
 
   const got = await getPhieuDeXuatVatTuByIdSupabase(id);
@@ -515,14 +515,14 @@ export async function deletePhieuDeXuatVatTuSupabase(id: string): Promise<void> 
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('phieuDeXuatVatTu.service.notFound'));
   const { error } = await supabase.from(TABLE_PHIEU).delete().eq('id', idNum);
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
 }
 
 export async function deletePhieuDeXuatVatTuManySupabase(ids: string[]): Promise<void> {
   const numIds = ids.map((s) => Number(s)).filter((n) => !Number.isNaN(n));
   if (numIds.length === 0) return;
   const { error } = await supabase.from(TABLE_PHIEU).delete().in('id', numIds);
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
 }
 
 /** Map DB chi tiết + ref → dòng tab Chi tiết. */
@@ -645,7 +645,7 @@ export async function listPhieuDeXuatSoPhieuMinimalSupabase(limit = 2500): Promi
     .select('id, so_phieu, ngay')
     .order('id', { ascending: false })
     .limit(limit);
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
   return (data ?? []).map((r: { id: number; so_phieu: string | null; ngay: string | null }) => ({
     id: String(r.id),
     so_phieu: r.so_phieu ?? '',

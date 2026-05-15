@@ -2,7 +2,7 @@
  * Service thanh toán đối tác – đọc/ghi Supabase (fp_mh_thanh_toan_doi_tac).
  * Dùng id_trang_thai_thanh_toan (FK) và trang_thai (text denormalize).
  */
-import { supabase, fetchAllRows } from '../../../../lib/supabase';
+import { supabase, fetchAllRows, throwSupabaseError } from '../../../../lib/supabase';
 import type { ThanhToanDoiTac } from '../core/types';
 import type { ThanhToanDoiTacFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
@@ -25,7 +25,7 @@ export interface NextSoPhieuTtoConfig {
 /** Gọi RPC Supabase lấy số thứ tự tiếp theo, format thành mã phiếu (tiền tố + pad). */
 export async function getNextSoPhieuThanhToanDoiTacRpc(config: NextSoPhieuTtoConfig): Promise<string> {
   const { data, error } = await supabase.rpc(RPC_NEXT_SO_PHIEU);
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
   const nextNum = Number(data);
   if (Number.isNaN(nextNum) || nextNum < 1) throw new Error('Invalid next number from RPC');
   const padded = String(nextNum).padStart(config.do_dai_phan_so, '0');
@@ -165,7 +165,7 @@ export async function getThanhToanDoiTacById(id: string): Promise<ThanhToanDoiTa
     .eq('id', idNum)
     .maybeSingle();
 
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
   if (!row) return null;
 
   const [branches, doiTacList, employees, statusList] = await Promise.all([
@@ -243,7 +243,7 @@ export async function createThanhToanDoiTac(data: ThanhToanDoiTacFormValues): Pr
   };
 
   const { data: inserted, error } = await supabase.from(TABLE).insert(payload).select(THANH_TOAN_ROW_COLUMNS).single();
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
 
   const got = await getThanhToanDoiTacById(String((inserted as DbRow).id));
   if (!got) throw new Error(i18n.t('thanhToanDoiTac.service.notFound'));
@@ -286,7 +286,7 @@ export async function updateThanhToanDoiTac(
   };
 
   const { error } = await supabase.from(TABLE).update(payload).eq('id', idNum);
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
 
   const got = await getThanhToanDoiTacById(id);
   if (!got) throw new Error(i18n.t('thanhToanDoiTac.service.notFound'));
@@ -297,12 +297,12 @@ export async function deleteThanhToanDoiTac(id: string): Promise<void> {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('thanhToanDoiTac.service.notFound'));
   const { error } = await supabase.from(TABLE).delete().eq('id', idNum);
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
 }
 
 export async function deleteThanhToanDoiTacMany(ids: string[]): Promise<void> {
   const numIds = ids.map((s) => Number(s)).filter((n) => !Number.isNaN(n));
   if (numIds.length === 0) return;
   const { error } = await supabase.from(TABLE).delete().in('id', numIds);
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
 }

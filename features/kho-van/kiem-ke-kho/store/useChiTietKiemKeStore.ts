@@ -22,7 +22,7 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'so_luong_so', label: i18n.t('kiemKeKho.store.soLuongSoCol'), visible: true, minWidth: 80, order: 2 },
   { id: 'so_luong_thuc_te', label: i18n.t('kiemKeKho.store.soLuongThucTeCol'), visible: true, minWidth: 80, order: 3 },
   { id: 'ket_qua', label: i18n.t('kiemKeKho.store.ketQuaCol'), visible: true, minWidth: 90, order: 4 },
-  { id: 'dieu_chinh_ton', label: i18n.t('kiemKeKho.store.dieuChinhCol'), visible: true, minWidth: 100, order: 5 },
+  { id: 'dieu_chinh_ton', label: i18n.t('kiemKeKho.store.dieuChinhCol'), visible: true, minWidth: 130, width: 160, order: 5 },
   { id: 'so_luong_dieu_chinh', label: i18n.t('kiemKeKho.store.soLuongDieuChinhCol'), visible: true, minWidth: 90, order: 6 },
   { id: 'don_vi_tinh', label: i18n.t('kiemKeKho.store.dvtCol'), visible: false, minWidth: 70, order: 7 },
   { id: 'ghi_chu_dong', label: i18n.t('kiemKeKho.store.ghiChuCol'), visible: false, minWidth: 120, order: 8 },

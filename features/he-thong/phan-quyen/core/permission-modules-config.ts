@@ -105,6 +105,11 @@ export const PERMISSION_FUNCTIONS: PermissionFunction[] = [
     groups: [
       { groupTitleKey: 'page.quanLyFarm.groupKeHoach', modules: [
         { id: BASE('quan-ly-farm', 'thu-hoach'), nameKey: 'page.quanLyFarm.modules.thuHoach' },
+        { id: BASE('quan-ly-farm', 'bao-cao-nhan-cong'), nameKey: 'page.quanLyFarm.modules.baoCaoNhanCong' },
+        { id: BASE('quan-ly-farm', 'bao-cao-so-che'), nameKey: 'page.quanLyFarm.modules.baoCaoSoChe' },
+        { id: BASE('quan-ly-farm', 'bao-cao-thanh-pham'), nameKey: 'page.quanLyFarm.modules.baoCaoThanhPham' },
+        { id: BASE('quan-ly-farm', 'du-bao-sl-dong-thung'), nameKey: 'page.quanLyFarm.modules.duBaoSlDongThung' },
+        { id: BASE('quan-ly-farm', 'thuong-kpi'), nameKey: 'page.quanLyFarm.modules.thuongKpi' },
       ]},
       /**
        * Kho phân thuốc — bố cục nhóm giống Kho vận (Mua hàng): nhập xuất / báo cáo / danh mục.

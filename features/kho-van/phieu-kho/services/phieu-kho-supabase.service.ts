@@ -3,7 +3,7 @@
  * Trên DB không có FK; app liên kết và enrich với: danh sách kho, danh sách hàng hóa,
  * nhân viên, danh sách đối tác.
  */
-import { supabase, fetchAllRows, fetchTablePage, type PaginatedTableResult } from '../../../../lib/supabase';
+import { supabase, fetchAllRows, fetchTablePage, type PaginatedTableResult, throwSupabaseError } from '../../../../lib/supabase';
 import type { PhieuKho, PhieuKhoChiTiet, LoaiPhieuKho, ChiTietPhieuKhoFlat, TrangThaiPhieuKho } from '../core/types';
 import type { PhieuKhoFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
@@ -258,7 +258,7 @@ function toNum(s: string | null | undefined): number | null {
 /** Lấy số phiếu tiếp theo theo loại (Option B: RPC dùng bảng counter). Gọi khi tạo phiếu mới. */
 export async function getNextSoPhieuSupabase(loai: LoaiPhieuKho): Promise<string> {
   const { data, error } = await supabase.rpc('get_next_so_phieu', { p_loai: loai });
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
   if (typeof data !== 'string') throw new Error('get_next_so_phieu did not return string');
   return data;
 }
@@ -283,7 +283,7 @@ export async function getPhieuKhoByIdSupabase(id: string): Promise<PhieuKho | nu
     .select(PHIEU_KHO_HEADER_ROW_SELECT)
     .eq('id', idNum)
     .maybeSingle();
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
   if (!row) return null;
 
   const [khoList, doiTacList, employees, ctRows, hangHoaList] = await Promise.all([
@@ -368,7 +368,7 @@ export async function createPhieuKhoSupabase(loai: LoaiPhieuKho, data: PhieuKhoF
   };
 
   const { data: inserted, error } = await supabase.from(TABLE_PHIEU).insert(payload).select(PHIEU_KHO_HEADER_ROW_SELECT).single();
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
   const idPhieu = (inserted as PhieuKhoDbRow).id;
   const idStr = String(idPhieu);
 
@@ -397,7 +397,7 @@ export async function createPhieuKhoSupabase(loai: LoaiPhieuKho, data: PhieuKhoF
       };
     });
     const { error: errCt } = await supabase.from(TABLE_CHI_TIET).insert(ctRows);
-    if (errCt) throw new Error(errCt.message);
+    if (errCt) throwSupabaseError(errCt);
   }
 
   const got = await getPhieuKhoByIdSupabase(idStr);
@@ -442,7 +442,7 @@ export async function updatePhieuKhoSupabase(id: string, data: PhieuKhoFormValue
   };
 
   const { error: updateErr } = await supabase.from(TABLE_PHIEU).update(payload).eq('id', idNum);
-  if (updateErr) throw new Error(updateErr.message);
+  if (updateErr) throwSupabaseError(updateErr);
 
   await supabase.from(TABLE_CHI_TIET).delete().eq('id_phieu_kho', idNum);
 
@@ -471,7 +471,7 @@ export async function updatePhieuKhoSupabase(id: string, data: PhieuKhoFormValue
       };
     });
     const { error: errCt } = await supabase.from(TABLE_CHI_TIET).insert(ctRows);
-    if (errCt) throw new Error(errCt.message);
+    if (errCt) throwSupabaseError(errCt);
   }
 
   const got = await getPhieuKhoByIdSupabase(id);
@@ -521,21 +521,21 @@ export async function updatePhieuKhoTrangThaiSupabase(
     .from(TABLE_PHIEU)
     .update({ trang_thai, trao_doi: newTraoDoi, id_nguoi_duyet: idNguoiDuyet })
     .eq('id', idNum);
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
 }
 
 export async function deletePhieuKhoSupabase(id: string): Promise<void> {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('phieuKho.service.notFound'));
   const { error } = await supabase.from(TABLE_PHIEU).delete().eq('id', idNum);
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
 }
 
 export async function deletePhieuKhoManySupabase(ids: string[]): Promise<void> {
   const numIds = ids.map((id) => Number(id)).filter((n) => !Number.isNaN(n));
   if (numIds.length === 0) return;
   const { error } = await supabase.from(TABLE_PHIEU).delete().in('id', numIds);
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
 }
 
 export async function getPhieuKhoByDoiTacSupabase(idDoiTac: string, loaiDoiTac: 'nha_cung_cap' | 'khach_hang'): Promise<PhieuKho[]> {
@@ -550,7 +550,7 @@ export async function getPhieuKhoByDoiTacSupabase(idDoiTac: string, loaiDoiTac: 
     .eq(col, idNum)
     .order('ngay', { ascending: false })
     .order('so_phieu', { ascending: false });
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
   const rows = (data ?? []) as PhieuKhoSummaryRow[];
   return rows.map((row) => mapPhieuKhoSummaryRowToPhieu(row));
 }

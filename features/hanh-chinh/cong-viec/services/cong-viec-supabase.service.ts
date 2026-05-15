@@ -1,7 +1,7 @@
 /**
  * Service công việc – đọc/ghi Supabase (fp_hc_cong_viec).
  */
-import { supabase, fetchAllRows } from '../../../../lib/supabase';
+import { supabase, fetchAllRows, throwSupabaseError } from '../../../../lib/supabase';
 import type { CongViec, TraoDoiEntry } from '../core/types';
 import type { CongViecFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
@@ -83,7 +83,7 @@ export async function getCongViecById(id: number | string): Promise<CongViec | n
   const { data, error } = await supabase.from(TABLE).select(ROW_COLUMNS).eq('id', n).single();
   if (error) {
     if ((error as { code?: string }).code === 'PGRST116') return null;
-    throw new Error((error as { message?: string }).message ?? String(error));
+    throwSupabaseError(error);
   }
   return data ? rowToCongViec(data as DbRow) : null;
 }
@@ -104,7 +104,7 @@ export async function createCongViec(
     trang_thai: data.trang_thai ?? 'draft',
   };
   const { data: inserted, error } = await supabase.from(TABLE).insert(payload).select(ROW_COLUMNS).single();
-  if (error) throw new Error((error as { message?: string }).message ?? String(error));
+  if (error) throwSupabaseError(error);
   return rowToCongViec(inserted as DbRow);
 }
 
@@ -134,7 +134,7 @@ export async function updateCongViec(
     return existing;
   }
   const { error } = await supabase.from(TABLE).update(payload).eq('id', n);
-  if (error) throw new Error((error as { message?: string }).message ?? String(error));
+  if (error) throwSupabaseError(error);
   const updated = await getCongViecById(n);
   if (!updated) throw new Error(i18n.t('congViec.service.notFound'));
   return updated;
@@ -144,7 +144,7 @@ export async function deleteCongViecList(ids: (number | string)[]): Promise<void
   const numIds = ids.map((x) => toNumericId(x)).filter((n) => n > 0);
   if (numIds.length === 0) return;
   const { error } = await supabase.from(TABLE).delete().in('id', numIds);
-  if (error) throw new Error((error as { message?: string }).message ?? String(error));
+  if (error) throwSupabaseError(error);
 }
 
 export async function getBinhLuanByCongViecId(id_cong_viec: number | string): Promise<TraoDoiEntry[]> {

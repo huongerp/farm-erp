@@ -13,8 +13,8 @@ import { getColumnCellStyle, getEffectiveColumnMinWidth, usesColumnSizingPreset 
 const VIRTUAL_THRESHOLD = 50;
 /** Chiều rộng cột checkbox (px) */
 const TABLE_CHECKBOX_WIDTH = 44;
-/** Chiều rộng cột Thao tác (px) */
-const TABLE_ACTION_COLUMN_WIDTH = 80;
+/** Chiều rộng mặc định cột Thao tác (px) */
+const DEFAULT_TABLE_ACTION_COLUMN_WIDTH = 80;
 /** MinWidth mặc định cho cột khi tính sticky offset (px) */
 const DEFAULT_COLUMN_MIN_WIDTH = 120;
 
@@ -72,6 +72,11 @@ interface GenericTableProps<T> {
 
   /** Hàng tổng/count hiển thị dưới toolbar, trên header bảng. Trả về nội dung cho từng cột (data = toàn bộ data đang hiển thị). */
   renderSummaryRow?: (colId: string, data: T[]) => React.ReactNode;
+
+  /** Ẩn cột Thao tác (ghim phải). Mặc định hiện. */
+  showActionsColumn?: boolean;
+  /** Chiều rộng cột Thao tác (px) khi hiển thị. Mặc định 80. */
+  actionsColumnWidth?: number;
 }
 
 /*
@@ -98,6 +103,8 @@ function GenericTable<T>({
   emptyDescription,
   emptyAction,
   renderSummaryRow,
+  showActionsColumn = true,
+  actionsColumnWidth = DEFAULT_TABLE_ACTION_COLUMN_WIDTH,
 }: GenericTableProps<T>) {
 
   const visibleColumns = useMemo(() =>
@@ -111,14 +118,17 @@ function GenericTable<T>({
     [visibleColumns]
   );
 
+  const actionColWidth = showActionsColumn ? actionsColumnWidth : 0;
+  const bodyColSpan = dataColumns.length + 1 + (showActionsColumn ? 1 : 0);
+
   /** Tổng minWidth của bảng để luôn cuộn ngang khi nhiều cột, tránh ép cột xuống dòng */
   const tableMinWidth = useMemo(() => {
     const cols = dataColumns.reduce(
       (sum, c) => sum + (c.width ?? getEffectiveColumnMinWidth(c, DEFAULT_COLUMN_MIN_WIDTH)),
       0
     );
-    return TABLE_CHECKBOX_WIDTH + cols + TABLE_ACTION_COLUMN_WIDTH;
-  }, [dataColumns]);
+    return TABLE_CHECKBOX_WIDTH + cols + actionColWidth;
+  }, [dataColumns, actionColWidth]);
 
   /** Tính left offset tích lũy cho từng cột sticky (sau checkbox) */
   const stickyLeftOffsets = useMemo(() => {
@@ -249,7 +259,11 @@ function GenericTable<T>({
                     <div className="h-3 w-16 bg-muted rounded animate-pulse" />
                   </th>
                 ))}
-                <th className="w-[80px] px-3 py-2 border-b border-border"><div className="h-3 w-12 bg-muted rounded animate-pulse mx-auto" /></th>
+                {showActionsColumn && (
+                <th className="px-3 py-2 border-b border-border" style={{ width: actionsColumnWidth, minWidth: actionsColumnWidth }}>
+                  <div className="h-3 w-12 bg-muted rounded animate-pulse mx-auto" />
+                </th>
+                )}
               </tr>
             </thead>
             <tbody>
@@ -264,7 +278,9 @@ function GenericTable<T>({
                       </div>
                     </td>
                   ))}
+                  {showActionsColumn && (
                   <td className="px-3 py-2.5"><div className="flex gap-1 justify-center">{[1,2,3].map(n => <div key={n} className="w-6 h-6 bg-muted/40 rounded animate-pulse" />)}</div></td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -350,12 +366,14 @@ function GenericTable<T>({
                       </th>
                     );
                   })}
+                  {showActionsColumn && (
                   <th
                     className="sticky right-0 z-[3] px-3 py-1.5 bg-muted border-b border-l border-border/80 text-center"
-                    style={{ width: TABLE_ACTION_COLUMN_WIDTH }}
+                    style={{ width: actionColWidth }}
                   >
                     {renderSummaryRow ? renderSummaryRow('actions', data) : null}
                   </th>
+                  )}
                 </tr>
               )}
               <tr className="bg-muted border-b border-border">
@@ -422,16 +440,18 @@ function GenericTable<T>({
                   );
                 })}
 
-                <th className={cn("sticky right-0 z-[3] px-3 bg-muted border-b border-l border-border text-center font-semibold text-foreground/80 text-xs", headerPy)} style={{ width: TABLE_ACTION_COLUMN_WIDTH }}>
+                {showActionsColumn && (
+                <th className={cn("sticky right-0 z-[3] px-3 bg-muted border-b border-l border-border text-center font-semibold text-foreground/80 text-xs", headerPy)} style={{ width: actionColWidth }}>
                   Thao tác
                 </th>
+                )}
               </tr>
             </thead>
 
             <tbody>
               {data.length === 0 ? (
                 <tr>
-                  <td colSpan={dataColumns.length + 2} className="py-16 text-center bg-card">
+                  <td colSpan={bodyColSpan} className="py-16 text-center bg-card">
                     <EmptyState title={emptyTitle} description={emptyDescription} action={emptyAction} />
                   </td>
                 </tr>
@@ -444,7 +464,7 @@ function GenericTable<T>({
                     <>
                       {/* Spacer top khi dùng virtual scroll */}
                       {useVirtual && items.length > 0 && items[0].start > 0 && (
-                        <tr><td colSpan={dataColumns.length + 2} style={{ height: items[0].start, padding: 0, border: 'none' }} /></tr>
+                        <tr><td colSpan={bodyColSpan} style={{ height: items[0].start, padding: 0, border: 'none' }} /></tr>
                       )}
 
                       {items.map((virtualRow) => {
@@ -515,19 +535,21 @@ function GenericTable<T>({
                               );
                             })}
 
+                            {showActionsColumn && (
                             <td
                               className={`sticky right-0 z-[1] px-2 ${cellPy} border-l border-border/50 text-center ${stickyCellClass}`}
                               onClick={(e) => e.stopPropagation()}
                             >
                               {renderCell('actions', item)}
                             </td>
+                            )}
                           </tr>
                         );
                       })}
 
                       {/* Spacer bottom khi dùng virtual scroll */}
                       {useVirtual && items.length > 0 && (
-                        <tr><td colSpan={dataColumns.length + 2} style={{ height: totalSize - (items[items.length - 1].start + items[items.length - 1].size), padding: 0, border: 'none' }} /></tr>
+                        <tr><td colSpan={bodyColSpan} style={{ height: totalSize - (items[items.length - 1].start + items[items.length - 1].size), padding: 0, border: 'none' }} /></tr>
                       )}
                     </>
                   );

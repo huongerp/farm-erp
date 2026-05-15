@@ -143,22 +143,7 @@ const DotKiemKeKhoDetail: React.FC<Props> = ({
         onClick: () => window.open(getPhieuKiemKeKhoPreviewUrl(data.id), '_blank', 'noopener,noreferrer'),
         variant: 'primary',
       },
-      {
-        label: t('kiemKeKho.detail.fillNote'),
-        icon: <FileText size={16} />,
-        onClick: () => setGhiChuOpen(true),
-        variant: 'secondary',
-      },
     ];
-    if ((isDraft || isDangKiemKe) && onTaoDanhSach) {
-      actions.push({
-        label: t('kiemKeKho.taoDanhSach'),
-        icon: <List size={16} />,
-        onClick: () => onTaoDanhSach(data.id),
-        variant: 'success',
-        disabled: taoDanhSachLoading,
-      });
-    }
     if (isDangKiemKe && pendingDieuChinhCount > 0) {
       actions.push({
         label: t('kiemKeKho.dieuChinhTonDot'),
@@ -166,6 +151,21 @@ const DotKiemKeKhoDetail: React.FC<Props> = ({
         onClick: handleDieuChinhDotClick,
         variant: 'secondary',
         disabled: dieuChinhDotMutation.isPending,
+      });
+    }
+    actions.push({
+      label: t('kiemKeKho.detail.fillNote'),
+      icon: <FileText size={16} />,
+      onClick: () => setGhiChuOpen(true),
+      variant: 'secondary',
+    });
+    if ((isDraft || isDangKiemKe) && onTaoDanhSach) {
+      actions.push({
+        label: t('kiemKeKho.taoDanhSach'),
+        icon: <List size={16} />,
+        onClick: () => onTaoDanhSach(data.id),
+        variant: 'success',
+        disabled: taoDanhSachLoading,
       });
     }
     if (isDangKiemKe && onHoanThanh) {

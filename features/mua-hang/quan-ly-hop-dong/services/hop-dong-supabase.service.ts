@@ -1,7 +1,7 @@
 /**
  * Quản lý hợp đồng – Supabase (fp_mh_hop_dong, fp_mh_hop_dong_ct, v_hop_dong_summary)
  */
-import { supabase, fetchAllRows } from '../../../../lib/supabase';
+import { supabase, fetchAllRows, throwSupabaseError } from '../../../../lib/supabase';
 import type { HopDong, HopDongChiTiet } from '../core/types';
 import type { HopDongFormValues, HopDongChiTietLineValues } from '../core/schema';
 import type { TrangThaiHopDong } from '../core/constants';
@@ -239,7 +239,7 @@ export async function getHopDongByIdSupabase(id: string): Promise<HopDong | null
     .select(VIEW_SUMMARY_SELECT)
     .eq('id', idNum)
     .maybeSingle();
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
   if (!row) return null;
 
   const { data: ctRows = [] } = await supabase
@@ -284,7 +284,7 @@ export async function createHopDongSupabase(data: HopDongFormValues, idNguoiTao:
   };
 
   const { data: inserted, error } = await supabase.from(TABLE_HOP).insert(payload).select(HOP_ROW_COLUMNS).single();
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
   const idHop = (inserted as HopDbRow).id;
   const idStr = String(idHop);
 
@@ -325,7 +325,7 @@ export async function updateHopDongSupabase(id: string, data: HopDongFormValues)
   };
 
   const { error: updateErr } = await supabase.from(TABLE_HOP).update(payload).eq('id', idNum);
-  if (updateErr) throw new Error(updateErr.message);
+  if (updateErr) throwSupabaseError(updateErr);
 
   const got = await getHopDongByIdSupabase(id);
   if (!got) throw new Error(i18n.t('hopDong.service.notFound'));
@@ -343,7 +343,7 @@ export async function updateHopDongTrangThaiSupabase(
     .from(TABLE_HOP)
     .update({ trang_thai, ghi_chu: ghi_chu?.trim() || null })
     .eq('id', idNum);
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
   const got = await getHopDongByIdSupabase(id);
   if (!got) throw new Error(i18n.t('hopDong.service.notFound'));
   return got;
@@ -359,7 +359,7 @@ export async function insertHopDongChiTietSupabase(
   const nv = idNguoiTao != null ? Number(idNguoiTao) : null;
   const payload = lineToCtPayload(idHop, row, nv != null && Number.isFinite(nv) ? nv : null);
   const { data: inserted, error } = await supabase.from(TABLE_CT).insert(payload).select(CT_SELECT).single();
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
   return rowToChiTiet(inserted as ChiTietDbRow, idHopDong);
 }
 
@@ -378,26 +378,26 @@ export async function updateHopDongChiTietSupabase(idCt: string, row: HopDongChi
     id_chi_nhanh: toNum(row.id_chi_nhanh ?? undefined),
   };
   const { error } = await supabase.from(TABLE_CT).update(payload).eq('id', idNum);
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
 }
 
 export async function deleteHopDongChiTietSupabase(idCt: string): Promise<void> {
   const idNum = Number(idCt);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('hopDong.service.notFound'));
   const { error } = await supabase.from(TABLE_CT).delete().eq('id', idNum);
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
 }
 
 export async function deleteHopDongSupabase(id: string): Promise<void> {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('hopDong.service.notFound'));
   const { error } = await supabase.from(TABLE_HOP).delete().eq('id', idNum);
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
 }
 
 export async function deleteHopDongManySupabase(ids: string[]): Promise<void> {
   const numIds = ids.map((s) => Number(s)).filter((n) => !Number.isNaN(n));
   if (numIds.length === 0) return;
   const { error } = await supabase.from(TABLE_HOP).delete().in('id', numIds);
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
 }

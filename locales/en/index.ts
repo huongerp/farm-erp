@@ -40,6 +40,7 @@ import thanhToanDoiTac from '@/features/mua-hang/thanh-toan-doi-tac/locales/en.j
 import baoCaodeXuatVatTu from '@/features/mua-hang/bao-cao-de-xuat-vat-tu/locales/en.json';
 import hopDong from '@/features/mua-hang/quan-ly-hop-dong/locales/en.json';
 import thuHoach from '@/features/quan-ly-farm/thu-hoach/locales/en.json';
+import baoCaoNhanCong from '@/features/quan-ly-farm/bao-cao-nhan-cong/locales/en.json';
 import hangHoaPhanThuoc from '@/features/quan-ly-farm/hang-hoa-phan-thuoc/locales/en.json';
 import phieuKhoPhanThuoc from '@/features/quan-ly-farm/phieu-kho-phan-thuoc/locales/en.json';
 import tonKhoPhanThuoc from '@/features/quan-ly-farm/ton-kho-phan-thuoc/locales/en.json';
@@ -85,6 +86,7 @@ const en = {
   ...(baoCaodeXuatVatTu as Record<string, string>),
   ...(hopDong as Record<string, string>),
   ...(thuHoach as Record<string, string>),
+  ...(baoCaoNhanCong as Record<string, string>),
   ...(hangHoaPhanThuoc as Record<string, string>),
   ...(phieuKhoPhanThuoc as Record<string, string>),
   ...(tonKhoPhanThuoc as Record<string, string>),

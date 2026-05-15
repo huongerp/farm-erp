@@ -3,7 +3,7 @@
  * Bảng cha: fp_ts_phieu_cap_phat_thu_hoi (header)
  * Bảng con: fp_ts_phieu_cap_phat_thu_hoi_ct (chi tiết – mỗi dòng 1 tài sản)
  */
-import { supabase } from '@/lib/supabase';
+import { supabase, throwSupabaseError } from '@/lib/supabase';
 import type {
   LoaiPhieu,
   PhieuCapPhatThuHoi,
@@ -161,7 +161,7 @@ export async function getPhieuListSupabase(
   let query = supabase.from(TABLE).select(PHIEU_CP_TH_COLUMNS).order('tg_tao', { ascending: false });
 
   const { data, error } = await query;
-  if (error) throw new Error((error as { message?: string }).message ?? String(error));
+  if (error) throwSupabaseError(error);
   let list = (data ?? []).map((row) => rowToPhieu(row as DbPhieuRow));
 
   if (params.filter === 'mine' && params.id_nguoi) {
@@ -260,7 +260,7 @@ export async function getAllPhieuChiTietSupabase(): Promise<PhieuChiTietRow[]> {
     .from(TABLE)
     .select(PHIEU_CP_TH_COLUMNS)
     .order('tg_tao', { ascending: false });
-  if (hErr) throw new Error((hErr as { message?: string }).message ?? String(hErr));
+  if (hErr) throwSupabaseError(hErr);
   if (!headers?.length) return [];
 
   const headerMap = new Map<number, DbPhieuRow>();
@@ -270,7 +270,7 @@ export async function getAllPhieuChiTietSupabase(): Promise<PhieuChiTietRow[]> {
     .from(TABLE_CT)
     .select(PHIEU_CP_CT_COLUMNS)
     .order('id_phieu', { ascending: false });
-  if (cErr) throw new Error((cErr as { message?: string }).message ?? String(cErr));
+  if (cErr) throwSupabaseError(cErr);
   if (!ctRows?.length) return [];
 
   return (ctRows as DbPhieuChiTietRow[])
@@ -368,7 +368,7 @@ export async function createPhieuSupabase(
   const loaiDb = LOAI_PHIEU_TO_DB[data.loai_phieu];
 
   const { data: maResult, error: maError } = await supabase.rpc('get_next_ma_phieu_cpth', { p_loai: loaiDb });
-  if (maError) throw new Error(maError.message ?? 'Không thể tạo mã phiếu');
+  if (maError) throwSupabaseError(maError);
   const ma_phieu = maResult as string;
 
   const headerPayload = await buildHeaderPayload(data, id_nguoi_thuc_hien, id_nguoi_tao, ten_nguoi_tao);
@@ -377,7 +377,7 @@ export async function createPhieuSupabase(
     .insert({ ...headerPayload, ma_phieu })
     .select(PHIEU_CP_TH_COLUMNS)
     .single();
-  if (error) throw new Error((error as { message?: string }).message ?? String(error));
+  if (error) throwSupabaseError(error);
 
   const phieuId = (inserted as DbPhieuRow).id;
 
@@ -385,7 +385,7 @@ export async function createPhieuSupabase(
   if (validLines.length > 0) {
     const ctRows = await buildChiTietRows(phieuId, validLines);
     const { error: ctError } = await supabase.from(TABLE_CT).insert(ctRows);
-    if (ctError) throw new Error(ctError.message ?? 'Không thể tạo chi tiết phiếu');
+    if (ctError) throwSupabaseError(ctError);
 
     for (const ct of validLines) {
       await updateTaiSanLocationAndHolder(ct.id_tai_san, {
@@ -412,16 +412,16 @@ export async function updatePhieuSupabase(
 
   const headerPayload = await buildHeaderPayload(data, id_nguoi_thuc_hien);
   const { error } = await supabase.from(TABLE).update(headerPayload).eq('id', numId);
-  if (error) throw new Error((error as { message?: string }).message ?? String(error));
+  if (error) throwSupabaseError(error);
 
   const { error: delError } = await supabase.from(TABLE_CT).delete().eq('id_phieu', numId);
-  if (delError) throw new Error(delError.message ?? 'Không thể xóa chi tiết cũ');
+  if (delError) throwSupabaseError(delError);
 
   const validLines = data.chi_tiet.filter((ct) => ct.id_tai_san);
   if (validLines.length > 0) {
     const ctRows = await buildChiTietRows(numId, validLines);
     const { error: ctError } = await supabase.from(TABLE_CT).insert(ctRows);
-    if (ctError) throw new Error(ctError.message ?? 'Không thể tạo chi tiết phiếu');
+    if (ctError) throwSupabaseError(ctError);
 
     for (const ct of validLines) {
       await updateTaiSanLocationAndHolder(ct.id_tai_san, {
@@ -442,5 +442,5 @@ export async function deletePhieuSupabase(ids: string[]): Promise<void> {
   const numIds = ids.map((x) => Number(x)).filter((n) => !Number.isNaN(n));
   if (numIds.length === 0) return;
   const { error } = await supabase.from(TABLE).delete().in('id', numIds);
-  if (error) throw new Error((error as { message?: string }).message ?? String(error));
+  if (error) throwSupabaseError(error);
 }

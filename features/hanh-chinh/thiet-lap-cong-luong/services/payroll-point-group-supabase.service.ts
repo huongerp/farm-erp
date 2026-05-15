@@ -1,7 +1,7 @@
 /**
  * Service nhóm điểm cộng trừ – đọc/ghi Supabase (fp_hr_thiet_lap_diem_cong_tru).
  */
-import { supabase, fetchAllRows } from '../../../../lib/supabase';
+import { supabase, fetchAllRows, throwSupabaseError } from '../../../../lib/supabase';
 import type { PayrollPointGroup } from '../core/types';
 import type { PayrollPointGroupFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
@@ -72,7 +72,7 @@ export async function createPayrollPointGroup(
   };
 
   const { data: inserted, error } = await supabase.from(TABLE).insert(payload).select(ROW_COLUMNS).single();
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
   return rowToItem(inserted as DbRow);
 }
 
@@ -97,7 +97,7 @@ export async function updatePayrollPointGroup(
   };
 
   const { error } = await supabase.from(TABLE).update(payload).eq('id', idNum);
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
 
   const { data: row, error: fetchErr } = await supabase.from(TABLE).select(ROW_COLUMNS).eq('id', idNum).single();
   if (fetchErr || !row) throw new Error(i18n.t('payrollIp.pointGroups.service.notFound'));
@@ -114,12 +114,12 @@ export async function updatePayrollPointGroupStatus(
     .from(TABLE)
     .update({ trang_thai: status })
     .in('id', numIds);
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
 }
 
 export async function deletePayrollPointGroups(ids: string[]): Promise<void> {
   const numIds = ids.map((s) => Number(s)).filter((n) => !Number.isNaN(n));
   if (numIds.length === 0) return;
   const { error } = await supabase.from(TABLE).delete().in('id', numIds);
-  if (error) throw new Error(error.message);
+  if (error) throwSupabaseError(error);
 }
