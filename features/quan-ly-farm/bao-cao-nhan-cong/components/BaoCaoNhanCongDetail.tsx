@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Copy, Edit, Lock, Trash2, Unlock, Users, Images } from 'lucide-react';
+import { Copy, Edit, Lock, Trash2, Unlock, Users, Images, Award } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import type { FarmBaoCaoNhanCong } from '../core/types';
 import type { LoaiChuyen } from '../core/types';
@@ -14,6 +14,7 @@ import {
   sumTongCongQuyDoiTuChiTiet,
   sumTongGioTangCaTichPhieu,
   sumTongGioTangCaTichTuChiTiet,
+  sumTienThuongKpi,
   tongCongQuyDoiNgayVaNua,
   tongGioTangCaTichMotDong,
   normalizeChiTietForDisplay,
@@ -210,6 +211,10 @@ const BaoCaoNhanCongDetail: React.FC<Props> = ({
               label={t('baoCaoNhanCong.store.colTongGioTangCa')}
               value={<span className="font-bold tabular-nums text-primary">{formatNumberVN(sumTongGioTangCaTichPhieu(data))}</span>}
             />
+            <DetailField
+              label={t('baoCaoNhanCong.store.colTongThuongKpi')}
+              value={<span className="font-bold tabular-nums text-primary">{formatNumberVN(sumTienThuongKpi(data))}</span>}
+            />
             <DetailField label={t('baoCaoNhanCong.store.colNguoiTao')} value={data.ten_nguoi_tao ?? '—'} />
             <DetailField label={t('baoCaoNhanCong.store.colTgTao')} value={formatDateTimeShort(data.tg_tao)} />
             <DetailField label={t('baoCaoNhanCong.store.colUpdated')} value={formatDateTimeShort(data.tg_cap_nhat)} />
@@ -360,6 +365,68 @@ const BaoCaoNhanCongDetail: React.FC<Props> = ({
               </tbody>
             </table>
           </div>
+        </DetailSection>
+
+        <DetailSection title={t('baoCaoNhanCong.detail.sectionKpi')} icon={<Award size={14} />} variant="primary">
+          {(data.kpi?.length ?? 0) === 0 ? (
+            <p className="text-sm text-muted-foreground py-2">{t('baoCaoNhanCong.detail.kpiEmpty')}</p>
+          ) : (
+            <div className="overflow-x-auto rounded-lg border border-border">
+              <table className="w-full text-sm min-w-[48rem]">
+                <thead>
+                  <tr className="bg-muted/50 border-b border-border">
+                    <th className="text-center px-2 py-2 font-medium w-12">{t('baoCaoNhanCong.form.colTt')}</th>
+                    <th className="text-left px-2 py-2 font-medium min-w-[9rem]">{t('baoCaoNhanCong.form.kpiColHangMuc')}</th>
+                    <th className="text-left px-2 py-2 font-medium w-20">{t('baoCaoNhanCong.form.kpiColDvt')}</th>
+                    <th className="text-left px-2 py-2 font-medium min-w-[5rem]">{t('baoCaoNhanCong.form.kpiColMucTieu')}</th>
+                    <th className="text-left px-2 py-2 font-medium min-w-[5rem]">{t('baoCaoNhanCong.form.kpiColThucTe')}</th>
+                    <th className="text-right px-2 py-2 font-medium w-24">{t('baoCaoNhanCong.form.kpiColPhanTram')}</th>
+                    <th className="text-left px-2 py-2 font-medium min-w-[5rem]">{t('baoCaoNhanCong.form.kpiColDanhGia')}</th>
+                    <th className="text-right px-2 py-2 font-medium w-28">{t('baoCaoNhanCong.form.kpiColTienThuong')}</th>
+                    <th className="text-left px-2 py-2 font-medium min-w-[8rem]">{t('baoCaoNhanCong.form.kpiColGhiChu')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[...(data.kpi ?? [])]
+                    .sort((a, b) => a.thu_tu - b.thu_tu)
+                    .map((row, idx) => (
+                      <tr key={row.id || `${row.thu_tu}-${idx}`} className="border-b border-border/80 last:border-0">
+                        <td className="px-2 py-2 text-center text-muted-foreground tabular-nums">{idx + 1}</td>
+                        <td className="px-2 py-2 text-sm">{row.ten_hang_muc?.trim() ? row.ten_hang_muc : '—'}</td>
+                        <td className="px-2 py-2 text-sm text-muted-foreground">{row.don_vi_tinh?.trim() ? row.don_vi_tinh : '—'}</td>
+                        <td className="px-2 py-2 text-sm text-muted-foreground whitespace-pre-wrap">
+                          {row.muc_tieu?.trim() ? row.muc_tieu : '—'}
+                        </td>
+                        <td className="px-2 py-2 text-sm text-muted-foreground whitespace-pre-wrap">
+                          {row.thuc_te?.trim() ? row.thuc_te : '—'}
+                        </td>
+                        <td className="px-2 py-2 text-right text-sm tabular-nums">
+                          {row.phan_tram == null || !Number.isFinite(Number(row.phan_tram))
+                            ? '—'
+                            : `${formatNumberVN(Number(row.phan_tram))}%`}
+                        </td>
+                        <td className="px-2 py-2 text-sm">{row.danh_gia?.trim() ? row.danh_gia : '—'}</td>
+                        <td className="px-2 py-2 text-right text-sm tabular-nums font-medium">
+                          {formatNumberVN(row.tien_thuong)}
+                        </td>
+                        <td className="px-2 py-2 text-sm text-muted-foreground whitespace-pre-wrap">
+                          {row.ghi_chu?.trim() ? row.ghi_chu : '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  <tr className="bg-primary/10 dark:bg-primary/15 border-t border-border">
+                    <td colSpan={7} className="px-3 py-2 text-right font-bold text-primary text-sm">
+                      {t('baoCaoNhanCong.form.kpiRowTongThuong')}
+                    </td>
+                    <td className="px-2 py-2 text-right font-bold text-primary text-sm tabular-nums">
+                      {formatNumberVN(sumTienThuongKpi(data))}
+                    </td>
+                    <td />
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          )}
         </DetailSection>
       </div>
     </GenericDrawer>

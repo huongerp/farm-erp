@@ -13,6 +13,19 @@ export function defaultChiTietRows(): BaoCaoNhanCongFormValues['chi_tiet'] {
   })) as BaoCaoNhanCongFormValues['chi_tiet'];
 }
 
+export function defaultKpiFormRow(): BaoCaoNhanCongFormValues['kpi'][number] {
+  return {
+    ten_hang_muc: '',
+    don_vi_tinh: null,
+    muc_tieu: null,
+    thuc_te: null,
+    phan_tram: null,
+    danh_gia: null,
+    tien_thuong: 0,
+    ghi_chu: null,
+  };
+}
+
 export function defaultFormValues(): BaoCaoNhanCongFormValues {
   const today = new Date().toISOString().slice(0, 10);
   return {
@@ -22,6 +35,7 @@ export function defaultFormValues(): BaoCaoNhanCongFormValues {
     ghi_chu: null,
     hinh_anh_urls: [],
     chi_tiet: defaultChiTietRows(),
+    kpi: [],
   };
 }
 
@@ -39,6 +53,17 @@ export function farmBaoCaoNhanCongToForm(row: FarmBaoCaoNhanCong): BaoCaoNhanCon
     };
   }) as BaoCaoNhanCongFormValues['chi_tiet'];
 
+  const kpi = (row.kpi ?? []).map((k) => ({
+    ten_hang_muc: k.ten_hang_muc ?? '',
+    don_vi_tinh: k.don_vi_tinh ?? null,
+    muc_tieu: k.muc_tieu ?? null,
+    thuc_te: k.thuc_te ?? null,
+    phan_tram: k.phan_tram == null || Number.isNaN(Number(k.phan_tram)) ? null : Number(k.phan_tram),
+    danh_gia: k.danh_gia ?? null,
+    tien_thuong: Number(k.tien_thuong ?? 0),
+    ghi_chu: k.ghi_chu ?? null,
+  }));
+
   return {
     ngay: row.ngay,
     id_chi_nhanh: row.id_chi_nhanh != null && String(row.id_chi_nhanh).trim() !== '' ? String(row.id_chi_nhanh) : '',
@@ -46,6 +71,7 @@ export function farmBaoCaoNhanCongToForm(row: FarmBaoCaoNhanCong): BaoCaoNhanCon
     ghi_chu: row.ghi_chu,
     hinh_anh_urls: Array.isArray(row.hinh_anh_urls) ? [...row.hinh_anh_urls] : [],
     chi_tiet,
+    kpi,
   };
 }
 

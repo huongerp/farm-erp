@@ -90,6 +90,9 @@ const SubmenuPage: React.FC = () => {
     if (basePath === '/quan-ly-farm' && decodedSlug === 'kiem-ke-kho-phan-thuoc') {
       return <Navigate to="/quan-ly-farm" replace />;
     }
+    if (basePath === '/quan-ly-farm' && decodedSlug === 'thuong-kpi') {
+      return <Navigate to="/quan-ly-farm" replace />;
+    }
     if (basePath === '/quan-ly-farm' && QUAN_LY_FARM_MODULE_SLUGS.includes(decodedSlug)) {
       if (decodedSlug === 'thu-hoach') {
         return wrapWithPermission(basePath ?? '', decodedSlug, (
@@ -104,6 +107,11 @@ const SubmenuPage: React.FC = () => {
       if (decodedSlug === 'bao-cao-so-che') {
         return wrapWithPermission(basePath ?? '', decodedSlug, (
           <ErrorBoundary>{renderLazySubmenuModule('bao-cao-so-che')}</ErrorBoundary>
+        ));
+      }
+      if (decodedSlug === 'du-bao-sl-dong-thung') {
+        return wrapWithPermission(basePath ?? '', decodedSlug, (
+          <ErrorBoundary>{renderLazySubmenuModule('du-bao-sl-dong-thung')}</ErrorBoundary>
         ));
       }
       if (decodedSlug === 'hang-hoa-phan-thuoc') {

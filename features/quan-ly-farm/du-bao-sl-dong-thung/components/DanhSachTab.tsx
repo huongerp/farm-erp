@@ -4,28 +4,24 @@ import { toast } from 'sonner';
 import { AnimatePresence } from 'framer-motion';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import {
-  useBaoCaoNhanCongList,
-  useBaoCaoNhanCongById,
-  useDeleteBaoCaoNhanCong,
-  useDeleteBaoCaoNhanCongMany,
-} from '../hooks/use-bao-cao-nhan-cong';
+  useDuBaoSlDongThungList,
+  useDuBaoSlDongThungById,
+  useDeleteDuBaoSlDongThung,
+  useDeleteDuBaoSlDongThungMany,
+} from '../hooks/use-du-bao-sl-dong-thung';
 import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
-import { useBaoCaoNhanCongStore, type BaoCaoNhanCongFilters } from '../store/useBaoCaoNhanCongStore';
+import { useDuBaoSlDongThungStore, type DuBaoSlDongThungFilters } from '../store/useDuBaoSlDongThungStore';
 import { useListWithFilter } from '../../../../lib/hooks';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
-import type { FarmBaoCaoNhanCong } from '../core/types';
+import type { FarmDuBaoSlDongThung } from '../core/types';
 import { getPreferredBranchFromUserLastRecords } from '../core/form-mappers';
-import {
-  canCopyBaoCaoNhanCongToNextDay,
-  canMutateBaoCaoNhanCong,
-  canToggleTrangThaiBaoCaoNhanCong,
-} from '../core/permissions';
+import { canMutateDuBaoSlDongThung, canToggleTrangThaiDuBaoSlDongThung } from '../core/permissions';
 import { useAuthStore } from '../../../../store/useStore';
-import BaoCaoNhanCongToolbar from './BaoCaoNhanCongToolbar';
-import BaoCaoNhanCongList from './BaoCaoNhanCongList';
-import BaoCaoNhanCongForm from './BaoCaoNhanCongForm';
-import BaoCaoNhanCongDetail from './BaoCaoNhanCongDetail';
+import DuBaoSlDongThungToolbar from './DuBaoSlDongThungToolbar';
+import DuBaoSlDongThungList from './DuBaoSlDongThungList';
+import DuBaoSlDongThungForm from './DuBaoSlDongThungForm';
+import DuBaoSlDongThungDetail from './DuBaoSlDongThungDetail';
 
 const DanhSachTab: React.FC = () => {
   const { t } = useTranslation();
@@ -43,50 +39,32 @@ const DanhSachTab: React.FC = () => {
     pagination,
     setPage,
     setPageSize,
-  } = useBaoCaoNhanCongStore();
+  } = useDuBaoSlDongThungStore();
 
   const [showForm, setShowForm] = useState(false);
-  const [editingItem, setEditingItem] = useState<FarmBaoCaoNhanCong | null>(null);
-  const [viewingItem, setViewingItem] = useState<FarmBaoCaoNhanCong | null>(null);
+  const [editingItem, setEditingItem] = useState<FarmDuBaoSlDongThung | null>(null);
+  const [viewingItem, setViewingItem] = useState<FarmDuBaoSlDongThung | null>(null);
 
-  const { data: allList = [], isLoading } = useBaoCaoNhanCongList();
+  const { data: allList = [], isLoading } = useDuBaoSlDongThungList();
   const { data: branches = [] } = useBranches();
   const user = useAuthStore((s) => s.user);
   const preferredBranch = useMemo(
     () => getPreferredBranchFromUserLastRecords(allList, user?.id),
     [allList, user?.id]
   );
-  const { data: viewingFull } = useBaoCaoNhanCongById(viewingItem?.id);
-  const { data: editingFull } = useBaoCaoNhanCongById(editingItem?.id);
-  const deleteMutation = useDeleteBaoCaoNhanCong();
-  const deleteManyMutation = useDeleteBaoCaoNhanCongMany();
+  const { data: viewingFull } = useDuBaoSlDongThungById(viewingItem?.id);
+  const { data: editingFull } = useDuBaoSlDongThungById(editingItem?.id);
+  const deleteMutation = useDeleteDuBaoSlDongThung();
+  const deleteManyMutation = useDeleteDuBaoSlDongThungMany();
 
-  const filterFn = useCallback((item: FarmBaoCaoNhanCong, term: string, f: BaoCaoNhanCongFilters) => {
+  const filterFn = useCallback((item: FarmDuBaoSlDongThung, term: string, f: DuBaoSlDongThungFilters) => {
     const q = term.trim().toLowerCase();
-    const kpiTextBlob = (item.kpi ?? [])
-      .map((k) =>
-        [
-          k.ten_hang_muc,
-          k.don_vi_tinh,
-          k.muc_tieu,
-          k.thuc_te,
-          k.danh_gia,
-          k.ghi_chu,
-          k.phan_tram != null && Number.isFinite(Number(k.phan_tram)) ? String(k.phan_tram) : '',
-          String(k.tien_thuong ?? ''),
-        ]
-          .filter(Boolean)
-          .join(' ')
-          .toLowerCase()
-      )
-      .join(' ');
     const matchesSearch =
       !q ||
       (item.ten_chi_nhanh?.toLowerCase().includes(q) ?? false) ||
       (item.ten_nguoi_tao?.toLowerCase().includes(q) ?? false) ||
       (item.ghi_chu?.toLowerCase().includes(q) ?? false) ||
-      String(item.ngay).includes(q) ||
-      kpiTextBlob.includes(q);
+      String(item.ngay).includes(q);
     const matchesBranch =
       (f.id_chi_nhanh?.length ?? 0) === 0 ||
       (item.id_chi_nhanh != null && (f.id_chi_nhanh ?? []).includes(item.id_chi_nhanh));
@@ -120,17 +98,17 @@ const DanhSachTab: React.FC = () => {
   }, [allList, viewingItem]);
 
   const canEditRow = useCallback(
-    (item: FarmBaoCaoNhanCong) => canMutateBaoCaoNhanCong(user, item, canUpdate),
+    (item: FarmDuBaoSlDongThung) => canMutateDuBaoSlDongThung(user, item, canUpdate),
     [user, canUpdate]
   );
   const canDeleteRow = useCallback(
-    (item: FarmBaoCaoNhanCong) => canMutateBaoCaoNhanCong(user, item, canDelete),
+    (item: FarmDuBaoSlDongThung) => canMutateDuBaoSlDongThung(user, item, canDelete),
     [user, canDelete]
   );
 
-  const handleEdit = (item: FarmBaoCaoNhanCong) => {
+  const handleEdit = (item: FarmDuBaoSlDongThung) => {
     if (!canEditRow(item)) {
-      toast.message(t('baoCaoNhanCong.toast.editNotAllowed'));
+      toast.message(t('duBaoSlDongThung.toast.editNotAllowed'));
       return;
     }
     setEditingItem(item);
@@ -146,12 +124,12 @@ const DanhSachTab: React.FC = () => {
   const handleDelete = (id: string) => {
     const item = allList.find((r) => r.id === id);
     if (!item || !canDeleteRow(item)) {
-      toast.message(t('baoCaoNhanCong.toast.deleteNotAllowed'));
+      toast.message(t('duBaoSlDongThung.toast.deleteNotAllowed'));
       return;
     }
     confirm({
-      title: t('baoCaoNhanCong.deleteTitle'),
-      message: t('baoCaoNhanCong.deleteMessage'),
+      title: t('duBaoSlDongThung.deleteTitle'),
+      message: t('duBaoSlDongThung.deleteMessage'),
       variant: 'danger',
       confirmText: CONFIRM_DELETE(),
       onConfirm: async () => {
@@ -171,19 +149,19 @@ const DanhSachTab: React.FC = () => {
       return item && canDeleteRow(item);
     });
     if (allowedIds.length === 0) {
-      toast.message(t('baoCaoNhanCong.toast.deleteManyNoneAllowed'));
+      toast.message(t('duBaoSlDongThung.toast.deleteManyNoneAllowed'));
       return;
     }
     const skippedCount = ids.length - allowedIds.length;
     confirm({
-      title: t('baoCaoNhanCong.deleteTitle'),
+      title: t('duBaoSlDongThung.deleteTitle'),
       message: t('common.deleteManyConfirm', { count: allowedIds.length }),
       variant: 'danger',
       confirmText: CONFIRM_DELETE_ALL(),
       onConfirm: async () => {
         await deleteManyMutation.mutateAsync(allowedIds);
         if (skippedCount > 0) {
-          toast.message(t('baoCaoNhanCong.toast.deleteManyPartial'));
+          toast.message(t('duBaoSlDongThung.toast.deleteManyPartial'));
         }
         clearSelection();
         if (viewingItem && allowedIds.includes(viewingItem.id)) setViewingItem(null);
@@ -203,20 +181,16 @@ const DanhSachTab: React.FC = () => {
   const viewedRow = viewingFull ?? viewingItem;
   const detailCanUpdate = useMemo(() => {
     if (!viewedRow) return false;
-    return canMutateBaoCaoNhanCong(user, viewedRow, canUpdate);
+    return canMutateDuBaoSlDongThung(user, viewedRow, canUpdate);
   }, [viewedRow, user, canUpdate]);
   const detailCanDelete = useMemo(() => {
     if (!viewedRow) return false;
-    return canMutateBaoCaoNhanCong(user, viewedRow, canDelete);
+    return canMutateDuBaoSlDongThung(user, viewedRow, canDelete);
   }, [viewedRow, user, canDelete]);
-  const detailCanCopyNextDay = useMemo(() => {
-    if (!viewedRow) return false;
-    return canCopyBaoCaoNhanCongToNextDay(user, viewedRow, canCreate);
-  }, [viewedRow, user, canCreate]);
 
   return (
     <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-      <BaoCaoNhanCongToolbar
+      <DuBaoSlDongThungToolbar
         data={filteredList}
         branches={branches}
         selectedCount={selectedIds.size}
@@ -229,7 +203,7 @@ const DanhSachTab: React.FC = () => {
         canDelete={canDelete}
       />
       <div className="flex-1 min-h-0 flex flex-col px-4 pb-4 pt-1">
-        <BaoCaoNhanCongList
+        <DuBaoSlDongThungList
           data={filteredList}
           columns={columns}
           selectedIds={selectedIds}
@@ -250,11 +224,10 @@ const DanhSachTab: React.FC = () => {
 
       <AnimatePresence>
         {showForm && (
-          <BaoCaoNhanCongForm
+          <DuBaoSlDongThungForm
             branches={branches}
             initialData={editingFull ?? editingItem}
             preferredBranch={editingItem ? undefined : preferredBranch}
-            existingList={allList}
             onClose={handleCloseForm}
           />
         )}
@@ -262,9 +235,8 @@ const DanhSachTab: React.FC = () => {
 
       <AnimatePresence>
         {viewingItem && !showForm && (
-          <BaoCaoNhanCongDetail
+          <DuBaoSlDongThungDetail
             data={viewingFull ?? viewingItem}
-            existingList={allList}
             onClose={() => setViewingItem(null)}
             onEdit={
               detailCanUpdate
@@ -276,20 +248,9 @@ const DanhSachTab: React.FC = () => {
                 : undefined
             }
             onDelete={detailCanDelete ? handleDelete : undefined}
-            onAfterCopyToNextDay={
-              canCreate
-                ? (newItem) => {
-                    setViewingItem(null);
-                    setEditingItem(newItem);
-                    setShowForm(true);
-                  }
-                : undefined
-            }
-            canCreate={canCreate}
             canUpdate={detailCanUpdate}
             canDelete={detailCanDelete}
-            canCopyNextDay={detailCanCopyNextDay}
-            canToggleTrangThai={canToggleTrangThaiBaoCaoNhanCong(user)}
+            canToggleTrangThai={canToggleTrangThaiDuBaoSlDongThung(user)}
           />
         )}
       </AnimatePresence>

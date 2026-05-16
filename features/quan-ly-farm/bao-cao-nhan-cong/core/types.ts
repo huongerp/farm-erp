@@ -32,6 +32,21 @@ export interface FarmBaoCaoNhanCongCt {
   thu_tu: number;
 }
 
+/** Đánh giá KPI / thưởng — `phan_tram` thang 0–100 (85 = 85%), null nếu không áp dụng */
+export interface FarmBaoCaoNhanCongKpi {
+  id: string;
+  id_bao_cao: string;
+  thu_tu: number;
+  ten_hang_muc: string;
+  don_vi_tinh: string | null;
+  muc_tieu: string | null;
+  thuc_te: string | null;
+  phan_tram: number | null;
+  danh_gia: string | null;
+  tien_thuong: number;
+  ghi_chu: string | null;
+}
+
 export type ChiTietNumericFields = Pick<
   FarmBaoCaoNhanCongCt,
   'sl_cong_ngay' | 'sl_cong_nua' | 'sl_tang_ca' | 'so_gio_tc'
@@ -115,6 +130,7 @@ export interface FarmBaoCaoNhanCong {
   tg_tao: string;
   tg_cap_nhat: string;
   chi_tiet: FarmBaoCaoNhanCongCt[];
+  kpi: FarmBaoCaoNhanCongKpi[];
 }
 
 export function sumSlCongNgay(item: FarmBaoCaoNhanCong): number {
@@ -159,4 +175,9 @@ export function sumTongCongQuyDoiTuChiTiet(rows: Partial<ChiTietNumericFields>[]
 
 export function sumTongCongQuyDoiPhieu(item: FarmBaoCaoNhanCong): number {
   return sumTongCongQuyDoiTuChiTiet(item.chi_tiet ?? []);
+}
+
+/** Tổng tiền thưởng (+) / trừ (-) theo các dòng KPI */
+export function sumTienThuongKpi(item: FarmBaoCaoNhanCong): number {
+  return (item.kpi ?? []).reduce((s, r) => s + Number(r.tien_thuong ?? 0), 0);
 }

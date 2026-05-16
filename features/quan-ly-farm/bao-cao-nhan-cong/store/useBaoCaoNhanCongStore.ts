@@ -77,23 +77,31 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
     order: 9,
   },
   {
+    id: 'tong_thuong_kpi',
+    label: i18n.t('baoCaoNhanCong.store.colTongThuongKpi'),
+    visible: true,
+    minWidth: 104,
+    maxWidth: 132,
+    order: 10,
+  },
+  {
     id: 'ghi_chu',
     label: i18n.t('baoCaoNhanCong.store.colGhiChu'),
     visible: true,
     minWidth: 200,
     maxWidth: 380,
-    order: 10,
+    order: 11,
   },
-  { id: 'ten_nguoi_tao', label: i18n.t('baoCaoNhanCong.store.colNguoiTao'), visible: true, minWidth: 128, maxWidth: 200, order: 11 },
+  { id: 'ten_nguoi_tao', label: i18n.t('baoCaoNhanCong.store.colNguoiTao'), visible: true, minWidth: 128, maxWidth: 200, order: 12 },
   {
     id: 'tg_tao',
     label: i18n.t('baoCaoNhanCong.store.colTgTao'),
     visible: true,
     minWidth: 132,
     maxWidth: 168,
-    order: 12,
+    order: 13,
   },
-  { id: 'tg_cap_nhat', label: i18n.t('baoCaoNhanCong.store.colUpdated'), visible: true, minWidth: 132, maxWidth: 168, order: 13 },
+  { id: 'tg_cap_nhat', label: i18n.t('baoCaoNhanCong.store.colUpdated'), visible: true, minWidth: 132, maxWidth: 168, order: 14 },
 ];
 
 const initialFilters: BaoCaoNhanCongFilters = {

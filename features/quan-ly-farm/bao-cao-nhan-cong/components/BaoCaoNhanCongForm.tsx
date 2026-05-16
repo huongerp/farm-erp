@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { useForm, Controller, type SubmitHandler } from 'react-hook-form';
+import { useForm, Controller, useFieldArray, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Building2, Users, Images } from 'lucide-react';
+import { Building2, Users, Images, Award, Plus, Trash2 } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
 import Textarea from '../../../../components/ui/Textarea';
 import Combobox from '../../../../components/ui/Combobox';
@@ -22,8 +22,10 @@ import {
   tongGioTangCaTichMotDong,
 } from '../core/types';
 import { formatNumberVN } from '../../../../lib/utils';
+import Button from '../../../../components/ui/Button';
 import {
   defaultFormValues,
+  defaultKpiFormRow,
   farmBaoCaoNhanCongToForm,
   findBaoCaoDuplicateByBranchAndDate,
 } from '../core/form-mappers';
@@ -112,6 +114,11 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
     defaultValues,
   });
 
+  const { fields: kpiFields, append: appendKpi, remove: removeKpi } = useFieldArray({
+    control,
+    name: 'kpi',
+  });
+
   const idChiNhanh = watch('id_chi_nhanh');
 
   useEffect(() => {
@@ -159,6 +166,12 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
   const tongQuyDoiPhieu = useMemo(() => sumTongCongQuyDoiTuChiTiet(chiTiet ?? []), [chiTiet]);
   const ivGioTich = useMemo(() => sumTongGioTangCaTichTuChiTiet(productionSlice), [productionSlice]);
   const tongGioTichPhieu = useMemo(() => sumTongGioTangCaTichTuChiTiet(chiTiet ?? []), [chiTiet]);
+
+  const kpiRows = watch('kpi');
+  const tongTienThuongKpi = useMemo(
+    () => (kpiRows ?? []).reduce((s, r) => s + Number(r?.tien_thuong ?? 0), 0),
+    [kpiRows]
+  );
 
   const vIndex = 5;
   const vCode = (rowV?.loai_chuyen ?? 'CONG_DINH_BIEN_KHONG_SAN_XUAT') as LoaiChuyen;
@@ -502,6 +515,174 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
                   </td>
                   <td className="px-3 py-2 align-top text-muted-foreground text-xs">—</td>
                 </tr>
+              </tbody>
+            </table>
+          </div>
+        </FormSection>
+
+        <FormSection title={t('baoCaoNhanCong.form.sectionKpi')} icon={<Award size={14} />} variant="primary">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+            <p className="text-xs text-muted-foreground">{t('baoCaoNhanCong.form.kpiHint')}</p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1"
+              onClick={() => appendKpi(defaultKpiFormRow())}
+            >
+              <Plus size={14} /> {t('baoCaoNhanCong.form.kpiAddRow')}
+            </Button>
+          </div>
+          <div className="overflow-x-auto rounded-lg border border-border">
+            <table className="w-full text-sm min-w-[56rem]">
+              <thead>
+                <tr className="bg-muted/50 border-b border-border">
+                  <th className="text-center px-1 py-2 font-medium w-10">{t('baoCaoNhanCong.form.colTt')}</th>
+                  <th className="text-left px-2 py-2 font-medium min-w-[10rem]">{t('baoCaoNhanCong.form.kpiColHangMuc')}</th>
+                  <th className="text-left px-2 py-2 font-medium w-[5.5rem]">{t('baoCaoNhanCong.form.kpiColDvt')}</th>
+                  <th className="text-left px-2 py-2 font-medium min-w-[6rem]">{t('baoCaoNhanCong.form.kpiColMucTieu')}</th>
+                  <th className="text-left px-2 py-2 font-medium min-w-[6rem]">{t('baoCaoNhanCong.form.kpiColThucTe')}</th>
+                  <th className="text-right px-2 py-2 font-medium w-[6.5rem]">{t('baoCaoNhanCong.form.kpiColPhanTram')}</th>
+                  <th className="text-left px-2 py-2 font-medium min-w-[6rem]">{t('baoCaoNhanCong.form.kpiColDanhGia')}</th>
+                  <th className="text-right px-2 py-2 font-medium w-[7.5rem]">{t('baoCaoNhanCong.form.kpiColTienThuong')}</th>
+                  <th className="text-left px-2 py-2 font-medium min-w-[8rem]">{t('baoCaoNhanCong.form.kpiColGhiChu')}</th>
+                  <th className="w-10 px-1" aria-label={t('common.actions')} />
+                </tr>
+              </thead>
+              <tbody>
+                {kpiFields.length === 0 ? (
+                  <tr>
+                    <td colSpan={10} className="px-3 py-6 text-center text-muted-foreground text-sm">
+                      {t('baoCaoNhanCong.form.kpiEmpty')}
+                    </td>
+                  </tr>
+                ) : (
+                  kpiFields.map((field, index) => (
+                    <tr key={field.id} className="border-b border-border/80">
+                      <td className="px-1 py-2 text-center tabular-nums text-muted-foreground align-top">{index + 1}</td>
+                      <td className="px-2 py-1.5 align-top">
+                        <Controller
+                          name={`kpi.${index}.ten_hang_muc`}
+                          control={control}
+                          render={({ field: f }) => (
+                            <Input {...f} value={f.value ?? ''} className="text-xs w-full min-w-[8rem]" placeholder="—" />
+                          )}
+                        />
+                      </td>
+                      <td className="px-2 py-1.5 align-top">
+                        <Controller
+                          name={`kpi.${index}.don_vi_tinh`}
+                          control={control}
+                          render={({ field: f }) => (
+                            <Input {...f} value={f.value ?? ''} className="text-xs w-full" placeholder="—" />
+                          )}
+                        />
+                      </td>
+                      <td className="px-2 py-1.5 align-top">
+                        <Controller
+                          name={`kpi.${index}.muc_tieu`}
+                          control={control}
+                          render={({ field: f }) => (
+                            <Input {...f} value={f.value ?? ''} className="text-xs w-full min-w-[5rem]" placeholder="—" />
+                          )}
+                        />
+                      </td>
+                      <td className="px-2 py-1.5 align-top">
+                        <Controller
+                          name={`kpi.${index}.thuc_te`}
+                          control={control}
+                          render={({ field: f }) => (
+                            <Input {...f} value={f.value ?? ''} className="text-xs w-full min-w-[5rem]" placeholder="—" />
+                          )}
+                        />
+                      </td>
+                      <td className="px-2 py-1.5 align-top">
+                        <Controller
+                          name={`kpi.${index}.phan_tram`}
+                          control={control}
+                          render={({ field: f }) => (
+                            <Input
+                              type="number"
+                              step="0.01"
+                              className="text-xs w-full text-right tabular-nums"
+                              value={f.value == null ? '' : String(f.value)}
+                              onChange={(e) => {
+                                const raw = e.target.value.trim();
+                                if (raw === '') {
+                                  f.onChange(null);
+                                  return;
+                                }
+                                const n = Number(raw);
+                                f.onChange(Number.isFinite(n) ? n : null);
+                              }}
+                              onBlur={f.onBlur}
+                              name={f.name}
+                              ref={f.ref}
+                              placeholder="—"
+                            />
+                          )}
+                        />
+                      </td>
+                      <td className="px-2 py-1.5 align-top">
+                        <Controller
+                          name={`kpi.${index}.danh_gia`}
+                          control={control}
+                          render={({ field: f }) => (
+                            <Input {...f} value={f.value ?? ''} className="text-xs w-full" placeholder="—" />
+                          )}
+                        />
+                      </td>
+                      <td className="px-2 py-1.5 align-top">
+                        <Controller
+                          name={`kpi.${index}.tien_thuong`}
+                          control={control}
+                          render={({ field: f }) => (
+                            <NumberInput
+                              value={f.value ?? 0}
+                              onChange={f.onChange}
+                              min={-1e15}
+                              max={1e15}
+                              maxFractionDigits={2}
+                              className="w-full"
+                              compact
+                            />
+                          )}
+                        />
+                      </td>
+                      <td className="px-2 py-1.5 align-top">
+                        <Controller
+                          name={`kpi.${index}.ghi_chu`}
+                          control={control}
+                          render={({ field: f }) => (
+                            <Input {...f} value={f.value ?? ''} className="text-xs w-full min-w-[6rem]" placeholder="—" />
+                          )}
+                        />
+                      </td>
+                      <td className="px-1 py-1.5 align-top text-center">
+                        <button
+                          type="button"
+                          onClick={() => removeKpi(index)}
+                          className="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-md"
+                          title={t('common.delete')}
+                          aria-label={t('common.delete')}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+                {kpiFields.length > 0 && (
+                  <tr className="bg-primary/10 dark:bg-primary/15 border-t border-border">
+                    <td colSpan={7} className="px-3 py-2 text-right font-bold text-primary tabular-nums">
+                      {t('baoCaoNhanCong.form.kpiRowTongThuong')}
+                    </td>
+                    <td className="px-2 py-2 text-right font-bold text-primary tabular-nums text-sm">
+                      {formatNumberVN(tongTienThuongKpi)}
+                    </td>
+                    <td colSpan={2} />
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
