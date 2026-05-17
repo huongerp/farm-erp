@@ -15,6 +15,7 @@ import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { useCopyBaoCaoSoCheToNextDay, useUpdateBaoCaoSoCheTrangThai } from '../hooks/use-bao-cao-so-che';
 import { useBaoCaoNhanCongList } from '../../bao-cao-nhan-cong/hooks/use-bao-cao-nhan-cong';
 import BaoCaoSoCheBcncKpiReadout from './BaoCaoSoCheBcncKpiReadout';
+import BaoCaoKpiThuongDetailSection from '../../shared/kpi-thuong/BaoCaoKpiThuongDetailSection';
 import { BaoCaoSoChePhamCapDetailTable } from './BaoCaoSoChePhamCapTables';
 import {
   BCSC_KPI_STT_OFFSET,
@@ -257,6 +258,8 @@ const BaoCaoSoCheDetail: React.FC<Props> = ({
             sttOffset={BCSC_KPI_STT_OFFSET}
           />
         </DetailSection>
+
+        <BaoCaoKpiThuongDetailSection rows={data.kpi_thuong ?? []} i18nPrefix="baoCaoSoChe.kpiThuong" />
 
         <DetailSection title={t('baoCaoSoChe.form.sectionPhamCapTitle')} icon={<Package size={14} />} variant="primary">
           <BaoCaoSoChePhamCapDetailTable rows={data.pham_cap} />

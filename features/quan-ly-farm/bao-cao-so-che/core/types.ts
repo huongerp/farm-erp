@@ -5,6 +5,9 @@
  */
 import type { SoLieuRowKey, SoLieuRowMeta } from './so-lieu-row-meta';
 import type { FarmBaoCaoSoChePhamCapRow } from './pham-cap';
+import type { FarmBaoCaoKpiThuongRow } from '../../shared/kpi-thuong/types';
+export type { FarmBaoCaoKpiThuongRow } from '../../shared/kpi-thuong/types';
+export { sumTienThuongKpiThuong } from '../../shared/kpi-thuong/types';
 
 /** `mo` = đang mở, `khoa` = đã khóa (chỉ quản trị sửa/xóa). */
 export type TrangThaiBaoCaoSoChePhieu = 'mo' | 'khoa';
@@ -42,6 +45,8 @@ export interface FarmBaoCaoSoChe {
   so_lieu_row_meta?: SoLieuRowMeta;
   /** Các dòng phẩm cấp — `fp_farm_bao_cao_so_che_pham_cap` (thiếu DB → mảng rỗng). */
   pham_cap: FarmBaoCaoSoChePhamCapRow[];
+  /** Đánh giá KPI / thưởng — `fp_farm_bao_cao_so_che_kpi` */
+  kpi_thuong: FarmBaoCaoKpiThuongRow[];
   ghi_chu: string | null;
   id_nguoi_tao: string | null;
   ten_nguoi_tao: string | null;

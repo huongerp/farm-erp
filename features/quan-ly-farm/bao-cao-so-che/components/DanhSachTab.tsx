@@ -63,12 +63,25 @@ const DanhSachTab: React.FC = () => {
 
   const filterFn = useCallback((item: FarmBaoCaoSoChe, term: string, f: BaoCaoSoCheFilters) => {
     const q = term.trim().toLowerCase();
+    const kpiTextBlob = (item.kpi_thuong ?? [])
+      .flatMap((k) => [
+        k.ten_hang_muc,
+        k.don_vi_tinh,
+        k.muc_tieu,
+        k.thuc_te,
+        k.danh_gia,
+        k.ghi_chu,
+      ])
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
     const matchesSearch =
       !q ||
       (item.ten_chi_nhanh?.toLowerCase().includes(q) ?? false) ||
       (item.ten_nguoi_tao?.toLowerCase().includes(q) ?? false) ||
       (item.ghi_chu?.toLowerCase().includes(q) ?? false) ||
       (item.don_vi_tinh?.toLowerCase().includes(q) ?? false) ||
+      kpiTextBlob.includes(q) ||
       String(item.ngay).includes(q);
     const matchesBranch =
       (f.id_chi_nhanh?.length ?? 0) === 0 ||

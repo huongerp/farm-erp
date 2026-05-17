@@ -66,11 +66,19 @@ const HopDongList: React.FC<Props> = ({
           </span>
         );
       case 'ten_hop_dong':
-        return <span className="text-sm text-foreground truncate block">{item.ten_hop_dong ?? '—'}</span>;
+        return (
+          <span className="text-sm text-foreground truncate block min-w-0" title={item.ten_hop_dong ?? undefined}>
+            {item.ten_hop_dong ?? '—'}
+          </span>
+        );
       case 'ngay':
-        return <span className="text-sm text-muted-foreground">{item.ngay ?? '—'}</span>;
+        return <span className="text-sm text-muted-foreground whitespace-nowrap">{item.ngay ?? '—'}</span>;
       case 'ten_nha_cung_cap':
-        return <span className="text-sm text-muted-foreground">{item.ten_nha_cung_cap ?? '—'}</span>;
+        return (
+          <span className="text-sm text-muted-foreground truncate block min-w-0" title={item.ten_nha_cung_cap ?? undefined}>
+            {item.ten_nha_cung_cap ?? '—'}
+          </span>
+        );
       case 'thanh_tien':
         return (
           <span className="text-sm tabular-nums font-medium">

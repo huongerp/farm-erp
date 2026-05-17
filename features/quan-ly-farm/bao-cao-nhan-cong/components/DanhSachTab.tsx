@@ -63,30 +63,12 @@ const DanhSachTab: React.FC = () => {
 
   const filterFn = useCallback((item: FarmBaoCaoNhanCong, term: string, f: BaoCaoNhanCongFilters) => {
     const q = term.trim().toLowerCase();
-    const kpiTextBlob = (item.kpi ?? [])
-      .map((k) =>
-        [
-          k.ten_hang_muc,
-          k.don_vi_tinh,
-          k.muc_tieu,
-          k.thuc_te,
-          k.danh_gia,
-          k.ghi_chu,
-          k.phan_tram != null && Number.isFinite(Number(k.phan_tram)) ? String(k.phan_tram) : '',
-          String(k.tien_thuong ?? ''),
-        ]
-          .filter(Boolean)
-          .join(' ')
-          .toLowerCase()
-      )
-      .join(' ');
     const matchesSearch =
       !q ||
       (item.ten_chi_nhanh?.toLowerCase().includes(q) ?? false) ||
       (item.ten_nguoi_tao?.toLowerCase().includes(q) ?? false) ||
       (item.ghi_chu?.toLowerCase().includes(q) ?? false) ||
-      String(item.ngay).includes(q) ||
-      kpiTextBlob.includes(q);
+      String(item.ngay).includes(q);
     const matchesBranch =
       (f.id_chi_nhanh?.length ?? 0) === 0 ||
       (item.id_chi_nhanh != null && (f.id_chi_nhanh ?? []).includes(item.id_chi_nhanh));

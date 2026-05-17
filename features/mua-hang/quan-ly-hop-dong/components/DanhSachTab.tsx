@@ -1,6 +1,9 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
+import ExportDialog from '../../../../components/shared/ExportDialog';
+import { useExportData } from '../../../../lib/useExportData';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import {
   useHopDongList,
@@ -15,10 +18,18 @@ import { useListWithFilter } from '../../../../lib/hooks';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
 import type { HopDong, HopDongFilters } from '../core/types';
+import { matchesHopDongFilters } from '../core/list-filter-helpers';
 import HopDongToolbar from './HopDongToolbar';
 import HopDongList from './HopDongList';
 import HopDongForm from './HopDongForm';
 import HopDongDetail from './HopDongDetail';
+import {
+  getExportColumnsHopDongList,
+  mapHopDongListRow,
+  exportFileNameHopDongList,
+  LIST_EXPORT_SHEET_HOP_DONG,
+  HOP_DONG_LIST_EXPORT_KEYS,
+} from '../utils/export-hop-dong-list';
 
 const DanhSachTab: React.FC = () => {
   const { t } = useTranslation();
@@ -41,6 +52,7 @@ const DanhSachTab: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<HopDong | null>(null);
   const [viewingItem, setViewingItem] = useState<HopDong | null>(null);
+  const [showExport, setShowExport] = useState(false);
 
   const { data: allList = [], isLoading } = useHopDongList();
   const { data: doiTacList = [] } = useDoiTacRefQuery('nha_cung_cap');
@@ -59,14 +71,36 @@ const DanhSachTab: React.FC = () => {
       (item.ten_hop_dong?.toLowerCase().includes(q) ?? false) ||
       (item.ten_nha_cung_cap?.toLowerCase().includes(q) ?? false) ||
       (item.ghi_chu?.toLowerCase().includes(q) ?? false);
-    const matchesTt =
-      (f.trangThai?.length ?? 0) === 0 || (f.trangThai ?? []).includes(item.trang_thai);
-    const matchesNcc =
-      (f.nccIds?.length ?? 0) === 0 || (f.nccIds ?? []).includes(item.id_nha_cung_cap);
-    return matchesSearch && matchesTt && matchesNcc;
+    return matchesSearch && matchesHopDongFilters(item, f);
   }, []);
 
   const filteredList = useListWithFilter(allList, searchTerm, filters, filterFn);
+
+  const exportColumnsList = useMemo(() => getExportColumnsHopDongList(t), [t]);
+  const exportMapList = useCallback((item: HopDong) => mapHopDongListRow(item, t), [t]);
+  const { exportData, paginatedData: paginatedExportData, selectedData: selectedExportData } =
+    useExportData<HopDong>({
+      data: filteredList,
+      isOpen: showExport,
+      mapFn: exportMapList,
+      pagination,
+      selectedIds,
+      keyExtractor: (p) => p.id,
+    });
+
+  const listExportVisibleKeys = useMemo(() => {
+    const allowed = new Set<string>(HOP_DONG_LIST_EXPORT_KEYS as unknown as string[]);
+    const picked = columns.filter((c) => c.visible && allowed.has(c.id)).map((c) => c.id);
+    return picked.length > 0 ? picked : undefined;
+  }, [columns]);
+
+  const handleExport = useCallback(() => {
+    if (filteredList.length === 0) {
+      toast.warning(t('hopDong.noExportData'));
+      return;
+    }
+    setShowExport(true);
+  }, [filteredList.length, t]);
 
   useEffect(() => resetState(), [resetState]);
   useEffect(() => {
@@ -125,7 +159,7 @@ const DanhSachTab: React.FC = () => {
   return (
     <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
       <HopDongToolbar
-        data={filteredList}
+        data={allList}
         doiTacList={doiTacList}
         selectedCount={selectedIds.size}
         onAdd={() => {
@@ -133,6 +167,7 @@ const DanhSachTab: React.FC = () => {
           setShowForm(true);
         }}
         onDeleteMany={handleDeleteMany}
+        onExport={handleExport}
         canCreate={canCreate}
         canDelete={canDelete}
       />
@@ -153,6 +188,22 @@ const DanhSachTab: React.FC = () => {
           onView={setViewingItem}
         />
       </div>
+
+      <AnimatePresence>
+        {showExport && (
+          <ExportDialog
+            open={showExport}
+            onClose={() => setShowExport(false)}
+            columns={exportColumnsList}
+            data={exportData}
+            paginatedData={paginatedExportData}
+            selectedData={selectedExportData}
+            fileName={exportFileNameHopDongList()}
+            visibleColumnKeys={listExportVisibleKeys}
+            sheetName={LIST_EXPORT_SHEET_HOP_DONG}
+          />
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {showForm && (

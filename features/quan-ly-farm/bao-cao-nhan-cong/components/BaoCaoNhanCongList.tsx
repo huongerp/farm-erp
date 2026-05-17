@@ -10,7 +10,6 @@ import {
   sumSoGioTc,
   sumTongCongQuyDoiPhieu,
   sumTongGioTangCaTichPhieu,
-  sumTienThuongKpi,
 } from '../core/types';
 import GenericTable from '../../../../components/shared/GenericTable';
 import type { ColumnConfig } from '../../../../store/createGenericStore';
@@ -120,10 +119,6 @@ const BaoCaoNhanCongList: React.FC<Props> = ({
       case 'tong_gio_tang_ca_tich':
         return (
           <span className="text-sm tabular-nums font-semibold text-primary">{formatNumberVN(sumTongGioTangCaTichPhieu(item))}</span>
-        );
-      case 'tong_thuong_kpi':
-        return (
-          <span className="text-sm tabular-nums font-semibold text-primary">{formatNumberVN(sumTienThuongKpi(item))}</span>
         );
       case 'ghi_chu':
         return (
@@ -239,10 +234,6 @@ const BaoCaoNhanCongList: React.FC<Props> = ({
         {t('baoCaoNhanCong.store.colGioTangCa')}: {formatNumberVN(sumSoGioTc(item))} ·{' '}
         {t('baoCaoNhanCong.store.colTongGioTangCa')}:{' '}
         <span className="font-semibold text-primary tabular-nums">{formatNumberVN(sumTongGioTangCaTichPhieu(item))}</span>
-      </div>
-      <div className="text-xs text-muted-foreground mb-1">
-        {t('baoCaoNhanCong.store.colTongThuongKpi')}:{' '}
-        <span className="font-semibold text-primary tabular-nums">{formatNumberVN(sumTienThuongKpi(item))}</span>
       </div>
       <div className="text-xs text-muted-foreground mb-1">
         {t('baoCaoNhanCong.store.colTgTao')}: {formatDateTimeShort(item.tg_tao)}

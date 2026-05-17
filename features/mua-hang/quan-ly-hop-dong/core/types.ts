@@ -45,4 +45,32 @@ export interface HopDong {
 export interface HopDongFilters {
   trangThai: string[];
   nccIds: string[];
+  dateFrom: string;
+  dateTo: string;
+  nguoiTaoIds: string[];
+}
+
+/** Dòng thanh toán kèm thông tin hợp đồng cha (tab Thanh toán) */
+export interface HopDongChiTietEnriched extends HopDongChiTiet {
+  ma_hop_dong?: string | null;
+  ten_hop_dong?: string | null;
+  ten_nha_cung_cap?: string | null;
+  id_nha_cung_cap?: string | null;
+  trang_thai_hop_dong?: string | null;
+}
+
+export interface ThanhToanFilters {
+  chiNhanhIds: string[];
+  nccIds: string[];
+  hopDongIds: string[];
+  dateFrom: string;
+  dateTo: string;
+  nguoiTaoIds: string[];
+}
+
+export interface BaoCaoFilters {
+  trangThai: string[];
+  nccIds: string[];
+  dateFrom: string;
+  dateTo: string;
 }

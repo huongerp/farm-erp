@@ -1,9 +1,9 @@
 /**
- * Báo cáo sơ chế — Supabase fp_farm_bao_cao_so_che + fp_farm_bao_cao_so_che_ct + fp_farm_bao_cao_so_che_pham_cap
+ * Báo cáo sơ chế — Supabase fp_farm_bao_cao_so_che + fp_farm_bao_cao_so_che_ct + fp_farm_bao_cao_so_che_pham_cap + fp_farm_bao_cao_so_che_kpi
  */
 import { supabase, throwSupabaseError, formatSupabaseError } from '../../../../lib/supabase';
 import i18n from '../../../../lib/i18n';
-import type { FarmBaoCaoSoChe, TrangThaiBaoCaoSoChePhieu } from '../core/types';
+import type { FarmBaoCaoSoChe, FarmBaoCaoKpiThuongRow, TrangThaiBaoCaoSoChePhieu } from '../core/types';
 import { TRANG_THAI_BAO_CAO_SO_CHE } from '../core/types';
 import { defaultPhamCapModelRows, type FarmBaoCaoSoChePhamCapRow } from '../core/pham-cap';
 import type { BaoCaoSoCheFormValues } from '../core/schema';
@@ -21,6 +21,7 @@ import {
 const TABLE_CHA = 'fp_farm_bao_cao_so_che';
 const TABLE_CT = 'fp_farm_bao_cao_so_che_ct';
 const TABLE_PCAP = 'fp_farm_bao_cao_so_che_pham_cap';
+const TABLE_KPI = 'fp_farm_bao_cao_so_che_kpi';
 
 const ROW_CHA = 'id,ngay,id_chi_nhanh,ten_chi_nhanh,ghi_chu,id_nguoi_tao,trang_thai,tg_tao,tg_cap_nhat';
 
@@ -28,6 +29,9 @@ const ROW_CT = 'id,id_bao_cao,ma_chi_tieu,gia_tri,don_vi_tinh,ghi_chu,thu_tu';
 
 const ROW_PCAP =
   'id,id_bao_cao,ten_pham_cap,so_tham_chieu,so_thung,so_kg,ty_le_pct,so_thung_quy_doi,thu_tu';
+
+const ROW_KPI =
+  'id,id_bao_cao,thu_tu,ten_hang_muc,don_vi_tinh,muc_tieu,thuc_te,phan_tram,danh_gia,tien_thuong,ghi_chu';
 
 function parseIdToInt8(id: string | null | undefined): number | null {
   if (id == null || id === '') return null;
@@ -71,6 +75,12 @@ function num(v: string | number | null | undefined): number {
   return Number.isFinite(n) ? n : 0;
 }
 
+function numNullable(v: string | number | null | undefined): number | null {
+  if (v == null || v === '') return null;
+  const n = typeof v === 'number' ? v : Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
 function isSoLieuRowKey(s: string): s is SoLieuRowKey {
   return (SO_LIEU_ROW_KEYS as readonly string[]).includes(s);
 }
@@ -95,6 +105,20 @@ interface DbRowCt {
   don_vi_tinh: string | null;
   ghi_chu: string | null;
   thu_tu: number | null;
+}
+
+interface DbRowKpi {
+  id: number;
+  id_bao_cao: number;
+  thu_tu: number | null;
+  ten_hang_muc: string;
+  don_vi_tinh: string | null;
+  muc_tieu: string | null;
+  thuc_te: string | null;
+  phan_tram: string | number | null;
+  danh_gia: string | null;
+  tien_thuong: string | number | null;
+  ghi_chu: string | null;
 }
 
 interface DbRowPcap {
@@ -186,7 +210,28 @@ function ctRowsToMetrics(
   };
 }
 
-function chaRowToModel(row: DbRowCha, ctRows: DbRowCt[], pcapRows: DbRowPcap[]): FarmBaoCaoSoChe {
+function kpiRowToModel(row: DbRowKpi): FarmBaoCaoKpiThuongRow {
+  return {
+    id: String(row.id),
+    id_bao_cao: String(row.id_bao_cao),
+    thu_tu: row.thu_tu ?? 0,
+    ten_hang_muc: row.ten_hang_muc ?? '',
+    don_vi_tinh: row.don_vi_tinh ?? null,
+    muc_tieu: row.muc_tieu ?? null,
+    thuc_te: row.thuc_te ?? null,
+    phan_tram: numNullable(row.phan_tram),
+    danh_gia: row.danh_gia ?? null,
+    tien_thuong: num(row.tien_thuong),
+    ghi_chu: row.ghi_chu ?? null,
+  };
+}
+
+function chaRowToModel(
+  row: DbRowCha,
+  ctRows: DbRowCt[],
+  pcapRows: DbRowPcap[],
+  kpiRows: FarmBaoCaoKpiThuongRow[]
+): FarmBaoCaoSoChe {
   const m = ctRowsToMetrics(ctRows);
   return {
     id: String(row.id),
@@ -195,6 +240,7 @@ function chaRowToModel(row: DbRowCha, ctRows: DbRowCt[], pcapRows: DbRowPcap[]):
     ten_chi_nhanh: row.ten_chi_nhanh ?? null,
     ...m,
     pham_cap: pcapRows.length > 0 ? pcapDbRowsToModel(pcapRows) : defaultPhamCapModelRows(),
+    kpi_thuong: kpiRows.sort((a, b) => a.thu_tu - b.thu_tu),
     ghi_chu: row.ghi_chu ?? null,
     id_nguoi_tao: row.id_nguoi_tao != null ? String(row.id_nguoi_tao) : null,
     ten_nguoi_tao: null,
@@ -214,6 +260,21 @@ async function fetchCtRowsForIds(ids: string[]): Promise<Map<string, DbRowCt[]>>
     const key = String(row.id_bao_cao);
     const list = map.get(key) ?? [];
     list.push(row);
+    map.set(key, list);
+  }
+  return map;
+}
+
+async function fetchKpiRowsForIds(ids: string[]): Promise<Map<string, FarmBaoCaoKpiThuongRow[]>> {
+  const map = new Map<string, FarmBaoCaoKpiThuongRow[]>();
+  if (ids.length === 0) return map;
+  const numIds = ids.map((x) => Number(x)).filter((n) => Number.isFinite(n));
+  const { data, error } = await supabase.from(TABLE_KPI).select(ROW_KPI).in('id_bao_cao', numIds);
+  if (error) throwSupabaseError(error, { resource: `${TABLE_KPI}.select` });
+  for (const row of (data ?? []) as DbRowKpi[]) {
+    const key = String(row.id_bao_cao);
+    const list = map.get(key) ?? [];
+    list.push(kpiRowToModel(row));
     map.set(key, list);
   }
   return map;
@@ -275,6 +336,22 @@ function ctRowsFromForm(values: BaoCaoSoCheFormValues, idBaoCao: number) {
   });
 }
 
+function kpiPayloadRows(idBaoCao: number, values: BaoCaoSoCheFormValues) {
+  const filtered = (values.kpi_thuong ?? []).filter((r) => String(r.ten_hang_muc ?? '').trim().length > 0);
+  return filtered.map((r, i) => ({
+    id_bao_cao: idBaoCao,
+    thu_tu: i + 1,
+    ten_hang_muc: String(r.ten_hang_muc).trim(),
+    don_vi_tinh: r.don_vi_tinh?.trim() || null,
+    muc_tieu: r.muc_tieu?.trim() || null,
+    thuc_te: r.thuc_te?.trim() || null,
+    phan_tram: r.phan_tram == null || Number.isNaN(Number(r.phan_tram)) ? null : Number(r.phan_tram),
+    danh_gia: r.danh_gia?.trim() || null,
+    tien_thuong: Number(r.tien_thuong ?? 0),
+    ghi_chu: r.ghi_chu?.trim() || null,
+  }));
+}
+
 function pcapRowsFromForm(values: BaoCaoSoCheFormValues, idBaoCao: number) {
   const rows = values.pham_cap ?? [];
   return rows
@@ -296,9 +373,18 @@ export async function getAllBaoCaoSoCheSupabase(): Promise<FarmBaoCaoSoChe[]> {
   if (error) throwSupabaseError(error, { resource: `${TABLE_CHA}.list` });
   const rows = (data ?? []) as DbRowCha[];
   const ids = rows.map((r) => String(r.id));
-  const [ctMap, pcapMap] = await Promise.all([fetchCtRowsForIds(ids), fetchPcapRowsForIds(ids)]);
+  const [ctMap, pcapMap, kpiMap] = await Promise.all([
+    fetchCtRowsForIds(ids),
+    fetchPcapRowsForIds(ids),
+    fetchKpiRowsForIds(ids),
+  ]);
   return rows.map((r) =>
-    chaRowToModel(r, ctMap.get(String(r.id)) ?? [], pcapMap.get(String(r.id)) ?? [])
+    chaRowToModel(
+      r,
+      ctMap.get(String(r.id)) ?? [],
+      pcapMap.get(String(r.id)) ?? [],
+      kpiMap.get(String(r.id)) ?? []
+    )
   );
 }
 
@@ -309,11 +395,17 @@ export async function getBaoCaoSoCheByIdSupabase(id: string): Promise<FarmBaoCao
   if (error) throwSupabaseError(error, { resource: `${TABLE_CHA}.byId` });
   if (!data) return null;
   const row = data as DbRowCha;
-  const [ctMap, pcapMap] = await Promise.all([
+  const [ctMap, pcapMap, kpiMap] = await Promise.all([
     fetchCtRowsForIds([String(row.id)]),
     fetchPcapRowsForIds([String(row.id)]),
+    fetchKpiRowsForIds([String(row.id)]),
   ]);
-  return chaRowToModel(row, ctMap.get(String(row.id)) ?? [], pcapMap.get(String(row.id)) ?? []);
+  return chaRowToModel(
+    row,
+    ctMap.get(String(row.id)) ?? [],
+    pcapMap.get(String(row.id)) ?? [],
+    kpiMap.get(String(row.id)) ?? []
+  );
 }
 
 export async function createBaoCaoSoCheSupabase(
@@ -332,6 +424,11 @@ export async function createBaoCaoSoCheSupabase(
   if (pcapIns.length > 0) {
     const { error: e3 } = await supabase.from(TABLE_PCAP).insert(pcapIns);
     if (e3) throwSupabaseError(e3, { resource: `${TABLE_PCAP}.insert` });
+  }
+  const kpiIns = kpiPayloadRows(pid, values);
+  if (kpiIns.length > 0) {
+    const { error: ek } = await supabase.from(TABLE_KPI).insert(kpiIns);
+    if (ek) throwSupabaseError(ek, { resource: `${TABLE_KPI}.insert` });
   }
   return (await getBaoCaoSoCheByIdSupabase(String(pid)))!;
 }
@@ -352,6 +449,13 @@ export async function updateBaoCaoSoCheSupabase(id: string, values: BaoCaoSoCheF
   if (pcapIns.length > 0) {
     const { error: insPc } = await supabase.from(TABLE_PCAP).insert(pcapIns);
     if (insPc) throwSupabaseError(insPc, { resource: `${TABLE_PCAP}.insert` });
+  }
+  const { error: delKpi } = await supabase.from(TABLE_KPI).delete().eq('id_bao_cao', numId);
+  if (delKpi) throwSupabaseError(delKpi, { resource: `${TABLE_KPI}.delete` });
+  const kpiIns = kpiPayloadRows(numId, values);
+  if (kpiIns.length > 0) {
+    const { error: ek } = await supabase.from(TABLE_KPI).insert(kpiIns);
+    if (ek) throwSupabaseError(ek, { resource: `${TABLE_KPI}.insert` });
   }
   return (await getBaoCaoSoCheByIdSupabase(id))!;
 }

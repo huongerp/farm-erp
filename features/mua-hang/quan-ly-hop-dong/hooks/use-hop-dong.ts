@@ -12,11 +12,21 @@ import {
   deleteHopDongChiTietSupabase,
   deleteHopDongSupabase,
   deleteHopDongManySupabase,
+  getAllHopDongChiTietEnrichedSupabase,
 } from '../services/hop-dong-supabase.service';
 import type { HopDongFormValues, HopDongChiTietLineValues } from '../core/schema';
 import type { TrangThaiHopDong } from '../core/constants';
 
 export const HOP_DONG_QUERY_KEY = ['hopDong'] as const;
+export const HOP_DONG_CHI_TIET_ALL_KEY = [...HOP_DONG_QUERY_KEY, 'chiTietAll'] as const;
+
+function invalidateHopDongQueries(queryClient: ReturnType<typeof useQueryClient>, idHopDong?: string) {
+  queryClient.invalidateQueries({ queryKey: HOP_DONG_QUERY_KEY });
+  queryClient.invalidateQueries({ queryKey: HOP_DONG_CHI_TIET_ALL_KEY });
+  if (idHopDong) {
+    queryClient.invalidateQueries({ queryKey: [...HOP_DONG_QUERY_KEY, 'detail', idHopDong] });
+  }
+}
 
 export function useHopDongList() {
   return useQuery({
@@ -30,6 +40,13 @@ export function useHopDongById(id: string | undefined) {
     queryKey: [...HOP_DONG_QUERY_KEY, 'detail', id],
     queryFn: () => getHopDongByIdSupabase(id!),
     enabled: !!id,
+  });
+}
+
+export function useHopDongChiTietAllList() {
+  return useQuery({
+    queryKey: HOP_DONG_CHI_TIET_ALL_KEY,
+    queryFn: getAllHopDongChiTietEnrichedSupabase,
   });
 }
 
@@ -120,8 +137,7 @@ export function useInsertHopDongChiTiet() {
       idNguoiTao: string | null;
     }) => insertHopDongChiTietSupabase(idHopDong, row, idNguoiTao),
     onSuccess: (_, { idHopDong }) => {
-      queryClient.invalidateQueries({ queryKey: HOP_DONG_QUERY_KEY });
-      queryClient.invalidateQueries({ queryKey: [...HOP_DONG_QUERY_KEY, 'detail', idHopDong] });
+      invalidateHopDongQueries(queryClient, idHopDong);
       toast.success(i18n.t('hopDong.toast.chiTietCreateSuccess'));
     },
     onError: (err: Error) => toast.error(err.message),
@@ -140,8 +156,7 @@ export function useUpdateHopDongChiTiet() {
       row: HopDongChiTietLineValues;
     }) => updateHopDongChiTietSupabase(idCt, row),
     onSuccess: (_, { idHopDong }) => {
-      queryClient.invalidateQueries({ queryKey: HOP_DONG_QUERY_KEY });
-      queryClient.invalidateQueries({ queryKey: [...HOP_DONG_QUERY_KEY, 'detail', idHopDong] });
+      invalidateHopDongQueries(queryClient, idHopDong);
       toast.success(i18n.t('hopDong.toast.chiTietUpdateSuccess'));
     },
     onError: (err: Error) => toast.error(err.message),
@@ -154,8 +169,7 @@ export function useDeleteHopDongChiTiet() {
     mutationFn: ({ idCt, idHopDong }: { idCt: string; idHopDong: string }) =>
       deleteHopDongChiTietSupabase(idCt).then(() => idHopDong),
     onSuccess: (idHopDong) => {
-      queryClient.invalidateQueries({ queryKey: HOP_DONG_QUERY_KEY });
-      queryClient.invalidateQueries({ queryKey: [...HOP_DONG_QUERY_KEY, 'detail', idHopDong] });
+      invalidateHopDongQueries(queryClient, idHopDong);
       toast.success(i18n.t('hopDong.toast.chiTietDeleteSuccess'));
     },
     onError: (err: Error) => toast.error(err.message),

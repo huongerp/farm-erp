@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import i18n from '../../../../lib/i18n';
 import { emptyPhamCapRows, PHAM_CAP_ROWS_MAX } from './pham-cap';
+import { kpiThuongArraySchema } from '../../shared/kpi-thuong/schema';
 
 const reqMsg = (key: string) => i18n.t(key);
 
@@ -81,6 +82,7 @@ export const baoCaoSoCheFormSchema = z.object({
     sl_buong_ton_cuoi_ngay: { ghi_chu: '', don_vi_tinh_phu: 'Buồng' },
   }),
   pham_cap: phamCapArraySchema.default(emptyPhamCapRows()),
+  kpi_thuong: kpiThuongArraySchema,
   ghi_chu: z.string().max(8000).optional().nullable(),
 });
 

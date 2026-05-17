@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Edit, Trash2 } from 'lucide-react';
 import { cn, formatDateShort, formatDateTimeShort, formatNumberVN } from '../../../../lib/utils';
 import type { FarmBaoCaoSoChe } from '../core/types';
+import { sumTienThuongKpiThuong } from '../core/types';
 import GenericTable from '../../../../components/shared/GenericTable';
 import type { ColumnConfig } from '../../../../store/createGenericStore';
 
@@ -89,6 +90,12 @@ const BaoCaoSoCheList: React.FC<Props> = ({
         return <span className="text-sm tabular-nums">{formatNumberVN(item.tong_buong_so_che)}</span>;
       case 'sl_buong_ton_cuoi_ngay':
         return <span className="text-sm tabular-nums">{formatNumberVN(item.sl_buong_ton_cuoi_ngay)}</span>;
+      case 'tong_thuong_kpi':
+        return (
+          <span className="text-sm tabular-nums font-semibold text-primary">
+            {formatNumberVN(sumTienThuongKpiThuong(item.kpi_thuong ?? []))}
+          </span>
+        );
       case 'ghi_chu':
         return (
           <div

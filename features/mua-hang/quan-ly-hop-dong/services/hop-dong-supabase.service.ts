@@ -2,7 +2,7 @@
  * Quản lý hợp đồng – Supabase (fp_mh_hop_dong, fp_mh_hop_dong_ct, v_hop_dong_summary)
  */
 import { supabase, fetchAllRows, throwSupabaseError } from '../../../../lib/supabase';
-import type { HopDong, HopDongChiTiet } from '../core/types';
+import type { HopDong, HopDongChiTiet, HopDongChiTietEnriched } from '../core/types';
 import type { HopDongFormValues, HopDongChiTietLineValues } from '../core/schema';
 import type { TrangThaiHopDong } from '../core/constants';
 import { getDoiTacRef } from '../../../kho-van/danh-sach-doi-tac/services/doi-tac-service';
@@ -400,4 +400,49 @@ export async function deleteHopDongManySupabase(ids: string[]): Promise<void> {
   if (numIds.length === 0) return;
   const { error } = await supabase.from(TABLE_HOP).delete().in('id', numIds);
   if (error) throwSupabaseError(error);
+}
+
+interface HopLiteRow {
+  id: number;
+  ma_hop_dong: string;
+  ten_hop_dong: string | null;
+  ten_nha_cung_cap: string | null;
+  id_nha_cung_cap: number;
+  trang_thai: string;
+}
+
+const HOP_LITE_SELECT = 'id,ma_hop_dong,ten_hop_dong,ten_nha_cung_cap,id_nha_cung_cap,trang_thai';
+
+/** Tất cả dòng thanh toán kèm thông tin hợp đồng cha (tab Thanh toán) */
+export async function getAllHopDongChiTietEnrichedSupabase(): Promise<HopDongChiTietEnriched[]> {
+  const [ctRows, hopRows] = await Promise.all([
+    fetchAllRows<ChiTietDbRow>((from, to) =>
+      supabase
+        .from(TABLE_CT)
+        .select(CT_SELECT)
+        .order('ngay', { ascending: false, nullsFirst: false })
+        .order('id', { ascending: false })
+        .range(from, to)
+    ),
+    fetchAllRows<HopLiteRow>((from, to) =>
+      supabase.from(TABLE_HOP).select(HOP_LITE_SELECT).order('id', { ascending: true }).range(from, to)
+    ),
+  ]);
+
+  const hopMap = new Map<number, HopLiteRow>();
+  for (const h of hopRows) hopMap.set(h.id, h);
+
+  return ctRows.map((r) => {
+    const hop = hopMap.get(r.id_hop_dong);
+    const idHopStr = String(r.id_hop_dong);
+    const base = rowToChiTiet(r, idHopStr);
+    return {
+      ...base,
+      ma_hop_dong: hop?.ma_hop_dong ?? null,
+      ten_hop_dong: hop?.ten_hop_dong ?? null,
+      ten_nha_cung_cap: hop?.ten_nha_cung_cap ?? null,
+      id_nha_cung_cap: hop?.id_nha_cung_cap != null ? String(hop.id_nha_cung_cap) : null,
+      trang_thai_hop_dong: hop?.trang_thai ?? null,
+    };
+  });
 }

@@ -1,7 +1,8 @@
 -- =============================================================================
 -- Farm: Báo cáo nhân công — phiếu theo ngày + chi tiết theo chuyền sản xuất
 -- Bảng: fp_farm_bao_cao_nhan_cong (cha), fp_farm_bao_cao_nhan_cong_ct (con)
--- Bảng con KPI / thưởng (tùy chọn, chạy riêng): docs/supabase-fp_farm_bao_cao_nhan_cong_kpi.sql
+-- Chi tiết từng ô (CN ngày / CN nửa / tăng ca): docs/supabase-fp_farm_bao_cao_nhan_cong_ct_sub.sql
+-- KPI / thưởng đã chuyển sang báo cáo sơ chế: docs/supabase-fp_farm_bao_cao_so_che_kpi.sql
 -- Chạy sau khi đã có fp_var_chi_nhanh, fp_var_nhan_vien (nếu FK tham chiếu)
 -- =============================================================================
 
@@ -162,4 +163,4 @@ CREATE POLICY "fp_farm_bcnc_ct_delete_auth" ON public.fp_farm_bao_cao_nhan_cong_
 -- CREATE OR REPLACE FUNCTION public.trg_fp_farm_bcnc_touch() ...
 
 -- Seed mẫu (tùy chọn): docs/supabase-seed-fp_farm_bao_cao_nhan_cong.sql
--- KPI / thưởng (Đánh giá KPI): docs/supabase-fp_farm_bao_cao_nhan_cong_kpi.sql — RLS + GRANT tách file, chạy sau file cha
+-- Ảnh đính kèm: docs/supabase-fp_farm_bao_cao_nhan_cong_add_hinh_anh_urls.sql

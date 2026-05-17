@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { useForm, Controller, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Building2, Calculator, Layers, MessageSquare, Users } from 'lucide-react';
+import BaoCaoKpiThuongFormSection from '../../shared/kpi-thuong/BaoCaoKpiThuongFormSection';
 import Input from '../../../../components/ui/Input';
 import Textarea from '../../../../components/ui/Textarea';
 import Combobox from '../../../../components/ui/Combobox';
@@ -233,6 +234,8 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
             sttOffset={BCSC_KPI_STT_OFFSET}
           />
         </FormSection>
+
+        <BaoCaoKpiThuongFormSection control={control} i18nPrefix="baoCaoSoChe.kpiThuong" />
 
         <BaoCaoSoChePhamCapFormSection control={control} errors={errors} />
       </form>

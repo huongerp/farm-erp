@@ -61,16 +61,24 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
     order: 9,
   },
   {
+    id: 'tong_thuong_kpi',
+    label: i18n.t('baoCaoSoChe.store.colTongThuongKpi'),
+    visible: true,
+    minWidth: 112,
+    maxWidth: 140,
+    order: 10,
+  },
+  {
     id: 'ghi_chu',
     label: i18n.t('baoCaoSoChe.store.colGhiChu'),
     visible: true,
     minWidth: 160,
     maxWidth: 320,
-    order: 10,
+    order: 11,
   },
-  { id: 'ten_nguoi_tao', label: i18n.t('baoCaoSoChe.store.colNguoiTao'), visible: true, minWidth: 128, maxWidth: 200, order: 11 },
-  { id: 'tg_tao', label: i18n.t('baoCaoSoChe.store.colTgTao'), visible: true, minWidth: 132, maxWidth: 168, order: 12 },
-  { id: 'tg_cap_nhat', label: i18n.t('baoCaoSoChe.store.colUpdated'), visible: true, minWidth: 132, maxWidth: 168, order: 13 },
+  { id: 'ten_nguoi_tao', label: i18n.t('baoCaoSoChe.store.colNguoiTao'), visible: true, minWidth: 128, maxWidth: 200, order: 12 },
+  { id: 'tg_tao', label: i18n.t('baoCaoSoChe.store.colTgTao'), visible: true, minWidth: 132, maxWidth: 168, order: 13 },
+  { id: 'tg_cap_nhat', label: i18n.t('baoCaoSoChe.store.colUpdated'), visible: true, minWidth: 132, maxWidth: 168, order: 14 },
 ];
 
 const initialFilters: BaoCaoSoCheFilters = {

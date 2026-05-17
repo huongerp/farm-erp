@@ -270,45 +270,70 @@ const HopDongDetail: React.FC<Props> = ({
             emptyDescription={t('hopDong.chiTiet.emptyHint')}
             maxTableHeight="360px"
           >
+            <colgroup>
+              <col style={{ width: '104px', minWidth: '104px' }} />
+              <col style={{ width: '128px', minWidth: '120px' }} />
+              <col style={{ width: '120px', minWidth: '116px' }} />
+              <col style={{ width: '104px', minWidth: '100px' }} />
+              <col style={{ width: '152px', minWidth: '140px' }} />
+              <col style={{ minWidth: '180px' }} />
+              {canUpdateChiTiet && <col style={{ width: '88px', minWidth: '88px' }} />}
+            </colgroup>
             <thead>
               <tr className="border-b border-border bg-muted/40">
-                <th className="text-left py-2 px-2 font-medium text-muted-foreground">{t('hopDong.form.ctNgay')}</th>
-                <th className="text-left py-2 px-2 font-medium text-muted-foreground">{t('hopDong.form.ctTenDot')}</th>
-                <th className="text-right py-2 px-2 font-medium text-muted-foreground">{t('hopDong.form.ctSoTien')}</th>
-                <th className="text-right py-2 px-2 font-medium text-muted-foreground">{t('hopDong.form.ctSoCay')}</th>
-                <th className="text-left py-2 px-2 font-medium text-muted-foreground">{t('hopDong.form.ctChiNhanh')}</th>
-                <th className="text-left py-2 px-2 font-medium text-muted-foreground min-w-[100px]">
+                <th className="text-left py-2.5 px-3 text-xs font-semibold text-muted-foreground whitespace-nowrap min-w-[104px]">
+                  {t('hopDong.form.ctNgay')}
+                </th>
+                <th className="text-left py-2.5 px-3 text-xs font-semibold text-muted-foreground whitespace-nowrap min-w-[120px]">
+                  {t('hopDong.form.ctTenDot')}
+                </th>
+                <th className="text-right py-2.5 px-3 text-xs font-semibold text-muted-foreground whitespace-nowrap min-w-[116px]">
+                  {t('hopDong.form.ctSoTien')}
+                </th>
+                <th className="text-right py-2.5 px-3 text-xs font-semibold text-muted-foreground whitespace-nowrap min-w-[100px]">
+                  {t('hopDong.form.ctSoCay')}
+                </th>
+                <th className="text-left py-2.5 px-3 text-xs font-semibold text-muted-foreground whitespace-nowrap min-w-[140px]">
+                  {t('hopDong.form.ctChiNhanh')}
+                </th>
+                <th className="text-left py-2.5 px-3 text-xs font-semibold text-muted-foreground min-w-[180px]">
                   {t('hopDong.form.ctGhiChu')}
                 </th>
                 {canUpdateChiTiet && (
-                  <th className="text-right py-2 px-2 font-medium text-muted-foreground w-24">{t('hopDong.chiTiet.actions')}</th>
+                  <th className="text-right py-2.5 px-3 text-xs font-semibold text-muted-foreground whitespace-nowrap w-[88px] shrink-0 sticky right-0 bg-muted/40">
+                    {t('hopDong.chiTiet.actions')}
+                  </th>
                 )}
               </tr>
             </thead>
             <tbody>
               {lines.length === 0 ? (
                 <tr>
-                  <td colSpan={canUpdateChiTiet ? 8 : 6} className="py-6 text-center text-muted-foreground text-sm">
+                  <td colSpan={canUpdateChiTiet ? 7 : 6} className="py-6 text-center text-muted-foreground text-sm">
                     —
                   </td>
                 </tr>
               ) : (
                 lines.map((ct) => (
                   <tr key={ct.id} className="border-b border-border/60">
-                    <td className="py-2 px-2 whitespace-nowrap">
+                    <td className="py-2.5 px-3 text-sm whitespace-nowrap">
                       {ct.ngay ? formatDateShort(ct.ngay) : '—'}
                     </td>
-                    <td className="py-2 px-2">{ct.ten_dot ?? '—'}</td>
-                    <td className="py-2 px-2 text-right tabular-nums">
+                    <td className="py-2.5 px-3 text-sm min-w-[120px]">{ct.ten_dot ?? '—'}</td>
+                    <td className="py-2.5 px-3 text-sm text-right tabular-nums whitespace-nowrap">
                       {formatNumberVN(ct.so_tien != null ? Number(ct.so_tien) : null)}
                     </td>
-                    <td className="py-2 px-2 text-right tabular-nums">
+                    <td className="py-2.5 px-3 text-sm text-right tabular-nums whitespace-nowrap">
                       {formatNumberVN(ct.so_cay_thuc_nhan != null ? Number(ct.so_cay_thuc_nhan) : null)}
                     </td>
-                    <td className="py-2 px-2">{ct.id_chi_nhanh ? (cnMap[ct.id_chi_nhanh] ?? ct.id_chi_nhanh) : '—'}</td>
-                    <td className="py-2 px-2 text-muted-foreground text-xs max-w-[140px] truncate">{ct.ghi_chu ?? '—'}</td>
+                    <td className="py-2.5 px-3 text-sm min-w-[140px]">
+                      {ct.id_chi_nhanh ? (cnMap[ct.id_chi_nhanh] ?? ct.id_chi_nhanh) : '—'}
+                    </td>
+                    <td className="py-2.5 px-3 text-sm text-muted-foreground min-w-[180px] max-w-[280px] truncate" title={ct.ghi_chu ?? undefined}>
+                      {ct.ghi_chu ?? '—'}
+                    </td>
                     {canUpdateChiTiet && (
-                      <td className="py-2 px-2 text-right">
+                      <td className="py-2.5 px-3 text-right whitespace-nowrap w-[88px] shrink-0 sticky right-0 bg-card">
                         <button
                           type="button"
                           onClick={() => openEditCt(ct)}

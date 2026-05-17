@@ -77,20 +77,12 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
     order: 9,
   },
   {
-    id: 'tong_thuong_kpi',
-    label: i18n.t('baoCaoNhanCong.store.colTongThuongKpi'),
-    visible: true,
-    minWidth: 104,
-    maxWidth: 132,
-    order: 10,
-  },
-  {
     id: 'ghi_chu',
     label: i18n.t('baoCaoNhanCong.store.colGhiChu'),
     visible: true,
     minWidth: 200,
     maxWidth: 380,
-    order: 11,
+    order: 10,
   },
   { id: 'ten_nguoi_tao', label: i18n.t('baoCaoNhanCong.store.colNguoiTao'), visible: true, minWidth: 128, maxWidth: 200, order: 12 },
   {

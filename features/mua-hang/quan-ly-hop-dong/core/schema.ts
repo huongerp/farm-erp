@@ -44,4 +44,11 @@ export const hopDongSchema = z.object({
 });
 
 export type HopDongChiTietLineValues = z.infer<typeof hopDongChiTietLineSchema>;
+
+/** Form tab Thanh toán (drawer) — bắt buộc chọn HĐ khi tạo mới */
+export const thanhToanFormSchema = hopDongChiTietLineSchema.extend({
+  id_hop_dong: z.string().min(1, i18n.t('hopDong.validation.hopDongRequired')),
+});
+
+export type ThanhToanFormValues = z.infer<typeof thanhToanFormSchema>;
 export type HopDongFormValues = z.infer<typeof hopDongSchema>;

@@ -1,8 +1,21 @@
 import { z } from 'zod';
 import { LOAI_CHUYEN_CODES, type LoaiChuyen } from './types';
 import i18n from '../../../../lib/i18n';
+import { hinhAnhUrlsSchema } from '../../shared/hinh-anh-url-schema';
 
 const reqMsg = (key: string) => i18n.t(key);
+
+const ctSubRowSchema = z.object({
+  sl_cong: z.coerce.number().min(0).default(0),
+  so_gio: z.coerce.number().min(0).default(0),
+  ghi_chu: z.string().max(500).nullable().default(null),
+});
+
+const chiTietSubSchema = z.object({
+  CN_NGAY: z.array(ctSubRowSchema).max(200).default([]),
+  CN_NUA: z.array(ctSubRowSchema).max(200).default([]),
+  TANG_CA: z.array(ctSubRowSchema).max(200).default([]),
+});
 
 const chiTietRowSchema = z.object({
   loai_chuyen: z.enum(LOAI_CHUYEN_CODES as unknown as [LoaiChuyen, ...LoaiChuyen[]]),
@@ -11,25 +24,7 @@ const chiTietRowSchema = z.object({
   sl_tang_ca: z.coerce.number().min(0).default(0),
   so_gio_tc: z.coerce.number().min(0).default(0),
   ghi_chu: z.string().max(8000).optional().nullable(),
-});
-
-const kpiRowSchema = z.object({
-  ten_hang_muc: z.string().max(2000),
-  don_vi_tinh: z.string().max(500).optional().nullable(),
-  muc_tieu: z.string().max(4000).optional().nullable(),
-  thuc_te: z.string().max(4000).optional().nullable(),
-  /** Thang 0–100 (85 = 85%); để trống → null */
-  phan_tram: z.preprocess(
-    (v) => {
-      if (v === '' || v === null || v === undefined) return null;
-      const n = typeof v === 'number' ? v : Number(v);
-      return Number.isFinite(n) ? n : null;
-    },
-    z.union([z.number().finite(), z.null()]).optional()
-  ),
-  danh_gia: z.string().max(500).optional().nullable(),
-  tien_thuong: z.coerce.number().finite().default(0),
-  ghi_chu: z.string().max(8000).optional().nullable(),
+  sub: chiTietSubSchema,
 });
 
 export const baoCaoNhanCongFormSchema = z.object({
@@ -40,10 +35,10 @@ export const baoCaoNhanCongFormSchema = z.object({
   ),
   ten_chi_nhanh: z.string().optional().nullable(),
   ghi_chu: z.string().max(8000).optional().nullable(),
-  /** URL ảnh (https), từ Cloudinary */
-  hinh_anh_urls: z.array(z.string().url()).max(20).default([]),
+  hinh_anh_urls: hinhAnhUrlsSchema,
   chi_tiet: z.array(chiTietRowSchema).length(LOAI_CHUYEN_CODES.length),
-  kpi: z.array(kpiRowSchema).max(200).default([]),
 });
 
 export type BaoCaoNhanCongFormValues = z.infer<typeof baoCaoNhanCongFormSchema>;
+export type CtSubRowFormValues = z.infer<typeof ctSubRowSchema>;
+export type ChiTietSubFormValues = z.infer<typeof chiTietSubSchema>;

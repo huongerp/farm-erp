@@ -6,6 +6,7 @@ import {
   mergeSoLieuMetaToForm,
 } from './so-lieu-row-meta';
 import { emptyPhamCapRows, normalizePhamCapFromDb } from './pham-cap';
+import { kpiThuongRowsToForm } from '../../shared/kpi-thuong/form-mappers';
 
 export function defaultFormValues(): BaoCaoSoCheFormValues {
   const today = new Date().toISOString().slice(0, 10);
@@ -21,6 +22,7 @@ export function defaultFormValues(): BaoCaoSoCheFormValues {
     sl_buong_ton_cuoi_ngay: 0,
     so_lieu_row_meta: emptySoLieuRowMetaForm(),
     pham_cap: emptyPhamCapRows(),
+    kpi_thuong: [],
     ghi_chu: null,
   };
 }
@@ -39,6 +41,7 @@ export function farmBaoCaoSoCheToForm(row: FarmBaoCaoSoChe): BaoCaoSoCheFormValu
     sl_buong_ton_cuoi_ngay: Number(row.sl_buong_ton_cuoi_ngay) || 0,
     so_lieu_row_meta: soMeta,
     pham_cap: normalizePhamCapFromDb(row.pham_cap),
+    kpi_thuong: kpiThuongRowsToForm(row.kpi_thuong ?? []),
     ghi_chu: row.ghi_chu,
   };
 }

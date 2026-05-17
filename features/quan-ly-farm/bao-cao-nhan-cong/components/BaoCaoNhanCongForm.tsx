@@ -1,13 +1,13 @@
-import React, { useEffect, useMemo, useCallback } from 'react';
+import React, { useEffect, useMemo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { useForm, Controller, useFieldArray, type SubmitHandler } from 'react-hook-form';
+import { useForm, Controller, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Building2, Users, Images, Award, Plus, Trash2 } from 'lucide-react';
+import { Building2, Users, Images, ChevronDown, Layers } from 'lucide-react';
+import NumberInput from '../../../../components/ui/NumberInput';
 import Input from '../../../../components/ui/Input';
 import Textarea from '../../../../components/ui/Textarea';
 import Combobox from '../../../../components/ui/Combobox';
-import NumberInput from '../../../../components/ui/NumberInput';
 import MultiImageInput, { type ImageItem } from '../../../../components/ui/MultiImageInput';
 import { uploadImageToCloudinary } from '../../../../lib/cloudinary';
 import { baoCaoNhanCongFormSchema, type BaoCaoNhanCongFormValues } from '../core/schema';
@@ -21,14 +21,27 @@ import {
   tongCongQuyDoiNgayVaNua,
   tongGioTangCaTichMotDong,
 } from '../core/types';
-import { formatNumberVN } from '../../../../lib/utils';
-import Button from '../../../../components/ui/Button';
+import { cn, formatNumberVN } from '../../../../lib/utils';
 import {
+  applySubTotalsToChiTietForm,
   defaultFormValues,
-  defaultKpiFormRow,
   farmBaoCaoNhanCongToForm,
   findBaoCaoDuplicateByBranchAndDate,
 } from '../core/form-mappers';
+import BaoCaoNhanCongChuyenSubEditor from './BaoCaoNhanCongChuyenSubEditor';
+import {
+  emptySubFormByLoai,
+  countSubLines,
+  needsMultiLineEditor,
+  getSubLoaiQuickGio,
+  normalizeChiTietSubFormByLoai,
+  setSubLoaiQuickValue,
+  syncChiTietTotalsFromSub,
+  type ChiTietSubFormByLoai,
+} from '../core/ct-sub';
+
+const SL_INPUT = { maxFractionDigits: 0, min: 0 } as const;
+const GIO_INPUT = { maxFractionDigits: 2, min: 0 } as const;
 import { useCreateBaoCaoNhanCong, useUpdateBaoCaoNhanCong } from '../hooks/use-bao-cao-nhan-cong';
 import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
 import { TRANG_THAI } from '../../../../lib/constants';
@@ -102,11 +115,14 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
     return base;
   }, [initialData, preferredBranch?.id_chi_nhanh, preferredBranch?.ten_chi_nhanh]);
 
+  const [expandedRows, setExpandedRows] = useState<Set<number>>(() => new Set());
+
   const {
     control,
     handleSubmit,
     watch,
     setValue,
+    getValues,
     reset,
     formState: { errors, isSubmitting },
   } = useForm<BaoCaoNhanCongFormValues>({
@@ -114,15 +130,15 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
     defaultValues,
   });
 
-  const { fields: kpiFields, append: appendKpi, remove: removeKpi } = useFieldArray({
-    control,
-    name: 'kpi',
-  });
-
   const idChiNhanh = watch('id_chi_nhanh');
 
   useEffect(() => {
     reset(defaultValues);
+    const autoExpand = new Set<number>();
+    defaultValues.chi_tiet.forEach((row, i) => {
+      if (needsMultiLineEditor(row.sub ?? emptySubFormByLoai())) autoExpand.add(i);
+    });
+    setExpandedRows(autoExpand);
   }, [defaultValues, reset]);
 
   useEffect(() => {
@@ -145,12 +161,39 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
       toast.error(t('baoCaoNhanCong.validation.duplicateNgayChiNhanh'));
       return;
     }
+    const payload = { ...data, chi_tiet: applySubTotalsToChiTietForm(data.chi_tiet) };
     if (isEdit && initialData) {
-      updateMutation.mutate({ id: initialData.id, data });
+      updateMutation.mutate({ id: initialData.id, data: payload });
       return;
     }
-    createMutation.mutate(data);
+    createMutation.mutate(payload);
   };
+
+  const toggleExpandRow = useCallback((index: number) => {
+    setExpandedRows((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+  }, []);
+
+  const patchSubAtIndex = useCallback(
+    (index: number, updater: (sub: ChiTietSubFormByLoai) => ChiTietSubFormByLoai) => {
+      const sub = updater(normalizeChiTietSubFormByLoai(getValues(`chi_tiet.${index}.sub`)));
+      const totals = syncChiTietTotalsFromSub(sub);
+      setValue(
+        `chi_tiet.${index}.sub`,
+        sub as BaoCaoNhanCongFormValues['chi_tiet'][number]['sub'],
+        { shouldDirty: true }
+      );
+      setValue(`chi_tiet.${index}.sl_cong_ngay`, totals.sl_cong_ngay, { shouldDirty: true });
+      setValue(`chi_tiet.${index}.sl_cong_nua`, totals.sl_cong_nua, { shouldDirty: true });
+      setValue(`chi_tiet.${index}.sl_tang_ca`, totals.sl_tang_ca, { shouldDirty: true });
+      setValue(`chi_tiet.${index}.so_gio_tc`, totals.so_gio_tc, { shouldDirty: true });
+    },
+    [getValues, setValue]
+  );
 
   const chiTiet = watch('chi_tiet');
 
@@ -167,12 +210,6 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
   const ivGioTich = useMemo(() => sumTongGioTangCaTichTuChiTiet(productionSlice), [productionSlice]);
   const tongGioTichPhieu = useMemo(() => sumTongGioTangCaTichTuChiTiet(chiTiet ?? []), [chiTiet]);
 
-  const kpiRows = watch('kpi');
-  const tongTienThuongKpi = useMemo(
-    () => (kpiRows ?? []).reduce((s, r) => s + Number(r?.tien_thuong ?? 0), 0),
-    [kpiRows]
-  );
-
   const vIndex = 5;
   const vCode = (rowV?.loai_chuyen ?? 'CONG_DINH_BIEN_KHONG_SAN_XUAT') as LoaiChuyen;
   const vLabelKey = `baoCaoNhanCong.chuyen.${vCode}` as const;
@@ -184,6 +221,217 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
       </span>
     );
   }, []);
+
+  const readOnlyTotalNum = useCallback((n: number) => {
+    return (
+      <span className="block w-full text-right tabular-nums text-sm py-1.5 px-1">
+        {formatNumberVN(n)}
+      </span>
+    );
+  }, []);
+
+  const renderChuyenDataRow = (
+    index: number,
+    tt: string,
+    labelKey: `baoCaoNhanCong.chuyen.${LoaiChuyen}`,
+    code: string
+  ) => {
+    const row = chiTiet?.[index];
+    const sub = normalizeChiTietSubFormByLoai(row?.sub);
+    const expanded = expandedRows.has(index);
+    const multiLine = needsMultiLineEditor(sub);
+    const quickEdit = !expanded && !multiLine;
+    const subCount = countSubLines(sub);
+
+    const quickNgay = quickEdit ? (
+      <div className="flex flex-col gap-1 min-w-[5.75rem]">
+        <Controller
+          name={`chi_tiet.${index}.sl_cong_ngay`}
+          control={control}
+          render={({ field: f }) => (
+            <NumberInput
+              value={f.value ?? 0}
+              onChange={(v) =>
+                patchSubAtIndex(index, (s) =>
+                  setSubLoaiQuickValue(s, 'CN_NGAY', v, getSubLoaiQuickGio(s, 'CN_NGAY'))
+                )
+              }
+              {...SL_INPUT}
+              compact
+              className="w-full"
+              placeholder={t('baoCaoNhanCong.sub.colSlCong')}
+            />
+          )}
+        />
+        <NumberInput
+          value={getSubLoaiQuickGio(sub, 'CN_NGAY')}
+          onChange={(v) =>
+            patchSubAtIndex(index, (s) =>
+              setSubLoaiQuickValue(s, 'CN_NGAY', row?.sl_cong_ngay ?? s.CN_NGAY[0]?.sl_cong ?? 0, v)
+            )
+          }
+          {...GIO_INPUT}
+          compact
+          className="w-full"
+          placeholder={t('baoCaoNhanCong.sub.colSoGio')}
+        />
+      </div>
+    ) : (
+      readOnlyTotalNum(Number(row?.sl_cong_ngay ?? 0))
+    );
+
+    const quickNua = quickEdit ? (
+      <div className="flex flex-col gap-1 min-w-[5.75rem]">
+        <Controller
+          name={`chi_tiet.${index}.sl_cong_nua`}
+          control={control}
+          render={({ field: f }) => (
+            <NumberInput
+              value={f.value ?? 0}
+              onChange={(v) =>
+                patchSubAtIndex(index, (s) =>
+                  setSubLoaiQuickValue(s, 'CN_NUA', v, getSubLoaiQuickGio(s, 'CN_NUA'))
+                )
+              }
+              {...SL_INPUT}
+              compact
+              className="w-full"
+              placeholder={t('baoCaoNhanCong.sub.colSlCong')}
+            />
+          )}
+        />
+        <NumberInput
+          value={getSubLoaiQuickGio(sub, 'CN_NUA')}
+          onChange={(v) =>
+            patchSubAtIndex(index, (s) =>
+              setSubLoaiQuickValue(s, 'CN_NUA', row?.sl_cong_nua ?? s.CN_NUA[0]?.sl_cong ?? 0, v)
+            )
+          }
+          {...GIO_INPUT}
+          compact
+          className="w-full"
+          placeholder={t('baoCaoNhanCong.sub.colSoGio')}
+        />
+      </div>
+    ) : (
+      readOnlyTotalNum(Number(row?.sl_cong_nua ?? 0))
+    );
+
+    const quickSlTc = quickEdit ? (
+      <Controller
+        name={`chi_tiet.${index}.sl_tang_ca`}
+        control={control}
+        render={({ field: f }) => (
+          <NumberInput
+            value={f.value ?? 0}
+            onChange={(v) =>
+              patchSubAtIndex(index, (s) =>
+                setSubLoaiQuickValue(s, 'TANG_CA', v, s.TANG_CA[0]?.so_gio ?? row?.so_gio_tc ?? 0)
+              )
+            }
+            {...SL_INPUT}
+            compact
+            className="w-full"
+          />
+        )}
+      />
+    ) : (
+      readOnlyTotalNum(Number(row?.sl_tang_ca ?? 0))
+    );
+
+    const quickGioTc = quickEdit ? (
+      <Controller
+        name={`chi_tiet.${index}.so_gio_tc`}
+        control={control}
+        render={({ field: f }) => (
+          <NumberInput
+            value={f.value ?? 0}
+            onChange={(v) =>
+              patchSubAtIndex(index, (s) =>
+                setSubLoaiQuickValue(s, 'TANG_CA', row?.sl_tang_ca ?? s.TANG_CA[0]?.sl_cong ?? 0, v)
+              )
+            }
+            {...GIO_INPUT}
+            compact
+            className="w-full"
+            placeholder={t('baoCaoNhanCong.sub.gioPlaceholder')}
+          />
+        )}
+      />
+    ) : (
+      readOnlyTotalNum(Number(row?.so_gio_tc ?? 0))
+    );
+
+    return (
+      <React.Fragment key={code}>
+        <tr className={cn('border-b border-border/80', expanded && 'bg-primary/[0.03]')}>
+          <td className="px-2 py-2 text-center font-medium text-muted-foreground tabular-nums align-top">{tt}</td>
+          <td className="px-3 py-2 align-top text-muted-foreground max-w-[12rem]">
+            <div className="text-sm leading-snug">{t(labelKey)}</div>
+            <button
+              type="button"
+              onClick={() => toggleExpandRow(index)}
+              className={cn(
+                'mt-1.5 inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-medium transition-colors',
+                expanded
+                  ? 'border-primary/50 bg-primary/10 text-primary'
+                  : 'border-border text-muted-foreground hover:border-primary/40 hover:text-primary'
+              )}
+            >
+              <Layers size={12} />
+              {expanded
+                ? t('baoCaoNhanCong.sub.collapse')
+                : multiLine
+                  ? t('baoCaoNhanCong.sub.editMultiLine', { count: subCount })
+                  : t('baoCaoNhanCong.sub.splitLines')}
+              <ChevronDown size={12} className={cn('transition-transform', expanded && 'rotate-180')} />
+            </button>
+            {multiLine && !expanded && (
+              <p className="text-[10px] text-amber-700 dark:text-amber-400 mt-1">{t('baoCaoNhanCong.sub.multiLineHint')}</p>
+            )}
+          </td>
+          <td className="px-2 py-1.5 align-top">{quickNgay}</td>
+          <td className="px-2 py-1.5 align-top">{quickNua}</td>
+          <td className="px-2 py-1.5 align-top bg-primary/[0.06] dark:bg-primary/10">
+            {readOnlyFormulaNum(tongCongQuyDoiNgayVaNua(row ?? {}))}
+          </td>
+          <td className="px-2 py-1.5 align-top">{quickSlTc}</td>
+          <td className="px-2 py-1.5 align-top">{quickGioTc}</td>
+          <td className="px-2 py-1.5 align-top bg-primary/[0.06] dark:bg-primary/10">
+            {readOnlyFormulaNum(tongGioTangCaTichMotDong(row ?? {}))}
+          </td>
+          <td className="px-2 py-1.5 align-top min-w-[20rem] max-w-[32rem]">
+            <Controller
+              name={`chi_tiet.${index}.ghi_chu`}
+              control={control}
+              render={({ field }) => (
+                <Textarea
+                  {...field}
+                  value={field.value ?? ''}
+                  rows={2}
+                  className="text-xs min-h-[3rem] resize-y w-full min-w-[18rem]"
+                  placeholder="—"
+                />
+              )}
+            />
+          </td>
+        </tr>
+        {expanded && (
+          <tr>
+            <td colSpan={9} className="p-0">
+              <BaoCaoNhanCongChuyenSubEditor
+                chiTietIndex={index}
+                chuyenLabel={t(labelKey)}
+                control={control}
+                setValue={setValue}
+                getValues={getValues}
+              />
+            </td>
+          </tr>
+        )}
+      </React.Fragment>
+    );
+  };
 
   const handleUploadImage = useCallback((file: File) => uploadImageToCloudinary(file, 'farm-erp/bao-cao-nhan-cong'), []);
 
@@ -261,11 +509,10 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
                 value={urlsToImageItems(field.value ?? [])}
                 onChange={(items) => field.onChange(imageItemsToUrls(items))}
                 uploadFile={CLOUDINARY_READY ? handleUploadImage : undefined}
-                disabled={!CLOUDINARY_READY}
                 hint={
                   CLOUDINARY_READY
                     ? t('baoCaoNhanCong.form.hinhAnhHint')
-                    : t('baoCaoNhanCong.form.hinhAnhCloudinaryHint')
+                    : t('baoCaoNhanCong.form.hinhAnhOfflineHint')
                 }
                 maxFiles={20}
                 maxSizeMB={5}
@@ -278,14 +525,21 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
         </FormSection>
 
         <FormSection title={t('baoCaoNhanCong.form.sectionChuyen')} icon={<Users size={14} />} variant="primary">
+          <p className="text-xs text-muted-foreground mb-3">{t('baoCaoNhanCong.form.tableEntryHint')}</p>
           <div className="overflow-x-auto rounded-lg border border-border">
             <table className="w-full text-sm min-w-[86rem]">
               <thead>
                 <tr className="bg-muted/50 border-b border-border">
                   <th className="text-center px-2 py-2 font-medium w-14">{t('baoCaoNhanCong.form.colTt')}</th>
                   <th className="text-left px-3 py-2 font-medium min-w-[9rem]">{t('baoCaoNhanCong.form.colChuyen')}</th>
-                  <th className="text-right px-2 py-2 font-medium w-[6.25rem]">{t('baoCaoNhanCong.form.colSlNgay')}</th>
-                  <th className="text-right px-2 py-2 font-medium w-[6.25rem]">{t('baoCaoNhanCong.form.colSlNua')}</th>
+                  <th className="text-right px-2 py-2 font-medium w-[6.5rem]">
+                    <div>{t('baoCaoNhanCong.form.colSlNgay')}</div>
+                    <div className="text-[10px] font-normal text-muted-foreground">{t('baoCaoNhanCong.form.colSlNgayHint')}</div>
+                  </th>
+                  <th className="text-right px-2 py-2 font-medium w-[6.5rem]">
+                    <div>{t('baoCaoNhanCong.form.colSlNua')}</div>
+                    <div className="text-[10px] font-normal text-muted-foreground">{t('baoCaoNhanCong.form.colSlNuaHint')}</div>
+                  </th>
                   <th className="text-right px-2 py-2 font-semibold text-primary w-[6.5rem] bg-primary/[0.08] dark:bg-primary/15">
                     {t('baoCaoNhanCong.form.colTongCongQuyDoi')}
                   </th>
@@ -301,95 +555,7 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
                 {productionSlice.map((row, index) => {
                   const code = row.loai_chuyen as LoaiChuyen;
                   const labelKey = `baoCaoNhanCong.chuyen.${code}` as const;
-                  return (
-                    <tr key={code} className="border-b border-border/80">
-                      <td className="px-2 py-2 text-center font-medium text-muted-foreground tabular-nums align-top">
-                        {chuyenTtLabelByThuTu(index + 1)}
-                      </td>
-                      <td className="px-3 py-2 align-top text-muted-foreground whitespace-normal max-w-[11rem]">
-                        {t(labelKey)}
-                      </td>
-                      <td className="px-2 py-1.5 align-top">
-                        <Controller
-                          name={`chi_tiet.${index}.sl_cong_ngay`}
-                          control={control}
-                          render={({ field }) => (
-                            <NumberInput
-                              value={field.value ?? 0}
-                              onChange={field.onChange}
-                              min={0}
-                              className="w-full"
-                              compact
-                            />
-                          )}
-                        />
-                      </td>
-                      <td className="px-2 py-1.5 align-top">
-                        <Controller
-                          name={`chi_tiet.${index}.sl_cong_nua`}
-                          control={control}
-                          render={({ field }) => (
-                            <NumberInput
-                              value={field.value ?? 0}
-                              onChange={field.onChange}
-                              min={0}
-                              className="w-full"
-                              compact
-                            />
-                          )}
-                        />
-                      </td>
-                      <td className="px-2 py-1.5 align-top bg-primary/[0.06] dark:bg-primary/10">{readOnlyFormulaNum(tongCongQuyDoiNgayVaNua(chiTiet?.[index] ?? {}))}</td>
-                      <td className="px-2 py-1.5 align-top">
-                        <Controller
-                          name={`chi_tiet.${index}.sl_tang_ca`}
-                          control={control}
-                          render={({ field }) => (
-                            <NumberInput
-                              value={field.value ?? 0}
-                              onChange={field.onChange}
-                              min={0}
-                              className="w-full"
-                              compact
-                            />
-                          )}
-                        />
-                      </td>
-                      <td className="px-2 py-1.5 align-top">
-                        <Controller
-                          name={`chi_tiet.${index}.so_gio_tc`}
-                          control={control}
-                          render={({ field }) => (
-                            <NumberInput
-                              value={field.value ?? 0}
-                              onChange={field.onChange}
-                              min={0}
-                              className="w-full"
-                              compact
-                            />
-                          )}
-                        />
-                      </td>
-                      <td className="px-2 py-1.5 align-top bg-primary/[0.06] dark:bg-primary/10">
-                        {readOnlyFormulaNum(tongGioTangCaTichMotDong(chiTiet?.[index] ?? {}))}
-                      </td>
-                      <td className="px-2 py-1.5 align-top min-w-[20rem] max-w-[32rem]">
-                        <Controller
-                          name={`chi_tiet.${index}.ghi_chu`}
-                          control={control}
-                          render={({ field }) => (
-                            <Textarea
-                              {...field}
-                              value={field.value ?? ''}
-                              rows={3}
-                              className="text-xs min-h-[4.5rem] resize-y w-full min-w-[18rem]"
-                              placeholder="—"
-                            />
-                          )}
-                        />
-                      </td>
-                    </tr>
-                  );
+                  return renderChuyenDataRow(index, chuyenTtLabelByThuTu(index + 1), labelKey, code);
                 })}
                 <tr className="border-b border-border/80 bg-primary/10 dark:bg-primary/15">
                   <td className="px-2 py-2 text-center font-bold text-primary tabular-nums align-top">IV</td>
@@ -406,91 +572,7 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
                   </td>
                   <td className="px-3 py-2 align-top text-muted-foreground text-xs">—</td>
                 </tr>
-                <tr key={vCode} className="border-b border-border/80">
-                  <td className="px-2 py-2 text-center font-medium text-muted-foreground tabular-nums align-top">V</td>
-                  <td className="px-3 py-2 align-top text-muted-foreground whitespace-normal max-w-[11rem]">
-                    {t(vLabelKey)}
-                  </td>
-                  <td className="px-2 py-1.5 align-top">
-                    <Controller
-                      name={`chi_tiet.${vIndex}.sl_cong_ngay`}
-                      control={control}
-                      render={({ field }) => (
-                        <NumberInput
-                          value={field.value ?? 0}
-                          onChange={field.onChange}
-                          min={0}
-                          className="w-full"
-                          compact
-                        />
-                      )}
-                    />
-                  </td>
-                  <td className="px-2 py-1.5 align-top">
-                    <Controller
-                      name={`chi_tiet.${vIndex}.sl_cong_nua`}
-                      control={control}
-                      render={({ field }) => (
-                        <NumberInput
-                          value={field.value ?? 0}
-                          onChange={field.onChange}
-                          min={0}
-                          className="w-full"
-                          compact
-                        />
-                      )}
-                    />
-                  </td>
-                  <td className="px-2 py-1.5 align-top bg-primary/[0.06] dark:bg-primary/10">{readOnlyFormulaNum(tongCongQuyDoiNgayVaNua(chiTiet?.[vIndex] ?? {}))}</td>
-                  <td className="px-2 py-1.5 align-top">
-                    <Controller
-                      name={`chi_tiet.${vIndex}.sl_tang_ca`}
-                      control={control}
-                      render={({ field }) => (
-                        <NumberInput
-                          value={field.value ?? 0}
-                          onChange={field.onChange}
-                          min={0}
-                          className="w-full"
-                          compact
-                        />
-                      )}
-                    />
-                  </td>
-                  <td className="px-2 py-1.5 align-top">
-                    <Controller
-                      name={`chi_tiet.${vIndex}.so_gio_tc`}
-                      control={control}
-                      render={({ field }) => (
-                        <NumberInput
-                          value={field.value ?? 0}
-                          onChange={field.onChange}
-                          min={0}
-                          className="w-full"
-                          compact
-                        />
-                      )}
-                    />
-                  </td>
-                  <td className="px-2 py-1.5 align-top bg-primary/[0.06] dark:bg-primary/10">
-                    {readOnlyFormulaNum(tongGioTangCaTichMotDong(chiTiet?.[vIndex] ?? {}))}
-                  </td>
-                  <td className="px-2 py-1.5 align-top min-w-[20rem] max-w-[32rem]">
-                    <Controller
-                      name={`chi_tiet.${vIndex}.ghi_chu`}
-                      control={control}
-                      render={({ field }) => (
-                        <Textarea
-                          {...field}
-                          value={field.value ?? ''}
-                          rows={3}
-                          className="text-xs min-h-[4.5rem] resize-y w-full min-w-[18rem]"
-                          placeholder="—"
-                        />
-                      )}
-                    />
-                  </td>
-                </tr>
+                {renderChuyenDataRow(vIndex, 'V', vLabelKey, vCode)}
                 <tr className="border-b border-border/80 bg-primary/15 dark:bg-primary/20 last:border-0">
                   <td className="px-2 py-2.5 text-left font-bold text-primary align-top sm:pl-3 tracking-tight" colSpan={2}>
                     {t('baoCaoNhanCong.form.rowTongNgay')}
@@ -520,173 +602,6 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
           </div>
         </FormSection>
 
-        <FormSection title={t('baoCaoNhanCong.form.sectionKpi')} icon={<Award size={14} />} variant="primary">
-          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-            <p className="text-xs text-muted-foreground">{t('baoCaoNhanCong.form.kpiHint')}</p>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="gap-1"
-              onClick={() => appendKpi(defaultKpiFormRow())}
-            >
-              <Plus size={14} /> {t('baoCaoNhanCong.form.kpiAddRow')}
-            </Button>
-          </div>
-          <div className="overflow-x-auto rounded-lg border border-border">
-            <table className="w-full text-sm min-w-[56rem]">
-              <thead>
-                <tr className="bg-muted/50 border-b border-border">
-                  <th className="text-center px-1 py-2 font-medium w-10">{t('baoCaoNhanCong.form.colTt')}</th>
-                  <th className="text-left px-2 py-2 font-medium min-w-[10rem]">{t('baoCaoNhanCong.form.kpiColHangMuc')}</th>
-                  <th className="text-left px-2 py-2 font-medium w-[5.5rem]">{t('baoCaoNhanCong.form.kpiColDvt')}</th>
-                  <th className="text-left px-2 py-2 font-medium min-w-[6rem]">{t('baoCaoNhanCong.form.kpiColMucTieu')}</th>
-                  <th className="text-left px-2 py-2 font-medium min-w-[6rem]">{t('baoCaoNhanCong.form.kpiColThucTe')}</th>
-                  <th className="text-right px-2 py-2 font-medium w-[6.5rem]">{t('baoCaoNhanCong.form.kpiColPhanTram')}</th>
-                  <th className="text-left px-2 py-2 font-medium min-w-[6rem]">{t('baoCaoNhanCong.form.kpiColDanhGia')}</th>
-                  <th className="text-right px-2 py-2 font-medium w-[7.5rem]">{t('baoCaoNhanCong.form.kpiColTienThuong')}</th>
-                  <th className="text-left px-2 py-2 font-medium min-w-[8rem]">{t('baoCaoNhanCong.form.kpiColGhiChu')}</th>
-                  <th className="w-10 px-1" aria-label={t('common.actions')} />
-                </tr>
-              </thead>
-              <tbody>
-                {kpiFields.length === 0 ? (
-                  <tr>
-                    <td colSpan={10} className="px-3 py-6 text-center text-muted-foreground text-sm">
-                      {t('baoCaoNhanCong.form.kpiEmpty')}
-                    </td>
-                  </tr>
-                ) : (
-                  kpiFields.map((field, index) => (
-                    <tr key={field.id} className="border-b border-border/80">
-                      <td className="px-1 py-2 text-center tabular-nums text-muted-foreground align-top">{index + 1}</td>
-                      <td className="px-2 py-1.5 align-top">
-                        <Controller
-                          name={`kpi.${index}.ten_hang_muc`}
-                          control={control}
-                          render={({ field: f }) => (
-                            <Input {...f} value={f.value ?? ''} className="text-xs w-full min-w-[8rem]" placeholder="—" />
-                          )}
-                        />
-                      </td>
-                      <td className="px-2 py-1.5 align-top">
-                        <Controller
-                          name={`kpi.${index}.don_vi_tinh`}
-                          control={control}
-                          render={({ field: f }) => (
-                            <Input {...f} value={f.value ?? ''} className="text-xs w-full" placeholder="—" />
-                          )}
-                        />
-                      </td>
-                      <td className="px-2 py-1.5 align-top">
-                        <Controller
-                          name={`kpi.${index}.muc_tieu`}
-                          control={control}
-                          render={({ field: f }) => (
-                            <Input {...f} value={f.value ?? ''} className="text-xs w-full min-w-[5rem]" placeholder="—" />
-                          )}
-                        />
-                      </td>
-                      <td className="px-2 py-1.5 align-top">
-                        <Controller
-                          name={`kpi.${index}.thuc_te`}
-                          control={control}
-                          render={({ field: f }) => (
-                            <Input {...f} value={f.value ?? ''} className="text-xs w-full min-w-[5rem]" placeholder="—" />
-                          )}
-                        />
-                      </td>
-                      <td className="px-2 py-1.5 align-top">
-                        <Controller
-                          name={`kpi.${index}.phan_tram`}
-                          control={control}
-                          render={({ field: f }) => (
-                            <Input
-                              type="number"
-                              step="0.01"
-                              className="text-xs w-full text-right tabular-nums"
-                              value={f.value == null ? '' : String(f.value)}
-                              onChange={(e) => {
-                                const raw = e.target.value.trim();
-                                if (raw === '') {
-                                  f.onChange(null);
-                                  return;
-                                }
-                                const n = Number(raw);
-                                f.onChange(Number.isFinite(n) ? n : null);
-                              }}
-                              onBlur={f.onBlur}
-                              name={f.name}
-                              ref={f.ref}
-                              placeholder="—"
-                            />
-                          )}
-                        />
-                      </td>
-                      <td className="px-2 py-1.5 align-top">
-                        <Controller
-                          name={`kpi.${index}.danh_gia`}
-                          control={control}
-                          render={({ field: f }) => (
-                            <Input {...f} value={f.value ?? ''} className="text-xs w-full" placeholder="—" />
-                          )}
-                        />
-                      </td>
-                      <td className="px-2 py-1.5 align-top">
-                        <Controller
-                          name={`kpi.${index}.tien_thuong`}
-                          control={control}
-                          render={({ field: f }) => (
-                            <NumberInput
-                              value={f.value ?? 0}
-                              onChange={f.onChange}
-                              min={-1e15}
-                              max={1e15}
-                              maxFractionDigits={2}
-                              className="w-full"
-                              compact
-                            />
-                          )}
-                        />
-                      </td>
-                      <td className="px-2 py-1.5 align-top">
-                        <Controller
-                          name={`kpi.${index}.ghi_chu`}
-                          control={control}
-                          render={({ field: f }) => (
-                            <Input {...f} value={f.value ?? ''} className="text-xs w-full min-w-[6rem]" placeholder="—" />
-                          )}
-                        />
-                      </td>
-                      <td className="px-1 py-1.5 align-top text-center">
-                        <button
-                          type="button"
-                          onClick={() => removeKpi(index)}
-                          className="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-md"
-                          title={t('common.delete')}
-                          aria-label={t('common.delete')}
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-                {kpiFields.length > 0 && (
-                  <tr className="bg-primary/10 dark:bg-primary/15 border-t border-border">
-                    <td colSpan={7} className="px-3 py-2 text-right font-bold text-primary tabular-nums">
-                      {t('baoCaoNhanCong.form.kpiRowTongThuong')}
-                    </td>
-                    <td className="px-2 py-2 text-right font-bold text-primary tabular-nums text-sm">
-                      {formatNumberVN(tongTienThuongKpi)}
-                    </td>
-                    <td colSpan={2} />
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </FormSection>
       </form>
     </GenericDrawer>
   );

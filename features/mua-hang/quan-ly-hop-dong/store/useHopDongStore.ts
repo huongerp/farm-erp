@@ -4,9 +4,9 @@ import type { HopDongFilters } from '../core/types';
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'ma_hop_dong', label: i18n.t('hopDong.store.maCol'), visible: true, minWidth: 120, maxWidth: 160, order: 0 },
-  { id: 'ten_hop_dong', label: i18n.t('hopDong.store.tenCol'), visible: true, minWidth: 160, maxWidth: 260, order: 1 },
+  { id: 'ten_hop_dong', label: i18n.t('hopDong.store.tenCol'), visible: true, minWidth: 200, maxWidth: 340, order: 1 },
   { id: 'ngay', label: i18n.t('hopDong.store.ngayCol'), visible: true, minWidth: 100, maxWidth: 120, order: 2 },
-  { id: 'ten_nha_cung_cap', label: i18n.t('hopDong.store.nccCol'), visible: true, minWidth: 140, maxWidth: 220, order: 3 },
+  { id: 'ten_nha_cung_cap', label: i18n.t('hopDong.store.nccCol'), visible: true, minWidth: 200, maxWidth: 320, order: 3 },
   { id: 'so_luong_cay', label: i18n.t('hopDong.store.soLuongCayCol'), visible: true, minWidth: 100, maxWidth: 120, order: 4 },
   { id: 'thanh_tien', label: i18n.t('hopDong.store.thanhTienCol'), visible: true, minWidth: 120, maxWidth: 140, order: 5 },
   { id: 'so_dot_thanh_toan', label: i18n.t('hopDong.store.soDotCol'), visible: true, minWidth: 88, maxWidth: 100, order: 6 },
@@ -22,6 +22,9 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
 const initialFilters: HopDongFilters = {
   trangThai: [],
   nccIds: [],
+  dateFrom: '',
+  dateTo: '',
+  nguoiTaoIds: [],
 };
 
 export const useHopDongStore = createGenericStore<HopDongFilters>(initialFilters, DEFAULT_COLUMNS);

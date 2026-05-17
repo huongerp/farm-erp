@@ -1,29 +1,27 @@
 import type { FarmBaoCaoNhanCong } from './types';
 import { LOAI_CHUYEN_CODES } from './types';
 import type { BaoCaoNhanCongFormValues } from './schema';
+import {
+  emptySubFormByLoai,
+  groupSubModelsByLoai,
+  hasAnySubRow,
+  legacyMirrorSubFromCtTotals,
+  subByLoaiModelsToForm,
+  syncChiTietTotalsFromSub,
+  normalizeChiTietSubFormByLoai,
+} from './ct-sub';
 
 export function defaultChiTietRows(): BaoCaoNhanCongFormValues['chi_tiet'] {
-  return LOAI_CHUYEN_CODES.map((loai_chuyen) => ({
-    loai_chuyen,
-    sl_cong_ngay: 0,
-    sl_cong_nua: 0,
-    sl_tang_ca: 0,
-    so_gio_tc: 0,
-    ghi_chu: null,
-  })) as BaoCaoNhanCongFormValues['chi_tiet'];
-}
-
-export function defaultKpiFormRow(): BaoCaoNhanCongFormValues['kpi'][number] {
-  return {
-    ten_hang_muc: '',
-    don_vi_tinh: null,
-    muc_tieu: null,
-    thuc_te: null,
-    phan_tram: null,
-    danh_gia: null,
-    tien_thuong: 0,
-    ghi_chu: null,
-  };
+  return LOAI_CHUYEN_CODES.map((loai_chuyen) => {
+    const sub = emptySubFormByLoai();
+    const totals = syncChiTietTotalsFromSub(normalizeChiTietSubFormByLoai(sub));
+    return {
+      loai_chuyen,
+      ...totals,
+      ghi_chu: null,
+      sub,
+    };
+  }) as BaoCaoNhanCongFormValues['chi_tiet'];
 }
 
 export function defaultFormValues(): BaoCaoNhanCongFormValues {
@@ -35,7 +33,6 @@ export function defaultFormValues(): BaoCaoNhanCongFormValues {
     ghi_chu: null,
     hinh_anh_urls: [],
     chi_tiet: defaultChiTietRows(),
-    kpi: [],
   };
 }
 
@@ -43,26 +40,24 @@ export function farmBaoCaoNhanCongToForm(row: FarmBaoCaoNhanCong): BaoCaoNhanCon
   const byLoai = new Map(row.chi_tiet.map((c) => [c.loai_chuyen, c]));
   const chi_tiet = LOAI_CHUYEN_CODES.map((code) => {
     const c = byLoai.get(code);
+    const subByLoai = c?.sub_by_loai;
+    let sub =
+      subByLoai && (subByLoai.CN_NGAY.length || subByLoai.CN_NUA.length || subByLoai.TANG_CA.length)
+        ? subByLoaiModelsToForm(subByLoai)
+        : legacyMirrorSubFromCtTotals({
+            sl_cong_ngay: c ? Number(c.sl_cong_ngay) : 0,
+            sl_cong_nua: c ? Number(c.sl_cong_nua) : 0,
+            sl_tang_ca: c ? Number(c.sl_tang_ca) : 0,
+            so_gio_tc: c ? Number(c.so_gio_tc) : 0,
+          });
+    const totals = syncChiTietTotalsFromSub(normalizeChiTietSubFormByLoai(sub));
     return {
       loai_chuyen: code,
-      sl_cong_ngay: c ? Number(c.sl_cong_ngay) : 0,
-      sl_cong_nua: c ? Number(c.sl_cong_nua) : 0,
-      sl_tang_ca: c ? Number(c.sl_tang_ca) : 0,
-      so_gio_tc: c ? Number(c.so_gio_tc) : 0,
+      ...totals,
       ghi_chu: c?.ghi_chu ?? null,
+      sub,
     };
   }) as BaoCaoNhanCongFormValues['chi_tiet'];
-
-  const kpi = (row.kpi ?? []).map((k) => ({
-    ten_hang_muc: k.ten_hang_muc ?? '',
-    don_vi_tinh: k.don_vi_tinh ?? null,
-    muc_tieu: k.muc_tieu ?? null,
-    thuc_te: k.thuc_te ?? null,
-    phan_tram: k.phan_tram == null || Number.isNaN(Number(k.phan_tram)) ? null : Number(k.phan_tram),
-    danh_gia: k.danh_gia ?? null,
-    tien_thuong: Number(k.tien_thuong ?? 0),
-    ghi_chu: k.ghi_chu ?? null,
-  }));
 
   return {
     ngay: row.ngay,
@@ -71,8 +66,17 @@ export function farmBaoCaoNhanCongToForm(row: FarmBaoCaoNhanCong): BaoCaoNhanCon
     ghi_chu: row.ghi_chu,
     hinh_anh_urls: Array.isArray(row.hinh_anh_urls) ? [...row.hinh_anh_urls] : [],
     chi_tiet,
-    kpi,
   };
+}
+
+/** Đồng bộ tổng trên từng dòng chi_tiet từ sub (gọi trước submit). */
+export function applySubTotalsToChiTietForm(
+  chi_tiet: BaoCaoNhanCongFormValues['chi_tiet']
+): BaoCaoNhanCongFormValues['chi_tiet'] {
+  return chi_tiet.map((row) => {
+    const totals = syncChiTietTotalsFromSub(normalizeChiTietSubFormByLoai(row.sub));
+    return { ...row, ...totals };
+  });
 }
 
 /** Ngày ISO yyyy-mm-dd + số ngày (theo lịch local). */
@@ -89,13 +93,11 @@ export function addCalendarDaysIso(isoDate: string, deltaDays: number): string {
   return `${yy}-${mm}-${dd}`;
 }
 
-/** Form tạo phiếu mới: cùng chi nhánh + chi tiết + ghi chú, ngày = ngày nguồn + 1. */
 export function farmBaoCaoNhanCongToFormNextDay(row: FarmBaoCaoNhanCong): BaoCaoNhanCongFormValues {
   const base = farmBaoCaoNhanCongToForm(row);
   return { ...base, ngay: addCalendarDaysIso(row.ngay, 1) };
 }
 
-/** Trùng cùng chi nhánh + cùng ngày (bỏ qua excludeId khi sửa). */
 export function findBaoCaoDuplicateByBranchAndDate(
   items: FarmBaoCaoNhanCong[],
   ngay: string,
@@ -113,7 +115,6 @@ export function findBaoCaoDuplicateByBranchAndDate(
   );
 }
 
-/** Gợi ý chi nhánh mặc định từ bản ghi gần nhất do user tạo */
 export function getPreferredBranchFromUserLastRecords(
   items: FarmBaoCaoNhanCong[],
   userId: string | number | undefined
@@ -127,3 +128,5 @@ export function getPreferredBranchFromUserLastRecords(
   if (!first?.id_chi_nhanh || !first.ten_chi_nhanh) return null;
   return { id_chi_nhanh: first.id_chi_nhanh, ten_chi_nhanh: first.ten_chi_nhanh };
 }
+
+export { hasAnySubRow, groupSubModelsByLoai };

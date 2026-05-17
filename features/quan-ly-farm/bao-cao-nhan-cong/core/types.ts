@@ -1,3 +1,6 @@
+import type { ChiTietSubByLoai, ChiTietSubFormByLoai } from './ct-sub';
+import { sumGioCongFromSubModels } from './ct-sub';
+
 /** 5 chuyền sản xuất (I.1 → III) — dòng IV trên UI = tổng các dòng này */
 export const CHUYEN_PRODUCTION_CODES = [
   'XAN_NAI',
@@ -30,21 +33,8 @@ export interface FarmBaoCaoNhanCongCt {
   so_gio_tc: number;
   ghi_chu: string | null;
   thu_tu: number;
-}
-
-/** Đánh giá KPI / thưởng — `phan_tram` thang 0–100 (85 = 85%), null nếu không áp dụng */
-export interface FarmBaoCaoNhanCongKpi {
-  id: string;
-  id_bao_cao: string;
-  thu_tu: number;
-  ten_hang_muc: string;
-  don_vi_tinh: string | null;
-  muc_tieu: string | null;
-  thuc_te: string | null;
-  phan_tram: number | null;
-  danh_gia: string | null;
-  tien_thuong: number;
-  ghi_chu: string | null;
+  /** Dòng con theo CN ngày / CN nửa / tăng ca — từ fp_farm_bao_cao_nhan_cong_ct_sub */
+  sub_by_loai?: ChiTietSubByLoai;
 }
 
 export type ChiTietNumericFields = Pick<
@@ -89,6 +79,7 @@ export function normalizeChiTietForDisplay(ct: FarmBaoCaoNhanCongCt[]): {
       so_gio_tc: 0,
       ghi_chu: null,
       thu_tu: i + 1,
+      sub_by_loai: { CN_NGAY: [], CN_NUA: [], TANG_CA: [] },
     };
   });
   const vExisting = byLoai.get('CONG_DINH_BIEN_KHONG_SAN_XUAT');
@@ -103,6 +94,7 @@ export function normalizeChiTietForDisplay(ct: FarmBaoCaoNhanCongCt[]): {
       so_gio_tc: 0,
       ghi_chu: null,
       thu_tu: 6,
+      sub_by_loai: { CN_NGAY: [], CN_NUA: [], TANG_CA: [] },
     };
   return { production, vRow };
 }
@@ -130,7 +122,6 @@ export interface FarmBaoCaoNhanCong {
   tg_tao: string;
   tg_cap_nhat: string;
   chi_tiet: FarmBaoCaoNhanCongCt[];
-  kpi: FarmBaoCaoNhanCongKpi[];
 }
 
 export function sumSlCongNgay(item: FarmBaoCaoNhanCong): number {
@@ -149,13 +140,26 @@ export function sumSoGioTc(item: FarmBaoCaoNhanCong): number {
   return (item.chi_tiet ?? []).reduce((s, r) => s + Number(r.so_gio_tc ?? 0), 0);
 }
 
-/** Tổng giờ tăng ca theo dòng: SL tăng ca × giờ tăng ca (một dòng chuyền). */
-export function tongGioTangCaTichMotDong(row: Partial<ChiTietNumericFields>): number {
+type TongGioTichRow = Partial<ChiTietNumericFields> & {
+  sub_by_loai?: ChiTietSubByLoai;
+  sub?: Partial<ChiTietSubFormByLoai> | ChiTietSubFormByLoai;
+};
+
+/** Tổng giờ tăng ca theo dòng: Σ(sl×giờ) từ sub TANG_CA; không có sub thì sl_tang_ca × so_gio_tc */
+export function tongGioTangCaTichMotDong(row: TongGioTichRow): number {
+  const formTc = row.sub?.TANG_CA;
+  if (formTc && formTc.length > 0) {
+    return formTc.reduce((s, r) => s + numChiTiet(r.sl_cong) * numChiTiet(r.so_gio), 0);
+  }
+  const subs = row.sub_by_loai?.TANG_CA;
+  if (subs && subs.length > 0) {
+    return sumGioCongFromSubModels(subs);
+  }
   return numChiTiet(row.sl_tang_ca) * numChiTiet(row.so_gio_tc);
 }
 
 /** Cộng dồn theo từng dòng (không nhân tổng SL với tổng giờ). */
-export function sumTongGioTangCaTichTuChiTiet(rows: Partial<ChiTietNumericFields>[]): number {
+export function sumTongGioTangCaTichTuChiTiet(rows: TongGioTichRow[]): number {
   return rows.reduce((s, r) => s + tongGioTangCaTichMotDong(r), 0);
 }
 
@@ -177,7 +181,3 @@ export function sumTongCongQuyDoiPhieu(item: FarmBaoCaoNhanCong): number {
   return sumTongCongQuyDoiTuChiTiet(item.chi_tiet ?? []);
 }
 
-/** Tổng tiền thưởng (+) / trừ (-) theo các dòng KPI */
-export function sumTienThuongKpi(item: FarmBaoCaoNhanCong): number {
-  return (item.kpi ?? []).reduce((s, r) => s + Number(r.tien_thuong ?? 0), 0);
-}
