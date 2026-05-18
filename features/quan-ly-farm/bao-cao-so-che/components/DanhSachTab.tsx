@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { AnimatePresence } from 'framer-motion';
-import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import {
   useBaoCaoSoCheList,
   useBaoCaoSoCheById,
@@ -16,20 +15,31 @@ import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
 import type { FarmBaoCaoSoChe } from '../core/types';
 import { getPreferredBranchFromUserLastRecords } from '../core/form-mappers';
-import {
-  canCopyBaoCaoSoCheToNextDay,
-  canMutateBaoCaoSoChe,
-  canToggleTrangThaiBaoCaoSoChe,
-} from '../core/permissions';
+import { useBaoCaoSoChePermissions } from '../hooks/use-bao-cao-so-che-permissions';
 import { useAuthStore } from '../../../../store/useStore';
+import ExportDialog from '../../../../components/shared/ExportDialog';
+import { useExportData } from '../../../../lib/useExportData';
 import BaoCaoSoCheToolbar from './BaoCaoSoCheToolbar';
 import BaoCaoSoCheList from './BaoCaoSoCheList';
 import BaoCaoSoCheForm from './BaoCaoSoCheForm';
 import BaoCaoSoCheDetail from './BaoCaoSoCheDetail';
+import {
+  mapFarmBaoCaoSoCheListRow,
+  getExportColumnsBaoCaoSoCheList,
+  exportFileNameBaoCaoSoCheDanhSach,
+} from '../utils/export-bao-cao-so-che-danh-sach';
 
 const DanhSachTab: React.FC = () => {
   const { t } = useTranslation();
-  const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
+  const {
+    canCreate,
+    canDelete,
+    canEditRow,
+    canDeleteRow,
+    canToggleTrangThai,
+    canCopyNextDay,
+    canAdmin,
+  } = useBaoCaoSoChePermissions();
   const confirm = useConfirmStore((s) => s.confirm);
   const {
     searchTerm,
@@ -48,6 +58,8 @@ const DanhSachTab: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<FarmBaoCaoSoChe | null>(null);
   const [viewingItem, setViewingItem] = useState<FarmBaoCaoSoChe | null>(null);
+  const [openedFormFromDetailId, setOpenedFormFromDetailId] = useState<string | null>(null);
+  const [showExport, setShowExport] = useState(false);
 
   const { data: allList = [], isLoading } = useBaoCaoSoCheList();
   const { data: branches = [] } = useBranches();
@@ -95,6 +107,29 @@ const DanhSachTab: React.FC = () => {
 
   const filteredList = useListWithFilter(allList, searchTerm, filters, filterFn);
 
+  const exportColumns = useMemo(() => getExportColumnsBaoCaoSoCheList(t), [t]);
+  const exportMapFn = useCallback(
+    (item: FarmBaoCaoSoChe) => mapFarmBaoCaoSoCheListRow(item, t),
+    [t]
+  );
+  const { exportData, paginatedData: paginatedExportData, selectedData: selectedExportData } =
+    useExportData({
+      data: filteredList,
+      isOpen: showExport,
+      mapFn: exportMapFn,
+      pagination,
+      selectedIds,
+      keyExtractor: (item) => item.id,
+    });
+
+  const handleExport = useCallback(() => {
+    if (filteredList.length === 0) {
+      toast.warning(t('baoCaoSoChe.noExportData'));
+      return;
+    }
+    setShowExport(true);
+  }, [filteredList.length, t]);
+
   useEffect(() => {
     return () => resetState();
   }, [resetState]);
@@ -115,28 +150,27 @@ const DanhSachTab: React.FC = () => {
     if (!fresh) setViewingItem(null);
   }, [allList, viewingItem]);
 
-  const canEditRow = useCallback(
-    (item: FarmBaoCaoSoChe) => canMutateBaoCaoSoChe(user, item, canUpdate),
-    [user, canUpdate]
-  );
-  const canDeleteRow = useCallback(
-    (item: FarmBaoCaoSoChe) => canMutateBaoCaoSoChe(user, item, canDelete),
-    [user, canDelete]
-  );
-
-  const handleEdit = (item: FarmBaoCaoSoChe) => {
+  const handleEdit = (item: FarmBaoCaoSoChe, fromDetail = false) => {
     if (!canEditRow(item)) {
       toast.message(t('baoCaoSoChe.toast.editNotAllowed'));
       return;
     }
+    setOpenedFormFromDetailId(fromDetail ? item.id : null);
     setEditingItem(item);
     setViewingItem(null);
     setShowForm(true);
   };
 
   const handleCloseForm = () => {
+    const wasFromDetail = openedFormFromDetailId != null;
+    const detailId = openedFormFromDetailId;
     setShowForm(false);
     setEditingItem(null);
+    setOpenedFormFromDetailId(null);
+    if (wasFromDetail && detailId) {
+      const fresh = allList.find((r) => r.id === detailId) ?? null;
+      setViewingItem(fresh);
+    }
   };
 
   const handleDelete = (id: string) => {
@@ -197,18 +231,9 @@ const DanhSachTab: React.FC = () => {
   }, [canDelete, selectedIds, allList, canDeleteRow]);
 
   const viewedRow = viewingFull ?? viewingItem;
-  const detailCanUpdate = useMemo(() => {
-    if (!viewedRow) return false;
-    return canMutateBaoCaoSoChe(user, viewedRow, canUpdate);
-  }, [viewedRow, user, canUpdate]);
-  const detailCanDelete = useMemo(() => {
-    if (!viewedRow) return false;
-    return canMutateBaoCaoSoChe(user, viewedRow, canDelete);
-  }, [viewedRow, user, canDelete]);
-  const detailCanCopyNextDay = useMemo(() => {
-    if (!viewedRow) return false;
-    return canCopyBaoCaoSoCheToNextDay(user, viewedRow, canCreate);
-  }, [viewedRow, user, canCreate]);
+  const detailCanUpdate = viewedRow ? canEditRow(viewedRow) : false;
+  const detailCanDelete = viewedRow ? canDeleteRow(viewedRow) : false;
+  const detailCanCopyNextDay = viewedRow ? canCopyNextDay(viewedRow) : false;
 
   return (
     <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
@@ -218,9 +243,11 @@ const DanhSachTab: React.FC = () => {
         selectedCount={selectedIds.size}
         onAdd={() => {
           setEditingItem(null);
+          setOpenedFormFromDetailId(null);
           setShowForm(true);
         }}
         onDeleteMany={canBulkDeleteSelection ? handleDeleteMany : undefined}
+        onExport={handleExport}
         canCreate={canCreate}
         canDelete={canDelete}
       />
@@ -245,6 +272,20 @@ const DanhSachTab: React.FC = () => {
       </div>
 
       <AnimatePresence>
+        {showExport && (
+          <ExportDialog
+            open={showExport}
+            onClose={() => setShowExport(false)}
+            columns={exportColumns}
+            data={exportData}
+            paginatedData={paginatedExportData}
+            selectedData={selectedExportData}
+            fileName={exportFileNameBaoCaoSoCheDanhSach()}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {showForm && (
           <BaoCaoSoCheForm
             branches={branches}
@@ -252,6 +293,7 @@ const DanhSachTab: React.FC = () => {
             preferredBranch={editingItem ? undefined : preferredBranch}
             existingList={allList}
             onClose={handleCloseForm}
+            canAdmin={canAdmin}
           />
         )}
       </AnimatePresence>
@@ -262,15 +304,7 @@ const DanhSachTab: React.FC = () => {
             data={viewingFull ?? viewingItem}
             existingList={allList}
             onClose={() => setViewingItem(null)}
-            onEdit={
-              detailCanUpdate
-                ? (item) => {
-                    setViewingItem(null);
-                    setEditingItem(item);
-                    setShowForm(true);
-                  }
-                : undefined
-            }
+            onEdit={detailCanUpdate ? (item) => handleEdit(item, true) : undefined}
             onDelete={detailCanDelete ? handleDelete : undefined}
             onAfterCopyToNextDay={
               canCreate
@@ -284,7 +318,7 @@ const DanhSachTab: React.FC = () => {
             canUpdate={detailCanUpdate}
             canDelete={detailCanDelete}
             canCopyNextDay={detailCanCopyNextDay}
-            canToggleTrangThai={canToggleTrangThaiBaoCaoSoChe(user)}
+            canToggleTrangThai={canToggleTrangThai}
           />
         )}
       </AnimatePresence>

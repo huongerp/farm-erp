@@ -203,6 +203,9 @@ function subPayloadRows(
       const sl = num(r.sl_cong);
       const gio = num(r.so_gio);
       if (sl === 0 && gio === 0 && !(r.ghi_chu?.trim())) return;
+      if ((sl > 0) !== (gio > 0)) {
+        throw new Error(i18n.t('baoCaoNhanCong.validation.slGioPairRequired'));
+      }
       rows.push({
         id_bcnc_ct: idBcncCt,
         loai_chi_tieu: loai,

@@ -105,9 +105,11 @@ export const PERMISSION_FUNCTIONS: PermissionFunction[] = [
     groups: [
       { groupTitleKey: 'page.quanLyFarm.groupKeHoach', modules: [
         { id: BASE('quan-ly-farm', 'thu-hoach'), nameKey: 'page.quanLyFarm.modules.thuHoach' },
+        /** BCNC: quyền Sửa/Xóa thường chỉ áp dụng cho phiếu mình tạo và chưa khóa; quản trị sửa/xóa tất cả. */
         { id: BASE('quan-ly-farm', 'bao-cao-nhan-cong'), nameKey: 'page.quanLyFarm.modules.baoCaoNhanCong' },
         { id: BASE('quan-ly-farm', 'bao-cao-so-che'), nameKey: 'page.quanLyFarm.modules.baoCaoSoChe' },
         { id: BASE('quan-ly-farm', 'du-bao-sl-dong-thung'), nameKey: 'page.quanLyFarm.modules.duBaoSlDongThung' },
+        { id: BASE('quan-ly-farm', 'thong-ke-san-xuat'), nameKey: 'page.quanLyFarm.modules.thongKeSanXuat' },
       ]},
       /**
        * Kho phân thuốc — bố cục nhóm giống Kho vận (Mua hàng): nhập xuất / báo cáo / danh mục.

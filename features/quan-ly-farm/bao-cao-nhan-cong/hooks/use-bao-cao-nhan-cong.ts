@@ -47,7 +47,7 @@ export function useCreateBaoCaoNhanCong(onSuccess?: () => void) {
   });
 }
 
-/** Tạo phiếu mới cho ngày kế tiếp (cùng chi nhánh + copy số liệu / ghi chú). */
+/** Tạo phiếu mới cho ngày kế tiếp (cùng chi nhánh + copy số liệu; không copy ghi chú / ảnh). */
 export function useCopyBaoCaoNhanCongToNextDay() {
   const qc = useQueryClient();
   const user = useAuthStore((s) => s.user);

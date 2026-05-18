@@ -108,6 +108,34 @@ const DuBaoSlDongThungList: React.FC<Props> = ({
             {formatDateTimeShort(item.tg_cap_nhat)}
           </span>
         );
+      case 'tong_buong_nhap_ke_hoach':
+        return <span className="text-sm tabular-nums text-right">{formatNumberVN(item.tong_buong_nhap_ke_hoach)}</span>;
+      case 'tong_buong_nhap_thuc_te':
+        return <span className="text-sm tabular-nums text-right">{formatNumberVN(item.tong_buong_nhap_thuc_te)}</span>;
+      case 'ty_le_thu_hoi_ke_hoach':
+        return (
+          <span className="text-sm tabular-nums">
+            {formatNumberVN(Math.round(item.ty_le_thu_hoi_ke_hoach * 10000) / 100)}%
+          </span>
+        );
+      case 'ty_le_thu_hoi_thuc_te':
+        return (
+          <span className="text-sm tabular-nums">
+            {formatNumberVN(Math.round(item.ty_le_thu_hoi_thuc_te * 10000) / 100)}%
+          </span>
+        );
+      case 'quy_cach_dong_thung_ke_hoach':
+        return <span className="text-sm tabular-nums">{formatNumberVN(item.quy_cach_dong_thung_ke_hoach)}</span>;
+      case 'quy_cach_dong_thung_thuc_te':
+        return <span className="text-sm tabular-nums">{formatNumberVN(item.quy_cach_dong_thung_thuc_te)}</span>;
+      case 'can_nang_binh_quan_buong': {
+        const kpiBq = computeDuBaoSlDongThungKpiFromFarm(item);
+        return (
+          <span className="text-sm tabular-nums">
+            {kpiBq.can_nang_binh_quan_buong != null ? formatNumberVN(kpiBq.can_nang_binh_quan_buong) : '—'}
+          </span>
+        );
+      }
       case 'actions':
         return (
           <div className="flex items-center justify-end gap-0.5">

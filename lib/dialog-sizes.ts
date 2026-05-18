@@ -28,6 +28,9 @@ export const DRAWER_WIDTH_KIEM_KE_KHO = 'sm:w-[54rem] sm:min-w-[54rem] sm:max-w-
 /** Báo cáo nhân công: form + detail rộng hơn chút cho bảng chuyền */
 export const DRAWER_WIDTH_BAO_CAO_NHAN_CONG = 'sm:w-[60rem] sm:min-w-[60rem] sm:max-w-[60rem]';
 
+/** Báo cáo sơ chế: bảng phẩm cấp + KPI nhiều cột → cùng cỡ nhân công */
+export const DRAWER_WIDTH_BAO_CAO_SO_CHE = 'sm:w-[60rem] sm:min-w-[60rem] sm:max-w-[60rem]';
+
 /** Drawer rộng cho form phức tạp cần panel phụ bên trái (82rem ≈ 1312px) */
 export const DRAWER_WIDTH_WIDE = 'sm:w-[82rem] sm:min-w-[82rem] sm:max-w-[82rem]';
 

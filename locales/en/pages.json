@@ -88,6 +88,8 @@
   "page.quanLyFarm.descs.baoCaoSoChe": "Track bunch balances, harvest, and pre-processing by day and branch.",
   "page.quanLyFarm.modules.duBaoSlDongThung": "Boxing quantity forecast",
   "page.quanLyFarm.descs.duBaoSlDongThung": "Forecast box counts from sample weights, planned and actual bunch intake.",
+  "page.quanLyFarm.modules.thongKeSanXuat": "Production statistics",
+  "page.quanLyFarm.descs.thongKeSanXuat": "Aggregated production KPIs by period and branch.",
   "page.quanLyFarm.modules.phieuKhoPhanThuoc": "Warehouse slips",
   "page.quanLyFarm.descs.phieuKhoPhanThuoc": "Receipts, issues, and transfers for farm fertilizers and crop protection products.",
   "page.quanLyFarm.modules.tonKhoPhanThuoc": "Stock on hand",

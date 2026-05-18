@@ -3,8 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useForm, Controller, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Building2, Users, Images, ChevronDown, Layers } from 'lucide-react';
-import NumberInput from '../../../../components/ui/NumberInput';
+import { Building2, Users, Images, ChevronDown } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
 import Textarea from '../../../../components/ui/Textarea';
 import Combobox from '../../../../components/ui/Combobox';
@@ -15,7 +14,6 @@ import type { FarmBaoCaoNhanCong } from '../core/types';
 import type { LoaiChuyen } from '../core/types';
 import {
   chuyenTtLabelByThuTu,
-  sumChiTietNumericPart,
   sumTongCongQuyDoiTuChiTiet,
   sumTongGioTangCaTichTuChiTiet,
   tongCongQuyDoiNgayVaNua,
@@ -31,18 +29,35 @@ import {
 import BaoCaoNhanCongChuyenSubEditor from './BaoCaoNhanCongChuyenSubEditor';
 import {
   emptySubFormByLoai,
-  countSubLines,
-  needsMultiLineEditor,
-  getSubLoaiQuickGio,
+  findSubSlGioPairIssues,
+  formatGioTbVN,
+  tongGioCongNgayVaNua,
+  subAlignedRowCount,
   normalizeChiTietSubFormByLoai,
-  setSubLoaiQuickValue,
-  syncChiTietTotalsFromSub,
-  type ChiTietSubFormByLoai,
+  sumSlCongFromSubRows,
+  sumGioCongFromSubRows,
+  sumFormLoaiTotalsOnRows,
 } from '../core/ct-sub';
+import {
+  bcncTableClass,
+  bcncColChuyen,
+  bcncColNum,
+  bcncColTongGio,
+  bcncColGhiChu,
+  bcncThGroup,
+  bcncThSub,
+  bcncTrMain,
+  bcncTdTt,
+  bcncTdChuyen,
+  bcncTdMainNum,
+  bcncTdQuyDoi,
+  bcncTdTongGio,
+  bcncTdTongGioTc,
+  bcncTdGhiChu,
+} from '../core/bcnc-detail-table';
 
-const SL_INPUT = { maxFractionDigits: 0, min: 0 } as const;
-const GIO_INPUT = { maxFractionDigits: 2, min: 0 } as const;
 import { useCreateBaoCaoNhanCong, useUpdateBaoCaoNhanCong } from '../hooks/use-bao-cao-nhan-cong';
+import { useBaoCaoNhanCongPermissions } from '../hooks/use-bao-cao-nhan-cong-permissions';
 import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
 import { TRANG_THAI } from '../../../../lib/constants';
 import GenericDrawer, { DRAWER_WIDTH_BAO_CAO_NHAN_CONG } from '../../../../components/shared/GenericDrawer';
@@ -79,6 +94,7 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
 }) => {
   const { t } = useTranslation();
   const isEdit = !!initialData;
+  const { canCreate, canEditRow } = useBaoCaoNhanCongPermissions();
   const createMutation = useCreateBaoCaoNhanCong(onClose);
   const updateMutation = useUpdateBaoCaoNhanCong(onClose);
 
@@ -128,17 +144,15 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
   } = useForm<BaoCaoNhanCongFormValues>({
     resolver: zodResolver(baoCaoNhanCongFormSchema) as any,
     defaultValues,
+    mode: 'onSubmit',
+    reValidateMode: 'onSubmit',
   });
 
   const idChiNhanh = watch('id_chi_nhanh');
 
   useEffect(() => {
     reset(defaultValues);
-    const autoExpand = new Set<number>();
-    defaultValues.chi_tiet.forEach((row, i) => {
-      if (needsMultiLineEditor(row.sub ?? emptySubFormByLoai())) autoExpand.add(i);
-    });
-    setExpandedRows(autoExpand);
+    setExpandedRows(new Set());
   }, [defaultValues, reset]);
 
   useEffect(() => {
@@ -150,7 +164,28 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
     if (b) setValue('ten_chi_nhanh', b.ten_chi_nhanh);
   }, [idChiNhanh, branches, setValue]);
 
+  const onInvalid = useCallback(() => {
+    const pairMsg = t('baoCaoNhanCong.validation.slGioPairRequired');
+    const expand = new Set<number>();
+    getValues('chi_tiet').forEach((ct, i) => {
+      if (findSubSlGioPairIssues(ct.sub).length > 0) expand.add(i);
+    });
+    if (expand.size > 0) {
+      toast.error(pairMsg);
+      setExpandedRows((prev) => new Set([...prev, ...expand]));
+    }
+  }, [getValues, t]);
+
   const onSubmit: SubmitHandler<BaoCaoNhanCongFormValues> = (data) => {
+    if (isEdit && initialData) {
+      if (!canEditRow(initialData)) {
+        toast.message(t('baoCaoNhanCong.toast.editNotAllowed'));
+        return;
+      }
+    } else if (!canCreate) {
+      toast.message(t('baoCaoNhanCong.toast.createNotAllowed'));
+      return;
+    }
     const dup = findBaoCaoDuplicateByBranchAndDate(
       existingList,
       data.ngay,
@@ -178,57 +213,37 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
     });
   }, []);
 
-  const patchSubAtIndex = useCallback(
-    (index: number, updater: (sub: ChiTietSubFormByLoai) => ChiTietSubFormByLoai) => {
-      const sub = updater(normalizeChiTietSubFormByLoai(getValues(`chi_tiet.${index}.sub`)));
-      const totals = syncChiTietTotalsFromSub(sub);
-      setValue(
-        `chi_tiet.${index}.sub`,
-        sub as BaoCaoNhanCongFormValues['chi_tiet'][number]['sub'],
-        { shouldDirty: true }
-      );
-      setValue(`chi_tiet.${index}.sl_cong_ngay`, totals.sl_cong_ngay, { shouldDirty: true });
-      setValue(`chi_tiet.${index}.sl_cong_nua`, totals.sl_cong_nua, { shouldDirty: true });
-      setValue(`chi_tiet.${index}.sl_tang_ca`, totals.sl_tang_ca, { shouldDirty: true });
-      setValue(`chi_tiet.${index}.so_gio_tc`, totals.so_gio_tc, { shouldDirty: true });
-    },
-    [getValues, setValue]
-  );
-
   const chiTiet = watch('chi_tiet');
 
   const productionSlice = useMemo(() => (chiTiet ?? []).slice(0, 5), [chiTiet]);
   const rowV = chiTiet?.[5];
-  const ivAgg = useMemo(() => sumChiTietNumericPart(productionSlice), [productionSlice]);
-  const tongAgg = useMemo(
-    () => sumChiTietNumericPart([ivAgg, rowV ?? {}]),
-    [ivAgg, rowV]
-  );
+  const ivCnNgay = useMemo(() => sumFormLoaiTotalsOnRows(productionSlice, 'CN_NGAY'), [productionSlice]);
+  const ivCnNua = useMemo(() => sumFormLoaiTotalsOnRows(productionSlice, 'CN_NUA'), [productionSlice]);
+  const ivTangCa = useMemo(() => sumFormLoaiTotalsOnRows(productionSlice, 'TANG_CA'), [productionSlice]);
+  const tongCnNgay = useMemo(() => sumFormLoaiTotalsOnRows(chiTiet ?? [], 'CN_NGAY'), [chiTiet]);
+  const tongCnNua = useMemo(() => sumFormLoaiTotalsOnRows(chiTiet ?? [], 'CN_NUA'), [chiTiet]);
+  const tongTangCa = useMemo(() => sumFormLoaiTotalsOnRows(chiTiet ?? [], 'TANG_CA'), [chiTiet]);
   const ivQuyDoi = useMemo(() => sumTongCongQuyDoiTuChiTiet(productionSlice), [productionSlice]);
-  const vQuyDoi = useMemo(() => tongCongQuyDoiNgayVaNua(rowV ?? {}), [rowV]);
+  const ivTongGioNgayNua = useMemo(() => tongGioCongNgayVaNua(ivCnNgay, ivCnNua), [ivCnNgay, ivCnNua]);
+  const ivTongGioTc = useMemo(() => sumTongGioTangCaTichTuChiTiet(productionSlice), [productionSlice]);
   const tongQuyDoiPhieu = useMemo(() => sumTongCongQuyDoiTuChiTiet(chiTiet ?? []), [chiTiet]);
-  const ivGioTich = useMemo(() => sumTongGioTangCaTichTuChiTiet(productionSlice), [productionSlice]);
-  const tongGioTichPhieu = useMemo(() => sumTongGioTangCaTichTuChiTiet(chiTiet ?? []), [chiTiet]);
+  const tongTongGioNgayNua = useMemo(() => tongGioCongNgayVaNua(tongCnNgay, tongCnNua), [tongCnNgay, tongCnNua]);
+  const tongTongGioTc = useMemo(() => sumTongGioTangCaTichTuChiTiet(chiTiet ?? []), [chiTiet]);
 
   const vIndex = 5;
   const vCode = (rowV?.loai_chuyen ?? 'CONG_DINH_BIEN_KHONG_SAN_XUAT') as LoaiChuyen;
   const vLabelKey = `baoCaoNhanCong.chuyen.${vCode}` as const;
 
-  const readOnlyFormulaNum = useCallback((n: number) => {
-    return (
-      <span className="block w-full text-right tabular-nums font-bold text-primary py-1.5 px-1">
-        {formatNumberVN(n)}
-      </span>
-    );
-  }, []);
-
-  const readOnlyTotalNum = useCallback((n: number) => {
-    return (
-      <span className="block w-full text-right tabular-nums text-sm py-1.5 px-1">
-        {formatNumberVN(n)}
-      </span>
-    );
-  }, []);
+  const formLoaiTotals = useCallback(
+    (row: BaoCaoNhanCongFormValues['chi_tiet'][number] | undefined, loai: 'CN_NGAY' | 'CN_NUA' | 'TANG_CA') => {
+      const sub = normalizeChiTietSubFormByLoai(row?.sub);
+      return {
+        nhanSu: sumSlCongFromSubRows(sub[loai]),
+        tongGio: sumGioCongFromSubRows(sub[loai]),
+      };
+    },
+    []
+  );
 
   const renderChuyenDataRow = (
     index: number,
@@ -239,168 +254,51 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
     const row = chiTiet?.[index];
     const sub = normalizeChiTietSubFormByLoai(row?.sub);
     const expanded = expandedRows.has(index);
-    const multiLine = needsMultiLineEditor(sub);
-    const quickEdit = !expanded && !multiLine;
-    const subCount = countSubLines(sub);
+    const subCount = subAlignedRowCount(sub);
+    const cnNgay = formLoaiTotals(row, 'CN_NGAY');
+    const cnNua = formLoaiTotals(row, 'CN_NUA');
+    const tangCa = formLoaiTotals(row, 'TANG_CA');
 
-    const quickNgay = quickEdit ? (
-      <div className="flex flex-col gap-1 min-w-[5.75rem]">
-        <Controller
-          name={`chi_tiet.${index}.sl_cong_ngay`}
-          control={control}
-          render={({ field: f }) => (
-            <NumberInput
-              value={f.value ?? 0}
-              onChange={(v) =>
-                patchSubAtIndex(index, (s) =>
-                  setSubLoaiQuickValue(s, 'CN_NGAY', v, getSubLoaiQuickGio(s, 'CN_NGAY'))
-                )
-              }
-              {...SL_INPUT}
-              compact
-              className="w-full"
-              placeholder={t('baoCaoNhanCong.sub.colSlCong')}
-            />
-          )}
-        />
-        <NumberInput
-          value={getSubLoaiQuickGio(sub, 'CN_NGAY')}
-          onChange={(v) =>
-            patchSubAtIndex(index, (s) =>
-              setSubLoaiQuickValue(s, 'CN_NGAY', row?.sl_cong_ngay ?? s.CN_NGAY[0]?.sl_cong ?? 0, v)
-            )
-          }
-          {...GIO_INPUT}
-          compact
-          className="w-full"
-          placeholder={t('baoCaoNhanCong.sub.colSoGio')}
-        />
-      </div>
-    ) : (
-      readOnlyTotalNum(Number(row?.sl_cong_ngay ?? 0))
-    );
-
-    const quickNua = quickEdit ? (
-      <div className="flex flex-col gap-1 min-w-[5.75rem]">
-        <Controller
-          name={`chi_tiet.${index}.sl_cong_nua`}
-          control={control}
-          render={({ field: f }) => (
-            <NumberInput
-              value={f.value ?? 0}
-              onChange={(v) =>
-                patchSubAtIndex(index, (s) =>
-                  setSubLoaiQuickValue(s, 'CN_NUA', v, getSubLoaiQuickGio(s, 'CN_NUA'))
-                )
-              }
-              {...SL_INPUT}
-              compact
-              className="w-full"
-              placeholder={t('baoCaoNhanCong.sub.colSlCong')}
-            />
-          )}
-        />
-        <NumberInput
-          value={getSubLoaiQuickGio(sub, 'CN_NUA')}
-          onChange={(v) =>
-            patchSubAtIndex(index, (s) =>
-              setSubLoaiQuickValue(s, 'CN_NUA', row?.sl_cong_nua ?? s.CN_NUA[0]?.sl_cong ?? 0, v)
-            )
-          }
-          {...GIO_INPUT}
-          compact
-          className="w-full"
-          placeholder={t('baoCaoNhanCong.sub.colSoGio')}
-        />
-      </div>
-    ) : (
-      readOnlyTotalNum(Number(row?.sl_cong_nua ?? 0))
-    );
-
-    const quickSlTc = quickEdit ? (
-      <Controller
-        name={`chi_tiet.${index}.sl_tang_ca`}
-        control={control}
-        render={({ field: f }) => (
-          <NumberInput
-            value={f.value ?? 0}
-            onChange={(v) =>
-              patchSubAtIndex(index, (s) =>
-                setSubLoaiQuickValue(s, 'TANG_CA', v, s.TANG_CA[0]?.so_gio ?? row?.so_gio_tc ?? 0)
-              )
-            }
-            {...SL_INPUT}
-            compact
-            className="w-full"
-          />
-        )}
-      />
-    ) : (
-      readOnlyTotalNum(Number(row?.sl_tang_ca ?? 0))
-    );
-
-    const quickGioTc = quickEdit ? (
-      <Controller
-        name={`chi_tiet.${index}.so_gio_tc`}
-        control={control}
-        render={({ field: f }) => (
-          <NumberInput
-            value={f.value ?? 0}
-            onChange={(v) =>
-              patchSubAtIndex(index, (s) =>
-                setSubLoaiQuickValue(s, 'TANG_CA', row?.sl_tang_ca ?? s.TANG_CA[0]?.sl_cong ?? 0, v)
-              )
-            }
-            {...GIO_INPUT}
-            compact
-            className="w-full"
-            placeholder={t('baoCaoNhanCong.sub.gioPlaceholder')}
-          />
-        )}
-      />
-    ) : (
-      readOnlyTotalNum(Number(row?.so_gio_tc ?? 0))
-    );
+    const tongGioTcTich = tongGioTangCaTichMotDong({ ...row, sub });
 
     return (
       <React.Fragment key={code}>
-        <tr className={cn('border-b border-border/80', expanded && 'bg-primary/[0.03]')}>
-          <td className="px-2 py-2 text-center font-medium text-muted-foreground tabular-nums align-top">{tt}</td>
-          <td className="px-3 py-2 align-top text-muted-foreground max-w-[12rem]">
-            <div className="text-sm leading-snug">{t(labelKey)}</div>
-            <button
-              type="button"
-              onClick={() => toggleExpandRow(index)}
-              className={cn(
-                'mt-1.5 inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-medium transition-colors',
-                expanded
-                  ? 'border-primary/50 bg-primary/10 text-primary'
-                  : 'border-border text-muted-foreground hover:border-primary/40 hover:text-primary'
-              )}
-            >
-              <Layers size={12} />
-              {expanded
-                ? t('baoCaoNhanCong.sub.collapse')
-                : multiLine
-                  ? t('baoCaoNhanCong.sub.editMultiLine', { count: subCount })
-                  : t('baoCaoNhanCong.sub.splitLines')}
-              <ChevronDown size={12} className={cn('transition-transform', expanded && 'rotate-180')} />
-            </button>
-            {multiLine && !expanded && (
-              <p className="text-[10px] text-amber-700 dark:text-amber-400 mt-1">{t('baoCaoNhanCong.sub.multiLineHint')}</p>
-            )}
+        <tr className={cn(bcncTrMain, expanded && 'bg-primary/[0.03]')}>
+          <td className={`${bcncTdTt} text-muted-foreground tabular-nums`}>{tt}</td>
+          <td className={`${bcncTdChuyen} text-muted-foreground`}>
+            <div className="flex items-center gap-2">
+              <span className="text-sm leading-snug flex-1 min-w-0">{t(labelKey)}</span>
+              <button
+                type="button"
+                onClick={() => toggleExpandRow(index)}
+                aria-expanded={expanded}
+                aria-label={
+                  expanded
+                    ? t('baoCaoNhanCong.sub.collapse')
+                    : `${t('baoCaoNhanCong.sub.viewBreakdown')} (${subCount})`
+                }
+                title={`${expanded ? t('baoCaoNhanCong.sub.collapse') : t('baoCaoNhanCong.sub.viewBreakdown')} (${subCount})`}
+                className={cn(
+                  'shrink-0 size-7 inline-flex items-center justify-center rounded-md border transition-colors',
+                  expanded
+                    ? 'border-primary/40 bg-primary/10 text-primary'
+                    : 'border-border bg-muted/40 text-muted-foreground hover:border-primary/30 hover:text-primary'
+                )}
+              >
+                <ChevronDown size={15} className={cn('transition-transform', expanded && 'rotate-180')} />
+              </button>
+            </div>
           </td>
-          <td className="px-2 py-1.5 align-top">{quickNgay}</td>
-          <td className="px-2 py-1.5 align-top">{quickNua}</td>
-          <td className="px-2 py-1.5 align-top bg-primary/[0.06] dark:bg-primary/10">
-            {readOnlyFormulaNum(tongCongQuyDoiNgayVaNua(row ?? {}))}
-          </td>
-          <td className="px-2 py-1.5 align-top">{quickSlTc}</td>
-          <td className="px-2 py-1.5 align-top">{quickGioTc}</td>
-          <td className="px-2 py-1.5 align-top bg-primary/[0.06] dark:bg-primary/10">
-            {readOnlyFormulaNum(tongGioTangCaTichMotDong(row ?? {}))}
-          </td>
-          <td className="px-2 py-1.5 align-top min-w-[20rem] max-w-[32rem]">
+          <td className={bcncTdMainNum}>{formatNumberVN(cnNgay.nhanSu)}</td>
+          <td className={bcncTdMainNum}>{formatGioTbVN(cnNgay.nhanSu, cnNgay.tongGio)}</td>
+          <td className={bcncTdMainNum}>{formatNumberVN(cnNua.nhanSu)}</td>
+          <td className={bcncTdMainNum}>{formatGioTbVN(cnNua.nhanSu, cnNua.tongGio)}</td>
+          <td className={bcncTdQuyDoi}>{formatNumberVN(tongCongQuyDoiNgayVaNua(row ?? {}))}</td>
+          <td className={bcncTdTongGio}>{formatNumberVN(tongGioCongNgayVaNua(cnNgay, cnNua))}</td>
+          <td className={bcncTdMainNum}>{formatNumberVN(tangCa.nhanSu)}</td>
+          <td className={bcncTdMainNum}>{formatGioTbVN(tangCa.nhanSu, tangCa.tongGio)}</td>
+          <td className={bcncTdTongGioTc}>{formatNumberVN(tongGioTcTich)}</td>
+          <td className={`${bcncTdGhiChu} font-normal`}>
             <Controller
               name={`chi_tiet.${index}.ghi_chu`}
               control={control}
@@ -408,8 +306,8 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
                 <Textarea
                   {...field}
                   value={field.value ?? ''}
-                  rows={2}
-                  className="text-xs min-h-[3rem] resize-y w-full min-w-[18rem]"
+                  rows={1}
+                  className="text-sm resize-y w-full min-h-0 py-1.5"
                   placeholder="—"
                 />
               )}
@@ -417,17 +315,13 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
           </td>
         </tr>
         {expanded && (
-          <tr>
-            <td colSpan={9} className="p-0">
-              <BaoCaoNhanCongChuyenSubEditor
-                chiTietIndex={index}
-                chuyenLabel={t(labelKey)}
-                control={control}
-                setValue={setValue}
-                getValues={getValues}
-              />
-            </td>
-          </tr>
+          <BaoCaoNhanCongChuyenSubEditor
+            chiTietIndex={index}
+            control={control}
+            setValue={setValue}
+            getValues={getValues}
+            subErrors={errors.chi_tiet?.[index]?.sub}
+          />
         )}
       </React.Fragment>
     );
@@ -453,7 +347,7 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
         />
       }
     >
-      <form id="bcnc-form" onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      <form id="bcnc-form" onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-5">
         <FormSection title={t('baoCaoNhanCong.form.ngay')} icon={<Building2 size={14} />} variant="primary">
           <FormGrid cols={2}>
             <Controller
@@ -525,30 +419,45 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
         </FormSection>
 
         <FormSection title={t('baoCaoNhanCong.form.sectionChuyen')} icon={<Users size={14} />} variant="primary">
-          <p className="text-xs text-muted-foreground mb-3">{t('baoCaoNhanCong.form.tableEntryHint')}</p>
           <div className="overflow-x-auto rounded-lg border border-border">
-            <table className="w-full text-sm min-w-[86rem]">
+            <table className={bcncTableClass}>
               <thead>
-                <tr className="bg-muted/50 border-b border-border">
-                  <th className="text-center px-2 py-2 font-medium w-14">{t('baoCaoNhanCong.form.colTt')}</th>
-                  <th className="text-left px-3 py-2 font-medium min-w-[9rem]">{t('baoCaoNhanCong.form.colChuyen')}</th>
-                  <th className="text-right px-2 py-2 font-medium w-[6.5rem]">
-                    <div>{t('baoCaoNhanCong.form.colSlNgay')}</div>
-                    <div className="text-[10px] font-normal text-muted-foreground">{t('baoCaoNhanCong.form.colSlNgayHint')}</div>
+                <tr className="bg-muted/50 border-b border-border/60">
+                  <th rowSpan={2} className={`text-center px-2 py-2 font-medium w-14 align-middle border-b border-border ${bcncThGroup}`}>
+                    {t('baoCaoNhanCong.form.colTt')}
                   </th>
-                  <th className="text-right px-2 py-2 font-medium w-[6.5rem]">
-                    <div>{t('baoCaoNhanCong.form.colSlNua')}</div>
-                    <div className="text-[10px] font-normal text-muted-foreground">{t('baoCaoNhanCong.form.colSlNuaHint')}</div>
+                  <th rowSpan={2} className={`text-left px-2 py-2 font-medium align-middle border-b border-border ${bcncColChuyen} ${bcncThGroup}`}>
+                    {t('baoCaoNhanCong.form.colChuyen')}
                   </th>
-                  <th className="text-right px-2 py-2 font-semibold text-primary w-[6.5rem] bg-primary/[0.08] dark:bg-primary/15">
+                  <th colSpan={2} className={`text-center px-2 py-1.5 font-medium border-b border-border/60 ${bcncThGroup}`}>
+                    {t('baoCaoNhanCong.form.colSlNgay')}
+                  </th>
+                  <th colSpan={2} className={`text-center px-2 py-1.5 font-medium border-b border-border/60 ${bcncThGroup}`}>
+                    {t('baoCaoNhanCong.form.colSlNua')}
+                  </th>
+                  <th rowSpan={2} className={`text-right px-2 py-2 font-semibold text-primary bg-primary/[0.08] dark:bg-primary/15 align-middle border-b border-border ${bcncThGroup}`}>
                     {t('baoCaoNhanCong.form.colTongCongQuyDoi')}
                   </th>
-                  <th className="text-right px-2 py-2 font-medium w-[6.25rem]">{t('baoCaoNhanCong.form.colSlTangCa')}</th>
-                  <th className="text-right px-2 py-2 font-medium w-[6.5rem]">{t('baoCaoNhanCong.form.colGioTangCa')}</th>
-                  <th className="text-right px-2 py-2 font-semibold text-primary w-[6.5rem] bg-primary/[0.08] dark:bg-primary/15">
-                    {t('baoCaoNhanCong.form.colTongGioTangCa')}
+                  <th rowSpan={2} className={`text-right px-2 py-1.5 font-semibold text-primary bg-primary/[0.08] dark:bg-primary/12 align-middle border-b border-border ${bcncColTongGio} ${bcncThGroup}`}>
+                    {t('baoCaoNhanCong.form.colTongGio')}
                   </th>
-                  <th className="text-left px-2 py-2 font-medium min-w-[20rem] w-[22rem]">{t('baoCaoNhanCong.form.colGhiChu')}</th>
+                  <th colSpan={2} className={`text-center px-2 py-1.5 font-medium border-b border-border/60 ${bcncThGroup}`}>
+                    {t('baoCaoNhanCong.form.colSlTangCa')}
+                  </th>
+                  <th rowSpan={2} className={`text-right px-2 py-1.5 font-semibold text-primary bg-primary/[0.08] dark:bg-primary/12 align-middle border-b border-border ${bcncColTongGio} ${bcncThGroup}`}>
+                    {t('baoCaoNhanCong.form.colTongGioTc')}
+                  </th>
+                  <th rowSpan={2} className={`text-left px-2 py-2 font-medium align-middle border-b border-border ${bcncColGhiChu}`}>
+                    {t('baoCaoNhanCong.form.colGhiChu')}
+                  </th>
+                </tr>
+                <tr className="bg-muted/50 border-b border-border text-xs text-muted-foreground">
+                  <th className={`text-right px-1 py-1 font-medium text-[11px] ${bcncColNum} ${bcncThSub}`}>{t('baoCaoNhanCong.detail.colNhanSu')}</th>
+                  <th className={`text-right px-1 py-1 font-medium text-[11px] ${bcncColNum} ${bcncThSub}`}>{t('baoCaoNhanCong.form.colGioTb')}</th>
+                  <th className={`text-right px-1 py-1 font-medium text-[11px] ${bcncColNum} ${bcncThSub}`}>{t('baoCaoNhanCong.detail.colNhanSu')}</th>
+                  <th className={`text-right px-1 py-1 font-medium text-[11px] ${bcncColNum} ${bcncThSub}`}>{t('baoCaoNhanCong.form.colGioTb')}</th>
+                  <th className={`text-right px-1 py-1 font-medium text-[11px] ${bcncColNum} ${bcncThSub}`}>{t('baoCaoNhanCong.detail.colNhanSu')}</th>
+                  <th className={`text-right px-1 py-1 font-medium text-[11px] ${bcncColNum} ${bcncThSub}`}>{t('baoCaoNhanCong.form.colGioTb')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -557,45 +466,35 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
                   const labelKey = `baoCaoNhanCong.chuyen.${code}` as const;
                   return renderChuyenDataRow(index, chuyenTtLabelByThuTu(index + 1), labelKey, code);
                 })}
-                <tr className="border-b border-border/80 bg-primary/10 dark:bg-primary/15">
-                  <td className="px-2 py-2 text-center font-bold text-primary tabular-nums align-top">IV</td>
-                  <td className="px-3 py-2 align-top font-bold text-primary">{t('baoCaoNhanCong.form.rowCongNhanDinhBien')}</td>
-                  <td className="px-2 py-1.5 align-top text-right tabular-nums font-bold text-primary">{formatNumberVN(ivAgg.sl_cong_ngay)}</td>
-                  <td className="px-2 py-1.5 align-top text-right tabular-nums font-bold text-primary">{formatNumberVN(ivAgg.sl_cong_nua)}</td>
-                  <td className="px-2 py-1.5 align-top text-right tabular-nums font-bold text-primary bg-primary/[0.06] dark:bg-primary/10">
-                    {formatNumberVN(ivQuyDoi)}
-                  </td>
-                  <td className="px-2 py-1.5 align-top text-right tabular-nums font-bold text-primary">{formatNumberVN(ivAgg.sl_tang_ca)}</td>
-                  <td className="px-2 py-1.5 align-top text-right tabular-nums font-bold text-primary">{formatNumberVN(ivAgg.so_gio_tc)}</td>
-                  <td className="px-2 py-1.5 align-top text-right tabular-nums font-bold text-primary bg-primary/[0.06] dark:bg-primary/10">
-                    {formatNumberVN(ivGioTich)}
-                  </td>
-                  <td className="px-3 py-2 align-top text-muted-foreground text-xs">—</td>
+                <tr className="border-b border-border/80 bg-primary/10 dark:bg-primary/15 font-semibold">
+                  <td className={`${bcncTdMainNum} text-center text-primary`}>IV</td>
+                  <td className={`${bcncTdChuyen} text-primary`}>{t('baoCaoNhanCong.form.rowCongNhanDinhBien')}</td>
+                  <td className={`${bcncTdMainNum} text-primary`}>{formatNumberVN(ivCnNgay.nhanSu)}</td>
+                  <td className={`${bcncTdMainNum} text-primary`}>{formatGioTbVN(ivCnNgay.nhanSu, ivCnNgay.tongGio)}</td>
+                  <td className={`${bcncTdMainNum} text-primary`}>{formatNumberVN(ivCnNua.nhanSu)}</td>
+                  <td className={`${bcncTdMainNum} text-primary`}>{formatGioTbVN(ivCnNua.nhanSu, ivCnNua.tongGio)}</td>
+                  <td className={bcncTdQuyDoi}>{formatNumberVN(ivQuyDoi)}</td>
+                  <td className={bcncTdTongGio}>{formatNumberVN(ivTongGioNgayNua)}</td>
+                  <td className={`${bcncTdMainNum} text-primary`}>{formatNumberVN(ivTangCa.nhanSu)}</td>
+                  <td className={`${bcncTdMainNum} text-primary`}>{formatGioTbVN(ivTangCa.nhanSu, ivTangCa.tongGio)}</td>
+                  <td className={bcncTdTongGioTc}>{formatNumberVN(ivTongGioTc)}</td>
+                  <td className={`${bcncTdGhiChu} text-muted-foreground text-sm font-normal`}>—</td>
                 </tr>
                 {renderChuyenDataRow(vIndex, 'V', vLabelKey, vCode)}
-                <tr className="border-b border-border/80 bg-primary/15 dark:bg-primary/20 last:border-0">
-                  <td className="px-2 py-2.5 text-left font-bold text-primary align-top sm:pl-3 tracking-tight" colSpan={2}>
+                <tr className="border-b border-border/80 bg-primary/15 dark:bg-primary/20 last:border-0 font-semibold">
+                  <td className={`${bcncTdChuyen} text-left text-primary sm:pl-3 tracking-tight`} colSpan={2}>
                     {t('baoCaoNhanCong.form.rowTongNgay')}
                   </td>
-                  <td className="px-2 py-2 align-top text-right tabular-nums font-bold text-primary text-base">
-                    {formatNumberVN(tongAgg.sl_cong_ngay)}
-                  </td>
-                  <td className="px-2 py-2 align-top text-right tabular-nums font-bold text-primary text-base">
-                    {formatNumberVN(tongAgg.sl_cong_nua)}
-                  </td>
-                  <td className="px-2 py-2 align-top text-right tabular-nums font-bold text-primary text-base bg-primary/[0.08] dark:bg-primary/15">
-                    {formatNumberVN(tongQuyDoiPhieu)}
-                  </td>
-                  <td className="px-2 py-2 align-top text-right tabular-nums font-bold text-primary text-base">
-                    {formatNumberVN(tongAgg.sl_tang_ca)}
-                  </td>
-                  <td className="px-2 py-2 align-top text-right tabular-nums font-bold text-primary text-base">
-                    {formatNumberVN(tongAgg.so_gio_tc)}
-                  </td>
-                  <td className="px-2 py-2 align-top text-right tabular-nums font-bold text-primary text-base bg-primary/[0.08] dark:bg-primary/15">
-                    {formatNumberVN(tongGioTichPhieu)}
-                  </td>
-                  <td className="px-3 py-2 align-top text-muted-foreground text-xs">—</td>
+                  <td className={`${bcncTdMainNum} text-primary text-base`}>{formatNumberVN(tongCnNgay.nhanSu)}</td>
+                  <td className={`${bcncTdMainNum} text-primary text-base`}>{formatGioTbVN(tongCnNgay.nhanSu, tongCnNgay.tongGio)}</td>
+                  <td className={`${bcncTdMainNum} text-primary text-base`}>{formatNumberVN(tongCnNua.nhanSu)}</td>
+                  <td className={`${bcncTdMainNum} text-primary text-base`}>{formatGioTbVN(tongCnNua.nhanSu, tongCnNua.tongGio)}</td>
+                  <td className={`${bcncTdQuyDoi} text-base bg-primary/[0.1] dark:bg-primary/20`}>{formatNumberVN(tongQuyDoiPhieu)}</td>
+                  <td className={`${bcncTdTongGio} text-base`}>{formatNumberVN(tongTongGioNgayNua)}</td>
+                  <td className={`${bcncTdMainNum} text-primary text-base`}>{formatNumberVN(tongTangCa.nhanSu)}</td>
+                  <td className={`${bcncTdMainNum} text-primary text-base`}>{formatGioTbVN(tongTangCa.nhanSu, tongTangCa.tongGio)}</td>
+                  <td className={`${bcncTdTongGioTc} text-base`}>{formatNumberVN(tongTongGioTc)}</td>
+                  <td className={`${bcncTdGhiChu} text-muted-foreground text-sm font-normal`}>—</td>
                 </tr>
               </tbody>
             </table>

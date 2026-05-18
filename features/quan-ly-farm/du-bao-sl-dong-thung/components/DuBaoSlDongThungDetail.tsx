@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Edit, Lock, Trash2, Unlock, Boxes } from 'lucide-react';
+import { Edit, Lock, Printer, Trash2, Unlock, Boxes } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import type { FarmDuBaoSlDongThung } from '../core/types';
 import { TRANG_THAI_DU_BAO_SL_DONG_THUNG } from '../core/types';
@@ -14,6 +14,7 @@ import { BTN_CLOSE, BTN_EDIT, BTN_DELETE, CONFIRM_YES } from '../../../../lib/bu
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { useUpdateDuBaoSlDongThungTrangThai } from '../hooks/use-du-bao-sl-dong-thung';
 import { computeDuBaoSlDongThungKpiFromFarm } from '../core/kpi';
+import { getDuBaoSlDongThungPreviewUrl } from '../core/preview-url';
 
 interface Props {
   data: FarmDuBaoSlDongThung;
@@ -72,7 +73,14 @@ const DuBaoSlDongThungDetail: React.FC<Props> = ({
     </div>
   );
 
-  const toolbarActions: DetailToolbarAction[] = [];
+  const toolbarActions: DetailToolbarAction[] = [
+    {
+      label: t('duBaoSlDongThung.detail.printReport'),
+      icon: <Printer size={16} />,
+      variant: 'primary',
+      onClick: () => window.open(getDuBaoSlDongThungPreviewUrl(data.id), '_blank', 'noopener,noreferrer'),
+    },
+  ];
   if (canToggleTrangThai) {
     const locked = data.trang_thai === TRANG_THAI_DU_BAO_SL_DONG_THUNG.KHOA;
     toolbarActions.push({

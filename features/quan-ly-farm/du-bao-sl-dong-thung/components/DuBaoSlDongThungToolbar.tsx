@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Building2, Calendar, Hash } from 'lucide-react';
+import { Plus, Building2, Calendar, Hash, ToggleLeft, Download } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
+import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
@@ -15,6 +16,7 @@ interface Props {
   selectedCount: number;
   onAdd: () => void;
   onDeleteMany: () => void;
+  onExport: () => void;
   canCreate?: boolean;
   canDelete?: boolean;
 }
@@ -33,6 +35,7 @@ const DuBaoSlDongThungToolbar: React.FC<Props> = ({
   selectedCount,
   onAdd,
   onDeleteMany,
+  onExport,
   canCreate = true,
   canDelete = true,
 }) => {
@@ -87,13 +90,22 @@ const DuBaoSlDongThungToolbar: React.FC<Props> = ({
       });
   }, [data]);
 
+  const trangThaiOptions = useMemo(
+    () => [
+      { value: 'mo', label: t('duBaoSlDongThung.trangThai.mo'), count: data.filter((d) => d.trang_thai === 'mo').length },
+      { value: 'khoa', label: t('duBaoSlDongThung.trangThai.khoa'), count: data.filter((d) => d.trang_thai === 'khoa').length },
+    ],
+    [data, t]
+  );
+
   const activeFilterCount = useMemo(() => {
     const f = filters as DuBaoSlDongThungFilters;
     return (
       (searchInput.trim() ? 1 : 0) +
       (f.id_chi_nhanh?.length ?? 0) +
       (f.nam?.length ?? 0) +
-      (f.thang?.length ?? 0)
+      (f.thang?.length ?? 0) +
+      (f.trang_thai?.length ?? 0)
     );
   }, [searchInput, filters]);
 
@@ -102,6 +114,7 @@ const DuBaoSlDongThungToolbar: React.FC<Props> = ({
     setFilter('id_chi_nhanh', []);
     setFilter('nam', []);
     setFilter('thang', []);
+    setFilter('trang_thai', []);
   };
 
   const filterGroups = useMemo(
@@ -123,6 +136,14 @@ const DuBaoSlDongThungToolbar: React.FC<Props> = ({
         onChange: (v: string[]) => setFilter('thang', v),
       },
       {
+        key: 'trang_thai',
+        label: t('duBaoSlDongThung.toolbar.filterTrangThai'),
+        icon: ToggleLeft,
+        options: trangThaiOptions,
+        value: filters.trang_thai ?? [],
+        onChange: (v: string[]) => setFilter('trang_thai', v),
+      },
+      {
         key: 'branch',
         label: t('duBaoSlDongThung.toolbar.filterBranch'),
         icon: Building2,
@@ -131,7 +152,7 @@ const DuBaoSlDongThungToolbar: React.FC<Props> = ({
         onChange: (v: string[]) => setFilter('id_chi_nhanh', v),
       },
     ],
-    [t, namOptions, thangOptions, branchOptions, filters.nam, filters.thang, filters.id_chi_nhanh, setFilter]
+    [t, namOptions, thangOptions, trangThaiOptions, branchOptions, filters.nam, filters.thang, filters.trang_thai, filters.id_chi_nhanh, setFilter]
   );
 
   const renderFilters = (
@@ -155,6 +176,15 @@ const DuBaoSlDongThungToolbar: React.FC<Props> = ({
         size="md"
       />
       <FilterChipMultiSelect
+        options={trangThaiOptions}
+        value={filters.trang_thai ?? []}
+        onChange={(v) => setFilter('trang_thai', v)}
+        placeholder={t('duBaoSlDongThung.toolbar.filterTrangThai')}
+        icon={ToggleLeft}
+        className="w-full sm:w-[150px]"
+        size="md"
+      />
+      <FilterChipMultiSelect
         options={branchOptions}
         value={filters.id_chi_nhanh ?? []}
         onChange={(v) => setFilter('id_chi_nhanh', v)}
@@ -166,8 +196,33 @@ const DuBaoSlDongThungToolbar: React.FC<Props> = ({
     </div>
   );
 
+  const mobileActions = useMemo(
+    () => [
+      {
+        key: 'export',
+        label: t('common.export'),
+        icon: Download,
+        onClick: onExport,
+        description: '',
+      },
+    ],
+    [onExport, t]
+  );
+
   const renderActions = (
     <>
+      <div className="hidden sm:flex items-center gap-2">
+        <Tooltip content={t('common.export')} placement="bottom">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onExport}
+            className="inline-flex min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-9 w-9 p-0 items-center justify-center border-border text-muted-foreground hover:bg-muted/50"
+          >
+            <Download className="w-4 h-4" />
+          </Button>
+        </Tooltip>
+      </div>
       {canCreate ? (
         <Button
           onClick={onAdd}
@@ -191,6 +246,7 @@ const DuBaoSlDongThungToolbar: React.FC<Props> = ({
       actions={renderActions}
       filters={renderFilters}
       filterGroups={filterGroups}
+      mobileActions={mobileActions}
       onAdd={canCreate ? onAdd : undefined}
       showBack
       searchPlaceholder={t('duBaoSlDongThung.toolbar.searchPlaceholder')}

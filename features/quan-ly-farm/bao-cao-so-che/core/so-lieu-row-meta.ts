@@ -8,7 +8,10 @@ export const SO_LIEU_ROW_KEYS = [
   'tong_buong_khong_so_che',
   'tong_buong_so_che',
   'sl_buong_ton_cuoi_ngay',
+  'danh_gia_loi_qc_pct',
 ] as const;
+
+export const SO_LIEU_ROW_DVT_QC_PCT = '%' as const;
 
 export type SoLieuRowKey = (typeof SO_LIEU_ROW_KEYS)[number];
 
@@ -31,6 +34,7 @@ export function emptySoLieuRowMetaForm(): SoLieuRowMetaForm {
     tong_buong_khong_so_che: { ...row },
     tong_buong_so_che: { ...row },
     sl_buong_ton_cuoi_ngay: { ...row },
+    danh_gia_loi_qc_pct: { ghi_chu: '', don_vi_tinh_phu: SO_LIEU_ROW_DVT_QC_PCT },
   };
 }
 
@@ -43,10 +47,14 @@ export function mergeSoLieuMetaToForm(fromDb: SoLieuRowMeta | null | undefined):
     const dRaw = typeof e.don_vi_tinh_phu === 'string' ? e.don_vi_tinh_phu : e.don_vi_tinh_phu != null ? String(e.don_vi_tinh_phu) : '';
     base[k] = {
       ghi_chu: typeof e.ghi_chu === 'string' ? e.ghi_chu : e.ghi_chu != null ? String(e.ghi_chu) : '',
-      don_vi_tinh_phu: dRaw.trim() || SO_LIEU_ROW_DVT_DEFAULT,
+      don_vi_tinh_phu: dRaw.trim() || defaultDvtForSoLieuRowKey(k),
     };
   }
   return base;
+}
+
+function defaultDvtForSoLieuRowKey(k: SoLieuRowKey): string {
+  return k === 'danh_gia_loi_qc_pct' ? SO_LIEU_ROW_DVT_QC_PCT : SO_LIEU_ROW_DVT_DEFAULT;
 }
 
 export function pruneSoLieuRowMetaForDb(form: SoLieuRowMetaForm): SoLieuRowMeta {
@@ -56,7 +64,8 @@ export function pruneSoLieuRowMetaForDb(form: SoLieuRowMetaForm): SoLieuRowMeta 
     if (!e) continue;
     const g = e.ghi_chu?.trim() ?? '';
     const d = e.don_vi_tinh_phu?.trim() ?? '';
-    const dMeaningful = d && d !== SO_LIEU_ROW_DVT_DEFAULT;
+    const dDefault = defaultDvtForSoLieuRowKey(k);
+    const dMeaningful = d && d !== dDefault;
     if (!g && !dMeaningful) continue;
     out[k] = {
       ghi_chu: g || null,
@@ -91,6 +100,7 @@ export const SO_LIEU_BUONG_ROW_DEFS: { key: SoLieuRowKey; labelKey: string }[] =
   { key: 'tong_buong_khong_so_che', labelKey: 'baoCaoSoChe.form.tongKhongSoChe' },
   { key: 'tong_buong_so_che', labelKey: 'baoCaoSoChe.form.tongSoChe' },
   { key: 'sl_buong_ton_cuoi_ngay', labelKey: 'baoCaoSoChe.form.slTonCuoi' },
+  { key: 'danh_gia_loi_qc_pct', labelKey: 'baoCaoSoChe.form.danhGiaLoiQcPct' },
 ];
 
 /** Số dòng chỉ số trong khối BCNC readout. */
@@ -107,6 +117,7 @@ export const SO_LIEU_DVT_PRESET_OPTIONS = ['Buồng', 'Thùng', 'kg', 'tạ', 'C
 export function deriveDonViTinhSlipFromSoLieuMeta(meta: SoLieuRowMetaForm | undefined | null): string {
   if (!meta) return SO_LIEU_ROW_DVT_DEFAULT;
   for (const { key } of SO_LIEU_BUONG_ROW_DEFS) {
+    if (key === 'danh_gia_loi_qc_pct') continue;
     const d = meta[key]?.don_vi_tinh_phu?.trim();
     if (d) return d;
   }

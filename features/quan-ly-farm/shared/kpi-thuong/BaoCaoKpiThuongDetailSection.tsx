@@ -2,7 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Award } from 'lucide-react';
 import DetailSection from '../../../../components/shared/DetailSection';
-import { formatNumberVN } from '../../../../lib/utils';
+import { cn, formatNumberVN } from '../../../../lib/utils';
 import type { FarmBaoCaoKpiThuongRow } from './types';
 import { sumTienThuongKpiThuong } from './types';
 
@@ -55,7 +55,14 @@ const BaoCaoKpiThuongDetailSection: React.FC<Props> = ({ rows, i18nPrefix }) => 
                       : `${formatNumberVN(Number(row.phan_tram))}%`}
                   </td>
                   <td className="px-2 py-2 text-sm">{row.danh_gia?.trim() ? row.danh_gia : '—'}</td>
-                  <td className="px-2 py-2 text-right text-sm tabular-nums font-medium">
+                  <td className={cn(
+                    'px-2 py-2 text-right text-sm tabular-nums font-medium',
+                    row.tien_thuong > 0
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : row.tien_thuong < 0
+                        ? 'text-rose-600 dark:text-rose-400'
+                        : ''
+                  )}>
                     {formatNumberVN(row.tien_thuong)}
                   </td>
                   <td className="px-2 py-2 text-sm text-muted-foreground whitespace-pre-wrap">

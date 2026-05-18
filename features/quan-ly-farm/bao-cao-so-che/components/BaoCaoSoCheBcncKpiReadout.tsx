@@ -14,8 +14,8 @@ import { BCSC_KPI_STT_OFFSET } from '../core/so-lieu-row-meta';
 
 const ZERO_LABOR_SNAPSHOT: BcscLaborFromBcncSnapshot = {
   tongCongQuyDoiPhieu: 0,
-  tongGio8TiepTheoCong: 0,
-  congQuyDoiDinhBien: 0,
+  tongGioCnNgay: 0,
+  soCnDinhBien: 0,
   gioTangCaTichDinhBien: 0,
 };
 
@@ -129,16 +129,16 @@ const BaoCaoSoCheBcncKpiReadout: React.FC<Props> = ({
       },
       {
         stt: o + 2,
-        chiSo: t('baoCaoSoChe.bcnc.tongGio8'),
+        chiSo: t('baoCaoSoChe.bcnc.tongGioCnNgay'),
         dvt: t('baoCaoSoChe.bcnc.dvt.gio'),
-        giaTri: fmtNum(L.tongGio8TiepTheoCong),
+        giaTri: fmtNum(L.tongGioCnNgay),
         ghiChu: g2,
       },
       {
         stt: o + 3,
         chiSo: t('baoCaoSoChe.bcnc.soCnDinhBien'),
         dvt: t('baoCaoSoChe.bcnc.dvt.tongCong'),
-        giaTri: fmtNum(L.congQuyDoiDinhBien),
+        giaTri: fmtNum(L.soCnDinhBien),
         ghiChu: g3,
       },
       {

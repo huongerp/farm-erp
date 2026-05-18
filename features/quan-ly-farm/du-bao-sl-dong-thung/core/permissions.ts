@@ -1,4 +1,3 @@
-import type { User } from '../../../../types';
 import type { FarmDuBaoSlDongThung } from './types';
 import { TRANG_THAI_DU_BAO_SL_DONG_THUNG } from './types';
 
@@ -6,23 +5,25 @@ export function isDuBaoSlDongThungLocked(item: FarmDuBaoSlDongThung): boolean {
   return item.trang_thai === TRANG_THAI_DU_BAO_SL_DONG_THUNG.KHOA;
 }
 
-export function isDuBaoSlDongThungAdmin(user: User | null | undefined): boolean {
-  return user?.role === 'admin';
-}
-
+/**
+ * Sửa / xóa phiếu:
+ * - Quản trị (`admin` / `all`) → được sửa/xóa tất cả.
+ * - Quyền thường → chỉ được sửa/xóa phiếu mình tạo (`id_nguoi_tao`) và chưa khóa.
+ */
 export function canMutateDuBaoSlDongThung(
-  user: User | null | undefined,
   item: FarmDuBaoSlDongThung,
-  moduleAllowed: boolean
+  moduleAllowed: boolean,
+  moduleCanAdmin: boolean,
+  userId: string | null | undefined
 ): boolean {
+  if (moduleCanAdmin) return true;
   if (!moduleAllowed) return false;
-  if (isDuBaoSlDongThungAdmin(user)) return true;
   if (isDuBaoSlDongThungLocked(item)) return false;
-  const creator = item.id_nguoi_tao;
-  if (creator == null || creator === '') return false;
-  return String(user?.id ?? '') === String(creator);
+  if (!userId || !item.id_nguoi_tao) return false;
+  return String(userId) === String(item.id_nguoi_tao);
 }
 
-export function canToggleTrangThaiDuBaoSlDongThung(user: User | null | undefined): boolean {
-  return isDuBaoSlDongThungAdmin(user);
+/** Khóa / mở khóa phiếu — chỉ quyền quản trị module. */
+export function canToggleTrangThaiDuBaoSlDongThung(moduleCanAdmin: boolean): boolean {
+  return moduleCanAdmin;
 }

@@ -5,6 +5,8 @@
 -- Phiếu cũ: có thể 0 dòng; thêm dòng trong app.
 -- Nếu bảng đã được tạo trước đó với cột ma_pham_cap (bản cũ), chạy thêm
 -- docs/supabase-fp_farm_bao_cao_so_che_pham_cap_migrate_ma_to_ten.sql
+-- Nếu bảng còn so_kg / ty_le_pct, sau khi deploy app mới chạy
+-- docs/supabase-fp_farm_bao_cao_so_che_pham_cap_drop_derived_columns.sql
 -- =============================================================================
 
 CREATE TABLE IF NOT EXISTS public.fp_farm_bao_cao_so_che_pham_cap (
@@ -13,18 +15,14 @@ CREATE TABLE IF NOT EXISTS public.fp_farm_bao_cao_so_che_pham_cap (
   ten_pham_cap text NOT NULL,
   so_tham_chieu numeric(18, 4) NOT NULL DEFAULT 0,
   so_thung numeric(18, 4) NOT NULL DEFAULT 0,
-  so_kg numeric(18, 4) NOT NULL DEFAULT 0,
-  ty_le_pct numeric(7, 4) NOT NULL DEFAULT 0,
   so_thung_quy_doi numeric(18, 4) NOT NULL DEFAULT 0,
-  thu_tu integer NOT NULL DEFAULT 0,
-  CONSTRAINT fp_farm_bcsc_pc_ty_le_chk CHECK (ty_le_pct >= 0 AND ty_le_pct <= 100)
+  thu_tu integer NOT NULL DEFAULT 0
 );
 
 COMMENT ON TABLE public.fp_farm_bao_cao_so_che_pham_cap IS
   'Phẩm cấp / loại thùng: nhiều dòng / phiếu; tên loại do người dùng nhập.';
 COMMENT ON COLUMN public.fp_farm_bao_cao_so_che_pham_cap.ten_pham_cap IS 'Tên loại phẩm cấp (tự do)';
-COMMENT ON COLUMN public.fp_farm_bao_cao_so_che_pham_cap.so_tham_chieu IS 'Cột “Số” tham chiếu trên phiếu';
-COMMENT ON COLUMN public.fp_farm_bao_cao_so_che_pham_cap.ty_le_pct IS 'Tỷ lệ % (0–100)';
+COMMENT ON COLUMN public.fp_farm_bao_cao_so_che_pham_cap.so_tham_chieu IS 'Kg mỗi thùng. Tổng kg & % tính trên app.';
 COMMENT ON COLUMN public.fp_farm_bao_cao_so_che_pham_cap.thu_tu IS 'Thứ tự hiển thị trong phiếu';
 
 CREATE INDEX IF NOT EXISTS idx_fp_farm_bcsc_pc_bao_cao ON public.fp_farm_bao_cao_so_che_pham_cap(id_bao_cao);

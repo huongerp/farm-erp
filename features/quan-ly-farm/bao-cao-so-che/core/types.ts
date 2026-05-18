@@ -41,6 +41,8 @@ export interface FarmBaoCaoSoChe {
   tong_buong_khong_so_che: number;
   tong_buong_so_che: number;
   sl_buong_ton_cuoi_ngay: number;
+  /** Đánh giá lỗi QC (%) — `fp_farm_bao_cao_so_che_ct.danh_gia_loi_qc_pct` */
+  danh_gia_loi_qc_pct: number;
   /** Meta từng dòng buồng — suy ra từ các dòng `_ct` (ĐVT/ghi chú theo `ma_chi_tieu`), không còn jsonb trên DB. */
   so_lieu_row_meta?: SoLieuRowMeta;
   /** Các dòng phẩm cấp — `fp_farm_bao_cao_so_che_pham_cap` (thiếu DB → mảng rỗng). */

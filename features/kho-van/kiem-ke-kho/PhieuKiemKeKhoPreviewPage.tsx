@@ -70,6 +70,21 @@ const PhieuKiemKeKhoPreviewPage: React.FC = () => {
   }, [downloadOpen]);
 
   const handlePrint = () => {
+    // Inject @page override: lề 0 để content tự chứa margin qua padding
+    // (L:20mm R:15mm T:15mm B:15mm được đặt trong PhieuKiemKeKhoPreviewContent)
+    const styleEl = document.createElement('style');
+    styleEl.id = 'kkk-print-page-override';
+    // T:15mm R:15mm B:15mm L:20mm — khớp pt-[15mm]/pr-[15mm]/pb-[15mm]/pl-[20mm] trong preview content
+    // print:p-0 trên content div sẽ loại padding ra, @page margin kiểm soát lề từng trang
+    styleEl.innerHTML = '@page { margin: 15mm 15mm 15mm 20mm !important; size: A4 portrait; }';
+    document.head.appendChild(styleEl);
+
+    const cleanup = () => {
+      document.getElementById('kkk-print-page-override')?.remove();
+      window.removeEventListener('afterprint', cleanup);
+    };
+    window.addEventListener('afterprint', cleanup);
+
     window.print();
   };
 
@@ -186,8 +201,8 @@ const PhieuKiemKeKhoPreviewPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="phieu-kiem-ke-kho-preview-body flex-1 overflow-auto p-4 md:p-6 flex justify-center">
-          <div className="bg-white shadow-xl rounded-sm phieu-kiem-ke-kho-preview-content-wrapper" style={{ width: '210mm', minHeight: '297mm' }}>
+        <div className="phieu-kiem-ke-kho-preview-body flex-1 overflow-auto p-4 md:p-6 flex justify-center items-start print:p-0 print:overflow-visible">
+          <div className="bg-white shadow-xl rounded-sm phieu-kiem-ke-kho-preview-content-wrapper print:shadow-none" style={{ width: '210mm', minHeight: '297mm' }}>
             {chiTietLoading && !chiTiet.length ? (
               <div className="flex items-center justify-center p-12 text-muted-foreground">
                 {t('kiemKeKho.loading')}

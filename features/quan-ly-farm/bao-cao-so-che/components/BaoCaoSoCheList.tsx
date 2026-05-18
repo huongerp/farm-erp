@@ -4,6 +4,7 @@ import { Edit, Trash2 } from 'lucide-react';
 import { cn, formatDateShort, formatDateTimeShort, formatNumberVN } from '../../../../lib/utils';
 import type { FarmBaoCaoSoChe } from '../core/types';
 import { sumTienThuongKpiThuong } from '../core/types';
+import { phamCapTongKgRow } from '../core/pham-cap-derived';
 import GenericTable from '../../../../components/shared/GenericTable';
 import type { ColumnConfig } from '../../../../store/createGenericStore';
 
@@ -90,6 +91,29 @@ const BaoCaoSoCheList: React.FC<Props> = ({
         return <span className="text-sm tabular-nums">{formatNumberVN(item.tong_buong_so_che)}</span>;
       case 'sl_buong_ton_cuoi_ngay':
         return <span className="text-sm tabular-nums">{formatNumberVN(item.sl_buong_ton_cuoi_ngay)}</span>;
+      case 'danh_gia_loi_qc_pct': {
+        const qc = item.danh_gia_loi_qc_pct;
+        return (
+          <span className={cn('text-sm tabular-nums', qc > 0 ? 'text-rose-600 dark:text-rose-400 font-medium' : 'text-muted-foreground')}>
+            {formatNumberVN(qc)}%
+          </span>
+        );
+      }
+      case 'tong_thung_pham_cap': {
+        const total = (item.pham_cap ?? []).reduce((s, r) => s + (r.so_thung ?? 0), 0);
+        return <span className="text-sm tabular-nums">{formatNumberVN(total)}</span>;
+      }
+      case 'tong_kg_pham_cap': {
+        const totalKg = (item.pham_cap ?? []).reduce((s, r) => s + phamCapTongKgRow(r), 0);
+        return <span className="text-sm tabular-nums">{formatNumberVN(totalKg)}</span>;
+      }
+      case 'nang_suat_thuc_te': {
+        const kpiRow = (item.kpi_thuong ?? []).find((k) =>
+          k.ten_hang_muc?.includes('Năng suất')
+        );
+        const val = kpiRow?.thuc_te?.trim();
+        return <span className="text-sm tabular-nums">{val ? val : '—'}</span>;
+      }
       case 'tong_thuong_kpi':
         return (
           <span className="text-sm tabular-nums font-semibold text-primary">

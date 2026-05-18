@@ -3,6 +3,10 @@ import { useTranslation } from 'react-i18next';
 import { User, Calendar, Warehouse } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDotKiemKeKhoList } from '../hooks/use-kiem-ke-kho';
+import {
+  exportKiemKeKhoThongKeToPDF,
+  exportKiemKeKhoThongKeToXLSX,
+} from '../utils/export-kiem-ke-kho-thong-ke';
 import { useKiemKeKhoViewScope } from '../hooks/use-kiem-ke-kho-view-scope';
 import { filterDotKiemKeListByViewScope } from '../utils/dot-kiem-ke-view-scope-filter';
 import { useEmployeesRefQuery } from '@/lib/hooks/use-supabase-ref-queries';
@@ -180,8 +184,33 @@ const ThongKeTab: React.FC = () => {
     </>
   );
 
-  const handleExportReport = () => {
-    toast.info(t('kiemKeKho.stats.exportReport') + ' – Đang phát triển');
+  const buildExportMeta = () => {
+    const filterLabels: string[] = [];
+    if (filterTrangThai.length > 0) {
+      filterLabels.push(
+        `${t('kiemKeKho.store.trangThaiCol')}: ${filterTrangThai.map((v) => t(`kiemKeKho.trangThaiDot.${v}`)).join(', ')}`
+      );
+    }
+    return { dateFrom: dateFrom || undefined, dateTo: dateTo || undefined, filterLabels };
+  };
+
+  const handleExportReport = async () => {
+    const meta = buildExportMeta();
+    try {
+      // Xuất XLSX (định dạng mặc định từ toolbar dropdown)
+      await exportKiemKeKhoThongKeToXLSX(stats.summary, stats.byTrangThai, meta);
+    } catch {
+      toast.error(t('common.exportError', { defaultValue: 'Xuất file thất bại' }));
+    }
+  };
+
+  const handleExportPDF = async () => {
+    const meta = buildExportMeta();
+    try {
+      await exportKiemKeKhoThongKeToPDF(stats.summary, stats.byTrangThai, meta);
+    } catch {
+      toast.error(t('common.exportError', { defaultValue: 'Xuất PDF thất bại' }));
+    }
   };
 
   const handlePrintReport = () => {
@@ -220,17 +249,30 @@ const ThongKeTab: React.FC = () => {
   return (
     <div className="flex flex-col h-full">
       <StatsToolbar
-        className="static z-auto"
+        className="static z-auto print:hidden"
         filters={renderFilters}
         filterGroups={filterGroups}
         activeFilterCount={activeFilterCount}
         onClearFilters={handleClearFilters}
         onExportReport={handleExportReport}
+        onExportPDF={handleExportPDF}
         onPrintReport={handlePrintReport}
       />
 
-      <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
-        <div className="p-3 sm:p-4 pb-4 space-y-4">
+      <div className="kiem-ke-kho-stats-content flex-1 min-h-0 overflow-y-auto custom-scrollbar print:overflow-visible">
+        <div className="p-3 sm:p-4 pb-4 space-y-4 print:p-0 print:space-y-3">
+          {/* Tiêu đề chỉ hiển thị khi in */}
+          <div className="hidden print:block mb-3">
+            <p className="text-sm font-semibold text-foreground">{t('kiemKeKho.stats.title')}</p>
+            {(dateFrom || dateTo) && (
+              <p className="text-xs text-muted-foreground">
+                {dateFrom && `${t('kiemKeKho.filter.dateFrom')}: ${dateFrom}`}
+                {dateFrom && dateTo && ' — '}
+                {dateTo && `${t('kiemKeKho.filter.dateTo')}: ${dateTo}`}
+              </p>
+            )}
+          </div>
+
           {isEmpty ? (
             <EmptyState
               title={t('kiemKeKho.stats.noData')}
@@ -253,7 +295,7 @@ const ThongKeTab: React.FC = () => {
             />
           ) : (
             <>
-              <h3 className="text-sm font-semibold text-primary">{t('kiemKeKho.stats.title')}</h3>
+              <h3 className="text-sm font-semibold text-primary print:hidden">{t('kiemKeKho.stats.title')}</h3>
               <StatsCards summary={stats.summary} />
               <StatsTables byTrangThai={stats.byTrangThai} />
             </>

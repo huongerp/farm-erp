@@ -50,6 +50,15 @@ const PhieuDeXuatVatTuPreviewPage = lazy(() => import('./features/kho-van/phieu-
 const DonDatHangPreviewPage = lazy(() => import('./features/mua-hang/don-dat-hang/DonDatHangPreviewPage'));
 const ThanhToanDoiTacPreviewPage = lazy(() => import('./features/mua-hang/thanh-toan-doi-tac/ThanhToanDoiTacPreviewPage'));
 const BaoCaoKhauHaoPreviewPage = lazy(() => import('./features/hanh-chinh/khau-hao-tai-san/BaoCaoKhauHaoPreviewPage'));
+const BaoCaoNhanCongPreviewPage = lazy(
+  () => import('./features/quan-ly-farm/bao-cao-nhan-cong/BaoCaoNhanCongPreviewPage')
+);
+const BaoCaoSoChePreviewPage = lazy(
+  () => import('./features/quan-ly-farm/bao-cao-so-che/BaoCaoSoChePreviewPage')
+);
+const DuBaoSlDongThungPreviewPage = lazy(
+  () => import('./features/quan-ly-farm/du-bao-sl-dong-thung/DuBaoSlDongThungPreviewPage')
+);
 
 const EmployeePage = lazy(() => import('./features/he-thong/nhan-vien/index'));
 const CompanyInfoPage = lazy(() => import('./features/he-thong/thong-tin-cong-ty/index'));
@@ -149,6 +158,42 @@ const App = () => {
               <ModulePermissionGuard moduleId="quan-ly-farm/phieu-kho-phan-thuoc">
                 <Suspense fallback={<PageFallback />}>
                   <PhieuKhoPTPreviewPage />
+                </Suspense>
+              </ModulePermissionGuard>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/quan-ly-farm/bao-cao-nhan-cong/preview/:id"
+          element={
+            <ProtectedRoute>
+              <ModulePermissionGuard moduleId="quan-ly-farm/bao-cao-nhan-cong">
+                <Suspense fallback={<PageFallback />}>
+                  <BaoCaoNhanCongPreviewPage />
+                </Suspense>
+              </ModulePermissionGuard>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/quan-ly-farm/bao-cao-so-che/preview/:id"
+          element={
+            <ProtectedRoute>
+              <ModulePermissionGuard moduleId="quan-ly-farm/bao-cao-so-che">
+                <Suspense fallback={<PageFallback />}>
+                  <BaoCaoSoChePreviewPage />
+                </Suspense>
+              </ModulePermissionGuard>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/quan-ly-farm/du-bao-sl-dong-thung/preview/:id"
+          element={
+            <ProtectedRoute>
+              <ModulePermissionGuard moduleId="quan-ly-farm/du-bao-sl-dong-thung">
+                <Suspense fallback={<PageFallback />}>
+                  <DuBaoSlDongThungPreviewPage />
                 </Suspense>
               </ModulePermissionGuard>
             </ProtectedRoute>

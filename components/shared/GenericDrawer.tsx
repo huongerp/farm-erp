@@ -14,6 +14,7 @@ export {
   DRAWER_WIDTH_DETAIL,
   DRAWER_WIDTH_KIEM_KE_KHO,
   DRAWER_WIDTH_BAO_CAO_NHAN_CONG,
+  DRAWER_WIDTH_BAO_CAO_SO_CHE,
 } from '../../lib/dialog-sizes';
 
 const useIsMobile = (breakpoint = 768) => {

@@ -6,7 +6,7 @@ import {
   mergeSoLieuMetaToForm,
 } from './so-lieu-row-meta';
 import { emptyPhamCapRows, normalizePhamCapFromDb } from './pham-cap';
-import { kpiThuongRowsToForm } from '../../shared/kpi-thuong/form-mappers';
+import { defaultBcscKpiThuongRows, normalizeBcscKpiThuongToForm } from './kpi-thuong-presets';
 
 export function defaultFormValues(): BaoCaoSoCheFormValues {
   const today = new Date().toISOString().slice(0, 10);
@@ -20,9 +20,10 @@ export function defaultFormValues(): BaoCaoSoCheFormValues {
     tong_buong_khong_so_che: 0,
     tong_buong_so_che: 0,
     sl_buong_ton_cuoi_ngay: 0,
+    danh_gia_loi_qc_pct: 0,
     so_lieu_row_meta: emptySoLieuRowMetaForm(),
     pham_cap: emptyPhamCapRows(),
-    kpi_thuong: [],
+    kpi_thuong: defaultBcscKpiThuongRows(),
     ghi_chu: null,
   };
 }
@@ -39,9 +40,10 @@ export function farmBaoCaoSoCheToForm(row: FarmBaoCaoSoChe): BaoCaoSoCheFormValu
     tong_buong_khong_so_che: Number(row.tong_buong_khong_so_che) || 0,
     tong_buong_so_che: Number(row.tong_buong_so_che) || 0,
     sl_buong_ton_cuoi_ngay: Number(row.sl_buong_ton_cuoi_ngay) || 0,
+    danh_gia_loi_qc_pct: Number(row.danh_gia_loi_qc_pct) || 0,
     so_lieu_row_meta: soMeta,
     pham_cap: normalizePhamCapFromDb(row.pham_cap),
-    kpi_thuong: kpiThuongRowsToForm(row.kpi_thuong ?? []),
+    kpi_thuong: normalizeBcscKpiThuongToForm(row.kpi_thuong),
     ghi_chu: row.ghi_chu,
   };
 }

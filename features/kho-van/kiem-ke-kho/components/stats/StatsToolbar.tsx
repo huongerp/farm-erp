@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { ChevronDown, FileDown, Printer } from 'lucide-react';
+import { ChevronDown, FileDown, FileText, Printer } from 'lucide-react';
 import { cn } from '../../../../../lib/utils';
 import DashboardToolbar from '../../../../../components/shared/DashboardToolbar';
 import type { FilterGroup } from '../../../../../components/ui/MobileFilterSheet';
@@ -13,6 +13,7 @@ interface StatsToolbarProps {
   activeFilterCount?: number;
   onClearFilters?: () => void;
   onExportReport?: () => void;
+  onExportPDF?: () => void;
   onPrintReport?: () => void;
 }
 
@@ -23,6 +24,7 @@ const StatsToolbar: React.FC<StatsToolbarProps> = ({
   activeFilterCount = 0,
   onClearFilters,
   onExportReport,
+  onExportPDF,
   onPrintReport,
 }) => {
   const { t } = useTranslation();
@@ -57,24 +59,26 @@ const StatsToolbar: React.FC<StatsToolbarProps> = ({
         <ChevronDown size={14} className={cn('transition-transform', actionsOpen && 'rotate-180')} />
       </button>
       {actionsOpen && (
-        <div className="absolute right-0 top-full mt-1.5 z-50 min-w-[160px] bg-card rounded-xl shadow-xl border border-border overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+        <div className="absolute right-0 top-full mt-1.5 z-50 min-w-[170px] bg-card rounded-xl shadow-xl border border-border overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
           <button
             type="button"
-            onClick={() => {
-              onExportReport?.();
-              setActionsOpen(false);
-            }}
+            onClick={() => { onExportReport?.(); setActionsOpen(false); }}
             className="w-full h-9 px-3 flex items-center gap-2 text-left text-sm text-foreground hover:bg-muted/60 transition-colors"
           >
             <FileDown size={16} className="text-muted-foreground" />
-            {t('kiemKeKho.stats.exportReport')}
+            {t('kiemKeKho.stats.exportReport')} (XLSX)
           </button>
           <button
             type="button"
-            onClick={() => {
-              onPrintReport?.();
-              setActionsOpen(false);
-            }}
+            onClick={() => { onExportPDF?.(); setActionsOpen(false); }}
+            className="w-full h-9 px-3 flex items-center gap-2 text-left text-sm text-foreground hover:bg-muted/60 transition-colors border-t border-border"
+          >
+            <FileText size={16} className="text-muted-foreground" />
+            {t('kiemKeKho.stats.exportReport')} (PDF)
+          </button>
+          <button
+            type="button"
+            onClick={() => { onPrintReport?.(); setActionsOpen(false); }}
             className="w-full h-9 px-3 flex items-center gap-2 text-left text-sm text-foreground hover:bg-muted/60 transition-colors border-t border-border"
           >
             <Printer size={16} className="text-muted-foreground" />

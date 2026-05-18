@@ -2,32 +2,23 @@ import { z } from 'zod';
 import i18n from '../../../../lib/i18n';
 import { emptyPhamCapRows, PHAM_CAP_ROWS_MAX } from './pham-cap';
 import { kpiThuongArraySchema } from '../../shared/kpi-thuong/schema';
+import { defaultBcscKpiThuongRows } from './kpi-thuong-presets';
 
 const reqMsg = (key: string) => i18n.t(key);
 
 function phamCapRowHasNumbers(r: {
   so_tham_chieu: unknown;
   so_thung: unknown;
-  so_kg: unknown;
-  ty_le_pct: unknown;
   so_thung_quy_doi: unknown;
 }): boolean {
   const n = (v: unknown) => Number(v) || 0;
-  return (
-    n(r.so_tham_chieu) !== 0 ||
-    n(r.so_thung) !== 0 ||
-    n(r.so_kg) !== 0 ||
-    n(r.ty_le_pct) !== 0 ||
-    n(r.so_thung_quy_doi) !== 0
-  );
+  return n(r.so_tham_chieu) !== 0 || n(r.so_thung) !== 0 || n(r.so_thung_quy_doi) !== 0;
 }
 
 const phamCapRowFormSchema = z.object({
   ten_pham_cap: z.string().max(200).default(''),
   so_tham_chieu: z.coerce.number().min(0).default(0),
   so_thung: z.coerce.number().min(0).default(0),
-  so_kg: z.coerce.number().min(0).default(0),
-  ty_le_pct: z.coerce.number().min(0).max(100).default(0),
   so_thung_quy_doi: z.coerce.number().min(0).default(0),
 });
 
@@ -58,6 +49,7 @@ const soLieuRowMetaFormSchema = z.object({
   tong_buong_khong_so_che: soLieuRowEntrySchema,
   tong_buong_so_che: soLieuRowEntrySchema,
   sl_buong_ton_cuoi_ngay: soLieuRowEntrySchema,
+  danh_gia_loi_qc_pct: soLieuRowEntrySchema,
 });
 
 export const baoCaoSoCheFormSchema = z.object({
@@ -74,15 +66,17 @@ export const baoCaoSoCheFormSchema = z.object({
   tong_buong_khong_so_che: z.coerce.number().min(0).default(0),
   tong_buong_so_che: z.coerce.number().min(0).default(0),
   sl_buong_ton_cuoi_ngay: z.coerce.number().min(0).default(0),
+  danh_gia_loi_qc_pct: z.coerce.number().min(0).max(100).default(0),
   so_lieu_row_meta: soLieuRowMetaFormSchema.default({
     sl_buong_ton_dau_ngay: { ghi_chu: '', don_vi_tinh_phu: 'Buồng' },
     tong_buong_thu_hoach: { ghi_chu: '', don_vi_tinh_phu: 'Buồng' },
     tong_buong_khong_so_che: { ghi_chu: '', don_vi_tinh_phu: 'Buồng' },
     tong_buong_so_che: { ghi_chu: '', don_vi_tinh_phu: 'Buồng' },
     sl_buong_ton_cuoi_ngay: { ghi_chu: '', don_vi_tinh_phu: 'Buồng' },
+    danh_gia_loi_qc_pct: { ghi_chu: '', don_vi_tinh_phu: '%' },
   }),
   pham_cap: phamCapArraySchema.default(emptyPhamCapRows()),
-  kpi_thuong: kpiThuongArraySchema,
+  kpi_thuong: kpiThuongArraySchema.default(defaultBcscKpiThuongRows()),
   ghi_chu: z.string().max(8000).optional().nullable(),
 });
 

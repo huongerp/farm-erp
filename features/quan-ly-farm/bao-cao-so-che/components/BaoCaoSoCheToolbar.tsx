@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Building2, Calendar, Hash } from 'lucide-react';
+import { Plus, Building2, Calendar, Hash, Download } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
+import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
@@ -15,6 +16,7 @@ interface Props {
   selectedCount: number;
   onAdd: () => void;
   onDeleteMany: () => void;
+  onExport: () => void;
   canCreate?: boolean;
   canDelete?: boolean;
 }
@@ -33,6 +35,7 @@ const BaoCaoSoCheToolbar: React.FC<Props> = ({
   selectedCount,
   onAdd,
   onDeleteMany,
+  onExport,
   canCreate = true,
   canDelete = true,
 }) => {
@@ -166,8 +169,33 @@ const BaoCaoSoCheToolbar: React.FC<Props> = ({
     </div>
   );
 
+  const mobileActions = useMemo(
+    () => [
+      {
+        key: 'export',
+        label: t('common.export'),
+        icon: Download,
+        onClick: onExport,
+        description: '',
+      },
+    ],
+    [onExport, t]
+  );
+
   const renderActions = (
     <>
+      <div className="hidden sm:flex items-center gap-2">
+        <Tooltip content={t('common.export')} placement="bottom">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onExport}
+            className="inline-flex min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-9 w-9 p-0 items-center justify-center border-border text-muted-foreground hover:bg-muted/50"
+          >
+            <Download className="w-4 h-4" />
+          </Button>
+        </Tooltip>
+      </div>
       {canCreate ? (
         <Button
           onClick={onAdd}
@@ -191,6 +219,7 @@ const BaoCaoSoCheToolbar: React.FC<Props> = ({
       actions={renderActions}
       filters={renderFilters}
       filterGroups={filterGroups}
+      mobileActions={mobileActions}
       onAdd={canCreate ? onAdd : undefined}
       showBack
       searchPlaceholder={t('baoCaoSoChe.toolbar.searchPlaceholder')}

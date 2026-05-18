@@ -1,18 +1,33 @@
 /**
  * Xuất phiếu kiểm kê kho đợt ra PDF/DOC/XLSX.
  *
- * PDF dùng html2canvas qua jsPDF để giữ font tiếng Việt theo trình duyệt,
- * tương tự chuẩn phiếu kho.
+ * - PDF : html2canvas qua jsPDF (font tiếng Việt theo trình duyệt).
+ * - DOC : HTML table-based (Word-safe) + UTF-8 BOM + Times New Roman.
+ * - XLSX: SheetJS aoa_to_sheet (Unicode gốc, Excel mở đúng).
+ *
+ * Dùng chung builders từ kkk-preview-layout.ts để nội dung khớp với React preview.
  */
 import type { DotKiemKeKho, ChiTietKiemKeKho } from '../core/types';
-import { formatDate, formatDateTime, formatNumberVN, getTodayISODate } from '../../../../lib/utils';
+import { formatDate, formatDateTime, getTodayISODate } from '../../../../lib/utils';
 import i18n from '../../../../lib/i18n';
 import { useUIStore } from '../../../../store/useStore';
 import { getTrangThaiDotLabel } from '../core/constants';
-import { getKetQuaLabel } from '../core/constants';
+import {
+  getKiemKeKhoChiTietStats,
+  buildKiemKeKhoStatsText,
+  buildKiemKeKhoDetailTableHTML,
+  buildKiemKeKhoSignFooterHTML,
+  buildKiemKeKhoDotInfoTableHTML,
+  getKiemKeKhoPreviewSignLabels,
+  getKiemKeKhoVariance,
+} from '../core/kkk-preview-layout';
 
 const FONT = "Arial, 'Helvetica Neue', sans-serif";
 const FONT_DOC = "'Times New Roman', Times, serif";
+
+/* ------------------------------------------------------------------ */
+/*  Helpers                                                            */
+/* ------------------------------------------------------------------ */
 
 function safeText(v: string | number | null | undefined): string {
   if (v == null || v === '') return '—';
@@ -39,26 +54,6 @@ function download(blob: Blob, name: string) {
   URL.revokeObjectURL(url);
 }
 
-function getVariance(row: ChiTietKiemKeKho): number | null {
-  if (row.so_luong_thuc_te == null) return null;
-  return Number(row.so_luong_thuc_te) - Number(row.so_luong_so);
-}
-
-function formatQtyWithUnit(value: number | null | undefined, unit?: string | null): string {
-  if (value == null) return '—';
-  return `${formatNumberVN(value)}${unit ? ` ${unit}` : ''}`;
-}
-
-function getStats(chiTiet: ChiTietKiemKeKho[]) {
-  return {
-    total: chiTiet.length,
-    khop: chiTiet.filter((c) => c.ket_qua === 'khop').length,
-    thieu: chiTiet.filter((c) => c.ket_qua === 'thieu').length,
-    thua: chiTiet.filter((c) => c.ket_qua === 'thua').length,
-    chuaKiem: chiTiet.filter((c) => c.ket_qua === 'chua_kiem').length,
-  };
-}
-
 function buildCompanyHeaderHTML(font = FONT): string {
   const info = useUIStore.getState().companyInfo;
   const logoHtml = info.appLogo
@@ -80,96 +75,60 @@ function buildCompanyHeaderHTML(font = FONT): string {
 </div>`;
 }
 
-const TABLE_CELL =
-  (label: string, value: string, font = FONT) =>
-  `<tr><td style="padding:4px 6px;border:1px solid #ddd;font-weight:600;width:40%;color:#444;font-family:${font}">${escapeHtml(label)}</td><td style="padding:4px 6px;border:1px solid #ddd;font-family:${font}">${escapeHtml(value)}</td></tr>`;
-
-function buildPhieuKiemKeKhoBodyHTML(dot: DotKiemKeKho, chiTiet: ChiTietKiemKeKho[]): string {
-  const t = i18n.t.bind(i18n);
-  const title = t('kiemKeKho.preview.title');
-  const printedAt = formatDateTime(new Date());
-  const subtitle = `${dot.ma_dot} · ${dot.ten_dot} · ${getTrangThaiDotLabel(dot.trang_thai, t)}`;
-  const stats = getStats(chiTiet);
-
-  const infoRows = [
-    [t('kiemKeKho.store.maDotCol'), dot.ma_dot],
-    [t('kiemKeKho.store.tenDotCol'), dot.ten_dot],
-    [t('kiemKeKho.store.ngayBatDauCol'), formatDate(dot.ngay_bat_dau)],
-    [t('kiemKeKho.store.ngayKetThucCol'), formatDate(dot.ngay_ket_thuc)],
-    [t('kiemKeKho.store.trangThaiCol'), getTrangThaiDotLabel(dot.trang_thai, t)],
-    [t('kiemKeKho.store.nguoiPhuTrachCol'), dot.ten_nguoi_phu_trach || dot.ma_nguoi_phu_trach || '—'],
-    [t('kiemKeKho.store.ghiChuCol'), dot.ghi_chu ?? '—'],
-  ];
-
-  const statsLine = `${t('kiemKeKho.stats.total')}: ${formatNumberVN(stats.total, { maxFractionDigits: 0 })} · ${t('kiemKeKho.ketQua.khop')}: ${formatNumberVN(stats.khop, { maxFractionDigits: 0 })} · ${t('kiemKeKho.ketQua.thieu')}: ${formatNumberVN(stats.thieu, { maxFractionDigits: 0 })} · ${t('kiemKeKho.ketQua.thua')}: ${formatNumberVN(stats.thua, { maxFractionDigits: 0 })} · ${t('kiemKeKho.ketQua.chua_kiem')}: ${formatNumberVN(stats.chuaKiem, { maxFractionDigits: 0 })}`;
-
-  let section2 = '';
-  if (chiTiet.length > 0) {
-    const theadCells = [
-      'TT',
-      t('kiemKeKho.store.khoCol'),
-      t('kiemKeKho.store.hangHoaCol'),
-      t('kiemKeKho.store.soLuongSoCol'),
-      t('kiemKeKho.store.soLuongThucTeCol'),
-      t('kiemKeKho.detail.chenhLech', { defaultValue: 'Chênh lệch' }),
-      t('kiemKeKho.store.ketQuaCol'),
-      t('kiemKeKho.store.ghiChuCol'),
-    ]
-      .map(
-        (text) =>
-          `<th style="padding:6px 8px;border:1px solid #ddd;text-align:left;font-size:9pt;font-family:${FONT};background:#3b82f6;color:#fff">${escapeHtml(text)}</th>`
-      )
-      .join('');
-    const tbodyRows = chiTiet
-      .map((c, idx) => {
-        const variance = getVariance(c);
-        return (
-          `<tr>
-            <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT};font-size:9pt;text-align:center">${idx + 1}</td>
-            <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT};font-size:9pt">${escapeHtml(c.ten_kho || c.ma_kho)}</td>
-            <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT};font-size:9pt">${escapeHtml(c.ten_hang || c.ma_hang)}</td>
-            <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT};font-size:9pt;text-align:right">${escapeHtml(formatQtyWithUnit(c.so_luong_so, c.don_vi_tinh))}</td>
-            <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT};font-size:9pt;text-align:right">${escapeHtml(formatQtyWithUnit(c.so_luong_thuc_te, c.don_vi_tinh))}</td>
-            <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT};font-size:9pt;text-align:right">${variance == null ? '—' : escapeHtml(formatNumberVN(variance))}</td>
-            <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT};font-size:9pt">${escapeHtml(getKetQuaLabel(c.ket_qua, t))}</td>
-            <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT};font-size:9pt">${escapeHtml(c.ghi_chu_dong)}</td>
-          </tr>`
-        );
-      })
-      .join('');
-    section2 = `
-<table style="width:100%;border-collapse:collapse;margin-top:12px;font-family:${FONT};font-size:10pt">
-  <thead><tr>${theadCells}</tr></thead>
-  <tbody>${tbodyRows}</tbody>
-</table>`;
-  }
-
-  return `
-<div style="font-family:${FONT};font-size:10pt;color:#222;padding:20px;min-width:600px;background:#fff">
-${buildCompanyHeaderHTML()}
-<h1 style="font-size:16pt;text-align:center;margin:0 0 8px;font-family:${FONT};text-transform:uppercase">${escapeHtml(title)}</h1>
-<p style="font-size:10pt;color:#555;text-align:center;margin-bottom:12px;font-family:${FONT}">${escapeHtml(subtitle)}</p>
-<hr style="border:0;border-top:1px solid #ccc;margin:12px 0" />
-<table style="width:100%;border-collapse:collapse;margin-top:12px;font-family:${FONT};font-size:10pt">
-  <thead><tr style="background:#3b82f6;color:#fff"><th colspan="2" style="padding:6px;text-align:left;font-size:9pt">${escapeHtml(t('kiemKeKho.form.infoSection'))}</th></tr></thead>
-  <tbody>${infoRows.map(([l, v]) => TABLE_CELL(l, safeText(v))).join('')}</tbody>
-</table>
-<p style="font-size:9pt;color:#555;margin:10px 0 0;font-family:${FONT}">${escapeHtml(statsLine)}</p>
-${chiTiet.length > 0 ? `<h2 style="font-size:11pt;margin:16px 0 8px;font-family:${FONT}">${escapeHtml(t('kiemKeKho.chiTietSection'))}</h2>${section2}` : `<p style="font-size:10pt;color:#666;font-style:italic;font-family:${FONT}">${escapeHtml(t('kiemKeKho.chiTietEmpty'))}</p>`}
-<div style="display:flex;gap:16px;margin-top:32px;padding-top:16px;border-top:1px solid #ccc">
-  <div style="text-align:center;flex:1"><p style="font-size:10pt;font-weight:600;margin:0 0 2px">${escapeHtml(t('kiemKeKho.preview.signInCharge'))}</p><p style="font-size:8pt;color:#666;margin:0">${escapeHtml(t('kiemKeKho.preview.signHint'))}</p></div>
-  <div style="text-align:center;flex:1"><p style="font-size:10pt;font-weight:600;margin:0 0 2px">${escapeHtml(t('kiemKeKho.preview.signCounter'))}</p><p style="font-size:8pt;color:#666;margin:0">${escapeHtml(t('kiemKeKho.preview.signHint'))}</p></div>
-  <div style="text-align:center;flex:1"><p style="font-size:10pt;font-weight:600;margin:0 0 2px">${escapeHtml(t('kiemKeKho.preview.signWarehouseKeeper'))}</p><p style="font-size:8pt;color:#666;margin:0">${escapeHtml(t('kiemKeKho.preview.signHint'))}</p></div>
-  <div style="text-align:center;flex:1"><p style="font-size:10pt;font-weight:600;margin:0 0 2px">${escapeHtml(t('kiemKeKho.preview.signApprover'))}</p><p style="font-size:8pt;color:#666;margin:0">${escapeHtml(t('kiemKeKho.preview.signHint'))}</p></div>
-</div>
-<p style="font-size:7pt;color:#888;margin-top:20px;font-family:${FONT}">${escapeHtml(t('kiemKeKho.preview.printedAt'))} ${escapeHtml(printedAt)}</p>
-</div>`;
-}
+/** Print/DOC CSS chung — thead lặp, hàng không cắt. */
+const PRINT_TABLE_STYLE = `
+  thead { display: table-header-group; }
+  tr { break-inside: avoid; page-break-inside: avoid; }
+  .sign-footer { break-inside: avoid; page-break-inside: avoid; }
+`;
 
 function getFileName(dot: DotKiemKeKho): string {
   const slug = `${dot.ma_dot}_${dot.ten_dot}`.replace(/\s+/g, '_').replace(/[^\w\u00C0-\u024F\-_]/gi, '');
   return `Phieu_kiem_ke_kho_${slug}_${getTodayISODate()}`;
 }
+
+/* ------------------------------------------------------------------ */
+/*  HTML body (dùng chung PDF + DOC)                                   */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Lề tài liệu — khớp preview React và @page khi in.
+ * T:15mm  R:15mm  B:15mm  L:20mm (chuẩn "trái 2cm, còn lại 1.5cm")
+ */
+const DOC_PADDING = '15mm 15mm 15mm 20mm';
+
+function buildPhieuKiemKeKhoBodyHTML(dot: DotKiemKeKho, chiTiet: ChiTietKiemKeKho[], font = FONT): string {
+  const t = i18n.t.bind(i18n);
+  const title = t('kiemKeKho.preview.title');
+  const printedAt = formatDateTime(new Date());
+  const subtitle = `${escapeHtml(dot.ma_dot)} · ${escapeHtml(dot.ten_dot)} · ${escapeHtml(getTrangThaiDotLabel(dot.trang_thai, t))}`;
+  const stats = getKiemKeKhoChiTietStats(chiTiet);
+  const statsLine = escapeHtml(buildKiemKeKhoStatsText(stats, t));
+
+  const infoTableHtml = buildKiemKeKhoDotInfoTableHTML(dot, t, font);
+  const detailSectionHtml =
+    chiTiet.length > 0
+      ? `<h2 style="font-size:11pt;margin:16px 0 8px;font-family:${font}">${escapeHtml(t('kiemKeKho.chiTietSection'))}</h2>${buildKiemKeKhoDetailTableHTML(chiTiet, t, font)}`
+      : `<p style="font-size:10pt;color:#666;font-style:italic;font-family:${font}">${escapeHtml(t('kiemKeKho.chiTietEmpty'))}</p>`;
+  const signFooterHtml = buildKiemKeKhoSignFooterHTML(t, font);
+
+  return `
+<div style="font-family:${font};font-size:10pt;color:#222;padding:${DOC_PADDING};min-width:600px;background:#fff;box-sizing:border-box">
+${buildCompanyHeaderHTML(font)}
+<h1 style="font-size:16pt;text-align:center;margin:0 0 8px;font-family:${font};text-transform:uppercase">${escapeHtml(title)}</h1>
+<p style="font-size:10pt;color:#555;text-align:center;margin-bottom:12px;font-family:${font}">${subtitle}</p>
+<hr style="border:0;border-top:1px solid #ccc;margin:12px 0" />
+${infoTableHtml}
+<p style="font-size:9pt;color:#555;margin:10px 0 0;font-family:${font}">${statsLine}</p>
+${detailSectionHtml}
+${signFooterHtml}
+<p style="font-size:7pt;color:#888;margin-top:20px;border-top:1px solid #e5e7eb;padding-top:8px;font-family:${font}">${escapeHtml(t('kiemKeKho.preview.printedAt'))} ${escapeHtml(printedAt)}</p>
+</div>`;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Export: PDF                                                        */
+/* ------------------------------------------------------------------ */
 
 export async function exportPhieuKiemKeKhoToPDF(
   dot: DotKiemKeKho,
@@ -183,47 +142,74 @@ export async function exportPhieuKiemKeKhoToPDF(
   const bodyContent = buildPhieuKiemKeKhoBodyHTML(dot, chiTiet);
   const fullHtml = [
     '<!DOCTYPE html><html><head><meta charset="UTF-8">',
-    `<style>*{box-sizing:border-box}body{margin:0;padding:0;background:#fff;color:#222;font-family:${FONT};font-size:10pt}img{max-width:100%}</style></head><body>`,
+    `<style>
+      *{box-sizing:border-box}
+      body{margin:0;padding:0;background:#fff;color:#222;font-family:${FONT};font-size:10pt}
+      img{max-width:100%}
+      ${PRINT_TABLE_STYLE}
+    </style></head><body>`,
     bodyContent,
     '</body></html>',
   ].join('');
 
   const iframe = document.createElement('iframe');
   iframe.setAttribute('srcdoc', fullHtml);
-  iframe.style.cssText = 'position:fixed;left:0;top:0;width:794px;height:1123px;border:0;z-index:-1';
+  // Không đặt height cố định để iframe có thể mở rộng theo nội dung
+  iframe.style.cssText = 'position:fixed;left:0;top:0;width:794px;border:0;z-index:-1;visibility:hidden';
   document.body.appendChild(iframe);
 
   await new Promise<void>((resolve, reject) => {
     iframe.onload = () => resolve();
     iframe.onerror = () => reject(new Error('iframe load failed'));
   });
-  await new Promise((r) => setTimeout(r, 100));
+  // Chờ fonts/images render
+  await new Promise((r) => setTimeout(r, 300));
 
   try {
     const docEl = iframe.contentDocument?.body;
     if (!docEl) throw new Error('iframe body not available');
+
+    // Đặt chiều cao iframe khớp với scrollHeight để html2canvas đủ canvas
+    const scrollH = docEl.scrollHeight;
+    iframe.style.height = `${scrollH + 20}px`;
+    await new Promise((r) => setTimeout(r, 100));
+
     const canvas = await html2canvas(docEl, {
       scale: 2,
       useCORS: true,
       backgroundColor: '#ffffff',
       logging: false,
+      height: scrollH,
+      windowHeight: scrollH,
     });
     if (iframe.parentNode) document.body.removeChild(iframe);
 
     const imgData = canvas.toDataURL('image/png');
     const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+
+    // Lề do content tự chứa (padding: 15mm 15mm 15mm 20mm trong HTML body).
+    // jsPDF đặt ảnh từ (0,0) rộng đúng khổ A4 — không cần margin riêng.
     const pageW = 210;
     const pageH = 297;
-    const imgH = (canvas.height * pageW) / canvas.width;
-    let remaining = imgH;
-    let y = 0;
 
-    doc.addImage(imgData, 'PNG', 0, y, pageW, imgH);
+    const pxToMm = 25.4 / 96;
+    // canvas.width ở scale:2 → chia 2 để ra pixel ở 96dpi → nhân pxToMm → mm
+    const imgWmm = (canvas.width / 2) * pxToMm;
+    const imgHmm = (canvas.height / 2) * pxToMm;
+    // Scale ảnh vừa đúng khổ A4 ngang
+    const scale = pageW / imgWmm;
+    const scaledH = imgHmm * scale;
+
+    let remaining = scaledH;
+    let srcY = 0;
+
+    doc.addImage(imgData, 'PNG', 0, 0, pageW, scaledH);
     remaining -= pageH;
+
     while (remaining > 0) {
-      y -= pageH;
+      srcY += pageH;
       doc.addPage();
-      doc.addImage(imgData, 'PNG', 0, y, pageW, imgH);
+      doc.addImage(imgData, 'PNG', 0, -srcY, pageW, scaledH);
       remaining -= pageH;
     }
 
@@ -233,15 +219,23 @@ export async function exportPhieuKiemKeKhoToPDF(
   }
 }
 
+/* ------------------------------------------------------------------ */
+/*  Export: DOC                                                        */
+/* ------------------------------------------------------------------ */
+
 function buildDocHTML(dot: DotKiemKeKho, chiTiet: ChiTietKiemKeKho[]): string {
-  const body = buildPhieuKiemKeKhoBodyHTML(dot, chiTiet).replaceAll(FONT, FONT_DOC);
+  const body = buildPhieuKiemKeKhoBodyHTML(dot, chiTiet, FONT_DOC);
   return [
     '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">',
     '<head>',
     '<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>',
-    `<style>body,td,th,p{font-family:${FONT_DOC};font-size:11pt;}</style>`,
+    `<style>
+      @page { size: A4; margin: 0; }
+      body,td,th,p { font-family:${FONT_DOC};font-size:11pt; }
+      ${PRINT_TABLE_STYLE}
+    </style>`,
     '</head>',
-    `<body style="font-family:${FONT_DOC};margin:40px">${body}</body>`,
+    `<body style="font-family:${FONT_DOC};margin:0">${body}</body>`,
     '</html>',
   ].join('');
 }
@@ -256,6 +250,10 @@ export async function exportPhieuKiemKeKhoToDoc(
   );
 }
 
+/* ------------------------------------------------------------------ */
+/*  Export: XLSX                                                       */
+/* ------------------------------------------------------------------ */
+
 export async function exportPhieuKiemKeKhoToXLSX(
   dot: DotKiemKeKho,
   chiTiet: ChiTietKiemKeKho[]
@@ -263,7 +261,8 @@ export async function exportPhieuKiemKeKhoToXLSX(
   const XLSX = await import('xlsx');
   const t = i18n.t.bind(i18n);
   const info = useUIStore.getState().companyInfo;
-  const stats = getStats(chiTiet);
+  const stats = getKiemKeKhoChiTietStats(chiTiet);
+  const signLabels = getKiemKeKhoPreviewSignLabels(t);
 
   const rows: (string | number)[][] = [
     [safeText(info.companyName)],
@@ -292,7 +291,7 @@ export async function exportPhieuKiemKeKhoToXLSX(
       t('kiemKeKho.store.hangHoaCol'),
       t('kiemKeKho.store.soLuongSoCol'),
       t('kiemKeKho.store.soLuongThucTeCol'),
-      t('kiemKeKho.detail.chenhLech', { defaultValue: 'Chênh lệch' }),
+      t('kiemKeKho.detail.chenhLech'),
       t('kiemKeKho.store.ketQuaCol'),
       t('kiemKeKho.store.dvtCol'),
       t('kiemKeKho.store.ghiChuCol'),
@@ -300,18 +299,22 @@ export async function exportPhieuKiemKeKhoToXLSX(
   ];
 
   chiTiet.forEach((c, idx) => {
+    const variance = getKiemKeKhoVariance(c);
     rows.push([
       idx + 1,
       safeText(c.ten_kho || c.ma_kho),
       safeText(c.ten_hang || c.ma_hang),
       Number(c.so_luong_so) || 0,
       c.so_luong_thuc_te != null ? Number(c.so_luong_thuc_te) : '',
-      getVariance(c) ?? '',
-      getKetQuaLabel(c.ket_qua, t),
+      variance ?? '',
+      t(`kiemKeKho.ketQua.${c.ket_qua}`),
       safeText(c.don_vi_tinh),
       safeText(c.ghi_chu_dong),
     ]);
   });
+
+  // Phần ký — 4 cột nhãn
+  rows.push([], signLabels);
 
   const ws = XLSX.utils.aoa_to_sheet(rows);
   ws['!cols'] = [

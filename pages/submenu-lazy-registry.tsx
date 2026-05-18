@@ -32,6 +32,7 @@ export const SUBMENU_MODULE_IMPORTS = {
   'bao-cao-nhan-cong': () => import('../features/quan-ly-farm/bao-cao-nhan-cong'),
   'bao-cao-so-che': () => import('../features/quan-ly-farm/bao-cao-so-che'),
   'du-bao-sl-dong-thung': () => import('../features/quan-ly-farm/du-bao-sl-dong-thung'),
+  'thong-ke-san-xuat': () => import('../features/quan-ly-farm/thong-ke-san-xuat'),
   'hang-hoa-phan-thuoc': () => import('../features/quan-ly-farm/hang-hoa-phan-thuoc'),
   'phieu-kho-phan-thuoc': () => import('../features/quan-ly-farm/phieu-kho-phan-thuoc'),
   'ton-kho-phan-thuoc': () => import('../features/quan-ly-farm/ton-kho-phan-thuoc'),

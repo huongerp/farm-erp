@@ -5,6 +5,7 @@ import { useForm, Controller, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Building2, Calculator, Layers, MessageSquare, Users } from 'lucide-react';
 import BaoCaoKpiThuongFormSection from '../../shared/kpi-thuong/BaoCaoKpiThuongFormSection';
+import { BCSC_DANH_GIA_KPI_OPTIONS } from '../core/kpi-thuong-presets';
 import Input from '../../../../components/ui/Input';
 import Textarea from '../../../../components/ui/Textarea';
 import Combobox from '../../../../components/ui/Combobox';
@@ -19,7 +20,7 @@ import { BCSC_KPI_STT_OFFSET, BCSC_SO_LIEU_STT_OFFSET, deriveDonViTinhSlipFromSo
 import { useCreateBaoCaoSoChe, useUpdateBaoCaoSoChe } from '../hooks/use-bao-cao-so-che';
 import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
 import { TRANG_THAI } from '../../../../lib/constants';
-import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/GenericDrawer';
+import GenericDrawer, { DRAWER_WIDTH_BAO_CAO_SO_CHE } from '../../../../components/shared/GenericDrawer';
 import FormSection from '../../../../components/shared/FormSection';
 import FormGrid from '../../../../components/shared/FormGrid';
 import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
@@ -34,6 +35,8 @@ interface Props {
   preferredBranch?: { id_chi_nhanh: string; ten_chi_nhanh: string } | null;
   existingList: FarmBaoCaoSoChe[];
   onClose: () => void;
+  /** Chỉ quản trị mới được thao tác section Phẩm cấp và KPI/thưởng. */
+  canAdmin?: boolean;
 }
 
 const BaoCaoSoCheForm: React.FC<Props> = ({
@@ -42,6 +45,7 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
   preferredBranch,
   existingList,
   onClose,
+  canAdmin = false,
 }) => {
   const { t } = useTranslation();
   const isEdit = !!initialData;
@@ -138,7 +142,7 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
     <GenericDrawer
       onClose={onClose}
       title={isEdit ? t('baoCaoSoChe.form.editTitle') : t('baoCaoSoChe.form.createTitle')}
-      maxWidthClass={DRAWER_WIDTH_FORM}
+      maxWidthClass={DRAWER_WIDTH_BAO_CAO_SO_CHE}
       icon={<Layers size={18} />}
       footer={
         <FormDrawerFooter
@@ -235,9 +239,14 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
           />
         </FormSection>
 
-        <BaoCaoKpiThuongFormSection control={control} i18nPrefix="baoCaoSoChe.kpiThuong" />
+        <BaoCaoSoChePhamCapFormSection control={control} errors={errors} disabled={!canAdmin} />
 
-        <BaoCaoSoChePhamCapFormSection control={control} errors={errors} />
+        <BaoCaoKpiThuongFormSection
+          control={control}
+          i18nPrefix="baoCaoSoChe.kpiThuong"
+          danhGiaOptions={BCSC_DANH_GIA_KPI_OPTIONS}
+          disabled={!canAdmin}
+        />
       </form>
     </GenericDrawer>
   );

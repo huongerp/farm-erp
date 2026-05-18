@@ -45,18 +45,19 @@ CREATE TABLE IF NOT EXISTS public.fp_farm_bao_cao_so_che_ct (
       'tong_buong_thu_hoach',
       'tong_buong_khong_so_che',
       'tong_buong_so_che',
-      'sl_buong_ton_cuoi_ngay'
+      'sl_buong_ton_cuoi_ngay',
+      'danh_gia_loi_qc_pct'
     )
   )
 );
 
 COMMENT ON TABLE public.fp_farm_bao_cao_so_che_ct IS
   'Chi tiết sơ chế: mỗi dòng một chỉ tiêu (mô hình giống fp_farm_bao_cao_nhan_cong_ct — nhiều dòng / phiếu)';
-COMMENT ON COLUMN public.fp_farm_bao_cao_so_che_ct.ma_chi_tieu IS 'Mã chỉ tiêu cố định (5 loại)';
+COMMENT ON COLUMN public.fp_farm_bao_cao_so_che_ct.ma_chi_tieu IS 'Mã chỉ tiêu cố định (6 loại)';
 COMMENT ON COLUMN public.fp_farm_bao_cao_so_che_ct.gia_tri IS 'Giá trị số của chỉ tiêu';
 COMMENT ON COLUMN public.fp_farm_bao_cao_so_che_ct.don_vi_tinh IS 'ĐVT theo dòng (vd. Buồng, Thùng)';
 COMMENT ON COLUMN public.fp_farm_bao_cao_so_che_ct.ghi_chu IS 'Ghi chú theo dòng chỉ tiêu';
-COMMENT ON COLUMN public.fp_farm_bao_cao_so_che_ct.thu_tu IS 'Thứ tự hiển thị (1..5)';
+COMMENT ON COLUMN public.fp_farm_bao_cao_so_che_ct.thu_tu IS 'Thứ tự hiển thị (1..6)';
 
 CREATE UNIQUE INDEX IF NOT EXISTS uq_fp_farm_bcsc_ct_bao_cao_ma
   ON public.fp_farm_bao_cao_so_che_ct (id_bao_cao, ma_chi_tieu);
@@ -69,18 +70,14 @@ CREATE TABLE IF NOT EXISTS public.fp_farm_bao_cao_so_che_pham_cap (
   ten_pham_cap text NOT NULL,
   so_tham_chieu numeric(18, 4) NOT NULL DEFAULT 0,
   so_thung numeric(18, 4) NOT NULL DEFAULT 0,
-  so_kg numeric(18, 4) NOT NULL DEFAULT 0,
-  ty_le_pct numeric(7, 4) NOT NULL DEFAULT 0,
   so_thung_quy_doi numeric(18, 4) NOT NULL DEFAULT 0,
-  thu_tu integer NOT NULL DEFAULT 0,
-  CONSTRAINT fp_farm_bcsc_pc_ty_le_chk CHECK (ty_le_pct >= 0 AND ty_le_pct <= 100)
+  thu_tu integer NOT NULL DEFAULT 0
 );
 
 COMMENT ON TABLE public.fp_farm_bao_cao_so_che_pham_cap IS
   'Phẩm cấp / loại thùng: nhiều dòng / phiếu; tên loại do người dùng nhập.';
 COMMENT ON COLUMN public.fp_farm_bao_cao_so_che_pham_cap.ten_pham_cap IS 'Tên loại phẩm cấp (tự do)';
-COMMENT ON COLUMN public.fp_farm_bao_cao_so_che_pham_cap.so_tham_chieu IS 'Cột “Số” tham chiếu trên phiếu';
-COMMENT ON COLUMN public.fp_farm_bao_cao_so_che_pham_cap.ty_le_pct IS 'Tỷ lệ % (0–100)';
+COMMENT ON COLUMN public.fp_farm_bao_cao_so_che_pham_cap.so_tham_chieu IS 'Kg mỗi thùng. Tổng kg & tỷ lệ % tính trên app (không lưu DB).';
 COMMENT ON COLUMN public.fp_farm_bao_cao_so_che_pham_cap.thu_tu IS 'Thứ tự hiển thị trong phiếu';
 
 CREATE INDEX IF NOT EXISTS idx_fp_farm_bcsc_pc_bao_cao ON public.fp_farm_bao_cao_so_che_pham_cap(id_bao_cao);

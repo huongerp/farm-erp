@@ -24,11 +24,13 @@ interface Props {
   initialData?: FarmDuBaoSlDongThung | null;
   preferredBranch?: { id_chi_nhanh: string; ten_chi_nhanh: string } | null;
   onClose: () => void;
+  /** Chỉ quản trị mới được nhập dòng 10–14 (phần thực tế). */
+  canAdmin?: boolean;
 }
 
 const inputCell = 'bg-amber-50/80 dark:bg-amber-950/25';
 
-const DuBaoSlDongThungForm: React.FC<Props> = ({ branches, initialData, preferredBranch, onClose }) => {
+const DuBaoSlDongThungForm: React.FC<Props> = ({ branches, initialData, preferredBranch, onClose, canAdmin = false }) => {
   const { t } = useTranslation();
   const isEdit = !!initialData;
   const createMutation = useCreateDuBaoSlDongThung(onClose);
@@ -334,20 +336,24 @@ const DuBaoSlDongThungForm: React.FC<Props> = ({ branches, initialData, preferre
                 <tr className="border-b border-border/80">
                   <td className="px-2 py-2 text-center tabular-nums text-muted-foreground">10</td>
                   <td className="px-3 py-2 text-muted-foreground">{t('duBaoSlDongThung.form.row10')}</td>
-                  <td className={cn('px-1 py-1', inputCell)}>
-                    <Controller
-                      name="tong_buong_nhap_thuc_te"
-                      control={control}
-                      render={({ field }) => (
-                        <NumberInput
-                          compact
-                          value={field.value}
-                          onChange={(n) => field.onChange(Math.max(0, Math.floor(n)))}
-                          maxFractionDigits={0}
-                          className="border-0 bg-transparent shadow-none"
-                        />
-                      )}
-                    />
+                  <td className={cn('px-1 py-1', canAdmin && inputCell)}>
+                    {canAdmin ? (
+                      <Controller
+                        name="tong_buong_nhap_thuc_te"
+                        control={control}
+                        render={({ field }) => (
+                          <NumberInput
+                            compact
+                            value={field.value}
+                            onChange={(n) => field.onChange(Math.max(0, Math.floor(n)))}
+                            maxFractionDigits={0}
+                            className="border-0 bg-transparent shadow-none"
+                          />
+                        )}
+                      />
+                    ) : (
+                      readOnlyNum(watched.tong_buong_nhap_thuc_te)
+                    )}
                   </td>
                   <td className="px-2 py-2 text-muted-foreground">{t('duBaoSlDongThung.form.unitBuong')}</td>
                   <td className="px-2 py-2 text-xs text-muted-foreground leading-snug">{t('duBaoSlDongThung.form.row10Note')}</td>
@@ -362,21 +368,25 @@ const DuBaoSlDongThungForm: React.FC<Props> = ({ branches, initialData, preferre
                 <tr className="border-b border-border/80">
                   <td className="px-2 py-2 text-center tabular-nums text-muted-foreground">12</td>
                   <td className="px-3 py-2 text-muted-foreground">{t('duBaoSlDongThung.form.row12')}</td>
-                  <td className={cn('px-1 py-1', inputCell)}>
-                    <Controller
-                      name="ty_le_thu_hoi_thuc_te_pct"
-                      control={control}
-                      render={({ field }) => (
-                        <NumberInput
-                          compact
-                          value={field.value}
-                          onChange={(n) => field.onChange(Math.min(100, Math.max(0, n)))}
-                          max={100}
-                          maxFractionDigits={2}
-                          className="border-0 bg-transparent shadow-none"
-                        />
-                      )}
-                    />
+                  <td className={cn('px-1 py-1', canAdmin && inputCell)}>
+                    {canAdmin ? (
+                      <Controller
+                        name="ty_le_thu_hoi_thuc_te_pct"
+                        control={control}
+                        render={({ field }) => (
+                          <NumberInput
+                            compact
+                            value={field.value}
+                            onChange={(n) => field.onChange(Math.min(100, Math.max(0, n)))}
+                            max={100}
+                            maxFractionDigits={2}
+                            className="border-0 bg-transparent shadow-none"
+                          />
+                        )}
+                      />
+                    ) : (
+                      readOnlyNum(watched.ty_le_thu_hoi_thuc_te_pct)
+                    )}
                   </td>
                   <td className="px-2 py-2 text-muted-foreground">{t('duBaoSlDongThung.form.unitPercent')}</td>
                   <td className="px-2 py-2 text-xs text-muted-foreground leading-snug">{t('duBaoSlDongThung.form.row12Note')}</td>
@@ -391,20 +401,24 @@ const DuBaoSlDongThungForm: React.FC<Props> = ({ branches, initialData, preferre
                 <tr className="border-b border-border/80">
                   <td className="px-2 py-2 text-center tabular-nums text-muted-foreground">14</td>
                   <td className="px-3 py-2 text-muted-foreground">{t('duBaoSlDongThung.form.row14')}</td>
-                  <td className={cn('px-1 py-1', inputCell)}>
-                    <Controller
-                      name="quy_cach_dong_thung_thuc_te"
-                      control={control}
-                      render={({ field }) => (
-                        <NumberInput
-                          compact
-                          value={field.value}
-                          onChange={field.onChange}
-                          maxFractionDigits={4}
-                          className="border-0 bg-transparent shadow-none"
-                        />
-                      )}
-                    />
+                  <td className={cn('px-1 py-1', canAdmin && inputCell)}>
+                    {canAdmin ? (
+                      <Controller
+                        name="quy_cach_dong_thung_thuc_te"
+                        control={control}
+                        render={({ field }) => (
+                          <NumberInput
+                            compact
+                            value={field.value}
+                            onChange={field.onChange}
+                            maxFractionDigits={4}
+                            className="border-0 bg-transparent shadow-none"
+                          />
+                        )}
+                      />
+                    ) : (
+                      readOnlyNum(watched.quy_cach_dong_thung_thuc_te)
+                    )}
                   </td>
                   <td className="px-2 py-2 text-muted-foreground">{t('duBaoSlDongThung.form.unitKgPerThung')}</td>
                   <td className="px-2 py-2 text-xs text-muted-foreground leading-snug">{t('duBaoSlDongThung.form.row14Note')}</td>

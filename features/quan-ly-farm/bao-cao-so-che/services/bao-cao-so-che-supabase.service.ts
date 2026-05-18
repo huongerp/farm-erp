@@ -4,8 +4,9 @@
 import { supabase, throwSupabaseError, formatSupabaseError } from '../../../../lib/supabase';
 import i18n from '../../../../lib/i18n';
 import type { FarmBaoCaoSoChe, FarmBaoCaoKpiThuongRow, TrangThaiBaoCaoSoChePhieu } from '../core/types';
+import { computeKpiPhanTram } from '../../shared/kpi-thuong/types';
 import { TRANG_THAI_BAO_CAO_SO_CHE } from '../core/types';
-import { defaultPhamCapModelRows, type FarmBaoCaoSoChePhamCapRow } from '../core/pham-cap';
+import { defaultPhamCapModelRows, inferSoThamChieuKgPerThung, type FarmBaoCaoSoChePhamCapRow } from '../core/pham-cap';
 import type { BaoCaoSoCheFormValues } from '../core/schema';
 import {
   SO_LIEU_BUONG_ROW_DEFS,
@@ -28,7 +29,7 @@ const ROW_CHA = 'id,ngay,id_chi_nhanh,ten_chi_nhanh,ghi_chu,id_nguoi_tao,trang_t
 const ROW_CT = 'id,id_bao_cao,ma_chi_tieu,gia_tri,don_vi_tinh,ghi_chu,thu_tu';
 
 const ROW_PCAP =
-  'id,id_bao_cao,ten_pham_cap,so_tham_chieu,so_thung,so_kg,ty_le_pct,so_thung_quy_doi,thu_tu';
+  'id,id_bao_cao,ten_pham_cap,so_tham_chieu,so_thung,so_thung_quy_doi,thu_tu';
 
 const ROW_KPI =
   'id,id_bao_cao,thu_tu,ten_hang_muc,don_vi_tinh,muc_tieu,thuc_te,phan_tram,danh_gia,tien_thuong,ghi_chu';
@@ -127,8 +128,6 @@ interface DbRowPcap {
   ten_pham_cap: string;
   so_tham_chieu: string | number | null;
   so_thung: string | number | null;
-  so_kg: string | number | null;
-  ty_le_pct: string | number | null;
   so_thung_quy_doi: string | number | null;
   thu_tu: number | null;
 }
@@ -136,17 +135,21 @@ interface DbRowPcap {
 function pcapDbRowsToModel(rows: DbRowPcap[]): FarmBaoCaoSoChePhamCapRow[] {
   return [...rows]
     .sort((a, b) => (a.thu_tu ?? 0) - (b.thu_tu ?? 0))
-    .map((r) => ({
-      id: String(r.id),
-      id_bao_cao: String(r.id_bao_cao),
-      ten_pham_cap: typeof r.ten_pham_cap === 'string' ? r.ten_pham_cap : '',
-      so_tham_chieu: num(r.so_tham_chieu),
-      so_thung: num(r.so_thung),
-      so_kg: num(r.so_kg),
-      ty_le_pct: num(r.ty_le_pct),
-      so_thung_quy_doi: num(r.so_thung_quy_doi),
-      thu_tu: Number(r.thu_tu) || 0,
-    }));
+    .map((r) => {
+      const so_thung = num(r.so_thung);
+      return {
+        id: String(r.id),
+        id_bao_cao: String(r.id_bao_cao),
+        ten_pham_cap: typeof r.ten_pham_cap === 'string' ? r.ten_pham_cap : '',
+        so_tham_chieu: inferSoThamChieuKgPerThung({
+          so_tham_chieu: num(r.so_tham_chieu),
+          so_thung,
+        }),
+        so_thung,
+        so_thung_quy_doi: num(r.so_thung_quy_doi),
+        thu_tu: Number(r.thu_tu) || 0,
+      };
+    });
 }
 
 function normalizeTrangThaiDb(v: string | null | undefined): TrangThaiBaoCaoSoChePhieu {
@@ -163,6 +166,7 @@ function ctRowsToMetrics(
   | 'tong_buong_khong_so_che'
   | 'tong_buong_so_che'
   | 'sl_buong_ton_cuoi_ngay'
+  | 'danh_gia_loi_qc_pct'
   | 'so_lieu_row_meta'
 > {
   if (rows.length === 0) {
@@ -173,6 +177,7 @@ function ctRowsToMetrics(
       tong_buong_khong_so_che: 0,
       tong_buong_so_che: 0,
       sl_buong_ton_cuoi_ngay: 0,
+      danh_gia_loi_qc_pct: 0,
       so_lieu_row_meta: {},
     };
   }
@@ -206,6 +211,7 @@ function ctRowsToMetrics(
     tong_buong_khong_so_che: num(byKey.get('tong_buong_khong_so_che')?.gia_tri),
     tong_buong_so_che: num(byKey.get('tong_buong_so_che')?.gia_tri),
     sl_buong_ton_cuoi_ngay: num(byKey.get('sl_buong_ton_cuoi_ngay')?.gia_tri),
+    danh_gia_loi_qc_pct: num(byKey.get('danh_gia_loi_qc_pct')?.gia_tri),
     so_lieu_row_meta: meta,
   };
 }
@@ -345,7 +351,7 @@ function kpiPayloadRows(idBaoCao: number, values: BaoCaoSoCheFormValues) {
     don_vi_tinh: r.don_vi_tinh?.trim() || null,
     muc_tieu: r.muc_tieu?.trim() || null,
     thuc_te: r.thuc_te?.trim() || null,
-    phan_tram: r.phan_tram == null || Number.isNaN(Number(r.phan_tram)) ? null : Number(r.phan_tram),
+    phan_tram: computeKpiPhanTram(r.muc_tieu, r.thuc_te),
     danh_gia: r.danh_gia?.trim() || null,
     tien_thuong: Number(r.tien_thuong ?? 0),
     ghi_chu: r.ghi_chu?.trim() || null,
@@ -353,16 +359,13 @@ function kpiPayloadRows(idBaoCao: number, values: BaoCaoSoCheFormValues) {
 }
 
 function pcapRowsFromForm(values: BaoCaoSoCheFormValues, idBaoCao: number) {
-  const rows = values.pham_cap ?? [];
-  return rows
+  return (values.pham_cap ?? [])
     .filter((r) => String(r?.ten_pham_cap ?? '').trim() !== '')
     .map((r, idx) => ({
       id_bao_cao: idBaoCao,
       ten_pham_cap: String(r.ten_pham_cap).trim(),
       so_tham_chieu: r.so_tham_chieu ?? 0,
       so_thung: r.so_thung ?? 0,
-      so_kg: r.so_kg ?? 0,
-      ty_le_pct: r.ty_le_pct ?? 0,
       so_thung_quy_doi: r.so_thung_quy_doi ?? 0,
       thu_tu: idx + 1,
     }));

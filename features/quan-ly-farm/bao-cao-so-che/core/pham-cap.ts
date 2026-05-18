@@ -1,4 +1,4 @@
-/** Bảng con `fp_farm_bao_cao_so_che_pham_cap` — nhiều dòng / phiếu, tên loại do người dùng. */
+/** Bảng con `fp_farm_bao_cao_so_che_pham_cap` — chỉ lưu tên + 3 số nhập; tổng kg & % tính trên app. */
 
 /** Giới hạn số dòng / phiếu (tránh payload quá lớn). */
 export const PHAM_CAP_ROWS_MAX = 50;
@@ -13,12 +13,12 @@ export const PHAM_CAP_PRESETS: readonly { ten: string }[] = [
   { ten: '18KG' },
 ] as const;
 
+/** Dữ liệu nhập form / lưu DB. */
 export interface PhamCapRowFormValues {
   ten_pham_cap: string;
+  /** Kg mỗi thùng (trước đây cột “Số” / `so_tham_chieu`). */
   so_tham_chieu: number;
   so_thung: number;
-  so_kg: number;
-  ty_le_pct: number;
   so_thung_quy_doi: number;
 }
 
@@ -27,8 +27,6 @@ export function emptyPhamCapRow(): PhamCapRowFormValues {
     ten_pham_cap: '',
     so_tham_chieu: 0,
     so_thung: 0,
-    so_kg: 0,
-    ty_le_pct: 0,
     so_thung_quy_doi: 0,
   };
 }
@@ -39,8 +37,6 @@ export function defaultPhamCapRows(): PhamCapRowFormValues[] {
     ten_pham_cap: p.ten,
     so_tham_chieu: 0,
     so_thung: 0,
-    so_kg: 0,
-    ty_le_pct: 0,
     so_thung_quy_doi: 0,
   }));
 }
@@ -50,15 +46,9 @@ export function emptyPhamCapRows(): PhamCapRowFormValues[] {
   return defaultPhamCapRows();
 }
 
-export interface FarmBaoCaoSoChePhamCapRow {
+export interface FarmBaoCaoSoChePhamCapRow extends PhamCapRowFormValues {
   id?: string;
   id_bao_cao?: string;
-  ten_pham_cap: string;
-  so_tham_chieu: number;
-  so_thung: number;
-  so_kg: number;
-  ty_le_pct: number;
-  so_thung_quy_doi: number;
   thu_tu: number;
 }
 
@@ -68,37 +58,36 @@ export function defaultPhamCapModelRows(): FarmBaoCaoSoChePhamCapRow[] {
     ten_pham_cap: p.ten,
     so_tham_chieu: 0,
     so_thung: 0,
-    so_kg: 0,
-    ty_le_pct: 0,
     so_thung_quy_doi: 0,
     thu_tu: idx + 1,
   }));
 }
 
-export function normalizePhamCapFromDb(rows: FarmBaoCaoSoChePhamCapRow[] | undefined | null): PhamCapRowFormValues[] {
+/** Chuẩn hoá từ model (đã map từ DB) → form. */
+export function normalizePhamCapFromDb(
+  rows: FarmBaoCaoSoChePhamCapRow[] | undefined | null
+): PhamCapRowFormValues[] {
   const list = [...(rows ?? [])].sort((a, b) => (a.thu_tu ?? 0) - (b.thu_tu ?? 0));
   if (list.length === 0) return defaultPhamCapRows();
   return list.map((r) => ({
     ten_pham_cap: typeof r.ten_pham_cap === 'string' ? r.ten_pham_cap : '',
     so_tham_chieu: Number(r.so_tham_chieu) || 0,
     so_thung: Number(r.so_thung) || 0,
-    so_kg: Number(r.so_kg) || 0,
-    ty_le_pct: Number(r.ty_le_pct) || 0,
     so_thung_quy_doi: Number(r.so_thung_quy_doi) || 0,
   }));
 }
 
-/** Tổng cộng hiển thị (không lưu DB). */
-export function sumPhamCapTotals(rows: PhamCapRowFormValues[] | FarmBaoCaoSoChePhamCapRow[]) {
-  let so_thung = 0;
-  let so_kg = 0;
-  let ty_le_pct = 0;
-  let so_thung_quy_doi = 0;
-  for (const r of rows) {
-    so_thung += Number(r.so_thung) || 0;
-    so_kg += Number(r.so_kg) || 0;
-    ty_le_pct += Number(r.ty_le_pct) || 0;
-    so_thung_quy_doi += Number(r.so_thung_quy_doi) || 0;
-  }
-  return { so_thung, so_kg, ty_le_pct, so_thung_quy_doi };
+/** Suy kg/thùng: ưu tiên `so_tham_chieu`; dữ liệu cũ = tổng kg ÷ số thùng. */
+export function inferSoThamChieuKgPerThung(
+  row: Pick<PhamCapRowFormValues, 'so_tham_chieu' | 'so_thung'>,
+  legacyTongKg?: number
+): number {
+  const ref = Number(row.so_tham_chieu) || 0;
+  if (ref > 0) return ref;
+  const thung = Number(row.so_thung) || 0;
+  const tongKg = Number(legacyTongKg) || 0;
+  if (thung > 0 && tongKg > 0) return tongKg / thung;
+  return 0;
 }
+
+export { sumPhamCapDisplayTotals as sumPhamCapTotals } from './pham-cap-derived';

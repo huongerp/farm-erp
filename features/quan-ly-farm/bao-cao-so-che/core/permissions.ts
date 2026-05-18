@@ -1,4 +1,3 @@
-import type { User } from '../../../../types';
 import type { FarmBaoCaoSoChe } from './types';
 import { TRANG_THAI_BAO_CAO_SO_CHE } from './types';
 
@@ -6,32 +5,36 @@ export function isBaoCaoSoCheLocked(item: FarmBaoCaoSoChe): boolean {
   return item.trang_thai === TRANG_THAI_BAO_CAO_SO_CHE.KHOA;
 }
 
-export function isBaoCaoSoCheAdmin(user: User | null | undefined): boolean {
-  return user?.role === 'admin';
-}
-
+/**
+ * Sửa / xóa phiếu:
+ * - Quản trị (`admin` / `all`) → được sửa/xóa tất cả.
+ * - Quyền thường → chỉ được sửa/xóa phiếu mình tạo (`id_nguoi_tao`) và chưa khóa.
+ */
 export function canMutateBaoCaoSoChe(
-  user: User | null | undefined,
   item: FarmBaoCaoSoChe,
-  moduleAllowed: boolean
+  moduleAllowed: boolean,
+  moduleCanAdmin: boolean,
+  userId: string | null | undefined
 ): boolean {
+  if (moduleCanAdmin) return true;
   if (!moduleAllowed) return false;
-  if (isBaoCaoSoCheAdmin(user)) return true;
   if (isBaoCaoSoCheLocked(item)) return false;
-  const creator = item.id_nguoi_tao;
-  if (creator == null || creator === '') return false;
-  return String(user?.id ?? '') === String(creator);
+  if (!userId || !item.id_nguoi_tao) return false;
+  return String(userId) === String(item.id_nguoi_tao);
 }
 
-export function canToggleTrangThaiBaoCaoSoChe(user: User | null | undefined): boolean {
-  return isBaoCaoSoCheAdmin(user);
+/** Khóa / mở khóa phiếu — chỉ quyền quản trị module. */
+export function canToggleTrangThaiBaoCaoSoChe(moduleCanAdmin: boolean): boolean {
+  return moduleCanAdmin;
 }
 
+/** Sao chép sang ngày kế — quyền Thêm và phiếu mình tạo (hoặc quản trị). */
 export function canCopyBaoCaoSoCheToNextDay(
-  user: User | null | undefined,
   item: FarmBaoCaoSoChe,
-  moduleCanCreate: boolean
+  moduleCanCreate: boolean,
+  moduleCanAdmin: boolean,
+  userId: string | null | undefined
 ): boolean {
-  if (!moduleCanCreate) return false;
-  return canMutateBaoCaoSoChe(user, item, true);
+  if (!moduleCanCreate && !moduleCanAdmin) return false;
+  return canMutateBaoCaoSoChe(item, true, moduleCanAdmin, userId);
 }

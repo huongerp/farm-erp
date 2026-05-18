@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { AnimatePresence } from 'framer-motion';
-import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import {
   useDuBaoSlDongThungList,
   useDuBaoSlDongThungById,
@@ -16,16 +15,30 @@ import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
 import type { FarmDuBaoSlDongThung } from '../core/types';
 import { getPreferredBranchFromUserLastRecords } from '../core/form-mappers';
-import { canMutateDuBaoSlDongThung, canToggleTrangThaiDuBaoSlDongThung } from '../core/permissions';
+import { useDuBaoSlDongThungPermissions } from '../hooks/use-du-bao-sl-dong-thung-permissions';
 import { useAuthStore } from '../../../../store/useStore';
+import ExportDialog from '../../../../components/shared/ExportDialog';
+import { useExportData } from '../../../../lib/useExportData';
 import DuBaoSlDongThungToolbar from './DuBaoSlDongThungToolbar';
 import DuBaoSlDongThungList from './DuBaoSlDongThungList';
 import DuBaoSlDongThungForm from './DuBaoSlDongThungForm';
 import DuBaoSlDongThungDetail from './DuBaoSlDongThungDetail';
+import {
+  mapFarmDuBaoSlDongThungListRow,
+  getExportColumnsDuBaoSlDongThungList,
+  exportFileNameDuBaoSlDongThungDanhSach,
+} from '../utils/export-du-bao-sl-dong-thung-danh-sach';
 
 const DanhSachTab: React.FC = () => {
   const { t } = useTranslation();
-  const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
+  const {
+    canCreate,
+    canDelete,
+    canEditRow,
+    canDeleteRow,
+    canToggleTrangThai,
+    canAdmin,
+  } = useDuBaoSlDongThungPermissions();
   const confirm = useConfirmStore((s) => s.confirm);
   const {
     searchTerm,
@@ -44,6 +57,7 @@ const DanhSachTab: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<FarmDuBaoSlDongThung | null>(null);
   const [viewingItem, setViewingItem] = useState<FarmDuBaoSlDongThung | null>(null);
+  const [showExport, setShowExport] = useState(false);
 
   const { data: allList = [], isLoading } = useDuBaoSlDongThungList();
   const { data: branches = [] } = useBranches();
@@ -72,10 +86,35 @@ const DanhSachTab: React.FC = () => {
     const ym = item.ngay?.slice(0, 7) ?? '';
     const matchesNam = (f.nam?.length ?? 0) === 0 || (f.nam ?? []).includes(y);
     const matchesThang = (f.thang?.length ?? 0) === 0 || (f.thang ?? []).includes(ym);
-    return matchesSearch && matchesBranch && matchesNam && matchesThang;
+    const matchesTrangThai =
+      (f.trang_thai?.length ?? 0) === 0 || (f.trang_thai ?? []).includes(item.trang_thai);
+    return matchesSearch && matchesBranch && matchesNam && matchesThang && matchesTrangThai;
   }, []);
 
   const filteredList = useListWithFilter(allList, searchTerm, filters, filterFn);
+
+  const exportColumns = useMemo(() => getExportColumnsDuBaoSlDongThungList(t), [t]);
+  const exportMapFn = useCallback(
+    (item: FarmDuBaoSlDongThung) => mapFarmDuBaoSlDongThungListRow(item, t),
+    [t]
+  );
+  const { exportData, paginatedData: paginatedExportData, selectedData: selectedExportData } =
+    useExportData({
+      data: filteredList,
+      isOpen: showExport,
+      mapFn: exportMapFn,
+      pagination,
+      selectedIds,
+      keyExtractor: (item) => item.id,
+    });
+
+  const handleExport = useCallback(() => {
+    if (filteredList.length === 0) {
+      toast.warning(t('duBaoSlDongThung.noExportData'));
+      return;
+    }
+    setShowExport(true);
+  }, [filteredList.length, t]);
 
   useEffect(() => {
     return () => resetState();
@@ -96,15 +135,6 @@ const DanhSachTab: React.FC = () => {
     if (fresh && fresh !== viewingItem) setViewingItem(fresh);
     if (!fresh) setViewingItem(null);
   }, [allList, viewingItem]);
-
-  const canEditRow = useCallback(
-    (item: FarmDuBaoSlDongThung) => canMutateDuBaoSlDongThung(user, item, canUpdate),
-    [user, canUpdate]
-  );
-  const canDeleteRow = useCallback(
-    (item: FarmDuBaoSlDongThung) => canMutateDuBaoSlDongThung(user, item, canDelete),
-    [user, canDelete]
-  );
 
   const handleEdit = (item: FarmDuBaoSlDongThung) => {
     if (!canEditRow(item)) {
@@ -179,14 +209,8 @@ const DanhSachTab: React.FC = () => {
   }, [canDelete, selectedIds, allList, canDeleteRow]);
 
   const viewedRow = viewingFull ?? viewingItem;
-  const detailCanUpdate = useMemo(() => {
-    if (!viewedRow) return false;
-    return canMutateDuBaoSlDongThung(user, viewedRow, canUpdate);
-  }, [viewedRow, user, canUpdate]);
-  const detailCanDelete = useMemo(() => {
-    if (!viewedRow) return false;
-    return canMutateDuBaoSlDongThung(user, viewedRow, canDelete);
-  }, [viewedRow, user, canDelete]);
+  const detailCanUpdate = viewedRow ? canEditRow(viewedRow) : false;
+  const detailCanDelete = viewedRow ? canDeleteRow(viewedRow) : false;
 
   return (
     <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
@@ -199,6 +223,7 @@ const DanhSachTab: React.FC = () => {
           setShowForm(true);
         }}
         onDeleteMany={canBulkDeleteSelection ? handleDeleteMany : undefined}
+        onExport={handleExport}
         canCreate={canCreate}
         canDelete={canDelete}
       />
@@ -223,12 +248,27 @@ const DanhSachTab: React.FC = () => {
       </div>
 
       <AnimatePresence>
+        {showExport && (
+          <ExportDialog
+            open={showExport}
+            onClose={() => setShowExport(false)}
+            columns={exportColumns}
+            data={exportData}
+            paginatedData={paginatedExportData}
+            selectedData={selectedExportData}
+            fileName={exportFileNameDuBaoSlDongThungDanhSach()}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {showForm && (
           <DuBaoSlDongThungForm
             branches={branches}
             initialData={editingFull ?? editingItem}
             preferredBranch={editingItem ? undefined : preferredBranch}
             onClose={handleCloseForm}
+            canAdmin={canAdmin}
           />
         )}
       </AnimatePresence>
@@ -250,7 +290,7 @@ const DanhSachTab: React.FC = () => {
             onDelete={detailCanDelete ? handleDelete : undefined}
             canUpdate={detailCanUpdate}
             canDelete={detailCanDelete}
-            canToggleTrangThai={canToggleTrangThaiDuBaoSlDongThung(user)}
+            canToggleTrangThai={canToggleTrangThai}
           />
         )}
       </AnimatePresence>

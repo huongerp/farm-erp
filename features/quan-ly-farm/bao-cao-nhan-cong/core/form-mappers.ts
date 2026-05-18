@@ -2,6 +2,7 @@ import type { FarmBaoCaoNhanCong } from './types';
 import { LOAI_CHUYEN_CODES } from './types';
 import type { BaoCaoNhanCongFormValues } from './schema';
 import {
+  LOAI_CHI_TIEU_CODES,
   emptySubFormByLoai,
   groupSubModelsByLoai,
   hasAnySubRow,
@@ -9,11 +10,15 @@ import {
   subByLoaiModelsToForm,
   syncChiTietTotalsFromSub,
   normalizeChiTietSubFormByLoai,
+  ensureSubFormMinRows,
+  trimSubEmptyTrailingRows,
+  padSubToRowCount,
+  type ChiTietSubFormByLoai,
 } from './ct-sub';
 
 export function defaultChiTietRows(): BaoCaoNhanCongFormValues['chi_tiet'] {
   return LOAI_CHUYEN_CODES.map((loai_chuyen) => {
-    const sub = emptySubFormByLoai();
+    const sub = padSubToRowCount(emptySubFormByLoai(), 1);
     const totals = syncChiTietTotalsFromSub(normalizeChiTietSubFormByLoai(sub));
     return {
       loai_chuyen,
@@ -50,6 +55,7 @@ export function farmBaoCaoNhanCongToForm(row: FarmBaoCaoNhanCong): BaoCaoNhanCon
             sl_tang_ca: c ? Number(c.sl_tang_ca) : 0,
             so_gio_tc: c ? Number(c.so_gio_tc) : 0,
           });
+    sub = ensureSubFormMinRows(sub, 1);
     const totals = syncChiTietTotalsFromSub(normalizeChiTietSubFormByLoai(sub));
     return {
       loai_chuyen: code,
@@ -74,8 +80,9 @@ export function applySubTotalsToChiTietForm(
   chi_tiet: BaoCaoNhanCongFormValues['chi_tiet']
 ): BaoCaoNhanCongFormValues['chi_tiet'] {
   return chi_tiet.map((row) => {
-    const totals = syncChiTietTotalsFromSub(normalizeChiTietSubFormByLoai(row.sub));
-    return { ...row, ...totals };
+    const sub = trimSubEmptyTrailingRows(normalizeChiTietSubFormByLoai(row.sub));
+    const totals = syncChiTietTotalsFromSub(sub);
+    return { ...row, sub, ...totals };
   });
 }
 
@@ -93,9 +100,28 @@ export function addCalendarDaysIso(isoDate: string, deltaDays: number): string {
   return `${yy}-${mm}-${dd}`;
 }
 
+function clearSubGhiChu(sub: ChiTietSubFormByLoai): ChiTietSubFormByLoai {
+  const out = emptySubFormByLoai();
+  for (const loai of LOAI_CHI_TIEU_CODES) {
+    out[loai] = (sub[loai] ?? []).map((r) => ({ ...r, ghi_chu: null }));
+  }
+  return out;
+}
+
+/** Copy sang ngày kế: giữ số liệu chuyền/sub, không copy ghi chú phiếu / chuyền / ảnh. */
 export function farmBaoCaoNhanCongToFormNextDay(row: FarmBaoCaoNhanCong): BaoCaoNhanCongFormValues {
   const base = farmBaoCaoNhanCongToForm(row);
-  return { ...base, ngay: addCalendarDaysIso(row.ngay, 1) };
+  return {
+    ...base,
+    ngay: addCalendarDaysIso(row.ngay, 1),
+    ghi_chu: null,
+    hinh_anh_urls: [],
+    chi_tiet: base.chi_tiet.map((ct) => ({
+      ...ct,
+      ghi_chu: null,
+      sub: clearSubGhiChu(normalizeChiTietSubFormByLoai(ct.sub)),
+    })),
+  };
 }
 
 export function findBaoCaoDuplicateByBranchAndDate(

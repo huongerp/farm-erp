@@ -3,10 +3,10 @@ import {
   normalizeChiTietForDisplay,
   sumTongCongQuyDoiPhieu,
   sumTongGioTangCaTichPhieu,
-  tongCongQuyDoiNgayVaNua,
   tongGioTangCaTichMotDong,
   chuyenTtLabelByThuTu,
 } from '../../bao-cao-nhan-cong/core/types';
+import { displayLoaiTotalsOnCt, sumDisplayLoaiTotalsOnRows } from '../../bao-cao-nhan-cong/core/ct-sub';
 
 const EPS = 1e-9;
 
@@ -49,22 +49,24 @@ export function extractBcncTableGhiChuRows(bcnc: FarmBaoCaoNhanCong | null): [st
 export interface BcscLaborFromBcncSnapshot {
   /** Tổng công quy đổi toàn phiếu — map nhãn "Tổng số công nhân làm việc" */
   tongCongQuyDoiPhieu: number;
-  /** Công × 8 giờ */
-  tongGio8TiepTheoCong: number;
-  /** Công quy đổi dòng V (định biên) */
-  congQuyDoiDinhBien: number;
+  /** Σ giờ CN ngày toàn phiếu (Σ sl×giờ, loại CN_NGAY) */
+  tongGioCnNgay: number;
+  /** Nhân sự CN ngày + CN nửa — dòng V (định biên không sản xuất) */
+  soCnDinhBien: number;
   /** Giờ TC tích dòng V */
   gioTangCaTichDinhBien: number;
 }
 
 export function extractLaborSnapshotFromBcnc(bcnc: FarmBaoCaoNhanCong): BcscLaborFromBcncSnapshot {
-  const { production, vRow } = normalizeChiTietForDisplay(bcnc.chi_tiet ?? []);
-  void production;
+  const { vRow } = normalizeChiTietForDisplay(bcnc.chi_tiet ?? []);
   const tongCongQuyDoiPhieu = sumTongCongQuyDoiPhieu(bcnc);
+  const cnNgayPhieu = sumDisplayLoaiTotalsOnRows(bcnc.chi_tiet ?? [], 'CN_NGAY');
+  const vCnNgay = displayLoaiTotalsOnCt(vRow, 'CN_NGAY');
+  const vCnNua = displayLoaiTotalsOnCt(vRow, 'CN_NUA');
   return {
     tongCongQuyDoiPhieu,
-    tongGio8TiepTheoCong: tongCongQuyDoiPhieu * 8,
-    congQuyDoiDinhBien: tongCongQuyDoiNgayVaNua(vRow),
+    tongGioCnNgay: cnNgayPhieu.tongGio,
+    soCnDinhBien: vCnNgay.nhanSu + vCnNua.nhanSu,
     gioTangCaTichDinhBien: tongGioTangCaTichMotDong(vRow),
   };
 }
@@ -100,8 +102,8 @@ export function computeBaoCaoSoCheKpis(
 
   const snap = extractLaborSnapshotFromBcnc(bcnc);
   const congQuyDoi = snap.tongCongQuyDoiPhieu;
-  const gio8 = snap.tongGio8TiepTheoCong;
-  const tongGioLam = gio8 + sumTongGioTangCaTichPhieu(bcnc);
+  const gioCnNgay = snap.tongGioCnNgay;
+  const tongGioLam = gioCnNgay + sumTongGioTangCaTichPhieu(bcnc);
 
   const nsThungCongNgay = congQuyDoi > EPS ? thung / congQuyDoi : null;
   const nsThungGioCong = tongGioLam > EPS ? thung / tongGioLam : null;

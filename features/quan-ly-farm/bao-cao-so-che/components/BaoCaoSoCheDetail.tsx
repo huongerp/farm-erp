@@ -1,11 +1,11 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Copy, Edit, Layers, Lock, MessageSquare, Trash2, Unlock, Users, Calculator, Package } from 'lucide-react';
+import { Copy, Edit, Layers, Lock, MessageSquare, Printer, Trash2, Unlock, Users, Calculator, Package } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import type { FarmBaoCaoSoChe } from '../core/types';
 import { TRANG_THAI_BAO_CAO_SO_CHE } from '../core/types';
 import { cn, formatDateShort, formatDateTimeShort, formatNumberVN } from '../../../../lib/utils';
-import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/GenericDrawer';
+import GenericDrawer, { DRAWER_WIDTH_BAO_CAO_SO_CHE } from '../../../../components/shared/GenericDrawer';
 import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';
 import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
@@ -17,6 +17,20 @@ import { useBaoCaoNhanCongList } from '../../bao-cao-nhan-cong/hooks/use-bao-cao
 import BaoCaoSoCheBcncKpiReadout from './BaoCaoSoCheBcncKpiReadout';
 import BaoCaoKpiThuongDetailSection from '../../shared/kpi-thuong/BaoCaoKpiThuongDetailSection';
 import { BaoCaoSoChePhamCapDetailTable } from './BaoCaoSoChePhamCapTables';
+import { getBaoCaoSoChePreviewUrl } from '../core/preview-url';
+import {
+  bcscSoLieuColChiSo,
+  bcscSoLieuColDvt,
+  bcscSoLieuColGiaTri,
+  bcscSoLieuColTt,
+  bcscSoLieuTableClass,
+  bcscSoLieuTdChiSo,
+  bcscSoLieuTdDvt,
+  bcscSoLieuTdGiaTri,
+  bcscSoLieuTdTt,
+  bcncColGhiChu,
+  bcncTdGhiChu,
+} from '../core/bcsc-so-lieu-table';
 import {
   BCSC_KPI_STT_OFFSET,
   BCSC_SO_LIEU_STT_OFFSET,
@@ -93,7 +107,14 @@ const BaoCaoSoCheDetail: React.FC<Props> = ({
     </div>
   );
 
-  const toolbarActions: DetailToolbarAction[] = [];
+  const toolbarActions: DetailToolbarAction[] = [
+    {
+      label: t('baoCaoSoChe.detail.printReport'),
+      icon: <Printer size={16} />,
+      variant: 'primary',
+      onClick: () => window.open(getBaoCaoSoChePreviewUrl(data.id), '_blank', 'noopener,noreferrer'),
+    },
+  ];
   if (canCopyNextDay) {
     toolbarActions.push({
       label: t('baoCaoSoChe.detail.copyNextDay'),
@@ -157,7 +178,7 @@ const BaoCaoSoCheDetail: React.FC<Props> = ({
       subtitle={formatDateShort(data.ngay)}
       icon={<Layers className="text-emerald-600" size={22} />}
       onClose={onClose}
-      maxWidthClass={DRAWER_WIDTH_FORM}
+      maxWidthClass={DRAWER_WIDTH_BAO_CAO_SO_CHE}
       footer={renderFooter}
     >
       <div className="space-y-4 pb-2">
@@ -212,14 +233,24 @@ const BaoCaoSoCheDetail: React.FC<Props> = ({
 
         <DetailSection title={t('baoCaoSoChe.form.sectionSoCheTitle')} icon={<Layers size={14} />} variant="primary">
           <div className="overflow-x-auto rounded-lg border border-border bg-muted/10">
-            <table className="w-full text-sm min-w-[48rem] text-left border-collapse">
+            <table className={bcscSoLieuTableClass}>
               <thead>
                 <tr className="bg-muted/50 border-b border-border">
-                  <th className="text-center px-2 py-2 font-medium text-xs w-14 whitespace-nowrap">{t('baoCaoSoChe.readout.colTt')}</th>
-                  <th className="text-left px-3 py-2 font-medium text-xs min-w-[10rem]">{t('baoCaoSoChe.readout.colChiSo')}</th>
-                  <th className="text-right px-2 py-2 font-medium text-xs min-w-[7.5rem]">{t('baoCaoSoChe.readout.colGiaTri')}</th>
-                  <th className="text-left px-2 py-2 font-medium text-xs w-[7.5rem] whitespace-nowrap">{t('baoCaoSoChe.readout.colDvtDong')}</th>
-                  <th className="text-left px-2 py-2 font-medium text-xs min-w-[18rem] w-[22rem]">{t('baoCaoSoChe.readout.colGhiChu')}</th>
+                  <th className={`text-center px-1 py-2 font-medium text-xs whitespace-nowrap ${bcscSoLieuColTt}`}>
+                    {t('baoCaoSoChe.readout.colTt')}
+                  </th>
+                  <th className={`text-left px-2 py-2 font-medium text-xs ${bcscSoLieuColChiSo}`}>
+                    {t('baoCaoSoChe.readout.colChiSo')}
+                  </th>
+                  <th className={`text-right px-1 py-2 font-medium text-xs ${bcscSoLieuColGiaTri}`}>
+                    {t('baoCaoSoChe.readout.colGiaTri')}
+                  </th>
+                  <th className={`text-left px-1 py-2 font-medium text-xs ${bcscSoLieuColDvt}`}>
+                    {t('baoCaoSoChe.readout.colDvtDong')}
+                  </th>
+                  <th className={`text-left px-2 py-2 font-medium text-xs ${bcncColGhiChu}`}>
+                    {t('baoCaoSoChe.readout.colGhiChu')}
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -230,14 +261,24 @@ const BaoCaoSoCheDetail: React.FC<Props> = ({
                   const ghi = meta.ghi_chu?.trim();
                   return (
                     <tr key={def.key} className="border-b border-border/80 last:border-b-0">
-                      <td className="px-2 py-2 text-center font-medium text-muted-foreground tabular-nums text-xs align-top">
+                      <td className={`${bcscSoLieuTdTt} font-medium text-muted-foreground tabular-nums text-xs`}>
                         {BCSC_SO_LIEU_STT_OFFSET + idx + 1}
                       </td>
-                      <td className="px-3 py-2 align-top text-muted-foreground text-xs whitespace-normal">{t(def.labelKey)}</td>
-                      <td className="px-2 py-2 text-xs font-medium tabular-nums text-right align-top">{formatNumberVN(val)}</td>
-                      <td className="px-2 py-2 text-xs text-muted-foreground align-top whitespace-nowrap">{dvtDong}</td>
-                      <td className="px-2 py-2 text-xs text-muted-foreground whitespace-pre-wrap align-top min-w-[18rem] max-w-[32rem]">
-                        {ghi ? ghi : '—'}
+                      <td className={`${bcscSoLieuTdChiSo} text-muted-foreground text-xs leading-snug`}>
+                        {t(def.labelKey)}
+                      </td>
+                      <td className={`${bcscSoLieuTdGiaTri} text-xs font-medium tabular-nums text-right`}>
+                        {formatNumberVN(val)}
+                      </td>
+                      <td className={`${bcscSoLieuTdDvt} text-xs text-muted-foreground whitespace-nowrap`}>
+                        {dvtDong}
+                      </td>
+                      <td className={`${bcncTdGhiChu} text-xs text-muted-foreground font-normal`}>
+                        {ghi ? (
+                          <p className="whitespace-pre-wrap text-sm leading-snug m-0">{ghi}</p>
+                        ) : (
+                          '—'
+                        )}
                       </td>
                     </tr>
                   );
@@ -259,11 +300,11 @@ const BaoCaoSoCheDetail: React.FC<Props> = ({
           />
         </DetailSection>
 
-        <BaoCaoKpiThuongDetailSection rows={data.kpi_thuong ?? []} i18nPrefix="baoCaoSoChe.kpiThuong" />
-
         <DetailSection title={t('baoCaoSoChe.form.sectionPhamCapTitle')} icon={<Package size={14} />} variant="primary">
           <BaoCaoSoChePhamCapDetailTable rows={data.pham_cap} />
         </DetailSection>
+
+        <BaoCaoKpiThuongDetailSection rows={data.kpi_thuong ?? []} i18nPrefix="baoCaoSoChe.kpiThuong" />
       </div>
     </GenericDrawer>
   );

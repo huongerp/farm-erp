@@ -1,5 +1,7 @@
 /** Chi tiết từng ô trên dòng chuyền — bảng fp_farm_bao_cao_nhan_cong_ct_sub */
 
+import { formatNumberVN } from '../../../../lib/utils';
+
 export const LOAI_CHI_TIEU_CODES = ['CN_NGAY', 'CN_NUA', 'TANG_CA'] as const;
 export type LoaiChiTieu = (typeof LOAI_CHI_TIEU_CODES)[number];
 
@@ -46,6 +48,96 @@ export function defaultCtSubFormRow(): CtSubFormRow {
   return { sl_cong: 0, so_gio: 0, ghi_chu: null };
 }
 
+export function isSubFormRowEmpty(r: CtSubFormRow | undefined): boolean {
+  if (!r) return true;
+  return num(r.sl_cong) <= 0 && num(r.so_gio) <= 0 && !(r.ghi_chu?.trim());
+}
+
+/** SL và giờ phải cùng trống hoặc cùng có giá trị > 0. */
+export function isSubFormRowSlGioPaired(r: CtSubFormRow | undefined): boolean {
+  if (!r) return true;
+  const sl = num(r.sl_cong);
+  const gio = num(r.so_gio);
+  if (sl <= 0 && gio <= 0) return true;
+  return sl > 0 && gio > 0;
+}
+
+export function findSubSlGioPairIssues(
+  sub: Partial<ChiTietSubFormByLoai> | undefined
+): Array<{ loai: LoaiChiTieu; index: number }> {
+  const normalized = normalizeChiTietSubFormByLoai(sub);
+  const n = subAlignedRowCount(normalized);
+  const issues: Array<{ loai: LoaiChiTieu; index: number }> = [];
+  for (let i = 0; i < n; i++) {
+    for (const loai of LOAI_CHI_TIEU_CODES) {
+      if (!isSubFormRowSlGioPaired(normalized[loai][i])) {
+        issues.push({ loai, index: i });
+      }
+    }
+  }
+  return issues;
+}
+
+/** Số dòng chi tiết căn theo max(CN ngày, CN nửa, tăng ca). */
+export function subAlignedRowCount(
+  sub: Partial<ChiTietSubFormByLoai> | Partial<ChiTietSubByLoai> | undefined
+): number {
+  if (!sub) return 0;
+  return Math.max(0, ...LOAI_CHI_TIEU_CODES.map((k) => (sub[k]?.length ?? 0)));
+}
+
+/** Căn độ dài 3 mảng sub theo cùng số dòng. */
+export function padSubToRowCount(sub: ChiTietSubFormByLoai, rowCount: number): ChiTietSubFormByLoai {
+  const n = Math.max(0, rowCount);
+  const out = emptySubFormByLoai();
+  for (const loai of LOAI_CHI_TIEU_CODES) {
+    const arr = [...(sub[loai] ?? [])];
+    while (arr.length < n) arr.push(defaultCtSubFormRow());
+    out[loai] = arr.slice(0, n);
+  }
+  return out;
+}
+
+export function ensureSubFormMinRows(sub: Partial<ChiTietSubFormByLoai>, minRows = 1): ChiTietSubFormByLoai {
+  const normalized = normalizeChiTietSubFormByLoai(sub);
+  const n = Math.max(subAlignedRowCount(normalized), minRows);
+  return padSubToRowCount(normalized, n);
+}
+
+/** Bỏ dòng trống ở cuối (giữ ít nhất 1 dòng nếu còn dữ liệu phía trên). */
+export function trimSubEmptyTrailingRows(sub: ChiTietSubFormByLoai): ChiTietSubFormByLoai {
+  const normalized = normalizeChiTietSubFormByLoai(sub);
+  let max = subAlignedRowCount(normalized);
+  while (max > 1) {
+    const i = max - 1;
+    const rowEmpty = LOAI_CHI_TIEU_CODES.every((loai) => isSubFormRowEmpty(normalized[loai][i]));
+    if (!rowEmpty) break;
+    max -= 1;
+  }
+  if (max === 0) return emptySubFormByLoai();
+  return padSubToRowCount(normalized, max);
+}
+
+export function getSubLineAtIndex(
+  sub: ChiTietSubByLoai | ChiTietSubFormByLoai,
+  loai: LoaiChiTieu,
+  index: number
+): CtSubFormRow | FarmBaoCaoNhanCongCtSub | undefined {
+  return sub[loai]?.[index];
+}
+
+export function combinedRowGhiChuAtIndex(
+  sub: ChiTietSubByLoai | ChiTietSubFormByLoai,
+  index: number
+): string {
+  const parts: string[] = [];
+  for (const loai of LOAI_CHI_TIEU_CODES) {
+    const g = sub[loai]?.[index]?.ghi_chu?.trim();
+    if (g) parts.push(g);
+  }
+  return [...new Set(parts)].join('\n');
+}
+
 const num = (v: unknown) => {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
@@ -61,8 +153,104 @@ export function sumGioCongFromSubRows(rows: CtSubFormRow[]): number {
   return rows.reduce((s, r) => s + num(r.sl_cong) * num(r.so_gio), 0);
 }
 
+export function sumSlCongFromSubModels(rows: FarmBaoCaoNhanCongCtSub[]): number {
+  return rows.reduce((s, r) => s + num(r.sl_cong), 0);
+}
+
 export function sumGioCongFromSubModels(rows: FarmBaoCaoNhanCongCtSub[]): number {
   return rows.reduce((s, r) => s + num(r.sl_cong) * num(r.so_gio), 0);
+}
+
+/** Giờ công một dòng sub */
+export function gioCongMotDongSub(line: { sl_cong: number; so_gio: number }): number {
+  return num(line.sl_cong) * num(line.so_gio);
+}
+
+/** Giờ trung bình = tổng giờ công (Σ sl×giờ) / nhân sự. */
+export function gioTbFromTotals(nhanSu: number, tongGioSum: number): number {
+  const ns = num(nhanSu);
+  return ns > 0 ? num(tongGioSum) / ns : 0;
+}
+
+/** Hiển thị giờ TB — tối đa 1 chữ số thập phân (vi-VN). */
+export function formatGioTbVN(nhanSu: number, tongGioSum: number): string {
+  return formatNumberVN(gioTbFromTotals(nhanSu, tongGioSum), {
+    maxFractionDigits: 1,
+    minFractionDigits: 0,
+  });
+}
+
+/** Tổng giờ công CN ngày + CN nửa (Σ sl×giờ). */
+export function tongGioCongNgayVaNua(
+  cnNgay: { tongGio: number },
+  cnNua: { tongGio: number }
+): number {
+  return num(cnNgay.tongGio) + num(cnNua.tongGio);
+}
+
+export interface CtRowForDisplayLoai {
+  sl_cong_ngay: number;
+  sl_cong_nua: number;
+  sl_tang_ca: number;
+  so_gio_tc: number;
+  sub_by_loai?: ChiTietSubByLoai;
+}
+
+/** Nhân sự + giờ (tổng) theo chỉ tiêu — dùng hiển thị detail */
+export function displayLoaiTotalsOnCt(
+  row: CtRowForDisplayLoai,
+  loai: LoaiChiTieu
+): { nhanSu: number; tongGio: number } {
+  const subs = row.sub_by_loai?.[loai];
+  if (subs && subs.length > 0) {
+    return {
+      nhanSu: sumSlCongFromSubModels(subs),
+      tongGio: sumGioCongFromSubModels(subs),
+    };
+  }
+  switch (loai) {
+    case 'CN_NGAY':
+      return { nhanSu: num(row.sl_cong_ngay), tongGio: 0 };
+    case 'CN_NUA':
+      return { nhanSu: num(row.sl_cong_nua), tongGio: 0 };
+    case 'TANG_CA':
+      return {
+        nhanSu: num(row.sl_tang_ca),
+        tongGio: num(row.sl_tang_ca) * num(row.so_gio_tc),
+      };
+    default:
+      return { nhanSu: 0, tongGio: 0 };
+  }
+}
+
+/** Cộng nhân sự / giờ tổng từ nhiều dòng chi_tiet form */
+export function sumFormLoaiTotalsOnRows(
+  rows: { sub?: Partial<ChiTietSubFormByLoai> }[],
+  loai: LoaiChiTieu
+): { nhanSu: number; tongGio: number } {
+  return rows.reduce(
+    (acc, r) => {
+      const sub = normalizeChiTietSubFormByLoai(r.sub);
+      return {
+        nhanSu: acc.nhanSu + sumSlCongFromSubRows(sub[loai]),
+        tongGio: acc.tongGio + sumGioCongFromSubRows(sub[loai]),
+      };
+    },
+    { nhanSu: 0, tongGio: 0 }
+  );
+}
+
+export function sumDisplayLoaiTotalsOnRows(
+  rows: CtRowForDisplayLoai[],
+  loai: LoaiChiTieu
+): { nhanSu: number; tongGio: number } {
+  return rows.reduce(
+    (acc, r) => {
+      const d = displayLoaiTotalsOnCt(r, loai);
+      return { nhanSu: acc.nhanSu + d.nhanSu, tongGio: acc.tongGio + d.tongGio };
+    },
+    { nhanSu: 0, tongGio: 0 }
+  );
 }
 
 /** Giờ×SL tăng ca: ưu tiên Σ(sl×giờ) từ sub; không có sub thì sl_tang_ca × so_gio_tc */
@@ -157,28 +345,76 @@ export function hasAnySubRow(sub: ChiTietSubFormByLoai): boolean {
 }
 
 export function countSubLines(sub: ChiTietSubFormByLoai): number {
-  return LOAI_CHI_TIEU_CODES.reduce((n, k) => n + (sub[k]?.length ?? 0), 0);
+  return subAlignedRowCount(sub);
 }
 
-/** Chỉ sửa nhanh trên bảng khi mỗi chỉ tiêu có tối đa 1 dòng con */
 export function canQuickEditSub(sub: ChiTietSubFormByLoai): boolean {
-  return LOAI_CHI_TIEU_CODES.every((k) => (sub[k]?.length ?? 0) <= 1);
+  return subAlignedRowCount(sub) <= 1;
 }
 
 export function needsMultiLineEditor(sub: ChiTietSubFormByLoai): boolean {
-  return !canQuickEditSub(sub);
+  return subAlignedRowCount(sub) > 1;
 }
 
-export function hasSubLinesOnCt(row: { sub_by_loai?: ChiTietSubByLoai }): boolean {
+export function hasSubLinesOnCt(
+  row: CtRowForDisplayLoai & { sub_by_loai?: ChiTietSubByLoai }
+): boolean {
   const s = row.sub_by_loai;
-  if (!s) return false;
-  return LOAI_CHI_TIEU_CODES.some((k) => (s[k]?.length ?? 0) > 0);
+  if (s && subAlignedRowCount(s) > 0) {
+    return LOAI_CHI_TIEU_CODES.some((loai) =>
+      (s[loai] ?? []).some((line) => !isSubFormRowEmpty(line as CtSubFormRow))
+    );
+  }
+  return (
+    num(row.sl_cong_ngay) > 0 ||
+    num(row.sl_cong_nua) > 0 ||
+    num(row.sl_tang_ca) > 0 ||
+    num(row.so_gio_tc) > 0
+  );
 }
 
-export function countSubLinesOnCt(row: { sub_by_loai?: ChiTietSubByLoai }): number {
+/** Sub để hiển thị detail — fallback mirror từ tổng khi chưa có dòng con. */
+export function subByLoaiForCtDisplay(
+  row: CtRowForDisplayLoai & { sub_by_loai?: ChiTietSubByLoai }
+): ChiTietSubFormByLoai {
   const s = row.sub_by_loai;
-  if (!s) return 0;
-  return LOAI_CHI_TIEU_CODES.reduce((n, k) => n + (s[k]?.length ?? 0), 0);
+  if (s && subAlignedRowCount(s) > 0) {
+    return padSubToRowCount(
+      {
+        CN_NGAY: (s.CN_NGAY ?? []).map((r) => ({
+          sl_cong: num(r.sl_cong),
+          so_gio: num(r.so_gio),
+          ghi_chu: r.ghi_chu ?? null,
+        })),
+        CN_NUA: (s.CN_NUA ?? []).map((r) => ({
+          sl_cong: num(r.sl_cong),
+          so_gio: num(r.so_gio),
+          ghi_chu: r.ghi_chu ?? null,
+        })),
+        TANG_CA: (s.TANG_CA ?? []).map((r) => ({
+          sl_cong: num(r.sl_cong),
+          so_gio: num(r.so_gio),
+          ghi_chu: r.ghi_chu ?? null,
+        })),
+      },
+      subAlignedRowCount(s)
+    );
+  }
+  return padSubToRowCount(
+    legacyMirrorSubFromCtTotals({
+      sl_cong_ngay: row.sl_cong_ngay,
+      sl_cong_nua: row.sl_cong_nua,
+      sl_tang_ca: row.sl_tang_ca,
+      so_gio_tc: row.so_gio_tc,
+    }),
+    Math.max(1, subAlignedRowCount(legacyMirrorSubFromCtTotals(row)))
+  );
+}
+
+export function countSubLinesOnCt(
+  row: CtRowForDisplayLoai & { sub_by_loai?: ChiTietSubByLoai }
+): number {
+  return subAlignedRowCount(subByLoaiForCtDisplay(row));
 }
 
 /** Giờ dòng đầu của chỉ tiêu (nhập nhanh trên bảng) */
@@ -193,13 +429,15 @@ export function setSubLoaiQuickValue(
   sl: number,
   soGio?: number
 ): ChiTietSubFormByLoai {
-  const next = { ...sub, CN_NGAY: [...sub.CN_NGAY], CN_NUA: [...sub.CN_NUA], TANG_CA: [...sub.TANG_CA] };
+  const next = ensureSubFormMinRows(sub, 1);
   const ghiChu = next[loai][0]?.ghi_chu ?? null;
   const gioVal = soGio !== undefined ? num(soGio) : num(next[loai][0]?.so_gio);
-  if (num(sl) <= 0 && gioVal <= 0) {
-    next[loai] = [];
-    return next;
-  }
-  next[loai] = [{ sl_cong: num(sl), so_gio: gioVal, ghi_chu: ghiChu }];
-  return next;
+  next[loai] = [
+    {
+      sl_cong: num(sl),
+      so_gio: gioVal,
+      ghi_chu: ghiChu,
+    },
+  ];
+  return padSubToRowCount(next, 1);
 }
