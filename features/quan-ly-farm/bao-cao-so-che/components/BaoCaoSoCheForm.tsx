@@ -28,6 +28,7 @@ import { useBaoCaoNhanCongList } from '../../bao-cao-nhan-cong/hooks/use-bao-cao
 import BaoCaoSoCheBcncKpiReadout from './BaoCaoSoCheBcncKpiReadout';
 import BaoCaoSoCheSoLieuBuongFormTable from './BaoCaoSoCheSoLieuBuongFormTable';
 import { BaoCaoSoChePhamCapFormSection } from './BaoCaoSoChePhamCapTables';
+import { sumPhamCapDisplayTotals } from '../core/pham-cap-derived';
 
 interface Props {
   branches: Branch[];
@@ -99,7 +100,11 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
 
   const idChiNhanh = watch('id_chi_nhanh');
   const ngay = watch('ngay');
-  const tongBuongSoChe = watch('tong_buong_so_che') ?? 0;
+  const phamCap = watch('pham_cap');
+  const tongThungQD = useMemo(
+    () => sumPhamCapDisplayTotals(phamCap ?? []).so_thung_quy_doi,
+    [phamCap]
+  );
   const soLieuMeta = watch('so_lieu_row_meta');
   const donViTinhKpi = useMemo(
     () => deriveDonViTinhSlipFromSoLieuMeta(soLieuMeta),
@@ -211,7 +216,7 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
             variant="bcnc"
             ngay={ngay ?? ''}
             idChiNhanh={idChiNhanh ?? ''}
-            tongBuongSoChe={Number(tongBuongSoChe)}
+            tongThungQD={tongThungQD}
             bcncList={bcncList}
             donViTinh={donViTinhKpi}
           />
@@ -227,19 +232,19 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
           </div>
         </FormSection>
 
+        <BaoCaoSoChePhamCapFormSection control={control} errors={errors} disabled={!canAdmin} />
+
         <FormSection title={t('baoCaoSoChe.form.sectionNsLuongTitle')} icon={<Calculator size={14} />} variant="primary">
           <BaoCaoSoCheBcncKpiReadout
             variant="kpi"
             ngay={ngay ?? ''}
             idChiNhanh={idChiNhanh ?? ''}
-            tongBuongSoChe={Number(tongBuongSoChe)}
+            tongThungQD={tongThungQD}
             bcncList={bcncList}
             donViTinh={donViTinhKpi}
             sttOffset={BCSC_KPI_STT_OFFSET}
           />
         </FormSection>
-
-        <BaoCaoSoChePhamCapFormSection control={control} errors={errors} disabled={!canAdmin} />
 
         <BaoCaoKpiThuongFormSection
           control={control}

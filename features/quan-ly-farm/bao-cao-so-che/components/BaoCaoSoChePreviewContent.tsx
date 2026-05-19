@@ -17,7 +17,7 @@ import {
   BCSC_SO_LIEU_STT_OFFSET,
   BCSC_KPI_STT_OFFSET,
 } from '../core/so-lieu-row-meta';
-import { enrichPhamCapRowsWithDerived } from '../core/pham-cap-derived';
+import { enrichPhamCapRowsWithDerived, sumPhamCapDisplayTotals } from '../core/pham-cap-derived';
 import { sumTienThuongKpiThuong } from '../core/types';
 import { computeKpiPhanTram } from '../../shared/kpi-thuong/types';
 import { formatDateShort, formatDateTime, formatNumberVN } from '../../../../lib/utils';
@@ -79,7 +79,7 @@ const BaoCaoSoChePreviewContent: React.FC<Props> = ({ data, bcncList }) => {
   const companyInfo = useUIStore((s) => s.companyInfo);
   const printedAt = formatDateTime(new Date());
   const trangThaiLabel = bcscTrangThaiLabel(data, t);
-  const slipU = data.don_vi_tinh?.trim() || 'buồng';
+  const slipU = data.don_vi_tinh?.trim() || 'thùng';
 
   const bcnc = useMemo(
     () => findBaoCaoNhanCongByBranchAndDate(bcncList, data.ngay, data.id_chi_nhanh),
@@ -87,12 +87,15 @@ const BaoCaoSoChePreviewContent: React.FC<Props> = ({ data, bcncList }) => {
   );
   const labor = useMemo(() => (bcnc ? extractLaborSnapshotFromBcnc(bcnc) : null), [bcnc]);
   const bcncGhiChu = useMemo(() => extractBcncTableGhiChuRows(bcnc), [bcnc]);
-  const kpis = useMemo(
-    () => computeBaoCaoSoCheKpis(Number(data.tong_buong_so_che), bcnc),
-    [data.tong_buong_so_che, bcnc]
-  );
-
   const phamCapEnriched = useMemo(() => enrichPhamCapRowsWithDerived(data.pham_cap ?? []), [data.pham_cap]);
+  const tongThungQD = useMemo(
+    () => sumPhamCapDisplayTotals(data.pham_cap ?? []).so_thung_quy_doi,
+    [data.pham_cap]
+  );
+  const kpis = useMemo(
+    () => computeBaoCaoSoCheKpis(tongThungQD, bcnc),
+    [tongThungQD, bcnc]
+  );
   const kpiThuongSorted = useMemo(
     () => [...(data.kpi_thuong ?? [])].sort((a, b) => a.thu_tu - b.thu_tu),
     [data.kpi_thuong]
@@ -105,8 +108,8 @@ const BaoCaoSoChePreviewContent: React.FC<Props> = ({ data, bcncList }) => {
     ? [
         { stt: 1, chiSo: t('baoCaoSoChe.bcnc.tongCongNhanLamViec'), dvt: t('baoCaoSoChe.bcnc.dvt.tongCong'), giaTri: fmtNum(labor.tongCongQuyDoiPhieu), ghiChu: g1 },
         { stt: 2, chiSo: t('baoCaoSoChe.bcnc.tongGioCnNgay'),        dvt: t('baoCaoSoChe.bcnc.dvt.gio'),     giaTri: fmtNum(labor.tongGioCnNgay),        ghiChu: g2 },
-        { stt: 3, chiSo: t('baoCaoSoChe.bcnc.soCnDinhBien'),          dvt: t('baoCaoSoChe.bcnc.dvt.tongCong'), giaTri: fmtNum(labor.soCnDinhBien),          ghiChu: g3 },
-        { stt: 4, chiSo: t('baoCaoSoChe.bcnc.gioTcCnDinhBien'),       dvt: t('baoCaoSoChe.bcnc.dvt.gio'),     giaTri: fmtNum(labor.gioTangCaTichDinhBien), ghiChu: g4 },
+        { stt: 3, chiSo: t('baoCaoSoChe.bcnc.congQdRowIV'),    dvt: t('baoCaoSoChe.bcnc.dvt.tongCong'), giaTri: fmtNum(labor.congQdRowIV),    ghiChu: g3 },
+        { stt: 4, chiSo: t('baoCaoSoChe.bcnc.tongGioTcRowIV'), dvt: t('baoCaoSoChe.bcnc.dvt.gio'),     giaTri: fmtNum(labor.tongGioTcRowIV), ghiChu: g4 },
       ]
     : [];
 
@@ -188,15 +191,9 @@ const BaoCaoSoChePreviewContent: React.FC<Props> = ({ data, bcncList }) => {
         rows={soLieuRows}
       />
 
-      {/* === III. Năng suất & lương === */}
-      <MetricTablePrint
-        sectionTitle={`III. ${t('baoCaoSoChe.form.sectionNsLuongTitle')}`}
-        rows={kpiCalcRows}
-      />
-
-      {/* === IV. Phẩm cấp / loại thùng === */}
+      {/* === III. Phẩm cấp / loại thùng === */}
       <div className="bcsc-section mb-3">
-        <h2 className="text-[9pt] font-semibold text-gray-800 mb-1">{`IV. ${t('baoCaoSoChe.form.sectionPhamCapTitle')}`}</h2>
+        <h2 className="text-[9pt] font-semibold text-gray-800 mb-1">{`III. ${t('baoCaoSoChe.form.sectionPhamCapTitle')}`}</h2>
         {phamCapEnriched.length === 0 ? (
           <p className="text-[8pt] text-gray-500">{t('baoCaoSoChe.phamCap.detailEmpty')}</p>
         ) : (
@@ -238,6 +235,12 @@ const BaoCaoSoChePreviewContent: React.FC<Props> = ({ data, bcncList }) => {
           </table>
         )}
       </div>
+
+      {/* === IV. Năng suất & lương === */}
+      <MetricTablePrint
+        sectionTitle={`IV. ${t('baoCaoSoChe.form.sectionNsLuongTitle')}`}
+        rows={kpiCalcRows}
+      />
 
       {/* === V. Đánh giá KPI / Thưởng === */}
       <div className="bcsc-section mb-3">

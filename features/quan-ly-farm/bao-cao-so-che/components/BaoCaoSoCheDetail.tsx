@@ -17,6 +17,7 @@ import { useBaoCaoNhanCongList } from '../../bao-cao-nhan-cong/hooks/use-bao-cao
 import BaoCaoSoCheBcncKpiReadout from './BaoCaoSoCheBcncKpiReadout';
 import BaoCaoKpiThuongDetailSection from '../../shared/kpi-thuong/BaoCaoKpiThuongDetailSection';
 import { BaoCaoSoChePhamCapDetailTable } from './BaoCaoSoChePhamCapTables';
+import { sumPhamCapDisplayTotals } from '../core/pham-cap-derived';
 import { getBaoCaoSoChePreviewUrl } from '../core/preview-url';
 import {
   bcscSoLieuColChiSo,
@@ -73,6 +74,10 @@ const BaoCaoSoCheDetail: React.FC<Props> = ({
 
   const soLieuMetaForm = useMemo(() => mergeSoLieuMetaToForm(data.so_lieu_row_meta), [data.so_lieu_row_meta]);
   const donViTinhKpi = useMemo(() => deriveDonViTinhSlipFromSoLieuMeta(soLieuMetaForm), [soLieuMetaForm]);
+  const tongThungQD = useMemo(
+    () => sumPhamCapDisplayTotals(data.pham_cap ?? []).so_thung_quy_doi,
+    [data.pham_cap]
+  );
 
   const renderFooter = (
     <div className="flex items-center justify-between w-full">
@@ -225,7 +230,7 @@ const BaoCaoSoCheDetail: React.FC<Props> = ({
             variant="bcnc"
             ngay={data.ngay}
             idChiNhanh={data.id_chi_nhanh != null ? String(data.id_chi_nhanh) : ''}
-            tongBuongSoChe={Number(data.tong_buong_so_che)}
+            tongThungQD={tongThungQD}
             bcncList={bcncList}
             donViTinh={donViTinhKpi}
           />
@@ -288,20 +293,20 @@ const BaoCaoSoCheDetail: React.FC<Props> = ({
           </div>
         </DetailSection>
 
+        <DetailSection title={t('baoCaoSoChe.form.sectionPhamCapTitle')} icon={<Package size={14} />} variant="primary">
+          <BaoCaoSoChePhamCapDetailTable rows={data.pham_cap} />
+        </DetailSection>
+
         <DetailSection title={t('baoCaoSoChe.form.sectionNsLuongTitle')} icon={<Calculator size={14} />} variant="primary">
           <BaoCaoSoCheBcncKpiReadout
             variant="kpi"
             ngay={data.ngay}
             idChiNhanh={data.id_chi_nhanh != null ? String(data.id_chi_nhanh) : ''}
-            tongBuongSoChe={Number(data.tong_buong_so_che)}
+            tongThungQD={tongThungQD}
             bcncList={bcncList}
             donViTinh={donViTinhKpi}
             sttOffset={BCSC_KPI_STT_OFFSET}
           />
-        </DetailSection>
-
-        <DetailSection title={t('baoCaoSoChe.form.sectionPhamCapTitle')} icon={<Package size={14} />} variant="primary">
-          <BaoCaoSoChePhamCapDetailTable rows={data.pham_cap} />
         </DetailSection>
 
         <BaoCaoKpiThuongDetailSection rows={data.kpi_thuong ?? []} i18nPrefix="baoCaoSoChe.kpiThuong" />

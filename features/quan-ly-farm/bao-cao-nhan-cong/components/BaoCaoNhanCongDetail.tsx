@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
+import ReactDOM from 'react-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import BaoCaoNhanCongDetailChuyenRow from './BaoCaoNhanCongDetailChuyenRow';
 import { useTranslation } from 'react-i18next';
-import { Copy, Edit, Lock, Printer, Trash2, Unlock, Users, Images } from 'lucide-react';
+import { Copy, Edit, Lock, Printer, Trash2, Unlock, Users, Images, X, ZoomIn, ChevronLeft, ChevronRight } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import type { FarmBaoCaoNhanCong } from '../core/types';
 import {
@@ -77,6 +79,14 @@ const BaoCaoNhanCongDetail: React.FC<Props> = ({
   const confirm = useConfirmStore((s) => s.confirm);
   const copyMutation = useCopyBaoCaoNhanCongToNextDay();
   const trangThaiMutation = useUpdateBaoCaoNhanCongTrangThai();
+
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const hinhAnhUrls = data.hinh_anh_urls ?? [];
+
+  const openLightbox = (idx: number) => setLightboxIndex(idx);
+  const closeLightbox = () => setLightboxIndex(null);
+  const goPrev = () => setLightboxIndex((i) => (i !== null && i > 0 ? i - 1 : i));
+  const goNext = () => setLightboxIndex((i) => (i !== null && i < hinhAnhUrls.length - 1 ? i + 1 : i));
 
   const renderFooter = (
     <div className="flex items-center justify-between w-full">
@@ -191,6 +201,7 @@ const BaoCaoNhanCongDetail: React.FC<Props> = ({
   }
 
   return (
+    <>
     <GenericDrawer
       title={t('baoCaoNhanCong.detail.title')}
       subtitle={formatDateShort(data.ngay)}
@@ -266,19 +277,21 @@ const BaoCaoNhanCongDetail: React.FC<Props> = ({
           </DetailFieldGrid>
         </DetailSection>
 
-        {(data.hinh_anh_urls?.length ?? 0) > 0 && (
+        {hinhAnhUrls.length > 0 && (
           <DetailSection title={t('baoCaoNhanCong.detail.sectionHinhAnh')} icon={<Images size={14} />} variant="primary">
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-              {data.hinh_anh_urls.map((url) => (
-                <a
+              {hinhAnhUrls.map((url, idx) => (
+                <button
                   key={url}
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block rounded-lg overflow-hidden border border-border bg-muted/20 aspect-square hover:ring-2 hover:ring-primary/30 transition-shadow"
+                  type="button"
+                  onClick={() => openLightbox(idx)}
+                  className="group relative block rounded-lg overflow-hidden border border-border bg-muted/20 aspect-square hover:ring-2 hover:ring-primary/30 transition-shadow cursor-zoom-in"
                 >
                   <img src={url} alt="" className="w-full h-full object-cover" loading="lazy" />
-                </a>
+                  <span className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 transition-colors">
+                    <ZoomIn size={20} className="text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow" />
+                  </span>
+                </button>
               ))}
             </div>
           </DetailSection>
@@ -367,6 +380,70 @@ const BaoCaoNhanCongDetail: React.FC<Props> = ({
 
       </div>
     </GenericDrawer>
+
+    {lightboxIndex !== null && ReactDOM.createPortal(
+      <AnimatePresence>
+        <motion.div
+          key="lightbox-backdrop"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[9999] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={closeLightbox}
+        >
+          <motion.img
+            key={hinhAnhUrls[lightboxIndex]}
+            initial={{ opacity: 0, scale: 0.92 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.92 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            src={hinhAnhUrls[lightboxIndex]}
+            alt=""
+            className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+
+          <button
+            type="button"
+            onClick={closeLightbox}
+            className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
+            aria-label="Đóng"
+          >
+            <X size={18} />
+          </button>
+
+          {lightboxIndex > 0 && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); goPrev(); }}
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
+              aria-label="Ảnh trước"
+            >
+              <ChevronLeft size={20} />
+            </button>
+          )}
+
+          {lightboxIndex < hinhAnhUrls.length - 1 && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); goNext(); }}
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
+              aria-label="Ảnh kế"
+            >
+              <ChevronRight size={20} />
+            </button>
+          )}
+
+          {hinhAnhUrls.length > 1 && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/70 text-sm tabular-nums select-none">
+              {lightboxIndex + 1} / {hinhAnhUrls.length}
+            </div>
+          )}
+        </motion.div>
+      </AnimatePresence>,
+      document.body
+    )}
+    </>
   );
 };
 

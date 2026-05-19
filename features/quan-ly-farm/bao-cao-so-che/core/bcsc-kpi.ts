@@ -2,11 +2,12 @@ import type { FarmBaoCaoNhanCong } from '../../bao-cao-nhan-cong/core/types';
 import {
   normalizeChiTietForDisplay,
   sumTongCongQuyDoiPhieu,
+  sumTongCongQuyDoiTuChiTiet,
   sumTongGioTangCaTichPhieu,
-  tongGioTangCaTichMotDong,
+  sumTongGioTangCaTichTuChiTiet,
   chuyenTtLabelByThuTu,
 } from '../../bao-cao-nhan-cong/core/types';
-import { displayLoaiTotalsOnCt, sumDisplayLoaiTotalsOnRows } from '../../bao-cao-nhan-cong/core/ct-sub';
+import { sumDisplayLoaiTotalsOnRows } from '../../bao-cao-nhan-cong/core/ct-sub';
 
 const EPS = 1e-9;
 
@@ -25,12 +26,12 @@ export function findBaoCaoNhanCongByBranchAndDate(
 }
 
 /**
- * Ghi chú 4 dòng bảng chỉ số BCNC trên báo cáo sơ chế — từ ghi chú phiếu + ghi chú từng chuyền (I.1…III) và dòng V.
- * Dòng 1–2: cùng nội dung (phiếu + các chuyền có ghi chú). Dòng 3–4: ghi chú dòng V (định biên).
+ * Ghi chú 4 dòng bảng chỉ số BCNC trên báo cáo sơ chế — từ ghi chú phiếu + ghi chú từng chuyền (I.1…III).
+ * Dòng 1–2: cùng nội dung (phiếu + các chuyền có ghi chú). Dòng 3–4: '—' (dòng IV là tổng tính toán, không có ghi chú riêng).
  */
 export function extractBcncTableGhiChuRows(bcnc: FarmBaoCaoNhanCong | null): [string, string, string, string] {
   if (!bcnc) return ['—', '—', '—', '—'];
-  const { production, vRow } = normalizeChiTietForDisplay(bcnc.chi_tiet ?? []);
+  const { production } = normalizeChiTietForDisplay(bcnc.chi_tiet ?? []);
   const slip = bcnc.ghi_chu?.trim() ?? '';
   const lineParts = production
     .map((r) => {
@@ -41,8 +42,7 @@ export function extractBcncTableGhiChuRows(bcnc: FarmBaoCaoNhanCong | null): [st
     })
     .filter(Boolean);
   const merged = [slip, ...lineParts].filter(Boolean).join(' · ') || '—';
-  const vNote = vRow.ghi_chu?.trim() || '—';
-  return [merged, merged, vNote, vNote];
+  return [merged, merged, '—', '—'];
 }
 
 /** Bốn chỉ số đọc từ báo cáo nhân công (theo plan). */
@@ -51,28 +51,26 @@ export interface BcscLaborFromBcncSnapshot {
   tongCongQuyDoiPhieu: number;
   /** Σ giờ CN ngày toàn phiếu (Σ sl×giờ, loại CN_NGAY) */
   tongGioCnNgay: number;
-  /** Nhân sự CN ngày + CN nửa — dòng V (định biên không sản xuất) */
-  soCnDinhBien: number;
-  /** Giờ TC tích dòng V */
-  gioTangCaTichDinhBien: number;
+  /** Công QĐ dòng IV — tổng công quy đổi 5 chuyền sản xuất */
+  congQdRowIV: number;
+  /** Tổng giờ TC dòng IV — tổng giờ tăng ca tích 5 chuyền sản xuất */
+  tongGioTcRowIV: number;
 }
 
 export function extractLaborSnapshotFromBcnc(bcnc: FarmBaoCaoNhanCong): BcscLaborFromBcncSnapshot {
-  const { vRow } = normalizeChiTietForDisplay(bcnc.chi_tiet ?? []);
+  const { production } = normalizeChiTietForDisplay(bcnc.chi_tiet ?? []);
   const tongCongQuyDoiPhieu = sumTongCongQuyDoiPhieu(bcnc);
   const cnNgayPhieu = sumDisplayLoaiTotalsOnRows(bcnc.chi_tiet ?? [], 'CN_NGAY');
-  const vCnNgay = displayLoaiTotalsOnCt(vRow, 'CN_NGAY');
-  const vCnNua = displayLoaiTotalsOnCt(vRow, 'CN_NUA');
   return {
     tongCongQuyDoiPhieu,
     tongGioCnNgay: cnNgayPhieu.tongGio,
-    soCnDinhBien: vCnNgay.nhanSu + vCnNua.nhanSu,
-    gioTangCaTichDinhBien: tongGioTangCaTichMotDong(vRow),
+    congQdRowIV: sumTongCongQuyDoiTuChiTiet(production),
+    tongGioTcRowIV: sumTongGioTangCaTichTuChiTiet(production),
   };
 }
 
 export interface BcscKpiComputed {
-  /** Tạm = số buồng sơ chế (cùng đơn vị buồng; có thể đổi công thức sau) */
+  /** Tổng số thùng quy đổi từ bảng phẩm cấp */
   thungThanhPham: number | null;
   nsThungCongNgay: number | null;
   nsThungGioCong: number | null;
@@ -83,11 +81,11 @@ export interface BcscKpiComputed {
 }
 
 export function computeBaoCaoSoCheKpis(
-  tongBuongSoChe: number,
+  tongThungQD: number,
   bcnc: FarmBaoCaoNhanCong | null
 ): BcscKpiComputed {
   const thung =
-    Number.isFinite(tongBuongSoChe) && tongBuongSoChe >= 0 ? tongBuongSoChe : null;
+    Number.isFinite(tongThungQD) && tongThungQD >= 0 ? tongThungQD : null;
 
   if (!bcnc || thung == null) {
     return {

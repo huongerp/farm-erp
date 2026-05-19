@@ -15,14 +15,14 @@ import { BCSC_KPI_STT_OFFSET } from '../core/so-lieu-row-meta';
 const ZERO_LABOR_SNAPSHOT: BcscLaborFromBcncSnapshot = {
   tongCongQuyDoiPhieu: 0,
   tongGioCnNgay: 0,
-  soCnDinhBien: 0,
-  gioTangCaTichDinhBien: 0,
+  congQdRowIV: 0,
+  tongGioTcRowIV: 0,
 };
 
 interface Props {
   ngay: string;
   idChiNhanh: string;
-  tongBuongSoChe: number;
+  tongThungQD: number;
   bcncList: FarmBaoCaoNhanCong[];
   /** ĐVT phiếu sơ chế (buồng, thùng, …) — dùng cho cột ĐVT của KPI */
   donViTinh?: string | null;
@@ -75,7 +75,7 @@ function MetricTable({
 const BaoCaoSoCheBcncKpiReadout: React.FC<Props> = ({
   ngay,
   idChiNhanh,
-  tongBuongSoChe,
+  tongThungQD,
   bcncList,
   donViTinh,
   sttOffset = 0,
@@ -101,7 +101,7 @@ const BaoCaoSoCheBcncKpiReadout: React.FC<Props> = ({
 
   const bcncGhiChu = useMemo(() => extractBcncTableGhiChuRows(bcnc), [bcnc]);
 
-  const kpis = useMemo(() => computeBaoCaoSoCheKpis(tongBuongSoChe, bcnc), [tongBuongSoChe, bcnc]);
+  const kpis = useMemo(() => computeBaoCaoSoCheKpis(tongThungQD, bcnc), [tongThungQD, bcnc]);
 
   const th = useMemo(
     () => ({
@@ -136,16 +136,16 @@ const BaoCaoSoCheBcncKpiReadout: React.FC<Props> = ({
       },
       {
         stt: o + 3,
-        chiSo: t('baoCaoSoChe.bcnc.soCnDinhBien'),
+        chiSo: t('baoCaoSoChe.bcnc.congQdRowIV'),
         dvt: t('baoCaoSoChe.bcnc.dvt.tongCong'),
-        giaTri: fmtNum(L.soCnDinhBien),
+        giaTri: fmtNum(L.congQdRowIV),
         ghiChu: g3,
       },
       {
         stt: o + 4,
-        chiSo: t('baoCaoSoChe.bcnc.gioTcCnDinhBien'),
+        chiSo: t('baoCaoSoChe.bcnc.tongGioTcRowIV'),
         dvt: t('baoCaoSoChe.bcnc.dvt.gio'),
-        giaTri: fmtNum(L.gioTangCaTichDinhBien),
+        giaTri: fmtNum(L.tongGioTcRowIV),
         ghiChu: g4,
       },
     ];

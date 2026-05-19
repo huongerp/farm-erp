@@ -14,7 +14,7 @@ import {
   BCSC_SO_LIEU_STT_OFFSET,
   BCSC_KPI_STT_OFFSET,
 } from '../core/so-lieu-row-meta';
-import { enrichPhamCapRowsWithDerived } from '../core/pham-cap-derived';
+import { enrichPhamCapRowsWithDerived, sumPhamCapDisplayTotals } from '../core/pham-cap-derived';
 import { sumTienThuongKpiThuong } from '../core/types';
 import { computeKpiPhanTram } from '../../shared/kpi-thuong/types';
 import {
@@ -121,14 +121,15 @@ function buildMetricTableHTML(
 
 function buildBaoCaoSoCheBodyHTML(data: FarmBaoCaoSoChe, bcncList: FarmBaoCaoNhanCong[]): string {
   const t = i18n.t.bind(i18n);
-  const slipU = data.don_vi_tinh?.trim() || 'buồng';
+  const slipU = data.don_vi_tinh?.trim() || 'thùng';
   const status = bcscTrangThaiLabel(data, t);
 
   const bcnc = findBaoCaoNhanCongByBranchAndDate(bcncList, data.ngay, data.id_chi_nhanh);
   const labor = bcnc ? extractLaborSnapshotFromBcnc(bcnc) : null;
   const [g1, g2, g3, g4] = extractBcncTableGhiChuRows(bcnc);
-  const kpis = computeBaoCaoSoCheKpis(Number(data.tong_buong_so_che), bcnc);
   const phamCapEnriched = enrichPhamCapRowsWithDerived(data.pham_cap ?? []);
+  const tongThungQD = sumPhamCapDisplayTotals(data.pham_cap ?? []).so_thung_quy_doi;
+  const kpis = computeBaoCaoSoCheKpis(tongThungQD, bcnc);
   const kpiThuong = [...(data.kpi_thuong ?? [])].sort((a, b) => a.thu_tu - b.thu_tu);
   const tongThuong = sumTienThuongKpiThuong(kpiThuong);
 
@@ -137,8 +138,8 @@ function buildBaoCaoSoCheBodyHTML(data: FarmBaoCaoSoChe, bcncList: FarmBaoCaoNha
     ? [
         { stt: 1, chiSo: t('baoCaoSoChe.bcnc.tongCongNhanLamViec'), dvt: t('baoCaoSoChe.bcnc.dvt.tongCong'), giaTri: fmtNum(labor.tongCongQuyDoiPhieu), ghiChu: g1 },
         { stt: 2, chiSo: t('baoCaoSoChe.bcnc.tongGioCnNgay'),        dvt: t('baoCaoSoChe.bcnc.dvt.gio'),     giaTri: fmtNum(labor.tongGioCnNgay),        ghiChu: g2 },
-        { stt: 3, chiSo: t('baoCaoSoChe.bcnc.soCnDinhBien'),          dvt: t('baoCaoSoChe.bcnc.dvt.tongCong'), giaTri: fmtNum(labor.soCnDinhBien),          ghiChu: g3 },
-        { stt: 4, chiSo: t('baoCaoSoChe.bcnc.gioTcCnDinhBien'),       dvt: t('baoCaoSoChe.bcnc.dvt.gio'),     giaTri: fmtNum(labor.gioTangCaTichDinhBien), ghiChu: g4 },
+        { stt: 3, chiSo: t('baoCaoSoChe.bcnc.congQdRowIV'),    dvt: t('baoCaoSoChe.bcnc.dvt.tongCong'), giaTri: fmtNum(labor.congQdRowIV),    ghiChu: g3 },
+        { stt: 4, chiSo: t('baoCaoSoChe.bcnc.tongGioTcRowIV'), dvt: t('baoCaoSoChe.bcnc.dvt.gio'),     giaTri: fmtNum(labor.tongGioTcRowIV), ghiChu: g4 },
       ]
     : [];
   const bcncSection = labor
@@ -170,7 +171,7 @@ function buildBaoCaoSoCheBodyHTML(data: FarmBaoCaoSoChe, bcncList: FarmBaoCaoNha
     { stt: o + 5, chiSo: t('baoCaoSoChe.kpi.tongLuong'),             dvt: t('baoCaoSoChe.kpi.dvt.tongLuong'),                   giaTri: fmtNum(kpis.tongLuong),           ghiChu: EMPTY },
     { stt: o + 6, chiSo: t('baoCaoSoChe.kpi.chiPhiNcPerKg'),         dvt: t('baoCaoSoChe.kpi.dvt.chiPhiPerKg'),                giaTri: fmtNum(kpis.chiPhiNhanCongPerKg), ghiChu: EMPTY },
   ];
-  const kpiCalcSection = buildMetricTableHTML(`III. ${t('baoCaoSoChe.form.sectionNsLuongTitle')}`, kpiCalcRows);
+  const kpiCalcSection = buildMetricTableHTML(`IV. ${t('baoCaoSoChe.form.sectionNsLuongTitle')}`, kpiCalcRows);
 
   // ---- IV. Phẩm cấp ----
   const phamCapBody =
@@ -201,7 +202,7 @@ function buildBaoCaoSoCheBodyHTML(data: FarmBaoCaoSoChe, bcncList: FarmBaoCaoNha
 
   const phamCapSection = `
 <div style="margin-bottom:12px;font-family:${FONT}">
-  <div style="font-size:9pt;font-weight:700;color:#222;margin-bottom:4px">IV. ${t('baoCaoSoChe.form.sectionPhamCapTitle')}</div>
+  <div style="font-size:9pt;font-weight:700;color:#222;margin-bottom:4px">III. ${t('baoCaoSoChe.form.sectionPhamCapTitle')}</div>
   <table style="width:100%;border-collapse:collapse;table-layout:fixed">
     <thead>
       <tr>
@@ -278,8 +279,8 @@ function buildBaoCaoSoCheBodyHTML(data: FarmBaoCaoSoChe, bcncList: FarmBaoCaoNha
     overviewTable,
     bcncSection,
     soLieuSection,
-    kpiCalcSection,
     phamCapSection,
+    kpiCalcSection,
     kpiThuongSection,
     signFooter,
     `<p style="font-size:7pt;color:#999;margin-top:16px;padding-top:8px;border-top:1px solid #eee;font-family:${FONT}">${t('baoCaoSoChe.preview.printedAt')} ${printedAt}</p>`,
@@ -394,13 +395,14 @@ export async function exportBaoCaoSoCheToXLSX(
   const t = i18n.t.bind(i18n);
   const info = useUIStore.getState().companyInfo;
   const status = bcscTrangThaiLabel(data, t);
-  const slipU = data.don_vi_tinh?.trim() || 'buồng';
+  const slipU = data.don_vi_tinh?.trim() || 'thùng';
 
   const bcnc = findBaoCaoNhanCongByBranchAndDate(bcncList, data.ngay, data.id_chi_nhanh);
   const labor = bcnc ? extractLaborSnapshotFromBcnc(bcnc) : null;
   const [g1, g2, g3, g4] = extractBcncTableGhiChuRows(bcnc);
-  const kpis = computeBaoCaoSoCheKpis(Number(data.tong_buong_so_che), bcnc);
   const phamCapEnriched = enrichPhamCapRowsWithDerived(data.pham_cap ?? []);
+  const tongThungQD = sumPhamCapDisplayTotals(data.pham_cap ?? []).so_thung_quy_doi;
+  const kpis = computeBaoCaoSoCheKpis(tongThungQD, bcnc);
   const kpiThuong = [...(data.kpi_thuong ?? [])].sort((a, b) => a.thu_tu - b.thu_tu);
   const tongThuong = sumTienThuongKpiThuong(kpiThuong);
 
@@ -427,8 +429,8 @@ export async function exportBaoCaoSoCheToXLSX(
       ? [
           [1, t('baoCaoSoChe.bcnc.tongCongNhanLamViec'), t('baoCaoSoChe.bcnc.dvt.tongCong'), labor.tongCongQuyDoiPhieu, g1],
           [2, t('baoCaoSoChe.bcnc.tongGioCnNgay'),        t('baoCaoSoChe.bcnc.dvt.gio'),     labor.tongGioCnNgay,        g2],
-          [3, t('baoCaoSoChe.bcnc.soCnDinhBien'),          t('baoCaoSoChe.bcnc.dvt.tongCong'), labor.soCnDinhBien,          g3],
-          [4, t('baoCaoSoChe.bcnc.gioTcCnDinhBien'),       t('baoCaoSoChe.bcnc.dvt.gio'),     labor.gioTangCaTichDinhBien, g4],
+          [3, t('baoCaoSoChe.bcnc.congQdRowIV'),    t('baoCaoSoChe.bcnc.dvt.tongCong'), labor.congQdRowIV,    g3],
+          [4, t('baoCaoSoChe.bcnc.tongGioTcRowIV'), t('baoCaoSoChe.bcnc.dvt.gio'),     labor.tongGioTcRowIV, g4],
         ]
       : [['—', t('baoCaoSoChe.bcnc.needNgayChiNhanh')]]),
     [],
@@ -442,18 +444,8 @@ export async function exportBaoCaoSoCheToXLSX(
       return [BCSC_SO_LIEU_STT_OFFSET + idx + 1, t(def.labelKey), dvt, val, meta?.ghi_chu?.trim() || ''];
     }),
     [],
-    // III. KPI tính toán
-    [`III. ${t('baoCaoSoChe.form.sectionNsLuongTitle')}`],
-    ['TT', 'Chỉ số', 'ĐVT', 'Giá trị', 'Ghi chú'],
-    [BCSC_KPI_STT_OFFSET + 1, t('baoCaoSoChe.kpi.nsThungCongNgay'),     t('baoCaoSoChe.kpi.dvt.perCong', { dvt: slipU }),     kpis.nsThungCongNgay ?? '—'],
-    [BCSC_KPI_STT_OFFSET + 2, t('baoCaoSoChe.kpi.nsThungGioCong'),       t('baoCaoSoChe.kpi.dvt.perGio', { dvt: slipU }),      kpis.nsThungGioCong ?? '—'],
-    [BCSC_KPI_STT_OFFSET + 3, t('baoCaoSoChe.kpi.nsBinhQuanNguoiGio'),   t('baoCaoSoChe.kpi.dvt.perCongGio', { dvt: slipU }), kpis.nsBinhQuanNguoiGio ?? '—'],
-    [BCSC_KPI_STT_OFFSET + 4, t('baoCaoSoChe.kpi.soThungTp'),             slipU,                                                kpis.thungThanhPham ?? '—'],
-    [BCSC_KPI_STT_OFFSET + 5, t('baoCaoSoChe.kpi.tongLuong'),             t('baoCaoSoChe.kpi.dvt.tongLuong'),                  '—'],
-    [BCSC_KPI_STT_OFFSET + 6, t('baoCaoSoChe.kpi.chiPhiNcPerKg'),         t('baoCaoSoChe.kpi.dvt.chiPhiPerKg'),                '—'],
-    [],
-    // IV. Phẩm cấp
-    [`IV. ${t('baoCaoSoChe.form.sectionPhamCapTitle')}`],
+    // III. Phẩm cấp
+    [`III. ${t('baoCaoSoChe.form.sectionPhamCapTitle')}`],
     ['TT', t('baoCaoSoChe.phamCap.colPhamCap'), t('baoCaoSoChe.phamCap.colSoKg'), t('baoCaoSoChe.phamCap.colSoThung'), t('baoCaoSoChe.phamCap.colTongKg'), t('baoCaoSoChe.phamCap.colTyLe'), t('baoCaoSoChe.phamCap.colSoThungQD')],
     ...phamCapEnriched.map((r, i) => [i + 1, r.ten_pham_cap || '', r.so_tham_chieu, r.so_thung, r.tong_kg, r.ty_le_pct, r.so_thung_quy_doi]),
     [
@@ -464,6 +456,16 @@ export async function exportBaoCaoSoCheToXLSX(
       100,
       phamCapEnriched.reduce((s, r) => s + (r.so_thung_quy_doi ?? 0), 0),
     ],
+    [],
+    // IV. KPI tính toán
+    [`IV. ${t('baoCaoSoChe.form.sectionNsLuongTitle')}`],
+    ['TT', 'Chỉ số', 'ĐVT', 'Giá trị', 'Ghi chú'],
+    [BCSC_KPI_STT_OFFSET + 1, t('baoCaoSoChe.kpi.nsThungCongNgay'),     t('baoCaoSoChe.kpi.dvt.perCong', { dvt: slipU }),     kpis.nsThungCongNgay ?? '—'],
+    [BCSC_KPI_STT_OFFSET + 2, t('baoCaoSoChe.kpi.nsThungGioCong'),       t('baoCaoSoChe.kpi.dvt.perGio', { dvt: slipU }),      kpis.nsThungGioCong ?? '—'],
+    [BCSC_KPI_STT_OFFSET + 3, t('baoCaoSoChe.kpi.nsBinhQuanNguoiGio'),   t('baoCaoSoChe.kpi.dvt.perCongGio', { dvt: slipU }), kpis.nsBinhQuanNguoiGio ?? '—'],
+    [BCSC_KPI_STT_OFFSET + 4, t('baoCaoSoChe.kpi.soThungTp'),             slipU,                                                kpis.thungThanhPham ?? '—'],
+    [BCSC_KPI_STT_OFFSET + 5, t('baoCaoSoChe.kpi.tongLuong'),             t('baoCaoSoChe.kpi.dvt.tongLuong'),                  '—'],
+    [BCSC_KPI_STT_OFFSET + 6, t('baoCaoSoChe.kpi.chiPhiNcPerKg'),         t('baoCaoSoChe.kpi.dvt.chiPhiPerKg'),                '—'],
     [],
     // V. KPI/Thưởng
     [`V. ${t('baoCaoSoChe.kpiThuong.sectionTitle')}`],
