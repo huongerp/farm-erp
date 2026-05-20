@@ -19,6 +19,7 @@ import { useDuBaoSlDongThungPermissions } from '../hooks/use-du-bao-sl-dong-thun
 import { useAuthStore } from '../../../../store/useStore';
 import ExportDialog from '../../../../components/shared/ExportDialog';
 import { useExportData } from '../../../../lib/useExportData';
+import { useDuBaoSlDongThungViewScope } from '../hooks/use-du-bao-sl-dong-thung-view-scope';
 import DuBaoSlDongThungToolbar from './DuBaoSlDongThungToolbar';
 import DuBaoSlDongThungList from './DuBaoSlDongThungList';
 import DuBaoSlDongThungForm from './DuBaoSlDongThungForm';
@@ -60,6 +61,11 @@ const DanhSachTab: React.FC = () => {
   const [showExport, setShowExport] = useState(false);
 
   const { data: allList = [], isLoading } = useDuBaoSlDongThungList();
+  const viewScope = useDuBaoSlDongThungViewScope();
+  const scopedList = useMemo(() => {
+    if (viewScope.isLoading || viewScope.viewAll) return allList;
+    return allList.filter((item) => viewScope.allowedBranchIds.includes(item.id_chi_nhanh ?? ''));
+  }, [allList, viewScope]);
   const { data: branches = [] } = useBranches();
   const user = useAuthStore((s) => s.user);
   const preferredBranch = useMemo(
@@ -91,7 +97,7 @@ const DanhSachTab: React.FC = () => {
     return matchesSearch && matchesBranch && matchesNam && matchesThang && matchesTrangThai;
   }, []);
 
-  const filteredList = useListWithFilter(allList, searchTerm, filters, filterFn);
+  const filteredList = useListWithFilter(scopedList, searchTerm, filters, filterFn);
 
   const exportColumns = useMemo(() => getExportColumnsDuBaoSlDongThungList(t), [t]);
   const exportMapFn = useCallback(

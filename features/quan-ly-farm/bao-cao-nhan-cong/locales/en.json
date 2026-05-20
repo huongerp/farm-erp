@@ -55,6 +55,7 @@
   "baoCaoNhanCong.toolbar.filterBranch": "Branch",
   "baoCaoNhanCong.toolbar.filterNam": "Year",
   "baoCaoNhanCong.toolbar.filterThang": "Month",
+  "baoCaoNhanCong.toolbar.filterTrangThai": "Status",
   "baoCaoNhanCong.toolbar.add": "Add",
   "baoCaoNhanCong.toolbar.deleteMany": "Delete selected",
   "baoCaoNhanCong.store.colNgay": "Date",

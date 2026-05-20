@@ -55,6 +55,7 @@
   "baoCaoNhanCong.toolbar.filterBranch": "Chi nhánh",
   "baoCaoNhanCong.toolbar.filterNam": "Năm",
   "baoCaoNhanCong.toolbar.filterThang": "Tháng",
+  "baoCaoNhanCong.toolbar.filterTrangThai": "Trạng thái",
   "baoCaoNhanCong.toolbar.add": "Thêm",
   "baoCaoNhanCong.toolbar.deleteMany": "Xóa đã chọn",
   "baoCaoNhanCong.store.colNgay": "Ngày",

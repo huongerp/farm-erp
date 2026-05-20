@@ -92,3 +92,39 @@ export function computeDonDatHangStats(list: DonDatHang[]) {
 export function useDonDatHangStats(list: DonDatHang[]) {
   return useMemo(() => computeDonDatHangStats(list), [list]);
 }
+
+export interface ChiTietCategoryRow {
+  id_hang_hoa: string;
+  phan_loai: string | null;
+  ten_danh_muc_cap1?: string;
+  ten_danh_muc_cap2?: string;
+}
+
+/** Tính thống kê theo danh mục cấp 1, cấp 2 và phân loại từ dữ liệu chi tiết. */
+export function computeDonDatHangCategoryStats(rows: ChiTietCategoryRow[]) {
+  const cap1Map = new Map<string, number>();
+  const cap2Map = new Map<string, number>();
+  const phanLoaiMap = new Map<string, number>();
+
+  rows.forEach((r) => {
+    const cap1 = r.ten_danh_muc_cap1?.trim() || '—';
+    cap1Map.set(cap1, (cap1Map.get(cap1) ?? 0) + 1);
+
+    const cap2 = r.ten_danh_muc_cap2?.trim() || '—';
+    cap2Map.set(cap2, (cap2Map.get(cap2) ?? 0) + 1);
+
+    const pl = r.phan_loai?.trim() || '—';
+    phanLoaiMap.set(pl, (phanLoaiMap.get(pl) ?? 0) + 1);
+  });
+
+  const toSorted = (m: Map<string, number>): StatsChartItem[] =>
+    Array.from(m.entries())
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
+
+  return {
+    byDanhMucCap1: toSorted(cap1Map),
+    byDanhMucCap2: toSorted(cap2Map),
+    byPhanLoai: toSorted(phanLoaiMap),
+  };
+}

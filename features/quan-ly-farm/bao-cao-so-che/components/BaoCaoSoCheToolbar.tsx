@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Building2, Calendar, Hash, Download } from 'lucide-react';
+import { Plus, Building2, Calendar, Hash, ToggleLeft, Ruler, Download } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
@@ -73,6 +73,24 @@ const BaoCaoSoCheToolbar: React.FC<Props> = ({
       }));
   }, [data]);
 
+  const trangThaiOptions = useMemo(
+    () => [
+      { value: 'mo', label: t('baoCaoSoChe.trangThai.mo'), count: data.filter((d) => d.trang_thai === 'mo').length },
+      { value: 'khoa', label: t('baoCaoSoChe.trangThai.khoa'), count: data.filter((d) => d.trang_thai === 'khoa').length },
+    ],
+    [data, t]
+  );
+
+  const donViTinhOptions = useMemo(() => {
+    const set = new Set<string>();
+    data.forEach((r) => { if (r.don_vi_tinh) set.add(r.don_vi_tinh); });
+    return [...set].sort().map((dvt) => ({
+      value: dvt,
+      label: dvt,
+      count: data.filter((d) => d.don_vi_tinh === dvt).length,
+    }));
+  }, [data]);
+
   const thangOptions = useMemo(() => {
     const set = new Set<string>();
     data.forEach((r) => {
@@ -96,7 +114,9 @@ const BaoCaoSoCheToolbar: React.FC<Props> = ({
       (searchInput.trim() ? 1 : 0) +
       (f.id_chi_nhanh?.length ?? 0) +
       (f.nam?.length ?? 0) +
-      (f.thang?.length ?? 0)
+      (f.thang?.length ?? 0) +
+      (f.trang_thai?.length ?? 0) +
+      (f.don_vi_tinh?.length ?? 0)
     );
   }, [searchInput, filters]);
 
@@ -105,6 +125,8 @@ const BaoCaoSoCheToolbar: React.FC<Props> = ({
     setFilter('id_chi_nhanh', []);
     setFilter('nam', []);
     setFilter('thang', []);
+    setFilter('trang_thai', []);
+    setFilter('don_vi_tinh', []);
   };
 
   const filterGroups = useMemo(
@@ -126,6 +148,22 @@ const BaoCaoSoCheToolbar: React.FC<Props> = ({
         onChange: (v: string[]) => setFilter('thang', v),
       },
       {
+        key: 'trang_thai',
+        label: t('baoCaoSoChe.toolbar.filterTrangThai'),
+        icon: ToggleLeft,
+        options: trangThaiOptions,
+        value: filters.trang_thai ?? [],
+        onChange: (v: string[]) => setFilter('trang_thai', v),
+      },
+      {
+        key: 'don_vi_tinh',
+        label: t('baoCaoSoChe.toolbar.filterDvt'),
+        icon: Ruler,
+        options: donViTinhOptions,
+        value: filters.don_vi_tinh ?? [],
+        onChange: (v: string[]) => setFilter('don_vi_tinh', v),
+      },
+      {
         key: 'branch',
         label: t('baoCaoSoChe.toolbar.filterBranch'),
         icon: Building2,
@@ -134,7 +172,7 @@ const BaoCaoSoCheToolbar: React.FC<Props> = ({
         onChange: (v: string[]) => setFilter('id_chi_nhanh', v),
       },
     ],
-    [t, namOptions, thangOptions, branchOptions, filters.nam, filters.thang, filters.id_chi_nhanh, setFilter]
+    [t, namOptions, thangOptions, trangThaiOptions, donViTinhOptions, branchOptions, filters.nam, filters.thang, filters.trang_thai, filters.don_vi_tinh, filters.id_chi_nhanh, setFilter]
   );
 
   const renderFilters = (
@@ -154,6 +192,24 @@ const BaoCaoSoCheToolbar: React.FC<Props> = ({
         onChange={(v) => setFilter('thang', v)}
         placeholder={t('baoCaoSoChe.toolbar.filterThang')}
         icon={Hash}
+        className="w-full sm:w-[140px]"
+        size="md"
+      />
+      <FilterChipMultiSelect
+        options={trangThaiOptions}
+        value={filters.trang_thai ?? []}
+        onChange={(v) => setFilter('trang_thai', v)}
+        placeholder={t('baoCaoSoChe.toolbar.filterTrangThai')}
+        icon={ToggleLeft}
+        className="w-full sm:w-[150px]"
+        size="md"
+      />
+      <FilterChipMultiSelect
+        options={donViTinhOptions}
+        value={filters.don_vi_tinh ?? []}
+        onChange={(v) => setFilter('don_vi_tinh', v)}
+        placeholder={t('baoCaoSoChe.toolbar.filterDvt')}
+        icon={Ruler}
         className="w-full sm:w-[140px]"
         size="md"
       />

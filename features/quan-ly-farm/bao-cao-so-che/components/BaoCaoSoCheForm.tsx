@@ -4,8 +4,9 @@ import { toast } from 'sonner';
 import { useForm, Controller, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Building2, Calculator, Layers, MessageSquare, Users } from 'lucide-react';
-import BaoCaoKpiThuongFormSection from '../../shared/kpi-thuong/BaoCaoKpiThuongFormSection';
-import { BCSC_DANH_GIA_KPI_OPTIONS } from '../core/kpi-thuong-presets';
+import BaoCaoSoCheKpiThuongFormSection, {
+  type BcscKpiPresetSource,
+} from './BaoCaoSoCheKpiThuongFormSection';
 import Input from '../../../../components/ui/Input';
 import Textarea from '../../../../components/ui/Textarea';
 import Combobox from '../../../../components/ui/Combobox';
@@ -29,6 +30,11 @@ import BaoCaoSoCheBcncKpiReadout from './BaoCaoSoCheBcncKpiReadout';
 import BaoCaoSoCheSoLieuBuongFormTable from './BaoCaoSoCheSoLieuBuongFormTable';
 import { BaoCaoSoChePhamCapFormSection } from './BaoCaoSoChePhamCapTables';
 import { sumPhamCapDisplayTotals } from '../core/pham-cap-derived';
+import {
+  findBaoCaoNhanCongByBranchAndDate,
+  computeBaoCaoSoCheKpis,
+} from '../core/bcsc-kpi';
+import { useDuBaoSlDongThungList } from '../../du-bao-sl-dong-thung/hooks/use-du-bao-sl-dong-thung';
 
 interface Props {
   branches: Branch[];
@@ -101,6 +107,7 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
   const idChiNhanh = watch('id_chi_nhanh');
   const ngay = watch('ngay');
   const phamCap = watch('pham_cap');
+  const danhGiaLoiQcPct = watch('danh_gia_loi_qc_pct');
   const tongThungQD = useMemo(
     () => sumPhamCapDisplayTotals(phamCap ?? []).so_thung_quy_doi,
     [phamCap]
@@ -111,6 +118,31 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
     [soLieuMeta]
   );
   const { data: bcncList = [] } = useBaoCaoNhanCongList();
+  const { data: dbsdtList = [] } = useDuBaoSlDongThungList();
+
+  const bcnc = useMemo(
+    () => findBaoCaoNhanCongByBranchAndDate(bcncList, ngay ?? '', idChiNhanh ?? ''),
+    [bcncList, ngay, idChiNhanh]
+  );
+  const kpis = useMemo(() => computeBaoCaoSoCheKpis(tongThungQD, bcnc), [tongThungQD, bcnc]);
+
+  const dbsdtRecord = useMemo(
+    () =>
+      dbsdtList.find(
+        (r) => r.ngay === ngay && String(r.id_chi_nhanh) === String(idChiNhanh)
+      ) ?? null,
+    [dbsdtList, ngay, idChiNhanh]
+  );
+
+  /* 3 nguồn tự tính cho section Đánh giá KPI/thưởng */
+  const kpiPresetSources = useMemo<[BcscKpiPresetSource, BcscKpiPresetSource, BcscKpiPresetSource]>(
+    () => [
+      { thucTeValue: kpis.nsThungCongNgay,                                          isHigherBetter: true  },
+      { thucTeValue: Number.isFinite(Number(danhGiaLoiQcPct)) ? Number(danhGiaLoiQcPct) : null, isHigherBetter: false },
+      { thucTeValue: dbsdtRecord != null ? dbsdtRecord.ty_le_thu_hoi_thuc_te * 100 : null,      isHigherBetter: true  },
+    ],
+    [kpis.nsThungCongNgay, danhGiaLoiQcPct, dbsdtRecord]
+  );
 
   useEffect(() => {
     reset(defaultValues);
@@ -246,10 +278,11 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
           />
         </FormSection>
 
-        <BaoCaoKpiThuongFormSection
+        <BaoCaoSoCheKpiThuongFormSection
           control={control}
+          setValue={setValue}
           i18nPrefix="baoCaoSoChe.kpiThuong"
-          danhGiaOptions={BCSC_DANH_GIA_KPI_OPTIONS}
+          presetSources={kpiPresetSources}
           disabled={!canAdmin}
         />
       </form>

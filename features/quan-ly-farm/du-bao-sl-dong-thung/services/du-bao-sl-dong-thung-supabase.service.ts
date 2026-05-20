@@ -9,7 +9,7 @@ import type { DuBaoSlDongThungFormValues } from '../core/schema';
 const TABLE = 'fp_farm_du_bao_sl_dong_thung';
 
 const ROW_SELECT =
-  'id,ngay,id_chi_nhanh,ten_chi_nhanh,so_buong_can_mau,tong_can_nang_mau,tong_buong_nhap_ke_hoach,ty_le_thu_hoi_ke_hoach,quy_cach_dong_thung_ke_hoach,tong_buong_nhap_thuc_te,ty_le_thu_hoi_thuc_te,quy_cach_dong_thung_thuc_te,ghi_chu,id_nguoi_tao,trang_thai,tg_tao,tg_cap_nhat';
+  'id,ngay,id_chi_nhanh,ten_chi_nhanh,so_buong_can_mau,tong_can_nang_mau,tong_buong_nhap_ke_hoach,ty_le_thu_hoi_ke_hoach,quy_cach_dong_thung_ke_hoach,tong_buong_nhap_thuc_te,ty_le_thu_hoi_thuc_te,quy_cach_dong_thung_thuc_te,can_nang_binh_quan_buong,tong_khoi_luong_ke_hoach,tong_so_thung_ke_hoach,tong_khoi_luong_thuc_te,tong_so_thung_thuc_te,ghi_chu,id_nguoi_tao,trang_thai,tg_tao,tg_cap_nhat';
 
 function parseIdToInt8(id: string | null | undefined): number | null {
   if (id == null || id === '') return null;
@@ -44,6 +44,16 @@ interface DbRow {
   tong_buong_nhap_thuc_te: number | null;
   ty_le_thu_hoi_thuc_te: string | number | null;
   quy_cach_dong_thung_thuc_te: string | number | null;
+  /** GENERATED — null khi so_buong_can_mau = 0 */
+  can_nang_binh_quan_buong: string | number | null;
+  /** GENERATED */
+  tong_khoi_luong_ke_hoach: string | number | null;
+  /** GENERATED */
+  tong_so_thung_ke_hoach: number | null;
+  /** GENERATED */
+  tong_khoi_luong_thuc_te: string | number | null;
+  /** GENERATED */
+  tong_so_thung_thuc_te: number | null;
   ghi_chu: string | null;
   id_nguoi_tao: number | null;
   trang_thai: string | null;
@@ -65,6 +75,11 @@ function rowToModel(row: DbRow): FarmDuBaoSlDongThung {
     tong_buong_nhap_thuc_te: Math.max(0, Math.floor(num(row.tong_buong_nhap_thuc_te))),
     ty_le_thu_hoi_thuc_te: num(row.ty_le_thu_hoi_thuc_te),
     quy_cach_dong_thung_thuc_te: num(row.quy_cach_dong_thung_thuc_te),
+    can_nang_binh_quan_buong: row.can_nang_binh_quan_buong != null ? num(row.can_nang_binh_quan_buong) : null,
+    tong_khoi_luong_ke_hoach: num(row.tong_khoi_luong_ke_hoach),
+    tong_so_thung_ke_hoach: Math.max(0, Math.floor(num(row.tong_so_thung_ke_hoach))),
+    tong_khoi_luong_thuc_te: num(row.tong_khoi_luong_thuc_te),
+    tong_so_thung_thuc_te: Math.max(0, Math.floor(num(row.tong_so_thung_thuc_te))),
     ghi_chu: row.ghi_chu ?? null,
     id_nguoi_tao: row.id_nguoi_tao != null ? String(row.id_nguoi_tao) : null,
     ten_nguoi_tao: null,

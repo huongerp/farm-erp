@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Copy, Edit, Layers, Lock, MessageSquare, Printer, Trash2, Unlock, Users, Calculator, Package } from 'lucide-react';
+import { Copy, Edit, ChevronDown, Boxes, Layers, Lock, MessageSquare, Printer, Trash2, Unlock, Users, Calculator, Package } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import type { FarmBaoCaoSoChe } from '../core/types';
 import { TRANG_THAI_BAO_CAO_SO_CHE } from '../core/types';
@@ -14,6 +14,9 @@ import { BTN_CLOSE, BTN_EDIT, BTN_DELETE, CONFIRM_YES } from '../../../../lib/bu
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { useCopyBaoCaoSoCheToNextDay, useUpdateBaoCaoSoCheTrangThai } from '../hooks/use-bao-cao-so-che';
 import { useBaoCaoNhanCongList } from '../../bao-cao-nhan-cong/hooks/use-bao-cao-nhan-cong';
+import { useDuBaoSlDongThungList } from '../../du-bao-sl-dong-thung/hooks/use-du-bao-sl-dong-thung';
+import BaoCaoNhanCongChuyenTable from '../../bao-cao-nhan-cong/components/BaoCaoNhanCongChuyenTable';
+import DuBaoSlDongThungBangTinhTable from '../../du-bao-sl-dong-thung/components/DuBaoSlDongThungBangTinhTable';
 import BaoCaoSoCheBcncKpiReadout from './BaoCaoSoCheBcncKpiReadout';
 import BaoCaoKpiThuongDetailSection from '../../shared/kpi-thuong/BaoCaoKpiThuongDetailSection';
 import { BaoCaoSoChePhamCapDetailTable } from './BaoCaoSoChePhamCapTables';
@@ -40,6 +43,11 @@ import {
   SO_LIEU_BUONG_ROW_DEFS,
   SO_LIEU_ROW_DVT_DEFAULT,
 } from '../core/so-lieu-row-meta';
+import {
+  findBaoCaoNhanCongByBranchAndDate,
+  computeBaoCaoSoCheKpis,
+} from '../core/bcsc-kpi';
+import type { FarmBaoCaoKpiThuongRow } from '../../shared/kpi-thuong/types';
 
 interface Props {
   data: FarmBaoCaoSoChe;
@@ -71,6 +79,9 @@ const BaoCaoSoCheDetail: React.FC<Props> = ({
   const copyMutation = useCopyBaoCaoSoCheToNextDay();
   const trangThaiMutation = useUpdateBaoCaoSoCheTrangThai();
   const { data: bcncList = [] } = useBaoCaoNhanCongList();
+  const { data: dbsdtList = [] } = useDuBaoSlDongThungList();
+
+  const [showBcncDetail, setShowBcncDetail] = useState(false);
 
   const soLieuMetaForm = useMemo(() => mergeSoLieuMetaToForm(data.so_lieu_row_meta), [data.so_lieu_row_meta]);
   const donViTinhKpi = useMemo(() => deriveDonViTinhSlipFromSoLieuMeta(soLieuMetaForm), [soLieuMetaForm]);
@@ -78,6 +89,53 @@ const BaoCaoSoCheDetail: React.FC<Props> = ({
     () => sumPhamCapDisplayTotals(data.pham_cap ?? []).so_thung_quy_doi,
     [data.pham_cap]
   );
+
+  const idChiNhanhStr = data.id_chi_nhanh != null ? String(data.id_chi_nhanh) : '';
+
+  const bcnc = useMemo(
+    () => findBaoCaoNhanCongByBranchAndDate(bcncList, data.ngay, idChiNhanhStr),
+    [bcncList, data.ngay, idChiNhanhStr]
+  );
+  const kpis = useMemo(() => computeBaoCaoSoCheKpis(tongThungQD, bcnc), [tongThungQD, bcnc]);
+
+  const dbsdtRecord = useMemo(
+    () =>
+      dbsdtList.find(
+        (r) => r.ngay === data.ngay && String(r.id_chi_nhanh) === idChiNhanhStr
+      ) ?? null,
+    [dbsdtList, data.ngay, idChiNhanhStr]
+  );
+
+  /**
+   * Enrich 3 preset KPI rows with live-computed thực tế + đánh giá.
+   * This ensures the detail always shows correct values regardless of what is stored in DB.
+   */
+  const enrichedKpiRows = useMemo((): FarmBaoCaoKpiThuongRow[] => {
+    const rows = data.kpi_thuong ?? [];
+    if (rows.length === 0) return rows;
+
+    const presetThucTe: (number | null)[] = [
+      kpis.nsThungCongNgay,
+      Number.isFinite(Number(data.danh_gia_loi_qc_pct)) ? Number(data.danh_gia_loi_qc_pct) : null,
+      dbsdtRecord != null ? dbsdtRecord.ty_le_thu_hoi_thuc_te * 100 : null,
+    ];
+    const presetHigherBetter = [true, false, true];
+
+    return rows.map((row, index) => {
+      if (index >= 3) return row;
+      const rawVal = presetThucTe[index];
+      if (rawVal == null || !Number.isFinite(rawVal)) return row;
+
+      const ttStr = String(Math.round(rawVal * 10000) / 10000);
+      const mt = parseFloat(String(row.muc_tieu ?? '').replace(',', '.'));
+      const tt = parseFloat(ttStr);
+      let danhGia = row.danh_gia;
+      if (Number.isFinite(tt) && Number.isFinite(mt)) {
+        danhGia = (presetHigherBetter[index] ? tt >= mt : tt <= mt) ? 'Đạt' : 'Không đạt';
+      }
+      return { ...row, thuc_te: ttStr, danh_gia: danhGia };
+    });
+  }, [data.kpi_thuong, data.danh_gia_loi_qc_pct, kpis.nsThungCongNgay, dbsdtRecord]);
 
   const renderFooter = (
     <div className="flex items-center justify-between w-full">
@@ -225,15 +283,45 @@ const BaoCaoSoCheDetail: React.FC<Props> = ({
           )}
         </DetailSection>
 
-        <DetailSection title={t('baoCaoSoChe.form.sectionBcncTitle')} icon={<Users size={14} />} variant="primary">
+        <DetailSection
+          title={t('baoCaoSoChe.form.sectionBcncTitle')}
+          icon={<Users size={14} />}
+          variant="primary"
+          action={
+            bcnc ? (
+              <button
+                type="button"
+                onClick={() => setShowBcncDetail((v) => !v)}
+                className={cn(
+                  'size-6 inline-flex items-center justify-center rounded-md border transition-colors',
+                  showBcncDetail
+                    ? 'border-primary/40 bg-primary/10 text-primary'
+                    : 'border-border bg-muted/40 text-muted-foreground hover:border-primary/30 hover:text-primary'
+                )}
+                title={showBcncDetail ? 'Ẩn bảng chuyền sản xuất' : 'Xem bảng chuyền sản xuất'}
+                aria-expanded={showBcncDetail}
+              >
+                <ChevronDown size={13} className={cn('transition-transform', showBcncDetail && 'rotate-180')} />
+              </button>
+            ) : undefined
+          }
+        >
           <BaoCaoSoCheBcncKpiReadout
             variant="bcnc"
             ngay={data.ngay}
-            idChiNhanh={data.id_chi_nhanh != null ? String(data.id_chi_nhanh) : ''}
+            idChiNhanh={idChiNhanhStr}
             tongThungQD={tongThungQD}
             bcncList={bcncList}
             donViTinh={donViTinhKpi}
           />
+          {showBcncDetail && bcnc && (
+            <div className="mt-3 pt-3 border-t border-border/60">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                {t('baoCaoNhanCong.form.sectionChuyen')}
+              </p>
+              <BaoCaoNhanCongChuyenTable data={bcnc} />
+            </div>
+          )}
         </DetailSection>
 
         <DetailSection title={t('baoCaoSoChe.form.sectionSoCheTitle')} icon={<Layers size={14} />} variant="primary">
@@ -301,7 +389,7 @@ const BaoCaoSoCheDetail: React.FC<Props> = ({
           <BaoCaoSoCheBcncKpiReadout
             variant="kpi"
             ngay={data.ngay}
-            idChiNhanh={data.id_chi_nhanh != null ? String(data.id_chi_nhanh) : ''}
+            idChiNhanh={idChiNhanhStr}
             tongThungQD={tongThungQD}
             bcncList={bcncList}
             donViTinh={donViTinhKpi}
@@ -309,9 +397,19 @@ const BaoCaoSoCheDetail: React.FC<Props> = ({
           />
         </DetailSection>
 
-        <BaoCaoKpiThuongDetailSection rows={data.kpi_thuong ?? []} i18nPrefix="baoCaoSoChe.kpiThuong" />
+        <BaoCaoKpiThuongDetailSection rows={enrichedKpiRows} i18nPrefix="baoCaoSoChe.kpiThuong" />
+
+        {dbsdtRecord && (
+          <DetailSection
+            title={t('duBaoSlDongThung.form.sectionBangTinh')}
+            icon={<Boxes size={14} />}
+            variant="primary"
+          >
+            <DuBaoSlDongThungBangTinhTable data={dbsdtRecord} />
+          </DetailSection>
+        )}
       </div>
-    </GenericDrawer>
+      </GenericDrawer>
   );
 };
 

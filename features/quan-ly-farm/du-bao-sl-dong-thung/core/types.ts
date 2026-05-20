@@ -14,12 +14,21 @@ export interface FarmDuBaoSlDongThung {
   so_buong_can_mau: number;
   tong_can_nang_mau: number;
   tong_buong_nhap_ke_hoach: number;
-  /** 0–1 */
   ty_le_thu_hoi_ke_hoach: number;
   quy_cach_dong_thung_ke_hoach: number;
   tong_buong_nhap_thuc_te: number;
   ty_le_thu_hoi_thuc_te: number;
   quy_cach_dong_thung_thuc_te: number;
+  /** GENERATED ALWAYS STORED — null khi so_buong_can_mau = 0 */
+  can_nang_binh_quan_buong: number | null;
+  /** GENERATED ALWAYS STORED */
+  tong_khoi_luong_ke_hoach: number;
+  /** GENERATED ALWAYS STORED */
+  tong_so_thung_ke_hoach: number;
+  /** GENERATED ALWAYS STORED */
+  tong_khoi_luong_thuc_te: number;
+  /** GENERATED ALWAYS STORED */
+  tong_so_thung_thuc_te: number;
   ghi_chu: string | null;
   id_nguoi_tao: string | null;
   ten_nguoi_tao: string | null;

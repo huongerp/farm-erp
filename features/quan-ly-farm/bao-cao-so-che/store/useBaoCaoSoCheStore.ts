@@ -5,6 +5,8 @@ export interface BaoCaoSoCheFilters {
   id_chi_nhanh: string[];
   nam: string[];
   thang: string[];
+  trang_thai: string[];
+  don_vi_tinh: string[];
 }
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
@@ -117,6 +119,8 @@ const initialFilters: BaoCaoSoCheFilters = {
   id_chi_nhanh: [],
   nam: [],
   thang: [],
+  trang_thai: [],
+  don_vi_tinh: [],
 };
 
 export const useBaoCaoSoCheStore = createGenericStore<BaoCaoSoCheFilters>(initialFilters, DEFAULT_COLUMNS);

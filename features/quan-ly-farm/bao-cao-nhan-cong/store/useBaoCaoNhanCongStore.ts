@@ -7,6 +7,7 @@ export interface BaoCaoNhanCongFilters {
   nam: string[];
   /** Tháng (yyyy-mm) từ cột ngày */
   thang: string[];
+  trang_thai: string[];
 }
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
@@ -100,6 +101,7 @@ const initialFilters: BaoCaoNhanCongFilters = {
   id_chi_nhanh: [],
   nam: [],
   thang: [],
+  trang_thai: [],
 };
 
 export const useBaoCaoNhanCongStore = createGenericStore<BaoCaoNhanCongFilters>(initialFilters, DEFAULT_COLUMNS);

@@ -19,6 +19,7 @@ import { useBaoCaoNhanCongPermissions } from '../hooks/use-bao-cao-nhan-cong-per
 import { useAuthStore } from '../../../../store/useStore';
 import ExportDialog from '../../../../components/shared/ExportDialog';
 import { useExportData } from '../../../../lib/useExportData';
+import { useBaoCaoNhanCongViewScope } from '../hooks/use-bao-cao-nhan-cong-view-scope';
 import BaoCaoNhanCongToolbar from './BaoCaoNhanCongToolbar';
 import BaoCaoNhanCongList from './BaoCaoNhanCongList';
 import BaoCaoNhanCongForm from './BaoCaoNhanCongForm';
@@ -61,6 +62,11 @@ const DanhSachTab: React.FC = () => {
   const [showExport, setShowExport] = useState(false);
 
   const { data: allList = [], isLoading } = useBaoCaoNhanCongList();
+  const viewScope = useBaoCaoNhanCongViewScope();
+  const scopedList = useMemo(() => {
+    if (viewScope.isLoading || viewScope.viewAll) return allList;
+    return allList.filter((item) => viewScope.allowedBranchIds.includes(item.id_chi_nhanh ?? ''));
+  }, [allList, viewScope]);
   const { data: branches = [] } = useBranches();
   const user = useAuthStore((s) => s.user);
   const preferredBranch = useMemo(
@@ -87,10 +93,11 @@ const DanhSachTab: React.FC = () => {
     const ym = item.ngay?.slice(0, 7) ?? '';
     const matchesNam = (f.nam?.length ?? 0) === 0 || (f.nam ?? []).includes(y);
     const matchesThang = (f.thang?.length ?? 0) === 0 || (f.thang ?? []).includes(ym);
-    return matchesSearch && matchesBranch && matchesNam && matchesThang;
+    const matchesTrangThai = (f.trang_thai?.length ?? 0) === 0 || (f.trang_thai ?? []).includes(item.trang_thai ?? '');
+    return matchesSearch && matchesBranch && matchesNam && matchesThang && matchesTrangThai;
   }, []);
 
-  const filteredList = useListWithFilter(allList, searchTerm, filters, filterFn);
+  const filteredList = useListWithFilter(scopedList, searchTerm, filters, filterFn);
 
   const exportColumns = useMemo(() => getExportColumnsBaoCaoNhanCongList(t), [t]);
   const exportMapFn = useCallback(

@@ -19,6 +19,7 @@ import { useBaoCaoSoChePermissions } from '../hooks/use-bao-cao-so-che-permissio
 import { useAuthStore } from '../../../../store/useStore';
 import ExportDialog from '../../../../components/shared/ExportDialog';
 import { useExportData } from '../../../../lib/useExportData';
+import { useBaoCaoSoCheViewScope } from '../hooks/use-bao-cao-so-che-view-scope';
 import BaoCaoSoCheToolbar from './BaoCaoSoCheToolbar';
 import BaoCaoSoCheList from './BaoCaoSoCheList';
 import BaoCaoSoCheForm from './BaoCaoSoCheForm';
@@ -62,6 +63,11 @@ const DanhSachTab: React.FC = () => {
   const [showExport, setShowExport] = useState(false);
 
   const { data: allList = [], isLoading } = useBaoCaoSoCheList();
+  const viewScope = useBaoCaoSoCheViewScope();
+  const scopedList = useMemo(() => {
+    if (viewScope.isLoading || viewScope.viewAll) return allList;
+    return allList.filter((item) => viewScope.allowedBranchIds.includes(item.id_chi_nhanh ?? ''));
+  }, [allList, viewScope]);
   const { data: branches = [] } = useBranches();
   const user = useAuthStore((s) => s.user);
   const preferredBranch = useMemo(
@@ -102,10 +108,12 @@ const DanhSachTab: React.FC = () => {
     const ym = item.ngay?.slice(0, 7) ?? '';
     const matchesNam = (f.nam?.length ?? 0) === 0 || (f.nam ?? []).includes(y);
     const matchesThang = (f.thang?.length ?? 0) === 0 || (f.thang ?? []).includes(ym);
-    return matchesSearch && matchesBranch && matchesNam && matchesThang;
+    const matchesTrangThai = (f.trang_thai?.length ?? 0) === 0 || (f.trang_thai ?? []).includes(item.trang_thai ?? '');
+    const matchesDvt = (f.don_vi_tinh?.length ?? 0) === 0 || (f.don_vi_tinh ?? []).includes(item.don_vi_tinh ?? '');
+    return matchesSearch && matchesBranch && matchesNam && matchesThang && matchesTrangThai && matchesDvt;
   }, []);
 
-  const filteredList = useListWithFilter(allList, searchTerm, filters, filterFn);
+  const filteredList = useListWithFilter(scopedList, searchTerm, filters, filterFn);
 
   const exportColumns = useMemo(() => getExportColumnsBaoCaoSoCheList(t), [t]);
   const exportMapFn = useCallback(

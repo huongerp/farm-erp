@@ -106,7 +106,7 @@ const BaoCaoSoChePreviewContent: React.FC<Props> = ({ data, bcncList }) => {
   const [g1, g2, g3, g4] = bcncGhiChu;
   const bcncRows = labor
     ? [
-        { stt: 1, chiSo: t('baoCaoSoChe.bcnc.tongCongNhanLamViec'), dvt: t('baoCaoSoChe.bcnc.dvt.tongCong'), giaTri: fmtNum(labor.tongCongQuyDoiPhieu), ghiChu: g1 },
+        { stt: 1, chiSo: t('baoCaoSoChe.bcnc.tongCongNhanLamViec'), dvt: t('baoCaoSoChe.bcnc.dvt.nguoi'), giaTri: fmtNum(labor.tongCongQuyDoiPhieu), ghiChu: g1 },
         { stt: 2, chiSo: t('baoCaoSoChe.bcnc.tongGioCnNgay'),        dvt: t('baoCaoSoChe.bcnc.dvt.gio'),     giaTri: fmtNum(labor.tongGioCnNgay),        ghiChu: g2 },
         { stt: 3, chiSo: t('baoCaoSoChe.bcnc.congQdRowIV'),    dvt: t('baoCaoSoChe.bcnc.dvt.tongCong'), giaTri: fmtNum(labor.congQdRowIV),    ghiChu: g3 },
         { stt: 4, chiSo: t('baoCaoSoChe.bcnc.tongGioTcRowIV'), dvt: t('baoCaoSoChe.bcnc.dvt.gio'),     giaTri: fmtNum(labor.tongGioTcRowIV), ghiChu: g4 },
@@ -130,10 +130,10 @@ const BaoCaoSoChePreviewContent: React.FC<Props> = ({ data, bcncList }) => {
   // ---- Rows KPI tính toán ----
   const o = BCSC_KPI_STT_OFFSET;
   const kpiCalcRows = [
-    { stt: o + 1, chiSo: t('baoCaoSoChe.kpi.nsThungCongNgay'),     dvt: t('baoCaoSoChe.kpi.dvt.perCong', { dvt: slipU }),     giaTri: fmtNum(kpis.nsThungCongNgay),     ghiChu: '—' },
-    { stt: o + 2, chiSo: t('baoCaoSoChe.kpi.nsThungGioCong'),       dvt: t('baoCaoSoChe.kpi.dvt.perGio', { dvt: slipU }),      giaTri: fmtNum(kpis.nsThungGioCong),      ghiChu: '—' },
-    { stt: o + 3, chiSo: t('baoCaoSoChe.kpi.nsBinhQuanNguoiGio'),   dvt: t('baoCaoSoChe.kpi.dvt.perCongGio', { dvt: slipU }), giaTri: fmtNum(kpis.nsBinhQuanNguoiGio), ghiChu: '—' },
-    { stt: o + 4, chiSo: t('baoCaoSoChe.kpi.soThungTp'),             dvt: slipU,                                                giaTri: fmtNum(kpis.thungThanhPham),      ghiChu: '—' },
+    { stt: o + 1, chiSo: t('baoCaoSoChe.kpi.nsThungCongNgay'),     dvt: t('baoCaoSoChe.kpi.dvt.perCong', { dvt: 'Thùng' }),     giaTri: fmtNum(kpis.nsThungCongNgay),     ghiChu: '—' },
+    { stt: o + 2, chiSo: t('baoCaoSoChe.kpi.nsThungGioCong'),       dvt: t('baoCaoSoChe.kpi.dvt.perGio', { dvt: 'Thùng' }),      giaTri: fmtNum(kpis.nsThungGioCong),      ghiChu: '—' },
+    { stt: o + 3, chiSo: t('baoCaoSoChe.kpi.nsBinhQuanNguoiGio'),   dvt: t('baoCaoSoChe.kpi.dvt.perCongGio', { dvt: 'Thùng' }), giaTri: fmtNum(kpis.nsBinhQuanNguoiGio), ghiChu: '—' },
+    { stt: o + 4, chiSo: t('baoCaoSoChe.kpi.soThungTp'),             dvt: 'Thùng',                                                giaTri: fmtNum(kpis.thungThanhPham),      ghiChu: '—' },
     { stt: o + 5, chiSo: t('baoCaoSoChe.kpi.tongLuong'),             dvt: t('baoCaoSoChe.kpi.dvt.tongLuong'),                   giaTri: fmtNum(kpis.tongLuong),           ghiChu: '—' },
     { stt: o + 6, chiSo: t('baoCaoSoChe.kpi.chiPhiNcPerKg'),         dvt: t('baoCaoSoChe.kpi.dvt.chiPhiPerKg'),                giaTri: fmtNum(kpis.chiPhiNhanCongPerKg), ghiChu: '—' },
   ];
@@ -276,7 +276,14 @@ const BaoCaoSoChePreviewContent: React.FC<Props> = ({ data, bcncList }) => {
                     <td className={`${tdPrint} text-right tabular-nums`}>
                       {pct != null ? `${fmtNum(pct)}%` : '—'}
                     </td>
-                    <td className={tdPrint}>{r.danh_gia?.trim() || '—'}</td>
+                    <td className={tdPrint} style={{
+                      color: r.danh_gia?.trim() === 'Đạt' ? '#16a34a'
+                           : r.danh_gia?.trim() === 'Không đạt' ? '#dc2626'
+                           : undefined,
+                      fontWeight: r.danh_gia?.trim() === 'Đạt' || r.danh_gia?.trim() === 'Không đạt' ? 600 : undefined,
+                    }}>
+                      {r.danh_gia?.trim() || '—'}
+                    </td>
                     <td className={`${tdPrint} text-right tabular-nums font-medium`} style={{ ...(tienCls ? { color: r.tien_thuong > 0 ? '#16a34a' : '#dc2626' } : {}) }}>
                       {formatNumberVN(r.tien_thuong)}
                     </td>

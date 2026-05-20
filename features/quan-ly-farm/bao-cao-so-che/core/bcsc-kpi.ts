@@ -1,13 +1,11 @@
 import type { FarmBaoCaoNhanCong } from '../../bao-cao-nhan-cong/core/types';
 import {
   normalizeChiTietForDisplay,
-  sumTongCongQuyDoiPhieu,
+  sumChiTietNumericPart,
   sumTongCongQuyDoiTuChiTiet,
-  sumTongGioTangCaTichPhieu,
   sumTongGioTangCaTichTuChiTiet,
   chuyenTtLabelByThuTu,
 } from '../../bao-cao-nhan-cong/core/types';
-import { sumDisplayLoaiTotalsOnRows } from '../../bao-cao-nhan-cong/core/ct-sub';
 
 const EPS = 1e-9;
 
@@ -47,9 +45,9 @@ export function extractBcncTableGhiChuRows(bcnc: FarmBaoCaoNhanCong | null): [st
 
 /** Bốn chỉ số đọc từ báo cáo nhân công (theo plan). */
 export interface BcscLaborFromBcncSnapshot {
-  /** Tổng công quy đổi toàn phiếu — map nhãn "Tổng số công nhân làm việc" */
+  /** CN ngày + CN nửa (dòng IV, chỉ 5 chuyền sản xuất) — map nhãn "Tổng số công nhân làm việc" */
   tongCongQuyDoiPhieu: number;
-  /** Σ giờ CN ngày toàn phiếu (Σ sl×giờ, loại CN_NGAY) */
+  /** Tổng giờ QĐ dòng IV = sl_cong_ngay×8 + sl_cong_nua×4 (5 chuyền sản xuất) */
   tongGioCnNgay: number;
   /** Công QĐ dòng IV — tổng công quy đổi 5 chuyền sản xuất */
   congQdRowIV: number;
@@ -59,11 +57,14 @@ export interface BcscLaborFromBcncSnapshot {
 
 export function extractLaborSnapshotFromBcnc(bcnc: FarmBaoCaoNhanCong): BcscLaborFromBcncSnapshot {
   const { production } = normalizeChiTietForDisplay(bcnc.chi_tiet ?? []);
-  const tongCongQuyDoiPhieu = sumTongCongQuyDoiPhieu(bcnc);
-  const cnNgayPhieu = sumDisplayLoaiTotalsOnRows(bcnc.chi_tiet ?? [], 'CN_NGAY');
+  const prodTotals = sumChiTietNumericPart(production);
+  // Row 1: CN ngày + CN nửa (dòng IV) — đếm đầu người, không quy đổi
+  const tongCongQuyDoiPhieu = prodTotals.sl_cong_ngay + prodTotals.sl_cong_nua;
+  // Row 2: Tổng giờ QĐ dòng IV = sl_cong_ngay×8 + sl_cong_nua×4
+  const tongGioCnNgay = prodTotals.sl_cong_ngay * 8 + prodTotals.sl_cong_nua * 4;
   return {
     tongCongQuyDoiPhieu,
-    tongGioCnNgay: cnNgayPhieu.tongGio,
+    tongGioCnNgay,
     congQdRowIV: sumTongCongQuyDoiTuChiTiet(production),
     tongGioTcRowIV: sumTongGioTangCaTichTuChiTiet(production),
   };
@@ -74,7 +75,7 @@ export interface BcscKpiComputed {
   thungThanhPham: number | null;
   nsThungCongNgay: number | null;
   nsThungGioCong: number | null;
-  /** TODO: thay khi có định nghĩa chính xác người × giờ */
+  /** Tổng số thùng quy đổi / (Tổng giờ QĐ IV + Tổng giờ TC IV) — bằng nsThungGioCong */
   nsBinhQuanNguoiGio: number | null;
   tongLuong: null;
   chiPhiNhanCongPerKg: null;
@@ -99,14 +100,15 @@ export function computeBaoCaoSoCheKpis(
   }
 
   const snap = extractLaborSnapshotFromBcnc(bcnc);
-  const congQuyDoi = snap.tongCongQuyDoiPhieu;
-  const gioCnNgay = snap.tongGioCnNgay;
-  const tongGioLam = gioCnNgay + sumTongGioTangCaTichPhieu(bcnc);
+  // Mẫu số chung: Tổng giờ QĐ (dòng IV) + Tổng giờ TC (dòng IV)
+  const tongGioLam = snap.tongGioCnNgay + snap.tongGioTcRowIV;
 
-  const nsThungCongNgay = congQuyDoi > EPS ? thung / congQuyDoi : null;
+  // 11: NS thùng/công ngày = thung × 8 / tongGioLam  (1 công = 8 giờ)
+  const nsThungCongNgay = tongGioLam > EPS ? (thung * 8) / tongGioLam : null;
+  // 12: NS thùng/giờ công = thung / tongGioLam
   const nsThungGioCong = tongGioLam > EPS ? thung / tongGioLam : null;
-  const denomNguoiGio = congQuyDoi * 8;
-  const nsBinhQuanNguoiGio = denomNguoiGio > EPS ? thung / denomNguoiGio : null;
+  // 13: NS bình quân người /giờ = thung / tongGioLam  (cùng công thức với 12)
+  const nsBinhQuanNguoiGio = tongGioLam > EPS ? thung / tongGioLam : null;
 
   return {
     thungThanhPham: thung,

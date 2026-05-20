@@ -17,7 +17,7 @@ interface KpiPreset {
 export const BCSC_KPI_THUONG_PRESETS: readonly KpiPreset[] = [
   { ten_hang_muc: 'Năng suất sơ chế',    don_vi_tinh: 'thùng', muc_tieu: '3,5'  },
   { ten_hang_muc: 'Tỷ lệ nải chuỗi lỗi', don_vi_tinh: '%',     muc_tieu: '1'    },
-  { ten_hang_muc: 'Tỷ lệ thu hồi',       don_vi_tinh: '%',     muc_tieu: '820'  },
+  { ten_hang_muc: 'Tỷ lệ thu hồi',       don_vi_tinh: '%',     muc_tieu: '85'   },
 ] as const;
 
 export function defaultBcscKpiThuongRows(): KpiThuongFormRow[] {

@@ -33,6 +33,30 @@ function roundBoxes(packingKg: number, kgPerBox: number): number {
 }
 
 export function computeDuBaoSlDongThungKpiFromFarm(row: FarmDuBaoSlDongThung): DuBaoSlDongThungKpi {
+  /* Nếu DB đã có GENERATED columns → đọc trực tiếp để đồng nhất với DB.
+     Fallback sang compute khi cột chưa tồn tại (trước khi chạy migration). */
+  const hasGenerated =
+    row.can_nang_binh_quan_buong !== undefined &&
+    row.tong_khoi_luong_ke_hoach !== undefined &&
+    row.tong_so_thung_ke_hoach !== undefined &&
+    row.tong_khoi_luong_thuc_te !== undefined &&
+    row.tong_so_thung_thuc_te !== undefined;
+
+  if (hasGenerated) {
+    const canBQ = row.can_nang_binh_quan_buong;
+    const r6 = Math.min(1, Math.max(0, Number(row.ty_le_thu_hoi_ke_hoach) || 0));
+    const r12 = Math.min(1, Math.max(0, Number(row.ty_le_thu_hoi_thuc_te) || 0));
+    return {
+      can_nang_binh_quan_buong: canBQ,
+      tong_khoi_luong_ke_hoach: row.tong_khoi_luong_ke_hoach,
+      khoi_luong_dong_thung_ke_hoach: row.tong_khoi_luong_ke_hoach * r6,
+      tong_so_thung_ke_hoach: row.tong_so_thung_ke_hoach,
+      tong_khoi_luong_thuc_te: row.tong_khoi_luong_thuc_te,
+      khoi_luong_dong_thung_thuc_te: row.tong_khoi_luong_thuc_te * r12,
+      tong_so_thung_thuc_te: row.tong_so_thung_thuc_te,
+    };
+  }
+
   return computeDuBaoSlDongThungKpi({
     so_buong_can_mau: row.so_buong_can_mau,
     tong_can_nang_mau: row.tong_can_nang_mau,

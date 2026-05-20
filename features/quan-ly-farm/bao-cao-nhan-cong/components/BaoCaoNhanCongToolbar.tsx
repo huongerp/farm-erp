@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Building2, Calendar, Hash, Download } from 'lucide-react';
+import { Plus, Building2, Calendar, Hash, ToggleLeft, Download } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
@@ -74,6 +74,14 @@ const BaoCaoNhanCongToolbar: React.FC<Props> = ({
       }));
   }, [data]);
 
+  const trangThaiOptions = useMemo(
+    () => [
+      { value: 'mo', label: t('baoCaoNhanCong.trangThai.mo'), count: data.filter((d) => d.trang_thai === 'mo').length },
+      { value: 'khoa', label: t('baoCaoNhanCong.trangThai.khoa'), count: data.filter((d) => d.trang_thai === 'khoa').length },
+    ],
+    [data, t]
+  );
+
   const thangOptions = useMemo(() => {
     const set = new Set<string>();
     data.forEach((r) => {
@@ -97,7 +105,8 @@ const BaoCaoNhanCongToolbar: React.FC<Props> = ({
       (searchInput.trim() ? 1 : 0) +
       (f.id_chi_nhanh?.length ?? 0) +
       (f.nam?.length ?? 0) +
-      (f.thang?.length ?? 0)
+      (f.thang?.length ?? 0) +
+      (f.trang_thai?.length ?? 0)
     );
   }, [searchInput, filters]);
 
@@ -106,6 +115,7 @@ const BaoCaoNhanCongToolbar: React.FC<Props> = ({
     setFilter('id_chi_nhanh', []);
     setFilter('nam', []);
     setFilter('thang', []);
+    setFilter('trang_thai', []);
   };
 
   const filterGroups = useMemo(
@@ -127,6 +137,14 @@ const BaoCaoNhanCongToolbar: React.FC<Props> = ({
         onChange: (v: string[]) => setFilter('thang', v),
       },
       {
+        key: 'trang_thai',
+        label: t('baoCaoNhanCong.toolbar.filterTrangThai'),
+        icon: ToggleLeft,
+        options: trangThaiOptions,
+        value: filters.trang_thai ?? [],
+        onChange: (v: string[]) => setFilter('trang_thai', v),
+      },
+      {
         key: 'branch',
         label: t('baoCaoNhanCong.toolbar.filterBranch'),
         icon: Building2,
@@ -135,7 +153,7 @@ const BaoCaoNhanCongToolbar: React.FC<Props> = ({
         onChange: (v: string[]) => setFilter('id_chi_nhanh', v),
       },
     ],
-    [t, namOptions, thangOptions, branchOptions, filters.nam, filters.thang, filters.id_chi_nhanh, setFilter]
+    [t, namOptions, thangOptions, trangThaiOptions, branchOptions, filters.nam, filters.thang, filters.trang_thai, filters.id_chi_nhanh, setFilter]
   );
 
   const renderFilters = (
@@ -156,6 +174,15 @@ const BaoCaoNhanCongToolbar: React.FC<Props> = ({
         placeholder={t('baoCaoNhanCong.toolbar.filterThang')}
         icon={Hash}
         className="w-full sm:w-[140px]"
+        size="md"
+      />
+      <FilterChipMultiSelect
+        options={trangThaiOptions}
+        value={filters.trang_thai ?? []}
+        onChange={(v) => setFilter('trang_thai', v)}
+        placeholder={t('baoCaoNhanCong.toolbar.filterTrangThai')}
+        icon={ToggleLeft}
+        className="w-full sm:w-[150px]"
         size="md"
       />
       <FilterChipMultiSelect

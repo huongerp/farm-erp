@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Tag, Building2, User } from 'lucide-react';
+import { Tag, Building2, User, Layers, FolderTree, Filter } from 'lucide-react';
 import type { DonDatHangStatsByTrangThai } from './useDonDatHangStats';
 import type { StatsChartItem } from './useDonDatHangStats';
 
@@ -8,6 +8,9 @@ interface Props {
   byTrangThai: DonDatHangStatsByTrangThai[];
   bySupplier: StatsChartItem[];
   byBuyer: StatsChartItem[];
+  byDanhMucCap1?: StatsChartItem[];
+  byDanhMucCap2?: StatsChartItem[];
+  byPhanLoai?: StatsChartItem[];
 }
 
 function TableBlock({
@@ -64,57 +67,82 @@ function TableBlock({
   );
 }
 
-const StatsTables: React.FC<Props> = ({ byTrangThai, bySupplier, byBuyer }) => {
+const StatsTables: React.FC<Props> = ({ byTrangThai, bySupplier, byBuyer, byDanhMucCap1, byDanhMucCap2, byPhanLoai }) => {
   const { t } = useTranslation();
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      <div className="bg-card rounded-xl border border-border overflow-hidden">
-        <div className="px-4 py-2.5 border-b border-border bg-muted/20">
-          <div className="flex items-center gap-2">
-            <Tag size={14} className="text-primary" />
-            <h3 className="text-xs font-semibold text-foreground">{t('donDatHang.stats.byStatus')}</h3>
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-card rounded-xl border border-border overflow-hidden">
+          <div className="px-4 py-2.5 border-b border-border bg-muted/20">
+            <div className="flex items-center gap-2">
+              <Tag size={14} className="text-primary" />
+              <h3 className="text-xs font-semibold text-foreground">{t('donDatHang.stats.byStatus')}</h3>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="bg-muted/30 border-b border-border">
+                  <th className="text-left px-4 py-2 font-medium text-muted-foreground">{t('donDatHang.stats.nameCol')}</th>
+                  <th className="text-right px-3 py-2 font-medium text-muted-foreground">{t('donDatHang.stats.countCol')}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/50">
+                {byTrangThai.length === 0 ? (
+                  <tr>
+                    <td colSpan={2} className="px-4 py-6 text-center text-muted-foreground">
+                      {t('donDatHang.stats.noData')}
+                    </td>
+                  </tr>
+                ) : (
+                  byTrangThai.map((row) => (
+                    <tr key={row.id} className="hover:bg-muted/20">
+                      <td className="px-4 py-2 text-foreground">{t(`donDatHang.${row.ten}`)}</td>
+                      <td className="px-3 py-2 text-right font-semibold tabular-nums">{row.count}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead>
-              <tr className="bg-muted/30 border-b border-border">
-                <th className="text-left px-4 py-2 font-medium text-muted-foreground">{t('donDatHang.stats.nameCol')}</th>
-                <th className="text-right px-3 py-2 font-medium text-muted-foreground">{t('donDatHang.stats.countCol')}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border/50">
-              {byTrangThai.length === 0 ? (
-                <tr>
-                  <td colSpan={2} className="px-4 py-6 text-center text-muted-foreground">
-                    {t('donDatHang.stats.noData')}
-                  </td>
-                </tr>
-              ) : (
-                byTrangThai.map((row) => (
-                  <tr key={row.id} className="hover:bg-muted/20">
-                    <td className="px-4 py-2 text-foreground">{t(`donDatHang.${row.ten}`)}</td>
-                    <td className="px-3 py-2 text-right font-semibold tabular-nums">{row.count}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        <TableBlock
+          titleKey="donDatHang.stats.bySupplier"
+          icon={Building2}
+          data={bySupplier}
+          emptyMessageKey="donDatHang.stats.noData"
+        />
+        <TableBlock
+          titleKey="donDatHang.stats.byBuyer"
+          icon={User}
+          data={byBuyer}
+          emptyMessageKey="donDatHang.stats.noData"
+        />
       </div>
-      <TableBlock
-        titleKey="donDatHang.stats.bySupplier"
-        icon={Building2}
-        data={bySupplier}
-        emptyMessageKey="donDatHang.stats.noData"
-      />
-      <TableBlock
-        titleKey="donDatHang.stats.byBuyer"
-        icon={User}
-        data={byBuyer}
-        emptyMessageKey="donDatHang.stats.noData"
-      />
+
+      {(byDanhMucCap1 || byDanhMucCap2 || byPhanLoai) && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <TableBlock
+            titleKey="donDatHang.stats.byDanhMucCap1"
+            icon={FolderTree}
+            data={byDanhMucCap1 ?? []}
+            emptyMessageKey="donDatHang.stats.noData"
+          />
+          <TableBlock
+            titleKey="donDatHang.stats.byDanhMucCap2"
+            icon={Layers}
+            data={byDanhMucCap2 ?? []}
+            emptyMessageKey="donDatHang.stats.noData"
+          />
+          <TableBlock
+            titleKey="donDatHang.stats.byPhanLoai"
+            icon={Filter}
+            data={byPhanLoai ?? []}
+            emptyMessageKey="donDatHang.stats.noData"
+          />
+        </div>
+      )}
     </div>
   );
 };

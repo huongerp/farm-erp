@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Tag, Building2, User, TrendingUp } from 'lucide-react';
+import { Tag, Building2, User, TrendingUp, FolderTree, Layers, Filter } from 'lucide-react';
 import {
   PieChart,
   Pie,
@@ -24,9 +24,12 @@ interface Props {
   bySupplier: StatsChartItem[];
   byBuyer: StatsChartItem[];
   byMonth: StatsChartItem[];
+  byDanhMucCap1?: StatsChartItem[];
+  byDanhMucCap2?: StatsChartItem[];
+  byPhanLoai?: StatsChartItem[];
 }
 
-const StatsCharts: React.FC<Props> = ({ byTrangThai, bySupplier, byBuyer, byMonth }) => {
+const StatsCharts: React.FC<Props> = ({ byTrangThai, bySupplier, byBuyer, byMonth, byDanhMucCap1, byDanhMucCap2, byPhanLoai }) => {
   const { t } = useTranslation();
   const [visible, setVisible] = useState(false);
   useEffect(() => {
@@ -43,6 +46,9 @@ const StatsCharts: React.FC<Props> = ({ byTrangThai, bySupplier, byBuyer, byMont
   const hasSupplier = bySupplier.some((d) => d.value > 0);
   const hasBuyer = byBuyer.some((d) => d.value > 0);
   const hasByMonth = byMonth.some((d) => d.value > 0);
+  const hasCap1 = byDanhMucCap1?.some((d) => d.value > 0);
+  const hasCap2 = byDanhMucCap2?.some((d) => d.value > 0);
+  const hasPhanLoai = byPhanLoai?.some((d) => d.value > 0);
 
   const renderBarChart = (
     data: StatsChartItem[],
@@ -134,6 +140,25 @@ const StatsCharts: React.FC<Props> = ({ byTrangThai, bySupplier, byBuyer, byMont
         {hasSupplier && renderBarChart(bySupplier.slice(0, 8), 'donDatHang.stats.bySupplier', <Building2 size={14} className="text-primary" />)}
         {hasBuyer && renderBarChart(byBuyer.slice(0, 8), 'donDatHang.stats.byBuyer', <User size={14} className="text-primary" />)}
       </div>
+      {(hasCap1 || hasCap2 || hasPhanLoai) && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {hasCap1 && renderBarChart(
+            (byDanhMucCap1 ?? []).slice(0, 8),
+            'donDatHang.stats.byDanhMucCap1',
+            <FolderTree size={14} className="text-primary" />
+          )}
+          {hasCap2 && renderBarChart(
+            (byDanhMucCap2 ?? []).slice(0, 8),
+            'donDatHang.stats.byDanhMucCap2',
+            <Layers size={14} className="text-primary" />
+          )}
+          {hasPhanLoai && renderBarChart(
+            (byPhanLoai ?? []).slice(0, 8),
+            'donDatHang.stats.byPhanLoai',
+            <Filter size={14} className="text-primary" />
+          )}
+        </div>
+      )}
     </div>
   );
 };

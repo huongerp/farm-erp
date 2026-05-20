@@ -17,7 +17,9 @@ import {
   deleteDonDatHangSupabase,
   deleteDonDatHangManySupabase,
   getNextSoPoDonDatHangSupabase,
+  fetchChiTietForCategoryStatsSupabase,
 } from './don-dat-hang-supabase.service';
+export type { ChiTietCategoryStatsItem } from './don-dat-hang-supabase.service';
 import { buildDonDatHangListServerQuery, type DonDatHangListServerQuery } from './don-dat-hang-list-query';
 
 export type { DonDatHangListServerQuery };
@@ -57,3 +59,4 @@ export const createDonDatHang = (data: DonDatHangFormValues) => createDonDatHang
 export const updateDonDatHang = updateDonDatHangSupabase;
 export const deleteDonDatHang = deleteDonDatHangSupabase;
 export const deleteDonDatHangMany = deleteDonDatHangManySupabase;
+export const fetchChiTietForCategoryStats = fetchChiTietForCategoryStatsSupabase;

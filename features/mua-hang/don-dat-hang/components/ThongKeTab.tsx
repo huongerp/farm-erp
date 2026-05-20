@@ -4,11 +4,11 @@ import { useQuery } from '@tanstack/react-query';
 import { User, Calendar, Building2, Tag } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDoiTacRefQuery, useEmployeesRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
-import { getAllDonDatHangSupabase, fetchDonDatHangThongKeFromRpc } from '../services/don-dat-hang-supabase.service';
+import { getAllDonDatHangSupabase, fetchDonDatHangThongKeFromRpc, fetchChiTietForCategoryStatsSupabase } from '../services/don-dat-hang-supabase.service';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import EmptyState from '../../../../components/shared/EmptyState';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
-import { computeDonDatHangStats } from './stats/useDonDatHangStats';
+import { computeDonDatHangStats, computeDonDatHangCategoryStats } from './stats/useDonDatHangStats';
 import { TRANG_THAI_DON_DAT_HANG, TRANG_THAI_KEY } from '../core/constants';
 import StatsToolbar from './stats/StatsToolbar';
 import StatsCards from './stats/StatsCards';
@@ -51,6 +51,24 @@ const ThongKeTab: React.FC = () => {
     },
     staleTime: 60_000,
   });
+
+  const { data: categoryRows } = useQuery({
+    queryKey: ['donDatHang', 'categoryStats', filterStatus, filterSupplier, filterBuyer, dateFrom, dateTo],
+    queryFn: () =>
+      fetchChiTietForCategoryStatsSupabase({
+        dateFrom: dateFrom || undefined,
+        dateTo: dateTo || undefined,
+        filterStatus: filterStatus.length ? filterStatus : undefined,
+        filterSupplier: filterSupplier.length ? filterSupplier : undefined,
+        filterBuyer: filterBuyer.length ? filterBuyer : undefined,
+      }),
+    staleTime: 60_000,
+  });
+
+  const categoryStats = useMemo(
+    () => (categoryRows ? computeDonDatHangCategoryStats(categoryRows) : null),
+    [categoryRows]
+  );
 
   const stats = useMemo(() => {
     if (!thongKe) return null;
@@ -294,12 +312,18 @@ const ThongKeTab: React.FC = () => {
                   bySupplier={stats!.bySupplier}
                   byBuyer={stats!.byBuyer}
                   byMonth={stats!.byMonth}
+                  byDanhMucCap1={categoryStats?.byDanhMucCap1}
+                  byDanhMucCap2={categoryStats?.byDanhMucCap2}
+                  byPhanLoai={categoryStats?.byPhanLoai}
                 />
               </Suspense>
               <StatsTables
                 byTrangThai={stats!.byTrangThai}
                 bySupplier={stats!.bySupplier}
                 byBuyer={stats!.byBuyer}
+                byDanhMucCap1={categoryStats?.byDanhMucCap1}
+                byDanhMucCap2={categoryStats?.byDanhMucCap2}
+                byPhanLoai={categoryStats?.byPhanLoai}
               />
             </>
           )}

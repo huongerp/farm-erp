@@ -762,6 +762,55 @@ export async function fetchDonDatHangThongKeFromRpc(params: {
   };
 }
 
+/** Kết quả tổng hợp theo danh mục / phân loại cho tab Thống kê. */
+export interface ChiTietCategoryStatsItem {
+  id_hang_hoa: string;
+  phan_loai: string | null;
+  ten_danh_muc_cap1?: string;
+  ten_danh_muc_cap2?: string;
+}
+
+/** Lấy dữ liệu tối thiểu từ flat view để tính thống kê theo danh mục cấp 1/2 và phân loại. */
+export async function fetchChiTietForCategoryStatsSupabase(params: {
+  dateFrom?: string;
+  dateTo?: string;
+  filterStatus?: string[];
+  filterSupplier?: string[];
+  filterBuyer?: string[];
+}): Promise<ChiTietCategoryStatsItem[]> {
+  const rows = await fetchAllRows<{ id_hang_hoa: number; phan_loai: string | null }>((from, to) => {
+    let q = supabase
+      .from(VIEW_DON_DAT_HANG_CHI_TIET_FLAT)
+      .select('id_hang_hoa,phan_loai')
+      .range(from, to);
+    if (params.filterStatus?.length) q = q.in('trang_thai', params.filterStatus);
+    if (params.filterSupplier?.length) {
+      const nums = params.filterSupplier.map(Number).filter((n) => !Number.isNaN(n));
+      if (nums.length) q = q.in('id_nha_cung_cap', nums);
+    }
+    if (params.filterBuyer?.length) {
+      const nums = params.filterBuyer.map(Number).filter((n) => !Number.isNaN(n));
+      if (nums.length) q = q.in('id_nguoi_dat', nums);
+    }
+    if (params.dateFrom) q = q.gte('ngay_dat', params.dateFrom);
+    if (params.dateTo) q = q.lte('ngay_dat', params.dateTo);
+    return q;
+  });
+
+  const hangHoaList = await getHangHoaRef();
+  const hangHoaMap: Record<string, { ten_danh_muc_cap1?: string; ten_danh_muc_cap2?: string }> = {};
+  hangHoaList.forEach((h) => {
+    hangHoaMap[h.id] = { ten_danh_muc_cap1: h.ten_danh_muc_cap1, ten_danh_muc_cap2: h.ten_danh_muc_cap2 };
+  });
+
+  return rows.map((r) => ({
+    id_hang_hoa: String(r.id_hang_hoa),
+    phan_loai: r.phan_loai ?? null,
+    ten_danh_muc_cap1: hangHoaMap[String(r.id_hang_hoa)]?.ten_danh_muc_cap1,
+    ten_danh_muc_cap2: hangHoaMap[String(r.id_hang_hoa)]?.ten_danh_muc_cap2,
+  }));
+}
+
 /** Chỉ id + số PO + ngày đặt — dropdown liên kết phiếu nhập ↔ đơn đặt hàng (giảm egress). */
 export type DonDatHangSoPoOption = { id: string; so_po: string; ngay: string };
 

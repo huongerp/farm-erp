@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { DateRangeValue } from '../../../../components/ui/DateRangePicker';
+import { useEmployeeBranchModuleScope } from '../../../he-thong/nhan-vien/hooks/use-employee-branch-module-scope';
 import { useBaoCaoNhanCongList } from '../../bao-cao-nhan-cong/hooks/use-bao-cao-nhan-cong';
 import { useBaoCaoSoCheList } from '../../bao-cao-so-che/hooks/use-bao-cao-so-che';
 import { useDuBaoSlDongThungList } from '../../du-bao-sl-dong-thung/hooks/use-du-bao-sl-dong-thung';
@@ -24,6 +25,7 @@ export function useThongKeSanXuat() {
   const bcncQuery = useBaoCaoNhanCongList();
   const bcscQuery = useBaoCaoSoCheList();
   const dbdtQuery = useDuBaoSlDongThungList();
+  const viewScope = useEmployeeBranchModuleScope('quan-ly-farm/thong-ke-san-xuat');
 
   const isLoading = bcncQuery.isLoading || bcscQuery.isLoading || dbdtQuery.isLoading;
   const isError = bcncQuery.isError || bcscQuery.isError || dbdtQuery.isError;
@@ -53,7 +55,13 @@ export function useThongKeSanXuat() {
     [bcncQuery.data, bcscQuery.data, dbdtQuery.data]
   );
 
-  const chiNhanhOptions = useMemo(() => getChiNhanhOptions(allRows), [allRows]);
+  // ── Branch-scope filter ───────────────────────────────────────────────────
+  const scopedRows = useMemo(() => {
+    if (viewScope.isLoading || viewScope.viewAll) return allRows;
+    return allRows.filter((r) => viewScope.allowedBranchIds.includes(r.id_chi_nhanh));
+  }, [allRows, viewScope]);
+
+  const chiNhanhOptions = useMemo(() => getChiNhanhOptions(scopedRows), [scopedRows]);
 
   // ── Computed filters object ───────────────────────────────────────────────
   const filters = useMemo(
@@ -71,7 +79,7 @@ export function useThongKeSanXuat() {
   );
 
   // ── Filtered rows + summary ───────────────────────────────────────────────
-  const filteredRows = useMemo(() => filterThongKeSanXuatRows(allRows, filters), [allRows, filters]);
+  const filteredRows = useMemo(() => filterThongKeSanXuatRows(scopedRows, filters), [scopedRows, filters]);
   const summary = useMemo(() => computeThongKeSanXuatSummary(filteredRows), [filteredRows]);
   const activeFilterCount = useMemo(() => countActiveFilters(filters), [filters]);
 
@@ -87,7 +95,7 @@ export function useThongKeSanXuat() {
   return {
     isLoading,
     isError,
-    allRows,
+    allRows: scopedRows,
     filteredRows,
     summary,
     activeFilterCount,
