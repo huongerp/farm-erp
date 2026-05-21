@@ -10,9 +10,11 @@ function phamCapRowHasNumbers(r: {
   so_tham_chieu: unknown;
   so_thung: unknown;
   so_thung_quy_doi: unknown;
+  ghi_chu?: unknown;
 }): boolean {
   const n = (v: unknown) => Number(v) || 0;
-  return n(r.so_tham_chieu) !== 0 || n(r.so_thung) !== 0 || n(r.so_thung_quy_doi) !== 0;
+  const note = typeof r.ghi_chu === 'string' ? r.ghi_chu.trim() : '';
+  return n(r.so_tham_chieu) !== 0 || n(r.so_thung) !== 0 || n(r.so_thung_quy_doi) !== 0 || note !== '';
 }
 
 const phamCapRowFormSchema = z.object({
@@ -20,6 +22,7 @@ const phamCapRowFormSchema = z.object({
   so_tham_chieu: z.coerce.number().min(0).default(0),
   so_thung: z.coerce.number().min(0).default(0),
   so_thung_quy_doi: z.coerce.number().min(0).default(0),
+  ghi_chu: z.string().max(500).default(''),
 });
 
 const phamCapArraySchema = z
@@ -67,6 +70,7 @@ export const baoCaoSoCheFormSchema = z.object({
   tong_buong_so_che: z.coerce.number().min(0).default(0),
   sl_buong_ton_cuoi_ngay: z.coerce.number().min(0).default(0),
   danh_gia_loi_qc_pct: z.coerce.number().min(0).max(100).default(0),
+  tong_luong: z.coerce.number().min(0).default(0),
   so_lieu_row_meta: soLieuRowMetaFormSchema.default({
     sl_buong_ton_dau_ngay: { ghi_chu: '', don_vi_tinh_phu: 'Buồng' },
     tong_buong_thu_hoach: { ghi_chu: '', don_vi_tinh_phu: 'Buồng' },

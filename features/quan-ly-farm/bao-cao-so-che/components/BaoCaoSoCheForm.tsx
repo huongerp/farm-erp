@@ -108,10 +108,13 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
   const ngay = watch('ngay');
   const phamCap = watch('pham_cap');
   const danhGiaLoiQcPct = watch('danh_gia_loi_qc_pct');
-  const tongThungQD = useMemo(
-    () => sumPhamCapDisplayTotals(phamCap ?? []).so_thung_quy_doi,
+  const tongLuong = watch('tong_luong');
+  const phamCapTotals = useMemo(
+    () => sumPhamCapDisplayTotals(phamCap ?? []),
     [phamCap]
   );
+  const tongThungQD = phamCapTotals.so_thung_quy_doi;
+  const tongKg = phamCapTotals.tong_kg;
   const soLieuMeta = watch('so_lieu_row_meta');
   const donViTinhKpi = useMemo(
     () => deriveDonViTinhSlipFromSoLieuMeta(soLieuMeta),
@@ -124,7 +127,10 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
     () => findBaoCaoNhanCongByBranchAndDate(bcncList, ngay ?? '', idChiNhanh ?? ''),
     [bcncList, ngay, idChiNhanh]
   );
-  const kpis = useMemo(() => computeBaoCaoSoCheKpis(tongThungQD, bcnc), [tongThungQD, bcnc]);
+  const kpis = useMemo(
+    () => computeBaoCaoSoCheKpis(tongThungQD, bcnc, tongKg, Number(tongLuong) || 0),
+    [tongThungQD, bcnc, tongKg, tongLuong]
+  );
 
   const dbsdtRecord = useMemo(
     () =>
@@ -249,6 +255,8 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
             ngay={ngay ?? ''}
             idChiNhanh={idChiNhanh ?? ''}
             tongThungQD={tongThungQD}
+            tongKg={tongKg}
+            tongLuong={Number(tongLuong) || 0}
             bcncList={bcncList}
             donViTinh={donViTinhKpi}
           />
@@ -272,9 +280,12 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
             ngay={ngay ?? ''}
             idChiNhanh={idChiNhanh ?? ''}
             tongThungQD={tongThungQD}
+            tongKg={tongKg}
+            tongLuong={Number(tongLuong) || 0}
             bcncList={bcncList}
             donViTinh={donViTinhKpi}
             sttOffset={BCSC_KPI_STT_OFFSET}
+            control={control}
           />
         </FormSection>
 

@@ -85,10 +85,12 @@ const BaoCaoSoCheDetail: React.FC<Props> = ({
 
   const soLieuMetaForm = useMemo(() => mergeSoLieuMetaToForm(data.so_lieu_row_meta), [data.so_lieu_row_meta]);
   const donViTinhKpi = useMemo(() => deriveDonViTinhSlipFromSoLieuMeta(soLieuMetaForm), [soLieuMetaForm]);
-  const tongThungQD = useMemo(
-    () => sumPhamCapDisplayTotals(data.pham_cap ?? []).so_thung_quy_doi,
+  const phamCapTotals = useMemo(
+    () => sumPhamCapDisplayTotals(data.pham_cap ?? []),
     [data.pham_cap]
   );
+  const tongThungQD = phamCapTotals.so_thung_quy_doi;
+  const tongKg = phamCapTotals.tong_kg;
 
   const idChiNhanhStr = data.id_chi_nhanh != null ? String(data.id_chi_nhanh) : '';
 
@@ -96,7 +98,10 @@ const BaoCaoSoCheDetail: React.FC<Props> = ({
     () => findBaoCaoNhanCongByBranchAndDate(bcncList, data.ngay, idChiNhanhStr),
     [bcncList, data.ngay, idChiNhanhStr]
   );
-  const kpis = useMemo(() => computeBaoCaoSoCheKpis(tongThungQD, bcnc), [tongThungQD, bcnc]);
+  const kpis = useMemo(
+    () => computeBaoCaoSoCheKpis(tongThungQD, bcnc, tongKg, data.tong_luong),
+    [tongThungQD, bcnc, tongKg, data.tong_luong]
+  );
 
   const dbsdtRecord = useMemo(
     () =>
@@ -311,6 +316,8 @@ const BaoCaoSoCheDetail: React.FC<Props> = ({
             ngay={data.ngay}
             idChiNhanh={idChiNhanhStr}
             tongThungQD={tongThungQD}
+            tongKg={tongKg}
+            tongLuong={data.tong_luong}
             bcncList={bcncList}
             donViTinh={donViTinhKpi}
           />
@@ -391,6 +398,8 @@ const BaoCaoSoCheDetail: React.FC<Props> = ({
             ngay={data.ngay}
             idChiNhanh={idChiNhanhStr}
             tongThungQD={tongThungQD}
+            tongKg={tongKg}
+            tongLuong={data.tong_luong}
             bcncList={bcncList}
             donViTinh={donViTinhKpi}
             sttOffset={BCSC_KPI_STT_OFFSET}

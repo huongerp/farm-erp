@@ -1,4 +1,4 @@
-/** Bảng con `fp_farm_bao_cao_so_che_pham_cap` — chỉ lưu tên + 3 số nhập; tổng kg & % tính trên app. */
+/** Bảng con `fp_farm_bao_cao_so_che_pham_cap` — lưu tên + 3 số nhập + ghi chú; tổng kg & % tính trên app. */
 
 /** Giới hạn số dòng / phiếu (tránh payload quá lớn). */
 export const PHAM_CAP_ROWS_MAX = 50;
@@ -20,6 +20,7 @@ export interface PhamCapRowFormValues {
   so_tham_chieu: number;
   so_thung: number;
   so_thung_quy_doi: number;
+  ghi_chu: string;
 }
 
 export function emptyPhamCapRow(): PhamCapRowFormValues {
@@ -28,6 +29,7 @@ export function emptyPhamCapRow(): PhamCapRowFormValues {
     so_tham_chieu: 0,
     so_thung: 0,
     so_thung_quy_doi: 0,
+    ghi_chu: '',
   };
 }
 
@@ -38,6 +40,7 @@ export function defaultPhamCapRows(): PhamCapRowFormValues[] {
     so_tham_chieu: 0,
     so_thung: 0,
     so_thung_quy_doi: 0,
+    ghi_chu: '',
   }));
 }
 
@@ -59,6 +62,7 @@ export function defaultPhamCapModelRows(): FarmBaoCaoSoChePhamCapRow[] {
     so_tham_chieu: 0,
     so_thung: 0,
     so_thung_quy_doi: 0,
+    ghi_chu: '',
     thu_tu: idx + 1,
   }));
 }
@@ -74,6 +78,7 @@ export function normalizePhamCapFromDb(
     so_tham_chieu: Number(r.so_tham_chieu) || 0,
     so_thung: Number(r.so_thung) || 0,
     so_thung_quy_doi: Number(r.so_thung_quy_doi) || 0,
+    ghi_chu: typeof r.ghi_chu === 'string' ? r.ghi_chu : '',
   }));
 }
 

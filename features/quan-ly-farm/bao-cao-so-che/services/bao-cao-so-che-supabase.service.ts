@@ -24,12 +24,12 @@ const TABLE_CT = 'fp_farm_bao_cao_so_che_ct';
 const TABLE_PCAP = 'fp_farm_bao_cao_so_che_pham_cap';
 const TABLE_KPI = 'fp_farm_bao_cao_so_che_kpi';
 
-const ROW_CHA = 'id,ngay,id_chi_nhanh,ten_chi_nhanh,ghi_chu,id_nguoi_tao,trang_thai,tg_tao,tg_cap_nhat';
+const ROW_CHA = 'id,ngay,id_chi_nhanh,ten_chi_nhanh,tong_luong,ghi_chu,id_nguoi_tao,trang_thai,tg_tao,tg_cap_nhat';
 
 const ROW_CT = 'id,id_bao_cao,ma_chi_tieu,gia_tri,don_vi_tinh,ghi_chu,thu_tu';
 
 const ROW_PCAP =
-  'id,id_bao_cao,ten_pham_cap,so_tham_chieu,so_thung,so_thung_quy_doi,thu_tu';
+  'id,id_bao_cao,ten_pham_cap,so_tham_chieu,so_thung,so_thung_quy_doi,ghi_chu,thu_tu';
 
 const ROW_KPI =
   'id,id_bao_cao,thu_tu,ten_hang_muc,don_vi_tinh,muc_tieu,thuc_te,phan_tram,danh_gia,tien_thuong,ghi_chu';
@@ -91,6 +91,7 @@ interface DbRowCha {
   ngay: string;
   id_chi_nhanh: number | null;
   ten_chi_nhanh: string | null;
+  tong_luong: string | number | null;
   ghi_chu: string | null;
   id_nguoi_tao: number | null;
   trang_thai: string | null;
@@ -129,6 +130,7 @@ interface DbRowPcap {
   so_tham_chieu: string | number | null;
   so_thung: string | number | null;
   so_thung_quy_doi: string | number | null;
+  ghi_chu: string | null;
   thu_tu: number | null;
 }
 
@@ -147,6 +149,7 @@ function pcapDbRowsToModel(rows: DbRowPcap[]): FarmBaoCaoSoChePhamCapRow[] {
         }),
         so_thung,
         so_thung_quy_doi: num(r.so_thung_quy_doi),
+        ghi_chu: r.ghi_chu ?? '',
         thu_tu: Number(r.thu_tu) || 0,
       };
     });
@@ -244,6 +247,7 @@ function chaRowToModel(
     ngay: typeof row.ngay === 'string' ? row.ngay.slice(0, 10) : String(row.ngay),
     id_chi_nhanh: row.id_chi_nhanh != null ? String(row.id_chi_nhanh) : null,
     ten_chi_nhanh: row.ten_chi_nhanh ?? null,
+    tong_luong: num(row.tong_luong),
     ...m,
     pham_cap: pcapRows.length > 0 ? pcapDbRowsToModel(pcapRows) : defaultPhamCapModelRows(),
     kpi_thuong: kpiRows.sort((a, b) => a.thu_tu - b.thu_tu),
@@ -306,6 +310,7 @@ function chaPayloadCreate(values: BaoCaoSoCheFormValues, idNguoiTao: string | nu
     ngay: values.ngay,
     id_chi_nhanh: parseIdToInt8(values.id_chi_nhanh),
     ten_chi_nhanh: values.ten_chi_nhanh?.trim() || null,
+    tong_luong: Number(values.tong_luong ?? 0),
     ghi_chu: values.ghi_chu?.trim() || null,
     id_nguoi_tao: parseIdToInt8(idNguoiTao),
     trang_thai: TRANG_THAI_BAO_CAO_SO_CHE.MO,
@@ -318,6 +323,7 @@ function chaPayloadUpdate(values: BaoCaoSoCheFormValues) {
     ngay: values.ngay,
     id_chi_nhanh: parseIdToInt8(values.id_chi_nhanh),
     ten_chi_nhanh: values.ten_chi_nhanh?.trim() || null,
+    tong_luong: Number(values.tong_luong ?? 0),
     ghi_chu: values.ghi_chu?.trim() || null,
     tg_cap_nhat: new Date().toISOString(),
   };
@@ -367,6 +373,7 @@ function pcapRowsFromForm(values: BaoCaoSoCheFormValues, idBaoCao: number) {
       so_tham_chieu: r.so_tham_chieu ?? 0,
       so_thung: r.so_thung ?? 0,
       so_thung_quy_doi: r.so_thung_quy_doi ?? 0,
+      ghi_chu: r.ghi_chu?.trim() || null,
       thu_tu: idx + 1,
     }));
 }

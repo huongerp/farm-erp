@@ -128,8 +128,9 @@ function buildBaoCaoSoCheBodyHTML(data: FarmBaoCaoSoChe, bcncList: FarmBaoCaoNha
   const labor = bcnc ? extractLaborSnapshotFromBcnc(bcnc) : null;
   const [g1, g2, g3, g4] = extractBcncTableGhiChuRows(bcnc);
   const phamCapEnriched = enrichPhamCapRowsWithDerived(data.pham_cap ?? []);
-  const tongThungQD = sumPhamCapDisplayTotals(data.pham_cap ?? []).so_thung_quy_doi;
-  const kpis = computeBaoCaoSoCheKpis(tongThungQD, bcnc);
+  const phamCapTotals = sumPhamCapDisplayTotals(data.pham_cap ?? []);
+  const tongThungQD = phamCapTotals.so_thung_quy_doi;
+  const kpis = computeBaoCaoSoCheKpis(tongThungQD, bcnc, phamCapTotals.tong_kg, data.tong_luong);
   const kpiThuong = [...(data.kpi_thuong ?? [])].sort((a, b) => a.thu_tu - b.thu_tu);
   const tongThuong = sumTienThuongKpiThuong(kpiThuong);
 
@@ -148,7 +149,7 @@ function buildBaoCaoSoCheBodyHTML(data: FarmBaoCaoSoChe, bcncList: FarmBaoCaoNha
 
   // ---- II. Số liệu buồng ----
   const soLieuRows = SO_LIEU_BUONG_ROW_DEFS.map((def, idx) => {
-    const val = (data as Record<string, unknown>)[def.key] as number;
+    const val = (data as unknown as Record<string, unknown>)[def.key] as number;
     const meta = data.so_lieu_row_meta?.[def.key];
     const dvt = meta?.don_vi_tinh_phu?.trim() || (def.key === 'danh_gia_loi_qc_pct' ? '%' : slipU);
     return {
@@ -176,7 +177,7 @@ function buildBaoCaoSoCheBodyHTML(data: FarmBaoCaoSoChe, bcncList: FarmBaoCaoNha
   // ---- IV. Phẩm cấp ----
   const phamCapBody =
     phamCapEnriched.length === 0
-      ? `<tr><td colspan="7" style="${td};text-align:center;color:#888">${t('baoCaoSoChe.phamCap.detailEmpty')}</td></tr>`
+      ? `<tr><td colspan="8" style="${td};text-align:center;color:#888">${t('baoCaoSoChe.phamCap.detailEmpty')}</td></tr>`
       : phamCapEnriched
           .map(
             (r, i) =>
@@ -188,6 +189,7 @@ function buildBaoCaoSoCheBodyHTML(data: FarmBaoCaoSoChe, bcncList: FarmBaoCaoNha
                 <td style="${tdR};font-weight:600">${fmtNum(r.tong_kg)}</td>
                 <td style="${tdR}">${r.ty_le_pct > 0 ? `${fmtNum(r.ty_le_pct)}%` : EMPTY}</td>
                 <td style="${tdR}">${fmtNum(r.so_thung_quy_doi)}</td>
+                <td style="${td}">${safe(r.ghi_chu)}</td>
               </tr>`
           )
           .join('') +
@@ -198,6 +200,7 @@ function buildBaoCaoSoCheBodyHTML(data: FarmBaoCaoSoChe, bcncList: FarmBaoCaoNha
           <td style="${tdTotR}">${fmtNum(phamCapEnriched.reduce((s, r) => s + r.tong_kg, 0))}</td>
           <td style="${tdTotR}">100%</td>
           <td style="${tdTotR}">${fmtNum(phamCapEnriched.reduce((s, r) => s + (r.so_thung_quy_doi ?? 0), 0))}</td>
+          <td style="${tdTotR}"></td>
         </tr>`;
 
   const phamCapSection = `
@@ -213,6 +216,7 @@ function buildBaoCaoSoCheBodyHTML(data: FarmBaoCaoSoChe, bcncList: FarmBaoCaoNha
         <th style="${th};text-align:right">${t('baoCaoSoChe.phamCap.colTongKg')}</th>
         <th style="${th};text-align:right">${t('baoCaoSoChe.phamCap.colTyLe')}</th>
         <th style="${th};text-align:right">${t('baoCaoSoChe.phamCap.colSoThungQD')}</th>
+        <th style="${th}">${t('baoCaoSoChe.phamCap.colGhiChu')}</th>
       </tr>
     </thead>
     <tbody>${phamCapBody}</tbody>
@@ -401,8 +405,9 @@ export async function exportBaoCaoSoCheToXLSX(
   const labor = bcnc ? extractLaborSnapshotFromBcnc(bcnc) : null;
   const [g1, g2, g3, g4] = extractBcncTableGhiChuRows(bcnc);
   const phamCapEnriched = enrichPhamCapRowsWithDerived(data.pham_cap ?? []);
-  const tongThungQD = sumPhamCapDisplayTotals(data.pham_cap ?? []).so_thung_quy_doi;
-  const kpis = computeBaoCaoSoCheKpis(tongThungQD, bcnc);
+  const phamCapTotals = sumPhamCapDisplayTotals(data.pham_cap ?? []);
+  const tongThungQD = phamCapTotals.so_thung_quy_doi;
+  const kpis = computeBaoCaoSoCheKpis(tongThungQD, bcnc, phamCapTotals.tong_kg, data.tong_luong);
   const kpiThuong = [...(data.kpi_thuong ?? [])].sort((a, b) => a.thu_tu - b.thu_tu);
   const tongThuong = sumTienThuongKpiThuong(kpiThuong);
 
@@ -438,7 +443,7 @@ export async function exportBaoCaoSoCheToXLSX(
     [`II. ${t('baoCaoSoChe.form.sectionSoCheTitle')}`],
     ['TT', 'Chỉ số', 'ĐVT', 'Giá trị', 'Ghi chú'],
     ...SO_LIEU_BUONG_ROW_DEFS.map((def, idx) => {
-      const val = (data as Record<string, unknown>)[def.key] as number;
+      const val = (data as unknown as Record<string, unknown>)[def.key] as number;
       const meta = data.so_lieu_row_meta?.[def.key];
       const dvt = meta?.don_vi_tinh_phu?.trim() || (def.key === 'danh_gia_loi_qc_pct' ? '%' : slipU);
       return [BCSC_SO_LIEU_STT_OFFSET + idx + 1, t(def.labelKey), dvt, val, meta?.ghi_chu?.trim() || ''];
@@ -446,8 +451,8 @@ export async function exportBaoCaoSoCheToXLSX(
     [],
     // III. Phẩm cấp
     [`III. ${t('baoCaoSoChe.form.sectionPhamCapTitle')}`],
-    ['TT', t('baoCaoSoChe.phamCap.colPhamCap'), t('baoCaoSoChe.phamCap.colSoKg'), t('baoCaoSoChe.phamCap.colSoThung'), t('baoCaoSoChe.phamCap.colTongKg'), t('baoCaoSoChe.phamCap.colTyLe'), t('baoCaoSoChe.phamCap.colSoThungQD')],
-    ...phamCapEnriched.map((r, i) => [i + 1, r.ten_pham_cap || '', r.so_tham_chieu, r.so_thung, r.tong_kg, r.ty_le_pct, r.so_thung_quy_doi]),
+    ['TT', t('baoCaoSoChe.phamCap.colPhamCap'), t('baoCaoSoChe.phamCap.colSoKg'), t('baoCaoSoChe.phamCap.colSoThung'), t('baoCaoSoChe.phamCap.colTongKg'), t('baoCaoSoChe.phamCap.colTyLe'), t('baoCaoSoChe.phamCap.colSoThungQD'), t('baoCaoSoChe.phamCap.colGhiChu')],
+    ...phamCapEnriched.map((r, i) => [i + 1, r.ten_pham_cap || '', r.so_tham_chieu, r.so_thung, r.tong_kg, r.ty_le_pct, r.so_thung_quy_doi, r.ghi_chu || '']),
     [
       t('baoCaoSoChe.phamCap.totalRow'), '',
       '',
@@ -455,6 +460,7 @@ export async function exportBaoCaoSoCheToXLSX(
       phamCapEnriched.reduce((s, r) => s + r.tong_kg, 0),
       100,
       phamCapEnriched.reduce((s, r) => s + (r.so_thung_quy_doi ?? 0), 0),
+      '',
     ],
     [],
     // IV. KPI tính toán
@@ -464,8 +470,8 @@ export async function exportBaoCaoSoCheToXLSX(
     [BCSC_KPI_STT_OFFSET + 2, t('baoCaoSoChe.kpi.nsThungGioCong'),       t('baoCaoSoChe.kpi.dvt.perGio', { dvt: 'Thùng' }),      kpis.nsThungGioCong ?? '—'],
     [BCSC_KPI_STT_OFFSET + 3, t('baoCaoSoChe.kpi.nsBinhQuanNguoiGio'),   t('baoCaoSoChe.kpi.dvt.perCongGio', { dvt: 'Thùng' }), kpis.nsBinhQuanNguoiGio ?? '—'],
     [BCSC_KPI_STT_OFFSET + 4, t('baoCaoSoChe.kpi.soThungTp'),             'Thùng',                                                kpis.thungThanhPham ?? '—'],
-    [BCSC_KPI_STT_OFFSET + 5, t('baoCaoSoChe.kpi.tongLuong'),             t('baoCaoSoChe.kpi.dvt.tongLuong'),                  '—'],
-    [BCSC_KPI_STT_OFFSET + 6, t('baoCaoSoChe.kpi.chiPhiNcPerKg'),         t('baoCaoSoChe.kpi.dvt.chiPhiPerKg'),                '—'],
+    [BCSC_KPI_STT_OFFSET + 5, t('baoCaoSoChe.kpi.tongLuong'),             t('baoCaoSoChe.kpi.dvt.tongLuong'),                  kpis.tongLuong ?? '—'],
+    [BCSC_KPI_STT_OFFSET + 6, t('baoCaoSoChe.kpi.chiPhiNcPerKg'),         t('baoCaoSoChe.kpi.dvt.chiPhiPerKg'),                kpis.chiPhiNhanCongPerKg ?? '—'],
     [],
     // V. KPI/Thưởng
     [`V. ${t('baoCaoSoChe.kpiThuong.sectionTitle')}`],

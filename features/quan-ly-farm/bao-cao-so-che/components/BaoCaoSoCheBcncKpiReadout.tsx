@@ -1,8 +1,10 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Controller, type Control } from 'react-hook-form';
 import { Users, Calculator } from 'lucide-react';
 import type { FarmBaoCaoNhanCong } from '../../bao-cao-nhan-cong/core/types';
 import { formatNumberVN } from '../../../../lib/utils';
+import NumberInput from '../../../../components/ui/NumberInput';
 import {
   findBaoCaoNhanCongByBranchAndDate,
   extractLaborSnapshotFromBcnc,
@@ -11,6 +13,7 @@ import {
   type BcscLaborFromBcncSnapshot,
 } from '../core/bcsc-kpi';
 import { BCSC_KPI_STT_OFFSET } from '../core/so-lieu-row-meta';
+import type { BaoCaoSoCheFormValues } from '../core/schema';
 
 const ZERO_LABOR_SNAPSHOT: BcscLaborFromBcncSnapshot = {
   tongCongQuyDoiPhieu: 0,
@@ -23,7 +26,10 @@ interface Props {
   ngay: string;
   idChiNhanh: string;
   tongThungQD: number;
+  tongKg?: number;
+  tongLuong?: number;
   bcncList: FarmBaoCaoNhanCong[];
+  control?: Control<BaoCaoSoCheFormValues>;
   /** ĐVT phiếu sơ chế (buồng, thùng, …) — dùng cho cột ĐVT của KPI */
   donViTinh?: string | null;
   /** STT cột đầu tiên bắt đầu từ số này (để nối tiếp các section trên form/chi tiết). */
@@ -42,7 +48,7 @@ function MetricTable({
   rows,
 }: {
   headers: { stt: string; chiSo: string; dvt: string; giaTri: string; ghiChu: string };
-  rows: { stt: number; chiSo: string; dvt: string; giaTri: string; ghiChu: string }[];
+  rows: { stt: number; chiSo: string; dvt: string; giaTri: React.ReactNode; ghiChu: string }[];
 }) {
   return (
     <div className="overflow-x-auto rounded-lg border border-border bg-background">
@@ -76,7 +82,10 @@ const BaoCaoSoCheBcncKpiReadout: React.FC<Props> = ({
   ngay,
   idChiNhanh,
   tongThungQD,
+  tongKg = 0,
+  tongLuong = 0,
   bcncList,
+  control,
   donViTinh,
   sttOffset = 0,
   variant = 'full',
@@ -101,7 +110,10 @@ const BaoCaoSoCheBcncKpiReadout: React.FC<Props> = ({
 
   const bcncGhiChu = useMemo(() => extractBcncTableGhiChuRows(bcnc), [bcnc]);
 
-  const kpis = useMemo(() => computeBaoCaoSoCheKpis(tongThungQD, bcnc), [tongThungQD, bcnc]);
+  const kpis = useMemo(
+    () => computeBaoCaoSoCheKpis(tongThungQD, bcnc, tongKg, tongLuong),
+    [tongThungQD, bcnc, tongKg, tongLuong]
+  );
 
   const th = useMemo(
     () => ({
@@ -187,7 +199,25 @@ const BaoCaoSoCheBcncKpiReadout: React.FC<Props> = ({
           stt: o + 5,
           chiSo: t('baoCaoSoChe.kpi.tongLuong'),
           dvt: t('baoCaoSoChe.kpi.dvt.tongLuong'),
-          giaTri: fmtNum(kpis.tongLuong),
+          giaTri:
+            variant === 'kpi' && control ? (
+              <Controller
+                name="tong_luong"
+                control={control}
+                render={({ field }) => (
+                  <NumberInput
+                    value={field.value ?? 0}
+                    onChange={field.onChange}
+                    min={0}
+                    compact
+                    showZeroFormatted
+                    className="text-right w-full"
+                  />
+                )}
+              />
+            ) : (
+              fmtNum(kpis.tongLuong)
+            ),
           ghiChu: '—',
         },
         {
@@ -199,7 +229,7 @@ const BaoCaoSoCheBcncKpiReadout: React.FC<Props> = ({
         },
       ];
     },
-    [kpis, slipU, kpiSttBase, t]
+    [control, kpis, slipU, kpiSttBase, t, variant]
   );
 
   const bcncBlock = (

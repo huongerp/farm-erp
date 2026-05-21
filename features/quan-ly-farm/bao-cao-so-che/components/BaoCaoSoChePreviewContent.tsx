@@ -88,13 +88,15 @@ const BaoCaoSoChePreviewContent: React.FC<Props> = ({ data, bcncList }) => {
   const labor = useMemo(() => (bcnc ? extractLaborSnapshotFromBcnc(bcnc) : null), [bcnc]);
   const bcncGhiChu = useMemo(() => extractBcncTableGhiChuRows(bcnc), [bcnc]);
   const phamCapEnriched = useMemo(() => enrichPhamCapRowsWithDerived(data.pham_cap ?? []), [data.pham_cap]);
-  const tongThungQD = useMemo(
-    () => sumPhamCapDisplayTotals(data.pham_cap ?? []).so_thung_quy_doi,
+  const phamCapTotals = useMemo(
+    () => sumPhamCapDisplayTotals(data.pham_cap ?? []),
     [data.pham_cap]
   );
+  const tongThungQD = phamCapTotals.so_thung_quy_doi;
+  const tongKg = phamCapTotals.tong_kg;
   const kpis = useMemo(
-    () => computeBaoCaoSoCheKpis(tongThungQD, bcnc),
-    [tongThungQD, bcnc]
+    () => computeBaoCaoSoCheKpis(tongThungQD, bcnc, tongKg, data.tong_luong),
+    [tongThungQD, bcnc, tongKg, data.tong_luong]
   );
   const kpiThuongSorted = useMemo(
     () => [...(data.kpi_thuong ?? [])].sort((a, b) => a.thu_tu - b.thu_tu),
@@ -115,7 +117,7 @@ const BaoCaoSoChePreviewContent: React.FC<Props> = ({ data, bcncList }) => {
 
   // ---- Rows số liệu buồng ----
   const soLieuRows = SO_LIEU_BUONG_ROW_DEFS.map((def, idx) => {
-    const val = (data as Record<string, unknown>)[def.key] as number;
+    const val = (data as unknown as Record<string, unknown>)[def.key] as number;
     const meta = data.so_lieu_row_meta?.[def.key];
     const dvt = meta?.don_vi_tinh_phu?.trim() || (def.key === 'danh_gia_loi_qc_pct' ? '%' : slipU);
     return {
@@ -207,6 +209,7 @@ const BaoCaoSoChePreviewContent: React.FC<Props> = ({ data, bcncList }) => {
                 <th className={`${thPrint} text-right`}>{t('baoCaoSoChe.phamCap.colTongKg')}</th>
                 <th className={`${thPrint} text-right`}>{t('baoCaoSoChe.phamCap.colTyLe')}</th>
                 <th className={`${thPrint} text-right`}>{t('baoCaoSoChe.phamCap.colSoThungQD')}</th>
+                <th className={thPrint}>{t('baoCaoSoChe.phamCap.colGhiChu')}</th>
               </tr>
             </thead>
             <tbody>
@@ -221,6 +224,7 @@ const BaoCaoSoChePreviewContent: React.FC<Props> = ({ data, bcncList }) => {
                     {r.ty_le_pct > 0 ? `${fmtNum(r.ty_le_pct)}%` : '—'}
                   </td>
                   <td className={`${tdPrint} text-right tabular-nums`}>{fmtNum(r.so_thung_quy_doi)}</td>
+                  <td className={tdPrint}>{r.ghi_chu?.trim() || '—'}</td>
                 </tr>
               ))}
               <tr className="bg-gray-100 font-semibold">
@@ -230,6 +234,7 @@ const BaoCaoSoChePreviewContent: React.FC<Props> = ({ data, bcncList }) => {
                 <td className={`${tdPrint} text-right tabular-nums`}>{fmtNum(phamCapEnriched.reduce((s, r) => s + r.tong_kg, 0))}</td>
                 <td className={`${tdPrint} text-right tabular-nums`}>100%</td>
                 <td className={`${tdPrint} text-right tabular-nums`}>{fmtNum(phamCapEnriched.reduce((s, r) => s + (r.so_thung_quy_doi ?? 0), 0))}</td>
+                <td className={tdPrint}></td>
               </tr>
             </tbody>
           </table>

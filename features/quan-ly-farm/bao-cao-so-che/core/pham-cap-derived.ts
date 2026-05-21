@@ -31,6 +31,7 @@ export function sumPhamCapDisplayTotals(rows: PhamCapRowFormValues[] | FarmBaoCa
     so_tham_chieu: Number(r.so_tham_chieu) || 0,
     so_thung: Number(r.so_thung) || 0,
     so_thung_quy_doi: Number(r.so_thung_quy_doi) || 0,
+    ghi_chu: typeof r.ghi_chu === 'string' ? r.ghi_chu : '',
   }));
   const enriched = enrichPhamCapRowsWithDerived(formRows);
   const tong_kg = enriched.reduce((s, r) => s + r.tong_kg, 0);

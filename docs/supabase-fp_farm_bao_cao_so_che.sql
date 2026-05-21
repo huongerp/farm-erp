@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS public.fp_farm_bao_cao_so_che (
   ngay date NOT NULL,
   id_chi_nhanh bigint NOT NULL REFERENCES public.fp_var_chi_nhanh(id) ON DELETE RESTRICT,
   ten_chi_nhanh text,
+  tong_luong numeric(18, 4) NOT NULL DEFAULT 0,
   ghi_chu text,
   id_nguoi_tao bigint REFERENCES public.fp_var_nhan_vien(id) ON DELETE SET NULL,
   trang_thai text NOT NULL DEFAULT 'mo' CHECK (trang_thai IN ('mo', 'khoa')),
@@ -23,6 +24,7 @@ CREATE TABLE IF NOT EXISTS public.fp_farm_bao_cao_so_che (
 COMMENT ON TABLE public.fp_farm_bao_cao_so_che IS 'Báo cáo sơ chế theo ngày / chi nhánh (phần header)';
 COMMENT ON COLUMN public.fp_farm_bao_cao_so_che.ngay IS 'Ngày báo cáo';
 COMMENT ON COLUMN public.fp_farm_bao_cao_so_che.ten_chi_nhanh IS 'Denormalize tên chi nhánh để list không cần join';
+COMMENT ON COLUMN public.fp_farm_bao_cao_so_che.tong_luong IS 'Tổng lương nhập tay cho section Năng suất và lương';
 COMMENT ON COLUMN public.fp_farm_bao_cao_so_che.trang_thai IS 'mo = đang mở; khoa = đã khóa';
 
 CREATE INDEX IF NOT EXISTS idx_fp_farm_bcsc_ngay ON public.fp_farm_bao_cao_so_che(ngay DESC);
@@ -71,6 +73,7 @@ CREATE TABLE IF NOT EXISTS public.fp_farm_bao_cao_so_che_pham_cap (
   so_tham_chieu numeric(18, 4) NOT NULL DEFAULT 0,
   so_thung numeric(18, 4) NOT NULL DEFAULT 0,
   so_thung_quy_doi numeric(18, 4) NOT NULL DEFAULT 0,
+  ghi_chu text,
   thu_tu integer NOT NULL DEFAULT 0
 );
 
@@ -78,6 +81,7 @@ COMMENT ON TABLE public.fp_farm_bao_cao_so_che_pham_cap IS
   'Phẩm cấp / loại thùng: nhiều dòng / phiếu; tên loại do người dùng nhập.';
 COMMENT ON COLUMN public.fp_farm_bao_cao_so_che_pham_cap.ten_pham_cap IS 'Tên loại phẩm cấp (tự do)';
 COMMENT ON COLUMN public.fp_farm_bao_cao_so_che_pham_cap.so_tham_chieu IS 'Kg mỗi thùng. Tổng kg & tỷ lệ % tính trên app (không lưu DB).';
+COMMENT ON COLUMN public.fp_farm_bao_cao_so_che_pham_cap.ghi_chu IS 'Ghi chú theo dòng phẩm cấp / loại thùng';
 COMMENT ON COLUMN public.fp_farm_bao_cao_so_che_pham_cap.thu_tu IS 'Thứ tự hiển thị trong phiếu';
 
 CREATE INDEX IF NOT EXISTS idx_fp_farm_bcsc_pc_bao_cao ON public.fp_farm_bao_cao_so_che_pham_cap(id_bao_cao);

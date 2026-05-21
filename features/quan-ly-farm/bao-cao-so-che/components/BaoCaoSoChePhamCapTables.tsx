@@ -60,7 +60,7 @@ export const BaoCaoSoChePhamCapFormSection: React.FC<{
       }
     >
       <div className="overflow-x-auto rounded-lg border border-border -mx-0.5 sm:mx-0">
-        <table className="w-full text-sm min-w-[52rem] text-left border-collapse">
+        <table className="w-full text-sm min-w-[64rem] text-left border-collapse">
           <thead>
             <tr className="bg-muted/50 border-b border-border">
               <th rowSpan={2} className="text-center px-2 py-2 font-medium text-xs w-12 align-middle border-r border-border/80">
@@ -81,6 +81,9 @@ export const BaoCaoSoChePhamCapFormSection: React.FC<{
                   {t('baoCaoSoChe.phamCap.colSoThungQD')}
                 </span>
               </th>
+              <th rowSpan={2} className="text-left px-2 py-2 font-medium text-xs min-w-[12rem] align-middle border-r border-border/80">
+                {t('baoCaoSoChe.phamCap.colGhiChu')}
+              </th>
               <th rowSpan={2} className="text-center px-2 py-2 font-medium text-xs w-24 align-middle">
                 {t('baoCaoSoChe.phamCap.colThaoTac')}
               </th>
@@ -100,7 +103,7 @@ export const BaoCaoSoChePhamCapFormSection: React.FC<{
           <tbody>
             {fields.length === 0 ? (
               <tr className="border-b border-border/80">
-                <td colSpan={8} className="px-3 py-6 text-center text-xs text-muted-foreground">
+                <td colSpan={9} className="px-3 py-6 text-center text-xs text-muted-foreground">
                   {t('baoCaoSoChe.phamCap.emptyHint')}
                 </td>
               </tr>
@@ -111,6 +114,7 @@ export const BaoCaoSoChePhamCapFormSection: React.FC<{
                 const errSo = errors.pham_cap?.[idx]?.so_tham_chieu?.message as string | undefined;
                 const errSt = errors.pham_cap?.[idx]?.so_thung?.message as string | undefined;
                 const errQd = errors.pham_cap?.[idx]?.so_thung_quy_doi?.message as string | undefined;
+                const errGhiChu = errors.pham_cap?.[idx]?.ghi_chu?.message as string | undefined;
                 const rowDerived = derived[idx];
                 return (
                   <tr key={field.id} className="border-b border-border/80">
@@ -197,6 +201,22 @@ export const BaoCaoSoChePhamCapFormSection: React.FC<{
                         )}
                       />
                     </td>
+                    <td className="px-2 py-1.5 align-top border-r border-border/80">
+                      <Controller
+                        name={`${base}.ghi_chu`}
+                        control={control}
+                        render={({ field: f }) => (
+                          <Input
+                            {...f}
+                            value={f.value ?? ''}
+                            placeholder={t('baoCaoSoChe.phamCap.ghiChuPlaceholder')}
+                            className="text-xs h-8"
+                            error={errGhiChu}
+                            disabled={disabled}
+                          />
+                        )}
+                      />
+                    </td>
                     <td className="px-1 py-1 align-middle text-center">
                       {!disabled && (
                         <Button
@@ -223,6 +243,7 @@ export const BaoCaoSoChePhamCapFormSection: React.FC<{
               <td className="px-2 py-2 text-xs text-right tabular-nums border-r border-border/60">{formatNumberVN(totals.tong_kg)}</td>
               <td className="px-2 py-2 text-xs text-right tabular-nums border-r border-border/80">{pctDisplay(totals.ty_le_pct)}</td>
               <td className="px-2 py-2 text-xs text-right tabular-nums border-r border-border/80">{formatNumberVN(totals.so_thung_quy_doi)}</td>
+              <td className="px-2 py-2 border-r border-border/80" aria-hidden />
               <td className="px-2 py-2 border-border/80" aria-hidden />
             </tr>
           </tbody>
@@ -243,7 +264,7 @@ export const BaoCaoSoChePhamCapDetailTable: React.FC<{ rows: FarmBaoCaoSoChePham
 
   return (
     <div className="overflow-x-auto rounded-lg border border-border bg-muted/10">
-      <table className="w-full text-sm min-w-[52rem] text-left border-collapse">
+      <table className="w-full text-sm min-w-[64rem] text-left border-collapse">
         <thead>
           <tr className="bg-muted/50 border-b border-border">
             <th rowSpan={2} className="text-center px-2 py-2 font-medium text-xs w-12 align-middle border-r border-border/80">
@@ -258,11 +279,14 @@ export const BaoCaoSoChePhamCapDetailTable: React.FC<{ rows: FarmBaoCaoSoChePham
             <th colSpan={3} className="text-center px-2 py-1.5 font-medium text-xs border-r border-border/80">
               {t('baoCaoSoChe.phamCap.groupLoaiThung')}
             </th>
-            <th rowSpan={2} className="text-center px-2 py-2 font-medium text-xs w-[7.5rem] align-middle leading-tight">
+            <th rowSpan={2} className="text-center px-2 py-2 font-medium text-xs w-[7.5rem] align-middle border-r border-border/80 leading-tight">
               <span className="block">{t('baoCaoSoChe.phamCap.groupTongQuyDoi')}</span>
               <span className="mt-1 block text-[10px] font-normal text-muted-foreground">
                 {t('baoCaoSoChe.phamCap.colSoThungQD')}
               </span>
+            </th>
+            <th rowSpan={2} className="text-left px-2 py-2 font-medium text-xs min-w-[12rem] align-middle">
+              {t('baoCaoSoChe.phamCap.colGhiChu')}
             </th>
           </tr>
           <tr className="bg-muted/40 border-b border-border">
@@ -280,7 +304,7 @@ export const BaoCaoSoChePhamCapDetailTable: React.FC<{ rows: FarmBaoCaoSoChePham
         <tbody>
           {sorted.length === 0 ? (
             <tr>
-              <td colSpan={7} className="px-3 py-6 text-center text-xs text-muted-foreground">
+              <td colSpan={8} className="px-3 py-6 text-center text-xs text-muted-foreground">
                 {t('baoCaoSoChe.phamCap.detailEmpty')}
               </td>
             </tr>
@@ -305,7 +329,10 @@ export const BaoCaoSoChePhamCapDetailTable: React.FC<{ rows: FarmBaoCaoSoChePham
                   <td className="px-2 py-2 text-xs text-right tabular-nums border-r border-border/80">
                     {pctDisplay(d?.ty_le_pct ?? 0)}
                   </td>
-                  <td className="px-2 py-2 text-xs text-right tabular-nums">{formatNumberVN(r.so_thung_quy_doi ?? 0)}</td>
+                  <td className="px-2 py-2 text-xs text-right tabular-nums border-r border-border/80">{formatNumberVN(r.so_thung_quy_doi ?? 0)}</td>
+                  <td className="px-2 py-2 text-xs text-muted-foreground whitespace-pre-wrap leading-snug">
+                    {r.ghi_chu?.trim() || '—'}
+                  </td>
                 </tr>
               );
             })
@@ -317,7 +344,8 @@ export const BaoCaoSoChePhamCapDetailTable: React.FC<{ rows: FarmBaoCaoSoChePham
             <td className="px-2 py-2 text-xs text-right tabular-nums border-r border-border/60">{formatNumberVN(totals.so_thung)}</td>
             <td className="px-2 py-2 text-xs text-right tabular-nums border-r border-border/60">{formatNumberVN(totals.tong_kg)}</td>
             <td className="px-2 py-2 text-xs text-right tabular-nums border-r border-border/80">{pctDisplay(totals.ty_le_pct)}</td>
-            <td className="px-2 py-2 text-xs text-right tabular-nums">{formatNumberVN(totals.so_thung_quy_doi)}</td>
+            <td className="px-2 py-2 text-xs text-right tabular-nums border-r border-border/80">{formatNumberVN(totals.so_thung_quy_doi)}</td>
+            <td className="px-2 py-2" aria-hidden />
           </tr>
         </tbody>
       </table>

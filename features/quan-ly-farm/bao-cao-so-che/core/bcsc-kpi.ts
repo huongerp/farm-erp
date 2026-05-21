@@ -77,16 +77,21 @@ export interface BcscKpiComputed {
   nsThungGioCong: number | null;
   /** Tổng số thùng quy đổi / (Tổng giờ QĐ IV + Tổng giờ TC IV) — bằng nsThungGioCong */
   nsBinhQuanNguoiGio: number | null;
-  tongLuong: null;
-  chiPhiNhanCongPerKg: null;
+  tongLuong: number | null;
+  chiPhiNhanCongPerKg: number | null;
 }
 
 export function computeBaoCaoSoCheKpis(
   tongThungQD: number,
-  bcnc: FarmBaoCaoNhanCong | null
+  bcnc: FarmBaoCaoNhanCong | null,
+  tongKg = 0,
+  tongLuong = 0
 ): BcscKpiComputed {
   const thung =
     Number.isFinite(tongThungQD) && tongThungQD >= 0 ? tongThungQD : null;
+  const salary = Number.isFinite(tongLuong) && tongLuong >= 0 ? tongLuong : null;
+  const kg = Number.isFinite(tongKg) && tongKg > EPS ? tongKg : null;
+  const chiPhiNhanCongPerKg = salary != null && kg != null ? salary / kg : null;
 
   if (!bcnc || thung == null) {
     return {
@@ -94,8 +99,8 @@ export function computeBaoCaoSoCheKpis(
       nsThungCongNgay: null,
       nsThungGioCong: null,
       nsBinhQuanNguoiGio: null,
-      tongLuong: null,
-      chiPhiNhanCongPerKg: null,
+      tongLuong: salary,
+      chiPhiNhanCongPerKg,
     };
   }
 
@@ -115,7 +120,7 @@ export function computeBaoCaoSoCheKpis(
     nsThungCongNgay,
     nsThungGioCong,
     nsBinhQuanNguoiGio,
-    tongLuong: null,
-    chiPhiNhanCongPerKg: null,
+    tongLuong: salary,
+    chiPhiNhanCongPerKg,
   };
 }
