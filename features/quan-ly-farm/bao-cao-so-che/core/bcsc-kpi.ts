@@ -1,4 +1,5 @@
 import type { FarmBaoCaoNhanCong } from '../../bao-cao-nhan-cong/core/types';
+import type { FarmBaoCaoKpiThuongRow } from '../../shared/kpi-thuong/types';
 import {
   normalizeChiTietForDisplay,
   sumChiTietNumericPart,
@@ -123,4 +124,56 @@ export function computeBaoCaoSoCheKpis(
     tongLuong: salary,
     chiPhiNhanCongPerKg,
   };
+}
+
+export interface BcscKpiThuongPresetSource {
+  thucTeValue: number | null;
+  isHigherBetter: boolean;
+}
+
+function numericKpiString(value: number | null | undefined): string | null {
+  if (value == null || !Number.isFinite(value)) return null;
+  return String(Math.round(value * 10000) / 10000);
+}
+
+function computePresetDanhGia(
+  thucTe: string | null,
+  mucTieu: string | null | undefined,
+  isHigherBetter: boolean
+): string | null {
+  if (thucTe == null) return null;
+  const tt = parseFloat(thucTe.replace(',', '.'));
+  const mt = parseFloat(String(mucTieu ?? '').replace(',', '.'));
+  if (!Number.isFinite(tt) || !Number.isFinite(mt)) return null;
+  return (isHigherBetter ? tt >= mt : tt <= mt) ? 'Đạt' : 'Không đạt';
+}
+
+export function buildBaoCaoSoCheKpiThuongPresetSources(
+  kpis: BcscKpiComputed,
+  danhGiaLoiQcPct: number | null,
+  tyLeThuHoiThucTePct: number | null
+): [BcscKpiThuongPresetSource, BcscKpiThuongPresetSource, BcscKpiThuongPresetSource] {
+  return [
+    { thucTeValue: kpis.nsThungGioCong, isHigherBetter: true },
+    { thucTeValue: Number.isFinite(Number(danhGiaLoiQcPct)) ? Number(danhGiaLoiQcPct) : null, isHigherBetter: false },
+    { thucTeValue: tyLeThuHoiThucTePct, isHigherBetter: true },
+  ];
+}
+
+export function enrichBaoCaoSoCheKpiThuongRows(
+  rows: FarmBaoCaoKpiThuongRow[],
+  presetSources: [BcscKpiThuongPresetSource, BcscKpiThuongPresetSource, BcscKpiThuongPresetSource]
+): FarmBaoCaoKpiThuongRow[] {
+  if (rows.length === 0) return rows;
+  return rows.map((row, index) => {
+    if (index >= presetSources.length) return row;
+    const source = presetSources[index];
+    const ttStr = numericKpiString(source.thucTeValue);
+    if (ttStr == null) return row;
+    return {
+      ...row,
+      thuc_te: ttStr,
+      danh_gia: computePresetDanhGia(ttStr, row.muc_tieu, source.isHigherBetter) ?? row.danh_gia,
+    };
+  });
 }

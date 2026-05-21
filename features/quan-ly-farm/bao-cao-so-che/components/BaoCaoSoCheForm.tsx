@@ -4,9 +4,7 @@ import { toast } from 'sonner';
 import { useForm, Controller, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Building2, Calculator, Layers, MessageSquare, Users } from 'lucide-react';
-import BaoCaoSoCheKpiThuongFormSection, {
-  type BcscKpiPresetSource,
-} from './BaoCaoSoCheKpiThuongFormSection';
+import BaoCaoSoCheKpiThuongFormSection from './BaoCaoSoCheKpiThuongFormSection';
 import Input from '../../../../components/ui/Input';
 import Textarea from '../../../../components/ui/Textarea';
 import Combobox from '../../../../components/ui/Combobox';
@@ -33,6 +31,7 @@ import { sumPhamCapDisplayTotals } from '../core/pham-cap-derived';
 import {
   findBaoCaoNhanCongByBranchAndDate,
   computeBaoCaoSoCheKpis,
+  buildBaoCaoSoCheKpiThuongPresetSources,
 } from '../core/bcsc-kpi';
 import { useDuBaoSlDongThungList } from '../../du-bao-sl-dong-thung/hooks/use-du-bao-sl-dong-thung';
 
@@ -141,13 +140,14 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
   );
 
   /* 3 nguồn tự tính cho section Đánh giá KPI/thưởng */
-  const kpiPresetSources = useMemo<[BcscKpiPresetSource, BcscKpiPresetSource, BcscKpiPresetSource]>(
-    () => [
-      { thucTeValue: kpis.nsThungCongNgay,                                          isHigherBetter: true  },
-      { thucTeValue: Number.isFinite(Number(danhGiaLoiQcPct)) ? Number(danhGiaLoiQcPct) : null, isHigherBetter: false },
-      { thucTeValue: dbsdtRecord != null ? dbsdtRecord.ty_le_thu_hoi_thuc_te * 100 : null,      isHigherBetter: true  },
-    ],
-    [kpis.nsThungCongNgay, danhGiaLoiQcPct, dbsdtRecord]
+  const kpiPresetSources = useMemo(
+    () =>
+      buildBaoCaoSoCheKpiThuongPresetSources(
+        kpis,
+        Number.isFinite(Number(danhGiaLoiQcPct)) ? Number(danhGiaLoiQcPct) : null,
+        dbsdtRecord != null ? dbsdtRecord.ty_le_thu_hoi_thuc_te * 100 : null
+      ),
+    [kpis, danhGiaLoiQcPct, dbsdtRecord]
   );
 
   useEffect(() => {

@@ -46,8 +46,9 @@ import {
 import {
   findBaoCaoNhanCongByBranchAndDate,
   computeBaoCaoSoCheKpis,
+  buildBaoCaoSoCheKpiThuongPresetSources,
+  enrichBaoCaoSoCheKpiThuongRows,
 } from '../core/bcsc-kpi';
-import type { FarmBaoCaoKpiThuongRow } from '../../shared/kpi-thuong/types';
 
 interface Props {
   data: FarmBaoCaoSoChe;
@@ -115,32 +116,20 @@ const BaoCaoSoCheDetail: React.FC<Props> = ({
    * Enrich 3 preset KPI rows with live-computed thực tế + đánh giá.
    * This ensures the detail always shows correct values regardless of what is stored in DB.
    */
-  const enrichedKpiRows = useMemo((): FarmBaoCaoKpiThuongRow[] => {
+  const kpiPresetSources = useMemo(
+    () =>
+      buildBaoCaoSoCheKpiThuongPresetSources(
+        kpis,
+        Number.isFinite(Number(data.danh_gia_loi_qc_pct)) ? Number(data.danh_gia_loi_qc_pct) : null,
+        dbsdtRecord != null ? dbsdtRecord.ty_le_thu_hoi_thuc_te * 100 : null
+      ),
+    [kpis, data.danh_gia_loi_qc_pct, dbsdtRecord]
+  );
+
+  const enrichedKpiRows = useMemo(() => {
     const rows = data.kpi_thuong ?? [];
-    if (rows.length === 0) return rows;
-
-    const presetThucTe: (number | null)[] = [
-      kpis.nsThungCongNgay,
-      Number.isFinite(Number(data.danh_gia_loi_qc_pct)) ? Number(data.danh_gia_loi_qc_pct) : null,
-      dbsdtRecord != null ? dbsdtRecord.ty_le_thu_hoi_thuc_te * 100 : null,
-    ];
-    const presetHigherBetter = [true, false, true];
-
-    return rows.map((row, index) => {
-      if (index >= 3) return row;
-      const rawVal = presetThucTe[index];
-      if (rawVal == null || !Number.isFinite(rawVal)) return row;
-
-      const ttStr = String(Math.round(rawVal * 10000) / 10000);
-      const mt = parseFloat(String(row.muc_tieu ?? '').replace(',', '.'));
-      const tt = parseFloat(ttStr);
-      let danhGia = row.danh_gia;
-      if (Number.isFinite(tt) && Number.isFinite(mt)) {
-        danhGia = (presetHigherBetter[index] ? tt >= mt : tt <= mt) ? 'Đạt' : 'Không đạt';
-      }
-      return { ...row, thuc_te: ttStr, danh_gia: danhGia };
-    });
-  }, [data.kpi_thuong, data.danh_gia_loi_qc_pct, kpis.nsThungCongNgay, dbsdtRecord]);
+    return enrichBaoCaoSoCheKpiThuongRows(rows, kpiPresetSources);
+  }, [data.kpi_thuong, kpiPresetSources]);
 
   const renderFooter = (
     <div className="flex items-center justify-between w-full">

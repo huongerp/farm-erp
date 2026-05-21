@@ -8,6 +8,8 @@ import {
   extractLaborSnapshotFromBcnc,
   extractBcncTableGhiChuRows,
   computeBaoCaoSoCheKpis,
+  buildBaoCaoSoCheKpiThuongPresetSources,
+  enrichBaoCaoSoCheKpiThuongRows,
 } from '../core/bcsc-kpi';
 import {
   SO_LIEU_BUONG_ROW_DEFS,
@@ -131,7 +133,14 @@ function buildBaoCaoSoCheBodyHTML(data: FarmBaoCaoSoChe, bcncList: FarmBaoCaoNha
   const phamCapTotals = sumPhamCapDisplayTotals(data.pham_cap ?? []);
   const tongThungQD = phamCapTotals.so_thung_quy_doi;
   const kpis = computeBaoCaoSoCheKpis(tongThungQD, bcnc, phamCapTotals.tong_kg, data.tong_luong);
-  const kpiThuong = [...(data.kpi_thuong ?? [])].sort((a, b) => a.thu_tu - b.thu_tu);
+  const kpiThuong = enrichBaoCaoSoCheKpiThuongRows(
+    [...(data.kpi_thuong ?? [])].sort((a, b) => a.thu_tu - b.thu_tu),
+    buildBaoCaoSoCheKpiThuongPresetSources(
+      kpis,
+      Number.isFinite(Number(data.danh_gia_loi_qc_pct)) ? Number(data.danh_gia_loi_qc_pct) : null,
+      null
+    )
+  );
   const tongThuong = sumTienThuongKpiThuong(kpiThuong);
 
   // ---- I. BCNC ----
@@ -408,7 +417,14 @@ export async function exportBaoCaoSoCheToXLSX(
   const phamCapTotals = sumPhamCapDisplayTotals(data.pham_cap ?? []);
   const tongThungQD = phamCapTotals.so_thung_quy_doi;
   const kpis = computeBaoCaoSoCheKpis(tongThungQD, bcnc, phamCapTotals.tong_kg, data.tong_luong);
-  const kpiThuong = [...(data.kpi_thuong ?? [])].sort((a, b) => a.thu_tu - b.thu_tu);
+  const kpiThuong = enrichBaoCaoSoCheKpiThuongRows(
+    [...(data.kpi_thuong ?? [])].sort((a, b) => a.thu_tu - b.thu_tu),
+    buildBaoCaoSoCheKpiThuongPresetSources(
+      kpis,
+      Number.isFinite(Number(data.danh_gia_loi_qc_pct)) ? Number(data.danh_gia_loi_qc_pct) : null,
+      null
+    )
+  );
   const tongThuong = sumTienThuongKpiThuong(kpiThuong);
 
   const rows: (string | number)[][] = [

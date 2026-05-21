@@ -16,14 +16,7 @@ import { computeKpiPhanTram } from '../../shared/kpi-thuong/types';
 import { defaultKpiThuongFormRow } from '../../shared/kpi-thuong/form-mappers';
 import type { KpiThuongFormRow } from '../../shared/kpi-thuong/types';
 import type { BaoCaoSoCheFormValues } from '../core/schema';
-
-/** Nguồn tự tính cho mỗi hàng preset. */
-export interface BcscKpiPresetSource {
-  /** Giá trị thực tế đã tính (null = chưa có dữ liệu). */
-  thucTeValue: number | null;
-  /** true = đạt khi thực tế >= mục tiêu; false = đạt khi thực tế <= mục tiêu. */
-  isHigherBetter: boolean;
-}
+import type { BcscKpiThuongPresetSource } from '../core/bcsc-kpi';
 
 /** Số hàng preset cố định — luôn là 3. */
 const PRESET_COUNT = 3;
@@ -79,7 +72,7 @@ interface Props {
   /**
    * 3 nguồn tự tính cho 3 hàng preset (index 0 → NS sơ chế, 1 → lỗi QC, 2 → tỷ lệ thu hồi).
    */
-  presetSources: [BcscKpiPresetSource, BcscKpiPresetSource, BcscKpiPresetSource];
+  presetSources: [BcscKpiThuongPresetSource, BcscKpiThuongPresetSource, BcscKpiThuongPresetSource];
   disabled?: boolean;
 }
 

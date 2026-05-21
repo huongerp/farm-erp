@@ -11,6 +11,8 @@ import {
   extractLaborSnapshotFromBcnc,
   extractBcncTableGhiChuRows,
   computeBaoCaoSoCheKpis,
+  buildBaoCaoSoCheKpiThuongPresetSources,
+  enrichBaoCaoSoCheKpiThuongRows,
 } from '../core/bcsc-kpi';
 import {
   SO_LIEU_BUONG_ROW_DEFS,
@@ -98,9 +100,22 @@ const BaoCaoSoChePreviewContent: React.FC<Props> = ({ data, bcncList }) => {
     () => computeBaoCaoSoCheKpis(tongThungQD, bcnc, tongKg, data.tong_luong),
     [tongThungQD, bcnc, tongKg, data.tong_luong]
   );
+  const kpiPresetSources = useMemo(
+    () =>
+      buildBaoCaoSoCheKpiThuongPresetSources(
+        kpis,
+        Number.isFinite(Number(data.danh_gia_loi_qc_pct)) ? Number(data.danh_gia_loi_qc_pct) : null,
+        null
+      ),
+    [kpis, data.danh_gia_loi_qc_pct]
+  );
   const kpiThuongSorted = useMemo(
-    () => [...(data.kpi_thuong ?? [])].sort((a, b) => a.thu_tu - b.thu_tu),
-    [data.kpi_thuong]
+    () =>
+      enrichBaoCaoSoCheKpiThuongRows(
+        [...(data.kpi_thuong ?? [])].sort((a, b) => a.thu_tu - b.thu_tu),
+        kpiPresetSources
+      ),
+    [data.kpi_thuong, kpiPresetSources]
   );
   const tongThuong = sumTienThuongKpiThuong(kpiThuongSorted);
 
