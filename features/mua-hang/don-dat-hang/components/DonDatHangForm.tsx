@@ -9,6 +9,7 @@ import Combobox from '../../../../components/ui/Combobox';
 import NumberInput from '../../../../components/ui/NumberInput';
 import Button from '../../../../components/ui/Button';
 import { DonDatHangFormValues, donDatHangSchema, type DonDatHangChiTietFormItem } from '../core/schema';
+import { mapPhieuDeXuatChiTietToDonDatHangLines } from '../core/don-dat-hang-to-form-values';
 import type { DonDatHang } from '../core/types';
 import type { Kho } from '../../../kho-van/danh-sach-kho/core/types';
 import type { EmployeeRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
@@ -371,20 +372,23 @@ const DonDatHangForm: React.FC<Props> = ({
   }, [isEdit, nextSoPo, setValue]);
 
   useEffect(() => {
-    if (!phieuForAutoFill?.chi_tiet?.length) return;
+    if (!isEdit && prefillValues?.id_phieu_de_xuat_vat_tu) {
+      appliedPhieuIdRef.current = prefillValues.id_phieu_de_xuat_vat_tu;
+    }
+  }, [isEdit, prefillValues?.id_phieu_de_xuat_vat_tu]);
+
+  useEffect(() => {
+    if (!phieuForAutoFill) return;
     if (phieuForAutoFill.id === appliedPhieuIdRef.current) return;
     appliedPhieuIdRef.current = phieuForAutoFill.id;
-    replace(
-      phieuForAutoFill.chi_tiet.map((ct) => ({
-        id_hang_hoa: ct.id_hang_hoa,
-        phan_loai: null,
-        muc_dich_su_dung: null,
-        so_luong: ct.so_luong,
-        don_gia: undefined,
-        ghi_chu: '',
-      }))
-    );
-  }, [phieuForAutoFill, replace]);
+    const phieuGhiChu = phieuForAutoFill.ghi_chu?.trim();
+    if (phieuGhiChu) {
+      setValue('ghi_chu', phieuGhiChu);
+    }
+    if (phieuForAutoFill.chi_tiet?.length) {
+      replace(mapPhieuDeXuatChiTietToDonDatHangLines(phieuForAutoFill.chi_tiet));
+    }
+  }, [phieuForAutoFill, replace, setValue]);
 
   useEffect(() => {
     if (initialData) {

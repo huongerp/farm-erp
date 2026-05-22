@@ -1,5 +1,30 @@
+import type { PhieuDeXuatVatTu, PhieuDeXuatVatTuChiTiet } from '../../../kho-van/phieu-de-xuat-vat-tu/core/types';
 import type { DonDatHang } from './types';
-import type { DonDatHangFormValues } from './schema';
+import type { DonDatHangChiTietFormItem, DonDatHangFormValues } from './schema';
+
+/** Dòng chi tiết đơn đặt hàng từ phiếu đề xuất: Mục đích ← ghi chú dòng phiếu. */
+export function mapPhieuDeXuatChiTietToDonDatHangLines(
+  chiTiet: PhieuDeXuatVatTuChiTiet[] | undefined
+): DonDatHangChiTietFormItem[] {
+  return (chiTiet ?? []).map((ct) => ({
+    id_hang_hoa: ct.id_hang_hoa,
+    phan_loai: null,
+    muc_dich_su_dung: ct.ghi_chu?.trim() || null,
+    so_luong: ct.so_luong,
+    don_gia: undefined,
+    ghi_chu: '',
+  }));
+}
+
+/** Điền sẵn đơn đặt hàng mới từ phiếu đề xuất liên kết. */
+export function phieuDeXuatToDonDatHangPrefill(phieu: PhieuDeXuatVatTu): Partial<DonDatHangFormValues> {
+  return {
+    id_phieu_de_xuat_vat_tu: phieu.id,
+    ngay_giao_dk: phieu.ngay_can,
+    ghi_chu: phieu.ghi_chu?.trim() || '',
+    chi_tiet: mapPhieuDeXuatChiTietToDonDatHangLines(phieu.chi_tiet),
+  };
+}
 
 /** Map đơn đặt hàng → giá trị form (tạo/sửa/phê duyệt). */
 export function donDatHangToFormValues(

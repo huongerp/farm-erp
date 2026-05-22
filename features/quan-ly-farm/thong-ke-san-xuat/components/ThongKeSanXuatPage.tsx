@@ -66,23 +66,23 @@ const ThongKeSanXuatPage: React.FC = () => {
   const handleExportXLSX = useCallback(async () => {
     if (filteredRows.length === 0) { toast.info('Không có dữ liệu để xuất'); return; }
     try {
-      await exportThongKeSanXuatToXLSX(summary, stats, periodLabel);
+      await exportThongKeSanXuatToXLSX(summary, stats, periodLabel, filteredRows);
       toast.success('Đã xuất file XLSX');
     } catch { toast.error('Xuất XLSX thất bại'); }
-  }, [filteredRows.length, summary, stats, periodLabel]);
+  }, [filteredRows, summary, stats, periodLabel]);
 
   const handleExportPDF = useCallback(async () => {
     if (filteredRows.length === 0) { toast.info('Không có dữ liệu để xuất'); return; }
     try {
-      await exportThongKeSanXuatToPDF(summary, stats, periodLabel);
+      await exportThongKeSanXuatToPDF(summary, stats, periodLabel, filteredRows);
       toast.success('Đã xuất file PDF');
     } catch { toast.error('Xuất PDF thất bại'); }
-  }, [filteredRows.length, summary, stats, periodLabel]);
+  }, [filteredRows, summary, stats, periodLabel]);
 
   const handlePrint = useCallback(() => {
     if (filteredRows.length === 0) { toast.info('Không có dữ liệu để in'); return; }
-    printThongKeSanXuat(summary, stats, periodLabel);
-  }, [filteredRows.length, summary, stats, periodLabel]);
+    printThongKeSanXuat(summary, stats, periodLabel, filteredRows);
+  }, [filteredRows, summary, stats, periodLabel]);
 
   // ── Option lists ─────────────────────────────────────────────────────────
 

@@ -23,7 +23,7 @@ import { TRANG_THAI_CHO_DUYET } from '../core/constants';
 import type { HangHoa } from '../../danh-sach-hang-hoa/core/types';
 import DanhSachHangHoaForm from '../../danh-sach-hang-hoa/components/DanhSachHangHoaForm';
 import DonDatHangForm from '../../../mua-hang/don-dat-hang/components/DonDatHangForm';
-import type { DonDatHangFormValues } from '../../../mua-hang/don-dat-hang/core/schema';
+import { phieuDeXuatToDonDatHangPrefill } from '../../../mua-hang/don-dat-hang/core/don-dat-hang-to-form-values';
 import type { PhieuDeXuatSoPhieuOption } from '../services/phieu-de-xuat-vat-tu-supabase.service';
 
 function phieuToFormValues(p: PhieuDeXuatVatTu, trangThai: PhieuDeXuatVatTu['trang_thai'], overrideGhiChu?: string): PhieuDeXuatVatTuFormValues {
@@ -396,15 +396,7 @@ const DanhSachTab: React.FC = () => {
         {createDonDatHangFrom && (() => {
           const phieu = createDonDatHangFrom;
           const phieuDeXuatOption: PhieuDeXuatSoPhieuOption = { id: phieu.id, so_phieu: phieu.so_phieu, ngay: phieu.ngay };
-          const prefill: Partial<DonDatHangFormValues> = {
-            id_phieu_de_xuat_vat_tu: phieu.id,
-            ngay_giao_dk: phieu.ngay_can,
-            chi_tiet: (phieu.chi_tiet ?? []).map((ct) => ({
-              id_hang_hoa: ct.id_hang_hoa,
-              so_luong: ct.so_luong,
-              ghi_chu: '',
-            })),
-          };
+          const prefill = phieuDeXuatToDonDatHangPrefill(phieu);
           return (
             <DonDatHangForm
               khoList={khoList}
