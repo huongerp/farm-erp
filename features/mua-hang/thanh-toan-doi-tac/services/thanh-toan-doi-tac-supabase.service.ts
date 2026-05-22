@@ -7,11 +7,13 @@ import type { ThanhToanDoiTac } from '../core/types';
 import type { ThanhToanDoiTacFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
 import { getBranches } from '../../../he-thong/chi-nhanh/services/chi-nhanh-service';
-import { getDoiTacRef } from '../../../kho-van/danh-sach-doi-tac/services/doi-tac-service';
+import { getAllNhomDoiTac } from '../../../kho-van/danh-sach-doi-tac/services/doi-tac-service';
+import type { LoaiDoiTac } from '../../../kho-van/danh-sach-doi-tac/core/types';
 import { getEmployeesRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
 import { getTrangThaiThanhToanDoiTacList } from '../../thiet-lap-de-xuat-vat-tu/services/trang-thai-thanh-toan-doi-tac-service';
 
 const TABLE = 'fp_mh_thanh_toan_doi_tac';
+const TABLE_DOI_TAC = 'fp_mh_danh_sach_doi_tac';
 const RPC_NEXT_SO_PHIEU = 'get_next_so_phieu_thanh_toan_doi_tac';
 
 const THANH_TOAN_ROW_COLUMNS =
@@ -49,6 +51,44 @@ interface DbRow {
   tg_cap_nhat: string | null;
 }
 
+interface DoiTacNhomRow {
+  id: number;
+  ma_doi_tac: string;
+  ten_doi_tac: string;
+  id_nhom: number | null;
+}
+
+/** Map đối tác (NCC) kèm tên nhóm – dùng enrich list/detail thanh toán. */
+async function loadDoiTacEnrichMap(
+  loai: LoaiDoiTac
+): Promise<Record<string, { ten: string; ma: string; ten_nhom?: string }>> {
+  const [doiTacRows, nhomList] = await Promise.all([
+    fetchAllRows<DoiTacNhomRow>((from, to) =>
+      supabase
+        .from(TABLE_DOI_TAC)
+        .select('id, ma_doi_tac, ten_doi_tac, id_nhom')
+        .eq('loai_doi_tac', loai)
+        .order('thu_tu', { ascending: true })
+        .order('ma_doi_tac', { ascending: true })
+        .range(from, to)
+    ),
+    getAllNhomDoiTac(),
+  ]);
+  const nhomMap: Record<string, string> = {};
+  nhomList.forEach((n) => {
+    nhomMap[n.id] = n.ten_nhom;
+  });
+  const map: Record<string, { ten: string; ma: string; ten_nhom?: string }> = {};
+  doiTacRows.forEach((row) => {
+    map[String(row.id)] = {
+      ten: row.ten_doi_tac ?? '',
+      ma: row.ma_doi_tac ?? '',
+      ten_nhom: row.id_nhom != null ? nhomMap[String(row.id_nhom)] : undefined,
+    };
+  });
+  return map;
+}
+
 function toNum(s: string | null | undefined): number | null {
   if (s == null || s === '') return null;
   const n = Number(s);
@@ -61,6 +101,7 @@ function rowToItem(
     ten_don_vi?: string | null;
     ten_doi_tac?: string;
     ma_doi_tac?: string;
+    ten_nhom?: string;
     ten_nguoi_tao?: string;
     ma_nguoi_tao?: string;
     ten_trang_thai?: string;
@@ -82,12 +123,13 @@ function rowToItem(
     id_doi_tac: String(row.id_doi_tac),
     ten_doi_tac: enrich.ten_doi_tac,
     ma_doi_tac: enrich.ma_doi_tac,
+    ten_nhom: enrich.ten_nhom,
     id_trang_thai_thanh_toan: idTrangThai,
     ten_trang_thai: tenTrangThai,
     mau_trang_thai: enrich.mau_trang_thai,
     so_tien: Number(row.so_tien),
     ngay_xu_ly: row.ngay_xu_ly ?? null,
-    ghi_chu: row.ghi_chu ?? undefined ?? null,
+    ghi_chu: row.ghi_chu ?? null,
     id_nguoi_tao: row.id_nguoi_tao != null ? String(row.id_nguoi_tao) : '',
     ten_nguoi_tao: enrich.ten_nguoi_tao,
     ma_nguoi_tao: enrich.ma_nguoi_tao,
@@ -97,7 +139,7 @@ function rowToItem(
 }
 
 export async function getAllThanhToanDoiTac(): Promise<ThanhToanDoiTac[]> {
-  const [rows, branches, doiTacList, employees, statusList] = await Promise.all([
+  const [rows, branches, doiTacMap, employees, statusList] = await Promise.all([
     fetchAllRows<DbRow>((from, to) =>
       supabase
         .from(TABLE)
@@ -107,7 +149,7 @@ export async function getAllThanhToanDoiTac(): Promise<ThanhToanDoiTac[]> {
         .range(from, to)
     ),
     getBranches(),
-    getDoiTacRef('nha_cung_cap'),
+    loadDoiTacEnrichMap('nha_cung_cap'),
     getEmployeesRef(),
     getTrangThaiThanhToanDoiTacList(),
   ]);
@@ -115,10 +157,6 @@ export async function getAllThanhToanDoiTac(): Promise<ThanhToanDoiTac[]> {
   const donViMap: Record<string, string> = {};
   branches.forEach((b) => {
     donViMap[b.id] = b.ten_chi_nhanh;
-  });
-  const doiTacMap: Record<string, { ten: string; ma: string }> = {};
-  doiTacList.forEach((d) => {
-    doiTacMap[d.id] = { ten: d.ten_ncc, ma: d.ma_ncc };
   });
   const nvMap: Record<string, { ten: string; ma: string }> = {};
   employees.forEach((e) => {
@@ -147,6 +185,7 @@ export async function getAllThanhToanDoiTac(): Promise<ThanhToanDoiTac[]> {
       ten_don_vi,
       ten_doi_tac: doiTac?.ten,
       ma_doi_tac: doiTac?.ma,
+      ten_nhom: doiTac?.ten_nhom,
       ten_nguoi_tao: nv?.ten,
       ma_nguoi_tao: nv?.ma,
       ten_trang_thai: ten_trang_thai ?? row.trang_thai ?? undefined,
@@ -168,9 +207,9 @@ export async function getThanhToanDoiTacById(id: string): Promise<ThanhToanDoiTa
   if (error) throwSupabaseError(error);
   if (!row) return null;
 
-  const [branches, doiTacList, employees, statusList] = await Promise.all([
+  const [branches, doiTacMap, employees, statusList] = await Promise.all([
     getBranches(),
-    getDoiTacRef('nha_cung_cap'),
+    loadDoiTacEnrichMap('nha_cung_cap'),
     getEmployeesRef(),
     getTrangThaiThanhToanDoiTacList(),
   ]);
@@ -178,10 +217,6 @@ export async function getThanhToanDoiTacById(id: string): Promise<ThanhToanDoiTa
   const donViMap: Record<string, string> = {};
   branches.forEach((b) => {
     donViMap[b.id] = b.ten_chi_nhanh;
-  });
-  const doiTacMap: Record<string, { ten: string; ma: string }> = {};
-  doiTacList.forEach((d) => {
-    doiTacMap[d.id] = { ten: d.ten_ncc, ma: d.ma_ncc };
   });
   const nvMap: Record<string, { ten: string; ma: string }> = {};
   employees.forEach((e) => {
@@ -211,6 +246,7 @@ export async function getThanhToanDoiTacById(id: string): Promise<ThanhToanDoiTa
     ten_don_vi,
     ten_doi_tac: doiTac?.ten,
     ma_doi_tac: doiTac?.ma,
+    ten_nhom: doiTac?.ten_nhom,
     ten_nguoi_tao: nv?.ten,
     ma_nguoi_tao: nv?.ma,
     ten_trang_thai: ten_trang_thai ?? r.trang_thai ?? undefined,

@@ -81,6 +81,7 @@ const ThanhToanDoiTacPreviewContent: React.FC<Props> = ({ data }) => {
           <TableRow label={t('thanhToanDoiTac.form.hangMuc')} value={data.hang_muc_thanh_toan} />
           <TableRow label={t('thanhToanDoiTac.form.ngay')} value={formatDate(data.ngay)} />
           <TableRow label={t('thanhToanDoiTac.form.donVi')} value={data.ten_don_vi ?? '—'} />
+          <TableRow label={t('thanhToanDoiTac.store.nhomDoiTacCol')} value={data.ten_nhom ?? '—'} />
           <TableRow label={t('thanhToanDoiTac.form.doiTac')} value={data.ten_doi_tac} />
           <TableRow
             label={t('thanhToanDoiTac.form.trangThai')}

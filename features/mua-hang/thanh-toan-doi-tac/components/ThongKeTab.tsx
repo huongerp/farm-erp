@@ -305,11 +305,17 @@ const ThongKeTab: React.FC = () => {
                   byTrangThai={stats.byTrangThai}
                   byDoiTac={stats.byDoiTac}
                   byDonVi={stats.byDonVi}
+                  byNhom={stats.byNhom}
                   byMonth={stats.byMonth}
                   byMonthAmount={stats.byMonthAmount}
                 />
               </Suspense>
-              <StatsTables byTrangThai={stats.byTrangThai} byDoiTac={stats.byDoiTac} byDonVi={stats.byDonVi} />
+              <StatsTables
+                byTrangThai={stats.byTrangThai}
+                byNhom={stats.byNhom}
+                byDoiTac={stats.byDoiTac}
+                byDonVi={stats.byDonVi}
+              />
             </>
           )}
         </div>

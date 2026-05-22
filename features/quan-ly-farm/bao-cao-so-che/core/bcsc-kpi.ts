@@ -76,7 +76,7 @@ export interface BcscKpiComputed {
   thungThanhPham: number | null;
   nsThungCongNgay: number | null;
   nsThungGioCong: number | null;
-  /** Tổng số thùng quy đổi / (Tổng giờ QĐ IV + Tổng giờ TC IV) — bằng nsThungGioCong */
+  /** Tổng kg / (Tổng giờ QĐ dòng IV + Tổng giờ TC dòng IV) */
   nsBinhQuanNguoiGio: number | null;
   tongLuong: number | null;
   chiPhiNhanCongPerKg: number | null;
@@ -94,7 +94,7 @@ export function computeBaoCaoSoCheKpis(
   const kg = Number.isFinite(tongKg) && tongKg > EPS ? tongKg : null;
   const chiPhiNhanCongPerKg = salary != null && kg != null ? salary / kg : null;
 
-  if (!bcnc || thung == null) {
+  if (!bcnc) {
     return {
       thungThanhPham: thung,
       nsThungCongNgay: null,
@@ -110,11 +110,12 @@ export function computeBaoCaoSoCheKpis(
   const tongGioLam = snap.tongGioCnNgay + snap.tongGioTcRowIV;
 
   // 11: NS thùng/công ngày = thung × 8 / tongGioLam  (1 công = 8 giờ)
-  const nsThungCongNgay = tongGioLam > EPS ? (thung * 8) / tongGioLam : null;
+  const nsThungCongNgay =
+    thung != null && tongGioLam > EPS ? (thung * 8) / tongGioLam : null;
   // 12: NS thùng/giờ công = thung / tongGioLam
-  const nsThungGioCong = tongGioLam > EPS ? thung / tongGioLam : null;
-  // 13: NS bình quân người /giờ = thung / tongGioLam  (cùng công thức với 12)
-  const nsBinhQuanNguoiGio = tongGioLam > EPS ? thung / tongGioLam : null;
+  const nsThungGioCong = thung != null && tongGioLam > EPS ? thung / tongGioLam : null;
+  // 13: NS bình quân người /giờ = Tổng kg / (Tổng giờ QĐ IV + Tổng giờ TC IV)
+  const nsBinhQuanNguoiGio = kg != null && tongGioLam > EPS ? kg / tongGioLam : null;
 
   return {
     thungThanhPham: thung,

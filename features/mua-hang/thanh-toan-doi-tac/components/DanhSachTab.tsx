@@ -84,6 +84,7 @@ const DanhSachTab: React.FC = () => {
       item.so_phieu.toLowerCase().includes(searchLower) ||
       (item.hang_muc_thanh_toan?.toLowerCase().includes(searchLower) ?? false) ||
       (item.ten_doi_tac?.toLowerCase().includes(searchLower) ?? false) ||
+      (item.ten_nhom?.toLowerCase().includes(searchLower) ?? false) ||
       (item.ten_don_vi?.toLowerCase().includes(searchLower) ?? false) ||
       (item.ghi_chu?.toLowerCase().includes(searchLower) ?? false);
     const matchesStatus = (f.statusIds?.length ?? 0) === 0 || (f.statusIds ?? []).includes(item.id_trang_thai_thanh_toan);

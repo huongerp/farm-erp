@@ -176,7 +176,7 @@ function buildBaoCaoSoCheBodyHTML(data: FarmBaoCaoSoChe, bcncList: FarmBaoCaoNha
   const kpiCalcRows = [
     { stt: o + 1, chiSo: t('baoCaoSoChe.kpi.nsThungCongNgay'),     dvt: t('baoCaoSoChe.kpi.dvt.perCong', { dvt: 'Thùng' }),     giaTri: fmtNum(kpis.nsThungCongNgay),     ghiChu: EMPTY },
     { stt: o + 2, chiSo: t('baoCaoSoChe.kpi.nsThungGioCong'),       dvt: t('baoCaoSoChe.kpi.dvt.perGio', { dvt: 'Thùng' }),      giaTri: fmtNum(kpis.nsThungGioCong),      ghiChu: EMPTY },
-    { stt: o + 3, chiSo: t('baoCaoSoChe.kpi.nsBinhQuanNguoiGio'),   dvt: t('baoCaoSoChe.kpi.dvt.perCongGio', { dvt: 'Thùng' }), giaTri: fmtNum(kpis.nsBinhQuanNguoiGio), ghiChu: EMPTY },
+    { stt: o + 3, chiSo: t('baoCaoSoChe.kpi.nsBinhQuanNguoiGio'),   dvt: t('baoCaoSoChe.kpi.dvt.perGio', { dvt: 'kg' }), giaTri: fmtNum(kpis.nsBinhQuanNguoiGio), ghiChu: EMPTY },
     { stt: o + 4, chiSo: t('baoCaoSoChe.kpi.soThungTp'),             dvt: 'Thùng',                                                giaTri: fmtNum(kpis.thungThanhPham),      ghiChu: EMPTY },
     { stt: o + 5, chiSo: t('baoCaoSoChe.kpi.tongLuong'),             dvt: t('baoCaoSoChe.kpi.dvt.tongLuong'),                   giaTri: fmtNum(kpis.tongLuong),           ghiChu: EMPTY },
     { stt: o + 6, chiSo: t('baoCaoSoChe.kpi.chiPhiNcPerKg'),         dvt: t('baoCaoSoChe.kpi.dvt.chiPhiPerKg'),                giaTri: fmtNum(kpis.chiPhiNhanCongPerKg), ghiChu: EMPTY },
@@ -484,7 +484,7 @@ export async function exportBaoCaoSoCheToXLSX(
     ['TT', 'Chỉ số', 'ĐVT', 'Giá trị', 'Ghi chú'],
     [BCSC_KPI_STT_OFFSET + 1, t('baoCaoSoChe.kpi.nsThungCongNgay'),     t('baoCaoSoChe.kpi.dvt.perCong', { dvt: 'Thùng' }),     kpis.nsThungCongNgay ?? '—'],
     [BCSC_KPI_STT_OFFSET + 2, t('baoCaoSoChe.kpi.nsThungGioCong'),       t('baoCaoSoChe.kpi.dvt.perGio', { dvt: 'Thùng' }),      kpis.nsThungGioCong ?? '—'],
-    [BCSC_KPI_STT_OFFSET + 3, t('baoCaoSoChe.kpi.nsBinhQuanNguoiGio'),   t('baoCaoSoChe.kpi.dvt.perCongGio', { dvt: 'Thùng' }), kpis.nsBinhQuanNguoiGio ?? '—'],
+    [BCSC_KPI_STT_OFFSET + 3, t('baoCaoSoChe.kpi.nsBinhQuanNguoiGio'),   t('baoCaoSoChe.kpi.dvt.perGio', { dvt: 'kg' }), kpis.nsBinhQuanNguoiGio ?? '—'],
     [BCSC_KPI_STT_OFFSET + 4, t('baoCaoSoChe.kpi.soThungTp'),             'Thùng',                                                kpis.thungThanhPham ?? '—'],
     [BCSC_KPI_STT_OFFSET + 5, t('baoCaoSoChe.kpi.tongLuong'),             t('baoCaoSoChe.kpi.dvt.tongLuong'),                  kpis.tongLuong ?? '—'],
     [BCSC_KPI_STT_OFFSET + 6, t('baoCaoSoChe.kpi.chiPhiNcPerKg'),         t('baoCaoSoChe.kpi.dvt.chiPhiPerKg'),                kpis.chiPhiNhanCongPerKg ?? '—'],

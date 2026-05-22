@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Edit, Trash2, CreditCard, Calendar, Building2, Users, Tag, User, RefreshCw, Printer, X } from 'lucide-react';
+import { Edit, Trash2, CreditCard, Calendar, Building2, Users, Tag, User, RefreshCw, Printer, X, Folder } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Input from '../../../../components/ui/Input';
 import Textarea from '../../../../components/ui/Textarea';
@@ -179,6 +179,7 @@ const ThanhToanDoiTacDetail: React.FC<Props> = ({
               <DetailField label={t('thanhToanDoiTac.form.hangMuc')} value={data.hang_muc_thanh_toan} icon={<CreditCard size={12} />} className="col-span-1 sm:col-span-2" />
               <DetailField label={t('thanhToanDoiTac.form.ngay')} value={data.ngay} icon={<Calendar size={12} />} />
               <DetailField label={t('thanhToanDoiTac.form.donVi')} value={data.ten_don_vi ?? '—'} icon={<Building2 size={12} />} />
+              <DetailField label={t('thanhToanDoiTac.store.nhomDoiTacCol')} value={data.ten_nhom ?? '—'} icon={<Folder size={12} />} />
               <DetailField label={t('thanhToanDoiTac.form.doiTac')} value={data.ten_doi_tac ?? '—'} icon={<Users size={12} />} />
               <DetailField
                 label={t('thanhToanDoiTac.form.trangThai')}
@@ -203,7 +204,7 @@ const ThanhToanDoiTacDetail: React.FC<Props> = ({
             </DetailFieldGrid>
           </DetailSection>
 
-          <DetailSection title={t('thanhToanDoiTac.detail.systemInfo')} icon={<Calendar size={14} />} variant="secondary">
+          <DetailSection title={t('thanhToanDoiTac.detail.systemInfo')} icon={<Calendar size={14} />} variant="muted">
             <DetailFieldGrid>
               <DetailField label={t('thanhToanDoiTac.detail.createdAt')} value={formatDateTimeShort(data.tg_tao)} icon={<Calendar size={12} />} />
               <DetailField label={t('thanhToanDoiTac.detail.updatedAt')} value={formatDateTimeShort(data.tg_cap_nhat)} icon={<Calendar size={12} />} />

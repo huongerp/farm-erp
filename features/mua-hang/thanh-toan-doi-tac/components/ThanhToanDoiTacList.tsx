@@ -73,6 +73,8 @@ const ThanhToanDoiTacList: React.FC<Props> = ({
         return <span className="text-sm text-muted-foreground">{item.ngay}</span>;
       case 'ten_don_vi':
         return <span className="text-sm text-muted-foreground">{item.ten_don_vi ?? '—'}</span>;
+      case 'ten_nhom':
+        return <span className="text-sm text-muted-foreground">{item.ten_nhom ?? '—'}</span>;
       case 'ten_doi_tac':
         return <span className="text-sm text-muted-foreground">{item.ten_doi_tac ?? '—'}</span>;
       case 'ten_trang_thai':
@@ -123,7 +125,9 @@ const ThanhToanDoiTacList: React.FC<Props> = ({
         {renderStatusBadge(item)}
       </div>
       <div className="font-medium text-foreground text-sm mb-1">{item.hang_muc_thanh_toan}</div>
-      <div className="text-xs text-muted-foreground mb-2">{item.ten_doi_tac ?? '—'} · {item.ngay}</div>
+      <div className="text-xs text-muted-foreground mb-2">
+        {[item.ten_nhom, item.ten_doi_tac].filter(Boolean).join(' · ') || '—'} · {item.ngay}
+      </div>
       <div className="text-sm tabular-nums font-medium mb-2">
         {item.so_tien != null ? item.so_tien.toLocaleString('vi-VN') : '—'}
       </div>

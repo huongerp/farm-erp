@@ -14,6 +14,8 @@ export interface ThanhToanDoiTac {
   id_doi_tac: string;
   ten_doi_tac?: string;
   ma_doi_tac?: string;
+  /** Nhóm đối tác – enrich từ đối tác (id_nhom) */
+  ten_nhom?: string;
   /** Trạng thái thanh toán – FK TrangThaiThanhToanDoiTac */
   id_trang_thai_thanh_toan: string;
   ten_trang_thai?: string;

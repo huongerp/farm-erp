@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Tag, Building2, Building, TrendingUp } from 'lucide-react';
+import { Tag, Building2, Building, TrendingUp, Folder } from 'lucide-react';
 import {
   PieChart,
   Pie,
@@ -42,11 +42,12 @@ interface Props {
   byTrangThai: ThanhToanDoiTacStatsByTrangThai[];
   byDoiTac: StatsChartItemAmount[];
   byDonVi: StatsChartItemAmount[];
+  byNhom: StatsChartItemAmount[];
   byMonth: StatsChartItem[];
   byMonthAmount: StatsChartItem[];
 }
 
-const StatsCharts: React.FC<Props> = ({ byTrangThai, byDoiTac, byDonVi, byMonth, byMonthAmount }) => {
+const StatsCharts: React.FC<Props> = ({ byTrangThai, byDoiTac, byDonVi, byNhom, byMonth, byMonthAmount }) => {
   const { t } = useTranslation();
   const [visible, setVisible] = useState(false);
   useEffect(() => {
@@ -60,11 +61,13 @@ const StatsCharts: React.FC<Props> = ({ byTrangThai, byDoiTac, byDonVi, byMonth,
   const hasStatus = statusPieData.length > 0;
   const hasDoiTac = byDoiTac.some((d) => d.value > 0 || d.amount > 0);
   const hasDonVi = byDonVi.some((d) => d.value > 0 || d.amount > 0);
+  const hasNhom = byNhom.some((d) => d.value > 0 || d.amount > 0);
   const hasByMonth = byMonth.some((d) => d.value > 0);
   const hasByMonthAmount = byMonthAmount.some((d) => d.value > 0);
 
   const byDoiTacChartData: StatsChartItem[] = byDoiTac.map((d) => ({ name: d.name, value: d.amount }));
   const byDonViChartData: StatsChartItem[] = byDonVi.map((d) => ({ name: d.name, value: d.amount }));
+  const byNhomChartData: StatsChartItem[] = byNhom.map((d) => ({ name: d.name, value: d.amount }));
 
   const renderBarChart = (
     data: StatsChartItem[],
@@ -132,7 +135,8 @@ const StatsCharts: React.FC<Props> = ({ byTrangThai, byDoiTac, byDonVi, byMonth,
         {hasByMonth && renderBarChart(byMonth, 'thanhToanDoiTac.stats.byMonth', <TrendingUp size={14} className="text-primary" />, 'horizontal')}
         {hasByMonthAmount && renderBarChart(byMonthAmount, 'thanhToanDoiTac.stats.byMonthAmount', <TrendingUp size={14} className="text-primary" />, 'horizontal', true)}
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {hasNhom && renderBarChart(byNhomChartData.slice(0, 8), 'thanhToanDoiTac.stats.byNhomDoiTac', <Folder size={14} className="text-primary" />, 'vertical', true)}
         {hasDoiTac && renderBarChart(byDoiTacChartData.slice(0, 8), 'thanhToanDoiTac.stats.byDoiTac', <Building2 size={14} className="text-primary" />, 'vertical', true)}
         {hasDonVi && renderBarChart(byDonViChartData.slice(0, 8), 'thanhToanDoiTac.stats.byDonVi', <Building size={14} className="text-primary" />, 'vertical', true)}
       </div>

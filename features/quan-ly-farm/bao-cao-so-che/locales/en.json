@@ -139,7 +139,7 @@
   "baoCaoSoChe.kpi.soThungTp": "Finished units (thùng)",
   "baoCaoSoChe.kpi.tongLuong": "Total wages",
   "baoCaoSoChe.kpi.chiPhiNcPerKg": "Labor cost per kg",
-  "baoCaoSoChe.kpi.tooltipNsBinhQuan": "Temporary: units / (converted work × 8). TODO: replace with the correct person×hour definition.",
+  "baoCaoSoChe.kpi.tooltipNsBinhQuan": "Total kg / (std. hours row IV + OT hours row IV) from the labor report for the same date and branch.",
   "baoCaoSoChe.kpi.tooltipThungTp": "Temporarily equals total pre-processed bunches; may change when “thùng” is defined.",
   "baoCaoSoChe.kpi.tooltipChuaCongThuc": "Formula or unit price / kg not configured yet — will show when data is available.",
   "baoCaoSoChe.phamCap.colPhamCap": "Product grade",

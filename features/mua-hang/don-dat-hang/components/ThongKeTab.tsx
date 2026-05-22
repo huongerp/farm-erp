@@ -8,13 +8,28 @@ import { getAllDonDatHangSupabase, fetchDonDatHangThongKeFromRpc, fetchChiTietFo
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import EmptyState from '../../../../components/shared/EmptyState';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
-import { computeDonDatHangStats, computeDonDatHangCategoryStats } from './stats/useDonDatHangStats';
+import {
+  computeDonDatHangStats,
+  computeDonDatHangCategoryStats,
+  filterDonDatHangList,
+} from './stats/useDonDatHangStats';
+import {
+  exportDonDatHangReportToXLSX,
+  printDonDatHangReport,
+  type DonDatHangReportFilters,
+} from '../utils/export-don-dat-hang-report';
 import { TRANG_THAI_DON_DAT_HANG, TRANG_THAI_KEY } from '../core/constants';
 import StatsToolbar from './stats/StatsToolbar';
 import StatsCards from './stats/StatsCards';
 const StatsCharts = lazy(() => import('./stats/StatsCharts'));
 import StatsTables from './stats/StatsTables';
-import type { DonDatHang } from '../core/types';
+type ReportFilterOption = { label: string; value: string };
+
+function getSelectedLabels(options: ReportFilterOption[], values: string[]): string[] {
+  if (values.length === 0) return [];
+  const labelMap = new Map(options.map((option) => [option.value, option.label]));
+  return values.map((value) => labelMap.get(value) ?? value);
+}
 
 const ThongKeTab: React.FC = () => {
   const { t } = useTranslation();
@@ -27,9 +42,22 @@ const ThongKeTab: React.FC = () => {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
 
+  const statsFilterParams = useMemo(
+    () => ({
+      dateFrom,
+      dateTo,
+      filterStatus,
+      filterSupplier,
+      filterBuyer,
+    }),
+    [dateFrom, dateTo, filterStatus, filterSupplier, filterBuyer]
+  );
+
   const { data: thongKe, isLoading, isError } = useQuery({
     queryKey: ['donDatHang', 'thongKe', filterStatus, filterSupplier, filterBuyer, dateFrom, dateTo],
     queryFn: async () => {
+      const list = await getAllDonDatHangSupabase();
+      const filteredList = filterDonDatHangList(list, statsFilterParams);
       const rpc = await fetchDonDatHangThongKeFromRpc({
         dateFrom,
         dateTo,
@@ -37,16 +65,7 @@ const ThongKeTab: React.FC = () => {
         filterSupplier,
         filterBuyer,
       });
-      if (rpc) return { kind: 'rpc' as const, rpc };
-      const list = await getAllDonDatHangSupabase();
-      const filteredList = list.filter((d: DonDatHang) => {
-        const matchStatus = filterStatus.length === 0 || filterStatus.includes(String(d.trang_thai));
-        const matchSupplier = filterSupplier.length === 0 || filterSupplier.includes(d.id_nha_cung_cap);
-        const matchBuyer = filterBuyer.length === 0 || filterBuyer.includes(d.id_nguoi_dat);
-        const matchFrom = !dateFrom || (d.ngay_dat && d.ngay_dat >= dateFrom);
-        const matchTo = !dateTo || (d.ngay_dat && d.ngay_dat <= dateTo);
-        return matchStatus && matchSupplier && matchBuyer && matchFrom && matchTo;
-      });
+      if (rpc) return { kind: 'rpc' as const, rpc, list, filteredList };
       return { kind: 'fallback' as const, list, filteredList };
     },
     staleTime: 60_000,
@@ -231,12 +250,61 @@ const ThongKeTab: React.FC = () => {
     </>
   );
 
-  const handleExportReport = () => {
-    toast.info(t('donDatHang.stats.exportReport') + ' – Đang phát triển');
+  const filteredList = useMemo(() => thongKe?.filteredList ?? [], [thongKe]);
+
+  const getReportFilters = (): DonDatHangReportFilters => ({
+    dateFrom,
+    dateTo,
+    statusLabels: getSelectedLabels(statusOptions, filterStatus),
+    supplierLabels: getSelectedLabels(supplierOptions, filterSupplier),
+    buyerLabels: getSelectedLabels(buyerOptions, filterBuyer),
+    statusValues: filterStatus,
+    supplierValues: filterSupplier,
+    buyerValues: filterBuyer,
+  });
+
+  const handleExportReport = async () => {
+    if (!stats || filteredList.length === 0) {
+      toast.error(t('donDatHang.noExportData'));
+      return;
+    }
+    const toastId = toast.loading(t('donDatHang.report.exporting'));
+    try {
+      await exportDonDatHangReportToXLSX({
+        list: filteredList,
+        stats: {
+          ...stats,
+          categoryStats: categoryStats ?? null,
+        },
+        filters: getReportFilters(),
+        t,
+      });
+      toast.success(t('donDatHang.report.exportSuccess'), { id: toastId });
+    } catch (error) {
+      console.error('Failed to export purchase order report', error);
+      toast.error(t('donDatHang.report.exportError'), { id: toastId });
+    }
   };
 
   const handlePrintReport = () => {
-    window.print();
+    if (!stats || filteredList.length === 0) {
+      toast.error(t('donDatHang.noExportData'));
+      return;
+    }
+    try {
+      printDonDatHangReport({
+        list: filteredList,
+        stats: {
+          ...stats,
+          categoryStats: categoryStats ?? null,
+        },
+        filters: getReportFilters(),
+        t,
+      });
+    } catch (error) {
+      console.error('Failed to print purchase order report', error);
+      toast.error(t('donDatHang.report.printError'));
+    }
   };
 
   if (isError) {

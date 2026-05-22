@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Tag, Building2, Building } from 'lucide-react';
+import { Tag, Building2, Building, Folder } from 'lucide-react';
 import type { ThanhToanDoiTacStatsByTrangThai } from './useThanhToanDoiTacStats';
 import type { StatsChartItemAmount } from './useThanhToanDoiTacStats';
 
@@ -74,17 +74,19 @@ interface Props {
   byTrangThai: ThanhToanDoiTacStatsByTrangThai[];
   byDoiTac: StatsChartItemAmount[];
   byDonVi: StatsChartItemAmount[];
+  byNhom: StatsChartItemAmount[];
 }
 
-const StatsTables: React.FC<Props> = ({ byTrangThai, byDoiTac, byDonVi }) => {
+const StatsTables: React.FC<Props> = ({ byTrangThai, byDoiTac, byDonVi, byNhom }) => {
   const { t } = useTranslation();
 
   const statusTableData = byTrangThai.map((r) => ({ name: r.ten, value: r.count, amount: r.amount }));
   const doiTacTableData = byDoiTac.map((r) => ({ name: r.name, value: r.value, amount: r.amount }));
   const donViTableData = byDonVi.map((r) => ({ name: r.name, value: r.value, amount: r.amount }));
+  const nhomTableData = byNhom.map((r) => ({ name: r.name, value: r.value, amount: r.amount }));
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
       <div className="bg-card rounded-xl border border-border overflow-hidden">
         <div className="px-4 py-2.5 border-b border-border bg-muted/20">
           <div className="flex items-center gap-2">
@@ -121,6 +123,7 @@ const StatsTables: React.FC<Props> = ({ byTrangThai, byDoiTac, byDonVi }) => {
           </table>
         </div>
       </div>
+      <TableBlock titleKey="thanhToanDoiTac.stats.byNhomDoiTac" icon={Folder} data={nhomTableData} emptyMessageKey="thanhToanDoiTac.stats.noData" showAmount />
       <TableBlock titleKey="thanhToanDoiTac.stats.byDoiTac" icon={Building2} data={doiTacTableData} emptyMessageKey="thanhToanDoiTac.stats.noData" showAmount />
       <TableBlock titleKey="thanhToanDoiTac.stats.byDonVi" icon={Building} data={donViTableData} emptyMessageKey="thanhToanDoiTac.stats.noData" showAmount />
     </div>

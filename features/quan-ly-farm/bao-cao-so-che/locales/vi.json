@@ -140,7 +140,7 @@
   "baoCaoSoChe.kpi.soThungTp": "Số thùng thành phẩm",
   "baoCaoSoChe.kpi.tongLuong": "Tổng lương",
   "baoCaoSoChe.kpi.chiPhiNcPerKg": "Chi phí nhân công/kg",
-  "baoCaoSoChe.kpi.tooltipNsBinhQuan": "Tạm: thùng / (công quy đổi × 8). TODO: thay khi có định nghĩa người × giờ chính xác.",
+  "baoCaoSoChe.kpi.tooltipNsBinhQuan": "Tổng kg / (Tổng giờ QĐ dòng IV + Tổng giờ TC dòng IV) từ báo cáo nhân công cùng ngày, chi nhánh.",
   "baoCaoSoChe.kpi.tooltipThungTp": "Tạm bằng tổng số buồng sơ chế; có thể đổi công thức khi có quy ước thùng.",
   "baoCaoSoChe.kpi.tooltipChuaCongThuc": "Chưa cấu hình công thức hoặc thiếu đơn giá / kg — hiển thị sau khi có dữ liệu.",
   "baoCaoSoChe.phamCap.colPhamCap": "Phẩm cấp",

@@ -19,6 +19,7 @@ export interface ThanhToanDoiTacReportStats {
   byTrangThai: ThanhToanDoiTacStatsByTrangThai[];
   byDoiTac: StatsChartItemAmount[];
   byDonVi: StatsChartItemAmount[];
+  byNhom: StatsChartItemAmount[];
   byMonth: StatsChartItem[];
   byMonthAmount: StatsChartItem[];
 }
@@ -112,6 +113,7 @@ function detailHeaders(t: TFunction): string[] {
     t('thanhToanDoiTac.form.hangMuc'),
     t('thanhToanDoiTac.form.ngay'),
     t('thanhToanDoiTac.form.donVi'),
+    t('thanhToanDoiTac.store.nhomDoiTacCol'),
     t('thanhToanDoiTac.form.doiTac'),
     t('thanhToanDoiTac.form.trangThai'),
     t('thanhToanDoiTac.form.soTien'),
@@ -128,6 +130,7 @@ function detailRows(list: ThanhToanDoiTac[], t: TFunction): Array<Record<string,
     [t('thanhToanDoiTac.form.hangMuc')]: item.hang_muc_thanh_toan,
     [t('thanhToanDoiTac.form.ngay')]: item.ngay ? formatDate(item.ngay) : '',
     [t('thanhToanDoiTac.form.donVi')]: item.ten_don_vi ?? '',
+    [t('thanhToanDoiTac.store.nhomDoiTacCol')]: item.ten_nhom ?? '',
     [t('thanhToanDoiTac.form.doiTac')]: item.ten_doi_tac ?? '',
     [t('thanhToanDoiTac.form.trangThai')]: item.ten_trang_thai ?? '',
     [t('thanhToanDoiTac.form.soTien')]: item.so_tien ?? 0,
@@ -189,6 +192,15 @@ export async function exportThanhToanDoiTacReportToXLSX({
   const wsPartner = sheetFromRows(XLSX, partnerRows, amountHeaders);
   setColumnWidths(wsPartner, [32, 14, 18]);
   XLSX.utils.book_append_sheet(wb, wsPartner, 'TheoDoiTac');
+
+  const nhomRows = stats.byNhom.map((row) => ({
+    [t('thanhToanDoiTac.stats.nameCol')]: row.name,
+    [t('thanhToanDoiTac.stats.countCol')]: row.value,
+    [t('thanhToanDoiTac.stats.amountCol')]: row.amount,
+  }));
+  const wsNhom = sheetFromRows(XLSX, nhomRows, amountHeaders);
+  setColumnWidths(wsNhom, [32, 14, 18]);
+  XLSX.utils.book_append_sheet(wb, wsNhom, 'TheoNhomDoiTac');
 
   const unitRows = stats.byDonVi.map((row) => ({
     [t('thanhToanDoiTac.stats.nameCol')]: row.name,
@@ -341,6 +353,7 @@ function buildDetailTableHTML(list: ThanhToanDoiTac[], t: TFunction): string {
       <td>${escapeHtml(item.hang_muc_thanh_toan)}</td>
       <td>${escapeHtml(item.ngay ? formatDate(item.ngay) : '')}</td>
       <td>${escapeHtml(item.ten_don_vi)}</td>
+      <td>${escapeHtml(item.ten_nhom)}</td>
       <td>${escapeHtml(item.ten_doi_tac)}</td>
       <td>${escapeHtml(item.ten_trang_thai)}</td>
       <td class="number">${escapeHtml(formatVnd(item.so_tien ?? 0))}</td>
@@ -359,13 +372,14 @@ function buildDetailTableHTML(list: ThanhToanDoiTac[], t: TFunction): string {
         <th>${escapeHtml(t('thanhToanDoiTac.form.hangMuc'))}</th>
         <th>${escapeHtml(t('thanhToanDoiTac.form.ngay'))}</th>
         <th>${escapeHtml(t('thanhToanDoiTac.form.donVi'))}</th>
+        <th>${escapeHtml(t('thanhToanDoiTac.store.nhomDoiTacCol'))}</th>
         <th>${escapeHtml(t('thanhToanDoiTac.form.doiTac'))}</th>
         <th>${escapeHtml(t('thanhToanDoiTac.form.trangThai'))}</th>
         <th class="number">${escapeHtml(t('thanhToanDoiTac.form.soTien'))}</th>
       </tr>
     </thead>
     <tbody>
-      ${rows || `<tr><td colspan="8" class="empty">${escapeHtml(t('thanhToanDoiTac.stats.noData'))}</td></tr>`}
+      ${rows || `<tr><td colspan="9" class="empty">${escapeHtml(t('thanhToanDoiTac.stats.noData'))}</td></tr>`}
     </tbody>
   </table>
 </section>`;
@@ -379,6 +393,7 @@ export function buildThanhToanDoiTacReportPrintHTML({
 }: ThanhToanDoiTacReportPayload): string {
   const statusRows = stats.byTrangThai.map((row) => ({ name: row.ten, count: row.count, amount: row.amount }));
   const partnerRows = stats.byDoiTac.map((row) => ({ name: row.name, count: row.value, amount: row.amount }));
+  const nhomRows = stats.byNhom.map((row) => ({ name: row.name, count: row.value, amount: row.amount }));
   const unitRows = stats.byDonVi.map((row) => ({ name: row.name, count: row.value, amount: row.amount }));
   const printedAt = formatDateTime(new Date());
 
@@ -432,7 +447,10 @@ export function buildThanhToanDoiTacReportPrintHTML({
     ${buildAmountTableHTML(t('thanhToanDoiTac.stats.byStatus'), statusRows, t)}
     ${buildAmountTableHTML(t('thanhToanDoiTac.stats.byDonVi'), unitRows, t)}
   </div>
-  ${buildAmountTableHTML(t('thanhToanDoiTac.stats.byDoiTac'), partnerRows, t)}
+  <div class="two-col">
+    ${buildAmountTableHTML(t('thanhToanDoiTac.stats.byNhomDoiTac'), nhomRows, t)}
+    ${buildAmountTableHTML(t('thanhToanDoiTac.stats.byDoiTac'), partnerRows, t)}
+  </div>
   <div class="two-col">
     ${buildMonthTableHTML(t('thanhToanDoiTac.stats.byMonth'), stats.byMonth, t('thanhToanDoiTac.stats.countCol'), false)}
     ${buildMonthTableHTML(t('thanhToanDoiTac.stats.byMonthAmount'), stats.byMonthAmount, t('thanhToanDoiTac.stats.amountCol'), true)}

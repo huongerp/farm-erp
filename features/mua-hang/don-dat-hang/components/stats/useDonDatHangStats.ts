@@ -22,6 +22,27 @@ export interface StatsChartItem {
   value: number;
 }
 
+export interface DonDatHangStatsFilterParams {
+  dateFrom?: string;
+  dateTo?: string;
+  filterStatus: string[];
+  filterSupplier: string[];
+  filterBuyer: string[];
+}
+
+/** Lọc danh sách đơn theo bộ lọc tab Thống kê (dùng xuất / in báo cáo). */
+export function filterDonDatHangList(list: DonDatHang[], params: DonDatHangStatsFilterParams): DonDatHang[] {
+  const { dateFrom = '', dateTo = '', filterStatus, filterSupplier, filterBuyer } = params;
+  return list.filter((d) => {
+    const matchStatus = filterStatus.length === 0 || filterStatus.includes(String(d.trang_thai));
+    const matchSupplier = filterSupplier.length === 0 || filterSupplier.includes(d.id_nha_cung_cap);
+    const matchBuyer = filterBuyer.length === 0 || filterBuyer.includes(d.id_nguoi_dat);
+    const matchFrom = !dateFrom || (d.ngay_dat && d.ngay_dat >= dateFrom);
+    const matchTo = !dateTo || (d.ngay_dat && d.ngay_dat <= dateTo);
+    return matchStatus && matchSupplier && matchBuyer && matchFrom && matchTo;
+  });
+}
+
 /** Logic thuần (dùng cho Thống kê RPC + fallback client). */
 export function computeDonDatHangStats(list: DonDatHang[]) {
     const draft = list.filter((d) => d.trang_thai === TRANG_THAI_NHAP).length;

@@ -95,6 +95,23 @@ export function useThanhToanDoiTacStats(list: ThanhToanDoiTac[]) {
       .map(({ name, count, amount }) => ({ name, value: count, amount }))
       .sort((a, b) => b.value - a.value);
 
+    const byNhomMap = new Map<string, { name: string; count: number; amount: number }>();
+    list.forEach((d) => {
+      const key = d.ten_nhom?.trim() || '__null__';
+      const name = d.ten_nhom?.trim() || '—';
+      const cur = byNhomMap.get(key);
+      const amount = d.so_tien ?? 0;
+      if (cur) {
+        cur.count += 1;
+        cur.amount += amount;
+      } else {
+        byNhomMap.set(key, { name, count: 1, amount });
+      }
+    });
+    const byNhom: StatsChartItemAmount[] = Array.from(byNhomMap.values())
+      .map(({ name, count, amount }) => ({ name, value: count, amount }))
+      .sort((a, b) => b.value - a.value);
+
     const byMonthMap = new Map<string, number>();
     list.forEach((d) => {
       if (!d.ngay) return;
@@ -134,6 +151,7 @@ export function useThanhToanDoiTacStats(list: ThanhToanDoiTac[]) {
       byTrangThai,
       byDoiTac,
       byDonVi,
+      byNhom,
       byMonth,
       byMonthAmount,
     };

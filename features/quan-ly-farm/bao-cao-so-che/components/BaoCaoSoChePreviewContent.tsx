@@ -149,7 +149,7 @@ const BaoCaoSoChePreviewContent: React.FC<Props> = ({ data, bcncList }) => {
   const kpiCalcRows = [
     { stt: o + 1, chiSo: t('baoCaoSoChe.kpi.nsThungCongNgay'),     dvt: t('baoCaoSoChe.kpi.dvt.perCong', { dvt: 'Thùng' }),     giaTri: fmtNum(kpis.nsThungCongNgay),     ghiChu: '—' },
     { stt: o + 2, chiSo: t('baoCaoSoChe.kpi.nsThungGioCong'),       dvt: t('baoCaoSoChe.kpi.dvt.perGio', { dvt: 'Thùng' }),      giaTri: fmtNum(kpis.nsThungGioCong),      ghiChu: '—' },
-    { stt: o + 3, chiSo: t('baoCaoSoChe.kpi.nsBinhQuanNguoiGio'),   dvt: t('baoCaoSoChe.kpi.dvt.perCongGio', { dvt: 'Thùng' }), giaTri: fmtNum(kpis.nsBinhQuanNguoiGio), ghiChu: '—' },
+    { stt: o + 3, chiSo: t('baoCaoSoChe.kpi.nsBinhQuanNguoiGio'),   dvt: t('baoCaoSoChe.kpi.dvt.perGio', { dvt: 'kg' }), giaTri: fmtNum(kpis.nsBinhQuanNguoiGio), ghiChu: '—' },
     { stt: o + 4, chiSo: t('baoCaoSoChe.kpi.soThungTp'),             dvt: 'Thùng',                                                giaTri: fmtNum(kpis.thungThanhPham),      ghiChu: '—' },
     { stt: o + 5, chiSo: t('baoCaoSoChe.kpi.tongLuong'),             dvt: t('baoCaoSoChe.kpi.dvt.tongLuong'),                   giaTri: fmtNum(kpis.tongLuong),           ghiChu: '—' },
     { stt: o + 6, chiSo: t('baoCaoSoChe.kpi.chiPhiNcPerKg'),         dvt: t('baoCaoSoChe.kpi.dvt.chiPhiPerKg'),                giaTri: fmtNum(kpis.chiPhiNhanCongPerKg), ghiChu: '—' },

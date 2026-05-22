@@ -184,7 +184,7 @@ const BaoCaoSoCheBcncKpiReadout: React.FC<Props> = ({
         {
           stt: o + 3,
           chiSo: t('baoCaoSoChe.kpi.nsBinhQuanNguoiGio'),
-          dvt: t('baoCaoSoChe.kpi.dvt.perCongGio', { dvt: 'Thùng' }),
+          dvt: t('baoCaoSoChe.kpi.dvt.perGio', { dvt: 'kg' }),
           giaTri: fmtNum(kpis.nsBinhQuanNguoiGio),
           ghiChu: '—',
         },
