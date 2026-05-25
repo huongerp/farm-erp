@@ -14,9 +14,10 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'tong_cay_da_giao', label: i18n.t('hopDong.store.tongCayDaGiaoCol'), visible: true, minWidth: 120, maxWidth: 140, order: 8 },
   { id: 'tien_con_lai', label: i18n.t('hopDong.store.tienConLaiCol'), visible: true, minWidth: 120, maxWidth: 140, order: 9 },
   { id: 'cay_con_lai', label: i18n.t('hopDong.store.cayConLaiCol'), visible: true, minWidth: 120, maxWidth: 140, order: 10 },
-  { id: 'trang_thai', label: i18n.t('hopDong.store.trangThaiCol'), visible: true, minWidth: 120, maxWidth: 140, order: 11 },
-  { id: 'ten_nguoi_tao', label: i18n.t('hopDong.store.nguoiTaoCol'), visible: true, minWidth: 120, maxWidth: 180, order: 12 },
-  { id: 'tg_cap_nhat', label: i18n.t('hopDong.store.updatedCol'), visible: true, minWidth: 100, maxWidth: 140, order: 13 },
+  { id: 'hinh_anh', label: i18n.t('hopDong.store.hinhAnhCol'), visible: true, minWidth: 72, maxWidth: 96, order: 11 },
+  { id: 'trang_thai', label: i18n.t('hopDong.store.trangThaiCol'), visible: true, minWidth: 120, maxWidth: 140, order: 12 },
+  { id: 'ten_nguoi_tao', label: i18n.t('hopDong.store.nguoiTaoCol'), visible: true, minWidth: 120, maxWidth: 180, order: 13 },
+  { id: 'tg_cap_nhat', label: i18n.t('hopDong.store.updatedCol'), visible: true, minWidth: 100, maxWidth: 140, order: 14 },
 ];
 
 const initialFilters: HopDongFilters = {

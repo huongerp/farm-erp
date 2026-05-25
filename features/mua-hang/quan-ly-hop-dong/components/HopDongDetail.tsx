@@ -1,7 +1,8 @@
 import React, { useCallback, useMemo, useState } from 'react';
+import ReactDOM from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence, motion } from 'framer-motion';
-import { FileText, Edit, Trash2, RefreshCw, X, Wallet } from 'lucide-react';
+import { FileText, Edit, Trash2, RefreshCw, X, Wallet, Images, ZoomIn, ChevronLeft, ChevronRight } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Textarea from '../../../../components/ui/Textarea';
 import Combobox from '../../../../components/ui/Combobox';
@@ -64,6 +65,13 @@ const HopDongDetail: React.FC<Props> = ({
 
   const [ctModalOpen, setCtModalOpen] = useState(false);
   const [editingLine, setEditingLine] = useState<HopDongChiTiet | null>(null);
+
+  const hinhAnhUrls = data.hinh_anh_urls ?? [];
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const openLightbox = (idx: number) => setLightboxIndex(idx);
+  const closeLightbox = () => setLightboxIndex(null);
+  const goPrev = () => setLightboxIndex((i) => (i !== null && i > 0 ? i - 1 : i));
+  const goNext = () => setLightboxIndex((i) => (i !== null && i < hinhAnhUrls.length - 1 ? i + 1 : i));
 
   const statusMutation = useUpdateHopDongTrangThai(() => setShowStatusPopup(false));
   const insertCt = useInsertHopDongChiTiet();
@@ -260,6 +268,26 @@ const HopDongDetail: React.FC<Props> = ({
             </DetailFieldGrid>
           </DetailSection>
 
+          {hinhAnhUrls.length > 0 && (
+            <DetailSection title={t('hopDong.detail.hinhAnh')} icon={<Images size={14} className="text-primary" />}>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                {hinhAnhUrls.map((url, idx) => (
+                  <button
+                    key={url}
+                    type="button"
+                    onClick={() => openLightbox(idx)}
+                    className="group relative block rounded-lg overflow-hidden border border-border bg-muted/20 aspect-square hover:ring-2 hover:ring-primary/30 transition-shadow cursor-zoom-in"
+                  >
+                    <img src={url} alt="" className="w-full h-full object-cover" loading="lazy" />
+                    <span className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 transition-colors">
+                      <ZoomIn size={20} className="text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow" />
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </DetailSection>
+          )}
+
           <GenericSubTableSection
             title={t('hopDong.detail.chiTiet')}
             icon={<Wallet size={14} className="text-primary" />}
@@ -441,6 +469,75 @@ const HopDongDetail: React.FC<Props> = ({
         onSubmit={onSaveCt}
         isLoading={ctPending}
       />
+
+      {lightboxIndex !== null && ReactDOM.createPortal(
+        <AnimatePresence>
+          <motion.div
+            key="hop-dong-lightbox-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[9999] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={closeLightbox}
+          >
+            <motion.img
+              key={hinhAnhUrls[lightboxIndex]}
+              initial={{ opacity: 0, scale: 0.92 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.92 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              src={hinhAnhUrls[lightboxIndex]}
+              alt=""
+              className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+
+            <button
+              type="button"
+              onClick={closeLightbox}
+              className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
+              aria-label={t('common.close')}
+            >
+              <X size={18} />
+            </button>
+
+            {lightboxIndex > 0 && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  goPrev();
+                }}
+                className="absolute left-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
+                aria-label={t('hopDong.detail.prevImage')}
+              >
+                <ChevronLeft size={20} />
+              </button>
+            )}
+
+            {lightboxIndex < hinhAnhUrls.length - 1 && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  goNext();
+                }}
+                className="absolute right-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
+                aria-label={t('hopDong.detail.nextImage')}
+              >
+                <ChevronRight size={20} />
+              </button>
+            )}
+
+            {hinhAnhUrls.length > 1 && (
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/70 text-sm tabular-nums select-none">
+                {lightboxIndex + 1} / {hinhAnhUrls.length}
+              </div>
+            )}
+          </motion.div>
+        </AnimatePresence>,
+        document.body
+      )}
     </>
   );
 };

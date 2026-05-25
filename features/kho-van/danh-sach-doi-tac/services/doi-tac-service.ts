@@ -12,7 +12,7 @@ const TABLE_DOI_TAC = 'fp_mh_danh_sach_doi_tac';
 const NHOM_DOI_TAC_COLUMNS = 'id,ma_nhom,ten_nhom,loai,thu_tu,trang_thai,tg_tao,tg_cap_nhat';
 const TAG_DOI_TAC_COLUMNS = 'id,ten_tag';
 const DOI_TAC_ROW_COLUMNS =
-  'id,ma_doi_tac,ten_doi_tac,loai_doi_tac,id_nhom,dia_chi,dien_thoai,email,mo_ta,tag_ids,trang_thai,thu_tu,tg_tao,tg_cap_nhat';
+  'id,ma_doi_tac,ten_doi_tac,loai_doi_tac,id_nhom,dia_chi,dien_thoai,email,mo_ta,ngan_hang_bin,so_tai_khoan,chu_tai_khoan,tag_ids,trang_thai,thu_tu,tg_tao,tg_cap_nhat';
 
 /** Row từ Supabase fp_mh_nhom_doi_tac */
 interface NhomRow {
@@ -43,6 +43,9 @@ interface DoiTacRow {
   dien_thoai: string | null;
   email: string | null;
   mo_ta: string | null;
+  ngan_hang_bin: string | null;
+  so_tai_khoan: string | null;
+  chu_tai_khoan: string | null;
   tag_ids: number[] | null;
   trang_thai: string | null;
   thu_tu: number | null;
@@ -83,6 +86,9 @@ function rowToDoiTac(row: DoiTacRow, tenNhom?: string, tenTags?: string[]): DoiT
     dien_thoai: row.dien_thoai ?? undefined,
     email: row.email ?? undefined,
     mo_ta: row.mo_ta ?? undefined,
+    ngan_hang_bin: row.ngan_hang_bin ?? undefined,
+    so_tai_khoan: row.so_tai_khoan ?? undefined,
+    chu_tai_khoan: row.chu_tai_khoan ?? undefined,
     tag_ids: (row.tag_ids ?? []).map(String),
     ten_tags: tenTags,
     trang_thai: (row.trang_thai as DoiTac['trang_thai']) ?? TRANG_THAI_DOI_TAC.DANG_HOAT_DONG,
@@ -308,6 +314,9 @@ export const createDoiTac = async (data: DoiTacFormValues): Promise<DoiTac> => {
     dien_thoai: data.dien_thoai?.trim() || null,
     email: data.email?.trim() || null,
     mo_ta: data.mo_ta?.trim() || null,
+    ngan_hang_bin: data.ngan_hang_bin?.trim() || null,
+    so_tai_khoan: data.so_tai_khoan?.trim() || null,
+    chu_tai_khoan: data.chu_tai_khoan?.trim() || null,
     tag_ids: Array.isArray(data.tag_ids) ? data.tag_ids.map(Number).filter((n) => !Number.isNaN(n)) : [],
     trang_thai: data.trang_thai || null,
     thu_tu: Math.max(1, data.thu_tu ?? 1),
@@ -340,6 +349,9 @@ export const updateDoiTac = async (id: string, data: DoiTacFormValues): Promise<
     dien_thoai: data.dien_thoai?.trim() || null,
     email: data.email?.trim() || null,
     mo_ta: data.mo_ta?.trim() || null,
+    ngan_hang_bin: data.ngan_hang_bin?.trim() || null,
+    so_tai_khoan: data.so_tai_khoan?.trim() || null,
+    chu_tai_khoan: data.chu_tai_khoan?.trim() || null,
     tag_ids: Array.isArray(data.tag_ids) ? data.tag_ids.map(Number).filter((n) => !Number.isNaN(n)) : [],
     trang_thai: data.trang_thai || null,
     thu_tu: Math.max(1, data.thu_tu ?? 1),

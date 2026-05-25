@@ -13,9 +13,10 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'ten_ncc', label: i18n.t('doiTac.store.nameCol'), visible: true, minWidth: 180, maxWidth: 320, order: 3 },
   { id: 'ten_nhom', label: i18n.t('doiTac.store.groupCol'), visible: true, minWidth: 140, maxWidth: 220, order: 4 },
   { id: 'dien_thoai', label: i18n.t('doiTac.store.phoneCol'), visible: true, minWidth: 110, maxWidth: 160, order: 5 },
-  { id: 'tags', label: i18n.t('doiTac.store.tagsCol'), visible: true, minWidth: 140, maxWidth: 260, order: 6 },
-  { id: 'trang_thai', label: i18n.t('doiTac.store.statusCol'), visible: true, minWidth: 100, maxWidth: 140, order: 7 },
-  { id: 'tg_cap_nhat', label: i18n.t('doiTac.store.updatedCol'), visible: true, minWidth: 100, maxWidth: 140, order: 8 },
+  { id: 'qr', label: i18n.t('doiTac.store.qrCol'), visible: true, minWidth: 64, maxWidth: 80, order: 6 },
+  { id: 'tags', label: i18n.t('doiTac.store.tagsCol'), visible: true, minWidth: 140, maxWidth: 260, order: 7 },
+  { id: 'trang_thai', label: i18n.t('doiTac.store.statusCol'), visible: true, minWidth: 100, maxWidth: 140, order: 8 },
+  { id: 'tg_cap_nhat', label: i18n.t('doiTac.store.updatedCol'), visible: true, minWidth: 100, maxWidth: 140, order: 9 },
 ];
 
 const initialFilters: DoiTacFilters = {

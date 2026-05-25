@@ -1,7 +1,9 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
-import { Edit, Trash2, Users, FileText, ArrowUpFromLine, Calendar, Power, Folder, MapPin, Phone, Mail, Tag } from 'lucide-react';
+import { Edit, Trash2, Users, FileText, ArrowUpFromLine, Calendar, Power, Folder, MapPin, Phone, Mail, Tag, Landmark, CreditCard, User } from 'lucide-react';
+import VietQRPreview from './VietQRPreview';
+import { getBankByBin } from '../../../../lib/vn-banks';
 import Button from '../../../../components/ui/Button';
 import MultiSelect from '../../../../components/ui/MultiSelect';
 import DetailToolbar, { type DetailToolbarAction } from '../../../../components/shared/DetailToolbar';
@@ -45,6 +47,9 @@ function toFormValues(d: DoiTac): DoiTacFormValues {
     dien_thoai: d.dien_thoai ?? '',
     email: d.email ?? '',
     mo_ta: d.mo_ta ?? '',
+    ngan_hang_bin: d.ngan_hang_bin ?? '',
+    so_tai_khoan: d.so_tai_khoan ?? '',
+    chu_tai_khoan: d.chu_tai_khoan ?? '',
     tag_ids: d.tag_ids ?? [],
     trang_thai: d.trang_thai,
     thu_tu: d.thu_tu,
@@ -72,6 +77,8 @@ const DoiTacDetail: React.FC<Props> = ({
 
   const isActive = data.trang_thai === TRANG_THAI_DOI_TAC.DANG_HOAT_DONG;
   const tags = data.ten_tags ?? [];
+  const bank = getBankByBin(data.ngan_hang_bin);
+  const hasBankInfo = !!(data.ngan_hang_bin || data.so_tai_khoan || data.chu_tai_khoan);
 
   useEffect(() => {
     if (tagModalOpen) setTempTagIds(data.tag_ids ?? []);
@@ -304,6 +311,38 @@ const DoiTacDetail: React.FC<Props> = ({
             />
           </DetailFieldGrid>
         </DetailSection>
+
+        {hasBankInfo && (
+          <DetailSection title={t('doiTac.detail.bankInfo')} icon={<Landmark size={14} />} variant="primary">
+            <DetailFieldGrid>
+              <DetailField
+                label={t('doiTac.form.bank')}
+                value={bank ? `${bank.shortName} (${bank.code})` : data.ngan_hang_bin ?? ''}
+                icon={<Landmark size={12} />}
+                emptyText="—"
+              />
+              <DetailField
+                label={t('doiTac.form.accountNumber')}
+                value={data.so_tai_khoan ?? ''}
+                icon={<CreditCard size={12} />}
+                emptyText="—"
+              />
+              <DetailField
+                label={t('doiTac.form.accountHolder')}
+                value={data.chu_tai_khoan ?? ''}
+                icon={<User size={12} />}
+                emptyText="—"
+              />
+            </DetailFieldGrid>
+            <div className="mt-3 flex justify-center">
+              <VietQRPreview
+                bin={data.ngan_hang_bin}
+                accountNumber={data.so_tai_khoan}
+                accountName={data.chu_tai_khoan}
+              />
+            </div>
+          </DetailSection>
+        )}
 
         <PhieuKhoLienQuanSubTable
           items={phieuKhoList}

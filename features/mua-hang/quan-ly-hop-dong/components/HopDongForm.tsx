@@ -1,13 +1,15 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useForm, Controller, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { FileText } from 'lucide-react';
+import { FileText, Images } from 'lucide-react';
 import { toast } from 'sonner';
 import Input from '../../../../components/ui/Input';
 import Textarea from '../../../../components/ui/Textarea';
 import Combobox from '../../../../components/ui/Combobox';
 import CurrencyInput from '../../../../components/ui/CurrencyInput';
+import MultiImageInput, { type ImageItem } from '../../../../components/ui/MultiImageInput';
+import { uploadImageToCloudinary } from '../../../../lib/cloudinary';
 import { hopDongSchema, type HopDongFormValues } from '../core/schema';
 import type { HopDong } from '../core/types';
 import type { DoiTacRefLite } from '../../../kho-van/danh-sach-doi-tac/services/doi-tac-service';
@@ -20,6 +22,19 @@ import FormGrid from '../../../../components/shared/FormGrid';
 import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
 import { getTodayISO } from '../../../../lib/utils';
 import { useAuthStore } from '../../../../store/useStore';
+
+const CLOUDINARY_READY =
+  Boolean(import.meta.env.VITE_CLOUDINARY_CLOUD_NAME) && Boolean(import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
+
+function urlsToImageItems(urls: string[]): ImageItem[] {
+  return urls.map((src) => ({ id: src, src }));
+}
+
+function imageItemsToUrls(items: ImageItem[]): string[] {
+  return items
+    .map((i) => i.src)
+    .filter((s): s is string => typeof s === 'string' && s.trim().length > 0);
+}
 
 interface Props {
   doiTacList: DoiTacRefLite[];
@@ -40,6 +55,7 @@ function hopDongToFormValues(item: HopDong | null | undefined): HopDongFormValue
       thanh_tien: undefined,
       trang_thai: TRANG_THAI_HOP_DONG[0],
       ghi_chu: '',
+      hinh_anh_urls: [],
     };
   }
   return {
@@ -53,6 +69,7 @@ function hopDongToFormValues(item: HopDong | null | undefined): HopDongFormValue
     thanh_tien: item.thanh_tien ?? undefined,
     trang_thai: item.trang_thai,
     ghi_chu: item.ghi_chu ?? '',
+    hinh_anh_urls: item.hinh_anh_urls ?? [],
   };
 }
 
@@ -123,6 +140,11 @@ const HopDongForm: React.FC<Props> = ({ doiTacList, initialData, onClose }) => {
 
   const pending = createMutation.isPending || updateMutation.isPending;
   const thanhTien = watch('thanh_tien');
+
+  const handleUploadImage = useCallback(
+    (file: File) => uploadImageToCloudinary(file, 'farm-erp/hop-dong'),
+    []
+  );
 
   return (
     <GenericDrawer
@@ -239,6 +261,31 @@ const HopDongForm: React.FC<Props> = ({ doiTacList, initialData, onClose }) => {
                 <Textarea label={t('hopDong.form.ghiChu')} rows={2} {...register('ghi_chu')} />
               </div>
             </FormGrid>
+          </FormSection>
+
+          <FormSection title={t('hopDong.form.hinhAnhSection')} icon={<Images size={14} />} variant="primary">
+            <Controller
+              name="hinh_anh_urls"
+              control={control}
+              render={({ field }) => (
+                <MultiImageInput
+                  label={t('hopDong.form.hinhAnh')}
+                  icon={<Images className="w-4 h-4 text-muted-foreground" />}
+                  value={urlsToImageItems(field.value ?? [])}
+                  onChange={(items) => field.onChange(imageItemsToUrls(items))}
+                  uploadFile={CLOUDINARY_READY ? handleUploadImage : undefined}
+                  hint={
+                    CLOUDINARY_READY
+                      ? t('hopDong.form.hinhAnhHint')
+                      : t('hopDong.form.hinhAnhOfflineHint')
+                  }
+                  maxFiles={20}
+                  maxSizeMB={5}
+                  columns={4}
+                  error={errors.hinh_anh_urls?.message as string | undefined}
+                />
+              )}
+            />
           </FormSection>
         </div>
       </form>

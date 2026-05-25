@@ -1,14 +1,16 @@
 import React, { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useForm, Controller, SubmitHandler } from 'react-hook-form';
+import { useForm, Controller, SubmitHandler, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Users, FileText, ArrowUpFromLine, Power, Folder, MapPin, Phone, Mail } from 'lucide-react';
+import { Users, FileText, ArrowUpFromLine, Power, Folder, MapPin, Phone, Mail, Landmark, CreditCard, User } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
 import Textarea from '../../../../components/ui/Textarea';
 import LoaiToggleGroup from './LoaiToggleGroup';
 import StatusToggle from '../../../../components/ui/StatusToggle';
 import Combobox from '../../../../components/ui/Combobox';
 import MultiSelect from '../../../../components/ui/MultiSelect';
+import VietQRPreview from './VietQRPreview';
+import { VN_BANKS, formatBankLabel } from '../../../../lib/vn-banks';
 import { DoiTacFormValues, doiTacSchema } from '../core/schema';
 import type { DoiTac } from '../core/types';
 import { TRANG_THAI_DOI_TAC } from '../core/types';
@@ -81,6 +83,9 @@ const DoiTacForm: React.FC<Props> = ({ initialData, loaiDoiTac, nhomList, tagLis
     dien_thoai: '',
     email: '',
     mo_ta: '',
+    ngan_hang_bin: '',
+    so_tai_khoan: '',
+    chu_tai_khoan: '',
     tag_ids: [],
     trang_thai: TRANG_THAI_DOI_TAC.DANG_HOAT_DONG,
     thu_tu: defaultThuTu ?? 1,
@@ -90,6 +95,15 @@ const DoiTacForm: React.FC<Props> = ({ initialData, loaiDoiTac, nhomList, tagLis
     resolver: zodResolver(doiTacSchema) as any,
     defaultValues,
   });
+
+  const bankOptions = useMemo(
+    () => VN_BANKS.map((b) => ({ value: b.bin, label: formatBankLabel(b), subLabel: b.ten })),
+    []
+  );
+
+  const watchedBin = useWatch({ control, name: 'ngan_hang_bin' });
+  const watchedAcc = useWatch({ control, name: 'so_tai_khoan' });
+  const watchedHolder = useWatch({ control, name: 'chu_tai_khoan' });
 
   useEffect(() => {
     if (initialData) {
@@ -102,6 +116,9 @@ const DoiTacForm: React.FC<Props> = ({ initialData, loaiDoiTac, nhomList, tagLis
         dien_thoai: initialData.dien_thoai ?? '',
         email: initialData.email ?? '',
         mo_ta: initialData.mo_ta ?? '',
+        ngan_hang_bin: initialData.ngan_hang_bin ?? '',
+        so_tai_khoan: initialData.so_tai_khoan ?? '',
+        chu_tai_khoan: initialData.chu_tai_khoan ?? '',
         tag_ids: initialData.tag_ids ?? [],
         trang_thai: initialData.trang_thai,
         thu_tu: initialData.thu_tu,
@@ -120,6 +137,9 @@ const DoiTacForm: React.FC<Props> = ({ initialData, loaiDoiTac, nhomList, tagLis
       dien_thoai: data.dien_thoai?.trim() || undefined,
       email: data.email?.trim() || undefined,
       mo_ta: data.mo_ta?.trim() || undefined,
+      ngan_hang_bin: data.ngan_hang_bin?.trim() || undefined,
+      so_tai_khoan: data.so_tai_khoan?.trim() || undefined,
+      chu_tai_khoan: data.chu_tai_khoan?.trim() || undefined,
       tag_ids: Array.isArray(data.tag_ids) ? data.tag_ids : [],
     };
     if (isEdit && initialData) {
@@ -301,6 +321,56 @@ const DoiTacForm: React.FC<Props> = ({ initialData, loaiDoiTac, nhomList, tagLis
                 />
               )}
             />
+          </FormGrid>
+        </FormSection>
+
+        <FormSection title={t('doiTac.form.bankSection')} icon={<Landmark size={14} />} variant="primary">
+          <FormGrid cols={2}>
+            <div className="col-span-1 sm:col-span-2">
+              <Controller
+                name="ngan_hang_bin"
+                control={control}
+                render={({ field }) => (
+                  <Combobox
+                    label={t('doiTac.form.bank')}
+                    icon={<Landmark size={12} />}
+                    options={bankOptions}
+                    value={field.value ?? ''}
+                    onChange={(v) => field.onChange(v ?? '')}
+                    placeholder={t('doiTac.form.bankPlaceholder')}
+                    searchPlaceholder={t('doiTac.form.bankSearchPlaceholder')}
+                    searchable
+                    dropdownInPortal
+                    error={errors.ngan_hang_bin?.message}
+                  />
+                )}
+              />
+            </div>
+            <Input
+              label={t('doiTac.form.accountNumber')}
+              placeholder={t('doiTac.form.accountNumberPlaceholder')}
+              icon={<CreditCard size={12} />}
+              {...register('so_tai_khoan')}
+              error={errors.so_tai_khoan?.message}
+            />
+            <Input
+              label={t('doiTac.form.accountHolder')}
+              placeholder={t('doiTac.form.accountHolderPlaceholder')}
+              icon={<User size={12} />}
+              {...register('chu_tai_khoan')}
+              error={errors.chu_tai_khoan?.message}
+              onChange={(e) => {
+                e.target.value = e.target.value.toUpperCase();
+                register('chu_tai_khoan').onChange(e);
+              }}
+            />
+            <div className="col-span-1 sm:col-span-2">
+              <VietQRPreview
+                bin={watchedBin}
+                accountNumber={watchedAcc}
+                accountName={watchedHolder}
+              />
+            </div>
           </FormGrid>
         </FormSection>
       </form>

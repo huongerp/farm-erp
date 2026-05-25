@@ -38,6 +38,10 @@ export interface DoiTac {
   dien_thoai?: string;
   email?: string;
   mo_ta?: string;
+  /** Mã BIN ngân hàng (Napas247 / VietQR), vd 970422 = MB. */
+  ngan_hang_bin?: string;
+  so_tai_khoan?: string;
+  chu_tai_khoan?: string;
   tag_ids: string[];
   ten_tags?: string[];
   trang_thai: TrangThaiHoatDong;

@@ -1,10 +1,17 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Edit, Trash2 } from 'lucide-react';
+import { Edit, Trash2, QrCode } from 'lucide-react';
 import { cn, formatDateShort } from '../../../../lib/utils';
 import type { DoiTac } from '../core/types';
 import GenericTable from '../../../../components/shared/GenericTable';
 import type { ColumnConfig } from '../../../../store/createGenericStore';
+
+const buildQrThumbUrl = (item: DoiTac): string | null => {
+  const bin = (item.ngan_hang_bin ?? '').trim();
+  const acc = (item.so_tai_khoan ?? '').trim();
+  if (!bin || !acc) return null;
+  return `https://img.vietqr.io/image/${encodeURIComponent(bin)}-${encodeURIComponent(acc)}-qr_only.png`;
+};
 
 interface Props {
   data: DoiTac[];
@@ -66,6 +73,32 @@ const DoiTacList: React.FC<Props> = ({
         return <span className="text-sm text-muted-foreground">{item.ten_nhom ?? '—'}</span>;
       case 'dien_thoai':
         return <span className="text-sm text-muted-foreground">{item.dien_thoai ?? '—'}</span>;
+      case 'qr': {
+        const url = buildQrThumbUrl(item);
+        if (!url) {
+          return (
+            <div
+              className="flex items-center justify-center text-muted-foreground/40"
+              aria-label={t('doiTac.store.qrEmpty')}
+              title={t('doiTac.store.qrEmpty')}
+            >
+              <QrCode size={20} />
+            </div>
+          );
+        }
+        return (
+          <div className="flex items-center justify-center">
+            <img
+              src={url}
+              alt={`QR ${item.ma_ncc}`}
+              width={48}
+              height={48}
+              loading="lazy"
+              className="rounded border border-border bg-white"
+            />
+          </div>
+        );
+      }
       case 'tags':
         return (
           <div className="flex flex-wrap gap-1">
@@ -115,7 +148,9 @@ const DoiTacList: React.FC<Props> = ({
     }
   };
 
-  const renderMobileCard = (item: DoiTac, isSelected: boolean) => (
+  const renderMobileCard = (item: DoiTac, isSelected: boolean) => {
+    const qrUrl = buildQrThumbUrl(item);
+    return (
     <div
       role="button"
       tabIndex={0}
@@ -134,8 +169,22 @@ const DoiTacList: React.FC<Props> = ({
           {item.loai_doi_tac === 'nha_cung_cap' ? t('doiTac.tabs.nhaCungCap') : t('doiTac.tabs.khachHang')}
         </span>
       </div>
-      <div className="font-medium text-foreground text-sm mb-1">{item.ten_ncc}</div>
-      <div className="text-xs text-muted-foreground mb-2">{item.ten_nhom ?? '—'} {item.dien_thoai ? `· ${item.dien_thoai}` : ''}</div>
+      <div className="flex items-start gap-3 mb-2">
+        <div className="flex-1 min-w-0">
+          <div className="font-medium text-foreground text-sm mb-1">{item.ten_ncc}</div>
+          <div className="text-xs text-muted-foreground">{item.ten_nhom ?? '—'} {item.dien_thoai ? `· ${item.dien_thoai}` : ''}</div>
+        </div>
+        {qrUrl && (
+          <img
+            src={qrUrl}
+            alt={`QR ${item.ma_ncc}`}
+            width={56}
+            height={56}
+            loading="lazy"
+            className="rounded border border-border bg-white shrink-0"
+          />
+        )}
+      </div>
       {(item.ten_tags ?? []).length > 0 && (
         <div className="flex flex-wrap gap-1 mb-2">
           {(item.ten_tags ?? []).map((name) => (
@@ -161,7 +210,8 @@ const DoiTacList: React.FC<Props> = ({
         </div>
       </div>
     </div>
-  );
+    );
+  };
 
   return (
     <GenericTable<DoiTac>

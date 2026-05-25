@@ -13,7 +13,7 @@ const TABLE_CT = 'fp_mh_hop_dong_ct';
 const VIEW_SUMMARY = 'v_hop_dong_summary';
 
 const HOP_ROW_COLUMNS =
-  'id,ngay,id_nha_cung_cap,ten_nha_cung_cap,ma_hop_dong,ten_hop_dong,noi_dung,so_luong_cay,don_gia,thanh_tien,trang_thai,ghi_chu,id_nguoi_tao,tg_tao,tg_cap_nhat';
+  'id,ngay,id_nha_cung_cap,ten_nha_cung_cap,ma_hop_dong,ten_hop_dong,noi_dung,so_luong_cay,don_gia,thanh_tien,trang_thai,ghi_chu,hinh_anh_urls,id_nguoi_tao,tg_tao,tg_cap_nhat';
 
 /**
  * Không liệt kê từng cột computed trên view: nếu Supabase chưa chạy migration
@@ -96,6 +96,7 @@ interface HopDbRow {
   thanh_tien: number | null;
   trang_thai: string;
   ghi_chu: string | null;
+  hinh_anh_urls: unknown;
   id_nguoi_tao: number | null;
   tg_tao: string | null;
   tg_cap_nhat: string | null;
@@ -162,6 +163,9 @@ function rowToHop(
     thanh_tien: row.thanh_tien != null ? Number(row.thanh_tien) : null,
     trang_thai: row.trang_thai as TrangThaiHopDong,
     ghi_chu: row.ghi_chu,
+    hinh_anh_urls: Array.isArray(row.hinh_anh_urls)
+      ? (row.hinh_anh_urls as unknown[]).filter((s): s is string => typeof s === 'string')
+      : [],
     id_nguoi_tao: row.id_nguoi_tao != null ? String(row.id_nguoi_tao) : null,
     ten_nguoi_tao: row.ref_ten_nguoi_tao ?? undefined,
     tg_tao: row.tg_tao ?? new Date().toISOString(),
@@ -280,6 +284,7 @@ export async function createHopDongSupabase(data: HopDongFormValues, idNguoiTao:
     thanh_tien: numOrNull(data.thanh_tien),
     trang_thai: data.trang_thai,
     ghi_chu: data.ghi_chu?.trim() || null,
+    hinh_anh_urls: Array.isArray(data.hinh_anh_urls) ? data.hinh_anh_urls : [],
     id_nguoi_tao: nvId,
   };
 
@@ -322,6 +327,7 @@ export async function updateHopDongSupabase(id: string, data: HopDongFormValues)
     thanh_tien: numOrNull(data.thanh_tien),
     trang_thai: data.trang_thai,
     ghi_chu: data.ghi_chu?.trim() || null,
+    hinh_anh_urls: Array.isArray(data.hinh_anh_urls) ? data.hinh_anh_urls : [],
   };
 
   const { error: updateErr } = await supabase.from(TABLE_HOP).update(payload).eq('id', idNum);

@@ -29,6 +29,7 @@ export interface HopDong {
   thanh_tien: number | null;
   trang_thai: TrangThaiHopDong;
   ghi_chu: string | null;
+  hinh_anh_urls: string[];
   id_nguoi_tao: string | null;
   ten_nguoi_tao?: string | null;
   tg_tao: string;

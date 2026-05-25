@@ -19,6 +19,9 @@ export const doiTacSchema = z.object({
   dien_thoai: z.string().optional(),
   email: z.string().optional(),
   mo_ta: z.string().optional(),
+  ngan_hang_bin: z.string().optional(),
+  so_tai_khoan: z.string().optional(),
+  chu_tai_khoan: z.string().optional(),
   tag_ids: z.array(z.string()).default([]),
   trang_thai: z.enum(['Đang hoạt động', 'Ngừng hoạt động'], {
     message: i18n.t('doiTac.validation.statusInvalid'),

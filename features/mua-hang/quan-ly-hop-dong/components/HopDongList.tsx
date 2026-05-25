@@ -131,6 +131,29 @@ const HopDongList: React.FC<Props> = ({
             {item.cay_con_lai != null ? Number(item.cay_con_lai).toLocaleString('vi-VN') : '—'}
           </span>
         );
+      case 'hinh_anh': {
+        const urls = item.hinh_anh_urls ?? [];
+        if (urls.length === 0) {
+          return <span className="text-xs text-muted-foreground">—</span>;
+        }
+        return (
+          <div className="relative inline-block">
+            <img
+              src={urls[0]}
+              alt=""
+              width={40}
+              height={40}
+              loading="lazy"
+              className="rounded border border-border object-cover h-10 w-10"
+            />
+            {urls.length > 1 && (
+              <span className="absolute -top-1 -right-1 px-1.5 rounded-full bg-primary text-white text-[10px] font-medium leading-4 min-w-[16px] text-center">
+                {urls.length}
+              </span>
+            )}
+          </div>
+        );
+      }
       case 'trang_thai':
         return renderStatus(item);
       case 'ten_nguoi_tao':
