@@ -180,7 +180,7 @@ const PhieuBaoTriDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, c
     <GenericDrawer
       title={t('baoTriSuaChua.detail.title')}
       icon={<Wrench size={20} />}
-      subtitle={`${displayData.ten_hang_muc ?? displayData.id_hang_muc} • ${displayData.ma_tai_san ?? displayData.id_tai_san}`}
+      subtitle={`${displayData.ma_phieu} • ${displayData.ten_hang_muc ?? displayData.id_hang_muc}`}
       onClose={onClose}
       footer={footer}
       maxWidthClass={DRAWER_WIDTH_DETAIL}
@@ -194,6 +194,7 @@ const PhieuBaoTriDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, c
           variant="primary"
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <DetailField label={t('baoTriSuaChua.store.maPhieuCol')} value={displayData.ma_phieu} />
             <DetailField label={t('baoTriSuaChua.store.ngayCol')} value={formatDate(displayData.ngay)} />
             <DetailField label={t('baoTriSuaChua.store.hangMucCol')} value={displayData.ten_hang_muc ?? displayData.id_hang_muc} />
             <DetailField label={t('baoTriSuaChua.store.taiSanCol')} value={displayData.ten_tai_san || displayData.ma_tai_san || '—'} />

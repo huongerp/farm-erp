@@ -15,7 +15,18 @@ const TABLE_TAI_SAN = 'fp_ts_tai_san';
 const TABLE_NHAN_VIEN = 'fp_var_nhan_vien';
 
 const PHIEU_CHI_PHI_ROW_COLUMNS =
-  'id,ngay,id_tai_san,ma_tai_san,ten_tai_san,id_hang_muc,ten_hang_muc,mo_ta,so_tien,ghi_chu,id_trang_thai,ten_trang_thai,nguoi_duyet,id_nguoi_tao,ten_nguoi_tao,tg_tao,tg_cap_nhat';
+  'id,ma_phieu,ngay,id_tai_san,ma_tai_san,ten_tai_san,id_hang_muc,ten_hang_muc,mo_ta,so_tien,ghi_chu,id_trang_thai,ten_trang_thai,nguoi_duyet,id_nguoi_tao,ten_nguoi_tao,tg_tao,tg_cap_nhat';
+
+const RPC_NEXT_MA_PHIEU = 'get_next_ma_phieu_chi_phi_tai_san';
+
+async function fetchNextMaPhieu(): Promise<string> {
+  const { data, error } = await supabase.rpc(RPC_NEXT_MA_PHIEU);
+  if (error) throwSupabaseError(error);
+  if (typeof data !== 'string' || !data.trim()) {
+    throw new Error('get_next_ma_phieu_chi_phi_tai_san did not return string');
+  }
+  return data.trim();
+}
 
 function parseNguoiTaoDbId(idNguoiTao: string): number | null {
   const t = idNguoiTao.trim();
@@ -59,6 +70,7 @@ function idTrangThaiToEnum(id: number): TrangThaiPhieu {
 
 interface DbPhieuRow {
   id: number;
+  ma_phieu: string;
   ngay: string;
   id_tai_san: number;
   ma_tai_san: string | null;
@@ -95,6 +107,7 @@ function phieuMatchesSearchQuery(p: PhieuBaoTriSuaChua, qRaw: string): boolean {
 
   const haystack = [
     p.id,
+    p.ma_phieu,
     ngayDisp,
     p.id_tai_san,
     p.ma_tai_san,
@@ -121,6 +134,7 @@ function phieuMatchesSearchQuery(p: PhieuBaoTriSuaChua, qRaw: string): boolean {
 function rowToPhieu(row: DbPhieuRow): PhieuBaoTriSuaChua {
   return {
     id: String(row.id),
+    ma_phieu: row.ma_phieu,
     ngay: row.ngay,
     id_tai_san: String(row.id_tai_san),
     ma_tai_san: row.ma_tai_san ?? undefined,
@@ -154,6 +168,7 @@ export async function getPhieuChiPhiListSupabase(
     .from(TABLE_PHIEU)
     .select(PHIEU_CHI_PHI_ROW_COLUMNS)
     .order('ngay', { ascending: false })
+    .order('ma_phieu', { ascending: false })
     .order('id', { ascending: false });
 
   if (params.id_tai_san !== undefined) {
@@ -208,7 +223,9 @@ export async function createPhieuChiPhiSupabase(
       .maybeSingle();
     tenNguoi = (nv as { ho_va_ten?: string } | null)?.ho_va_ten?.trim() || null;
   }
+  const ma_phieu = await fetchNextMaPhieu();
   const payload = {
+    ma_phieu,
     ngay: data.ngay,
     id_tai_san: parseInt(data.id_tai_san, 10),
     ma_tai_san: taiSan?.ma_tai_san || null,

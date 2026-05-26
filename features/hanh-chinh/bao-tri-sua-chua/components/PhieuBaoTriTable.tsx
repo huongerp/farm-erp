@@ -47,6 +47,10 @@ const PhieuBaoTriTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, on
 
   const renderCell = (colId: string, item: PhieuBaoTriSuaChua) => {
     switch (colId) {
+      case 'ma_phieu':
+        return (
+          <span className="font-mono text-sm font-medium text-foreground tabular-nums">{item.ma_phieu}</span>
+        );
       case 'ngay':
         return (
           <span className="text-sm tabular-nums">{formatDate(item.ngay)}</span>
@@ -134,9 +138,10 @@ const PhieuBaoTriTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, on
       onClick={() => handleRowClick?.(item)}
     >
       <div className="flex justify-between items-start gap-2">
-        <span className="font-medium text-sm">{item.ten_hang_muc || item.id_hang_muc}</span>
+        <span className="font-mono text-sm font-medium">{item.ma_phieu}</span>
         <span className="text-xs text-muted-foreground">{formatDate(item.ngay)}</span>
       </div>
+      <p className="text-xs text-muted-foreground mt-0.5">{item.ten_hang_muc || item.id_hang_muc}</p>
       <p className="text-sm text-foreground mt-0.5">{item.ten_tai_san || item.ma_tai_san || '—'}</p>
       <p className="text-xs text-muted-foreground">{formatCurrency(item.so_tien)} • {getTrangThaiLabel(item.trang_thai, t)}</p>
     </div>

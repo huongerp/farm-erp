@@ -68,6 +68,7 @@ VALUES
 
 CREATE TABLE public.fp_ts_chi_phi_tai_san (
   id               bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  ma_phieu         text NOT NULL,
   ngay             date NOT NULL,
   id_tai_san       bigint NOT NULL,
   ma_tai_san       text,
@@ -89,6 +90,7 @@ CREATE TABLE public.fp_ts_chi_phi_tai_san (
 );
 
 COMMENT ON TABLE public.fp_ts_chi_phi_tai_san IS 'Phiếu chi phí tài sản – Module Chi phí tài sản. Trạng thái lấy từ fp_ts_trang_thai_chi_phi_tai_san (id_trang_thai, ten_trang_thai).';
+COMMENT ON COLUMN public.fp_ts_chi_phi_tai_san.ma_phieu IS 'Mã phiếu – tự sinh CPTS-0001, CPTS-0002, ... (RPC get_next_ma_phieu_chi_phi_tai_san)';
 COMMENT ON COLUMN public.fp_ts_chi_phi_tai_san.ngay IS 'Ngày phiếu';
 COMMENT ON COLUMN public.fp_ts_chi_phi_tai_san.id_tai_san IS 'ID tài sản (tham chiếu fp_ts_tai_san.id, không FK để linh hoạt)';
 COMMENT ON COLUMN public.fp_ts_chi_phi_tai_san.ma_tai_san IS 'Mã tài sản (lưu tắt khi tạo/cập nhật)';
@@ -104,6 +106,7 @@ COMMENT ON COLUMN public.fp_ts_chi_phi_tai_san.nguoi_duyet IS 'Tên người duy
 COMMENT ON COLUMN public.fp_ts_chi_phi_tai_san.id_nguoi_tao IS 'ID người tạo';
 COMMENT ON COLUMN public.fp_ts_chi_phi_tai_san.ten_nguoi_tao IS 'Tên người tạo (lưu tắt)';
 
+CREATE UNIQUE INDEX idx_fp_ts_chi_phi_tai_san_ma_phieu ON public.fp_ts_chi_phi_tai_san(ma_phieu);
 CREATE INDEX idx_fp_ts_chi_phi_tai_san_ngay ON public.fp_ts_chi_phi_tai_san(ngay);
 CREATE INDEX idx_fp_ts_chi_phi_tai_san_id_tai_san ON public.fp_ts_chi_phi_tai_san(id_tai_san);
 CREATE INDEX idx_fp_ts_chi_phi_tai_san_id_trang_thai ON public.fp_ts_chi_phi_tai_san(id_trang_thai);
@@ -149,7 +152,33 @@ CREATE POLICY "Allow delete fp_ts_chi_phi_tai_san" ON public.fp_ts_chi_phi_tai_s
   FOR DELETE TO authenticated USING (true);
 
 -- -----------------------------------------------------------------------------
--- 3. Đồng bộ ma_tai_san / ten_tai_san trên phiếu chi phí khi đổi mã hoặc tên tài sản
+-- 3. Sequence + RPC mã phiếu tự tăng (CPTS-0001, CPTS-0002, ...)
+-- App gọi get_next_ma_phieu_chi_phi_tai_san() khi tạo phiếu mới.
+-- -----------------------------------------------------------------------------
+
+CREATE SEQUENCE IF NOT EXISTS fp_ts_chi_phi_tai_san_ma_phieu_seq START 1;
+
+CREATE OR REPLACE FUNCTION get_next_ma_phieu_chi_phi_tai_san()
+RETURNS text
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  next_val bigint;
+BEGIN
+  next_val := nextval('fp_ts_chi_phi_tai_san_ma_phieu_seq');
+  RETURN 'CPTS-' || lpad(next_val::text, 4, '0');
+END;
+$$;
+
+COMMENT ON FUNCTION get_next_ma_phieu_chi_phi_tai_san() IS 'Trả về mã phiếu chi phí tài sản tiếp theo (CPTS-0001, CPTS-0002, ...)';
+
+GRANT USAGE ON SEQUENCE fp_ts_chi_phi_tai_san_ma_phieu_seq TO authenticated;
+GRANT EXECUTE ON FUNCTION get_next_ma_phieu_chi_phi_tai_san() TO authenticated;
+
+-- -----------------------------------------------------------------------------
+-- 4. Đồng bộ ma_tai_san / ten_tai_san trên phiếu chi phí khi đổi mã hoặc tên tài sản
 -- (bảng fp_ts_tai_san phải đã tồn tại). Chạy thêm block này nếu DB đã deploy trước đó.
 -- -----------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.fp_ts_tai_san_sync_chi_phi_ma_ten()

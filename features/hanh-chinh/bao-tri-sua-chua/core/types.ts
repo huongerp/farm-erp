@@ -4,6 +4,8 @@ export type TrangThaiPhieu = 'cho_duyet' | 'da_duyet' | 'khong_duyet';
 /** Phiếu bảo trì / sửa chữa – yêu cầu bảo trì hoặc sửa chữa tài sản */
 export interface PhieuBaoTriSuaChua {
   id: string;
+  /** Mã phiếu tự sinh: CPTS-0001, CPTS-0002, ... */
+  ma_phieu: string;
   ngay: string;
   id_tai_san: string;
   ma_tai_san?: string;

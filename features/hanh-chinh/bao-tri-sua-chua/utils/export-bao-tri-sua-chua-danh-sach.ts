@@ -20,7 +20,7 @@ function cellDateTime(s: string | undefined | null): string {
 }
 
 export const CHI_PHI_TAI_SAN_LIST_EXPORT_KEYS = [
-  'id',
+  'ma_phieu',
   'ngay',
   'id_tai_san',
   'ma_tai_san',
@@ -40,7 +40,7 @@ export const CHI_PHI_TAI_SAN_LIST_EXPORT_KEYS = [
 
 export function mapPhieuChiPhiTaiSanListRow(p: PhieuBaoTriSuaChua, t: TFunction): Record<string, unknown> {
   return {
-    id: p.id,
+    ma_phieu: (p.ma_phieu ?? '').trim(),
     ngay: cellDate(p.ngay),
     id_tai_san: p.id_tai_san ?? '',
     ma_tai_san: (p.ma_tai_san ?? '').trim(),
