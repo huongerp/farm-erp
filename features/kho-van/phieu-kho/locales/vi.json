@@ -42,6 +42,7 @@
   "phieuKho.form.codePlaceholder": "Nhập số phiếu",
   "phieuKho.form.autoCodePlaceholder": "Tự sinh khi lưu",
   "phieuKho.form.date": "Ngày",
+  "phieuKho.form.dateEditRestricted": "Chỉ quản trị module hoặc cấp bậc 1 được chỉnh ngày phiếu",
   "phieuKho.form.warehouse": "Kho",
   "phieuKho.form.warehouseFrom": "Kho đi",
   "phieuKho.form.warehousePlaceholder": "Chọn kho",

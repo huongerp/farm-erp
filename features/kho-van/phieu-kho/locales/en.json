@@ -42,6 +42,7 @@
   "phieuKho.form.codePlaceholder": "Enter voucher number",
   "phieuKho.form.autoCodePlaceholder": "Auto-generated on save",
   "phieuKho.form.date": "Date",
+  "phieuKho.form.dateEditRestricted": "Only module admins or job level 1 can change the voucher date",
   "phieuKho.form.warehouse": "Warehouse",
   "phieuKho.form.warehouseFrom": "From warehouse",
   "phieuKho.form.warehousePlaceholder": "Select warehouse",

@@ -17,6 +17,7 @@ import type { HangHoa } from '../../danh-sach-hang-hoa/core/types';
 import type { HangHoaRefLite } from '../../danh-sach-hang-hoa/services/hang-hoa-service';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { useCreatePhieuKho, useUpdatePhieuKho, useTonKhoTheoKho } from '../hooks/use-phieu-kho';
+import { useCanEditPhieuKhoNgay } from '../hooks/use-can-edit-phieu-kho-ngay';
 import { getNextSoPhieu } from '../services/phieu-kho-service';
 import { useHangHoaRefQuery, useDoiTacRefQuery, useDonDatHangSoPoMinimalQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
 import type { DonDatHangSoPoOption } from '../../../mua-hang/don-dat-hang/services/don-dat-hang-supabase.service';
@@ -73,6 +74,7 @@ const PhieuKhoForm: React.FC<Props> = ({
 }) => {
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
+  const canEditNgay = useCanEditPhieuKhoNgay();
   const isEdit = !!initialData?.id;
   const createMutation = useCreatePhieuKho(loai, onClose);
   const updateMutation = useUpdatePhieuKho(onClose);
@@ -234,6 +236,7 @@ const PhieuKhoForm: React.FC<Props> = ({
     }
     const sanitized: PhieuKhoFormValues = {
       ...data,
+      ngay: !canEditNgay && isEdit && initialData ? initialData.ngay : data.ngay,
       so_phieu: soPhieu || data.so_phieu?.trim() || '',
       kho_den_id: data.kho_den_id === '' || data.kho_den_id === undefined ? null : data.kho_den_id,
       id_nha_cung_cap: data.id_nha_cung_cap === '' || data.id_nha_cung_cap === undefined ? null : data.id_nha_cung_cap,
@@ -318,6 +321,9 @@ const PhieuKhoForm: React.FC<Props> = ({
               type="date"
               icon={<Calendar size={12} />}
               required
+              readOnly={!canEditNgay}
+              disabled={!canEditNgay}
+              title={!canEditNgay ? t('phieuKho.form.dateEditRestricted') : undefined}
               {...register('ngay')}
               error={errors.ngay?.message}
             />
