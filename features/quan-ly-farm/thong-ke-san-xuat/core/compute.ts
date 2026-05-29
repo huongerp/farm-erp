@@ -9,6 +9,13 @@ import {
 } from '../../bao-cao-nhan-cong/core/types';
 import { displayLoaiTotalsOnCt } from '../../bao-cao-nhan-cong/core/ct-sub';
 import { sumTienThuongKpiThuong } from '../../bao-cao-so-che/core/types';
+import {
+  computeBaoCaoSoCheKpis,
+  buildBaoCaoSoCheKpiThuongPresetSources,
+  enrichBaoCaoSoCheKpiThuongRows,
+} from '../../bao-cao-so-che/core/bcsc-kpi';
+import { sumPhamCapDisplayTotals } from '../../bao-cao-so-che/core/pham-cap-derived';
+import { computeKpiPhanTram } from '../../shared/kpi-thuong/types';
 import { computeDuBaoSlDongThungKpiFromFarm } from '../../du-bao-sl-dong-thung/core/kpi';
 import type {
   ThongKeSanXuatRow,
@@ -40,9 +47,32 @@ function buildBcncSnapshot(bcnc: FarmBaoCaoNhanCong): BcncSnapshot {
 // ─── KPI snapshot ─────────────────────────────────────────────────────────────
 
 const KPI_DAT_VALUES = new Set(['Đạt', 'Tốt']);
+const BCSC_KPI_PRESET_COUNT = 3;
 
-function buildKpiSnapshot(bcsc: FarmBaoCaoSoChe): KpiSnapshot {
-  const rows = bcsc.kpi_thuong ?? [];
+function buildKpiSnapshot(
+  bcsc: FarmBaoCaoSoChe,
+  bcnc: FarmBaoCaoNhanCong | null,
+  dbdt: FarmDuBaoSlDongThung | null
+): KpiSnapshot {
+  const rawRows = bcsc.kpi_thuong ?? [];
+  const phamCapTotals = sumPhamCapDisplayTotals(bcsc.pham_cap ?? []);
+  const kpis = computeBaoCaoSoCheKpis(
+    phamCapTotals.so_thung_quy_doi,
+    bcnc,
+    phamCapTotals.tong_kg,
+    bcsc.tong_luong
+  );
+  const presetSources = buildBaoCaoSoCheKpiThuongPresetSources(
+    kpis,
+    Number.isFinite(Number(bcsc.danh_gia_loi_qc_pct)) ? Number(bcsc.danh_gia_loi_qc_pct) : null,
+    dbdt != null ? dbdt.ty_le_thu_hoi_thuc_te * 100 : null
+  );
+  const enriched = enrichBaoCaoSoCheKpiThuongRows(rawRows, presetSources);
+  const rows = enriched.map((row, index) => {
+    if (index >= BCSC_KPI_PRESET_COUNT) return row;
+    const pct = computeKpiPhanTram(row.muc_tieu, row.thuc_te);
+    return pct != null ? { ...row, phan_tram: pct } : row;
+  });
   const validRows = rows.filter((r) => r.danh_gia != null || num(r.tien_thuong) > 0);
   const tongKpi = validRows.length;
   const soKpiDat = validRows.filter((r) => r.danh_gia != null && KPI_DAT_VALUES.has(r.danh_gia)).length;
@@ -82,7 +112,7 @@ export function mergeThongKeSanXuatRows(
       bcsc: v.bcsc,
       dbdt: v.dbdt,
       bcncSnapshot: v.bcnc ? buildBcncSnapshot(v.bcnc) : null,
-      kpiSnapshot: v.bcsc ? buildKpiSnapshot(v.bcsc) : null,
+      kpiSnapshot: v.bcsc ? buildKpiSnapshot(v.bcsc, v.bcnc, v.dbdt) : null,
       dbdtKpi: v.dbdt ? computeDuBaoSlDongThungKpiFromFarm(v.dbdt) : null,
     }))
     .sort((a, b) => b.ngay.localeCompare(a.ngay) || a.ten_chi_nhanh.localeCompare(b.ten_chi_nhanh));

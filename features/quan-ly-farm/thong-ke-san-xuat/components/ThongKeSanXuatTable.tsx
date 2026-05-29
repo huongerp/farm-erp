@@ -12,6 +12,7 @@ import {
 } from '../../bao-cao-nhan-cong/core/types';
 import { displayLoaiTotalsOnCt } from '../../bao-cao-nhan-cong/core/ct-sub';
 import type { ThongKeSanXuatRow } from '../core/types';
+import { kpiThucTeDisplay } from '../core/kpi-display';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -245,7 +246,17 @@ function ExpandedBcncDetail({ row }: { row: ThongKeSanXuatRow }) {
                             ) : '—'}
                           </td>
                           <td className="px-2 py-1 border border-border/40 text-right tabular-nums">
-                            {r.tien_thuong > 0 ? currency(r.tien_thuong) : '—'}
+                            {r.tien_thuong !== 0 ? (
+                              <span
+                                className={cn(
+                                  r.tien_thuong > 0
+                                    ? 'text-emerald-600 dark:text-emerald-400'
+                                    : 'text-rose-600 dark:text-rose-400'
+                                )}
+                              >
+                                {currency(r.tien_thuong)}
+                              </span>
+                            ) : '—'}
                           </td>
                         </tr>
                       );
@@ -379,12 +390,24 @@ function TableRow({
             </span>
           ) : '—'}
         </Td>
+        <Td className="text-right tabular-nums">{kpiThucTeDisplay(k, 0)}</Td>
+        <Td className="text-right tabular-nums">{kpiThucTeDisplay(k, 1)}</Td>
+        <Td className="text-right tabular-nums">{kpiThucTeDisplay(k, 2)}</Td>
         <Td>
           <KpiBadges kpiSnapshot={k} />
         </Td>
         <Td className="text-right tabular-nums">
-          {k && k.tongTienThuong > 0 ? (
-            <span className="text-emerald-600 dark:text-emerald-400 font-medium">{currency(k.tongTienThuong)}</span>
+          {k && k.tongTienThuong !== 0 ? (
+            <span
+              className={cn(
+                'font-medium',
+                k.tongTienThuong > 0
+                  ? 'text-emerald-600 dark:text-emerald-400'
+                  : 'text-rose-600 dark:text-rose-400'
+              )}
+            >
+              {currency(k.tongTienThuong)}
+            </span>
           ) : k ? '0' : '—'}
         </Td>
 
@@ -466,7 +489,7 @@ const ThongKeSanXuatTable: React.FC<Props> = ({ rows }) => {
 
             {/* Sơ chế group */}
             <Th
-              colSpan={6}
+              colSpan={9}
               className="text-center border-l border-sky-200/60 dark:border-sky-900/40 bg-sky-50/50 dark:bg-sky-950/20 text-sky-700 dark:text-sky-400"
             >
               {t('thongKeSanXuat.table.groupSoChe')}
@@ -497,6 +520,15 @@ const ThongKeSanXuatTable: React.FC<Props> = ({ rows }) => {
             <Th className="text-right">{t('thongKeSanXuat.table.buongSoChe')}</Th>
             <Th className="text-right" title="Buồng tồn cuối ngày">{t('thongKeSanXuat.table.buongTonCuoi')}</Th>
             <Th className="text-right">{t('thongKeSanXuat.table.loiQcPct')}</Th>
+            <Th className="text-right" title={t('thongKeSanXuat.table.kpiNsSoCheTitle')}>
+              {t('thongKeSanXuat.table.kpiNsSoChe')}
+            </Th>
+            <Th className="text-right" title={t('thongKeSanXuat.table.kpiLoiNaiChuoiTitle')}>
+              {t('thongKeSanXuat.table.kpiLoiNaiChuoi')}
+            </Th>
+            <Th className="text-right" title={t('thongKeSanXuat.table.kpiTyLeThuHoiTitle')}>
+              {t('thongKeSanXuat.table.kpiTyLeThuHoi')}
+            </Th>
             <Th className="text-left" title="Đánh giá KPI từng hạng mục">{t('thongKeSanXuat.table.kpi')}</Th>
             <Th className="text-right">{t('thongKeSanXuat.table.tienThuong')}</Th>
 

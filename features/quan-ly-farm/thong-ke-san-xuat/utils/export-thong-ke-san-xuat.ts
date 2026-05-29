@@ -6,6 +6,7 @@ import { formatNumberVN, formatDateShort, getTodayISODate } from '../../../../li
 import { useUIStore } from '../../../../store/useStore';
 import type { ThongKeSanXuatStats, KpiAnalysis, ByChiNhanhRow } from '../components/stats/useThongKeSanXuatStats';
 import type { ThongKeSanXuatSummary, ThongKeSanXuatRow } from '../core/types';
+import { kpiThucTeDisplay } from '../core/kpi-display';
 
 // ─── Style constants ──────────────────────────────────────────────────────────
 
@@ -43,6 +44,9 @@ const DAILY_COL_HEADERS = [
   'Buồng SC',
   'Tồn CN',
   'Lỗi QC%',
+  'NS SC',
+  'TL nải lỗi',
+  'TL thu hồi',
   'KPI',
   'Tiền thưởng',
   'Cân BQ (g)',
@@ -135,8 +139,11 @@ function mapDailyDetailCells(row: ThongKeSanXuatRow): string[] {
     bcsc ? fmtInt(bcsc.tong_buong_so_che) : '—',
     bcsc ? fmtInt(bcsc.sl_buong_ton_cuoi_ngay) : '—',
     bcsc ? fmtPctDirect(bcsc.danh_gia_loi_qc_pct) : '—',
+    kpiThucTeDisplay(k, 0),
+    kpiThucTeDisplay(k, 1),
+    kpiThucTeDisplay(k, 2),
     kpiText,
-    k && k.tongTienThuong > 0 ? fmtCur(k.tongTienThuong) : k ? '0' : '—',
+    k && k.tongTienThuong !== 0 ? fmtCurSigned(k.tongTienThuong) : k ? '0' : '—',
     d?.can_nang_binh_quan_buong != null
       ? fmtInt(d.can_nang_binh_quan_buong * 1000)
       : '—',
@@ -356,7 +363,7 @@ function buildDailyDetailSection(rows: ThongKeSanXuatRow[]): string {
   const groupRow = [
     ...DAILY_COL_HEADERS.slice(0, 3).map((h) => `<th rowspan="2" style="${thDailyL}">${h}</th>`),
     `<th colspan="7" style="${thDaily};background:#eff6ff;color:#1d4ed8">${DAILY_GROUP_HEADERS[0]}</th>`,
-    `<th colspan="6" style="${thDaily};background:#f0f9ff;color:#0369a1">${DAILY_GROUP_HEADERS[1]}</th>`,
+    `<th colspan="9" style="${thDaily};background:#f0f9ff;color:#0369a1">${DAILY_GROUP_HEADERS[1]}</th>`,
     `<th colspan="7" style="${thDaily};background:#eef2ff;color:#4338ca">${DAILY_GROUP_HEADERS[2]}</th>`,
   ].join('');
   const subRow = DAILY_COL_HEADERS.slice(3)
@@ -429,15 +436,15 @@ function appendDailyDetailXlsx(
   groupRow[2] = DAILY_COL_HEADERS[2];
   groupRow[3] = DAILY_GROUP_HEADERS[0];
   groupRow[10] = DAILY_GROUP_HEADERS[1];
-  groupRow[16] = DAILY_GROUP_HEADERS[2];
+  groupRow[19] = DAILY_GROUP_HEADERS[2];
   sheetRows.push(groupRow);
 
   merges.push({ s: { r: groupRowIdx, c: 0 }, e: { r: groupRowIdx + 1, c: 0 } });
   merges.push({ s: { r: groupRowIdx, c: 1 }, e: { r: groupRowIdx + 1, c: 1 } });
   merges.push({ s: { r: groupRowIdx, c: 2 }, e: { r: groupRowIdx + 1, c: 2 } });
   merges.push({ s: { r: groupRowIdx, c: 3 }, e: { r: groupRowIdx, c: 9 } });
-  merges.push({ s: { r: groupRowIdx, c: 10 }, e: { r: groupRowIdx, c: 15 } });
-  merges.push({ s: { r: groupRowIdx, c: 16 }, e: { r: groupRowIdx, c: 22 } });
+  merges.push({ s: { r: groupRowIdx, c: 10 }, e: { r: groupRowIdx, c: 18 } });
+  merges.push({ s: { r: groupRowIdx, c: 19 }, e: { r: groupRowIdx, c: 25 } });
 
   const subRowIdx = sheetRows.length;
   sheetRows.push([...DAILY_COL_HEADERS]);
