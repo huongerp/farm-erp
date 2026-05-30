@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Award, Plus, Trash2 } from 'lucide-react';
 import {
@@ -17,33 +17,13 @@ import { defaultKpiThuongFormRow } from '../../shared/kpi-thuong/form-mappers';
 import type { KpiThuongFormRow } from '../../shared/kpi-thuong/types';
 import type { BaoCaoSoCheFormValues } from '../core/schema';
 import type { BcscKpiThuongPresetSource } from '../core/bcsc-kpi';
+import { resolveBcscPresetKpiDerivedFields } from '../core/bcsc-kpi';
 
 /** Số hàng preset cố định — luôn là 3. */
 const PRESET_COUNT = 3;
 
 const DANH_GIA_DAT = 'Đạt';
 const DANH_GIA_KHONG_DAT = 'Không đạt';
-
-function numericStr(val: number | null): string | null {
-  if (val == null || !Number.isFinite(val)) return null;
-  return String(Math.round(val * 10000) / 10000);
-}
-
-function parseLenient(s: string | null | undefined): number | null {
-  const n = parseFloat(String(s ?? '').trim().replace(',', '.'));
-  return Number.isFinite(n) ? n : null;
-}
-
-function computeDanhGia(
-  thucTeStr: string | null,
-  mucTieuStr: string | null,
-  isHigherBetter: boolean
-): typeof DANH_GIA_DAT | typeof DANH_GIA_KHONG_DAT | null {
-  const tt = parseLenient(thucTeStr);
-  const mt = parseLenient(mucTieuStr);
-  if (tt == null || mt == null) return null;
-  return (isHigherBetter ? tt >= mt : tt <= mt) ? DANH_GIA_DAT : DANH_GIA_KHONG_DAT;
-}
 
 /** Badge màu cho cột Đánh giá */
 export function DanhGiaKpiBadge({ value }: { value: string | null | undefined }) {
@@ -92,25 +72,29 @@ const BaoCaoSoCheKpiThuongFormSection: React.FC<Props> = ({
   });
 
   const kpiRows = useWatch({ control, name: 'kpi_thuong' }) as KpiThuongFormRow[] | undefined;
-  const kpiRowsRef = useRef<KpiThuongFormRow[] | undefined>(undefined);
-  kpiRowsRef.current = kpiRows;
+  const presetMucTieuKey = (kpiRows ?? [])
+    .slice(0, PRESET_COUNT)
+    .map((r) => r?.muc_tieu ?? '')
+    .join('\0');
 
   /* ── Tự động đồng bộ thực tế + đánh giá cho 3 hàng preset ── */
   useEffect(() => {
-    const rows = kpiRowsRef.current ?? [];
+    const rows = kpiRows ?? [];
     presetSources.forEach((source, index) => {
       if (index >= PRESET_COUNT) return;
-      const ttStr = numericStr(source.thucTeValue);
-      if (ttStr == null) return;
-      const mucTieu = rows[index]?.muc_tieu ?? null;
-      const danhGia = computeDanhGia(ttStr, mucTieu, source.isHigherBetter);
-      setValue(`kpi_thuong.${index}.thuc_te`, ttStr, { shouldDirty: false, shouldTouch: false });
-      if (danhGia != null) {
-        setValue(`kpi_thuong.${index}.danh_gia`, danhGia, { shouldDirty: false, shouldTouch: false });
+      const { thucTeStr, phanTram, danhGia } = resolveBcscPresetKpiDerivedFields(
+        source,
+        rows[index]?.muc_tieu ?? null
+      );
+      if (thucTeStr == null) return;
+      setValue(`kpi_thuong.${index}.thuc_te`, thucTeStr, { shouldDirty: false, shouldTouch: false });
+      if (phanTram != null) {
+        setValue(`kpi_thuong.${index}.phan_tram`, phanTram, { shouldDirty: false, shouldTouch: false });
       }
+      setValue(`kpi_thuong.${index}.danh_gia`, danhGia, { shouldDirty: false, shouldTouch: false });
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [presetSources, setValue]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- kpiRows đọc từ closure khi presetSources / presetMucTieuKey đổi
+  }, [presetSources, presetMucTieuKey, setValue]);
 
   const tongTienThuong = (kpiRows ?? []).reduce((s, r) => s + Number(r?.tien_thuong ?? 0), 0);
 
@@ -158,25 +142,20 @@ const BaoCaoSoCheKpiThuongFormSection: React.FC<Props> = ({
                 const source = isPreset ? presetSources[index] : null;
                 const row = (kpiRows ?? [])[index];
 
+                const presetDerived = isPreset
+                  ? resolveBcscPresetKpiDerivedFields(source!, row?.muc_tieu ?? null)
+                  : null;
+
                 /* Thực tế hiển thị cho hàng preset — lấy thẳng từ nguồn tính, không qua form state */
                 const thucTeDisplay = isPreset
-                  ? source!.thucTeValue != null && Number.isFinite(source!.thucTeValue)
-                    ? formatNumberVN(Math.round(source!.thucTeValue * 10000) / 10000)
+                  ? presetDerived!.thucTeStr != null
+                    ? formatNumberVN(Math.round(Number(presetDerived!.thucTeStr) * 10000) / 10000)
                     : '—'
                   : null;
 
-                /* Đánh giá cho hàng preset */
-                const danhGiaPreset = isPreset
-                  ? computeDanhGia(
-                      numericStr(source!.thucTeValue),
-                      row?.muc_tieu ?? null,
-                      source!.isHigherBetter
-                    )
-                  : null;
-
-                /* % cho hàng preset */
+                const danhGiaPreset = isPreset ? presetDerived!.danhGia : null;
                 const pctPreset = isPreset
-                  ? computeKpiPhanTram(row?.muc_tieu, numericStr(source!.thucTeValue))
+                  ? presetDerived!.phanTram
                   : computeKpiPhanTram(row?.muc_tieu, row?.thuc_te);
 
                 return (
@@ -215,19 +194,21 @@ const BaoCaoSoCheKpiThuongFormSection: React.FC<Props> = ({
                       )}
                     </td>
 
-                    {/* Mục tiêu — luôn read-only cho preset */}
+                    {/* Mục tiêu — preset có giá trị mặc định khi tạo phiếu, vẫn chỉnh được */}
                     <td className="px-2 py-1.5 align-top">
-                      {isPreset ? (
-                        <span className="text-xs text-muted-foreground tabular-nums">{row?.muc_tieu || '—'}</span>
-                      ) : (
-                        <Controller
-                          name={`kpi_thuong.${index}.muc_tieu`}
-                          control={control}
-                          render={({ field: f }) => (
-                            <Input {...f} value={f.value ?? ''} className="text-xs w-full" placeholder="—" disabled={disabled} />
-                          )}
-                        />
-                      )}
+                      <Controller
+                        name={`kpi_thuong.${index}.muc_tieu`}
+                        control={control}
+                        render={({ field: f }) => (
+                          <Input
+                            {...f}
+                            value={f.value ?? ''}
+                            className="text-xs w-full tabular-nums"
+                            placeholder="—"
+                            disabled={disabled}
+                          />
+                        )}
+                      />
                     </td>
 
                     {/* Thực tế — tự tính cho preset, editable cho hàng thêm mới */}

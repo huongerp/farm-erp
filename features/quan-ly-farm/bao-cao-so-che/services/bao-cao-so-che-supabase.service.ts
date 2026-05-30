@@ -357,7 +357,9 @@ function kpiPayloadRows(idBaoCao: number, values: BaoCaoSoCheFormValues) {
     don_vi_tinh: r.don_vi_tinh?.trim() || null,
     muc_tieu: r.muc_tieu?.trim() || null,
     thuc_te: r.thuc_te?.trim() || null,
-    phan_tram: computeKpiPhanTram(r.muc_tieu, r.thuc_te),
+    phan_tram: r.phan_tram != null && Number.isFinite(Number(r.phan_tram))
+      ? Number(r.phan_tram)
+      : computeKpiPhanTram(r.muc_tieu, r.thuc_te),
     danh_gia: r.danh_gia?.trim() || null,
     tien_thuong: Number(r.tien_thuong ?? 0),
     ghi_chu: r.ghi_chu?.trim() || null,

@@ -25,16 +25,6 @@ export function enrichPhamCapRowsWithDerived<T extends PhamCapRowFormValues>(
   });
 }
 
-/** Tỷ lệ thu hồi KPI (%) = Tổng số thùng quy đổi ÷ Tổng số thùng × 100. */
-export function computeTyLeThuHoiPctFromPhamCap(
-  totals: Pick<ReturnType<typeof sumPhamCapDisplayTotals>, 'so_thung_quy_doi' | 'so_thung'>
-): number | null {
-  const tongThung = Number(totals.so_thung) || 0;
-  const tongThungQD = Number(totals.so_thung_quy_doi) || 0;
-  if (tongThung <= EPS) return null;
-  return (tongThungQD / tongThung) * 100;
-}
-
 export function sumPhamCapDisplayTotals(rows: PhamCapRowFormValues[] | FarmBaoCaoSoChePhamCapRow[]) {
   const formRows: PhamCapRowFormValues[] = rows.map((r) => ({
     ten_pham_cap: r.ten_pham_cap,

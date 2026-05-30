@@ -4,7 +4,9 @@ import { Edit, Lock, Printer, Trash2, Unlock, Boxes } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import type { FarmDuBaoSlDongThung } from '../core/types';
 import { TRANG_THAI_DU_BAO_SL_DONG_THUNG } from '../core/types';
-import { cn, formatDateShort, formatDateTimeShort, formatNumberVN } from '../../../../lib/utils';import GenericDrawer, { DRAWER_WIDTH_BAO_CAO_NHAN_CONG } from '../../../../components/shared/GenericDrawer';
+import { cn, formatDateShort, formatDateTimeShort, formatNumberVN } from '../../../../lib/utils';
+import GenericDrawer, { DRAWER_WIDTH_BAO_CAO_NHAN_CONG } from '../../../../components/shared/GenericDrawer';
+import { computeDuBaoSlDongThungKpiFromFarm } from '../core/kpi';
 import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';
 import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
@@ -37,6 +39,7 @@ const DuBaoSlDongThungDetail: React.FC<Props> = ({
   const { t } = useTranslation();
   const confirm = useConfirmStore((s) => s.confirm);
   const trangThaiMutation = useUpdateDuBaoSlDongThungTrangThai();
+  const kpi = computeDuBaoSlDongThungKpiFromFarm(data);
 
   const renderFooter = (
     <div className="flex items-center justify-between w-full">

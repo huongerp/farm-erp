@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { X, Printer, Download, ChevronDown, FileText, FileSpreadsheet, FileType } from 'lucide-react';
 import { useBaoCaoSoCheById } from './hooks/use-bao-cao-so-che';
 import { useBaoCaoNhanCongList } from '../bao-cao-nhan-cong/hooks/use-bao-cao-nhan-cong';
+import { useDuBaoSlDongThungList } from '../du-bao-sl-dong-thung/hooks/use-du-bao-sl-dong-thung';
 import {
   exportBaoCaoSoCheToPDF,
   exportBaoCaoSoCheToDoc,
@@ -29,6 +30,7 @@ const BaoCaoSoChePreviewPage: React.FC = () => {
   const navigate = useNavigate();
   const { data, isLoading, isError, error, refetch } = useBaoCaoSoCheById(id ?? undefined);
   const { data: bcncList = [] } = useBaoCaoNhanCongList();
+  const { data: dbdtList = [] } = useDuBaoSlDongThungList();
   const [exporting, setExporting] = useState(false);
   const [downloadOpen, setDownloadOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -81,14 +83,14 @@ const BaoCaoSoChePreviewPage: React.FC = () => {
       setDownloadOpen(false);
       setExporting(true);
       try {
-        if (format === 'pdf') await exportBaoCaoSoCheToPDF(data, bcncList);
-        else if (format === 'doc') await exportBaoCaoSoCheToDoc(data, bcncList);
-        else if (format === 'xlsx') await exportBaoCaoSoCheToXLSX(data, bcncList);
+        if (format === 'pdf') await exportBaoCaoSoCheToPDF(data, bcncList, dbdtList);
+        else if (format === 'doc') await exportBaoCaoSoCheToDoc(data, bcncList, dbdtList);
+        else if (format === 'xlsx') await exportBaoCaoSoCheToXLSX(data, bcncList, dbdtList);
       } finally {
         setExporting(false);
       }
     },
-    [data, bcncList]
+    [data, bcncList, dbdtList]
   );
 
   if (isLoading) {
@@ -195,7 +197,7 @@ const BaoCaoSoChePreviewPage: React.FC = () => {
           className="bg-white shadow-xl bao-cao-so-che-preview-content-wrapper"
           style={{ width: '210mm', minWidth: '210mm' }}
         >
-          <BaoCaoSoChePreviewContent data={data!} bcncList={bcncList} />
+          <BaoCaoSoChePreviewContent data={data!} bcncList={bcncList} dbdtList={dbdtList} />
         </div>
       </div>
     </div>

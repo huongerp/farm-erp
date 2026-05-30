@@ -5,9 +5,11 @@ import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { FarmBaoCaoSoChe } from '../core/types';
 import type { FarmBaoCaoNhanCong } from '../../bao-cao-nhan-cong/core/types';
+import type { FarmDuBaoSlDongThung } from '../../du-bao-sl-dong-thung/core/types';
 import { bcscTrangThaiLabel } from '../core/bcsc-preview-layout';
 import {
   findBaoCaoNhanCongByBranchAndDate,
+  findDuBaoSlDongThungByBranchAndDate,
   extractLaborSnapshotFromBcnc,
   extractBcncTableGhiChuRows,
   computeBaoCaoSoCheKpis,
@@ -19,11 +21,7 @@ import {
   BCSC_SO_LIEU_STT_OFFSET,
   BCSC_KPI_STT_OFFSET,
 } from '../core/so-lieu-row-meta';
-import {
-  computeTyLeThuHoiPctFromPhamCap,
-  enrichPhamCapRowsWithDerived,
-  sumPhamCapDisplayTotals,
-} from '../core/pham-cap-derived';
+import { enrichPhamCapRowsWithDerived, sumPhamCapDisplayTotals } from '../core/pham-cap-derived';
 import { sumTienThuongKpiThuong } from '../core/types';
 import { computeKpiPhanTram } from '../../shared/kpi-thuong/types';
 import { formatDateShort, formatDateTime, formatNumberVN } from '../../../../lib/utils';
@@ -34,6 +32,7 @@ import BaoCaoSoChePreviewSignFooter from './BaoCaoSoChePreviewSignFooter';
 interface Props {
   data: FarmBaoCaoSoChe;
   bcncList: FarmBaoCaoNhanCong[];
+  dbdtList: FarmDuBaoSlDongThung[];
 }
 
 function fmtNum(n: number | null | undefined): string {
@@ -80,7 +79,7 @@ function MetricTablePrint({
   );
 }
 
-const BaoCaoSoChePreviewContent: React.FC<Props> = ({ data, bcncList }) => {
+const BaoCaoSoChePreviewContent: React.FC<Props> = ({ data, bcncList, dbdtList }) => {
   const { t } = useTranslation();
   const companyInfo = useUIStore((s) => s.companyInfo);
   const printedAt = formatDateTime(new Date());
@@ -90,6 +89,10 @@ const BaoCaoSoChePreviewContent: React.FC<Props> = ({ data, bcncList }) => {
   const bcnc = useMemo(
     () => findBaoCaoNhanCongByBranchAndDate(bcncList, data.ngay, data.id_chi_nhanh),
     [bcncList, data.ngay, data.id_chi_nhanh]
+  );
+  const dbsdtRecord = useMemo(
+    () => findDuBaoSlDongThungByBranchAndDate(dbdtList, data.ngay, data.id_chi_nhanh),
+    [dbdtList, data.ngay, data.id_chi_nhanh]
   );
   const labor = useMemo(() => (bcnc ? extractLaborSnapshotFromBcnc(bcnc) : null), [bcnc]);
   const bcncGhiChu = useMemo(() => extractBcncTableGhiChuRows(bcnc), [bcnc]);
@@ -109,9 +112,10 @@ const BaoCaoSoChePreviewContent: React.FC<Props> = ({ data, bcncList }) => {
       buildBaoCaoSoCheKpiThuongPresetSources(
         kpis,
         Number.isFinite(Number(data.danh_gia_loi_qc_pct)) ? Number(data.danh_gia_loi_qc_pct) : null,
-        computeTyLeThuHoiPctFromPhamCap(phamCapTotals)
+        dbsdtRecord,
+        phamCapTotals.so_thung
       ),
-    [kpis, data.danh_gia_loi_qc_pct, phamCapTotals]
+    [kpis, data.danh_gia_loi_qc_pct, dbsdtRecord, phamCapTotals.so_thung]
   );
   const kpiThuongSorted = useMemo(
     () =>
@@ -288,7 +292,10 @@ const BaoCaoSoChePreviewContent: React.FC<Props> = ({ data, bcncList }) => {
             </thead>
             <tbody>
               {kpiThuongSorted.map((r, i) => {
-                const pct = computeKpiPhanTram(r.muc_tieu, r.thuc_te);
+                const pct =
+                  r.phan_tram != null && Number.isFinite(Number(r.phan_tram))
+                    ? Number(r.phan_tram)
+                    : computeKpiPhanTram(r.muc_tieu, r.thuc_te);
                 const tienCls = r.tien_thuong > 0 ? 'color:#16a34a' : r.tien_thuong < 0 ? 'color:#dc2626' : '';
                 return (
                   <tr key={r.id || i} className="even:bg-gray-50">

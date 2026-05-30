@@ -1,5 +1,8 @@
 import type { FarmBaoCaoNhanCong } from '../../bao-cao-nhan-cong/core/types';
+import type { FarmDuBaoSlDongThung } from '../../du-bao-sl-dong-thung/core/types';
+import { computeDuBaoSlDongThungKpiFromFarm } from '../../du-bao-sl-dong-thung/core/kpi';
 import type { FarmBaoCaoKpiThuongRow } from '../../shared/kpi-thuong/types';
+import { computeKpiPhanTram } from '../../shared/kpi-thuong/types';
 import {
   normalizeChiTietForDisplay,
   sumChiTietNumericPart,
@@ -22,6 +25,50 @@ export function findBaoCaoNhanCongByBranchAndDate(
     (r) => r.ngay === ngay && r.id_chi_nhanh != null && String(r.id_chi_nhanh) === idStr
   );
   return row ?? null;
+}
+
+/** Phiếu dự báo SL đóng thùng cùng chi nhánh + ngày. */
+export function findDuBaoSlDongThungByBranchAndDate(
+  list: FarmDuBaoSlDongThung[],
+  ngay: string,
+  idChiNhanh: string | null | undefined
+): FarmDuBaoSlDongThung | null {
+  if (!ngay || !idChiNhanh || String(idChiNhanh).trim() === '') return null;
+  const idStr = String(idChiNhanh);
+  const row = list.find(
+    (r) => r.ngay === ngay && r.id_chi_nhanh != null && String(r.id_chi_nhanh) === idStr
+  );
+  return row ?? null;
+}
+
+/** Thực tế KPI hàng 3 (Tỷ lệ thu hồi) = dòng 15 ĐBĐT: Tổng số thùng dự kiến (TT). */
+export function extractTyLeThuHoiThucTeFromDbdt(
+  dbdt: FarmDuBaoSlDongThung | null
+): number | null {
+  if (!dbdt) return null;
+  const thung = computeDuBaoSlDongThungKpiFromFarm(dbdt).tong_so_thung_thuc_te;
+  return Number.isFinite(thung) ? thung : null;
+}
+
+/** Cột % KPI hàng 3 = dòng 12 ĐBĐT: Tỷ lệ thu hồi (TT), thang 0–100. */
+export function extractTyLeThuHoiPhanTramFromDbdt(
+  dbdt: FarmDuBaoSlDongThung | null
+): number | null {
+  if (!dbdt) return null;
+  const r = Number(dbdt.ty_le_thu_hoi_thuc_te);
+  if (!Number.isFinite(r)) return null;
+  return Math.min(100, Math.max(0, r * 100));
+}
+
+/** Đánh giá hàng 3: thực tế (thùng ĐBĐT) < tổng Số thùng (Loại thùng) phẩm cấp → Đạt. */
+export function computeTyLeThuHoiDanhGia(
+  thucTeThung: number | null,
+  phamCapTongSoThung: number | null
+): string | null {
+  if (thucTeThung == null || phamCapTongSoThung == null || !Number.isFinite(phamCapTongSoThung)) {
+    return null;
+  }
+  return thucTeThung < phamCapTongSoThung ? 'Đạt' : 'Không đạt';
 }
 
 /**
@@ -130,6 +177,29 @@ export function computeBaoCaoSoCheKpis(
 export interface BcscKpiThuongPresetSource {
   thucTeValue: number | null;
   isHigherBetter: boolean;
+  /** Cột % — nếu có thì dùng trực tiếp (vd. tỷ lệ thu hồi TT từ ĐBĐT). */
+  phanTramValue?: number | null;
+  /** Ngưỡng tổng Số thùng (Loại thùng) phẩm cấp — dùng đánh giá hàng Tỷ lệ thu hồi. */
+  phamCapTongSoThung?: number | null;
+}
+
+export function resolveBcscPresetKpiDerivedFields(
+  source: BcscKpiThuongPresetSource,
+  mucTieu: string | null | undefined
+): { thucTeStr: string | null; phanTram: number | null; danhGia: string | null } {
+  const thucTeStr = numericKpiString(source.thucTeValue);
+  if (thucTeStr == null) {
+    return { thucTeStr: null, phanTram: null, danhGia: null };
+  }
+  const phanTram =
+    source.phanTramValue != null && Number.isFinite(source.phanTramValue)
+      ? source.phanTramValue
+      : computeKpiPhanTram(mucTieu, thucTeStr);
+  const danhGia =
+    source.phamCapTongSoThung != null
+      ? computeTyLeThuHoiDanhGia(source.thucTeValue, source.phamCapTongSoThung)
+      : computePresetDanhGia(thucTeStr, mucTieu, source.isHigherBetter);
+  return { thucTeStr, phanTram, danhGia };
 }
 
 function numericKpiString(value: number | null | undefined): string | null {
@@ -152,12 +222,18 @@ function computePresetDanhGia(
 export function buildBaoCaoSoCheKpiThuongPresetSources(
   kpis: BcscKpiComputed,
   danhGiaLoiQcPct: number | null,
-  tyLeThuHoiThucTePct: number | null
+  dbdt: FarmDuBaoSlDongThung | null,
+  phamCapTongSoThung: number
 ): [BcscKpiThuongPresetSource, BcscKpiThuongPresetSource, BcscKpiThuongPresetSource] {
   return [
     { thucTeValue: kpis.nsThungGioCong, isHigherBetter: true },
     { thucTeValue: Number.isFinite(Number(danhGiaLoiQcPct)) ? Number(danhGiaLoiQcPct) : null, isHigherBetter: false },
-    { thucTeValue: tyLeThuHoiThucTePct, isHigherBetter: true },
+    {
+      thucTeValue: extractTyLeThuHoiThucTeFromDbdt(dbdt),
+      isHigherBetter: true,
+      phanTramValue: extractTyLeThuHoiPhanTramFromDbdt(dbdt),
+      phamCapTongSoThung,
+    },
   ];
 }
 
@@ -169,12 +245,13 @@ export function enrichBaoCaoSoCheKpiThuongRows(
   return rows.map((row, index) => {
     if (index >= presetSources.length) return row;
     const source = presetSources[index];
-    const ttStr = numericKpiString(source.thucTeValue);
-    if (ttStr == null) return row;
+    const { thucTeStr, phanTram, danhGia } = resolveBcscPresetKpiDerivedFields(source, row.muc_tieu);
+    if (thucTeStr == null) return row;
     return {
       ...row,
-      thuc_te: ttStr,
-      danh_gia: computePresetDanhGia(ttStr, row.muc_tieu, source.isHigherBetter) ?? row.danh_gia,
+      thuc_te: thucTeStr,
+      phan_tram: phanTram,
+      danh_gia: danhGia ?? row.danh_gia,
     };
   });
 }

@@ -3,8 +3,10 @@
  */
 import type { FarmBaoCaoSoChe } from '../core/types';
 import type { FarmBaoCaoNhanCong } from '../../bao-cao-nhan-cong/core/types';
+import type { FarmDuBaoSlDongThung } from '../../du-bao-sl-dong-thung/core/types';
 import {
   findBaoCaoNhanCongByBranchAndDate,
+  findDuBaoSlDongThungByBranchAndDate,
   extractLaborSnapshotFromBcnc,
   extractBcncTableGhiChuRows,
   computeBaoCaoSoCheKpis,
@@ -16,7 +18,7 @@ import {
   BCSC_SO_LIEU_STT_OFFSET,
   BCSC_KPI_STT_OFFSET,
 } from '../core/so-lieu-row-meta';
-import { computeTyLeThuHoiPctFromPhamCap, enrichPhamCapRowsWithDerived, sumPhamCapDisplayTotals } from '../core/pham-cap-derived';
+import { enrichPhamCapRowsWithDerived, sumPhamCapDisplayTotals } from '../core/pham-cap-derived';
 import { sumTienThuongKpiThuong } from '../core/types';
 import { computeKpiPhanTram } from '../../shared/kpi-thuong/types';
 import {
@@ -121,12 +123,17 @@ function buildMetricTableHTML(
 </div>`;
 }
 
-function buildBaoCaoSoCheBodyHTML(data: FarmBaoCaoSoChe, bcncList: FarmBaoCaoNhanCong[]): string {
+function buildBaoCaoSoCheBodyHTML(
+  data: FarmBaoCaoSoChe,
+  bcncList: FarmBaoCaoNhanCong[],
+  dbdtList: FarmDuBaoSlDongThung[]
+): string {
   const t = i18n.t.bind(i18n);
   const slipU = data.don_vi_tinh?.trim() || 'thùng';
   const status = bcscTrangThaiLabel(data, t);
 
   const bcnc = findBaoCaoNhanCongByBranchAndDate(bcncList, data.ngay, data.id_chi_nhanh);
+  const dbsdtRecord = findDuBaoSlDongThungByBranchAndDate(dbdtList, data.ngay, data.id_chi_nhanh);
   const labor = bcnc ? extractLaborSnapshotFromBcnc(bcnc) : null;
   const [g1, g2, g3, g4] = extractBcncTableGhiChuRows(bcnc);
   const phamCapEnriched = enrichPhamCapRowsWithDerived(data.pham_cap ?? []);
@@ -138,7 +145,8 @@ function buildBaoCaoSoCheBodyHTML(data: FarmBaoCaoSoChe, bcncList: FarmBaoCaoNha
     buildBaoCaoSoCheKpiThuongPresetSources(
       kpis,
       Number.isFinite(Number(data.danh_gia_loi_qc_pct)) ? Number(data.danh_gia_loi_qc_pct) : null,
-      computeTyLeThuHoiPctFromPhamCap(phamCapTotals)
+      dbsdtRecord,
+      phamCapTotals.so_thung
     )
   );
   const tongThuong = sumTienThuongKpiThuong(kpiThuong);
@@ -238,7 +246,10 @@ function buildBaoCaoSoCheBodyHTML(data: FarmBaoCaoSoChe, bcncList: FarmBaoCaoNha
       ? `<tr><td colspan="9" style="${td};text-align:center;color:#888">${t('baoCaoSoChe.kpiThuong.emptyDetail')}</td></tr>`
       : kpiThuong
           .map((r, i) => {
-            const pct = computeKpiPhanTram(r.muc_tieu, r.thuc_te);
+            const pct =
+              r.phan_tram != null && Number.isFinite(Number(r.phan_tram))
+                ? Number(r.phan_tram)
+                : computeKpiPhanTram(r.muc_tieu, r.thuc_te);
             const tienColor = r.tien_thuong > 0 ? '#16a34a' : r.tien_thuong < 0 ? '#dc2626' : '#111';
             return `<tr>
               <td style="${tdC}">${i + 1}</td>
@@ -302,14 +313,15 @@ function buildBaoCaoSoCheBodyHTML(data: FarmBaoCaoSoChe, bcncList: FarmBaoCaoNha
 
 export async function exportBaoCaoSoCheToPDF(
   data: FarmBaoCaoSoChe,
-  bcncList: FarmBaoCaoNhanCong[]
+  bcncList: FarmBaoCaoNhanCong[],
+  dbdtList: FarmDuBaoSlDongThung[] = []
 ): Promise<void> {
   const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
     import('jspdf'),
     import('html2canvas'),
   ]);
 
-  const bodyContent = buildBaoCaoSoCheBodyHTML(data, bcncList);
+  const bodyContent = buildBaoCaoSoCheBodyHTML(data, bcncList, dbdtList);
   const fullHtml = [
     '<!DOCTYPE html><html><head><meta charset="UTF-8">',
     `<style>*{box-sizing:border-box}body{margin:0;padding:0;background:#fff;color:#222;font-family:${FONT};font-size:10pt}img{max-width:100%}table{word-break:break-word}</style></head><body>`,
@@ -385,9 +397,10 @@ export async function exportBaoCaoSoCheToPDF(
 
 export async function exportBaoCaoSoCheToDoc(
   data: FarmBaoCaoSoChe,
-  bcncList: FarmBaoCaoNhanCong[]
+  bcncList: FarmBaoCaoNhanCong[],
+  dbdtList: FarmDuBaoSlDongThung[] = []
 ): Promise<void> {
-  const body = buildBaoCaoSoCheBodyHTML(data, bcncList);
+  const body = buildBaoCaoSoCheBodyHTML(data, bcncList, dbdtList);
   const html = [
     '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">',
     '<head>',
@@ -402,7 +415,8 @@ export async function exportBaoCaoSoCheToDoc(
 
 export async function exportBaoCaoSoCheToXLSX(
   data: FarmBaoCaoSoChe,
-  bcncList: FarmBaoCaoNhanCong[]
+  bcncList: FarmBaoCaoNhanCong[],
+  dbdtList: FarmDuBaoSlDongThung[] = []
 ): Promise<void> {
   const XLSX = await import('xlsx');
   const t = i18n.t.bind(i18n);
@@ -411,6 +425,7 @@ export async function exportBaoCaoSoCheToXLSX(
   const slipU = data.don_vi_tinh?.trim() || 'thùng';
 
   const bcnc = findBaoCaoNhanCongByBranchAndDate(bcncList, data.ngay, data.id_chi_nhanh);
+  const dbsdtRecord = findDuBaoSlDongThungByBranchAndDate(dbdtList, data.ngay, data.id_chi_nhanh);
   const labor = bcnc ? extractLaborSnapshotFromBcnc(bcnc) : null;
   const [g1, g2, g3, g4] = extractBcncTableGhiChuRows(bcnc);
   const phamCapEnriched = enrichPhamCapRowsWithDerived(data.pham_cap ?? []);
@@ -422,7 +437,8 @@ export async function exportBaoCaoSoCheToXLSX(
     buildBaoCaoSoCheKpiThuongPresetSources(
       kpis,
       Number.isFinite(Number(data.danh_gia_loi_qc_pct)) ? Number(data.danh_gia_loi_qc_pct) : null,
-      computeTyLeThuHoiPctFromPhamCap(phamCapTotals)
+      dbsdtRecord,
+      phamCapTotals.so_thung
     )
   );
   const tongThuong = sumTienThuongKpiThuong(kpiThuong);
@@ -493,7 +509,10 @@ export async function exportBaoCaoSoCheToXLSX(
     [`V. ${t('baoCaoSoChe.kpiThuong.sectionTitle')}`],
     ['TT', t('baoCaoSoChe.kpiThuong.colHangMuc'), t('baoCaoSoChe.kpiThuong.colDvt'), t('baoCaoSoChe.kpiThuong.colMucTieu'), t('baoCaoSoChe.kpiThuong.colThucTe'), '%', t('baoCaoSoChe.kpiThuong.colDanhGia'), t('baoCaoSoChe.kpiThuong.colTienThuong'), t('baoCaoSoChe.kpiThuong.colGhiChu')],
     ...kpiThuong.map((r, i) => {
-      const pct = computeKpiPhanTram(r.muc_tieu, r.thuc_te);
+      const pct =
+        r.phan_tram != null && Number.isFinite(Number(r.phan_tram))
+          ? Number(r.phan_tram)
+          : computeKpiPhanTram(r.muc_tieu, r.thuc_te);
       return [i + 1, r.ten_hang_muc || '', r.don_vi_tinh || '', r.muc_tieu || '', r.thuc_te || '', pct ?? '', r.danh_gia || '', r.tien_thuong, r.ghi_chu || ''];
     }),
     [t('baoCaoSoChe.kpiThuong.rowTongThuong'), '', '', '', '', '', '', tongThuong, ''],

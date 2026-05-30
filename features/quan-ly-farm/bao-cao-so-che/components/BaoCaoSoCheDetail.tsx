@@ -20,7 +20,7 @@ import DuBaoSlDongThungBangTinhTable from '../../du-bao-sl-dong-thung/components
 import BaoCaoSoCheBcncKpiReadout from './BaoCaoSoCheBcncKpiReadout';
 import BaoCaoKpiThuongDetailSection from '../../shared/kpi-thuong/BaoCaoKpiThuongDetailSection';
 import { BaoCaoSoChePhamCapDetailTable } from './BaoCaoSoChePhamCapTables';
-import { computeTyLeThuHoiPctFromPhamCap, sumPhamCapDisplayTotals } from '../core/pham-cap-derived';
+import { sumPhamCapDisplayTotals } from '../core/pham-cap-derived';
 import { getBaoCaoSoChePreviewUrl } from '../core/preview-url';
 import {
   bcscSoLieuColChiSo,
@@ -45,6 +45,7 @@ import {
 } from '../core/so-lieu-row-meta';
 import {
   findBaoCaoNhanCongByBranchAndDate,
+  findDuBaoSlDongThungByBranchAndDate,
   computeBaoCaoSoCheKpis,
   buildBaoCaoSoCheKpiThuongPresetSources,
   enrichBaoCaoSoCheKpiThuongRows,
@@ -105,10 +106,7 @@ const BaoCaoSoCheDetail: React.FC<Props> = ({
   );
 
   const dbsdtRecord = useMemo(
-    () =>
-      dbsdtList.find(
-        (r) => r.ngay === data.ngay && String(r.id_chi_nhanh) === idChiNhanhStr
-      ) ?? null,
+    () => findDuBaoSlDongThungByBranchAndDate(dbsdtList, data.ngay, idChiNhanhStr),
     [dbsdtList, data.ngay, idChiNhanhStr]
   );
 
@@ -121,9 +119,10 @@ const BaoCaoSoCheDetail: React.FC<Props> = ({
       buildBaoCaoSoCheKpiThuongPresetSources(
         kpis,
         Number.isFinite(Number(data.danh_gia_loi_qc_pct)) ? Number(data.danh_gia_loi_qc_pct) : null,
-        computeTyLeThuHoiPctFromPhamCap(phamCapTotals)
+        dbsdtRecord,
+        phamCapTotals.so_thung
       ),
-    [kpis, data.danh_gia_loi_qc_pct, phamCapTotals]
+    [kpis, data.danh_gia_loi_qc_pct, dbsdtRecord, phamCapTotals.so_thung]
   );
 
   const enrichedKpiRows = useMemo(() => {

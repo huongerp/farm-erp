@@ -27,12 +27,14 @@ import { useBaoCaoNhanCongList } from '../../bao-cao-nhan-cong/hooks/use-bao-cao
 import BaoCaoSoCheBcncKpiReadout from './BaoCaoSoCheBcncKpiReadout';
 import BaoCaoSoCheSoLieuBuongFormTable from './BaoCaoSoCheSoLieuBuongFormTable';
 import { BaoCaoSoChePhamCapFormSection } from './BaoCaoSoChePhamCapTables';
-import { computeTyLeThuHoiPctFromPhamCap, sumPhamCapDisplayTotals } from '../core/pham-cap-derived';
+import { sumPhamCapDisplayTotals } from '../core/pham-cap-derived';
 import {
   findBaoCaoNhanCongByBranchAndDate,
+  findDuBaoSlDongThungByBranchAndDate,
   computeBaoCaoSoCheKpis,
   buildBaoCaoSoCheKpiThuongPresetSources,
 } from '../core/bcsc-kpi';
+import { useDuBaoSlDongThungList } from '../../du-bao-sl-dong-thung/hooks/use-du-bao-sl-dong-thung';
 
 interface Props {
   branches: Branch[];
@@ -119,6 +121,7 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
     [soLieuMeta]
   );
   const { data: bcncList = [] } = useBaoCaoNhanCongList();
+  const { data: dbsdtList = [] } = useDuBaoSlDongThungList();
 
   const bcnc = useMemo(
     () => findBaoCaoNhanCongByBranchAndDate(bcncList, ngay ?? '', idChiNhanh ?? ''),
@@ -129,15 +132,21 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
     [tongThungQD, bcnc, tongKg, tongLuong]
   );
 
+  const dbsdtRecord = useMemo(
+    () => findDuBaoSlDongThungByBranchAndDate(dbsdtList, ngay ?? '', idChiNhanh ?? ''),
+    [dbsdtList, ngay, idChiNhanh]
+  );
+
   /* 3 nguồn tự tính cho section Đánh giá KPI/thưởng */
   const kpiPresetSources = useMemo(
     () =>
       buildBaoCaoSoCheKpiThuongPresetSources(
         kpis,
         Number.isFinite(Number(danhGiaLoiQcPct)) ? Number(danhGiaLoiQcPct) : null,
-        computeTyLeThuHoiPctFromPhamCap(phamCapTotals)
+        dbsdtRecord,
+        phamCapTotals.so_thung
       ),
-    [kpis, danhGiaLoiQcPct, phamCapTotals]
+    [kpis, danhGiaLoiQcPct, dbsdtRecord, phamCapTotals.so_thung]
   );
 
   useEffect(() => {
