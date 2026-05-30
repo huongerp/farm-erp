@@ -19,7 +19,11 @@ import {
   BCSC_SO_LIEU_STT_OFFSET,
   BCSC_KPI_STT_OFFSET,
 } from '../core/so-lieu-row-meta';
-import { enrichPhamCapRowsWithDerived, sumPhamCapDisplayTotals } from '../core/pham-cap-derived';
+import {
+  computeTyLeThuHoiPctFromPhamCap,
+  enrichPhamCapRowsWithDerived,
+  sumPhamCapDisplayTotals,
+} from '../core/pham-cap-derived';
 import { sumTienThuongKpiThuong } from '../core/types';
 import { computeKpiPhanTram } from '../../shared/kpi-thuong/types';
 import { formatDateShort, formatDateTime, formatNumberVN } from '../../../../lib/utils';
@@ -105,9 +109,9 @@ const BaoCaoSoChePreviewContent: React.FC<Props> = ({ data, bcncList }) => {
       buildBaoCaoSoCheKpiThuongPresetSources(
         kpis,
         Number.isFinite(Number(data.danh_gia_loi_qc_pct)) ? Number(data.danh_gia_loi_qc_pct) : null,
-        null
+        computeTyLeThuHoiPctFromPhamCap(phamCapTotals)
       ),
-    [kpis, data.danh_gia_loi_qc_pct]
+    [kpis, data.danh_gia_loi_qc_pct, phamCapTotals]
   );
   const kpiThuongSorted = useMemo(
     () =>

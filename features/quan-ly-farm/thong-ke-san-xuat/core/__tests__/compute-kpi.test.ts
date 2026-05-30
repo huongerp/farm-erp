@@ -5,6 +5,7 @@ import {
   enrichBaoCaoSoCheKpiThuongRows,
 } from '../../../bao-cao-so-che/core/bcsc-kpi';
 import { BCSC_KPI_THUONG_PRESETS } from '../../../bao-cao-so-che/core/kpi-thuong-presets';
+import { computeTyLeThuHoiPctFromPhamCap, sumPhamCapDisplayTotals } from '../../../bao-cao-so-che/core/pham-cap-derived';
 import { computeKpiPhanTram } from '../../../shared/kpi-thuong/types';
 import type { FarmBaoCaoNhanCong } from '../../../bao-cao-nhan-cong/core/types';
 import type { FarmBaoCaoSoChe } from '../../../bao-cao-so-che/core/types';
@@ -131,19 +132,16 @@ function minimalDbdt(overrides: Partial<FarmDuBaoSlDongThung> = {}): FarmDuBaoSl
 
 function expectedEnrichedRows(
   bcsc: FarmBaoCaoSoChe,
-  bcnc: FarmBaoCaoNhanCong | null,
-  dbdt: FarmDuBaoSlDongThung | null
+  bcnc: FarmBaoCaoNhanCong | null
 ) {
-  const tongThungQD = (bcsc.pham_cap ?? []).reduce((s, r) => s + (Number(r.so_thung_quy_doi) || 0), 0);
-  const tongKg = (bcsc.pham_cap ?? []).reduce(
-    (s, r) => s + (Number(r.so_thung) || 0) * (Number(r.so_tham_chieu) || 0),
-    0
-  );
+  const phamCapTotals = sumPhamCapDisplayTotals(bcsc.pham_cap ?? []);
+  const tongThungQD = phamCapTotals.so_thung_quy_doi;
+  const tongKg = phamCapTotals.tong_kg;
   const kpis = computeBaoCaoSoCheKpis(tongThungQD, bcnc, tongKg, bcsc.tong_luong);
   const presetSources = buildBaoCaoSoCheKpiThuongPresetSources(
     kpis,
     Number.isFinite(Number(bcsc.danh_gia_loi_qc_pct)) ? Number(bcsc.danh_gia_loi_qc_pct) : null,
-    dbdt != null ? dbdt.ty_le_thu_hoi_thuc_te * 100 : null
+    computeTyLeThuHoiPctFromPhamCap(phamCapTotals)
   );
   const enriched = enrichBaoCaoSoCheKpiThuongRows(bcsc.kpi_thuong ?? [], presetSources);
   return enriched.map((row, index) => {
@@ -154,32 +152,45 @@ function expectedEnrichedRows(
 }
 
 describe('mergeThongKeSanXuatRows — KPI enrich', () => {
-  it('dùng thực tế tính live thay vì giá trị stale trong DB khi BCNC/ĐBĐT thay đổi', () => {
+  it('dùng thực tế tính live thay vì giá trị stale trong DB khi BCNC thay đổi', () => {
     const bcnc = minimalBcnc();
     const bcsc = minimalBcsc();
     const dbdt = minimalDbdt();
 
     const [row] = mergeThongKeSanXuatRows([bcnc], [bcsc], [dbdt]);
-    const expected = expectedEnrichedRows(bcsc, bcnc, dbdt);
+    const expected = expectedEnrichedRows(bcsc, bcnc);
 
     expect(row.kpiSnapshot?.rows[0].thuc_te).toBe(expected[0].thuc_te);
     expect(row.kpiSnapshot?.rows[1].thuc_te).toBe(expected[1].thuc_te);
     expect(row.kpiSnapshot?.rows[2].thuc_te).toBe(expected[2].thuc_te);
     expect(row.kpiSnapshot?.rows[0].thuc_te).not.toBe('1');
-    expect(row.kpiSnapshot?.rows[2].thuc_te).toBe('88');
+    expect(row.kpiSnapshot?.rows[2].thuc_te).toBe('100');
     expect(row.kpiSnapshot?.rows[1].thuc_te).toBe('0.5');
   });
 
   it('tính lại phan_tram và đánh giá từ thực tế đã enrich', () => {
     const bcnc = minimalBcnc();
-    const bcsc = minimalBcsc();
-    const dbdt = minimalDbdt({ ty_le_thu_hoi_thuc_te: 0.9 });
+    const bcsc = minimalBcsc({
+      pham_cap: [
+        {
+          id: 'pc-1',
+          id_bao_cao: 'bcsc-1',
+          ten_pham_cap: 'TP',
+          so_tham_chieu: 10,
+          so_thung: 100,
+          so_thung_quy_doi: 90,
+          ghi_chu: null,
+          thu_tu: 1,
+        },
+      ],
+    });
+    const dbdt = minimalDbdt();
 
     const [row] = mergeThongKeSanXuatRows([bcnc], [bcsc], [dbdt]);
     const kpi3 = row.kpiSnapshot?.rows[2];
 
     expect(kpi3?.thuc_te).toBe('90');
-    expect(kpi3?.phan_tram).toBeCloseTo((90 / 85) * 100, 4);
+    expect(kpi3?.phan_tram).toBeCloseTo(100, 4);
     expect(kpi3?.danh_gia).toBe('Đạt');
     expect(row.kpiSnapshot?.tatCaKpiDat).toBe(
       (row.kpiSnapshot?.rows ?? []).every(

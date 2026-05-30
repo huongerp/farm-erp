@@ -20,7 +20,7 @@ import DuBaoSlDongThungBangTinhTable from '../../du-bao-sl-dong-thung/components
 import BaoCaoSoCheBcncKpiReadout from './BaoCaoSoCheBcncKpiReadout';
 import BaoCaoKpiThuongDetailSection from '../../shared/kpi-thuong/BaoCaoKpiThuongDetailSection';
 import { BaoCaoSoChePhamCapDetailTable } from './BaoCaoSoChePhamCapTables';
-import { sumPhamCapDisplayTotals } from '../core/pham-cap-derived';
+import { computeTyLeThuHoiPctFromPhamCap, sumPhamCapDisplayTotals } from '../core/pham-cap-derived';
 import { getBaoCaoSoChePreviewUrl } from '../core/preview-url';
 import {
   bcscSoLieuColChiSo,
@@ -121,9 +121,9 @@ const BaoCaoSoCheDetail: React.FC<Props> = ({
       buildBaoCaoSoCheKpiThuongPresetSources(
         kpis,
         Number.isFinite(Number(data.danh_gia_loi_qc_pct)) ? Number(data.danh_gia_loi_qc_pct) : null,
-        dbsdtRecord != null ? dbsdtRecord.ty_le_thu_hoi_thuc_te * 100 : null
+        computeTyLeThuHoiPctFromPhamCap(phamCapTotals)
       ),
-    [kpis, data.danh_gia_loi_qc_pct, dbsdtRecord]
+    [kpis, data.danh_gia_loi_qc_pct, phamCapTotals]
   );
 
   const enrichedKpiRows = useMemo(() => {

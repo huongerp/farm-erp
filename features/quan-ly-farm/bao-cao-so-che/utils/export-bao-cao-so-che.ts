@@ -16,7 +16,7 @@ import {
   BCSC_SO_LIEU_STT_OFFSET,
   BCSC_KPI_STT_OFFSET,
 } from '../core/so-lieu-row-meta';
-import { enrichPhamCapRowsWithDerived, sumPhamCapDisplayTotals } from '../core/pham-cap-derived';
+import { computeTyLeThuHoiPctFromPhamCap, enrichPhamCapRowsWithDerived, sumPhamCapDisplayTotals } from '../core/pham-cap-derived';
 import { sumTienThuongKpiThuong } from '../core/types';
 import { computeKpiPhanTram } from '../../shared/kpi-thuong/types';
 import {
@@ -138,7 +138,7 @@ function buildBaoCaoSoCheBodyHTML(data: FarmBaoCaoSoChe, bcncList: FarmBaoCaoNha
     buildBaoCaoSoCheKpiThuongPresetSources(
       kpis,
       Number.isFinite(Number(data.danh_gia_loi_qc_pct)) ? Number(data.danh_gia_loi_qc_pct) : null,
-      null
+      computeTyLeThuHoiPctFromPhamCap(phamCapTotals)
     )
   );
   const tongThuong = sumTienThuongKpiThuong(kpiThuong);
@@ -422,7 +422,7 @@ export async function exportBaoCaoSoCheToXLSX(
     buildBaoCaoSoCheKpiThuongPresetSources(
       kpis,
       Number.isFinite(Number(data.danh_gia_loi_qc_pct)) ? Number(data.danh_gia_loi_qc_pct) : null,
-      null
+      computeTyLeThuHoiPctFromPhamCap(phamCapTotals)
     )
   );
   const tongThuong = sumTienThuongKpiThuong(kpiThuong);

@@ -14,7 +14,7 @@ import {
   buildBaoCaoSoCheKpiThuongPresetSources,
   enrichBaoCaoSoCheKpiThuongRows,
 } from '../../bao-cao-so-che/core/bcsc-kpi';
-import { sumPhamCapDisplayTotals } from '../../bao-cao-so-che/core/pham-cap-derived';
+import { computeTyLeThuHoiPctFromPhamCap, sumPhamCapDisplayTotals } from '../../bao-cao-so-che/core/pham-cap-derived';
 import { computeKpiPhanTram } from '../../shared/kpi-thuong/types';
 import { computeDuBaoSlDongThungKpiFromFarm } from '../../du-bao-sl-dong-thung/core/kpi';
 import type {
@@ -52,7 +52,7 @@ const BCSC_KPI_PRESET_COUNT = 3;
 function buildKpiSnapshot(
   bcsc: FarmBaoCaoSoChe,
   bcnc: FarmBaoCaoNhanCong | null,
-  dbdt: FarmDuBaoSlDongThung | null
+  _dbdt: FarmDuBaoSlDongThung | null
 ): KpiSnapshot {
   const rawRows = bcsc.kpi_thuong ?? [];
   const phamCapTotals = sumPhamCapDisplayTotals(bcsc.pham_cap ?? []);
@@ -65,7 +65,7 @@ function buildKpiSnapshot(
   const presetSources = buildBaoCaoSoCheKpiThuongPresetSources(
     kpis,
     Number.isFinite(Number(bcsc.danh_gia_loi_qc_pct)) ? Number(bcsc.danh_gia_loi_qc_pct) : null,
-    dbdt != null ? dbdt.ty_le_thu_hoi_thuc_te * 100 : null
+    computeTyLeThuHoiPctFromPhamCap(phamCapTotals)
   );
   const enriched = enrichBaoCaoSoCheKpiThuongRows(rawRows, presetSources);
   const rows = enriched.map((row, index) => {

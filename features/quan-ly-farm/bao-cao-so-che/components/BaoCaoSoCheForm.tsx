@@ -27,13 +27,12 @@ import { useBaoCaoNhanCongList } from '../../bao-cao-nhan-cong/hooks/use-bao-cao
 import BaoCaoSoCheBcncKpiReadout from './BaoCaoSoCheBcncKpiReadout';
 import BaoCaoSoCheSoLieuBuongFormTable from './BaoCaoSoCheSoLieuBuongFormTable';
 import { BaoCaoSoChePhamCapFormSection } from './BaoCaoSoChePhamCapTables';
-import { sumPhamCapDisplayTotals } from '../core/pham-cap-derived';
+import { computeTyLeThuHoiPctFromPhamCap, sumPhamCapDisplayTotals } from '../core/pham-cap-derived';
 import {
   findBaoCaoNhanCongByBranchAndDate,
   computeBaoCaoSoCheKpis,
   buildBaoCaoSoCheKpiThuongPresetSources,
 } from '../core/bcsc-kpi';
-import { useDuBaoSlDongThungList } from '../../du-bao-sl-dong-thung/hooks/use-du-bao-sl-dong-thung';
 
 interface Props {
   branches: Branch[];
@@ -120,7 +119,6 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
     [soLieuMeta]
   );
   const { data: bcncList = [] } = useBaoCaoNhanCongList();
-  const { data: dbsdtList = [] } = useDuBaoSlDongThungList();
 
   const bcnc = useMemo(
     () => findBaoCaoNhanCongByBranchAndDate(bcncList, ngay ?? '', idChiNhanh ?? ''),
@@ -131,23 +129,15 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
     [tongThungQD, bcnc, tongKg, tongLuong]
   );
 
-  const dbsdtRecord = useMemo(
-    () =>
-      dbsdtList.find(
-        (r) => r.ngay === ngay && String(r.id_chi_nhanh) === String(idChiNhanh)
-      ) ?? null,
-    [dbsdtList, ngay, idChiNhanh]
-  );
-
   /* 3 nguồn tự tính cho section Đánh giá KPI/thưởng */
   const kpiPresetSources = useMemo(
     () =>
       buildBaoCaoSoCheKpiThuongPresetSources(
         kpis,
         Number.isFinite(Number(danhGiaLoiQcPct)) ? Number(danhGiaLoiQcPct) : null,
-        dbsdtRecord != null ? dbsdtRecord.ty_le_thu_hoi_thuc_te * 100 : null
+        computeTyLeThuHoiPctFromPhamCap(phamCapTotals)
       ),
-    [kpis, danhGiaLoiQcPct, dbsdtRecord]
+    [kpis, danhGiaLoiQcPct, phamCapTotals]
   );
 
   useEffect(() => {
