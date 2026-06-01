@@ -106,10 +106,17 @@ const addMov = (map: Map<string, Mov>, key: string, nhap: number, xuat: number) 
  * Đảm bảo: Tồn đầu + Tổng nhập − Tổng xuất ≡ Tồn cuối.
  * Chỉ phiếu "Không duyệt" bị loại; "Chờ duyệt" + "Đã duyệt" đều tính.
  */
+function nxtFiltersToRpcPayload(filters: NXTReportFilters): Record<string, unknown> {
+  return {
+    ...filters,
+    trangThaiPhieu: filters.trangThaiPhieu.map((n) => TRANG_THAI_NUM_TO_TEXT[n]).filter(Boolean),
+  };
+}
+
 export async function getNXTByPeriod(filters: NXTReportFilters): Promise<NXTByPeriodResult> {
   try {
     const { data, error } = await supabase.rpc('rpc_nxt_by_period', {
-      p_filters: filters as unknown as Record<string, unknown>,
+      p_filters: nxtFiltersToRpcPayload(filters),
     });
     if (!error && data != null && typeof data === 'object' && Array.isArray((data as NXTByPeriodResult).byWarehouse)) {
       return data as NXTByPeriodResult;
@@ -355,7 +362,7 @@ const TRANG_THAI_NUM_TO_TEXT: Record<number, string> = {
 export async function getPhieuInPeriod(filters: NXTReportFilters): Promise<PhieuKho[]> {
   try {
     const { data, error } = await supabase.rpc('rpc_phieu_in_period', {
-      p_filters: filters as unknown as Record<string, unknown>,
+      p_filters: nxtFiltersToRpcPayload(filters),
     });
     if (!error && Array.isArray(data)) return data as PhieuKho[];
   } catch {

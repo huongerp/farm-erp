@@ -200,8 +200,9 @@ interface PhieuKhoChiTietFlatViewRow {
   so_po_don_dat_hang?: string | null;
 }
 
+/** Tab chi tiết phẳng — bỏ trao_doi (lặp theo dòng, chỉ cần khi mở 1 phiếu). */
 const PHIEU_KHO_CHI_TIET_FLAT_SELECT =
-  'chi_tiet_id, id_phieu_kho, id_hang_hoa, ten_hang_hoa, don_vi_tinh, so_luong, don_gia, thanh_tien, so_lot, ghi_chu, chi_tiet_nguoi_tao_id, chi_tiet_ten_nguoi_tao, chi_tiet_tg_tao, chi_tiet_tg_cap_nhat, phieu_id, so_phieu, ngay, loai, kho_id, ten_kho, kho_den_id, ten_kho_den, id_nha_cung_cap, id_khach_hang, trang_thai, mo_ta, trao_doi, phieu_nguoi_tao_id, phieu_ten_nguoi_tao, id_nguoi_duyet, phieu_tg_tao, phieu_tg_cap_nhat, id_don_dat_hang, ma_hang, so_po_don_dat_hang';
+  'chi_tiet_id, id_phieu_kho, id_hang_hoa, ten_hang_hoa, don_vi_tinh, so_luong, don_gia, thanh_tien, so_lot, ghi_chu, chi_tiet_nguoi_tao_id, chi_tiet_ten_nguoi_tao, chi_tiet_tg_tao, chi_tiet_tg_cap_nhat, phieu_id, so_phieu, ngay, loai, kho_id, ten_kho, kho_den_id, ten_kho_den, id_nha_cung_cap, id_khach_hang, trang_thai, mo_ta, phieu_nguoi_tao_id, phieu_ten_nguoi_tao, id_nguoi_duyet, phieu_tg_tao, phieu_tg_cap_nhat, id_don_dat_hang, ma_hang, so_po_don_dat_hang';
 
 function rowToPhieu(
   row: PhieuKhoDbRow,
@@ -669,20 +670,12 @@ function mapPhieuKhoChiTietFlatViewRows(
   return flat;
 }
 
+/** @deprecated Dùng getChiTietPhieuKhoPageSupabase — tải ~19k dòng gây egress lớn. */
 export async function getChiTietPhieuKhoAllSupabase(): Promise<ChiTietPhieuKhoFlat[]> {
-  const [flatRows, maps] = await Promise.all([
-    fetchAllRows<PhieuKhoChiTietFlatViewRow>((from, to) =>
-      supabase
-        .from(VIEW_PHIEU_KHO_CHI_TIET_FLAT)
-        .select(PHIEU_KHO_CHI_TIET_FLAT_SELECT)
-        .order('ngay', { ascending: false })
-        .order('so_phieu', { ascending: false })
-        .order('chi_tiet_id', { ascending: false })
-        .range(from, to)
-    ),
-    getChiTietEnrichmentMaps(),
-  ]);
-  return mapPhieuKhoChiTietFlatViewRows(flatRows, maps.khoMap, maps.doiTacMap, maps.nvMap);
+  console.warn(
+    '[phieu-kho] getChiTietPhieuKhoAllSupabase is deprecated — use paginated getChiTietPhieuKhoPageSupabase'
+  );
+  return [];
 }
 
 const IMPOSSIBLE_NUM_ID = -2147483647;
@@ -799,10 +792,17 @@ export async function getChiTietPhieuKhoPageSupabase(
   return { data, totalCount: pageResult.totalCount, page: pageResult.page, pageSize: pageResult.pageSize };
 }
 
+const LICH_SU_NHAP_XUAT_MAX_ROWS = 500;
+
 export async function getLichSuNhapXuatByHangHoaSupabase(id_hang_hoa: string): Promise<LichSuNhapXuatRow[]> {
   const idHhNum = Number(id_hang_hoa);
   if (Number.isNaN(idHhNum)) return [];
-  const { data: ctRows } = await supabase.from(TABLE_CHI_TIET).select(PHIEU_KHO_CHI_TIET_ROW_SELECT).eq('id_hang_hoa', idHhNum);
+  const { data: ctRows } = await supabase
+    .from(TABLE_CHI_TIET)
+    .select(PHIEU_KHO_CHI_TIET_ROW_SELECT)
+    .eq('id_hang_hoa', idHhNum)
+    .order('id', { ascending: false })
+    .limit(LICH_SU_NHAP_XUAT_MAX_ROWS);
   if (!ctRows?.length) return [];
   const phieuIds = [...new Set((ctRows as ChiTietDbRow[]).map((c) => c.id_phieu_kho))];
   const { data: phieuRows } = await supabase.from(TABLE_PHIEU).select(PHIEU_KHO_HEADER_ROW_SELECT).in('id', phieuIds);
@@ -845,10 +845,20 @@ export async function getLichSuNhapXuatByHangHoaSupabase(id_hang_hoa: string): P
 export async function getLichSuNhapXuatByKhoSupabase(id_kho: string): Promise<LichSuNhapXuatByKhoRow[]> {
   const idKhoNum = Number(id_kho);
   if (Number.isNaN(idKhoNum)) return [];
-  const { data: phieuRows } = await supabase.from(TABLE_PHIEU).select(PHIEU_KHO_HEADER_ROW_SELECT).or(`kho_id.eq.${idKhoNum},kho_den_id.eq.${idKhoNum}`);
+  const { data: phieuRows } = await supabase
+    .from(TABLE_PHIEU)
+    .select(PHIEU_KHO_HEADER_ROW_SELECT)
+    .or(`kho_id.eq.${idKhoNum},kho_den_id.eq.${idKhoNum}`)
+    .order('ngay', { ascending: false })
+    .limit(200);
   if (!phieuRows?.length) return [];
   const phieuIds = (phieuRows as PhieuKhoDbRow[]).map((p) => p.id);
-  const { data: ctRows } = await supabase.from(TABLE_CHI_TIET).select(PHIEU_KHO_CHI_TIET_ROW_SELECT).in('id_phieu_kho', phieuIds);
+  const { data: ctRows } = await supabase
+    .from(TABLE_CHI_TIET)
+    .select(PHIEU_KHO_CHI_TIET_ROW_SELECT)
+    .in('id_phieu_kho', phieuIds)
+    .order('id', { ascending: false })
+    .limit(LICH_SU_NHAP_XUAT_MAX_ROWS);
   if (!ctRows?.length) return [];
   const hangHoaList = await getHangHoaRef();
   const hangHoaMap: Record<string, { ma_hang: string; ten_hang: string }> = {};

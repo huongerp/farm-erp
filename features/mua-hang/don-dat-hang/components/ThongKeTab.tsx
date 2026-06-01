@@ -56,8 +56,6 @@ const ThongKeTab: React.FC = () => {
   const { data: thongKe, isLoading, isError } = useQuery({
     queryKey: ['donDatHang', 'thongKe', filterStatus, filterSupplier, filterBuyer, dateFrom, dateTo],
     queryFn: async () => {
-      const list = await getAllDonDatHangSupabase();
-      const filteredList = filterDonDatHangList(list, statsFilterParams);
       const rpc = await fetchDonDatHangThongKeFromRpc({
         dateFrom,
         dateTo,
@@ -65,7 +63,9 @@ const ThongKeTab: React.FC = () => {
         filterSupplier,
         filterBuyer,
       });
-      if (rpc) return { kind: 'rpc' as const, rpc, list, filteredList };
+      if (rpc) return { kind: 'rpc' as const, rpc };
+      const list = await getAllDonDatHangSupabase();
+      const filteredList = filterDonDatHangList(list, statsFilterParams);
       return { kind: 'fallback' as const, list, filteredList };
     },
     staleTime: 60_000,
@@ -119,7 +119,9 @@ const ThongKeTab: React.FC = () => {
     if (thongKe.kind === 'rpc') {
       const o = thongKe.rpc.chipBySupplierId;
       const m: Record<string, number> = {};
-      Object.entries(o).forEach(([k, v]) => { m[String(k)] = Number(v) || 0; });
+      Object.entries(o).forEach(([k, v]) => {
+        m[String(k)] = Number(v) || 0;
+      });
       return m;
     }
     const m: Record<string, number> = {};

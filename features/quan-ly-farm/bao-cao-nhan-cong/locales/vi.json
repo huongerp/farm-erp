@@ -134,6 +134,8 @@
   "baoCaoNhanCong.detail.sectionKpi": "Đánh giá KPI / thưởng",
   "baoCaoNhanCong.detail.kpiEmpty": "Không có dòng KPI trên phiếu này.",
   "baoCaoNhanCong.list.photoCountTooltip": "{{count}} ảnh đính kèm",
+  "baoCaoNhanCong.list.photosOnDetail": "Xem chi tiết",
+  "baoCaoNhanCong.list.photosOnDetailHint": "Ảnh chỉ tải khi mở chi tiết phiếu",
   "baoCaoNhanCong.detail.edit": "Sửa",
   "baoCaoNhanCong.detail.delete": "Xóa",
   "baoCaoNhanCong.detail.close": "Đóng",

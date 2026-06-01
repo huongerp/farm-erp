@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { useConfirmStore } from '@/store/useConfirmStore';
@@ -9,6 +9,11 @@ import Button from '../../../../components/ui/Button';
 import Textarea from '../../../../components/ui/Textarea';
 import Combobox from '../../../../components/ui/Combobox';
 import SingleImageInput from '../../../../components/ui/SingleImageInput';
+import { uploadImageToCloudinary } from '../../../../lib/cloudinary';
+
+const CLOUDINARY_READY =
+  Boolean(import.meta.env.VITE_CLOUDINARY_CLOUD_NAME) &&
+  Boolean(import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
 import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/GenericDrawer';
 import FormSection from '../../../../components/shared/FormSection';
 import FormGrid from '../../../../components/shared/FormGrid';
@@ -57,6 +62,10 @@ const TaiSanForm: React.FC<Props> = ({ initialData, onClose }) => {
   const isEdit = !!initialData;
   const createMutation = useCreateTaiSan(onClose);
   const updateMutation = useUpdateTaiSan(onClose);
+  const handleUploadImage = useCallback(
+    (file: File) => uploadImageToCloudinary(file, 'farm-erp/tai-san'),
+    []
+  );
   const { data: nextMa, isSuccess: nextMaSuccess } = useGetNextMaTaiSan(!isEdit);
   const { data: groups = [] } = useAssetGroups();
   const { data: locations = [] } = useAssetStorageLocations();
@@ -258,6 +267,7 @@ const TaiSanForm: React.FC<Props> = ({ initialData, onClose }) => {
                   icon={<ImageIcon size={14} />}
                   value={field.value || null}
                   onChange={(v) => field.onChange(v ?? '')}
+                  uploadFile={CLOUDINARY_READY ? handleUploadImage : undefined}
                   placeholder={t('danhSachTaiSan.form.hinhAnhPlaceholder')}
                   hint={t('danhSachTaiSan.form.hinhAnhHint')}
                   shape="rounded"

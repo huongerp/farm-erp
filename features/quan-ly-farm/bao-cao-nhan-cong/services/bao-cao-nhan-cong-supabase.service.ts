@@ -18,7 +18,12 @@ const TABLE_CHA = 'fp_farm_bao_cao_nhan_cong';
 const TABLE_CT = 'fp_farm_bao_cao_nhan_cong_ct';
 const TABLE_CT_SUB = 'fp_farm_bao_cao_nhan_cong_ct_sub';
 
-const ROW_CHA =
+/** List — bỏ hinh_anh_urls (~1.8MB/dòng base64). Ảnh chỉ load khi mở chi tiết (ROW_CHA_DETAIL). */
+const ROW_CHA_LIST =
+  'id,ngay,id_chi_nhanh,ten_chi_nhanh,ghi_chu,id_nguoi_tao,trang_thai,tg_tao,tg_cap_nhat';
+
+/** Chi tiết / insert / update */
+const ROW_CHA_DETAIL =
   'id,ngay,id_chi_nhanh,ten_chi_nhanh,ghi_chu,hinh_anh_urls,id_nguoi_tao,trang_thai,tg_tao,tg_cap_nhat';
 
 const ROW_CT =
@@ -128,14 +133,14 @@ function normalizeTrangThaiDb(v: string | null | undefined): TrangThaiBaoCaoNhan
   return v === TRANG_THAI_BAO_CAO_NHAN_CONG.KHOA ? TRANG_THAI_BAO_CAO_NHAN_CONG.KHOA : TRANG_THAI_BAO_CAO_NHAN_CONG.MO;
 }
 
-function chaRowToModel(row: DbRowCha, chi: FarmBaoCaoNhanCongCt[]): FarmBaoCaoNhanCong {
+function chaRowToModel(row: DbRowCha, chi: FarmBaoCaoNhanCongCt[], includeHinhAnh = true): FarmBaoCaoNhanCong {
   return {
     id: String(row.id),
     ngay: typeof row.ngay === 'string' ? row.ngay.slice(0, 10) : String(row.ngay),
     id_chi_nhanh: row.id_chi_nhanh != null ? String(row.id_chi_nhanh) : null,
     ten_chi_nhanh: row.ten_chi_nhanh ?? null,
     ghi_chu: row.ghi_chu ?? null,
-    hinh_anh_urls: parseHinhAnhUrls(row.hinh_anh_urls),
+    hinh_anh_urls: includeHinhAnh ? parseHinhAnhUrls(row.hinh_anh_urls) : [],
     id_nguoi_tao: row.id_nguoi_tao != null ? String(row.id_nguoi_tao) : null,
     ten_nguoi_tao: null,
     trang_thai: normalizeTrangThaiDb(row.trang_thai),
@@ -251,18 +256,18 @@ async function insertCtAndSub(
 }
 
 export async function getAllBaoCaoNhanCongSupabase(): Promise<FarmBaoCaoNhanCong[]> {
-  const { data, error } = await supabase.from(TABLE_CHA).select(ROW_CHA).order('ngay', { ascending: false });
+  const { data, error } = await supabase.from(TABLE_CHA).select(ROW_CHA_LIST).order('ngay', { ascending: false });
   if (error) throwSupabaseError(error, { resource: `${TABLE_CHA}.list` });
   const rows = (data ?? []) as DbRowCha[];
   const ids = rows.map((r) => String(r.id));
   const ctMap = await fetchChiTietForIds(ids);
-  return rows.map((r) => chaRowToModel(r, ctMap.get(String(r.id)) ?? []));
+  return rows.map((r) => chaRowToModel(r, ctMap.get(String(r.id)) ?? [], false));
 }
 
 export async function getBaoCaoNhanCongByIdSupabase(id: string): Promise<FarmBaoCaoNhanCong | null> {
   const numId = Number(id);
   if (!Number.isFinite(numId)) return null;
-  const { data, error } = await supabase.from(TABLE_CHA).select(ROW_CHA).eq('id', numId).maybeSingle();
+  const { data, error } = await supabase.from(TABLE_CHA).select(ROW_CHA_DETAIL).eq('id', numId).maybeSingle();
   if (error) throwSupabaseError(error, { resource: `${TABLE_CHA}.byId` });
   if (!data) return null;
   const row = data as DbRowCha;
@@ -299,7 +304,7 @@ export async function createBaoCaoNhanCongSupabase(
   idNguoiTao: string | null
 ): Promise<FarmBaoCaoNhanCong> {
   const payload = { ...chaPayloadCreate(values, idNguoiTao), tg_tao: new Date().toISOString() };
-  const { data: inserted, error } = await supabase.from(TABLE_CHA).insert(payload).select(ROW_CHA).single();
+  const { data: inserted, error } = await supabase.from(TABLE_CHA).insert(payload).select(ROW_CHA_DETAIL).single();
   if (error) throw mapChaInsertUpdateError(error);
   const parent = inserted as DbRowCha;
   await insertCtAndSub(parent.id, values.chi_tiet);

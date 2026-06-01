@@ -24,10 +24,12 @@ const QUERY_KEY_CHI_TIET = [...QUERY_KEY, 'chiTiet'] as const;
 const PHIEU_DE_XUAT_PAGE_SIZE = 50;
 const PHIEU_DE_XUAT_CHI_TIET_PAGE_SIZE = 100;
 
+/** @deprecated Tab Thống kê: dùng fetchPhieuDeXuatStatsFromRpc. List tab: usePhieuDeXuatVatTuListPaged. */
 export const usePhieuDeXuatVatTuList = () => {
   return useQuery({
     queryKey: QUERY_KEY,
     queryFn: getAllPhieuDeXuatVatTu,
+    enabled: false,
     staleTime: 1000 * 60 * 15,
   });
 };
@@ -42,10 +44,12 @@ export const usePhieuDeXuatVatTuListPaged = (pageIndex: number, listQuery: Phieu
   });
 };
 
+/** @deprecated Dùng usePhieuDeXuatVatTuChiTietPaged. */
 export const usePhieuDeXuatVatTuChiTietAll = () => {
   return useQuery({
     queryKey: QUERY_KEY_CHI_TIET,
     queryFn: getAllPhieuDeXuatVatTuChiTiet,
+    enabled: false,
     staleTime: 1000 * 60 * 15,
   });
 };

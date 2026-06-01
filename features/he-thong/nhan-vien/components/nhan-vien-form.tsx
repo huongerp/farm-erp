@@ -1,5 +1,5 @@
 
-import React, { useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
@@ -15,6 +15,11 @@ import Combobox from '../../../../components/ui/Combobox';
 import MultiSelect from '../../../../components/ui/MultiSelect';
 import RadioGroup from '../../../../components/ui/RadioGroup';
 import SingleImageInput from '../../../../components/ui/SingleImageInput';
+import { uploadImageToCloudinary } from '../../../../lib/cloudinary';
+
+const CLOUDINARY_READY =
+  Boolean(import.meta.env.VITE_CLOUDINARY_CLOUD_NAME) &&
+  Boolean(import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
 import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/GenericDrawer';
 import FormSection from '../../../../components/shared/FormSection';
 import FormGrid from '../../../../components/shared/FormGrid';
@@ -47,6 +52,11 @@ const EmployeeForm: React.FC<Props> = ({ initialData, prefillData, onClose }) =>
   const isEdit = !!initialData;
   const createMutation = useCreateEmployee(onClose);
   const updateMutation = useUpdateEmployee(onClose);
+
+  const handleUploadAvatar = useCallback(
+    (file: File) => uploadImageToCloudinary(file, 'farm-erp/nhan-vien'),
+    []
+  );
 
   const { data: departments = [] } = useDepartments();
   const { data: positions = [] } = usePositions();
@@ -189,6 +199,7 @@ const EmployeeForm: React.FC<Props> = ({ initialData, prefillData, onClose }) =>
                                 icon={<Camera className="w-4 h-4" />}
                                 value={field.value}
                                 onChange={field.onChange}
+                                uploadFile={CLOUDINARY_READY ? handleUploadAvatar : undefined}
                                 shape="circle"
                                 maxSizeMB={2}
                                 placeholder={t('employee.form.avatarPlaceholder')}

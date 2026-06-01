@@ -11,6 +11,12 @@ import { getEmployeesRef } from '../../../he-thong/nhan-vien/services/nhan-vien-
 import type { BranchListScope } from '../../../../lib/branch-scope-query';
 import { postgrestQuotedIlikePattern } from '../../../../lib/postgrest-or-ilike';
 import type { PhieuDeXuatChiTietListServerQuery, PhieuDeXuatVatTuListServerQuery } from './phieu-de-xuat-list-query';
+import type {
+  PhieuDeXuatVatTuStatsByTrangThai,
+  PhieuDeXuatVatTuStatsSummary,
+  StatsChartItem,
+} from '../components/stats/usePhieuDeXuatVatTuStats';
+import { filterKeyToTrangThai, TRANG_THAI_PHIEU_DE_XUAT_VAT_TU } from '../core/constants';
 
 const TABLE_PHIEU = 'fp_mh_phieu_de_xuat_vat_tu';
 const TABLE_CHI_TIET = 'fp_mh_phieu_de_xuat_vat_tu_chi_tiet';
@@ -166,6 +172,108 @@ export async function getAllPhieuDeXuatVatTuSupabase(): Promise<PhieuDeXuatVatTu
       .range(from, to)
   );
   return rows.map((row) => mapPhieuDeXuatSummaryRowToPhieu(row));
+}
+
+export type PhieuDeXuatStatsRpcResult = {
+  summary: PhieuDeXuatVatTuStatsSummary;
+  byTrangThai: PhieuDeXuatVatTuStatsByTrangThai[];
+  byNoiDeXuat: StatsChartItem[];
+  byNguoiDeXuat: StatsChartItem[];
+  byNguoiDuyet: StatsChartItem[];
+  byMonth: StatsChartItem[];
+  chipByStatusKey: Record<string, number>;
+  chipByNoiDeXuatId: Record<string, number>;
+  chipByNguoiDeXuatId: Record<string, number>;
+  chipByNguoiDuyetId: Record<string, number>;
+};
+
+/** Thống kê server-side — @see docs/supabase-rpc_phieu_de_xuat_stats.sql */
+export async function fetchPhieuDeXuatStatsFromRpc(params: {
+  dateFrom: string;
+  dateTo: string;
+  filterStatus: string[];
+  filterNoiDeXuat: string[];
+  filterNguoiDeXuat: string[];
+  filterNguoiDuyet: string[];
+  scopeNoiDeXuatIds?: number[];
+}): Promise<PhieuDeXuatStatsRpcResult | null> {
+  const toDate = (s: string) => (s?.trim() ? s.trim().slice(0, 10) : null);
+  const trangThai = params.filterStatus.map((k) => filterKeyToTrangThai(k as 'Pending' | 'Approved' | 'Rejected'));
+  const noiNums = params.filterNoiDeXuat.map(Number).filter((n) => !Number.isNaN(n));
+  let noiIds = noiNums.length ? noiNums : null;
+  if (params.scopeNoiDeXuatIds != null) {
+    const scopeSet = new Set(params.scopeNoiDeXuatIds);
+    if (noiIds?.length) {
+      noiIds = noiIds.filter((id) => scopeSet.has(id));
+    } else {
+      noiIds = [...scopeSet];
+    }
+    if (noiIds.length === 0) {
+      return {
+        summary: { total: 0, pending: 0, approved: 0, rejected: 0 },
+        byTrangThai: TRANG_THAI_PHIEU_DE_XUAT_VAT_TU.map((s) => ({
+          id: s,
+          ten: `status.${s === 'Chờ duyệt' ? 'pending' : s === 'Đã duyệt' ? 'approved' : 'rejected'}`,
+          count: 0,
+        })),
+        byNoiDeXuat: [],
+        byNguoiDeXuat: [],
+        byNguoiDuyet: [],
+        byMonth: [],
+        chipByStatusKey: {},
+        chipByNoiDeXuatId: {},
+        chipByNguoiDeXuatId: {},
+        chipByNguoiDuyetId: {},
+      };
+    }
+  }
+  const deXuatNums = params.filterNguoiDeXuat.map(Number).filter((n) => !Number.isNaN(n));
+  const duyetNums = params.filterNguoiDuyet.map(Number).filter((n) => !Number.isNaN(n));
+
+  const { data, error } = await supabase.rpc('rpc_phieu_de_xuat_stats', {
+    p_date_from: toDate(params.dateFrom),
+    p_date_to: toDate(params.dateTo),
+    p_trang_thai: trangThai.length ? trangThai : null,
+    p_id_noi_de_xuat: noiIds,
+    p_id_nguoi_de_xuat: deXuatNums.length ? deXuatNums : null,
+    p_id_nguoi_duyet: duyetNums.length ? duyetNums : null,
+  });
+  if (error || data == null || typeof data !== 'object') return null;
+  const j = data as {
+    summary?: PhieuDeXuatVatTuStatsSummary;
+    byTrangThai?: { id: string; count: number }[];
+    byNoiDeXuat?: StatsChartItem[];
+    byNguoiDeXuat?: StatsChartItem[];
+    byNguoiDuyet?: StatsChartItem[];
+    byMonth?: StatsChartItem[];
+    chipByStatusKey?: Record<string, number>;
+    chipByNoiDeXuatId?: Record<string, number>;
+    chipByNguoiDeXuatId?: Record<string, number>;
+    chipByNguoiDuyetId?: Record<string, number>;
+  };
+  if (!j.summary) return null;
+  const byTrangThai: PhieuDeXuatVatTuStatsByTrangThai[] = (
+    ['Pending', 'Approved', 'Rejected'] as const
+  ).map((key) => {
+    const row = j.byTrangThai?.find((r) => r.id === key);
+    return {
+      id: key,
+      ten: `status.${key === 'Pending' ? 'pending' : key === 'Approved' ? 'approved' : 'rejected'}`,
+      count: row?.count ?? 0,
+    };
+  });
+  return {
+    summary: j.summary,
+    byTrangThai,
+    byNoiDeXuat: j.byNoiDeXuat ?? [],
+    byNguoiDeXuat: j.byNguoiDeXuat ?? [],
+    byNguoiDuyet: j.byNguoiDuyet ?? [],
+    byMonth: j.byMonth ?? [],
+    chipByStatusKey: j.chipByStatusKey ?? {},
+    chipByNoiDeXuatId: j.chipByNoiDeXuatId ?? {},
+    chipByNguoiDeXuatId: j.chipByNguoiDeXuatId ?? {},
+    chipByNguoiDuyetId: j.chipByNguoiDuyetId ?? {},
+  };
 }
 
 const PHIEU_DE_XUAT_PAGE_SIZE_DEFAULT = 50;

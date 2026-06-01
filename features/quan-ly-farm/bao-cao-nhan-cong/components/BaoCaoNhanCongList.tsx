@@ -81,29 +81,12 @@ const BaoCaoNhanCongList: React.FC<Props> = ({
           </span>
         );
       }
-      case 'hinh_anh': {
-        const urls = item.hinh_anh_urls ?? [];
-        const n = urls.length;
-        const first = urls[0];
-        if (!first) {
-          return <span className="text-xs text-muted-foreground tabular-nums">—</span>;
-        }
+      case 'hinh_anh':
         return (
-          <div
-            className="flex items-center justify-center"
-            title={t('baoCaoNhanCong.list.photoCountTooltip', { count: n })}
-          >
-            <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-md border border-border bg-muted/50">
-              <img src={first} alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" />
-              {n > 1 ? (
-                <span className="absolute bottom-0 right-0 rounded-tl bg-black/65 px-[3px] py-px text-[9px] font-semibold leading-none text-white tabular-nums">
-                  {n}
-                </span>
-              ) : null}
-            </div>
-          </div>
+          <span className="text-xs text-muted-foreground" title={t('baoCaoNhanCong.list.photosOnDetailHint')}>
+            {t('baoCaoNhanCong.list.photosOnDetail')}
+          </span>
         );
-      }
       case 'tong_cong_ngay':
         return <span className="text-sm tabular-nums">{formatNumberVN(sumSlCongNgay(item))}</span>;
       case 'tong_cong_nua':
@@ -202,25 +185,6 @@ const BaoCaoNhanCongList: React.FC<Props> = ({
         {t('baoCaoNhanCong.store.colTrangThai')}:{' '}
         {item.trang_thai === 'khoa' ? t('baoCaoNhanCong.trangThai.khoa') : t('baoCaoNhanCong.trangThai.mo')}
       </div>
-      {(item.hinh_anh_urls?.length ?? 0) > 0 && (
-        <div className="flex items-center gap-2 mb-1.5">
-          <span className="text-xs text-muted-foreground shrink-0">{t('baoCaoNhanCong.store.colHinhAnh')}:</span>
-          <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded border border-border bg-muted/50">
-            <img
-              src={item.hinh_anh_urls[0]}
-              alt=""
-              className="h-full w-full object-cover"
-              loading="lazy"
-              decoding="async"
-            />
-            {(item.hinh_anh_urls?.length ?? 0) > 1 ? (
-              <span className="absolute bottom-0 right-0 rounded-tl bg-black/65 px-[2px] py-px text-[8px] font-semibold leading-none text-white tabular-nums">
-                {item.hinh_anh_urls.length}
-              </span>
-            ) : null}
-          </div>
-        </div>
-      )}
       <div className="text-xs text-muted-foreground mb-1">
         {t('baoCaoNhanCong.store.colTongCongNgay')}: {formatNumberVN(sumSlCongNgay(item))}
       </div>

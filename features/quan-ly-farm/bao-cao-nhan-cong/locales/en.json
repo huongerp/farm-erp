@@ -134,6 +134,8 @@
   "baoCaoNhanCong.detail.sectionKpi": "KPI evaluation / bonus",
   "baoCaoNhanCong.detail.kpiEmpty": "No KPI rows on this report.",
   "baoCaoNhanCong.list.photoCountTooltip": "{{count}} attached photos",
+  "baoCaoNhanCong.list.photosOnDetail": "View detail",
+  "baoCaoNhanCong.list.photosOnDetailHint": "Photos load when opening report detail",
   "baoCaoNhanCong.detail.edit": "Edit",
   "baoCaoNhanCong.detail.delete": "Delete",
   "baoCaoNhanCong.detail.close": "Close",

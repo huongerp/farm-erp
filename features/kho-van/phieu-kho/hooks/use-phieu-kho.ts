@@ -29,10 +29,12 @@ const invalidateTonKho = (qc: ReturnType<typeof useQueryClient>) => {
   qc.invalidateQueries({ queryKey: TON_KHO_QUERY_KEY });
 };
 
+/** @deprecated Dùng usePhieuKhoListPaged — full load ~3.6k phiếu gây egress lớn. */
 export const usePhieuKhoList = () => {
   return useQuery({
     queryKey: QUERY_KEY,
     queryFn: getAllPhieuKho,
+    enabled: false,
     staleTime: 1000 * 60 * 10,
   });
 };
@@ -55,10 +57,12 @@ const QUERY_KEY_CHI_TIET = ['phieuKho', 'chiTiet'] as const;
 const CHI_TIET_PHIEU_KHO_PAGE_SIZE = 100;
 
 /** Danh sách phẳng toàn bộ dòng chi tiết phiếu (nhập/xuất/chuyển) cho tab Chi tiết phiếu. */
+/** @deprecated Dùng useChiTietPhieuKhoPaged — full load ~19k dòng gây egress lớn. */
 export const useChiTietPhieuKhoAll = () => {
   return useQuery({
     queryKey: QUERY_KEY_CHI_TIET,
     queryFn: getChiTietPhieuKhoAll,
+    enabled: false,
     staleTime: 1000 * 60 * 2,
   });
 };

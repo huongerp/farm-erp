@@ -7,6 +7,7 @@ import type {
   TongHopByNoiDeXuatRow,
 } from '../core/types';
 import { TRANG_THAI_CHO_DUYET, TRANG_THAI_DA_DUYET, TRANG_THAI_KHONG_DUYET } from '../../../kho-van/phieu-de-xuat-vat-tu/core/constants';
+import { fetchPhieuDeXuatStatsFromRpc } from '../../../kho-van/phieu-de-xuat-vat-tu/services/phieu-de-xuat-vat-tu-supabase.service';
 import { getAllPhieuDeXuatVatTu } from '../../../kho-van/phieu-de-xuat-vat-tu/services/phieu-de-xuat-vat-tu-service';
 import { getAllDonDatHang } from '../../don-dat-hang/services/don-dat-hang-service';
 import { getKhoRef } from '../../../kho-van/danh-sach-kho/services/kho-service';
@@ -18,6 +19,20 @@ function inDateRange(ngay: string, dateFrom: string, dateTo: string): boolean {
 }
 
 /** Chi nhánh (kho nơi đề xuất) và/hoặc người đề xuất — giống module phiếu đề xuất. */
+async function resolveScopeNoiDeXuatIds(
+  filters: BaoCaoDeXuatVatTuFilters
+): Promise<number[] | undefined> {
+  const scopeOn =
+    filters.allowedBranchIds !== undefined || Boolean((filters.allowedCreatorUserId ?? '').trim());
+  if (!scopeOn) return undefined;
+  if (!filters.allowedBranchIds?.length) return [];
+  const khoList = await getKhoRef();
+  return khoList
+    .filter((k) => k.id_chi_nhanh != null && filters.allowedBranchIds!.includes(k.id_chi_nhanh))
+    .map((k) => Number(k.id))
+    .filter((n) => !Number.isNaN(n));
+}
+
 async function filterPhieuDeXuatForViewScope(
   list: Awaited<ReturnType<typeof getAllPhieuDeXuatVatTu>>,
   opts: { allowedBranchIds?: string[]; allowedCreatorUserId?: string }
@@ -93,6 +108,42 @@ export async function getPhieuDeXuatInPeriod(
 export async function getTongHopDeXuatKy(
   filters: BaoCaoDeXuatVatTuFilters
 ): Promise<TongHopDeXuatKyResult> {
+  const scopeKhoIds = await resolveScopeNoiDeXuatIds(filters);
+  const rpc = await fetchPhieuDeXuatStatsFromRpc({
+    dateFrom: filters.dateFrom,
+    dateTo: filters.dateTo,
+    filterStatus: [],
+    filterNoiDeXuat: filters.noiDeXuatIds,
+    filterNguoiDeXuat: filters.nguoiDeXuatIds,
+    filterNguoiDuyet: filters.nguoiDuyetIds,
+    scopeNoiDeXuatIds: scopeKhoIds,
+  });
+  if (rpc) {
+    const byTrangThai: TongHopByTrangThaiRow[] = [
+      { trang_thai: TRANG_THAI_CHO_DUYET, count: rpc.summary.pending },
+      { trang_thai: TRANG_THAI_DA_DUYET, count: rpc.summary.approved },
+      { trang_thai: TRANG_THAI_KHONG_DUYET, count: rpc.summary.rejected },
+    ];
+    const byNoiDeXuat: TongHopByNoiDeXuatRow[] = rpc.byNoiDeXuat.map((row) => ({
+      id_noi_de_xuat: '',
+      ten_noi_de_xuat: row.name,
+      count: row.value,
+    }));
+    const byMonth = rpc.byMonth.map((row) => {
+      const [m, y] = row.name.split('/');
+      return { monthKey: y && m ? `${y}-${m.padStart(2, '0')}` : row.name, label: row.name, count: row.value };
+    });
+    return {
+      total: rpc.summary.total,
+      choDuyet: rpc.summary.pending,
+      daDuyet: rpc.summary.approved,
+      khongDuyet: rpc.summary.rejected,
+      byTrangThai,
+      byNoiDeXuat,
+      byMonth,
+    };
+  }
+
   await delay(300);
   const all = await getAllPhieuDeXuatVatTu();
   const scoped = await filterPhieuDeXuatForViewScope(all, {

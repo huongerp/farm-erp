@@ -114,7 +114,7 @@ export interface FarmBaoCaoNhanCong {
   id_chi_nhanh: string | null;
   ten_chi_nhanh: string | null;
   ghi_chu: string | null;
-  /** URL ảnh Cloudinary (theo thứ tự) */
+  /** URL ảnh Cloudinary (theo thứ tự) — list không tải; chỉ chi tiết / form */
   hinh_anh_urls: string[];
   id_nguoi_tao: string | null;
   ten_nguoi_tao: string | null;

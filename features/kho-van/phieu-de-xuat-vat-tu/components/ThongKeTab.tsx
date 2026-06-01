@@ -1,64 +1,24 @@
 import React, { useMemo, useState, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
 import { User, UserCheck, Calendar, Warehouse, Tag } from 'lucide-react';
 import { toast } from 'sonner';
-import { usePhieuDeXuatVatTuList } from '../hooks/use-phieu-de-xuat-vat-tu';
 import { usePhieuDeXuatVatTuViewScope } from '../hooks/use-phieu-de-xuat-vat-tu-view-scope';
-import { filterPhieuDeXuatListByViewScope } from '../utils/phieu-de-xuat-view-scope-filter';
+import { fetchPhieuDeXuatStatsFromRpc } from '../services/phieu-de-xuat-vat-tu-supabase.service';
 import { useEmployeesRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import EmptyState from '../../../../components/shared/EmptyState';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
-import { usePhieuDeXuatVatTuStats } from './stats/usePhieuDeXuatVatTuStats';
 import StatsToolbar from './stats/StatsToolbar';
 import StatsCards from './stats/StatsCards';
 const StatsCharts = lazy(() => import('./stats/StatsCharts'));
 import StatsTables from './stats/StatsTables';
-import type { PhieuDeXuatVatTu } from '../core/types';
-import { trangThaiToFilterKey } from '../core/constants';
-
 const ThongKeTab: React.FC = () => {
   const { t } = useTranslation();
-  const { data: list = [], isLoading, isError } = usePhieuDeXuatVatTuList();
   const { data: employees = [] } = useEmployeesRefQuery();
   const { data: khoList = [] } = useKhoList();
   const viewScope = usePhieuDeXuatVatTuViewScope();
-
-  const viewableList = useMemo(
-    () => filterPhieuDeXuatListByViewScope(list, khoList, viewScope),
-    [list, khoList, viewScope]
-  );
-
-  const statusCounts = useMemo(() => {
-    const m: Record<string, number> = {};
-    viewableList.forEach((d) => {
-      const key = trangThaiToFilterKey(d.trang_thai);
-      m[key] = (m[key] ?? 0) + 1;
-    });
-    return m;
-  }, [viewableList]);
-  const noiDeXuatCounts = useMemo(() => {
-    const m: Record<string, number> = {};
-    viewableList.forEach((d) => {
-      m[d.id_noi_de_xuat] = (m[d.id_noi_de_xuat] ?? 0) + 1;
-    });
-    return m;
-  }, [viewableList]);
-  const nguoiDeXuatCounts = useMemo(() => {
-    const m: Record<string, number> = {};
-    viewableList.forEach((d) => {
-      m[d.id_nguoi_de_xuat] = (m[d.id_nguoi_de_xuat] ?? 0) + 1;
-    });
-    return m;
-  }, [viewableList]);
-  const nguoiDuyetCounts = useMemo(() => {
-    const m: Record<string, number> = {};
-    viewableList.forEach((d) => {
-      if (d.id_nguoi_duyet) m[d.id_nguoi_duyet] = (m[d.id_nguoi_duyet] ?? 0) + 1;
-    });
-    return m;
-  }, [viewableList]);
 
   const [filterStatus, setFilterStatus] = useState<string[]>([]);
   const [filterNoiDeXuat, setFilterNoiDeXuat] = useState<string[]>([]);
@@ -67,22 +27,51 @@ const ThongKeTab: React.FC = () => {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
 
-  const filteredList = useMemo(() => {
-    return viewableList.filter((d: PhieuDeXuatVatTu) => {
-      const statusKey = trangThaiToFilterKey(d.trang_thai);
-      const matchStatus = filterStatus.length === 0 || filterStatus.includes(statusKey);
-      const matchNoiDeXuat = filterNoiDeXuat.length === 0 || filterNoiDeXuat.includes(d.id_noi_de_xuat);
-      const matchNguoiDeXuat = filterNguoiDeXuat.length === 0 || filterNguoiDeXuat.includes(d.id_nguoi_de_xuat);
-      const matchNguoiDuyet =
-        filterNguoiDuyet.length === 0 ||
-        (d.id_nguoi_duyet != null && filterNguoiDuyet.includes(d.id_nguoi_duyet));
-      const matchFrom = !dateFrom || (d.ngay && d.ngay >= dateFrom);
-      const matchTo = !dateTo || (d.ngay && d.ngay <= dateTo);
-      return matchStatus && matchNoiDeXuat && matchNguoiDeXuat && matchNguoiDuyet && matchFrom && matchTo;
-    });
-  }, [viewableList, filterStatus, filterNoiDeXuat, filterNguoiDeXuat, filterNguoiDuyet, dateFrom, dateTo]);
+  const scopeNoiDeXuatIds = useMemo(() => {
+    if (viewScope.viewAll) return undefined;
+    if (!viewScope.viewByBranch) return [] as number[];
+    return khoList
+      .filter((k) => k.id_chi_nhanh != null && viewScope.allowedBranchIds.includes(k.id_chi_nhanh))
+      .map((k) => Number(k.id))
+      .filter((n) => !Number.isNaN(n));
+  }, [viewScope, khoList]);
 
-  const stats = usePhieuDeXuatVatTuStats(filteredList);
+  const {
+    data: stats,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: [
+      'phieuDeXuatVatTu',
+      'thongKe',
+      filterStatus,
+      filterNoiDeXuat,
+      filterNguoiDeXuat,
+      filterNguoiDuyet,
+      dateFrom,
+      dateTo,
+      scopeNoiDeXuatIds,
+    ],
+    queryFn: async () => {
+      const rpc = await fetchPhieuDeXuatStatsFromRpc({
+        dateFrom,
+        dateTo,
+        filterStatus,
+        filterNoiDeXuat,
+        filterNguoiDeXuat,
+        filterNguoiDuyet,
+        scopeNoiDeXuatIds,
+      });
+      if (!rpc) throw new Error('RPC rpc_phieu_de_xuat_stats unavailable');
+      return rpc;
+    },
+    staleTime: 60_000,
+  });
+
+  const statusCounts = stats?.chipByStatusKey ?? {};
+  const noiDeXuatCounts = stats?.chipByNoiDeXuatId ?? {};
+  const nguoiDeXuatCounts = stats?.chipByNguoiDeXuatId ?? {};
+  const nguoiDuyetCounts = stats?.chipByNguoiDuyetId ?? {};
 
   const statusOptions = useMemo(
     () => [
@@ -245,7 +234,7 @@ const ThongKeTab: React.FC = () => {
     );
   }
 
-  const isEmpty = filteredList.length === 0;
+  const isEmpty = !stats || stats.summary.total === 0;
 
   return (
     <div className="flex flex-col h-full">
@@ -281,7 +270,7 @@ const ThongKeTab: React.FC = () => {
                 ) : undefined
               }
             />
-          ) : (
+          ) : stats ? (
             <>
               <h3 className="text-sm font-semibold text-primary">{t('phieuDeXuatVatTu.stats.title')}</h3>
               <StatsCards summary={stats.summary} />
@@ -301,7 +290,7 @@ const ThongKeTab: React.FC = () => {
                 byNguoiDuyet={stats.byNguoiDuyet}
               />
             </>
-          )}
+          ) : null}
         </div>
       </div>
     </div>
