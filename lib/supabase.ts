@@ -78,8 +78,9 @@ if (typeof window !== 'undefined' && isLoggerEnabled()) {
 const SUPABASE_PAGE_SIZE = 1000;
 
 /** PostgREST builder trả về thenable, không phải `Promise<...>` thuần — cho phép `await` giống Promise. */
-type SupabasePageResult<T> = PromiseLike<{
-  data: T[] | null;
+/** PostgREST builder — thenable; `data` có thể là tập con cột so với `T`. */
+type SupabasePageResult = PromiseLike<{
+  data: unknown[] | null;
   error: { message: string } | null;
 }>;
 
@@ -88,14 +89,14 @@ type SupabasePageResult<T> = PromiseLike<{
  * Dùng khi cần tải hết dữ liệu vượt quá giới hạn 1000 dòng mặc định.
  */
 export async function fetchAllRows<T>(
-  run: (from: number, to: number) => SupabasePageResult<T>
+  run: (from: number, to: number) => SupabasePageResult
 ): Promise<T[]> {
   const all: T[] = [];
   let from = 0;
   while (true) {
     const { data, error } = await run(from, from + SUPABASE_PAGE_SIZE - 1);
     if (error) throwSupabaseError(error);
-    const list = data ?? [];
+    const list = (data ?? []) as T[];
     all.push(...list);
     if (list.length < SUPABASE_PAGE_SIZE) break;
     from += SUPABASE_PAGE_SIZE;

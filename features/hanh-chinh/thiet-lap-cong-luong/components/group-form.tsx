@@ -126,10 +126,10 @@ const PayrollFormGroupForm: React.FC<Props> = ({ initialData, onClose }) => {
               render={({ field }) => (
                 <StatusToggle
                   label={t('payrollIp.groups.form.status')}
-                  value={field.value === 1 ? '1' : '0'}
-                  onChange={(v) => field.onChange(v === '1' ? 1 : 0)}
-                  activeValue="1"
-                  inactiveValue="0"
+                  value={field.value}
+                  onChange={field.onChange}
+                  activeValue={TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG}
+                  inactiveValue={TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG}
                   activeLabel={t('payrollIp.active')}
                   inactiveLabel={t('payrollIp.inactive')}
                   icon={<Power size={12} />}

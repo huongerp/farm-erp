@@ -90,7 +90,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ placement = 'defaul
   const usePortal = placement === 'default' && !isMobile && isOpen && portalPosition;
 
   return (
-    <div className="relative" ref={buttonRef}>
+    <div className="relative">
       <button
         type="button"
         aria-label={t('nav.notification')}

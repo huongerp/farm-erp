@@ -170,8 +170,8 @@ const EmployeePage: React.FC = () => {
     const direction = sort.direction;
     const sorted = [...employees];
     sorted.sort((a, b) => {
-      const aVal = (a as Record<string, unknown>)[col];
-      const bVal = (b as Record<string, unknown>)[col];
+      const aVal = (a as unknown as Record<string, unknown>)[col];
+      const bVal = (b as unknown as Record<string, unknown>)[col];
       const cmp =
         typeof aVal === 'number' && typeof bVal === 'number'
           ? aVal - bVal

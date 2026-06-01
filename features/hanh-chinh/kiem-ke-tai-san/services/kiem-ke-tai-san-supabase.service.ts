@@ -508,6 +508,7 @@ export async function themChiTietPhatHienSupabase(
     ten_nguoi_giu_thuc_te: payload.id_nguoi_giu_thuc_te ? (empMap.get(payload.id_nguoi_giu_thuc_te) ?? null) : null,
     id_trang_thai_thuc_te: payload.id_trang_thai_thuc_te,
     ten_trang_thai_thuc_te: payload.id_trang_thai_thuc_te ? (statusMap.get(payload.id_trang_thai_thuc_te) ?? null) : null,
+    ket_qua: KET_QUA_CHUA_KIEM,
     ghi_chu_dong: payload.ghi_chu_dong ?? null,
     id_nguoi_kiem,
     ten_nguoi_kiem: empMap.get(id_nguoi_kiem) ?? null,

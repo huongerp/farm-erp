@@ -20,6 +20,7 @@ import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { TRANG_THAI_OPTIONS, getHangMucLabel } from '../core/constants';
 import type { PhieuBaoTriSuaChua } from '../core/types';
 import type { LoaiChiPhi } from '../../thiet-lap-tai-san/core/types';
+import type { TFunction } from 'i18next';
 
 const DEFAULT_VALUES: PhieuBaoTriSuaChuaFormValues = {
   ngay: new Date().toISOString().slice(0, 10),
@@ -32,7 +33,7 @@ const DEFAULT_VALUES: PhieuBaoTriSuaChuaFormValues = {
   nguoi_duyet: null,
 };
 
-function resolveTenHangMuc(id: string, loai: LoaiChiPhi[], t: (k: string) => string): string {
+function resolveTenHangMuc(id: string, loai: LoaiChiPhi[], t: TFunction): string {
   const found = loai.find((l) => l.id === id);
   if (found) return found.ten;
   return getHangMucLabel(id, t);

@@ -60,7 +60,7 @@ const BangLuongMyTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, on
       case 'phu_cap_tinh':
         return (
           <span className="text-sm text-foreground tabular-nums">
-            {formatCurrency((item as Record<string, number>)[colId])}
+            {formatCurrency((item as unknown as Record<string, number>)[colId])}
           </span>
         );
       case 'cong_tru_net':

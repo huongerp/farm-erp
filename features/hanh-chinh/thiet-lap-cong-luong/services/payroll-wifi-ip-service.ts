@@ -53,7 +53,10 @@ export const updatePayrollWifiIp = async (id: string, data: PayrollWifiIpFormVal
   return updated;
 };
 
-export const updatePayrollWifiIpStatus = async (ids: string[], status: 0 | 1): Promise<void> => {
+export const updatePayrollWifiIpStatus = async (
+  ids: string[],
+  status: import('../../../../lib/constants').TrangThaiHoatDong
+): Promise<void> => {
   await delay(600);
   const now = new Date().toISOString();
   dbWifiIps = dbWifiIps.map(item =>

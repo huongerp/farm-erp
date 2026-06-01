@@ -17,7 +17,7 @@ export const hangHoaSchema = z.object({
   dvt: z.preprocess((v) => (v == null ? '' : v), z.string().min(1, i18n.t('hangHoa.validation.unitRequired'))),
   don_gia: z.preprocess(
     (val) => (val === '' || val === null || val === undefined ? undefined : Number(val)),
-    z.number({ required_error: i18n.t('hangHoa.validation.priceRequired') }).min(0, i18n.t('hangHoa.validation.priceMin')),
+    z.number({ message: i18n.t('hangHoa.validation.priceRequired') }).min(0, i18n.t('hangHoa.validation.priceMin')),
   ),
   trang_thai: z.enum([TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG, TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG]),
   thu_tu: z.coerce.number().min(1, i18n.t('hangHoa.validation.thuTuMin')),

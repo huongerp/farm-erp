@@ -9,7 +9,6 @@ import { useCapPhatThuHoiStore } from '../store/useCapPhatThuHoiStore';
 import { useEmployeesRefQuery } from '@/lib/hooks/use-supabase-ref-queries';
 import { LOAI_PHIEU_OPTIONS } from '../core/constants';
 import { useCapPhatThuHoiFilterCounts } from '../hooks/use-cap-phat-thu-hoi-filter-counts';
-import type { LoaiPhieu } from '../core/types';
 import type { PhieuCapPhatThuHoi } from '../core/types';
 import type { ActionItem } from '../../../../components/ui/MobileActionsSheet';
 
@@ -71,7 +70,7 @@ const CapPhatThuHoiToolbar: React.FC<Props> = ({
 
   const renderFilters = (
     <>
-      <FilterChipMultiSelect<LoaiPhieu>
+      <FilterChipMultiSelect
         options={loaiOptions}
         value={filters.loai_phieu}
         onChange={(v) => setFilter('loai_phieu', v)}

@@ -18,6 +18,7 @@ import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { useAuthStore } from '../../../../store/useStore';
 import { useCreatePhieuDeXuatVatTu, useUpdatePhieuDeXuatVatTu } from '../hooks/use-phieu-de-xuat-vat-tu';
 import { useHangHoaRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
+import type { HangHoaRefLite } from '../../danh-sach-hang-hoa/services/hang-hoa-service';
 import { useCauHinhDeXuatVatTu } from '../../../mua-hang/thiet-lap-de-xuat-vat-tu/hooks/use-cau-hinh-de-xuat-vat-tu';
 import { useTienDoMuaHangList } from '../../../mua-hang/thiet-lap-de-xuat-vat-tu/hooks/use-tien-do-mua-hang';
 import { getNextSoPhieuPhieuDeXuatVatTuRpc } from '../services/phieu-de-xuat-vat-tu-supabase.service';
@@ -113,7 +114,7 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
     opt.value === ADD_HANG_HOA ? <span className="text-primary font-medium">{opt.label}</span> : undefined;
 
   const hangHoaMap = useMemo(() => {
-    const m: Record<string, HangHoa> = {};
+    const m: Record<string, HangHoaRefLite> = {};
     hangHoaList.forEach((h) => {
       m[h.id] = h;
     });

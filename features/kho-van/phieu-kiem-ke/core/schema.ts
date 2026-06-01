@@ -17,9 +17,7 @@ export const phieuKiemKeSchema = z.object({
   id_nguoi_thuc_hien: z.string().min(1, i18n.t('phieuKiemKe.validation.performerRequired')),
   id_nguoi_duyet: z.string().optional().nullable(),
   ghi_chu: z.string().optional(),
-  trang_thai: z.enum(TRANG_THAI_KIEM_KE, {
-    errorMap: () => ({ message: i18n.t('phieuKiemKe.validation.statusInvalid') }),
-  }),
+  trang_thai: z.enum(TRANG_THAI_KIEM_KE, { message: i18n.t('phieuKiemKe.validation.statusInvalid') }),
   chi_tiet: z.array(phieuKiemKeChiTietFormItemSchema).default([]),
 }).refine(
   (data) => {

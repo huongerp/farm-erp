@@ -124,7 +124,7 @@ const NhomFormDrawer: React.FC<NhomFormDrawerProps> = ({ initialData, defaultThu
               <StatusToggle
                 label={t('doiTac.danhMuc.form.trangThai')}
                 value={trangThai}
-                onChange={setTrangThai}
+                onChange={(value) => setTrangThai(value as typeof trangThai)}
                 activeValue={TRANG_THAI_DOI_TAC.DANG_HOAT_DONG}
                 inactiveValue={TRANG_THAI_DOI_TAC.NGUNG_HOAT_DONG}
                 activeLabel={t('common.activeStatus')}

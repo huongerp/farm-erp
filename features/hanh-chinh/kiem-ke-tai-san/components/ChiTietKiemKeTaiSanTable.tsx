@@ -147,7 +147,7 @@ const ChiTietKiemKeTaiSanTable: React.FC<Props> = ({
           </div>
         );
       default:
-        return <span className="text-sm">{String((item as Record<string, unknown>)[colId] ?? '—')}</span>;
+        return <span className="text-sm">{String((item as unknown as Record<string, unknown>)[colId] ?? '—')}</span>;
     }
   };
 

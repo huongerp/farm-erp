@@ -449,14 +449,16 @@ const EmployeeStats: React.FC<EmployeeStatsProps> = ({
                           dataKey="value"
                           radius={[6, 6, 0, 0]}
                           name={t('employee.stats.quantity')}
-                          onClick={(data: { name: string }) => {
+                          onClick={(data: unknown) => {
+                            const name = (data as { name?: string } | undefined)?.name;
+                            if (!name) return;
                             const statusMap: Record<string, number> = {
                               [t('employee.statusActive')]: 1,
                               [t('employee.statusProbation')]: 2,
                               [t('employee.statusLeave')]: 3,
                               [t('employee.statusResigned')]: 0,
                             };
-                            const num = statusMap[data.name];
+                            const num = statusMap[name];
                             if (num !== undefined && onDrillDownStatus) onDrillDownStatus(num);
                           }}
                           style={{ cursor: onDrillDownStatus ? 'pointer' : 'default' }}

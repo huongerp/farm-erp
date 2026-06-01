@@ -104,7 +104,6 @@ function taiSanToFormValues(a: TaiSan, overrideIdTrangThai?: string): TaiSanForm
     nguyen_gia: a.nguyen_gia ?? undefined,
     hinh_anh: a.hinh_anh ?? '',
     ghi_chu: a.ghi_chu ?? undefined,
-    trang_thai: a.trang_thai,
   };
 }
 

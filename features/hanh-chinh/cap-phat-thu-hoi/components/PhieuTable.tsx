@@ -48,7 +48,7 @@ const PhieuTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, onDelete
       case 'ten_nguoi_thuc_hien':
         return (
           <span className="text-sm text-foreground">
-            {item[colId as keyof PhieuCapPhatThuHoi] || '—'}
+            {String(item[colId as keyof PhieuCapPhatThuHoi] ?? '—')}
           </span>
         );
       case 'ngay_thuc_hien':

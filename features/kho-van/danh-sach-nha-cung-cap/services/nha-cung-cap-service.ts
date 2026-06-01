@@ -23,12 +23,12 @@ const seedTag: Tag[] = [
 type NhaCungCapRow = Omit<NhaCungCap, 'ten_nhom' | 'ten_tags'> & { ten_nhom?: string; ten_tags?: string[] };
 
 const seedNCC: NhaCungCapRow[] = [
-  { id: 'ncc-1', ma_ncc: 'NCC-001', ten_ncc: 'Công ty Vật tư ABC', id_nhom: 'nhom-1', dia_chi: '123 Đường X', dien_thoai: '0281234567', email: 'abc@vt.vn', tag_ids: ['tag-1', 'tag-2'], thu_tu: 0, trang_thai: 1, tg_tao: ts(), tg_cap_nhat: ts() },
-  { id: 'ncc-2', ma_ncc: 'NCC-002', ten_ncc: 'Nguyên liệu XYZ', id_nhom: 'nhom-2', dien_thoai: '0287654321', tag_ids: ['tag-2', 'tag-5'], thu_tu: 1, trang_thai: 1, tg_tao: ts(), tg_cap_nhat: ts() },
-  { id: 'ncc-3', ma_ncc: 'NCC-003', ten_ncc: 'Dịch vụ Logistics 24h', id_nhom: 'nhom-3', dia_chi: '456 Đường Y', tag_ids: ['tag-1'], thu_tu: 2, trang_thai: 1, tg_tao: ts(), tg_cap_nhat: ts() },
-  { id: 'ncc-4', ma_ncc: 'NCC-004', ten_ncc: 'Nhập khẩu Thiết bị', id_nhom: 'nhom-1', dien_thoai: '0908123456', tag_ids: ['tag-3', 'tag-4'], thu_tu: 3, trang_thai: 1, tg_tao: ts(), tg_cap_nhat: ts() },
-  { id: 'ncc-5', ma_ncc: 'NCC-005', ten_ncc: 'Vật tư văn phòng Miền Nam', id_nhom: 'nhom-1', tag_ids: [], thu_tu: 4, trang_thai: 1, mo_ta: 'Chuyên văn phòng phẩm', tg_tao: ts(), tg_cap_nhat: ts() },
-  { id: 'ncc-6', ma_ncc: 'NCC-006', ten_ncc: 'NCC ngừng hợp tác', id_nhom: null, tag_ids: [], thu_tu: 5, trang_thai: 0, tg_tao: ts(), tg_cap_nhat: ts() },
+  { id: 'ncc-1', ma_ncc: 'NCC-001', ten_ncc: 'Công ty Vật tư ABC', id_nhom: 'nhom-1', dia_chi: '123 Đường X', dien_thoai: '0281234567', email: 'abc@vt.vn', tag_ids: ['tag-1', 'tag-2'], thu_tu: 0, trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG, tg_tao: ts(), tg_cap_nhat: ts() },
+  { id: 'ncc-2', ma_ncc: 'NCC-002', ten_ncc: 'Nguyên liệu XYZ', id_nhom: 'nhom-2', dien_thoai: '0287654321', tag_ids: ['tag-2', 'tag-5'], thu_tu: 1, trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG, tg_tao: ts(), tg_cap_nhat: ts() },
+  { id: 'ncc-3', ma_ncc: 'NCC-003', ten_ncc: 'Dịch vụ Logistics 24h', id_nhom: 'nhom-3', dia_chi: '456 Đường Y', tag_ids: ['tag-1'], thu_tu: 2, trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG, tg_tao: ts(), tg_cap_nhat: ts() },
+  { id: 'ncc-4', ma_ncc: 'NCC-004', ten_ncc: 'Nhập khẩu Thiết bị', id_nhom: 'nhom-1', dien_thoai: '0908123456', tag_ids: ['tag-3', 'tag-4'], thu_tu: 3, trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG, tg_tao: ts(), tg_cap_nhat: ts() },
+  { id: 'ncc-5', ma_ncc: 'NCC-005', ten_ncc: 'Vật tư văn phòng Miền Nam', id_nhom: 'nhom-1', tag_ids: [], thu_tu: 4, trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG, mo_ta: 'Chuyên văn phòng phẩm', tg_tao: ts(), tg_cap_nhat: ts() },
+  { id: 'ncc-6', ma_ncc: 'NCC-006', ten_ncc: 'NCC ngừng hợp tác', id_nhom: null, tag_ids: [], thu_tu: 5, trang_thai: TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG, tg_tao: ts(), tg_cap_nhat: ts() },
 ];
 
 let dbNhom: NhomNhaCungCap[] = JSON.parse(JSON.stringify(seedNhom));

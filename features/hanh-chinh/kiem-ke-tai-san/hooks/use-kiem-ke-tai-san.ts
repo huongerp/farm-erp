@@ -29,7 +29,7 @@ export interface UseDotKiemKeListParams {
   filter?: 'all' | 'mine';
   id_nguoi?: string;
   q?: string;
-  trang_thai_dot?: string[];
+  trang_thai_dot?: TrangThaiDotKiemKe[];
   dateFrom?: string;
   dateTo?: string;
   id_nguoi_phu_trach?: string[];

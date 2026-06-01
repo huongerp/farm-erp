@@ -106,7 +106,10 @@ export const updatePosition = async (id: string, data: PositionFormValues): Prom
   return rowToPosition(updated, deptMap, levelMap, capBacNumberMap);
 };
 
-export const updatePositionStatus = async (ids: string[], status: TrangThai): Promise<Position | undefined> => {
+export const updatePositionStatus = async (
+  ids: string[],
+  status: TrangThaiHoatDong
+): Promise<Position | undefined> => {
   if (ids.length === 1) {
     const { data, error } = await supabase
       .from(TABLE)

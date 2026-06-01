@@ -2,7 +2,7 @@ import { z } from 'zod';
 import i18n from '../../../../lib/i18n';
 import { TRANG_THAI } from '../../../../lib/constants';
 
-const optionalNumber = (schema: z.ZodNumber, errorKey: string) =>
+const optionalNumber = (schema: z.ZodType<number>, errorKey: string) =>
   z.preprocess(
     (val) => (val === '' || val === null || val === undefined ? undefined : val),
     schema.refine((v) => Number.isFinite(v), { message: i18n.t(errorKey) }).optional()

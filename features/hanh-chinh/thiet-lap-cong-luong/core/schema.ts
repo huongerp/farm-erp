@@ -19,7 +19,7 @@ export const payrollWifiIpSchema = z.object({
 export type PayrollWifiIpFormValues = z.infer<typeof payrollWifiIpSchema>;
 
 export const payrollAdminFormGroupSchema = z.object({
-  loai_phieu: z.enum(ADMIN_FORM_TYPES, { errorMap: () => ({ message: i18n.t('payrollIp.groups.validation.typeRequired') }) }),
+  loai_phieu: z.enum(ADMIN_FORM_TYPES, { message: i18n.t('payrollIp.groups.validation.typeRequired') }),
   so_luong_thang: z.coerce
     .number()
     .min(0, { message: i18n.t('payrollIp.groups.validation.quotaMin') })
@@ -35,7 +35,7 @@ const POINT_GROUP_TYPES = ['cong', 'tru'] as const;
 export const payrollPointGroupSchema = z.object({
   ma: z.string().min(1, { message: i18n.t('payrollIp.pointGroups.validation.maRequired') }),
   ten: z.string().min(1, { message: i18n.t('payrollIp.pointGroups.validation.tenRequired') }),
-  loai: z.enum(POINT_GROUP_TYPES, { errorMap: () => ({ message: i18n.t('payrollIp.pointGroups.validation.loaiRequired') }) }),
+  loai: z.enum(POINT_GROUP_TYPES, { message: i18n.t('payrollIp.pointGroups.validation.loaiRequired') }),
   thu_tu: z.coerce.number().min(0, { message: i18n.t('payrollIp.pointGroups.validation.thuTuMin') }),
   ghi_chu: z.string().optional().nullable(),
   trang_thai: z.enum([TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG, TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG]),

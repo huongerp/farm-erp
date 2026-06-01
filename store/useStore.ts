@@ -56,6 +56,8 @@ interface CompanyInfo {
   website: string;
 }
 
+export type PrimaryColor = ThemeState['primaryColor'];
+
 interface ThemeState {
   primaryColor: 'blue' | 'violet' | 'emerald' | 'rose' | 'amber' | 'orange' | 'cyan' | 'slate';
   fontFamily:

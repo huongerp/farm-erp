@@ -1,14 +1,14 @@
 import React from 'react';
 import MultiSelect from '../ui/MultiSelect';
 import type { Option } from '../ui/MultiSelect';
-import { filterOptionsWithCount } from '../../lib/filterOptionsWithCount';
+import { filterOptionsWithCount, type OptionWithCount } from '../../lib/filterOptionsWithCount';
 
 /**
  * Filter chip multi-select: chọn nhiều giá trị cho bộ lọc toolbar.
  * Quy chuẩn: (1) "Chọn tất cả" + "Xóa chọn" trong dropdown; (2) chỉ hiện option có count > 0 (hoặc đang chọn) khi hideZeroCount.
  */
-interface FilterChipMultiSelectProps {
-  options: Option[];
+interface FilterChipMultiSelectProps<T extends OptionWithCount = OptionWithCount> {
+  options: T[];
   value: string[];
   onChange: (value: string[]) => void;
   placeholder: string;
@@ -19,7 +19,7 @@ interface FilterChipMultiSelectProps {
   hideZeroCount?: boolean;
 }
 
-const FilterChipMultiSelect: React.FC<FilterChipMultiSelectProps> = ({
+function FilterChipMultiSelect<T extends OptionWithCount = OptionWithCount>({
   options,
   value,
   onChange,
@@ -28,11 +28,11 @@ const FilterChipMultiSelect: React.FC<FilterChipMultiSelectProps> = ({
   className = 'w-full sm:w-[150px]',
   size = 'sm',
   hideZeroCount = true,
-}) => {
+}: FilterChipMultiSelectProps<T>) {
   const visibleOptions = hideZeroCount ? filterOptionsWithCount(options, value) : options;
   return (
     <MultiSelect
-      options={visibleOptions}
+      options={visibleOptions as Option[]}
       value={value}
       onChange={onChange}
       placeholder={placeholder}
@@ -41,6 +41,6 @@ const FilterChipMultiSelect: React.FC<FilterChipMultiSelectProps> = ({
       size={size}
     />
   );
-};
+}
 
 export default FilterChipMultiSelect;

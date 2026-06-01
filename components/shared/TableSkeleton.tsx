@@ -35,8 +35,8 @@ const TableSkeleton: React.FC<TableSkeletonProps> = ({
   columnWithSubline,
   className,
 }) => {
-  const cols = typeof columns === 'number'
-    ? Array.from({ length: columns }, () => ({}))
+  const cols: TableSkeletonColumn[] = typeof columns === 'number'
+    ? Array.from({ length: columns }, () => ({} as TableSkeletonColumn))
     : columns;
 
   return (

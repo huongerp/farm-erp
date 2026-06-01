@@ -195,8 +195,8 @@ const ChiTietList: React.FC<Props> = ({
     if (!sort.column || !sort.direction) return rows;
     const dir = sort.direction === 'asc' ? 1 : -1;
     return [...rows].sort((a, b) => {
-      const aVal = (a as Record<string, unknown>)[sort.column!];
-      const bVal = (b as Record<string, unknown>)[sort.column!];
+      const aVal = (a as unknown as Record<string, unknown>)[sort.column!];
+      const bVal = (b as unknown as Record<string, unknown>)[sort.column!];
       if (aVal == null && bVal == null) return 0;
       if (aVal == null) return dir;
       if (bVal == null) return -dir;

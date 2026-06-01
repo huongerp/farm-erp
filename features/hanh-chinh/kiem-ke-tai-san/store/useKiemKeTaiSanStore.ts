@@ -1,8 +1,9 @@
 import { createGenericStore, ColumnConfig } from '../../../../store/createGenericStore';
 import i18n from '../../../../lib/i18n';
+import type { TrangThaiDotKiemKe } from '../core/types';
 
 export interface KiemKeTaiSanFilters {
-  trang_thai_dot: string[];
+  trang_thai_dot: TrangThaiDotKiemKe[];
   dateFrom: string;
   dateTo: string;
   id_nguoi_phu_trach: string[];

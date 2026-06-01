@@ -23,7 +23,7 @@ function getTodayDateString(): string {
 
 const DEFAULT_VALUES: AdminFormValues = {
   ngay: getTodayDateString(),
-  loai_phieu: '',
+  loai_phieu: 'late_early',
   ca: 'morning',
   ly_do: '',
 };

@@ -62,7 +62,11 @@ const ThuHoachForm: React.FC<Props> = ({
     if (initialData?.id_chi_nhanh && initialData.ten_chi_nhanh) {
       const idStr = String(initialData.id_chi_nhanh);
       if (!opts.some((o) => String(o.value) === idStr)) {
-        opts.unshift({ value: idStr, label: `${initialData.ten_chi_nhanh} (${t('thuHoach.form.branchInactiveHint')})` });
+        opts.unshift({
+          value: idStr,
+          label: `${initialData.ten_chi_nhanh} (${t('thuHoach.form.branchInactiveHint')})`,
+          subLabel: idStr,
+        });
       }
     }
     return opts;
@@ -96,7 +100,7 @@ const ThuHoachForm: React.FC<Props> = ({
   const idChiNhanh = watch('id_chi_nhanh');
   const watchedForm = watch();
   const tongKeHoachTuan = useMemo(
-    () => sumKeHoachWeek(watchedForm as Pick<FarmThuHoach, `ke_hoach_${(typeof THU_HOACH_DAY_SUFFIXES)[number]}`>),
+    () => sumKeHoachWeek(watchedForm as unknown as Pick<FarmThuHoach, `ke_hoach_${(typeof THU_HOACH_DAY_SUFFIXES)[number]}`>),
     [watchedForm]
   );
 

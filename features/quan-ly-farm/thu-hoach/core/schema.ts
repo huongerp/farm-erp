@@ -11,7 +11,7 @@ function preprocessOptionalNumber(val: unknown): unknown {
 }
 
 function keHoachShape() {
-  const o: Record<string, z.ZodNumber> = {};
+  const o: Record<string, z.ZodType<number>> = {};
   for (const s of THU_HOACH_DAY_SUFFIXES) {
     o[`ke_hoach_${s}`] = dayNum;
   }
@@ -19,7 +19,7 @@ function keHoachShape() {
 }
 
 function thucTeShape() {
-  const o: Record<string, z.ZodNumber> = {};
+  const o: Record<string, z.ZodType<number>> = {};
   for (const s of THU_HOACH_DAY_SUFFIXES) {
     o[`thuc_te_${s}`] = dayNum;
   }
@@ -33,10 +33,7 @@ export const thuHoachKeHoachFormSchema = z.object({
   nam: z.preprocess(
     preprocessOptionalNumber,
     z
-      .number({
-        required_error: reqMsg('thuHoach.validation.namRequired'),
-        invalid_type_error: reqMsg('thuHoach.validation.namRequired'),
-      })
+      .number({ message: reqMsg('thuHoach.validation.namRequired') })
       .int()
       .min(2000, { message: reqMsg('thuHoach.validation.namRange') })
       .max(2100, { message: reqMsg('thuHoach.validation.namRange') })
@@ -44,10 +41,7 @@ export const thuHoachKeHoachFormSchema = z.object({
   tuan: z.preprocess(
     preprocessOptionalNumber,
     z
-      .number({
-        required_error: reqMsg('thuHoach.validation.tuanRequired'),
-        invalid_type_error: reqMsg('thuHoach.validation.tuanRequired'),
-      })
+      .number({ message: reqMsg('thuHoach.validation.tuanRequired') })
       .int()
       .min(1, { message: reqMsg('thuHoach.validation.tuanRange') })
       .max(53, { message: reqMsg('thuHoach.validation.tuanRange') })

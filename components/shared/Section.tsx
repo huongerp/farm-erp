@@ -6,8 +6,8 @@ interface SectionProps {
   icon?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
-  /** Mặc định 'primary' – tiêu đề section luôn màu primary. Dùng 'muted' chỉ khi section phụ, ít nhấn mạnh. */
-  variant?: 'primary' | 'muted';
+  /** Mặc định 'primary' – tiêu đề section luôn màu primary. */
+  variant?: 'primary' | 'muted' | 'secondary';
   /** Id cho anchor link (vd. TOC nhảy tới section) */
   id?: string;
   /** Nút/hành động đặt cùng hàng với title (bên phải), chuẩn module Phòng ban. */
@@ -21,6 +21,7 @@ interface SectionProps {
  */
 const Section: React.FC<SectionProps> = ({ title, icon, children, className, variant = 'primary', id, action }) => {
   const isPrimary = variant === 'primary';
+  const isSecondary = variant === 'secondary';
 
   return (
     <div
@@ -34,13 +35,13 @@ const Section: React.FC<SectionProps> = ({ title, icon, children, className, var
       <div
         className={cn(
           'flex items-center justify-between gap-2 pb-2 sm:pb-2.5 border-b',
-          isPrimary ? 'border-primary/20' : 'border-border'
+          isPrimary ? 'border-primary/20' : isSecondary ? 'border-secondary/30' : 'border-border'
         )}
       >
         <h4
           className={cn(
             'text-[11px] sm:text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 sm:gap-2 min-w-0',
-            isPrimary ? 'text-primary font-bold' : 'text-muted-foreground'
+            isPrimary ? 'text-primary font-bold' : isSecondary ? 'text-secondary-foreground' : 'text-muted-foreground'
           )}
         >
           {icon}

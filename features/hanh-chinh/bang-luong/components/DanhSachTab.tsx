@@ -83,15 +83,14 @@ const DanhSachTab: React.FC = () => {
     const sorted = [...filteredList];
     const periodKey = (r: BangLuongRecord) =>
       `${r.nam}-${String(r.thang).padStart(2, '0')}`;
+    const sortableValue = (record: BangLuongRecord, col: string): string | number => {
+      if (col === 'period') return periodKey(record);
+      const raw = record[col as keyof BangLuongRecord];
+      return typeof raw === 'string' || typeof raw === 'number' ? raw : '';
+    };
     sorted.sort((a, b) => {
-      let aVal: string | number =
-        sort.column === 'period'
-          ? periodKey(a)
-          : (a[sort.column as keyof BangLuongRecord] ?? '');
-      let bVal: string | number =
-        sort.column === 'period'
-          ? periodKey(b)
-          : (b[sort.column as keyof BangLuongRecord] ?? '');
+      const aVal = sortableValue(a, sort.column);
+      const bVal = sortableValue(b, sort.column);
       let cmp = 0;
       if (typeof aVal === 'number' && typeof bVal === 'number') cmp = aVal - bVal;
       else cmp = String(aVal).localeCompare(String(bVal), getLanguage());

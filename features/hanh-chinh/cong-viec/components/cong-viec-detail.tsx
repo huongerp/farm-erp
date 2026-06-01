@@ -6,7 +6,7 @@ import { ClipboardList, Edit, MessageSquare, ListTree, Plus, Send, User, Trash2,
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
 import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
 import { getDrawerWidthClass } from '../../../../lib/dialog-sizes';
-import DetailToolbar from '../../../../components/shared/DetailToolbar';
+import DetailToolbar, { type DetailToolbarAction } from '../../../../components/shared/DetailToolbar';
 import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';
 import GenericSubTableSection from '../../../../components/shared/GenericSubTableSection';
@@ -49,7 +49,7 @@ interface Props {
 
 const CongViecDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onAddChild, onDeleteChild, onViewChild, stackLevel = 0, canCreate = true, canUpdate = true, canDelete = true }) => {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState(TAB_IDS.info);
+  const [activeTab, setActiveTab] = useState<(typeof TAB_IDS)[keyof typeof TAB_IDS]>(TAB_IDS.info);
   const [showTrangThaiModal, setShowTrangThaiModal] = useState(false);
   const [modalTrangThai, setModalTrangThai] = useState<CongViecTrangThai>(data.trang_thai);
   const [modalKetQua, setModalKetQua] = useState(data.ket_qua ?? '');
@@ -132,6 +132,28 @@ const CongViecDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onAd
       icon: MessageSquare,
     },
   ];
+  const detailActions: DetailToolbarAction[] = [
+    ...(canUpdate
+      ? [
+          {
+            label: t('congViec.detail.actionTrangThai'),
+            icon: <RefreshCw size={16} />,
+            onClick: handleOpenTrangThaiModal,
+            variant: 'info' as const,
+          },
+        ]
+      : []),
+    ...(canCreate && onAddChild
+      ? [
+          {
+            label: t('congViec.detail.addCon'),
+            icon: <ListTree size={16} />,
+            onClick: () => onAddChild(data.id),
+            variant: 'primary' as const,
+          },
+        ]
+      : []),
+  ];
 
   const renderFooter = (
     <div className="flex items-center justify-between w-full">
@@ -197,24 +219,11 @@ const CongViecDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onAd
         </div>
 
         <DetailToolbar
-        actions={[
-          ...(canUpdate ? [{
-            label: t('congViec.detail.actionTrangThai'),
-            icon: <RefreshCw size={16} />,
-            onClick: handleOpenTrangThaiModal,
-            variant: 'info',
-          }] : []),
-          ...(canCreate && onAddChild ? [{
-            label: t('congViec.detail.addCon'),
-            icon: <ListTree size={16} />,
-            onClick: () => onAddChild(data.id),
-            variant: 'primary',
-          }] : []),
-        ]}
-        className="bg-card rounded-xl border border-border mb-4"
-      />
+          actions={detailActions}
+          className="bg-card rounded-xl border border-border mb-4"
+        />
 
-        <TabGroup tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
+        <TabGroup tabs={tabs} activeTab={activeTab} onChange={(id) => setActiveTab(id as (typeof TAB_IDS)[keyof typeof TAB_IDS])} />
 
         {activeTab === TAB_IDS.info && (
           <DetailSection title={t('congViec.form.basicInfo')} icon={<ClipboardList size={14} />}>

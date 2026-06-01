@@ -98,7 +98,8 @@ export const getRoles = async (): Promise<PositionPermission[]> => {
   try {
     const { data: countRows, error: countErr } = await supabase.rpc('rpc_count_nhan_vien_by_chuc_vu');
     if (countErr) throw countErr;
-    nhanVienCountMap = (countRows ?? []).reduce<Record<string, number>>((acc, r: { chuc_vu_id: number | string; so_nhan_vien: number | string }) => {
+    const typedCountRows = (countRows ?? []) as { chuc_vu_id: number | string; so_nhan_vien: number | string }[];
+    nhanVienCountMap = typedCountRows.reduce<Record<string, number>>((acc, r) => {
       const id = String(r.chuc_vu_id);
       acc[id] = Number(r.so_nhan_vien) || 0;
       return acc;

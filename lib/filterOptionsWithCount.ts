@@ -4,6 +4,7 @@
  */
 export interface OptionWithCount {
   value: string;
+  label: string;
   count?: number;
   [key: string]: unknown;
 }

@@ -8,11 +8,11 @@ export const hopDongChiTietLineSchema = z.object({
   ngay: z.string().trim().min(1, i18n.t('hopDong.validation.ctNgayRequired')),
   ten_dot: z.string().trim().min(1, i18n.t('hopDong.validation.ctTenDotRequired')),
   so_tien: z.coerce
-    .number({ invalid_type_error: i18n.t('hopDong.validation.ctSoTienRequired') })
+    .number({ message: i18n.t('hopDong.validation.ctSoTienRequired') })
     .refine((n) => Number.isFinite(n), { message: i18n.t('hopDong.validation.ctSoTienRequired') })
     .refine((n) => n >= 0, { message: i18n.t('hopDong.validation.ctSoTienMin') }),
   so_cay_thuc_nhan: z.coerce
-    .number({ invalid_type_error: i18n.t('hopDong.validation.ctSoCayRequired') })
+    .number({ message: i18n.t('hopDong.validation.ctSoCayRequired') })
     .refine((n) => Number.isFinite(n), { message: i18n.t('hopDong.validation.ctSoCayRequired') })
     .refine((n) => n >= 0, { message: i18n.t('hopDong.validation.ctSoCayMin') }),
   ghi_chu: z.string().optional().nullable(),

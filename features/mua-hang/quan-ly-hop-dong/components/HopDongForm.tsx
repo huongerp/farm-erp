@@ -102,8 +102,8 @@ const HopDongForm: React.FC<Props> = ({ doiTacList, initialData, onClose }) => {
   const sl = watch('so_luong_cay');
   const dg = watch('don_gia');
   useEffect(() => {
-    const a = sl != null && sl !== '' ? Number(sl) : NaN;
-    const b = dg != null && dg !== '' ? Number(dg) : NaN;
+    const a = sl != null ? Number(sl) : NaN;
+    const b = dg != null ? Number(dg) : NaN;
     if (Number.isFinite(a) && Number.isFinite(b)) {
       setValue('thanh_tien', a * b);
     }

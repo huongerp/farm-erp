@@ -10,7 +10,7 @@ import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinner
 import NoiQuanLyStatsToolbar from './NoiQuanLyStatsToolbar';
 import type { AssetStorageLocation } from '../../thiet-lap-tai-san/core/types';
 import type { TaiSan } from '../../danh-muc-tai-san/core/types';
-import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
+import { TRANG_THAI_HOAT_DONG, TRANG_THAI } from '../../../../lib/constants';
 
 /** Số tài sản theo id_noi_luu */
 function countAssetsByNoiLuu(assets: TaiSan[]): Map<string, number> {
@@ -43,7 +43,7 @@ const NoiQuanLyStatsTab: React.FC = () => {
   const branchOptions = useMemo(
     () =>
       branches
-        .filter((b) => b.trang_thai === 1)
+        .filter((b) => b.trang_thai === TRANG_THAI.DANG_DUNG)
         .map((b) => ({ label: b.ten_chi_nhanh, value: b.id, subLabel: b.ma_chi_nhanh })),
     [branches]
   );

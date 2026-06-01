@@ -15,15 +15,11 @@ export const phieuKhoPTSchema = z
   .object({
     so_phieu: z.string().max(50, i18n.t('phieuKhoPhanThuoc.validation.codeMax')),
     ngay: z.string().min(1, i18n.t('phieuKhoPhanThuoc.validation.dateRequired')),
-    loai: z.enum(['nhập', 'xuất', 'chuyển'], {
-      errorMap: () => ({ message: i18n.t('phieuKhoPhanThuoc.validation.loaiInvalid') }),
-    }),
+    loai: z.enum(['nhập', 'xuất', 'chuyển'], { message: i18n.t('phieuKhoPhanThuoc.validation.loaiInvalid') }),
     kho_id: z.string().min(1, i18n.t('phieuKhoPhanThuoc.validation.warehouseRequired')),
     kho_den_id: z.string().optional().nullable(),
     mo_ta: z.string().optional(),
-    trang_thai: z.enum(TRANG_THAI_VALUES, {
-      errorMap: () => ({ message: i18n.t('phieuKhoPhanThuoc.validation.statusInvalid') }),
-    }),
+    trang_thai: z.enum(TRANG_THAI_VALUES, { message: i18n.t('phieuKhoPhanThuoc.validation.statusInvalid') }),
     nguoi_tao_id: z.coerce.number().optional().nullable(),
     chi_tiet: z.array(phieuKhoPTChiTietFormItemSchema).default([]),
   })

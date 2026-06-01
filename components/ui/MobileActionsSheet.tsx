@@ -6,7 +6,7 @@ import { X, Settings2, type LucideIcon } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 export interface ActionItem {
-  key: string;
+  key?: string;
   label: string;
   icon: LucideIcon;
   onClick: () => void;

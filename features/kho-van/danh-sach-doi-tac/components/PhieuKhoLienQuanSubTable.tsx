@@ -16,14 +16,14 @@ export interface PhieuKhoLienQuanSubTableProps {
 }
 
 const getLoaiLabel = (loai: LoaiPhieuKho, t: (k: string) => string) => {
-  if (loai === 'nhap') return t('phieuKho.tabs.nhap');
-  if (loai === 'xuat') return t('phieuKho.tabs.xuat');
+  if (loai === 'nhập') return t('phieuKho.tabs.nhap');
+  if (loai === 'xuất') return t('phieuKho.tabs.xuat');
   return t('phieuKho.tabs.chuyen');
 };
 
-const getStatusLabel = (trang_thai: 0 | 1 | 2, t: (k: string) => string) => {
-  if (trang_thai === 0) return t('phieuKho.status.pending');
-  if (trang_thai === 1) return t('phieuKho.status.approved');
+const getStatusLabel = (trang_thai: PhieuKho['trang_thai'], t: (k: string) => string) => {
+  if (trang_thai === 'Chờ duyệt') return t('phieuKho.status.pending');
+  if (trang_thai === 'Đã duyệt') return t('phieuKho.status.approved');
   return t('phieuKho.status.rejected');
 };
 
@@ -89,13 +89,13 @@ const PhieuKhoLienQuanSubTable: React.FC<PhieuKhoLienQuanSubTableProps> = ({
                 <td className="px-4 py-2.5 font-mono text-sm text-foreground">{pk.so_phieu}</td>
                 <td className="px-4 py-2.5 text-foreground">{formatDateShort(pk.ngay)}</td>
                 <td className="px-4 py-2.5 text-foreground">{getLoaiLabel(pk.loai, t)}</td>
-                <td className="px-4 py-2.5 text-foreground">{pk.ten_kho ?? pk.id_kho}</td>
+                <td className="px-4 py-2.5 text-foreground">{pk.ten_kho ?? pk.kho_id}</td>
                 <td className="px-4 py-2.5">
                   <span
                     className={
-                      pk.trang_thai === 1
+                      pk.trang_thai === 'Đã duyệt'
                         ? 'inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20'
-                        : pk.trang_thai === 0
+                        : pk.trang_thai === 'Chờ duyệt'
                           ? 'inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
                           : 'inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
                     }

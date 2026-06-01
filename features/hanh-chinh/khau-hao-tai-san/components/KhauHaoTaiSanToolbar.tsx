@@ -8,7 +8,6 @@ import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolb
 import { useKhauHaoTaiSanStore } from '../store/useKhauHaoTaiSanStore';
 import { TRANG_THAI_KY_OPTIONS } from '../core/constants';
 import type { KyKhauHao } from '../core/types';
-import type { TrangThaiKyKhauHao } from '../core/types';
 import type { ActionItem } from '../../../../components/ui/MobileActionsSheet';
 
 interface Props {
@@ -82,9 +81,9 @@ const KhauHaoTaiSanToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany
         className="w-full sm:w-[120px]"
         size="md"
       />
-      <FilterChipMultiSelect<TrangThaiKyKhauHao>
+      <FilterChipMultiSelect
         options={trangThaiOptions}
-        value={filters.trang_thai_ky as TrangThaiKyKhauHao[]}
+        value={filters.trang_thai_ky}
         onChange={(v) => setFilter('trang_thai_ky', v)}
         placeholder={t('khauHaoTaiSan.store.trangThaiCol')}
         icon={Calendar}

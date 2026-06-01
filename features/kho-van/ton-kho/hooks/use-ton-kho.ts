@@ -45,7 +45,7 @@ export function useAllTonKho() {
   }, [scope, khoList]);
 
   const blocked =
-    matrixScope === 'wait' || (matrixScope !== 'wait' && matrixScope.kind === 'ids' && khoLoading);
+    matrixScope === 'wait' || (matrixScope.kind === 'ids' && khoLoading);
   const enabled = !blocked;
 
   const q = useQuery({

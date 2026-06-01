@@ -40,10 +40,10 @@ const NhapKetQuaKiemKeDialog: React.FC<Props> = ({
   const { data: employees = [] } = useEmployeesRefQuery();
 
   const locationOptions = locations
-    .filter((l) => l.trang_thai === 1)
+    .filter((l) => l.trang_thai === 'Đang hoạt động')
     .map((l) => ({ label: l.ten_noi_luu, value: l.id, subLabel: l.ma_noi_luu }));
   const statusOptions = statuses
-    .filter((s) => s.trang_thai === 1)
+    .filter((s) => s.trang_thai === 'Đang hoạt động')
     .map((s) => ({ label: s.ten, value: s.id, subLabel: s.ma }));
   const employeeOptions = employees.map((e) => ({
     label: e.ho_ten,

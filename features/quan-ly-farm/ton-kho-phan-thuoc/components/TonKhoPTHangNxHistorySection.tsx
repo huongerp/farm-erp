@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { History } from 'lucide-react';
 import GenericSubTableSection from '../../../../components/shared/GenericSubTableSection';
 import { useFarmPhieuKhoPTHangNxHistory } from '../hooks/use-farm-ton-kho-pt';
@@ -23,11 +24,11 @@ function loaiLabel(t: (k: string) => string, loai: string): string {
   return l || '—';
 }
 
-function khoDisplay(row: TonKhoPTHangNxHistoryRow, t: (k: string) => string): string {
+function khoDisplay(row: TonKhoPTHangNxHistoryRow, t: TFunction): string {
   const from = (row.ten_kho ?? '').trim() || '—';
   const to = (row.ten_kho_den ?? '').trim();
   if ((row.loai ?? '').trim() === 'chuyển' && to) {
-    return t('tonKhoPhanThuoc.detail.historyNx.khoChuyen', { from, to });
+    return t('tonKhoPhanThuoc.detail.historyNx.khoChuyen', { from, to }) as string;
   }
   return from;
 }

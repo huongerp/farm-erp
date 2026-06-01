@@ -20,8 +20,11 @@ export type ChiTietSubByLoai = Record<LoaiChiTieu, FarmBaoCaoNhanCongCtSub[]>;
 export interface CtSubFormRow {
   sl_cong: number;
   so_gio: number;
-  ghi_chu?: string | null;
+  ghi_chu: string | null;
 }
+
+/** Dòng sub khi chỉ cần sl/gio (display, export) — ghi_chu có thể thiếu. */
+export type CtSubFormRowInput = Pick<CtSubFormRow, 'sl_cong' | 'so_gio'> & Partial<Pick<CtSubFormRow, 'ghi_chu'>>;
 
 /** Chuẩn hoá sub từ form (zod có thể thiếu ghi_chu) sang ChiTietSubFormByLoai */
 export function normalizeChiTietSubFormByLoai(sub: Partial<ChiTietSubFormByLoai> | undefined): ChiTietSubFormByLoai {
@@ -48,13 +51,13 @@ export function defaultCtSubFormRow(): CtSubFormRow {
   return { sl_cong: 0, so_gio: 0, ghi_chu: null };
 }
 
-export function isSubFormRowEmpty(r: CtSubFormRow | undefined): boolean {
+export function isSubFormRowEmpty(r: CtSubFormRowInput | undefined): boolean {
   if (!r) return true;
   return num(r.sl_cong) <= 0 && num(r.so_gio) <= 0 && !(r.ghi_chu?.trim());
 }
 
 /** SL và giờ phải cùng trống hoặc cùng có giá trị > 0. */
-export function isSubFormRowSlGioPaired(r: CtSubFormRow | undefined): boolean {
+export function isSubFormRowSlGioPaired(r: CtSubFormRowInput | undefined): boolean {
   if (!r) return true;
   const sl = num(r.sl_cong);
   const gio = num(r.so_gio);

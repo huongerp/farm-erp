@@ -13,6 +13,7 @@ import { useTaiSanList } from '../../danh-muc-tai-san/hooks/use-danh-muc-tai-san
 import { useAssetStorageLocations } from '../../thiet-lap-tai-san/hooks/use-noi-luu';
 import { useAssetStatuses } from '../../thiet-lap-tai-san/hooks/use-trang-thai';
 import { useEmployeesRefQuery } from '@/lib/hooks/use-supabase-ref-queries';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import type { ThemChiTietPhatHienPayload } from '../services/kiem-ke-tai-san-service';
 
 interface Props {
@@ -50,10 +51,10 @@ const ThemTaiSanThucTeDialog: React.FC<Props> = ({
       subLabel: a.ma_tai_san,
     }));
   const locationOptions = locations
-    .filter((l) => l.trang_thai === 1)
+    .filter((l) => l.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG)
     .map((l) => ({ label: l.ten_noi_luu, value: l.id, subLabel: l.ma_noi_luu }));
   const statusOptions = statuses
-    .filter((s) => s.trang_thai === 1)
+    .filter((s) => s.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG)
     .map((s) => ({ label: s.ten, value: s.id, subLabel: s.ma }));
   const employeeOptions = employees.map((e) => ({
     label: e.ho_ten,

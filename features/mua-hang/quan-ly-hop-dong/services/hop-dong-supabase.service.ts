@@ -204,9 +204,8 @@ function lineToCtPayload(
     id_hop_dong: idHopNum,
     ngay: c.ngay?.trim() || null,
     ten_dot: c.ten_dot?.trim() || null,
-    so_tien: c.so_tien != null && c.so_tien !== '' ? Number(c.so_tien) : null,
-    so_cay_thuc_nhan:
-      c.so_cay_thuc_nhan != null && c.so_cay_thuc_nhan !== '' ? Number(c.so_cay_thuc_nhan) : null,
+    so_tien: c.so_tien != null ? Number(c.so_tien) : null,
+    so_cay_thuc_nhan: c.so_cay_thuc_nhan != null ? Number(c.so_cay_thuc_nhan) : null,
     ghi_chu: c.ghi_chu?.trim() || null,
     id_chi_nhanh: toNum(c.id_chi_nhanh ?? undefined),
     id_nguoi_tao: idNguoiTaoNum != null && Number.isFinite(idNguoiTaoNum) ? idNguoiTaoNum : null,
@@ -377,9 +376,8 @@ export async function updateHopDongChiTietSupabase(idCt: string, row: HopDongChi
   const payload = {
     ngay: row.ngay?.trim() || null,
     ten_dot: row.ten_dot?.trim() || null,
-    so_tien: row.so_tien != null && row.so_tien !== '' ? Number(row.so_tien) : null,
-    so_cay_thuc_nhan:
-      row.so_cay_thuc_nhan != null && row.so_cay_thuc_nhan !== '' ? Number(row.so_cay_thuc_nhan) : null,
+    so_tien: row.so_tien != null ? Number(row.so_tien) : null,
+    so_cay_thuc_nhan: row.so_cay_thuc_nhan != null ? Number(row.so_cay_thuc_nhan) : null,
     ghi_chu: row.ghi_chu?.trim() || null,
     id_chi_nhanh: toNum(row.id_chi_nhanh ?? undefined),
   };

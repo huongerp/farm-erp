@@ -8,9 +8,9 @@ import {
   PERMISSION_FUNCTIONS,
   PERMISSION_ACTIONS,
   SYSTEM_MODULES_CONFIG,
-  type PermissionFunction,
 } from '../services/phan-quyen-service';
 import { APPROVE_ACTION, hasApproveFeature } from '../core/permission-modules-config';
+import type { PermissionFunction } from '../core/permission-modules-config';
 import { PositionPermission, ActionType } from '../core/types';
 import Button from '../../../../components/ui/Button';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';

@@ -13,12 +13,8 @@ export const congViecSchema = z.object({
     .union([z.number().min(1, { message: i18n.t('congViec.validation.trachNhiemRequired') }), z.null()])
     .refine((v) => v != null && v >= 1, { message: i18n.t('congViec.validation.trachNhiemRequired') }),
   nguoi_ho_tro: z.array(z.number()),
-  uu_tien: z.enum(UU_TIEN_VALUES, {
-    errorMap: () => ({ message: i18n.t('congViec.validation.uuTienRequired') }),
-  }),
-  trang_thai: z.enum(TRANG_THAI_VALUES, {
-    errorMap: () => ({ message: i18n.t('congViec.validation.trangThaiRequired') }),
-  }),
+  uu_tien: z.enum(UU_TIEN_VALUES, { message: i18n.t('congViec.validation.uuTienRequired') }),
+  trang_thai: z.enum(TRANG_THAI_VALUES, { message: i18n.t('congViec.validation.trangThaiRequired') }),
 });
 
 export type CongViecFormValues = z.infer<typeof congViecSchema>;

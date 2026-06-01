@@ -239,7 +239,7 @@ export function exportToPDF(data: any[], filename: string, title?: string) {
     import('./jspdf-vietnamese-font'),
   ])
     .then(async ([jspdfModule, autoTableModule, viMod]) => {
-      const jsPDF = (jspdfModule as { default?: typeof import('jspdf') }).default;
+      const jsPDF = (jspdfModule as unknown as { default: typeof import('jspdf').jsPDF }).default;
       if (!jsPDF) return;
       const headers = Object.keys(data[0]);
       const doc = new jsPDF({ orientation: headers.length > 5 ? 'l' : 'p', unit: 'mm', format: 'a4' });

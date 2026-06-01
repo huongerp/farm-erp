@@ -23,7 +23,7 @@ const CongViecDashboardTab: React.FC = () => {
   const confirm = useConfirmStore((s) => s.confirm);
   const user = useAuthStore((s) => s.user);
   const currentUserId = user?.id ?? '';
-  const [activeView, setActiveView] = useState(DASHBOARD_VIEW.my);
+  const [activeView, setActiveView] = useState<keyof typeof DASHBOARD_VIEW>(DASHBOARD_VIEW.my);
   const [detailStack, setDetailStack] = useState<CongViec[]>([]);
 
   const { data: list = [], isLoading } = useCongViecList();

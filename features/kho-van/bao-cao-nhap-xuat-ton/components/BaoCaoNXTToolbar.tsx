@@ -149,7 +149,7 @@ const BaoCaoNXTToolbar: React.FC<BaoCaoNXTToolbarProps> = ({
         icon: ClipboardList,
         options: loaiOptions.map((o) => ({ ...o, value: o.value })),
         value: filters.loaiPhieu,
-        onChange: (val: string[]) => onFiltersChange({ ...filters, loaiPhieu: val as LoaiPhieuKho[] }),
+        onChange: (val: string[]) => onFiltersChange({ ...filters, loaiPhieu: val as unknown as LoaiPhieuKho[] }),
       },
       {
         key: 'trangThaiPhieu',
@@ -208,10 +208,10 @@ const BaoCaoNXTToolbar: React.FC<BaoCaoNXTToolbarProps> = ({
         className="w-full sm:w-[180px]"
         size="md"
       />
-      <FilterChipMultiSelect<LoaiPhieuKho>
+      <FilterChipMultiSelect
         options={loaiOptions}
         value={filters.loaiPhieu}
-        onChange={(v) => onFiltersChange({ ...filters, loaiPhieu: v })}
+        onChange={(v) => onFiltersChange({ ...filters, loaiPhieu: v as unknown as LoaiPhieuKho[] })}
         placeholder={t('baoCaonhapXuatTon.filter.loaiPhieuPlaceholder')}
         icon={ClipboardList}
         className="w-full sm:w-[160px]"

@@ -216,7 +216,9 @@ const DanhMucList: React.FC<Props> = ({
                     <input
                       type="checkbox"
                       checked={isAllSelected}
-                      ref={(el) => el && (el.indeterminate = isIndeterminate)}
+                      ref={(el) => {
+                        if (el) el.indeterminate = isIndeterminate;
+                      }}
                       onChange={() => onToggleAllSelection(currentPageIds)}
                       onClick={(e) => e.stopPropagation()}
                       className="w-4 h-4 rounded border-border text-primary accent-primary"

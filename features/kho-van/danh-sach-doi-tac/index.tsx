@@ -13,7 +13,7 @@ import DanhMucTab from './components/DanhMucTab';
 import TagTab from './components/TagTab';
 import NhomFormDrawer from './components/NhomFormDrawer';
 import { useDoiTacList, useNhomDoiTacList, useTagList, useDeleteDoiTac, useDeleteDoiTacMany, useCreateNhomDoiTac } from './hooks/use-doi-tac';
-import type { NhomDoiTac } from './core/types';
+import type { LoaiDoiTac, NhomDoiTac } from './core/types';
 import type { NhomDoiTacFormValues } from './services/doi-tac-service';
 import { useDoiTacStore } from './store/useDoiTacStore';
 import { useConfirmStore } from '../../../store/useConfirmStore';
@@ -215,7 +215,7 @@ const DanhSachDoiTacPage: React.FC = () => {
 
   const handleEditPhieu = (pk: PhieuKho) => {
     setViewingItem(null);
-    const tab = pk.loai === 'nhap' ? 'nhap' : pk.loai === 'xuat' ? 'xuat' : 'chuyen';
+    const tab = pk.loai === 'nhập' ? 'nhap' : pk.loai === 'xuất' ? 'xuat' : 'chuyen';
     window.location.href = `/mua-hang/phieu-kho?tab=${tab}&edit=${pk.id}`;
   };
 
@@ -288,7 +288,7 @@ const DanhSachDoiTacPage: React.FC = () => {
         {showForm && (
           <DoiTacForm
             initialData={editingItem}
-            loaiDoiTac={activeTab}
+            loaiDoiTac={activeTab as LoaiDoiTac}
             nhomList={nhomList}
             tagList={tagList}
             defaultThuTu={nextThuTuForDoiTac}

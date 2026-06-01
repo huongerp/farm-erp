@@ -18,6 +18,14 @@ export interface DetailToolbarAction {
     disabled?: boolean;
 }
 
+function renderSizedIcon(icon: React.ReactNode) {
+    if (!React.isValidElement(icon)) return icon;
+    return React.cloneElement(
+        icon as React.ReactElement<{ size?: number; strokeWidth?: number }>,
+        { size: 16, strokeWidth: 2 }
+    );
+}
+
 interface DetailToolbarProps {
     actions: DetailToolbarAction[];
     /** Số cột: 2 cho sidebar hẹp, mặc định 3 (mobile) / 6 (desktop) */
@@ -62,7 +70,7 @@ const DetailToolbar: React.FC<DetailToolbarProps> = ({ actions, columns, classNa
                                                     action.variant === 'secondary' ? "bg-secondary/40 text-secondary-foreground border-border hover:bg-secondary/70" :
                                                         "bg-muted/50 text-foreground hover:bg-muted"
                     )}>
-                        {React.cloneElement(action.icon as React.ReactElement, { size: 16, strokeWidth: 2 })}
+                        {renderSizedIcon(action.icon)}
                     </div>
                     <span className={cn(
                         "text-xs font-medium text-center transition-colors break-words w-full px-1 leading-tight",

@@ -46,7 +46,7 @@ export function farmBaoCaoNhanCongToForm(row: FarmBaoCaoNhanCong): BaoCaoNhanCon
   const chi_tiet = LOAI_CHUYEN_CODES.map((code) => {
     const c = byLoai.get(code);
     const subByLoai = c?.sub_by_loai;
-    let sub =
+    let sub: BaoCaoNhanCongFormValues['chi_tiet'][number]['sub'] =
       subByLoai && (subByLoai.CN_NGAY.length || subByLoai.CN_NUA.length || subByLoai.TANG_CA.length)
         ? subByLoaiModelsToForm(subByLoai)
         : legacyMirrorSubFromCtTotals({
@@ -80,7 +80,7 @@ export function applySubTotalsToChiTietForm(
   chi_tiet: BaoCaoNhanCongFormValues['chi_tiet']
 ): BaoCaoNhanCongFormValues['chi_tiet'] {
   return chi_tiet.map((row) => {
-    const sub = trimSubEmptyTrailingRows(normalizeChiTietSubFormByLoai(row.sub));
+    const sub = normalizeChiTietSubFormByLoai(trimSubEmptyTrailingRows(normalizeChiTietSubFormByLoai(row.sub)));
     const totals = syncChiTietTotalsFromSub(sub);
     return { ...row, sub, ...totals };
   });
@@ -119,7 +119,7 @@ export function farmBaoCaoNhanCongToFormNextDay(row: FarmBaoCaoNhanCong): BaoCao
     chi_tiet: base.chi_tiet.map((ct) => ({
       ...ct,
       ghi_chu: null,
-      sub: clearSubGhiChu(normalizeChiTietSubFormByLoai(ct.sub)),
+      sub: normalizeChiTietSubFormByLoai(clearSubGhiChu(normalizeChiTietSubFormByLoai(ct.sub))),
     })),
   };
 }

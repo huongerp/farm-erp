@@ -12,7 +12,6 @@ import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { TRANG_THAI_DOT_OPTIONS } from '../core/constants';
 import { useKiemKeKhoFilterCounts } from '../hooks/use-kiem-ke-kho-filter-counts';
 import type { DotKiemKeKho } from '../core/types';
-import type { TrangThaiDotKiemKeKho } from '../core/types';
 import type { ActionItem } from '../../../../components/ui/MobileActionsSheet';
 
 interface Props {
@@ -89,9 +88,9 @@ const KiemKeKhoToolbar: React.FC<Props> = ({
 
   const renderFilters = (
     <>
-      <FilterChipMultiSelect<TrangThaiDotKiemKeKho>
+      <FilterChipMultiSelect
         options={trangThaiOptions}
-        value={filters.trang_thai_dot as TrangThaiDotKiemKeKho[]}
+        value={filters.trang_thai_dot}
         onChange={(v) => setFilter('trang_thai_dot', v)}
         placeholder={t('kiemKeKho.store.trangThaiCol')}
         icon={Calendar}

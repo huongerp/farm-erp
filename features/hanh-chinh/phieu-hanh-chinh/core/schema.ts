@@ -8,7 +8,7 @@ export const adminFormSchema = z.object({
     .union([z.enum(ADMIN_FORM_TYPES), z.literal('')])
     .refine((v) => v !== '', { message: i18n.t('adminForm.validation.typeRequired') }),
   ca: z.enum(ADMIN_FORM_SHIFTS, {
-    errorMap: () => ({ message: i18n.t('adminForm.validation.shiftRequired') }),
+    message: i18n.t('adminForm.validation.shiftRequired'),
   }),
   ngay: z.string().min(1, { message: i18n.t('adminForm.validation.dateRequired') }),
   ly_do: z

@@ -35,7 +35,7 @@ export const phieuDeXuatVatTuSchema = z
     id_nguoi_duyet: z.string().optional().nullable(),
     ghi_chu: z.string().optional(),
     trang_thai: z.enum(TRANG_THAI_PHIEU_DE_XUAT_VAT_TU, {
-      errorMap: () => ({ message: i18n.t('phieuDeXuatVatTu.validation.statusInvalid') }),
+      message: i18n.t('phieuDeXuatVatTu.validation.statusInvalid'),
     }),
     chi_tiet: z.array(phieuDeXuatVatTuChiTietFormItemSchema).default([]),
   })

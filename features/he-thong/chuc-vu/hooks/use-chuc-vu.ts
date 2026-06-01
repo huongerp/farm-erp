@@ -42,7 +42,7 @@ export const useUpdatePosition = (onSuccess?: () => void) => {
 export const useUpdateStatusPosition = () => {
     const queryClient = useQueryClient();
     return useMutation({
-      mutationFn: ({ ids, status }: { ids: string[], status: import('../../../../lib/constants').TrangThai }) => updatePositionStatus(ids, status),
+      mutationFn: ({ ids, status }: { ids: string[], status: import('../../../../lib/constants').TrangThaiHoatDong }) => updatePositionStatus(ids, status),
       onSuccess: (_, variables) => {
         queryClient.invalidateQueries({ queryKey: ['positions'] });
         toast.success(i18n.t('position.toast.statusUpdate', { count: variables.ids.length }));

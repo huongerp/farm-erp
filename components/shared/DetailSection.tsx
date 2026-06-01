@@ -6,7 +6,7 @@ interface DetailSectionProps {
   icon?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
-  variant?: 'primary' | 'muted';
+  variant?: 'primary' | 'muted' | 'secondary';
   /** Nút/hành động cùng hàng với title (chuẩn module Phòng ban) */
   action?: React.ReactNode;
 }

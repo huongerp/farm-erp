@@ -9,6 +9,7 @@ import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import { useHierarchyRootFilter } from '../../../../lib/useHierarchyRootFilter';
 import type { Department } from '../core/types';
+import type { OptionWithCount } from '../../../../lib/filterOptionsWithCount';
 import { TRANG_THAI, type TrangThai } from '../../../../lib/constants';
 
 interface Props {
@@ -46,6 +47,7 @@ const PhongBanToolbar: React.FC<Props> = ({
     getOrder: (d) => d.tt,
     getRootLabel: (d) => d.ten_phong_ban,
   });
+  const phongFilterOptions = phongOptionsWithCount as unknown as OptionWithCount[];
 
   const activeFilterCount = useMemo(
     () =>
@@ -72,7 +74,7 @@ const PhongBanToolbar: React.FC<Props> = ({
   const renderFilters = (
     <>
       <FilterChipMultiSelect
-        options={phongOptionsWithCount}
+        options={phongFilterOptions}
         value={filters.id_phong_goc}
         onChange={(v) => setFilter('id_phong_goc', v)}
         placeholder={t('department.toolbar.department')}
@@ -96,7 +98,7 @@ const PhongBanToolbar: React.FC<Props> = ({
         key: 'id_phong_goc',
         label: t('department.toolbar.department'),
         icon: Building2,
-        options: phongOptionsWithCount,
+        options: phongFilterOptions,
         value: filters.id_phong_goc,
         onChange: (val: string[]) => setFilter('id_phong_goc', val),
       },
@@ -109,7 +111,7 @@ const PhongBanToolbar: React.FC<Props> = ({
         onChange: (val: string[]) => setFilter('status', val),
       },
     ],
-    [filters.id_phong_goc, filters.status, setFilter, t, phongOptionsWithCount, statusOptions]
+    [filters.id_phong_goc, filters.status, setFilter, t, phongFilterOptions, statusOptions]
   );
 
   const mobileActions = useMemo(

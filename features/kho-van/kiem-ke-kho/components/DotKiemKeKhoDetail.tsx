@@ -112,7 +112,9 @@ const DotKiemKeKhoDetail: React.FC<Props> = ({
       title: t('kiemKeKho.confirm.dieuChinhDotTitle'),
       message: t('kiemKeKho.confirm.dieuChinhDotMessage', { count: pendingDieuChinhCount }),
       variant: 'warning',
-      onConfirm: () => dieuChinhDotMutation.mutateAsync(),
+        onConfirm: () => {
+          void dieuChinhDotMutation.mutateAsync();
+        },
     });
   }, [confirm, t, pendingDieuChinhCount, dieuChinhDotMutation]);
 
@@ -122,7 +124,9 @@ const DotKiemKeKhoDetail: React.FC<Props> = ({
         title: t('kiemKeKho.confirm.dieuChinhRowTitle'),
         message: t('kiemKeKho.confirm.dieuChinhRowMessage'),
         variant: 'warning',
-        onConfirm: () => dieuChinhRowMutation.mutateAsync(id),
+        onConfirm: () => {
+          void dieuChinhRowMutation.mutateAsync(id);
+        },
       });
     },
     [confirm, t, dieuChinhRowMutation]

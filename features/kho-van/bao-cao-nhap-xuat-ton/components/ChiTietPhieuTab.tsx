@@ -83,7 +83,7 @@ function PhieuDetailDrawer({
               <p className="text-xs text-muted-foreground">{t('baoCaonhapXuatTon.chiTiet.kho')}</p>
               <p className="font-medium">{phieu.ten_kho ?? '—'}</p>
             </div>
-            {phieu.loai === 'chuyen' && (
+            {phieu.loai === 'chuyển' && (
               <div className="col-span-2">
                 <p className="text-xs text-muted-foreground">{t('baoCaonhapXuatTon.chiTiet.khoDen')}</p>
                 <p className="font-medium">{phieu.ten_kho_den ?? '—'}</p>

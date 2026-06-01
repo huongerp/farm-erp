@@ -18,7 +18,7 @@ import {
 import Button from '../components/ui/Button';
 import Combobox from '../components/ui/Combobox';
 import ToggleSwitch from '../components/ui/ToggleSwitch';
-import { useUIStore } from '../store/useStore';
+import { useUIStore, type PrimaryColor } from '../store/useStore';
 import { toast } from 'sonner';
 import { cn } from '../lib/utils';
 
@@ -59,7 +59,7 @@ const Settings: React.FC = () => {
   const languageId = useId();
   const timezoneId = useId();
 
-  const THEME_COLORS = useMemo(() => [
+  const THEME_COLORS = useMemo((): { name: PrimaryColor; label: string; color: string }[] => [
     { name: 'blue', label: t('settings.colorBlue'), color: 'bg-blue-600' },
     { name: 'violet', label: t('settings.colorViolet'), color: 'bg-indigo-600' },
     { name: 'emerald', label: t('settings.colorEmerald'), color: 'bg-emerald-600' },

@@ -10,7 +10,6 @@ import { useEmployeesRefQuery } from '@/lib/hooks/use-supabase-ref-queries';
 import { TRANG_THAI_DOT_OPTIONS } from '../core/constants';
 import { useKiemKeFilterCounts } from '../hooks/use-kiem-ke-filter-counts';
 import type { DotKiemKe } from '../core/types';
-import type { TrangThaiDotKiemKe } from '../core/types';
 import type { ActionItem } from '../../../../components/ui/MobileActionsSheet';
 
 interface Props {
@@ -71,9 +70,9 @@ const KiemKeTaiSanToolbar: React.FC<Props> = ({
 
   const renderFilters = (
     <>
-      <FilterChipMultiSelect<TrangThaiDotKiemKe>
+      <FilterChipMultiSelect
         options={trangThaiOptions}
-        value={filters.trang_thai_dot as TrangThaiDotKiemKe[]}
+        value={filters.trang_thai_dot}
         onChange={(v) => setFilter('trang_thai_dot', v)}
         placeholder={t('kiemKeTaiSan.store.trangThaiCol')}
         icon={Calendar}

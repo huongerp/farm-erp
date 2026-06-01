@@ -57,7 +57,7 @@ const BranchPage: React.FC = () => {
         item.dia_chi.toLowerCase().includes(searchLower) ||
         item.tinh_thanh.toLowerCase().includes(searchLower) ||
         item.quan_huyen.toLowerCase().includes(searchLower);
-      const statusKey = item.trang_thai === 1 ? 'Active' : 'Inactive';
+      const statusKey = item.trang_thai === TRANG_THAI.DANG_DUNG ? 'Active' : 'Inactive';
       const matchesStatus = f.status.length === 0 || f.status.includes(statusKey);
       return matchesSearch && matchesStatus;
     },
@@ -135,7 +135,7 @@ const BranchPage: React.FC = () => {
     });
   };
 
-  const handleStatusChangeMany = (ids: string[], status: string) => {
+  const handleStatusChangeMany = (ids: string[], status: Branch['trang_thai']) => {
     const statusLabel = status === TRANG_THAI.DANG_DUNG ? t('branch.active') : t('branch.inactive');
     confirm({
       title: t('branch.statusChangeTitle'),

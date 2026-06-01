@@ -19,8 +19,9 @@ import StatsTables from './stats/StatsTables';
 import { usePhieuBaoTriStats } from './stats/usePhieuBaoTriStats';
 import { exportToExcel, formatCurrency } from '../../../../lib/utils';
 import type { PhieuBaoTriSuaChua } from '../core/types';
+import type { TFunction } from 'i18next';
 
-function phieuToExportRow(p: PhieuBaoTriSuaChua, t: (k: string) => string): Record<string, string> {
+function phieuToExportRow(p: PhieuBaoTriSuaChua, t: TFunction): Record<string, string> {
   const hangMucLabel = p.ten_hang_muc || getHangMucLabel(p.id_hang_muc, t);
   return {
     ngay: p.ngay,

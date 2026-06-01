@@ -152,8 +152,12 @@ const PositionPage: React.FC = () => {
   };
 
   const handleStatusChange = (item: Position) => {
-    const newStatus = item.trang_thai === TRANG_THAI.DANG_DUNG ? TRANG_THAI.NGUNG : TRANG_THAI.DANG_DUNG;
-    const statusLabel = newStatus === TRANG_THAI.DANG_DUNG ? t('position.active') : t('position.inactive');
+    const newStatus =
+      item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG
+        ? TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG
+        : TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
+    const statusLabel =
+      newStatus === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? t('position.active') : t('position.inactive');
     confirm({
       title: t('position.statusChangeTitle'),
       message: `${t('position.statusChangeMessage', { count: 1 })} ${statusLabel}?`,
@@ -196,6 +200,11 @@ const PositionPage: React.FC = () => {
     });
   };
 
+  const toolbarItems = useMemo(
+    () => positions.map((p) => ({ trang_thai: p.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? 'Đang dùng' : 'Ngừng' })),
+    [positions]
+  );
+
   const handleExport = () => {
     if (filteredPositions.length === 0) {
       toast.warning(t('position.noExportData'));
@@ -220,7 +229,7 @@ const PositionPage: React.FC = () => {
     <div className="flex flex-col h-[calc(100dvh-3.75rem)] md:h-[calc(100dvh-4.5rem)]">
       <div className="flex-1 min-h-0 flex flex-col mt-1.5 rounded-xl border border-border bg-card shadow-sm overflow-hidden">
         <PositionToolbar
-          items={positions}
+          items={toolbarItems}
           onAdd={() => setShowForm(true)}
           onExport={handleExport}
           onImport={() => toast.info(t('position.importDeveloping'))}
