@@ -25,6 +25,7 @@ CREATE TABLE public.fp_mh_dot_kiem_ke_kho (
   ngay_ket_thuc          date NOT NULL,
   trang_thai             text NOT NULL DEFAULT 'draft',
   id_nguoi_phu_trach     bigint NOT NULL,
+  id_nguoi_tao           bigint REFERENCES public.fp_var_nhan_vien(id) ON DELETE SET NULL,
   ghi_chu                text,
   tg_tao                 timestamptz DEFAULT now(),
   tg_cap_nhat            timestamptz DEFAULT now()
@@ -37,6 +38,7 @@ COMMENT ON COLUMN public.fp_mh_dot_kiem_ke_kho.ngay_bat_dau IS 'Ngày bắt đ�
 COMMENT ON COLUMN public.fp_mh_dot_kiem_ke_kho.ngay_ket_thuc IS 'Ngày kết thúc đợt';
 COMMENT ON COLUMN public.fp_mh_dot_kiem_ke_kho.trang_thai IS 'draft | dang_kiem_ke | hoan_thanh';
 COMMENT ON COLUMN public.fp_mh_dot_kiem_ke_kho.id_nguoi_phu_trach IS 'Người phụ trách (bắt buộc) → fp_var_nhan_vien(id)';
+COMMENT ON COLUMN public.fp_mh_dot_kiem_ke_kho.id_nguoi_tao IS 'Người tạo đợt → fp_var_nhan_vien(id)';
 
 -- Bảng trung gian: phạm vi kho của đợt (một đợt nhiều kho)
 CREATE TABLE public.fp_mh_dot_kiem_ke_kho_kho (
@@ -78,6 +80,7 @@ CREATE INDEX idx_fp_mh_dot_kiem_ke_kho_ngay_bat_dau ON fp_mh_dot_kiem_ke_kho(nga
 CREATE INDEX idx_fp_mh_dot_kiem_ke_kho_ngay_ket_thuc ON fp_mh_dot_kiem_ke_kho(ngay_ket_thuc);
 CREATE INDEX idx_fp_mh_dot_kiem_ke_kho_trang_thai ON fp_mh_dot_kiem_ke_kho(trang_thai);
 CREATE INDEX idx_fp_mh_dot_kiem_ke_kho_id_nguoi_phu_trach ON fp_mh_dot_kiem_ke_kho(id_nguoi_phu_trach);
+CREATE INDEX idx_fp_mh_dot_kiem_ke_kho_id_nguoi_tao ON fp_mh_dot_kiem_ke_kho(id_nguoi_tao);
 CREATE INDEX idx_fp_mh_dot_kiem_ke_kho_kho_id_dot ON fp_mh_dot_kiem_ke_kho_kho(id_dot_kiem_ke_kho);
 CREATE INDEX idx_fp_mh_dot_kiem_ke_kho_chi_tiet_id_dot ON fp_mh_dot_kiem_ke_kho_chi_tiet(id_dot_kiem_ke_kho);
 CREATE INDEX idx_fp_mh_dot_kiem_ke_kho_chi_tiet_id_kho ON fp_mh_dot_kiem_ke_kho_chi_tiet(id_kho);

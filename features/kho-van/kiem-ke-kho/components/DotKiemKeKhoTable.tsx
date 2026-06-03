@@ -79,10 +79,22 @@ const DotKiemKeKhoTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, o
             {item.so_lech != null ? item.so_lech : '—'}
           </span>
         );
+      case 'ten_nguoi_tao':
+        return (
+          <span className="text-sm text-foreground">
+            {item.ten_nguoi_tao || item.ma_nguoi_tao || '—'}
+          </span>
+        );
       case 'ten_nguoi_phu_trach':
         return (
           <span className="text-sm text-foreground">
             {item.ten_nguoi_phu_trach || item.ma_nguoi_phu_trach || '—'}
+          </span>
+        );
+      case 'tg_tao':
+        return (
+          <span className="text-xs text-muted-foreground tabular-nums">
+            {formatDateTimeShort(item.tg_tao)}
           </span>
         );
       case 'ghi_chu':
@@ -150,7 +162,8 @@ const DotKiemKeKhoTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, o
       </div>
       <p className="text-sm text-foreground mt-0.5">{item.ten_dot || '—'}</p>
       <p className="text-xs text-muted-foreground">
-        {formatDate(item.ngay_bat_dau)} → {formatDate(item.ngay_ket_thuc)} · {item.ten_nguoi_phu_trach || '—'}
+        {formatDate(item.ngay_bat_dau)} → {formatDate(item.ngay_ket_thuc)} · {item.ten_nguoi_tao || '—'} ·{' '}
+        {item.ten_nguoi_phu_trach || '—'}
       </p>
       <div className="flex gap-3 mt-1.5 text-xs text-muted-foreground">
         <span>{t('kiemKeKho.store.soKhoCol')}: {item.so_kho ?? item.id_kho?.length ?? 0}</span>

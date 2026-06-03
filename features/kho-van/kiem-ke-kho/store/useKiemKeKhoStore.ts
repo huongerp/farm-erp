@@ -18,9 +18,11 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'so_kho', label: i18n.t('kiemKeKho.store.soKhoCol'), visible: true, minWidth: 80, order: 5 },
   { id: 'so_hang_hoa', label: i18n.t('kiemKeKho.store.soHangHoaCol'), visible: true, minWidth: 100, order: 6 },
   { id: 'so_lech', label: i18n.t('kiemKeKho.store.soLechCol'), visible: true, minWidth: 80, order: 7 },
-  { id: 'ten_nguoi_phu_trach', label: i18n.t('kiemKeKho.store.nguoiPhuTrachCol'), visible: true, minWidth: 140, order: 8 },
-  { id: 'ghi_chu', label: i18n.t('kiemKeKho.store.ghiChuCol'), visible: false, minWidth: 160, order: 9 },
-  { id: 'tg_cap_nhat', label: i18n.t('kiemKeKho.store.updatedCol'), visible: true, minWidth: 130, order: 10 },
+  { id: 'ten_nguoi_tao', label: i18n.t('kiemKeKho.store.nguoiTaoCol'), visible: true, minWidth: 140, order: 8 },
+  { id: 'ten_nguoi_phu_trach', label: i18n.t('kiemKeKho.store.nguoiPhuTrachCol'), visible: true, minWidth: 140, order: 9 },
+  { id: 'ghi_chu', label: i18n.t('kiemKeKho.store.ghiChuCol'), visible: false, minWidth: 160, order: 10 },
+  { id: 'tg_tao', label: i18n.t('kiemKeKho.store.createdAtCol'), visible: false, minWidth: 130, order: 11 },
+  { id: 'tg_cap_nhat', label: i18n.t('kiemKeKho.store.updatedCol'), visible: true, minWidth: 130, order: 12 },
 ];
 
 const initialFilters: KiemKeKhoFilters = {

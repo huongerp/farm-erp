@@ -250,6 +250,10 @@ const DotKiemKeKhoDetail: React.FC<Props> = ({
             value={getTrangThaiDotLabel(data.trang_thai, t)}
           />
           <DetailField
+            label={t('kiemKeKho.store.nguoiTaoCol')}
+            value={data.ten_nguoi_tao || data.ma_nguoi_tao || '—'}
+          />
+          <DetailField
             label={t('kiemKeKho.store.nguoiPhuTrachCol')}
             value={data.ten_nguoi_phu_trach || data.ma_nguoi_phu_trach || '—'}
           />

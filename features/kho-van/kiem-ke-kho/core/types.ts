@@ -19,6 +19,9 @@ export interface DotKiemKeKho {
   id_nguoi_phu_trach: string;
   ten_nguoi_phu_trach?: string | null;
   ma_nguoi_phu_trach?: string | null;
+  id_nguoi_tao?: string | null;
+  ten_nguoi_tao?: string | null;
+  ma_nguoi_tao?: string | null;
   /** Phạm vi: danh sách kho cần kiểm */
   id_kho: string[];
   ghi_chu?: string | null;

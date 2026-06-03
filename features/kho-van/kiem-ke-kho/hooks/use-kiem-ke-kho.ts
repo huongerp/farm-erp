@@ -62,8 +62,14 @@ export function useChiTietByDot(id_dot: string | null) {
 
 export function useCreateDotKiemKeKho(onSuccess?: () => void) {
   const qc = useQueryClient();
+  const userId = useAuthStore((s) => s.user?.id ?? null);
   return useMutation({
-    mutationFn: (data: DotKiemKeKhoCreate) => createDotKiemKeKho(data),
+    mutationFn: (data: DotKiemKeKhoCreate) => {
+      if (!userId) {
+        throw new Error(i18n.t('kiemKeKho.validation.nguoiTaoSessionRequired'));
+      }
+      return createDotKiemKeKho(data, userId);
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['dotKiemKeKhoList'] });
       toast.success(i18n.t('kiemKeKho.toast.createSuccess'));

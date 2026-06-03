@@ -39,7 +39,7 @@ const TABLE_CHI_TIET = 'fp_mh_dot_kiem_ke_kho_chi_tiet';
 const TABLE_PHIEU_KHO = 'fp_mh_phieu_kho';
 
 const DOT_KK_KHO_COLUMNS =
-  'id,ma_dot,ten_dot,ngay_bat_dau,ngay_ket_thuc,trang_thai,id_nguoi_phu_trach,ghi_chu,tg_tao,tg_cap_nhat';
+  'id,ma_dot,ten_dot,ngay_bat_dau,ngay_ket_thuc,trang_thai,id_nguoi_phu_trach,id_nguoi_tao,ghi_chu,tg_tao,tg_cap_nhat';
 const CHI_TIET_KK_KHO_COLUMNS =
   'id,id_dot_kiem_ke_kho,id_kho,id_hang_hoa,so_luong_so,so_luong_thuc_te,ket_qua,ghi_chu_dong,id_nguoi_kiem,ngay_kiem,tg_tao,tg_cap_nhat,id_phieu_kho_dieu_chinh,so_luong_dieu_chinh,tg_dieu_chinh_ton';
 
@@ -51,6 +51,7 @@ interface DotRow {
   ngay_ket_thuc: string | null;
   trang_thai: string | null;
   id_nguoi_phu_trach: number;
+  id_nguoi_tao: number | null;
   ghi_chu: string | null;
   tg_tao: string | null;
   tg_cap_nhat: string | null;
@@ -82,7 +83,12 @@ interface ChiTietRow {
 function rowToDot(
   row: DotRow,
   idKhoList: string[],
-  enrich?: { ten_nguoi_phu_trach?: string | null; ma_nguoi_phu_trach?: string | null },
+  enrich?: {
+    ten_nguoi_phu_trach?: string | null;
+    ma_nguoi_phu_trach?: string | null;
+    ten_nguoi_tao?: string | null;
+    ma_nguoi_tao?: string | null;
+  },
   stats?: { so_hang_hoa: number; so_lech: number }
 ): DotKiemKeKho {
   return {
@@ -95,6 +101,9 @@ function rowToDot(
     id_nguoi_phu_trach: String(row.id_nguoi_phu_trach),
     ten_nguoi_phu_trach: enrich?.ten_nguoi_phu_trach ?? null,
     ma_nguoi_phu_trach: enrich?.ma_nguoi_phu_trach ?? null,
+    id_nguoi_tao: row.id_nguoi_tao != null ? String(row.id_nguoi_tao) : null,
+    ten_nguoi_tao: enrich?.ten_nguoi_tao ?? null,
+    ma_nguoi_tao: enrich?.ma_nguoi_tao ?? null,
     id_kho: idKhoList,
     ghi_chu: row.ghi_chu ?? null,
     trang_thai_active: 1,
@@ -242,17 +251,35 @@ export async function getDotKiemKeKhoListSupabase(
     if (params.filter === 'mine' && params.id_nguoi && String(row.id_nguoi_phu_trach) !== params.id_nguoi) continue;
     if (params.q?.trim()) {
       const q = params.q.trim().toLowerCase();
-      const ten = empMap.get(String(row.id_nguoi_phu_trach))?.ten ?? '';
-      const ma = empMap.get(String(row.id_nguoi_phu_trach))?.ma ?? '';
+      const empPhuTrach = empMap.get(String(row.id_nguoi_phu_trach));
+      const empTao = row.id_nguoi_tao != null ? empMap.get(String(row.id_nguoi_tao)) : undefined;
       if (
-        !(row.ma_dot?.toLowerCase().includes(q) || row.ten_dot?.toLowerCase().includes(q) || ten.toLowerCase().includes(q) || ma.toLowerCase().includes(q))
+        !(
+          row.ma_dot?.toLowerCase().includes(q) ||
+          row.ten_dot?.toLowerCase().includes(q) ||
+          (empPhuTrach?.ten ?? '').toLowerCase().includes(q) ||
+          (empPhuTrach?.ma ?? '').toLowerCase().includes(q) ||
+          (empTao?.ten ?? '').toLowerCase().includes(q) ||
+          (empTao?.ma ?? '').toLowerCase().includes(q)
+        )
       )
         continue;
     }
-    const emp = empMap.get(String(row.id_nguoi_phu_trach));
+    const empPhuTrach = empMap.get(String(row.id_nguoi_phu_trach));
+    const empTao = row.id_nguoi_tao != null ? empMap.get(String(row.id_nguoi_tao)) : undefined;
     const stats = chiTietCounts[row.id];
     result.push(
-      rowToDot(row, idKhoList, { ten_nguoi_phu_trach: emp?.ten ?? null, ma_nguoi_phu_trach: emp?.ma ?? null }, stats)
+      rowToDot(
+        row,
+        idKhoList,
+        {
+          ten_nguoi_phu_trach: empPhuTrach?.ten ?? null,
+          ma_nguoi_phu_trach: empPhuTrach?.ma ?? null,
+          ten_nguoi_tao: empTao?.ten ?? null,
+          ma_nguoi_tao: empTao?.ma ?? null,
+        },
+        stats
+      )
     );
   }
   return result;
@@ -266,10 +293,14 @@ export async function getDotKiemKeKhoByIdSupabase(id: string): Promise<DotKiemKe
   if (!row) return null;
   const idKhoList = await getDotKhoIds((row as DotRow).id);
   const employees = await getEmployeesRef();
-  const emp = employees.find((e) => e.id === String((row as DotRow).id_nguoi_phu_trach));
+  const dotRow = row as DotRow;
+  const empPhuTrach = employees.find((e) => e.id === String(dotRow.id_nguoi_phu_trach));
+  const empTao = dotRow.id_nguoi_tao != null ? employees.find((e) => e.id === String(dotRow.id_nguoi_tao)) : undefined;
   return rowToDot(row as DotRow, idKhoList, {
-    ten_nguoi_phu_trach: emp?.ho_ten ?? null,
-    ma_nguoi_phu_trach: emp?.ma_nhan_vien ?? null,
+    ten_nguoi_phu_trach: empPhuTrach?.ho_ten ?? null,
+    ma_nguoi_phu_trach: empPhuTrach?.ma_nhan_vien ?? null,
+    ten_nguoi_tao: empTao?.ho_ten ?? null,
+    ma_nguoi_tao: empTao?.ma_nhan_vien ?? null,
   });
 }
 
@@ -308,7 +339,13 @@ export async function getChiTietByDotSupabase(id_dot_kiem_ke_kho: string): Promi
   return out;
 }
 
-export async function createDotKiemKeKhoSupabase(data: DotKiemKeKhoCreate): Promise<DotKiemKeKho> {
+/** idNguoiTao = fp_var_nhan_vien.id của user đăng nhập; không fallback sang id_nguoi_phu_trach. */
+export async function createDotKiemKeKhoSupabase(
+  data: DotKiemKeKhoCreate,
+  idNguoiTao?: string | null
+): Promise<DotKiemKeKho> {
+  const idNguoiTaoNum =
+    idNguoiTao != null && idNguoiTao !== '' && Number.isFinite(Number(idNguoiTao)) ? Number(idNguoiTao) : null;
   const { data: row, error } = await supabase
     .from(TABLE_DOT)
     .insert({
@@ -318,6 +355,7 @@ export async function createDotKiemKeKhoSupabase(data: DotKiemKeKhoCreate): Prom
       ngay_ket_thuc: data.ngay_ket_thuc,
       trang_thai: 'draft',
       id_nguoi_phu_trach: Number(data.id_nguoi_phu_trach),
+      id_nguoi_tao: idNguoiTaoNum,
       ghi_chu: data.ghi_chu?.trim() || null,
     })
     .select(DOT_KK_KHO_COLUMNS)
