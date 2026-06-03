@@ -7,7 +7,7 @@ import EmptyState from './EmptyState';
 import LoadingSpinnerWithText from './LoadingSpinnerWithText';
 import { cn } from '../../lib/utils';
 import type { ColumnConfig, SortState } from '../../store/createGenericStore';
-import { getColumnCellStyle, getEffectiveColumnMinWidth, usesColumnSizingPreset } from '../../store/createGenericStore';
+import { getColumnCellStyle, getEffectiveColumnMinWidth, usesColumnNoWrapPreset } from '../../store/createGenericStore';
 
 /** Ngưỡng kích hoạt virtual scroll tự động (số dòng trên trang) */
 const VIRTUAL_THRESHOLD = 50;
@@ -16,7 +16,7 @@ const TABLE_CHECKBOX_WIDTH = 44;
 /** Chiều rộng mặc định cột Thao tác (px) */
 const DEFAULT_TABLE_ACTION_COLUMN_WIDTH = 80;
 /** MinWidth mặc định cho cột khi tính sticky offset (px) */
-const DEFAULT_COLUMN_MIN_WIDTH = 120;
+const DEFAULT_COLUMN_MIN_WIDTH = 128;
 
 interface GenericTableProps<T> {
   data: T[];
@@ -526,7 +526,7 @@ function GenericTable<T>({
                                   <div
                                     className={cn(
                                       'min-w-0 max-w-full overflow-hidden',
-                                      usesColumnSizingPreset(col.id) && 'whitespace-nowrap tabular-nums'
+                                      usesColumnNoWrapPreset(col.id) && 'whitespace-nowrap tabular-nums'
                                     )}
                                   >
                                     {renderCell(col.id, item)}

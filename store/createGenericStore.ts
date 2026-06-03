@@ -30,25 +30,134 @@ export const COLUMN_WIDTH_DATETIME_MIN = 160;
 export const COLUMN_WIDTH_DATETIME_MAX = 240;
 
 /** Số tiền (locale vi-VN, có dấu chấm phân tách). */
-export const COLUMN_WIDTH_MONEY_MIN = 120;
-export const COLUMN_WIDTH_MONEY_MAX = 184;
-
-const MONEY_COLUMN_IDS = new Set(['so_tien', 'tong_tien', 'thanh_tien']);
+export const COLUMN_WIDTH_MONEY_MIN = 128;
+export const COLUMN_WIDTH_MONEY_MAX = 196;
 
 /** Trạng thái / badge — tránh ép hẹp khiến nhãn xuống dòng. */
 export const COLUMN_WIDTH_STATUS_MIN = 116;
 export const COLUMN_WIDTH_STATUS_MAX = 196;
 
+/** Mã / số chứng từ (ma_dot, ma_*, so_phieu, …). */
+export const COLUMN_WIDTH_CODE_MIN = 156;
+export const COLUMN_WIDTH_CODE_MAX = 224;
+
+/** Tên dài (ten_dot, ten_hang_hoa, ten_*, …). */
+export const COLUMN_WIDTH_NAME_MIN = 220;
+export const COLUMN_WIDTH_NAME_MAX = 400;
+
+/** Tên tham chiếu ngắn hơn (kho, NCC, danh mục, …). */
+export const COLUMN_WIDTH_ENTITY_MIN = 168;
+export const COLUMN_WIDTH_ENTITY_MAX = 300;
+
+/** Người (ten_nguoi_*). */
+export const COLUMN_WIDTH_PERSON_MIN = 152;
+export const COLUMN_WIDTH_PERSON_MAX = 248;
+
+/** Ghi chú / mô tả. */
+export const COLUMN_WIDTH_NOTE_MIN = 220;
+export const COLUMN_WIDTH_NOTE_MAX = 520;
+
+/** Số lượng / thứ tự / cột đếm gọn. */
+export const COLUMN_WIDTH_COUNT_MIN = 96;
+export const COLUMN_WIDTH_COUNT_MAX = 132;
+
+/** Loại / phân loại. */
+export const COLUMN_WIDTH_TYPE_MIN = 108;
+export const COLUMN_WIDTH_TYPE_MAX = 168;
+
+/** Đơn vị tính, icon, QR. */
+export const COLUMN_WIDTH_COMPACT_MIN = 72;
+export const COLUMN_WIDTH_COMPACT_MAX = 108;
+
+const MONEY_COLUMN_IDS = new Set(['so_tien', 'tong_tien', 'thanh_tien', 'don_gia']);
+
+const DOC_CODE_IDS = new Set(['so_phieu', 'ma_dot', 'ma_phieu']);
+
+const NOTE_IDS = new Set(['ghi_chu', 'mo_ta', 'trao_doi']);
+
+const COUNT_IDS = new Set([
+  'thu_tu',
+  'so_kho',
+  'so_hang_hoa',
+  'so_lech',
+  'tong_so_dong',
+  'tong_so_luong',
+  'so_luong',
+  'so_cay',
+  'cap_bac',
+]);
+
+const ENTITY_NAME_IDS = new Set([
+  'ten_kho',
+  'ten_kho_den',
+  'ten_nha_cung_cap',
+  'ten_khach_hang',
+  'ten_chi_nhanh',
+  'ten_danh_muc',
+  'ten_nhom',
+  'ten_hang',
+  'ten_hang_hoa',
+  'ten_tai_san',
+  'ten_noi_luu',
+  'ten_cha',
+  'ten_noi_luu_truoc',
+  'ten_noi_luu_sau',
+]);
+
+const TYPE_IDS = new Set(['loai', 'loai_phieu', 'loai_doi_tac', 'loai_phieu_hanh_chinh']);
+
+const COMPACT_IDS = new Set(['dvt', 'don_vi_tinh', 'hinh_anh', 'qr', 'mau', 'actions']);
+
 function isStatusColumnId(id: string): boolean {
   return id === 'trang_thai' || id === 'ten_trang_thai' || id.endsWith('_trang_thai');
 }
 
+function isNoteColumnId(id: string): boolean {
+  return NOTE_IDS.has(id);
+}
+
+function isNameColumnId(id: string): boolean {
+  if (isStatusColumnId(id)) return false;
+  if (ENTITY_NAME_IDS.has(id)) return false;
+  if (id.startsWith('ten_nguoi_')) return false;
+  if (id === 'ten_dot' || id === 'ten' || id === 'ho_ten' || id === 'ho_va_ten') return true;
+  if (id.startsWith('ten_')) return true;
+  return false;
+}
+
+function isCodeColumnId(id: string): boolean {
+  if (DOC_CODE_IDS.has(id)) return true;
+  if (id === 'ma' || id.startsWith('ma_')) return true;
+  if (id.startsWith('so_po_')) return true;
+  return false;
+}
+
+function isPersonColumnId(id: string): boolean {
+  return id.startsWith('ten_nguoi_');
+}
+
+function isEntityColumnId(id: string): boolean {
+  if (ENTITY_NAME_IDS.has(id)) return true;
+  if (id.startsWith('ref_ten_')) return true;
+  return false;
+}
+
+function isCountColumnId(id: string): boolean {
+  if (COUNT_IDS.has(id)) return true;
+  if (id.startsWith('tong_so_')) return true;
+  return false;
+}
+
 /**
- * Preset min/max theo id cột (quy ước naming trong app): ngày, tg_*, số tiền, trạng thái.
- * Dùng cho style bảng, minWidth khi cuộn ngang, nowrap ô dữ liệu, và giới hạn resize.
+ * Preset min/max theo id cột (quy ước naming toàn app).
+ * Dùng cho style bảng, minWidth khi cuộn ngang, và giới hạn resize.
  */
 export function inferColumnSizingPreset(id: string | undefined): { minWidth: number; maxWidth: number } | null {
   if (!id) return null;
+  if (id === 'actions') return null;
+  if (COMPACT_IDS.has(id)) {
+    return { minWidth: COLUMN_WIDTH_COMPACT_MIN, maxWidth: COLUMN_WIDTH_COMPACT_MAX };
+  }
   if (id.startsWith('tg_')) {
     return { minWidth: COLUMN_WIDTH_DATETIME_MIN, maxWidth: COLUMN_WIDTH_DATETIME_MAX };
   }
@@ -60,6 +169,30 @@ export function inferColumnSizingPreset(id: string | undefined): { minWidth: num
   }
   if (isStatusColumnId(id)) {
     return { minWidth: COLUMN_WIDTH_STATUS_MIN, maxWidth: COLUMN_WIDTH_STATUS_MAX };
+  }
+  if (isNoteColumnId(id)) {
+    return { minWidth: COLUMN_WIDTH_NOTE_MIN, maxWidth: COLUMN_WIDTH_NOTE_MAX };
+  }
+  if (TYPE_IDS.has(id) || id.startsWith('loai_')) {
+    return { minWidth: COLUMN_WIDTH_TYPE_MIN, maxWidth: COLUMN_WIDTH_TYPE_MAX };
+  }
+  if (isCountColumnId(id)) {
+    return { minWidth: COLUMN_WIDTH_COUNT_MIN, maxWidth: COLUMN_WIDTH_COUNT_MAX };
+  }
+  if (isPersonColumnId(id)) {
+    return { minWidth: COLUMN_WIDTH_PERSON_MIN, maxWidth: COLUMN_WIDTH_PERSON_MAX };
+  }
+  if (isCodeColumnId(id)) {
+    return { minWidth: COLUMN_WIDTH_CODE_MIN, maxWidth: COLUMN_WIDTH_CODE_MAX };
+  }
+  if (isEntityColumnId(id)) {
+    return { minWidth: COLUMN_WIDTH_ENTITY_MIN, maxWidth: COLUMN_WIDTH_ENTITY_MAX };
+  }
+  if (isNameColumnId(id)) {
+    return { minWidth: COLUMN_WIDTH_NAME_MIN, maxWidth: COLUMN_WIDTH_NAME_MAX };
+  }
+  if (id === 'dien_thoai' || id === 'email' || id === 'tags') {
+    return { minWidth: 128, maxWidth: 220 };
   }
   return null;
 }
@@ -81,9 +214,15 @@ export function getEffectiveColumnResizeBounds(col: ColumnConfig): { min: number
   return { min, max };
 }
 
-/** Cột có preset sizing (ngày / giờ / tiền) — nên giữ một dòng trong GenericTable. */
+/** Cột có preset sizing. */
 export function usesColumnSizingPreset(id: string): boolean {
   return inferColumnSizingPreset(id) != null;
+}
+
+/** Cột preset nên giữ một dòng (không áp nowrap cho tên / ghi chú dài). */
+export function usesColumnNoWrapPreset(id: string): boolean {
+  if (!inferColumnSizingPreset(id)) return false;
+  return !isNameColumnId(id) && !isNoteColumnId(id);
 }
 
 /** Input cho getColumnCellStyle: có thể kèm id để áp preset ngày/giờ. */
