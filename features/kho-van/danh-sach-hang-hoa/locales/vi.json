@@ -54,6 +54,7 @@
   "hangHoa.detail.minStock": "Tồn tối thiểu",
   "hangHoa.store.descCol": "Mô tả",
   "hangHoa.store.statusCol": "Trạng thái",
+  "hangHoa.store.createdCol": "Thời điểm tạo",
   "hangHoa.store.updatedCol": "Cập nhật",
   "hangHoa.validation.codeRequired": "Mã hàng bắt buộc",
   "hangHoa.validation.codeMax": "Mã tối đa 50 ký tự",

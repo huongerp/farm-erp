@@ -54,6 +54,7 @@
   "hangHoa.detail.minStock": "Min stock",
   "hangHoa.store.descCol": "Description",
   "hangHoa.store.statusCol": "Status",
+  "hangHoa.store.createdCol": "Created at",
   "hangHoa.store.updatedCol": "Updated",
   "hangHoa.validation.codeRequired": "Code is required",
   "hangHoa.validation.codeMax": "Code max 50 characters",

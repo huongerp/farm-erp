@@ -11,9 +11,9 @@ import {
 
 const TABLE = 'fp_mh_danh_sach_hang_hoa';
 
-/** Danh sách — có mo_ta cho cột mô tả; vẫn bỏ hinh_anh (base64 nặng). */
+/** Danh sách — có mo_ta, hinh_anh (URL Cloudinary ngắn) cho cột ảnh trên list. */
 const HANG_HOA_LIST_COLUMNS =
-  'id,danh_muc_id,danh_muc_cha_id,ma_hang_hoa,ten_hang_hoa,dvt,thu_tu,trang_thai,don_gia,mo_ta,tg_tao,tg_cap_nhat';
+  'id,danh_muc_id,danh_muc_cha_id,ma_hang_hoa,ten_hang_hoa,dvt,thu_tu,trang_thai,don_gia,mo_ta,hinh_anh,tg_tao,tg_cap_nhat';
 
 /** Chi tiết form/preview — đủ mo_ta, hinh_anh. */
 const HANG_HOA_DETAIL_COLUMNS =

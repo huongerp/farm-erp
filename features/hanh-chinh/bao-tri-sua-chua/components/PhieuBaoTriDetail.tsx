@@ -197,12 +197,14 @@ const PhieuBaoTriDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, c
             <DetailField label={t('baoTriSuaChua.store.maPhieuCol')} value={displayData.ma_phieu} />
             <DetailField label={t('baoTriSuaChua.store.ngayCol')} value={formatDate(displayData.ngay)} />
             <DetailField label={t('baoTriSuaChua.store.hangMucCol')} value={displayData.ten_hang_muc ?? displayData.id_hang_muc} />
-            <DetailField label={t('baoTriSuaChua.store.taiSanCol')} value={displayData.ten_tai_san || displayData.ma_tai_san || '—'} />
+            <DetailField label={t('baoTriSuaChua.store.maTaiSanCol')} value={displayData.ma_tai_san || '—'} />
+            <DetailField label={t('baoTriSuaChua.store.tenTaiSanCol')} value={displayData.ten_tai_san || '—'} />
             <DetailField label={t('baoTriSuaChua.store.soTienCol')} value={formatCurrency(displayData.so_tien)} />
             <DetailField
               label={t('baoTriSuaChua.store.trangThaiCol')}
               value={getTrangThaiLabel(displayData.trang_thai, t)}
             />
+            <DetailField label={t('baoTriSuaChua.store.createdCol')} value={formatDateTimeShort(displayData.tg_tao)} />
             <DetailField label={t('baoTriSuaChua.store.updatedCol')} value={formatDateTimeShort(displayData.tg_cap_nhat)} />
           </div>
         </DetailSection>

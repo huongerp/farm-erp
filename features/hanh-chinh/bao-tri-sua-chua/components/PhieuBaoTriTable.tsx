@@ -61,14 +61,15 @@ const PhieuBaoTriTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, on
             {item.ten_hang_muc || item.id_hang_muc}
           </span>
         );
+      case 'ma_tai_san':
+        return (
+          <span className="font-mono text-xs font-medium text-muted-foreground bg-muted px-2 py-1 rounded border border-border">
+            {item.ma_tai_san ?? '—'}
+          </span>
+        );
       case 'ten_tai_san':
         return (
-          <div className="flex flex-col gap-0.5 min-w-[140px]">
-            <span className="font-medium text-foreground text-sm">{item.ten_tai_san || item.ma_tai_san || '—'}</span>
-            {item.ma_tai_san && item.ten_tai_san && (
-              <span className="text-xs text-muted-foreground">{item.ma_tai_san}</span>
-            )}
-          </div>
+          <span className="text-sm text-foreground line-clamp-2">{item.ten_tai_san ?? '—'}</span>
         );
       case 'so_tien':
         return (
@@ -78,6 +79,20 @@ const PhieuBaoTriTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, on
         return renderTrangThaiBadge(item.trang_thai);
       case 'nguoi_duyet':
         return <span className="text-sm text-foreground">{item.nguoi_duyet || '—'}</span>;
+      case 'ten_nguoi_tao':
+        return <span className="text-sm text-foreground">{item.ten_nguoi_tao || '—'}</span>;
+      case 'ghi_chu':
+        return (
+          <span className="text-xs text-muted-foreground line-clamp-2 max-w-[200px]">
+            {item.ghi_chu || '—'}
+          </span>
+        );
+      case 'tg_tao':
+        return (
+          <span className="text-xs text-muted-foreground tabular-nums">
+            {formatDateTimeShort(item.tg_tao)}
+          </span>
+        );
       case 'mo_ta':
         return (
           <span className="text-xs text-muted-foreground line-clamp-2 max-w-[200px]">
@@ -142,7 +157,10 @@ const PhieuBaoTriTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, on
         <span className="text-xs text-muted-foreground">{formatDate(item.ngay)}</span>
       </div>
       <p className="text-xs text-muted-foreground mt-0.5">{item.ten_hang_muc || item.id_hang_muc}</p>
-      <p className="text-sm text-foreground mt-0.5">{item.ten_tai_san || item.ma_tai_san || '—'}</p>
+      <p className="text-sm text-foreground mt-0.5">{item.ten_tai_san ?? '—'}</p>
+      {item.ma_tai_san && (
+        <p className="text-xs font-mono text-muted-foreground">{item.ma_tai_san}</p>
+      )}
       <p className="text-xs text-muted-foreground">{formatCurrency(item.so_tien)} • {getTrangThaiLabel(item.trang_thai, t)}</p>
     </div>
   );

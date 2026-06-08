@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Edit, Trash2 } from 'lucide-react';
-import { cn, formatDateShort, formatNumberVN } from '../../../../lib/utils';
+import { cn, formatDateShort, formatDateTimeShort, formatNumberVN } from '../../../../lib/utils';
 import type { HangHoa } from '../core/types';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import GenericTable from '../../../../components/shared/GenericTable';
@@ -130,8 +130,18 @@ const DanhSachHangHoaList: React.FC<Props> = ({
       }
       case 'trang_thai':
         return renderStatusBadge(item);
+      case 'tg_tao':
+        return (
+          <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">
+            {formatDateTimeShort(item.tg_tao)}
+          </span>
+        );
       case 'tg_cap_nhat':
-        return <span className="text-xs text-muted-foreground whitespace-nowrap">{formatDateShort(item.tg_cap_nhat)}</span>;
+        return (
+          <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">
+            {formatDateTimeShort(item.tg_cap_nhat)}
+          </span>
+        );
       case 'actions':
         return (
           <div className="flex items-center justify-end gap-0.5">
