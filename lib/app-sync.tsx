@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useUIStore } from '../store/useStore';
 import { PRIMARY_COLOR_MAP } from './theme-utils';
+import { ensureLocaleForLanguage } from './i18n-feature-locales';
 import i18n from './i18n';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
@@ -106,7 +107,9 @@ export const MetadataSynchronizer: React.FC = () => {
 export const LanguageSynchronizer: React.FC = () => {
   const language = useUIStore((s) => s.language);
   useEffect(() => {
-    i18n.changeLanguage(language);
+    void ensureLocaleForLanguage(language).then(() => {
+      i18n.changeLanguage(language);
+    });
     dayjs.locale(language === 'vi' ? 'vi' : 'en');
     document.documentElement.lang = language === 'vi' ? 'vi' : 'en';
   }, [language]);

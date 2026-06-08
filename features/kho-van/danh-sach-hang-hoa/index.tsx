@@ -11,7 +11,7 @@ import DanhSachHangHoaDetail from './components/DanhSachHangHoaDetail';
 import DinhMucTonTab from './components/DinhMucTonTab';
 import ImportDialog from '../../../components/shared/ImportDialog';
 import type { ImportReferenceSheet, ImportSampleRow } from '../../../components/shared/ImportDialog';
-import ExportDialog from '../../../components/shared/ExportDialog';
+import ExportDialog from '../../../components/shared/LazyExportDialog';
 import {
   useHangHoaList,
   useDeleteHangHoa,

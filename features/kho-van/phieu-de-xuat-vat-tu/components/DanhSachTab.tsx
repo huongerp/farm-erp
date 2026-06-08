@@ -48,7 +48,7 @@ import PhieuDeXuatVatTuToolbar from './PhieuDeXuatVatTuToolbar';
 import PhieuDeXuatVatTuList from './PhieuDeXuatVatTuList';
 import PhieuDeXuatVatTuForm from './PhieuDeXuatVatTuForm';
 import PhieuDeXuatVatTuDetail, { type PhieuDeXuatVatTuApprovePayload } from './PhieuDeXuatVatTuDetail';
-import ExportDialog from '../../../../components/shared/ExportDialog';
+import ExportDialog from '../../../../components/shared/LazyExportDialog';
 import { useExportData } from '../../../../lib/useExportData';
 import {
   PHIEU_DE_XUAT_VAT_TU_LIST_EXPORT_KEYS,

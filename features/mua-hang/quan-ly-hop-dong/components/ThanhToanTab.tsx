@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import ExportDialog from '../../../../components/shared/ExportDialog';
+import ExportDialog from '../../../../components/shared/LazyExportDialog';
 import { useExportData } from '../../../../lib/useExportData';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import {

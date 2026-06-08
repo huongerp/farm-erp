@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
+import { cn } from '../../lib/utils';
+import { useEnterTransition } from '../../lib/usePresenceTransition';
 import {
   getDrawerWidthClass,
   DRAWER_WIDTH_FORM,
@@ -61,6 +62,7 @@ const GenericDrawer: React.FC<GenericDrawerProps> = ({
   const drawerRef = useRef<HTMLDivElement>(null);
   const openerRef = useRef<HTMLElement | null>(null);
   const isMobile = useIsMobile();
+  const visible = useEnterTransition();
   const isModal = variant === 'modal';
   /** Trên mobile, modal hiển thị full-screen thay vì hộp giữa màn hình */
   const modalFullScreen = isModal && isMobile;
@@ -168,25 +170,32 @@ const GenericDrawer: React.FC<GenericDrawerProps> = ({
     </>
   );
 
+  const panelClass = isModal
+    ? modalFullScreen
+      ? 'presence-drawer-modal-full'
+      : 'presence-drawer-modal'
+    : 'presence-drawer';
+
   return (
     <>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
         onClick={onClose}
-        className="fixed inset-0 bg-black/20 backdrop-blur-md"
+        className={cn(
+          'fixed inset-0 bg-black/20 backdrop-blur-md presence-overlay',
+          visible && 'presence-visible',
+        )}
         style={{ zIndex: zIndexBackdrop }}
       />
 
       {isModal ? (
         <div className={`fixed inset-0 pointer-events-none ${modalFullScreen ? 'flex flex-col' : 'flex items-center justify-center p-4'}`} style={{ zIndex: zIndexContent }}>
-          <motion.div
-            initial={modalFullScreen ? { opacity: 0, y: 20 } : { opacity: 0, scale: 0.9, y: 30 }}
-            animate={modalFullScreen ? { opacity: 1, y: 0 } : { opacity: 1, scale: 1, y: 0 }}
-            exit={modalFullScreen ? { opacity: 0, y: 20 } : { opacity: 0, scale: 0.9, y: 30 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className={`w-full bg-card shadow-ultra flex flex-col pointer-events-auto border border-border/40 outline-none ${modalFullScreen ? 'h-full min-h-[100dvh] max-h-none rounded-none' : `${widthClass} max-h-[90vh] rounded-2xl`}`}
+          <div
+            className={cn(
+              'w-full bg-card shadow-ultra flex flex-col pointer-events-auto border border-border/40 outline-none',
+              panelClass,
+              visible && 'presence-visible',
+              modalFullScreen ? 'h-full min-h-[100dvh] max-h-none rounded-none' : `${widthClass} max-h-[90vh] rounded-2xl`,
+            )}
             ref={drawerRef}
             role="dialog"
             aria-modal="true"
@@ -194,15 +203,15 @@ const GenericDrawer: React.FC<GenericDrawerProps> = ({
             tabIndex={-1}
           >
             {Content}
-          </motion.div>
+          </div>
         </div>
       ) : (
-        <motion.div
-          initial={{ x: '100%' }}
-          animate={{ x: 0 }}
-          exit={{ x: '100%' }}
-          transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-          className={`fixed inset-y-0 right-0 w-full ${widthClass} bg-card shadow-ultra flex flex-col h-[100dvh] border-l border-border/40 outline-none`}
+        <div
+          className={cn(
+            `fixed inset-y-0 right-0 w-full ${widthClass} bg-card shadow-ultra flex flex-col h-[100dvh] border-l border-border/40 outline-none`,
+            panelClass,
+            visible && 'presence-visible',
+          )}
           style={{ zIndex: zIndexContent }}
           ref={drawerRef}
           role="dialog"
@@ -211,7 +220,7 @@ const GenericDrawer: React.FC<GenericDrawerProps> = ({
           tabIndex={-1}
         >
           {Content}
-        </motion.div>
+        </div>
       )}
     </>
   );

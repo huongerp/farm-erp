@@ -2,9 +2,12 @@ import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import { visualizer } from 'rollup-plugin-visualizer';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
+  const analyze = process.env.ANALYZE === '1';
+
   return {
     server: {
       port: 3000,
@@ -26,10 +29,11 @@ export default defineConfig(({ mode }) => {
               return 'tanstack-query';
             }
             if (id.includes('framer-motion')) return 'framer-motion';
-            if (id.includes('@tiptap')) return 'tiptap';
             if (id.includes('@dnd-kit')) return 'dnd-kit';
             if (id.includes('recharts')) return 'recharts';
-            if (id.includes('xlsx') || id.includes('jspdf') || id.includes('html2canvas')) return 'export-libs';
+            if (id.includes('xlsx')) return 'vendor-xlsx';
+            if (id.includes('jspdf')) return 'vendor-jspdf';
+            if (id.includes('html2canvas')) return 'vendor-html2canvas';
             if (id.includes('react-router')) return 'react-router';
             if (id.includes('react-dom') || id.includes('/react/')) return 'react-vendor';
             if (id.includes('i18next') || id.includes('react-i18next')) return 'i18n';
@@ -54,6 +58,16 @@ export default defineConfig(({ mode }) => {
         },
       },
       react(),
+      ...(analyze
+        ? [
+            visualizer({
+              filename: 'dist/stats.html',
+              open: false,
+              gzipSize: true,
+              brotliSize: true,
+            }),
+          ]
+        : []),
       VitePWA({
         registerType: 'prompt',
         manifest: {
@@ -80,8 +94,8 @@ export default defineConfig(({ mode }) => {
           ],
         },
         workbox: {
-          // Chỉ precache shell — không precache toàn bộ chunk JS/CSS (~200 file / ~6MB).
           globPatterns: ['**/*.html', 'favicon.svg', 'manifest.webmanifest', 'fonts/**/*'],
+          globIgnores: ['**/stats.html'],
           navigateFallback: 'index.html',
           cleanupOutdatedCaches: true,
           runtimeCaching: [

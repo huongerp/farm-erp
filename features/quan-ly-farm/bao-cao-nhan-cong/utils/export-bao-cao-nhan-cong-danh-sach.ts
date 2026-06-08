@@ -12,7 +12,7 @@ import {
   sumTongGioTangCaTichPhieu,
 } from '../core/types';
 import { TRANG_THAI_BAO_CAO_NHAN_CONG } from '../core/types';
-import type { ExportColumn } from '../../../../components/shared/ExportDialog';
+import type { ExportColumn } from '../../../../components/shared/LazyExportDialog';
 import { formatDateShort, formatDateTimeShort, formatNumberVN } from '../../../../lib/utils';
 
 export const BAO_CAO_NHAN_CONG_LIST_EXPORT_KEYS = [

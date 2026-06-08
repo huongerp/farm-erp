@@ -16,7 +16,7 @@ import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { PayrollWifiIp } from '../core/types';
 import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
 import ImportDialog from '../../../../components/shared/ImportDialog';
-import ExportDialog from '../../../../components/shared/ExportDialog';
+import ExportDialog from '../../../../components/shared/LazyExportDialog';
 import { useExportData } from '../../../../lib/useExportData';
 
 const PayrollWifiIpTab: React.FC = () => {

@@ -3,7 +3,7 @@
  */
 import type { TFunction } from 'i18next';
 import type { PhieuKho, ChiTietPhieuKhoFlat } from '../core/types';
-import type { ExportColumn } from '../../../../components/shared/ExportDialog';
+import type { ExportColumn } from '../../../../components/shared/LazyExportDialog';
 
 /** Thứ tự cột xuất — khớp key trong mapPhieuKhoListRow */
 export const PHIEU_KHO_LIST_EXPORT_KEYS = [

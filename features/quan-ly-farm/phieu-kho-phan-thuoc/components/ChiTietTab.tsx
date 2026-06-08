@@ -26,7 +26,7 @@ import PhieuKhoPTDetail from './PhieuKhoPTDetail';
 import PhieuKhoPTForm from './PhieuKhoPTForm';
 import DanhSachKhoForm from '../../../kho-van/danh-sach-kho/components/danh-sach-kho-form';
 import HangHoaForm from '../../hang-hoa-phan-thuoc/components/HangHoaForm';
-import ExportDialog from '../../../../components/shared/ExportDialog';
+import ExportDialog from '../../../../components/shared/LazyExportDialog';
 import { useExportData } from '../../../../lib/useExportData';
 import {
   mapChiTietPhieuKhoPTFlatRow,

@@ -9,7 +9,7 @@ import PositionForm from './components/chuc-vu-form';
 import PositionDetail from './components/chuc-vu-detail';
 import PositionToolbar from './components/chuc-vu-toolbar';
 import PositionTable from './components/chuc-vu-table';
-import ExportDialog from '../../../components/shared/ExportDialog';
+import ExportDialog from '../../../components/shared/LazyExportDialog';
 
 import { usePositions, useDeletePosition, useUpdateStatusPosition } from './hooks/use-chuc-vu';
 import { usePositionStore } from './store/usePositionStore';

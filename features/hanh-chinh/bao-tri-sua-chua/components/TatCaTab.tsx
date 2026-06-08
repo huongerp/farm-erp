@@ -4,7 +4,7 @@ import { AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
-import ExportDialog from '../../../../components/shared/ExportDialog';
+import ExportDialog from '../../../../components/shared/LazyExportDialog';
 import { useExportData } from '../../../../lib/useExportData';
 import BaoTriSuaChuaToolbar from './BaoTriSuaChuaToolbar';
 import PhieuBaoTriTable from './PhieuBaoTriTable';

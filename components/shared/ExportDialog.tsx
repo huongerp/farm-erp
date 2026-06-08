@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
 import { Download, X, FileSpreadsheet, FileText, Check } from 'lucide-react';
 import Button from '../ui/Button';
 import { cn, getTodayISODate } from '../../lib/utils';
+import { useEnterTransition } from '../../lib/usePresenceTransition';
 
 function escapeCsvCell(val: unknown): string {
   let cell = val == null ? '' : String(val);
@@ -65,6 +65,7 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
     return new Set(allKeys);
   });
   const [exporting, setExporting] = useState(false);
+  const visible = useEnterTransition();
 
   const toggleCol = (key: string) => {
     const next = new Set(selectedCols);
@@ -190,17 +191,20 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
 
   return (
     <>
-      <motion.div
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      <div
         onClick={onClose}
-        className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-md"
+        className={cn(
+          'fixed inset-0 z-[60] bg-black/20 backdrop-blur-md presence-overlay',
+          visible && 'presence-visible',
+        )}
       />
       <div className="fixed inset-0 z-[61] flex items-center justify-center p-4 pointer-events-none">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9, y: 30 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.9, y: 30 }}
-          className={cn("w-full bg-card rounded-2xl shadow-2xl border border-border pointer-events-auto flex flex-col max-h-[85vh]", DIALOG_SIZE.LARGE)}
+        <div
+          className={cn(
+            'w-full bg-card rounded-2xl shadow-2xl border border-border pointer-events-auto flex flex-col max-h-[85vh] presence-dialog-center',
+            visible && 'presence-visible',
+            DIALOG_SIZE.LARGE,
+          )}
         >
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-3 border-b border-border shrink-0">
@@ -306,7 +310,7 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
               {exporting ? t('shared.export.exporting') : t('shared.export.exportRows', { count: getExportData().length })}
             </Button>
           </div>
-        </motion.div>
+        </div>
       </div>
     </>
   );

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { AuthState, User } from '../types';
 import i18n from '../lib/i18n';
+import { ensureLocaleForLanguage } from '../lib/i18n-feature-locales';
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -105,7 +106,9 @@ export const useUIStore = create<UIState>()(
       language: 'vi',
       setTheme: (settings) => {
         if (settings.language != null) {
-          i18n.changeLanguage(settings.language).catch(() => {});
+          void ensureLocaleForLanguage(settings.language).then(() => {
+            i18n.changeLanguage(settings.language!).catch(() => {});
+          });
         }
         set((state) => ({ ...state, ...settings }));
       },

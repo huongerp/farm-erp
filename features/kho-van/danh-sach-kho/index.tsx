@@ -7,7 +7,7 @@ import DanhSachKhoToolbar from './components/danh-sach-kho-toolbar';
 import DanhSachKhoList from './components/danh-sach-kho-list';
 import DanhSachKhoForm from './components/danh-sach-kho-form';
 import DanhSachKhoDetail from './components/danh-sach-kho-detail';
-import ExportDialog from '../../../components/shared/ExportDialog';
+import ExportDialog from '../../../components/shared/LazyExportDialog';
 import ImportDialog from '../../../components/shared/ImportDialog';
 import {
   useKhoList,

@@ -18,7 +18,7 @@ import DonDatHangToolbar from './DonDatHangToolbar';
 import DonDatHangList from './DonDatHangList';
 import DonDatHangForm from './DonDatHangForm';
 import DonDatHangDetail from './DonDatHangDetail';
-import ExportDialog from '../../../../components/shared/ExportDialog';
+import ExportDialog from '../../../../components/shared/LazyExportDialog';
 import PhieuKhoForm from '../../../kho-van/phieu-kho/components/PhieuKhoForm';
 import type { PhieuKhoFormValues } from '../../../kho-van/phieu-kho/core/schema';
 import type { DonDatHangSoPoOption } from '../services/don-dat-hang-supabase.service';

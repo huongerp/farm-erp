@@ -24,7 +24,7 @@ import type { PhieuDeXuatVatTu, PhieuDeXuatVatTuChiTietRow } from '../core/types
 import type { PhieuDeXuatVatTuFormValues } from '../core/schema';
 import { getTienDoMhBadgeClass } from '../core/constants';
 import ChiTietTabToolbar from './ChiTietTabToolbar';
-import ExportDialog from '../../../../components/shared/ExportDialog';
+import ExportDialog from '../../../../components/shared/LazyExportDialog';
 import GenericTable from '../../../../components/shared/GenericTable';
 import { useExportData } from '../../../../lib/useExportData';
 import { CHI_TIET_EXPORT_KEYS, getChiTietExportColumns, mapChiTietRowToExport } from '../utils/chi-tiet-export';

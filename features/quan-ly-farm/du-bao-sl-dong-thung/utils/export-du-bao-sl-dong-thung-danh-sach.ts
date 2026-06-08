@@ -5,7 +5,7 @@ import type { TFunction } from 'i18next';
 import type { FarmDuBaoSlDongThung } from '../core/types';
 import { TRANG_THAI_DU_BAO_SL_DONG_THUNG } from '../core/types';
 import { computeDuBaoSlDongThungKpiFromFarm } from '../core/kpi';
-import type { ExportColumn } from '../../../../components/shared/ExportDialog';
+import type { ExportColumn } from '../../../../components/shared/LazyExportDialog';
 import { formatDateShort, formatDateTimeShort, formatNumberVN } from '../../../../lib/utils';
 
 export const DU_BAO_SL_DONG_THUNG_LIST_EXPORT_KEYS = [

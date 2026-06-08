@@ -1,5 +1,5 @@
 import type { TFunction } from 'i18next';
-import type { ExportColumn } from '../../../../components/shared/ExportDialog';
+import type { ExportColumn } from '../../../../components/shared/LazyExportDialog';
 import type { HopDong, HopDongChiTietEnriched } from '../core/types';
 import { formatDateShort, formatDateTimeShort, formatNumberVN, getTodayISODate } from '../../../../lib/utils';
 import { TRANG_THAI_HOP_DONG } from '../core/constants';

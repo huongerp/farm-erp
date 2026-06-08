@@ -9,7 +9,7 @@ import JobLevelForm from './components/cap-bac-form';
 import JobLevelDetail from './components/cap-bac-detail';
 import JobLevelToolbar from './components/cap-bac-toolbar';
 import JobLevelTable from './components/cap-bac-table';
-import ExportDialog from '../../../components/shared/ExportDialog';
+import ExportDialog from '../../../components/shared/LazyExportDialog';
 
 import { useJobLevels, useDeleteJobLevel, useUpdateStatusJobLevel } from './hooks/use-cap-bac';
 import { useJobLevelStore } from './store/useJobLevelStore';

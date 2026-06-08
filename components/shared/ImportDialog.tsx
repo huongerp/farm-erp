@@ -1,9 +1,9 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Upload, FileSpreadsheet, X, AlertCircle, CheckCircle2, Download, ArrowRight, FileWarning } from 'lucide-react';
 import Button from '../ui/Button';
 import { cn } from '../../lib/utils';
+import { useEnterTransition } from '../../lib/usePresenceTransition';
 import { DIALOG_SIZE } from '../../lib/dialog-sizes';
 
 export interface ImportColumn {
@@ -52,6 +52,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
   const [result, setResult] = useState<{ success: number; errors: string[] } | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const visible = useEnterTransition();
 
   const reset = () => {
     setStep('upload');
@@ -214,17 +215,20 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
 
   return (
     <>
-      <motion.div
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      <div
         onClick={handleClose}
-        className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-md"
+        className={cn(
+          'fixed inset-0 z-[60] bg-black/20 backdrop-blur-md presence-overlay',
+          visible && 'presence-visible',
+        )}
       />
       <div className="fixed inset-0 z-[61] flex items-center justify-center p-4 pointer-events-none">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9, y: 30 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.9, y: 30 }}
-          className={cn("w-full bg-card rounded-2xl shadow-2xl border border-border pointer-events-auto flex flex-col max-h-[85vh]", DIALOG_SIZE.LARGE)}
+        <div
+          className={cn(
+            'w-full bg-card rounded-2xl shadow-2xl border border-border pointer-events-auto flex flex-col max-h-[85vh] presence-dialog-center',
+            visible && 'presence-visible',
+            DIALOG_SIZE.LARGE,
+          )}
         >
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
@@ -244,9 +248,8 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
 
           {/* Body */}
           <div className="flex-1 overflow-y-auto p-5 custom-scrollbar">
-            <AnimatePresence mode="wait">
-              {step === 'upload' && (
-                <motion.div key="upload" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            {step === 'upload' && (
+              <div key="upload">
                   <div
                     onClick={() => fileInputRef.current?.click()}
                     onDrop={handleDrop}
@@ -278,11 +281,11 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
                       {t('shared.import.templateHasRefSheets', { count: referenceSheets.length })}
                     </p>
                   )}
-                </motion.div>
-              )}
+              </div>
+            )}
 
-              {step === 'mapping' && (
-                <motion.div key="mapping" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
+            {step === 'mapping' && (
+              <div key="mapping" className="space-y-4">
                   <div className="flex items-center justify-between">
                     <p className="text-xs text-muted-foreground">
                       {t('shared.import.rowsRead', { count: sheetData.length })}
@@ -356,11 +359,11 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
                       </div>
                     </div>
                   )}
-                </motion.div>
-              )}
+              </div>
+            )}
 
-              {step === 'result' && result && (
-                <motion.div key="result" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center py-6">
+            {step === 'result' && result && (
+              <div key="result" className="text-center py-6">
                   {result.success > 0 ? (
                     <div className="space-y-3">
                       <CheckCircle2 size={48} className="mx-auto text-primary" />
@@ -425,9 +428,8 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
                       ))}
                     </div>
                   )}
-                </motion.div>
-              )}
-            </AnimatePresence>
+              </div>
+            )}
           </div>
 
           {/* Footer */}
@@ -457,7 +459,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
               )}
             </div>
           </div>
-        </motion.div>
+        </div>
       </div>
     </>
   );

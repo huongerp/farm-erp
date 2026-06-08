@@ -17,7 +17,7 @@ import type { FarmBaoCaoSoChe } from '../core/types';
 import { getPreferredBranchFromUserLastRecords } from '../core/form-mappers';
 import { useBaoCaoSoChePermissions } from '../hooks/use-bao-cao-so-che-permissions';
 import { useAuthStore } from '../../../../store/useStore';
-import ExportDialog from '../../../../components/shared/ExportDialog';
+import ExportDialog from '../../../../components/shared/LazyExportDialog';
 import { useExportData } from '../../../../lib/useExportData';
 import { useBaoCaoSoCheViewScope } from '../hooks/use-bao-cao-so-che-view-scope';
 import BaoCaoSoCheToolbar from './BaoCaoSoCheToolbar';

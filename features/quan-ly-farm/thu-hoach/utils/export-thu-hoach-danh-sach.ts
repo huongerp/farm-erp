@@ -5,7 +5,7 @@ import type { TFunction } from 'i18next';
 import type { FarmThuHoach } from '../core/types';
 import { THU_HOACH_DAY_SUFFIXES } from '../core/types';
 import { formatThuDuKienShort } from '../core/utils';
-import type { ExportColumn } from '../../../../components/shared/ExportDialog';
+import type { ExportColumn } from '../../../../components/shared/LazyExportDialog';
 import { DAY_FORM_LABEL_KEY } from '../core/form-mappers';
 
 export function mapFarmThuHoachListRow(p: FarmThuHoach): Record<string, unknown> {

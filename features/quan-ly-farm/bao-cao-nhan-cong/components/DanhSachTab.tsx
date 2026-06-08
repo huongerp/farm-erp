@@ -17,7 +17,7 @@ import type { FarmBaoCaoNhanCong } from '../core/types';
 import { getPreferredBranchFromUserLastRecords } from '../core/form-mappers';
 import { useBaoCaoNhanCongPermissions } from '../hooks/use-bao-cao-nhan-cong-permissions';
 import { useAuthStore } from '../../../../store/useStore';
-import ExportDialog from '../../../../components/shared/ExportDialog';
+import ExportDialog from '../../../../components/shared/LazyExportDialog';
 import { useExportData } from '../../../../lib/useExportData';
 import { useBaoCaoNhanCongViewScope } from '../hooks/use-bao-cao-nhan-cong-view-scope';
 import BaoCaoNhanCongToolbar from './BaoCaoNhanCongToolbar';

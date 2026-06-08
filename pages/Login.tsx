@@ -5,8 +5,9 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
 import { Sparkles, ArrowRight, Loader2, CheckCircle2, Eye, EyeOff, X } from 'lucide-react';
+import { usePresenceTransition } from '../lib/usePresenceTransition';
+import { cn } from '../lib/utils';
 import { useAuthStore, useUIStore } from '../store/useStore';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
@@ -43,6 +44,7 @@ const Login: React.FC = () => {
   const [forgotOpen, setForgotOpen] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotLoading, setForgotLoading] = useState(false);
+  const { mounted: forgotMounted, visible: forgotVisible } = usePresenceTransition(forgotOpen);
 
   const loginSchema = useMemo(() => z.object({
     email: z.string().min(1, t('page.login.emailRequired')).email(t('page.login.emailInvalid')),
@@ -146,24 +148,12 @@ const Login: React.FC = () => {
         <div className="absolute inset-0 bg-gradient-to-br from-slate-900/90 via-slate-900/80 to-primary/20"></div>
         
         {/* Animated Orbs */}
-        <motion.div 
-            animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
-            transition={{ duration: 8, repeat: Infinity }}
-            className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl"
-        />
-        <motion.div 
-            animate={{ scale: [1, 1.3, 1], opacity: [0.2, 0.4, 0.2] }}
-            transition={{ duration: 10, repeat: Infinity, delay: 1 }}
-            className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-primary/20 rounded-full blur-3xl"
-        />
+        <div className="login-blob-a absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl" />
+        <div className="login-blob-b absolute bottom-1/4 right-1/4 w-80 h-80 bg-primary/20 rounded-full blur-3xl" />
 
         {/* Content */}
         <div className="relative z-10 max-w-lg text-white space-y-8">
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-            >
+            <div className="login-brand-enter">
                 <div className="flex items-center gap-3 mb-6">
                     {companyInfo.appLogo ? (
                          <img src={companyInfo.appLogo} alt="Logo" className="h-14 w-14 object-contain" />
@@ -181,14 +171,9 @@ const Login: React.FC = () => {
                 <p className="text-slate-400 text-lg leading-relaxed">
                     {t('page.login.description')}
                 </p>
-            </motion.div>
+            </div>
 
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.6 }}
-                className="space-y-4 pt-8"
-            >
+            <div className="login-features-enter space-y-4 pt-8">
                 {[
                     t('page.login.feature1'),
                     t('page.login.feature2'),
@@ -199,17 +184,13 @@ const Login: React.FC = () => {
                         <span>{feature}</span>
                     </div>
                 ))}
-            </motion.div>
+            </div>
         </div>
       </div>
 
       {/* Right Side - Login Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 md:p-12 relative">
-        <motion.div 
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="w-full max-w-md space-y-8"
-        >
+        <div className="login-form-enter w-full max-w-md space-y-8">
             <div className="text-center lg:text-left">
                 <h2 className="text-3xl font-bold text-foreground tracking-tight">{t('page.login.welcome')}</h2>
                 <p className="text-muted-foreground mt-2">{t('page.login.welcomeDesc')}</p>
@@ -333,12 +314,20 @@ const Login: React.FC = () => {
             </div>
 
             {/* Modal Quên mật khẩu */}
-            {forgotOpen && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="w-full max-w-md rounded-xl bg-card border border-border shadow-lg p-6"
+            {forgotMounted && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div
+                  className={cn(
+                    'absolute inset-0 bg-black/50 presence-overlay',
+                    forgotVisible && 'presence-visible',
+                  )}
+                  onClick={() => setForgotOpen(false)}
+                />
+                <div
+                  className={cn(
+                    'relative w-full max-w-md rounded-xl bg-card border border-border shadow-lg p-6 presence-dialog',
+                    forgotVisible && 'presence-visible',
+                  )}
                 >
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-semibold text-foreground">{t('page.login.forgotPasswordTitle')}</h3>
@@ -370,10 +359,10 @@ const Login: React.FC = () => {
                       </Button>
                     </div>
                   </form>
-                </motion.div>
+                </div>
               </div>
             )}
-        </motion.div>
+        </div>
         
         {/* Footer info for Login page */}
         <div className="absolute bottom-6 text-center text-xs text-muted-foreground w-full left-0 px-4">

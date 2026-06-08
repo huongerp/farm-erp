@@ -28,7 +28,7 @@ import DanhSachKhoForm from '../../danh-sach-kho/components/danh-sach-kho-form';
 import DanhSachHangHoaForm from '../../danh-sach-hang-hoa/components/DanhSachHangHoaForm';
 import DoiTacForm from '../../danh-sach-doi-tac/components/DoiTacForm';
 import { useNhomDoiTacList, useTagList, useDoiTacList } from '../../danh-sach-doi-tac/hooks/use-doi-tac';
-import ExportDialog from '../../../../components/shared/ExportDialog';
+import ExportDialog from '../../../../components/shared/LazyExportDialog';
 import { useExportData } from '../../../../lib/useExportData';
 import {
   mapPhieuKhoListRow,

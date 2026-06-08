@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
+import { ensureFeatureLocale } from '../../../lib/i18n-feature-locales';
 import DanhSachNhaCungCapToolbar from './components/DanhSachNhaCungCapToolbar';
 import DanhSachNhaCungCapList from './components/DanhSachNhaCungCapList';
 import DanhSachNhaCungCapForm from './components/DanhSachNhaCungCapForm';
@@ -15,6 +16,10 @@ import type { NhaCungCap } from './core/types';
 
 const DanhSachNhaCungCapPage: React.FC = () => {
   const { t } = useTranslation();
+
+  useEffect(() => {
+    void ensureFeatureLocale('danh-sach-nha-cung-cap');
+  }, []);
   const confirm = useConfirmStore((s) => s.confirm);
   const {
     searchTerm,

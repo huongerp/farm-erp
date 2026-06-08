@@ -4,7 +4,7 @@
  */
 import type { TFunction } from 'i18next';
 import type { ChiTietDonDatHangFlat, DonDatHang } from '../core/types';
-import type { ExportColumn } from '../../../../components/shared/ExportDialog';
+import type { ExportColumn } from '../../../../components/shared/LazyExportDialog';
 import { formatDateShort, formatDateShortTime } from '../../../../lib/utils';
 
 function cellDate(s: string | undefined | null): string {

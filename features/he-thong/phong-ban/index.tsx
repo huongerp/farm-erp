@@ -7,7 +7,7 @@ import PhongBanToolbar from './components/phong-ban-toolbar';
 import DepartmentList from './components/phong-ban-list';
 import DepartmentForm from './components/phong-ban-form';
 import DepartmentDetail from './components/phong-ban-detail';
-import ExportDialog from '../../../components/shared/ExportDialog';
+import ExportDialog from '../../../components/shared/LazyExportDialog';
 import ImportDialog from '../../../components/shared/ImportDialog';
 import { useDepartments, useDeleteDepartment, useUpdateStatusDepartment, useImportDepartments } from './hooks/use-phong-ban';
 import { useDepartmentStore } from './store/useDepartmentStore';

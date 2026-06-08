@@ -5,7 +5,7 @@ import type { TFunction } from 'i18next';
 import type { FarmBaoCaoSoChe } from '../core/types';
 import { TRANG_THAI_BAO_CAO_SO_CHE, sumTienThuongKpiThuong } from '../core/types';
 import { sumPhamCapDisplayTotals } from '../core/pham-cap-derived';
-import type { ExportColumn } from '../../../../components/shared/ExportDialog';
+import type { ExportColumn } from '../../../../components/shared/LazyExportDialog';
 import { formatDateShort, formatDateTimeShort, formatNumberVN } from '../../../../lib/utils';
 
 export const BAO_CAO_SO_CHE_LIST_EXPORT_KEYS = [

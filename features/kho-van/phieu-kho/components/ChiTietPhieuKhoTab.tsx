@@ -36,7 +36,7 @@ import type { LoaiPhieuKho, TrangThaiPhieuKho } from '../core/types';
 import { LOAI_DB_TO_TAB } from '../core/types';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { CONFIRM_DELETE } from '../../../../lib/button-labels';
-import ExportDialog from '../../../../components/shared/ExportDialog';
+import ExportDialog from '../../../../components/shared/LazyExportDialog';
 import { useExportData } from '../../../../lib/useExportData';
 import {
   mapChiTietPhieuKhoFlatRow,

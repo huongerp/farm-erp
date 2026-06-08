@@ -23,7 +23,7 @@ import ThuHoachToolbar from './ThuHoachToolbar';
 import ThuHoachList from './ThuHoachList';
 import ThuHoachForm from './ThuHoachForm';
 import ThuHoachDetail from './ThuHoachDetail';
-import ExportDialog from '../../../../components/shared/ExportDialog';
+import ExportDialog from '../../../../components/shared/LazyExportDialog';
 import { useExportData } from '../../../../lib/useExportData';
 import {
   mapFarmThuHoachListRow,

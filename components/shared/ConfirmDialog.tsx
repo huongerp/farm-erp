@@ -1,18 +1,19 @@
 
 import React, { useEffect, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { AlertTriangle, Trash2, Info, X } from 'lucide-react';
 import { toast } from 'sonner';
 import Button from '../ui/Button';
 import { useConfirmStore } from '../../store/useConfirmStore';
 import { DIALOG_SIZE } from '../../lib/dialog-sizes';
 import { cn } from '../../lib/utils';
+import { usePresenceTransition } from '../../lib/usePresenceTransition';
 import i18n from '../../lib/i18n';
 
 const ConfirmDialog: React.FC = () => {
   const { isOpen, options, close, isLoading, setLoading } = useConfirmStore();
   const { title, message, variant, confirmText, cancelText, onConfirm, onCancel } = options;
   const dialogRef = useRef<HTMLDivElement>(null);
+  const { mounted, visible } = usePresenceTransition(isOpen);
 
   const handleConfirm = async () => {
     try {
@@ -81,67 +82,66 @@ const ConfirmDialog: React.FC = () => {
     }
   };
 
+  if (!mounted) return null;
+
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={!isLoading ? handleCancel : undefined}
-            className="absolute inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-md"
-          />
-          <motion.div
-            ref={dialogRef}
-            role="alertdialog"
-            aria-modal="true"
-            aria-labelledby="confirm-dialog-title"
-            tabIndex={-1}
-            initial={{ scale: 0.95, opacity: 0, y: 10 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.95, opacity: 0, y: 10 }}
-            className={cn("relative bg-card rounded-xl p-6 w-full shadow-2xl border border-border/40 flex flex-col items-center text-center outline-none", DIALOG_SIZE.CONFIRM)}
-          >
-            {getIcon()}
-            
-            <h3 id="confirm-dialog-title" className="text-base font-semibold text-foreground mb-2">{title}</h3>
-            
-            <div className="text-sm text-muted-foreground mb-6 leading-relaxed">
-              {message}
-            </div>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div
+        onClick={!isLoading ? handleCancel : undefined}
+        className={cn(
+          'absolute inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-md presence-overlay',
+          visible && 'presence-visible',
+        )}
+      />
+      <div
+        ref={dialogRef}
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="confirm-dialog-title"
+        tabIndex={-1}
+        className={cn(
+          'relative bg-card rounded-xl p-6 w-full shadow-2xl border border-border/40 flex flex-col items-center text-center outline-none presence-dialog',
+          visible && 'presence-visible',
+          DIALOG_SIZE.CONFIRM,
+        )}
+      >
+        {getIcon()}
 
-            <div className="flex gap-3 w-full">
-              <Button 
-                variant="outline" 
-                onClick={handleCancel} 
-                disabled={isLoading}
-                className="flex-1 border-border text-muted-foreground hover:bg-muted h-11 rounded-lg"
-              >
-                {cancelText}
-              </Button>
-              <Button 
-                onClick={handleConfirm} 
-                isLoading={isLoading}
-                className={`flex-1 h-11 rounded-lg ${getConfirmButtonClass()}`}
-              >
-                {confirmText}
-              </Button>
-            </div>
+        <h3 id="confirm-dialog-title" className="text-base font-semibold text-foreground mb-2">{title}</h3>
 
-            {!isLoading && (
-                 <button 
-                    onClick={handleCancel}
-                    aria-label="Đóng"
-                    className="absolute top-4 right-4 p-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition-colors"
-                 >
-                     <X size={20} />
-                 </button>
-            )}
-          </motion.div>
+        <div className="text-sm text-muted-foreground mb-6 leading-relaxed">
+          {message}
         </div>
-      )}
-    </AnimatePresence>
+
+        <div className="flex gap-3 w-full">
+          <Button
+            variant="outline"
+            onClick={handleCancel}
+            disabled={isLoading}
+            className="flex-1 border-border text-muted-foreground hover:bg-muted h-11 rounded-lg"
+          >
+            {cancelText}
+          </Button>
+          <Button
+            onClick={handleConfirm}
+            isLoading={isLoading}
+            className={`flex-1 h-11 rounded-lg ${getConfirmButtonClass()}`}
+          >
+            {confirmText}
+          </Button>
+        </div>
+
+        {!isLoading && (
+          <button
+            onClick={handleCancel}
+            aria-label="Đóng"
+            className="absolute top-4 right-4 p-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition-colors"
+          >
+            <X size={20} />
+          </button>
+        )}
+      </div>
+    </div>
   );
 };
 

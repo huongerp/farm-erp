@@ -1,20 +1,18 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import vi from '../locales/vi';
-import en from '../locales/en';
+import vi from '../locales/vi/core';
 
 i18n.use(initReactI18next).init({
   resources: {
     vi: { translation: vi },
-    en: { translation: en },
   },
-  lng: 'vi',        // default language
-  fallbackLng: 'vi', // fallback language
+  lng: 'vi',
+  fallbackLng: 'vi',
   interpolation: {
-    escapeValue: false, // React already escapes
+    escapeValue: false,
   },
   react: {
-    useSuspense: false, // avoid Suspense wrapper requirement
+    useSuspense: false,
   },
 });
 

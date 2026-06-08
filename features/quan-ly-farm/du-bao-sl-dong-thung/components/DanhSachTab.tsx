@@ -17,7 +17,7 @@ import type { FarmDuBaoSlDongThung } from '../core/types';
 import { getPreferredBranchFromUserLastRecords } from '../core/form-mappers';
 import { useDuBaoSlDongThungPermissions } from '../hooks/use-du-bao-sl-dong-thung-permissions';
 import { useAuthStore } from '../../../../store/useStore';
-import ExportDialog from '../../../../components/shared/ExportDialog';
+import ExportDialog from '../../../../components/shared/LazyExportDialog';
 import { useExportData } from '../../../../lib/useExportData';
 import { useDuBaoSlDongThungViewScope } from '../hooks/use-du-bao-sl-dong-thung-view-scope';
 import DuBaoSlDongThungToolbar from './DuBaoSlDongThungToolbar';

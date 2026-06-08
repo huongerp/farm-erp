@@ -3,7 +3,7 @@
  */
 import type { TFunction } from 'i18next';
 import type { PhieuKhoPT, ChiTietPhieuKhoPTFlat } from '../core/types';
-import type { ExportColumn } from '../../../../components/shared/ExportDialog';
+import type { ExportColumn } from '../../../../components/shared/LazyExportDialog';
 
 export const PHIEU_KHO_PT_LIST_EXPORT_KEYS = [
   'id',

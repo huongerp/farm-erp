@@ -9,9 +9,9 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore, useUIStore } from '../../store/useStore';
-import { motion, AnimatePresence, type Transition } from 'framer-motion';
 import Button from '../ui/Button';
 import { cn } from '../../lib/utils';
+import { usePresenceTransition } from '../../lib/usePresenceTransition';
 import Breadcrumbs from '../shared/Breadcrumbs';
 import LiveClock from './LiveClock';
 import MobileBottomNav from './MobileBottomNav';
@@ -70,6 +70,11 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const userMenuRef = useRef<HTMLDivElement>(null);
   const prevPathRef = useRef(location.pathname);
   const isMobile = useIsMobile();
+
+  const { mounted: backdropMounted, visible: backdropVisible } = usePresenceTransition(isMobile && sidebarOpen);
+  const { mounted: userMenuMounted, visible: userMenuVisible } = usePresenceTransition(isUserMenuOpen);
+  const { mounted: changePwMounted, visible: changePwVisible } = usePresenceTransition(showChangePasswordModal);
+  const { mounted: logoutMounted, visible: logoutVisible } = usePresenceTransition(showLogoutDialog);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -156,8 +161,6 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   );
   const navItems = visibleMenu.map(({ path, nameKey, icon }) => ({ name: t(nameKey), icon, path }));
 
-  const sidebarTransition: Transition = { duration: 0.15, ease: 'circOut' };
-
   return (
     <div className="flex h-[100dvh] bg-background font-sans text-foreground selection:bg-primary/20 selection:text-primary overflow-x-hidden min-h-0">
       {/* Skip-to-content link for keyboard navigation */}
@@ -169,28 +172,26 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
       </a>
 
       {/* Mobile Backdrop */}
-      <AnimatePresence>
-        {sidebarOpen && (
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            onClick={toggleSidebar}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSidebar(); } }}
-            role="button"
-            tabIndex={0}
-            aria-label={t('nav.closeOverlay')}
-            className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm md:hidden"
-          />
-        )}
-      </AnimatePresence>
+      {backdropMounted && (
+        <div
+          onClick={toggleSidebar}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSidebar(); } }}
+          role="button"
+          tabIndex={0}
+          aria-label={t('nav.closeOverlay')}
+          className={cn(
+            'fixed inset-0 z-40 bg-black/40 backdrop-blur-sm md:hidden presence-overlay',
+            backdropVisible && 'presence-visible',
+          )}
+        />
+      )}
 
       {/* ===== SIDEBAR ===== */}
-      <motion.aside
-        initial={false}
-        animate={{ width: sidebarOpen ? SIDEBAR_WIDTH_EXPANDED : SIDEBAR_WIDTH_COLLAPSED }}
-        transition={sidebarTransition}
+      <aside
+        style={{ width: sidebarOpen ? SIDEBAR_WIDTH_EXPANDED : SIDEBAR_WIDTH_COLLAPSED }}
         className={cn(
-          "fixed inset-y-0 left-0 z-50 bg-card border-r border-border/40 flex flex-col overflow-hidden md:relative",
-          isMobile && !sidebarOpen ? "-translate-x-full" : "translate-x-0"
+          'sidebar-aside fixed inset-y-0 left-0 z-50 bg-card border-r border-border/40 flex flex-col overflow-hidden md:relative',
+          isMobile && !sidebarOpen ? '-translate-x-full' : 'translate-x-0',
         )}
       >
         {/* Logo + tên app: lấy từ cài đặt module "Thông tin công ty" (companyInfo trong store, đồng bộ bởi useCompanyInfo) */}
@@ -208,14 +209,15 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                 <Sparkles size={16} className="text-white" />
               </div>
             )}
-            <motion.div
-              animate={{ opacity: sidebarOpen ? 1 : 0, x: sidebarOpen ? 0 : -10 }}
-              transition={sidebarTransition}
-              className="min-w-0"
+            <div
+              className={cn(
+                'sidebar-label min-w-0',
+                sidebarOpen ? 'sidebar-label-expanded' : 'sidebar-label-collapsed',
+              )}
             >
               <h2 className="text-xs font-bold text-foreground leading-tight truncate">{companyInfo.appName}</h2>
               <p className="text-xs text-muted-foreground truncate leading-tight">{companyInfo.appDescription || t('nav.defaultAppDescription')}</p>
-            </motion.div>
+            </div>
           </div>
         </div>
 
@@ -251,11 +253,7 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                   {({ isActive }) => (
                     <>
                       {isActive && (
-                        <motion.div
-                          layoutId="navIndicator"
-                          className="absolute left-0 top-2 bottom-2 w-[3px] bg-primary rounded-r-full z-10"
-                          transition={{ type: "spring", bounce: 0.25, duration: 0.5 }}
-                        />
+                        <div className="absolute left-0 top-2 bottom-2 w-[3px] bg-primary rounded-r-full z-10" />
                       )}
 
                       <div className="w-[60px] md:w-[56px] flex justify-center shrink-0">
@@ -269,17 +267,15 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                         </div>
                       </div>
 
-                      <motion.span
-                        animate={{ opacity: sidebarOpen ? 1 : 0, x: sidebarOpen ? 0 : -5 }}
-                        transition={sidebarTransition}
+                      <span
                         className={cn(
-                          "text-sm font-medium transition-colors whitespace-nowrap",
-                          isActive ? "text-primary font-bold" : "text-inherit",
-                          !sidebarOpen && "pointer-events-none"
+                          'sidebar-nav-label text-sm font-medium transition-colors whitespace-nowrap',
+                          sidebarOpen ? 'sidebar-nav-label-expanded' : 'sidebar-nav-label-collapsed',
+                          isActive ? 'text-primary font-bold' : 'text-inherit',
                         )}
                       >
                         {item.name}
-                      </motion.span>
+                      </span>
                     </>
                   )}
                 </NavLink>
@@ -289,7 +285,7 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
           {/* Fade hint when nav is scrollable */}
           <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-card to-transparent pointer-events-none shrink-0" aria-hidden />
         </div>
-      </motion.aside>
+      </aside>
 
       {/* Sidebar collapsed tooltip — rendered via portal to escape overflow-hidden */}
       {sidebarTooltip && !sidebarOpen && createPortal(
@@ -358,43 +354,41 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                 <ChevronDown size={12} className={cn("text-muted-foreground/50 hidden md:block transition-transform", isUserMenuOpen ? "rotate-180" : "")} />
               </button>
 
-              <AnimatePresence>
-                {isUserMenuOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 8, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                    className="absolute right-0 top-full mt-2 w-56 bg-card/95 backdrop-blur-xl rounded-xl shadow-xl border border-border overflow-hidden z-50 p-1.5"
-                  >
-                    <div className="px-3 py-2.5 border-b border-border md:hidden">
-                      <p className="text-xs font-semibold text-foreground">{user?.full_name}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{user?.email}</p>
-                    </div>
-                    <div className="space-y-0.5">
-                      <Link to="/ho-so" onClick={() => setIsUserMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 text-xs font-medium text-muted-foreground hover:bg-primary/5 hover:text-primary rounded-lg transition-all group">
-                        <User size={15} className="text-muted-foreground group-hover:text-primary transition-colors" /> {t('nav.profile')}
-                      </Link>
-                      <Link to="/cai-dat" onClick={() => setIsUserMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 text-xs font-medium text-muted-foreground hover:bg-primary/5 hover:text-primary rounded-lg transition-all group">
-                        <Settings size={15} className="text-muted-foreground group-hover:text-primary transition-colors" /> {t('nav.settings')}
-                      </Link>
-                      <button
-                        type="button"
-                        onClick={() => { setIsUserMenuOpen(false); setShowChangePasswordModal(true); }}
-                        className="w-full flex items-center gap-3 px-3 py-2.5 text-xs font-medium text-muted-foreground hover:bg-primary/5 hover:text-primary rounded-lg transition-all group text-left"
-                      >
-                        <Lock size={15} className="text-muted-foreground group-hover:text-primary transition-colors shrink-0" /> {t('nav.changePassword')}
-                      </button>
-                      <div className="h-px bg-border my-1 mx-2" />
-                      <button
-                        onClick={() => setShowLogoutDialog(true)}
-                        className="w-full flex items-center gap-3 px-3 py-2.5 text-xs font-medium text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition-all group"
-                      >
-                        <LogOut size={15} className="text-rose-300 group-hover:text-rose-500 transition-colors" /> {t('nav.logout')}
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              {userMenuMounted && (
+                <div
+                  className={cn(
+                    'absolute right-0 top-full mt-2 w-56 bg-card/95 backdrop-blur-xl rounded-xl shadow-xl border border-border overflow-hidden z-50 p-1.5 presence-dropdown',
+                    userMenuVisible && 'presence-visible',
+                  )}
+                >
+                  <div className="px-3 py-2.5 border-b border-border md:hidden">
+                    <p className="text-xs font-semibold text-foreground">{user?.full_name}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{user?.email}</p>
+                  </div>
+                  <div className="space-y-0.5">
+                    <Link to="/ho-so" onClick={() => setIsUserMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 text-xs font-medium text-muted-foreground hover:bg-primary/5 hover:text-primary rounded-lg transition-all group">
+                      <User size={15} className="text-muted-foreground group-hover:text-primary transition-colors" /> {t('nav.profile')}
+                    </Link>
+                    <Link to="/cai-dat" onClick={() => setIsUserMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 text-xs font-medium text-muted-foreground hover:bg-primary/5 hover:text-primary rounded-lg transition-all group">
+                      <Settings size={15} className="text-muted-foreground group-hover:text-primary transition-colors" /> {t('nav.settings')}
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => { setIsUserMenuOpen(false); setShowChangePasswordModal(true); }}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 text-xs font-medium text-muted-foreground hover:bg-primary/5 hover:text-primary rounded-lg transition-all group text-left"
+                    >
+                      <Lock size={15} className="text-muted-foreground group-hover:text-primary transition-colors shrink-0" /> {t('nav.changePassword')}
+                    </button>
+                    <div className="h-px bg-border my-1 mx-2" />
+                    <button
+                      onClick={() => setShowLogoutDialog(true)}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 text-xs font-medium text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition-all group"
+                    >
+                      <LogOut size={15} className="text-rose-300 group-hover:text-rose-500 transition-colors" /> {t('nav.logout')}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </header>
@@ -413,120 +407,120 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
       <MobileBottomNav />
 
       {/* Change Password Modal */}
-      <AnimatePresence>
-        {showChangePasswordModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="change-password-title">
-            <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => { setShowChangePasswordModal(false); setChangePasswordNew(''); setChangePasswordConfirm(''); }}
-              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="relative bg-card rounded-xl p-6 max-w-md w-full shadow-2xl border border-border/40"
-            >
-              <div className="flex items-center gap-3 mb-1">
-                <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                  <Lock size={20} />
-                </div>
-                <div>
-                  <h3 id="change-password-title" className="text-lg font-bold text-foreground">{t('nav.changePasswordTitle')}</h3>
-                  <p className="text-sm text-muted-foreground mt-0.5">{t('nav.changePasswordDesc')}</p>
+      {changePwMounted && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="change-password-title">
+          <div
+            onClick={() => { setShowChangePasswordModal(false); setChangePasswordNew(''); setChangePasswordConfirm(''); }}
+            className={cn(
+              'absolute inset-0 bg-black/40 backdrop-blur-sm presence-overlay',
+              changePwVisible && 'presence-visible',
+            )}
+          />
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className={cn(
+              'relative bg-card rounded-xl p-6 max-w-md w-full shadow-2xl border border-border/40 presence-dialog',
+              changePwVisible && 'presence-visible',
+            )}
+          >
+            <div className="flex items-center gap-3 mb-1">
+              <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                <Lock size={20} />
+              </div>
+              <div>
+                <h3 id="change-password-title" className="text-lg font-bold text-foreground">{t('nav.changePasswordTitle')}</h3>
+                <p className="text-sm text-muted-foreground mt-0.5">{t('nav.changePasswordDesc')}</p>
+              </div>
+            </div>
+            <form onSubmit={handleChangePasswordSubmit} className="mt-5 space-y-4">
+              <div>
+                <label className="text-sm font-medium text-foreground block mb-1.5">{t('nav.changePasswordNew')} <span className="text-red-500">*</span></label>
+                <div className="relative">
+                  <input
+                    type={changePasswordShowNew ? 'text' : 'password'}
+                    value={changePasswordNew}
+                    onChange={(e) => setChangePasswordNew(e.target.value)}
+                    placeholder="••••••••"
+                    autoComplete="new-password"
+                    className="w-full h-10 rounded-lg border border-input bg-background pl-3 pr-10 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setChangePasswordShowNew((v) => !v)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded text-muted-foreground hover:text-foreground"
+                    aria-label={changePasswordShowNew ? t('page.login.hidePassword') : t('page.login.showPassword')}
+                  >
+                    {changePasswordShowNew ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
                 </div>
               </div>
-              <form onSubmit={handleChangePasswordSubmit} className="mt-5 space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-foreground block mb-1.5">{t('nav.changePasswordNew')} <span className="text-red-500">*</span></label>
-                  <div className="relative">
-                    <input
-                      type={changePasswordShowNew ? 'text' : 'password'}
-                      value={changePasswordNew}
-                      onChange={(e) => setChangePasswordNew(e.target.value)}
-                      placeholder="••••••••"
-                      autoComplete="new-password"
-                      className="w-full h-10 rounded-lg border border-input bg-background pl-3 pr-10 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setChangePasswordShowNew((v) => !v)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded text-muted-foreground hover:text-foreground"
-                      aria-label={changePasswordShowNew ? t('page.login.hidePassword') : t('page.login.showPassword')}
-                    >
-                      {changePasswordShowNew ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
-                  </div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-foreground block mb-1.5">{t('nav.changePasswordConfirm')} <span className="text-red-500">*</span></label>
-                  <div className="relative">
-                    <input
-                      type={changePasswordShowConfirm ? 'text' : 'password'}
-                      value={changePasswordConfirm}
-                      onChange={(e) => setChangePasswordConfirm(e.target.value)}
-                      placeholder="••••••••"
-                      autoComplete="new-password"
-                      className="w-full h-10 rounded-lg border border-input bg-background pl-3 pr-10 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setChangePasswordShowConfirm((v) => !v)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded text-muted-foreground hover:text-foreground"
-                      aria-label={changePasswordShowConfirm ? t('page.login.hidePassword') : t('page.login.showPassword')}
-                    >
-                      {changePasswordShowConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
-                  </div>
-                </div>
-                <div className="flex gap-2 pt-1">
-                  <Button
+              <div>
+                <label className="text-sm font-medium text-foreground block mb-1.5">{t('nav.changePasswordConfirm')} <span className="text-red-500">*</span></label>
+                <div className="relative">
+                  <input
+                    type={changePasswordShowConfirm ? 'text' : 'password'}
+                    value={changePasswordConfirm}
+                    onChange={(e) => setChangePasswordConfirm(e.target.value)}
+                    placeholder="••••••••"
+                    autoComplete="new-password"
+                    className="w-full h-10 rounded-lg border border-input bg-background pl-3 pr-10 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                  />
+                  <button
                     type="button"
-                    variant="outline"
-                    className="flex-1 rounded-lg h-10 text-sm font-medium"
-                    onClick={() => { setShowChangePasswordModal(false); setChangePasswordNew(''); setChangePasswordConfirm(''); }}
+                    onClick={() => setChangePasswordShowConfirm((v) => !v)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded text-muted-foreground hover:text-foreground"
+                    aria-label={changePasswordShowConfirm ? t('page.login.hidePassword') : t('page.login.showPassword')}
                   >
-                    {t('common.cancel')}
-                  </Button>
-                  <Button type="submit" className="flex-1 rounded-lg h-10 text-sm font-medium" isLoading={changePasswordLoading}>
-                    {t('nav.changePasswordSubmit')}
-                  </Button>
+                    {changePasswordShowConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
                 </div>
-              </form>
-            </motion.div>
+              </div>
+              <div className="flex gap-2 pt-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1 rounded-lg h-10 text-sm font-medium"
+                  onClick={() => { setShowChangePasswordModal(false); setChangePasswordNew(''); setChangePasswordConfirm(''); }}
+                >
+                  {t('common.cancel')}
+                </Button>
+                <Button type="submit" className="flex-1 rounded-lg h-10 text-sm font-medium" isLoading={changePasswordLoading}>
+                  {t('nav.changePasswordSubmit')}
+                </Button>
+              </div>
+            </form>
           </div>
-        )}
-      </AnimatePresence>
+        </div>
+      )}
 
       {/* Logout Confirmation Dialog */}
-      <AnimatePresence>
-        {showLogoutDialog && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => setShowLogoutDialog(false)}
-              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="relative bg-card rounded-xl p-6 max-w-sm w-full shadow-2xl border border-border/40 text-center"
-            >
-              <div className="h-12 w-12 bg-rose-50 dark:bg-rose-950/50 text-rose-500 dark:text-rose-400 rounded-xl flex items-center justify-center mx-auto mb-4">
-                <LogOut size={24} />
-              </div>
-              <h3 className="text-lg font-bold text-foreground mb-1">{t('nav.logoutConfirmTitle')}</h3>
-              <p className="text-sm text-muted-foreground mb-6 leading-relaxed">{t('nav.logoutConfirmMessage')}</p>
-              <div className="flex gap-2">
-                <Button variant="outline" className="flex-1 rounded-lg h-9 text-sm font-medium" onClick={() => setShowLogoutDialog(false)}>{t('nav.logoutCancel')}</Button>
-                <Button className="flex-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg h-9 text-sm font-medium shadow-sm" onClick={handleLogout}>{t('nav.logout')}</Button>
-              </div>
-            </motion.div>
+      {logoutMounted && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div
+            onClick={() => setShowLogoutDialog(false)}
+            className={cn(
+              'absolute inset-0 bg-black/40 backdrop-blur-sm presence-overlay',
+              logoutVisible && 'presence-visible',
+            )}
+          />
+          <div
+            className={cn(
+              'relative bg-card rounded-xl p-6 max-w-sm w-full shadow-2xl border border-border/40 text-center presence-dialog',
+              logoutVisible && 'presence-visible',
+            )}
+          >
+            <div className="h-12 w-12 bg-rose-50 dark:bg-rose-950/50 text-rose-500 dark:text-rose-400 rounded-xl flex items-center justify-center mx-auto mb-4">
+              <LogOut size={24} />
+            </div>
+            <h3 className="text-lg font-bold text-foreground mb-1">{t('nav.logoutConfirmTitle')}</h3>
+            <p className="text-sm text-muted-foreground mb-6 leading-relaxed">{t('nav.logoutConfirmMessage')}</p>
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1 rounded-lg h-9 text-sm font-medium" onClick={() => setShowLogoutDialog(false)}>{t('nav.logoutCancel')}</Button>
+              <Button className="flex-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg h-9 text-sm font-medium shadow-sm" onClick={handleLogout}>{t('nav.logout')}</Button>
+            </div>
           </div>
-        )}
-      </AnimatePresence>
+        </div>
+      )}
     </div>
   );
 };
