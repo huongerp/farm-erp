@@ -1,11 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useUIStore } from '../store/useStore';
 import { PRIMARY_COLOR_MAP } from './theme-utils';
-import { ensureLocaleForLanguage } from './i18n-feature-locales';
 import i18n from './i18n';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
-import 'dayjs/locale/en';
 
 const FONT_URL_MAP: Record<string, string> = {
   Inter: '',
@@ -105,14 +103,11 @@ export const MetadataSynchronizer: React.FC = () => {
 };
 
 export const LanguageSynchronizer: React.FC = () => {
-  const language = useUIStore((s) => s.language);
   useEffect(() => {
-    void ensureLocaleForLanguage(language).then(() => {
-      i18n.changeLanguage(language);
-    });
-    dayjs.locale(language === 'vi' ? 'vi' : 'en');
-    document.documentElement.lang = language === 'vi' ? 'vi' : 'en';
-  }, [language]);
+    void i18n.changeLanguage('vi');
+    dayjs.locale('vi');
+    document.documentElement.lang = 'vi';
+  }, []);
   return null;
 };
 

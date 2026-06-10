@@ -22,22 +22,14 @@ export function getTimezone(): string {
   }
 }
 
-/** Lấy locale hiện tại từ store (fallback: 'vi') - dùng cho Intl, localeCompare, toLocaleDateString */
+/** Lấy locale hiện tại (app thuần tiếng Việt) */
 export function getLocale(): string {
-  try {
-    return useUIStore.getState().language === 'en' ? 'en-US' : 'vi-VN'
-  } catch {
-    return 'vi-VN'
-  }
+  return 'vi-VN'
 }
 
-/** Lấy language code ngắn ('vi' | 'en') từ store */
+/** Lấy language code ngắn */
 export function getLanguage(): string {
-  try {
-    return useUIStore.getState().language || 'vi'
-  } catch {
-    return 'vi'
-  }
+  return 'vi'
 }
 
 /** Tạo dayjs instance đã áp timezone từ cài đặt */
@@ -50,24 +42,24 @@ export function nowTz(): dayjs.Dayjs {
   return dayjs().tz(getTimezone())
 }
 
-/** vi: dd/mm/yyyy, en: mm/dd/yyyy – chuỗi format dayjs theo ngôn ngữ hiện tại */
+/** Định dạng ngày hiển thị (DD/MM/YYYY) */
 function getDisplayDateFormat(): string {
-  return i18n.language?.startsWith('en') ? 'MM/DD/YYYY' : 'DD/MM/YYYY'
+  return 'DD/MM/YYYY'
 }
 function getDisplayDateTimeFormat(): string {
-  return i18n.language?.startsWith('en') ? 'MM/DD/YYYY HH:mm' : 'DD/MM/YYYY HH:mm'
+  return 'DD/MM/YYYY HH:mm'
 }
 function getDisplayDateTimeFormatShort(): string {
-  return i18n.language?.startsWith('en') ? 'HH:mm - MM/DD/YYYY' : 'HH:mm - DD/MM/YYYY'
+  return 'HH:mm - DD/MM/YYYY'
 }
 function getDisplayDateFormatShort(): string {
-  return i18n.language?.startsWith('en') ? 'MM/DD' : 'DD/MM'
+  return 'DD/MM'
 }
 function getDisplayTimeDateShortFormat(): string {
-  return i18n.language?.startsWith('en') ? 'HH:mm MM/DD' : 'HH:mm DD/MM'
+  return 'HH:mm DD/MM'
 }
 function getDisplayDateShortTimeFormat(): string {
-  return i18n.language?.startsWith('en') ? 'MM/DD HH:mm' : 'DD/MM HH:mm'
+  return 'DD/MM HH:mm'
 }
 
 /** Định dạng ngày hiển thị (vi: DD/MM/YYYY, en: MM/DD/YYYY) – fallback cho code cũ */

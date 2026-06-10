@@ -1,7 +1,8 @@
 /**
- * Locale vi cốt lõi — common, pages, he-thong (không gồm feature locales lazy).
+ * Locale vi — core + feature (gộp static lúc startup).
  */
 import common from './common.json';
+import featureLocales from './feature-locales';
 import pages from './pages.json';
 import employee from './employee.json';
 import department from './department.json';
@@ -37,6 +38,7 @@ const viCore = {
   ...(congViec as Record<string, string>),
   ...(guide as Record<string, string>),
   ...(kho as Record<string, string>),
+  ...featureLocales,
 };
 
 export default viCore;

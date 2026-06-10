@@ -1,8 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { AuthState, User } from '../types';
-import i18n from '../lib/i18n';
-import { ensureLocaleForLanguage } from '../lib/i18n-feature-locales';
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -71,7 +69,6 @@ interface ThemeState {
   fontSize: 'small' | 'medium' | 'large';
   colorScheme: 'light' | 'dark' | 'system';
   timezone: string;
-  language: 'vi' | 'en';
   setTheme: (settings: Partial<Omit<ThemeState, 'setTheme'>>) => void;
 }
 
@@ -103,13 +100,7 @@ export const useUIStore = create<UIState>()(
       fontSize: 'medium',
       colorScheme: 'light',
       timezone: 'Asia/Ho_Chi_Minh',
-      language: 'vi',
       setTheme: (settings) => {
-        if (settings.language != null) {
-          void ensureLocaleForLanguage(settings.language).then(() => {
-            i18n.changeLanguage(settings.language!).catch(() => {});
-          });
-        }
         set((state) => ({ ...state, ...settings }));
       },
 
@@ -135,7 +126,7 @@ export const useUIStore = create<UIState>()(
     }),
     {
       name: 'ui-storage', // Persist UI settings including branding
-      version: 2, // bump when schema changes
+      version: 3, // v3: bỏ language (app thuần tiếng Việt)
       migrate: (persisted: any, version: number) => {
         // v0 → v1: fonts list reduced from 11 → 6, reset invalid fontFamily
         if (version === 0 && persisted && typeof persisted === 'object') {
@@ -161,6 +152,10 @@ export const useUIStore = create<UIState>()(
               website: 'https://forpeasantz.com',
             };
           }
+        }
+        // v2 → v3: app thuần tiếng Việt — bỏ language khỏi persisted state
+        if (version < 3 && persisted && typeof persisted === 'object') {
+          delete (persisted as Record<string, unknown>).language;
         }
         // Thay logo Facebook CDN (403 hotlink) bằng fallback
         if (persisted && typeof persisted === 'object') {

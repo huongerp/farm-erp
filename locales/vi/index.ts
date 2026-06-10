@@ -1,4 +1,4 @@
 /**
- * Locale vi — re-export core (feature locales lazy qua lib/i18n-feature-locales).
+ * Locale vi — re-export core (gồm feature locales).
  */
 export { default } from './core';

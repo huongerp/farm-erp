@@ -28,11 +28,6 @@ const FONT_SIZE_CLASS = {
   large: 'text-base',
 } as const;
 
-const LANGUAGES = [
-  { value: 'vi', label: 'Tiếng Việt (Việt Nam)' },
-  { value: 'en', label: 'English (US)' },
-];
-
 const TIMEZONES = [
   { value: 'Asia/Ho_Chi_Minh', label: '(GMT+07:00) Hà Nội, TP.HCM, Bangkok' },
   { value: 'Asia/Tokyo', label: '(GMT+09:00) Tokyo, Seoul' },
@@ -51,12 +46,11 @@ const TIMEZONES = [
 
 const Settings: React.FC = () => {
   const { t } = useTranslation();
-  const { primaryColor, fontFamily, fontSize, colorScheme, timezone, language, setTheme } = useUIStore();
+  const { primaryColor, fontFamily, fontSize, colorScheme, timezone, setTheme } = useUIStore();
 
   // Unique IDs for label → control association (C3, D2)
   const fontFamilyId = useId();
   const fontSizeId = useId();
-  const languageId = useId();
   const timezoneId = useId();
 
   const THEME_COLORS = useMemo((): { name: PrimaryColor; label: string; color: string }[] => [
@@ -85,7 +79,6 @@ const Settings: React.FC = () => {
     { value: 'large', label: t('settings.fontLarge'), desc: t('settings.fontLargeDesc') },
   ], [t]);
 
-  // A3: Reset all settings including timezone + language
   const handleReset = () => {
     setTheme({
       primaryColor: 'blue',
@@ -93,7 +86,6 @@ const Settings: React.FC = () => {
       fontSize: 'medium',
       colorScheme: 'light',
       timezone: 'Asia/Ho_Chi_Minh',
-      language: 'vi',
     });
     toast.info(t('settings.restored'));
   };
@@ -360,21 +352,6 @@ const Settings: React.FC = () => {
               {t('settings.region')}
             </h3>
             <div className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor={languageId} className="text-sm font-medium text-foreground flex items-center gap-2">
-                  <Globe size={14} className="text-muted-foreground" />
-                  {t('settings.language')}
-                </label>
-                <Combobox
-                  label=""
-                  options={LANGUAGES.map((l) => ({ label: l.label, value: l.value }))}
-                  value={language}
-                  onChange={(v) => setTheme({ language: String(v) as 'vi' | 'en' })}
-                  placeholder={t('settings.selectLanguage')}
-                  searchable={false}
-                  triggerClassName="h-11 rounded-xl"
-                />
-              </div>
               <div className="space-y-2">
                 <label htmlFor={timezoneId} className="text-sm font-medium text-foreground flex items-center gap-2">
                   <Clock size={14} className="text-muted-foreground" />

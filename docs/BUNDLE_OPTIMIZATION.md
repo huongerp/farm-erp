@@ -34,7 +34,7 @@ Main chunk giữ nguyên kích thước; lợi ích Phase 3 là **framer-motion 
 
 1. **Tách export libs** — `vendor-xlsx`, `vendor-jspdf`, `vendor-html2canvas` (chỉ tải format user chọn).
 2. **Lazy ExportDialog / ImportDialog** — `LazyExportDialog`, `LazyImportDialog` (chỉ load khi `open={true}`).
-3. **i18n lazy** — Core vi lúc startup; en core + feature locales khi cần (`lib/i18n-feature-locales.ts`).
+3. **i18n** — Core vi (gồm feature locales) load lúc startup qua `locales/vi/core.ts` + `locales/vi/feature-locales.ts`. Chỉ dùng tiếng Việt.
 4. **Gỡ @tiptap** — không dùng trong codebase.
 5. **Recharts** — tab Thống kê đã `React.lazy` StatsCharts; recharts chunk load khi mở tab stats.
 
@@ -61,7 +61,7 @@ Kiểm tra framer-motion không load lúc startup: DevTools → Network → relo
 ## Quy ước khi thêm dependency
 
 - Thư viện >50KB gzip: **dynamic import** hoặc lazy component.
-- Locale module mới: thêm loader vào `FEATURE_LOCALE_LOADERS` trong `lib/i18n-feature-locales.ts`.
+- Locale module mới: thêm `features/xxx/locales/vi.json` (chỉ vi) + import/spread trong `locales/vi/feature-locales.ts`.
 - Export/import: dùng `LazyExportDialog` / `LazyImportDialog`, không import trực tiếp.
 - Dialog/drawer trên shell global (`App`, `Layout`): dùng CSS + `usePresenceTransition`, **không** import `framer-motion`.
 
