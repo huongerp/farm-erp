@@ -25,6 +25,7 @@ import {
   subAlignedRowCount,
   subByLoaiForCtDisplay,
   sumDisplayLoaiTotalsOnRows,
+  sumTongGioQuyDoiRowIVFromRows,
   tongGioCongNgayVaNua,
 } from '../core/ct-sub';
 import { formatDateShort, formatDateTime, formatNumberVN, getTodayISODate } from '../../../../lib/utils';
@@ -154,7 +155,7 @@ function buildChuyenTableHTML(data: FarmBaoCaoNhanCong): string {
   const ivCnNgay = sumDisplayLoaiTotalsOnRows(production, 'CN_NGAY');
   const ivCnNua = sumDisplayLoaiTotalsOnRows(production, 'CN_NUA');
   const ivTangCa = sumDisplayLoaiTotalsOnRows(production, 'TANG_CA');
-  const ivTongGioNgayNua = tongGioCongNgayVaNua(ivCnNgay, ivCnNua);
+  const ivTongGioNgayNua = sumTongGioQuyDoiRowIVFromRows(production);
   const ivTongGioTc = sumTongGioTangCaTichTuChiTiet(production);
   const tongCnNgay = sumDisplayLoaiTotalsOnRows(data.chi_tiet ?? [], 'CN_NGAY');
   const tongCnNua = sumDisplayLoaiTotalsOnRows(data.chi_tiet ?? [], 'CN_NUA');
@@ -457,7 +458,7 @@ export async function exportBaoCaoNhanCongToXLSX(data: FarmBaoCaoNhanCong): Prom
     ivCnNua.nhanSu,
     formatGioTbVN(ivCnNua.nhanSu, ivCnNua.tongGio),
     sumTongCongQuyDoiTuChiTiet(production),
-    tongGioCongNgayVaNua(ivCnNgay, ivCnNua),
+    sumTongGioQuyDoiRowIVFromRows(production),
     ivTangCa.nhanSu,
     formatGioTbVN(ivTangCa.nhanSu, ivTangCa.tongGio),
     sumTongGioTangCaTichTuChiTiet(production),

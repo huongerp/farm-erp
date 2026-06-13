@@ -24,6 +24,7 @@ import { getSessionBootstrap, employeeToUser } from './lib/auth';
 import { supabase } from './lib/supabase';
 import { toast } from 'sonner';
 import i18n from './lib/i18n';
+import { lazyWithFeatureI18n } from './lib/lazy-with-feature-i18n';
 
 const Home = lazy(() => import('./pages/Home'));
 const LicenseInfo = lazy(() => import('./pages/LicenseInfo'));
@@ -40,23 +41,56 @@ const JobLevelPage = lazy(() => import('./features/he-thong/cap-bac/index'));
 
 const PayslipPreviewPage = lazy(() => import('./features/hanh-chinh/bang-luong/PayslipPreviewPage'));
 const EmployeeProfilePreviewPage = lazy(() => import('./features/he-thong/nhan-vien/EmployeeProfilePreviewPage'));
-const HoSoTaiSanPreviewPage = lazy(() => import('./features/hanh-chinh/danh-muc-tai-san/HoSoTaiSanPreviewPage'));
-const PhieuCPTHPreviewPage = lazy(() => import('./features/hanh-chinh/cap-phat-thu-hoi/PhieuCPTHPreviewPage'));
-const PhieuKiemKePreviewPage = lazy(() => import('./features/hanh-chinh/kiem-ke-tai-san/PhieuKiemKePreviewPage'));
-const PhieuKiemKeKhoPreviewPage = lazy(() => import('./features/kho-van/kiem-ke-kho/PhieuKiemKeKhoPreviewPage'));
-const PhieuKhoPreviewPage = lazy(() => import('./features/kho-van/phieu-kho/PhieuKhoPreviewPage'));
-const PhieuKhoPTPreviewPage = lazy(() => import('./features/quan-ly-farm/phieu-kho-phan-thuoc/PhieuKhoPTPreviewPage'));
-const PhieuDeXuatVatTuPreviewPage = lazy(() => import('./features/kho-van/phieu-de-xuat-vat-tu/PhieuDeXuatVatTuPreviewPage'));
-const DonDatHangPreviewPage = lazy(() => import('./features/mua-hang/don-dat-hang/DonDatHangPreviewPage'));
-const ThanhToanDoiTacPreviewPage = lazy(() => import('./features/mua-hang/thanh-toan-doi-tac/ThanhToanDoiTacPreviewPage'));
-const BaoCaoKhauHaoPreviewPage = lazy(() => import('./features/hanh-chinh/khau-hao-tai-san/BaoCaoKhauHaoPreviewPage'));
-const BaoCaoNhanCongPreviewPage = lazy(
+const HoSoTaiSanPreviewPage = lazyWithFeatureI18n(
+  'danh-muc-tai-san',
+  () => import('./features/hanh-chinh/danh-muc-tai-san/HoSoTaiSanPreviewPage')
+);
+const PhieuCPTHPreviewPage = lazyWithFeatureI18n(
+  'cap-phat-thu-hoi',
+  () => import('./features/hanh-chinh/cap-phat-thu-hoi/PhieuCPTHPreviewPage')
+);
+const PhieuKiemKePreviewPage = lazyWithFeatureI18n(
+  'kiem-ke-tai-san',
+  () => import('./features/hanh-chinh/kiem-ke-tai-san/PhieuKiemKePreviewPage')
+);
+const PhieuKiemKeKhoPreviewPage = lazyWithFeatureI18n(
+  'kiem-ke-kho',
+  () => import('./features/kho-van/kiem-ke-kho/PhieuKiemKeKhoPreviewPage')
+);
+const PhieuKhoPreviewPage = lazyWithFeatureI18n(
+  'phieu-kho',
+  () => import('./features/kho-van/phieu-kho/PhieuKhoPreviewPage')
+);
+const PhieuKhoPTPreviewPage = lazyWithFeatureI18n(
+  'phieu-kho-phan-thuoc',
+  () => import('./features/quan-ly-farm/phieu-kho-phan-thuoc/PhieuKhoPTPreviewPage')
+);
+const PhieuDeXuatVatTuPreviewPage = lazyWithFeatureI18n(
+  'phieu-de-xuat-vat-tu',
+  () => import('./features/kho-van/phieu-de-xuat-vat-tu/PhieuDeXuatVatTuPreviewPage')
+);
+const DonDatHangPreviewPage = lazyWithFeatureI18n(
+  'don-dat-hang',
+  () => import('./features/mua-hang/don-dat-hang/DonDatHangPreviewPage')
+);
+const ThanhToanDoiTacPreviewPage = lazyWithFeatureI18n(
+  'thanh-toan-doi-tac',
+  () => import('./features/mua-hang/thanh-toan-doi-tac/ThanhToanDoiTacPreviewPage')
+);
+const BaoCaoKhauHaoPreviewPage = lazyWithFeatureI18n(
+  'khau-hao-tai-san',
+  () => import('./features/hanh-chinh/khau-hao-tai-san/BaoCaoKhauHaoPreviewPage')
+);
+const BaoCaoNhanCongPreviewPage = lazyWithFeatureI18n(
+  'bao-cao-nhan-cong',
   () => import('./features/quan-ly-farm/bao-cao-nhan-cong/BaoCaoNhanCongPreviewPage')
 );
-const BaoCaoSoChePreviewPage = lazy(
+const BaoCaoSoChePreviewPage = lazyWithFeatureI18n(
+  'bao-cao-so-che',
   () => import('./features/quan-ly-farm/bao-cao-so-che/BaoCaoSoChePreviewPage')
 );
-const DuBaoSlDongThungPreviewPage = lazy(
+const DuBaoSlDongThungPreviewPage = lazyWithFeatureI18n(
+  'du-bao-sl-dong-thung',
   () => import('./features/quan-ly-farm/du-bao-sl-dong-thung/DuBaoSlDongThungPreviewPage')
 );
 

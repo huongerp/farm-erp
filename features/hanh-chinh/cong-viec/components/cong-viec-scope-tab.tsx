@@ -11,7 +11,7 @@ import CongViecKanban from './cong-viec-kanban';
 import CongViecGantt from './cong-viec-gantt';
 import CongViecForm from './cong-viec-form';
 import CongViecDetail from './cong-viec-detail';
-import ImportDialog from '../../../../components/shared/ImportDialog';
+import ImportDialog from '../../../../components/shared/LazyImportDialog';
 import EmptyState from '../../../../components/shared/EmptyState';
 import Button from '../../../../components/ui/Button';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';

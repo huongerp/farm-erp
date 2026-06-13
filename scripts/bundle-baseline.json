@@ -1,0 +1,35 @@
+{
+  "updatedAt": "2026-06-13",
+  "note": "Raw KB from dist/assets after vite build. Regenerate: npm run build && node scripts/update-bundle-baseline.mjs",
+  "chunks": {
+    "main": {
+      "rawKb": 503,
+      "warnKb": 900,
+      "maxIncreasePct": 5
+    },
+    "vendorXlsx": {
+      "rawKb": 419,
+      "warnKb": 400
+    },
+    "vendorJspdf": {
+      "rawKb": 408,
+      "warnKb": 400
+    },
+    "vendorHtml2canvas": {
+      "rawKb": 196,
+      "warnKb": 300
+    },
+    "recharts": {
+      "rawKb": 376,
+      "warnKb": 450
+    },
+    "framerMotion": {
+      "rawKb": 116,
+      "warnKb": 150
+    },
+    "sentry": {
+      "rawKb": 407,
+      "warnKb": 50
+    }
+  }
+}

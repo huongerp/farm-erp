@@ -7,16 +7,9 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import ErrorBoundary from './components/shared/ErrorBoundary';
 import { queryClient } from './lib/query-client';
 
-const sentryDsn = import.meta.env.VITE_SENTRY_DSN;
-if (sentryDsn && typeof sentryDsn === 'string' && sentryDsn.trim() !== '') {
-  void import('@sentry/react').then((Sentry) => {
-    Sentry.init({
-      dsn: sentryDsn,
-      environment: import.meta.env.MODE || 'production',
-      enabled: true,
-    });
-  });
-}
+import { ensureSentryInitialized } from './lib/sentry-client';
+
+void ensureSentryInitialized();
 
 // PWA: đăng ký SW + toast cập nhật/offline trong App (PwaRegister)
 

@@ -1,7 +1,10 @@
 import React, { lazy, Suspense } from 'react';
+import {
+  loadFeatureI18nForSubmenuSlug,
+  wrapModuleImportWithFeatureI18n,
+} from '../lib/feature-i18n';
 
-/** Hàm import thuần — dùng cho prefetch (hover) trước khi React.lazy chạy. */
-export const SUBMENU_MODULE_IMPORTS = {
+const RAW_SUBMENU_MODULE_IMPORTS = {
   'thiet-lap-cong-luong': () => import('../features/hanh-chinh/thiet-lap-cong-luong'),
   'phieu-hanh-chinh': () => import('../features/hanh-chinh/phieu-hanh-chinh'),
   'diem-cong-tru': () => import('../features/hanh-chinh/diem-cong-tru'),
@@ -38,12 +41,23 @@ export const SUBMENU_MODULE_IMPORTS = {
   'ton-kho-phan-thuoc': () => import('../features/quan-ly-farm/ton-kho-phan-thuoc'),
 } as const;
 
+/** Hàm import thuần — dùng cho prefetch (hover) trước khi React.lazy chạy. */
+export const SUBMENU_MODULE_IMPORTS = Object.fromEntries(
+  Object.entries(RAW_SUBMENU_MODULE_IMPORTS).map(([slug, loader]) => [
+    slug,
+    wrapModuleImportWithFeatureI18n(slug, loader),
+  ])
+) as {
+  [K in keyof typeof RAW_SUBMENU_MODULE_IMPORTS]: (typeof RAW_SUBMENU_MODULE_IMPORTS)[K];
+};
+
 export type SubmenuLazySlug = keyof typeof SUBMENU_MODULE_IMPORTS;
 
-/** Prefetch chunk JS của một module (gọi khi hover / focus vào thẻ). */
+/** Prefetch chunk JS + locale feature của một module (gọi khi hover / focus vào thẻ). */
 export function prefetchSubmenuModuleSlug(slug: string): void {
   const fn = SUBMENU_MODULE_IMPORTS[slug as SubmenuLazySlug];
   if (fn) void fn();
+  void loadFeatureI18nForSubmenuSlug(slug);
 }
 
 const DASHBOARD_IMPORTS = {

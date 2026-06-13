@@ -1,70 +1,73 @@
 # Tối ưu bundle — farm-erp
 
-## Baseline (trước tối ưu)
+## Baseline hiện tại (Phase 4 — 2026-06-13)
 
-| Chunk | Raw (~KB) | Gzip (~KB) |
-|-------|-----------|------------|
-| `index-*.js` (main) | ~1094 | ~249 |
-| `export-libs-*.js` (monolith) | ~1052 | ~327 |
-| `recharts-*.js` | ~385 | ~113 |
+Sau lazy i18n feature + Sentry/ImportDialog lazy. Cập nhật số liệu:
 
-## Sau Phase 1–2 (tham khảo)
-
-| Chunk | Raw (~KB) | Gzip (~KB) |
-|-------|-----------|------------|
-| `index-*.js` (main) | ~519 | ~141 |
-| `core-*.js` (i18n vi core) | ~160 | ~38 |
-| `vendor-xlsx-*.js` | ~429 | ~143 |
-| `vendor-jspdf-*.js` | ~418 | ~136 |
-| `vendor-html2canvas-*.js` | ~201 | ~47 |
-| `recharts-*.js` | ~385 | ~113 |
-
-## Sau Phase 3 (tham khảo)
+```bash
+npm run build && npm run update:bundle-baseline
+npm run check:bundle
+```
 
 | Chunk | Raw (~KB) | Gzip (~KB) | Ghi chú |
 |-------|-----------|------------|---------|
-| `index-*.js` (main) | ~519 | ~141 | Không import trực tiếp `framer-motion` |
-| `framer-motion-*.js` | ~119 | ~39 | Chỉ load khi mở module có animation (lazy chunks) |
+| `index-*.js` (main) | **503** | **~140** | Shell + core i18n (không còn ~30 feature JSON) |
+| `vendor-xlsx-*.js` | ~419 | ~143 | Chỉ khi export Excel |
+| `vendor-jspdf-*.js` | ~408 | ~136 | Chỉ khi in/PDF |
+| `vendor-html2canvas-*.js` | ~196 | ~47 | PDF từ HTML |
+| `recharts-*.js` | ~376 | ~113 | Tab thống kê / chart |
+| `framer-motion-*.js` | ~119 | ~39 | Module có animation |
+| `sentry-*.js` | ~11 | ~3 | Chỉ init khi có DSN (dynamic) |
 
-Main chunk giữ nguyên kích thước; lợi ích Phase 3 là **framer-motion không còn trên critical path** (`App` → `Layout`, `ConfirmDialog`, `Login`).
+Ngưỡng CI: `npm run check:bundle` — main fail nếu vượt baseline +5% (xem `scripts/bundle-baseline.json`).
+
+## Lịch sử (tham khảo)
+
+| Giai đoạn | Main raw (~KB) | Ghi chú |
+|-----------|----------------|---------|
+| Trước tối ưu | ~1094 | Monolith export-libs |
+| Phase 1–2 | ~519 | Tách vendor, lazy export |
+| Phase 3 | ~519 | framer-motion off critical shell |
+| Pre–Phase 4 | ~716 | Feature locales gom startup |
+| Phase 4 | **503** | Lazy i18n feature + Sentry/ImportDialog cleanup (−213 KB main) |
 
 ## Thay đổi đã áp dụng
 
 ### Phase 1–2
 
-1. **Tách export libs** — `vendor-xlsx`, `vendor-jspdf`, `vendor-html2canvas` (chỉ tải format user chọn).
-2. **Lazy ExportDialog / ImportDialog** — `LazyExportDialog`, `LazyImportDialog` (chỉ load khi `open={true}`).
-3. **i18n** — Core vi (gồm feature locales) load lúc startup qua `locales/vi/core.ts` + `locales/vi/feature-locales.ts`. Chỉ dùng tiếng Việt.
-4. **Gỡ @tiptap** — không dùng trong codebase.
-5. **Recharts** — tab Thống kê đã `React.lazy` StatsCharts; recharts chunk load khi mở tab stats.
+1. **Tách export libs** — `vendor-xlsx`, `vendor-jspdf`, `vendor-html2canvas`.
+2. **Lazy ExportDialog / ImportDialog** — `LazyExportDialog`, `LazyImportDialog`.
+3. **Recharts** — tab Thống kê `React.lazy` StatsCharts.
 
 ### Phase 3
 
-1. **Gỡ framer-motion khỏi critical path** — `Layout`, `ConfirmDialog`, `Login` dùng CSS transitions + `lib/usePresenceTransition.ts`; `GenericDrawer`, `ExportDialog`, `ImportDialog` cũng chuyển sang CSS.
-2. **CSS presence utilities** — class `.presence-overlay`, `.presence-dialog`, `.presence-drawer`, … trong `index.css` (hỗ trợ `prefers-reduced-motion`).
-3. **Audit PDF export** — tất cả `export-*.ts` / `print-*.ts` dùng `await import('jspdf')` / `import('html2canvas')` trong handler; không có static import runtime. PreviewPage giữ static import utils (chỉ load HTML builder, không kéo vendor-jspdf).
-4. **lucide-react** — không thay đổi (named import, tree-shake OK).
+1. **Shell CSS** — Layout, ConfirmDialog, Login dùng CSS + `usePresenceTransition`.
+2. **Dynamic PDF/Excel** — `await import('jspdf')` / `import('xlsx')` trong handler.
+
+### Phase 4 (mới)
+
+1. **Lazy feature i18n** — [lib/feature-i18n.ts](../lib/feature-i18n.ts): locale `features/*/locales/vi.json` load khi mở submenu/preview (`wrapModuleImportWithFeatureI18n`, `lazyWithFeatureI18n`). Core vi ([locales/vi/core.ts](../locales/vi/core.ts)) giữ shell keys.
+2. **Sentry dynamic** — [lib/sentry-client.ts](../lib/sentry-client.ts); ErrorBoundary không static import `@sentry/react`.
+3. **LazyImportDialog thống nhất** — mọi entry import dùng `LazyImportDialog`.
+4. **Bundle baseline** — [scripts/bundle-baseline.json](../scripts/bundle-baseline.json) + `check:bundle` so sánh +5% main.
 
 ## Đo lường
 
 ```bash
-# Build + báo cáo visual (stats.html không precache PWA)
-npm run build:analyze
-# Mở dist/stats.html trong trình duyệt
-
-# Kiểm tra ngưỡng chunk
-npm run build && node scripts/check-bundle-size.mjs
+npm run build:analyze          # dist/stats.html
+npm run build && npm run check:bundle
+npm run update:bundle-baseline # sau khi chấp nhận kích thước mới
 ```
 
-Kiểm tra framer-motion không load lúc startup: DevTools → Network → reload `/` hoặc `/dang-nhap` → không thấy `framer-motion-*.js` cho đến khi vào module có animation.
+Critical path: reload `/dang-nhap` → không thấy `vendor-xlsx`, `vendor-jspdf`, `recharts`, feature locale chunks.
 
-## Quy ước khi thêm dependency
+## Quy ước khi thêm module
 
-- Thư viện >50KB gzip: **dynamic import** hoặc lazy component.
-- Locale module mới: thêm `features/xxx/locales/vi.json` (chỉ vi) + import/spread trong `locales/vi/feature-locales.ts`.
-- Export/import: dùng `LazyExportDialog` / `LazyImportDialog`, không import trực tiếp.
-- Dialog/drawer trên shell global (`App`, `Layout`): dùng CSS + `usePresenceTransition`, **không** import `framer-motion`.
+- Locale feature: thêm loader trong [lib/feature-i18n.ts](../lib/feature-i18n.ts) (không spread vào `core.ts`).
+- Export/import: `LazyExportDialog` / `LazyImportDialog`.
+- Thư viện >50KB gzip: dynamic import hoặc lazy component.
+- Shell global: CSS + `usePresenceTransition`, tránh `framer-motion`.
 
 ## PWA
 
-Precache chỉ HTML/shell/fonts — không precache toàn bộ JS chunks (xem `vite.config.ts` workbox `globPatterns`). `stats.html` (bundle analyzer) bị loại khỏi precache qua `globIgnores`.
+Precache chỉ HTML/shell/fonts — xem `vite.config.ts` workbox `globPatterns`.

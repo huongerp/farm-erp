@@ -256,6 +256,22 @@ export function sumDisplayLoaiTotalsOnRows(
   );
 }
 
+/** Tổng giờ QĐ dòng IV (5 chuyền SX): Σ(sl×giờ) CN ngày + CN nửa — khớp cột "Tổng giờ" BCNC. */
+export function sumTongGioQuyDoiRowIVFromRows(rows: CtRowForDisplayLoai[]): number {
+  const cnNgay = sumDisplayLoaiTotalsOnRows(rows, 'CN_NGAY');
+  const cnNua = sumDisplayLoaiTotalsOnRows(rows, 'CN_NUA');
+  return tongGioCongNgayVaNua(cnNgay, cnNua);
+}
+
+/** Cùng công thức dòng IV — từ form rows (sub form, không phải sub_by_loai). */
+export function sumTongGioQuyDoiRowIVFromFormRows(
+  rows: { sub?: Partial<ChiTietSubFormByLoai> }[]
+): number {
+  const cnNgay = sumFormLoaiTotalsOnRows(rows, 'CN_NGAY');
+  const cnNua = sumFormLoaiTotalsOnRows(rows, 'CN_NUA');
+  return tongGioCongNgayVaNua(cnNgay, cnNua);
+}
+
 /** Giờ×SL tăng ca: ưu tiên Σ(sl×giờ) từ sub; không có sub thì sl_tang_ca × so_gio_tc */
 export function tongGioTangCaTichFromCt(
   slTangCa: number,

@@ -3,6 +3,7 @@ import type { FarmDuBaoSlDongThung } from '../../du-bao-sl-dong-thung/core/types
 import { computeDuBaoSlDongThungKpiFromFarm } from '../../du-bao-sl-dong-thung/core/kpi';
 import type { FarmBaoCaoKpiThuongRow } from '../../shared/kpi-thuong/types';
 import { computeKpiPhanTram } from '../../shared/kpi-thuong/types';
+import { sumTongGioQuyDoiRowIVFromRows } from '../../bao-cao-nhan-cong/core/ct-sub';
 import {
   normalizeChiTietForDisplay,
   sumChiTietNumericPart,
@@ -95,7 +96,7 @@ export function extractBcncTableGhiChuRows(bcnc: FarmBaoCaoNhanCong | null): [st
 export interface BcscLaborFromBcncSnapshot {
   /** CN ngày + CN nửa (dòng IV, chỉ 5 chuyền sản xuất) — map nhãn "Tổng số công nhân làm việc" */
   tongCongQuyDoiPhieu: number;
-  /** Tổng giờ QĐ dòng IV = sl_cong_ngay×8 + sl_cong_nua×4 (5 chuyền sản xuất) */
+  /** Tổng giờ QĐ dòng IV = Σ(sl×giờ) CN ngày + CN nửa từ sub (5 chuyền sản xuất) */
   tongGioCnNgay: number;
   /** Công QĐ dòng IV — tổng công quy đổi 5 chuyền sản xuất */
   congQdRowIV: number;
@@ -108,8 +109,7 @@ export function extractLaborSnapshotFromBcnc(bcnc: FarmBaoCaoNhanCong): BcscLabo
   const prodTotals = sumChiTietNumericPart(production);
   // Row 1: CN ngày + CN nửa (dòng IV) — đếm đầu người, không quy đổi
   const tongCongQuyDoiPhieu = prodTotals.sl_cong_ngay + prodTotals.sl_cong_nua;
-  // Row 2: Tổng giờ QĐ dòng IV = sl_cong_ngay×8 + sl_cong_nua×4
-  const tongGioCnNgay = prodTotals.sl_cong_ngay * 8 + prodTotals.sl_cong_nua * 4;
+  const tongGioCnNgay = sumTongGioQuyDoiRowIVFromRows(production);
   return {
     tongCongQuyDoiPhieu,
     tongGioCnNgay,

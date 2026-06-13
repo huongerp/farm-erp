@@ -9,7 +9,7 @@ import DanhSachHangHoaList from './components/DanhSachHangHoaList';
 import DanhSachHangHoaForm from './components/DanhSachHangHoaForm';
 import DanhSachHangHoaDetail from './components/DanhSachHangHoaDetail';
 import DinhMucTonTab from './components/DinhMucTonTab';
-import ImportDialog from '../../../components/shared/ImportDialog';
+import ImportDialog from '../../../components/shared/LazyImportDialog';
 import type { ImportReferenceSheet, ImportSampleRow } from '../../../components/shared/ImportDialog';
 import ExportDialog from '../../../components/shared/LazyExportDialog';
 import {

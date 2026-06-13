@@ -7,6 +7,7 @@
     "build": "vite build",
     "build:analyze": "ANALYZE=1 vite build",
     "check:bundle": "node scripts/check-bundle-size.mjs",
+    "update:bundle-baseline": "node scripts/update-bundle-baseline.mjs",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",

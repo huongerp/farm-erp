@@ -8,7 +8,7 @@ import DepartmentList from './components/phong-ban-list';
 import DepartmentForm from './components/phong-ban-form';
 import DepartmentDetail from './components/phong-ban-detail';
 import ExportDialog from '../../../components/shared/LazyExportDialog';
-import ImportDialog from '../../../components/shared/ImportDialog';
+import ImportDialog from '../../../components/shared/LazyImportDialog';
 import { useDepartments, useDeleteDepartment, useUpdateStatusDepartment, useImportDepartments } from './hooks/use-phong-ban';
 import { useDepartmentStore } from './store/useDepartmentStore';
 import { useConfirmStore } from '../../../store/useConfirmStore';

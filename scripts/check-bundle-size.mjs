@@ -1,21 +1,13 @@
 #!/usr/bin/env node
 /**
- * Kiểm tra kích thước chunk sau build — cảnh báo nếu vượt ngưỡng.
- * Chạy: npm run build && node scripts/check-bundle-size.mjs
+ * Kiểm tra kích thước chunk sau build — so với scripts/bundle-baseline.json.
+ * Chạy: npm run build && npm run check:bundle
  */
-import { readdirSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 const DIST_ASSETS = join(process.cwd(), 'dist', 'assets');
-
-/** Ngưỡng gzip ước lượng (raw size / ~3) — chỉ cảnh báo, không fail CI trừ main chunk. */
-const WARN_RAW_KB = {
-  main: 900,
-  vendorXlsx: 400,
-  vendorJspdf: 400,
-  vendorHtml2canvas: 300,
-  recharts: 450,
-};
+const BASELINE_PATH = join(process.cwd(), 'scripts', 'bundle-baseline.json');
 
 function kb(bytes) {
   return Math.round(bytes / 1024);
@@ -29,36 +21,62 @@ function findLargestMatching(files, pattern) {
     .sort((a, b) => b.size - a.size)[0];
 }
 
-const files = readdirSync(DIST_ASSETS).filter((f) => f.endsWith('.js'));
-const main = findLargestMatching(files, /^index-.*\.js$/);
-const xlsx = findLargestMatching(files, /vendor-xlsx-.*\.js$/);
-const jspdf = findLargestMatching(files, /vendor-jspdf-.*\.js$/);
-const html2canvas = findLargestMatching(files, /vendor-html2canvas-.*\.js$/);
-const recharts = findLargestMatching(files, /^recharts-.*\.js$/);
+function loadBaseline() {
+  try {
+    return JSON.parse(readFileSync(BASELINE_PATH, 'utf8'));
+  } catch {
+    return null;
+  }
+}
 
-const rows = [
-  ['Main (index-*.js)', main, WARN_RAW_KB.main],
-  ['vendor-xlsx', xlsx, WARN_RAW_KB.vendorXlsx],
-  ['vendor-jspdf', jspdf, WARN_RAW_KB.vendorJspdf],
-  ['vendor-html2canvas', html2canvas, WARN_RAW_KB.vendorHtml2canvas],
-  ['recharts', recharts, WARN_RAW_KB.recharts],
+const baseline = loadBaseline();
+const files = readdirSync(DIST_ASSETS).filter((f) => f.endsWith('.js'));
+
+const entries = [
+  { label: 'Main (index-*.js)', key: 'main', pattern: /^index-.*\.js$/, failOnExceed: true },
+  { label: 'vendor-xlsx', key: 'vendorXlsx', pattern: /vendor-xlsx-.*\.js$/ },
+  { label: 'vendor-jspdf', key: 'vendorJspdf', pattern: /vendor-jspdf-.*\.js$/ },
+  { label: 'vendor-html2canvas', key: 'vendorHtml2canvas', pattern: /vendor-html2canvas-.*\.js$/ },
+  { label: 'recharts', key: 'recharts', pattern: /^recharts-.*\.js$/ },
+  { label: 'framer-motion', key: 'framerMotion', pattern: /^framer-motion-.*\.js$/ },
+  { label: 'sentry', key: 'sentry', pattern: /^sentry-.*\.js$/ },
 ];
 
 console.log('Bundle size check (raw KB):\n');
 let failed = false;
-for (const [label, entry, limitKb] of rows) {
+
+for (const { label, key, pattern, failOnExceed } of entries) {
+  const entry = findLargestMatching(files, pattern);
   if (!entry) {
     console.log(`  ${label}: (not found)`);
     continue;
   }
   const sizeKb = kb(entry.size);
-  const warn = sizeKb > limitKb;
-  if (warn && label.startsWith('Main')) failed = true;
-  console.log(`  ${label}: ${sizeKb} KB${warn ? ` ⚠ exceeds ${limitKb} KB` : ''}  (${entry.name})`);
+  const b = baseline?.chunks?.[key];
+  const warnKb = b?.warnKb ?? 900;
+  const baselineKb = b?.rawKb;
+  const maxIncreasePct = b?.maxIncreasePct ?? 5;
+
+  let flags = '';
+  if (sizeKb > warnKb) flags += ` ⚠ exceeds warn ${warnKb} KB`;
+
+  if (baselineKb != null && key === 'main') {
+    const maxAllowed = Math.ceil(baselineKb * (1 + maxIncreasePct / 100));
+    if (sizeKb > maxAllowed) {
+      flags += ` ⚠ main +${maxIncreasePct}% over baseline (${baselineKb} KB → max ${maxAllowed} KB)`;
+      if (failOnExceed) failed = true;
+    } else if (sizeKb > baselineKb) {
+      flags += ` (baseline ${baselineKb} KB, +${sizeKb - baselineKb} KB)`;
+    } else {
+      flags += ` (baseline ${baselineKb} KB, ${sizeKb - baselineKb} KB)`;
+    }
+  }
+
+  console.log(`  ${label}: ${sizeKb} KB${flags}  (${entry.name})`);
 }
 
 if (failed) {
-  console.error('\nMain chunk exceeds threshold. Run npm run build:analyze and see docs/BUNDLE_OPTIMIZATION.md');
+  console.error('\nMain chunk exceeds baseline threshold. Run npm run build:analyze and see docs/BUNDLE_OPTIMIZATION.md');
   process.exit(1);
 }
 

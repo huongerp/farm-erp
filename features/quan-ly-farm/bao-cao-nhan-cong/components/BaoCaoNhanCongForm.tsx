@@ -37,6 +37,7 @@ import {
   sumSlCongFromSubRows,
   sumGioCongFromSubRows,
   sumFormLoaiTotalsOnRows,
+  sumTongGioQuyDoiRowIVFromFormRows,
 } from '../core/ct-sub';
 import {
   bcncTableClass,
@@ -224,7 +225,7 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
   const tongCnNua = useMemo(() => sumFormLoaiTotalsOnRows(chiTiet ?? [], 'CN_NUA'), [chiTiet]);
   const tongTangCa = useMemo(() => sumFormLoaiTotalsOnRows(chiTiet ?? [], 'TANG_CA'), [chiTiet]);
   const ivQuyDoi = useMemo(() => sumTongCongQuyDoiTuChiTiet(productionSlice), [productionSlice]);
-  const ivTongGioNgayNua = useMemo(() => tongGioCongNgayVaNua(ivCnNgay, ivCnNua), [ivCnNgay, ivCnNua]);
+  const ivTongGioNgayNua = useMemo(() => sumTongGioQuyDoiRowIVFromFormRows(productionSlice), [productionSlice]);
   const ivTongGioTc = useMemo(() => sumTongGioTangCaTichTuChiTiet(productionSlice), [productionSlice]);
   const tongQuyDoiPhieu = useMemo(() => sumTongCongQuyDoiTuChiTiet(chiTiet ?? []), [chiTiet]);
   const tongTongGioNgayNua = useMemo(() => tongGioCongNgayVaNua(tongCnNgay, tongCnNua), [tongCnNgay, tongCnNua]);

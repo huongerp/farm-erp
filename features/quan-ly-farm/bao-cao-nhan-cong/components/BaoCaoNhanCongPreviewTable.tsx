@@ -23,6 +23,7 @@ import {
   subAlignedRowCount,
   subByLoaiForCtDisplay,
   sumDisplayLoaiTotalsOnRows,
+  sumTongGioQuyDoiRowIVFromRows,
   tongGioCongNgayVaNua,
 } from '../core/ct-sub';
 import { formatNumberVN } from '../../../../lib/utils';
@@ -137,7 +138,7 @@ const BaoCaoNhanCongPreviewTable: React.FC<Props> = ({ data }) => {
   const ivCnNgay = sumDisplayLoaiTotalsOnRows(production, 'CN_NGAY');
   const ivCnNua = sumDisplayLoaiTotalsOnRows(production, 'CN_NUA');
   const ivTangCa = sumDisplayLoaiTotalsOnRows(production, 'TANG_CA');
-  const ivTongGioNgayNua = tongGioCongNgayVaNua(ivCnNgay, ivCnNua);
+  const ivTongGioNgayNua = sumTongGioQuyDoiRowIVFromRows(production);
   const ivTongGioTc = sumTongGioTangCaTichTuChiTiet(production);
   const tongCnNgay = sumDisplayLoaiTotalsOnRows(data.chi_tiet ?? [], 'CN_NGAY');
   const tongCnNua = sumDisplayLoaiTotalsOnRows(data.chi_tiet ?? [], 'CN_NUA');

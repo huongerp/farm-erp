@@ -64,6 +64,21 @@ function minimalBcnc(overrides: Partial<FarmBaoCaoNhanCong> = {}): FarmBaoCaoNha
         so_gio_tc: 0,
         ghi_chu: null,
         thu_tu: 1,
+        sub_by_loai: {
+          CN_NGAY: [
+            {
+              id: 's1',
+              id_bcnc_ct: 'ct-1',
+              loai_chi_tieu: 'CN_NGAY',
+              thu_tu: 1,
+              sl_cong: 8,
+              so_gio: 8,
+              ghi_chu: null,
+            },
+          ],
+          CN_NUA: [],
+          TANG_CA: [],
+        },
       },
     ],
     ...overrides,

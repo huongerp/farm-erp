@@ -20,7 +20,7 @@ import { AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { List, BarChart3 } from 'lucide-react';
 import TabGroup, { Tab } from '../components/ui/TabGroup';
-import ImportDialog from '../components/shared/ImportDialog';
+import ImportDialog from '../components/shared/LazyImportDialog';
 import ExportDialog from '../components/shared/LazyExportDialog';
 import { getLanguage } from './utils';
 import { useListWithFilter } from './hooks';

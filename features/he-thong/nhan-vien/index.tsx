@@ -14,7 +14,7 @@ import EmployeeToolbar from './components/nhan-vien-toolbar';
 import EmployeeTable from './components/nhan-vien-table';
 const EmployeeStats = lazy(() => import('./components/nhan-vien-stats'));
 import BulkEditSheet from './components/nhan-vien-bulk-edit';
-import ImportDialog from '../../../components/shared/ImportDialog';
+import ImportDialog from '../../../components/shared/LazyImportDialog';
 import ExportDialog from '../../../components/shared/LazyExportDialog';
 
 import {
