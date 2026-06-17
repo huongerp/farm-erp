@@ -101,7 +101,7 @@ BEGIN
     WHERE ct.so_luong > 0
       AND (pk.ngay::date > v_date_to OR (pk.ngay::date >= v_date_from AND pk.ngay::date <= v_date_to))
   ),
-  mov_filtered AS (
+  mov_product_scoped AS (
     SELECT m.*
     FROM movements m
     LEFT JOIN public.fp_mh_danh_sach_hang_hoa hh ON hh.id = m.id_hang_hoa
@@ -111,7 +111,11 @@ BEGIN
         cardinality(v_cat_ids) = 0
         OR (hh.danh_muc_id IS NOT NULL AND hh.danh_muc_id = ANY (v_cat_ids))
       )
-      AND (cardinality(v_loai) = 0 OR m.loai_n = ANY (v_loai))
+  ),
+  mov_filtered AS (
+    SELECT m.*
+    FROM mov_product_scoped m
+    WHERE (cardinality(v_loai) = 0 OR m.loai_n = ANY (v_loai))
   ),
   period_kh AS (
     SELECT
@@ -143,29 +147,21 @@ BEGIN
     SELECT m.kho_id, m.id_hang_hoa,
       sum(CASE WHEN m.loai_n = 'nhap' THEN m.qty ELSE 0 END) AS nhap,
       sum(CASE WHEN m.loai_n = 'xuat' THEN m.qty ELSE 0 END) AS xuat
-    FROM movements m
+    FROM mov_product_scoped m
     WHERE m.after_period AND m.loai_n IN ('nhap', 'xuat')
     GROUP BY m.kho_id, m.id_hang_hoa
   ),
   after_chuyen_from AS (
     SELECT m.kho_id, m.id_hang_hoa, sum(m.qty) AS xuat
-    FROM movements m
+    FROM mov_product_scoped m
     WHERE m.after_period AND m.loai_n = 'chuyen' AND m.kho_den_id IS NOT NULL
     GROUP BY m.kho_id, m.id_hang_hoa
   ),
   after_chuyen_to AS (
     SELECT m.kho_den_id AS kho_id, m.id_hang_hoa, sum(m.qty) AS nhap
-    FROM movements m
+    FROM mov_product_scoped m
     WHERE m.after_period AND m.loai_n = 'chuyen' AND m.kho_den_id IS NOT NULL
     GROUP BY m.kho_den_id, m.id_hang_hoa
-  ),
-  keys AS (
-    SELECT DISTINCT kho_id, id_hang_hoa FROM period_kh
-    UNION SELECT DISTINCT kho_id, id_hang_hoa FROM period_chuyen_from
-    UNION SELECT DISTINCT kho_id, id_hang_hoa FROM period_chuyen_to
-    UNION SELECT DISTINCT kho_id, id_hang_hoa FROM after_kh
-    UNION SELECT DISTINCT kho_id, id_hang_hoa FROM after_chuyen_from
-    UNION SELECT DISTINCT kho_id, id_hang_hoa FROM after_chuyen_to
   ),
   ton_scoped AS (
     SELECT t.kho_id, t.id_hang_hoa, t.so_luong::numeric AS so_luong
@@ -176,6 +172,28 @@ BEGIN
       OR EXISTS (
         SELECT 1 FROM kho_branch kb
         WHERE kb.kho_id = t.kho_id AND kb.chi_nhanh_id = ANY (v_branch_ids)
+      )
+  ),
+  keys AS (
+    SELECT DISTINCT kho_id, id_hang_hoa FROM period_kh
+    UNION SELECT DISTINCT kho_id, id_hang_hoa FROM period_chuyen_from
+    UNION SELECT DISTINCT kho_id, id_hang_hoa FROM period_chuyen_to
+    UNION SELECT DISTINCT kho_id, id_hang_hoa FROM after_kh
+    UNION SELECT DISTINCT kho_id, id_hang_hoa FROM after_chuyen_from
+    UNION SELECT DISTINCT kho_id, id_hang_hoa FROM after_chuyen_to
+    UNION
+    SELECT DISTINCT t.kho_id, t.id_hang_hoa
+    FROM ton_scoped t
+    WHERE t.so_luong <> 0
+      AND (cardinality(v_hh_ids) = 0 OR t.id_hang_hoa = ANY (v_hh_ids))
+      AND (
+        cardinality(v_cat_ids) = 0
+        OR EXISTS (
+          SELECT 1 FROM public.fp_mh_danh_sach_hang_hoa hh
+          WHERE hh.id = t.id_hang_hoa
+            AND hh.danh_muc_id IS NOT NULL
+            AND hh.danh_muc_id = ANY (v_cat_ids)
+        )
       )
   ),
   kh_detail AS (
@@ -206,8 +224,14 @@ BEGIN
       sum(kd.period_xuat) AS tong_xuat,
       sum(kd.ton_cuoi) AS ton_cuoi_ky
     FROM kh_detail kd
+    LEFT JOIN public.fp_mh_danh_sach_hang_hoa hh ON hh.id = kd.id_hang_hoa
     LEFT JOIN public.fp_mh_danh_sach_kho k ON k.id = kd.kho_id
-    WHERE cardinality(v_wh_ids) = 0 OR kd.kho_id = ANY (v_wh_ids)
+    WHERE (cardinality(v_wh_ids) = 0 OR kd.kho_id = ANY (v_wh_ids))
+      AND (cardinality(v_hh_ids) = 0 OR kd.id_hang_hoa = ANY (v_hh_ids))
+      AND (
+        cardinality(v_cat_ids) = 0
+        OR (hh.danh_muc_id IS NOT NULL AND hh.danh_muc_id = ANY (v_cat_ids))
+      )
     GROUP BY kd.kho_id, k.ma_kho, k.ten_kho
   ),
   by_prod AS (
@@ -225,7 +249,8 @@ BEGIN
     LEFT JOIN public.fp_mh_danh_sach_hang_hoa hh ON hh.id = kd.id_hang_hoa
     LEFT JOIN public.fp_mh_danh_muc_hang_hoa dm ON dm.id = hh.danh_muc_id
   WHERE
-      (cardinality(v_hh_ids) = 0 OR kd.id_hang_hoa = ANY (v_hh_ids))
+      (cardinality(v_wh_ids) = 0 OR kd.kho_id = ANY (v_wh_ids))
+      AND (cardinality(v_hh_ids) = 0 OR kd.id_hang_hoa = ANY (v_hh_ids))
       AND (
         cardinality(v_cat_ids) = 0
         OR (hh.danh_muc_id IS NOT NULL AND hh.danh_muc_id = ANY (v_cat_ids))

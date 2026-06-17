@@ -23,14 +23,14 @@ const TongHopNXTKyTab: React.FC<TongHopNXTKyTabProps> = ({ filters, onClearFilte
   const { data, isLoading, isError } = useNXTByPeriod(filters);
 
   const summary = useMemo(() => {
-    const byWarehouse = data?.byWarehouse ?? [];
+    const byProduct = data?.byProduct ?? [];
     return {
-      tonDauKy: byWarehouse.reduce((s, r) => s + r.ton_dau_ky, 0),
-      tongNhap: byWarehouse.reduce((s, r) => s + r.tong_nhap, 0),
-      tongXuat: byWarehouse.reduce((s, r) => s + r.tong_xuat, 0),
-      tonCuoiKy: byWarehouse.reduce((s, r) => s + r.ton_cuoi_ky, 0),
+      tonDauKy: byProduct.reduce((s, r) => s + r.ton_dau_ky, 0),
+      tongNhap: byProduct.reduce((s, r) => s + r.tong_nhap, 0),
+      tongXuat: byProduct.reduce((s, r) => s + r.tong_xuat, 0),
+      tonCuoiKy: byProduct.reduce((s, r) => s + r.ton_cuoi_ky, 0),
     };
-  }, [data?.byWarehouse]);
+  }, [data?.byProduct]);
 
   if (isError) {
     return (

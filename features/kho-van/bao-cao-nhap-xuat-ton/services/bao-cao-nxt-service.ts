@@ -190,12 +190,10 @@ export async function getNXTByPeriod(filters: NXTReportFilters): Promise<NXTByPe
   };
 
   // ── 5. Aggregate movements ──
-  // afterByKH : phát sinh SAU kỳ (tất cả, không filter) → dùng để trừ ngược từ tồn hiện tại
-  // periodByKH: phát sinh TRONG kỳ (có filter) → hiển thị nhập/xuất + tính tồn đầu
+  // afterByKH : phát sinh SAU kỳ (lọc SP/danh mục; không lọc loại phiếu) → back-calc tồn cuối kỳ
+  // periodByKH: phát sinh TRONG kỳ (đủ filter chip) → hiển thị nhập/xuất + tính tồn đầu
   const afterByKH = new Map<string, Mov>();
   const periodByKH = new Map<string, Mov>();
-  const periodByKho = new Map<string, Mov>();
-  const periodByHH = new Map<string, Mov>();
 
   for (const p of phieuForReport) {
     if (!isTrangThaiTinhTon(p)) continue;
@@ -215,8 +213,9 @@ export async function getNXTByPeriod(filters: NXTReportFilters): Promise<NXTByPe
     for (const ct of items) {
       if (ct.qty <= 0) continue;
 
-      // ── After-period: aggregate ALL movements (no report filters) ──
+      // ── After-period: lọc SP/danh mục (mirror mov_product_scoped RPC) ──
       if (isAfter) {
+        if (!productOk(ct.idHh)) continue;
         if (loai === 'nhập') {
           addMov(afterByKH, `${khoId}|${ct.idHh}`, ct.qty, 0);
         } else if (loai === 'xuất') {
@@ -235,24 +234,18 @@ export async function getNXTByPeriod(filters: NXTReportFilters): Promise<NXTByPe
       if (loai === 'nhập') {
         if (warehouseSet && !warehouseSet.has(khoId)) continue;
         addMov(periodByKH, `${khoId}|${ct.idHh}`, ct.qty, 0);
-        addMov(periodByKho, khoId, ct.qty, 0);
-        addMov(periodByHH, ct.idHh, ct.qty, 0);
       } else if (loai === 'xuất') {
         if (warehouseSet && !warehouseSet.has(khoId)) continue;
         addMov(periodByKH, `${khoId}|${ct.idHh}`, 0, ct.qty);
-        addMov(periodByKho, khoId, 0, ct.qty);
-        addMov(periodByHH, ct.idHh, 0, ct.qty);
       } else if (loai === 'chuyển' && khoDenId) {
         const fromOk = !warehouseSet || warehouseSet.has(khoId);
         const toOk = !warehouseSet || warehouseSet.has(khoDenId);
         if (!fromOk && !toOk) continue;
         if (fromOk) {
           addMov(periodByKH, `${khoId}|${ct.idHh}`, 0, ct.qty);
-          addMov(periodByKho, khoId, 0, ct.qty);
         }
         if (toOk) {
           addMov(periodByKH, `${khoDenId}|${ct.idHh}`, ct.qty, 0);
-          addMov(periodByKho, khoDenId, ct.qty, 0);
         }
       }
     }
@@ -267,81 +260,114 @@ export async function getNXTByPeriod(filters: NXTReportFilters): Promise<NXTByPe
   afterByKH.forEach((_, key) => { if (!currentByKH.has(key)) currentByKH.set(key, 0); });
   periodByKH.forEach((_, key) => { if (!currentByKH.has(key)) currentByKH.set(key, 0); });
 
-  // ── 7. Build by-warehouse rows ──
-  const byWarehouseRows: NXTByWarehouseRow[] = [];
-  const khoIdsForReport = warehouseSet
-    ? Array.from(warehouseSet)
-    : [...new Set([...khoList.map((k) => String(k.id)), ...periodByKho.keys()])];
+  const hasNarrowFilters =
+    (warehouseIds?.length ?? 0) > 0 ||
+    (hangHoaIds?.length ?? 0) > 0 ||
+    (categoryIds?.length ?? 0) > 0 ||
+    (loaiPhieu?.length ?? 0) > 0;
 
-  for (const idKho of khoIdsForReport) {
-    const k = khoMap[idKho];
-    const pMov = periodByKho.get(idKho) ?? zeroMov();
-    let ton_cuoi_ky = 0;
-    let ton_dau_ky = 0;
+  const matchesCellFilters = (kho: string, hh: string): boolean => {
+    if (!productOk(hh)) return false;
+    if (warehouseSet && !warehouseSet.has(kho)) return false;
+    return true;
+  };
 
-    currentByKH.forEach((currentQty, key) => {
-      const [kho, hh] = key.split('|');
-      if (kho !== idKho || !productOk(hh)) return;
-      const after = afterByKH.get(key) ?? zeroMov();
-      const period = periodByKH.get(key) ?? zeroMov();
-      const endQty = currentQty - after.nhap + after.xuat;
-      const startQty = endQty - period.nhap + period.xuat;
-      ton_cuoi_ky += endQty;
-      ton_dau_ky += startQty;
-    });
+  const isCellActive = (tonDau: number, tonCuoi: number, nhap: number, xuat: number): boolean =>
+    tonDau !== 0 || tonCuoi !== 0 || nhap !== 0 || xuat !== 0;
 
-    byWarehouseRows.push({
-      id_kho: idKho,
-      ma_kho: k?.ma_kho ?? idKho,
-      ten_kho: k?.ten_kho ?? idKho,
+  // ── 7. Ma trận chi tiết kho × hàng (một nguồn cho cả hai bảng) ──
+  interface NXTKHDetailCell {
+    id_kho: string;
+    id_hang_hoa: string;
+    ton_dau_ky: number;
+    tong_nhap: number;
+    tong_xuat: number;
+    ton_cuoi_ky: number;
+  }
+  const detailRows: NXTKHDetailCell[] = [];
+
+  currentByKH.forEach((currentQty, key) => {
+    const [kho, hh] = key.split('|');
+    if (!matchesCellFilters(kho, hh)) return;
+    const after = afterByKH.get(key) ?? zeroMov();
+    const period = periodByKH.get(key) ?? zeroMov();
+    const ton_cuoi_ky = currentQty - after.nhap + after.xuat;
+    const ton_dau_ky = ton_cuoi_ky - period.nhap + period.xuat;
+    const tong_nhap = period.nhap;
+    const tong_xuat = period.xuat;
+    if (hasNarrowFilters && !isCellActive(ton_dau_ky, ton_cuoi_ky, tong_nhap, tong_xuat)) return;
+    detailRows.push({
+      id_kho: kho,
+      id_hang_hoa: hh,
       ton_dau_ky,
-      tong_nhap: pMov.nhap,
-      tong_xuat: pMov.xuat,
+      tong_nhap,
+      tong_xuat,
       ton_cuoi_ky,
+    });
+  });
+
+  type NXTAgg = { ton_dau_ky: number; tong_nhap: number; tong_xuat: number; ton_cuoi_ky: number };
+  const zeroAgg = (): NXTAgg => ({ ton_dau_ky: 0, tong_nhap: 0, tong_xuat: 0, ton_cuoi_ky: 0 });
+  const addAgg = (agg: NXTAgg, row: NXTKHDetailCell) => {
+    agg.ton_dau_ky += row.ton_dau_ky;
+    agg.tong_nhap += row.tong_nhap;
+    agg.tong_xuat += row.tong_xuat;
+    agg.ton_cuoi_ky += row.ton_cuoi_ky;
+  };
+
+  // ── 8. Pivot: theo kho ──
+  const whAgg = new Map<string, NXTAgg>();
+  for (const row of detailRows) {
+    const cur = whAgg.get(row.id_kho) ?? zeroAgg();
+    addAgg(cur, row);
+    whAgg.set(row.id_kho, cur);
+  }
+
+  let byWarehouseRows: NXTByWarehouseRow[];
+  if (hasNarrowFilters) {
+    byWarehouseRows = Array.from(whAgg.entries()).map(([idKho, agg]) => {
+      const k = khoMap[idKho];
+      return {
+        id_kho: idKho,
+        ma_kho: k?.ma_kho ?? idKho,
+        ten_kho: k?.ten_kho ?? idKho,
+        ...agg,
+      };
+    });
+  } else {
+    const allKhoIds = [...new Set([...khoList.map((k) => String(k.id)), ...whAgg.keys()])];
+    byWarehouseRows = allKhoIds.map((idKho) => {
+      const k = khoMap[idKho];
+      const agg = whAgg.get(idKho) ?? zeroAgg();
+      return {
+        id_kho: idKho,
+        ma_kho: k?.ma_kho ?? idKho,
+        ten_kho: k?.ten_kho ?? idKho,
+        ...agg,
+      };
     });
   }
 
-  // ── 8. Build by-product rows ──
-  const byProductRows: NXTByProductRow[] = [];
-  const hhIdsForReport = new Set<string>();
-  periodByHH.forEach((_, id) => hhIdsForReport.add(id));
-  tonKhoForReport.forEach((r) => {
-    const idHh = String(r.id_hang_hoa);
-    if (productOk(idHh)) hhIdsForReport.add(idHh);
-  });
+  // ── 9. Pivot: theo hàng ──
+  const hhAgg = new Map<string, NXTAgg>();
+  for (const row of detailRows) {
+    const cur = hhAgg.get(row.id_hang_hoa) ?? zeroAgg();
+    addAgg(cur, row);
+    hhAgg.set(row.id_hang_hoa, cur);
+  }
 
-  hhIdsForReport.forEach((idHh) => {
-    if (!productOk(idHh)) return;
+  const byProductRows: NXTByProductRow[] = Array.from(hhAgg.entries()).map(([idHh, agg]) => {
     const h = hangHoaMap[idHh];
-    const pMov = periodByHH.get(idHh) ?? zeroMov();
-    let ton_cuoi_ky = 0;
-    let ton_dau_ky = 0;
-
-    currentByKH.forEach((currentQty, key) => {
-      const [kho, hh] = key.split('|');
-      if (hh !== idHh) return;
-      if (warehouseSet && !warehouseSet.has(kho)) return;
-      const after = afterByKH.get(key) ?? zeroMov();
-      const period = periodByKH.get(key) ?? zeroMov();
-      const endQty = currentQty - after.nhap + after.xuat;
-      const startQty = endQty - period.nhap + period.xuat;
-      ton_cuoi_ky += endQty;
-      ton_dau_ky += startQty;
-    });
-
     const maHang = h?.ma_hang ?? (h as any)?.ma_hang_hoa ?? idHh;
     const tenHang = h?.ten_hang ?? (h as any)?.ten_hang_hoa ?? '—';
-    byProductRows.push({
+    return {
       id_hang_hoa: idHh,
       ma_hang: maHang,
       ten_hang: tenHang,
       ten_danh_muc: h?.ten_danh_muc,
       don_vi_tinh: (h as any)?.dvt ?? h?.don_vi_tinh ?? '—',
-      ton_dau_ky,
-      tong_nhap: pMov.nhap,
-      tong_xuat: pMov.xuat,
-      ton_cuoi_ky,
-    });
+      ...agg,
+    };
   });
 
   return { byWarehouse: byWarehouseRows, byProduct: byProductRows };
