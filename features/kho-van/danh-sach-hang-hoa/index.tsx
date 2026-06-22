@@ -85,6 +85,14 @@ const DanhSachHangHoaPage: React.FC = () => {
       ),
     [list]
   );
+  /** Các phẩm cấp đã có trong bảng – gợi ý khi nhập phẩm cấp (datalist). */
+  const existingPhamCapList = useMemo(
+    () =>
+      [...new Set(list.map((h) => h.pham_cap).filter((x): x is string => x != null && x.trim() !== ''))].sort((a, b) =>
+        a.localeCompare(b)
+      ),
+    [list]
+  );
   const deleteMutation = useDeleteHangHoa();
   const deleteManyMutation = useDeleteHangHoaMany();
   const statusMutation = useUpdateHangHoaStatus();
@@ -96,6 +104,7 @@ const DanhSachHangHoaPage: React.FC = () => {
       { key: 'ten_hang_hoa', label: t('hangHoa.form.name'), required: true },
       { key: 'danh_muc', label: t('hangHoa.import.danhMucCol'), required: true },
       { key: 'dvt', label: t('hangHoa.form.unit'), required: true },
+      { key: 'pham_cap', label: t('hangHoa.form.phamCap') },
       { key: 'don_gia', label: t('hangHoa.form.price') },
       { key: 'mo_ta', label: t('hangHoa.store.descCol') },
       { key: 'trang_thai', label: t('hangHoa.store.statusCol') },
@@ -151,6 +160,7 @@ const DanhSachHangHoaPage: React.FC = () => {
       { key: 'ten_hang_hoa', label: t('hangHoa.store.nameCol') },
       { key: 'ten_danh_muc', label: t('hangHoa.store.categoryCol') },
       { key: 'dvt', label: t('hangHoa.store.unitCol') },
+      { key: 'pham_cap', label: t('hangHoa.store.phamCapCol') },
       { key: 'don_gia', label: t('hangHoa.store.priceCol') },
       { key: 'mo_ta', label: t('hangHoa.store.descCol') },
       { key: 'trang_thai_text', label: t('hangHoa.store.statusCol') },
@@ -176,7 +186,8 @@ const DanhSachHangHoaPage: React.FC = () => {
         item.ten_hang_hoa.toLowerCase().includes(searchLower) ||
         item.ma_hang_hoa.toLowerCase().includes(searchLower) ||
         (item.ten_danh_muc?.toLowerCase().includes(searchLower) ?? false) ||
-        (item.dvt?.toLowerCase().includes(searchLower) ?? false);
+        (item.dvt?.toLowerCase().includes(searchLower) ?? false) ||
+        (item.pham_cap?.toLowerCase().includes(searchLower) ?? false);
       const statusKey = item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? 'Active' : 'Inactive';
       const matchesStatus = f.status.length === 0 || f.status.includes(statusKey);
       const matchesDanhMucCha =
@@ -221,6 +232,7 @@ const DanhSachHangHoaPage: React.FC = () => {
       ten_hang_hoa: item.ten_hang_hoa,
       ten_danh_muc: item.ten_danh_muc ?? '',
       dvt: item.dvt ?? '',
+      pham_cap: item.pham_cap ?? '',
       don_gia: item.don_gia ?? '',
       mo_ta: item.mo_ta ?? '',
       trang_thai_text:
@@ -319,6 +331,7 @@ const DanhSachHangHoaPage: React.FC = () => {
       danh_muc: row.danh_muc != null ? String(row.danh_muc) : undefined,
       dvt: row.dvt != null ? String(row.dvt) : undefined,
       don_gia: row.don_gia as string | number | undefined,
+      pham_cap: row.pham_cap != null ? String(row.pham_cap) : undefined,
       mo_ta: row.mo_ta != null ? String(row.mo_ta) : undefined,
       trang_thai: row.trang_thai != null ? String(row.trang_thai) : undefined,
     }));
@@ -392,6 +405,7 @@ const DanhSachHangHoaPage: React.FC = () => {
             initialData={editingItem}
             defaultThuTu={nextThuTu}
             existingDvtList={existingDvtList}
+            existingPhamCapList={existingPhamCapList}
             onClose={handleCloseForm}
           />
         )}

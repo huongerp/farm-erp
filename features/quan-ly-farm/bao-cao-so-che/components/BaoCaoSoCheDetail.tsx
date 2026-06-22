@@ -15,6 +15,7 @@ import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { useCopyBaoCaoSoCheToNextDay, useUpdateBaoCaoSoCheTrangThai } from '../hooks/use-bao-cao-so-che';
 import { useBaoCaoNhanCongList } from '../../bao-cao-nhan-cong/hooks/use-bao-cao-nhan-cong';
 import { useDuBaoSlDongThungList } from '../../du-bao-sl-dong-thung/hooks/use-du-bao-sl-dong-thung';
+import { usePhieuNhapPhamCapRef } from '../hooks/use-phieu-nhap-pham-cap-ref';
 import BaoCaoNhanCongChuyenTable from '../../bao-cao-nhan-cong/components/BaoCaoNhanCongChuyenTable';
 import DuBaoSlDongThungBangTinhTable from '../../du-bao-sl-dong-thung/components/DuBaoSlDongThungBangTinhTable';
 import BaoCaoSoCheBcncKpiReadout from './BaoCaoSoCheBcncKpiReadout';
@@ -95,6 +96,10 @@ const BaoCaoSoCheDetail: React.FC<Props> = ({
   const tongKg = phamCapTotals.tong_kg;
 
   const idChiNhanhStr = data.id_chi_nhanh != null ? String(data.id_chi_nhanh) : '';
+  const { data: phieuNhapByPhamCap = {}, isLoading: phieuNhapRefLoading } = usePhieuNhapPhamCapRef(
+    data.ngay,
+    idChiNhanhStr
+  );
 
   const bcnc = useMemo(
     () => findBaoCaoNhanCongByBranchAndDate(bcncList, data.ngay, idChiNhanhStr),
@@ -377,7 +382,11 @@ const BaoCaoSoCheDetail: React.FC<Props> = ({
         </DetailSection>
 
         <DetailSection title={t('baoCaoSoChe.form.sectionPhamCapTitle')} icon={<Package size={14} />} variant="primary">
-          <BaoCaoSoChePhamCapDetailTable rows={data.pham_cap} />
+          <BaoCaoSoChePhamCapDetailTable
+            rows={data.pham_cap}
+            phieuNhapByPhamCap={phieuNhapByPhamCap}
+            phieuNhapRefLoading={phieuNhapRefLoading}
+          />
         </DetailSection>
 
         <DetailSection title={t('baoCaoSoChe.form.sectionNsLuongTitle')} icon={<Calculator size={14} />} variant="primary">

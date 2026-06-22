@@ -405,6 +405,14 @@ const ChiTietPhieuKhoTab: React.FC = () => {
             {row.ten_hang ?? '—'}
           </td>
         );
+      case 'pham_cap':
+        return (
+          <td key={col.id} className="px-4 py-3 text-sm text-muted-foreground" style={getColumnCellStyle(col)}>
+            <span className="block truncate whitespace-nowrap" title={row.pham_cap ?? undefined}>
+              {row.pham_cap ?? '—'}
+            </span>
+          </td>
+        );
       case 'so_luong':
         return (
           <td key={col.id} className="px-4 py-3 tabular-nums text-sm" style={getColumnCellStyle(col)}>

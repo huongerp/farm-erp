@@ -162,6 +162,12 @@ const DanhSachHangHoaDetail: React.FC<Props> = ({
               emptyText="—"
             />
             <DetailField
+              label={t('hangHoa.detail.phamCap')}
+              value={data.pham_cap ?? ''}
+              icon={<Package size={12} />}
+              emptyText="—"
+            />
+            <DetailField
               label={t('hangHoa.form.price')}
               value={data.don_gia != null ? data.don_gia.toLocaleString('vi-VN') : ''}
               icon={<DollarSign size={12} />}

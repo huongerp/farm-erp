@@ -8,13 +8,33 @@ import Button from '../../../../components/ui/Button';
 import FormSection from '../../../../components/shared/FormSection';
 import type { BaoCaoSoCheFormValues } from '../core/schema';
 import type { FarmBaoCaoSoChePhamCapRow } from '../core/pham-cap';
-import { PHAM_CAP_ROWS_MAX, emptyPhamCapRow, sumPhamCapTotals } from '../core/pham-cap';
+import { PHAM_CAP_ROWS_MAX, emptyPhamCapRow, sumPhamCapTotals, lookupPhieuNhapSoLuong, sumPhieuNhapRefForRows } from '../core/pham-cap';
 import { enrichPhamCapRowsWithDerived } from '../core/pham-cap-derived';
-import { formatNumberVN } from '../../../../lib/utils';
+import { formatNumberVN, cn } from '../../../../lib/utils';
 
 function pctDisplay(n: number): string {
   if (!Number.isFinite(n)) return '—';
   return `${formatNumberVN(n)}%`;
+}
+
+function PhieuNhapRefCell({
+  qty,
+  loading,
+}: {
+  qty: number | undefined;
+  loading?: boolean;
+}) {
+  if (loading) {
+    return <span className="text-xs text-muted-foreground">…</span>;
+  }
+  if (qty === undefined) {
+    return <span className="text-xs text-muted-foreground">—</span>;
+  }
+  return (
+    <span className="text-xs font-medium tabular-nums text-muted-foreground">
+      {formatNumberVN(qty)}
+    </span>
+  );
 }
 
 /** Section + bảng phẩm cấp (nút Thêm trên cùng hàng tiêu đề). */
@@ -23,12 +43,19 @@ export const BaoCaoSoChePhamCapFormSection: React.FC<{
   errors: FieldErrors<BaoCaoSoCheFormValues>;
   /** Khi true: ẩn nút Thêm/Xóa, disable toàn bộ input — chỉ quản trị mới thao tác được. */
   disabled?: boolean;
-}> = ({ control, errors, disabled = false }) => {
+  /** SL phiếu nhập kho theo phẩm cấp (đối chiếu, không lưu DB). */
+  phieuNhapByPhamCap?: Record<string, number>;
+  phieuNhapRefLoading?: boolean;
+}> = ({ control, errors, disabled = false, phieuNhapByPhamCap, phieuNhapRefLoading = false }) => {
   const { t } = useTranslation();
   const { fields, append, remove } = useFieldArray({ control, name: 'pham_cap' });
   const pham = useWatch({ control, name: 'pham_cap' });
   const derived = useMemo(() => enrichPhamCapRowsWithDerived(pham ?? []), [pham]);
   const totals = useMemo(() => sumPhamCapTotals(pham ?? []), [pham]);
+  const phieuNhapRefTotal = useMemo(
+    () => sumPhieuNhapRefForRows(phieuNhapByPhamCap, pham ?? []),
+    [phieuNhapByPhamCap, pham]
+  );
   const atMax = fields.length >= PHAM_CAP_ROWS_MAX;
 
   return (
@@ -72,7 +99,7 @@ export const BaoCaoSoChePhamCapFormSection: React.FC<{
               <th rowSpan={2} className="text-right px-2 py-2 font-medium text-xs w-20 align-middle border-r border-border/80">
                 {t('baoCaoSoChe.phamCap.colSoKg')}
               </th>
-              <th colSpan={3} className="text-center px-2 py-1.5 font-medium text-xs border-r border-border/80">
+              <th colSpan={4} className="text-center px-2 py-1.5 font-medium text-xs border-r border-border/80">
                 {t('baoCaoSoChe.phamCap.groupLoaiThung')}
               </th>
               <th rowSpan={2} className="text-center px-2 py-2 font-medium text-xs w-[7.5rem] align-middle border-r border-border/80 leading-tight">
@@ -89,6 +116,12 @@ export const BaoCaoSoChePhamCapFormSection: React.FC<{
               </th>
             </tr>
             <tr className="bg-muted/40 border-b border-border">
+              <th className="text-right px-2 py-1.5 font-medium text-xs border-r border-border/60 leading-tight">
+                <span className="block">{t('baoCaoSoChe.phamCap.colSoThungPhieuNhap')}</span>
+                <span className="mt-0.5 block text-[10px] font-normal text-muted-foreground">
+                  {t('baoCaoSoChe.phamCap.colSoThungPhieuNhapHint')}
+                </span>
+              </th>
               <th className="text-right px-2 py-1.5 font-medium text-xs border-r border-border/60">
                 {t('baoCaoSoChe.phamCap.colSoThung')}
               </th>
@@ -103,7 +136,7 @@ export const BaoCaoSoChePhamCapFormSection: React.FC<{
           <tbody>
             {fields.length === 0 ? (
               <tr className="border-b border-border/80">
-                <td colSpan={9} className="px-3 py-6 text-center text-xs text-muted-foreground">
+                <td colSpan={10} className="px-3 py-6 text-center text-xs text-muted-foreground">
                   {t('baoCaoSoChe.phamCap.emptyHint')}
                 </td>
               </tr>
@@ -116,6 +149,10 @@ export const BaoCaoSoChePhamCapFormSection: React.FC<{
                 const errQd = errors.pham_cap?.[idx]?.so_thung_quy_doi?.message as string | undefined;
                 const errGhiChu = errors.pham_cap?.[idx]?.ghi_chu?.message as string | undefined;
                 const rowDerived = derived[idx];
+                const slPhieuNhap = lookupPhieuNhapSoLuong(phieuNhapByPhamCap, pham?.[idx]?.ten_pham_cap);
+                const soThungVal = Number(pham?.[idx]?.so_thung) || 0;
+                const soThungMismatch =
+                  slPhieuNhap !== undefined && soThungVal > 0 && slPhieuNhap > 0 && soThungVal !== slPhieuNhap;
                 return (
                   <tr key={field.id} className="border-b border-border/80">
                     <td className="px-2 py-1.5 text-center text-xs text-muted-foreground tabular-nums align-top border-r border-border/60">
@@ -155,6 +192,9 @@ export const BaoCaoSoChePhamCapFormSection: React.FC<{
                         )}
                       />
                     </td>
+                    <td className="px-2 py-1.5 align-top border-r border-border/60 text-right">
+                      <PhieuNhapRefCell qty={slPhieuNhap} loading={phieuNhapRefLoading} />
+                    </td>
                     <td className="px-2 py-1 align-top border-r border-border/60">
                       <Controller
                         name={`${base}.so_thung`}
@@ -166,7 +206,7 @@ export const BaoCaoSoChePhamCapFormSection: React.FC<{
                             min={0}
                             compact
                             showZeroFormatted
-                            className="text-right w-full"
+                            className={cn('text-right w-full', soThungMismatch && 'text-amber-600 dark:text-amber-500')}
                             error={errSt}
                             disabled={disabled}
                           />
@@ -239,6 +279,9 @@ export const BaoCaoSoChePhamCapFormSection: React.FC<{
               <td colSpan={3} className="px-3 py-2 text-xs text-right border-r border-border/80">
                 {t('baoCaoSoChe.phamCap.totalRow')}
               </td>
+              <td className="px-2 py-2 text-xs text-right tabular-nums text-muted-foreground border-r border-border/60">
+                {phieuNhapRefLoading ? '…' : formatNumberVN(phieuNhapRefTotal)}
+              </td>
               <td className="px-2 py-2 text-xs text-right tabular-nums border-r border-border/60">{formatNumberVN(totals.so_thung)}</td>
               <td className="px-2 py-2 text-xs text-right tabular-nums border-r border-border/60">{formatNumberVN(totals.tong_kg)}</td>
               <td className="px-2 py-2 text-xs text-right tabular-nums border-r border-border/80">{pctDisplay(totals.ty_le_pct)}</td>
@@ -253,7 +296,11 @@ export const BaoCaoSoChePhamCapFormSection: React.FC<{
   );
 };
 
-export const BaoCaoSoChePhamCapDetailTable: React.FC<{ rows: FarmBaoCaoSoChePhamCapRow[] }> = ({ rows }) => {
+export const BaoCaoSoChePhamCapDetailTable: React.FC<{
+  rows: FarmBaoCaoSoChePhamCapRow[];
+  phieuNhapByPhamCap?: Record<string, number>;
+  phieuNhapRefLoading?: boolean;
+}> = ({ rows, phieuNhapByPhamCap, phieuNhapRefLoading = false }) => {
   const { t } = useTranslation();
   const sorted = useMemo(
     () => [...rows].sort((a, b) => (a.thu_tu ?? 0) - (b.thu_tu ?? 0)),
@@ -261,6 +308,10 @@ export const BaoCaoSoChePhamCapDetailTable: React.FC<{ rows: FarmBaoCaoSoChePham
   );
   const derived = useMemo(() => enrichPhamCapRowsWithDerived(sorted), [sorted]);
   const totals = useMemo(() => sumPhamCapTotals(sorted), [sorted]);
+  const phieuNhapRefTotal = useMemo(
+    () => sumPhieuNhapRefForRows(phieuNhapByPhamCap, sorted),
+    [phieuNhapByPhamCap, sorted]
+  );
 
   return (
     <div className="overflow-x-auto rounded-lg border border-border bg-muted/10">
@@ -276,7 +327,7 @@ export const BaoCaoSoChePhamCapDetailTable: React.FC<{ rows: FarmBaoCaoSoChePham
             <th rowSpan={2} className="text-right px-2 py-2 font-medium text-xs w-20 align-middle border-r border-border/80">
               {t('baoCaoSoChe.phamCap.colSoKg')}
             </th>
-            <th colSpan={3} className="text-center px-2 py-1.5 font-medium text-xs border-r border-border/80">
+            <th colSpan={4} className="text-center px-2 py-1.5 font-medium text-xs border-r border-border/80">
               {t('baoCaoSoChe.phamCap.groupLoaiThung')}
             </th>
             <th rowSpan={2} className="text-center px-2 py-2 font-medium text-xs w-[7.5rem] align-middle border-r border-border/80 leading-tight">
@@ -290,6 +341,12 @@ export const BaoCaoSoChePhamCapDetailTable: React.FC<{ rows: FarmBaoCaoSoChePham
             </th>
           </tr>
           <tr className="bg-muted/40 border-b border-border">
+            <th className="text-right px-2 py-1.5 font-medium text-xs border-r border-border/60 leading-tight">
+              <span className="block">{t('baoCaoSoChe.phamCap.colSoThungPhieuNhap')}</span>
+              <span className="mt-0.5 block text-[10px] font-normal text-muted-foreground">
+                {t('baoCaoSoChe.phamCap.colSoThungPhieuNhapHint')}
+              </span>
+            </th>
             <th className="text-right px-2 py-1.5 font-medium text-xs border-r border-border/60">
               {t('baoCaoSoChe.phamCap.colSoThung')}
             </th>
@@ -304,13 +361,17 @@ export const BaoCaoSoChePhamCapDetailTable: React.FC<{ rows: FarmBaoCaoSoChePham
         <tbody>
           {sorted.length === 0 ? (
             <tr>
-              <td colSpan={8} className="px-3 py-6 text-center text-xs text-muted-foreground">
+              <td colSpan={9} className="px-3 py-6 text-center text-xs text-muted-foreground">
                 {t('baoCaoSoChe.phamCap.detailEmpty')}
               </td>
             </tr>
           ) : (
             sorted.map((r, idx) => {
               const d = derived[idx];
+              const slPhieuNhap = lookupPhieuNhapSoLuong(phieuNhapByPhamCap, r.ten_pham_cap);
+              const soThungVal = Number(r.so_thung) || 0;
+              const soThungMismatch =
+                slPhieuNhap !== undefined && soThungVal > 0 && slPhieuNhap > 0 && soThungVal !== slPhieuNhap;
               return (
                 <tr key={`${r.id ?? 'row'}-${idx}`} className="border-b border-border/80 last:border-b-0">
                   <td className="px-2 py-2 text-center text-xs text-muted-foreground tabular-nums border-r border-border/60">
@@ -321,6 +382,14 @@ export const BaoCaoSoChePhamCapDetailTable: React.FC<{ rows: FarmBaoCaoSoChePham
                     {formatNumberVN(r.so_tham_chieu ?? 0)}
                   </td>
                   <td className="px-2 py-2 text-xs text-right tabular-nums border-r border-border/60">
+                    <PhieuNhapRefCell qty={slPhieuNhap} loading={phieuNhapRefLoading} />
+                  </td>
+                  <td
+                    className={cn(
+                      'px-2 py-2 text-xs text-right tabular-nums border-r border-border/60',
+                      soThungMismatch && 'text-amber-600 dark:text-amber-500 font-medium'
+                    )}
+                  >
                     {formatNumberVN(r.so_thung ?? 0)}
                   </td>
                   <td className="px-2 py-2 text-xs text-right tabular-nums border-r border-border/60">
@@ -340,6 +409,9 @@ export const BaoCaoSoChePhamCapDetailTable: React.FC<{ rows: FarmBaoCaoSoChePham
           <tr className="bg-muted/30 font-medium border-t border-border">
             <td colSpan={3} className="px-3 py-2 text-xs text-right border-r border-border/80">
               {t('baoCaoSoChe.phamCap.totalRow')}
+            </td>
+            <td className="px-2 py-2 text-xs text-right tabular-nums text-muted-foreground border-r border-border/60">
+              {phieuNhapRefLoading ? '…' : formatNumberVN(phieuNhapRefTotal)}
             </td>
             <td className="px-2 py-2 text-xs text-right tabular-nums border-r border-border/60">{formatNumberVN(totals.so_thung)}</td>
             <td className="px-2 py-2 text-xs text-right tabular-nums border-r border-border/60">{formatNumberVN(totals.tong_kg)}</td>

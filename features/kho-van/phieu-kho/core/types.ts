@@ -45,6 +45,8 @@ export interface PhieuKhoChiTiet {
   don_gia?: number;
   thanh_tien?: number;
   don_vi_tinh?: string;
+  /** Phẩm cấp (snapshot fp_mh_phieu_kho_chi_tiet.pham_cap). */
+  pham_cap?: string | null;
   /** Số LOT (fp_mh_phieu_kho_chi_tiet.so_lot). */
   so_lot?: string;
   ghi_chu?: string;
@@ -145,6 +147,7 @@ export interface ChiTietPhieuKhoFlat {
   don_gia?: number;
   thanh_tien?: number;
   don_vi_tinh?: string;
+  pham_cap?: string | null;
   so_lot?: string;
   ghi_chu?: string;
   /** Audit dòng chi tiết (fp_mh_phieu_kho_chi_tiet). */

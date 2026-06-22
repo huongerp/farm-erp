@@ -96,3 +96,36 @@ export function inferSoThamChieuKgPerThung(
 }
 
 export { sumPhamCapDisplayTotals as sumPhamCapTotals } from './pham-cap-derived';
+
+/** Chuẩn hoá tên phẩm cấp để ghép với phiếu nhập kho. */
+export function normalizePhamCapKey(value: string | null | undefined): string {
+  return typeof value === 'string' ? value.trim().toLowerCase() : '';
+}
+
+/** Tra SL phiếu nhập theo tên phẩm cấp; `undefined` = không có dữ liệu đối chiếu. */
+export function lookupPhieuNhapSoLuong(
+  map: Record<string, number> | undefined,
+  tenPhamCap: string | null | undefined
+): number | undefined {
+  if (!map) return undefined;
+  const key = normalizePhamCapKey(tenPhamCap);
+  if (!key) return undefined;
+  return key in map ? map[key] : undefined;
+}
+
+/** Tổng SL phiếu nhập cho các dòng có tên phẩm cấp khớp map. */
+export function sumPhieuNhapRefForRows(
+  map: Record<string, number> | undefined,
+  rows: Pick<PhamCapRowFormValues, 'ten_pham_cap'>[]
+): number {
+  if (!map) return 0;
+  const seen = new Set<string>();
+  let total = 0;
+  for (const row of rows) {
+    const key = normalizePhamCapKey(row.ten_pham_cap);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    if (key in map) total += map[key];
+  }
+  return total;
+}

@@ -29,6 +29,8 @@ interface Props {
   defaultThuTu?: number;
   /** Các đơn vị tính đã có trong bảng – dùng gợi ý khi nhập DVT. */
   existingDvtList?: string[];
+  /** Các phẩm cấp đã có trong bảng – gợi ý khi nhập phẩm cấp (datalist). */
+  existingPhamCapList?: string[];
   onClose: () => void;
   /** Gọi khi tạo mới thành công với hàng hóa vừa tạo. */
   onSuccessCreate?: (item: HangHoa) => void;
@@ -38,11 +40,13 @@ const DanhSachHangHoaForm: React.FC<Props> = ({
   initialData,
   defaultThuTu,
   existingDvtList = [],
+  existingPhamCapList = [],
   onClose,
   onSuccessCreate,
 }) => {
   const { t } = useTranslation();
   const dvtListId = useId();
+  const phamCapListId = useId();
   const isEdit = !!initialData;
   const createMutation = useCreateHangHoa(onClose);
   const updateMutation = useUpdateHangHoa(onClose);
@@ -69,6 +73,7 @@ const DanhSachHangHoaForm: React.FC<Props> = ({
     don_gia: undefined,
     trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG,
     thu_tu: defaultThuTu ?? 1,
+    pham_cap: null,
     mo_ta: null,
     hinh_anh: null,
   };
@@ -100,6 +105,7 @@ const DanhSachHangHoaForm: React.FC<Props> = ({
         don_gia: initialData.don_gia ?? undefined,
         trang_thai: initialData.trang_thai,
         thu_tu: initialData.thu_tu,
+        pham_cap: initialData.pham_cap ?? null,
         mo_ta: initialData.mo_ta ?? null,
         hinh_anh: initialData.hinh_anh ?? null,
       });
@@ -114,6 +120,7 @@ const DanhSachHangHoaForm: React.FC<Props> = ({
       id_danh_muc_cap2: data.id_danh_muc_cap2 === '' || data.id_danh_muc_cap2 === undefined ? null : data.id_danh_muc_cap2,
       dvt: data.dvt?.trim() || null,
       don_gia: data.don_gia != null && !Number.isNaN(Number(data.don_gia)) && Number(data.don_gia) >= 0 ? Number(data.don_gia) : null,
+      pham_cap: data.pham_cap?.trim() || null,
       mo_ta: data.mo_ta?.trim() || null,
       hinh_anh: data.hinh_anh?.trim() || null,
     };
@@ -209,6 +216,23 @@ const DanhSachHangHoaForm: React.FC<Props> = ({
                 <datalist id={dvtListId}>
                   {existingDvtList.map((d) => (
                     <option key={d} value={d} />
+                  ))}
+                </datalist>
+              )}
+            </div>
+            <div className="relative">
+              <Input
+                label={t('hangHoa.form.phamCap')}
+                placeholder={t('hangHoa.form.phamCapPlaceholder')}
+                icon={<Package size={12} />}
+                list={phamCapListId}
+                {...register('pham_cap')}
+                error={errors.pham_cap?.message}
+              />
+              {existingPhamCapList.length > 0 && (
+                <datalist id={phamCapListId}>
+                  {existingPhamCapList.map((p) => (
+                    <option key={p} value={p} />
                   ))}
                 </datalist>
               )}

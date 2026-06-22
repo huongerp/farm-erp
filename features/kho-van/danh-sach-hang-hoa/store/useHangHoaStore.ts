@@ -27,13 +27,14 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'ten_hang_hoa', label: i18n.t('hangHoa.store.nameCol'), visible: true, minWidth: 300, maxWidth: 460, order: 3 },
   { id: 'ten_danh_muc', label: i18n.t('hangHoa.store.categoryCol'), visible: true, minWidth: 180, maxWidth: 300, order: 4 },
   { id: 'dvt', label: i18n.t('hangHoa.store.unitCol'), visible: true, minWidth: 100, maxWidth: 140, order: 5 },
-  { id: 'don_gia', label: i18n.t('hangHoa.store.priceCol'), visible: true, minWidth: 120, maxWidth: 160, order: 6 },
-  { id: 'trang_thai', label: i18n.t('hangHoa.store.statusCol'), visible: true, minWidth: 120, maxWidth: 180, order: 7 },
-  { id: 'tg_cap_nhat', label: i18n.t('hangHoa.store.updatedCol'), visible: true, minWidth: COLUMN_WIDTH_DATETIME_MIN, maxWidth: COLUMN_WIDTH_DATETIME_MAX, order: 8 },
-  { id: 'mo_ta', label: i18n.t('hangHoa.store.descCol'), visible: false, minWidth: COLUMN_WIDTH_NOTE_MIN, maxWidth: COLUMN_WIDTH_NOTE_MAX, order: 9 },
-  { id: 'tong_dinh_muc', label: i18n.t('hangHoa.store.tongDinhMucCol'), visible: false, minWidth: 120, maxWidth: 160, order: 10 },
-  { id: 'so_kho_dinh_muc', label: i18n.t('hangHoa.store.soKhoDinhMucCol'), visible: false, minWidth: 100, maxWidth: 140, order: 11 },
-  { id: 'tg_tao', label: i18n.t('hangHoa.store.createdCol'), visible: false, minWidth: COLUMN_WIDTH_DATETIME_MIN, maxWidth: COLUMN_WIDTH_DATETIME_MAX, order: 12 },
+  { id: 'pham_cap', label: i18n.t('hangHoa.store.phamCapCol'), visible: true, minWidth: 120, maxWidth: 180, order: 6 },
+  { id: 'don_gia', label: i18n.t('hangHoa.store.priceCol'), visible: true, minWidth: 120, maxWidth: 160, order: 7 },
+  { id: 'trang_thai', label: i18n.t('hangHoa.store.statusCol'), visible: true, minWidth: 120, maxWidth: 180, order: 8 },
+  { id: 'tg_cap_nhat', label: i18n.t('hangHoa.store.updatedCol'), visible: true, minWidth: COLUMN_WIDTH_DATETIME_MIN, maxWidth: COLUMN_WIDTH_DATETIME_MAX, order: 9 },
+  { id: 'mo_ta', label: i18n.t('hangHoa.store.descCol'), visible: false, minWidth: COLUMN_WIDTH_NOTE_MIN, maxWidth: COLUMN_WIDTH_NOTE_MAX, order: 10 },
+  { id: 'tong_dinh_muc', label: i18n.t('hangHoa.store.tongDinhMucCol'), visible: false, minWidth: 120, maxWidth: 160, order: 11 },
+  { id: 'so_kho_dinh_muc', label: i18n.t('hangHoa.store.soKhoDinhMucCol'), visible: false, minWidth: 100, maxWidth: 140, order: 12 },
+  { id: 'tg_tao', label: i18n.t('hangHoa.store.createdCol'), visible: false, minWidth: COLUMN_WIDTH_DATETIME_MIN, maxWidth: COLUMN_WIDTH_DATETIME_MAX, order: 13 },
 ];
 
 const initialFilters: HangHoaFilters = {

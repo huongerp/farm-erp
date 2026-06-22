@@ -145,6 +145,9 @@ const PhieuKhoPreviewContent: React.FC<Props> = ({ phieu }) => {
                 <th className="border border-gray-300 bg-primary text-white p-1.5 text-left text-[9pt] font-bold">
                   {t('phieuKho.form.itemName')}
                 </th>
+                <th className="border border-gray-300 bg-primary text-white p-1.5 text-left text-[9pt] font-bold w-24">
+                  {t('phieuKho.form.phamCap')}
+                </th>
                 <th className="border border-gray-300 bg-primary text-white p-1.5 text-center text-[9pt] font-bold w-16">
                   {t('phieuKho.form.unit')}
                 </th>
@@ -167,6 +170,7 @@ const PhieuKhoPreviewContent: React.FC<Props> = ({ phieu }) => {
                     {c.ten_danh_muc ?? '—'}
                   </td>
                   <td className="border border-gray-300 p-1.5 text-gray-900">{c.ten_hang ?? '—'}</td>
+                  <td className="border border-gray-300 p-1.5 text-gray-900 text-[9pt]">{c.pham_cap ?? '—'}</td>
                   <td className="border border-gray-300 p-1.5 text-gray-900 text-center">{c.don_vi_tinh ?? '—'}</td>
                   <td className="border border-gray-300 p-1.5 text-gray-900 tabular-nums text-right">{formatNumberVN(c.so_luong)}</td>
                   <td className="border border-gray-300 p-1.5 text-gray-900 text-center text-[9pt]">{c.so_lot ?? '—'}</td>
@@ -176,7 +180,7 @@ const PhieuKhoPreviewContent: React.FC<Props> = ({ phieu }) => {
             </tbody>
             <tfoot>
               <tr className="bg-gray-100 font-semibold text-gray-900">
-                <td colSpan={4} className="border border-gray-300 p-1.5 text-[10pt]">
+                <td colSpan={5} className="border border-gray-300 p-1.5 text-[10pt]">
                   {t('phieuKho.preview.totalQty')}
                 </td>
                 <td className="border border-gray-300 p-1.5 text-[10pt] tabular-nums text-right">

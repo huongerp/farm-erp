@@ -13,11 +13,11 @@ const TABLE = 'fp_mh_danh_sach_hang_hoa';
 
 /** Danh sách — có mo_ta, hinh_anh (URL Cloudinary ngắn) cho cột ảnh trên list. */
 const HANG_HOA_LIST_COLUMNS =
-  'id,danh_muc_id,danh_muc_cha_id,ma_hang_hoa,ten_hang_hoa,dvt,thu_tu,trang_thai,don_gia,mo_ta,hinh_anh,tg_tao,tg_cap_nhat';
+  'id,danh_muc_id,danh_muc_cha_id,ma_hang_hoa,ten_hang_hoa,dvt,pham_cap,thu_tu,trang_thai,don_gia,mo_ta,hinh_anh,tg_tao,tg_cap_nhat';
 
 /** Chi tiết form/preview — đủ mo_ta, hinh_anh. */
 const HANG_HOA_DETAIL_COLUMNS =
-  'id,danh_muc_id,danh_muc_cha_id,ma_hang_hoa,ten_hang_hoa,dvt,thu_tu,trang_thai,don_gia,mo_ta,hinh_anh,tg_tao,tg_cap_nhat';
+  'id,danh_muc_id,danh_muc_cha_id,ma_hang_hoa,ten_hang_hoa,dvt,pham_cap,thu_tu,trang_thai,don_gia,mo_ta,hinh_anh,tg_tao,tg_cap_nhat';
 
 /** Row từ Supabase fp_mh_danh_sach_hang_hoa */
 interface HangHoaRow {
@@ -27,6 +27,7 @@ interface HangHoaRow {
   ma_hang_hoa: string | null;
   ten_hang_hoa: string | null;
   dvt: string | null;
+  pham_cap: string | null;
   thu_tu: number | null;
   trang_thai: string | null;
   don_gia: string | number | null;
@@ -65,6 +66,7 @@ function rowToHangHoa(row: HangHoaRow, danhMuc?: { ten_danh_muc?: string; ten_da
     ma_hang: ma,
     ten_hang: ten,
     don_vi_tinh: unit,
+    pham_cap: row.pham_cap ?? null,
     mo_ta: row.mo_ta ?? null,
     hinh_anh: row.hinh_anh ?? null,
   };
@@ -129,6 +131,8 @@ export type HangHoaRefLite = {
   ten_danh_muc_cap2?: string;
   /** Đơn giá mặc định (phiếu kho / đơn đặt hàng). */
   don_gia: number | null;
+  /** Phẩm cấp mặc định từ danh mục hàng hóa. */
+  pham_cap?: string | null;
   /** Chuẩn hóa giống HangHoa — dùng lọc tạo danh sách kiểm kê kho. */
   trang_thai: HangHoa['trang_thai'];
 };
@@ -139,7 +143,7 @@ export const getHangHoaRef = async (): Promise<HangHoaRefLite[]> => {
       fetchAllRows<HangHoaRow>((from, to) =>
         supabase
           .from(TABLE)
-          .select('id, ma_hang_hoa, ten_hang_hoa, dvt, danh_muc_id, danh_muc_cha_id, thu_tu, trang_thai, don_gia')
+          .select('id, ma_hang_hoa, ten_hang_hoa, dvt, pham_cap, danh_muc_id, danh_muc_cha_id, thu_tu, trang_thai, don_gia')
           .order('thu_tu', { ascending: true })
           .order('ma_hang_hoa', { ascending: true })
           .range(from, to)
@@ -175,6 +179,7 @@ export const getHangHoaRef = async (): Promise<HangHoaRefLite[]> => {
         ten_danh_muc_cap1: danhMuc.ten_danh_muc_cap1,
         ten_danh_muc_cap2: danhMuc.ten_danh_muc_cap2,
         don_gia: Number.isFinite(donGia) ? donGia : null,
+        pham_cap: row.pham_cap ?? null,
         trang_thai: normalizeTrangThaiHangHoa(row.trang_thai),
       };
     });
@@ -229,6 +234,7 @@ export const createHangHoa = async (data: HangHoaFormValues): Promise<HangHoa> =
     thu_tu: data.thu_tu != null ? Math.max(1, data.thu_tu) : nextThuTu,
     trang_thai: data.trang_thai,
     don_gia: data.don_gia != null && !Number.isNaN(Number(data.don_gia)) ? Number(data.don_gia) : null,
+    pham_cap: data.pham_cap?.trim() || null,
     mo_ta: data.mo_ta?.trim() || null,
     hinh_anh: data.hinh_anh?.trim() || null,
   };
@@ -265,6 +271,7 @@ export const updateHangHoa = async (id: string, data: HangHoaFormValues): Promis
     thu_tu: Math.max(1, data.thu_tu ?? 1),
     trang_thai: data.trang_thai,
     don_gia: data.don_gia != null && !Number.isNaN(Number(data.don_gia)) ? Number(data.don_gia) : null,
+    pham_cap: data.pham_cap?.trim() || null,
     mo_ta: data.mo_ta?.trim() || null,
     hinh_anh: data.hinh_anh?.trim() || null,
     tg_cap_nhat: new Date().toISOString(),
@@ -317,6 +324,7 @@ export interface HangHoaImportRow {
   danh_muc?: string;
   dvt?: string;
   don_gia?: string | number;
+  pham_cap?: string;
   mo_ta?: string;
   trang_thai?: string;
 }
@@ -442,6 +450,7 @@ export const importHangHoa = async (
             dvt,
             trang_thai: trangThai,
             don_gia: donGia,
+            pham_cap: row.pham_cap != null ? String(row.pham_cap).trim() || null : null,
             mo_ta: row.mo_ta != null ? String(row.mo_ta).trim() || null : null,
             tg_cap_nhat: new Date().toISOString(),
           },
@@ -461,6 +470,7 @@ export const importHangHoa = async (
           thu_tu: nextThuTu++,
           trang_thai: trangThai,
           don_gia: donGia,
+          pham_cap: row.pham_cap != null ? String(row.pham_cap).trim() || null : null,
           mo_ta: row.mo_ta != null ? String(row.mo_ta).trim() || null : null,
         },
       });

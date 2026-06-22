@@ -158,6 +158,14 @@ const PhieuKhoForm: React.FC<Props> = ({
     [hangHoaComboboxOptions, onRequestAddHangHoa, t]
   );
 
+  const phamCapComboboxOptions = useMemo(
+    () =>
+      [...new Set(hangHoaList.map((h) => h.pham_cap).filter((x): x is string => x != null && x.trim() !== ''))]
+        .sort((a, b) => a.localeCompare(b))
+        .map((p) => ({ value: p, label: p })),
+    [hangHoaList]
+  );
+
   const hangHoaMap = useMemo(() => {
     const m: Record<string, HangHoaRefLite> = {};
     hangHoaList.forEach((h) => { m[h.id] = h; });
@@ -196,6 +204,7 @@ const PhieuKhoForm: React.FC<Props> = ({
           id_hang_hoa: ct.id_hang_hoa,
           so_luong: ct.so_luong,
           don_gia: ct.don_gia,
+          pham_cap: ct.pham_cap ?? hangHoaMap[ct.id_hang_hoa]?.pham_cap ?? '',
           so_lot: ct.so_lot ?? '',
           ghi_chu: ct.ghi_chu ?? '',
         })),
@@ -209,11 +218,14 @@ const PhieuKhoForm: React.FC<Props> = ({
         ...prefillValues,
         ngay: prefillValues?.ngay ?? today(),
         id_don_dat_hang: prefillValues?.id_don_dat_hang ?? null,
-        chi_tiet: prefillValues?.chi_tiet?.length ? prefillValues.chi_tiet : [],
+        chi_tiet: (prefillValues?.chi_tiet?.length ? prefillValues.chi_tiet : []).map((ct) => ({
+          ...ct,
+          pham_cap: ct.pham_cap ?? (ct.id_hang_hoa ? hangHoaMap[ct.id_hang_hoa]?.pham_cap ?? '' : ''),
+        })),
       });
       if (user?.id) setValue('nguoi_tao_id', Number(user.id));
     }
-  }, [initialData, prefillValues, reset, user?.id, setValue]);
+  }, [initialData, prefillValues, reset, user?.id, setValue, hangHoaMap]);
 
   const onSubmit: SubmitHandler<PhieuKhoFormValues> = async (data) => {
     if (loai === 'chuyen' && !data.kho_den_id) {
@@ -248,6 +260,7 @@ const PhieuKhoForm: React.FC<Props> = ({
         id_hang_hoa: c.id_hang_hoa.trim(),
         so_luong: Number(c.so_luong),
         don_gia: c.don_gia != null ? Number(c.don_gia) : undefined,
+        pham_cap: c.pham_cap?.trim() || undefined,
         so_lot: c.so_lot?.trim() || undefined,
         ghi_chu: c.ghi_chu?.trim() || undefined,
       })),
@@ -511,7 +524,7 @@ const PhieuKhoForm: React.FC<Props> = ({
           icon={<Package size={14} className="text-primary" />}
           count={fields.length}
           addLabel={t('phieuKho.form.addRow')}
-          onAdd={() => append({ id_hang_hoa: '', so_luong: 0, don_gia: 0, so_lot: '', ghi_chu: '' })}
+          onAdd={() => append({ id_hang_hoa: '', so_luong: 0, don_gia: 0, pham_cap: '', so_lot: '', ghi_chu: '' })}
           emptyTitle={t('phieuKho.form.noItems')}
           emptyDescription={t('phieuKho.form.noItemsHint')}
           maxTableHeight="360px"
@@ -521,6 +534,7 @@ const PhieuKhoForm: React.FC<Props> = ({
             <tr>
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap w-10">#</th>
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[200px]">{t('phieuKho.form.item')}</th>
+              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[120px]">{t('phieuKho.form.phamCap')}</th>
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[110px]">{t('phieuKho.form.quantity')}</th>
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[100px]">{t('phieuKho.form.unitPrice')}</th>
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[110px]">{t('phieuKho.form.amount')}</th>
@@ -537,7 +551,7 @@ const PhieuKhoForm: React.FC<Props> = ({
           <tbody className="[&>tr>td]:border-b [&>tr>td]:border-border">
             {fields.length === 0 ? (
               <tr>
-                <td colSpan={showTonKhoWarning ? 11 : 10} className="px-4 py-6 text-center text-muted-foreground text-xs">
+                <td colSpan={showTonKhoWarning ? 12 : 11} className="px-4 py-6 text-center text-muted-foreground text-xs">
                   {t('phieuKho.form.noItems')}
                 </td>
               </tr>
@@ -567,12 +581,14 @@ const PhieuKhoForm: React.FC<Props> = ({
                                   if (h) {
                                     setValue(`chi_tiet.${index}.id_hang_hoa`, h.id);
                                     setValue(`chi_tiet.${index}.don_gia`, hangHoaMap[h.id]?.don_gia ?? 0);
+                                    setValue(`chi_tiet.${index}.pham_cap`, h.pham_cap ?? hangHoaMap[h.id]?.pham_cap ?? '');
                                   }
                                 });
                                 return;
                               }
                               f.onChange(v ?? '');
                               setValue(`chi_tiet.${index}.don_gia`, v ? (hangHoaMap[String(v)]?.don_gia ?? 0) : 0);
+                              setValue(`chi_tiet.${index}.pham_cap`, v ? (hangHoaMap[String(v)]?.pham_cap ?? '') : '');
                             }}
                             placeholder={isLoadingHangHoa ? 'Đang tải...' : t('phieuKho.form.itemPlaceholder')}
                             searchPlaceholder={t('phieuKho.form.itemSearchPlaceholder')}
@@ -581,6 +597,25 @@ const PhieuKhoForm: React.FC<Props> = ({
                             triggerClassName="h-9 text-sm border-border rounded-md"
                             dropdownInPortal
                             renderOption={renderAddOption}
+                          />
+                        )}
+                      />
+                    </td>
+                    <td className="px-4 py-2.5 min-w-[120px] align-top">
+                      <Controller
+                        name={`chi_tiet.${index}.pham_cap`}
+                        control={control}
+                        render={({ field: f }) => (
+                          <Combobox
+                            options={phamCapComboboxOptions}
+                            value={f.value || null}
+                            onChange={(v) => f.onChange(v ?? '')}
+                            placeholder={t('phieuKho.form.phamCapPlaceholder')}
+                            searchable
+                            creatable
+                            creatableLabel={t('hangHoa.form.creatableNew')}
+                            dropdownInPortal
+                            triggerClassName="h-9 text-sm border-border rounded-md"
                           />
                         )}
                       />
@@ -660,7 +695,7 @@ const PhieuKhoForm: React.FC<Props> = ({
               }, 0);
               return (
                 <tr key="totals" className="bg-muted/50 border-t-2 border-border font-medium">
-                  <td colSpan={2} className="px-4 py-2.5 text-muted-foreground text-xs" />
+                  <td colSpan={3} className="px-4 py-2.5 text-muted-foreground text-xs" />
                   <td className="px-4 py-2.5 text-xs tabular-nums">{formatNumberVN(tongSoLuong)}</td>
                   <td className="px-4 py-2.5 text-xs" />
                   <td className="px-4 py-2.5 text-xs tabular-nums">{formatNumberVN(tongTien)}</td>

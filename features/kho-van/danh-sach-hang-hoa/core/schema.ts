@@ -21,6 +21,8 @@ export const hangHoaSchema = z.object({
   ),
   trang_thai: z.enum([TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG, TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG]),
   thu_tu: z.coerce.number().min(1, i18n.t('hangHoa.validation.thuTuMin')),
+  /** Phẩm cấp (tùy chọn). */
+  pham_cap: z.string().optional().nullable(),
   /** Mô tả hàng hóa. */
   mo_ta: z.string().optional().nullable(),
   /** URL hình ảnh (Cloudinary). */

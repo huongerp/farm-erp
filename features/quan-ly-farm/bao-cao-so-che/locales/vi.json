@@ -148,6 +148,8 @@
   "baoCaoSoChe.phamCap.colSoKg": "Số kg",
   "baoCaoSoChe.phamCap.colTongKg": "Tổng kg",
   "baoCaoSoChe.phamCap.groupLoaiThung": "Loại thùng",
+  "baoCaoSoChe.phamCap.colSoThungPhieuNhap": "SL phiếu nhập",
+  "baoCaoSoChe.phamCap.colSoThungPhieuNhapHint": "đối chiếu",
   "baoCaoSoChe.phamCap.colSoThung": "Số thùng",
   "baoCaoSoChe.phamCap.colTyLe": "Tỷ lệ %",
   "baoCaoSoChe.phamCap.groupTongQuyDoi": "Tổng quy đổi",

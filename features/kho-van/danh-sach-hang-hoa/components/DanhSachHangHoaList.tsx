@@ -87,6 +87,12 @@ const DanhSachHangHoaList: React.FC<Props> = ({
         );
       case 'dvt':
         return <span className="block truncate whitespace-nowrap text-sm text-muted-foreground" title={item.dvt ?? ''}>{item.dvt ?? '—'}</span>;
+      case 'pham_cap':
+        return (
+          <span className="block truncate whitespace-nowrap text-sm text-muted-foreground" title={item.pham_cap ?? undefined}>
+            {item.pham_cap ?? '—'}
+          </span>
+        );
       case 'don_gia':
         return (
           <span className="text-sm text-muted-foreground tabular-nums whitespace-nowrap">

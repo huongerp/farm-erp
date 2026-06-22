@@ -62,7 +62,7 @@ async function clearKiemKeKhoDieuChinhLinksByPhieuIds(phieuIds: number[]): Promi
 }
 
 const PHIEU_KHO_CHI_TIET_ROW_SELECT =
-  'id, id_phieu_kho, id_hang_hoa, ten_hang_hoa, don_vi_tinh, so_luong, don_gia, thanh_tien, so_lot, ghi_chu, nguoi_tao_id, ten_nguoi_tao, tg_tao, tg_cap_nhat';
+  'id, id_phieu_kho, id_hang_hoa, ten_hang_hoa, don_vi_tinh, pham_cap, so_luong, don_gia, thanh_tien, so_lot, ghi_chu, nguoi_tao_id, ten_nguoi_tao, tg_tao, tg_cap_nhat';
 
 /** Cột view summary — có mo_ta cho list; vẫn bỏ trao_doi (dài, chỉ cần khi mở chi tiết). */
 const PHIEU_KHO_SUMMARY_SELECT =
@@ -109,6 +109,7 @@ interface ChiTietDbRow {
   id_hang_hoa: number;
   ten_hang_hoa: string | null;
   don_vi_tinh: string | null;
+  pham_cap: string | null;
   so_luong: number;
   don_gia: number | null;
   thanh_tien: number | null;
@@ -168,6 +169,7 @@ interface PhieuKhoChiTietFlatViewRow {
   id_hang_hoa: number;
   ten_hang_hoa: string | null;
   don_vi_tinh: string | null;
+  pham_cap: string | null;
   so_luong: number | string | null;
   don_gia: number | string | null;
   thanh_tien: number | string | null;
@@ -202,7 +204,7 @@ interface PhieuKhoChiTietFlatViewRow {
 
 /** Tab chi tiết phẳng — bỏ trao_doi (lặp theo dòng, chỉ cần khi mở 1 phiếu). */
 const PHIEU_KHO_CHI_TIET_FLAT_SELECT =
-  'chi_tiet_id, id_phieu_kho, id_hang_hoa, ten_hang_hoa, don_vi_tinh, so_luong, don_gia, thanh_tien, so_lot, ghi_chu, chi_tiet_nguoi_tao_id, chi_tiet_ten_nguoi_tao, chi_tiet_tg_tao, chi_tiet_tg_cap_nhat, phieu_id, so_phieu, ngay, loai, kho_id, ten_kho, kho_den_id, ten_kho_den, id_nha_cung_cap, id_khach_hang, trang_thai, mo_ta, phieu_nguoi_tao_id, phieu_ten_nguoi_tao, id_nguoi_duyet, phieu_tg_tao, phieu_tg_cap_nhat, id_don_dat_hang, ma_hang, so_po_don_dat_hang';
+  'chi_tiet_id, id_phieu_kho, id_hang_hoa, ten_hang_hoa, don_vi_tinh, pham_cap, so_luong, don_gia, thanh_tien, so_lot, ghi_chu, chi_tiet_nguoi_tao_id, chi_tiet_ten_nguoi_tao, chi_tiet_tg_tao, chi_tiet_tg_cap_nhat, phieu_id, so_phieu, ngay, loai, kho_id, ten_kho, kho_den_id, ten_kho_den, id_nha_cung_cap, id_khach_hang, trang_thai, mo_ta, phieu_nguoi_tao_id, phieu_ten_nguoi_tao, id_nguoi_duyet, phieu_tg_tao, phieu_tg_cap_nhat, id_don_dat_hang, ma_hang, so_po_don_dat_hang';
 
 function rowToPhieu(
   row: PhieuKhoDbRow,
@@ -253,6 +255,7 @@ function rowToChiTiet(row: ChiTietDbRow, idPhieuKhoStr: string, enrich?: { ma_ha
     don_gia: row.don_gia != null ? Number(row.don_gia) : undefined,
     thanh_tien: row.thanh_tien != null ? Number(row.thanh_tien) : undefined,
     don_vi_tinh: row.don_vi_tinh ?? undefined,
+    pham_cap: row.pham_cap ?? undefined,
     so_lot: row.so_lot ?? undefined,
     ghi_chu: row.ghi_chu ?? undefined,
     nguoi_tao_id: row.nguoi_tao_id ?? undefined,
@@ -390,8 +393,14 @@ export async function createPhieuKhoSupabase(loai: LoaiPhieuKho, data: PhieuKhoF
   const idStr = String(idPhieu);
 
   const hangHoaList = await getHangHoaRef();
-  const hangHoaMap: Record<string, { ten_hang_hoa: string; don_vi_tinh?: string }> = {};
-  hangHoaList.forEach((h) => { hangHoaMap[h.id] = { ten_hang_hoa: h.ten_hang_hoa ?? h.ten_hang ?? '', don_vi_tinh: h.don_vi_tinh ?? undefined }; });
+  const hangHoaMap: Record<string, { ten_hang_hoa: string; don_vi_tinh?: string; pham_cap?: string | null }> = {};
+  hangHoaList.forEach((h) => {
+    hangHoaMap[h.id] = {
+      ten_hang_hoa: h.ten_hang_hoa ?? h.ten_hang ?? '',
+      don_vi_tinh: h.don_vi_tinh ?? undefined,
+      pham_cap: h.pham_cap ?? null,
+    };
+  });
 
   const chiTietPayload = filterPhieuKhoChiTietForSave(data.chi_tiet);
   if (chiTietPayload.length > 0) {
@@ -399,11 +408,13 @@ export async function createPhieuKhoSupabase(loai: LoaiPhieuKho, data: PhieuKhoF
       const h = hangHoaMap[c.id_hang_hoa.trim()];
       const sl = Number(c.so_luong);
       const dg = c.don_gia != null ? Number(c.don_gia) : 0;
+      const phamCap = c.pham_cap?.trim() || h?.pham_cap?.trim() || null;
       return {
         id_phieu_kho: idPhieu,
         id_hang_hoa: Number(c.id_hang_hoa),
         ten_hang_hoa: h?.ten_hang_hoa ?? null,
         don_vi_tinh: h?.don_vi_tinh ?? null,
+        pham_cap: phamCap,
         so_luong: sl,
         don_gia: dg,
         thanh_tien: sl * dg,
@@ -464,8 +475,14 @@ export async function updatePhieuKhoSupabase(id: string, data: PhieuKhoFormValue
   await supabase.from(TABLE_CHI_TIET).delete().eq('id_phieu_kho', idNum);
 
   const hangHoaList = await getHangHoaRef();
-  const hangHoaMap: Record<string, { ten_hang_hoa: string; don_vi_tinh?: string }> = {};
-  hangHoaList.forEach((h) => { hangHoaMap[h.id] = { ten_hang_hoa: h.ten_hang_hoa ?? h.ten_hang ?? '', don_vi_tinh: h.don_vi_tinh ?? undefined }; });
+  const hangHoaMap: Record<string, { ten_hang_hoa: string; don_vi_tinh?: string; pham_cap?: string | null }> = {};
+  hangHoaList.forEach((h) => {
+    hangHoaMap[h.id] = {
+      ten_hang_hoa: h.ten_hang_hoa ?? h.ten_hang ?? '',
+      don_vi_tinh: h.don_vi_tinh ?? undefined,
+      pham_cap: h.pham_cap ?? null,
+    };
+  });
 
   const chiTietPayload = filterPhieuKhoChiTietForSave(data.chi_tiet);
   if (chiTietPayload.length > 0) {
@@ -473,11 +490,13 @@ export async function updatePhieuKhoSupabase(id: string, data: PhieuKhoFormValue
       const h = hangHoaMap[c.id_hang_hoa.trim()];
       const sl = Number(c.so_luong);
       const dg = c.don_gia != null ? Number(c.don_gia) : 0;
+      const phamCap = c.pham_cap?.trim() || h?.pham_cap?.trim() || null;
       return {
         id_phieu_kho: idNum,
         id_hang_hoa: Number(c.id_hang_hoa),
         ten_hang_hoa: h?.ten_hang_hoa ?? null,
         don_vi_tinh: h?.don_vi_tinh ?? null,
+        pham_cap: phamCap,
         so_luong: sl,
         don_gia: dg,
         thanh_tien: sl * dg,
@@ -658,6 +677,7 @@ function mapPhieuKhoChiTietFlatViewRows(
       don_gia: r.don_gia != null ? Number(r.don_gia) : undefined,
       thanh_tien: r.thanh_tien != null ? Number(r.thanh_tien) : undefined,
       don_vi_tinh: r.don_vi_tinh ?? undefined,
+      pham_cap: r.pham_cap ?? undefined,
       so_lot: r.so_lot ?? undefined,
       ghi_chu: r.ghi_chu ?? undefined,
       chi_tiet_nguoi_tao_id: lineNvId,
@@ -762,7 +782,7 @@ function applyChiTietPhieuKhoListQueryToFlatSelect(q: any, query: ChiTietPhieuKh
   if (term) {
     const esc = term.replace(/%/g, '\\%').replace(/_/g, '\\_');
     const pat = postgrestQuotedIlikePattern(`%${esc}%`);
-    b = b.or(`so_phieu.ilike.${pat},ten_hang_hoa.ilike.${pat},mo_ta.ilike.${pat},ghi_chu.ilike.${pat},so_po_don_dat_hang.ilike.${pat}`);
+    b = b.or(`so_phieu.ilike.${pat},ten_hang_hoa.ilike.${pat},pham_cap.ilike.${pat},mo_ta.ilike.${pat},ghi_chu.ilike.${pat},so_po_don_dat_hang.ilike.${pat}`);
   }
   return b;
 }

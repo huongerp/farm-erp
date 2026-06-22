@@ -35,6 +35,7 @@ import {
   buildBaoCaoSoCheKpiThuongPresetSources,
 } from '../core/bcsc-kpi';
 import { useDuBaoSlDongThungList } from '../../du-bao-sl-dong-thung/hooks/use-du-bao-sl-dong-thung';
+import { usePhieuNhapPhamCapRef } from '../hooks/use-phieu-nhap-pham-cap-ref';
 
 interface Props {
   branches: Branch[];
@@ -122,6 +123,10 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
   );
   const { data: bcncList = [] } = useBaoCaoNhanCongList();
   const { data: dbsdtList = [] } = useDuBaoSlDongThungList();
+  const { data: phieuNhapByPhamCap = {}, isLoading: phieuNhapRefLoading } = usePhieuNhapPhamCapRef(
+    ngay,
+    idChiNhanh
+  );
 
   const bcnc = useMemo(
     () => findBaoCaoNhanCongByBranchAndDate(bcncList, ngay ?? '', idChiNhanh ?? ''),
@@ -271,7 +276,13 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
           </div>
         </FormSection>
 
-        <BaoCaoSoChePhamCapFormSection control={control} errors={errors} disabled={!canAdmin} />
+        <BaoCaoSoChePhamCapFormSection
+          control={control}
+          errors={errors}
+          disabled={!canAdmin}
+          phieuNhapByPhamCap={phieuNhapByPhamCap}
+          phieuNhapRefLoading={phieuNhapRefLoading}
+        />
 
         <FormSection title={t('baoCaoSoChe.form.sectionNsLuongTitle')} icon={<Calculator size={14} />} variant="primary">
           <BaoCaoSoCheBcncKpiReadout
