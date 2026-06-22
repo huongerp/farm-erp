@@ -6,7 +6,7 @@ const TRANG_THAI_VALUES = ['Chờ duyệt', 'Đã duyệt', 'Không duyệt'] as
 /** Schema cho một dòng chi tiết (dùng khi gửi API). */
 export const phieuKhoChiTietItemSchema = z.object({
   id_hang_hoa: z.string().min(1, i18n.t('phieuKho.validation.itemRequired')),
-  so_luong: z.coerce.number().min(0.0001, i18n.t('phieuKho.validation.quantityMin')),
+  so_luong: z.coerce.number().min(0, i18n.t('phieuKho.validation.quantityMin')),
   don_gia: z.coerce.number().optional(),
   so_lot: z.string().optional(),
   ghi_chu: z.string().optional(),
@@ -20,6 +20,15 @@ export const phieuKhoChiTietFormItemSchema = z.object({
   so_lot: z.string().optional(),
   ghi_chu: z.string().optional(),
 });
+
+/** Giữ dòng có mã hàng và số lượng >= 0; bỏ dòng chưa chọn hàng hoá. */
+export function filterPhieuKhoChiTietForSave(
+  chiTiet: PhieuKhoChiTietFormItem[] | undefined
+): PhieuKhoChiTietFormItem[] {
+  return (chiTiet ?? []).filter(
+    (c) => c.id_hang_hoa?.trim() && Number(c.so_luong) >= 0 && !Number.isNaN(Number(c.so_luong))
+  );
+}
 
 export const phieuKhoSchema = z.object({
   /** Để trống khi tạo mới: mã lấy từ RPC lúc Lưu. */

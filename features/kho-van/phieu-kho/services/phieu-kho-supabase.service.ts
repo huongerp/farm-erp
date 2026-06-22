@@ -5,7 +5,7 @@
  */
 import { supabase, fetchAllRows, fetchTablePage, type PaginatedTableResult, throwSupabaseError } from '../../../../lib/supabase';
 import type { PhieuKho, PhieuKhoChiTiet, LoaiPhieuKho, ChiTietPhieuKhoFlat, TrangThaiPhieuKho } from '../core/types';
-import type { PhieuKhoFormValues } from '../core/schema';
+import { filterPhieuKhoChiTietForSave, type PhieuKhoFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
 
 /** Dòng lịch sử nhập/xuất/chuyển theo hàng hóa. */
@@ -393,7 +393,7 @@ export async function createPhieuKhoSupabase(loai: LoaiPhieuKho, data: PhieuKhoF
   const hangHoaMap: Record<string, { ten_hang_hoa: string; don_vi_tinh?: string }> = {};
   hangHoaList.forEach((h) => { hangHoaMap[h.id] = { ten_hang_hoa: h.ten_hang_hoa ?? h.ten_hang ?? '', don_vi_tinh: h.don_vi_tinh ?? undefined }; });
 
-  const chiTietPayload = (data.chi_tiet ?? []).filter((c) => c.id_hang_hoa?.trim() && Number(c.so_luong) > 0);
+  const chiTietPayload = filterPhieuKhoChiTietForSave(data.chi_tiet);
   if (chiTietPayload.length > 0) {
     const ctRows = chiTietPayload.map((c) => {
       const h = hangHoaMap[c.id_hang_hoa.trim()];
@@ -467,7 +467,7 @@ export async function updatePhieuKhoSupabase(id: string, data: PhieuKhoFormValue
   const hangHoaMap: Record<string, { ten_hang_hoa: string; don_vi_tinh?: string }> = {};
   hangHoaList.forEach((h) => { hangHoaMap[h.id] = { ten_hang_hoa: h.ten_hang_hoa ?? h.ten_hang ?? '', don_vi_tinh: h.don_vi_tinh ?? undefined }; });
 
-  const chiTietPayload = (data.chi_tiet ?? []).filter((c) => c.id_hang_hoa?.trim() && Number(c.so_luong) > 0);
+  const chiTietPayload = filterPhieuKhoChiTietForSave(data.chi_tiet);
   if (chiTietPayload.length > 0) {
     const ctRows = chiTietPayload.map((c) => {
       const h = hangHoaMap[c.id_hang_hoa.trim()];

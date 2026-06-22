@@ -82,7 +82,7 @@
   "phieuKho.form.noItemsHint": "Bấm Thêm dòng để thêm hàng hóa",
   "phieuKho.form.note": "Ghi chú",
   "phieuKho.validation.itemRequired": "Vui lòng chọn hàng hóa",
-  "phieuKho.validation.quantityMin": "Số lượng phải lớn hơn 0",
+  "phieuKho.validation.quantityMin": "Số lượng không được âm",
   "phieuKho.validation.atLeastOneItem": "Phiếu phải có ít nhất một dòng hàng hóa",
   "phieuKho.detail.title": "Chi tiết phiếu kho",
   "phieuKho.detail.basicInfo": "Thông tin cơ bản",

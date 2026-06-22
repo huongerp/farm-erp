@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS fp_mh_phieu_kho_chi_tiet (
   id_hang_hoa    bigint NOT NULL,
   ten_hang_hoa   text,
   don_vi_tinh    text,
-  so_luong       numeric(18,4) NOT NULL CHECK (so_luong > 0),
+  so_luong       numeric(18,4) NOT NULL CHECK (so_luong >= 0),
   don_gia        numeric(18,4) DEFAULT 0,
   thanh_tien     numeric(18,4) DEFAULT 0,
   so_lot         text,

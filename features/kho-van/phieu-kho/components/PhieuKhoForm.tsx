@@ -8,7 +8,7 @@ import Input from '../../../../components/ui/Input';
 import Textarea from '../../../../components/ui/Textarea';
 import Select from '../../../../components/ui/Select';
 import Combobox from '../../../../components/ui/Combobox';
-import { PhieuKhoFormValues, phieuKhoSchema } from '../core/schema';
+import { PhieuKhoFormValues, phieuKhoSchema, filterPhieuKhoChiTietForSave } from '../core/schema';
 import type { PhieuKho, LoaiPhieuKhoTab } from '../core/types';
 import { LOAI_TAB_TO_DB } from '../core/types';
 import { formatNumberVN } from '../../../../lib/utils';
@@ -22,7 +22,7 @@ import { getNextSoPhieu } from '../services/phieu-kho-service';
 import { useHangHoaRefQuery, useDoiTacRefQuery, useDonDatHangSoPoMinimalQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
 import type { DonDatHangSoPoOption } from '../../../mua-hang/don-dat-hang/services/don-dat-hang-supabase.service';
 import { useAuthStore } from '../../../../store/useStore';
-import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/GenericDrawer';
+import GenericDrawer, { DRAWER_WIDTH_PHIEU_KHO } from '../../../../components/shared/GenericDrawer';
 import FormSection from '../../../../components/shared/FormSection';
 import FormGrid from '../../../../components/shared/FormGrid';
 import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
@@ -220,7 +220,7 @@ const PhieuKhoForm: React.FC<Props> = ({
       toast.error(t('phieuKho.validation.warehouseToRequired'));
       return;
     }
-    const validChiTiet = (data.chi_tiet ?? []).filter((c) => c.id_hang_hoa?.trim() && Number(c.so_luong) > 0);
+    const validChiTiet = filterPhieuKhoChiTietForSave(data.chi_tiet);
     if (!isEdit && validChiTiet.length === 0) {
       toast.error(t('phieuKho.validation.atLeastOneItem'));
       return;
@@ -301,7 +301,7 @@ const PhieuKhoForm: React.FC<Props> = ({
           createLabel={t('phieuKho.form.create')}
         />
       }
-      maxWidthClass={DRAWER_WIDTH_FORM}
+      maxWidthClass={DRAWER_WIDTH_PHIEU_KHO}
     >
       <form id="phieu-kho-form" onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <FormSection title={t('phieuKho.detail.basicInfo')} icon={<FileText size={14} />} variant="primary">
@@ -514,7 +514,8 @@ const PhieuKhoForm: React.FC<Props> = ({
           onAdd={() => append({ id_hang_hoa: '', so_luong: 0, don_gia: 0, so_lot: '', ghi_chu: '' })}
           emptyTitle={t('phieuKho.form.noItems')}
           emptyDescription={t('phieuKho.form.noItemsHint')}
-          maxTableHeight="320px"
+          maxTableHeight="360px"
+          tableClassName="min-w-max"
         >
           <thead className="sticky top-0 z-[1] bg-muted border-b border-border">
             <tr>
@@ -525,7 +526,7 @@ const PhieuKhoForm: React.FC<Props> = ({
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[110px]">{t('phieuKho.form.amount')}</th>
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[64px]">{t('phieuKho.form.unit')}</th>
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[90px]">{t('phieuKho.form.stockAtWarehouse')}</th>
-              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[90px]">{t('phieuKho.preview.soLot')}</th>
+              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[160px]">{t('phieuKho.preview.soLot')}</th>
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[200px]">{t('phieuKho.form.note')}</th>
               {showTonKhoWarning && (
                 <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[100px]">{t('phieuKho.form.warning')}</th>
@@ -611,10 +612,10 @@ const PhieuKhoForm: React.FC<Props> = ({
                     <td className="px-4 py-2.5 text-xs text-muted-foreground tabular-nums">
                       {idHangHoa ? `${ton} ${donVi !== '—' ? donVi : ''}` : '—'}
                     </td>
-                    <td className="px-4 py-2.5 min-w-[90px] align-top">
+                    <td className="px-4 py-2.5 min-w-[160px] align-top">
                       <Input
                         placeholder={t('phieuKho.preview.soLot')}
-                        className="h-9 text-sm border-border w-full"
+                        className="h-9 text-sm border-border w-full min-w-[10rem]"
                         {...register(`chi_tiet.${index}.so_lot`)}
                       />
                     </td>
