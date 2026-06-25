@@ -1,5 +1,6 @@
 /**
- * Locale vi — core shell (feature locales lazy-load qua lib/feature-i18n.ts).
+ * Locale vi — core shell + tất cả feature locales (eager load khi khởi động).
+ * Tránh race condition khi i18n.t() chạy lúc import module (store, schema).
  */
 import common from './common.json';
 import pages from './pages.json';
@@ -19,6 +20,37 @@ import congViec from './cong-viec.json';
 import guide from './guide.json';
 import kho from './kho.json';
 
+import baoTriSuaChua from '../../features/hanh-chinh/bao-tri-sua-chua/locales/vi.json';
+import capPhatThuHoi from '../../features/hanh-chinh/cap-phat-thu-hoi/locales/vi.json';
+import danhMucTaiSan from '../../features/hanh-chinh/danh-muc-tai-san/locales/vi.json';
+import khauHaoTaiSan from '../../features/hanh-chinh/khau-hao-tai-san/locales/vi.json';
+import kiemKeTaiSan from '../../features/hanh-chinh/kiem-ke-tai-san/locales/vi.json';
+import noiQuanLy from '../../features/hanh-chinh/noi-quan-ly/locales/vi.json';
+import thietLapTaiSan from '../../features/hanh-chinh/thiet-lap-tai-san/locales/vi.json';
+import baoCaoNhapXuatTon from '../../features/kho-van/bao-cao-nhap-xuat-ton/locales/vi.json';
+import danhMucHangHoa from '../../features/kho-van/danh-muc-hang-hoa/locales/vi.json';
+import danhSachDoiTac from '../../features/kho-van/danh-sach-doi-tac/locales/vi.json';
+import danhSachHangHoa from '../../features/kho-van/danh-sach-hang-hoa/locales/vi.json';
+import danhSachNhaCungCap from '../../features/kho-van/danh-sach-nha-cung-cap/locales/vi.json';
+import kiemKeKho from '../../features/kho-van/kiem-ke-kho/locales/vi.json';
+import phieuDeXuatVatTu from '../../features/kho-van/phieu-de-xuat-vat-tu/locales/vi.json';
+import phieuKho from '../../features/kho-van/phieu-kho/locales/vi.json';
+import phieuKiemKe from '../../features/kho-van/phieu-kiem-ke/locales/vi.json';
+import tonKho from '../../features/kho-van/ton-kho/locales/vi.json';
+import baoCaoDeXuatVatTu from '../../features/mua-hang/bao-cao-de-xuat-vat-tu/locales/vi.json';
+import donDatHang from '../../features/mua-hang/don-dat-hang/locales/vi.json';
+import quanLyHopDong from '../../features/mua-hang/quan-ly-hop-dong/locales/vi.json';
+import thanhToanDoiTac from '../../features/mua-hang/thanh-toan-doi-tac/locales/vi.json';
+import thietLapDeXuatVatTu from '../../features/mua-hang/thiet-lap-de-xuat-vat-tu/locales/vi.json';
+import baoCaoNhanCong from '../../features/quan-ly-farm/bao-cao-nhan-cong/locales/vi.json';
+import baoCaoSoChe from '../../features/quan-ly-farm/bao-cao-so-che/locales/vi.json';
+import duBaoSlDongThung from '../../features/quan-ly-farm/du-bao-sl-dong-thung/locales/vi.json';
+import hangHoaPhanThuoc from '../../features/quan-ly-farm/hang-hoa-phan-thuoc/locales/vi.json';
+import phieuKhoPhanThuoc from '../../features/quan-ly-farm/phieu-kho-phan-thuoc/locales/vi.json';
+import thongKeSanXuat from '../../features/quan-ly-farm/thong-ke-san-xuat/locales/vi.json';
+import thuHoach from '../../features/quan-ly-farm/thu-hoach/locales/vi.json';
+import tonKhoPhanThuoc from '../../features/quan-ly-farm/ton-kho-phan-thuoc/locales/vi.json';
+
 const viCore = {
   ...(common as Record<string, string>),
   ...(pages as Record<string, string>),
@@ -37,6 +69,36 @@ const viCore = {
   ...(congViec as Record<string, string>),
   ...(guide as Record<string, string>),
   ...(kho as Record<string, string>),
+  ...(baoTriSuaChua as Record<string, string>),
+  ...(capPhatThuHoi as Record<string, string>),
+  ...(danhMucTaiSan as Record<string, string>),
+  ...(khauHaoTaiSan as Record<string, string>),
+  ...(kiemKeTaiSan as Record<string, string>),
+  ...(noiQuanLy as Record<string, string>),
+  ...(thietLapTaiSan as Record<string, string>),
+  ...(baoCaoNhapXuatTon as Record<string, string>),
+  ...(danhMucHangHoa as Record<string, string>),
+  ...(danhSachDoiTac as Record<string, string>),
+  ...(danhSachHangHoa as Record<string, string>),
+  ...(danhSachNhaCungCap as Record<string, string>),
+  ...(kiemKeKho as Record<string, string>),
+  ...(phieuDeXuatVatTu as Record<string, string>),
+  ...(phieuKho as Record<string, string>),
+  ...(phieuKiemKe as Record<string, string>),
+  ...(tonKho as Record<string, string>),
+  ...(baoCaoDeXuatVatTu as Record<string, string>),
+  ...(donDatHang as Record<string, string>),
+  ...(quanLyHopDong as Record<string, string>),
+  ...(thanhToanDoiTac as Record<string, string>),
+  ...(thietLapDeXuatVatTu as Record<string, string>),
+  ...(baoCaoNhanCong as Record<string, string>),
+  ...(baoCaoSoChe as Record<string, string>),
+  ...(duBaoSlDongThung as Record<string, string>),
+  ...(hangHoaPhanThuoc as Record<string, string>),
+  ...(phieuKhoPhanThuoc as Record<string, string>),
+  ...(thongKeSanXuat as Record<string, string>),
+  ...(thuHoach as Record<string, string>),
+  ...(tonKhoPhanThuoc as Record<string, string>),
 };
 
 export default viCore;

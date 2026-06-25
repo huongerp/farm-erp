@@ -11,7 +11,7 @@ export interface DonDatHangFilters {
   phanLoai?: string[];
 }
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
+const getDefaultColumns = (): ColumnConfig[] => [
   { id: 'so_po', label: i18n.t('donDatHang.store.soPoCol'), visible: true, minWidth: 132, maxWidth: 190, order: 0 },
   { id: 'ngay_dat', label: i18n.t('donDatHang.store.orderDateCol'), visible: true, minWidth: 132, maxWidth: 168, order: 1 },
   { id: 'ngay_giao_dk', label: i18n.t('donDatHang.store.deliveryDateCol'), visible: true, minWidth: 140, maxWidth: 176, order: 2 },
@@ -34,5 +34,5 @@ const initialFilters: DonDatHangFilters = {
 
 export const useDonDatHangStore = createGenericStore<DonDatHangFilters>(
   initialFilters,
-  DEFAULT_COLUMNS
+  getDefaultColumns()
 );

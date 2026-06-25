@@ -2,7 +2,7 @@ import { createGenericStore, type ColumnConfig } from '../../../../store/createG
 import i18n from '../../../../lib/i18n';
 import type { DonDatHangFilters } from './useDonDatHangStore';
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
+const getDefaultColumns = (): ColumnConfig[] => [
   { id: 'so_po', label: i18n.t('donDatHang.chiTietTab.soPoCol'), visible: true, minWidth: 132, maxWidth: 190, order: 0 },
   { id: 'ngay_dat', label: i18n.t('donDatHang.chiTietTab.orderDateCol'), visible: true, minWidth: 132, maxWidth: 168, order: 1 },
   { id: 'ten_nha_cung_cap', label: i18n.t('donDatHang.chiTietTab.supplierCol'), visible: true, minWidth: 220, maxWidth: 360, order: 2 },
@@ -32,4 +32,4 @@ const initialFilters: DonDatHangFilters = {
   phanLoai: [],
 };
 
-export const useChiTietDonDatHangStore = createGenericStore<DonDatHangFilters>(initialFilters, DEFAULT_COLUMNS);
+export const useChiTietDonDatHangStore = createGenericStore<DonDatHangFilters>(initialFilters, getDefaultColumns());

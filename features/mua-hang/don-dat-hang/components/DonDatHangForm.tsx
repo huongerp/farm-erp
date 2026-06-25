@@ -8,7 +8,7 @@ import Textarea from '../../../../components/ui/Textarea';
 import Combobox from '../../../../components/ui/Combobox';
 import NumberInput from '../../../../components/ui/NumberInput';
 import Button from '../../../../components/ui/Button';
-import { DonDatHangFormValues, donDatHangSchema, type DonDatHangChiTietFormItem } from '../core/schema';
+import { DonDatHangFormValues, getDonDatHangSchema, type DonDatHangChiTietFormItem } from '../core/schema';
 import { mapPhieuDeXuatChiTietToDonDatHangLines } from '../core/don-dat-hang-to-form-values';
 import type { DonDatHang } from '../core/types';
 import type { Kho } from '../../../kho-van/danh-sach-kho/core/types';
@@ -348,6 +348,8 @@ const DonDatHangForm: React.FC<Props> = ({
     trang_thai: 'Nháp',
     chi_tiet: [],
   };
+
+  const donDatHangSchema = useMemo(() => getDonDatHangSchema(), [t]);
 
   const { register, handleSubmit, formState: { errors }, reset, control, watch, setValue } = useForm<DonDatHangFormValues>({
     resolver: zodResolver(donDatHangSchema) as any,
