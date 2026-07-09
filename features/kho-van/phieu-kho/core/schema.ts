@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import i18n from '../../../../lib/i18n';
-
-const TRANG_THAI_VALUES = ['Chờ duyệt', 'Đã duyệt', 'Không duyệt'] as const;
+import { TRANG_THAI_PHIEU_KHO_VALUES } from './constants';
 
 /** Schema cho một dòng chi tiết (dùng khi gửi API). */
 export const phieuKhoChiTietItemSchema = z.object({
@@ -43,7 +42,7 @@ export const phieuKhoSchema = z.object({
   /** Đơn đặt hàng nguồn (phiếu nhập); tùy chọn. */
   id_don_dat_hang: z.string().optional().nullable(),
   mo_ta: z.string().optional(),
-  trang_thai: z.enum(TRANG_THAI_VALUES, {
+  trang_thai: z.enum(TRANG_THAI_PHIEU_KHO_VALUES, {
     message: i18n.t('phieuKho.validation.statusInvalid'),
   }),
   nguoi_tao_id: z.coerce.number().optional().nullable(),

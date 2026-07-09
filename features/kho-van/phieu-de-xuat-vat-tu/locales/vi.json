@@ -60,6 +60,7 @@
   "phieuDeXuatVatTu.form.save": "Lưu",
   "phieuDeXuatVatTu.form.create": "Tạo phiếu",
   "phieuDeXuatVatTu.status.pending": "Chờ duyệt",
+  "phieuDeXuatVatTu.status.waiting": "Đợi duyệt",
   "phieuDeXuatVatTu.status.approved": "Đã duyệt",
   "phieuDeXuatVatTu.status.rejected": "Không duyệt",
   "phieuDeXuatVatTu.validation.codeRequired": "Vui lòng nhập số phiếu",

@@ -1,11 +1,12 @@
-/** Trạng thái phiếu đề xuất vật tư – lưu text trong DB */
-export type TrangThaiPhieuDeXuatVatTu = 'Chờ duyệt' | 'Đã duyệt' | 'Không duyệt';
+import type { TrangThaiPhieuDeXuatVatTu } from '../../../kho-van/phieu-de-xuat-vat-tu/core/constants';
+
+export type { TrangThaiPhieuDeXuatVatTu };
 
 /** Bộ lọc chung cho báo cáo đề xuất vật tư */
 export interface BaoCaoDeXuatVatTuFilters {
   dateFrom: string;
   dateTo: string;
-  /** Trạng thái: Chờ duyệt, Đã duyệt, Không duyệt */
+  /** Trạng thái: Chờ duyệt, Đợi duyệt, Đã duyệt, Không duyệt */
   trangThaiIds: TrangThaiPhieuDeXuatVatTu[];
   noiDeXuatIds: string[];
   nguoiDeXuatIds: string[];
@@ -34,6 +35,7 @@ export interface TongHopByNoiDeXuatRow {
 export interface TongHopDeXuatKyResult {
   total: number;
   choDuyet: number;
+  doiDuyet: number;
   daDuyet: number;
   khongDuyet: number;
   byTrangThai: TongHopByTrangThaiRow[];

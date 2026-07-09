@@ -1,8 +1,9 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { BarChart3, FileText, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { BarChart3, FileText, Clock, Hourglass, CheckCircle, XCircle } from 'lucide-react';
 import { useTongHopDeXuatKy } from '../hooks/use-bao-cao-de-xuat-vat-tu';
 import type { BaoCaoDeXuatVatTuFilters } from '../core/types';
+import { getBaoCaoTrangThaiLabel } from '../core/trang-thai-utils';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import EmptyState from '../../../../components/shared/EmptyState';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -15,10 +16,7 @@ function formatDateDisplay(ymd: string): string {
 }
 
 function getTrangThaiLabel(trang_thai: string, t: (k: string) => string): string {
-  if (trang_thai === 'Chờ duyệt') return t('baoCaodeXuatVatTu.trangThaiChoDuyet');
-  if (trang_thai === 'Đã duyệt') return t('baoCaodeXuatVatTu.trangThaiDaDuyet');
-  if (trang_thai === 'Không duyệt') return t('baoCaodeXuatVatTu.trangThaiKhongDuyet');
-  return trang_thai;
+  return getBaoCaoTrangThaiLabel(trang_thai, t);
 }
 
 interface TongHopKyTabProps {
@@ -56,6 +54,7 @@ const TongHopKyTab: React.FC<TongHopKyTabProps> = ({ filters, onClearFilters }) 
 
   const total = data?.total ?? 0;
   const choDuyet = data?.choDuyet ?? 0;
+  const doiDuyet = data?.doiDuyet ?? 0;
   const daDuyet = data?.daDuyet ?? 0;
   const khongDuyet = data?.khongDuyet ?? 0;
   const byTrangThai = data?.byTrangThai ?? [];
@@ -90,6 +89,7 @@ const TongHopKyTab: React.FC<TongHopKyTabProps> = ({ filters, onClearFilters }) 
   const cards = [
     { labelKey: 'baoCaodeXuatVatTu.tongHop.totalPhieu', value: total, icon: FileText, iconClass: 'bg-primary/10 text-primary' },
     { labelKey: 'baoCaodeXuatVatTu.tongHop.choDuyet', value: choDuyet, icon: Clock, iconClass: 'bg-amber-500/10 text-amber-600 dark:text-amber-400' },
+    { labelKey: 'baoCaodeXuatVatTu.tongHop.doiDuyet', value: doiDuyet, icon: Hourglass, iconClass: 'bg-sky-500/10 text-sky-600 dark:text-sky-400' },
     { labelKey: 'baoCaodeXuatVatTu.tongHop.daDuyet', value: daDuyet, icon: CheckCircle, iconClass: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' },
     { labelKey: 'baoCaodeXuatVatTu.tongHop.khongDuyet', value: khongDuyet, icon: XCircle, iconClass: 'bg-rose-500/10 text-rose-600 dark:text-rose-400' },
   ];
@@ -101,7 +101,7 @@ const TongHopKyTab: React.FC<TongHopKyTabProps> = ({ filters, onClearFilters }) 
           {periodLabel}
         </p>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
           {cards.map((item) => {
             const Icon = item.icon;
             return (

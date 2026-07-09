@@ -61,6 +61,7 @@
   "phieuKho.form.descriptionPlaceholder": "Nhập mô tả",
   "phieuKho.form.status": "Trạng thái",
   "phieuKho.status.pending": "Chờ duyệt",
+  "phieuKho.status.waiting": "Đợi duyệt",
   "phieuKho.status.approved": "Đã duyệt",
   "phieuKho.status.rejected": "Không duyệt",
   "phieuKho.form.save": "Lưu",

@@ -11,7 +11,7 @@ import { DATE_RANGE_PRESETS, type DateRangePresetId } from '../../../he-thong/nh
 import { getDateRangeFromPreset } from '../../../he-thong/nhan-vien/utils/stats-date-range';
 import { useChiTietTabStore } from '../store/useChiTietTabStore';
 import type { PhieuDeXuatVatTuChiTietRow } from '../core/types';
-import { TRANG_THAI_CHO_DUYET, TRANG_THAI_DA_DUYET, TRANG_THAI_KHONG_DUYET, TIEN_DO_MH_KNOWN_LABELS } from '../core/constants';
+import { TRANG_THAI_CHO_DUYET, TRANG_THAI_DA_DUYET, TRANG_THAI_DOI_DUYET, TRANG_THAI_KHONG_DUYET, TIEN_DO_MH_KNOWN_LABELS } from '../core/constants';
 import type { EmployeeRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
 import type { Kho } from '../../danh-sach-kho/core/types';
 
@@ -141,6 +141,11 @@ const ChiTietTabToolbar: React.FC<Props> = ({
         label: t('phieuDeXuatVatTu.status.pending'),
         value: 'Pending',
         count: unweighted ? 1 : data.filter((r) => r.trang_thai_phieu === TRANG_THAI_CHO_DUYET).length,
+      },
+      {
+        label: t('phieuDeXuatVatTu.status.waiting'),
+        value: 'Waiting',
+        count: unweighted ? 1 : data.filter((r) => r.trang_thai_phieu === TRANG_THAI_DOI_DUYET).length,
       },
       {
         label: t('phieuDeXuatVatTu.status.approved'),

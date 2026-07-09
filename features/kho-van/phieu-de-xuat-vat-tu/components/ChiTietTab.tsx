@@ -22,7 +22,7 @@ import type { DateRangePresetId } from '../../../he-thong/nhan-vien/core/stats-c
 import type { Kho } from '../../danh-sach-kho/core/types';
 import type { PhieuDeXuatVatTu, PhieuDeXuatVatTuChiTietRow } from '../core/types';
 import type { PhieuDeXuatVatTuFormValues } from '../core/schema';
-import { getTienDoMhBadgeClass } from '../core/constants';
+import { getTienDoMhBadgeClass, getTrangThaiPhieuBadgeClass, trangThaiToI18nKey } from '../core/constants';
 import ChiTietTabToolbar from './ChiTietTabToolbar';
 import ExportDialog from '../../../../components/shared/LazyExportDialog';
 import GenericTable from '../../../../components/shared/GenericTable';
@@ -341,16 +341,13 @@ const ChiTietTab: React.FC = () => {
       <span
         className={cn(
           'inline-flex px-2 py-0.5 rounded-full text-xs font-medium border whitespace-nowrap',
-          status === 'Đã duyệt' && 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20',
-          status === 'Chờ duyệt' && 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20',
-          status === 'Không duyệt' && 'bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/20',
-          status !== 'Đã duyệt' && status !== 'Chờ duyệt' && status !== 'Không duyệt' && 'bg-muted text-muted-foreground border-border'
+          getTrangThaiPhieuBadgeClass(status),
         )}
       >
-        {status}
+        {t(`phieuDeXuatVatTu.status.${trangThaiToI18nKey(status)}`, { defaultValue: status })}
       </span>
     );
-  }, []);
+  }, [t]);
 
   const renderTienDoBadge = useCallback((tenTienDo: string | null | undefined) => {
     if (tenTienDo == null || tenTienDo === '') return <span className="text-muted-foreground text-sm">—</span>;

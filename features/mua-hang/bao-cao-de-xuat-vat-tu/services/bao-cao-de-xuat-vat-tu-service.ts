@@ -6,7 +6,8 @@ import type {
   TongHopByTrangThaiRow,
   TongHopByNoiDeXuatRow,
 } from '../core/types';
-import { TRANG_THAI_CHO_DUYET, TRANG_THAI_DA_DUYET, TRANG_THAI_KHONG_DUYET } from '../../../kho-van/phieu-de-xuat-vat-tu/core/constants';
+import { TRANG_THAI_CHO_DUYET, TRANG_THAI_DA_DUYET, TRANG_THAI_DOI_DUYET, TRANG_THAI_KHONG_DUYET } from '../../../kho-van/phieu-de-xuat-vat-tu/core/constants';
+import { TRANG_THAI_PHIEU_DE_XUAT_VAT_TU } from '../core/trang-thai-utils';
 import { fetchPhieuDeXuatStatsFromRpc } from '../../../kho-van/phieu-de-xuat-vat-tu/services/phieu-de-xuat-vat-tu-supabase.service';
 import { getAllPhieuDeXuatVatTu } from '../../../kho-van/phieu-de-xuat-vat-tu/services/phieu-de-xuat-vat-tu-service';
 import { getAllDonDatHang } from '../../don-dat-hang/services/don-dat-hang-service';
@@ -121,6 +122,7 @@ export async function getTongHopDeXuatKy(
   if (rpc) {
     const byTrangThai: TongHopByTrangThaiRow[] = [
       { trang_thai: TRANG_THAI_CHO_DUYET, count: rpc.summary.pending },
+      { trang_thai: TRANG_THAI_DOI_DUYET, count: rpc.summary.waiting },
       { trang_thai: TRANG_THAI_DA_DUYET, count: rpc.summary.approved },
       { trang_thai: TRANG_THAI_KHONG_DUYET, count: rpc.summary.rejected },
     ];
@@ -136,6 +138,7 @@ export async function getTongHopDeXuatKy(
     return {
       total: rpc.summary.total,
       choDuyet: rpc.summary.pending,
+      doiDuyet: rpc.summary.waiting,
       daDuyet: rpc.summary.approved,
       khongDuyet: rpc.summary.rejected,
       byTrangThai,
@@ -153,14 +156,14 @@ export async function getTongHopDeXuatKy(
   const filtered = applyFilters(scoped, filters);
 
   const choDuyet = filtered.filter((p) => p.trang_thai === TRANG_THAI_CHO_DUYET).length;
+  const doiDuyet = filtered.filter((p) => p.trang_thai === TRANG_THAI_DOI_DUYET).length;
   const daDuyet = filtered.filter((p) => p.trang_thai === TRANG_THAI_DA_DUYET).length;
   const khongDuyet = filtered.filter((p) => p.trang_thai === TRANG_THAI_KHONG_DUYET).length;
 
-  const TRANG_THAI_LIST = [TRANG_THAI_CHO_DUYET, TRANG_THAI_DA_DUYET, TRANG_THAI_KHONG_DUYET] as const;
   const byTrangThaiMap = new Map<string, number>();
-  TRANG_THAI_LIST.forEach((s) => byTrangThaiMap.set(s, 0));
+  TRANG_THAI_PHIEU_DE_XUAT_VAT_TU.forEach((s) => byTrangThaiMap.set(s, 0));
   filtered.forEach((p) => byTrangThaiMap.set(p.trang_thai, (byTrangThaiMap.get(p.trang_thai) ?? 0) + 1));
-  const byTrangThai: TongHopByTrangThaiRow[] = TRANG_THAI_LIST.map((trang_thai) => ({
+  const byTrangThai: TongHopByTrangThaiRow[] = TRANG_THAI_PHIEU_DE_XUAT_VAT_TU.map((trang_thai) => ({
     trang_thai,
     count: byTrangThaiMap.get(trang_thai) ?? 0,
   }));
@@ -195,6 +198,7 @@ export async function getTongHopDeXuatKy(
   return {
     total: filtered.length,
     choDuyet,
+    doiDuyet,
     daDuyet,
     khongDuyet,
     byTrangThai,

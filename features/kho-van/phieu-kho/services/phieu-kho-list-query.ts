@@ -6,11 +6,7 @@ import { LOAI_TAB_TO_DB } from '../core/types';
 import type { Kho } from '../../danh-sach-kho/core/types';
 import type { ChiTietPhieuKhoFilters } from '../store/useChiTietPhieuKhoStore';
 
-const STATUS_KEY_TO_VI: Record<string, string> = {
-  Pending: 'Chờ duyệt',
-  Approved: 'Đã duyệt',
-  Rejected: 'Không duyệt',
-};
+import { filterKeyToTrangThai, type TrangThaiFilterKey } from '../core/constants';
 
 function strArr(v: unknown): string[] {
   if (v == null) return [];
@@ -68,7 +64,9 @@ export function buildPhieuKhoListServerQuery(params: {
   khoList: Kho[];
 }): PhieuKhoListServerQuery {
   const { loaiTab, searchTerm, filters, ngayFrom, ngayTo, viewScope, khoList } = params;
-  const st = strArr(filters.status).map((k) => STATUS_KEY_TO_VI[k]).filter(Boolean);
+  const st = strArr(filters.status)
+    .map((k) => filterKeyToTrangThai(k as TrangThaiFilterKey))
+    .filter(Boolean);
   const scope = buildPhieuKhoViewScopeForServer(
     viewScope.viewAll,
     viewScope.viewByBranch,
@@ -113,7 +111,9 @@ export function buildChiTietPhieuKhoListServerQuery(params: {
         .filter((x): x is string => x !== '')
     ),
   ].sort();
-  const st = strArr(filters.trangThaiKeys).map((k) => STATUS_KEY_TO_VI[k]).filter(Boolean);
+  const st = strArr(filters.trangThaiKeys)
+    .map((k) => filterKeyToTrangThai(k as TrangThaiFilterKey))
+    .filter(Boolean);
   const scope = buildPhieuKhoViewScopeForServer(
     viewScope.viewAll,
     viewScope.viewByBranch,

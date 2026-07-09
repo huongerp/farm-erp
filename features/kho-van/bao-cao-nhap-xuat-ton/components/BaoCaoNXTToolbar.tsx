@@ -158,7 +158,7 @@ const BaoCaoNXTToolbar: React.FC<BaoCaoNXTToolbarProps> = ({
         options: trangThaiOptions.map((o) => ({ label: o.label, value: String(o.value) })),
         value: filters.trangThaiPhieu.map(String),
         onChange: (val: string[]) =>
-          onFiltersChange({ ...filters, trangThaiPhieu: val.map(Number) as (0 | 1 | 2)[] }),
+          onFiltersChange({ ...filters, trangThaiPhieu: val.map(Number) as (0 | 1 | 2 | 3)[] }),
       },
       {
         key: 'categoryIds',
@@ -221,7 +221,7 @@ const BaoCaoNXTToolbar: React.FC<BaoCaoNXTToolbarProps> = ({
         options={trangThaiOptions.map((o) => ({ label: o.label, value: String(o.value) }))}
         value={filters.trangThaiPhieu.map(String)}
         onChange={(v) =>
-          onFiltersChange({ ...filters, trangThaiPhieu: v.map(Number) as (0 | 1 | 2)[] })
+          onFiltersChange({ ...filters, trangThaiPhieu: v.map(Number) as (0 | 1 | 2 | 3)[] })
         }
         placeholder={t('baoCaonhapXuatTon.filter.trangThaiPlaceholder')}
         icon={ClipboardList}

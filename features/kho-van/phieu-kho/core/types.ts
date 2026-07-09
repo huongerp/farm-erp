@@ -5,7 +5,7 @@ export type LoaiPhieuKhoTab = 'nhap' | 'xuat' | 'chuyen';
 export type LoaiPhieuKho = 'nhập' | 'xuất' | 'chuyển';
 
 /** Trạng thái phiếu – text lưu DB. */
-export type TrangThaiPhieuKho = 'Chờ duyệt' | 'Đã duyệt' | 'Không duyệt';
+export type TrangThaiPhieuKho = 'Chờ duyệt' | 'Đợi duyệt' | 'Đã duyệt' | 'Không duyệt';
 
 /** Map tab → giá trị loại gửi DB. */
 export const LOAI_TAB_TO_DB: Record<LoaiPhieuKhoTab, LoaiPhieuKho> = {
@@ -26,10 +26,12 @@ export const TRANG_THAI_PHIEU_KHO: Record<number, TrangThaiPhieuKho> = {
   0: 'Chờ duyệt',
   1: 'Đã duyệt',
   2: 'Không duyệt',
+  3: 'Đợi duyệt',
 };
 
 export const TRANG_THAI_PHIEU_KHO_TO_NUM: Record<TrangThaiPhieuKho, number> = {
   'Chờ duyệt': 0,
+  'Đợi duyệt': 3,
   'Đã duyệt': 1,
   'Không duyệt': 2,
 };
@@ -82,7 +84,7 @@ export interface PhieuKho {
   id_don_dat_hang?: string | null;
   /** Số PO từ view / enrich. */
   so_po_don_dat_hang?: string | null;
-  /** Text: "Chờ duyệt" | "Đã duyệt" | "Không duyệt" */
+  /** Text: Chờ duyệt, Đợi duyệt, Đã duyệt, Không duyệt */
   trang_thai: TrangThaiPhieuKho;
   mo_ta?: string;
   /** Nội dung trao đổi / ghi chú duyệt. */

@@ -1,10 +1,19 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Edit, Trash2, FileText, Calendar, Warehouse, ArrowRightLeft, Package, Truck, Printer, CheckCircle, XCircle, Copy } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Edit, Trash2, FileText, Calendar, Warehouse, ArrowRightLeft, Package, Truck, Printer, CheckCircle, X, Copy, Hourglass } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Textarea from '../../../../components/ui/Textarea';
 import { cn } from '../../../../lib/utils';
-import type { PhieuKho, LoaiPhieuKhoTab } from '../core/types';
+import type { PhieuKho, LoaiPhieuKhoTab, TrangThaiPhieuKho } from '../core/types';
+import {
+  TRANG_THAI_DA_DUYET,
+  TRANG_THAI_DOI_DUYET,
+  TRANG_THAI_KHONG_DUYET,
+  getTrangThaiPhieuBadgeClass,
+  isTrangThaiChoPheDuyet,
+  trangThaiToI18nKey,
+} from '../core/constants';
 import { formatDateTimeShort, formatNumberVN } from '../../../../lib/utils';
 import GenericDrawer, { DRAWER_WIDTH_PHIEU_KHO } from '../../../../components/shared/GenericDrawer';
 import DetailToolbar, { type DetailToolbarAction } from '../../../../components/shared/DetailToolbar';
@@ -15,6 +24,41 @@ import GenericSubTableSection from '../../../../components/shared/GenericSubTabl
 import { BTN_CLOSE, BTN_EDIT, BTN_DELETE } from '../../../../lib/button-labels';
 import { useUpdatePhieuKhoTrangThai } from '../hooks/use-phieu-kho';
 import { useAuthStore } from '../../../../store/useStore';
+
+interface ApproveOptionProps {
+  label: string;
+  icon: React.ReactNode;
+  iconWrapClass: string;
+  buttonClass: string;
+  onClick: () => void;
+  disabled?: boolean;
+}
+
+const ApproveOption: React.FC<ApproveOptionProps> = ({
+  label,
+  icon,
+  iconWrapClass,
+  buttonClass,
+  onClick,
+  disabled,
+}) => (
+  <button
+    type="button"
+    onClick={onClick}
+    disabled={disabled}
+    className={cn(
+      'group flex flex-col items-center justify-center gap-1.5 rounded-lg border px-2 py-2.5 text-center transition-all',
+      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+      'hover:shadow-sm active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50',
+      buttonClass,
+    )}
+  >
+    <span className={cn('flex h-7 w-7 shrink-0 items-center justify-center rounded-full', iconWrapClass)}>
+      {icon}
+    </span>
+    <span className="text-xs font-medium leading-tight">{label}</span>
+  </button>
+);
 
 interface Props {
   data: PhieuKho;
@@ -36,30 +80,41 @@ const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete
     user?.ho_va_ten?.trim() || user?.full_name?.trim() || user?.email?.trim() || '';
   const [showDuyetPopup, setShowDuyetPopup] = useState(false);
   const [duyetGhiChu, setDuyetGhiChu] = useState('');
-  const [duyetOption, setDuyetOption] = useState<'Đã duyệt' | 'Không duyệt'>('Đã duyệt');
   const updateTrangThaiMutation = useUpdatePhieuKhoTrangThai(() => setShowDuyetPopup(false));
 
-  const statusLabel =
-    data.trang_thai === 'Chờ duyệt'
-      ? t('phieuKho.status.pending')
-      : data.trang_thai === 'Đã duyệt'
-        ? t('phieuKho.status.approved')
-        : t('phieuKho.status.rejected');
-  const statusVariant =
-    data.trang_thai === 'Chờ duyệt' ? 'amber' : data.trang_thai === 'Đã duyệt' ? 'primary' : 'rose';
+  const showApproveButton = canApprove && isTrangThaiChoPheDuyet(data.trang_thai);
+  const statusLabel = t(`phieuKho.status.${trangThaiToI18nKey(data.trang_thai)}`);
+
+  const submitApprove = (trangThai: TrangThaiPhieuKho) => {
+    updateTrangThaiMutation.mutate(
+      {
+        id: data.id,
+        trang_thai: trangThai,
+        ghi_chu: duyetGhiChu.trim() || undefined,
+        id_nguoi_duyet: nguoiDuyetIdValid,
+        ten_nguoi_duyet_hien_thi: nguoiDuyetTen || undefined,
+      },
+      {
+        onSuccess: () => {
+          setShowDuyetPopup(false);
+          setDuyetGhiChu('');
+        },
+      },
+    );
+  };
+
   const isChuyen = loai === 'chuyen';
   const isNhap = loai === 'nhap';
   const isXuat = loai === 'xuat';
 
   const detailToolbarActions: DetailToolbarAction[] = useMemo(() => {
     const actions: DetailToolbarAction[] = [];
-    if (canApprove) {
+    if (showApproveButton) {
       actions.push({
         label: t('phieuKho.approveAction'),
         icon: <CheckCircle size={16} />,
         onClick: () => {
           setDuyetGhiChu('');
-          setDuyetOption(data.trang_thai === 'Không duyệt' ? 'Đã duyệt' : data.trang_thai === 'Đã duyệt' ? 'Không duyệt' : 'Đã duyệt');
           setShowDuyetPopup(true);
         },
         variant: 'primary',
@@ -78,7 +133,7 @@ const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete
       onClick: () => window.open(`/mua-hang/phieu-kho/preview/${data.id}`, '_blank', 'noopener,noreferrer'),
     });
     return actions;
-  }, [data, canApprove, onCopy, onClose, t]);
+  }, [data, showApproveButton, onCopy, onClose, t]);
 
   const renderFooter = (
     <div className="flex items-center justify-between w-full">
@@ -118,6 +173,7 @@ const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete
   );
 
   return (
+    <>
     <GenericDrawer
       title={t('phieuKho.detail.title')}
       subtitle={data.so_phieu}
@@ -136,23 +192,11 @@ const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete
             <p className="text-body-sm text-muted-foreground mt-0.5">{data.ngay}</p>
             <div className="mt-1.5">
               <span
-                className={
-                  statusVariant === 'amber'
-                    ? 'inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-medium border border-amber-500/20'
-                    : statusVariant === 'primary'
-                      ? 'inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium border border-primary/20'
-                      : 'inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 text-xs font-medium border border-rose-500/20'
-                }
+                className={cn(
+                  'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border',
+                  getTrangThaiPhieuBadgeClass(data.trang_thai),
+                )}
               >
-                <span
-                  className={
-                    statusVariant === 'amber'
-                      ? 'w-1.5 h-1.5 rounded-full bg-amber-500'
-                      : statusVariant === 'primary'
-                        ? 'w-1.5 h-1.5 rounded-full bg-primary'
-                        : 'w-1.5 h-1.5 rounded-full bg-rose-500'
-                  }
-                />{' '}
                 {statusLabel}
               </span>
             </div>
@@ -294,83 +338,102 @@ const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete
           </DetailFieldGrid>
         </DetailSection>
       </div>
-
-      {showDuyetPopup && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50" onClick={() => setShowDuyetPopup(false)}>
-          <div
-            className="bg-card border border-border rounded-xl shadow-xl max-w-md w-full p-5 space-y-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-lg font-semibold text-foreground">{t('phieuKho.approveDialog.title')}</h3>
-
-            <div className="grid grid-cols-2 gap-2.5">
-              {([
-                { value: 'Đã duyệt' as const, icon: <CheckCircle size={15} />, color: 'emerald' },
-                { value: 'Không duyệt' as const, icon: <XCircle size={15} />, color: 'rose' },
-              ]).map((opt) => {
-                const selected = duyetOption === opt.value;
-                const label = opt.value === 'Đã duyệt' ? t('phieuKho.approveDialog.approveButton') : t('phieuKho.approveDialog.rejectButton');
-                return (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => setDuyetOption(opt.value)}
-                    className={cn(
-                      'flex items-center gap-2 rounded-lg border px-3.5 py-2.5 text-sm font-medium transition-all duration-150 cursor-pointer',
-                      selected && opt.color === 'emerald' && 'border-emerald-500/60 bg-emerald-50 text-emerald-700 shadow-sm dark:bg-emerald-950/25 dark:text-emerald-400 dark:border-emerald-700/50',
-                      selected && opt.color === 'rose' && 'border-rose-500/60 bg-rose-50 text-rose-700 shadow-sm dark:bg-rose-950/25 dark:text-rose-400 dark:border-rose-700/50',
-                      !selected && 'border-border bg-card text-muted-foreground hover:bg-muted/50 hover:text-foreground',
-                    )}
-                  >
-                    <span className={cn(
-                      'shrink-0',
-                      selected && opt.color === 'emerald' && 'text-emerald-600 dark:text-emerald-400',
-                      selected && opt.color === 'rose' && 'text-rose-600 dark:text-rose-400',
-                      !selected && 'text-muted-foreground/60',
-                    )}>
-                      {opt.icon}
-                    </span>
-                    <span>{label}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            <Textarea
-              label={t('phieuKho.approveDialog.note')}
-              placeholder={t('phieuKho.approveDialog.notePlaceholder')}
-              value={duyetGhiChu}
-              onChange={(e) => setDuyetGhiChu(e.target.value)}
-              rows={3}
-            />
-
-            <div className="flex items-center justify-end gap-2 pt-1">
-              <Button variant="ghost" onClick={() => setShowDuyetPopup(false)} className="border border-border">
-                {BTN_CLOSE()}
-              </Button>
-              <Button
-                onClick={() => {
-                  updateTrangThaiMutation.mutate(
-                    {
-                      id: data.id,
-                      trang_thai: duyetOption,
-                      ghi_chu: duyetGhiChu.trim() || undefined,
-                      id_nguoi_duyet: nguoiDuyetIdValid,
-                      ten_nguoi_duyet_hien_thi: nguoiDuyetTen || undefined,
-                    },
-                    { onSuccess: () => setShowDuyetPopup(false) }
-                  );
-                }}
-                disabled={updateTrangThaiMutation.isPending}
-                className="bg-primary text-white shadow-lg hover:bg-primary/90"
-              >
-                {updateTrangThaiMutation.isPending ? '...' : t('phieuKho.approveDialog.submit')}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </GenericDrawer>
+
+      <AnimatePresence>
+        {showDuyetPopup && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowDuyetPopup(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.96, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.96, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="bg-card rounded-2xl border border-border shadow-2xl max-w-lg w-full overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="px-6 pt-5 pb-4 border-b border-border bg-muted/30">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <h3 className="text-lg font-semibold text-foreground">
+                      {t('phieuKho.approveDialog.title')}
+                    </h3>
+                    <p className="text-sm text-muted-foreground mt-0.5 truncate">{data.so_phieu}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowDuyetPopup(false)}
+                    className="p-2 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors shrink-0"
+                    aria-label={t('common.close')}
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="px-6 py-5 space-y-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                    {t('phieuKho.approveDialog.status')}
+                  </p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <ApproveOption
+                      label={t('phieuKho.status.approved')}
+                      icon={<CheckCircle size={14} />}
+                      iconWrapClass="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                      buttonClass="border-emerald-500/25 bg-emerald-500/[0.04] text-emerald-800 dark:text-emerald-200 hover:border-emerald-500/45 hover:bg-emerald-500/10"
+                      onClick={() => submitApprove(TRANG_THAI_DA_DUYET)}
+                      disabled={updateTrangThaiMutation.isPending}
+                    />
+                    <ApproveOption
+                      label={t('phieuKho.status.waiting')}
+                      icon={<Hourglass size={14} />}
+                      iconWrapClass="bg-sky-500/15 text-sky-600 dark:text-sky-400"
+                      buttonClass="border-sky-500/25 bg-sky-500/[0.04] text-sky-800 dark:text-sky-200 hover:border-sky-500/45 hover:bg-sky-500/10"
+                      onClick={() => submitApprove(TRANG_THAI_DOI_DUYET)}
+                      disabled={updateTrangThaiMutation.isPending}
+                    />
+                    <ApproveOption
+                      label={t('phieuKho.status.rejected')}
+                      icon={<X size={14} />}
+                      iconWrapClass="bg-rose-500/15 text-rose-600 dark:text-rose-400"
+                      buttonClass="border-rose-500/25 bg-rose-500/[0.04] text-rose-800 dark:text-rose-200 hover:border-rose-500/45 hover:bg-rose-500/10"
+                      onClick={() => submitApprove(TRANG_THAI_KHONG_DUYET)}
+                      disabled={updateTrangThaiMutation.isPending}
+                    />
+                  </div>
+                </div>
+
+                <Textarea
+                  label={t('phieuKho.approveDialog.note')}
+                  placeholder={t('phieuKho.approveDialog.notePlaceholder')}
+                  value={duyetGhiChu}
+                  onChange={(e) => setDuyetGhiChu(e.target.value)}
+                  rows={3}
+                  className="resize-none"
+                />
+              </div>
+
+              <div className="px-6 py-4 border-t border-border bg-muted/20 flex justify-end">
+                <Button
+                  variant="ghost"
+                  onClick={() => setShowDuyetPopup(false)}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  {BTN_CLOSE()}
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 };
 

@@ -16,7 +16,7 @@ import type {
   PhieuDeXuatVatTuStatsSummary,
   StatsChartItem,
 } from '../components/stats/usePhieuDeXuatVatTuStats';
-import { filterKeyToTrangThai, TRANG_THAI_PHIEU_DE_XUAT_VAT_TU } from '../core/constants';
+import { filterKeyToTrangThai, TRANG_THAI_PHIEU_DE_XUAT_VAT_TU, trangThaiToI18nKey, type TrangThaiFilterKey } from '../core/constants';
 
 const TABLE_PHIEU = 'fp_mh_phieu_de_xuat_vat_tu';
 const TABLE_CHI_TIET = 'fp_mh_phieu_de_xuat_vat_tu_chi_tiet';
@@ -198,7 +198,7 @@ export async function fetchPhieuDeXuatStatsFromRpc(params: {
   scopeNoiDeXuatIds?: number[];
 }): Promise<PhieuDeXuatStatsRpcResult | null> {
   const toDate = (s: string) => (s?.trim() ? s.trim().slice(0, 10) : null);
-  const trangThai = params.filterStatus.map((k) => filterKeyToTrangThai(k as 'Pending' | 'Approved' | 'Rejected'));
+  const trangThai = params.filterStatus.map((k) => filterKeyToTrangThai(k as TrangThaiFilterKey));
   const noiNums = params.filterNoiDeXuat.map(Number).filter((n) => !Number.isNaN(n));
   let noiIds = noiNums.length ? noiNums : null;
   if (params.scopeNoiDeXuatIds != null) {
@@ -210,10 +210,10 @@ export async function fetchPhieuDeXuatStatsFromRpc(params: {
     }
     if (noiIds.length === 0) {
       return {
-        summary: { total: 0, pending: 0, approved: 0, rejected: 0 },
+        summary: { total: 0, pending: 0, waiting: 0, approved: 0, rejected: 0 },
         byTrangThai: TRANG_THAI_PHIEU_DE_XUAT_VAT_TU.map((s) => ({
           id: s,
-          ten: `status.${s === 'Chờ duyệt' ? 'pending' : s === 'Đã duyệt' ? 'approved' : 'rejected'}`,
+          ten: `status.${trangThaiToI18nKey(s)}`,
           count: 0,
         })),
         byNoiDeXuat: [],
@@ -252,18 +252,25 @@ export async function fetchPhieuDeXuatStatsFromRpc(params: {
     chipByNguoiDuyetId?: Record<string, number>;
   };
   if (!j.summary) return null;
+  const summary: PhieuDeXuatVatTuStatsSummary = {
+    total: j.summary.total ?? 0,
+    pending: j.summary.pending ?? 0,
+    waiting: j.summary.waiting ?? 0,
+    approved: j.summary.approved ?? 0,
+    rejected: j.summary.rejected ?? 0,
+  };
   const byTrangThai: PhieuDeXuatVatTuStatsByTrangThai[] = (
-    ['Pending', 'Approved', 'Rejected'] as const
+    ['Pending', 'Waiting', 'Approved', 'Rejected'] as const
   ).map((key) => {
     const row = j.byTrangThai?.find((r) => r.id === key);
     return {
       id: key,
-      ten: `status.${key === 'Pending' ? 'pending' : key === 'Approved' ? 'approved' : 'rejected'}`,
+      ten: `status.${key === 'Pending' ? 'pending' : key === 'Waiting' ? 'waiting' : key === 'Approved' ? 'approved' : 'rejected'}`,
       count: row?.count ?? 0,
     };
   });
   return {
-    summary: j.summary,
+    summary,
     byTrangThai,
     byNoiDeXuat: j.byNoiDeXuat ?? [],
     byNguoiDeXuat: j.byNguoiDeXuat ?? [],

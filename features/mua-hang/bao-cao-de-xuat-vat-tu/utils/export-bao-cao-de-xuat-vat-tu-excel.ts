@@ -9,11 +9,10 @@ import {
 
 const FILENAME_PREFIX = 'bao_cao_de_xuat_vat_tu';
 
+import { getBaoCaoTrangThaiLabel } from '../core/trang-thai-utils';
+
 function getTrangThaiLabel(trang_thai: string, t: TFunction): string {
-  if (trang_thai === 'Chờ duyệt') return t('baoCaodeXuatVatTu.trangThaiChoDuyet');
-  if (trang_thai === 'Đã duyệt') return t('baoCaodeXuatVatTu.trangThaiDaDuyet');
-  if (trang_thai === 'Không duyệt') return t('baoCaodeXuatVatTu.trangThaiKhongDuyet');
-  return trang_thai;
+  return getBaoCaoTrangThaiLabel(trang_thai, t);
 }
 
 export async function exportBaoCaoDeXuatVatTuToExcel(

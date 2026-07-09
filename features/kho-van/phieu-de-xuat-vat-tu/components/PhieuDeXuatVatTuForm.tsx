@@ -10,7 +10,7 @@ import Combobox from '../../../../components/ui/Combobox';
 import NumberInput from '../../../../components/ui/NumberInput';
 import { PhieuDeXuatVatTuFormValues, phieuDeXuatVatTuSchema } from '../core/schema';
 import type { PhieuDeXuatVatTu } from '../core/types';
-import { TRANG_THAI_CHO_DUYET, TRANG_THAI_DA_DUYET, TRANG_THAI_KHONG_DUYET } from '../core/constants';
+import { TRANG_THAI_CHO_DUYET, TRANG_THAI_PHIEU_DE_XUAT_VAT_TU, trangThaiToI18nKey } from '../core/constants';
 import type { Kho } from '../../danh-sach-kho/core/types';
 import type { HangHoa } from '../../danh-sach-hang-hoa/core/types';
 import type { EmployeeRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
@@ -416,11 +416,10 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
                   render={({ field }) => (
                     <Combobox
                       label={t('phieuDeXuatVatTu.form.status')}
-                      options={[
-                        { value: TRANG_THAI_CHO_DUYET, label: t('phieuDeXuatVatTu.status.pending') },
-                        { value: TRANG_THAI_DA_DUYET, label: t('phieuDeXuatVatTu.status.approved') },
-                        { value: TRANG_THAI_KHONG_DUYET, label: t('phieuDeXuatVatTu.status.rejected') },
-                      ]}
+                      options={TRANG_THAI_PHIEU_DE_XUAT_VAT_TU.map((value) => ({
+                        value,
+                        label: t(`phieuDeXuatVatTu.status.${trangThaiToI18nKey(value)}`),
+                      }))}
                       value={field.value ?? ''}
                       onChange={(v) => field.onChange(v ?? TRANG_THAI_CHO_DUYET)}
                       placeholder={t('phieuDeXuatVatTu.form.status')}

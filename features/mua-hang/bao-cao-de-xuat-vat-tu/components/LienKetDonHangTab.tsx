@@ -6,13 +6,11 @@ import type { BaoCaoDeXuatVatTuFilters } from '../core/types';
 import type { LienKetDonHangRow } from '../core/types';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import EmptyState from '../../../../components/shared/EmptyState';
+import { getBaoCaoTrangThaiBadgeClass, getBaoCaoTrangThaiLabel } from '../core/trang-thai-utils';
 import { cn } from '../../../../lib/utils';
 
 function getTrangThaiLabel(trang_thai: string, t: (k: string) => string): string {
-  if (trang_thai === 'Chờ duyệt') return t('baoCaodeXuatVatTu.trangThaiChoDuyet');
-  if (trang_thai === 'Đã duyệt') return t('baoCaodeXuatVatTu.trangThaiDaDuyet');
-  if (trang_thai === 'Không duyệt') return t('baoCaodeXuatVatTu.trangThaiKhongDuyet');
-  return trang_thai;
+  return getBaoCaoTrangThaiLabel(trang_thai, t);
 }
 
 type LienKetFilter = 'all' | 'daChuyen' | 'chuaChuyen';
@@ -133,8 +131,8 @@ const LienKetDonHangTab: React.FC<LienKetDonHangTabProps> = ({ filters, onClearF
                       <td className="px-4 py-3">
                         <span
                           className={cn(
-                            'inline-flex px-2 py-0.5 rounded-full text-xs font-medium',
-                            row.trang_thai === 'Chờ duyệt' ? 'bg-amber-500/10 text-amber-600' : row.trang_thai === 'Đã duyệt' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-600'
+                            'inline-flex px-2 py-0.5 rounded-full text-xs font-medium border',
+                            getBaoCaoTrangThaiBadgeClass(row.trang_thai),
                           )}
                         >
                           {getTrangThaiLabel(row.trang_thai, t)}

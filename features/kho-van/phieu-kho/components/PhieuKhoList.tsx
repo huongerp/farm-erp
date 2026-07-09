@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Edit, Trash2 } from 'lucide-react';
 import { cn, formatDateShort, formatNumberVN } from '../../../../lib/utils';
 import type { PhieuKho, LoaiPhieuKhoTab } from '../core/types';
+import { getTrangThaiPhieuBadgeClass, trangThaiToI18nKey } from '../core/constants';
 import GenericTable from '../../../../components/shared/GenericTable';
 import type { ColumnConfig } from '../../../../store/createGenericStore';
 
@@ -69,30 +70,16 @@ const PhieuKhoList: React.FC<Props> = ({
     [visibleColumns, loai, t]
   );
 
-  const renderStatusBadge = (item: PhieuKho) => {
-    if (item.trang_thai === 'Chờ duyệt') {
-      return (
-        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-          {t('phieuKho.status.pending')}
-        </span>
-      );
-    }
-    if (item.trang_thai === 'Đã duyệt') {
-      return (
-        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
-          {t('phieuKho.status.approved')}
-        </span>
-      );
-    }
-    if (item.trang_thai === 'Không duyệt') {
-      return (
-        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
-          {t('phieuKho.status.rejected')}
-        </span>
-      );
-    }
-    return null;
-  };
+  const renderStatusBadge = (item: PhieuKho) => (
+    <span
+      className={cn(
+        'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border',
+        getTrangThaiPhieuBadgeClass(item.trang_thai),
+      )}
+    >
+      {t(`phieuKho.status.${trangThaiToI18nKey(item.trang_thai)}`)}
+    </span>
+  );
 
   const renderCell = (colId: string, item: PhieuKho) => {
     switch (colId) {

@@ -23,7 +23,7 @@ function toNumIds(strIds: string[]): number[] {
 function trangThaiKeysToDb(statusKeys: string[]): string[] {
   const out = new Set<string>();
   for (const key of statusKeys) {
-    if (key === 'Pending' || key === 'Approved' || key === 'Rejected') {
+    if (key === 'Pending' || key === 'Waiting' || key === 'Approved' || key === 'Rejected') {
       out.add(filterKeyToTrangThai(key as TrangThaiFilterKey));
     } else {
       out.add(key);

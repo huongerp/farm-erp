@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { FileText, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { FileText, Clock, Hourglass, CheckCircle, XCircle } from 'lucide-react';
 import type { PhieuDeXuatVatTuStatsSummary } from './usePhieuDeXuatVatTuStats';
 
 interface Props {
@@ -23,6 +23,12 @@ const StatsCards: React.FC<Props> = ({ summary }) => {
       className: 'bg-amber-500/10 text-amber-700 border-amber-500/20',
     },
     {
+      title: t('phieuDeXuatVatTu.status.waiting'),
+      value: summary.waiting,
+      icon: Hourglass,
+      className: 'bg-sky-500/10 text-sky-700 border-sky-500/20',
+    },
+    {
       title: t('phieuDeXuatVatTu.status.approved'),
       value: summary.approved,
       icon: CheckCircle,
@@ -37,7 +43,7 @@ const StatsCards: React.FC<Props> = ({ summary }) => {
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
       {cards.map((card) => (
         <div
           key={card.title}

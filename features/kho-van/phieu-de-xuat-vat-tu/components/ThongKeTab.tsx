@@ -76,6 +76,7 @@ const ThongKeTab: React.FC = () => {
   const statusOptions = useMemo(
     () => [
       { label: t('phieuDeXuatVatTu.status.pending'), value: 'Pending', subLabel: undefined as string | undefined, count: statusCounts['Pending'] ?? 0 },
+      { label: t('phieuDeXuatVatTu.status.waiting'), value: 'Waiting', subLabel: undefined, count: statusCounts['Waiting'] ?? 0 },
       { label: t('phieuDeXuatVatTu.status.approved'), value: 'Approved', subLabel: undefined, count: statusCounts['Approved'] ?? 0 },
       { label: t('phieuDeXuatVatTu.status.rejected'), value: 'Rejected', subLabel: undefined, count: statusCounts['Rejected'] ?? 0 },
     ],

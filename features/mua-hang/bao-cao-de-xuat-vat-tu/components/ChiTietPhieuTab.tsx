@@ -10,20 +10,17 @@ import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/share
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import EmptyState from '../../../../components/shared/EmptyState';
 import { BTN_CLOSE } from '../../../../lib/button-labels';
+import { getBaoCaoTrangThaiBadgeClass, getBaoCaoTrangThaiLabel } from '../core/trang-thai-utils';
 import { cn } from '../../../../lib/utils';
-
-function getTrangThaiLabel(trang_thai: string, t: (k: string) => string): string {
-  if (trang_thai === 'Chờ duyệt') return t('baoCaodeXuatVatTu.trangThaiChoDuyet');
-  if (trang_thai === 'Đã duyệt') return t('baoCaodeXuatVatTu.trangThaiDaDuyet');
-  if (trang_thai === 'Không duyệt') return t('baoCaodeXuatVatTu.trangThaiKhongDuyet');
-  return trang_thai;
-}
 
 function TrangThaiBadge({ status }: { status: string }) {
   const { t } = useTranslation();
-  const label = getTrangThaiLabel(status, t);
-  const cls = status === 'Chờ duyệt' ? 'bg-amber-500/10 text-amber-600' : status === 'Đã duyệt' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-600';
-  return <span className={cn('inline-flex px-2 py-0.5 rounded-full text-xs font-medium', cls)}>{label}</span>;
+  const label = getBaoCaoTrangThaiLabel(status, t);
+  return (
+    <span className={cn('inline-flex px-2 py-0.5 rounded-full text-xs font-medium border', getBaoCaoTrangThaiBadgeClass(status))}>
+      {label}
+    </span>
+  );
 }
 
 function PhieuDetailDrawer({ phieuId, onClose }: { phieuId: string; onClose: () => void }) {

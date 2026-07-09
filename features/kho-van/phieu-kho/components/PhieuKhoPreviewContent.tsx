@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { formatDateVietnameseLong, formatDateTime, formatNumberVN } from '../../../../lib/utils';
 import { useUIStore } from '../../../../store/useStore';
 import type { PhieuKho, PhieuKhoChiTiet, LoaiPhieuKho } from '../core/types';
+import { trangThaiToI18nKey } from '../core/constants';
 
 function getLoaiLabel(loai: LoaiPhieuKho, t: (k: string) => string): string {
   const key = loai === 'nhập' ? 'phieuKho.tabs.nhap' : loai === 'xuất' ? 'phieuKho.tabs.xuat' : 'phieuKho.tabs.chuyen';
@@ -14,8 +15,7 @@ function getLoaiLabel(loai: LoaiPhieuKho, t: (k: string) => string): string {
 }
 
 function getTrangThaiLabel(trangThai: string, t: (k: string) => string): string {
-  const key = trangThai === 'Chờ duyệt' ? 'phieuKho.status.pending' : trangThai === 'Đã duyệt' ? 'phieuKho.status.approved' : 'phieuKho.status.rejected';
-  return t(key);
+  return t(`phieuKho.status.${trangThaiToI18nKey(trangThai)}`);
 }
 
 /** Nơi đi / Nơi đến theo loại phiếu (nhập: NCC→Kho, xuất: Kho→KH, chuyển: Kho→Kho đến). */
@@ -115,10 +115,10 @@ const PhieuKhoPreviewContent: React.FC<Props> = ({ phieu }) => {
         </div>
       </div>
 
-      {/* Ghi chú */}
+      {/* Mô tả — giữ xuống dòng khi in */}
       <p className="text-[10pt] mb-1">
         <span className="font-semibold text-gray-600">{t('phieuKho.form.description')}: </span>
-        <span className="text-gray-900">{phieu.mo_ta ?? '—'}</span>
+        <span className="text-gray-900 whitespace-pre-line break-words">{phieu.mo_ta ?? '—'}</span>
       </p>
 
       {/* Trạng thái */}

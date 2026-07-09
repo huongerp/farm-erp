@@ -10,11 +10,10 @@ import { getTongHopDeXuatKy, getPhieuDeXuatInPeriod } from '../services/bao-cao-
 
 const FONT_STACK = "'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif";
 
+import { getBaoCaoTrangThaiLabel } from '../core/trang-thai-utils';
+
 function getTrangThaiLabel(trang_thai: string, t: TFunction): string {
-  if (trang_thai === 'Chờ duyệt') return t('baoCaodeXuatVatTu.trangThaiChoDuyet');
-  if (trang_thai === 'Đã duyệt') return t('baoCaodeXuatVatTu.trangThaiDaDuyet');
-  if (trang_thai === 'Không duyệt') return t('baoCaodeXuatVatTu.trangThaiKhongDuyet');
-  return trang_thai;
+  return getBaoCaoTrangThaiLabel(trang_thai, t);
 }
 
 function buildCompanyHeaderHTML(): string {

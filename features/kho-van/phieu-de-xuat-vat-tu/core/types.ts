@@ -60,8 +60,8 @@ export interface PhieuDeXuatVatTu {
   ten_nguoi_duyet?: string | null;
   ma_nguoi_duyet?: string | null;
   ghi_chu?: string;
-  /** Trạng thái lưu thẳng text: "Chờ duyệt" | "Đã duyệt" | "Không duyệt" */
-  trang_thai: 'Chờ duyệt' | 'Đã duyệt' | 'Không duyệt';
+  /** Trạng thái lưu thẳng text trong DB */
+  trang_thai: 'Chờ duyệt' | 'Đợi duyệt' | 'Đã duyệt' | 'Không duyệt';
   tg_tao: string;
   tg_cap_nhat: string;
   chi_tiet?: PhieuDeXuatVatTuChiTiet[];

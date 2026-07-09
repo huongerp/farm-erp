@@ -6,8 +6,8 @@ export interface NXTReportFilters {
   dateTo: string;
   warehouseIds: string[];
   loaiPhieu: LoaiPhieuKho[];
-  /** Trạng thái phiếu: 0 Chờ duyệt, 1 Đã duyệt, 2 Không duyệt. Rỗng = tất cả. */
-  trangThaiPhieu: (0 | 1 | 2)[];
+  /** Trạng thái phiếu: 0 Chờ duyệt, 3 Đợi duyệt, 1 Đã duyệt, 2 Không duyệt. Rỗng = tất cả. */
+  trangThaiPhieu: (0 | 1 | 2 | 3)[];
   /** Lọc theo hàng hóa (id) hoặc danh mục – cho tổng hợp theo sản phẩm / tồn tại thời điểm */
   hangHoaIds: string[];
   categoryIds: string[];

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Edit, Trash2 } from 'lucide-react';
 import { cn, formatDateShort, formatNumberVN } from '../../../../lib/utils';
 import type { PhieuDeXuatVatTu } from '../core/types';
-import { TRANG_THAI_CHO_DUYET, TRANG_THAI_DA_DUYET, TRANG_THAI_KHONG_DUYET } from '../core/constants';
+import { TRANG_THAI_PHIEU_DE_XUAT_VAT_TU, getTrangThaiPhieuBadgeClass, trangThaiToI18nKey } from '../core/constants';
 import GenericTable from '../../../../components/shared/GenericTable';
 import type { ColumnConfig } from '../../../../store/createGenericStore';
 
@@ -57,19 +57,14 @@ const PhieuDeXuatVatTuList: React.FC<Props> = ({
 
   const renderStatusBadges = (item: PhieuDeXuatVatTu) => (
     <div className="flex flex-wrap items-center gap-1">
-      {item.trang_thai === TRANG_THAI_CHO_DUYET && (
-        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-          {t('phieuDeXuatVatTu.status.pending')}
-        </span>
-      )}
-      {item.trang_thai === TRANG_THAI_DA_DUYET && (
-        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
-          {t('phieuDeXuatVatTu.status.approved')}
-        </span>
-      )}
-      {item.trang_thai === TRANG_THAI_KHONG_DUYET && (
-        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
-          {t('phieuDeXuatVatTu.status.rejected')}
+      {TRANG_THAI_PHIEU_DE_XUAT_VAT_TU.includes(item.trang_thai) && (
+        <span
+          className={cn(
+            'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border',
+            getTrangThaiPhieuBadgeClass(item.trang_thai),
+          )}
+        >
+          {t(`phieuDeXuatVatTu.status.${trangThaiToI18nKey(item.trang_thai)}`)}
         </span>
       )}
       {isOverdue?.(item) && (

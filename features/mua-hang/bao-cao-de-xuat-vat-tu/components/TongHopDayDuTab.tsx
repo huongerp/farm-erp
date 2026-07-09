@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { BarChart3, FileText, Link2, Clock, CheckCircle, XCircle, User, Percent, Send } from 'lucide-react';
+import { BarChart3, FileText, Link2, Clock, Hourglass, CheckCircle, XCircle, User, Percent, Send } from 'lucide-react';
+import { getBaoCaoTrangThaiBadgeClass, getBaoCaoTrangThaiLabel } from '../core/trang-thai-utils';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { useTongHopDeXuatKy, usePhieuDeXuatInPeriod, useLienKetDonHang } from '../hooks/use-bao-cao-de-xuat-vat-tu';
 import { usePhieuDeXuatVatTuById } from '../../../kho-van/phieu-de-xuat-vat-tu/hooks/use-phieu-de-xuat-vat-tu';
@@ -22,27 +23,22 @@ function formatDateDisplay(ymd: string): string {
 }
 
 /** Màu chart: dễ nhìn, rõ ràng */
-const STATUS_CHART_COLORS = ['#f59e0b', '#10b981', '#ef4444'];
+const STATUS_CHART_COLORS = ['#f59e0b', '#0ea5e9', '#10b981', '#ef4444'];
 const BAR_MONTH_COLOR = '#6366f1';
 const LIEN_KET_COLORS = ['#10b981', '#94a3b8'];
 
 function getTrangThaiLabel(trang_thai: string, t: (k: string) => string): string {
-  if (trang_thai === 'Chờ duyệt') return t('baoCaodeXuatVatTu.trangThaiChoDuyet');
-  if (trang_thai === 'Đã duyệt') return t('baoCaodeXuatVatTu.trangThaiDaDuyet');
-  if (trang_thai === 'Không duyệt') return t('baoCaodeXuatVatTu.trangThaiKhongDuyet');
-  return trang_thai;
+  return getBaoCaoTrangThaiLabel(trang_thai, t);
 }
 
 function TrangThaiBadge({ status }: { status: string }) {
   const { t } = useTranslation();
   const label = getTrangThaiLabel(status, t);
-  const cls =
-    status === 'Chờ duyệt'
-      ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
-      : status === 'Đã duyệt'
-        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-        : 'bg-rose-500/10 text-rose-600 dark:text-rose-400';
-  return <span className={cn('inline-flex px-2 py-0.5 rounded-full text-xs font-medium', cls)}>{label}</span>;
+  return (
+    <span className={cn('inline-flex px-2 py-0.5 rounded-full text-xs font-medium border', getBaoCaoTrangThaiBadgeClass(status))}>
+      {label}
+    </span>
+  );
 }
 
 function PhieuDetailDrawer({ phieuId, onClose }: { phieuId: string; onClose: () => void }) {
@@ -169,6 +165,7 @@ const TongHopDayDuTab: React.FC<TongHopDayDuTabProps> = ({ filters, onClearFilte
 
   const total = tongHopData?.total ?? 0;
   const choDuyet = tongHopData?.choDuyet ?? 0;
+  const doiDuyet = tongHopData?.doiDuyet ?? 0;
   const daDuyet = tongHopData?.daDuyet ?? 0;
   const khongDuyet = tongHopData?.khongDuyet ?? 0;
   const byTrangThai = tongHopData?.byTrangThai ?? [];
@@ -262,6 +259,7 @@ const TongHopDayDuTab: React.FC<TongHopDayDuTabProps> = ({ filters, onClearFilte
   const cards = [
     { labelKey: 'baoCaodeXuatVatTu.tongHop.totalPhieu', value: total, icon: FileText, iconClass: 'bg-primary/10 text-primary' },
     { labelKey: 'baoCaodeXuatVatTu.tongHop.choDuyet', value: choDuyet, icon: Clock, iconClass: 'bg-amber-500/10 text-amber-600 dark:text-amber-400' },
+    { labelKey: 'baoCaodeXuatVatTu.tongHop.doiDuyet', value: doiDuyet, icon: Hourglass, iconClass: 'bg-sky-500/10 text-sky-600 dark:text-sky-400' },
     { labelKey: 'baoCaodeXuatVatTu.tongHop.daDuyet', value: daDuyet, icon: CheckCircle, iconClass: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' },
     { labelKey: 'baoCaodeXuatVatTu.tongHop.khongDuyet', value: khongDuyet, icon: XCircle, iconClass: 'bg-rose-500/10 text-rose-600 dark:text-rose-400' },
     { labelKey: 'baoCaodeXuatVatTu.kpi.tyLeDuyet', value: `${tyLeDuyetPct}%`, icon: Percent, iconClass: 'bg-sky-500/10 text-sky-600 dark:text-sky-400' },

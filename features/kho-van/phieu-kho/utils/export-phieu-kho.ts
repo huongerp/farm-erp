@@ -6,6 +6,7 @@
  * - XLSX : SheetJS aoa_to_sheet (Unicode gốc, Excel mở đúng).
  */
 import type { PhieuKho, PhieuKhoChiTiet, LoaiPhieuKho } from '../core/types';
+import { trangThaiToI18nKey } from '../core/constants';
 import {
   formatDateVietnameseLong,
   formatDateTime,
@@ -31,12 +32,7 @@ function getTrangThaiLabel(
   trangThai: string,
   t: (k: string) => string,
 ): string {
-  const map: Record<string, string> = {
-    'Chờ duyệt': 'phieuKho.status.pending',
-    'Đã duyệt': 'phieuKho.status.approved',
-    'Từ chối': 'phieuKho.status.rejected',
-  };
-  return t(map[trangThai] ?? 'phieuKho.status.pending');
+  return t(`phieuKho.status.${trangThaiToI18nKey(trangThai)}`);
 }
 
 function getNoiDiNoiDen(p: PhieuKho) {
@@ -164,7 +160,7 @@ export function buildPhieuKhoBodyHTML(
   <div><strong style="color:#444">${t('phieuKho.preview.noiDi')}:</strong> ${noiDi}</div>
   <div><strong style="color:#444">${t('phieuKho.preview.noiDen')}:</strong> ${noiDen}</div>
 </div>
-<p style="font-size:10pt;margin:4px 0"><strong style="color:#444">${t('phieuKho.form.description')}:</strong> ${safe(phieu.mo_ta)}</p>
+<p style="font-size:10pt;margin:4px 0"><strong style="color:#444">${t('phieuKho.form.description')}:</strong> <span style="white-space:pre-wrap;word-break:break-word">${safe(phieu.mo_ta)}</span></p>
 <p style="font-size:10pt;margin:4px 0 16px"><strong style="color:#444">${t('phieuKho.store.statusCol')}:</strong> ${getTrangThaiLabel(phieu.trang_thai, t)}</p>
 ${tableHTML}
 <div style="display:flex;gap:16px;margin-top:32px;padding-top:16px;border-top:1px solid #ccc">
@@ -225,7 +221,7 @@ function buildDocHTML(phieu: PhieuKho, chiTiet: PhieuKhoChiTiet[]): string {
 <tr><td style="padding:8px 0 4px 0">${dateLine}</td></tr>
 <tr><td style="text-align:center;padding:8px 0"><b style="font-size:14pt">${title}</b><br/>(${t('phieuKho.form.code')}: ${phieu.so_phieu})</td></tr>
 <tr><td style="padding:4px 0"><b>${t('phieuKho.preview.noiDi')}:</b> ${noiDi} &nbsp;&nbsp;&nbsp; <b>${t('phieuKho.preview.noiDen')}:</b> ${noiDen}</td></tr>
-<tr><td style="padding:4px 0"><b>${t('phieuKho.form.description')}:</b> ${safe(phieu.mo_ta)}</td></tr>
+<tr><td style="padding:4px 0"><b>${t('phieuKho.form.description')}:</b> <span style="white-space:pre-wrap;word-break:break-word">${safe(phieu.mo_ta)}</span></td></tr>
 <tr><td style="padding:4px 0 12px 0"><b>${t('phieuKho.store.statusCol')}:</b> ${getTrangThaiLabel(phieu.trang_thai, t)}</td></tr>
 ${detailRows ? `
 <tr><td style="padding:8px 0 4px 0"><b>${t('phieuKho.preview.danhSachChiTiet')}</b></td></tr>

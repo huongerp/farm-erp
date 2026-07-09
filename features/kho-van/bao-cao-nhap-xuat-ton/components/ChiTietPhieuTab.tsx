@@ -5,6 +5,7 @@ import { usePhieuInPeriod } from '../hooks/use-bao-cao-nxt';
 import { usePhieuKhoById } from '../../phieu-kho/hooks/use-phieu-kho';
 import type { NXTReportFilters } from '../core/types';
 import type { PhieuKho, LoaiPhieuKho, TrangThaiPhieuKho } from '../../phieu-kho/core/types';
+import { getTrangThaiPhieuBadgeClass, trangThaiToI18nKey } from '../../phieu-kho/core/constants';
 import Button from '../../../../components/ui/Button';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
@@ -30,9 +31,16 @@ function LoaiBadge({ loai }: { loai: LoaiPhieuKho }) {
 
 function TrangThaiBadge({ status }: { status: TrangThaiPhieuKho }) {
   const { t } = useTranslation();
-  const label = status === 'Chờ duyệt' ? t('baoCaonhapXuatTon.trangThaiChoDuyet') : status === 'Đã duyệt' ? t('baoCaonhapXuatTon.trangThaiDaDuyet') : t('baoCaonhapXuatTon.trangThaiKhongDuyet');
-  const cls = status === 'Chờ duyệt' ? 'bg-amber-500/10 text-amber-600' : status === 'Đã duyệt' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-600';
-  return <span className={cn('inline-flex px-2 py-0.5 rounded-full text-xs font-medium', cls)}>{label}</span>;
+  return (
+    <span
+      className={cn(
+        'inline-flex px-2 py-0.5 rounded-full text-xs font-medium border',
+        getTrangThaiPhieuBadgeClass(status),
+      )}
+    >
+      {t(`phieuKho.status.${trangThaiToI18nKey(status)}`)}
+    </span>
+  );
 }
 
 function PhieuDetailDrawer({

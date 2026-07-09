@@ -34,6 +34,7 @@ import { getColumnCellStyle } from '../../../../store/createGenericStore';
 import type { ColumnConfig } from '../../../../store/createGenericStore';
 import type { LoaiPhieuKho, TrangThaiPhieuKho } from '../core/types';
 import { LOAI_DB_TO_TAB } from '../core/types';
+import { getTrangThaiPhieuBadgeClass, trangThaiToI18nKey } from '../core/constants';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { CONFIRM_DELETE } from '../../../../lib/button-labels';
 import ExportDialog from '../../../../components/shared/LazyExportDialog';
@@ -61,12 +62,14 @@ function LoaiBadge({ loai }: { loai: LoaiPhieuKho }) {
 
 function StatusBadge({ status }: { status: TrangThaiPhieuKho }) {
   const { t } = useTranslation();
-  const label = status === 'Chờ duyệt' ? t('phieuKho.status.pending') : status === 'Đã duyệt' ? t('phieuKho.status.approved') : t('phieuKho.status.rejected');
-  const cls =
-    status === 'Chờ duyệt' ? 'bg-amber-500/10 text-amber-600 border-amber-500/20' : status === 'Đã duyệt' ? 'bg-primary/10 text-primary border-primary/20' : 'bg-rose-500/10 text-rose-600 border-rose-500/20';
   return (
-    <span className={cn('inline-flex px-2 py-0.5 rounded-full text-xs font-medium border', cls)}>
-      {label}
+    <span
+      className={cn(
+        'inline-flex px-2 py-0.5 rounded-full text-xs font-medium border',
+        getTrangThaiPhieuBadgeClass(status),
+      )}
+    >
+      {t(`phieuKho.status.${trangThaiToI18nKey(status)}`)}
     </span>
   );
 }

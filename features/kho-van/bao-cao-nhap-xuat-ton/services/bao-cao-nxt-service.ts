@@ -380,6 +380,7 @@ const TRANG_THAI_NUM_TO_TEXT: Record<number, string> = {
   0: 'Chờ duyệt',
   1: 'Đã duyệt',
   2: 'Không duyệt',
+  3: 'Đợi duyệt',
 };
 
 /**

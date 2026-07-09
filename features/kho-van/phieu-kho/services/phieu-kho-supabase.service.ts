@@ -548,7 +548,12 @@ export async function updatePhieuKhoTrangThaiSupabase(
   const who =
     options?.ten_nguoi_duyet_hien_thi?.trim() ||
     (idNguoiDuyet != null ? `Nhân viên #${idNguoiDuyet}` : 'Người dùng');
-  const actionVerb = trang_thai === 'Đã duyệt' ? 'đã duyệt' : 'không duyệt';
+  const actionVerb =
+    trang_thai === 'Đã duyệt'
+      ? 'đã duyệt'
+      : trang_thai === 'Đợi duyệt'
+        ? 'chuyển sang đợi duyệt'
+        : 'không duyệt';
   const entry = ghi_chu?.trim()
     ? `${ts} — ${who} ${actionVerb}. Ghi chú: ${ghi_chu.trim()}`
     : `${ts} — ${who} ${actionVerb}.`;

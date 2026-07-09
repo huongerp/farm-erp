@@ -3,7 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { Package, Eye, Edit, Trash2 } from 'lucide-react';
 import GenericSubTableSection from '../../../../components/shared/GenericSubTableSection';
 import type { PhieuKho, LoaiPhieuKho } from '../../phieu-kho/core/types';
-import { formatDateShort } from '../../../../lib/utils';
+import { getTrangThaiPhieuBadgeClass, trangThaiToI18nKey } from '../../phieu-kho/core/constants';
+import { cn, formatDateShort } from '../../../../lib/utils';
 
 export interface PhieuKhoLienQuanSubTableProps {
   items: PhieuKho[];
@@ -21,11 +22,8 @@ const getLoaiLabel = (loai: LoaiPhieuKho, t: (k: string) => string) => {
   return t('phieuKho.tabs.chuyen');
 };
 
-const getStatusLabel = (trang_thai: PhieuKho['trang_thai'], t: (k: string) => string) => {
-  if (trang_thai === 'Chờ duyệt') return t('phieuKho.status.pending');
-  if (trang_thai === 'Đã duyệt') return t('phieuKho.status.approved');
-  return t('phieuKho.status.rejected');
-};
+const getStatusLabel = (trang_thai: PhieuKho['trang_thai'], t: (k: string) => string) =>
+  t(`phieuKho.status.${trangThaiToI18nKey(trang_thai)}`);
 
 const PhieuKhoLienQuanSubTable: React.FC<PhieuKhoLienQuanSubTableProps> = ({
   items,
@@ -92,13 +90,10 @@ const PhieuKhoLienQuanSubTable: React.FC<PhieuKhoLienQuanSubTableProps> = ({
                 <td className="px-4 py-2.5 text-foreground">{pk.ten_kho ?? pk.kho_id}</td>
                 <td className="px-4 py-2.5">
                   <span
-                    className={
-                      pk.trang_thai === 'Đã duyệt'
-                        ? 'inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20'
-                        : pk.trang_thai === 'Chờ duyệt'
-                          ? 'inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
-                          : 'inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
-                    }
+                    className={cn(
+                      'inline-flex px-2 py-0.5 rounded-full text-xs font-medium border',
+                      getTrangThaiPhieuBadgeClass(pk.trang_thai),
+                    )}
                   >
                     {getStatusLabel(pk.trang_thai, t)}
                   </span>

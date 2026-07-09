@@ -1,12 +1,20 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Edit, Trash2, FileText, Calendar, Warehouse, User, UserCheck, Package, CheckCircle, Printer, X, Copy, ShoppingCart } from 'lucide-react';
+import { Edit, Trash2, FileText, Calendar, Warehouse, User, UserCheck, Package, CheckCircle, Printer, X, Copy, ShoppingCart, Hourglass } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Textarea from '../../../../components/ui/Textarea';
 import type { PhieuDeXuatVatTu } from '../core/types';
-import { TRANG_THAI_CHO_DUYET, TRANG_THAI_DA_DUYET, TRANG_THAI_KHONG_DUYET } from '../core/constants';
-import { formatDateTimeShort } from '../../../../lib/utils';
+import type { TrangThaiPhieuDeXuatVatTu } from '../core/constants';
+import {
+  TRANG_THAI_DA_DUYET,
+  TRANG_THAI_DOI_DUYET,
+  TRANG_THAI_KHONG_DUYET,
+  getTrangThaiPhieuBadgeClass,
+  isTrangThaiChoPheDuyet,
+  trangThaiToI18nKey,
+} from '../core/constants';
+import { cn, formatDateTimeShort } from '../../../../lib/utils';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
 import DetailToolbar, { type DetailToolbarAction } from '../../../../components/shared/DetailToolbar';
 import DetailSection from '../../../../components/shared/DetailSection';
@@ -17,8 +25,43 @@ import { BTN_CLOSE, BTN_EDIT, BTN_DELETE } from '../../../../lib/button-labels';
 
 const PREVIEW_BASE = '/mua-hang/phieu-de-xuat-vat-tu/preview';
 
+interface ApproveOptionProps {
+  label: string;
+  icon: React.ReactNode;
+  iconWrapClass: string;
+  buttonClass: string;
+  onClick: () => void;
+  className?: string;
+}
+
+const ApproveOption: React.FC<ApproveOptionProps> = ({
+  label,
+  icon,
+  iconWrapClass,
+  buttonClass,
+  onClick,
+  className,
+}) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className={cn(
+      'group flex flex-col items-center justify-center gap-1.5 rounded-lg border px-2 py-2.5 text-center transition-all',
+      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+      'hover:shadow-sm active:scale-[0.98]',
+      buttonClass,
+      className,
+    )}
+  >
+    <span className={cn('flex h-7 w-7 shrink-0 items-center justify-center rounded-full', iconWrapClass)}>
+      {icon}
+    </span>
+    <span className="text-xs font-medium leading-tight">{label}</span>
+  </button>
+);
+
 export interface PhieuDeXuatVatTuApprovePayload {
-  trangThai: 'Đã duyệt' | 'Không duyệt';
+  trangThai: TrangThaiPhieuDeXuatVatTu;
   ghiChu?: string;
 }
 
@@ -50,11 +93,11 @@ const PhieuDeXuatVatTuDetail: React.FC<Props> = ({
   showOverdueBadge = false,
 }) => {
   const { t } = useTranslation();
-  const canApprove = data.trang_thai === TRANG_THAI_CHO_DUYET && !!onApprove;
+  const canApprove = isTrangThaiChoPheDuyet(data.trang_thai) && !!onApprove;
   const [showApprovePopup, setShowApprovePopup] = useState(false);
   const [approveGhiChu, setApproveGhiChu] = useState('');
 
-  const submitApprove = (trangThai: 'Đã duyệt' | 'Không duyệt') => {
+  const submitApprove = (trangThai: TrangThaiPhieuDeXuatVatTu) => {
     onApprove?.(data, { trangThai, ghiChu: approveGhiChu.trim() || undefined });
     setShowApprovePopup(false);
     setApproveGhiChu('');
@@ -103,14 +146,7 @@ const PhieuDeXuatVatTuDetail: React.FC<Props> = ({
     [canApprove, data, onApprove, onCopy, onClose, onPrint, onCreateDonDatHang, t]
   );
 
-  const statusLabel =
-    data.trang_thai === TRANG_THAI_CHO_DUYET
-      ? t('phieuDeXuatVatTu.status.pending')
-      : data.trang_thai === TRANG_THAI_DA_DUYET
-        ? t('phieuDeXuatVatTu.status.approved')
-        : t('phieuDeXuatVatTu.status.rejected');
-  const statusVariant =
-    data.trang_thai === TRANG_THAI_CHO_DUYET ? 'amber' : data.trang_thai === TRANG_THAI_DA_DUYET ? 'primary' : 'rose';
+  const statusLabel = t(`phieuDeXuatVatTu.status.${trangThaiToI18nKey(data.trang_thai)}`);
 
   const renderFooter = (
     <div className="flex items-center justify-between w-full">
@@ -169,23 +205,11 @@ const PhieuDeXuatVatTuDetail: React.FC<Props> = ({
             <p className="text-body-sm text-muted-foreground mt-0.5">{data.ngay}</p>
             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
               <span
-                className={
-                  statusVariant === 'amber'
-                    ? 'inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-medium border border-amber-500/20'
-                    : statusVariant === 'primary'
-                      ? 'inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium border border-primary/20'
-                      : 'inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 text-xs font-medium border border-rose-500/20'
-                }
+                className={cn(
+                  'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border',
+                  getTrangThaiPhieuBadgeClass(data.trang_thai),
+                )}
               >
-                <span
-                  className={
-                    statusVariant === 'amber'
-                      ? 'w-1.5 h-1.5 rounded-full bg-amber-500'
-                      : statusVariant === 'primary'
-                        ? 'w-1.5 h-1.5 rounded-full bg-primary'
-                        : 'w-1.5 h-1.5 rounded-full bg-rose-500'
-                  }
-                />{' '}
                 {statusLabel}
               </span>
               {showOverdueBadge && (
@@ -299,7 +323,7 @@ const PhieuDeXuatVatTuDetail: React.FC<Props> = ({
       </div>
     </GenericDrawer>
 
-      {/* Popup phê duyệt: hai nút rõ ràng Duyệt / Không duyệt + ghi chú */}
+      {/* Popup phê duyệt: Không duyệt / Đợi duyệt / Đã duyệt + ghi chú */}
       <AnimatePresence>
         {showApprovePopup && (
           <motion.div
@@ -315,42 +339,58 @@ const PhieuDeXuatVatTuDetail: React.FC<Props> = ({
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.96, opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="bg-card rounded-2xl border border-border shadow-2xl max-w-md w-full overflow-hidden"
+              className="bg-card rounded-2xl border border-border shadow-2xl max-w-lg w-full overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="px-6 pt-5 pb-4 border-b border-border bg-muted/30">
                 <div className="flex items-center justify-between gap-3">
-                  <h3 className="text-lg font-semibold text-foreground">
-                    {t('phieuDeXuatVatTu.detail.approveDialogTitle')}
-                  </h3>
+                  <div className="min-w-0">
+                    <h3 className="text-lg font-semibold text-foreground">
+                      {t('phieuDeXuatVatTu.detail.approveDialogTitle')}
+                    </h3>
+                    <p className="text-sm text-muted-foreground mt-0.5 truncate">{data.so_phieu}</p>
+                  </div>
                   <button
                     type="button"
                     onClick={() => setShowApprovePopup(false)}
-                    className="p-2 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                    className="p-2 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors shrink-0"
                     aria-label={t('common.close')}
                   >
                     <X size={18} />
                   </button>
                 </div>
-                <p className="text-sm text-muted-foreground mt-1">{data.so_phieu}</p>
               </div>
-              <div className="px-6 py-4 flex items-center justify-center gap-3">
-                <Button
-                  onClick={() => submitApprove(TRANG_THAI_KHONG_DUYET)}
-                  className="bg-rose-600 text-white hover:bg-rose-700 border border-rose-600 shadow-sm"
-                >
-                  <X size={16} className="mr-2" />
-                  {t('phieuDeXuatVatTu.status.rejected')}
-                </Button>
-                <Button
-                  onClick={() => submitApprove(TRANG_THAI_DA_DUYET)}
-                  className="bg-emerald-600 text-white hover:bg-emerald-700 border border-emerald-600 shadow-sm"
-                >
-                  <CheckCircle size={16} className="mr-2" />
-                  {t('phieuDeXuatVatTu.status.approved')}
-                </Button>
-              </div>
-              <div className="px-6 pb-4">
+
+              <div className="px-6 py-5 space-y-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                    {t('phieuDeXuatVatTu.detail.approveDialogResult')}
+                  </p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <ApproveOption
+                      label={t('phieuDeXuatVatTu.status.approved')}
+                      icon={<CheckCircle size={14} />}
+                      iconWrapClass="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                      buttonClass="border-emerald-500/25 bg-emerald-500/[0.04] text-emerald-800 dark:text-emerald-200 hover:border-emerald-500/45 hover:bg-emerald-500/10"
+                      onClick={() => submitApprove(TRANG_THAI_DA_DUYET)}
+                    />
+                    <ApproveOption
+                      label={t('phieuDeXuatVatTu.status.waiting')}
+                      icon={<Hourglass size={14} />}
+                      iconWrapClass="bg-sky-500/15 text-sky-600 dark:text-sky-400"
+                      buttonClass="border-sky-500/25 bg-sky-500/[0.04] text-sky-800 dark:text-sky-200 hover:border-sky-500/45 hover:bg-sky-500/10"
+                      onClick={() => submitApprove(TRANG_THAI_DOI_DUYET)}
+                    />
+                    <ApproveOption
+                      label={t('phieuDeXuatVatTu.status.rejected')}
+                      icon={<X size={14} />}
+                      iconWrapClass="bg-rose-500/15 text-rose-600 dark:text-rose-400"
+                      buttonClass="border-rose-500/25 bg-rose-500/[0.04] text-rose-800 dark:text-rose-200 hover:border-rose-500/45 hover:bg-rose-500/10"
+                      onClick={() => submitApprove(TRANG_THAI_KHONG_DUYET)}
+                    />
+                  </div>
+                </div>
+
                 <Textarea
                   label={t('phieuDeXuatVatTu.detail.approveDialogNote')}
                   placeholder={t('phieuDeXuatVatTu.detail.approveDialogNotePlaceholder')}
@@ -360,11 +400,12 @@ const PhieuDeXuatVatTuDetail: React.FC<Props> = ({
                   className="resize-none"
                 />
               </div>
-              <div className="px-6 pb-6 flex justify-end">
+
+              <div className="px-6 py-4 border-t border-border bg-muted/20 flex justify-end">
                 <Button
                   variant="ghost"
                   onClick={() => setShowApprovePopup(false)}
-                  className="border border-border text-muted-foreground"
+                  className="text-muted-foreground hover:text-foreground"
                 >
                   {t('common.cancel')}
                 </Button>

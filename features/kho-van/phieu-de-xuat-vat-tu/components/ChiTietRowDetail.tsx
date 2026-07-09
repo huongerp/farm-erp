@@ -10,7 +10,7 @@ import DetailField from '../../../../components/shared/DetailField';
 import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
 import { BTN_CLOSE, BTN_EDIT, BTN_DELETE } from '../../../../lib/button-labels';
 import { cn } from '../../../../lib/utils';
-import { getTienDoMhBadgeClass } from '../core/constants';
+import { getTienDoMhBadgeClass, getTrangThaiPhieuBadgeClass, trangThaiToI18nKey } from '../core/constants';
 
 interface Props {
   data: PhieuDeXuatVatTuChiTietRow;
@@ -39,22 +39,10 @@ const ChiTietRowDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
     [t, onChuyenTienDo]
   );
 
-  const statusVariant =
-    data.trang_thai_phieu === 'Đã duyệt'
-      ? 'primary'
-      : data.trang_thai_phieu === 'Chờ duyệt'
-        ? 'amber'
-        : data.trang_thai_phieu === 'Không duyệt'
-          ? 'rose'
-          : 'muted';
-  const statusLabel =
-    data.trang_thai_phieu === 'Chờ duyệt'
-      ? t('phieuDeXuatVatTu.status.pending')
-      : data.trang_thai_phieu === 'Đã duyệt'
-        ? t('phieuDeXuatVatTu.status.approved')
-        : data.trang_thai_phieu === 'Không duyệt'
-          ? t('phieuDeXuatVatTu.status.rejected')
-          : data.trang_thai_phieu ?? '—';
+  const statusLabel = data.trang_thai_phieu
+    ? t(`phieuDeXuatVatTu.status.${trangThaiToI18nKey(data.trang_thai_phieu)}`, { defaultValue: data.trang_thai_phieu })
+    : '—';
+  const statusBadgeClass = getTrangThaiPhieuBadgeClass(data.trang_thai_phieu);
 
   const renderFooter = (
     <div className="flex items-center justify-between w-full">
@@ -115,21 +103,9 @@ const ChiTietRowDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
               <span
                 className={cn(
                   'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border',
-                  statusVariant === 'amber' && 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
-                  statusVariant === 'primary' && 'bg-primary/10 text-primary border-primary/20',
-                  statusVariant === 'rose' && 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20',
-                  statusVariant === 'muted' && 'bg-muted text-muted-foreground border-border'
+                  statusBadgeClass,
                 )}
               >
-                <span
-                  className={cn(
-                    'w-1.5 h-1.5 rounded-full',
-                    statusVariant === 'amber' && 'bg-amber-500',
-                    statusVariant === 'primary' && 'bg-primary',
-                    statusVariant === 'rose' && 'bg-rose-500',
-                    statusVariant === 'muted' && 'bg-muted-foreground'
-                  )}
-                />{' '}
                 {statusLabel}
               </span>
               {data.ten_tien_do_mh ? (
@@ -170,11 +146,6 @@ const ChiTietRowDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
               label={t('phieuDeXuatVatTu.form.requester')}
               value={data.ten_nguoi_de_xuat ?? '—'}
               icon={<User size={12} />}
-            />
-            <DetailField
-              label={t('phieuDeXuatVatTu.form.approver')}
-              value={data.ten_nguoi_duyet ?? '—'}
-              icon={<UserCheck size={12} />}
             />
             <DetailField
               label={t('phieuDeXuatVatTu.store.statusCol')}
@@ -223,6 +194,11 @@ const ChiTietRowDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
                 )
               }
               icon={<Package size={12} />}
+            />
+            <DetailField
+              label={t('phieuDeXuatVatTu.store.nguoiDuyetCol')}
+              value={data.ten_nguoi_duyet ?? '—'}
+              icon={<UserCheck size={12} />}
             />
             <DetailField
               label={t('phieuDeXuatVatTu.form.specs')}

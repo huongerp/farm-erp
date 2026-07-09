@@ -104,6 +104,7 @@ const PhieuKhoForm: React.FC<Props> = ({
   const khoIdWatch = watch('kho_id');
   const idNhaCungCapWatch = watch('id_nha_cung_cap');
   const idKhachHangWatch = watch('id_khach_hang');
+  const moTaWatch = watch('mo_ta');
 
   const khoOptions = useMemo(
     () => [
@@ -508,6 +509,8 @@ const PhieuKhoForm: React.FC<Props> = ({
                 {...register('mo_ta')}
                 error={errors.mo_ta?.message}
                 rows={2}
+                autoResize
+                resizeDep={moTaWatch}
               />
             </div>
           </FormGrid>
@@ -657,8 +660,10 @@ const PhieuKhoForm: React.FC<Props> = ({
                     <td className="px-4 py-2.5 min-w-[200px] align-top">
                       <Textarea
                         placeholder={t('phieuKho.form.note')}
-                        className="min-h-[52px] text-sm border-border w-full resize-y rounded-md"
+                        className="min-h-[52px] text-sm border-border w-full rounded-md"
                         rows={2}
+                        autoResize
+                        resizeDep={chiTietValues[index]?.ghi_chu}
                         {...register(`chi_tiet.${index}.ghi_chu`)}
                       />
                     </td>

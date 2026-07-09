@@ -36,6 +36,7 @@ chip_status AS (
   SELECT
     CASE p.trang_thai
       WHEN 'Chờ duyệt' THEN 'Pending'
+      WHEN 'Đợi duyệt' THEN 'Waiting'
       WHEN 'Đã duyệt' THEN 'Approved'
       WHEN 'Không duyệt' THEN 'Rejected'
       ELSE 'Pending'
@@ -61,6 +62,7 @@ SELECT jsonb_build_object(
     SELECT jsonb_build_object(
       'total', count(*)::int,
       'pending', coalesce(sum(CASE WHEN trang_thai = 'Chờ duyệt' THEN 1 ELSE 0 END), 0)::int,
+      'waiting', coalesce(sum(CASE WHEN trang_thai = 'Đợi duyệt' THEN 1 ELSE 0 END), 0)::int,
       'approved', coalesce(sum(CASE WHEN trang_thai = 'Đã duyệt' THEN 1 ELSE 0 END), 0)::int,
       'rejected', coalesce(sum(CASE WHEN trang_thai = 'Không duyệt' THEN 1 ELSE 0 END), 0)::int
     ) FROM base
@@ -71,6 +73,7 @@ SELECT jsonb_build_object(
       SELECT
         CASE trang_thai
           WHEN 'Chờ duyệt' THEN 'Pending'
+          WHEN 'Đợi duyệt' THEN 'Waiting'
           WHEN 'Đã duyệt' THEN 'Approved'
           WHEN 'Không duyệt' THEN 'Rejected'
           ELSE 'Pending'

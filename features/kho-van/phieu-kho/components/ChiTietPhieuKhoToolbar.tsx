@@ -9,6 +9,7 @@ import DateRangePicker from '../../../../components/ui/DateRangePicker';
 import { useSearchInputCommit } from '../../../../lib/hooks/use-search-input-commit';
 import { useChiTietPhieuKhoStore, type DatePresetId } from '../store/useChiTietPhieuKhoStore';
 import type { ChiTietPhieuKhoFlat } from '../core/types';
+import { TRANG_THAI_CHO_DUYET, TRANG_THAI_DA_DUYET, TRANG_THAI_DOI_DUYET, TRANG_THAI_KHONG_DUYET } from '../core/constants';
 import type { Kho } from '../../danh-sach-kho/core/types';
 import { DATE_RANGE_PRESETS } from '../../../he-thong/nhan-vien/core/stats-constants';
 import { getDateRangeFromPreset } from '../../../he-thong/nhan-vien/utils/stats-date-range';
@@ -25,6 +26,7 @@ interface Props {
 
 const PhieuStatus = {
   pending: 'Pending',
+  waiting: 'Waiting',
   approved: 'Approved',
   rejected: 'Rejected',
 } as const;
@@ -67,17 +69,22 @@ const ChiTietPhieuKhoToolbar: React.FC<Props> = ({
       {
         label: t('phieuKho.status.pending'),
         value: PhieuStatus.pending,
-        count: unweighted ? 1 : data.filter((d) => d.trang_thai === 'Chờ duyệt').length,
+        count: unweighted ? 1 : data.filter((d) => d.trang_thai === TRANG_THAI_CHO_DUYET).length,
+      },
+      {
+        label: t('phieuKho.status.waiting'),
+        value: PhieuStatus.waiting,
+        count: unweighted ? 1 : data.filter((d) => d.trang_thai === TRANG_THAI_DOI_DUYET).length,
       },
       {
         label: t('phieuKho.status.approved'),
         value: PhieuStatus.approved,
-        count: unweighted ? 1 : data.filter((d) => d.trang_thai === 'Đã duyệt').length,
+        count: unweighted ? 1 : data.filter((d) => d.trang_thai === TRANG_THAI_DA_DUYET).length,
       },
       {
         label: t('phieuKho.status.rejected'),
         value: PhieuStatus.rejected,
-        count: unweighted ? 1 : data.filter((d) => d.trang_thai === 'Không duyệt').length,
+        count: unweighted ? 1 : data.filter((d) => d.trang_thai === TRANG_THAI_KHONG_DUYET).length,
       },
     ],
     [data, t, unweighted]
