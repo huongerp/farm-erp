@@ -65,6 +65,15 @@ const PhieuDeXuatVatTuPreviewPage: React.FC = () => {
   }, [downloadOpen]);
 
   const handlePrint = () => {
+    const styleEl = document.createElement('style');
+    styleEl.id = 'phieu-de-xuat-print-page-override';
+    styleEl.innerHTML = '@page { margin: 15mm 15mm 15mm 20mm !important; size: A4 portrait; }';
+    document.head.appendChild(styleEl);
+    const cleanup = () => {
+      document.getElementById('phieu-de-xuat-print-page-override')?.remove();
+      window.removeEventListener('afterprint', cleanup);
+    };
+    window.addEventListener('afterprint', cleanup);
     window.print();
   };
 
@@ -185,7 +194,7 @@ const PhieuDeXuatVatTuPreviewPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="phieu-de-xuat-preview-body flex-1 overflow-auto p-4 md:p-6 flex justify-center">
+        <div className="phieu-de-xuat-preview-body flex-1 overflow-auto p-4 md:p-6 flex justify-center items-start print:p-0 print:overflow-visible">
           <div className="bg-white shadow-xl rounded-sm phieu-de-xuat-preview-content-wrapper" style={{ width: '210mm', minHeight: '297mm' }}>
             <PhieuDeXuatVatTuPreviewContent phieu={phieu!} />
           </div>

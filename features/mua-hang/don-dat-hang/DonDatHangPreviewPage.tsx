@@ -66,6 +66,15 @@ const DonDatHangPreviewPage: React.FC = () => {
   }, [downloadOpen]);
 
   const handlePrint = () => {
+    const styleEl = document.createElement('style');
+    styleEl.id = 'don-dat-hang-print-page-override';
+    styleEl.innerHTML = '@page { margin: 15mm 15mm 15mm 20mm !important; size: A4 portrait; }';
+    document.head.appendChild(styleEl);
+    const cleanup = () => {
+      document.getElementById('don-dat-hang-print-page-override')?.remove();
+      window.removeEventListener('afterprint', cleanup);
+    };
+    window.addEventListener('afterprint', cleanup);
     window.print();
   };
 

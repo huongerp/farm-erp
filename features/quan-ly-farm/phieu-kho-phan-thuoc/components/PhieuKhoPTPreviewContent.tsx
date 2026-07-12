@@ -44,7 +44,7 @@ const PhieuKhoPTPreviewContent: React.FC<Props> = ({ phieu }) => {
   const { noiDi, noiDen } = getNoiDiNoiDen(phieu);
 
   return (
-    <div className="phieu-kho-pt-preview-content bg-white text-gray-900 font-sans text-[10pt] p-5 min-h-full flex flex-col">
+    <div className="phieu-kho-pt-preview-content bg-white text-gray-900 font-sans text-[10pt] pt-[15mm] pr-[15mm] pb-[15mm] pl-[20mm] print:p-0 min-h-full flex flex-col">
       <div className="flex items-start gap-4 pb-4 mb-4 border-b-2 border-gray-300">
         {companyInfo.appLogo && (
           <img src={companyInfo.appLogo} alt="Logo" className="w-16 h-16 object-contain shrink-0" />

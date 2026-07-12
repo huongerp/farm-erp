@@ -16,6 +16,7 @@ import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import { useNhomDoiTacList, useTagList, useDoiTacList } from '../../danh-sach-doi-tac/hooks/use-doi-tac';
 import { useChiTietPhieuKhoStore } from '../store/useChiTietPhieuKhoStore';
 import type { ChiTietPhieuKhoFlat, PhieuKho, LoaiPhieuKhoTab } from '../core/types';
+import { canMutatePhieuKhoByTrangThai } from '../core/constants';
 import type { Kho } from '../../danh-sach-kho/core/types';
 import type { HangHoa } from '../../danh-sach-hang-hoa/core/types';
 import type { DoiTac } from '../../danh-sach-doi-tac/core/types';
@@ -291,12 +292,19 @@ const ChiTietPhieuKhoTab: React.FC = () => {
     setViewingPhieuId(null);
   }, []);
 
-  const handleEdit = useCallback((item: PhieuKho) => {
-    setEditingItem(item);
-    setEditingLoai(LOAI_DB_TO_TAB[item.loai]);
-    setIsCopyMode(false);
-    setShowForm(true);
-  }, []);
+  const handleEdit = useCallback(
+    (item: PhieuKho) => {
+      if (!canMutatePhieuKhoByTrangThai(item.trang_thai, canUpdate, canApprove)) {
+        toast.message(t('phieuKho.cannotMutateApproved'));
+        return;
+      }
+      setEditingItem(item);
+      setEditingLoai(LOAI_DB_TO_TAB[item.loai]);
+      setIsCopyMode(false);
+      setShowForm(true);
+    },
+    [canUpdate, canApprove, t]
+  );
 
   const handleCopy = useCallback((item: PhieuKho) => {
     const copy: PhieuKho = {
@@ -320,6 +328,11 @@ const ChiTietPhieuKhoTab: React.FC = () => {
 
   const handleDelete = useCallback(
     (id: string) => {
+      const item = viewingPhieu?.id === id ? viewingPhieu : null;
+      if (item && !canMutatePhieuKhoByTrangThai(item.trang_thai, canDelete, canApprove)) {
+        toast.message(t('phieuKho.cannotMutateApproved'));
+        return;
+      }
       confirm({
         title: t('phieuKho.deleteTitle'),
         message: t('phieuKho.deleteMessage'),
@@ -334,7 +347,7 @@ const ChiTietPhieuKhoTab: React.FC = () => {
         },
       });
     },
-    [confirm, t, deleteMutation]
+    [confirm, t, deleteMutation, viewingPhieu, canDelete, canApprove]
   );
 
   const renderCell = (row: ChiTietPhieuKhoFlat, col: ColumnConfig) => {
@@ -668,8 +681,16 @@ const ChiTietPhieuKhoTab: React.FC = () => {
           data={viewingPhieu}
           loai={viewingLoai}
           onClose={handleCloseDetail}
-          onEdit={canUpdate ? handleEdit : undefined}
-          onDelete={canDelete ? handleDelete : undefined}
+          onEdit={
+            canMutatePhieuKhoByTrangThai(viewingPhieu.trang_thai, canUpdate, canApprove)
+              ? handleEdit
+              : undefined
+          }
+          onDelete={
+            canMutatePhieuKhoByTrangThai(viewingPhieu.trang_thai, canDelete, canApprove)
+              ? handleDelete
+              : undefined
+          }
           onCopy={canCreate ? handleCopy : undefined}
           canApprove={canApprove}
         />

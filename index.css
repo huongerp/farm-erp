@@ -451,7 +451,7 @@ html[data-text-size="large"] { font-size: 18px; }
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
-  /* Phiếu kho: in chỉ nội dung, ẩn toolbar (backdrop + body cũng visible để con in được) */
+  /* Phiếu kho: in chỉ nội dung, ẩn toolbar — giải phóng flex-chain để nhiều trang */
   .phieu-kho-preview-backdrop,
   .phieu-kho-preview-body,
   .phieu-kho-preview-content-wrapper,
@@ -461,19 +461,50 @@ html[data-text-size="large"] { font-size: 18px; }
     visibility: visible;
   }
   .phieu-kho-preview-backdrop {
+    position: static !important;
+    height: auto !important;
+    overflow: visible !important;
     background: white !important;
+    display: block !important;
   }
   .phieu-kho-preview-toolbar {
     display: none !important;
   }
+  .phieu-kho-preview-body {
+    position: static !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    display: block !important;
+    flex: none !important;
+  }
+  /* Static flow → browser tự phân trang; không dùng absolute vì sẽ cắt trang */
   .phieu-kho-preview-content-wrapper {
-    position: absolute !important;
-    left: 0 !important;
-    top: 0 !important;
-    width: 210mm !important;
+    position: static !important;
+    width: 100% !important;
+    max-width: 210mm !important;
     box-shadow: none !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+    display: block !important;
+  }
+  /* Phiếu kho: phân trang hàng và lặp header bảng + running company header */
+  .phieu-kho-preview-content .phieu-kho-print-doc {
+    width: 100%;
+  }
+  .phieu-kho-preview-content .phieu-kho-print-doc > thead.phieu-kho-print-running-header {
+    display: table-header-group;
+  }
+  .phieu-kho-preview-content .phieu-kho-print-detail-table thead {
+    display: table-header-group;
+  }
+  .phieu-kho-preview-content .phieu-kho-print-detail-table tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .phieu-kho-preview-content .phieu-kho-print-sign-footer {
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
   /* Phiếu kiểm kê kho: in chỉ nội dung, ẩn toolbar */
   .phieu-kiem-ke-kho-preview-backdrop,
@@ -539,7 +570,7 @@ html[data-text-size="large"] { font-size: 18px; }
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
-  /* Phiếu đề xuất vật tư: in chỉ nội dung, ẩn toolbar */
+  /* Phiếu đề xuất vật tư: in chỉ nội dung — static flow nhiều trang */
   .phieu-de-xuat-preview-backdrop,
   .phieu-de-xuat-preview-body,
   .phieu-de-xuat-preview-content-wrapper,
@@ -549,21 +580,40 @@ html[data-text-size="large"] { font-size: 18px; }
     visibility: visible;
   }
   .phieu-de-xuat-preview-backdrop {
+    position: static !important;
+    height: auto !important;
+    overflow: visible !important;
     background: white !important;
+    display: block !important;
   }
   .phieu-de-xuat-preview-toolbar {
     display: none !important;
   }
+  .phieu-de-xuat-preview-body {
+    position: static !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    display: block !important;
+    flex: none !important;
+  }
   .phieu-de-xuat-preview-content-wrapper {
-    position: absolute !important;
-    left: 0 !important;
-    top: 0 !important;
-    width: 210mm !important;
+    position: static !important;
+    width: 100% !important;
+    max-width: 210mm !important;
     box-shadow: none !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+    display: block !important;
   }
-  /* Đơn đặt hàng: in chỉ nội dung, ẩn toolbar */
+  .phieu-de-xuat-preview-content table thead {
+    display: table-header-group;
+  }
+  .phieu-de-xuat-preview-content tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  /* Đơn đặt hàng: in chỉ nội dung — static flow nhiều trang */
   .don-dat-hang-preview-backdrop,
   .don-dat-hang-preview-body,
   .don-dat-hang-preview-content-wrapper,
@@ -573,19 +623,81 @@ html[data-text-size="large"] { font-size: 18px; }
     visibility: visible;
   }
   .don-dat-hang-preview-backdrop {
+    position: static !important;
+    height: auto !important;
+    overflow: visible !important;
     background: white !important;
+    display: block !important;
   }
   .don-dat-hang-preview-toolbar {
     display: none !important;
   }
+  .don-dat-hang-preview-body {
+    position: static !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    display: block !important;
+    flex: none !important;
+  }
   .don-dat-hang-preview-content-wrapper {
-    position: absolute !important;
-    left: 0 !important;
-    top: 0 !important;
-    width: 210mm !important;
+    position: static !important;
+    width: 100% !important;
+    max-width: 210mm !important;
     box-shadow: none !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+    display: block !important;
+  }
+  .don-dat-hang-preview-content table thead {
+    display: table-header-group;
+  }
+  .don-dat-hang-preview-content tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  /* Phiếu kho phân thuốc: in chỉ nội dung — static flow nhiều trang */
+  .phieu-kho-pt-preview-backdrop,
+  .phieu-kho-pt-preview-body,
+  .phieu-kho-pt-preview-content-wrapper,
+  .phieu-kho-pt-preview-content-wrapper *,
+  .phieu-kho-pt-preview-content,
+  .phieu-kho-pt-preview-content * {
+    visibility: visible;
+  }
+  .phieu-kho-pt-preview-backdrop {
+    position: static !important;
+    height: auto !important;
+    overflow: visible !important;
+    background: white !important;
+    display: block !important;
+  }
+  .phieu-kho-pt-preview-toolbar {
+    display: none !important;
+  }
+  .phieu-kho-pt-preview-body {
+    position: static !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    display: block !important;
+    flex: none !important;
+  }
+  .phieu-kho-pt-preview-content-wrapper {
+    position: static !important;
+    width: 100% !important;
+    max-width: 210mm !important;
+    box-shadow: none !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    display: block !important;
+  }
+  .phieu-kho-pt-preview-content table thead {
+    display: table-header-group;
+  }
+  .phieu-kho-pt-preview-content tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
   /* Báo cáo sơ chế: in A4 dọc — content flow đúng qua nhiều trang */
   .bao-cao-so-che-preview-backdrop,
@@ -660,7 +772,7 @@ html[data-text-size="large"] { font-size: 18px; }
     break-inside: avoid;
     page-break-inside: avoid;
   }
-  /* Báo cáo nhân công: in A4 ngang, ẩn toolbar */
+  /* Báo cáo nhân công: in A4 — static flow nhiều trang */
   .bao-cao-nhan-cong-preview-backdrop,
   .bao-cao-nhan-cong-preview-body,
   .bao-cao-nhan-cong-preview-content-wrapper,
@@ -670,19 +782,38 @@ html[data-text-size="large"] { font-size: 18px; }
     visibility: visible;
   }
   .bao-cao-nhan-cong-preview-backdrop {
+    position: static !important;
+    height: auto !important;
+    overflow: visible !important;
     background: white !important;
+    display: block !important;
   }
   .bao-cao-nhan-cong-preview-toolbar {
     display: none !important;
   }
+  .bao-cao-nhan-cong-preview-body {
+    position: static !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    display: block !important;
+    flex: none !important;
+  }
   .bao-cao-nhan-cong-preview-content-wrapper {
-    position: absolute !important;
-    left: 0 !important;
-    top: 0 !important;
-    width: 210mm !important;
+    position: static !important;
+    width: 100% !important;
+    max-width: 210mm !important;
     box-shadow: none !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+    display: block !important;
+  }
+  .bao-cao-nhan-cong-preview-content table thead {
+    display: table-header-group;
+  }
+  .bao-cao-nhan-cong-preview-content tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 }
 

@@ -15,6 +15,7 @@ import {
 } from '../../../../lib/utils';
 import i18n from '../../../../lib/i18n';
 import { useUIStore } from '../../../../store/useStore';
+import { sumSoLuongByPhamCap } from './sum-so-luong-by-pham-cap';
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
@@ -22,6 +23,9 @@ import { useUIStore } from '../../../../store/useStore';
 
 const FONT = "Arial, 'Helvetica Neue', sans-serif";
 const FONT_DOC = "'Times New Roman', Times, serif";
+
+/** Lề tài liệu — khớp preview React và @page khi in. T:15 R:15 B:15 L:20 */
+const DOC_PADDING = '15mm 15mm 15mm 20mm';
 
 function safe(v: string | number | null | undefined): string {
   if (v == null || v === '') return '–';
@@ -65,11 +69,21 @@ function colHeaders(t: (k: string) => string) {
     'TT',
     t('phieuKho.preview.danhMuc'),
     t('phieuKho.form.itemName'),
+    t('phieuKho.form.phamCap'),
     t('phieuKho.form.unit'),
     t('phieuKho.form.quantity'),
     t('phieuKho.preview.soLot'),
     t('phieuKho.form.note'),
   ];
+}
+
+/** Dòng PO chỉ hiện với phiếu nhập có liên kết đơn đặt hàng. */
+function getPoDisplay(phieu: PhieuKho): string | null {
+  if (phieu.loai !== 'nhập') return null;
+  const soPo = phieu.so_po_don_dat_hang?.trim();
+  if (soPo) return soPo;
+  if (phieu.id_don_dat_hang) return `#${phieu.id_don_dat_hang}`;
+  return null;
 }
 
 function download(blob: Blob, name: string) {
@@ -107,10 +121,11 @@ export function buildPhieuKhoBodyHTML(
   if (chiTiet.length > 0) {
     const total = chiTiet.reduce((s, c) => s + (Number(c.so_luong) || 0), 0);
     const headers = colHeaders(t);
+    // 8 cols: TT=0, ĐVT=4, SL=5, LOT=6
     const ths = headers
       .map(
         (h, i) =>
-          `<th style="padding:6px 8px;border:1px solid #ccc;font-family:${F};font-size:9pt;background:#3b82f6;color:#fff;text-align:${i === 4 ? 'right' : i === 0 || i === 3 ? 'center' : 'left'}">${h}</th>`,
+          `<th style="padding:6px 8px;border:1px solid #ccc;font-family:${F};font-size:9pt;background:#3b82f6;color:#fff;text-align:${i === 5 ? 'right' : i === 0 || i === 4 || i === 6 ? 'center' : 'left'}">${h}</th>`,
       )
       .join('');
     const rows = chiTiet
@@ -119,6 +134,7 @@ export function buildPhieuKhoBodyHTML(
 <td style="padding:4px 8px;border:1px solid #ccc;font-family:${F};font-size:9pt;text-align:center">${idx + 1}</td>
 <td style="padding:4px 8px;border:1px solid #ccc;font-family:${F};font-size:9pt">${safe(c.ten_danh_muc)}</td>
 <td style="padding:4px 8px;border:1px solid #ccc;font-family:${F};font-size:9pt">${safe(c.ten_hang)}</td>
+<td style="padding:4px 8px;border:1px solid #ccc;font-family:${F};font-size:9pt">${safe(c.pham_cap)}</td>
 <td style="padding:4px 8px;border:1px solid #ccc;font-family:${F};font-size:9pt;text-align:center">${safe(c.don_vi_tinh)}</td>
 <td style="padding:4px 8px;border:1px solid #ccc;font-family:${F};font-size:9pt;text-align:right">${formatNumberVN(c.so_luong)}</td>
 <td style="padding:4px 8px;border:1px solid #ccc;font-family:${F};font-size:9pt;text-align:center">${safe(c.so_lot)}</td>
@@ -127,10 +143,18 @@ export function buildPhieuKhoBodyHTML(
       )
       .join('');
     const tfoot = `<tr style="background:#f1f5f9;font-weight:600">
-<td colspan="4" style="padding:6px 8px;border:1px solid #ccc;font-family:${F};font-size:9pt">${t('phieuKho.preview.totalQty')}</td>
+<td colspan="5" style="padding:6px 8px;border:1px solid #ccc;font-family:${F};font-size:9pt">${t('phieuKho.preview.totalQty')}</td>
 <td style="padding:6px 8px;border:1px solid #ccc;font-family:${F};font-size:9pt;text-align:right">${formatNumberVN(total)}</td>
 <td colspan="2" style="padding:6px 8px;border:1px solid #ccc;font-family:${F};font-size:9pt"></td>
-</tr>`;
+</tr>${sumSoLuongByPhamCap(chiTiet)
+      .map(
+        ({ phamCap, soLuong }) => `<tr style="background:#f8fafc">
+<td colspan="5" style="padding:6px 8px;border:1px solid #ccc;font-family:${F};font-size:9pt">${t('phieuKho.preview.totalQtyByPhamCap', { phamCap })}</td>
+<td style="padding:6px 8px;border:1px solid #ccc;font-family:${F};font-size:9pt;text-align:right">${formatNumberVN(soLuong)}</td>
+<td colspan="2" style="padding:6px 8px;border:1px solid #ccc;font-family:${F};font-size:9pt"></td>
+</tr>`,
+      )
+      .join('')}`;
     tableHTML = `
 <h2 style="font-size:11pt;margin:12px 0 8px;font-family:${F}">${t('phieuKho.preview.danhSachChiTiet')}</h2>
 <table style="width:100%;border-collapse:collapse;font-family:${F};font-size:10pt">
@@ -143,8 +167,13 @@ export function buildPhieuKhoBodyHTML(
   const signBlock = (label: string) =>
     `<div style="text-align:center;flex:1"><p style="font-size:10pt;font-weight:600;color:#333;margin-bottom:2px;font-family:${F}">${label}</p><p style="font-size:8pt;color:#666;font-family:${F}">${t('phieuKho.preview.signHint')}</p></div>`;
 
+  const poDisplay = getPoDisplay(phieu);
+  const poHtml = poDisplay
+    ? `<p style="font-size:10pt;color:#333;text-align:center;margin:0 0 12px"><strong>${t('phieuKho.detail.linkPo')}:</strong> <span style="font-family:monospace">${poDisplay}</span></p>`
+    : '';
+
   return `
-<div style="font-family:${F};font-size:10pt;color:#222;padding:20px;min-width:600px;display:flex;flex-direction:column;min-height:100%">
+<div style="font-family:${F};font-size:10pt;color:#222;padding:${DOC_PADDING};min-width:600px;background:#fff;box-sizing:border-box">
 <div style="display:flex;align-items:flex-start;gap:16px;padding-bottom:16px;margin-bottom:16px;border-bottom:2px solid #333;font-family:${F}">
   ${logoHtml}
   <div style="flex:1;min-width:0">
@@ -156,6 +185,7 @@ export function buildPhieuKhoBodyHTML(
 <p style="font-size:10pt;color:#333;margin:0 0 4px;text-align:left">${dateLine}</p>
 <h1 style="font-size:16pt;text-align:center;margin:8px 0 4px;text-transform:uppercase">${title}</h1>
 <p style="font-size:10pt;color:#555;text-align:center;margin-bottom:12px">(${t('phieuKho.form.code')}: ${phieu.so_phieu})</p>
+${poHtml}
 <div style="display:flex;gap:24px;margin-bottom:8px;font-size:10pt">
   <div><strong style="color:#444">${t('phieuKho.preview.noiDi')}:</strong> ${noiDi}</div>
   <div><strong style="color:#444">${t('phieuKho.preview.noiDen')}:</strong> ${noiDen}</div>
@@ -169,7 +199,7 @@ ${tableHTML}
   ${signBlock(t('phieuKho.preview.signRelated'))}
   ${signBlock(t('phieuKho.preview.signApprover'))}
 </div>
-<footer style="margin-top:auto;padding-top:16px;border-top:1px solid #ddd"><p style="font-size:7pt;color:#888;margin:0">${t('phieuKho.preview.printedAt')} ${printedAt}</p></footer>
+<footer style="margin-top:20px;padding-top:16px;border-top:1px solid #ddd"><p style="font-size:7pt;color:#888;margin:0">${t('phieuKho.preview.printedAt')} ${printedAt}</p></footer>
 </div>`;
 }
 
@@ -196,20 +226,41 @@ function buildDocHTML(phieu: PhieuKho, chiTiet: PhieuKhoChiTiet[]): string {
     chiTiet.forEach((c, idx) => {
       detailRows +=
         '<tr>' +
-        [idx + 1, safe(c.ten_danh_muc), safe(c.ten_hang), safe(c.don_vi_tinh), formatNumberVN(c.so_luong), safe(c.so_lot), safe(c.ghi_chu)]
+        [
+          idx + 1,
+          safe(c.ten_danh_muc),
+          safe(c.ten_hang),
+          safe(c.pham_cap),
+          safe(c.don_vi_tinh),
+          formatNumberVN(c.so_luong),
+          safe(c.so_lot),
+          safe(c.ghi_chu),
+        ]
           .map((v) => `<td style="border:1px solid #999;padding:4px 6px">${v}</td>`)
           .join('') +
         '</tr>';
     });
     detailRows +=
       `<tr style="background:#f1f5f9;font-weight:bold">` +
-      `<td colspan="4" style="border:1px solid #999;padding:4px 6px">${t('phieuKho.preview.totalQty')}</td>` +
+      `<td colspan="5" style="border:1px solid #999;padding:4px 6px">${t('phieuKho.preview.totalQty')}</td>` +
       `<td style="border:1px solid #999;padding:4px 6px">${formatNumberVN(total)}</td>` +
       `<td colspan="2" style="border:1px solid #999;padding:4px 6px"></td></tr>`;
+    for (const { phamCap, soLuong } of sumSoLuongByPhamCap(chiTiet)) {
+      detailRows +=
+        `<tr style="background:#f8fafc">` +
+        `<td colspan="5" style="border:1px solid #999;padding:4px 6px">${t('phieuKho.preview.totalQtyByPhamCap', { phamCap })}</td>` +
+        `<td style="border:1px solid #999;padding:4px 6px">${formatNumberVN(soLuong)}</td>` +
+        `<td colspan="2" style="border:1px solid #999;padding:4px 6px"></td></tr>`;
+    }
   }
 
   const sign = (label: string) =>
     `<td width="25%" style="text-align:center;padding:8px;vertical-align:top"><b>${label}</b><br/><span style="font-size:9pt;color:#666">${t('phieuKho.preview.signHint')}</span></td>`;
+
+  const poDisplay = getPoDisplay(phieu);
+  const poRow = poDisplay
+    ? `<tr><td style="text-align:center;padding:4px 0"><b>${t('phieuKho.detail.linkPo')}:</b> <span style="font-family:monospace">${poDisplay}</span></td></tr>`
+    : '';
 
   return `
 <table width="100%" cellpadding="0" cellspacing="0" style="font-size:11pt">
@@ -220,6 +271,7 @@ function buildDocHTML(phieu: PhieuKho, chiTiet: PhieuKhoChiTiet[]): string {
 </td></tr>
 <tr><td style="padding:8px 0 4px 0">${dateLine}</td></tr>
 <tr><td style="text-align:center;padding:8px 0"><b style="font-size:14pt">${title}</b><br/>(${t('phieuKho.form.code')}: ${phieu.so_phieu})</td></tr>
+${poRow}
 <tr><td style="padding:4px 0"><b>${t('phieuKho.preview.noiDi')}:</b> ${noiDi} &nbsp;&nbsp;&nbsp; <b>${t('phieuKho.preview.noiDen')}:</b> ${noiDen}</td></tr>
 <tr><td style="padding:4px 0"><b>${t('phieuKho.form.description')}:</b> <span style="white-space:pre-wrap;word-break:break-word">${safe(phieu.mo_ta)}</span></td></tr>
 <tr><td style="padding:4px 0 12px 0"><b>${t('phieuKho.store.statusCol')}:</b> ${getTrangThaiLabel(phieu.trang_thai, t)}</td></tr>
@@ -240,7 +292,8 @@ ${detailRows ? `
 
 /**
  * Xuất PDF từ source: HTML từ buildPhieuKhoBodyHTML → iframe → html2canvas → jsPDF.
- * Chữ màu đen, nền trắng, không phụ thuộc trang preview.
+ * Phân trang A4: scale theo chiều ngang, cắt ảnh thành nhiều trang.
+ * Trang 2+: stamp header công ty rút gọn ở đỉnh trang.
  */
 export async function exportPhieuKhoToPDF(
   phieu: PhieuKho,
@@ -261,35 +314,84 @@ export async function exportPhieuKhoToPDF(
 
   const iframe = document.createElement('iframe');
   iframe.setAttribute('srcdoc', fullHtml);
-  iframe.style.cssText = 'position:fixed;left:0;top:0;width:794px;height:1123px;border:0;z-index:-1';
+  iframe.style.cssText = 'position:fixed;left:0;top:0;width:794px;border:0;z-index:-1;visibility:hidden';
   document.body.appendChild(iframe);
 
   await new Promise<void>((resolve, reject) => {
     iframe.onload = () => resolve();
     iframe.onerror = () => reject(new Error('iframe load failed'));
   });
-  await new Promise((r) => setTimeout(r, 100));
+  await new Promise((r) => setTimeout(r, 300));
 
   try {
     const docEl = iframe.contentDocument?.body;
     if (!docEl) throw new Error('iframe body not available');
+
+    const scrollH = docEl.scrollHeight;
+    iframe.style.height = `${scrollH + 20}px`;
+    await new Promise((r) => setTimeout(r, 100));
+
     const canvas = await html2canvas(docEl, {
       scale: 2,
       useCORS: true,
       backgroundColor: '#ffffff',
       logging: false,
+      height: scrollH,
+      windowHeight: scrollH,
     });
     if (iframe.parentNode) document.body.removeChild(iframe);
 
     const imgData = canvas.toDataURL('image/png');
     const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+
     const pageW = 210;
     const pageH = 297;
+    /** Chiều cao dành cho header rút gọn trên trang 2+ */
+    const headerReserve = 22;
+
     const pxToMm = 25.4 / 96;
-    const wMm = (canvas.width / 2) * pxToMm;
-    const hMm = (canvas.height / 2) * pxToMm;
-    const scale = Math.min(pageW / wMm, pageH / hMm, 1);
-    doc.addImage(imgData, 'PNG', 0, 0, wMm * scale, hMm * scale);
+    const imgWmm = (canvas.width / 2) * pxToMm;
+    const imgHmm = (canvas.height / 2) * pxToMm;
+    const scale = pageW / imgWmm;
+    const scaledH = imgHmm * scale;
+
+    const info = useUIStore.getState().companyInfo;
+    const title = titleOf(phieu.loai);
+
+    const stampContinuationHeader = () => {
+      doc.setFillColor(255, 255, 255);
+      doc.rect(0, 0, pageW, headerReserve, 'F');
+      doc.setDrawColor(180, 180, 180);
+      doc.setLineWidth(0.3);
+      doc.line(10, headerReserve - 2, pageW - 10, headerReserve - 2);
+      doc.setTextColor(17, 17, 17);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      const company = (info.companyName || '').slice(0, 60);
+      doc.text(company, 10, 8);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(80, 80, 80);
+      doc.text(`${title} · ${phieu.so_phieu}`, 10, 14);
+    };
+
+    // Trang 1: full height
+    let srcY = 0;
+    let remaining = scaledH;
+    doc.addImage(imgData, 'PNG', 0, 0, pageW, scaledH);
+    remaining -= pageH;
+    srcY += pageH;
+
+    // Trang 2+: reserve header — vẽ ảnh trước, stamp header trắng đè lên đỉnh
+    while (remaining > 0) {
+      doc.addPage();
+      const pageContentH = pageH - headerReserve;
+      doc.addImage(imgData, 'PNG', 0, headerReserve - srcY, pageW, scaledH);
+      stampContinuationHeader();
+      remaining -= pageContentH;
+      srcY += pageContentH;
+    }
+
     download(doc.output('blob'), `${fileName(phieu)}.pdf`);
   } finally {
     if (iframe.parentNode) document.body.removeChild(iframe);
@@ -342,6 +444,7 @@ export async function exportPhieuKhoToXLSX(
     [formatDateVietnameseLong(phieu.ngay)],
     [titleOf(phieu.loai)],
     [t('phieuKho.form.code'), phieu.so_phieu],
+    ...(getPoDisplay(phieu) ? [[t('phieuKho.detail.linkPo'), getPoDisplay(phieu)!]] : []),
     [t('phieuKho.preview.noiDi'), noiDi],
     [t('phieuKho.preview.noiDen'), noiDen],
     [t('phieuKho.form.description'), safe(phieu.mo_ta)],
@@ -355,6 +458,7 @@ export async function exportPhieuKhoToXLSX(
       idx + 1,
       safe(c.ten_danh_muc),
       safe(c.ten_hang),
+      safe(c.pham_cap),
       safe(c.don_vi_tinh),
       Number(c.so_luong) || 0,
       safe(c.so_lot),
@@ -364,7 +468,10 @@ export async function exportPhieuKhoToXLSX(
 
   if (chiTiet.length > 0) {
     const total = chiTiet.reduce((s, c) => s + (Number(c.so_luong) || 0), 0);
-    rows.push([t('phieuKho.preview.totalQty'), '', '', '', total, '', '']);
+    rows.push([t('phieuKho.preview.totalQty'), '', '', '', '', total, '', '']);
+    for (const { phamCap, soLuong } of sumSoLuongByPhamCap(chiTiet)) {
+      rows.push([t('phieuKho.preview.totalQtyByPhamCap', { phamCap }), '', '', '', '', soLuong, '', '']);
+    }
   }
 
   rows.push([]);
@@ -380,6 +487,7 @@ export async function exportPhieuKhoToXLSX(
     { wch: 18 },
     { wch: 22 },
     { wch: 28 },
+    { wch: 12 },
     { wch: 10 },
     { wch: 12 },
     { wch: 14 },

@@ -331,23 +331,30 @@ export async function exportBaoCaoSoCheToPDF(
 
   const iframe = document.createElement('iframe');
   iframe.setAttribute('srcdoc', fullHtml);
-  iframe.style.cssText = 'position:fixed;left:0;top:0;width:834px;height:1123px;border:0;z-index:-1';
+  iframe.style.cssText = 'position:fixed;left:0;top:0;width:834px;border:0;z-index:-1;visibility:hidden';
   document.body.appendChild(iframe);
 
   await new Promise<void>((resolve, reject) => {
     iframe.onload = () => resolve();
     iframe.onerror = () => reject(new Error('iframe load failed'));
   });
-  await new Promise((r) => setTimeout(r, 200));
+  await new Promise((r) => setTimeout(r, 300));
 
   try {
     const docEl = iframe.contentDocument?.body;
     if (!docEl) throw new Error('iframe body not available');
+
+    const scrollH = docEl.scrollHeight;
+    iframe.style.height = `${scrollH + 20}px`;
+    await new Promise((r) => setTimeout(r, 100));
+
     const canvas = await html2canvas(docEl, {
       scale: 2,
       useCORS: true,
       backgroundColor: '#ffffff',
       logging: false,
+      height: scrollH,
+      windowHeight: scrollH,
     });
     if (iframe.parentNode) document.body.removeChild(iframe);
 
@@ -355,38 +362,22 @@ export async function exportBaoCaoSoCheToPDF(
     const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
     const pageW = 210;
     const pageH = 297;
-    const margin = 8;
     const pxToMm = 25.4 / 96;
-    const wMm = (canvas.width / 2) * pxToMm;
-    const hMm = (canvas.height / 2) * pxToMm;
-    const maxW = pageW - margin * 2;
-    const maxH = pageH - margin * 2;
-    const scale = Math.min(maxW / wMm, maxH / hMm, 1);
-    const drawW = wMm * scale;
-    const drawH = hMm * scale;
+    const imgWmm = (canvas.width / 2) * pxToMm;
+    const imgHmm = (canvas.height / 2) * pxToMm;
+    const scale = pageW / imgWmm;
+    const scaledH = imgHmm * scale;
 
-    if (drawH <= maxH) {
-      doc.addImage(imgData, 'PNG', margin, margin, drawW, drawH);
-    } else {
-      let yOffset = 0;
-      let page = 0;
-      const sliceMm = maxH;
-      const slicePx = (sliceMm / scale / pxToMm) * 2;
-      while (yOffset < canvas.height) {
-        const sliceH = Math.min(slicePx, canvas.height - yOffset);
-        const sliceCanvas = document.createElement('canvas');
-        sliceCanvas.width = canvas.width;
-        sliceCanvas.height = sliceH;
-        const ctx = sliceCanvas.getContext('2d');
-        if (!ctx) break;
-        ctx.drawImage(canvas, 0, yOffset, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
-        const sliceImg = sliceCanvas.toDataURL('image/png');
-        const sliceHMm = (sliceH / 2) * pxToMm * scale;
-        if (page > 0) doc.addPage();
-        doc.addImage(sliceImg, 'PNG', margin, margin, drawW, sliceHMm);
-        yOffset += sliceH;
-        page += 1;
-      }
+    let remaining = scaledH;
+    let srcY = 0;
+    doc.addImage(imgData, 'PNG', 0, 0, pageW, scaledH);
+    remaining -= pageH;
+
+    while (remaining > 0) {
+      srcY += pageH;
+      doc.addPage();
+      doc.addImage(imgData, 'PNG', 0, -srcY, pageW, scaledH);
+      remaining -= pageH;
     }
 
     download(doc.output('blob'), `${fileName(data)}.pdf`);

@@ -40,7 +40,7 @@ const DonDatHangPreviewContent: React.FC<Props> = ({ po }) => {
   );
 
   return (
-    <div className="don-dat-hang-preview-content don-dat-hang-preview bg-white text-gray-900 font-sans text-[10pt] p-5 min-h-full flex flex-col">
+    <div className="don-dat-hang-preview-content don-dat-hang-preview bg-white text-gray-900 font-sans text-[10pt] pt-[15mm] pr-[15mm] pb-[15mm] pl-[20mm] print:p-0 min-h-full flex flex-col">
       {/* Header công ty */}
       <div className="flex items-start gap-4 pb-4 mb-4 border-b-2 border-gray-300">
         {companyInfo.appLogo && (

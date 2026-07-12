@@ -25,6 +25,8 @@ interface Props {
   onView?: (item: PhieuKho) => void;
   /** Nếu có: chỉ hiển thị nút Sửa khi canEditItem(item) === true. */
   canEditItem?: (item: PhieuKho) => boolean;
+  /** Nếu có: chỉ hiển thị nút Xoá khi canDeleteItem(item) === true. */
+  canDeleteItem?: (item: PhieuKho) => boolean;
   /** Phân trang server: tổng bản ghi khớp lọc (khác `data.length` khi `data` chỉ một trang). */
   serverTotalCount?: number;
 }
@@ -46,6 +48,7 @@ const PhieuKhoList: React.FC<Props> = ({
   onDelete,
   onView,
   canEditItem,
+  canDeleteItem,
   serverTotalCount,
 }) => {
   const { t } = useTranslation();
@@ -159,7 +162,7 @@ const PhieuKhoList: React.FC<Props> = ({
                 <Edit size={14} />
               </button>
             )}
-            {onDelete && (
+            {onDelete && (!canDeleteItem || canDeleteItem(item)) && (
               <button
                 type="button"
                 onClick={(e) => {
@@ -245,7 +248,7 @@ const PhieuKhoList: React.FC<Props> = ({
               <Edit size={14} />
             </button>
           )}
-          {onDelete && (
+          {onDelete && (!canDeleteItem || canDeleteItem(item)) && (
             <button
               type="button"
               onClick={(e) => {

@@ -244,7 +244,7 @@ ${detailRows ? `<tr><td style="padding:8px 0 4px 0"><b>${t('donDatHang.form.item
 
 /**
  * Xuất PDF từ source: tạo tài liệu HTML độc lập (iframe), chụp bằng html2canvas, chèn vào jsPDF.
- * Không dùng DOM trang preview; chữ màu đen (#222), nền trắng, font Arial.
+ * Phân trang A4: scale theo chiều ngang, cắt ảnh thành nhiều trang.
  */
 export async function exportDonDatHangToPDF(po: DonDatHang, chiTiet: DonDatHangChiTiet[]): Promise<void> {
   const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
@@ -266,15 +266,7 @@ export async function exportDonDatHangToPDF(po: DonDatHang, chiTiet: DonDatHangC
 
   const iframe = document.createElement('iframe');
   iframe.setAttribute('srcdoc', fullHtml);
-  iframe.style.cssText = [
-    'position:fixed',
-    'left:0',
-    'top:0',
-    'width:794px',
-    'height:1123px',
-    'border:0',
-    'z-index:-1',
-  ].join(';');
+  iframe.style.cssText = 'position:fixed;left:0;top:0;width:794px;border:0;z-index:-1;visibility:hidden';
   document.body.appendChild(iframe);
 
   const onLoad = new Promise<void>((resolve, reject) => {
@@ -283,17 +275,23 @@ export async function exportDonDatHangToPDF(po: DonDatHang, chiTiet: DonDatHangC
   });
 
   await onLoad;
-  await new Promise((r) => setTimeout(r, 100));
+  await new Promise((r) => setTimeout(r, 300));
 
   try {
     const docEl = iframe.contentDocument?.body;
     if (!docEl) throw new Error('iframe body not available');
+
+    const scrollH = docEl.scrollHeight;
+    iframe.style.height = `${scrollH + 20}px`;
+    await new Promise((r) => setTimeout(r, 100));
 
     const canvas = await html2canvas(docEl, {
       scale: 2,
       useCORS: true,
       backgroundColor: '#ffffff',
       logging: false,
+      height: scrollH,
+      windowHeight: scrollH,
     });
 
     const imgData = canvas.toDataURL('image/png');
@@ -301,10 +299,23 @@ export async function exportDonDatHangToPDF(po: DonDatHang, chiTiet: DonDatHangC
     const pageW = 210;
     const pageH = 297;
     const pxToMm = 25.4 / 96;
-    const wMm = (canvas.width / 2) * pxToMm;
-    const hMm = (canvas.height / 2) * pxToMm;
-    const scale = Math.min(pageW / wMm, pageH / hMm, 1);
-    doc.addImage(imgData, 'PNG', 0, 0, wMm * scale, hMm * scale);
+    const imgWmm = (canvas.width / 2) * pxToMm;
+    const imgHmm = (canvas.height / 2) * pxToMm;
+    const scale = pageW / imgWmm;
+    const scaledH = imgHmm * scale;
+
+    let remaining = scaledH;
+    let srcY = 0;
+    doc.addImage(imgData, 'PNG', 0, 0, pageW, scaledH);
+    remaining -= pageH;
+
+    while (remaining > 0) {
+      srcY += pageH;
+      doc.addPage();
+      doc.addImage(imgData, 'PNG', 0, -srcY, pageW, scaledH);
+      remaining -= pageH;
+    }
+
     download(doc.output('blob'), `${getFileName(po)}.pdf`);
   } finally {
     if (iframe.parentNode) document.body.removeChild(iframe);

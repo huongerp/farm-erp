@@ -37,6 +37,21 @@ export function isTrangThaiChoPheDuyet(trangThai: string): boolean {
   return trangThai === TRANG_THAI_CHO_DUYET || trangThai === TRANG_THAI_DOI_DUYET;
 }
 
+export function isTrangThaiDaDuyet(trangThai: string): boolean {
+  return trangThai === TRANG_THAI_DA_DUYET;
+}
+
+/** Sửa/xoá: chưa duyệt → đủ CRUD; đã duyệt → cần thêm quyền duyệt/quan_tri. */
+export function canMutatePhieuKhoByTrangThai(
+  trangThai: string,
+  moduleAllowed: boolean,
+  canBypassApproved: boolean
+): boolean {
+  if (!moduleAllowed) return false;
+  if (isTrangThaiDaDuyet(trangThai)) return canBypassApproved;
+  return true;
+}
+
 /** i18n key suffix cho trạng thái phiếu (phieuKho.status.*). */
 export function trangThaiToI18nKey(trangThai: string): string {
   if (trangThai === TRANG_THAI_CHO_DUYET) return 'pending';

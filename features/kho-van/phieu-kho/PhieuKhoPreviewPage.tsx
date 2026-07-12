@@ -65,6 +65,19 @@ const PhieuKhoPreviewPage: React.FC = () => {
   }, [downloadOpen]);
 
   const handlePrint = () => {
+    // Inject @page override: lề do @page; content dùng print:p-0
+    // T:15mm R:15mm B:15mm L:20mm — khớp pt/pr/pb/pl trong PreviewContent
+    const styleEl = document.createElement('style');
+    styleEl.id = 'phieu-kho-print-page-override';
+    styleEl.innerHTML = '@page { margin: 15mm 15mm 15mm 20mm !important; size: A4 portrait; }';
+    document.head.appendChild(styleEl);
+
+    const cleanup = () => {
+      document.getElementById('phieu-kho-print-page-override')?.remove();
+      window.removeEventListener('afterprint', cleanup);
+    };
+    window.addEventListener('afterprint', cleanup);
+
     window.print();
   };
 
@@ -185,7 +198,7 @@ const PhieuKhoPreviewPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="phieu-kho-preview-body flex-1 overflow-auto p-4 md:p-6 flex justify-center">
+        <div className="phieu-kho-preview-body flex-1 overflow-auto p-4 md:p-6 flex justify-center items-start print:p-0 print:overflow-visible">
           <div className="bg-white shadow-xl rounded-sm phieu-kho-preview-content-wrapper" style={{ width: '210mm', minHeight: '297mm' }}>
             <PhieuKhoPreviewContent phieu={phieu} />
           </div>

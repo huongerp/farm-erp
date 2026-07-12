@@ -241,23 +241,30 @@ export async function exportPhieuKhoPTToPDF(phieu: PhieuKhoPT, chiTiet: PhieuKho
 
   const iframe = document.createElement('iframe');
   iframe.setAttribute('srcdoc', fullHtml);
-  iframe.style.cssText = 'position:fixed;left:0;top:0;width:794px;height:1123px;border:0;z-index:-1';
+  iframe.style.cssText = 'position:fixed;left:0;top:0;width:794px;border:0;z-index:-1;visibility:hidden';
   document.body.appendChild(iframe);
 
   await new Promise<void>((resolve, reject) => {
     iframe.onload = () => resolve();
     iframe.onerror = () => reject(new Error('iframe load failed'));
   });
-  await new Promise((r) => setTimeout(r, 100));
+  await new Promise((r) => setTimeout(r, 300));
 
   try {
     const docEl = iframe.contentDocument?.body;
     if (!docEl) throw new Error('iframe body not available');
+
+    const scrollH = docEl.scrollHeight;
+    iframe.style.height = `${scrollH + 20}px`;
+    await new Promise((r) => setTimeout(r, 100));
+
     const canvas = await html2canvas(docEl, {
       scale: 2,
       useCORS: true,
       backgroundColor: '#ffffff',
       logging: false,
+      height: scrollH,
+      windowHeight: scrollH,
     });
     if (iframe.parentNode) document.body.removeChild(iframe);
 
@@ -266,10 +273,23 @@ export async function exportPhieuKhoPTToPDF(phieu: PhieuKhoPT, chiTiet: PhieuKho
     const pageW = 210;
     const pageH = 297;
     const pxToMm = 25.4 / 96;
-    const wMm = (canvas.width / 2) * pxToMm;
-    const hMm = (canvas.height / 2) * pxToMm;
-    const scale = Math.min(pageW / wMm, pageH / hMm, 1);
-    doc.addImage(imgData, 'PNG', 0, 0, wMm * scale, hMm * scale);
+    const imgWmm = (canvas.width / 2) * pxToMm;
+    const imgHmm = (canvas.height / 2) * pxToMm;
+    const scale = pageW / imgWmm;
+    const scaledH = imgHmm * scale;
+
+    let remaining = scaledH;
+    let srcY = 0;
+    doc.addImage(imgData, 'PNG', 0, 0, pageW, scaledH);
+    remaining -= pageH;
+
+    while (remaining > 0) {
+      srcY += pageH;
+      doc.addPage();
+      doc.addImage(imgData, 'PNG', 0, -srcY, pageW, scaledH);
+      remaining -= pageH;
+    }
+
     download(doc.output('blob'), `${fileName(phieu)}.pdf`);
   } finally {
     if (iframe.parentNode) document.body.removeChild(iframe);

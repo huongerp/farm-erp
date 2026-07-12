@@ -22,7 +22,7 @@ const BaoCaoNhanCongPreviewContent: React.FC<Props> = ({ data }) => {
   const trangThaiLabel = bcncTrangThaiLabel(data, t);
 
   return (
-    <div className="bao-cao-nhan-cong-preview-content bg-white text-gray-900 font-sans text-[10pt] p-5 min-h-full w-[210mm] max-w-[210mm] box-border flex flex-col">
+    <div className="bao-cao-nhan-cong-preview-content bg-white text-gray-900 font-sans text-[10pt] pt-[15mm] pr-[15mm] pb-[15mm] pl-[20mm] print:p-0 min-h-full w-[210mm] max-w-[210mm] box-border flex flex-col">
       <div className="flex items-start gap-3 pb-3 mb-3 border-b-2 border-gray-300">
         {companyInfo.appLogo && (
           <img src={companyInfo.appLogo} alt="Logo" className="w-14 h-14 object-contain shrink-0" />

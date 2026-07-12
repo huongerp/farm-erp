@@ -17,6 +17,7 @@ import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
 import type { PhieuKho, LoaiPhieuKhoTab } from '../core/types';
 import { LOAI_TAB_TO_DB } from '../core/types';
+import { canMutatePhieuKhoByTrangThai } from '../core/constants';
 import type { Kho } from '../../danh-sach-kho/core/types';
 import type { HangHoa } from '../../danh-sach-hang-hoa/core/types';
 import type { DoiTac } from '../../danh-sach-doi-tac/core/types';
@@ -209,6 +210,10 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
   }, [tableRows, viewingItem]);
 
   const handleEdit = (item: PhieuKho) => {
+    if (!canMutatePhieuKhoByTrangThai(item.trang_thai, canUpdate, canApprove)) {
+      toast.message(t('phieuKho.cannotMutateApproved'));
+      return;
+    }
     setEditingItem(item);
     setIsCopyMode(false);
     setShowForm(true);
@@ -234,6 +239,11 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
   };
 
   const handleDelete = (id: string) => {
+    const item = tableRows.find((p) => p.id === id) ?? (viewingItem?.id === id ? viewingItem : null);
+    if (item && !canMutatePhieuKhoByTrangThai(item.trang_thai, canDelete, canApprove)) {
+      toast.message(t('phieuKho.cannotMutateApproved'));
+      return;
+    }
     confirm({
       title: t('phieuKho.deleteTitle'),
       message: t('phieuKho.deleteMessage'),
@@ -250,19 +260,46 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
   };
 
   const handleDeleteMany = () => {
-    const ids = Array.from(selectedIds);
+    const selected = Array.from(selectedIds);
+    const allowedIds = selected.filter((id) => {
+      const item = tableRows.find((p) => p.id === id);
+      return item && canMutatePhieuKhoByTrangThai(item.trang_thai, canDelete, canApprove);
+    });
+    if (allowedIds.length === 0) {
+      toast.message(t('phieuKho.toast.deleteManyNoneAllowed'));
+      return;
+    }
+    const skipped = selected.length - allowedIds.length;
     confirm({
       title: t('phieuKho.deleteTitle'),
-      message: t('common.deleteManyConfirm', { count: ids.length }),
+      message: t('common.deleteManyConfirm', { count: allowedIds.length }),
       variant: 'danger',
       confirmText: CONFIRM_DELETE_ALL(),
       onConfirm: async () => {
-        await deleteManyMutation.mutateAsync(ids);
+        if (skipped > 0) toast.message(t('phieuKho.toast.deleteManyPartial'));
+        await deleteManyMutation.mutateAsync(allowedIds);
         clearSelection();
-        if (viewingItem && ids.includes(viewingItem.id)) setViewingItem(null);
+        if (viewingItem && allowedIds.includes(viewingItem.id)) setViewingItem(null);
       },
     });
   };
+
+  const canEditItem = useCallback(
+    (item: PhieuKho) => canMutatePhieuKhoByTrangThai(item.trang_thai, canUpdate, canApprove),
+    [canUpdate, canApprove]
+  );
+  const canDeleteItem = useCallback(
+    (item: PhieuKho) => canMutatePhieuKhoByTrangThai(item.trang_thai, canDelete, canApprove),
+    [canDelete, canApprove]
+  );
+
+  const detailPhieu = viewingPhieuFull ?? viewingItem;
+  const detailCanEdit = detailPhieu
+    ? canMutatePhieuKhoByTrangThai(detailPhieu.trang_thai, canUpdate, canApprove)
+    : false;
+  const detailCanDelete = detailPhieu
+    ? canMutatePhieuKhoByTrangThai(detailPhieu.trang_thai, canDelete, canApprove)
+    : false;
 
   return (
     <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
@@ -301,6 +338,8 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
           onEdit={canUpdate ? handleEdit : undefined}
           onDelete={canDelete ? handleDelete : undefined}
           onView={setViewingItem}
+          canEditItem={canEditItem}
+          canDeleteItem={canDeleteItem}
         />
       </div>
 
@@ -431,8 +470,8 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
             data={viewingPhieuFull ?? viewingItem}
             loai={loaiTab}
             onClose={() => setViewingItem(null)}
-            onEdit={canUpdate ? handleEdit : undefined}
-            onDelete={canDelete ? handleDelete : undefined}
+            onEdit={detailCanEdit ? handleEdit : undefined}
+            onDelete={detailCanDelete ? handleDelete : undefined}
             onCopy={canCreate ? handleCopy : undefined}
             canApprove={canApprove}
           />
