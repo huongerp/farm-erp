@@ -153,10 +153,7 @@ const CuaToiTab: React.FC = () => {
           data={detailData}
           onClose={() => setDetailItem(null)}
           onEdit={canUpdate ? handleEdit : undefined}
-          onDelete={canDelete ? (id) => {
-            setDetailItem(null);
-            deleteMutation.mutate([id]);
-          } : undefined}
+          onDelete={canDelete ? () => handleDelete(detailData) : undefined}
         />
       )}
       {showForm && (

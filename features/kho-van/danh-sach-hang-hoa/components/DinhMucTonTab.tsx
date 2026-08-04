@@ -428,6 +428,7 @@ const DinhMucTonTab: React.FC<DinhMucTonTabProps> = ({ onBack }) => {
           khoList={khoList}
           hangHoaList={hangHoaList}
           editingRow={editingRow}
+          isSaving={createMutation.isPending || updateMutation.isPending}
           onClose={() => { setShowForm(false); setEditingRow(null); }}
           onCreate={(payload) => {
             createMutation.mutate(payload, {
@@ -528,6 +529,7 @@ interface DinhMucTonFormDrawerProps {
   khoList: Kho[];
   hangHoaList: HangHoaRefLite[];
   editingRow: DinhMucTonKhoRow | null;
+  isSaving?: boolean;
   onClose: () => void;
   onCreate: (payload: { kho_id: string; hang_hoa_id: string; ton_toi_thieu: number }) => void;
   onUpdate: (id: string, ton_toi_thieu: number) => void;
@@ -537,6 +539,7 @@ const DinhMucTonFormDrawer: React.FC<DinhMucTonFormDrawerProps> = ({
   khoList,
   hangHoaList,
   editingRow,
+  isSaving = false,
   onClose,
   onCreate,
   onUpdate,
@@ -602,6 +605,7 @@ const DinhMucTonFormDrawer: React.FC<DinhMucTonFormDrawerProps> = ({
         <FormDrawerFooter
           formId="dinh-muc-ton-form"
           onCancel={onClose}
+          isLoading={isSaving}
           isEdit={isEdit}
           saveLabel={t('common.save')}
           createLabel={t('hangHoa.dinhMuc.add')}

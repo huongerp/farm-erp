@@ -40,7 +40,7 @@ export const FormDrawerFooter: React.FC<FormDrawerFooterProps> = ({
 
   return (
     <div className="flex items-center justify-between w-full gap-3">
-      <Button variant="outline" onClick={onCancel} className="border-border text-muted-foreground">
+      <Button variant="outline" onClick={onCancel} disabled={isLoading} className="border-border text-muted-foreground">
         {resolvedCancel}
       </Button>
       <Button type="submit" form={formId} isLoading={isLoading} className="bg-primary text-white shadow-lg">

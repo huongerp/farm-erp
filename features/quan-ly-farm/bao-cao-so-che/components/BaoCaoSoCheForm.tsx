@@ -155,8 +155,11 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
   );
 
   useEffect(() => {
+    // Không reset nếu người dùng đã bắt đầu sửa — defaultValues đổi identity khi
+    // useBaoCaoSoCheById trả bản đầy đủ về sau (cùng bản ghi), không nên ghi đè chữ đang gõ.
+    if (isDirty) return;
     reset(defaultValues);
-  }, [defaultValues, reset]);
+  }, [defaultValues, reset, isDirty]);
 
   useEffect(() => {
     if (!idChiNhanh) {

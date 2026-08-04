@@ -220,10 +220,7 @@ const TatCaTab: React.FC<Props> = ({ defaultTaiSanId }) => {
           onClose={() => setDetailItem(null)}
           canAdmin={canAdmin}
           onEdit={canUpdate ? handleEdit : undefined}
-          onDelete={canDelete ? (id) => {
-            setDetailItem(null);
-            deleteMutation.mutate([id]);
-          } : undefined}
+          onDelete={canDelete ? () => handleDelete(detailItem) : undefined}
         />
       )}
       <AnimatePresence>

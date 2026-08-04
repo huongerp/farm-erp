@@ -151,9 +151,11 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
   const idChiNhanh = watch('id_chi_nhanh');
 
   useEffect(() => {
+    // Không reset nếu người dùng đã bắt đầu sửa — cùng lý do đã sửa ở BaoCaoSoCheForm.
+    if (isDirty) return;
     reset(defaultValues);
     setExpandedRows(new Set());
-  }, [defaultValues, reset]);
+  }, [defaultValues, reset, isDirty]);
 
   useEffect(() => {
     if (!idChiNhanh) {

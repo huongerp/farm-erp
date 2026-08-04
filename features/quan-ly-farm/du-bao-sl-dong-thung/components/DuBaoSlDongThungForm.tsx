@@ -75,7 +75,7 @@ const DuBaoSlDongThungForm: React.FC<Props> = ({ branches, initialData, preferre
     watch,
     setValue,
     reset,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<DuBaoSlDongThungFormValues>({
     resolver: zodResolver(duBaoSlDongThungFormSchema) as any,
     defaultValues,
@@ -86,8 +86,10 @@ const DuBaoSlDongThungForm: React.FC<Props> = ({ branches, initialData, preferre
   const kpi = computeKpiFromForm(watched);
 
   useEffect(() => {
+    // Không reset nếu người dùng đã bắt đầu sửa — cùng lý do đã sửa ở BaoCaoSoCheForm.
+    if (isDirty) return;
     reset(defaultValues);
-  }, [defaultValues, reset]);
+  }, [defaultValues, reset, isDirty]);
 
   useEffect(() => {
     if (!idChiNhanh) {
@@ -123,6 +125,7 @@ const DuBaoSlDongThungForm: React.FC<Props> = ({ branches, initialData, preferre
   return (
     <GenericDrawer
       onClose={onClose}
+      isDirty={isDirty}
       title={isEdit ? t('duBaoSlDongThung.form.editTitle') : t('duBaoSlDongThung.form.createTitle')}
       maxWidthClass={DRAWER_WIDTH_BAO_CAO_NHAN_CONG}
       icon={<Boxes size={18} />}

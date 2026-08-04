@@ -296,7 +296,9 @@ const DanhSachTab: React.FC = () => {
             onDelete={canDelete ? handleDelete : undefined}
             onApprove={canApprove ? handleApprove : undefined}
             onChangeStatus={canAdmin ? handleChangeStatus : undefined}
-            onCreatePhieuNhapKho={canCreate ? (item) => setCreatePhieuNhapFrom(viewingPoFull ?? item) : undefined}
+            // Chờ viewingPoFull load xong mới cho tạo phiếu nhập — nếu không, item có thể là dòng
+            // summary (chưa có chi_tiet) và phiếu nhập tạo ra sẽ trống, không có dòng hàng nào.
+            onCreatePhieuNhapKho={canCreate && viewingPoFull ? () => setCreatePhieuNhapFrom(viewingPoFull) : undefined}
           />
         )}
       </AnimatePresence>

@@ -91,7 +91,7 @@ const ThuHoachForm: React.FC<Props> = ({
     watch,
     setValue,
     reset,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<ThuHoachKeHoachFormValues>({
     resolver: zodResolver(thuHoachKeHoachFormSchema),
     defaultValues,
@@ -105,8 +105,10 @@ const ThuHoachForm: React.FC<Props> = ({
   );
 
   useEffect(() => {
+    // Không reset nếu người dùng đã bắt đầu sửa — cùng lý do đã sửa ở BaoCaoSoCheForm.
+    if (isDirty) return;
     reset(defaultValues);
-  }, [defaultValues, reset]);
+  }, [defaultValues, reset, isDirty]);
 
   useEffect(() => {
     if (!idChiNhanh) {
@@ -157,6 +159,7 @@ const ThuHoachForm: React.FC<Props> = ({
       subtitle={t('thuHoach.form.keHoachGroup')}
       icon={<Sprout className="text-emerald-600" size={22} />}
       onClose={onClose}
+      isDirty={isDirty}
       maxWidthClass={DRAWER_WIDTH_FORM}
       footer={
         <FormDrawerFooter

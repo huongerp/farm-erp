@@ -188,6 +188,9 @@ const PhieuKhoForm: React.FC<Props> = ({
       : undefined;
 
   useEffect(() => {
+    // Không reset nếu người dùng đã bắt đầu sửa — tránh ghi đè chữ đang gõ khi
+    // bản đầy đủ (usePhieuKhoById) về sau bản summary ban đầu (cùng phiếu, identity đổi).
+    if (isDirty) return;
     if (initialData) {
       reset({
         so_phieu: initialData.so_phieu,
@@ -225,7 +228,7 @@ const PhieuKhoForm: React.FC<Props> = ({
       });
       if (user?.id) setValue('nguoi_tao_id', Number(user.id));
     }
-  }, [initialData, prefillValues, reset, user?.id, setValue, hangHoaMap]);
+  }, [initialData, prefillValues, reset, user?.id, setValue, hangHoaMap, isDirty]);
 
   const onSubmit: SubmitHandler<PhieuKhoFormValues> = async (data) => {
     if (loai === 'chuyen' && !data.kho_den_id) {

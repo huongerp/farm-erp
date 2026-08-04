@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { useForm, Controller, SubmitHandler, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { FileText, Calendar, Building2, Warehouse, User, Package, CreditCard, Edit, Trash2, Tag } from 'lucide-react';
@@ -393,6 +394,9 @@ const DonDatHangForm: React.FC<Props> = ({
   }, [phieuForAutoFill, replace, setValue]);
 
   useEffect(() => {
+    // Không reset nếu người dùng đã bắt đầu sửa — tránh ghi đè chữ đang gõ khi
+    // bản đầy đủ (editingPoFull) về sau bản summary ban đầu (cùng id, identity đổi).
+    if (isDirty) return;
     if (initialData) {
       reset({
         so_po: initialData.so_po,
@@ -423,13 +427,16 @@ const DonDatHangForm: React.FC<Props> = ({
         ngay_giao_dk: prefillValues?.ngay_giao_dk ?? getEndOfMonthISO(),
       });
     }
-  }, [initialData, reset]);
+  }, [initialData, reset, isDirty]);
 
   const onSubmit: SubmitHandler<DonDatHangFormValues> = (data) => {
     const validChiTiet = (data.chi_tiet ?? []).filter(
       (c) => c.id_hang_hoa?.trim() && Number(c.so_luong) > 0
     );
-    if (validChiTiet.length === 0) return;
+    if (validChiTiet.length === 0) {
+      toast.error(t('donDatHang.validation.atLeastOneItem'));
+      return;
+    }
     const sanitized: DonDatHangFormValues = {
       ...data,
       id_kho_nhan: data.id_kho_nhan === '' || data.id_kho_nhan === undefined ? null : data.id_kho_nhan,

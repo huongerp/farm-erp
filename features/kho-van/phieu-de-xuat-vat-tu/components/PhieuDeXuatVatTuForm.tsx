@@ -233,7 +233,10 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
     const validChiTiet = (data.chi_tiet ?? []).filter(
       (c) => c.id_hang_hoa?.trim() && Number(c.so_luong) > 0
     );
-    if (validChiTiet.length === 0) return;
+    if (validChiTiet.length === 0) {
+      toast.error(t('phieuDeXuatVatTu.validation.atLeastOneItem'));
+      return;
+    }
     if (config?.ghi_chu_bat_buoc && !data.ghi_chu?.trim()) {
       toast.error(t('phieuDeXuatVatTu.form.notesRequired'));
       return;

@@ -109,12 +109,14 @@ const ThanhToanDoiTacForm: React.FC<Props> = ({
     id_nguoi_tao: '',
   };
 
-  const { register, handleSubmit, formState: { errors }, reset, control, setValue } = useForm<ThanhToanDoiTacFormValues>({
+  const { register, handleSubmit, formState: { errors, isDirty }, reset, control, setValue } = useForm<ThanhToanDoiTacFormValues>({
     resolver: zodResolver(thanhToanDoiTacSchema) as any,
     defaultValues,
   });
 
   useEffect(() => {
+    // Không reset nếu người dùng đã bắt đầu sửa — cùng lý do đã sửa ở DonDatHangForm.
+    if (isDirty) return;
     if (initialData) {
       reset({
         so_phieu: initialData.so_phieu,
@@ -139,7 +141,7 @@ const ThanhToanDoiTacForm: React.FC<Props> = ({
       if (user?.id) setValue('id_nguoi_tao', user.id);
       if (idTrangThaiMacDinh) setValue('id_trang_thai_thanh_toan', idTrangThaiMacDinh);
     }
-  }, [initialData, config?.tu_sinh_so_phieu, reset, setValue, user?.id, user?.id_chi_nhanh, idTrangThaiMacDinh]);
+  }, [initialData, config?.tu_sinh_so_phieu, reset, setValue, user?.id, user?.id_chi_nhanh, idTrangThaiMacDinh, isDirty]);
 
   // Khi tạo mới và bật tự sinh: đảm bảo preview số phiếu luôn được điền (kể cả config load sau)
   useEffect(() => {
@@ -189,6 +191,7 @@ const ThanhToanDoiTacForm: React.FC<Props> = ({
       title={isEdit ? t('thanhToanDoiTac.form.editTitle') : t('thanhToanDoiTac.form.createTitle')}
       icon={<CreditCard size={20} />}
       onClose={onClose}
+      isDirty={isDirty}
       footer={
         <FormDrawerFooter
           formId="thanh-toan-doi-tac-form"

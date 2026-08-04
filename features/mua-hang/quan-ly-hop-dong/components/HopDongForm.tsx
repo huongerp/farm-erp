@@ -89,15 +89,17 @@ const HopDongForm: React.FC<Props> = ({ doiTacList, initialData, onClose }) => {
     watch,
     setValue,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<HopDongFormValues>({
     resolver: zodResolver(hopDongSchema) as any,
     defaultValues,
   });
 
   useEffect(() => {
+    // Không reset nếu người dùng đã bắt đầu sửa — cùng lý do đã sửa ở DonDatHangForm.
+    if (isDirty) return;
     reset(hopDongToFormValues(initialData ?? null));
-  }, [initialData, reset]);
+  }, [initialData, reset, isDirty]);
 
   const sl = watch('so_luong_cay');
   const dg = watch('don_gia');
@@ -151,6 +153,7 @@ const HopDongForm: React.FC<Props> = ({ doiTacList, initialData, onClose }) => {
       title={isEdit ? t('hopDong.form.editTitle') : t('hopDong.form.createTitle')}
       icon={<FileText size={20} />}
       onClose={onClose}
+      isDirty={isDirty}
       maxWidthClass={DRAWER_WIDTH_FORM}
       footer={
         <FormDrawerFooter

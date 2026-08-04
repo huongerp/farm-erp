@@ -259,6 +259,7 @@ const DanhSachHangHoaDetail: React.FC<Props> = ({
           khoList={khoList}
           existingKhoIds={dinhMucList.map((r) => r.kho_id)}
           editingRow={editingDinhMuc}
+          isSaving={createDinhMuc.isPending || updateDinhMuc.isPending}
           onClose={() => { setShowDinhMucForm(false); setEditingDinhMuc(null); }}
           onCreate={(payload) => {
             createDinhMuc.mutate(payload, {
@@ -283,6 +284,7 @@ interface DinhMucDetailFormDrawerProps {
   khoList: Kho[];
   existingKhoIds: string[];
   editingRow: DinhMucTonKhoRow | null;
+  isSaving?: boolean;
   onClose: () => void;
   onCreate: (payload: { kho_id: string; hang_hoa_id: string; ton_toi_thieu: number }) => void;
   onUpdate: (id: string, ton_toi_thieu: number) => void;
@@ -293,6 +295,7 @@ const DinhMucDetailFormDrawer: React.FC<DinhMucDetailFormDrawerProps> = ({
   khoList,
   existingKhoIds,
   editingRow,
+  isSaving = false,
   onClose,
   onCreate,
   onUpdate,
@@ -326,6 +329,7 @@ const DinhMucDetailFormDrawer: React.FC<DinhMucDetailFormDrawerProps> = ({
         <FormDrawerFooter
           formId="dinh-muc-detail-form"
           onCancel={onClose}
+          isLoading={isSaving}
           isEdit={isEdit}
           saveLabel={t('common.save')}
           createLabel={t('hangHoa.dinhMuc.add')}

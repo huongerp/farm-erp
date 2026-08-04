@@ -61,7 +61,7 @@ const PhieuKhoPTForm: React.FC<Props> = ({ khoList, initialData, onClose, onRequ
     chi_tiet: [],
   };
 
-  const { register, handleSubmit, formState: { errors }, reset, control, watch, setValue } = useForm<PhieuKhoPTFormValues>({
+  const { register, handleSubmit, formState: { errors, isDirty }, reset, control, watch, setValue } = useForm<PhieuKhoPTFormValues>({
     resolver: zodResolver(phieuKhoPTSchema) as any,
     defaultValues,
   });
@@ -121,6 +121,8 @@ const PhieuKhoPTForm: React.FC<Props> = ({ khoList, initialData, onClose, onRequ
     ) : undefined;
 
   useEffect(() => {
+    // Không reset nếu người dùng đã bắt đầu sửa — cùng lý do đã sửa ở PhieuKhoForm.
+    if (isDirty) return;
     if (initialData) {
       reset({
         so_phieu: initialData.so_phieu,
@@ -146,7 +148,7 @@ const PhieuKhoPTForm: React.FC<Props> = ({ khoList, initialData, onClose, onRequ
       reset({ ...defaultValues, ngay: today(), loai: 'nhập' });
       if (user?.id) setValue('nguoi_tao_id', Number(user.id));
     }
-  }, [initialData, reset, user?.id, setValue]);
+  }, [initialData, reset, user?.id, setValue, isDirty]);
 
   useEffect(() => {
     if (loaiWatch !== 'chuyển') {
@@ -216,6 +218,7 @@ const PhieuKhoPTForm: React.FC<Props> = ({ khoList, initialData, onClose, onRequ
       title={isEdit ? t('phieuKhoPhanThuoc.form.editTitle') : t('phieuKhoPhanThuoc.form.createTitle')}
       icon={<FileText size={20} />}
       onClose={onClose}
+      isDirty={isDirty}
       footer={
         <FormDrawerFooter
           formId="phieu-kho-pt-form"

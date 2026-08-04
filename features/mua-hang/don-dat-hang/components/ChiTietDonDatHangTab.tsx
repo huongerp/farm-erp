@@ -560,7 +560,8 @@ const ChiTietDonDatHangTab: React.FC = () => {
           onDelete={canDelete ? handleDelete : undefined}
           onApprove={canApprove ? handleApprove : undefined}
           onChangeStatus={canAdmin ? handleChangeStatus : undefined}
-          onCreatePhieuNhapKho={canCreate ? (item) => setCreatePhieuNhapFrom(viewingPoFull ?? item) : undefined}
+          // Chờ viewingPoFull load xong mới cho tạo phiếu nhập — xem giải thích trong DanhSachTab.tsx.
+          onCreatePhieuNhapKho={canCreate && viewingPoFull ? () => setCreatePhieuNhapFrom(viewingPoFull) : undefined}
         />
       )}
 
