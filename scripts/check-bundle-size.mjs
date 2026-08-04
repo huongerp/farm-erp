@@ -30,10 +30,11 @@ function loadBaseline() {
 }
 
 const baseline = loadBaseline();
-const files = readdirSync(DIST_ASSETS).filter((f) => f.endsWith('.js'));
+const files = readdirSync(DIST_ASSETS).filter((f) => f.endsWith('.js') || f.endsWith('.css'));
 
 const entries = [
   { label: 'Main (index-*.js)', key: 'main', pattern: /^index-.*\.js$/, failOnExceed: true },
+  { label: 'CSS (index-*.css)', key: 'css', pattern: /^index-.*\.css$/ },
   { label: 'vendor-xlsx', key: 'vendorXlsx', pattern: /vendor-xlsx-.*\.js$/ },
   { label: 'vendor-jspdf', key: 'vendorJspdf', pattern: /vendor-jspdf-.*\.js$/ },
   { label: 'vendor-html2canvas', key: 'vendorHtml2canvas', pattern: /vendor-html2canvas-.*\.js$/ },

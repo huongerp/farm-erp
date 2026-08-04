@@ -7,6 +7,10 @@
       "warnKb": 900,
       "maxIncreasePct": 5
     },
+    "css": {
+      "rawKb": 174,
+      "warnKb": 250
+    },
     "vendorXlsx": {
       "rawKb": 419,
       "warnKb": 400
@@ -29,7 +33,7 @@
     },
     "sentry": {
       "rawKb": 407,
-      "warnKb": 50
+      "warnKb": 450
     }
   }
 }

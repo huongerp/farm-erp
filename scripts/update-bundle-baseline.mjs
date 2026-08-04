@@ -21,8 +21,9 @@ function findLargestMatching(files, pattern) {
     .sort((a, b) => b.size - a.size)[0];
 }
 
-const files = readdirSync(DIST_ASSETS).filter((f) => f.endsWith('.js'));
+const files = readdirSync(DIST_ASSETS).filter((f) => f.endsWith('.js') || f.endsWith('.css'));
 const main = findLargestMatching(files, /^index-.*\.js$/);
+const css = findLargestMatching(files, /^index-.*\.css$/);
 const xlsx = findLargestMatching(files, /vendor-xlsx-.*\.js$/);
 const jspdf = findLargestMatching(files, /vendor-jspdf-.*\.js$/);
 const html2canvas = findLargestMatching(files, /vendor-html2canvas-.*\.js$/);
@@ -45,6 +46,10 @@ const baseline = {
       rawKb: main ? kb(main.size) : prev.chunks?.main?.rawKb ?? 0,
       warnKb: prev.chunks?.main?.warnKb ?? 900,
       maxIncreasePct: prev.chunks?.main?.maxIncreasePct ?? 5,
+    },
+    css: {
+      rawKb: css ? kb(css.size) : prev.chunks?.css?.rawKb ?? 0,
+      warnKb: prev.chunks?.css?.warnKb ?? 250,
     },
     vendorXlsx: {
       rawKb: xlsx ? kb(xlsx.size) : prev.chunks?.vendorXlsx?.rawKb ?? 0,
