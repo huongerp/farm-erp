@@ -360,7 +360,8 @@ export async function rejectAdminFormByManager(id: string): Promise<void> {
   if (error) throw new Error(error.message ?? i18n.t('adminForm.service.notFound'));
 }
 
-export async function approveAdminFormByHcns(id: string): Promise<void> {
+/** Chỉ 1 cấp duyệt thật ở DB (trang_thai) — giữ API HCNS cho tương thích, coi như đã duyệt. */
+export async function approveAdminFormByHcns(_id: string): Promise<void> {
   return Promise.resolve();
 }
 

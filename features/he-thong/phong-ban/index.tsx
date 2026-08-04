@@ -278,7 +278,6 @@ const DepartmentPage = () => {
         {showForm && (
           <DepartmentForm
             initialData={editingDept}
-            allDepartments={departments}
             onClose={handleCloseForm}
           />
         )}

@@ -310,7 +310,6 @@ const DanhSachTab: React.FC = () => {
                   }
                 : undefined
             }
-            canCreate={canCreate}
             canUpdate={detailCanUpdate}
             canDelete={detailCanDelete}
             canCopyNextDay={detailCanCopyNextDay}

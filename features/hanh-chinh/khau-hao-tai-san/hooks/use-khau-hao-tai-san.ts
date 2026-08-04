@@ -75,7 +75,7 @@ export const useTinhToanKhauHaoKy = (idKy: string | null, onSuccess?: () => void
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => (idKy ? tinhToanKhauHaoKy(idKy) : Promise.reject(new Error('No idKy'))),
-    onSuccess: (_data, _v, ctx) => {
+    onSuccess: (_data, _v) => {
       if (idKy) {
         queryClient.invalidateQueries({ queryKey: queryKeyChiTiet(idKy) });
         queryClient.invalidateQueries({ queryKey: QUERY_KEY_KY });

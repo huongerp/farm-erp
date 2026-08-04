@@ -133,7 +133,7 @@ export function useUpdateChiTietKetQua(id_dot: string, onSuccess?: () => void) {
       data: ChiTietKiemKeUpdate;
       id_nguoi_kiem: string;
     }) => updateChiTietKetQua(id_chi_tiet, data, id_nguoi_kiem),
-    onSuccess: (_, { id_chi_tiet }) => {
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['chiTietKiemKe', id_dot] });
       onSuccess?.();
     },

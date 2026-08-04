@@ -80,6 +80,7 @@ const CurrencyInput = React.forwardRef<HTMLInputElement, CurrencyInputProps>(
             </div>
           )}
           <input
+            {...rest}
             ref={ref}
             type="text"
             inputMode="numeric"

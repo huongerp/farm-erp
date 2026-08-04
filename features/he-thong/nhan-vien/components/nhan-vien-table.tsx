@@ -25,7 +25,6 @@ interface Props {
     isFetching?: boolean;
     onEdit: (item: Employee) => void;
     onDelete: (id: string) => void;
-    onStatusChange: (item: Employee) => void;
     onView: (item: Employee) => void;
     /** Danh sách chức vụ để tra cứu cấp bậc theo chức vụ khi nhân viên chưa có ten_cap_bac */
     positions?: Position[];
@@ -35,7 +34,7 @@ interface Props {
     canDelete?: boolean;
 }
 
-const EmployeeTable: React.FC<Props> = ({ data, totalRecordsOverride, isLoading, isFetching, onEdit, onDelete, onStatusChange, onView, positions = [], canUpdate = true, canDelete = true }) => {
+const EmployeeTable: React.FC<Props> = ({ data, totalRecordsOverride, isLoading, isFetching, onEdit, onDelete, onView, positions = [], canUpdate = true, canDelete = true }) => {
     const { t } = useTranslation();
     const {
         columns, pagination, setPage, setPageSize,

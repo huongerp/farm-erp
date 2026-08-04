@@ -29,8 +29,7 @@ import { getLanguage, exportToExcel } from '../../../../lib/utils';
 import type { CongViec } from '../core/types';
 import type { CongViecFilters } from '../store/useCongViecStore';
 
-const TAB_IDS = ['my', 'list', 'kanban', 'gantt'] as const;
-type TabId = (typeof TAB_IDS)[number];
+type TabId = 'my' | 'list' | 'kanban' | 'gantt';
 
 interface Props {
   scope: CongViecScope;

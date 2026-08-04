@@ -28,8 +28,6 @@ interface Props {
   onEdit?: (item: AdminFormRequest) => void;
   onDelete?: (id: string) => void;
   onCancel?: (id: string) => void;
-  onApproveManager?: (id: string) => void;
-  onRejectManager?: (id: string) => void;
   onApproveHcns?: (id: string) => void;
   onRejectHcns?: (id: string) => void;
   canUpdate?: boolean;
@@ -42,8 +40,6 @@ const AdminFormDetail: React.FC<Props> = ({
   onEdit,
   onDelete,
   onCancel,
-  onApproveManager,
-  onRejectManager,
   onApproveHcns,
   onRejectHcns,
   canUpdate = true,

@@ -20,7 +20,7 @@ interface NotificationDropdownProps {
 const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   isOpen,
   onClose,
-  anchorRef,
+  anchorRef: _anchorRef,
   className,
   placement = 'default',
 }) => {

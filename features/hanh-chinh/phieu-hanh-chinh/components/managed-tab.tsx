@@ -7,8 +7,6 @@ import AdminFormDetail from './admin-form-detail';
 import AdminFormForm from './admin-form-form';
 import {
   useAdminForms,
-  useApproveAdminFormByManager,
-  useRejectAdminFormByManager,
   useApproveAdminFormByHcns,
   useRejectAdminFormByHcns,
   useApproveAdminFormsByManager,
@@ -53,8 +51,6 @@ const AdminFormManagedTab: React.FC = () => {
   const [editingItem, setEditingItem] = useState<AdminFormRequest | null>(null);
 
   const { data: forms = [], isLoading } = useAdminForms();
-  const approveManagerMutation = useApproveAdminFormByManager();
-  const rejectManagerMutation = useRejectAdminFormByManager();
   const approveHcnsMutation = useApproveAdminFormByHcns();
   const rejectHcnsMutation = useRejectAdminFormByHcns();
   const approveManyManagerMutation = useApproveAdminFormsByManager();
@@ -108,30 +104,6 @@ const AdminFormManagedTab: React.FC = () => {
     });
     return sorted;
   }, [filteredList, sort]);
-
-  const handleApproveManager = (id: string) => {
-    confirm({
-      title: t('adminForm.actions.approveManager'),
-      message: t('adminForm.confirmApprove'),
-      variant: 'warning',
-      confirmText: CONFIRM_YES(),
-      onConfirm: async () => {
-        approveManagerMutation.mutate(id);
-      },
-    });
-  };
-
-  const handleRejectManager = (id: string) => {
-    confirm({
-      title: t('adminForm.actions.rejectManager'),
-      message: t('adminForm.confirmReject'),
-      variant: 'danger',
-      confirmText: CONFIRM_YES(),
-      onConfirm: async () => {
-        rejectManagerMutation.mutate(id);
-      },
-    });
-  };
 
   const handleApproveHcns = (id: string) => {
     confirm({
@@ -317,8 +289,6 @@ const AdminFormManagedTab: React.FC = () => {
             }}
             onDelete={handleDelete}
             onCancel={handleCancel}
-            onApproveManager={handleApproveManager}
-            onRejectManager={handleRejectManager}
             onApproveHcns={handleApproveHcns}
             onRejectHcns={handleRejectHcns}
             canUpdate={canUpdate}

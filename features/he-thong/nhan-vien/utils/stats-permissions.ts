@@ -13,8 +13,8 @@ export type UserRole = 'admin' | 'user';
  * Whether the current user can export stats report (Excel/PDF).
  * Default: allow both; set to admin-only if your policy requires.
  */
-export function canExportStats(role: UserRole | undefined): boolean {
-  return true; // or: role === 'admin';
+export function canExportStats(_role: UserRole | undefined): boolean {
+  return true; // or: _role === 'admin';
 }
 
 /**

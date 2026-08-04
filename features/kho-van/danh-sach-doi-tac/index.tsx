@@ -25,8 +25,7 @@ import { useListWithFilter } from '../../../lib/hooks';
 import type { DoiTac } from './core/types';
 import type { PhieuKho } from '../phieu-kho/core/types';
 
-const VALID_TABS = ['nha_cung_cap', 'khach_hang', 'danh_muc', 'tag'] as const;
-type TabId = (typeof VALID_TABS)[number];
+type TabId = 'nha_cung_cap' | 'khach_hang' | 'danh_muc' | 'tag';
 
 const DanhSachDoiTacPage: React.FC = () => {
   const { t } = useTranslation();

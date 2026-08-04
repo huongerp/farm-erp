@@ -405,20 +405,12 @@ const DanhSachTab: React.FC = () => {
           onDeleteMany={handleDeleteMany}
           onStatusChangeMany={handleStatusChangeMany}
           onExportExcel={() => {
-            try {
-              const rows = sortedList.map(taiSanToExportRow);
-              exportToExcel(rows, TAI_SAN_EXPORT_FILENAME);
-            } catch (_e) {
-              // no-op; exportToExcel handles empty list
-            }
+            const rows = sortedList.map(taiSanToExportRow);
+            exportToExcel(rows, TAI_SAN_EXPORT_FILENAME);
           }}
           onExportPDF={() => {
-            try {
-              const rows = sortedList.map(taiSanToExportRow);
-              exportToPDF(rows, TAI_SAN_EXPORT_FILENAME, undefined);
-            } catch (_e) {
-              // no-op
-            }
+            const rows = sortedList.map(taiSanToExportRow);
+            exportToPDF(rows, TAI_SAN_EXPORT_FILENAME, undefined);
           }}
           canCreate={canCreate}
           canUpdate={canUpdate}

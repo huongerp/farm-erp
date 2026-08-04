@@ -34,7 +34,6 @@ interface Props {
   onDelete?: (id: string) => void;
   /** Sau khi copy sang ngày kế tiếp thành công: mở form sửa phiếu mới. */
   onAfterCopyToNextDay?: (newItem: FarmBaoCaoNhanCong) => void;
-  canCreate?: boolean;
   canUpdate?: boolean;
   canDelete?: boolean;
   /** Sao chép sang ngày kế (đã tính khóa / quyền). */
@@ -50,7 +49,6 @@ const BaoCaoNhanCongDetail: React.FC<Props> = ({
   onEdit,
   onDelete,
   onAfterCopyToNextDay,
-  canCreate = true,
   canUpdate = true,
   canDelete = true,
   canCopyNextDay = true,

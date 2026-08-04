@@ -39,7 +39,7 @@ const KiemKeTaiSanToolbar: React.FC<Props> = ({
   const selectedIds = useKiemKeTaiSanStore((s) => s.selectedIds);
   const clearSelection = useKiemKeTaiSanStore((s) => s.clearSelection);
   const { data: employees = [] } = useEmployeesRefQuery();
-  const { trangThaiCounts, nguoiPhuTrachCounts } = useKiemKeFilterCounts(items, filters);
+  const { trangThaiCounts, nguoiPhuTrachCounts } = useKiemKeFilterCounts(items);
 
   const selectedCount = selectedIds.size;
   const trangThaiOptions = useMemo(

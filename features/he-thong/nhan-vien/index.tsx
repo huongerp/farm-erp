@@ -7,7 +7,6 @@ import { useQuery } from '@tanstack/react-query';
 
 import { List, BarChart3 } from 'lucide-react';
 import TabGroup, { Tab } from '../../../components/ui/TabGroup';
-import Select from '../../../components/ui/Select';
 import EmployeeForm from './components/nhan-vien-form';
 import EmployeeDetail from './components/nhan-vien-detail';
 import EmployeeToolbar from './components/nhan-vien-toolbar';
@@ -235,34 +234,6 @@ const EmployeePage: React.FC = () => {
     });
   };
 
-  const handleStatusChange = (item: Employee) => {
-      let selectedStatus: string = item.trang_thai;
-
-      confirm({
-        title: t('employee.statusChangeTitle'),
-        message: (
-          <div className="space-y-4 text-left py-2">
-            <p className="text-sm">{t('employee.statusChangeMessage')} <strong>{item.ho_ten}</strong>:</p>
-            <Select
-              defaultValue={item.trang_thai}
-              options={[
-                { label: t('employee.statusActive'), value: TRANG_THAI_NV.DANG_LAM_VIEC },
-                { label: t('employee.statusProbation'), value: TRANG_THAI_NV.THU_VIEC },
-                { label: t('employee.statusLeave'), value: TRANG_THAI_NV.NGHI_PHEP },
-                { label: t('employee.statusResigned'), value: TRANG_THAI_NV.NGHI_VIEC },
-              ]}
-              onChange={(e) => { selectedStatus = e.target.value; }}
-            />
-          </div>
-        ),
-        variant: "info",
-        confirmText: CONFIRM_YES(),
-        onConfirm: async () => {
-          await statusMutation.mutateAsync({ ids: [item.id], status: selectedStatus });
-        }
-      });
-  };
-
   const handleDeleteMany = (ids: string[]) => {
       const emps = employees.filter(e => ids.includes(e.id));
       confirm({
@@ -325,7 +296,6 @@ const EmployeePage: React.FC = () => {
               onEdit={handleEdit}
               onView={handleView}
               onDelete={handleDelete}
-              onStatusChange={handleStatusChange}
               positions={positions}
               canUpdate={canUpdate}
               canDelete={canDelete}

@@ -17,12 +17,10 @@ import { TRANG_THAI } from '../../../../lib/constants';
 
 interface Props {
   initialData?: Department | null;
-  allDepartments: Department[];
   onClose: () => void;
-  defaultParentId?: string | null;
 }
 
-const DepartmentForm: React.FC<Props> = ({ initialData, allDepartments, onClose }) => {
+const DepartmentForm: React.FC<Props> = ({ initialData, onClose }) => {
   const { t } = useTranslation();
   const isEdit = !!initialData;
   const createMutation = useCreateDepartment(onClose);

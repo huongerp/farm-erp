@@ -1,10 +1,6 @@
 import type { DotKiemKe } from '../core/types';
-import type { KiemKeTaiSanFilters } from '../store/useKiemKeTaiSanStore';
 
-export function useKiemKeFilterCounts(
-  items: DotKiemKe[],
-  filters: KiemKeTaiSanFilters
-) {
+export function useKiemKeFilterCounts(items: DotKiemKe[]) {
   const trangThaiCounts: Record<string, number> = {};
   const nguoiPhuTrachCounts: Record<string, number> = {};
   items.forEach((d) => {
