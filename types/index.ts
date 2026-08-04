@@ -50,5 +50,3 @@ export interface Notification {
   createdAt: string; // ISO
   link?: string; // optional route or URL
 }
-
-export * from './crud';
