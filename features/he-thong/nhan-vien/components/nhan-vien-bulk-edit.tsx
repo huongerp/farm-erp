@@ -102,10 +102,11 @@ const BulkEditSheet: React.FC<Props> = ({ selectedEmployees, onClose, onSuccess 
 
   const footer = (
     <div className="flex items-center justify-between w-full gap-3">
-      <Button variant="outline" onClick={onClose} className="border-border text-muted-foreground">
+      <Button variant="outline" size="sm" onClick={onClose} disabled={bulkMutation.isPending} className="border-border text-muted-foreground">
         <X size={16} className="mr-2" /> {t('common.cancel')}
       </Button>
       <Button
+        size="sm"
         onClick={handleSubmit}
         isLoading={bulkMutation.isPending}
         disabled={!hasChanges}

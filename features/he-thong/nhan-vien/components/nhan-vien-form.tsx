@@ -159,10 +159,10 @@ const EmployeeForm: React.FC<Props> = ({ initialData, prefillData, onClose }) =>
 
   const renderFooter = (
     <div className="flex items-center justify-between w-full gap-3">
-        <Button variant="outline" onClick={onClose} className="border-border text-muted-foreground">
+        <Button variant="outline" size="sm" onClick={onClose} disabled={isLoading} className="border-border text-muted-foreground">
             {BTN_CANCEL()}
         </Button>
-        <Button type="submit" form="emp-form" isLoading={isLoading} className="bg-primary text-white shadow-lg">
+        <Button type="submit" form="emp-form" size="sm" isLoading={isLoading} className="bg-primary text-white shadow-lg">
             {isEdit ? <><Save className="mr-2 h-4 w-4" /> {BTN_SAVE()}</> : <><UserPlus className="mr-2 h-4 w-4" /> {BTN_CREATE()} <ArrowRight className="ml-2 h-4 w-4" /></>}
         </Button>
     </div>
