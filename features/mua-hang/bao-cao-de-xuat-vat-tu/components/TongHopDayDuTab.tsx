@@ -106,26 +106,28 @@ function PhieuDetailDrawer({ phieuId, onClose }: { phieuId: string; onClose: () 
             <div>
               <p className="text-xs font-medium text-muted-foreground mb-2">{t('baoCaodeXuatVatTu.chiTiet.danhSachHang')}</p>
               <div className="rounded-lg border border-border overflow-hidden">
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className="bg-muted/50 border-b border-border">
-                      <th className="px-3 py-2 text-left font-medium text-muted-foreground">{t('baoCaodeXuatVatTu.chiTiet.maHang')}</th>
-                      <th className="px-3 py-2 text-left font-medium text-muted-foreground">{t('baoCaodeXuatVatTu.chiTiet.tenHang')}</th>
-                      <th className="px-3 py-2 text-right font-medium text-muted-foreground">{t('baoCaodeXuatVatTu.chiTiet.soLuong')}</th>
-                      <th className="px-3 py-2 text-center font-medium text-muted-foreground">{t('baoCaodeXuatVatTu.chiTiet.dvt')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {phieu.chi_tiet.map((ct) => (
-                      <tr key={ct.id} className="border-b border-border/60">
-                        <td className="px-3 py-2 font-mono">{ct.ma_hang ?? '—'}</td>
-                        <td className="px-3 py-2">{ct.ten_hang ?? '—'}</td>
-                        <td className="px-3 py-2 text-right tabular-nums">{ct.so_luong}</td>
-                        <td className="px-3 py-2 text-center text-muted-foreground">{ct.don_vi_tinh ?? '—'}</td>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="bg-muted/50 border-b border-border">
+                        <th className="px-3 py-2 text-left font-medium text-muted-foreground">{t('baoCaodeXuatVatTu.chiTiet.maHang')}</th>
+                        <th className="px-3 py-2 text-left font-medium text-muted-foreground">{t('baoCaodeXuatVatTu.chiTiet.tenHang')}</th>
+                        <th className="px-3 py-2 text-right font-medium text-muted-foreground">{t('baoCaodeXuatVatTu.chiTiet.soLuong')}</th>
+                        <th className="px-3 py-2 text-center font-medium text-muted-foreground">{t('baoCaodeXuatVatTu.chiTiet.dvt')}</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {phieu.chi_tiet.map((ct) => (
+                        <tr key={ct.id} className="border-b border-border/60">
+                          <td className="px-3 py-2 font-mono">{ct.ma_hang ?? '—'}</td>
+                          <td className="px-3 py-2">{ct.ten_hang ?? '—'}</td>
+                          <td className="px-3 py-2 text-right tabular-nums">{ct.so_luong}</td>
+                          <td className="px-3 py-2 text-center text-muted-foreground">{ct.don_vi_tinh ?? '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}
@@ -410,7 +412,7 @@ const TongHopDayDuTab: React.FC<TongHopDayDuTabProps> = ({ filters, onClearFilte
             </FormSection>
 
             <FormSection title={t('baoCaodeXuatVatTu.tongHop.byNoiDeXuat')} icon={<FileText size={16} />} variant="muted">
-              <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm max-h-[320px] overflow-y-auto">
+              <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm max-h-[320px] overflow-y-auto overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="sticky top-0 z-[1] bg-muted/95 backdrop-blur">
                     <tr>
@@ -441,7 +443,7 @@ const TongHopDayDuTab: React.FC<TongHopDayDuTabProps> = ({ filters, onClearFilte
             </FormSection>
 
             <FormSection title={t('baoCaodeXuatVatTu.tongHop.byNguoiDeXuat')} icon={<User size={16} />} variant="muted">
-              <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm max-h-[320px] overflow-y-auto">
+              <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm max-h-[320px] overflow-y-auto overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="sticky top-0 z-[1] bg-muted/95 backdrop-blur">
                     <tr>

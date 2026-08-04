@@ -188,8 +188,8 @@ const EmployeeTable: React.FC<Props> = ({ data, totalRecordsOverride, isLoading,
                     <span>{item.so_dien_thoai}</span>
                 </div>
                 <div className="flex gap-1.5">
-                    {canUpdate && <button onClick={e => { e.stopPropagation(); onEdit(item); }} className="p-2 text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-all active:scale-90"><Edit size={14} /></button>}
-                    {canDelete && <button onClick={e => { e.stopPropagation(); onDelete(item.id); }} className="p-2 text-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 rounded-lg transition-all active:scale-90"><Trash2 size={14} /></button>}
+                    {canUpdate && <button onClick={e => { e.stopPropagation(); onEdit(item); }} aria-label={t('common.edit')} className="min-h-[44px] min-w-[44px] flex items-center justify-center text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-all active:scale-90"><Edit size={14} /></button>}
+                    {canDelete && <button onClick={e => { e.stopPropagation(); onDelete(item.id); }} aria-label={t('common.delete')} className="min-h-[44px] min-w-[44px] flex items-center justify-center text-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 rounded-lg transition-all active:scale-90"><Trash2 size={14} /></button>}
                 </div>
             </div>
         </div>

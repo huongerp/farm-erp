@@ -13,13 +13,23 @@ import { useThietLapTaiSanViewScope } from './hooks/use-thiet-lap-tai-san-view-s
 const ThietLapTaiSanPage: React.FC = () => {
   const { t } = useTranslation();
   const { viewAll, isLoading: scopeLoading } = useThietLapTaiSanViewScope();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('nhomtaisan');
 
   const tabFromUrl = searchParams.get('tab');
   useEffect(() => {
     if (tabFromUrl === 'nhomtaisan' || tabFromUrl === 'trangthai' || tabFromUrl === 'loaichiphi') setActiveTab(tabFromUrl);
   }, [tabFromUrl]);
+
+  // Ghi tab vào URL — trước đây chỉ đọc, không ghi, nên bấm tab rồi F5 là nhảy về tab cũ.
+  const handleTabChange = (id: string) => {
+    setActiveTab(id);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('tab', id);
+      return next;
+    });
+  };
 
   const tabs = useMemo(
     () => [
@@ -42,7 +52,7 @@ const ThietLapTaiSanPage: React.FC = () => {
   return (
     <div className="flex flex-col h-[calc(100dvh-3.75rem)] md:h-[calc(100dvh-4.5rem)] relative">
       <div className="shrink-0 relative z-0">
-        <TabGroup tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
+        <TabGroup tabs={tabs} activeTab={activeTab} onChange={handleTabChange} />
       </div>
 
       {activeTab === 'nhomtaisan' && (

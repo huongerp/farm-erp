@@ -308,11 +308,6 @@ const Login: React.FC = () => {
                 )}
             </button>
 
-            <div className="text-center text-sm text-muted-foreground">
-                {t('page.login.noAccount')}{' '}
-                <a href="#" className="font-semibold text-primary hover:underline">{t('page.login.register')}</a>
-            </div>
-
             {/* Modal Quên mật khẩu */}
             {forgotMounted && (
               <div className="fixed inset-0 z-50 flex items-center justify-center p-4">

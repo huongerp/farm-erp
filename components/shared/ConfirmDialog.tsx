@@ -15,6 +15,7 @@ const ConfirmDialog: React.FC = () => {
   const { title, message, variant, confirmText, cancelText, onConfirm, onCancel } = options;
   const dialogRef = useRef<HTMLDivElement>(null);
   const overlayIdRef = useRef<number | null>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
   const { mounted, visible } = usePresenceTransition(isOpen);
 
   // Đăng ký vào overlay stack chỉ khi đang mở — cùng cơ chế với GenericDrawer
@@ -27,6 +28,17 @@ const ConfirmDialog: React.FC = () => {
     return () => {
       popOverlay(id);
       overlayIdRef.current = null;
+    };
+  }, [isOpen]);
+
+  // Khôi phục focus về phần tử đã mở dialog khi đóng — GenericDrawer đã làm đúng, chép sang đây.
+  useEffect(() => {
+    if (!isOpen) return;
+    openerRef.current = document.activeElement as HTMLElement | null;
+    return () => {
+      if (openerRef.current && typeof openerRef.current.focus === 'function') {
+        openerRef.current.focus({ preventScroll: true });
+      }
     };
   }, [isOpen]);
 

@@ -184,6 +184,20 @@ const ChiTietKiemKeTaiSanTable: React.FC<Props> = ({
               <PenLine size={14} />
             </button>
           )}
+          {isDangKiemKe && onCapNhatSo && canCapNhatSo(item) && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onCapNhatSo(item.id);
+              }}
+              disabled={capNhatSoLoading}
+              className="p-1.5 text-secondary-foreground bg-muted/50 hover:bg-muted rounded-md"
+              aria-label={t('kiemKeTaiSan.capNhatSoTheoKetQua')}
+            >
+              <RefreshCw size={14} />
+            </button>
+          )}
           {onDelete && (
             <button
               type="button"

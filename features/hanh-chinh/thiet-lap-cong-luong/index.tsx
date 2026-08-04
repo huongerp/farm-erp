@@ -11,7 +11,7 @@ const TAB_POINT_GROUPS = 'pointGroupsSetup';
 
 const PayrollSetupPage: React.FC = () => {
   const { t } = useTranslation();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(TAB_ADMIN_GROUPS);
 
   const tabFromUrl = searchParams.get('tab');
@@ -20,6 +20,16 @@ const PayrollSetupPage: React.FC = () => {
       setActiveTab(tabFromUrl);
     }
   }, [tabFromUrl]);
+
+  // Ghi tab vào URL — trước đây chỉ đọc, không ghi, nên bấm tab rồi F5 là nhảy về tab cũ.
+  const handleTabChange = (id: string) => {
+    setActiveTab(id);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('tab', id);
+      return next;
+    });
+  };
 
   const tabs = useMemo(
     () => [
@@ -32,7 +42,7 @@ const PayrollSetupPage: React.FC = () => {
   return (
     <div className="flex flex-col h-[calc(100dvh-3.75rem)] md:h-[calc(100dvh-4.5rem)] relative">
       <div className="shrink-0 relative z-0">
-        <TabGroup tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
+        <TabGroup tabs={tabs} activeTab={activeTab} onChange={handleTabChange} />
       </div>
 
       <div className="flex-1 min-h-0 flex flex-col mt-1.5">

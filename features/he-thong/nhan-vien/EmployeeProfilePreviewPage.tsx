@@ -33,7 +33,9 @@ const EmployeeProfilePreviewPage: React.FC = () => {
     if (window.history.length > 1) {
       navigate(-1);
     } else {
-      window.close();
+      // window.open(..., 'noopener') → window.opener === null, browser chặn window.close().
+      // Điều hướng về danh sách của module để vẫn thoát được khi mở qua deep-link / F5.
+      navigate('/nhan-vien', { replace: true });
     }
   }, [navigate]);
 
