@@ -63,7 +63,7 @@ const ChiTietKiemKeTable: React.FC<Props> = ({
     const cls = cn(
       'inline-flex px-2 py-0.5 rounded-full text-xs font-medium border',
       ket_qua === 'khop' && 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20',
-      ket_qua === 'thieu' && 'bg-amber-500/10 text-amber-700 border-amber-500/20',
+      ket_qua === 'thieu' && 'bg-rose-500/10 text-rose-700 border-rose-500/20',
       ket_qua === 'thua' && 'bg-violet-500/10 text-violet-700 border-violet-500/20',
       ket_qua === 'chua_kiem' && 'bg-muted text-muted-foreground border-border'
     );

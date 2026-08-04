@@ -285,13 +285,13 @@ const DotKiemKeKhoDetail: React.FC<Props> = ({
             <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
               {t('kiemKeKho.stats.total')}: {stats.total}
             </span>
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-700">
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
               {t('kiemKeKho.ketQua.khop')}: {stats.khop}
             </span>
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-700">
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-rose-500/10 text-rose-700 dark:text-rose-300">
               {t('kiemKeKho.ketQua.thieu')}: {stats.thieu}
             </span>
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-violet-500/10 text-violet-700">
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-violet-500/10 text-violet-700 dark:text-violet-300">
               {t('kiemKeKho.ketQua.thua')}: {stats.thua}
             </span>
             <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground">

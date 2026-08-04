@@ -6,7 +6,7 @@ import Tooltip from '../../../../components/ui/Tooltip';
 import { formatDateTimeShort } from '../../../../lib/utils';
 import type { CongViec } from '../core/types';
 import { useCongViecStore } from '../store/useCongViecStore';
-import { getTrangThaiLabel, getUuTienLabel } from '../core/constants';
+import { renderTrangThaiBadge, renderUuTienBadge } from '../core/badges';
 import { useEmployeesRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
 
 interface Props {
@@ -47,40 +47,6 @@ const CongViecTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onV
     return employeeNameMap[id] ?? String(id);
   };
 
-  const renderTrangThaiBadge = (trangThai: CongViec['trang_thai']) => {
-    const label = getTrangThaiLabel(trangThai, t);
-    const cls =
-      trangThai === 'hoan_thanh'
-        ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
-        : trangThai === 'dang_thuc_hien'
-          ? 'bg-blue-50 text-blue-700 border-blue-100'
-          : trangThai === 'cho_bao_cao'
-            ? 'bg-amber-50 text-amber-700 border-amber-100'
-            : trangThai === 'huy'
-              ? 'bg-muted text-muted-foreground border-border'
-              : 'bg-slate-100 text-slate-700 border-slate-200';
-    return (
-      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${cls}`}>
-        {label}
-      </span>
-    );
-  };
-
-  const renderUuTienBadge = (uuTien: CongViec['uu_tien']) => {
-    const label = getUuTienLabel(uuTien, t);
-    const cls =
-      uuTien === 'cao'
-        ? 'bg-rose-50 text-rose-700 border-rose-100'
-        : uuTien === 'trung_binh'
-          ? 'bg-amber-50 text-amber-700 border-amber-100'
-          : 'bg-slate-100 text-slate-700 border-slate-200';
-    return (
-      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${cls}`}>
-        {label}
-      </span>
-    );
-  };
-
   const renderCell = (colId: string, item: CongViec) => {
     switch (colId) {
       case 'tieu_de':
@@ -114,9 +80,9 @@ const CongViecTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onV
           </span>
         );
       case 'uu_tien':
-        return renderUuTienBadge(item.uu_tien);
+        return renderUuTienBadge(item.uu_tien, t);
       case 'trang_thai':
-        return renderTrangThaiBadge(item.trang_thai);
+        return renderTrangThaiBadge(item.trang_thai, t);
       case 'tg_cap_nhat':
         return (
           <span className="text-xs text-muted-foreground tabular-nums">
@@ -195,8 +161,8 @@ const CongViecTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onV
             )}
           </div>
           <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-            {renderUuTienBadge(item.uu_tien)}
-            {renderTrangThaiBadge(item.trang_thai)}
+            {renderUuTienBadge(item.uu_tien, t)}
+            {renderTrangThaiBadge(item.trang_thai, t)}
             <span className="text-xs text-muted-foreground">{formatDateTimeShort(item.tg_cap_nhat)}</span>
           </div>
         </div>

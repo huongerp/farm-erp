@@ -257,10 +257,10 @@ const DotKiemKeDetail: React.FC<Props> = ({
             <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
               {t('kiemKeTaiSan.stats.total')}: {stats.total}
             </span>
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-700">
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
               {t('kiemKeTaiSan.ketQua.khop')}: {stats.khop}
             </span>
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-700">
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-700 dark:text-amber-300">
               {t('kiemKeTaiSan.stats.chenh')}: {stats.chenh}
             </span>
             <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground">

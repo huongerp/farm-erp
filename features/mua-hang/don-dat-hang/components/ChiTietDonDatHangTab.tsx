@@ -20,7 +20,7 @@ import { useDoiTacRefQuery, useEmployeesRefQuery, useHangHoaRefQuery, usePhieuDe
 import { useKhoList } from '../../../kho-van/danh-sach-kho/hooks/use-kho';
 import { useChiTietDonDatHangStore } from '../store/useChiTietDonDatHangStore';
 import type { ChiTietDonDatHangFlat, DonDatHang } from '../core/types';
-import { TRANG_THAI_KEY } from '../core/constants';
+import { TRANG_THAI_KEY, STATUS_VARIANTS } from '../core/constants';
 import ChiTietDonDatHangToolbar from './ChiTietDonDatHangToolbar';
 import DonDatHangDetail from './DonDatHangDetail';
 import DonDatHangForm from './DonDatHangForm';
@@ -42,17 +42,6 @@ import {
   exportFileNameDonDatHangChiTiet,
   CHI_TIET_EXPORT_SHEET_NAME,
 } from '../utils/export-don-dat-hang-danh-sach';
-
-const STATUS_VARIANTS: Record<string, string> = {
-  'Nháp': 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20',
-  'Chờ duyệt': 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
-  'Đã gửi': 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
-  'Đã xác nhận': 'bg-primary/10 text-primary border-primary/20',
-  'Đang giao': 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20',
-  'Đã nhận đủ': 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
-  'Đã đóng': 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
-  'Hủy': 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20',
-};
 
 function StatusBadge({ status, t }: { status: DonDatHang['trang_thai']; t: (k: string) => string }) {
   const key = TRANG_THAI_KEY[status];

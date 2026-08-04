@@ -7,7 +7,7 @@ import Textarea from '../../../../components/ui/Textarea';
 import Combobox from '../../../../components/ui/Combobox';
 import type { DonDatHang, DonDatHangTrangThai } from '../core/types';
 import { TRANG_THAI_CHO_DUYET, TRANG_THAI_DA_XAC_NHAN, TRANG_THAI_HUY } from '../core/types';
-import { TRANG_THAI_KEY, TRANG_THAI_DON_DAT_HANG } from '../core/constants';
+import { TRANG_THAI_KEY, TRANG_THAI_DON_DAT_HANG, STATUS_VARIANTS } from '../core/constants';
 import { formatDateTimeShort } from '../../../../lib/utils';
 import { cn } from '../../../../lib/utils';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
@@ -44,17 +44,6 @@ interface Props {
   /** Mở form phiếu nhập kho với dữ liệu từ đơn (tab Mua hàng). */
   onCreatePhieuNhapKho?: (item: DonDatHang) => void;
 }
-
-const STATUS_VARIANTS: Record<string, string> = {
-  'Nháp': 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20',
-  'Chờ duyệt': 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
-  'Đã gửi': 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
-  'Đã xác nhận': 'bg-primary/10 text-primary border-primary/20',
-  'Đang giao': 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20',
-  'Đã nhận đủ': 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
-  'Đã đóng': 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
-  'Hủy': 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20',
-};
 
 const DonDatHangDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onApprove, onChangeStatus, onPrint, onCreatePhieuNhapKho }) => {
   const { t } = useTranslation();

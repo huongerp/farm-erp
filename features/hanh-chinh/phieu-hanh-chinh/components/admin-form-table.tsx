@@ -8,6 +8,7 @@ import { AdminFormRequest } from '../core/types';
 import { getAdminFormShiftLabel, getAdminFormStatusLabel } from '../core/constants';
 import { getAdminFormTypeLabel } from '../../thiet-lap-cong-luong/core/constants';
 import type { GenericState } from '../../../../store/createGenericStore';
+import { getStatusBadgeClass } from '../../../../lib/status-badge';
 
 interface Props {
   data: AdminFormRequest[];
@@ -38,34 +39,34 @@ const AdminFormTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, onDe
     const label = getAdminFormStatusLabel(status, t);
     if (status === 'approved') {
       return (
-        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-600 border border-emerald-100">
+        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusBadgeClass('success')}`}>
           {label}
         </span>
       );
     }
     if (status === 'rejected') {
       return (
-        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-rose-50 text-rose-600 border border-rose-100">
+        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusBadgeClass('rejected')}`}>
           {label}
         </span>
       );
     }
     if (status === 'cancelled') {
       return (
-        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border">
+        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusBadgeClass('neutral')}`}>
           {label}
         </span>
       );
     }
     if (status === 'manager_approved') {
       return (
-        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-600 border border-amber-100">
+        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusBadgeClass('pending')}`}>
           {label}
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusBadgeClass('info')}`}>
         {label}
       </span>
     );
@@ -96,20 +97,20 @@ const AdminFormTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, onDe
       case 'ca':
         if (item.ca === 'morning') {
           return (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-100">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 border border-amber-100 dark:border-amber-900">
               {getAdminFormShiftLabel(item.ca, t)}
             </span>
           );
         }
         if (item.ca === 'afternoon') {
           return (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-sky-50 text-sky-700 border border-sky-100">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-sky-50 text-sky-700 dark:bg-sky-950/30 dark:text-sky-400 border border-sky-100 dark:border-sky-900">
               {getAdminFormShiftLabel(item.ca, t)}
             </span>
           );
         }
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-100">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900">
             {getAdminFormShiftLabel(item.ca, t)}
           </span>
         );
