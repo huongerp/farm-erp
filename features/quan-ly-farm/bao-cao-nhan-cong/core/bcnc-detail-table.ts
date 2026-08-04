@@ -46,7 +46,7 @@ export const bcncTdSubNum =
   `${bcncColNum} px-1 py-1 text-right text-xs tabular-nums border-r border-border/40 text-muted-foreground align-middle`;
 
 export const bcncTdSubLabel =
-  'w-[4.5rem] min-w-[4rem] max-w-[5rem] px-1.5 py-1 text-[11px] leading-tight text-muted-foreground border-r border-border/40 align-middle';
+  'w-[4.5rem] min-w-[4rem] max-w-[5rem] px-1.5 py-1 text-caption leading-tight text-muted-foreground border-r border-border/40 align-middle';
 
 export const bcncTdSubDash =
   `${bcncColQuyDoi} px-1 py-1 text-center text-xs text-muted-foreground/70 border-r border-border/40 align-middle bg-muted/10`;

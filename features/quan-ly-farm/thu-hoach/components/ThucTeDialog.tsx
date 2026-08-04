@@ -81,7 +81,7 @@ const ThucTeDialog: React.FC<Props> = ({ data, onClose }) => {
         onSubmit={handleSubmit(onSubmit)}
       >
         <FormSection title={t('thuHoach.detail.thucTe')} className="!p-3 sm:!p-3.5">
-          <p className="text-[10px] sm:text-[11px] text-muted-foreground leading-snug mb-1.5 line-clamp-3 sm:line-clamp-none">
+          <p className="text-2xs sm:text-caption text-muted-foreground leading-snug mb-1.5 line-clamp-3 sm:line-clamp-none">
             {t('thuHoach.thucTe.planHint')}
           </p>
           {/* Chỉ 2 thứ / hàng (sm+); mobile 1 cột — tránh 3 cột rối */}
@@ -94,7 +94,7 @@ const ThucTeDialog: React.FC<Props> = ({ data, onClose }) => {
                   className="rounded-md border border-border/80 bg-card px-2 py-1.5 sm:px-2.5 sm:py-2 min-w-0"
                 >
                   <p
-                    className="text-[11px] sm:text-xs font-semibold text-foreground mb-1 truncate"
+                    className="text-caption sm:text-xs font-semibold text-foreground mb-1 truncate"
                     title={t(DAY_FORM_LABEL_KEY[s])}
                   >
                     {t(DAY_FORM_LABEL_KEY[s])}
@@ -102,7 +102,7 @@ const ThucTeDialog: React.FC<Props> = ({ data, onClose }) => {
                   {/* Kế hoạch luôn trên, thực tế luôn dưới — mọi kích thước màn hình */}
                   <div className="flex flex-col gap-1.5 min-w-0 w-full">
                     <div className="w-full min-w-0 rounded border border-border/60 bg-muted/30 px-2 py-1.5">
-                      <span className="text-[9px] sm:text-[10px] uppercase tracking-wide text-muted-foreground">
+                      <span className="text-[9px] sm:text-2xs uppercase tracking-wide text-muted-foreground">
                         {t('thuHoach.stats.abbrKH')}
                       </span>
                       <p className="text-xs sm:text-sm font-semibold tabular-nums text-foreground leading-none mt-0.5">
@@ -123,7 +123,7 @@ const ThucTeDialog: React.FC<Props> = ({ data, onClose }) => {
                             maxFractionDigits={2}
                             showZeroFormatted
                             compact
-                            className="min-w-0 w-full [&_label]:text-[10px] [&_label]:mb-1"
+                            className="min-w-0 w-full [&_label]:text-2xs [&_label]:mb-1"
                           />
                         )}
                       />
@@ -135,7 +135,7 @@ const ThucTeDialog: React.FC<Props> = ({ data, onClose }) => {
           </div>
           <div className="mt-2 grid grid-cols-2 gap-1.5 sm:gap-2 rounded-md border border-border bg-muted/25 px-2 py-1.5 min-w-0">
             <div className="min-w-0 overflow-hidden">
-              <p className="text-[9px] sm:text-[10px] font-medium text-muted-foreground leading-tight line-clamp-2">
+              <p className="text-[9px] sm:text-2xs font-medium text-muted-foreground leading-tight line-clamp-2">
                 {t('thuHoach.store.colTongKeHoach')}
               </p>
               <p className="text-sm sm:text-base font-semibold tabular-nums text-foreground mt-0.5 truncate">
@@ -143,7 +143,7 @@ const ThucTeDialog: React.FC<Props> = ({ data, onClose }) => {
               </p>
             </div>
             <div className="min-w-0 overflow-hidden">
-              <p className="text-[9px] sm:text-[10px] font-medium text-muted-foreground leading-tight line-clamp-2">
+              <p className="text-[9px] sm:text-2xs font-medium text-muted-foreground leading-tight line-clamp-2">
                 {t('thuHoach.store.colTongThucTe')}
               </p>
               <p className="text-sm sm:text-base font-semibold tabular-nums text-primary mt-0.5 truncate">

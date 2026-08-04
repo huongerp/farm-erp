@@ -180,7 +180,7 @@ const Combobox: React.FC<ComboboxProps> = ({
   return (
     <div className={cn("w-full relative", className)} ref={containerRef}>
       {label && (
-        <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mb-1.5 flex items-center gap-1.5 text-foreground flex-wrap">
+        <label className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mb-1.5 flex items-center gap-1.5 text-foreground flex-wrap">
           {icon && <span className="text-muted-foreground shrink-0">{icon}</span>}
           <span className="inline-flex items-center gap-1 min-w-0">
             {label}
@@ -198,7 +198,7 @@ const Combobox: React.FC<ComboboxProps> = ({
         role="combobox"
         disabled={disabled}
         className={cn(
-          "relative w-full h-10 rounded-lg border border-border bg-background py-2 px-3 text-sm text-foreground ring-offset-background flex items-center justify-between cursor-pointer transition-all duration-200 text-left",
+          "relative w-full h-10 rounded-lg border border-border bg-background py-2 px-3 text-body-sm text-foreground ring-offset-background flex items-center justify-between cursor-pointer transition-all duration-200 text-left",
           isOpen ? "border-primary ring-2 ring-primary/20" : "hover:border-border/80 focus-within:border-border/80",
           error ? "border-destructive focus-visible:ring-destructive" : "",
           disabled ? "opacity-50 cursor-not-allowed bg-muted" : "",
@@ -263,7 +263,7 @@ const Combobox: React.FC<ComboboxProps> = ({
                     <input
                       ref={inputRef}
                       type="text"
-                      className="w-full pl-9 pr-3 py-2 text-sm text-foreground bg-muted border border-border rounded-lg placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                      className="w-full pl-9 pr-3 py-2 text-body-sm text-foreground bg-muted border border-border rounded-lg placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                       placeholder={searchPlaceholder}
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
@@ -276,7 +276,7 @@ const Combobox: React.FC<ComboboxProps> = ({
               <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar p-1.5 space-y-1">
                 {canCreateNew && (
                   <div
-                    className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm cursor-pointer transition-colors text-primary hover:bg-primary/10 border border-primary/20"
+                    className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-body-sm cursor-pointer transition-colors text-primary hover:bg-primary/10 border border-primary/20"
                     onClick={(e) => { e.stopPropagation(); handleCreateNew(); }}
                   >
                     <Plus size={16} className="shrink-0" />
@@ -284,7 +284,7 @@ const Combobox: React.FC<ComboboxProps> = ({
                   </div>
                 )}
                 {filteredOptions.length === 0 && !canCreateNew ? (
-                  <div className="py-8 text-center text-sm text-muted-foreground flex flex-col items-center">
+                  <div className="py-8 text-center text-body-sm text-muted-foreground flex flex-col items-center">
                     <Search size={24} className="mb-2 opacity-20" />
                     Không tìm thấy kết quả
                   </div>
@@ -295,7 +295,7 @@ const Combobox: React.FC<ComboboxProps> = ({
                       <div
                         key={option.value}
                         className={cn(
-                          "flex items-center justify-between px-3 py-2.5 rounded-lg text-sm cursor-pointer transition-colors",
+                          "flex items-center justify-between px-3 py-2.5 rounded-lg text-body-sm cursor-pointer transition-colors",
                           value === option.value
                             ? "bg-primary/10 text-foreground font-medium border border-primary/20"
                             : "text-foreground hover:bg-muted/50"
@@ -343,7 +343,7 @@ const Combobox: React.FC<ComboboxProps> = ({
                     <input
                       ref={inputRef}
                       type="text"
-                      className="w-full pl-9 pr-3 py-2 text-sm text-foreground bg-muted border border-border rounded-lg placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                      className="w-full pl-9 pr-3 py-2 text-body-sm text-foreground bg-muted border border-border rounded-lg placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                       placeholder={searchPlaceholder}
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
@@ -356,7 +356,7 @@ const Combobox: React.FC<ComboboxProps> = ({
               <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar p-1.5 space-y-1">
                 {canCreateNew && (
                   <div
-                    className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm cursor-pointer transition-colors text-primary hover:bg-primary/10 border border-primary/20"
+                    className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-body-sm cursor-pointer transition-colors text-primary hover:bg-primary/10 border border-primary/20"
                     onClick={(e) => { e.stopPropagation(); handleCreateNew(); }}
                   >
                     <Plus size={16} className="shrink-0" />
@@ -364,7 +364,7 @@ const Combobox: React.FC<ComboboxProps> = ({
                   </div>
                 )}
                 {filteredOptions.length === 0 && !canCreateNew ? (
-                  <div className="py-8 text-center text-sm text-muted-foreground flex flex-col items-center">
+                  <div className="py-8 text-center text-body-sm text-muted-foreground flex flex-col items-center">
                     <Search size={24} className="mb-2 opacity-20" />
                     Không tìm thấy kết quả
                   </div>
@@ -375,7 +375,7 @@ const Combobox: React.FC<ComboboxProps> = ({
                       <div
                         key={option.value}
                         className={cn(
-                          "flex items-center justify-between px-3 py-2.5 rounded-lg text-sm cursor-pointer transition-colors",
+                          "flex items-center justify-between px-3 py-2.5 rounded-lg text-body-sm cursor-pointer transition-colors",
                           value === option.value
                             ? "bg-primary/10 text-foreground font-medium border border-primary/20"
                             : "text-foreground hover:bg-muted/50"

@@ -311,7 +311,7 @@ const TaiSanDetail: React.FC<Props> = ({
           <div className="flex items-center gap-3 pb-2 sm:pb-2.5">
             <div className="flex items-center gap-2 shrink-0">
               <ArrowLeftRight size={14} className="text-primary" />
-              <h4 className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-primary font-bold">
+              <h4 className="text-caption sm:text-xs font-semibold uppercase tracking-wider text-primary font-bold">
                 {t('danhSachTaiSan.detail.phieuHistorySection')}
               </h4>
               <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium tabular-nums bg-primary/10 text-primary border border-primary/20">
@@ -392,7 +392,7 @@ const TaiSanDetail: React.FC<Props> = ({
           <div className="flex items-center gap-3 pb-2 sm:pb-2.5">
             <div className="flex items-center gap-2 shrink-0">
               <Wrench size={14} className="text-primary" />
-              <h4 className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-primary font-bold">
+              <h4 className="text-caption sm:text-xs font-semibold uppercase tracking-wider text-primary font-bold">
                 {t('danhSachTaiSan.detail.baoTriSuaChuaSection')}
               </h4>
               <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium tabular-nums bg-primary/10 text-primary border border-primary/20">

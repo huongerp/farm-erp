@@ -91,12 +91,12 @@ const BaoCaoNhanCongChuyenTable: React.FC<Props> = ({ data }) => {
             </th>
           </tr>
           <tr className="bg-muted/50 border-b border-border text-xs text-muted-foreground">
-            <th className={`text-right px-1 py-1 font-medium text-[11px] ${bcncColNum} ${bcncThSub}`}>{t('baoCaoNhanCong.detail.colNhanSu')}</th>
-            <th className={`text-right px-1 py-1 font-medium text-[11px] ${bcncColNum} ${bcncThSub}`}>{t('baoCaoNhanCong.form.colGioTb')}</th>
-            <th className={`text-right px-1 py-1 font-medium text-[11px] ${bcncColNum} ${bcncThSub}`}>{t('baoCaoNhanCong.detail.colNhanSu')}</th>
-            <th className={`text-right px-1 py-1 font-medium text-[11px] ${bcncColNum} ${bcncThSub}`}>{t('baoCaoNhanCong.form.colGioTb')}</th>
-            <th className={`text-right px-1 py-1 font-medium text-[11px] ${bcncColNum} ${bcncThSub}`}>{t('baoCaoNhanCong.detail.colNhanSu')}</th>
-            <th className={`text-right px-1 py-1 font-medium text-[11px] ${bcncColNum} ${bcncThSub}`}>{t('baoCaoNhanCong.form.colGioTb')}</th>
+            <th className={`text-right px-1 py-1 font-medium text-caption ${bcncColNum} ${bcncThSub}`}>{t('baoCaoNhanCong.detail.colNhanSu')}</th>
+            <th className={`text-right px-1 py-1 font-medium text-caption ${bcncColNum} ${bcncThSub}`}>{t('baoCaoNhanCong.form.colGioTb')}</th>
+            <th className={`text-right px-1 py-1 font-medium text-caption ${bcncColNum} ${bcncThSub}`}>{t('baoCaoNhanCong.detail.colNhanSu')}</th>
+            <th className={`text-right px-1 py-1 font-medium text-caption ${bcncColNum} ${bcncThSub}`}>{t('baoCaoNhanCong.form.colGioTb')}</th>
+            <th className={`text-right px-1 py-1 font-medium text-caption ${bcncColNum} ${bcncThSub}`}>{t('baoCaoNhanCong.detail.colNhanSu')}</th>
+            <th className={`text-right px-1 py-1 font-medium text-caption ${bcncColNum} ${bcncThSub}`}>{t('baoCaoNhanCong.form.colGioTb')}</th>
           </tr>
         </thead>
         <tbody>

@@ -90,7 +90,7 @@ const NumberInput: React.FC<NumberInputProps> = ({
   return (
     <div className="w-full">
       {label && (
-        <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mb-1.5 flex items-center gap-1.5 text-foreground">
+        <label className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mb-1.5 flex items-center gap-1.5 text-foreground">
           {icon && <span className="text-muted-foreground shrink-0">{icon}</span>}
           {label}
           {required && <span className="text-red-500 ml-0.5">*</span>}
@@ -111,7 +111,7 @@ const NumberInput: React.FC<NumberInputProps> = ({
           'disabled:cursor-not-allowed disabled:opacity-50',
           error && 'border-destructive focus:ring-destructive',
           icon && 'pl-9',
-          compact ? 'h-9 text-sm py-1.5 px-2' : 'h-10 py-2 px-3 text-sm',
+          compact ? 'h-9 text-body-sm py-1.5 px-2' : 'h-10 py-2 px-3 text-body-sm',
           className
         )}
       />

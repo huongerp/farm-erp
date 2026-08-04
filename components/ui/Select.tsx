@@ -25,7 +25,7 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
     return (
       <div className="w-full">
         {label && (
-          <label htmlFor={selectId} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mb-1.5 block text-foreground">
+          <label htmlFor={selectId} className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mb-1.5 block text-foreground">
             {label}
             {required && <span className="text-red-500 ml-0.5">*</span>}
           </label>
@@ -42,7 +42,7 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
             aria-invalid={error ? true : undefined}
             aria-describedby={errorId}
             className={cn(
-              'flex h-10 w-full rounded-lg border border-border bg-background px-3 py-2 pr-10 text-sm text-foreground ring-offset-background appearance-none transition-colors',
+              'flex h-10 w-full rounded-lg border border-border bg-background px-3 py-2 pr-10 text-body-sm text-foreground ring-offset-background appearance-none transition-colors',
               'hover:border-border/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary/40 disabled:cursor-not-allowed disabled:opacity-50',
               icon ? 'pl-10' : '',
               error ? 'border-destructive focus-visible:ring-destructive' : '',

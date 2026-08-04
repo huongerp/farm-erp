@@ -106,7 +106,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ placement = 'defaul
         <Bell size={20} strokeWidth={1.8} className="shrink-0" />
         {count > 0 && (
           <span
-            className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-primary text-[10px] font-semibold text-primary-foreground rounded-full shadow-sm ring-2 ring-card"
+            className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-primary text-2xs font-semibold text-primary-foreground rounded-full shadow-sm ring-2 ring-card"
             aria-hidden
           >
             {count > 99 ? '99+' : count}

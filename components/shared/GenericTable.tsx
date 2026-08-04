@@ -250,7 +250,7 @@ function GenericTable<T>({
           <LoadingSpinnerWithText text={loadingText} centered />
         </div>
         <div className="hidden md:block flex-1 min-h-0 overflow-hidden">
-          <table className="w-full text-sm border-separate border-spacing-0">
+          <table className="w-full text-body-sm border-separate border-spacing-0">
             <thead>
               <tr className="bg-muted/30 border-b border-border">
                 <th className="w-[44px] px-3 py-2 border-b border-border"><div className="w-4 h-4 bg-muted rounded animate-pulse" /></th>
@@ -327,7 +327,7 @@ function GenericTable<T>({
         <div className={cn("absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-card/80 to-transparent z-[4] pointer-events-none transition-opacity", scrollShadow.right ? "opacity-100" : "opacity-0")} />
 
         <div ref={(el) => { (scrollRef as any).current = el; (virtualParentRef as any).current = el; }} className="h-full overflow-auto custom-scrollbar" style={{ overscrollBehavior: 'contain' }}>
-          <table className="text-sm text-left border-separate border-spacing-0" style={{ minWidth: tableMinWidth, width: '100%' }}>
+          <table className="text-body-sm text-left border-separate border-spacing-0" style={{ minWidth: tableMinWidth, width: '100%' }}>
             <thead className="sticky top-0 z-[2]">
               {renderSummaryRow && (
                 <tr className="bg-muted/60 border-b border-border/80">

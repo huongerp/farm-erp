@@ -166,7 +166,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
   const extraCount = value.length - 1;
 
   const heightClass = size === 'sm' ? 'h-7' : size === 'md' ? 'h-8' : 'h-10';
-  const textSizeClass = size === 'lg' ? 'text-sm' : 'text-xs';
+  const textSizeClass = size === 'lg' ? 'text-body-sm' : 'text-xs';
   const showLabelAbove = labelAbove && label;
 
   const dropdownContent = (
@@ -271,7 +271,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
   return (
     <div className={cn("relative w-full", !showLabelAbove && "min-w-[140px]", className)} ref={containerRef}>
       {showLabelAbove && (
-        <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mb-1.5 flex items-center gap-1.5 text-foreground">
+        <label className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mb-1.5 flex items-center gap-1.5 text-foreground">
           {Icon && <span className="text-muted-foreground shrink-0"><Icon size={14} /></span>}
           {label}
           {required && <span className="text-red-500 ml-0.5">*</span>}
@@ -303,7 +303,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
             <span className="truncate">{placeholder}</span>
           ) : (
             <div className="flex items-center gap-1 min-w-0">
-              <span className={cn("truncate font-medium text-gray-900 dark:text-gray-100", size === 'lg' ? "text-sm" : "text-xs")}>{firstName ?? placeholder}</span>
+              <span className={cn("truncate font-medium text-gray-900 dark:text-gray-100", size === 'lg' ? "text-body-sm" : "text-xs")}>{firstName ?? placeholder}</span>
               {extraCount > 0 && (
                 <span className="shrink-0 bg-primary/10 text-primary text-2xs font-bold px-1.5 py-0.5 rounded-full tabular-nums" title={value.map(v => options.find(o => o.value === v)?.label).filter(Boolean).join(', ')}>
                   +{extraCount}

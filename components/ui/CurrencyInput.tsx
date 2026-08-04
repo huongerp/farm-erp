@@ -67,7 +67,7 @@ const CurrencyInput = React.forwardRef<HTMLInputElement, CurrencyInputProps>(
     return (
       <div className="w-full">
         {label && (
-          <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mb-2 flex items-center gap-1.5 text-foreground">
+          <label className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mb-2 flex items-center gap-1.5 text-foreground">
             {icon && <span className="text-muted-foreground shrink-0">{icon}</span>}
             {label}
             {required && <span className="text-red-500 ml-0.5">*</span>}
@@ -89,7 +89,7 @@ const CurrencyInput = React.forwardRef<HTMLInputElement, CurrencyInputProps>(
             value={displayValue}
             onChange={handleChange}
             className={cn(
-              'flex h-10 w-full rounded-lg border border-border bg-background py-2 text-sm text-foreground ring-offset-background placeholder:text-muted-foreground transition-colors',
+              'flex h-10 w-full rounded-lg border border-border bg-background py-2 text-body-sm text-foreground ring-offset-background placeholder:text-muted-foreground transition-colors',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
               'disabled:cursor-not-allowed disabled:opacity-50',
               icon ? 'pl-10' : 'pl-3',

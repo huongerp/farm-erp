@@ -71,7 +71,7 @@ const GenericSubTableSection: React.FC<GenericSubTableSectionProps> = ({
       <div className="flex items-center gap-3 pb-2 sm:pb-2.5">
         <div className="flex items-center gap-2 shrink-0">
           {icon}
-          <h4 className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-primary font-bold">
+          <h4 className="text-caption sm:text-xs font-semibold uppercase tracking-wider text-primary font-bold">
             {title}
           </h4>
           {count !== undefined && (

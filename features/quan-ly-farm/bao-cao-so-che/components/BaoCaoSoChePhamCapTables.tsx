@@ -67,7 +67,7 @@ export const BaoCaoSoChePhamCapFormSection: React.FC<{
         !disabled ? (
           <div className="flex flex-wrap items-center justify-end gap-2">
             {atMax ? (
-              <span className="text-[10px] sm:text-xs text-muted-foreground max-w-[14rem] text-right leading-tight">
+              <span className="text-2xs sm:text-xs text-muted-foreground max-w-[14rem] text-right leading-tight">
                 {t('baoCaoSoChe.phamCap.maxRowsHint', { max: PHAM_CAP_ROWS_MAX })}
               </span>
             ) : null}
@@ -104,7 +104,7 @@ export const BaoCaoSoChePhamCapFormSection: React.FC<{
               </th>
               <th rowSpan={2} className="text-center px-2 py-2 font-medium text-xs w-[7.5rem] align-middle border-r border-border/80 leading-tight">
                 <span className="block">{t('baoCaoSoChe.phamCap.groupTongQuyDoi')}</span>
-                <span className="mt-1 block text-[10px] font-normal text-muted-foreground">
+                <span className="mt-1 block text-2xs font-normal text-muted-foreground">
                   {t('baoCaoSoChe.phamCap.colSoThungQD')}
                 </span>
               </th>
@@ -118,7 +118,7 @@ export const BaoCaoSoChePhamCapFormSection: React.FC<{
             <tr className="bg-muted/40 border-b border-border">
               <th className="text-right px-2 py-1.5 font-medium text-xs border-r border-border/60 leading-tight">
                 <span className="block">{t('baoCaoSoChe.phamCap.colSoThungPhieuNhap')}</span>
-                <span className="mt-0.5 block text-[10px] font-normal text-muted-foreground">
+                <span className="mt-0.5 block text-2xs font-normal text-muted-foreground">
                   {t('baoCaoSoChe.phamCap.colSoThungPhieuNhapHint')}
                 </span>
               </th>
@@ -332,7 +332,7 @@ export const BaoCaoSoChePhamCapDetailTable: React.FC<{
             </th>
             <th rowSpan={2} className="text-center px-2 py-2 font-medium text-xs w-[7.5rem] align-middle border-r border-border/80 leading-tight">
               <span className="block">{t('baoCaoSoChe.phamCap.groupTongQuyDoi')}</span>
-              <span className="mt-1 block text-[10px] font-normal text-muted-foreground">
+              <span className="mt-1 block text-2xs font-normal text-muted-foreground">
                 {t('baoCaoSoChe.phamCap.colSoThungQD')}
               </span>
             </th>
@@ -343,7 +343,7 @@ export const BaoCaoSoChePhamCapDetailTable: React.FC<{
           <tr className="bg-muted/40 border-b border-border">
             <th className="text-right px-2 py-1.5 font-medium text-xs border-r border-border/60 leading-tight">
               <span className="block">{t('baoCaoSoChe.phamCap.colSoThungPhieuNhap')}</span>
-              <span className="mt-0.5 block text-[10px] font-normal text-muted-foreground">
+              <span className="mt-0.5 block text-2xs font-normal text-muted-foreground">
                 {t('baoCaoSoChe.phamCap.colSoThungPhieuNhapHint')}
               </span>
             </th>

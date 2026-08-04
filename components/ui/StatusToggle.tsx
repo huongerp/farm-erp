@@ -45,7 +45,7 @@ const StatusToggle: React.FC<StatusToggleProps> = ({
   return (
     <div className={cn('w-full', className)}>
       {label && (
-        <label className="text-sm font-medium leading-none mb-2 flex items-center gap-1.5 text-foreground">
+        <label className="text-xs font-medium leading-none mb-2 flex items-center gap-1.5 text-foreground">
           {icon && <span className="text-muted-foreground shrink-0">{icon}</span>}
           {label}
           {required && <span className="text-red-500 ml-0.5">*</span>}
@@ -56,7 +56,7 @@ const StatusToggle: React.FC<StatusToggleProps> = ({
         onClick={handleToggle}
         disabled={disabled}
         className={cn(
-          'w-full flex items-center justify-between rounded-lg border px-3 py-2 h-10 text-sm font-medium transition-all duration-200',
+          'w-full flex items-center justify-between rounded-lg border px-3 py-2 h-10 text-body-sm font-medium transition-all duration-200',
           isActive
             ? 'bg-primary/10 border-primary/30 text-primary'
             : 'bg-muted/30 border-border text-muted-foreground',

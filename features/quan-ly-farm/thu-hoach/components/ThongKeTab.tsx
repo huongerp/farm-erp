@@ -34,7 +34,7 @@ function AggCell({
   const L = labels ?? DEFAULT_METRIC_LABELS;
   const cl = chenhLech(a);
   return (
-    <div className={cn('text-right text-[11px] leading-snug tabular-nums space-y-0.5', className)}>
+    <div className={cn('text-right text-caption leading-snug tabular-nums space-y-0.5', className)}>
       <div>
         <span className="text-muted-foreground">{L.kh} </span>
         {formatNumberVN(a.keHoach)}
@@ -287,7 +287,7 @@ const ThongKeTab: React.FC = () => {
                 const col = table.colTotals.get(d)!;
                 return (
                   <td key={d} className="p-2 border-r border-border align-top">
-                    <AggCell agg={col} className="text-[11px]" labels={metricLabels} />
+                    <AggCell agg={col} className="text-caption" labels={metricLabels} />
                   </td>
                 );
               })}

@@ -32,7 +32,7 @@ function TableShell({ title, icon, children }: { title: string; icon: React.Reac
 }
 
 const TH = ({ children, right, center }: { children: React.ReactNode; right?: boolean; center?: boolean }) => (
-  <th className={`px-3 py-2 text-[11px] font-medium text-muted-foreground bg-muted/30 border-b border-border whitespace-nowrap${right ? ' text-right' : center ? ' text-center' : ' text-left'}`}>
+  <th className={`px-3 py-2 text-caption font-medium text-muted-foreground bg-muted/30 border-b border-border whitespace-nowrap${right ? ' text-right' : center ? ' text-center' : ' text-left'}`}>
     {children}
   </th>
 );

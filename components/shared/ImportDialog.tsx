@@ -277,7 +277,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
                     </button>
                   </div>
                   {referenceSheets && referenceSheets.length > 0 && (
-                    <p className="text-[10px] text-muted-foreground text-center mt-2">
+                    <p className="text-2xs text-muted-foreground text-center mt-2">
                       {t('shared.import.templateHasRefSheets', { count: referenceSheets.length })}
                     </p>
                   )}
@@ -387,7 +387,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
                         </p>
                         <button
                           onClick={downloadErrorReport}
-                          className="text-[11px] text-primary hover:underline flex items-center gap-1"
+                          className="text-caption text-primary hover:underline flex items-center gap-1"
                         >
                           <Download size={12} /> {t('shared.import.downloadErrors')}
                         </button>
@@ -412,7 +412,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
                           </tbody>
                         </table>
                         {importErrors!.length > 50 && (
-                          <p className="text-[10px] text-muted-foreground text-center py-1.5">
+                          <p className="text-2xs text-muted-foreground text-center py-1.5">
                             {t('shared.import.moreErrors', { count: importErrors!.length - 50 })}
                           </p>
                         )}

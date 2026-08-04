@@ -92,7 +92,7 @@ function ParentSelectInner<T>(
   return (
     <div className={cn('w-full', className)}>
       {label && (
-        <label className="text-xs font-medium text-foreground/80 flex items-center gap-1.5 mb-1.5 block">
+        <label className="text-xs font-medium text-foreground/80 flex items-center gap-1.5 mb-1.5">
           {icon && <span className="text-muted-foreground shrink-0">{icon}</span>}
           {label}
           {required && <span className="text-red-500">*</span>}
@@ -107,7 +107,7 @@ function ParentSelectInner<T>(
         aria-invalid={!!error}
         aria-describedby={error ? `${name ?? 'parent'}-error` : undefined}
         className={cn(
-          'flex h-10 w-full rounded-lg border bg-background px-3 py-2 text-foreground text-sm ring-offset-background',
+          'flex h-10 w-full rounded-lg border bg-background px-3 py-2 text-foreground text-body-sm ring-offset-background',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
           'disabled:cursor-not-allowed disabled:opacity-50',
           error ? 'border-destructive' : 'border-border'

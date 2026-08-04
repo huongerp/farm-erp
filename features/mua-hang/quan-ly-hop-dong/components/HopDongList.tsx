@@ -147,7 +147,7 @@ const HopDongList: React.FC<Props> = ({
               className="rounded border border-border object-cover h-10 w-10"
             />
             {urls.length > 1 && (
-              <span className="absolute -top-1 -right-1 px-1.5 rounded-full bg-primary text-white text-[10px] font-medium leading-4 min-w-[16px] text-center">
+              <span className="absolute -top-1 -right-1 px-1.5 rounded-full bg-primary text-white text-2xs font-medium leading-4 min-w-[16px] text-center">
                 {urls.length}
               </span>
             )}

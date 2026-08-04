@@ -40,7 +40,7 @@ const Section: React.FC<SectionProps> = ({ title, icon, children, className, var
       >
         <h4
           className={cn(
-            'text-[11px] sm:text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 sm:gap-2 min-w-0',
+            'text-caption sm:text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 sm:gap-2 min-w-0',
             isPrimary ? 'text-primary font-bold' : isSecondary ? 'text-secondary-foreground' : 'text-muted-foreground'
           )}
         >

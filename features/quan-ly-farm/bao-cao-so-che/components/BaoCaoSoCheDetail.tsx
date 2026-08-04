@@ -316,7 +316,7 @@ const BaoCaoSoCheDetail: React.FC<Props> = ({
           />
           {showBcncDetail && bcnc && (
             <div className="mt-3 pt-3 border-t border-border/60">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+              <p className="text-caption font-semibold uppercase tracking-wider text-muted-foreground mb-2">
                 {t('baoCaoNhanCong.form.sectionChuyen')}
               </p>
               <BaoCaoNhanCongChuyenTable data={bcnc} />

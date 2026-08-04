@@ -119,8 +119,8 @@ const RadioGroup: React.FC<RadioGroupProps> = ({
   /* ----- Size classes ----- */
   const sizeClasses = {
     sm: 'px-3 py-1.5 text-xs gap-1.5',
-    md: 'px-3.5 py-2 text-sm gap-2',
-    lg: 'px-4 py-2.5 text-sm gap-2',
+    md: 'px-3.5 py-2 text-body-sm gap-2',
+    lg: 'px-4 py-2.5 text-body-sm gap-2',
   };
 
   /* ----- Container classes ----- */
@@ -191,7 +191,7 @@ const RadioGroup: React.FC<RadioGroupProps> = ({
   return (
     <div className={cn('w-full', className)}>
       {label && (
-        <label className="text-sm font-medium leading-none mb-1.5 block text-foreground">
+        <label className="text-xs font-medium leading-none mb-1.5 block text-foreground">
           {label}
           {required && <span className="text-red-500 ml-0.5">*</span>}
         </label>

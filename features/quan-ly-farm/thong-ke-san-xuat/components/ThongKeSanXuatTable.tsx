@@ -61,7 +61,7 @@ function Th({
       rowSpan={rowSpan}
       title={title}
       className={cn(
-        'px-2 py-1.5 text-[11px] font-semibold text-muted-foreground whitespace-nowrap border-b border-border/60 bg-muted/40',
+        'px-2 py-1.5 text-caption font-semibold text-muted-foreground whitespace-nowrap border-b border-border/60 bg-muted/40',
         className
       )}
     >
@@ -95,7 +95,7 @@ function BcBadge({ has, label }: { has: boolean; label: string }) {
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-medium',
+        'inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-2xs font-medium',
         has
           ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
           : 'bg-muted text-muted-foreground/50'
@@ -119,12 +119,12 @@ function KpiBadges({ kpiSnapshot }: { kpiSnapshot: ThongKeSanXuatRow['kpiSnapsho
           <span
             key={i}
             title={r.ten_hang_muc}
-            className={cn('inline-block rounded px-1 py-0.5 text-[10px] font-medium', badge.cls)}
+            className={cn('inline-block rounded px-1 py-0.5 text-2xs font-medium', badge.cls)}
           >
             {badge.label}
           </span>
         ) : (
-          <span key={i} className="inline-block rounded px-1 py-0.5 text-[10px] bg-muted text-muted-foreground/50">
+          <span key={i} className="inline-block rounded px-1 py-0.5 text-2xs bg-muted text-muted-foreground/50">
             —
           </span>
         );
@@ -145,29 +145,29 @@ function ExpandedBcncDetail({ row }: { row: ThongKeSanXuatRow }) {
     <tr>
       <td colSpan={100} className="bg-muted/20 border-b border-border/40 p-0">
         <div className="px-4 py-3">
-          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+          <p className="text-caption font-semibold text-muted-foreground uppercase tracking-wider mb-2">
             {t('thongKeSanXuat.table.detailTitle')} — {t('thongKeSanXuat.table.groupNhanCong')}
           </p>
           <div className="overflow-x-auto">
             <table className="text-xs border-collapse w-auto min-w-[480px]">
               <thead>
                 <tr>
-                  <th className="px-2 py-1 text-left text-[11px] font-semibold text-muted-foreground border border-border/40 bg-muted/60">
+                  <th className="px-2 py-1 text-left text-caption font-semibold text-muted-foreground border border-border/40 bg-muted/60">
                     {t('thongKeSanXuat.table.chuyen')}
                   </th>
-                  <th className="px-2 py-1 text-right text-[11px] font-semibold text-muted-foreground border border-border/40 bg-muted/60">
+                  <th className="px-2 py-1 text-right text-caption font-semibold text-muted-foreground border border-border/40 bg-muted/60">
                     {t('thongKeSanXuat.table.colCnNgay')}
                   </th>
-                  <th className="px-2 py-1 text-right text-[11px] font-semibold text-muted-foreground border border-border/40 bg-muted/60">
+                  <th className="px-2 py-1 text-right text-caption font-semibold text-muted-foreground border border-border/40 bg-muted/60">
                     {t('thongKeSanXuat.table.colCnNua')}
                   </th>
-                  <th className="px-2 py-1 text-right text-[11px] font-semibold text-muted-foreground border border-border/40 bg-muted/60">
+                  <th className="px-2 py-1 text-right text-caption font-semibold text-muted-foreground border border-border/40 bg-muted/60">
                     {t('thongKeSanXuat.table.colTangCa')}
                   </th>
-                  <th className="px-2 py-1 text-right text-[11px] font-semibold text-muted-foreground border border-border/40 bg-muted/60">
+                  <th className="px-2 py-1 text-right text-caption font-semibold text-muted-foreground border border-border/40 bg-muted/60">
                     {t('thongKeSanXuat.table.colCongQD')}
                   </th>
-                  <th className="px-2 py-1 text-right text-[11px] font-semibold text-muted-foreground border border-border/40 bg-muted/60">
+                  <th className="px-2 py-1 text-right text-caption font-semibold text-muted-foreground border border-border/40 bg-muted/60">
                     {t('thongKeSanXuat.table.colGioTC')}
                   </th>
                 </tr>
@@ -208,20 +208,20 @@ function ExpandedBcncDetail({ row }: { row: ThongKeSanXuatRow }) {
           {/* KPI detail */}
           {row.kpiSnapshot && row.kpiSnapshot.tongKpi > 0 && (
             <div className="mt-3">
-              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+              <p className="text-caption font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
                 {t('thongKeSanXuat.table.kpi')} — {t('thongKeSanXuat.table.groupSoChe')}
               </p>
               <div className="overflow-x-auto">
                 <table className="text-xs border-collapse w-auto min-w-[500px]">
                   <thead>
                     <tr>
-                      <th className="px-2 py-1 text-left text-[11px] font-semibold text-muted-foreground border border-border/40 bg-muted/60">Hạng mục</th>
-                      <th className="px-2 py-1 text-right text-[11px] font-semibold text-muted-foreground border border-border/40 bg-muted/60">ĐVT</th>
-                      <th className="px-2 py-1 text-right text-[11px] font-semibold text-muted-foreground border border-border/40 bg-muted/60">Mục tiêu</th>
-                      <th className="px-2 py-1 text-right text-[11px] font-semibold text-muted-foreground border border-border/40 bg-muted/60">Thực tế</th>
-                      <th className="px-2 py-1 text-right text-[11px] font-semibold text-muted-foreground border border-border/40 bg-muted/60">%</th>
-                      <th className="px-2 py-1 text-center text-[11px] font-semibold text-muted-foreground border border-border/40 bg-muted/60">Đánh giá</th>
-                      <th className="px-2 py-1 text-right text-[11px] font-semibold text-muted-foreground border border-border/40 bg-muted/60">Tiền thưởng</th>
+                      <th className="px-2 py-1 text-left text-caption font-semibold text-muted-foreground border border-border/40 bg-muted/60">Hạng mục</th>
+                      <th className="px-2 py-1 text-right text-caption font-semibold text-muted-foreground border border-border/40 bg-muted/60">ĐVT</th>
+                      <th className="px-2 py-1 text-right text-caption font-semibold text-muted-foreground border border-border/40 bg-muted/60">Mục tiêu</th>
+                      <th className="px-2 py-1 text-right text-caption font-semibold text-muted-foreground border border-border/40 bg-muted/60">Thực tế</th>
+                      <th className="px-2 py-1 text-right text-caption font-semibold text-muted-foreground border border-border/40 bg-muted/60">%</th>
+                      <th className="px-2 py-1 text-center text-caption font-semibold text-muted-foreground border border-border/40 bg-muted/60">Đánh giá</th>
+                      <th className="px-2 py-1 text-right text-caption font-semibold text-muted-foreground border border-border/40 bg-muted/60">Tiền thưởng</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -238,7 +238,7 @@ function ExpandedBcncDetail({ row }: { row: ThongKeSanXuatRow }) {
                           </td>
                           <td className="px-2 py-1 border border-border/40 text-center">
                             {badge ? (
-                              <span className={cn('rounded px-1.5 py-0.5 text-[10px] font-medium', badge.cls)}>
+                              <span className={cn('rounded px-1.5 py-0.5 text-2xs font-medium', badge.cls)}>
                                 {r.danh_gia}
                               </span>
                             ) : '—'}
@@ -268,7 +268,7 @@ function ExpandedBcncDetail({ row }: { row: ThongKeSanXuatRow }) {
           {/* Phẩm cấp */}
           {row.bcsc && (row.bcsc.pham_cap ?? []).some((p) => p.so_thung > 0) && (
             <div className="mt-3">
-              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+              <p className="text-caption font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
                 Phẩm cấp — {t('thongKeSanXuat.table.groupSoChe')}
               </p>
               <div className="flex flex-wrap gap-2">

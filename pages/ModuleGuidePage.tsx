@@ -193,7 +193,7 @@ const ModuleGuidePage: React.FC = () => {
           aria-label={t('guide.breadcrumbLabel')}
         >
           <div className="sticky top-24 pt-1 border-l border-border pl-4">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5 mb-3">
+            <p className="text-caption font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5 mb-3">
               <List size={12} aria-hidden />
               {t('guide.tocTitle')}
             </p>

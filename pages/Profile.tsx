@@ -186,7 +186,7 @@ const Profile: React.FC = () => {
                 </div>
                 <div className="pb-1 sm:pb-0 sm:mt-3 min-w-0">
                   <h3 className="font-bold text-base sm:text-lg text-foreground leading-tight truncate">{displayName}</h3>
-                  <span className="inline-block mt-1 sm:mt-1.5 bg-primary/10 text-primary px-2 sm:px-2.5 py-0.5 rounded-full text-[11px] sm:text-xs font-semibold">
+                  <span className="inline-block mt-1 sm:mt-1.5 bg-primary/10 text-primary px-2 sm:px-2.5 py-0.5 rounded-full text-caption sm:text-xs font-semibold">
                     {roleLabel}
                   </span>
                 </div>
@@ -290,7 +290,7 @@ const Profile: React.FC = () => {
             </DetailFieldGrid>
             {/* Địa chỉ */}
             <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-border/50">
-              <p className="text-[11px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2.5 sm:mb-3 flex items-center gap-1.5">
+              <p className="text-caption sm:text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2.5 sm:mb-3 flex items-center gap-1.5">
                 <MapPin size={12} /> {t('employee.detail.address')}
               </p>
               <DetailFieldGrid cols={3}>
@@ -313,7 +313,7 @@ const Profile: React.FC = () => {
             </DetailFieldGrid>
             {/* Học vấn */}
             <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-border/50">
-              <p className="text-[11px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2.5 sm:mb-3 flex items-center gap-1.5">
+              <p className="text-caption sm:text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2.5 sm:mb-3 flex items-center gap-1.5">
                 <GraduationCap size={12} /> {t('employee.detail.educationInfo')}
               </p>
               <DetailFieldGrid cols={3}>
@@ -336,7 +336,7 @@ const Profile: React.FC = () => {
             </DetailFieldGrid>
             {/* Bảo hiểm */}
             <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-border/50">
-              <p className="text-[11px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2.5 sm:mb-3 flex items-center gap-1.5">
+              <p className="text-caption sm:text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2.5 sm:mb-3 flex items-center gap-1.5">
                 <ShieldCheck size={12} /> {t('employee.detail.insuranceInfo')}
               </p>
               <DetailFieldGrid cols={3}>

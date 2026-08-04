@@ -75,7 +75,7 @@ const ThuHoachTraoDoiDialog: React.FC<Props> = ({ data, onClose }) => {
         <p className="text-xs text-muted-foreground leading-relaxed">{t('thuHoach.traoDoiDialog.hint')}</p>
         {(data.trao_doi ?? '').trim() !== '' && (
           <div className="rounded-lg border border-border bg-muted/30 p-3 max-h-40 overflow-y-auto custom-scrollbar">
-            <p className="text-[11px] font-medium text-muted-foreground mb-1.5">
+            <p className="text-caption font-medium text-muted-foreground mb-1.5">
               {t('thuHoach.traoDoiDialog.historyLabel')}
             </p>
             <pre className="text-xs whitespace-pre-wrap break-words text-foreground font-sans m-0">

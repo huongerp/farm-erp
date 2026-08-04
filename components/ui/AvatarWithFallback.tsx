@@ -58,7 +58,7 @@ export interface AvatarWithFallbackProps {
 }
 
 const sizeClasses = {
-  xs: 'w-5 h-5 text-[10px]',
+  xs: 'w-5 h-5 text-2xs',
   sm: 'w-8 h-8 text-xs',
   md: 'w-10 h-10 text-sm',
   lg: 'w-11 h-11 text-base',

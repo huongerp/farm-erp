@@ -74,7 +74,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
     return (
       <div className="w-full">
         {label && (
-          <label htmlFor={textareaId} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mb-2 flex items-center gap-1.5 text-foreground">
+          <label htmlFor={textareaId} className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mb-2 flex items-center gap-1.5 text-foreground">
             {icon && <span className="text-muted-foreground shrink-0">{icon}</span>}
             {label}
             {required && <span className="text-red-500 ml-0.5">*</span>}
@@ -91,7 +91,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           aria-invalid={error ? true : undefined}
           aria-describedby={errorId}
           className={cn(
-            'flex w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground ring-offset-background placeholder:text-muted-foreground transition-colors resize-none',
+            'flex w-full rounded-lg border border-border bg-background px-3 py-2.5 text-body-sm text-foreground ring-offset-background placeholder:text-muted-foreground transition-colors resize-none',
             autoResize ? 'min-h-0 overflow-hidden' : 'min-h-[100px]',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
             'disabled:cursor-not-allowed disabled:opacity-50',

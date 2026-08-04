@@ -100,7 +100,7 @@ const FunctionDropdown: React.FC<{
         )}
       >
         <div className={cn('w-2 h-2 rounded-full shrink-0', dotClass)} />
-        <span className="text-[13px] font-semibold text-foreground truncate flex-1">
+        <span className="text-body-sm font-semibold text-foreground truncate flex-1">
           {selected ? t(selected.nameKey) : t('common.all')}
         </span>
         <ChevronDown size={14} className={cn('text-muted-foreground transition-transform shrink-0', open && 'rotate-180')} />
@@ -110,7 +110,7 @@ const FunctionDropdown: React.FC<{
           <div className="max-h-[280px] overflow-y-auto no-scrollbar p-1">
             <button onClick={() => { onSelect(null); setOpen(false); }} className={cn('w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-left', !selected ? 'bg-primary/10 text-primary' : 'hover:bg-muted text-foreground')}>
               <Layers size={13} className="shrink-0" />
-              <span className="text-[13px] font-medium flex-1">{t('common.all')}</span>
+              <span className="text-body-sm font-medium flex-1">{t('common.all')}</span>
               {!selected && <Check size={13} className="text-primary shrink-0" />}
             </button>
             <div className="h-px bg-border my-1" />
@@ -120,9 +120,9 @@ const FunctionDropdown: React.FC<{
               return (
                 <button key={fn.id} onClick={() => { onSelect(fn); setOpen(false); }} className={cn('w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-left', isSel ? 'bg-primary/10 text-primary' : 'hover:bg-muted text-foreground')}>
                   <div className={cn('w-2 h-2 rounded-full shrink-0', DOT_COLOR[fn.color] ?? 'bg-primary')} />
-                  <span className="text-[13px] font-medium flex-1 truncate">{t(fn.nameKey)}</span>
+                  <span className="text-body-sm font-medium flex-1 truncate">{t(fn.nameKey)}</span>
                   {isSel && <Check size={13} className="text-primary shrink-0" />}
-                  <span className="text-[10px] text-muted-foreground tabular-nums shrink-0 w-5 text-right">{count}</span>
+                  <span className="text-2xs text-muted-foreground tabular-nums shrink-0 w-5 text-right">{count}</span>
                 </button>
               );
             })}
@@ -162,7 +162,7 @@ const MobileModulePicker: React.FC<{
       <div className="flex gap-1.5 p-3 pb-2 overflow-x-auto no-scrollbar shrink-0">
         <button
           onClick={() => { setFilterFn(null); setExpanded(new Set(PERMISSION_FUNCTIONS.map((f) => f.id))); }}
-          className={cn('shrink-0 px-3 py-1.5 rounded-full text-[12px] font-semibold border transition-colors', !filterFn ? 'bg-primary text-white border-primary' : 'bg-card border-border text-muted-foreground')}
+          className={cn('shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors', !filterFn ? 'bg-primary text-white border-primary' : 'bg-card border-border text-muted-foreground')}
         >
           {t('common.all')}
         </button>
@@ -170,7 +170,7 @@ const MobileModulePicker: React.FC<{
           <button
             key={fn.id}
             onClick={() => { setFilterFn(fn.id); setExpanded(new Set([fn.id])); }}
-            className={cn('shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-semibold border transition-colors', filterFn === fn.id ? 'bg-primary text-white border-primary' : 'bg-card border-border text-muted-foreground')}
+            className={cn('shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors', filterFn === fn.id ? 'bg-primary text-white border-primary' : 'bg-card border-border text-muted-foreground')}
           >
             <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', filterFn === fn.id ? 'bg-white/70' : (DOT_COLOR[fn.color] ?? 'bg-primary'))} />
             {t(fn.nameKey)}
@@ -196,10 +196,10 @@ const MobileModulePicker: React.FC<{
                 className={cn('w-full flex items-center gap-2.5 px-4 py-3 text-left border-b border-border/50', isExp ? 'bg-primary/[0.04]' : '')}
               >
                 <div className={cn('w-1 h-5 rounded-full shrink-0', isExp ? 'bg-primary' : 'bg-border')} />
-                <span className={cn('text-[13px] font-bold uppercase tracking-wide flex-1', isExp ? 'text-primary' : 'text-foreground/70')}>
+                <span className={cn('text-body-sm font-bold uppercase tracking-wide flex-1', isExp ? 'text-primary' : 'text-foreground/70')}>
                   {t(fn.nameKey)}
                 </span>
-                <span className="text-[11px] text-muted-foreground tabular-nums mr-1">
+                <span className="text-caption text-muted-foreground tabular-nums mr-1">
                   {fn.groups.reduce((s, g) => s + g.modules.length, 0)}
                 </span>
                 <ChevronDown size={14} className={cn('text-muted-foreground transition-transform', !isExp && '-rotate-90')} />
@@ -208,7 +208,7 @@ const MobileModulePicker: React.FC<{
                 <div key={gr.groupTitleKey}>
                   <div className="px-4 pl-8 py-2 flex items-center gap-2">
                     <div className="w-4 h-px bg-muted-foreground/25 shrink-0" />
-                    <span className="text-[11px] font-bold text-muted-foreground tracking-wide">{t(gr.groupTitleKey)}</span>
+                    <span className="text-caption font-bold text-muted-foreground tracking-wide">{t(gr.groupTitleKey)}</span>
                   </div>
                   {gr.modules.map((m) => {
                     const isActive = selectedModuleId === m.id;
@@ -223,8 +223,8 @@ const MobileModulePicker: React.FC<{
                       >
                         <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', isActive ? 'bg-primary' : 'bg-muted-foreground/25')} />
                         <span className="flex-1 min-w-0">
-                          <span className={cn('text-[13px] block', isActive ? 'text-primary font-semibold' : 'text-foreground')}>{t(m.nameKey)}</span>
-                          <span className={cn('font-mono text-[10px] block', isActive ? 'text-primary/50' : 'text-muted-foreground/40')}>{getModuleSlug(m.id)}</span>
+                          <span className={cn('text-body-sm block', isActive ? 'text-primary font-semibold' : 'text-foreground')}>{t(m.nameKey)}</span>
+                          <span className={cn('font-mono text-2xs block', isActive ? 'text-primary/50' : 'text-muted-foreground/40')}>{getModuleSlug(m.id)}</span>
                         </span>
                         {isActive && <Check size={16} className="text-primary shrink-0" />}
                       </button>
@@ -249,7 +249,7 @@ const MobileTriBtn: React.FC<{
   <button
     onClick={onClick}
     className={cn(
-      'flex items-center justify-center gap-1.5 px-1 py-2.5 rounded-lg border text-[11px] font-semibold transition-all active:scale-95',
+      'flex items-center justify-center gap-1.5 px-1 py-2.5 rounded-lg border text-caption font-semibold transition-all active:scale-95',
       state === 'all'
         ? 'bg-primary/15 border-primary/30 text-primary'
         : state === 'some'
@@ -399,7 +399,7 @@ const PermissionMatrix: React.FC<Props> = ({ roles, isLoading, canUpdate = true 
             <div className="p-2.5 border-b border-border">
               <div className="flex items-center gap-1.5 mb-2">
                 <Filter size={12} className="text-muted-foreground" />
-                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t('permission.matrix.quickSelectFunction')}</span>
+                <span className="text-2xs font-semibold text-muted-foreground uppercase tracking-wider">{t('permission.matrix.quickSelectFunction')}</span>
               </div>
               <FunctionDropdown selected={selectedFunction} onSelect={(fn) => {
                 setSelectedFunction(fn);
@@ -415,8 +415,8 @@ const PermissionMatrix: React.FC<Props> = ({ roles, isLoading, canUpdate = true 
                   <div key={fn.id}>
                     <button onClick={() => toggleFunctionExpand(fn.id)} className={cn('w-full flex items-center gap-2 px-3 py-[7px] transition-colors text-left', isExp ? 'bg-primary/[0.06] dark:bg-primary/10' : 'hover:bg-muted/50')}>
                       <div className={cn('w-1 h-4 rounded-full shrink-0', isExp ? 'bg-primary' : 'bg-border')} />
-                      <span className={cn('text-[12px] font-bold uppercase tracking-wide flex-1 truncate', isExp ? 'text-primary' : 'text-foreground/70')}>{t(fn.nameKey)}</span>
-                      <span className="text-[10px] text-muted-foreground tabular-nums shrink-0 w-5 text-right">{fn.groups.reduce((s, g) => s + g.modules.length, 0)}</span>
+                      <span className={cn('text-xs font-bold uppercase tracking-wide flex-1 truncate', isExp ? 'text-primary' : 'text-foreground/70')}>{t(fn.nameKey)}</span>
+                      <span className="text-2xs text-muted-foreground tabular-nums shrink-0 w-5 text-right">{fn.groups.reduce((s, g) => s + g.modules.length, 0)}</span>
                       <ChevronDown size={12} className={cn('text-muted-foreground transition-transform shrink-0', !isExp && '-rotate-90')} />
                     </button>
                     {isExp && (
@@ -433,7 +433,7 @@ const PermissionMatrix: React.FC<Props> = ({ roles, isLoading, canUpdate = true 
                                 <button key={m.id} onClick={() => setSelectedModuleId(m.id)} className={cn('w-full flex items-start gap-1.5 pl-5 pr-2 py-[5px] transition-all text-left', isActive ? 'bg-primary/10 text-primary font-semibold' : 'text-muted-foreground hover:text-foreground hover:bg-muted/40 font-normal')}>
                                   <span className={cn('w-1 h-1 rounded-full shrink-0 mt-[6px]', isActive ? 'bg-primary' : 'bg-muted-foreground/30')} />
                                   <span className="flex-1 min-w-0">
-                                    <span className="text-[12px] block truncate">{t(m.nameKey)}</span>
+                                    <span className="text-xs block truncate">{t(m.nameKey)}</span>
                                     <span className={cn('font-mono text-[9.5px] block truncate', isActive ? 'text-primary/50' : 'text-muted-foreground/40')}>{getModuleSlug(m.id)}</span>
                                   </span>
                                   {isActive && <ChevronRight size={10} className="text-primary shrink-0 mt-[5px]" />}
@@ -464,8 +464,8 @@ const PermissionMatrix: React.FC<Props> = ({ roles, isLoading, canUpdate = true 
               >
                 <Shield size={16} className="text-primary shrink-0" />
                 <div className="flex-1 min-w-0 text-left">
-                  <p className="text-[13px] font-bold text-foreground truncate">{displayModuleName}</p>
-                  <p className="text-[10px] text-muted-foreground">{t('permission.matrix.moduleList')} &rsaquo;</p>
+                  <p className="text-body-sm font-bold text-foreground truncate">{displayModuleName}</p>
+                  <p className="text-2xs text-muted-foreground">{t('permission.matrix.moduleList')} &rsaquo;</p>
                 </div>
                 <ChevronRight size={16} className="text-muted-foreground shrink-0" />
               </button>
@@ -474,7 +474,7 @@ const PermissionMatrix: React.FC<Props> = ({ roles, isLoading, canUpdate = true 
                 <h3 className="font-bold text-base text-foreground flex items-center gap-2 truncate">
                   {t('permission.matrix.setupTitle')} <span className="text-primary truncate">{displayModuleName}</span>
                 </h3>
-                <p className="text-[11px] text-muted-foreground mt-0.5">{t('permission.matrix.setupDesc')}</p>
+                <p className="text-caption text-muted-foreground mt-0.5">{t('permission.matrix.setupDesc')}</p>
               </div>
               {canUpdate && (
                 <Button onClick={handleSave} isLoading={updateMutation.isPending} className="bg-primary text-white shadow-xl h-9 px-4 lg:px-5 rounded-lg font-bold text-xs lg:text-sm shrink-0">
@@ -490,11 +490,11 @@ const PermissionMatrix: React.FC<Props> = ({ roles, isLoading, canUpdate = true 
               <table className="w-full border-collapse">
                 <thead className="sticky top-0 z-10 bg-card/95 backdrop-blur-md border-b-2 border-border">
                   <tr>
-                    <th className="px-6 py-2.5 text-left text-[11px] font-semibold text-muted-foreground w-[220px]">{t('permission.matrix.position')}</th>
-                    {displayActions.map((a) => <th key={a} className="px-2 py-2.5 text-center text-[11px] font-semibold text-muted-foreground">{actionLabels[a]}</th>)}
+                    <th className="px-6 py-2.5 text-left text-caption font-semibold text-muted-foreground w-[220px]">{t('permission.matrix.position')}</th>
+                    {displayActions.map((a) => <th key={a} className="px-2 py-2.5 text-center text-caption font-semibold text-muted-foreground">{actionLabels[a]}</th>)}
                   </tr>
                   <tr className="border-t border-border bg-muted/20">
-                    <td className="px-6 py-2 text-[11px] font-bold text-primary/80">{t('permission.matrix.selectAll')}</td>
+                    <td className="px-6 py-2 text-caption font-bold text-primary/80">{t('permission.matrix.selectAll')}</td>
                     {displayActions.map((a) => <td key={a} className="px-1 py-2 text-center"><TriCheck state={getActionState(allRoleIds, a)} disabled={!canUpdate} onClick={() => toggleActionForRoles(allRoleIds, a)} /></td>)}
                   </tr>
                 </thead>
@@ -504,7 +504,7 @@ const PermissionMatrix: React.FC<Props> = ({ roles, isLoading, canUpdate = true 
                     return (
                       <React.Fragment key={dept}>
                         <tr className="bg-muted/40 border-t-2 border-border">
-                          <td className="px-6 py-2"><span className="flex items-center gap-1.5 font-bold text-[12px] text-foreground/80"><Building2 size={13} className="text-primary shrink-0" />{t(dept)}</span></td>
+                          <td className="px-6 py-2"><span className="flex items-center gap-1.5 font-bold text-xs text-foreground/80"><Building2 size={13} className="text-primary shrink-0" />{t(dept)}</span></td>
                           {displayActions.map((a) => <td key={a} className="px-1 py-2 text-center"><TriCheck state={getActionState(dids, a)} disabled={!canUpdate} onClick={() => toggleActionForRoles(dids, a)} /></td>)}
                         </tr>
                         {dr.map((role, ri) => {
@@ -512,7 +512,7 @@ const PermissionMatrix: React.FC<Props> = ({ roles, isLoading, canUpdate = true 
                           return (
                             <tr key={role.id} className="hover:bg-muted/20 transition-colors border-t border-border/50">
                               <td className="px-6 py-2 pl-8">
-                                <span className="flex items-center gap-1.5 text-[13px] font-medium text-foreground">
+                                <span className="flex items-center gap-1.5 text-body-sm font-medium text-foreground">
                                   <span className="flex flex-col items-center shrink-0 w-3 self-stretch">
                                     <span className="w-px flex-1 bg-border" />
                                     <span className="w-1.5 h-1.5 rounded-full border-2 border-primary/40 bg-card shrink-0" />
@@ -538,7 +538,7 @@ const PermissionMatrix: React.FC<Props> = ({ roles, isLoading, canUpdate = true 
               <div className="bg-primary/5 border border-primary/20 rounded-xl p-3">
                 <div className="flex items-center gap-2 mb-2">
                   <CheckCheck size={14} className="text-primary" />
-                  <span className="text-[12px] font-bold text-primary">{t('permission.matrix.selectAll')}</span>
+                  <span className="text-xs font-bold text-primary">{t('permission.matrix.selectAll')}</span>
                 </div>
                 <div className="grid grid-cols-3 gap-1.5">
                   {displayActions.map((a) => <MobileTriBtn key={a} label={actionLabels[a]} state={getActionState(allRoleIds, a)} onClick={() => toggleActionForRoles(allRoleIds, a)} />)}
@@ -552,7 +552,7 @@ const PermissionMatrix: React.FC<Props> = ({ roles, isLoading, canUpdate = true 
                     <div className="bg-muted/40 border border-border rounded-xl p-3">
                       <div className="flex items-center gap-2 mb-2">
                         <Building2 size={14} className="text-primary shrink-0" />
-                        <span className="text-[12px] font-bold text-foreground/80 flex-1 truncate">{t(dept)}</span>
+                        <span className="text-xs font-bold text-foreground/80 flex-1 truncate">{t(dept)}</span>
                       </div>
                       <div className="grid grid-cols-3 gap-1.5">
                         {displayActions.map((a) => <MobileTriBtn key={a} label={actionLabels[a]} state={getActionState(dids, a)} onClick={() => toggleActionForRoles(dids, a)} />)}
@@ -564,7 +564,7 @@ const PermissionMatrix: React.FC<Props> = ({ roles, isLoading, canUpdate = true 
                         <div key={role.id} className="bg-card border border-border rounded-xl p-3 ml-3">
                           <div className="flex items-center gap-2 mb-2">
                             <span className="w-1.5 h-1.5 rounded-full bg-primary/40 shrink-0" />
-                            <span className="text-[12px] font-semibold text-foreground flex-1 truncate">{role.ten_chuc_vu}</span>
+                            <span className="text-xs font-semibold text-foreground flex-1 truncate">{role.ten_chuc_vu}</span>
                             <span className="text-[9px] font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{role.ma_chuc_vu}</span>
                           </div>
                           <div className="grid grid-cols-3 gap-1.5">

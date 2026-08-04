@@ -17,7 +17,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="w-full">
         {label && (
-          <label htmlFor={inputId} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mb-1.5 flex items-center gap-1.5">
+          <label htmlFor={inputId} className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mb-1.5 flex items-center gap-1.5">
             {icon && <span className="text-muted-foreground shrink-0">{icon}</span>}
             {label}
             {required && <span className="text-red-500 ml-0.5">*</span>}
@@ -30,7 +30,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             aria-invalid={error ? true : undefined}
             aria-describedby={errorId}
             className={cn(
-              "flex h-10 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary/40 disabled:cursor-not-allowed disabled:opacity-50",
+              "flex h-10 w-full rounded-lg border border-border bg-background px-3 py-2 text-body-sm text-foreground ring-offset-background file:border-0 file:bg-transparent file:text-body-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary/40 disabled:cursor-not-allowed disabled:opacity-50",
               error ? 'border-destructive focus-visible:ring-destructive' : '',
               className
             )}
