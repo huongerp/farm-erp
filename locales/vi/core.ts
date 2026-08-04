@@ -31,11 +31,9 @@ import baoCaoNhapXuatTon from '../../features/kho-van/bao-cao-nhap-xuat-ton/loca
 import danhMucHangHoa from '../../features/kho-van/danh-muc-hang-hoa/locales/vi.json';
 import danhSachDoiTac from '../../features/kho-van/danh-sach-doi-tac/locales/vi.json';
 import danhSachHangHoa from '../../features/kho-van/danh-sach-hang-hoa/locales/vi.json';
-import danhSachNhaCungCap from '../../features/kho-van/danh-sach-nha-cung-cap/locales/vi.json';
 import kiemKeKho from '../../features/kho-van/kiem-ke-kho/locales/vi.json';
 import phieuDeXuatVatTu from '../../features/kho-van/phieu-de-xuat-vat-tu/locales/vi.json';
 import phieuKho from '../../features/kho-van/phieu-kho/locales/vi.json';
-import phieuKiemKe from '../../features/kho-van/phieu-kiem-ke/locales/vi.json';
 import tonKho from '../../features/kho-van/ton-kho/locales/vi.json';
 import baoCaoDeXuatVatTu from '../../features/mua-hang/bao-cao-de-xuat-vat-tu/locales/vi.json';
 import donDatHang from '../../features/mua-hang/don-dat-hang/locales/vi.json';
@@ -80,11 +78,9 @@ const viCore = {
   ...(danhMucHangHoa as Record<string, string>),
   ...(danhSachDoiTac as Record<string, string>),
   ...(danhSachHangHoa as Record<string, string>),
-  ...(danhSachNhaCungCap as Record<string, string>),
   ...(kiemKeKho as Record<string, string>),
   ...(phieuDeXuatVatTu as Record<string, string>),
   ...(phieuKho as Record<string, string>),
-  ...(phieuKiemKe as Record<string, string>),
   ...(tonKho as Record<string, string>),
   ...(baoCaoDeXuatVatTu as Record<string, string>),
   ...(donDatHang as Record<string, string>),

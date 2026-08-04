@@ -14,11 +14,9 @@ export type FeatureI18nKey =
   | 'danh-muc-hang-hoa'
   | 'danh-sach-doi-tac'
   | 'danh-sach-hang-hoa'
-  | 'danh-sach-nha-cung-cap'
   | 'kiem-ke-kho'
   | 'phieu-de-xuat-vat-tu'
   | 'phieu-kho'
-  | 'phieu-kiem-ke'
   | 'ton-kho'
   | 'bao-cao-de-xuat-vat-tu'
   | 'don-dat-hang'
@@ -46,11 +44,9 @@ const FEATURE_I18N_KEYS = new Set<FeatureI18nKey>([
   'danh-muc-hang-hoa',
   'danh-sach-doi-tac',
   'danh-sach-hang-hoa',
-  'danh-sach-nha-cung-cap',
   'kiem-ke-kho',
   'phieu-de-xuat-vat-tu',
   'phieu-kho',
-  'phieu-kiem-ke',
   'ton-kho',
   'bao-cao-de-xuat-vat-tu',
   'don-dat-hang',
