@@ -5,6 +5,7 @@
 import type { BangLuongRecord } from '../core/types';
 import { formatCurrency, formatDateTime, getTodayISODate } from '../../../../lib/utils';
 import i18n from '../../../../lib/i18n';
+import { ensureJsPDFVietnameseFont } from '../../../../lib/jspdf-vietnamese-font';
 import { useUIStore } from '../../../../store/useStore';
 
 const FONT_FAMILY = "'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif";
@@ -191,6 +192,7 @@ export type BangLuongExportFormat = 'pdf' | 'excel' | 'doc';
 export async function exportBangLuongPDF(record: BangLuongRecord): Promise<void> {
   const [{ default: jsPDF }] = await Promise.all([import('jspdf')]);
   const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+  await ensureJsPDFVietnameseFont(doc);
 
   const container = document.createElement('div');
   container.style.cssText = `position:absolute;left:0;top:0;width:210mm;padding:20px;font-family:${FONT_FAMILY};font-size:10pt;background:#fff;box-sizing:border-box`;
@@ -200,7 +202,7 @@ export async function exportBangLuongPDF(record: BangLuongRecord): Promise<void>
   try {
     await doc.html(container, {
       callback: () => {},
-      html2canvas: { scale: 0.5, useCORS: true, logging: false },
+      html2canvas: { useCORS: true, logging: false },
       x: 10,
       y: 10,
       width: 190,

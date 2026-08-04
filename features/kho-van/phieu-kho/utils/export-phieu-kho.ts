@@ -16,6 +16,7 @@ import {
 import i18n from '../../../../lib/i18n';
 import { useUIStore } from '../../../../store/useStore';
 import { sumSoLuongByPhamCap } from './sum-so-luong-by-pham-cap';
+import { ensureJsPDFVietnameseFont, JSPDF_VI_FONT_FAMILY } from '../../../../lib/jspdf-vietnamese-font';
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
@@ -343,6 +344,7 @@ export async function exportPhieuKhoToPDF(
 
     const imgData = canvas.toDataURL('image/png');
     const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+    await ensureJsPDFVietnameseFont(doc);
 
     const pageW = 210;
     const pageH = 297;
@@ -365,11 +367,11 @@ export async function exportPhieuKhoToPDF(
       doc.setLineWidth(0.3);
       doc.line(10, headerReserve - 2, pageW - 10, headerReserve - 2);
       doc.setTextColor(17, 17, 17);
-      doc.setFont('helvetica', 'bold');
+      doc.setFont(JSPDF_VI_FONT_FAMILY, 'bold');
       doc.setFontSize(10);
       const company = (info.companyName || '').slice(0, 60);
       doc.text(company, 10, 8);
-      doc.setFont('helvetica', 'normal');
+      doc.setFont(JSPDF_VI_FONT_FAMILY, 'normal');
       doc.setFontSize(8);
       doc.setTextColor(80, 80, 80);
       doc.text(`${title} · ${phieu.so_phieu}`, 10, 14);

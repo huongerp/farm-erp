@@ -2,6 +2,7 @@ import type { TFunction } from 'i18next';
 import { formatDateTime, formatNumberVN, getTodayISODate } from '../../../../lib/utils';
 import { useUIStore } from '../../../../store/useStore';
 import i18n from '../../../../lib/i18n';
+import { ensureJsPDFVietnameseFont } from '../../../../lib/jspdf-vietnamese-font';
 
 const FONT_STACK = "'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif";
 
@@ -201,6 +202,7 @@ ${buildMonthTable(snapshot.byMonth, t)}
 
   const [{ default: jsPDF }] = await Promise.all([import('jspdf')]);
   const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+  await ensureJsPDFVietnameseFont(doc);
   const container = document.createElement('div');
   container.style.cssText =
     'position:fixed;left:-9999px;top:0;width:210mm;padding:20px;font-family:Segoe UI,Roboto,Arial,sans-serif;font-size:10pt;background:#fff';
@@ -210,7 +212,7 @@ ${buildMonthTable(snapshot.byMonth, t)}
   try {
     await doc.html(container, {
       callback: () => {},
-      html2canvas: { scale: 0.5, useCORS: true },
+      html2canvas: { useCORS: true },
       x: 10,
       y: 10,
       width: 190,

@@ -4,6 +4,7 @@
 import type { TaiSan } from '../core/types';
 import { formatCurrency, formatDate, formatDateTime, getTodayISODate } from '../../../../lib/utils';
 import i18n from '../../../../lib/i18n';
+import { ensureJsPDFVietnameseFont } from '../../../../lib/jspdf-vietnamese-font';
 import { useUIStore } from '../../../../store/useStore';
 
 const FONT_STACK = "'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif";
@@ -99,6 +100,7 @@ function getFileName(record: TaiSan): string {
 export async function exportHoSoTaiSanPDF(record: TaiSan): Promise<void> {
   const [{ default: jsPDF }] = await Promise.all([import('jspdf')]);
   const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+  await ensureJsPDFVietnameseFont(doc);
 
   const container = document.createElement('div');
   container.style.cssText =
@@ -109,7 +111,7 @@ export async function exportHoSoTaiSanPDF(record: TaiSan): Promise<void> {
   try {
     await doc.html(container, {
       callback: () => {},
-      html2canvas: { scale: 0.5, useCORS: true },
+      html2canvas: { useCORS: true },
       x: 10,
       y: 10,
       width: 190,

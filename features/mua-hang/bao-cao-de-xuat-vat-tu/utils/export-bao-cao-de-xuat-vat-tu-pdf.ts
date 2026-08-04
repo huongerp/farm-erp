@@ -4,6 +4,7 @@
 import { formatDateTime, getTodayISODate } from '../../../../lib/utils';
 import { useUIStore } from '../../../../store/useStore';
 import i18n from '../../../../lib/i18n';
+import { ensureJsPDFVietnameseFont } from '../../../../lib/jspdf-vietnamese-font';
 import type { BaoCaoDeXuatVatTuFilters } from '../core/types';
 import type { TFunction } from 'i18next';
 import { getTongHopDeXuatKy, getPhieuDeXuatInPeriod } from '../services/bao-cao-de-xuat-vat-tu-service';
@@ -151,6 +152,7 @@ ${table3}
 
   const [{ default: jsPDF }] = await Promise.all([import('jspdf')]);
   const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+  await ensureJsPDFVietnameseFont(doc);
 
   const container = document.createElement('div');
   container.style.cssText =
@@ -161,7 +163,7 @@ ${table3}
   try {
     await doc.html(container, {
       callback: () => {},
-      html2canvas: { scale: 0.5, useCORS: true },
+      html2canvas: { useCORS: true },
       x: 10,
       y: 10,
       width: 190,
