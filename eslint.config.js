@@ -4,6 +4,7 @@ import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
 import prettierConfig from 'eslint-config-prettier';
+import globals from 'globals';
 
 export default [
   { ignores: ['dist/**', 'node_modules/**', '*.min.js', '.npm-cache/**'] },
@@ -31,49 +32,10 @@ export default [
         ecmaFeatures: { jsx: true },
       },
       globals: {
+        ...globals.browser,
+        ...globals.node,
         React: 'readonly',
         JSX: 'readonly',
-        console: 'readonly',
-        fetch: 'readonly',
-        window: 'readonly',
-        document: 'readonly',
-        import: 'readonly',
-        module: 'readonly',
-        require: 'readonly',
-        process: 'readonly',
-        __dirname: 'readonly',
-        __filename: 'readonly',
-        Buffer: 'readonly',
-        global: 'readonly',
-        setTimeout: 'readonly',
-        clearTimeout: 'readonly',
-        setInterval: 'readonly',
-        clearInterval: 'readonly',
-        URL: 'readonly',
-        URLSearchParams: 'readonly',
-        FormData: 'readonly',
-        Blob: 'readonly',
-        File: 'readonly',
-        AbortController: 'readonly',
-        ResizeObserver: 'readonly',
-        IntersectionObserver: 'readonly',
-        MutationObserver: 'readonly',
-        performance: 'readonly',
-        requestAnimationFrame: 'readonly',
-        cancelAnimationFrame: 'readonly',
-        localStorage: 'readonly',
-        sessionStorage: 'readonly',
-        navigator: 'readonly',
-        location: 'readonly',
-        history: 'readonly',
-        CustomEvent: 'readonly',
-        Event: 'readonly',
-        MouseEvent: 'readonly',
-        KeyboardEvent: 'readonly',
-        HTMLElement: 'readonly',
-        Element: 'readonly',
-        Node: 'readonly',
-        NodeList: 'readonly',
       },
     },
     plugins: {
@@ -82,7 +44,7 @@ export default [
       'jsx-a11y': jsxA11y,
     },
     settings: {
-      react: { version: '18.3' },
+      react: { version: '19.0' },
     },
     rules: {
       ...react.configs.recommended.rules,
@@ -96,6 +58,15 @@ export default [
       'no-useless-assignment': 'warn',
       'prefer-const': 'warn',
       'no-case-declarations': 'warn',
+      // rules-of-hooks chặn thật (0 vi phạm hiện tại — giữ nguyên mức
+      // 'error' mà react.configs.recommended.rules đã set ở trên).
+      // Các rule react-hooks/* khác giữ 'warn' vì có hàng chục vi phạm
+      // có từ trước (exhaustive-deps: 82, set-state-in-effect: 88,
+      // static-components: 61...) — nâng lên 'error' ngay bây giờ sẽ
+      // làm `npm run lint` luôn đỏ mà không ai sửa nổi trong 1 lần.
+      // Ngưỡng --max-warnings ở package.json chặn KHÔNG cho tăng thêm;
+      // hạ dần các rule này về 'error' khi dọn hết vi phạm của rule đó.
+      'react-hooks/rules-of-hooks': 'error',
       'react-hooks/set-state-in-effect': 'warn',
       'react-hooks/exhaustive-deps': 'warn',
       'react-hooks/preserve-manual-memoization': 'warn',

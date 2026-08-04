@@ -58,10 +58,8 @@ if (typeof window !== 'undefined' && isLoggerEnabled()) {
         pruned.push(now);
         counters.set(table, pruned);
         if (pruned.length >= WARN_THRESHOLD) {
-          // eslint-disable-next-line no-console
           console.warn(`[supabase-logger] ${table}: ${pruned.length} req/1s (có thể đang lặp / cache key trùng)`);
         } else if (pruned.length > 1) {
-          // eslint-disable-next-line no-console
           console.debug(`[supabase-logger] ${table}: ${pruned.length} req/1s`);
         }
       }
@@ -70,7 +68,6 @@ if (typeof window !== 'undefined' && isLoggerEnabled()) {
     }
     return origFetch(input, init);
   };
-  // eslint-disable-next-line no-console
   console.info('[supabase-logger] enabled — theo dõi số request/giây theo bảng.');
 }
 
