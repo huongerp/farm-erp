@@ -149,6 +149,7 @@ const GenericToolbar: React.FC<GenericToolbarProps> = ({
                             </div>
                             <button
                                 onClick={onClearSelection}
+                                aria-label={t('common.clearSelectionAria')}
                                 className="text-muted-foreground hover:text-destructive p-1.5 rounded-lg hover:bg-destructive/10 transition-all active:scale-90"
                             >
                                 <X size={14} className="stroke-[2.5px]" />
@@ -160,12 +161,14 @@ const GenericToolbar: React.FC<GenericToolbarProps> = ({
                                 <>
                                     <button
                                         onClick={() => onStatusChangeMany(1)}
+                                        aria-label={t('common.approveManyAria')}
                                         className="min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-8 w-8 flex items-center justify-center text-primary bg-primary/10 rounded-lg border border-primary/20 active:scale-95"
                                     >
                                         <Check size={14} className="stroke-[2.5px]" />
                                     </button>
                                     <button
                                         onClick={() => onStatusChangeMany(0)}
+                                        aria-label={t('common.rejectManyAria')}
                                         className="min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-8 w-8 flex items-center justify-center text-muted-foreground bg-muted/50 rounded-lg border border-border active:scale-95"
                                     >
                                         <Power size={14} className="stroke-[2.5px]" />
@@ -175,6 +178,7 @@ const GenericToolbar: React.FC<GenericToolbarProps> = ({
                             {onDeleteMany && (
                                 <button
                                     onClick={onDeleteMany}
+                                    aria-label={t('common.deleteManyAria')}
                                     className="min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-8 w-8 flex items-center justify-center text-white bg-destructive rounded-lg shadow-sm active:scale-95"
                                 >
                                     <Trash2 size={14} className="stroke-[2.5px]" />
@@ -195,6 +199,7 @@ const GenericToolbar: React.FC<GenericToolbarProps> = ({
                             {showBack && (
                                 <button
                                     onClick={handleBack}
+                                    aria-label={t('common.back')}
                                     className="shrink-0 min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-8 w-8 flex items-center justify-center rounded-lg border border-border bg-muted/30 text-muted-foreground active:scale-95 transition-all"
                                 >
                                     <ArrowLeft size={15} className="stroke-[2.5px]" />
@@ -214,6 +219,7 @@ const GenericToolbar: React.FC<GenericToolbarProps> = ({
                                     {searchTerm && (
                                         <button
                                             onClick={() => onSearchChange('')}
+                                            aria-label={t('common.clearSearchAria')}
                                             className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground p-0.5 rounded-full"
                                         >
                                             <X size={12} />
@@ -230,6 +236,7 @@ const GenericToolbar: React.FC<GenericToolbarProps> = ({
                             {hasFilters && (
                                 <button
                                     onClick={() => setShowMobileFilters(true)}
+                                    aria-label={t('common.openFiltersAria')}
                                     className={cn(
                                         "shrink-0 min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-8 w-8 flex items-center justify-center rounded-lg border transition-all active:scale-95 relative",
                                         activeFilterCount > 0
@@ -250,6 +257,7 @@ const GenericToolbar: React.FC<GenericToolbarProps> = ({
                             {hasMobileActions && (
                                 <button
                                     onClick={() => setShowMobileActions(true)}
+                                    aria-label={t('common.openActionsAria')}
                                     className="shrink-0 min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-8 w-8 flex items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-all active:scale-95"
                                 >
                                     <MoreVertical size={15} />
@@ -260,6 +268,7 @@ const GenericToolbar: React.FC<GenericToolbarProps> = ({
                             {onAdd && (
                                 <button
                                     onClick={onAdd}
+                                    aria-label={t('common.add')}
                                     className="shrink-0 min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-8 w-8 flex items-center justify-center rounded-lg bg-primary text-white shadow-sm active:scale-95 transition-all"
                                 >
                                     <Plus size={16} className="stroke-[2.5px]" />

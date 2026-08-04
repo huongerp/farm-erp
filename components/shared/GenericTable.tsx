@@ -4,6 +4,7 @@ import { ArrowUp, ArrowDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRi
 import Button from '../ui/Button';
 import Tooltip from '../ui/Tooltip';
 import EmptyState from './EmptyState';
+import ErrorState from './ErrorState';
 import LoadingSpinnerWithText from './LoadingSpinnerWithText';
 import { cn } from '../../lib/utils';
 import type { ColumnConfig, SortState } from '../../store/createGenericStore';
@@ -25,6 +26,10 @@ interface GenericTableProps<T> {
   isLoading: boolean;
   /** Đang refetch nhưng đã có dữ liệu: overlay nhẹ, không thay bằng skeleton. */
   isFetching?: boolean;
+  /** Query lỗi (mất mạng, RLS chặn, ...) — hiện ErrorState với nút thử lại thay vì "Không có dữ liệu". */
+  isError?: boolean;
+  /** Gọi lại query khi bấm "Thử lại" ở ErrorState. */
+  onRetry?: () => void;
 
   // Selection
   selectedIds: Set<string>;
@@ -87,7 +92,7 @@ interface GenericTableProps<T> {
  */
 
 function GenericTable<T>({
-  data, columns, isLoading, isFetching = false,
+  data, columns, isLoading, isFetching = false, isError = false, onRetry,
   selectedIds, onToggleSelection, onToggleAll,
   page, pageSize, onPageChange, onPageSizeChange,
   totalRecordsOverride,
@@ -241,6 +246,15 @@ function GenericTable<T>({
   // Density padding
   const cellPy = density === 'compact' ? 'py-1.5' : density === 'comfortable' ? 'py-3' : 'py-2';
   const headerPy = density === 'compact' ? 'py-1.5' : 'py-2';
+
+  // Lỗi query (mất mạng, RLS chặn, ...) — ưu tiên hiện trước skeleton/empty state, có nút thử lại.
+  if (isError && !isLoading) {
+    return (
+      <div className="flex flex-col h-full bg-card overflow-hidden items-center justify-center">
+        <ErrorState onRetry={onRetry} />
+      </div>
+    );
+  }
 
   // Skeleton loading: strip icon xoay + chữ primary (Nhân sự, ...) rồi skeleton
   if (isLoading) {

@@ -64,6 +64,7 @@ const Combobox: React.FC<ComboboxProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
   const [dropdownRect, setDropdownRect] = useState<{ top: number; left: number; width: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -91,6 +92,17 @@ const Combobox: React.FC<ComboboxProps> = ({
       updateDropdownRect();
     }
   }, [isOpen, dropdownInPortal]);
+
+  // Reset highlight khi mở lại hoặc khi danh sách lọc đổi (gõ tìm kiếm) — luôn bắt đầu ở đầu danh sách.
+  useEffect(() => {
+    setHighlightedIndex(0);
+  }, [isOpen, searchTerm]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const el = document.getElementById(`${listboxId}-option-${highlightedIndex}`);
+    el?.scrollIntoView({ block: 'nearest' });
+  }, [highlightedIndex, isOpen, listboxId]);
 
   // Close when clicking outside (portal: also ignore clicks inside the portaled dropdown)
   useEffect(() => {
@@ -172,6 +184,26 @@ const Combobox: React.FC<ComboboxProps> = ({
     }
   };
 
+  // Bàn phím: ArrowUp/Down di chuyển highlight, Enter chọn — trước đây option chỉ là
+  // <div onClick>, không thể hoàn thành form bằng bàn phím (mọi Combobox bắt buộc chặn luồng).
+  const handleListKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHighlightedIndex((i) => Math.min(i + 1, filteredOptions.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHighlightedIndex((i) => Math.max(i - 1, 0));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const opt = filteredOptions[highlightedIndex];
+      if (opt) {
+        handleSelect(opt.value);
+      } else if (canCreateNew) {
+        handleCreateNew();
+      }
+    }
+  };
+
   const clearSelection = (e: React.MouseEvent) => {
     e.stopPropagation();
     onChange('');
@@ -209,6 +241,18 @@ const Combobox: React.FC<ComboboxProps> = ({
           const next = !isOpen;
           if (next) openedAtRef.current = Date.now();
           setIsOpen(next);
+        }}
+        onKeyDown={(e) => {
+          if (disabled) return;
+          if (!isOpen && (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ')) {
+            e.preventDefault();
+            openedAtRef.current = Date.now();
+            setIsOpen(true);
+            return;
+          }
+          // Khi không có ô tìm kiếm, dropdown mở nhưng không có input nào giữ focus —
+          // trigger vẫn giữ focus nên phải tự xử lý điều hướng ở đây.
+          if (isOpen && !searchable) handleListKeyDown(e);
         }}
       >
         <span className={cn("truncate flex-1 min-w-0", !selectedOption && "text-muted-foreground")}>
@@ -263,10 +307,16 @@ const Combobox: React.FC<ComboboxProps> = ({
                     <input
                       ref={inputRef}
                       type="text"
+                      role="combobox"
+                      aria-expanded={isOpen}
+                      aria-controls={listboxId}
+                      aria-autocomplete="list"
+                      aria-activedescendant={filteredOptions[highlightedIndex] ? `${listboxId}-option-${highlightedIndex}` : undefined}
                       className="w-full pl-9 pr-3 py-2 text-body-sm text-foreground bg-muted border border-border rounded-lg placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                       placeholder={searchPlaceholder}
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
+                      onKeyDown={handleListKeyDown}
                       autoFocus
                       onClick={(e) => e.stopPropagation()}
                     />
@@ -289,16 +339,22 @@ const Combobox: React.FC<ComboboxProps> = ({
                     Không tìm thấy kết quả
                   </div>
                 ) : (
-                  filteredOptions.map((option) => {
+                  filteredOptions.map((option, index) => {
                     const customRender = renderOption ? renderOption(option) : undefined;
                     return (
                       <div
                         key={option.value}
+                        id={`${listboxId}-option-${index}`}
+                        role="option"
+                        tabIndex={-1}
+                        aria-selected={value === option.value}
                         className={cn(
                           "flex items-center justify-between px-3 py-2.5 rounded-lg text-body-sm cursor-pointer transition-colors",
                           value === option.value
                             ? "bg-primary/10 text-foreground font-medium border border-primary/20"
-                            : "text-foreground hover:bg-muted/50"
+                            : index === highlightedIndex
+                              ? "bg-muted text-foreground"
+                              : "text-foreground hover:bg-muted/50"
                         )}
                         onClick={(e) => {
                           e.stopPropagation();
@@ -343,10 +399,16 @@ const Combobox: React.FC<ComboboxProps> = ({
                     <input
                       ref={inputRef}
                       type="text"
+                      role="combobox"
+                      aria-expanded={isOpen}
+                      aria-controls={listboxId}
+                      aria-autocomplete="list"
+                      aria-activedescendant={filteredOptions[highlightedIndex] ? `${listboxId}-option-${highlightedIndex}` : undefined}
                       className="w-full pl-9 pr-3 py-2 text-body-sm text-foreground bg-muted border border-border rounded-lg placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                       placeholder={searchPlaceholder}
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
+                      onKeyDown={handleListKeyDown}
                       autoFocus
                       onClick={(e) => e.stopPropagation()}
                     />
@@ -369,16 +431,22 @@ const Combobox: React.FC<ComboboxProps> = ({
                     Không tìm thấy kết quả
                   </div>
                 ) : (
-                  filteredOptions.map((option) => {
+                  filteredOptions.map((option, index) => {
                     const customRender = renderOption ? renderOption(option) : undefined;
                     return (
                       <div
                         key={option.value}
+                        id={`${listboxId}-option-${index}`}
+                        role="option"
+                        tabIndex={-1}
+                        aria-selected={value === option.value}
                         className={cn(
                           "flex items-center justify-between px-3 py-2.5 rounded-lg text-body-sm cursor-pointer transition-colors",
                           value === option.value
                             ? "bg-primary/10 text-foreground font-medium border border-primary/20"
-                            : "text-foreground hover:bg-muted/50"
+                            : index === highlightedIndex
+                              ? "bg-muted text-foreground"
+                              : "text-foreground hover:bg-muted/50"
                         )}
                         onClick={(e) => {
                           e.stopPropagation();

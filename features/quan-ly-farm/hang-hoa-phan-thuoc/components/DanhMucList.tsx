@@ -292,6 +292,7 @@ const DanhMucList: React.FC<Props> = ({
                               <button
                                 type="button"
                                 onClick={() => onAddChild(item)}
+                                aria-label={t('farmHangHoaPhanThuoc.danhMuc.detail.addChild')}
                                 className="p-1.5 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded-md transition-all active:scale-95 shrink-0"
                               >
                                 <FolderPlus size={15} />
@@ -303,6 +304,7 @@ const DanhMucList: React.FC<Props> = ({
                               <button
                                 type="button"
                                 onClick={() => onEdit(item)}
+                                aria-label={t('common.edit')}
                                 className="p-1.5 text-primary hover:bg-primary/10 rounded-md transition-all active:scale-95 shrink-0"
                               >
                                 <Edit size={15} />
@@ -314,6 +316,7 @@ const DanhMucList: React.FC<Props> = ({
                               <button
                                 type="button"
                                 onClick={() => onDelete(id)}
+                                aria-label={t('common.delete')}
                                 className="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-md transition-all active:scale-95 shrink-0"
                               >
                                 <Trash2 size={15} />
@@ -374,6 +377,7 @@ const DanhMucList: React.FC<Props> = ({
                       <button
                         type="button"
                         onClick={() => onEdit(item)}
+                        aria-label={t('common.edit')}
                         className="p-2 text-primary hover:bg-primary/10 rounded-lg"
                       >
                         <Edit size={14} />
@@ -383,6 +387,7 @@ const DanhMucList: React.FC<Props> = ({
                       <button
                         type="button"
                         onClick={() => onDelete(item.id)}
+                        aria-label={t('common.delete')}
                         className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg"
                       >
                         <Trash2 size={14} />

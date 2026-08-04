@@ -59,6 +59,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
   const [dropdownRect, setDropdownRect] = useState<{ top: number; left: number; width: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const listboxId = useId();
@@ -94,6 +95,17 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [dropdownInPortal]);
+
+  // Reset highlight khi mở lại hoặc khi tìm kiếm đổi kết quả; scroll option đang highlight vào view.
+  useEffect(() => {
+    setHighlightedIndex(0);
+  }, [isOpen, searchTerm]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const el = document.getElementById(`${listboxId}-option-${highlightedIndex}`);
+    el?.scrollIntoView({ block: 'nearest' });
+  }, [highlightedIndex, isOpen, listboxId]);
 
   // Escape đóng dropdown, KHÔNG đóng drawer/form bên ngoài — xem giải thích trong Combobox.tsx.
   useEffect(() => {
@@ -161,6 +173,28 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
     }
   };
 
+  // Bàn phím: ArrowUp/Down di chuyển highlight, Enter TOGGLE chọn (không đóng dropdown —
+  // multi-select cho phép chọn tiếp option khác ngay sau đó).
+  const handleListKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHighlightedIndex((i) => Math.min(i + 1, filteredOptions.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHighlightedIndex((i) => Math.max(i - 1, 0));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const opt = filteredOptions[highlightedIndex];
+      if (opt) {
+        const hasCount = opt.count !== undefined;
+        const isZeroCount = hasCount && opt.count === 0 && !value.includes(opt.value);
+        if (!isZeroCount) handleSelect(opt.value);
+      } else if (showCreateOption) {
+        handleCreateOption();
+      }
+    }
+  };
+
   const hasValue = value.length > 0;
   const firstName = value.length > 0 ? options.find(o => o.value === value[0])?.label : null;
   const extraCount = value.length - 1;
@@ -176,10 +210,16 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
           <Search size={13} className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
+            role="combobox"
+            aria-expanded={isOpen}
+            aria-controls={listboxId}
+            aria-autocomplete="list"
+            aria-activedescendant={filteredOptions[highlightedIndex] ? `${listboxId}-option-${highlightedIndex}` : undefined}
             className="w-full pl-7 pr-3 py-1.5 text-xs text-foreground border border-border rounded-lg bg-background placeholder:text-muted-foreground focus:outline-none focus:border-primary"
             placeholder="Tìm kiếm..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={handleListKeyDown}
             autoFocus
           />
         </div>
@@ -212,18 +252,26 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
           <div className="py-3 text-center text-xs text-muted-foreground">Không tìm thấy</div>
         ) : (
           <>
-            {filteredOptions.map((option) => {
+            {filteredOptions.map((option, index) => {
               const isSelected = value.includes(option.value);
               const hasCount = option.count !== undefined;
               const isZeroCount = hasCount && option.count === 0 && !isSelected;
               return (
                 <div
                   key={option.value}
+                  id={`${listboxId}-option-${index}`}
+                  role="option"
+                  tabIndex={-1}
+                  aria-selected={isSelected}
                   onClick={() => !isZeroCount && handleSelect(option.value)}
                   className={cn(
                     "flex items-center px-2 py-1.5 text-xs rounded-lg transition-colors",
                     isZeroCount ? "opacity-40 cursor-not-allowed" : "cursor-pointer",
-                    isSelected ? "bg-primary/10 text-foreground font-medium border border-primary/20" : !isZeroCount && "text-foreground hover:bg-muted/50"
+                    isSelected
+                      ? "bg-primary/10 text-foreground font-medium border border-primary/20"
+                      : index === highlightedIndex
+                        ? "bg-muted text-foreground"
+                        : !isZeroCount && "text-foreground hover:bg-muted/50"
                   )}
                 >
                   <div className={cn(
@@ -283,6 +331,12 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
         aria-haspopup="listbox"
         aria-controls={listboxId}
         onClick={() => setIsOpen(!isOpen)}
+        onKeyDown={(e) => {
+          if (!isOpen && (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ')) {
+            e.preventDefault();
+            setIsOpen(true);
+          }
+        }}
         className={cn(
           "w-full flex items-center justify-between rounded-lg border bg-background py-2 px-3 transition-all text-left",
           size === 'lg' ? "min-h-10" : "px-2",

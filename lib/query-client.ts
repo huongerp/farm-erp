@@ -1,7 +1,9 @@
-import { QueryClient, type Query } from '@tanstack/react-query';
+import { QueryCache, QueryClient, type Query } from '@tanstack/react-query';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 import { persistQueryClient } from '@tanstack/react-query-persist-client';
 import { get, set, del } from 'idb-keyval';
+import { toast } from 'sonner';
+import i18n from './i18n';
 
 /**
  * gcTime phải ≥ maxAge để persister có thể khôi phục cache sau F5 (TanStack v5).
@@ -9,8 +11,22 @@ import { get, set, del } from 'idb-keyval';
  */
 const ONE_DAY_MS = 1000 * 60 * 60 * 24;
 
+/**
+ * Nhiều màn chỉ đọc `{ data = [], isLoading }` và bỏ qua `isError` — mất mạng hoặc RLS chặn đều
+ * hiện thành bảng rỗng "Không có dữ liệu", người dùng dễ hiểu lầm là mất dữ liệu thật. Toast lỗi
+ * toàn cục ở đây đảm bảo mọi lỗi query đều được báo, kể cả màn không tự xử lý isError.
+ * `id` theo queryKey để tránh spam nhiều toast giống nhau khi 1 lỗi mạng làm nhiều query cùng fail.
+ */
+const queryCache = new QueryCache({
+  onError: (error, query) => {
+    const message = error instanceof Error && error.message ? error.message : i18n.t('common.queryError');
+    toast.error(message, { id: `query-error:${JSON.stringify(query.queryKey)}` });
+  },
+});
+
 /** Singleton dùng chung (prefetch sau đăng nhập, App, tests). */
 export const queryClient = new QueryClient({
+  queryCache,
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 5,
