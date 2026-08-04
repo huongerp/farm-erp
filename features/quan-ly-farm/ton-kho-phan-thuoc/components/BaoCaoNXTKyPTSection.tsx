@@ -68,7 +68,7 @@ const BaoCaoNXTKyPTSection: React.FC = () => {
           onExportExcel={onExport}
         />
       </div>
-      <div className="flex-1 min-h-0 rounded-xl border border-border bg-card shadow-sm overflow-hidden flex flex-col">
+      <div className="ton-kho-pt-nxt-stats-content flex-1 min-h-0 rounded-xl border border-border bg-card shadow-sm overflow-hidden flex flex-col print:overflow-visible">
         <TongHopNXTKyPTTab onClearFilters={clearNxtFilters} />
       </div>
     </div>

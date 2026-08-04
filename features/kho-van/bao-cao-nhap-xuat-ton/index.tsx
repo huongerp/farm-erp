@@ -138,7 +138,7 @@ const BaoCaoNhapXuatTonPage: React.FC = () => {
           onRefresh={handleRefresh}
         />
       </div>
-      <div className="flex-1 min-h-0 flex flex-col mt-1.5 overflow-hidden">
+      <div className="bao-cao-nxt-stats-content flex-1 min-h-0 flex flex-col mt-1.5 overflow-hidden print:overflow-visible">
         {activeTab === 'tongHop' && <TongHopNXTKyTab filters={effectiveFilters} onClearFilters={handleClearAllFilters} />}
         {activeTab === 'chiTietPhieu' && <ChiTietPhieuTab filters={effectiveFilters} />}
         {activeTab === 'tonThoiDiem' && <TonTaiThoiDiemTab filters={effectiveFilters} />}

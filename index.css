@@ -393,84 +393,150 @@ html[data-text-size="large"] { font-size: 18px; }
   body * {
     visibility: hidden;
   }
+  /* Phiếu lương — static flow để in nhiều trang (trước đây absolute cắt mất trang 2+,
+     và vùng in thật là 186mm nên 210mm cắt mất cột bên phải). */
+  .payslip-preview-backdrop,
+  .payslip-preview-body,
+  .payslip-preview-content-wrapper,
+  .payslip-preview-content-wrapper *,
   .payslip-preview-content,
   .payslip-preview-content * {
     visibility: visible;
   }
   .payslip-preview-backdrop {
+    position: static !important;
+    height: auto !important;
+    overflow: visible !important;
     background: white !important;
+    display: block !important;
   }
   .payslip-preview-toolbar {
     display: none !important;
   }
-  .payslip-preview-content {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 210mm;
+  .payslip-preview-body {
+    position: static !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    display: block !important;
+    flex: none !important;
+  }
+  .payslip-preview-content-wrapper {
+    position: static !important;
+    width: 100% !important;
+    max-width: 210mm !important;
     box-shadow: none !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+    display: block !important;
   }
   /* Hồ sơ nhân viên: in chỉ nội dung, ẩn toolbar */
+  .employee-profile-preview-backdrop,
+  .employee-profile-preview-body,
+  .employee-profile-preview-content-wrapper,
+  .employee-profile-preview-content-wrapper *,
   .employee-profile-preview-content,
   .employee-profile-preview-content * {
     visibility: visible;
   }
   .employee-profile-preview-backdrop {
+    position: static !important;
+    height: auto !important;
+    overflow: visible !important;
     background: white !important;
+    display: block !important;
   }
   .employee-profile-preview-toolbar {
     display: none !important;
   }
-  .employee-profile-preview-content {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
+  .employee-profile-preview-body {
+    position: static !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    display: block !important;
+    flex: none !important;
+  }
+  .employee-profile-preview-content-wrapper {
+    position: static !important;
+    width: 100% !important;
+    max-width: 210mm !important;
     box-shadow: none !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+    display: block !important;
   }
   /* Hồ sơ tài sản: in chỉ nội dung, ẩn toolbar */
+  .ho-so-tai-san-preview-backdrop,
+  .ho-so-tai-san-preview-body,
+  .ho-so-tai-san-preview-content-wrapper,
+  .ho-so-tai-san-preview-content-wrapper *,
   .ho-so-tai-san-preview-content,
   .ho-so-tai-san-preview-content * {
     visibility: visible;
   }
   .ho-so-tai-san-preview-backdrop {
+    position: static !important;
+    height: auto !important;
+    overflow: visible !important;
     background: white !important;
+    display: block !important;
   }
   .ho-so-tai-san-preview-toolbar {
     display: none !important;
   }
-  .ho-so-tai-san-preview-content {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 210mm;
+  .ho-so-tai-san-preview-body {
+    position: static !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    display: block !important;
+    flex: none !important;
+  }
+  .ho-so-tai-san-preview-content-wrapper {
+    position: static !important;
+    width: 100% !important;
+    max-width: 210mm !important;
     box-shadow: none !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+    display: block !important;
   }
   /* Phiếu kiểm kê: in chỉ nội dung, ẩn toolbar */
+  .phieu-kiem-ke-preview-backdrop,
+  .phieu-kiem-ke-preview-body,
+  .phieu-kiem-ke-preview-content-wrapper,
+  .phieu-kiem-ke-preview-content-wrapper *,
   .phieu-kiem-ke-preview-content,
   .phieu-kiem-ke-preview-content * {
     visibility: visible;
   }
   .phieu-kiem-ke-preview-backdrop {
+    position: static !important;
+    height: auto !important;
+    overflow: visible !important;
     background: white !important;
+    display: block !important;
   }
   .phieu-kiem-ke-preview-toolbar {
     display: none !important;
   }
-  .phieu-kiem-ke-preview-content {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 210mm;
+  .phieu-kiem-ke-preview-body {
+    position: static !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    display: block !important;
+    flex: none !important;
+  }
+  .phieu-kiem-ke-preview-content-wrapper {
+    position: static !important;
+    width: 100% !important;
+    max-width: 210mm !important;
     box-shadow: none !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+    display: block !important;
   }
   /* Phiếu kho: in chỉ nội dung, ẩn toolbar — giải phóng flex-chain để nhiều trang */
   .phieu-kho-preview-backdrop,
@@ -583,9 +649,48 @@ html[data-text-size="large"] { font-size: 18px; }
     visibility: visible;
   }
   .kiem-ke-kho-stats-content {
-    position: absolute;
-    left: 0;
-    top: 0;
+    /* static (không absolute) để trình duyệt tự phân trang khi bảng thống kê dài */
+    position: static;
+    width: 100%;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  /* 10 tab thống kê khác cùng mẫu — trước đây có nút "In báo cáo" nhưng KHÔNG có khối in
+     nào tương ứng nên bấm In ra trang trắng. */
+  .danh-muc-tai-san-stats-content,
+  .danh-muc-tai-san-stats-content *,
+  .khau-hao-tai-san-stats-content,
+  .khau-hao-tai-san-stats-content *,
+  .bao-tri-sua-chua-stats-content,
+  .bao-tri-sua-chua-stats-content *,
+  .cap-phat-thu-hoi-stats-content,
+  .cap-phat-thu-hoi-stats-content *,
+  .kiem-ke-tai-san-stats-content,
+  .kiem-ke-tai-san-stats-content *,
+  .ton-kho-stats-content,
+  .ton-kho-stats-content *,
+  .phieu-de-xuat-vat-tu-stats-content,
+  .phieu-de-xuat-vat-tu-stats-content *,
+  .noi-quan-ly-stats-content,
+  .noi-quan-ly-stats-content *,
+  .bao-cao-nxt-stats-content,
+  .bao-cao-nxt-stats-content *,
+  .ton-kho-pt-nxt-stats-content,
+  .ton-kho-pt-nxt-stats-content * {
+    visibility: visible;
+  }
+  .danh-muc-tai-san-stats-content,
+  .khau-hao-tai-san-stats-content,
+  .bao-tri-sua-chua-stats-content,
+  .cap-phat-thu-hoi-stats-content,
+  .kiem-ke-tai-san-stats-content,
+  .ton-kho-stats-content,
+  .phieu-de-xuat-vat-tu-stats-content,
+  .noi-quan-ly-stats-content,
+  .bao-cao-nxt-stats-content,
+  .ton-kho-pt-nxt-stats-content {
+    position: static;
     width: 100%;
     overflow: visible !important;
     -webkit-print-color-adjust: exact;
@@ -835,6 +940,114 @@ html[data-text-size="large"] { font-size: 18px; }
   .bao-cao-nhan-cong-preview-content tr {
     break-inside: avoid;
     page-break-inside: avoid;
+  }
+  /* Thanh toán đối tác: trước đây KHÔNG có khối in nào — in ra trang trắng hoàn toàn */
+  .thanh-toan-doi-tac-preview-backdrop,
+  .thanh-toan-doi-tac-preview-body,
+  .thanh-toan-doi-tac-preview-content-wrapper,
+  .thanh-toan-doi-tac-preview-content-wrapper *,
+  .thanh-toan-doi-tac-preview-content,
+  .thanh-toan-doi-tac-preview-content * {
+    visibility: visible;
+  }
+  .thanh-toan-doi-tac-preview-backdrop {
+    position: static !important;
+    height: auto !important;
+    overflow: visible !important;
+    background: white !important;
+    display: block !important;
+  }
+  .thanh-toan-doi-tac-preview-toolbar {
+    display: none !important;
+  }
+  .thanh-toan-doi-tac-preview-body {
+    position: static !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    display: block !important;
+    flex: none !important;
+  }
+  .thanh-toan-doi-tac-preview-content-wrapper {
+    position: static !important;
+    width: 100% !important;
+    max-width: 210mm !important;
+    box-shadow: none !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    display: block !important;
+  }
+  /* Báo cáo khấu hao: trước đây KHÔNG có khối in nào — in ra trang trắng hoàn toàn */
+  .bao-cao-khau-hao-preview-backdrop,
+  .bao-cao-khau-hao-preview-body,
+  .bao-cao-khau-hao-preview-content-wrapper,
+  .bao-cao-khau-hao-preview-content-wrapper *,
+  .bao-cao-khau-hao-preview-content,
+  .bao-cao-khau-hao-preview-content * {
+    visibility: visible;
+  }
+  .bao-cao-khau-hao-preview-backdrop {
+    position: static !important;
+    height: auto !important;
+    overflow: visible !important;
+    background: white !important;
+    display: block !important;
+  }
+  .bao-cao-khau-hao-preview-toolbar {
+    display: none !important;
+  }
+  .bao-cao-khau-hao-preview-body {
+    position: static !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    display: block !important;
+    flex: none !important;
+  }
+  .bao-cao-khau-hao-preview-content-wrapper {
+    position: static !important;
+    width: 100% !important;
+    max-width: 210mm !important;
+    box-shadow: none !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    display: block !important;
+  }
+  /* Phiếu cấp phát/thu hồi: trước đây KHÔNG có khối in nào — in ra trang trắng hoàn toàn */
+  .phieu-cpth-preview-backdrop,
+  .phieu-cpth-preview-body,
+  .phieu-cpth-preview-content-wrapper,
+  .phieu-cpth-preview-content-wrapper *,
+  .phieu-cpth-preview-content,
+  .phieu-cpth-preview-content * {
+    visibility: visible;
+  }
+  .phieu-cpth-preview-backdrop {
+    position: static !important;
+    height: auto !important;
+    overflow: visible !important;
+    background: white !important;
+    display: block !important;
+  }
+  .phieu-cpth-preview-toolbar {
+    display: none !important;
+  }
+  .phieu-cpth-preview-body {
+    position: static !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    display: block !important;
+    flex: none !important;
+  }
+  .phieu-cpth-preview-content-wrapper {
+    position: static !important;
+    width: 100% !important;
+    max-width: 210mm !important;
+    box-shadow: none !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    display: block !important;
   }
 }
 

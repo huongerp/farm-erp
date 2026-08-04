@@ -166,8 +166,8 @@ const ThanhToanDoiTacPreviewPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto p-4 md:p-6 flex justify-center">
-        <div className="bg-white shadow-xl rounded-sm print:shadow-none" style={{ width: '210mm', minHeight: '297mm' }}>
+      <div className="thanh-toan-doi-tac-preview-body flex-1 overflow-auto p-4 md:p-6 flex justify-center">
+        <div className="bg-white shadow-xl rounded-sm print:shadow-none thanh-toan-doi-tac-preview-content-wrapper" style={{ width: '210mm', minHeight: '297mm' }}>
           <ThanhToanDoiTacPreviewContent data={item!} />
         </div>
       </div>

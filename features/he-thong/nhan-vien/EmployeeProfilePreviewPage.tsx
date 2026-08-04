@@ -177,9 +177,9 @@ const EmployeeProfilePreviewPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto p-4 md:p-6 flex justify-center">
+      <div className="employee-profile-preview-body flex-1 overflow-auto p-4 md:p-6 flex justify-center">
         <div
-          className="bg-white shadow-xl rounded-sm max-w-[210mm] w-full min-h-[297mm]"
+          className="bg-white shadow-xl rounded-sm max-w-[210mm] w-full min-h-[297mm] employee-profile-preview-content-wrapper"
           style={{ minHeight: '297mm' }}
         >
           <EmployeeProfilePreviewContent employee={employee} />

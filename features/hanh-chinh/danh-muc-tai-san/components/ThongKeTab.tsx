@@ -214,7 +214,7 @@ const ThongKeTab: React.FC = () => {
         onPrintReport={handlePrintReport}
       />
 
-      <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
+      <div className="danh-muc-tai-san-stats-content flex-1 min-h-0 overflow-y-auto custom-scrollbar print:overflow-visible">
         <div className="p-3 sm:p-4 pb-4 space-y-4">
           {isEmpty ? (
             <EmptyState
