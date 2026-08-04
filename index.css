@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+/*
+ * Tailwind v4 mặc định biến thể `dark:` theo `prefers-color-scheme`.
+ * App chuyển theme bằng cách gắn/gỡ class `.dark` trên <html>
+ * (xem index.html và lib/app-sync.tsx), nên phải khai báo lại
+ * `dark:` để nó bám theo class thay vì theme hệ điều hành.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-primary: hsl(243 75% 59%);
   --color-primary-foreground: hsl(0 0% 100%);
@@ -28,6 +36,20 @@
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
   --shadow-ultra: 0 25px 50px -12px rgba(0, 0, 0, 0.08);
+  /* Ported từ tailwind.config.js (file đó không được nạp — @import
+     "tailwindcss" của v4 không đọc theme.extend nếu thiếu @config,
+     và ở đây ta chọn port trực tiếp vào @theme thay vì thêm @config
+     để tránh 2 nguồn định nghĩa màu tranh nhau). */
+  --shadow-soft: 0 2px 10px rgba(0, 0, 0, 0.03);
+  --shadow-medium: 0 4px 20px rgba(0, 0, 0, 0.06);
+  --font-sans: 'Inter', 'Noto Sans', system-ui, sans-serif;
+  --font-serif: 'Merriweather', serif;
+  --text-2xs: 0.625rem;
+  --text-2xs--line-height: 0.875rem;
+  --text-caption: 0.6875rem;
+  --text-caption--line-height: 1rem;
+  --text-body-sm: 0.8125rem;
+  --text-body-sm--line-height: 1.125rem;
 }
 
 :root {
@@ -55,11 +77,9 @@
 
   --radius: 1rem;
 
-  --shadow-soft: 0 2px 10px rgba(0, 0, 0, 0.03);
-  --shadow-medium: 0 4px 20px rgba(0, 0, 0, 0.06);
-
-  --font-sans: 'Inter', 'Noto Sans', system-ui, sans-serif;
-  --font-serif: 'Merriweather', serif;
+  /* --shadow-soft/--shadow-medium/--font-sans/--font-serif: khai báo
+     trong @theme phía trên (Tailwind cần chúng ở đó để sinh utility
+     class font-sans/shadow-soft/...). */
 }
 
 /* Dark mode palette */
