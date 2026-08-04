@@ -85,7 +85,7 @@ export function buildDonDatHangBodyHTML(po: DonDatHang, chiTiet: DonDatHangChiTi
   ];
 
   const rowCell = TABLE_CELL(F);
-  let tableHTML = '';
+  let tableHTML: string;
   if (chiTiet.length > 0) {
     const headers = [
       '#',

@@ -195,7 +195,7 @@ const IMPOSSIBLE_NUM_ID = -2147483647;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function applyDonDatHangScope(q: any, scope: BranchListScope): any {
-  let b = q;
+  const b = q;
   if (scope.viewAll) return b;
   const own = scope.ownEmployeeIdNum;
   if (!scope.viewByBranch) {

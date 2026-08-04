@@ -73,7 +73,7 @@ export function buildPhieuDeXuatVatTuBodyHTML(
     ? `<img src="${info.appLogo}" alt="" style="width:56px;height:56px;object-fit:contain;flex-shrink:0"/>`
     : '';
 
-  let tableHTML = '';
+  let tableHTML: string;
   if (chiTiet.length > 0) {
     const headers = colHeaders(t);
     const ths = headers

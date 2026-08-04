@@ -158,7 +158,7 @@ export interface GetPhieuListParams {
 export async function getPhieuListSupabase(
   params: GetPhieuListParams = {}
 ): Promise<PhieuCapPhatThuHoi[]> {
-  let query = supabase.from(TABLE).select(PHIEU_CP_TH_COLUMNS).order('tg_tao', { ascending: false });
+  const query = supabase.from(TABLE).select(PHIEU_CP_TH_COLUMNS).order('tg_tao', { ascending: false });
 
   const { data, error } = await query;
   if (error) throwSupabaseError(error);

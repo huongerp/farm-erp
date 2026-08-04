@@ -729,7 +729,7 @@ const IMPOSSIBLE_NUM_ID = -2147483647;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function applyScopePhieuKhoSummary(q: any, scope: BranchListScope): any {
-  let b = q;
+  const b = q;
   if (scope.viewAll) return b;
   const own = scope.ownEmployeeIdNum;
   if (!scope.viewByBranch) {
@@ -750,7 +750,7 @@ function applyScopePhieuKhoSummary(q: any, scope: BranchListScope): any {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function applyScopePhieuKhoChiTietFlat(q: any, scope: BranchListScope): any {
-  let b = q;
+  const b = q;
   if (scope.viewAll) return b;
   const own = scope.ownEmployeeIdNum;
   if (!scope.viewByBranch) {

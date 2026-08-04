@@ -52,9 +52,10 @@ const CuaToiTab: React.FC = () => {
     sorted.sort((a, b) => {
       const aVal = a[sort.column as keyof PhieuCapPhatThuHoi] ?? '';
       const bVal = b[sort.column as keyof PhieuCapPhatThuHoi] ?? '';
-      let cmp = 0;
-      if (typeof aVal === 'number' && typeof bVal === 'number') cmp = aVal - bVal;
-      else cmp = String(aVal).localeCompare(String(bVal), getLanguage());
+      const cmp =
+        typeof aVal === 'number' && typeof bVal === 'number'
+          ? aVal - bVal
+          : String(aVal).localeCompare(String(bVal), getLanguage());
       return sort.direction === 'desc' ? -cmp : cmp;
     });
     return sorted;

@@ -126,9 +126,10 @@ const CongViecScopeTab: React.FC<Props> = ({ scope }) => {
     sorted.sort((a: CongViec, b: CongViec) => {
       const aVal = a[sort.column as keyof CongViec] ?? '';
       const bVal = b[sort.column as keyof CongViec] ?? '';
-      let cmp = 0;
-      if (typeof aVal === 'number' && typeof bVal === 'number') cmp = aVal - bVal;
-      else cmp = String(aVal).localeCompare(String(bVal), getLanguage());
+      const cmp =
+        typeof aVal === 'number' && typeof bVal === 'number'
+          ? aVal - bVal
+          : String(aVal).localeCompare(String(bVal), getLanguage());
       return sort.direction === 'desc' ? -cmp : cmp;
     });
     return sorted;
@@ -140,9 +141,10 @@ const CongViecScopeTab: React.FC<Props> = ({ scope }) => {
     sorted.sort((a: CongViec, b: CongViec) => {
       const aVal = a[sort.column as keyof CongViec] ?? '';
       const bVal = b[sort.column as keyof CongViec] ?? '';
-      let cmp = 0;
-      if (typeof aVal === 'number' && typeof bVal === 'number') cmp = aVal - bVal;
-      else cmp = String(aVal).localeCompare(String(bVal), getLanguage());
+      const cmp =
+        typeof aVal === 'number' && typeof bVal === 'number'
+          ? aVal - bVal
+          : String(aVal).localeCompare(String(bVal), getLanguage());
       return sort.direction === 'desc' ? -cmp : cmp;
     });
     return sorted;

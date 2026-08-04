@@ -243,7 +243,7 @@ export const updateModulePermissions = async (
   }
 };
 
-let dbLogs: AccessLog[] = [
+const dbLogs: AccessLog[] = [
   {
     id: 'log-1',
     id_nguoi_dung: 'user-123',

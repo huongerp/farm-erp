@@ -64,7 +64,7 @@ export async function signInWithPassword(
   const authEmail = authData?.user?.email;
   if (!authEmail) throw new Error('Không lấy được email từ phiên đăng nhập.');
 
-  let employee: Employee | null = null;
+  let employee: Employee | null;
   try {
     employee = await getEmployeeByEmail(authEmail);
   } catch (e) {

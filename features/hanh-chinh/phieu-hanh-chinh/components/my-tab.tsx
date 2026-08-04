@@ -92,9 +92,10 @@ const AdminFormMyTab: React.FC = () => {
     sorted.sort((a: any, b: any) => {
       const aVal = a[sort.column!] ?? '';
       const bVal = b[sort.column!] ?? '';
-      let cmp = 0;
-      if (typeof aVal === 'number' && typeof bVal === 'number') cmp = aVal - bVal;
-      else cmp = String(aVal).localeCompare(String(bVal), getLanguage());
+      const cmp =
+        typeof aVal === 'number' && typeof bVal === 'number'
+          ? aVal - bVal
+          : String(aVal).localeCompare(String(bVal), getLanguage());
       return sort.direction === 'desc' ? -cmp : cmp;
     });
     return sorted;

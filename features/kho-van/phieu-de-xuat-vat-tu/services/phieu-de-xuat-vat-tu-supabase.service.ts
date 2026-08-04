@@ -295,7 +295,7 @@ function chunkNumericIds(ids: number[], size: number): number[][] {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function applyPhieuDeXuatHeaderScope(q: any, scope: BranchListScope): any {
-  let b = q;
+  const b = q;
   if (scope.viewAll) return b;
   const own = scope.ownEmployeeIdNum;
   if (!scope.viewByBranch) {

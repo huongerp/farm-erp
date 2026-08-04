@@ -118,7 +118,7 @@ export function buildPhieuKhoBodyHTML(
     ? `<img src="${info.appLogo}" alt="" style="width:56px;height:56px;object-fit:contain;flex-shrink:0"/>`
     : '';
 
-  let tableHTML = '';
+  let tableHTML: string;
   if (chiTiet.length > 0) {
     const total = chiTiet.reduce((s, c) => s + (Number(c.so_luong) || 0), 0);
     const headers = colHeaders(t);

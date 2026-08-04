@@ -72,9 +72,10 @@ const TienDoMuaHangTab: React.FC = () => {
     sorted.sort((a: TienDoMuaHang, b: TienDoMuaHang) => {
       const aVal = a[sort.column as keyof TienDoMuaHang] ?? '';
       const bVal = b[sort.column as keyof TienDoMuaHang] ?? '';
-      let cmp = 0;
-      if (typeof aVal === 'number' && typeof bVal === 'number') cmp = aVal - bVal;
-      else cmp = String(aVal).localeCompare(String(bVal), getLanguage());
+      const cmp =
+        typeof aVal === 'number' && typeof bVal === 'number'
+          ? aVal - bVal
+          : String(aVal).localeCompare(String(bVal), getLanguage());
       return sort.direction === 'desc' ? -cmp : cmp;
     });
     return sorted;
