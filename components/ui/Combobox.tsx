@@ -108,6 +108,24 @@ const Combobox: React.FC<ComboboxProps> = ({
     };
   }, [dropdownInPortal]);
 
+  // Escape đóng dropdown, KHÔNG đóng drawer/form bên ngoài. GenericDrawer cũng lắng
+  // nghe Escape trên document — dùng stopImmediatePropagation để chặn handler đó chạy
+  // (chỉ chặn được khi listener này được đăng ký trước, đúng vì Combobox là con nên
+  // effect của nó chạy trước effect của GenericDrawer — React chạy effect từ trong ra).
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      setIsOpen(false);
+    };
+    // capture:true — chạy TRƯỚC listener bubble-phase của GenericDrawer trên cùng
+    // document, bất kể thứ tự đăng ký (dropdown có thể mở lâu sau khi drawer đã mount).
+    document.addEventListener('keydown', handleEscape, true);
+    return () => document.removeEventListener('keydown', handleEscape, true);
+  }, [isOpen]);
+
   // When dropdown in portal: close on scroll of outside elements. Trên mobile bỏ qua scroll trong 400ms sau khi mở để tránh nháy.
   useEffect(() => {
     if (!isOpen || !dropdownInPortal) return;

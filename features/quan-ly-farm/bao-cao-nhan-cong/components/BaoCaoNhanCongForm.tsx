@@ -140,7 +140,7 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
     setValue,
     getValues,
     reset,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<BaoCaoNhanCongFormValues>({
     resolver: zodResolver(baoCaoNhanCongFormSchema) as any,
     defaultValues,
@@ -332,6 +332,7 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
   return (
     <GenericDrawer
       onClose={onClose}
+      isDirty={isDirty}
       title={isEdit ? t('baoCaoNhanCong.form.editTitle') : t('baoCaoNhanCong.form.createTitle')}
       maxWidthClass={DRAWER_WIDTH_BAO_CAO_NHAN_CONG}
       icon={<Users size={18} />}

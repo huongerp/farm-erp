@@ -99,7 +99,7 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
     watch,
     setValue,
     reset,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<BaoCaoSoCheFormValues>({
     resolver: zodResolver(baoCaoSoCheFormSchema) as any,
     defaultValues,
@@ -188,6 +188,7 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
   return (
     <GenericDrawer
       onClose={onClose}
+      isDirty={isDirty}
       title={isEdit ? t('baoCaoSoChe.form.editTitle') : t('baoCaoSoChe.form.createTitle')}
       maxWidthClass={DRAWER_WIDTH_BAO_CAO_SO_CHE}
       icon={<Layers size={18} />}

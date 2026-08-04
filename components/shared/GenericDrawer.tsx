@@ -1,8 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useEnterTransition } from '../../lib/usePresenceTransition';
+import { pushOverlay, popOverlay, isTopOverlay } from '../../lib/overlay-stack';
+import { useConfirmStore } from '../../store/useConfirmStore';
 import {
   getDrawerWidthClass,
   DRAWER_Z_BASE,
@@ -45,6 +47,12 @@ interface GenericDrawerProps {
   variant?: 'drawer' | 'modal';
   /** 0 = drawer nền (48rem), >= 1 = drawer chồng (44rem) + z-index tăng */
   stackLevel?: number;
+  /**
+   * true khi form bên trong có thay đổi chưa lưu (thường `formState.isDirty` của
+   * react-hook-form). Khi true, đóng bằng Escape/backdrop/nút X sẽ hỏi xác nhận trước
+   * thay vì đóng ngay — tránh mất dữ liệu đang nhập.
+   */
+  isDirty?: boolean;
 }
 
 const GenericDrawer: React.FC<GenericDrawerProps> = ({
@@ -57,10 +65,13 @@ const GenericDrawer: React.FC<GenericDrawerProps> = ({
   maxWidthClass: maxWidthClassProp,
   variant = 'drawer',
   stackLevel = 0,
+  isDirty = false,
 }) => {
   const { t } = useTranslation();
+  const confirm = useConfirmStore((s) => s.confirm);
   const drawerRef = useRef<HTMLDivElement>(null);
   const openerRef = useRef<HTMLElement | null>(null);
+  const overlayIdRef = useRef<number | null>(null);
   const isMobile = useIsMobile();
   const visible = useEnterTransition();
   const isModal = variant === 'modal';
@@ -81,11 +92,35 @@ const GenericDrawer: React.FC<GenericDrawerProps> = ({
     };
   }, []);
 
+  // Đăng ký vào overlay stack — chỉ overlay trên cùng mới phản hồi Escape (xem lib/overlay-stack.ts).
+  useEffect(() => {
+    const id = pushOverlay();
+    overlayIdRef.current = id;
+    return () => popOverlay(id);
+  }, []);
+
+  /** Đóng có xác nhận nếu form đang có thay đổi chưa lưu. */
+  const requestClose = useCallback(() => {
+    if (isDirty) {
+      confirm({
+        title: t('common.unsavedChangesTitle'),
+        message: t('common.unsavedChangesMessage'),
+        variant: 'warning',
+        confirmText: t('common.discard'),
+        cancelText: t('common.keepEditing'),
+        onConfirm: () => onClose(),
+      });
+      return;
+    }
+    onClose();
+  }, [isDirty, onClose, confirm, t]);
+
   // Escape key to close + focus trap
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose();
+        if (overlayIdRef.current != null && !isTopOverlay(overlayIdRef.current)) return;
+        requestClose();
         return;
       }
       if (e.key === 'Tab' && drawerRef.current) {
@@ -107,7 +142,7 @@ const GenericDrawer: React.FC<GenericDrawerProps> = ({
     document.addEventListener('keydown', handleKeyDown);
     setTimeout(() => drawerRef.current?.focus(), 100);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
+  }, [requestClose]);
 
   const Content = (
     <>
@@ -140,7 +175,7 @@ const GenericDrawer: React.FC<GenericDrawerProps> = ({
           </div>
         </div>
         <button
-          onClick={onClose}
+          onClick={requestClose}
           aria-label={t('common.close')}
           className="p-2.5 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-all active:scale-90 shrink-0"
         >
@@ -179,7 +214,7 @@ const GenericDrawer: React.FC<GenericDrawerProps> = ({
   return (
     <>
       <div
-        onClick={onClose}
+        onClick={requestClose}
         className={cn(
           'fixed inset-0 bg-black/20 backdrop-blur-md presence-overlay',
           visible && 'presence-visible',

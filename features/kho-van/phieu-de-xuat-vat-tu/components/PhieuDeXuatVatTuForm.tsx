@@ -149,7 +149,7 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
     chi_tiet: [],
   };
 
-  const { register, handleSubmit, formState: { errors }, reset, control, watch, setValue } = useForm<PhieuDeXuatVatTuFormValues>({
+  const { register, handleSubmit, formState: { errors, isDirty }, reset, control, watch, setValue } = useForm<PhieuDeXuatVatTuFormValues>({
     resolver: zodResolver(phieuDeXuatVatTuSchema) as any,
     defaultValues,
   });
@@ -284,6 +284,7 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
       title={isEdit ? t('phieuDeXuatVatTu.form.editTitle') : t('phieuDeXuatVatTu.form.createTitle')}
       icon={<FileText size={20} />}
       onClose={onClose}
+      isDirty={!readOnly && isDirty}
       footer={
         readOnly ? null : (
           <FormDrawerFooter

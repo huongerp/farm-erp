@@ -95,7 +95,7 @@ const PhieuKhoForm: React.FC<Props> = ({
     chi_tiet: [],
   };
 
-  const { register, handleSubmit, formState: { errors }, reset, control, watch, setValue } = useForm<PhieuKhoFormValues>({
+  const { register, handleSubmit, formState: { errors, isDirty }, reset, control, watch, setValue } = useForm<PhieuKhoFormValues>({
     resolver: zodResolver(phieuKhoSchema) as any,
     defaultValues,
   });
@@ -304,6 +304,7 @@ const PhieuKhoForm: React.FC<Props> = ({
       title={isEdit ? t('phieuKho.form.editTitle') : t('phieuKho.form.createTitle')}
       icon={<FileText size={20} />}
       onClose={onClose}
+      isDirty={isDirty}
       footer={
         <FormDrawerFooter
           formId="phieu-kho-form"

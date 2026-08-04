@@ -95,6 +95,20 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [dropdownInPortal]);
 
+  // Escape đóng dropdown, KHÔNG đóng drawer/form bên ngoài — xem giải thích trong Combobox.tsx.
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      setIsOpen(false);
+    };
+    // capture:true — chạy TRƯỚC listener bubble-phase của GenericDrawer, xem giải thích trong Combobox.tsx.
+    document.addEventListener('keydown', handleEscape, true);
+    return () => document.removeEventListener('keydown', handleEscape, true);
+  }, [isOpen]);
+
   useEffect(() => {
     if (!isOpen || !dropdownInPortal) return;
     const onScroll = (e: Event) => {

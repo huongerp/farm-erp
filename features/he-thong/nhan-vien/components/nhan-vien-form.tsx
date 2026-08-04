@@ -64,7 +64,7 @@ const EmployeeForm: React.FC<Props> = ({ initialData, prefillData, onClose }) =>
   const { data: branches = [] } = useBranches();
 
   const defaultValues = getDefaultEmployeeFormValues(getTodayISO());
-  const { register, handleSubmit, formState: { errors }, reset, control, watch, setValue } = useForm<EmployeeFormValues>({
+  const { register, handleSubmit, formState: { errors, isDirty }, reset, control, watch, setValue } = useForm<EmployeeFormValues>({
     resolver: zodResolver(employeeSchema),
     defaultValues,
   });
@@ -174,6 +174,7 @@ const EmployeeForm: React.FC<Props> = ({ initialData, prefillData, onClose }) =>
         subtitle={isEdit ? `${t('employee.form.editSubtitle')} ${initialData.ho_ten}` : t('employee.form.createSubtitle')}
         icon={<UserCircle size={20} />}
         onClose={onClose}
+        isDirty={isDirty}
         footer={renderFooter}
         maxWidthClass={DRAWER_WIDTH_FORM}
     >

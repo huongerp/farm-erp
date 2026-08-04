@@ -7,13 +7,28 @@ import { useConfirmStore } from '../../store/useConfirmStore';
 import { DIALOG_SIZE } from '../../lib/dialog-sizes';
 import { cn } from '../../lib/utils';
 import { usePresenceTransition } from '../../lib/usePresenceTransition';
+import { pushOverlay, popOverlay, isTopOverlay } from '../../lib/overlay-stack';
 import i18n from '../../lib/i18n';
 
 const ConfirmDialog: React.FC = () => {
   const { isOpen, options, close, isLoading, setLoading } = useConfirmStore();
   const { title, message, variant, confirmText, cancelText, onConfirm, onCancel } = options;
   const dialogRef = useRef<HTMLDivElement>(null);
+  const overlayIdRef = useRef<number | null>(null);
   const { mounted, visible } = usePresenceTransition(isOpen);
+
+  // Đăng ký vào overlay stack chỉ khi đang mở — cùng cơ chế với GenericDrawer
+  // (xem lib/overlay-stack.ts) để Escape không xuyên qua confirm dialog đóng luôn
+  // drawer bên dưới.
+  useEffect(() => {
+    if (!isOpen) return;
+    const id = pushOverlay();
+    overlayIdRef.current = id;
+    return () => {
+      popOverlay(id);
+      overlayIdRef.current = null;
+    };
+  }, [isOpen]);
 
   const handleConfirm = async () => {
     try {
@@ -41,6 +56,7 @@ const ConfirmDialog: React.FC = () => {
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && !isLoading) {
+        if (overlayIdRef.current != null && !isTopOverlay(overlayIdRef.current)) return;
         handleCancel();
         return;
       }

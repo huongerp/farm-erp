@@ -351,7 +351,7 @@ const DonDatHangForm: React.FC<Props> = ({
 
   const donDatHangSchema = useMemo(() => getDonDatHangSchema(), [t]);
 
-  const { register, handleSubmit, formState: { errors }, reset, control, watch, setValue } = useForm<DonDatHangFormValues>({
+  const { register, handleSubmit, formState: { errors, isDirty }, reset, control, watch, setValue } = useForm<DonDatHangFormValues>({
     resolver: zodResolver(donDatHangSchema) as any,
     defaultValues,
   });
@@ -492,6 +492,7 @@ const DonDatHangForm: React.FC<Props> = ({
         title={isEdit ? t('donDatHang.form.editTitle') : t('donDatHang.form.createTitle')}
         icon={<FileText size={20} />}
         onClose={onClose}
+        isDirty={isDirty}
         footer={
           <FormDrawerFooter
             formId="don-dat-hang-form"
