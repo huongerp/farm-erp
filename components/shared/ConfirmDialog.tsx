@@ -134,14 +134,14 @@ const ConfirmDialog: React.FC = () => {
             variant="outline"
             onClick={handleCancel}
             disabled={isLoading}
-            className="flex-1 border-border text-muted-foreground hover:bg-muted h-11 rounded-lg"
+            className="flex-1 border-border text-muted-foreground hover:bg-muted h-9 rounded-md"
           >
             {cancelText}
           </Button>
           <Button
             onClick={handleConfirm}
             isLoading={isLoading}
-            className={`flex-1 h-11 rounded-lg ${getConfirmButtonClass()}`}
+            className={`flex-1 h-9 rounded-md ${getConfirmButtonClass()}`}
           >
             {confirmText}
           </Button>

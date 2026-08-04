@@ -26,7 +26,7 @@ function FilterChipMultiSelect<T extends OptionWithCount = OptionWithCount>({
   placeholder,
   icon,
   className = 'w-full sm:w-[150px]',
-  size = 'sm',
+  size = 'md',
   hideZeroCount = true,
 }: FilterChipMultiSelectProps<T>) {
   const visibleOptions = hideZeroCount ? filterOptionsWithCount(options, value) : options;

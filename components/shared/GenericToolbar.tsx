@@ -209,7 +209,7 @@ const GenericToolbar: React.FC<GenericToolbarProps> = ({
                                         value={searchTerm}
                                         onChange={(e) => onSearchChange(e.target.value)}
                                         placeholder={resolvedSearchPlaceholder}
-                                        className="w-full h-8 pl-8 pr-7 bg-muted/40 border border-border/60 rounded-lg text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all"
+                                        className="w-full h-8 pl-8 pr-7 bg-muted/40 border border-border/60 rounded-lg text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all"
                                     />
                                     {searchTerm && (
                                         <button
@@ -275,7 +275,7 @@ const GenericToolbar: React.FC<GenericToolbarProps> = ({
                 <div className="sm:hidden pt-1">
                     <button
                         onClick={onClearAllFilters}
-                        className="h-7 px-2.5 flex items-center gap-1 text-xs font-medium text-destructive hover:bg-destructive/10 rounded-lg transition-all border border-destructive/20 active:scale-95"
+                        className="h-8 px-2.5 flex items-center gap-1 text-xs font-medium text-destructive hover:bg-destructive/10 rounded-lg transition-all border border-destructive/20 active:scale-95"
                     >
                         <X size={12} className="stroke-[2.5px]" />
                         {t('common.clearFilters', { count: activeFilterCount })}
@@ -336,7 +336,7 @@ const GenericToolbar: React.FC<GenericToolbarProps> = ({
                                         value={searchTerm}
                                         onChange={(e) => onSearchChange(e.target.value)}
                                         placeholder={resolvedSearchPlaceholder}
-                                        className="w-full h-8 pl-10 pr-8 bg-muted/40 hover:bg-muted/60 border border-border/60 rounded-lg text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 focus:bg-background transition-all"
+                                        className="w-full h-8 pl-10 pr-8 bg-muted/40 hover:bg-muted/60 border border-border/60 rounded-lg text-xs text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 focus:bg-background transition-all"
                                     />
                                     {searchTerm && (
                                         <button
@@ -356,7 +356,7 @@ const GenericToolbar: React.FC<GenericToolbarProps> = ({
                             {activeFilterCount > 0 && onClearAllFilters && (
                                 <button
                                     onClick={onClearAllFilters}
-                                    className="shrink-0 h-7 px-2 flex items-center gap-1 text-xs font-medium text-destructive hover:bg-destructive/10 rounded-lg transition-all border border-destructive/20 hover:border-destructive/30 active:scale-95"
+                                    className="shrink-0 h-8 px-2 flex items-center gap-1 text-xs font-medium text-destructive hover:bg-destructive/10 rounded-lg transition-all border border-destructive/20 hover:border-destructive/30 active:scale-95"
                                 >
                                     <X size={11} className="stroke-[2.5px]" />
                                     {t('common.clearFilters', { count: activeFilterCount })}

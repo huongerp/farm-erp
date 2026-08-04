@@ -304,11 +304,11 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
 
           {/* Footer */}
           <div className="px-5 py-3 border-t border-border flex items-center justify-between shrink-0">
-            <Button variant="outline" onClick={onClose} className="text-xs h-8">{t('common.cancel')}</Button>
+            <Button variant="outline" onClick={onClose} className="text-xs h-9">{t('common.cancel')}</Button>
             <Button
               onClick={handleExport}
               disabled={exporting || getExportData().length === 0}
-              className="bg-primary text-white text-xs h-8 px-4"
+              className="bg-primary text-white text-xs h-9 px-4"
             >
               <Download size={13} className="mr-1.5" />
               {exporting ? t('shared.export.exporting') : t('shared.export.exportRows', { count: getExportData().length })}

@@ -106,7 +106,7 @@ const DashboardToolbar: React.FC<DashboardToolbarProps> = ({
         <div className="sm:hidden pt-1.5">
           <button
             onClick={onClearFilters}
-            className="h-7 px-2.5 flex items-center gap-1 text-xs font-medium text-destructive hover:bg-destructive/10 rounded-lg transition-all border border-destructive/20 active:scale-95"
+            className="h-8 px-2.5 flex items-center gap-1 text-xs font-medium text-destructive hover:bg-destructive/10 rounded-lg transition-all border border-destructive/20 active:scale-95"
           >
             <X size={12} className="stroke-[2.5px]" />
             {t('common.clearFilters', { count: activeFilterCount })}
@@ -145,7 +145,7 @@ const DashboardToolbar: React.FC<DashboardToolbarProps> = ({
             {activeFilterCount > 0 && onClearFilters && (
               <button
                 onClick={onClearFilters}
-                className="h-7 px-2 flex items-center gap-1 text-xs font-medium text-destructive hover:bg-destructive/10 rounded-lg transition-all border border-destructive/20 hover:border-destructive/30 active:scale-95"
+                className="h-8 px-2 flex items-center gap-1 text-xs font-medium text-destructive hover:bg-destructive/10 rounded-lg transition-all border border-destructive/20 hover:border-destructive/30 active:scale-95"
               >
                 <X size={11} className="stroke-[2.5px]" />
                 {t('common.clearFilters', { count: activeFilterCount })}

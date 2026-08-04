@@ -434,26 +434,26 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
 
           {/* Footer */}
           <div className="px-5 py-3 border-t border-border flex items-center justify-between shrink-0">
-            <Button variant="outline" onClick={handleClose} className="text-xs h-8">
+            <Button variant="outline" onClick={handleClose} className="text-xs h-9">
               {step === 'result' ? t('common.close') : t('common.cancel')}
             </Button>
             <div className="flex gap-2">
               {step === 'mapping' && (
                 <>
-                  <Button variant="outline" onClick={() => { setStep('upload'); setFile(null); }} className="text-xs h-8">
+                  <Button variant="outline" onClick={() => { setStep('upload'); setFile(null); }} className="text-xs h-9">
                     {t('common.selectFile')}
                   </Button>
                   <Button
                     onClick={handleImport}
                     disabled={importing}
-                    className="bg-primary text-white text-xs h-8 px-4"
+                    className="bg-primary text-white text-xs h-9 px-4"
                   >
                     {importing ? t('common.processing') : t('shared.import.importRows', { count: sheetData.length })}
                   </Button>
                 </>
               )}
               {step === 'result' && result && result.success > 0 && (
-                <Button onClick={handleClose} className="bg-primary text-white text-xs h-8 px-4">
+                <Button onClick={handleClose} className="bg-primary text-white text-xs h-9 px-4">
                   {t('common.finish')}
                 </Button>
               )}

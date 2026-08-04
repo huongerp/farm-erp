@@ -34,6 +34,8 @@ interface DateRangePickerProps {
   className?: string;
   /** ID of the "custom" preset, default = 'custom' */
   customPresetId?: string;
+  /** Chiều cao trigger — 'md' (h-8, mặc định, khớp filter chip khác) hoặc 'sm' (h-7). */
+  size?: 'sm' | 'md';
 }
 
 /* ------------------------------------------------------------------ */
@@ -48,6 +50,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
   placeholder = 'Khoảng thời gian',
   className,
   customPresetId = 'custom',
+  size = 'md',
 }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -89,7 +92,8 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
         type="button"
         onClick={() => setOpen(!open)}
         className={cn(
-          'h-8 pl-2.5 pr-2 flex items-center gap-1.5 rounded-lg border text-xs font-medium transition-all whitespace-nowrap',
+          size === 'sm' ? 'h-7' : 'h-8',
+          'pl-2.5 pr-2 flex items-center gap-1.5 rounded-lg border text-xs font-medium transition-all whitespace-nowrap',
           open
             ? 'border-primary/40 bg-primary/5 text-primary'
             : 'border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground'
