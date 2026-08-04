@@ -7,7 +7,7 @@ import {
   UserPlus, Save, ArrowRight, UserCircle, Camera,
   Mail, Phone, Briefcase, IdCard, User, Building2, Calendar,
   CircleDot, MapPin, Heart, GraduationCap, Landmark,
-  CreditCard, ShieldCheck, FileText, Globe, Users, BookOpen
+  CreditCard, ShieldCheck, FileText, Globe, Users, BookOpen, KeyRound
 } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Input from '../../../../components/ui/Input';
@@ -480,7 +480,26 @@ const EmployeeForm: React.FC<Props> = ({ initialData, prefillData, onClose }) =>
                 </FormGrid>
              </FormSection>
 
-             {/* ===== SECTION 4: Địa chỉ ===== */}
+             {/* ===== SECTION 4: Tài khoản đăng nhập ===== */}
+             <FormSection title={t('employee.form.accountInfo')} icon={<ShieldCheck size={14} />}>
+                <FormGrid cols={2}>
+                    <Input
+                        label={isEdit ? t('employee.form.passwordEdit') : t('employee.form.password')}
+                        type="password"
+                        autoComplete="new-password"
+                        placeholder="••••••••"
+                        icon={<KeyRound className="w-4 h-4 text-muted-foreground" />}
+                        {...register('mat_khau')}
+                        error={errors.mat_khau?.message}
+                    />
+                    <div />
+                </FormGrid>
+                <p className="text-xs text-muted-foreground">
+                    {isEdit ? t('employee.form.passwordEditHint') : t('employee.form.passwordHint')}
+                </p>
+             </FormSection>
+
+             {/* ===== SECTION 5: Địa chỉ ===== */}
              <FormSection title={t('employee.form.address')} icon={<MapPin size={14} />}>
                 <FormGrid cols={2}>
                     <Input
@@ -521,7 +540,7 @@ const EmployeeForm: React.FC<Props> = ({ initialData, prefillData, onClose }) =>
                 </FormGrid>
              </FormSection>
 
-             {/* ===== SECTION 5: Hôn nhân & Gia đình ===== */}
+             {/* ===== SECTION 6: Hôn nhân & Gia đình ===== */}
              <FormSection title={t('employee.form.familyInfo')} icon={<Heart size={14} />}>
                 <FormGrid cols={2}>
                     <Controller
@@ -549,7 +568,7 @@ const EmployeeForm: React.FC<Props> = ({ initialData, prefillData, onClose }) =>
                 </FormGrid>
              </FormSection>
 
-             {/* ===== SECTION 6: Học vấn & Chứng chỉ ===== */}
+             {/* ===== SECTION 7: Học vấn & Chứng chỉ ===== */}
              <FormSection title={t('employee.form.educationInfo')} icon={<GraduationCap size={14} />}>
                 <FormGrid cols={2}>
                     <Controller
@@ -598,7 +617,7 @@ const EmployeeForm: React.FC<Props> = ({ initialData, prefillData, onClose }) =>
                 </FormGrid>
              </FormSection>
 
-             {/* ===== SECTION 7: Tài chính & Ngân hàng ===== */}
+             {/* ===== SECTION 8: Tài chính & Ngân hàng ===== */}
              <FormSection title={t('employee.form.financialInfo')} icon={<Landmark size={14} />}>
                 <FormGrid cols={2}>
                     <Input
@@ -630,7 +649,7 @@ const EmployeeForm: React.FC<Props> = ({ initialData, prefillData, onClose }) =>
                 </FormGrid>
              </FormSection>
 
-             {/* ===== SECTION 8: Bảo hiểm ===== */}
+             {/* ===== SECTION 9: Bảo hiểm ===== */}
              <FormSection title={t('employee.form.insuranceInfo')} icon={<ShieldCheck size={14} />}>
                 <FormGrid cols={2}>
                     <Input

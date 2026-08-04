@@ -1,9 +1,9 @@
-import { supabase, fetchAllRows, fetchTablePage, type PaginatedTableResult } from '../../../../lib/supabase';
+import { db, fetchAllRows, fetchTablePage, type PaginatedTableResult } from '../../../../lib/db';
 import { getCachedRef, REF_CACHE_KEYS } from '../../../../lib/ref-cache';
-import { ensureAuthUser } from '../../../../lib/ensure-auth-user';
+import { setMatKhauHash } from '../../../../lib/mat-khau';
 import type { Employee } from '../core/types';
 import type { EmployeeFormValues } from '../core/schema';
-import { TRANG_THAI_NV, type TrangThaiNV } from '../../../../lib/constants';
+import { DEFAULT_PASSWORD, TRANG_THAI_NV, type TrangThaiNV } from '../../../../lib/constants';
 import { getPositions } from '../../chuc-vu/services/chuc-vu-service';
 import { getDepartments } from '../../phong-ban/services/phong-ban-service';
 import { getBranches } from '../../chi-nhanh/services/chi-nhanh-service';
@@ -244,7 +244,7 @@ export async function enrichEmployeesWithRefDataAsync(employees: Employee[]): Pr
  */
 export async function fetchEmployeeRows(): Promise<Employee[]> {
   const data = await fetchAllRows<NhanVienRow>((from, to) =>
-    supabase.from(TABLE).select(EMPLOYEE_LIST_SELECT).order('id', { ascending: false }).range(from, to)
+    db.from(TABLE).select(EMPLOYEE_LIST_SELECT).order('id', { ascending: false }).range(from, to)
   );
   return data.map(rowToEmployee);
 }
@@ -254,7 +254,7 @@ export async function fetchEmployeeRows(): Promise<Employee[]> {
  */
 export async function fetchEmployeeRowsLiteForCounts(): Promise<Employee[]> {
   const data = await fetchAllRows<NhanVienRow>((from, to) =>
-    supabase.from(TABLE).select(EMPLOYEE_LITE_FOR_COUNTS_SELECT).order('id', { ascending: false }).range(from, to)
+    db.from(TABLE).select(EMPLOYEE_LITE_FOR_COUNTS_SELECT).order('id', { ascending: false }).range(from, to)
   );
   return data.map(rowToEmployee);
 }
@@ -286,7 +286,7 @@ export async function fetchEmployeeRowsPage(
 ): Promise<PaginatedTableResult<Employee>> {
   const { page, pageSize, q, trangThai, phongBanIds, chucVuIds } = query;
   const result = await fetchTablePage<NhanVienRow>(page, pageSize, async (from, to) => {
-    let sel = supabase
+    let sel = db
       .from(TABLE)
       .select(EMPLOYEE_LIST_SELECT, { count: 'exact' });
 
@@ -326,7 +326,7 @@ export async function fetchEmployeeRowsAllMatching(
 ): Promise<Employee[]> {
   const { q, trangThai, phongBanIds, chucVuIds } = query;
   const data = await fetchAllRows<NhanVienRow>((from, to) => {
-    let sel = supabase.from(TABLE).select(EMPLOYEE_LIST_SELECT);
+    let sel = db.from(TABLE).select(EMPLOYEE_LIST_SELECT);
     if (trangThai && trangThai.length > 0) {
       sel = sel.in('trang_thai', trangThai as string[]);
     }
@@ -373,7 +373,7 @@ export const getEmployeesRef = async (): Promise<EmployeeRef[]> => {
   return getCachedRef(REF_CACHE_KEYS.employees, async () => {
     try {
       const data = await fetchAllRows<{ id: number; ho_va_ten: string | null; email: string | null; trang_thai: unknown }>((from, to) =>
-        supabase.from(VIEW_NHAN_VIEN_REF).select('id, ho_va_ten, email, trang_thai').order('id', { ascending: false }).range(from, to)
+        db.from(VIEW_NHAN_VIEN_REF).select('id, ho_va_ten, email, trang_thai').order('id', { ascending: false }).range(from, to)
       );
       return data.map((row) => ({
         id: String(row.id),
@@ -385,7 +385,7 @@ export const getEmployeesRef = async (): Promise<EmployeeRef[]> => {
     } catch {
       // Fallback: view chưa tạo → dùng bảng gốc với đúng cột tối giản.
       const data = await fetchAllRows<{ id: number; ho_va_ten: string | null; email: string | null; trang_thai: unknown }>((from, to) =>
-        supabase.from(TABLE).select('id, ho_va_ten, email, trang_thai').order('id', { ascending: false }).range(from, to)
+        db.from(TABLE).select('id, ho_va_ten, email, trang_thai').order('id', { ascending: false }).range(from, to)
       );
       return data.map((row) => ({
         id: String(row.id),
@@ -399,7 +399,7 @@ export const getEmployeesRef = async (): Promise<EmployeeRef[]> => {
 };
 
 export const getEmployeeById = async (id: string): Promise<Employee | undefined> => {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from(TABLE)
     .select(EMPLOYEE_DETAIL_SELECT)
     .eq('id', id)
@@ -424,7 +424,7 @@ export const getEmployeeByEmail = async (email: string): Promise<Employee | null
   const normalized = email.trim().toLowerCase();
   // `.eq` trên cột đã chuẩn hoá lowercase → dùng B-tree index (nhanh hơn `.ilike` nhiều lần).
   // Với dữ liệu cũ có thể còn email lẫn HOA/thường, làm thêm 1 lần .ilike fallback.
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from(TABLE)
     .select(EMPLOYEE_AUTH_SELECT)
     .eq('email', normalized)
@@ -436,7 +436,7 @@ export const getEmployeeByEmail = async (email: string): Promise<Employee | null
     return emp;
   }
   // Fallback dữ liệu cũ (chưa chuẩn hoá lowercase) — sau khi migrate có thể xoá đoạn này.
-  const fallback = await supabase
+  const fallback = await db
     .from(TABLE)
     .select(EMPLOYEE_AUTH_SELECT)
     .ilike('email', normalized)
@@ -448,11 +448,42 @@ export const getEmployeeByEmail = async (email: string): Promise<Employee | null
   return emp;
 };
 
-export const createEmployee = async (data: EmployeeFormValues): Promise<Employee & { _authCreated?: boolean }> => {
+/**
+ * Employee kèm cờ để hook quyết định toast nào cần hiện:
+ * - `_passwordSet`: admin tự nhập mật khẩu (thay vì dùng mật khẩu mặc định).
+ * - `_passwordError`: ghi mật khẩu thất bại — hồ sơ vẫn lưu thành công.
+ */
+export type EmployeeMutationResult = Employee & {
+  _passwordSet?: boolean;
+  _passwordError?: string;
+};
+
+/**
+ * Ghi mật khẩu sau khi hồ sơ đã lưu xong. KHÔNG ném lỗi: dòng dữ liệu đã được
+ * insert/update thành công nên báo lỗi ở đây sẽ khiến UI hiểu là thất bại hoàn
+ * toàn (và lần thử lại sẽ vướng "email trùng"). Trả về lỗi để hook cảnh báo,
+ * admin đặt lại mật khẩu bằng cách sửa hồ sơ.
+ *
+ * Thường gặp khi chưa chạy docs/supabase-fp_var_nhan_vien_mat_khau.sql.
+ */
+async function applyMatKhau(
+  emp: EmployeeMutationResult,
+  matKhau: string,
+  phaiDoi: boolean
+): Promise<void> {
+  try {
+    await setMatKhauHash(emp.id, matKhau, phaiDoi);
+    emp._passwordSet = true;
+  } catch (err) {
+    emp._passwordError = err instanceof Error ? err.message : String(err);
+  }
+}
+
+export const createEmployee = async (data: EmployeeFormValues): Promise<EmployeeMutationResult> => {
   const emailVal = data.email?.trim().toLowerCase();
   if (emailVal) {
     // `.eq` nhanh hơn `.ilike` vì dùng được index (xem docs/supabase-fp_var_nhan_vien email lowercase).
-    const { data: dup } = await supabase
+    const { data: dup } = await db
       .from(TABLE)
       .select('id')
       .eq('email', emailVal)
@@ -460,32 +491,32 @@ export const createEmployee = async (data: EmployeeFormValues): Promise<Employee
     if (dup) throw new Error(i18n.t('employee.validation.emailDuplicate'));
   }
 
-  let authCreated = false;
-  if (emailVal) {
-    const result = await ensureAuthUser(data.email);
-    authCreated = result.created;
-  }
-
   const row = formToRow(data);
-  const { data: inserted, error } = await supabase
+  const { data: inserted, error } = await db
     .from(TABLE)
     .insert(row)
     .select(EMPLOYEE_DETAIL_SELECT)
     .single();
 
   if (error) throw new Error(error.message);
-  const emp: Employee & { _authCreated?: boolean } = rowToEmployee(inserted);
-  emp._authCreated = authCreated;
+  const emp: EmployeeMutationResult = rowToEmployee(inserted);
+
+  // Mật khẩu không phải cột của bảng — ghi riêng qua RPC để hash bằng pgcrypto.
+  // Admin bỏ trống → cấp mật khẩu mặc định + buộc đổi ở lần đăng nhập đầu.
+  const matKhau = data.mat_khau?.trim();
+  await applyMatKhau(emp, matKhau || DEFAULT_PASSWORD, !matKhau);
+  // Dùng mật khẩu mặc định thì không cần toast "đã đặt mật khẩu" riêng.
+  if (!matKhau) emp._passwordSet = false;
+
   await enrichEmployeesWithRefDataAsync([emp]);
   return emp;
 };
 
-export const updateEmployee = async (id: string, data: EmployeeFormValues): Promise<Employee & { _authCreated?: boolean }> => {
-  let authCreated = false;
+export const updateEmployee = async (id: string, data: EmployeeFormValues): Promise<EmployeeMutationResult> => {
   const newEmail = data.email?.trim().toLowerCase() || '';
 
   if (newEmail) {
-    const { data: current } = await supabase
+    const { data: current } = await db
       .from(TABLE)
       .select('id, email')
       .eq('email', newEmail)
@@ -493,21 +524,10 @@ export const updateEmployee = async (id: string, data: EmployeeFormValues): Prom
     if (current && String((current as Record<string, unknown>).id) !== id) {
       throw new Error(i18n.t('employee.validation.emailDuplicate'));
     }
-
-    const { data: self } = await supabase
-      .from(TABLE)
-      .select('email')
-      .eq('id', id)
-      .maybeSingle();
-    const oldEmail = ((self as Record<string, unknown>)?.email as string ?? '').trim().toLowerCase();
-    if (newEmail !== oldEmail) {
-      const result = await ensureAuthUser(data.email);
-      authCreated = result.created;
-    }
   }
 
   const row = formToRow(data);
-  const { data: updated, error } = await supabase
+  const { data: updated, error } = await db
     .from(TABLE)
     .update(row)
     .eq('id', id)
@@ -515,14 +535,18 @@ export const updateEmployee = async (id: string, data: EmployeeFormValues): Prom
     .single();
 
   if (error) throw new Error(error.message ?? i18n.t('employee.service.notFound'));
-  const emp: Employee & { _authCreated?: boolean } = rowToEmployee(updated);
-  emp._authCreated = authCreated;
+  const emp: EmployeeMutationResult = rowToEmployee(updated);
+
+  // Bỏ trống = không đổi mật khẩu.
+  const matKhau = data.mat_khau?.trim();
+  if (matKhau) await applyMatKhau(emp, matKhau, false);
+
   await enrichEmployeesWithRefDataAsync([emp]);
   return emp;
 };
 
 export const updateEmployeeStatus = async (ids: string[], status: string): Promise<void> => {
-  const { error } = await supabase
+  const { error } = await db
     .from(TABLE)
     .update({ trang_thai: status })
     .in('id', ids);
@@ -539,7 +563,7 @@ export const bulkUpdateEmployees = async (ids: string[], fields: Record<string, 
   if (fields.trang_thai != null) row.trang_thai = fields.trang_thai;
   if (Object.keys(row).length === 0) return;
 
-  const { error } = await supabase
+  const { error } = await db
     .from(TABLE)
     .update(row)
     .in('id', ids);
@@ -548,13 +572,13 @@ export const bulkUpdateEmployees = async (ids: string[], fields: Record<string, 
 };
 
 export const deleteEmployee = async (id: string): Promise<void> => {
-  const { error } = await supabase.from(TABLE).delete().eq('id', id);
+  const { error } = await db.from(TABLE).delete().eq('id', id);
   if (error) throw new Error(error.message);
 };
 
 export const deleteEmployees = async (ids: string[]): Promise<void> => {
   if (ids.length === 0) return;
-  const { error } = await supabase.from(TABLE).delete().in('id', ids);
+  const { error } = await db.from(TABLE).delete().in('id', ids);
   if (error) throw new Error(error.message);
 };
 

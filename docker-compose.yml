@@ -1,0 +1,105 @@
+# =====================================================================
+# Deploy trên Dokploy — 3 service sau MỘT domain duy nhất
+#
+#   /        → web        (SPA Vite, nginx)
+#   /api/*   → postgrest  (thay Supabase REST)
+#   /auth/*  → auth       (thay Supabase Auth)
+#
+# Một domain nên KHÔNG có CORS và không có request cross-site nào.
+# Frontend gọi bằng đường dẫn tương đối `/api`, `/auth` → không phải build
+# lại image khi đổi domain.
+#
+# Postgres KHÔNG nằm ở đây: dùng database Dokploy đang có (fpfarm), truy cập
+# qua hostname nội bộ trên dokploy-network.
+#
+# Biến môi trường: khai trong tab Environment của Dokploy, xem .env.example.
+# Kế hoạch: docs/VPS_POSTGREST_PLAN.md
+# =====================================================================
+
+services:
+  postgrest:
+    image: postgrest/postgrest:v14.16
+    restart: always
+    environment:
+      # Role `authenticator`, hostname NỘI BỘ (không đi qua IP public).
+      PGRST_DB_URI: ${PGRST_DB_URI}
+      PGRST_DB_SCHEMAS: public
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: ${PGRST_JWT_SECRET}
+      # pgcrypto nằm ở schema `extensions` (giữ nguyên cách Supabase bố trí).
+      PGRST_DB_EXTRA_SEARCH_PATH: 'public, extensions'
+      # Không phơi toàn bộ schema ra Internet.
+      PGRST_OPENAPI_MODE: disabled
+      PGRST_DB_POOL: '10'
+      PGRST_SERVER_PORT: '3000'
+      # KHÔNG đặt PGRST_DB_MAX_ROWS: fetchAllRows/fetchTablePage tự phân trang
+      # 1000 dòng và dựa vào count=exact, đặt max-rows sẽ làm lệch Content-Range.
+    expose:
+      - '3000'
+    networks:
+      - dokploy-network
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=dokploy-network
+      - traefik.http.routers.farm-api.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api`)
+      - traefik.http.routers.farm-api.entrypoints=websecure
+      - traefik.http.routers.farm-api.tls.certResolver=letsencrypt
+      - traefik.http.routers.farm-api.priority=100
+      - traefik.http.routers.farm-api.middlewares=farm-api-strip
+      - traefik.http.middlewares.farm-api-strip.stripprefix.prefixes=/api
+      - traefik.http.services.farm-api.loadbalancer.server.port=3000
+
+  auth:
+    build:
+      context: ./services/auth
+    restart: always
+    environment:
+      # Role `auth_service` — chỉ EXECUTE được mấy RPC đăng nhập.
+      DATABASE_URL: ${AUTH_DATABASE_URL}
+      # Dùng chung secret với PostgREST, nếu không token ký ra sẽ bị từ chối.
+      JWT_SECRET: ${PGRST_JWT_SECRET}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      ACCESS_TOKEN_TTL_SECONDS: '900'
+      PORT: '3001'
+    expose:
+      - '3001'
+    networks:
+      - dokploy-network
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=dokploy-network
+      - traefik.http.routers.farm-auth.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/auth`)
+      - traefik.http.routers.farm-auth.entrypoints=websecure
+      - traefik.http.routers.farm-auth.tls.certResolver=letsencrypt
+      - traefik.http.routers.farm-auth.priority=100
+      - traefik.http.services.farm-auth.loadbalancer.server.port=3001
+
+  web:
+    build:
+      context: .
+      dockerfile: deploy/web.Dockerfile
+      args:
+        # Vite nhúng biến vào bundle lúc build, nên phải truyền qua build args.
+        VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+        VITE_CLOUDINARY_CLOUD_NAME: ${VITE_CLOUDINARY_CLOUD_NAME}
+        VITE_CLOUDINARY_UPLOAD_PRESET: ${VITE_CLOUDINARY_UPLOAD_PRESET}
+        VITE_SENTRY_DSN: ${VITE_SENTRY_DSN}
+    restart: always
+    expose:
+      - '80'
+    networks:
+      - dokploy-network
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=dokploy-network
+      - traefik.http.routers.farm-web.rule=Host(`${APP_DOMAIN}`)
+      - traefik.http.routers.farm-web.entrypoints=websecure
+      - traefik.http.routers.farm-web.tls.certResolver=letsencrypt
+      - traefik.http.routers.farm-web.priority=1
+      - traefik.http.services.farm-web.loadbalancer.server.port=80
+
+# Bắt buộc phải gắn dokploy-network, không thì Traefik không thấy container và
+# trả 404 dù label đã đúng (Dokploy issue #3435).
+networks:
+  dokploy-network:
+    external: true

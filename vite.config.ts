@@ -1,23 +1,41 @@
 import path from 'path';
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { visualizer } from 'rollup-plugin-visualizer';
 
-export default defineConfig(() => {
+export default defineConfig(({ mode }) => {
   const analyze = process.env.ANALYZE === '1';
+  // `lib/api-config.ts` dùng đường dẫn tương đối (`/api`, `/auth`) giống hệt
+  // production sau Traefik. Ở dev, proxy này đóng vai Traefik: forward sang
+  // PostgREST và auth-service chạy local. Đổi target qua .env nếu chạy port khác
+  // (xem README mục "Chạy full-stack ở local").
+  const env = loadEnv(mode, process.cwd(), '');
+  const authProxyTarget = env.DEV_AUTH_PROXY_TARGET || 'http://127.0.0.1:3001';
+  const apiProxyTarget = env.DEV_API_PROXY_TARGET || 'http://127.0.0.1:3010';
 
   return {
     server: {
       port: 3000,
       host: '0.0.0.0',
+      proxy: {
+        // auth-service tự khai đủ tiền tố /auth trong route (giống Traefik không strip).
+        '/auth': { target: authProxyTarget, changeOrigin: true },
+        // PostgREST không biết gì về /api — Traefik strip tiền tố trước khi forward,
+        // proxy dev phải làm y hệt.
+        '/api': {
+          target: apiProxyTarget,
+          changeOrigin: true,
+          rewrite: (p) => p.replace(/^\/api/, ''),
+        },
+      },
     },
     build: {
       rollupOptions: {
         output: {
           manualChunks(id) {
             if (!id.includes('node_modules')) return;
-            if (id.includes('@supabase')) return 'supabase';
+            if (id.includes('@supabase')) return 'postgrest';
             if (
               id.includes('@tanstack/react-query') ||
               id.includes('@tanstack/query-async-storage-persister') ||

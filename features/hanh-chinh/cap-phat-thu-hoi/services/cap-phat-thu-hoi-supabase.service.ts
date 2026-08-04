@@ -3,7 +3,7 @@
  * Bảng cha: fp_ts_phieu_cap_phat_thu_hoi (header)
  * Bảng con: fp_ts_phieu_cap_phat_thu_hoi_ct (chi tiết – mỗi dòng 1 tài sản)
  */
-import { supabase, throwSupabaseError } from '@/lib/supabase';
+import { db, throwSupabaseError } from '@/lib/db';
 import type {
   LoaiPhieu,
   PhieuCapPhatThuHoi,
@@ -158,7 +158,7 @@ export interface GetPhieuListParams {
 export async function getPhieuListSupabase(
   params: GetPhieuListParams = {}
 ): Promise<PhieuCapPhatThuHoi[]> {
-  const query = supabase.from(TABLE).select(PHIEU_CP_TH_COLUMNS).order('tg_tao', { ascending: false });
+  const query = db.from(TABLE).select(PHIEU_CP_TH_COLUMNS).order('tg_tao', { ascending: false });
 
   const { data, error } = await query;
   if (error) throwSupabaseError(error);
@@ -194,10 +194,10 @@ export async function getPhieuByIdSupabase(id: string): Promise<PhieuCapPhatThuH
   const numId = Number(id);
   if (Number.isNaN(numId)) return null;
 
-  const { data, error } = await supabase.from(TABLE).select(PHIEU_CP_TH_COLUMNS).eq('id', numId).single();
+  const { data, error } = await db.from(TABLE).select(PHIEU_CP_TH_COLUMNS).eq('id', numId).single();
   if (error || !data) return null;
 
-  const { data: ctData } = await supabase
+  const { data: ctData } = await db
     .from(TABLE_CT)
     .select(PHIEU_CP_CT_COLUMNS)
     .eq('id_phieu', numId)
@@ -217,7 +217,7 @@ export async function getPhieuChiTietByTaiSanIdSupabase(
   const numTs = Number(idTaiSan);
   if (Number.isNaN(numTs)) return [];
 
-  const { data: ctRows, error } = await supabase
+  const { data: ctRows, error } = await db
     .from(TABLE_CT)
     .select(PHIEU_CP_CT_COLUMNS)
     .eq('id_tai_san', numTs)
@@ -226,7 +226,7 @@ export async function getPhieuChiTietByTaiSanIdSupabase(
   if (error || !ctRows || ctRows.length === 0) return [];
 
   const phieuIds = [...new Set((ctRows as DbPhieuChiTietRow[]).map((r) => r.id_phieu))];
-  const { data: headerRows } = await supabase
+  const { data: headerRows } = await db
     .from(TABLE)
     .select(PHIEU_CP_TH_COLUMNS)
     .in('id', phieuIds);
@@ -256,7 +256,7 @@ export async function getPhieuChiTietByTaiSanIdSupabase(
  * Dùng cho tab "Chi tiết" tổng hợp.
  */
 export async function getAllPhieuChiTietSupabase(): Promise<PhieuChiTietRow[]> {
-  const { data: headers, error: hErr } = await supabase
+  const { data: headers, error: hErr } = await db
     .from(TABLE)
     .select(PHIEU_CP_TH_COLUMNS)
     .order('tg_tao', { ascending: false });
@@ -266,7 +266,7 @@ export async function getAllPhieuChiTietSupabase(): Promise<PhieuChiTietRow[]> {
   const headerMap = new Map<number, DbPhieuRow>();
   (headers as DbPhieuRow[]).forEach((h) => headerMap.set(h.id, h));
 
-  const { data: ctRows, error: cErr } = await supabase
+  const { data: ctRows, error: cErr } = await db
     .from(TABLE_CT)
     .select(PHIEU_CP_CT_COLUMNS)
     .order('id_phieu', { ascending: false });
@@ -367,12 +367,12 @@ export async function createPhieuSupabase(
 ): Promise<PhieuCapPhatThuHoi> {
   const loaiDb = LOAI_PHIEU_TO_DB[data.loai_phieu];
 
-  const { data: maResult, error: maError } = await supabase.rpc('get_next_ma_phieu_cpth', { p_loai: loaiDb });
+  const { data: maResult, error: maError } = await db.rpc('get_next_ma_phieu_cpth', { p_loai: loaiDb });
   if (maError) throwSupabaseError(maError);
   const ma_phieu = maResult as string;
 
   const headerPayload = await buildHeaderPayload(data, id_nguoi_thuc_hien, id_nguoi_tao, ten_nguoi_tao);
-  const { data: inserted, error } = await supabase
+  const { data: inserted, error } = await db
     .from(TABLE)
     .insert({ ...headerPayload, ma_phieu })
     .select(PHIEU_CP_TH_COLUMNS)
@@ -384,7 +384,7 @@ export async function createPhieuSupabase(
   const validLines = data.chi_tiet.filter((ct) => ct.id_tai_san);
   if (validLines.length > 0) {
     const ctRows = await buildChiTietRows(phieuId, validLines);
-    const { error: ctError } = await supabase.from(TABLE_CT).insert(ctRows);
+    const { error: ctError } = await db.from(TABLE_CT).insert(ctRows);
     if (ctError) throwSupabaseError(ctError);
 
     for (const ct of validLines) {
@@ -411,16 +411,16 @@ export async function updatePhieuSupabase(
   if (Number.isNaN(numId)) throw new Error('Phiếu không tồn tại');
 
   const headerPayload = await buildHeaderPayload(data, id_nguoi_thuc_hien);
-  const { error } = await supabase.from(TABLE).update(headerPayload).eq('id', numId);
+  const { error } = await db.from(TABLE).update(headerPayload).eq('id', numId);
   if (error) throwSupabaseError(error);
 
-  const { error: delError } = await supabase.from(TABLE_CT).delete().eq('id_phieu', numId);
+  const { error: delError } = await db.from(TABLE_CT).delete().eq('id_phieu', numId);
   if (delError) throwSupabaseError(delError);
 
   const validLines = data.chi_tiet.filter((ct) => ct.id_tai_san);
   if (validLines.length > 0) {
     const ctRows = await buildChiTietRows(numId, validLines);
-    const { error: ctError } = await supabase.from(TABLE_CT).insert(ctRows);
+    const { error: ctError } = await db.from(TABLE_CT).insert(ctRows);
     if (ctError) throwSupabaseError(ctError);
 
     for (const ct of validLines) {
@@ -441,6 +441,6 @@ export async function updatePhieuSupabase(
 export async function deletePhieuSupabase(ids: string[]): Promise<void> {
   const numIds = ids.map((x) => Number(x)).filter((n) => !Number.isNaN(n));
   if (numIds.length === 0) return;
-  const { error } = await supabase.from(TABLE).delete().in('id', numIds);
+  const { error } = await db.from(TABLE).delete().in('id', numIds);
   if (error) throwSupabaseError(error);
 }

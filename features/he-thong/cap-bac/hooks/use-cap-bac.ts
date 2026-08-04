@@ -22,7 +22,7 @@ export const useCreateJobLevel = (onSuccess?: () => void) => {
       toast.success(i18n.t('jobLevel.toast.createSuccess'));
       if (onSuccess) onSuccess();
     },
-    onError: (err: any) => toast.error(err.message)
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : String(err))
   });
 };
 
@@ -35,7 +35,7 @@ export const useUpdateJobLevel = (onSuccess?: () => void) => {
       toast.success(i18n.t('jobLevel.toast.updateSuccess'));
       if (onSuccess) onSuccess();
     },
-    onError: (err: any) => toast.error(err.message)
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : String(err))
   });
 };
 
@@ -47,7 +47,7 @@ export const useUpdateStatusJobLevel = () => {
         queryClient.invalidateQueries({ queryKey: ['job-levels'] });
         toast.success(i18n.t('jobLevel.toast.statusUpdate', { count: variables.ids.length }));
       },
-      onError: (err: any) => toast.error(err.message)
+      onError: (err: unknown) => toast.error(err instanceof Error ? err.message : String(err))
     });
 };
 
@@ -59,6 +59,6 @@ export const useDeleteJobLevel = () => {
       queryClient.invalidateQueries({ queryKey: ['job-levels'] });
       toast.success(i18n.t('jobLevel.toast.deleteSuccess', { count: ids.length }));
     },
-    onError: (err: any) => toast.error(err.message)
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : String(err))
   });
 };

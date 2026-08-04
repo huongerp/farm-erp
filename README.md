@@ -29,9 +29,39 @@
 | `npm run test` | Chạy test (Vitest) |
 | `npm run test:watch` | Chạy test ở chế độ watch |
 
+## Chạy full-stack ở local (PostgREST + auth-service)
+
+Mặc định `npm run dev` chỉ chạy SPA. Đăng nhập/gọi API cần thêm PostgREST và auth-service — Vite dev server proxy `/api` và `/auth` sang hai service này (xem `vite.config.ts`), giống hệt cách Traefik route ở production, nên **không cần đặt `VITE_API_URL`/`VITE_AUTH_URL`**.
+
+Cả hai service đều nối thẳng ra Postgres trên VPS qua host **ngoài** (không nằm trong mạng nội bộ Dokploy) — dùng `VPS_DB_URL` đã có trong `.env` để lấy host/port/dbname:
+
+```bash
+source .env
+HOSTPORT=$(echo "$VPS_DB_URL" | sed -E 's#.*@([^/]+)/.*#\1#')
+DBNAME=$(echo "$VPS_DB_URL" | sed -E 's#.*/([^/?]+)$#\1#')
+
+# 1. PostgREST (cổng 3010 — trùng 3000 với Vite thì đổi qua DEV_API_PROXY_TARGET)
+docker run --rm -p 3010:3000 \
+  -e PGRST_DB_URI="postgresql://authenticator:${PGRST_AUTHENTICATOR_PASSWORD}@${HOSTPORT}/${DBNAME}" \
+  -e PGRST_DB_SCHEMAS=public -e PGRST_DB_ANON_ROLE=anon \
+  -e PGRST_JWT_SECRET="$PGRST_JWT_SECRET" \
+  -e PGRST_DB_EXTRA_SEARCH_PATH='public, extensions' \
+  postgrest/postgrest:v14.16
+
+# 2. auth-service (cổng 3001, terminal khác)
+cd services/auth
+DATABASE_URL="postgresql://auth_service:${AUTH_SERVICE_DB_PASSWORD}@${HOSTPORT}/${DBNAME}" \
+JWT_SECRET="$PGRST_JWT_SECRET" \
+GOOGLE_CLIENT_ID="$VITE_GOOGLE_CLIENT_ID" \
+npm run dev
+```
+
+Mật khẩu hai role (`PGRST_AUTHENTICATOR_PASSWORD`, `AUTH_SERVICE_DB_PASSWORD`) và `PGRST_JWT_SECRET` phải khớp giá trị đã đặt lúc chạy `docs/vps-01-prepare-target.sql` / `docs/vps-04-auth-schema.sql` trên VPS. Port 5432 của VPS Postgres phải đang mở ra ngoài (đóng lại theo `docs/VPS_CUTOVER.md` mục 7 thì cách này cũng dừng theo).
+
 ## Tài liệu
 
 - [Quy ước giao diện (UI Conventions)](docs/UI-CONVENTIONS.md) – Dialog/Drawer, Section, Design system (border radius, button, error message).
+- [Chuyển sang PostgREST self-host](docs/VPS_POSTGREST_PLAN.md), [runbook cut-over](docs/VPS_CUTOVER.md).
 
 ## Cấu trúc chính
 

@@ -1,11 +1,11 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Sparkles, ArrowRight, Loader2, CheckCircle2, Eye, EyeOff, X } from 'lucide-react';
+import { Sparkles, ArrowRight, CheckCircle2, Eye, EyeOff, X } from 'lucide-react';
 import { usePresenceTransition } from '../lib/usePresenceTransition';
 import { cn } from '../lib/utils';
 import { useAuthStore, useUIStore } from '../store/useStore';
@@ -14,12 +14,16 @@ import Input from '../components/ui/Input';
 import { toast } from 'sonner';
 import {
   signInWithPassword,
+  signInWithGoogleIdToken,
   employeeToUser,
-  requestPasswordReset,
-  signInWithGoogle,
   getSessionBootstrap,
   ResignedEmployeeAuthError,
+  WrongCredentialsError,
+  TooManyAttemptsError,
+  GoogleNoEmployeeError,
+  type KetQuaDangNhap,
 } from '../lib/auth';
+import { googleDaCauHinh, veNutGoogle } from '../lib/google-signin';
 import { queryClient } from '../lib/query-client';
 import { getCurrentRoleContext } from '../features/he-thong/phan-quyen/services/phan-quyen-service';
 import { CURRENT_ROLE_CONTEXT_KEY } from '../features/he-thong/phan-quyen/hooks/use-phan-quyen';
@@ -42,8 +46,6 @@ const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
-  const [forgotEmail, setForgotEmail] = useState('');
-  const [forgotLoading, setForgotLoading] = useState(false);
   const { mounted: forgotMounted, visible: forgotVisible } = usePresenceTransition(forgotOpen);
 
   const loginSchema = useMemo(() => z.object({
@@ -64,18 +66,16 @@ const Login: React.FC = () => {
     if (savedEmail) setRememberMe(true);
   }, []);
 
-  useEffect(() => {
-    if (forgotOpen) setForgotEmail(savedEmail ?? '');
-  }, [forgotOpen, savedEmail]);
-
-  const onSubmit = async (data: LoginValues) => {
-    setIsLoading(true);
-    try {
-      const employee = await signInWithPassword(data.email, data.password);
+  /**
+   * Phần dùng chung sau khi auth-service đã cấp token: seed cache rồi điều hướng.
+   *
+   * Gọi RPC bootstrap để seed cache phân quyền + công ty trong 1 request, thay cho
+   * prefetchQuery getCurrentRoleContext (trước đây thêm 2 request fp_var_phan_quyen + fp_var_chuc_vu).
+   */
+  const hoanTatDangNhap = useCallback(
+    async ({ employee, phaiDoiMatKhau }: KetQuaDangNhap) => {
       const user = employeeToUser(employee);
       login(user);
-      // Gọi RPC bootstrap để seed cache phân quyền + công ty trong 1 request, thay cho
-      // prefetchQuery getCurrentRoleContext (trước đây thêm 2 request fp_var_phan_quyen + fp_var_chuc_vu).
       const bootstrap = await getSessionBootstrap();
       if (bootstrap.roleContext && user.id_chuc_vu != null) {
         queryClient.setQueryData(
@@ -92,52 +92,64 @@ const Login: React.FC = () => {
         queryClient.setQueryData(COMPANY_INFO_QUERY_KEY, bootstrap.company);
         setCompanyInfo(bootstrap.company);
       }
+      toast.success(t('page.login.loginSuccess'));
+      // Mật khẩu do admin cấp → buộc đổi trước khi vào app.
+      navigate(phaiDoiMatKhau ? '/dat-lai-mat-khau' : '/');
+    },
+    [login, navigate, setCompanyInfo, t],
+  );
+
+  const baoLoiDangNhap = useCallback(
+    (err: unknown) => {
+      if (err instanceof ResignedEmployeeAuthError) toast.error(t('page.login.accountLocked'));
+      else if (err instanceof WrongCredentialsError) toast.error(t('page.login.wrongCredentials'));
+      else if (err instanceof TooManyAttemptsError) toast.error(t('page.login.tooManyAttempts'));
+      else if (err instanceof GoogleNoEmployeeError) toast.error(t('page.login.googleNoEmployee'));
+      else toast.error(err instanceof Error ? err.message : t('page.login.loginError'));
+    },
+    [t],
+  );
+
+  const onSubmit = async (data: LoginValues) => {
+    setIsLoading(true);
+    try {
+      const ketQua = await signInWithPassword(data.email, data.password);
       if (rememberMe) localStorage.setItem(REMEMBER_EMAIL_KEY, data.email.trim());
       else localStorage.removeItem(REMEMBER_EMAIL_KEY);
-      toast.success(t('page.login.loginSuccess'));
-      navigate('/');
+      await hoanTatDangNhap(ketQua);
     } catch (err) {
-      if (err instanceof ResignedEmployeeAuthError) {
-        toast.error(t('page.login.accountLocked'));
-      } else {
-        const message = err instanceof Error ? err.message : t('page.login.loginError');
-        toast.error(message);
-      }
+      baoLoiDangNhap(err);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleForgotSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const email = forgotEmail.trim();
-    if (!email) {
-      toast.error(t('page.login.emailRequired'));
-      return;
-    }
-    setForgotLoading(true);
-    try {
-      await requestPasswordReset(email);
-      toast.success(t('page.login.forgotPasswordSuccess'));
-      setForgotOpen(false);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('page.login.forgotPasswordError'));
-    } finally {
-      setForgotLoading(false);
-    }
-  };
+  // Nút Google phải do Google render (luồng ID token của GIS), không dùng nút tự vẽ.
+  const googleRef = useRef<HTMLDivElement>(null);
+  const coGoogle = googleDaCauHinh();
 
-  const handleGoogleLogin = async () => {
-    setIsGoogleLoading(true);
-    try {
-      await signInWithGoogle();
-      // Thành công: trình duyệt sẽ chuyển sang Google, sau đó redirect về app. useAuthSync sẽ xử lý session.
-    } catch (err) {
-      setIsGoogleLoading(false);
-      const msg = err instanceof Error ? err.message : t('page.login.googleNotConfigured');
-      toast.error(msg);
-    }
-  };
+  const xuLyIdTokenGoogle = useCallback(
+    async (idToken: string) => {
+      setIsGoogleLoading(true);
+      try {
+        await hoanTatDangNhap(await signInWithGoogleIdToken(idToken));
+      } catch (err) {
+        baoLoiDangNhap(err);
+      } finally {
+        setIsGoogleLoading(false);
+      }
+    },
+    [baoLoiDangNhap, hoanTatDangNhap],
+  );
+
+  useEffect(() => {
+    if (!coGoogle || !googleRef.current) return;
+    veNutGoogle(googleRef.current, (idToken) => void xuLyIdTokenGoogle(idToken), { width: 400 }).catch(
+      (err) => {
+        console.error('[Login] không vẽ được nút Google', err);
+      },
+    );
+  }, [coGoogle, xuLyIdTokenGoogle]);
 
   return (
     <div className="flex min-h-screen w-full bg-background">
@@ -265,50 +277,29 @@ const Login: React.FC = () => {
                 </Button>
             </form>
 
-            <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t border-border" />
+            {coGoogle && (
+              <>
+                <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t border-border" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-background px-3 text-muted-foreground font-medium">{t('page.login.orLoginWith')}</span>
+                    </div>
                 </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-3 text-muted-foreground font-medium">{t('page.login.orLoginWith')}</span>
-                </div>
-            </div>
 
-            {/* Google Login Button */}
-            <button
-                type="button"
-                onClick={handleGoogleLogin}
-                disabled={isGoogleLoading || isLoading}
-                className="w-full flex items-center justify-center gap-3 bg-card border border-border text-foreground hover:bg-muted/50 hover:border-border/80 font-medium h-11 rounded-xl transition-all shadow-sm active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
-            >
-                {isGoogleLoading ? (
-                    <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-                ) : (
-                    <>
-                        <svg className="w-5 h-5" viewBox="0 0 24 24">
-                            <path
-                                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                                fill="#4285F4"
-                            />
-                            <path
-                                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                                fill="#34A853"
-                            />
-                            <path
-                                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                                fill="#FBBC05"
-                            />
-                            <path
-                                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                                fill="#EA4335"
-                            />
-                        </svg>
-                        <span>Google</span>
-                    </>
-                )}
-            </button>
+                {/* Nút do Google render — luồng ID token của GIS không cho dùng nút tự vẽ. */}
+                <div
+                  ref={googleRef}
+                  className={cn(
+                    'flex justify-center [color-scheme:light]',
+                    (isGoogleLoading || isLoading) && 'pointer-events-none opacity-60',
+                  )}
+                />
+              </>
+            )}
 
-            {/* Modal Quên mật khẩu */}
+            {/* Quên mật khẩu: self-host không gửi email, admin cấp lại mật khẩu. */}
             {forgotMounted && (
               <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                 <div
@@ -335,25 +326,12 @@ const Login: React.FC = () => {
                       <X className="h-5 w-5" />
                     </button>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-4">{t('page.login.forgotPasswordDesc')}</p>
-                  <form onSubmit={handleForgotSubmit} className="space-y-4">
-                    <Input
-                      label={t('page.login.email')}
-                      type="email"
-                      placeholder={t('page.login.emailPlaceholder')}
-                      value={forgotEmail}
-                      onChange={(e) => setForgotEmail(e.target.value)}
-                      className="h-11"
-                    />
-                    <div className="flex gap-2 justify-end">
-                      <Button type="button" variant="outline" onClick={() => setForgotOpen(false)}>
-                        {t('common.cancel')}
-                      </Button>
-                      <Button type="submit" isLoading={forgotLoading}>
-                        {t('page.login.sendResetLink')}
-                      </Button>
-                    </div>
-                  </form>
+                  <p className="text-sm text-muted-foreground">{t('page.login.forgotPasswordDesc')}</p>
+                  <div className="mt-5 flex justify-end">
+                    <Button type="button" onClick={() => setForgotOpen(false)}>
+                      {t('common.close')}
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}

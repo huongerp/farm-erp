@@ -1,4 +1,4 @@
-import { supabase, fetchAllRows } from '../../../../lib/supabase';
+import { db, fetchAllRows } from '../../../../lib/db';
 import type { AdminFormRequest } from '../core/types';
 import type { AdminFormValues } from '../core/schema';
 import type { AdminFormStatus, ApprovalStatus } from '../core/constants';
@@ -107,11 +107,11 @@ async function fetchMaps(rows: Row[]): Promise<{ mapLoaiPhieu: Record<number, st
   const mapTenNhanVien: Record<number, string> = {};
 
   if (loaiPhieuIds.length > 0) {
-    const { data: nhomRows } = await supabase.from(TABLE_NHOM).select('id, loai_phieu').in('id', loaiPhieuIds);
+    const { data: nhomRows } = await db.from(TABLE_NHOM).select('id, loai_phieu').in('id', loaiPhieuIds);
     (nhomRows ?? []).forEach((r: Row) => { mapLoaiPhieu[Number(r.id)] = (r.loai_phieu as string) ?? ''; });
   }
   if (nguoiTaoIds.length > 0) {
-    const { data: nvRows } = await supabase.from(TABLE_NHAN_VIEN).select('id, ho_va_ten').in('id', nguoiTaoIds);
+    const { data: nvRows } = await db.from(TABLE_NHAN_VIEN).select('id, ho_va_ten').in('id', nguoiTaoIds);
     (nvRows ?? []).forEach((r: Row) => { mapTenNhanVien[Number(r.id)] = (r.ho_va_ten as string) ?? ''; });
   }
   return { mapLoaiPhieu, mapTenNhanVien };
@@ -119,7 +119,7 @@ async function fetchMaps(rows: Row[]): Promise<{ mapLoaiPhieu: Record<number, st
 
 export async function getAdminForms(): Promise<AdminFormRequest[]> {
   const rows = await fetchAllRows<Row>(async (from, to) =>
-    supabase.from(TABLE).select(ADMIN_FORM_ROW_COLUMNS).order('ngay', { ascending: false }).range(from, to)
+    db.from(TABLE).select(ADMIN_FORM_ROW_COLUMNS).order('ngay', { ascending: false }).range(from, to)
   );
   const { mapLoaiPhieu, mapTenNhanVien } = await fetchMaps(rows);
   return rows.map((r) => rowToRequest(r, mapLoaiPhieu, mapTenNhanVien));
@@ -134,7 +134,7 @@ export async function getAdminFormsByUserAndMonth(
   const isNum = !Number.isNaN(nguoiTaoId);
   const run = async (from: number, to: number) =>
     isNum
-      ? supabase
+      ? db
           .from(TABLE)
           .select(ADMIN_FORM_ROW_COLUMNS)
           .eq('nguoi_tao_id', nguoiTaoId)
@@ -142,7 +142,7 @@ export async function getAdminFormsByUserAndMonth(
           .lte('ngay', prefix + '31')
           .order('ngay', { ascending: false })
           .range(from, to)
-      : supabase
+      : db
           .from(TABLE)
           .select(ADMIN_FORM_ROW_COLUMNS)
           .gte('ngay', prefix + '01')
@@ -159,7 +159,7 @@ export async function getAdminFormsByUserAndMonth(
 /** Resolve loai_phieu (app) -> id nhóm phiếu (bigint) */
 async function resolveLoaiPhieuId(loaiPhieuApp: AdminFormType): Promise<number | null> {
   const loaiVi = LOAI_PHIEU_APP_TO_VI[loaiPhieuApp];
-  const { data } = await supabase
+  const { data } = await db
     .from(TABLE_NHOM)
     .select('id')
     .eq('loai_phieu', loaiVi)
@@ -193,7 +193,7 @@ export async function createAdminForm(
     tg_cap_nhat: null,
   };
 
-  const { data: inserted, error } = await supabase.from(TABLE).insert(row).select(ADMIN_FORM_ROW_COLUMNS).single();
+  const { data: inserted, error } = await db.from(TABLE).insert(row).select(ADMIN_FORM_ROW_COLUMNS).single();
   if (error) throw new Error(error.message);
   const insertedRow = inserted as Row;
   const { mapLoaiPhieu, mapTenNhanVien } = await fetchMaps([insertedRow]);
@@ -211,7 +211,7 @@ export async function updateAdminForm(id: string, data: AdminFormValues): Promis
     ly_do: data.ly_do?.trim() || null,
     tg_cap_nhat: new Date().toISOString(),
   };
-  const { data: updated, error } = await supabase
+  const { data: updated, error } = await db
     .from(TABLE)
     .update(row)
     .eq('id', idNum)
@@ -226,7 +226,7 @@ export async function updateAdminForm(id: string, data: AdminFormValues): Promis
 export async function cancelAdminForm(id: string): Promise<void> {
   const idNum = parseInt(id, 10);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('adminForm.service.notFound'));
-  const { error } = await supabase
+  const { error } = await db
     .from(TABLE)
     .update({ trang_thai: 'Đã hủy', tg_cap_nhat: new Date().toISOString() })
     .eq('id', idNum);
@@ -236,7 +236,7 @@ export async function cancelAdminForm(id: string): Promise<void> {
 export async function deleteAdminForm(id: string): Promise<void> {
   const idNum = parseInt(id, 10);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('adminForm.service.notFound'));
-  const { error } = await supabase.from(TABLE).delete().eq('id', idNum);
+  const { error } = await db.from(TABLE).delete().eq('id', idNum);
   if (error) throw new Error(error.message ?? i18n.t('adminForm.service.notFound'));
 }
 
@@ -244,7 +244,7 @@ export async function deleteAdminForms(ids: string[]): Promise<void> {
   if (ids.length === 0) return;
   const numIds = ids.map((id) => parseInt(id, 10)).filter((n) => !Number.isNaN(n));
   if (numIds.length === 0) return;
-  const { error } = await supabase.from(TABLE).delete().in('id', numIds);
+  const { error } = await db.from(TABLE).delete().in('id', numIds);
   if (error) throw new Error(error.message ?? i18n.t('adminForm.service.notFound'));
 }
 
@@ -252,7 +252,7 @@ export async function cancelAdminForms(ids: string[]): Promise<void> {
   if (ids.length === 0) return;
   const numIds = ids.map((id) => parseInt(id, 10)).filter((n) => !Number.isNaN(n));
   if (numIds.length === 0) return;
-  const { error } = await supabase
+  const { error } = await db
     .from(TABLE)
     .update({ trang_thai: 'Đã hủy', tg_cap_nhat: new Date().toISOString() })
     .in('id', numIds);
@@ -264,7 +264,7 @@ export async function approveAdminFormsByManager(ids: string[]): Promise<void> {
   if (ids.length === 0) return;
   const numIds = ids.map((id) => parseInt(id, 10)).filter((n) => !Number.isNaN(n));
   if (numIds.length === 0) return;
-  const { error } = await supabase
+  const { error } = await db
     .from(TABLE)
     .update({
       trang_thai: 'Đã duyệt',
@@ -278,7 +278,7 @@ export async function rejectAdminFormsByManager(ids: string[]): Promise<void> {
   if (ids.length === 0) return;
   const numIds = ids.map((id) => parseInt(id, 10)).filter((n) => !Number.isNaN(n));
   if (numIds.length === 0) return;
-  const { error } = await supabase
+  const { error } = await db
     .from(TABLE)
     .update({
       trang_thai: 'Từ chối',
@@ -317,7 +317,7 @@ export async function createAdminFormSystem(data: {
     nguoi_tao_id: nguoiTaoId,
     tg_cap_nhat: null,
   };
-  const { data: inserted, error } = await supabase.from(TABLE).insert(row).select(ADMIN_FORM_ROW_COLUMNS).single();
+  const { data: inserted, error } = await db.from(TABLE).insert(row).select(ADMIN_FORM_ROW_COLUMNS).single();
   if (error) throw new Error(error.message);
   const out = inserted as Row;
   const { mapLoaiPhieu, mapTenNhanVien } = await fetchMaps([out]);
@@ -327,7 +327,7 @@ export async function createAdminFormSystem(data: {
 export async function updateAdminFormGhiChu(id: string, ghiChu: string | null): Promise<void> {
   const idNum = parseInt(id, 10);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('adminForm.service.notFound'));
-  const { error } = await supabase
+  const { error } = await db
     .from(TABLE)
     .update({ ghi_chu: ghiChu?.trim() || null, tg_cap_nhat: new Date().toISOString() })
     .eq('id', idNum);
@@ -337,7 +337,7 @@ export async function updateAdminFormGhiChu(id: string, ghiChu: string | null): 
 export async function approveAdminFormByManager(id: string): Promise<void> {
   const idNum = parseInt(id, 10);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('adminForm.service.notFound'));
-  const { error } = await supabase
+  const { error } = await db
     .from(TABLE)
     .update({
       trang_thai: 'Đã duyệt',
@@ -350,7 +350,7 @@ export async function approveAdminFormByManager(id: string): Promise<void> {
 export async function rejectAdminFormByManager(id: string): Promise<void> {
   const idNum = parseInt(id, 10);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('adminForm.service.notFound'));
-  const { error } = await supabase
+  const { error } = await db
     .from(TABLE)
     .update({
       trang_thai: 'Từ chối',

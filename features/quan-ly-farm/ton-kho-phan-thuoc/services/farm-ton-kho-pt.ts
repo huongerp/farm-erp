@@ -1,7 +1,7 @@
 /**
  * Tồn kho + báo cáo NXT phân thuốc — view v_farm_ton_kho_phan_thuoc + flat view.
  */
-import { supabase, fetchAllRows } from '../../../../lib/supabase';
+import { db, fetchAllRows } from '../../../../lib/db';
 import { getKhoList } from '../../../kho-van/danh-sach-kho/services/kho-service';
 import { getAllFarmHangHoa } from '../../hang-hoa-phan-thuoc/services/farm-hang-hoa-service';
 import type { Kho } from '../../../kho-van/danh-sach-kho/core/types';
@@ -61,7 +61,7 @@ function rowToTonKho(r: TonKhoViewRow): TonKhoPTRecord {
 /** Ma trận tồn từ view (chỉ id kho × hàng + số lượng). */
 export async function getTonKhoPTMatrix(): Promise<TonKhoPTRecord[]> {
   const rows = await fetchAllRows<TonKhoViewRow>((from, to) =>
-    supabase.from(VIEW_TON).select('id_kho, id_hang_hoa, so_luong').range(from, to)
+    db.from(VIEW_TON).select('id_kho, id_hang_hoa, so_luong').range(from, to)
   );
   return rows.map(rowToTonKho);
 }
@@ -99,7 +99,7 @@ export async function getPhieuKhoPTHangNxHistory(idHangHoa: string): Promise<Ton
   if (!idHangHoa?.trim() || Number.isNaN(idNum)) return [];
 
   const rows = await fetchAllRows<HangNxHistoryDbRow>((from, to) =>
-    supabase
+    db
       .from(VIEW_FLAT)
       .select(HANG_NX_HISTORY_SELECT)
       .eq('id_hang_hoa', idNum)
@@ -176,7 +176,7 @@ async function computeNXTPTPeriodState(filters: NXTPTFilters): Promise<NXTPTPeri
   const [tonKhoList, flatRows, khoList, hangHoaList] = await Promise.all([
     getTonKhoPTMatrix(),
     fetchAllRows<FarmPhieuKhoPTFlatRow>((from, to) =>
-      supabase.from(VIEW_FLAT).select(FLAT_SELECT).range(from, to)
+      db.from(VIEW_FLAT).select(FLAT_SELECT).range(from, to)
     ),
     getKhoList(),
     getAllFarmHangHoa(),

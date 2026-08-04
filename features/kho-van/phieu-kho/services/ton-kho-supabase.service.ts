@@ -2,7 +2,7 @@
  * Tồn kho từ view fp_mh_ton_kho (Supabase) và định mức từ bảng fp_mh_dinh_muc_ton_kho.
  */
 
-import { supabase, fetchAllRows, throwSupabaseError } from '../../../../lib/supabase';
+import { db, fetchAllRows, throwSupabaseError } from '../../../../lib/db';
 
 const VIEW_TON_KHO = 'fp_mh_ton_kho';
 
@@ -71,7 +71,7 @@ async function fetchTonKhoMatrixViaRest(scope: TonKhoMatrixScope): Promise<TonKh
   const nums =
     idsOnly !== null ? idsOnly.map(Number).filter((n) => !Number.isNaN(n)) : null;
   const rows = await fetchAllRows<TonKhoViewRow>((from, to) => {
-    let q = supabase.from(VIEW_TON_KHO).select('kho_id, id_hang_hoa, so_luong');
+    let q = db.from(VIEW_TON_KHO).select('kho_id, id_hang_hoa, so_luong');
     if (nums !== null && nums.length > 0) q = q.in('kho_id', nums);
     return q.range(from, to);
   });
@@ -89,7 +89,7 @@ export async function getTonKhoMatrixSupabase(scope: TonKhoMatrixScope): Promise
   const pKhoIds =
     scope.kind === 'all' ? null : scope.ids.map(Number).filter((n) => !Number.isNaN(n));
 
-  const { data, error } = await supabase.rpc('rpc_ton_kho_matrix', {
+  const { data, error } = await db.rpc('rpc_ton_kho_matrix', {
     p_kho_ids: scope.kind === 'all' ? null : pKhoIds,
   });
 
@@ -110,7 +110,7 @@ export async function getTonKhoSupabase(id_kho: string, id_hang_hoa: string): Pr
   const khoNum = Number(id_kho);
   const hhNum = Number(id_hang_hoa);
   if (Number.isNaN(khoNum) || Number.isNaN(hhNum)) return 0;
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from(VIEW_TON_KHO)
     .select('so_luong')
     .eq('kho_id', khoNum)
@@ -126,7 +126,7 @@ export async function getTonKhoTheoKhoSupabase(
 ): Promise<{ id_hang_hoa: string; so_luong: number }[]> {
   const khoNum = Number(id_kho);
   if (Number.isNaN(khoNum)) return [];
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from(VIEW_TON_KHO)
     .select('id_hang_hoa, so_luong')
     .eq('kho_id', khoNum);
@@ -143,7 +143,7 @@ export async function getTonKhoTheoHangHoaSupabase(
 ): Promise<{ id_kho: string; so_luong: number }[]> {
   const hhNum = Number(id_hang_hoa);
   if (Number.isNaN(hhNum)) return [];
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from(VIEW_TON_KHO)
     .select('kho_id, so_luong')
     .eq('id_hang_hoa', hhNum);
@@ -162,7 +162,7 @@ const dinhMucKey = (kho_id: string, hang_hoa_id: string) => `${kho_id}|${hang_ho
 /** Lấy toàn bộ định mức tồn kho (kho_id, hang_hoa_id, ton_toi_thieu). Trả về Map để tra nhanh. */
 export async function getDinhMucTonKhoSupabase(): Promise<DinhMucTonKhoMap> {
   const rows = await fetchAllRows<DinhMucDbRow>((from, to) =>
-    supabase.from(TABLE_DINH_MUC).select('kho_id, hang_hoa_id, ton_toi_thieu').range(from, to)
+    db.from(TABLE_DINH_MUC).select('kho_id, hang_hoa_id, ton_toi_thieu').range(from, to)
   );
   const map: DinhMucTonKhoMap = new Map();
   rows.forEach((r) => {
@@ -186,7 +186,7 @@ function rowToDinhMuc(r: DinhMucDbRow): DinhMucTonKhoRow {
 /** Lấy danh sách định mức tồn kho (đủ cột cho tab Định mức tồn). */
 export async function getDinhMucListSupabase(): Promise<DinhMucTonKhoRow[]> {
   const rows = await fetchAllRows<DinhMucDbRow>((from, to) =>
-    supabase.from(TABLE_DINH_MUC).select('id, kho_id, hang_hoa_id, ton_toi_thieu').range(from, to)
+    db.from(TABLE_DINH_MUC).select('id, kho_id, hang_hoa_id, ton_toi_thieu').range(from, to)
   );
   return rows.map(rowToDinhMuc);
 }
@@ -195,7 +195,7 @@ export async function getDinhMucListSupabase(): Promise<DinhMucTonKhoRow[]> {
 export async function getDinhMucByHangHoaSupabase(hang_hoa_id: string): Promise<DinhMucTonKhoRow[]> {
   const num = Number(hang_hoa_id);
   if (Number.isNaN(num)) return [];
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from(TABLE_DINH_MUC)
     .select('id, kho_id, hang_hoa_id, ton_toi_thieu')
     .eq('hang_hoa_id', num);
@@ -209,7 +209,7 @@ export async function createDinhMucTonKhoSupabase(payload: {
   hang_hoa_id: string;
   ton_toi_thieu: number;
 }): Promise<DinhMucTonKhoRow> {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from(TABLE_DINH_MUC)
     .insert({
       kho_id: Number(payload.kho_id),
@@ -227,7 +227,7 @@ export async function updateDinhMucTonKhoSupabase(
   id: string,
   payload: { ton_toi_thieu: number }
 ): Promise<DinhMucTonKhoRow> {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from(TABLE_DINH_MUC)
     .update({ ton_toi_thieu: payload.ton_toi_thieu })
     .eq('id', Number(id))
@@ -239,7 +239,7 @@ export async function updateDinhMucTonKhoSupabase(
 
 /** Xóa định mức tồn kho. */
 export async function deleteDinhMucTonKhoSupabase(id: string): Promise<void> {
-  const { error } = await supabase.from(TABLE_DINH_MUC).delete().eq('id', Number(id));
+  const { error } = await db.from(TABLE_DINH_MUC).delete().eq('id', Number(id));
   if (error) throwSupabaseError(error);
 }
 

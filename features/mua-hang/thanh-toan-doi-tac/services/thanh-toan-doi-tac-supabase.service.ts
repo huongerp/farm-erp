@@ -2,7 +2,7 @@
  * Service thanh toán đối tác – đọc/ghi Supabase (fp_mh_thanh_toan_doi_tac).
  * Dùng id_trang_thai_thanh_toan (FK) và trang_thai (text denormalize).
  */
-import { supabase, fetchAllRows, throwSupabaseError } from '../../../../lib/supabase';
+import { db, fetchAllRows, throwSupabaseError } from '../../../../lib/db';
 import type { ThanhToanDoiTac } from '../core/types';
 import type { ThanhToanDoiTacFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
@@ -26,7 +26,7 @@ export interface NextSoPhieuTtoConfig {
 
 /** Gọi RPC Supabase lấy số thứ tự tiếp theo, format thành mã phiếu (tiền tố + pad). */
 export async function getNextSoPhieuThanhToanDoiTacRpc(config: NextSoPhieuTtoConfig): Promise<string> {
-  const { data, error } = await supabase.rpc(RPC_NEXT_SO_PHIEU);
+  const { data, error } = await db.rpc(RPC_NEXT_SO_PHIEU);
   if (error) throwSupabaseError(error);
   const nextNum = Number(data);
   if (Number.isNaN(nextNum) || nextNum < 1) throw new Error('Invalid next number from RPC');
@@ -64,7 +64,7 @@ async function loadDoiTacEnrichMap(
 ): Promise<Record<string, { ten: string; ma: string; ten_nhom?: string }>> {
   const [doiTacRows, nhomList] = await Promise.all([
     fetchAllRows<DoiTacNhomRow>((from, to) =>
-      supabase
+      db
         .from(TABLE_DOI_TAC)
         .select('id, ma_doi_tac, ten_doi_tac, id_nhom')
         .eq('loai_doi_tac', loai)
@@ -141,7 +141,7 @@ function rowToItem(
 export async function getAllThanhToanDoiTac(): Promise<ThanhToanDoiTac[]> {
   const [rows, branches, doiTacMap, employees, statusList] = await Promise.all([
     fetchAllRows<DbRow>((from, to) =>
-      supabase
+      db
         .from(TABLE)
         .select(THANH_TOAN_ROW_COLUMNS)
         .order('ngay', { ascending: false })
@@ -198,7 +198,7 @@ export async function getThanhToanDoiTacById(id: string): Promise<ThanhToanDoiTa
   const idNum = Number(id);
   if (Number.isNaN(idNum)) return null;
 
-  const { data: row, error } = await supabase
+  const { data: row, error } = await db
     .from(TABLE)
     .select(THANH_TOAN_ROW_COLUMNS)
     .eq('id', idNum)
@@ -256,7 +256,7 @@ export async function getThanhToanDoiTacById(id: string): Promise<ThanhToanDoiTa
 
 export async function createThanhToanDoiTac(data: ThanhToanDoiTacFormValues): Promise<ThanhToanDoiTac> {
   const soPhieu = data.so_phieu.trim();
-  const { data: existing } = await supabase.from(TABLE).select('id').eq('so_phieu', soPhieu).maybeSingle();
+  const { data: existing } = await db.from(TABLE).select('id').eq('so_phieu', soPhieu).maybeSingle();
   if (existing) throw new Error(i18n.t('thanhToanDoiTac.service.duplicateSoPhieu'));
 
   const statusList = await getTrangThaiThanhToanDoiTacList();
@@ -278,7 +278,7 @@ export async function createThanhToanDoiTac(data: ThanhToanDoiTacFormValues): Pr
     id_nguoi_tao: toNum(data.id_nguoi_tao),
   };
 
-  const { data: inserted, error } = await supabase.from(TABLE).insert(payload).select(THANH_TOAN_ROW_COLUMNS).single();
+  const { data: inserted, error } = await db.from(TABLE).insert(payload).select(THANH_TOAN_ROW_COLUMNS).single();
   if (error) throwSupabaseError(error);
 
   const got = await getThanhToanDoiTacById(String((inserted as DbRow).id));
@@ -294,7 +294,7 @@ export async function updateThanhToanDoiTac(
   if (Number.isNaN(idNum)) throw new Error(i18n.t('thanhToanDoiTac.service.notFound'));
 
   const soPhieu = data.so_phieu.trim();
-  const { data: other } = await supabase
+  const { data: other } = await db
     .from(TABLE)
     .select('id')
     .eq('so_phieu', soPhieu)
@@ -321,7 +321,7 @@ export async function updateThanhToanDoiTac(
     id_nguoi_tao: toNum(data.id_nguoi_tao),
   };
 
-  const { error } = await supabase.from(TABLE).update(payload).eq('id', idNum);
+  const { error } = await db.from(TABLE).update(payload).eq('id', idNum);
   if (error) throwSupabaseError(error);
 
   const got = await getThanhToanDoiTacById(id);
@@ -332,13 +332,13 @@ export async function updateThanhToanDoiTac(
 export async function deleteThanhToanDoiTac(id: string): Promise<void> {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('thanhToanDoiTac.service.notFound'));
-  const { error } = await supabase.from(TABLE).delete().eq('id', idNum);
+  const { error } = await db.from(TABLE).delete().eq('id', idNum);
   if (error) throwSupabaseError(error);
 }
 
 export async function deleteThanhToanDoiTacMany(ids: string[]): Promise<void> {
   const numIds = ids.map((s) => Number(s)).filter((n) => !Number.isNaN(n));
   if (numIds.length === 0) return;
-  const { error } = await supabase.from(TABLE).delete().in('id', numIds);
+  const { error } = await db.from(TABLE).delete().in('id', numIds);
   if (error) throwSupabaseError(error);
 }

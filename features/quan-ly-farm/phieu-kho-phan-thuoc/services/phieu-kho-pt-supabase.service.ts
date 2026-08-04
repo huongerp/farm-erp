@@ -1,7 +1,7 @@
 /**
  * Phiếu kho phân thuốc — Supabase (fp_farm_phieu_kho_phan_thuoc + chi tiết + views).
  */
-import { supabase, fetchTablePage, type PaginatedTableResult, throwSupabaseError } from '../../../../lib/supabase';
+import { db, fetchTablePage, type PaginatedTableResult, throwSupabaseError } from '../../../../lib/db';
 import type {
   PhieuKhoPT,
   PhieuKhoPTChiTiet,
@@ -183,7 +183,7 @@ function rowToChiTiet(
 }
 
 export async function getNextSoPhieuFarmPtSupabase(loai: LoaiPhieuKhoPT): Promise<string> {
-  const { data, error } = await supabase.rpc('get_next_so_phieu_farm_pt', { p_loai: loai });
+  const { data, error } = await db.rpc('get_next_so_phieu_farm_pt', { p_loai: loai });
   if (error) throwSupabaseError(error);
   if (typeof data !== 'string') throw new Error('get_next_so_phieu_farm_pt did not return string');
   return data;
@@ -192,7 +192,7 @@ export async function getNextSoPhieuFarmPtSupabase(loai: LoaiPhieuKhoPT): Promis
 export async function getPhieuKhoPTByIdSupabase(id: string): Promise<PhieuKhoPT | null> {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) return null;
-  const { data: row, error } = await supabase
+  const { data: row, error } = await db
     .from(TABLE_PHIEU)
     .select(PHIEU_PT_HEADER_ROW_SELECT)
     .eq('id', idNum)
@@ -203,7 +203,7 @@ export async function getPhieuKhoPTByIdSupabase(id: string): Promise<PhieuKhoPT 
   const [khoList, employees, ctRows, hangHoaList] = await Promise.all([
     getKhoRef(),
     getEmployeesRef(),
-    supabase
+    db
       .from(TABLE_CHI_TIET)
       .select(PHIEU_PT_CHI_TIET_ROW_SELECT)
       .eq('id_phieu_kho', idNum)
@@ -245,7 +245,7 @@ export async function getPhieuKhoPTByIdSupabase(id: string): Promise<PhieuKhoPT 
 export async function createPhieuKhoPTSupabase(data: PhieuKhoPTFormValues): Promise<PhieuKhoPT> {
   const loai = data.loai as LoaiPhieuKhoPT;
   const soPhieu = data.so_phieu.trim();
-  const { data: existing } = await supabase.from(TABLE_PHIEU).select('id').eq('so_phieu', soPhieu).eq('loai', loai).maybeSingle();
+  const { data: existing } = await db.from(TABLE_PHIEU).select('id').eq('so_phieu', soPhieu).eq('loai', loai).maybeSingle();
   if (existing) throw new Error(i18n.t('phieuKhoPhanThuoc.service.duplicateCode'));
 
   const [khoList, employees] = await Promise.all([getKhoRef(), getEmployeesRef()]);
@@ -274,7 +274,7 @@ export async function createPhieuKhoPTSupabase(data: PhieuKhoPTFormValues): Prom
     ten_nguoi_tao: nguoiTaoId != null ? (nvMap[String(nguoiTaoId)] ?? null) : null,
   };
 
-  const { data: inserted, error } = await supabase.from(TABLE_PHIEU).insert(payload).select(PHIEU_PT_HEADER_ROW_SELECT).single();
+  const { data: inserted, error } = await db.from(TABLE_PHIEU).insert(payload).select(PHIEU_PT_HEADER_ROW_SELECT).single();
   if (error) throwSupabaseError(error);
   const idPhieu = (inserted as PhieuKhoPTDbRow).id;
   const idStr = String(idPhieu);
@@ -305,7 +305,7 @@ export async function createPhieuKhoPTSupabase(data: PhieuKhoPTFormValues): Prom
         ten_nguoi_tao: nguoiTaoId != null ? (nvMap[String(nguoiTaoId)] ?? null) : null,
       };
     });
-    const { error: errCt } = await supabase.from(TABLE_CHI_TIET).insert(ctRows);
+    const { error: errCt } = await db.from(TABLE_CHI_TIET).insert(ctRows);
     if (errCt) throwSupabaseError(errCt);
   }
 
@@ -318,12 +318,12 @@ export async function updatePhieuKhoPTSupabase(id: string, data: PhieuKhoPTFormV
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('phieuKhoPhanThuoc.service.notFound'));
 
-  const { data: oldRow, error: fetchErr } = await supabase.from(TABLE_PHIEU).select(PHIEU_PT_HEADER_ROW_SELECT).eq('id', idNum).maybeSingle();
+  const { data: oldRow, error: fetchErr } = await db.from(TABLE_PHIEU).select(PHIEU_PT_HEADER_ROW_SELECT).eq('id', idNum).maybeSingle();
   if (fetchErr || !oldRow) throw new Error(i18n.t('phieuKhoPhanThuoc.service.notFound'));
 
   const soPhieu = data.so_phieu.trim();
   const loaiForUnique = data.loai as LoaiPhieuKhoPT;
-  const { data: other } = await supabase
+  const { data: other } = await db
     .from(TABLE_PHIEU)
     .select('id')
     .eq('so_phieu', soPhieu)
@@ -358,10 +358,10 @@ export async function updatePhieuKhoPTSupabase(id: string, data: PhieuKhoPTFormV
     ten_nguoi_tao: nguoiTaoId != null ? (nvMap[String(nguoiTaoId)] ?? null) : null,
   };
 
-  const { error: updateErr } = await supabase.from(TABLE_PHIEU).update(payload).eq('id', idNum);
+  const { error: updateErr } = await db.from(TABLE_PHIEU).update(payload).eq('id', idNum);
   if (updateErr) throwSupabaseError(updateErr);
 
-  await supabase.from(TABLE_CHI_TIET).delete().eq('id_phieu_kho', idNum);
+  await db.from(TABLE_CHI_TIET).delete().eq('id_phieu_kho', idNum);
 
   const hangHoaList = await getAllFarmHangHoa();
   const hangHoaMap: Record<string, { ten_hang_hoa: string; don_vi_tinh?: string }> = {};
@@ -389,7 +389,7 @@ export async function updatePhieuKhoPTSupabase(id: string, data: PhieuKhoPTFormV
         ten_nguoi_tao: nguoiTaoId != null ? (nvMap[String(nguoiTaoId)] ?? null) : null,
       };
     });
-    const { error: errCt } = await supabase.from(TABLE_CHI_TIET).insert(ctRows);
+    const { error: errCt } = await db.from(TABLE_CHI_TIET).insert(ctRows);
     if (errCt) throwSupabaseError(errCt);
   }
 
@@ -422,7 +422,7 @@ export async function updatePhieuKhoPTTrangThaiSupabase(
       ? options.id_nguoi_duyet
       : null;
 
-  const { data: row } = await supabase.from(TABLE_PHIEU).select('trao_doi').eq('id', idNum).maybeSingle();
+  const { data: row } = await db.from(TABLE_PHIEU).select('trao_doi').eq('id', idNum).maybeSingle();
   const existing = (row as { trao_doi?: string } | null)?.trao_doi ?? '';
   const ts = formatPhieuKhoPTTraoDoiTimestamp();
   const who =
@@ -433,7 +433,7 @@ export async function updatePhieuKhoPTTrangThaiSupabase(
     ? `${ts} — ${who} ${actionVerb}. Ghi chú: ${ghi_chu.trim()}`
     : `${ts} — ${who} ${actionVerb}.`;
   const newTraoDoi = existing ? existing + '\n' + entry : entry;
-  const { error } = await supabase
+  const { error } = await db
     .from(TABLE_PHIEU)
     .update({ trang_thai, trao_doi: newTraoDoi, id_nguoi_duyet: idNguoiDuyet })
     .eq('id', idNum);
@@ -443,14 +443,14 @@ export async function updatePhieuKhoPTTrangThaiSupabase(
 export async function deletePhieuKhoPTSupabase(id: string): Promise<void> {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('phieuKhoPhanThuoc.service.notFound'));
-  const { error } = await supabase.from(TABLE_PHIEU).delete().eq('id', idNum);
+  const { error } = await db.from(TABLE_PHIEU).delete().eq('id', idNum);
   if (error) throwSupabaseError(error);
 }
 
 export async function deletePhieuKhoPTManySupabase(ids: string[]): Promise<void> {
   const numIds = ids.map((id) => Number(id)).filter((n) => !Number.isNaN(n));
   if (numIds.length === 0) return;
-  const { error } = await supabase.from(TABLE_PHIEU).delete().in('id', numIds);
+  const { error } = await db.from(TABLE_PHIEU).delete().in('id', numIds);
   if (error) throwSupabaseError(error);
 }
 
@@ -569,7 +569,7 @@ export async function getPhieuKhoPTPageSupabase(
   listQuery?: PhieuKhoPTListServerQuery
 ): Promise<PaginatedTableResult<PhieuKhoPT>> {
   const pageResult = await fetchTablePage<PhieuKhoPTSummaryRow>(page, pageSize, async (from, to) => {
-    let sel = supabase.from(VIEW_SUMMARY).select(PHIEU_PT_SUMMARY_SELECT, { count: 'exact' });
+    let sel = db.from(VIEW_SUMMARY).select(PHIEU_PT_SUMMARY_SELECT, { count: 'exact' });
     if (listQuery) sel = applyPhieuKhoPTListQueryToSummarySelect(sel, listQuery);
     const res = await sel.order('ngay', { ascending: false }).order('so_phieu', { ascending: false }).range(from, to);
     return { data: (res.data ?? null) as PhieuKhoPTSummaryRow[] | null, error: res.error, count: res.count };
@@ -585,7 +585,7 @@ export async function getChiTietPhieuKhoPTPageSupabase(
 ): Promise<PaginatedTableResult<ChiTietPhieuKhoPTFlat>> {
   const [pageResult, nvMap] = await Promise.all([
     fetchTablePage<PhieuKhoPTChiTietFlatViewRow>(page, pageSize, async (from, to) => {
-      let sel = supabase.from(VIEW_FLAT).select(PHIEU_PT_CHI_TIET_FLAT_SELECT, { count: 'exact' });
+      let sel = db.from(VIEW_FLAT).select(PHIEU_PT_CHI_TIET_FLAT_SELECT, { count: 'exact' });
       if (listQuery) sel = applyChiTietPhieuKhoPTListQueryToFlatSelect(sel, listQuery);
       const res = await sel
         .order('ngay', { ascending: false })

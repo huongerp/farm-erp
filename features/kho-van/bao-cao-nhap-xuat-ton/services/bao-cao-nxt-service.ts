@@ -11,7 +11,7 @@ import { getAllPhieuKho } from '../../phieu-kho/services/phieu-kho-service';
 import { getAllTonKho } from '../../phieu-kho/services/ton-kho-service';
 import { getKhoList } from '../../danh-sach-kho/services/kho-service';
 import { getHangHoaRef, type HangHoaRefLite } from '../../danh-sach-hang-hoa/services/hang-hoa-service';
-import { supabase, fetchAllRows } from '../../../../lib/supabase';
+import { db, fetchAllRows } from '../../../../lib/db';
 
 /* ────────────────────────── helpers ────────────────────────── */
 
@@ -115,7 +115,7 @@ function nxtFiltersToRpcPayload(filters: NXTReportFilters): Record<string, unkno
 
 export async function getNXTByPeriod(filters: NXTReportFilters): Promise<NXTByPeriodResult> {
   try {
-    const { data, error } = await supabase.rpc('rpc_nxt_by_period', {
+    const { data, error } = await db.rpc('rpc_nxt_by_period', {
       p_filters: nxtFiltersToRpcPayload(filters),
     });
     if (!error && data != null && typeof data === 'object' && Array.isArray((data as NXTByPeriodResult).byWarehouse)) {
@@ -136,7 +136,7 @@ export async function getNXTByPeriod(filters: NXTReportFilters): Promise<NXTByPe
     getHangHoaRef(),
     getAllTonKho(),
     fetchAllRows<{ id_phieu_kho: number; id_hang_hoa: number; so_luong: number }>((from, to) =>
-      supabase
+      db
         .from('fp_mh_phieu_kho_chi_tiet')
         .select('id_phieu_kho, id_hang_hoa, so_luong')
         .range(from, to)
@@ -388,7 +388,7 @@ const TRANG_THAI_NUM_TO_TEXT: Record<number, string> = {
  */
 export async function getPhieuInPeriod(filters: NXTReportFilters): Promise<PhieuKho[]> {
   try {
-    const { data, error } = await supabase.rpc('rpc_phieu_in_period', {
+    const { data, error } = await db.rpc('rpc_phieu_in_period', {
       p_filters: nxtFiltersToRpcPayload(filters),
     });
     if (!error && Array.isArray(data)) return data as PhieuKho[];
@@ -416,7 +416,7 @@ export async function getPhieuInPeriod(filters: NXTReportFilters): Promise<Phieu
     needsProductFilter ? getHangHoaRef() : Promise.resolve<HangHoaRefLite[]>([]),
     needsProductFilter
       ? fetchAllRows<{ id_phieu_kho: number; id_hang_hoa: number }>((from, to) =>
-          supabase
+          db
             .from('fp_mh_phieu_kho_chi_tiet')
             .select('id_phieu_kho, id_hang_hoa')
             .range(from, to)
@@ -496,7 +496,7 @@ export async function getPhieuInPeriod(filters: NXTReportFilters): Promise<Phieu
  */
 export async function getTonAtDate(filters: Pick<NXTReportFilters, 'warehouseIds' | 'hangHoaIds' | 'categoryIds' | 'allowedBranchIds'>): Promise<TonTaiThoiDiemRow[]> {
   try {
-    const { data, error } = await supabase.rpc('rpc_ton_at_date', {
+    const { data, error } = await db.rpc('rpc_ton_at_date', {
       p_filters: filters as unknown as Record<string, unknown>,
     });
     if (!error && Array.isArray(data)) return data as TonTaiThoiDiemRow[];

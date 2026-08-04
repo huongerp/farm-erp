@@ -6,6 +6,9 @@ import { cn } from '../../lib/utils';
 import { useEnterTransition } from '../../lib/usePresenceTransition';
 import { DIALOG_SIZE } from '../../lib/dialog-sizes';
 
+type CellValue = string | number | boolean | null | undefined;
+
+
 export interface ImportColumn {
   key: string;
   label: string;
@@ -26,7 +29,7 @@ interface ImportDialogProps {
   open: boolean;
   onClose: () => void;
   columns: ImportColumn[];
-  onImport: (data: Record<string, any>[]) => Promise<void>;
+  onImport: (data: Record<string, unknown>[]) => Promise<void>;
   templateFileName?: string;
   /** Sheet tham chiếu thêm vào file mẫu (danh mục, kho...). */
   referenceSheets?: ImportReferenceSheet[];
@@ -46,7 +49,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
   const [step, setStep] = useState<Step>('upload');
   const [file, setFile] = useState<File | null>(null);
   const [sheetHeaders, setSheetHeaders] = useState<string[]>([]);
-  const [sheetData, setSheetData] = useState<any[][]>([]);
+  const [sheetData, setSheetData] = useState<CellValue[][]>([]);
   const [mapping, setMapping] = useState<Record<string, string>>({});
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState<{ success: number; errors: string[] } | null>(null);
@@ -76,7 +79,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
       const buffer = await f.arrayBuffer();
       const workbook = XLSX.read(buffer, { type: 'array' });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const json = XLSX.utils.sheet_to_json<any[]>(sheet, { header: 1 });
+      const json = XLSX.utils.sheet_to_json<CellValue[]>(sheet, { header: 1 });
 
       if (json.length < 2) {
         setResult({ success: 0, errors: [t('shared.import.noDataOrHeader')] });
@@ -85,9 +88,9 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
       }
 
       const headers = (json[0] as string[]).map(h => String(h || '').trim());
-      const data = json.slice(1).filter(row => (row as any[]).some(cell => cell !== null && cell !== undefined && cell !== ''));
+      const data = json.slice(1).filter(row => (row as CellValue[]).some(cell => cell !== null && cell !== undefined && cell !== ''));
       setSheetHeaders(headers);
-      setSheetData(data as any[][]);
+      setSheetData(data as CellValue[][]);
 
       const autoMap: Record<string, string> = {};
       columns.forEach(col => {
@@ -121,7 +124,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
   const handleImport = async () => {
     setImporting(true);
     const errors: string[] = [];
-    const parsed: Record<string, any>[] = [];
+    const parsed: Record<string, unknown>[] = [];
 
     const unmapped = columns.filter(c => c.required && !mapping[c.key]);
     if (unmapped.length > 0) {
@@ -132,7 +135,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
     }
 
     sheetData.forEach((row, rowIdx) => {
-      const record: Record<string, any> = {};
+      const record: Record<string, unknown> = {};
       let hasError = false;
 
       columns.forEach(col => {
@@ -156,8 +159,8 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
     try {
       if (parsed.length > 0) await onImport(parsed);
       setResult({ success: parsed.length, errors });
-    } catch (err: any) {
-      setResult({ success: 0, errors: [err?.message || t('shared.import.importError')] });
+    } catch (err: unknown) {
+      setResult({ success: 0, errors: [err instanceof Error ? err.message : t('shared.import.importError')] });
     }
     setStep('result');
     setImporting(false);
@@ -167,7 +170,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
     const XLSX = await import('xlsx');
     const wb = XLSX.utils.book_new();
     const headerRow = columns.map(c => c.label);
-    const templateData: any[][] = [headerRow];
+    const templateData: CellValue[][] = [headerRow];
     if (sampleRows && sampleRows.length > 0) {
       sampleRows.forEach((sr) => templateData.push(sr));
     }
@@ -183,7 +186,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
 
     if (referenceSheets) {
       referenceSheets.forEach((ref) => {
-        const refData: any[][] = [ref.headers, ...ref.data];
+        const refData: CellValue[][] = [ref.headers, ...ref.data];
         const refWs = XLSX.utils.aoa_to_sheet(refData);
         refWs['!cols'] = ref.headers.map((h, i) => {
           let max = h.length;

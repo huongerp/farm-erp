@@ -1,7 +1,7 @@
 /**
  * Quản lý hợp đồng – Supabase (fp_mh_hop_dong, fp_mh_hop_dong_ct, v_hop_dong_summary)
  */
-import { supabase, fetchAllRows, throwSupabaseError } from '../../../../lib/supabase';
+import { db, fetchAllRows, throwSupabaseError } from '../../../../lib/db';
 import type { HopDong, HopDongChiTiet, HopDongChiTietEnriched } from '../core/types';
 import type { HopDongFormValues, HopDongChiTietLineValues } from '../core/schema';
 import type { TrangThaiHopDong } from '../core/constants';
@@ -214,7 +214,7 @@ function lineToCtPayload(
 
 export async function getAllHopDongSupabase(): Promise<HopDong[]> {
   const rows = await fetchAllRows<HopSummaryRow>((from, to) =>
-    supabase
+    db
       .from(VIEW_SUMMARY)
       .select(VIEW_SUMMARY_SELECT)
       .order('ngay', { ascending: false, nullsFirst: false })
@@ -223,7 +223,7 @@ export async function getAllHopDongSupabase(): Promise<HopDong[]> {
   );
 
   const ctRows = await fetchAllRows<CtAggRow>((from, to) =>
-    supabase.from(TABLE_CT).select(CT_AGG_SELECT).order('id', { ascending: true }).range(from, to)
+    db.from(TABLE_CT).select(CT_AGG_SELECT).order('id', { ascending: true }).range(from, to)
   );
   const aggMap = buildCtAggMap(ctRows);
 
@@ -237,7 +237,7 @@ export async function getHopDongByIdSupabase(id: string): Promise<HopDong | null
   const idNum = Number(id);
   if (Number.isNaN(idNum)) return null;
 
-  const { data: row, error } = await supabase
+  const { data: row, error } = await db
     .from(VIEW_SUMMARY)
     .select(VIEW_SUMMARY_SELECT)
     .eq('id', idNum)
@@ -245,7 +245,7 @@ export async function getHopDongByIdSupabase(id: string): Promise<HopDong | null
   if (error) throwSupabaseError(error);
   if (!row) return null;
 
-  const { data: ctRows = [] } = await supabase
+  const { data: ctRows = [] } = await db
     .from(TABLE_CT)
     .select(CT_SELECT)
     .eq('id_hop_dong', idNum)
@@ -259,7 +259,7 @@ export async function getHopDongByIdSupabase(id: string): Promise<HopDong | null
 
 export async function createHopDongSupabase(data: HopDongFormValues, idNguoiTao: string): Promise<HopDong> {
   const ma = data.ma_hop_dong.trim();
-  const { data: existing } = await supabase.from(TABLE_HOP).select('id').eq('ma_hop_dong', ma).maybeSingle();
+  const { data: existing } = await db.from(TABLE_HOP).select('id').eq('ma_hop_dong', ma).maybeSingle();
   if (existing) throw new Error(i18n.t('hopDong.service.duplicateMa'));
 
   const nvId = Number(idNguoiTao);
@@ -287,7 +287,7 @@ export async function createHopDongSupabase(data: HopDongFormValues, idNguoiTao:
     id_nguoi_tao: nvId,
   };
 
-  const { data: inserted, error } = await supabase.from(TABLE_HOP).insert(payload).select(HOP_ROW_COLUMNS).single();
+  const { data: inserted, error } = await db.from(TABLE_HOP).insert(payload).select(HOP_ROW_COLUMNS).single();
   if (error) throwSupabaseError(error);
   const idHop = (inserted as HopDbRow).id;
   const idStr = String(idHop);
@@ -301,11 +301,11 @@ export async function updateHopDongSupabase(id: string, data: HopDongFormValues)
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('hopDong.service.notFound'));
 
-  const { data: oldRow, error: fetchErr } = await supabase.from(TABLE_HOP).select(HOP_ROW_COLUMNS).eq('id', idNum).maybeSingle();
+  const { data: oldRow, error: fetchErr } = await db.from(TABLE_HOP).select(HOP_ROW_COLUMNS).eq('id', idNum).maybeSingle();
   if (fetchErr || !oldRow) throw new Error(i18n.t('hopDong.service.notFound'));
 
   const ma = data.ma_hop_dong.trim();
-  const { data: other } = await supabase.from(TABLE_HOP).select('id').eq('ma_hop_dong', ma).neq('id', idNum).maybeSingle();
+  const { data: other } = await db.from(TABLE_HOP).select('id').eq('ma_hop_dong', ma).neq('id', idNum).maybeSingle();
   if (other) throw new Error(i18n.t('hopDong.service.duplicateMa'));
 
   const doiTacList = await getDoiTacRef('nha_cung_cap');
@@ -329,7 +329,7 @@ export async function updateHopDongSupabase(id: string, data: HopDongFormValues)
     hinh_anh_urls: Array.isArray(data.hinh_anh_urls) ? data.hinh_anh_urls : [],
   };
 
-  const { error: updateErr } = await supabase.from(TABLE_HOP).update(payload).eq('id', idNum);
+  const { error: updateErr } = await db.from(TABLE_HOP).update(payload).eq('id', idNum);
   if (updateErr) throwSupabaseError(updateErr);
 
   const got = await getHopDongByIdSupabase(id);
@@ -344,7 +344,7 @@ export async function updateHopDongTrangThaiSupabase(
 ): Promise<HopDong> {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('hopDong.service.notFound'));
-  const { error } = await supabase
+  const { error } = await db
     .from(TABLE_HOP)
     .update({ trang_thai, ghi_chu: ghi_chu?.trim() || null })
     .eq('id', idNum);
@@ -363,7 +363,7 @@ export async function insertHopDongChiTietSupabase(
   if (Number.isNaN(idHop)) throw new Error(i18n.t('hopDong.service.notFound'));
   const nv = idNguoiTao != null ? Number(idNguoiTao) : null;
   const payload = lineToCtPayload(idHop, row, nv != null && Number.isFinite(nv) ? nv : null);
-  const { data: inserted, error } = await supabase.from(TABLE_CT).insert(payload).select(CT_SELECT).single();
+  const { data: inserted, error } = await db.from(TABLE_CT).insert(payload).select(CT_SELECT).single();
   if (error) throwSupabaseError(error);
   return rowToChiTiet(inserted as ChiTietDbRow, idHopDong);
 }
@@ -371,7 +371,7 @@ export async function insertHopDongChiTietSupabase(
 export async function updateHopDongChiTietSupabase(idCt: string, row: HopDongChiTietLineValues): Promise<void> {
   const idNum = Number(idCt);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('hopDong.service.notFound'));
-  const { data: exists } = await supabase.from(TABLE_CT).select('id').eq('id', idNum).maybeSingle();
+  const { data: exists } = await db.from(TABLE_CT).select('id').eq('id', idNum).maybeSingle();
   if (!exists) throw new Error(i18n.t('hopDong.service.notFound'));
   const payload = {
     ngay: row.ngay?.trim() || null,
@@ -381,28 +381,28 @@ export async function updateHopDongChiTietSupabase(idCt: string, row: HopDongChi
     ghi_chu: row.ghi_chu?.trim() || null,
     id_chi_nhanh: toNum(row.id_chi_nhanh ?? undefined),
   };
-  const { error } = await supabase.from(TABLE_CT).update(payload).eq('id', idNum);
+  const { error } = await db.from(TABLE_CT).update(payload).eq('id', idNum);
   if (error) throwSupabaseError(error);
 }
 
 export async function deleteHopDongChiTietSupabase(idCt: string): Promise<void> {
   const idNum = Number(idCt);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('hopDong.service.notFound'));
-  const { error } = await supabase.from(TABLE_CT).delete().eq('id', idNum);
+  const { error } = await db.from(TABLE_CT).delete().eq('id', idNum);
   if (error) throwSupabaseError(error);
 }
 
 export async function deleteHopDongSupabase(id: string): Promise<void> {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('hopDong.service.notFound'));
-  const { error } = await supabase.from(TABLE_HOP).delete().eq('id', idNum);
+  const { error } = await db.from(TABLE_HOP).delete().eq('id', idNum);
   if (error) throwSupabaseError(error);
 }
 
 export async function deleteHopDongManySupabase(ids: string[]): Promise<void> {
   const numIds = ids.map((s) => Number(s)).filter((n) => !Number.isNaN(n));
   if (numIds.length === 0) return;
-  const { error } = await supabase.from(TABLE_HOP).delete().in('id', numIds);
+  const { error } = await db.from(TABLE_HOP).delete().in('id', numIds);
   if (error) throwSupabaseError(error);
 }
 
@@ -421,7 +421,7 @@ const HOP_LITE_SELECT = 'id,ma_hop_dong,ten_hop_dong,ten_nha_cung_cap,id_nha_cun
 export async function getAllHopDongChiTietEnrichedSupabase(): Promise<HopDongChiTietEnriched[]> {
   const [ctRows, hopRows] = await Promise.all([
     fetchAllRows<ChiTietDbRow>((from, to) =>
-      supabase
+      db
         .from(TABLE_CT)
         .select(CT_SELECT)
         .order('ngay', { ascending: false, nullsFirst: false })
@@ -429,7 +429,7 @@ export async function getAllHopDongChiTietEnrichedSupabase(): Promise<HopDongChi
         .range(from, to)
     ),
     fetchAllRows<HopLiteRow>((from, to) =>
-      supabase.from(TABLE_HOP).select(HOP_LITE_SELECT).order('id', { ascending: true }).range(from, to)
+      db.from(TABLE_HOP).select(HOP_LITE_SELECT).order('id', { ascending: true }).range(from, to)
     ),
   ]);
 

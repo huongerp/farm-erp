@@ -49,7 +49,7 @@ export const useCreateAdminForm = (onSuccess?: () => void) => {
       toast.success(i18n.t('adminForm.toast.createSuccess'));
       if (onSuccess) onSuccess();
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : String(err)),
   });
 };
 
@@ -62,7 +62,7 @@ export const useUpdateAdminForm = (onSuccess?: () => void) => {
       toast.success(i18n.t('adminForm.toast.updateSuccess'));
       if (onSuccess) onSuccess();
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : String(err)),
   });
 };
 
@@ -75,7 +75,7 @@ export const useUpdateAdminFormGhiChu = (onSuccess?: () => void) => {
       toast.success(i18n.t('adminForm.toast.updateSuccess'));
       if (onSuccess) onSuccess();
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : String(err)),
   });
 };
 
@@ -87,7 +87,7 @@ export const useCancelAdminForm = () => {
       queryClient.invalidateQueries({ queryKey: ['adminForms'] });
       toast.success(i18n.t('adminForm.toast.cancelSuccess'));
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : String(err)),
   });
 };
 
@@ -99,7 +99,7 @@ export const useDeleteAdminForm = () => {
       queryClient.invalidateQueries({ queryKey: ['adminForms'] });
       toast.success(i18n.t('adminForm.toast.deleteSuccess'));
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : String(err)),
   });
 };
 
@@ -111,7 +111,7 @@ export const useDeleteAdminForms = () => {
       queryClient.invalidateQueries({ queryKey: ['adminForms'] });
       toast.success(i18n.t('adminForm.toast.deleteSuccess', { count: variables.length }));
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : String(err)),
   });
 };
 
@@ -123,7 +123,7 @@ export const useCancelAdminForms = () => {
       queryClient.invalidateQueries({ queryKey: ['adminForms'] });
       toast.success(i18n.t('adminForm.toast.cancelManySuccess', { count: variables.length }));
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : String(err)),
   });
 };
 
@@ -135,7 +135,7 @@ export const useApproveAdminFormsByManager = () => {
       queryClient.invalidateQueries({ queryKey: ['adminForms'] });
       toast.success(i18n.t('adminForm.toast.approveManySuccess', { count: variables.length }));
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : String(err)),
   });
 };
 
@@ -147,7 +147,7 @@ export const useRejectAdminFormsByManager = () => {
       queryClient.invalidateQueries({ queryKey: ['adminForms'] });
       toast.success(i18n.t('adminForm.toast.rejectManySuccess', { count: variables.length }));
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : String(err)),
   });
 };
 
@@ -159,7 +159,7 @@ export const useApproveAdminFormsByHcns = () => {
       queryClient.invalidateQueries({ queryKey: ['adminForms'] });
       toast.success(i18n.t('adminForm.toast.approveHrManySuccess', { count: variables.length }));
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : String(err)),
   });
 };
 
@@ -171,7 +171,7 @@ export const useRejectAdminFormsByHcns = () => {
       queryClient.invalidateQueries({ queryKey: ['adminForms'] });
       toast.success(i18n.t('adminForm.toast.rejectHrManySuccess', { count: variables.length }));
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : String(err)),
   });
 };
 
@@ -183,7 +183,7 @@ export const useApproveAdminFormByManager = () => {
       queryClient.invalidateQueries({ queryKey: ['adminForms'] });
       toast.success(i18n.t('adminForm.toast.approveSuccess'));
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : String(err)),
   });
 };
 
@@ -195,7 +195,7 @@ export const useRejectAdminFormByManager = () => {
       queryClient.invalidateQueries({ queryKey: ['adminForms'] });
       toast.success(i18n.t('adminForm.toast.rejectSuccess'));
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : String(err)),
   });
 };
 
@@ -207,7 +207,7 @@ export const useApproveAdminFormByHcns = () => {
       queryClient.invalidateQueries({ queryKey: ['adminForms'] });
       toast.success(i18n.t('adminForm.toast.approveHrSuccess'));
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : String(err)),
   });
 };
 
@@ -219,6 +219,6 @@ export const useRejectAdminFormByHcns = () => {
       queryClient.invalidateQueries({ queryKey: ['adminForms'] });
       toast.success(i18n.t('adminForm.toast.rejectHrSuccess'));
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : String(err)),
   });
 };

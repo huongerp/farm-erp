@@ -1,7 +1,7 @@
 /**
  * Service công việc – đọc/ghi Supabase (fp_hc_cong_viec).
  */
-import { supabase, fetchAllRows, throwSupabaseError } from '../../../../lib/supabase';
+import { db, fetchAllRows, throwSupabaseError } from '../../../../lib/db';
 import type { CongViec, TraoDoiEntry } from '../core/types';
 import type { CongViecFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
@@ -68,7 +68,7 @@ function toNumericId(v: number | string): number {
 
 export async function getCongViecList(): Promise<CongViec[]> {
   const rows = await fetchAllRows<DbRow>((from, to) =>
-    supabase
+    db
       .from(TABLE)
       .select(ROW_COLUMNS)
       .order('tg_tao', { ascending: false })
@@ -80,7 +80,7 @@ export async function getCongViecList(): Promise<CongViec[]> {
 
 export async function getCongViecById(id: number | string): Promise<CongViec | null> {
   const n = toNumericId(id);
-  const { data, error } = await supabase.from(TABLE).select(ROW_COLUMNS).eq('id', n).single();
+  const { data, error } = await db.from(TABLE).select(ROW_COLUMNS).eq('id', n).single();
   if (error) {
     if ((error as { code?: string }).code === 'PGRST116') return null;
     throwSupabaseError(error);
@@ -103,7 +103,7 @@ export async function createCongViec(
     uu_tien: data.uu_tien ?? 'trung_binh',
     trang_thai: data.trang_thai ?? 'draft',
   };
-  const { data: inserted, error } = await supabase.from(TABLE).insert(payload).select(ROW_COLUMNS).single();
+  const { data: inserted, error } = await db.from(TABLE).insert(payload).select(ROW_COLUMNS).single();
   if (error) throwSupabaseError(error);
   return rowToCongViec(inserted as DbRow);
 }
@@ -133,7 +133,7 @@ export async function updateCongViec(
     if (!existing) throw new Error(i18n.t('congViec.service.notFound'));
     return existing;
   }
-  const { error } = await supabase.from(TABLE).update(payload).eq('id', n);
+  const { error } = await db.from(TABLE).update(payload).eq('id', n);
   if (error) throwSupabaseError(error);
   const updated = await getCongViecById(n);
   if (!updated) throw new Error(i18n.t('congViec.service.notFound'));
@@ -143,7 +143,7 @@ export async function updateCongViec(
 export async function deleteCongViecList(ids: (number | string)[]): Promise<void> {
   const numIds = ids.map((x) => toNumericId(x)).filter((n) => n > 0);
   if (numIds.length === 0) return;
-  const { error } = await supabase.from(TABLE).delete().in('id', numIds);
+  const { error } = await db.from(TABLE).delete().in('id', numIds);
   if (error) throwSupabaseError(error);
 }
 

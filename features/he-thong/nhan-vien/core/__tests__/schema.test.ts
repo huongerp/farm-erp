@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { employeeSchema } from '../schema';
+import { TRANG_THAI_NV } from '../../../../../lib/constants';
 
 /* ================================================================
  *  Helper: tạo dữ liệu hợp lệ base rồi override từng trường
@@ -12,7 +13,7 @@ const validData = () => ({
   id_phong_ban: 'dep-1',
   id_chi_nhanh: ['branch-1'],
   gioi_tinh: 'Nam' as const,
-  trang_thai: 1,
+  trang_thai: TRANG_THAI_NV.DANG_LAM_VIEC,
   ngay_vao_lam: '2024-01-15',
 });
 
@@ -161,6 +162,22 @@ describe('employeeSchema', () => {
     it('từ chối SĐT không hợp lệ', () => {
       const r = parse({ sdt_khan_cap: '12345' });
       expect(r.success).toBe(false);
+    });
+  });
+
+  /* ────── Mật khẩu ────── */
+  describe('mat_khau', () => {
+    it('chấp nhận bỏ trống (tạo mới = mật khẩu mặc định, sửa = không đổi)', () => {
+      expect(parse({ mat_khau: '' }).success).toBe(true);
+      expect(parse({ mat_khau: undefined }).success).toBe(true);
+    });
+
+    it('chấp nhận từ 6 ký tự', () => {
+      expect(parse({ mat_khau: '123456' }).success).toBe(true);
+    });
+
+    it('từ chối dưới 6 ký tự', () => {
+      expect(parse({ mat_khau: '12345' }).success).toBe(false);
     });
   });
 

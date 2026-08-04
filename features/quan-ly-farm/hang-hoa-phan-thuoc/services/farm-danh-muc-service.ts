@@ -1,4 +1,4 @@
-import { supabase, fetchAllRows } from '../../../../lib/supabase';
+import { db, fetchAllRows } from '../../../../lib/db';
 import type { FarmDanhMuc } from '../core/types';
 import type { FarmDanhMucFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
@@ -8,10 +8,10 @@ const TABLE_HANG_HOA = 'fp_farm_danh_sach_hang_hoa';
 
 async function assertNoHangHoaReferences(idNums: number[]): Promise<void> {
   if (idNums.length === 0) return;
-  const { data: byDm, error: e1 } = await supabase.from(TABLE_HANG_HOA).select('id').in('danh_muc_id', idNums).limit(1);
+  const { data: byDm, error: e1 } = await db.from(TABLE_HANG_HOA).select('id').in('danh_muc_id', idNums).limit(1);
   if (e1) throw new Error(e1.message);
   if (byDm && byDm.length > 0) throw new Error(i18n.t('farmHangHoaPhanThuoc.danhMuc.service.hasHangHoa'));
-  const { data: byCha, error: e2 } = await supabase.from(TABLE_HANG_HOA).select('id').in('danh_muc_cha_id', idNums).limit(1);
+  const { data: byCha, error: e2 } = await db.from(TABLE_HANG_HOA).select('id').in('danh_muc_cha_id', idNums).limit(1);
   if (e2) throw new Error(e2.message);
   if (byCha && byCha.length > 0) throw new Error(i18n.t('farmHangHoaPhanThuoc.danhMuc.service.hasHangHoa'));
 }
@@ -44,7 +44,7 @@ function rowToFarmDanhMuc(row: FarmDanhMucRow): FarmDanhMuc {
 
 export async function getAllFarmDanhMuc(): Promise<FarmDanhMuc[]> {
   const data = await fetchAllRows<FarmDanhMucRow>((from, to) =>
-    supabase
+    db
       .from(TABLE)
       .select(DM_COLUMNS)
       .order('thu_tu', { ascending: true })
@@ -80,7 +80,7 @@ export const getFarmDanhMucCap2WithParent = async (): Promise<FarmDanhMucCap2Wit
 export const getFarmDanhMucById = async (id: string): Promise<FarmDanhMuc | null> => {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) return null;
-  const { data: row, error } = await supabase.from(TABLE).select(DM_COLUMNS).eq('id', idNum).maybeSingle();
+  const { data: row, error } = await db.from(TABLE).select(DM_COLUMNS).eq('id', idNum).maybeSingle();
   if (error) throw new Error(error.message);
   if (!row) return null;
   return rowToFarmDanhMuc(row as FarmDanhMucRow);
@@ -94,7 +94,7 @@ export const createFarmDanhMuc = async (data: FarmDanhMucFormValues): Promise<Fa
     thu_tu: Math.max(1, data.thu_tu ?? 1),
     mo_ta: data.mo_ta?.trim() || null,
   };
-  const { data: inserted, error } = await supabase.from(TABLE).insert(payload).select(DM_COLUMNS).single();
+  const { data: inserted, error } = await db.from(TABLE).insert(payload).select(DM_COLUMNS).single();
   if (error) throw new Error(error.message);
   return rowToFarmDanhMuc(inserted as FarmDanhMucRow);
 };
@@ -110,7 +110,7 @@ export const updateFarmDanhMuc = async (id: string, data: FarmDanhMucFormValues)
     mo_ta: data.mo_ta?.trim() || null,
     tg_cap_nhat: new Date().toISOString(),
   };
-  const { data: updated, error } = await supabase
+  const { data: updated, error } = await db
     .from(TABLE)
     .update(payload)
     .eq('id', idNum)
@@ -123,7 +123,7 @@ export const updateFarmDanhMuc = async (id: string, data: FarmDanhMucFormValues)
 export const deleteFarmDanhMuc = async (id: string): Promise<void> => {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('farmHangHoaPhanThuoc.danhMuc.service.notFound'));
-  const { data: children, error: errSelect } = await supabase
+  const { data: children, error: errSelect } = await db
     .from(TABLE)
     .select('id')
     .eq('danh_muc_cha_id', idNum)
@@ -131,7 +131,7 @@ export const deleteFarmDanhMuc = async (id: string): Promise<void> => {
   if (errSelect) throw new Error(errSelect.message);
   if (children && children.length > 0) throw new Error(i18n.t('farmHangHoaPhanThuoc.danhMuc.service.hasChildren'));
   await assertNoHangHoaReferences([idNum]);
-  const { error } = await supabase.from(TABLE).delete().eq('id', idNum);
+  const { error } = await db.from(TABLE).delete().eq('id', idNum);
   if (error) throw new Error(error.message ?? i18n.t('farmHangHoaPhanThuoc.danhMuc.service.notFound'));
 };
 
@@ -139,13 +139,13 @@ export const deleteFarmDanhMucMany = async (ids: string[]): Promise<void> => {
   if (ids.length === 0) return;
   const idNums = ids.map(Number).filter((n) => !Number.isNaN(n));
   if (idNums.length === 0) return;
-  const { data: children } = await supabase
+  const { data: children } = await db
     .from(TABLE)
     .select('id, danh_muc_cha_id')
     .in('danh_muc_cha_id', idNums)
     .limit(1);
   if (children && children.length > 0) throw new Error(i18n.t('farmHangHoaPhanThuoc.danhMuc.service.hasChildren'));
   await assertNoHangHoaReferences(idNums);
-  const { error } = await supabase.from(TABLE).delete().in('id', idNums);
+  const { error } = await db.from(TABLE).delete().in('id', idNums);
   if (error) throw new Error(error.message ?? i18n.t('farmHangHoaPhanThuoc.danhMuc.service.notFound'));
 };

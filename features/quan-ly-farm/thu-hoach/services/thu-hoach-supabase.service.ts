@@ -1,7 +1,7 @@
 /**
  * Thu hoạch — Supabase fp_farm_thu_hoach
  */
-import { supabase, fetchAllRows, throwSupabaseError } from '../../../../lib/supabase';
+import { db, fetchAllRows, throwSupabaseError } from '../../../../lib/db';
 import i18n from '../../../../lib/i18n';
 import type { FarmThuHoach } from '../core/types';
 import { THU_HOACH_DAY_SUFFIXES } from '../core/types';
@@ -122,7 +122,7 @@ export async function appendThuHoachTraoDoiSupabase(
   const text = noiDung.trim();
   if (!text) throw new Error(i18n.t('thuHoach.validation.traoDoiNoiDungRequired'));
 
-  const { data: rowCur, error: eSel } = await supabase.from(TABLE).select('trao_doi').eq('id', numId).maybeSingle();
+  const { data: rowCur, error: eSel } = await db.from(TABLE).select('trao_doi').eq('id', numId).maybeSingle();
   if (eSel) throwSupabaseError(eSel);
   if (rowCur == null) throw new Error(i18n.t('thuHoach.service.notFound'));
 
@@ -132,7 +132,7 @@ export async function appendThuHoachTraoDoiSupabase(
   const entry = `${ts} — ${who}: ${text}`;
   const newTraoDoi = existing ? `${existing}\n${entry}` : entry;
 
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from(TABLE)
     .update({ trao_doi: newTraoDoi })
     .eq('id', numId)
@@ -144,7 +144,7 @@ export async function appendThuHoachTraoDoiSupabase(
 
 export async function getAllThuHoachSupabase(): Promise<FarmThuHoach[]> {
   const rows = await fetchAllRows<DbRow>((from, to) =>
-    supabase
+    db
       .from(TABLE)
       .select(THU_HOACH_ROW_COLUMNS)
       .order('nam', { ascending: false })
@@ -158,7 +158,7 @@ export async function getAllThuHoachSupabase(): Promise<FarmThuHoach[]> {
 export async function getThuHoachByIdSupabase(id: string): Promise<FarmThuHoach | null> {
   const numId = Number(id);
   if (!Number.isFinite(numId)) return null;
-  const { data, error } = await supabase.from(TABLE).select(THU_HOACH_ROW_COLUMNS).eq('id', numId).maybeSingle();
+  const { data, error } = await db.from(TABLE).select(THU_HOACH_ROW_COLUMNS).eq('id', numId).maybeSingle();
   if (error) throwSupabaseError(error);
   if (!data) return null;
   return rowToModel(data as DbRow);
@@ -172,7 +172,7 @@ export async function createThuHoachSupabase(
     ...keHoachPayload(values),
     id_nguoi_tao: parseIdToInt8(idNguoiTao),
   };
-  const { data, error } = await supabase.from(TABLE).insert(payload).select(THU_HOACH_ROW_COLUMNS).single();
+  const { data, error } = await db.from(TABLE).insert(payload).select(THU_HOACH_ROW_COLUMNS).single();
   if (error) throwSupabaseError(error);
   return rowToModel(data as DbRow);
 }
@@ -184,7 +184,7 @@ export async function updateThuHoachKeHoachSupabase(
   const numId = Number(id);
   if (!Number.isFinite(numId)) throw new Error('Invalid id');
   const payload = keHoachPayload(values);
-  const { data, error } = await supabase.from(TABLE).update(payload).eq('id', numId).select(THU_HOACH_ROW_COLUMNS).single();
+  const { data, error } = await db.from(TABLE).update(payload).eq('id', numId).select(THU_HOACH_ROW_COLUMNS).single();
   if (error) throwSupabaseError(error);
   return rowToModel(data as DbRow);
 }
@@ -196,7 +196,7 @@ export async function updateThuHoachThucTeSupabase(
   const numId = Number(id);
   if (!Number.isFinite(numId)) throw new Error('Invalid id');
   const payload = thucTePayload(values);
-  const { data, error } = await supabase.from(TABLE).update(payload).eq('id', numId).select(THU_HOACH_ROW_COLUMNS).single();
+  const { data, error } = await db.from(TABLE).update(payload).eq('id', numId).select(THU_HOACH_ROW_COLUMNS).single();
   if (error) throwSupabaseError(error);
   return rowToModel(data as DbRow);
 }
@@ -204,13 +204,13 @@ export async function updateThuHoachThucTeSupabase(
 export async function deleteThuHoachSupabase(id: string): Promise<void> {
   const numId = Number(id);
   if (!Number.isFinite(numId)) throw new Error('Invalid id');
-  const { error } = await supabase.from(TABLE).delete().eq('id', numId);
+  const { error } = await db.from(TABLE).delete().eq('id', numId);
   if (error) throwSupabaseError(error);
 }
 
 export async function deleteThuHoachManySupabase(ids: string[]): Promise<void> {
   const numIds = ids.map((id) => Number(id)).filter((n) => Number.isFinite(n));
   if (numIds.length === 0) return;
-  const { error } = await supabase.from(TABLE).delete().in('id', numIds);
+  const { error } = await db.from(TABLE).delete().in('id', numIds);
   if (error) throwSupabaseError(error);
 }

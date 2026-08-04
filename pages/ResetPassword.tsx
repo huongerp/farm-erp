@@ -1,12 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import Button from '../components/ui/Button';
 import { toast } from 'sonner';
-import { supabase } from '../lib/supabase';
-import { updatePassword } from '../lib/auth';
+import { changeOwnPassword } from '../lib/auth';
+import { emailPhienHienTai, phaiDoiMatKhau } from '../lib/token-store';
+import { PASSWORD_MIN_LENGTH } from '../lib/constants';
 
+/**
+ * Đổi mật khẩu cho người ĐANG đăng nhập.
+ *
+ * Trước đây trang này nhận link phục hồi qua email của Supabase Auth. Bản
+ * self-host không có dịch vụ gửi mail nên luồng đổi thành: admin cấp lại mật
+ * khẩu trên trang Nhân viên kèm cờ `phai_doi_mat_khau`, người dùng đăng nhập
+ * bằng mật khẩu đó rồi bị đưa tới đây để đặt mật khẩu riêng.
+ *
+ * Đổi mật khẩu tự nguyện vẫn nằm ở menu người dùng trong Layout.
+ */
 const ResetPassword: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -15,17 +26,13 @@ const ResetPassword: React.FC = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isRecoverySession, setIsRecoverySession] = useState<boolean | null>(null);
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setIsRecoverySession(!!session);
-    });
-  }, []);
+  const email = emailPhienHienTai();
+  const batBuocDoi = phaiDoiMatKhau();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newPassword.length < 6) {
+    if (newPassword.length < PASSWORD_MIN_LENGTH) {
       toast.error(t('page.resetPassword.passwordMin'));
       return;
     }
@@ -35,9 +42,10 @@ const ResetPassword: React.FC = () => {
     }
     setIsLoading(true);
     try {
-      await updatePassword(newPassword);
+      await changeOwnPassword(newPassword);
       toast.success(t('page.resetPassword.success'));
-      navigate('/dang-nhap', { replace: true });
+      // Đổi mật khẩu của chính mình không thu hồi phiên hiện tại → vào thẳng app.
+      navigate('/', { replace: true });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t('page.resetPassword.error'));
     } finally {
@@ -45,19 +53,11 @@ const ResetPassword: React.FC = () => {
     }
   };
 
-  if (isRecoverySession === null) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <div className="h-10 w-10 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
-      </div>
-    );
-  }
-
-  if (!isRecoverySession) {
+  if (!email) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <div className="w-full max-w-md text-center space-y-6">
-          <p className="text-muted-foreground">{t('page.resetPassword.invalidOrExpired')}</p>
+          <p className="text-muted-foreground">{t('page.resetPassword.needLogin')}</p>
           <Button onClick={() => navigate('/dang-nhap', { replace: true })}>
             {t('page.resetPassword.backToLogin')}
           </Button>
@@ -74,7 +74,10 @@ const ResetPassword: React.FC = () => {
             <Lock className="h-7 w-7" />
           </div>
           <h1 className="text-2xl font-bold text-foreground">{t('page.resetPassword.title')}</h1>
-          <p className="text-muted-foreground mt-2">{t('page.resetPassword.description')}</p>
+          <p className="text-muted-foreground mt-2">
+            {batBuocDoi ? t('page.resetPassword.mustChange') : t('page.resetPassword.description')}
+          </p>
+          <p className="text-sm text-muted-foreground mt-1">{email}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -86,8 +89,9 @@ const ResetPassword: React.FC = () => {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="••••••••"
+                autoComplete="new-password"
                 className="flex h-11 w-full rounded-lg border border-input bg-background pl-3 pr-10 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                minLength={6}
+                minLength={PASSWORD_MIN_LENGTH}
               />
               <button
                 type="button"
@@ -106,8 +110,9 @@ const ResetPassword: React.FC = () => {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="••••••••"
+                autoComplete="new-password"
                 className="flex h-11 w-full rounded-lg border border-input bg-background pl-3 pr-10 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                minLength={6}
+                minLength={PASSWORD_MIN_LENGTH}
               />
               <button
                 type="button"
@@ -124,15 +129,17 @@ const ResetPassword: React.FC = () => {
           </Button>
         </form>
 
-        <p className="text-center">
-          <button
-            type="button"
-            onClick={() => navigate('/dang-nhap')}
-            className="text-sm text-primary hover:underline"
-          >
-            {t('page.resetPassword.backToLogin')}
-          </button>
-        </p>
+        {!batBuocDoi && (
+          <p className="text-center">
+            <button
+              type="button"
+              onClick={() => navigate('/')}
+              className="text-sm text-primary hover:underline"
+            >
+              {t('common.cancel')}
+            </button>
+          </p>
+        )}
       </div>
     </div>
   );

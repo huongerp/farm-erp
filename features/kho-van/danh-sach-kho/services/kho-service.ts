@@ -1,4 +1,4 @@
-import { supabase, fetchAllRows } from '../../../../lib/supabase';
+import { db, fetchAllRows } from '../../../../lib/db';
 import { getCachedRef, REF_CACHE_KEYS } from '../../../../lib/ref-cache';
 import { getBranches } from '../../../he-thong/chi-nhanh/services/chi-nhanh-service';
 import type { Kho } from '../core/types';
@@ -45,7 +45,7 @@ function rowToKho(row: KhoRow, tenChiNhanh?: string): Kho {
 export const getKhoList = async (): Promise<Kho[]> => {
   const [rows, branches] = await Promise.all([
     fetchAllRows<KhoRow>((from, to) =>
-      supabase
+      db
         .from(TABLE)
         .select(KHO_ROW_COLUMNS)
         .order('thu_tu', { ascending: true })
@@ -75,7 +75,7 @@ export type KhoRefLite = {
 export const getKhoRef = async (): Promise<KhoRefLite[]> => {
   return getCachedRef(REF_CACHE_KEYS.kho, async () => {
     const rows = await fetchAllRows<Pick<KhoRow, 'id' | 'ma_kho' | 'ten_kho' | 'chi_nhanh_id' | 'thu_tu'>>((from, to) =>
-      supabase
+      db
         .from(TABLE)
         .select('id, ma_kho, ten_kho, chi_nhanh_id, thu_tu')
         .order('thu_tu', { ascending: true })
@@ -94,7 +94,7 @@ export const getKhoRef = async (): Promise<KhoRefLite[]> => {
 export const getKhoById = async (id: string): Promise<Kho | null> => {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) return null;
-  const { data: row, error } = await supabase
+  const { data: row, error } = await db
     .from(TABLE)
     .select(KHO_ROW_COLUMNS)
     .eq('id', idNum)
@@ -110,7 +110,7 @@ export const getKhoById = async (id: string): Promise<Kho | null> => {
 };
 
 export const createKho = async (data: KhoFormValues): Promise<Kho> => {
-  const { data: existing } = await supabase
+  const { data: existing } = await db
     .from(TABLE)
     .select('id')
     .eq('ma_kho', data.ma_kho.trim().toUpperCase())
@@ -127,7 +127,7 @@ export const createKho = async (data: KhoFormValues): Promise<Kho> => {
     trang_thai: data.trang_thai,
   };
 
-  const { data: inserted, error } = await supabase.from(TABLE).insert(payload).select(KHO_ROW_COLUMNS).single();
+  const { data: inserted, error } = await db.from(TABLE).insert(payload).select(KHO_ROW_COLUMNS).single();
   if (error) throw new Error(error.message);
   const branches = await getBranches();
   const tenChiNhanh =
@@ -141,7 +141,7 @@ export const updateKho = async (id: string, data: KhoFormValues): Promise<Kho> =
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('kho.service.notFound'));
 
-  const { data: duplicate } = await supabase
+  const { data: duplicate } = await db
     .from(TABLE)
     .select('id')
     .eq('ma_kho', data.ma_kho.trim().toUpperCase())
@@ -160,7 +160,7 @@ export const updateKho = async (id: string, data: KhoFormValues): Promise<Kho> =
     tg_cap_nhat: new Date().toISOString(),
   };
 
-  const { data: updated, error } = await supabase
+  const { data: updated, error } = await db
     .from(TABLE)
     .update(payload)
     .eq('id', idNum)
@@ -178,7 +178,7 @@ export const updateKho = async (id: string, data: KhoFormValues): Promise<Kho> =
 export const updateKhoStatus = async (id: string, status: Kho['trang_thai']): Promise<Kho> => {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('kho.service.notFound'));
-  const { data: updated, error } = await supabase
+  const { data: updated, error } = await db
     .from(TABLE)
     .update({ trang_thai: status, tg_cap_nhat: new Date().toISOString() })
     .eq('id', idNum)
@@ -196,7 +196,7 @@ export const updateKhoStatus = async (id: string, status: Kho['trang_thai']): Pr
 export const deleteKho = async (id: string): Promise<void> => {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('kho.service.notFound'));
-  const { error } = await supabase.from(TABLE).delete().eq('id', idNum);
+  const { error } = await db.from(TABLE).delete().eq('id', idNum);
   if (error) throw new Error(error.message ?? i18n.t('kho.service.notFound'));
 };
 
@@ -204,7 +204,7 @@ export const deleteKhoMany = async (ids: string[]): Promise<void> => {
   if (ids.length === 0) return;
   const idNums = ids.map(Number).filter((n) => !Number.isNaN(n));
   if (idNums.length === 0) return;
-  const { error } = await supabase.from(TABLE).delete().in('id', idNums);
+  const { error } = await db.from(TABLE).delete().in('id', idNums);
   if (error) throw new Error(error.message ?? i18n.t('kho.service.notFound'));
 };
 

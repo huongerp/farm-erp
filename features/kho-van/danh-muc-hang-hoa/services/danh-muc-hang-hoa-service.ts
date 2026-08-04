@@ -1,4 +1,4 @@
-import { supabase, fetchAllRows } from '../../../../lib/supabase';
+import { db, fetchAllRows } from '../../../../lib/db';
 import type { DanhMucHangHoa } from '../core/types';
 import type { DanhMucHangHoaFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
@@ -44,7 +44,7 @@ export async function getDanhMucHangHoaRefRows(): Promise<
 > {
   const data = await fetchAllRows<Pick<DanhMucHangHoaRow, 'id' | 'ten_danh_muc' | 'danh_muc_cha_id'>>(
     (from, to) =>
-      supabase
+      db
         .from(TABLE)
         .select(DM_HH_REF_COLUMNS)
         .order('thu_tu', { ascending: true })
@@ -60,7 +60,7 @@ export async function getDanhMucHangHoaRefRows(): Promise<
 
 export const getAllDanhMucHangHoa = async (): Promise<DanhMucHangHoa[]> => {
   const data = await fetchAllRows<DanhMucHangHoaRow>((from, to) =>
-    supabase
+    db
       .from(TABLE)
       .select(DM_HH_COLUMNS)
       .order('thu_tu', { ascending: true })
@@ -98,7 +98,7 @@ export const getDanhMucCap2WithParent = async (): Promise<DanhMucCap2WithParent[
 export const getDanhMucHangHoaById = async (id: string): Promise<DanhMucHangHoa | null> => {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) return null;
-  const { data: row, error } = await supabase
+  const { data: row, error } = await db
     .from(TABLE)
     .select(DM_HH_COLUMNS)
     .eq('id', idNum)
@@ -120,7 +120,7 @@ export const createDanhMucHangHoa = async (
     trang_thai: data.trang_thai,
   };
 
-  const { data: inserted, error } = await supabase.from(TABLE).insert(payload).select(DM_HH_COLUMNS).single();
+  const { data: inserted, error } = await db.from(TABLE).insert(payload).select(DM_HH_COLUMNS).single();
   if (error) throw new Error(error.message);
   return rowToDanhMuc(inserted as DanhMucHangHoaRow);
 };
@@ -142,7 +142,7 @@ export const updateDanhMucHangHoa = async (
     tg_cap_nhat: new Date().toISOString(),
   };
 
-  const { data: updated, error } = await supabase
+  const { data: updated, error } = await db
     .from(TABLE)
     .update(payload)
     .eq('id', idNum)
@@ -156,7 +156,7 @@ export const deleteDanhMucHangHoa = async (id: string): Promise<void> => {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('danhMucHangHoa.service.notFound'));
 
-  const { data: children, error: errSelect } = await supabase
+  const { data: children, error: errSelect } = await db
     .from(TABLE)
     .select('id')
     .eq('danh_muc_cha_id', idNum)
@@ -164,7 +164,7 @@ export const deleteDanhMucHangHoa = async (id: string): Promise<void> => {
   if (errSelect) throw new Error(errSelect.message);
   if (children && children.length > 0) throw new Error(i18n.t('danhMucHangHoa.service.hasChildren'));
 
-  const { error } = await supabase.from(TABLE).delete().eq('id', idNum);
+  const { error } = await db.from(TABLE).delete().eq('id', idNum);
   if (error) throw new Error(error.message ?? i18n.t('danhMucHangHoa.service.notFound'));
 };
 
@@ -173,13 +173,13 @@ export const deleteDanhMucHangHoaMany = async (ids: string[]): Promise<void> => 
   const idNums = ids.map(Number).filter((n) => !Number.isNaN(n));
   if (idNums.length === 0) return;
 
-  const { data: children } = await supabase
+  const { data: children } = await db
     .from(TABLE)
     .select('id, danh_muc_cha_id')
     .in('danh_muc_cha_id', idNums)
     .limit(1);
   if (children && children.length > 0) throw new Error(i18n.t('danhMucHangHoa.service.hasChildren'));
 
-  const { error } = await supabase.from(TABLE).delete().in('id', idNums);
+  const { error } = await db.from(TABLE).delete().in('id', idNums);
   if (error) throw new Error(error.message ?? i18n.t('danhMucHangHoa.service.notFound'));
 };

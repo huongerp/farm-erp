@@ -1,4 +1,4 @@
-import { supabase, fetchAllRows } from '../../../../lib/supabase';
+import { db, fetchAllRows } from '../../../../lib/db';
 import type { PayrollAdminFormGroup } from '../core/types';
 import type { PayrollAdminFormGroupFormValues } from '../core/schema';
 import type { AdminFormType } from '../core/constants';
@@ -51,7 +51,7 @@ function rowToGroup(row: Row): PayrollAdminFormGroup {
 
 export async function getPayrollAdminFormGroups(): Promise<PayrollAdminFormGroup[]> {
   const rows = await fetchAllRows<Row>((from, to) =>
-    supabase.from(TABLE).select(ROW_COLUMNS).order('tg_tao', { ascending: false }).range(from, to)
+    db.from(TABLE).select(ROW_COLUMNS).order('tg_tao', { ascending: false }).range(from, to)
   );
   return rows.map(rowToGroup);
 }
@@ -66,7 +66,7 @@ export async function createPayrollAdminFormGroup(
     trang_thai: data.trang_thai,
   };
 
-  const { data: inserted, error } = await supabase
+  const { data: inserted, error } = await db
     .from(TABLE)
     .insert(row)
     .select()
@@ -90,7 +90,7 @@ export async function updatePayrollAdminFormGroup(
 
   const idNum = parseInt(id, 10);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('payrollIp.groups.service.notFound'));
-  const { data: updated, error } = await supabase
+  const { data: updated, error } = await db
     .from(TABLE)
     .update(row)
     .eq('id', idNum)
@@ -106,7 +106,7 @@ export async function updatePayrollAdminFormGroupStatus(ids: string[], status: T
   const payload = { trang_thai: status, tg_cap_nhat: new Date().toISOString() };
   const numIds = ids.map((id) => parseInt(id, 10)).filter((n) => !Number.isNaN(n));
   if (numIds.length === 0) return;
-  const { error } = await supabase.from(TABLE).update(payload).in('id', numIds);
+  const { error } = await db.from(TABLE).update(payload).in('id', numIds);
   if (error) throw new Error(error.message ?? i18n.t('payrollIp.groups.service.notFound'));
 }
 
@@ -114,6 +114,6 @@ export async function deletePayrollAdminFormGroups(ids: string[]): Promise<void>
   if (ids.length === 0) return;
   const numIds = ids.map((id) => parseInt(id, 10)).filter((n) => !Number.isNaN(n));
   if (numIds.length === 0) return;
-  const { error } = await supabase.from(TABLE).delete().in('id', numIds);
+  const { error } = await db.from(TABLE).delete().in('id', numIds);
   if (error) throw new Error(error.message ?? i18n.t('payrollIp.groups.service.notFound'));
 }

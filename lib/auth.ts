@@ -1,5 +1,17 @@
-import { supabase } from './supabase';
-import { formatSupabaseError } from './supabase-errors';
+import { db } from './db';
+import { AUTH_URL } from './api-config';
+import { setMatKhauHash } from './mat-khau';
+import { tatTuChonGoogle } from './google-signin';
+import {
+  docPhien,
+  emailPhienHienTai,
+  layAccessToken,
+  luuPhien,
+  nhanVienIdPhienHienTai,
+  phaiDoiMatKhau,
+  xoaCoPhaiDoiMatKhau,
+  xoaPhien,
+} from './token-store';
 import type { User } from '../types';
 import type { Employee } from '../features/he-thong/nhan-vien/core/types';
 import { getEmployeeByEmail, normalizeChiNhanhIdsFromRow } from '../features/he-thong/nhan-vien/services/nhan-vien-service';
@@ -17,11 +29,101 @@ export class ResignedEmployeeAuthError extends Error {
   }
 }
 
+/** Sai email/mật khẩu. Không phân biệt "email không tồn tại" để khỏi tiết lộ email nào có trong hệ thống. */
+export class WrongCredentialsError extends Error {
+  constructor() {
+    super('WrongCredentials');
+    this.name = 'WrongCredentialsError';
+  }
+}
+
+/** Quá 10 lần sai trong 15 phút — bị chặn tạm (chống dò mật khẩu). */
+export class TooManyAttemptsError extends Error {
+  constructor() {
+    super('TooManyAttempts');
+    this.name = 'TooManyAttemptsError';
+  }
+}
+
+/** Email Google hợp lệ nhưng không có hồ sơ nhân viên nào trùng. */
+export class GoogleNoEmployeeError extends Error {
+  constructor() {
+    super('GoogleNoEmployee');
+    this.name = 'GoogleNoEmployeeError';
+  }
+}
+
+/** Phản hồi của auth-service khi tạo phiên thành công. */
+type PhanHoiDangNhap = {
+  access_token: string;
+  expires_in: number;
+  refresh_token: string;
+  email: string;
+  nhan_vien_id: number;
+  phai_doi_mat_khau: boolean;
+};
+
+/**
+ * Gọi auth-service và đổi `ly_do` thành lỗi có kiểu để UI hiển thị đúng thông báo.
+ */
+async function goiAuth(duongDan: string, body: unknown): Promise<PhanHoiDangNhap> {
+  let res: Response;
+  try {
+    res = await fetch(`${AUTH_URL}${duongDan}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    throw new Error('Không kết nối được tới máy chủ xác thực. Kiểm tra kết nối mạng.');
+  }
+
+  if (res.ok) return (await res.json()) as PhanHoiDangNhap;
+
+  const lyDo = await res
+    .json()
+    .then((j: { ly_do?: string }) => j?.ly_do ?? '')
+    .catch(() => '');
+
+  switch (lyDo) {
+    case 'sai_thong_tin':
+      throw new WrongCredentialsError();
+    case 'bi_chan':
+      throw new TooManyAttemptsError();
+    case 'nghi_viec':
+      throw new ResignedEmployeeAuthError();
+    case 'khong_co_ho_so':
+      throw new GoogleNoEmployeeError();
+    case 'google_khong_hop_le':
+      throw new Error('Không xác minh được tài khoản Google. Thử lại.');
+    case 'google_chua_cau_hinh':
+      throw new Error('Đăng nhập Google chưa được cấu hình trên máy chủ.');
+    default:
+      throw new Error(`Đăng nhập thất bại (HTTP ${res.status}).`);
+  }
+}
+
+function luuPhienTuPhanHoi(res: PhanHoiDangNhap): void {
+  luuPhien({
+    access_token: res.access_token,
+    het_han_luc: Date.now() + res.expires_in * 1000,
+    refresh_token: res.refresh_token,
+    email: res.email,
+    nhan_vien_id: res.nhan_vien_id,
+    phai_doi_mat_khau: res.phai_doi_mat_khau,
+  });
+}
+
+/**
+ * Nhân viên bị chuyển sang Nghỉ việc trong lúc đang có phiên: server đã thu hồi
+ * refresh token (trigger trong docs/vps-04-auth-schema.sql), nhưng access token
+ * cũ còn hạn tới 15 phút nên vẫn phải chặn ở client.
+ */
 async function resolveEmployeeOrSignOutIfResigned(
   employee: Employee | null
 ): Promise<{ employee: Employee | null; lockoutReason: 'resigned' | null }> {
   if (employee?.trang_thai === TRANG_THAI_NV.NGHI_VIEC) {
-    await supabase.auth.signOut();
+    await signOut();
     return { employee: null, lockoutReason: 'resigned' };
   }
   return { employee, lockoutReason: null };
@@ -47,62 +149,103 @@ export function employeeToUser(emp: Employee): User {
   };
 }
 
-/**
- * Đăng nhập bằng email/password (Supabase Auth), sau đó lấy nhân viên theo email từ fp_var_nhan_vien.
- * Trả về Employee nếu thành công; throw nếu sai mật khẩu hoặc không tìm thấy nhân viên.
- */
-export async function signInWithPassword(
-  email: string,
-  password: string
-): Promise<Employee> {
-  const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-    email: email.trim(),
-    password,
-  });
+/** Kết quả đăng nhập: hồ sơ nhân viên + có phải bắt đổi mật khẩu ngay không. */
+export type KetQuaDangNhap = {
+  employee: Employee;
+  phaiDoiMatKhau: boolean;
+};
 
-  if (authError) throw new Error(formatSupabaseError(authError, { resource: 'auth.signInWithPassword' }));
-  const authEmail = authData?.user?.email;
-  if (!authEmail) throw new Error('Không lấy được email từ phiên đăng nhập.');
-
+/** Sau khi có phiên, lấy hồ sơ nhân viên theo email và chặn nếu đã nghỉ việc. */
+async function layHoSoSauDangNhap(email: string): Promise<KetQuaDangNhap> {
   let employee: Employee | null;
   try {
-    employee = await getEmployeeByEmail(authEmail);
+    employee = await getEmployeeByEmail(email);
   } catch (e) {
     const msg = e instanceof Error ? e.message : '';
     throw new Error(msg || 'Không thể tải hồ sơ nhân viên.', { cause: e });
   }
+
   if (!employee) {
+    // Server đã đối chiếu email với fp_var_nhan_vien trước khi cấp token, nên
+    // tới đây mà rỗng thì gần như chắc là RLS/quyền đọc, không phải thiếu dòng.
     throw new Error(
-      'Không tìm thấy hồ sơ nhân viên với email này. Kiểm tra: (1) Bảng fp_var_nhan_vien có dòng nào với cột email = "' +
-        authEmail +
-        '" không; (2) RLS: nếu bảng bật Row Level Security thì cần policy cho phép user đã đăng nhập được SELECT (xem docs hoặc chạy policy mẫu trong Supabase SQL Editor).'
+      `Không đọc được hồ sơ nhân viên của "${email}" dù đăng nhập thành công. ` +
+        'Kiểm tra policy SELECT cho role `authenticated` trên fp_var_nhan_vien.'
     );
   }
 
   const gated = await resolveEmployeeOrSignOutIfResigned(employee);
   if (gated.lockoutReason === 'resigned') throw new ResignedEmployeeAuthError();
-  return gated.employee!;
+  return { employee: gated.employee!, phaiDoiMatKhau: phaiDoiMatKhau() };
 }
 
 /**
- * Đăng xuất: xóa phiên Supabase Auth.
+ * Đăng nhập bằng email/mật khẩu qua auth-service, rồi lấy nhân viên theo email.
+ * Mật khẩu được kiểm bằng bcrypt trong Postgres (`rpc_verify_mat_khau`).
  */
-export async function signOut(): Promise<void> {
-  await supabase.auth.signOut();
+export async function signInWithPassword(
+  email: string,
+  password: string
+): Promise<KetQuaDangNhap> {
+  const res = await goiAuth('/dang-nhap', { email: email.trim(), mat_khau: password });
+  luuPhienTuPhanHoi(res);
+  return layHoSoSauDangNhap(res.email);
 }
 
 /**
- * Kiểm tra phiên hiện tại: nếu có user Auth thì lấy nhân viên theo email.
+ * Đăng nhập bằng ID token của Google (lấy từ nút GIS — xem lib/google-signin.ts).
+ * Chữ ký RS256 được xác minh ở auth-service, không phải ở đây.
+ */
+export async function signInWithGoogleIdToken(idToken: string): Promise<KetQuaDangNhap> {
+  const res = await goiAuth('/dang-nhap-google', { id_token: idToken });
+  luuPhienTuPhanHoi(res);
+  return layHoSoSauDangNhap(res.email);
+}
+
+/** Đăng xuất: thu hồi phiên phía server rồi xoá token ở máy. */
+export async function signOut(): Promise<void> {
+  const refreshToken = docPhien()?.refresh_token;
+  xoaPhien();
+  tatTuChonGoogle();
+  if (!refreshToken) return;
+  try {
+    await fetch(`${AUTH_URL}/dang-xuat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    });
+  } catch {
+    // Mất mạng: token ở máy đã xoá nên người dùng vẫn thoát được. Phiên phía
+    // server sẽ tự hết hạn.
+  }
+}
+
+/**
+ * Kiểm tra phiên hiện tại: nếu token còn hiệu lực thì lấy nhân viên theo email.
  * Dùng khi load app để khôi phục trạng thái đăng nhập.
  */
 export async function getSessionEmployee(): Promise<Employee | null> {
-  const { data: { session } } = await supabase.auth.getSession();
-  const email = session?.user?.email;
+  if (!(await layAccessToken())) return null;
+  const email = emailPhienHienTai();
   if (!email) return null;
 
   const employee = await getEmployeeByEmail(email);
   const gated = await resolveEmployeeOrSignOutIfResigned(employee);
   return gated.employee;
+}
+
+/**
+ * Đổi mật khẩu của chính người đang đăng nhập.
+ *
+ * Ghi qua `rpc_set_mat_khau` (bcrypt server-side). Tự đổi thì các phiên khác
+ * KHÔNG bị thu hồi — chỉ khi admin đặt lại mật khẩu cho người khác mới cắt phiên
+ * (xem docs/vps-04-auth-schema.sql).
+ */
+export async function changeOwnPassword(newPassword: string): Promise<void> {
+  const nhanVienId = nhanVienIdPhienHienTai();
+  if (!nhanVienId) throw new Error('Chưa đăng nhập.');
+  await setMatKhauHash(nhanVienId, newPassword);
+  xoaCoPhaiDoiMatKhau();
 }
 
 /**
@@ -169,12 +312,13 @@ function bootstrapCompanyFromRpc(row: Record<string, unknown> | null): CompanyIn
  * `getSessionEmployee()` truyền thống để app không gãy.
  */
 export async function getSessionBootstrap(): Promise<SessionBootstrap> {
-  const { data: { session } } = await supabase.auth.getSession();
-  const email = session?.user?.email;
+  // Gọi trước để token được làm mới nếu cần — nếu phiên đã mất thì email cũng bị xoá.
+  if (!(await layAccessToken())) return { employee: null, roleContext: null, company: null };
+  const email = emailPhienHienTai();
   if (!email) return { employee: null, roleContext: null, company: null };
 
   try {
-    const { data, error } = await supabase.rpc('rpc_get_session_bootstrap', {
+    const { data, error } = await db.rpc('rpc_get_session_bootstrap', {
       p_email: email.trim(),
     });
     if (error) throw error;
@@ -217,36 +361,6 @@ export async function getSessionBootstrap(): Promise<SessionBootstrap> {
   }
 }
 
-/** Gửi email đặt lại mật khẩu (Supabase Auth). User nhận link và mở trang /dat-lai-mat-khau để đổi mật khẩu. */
-export async function requestPasswordReset(email: string): Promise<void> {
-  const redirectTo =
-    typeof window !== 'undefined'
-      ? `${window.location.origin}/dat-lai-mat-khau`
-      : undefined;
-  const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-    redirectTo,
-  });
-  if (error) throw new Error(formatSupabaseError(error, { resource: 'auth.resetPasswordForEmail' }));
-}
-
-/** Đặt lại mật khẩu (sau khi user mở link từ email trên trang /dat-lai-mat-khau). */
-export async function updatePassword(newPassword: string): Promise<void> {
-  const { error } = await supabase.auth.updateUser({ password: newPassword });
-  if (error) throw new Error(formatSupabaseError(error, { resource: 'auth.updateUser' }));
-}
-
-/**
- * Đăng nhập bằng Google (Supabase OAuth).
- * Chuyển hướng sang Google, sau khi đăng nhập xong redirect về redirectTo (mặc định: trang chủ).
- * Khi quay lại app, useAuthSync sẽ gọi getSessionEmployee() và đăng nhập nếu có hồ sơ nhân viên trùng email.
- * Cần bật Google provider trong Supabase Dashboard và thêm redirect URL vào allow list.
- */
-export async function signInWithGoogle(): Promise<void> {
-  const redirectTo =
-    typeof window !== 'undefined' ? `${window.location.origin}/` : undefined;
-  const { error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: { redirectTo },
-  });
-  if (error) throw new Error(formatSupabaseError(error, { resource: 'auth.signInWithOAuth' }));
-}
+// Không còn "quên mật khẩu qua email": self-host không có dịch vụ gửi mail. Admin
+// đặt lại mật khẩu trên trang Nhân viên, kèm cờ phai_doi_mat_khau để buộc người
+// dùng đổi ở lần đăng nhập kế tiếp. Xem docs/VPS_POSTGREST_PLAN.md.

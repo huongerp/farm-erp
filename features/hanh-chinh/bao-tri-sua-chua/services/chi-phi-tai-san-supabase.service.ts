@@ -3,7 +3,7 @@
  * Bảng: fp_ts_chi_phi_tai_san (phiếu), fp_ts_trang_thai_chi_phi_tai_san (thiết lập trạng thái).
  * Map: id_trang_thai + ten_trang_thai (DB) <-> trang_thai enum (app: cho_duyet | da_duyet | khong_duyet).
  */
-import { supabase, throwSupabaseError } from '../../../../lib/supabase';
+import { db, throwSupabaseError } from '../../../../lib/db';
 import { formatDate, formatDateShort } from '../../../../lib/utils';
 import type { PhieuBaoTriSuaChua, PhieuBaoTriSuaChuaCreate } from '../core/types';
 import type { TrangThaiPhieu } from '../core/types';
@@ -20,7 +20,7 @@ const PHIEU_CHI_PHI_ROW_COLUMNS =
 const RPC_NEXT_MA_PHIEU = 'get_next_ma_phieu_chi_phi_tai_san';
 
 async function fetchNextMaPhieu(): Promise<string> {
-  const { data, error } = await supabase.rpc(RPC_NEXT_MA_PHIEU);
+  const { data, error } = await db.rpc(RPC_NEXT_MA_PHIEU);
   if (error) throwSupabaseError(error);
   if (typeof data !== 'string' || !data.trim()) {
     throw new Error('get_next_ma_phieu_chi_phi_tai_san did not return string');
@@ -39,7 +39,7 @@ function parseNguoiTaoDbId(idNguoiTao: string): number | null {
 async function fetchTaiSanMaTen(idTaiSan: string): Promise<{ ma_tai_san: string; ten_tai_san: string } | null> {
   const n = parseInt(idTaiSan, 10);
   if (Number.isNaN(n)) return null;
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from(TABLE_TAI_SAN)
     .select('ma_tai_san, ten_tai_san')
     .eq('id', n)
@@ -164,7 +164,7 @@ export interface GetPhieuChiPhiListParams {
 export async function getPhieuChiPhiListSupabase(
   params: GetPhieuChiPhiListParams = {}
 ): Promise<PhieuBaoTriSuaChua[]> {
-  let query = supabase
+  let query = db
     .from(TABLE_PHIEU)
     .select(PHIEU_CHI_PHI_ROW_COLUMNS)
     .order('ngay', { ascending: false })
@@ -201,7 +201,7 @@ export async function getPhieuChiPhiListSupabase(
 export async function getPhieuChiPhiByIdSupabase(id: string): Promise<PhieuBaoTriSuaChua | null> {
   const numId = parseInt(id, 10);
   if (Number.isNaN(numId)) return null;
-  const { data, error } = await supabase.from(TABLE_PHIEU).select(PHIEU_CHI_PHI_ROW_COLUMNS).eq('id', numId).single();
+  const { data, error } = await db.from(TABLE_PHIEU).select(PHIEU_CHI_PHI_ROW_COLUMNS).eq('id', numId).single();
   if (error || !data) return null;
   return rowToPhieu(data as DbPhieuRow);
 }
@@ -216,7 +216,7 @@ export async function createPhieuChiPhiSupabase(
   const idNguoiNum = parseNguoiTaoDbId(id_nguoi_tao);
   let tenNguoi = options?.ten_nguoi_tao?.trim() || null;
   if (!tenNguoi && idNguoiNum != null) {
-    const { data: nv } = await supabase
+    const { data: nv } = await db
       .from(TABLE_NHAN_VIEN)
       .select('ho_va_ten')
       .eq('id', idNguoiNum)
@@ -241,7 +241,7 @@ export async function createPhieuChiPhiSupabase(
     id_nguoi_tao: idNguoiNum,
     ten_nguoi_tao: tenNguoi,
   };
-  const { data: inserted, error } = await supabase.from(TABLE_PHIEU).insert(payload).select(PHIEU_CHI_PHI_ROW_COLUMNS).single();
+  const { data: inserted, error } = await db.from(TABLE_PHIEU).insert(payload).select(PHIEU_CHI_PHI_ROW_COLUMNS).single();
   if (error) throwSupabaseError(error);
   return rowToPhieu(inserted as DbPhieuRow);
 }
@@ -268,9 +268,9 @@ export async function updatePhieuChiPhiSupabase(
   };
   if (idTrangThai !== undefined) payload.id_trang_thai = idTrangThai;
 
-  const { error } = await supabase.from(TABLE_PHIEU).update(payload).eq('id', numId);
+  const { error } = await db.from(TABLE_PHIEU).update(payload).eq('id', numId);
   if (error) throwSupabaseError(error);
-  const { data: updated, error: err2 } = await supabase.from(TABLE_PHIEU).select(PHIEU_CHI_PHI_ROW_COLUMNS).eq('id', numId).single();
+  const { data: updated, error: err2 } = await db.from(TABLE_PHIEU).select(PHIEU_CHI_PHI_ROW_COLUMNS).eq('id', numId).single();
   if (err2 || !updated) throw new Error(i18n.t('baoTriSuaChua.service.notFound', { defaultValue: 'Phiếu không tồn tại' }));
   return rowToPhieu(updated as DbPhieuRow);
 }
@@ -278,13 +278,13 @@ export async function updatePhieuChiPhiSupabase(
 export async function deletePhieuChiPhiSupabase(ids: string[]): Promise<void> {
   const numIds = ids.map((x) => parseInt(x, 10)).filter((n) => !Number.isNaN(n));
   if (numIds.length === 0) return;
-  const { error } = await supabase.from(TABLE_PHIEU).delete().in('id', numIds);
+  const { error } = await db.from(TABLE_PHIEU).delete().in('id', numIds);
   if (error) throwSupabaseError(error);
 }
 
 /** Lấy danh sách trạng thái phiếu từ bảng thiết lập (để combobox, v.v.) */
 export async function getTrangThaiChiPhiListSupabase(): Promise<{ id: number; ma: string; ten: string }[]> {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from(TABLE_TRANG_THAI)
     .select('id, ma, ten')
     .order('thu_tu', { ascending: true });

@@ -1,4 +1,4 @@
-import { supabase } from '../../../../lib/supabase';
+import { db } from '../../../../lib/db';
 import i18n from '../../../../lib/i18n';
 
 const TABLE = 'fp_var_tt_cong_ty';
@@ -54,7 +54,7 @@ function rowToCompanyInfo(row: Record<string, unknown>): CompanyInfoPayload {
  * App dùng 1 bản ghi làm cấu hình chung.
  */
 export async function getCompanyInfo(): Promise<CompanyInfoPayload | null> {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from(TABLE)
     .select('id, ten_ung_dung, mo_ta, logo, ten_cong_ty, ma_so_thue, dia_chi, so_dien_thoai, email, trang_web')
     .order('id', { ascending: true })
@@ -86,7 +86,7 @@ export async function updateCompanyInfo(
     tg_cap_nhat: new Date().toISOString(),
   };
 
-  const { data: updated, error } = await supabase
+  const { data: updated, error } = await db
     .from(TABLE)
     .update(row)
     .eq('id', id)
@@ -101,7 +101,7 @@ export async function updateCompanyInfo(
  * Lấy id bản ghi đầu tiên (để cập nhật). Trả về null nếu bảng trống.
  */
 export async function getFirstCompanyId(): Promise<string | null> {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from(TABLE)
     .select('id')
     .order('id', { ascending: true })

@@ -13,6 +13,7 @@ import {
   bulkUpdateEmployees,
   restoreEmployees,
   type EmployeeListQuery,
+  type EmployeeMutationResult,
 } from "../services/nhan-vien-service";
 import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
 import { EmployeeFormValues } from "../core/schema";
@@ -116,15 +117,22 @@ export const useCreateEmployee = (onSuccess?: () => void) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createEmployee,
-    onSuccess: (emp: Employee & { _authCreated?: boolean }) => {
+    onSuccess: (emp: EmployeeMutationResult) => {
       queryClient.setQueryData(EMPLOYEES_QUERY_KEY, (old: Employee[] | undefined) =>
         old ? [emp, ...old] : [emp]
       );
       queryClient.invalidateQueries({ queryKey: EMPLOYEES_REF_QUERY_KEY });
       invalidateRefCache('employees');
       toast.success(i18n.t('employee.toast.createSuccess'));
-      if (emp._authCreated) {
-        toast.info(i18n.t('employee.toast.authUserCreated', { email: emp.email }));
+      if (emp.email) {
+        toast.info(
+          emp._passwordSet
+            ? i18n.t('employee.toast.customPasswordSet', { email: emp.email })
+            : i18n.t('employee.toast.defaultPasswordSet', { email: emp.email })
+        );
+      }
+      if (emp._passwordError) {
+        toast.warning(i18n.t('employee.toast.passwordSetFailed', { error: emp._passwordError }));
       }
       if (onSuccess) onSuccess();
     },
@@ -136,7 +144,7 @@ export const useUpdateEmployee = (onSuccess?: () => void) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: string, data: EmployeeFormValues }) => updateEmployee(id, data),
-    onSuccess: (emp: Employee & { _authCreated?: boolean }) => {
+    onSuccess: (emp: EmployeeMutationResult) => {
       queryClient.setQueryData(EMPLOYEES_QUERY_KEY, (old: Employee[] | undefined) =>
         old?.map((e) => (String(e.id) === String(emp.id) ? emp : e)) ?? [emp]
       );
@@ -144,8 +152,11 @@ export const useUpdateEmployee = (onSuccess?: () => void) => {
       queryClient.invalidateQueries({ queryKey: EMPLOYEES_REF_QUERY_KEY });
       invalidateRefCache('employees');
       toast.success(i18n.t('employee.toast.updateSuccess'));
-      if (emp._authCreated) {
-        toast.info(i18n.t('employee.toast.authUserCreated', { email: emp.email }));
+      if (emp._passwordSet) {
+        toast.info(i18n.t('employee.toast.passwordSet', { email: emp.email }));
+      }
+      if (emp._passwordError) {
+        toast.warning(i18n.t('employee.toast.passwordSetFailed', { error: emp._passwordError }));
       }
       if (onSuccess) onSuccess();
     },
@@ -220,7 +231,7 @@ export const useDeleteWithUndo = () => {
       queryClient.invalidateQueries({ queryKey: EMPLOYEES_REF_QUERY_KEY });
       invalidateRefCache('employees');
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : String(err)),
   });
 
   const restoreMut = useMutation({

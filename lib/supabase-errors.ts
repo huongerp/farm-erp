@@ -80,45 +80,45 @@ export function formatSupabaseError(err: unknown, ctx?: { resource?: string }): 
   const status = extractHttpStatus(err);
 
   if (isNetworkFailure(msg, err)) {
-    return i18n.t('errors.supabase.network') + suffix;
+    return i18n.t('errors.db.network') + suffix;
   }
 
   if (status === 403) {
-    return i18n.t('errors.supabase.forbidden403') + suffix;
+    return i18n.t('errors.db.forbidden403') + suffix;
   }
   if (
     status == null &&
     (/\b403\b/i.test(msg) || /^forbidden$/i.test(msg.trim()) || /new row violates row-level security/i.test(msg))
   ) {
-    return i18n.t('errors.supabase.forbidden403') + suffix;
+    return i18n.t('errors.db.forbidden403') + suffix;
   }
   if (status === 401) {
-    return i18n.t('errors.supabase.unauthorized401') + suffix;
+    return i18n.t('errors.db.unauthorized401') + suffix;
   }
   if (status === 404) {
-    return i18n.t('errors.supabase.notFound404') + suffix;
+    return i18n.t('errors.db.notFound404') + suffix;
   }
   if (status != null && status >= 500 && status < 600) {
-    return i18n.t('errors.supabase.serverError', { status: String(status) }) + suffix;
+    return i18n.t('errors.db.serverError', { status: String(status) }) + suffix;
   }
 
   if (code === '42501' || /permission denied for|violates row-level security|row-level security/i.test(msg)) {
-    return i18n.t('errors.supabase.forbiddenRls', { code: code || '42501' }) + suffix;
+    return i18n.t('errors.db.forbiddenRls', { code: code || '42501' }) + suffix;
   }
 
   if (code === 'PGRST301' || /jwt expired|invalid jwt|jwt/i.test(msg)) {
-    return i18n.t('errors.supabase.jwt', { code: code || 'JWT' }) + suffix;
+    return i18n.t('errors.db.jwt', { code: code || 'JWT' }) + suffix;
   }
 
   const parts: string[] = [];
   if (code) parts.push(`[${code}]`);
   else if (status) parts.push(`[HTTP ${status}]`);
-  parts.push(msg.trim() || i18n.t('errors.supabase.noMessage'));
+  parts.push(msg.trim() || i18n.t('errors.db.noMessage'));
 
   if (isRecord(err) && typeof err.hint === 'string' && err.hint.trim()) {
-    parts.push(i18n.t('errors.supabase.hintLine', { hint: err.hint.trim() }));
+    parts.push(i18n.t('errors.db.hintLine', { hint: err.hint.trim() }));
   } else if (isRecord(err) && typeof err.details === 'string' && err.details.trim()) {
-    parts.push(i18n.t('errors.supabase.detailsLine', { details: err.details.trim() }));
+    parts.push(i18n.t('errors.db.detailsLine', { details: err.details.trim() }));
   }
 
   return parts.join(' ') + suffix;

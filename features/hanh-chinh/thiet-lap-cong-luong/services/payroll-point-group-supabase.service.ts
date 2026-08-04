@@ -1,7 +1,7 @@
 /**
  * Service nhóm điểm cộng trừ – đọc/ghi Supabase (fp_hr_thiet_lap_diem_cong_tru).
  */
-import { supabase, fetchAllRows, throwSupabaseError } from '../../../../lib/supabase';
+import { db, fetchAllRows, throwSupabaseError } from '../../../../lib/db';
 import type { PayrollPointGroup } from '../core/types';
 import type { PayrollPointGroupFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
@@ -45,7 +45,7 @@ function rowToItem(row: DbRow): PayrollPointGroup {
 
 export async function getPayrollPointGroups(): Promise<PayrollPointGroup[]> {
   const rows = await fetchAllRows<DbRow>((from, to) =>
-    supabase
+    db
       .from(TABLE)
       .select(ROW_COLUMNS)
       .order('thu_tu', { ascending: true })
@@ -59,7 +59,7 @@ export async function createPayrollPointGroup(
   data: PayrollPointGroupFormValues
 ): Promise<PayrollPointGroup> {
   const ma = data.ma.trim();
-  const { data: existing } = await supabase.from(TABLE).select('id').eq('ma', ma).maybeSingle();
+  const { data: existing } = await db.from(TABLE).select('id').eq('ma', ma).maybeSingle();
   if (existing) throw new Error(i18n.t('payrollIp.pointGroups.service.duplicateMa'));
 
   const payload = {
@@ -71,7 +71,7 @@ export async function createPayrollPointGroup(
     trang_thai: data.trang_thai,
   };
 
-  const { data: inserted, error } = await supabase.from(TABLE).insert(payload).select(ROW_COLUMNS).single();
+  const { data: inserted, error } = await db.from(TABLE).insert(payload).select(ROW_COLUMNS).single();
   if (error) throwSupabaseError(error);
   return rowToItem(inserted as DbRow);
 }
@@ -84,7 +84,7 @@ export async function updatePayrollPointGroup(
   if (Number.isNaN(idNum)) throw new Error(i18n.t('payrollIp.pointGroups.service.notFound'));
 
   const ma = data.ma.trim();
-  const { data: other } = await supabase.from(TABLE).select('id').eq('ma', ma).neq('id', idNum).maybeSingle();
+  const { data: other } = await db.from(TABLE).select('id').eq('ma', ma).neq('id', idNum).maybeSingle();
   if (other) throw new Error(i18n.t('payrollIp.pointGroups.service.duplicateMa'));
 
   const payload = {
@@ -96,10 +96,10 @@ export async function updatePayrollPointGroup(
     trang_thai: data.trang_thai,
   };
 
-  const { error } = await supabase.from(TABLE).update(payload).eq('id', idNum);
+  const { error } = await db.from(TABLE).update(payload).eq('id', idNum);
   if (error) throwSupabaseError(error);
 
-  const { data: row, error: fetchErr } = await supabase.from(TABLE).select(ROW_COLUMNS).eq('id', idNum).single();
+  const { data: row, error: fetchErr } = await db.from(TABLE).select(ROW_COLUMNS).eq('id', idNum).single();
   if (fetchErr || !row) throw new Error(i18n.t('payrollIp.pointGroups.service.notFound'));
   return rowToItem(row as DbRow);
 }
@@ -110,7 +110,7 @@ export async function updatePayrollPointGroupStatus(
 ): Promise<void> {
   const numIds = ids.map((s) => Number(s)).filter((n) => !Number.isNaN(n));
   if (numIds.length === 0) return;
-  const { error } = await supabase
+  const { error } = await db
     .from(TABLE)
     .update({ trang_thai: status })
     .in('id', numIds);
@@ -120,6 +120,6 @@ export async function updatePayrollPointGroupStatus(
 export async function deletePayrollPointGroups(ids: string[]): Promise<void> {
   const numIds = ids.map((s) => Number(s)).filter((n) => !Number.isNaN(n));
   if (numIds.length === 0) return;
-  const { error } = await supabase.from(TABLE).delete().in('id', numIds);
+  const { error } = await db.from(TABLE).delete().in('id', numIds);
   if (error) throwSupabaseError(error);
 }

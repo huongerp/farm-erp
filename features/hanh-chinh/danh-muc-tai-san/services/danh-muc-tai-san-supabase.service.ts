@@ -2,7 +2,7 @@
  * Service danh mục tài sản – đọc/ghi Supabase (bảng fp_ts_tai_san).
  * Map: DB id_nhan_vien/ten_nhan_vien ↔ App id_nhan_vien_dang_giu/ten_nhan_vien_dang_giu.
  */
-import { supabase, throwSupabaseError } from '../../../../lib/supabase';
+import { db, throwSupabaseError } from '../../../../lib/db';
 import type { TaiSan } from '../core/types';
 import type { TaiSanFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
@@ -100,7 +100,7 @@ const TAI_SAN_LIST_LITE =
   'id,ma_tai_san,ten_tai_san,id_nhom,ten_nhom,id_noi_luu,ten_noi_luu,id_chi_nhanh,ten_chi_nhanh,id_trang_thai,ten_trang_thai,id_nhan_vien,ten_nhan_vien,thuong_hieu,model,serial,xuat_xu,ma_barcode,ten_nha_cung_cap,id_nguoi_tao,ten_nguoi_tao,ngay_nhap,nguyen_gia,ngay_bat_dau_trich_khau_hao,gia_tri_con_lai,khau_hao_luy_ke,ghi_chu,tg_tao,tg_cap_nhat';
 
 export async function getTaiSanListSupabase(): Promise<TaiSan[]> {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from(TABLE)
     .select(TAI_SAN_LIST_LITE)
     .order('tg_cap_nhat', { ascending: false });
@@ -116,7 +116,7 @@ const MA_TAI_SAN_PAD = 5;
  * Query các mã match pattern TS + số, lấy max rồi +1; không có thì trả về TS00001.
  */
 export async function getNextMaTaiSanSupabase(): Promise<string> {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from(TABLE)
     .select('ma_tai_san')
     .ilike('ma_tai_san', `${MA_TAI_SAN_PREFIX}%`)
@@ -148,10 +148,10 @@ function parseDistinctJsonb(data: unknown): string[] | null {
  * Ưu tiên RPC `rpc_fp_ts_distinct_thuong_hieu` (docs/supabase-rpc_fp_ts_distinct.sql); fallback tải cột nếu RPC chưa có.
  */
 export async function getDistinctThuongHieuSupabase(): Promise<string[]> {
-  const { data, error } = await supabase.rpc('rpc_fp_ts_distinct_thuong_hieu');
+  const { data, error } = await db.rpc('rpc_fp_ts_distinct_thuong_hieu');
   const parsed = !error && data != null ? parseDistinctJsonb(data as unknown) : null;
   if (parsed) return parsed;
-  const { data: rows, error: e2 } = await supabase.from(TABLE).select('thuong_hieu');
+  const { data: rows, error: e2 } = await db.from(TABLE).select('thuong_hieu');
   if (e2) throwSupabaseError(e2);
   const set = new Set<string>();
   (rows ?? []).forEach((row: { thuong_hieu: string | null }) => {
@@ -165,10 +165,10 @@ export async function getDistinctThuongHieuSupabase(): Promise<string[]> {
  * Lấy danh sách giá trị distinct (enum) của cột model từ fp_ts_tai_san, dùng cho combobox có thể thêm mới.
  */
 export async function getDistinctModelSupabase(): Promise<string[]> {
-  const { data, error } = await supabase.rpc('rpc_fp_ts_distinct_model');
+  const { data, error } = await db.rpc('rpc_fp_ts_distinct_model');
   const parsed = !error && data != null ? parseDistinctJsonb(data as unknown) : null;
   if (parsed) return parsed;
-  const { data: rows, error: e2 } = await supabase.from(TABLE).select('model');
+  const { data: rows, error: e2 } = await db.from(TABLE).select('model');
   if (e2) throwSupabaseError(e2);
   const set = new Set<string>();
   (rows ?? []).forEach((row: { model: string | null }) => {
@@ -182,10 +182,10 @@ export async function getDistinctModelSupabase(): Promise<string[]> {
  * Lấy danh sách giá trị distinct (enum) của cột xuat_xu từ fp_ts_tai_san, dùng cho combobox có thể thêm mới.
  */
 export async function getDistinctXuatXuSupabase(): Promise<string[]> {
-  const { data, error } = await supabase.rpc('rpc_fp_ts_distinct_xuat_xu');
+  const { data, error } = await db.rpc('rpc_fp_ts_distinct_xuat_xu');
   const parsed = !error && data != null ? parseDistinctJsonb(data as unknown) : null;
   if (parsed) return parsed;
-  const { data: rows, error: e2 } = await supabase.from(TABLE).select('xuat_xu');
+  const { data: rows, error: e2 } = await db.from(TABLE).select('xuat_xu');
   if (e2) throwSupabaseError(e2);
   const set = new Set<string>();
   (rows ?? []).forEach((row: { xuat_xu: string | null }) => {
@@ -199,10 +199,10 @@ export async function getDistinctXuatXuSupabase(): Promise<string[]> {
  * Lấy danh sách giá trị distinct (enum) của cột ten_nha_cung_cap từ fp_ts_tai_san, dùng cho combobox có thể thêm mới.
  */
 export async function getDistinctNhaCungCapSupabase(): Promise<string[]> {
-  const { data, error } = await supabase.rpc('rpc_fp_ts_distinct_ten_nha_cung_cap');
+  const { data, error } = await db.rpc('rpc_fp_ts_distinct_ten_nha_cung_cap');
   const parsed = !error && data != null ? parseDistinctJsonb(data as unknown) : null;
   if (parsed) return parsed;
-  const { data: rows, error: e2 } = await supabase.from(TABLE).select('ten_nha_cung_cap');
+  const { data: rows, error: e2 } = await db.from(TABLE).select('ten_nha_cung_cap');
   if (e2) throwSupabaseError(e2);
   const set = new Set<string>();
   (rows ?? []).forEach((row: { ten_nha_cung_cap: string | null }) => {
@@ -218,7 +218,7 @@ export async function getDistinctNhaCungCapSupabase(): Promise<string[]> {
 export async function checkMaTaiSanExistsSupabase(ma: string, excludeId?: string | null): Promise<boolean> {
   const trimmed = (ma || '').trim();
   if (!trimmed) return false;
-  let query = supabase.from(TABLE).select('id').eq('ma_tai_san', trimmed).limit(1);
+  let query = db.from(TABLE).select('id').eq('ma_tai_san', trimmed).limit(1);
   if (excludeId != null && excludeId !== '') {
     const numId = Number(excludeId);
     if (!Number.isNaN(numId)) query = query.neq('id', numId);
@@ -279,7 +279,7 @@ export async function createTaiSanSupabase(data: TaiSanFormValues): Promise<TaiS
     ghi_chu: data.ghi_chu?.trim() || null,
   };
 
-  const { data: inserted, error } = await supabase.from(TABLE).insert(payload).select(TAI_SAN_DETAIL_COLUMNS).single();
+  const { data: inserted, error } = await db.from(TABLE).insert(payload).select(TAI_SAN_DETAIL_COLUMNS).single();
   if (error) throwSupabaseError(error);
   return rowToTaiSan(inserted as DbTaiSanRow);
 }
@@ -334,9 +334,9 @@ export async function updateTaiSanSupabase(id: string, data: TaiSanFormValues): 
     ghi_chu: data.ghi_chu?.trim() || null,
   };
 
-  const { error } = await supabase.from(TABLE).update(payload).eq('id', numId);
+  const { error } = await db.from(TABLE).update(payload).eq('id', numId);
   if (error) throwSupabaseError(error);
-  const { data: updated, error: err2 } = await supabase.from(TABLE).select(TAI_SAN_DETAIL_COLUMNS).eq('id', numId).single();
+  const { data: updated, error: err2 } = await db.from(TABLE).select(TAI_SAN_DETAIL_COLUMNS).eq('id', numId).single();
   if (err2 || !updated) throw new Error(i18n.t('danhSachTaiSan.service.notFound'));
   return rowToTaiSan(updated as DbTaiSanRow);
 }
@@ -347,7 +347,7 @@ export async function updateTaiSanKhauHaoSupabase(
 ): Promise<TaiSan> {
   const numId = Number(id);
   if (Number.isNaN(numId)) throw new Error(i18n.t('danhSachTaiSan.service.notFound'));
-  const { error } = await supabase
+  const { error } = await db
     .from(TABLE)
     .update({
       gia_tri_con_lai: payload.gia_tri_con_lai,
@@ -355,7 +355,7 @@ export async function updateTaiSanKhauHaoSupabase(
     })
     .eq('id', numId);
   if (error) throwSupabaseError(error);
-  const { data: updated, error: err2 } = await supabase.from(TABLE).select(TAI_SAN_DETAIL_COLUMNS).eq('id', numId).single();
+  const { data: updated, error: err2 } = await db.from(TABLE).select(TAI_SAN_DETAIL_COLUMNS).eq('id', numId).single();
   if (err2 || !updated) throw new Error(i18n.t('danhSachTaiSan.service.notFound'));
   return rowToTaiSan(updated as DbTaiSanRow);
 }
@@ -387,13 +387,13 @@ export async function updateTaiSanLocationAndHolderSupabase(
     }
   }
   if (Object.keys(updates).length === 0) {
-    const { data: row } = await supabase.from(TABLE).select(TAI_SAN_DETAIL_COLUMNS).eq('id', numId).single();
+    const { data: row } = await db.from(TABLE).select(TAI_SAN_DETAIL_COLUMNS).eq('id', numId).single();
     if (!row) throw new Error(i18n.t('danhSachTaiSan.service.notFound'));
     return rowToTaiSan(row as DbTaiSanRow);
   }
-  const { error } = await supabase.from(TABLE).update(updates).eq('id', numId);
+  const { error } = await db.from(TABLE).update(updates).eq('id', numId);
   if (error) throwSupabaseError(error);
-  const { data: updated, error: err2 } = await supabase.from(TABLE).select(TAI_SAN_DETAIL_COLUMNS).eq('id', numId).single();
+  const { data: updated, error: err2 } = await db.from(TABLE).select(TAI_SAN_DETAIL_COLUMNS).eq('id', numId).single();
   if (err2 || !updated) throw new Error(i18n.t('danhSachTaiSan.service.notFound'));
   return rowToTaiSan(updated as DbTaiSanRow);
 }
@@ -431,13 +431,13 @@ export async function updateTaiSanFromKiemKeSupabase(
     updates.ten_trang_thai = st?.ten ?? null;
   }
   if (Object.keys(updates).length === 0) {
-    const { data: row } = await supabase.from(TABLE).select(TAI_SAN_DETAIL_COLUMNS).eq('id', numId).single();
+    const { data: row } = await db.from(TABLE).select(TAI_SAN_DETAIL_COLUMNS).eq('id', numId).single();
     if (!row) throw new Error(i18n.t('danhSachTaiSan.service.notFound'));
     return rowToTaiSan(row as DbTaiSanRow);
   }
-  const { error } = await supabase.from(TABLE).update(updates).eq('id', numId);
+  const { error } = await db.from(TABLE).update(updates).eq('id', numId);
   if (error) throwSupabaseError(error);
-  const { data: updated, error: err2 } = await supabase.from(TABLE).select(TAI_SAN_DETAIL_COLUMNS).eq('id', numId).single();
+  const { data: updated, error: err2 } = await db.from(TABLE).select(TAI_SAN_DETAIL_COLUMNS).eq('id', numId).single();
   if (err2 || !updated) throw new Error(i18n.t('danhSachTaiSan.service.notFound'));
   return rowToTaiSan(updated as DbTaiSanRow);
 }
@@ -445,6 +445,6 @@ export async function updateTaiSanFromKiemKeSupabase(
 export async function deleteTaiSanSupabase(ids: string[]): Promise<void> {
   const numIds = ids.map((x) => Number(x)).filter((n) => !Number.isNaN(n));
   if (numIds.length === 0) return;
-  const { error } = await supabase.from(TABLE).delete().in('id', numIds);
+  const { error } = await db.from(TABLE).delete().in('id', numIds);
   if (error) throwSupabaseError(error);
 }

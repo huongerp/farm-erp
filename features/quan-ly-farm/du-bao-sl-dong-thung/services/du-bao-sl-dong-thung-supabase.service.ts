@@ -1,7 +1,7 @@
 /**
  * Dự báo SL đóng thùng — Supabase fp_farm_du_bao_sl_dong_thung
  */
-import { supabase, throwSupabaseError, formatSupabaseError } from '../../../../lib/supabase';
+import { db, throwSupabaseError, formatSupabaseError } from '../../../../lib/db';
 import type { FarmDuBaoSlDongThung, TrangThaiDuBaoSlDongThungPhieu } from '../core/types';
 import { TRANG_THAI_DU_BAO_SL_DONG_THUNG } from '../core/types';
 import type { DuBaoSlDongThungFormValues } from '../core/schema';
@@ -113,7 +113,7 @@ function bodyFromForm(values: DuBaoSlDongThungFormValues, trangThai: TrangThaiDu
 }
 
 export async function getAllDuBaoSlDongThungSupabase(): Promise<FarmDuBaoSlDongThung[]> {
-  const { data, error } = await supabase.from(TABLE).select(ROW_SELECT).order('ngay', { ascending: false });
+  const { data, error } = await db.from(TABLE).select(ROW_SELECT).order('ngay', { ascending: false });
   if (error) throwSupabaseError(error, { resource: `${TABLE}.list` });
   return ((data ?? []) as DbRow[]).map(rowToModel);
 }
@@ -121,7 +121,7 @@ export async function getAllDuBaoSlDongThungSupabase(): Promise<FarmDuBaoSlDongT
 export async function getDuBaoSlDongThungByIdSupabase(id: string): Promise<FarmDuBaoSlDongThung | null> {
   const numId = Number(id);
   if (!Number.isFinite(numId)) return null;
-  const { data, error } = await supabase.from(TABLE).select(ROW_SELECT).eq('id', numId).maybeSingle();
+  const { data, error } = await db.from(TABLE).select(ROW_SELECT).eq('id', numId).maybeSingle();
   if (error) throwSupabaseError(error, { resource: `${TABLE}.byId` });
   if (!data) return null;
   return rowToModel(data as DbRow);
@@ -136,7 +136,7 @@ export async function createDuBaoSlDongThungSupabase(
     id_nguoi_tao: parseIdToInt8(idNguoiTao),
     tg_tao: new Date().toISOString(),
   };
-  const { data: inserted, error } = await supabase.from(TABLE).insert(payload).select(ROW_SELECT).single();
+  const { data: inserted, error } = await db.from(TABLE).insert(payload).select(ROW_SELECT).single();
   if (error) throw mapInsertUpdateError(error);
   return rowToModel(inserted as DbRow);
 }
@@ -144,11 +144,11 @@ export async function createDuBaoSlDongThungSupabase(
 export async function updateDuBaoSlDongThungSupabase(id: string, values: DuBaoSlDongThungFormValues): Promise<FarmDuBaoSlDongThung> {
   const numId = Number(id);
   if (!Number.isFinite(numId)) throw new Error('Invalid id');
-  const { data: existing, error: e0 } = await supabase.from(TABLE).select('trang_thai').eq('id', numId).maybeSingle();
+  const { data: existing, error: e0 } = await db.from(TABLE).select('trang_thai').eq('id', numId).maybeSingle();
   if (e0) throwSupabaseError(e0, { resource: `${TABLE}.readTrangThai` });
   const trangThai = normalizeTrangThaiDb((existing as { trang_thai?: string } | null)?.trang_thai);
   const updateBody = bodyFromForm(values, trangThai);
-  const { data, error } = await supabase.from(TABLE).update(updateBody).eq('id', numId).select(ROW_SELECT).single();
+  const { data, error } = await db.from(TABLE).update(updateBody).eq('id', numId).select(ROW_SELECT).single();
   if (error) throw mapInsertUpdateError(error);
   return rowToModel(data as DbRow);
 }
@@ -156,14 +156,14 @@ export async function updateDuBaoSlDongThungSupabase(id: string, values: DuBaoSl
 export async function deleteDuBaoSlDongThungSupabase(id: string): Promise<void> {
   const numId = Number(id);
   if (!Number.isFinite(numId)) return;
-  const { error } = await supabase.from(TABLE).delete().eq('id', numId);
+  const { error } = await db.from(TABLE).delete().eq('id', numId);
   if (error) throwSupabaseError(error, { resource: `${TABLE}.delete` });
 }
 
 export async function deleteDuBaoSlDongThungManySupabase(ids: string[]): Promise<void> {
   const numIds = ids.map((x) => Number(x)).filter((n) => Number.isFinite(n));
   if (numIds.length === 0) return;
-  const { error } = await supabase.from(TABLE).delete().in('id', numIds);
+  const { error } = await db.from(TABLE).delete().in('id', numIds);
   if (error) throwSupabaseError(error, { resource: `${TABLE}.deleteMany` });
 }
 
@@ -175,7 +175,7 @@ export async function updateDuBaoSlDongThungTrangThaiSupabase(
   if (!Number.isFinite(numId)) throw new Error('Invalid id');
   const next =
     trang_thai === TRANG_THAI_DU_BAO_SL_DONG_THUNG.KHOA ? TRANG_THAI_DU_BAO_SL_DONG_THUNG.KHOA : TRANG_THAI_DU_BAO_SL_DONG_THUNG.MO;
-  const { error } = await supabase
+  const { error } = await db
     .from(TABLE)
     .update({ trang_thai: next, tg_cap_nhat: new Date().toISOString() })
     .eq('id', numId);

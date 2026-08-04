@@ -1,7 +1,7 @@
 /**
  * Báo cáo sơ chế — Supabase fp_farm_bao_cao_so_che + fp_farm_bao_cao_so_che_ct + fp_farm_bao_cao_so_che_pham_cap + fp_farm_bao_cao_so_che_kpi
  */
-import { supabase, throwSupabaseError, formatSupabaseError } from '../../../../lib/supabase';
+import { db, throwSupabaseError, formatSupabaseError } from '../../../../lib/db';
 import i18n from '../../../../lib/i18n';
 import type { FarmBaoCaoSoChe, FarmBaoCaoKpiThuongRow, TrangThaiBaoCaoSoChePhieu } from '../core/types';
 import { computeKpiPhanTram } from '../../shared/kpi-thuong/types';
@@ -63,7 +63,7 @@ async function assertBaoCaoSoCheUniqueNgayChiNhanh(
 ): Promise<void> {
   const bid = parseIdToInt8(idChiNhanh);
   if (bid == null || !ngay?.trim()) return;
-  let q = supabase.from(TABLE_CHA).select('id').eq('ngay', ngay).eq('id_chi_nhanh', bid);
+  let q = db.from(TABLE_CHA).select('id').eq('ngay', ngay).eq('id_chi_nhanh', bid);
   if (excludeId != null) q = q.neq('id', excludeId);
   const { data, error } = await q.maybeSingle();
   if (error) throwSupabaseError(error, { resource: `${TABLE_CHA}.assertUnique` });
@@ -264,7 +264,7 @@ async function fetchCtRowsForIds(ids: string[]): Promise<Map<string, DbRowCt[]>>
   const map = new Map<string, DbRowCt[]>();
   if (ids.length === 0) return map;
   const numIds = ids.map((x) => Number(x)).filter((n) => Number.isFinite(n));
-  const { data, error } = await supabase.from(TABLE_CT).select(ROW_CT).in('id_bao_cao', numIds);
+  const { data, error } = await db.from(TABLE_CT).select(ROW_CT).in('id_bao_cao', numIds);
   if (error) throwSupabaseError(error, { resource: `${TABLE_CT}.select` });
   for (const row of (data ?? []) as DbRowCt[]) {
     const key = String(row.id_bao_cao);
@@ -279,7 +279,7 @@ async function fetchKpiRowsForIds(ids: string[]): Promise<Map<string, FarmBaoCao
   const map = new Map<string, FarmBaoCaoKpiThuongRow[]>();
   if (ids.length === 0) return map;
   const numIds = ids.map((x) => Number(x)).filter((n) => Number.isFinite(n));
-  const { data, error } = await supabase.from(TABLE_KPI).select(ROW_KPI).in('id_bao_cao', numIds);
+  const { data, error } = await db.from(TABLE_KPI).select(ROW_KPI).in('id_bao_cao', numIds);
   if (error) throwSupabaseError(error, { resource: `${TABLE_KPI}.select` });
   for (const row of (data ?? []) as DbRowKpi[]) {
     const key = String(row.id_bao_cao);
@@ -294,7 +294,7 @@ async function fetchPcapRowsForIds(ids: string[]): Promise<Map<string, DbRowPcap
   const map = new Map<string, DbRowPcap[]>();
   if (ids.length === 0) return map;
   const numIds = ids.map((x) => Number(x)).filter((n) => Number.isFinite(n));
-  const { data, error } = await supabase.from(TABLE_PCAP).select(ROW_PCAP).in('id_bao_cao', numIds);
+  const { data, error } = await db.from(TABLE_PCAP).select(ROW_PCAP).in('id_bao_cao', numIds);
   if (error) throwSupabaseError(error, { resource: `${TABLE_PCAP}.select` });
   for (const row of (data ?? []) as DbRowPcap[]) {
     const key = String(row.id_bao_cao);
@@ -381,7 +381,7 @@ function pcapRowsFromForm(values: BaoCaoSoCheFormValues, idBaoCao: number) {
 }
 
 export async function getAllBaoCaoSoCheSupabase(): Promise<FarmBaoCaoSoChe[]> {
-  const { data, error } = await supabase.from(TABLE_CHA).select(ROW_CHA).order('ngay', { ascending: false });
+  const { data, error } = await db.from(TABLE_CHA).select(ROW_CHA).order('ngay', { ascending: false });
   if (error) throwSupabaseError(error, { resource: `${TABLE_CHA}.list` });
   const rows = (data ?? []) as DbRowCha[];
   const ids = rows.map((r) => String(r.id));
@@ -403,7 +403,7 @@ export async function getAllBaoCaoSoCheSupabase(): Promise<FarmBaoCaoSoChe[]> {
 export async function getBaoCaoSoCheByIdSupabase(id: string): Promise<FarmBaoCaoSoChe | null> {
   const numId = Number(id);
   if (!Number.isFinite(numId)) return null;
-  const { data, error } = await supabase.from(TABLE_CHA).select(ROW_CHA).eq('id', numId).maybeSingle();
+  const { data, error } = await db.from(TABLE_CHA).select(ROW_CHA).eq('id', numId).maybeSingle();
   if (error) throwSupabaseError(error, { resource: `${TABLE_CHA}.byId` });
   if (!data) return null;
   const row = data as DbRowCha;
@@ -426,20 +426,20 @@ export async function createBaoCaoSoCheSupabase(
 ): Promise<FarmBaoCaoSoChe> {
   await assertBaoCaoSoCheUniqueNgayChiNhanh(values.ngay, values.id_chi_nhanh, null);
   const payloadCha = { ...chaPayloadCreate(values, idNguoiTao), tg_tao: new Date().toISOString() };
-  const { data: inserted, error } = await supabase.from(TABLE_CHA).insert(payloadCha).select(ROW_CHA).single();
+  const { data: inserted, error } = await db.from(TABLE_CHA).insert(payloadCha).select(ROW_CHA).single();
   if (error) throw mapChaInsertUpdateError(error);
   const parent = inserted as DbRowCha;
   const pid = parent.id;
-  const { error: e2 } = await supabase.from(TABLE_CT).insert(ctRowsFromForm(values, pid));
+  const { error: e2 } = await db.from(TABLE_CT).insert(ctRowsFromForm(values, pid));
   if (e2) throwSupabaseError(e2, { resource: `${TABLE_CT}.insert` });
   const pcapIns = pcapRowsFromForm(values, pid);
   if (pcapIns.length > 0) {
-    const { error: e3 } = await supabase.from(TABLE_PCAP).insert(pcapIns);
+    const { error: e3 } = await db.from(TABLE_PCAP).insert(pcapIns);
     if (e3) throwSupabaseError(e3, { resource: `${TABLE_PCAP}.insert` });
   }
   const kpiIns = kpiPayloadRows(pid, values);
   if (kpiIns.length > 0) {
-    const { error: ek } = await supabase.from(TABLE_KPI).insert(kpiIns);
+    const { error: ek } = await db.from(TABLE_KPI).insert(kpiIns);
     if (ek) throwSupabaseError(ek, { resource: `${TABLE_KPI}.insert` });
   }
   return (await getBaoCaoSoCheByIdSupabase(String(pid)))!;
@@ -449,24 +449,24 @@ export async function updateBaoCaoSoCheSupabase(id: string, values: BaoCaoSoCheF
   const numId = Number(id);
   if (!Number.isFinite(numId)) throw new Error('Invalid id');
   await assertBaoCaoSoCheUniqueNgayChiNhanh(values.ngay, values.id_chi_nhanh, numId);
-  const { error } = await supabase.from(TABLE_CHA).update(chaPayloadUpdate(values)).eq('id', numId);
+  const { error } = await db.from(TABLE_CHA).update(chaPayloadUpdate(values)).eq('id', numId);
   if (error) throw mapChaInsertUpdateError(error);
-  const { error: delErr } = await supabase.from(TABLE_CT).delete().eq('id_bao_cao', numId);
+  const { error: delErr } = await db.from(TABLE_CT).delete().eq('id_bao_cao', numId);
   if (delErr) throwSupabaseError(delErr, { resource: `${TABLE_CT}.delete` });
-  const { error: insErr } = await supabase.from(TABLE_CT).insert(ctRowsFromForm(values, numId));
+  const { error: insErr } = await db.from(TABLE_CT).insert(ctRowsFromForm(values, numId));
   if (insErr) throwSupabaseError(insErr, { resource: `${TABLE_CT}.insert` });
-  const { error: delPc } = await supabase.from(TABLE_PCAP).delete().eq('id_bao_cao', numId);
+  const { error: delPc } = await db.from(TABLE_PCAP).delete().eq('id_bao_cao', numId);
   if (delPc) throwSupabaseError(delPc, { resource: `${TABLE_PCAP}.delete` });
   const pcapIns = pcapRowsFromForm(values, numId);
   if (pcapIns.length > 0) {
-    const { error: insPc } = await supabase.from(TABLE_PCAP).insert(pcapIns);
+    const { error: insPc } = await db.from(TABLE_PCAP).insert(pcapIns);
     if (insPc) throwSupabaseError(insPc, { resource: `${TABLE_PCAP}.insert` });
   }
-  const { error: delKpi } = await supabase.from(TABLE_KPI).delete().eq('id_bao_cao', numId);
+  const { error: delKpi } = await db.from(TABLE_KPI).delete().eq('id_bao_cao', numId);
   if (delKpi) throwSupabaseError(delKpi, { resource: `${TABLE_KPI}.delete` });
   const kpiIns = kpiPayloadRows(numId, values);
   if (kpiIns.length > 0) {
-    const { error: ek } = await supabase.from(TABLE_KPI).insert(kpiIns);
+    const { error: ek } = await db.from(TABLE_KPI).insert(kpiIns);
     if (ek) throwSupabaseError(ek, { resource: `${TABLE_KPI}.insert` });
   }
   return (await getBaoCaoSoCheByIdSupabase(id))!;
@@ -475,14 +475,14 @@ export async function updateBaoCaoSoCheSupabase(id: string, values: BaoCaoSoCheF
 export async function deleteBaoCaoSoCheSupabase(id: string): Promise<void> {
   const numId = Number(id);
   if (!Number.isFinite(numId)) return;
-  const { error } = await supabase.from(TABLE_CHA).delete().eq('id', numId);
+  const { error } = await db.from(TABLE_CHA).delete().eq('id', numId);
   if (error) throwSupabaseError(error, { resource: `${TABLE_CHA}.delete` });
 }
 
 export async function deleteBaoCaoSoCheManySupabase(ids: string[]): Promise<void> {
   const numIds = ids.map((x) => Number(x)).filter((n) => Number.isFinite(n));
   if (numIds.length === 0) return;
-  const { error } = await supabase.from(TABLE_CHA).delete().in('id', numIds);
+  const { error } = await db.from(TABLE_CHA).delete().in('id', numIds);
   if (error) throwSupabaseError(error, { resource: `${TABLE_CHA}.deleteMany` });
 }
 
@@ -493,7 +493,7 @@ export async function updateBaoCaoSoCheTrangThaiSupabase(
   const numId = Number(id);
   if (!Number.isFinite(numId)) throw new Error('Invalid id');
   const next = trang_thai === TRANG_THAI_BAO_CAO_SO_CHE.KHOA ? TRANG_THAI_BAO_CAO_SO_CHE.KHOA : TRANG_THAI_BAO_CAO_SO_CHE.MO;
-  const { error } = await supabase
+  const { error } = await db
     .from(TABLE_CHA)
     .update({ trang_thai: next, tg_cap_nhat: new Date().toISOString() })
     .eq('id', numId);

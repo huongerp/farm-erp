@@ -1,7 +1,7 @@
 /**
  * Báo cáo nhân công — Supabase fp_farm_bao_cao_nhan_cong + _ct + _ct_sub
  */
-import { supabase, throwSupabaseError, formatSupabaseError } from '../../../../lib/supabase';
+import { db, throwSupabaseError, formatSupabaseError } from '../../../../lib/db';
 import i18n from '../../../../lib/i18n';
 import type {
   FarmBaoCaoNhanCong,
@@ -153,7 +153,7 @@ function chaRowToModel(row: DbRowCha, chi: FarmBaoCaoNhanCongCt[], includeHinhAn
 async function fetchSubForCtIds(ctIds: number[]): Promise<Map<string, FarmBaoCaoNhanCongCtSub[]>> {
   const map = new Map<string, FarmBaoCaoNhanCongCtSub[]>();
   if (ctIds.length === 0) return map;
-  const { data, error } = await supabase.from(TABLE_CT_SUB).select(ROW_CT_SUB).in('id_bcnc_ct', ctIds);
+  const { data, error } = await db.from(TABLE_CT_SUB).select(ROW_CT_SUB).in('id_bcnc_ct', ctIds);
   if (error) throwSupabaseError(error, { resource: `${TABLE_CT_SUB}.select` });
   for (const row of (data ?? []) as DbRowCtSub[]) {
     const key = String(row.id_bcnc_ct);
@@ -168,7 +168,7 @@ async function fetchChiTietForIds(ids: string[]): Promise<Map<string, FarmBaoCao
   const ctMap = new Map<string, FarmBaoCaoNhanCongCt[]>();
   if (ids.length === 0) return ctMap;
   const numIds = ids.map((x) => Number(x)).filter((n) => Number.isFinite(n));
-  const { data, error } = await supabase.from(TABLE_CT).select(ROW_CT).in('id_bao_cao', numIds);
+  const { data, error } = await db.from(TABLE_CT).select(ROW_CT).in('id_bao_cao', numIds);
   if (error) throwSupabaseError(error, { resource: `${TABLE_CT}.select` });
   const ctRows = (data ?? []) as DbRowCt[];
   const ctIds = ctRows.map((r) => r.id);
@@ -231,7 +231,7 @@ async function insertCtAndSub(
   const synced = applySubTotalsToChiTietForm(chiTiet);
   for (let i = 0; i < synced.length; i++) {
     const r = synced[i]!;
-    const { data: insertedCt, error: eCt } = await supabase
+    const { data: insertedCt, error: eCt } = await db
       .from(TABLE_CT)
       .insert({
         id_bao_cao: idBaoCao,
@@ -249,14 +249,14 @@ async function insertCtAndSub(
     const ctId = (insertedCt as { id: number }).id;
     const subRows = subPayloadRows(ctId, r.sub);
     if (subRows.length > 0) {
-      const { error: eSub } = await supabase.from(TABLE_CT_SUB).insert(subRows);
+      const { error: eSub } = await db.from(TABLE_CT_SUB).insert(subRows);
       if (eSub) throwSupabaseError(eSub, { resource: `${TABLE_CT_SUB}.insert` });
     }
   }
 }
 
 export async function getAllBaoCaoNhanCongSupabase(): Promise<FarmBaoCaoNhanCong[]> {
-  const { data, error } = await supabase.from(TABLE_CHA).select(ROW_CHA_LIST).order('ngay', { ascending: false });
+  const { data, error } = await db.from(TABLE_CHA).select(ROW_CHA_LIST).order('ngay', { ascending: false });
   if (error) throwSupabaseError(error, { resource: `${TABLE_CHA}.list` });
   const rows = (data ?? []) as DbRowCha[];
   const ids = rows.map((r) => String(r.id));
@@ -267,7 +267,7 @@ export async function getAllBaoCaoNhanCongSupabase(): Promise<FarmBaoCaoNhanCong
 export async function getBaoCaoNhanCongByIdSupabase(id: string): Promise<FarmBaoCaoNhanCong | null> {
   const numId = Number(id);
   if (!Number.isFinite(numId)) return null;
-  const { data, error } = await supabase.from(TABLE_CHA).select(ROW_CHA_DETAIL).eq('id', numId).maybeSingle();
+  const { data, error } = await db.from(TABLE_CHA).select(ROW_CHA_DETAIL).eq('id', numId).maybeSingle();
   if (error) throwSupabaseError(error, { resource: `${TABLE_CHA}.byId` });
   if (!data) return null;
   const row = data as DbRowCha;
@@ -304,7 +304,7 @@ export async function createBaoCaoNhanCongSupabase(
   idNguoiTao: string | null
 ): Promise<FarmBaoCaoNhanCong> {
   const payload = { ...chaPayloadCreate(values, idNguoiTao), tg_tao: new Date().toISOString() };
-  const { data: inserted, error } = await supabase.from(TABLE_CHA).insert(payload).select(ROW_CHA_DETAIL).single();
+  const { data: inserted, error } = await db.from(TABLE_CHA).insert(payload).select(ROW_CHA_DETAIL).single();
   if (error) throw mapChaInsertUpdateError(error);
   const parent = inserted as DbRowCha;
   await insertCtAndSub(parent.id, values.chi_tiet);
@@ -317,9 +317,9 @@ export async function updateBaoCaoNhanCongSupabase(
 ): Promise<FarmBaoCaoNhanCong> {
   const numId = Number(id);
   if (!Number.isFinite(numId)) throw new Error('Invalid id');
-  const { error } = await supabase.from(TABLE_CHA).update(chaPayloadUpdate(values)).eq('id', numId);
+  const { error } = await db.from(TABLE_CHA).update(chaPayloadUpdate(values)).eq('id', numId);
   if (error) throw mapChaInsertUpdateError(error);
-  const { error: delErr } = await supabase.from(TABLE_CT).delete().eq('id_bao_cao', numId);
+  const { error: delErr } = await db.from(TABLE_CT).delete().eq('id_bao_cao', numId);
   if (delErr) throwSupabaseError(delErr, { resource: `${TABLE_CT}.delete` });
   await insertCtAndSub(numId, values.chi_tiet);
   return (await getBaoCaoNhanCongByIdSupabase(id))!;
@@ -328,14 +328,14 @@ export async function updateBaoCaoNhanCongSupabase(
 export async function deleteBaoCaoNhanCongSupabase(id: string): Promise<void> {
   const numId = Number(id);
   if (!Number.isFinite(numId)) return;
-  const { error } = await supabase.from(TABLE_CHA).delete().eq('id', numId);
+  const { error } = await db.from(TABLE_CHA).delete().eq('id', numId);
   if (error) throwSupabaseError(error, { resource: `${TABLE_CHA}.delete` });
 }
 
 export async function deleteBaoCaoNhanCongManySupabase(ids: string[]): Promise<void> {
   const numIds = ids.map((x) => Number(x)).filter((n) => Number.isFinite(n));
   if (numIds.length === 0) return;
-  const { error } = await supabase.from(TABLE_CHA).delete().in('id', numIds);
+  const { error } = await db.from(TABLE_CHA).delete().in('id', numIds);
   if (error) throwSupabaseError(error, { resource: `${TABLE_CHA}.deleteMany` });
 }
 
@@ -346,7 +346,7 @@ export async function updateBaoCaoNhanCongTrangThaiSupabase(
   const numId = Number(id);
   if (!Number.isFinite(numId)) throw new Error('Invalid id');
   const next = trang_thai === TRANG_THAI_BAO_CAO_NHAN_CONG.KHOA ? TRANG_THAI_BAO_CAO_NHAN_CONG.KHOA : TRANG_THAI_BAO_CAO_NHAN_CONG.MO;
-  const { error } = await supabase
+  const { error } = await db
     .from(TABLE_CHA)
     .update({ trang_thai: next, tg_cap_nhat: new Date().toISOString() })
     .eq('id', numId);

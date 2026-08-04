@@ -1,7 +1,7 @@
 /**
  * Service đợt kiểm kê kho – Supabase (fp_mh_dot_kiem_ke_kho, fp_mh_dot_kiem_ke_kho_kho, fp_mh_dot_kiem_ke_kho_chi_tiet).
  */
-import { supabase, throwSupabaseError } from '../../../../lib/supabase';
+import { db, throwSupabaseError } from '../../../../lib/db';
 import type {
   DotKiemKeKho,
   ChiTietKiemKeKho,
@@ -152,14 +152,14 @@ async function reconcileKiemKeChiTietOrphanPhieuLinks(rows: ChiTietRow[]): Promi
     ),
   ];
   if (phieuIds.length === 0) return;
-  const { data: phieuRows, error: phieuErr } = await supabase.from(TABLE_PHIEU_KHO).select('id').in('id', phieuIds);
+  const { data: phieuRows, error: phieuErr } = await db.from(TABLE_PHIEU_KHO).select('id').in('id', phieuIds);
   if (phieuErr) throwSupabaseError(phieuErr);
   const existing = new Set((phieuRows ?? []).map((p: { id: number }) => Number(p.id)));
   const orphanLineIds = rows
     .filter((r) => r.id_phieu_kho_dieu_chinh != null && !existing.has(Number(r.id_phieu_kho_dieu_chinh)))
     .map((r) => r.id);
   if (orphanLineIds.length === 0) return;
-  const { error: upErr } = await supabase
+  const { error: upErr } = await db
     .from(TABLE_CHI_TIET)
     .update({
       id_phieu_kho_dieu_chinh: null,
@@ -187,7 +187,7 @@ function computeKetQua(soLuongSo: number, soLuongThucTe: number | null): KetQuaK
 
 /** Lấy danh sách id_kho của một đợt */
 async function getDotKhoIds(idDot: number): Promise<string[]> {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from(TABLE_DOT_KHO)
     .select('id_kho')
     .eq('id_dot_kiem_ke_kho', idDot);
@@ -201,7 +201,7 @@ export async function getDotKiemKeKhoListSupabase(
   const employees = await getEmployeesRef();
   const empMap = new Map(employees.map((e) => [e.id, { ten: e.ho_ten, ma: e.ma_nhan_vien }]));
 
-  let query = supabase.from(TABLE_DOT).select(DOT_KK_KHO_COLUMNS).order('ngay_ket_thuc', { ascending: false });
+  let query = db.from(TABLE_DOT).select(DOT_KK_KHO_COLUMNS).order('ngay_ket_thuc', { ascending: false });
 
   if (params.trang_thai_dot?.length) {
     query = query.in('trang_thai', params.trang_thai_dot);
@@ -223,7 +223,7 @@ export async function getDotKiemKeKhoListSupabase(
   const dotIds = dotRows.map((r) => r.id);
   const chiTietCounts: Record<number, { so_hang_hoa: number; so_lech: number }> = {};
   if (dotIds.length > 0) {
-    const { data: chiTietRows } = await supabase
+    const { data: chiTietRows } = await db
       .from(TABLE_CHI_TIET)
       .select('id_dot_kiem_ke_kho, ket_qua')
       .in('id_dot_kiem_ke_kho', dotIds);
@@ -283,7 +283,7 @@ export async function getDotKiemKeKhoListSupabase(
 export async function getDotKiemKeKhoByIdSupabase(id: string): Promise<DotKiemKeKho | null> {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) return null;
-  const { data: row, error } = await supabase.from(TABLE_DOT).select(DOT_KK_KHO_COLUMNS).eq('id', idNum).maybeSingle();
+  const { data: row, error } = await db.from(TABLE_DOT).select(DOT_KK_KHO_COLUMNS).eq('id', idNum).maybeSingle();
   if (error) throwSupabaseError(error);
   if (!row) return null;
   const idKhoList = await getDotKhoIds((row as DotRow).id);
@@ -302,7 +302,7 @@ export async function getDotKiemKeKhoByIdSupabase(id: string): Promise<DotKiemKe
 export async function getChiTietByDotSupabase(id_dot_kiem_ke_kho: string): Promise<ChiTietKiemKeKho[]> {
   const idNum = Number(id_dot_kiem_ke_kho);
   if (Number.isNaN(idNum)) return [];
-  const { data: rows, error } = await supabase
+  const { data: rows, error } = await db
     .from(TABLE_CHI_TIET)
     .select(CHI_TIET_KK_KHO_COLUMNS)
     .eq('id_dot_kiem_ke_kho', idNum)
@@ -341,7 +341,7 @@ export async function createDotKiemKeKhoSupabase(
 ): Promise<DotKiemKeKho> {
   const idNguoiTaoNum =
     idNguoiTao != null && idNguoiTao !== '' && Number.isFinite(Number(idNguoiTao)) ? Number(idNguoiTao) : null;
-  const { data: row, error } = await supabase
+  const { data: row, error } = await db
     .from(TABLE_DOT)
     .insert({
       ma_dot: data.ma_dot.trim(),
@@ -358,7 +358,7 @@ export async function createDotKiemKeKhoSupabase(
   if (error) throwSupabaseError(error);
   const idDot = (row as DotRow).id;
   if ((data.id_kho ?? []).length > 0) {
-    const { error: errKho } = await supabase.from(TABLE_DOT_KHO).insert(
+    const { error: errKho } = await db.from(TABLE_DOT_KHO).insert(
       data.id_kho!.map((id_kho) => ({ id_dot_kiem_ke_kho: idDot, id_kho: Number(id_kho) }))
     );
     if (errKho) throwSupabaseError(errKho);
@@ -385,13 +385,13 @@ export async function updateDotKiemKeKhoSupabase(id: string, data: Partial<DotKi
   if (data.id_nguoi_phu_trach != null) payload.id_nguoi_phu_trach = Number(data.id_nguoi_phu_trach);
   if (data.ghi_chu !== undefined) payload.ghi_chu = data.ghi_chu?.trim() || null;
   if (Object.keys(payload).length > 0) {
-    const { error: updateErr } = await supabase.from(TABLE_DOT).update(payload).eq('id', idNum);
+    const { error: updateErr } = await db.from(TABLE_DOT).update(payload).eq('id', idNum);
     if (updateErr) throwSupabaseError(updateErr);
   }
   if (data.id_kho != null) {
-    await supabase.from(TABLE_DOT_KHO).delete().eq('id_dot_kiem_ke_kho', idNum);
+    await db.from(TABLE_DOT_KHO).delete().eq('id_dot_kiem_ke_kho', idNum);
     if (data.id_kho.length > 0) {
-      const { error: errKho } = await supabase
+      const { error: errKho } = await db
         .from(TABLE_DOT_KHO)
         .insert(data.id_kho.map((id_kho) => ({ id_dot_kiem_ke_kho: idNum, id_kho: Number(id_kho) })));
       if (errKho) throwSupabaseError(errKho);
@@ -405,17 +405,17 @@ export async function updateDotKiemKeKhoSupabase(id: string, data: Partial<DotKi
 export async function deleteDotKiemKeKhoSupabase(ids: string[]): Promise<void> {
   const idNums = ids.map((s) => Number(s)).filter((n) => !Number.isNaN(n));
   if (idNums.length === 0) return;
-  const { data: dots } = await supabase.from(TABLE_DOT).select('id, trang_thai').in('id', idNums);
+  const { data: dots } = await db.from(TABLE_DOT).select('id, trang_thai').in('id', idNums);
   const completed = (dots ?? []).filter((d: { trang_thai: string }) => d.trang_thai === 'hoan_thanh');
   if (completed.length > 0) throw new Error(i18n.t('kiemKeKho.service.onlyDeleteNotCompleted'));
-  const { error } = await supabase.from(TABLE_DOT).delete().in('id', idNums);
+  const { error } = await db.from(TABLE_DOT).delete().in('id', idNums);
   if (error) throwSupabaseError(error);
 }
 
 export async function changeTrangThaiDotSupabase(id: string, trang_thai: TrangThaiDotKiemKeKho): Promise<DotKiemKeKho> {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('kiemKeKho.service.notFound'));
-  const { error } = await supabase.from(TABLE_DOT).update({ trang_thai }).eq('id', idNum);
+  const { error } = await db.from(TABLE_DOT).update({ trang_thai }).eq('id', idNum);
   if (error) throwSupabaseError(error);
   const updated = await getDotKiemKeKhoByIdSupabase(id);
   if (!updated) throw new Error(i18n.t('kiemKeKho.service.notFound'));
@@ -477,9 +477,9 @@ export async function taoDanhSachKiemKeSupabase(
   if (toInsert.length === 0) {
     throw new Error(i18n.t('kiemKeKho.service.taoDanhSachEmpty'));
   }
-  const { error } = await supabase.from(TABLE_CHI_TIET).insert(toInsert);
+  const { error } = await db.from(TABLE_CHI_TIET).insert(toInsert);
   if (error) throwSupabaseError(error);
-  const { error: updateDotErr } = await supabase
+  const { error: updateDotErr } = await db
     .from(TABLE_DOT)
     .update({ trang_thai: 'dang_kiem_ke' })
     .eq('id', idDotNum);
@@ -502,7 +502,7 @@ export async function createChiTietKiemKeSupabase(
   const tonTheoKho = await getTonKhoTheoKho(id_kho);
   const ton = tonTheoKho.find((t) => t.id_hang_hoa === id_hang_hoa);
   const so_luong_so = ton?.so_luong ?? 0;
-  const { data: row, error } = await supabase
+  const { data: row, error } = await db
     .from(TABLE_CHI_TIET)
     .insert({
       id_dot_kiem_ke_kho: Number(id_dot_kiem_ke_kho),
@@ -527,12 +527,12 @@ export async function createChiTietKiemKeSupabase(
 export async function deleteChiTietKiemKeSupabase(id_chi_tiet: string): Promise<void> {
   const idNum = Number(id_chi_tiet);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('kiemKeKho.service.chiTietNotFound'));
-  const { data: row, error: fetchErr } = await supabase.from(TABLE_CHI_TIET).select('id_dot_kiem_ke_kho').eq('id', idNum).maybeSingle();
+  const { data: row, error: fetchErr } = await db.from(TABLE_CHI_TIET).select('id_dot_kiem_ke_kho').eq('id', idNum).maybeSingle();
   if (fetchErr || !row) throw new Error(i18n.t('kiemKeKho.service.chiTietNotFound'));
   const dot = await getDotKiemKeKhoByIdSupabase(String((row as { id_dot_kiem_ke_kho: number }).id_dot_kiem_ke_kho));
   if (!dot) throw new Error(i18n.t('kiemKeKho.service.notFound'));
   if (dot.trang_thai === 'hoan_thanh') throw new Error(i18n.t('kiemKeKho.service.onlyEditDraft'));
-  const { error } = await supabase.from(TABLE_CHI_TIET).delete().eq('id', idNum);
+  const { error } = await db.from(TABLE_CHI_TIET).delete().eq('id', idNum);
   if (error) throwSupabaseError(error);
 }
 
@@ -543,13 +543,13 @@ export async function updateChiTietKetQuaSupabase(
 ): Promise<ChiTietKiemKeKho> {
   const idNum = Number(id_chi_tiet);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('kiemKeKho.service.chiTietNotFound'));
-  const { data: row, error: fetchErr } = await supabase.from(TABLE_CHI_TIET).select(CHI_TIET_KK_KHO_COLUMNS).eq('id', idNum).maybeSingle();
+  const { data: row, error: fetchErr } = await db.from(TABLE_CHI_TIET).select(CHI_TIET_KK_KHO_COLUMNS).eq('id', idNum).maybeSingle();
   if (fetchErr || !row) throw new Error(i18n.t('kiemKeKho.service.chiTietNotFound'));
   const r = row as ChiTietRow;
   const soLuongThucTe = data.so_luong_thuc_te !== undefined ? data.so_luong_thuc_te : r.so_luong_thuc_te;
   const ghiChuDong = data.ghi_chu_dong !== undefined ? data.ghi_chu_dong : r.ghi_chu_dong;
   const ketQua = computeKetQua(Number(r.so_luong_so), soLuongThucTe ?? null);
-  const { error: updateErr } = await supabase
+  const { error: updateErr } = await db
     .from(TABLE_CHI_TIET)
     .update({
       so_luong_thuc_te: soLuongThucTe ?? null,
@@ -593,7 +593,7 @@ export async function dieuChinhTonTheoKetQuaSupabase(
   if (Number.isNaN(idNum)) throw new Error(i18n.t('kiemKeKho.service.chiTietNotFound'));
   const nv =
     p_nguoi_tao_id != null && Number.isFinite(Number(p_nguoi_tao_id)) ? Number(p_nguoi_tao_id) : null;
-  const { error } = await supabase.rpc('kiem_ke_apply_dieu_chinh_chi_tiet', {
+  const { error } = await db.rpc('kiem_ke_apply_dieu_chinh_chi_tiet', {
     p_id_chi_tiet: idNum,
     p_nguoi_tao_id: nv,
   });
@@ -608,7 +608,7 @@ export async function dieuChinhTonTheoDotSupabase(
   if (Number.isNaN(idNum)) throw new Error(i18n.t('kiemKeKho.service.notFound'));
   const nv =
     p_nguoi_tao_id != null && Number.isFinite(Number(p_nguoi_tao_id)) ? Number(p_nguoi_tao_id) : null;
-  const { data, error } = await supabase.rpc('kiem_ke_apply_dieu_chinh_dot', {
+  const { data, error } = await db.rpc('kiem_ke_apply_dieu_chinh_dot', {
     p_id_dot: idNum,
     p_nguoi_tao_id: nv,
   });
@@ -622,7 +622,7 @@ export async function hoanThanhDotSupabase(id_dot_kiem_ke_kho: string): Promise<
   if (!dot) throw new Error(i18n.t('kiemKeKho.service.notFound'));
   if (dot.trang_thai !== 'dang_kiem_ke') throw new Error(i18n.t('kiemKeKho.service.onlyHoanThanhWhenDangKiem'));
   const idNum = Number(id_dot_kiem_ke_kho);
-  const { error } = await supabase.from(TABLE_DOT).update({ trang_thai: 'hoan_thanh' }).eq('id', idNum);
+  const { error } = await db.from(TABLE_DOT).update({ trang_thai: 'hoan_thanh' }).eq('id', idNum);
   if (error) throwSupabaseError(error);
   const updated = await getDotKiemKeKhoByIdSupabase(id_dot_kiem_ke_kho);
   if (!updated) throw new Error(i18n.t('kiemKeKho.service.notFound'));
@@ -631,7 +631,7 @@ export async function hoanThanhDotSupabase(id_dot_kiem_ke_kho: string): Promise<
 
 /** Trả về số thứ tự tiếp theo cho mã đợt (app format: KK-YYYY-NNNN). */
 export async function getNextMaDotDotKiemKeKhoSupabase(): Promise<number> {
-  const { data, error } = await supabase.rpc('get_next_ma_dot_dot_kiem_ke_kho');
+  const { data, error } = await db.rpc('get_next_ma_dot_dot_kiem_ke_kho');
   if (error) throwSupabaseError(error);
   if (typeof data === 'number' && Number.isFinite(data)) return data;
   const n = Number(data);

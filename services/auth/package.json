@@ -1,0 +1,25 @@
+{
+  "name": "farm-erp-auth",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Auth service thay Supabase Auth: đăng nhập mật khẩu + Google, ký JWT cho PostgREST",
+  "scripts": {
+    "dev": "node --watch --experimental-strip-types src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.1.0",
+    "google-auth-library": "^11.0.0",
+    "hono": "^4.13.0",
+    "jose": "^6.2.8",
+    "pg": "^8.22.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "@types/pg": "^8.20.3",
+    "typescript": "^7.0.2"
+  }
+}

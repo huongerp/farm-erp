@@ -1,6 +1,7 @@
 
 import { z } from "zod";
 import i18n from '../../../../lib/i18n';
+import { PASSWORD_MIN_LENGTH } from '../../../../lib/constants';
 
 /* ================================================================
  *  Regex patterns cho validation nâng cao
@@ -41,6 +42,17 @@ export const employeeSchema = z.object({
     message: i18n.t('employee.validation.hireDateInvalid'),
   }),
   anh_dai_dien: z.string().optional().nullable(),
+
+  // --- Tài khoản đăng nhập ---
+  // Không phải cột của bảng: `formToRow` bỏ qua field này, mật khẩu đi riêng qua
+  // RPC `rpc_set_mat_khau` để hash bằng pgcrypto (xem lib/mat-khau.ts).
+  // Bỏ trống khi tạo mới = cấp mật khẩu mặc định; bỏ trống khi sửa = không đổi.
+  mat_khau: z
+    .union([
+      z.literal(''),
+      z.string().min(PASSWORD_MIN_LENGTH, { message: i18n.t('employee.validation.passwordMin') }),
+    ])
+    .optional(),
 
   // --- Thông tin cá nhân ---
   ngay_sinh: z.string().optional().nullable()

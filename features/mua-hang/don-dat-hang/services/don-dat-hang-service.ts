@@ -2,7 +2,7 @@
  * Service đơn đặt hàng – sử dụng Supabase (fp_mh_don_dat_hang, fp_mh_don_dat_hang_chi_tiet).
  */
 import type { DonDatHangFormValues } from '../core/schema';
-import type { PaginatedTableResult } from '../../../../lib/supabase';
+import type { PaginatedTableResult } from '../../../../lib/db';
 import type { ChiTietDonDatHangFlat, DonDatHang, DonDatHangTrangThai } from '../core/types';
 import {
   getAllDonDatHangSupabase,

@@ -1,7 +1,7 @@
 /**
  * Service phiếu đề xuất vật tư – đọc/ghi Supabase (fp_mh_phieu_de_xuat_vat_tu, fp_mh_phieu_de_xuat_vat_tu_chi_tiet).
  */
-import { supabase, fetchAllRows, fetchTablePage, type PaginatedTableResult, throwSupabaseError } from '../../../../lib/supabase';
+import { db, fetchAllRows, fetchTablePage, type PaginatedTableResult, throwSupabaseError } from '../../../../lib/db';
 import type { PhieuDeXuatVatTu, PhieuDeXuatVatTuChiTiet, PhieuDeXuatVatTuChiTietRow } from '../core/types';
 import type { PhieuDeXuatVatTuFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
@@ -44,7 +44,7 @@ export interface NextSoPhieuConfig {
 
 /** Gọi RPC Supabase lấy số thứ tự tiếp theo, format thành mã phiếu (tiền tố + pad). Nguồn sự thật duy nhất, tránh trùng khi nhiều user. */
 export async function getNextSoPhieuPhieuDeXuatVatTuRpc(config: NextSoPhieuConfig): Promise<string> {
-  const { data, error } = await supabase.rpc(RPC_NEXT_SO_PHIEU);
+  const { data, error } = await db.rpc(RPC_NEXT_SO_PHIEU);
   if (error) throwSupabaseError(error);
   const nextNum = Number(data);
   if (Number.isNaN(nextNum) || nextNum < 1) throw new Error('Invalid next number from RPC');
@@ -164,7 +164,7 @@ function rowToChiTiet(row: ChiTietDbRow, idPhieuStr: string, enrich?: { ma_hang?
 
 export async function getAllPhieuDeXuatVatTuSupabase(): Promise<PhieuDeXuatVatTu[]> {
   const rows = await fetchAllRows<PhieuDeXuatSummaryRow>((from, to) =>
-    supabase
+    db
       .from(VIEW_PHIEU_DE_XUAT_SUMMARY)
       .select(VIEW_PHIEU_DE_XUAT_SUMMARY_COLUMNS)
       .order('ngay', { ascending: false })
@@ -230,7 +230,7 @@ export async function fetchPhieuDeXuatStatsFromRpc(params: {
   const deXuatNums = params.filterNguoiDeXuat.map(Number).filter((n) => !Number.isNaN(n));
   const duyetNums = params.filterNguoiDuyet.map(Number).filter((n) => !Number.isNaN(n));
 
-  const { data, error } = await supabase.rpc('rpc_phieu_de_xuat_stats', {
+  const { data, error } = await db.rpc('rpc_phieu_de_xuat_stats', {
     p_date_from: toDate(params.dateFrom),
     p_date_to: toDate(params.dateTo),
     p_trang_thai: trangThai.length ? trangThai : null,
@@ -349,7 +349,7 @@ function applyPhieuDeXuatVatTuListQuery(q: any, query: PhieuDeXuatVatTuListServe
 
 async function fetchPhieuIdsMatchingScope(scope: BranchListScope): Promise<number[]> {
   const rows = await fetchAllRows<{ id: number }>((from, to) => {
-    const base = supabase.from(VIEW_PHIEU_DE_XUAT_SUMMARY).select('id');
+    const base = db.from(VIEW_PHIEU_DE_XUAT_SUMMARY).select('id');
     const scoped = applyPhieuDeXuatHeaderScope(base, scope);
     return scoped.order('id', { ascending: true }).range(from, to);
   });
@@ -412,7 +412,7 @@ export async function getPhieuDeXuatVatTuPageSupabase(
   listQuery?: PhieuDeXuatVatTuListServerQuery
 ): Promise<PaginatedTableResult<PhieuDeXuatVatTu>> {
   const pageResult = await fetchTablePage<PhieuDeXuatSummaryRow>(page, pageSize, async (from, to) => {
-    let sel = supabase.from(VIEW_PHIEU_DE_XUAT_SUMMARY).select(VIEW_PHIEU_DE_XUAT_SUMMARY_COLUMNS, { count: 'exact' });
+    let sel = db.from(VIEW_PHIEU_DE_XUAT_SUMMARY).select(VIEW_PHIEU_DE_XUAT_SUMMARY_COLUMNS, { count: 'exact' });
     if (listQuery) sel = applyPhieuDeXuatVatTuListQuery(sel, listQuery);
     const res = await sel.order('ngay', { ascending: false }).order('so_phieu', { ascending: false }).range(from, to);
     return { data: res.data as PhieuDeXuatSummaryRow[] | null, error: res.error, count: res.count };
@@ -440,7 +440,7 @@ export async function fetchAllPhieuDeXuatVatTuForListQuerySupabase(
 export async function getPhieuDeXuatVatTuByIdSupabase(id: string): Promise<PhieuDeXuatVatTu | null> {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) return null;
-  const { data: row, error } = await supabase
+  const { data: row, error } = await db
     .from(TABLE_PHIEU)
     .select(PHIEU_DE_XUAT_HEADER_SELECT)
     .eq('id', idNum)
@@ -451,7 +451,7 @@ export async function getPhieuDeXuatVatTuByIdSupabase(id: string): Promise<Phieu
   const [khoList, employees, ctRows, hangHoaList] = await Promise.all([
     getKhoRef(),
     getEmployeesRef(),
-    supabase
+    db
       .from(TABLE_CHI_TIET)
       .select('id, id_phieu_de_xuat_vat_tu, id_hang_hoa, so_luong, don_vi_tinh, thong_so, ghi_chu, id_tien_do_mh, ten_tien_do_mh, trao_doi')
       .eq('id_phieu_de_xuat_vat_tu', idNum)
@@ -492,7 +492,7 @@ export async function getPhieuDeXuatVatTuByIdSupabase(id: string): Promise<Phieu
 
 export async function createPhieuDeXuatVatTuSupabase(data: PhieuDeXuatVatTuFormValues): Promise<PhieuDeXuatVatTu> {
   const soPhieu = data.so_phieu.trim();
-  const { data: existing } = await supabase.from(TABLE_PHIEU).select('id').eq('so_phieu', soPhieu).maybeSingle();
+  const { data: existing } = await db.from(TABLE_PHIEU).select('id').eq('so_phieu', soPhieu).maybeSingle();
   if (existing) throw new Error(i18n.t('phieuDeXuatVatTu.service.duplicateCode'));
 
   const payload = {
@@ -506,7 +506,7 @@ export async function createPhieuDeXuatVatTuSupabase(data: PhieuDeXuatVatTuFormV
     trang_thai: data.trang_thai,
   };
 
-  const { data: inserted, error } = await supabase.from(TABLE_PHIEU).insert(payload).select(PHIEU_DE_XUAT_HEADER_SELECT).single();
+  const { data: inserted, error } = await db.from(TABLE_PHIEU).insert(payload).select(PHIEU_DE_XUAT_HEADER_SELECT).single();
   if (error) throwSupabaseError(error);
   const idPhieu = (inserted as PhieuDbRow).id;
   const idStr = String(idPhieu);
@@ -546,7 +546,7 @@ export async function createPhieuDeXuatVatTuSupabase(data: PhieuDeXuatVatTuFormV
       ten_nguoi_duyet: tenNguoiDuyet,
       trang_thai_phieu: data.trang_thai,
     }));
-    const { error: errCt } = await supabase.from(TABLE_CHI_TIET).insert(ctRows);
+    const { error: errCt } = await db.from(TABLE_CHI_TIET).insert(ctRows);
     if (errCt) throwSupabaseError(errCt);
   }
 
@@ -559,11 +559,11 @@ export async function updatePhieuDeXuatVatTuSupabase(id: string, data: PhieuDeXu
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('phieuDeXuatVatTu.service.notFound'));
 
-  const { data: oldRow, error: fetchErr } = await supabase.from(TABLE_PHIEU).select(PHIEU_DE_XUAT_HEADER_SELECT).eq('id', idNum).maybeSingle();
+  const { data: oldRow, error: fetchErr } = await db.from(TABLE_PHIEU).select(PHIEU_DE_XUAT_HEADER_SELECT).eq('id', idNum).maybeSingle();
   if (fetchErr || !oldRow) throw new Error(i18n.t('phieuDeXuatVatTu.service.notFound'));
 
   const soPhieu = data.so_phieu.trim();
-  const { data: other } = await supabase.from(TABLE_PHIEU).select('id').eq('so_phieu', soPhieu).neq('id', idNum).maybeSingle();
+  const { data: other } = await db.from(TABLE_PHIEU).select('id').eq('so_phieu', soPhieu).neq('id', idNum).maybeSingle();
   if (other) throw new Error(i18n.t('phieuDeXuatVatTu.service.duplicateCode'));
 
   const payload = {
@@ -577,10 +577,10 @@ export async function updatePhieuDeXuatVatTuSupabase(id: string, data: PhieuDeXu
     trang_thai: data.trang_thai,
   };
 
-  const { error: updateErr } = await supabase.from(TABLE_PHIEU).update(payload).eq('id', idNum);
+  const { error: updateErr } = await db.from(TABLE_PHIEU).update(payload).eq('id', idNum);
   if (updateErr) throwSupabaseError(updateErr);
 
-  await supabase.from(TABLE_CHI_TIET).delete().eq('id_phieu_de_xuat_vat_tu', idNum);
+  await db.from(TABLE_CHI_TIET).delete().eq('id_phieu_de_xuat_vat_tu', idNum);
 
   const [hangHoaList, khoList, employees] = await Promise.all([
     getHangHoaRef(),
@@ -617,7 +617,7 @@ export async function updatePhieuDeXuatVatTuSupabase(id: string, data: PhieuDeXu
       ten_nguoi_duyet: tenNguoiDuyet,
       trang_thai_phieu: data.trang_thai,
     }));
-    const { error: errCt } = await supabase.from(TABLE_CHI_TIET).insert(ctRows);
+    const { error: errCt } = await db.from(TABLE_CHI_TIET).insert(ctRows);
     if (errCt) throwSupabaseError(errCt);
   }
 
@@ -629,14 +629,14 @@ export async function updatePhieuDeXuatVatTuSupabase(id: string, data: PhieuDeXu
 export async function deletePhieuDeXuatVatTuSupabase(id: string): Promise<void> {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('phieuDeXuatVatTu.service.notFound'));
-  const { error } = await supabase.from(TABLE_PHIEU).delete().eq('id', idNum);
+  const { error } = await db.from(TABLE_PHIEU).delete().eq('id', idNum);
   if (error) throwSupabaseError(error);
 }
 
 export async function deletePhieuDeXuatVatTuManySupabase(ids: string[]): Promise<void> {
   const numIds = ids.map((s) => Number(s)).filter((n) => !Number.isNaN(n));
   if (numIds.length === 0) return;
-  const { error } = await supabase.from(TABLE_PHIEU).delete().in('id', numIds);
+  const { error } = await db.from(TABLE_PHIEU).delete().in('id', numIds);
   if (error) throwSupabaseError(error);
 }
 
@@ -648,7 +648,7 @@ async function mapPhieuDeXuatChiTietDbRowsToRows(rows: ChiTietFullDbRow[]): Prom
   const phieuIds = [...new Set(rows.map((r) => r.id_phieu_de_xuat_vat_tu))];
   const phieuRows: PhieuDbRow[] = [];
   if (phieuIds.length > 0) {
-    const { data: phieuData } = await supabase.from(TABLE_PHIEU).select(PHIEU_DE_XUAT_HEADER_SELECT).in('id', phieuIds);
+    const { data: phieuData } = await db.from(TABLE_PHIEU).select(PHIEU_DE_XUAT_HEADER_SELECT).in('id', phieuIds);
     if (phieuData) phieuRows.push(...(phieuData as PhieuDbRow[]));
   }
   const nvMap: Record<string, { ho_ten: string }> = {};
@@ -711,7 +711,7 @@ async function mapPhieuDeXuatChiTietDbRowsToRows(rows: ChiTietFullDbRow[]): Prom
 /** Lấy toàn bộ dòng chi tiết từ bảng fp_mh_phieu_de_xuat_vat_tu_chi_tiet (phục vụ tab Chi tiết). Làm giàu ten_noi_de_xuat, ten_nguoi_de_xuat, ten_nguoi_duyet từ phiếu nếu chi tiết chưa có. */
 export async function getAllPhieuDeXuatVatTuChiTietSupabase(): Promise<PhieuDeXuatVatTuChiTietRow[]> {
   const rows = await fetchAllRows<ChiTietFullDbRow>((from, to) =>
-    supabase
+    db
       .from(VIEW_CHI_TIET_FLAT)
       .select(CHI_TIET_TAB_SELECT)
       .order('id_phieu_de_xuat_vat_tu', { ascending: false })
@@ -738,7 +738,7 @@ export async function getPhieuDeXuatVatTuChiTietPageSupabase(
   }
 
   const pageResult = await fetchTablePage<ChiTietFullDbRow>(page, pageSize, async (from, to) => {
-    let sel = supabase.from(VIEW_CHI_TIET_FLAT).select(CHI_TIET_TAB_SELECT, { count: 'exact' });
+    let sel = db.from(VIEW_CHI_TIET_FLAT).select(CHI_TIET_TAB_SELECT, { count: 'exact' });
     sel = applyPhieuIdConstraint(sel, phieuIds);
     if (listQuery) sel = applyPhieuDeXuatChiTietRowFilters(sel, listQuery);
     const res = await sel
@@ -755,7 +755,7 @@ export async function getPhieuDeXuatVatTuChiTietPageSupabase(
 export type PhieuDeXuatSoPhieuOption = { id: string; so_phieu: string; ngay: string };
 
 export async function listPhieuDeXuatSoPhieuMinimalSupabase(limit = 2500): Promise<PhieuDeXuatSoPhieuOption[]> {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from(TABLE_PHIEU)
     .select('id, so_phieu, ngay')
     .order('id', { ascending: false })

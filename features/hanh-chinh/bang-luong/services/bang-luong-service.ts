@@ -8,7 +8,7 @@ import type {
 import { NGAY_CONG_CHUAN_THANG, NGUONG_DAT_KPI, TY_LE_LUONG_KPI_KHONG_DAT } from '../core/constants';
 import { getEmployees } from '@/features/he-thong/nhan-vien/services/nhan-vien-service';
 import type { Employee } from '@/features/he-thong/nhan-vien/core/types';
-import { supabase } from '../../../../lib/supabase';
+import { db } from '../../../../lib/db';
 import i18n from '../../../../lib/i18n';
 
 const TABLE = 'fp_hr_bang_luong';
@@ -99,7 +99,7 @@ async function fetchNhanVienPhongBanMaps(
   const phongBanMap: Record<number, string> = {};
   if (nhanVienIds.length === 0) return { nhanVienMap, phongBanMap };
   const uniq = [...new Set(nhanVienIds)];
-  const { data: nvRows } = await supabase
+  const { data: nvRows } = await db
     .from(TABLE_NHAN_VIEN)
     .select('id, ho_va_ten, phong_ban_id')
     .in('id', uniq);
@@ -116,7 +116,7 @@ async function fetchNhanVienPhongBanMaps(
   });
   if (phongBanIds.length > 0) {
     const pbUniq = [...new Set(phongBanIds)];
-    const { data: pbRows } = await supabase.from(TABLE_PHONG_BAN).select('id, ten_phong_ban').in('id', pbUniq);
+    const { data: pbRows } = await db.from(TABLE_PHONG_BAN).select('id, ten_phong_ban').in('id', pbUniq);
     (pbRows ?? []).forEach((r: Row) => {
       phongBanMap[Number(r.id)] = (r.ten_phong_ban as string) ?? '';
     });
@@ -248,7 +248,7 @@ async function seedDb(): Promise<void> {
 }
 
 export async function getBangLuongRecords(): Promise<BangLuongRecord[]> {
-  const { data: rows, error } = await supabase
+  const { data: rows, error } = await db
     .from(TABLE)
     .select(BANG_LUONG_ROW_COLUMNS)
     .order('nam', { ascending: false })
@@ -263,7 +263,7 @@ export async function getBangLuongRecords(): Promise<BangLuongRecord[]> {
 export async function getBangLuongById(id: string): Promise<BangLuongRecord | null> {
   const idNum = parseInt(id, 10);
   if (Number.isNaN(idNum)) return null;
-  const { data: row, error } = await supabase.from(TABLE).select(BANG_LUONG_ROW_COLUMNS).eq('id', idNum).maybeSingle();
+  const { data: row, error } = await db.from(TABLE).select(BANG_LUONG_ROW_COLUMNS).eq('id', idNum).maybeSingle();
   if (error) throw new Error(error.message ?? i18n.t('bangLuong.service.error'));
   if (!row) return null;
   const nvId = Number((row as Row).nhan_vien_id);
@@ -278,7 +278,7 @@ export async function getBangLuongByNhanVienPeriod(
 ): Promise<BangLuongRecord | null> {
   const nvId = parseInt(id_nhan_vien, 10);
   if (Number.isNaN(nvId)) return null;
-  const { data: row, error } = await supabase
+  const { data: row, error } = await db
     .from(TABLE)
     .select(BANG_LUONG_ROW_COLUMNS)
     .eq('nhan_vien_id', nvId)
@@ -359,7 +359,7 @@ export async function addBangLuong(
     tong_luong: record.tong_luong,
     tg_cap_nhat: null,
   };
-  const { data: inserted, error } = await supabase.from(TABLE).insert(row).select(BANG_LUONG_ROW_COLUMNS).single();
+  const { data: inserted, error } = await db.from(TABLE).insert(row).select(BANG_LUONG_ROW_COLUMNS).single();
   if (error) throw new Error(error.message ?? i18n.t('bangLuong.service.error'));
   const { nhanVienMap, phongBanMap } = await fetchNhanVienPhongBanMaps([nvId]);
   return rowToRecord(inserted as Row, nhanVienMap, phongBanMap);
@@ -376,7 +376,7 @@ export async function saveBangLuong(record: BangLuongRecord): Promise<BangLuongR
     cong_tru_net;
   const idNum = parseInt(record.id, 10);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('bangLuong.service.error'));
-  const { data: updated, error } = await supabase
+  const { data: updated, error } = await db
     .from(TABLE)
     .update({
       ngay_cong: record.ngay_cong,
@@ -444,7 +444,7 @@ export async function createBangLuongFromRecord(
     tong_luong,
     ghi_chu: record.ghi_chu ?? null,
   };
-  const { data: inserted, error } = await supabase.from(TABLE).insert(row).select(BANG_LUONG_ROW_COLUMNS).single();
+  const { data: inserted, error } = await db.from(TABLE).insert(row).select(BANG_LUONG_ROW_COLUMNS).single();
   if (error) throw new Error(error.message ?? i18n.t('bangLuong.service.error'));
   const { nhanVienMap, phongBanMap } = await fetchNhanVienPhongBanMaps([nvId]);
   return rowToRecord(inserted as Row, nhanVienMap, phongBanMap);
@@ -454,6 +454,6 @@ export async function createBangLuongFromRecord(
 export async function deleteBangLuong(ids: string[]): Promise<void> {
   const numIds = ids.map((id) => parseInt(id, 10)).filter((n) => !Number.isNaN(n));
   if (numIds.length === 0) return;
-  const { error } = await supabase.from(TABLE).delete().in('id', numIds);
+  const { error } = await db.from(TABLE).delete().in('id', numIds);
   if (error) throw new Error(error.message ?? i18n.t('bangLuong.service.error'));
 }

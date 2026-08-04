@@ -1,4 +1,4 @@
-import { supabase, fetchAllRows } from '../../../../lib/supabase';
+import { db, fetchAllRows } from '../../../../lib/db';
 import { getKhoRef } from '../../../kho-van/danh-sach-kho/services/kho-service';
 import { normalizePhamCapKey } from '../core/pham-cap';
 
@@ -26,7 +26,7 @@ export async function fetchPhieuNhapSoLuongByPhamCap(
   if (khoIds.length === 0) return {};
 
   const rows = await fetchAllRows<PhieuNhapPhamCapRow>((from, to) =>
-    supabase
+    db
       .from(VIEW_PHIEU_KHO_CHI_TIET_FLAT)
       .select('pham_cap, so_luong')
       .eq('ngay', ngayTrim)

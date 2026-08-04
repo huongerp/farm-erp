@@ -21,7 +21,7 @@ import {
   useResolvedTheme,
 } from './lib/app-sync';
 import { getSessionBootstrap, employeeToUser } from './lib/auth';
-import { supabase } from './lib/supabase';
+import { dangKyKhiMatPhien, emailPhienHienTai } from './lib/token-store';
 import { toast } from 'sonner';
 import i18n from './lib/i18n';
 import { lazyWithFeatureI18n } from './lib/lazy-with-feature-i18n';
@@ -150,17 +150,27 @@ function useAuthSync() {
           logout();
           if (lockoutReason === 'resigned') {
             toast.error(i18n.t('page.login.accountLocked'));
-          } else {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session?.user?.email) {
-              toast.info(i18n.t('page.login.googleNoEmployee'));
-            }
+          } else if (emailPhienHienTai()) {
+            // Có phiên hợp lệ nhưng không đọc được hồ sơ nhân viên nào trùng email.
+            toast.info(i18n.t('page.login.googleNoEmployee'));
           }
         }
       })();
     }
     void authBootstrapPromise;
   }, []);
+
+  // Phiên mất hiệu lực giữa lúc đang dùng (refresh token bị thu hồi, nhân viên
+  // chuyển sang Nghỉ việc, hoặc đăng xuất ở tab khác) → đưa về trang đăng nhập.
+  useEffect(
+    () =>
+      dangKyKhiMatPhien(() => {
+        if (!useAuthStore.getState().isAuthenticated) return;
+        useAuthStore.getState().logout();
+        toast.info(i18n.t('page.login.sessionExpired'));
+      }),
+    [],
+  );
 }
 
 const App = () => {

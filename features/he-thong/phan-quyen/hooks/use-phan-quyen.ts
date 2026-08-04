@@ -45,7 +45,7 @@ export const useCreateRole = (onSuccess?: () => void) => {
       toast.success(i18n.t('permission.toast.createSuccess'));
       if (onSuccess) onSuccess();
     },
-    onError: (err: any) => toast.error(err.message)
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : String(err))
   });
 };
 
@@ -71,7 +71,7 @@ export const useUpdateModulePermissions = () => {
       queryClient.invalidateQueries({ queryKey: [CURRENT_ROLE_CONTEXT_KEY] });
       toast.success(i18n.t('permission.toast.updateSuccess'));
     },
-    onError: (err: any) => toast.error(err.message)
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : String(err))
   });
 };
 

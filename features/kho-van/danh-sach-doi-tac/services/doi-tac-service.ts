@@ -1,4 +1,4 @@
-import { supabase, fetchAllRows } from '../../../../lib/supabase';
+import { db, fetchAllRows } from '../../../../lib/db';
 import { getCachedRef, REF_CACHE_KEYS } from '../../../../lib/ref-cache';
 import type { DoiTac, LoaiDoiTac, NhomDoiTac, Tag, TrangThaiDoiTac } from '../core/types';
 import { TRANG_THAI_DOI_TAC } from '../core/types';
@@ -119,7 +119,7 @@ function enrichDoiTacList(
 
 export const getAllNhomDoiTac = async (): Promise<NhomDoiTac[]> => {
   const data = await fetchAllRows<NhomRow>((from, to) =>
-    supabase.from(TABLE_NHOM).select(NHOM_DOI_TAC_COLUMNS).order('thu_tu', { ascending: true }).range(from, to)
+    db.from(TABLE_NHOM).select(NHOM_DOI_TAC_COLUMNS).order('thu_tu', { ascending: true }).range(from, to)
   );
   return data.map(rowToNhom);
 };
@@ -135,7 +135,7 @@ export type NhomDoiTacFormValues = {
 
 export const createNhomDoiTac = async (data: NhomDoiTacFormValues): Promise<NhomDoiTac> => {
   const ma = data.ma_nhom.trim().toUpperCase();
-  const { data: existing } = await supabase.from(TABLE_NHOM).select('id').eq('ma_nhom', ma).maybeSingle();
+  const { data: existing } = await db.from(TABLE_NHOM).select('id').eq('ma_nhom', ma).maybeSingle();
   if (existing) throw new Error(i18n.t('doiTac.service.duplicateCode'));
 
   const row = {
@@ -146,14 +146,14 @@ export const createNhomDoiTac = async (data: NhomDoiTacFormValues): Promise<Nhom
     trang_thai: data.trang_thai || null,
   };
 
-  const { data: inserted, error } = await supabase.from(TABLE_NHOM).insert(row).select(NHOM_DOI_TAC_COLUMNS).single();
+  const { data: inserted, error } = await db.from(TABLE_NHOM).insert(row).select(NHOM_DOI_TAC_COLUMNS).single();
   if (error) throw new Error(error.message);
   return rowToNhom(inserted as NhomRow);
 };
 
 export const updateNhomDoiTac = async (id: string, data: NhomDoiTacFormValues): Promise<NhomDoiTac> => {
   const ma = data.ma_nhom.trim().toUpperCase();
-  const { data: other } = await supabase.from(TABLE_NHOM).select('id').eq('ma_nhom', ma).neq('id', Number(id)).maybeSingle();
+  const { data: other } = await db.from(TABLE_NHOM).select('id').eq('ma_nhom', ma).neq('id', Number(id)).maybeSingle();
   if (other) throw new Error(i18n.t('doiTac.service.duplicateCode'));
 
   const row = {
@@ -165,7 +165,7 @@ export const updateNhomDoiTac = async (id: string, data: NhomDoiTacFormValues): 
     tg_cap_nhat: new Date().toISOString(),
   };
 
-  const { data: updated, error } = await supabase
+  const { data: updated, error } = await db
     .from(TABLE_NHOM)
     .update(row)
     .eq('id', Number(id))
@@ -176,13 +176,13 @@ export const updateNhomDoiTac = async (id: string, data: NhomDoiTacFormValues): 
 };
 
 export const deleteNhomDoiTac = async (id: string): Promise<void> => {
-  const { error } = await supabase.from(TABLE_NHOM).delete().eq('id', Number(id));
+  const { error } = await db.from(TABLE_NHOM).delete().eq('id', Number(id));
   if (error) throw new Error(error.message ?? i18n.t('doiTac.service.nhomNotFound'));
 };
 
 export const deleteNhomDoiTacMany = async (ids: string[]): Promise<void> => {
   const numIds = ids.map(Number);
-  const { error } = await supabase.from(TABLE_NHOM).delete().in('id', numIds);
+  const { error } = await db.from(TABLE_NHOM).delete().in('id', numIds);
   if (error) throw new Error(error.message);
 };
 
@@ -190,7 +190,7 @@ export const deleteNhomDoiTacMany = async (ids: string[]): Promise<void> => {
 
 export const getAllTag = async (): Promise<Tag[]> => {
   const data = await fetchAllRows<TagRow>((from, to) =>
-    supabase.from(TABLE_TAG).select(TAG_DOI_TAC_COLUMNS).range(from, to)
+    db.from(TABLE_TAG).select(TAG_DOI_TAC_COLUMNS).range(from, to)
   );
   return data.map(rowToTag);
 };
@@ -198,14 +198,14 @@ export const getAllTag = async (): Promise<Tag[]> => {
 export const createTag = async (ten_tag: string): Promise<Tag> => {
   const name = ten_tag.trim();
   if (!name) throw new Error(i18n.t('doiTac.validation.tagNameRequired'));
-  const { data: existing } = await supabase
+  const { data: existing } = await db
     .from(TABLE_TAG)
     .select(TAG_DOI_TAC_COLUMNS)
     .ilike('ten_tag', name)
     .maybeSingle();
   if (existing) return rowToTag(existing as TagRow);
 
-  const { data: inserted, error } = await supabase.from(TABLE_TAG).insert({ ten_tag: name }).select(TAG_DOI_TAC_COLUMNS).single();
+  const { data: inserted, error } = await db.from(TABLE_TAG).insert({ ten_tag: name }).select(TAG_DOI_TAC_COLUMNS).single();
   if (error) throw new Error(error.message);
   return rowToTag(inserted as TagRow);
 };
@@ -213,7 +213,7 @@ export const createTag = async (ten_tag: string): Promise<Tag> => {
 export const updateTag = async (id: string, ten_tag: string): Promise<Tag> => {
   const name = ten_tag.trim();
   if (!name) throw new Error(i18n.t('doiTac.validation.tagNameRequired'));
-  const { data: updated, error } = await supabase
+  const { data: updated, error } = await db
     .from(TABLE_TAG)
     .update({ ten_tag: name })
     .eq('id', Number(id))
@@ -225,17 +225,17 @@ export const updateTag = async (id: string, ten_tag: string): Promise<Tag> => {
 
 export const deleteTag = async (id: string): Promise<void> => {
   const numId = Number(id);
-  const { error: rpcErr } = await supabase.rpc('remove_tag_from_partners', { p_tag_id: numId });
+  const { error: rpcErr } = await db.rpc('remove_tag_from_partners', { p_tag_id: numId });
   if (rpcErr) throw new Error(rpcErr.message);
-  const { error } = await supabase.from(TABLE_TAG).delete().eq('id', numId);
+  const { error } = await db.from(TABLE_TAG).delete().eq('id', numId);
   if (error) throw new Error(error.message);
 };
 
 export const deleteTagMany = async (ids: string[]): Promise<void> => {
   const numIds = ids.map(Number);
-  const { error: rpcErr } = await supabase.rpc('remove_tags_from_partners', { p_tag_ids: numIds });
+  const { error: rpcErr } = await db.rpc('remove_tags_from_partners', { p_tag_ids: numIds });
   if (rpcErr) throw new Error(rpcErr.message);
-  const { error } = await supabase.from(TABLE_TAG).delete().in('id', numIds);
+  const { error } = await db.from(TABLE_TAG).delete().in('id', numIds);
   if (error) throw new Error(error.message);
 };
 
@@ -244,7 +244,7 @@ export const deleteTagMany = async (ids: string[]): Promise<void> => {
 export const getAllDoiTac = async (loai?: LoaiDoiTac): Promise<DoiTac[]> => {
   const [nhomList, tagList] = await Promise.all([getAllNhomDoiTac(), getAllTag()]);
   const list = await fetchAllRows<DoiTacRow>((from, to) => {
-    let q = supabase
+    let q = db
       .from(TABLE_DOI_TAC)
       .select(DOI_TAC_ROW_COLUMNS)
       .order('thu_tu', { ascending: true })
@@ -268,7 +268,7 @@ export type DoiTacRefLite = {
 export const getDoiTacRef = async (loai?: LoaiDoiTac): Promise<DoiTacRefLite[]> => {
   return getCachedRef(REF_CACHE_KEYS.doiTac(loai), async () => {
     const list = await fetchAllRows<Pick<DoiTacRow, 'id' | 'ma_doi_tac' | 'ten_doi_tac' | 'loai_doi_tac' | 'trang_thai'>>((from, to) => {
-      let q = supabase
+      let q = db
         .from(TABLE_DOI_TAC)
         .select('id, ma_doi_tac, ten_doi_tac, loai_doi_tac, trang_thai')
         .order('thu_tu', { ascending: true })
@@ -288,7 +288,7 @@ export const getDoiTacRef = async (loai?: LoaiDoiTac): Promise<DoiTacRefLite[]> 
 };
 
 export const getDoiTacById = async (id: string): Promise<DoiTac | null> => {
-  const { data: row, error } = await supabase
+  const { data: row, error } = await db
     .from(TABLE_DOI_TAC)
     .select(DOI_TAC_ROW_COLUMNS)
     .eq('id', Number(id))
@@ -302,7 +302,7 @@ export const getDoiTacById = async (id: string): Promise<DoiTac | null> => {
 
 export const createDoiTac = async (data: DoiTacFormValues): Promise<DoiTac> => {
   const code = data.ma_ncc.trim().toUpperCase();
-  const { data: existing } = await supabase.from(TABLE_DOI_TAC).select('id').eq('ma_doi_tac', code).maybeSingle();
+  const { data: existing } = await db.from(TABLE_DOI_TAC).select('id').eq('ma_doi_tac', code).maybeSingle();
   if (existing) throw new Error(i18n.t('doiTac.service.duplicateCode'));
 
   const row = {
@@ -322,7 +322,7 @@ export const createDoiTac = async (data: DoiTacFormValues): Promise<DoiTac> => {
     thu_tu: Math.max(1, data.thu_tu ?? 1),
   };
 
-  const { data: inserted, error } = await supabase.from(TABLE_DOI_TAC).insert(row).select(DOI_TAC_ROW_COLUMNS).single();
+  const { data: inserted, error } = await db.from(TABLE_DOI_TAC).insert(row).select(DOI_TAC_ROW_COLUMNS).single();
   if (error) throw new Error(error.message);
   const [nhomList, tagList] = await Promise.all([getAllNhomDoiTac(), getAllTag()]);
   const [enriched] = enrichDoiTacList([inserted as DoiTacRow], nhomList, tagList);
@@ -332,7 +332,7 @@ export const createDoiTac = async (data: DoiTacFormValues): Promise<DoiTac> => {
 export const updateDoiTac = async (id: string, data: DoiTacFormValues): Promise<DoiTac> => {
   const code = data.ma_ncc.trim().toUpperCase();
   const numId = Number(id);
-  const { data: other } = await supabase
+  const { data: other } = await db
     .from(TABLE_DOI_TAC)
     .select('id')
     .eq('ma_doi_tac', code)
@@ -358,7 +358,7 @@ export const updateDoiTac = async (id: string, data: DoiTacFormValues): Promise<
     tg_cap_nhat: new Date().toISOString(),
   };
 
-  const { data: updated, error } = await supabase
+  const { data: updated, error } = await db
     .from(TABLE_DOI_TAC)
     .update(row)
     .eq('id', numId)
@@ -371,12 +371,12 @@ export const updateDoiTac = async (id: string, data: DoiTacFormValues): Promise<
 };
 
 export const deleteDoiTac = async (id: string): Promise<void> => {
-  const { error } = await supabase.from(TABLE_DOI_TAC).delete().eq('id', Number(id));
+  const { error } = await db.from(TABLE_DOI_TAC).delete().eq('id', Number(id));
   if (error) throw new Error(error.message ?? i18n.t('doiTac.service.notFound'));
 };
 
 export const deleteDoiTacMany = async (ids: string[]): Promise<void> => {
   const numIds = ids.map(Number);
-  const { error } = await supabase.from(TABLE_DOI_TAC).delete().in('id', numIds);
+  const { error } = await db.from(TABLE_DOI_TAC).delete().in('id', numIds);
   if (error) throw new Error(error.message);
 };

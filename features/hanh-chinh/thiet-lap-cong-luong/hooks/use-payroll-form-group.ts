@@ -25,7 +25,7 @@ export const useCreatePayrollAdminFormGroup = (onSuccess?: () => void) => {
       toast.success(i18n.t('payrollIp.groups.toast.createSuccess'));
       if (onSuccess) onSuccess();
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : String(err)),
   });
 };
 
@@ -39,7 +39,7 @@ export const useUpdatePayrollAdminFormGroup = (onSuccess?: () => void) => {
       toast.success(i18n.t('payrollIp.groups.toast.updateSuccess'));
       if (onSuccess) onSuccess();
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : String(err)),
   });
 };
 
@@ -52,7 +52,7 @@ export const useUpdatePayrollAdminFormGroupStatus = () => {
       queryClient.invalidateQueries({ queryKey: ['payrollAdminFormGroups'] });
       toast.success(i18n.t('payrollIp.groups.toast.statusUpdate', { count: variables.ids.length }));
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : String(err)),
   });
 };
 
@@ -64,6 +64,6 @@ export const useDeletePayrollAdminFormGroups = () => {
       queryClient.invalidateQueries({ queryKey: ['payrollAdminFormGroups'] });
       toast.success(i18n.t('payrollIp.groups.toast.deleteSuccess', { count: variables.length }));
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : String(err)),
   });
 };

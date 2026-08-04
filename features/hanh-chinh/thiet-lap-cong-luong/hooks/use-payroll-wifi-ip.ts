@@ -53,7 +53,7 @@ export const useUpdatePayrollWifiIpStatus = () => {
       queryClient.invalidateQueries({ queryKey: ['payrollWifiIps'] });
       toast.success(i18n.t('payrollIp.toast.statusUpdate', { count: variables.ids.length }));
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : String(err)),
   });
 };
 
@@ -65,7 +65,7 @@ export const useDeletePayrollWifiIps = () => {
       queryClient.invalidateQueries({ queryKey: ['payrollWifiIps'] });
       toast.success(i18n.t('payrollIp.toast.deleteSuccess', { count: ids.length }));
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : String(err)),
   });
 };
 
@@ -83,6 +83,6 @@ export const useImportPayrollWifiIps = (onSuccess?: () => void) => {
       }
       if (onSuccess) onSuccess();
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : String(err)),
   });
 };

@@ -11,6 +11,9 @@ node_modules/
 dist/
 build/
 
+# Dump database (scripts/vps-dump-restore.sh) — chứa toàn bộ dữ liệu thật
+backup/
+
 # Logs
 *.log
 npm-debug.log*

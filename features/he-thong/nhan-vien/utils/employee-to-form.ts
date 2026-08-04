@@ -18,6 +18,7 @@ export function getDefaultEmployeeFormValues(ngayVaoLam: string): EmployeeFormVa
     trang_thai: TRANG_THAI_NV.DANG_LAM_VIEC,
     ngay_vao_lam: ngayVaoLam,
     anh_dai_dien: '',
+    mat_khau: '',
     ngay_sinh: '',
     cmnd_cccd: '',
     ngay_cap_cccd: '',
@@ -71,6 +72,8 @@ export function employeeToFormValues(emp: Employee): EmployeeFormValues {
     trang_thai: emp.trang_thai,
     ngay_vao_lam: emp.ngay_vao_lam,
     anh_dai_dien: emp.anh_dai_dien ?? undefined,
+    // Không bao giờ prefill mật khẩu — bỏ trống nghĩa là "không đổi".
+    mat_khau: '',
     ngay_sinh: emp.ngay_sinh ?? undefined,
     cmnd_cccd: emp.cmnd_cccd ?? undefined,
     ngay_cap_cccd: emp.ngay_cap_cccd ?? undefined,

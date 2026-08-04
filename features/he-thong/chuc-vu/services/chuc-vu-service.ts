@@ -1,4 +1,4 @@
-import { supabase, fetchAllRows } from '../../../../lib/supabase';
+import { db, fetchAllRows } from '../../../../lib/db';
 import type { Position } from '../core/types';
 import type { PositionFormValues } from '../core/schema';
 import { TRANG_THAI, TRANG_THAI_HOAT_DONG, type TrangThaiHoatDong } from '../../../../lib/constants';
@@ -49,7 +49,7 @@ async function buildLookupMaps() {
 
 export const getPositions = async (): Promise<Position[]> => {
   const data = await fetchAllRows<Record<string, unknown>>((from, to) =>
-    supabase
+    db
       .from(TABLE)
       .select('id, ten_chuc_vu, phong_ban_id, cap_bac_id, mo_ta, tt, trang_thai, tg_tao, tg_cap_nhat')
       .order('tt', { ascending: true, nullsFirst: false })
@@ -72,7 +72,7 @@ export const createPosition = async (data: PositionFormValues): Promise<Position
     tg_cap_nhat: new Date().toISOString(),
   };
 
-  const { data: inserted, error } = await supabase
+  const { data: inserted, error } = await db
     .from(TABLE)
     .insert(row)
     .select('id, ten_chuc_vu, phong_ban_id, cap_bac_id, mo_ta, tt, trang_thai, tg_tao, tg_cap_nhat')
@@ -94,7 +94,7 @@ export const updatePosition = async (id: string, data: PositionFormValues): Prom
     tg_cap_nhat: new Date().toISOString(),
   };
 
-  const { data: updated, error } = await supabase
+  const { data: updated, error } = await db
     .from(TABLE)
     .update(row)
     .eq('id', id)
@@ -111,7 +111,7 @@ export const updatePositionStatus = async (
   status: TrangThaiHoatDong
 ): Promise<Position | undefined> => {
   if (ids.length === 1) {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from(TABLE)
       .update({ trang_thai: status, tg_cap_nhat: new Date().toISOString() })
       .eq('id', ids[0])
@@ -124,7 +124,7 @@ export const updatePositionStatus = async (
     return rowToPosition(data, deptMap, levelMap, capBacNumberMap);
   }
 
-  const { error } = await supabase
+  const { error } = await db
     .from(TABLE)
     .update({ trang_thai: status, tg_cap_nhat: new Date().toISOString() })
     .in('id', ids);
@@ -134,6 +134,6 @@ export const updatePositionStatus = async (
 };
 
 export const deletePositions = async (ids: string[]): Promise<void> => {
-  const { error } = await supabase.from(TABLE).delete().in('id', ids);
+  const { error } = await db.from(TABLE).delete().in('id', ids);
   if (error) throw new Error(error.message);
 };

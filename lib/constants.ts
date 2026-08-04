@@ -20,3 +20,12 @@ export const TRANG_THAI_NV = {
   NGHI_PHEP: 'Nghỉ phép',
 } as const;
 export type TrangThaiNV = (typeof TRANG_THAI_NV)[keyof typeof TRANG_THAI_NV];
+
+/**
+ * Mật khẩu cấp cho tài khoản mới khi admin không tự nhập — kèm cờ
+ * `phai_doi_mat_khau = true` để buộc user đổi ở lần đăng nhập kế tiếp.
+ */
+export const DEFAULT_PASSWORD = '123456';
+
+/** Độ dài mật khẩu tối thiểu – trùng ràng buộc trong RPC `rpc_set_mat_khau`. */
+export const PASSWORD_MIN_LENGTH = 6;

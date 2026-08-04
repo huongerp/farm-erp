@@ -55,7 +55,7 @@ export const useUpdateStatusBranch = () => {
       queryClient.invalidateQueries({ queryKey: ['branches'] });
       toast.success(i18n.t('branch.toast.statusUpdate', { count: variables.ids.length }));
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : String(err)),
   });
 };
 
@@ -67,6 +67,6 @@ export const useDeleteBranches = () => {
       queryClient.invalidateQueries({ queryKey: ['branches'] });
       toast.success(i18n.t('branch.toast.deleteSuccess', { count: ids.length }));
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : String(err)),
   });
 };

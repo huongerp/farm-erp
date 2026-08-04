@@ -1,4 +1,4 @@
-import { supabase, fetchAllRows } from '../../../../lib/supabase';
+import { db, fetchAllRows } from '../../../../lib/db';
 import type { JobLevel } from '../core/types';
 import type { JobLevelFormValues } from '../core/schema';
 import { TRANG_THAI, TRANG_THAI_HOAT_DONG, type TrangThaiHoatDong } from '../../../../lib/constants';
@@ -25,7 +25,7 @@ function rowToJobLevel(row: Record<string, unknown>): JobLevel {
 
 export const getJobLevels = async (): Promise<JobLevel[]> => {
   const data = await fetchAllRows<Record<string, unknown>>((from, to) =>
-    supabase
+    db
       .from(TABLE)
       .select('id, ten_cap_bac, cap_bac, mo_ta, trang_thai, tg_tao, tg_cap_nhat')
       .order('cap_bac', { ascending: true, nullsFirst: false })
@@ -44,7 +44,7 @@ export const createJobLevel = async (data: JobLevelFormValues): Promise<JobLevel
     tg_cap_nhat: new Date().toISOString(),
   };
 
-  const { data: inserted, error } = await supabase
+  const { data: inserted, error } = await db
     .from(TABLE)
     .insert(payload)
     .select('id, ten_cap_bac, cap_bac, mo_ta, trang_thai, tg_tao, tg_cap_nhat')
@@ -63,7 +63,7 @@ export const updateJobLevel = async (id: string, data: JobLevelFormValues): Prom
     tg_cap_nhat: new Date().toISOString(),
   };
 
-  const { data: updated, error } = await supabase
+  const { data: updated, error } = await db
     .from(TABLE)
     .update(payload)
     .eq('id', id)
@@ -76,7 +76,7 @@ export const updateJobLevel = async (id: string, data: JobLevelFormValues): Prom
 
 export const updateJobLevelStatus = async (ids: string[], status: TrangThaiHoatDong): Promise<JobLevel | undefined> => {
   if (ids.length === 1) {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from(TABLE)
       .update({ trang_thai: status, tg_cap_nhat: new Date().toISOString() })
       .eq('id', ids[0])
@@ -87,7 +87,7 @@ export const updateJobLevelStatus = async (ids: string[], status: TrangThaiHoatD
     return data ? rowToJobLevel(data) : undefined;
   }
 
-  const { error } = await supabase
+  const { error } = await db
     .from(TABLE)
     .update({ trang_thai: status, tg_cap_nhat: new Date().toISOString() })
     .in('id', ids);
@@ -97,7 +97,7 @@ export const updateJobLevelStatus = async (ids: string[], status: TrangThaiHoatD
 };
 
 export const deleteJobLevels = async (ids: string[]): Promise<void> => {
-  const { error } = await supabase
+  const { error } = await db
     .from(TABLE)
     .delete()
     .in('id', ids);

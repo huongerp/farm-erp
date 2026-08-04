@@ -38,7 +38,7 @@ node scripts/migrate-base64-to-cloudinary.mjs
 Trong `.env.local`:
 
 ```
-VITE_SUPABASE_REQUEST_LOGGER=1
+VITE_API_REQUEST_LOGGER=1
 ```
 
 Mở Console — cảnh báo nếu >10 request/giây cùng bảng.

@@ -1,7 +1,7 @@
 /**
  * Service khấu hao tài sản – đọc/ghi Supabase (fp_ts_ky_khau_hao, fp_ts_chi_tiet_khau_hao).
  */
-import { supabase, throwSupabaseError } from '../../../../lib/supabase';
+import { db, throwSupabaseError } from '../../../../lib/db';
 import type { KyKhauHao, ChiTietKhauHao, KyKhauHaoCreate, TrangThaiKyKhauHao } from '../core/types';
 import { getTaiSanList } from '../../danh-muc-tai-san/services/danh-muc-tai-san-service';
 import { updateTaiSanKhauHao } from '../../danh-muc-tai-san/services/danh-muc-tai-san-service';
@@ -135,7 +135,7 @@ export function tinhKhauHaoKy(
 }
 
 export async function getKyKhauHaoListSupabase(): Promise<KyKhauHao[]> {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from(TABLE_KY)
     .select(KY_KHAU_HAO_COLUMNS)
     .order('nam', { ascending: false })
@@ -147,13 +147,13 @@ export async function getKyKhauHaoListSupabase(): Promise<KyKhauHao[]> {
 export async function getKyKhauHaoByIdSupabase(id: string): Promise<KyKhauHao | null> {
   const numId = toNum(id);
   if (numId == null) return null;
-  const { data, error } = await supabase.from(TABLE_KY).select(KY_KHAU_HAO_COLUMNS).eq('id', numId).maybeSingle();
+  const { data, error } = await db.from(TABLE_KY).select(KY_KHAU_HAO_COLUMNS).eq('id', numId).maybeSingle();
   if (error) throwSupabaseError(error);
   return data ? rowToKy(data as DbKyKhauHaoRow) : null;
 }
 
 export async function createKyKhauHaoSupabase(data: KyKhauHaoCreate): Promise<KyKhauHao> {
-  const { data: existing } = await supabase
+  const { data: existing } = await db
     .from(TABLE_KY)
     .select('id')
     .eq('thang', data.thang)
@@ -169,7 +169,7 @@ export async function createKyKhauHaoSupabase(data: KyKhauHaoCreate): Promise<Ky
     id_nguoi_tao: toNum(data.id_nguoi_tao ?? null),
     ten_nguoi_tao: data.ten_nguoi_tao?.trim() || null,
   };
-  const { data: inserted, error } = await supabase.from(TABLE_KY).insert(payload).select(KY_KHAU_HAO_COLUMNS).single();
+  const { data: inserted, error } = await db.from(TABLE_KY).insert(payload).select(KY_KHAU_HAO_COLUMNS).single();
   if (error) throwSupabaseError(error);
   return rowToKy(inserted as DbKyKhauHaoRow);
 }
@@ -178,11 +178,11 @@ export async function updateKyKhauHaoSupabase(id: string, data: KyKhauHaoCreate)
   const numId = toNum(id);
   if (numId == null) throw new Error(i18n.t('khauHaoTaiSan.service.kyNotFound'));
 
-  const { data: ky } = await supabase.from(TABLE_KY).select('trang_thai').eq('id', numId).single();
+  const { data: ky } = await db.from(TABLE_KY).select('trang_thai').eq('id', numId).single();
   if (!ky) throw new Error(i18n.t('khauHaoTaiSan.service.kyNotFound'));
   if (ky.trang_thai === 'chot') throw new Error(i18n.t('khauHaoTaiSan.service.kyAlreadyChot'));
 
-  const { data: existing } = await supabase
+  const { data: existing } = await db
     .from(TABLE_KY)
     .select('id')
     .eq('thang', data.thang)
@@ -198,9 +198,9 @@ export async function updateKyKhauHaoSupabase(id: string, data: KyKhauHaoCreate)
     id_nguoi_tao: toNum(data.id_nguoi_tao ?? null),
     ten_nguoi_tao: data.ten_nguoi_tao?.trim() || null,
   };
-  const { error } = await supabase.from(TABLE_KY).update(payload).eq('id', numId);
+  const { error } = await db.from(TABLE_KY).update(payload).eq('id', numId);
   if (error) throwSupabaseError(error);
-  const { data: updated, error: err2 } = await supabase.from(TABLE_KY).select(KY_KHAU_HAO_COLUMNS).eq('id', numId).single();
+  const { data: updated, error: err2 } = await db.from(TABLE_KY).select(KY_KHAU_HAO_COLUMNS).eq('id', numId).single();
   if (err2 || !updated) throw new Error(i18n.t('khauHaoTaiSan.service.kyNotFound'));
   return rowToKy(updated as DbKyKhauHaoRow);
 }
@@ -208,7 +208,7 @@ export async function updateKyKhauHaoSupabase(id: string, data: KyKhauHaoCreate)
 export async function getChiTietKhauHaoSupabase(idKy: string): Promise<ChiTietKhauHao[]> {
   const numKy = toNum(idKy);
   if (numKy == null) return [];
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from(TABLE_CHI_TIET)
     .select(CHI_TIET_KHAU_HAO_COLUMNS)
     .eq('id_ky_khau_hao', numKy)
@@ -225,7 +225,7 @@ export async function tinhToanKhauHaoKySupabase(
   const numKy = toNum(idKy);
   if (numKy == null) throw new Error(i18n.t('khauHaoTaiSan.service.kyNotFound'));
 
-  const { data: kyRow } = await supabase.from(TABLE_KY).select('thang, nam, trang_thai').eq('id', numKy).single();
+  const { data: kyRow } = await db.from(TABLE_KY).select('thang, nam, trang_thai').eq('id', numKy).single();
   if (!kyRow) throw new Error(i18n.t('khauHaoTaiSan.service.kyNotFound'));
   if (kyRow.trang_thai === 'chot') throw new Error(i18n.t('khauHaoTaiSan.service.kyAlreadyChot'));
 
@@ -246,7 +246,7 @@ export async function tinhToanKhauHaoKySupabase(
     return hasRate;
   });
 
-  await supabase.from(TABLE_CHI_TIET).delete().eq('id_ky_khau_hao', numKy);
+  await db.from(TABLE_CHI_TIET).delete().eq('id_ky_khau_hao', numKy);
 
   let tongNguyenGia = 0;
   let tongKhauHaoKy = 0;
@@ -286,11 +286,11 @@ export async function tinhToanKhauHaoKySupabase(
   }
 
   if (inserts.length > 0) {
-    const { error: insErr } = await supabase.from(TABLE_CHI_TIET).insert(inserts);
+    const { error: insErr } = await db.from(TABLE_CHI_TIET).insert(inserts);
     if (insErr) throwSupabaseError(insErr);
   }
 
-  const { error: upErr } = await supabase
+  const { error: upErr } = await db
     .from(TABLE_KY)
     .update({
       tong_nguyen_gia: tongNguyenGia,
@@ -306,11 +306,11 @@ export async function chotKySupabase(idKy: string): Promise<void> {
   const numKy = toNum(idKy);
   if (numKy == null) throw new Error(i18n.t('khauHaoTaiSan.service.kyNotFound'));
 
-  const { data: kyRow } = await supabase.from(TABLE_KY).select('trang_thai').eq('id', numKy).single();
+  const { data: kyRow } = await db.from(TABLE_KY).select('trang_thai').eq('id', numKy).single();
   if (!kyRow) throw new Error(i18n.t('khauHaoTaiSan.service.kyNotFound'));
   if (kyRow.trang_thai === 'chot') throw new Error(i18n.t('khauHaoTaiSan.service.kyAlreadyChot'));
 
-  const { data: chiTietRows, error: selErr } = await supabase
+  const { data: chiTietRows, error: selErr } = await db
     .from(TABLE_CHI_TIET)
     .select('id_tai_san, gia_tri_con_lai_cuoi_ky, khau_hao_luy_ke')
     .eq('id_ky_khau_hao', numKy);
@@ -325,7 +325,7 @@ export async function chotKySupabase(idKy: string): Promise<void> {
     });
   }
 
-  const { error: upErr } = await supabase.from(TABLE_KY).update({ trang_thai: 'chot' }).eq('id', numKy);
+  const { error: upErr } = await db.from(TABLE_KY).update({ trang_thai: 'chot' }).eq('id', numKy);
   if (upErr) throwSupabaseError(upErr);
 }
 
@@ -333,17 +333,17 @@ export async function deleteKyKhauHaoSupabase(id: string): Promise<void> {
   const numId = toNum(id);
   if (numId == null) return;
 
-  const { data: ky } = await supabase.from(TABLE_KY).select('trang_thai').eq('id', numId).single();
+  const { data: ky } = await db.from(TABLE_KY).select('trang_thai').eq('id', numId).single();
   if (ky?.trang_thai === 'chot') throw new Error(i18n.t('khauHaoTaiSan.service.cannotDeleteChot'));
 
-  await supabase.from(TABLE_CHI_TIET).delete().eq('id_ky_khau_hao', numId);
-  await supabase.from(TABLE_KY).delete().eq('id', numId);
+  await db.from(TABLE_CHI_TIET).delete().eq('id_ky_khau_hao', numId);
+  await db.from(TABLE_KY).delete().eq('id', numId);
 }
 
 export async function updateKyKhauHaoGhiChuSupabase(id: string, ghi_chu: string | null): Promise<KyKhauHao> {
   const numId = toNum(id);
   if (numId == null) throw new Error(i18n.t('khauHaoTaiSan.service.kyNotFound'));
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from(TABLE_KY)
     .update({ ghi_chu: ghi_chu?.trim() || null })
     .eq('id', numId)
@@ -362,10 +362,10 @@ export async function updateKyKhauHaoTrangThaiSupabase(
   if (numId == null) throw new Error(i18n.t('khauHaoTaiSan.service.kyNotFound'));
   if (trang_thai === 'chot') throw new Error(i18n.t('khauHaoTaiSan.service.useChotKy'));
 
-  const { data: ky } = await supabase.from(TABLE_KY).select('trang_thai').eq('id', numId).single();
+  const { data: ky } = await db.from(TABLE_KY).select('trang_thai').eq('id', numId).single();
   if (!ky || ky.trang_thai !== 'chot') throw new Error(i18n.t('khauHaoTaiSan.service.onlyRevertChot'));
 
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from(TABLE_KY)
     .update({ trang_thai: 'draft' })
     .eq('id', numId)

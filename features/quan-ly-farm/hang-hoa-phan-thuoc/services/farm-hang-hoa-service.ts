@@ -1,4 +1,4 @@
-import { supabase, fetchAllRows } from '../../../../lib/supabase';
+import { db, fetchAllRows } from '../../../../lib/db';
 import type { FarmHangHoa } from '../core/types';
 import type { FarmHangHoaFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
@@ -75,7 +75,7 @@ async function enrichWithTenDanhMuc(rows: FarmHangHoaRow[]): Promise<FarmHangHoa
 
 export const getAllFarmHangHoa = async (): Promise<FarmHangHoa[]> => {
   const rows = await fetchAllRows<FarmHangHoaRow>((from, to) =>
-    supabase
+    db
       .from(TABLE)
       .select(HANG_HOA_COLUMNS)
       .order('ma_hang_hoa', { ascending: true })
@@ -87,7 +87,7 @@ export const getAllFarmHangHoa = async (): Promise<FarmHangHoa[]> => {
 export const getFarmHangHoaById = async (id: string): Promise<FarmHangHoa | null> => {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) return null;
-  const { data: row, error } = await supabase.from(TABLE).select(HANG_HOA_COLUMNS).eq('id', idNum).maybeSingle();
+  const { data: row, error } = await db.from(TABLE).select(HANG_HOA_COLUMNS).eq('id', idNum).maybeSingle();
   if (error) throw new Error(error.message);
   if (!row) return null;
   const [enriched] = await enrichWithTenDanhMuc([row as FarmHangHoaRow]);
@@ -101,7 +101,7 @@ export const createFarmHangHoa = async (data: FarmHangHoaFormValues): Promise<Fa
   const danh_muc_id = cap2 ? Number(cap2.id) : null;
   const danh_muc_cha_id = cap2?.id_cha ? Number(cap2.id_cha) : null;
 
-  const { data: existing } = await supabase
+  const { data: existing } = await db
     .from(TABLE)
     .select('id')
     .eq('ma_hang_hoa', data.ma_hang_hoa.trim().toUpperCase())
@@ -118,7 +118,7 @@ export const createFarmHangHoa = async (data: FarmHangHoaFormValues): Promise<Fa
     mo_ta: data.mo_ta?.trim() || null,
   };
 
-  const { data: inserted, error } = await supabase.from(TABLE).insert(payload).select(HANG_HOA_COLUMNS).single();
+  const { data: inserted, error } = await db.from(TABLE).insert(payload).select(HANG_HOA_COLUMNS).single();
   if (error) throw new Error(error.message);
   const [enriched] = await enrichWithTenDanhMuc([inserted as FarmHangHoaRow]);
   return enriched;
@@ -134,7 +134,7 @@ export const updateFarmHangHoa = async (id: string, data: FarmHangHoaFormValues)
   const danh_muc_id = cap2 ? Number(cap2.id) : null;
   const danh_muc_cha_id = cap2?.id_cha ? Number(cap2.id_cha) : null;
 
-  const { data: duplicate } = await supabase
+  const { data: duplicate } = await db
     .from(TABLE)
     .select('id')
     .eq('ma_hang_hoa', data.ma_hang_hoa.trim().toUpperCase())
@@ -153,7 +153,7 @@ export const updateFarmHangHoa = async (id: string, data: FarmHangHoaFormValues)
     tg_cap_nhat: new Date().toISOString(),
   };
 
-  const { data: updated, error } = await supabase
+  const { data: updated, error } = await db
     .from(TABLE)
     .update(payload)
     .eq('id', idNum)
@@ -167,7 +167,7 @@ export const updateFarmHangHoa = async (id: string, data: FarmHangHoaFormValues)
 export const deleteFarmHangHoa = async (id: string): Promise<void> => {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('farmHangHoaPhanThuoc.hangHoa.service.notFound'));
-  const { error } = await supabase.from(TABLE).delete().eq('id', idNum);
+  const { error } = await db.from(TABLE).delete().eq('id', idNum);
   if (error) throw new Error(error.message ?? i18n.t('farmHangHoaPhanThuoc.hangHoa.service.notFound'));
 };
 
@@ -175,6 +175,6 @@ export const deleteFarmHangHoaMany = async (ids: string[]): Promise<void> => {
   if (ids.length === 0) return;
   const idNums = ids.map(Number).filter((n) => !Number.isNaN(n));
   if (idNums.length === 0) return;
-  const { error } = await supabase.from(TABLE).delete().in('id', idNums);
+  const { error } = await db.from(TABLE).delete().in('id', idNums);
   if (error) throw new Error(error.message ?? i18n.t('farmHangHoaPhanThuoc.hangHoa.service.notFound'));
 };

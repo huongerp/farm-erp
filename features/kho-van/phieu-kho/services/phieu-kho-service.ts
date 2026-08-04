@@ -28,7 +28,7 @@ export type { PhieuKhoListServerQuery, ChiTietPhieuKhoListServerQuery } from './
 export { buildPhieuKhoListServerQuery, buildChiTietPhieuKhoListServerQuery } from './phieu-kho-list-query';
 
 export type { LichSuNhapXuatRow, LichSuNhapXuatByKhoRow } from './phieu-kho-supabase.service';
-export type { PaginatedTableResult } from '../../../../lib/supabase';
+export type { PaginatedTableResult } from '../../../../lib/db';
 
 export const getAllPhieuKho = getAllPhieuKhoSupabase;
 export const getPhieuKhoById = getPhieuKhoByIdSupabase;

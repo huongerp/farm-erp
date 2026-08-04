@@ -3,7 +3,7 @@
  * Trên DB không có FK; app liên kết và enrich với: danh sách kho, danh sách hàng hóa,
  * nhân viên, danh sách đối tác.
  */
-import { supabase, fetchAllRows, fetchTablePage, type PaginatedTableResult, throwSupabaseError } from '../../../../lib/supabase';
+import { db, fetchAllRows, fetchTablePage, type PaginatedTableResult, throwSupabaseError } from '../../../../lib/db';
 import type { PhieuKho, PhieuKhoChiTiet, LoaiPhieuKho, ChiTietPhieuKhoFlat, TrangThaiPhieuKho } from '../core/types';
 import { filterPhieuKhoChiTietForSave, type PhieuKhoFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
@@ -50,7 +50,7 @@ const TABLE_DOT_KK_KHO_CHI_TIET = 'fp_mh_dot_kiem_ke_kho_chi_tiet';
 /** Trước khi xóa phiếu kho: gỡ 3 cột liên kết điều chỉnh tồn trên kiểm kê (trùng với trigger DB / reconcile đọc). */
 async function clearKiemKeKhoDieuChinhLinksByPhieuIds(phieuIds: number[]): Promise<void> {
   if (phieuIds.length === 0) return;
-  const { error } = await supabase
+  const { error } = await db
     .from(TABLE_DOT_KK_KHO_CHI_TIET)
     .update({
       id_phieu_kho_dieu_chinh: null,
@@ -277,7 +277,7 @@ function toNum(s: string | null | undefined): number | null {
 
 /** Lấy số phiếu tiếp theo theo loại (Option B: RPC dùng bảng counter). Gọi khi tạo phiếu mới. */
 export async function getNextSoPhieuSupabase(loai: LoaiPhieuKho): Promise<string> {
-  const { data, error } = await supabase.rpc('get_next_so_phieu', { p_loai: loai });
+  const { data, error } = await db.rpc('get_next_so_phieu', { p_loai: loai });
   if (error) throwSupabaseError(error);
   if (typeof data !== 'string') throw new Error('get_next_so_phieu did not return string');
   return data;
@@ -285,7 +285,7 @@ export async function getNextSoPhieuSupabase(loai: LoaiPhieuKho): Promise<string
 
 export async function getAllPhieuKhoSupabase(): Promise<PhieuKho[]> {
   const rows = await fetchAllRows<PhieuKhoSummaryRow>((from, to) =>
-    supabase
+    db
       .from(VIEW_PHIEU_KHO_SUMMARY)
       .select(PHIEU_KHO_SUMMARY_SELECT)
       .order('ngay', { ascending: false })
@@ -298,7 +298,7 @@ export async function getAllPhieuKhoSupabase(): Promise<PhieuKho[]> {
 export async function getPhieuKhoByIdSupabase(id: string): Promise<PhieuKho | null> {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) return null;
-  const { data: row, error } = await supabase
+  const { data: row, error } = await db
     .from(TABLE_PHIEU)
     .select(PHIEU_KHO_HEADER_ROW_SELECT)
     .eq('id', idNum)
@@ -310,7 +310,7 @@ export async function getPhieuKhoByIdSupabase(id: string): Promise<PhieuKho | nu
     getKhoRef(),
     getDoiTacRef(),
     getEmployeesRef(),
-    supabase
+    db
       .from(TABLE_CHI_TIET)
       .select(PHIEU_KHO_CHI_TIET_ROW_SELECT)
       .eq('id_phieu_kho', idNum)
@@ -330,7 +330,7 @@ export async function getPhieuKhoByIdSupabase(id: string): Promise<PhieuKho | nu
   const p = row as PhieuKhoDbRow;
   let soPoDon: string | undefined;
   if (p.id_don_dat_hang != null) {
-    const { data: dh } = await supabase
+    const { data: dh } = await db
       .from('fp_mh_don_dat_hang')
       .select('so_po')
       .eq('id', p.id_don_dat_hang)
@@ -359,7 +359,7 @@ export async function getPhieuKhoByIdSupabase(id: string): Promise<PhieuKho | nu
 
 export async function createPhieuKhoSupabase(loai: LoaiPhieuKho, data: PhieuKhoFormValues): Promise<PhieuKho> {
   const soPhieu = data.so_phieu.trim();
-  const { data: existing } = await supabase.from(TABLE_PHIEU).select('id').eq('so_phieu', soPhieu).eq('loai', loai).maybeSingle();
+  const { data: existing } = await db.from(TABLE_PHIEU).select('id').eq('so_phieu', soPhieu).eq('loai', loai).maybeSingle();
   if (existing) throw new Error(i18n.t('phieuKho.service.duplicateCode'));
 
   const [khoList, employees] = await Promise.all([getKhoRef(), getEmployeesRef()]);
@@ -387,7 +387,7 @@ export async function createPhieuKhoSupabase(loai: LoaiPhieuKho, data: PhieuKhoF
     ten_nguoi_tao: nguoiTaoId != null ? (nvMap[String(nguoiTaoId)] ?? null) : null,
   };
 
-  const { data: inserted, error } = await supabase.from(TABLE_PHIEU).insert(payload).select(PHIEU_KHO_HEADER_ROW_SELECT).single();
+  const { data: inserted, error } = await db.from(TABLE_PHIEU).insert(payload).select(PHIEU_KHO_HEADER_ROW_SELECT).single();
   if (error) throwSupabaseError(error);
   const idPhieu = (inserted as PhieuKhoDbRow).id;
   const idStr = String(idPhieu);
@@ -424,7 +424,7 @@ export async function createPhieuKhoSupabase(loai: LoaiPhieuKho, data: PhieuKhoF
         ten_nguoi_tao: nguoiTaoId != null ? (nvMap[String(nguoiTaoId)] ?? null) : null,
       };
     });
-    const { error: errCt } = await supabase.from(TABLE_CHI_TIET).insert(ctRows);
+    const { error: errCt } = await db.from(TABLE_CHI_TIET).insert(ctRows);
     if (errCt) throwSupabaseError(errCt);
   }
 
@@ -437,11 +437,11 @@ export async function updatePhieuKhoSupabase(id: string, data: PhieuKhoFormValue
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('phieuKho.service.notFound'));
 
-  const { data: oldRow, error: fetchErr } = await supabase.from(TABLE_PHIEU).select(PHIEU_KHO_HEADER_ROW_SELECT).eq('id', idNum).maybeSingle();
+  const { data: oldRow, error: fetchErr } = await db.from(TABLE_PHIEU).select(PHIEU_KHO_HEADER_ROW_SELECT).eq('id', idNum).maybeSingle();
   if (fetchErr || !oldRow) throw new Error(i18n.t('phieuKho.service.notFound'));
 
   const soPhieu = data.so_phieu.trim();
-  const { data: other } = await supabase.from(TABLE_PHIEU).select('id').eq('so_phieu', soPhieu).eq('loai', (oldRow as PhieuKhoDbRow).loai).neq('id', idNum).maybeSingle();
+  const { data: other } = await db.from(TABLE_PHIEU).select('id').eq('so_phieu', soPhieu).eq('loai', (oldRow as PhieuKhoDbRow).loai).neq('id', idNum).maybeSingle();
   if (other) throw new Error(i18n.t('phieuKho.service.duplicateCode'));
 
   const [khoList, employees] = await Promise.all([getKhoRef(), getEmployeesRef()]);
@@ -479,7 +479,7 @@ export async function updatePhieuKhoSupabase(id: string, data: PhieuKhoFormValue
     throw new Error(i18n.t('phieuKho.validation.atLeastOneItem'));
   }
 
-  const { error: updateErr } = await supabase.from(TABLE_PHIEU).update(payload).eq('id', idNum);
+  const { error: updateErr } = await db.from(TABLE_PHIEU).update(payload).eq('id', idNum);
   if (updateErr) throwSupabaseError(updateErr);
 
   const hangHoaList = await getHangHoaRef();
@@ -497,7 +497,7 @@ export async function updatePhieuKhoSupabase(id: string, data: PhieuKhoFormValue
   // (theo id đã chụp từ đầu) SAU KHI chèn thành công. Nếu insert lỗi, dòng cũ
   // vẫn còn nguyên — hỏng ở bước xoá thì thừa dữ liệu (dễ dọn) thay vì mất
   // sạch dòng hàng (không thể phục hồi).
-  const { data: oldCtRows, error: oldCtErr } = await supabase
+  const { data: oldCtRows, error: oldCtErr } = await db
     .from(TABLE_CHI_TIET)
     .select('id')
     .eq('id_phieu_kho', idNum);
@@ -524,11 +524,11 @@ export async function updatePhieuKhoSupabase(id: string, data: PhieuKhoFormValue
       ten_nguoi_tao: nguoiTaoId != null ? (nvMap[String(nguoiTaoId)] ?? null) : null,
     };
   });
-  const { error: errCt } = await supabase.from(TABLE_CHI_TIET).insert(ctRows);
+  const { error: errCt } = await db.from(TABLE_CHI_TIET).insert(ctRows);
   if (errCt) throwSupabaseError(errCt);
 
   if (oldCtIds.length > 0) {
-    const { error: delErr } = await supabase.from(TABLE_CHI_TIET).delete().in('id', oldCtIds);
+    const { error: delErr } = await db.from(TABLE_CHI_TIET).delete().in('id', oldCtIds);
     if (delErr) throwSupabaseError(delErr);
   }
 
@@ -564,7 +564,7 @@ export async function updatePhieuKhoTrangThaiSupabase(
       ? options.id_nguoi_duyet
       : null;
 
-  const { data: row } = await supabase.from(TABLE_PHIEU).select('trao_doi').eq('id', idNum).maybeSingle();
+  const { data: row } = await db.from(TABLE_PHIEU).select('trao_doi').eq('id', idNum).maybeSingle();
   const existing = (row as { trao_doi?: string } | null)?.trao_doi ?? '';
   const ts = formatPhieuKhoTraoDoiTimestamp();
   const who =
@@ -580,7 +580,7 @@ export async function updatePhieuKhoTrangThaiSupabase(
     ? `${ts} — ${who} ${actionVerb}. Ghi chú: ${ghi_chu.trim()}`
     : `${ts} — ${who} ${actionVerb}.`;
   const newTraoDoi = existing ? existing + '\n' + entry : entry;
-  const { error } = await supabase
+  const { error } = await db
     .from(TABLE_PHIEU)
     .update({ trang_thai, trao_doi: newTraoDoi, id_nguoi_duyet: idNguoiDuyet })
     .eq('id', idNum);
@@ -591,7 +591,7 @@ export async function deletePhieuKhoSupabase(id: string): Promise<void> {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('phieuKho.service.notFound'));
   await clearKiemKeKhoDieuChinhLinksByPhieuIds([idNum]);
-  const { error } = await supabase.from(TABLE_PHIEU).delete().eq('id', idNum);
+  const { error } = await db.from(TABLE_PHIEU).delete().eq('id', idNum);
   if (error) throwSupabaseError(error);
 }
 
@@ -599,7 +599,7 @@ export async function deletePhieuKhoManySupabase(ids: string[]): Promise<void> {
   const numIds = ids.map((id) => Number(id)).filter((n) => !Number.isNaN(n));
   if (numIds.length === 0) return;
   await clearKiemKeKhoDieuChinhLinksByPhieuIds(numIds);
-  const { error } = await supabase.from(TABLE_PHIEU).delete().in('id', numIds);
+  const { error } = await db.from(TABLE_PHIEU).delete().in('id', numIds);
   if (error) throwSupabaseError(error);
 }
 
@@ -608,7 +608,7 @@ export async function getPhieuKhoByDoiTacSupabase(idDoiTac: string, loaiDoiTac: 
   if (Number.isNaN(idNum)) return [];
   const loaiDb: LoaiPhieuKho = loaiDoiTac === 'nha_cung_cap' ? 'nhập' : 'xuất';
   const col = loaiDoiTac === 'nha_cung_cap' ? 'id_nha_cung_cap' : 'id_khach_hang';
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from(VIEW_PHIEU_KHO_SUMMARY)
     .select(PHIEU_KHO_SUMMARY_SELECT)
     .eq('loai', loaiDb)
@@ -824,7 +824,7 @@ export async function getChiTietPhieuKhoPageSupabase(
 ): Promise<PaginatedTableResult<ChiTietPhieuKhoFlat>> {
   const [pageResult, maps] = await Promise.all([
     fetchTablePage<PhieuKhoChiTietFlatViewRow>(page, pageSize, async (from, to) => {
-      let sel = supabase.from(VIEW_PHIEU_KHO_CHI_TIET_FLAT).select(PHIEU_KHO_CHI_TIET_FLAT_SELECT, { count: 'exact' });
+      let sel = db.from(VIEW_PHIEU_KHO_CHI_TIET_FLAT).select(PHIEU_KHO_CHI_TIET_FLAT_SELECT, { count: 'exact' });
       if (listQuery) sel = applyChiTietPhieuKhoListQueryToFlatSelect(sel, listQuery);
       const res = await sel
         .order('ngay', { ascending: false })
@@ -844,7 +844,7 @@ const LICH_SU_NHAP_XUAT_MAX_ROWS = 500;
 export async function getLichSuNhapXuatByHangHoaSupabase(id_hang_hoa: string): Promise<LichSuNhapXuatRow[]> {
   const idHhNum = Number(id_hang_hoa);
   if (Number.isNaN(idHhNum)) return [];
-  const { data: ctRows } = await supabase
+  const { data: ctRows } = await db
     .from(TABLE_CHI_TIET)
     .select(PHIEU_KHO_CHI_TIET_ROW_SELECT)
     .eq('id_hang_hoa', idHhNum)
@@ -852,7 +852,7 @@ export async function getLichSuNhapXuatByHangHoaSupabase(id_hang_hoa: string): P
     .limit(LICH_SU_NHAP_XUAT_MAX_ROWS);
   if (!ctRows?.length) return [];
   const phieuIds = [...new Set((ctRows as ChiTietDbRow[]).map((c) => c.id_phieu_kho))];
-  const { data: phieuRows } = await supabase.from(TABLE_PHIEU).select(PHIEU_KHO_HEADER_ROW_SELECT).in('id', phieuIds);
+  const { data: phieuRows } = await db.from(TABLE_PHIEU).select(PHIEU_KHO_HEADER_ROW_SELECT).in('id', phieuIds);
   if (!phieuRows?.length) return [];
   const khoList = await getKhoRef();
   const khoMap: Record<string, string> = {};
@@ -892,7 +892,7 @@ export async function getLichSuNhapXuatByHangHoaSupabase(id_hang_hoa: string): P
 export async function getLichSuNhapXuatByKhoSupabase(id_kho: string): Promise<LichSuNhapXuatByKhoRow[]> {
   const idKhoNum = Number(id_kho);
   if (Number.isNaN(idKhoNum)) return [];
-  const { data: phieuRows } = await supabase
+  const { data: phieuRows } = await db
     .from(TABLE_PHIEU)
     .select(PHIEU_KHO_HEADER_ROW_SELECT)
     .or(`kho_id.eq.${idKhoNum},kho_den_id.eq.${idKhoNum}`)
@@ -900,7 +900,7 @@ export async function getLichSuNhapXuatByKhoSupabase(id_kho: string): Promise<Li
     .limit(200);
   if (!phieuRows?.length) return [];
   const phieuIds = (phieuRows as PhieuKhoDbRow[]).map((p) => p.id);
-  const { data: ctRows } = await supabase
+  const { data: ctRows } = await db
     .from(TABLE_CHI_TIET)
     .select(PHIEU_KHO_CHI_TIET_ROW_SELECT)
     .in('id_phieu_kho', phieuIds)
@@ -956,7 +956,7 @@ export async function getPhieuKhoPageSupabase(
   listQuery?: PhieuKhoListServerQuery
 ): Promise<PaginatedTableResult<PhieuKho>> {
   const pageResult = await fetchTablePage<PhieuKhoSummaryRow>(page, pageSize, async (from, to) => {
-    let sel = supabase.from(VIEW_PHIEU_KHO_SUMMARY).select(PHIEU_KHO_SUMMARY_SELECT, { count: 'exact' });
+    let sel = db.from(VIEW_PHIEU_KHO_SUMMARY).select(PHIEU_KHO_SUMMARY_SELECT, { count: 'exact' });
     if (listQuery) sel = applyPhieuKhoListQueryToSummarySelect(sel, listQuery);
     const res = await sel
       .order('ngay', { ascending: false })

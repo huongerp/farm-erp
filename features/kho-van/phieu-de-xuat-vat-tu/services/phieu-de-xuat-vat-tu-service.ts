@@ -1,7 +1,7 @@
 /**
  * Service phiếu đề xuất vật tư – sử dụng Supabase (fp_mh_phieu_de_xuat_vat_tu, fp_mh_phieu_de_xuat_vat_tu_chi_tiet).
  */
-import type { PaginatedTableResult } from '../../../../lib/supabase';
+import type { PaginatedTableResult } from '../../../../lib/db';
 import type { PhieuDeXuatVatTuFormValues } from '../core/schema';
 import type { PhieuDeXuatVatTu, PhieuDeXuatVatTuChiTietRow } from '../core/types';
 import {

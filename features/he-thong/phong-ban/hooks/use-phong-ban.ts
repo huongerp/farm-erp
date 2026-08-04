@@ -47,7 +47,7 @@ export const useUpdateStatusDepartment = () => {
       queryClient.invalidateQueries({ queryKey: ['departments'] });
       toast.success(i18n.t('department.toast.updateSuccess'));
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : String(err)),
   });
 };
 
@@ -77,6 +77,6 @@ export const useImportDepartments = (onSuccess?: () => void) => {
       }
       if (onSuccess) onSuccess();
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : String(err)),
   });
 };

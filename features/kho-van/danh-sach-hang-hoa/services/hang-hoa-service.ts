@@ -1,4 +1,4 @@
-import { supabase, fetchAllRows } from '../../../../lib/supabase';
+import { db, fetchAllRows } from '../../../../lib/db';
 import { getCachedRef, REF_CACHE_KEYS } from '../../../../lib/ref-cache';
 import type { HangHoa } from '../core/types';
 import type { HangHoaFormValues } from '../core/schema';
@@ -105,7 +105,7 @@ async function enrichWithTenDanhMuc(rows: HangHoaRow[]): Promise<HangHoa[]> {
 
 export const getAllHangHoa = async (): Promise<HangHoa[]> => {
   const rows = await fetchAllRows<HangHoaRow>((from, to) =>
-    supabase
+    db
       .from(TABLE)
       .select(HANG_HOA_LIST_COLUMNS)
       .order('thu_tu', { ascending: true })
@@ -141,7 +141,7 @@ export const getHangHoaRef = async (): Promise<HangHoaRefLite[]> => {
   return getCachedRef(REF_CACHE_KEYS.hangHoa, async () => {
     const [rows, dmList] = await Promise.all([
       fetchAllRows<HangHoaRow>((from, to) =>
-        supabase
+        db
           .from(TABLE)
           .select('id, ma_hang_hoa, ten_hang_hoa, dvt, pham_cap, danh_muc_id, danh_muc_cha_id, thu_tu, trang_thai, don_gia')
           .order('thu_tu', { ascending: true })
@@ -189,7 +189,7 @@ export const getHangHoaRef = async (): Promise<HangHoaRefLite[]> => {
 export const getHangHoaById = async (id: string): Promise<HangHoa | null> => {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) return null;
-  const { data: row, error } = await supabase
+  const { data: row, error } = await db
     .from(TABLE)
     .select(HANG_HOA_DETAIL_COLUMNS)
     .eq('id', idNum)
@@ -205,7 +205,7 @@ export const getHangHoaDetail = getHangHoaById;
 
 /** Thứ tự mới khi tạo: max(thu_tu) + 1, tối thiểu 1. */
 export const getNextThuTu = async (): Promise<number> => {
-  const { data, error } = await supabase.from(TABLE).select('thu_tu').order('thu_tu', { ascending: false }).limit(1).maybeSingle();
+  const { data, error } = await db.from(TABLE).select('thu_tu').order('thu_tu', { ascending: false }).limit(1).maybeSingle();
   if (error) throw new Error(error.message);
   const max = data?.thu_tu != null ? Number(data.thu_tu) : 0;
   return Math.max(1, max + 1);
@@ -217,7 +217,7 @@ export const createHangHoa = async (data: HangHoaFormValues): Promise<HangHoa> =
   const danh_muc_id = cap2 ? Number(cap2.id) : null;
   const danh_muc_cha_id = cap2?.id_cha ? Number(cap2.id_cha) : null;
 
-  const { data: existing } = await supabase
+  const { data: existing } = await db
     .from(TABLE)
     .select('id')
     .eq('ma_hang_hoa', data.ma_hang_hoa.trim().toUpperCase())
@@ -239,7 +239,7 @@ export const createHangHoa = async (data: HangHoaFormValues): Promise<HangHoa> =
     hinh_anh: data.hinh_anh?.trim() || null,
   };
 
-  const { data: inserted, error } = await supabase.from(TABLE).insert(payload).select(HANG_HOA_DETAIL_COLUMNS).single();
+  const { data: inserted, error } = await db.from(TABLE).insert(payload).select(HANG_HOA_DETAIL_COLUMNS).single();
   if (error) throw new Error(error.message);
   const [enriched] = await enrichWithTenDanhMuc([inserted as HangHoaRow]);
   return enriched;
@@ -254,7 +254,7 @@ export const updateHangHoa = async (id: string, data: HangHoaFormValues): Promis
   const danh_muc_id = cap2 ? Number(cap2.id) : null;
   const danh_muc_cha_id = cap2?.id_cha ? Number(cap2.id_cha) : null;
 
-  const { data: duplicate } = await supabase
+  const { data: duplicate } = await db
     .from(TABLE)
     .select('id')
     .eq('ma_hang_hoa', data.ma_hang_hoa.trim().toUpperCase())
@@ -277,7 +277,7 @@ export const updateHangHoa = async (id: string, data: HangHoaFormValues): Promis
     tg_cap_nhat: new Date().toISOString(),
   };
 
-  const { data: updated, error } = await supabase
+  const { data: updated, error } = await db
     .from(TABLE)
     .update(payload)
     .eq('id', idNum)
@@ -291,7 +291,7 @@ export const updateHangHoa = async (id: string, data: HangHoaFormValues): Promis
 export const updateHangHoaStatus = async (id: string, status: HangHoa['trang_thai']): Promise<HangHoa> => {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('hangHoa.service.notFound'));
-  const { data: updated, error } = await supabase
+  const { data: updated, error } = await db
     .from(TABLE)
     .update({ trang_thai: status, tg_cap_nhat: new Date().toISOString() })
     .eq('id', idNum)
@@ -305,7 +305,7 @@ export const updateHangHoaStatus = async (id: string, status: HangHoa['trang_tha
 export const deleteHangHoa = async (id: string): Promise<void> => {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('hangHoa.service.notFound'));
-  const { error } = await supabase.from(TABLE).delete().eq('id', idNum);
+  const { error } = await db.from(TABLE).delete().eq('id', idNum);
   if (error) throw new Error(error.message ?? i18n.t('hangHoa.service.notFound'));
 };
 
@@ -313,7 +313,7 @@ export const deleteHangHoaMany = async (ids: string[]): Promise<void> => {
   if (ids.length === 0) return;
   const idNums = ids.map(Number).filter((n) => !Number.isNaN(n));
   if (idNums.length === 0) return;
-  const { error } = await supabase.from(TABLE).delete().in('id', idNums);
+  const { error } = await db.from(TABLE).delete().in('id', idNums);
   if (error) throw new Error(error.message ?? i18n.t('hangHoa.service.notFound'));
 };
 
@@ -376,14 +376,14 @@ export const importHangHoa = async (
   const dmByTen = new Map(danhMucCap2.map((d) => [d.ten_danh_muc.trim().toLowerCase(), { id: d.id, id_cha: d.id_cha }]));
 
   // Phase 2: Load existing ma_hang_hoa for duplicate check (1 request)
-  const { data: existingRows } = await supabase.from(TABLE).select('id, ma_hang_hoa');
+  const { data: existingRows } = await db.from(TABLE).select('id, ma_hang_hoa');
   const existingByMa = new Map<string, number>();
   (existingRows ?? []).forEach((r: { id: number; ma_hang_hoa: string | null }) => {
     if (r.ma_hang_hoa) existingByMa.set(r.ma_hang_hoa.trim().toUpperCase(), r.id);
   });
 
   // Phase 3: Get current max thu_tu (1 request)
-  const { data: maxRow } = await supabase.from(TABLE).select('thu_tu').order('thu_tu', { ascending: false }).limit(1).maybeSingle();
+  const { data: maxRow } = await db.from(TABLE).select('thu_tu').order('thu_tu', { ascending: false }).limit(1).maybeSingle();
   let nextThuTu = Math.max(1, (maxRow?.thu_tu != null ? Number(maxRow.thu_tu) : 0) + 1);
 
   // Phase 4: Validate all rows client-side
@@ -480,7 +480,7 @@ export const importHangHoa = async (
   // Phase 5: Batch insert (chunks of BATCH_SIZE)
   for (let i = 0; i < toInsert.length; i += BATCH_SIZE) {
     const chunk = toInsert.slice(i, i + BATCH_SIZE);
-    const { error } = await supabase.from(TABLE).insert(chunk.map((c) => c.payload));
+    const { error } = await db.from(TABLE).insert(chunk.map((c) => c.payload));
     if (error) {
       chunk.forEach((c) => {
         const row = rows[c.rowIdx];
@@ -503,7 +503,7 @@ export const importHangHoa = async (
       const chunk = toUpdate.slice(i, i + UPDATE_CHUNK);
       const results = await Promise.allSettled(
         chunk.map((c) =>
-          supabase.from(TABLE).update(c.payload).eq('id', c.existingId)
+          db.from(TABLE).update(c.payload).eq('id', c.existingId)
         )
       );
       results.forEach((res, idx) => {

@@ -1,4 +1,4 @@
-import { supabase, fetchAllRows } from '../../../../lib/supabase';
+import { db, fetchAllRows } from '../../../../lib/db';
 import type { Department } from '../core/types';
 import type { DepartmentFormValues } from '../core/schema';
 import type { TrangThai } from '../../../../lib/constants';
@@ -31,7 +31,7 @@ function rowToDepartment(row: Record<string, unknown>): Department {
 
 export const getDepartments = async (): Promise<Department[]> => {
   const data = await fetchAllRows<Record<string, unknown>>((from, to) =>
-    supabase.from(TABLE).select(PHONG_BAN_COLUMNS).order('tt', { ascending: true }).range(from, to)
+    db.from(TABLE).select(PHONG_BAN_COLUMNS).order('tt', { ascending: true }).range(from, to)
   );
   return data.map(rowToDepartment);
 };
@@ -44,7 +44,7 @@ export const createDepartment = async (data: DepartmentFormValues): Promise<Depa
     trang_thai: data.trang_thai,
   };
 
-  const { data: inserted, error } = await supabase
+  const { data: inserted, error } = await db
     .from(TABLE)
     .insert(row)
     .select(PHONG_BAN_COLUMNS)
@@ -63,7 +63,7 @@ export const updateDepartment = async (id: string, data: DepartmentFormValues): 
     tg_cap_nhat: new Date().toISOString(),
   };
 
-  const { data: updated, error } = await supabase
+  const { data: updated, error } = await db
     .from(TABLE)
     .update(row)
     .eq('id', id)
@@ -75,7 +75,7 @@ export const updateDepartment = async (id: string, data: DepartmentFormValues): 
 };
 
 export const updateDepartmentStatus = async (id: string, status: TrangThai): Promise<Department> => {
-  const { data: updated, error } = await supabase
+  const { data: updated, error } = await db
     .from(TABLE)
     .update({ trang_thai: status, tg_cap_nhat: new Date().toISOString() })
     .eq('id', id)
@@ -87,7 +87,7 @@ export const updateDepartmentStatus = async (id: string, status: TrangThai): Pro
 };
 
 export const deleteDepartment = async (id: string): Promise<void> => {
-  const { error } = await supabase.from(TABLE).delete().eq('id', id);
+  const { error } = await db.from(TABLE).delete().eq('id', id);
   if (error) throw new Error(error.message);
 };
 

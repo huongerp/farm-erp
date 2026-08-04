@@ -1,4 +1,4 @@
-import { supabase, fetchAllRows } from '../../../../lib/supabase';
+import { db, fetchAllRows } from '../../../../lib/db';
 import { PositionPermission, AccessLog, ModulePermission, ActionType } from '../core/types';
 import { RoleFormValues } from '../core/schema';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
@@ -45,8 +45,8 @@ export async function getCurrentRoleContext(chucVuId: string): Promise<CurrentRo
   }
 
   const [pqRes, cvRes] = await Promise.all([
-    supabase.from(TABLE_PHAN_QUYEN).select('module_id, actions').eq('chuc_vu_id', cvId),
-    supabase.from(TABLE_CHUC_VU).select('tt').eq('id', cvId).maybeSingle(),
+    db.from(TABLE_PHAN_QUYEN).select('module_id, actions').eq('chuc_vu_id', cvId),
+    db.from(TABLE_CHUC_VU).select('tt').eq('id', cvId).maybeSingle(),
   ]);
 
   if (pqRes.error) throw new Error(pqRes.error.message);
@@ -70,7 +70,7 @@ export const getRoles = async (): Promise<PositionPermission[]> => {
     getPositions(),
     getDepartments(),
     fetchAllRows<{ chuc_vu_id: number; module_id: string; actions: string[] }>((from, to) =>
-      supabase
+      db
         .from(TABLE_PHAN_QUYEN)
         .select('id, chuc_vu_id, module_id, actions, tg_cap_nhat')
         .order('id', { ascending: true })
@@ -96,7 +96,7 @@ export const getRoles = async (): Promise<PositionPermission[]> => {
   // RPC trả về tối đa số chức vụ (vài chục dòng) → <1 KB. Xem docs/supabase-rpc_count_nhan_vien_by_chuc_vu.sql.
   let nhanVienCountMap: Record<string, number> = {};
   try {
-    const { data: countRows, error: countErr } = await supabase.rpc('rpc_count_nhan_vien_by_chuc_vu');
+    const { data: countRows, error: countErr } = await db.rpc('rpc_count_nhan_vien_by_chuc_vu');
     if (countErr) throw countErr;
     const typedCountRows = (countRows ?? []) as { chuc_vu_id: number | string; so_nhan_vien: number | string }[];
     nhanVienCountMap = typedCountRows.reduce<Record<string, number>>((acc, r) => {
@@ -141,7 +141,7 @@ export const createRole = async (
   data: RoleFormValues,
   permissions: ModulePermission[],
 ): Promise<PositionPermission> => {
-  const { data: insertedChucVu, error: errChucVu } = await supabase
+  const { data: insertedChucVu, error: errChucVu } = await db
     .from(TABLE_CHUC_VU)
     .insert({
       ten_chuc_vu: data.ten_vai_tro.trim(),
@@ -163,7 +163,7 @@ export const createRole = async (
       module_id: p.module_id,
       actions: p.actions,
     }));
-    const { error: errPQ } = await supabase.from(TABLE_PHAN_QUYEN).insert(rows);
+    const { error: errPQ } = await db.from(TABLE_PHAN_QUYEN).insert(rows);
     if (errPQ) throw new Error(errPQ.message);
   }
 
@@ -191,10 +191,10 @@ export const deleteRoles = async (ids: string[]): Promise<void> => {
   const numIds = ids.map((id) => Number(id)).filter((n) => !Number.isNaN(n));
   if (numIds.length === 0) return;
 
-  const { error: errDelPQ } = await supabase.from(TABLE_PHAN_QUYEN).delete().in('chuc_vu_id', numIds);
+  const { error: errDelPQ } = await db.from(TABLE_PHAN_QUYEN).delete().in('chuc_vu_id', numIds);
   if (errDelPQ) throw new Error(errDelPQ.message);
 
-  const { error: errDelCV } = await supabase.from(TABLE_CHUC_VU).delete().in('id', numIds);
+  const { error: errDelCV } = await db.from(TABLE_CHUC_VU).delete().in('id', numIds);
   if (errDelCV) throw new Error(errDelCV.message);
 };
 
@@ -206,7 +206,7 @@ export const updateModulePermissions = async (
   if (updates.length === 0) return;
 
   const roleIds = updates.map((u) => Number(u.roleId)).filter((n) => !Number.isNaN(n));
-  const { data: existing } = await supabase
+  const { data: existing } = await db
     .from(TABLE_PHAN_QUYEN)
     .select('id, chuc_vu_id, module_id')
     .eq('module_id', moduleId)
@@ -231,14 +231,14 @@ export const updateModulePermissions = async (
   if (toUpdate.length > 0) {
     const results = await Promise.all(
       toUpdate.map(({ id, actions }) =>
-        supabase.from(TABLE_PHAN_QUYEN).update({ actions, tg_cap_nhat: new Date().toISOString() }).eq('id', id),
+        db.from(TABLE_PHAN_QUYEN).update({ actions, tg_cap_nhat: new Date().toISOString() }).eq('id', id),
       ),
     );
     const err = results.find((r) => r.error);
     if (err?.error) throw new Error(err.error.message);
   }
   if (toInsert.length > 0) {
-    const { error } = await supabase.from(TABLE_PHAN_QUYEN).insert(toInsert);
+    const { error } = await db.from(TABLE_PHAN_QUYEN).insert(toInsert);
     if (error) throw new Error(error.message);
   }
 };

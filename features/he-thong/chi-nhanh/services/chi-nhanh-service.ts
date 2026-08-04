@@ -1,4 +1,4 @@
-import { supabase, fetchAllRows } from '../../../../lib/supabase';
+import { db, fetchAllRows } from '../../../../lib/db';
 import type { Branch } from '../core/types';
 import type { BranchFormValues } from '../core/schema';
 import type { TrangThai } from '../../../../lib/constants';
@@ -29,7 +29,7 @@ function rowToBranch(row: Record<string, unknown>): Branch {
 
 export async function getBranches(): Promise<Branch[]> {
   const data = await fetchAllRows<Record<string, unknown>>((from, to) =>
-    supabase.from(TABLE).select(CHI_NHANH_COLUMNS).order('ten_chi_nhanh', { ascending: true }).range(from, to)
+    db.from(TABLE).select(CHI_NHANH_COLUMNS).order('ten_chi_nhanh', { ascending: true }).range(from, to)
   );
   return data.map(rowToBranch);
 }
@@ -47,7 +47,7 @@ export async function createBranch(data: BranchFormValues): Promise<Branch> {
     trang_thai: data.trang_thai,
   };
 
-  const { data: inserted, error } = await supabase
+  const { data: inserted, error } = await db
     .from(TABLE)
     .insert(row)
     .select(CHI_NHANH_COLUMNS)
@@ -71,7 +71,7 @@ export async function updateBranch(id: string, data: BranchFormValues): Promise<
     tg_cap_nhat: new Date().toISOString(),
   };
 
-  const { data: updated, error } = await supabase
+  const { data: updated, error } = await db
     .from(TABLE)
     .update(row)
     .eq('id', id)
@@ -86,7 +86,7 @@ export async function updateBranchStatus(ids: string[], status: TrangThai): Prom
   if (ids.length === 0) return undefined;
   const updatePayload = { trang_thai: status, tg_cap_nhat: new Date().toISOString() };
   if (ids.length === 1) {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from(TABLE)
       .update(updatePayload)
       .eq('id', ids[0])
@@ -95,7 +95,7 @@ export async function updateBranchStatus(ids: string[], status: TrangThai): Prom
     if (error) throw new Error(error.message ?? i18n.t('branch.service.notFound'));
     return data ? rowToBranch(data) : undefined;
   }
-  const { error } = await supabase
+  const { error } = await db
     .from(TABLE)
     .update(updatePayload)
     .in('id', ids);
@@ -105,6 +105,6 @@ export async function updateBranchStatus(ids: string[], status: TrangThai): Prom
 
 export async function deleteBranches(ids: string[]): Promise<void> {
   if (ids.length === 0) return;
-  const { error } = await supabase.from(TABLE).delete().in('id', ids);
+  const { error } = await db.from(TABLE).delete().in('id', ids);
   if (error) throw new Error(error.message ?? i18n.t('branch.service.notFound'));
 }

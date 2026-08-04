@@ -17,7 +17,7 @@ import LiveClock from './LiveClock';
 import MobileBottomNav from './MobileBottomNav';
 import { SIDEBAR_MENU } from '../../lib/sidebar-menu';
 import { useSubmenuVisible, isSubmenuWithPermission } from '../../features/he-thong/phan-quyen/hooks/use-module-permission';
-import { signOut, updatePassword } from '../../lib/auth';
+import { signOut, changeOwnPassword } from '../../lib/auth';
 import { toast } from 'sonner';
 import { useCompanyInfo } from '../../features/he-thong/thong-tin-cong-ty/hooks/use-thong-tin-cong-ty';
 import { warmupNavigationTarget } from '../../lib/submenu-prefetch';
@@ -131,7 +131,7 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     }
     setChangePasswordLoading(true);
     try {
-      await updatePassword(changePasswordNew);
+      await changeOwnPassword(changePasswordNew);
       toast.success(t('nav.changePasswordSuccess'));
       setShowChangePasswordModal(false);
       setChangePasswordNew('');
