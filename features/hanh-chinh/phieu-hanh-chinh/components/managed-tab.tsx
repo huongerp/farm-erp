@@ -73,12 +73,13 @@ const AdminFormManagedTab: React.FC = () => {
     (item: AdminFormRequest, term: string, f: typeof filters) => {
       const searchLower = term.toLowerCase();
       const typeLabel = getAdminFormTypeLabel(item.loai_phieu, t).toLowerCase();
-      const matchesSearch =
+      const matchesSearch = Boolean(
         !term ||
         typeLabel.includes(searchLower) ||
         item.ly_do.toLowerCase().includes(searchLower) ||
         item.ngay.includes(term) ||
-        (item.ten_nguoi_tao && item.ten_nguoi_tao.toLowerCase().includes(searchLower));
+        (item.ten_nguoi_tao && item.ten_nguoi_tao.toLowerCase().includes(searchLower))
+      );
       const matchesStatus = f.status.length === 0 || f.status.includes(item.trang_thai);
       const matchesType = f.type.length === 0 || f.type.includes(item.loai_phieu);
       const matchesShift = f.shift.length === 0 || f.shift.includes(item.ca);

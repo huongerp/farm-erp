@@ -122,7 +122,7 @@ const CongViecGantt: React.FC<Props> = ({ data, onView }) => {
             data.map((item) => {
               const { left, width } = getBarStyle(
                 item.tg_tao,
-                item.ngay_het_han,
+                item.ngay_het_han ?? item.tg_tao,
                 minStart,
                 PX_PER_DAY
               );

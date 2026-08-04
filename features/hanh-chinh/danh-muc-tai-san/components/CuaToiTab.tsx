@@ -236,19 +236,20 @@ const CuaToiTab: React.FC = () => {
   const filterFn = useCallback(
     (item: TaiSan, term: string, f: DanhSachTaiSanFilters) => {
       const searchLower = term.toLowerCase();
-      const matchesSearch =
+      const matchesSearch = Boolean(
         !term ||
         (item.ma_tai_san?.toLowerCase().includes(searchLower)) ||
         (item.ten_tai_san?.toLowerCase().includes(searchLower)) ||
         (item.ten_nhom?.toLowerCase().includes(searchLower)) ||
-        (item.ten_noi_luu?.toLowerCase().includes(searchLower));
+        (item.ten_noi_luu?.toLowerCase().includes(searchLower))
+      );
       const matchesStatus =
         f.status.length === 0 ||
         (f.status.includes('Active') && item.trang_thai === 1) ||
         (f.status.includes('Inactive') && item.trang_thai === 0);
-      const matchesNhom = f.id_nhom.length === 0 || (item.id_nhom && f.id_nhom.includes(item.id_nhom));
-      const matchesNoiLuu = f.id_noi_luu.length === 0 || (item.id_noi_luu && f.id_noi_luu.includes(item.id_noi_luu));
-      const matchesTrangThai = f.id_trang_thai.length === 0 || (item.id_trang_thai && f.id_trang_thai.includes(item.id_trang_thai));
+      const matchesNhom = f.id_nhom.length === 0 || Boolean(item.id_nhom && f.id_nhom.includes(item.id_nhom));
+      const matchesNoiLuu = f.id_noi_luu.length === 0 || Boolean(item.id_noi_luu && f.id_noi_luu.includes(item.id_noi_luu));
+      const matchesTrangThai = f.id_trang_thai.length === 0 || Boolean(item.id_trang_thai && f.id_trang_thai.includes(item.id_trang_thai));
       return matchesSearch && matchesStatus && matchesNhom && matchesNoiLuu && matchesTrangThai;
     },
     []

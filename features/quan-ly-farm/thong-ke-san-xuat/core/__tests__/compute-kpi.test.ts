@@ -107,7 +107,7 @@ function minimalBcsc(overrides: Partial<FarmBaoCaoSoChe> = {}): FarmBaoCaoSoChe 
         so_tham_chieu: 10,
         so_thung: 35,
         so_thung_quy_doi: 35,
-        ghi_chu: null,
+        ghi_chu: '',
         thu_tu: 1,
       },
     ],

@@ -39,7 +39,7 @@ interface Props {
 
 /** Lấy id nhân viên (number) từ user đăng nhập: khớp theo user.id hoặc user.email. */
 function getCurrentUserEmployeeId(
-  employees: { id: string; email?: string }[],
+  employees: { id: string; email?: string | null }[],
   userId: string | undefined,
   userEmail: string | undefined
 ): number | null {

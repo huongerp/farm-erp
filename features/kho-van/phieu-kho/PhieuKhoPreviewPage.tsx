@@ -143,6 +143,8 @@ const PhieuKhoPreviewPage: React.FC = () => {
     );
   }
 
+  if (!phieu) return null;
+
   return (
     <>
       <div

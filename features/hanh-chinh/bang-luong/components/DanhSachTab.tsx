@@ -89,8 +89,8 @@ const DanhSachTab: React.FC = () => {
       return typeof raw === 'string' || typeof raw === 'number' ? raw : '';
     };
     sorted.sort((a, b) => {
-      const aVal = sortableValue(a, sort.column);
-      const bVal = sortableValue(b, sort.column);
+      const aVal = sortableValue(a, sort.column ?? '');
+      const bVal = sortableValue(b, sort.column ?? '');
       let cmp = 0;
       if (typeof aVal === 'number' && typeof bVal === 'number') cmp = aVal - bVal;
       else cmp = String(aVal).localeCompare(String(bVal), getLanguage());

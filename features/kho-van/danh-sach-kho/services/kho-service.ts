@@ -209,7 +209,11 @@ export const deleteKhoMany = async (ids: string[]): Promise<void> => {
 };
 
 export const importKho = async (
-  rows: (KhoFormValues & { ma_kho?: string; ten_kho?: string; id_chi_nhanh?: string | null })[]
+  rows: (Omit<KhoFormValues, 'ma_kho' | 'ten_kho' | 'id_chi_nhanh'> & {
+    ma_kho?: string;
+    ten_kho?: string;
+    id_chi_nhanh?: string | null;
+  })[]
 ): Promise<{ created: number; errors: string[] }> => {
   const errors: string[] = [];
   let created = 0;

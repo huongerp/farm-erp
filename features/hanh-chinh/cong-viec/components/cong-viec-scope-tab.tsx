@@ -105,10 +105,11 @@ const CongViecScopeTab: React.FC<Props> = ({ scope }) => {
       const uuTien = f.uu_tien ?? [];
       const trachNhiem = f.trach_nhiem ?? [];
       const searchLower = term.toLowerCase();
-      const matchesSearch =
+      const matchesSearch = Boolean(
         !term ||
         item.tieu_de.toLowerCase().includes(searchLower) ||
-        (item.mo_ta && item.mo_ta.toLowerCase().includes(searchLower));
+        (item.mo_ta && item.mo_ta.toLowerCase().includes(searchLower))
+      );
       const matchesTrangThai = trangThai.length === 0 || trangThai.includes(item.trang_thai);
       const matchesUuTien = uuTien.length === 0 || uuTien.includes(item.uu_tien);
       const matchesTrachNhiem =
@@ -229,7 +230,8 @@ const CongViecScopeTab: React.FC<Props> = ({ scope }) => {
     });
   };
 
-  const handleDeleteMany = (ids: string[]) => {
+  const handleDeleteMany = (rawIds: (string | number)[]) => {
+    const ids = rawIds.map(String);
     confirm({
       title: t('congViec.bulkDeleteTitle'),
       message: t('congViec.bulkDeleteMessage', { count: ids.length }),

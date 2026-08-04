@@ -68,8 +68,8 @@ export interface PhieuDeXuatVatTuApprovePayload {
 interface Props {
   data: PhieuDeXuatVatTu;
   onClose: () => void;
-  onEdit: (item: PhieuDeXuatVatTu) => void;
-  onDelete: (id: string) => void;
+  onEdit?: (item: PhieuDeXuatVatTu) => void;
+  onDelete?: (id: string) => void;
   onCopy?: (item: PhieuDeXuatVatTu) => void;
   onApprove?: (item: PhieuDeXuatVatTu, payload: PhieuDeXuatVatTuApprovePayload) => void;
   onPrint?: (item: PhieuDeXuatVatTu) => void;
@@ -161,7 +161,7 @@ const PhieuDeXuatVatTuDetail: React.FC<Props> = ({
         {canEdit && (
           <Button
             onClick={() => {
-              onEdit(data);
+              onEdit?.(data);
               onClose();
             }}
             className="bg-primary text-white shadow-lg hover:bg-primary/90"
@@ -173,7 +173,7 @@ const PhieuDeXuatVatTuDetail: React.FC<Props> = ({
           <Button
             variant="ghost"
             onClick={() => {
-              onDelete(data.id);
+              onDelete?.(data.id);
               onClose();
             }}
             className="text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/50 dark:text-rose-400 border border-rose-200 hover:border-rose-300 dark:border-rose-800 dark:hover:border-rose-700"

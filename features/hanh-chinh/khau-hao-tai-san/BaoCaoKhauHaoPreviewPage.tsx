@@ -103,6 +103,8 @@ const BaoCaoKhauHaoPreviewPage: React.FC = () => {
     );
   }
 
+  if (!ky) return null;
+
   return (
     <>
       <div

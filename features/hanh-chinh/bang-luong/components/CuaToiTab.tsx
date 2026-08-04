@@ -50,10 +50,11 @@ const CuaToiTab: React.FC = () => {
     (item: BangLuongRecord, term: string, f: typeof filters) => {
       const searchLower = term.toLowerCase();
       const periodStr = `${item.nam}-${String(item.thang).padStart(2, '0')}`;
-      const matchesSearch =
+      const matchesSearch = Boolean(
         !term ||
         periodStr.includes(term) ||
-        (item.ten_phong_ban?.toLowerCase().includes(searchLower));
+        (item.ten_phong_ban?.toLowerCase().includes(searchLower))
+      );
       const matchesPeriod = !f.yearMonth || periodStr.startsWith(f.yearMonth);
       return matchesSearch && matchesPeriod;
     },
@@ -73,8 +74,8 @@ const CuaToiTab: React.FC = () => {
       return typeof raw === 'string' || typeof raw === 'number' ? raw : '';
     };
     sorted.sort((a, b) => {
-      const aVal = sortableValue(a, sort.column);
-      const bVal = sortableValue(b, sort.column);
+      const aVal = sortableValue(a, sort.column ?? '');
+      const bVal = sortableValue(b, sort.column ?? '');
       let cmp = 0;
       if (typeof aVal === 'number' && typeof bVal === 'number') cmp = aVal - bVal;
       else cmp = String(aVal).localeCompare(String(bVal), getLanguage());

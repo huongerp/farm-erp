@@ -28,6 +28,7 @@ export const createPayrollWifiIp = async (data: PayrollWifiIpFormValues): Promis
     id: `wifi-${Date.now()}`,
     ...data,
     ten_chi_nhanh: branchName,
+    ghi_chu: data.ghi_chu ?? undefined,
     trang_thai: data.trang_thai,
     tg_tao: now,
     tg_cap_nhat: now,
@@ -46,6 +47,7 @@ export const updatePayrollWifiIp = async (id: string, data: PayrollWifiIpFormVal
     ...dbWifiIps[index],
     ...data,
     ten_chi_nhanh: branchName,
+    ghi_chu: data.ghi_chu ?? undefined,
     trang_thai: data.trang_thai,
     tg_cap_nhat: new Date().toISOString(),
   };
@@ -97,6 +99,7 @@ export const importPayrollWifiIps = async (rows: PayrollWifiIpFormValues[]): Pro
       id: `wifi-${Date.now()}-${i}`,
       ...row,
       ten_chi_nhanh: branchName,
+      ghi_chu: row.ghi_chu ?? undefined,
       trang_thai: normalizeTrangThai(row.trang_thai),
       tg_tao: stamp,
       tg_cap_nhat: stamp,

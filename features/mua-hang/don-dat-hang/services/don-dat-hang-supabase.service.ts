@@ -169,8 +169,8 @@ function mapDonSummaryRowToDon(row: DonSummaryRow): DonDatHang {
   const don = rowToDon(row, {
     ma_nha_cung_cap: row.ref_ma_nha_cung_cap ?? undefined,
     so_phieu_de_xuat,
-    ten_nguoi_dat: row.ref_ten_nguoi_dat,
-    ma_nguoi_dat: row.ref_ma_nguoi_dat,
+    ten_nguoi_dat: row.ref_ten_nguoi_dat ?? undefined,
+    ma_nguoi_dat: row.ref_ma_nguoi_dat ?? undefined,
     ten_nguoi_duyet: row.ref_ten_nguoi_duyet ?? null,
     ma_nguoi_duyet: row.ref_ma_nguoi_duyet ?? null,
   });
@@ -358,7 +358,7 @@ function mapDonDatHangChiTietFlatViewRow(row: DonDatHangChiTietFlatViewRow, enri
     id_phieu_de_xuat_vat_tu: row.id_phieu_de_xuat_vat_tu != null ? String(row.id_phieu_de_xuat_vat_tu) : null,
     so_phieu_de_xuat,
     id_nguoi_dat: String(row.id_nguoi_dat),
-    ten_nguoi_dat: row.ref_ten_nguoi_dat,
+    ten_nguoi_dat: row.ref_ten_nguoi_dat ?? undefined,
     ma_nguoi_dat: row.ref_ma_nguoi_dat ?? undefined,
     id_nguoi_duyet: row.id_nguoi_duyet != null ? String(row.id_nguoi_duyet) : null,
     ten_nguoi_duyet: row.ref_ten_nguoi_duyet ?? null,

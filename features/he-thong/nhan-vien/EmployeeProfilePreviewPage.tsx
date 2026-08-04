@@ -118,6 +118,8 @@ const EmployeeProfilePreviewPage: React.FC = () => {
     );
   }
 
+  if (!employee) return null;
+
   return (
     <div
       className="employee-profile-preview-backdrop fixed inset-0 z-[70] flex flex-col bg-muted/90"

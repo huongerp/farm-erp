@@ -127,6 +127,8 @@ const HoSoTaiSanPreviewPage: React.FC = () => {
     );
   }
 
+  if (!record) return null;
+
   return (
     <>
       <div

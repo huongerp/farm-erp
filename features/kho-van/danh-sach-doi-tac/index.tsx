@@ -61,7 +61,7 @@ const DanhSachDoiTacPage: React.FC = () => {
   const [editingItem, setEditingItem] = useState<DoiTac | null>(null);
   const [viewingItem, setViewingItem] = useState<DoiTac | null>(null);
   const [showAddNhomFromDoiTac, setShowAddNhomFromDoiTac] = useState(false);
-  const addNhomResolveRef = useRef<(nhom: NhomDoiTac) => void | null>(null);
+  const addNhomResolveRef = useRef<((nhom: NhomDoiTac | null) => void) | null>(null);
   const queryClient = useQueryClient();
   const createNhomFromDoiTac = useCreateNhomDoiTac();
   const deletePhieuMutation = useDeletePhieuKho();

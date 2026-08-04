@@ -125,6 +125,8 @@ const PayslipPreviewPage: React.FC = () => {
     );
   }
 
+  if (!record) return null;
+
   return (
     <>
       <div

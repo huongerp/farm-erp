@@ -15,7 +15,7 @@ interface Props {
   branches: Branch[];
   selectedCount: number;
   onAdd: () => void;
-  onDeleteMany: () => void;
+  onDeleteMany?: () => void;
   onExport: () => void;
   canCreate?: boolean;
   canDelete?: boolean;

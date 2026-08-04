@@ -191,7 +191,7 @@ const DanhMucHangHoaDetail: React.FC<Props> = ({
               <Button
                 type="button"
                 size="sm"
-                onClick={() => onAddChild(data)}
+                onClick={() => onAddChild?.(data)}
                 className="bg-primary text-white hover:bg-primary/90 shadow-sm h-8 px-3 shrink-0"
               >
                 <Plus size={14} className="mr-1.5" />
@@ -204,7 +204,7 @@ const DanhMucHangHoaDetail: React.FC<Props> = ({
                 description={t('danhMucHangHoa.detail.noChildrenHint')}
                 icon={<Folder className="w-10 h-10 text-muted-foreground" />}
                 action={
-                  <Button type="button" size="sm" onClick={() => onAddChild(data)} className="bg-primary text-white hover:bg-primary/90">
+                  <Button type="button" size="sm" onClick={() => onAddChild?.(data)} className="bg-primary text-white hover:bg-primary/90">
                     <Plus size={14} className="mr-2" />
                     {t('danhMucHangHoa.detail.addChild')}
                   </Button>

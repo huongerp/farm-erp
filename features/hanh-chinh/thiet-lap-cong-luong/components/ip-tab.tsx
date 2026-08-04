@@ -52,10 +52,11 @@ const PayrollWifiIpTab: React.FC = () => {
   const filterFn = useCallback(
     (item: PayrollWifiIp, term: string, f: typeof filters) => {
       const searchLower = term.toLowerCase();
-      const matchesSearch =
+      const matchesSearch = Boolean(
         !term ||
         item.ip_wifi.toLowerCase().includes(searchLower) ||
-        (item.ten_chi_nhanh && item.ten_chi_nhanh.toLowerCase().includes(searchLower));
+        (item.ten_chi_nhanh && item.ten_chi_nhanh.toLowerCase().includes(searchLower))
+      );
       const statusKey = item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? 'Active' : 'Inactive';
       const matchesStatus = f.status.length === 0 || f.status.includes(statusKey);
       const matchesBranch = f.id_chi_nhanh.length === 0 || f.id_chi_nhanh.includes(item.id_chi_nhanh);

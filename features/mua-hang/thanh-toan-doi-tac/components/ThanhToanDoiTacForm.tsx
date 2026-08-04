@@ -171,7 +171,7 @@ const ThanhToanDoiTacForm: React.FC<Props> = ({
     const sanitized: ThanhToanDoiTacFormValues = {
       ...data,
       so_phieu: (soPhieu || data.so_phieu?.trim()) ?? '',
-      id_don_vi: data.id_don_vi || null,
+      // id_don_vi đã được zod validate là non-empty (schema.ts: min(1)) trước khi RHF gọi handler này.
       ngay_xu_ly: data.ngay_xu_ly === '' ? null : data.ngay_xu_ly,
       ghi_chu: data.ghi_chu === '' ? null : data.ghi_chu,
     };

@@ -18,8 +18,8 @@ export interface HierarchyTableProps<T> {
   renderCell: (item: T, col: ColumnConfig) => React.ReactNode;
   onToggleSelection: (id: string) => void;
   onToggleAllSelection: (ids: string[]) => void;
-  onEdit: (item: T) => void;
-  onDelete: (id: string) => void;
+  onEdit?: (item: T) => void;
+  onDelete?: (id: string) => void;
   onView?: (item: T) => void;
   /** Label cột "Thao tác" */
   actionsColumnLabel?: string;
@@ -141,22 +141,26 @@ export function HierarchyTable<T>({
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="flex items-center justify-center gap-0.5">
-                    <button
-                      type="button"
-                      onClick={() => onEdit(item)}
-                      className="p-2 text-primary hover:bg-primary/10 rounded-md transition-all active:scale-95"
-                      title={t('common.edit')}
-                    >
-                      <Edit size={15} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onDelete(id)}
-                      className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-md transition-all active:scale-95"
-                      title={t('common.delete')}
-                    >
-                      <Trash2 size={15} />
-                    </button>
+                    {onEdit && (
+                      <button
+                        type="button"
+                        onClick={() => onEdit(item)}
+                        className="p-2 text-primary hover:bg-primary/10 rounded-md transition-all active:scale-95"
+                        title={t('common.edit')}
+                      >
+                        <Edit size={15} />
+                      </button>
+                    )}
+                    {onDelete && (
+                      <button
+                        type="button"
+                        onClick={() => onDelete(id)}
+                        className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-md transition-all active:scale-95"
+                        title={t('common.delete')}
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>

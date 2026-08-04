@@ -26,7 +26,7 @@ function thanhToanToFormValues(item: ThanhToanDoiTac, override?: Partial<ThanhTo
     so_phieu: item.so_phieu,
     hang_muc_thanh_toan: item.hang_muc_thanh_toan,
     ngay: item.ngay,
-    id_don_vi: item.id_don_vi ?? null,
+    id_don_vi: item.id_don_vi ?? '',
     id_doi_tac: item.id_doi_tac,
     id_trang_thai_thanh_toan: override?.id_trang_thai_thanh_toan ?? item.id_trang_thai_thanh_toan,
     so_tien: item.so_tien,

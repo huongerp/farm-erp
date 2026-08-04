@@ -42,7 +42,7 @@ function toFormValues(d: DoiTac): DoiTacFormValues {
     ma_ncc: d.ma_ncc,
     ten_ncc: d.ten_ncc,
     loai_doi_tac: d.loai_doi_tac,
-    id_nhom: d.id_nhom ?? null,
+    id_nhom: d.id_nhom ?? '',
     dia_chi: d.dia_chi ?? '',
     dien_thoai: d.dien_thoai ?? '',
     email: d.email ?? '',

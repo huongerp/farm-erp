@@ -49,7 +49,7 @@ const HangHoaForm: React.FC<Props> = ({ initialData, existingDvtList = [], onClo
   const defaultValues: Partial<FarmHangHoaFormValues> = {
     ma_hang_hoa: '',
     ten_hang_hoa: '',
-    id_danh_muc_cap2: null,
+    id_danh_muc_cap2: '',
     dvt: '',
     don_gia: undefined,
     mo_ta: null,
@@ -78,7 +78,7 @@ const HangHoaForm: React.FC<Props> = ({ initialData, existingDvtList = [], onClo
       reset({
         ma_hang_hoa: initialData.ma_hang_hoa,
         ten_hang_hoa: initialData.ten_hang_hoa,
-        id_danh_muc_cap2: initialData.danh_muc_id ?? null,
+        id_danh_muc_cap2: initialData.danh_muc_id ?? '',
         dvt: initialData.dvt ?? '',
         don_gia: initialData.don_gia ?? undefined,
         mo_ta: initialData.mo_ta ?? null,
@@ -87,7 +87,7 @@ const HangHoaForm: React.FC<Props> = ({ initialData, existingDvtList = [], onClo
       reset({
         ma_hang_hoa: '',
         ten_hang_hoa: '',
-        id_danh_muc_cap2: null,
+        id_danh_muc_cap2: '',
         dvt: '',
         don_gia: undefined,
         mo_ta: null,
@@ -96,12 +96,10 @@ const HangHoaForm: React.FC<Props> = ({ initialData, existingDvtList = [], onClo
   }, [initialData, reset]);
 
   const onSubmit: SubmitHandler<FarmHangHoaFormValues> = (data) => {
+    // id_danh_muc_cap2/dvt/don_gia đã được zod validate là non-empty/non-null
+    // (schema.ts: min(1) / z.number()) trước khi RHF gọi handler này.
     const sanitized = {
       ...data,
-      id_danh_muc_cap2: data.id_danh_muc_cap2 === '' || data.id_danh_muc_cap2 === undefined ? null : data.id_danh_muc_cap2,
-      dvt: data.dvt?.trim() || null,
-      don_gia:
-        data.don_gia != null && !Number.isNaN(Number(data.don_gia)) && Number(data.don_gia) >= 0 ? Number(data.don_gia) : null,
       mo_ta: data.mo_ta?.trim() || null,
     };
     if (isEdit && initialData) {

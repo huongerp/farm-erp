@@ -76,12 +76,13 @@ const NoiLuuTab: React.FC<NoiLuuTabProps> = ({ viewScope }) => {
   const filterFn = useCallback(
     (item: AssetStorageLocation, term: string, f: typeof filters) => {
       const searchLower = term.toLowerCase();
-      const matchesSearch =
+      const matchesSearch = Boolean(
         !term ||
         item.ma_noi_luu.toLowerCase().includes(searchLower) ||
         item.ten_noi_luu.toLowerCase().includes(searchLower) ||
         (item.ten_chi_nhanh && item.ten_chi_nhanh.toLowerCase().includes(searchLower)) ||
-        (item.ghi_chu && item.ghi_chu.toLowerCase().includes(searchLower));
+        (item.ghi_chu && item.ghi_chu.toLowerCase().includes(searchLower))
+      );
       const statusKey = item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? 'Active' : 'Inactive';
       const matchesStatus = f.status.length === 0 || f.status.includes(statusKey);
       const matchesBranch = f.id_chi_nhanh.length === 0 || f.id_chi_nhanh.includes(item.id_chi_nhanh);

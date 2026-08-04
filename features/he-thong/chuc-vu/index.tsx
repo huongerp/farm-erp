@@ -60,11 +60,12 @@ const PositionPage: React.FC = () => {
   const filterFn = useCallback(
     (item: Position, term: string, f: typeof filters) => {
       const searchLower = term.toLowerCase();
-      const matchesSearch =
+      const matchesSearch = Boolean(
         !term ||
         (item.ma_chuc_vu && item.ma_chuc_vu.toLowerCase().includes(searchLower)) ||
         item.ten_chuc_vu.toLowerCase().includes(searchLower) ||
-        (item.mo_ta && item.mo_ta.toLowerCase().includes(searchLower));
+        (item.mo_ta && item.mo_ta.toLowerCase().includes(searchLower))
+      );
       const statusKey = item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? 'Active' : 'Inactive';
       const matchesStatus = f.status.length === 0 || f.status.includes(statusKey);
       return matchesSearch && matchesStatus;

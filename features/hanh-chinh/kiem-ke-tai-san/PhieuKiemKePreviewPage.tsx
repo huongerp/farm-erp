@@ -102,6 +102,8 @@ const PhieuKiemKePreviewPage: React.FC = () => {
     );
   }
 
+  if (!dot) return null;
+
   return (
     <>
       <div

@@ -24,7 +24,7 @@ interface Props {
   isLoading?: boolean;
 }
 
-const emptyValues = (): HopDongChiTietLineValues => ({
+const emptyValues = (): Partial<HopDongChiTietLineValues> => ({
   ngay: getTodayISO(),
   ten_dot: '',
   so_tien: undefined,
@@ -33,7 +33,7 @@ const emptyValues = (): HopDongChiTietLineValues => ({
   id_chi_nhanh: '',
 });
 
-function toFormValues(ct: HopDongChiTiet | null | undefined): HopDongChiTietLineValues {
+function toFormValues(ct: HopDongChiTiet | null | undefined): Partial<HopDongChiTietLineValues> {
   if (!ct) return emptyValues();
   return {
     ngay: ct.ngay ?? '',

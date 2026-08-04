@@ -5,7 +5,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import NumberInput from '../../../../components/ui/NumberInput';
 import Input from '../../../../components/ui/Input';
 import Button from '../../../../components/ui/Button';
-import type { BaoCaoNhanCongFormValues } from '../core/schema';
+import type { BaoCaoNhanCongFormValues, ChiTietSubFormValues } from '../core/schema';
 import {
   LOAI_CHI_TIEU_CODES,
   type LoaiChiTieu,
@@ -30,9 +30,7 @@ import {
 const SL_INPUT = { maxFractionDigits: 0, min: 0 } as const;
 const GIO_INPUT = { maxFractionDigits: 2, min: 0 } as const;
 
-type SubFieldErrors = NonNullable<
-  NonNullable<FieldErrors<BaoCaoNhanCongFormValues>['chi_tiet']>[number]['sub']
->;
+type SubFieldErrors = FieldErrors<ChiTietSubFormValues>;
 
 function subPairError(subErrors: SubFieldErrors | undefined, loai: LoaiChiTieu, rowIdx: number): string | undefined {
   const row = subErrors?.[loai]?.[rowIdx];

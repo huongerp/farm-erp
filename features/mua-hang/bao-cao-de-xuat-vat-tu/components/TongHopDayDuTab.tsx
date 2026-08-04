@@ -334,13 +334,13 @@ const TongHopDayDuTab: React.FC<TongHopDayDuTabProps> = ({ filters, onClearFilte
                         paddingAngle={2}
                         dataKey="value"
                         nameKey="name"
-                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
                       >
                         {pieTrangThaiData.map((_, i) => (
                           <Cell key={i} fill={STATUS_CHART_COLORS[i % STATUS_CHART_COLORS.length]} />
                         ))}
                       </Pie>
-                      <Tooltip content={<ChartTooltip />} formatter={(v: number) => [v, t('baoCaodeXuatVatTu.tongHop.countCol')]} />
+                      <Tooltip content={<ChartTooltip />} formatter={(v: number | undefined) => [v ?? 0, t('baoCaodeXuatVatTu.tongHop.countCol')]} />
                       <Legend wrapperStyle={{ fontSize: 11 }} formatter={(value) => <span className="text-muted-foreground text-xs">{value}</span>} />
                     </PieChart>
                   </ResponsiveContainer>
@@ -361,13 +361,13 @@ const TongHopDayDuTab: React.FC<TongHopDayDuTabProps> = ({ filters, onClearFilte
                         paddingAngle={2}
                         dataKey="value"
                         nameKey="name"
-                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
                       >
                         {pieLienKetData.map((_, i) => (
                           <Cell key={i} fill={LIEN_KET_COLORS[i % LIEN_KET_COLORS.length]} />
                         ))}
                       </Pie>
-                      <Tooltip content={<ChartTooltip />} formatter={(v: number) => [v, t('baoCaodeXuatVatTu.tongHop.countCol')]} />
+                      <Tooltip content={<ChartTooltip />} formatter={(v: number | undefined) => [v ?? 0, t('baoCaodeXuatVatTu.tongHop.countCol')]} />
                       <Legend wrapperStyle={{ fontSize: 11 }} formatter={(value) => <span className="text-muted-foreground text-xs">{value}</span>} />
                     </PieChart>
                   </ResponsiveContainer>

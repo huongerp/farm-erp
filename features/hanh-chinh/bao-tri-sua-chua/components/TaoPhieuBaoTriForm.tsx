@@ -56,7 +56,7 @@ const TaoPhieuBaoTriForm: React.FC<Props> = ({ onClose, defaultTaiSanId, initial
   const createMutation = useCreatePhieuBaoTri(onClose);
   const updateMutation = useUpdatePhieuBaoTri((updatedItem) => {
     onClose();
-    onSuccessAfterEdit?.(updatedItem);
+    if (updatedItem) onSuccessAfterEdit?.(updatedItem);
   });
   const { data: assets = [] } = useTaiSanList();
   const { data: loaiChiPhi = [] } = useLoaiChiPhiList();
