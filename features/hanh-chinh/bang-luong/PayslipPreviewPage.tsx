@@ -5,6 +5,7 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { X, Printer, Download, ChevronDown, FileText, FileSpreadsheet, FileType } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 import { useBangLuongById } from './hooks/use-bang-luong';
@@ -80,6 +81,9 @@ const PayslipPreviewPage: React.FC = () => {
       if (format === 'pdf') await exportBangLuongPDF(record);
       else if (format === 'excel') await exportBangLuongExcel(record);
       else await exportBangLuongDoc(record);
+    } catch (e) {
+      if (import.meta.env.DEV) console.error('Export error:', e);
+      toast.error(t('common.exportError'));
     } finally {
       setExporting(false);
     }

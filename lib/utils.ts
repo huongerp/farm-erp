@@ -5,6 +5,7 @@ import utc from "dayjs/plugin/utc"
 import timezone from "dayjs/plugin/timezone"
 import { useUIStore } from "../store/useStore"
 import i18n from "./i18n"
+import { toast } from "sonner"
 
 dayjs.extend(utc)
 dayjs.extend(timezone)
@@ -214,17 +215,34 @@ export function parseFormattedNumber(str: string, locale?: string): number {
 }
 
 export function exportToExcel(data: any[], filename: string) {
-  if (!data || !data.length) return;
-  import('xlsx').then(XLSX => {
-    const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Data');
-    XLSX.writeFile(wb, `${filename}_${getTodayISODate()}.xlsx`);
-  });
+  if (!data || !data.length) {
+    toast.warning(i18n.t('common.exportNoData'));
+    return;
+  }
+  import('xlsx')
+    .then(XLSX => {
+      const ws = XLSX.utils.json_to_sheet(data);
+      // Cột nào là số thật (nguyên giá, số lượng, ...) thì định dạng phân tách hàng nghìn,
+      // vẫn giữ nguyên là số để SUM()/sort/filter hoạt động đúng trong Excel.
+      const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+      for (let R = range.s.r + 1; R <= range.e.r; R++) {
+        for (let C = range.s.c; C <= range.e.c; C++) {
+          const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
+          if (cell && typeof cell.v === 'number') cell.z = '#,##0';
+        }
+      }
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Data');
+      XLSX.writeFile(wb, `${filename}_${getTodayISODate()}.xlsx`);
+    })
+    .catch(() => toast.error(i18n.t('common.exportError')));
 }
 
 export function exportToPDF(data: any[], filename: string, title?: string) {
-  if (!data || !data.length) return;
+  if (!data || !data.length) {
+    toast.warning(i18n.t('common.exportNoData'));
+    return;
+  }
   Promise.all([
     import('jspdf'),
     import('jspdf-autotable'),
@@ -244,18 +262,26 @@ export function exportToPDF(data: any[], filename: string, title?: string) {
       const autoTable = autoTableModule.default;
       autoTable(doc, {
         head: [headers],
-        body: data.map((row) => headers.map((h) => String(row[h] ?? ''))),
+        body: data.map((row) =>
+          headers.map((h) => {
+            const v = row[h];
+            return typeof v === 'number' ? formatNumberVN(v) : String(v ?? '');
+          })
+        ),
         startY: title ? 22 : 10,
         styles: { font, fontSize: 7, cellPadding: 2 },
         headStyles: { font, fillColor: [59, 130, 246], fontStyle: 'bold' },
       });
       doc.save(`${filename}_${getTodayISODate()}.pdf`);
     })
-    .catch(() => {});
+    .catch(() => toast.error(i18n.t('common.exportError')));
 }
 
 export function exportToCSV(data: any[], filename: string) {
-  if (!data || !data.length) return;
+  if (!data || !data.length) {
+    toast.warning(i18n.t('common.exportNoData'));
+    return;
+  }
 
   // Lấy header từ key của object đầu tiên
   const headers = Object.keys(data[0]);

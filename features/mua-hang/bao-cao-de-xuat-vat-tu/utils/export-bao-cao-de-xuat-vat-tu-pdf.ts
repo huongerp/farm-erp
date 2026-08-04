@@ -2,6 +2,7 @@
  * Xuất báo cáo đề xuất vật tư ra PDF – header công ty + kỳ + bảng tổng hợp theo trạng thái, theo nơi đề xuất.
  */
 import { formatDateTime, getTodayISODate } from '../../../../lib/utils';
+import { downloadBlob } from '../../../../lib/download-blob';
 import { useUIStore } from '../../../../store/useStore';
 import i18n from '../../../../lib/i18n';
 import { ensureJsPDFVietnameseFont } from '../../../../lib/jspdf-vietnamese-font';
@@ -171,13 +172,8 @@ ${table3}
     });
 
     const blob = doc.output('blob');
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
     const periodSuffix = filters.dateFrom && filters.dateTo ? `${filters.dateFrom}_${filters.dateTo}` : 'all';
-    a.download = `bao_cao_de_xuat_vat_tu_${periodSuffix}_${getTodayISODate()}.pdf`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadBlob(blob, `bao_cao_de_xuat_vat_tu_${periodSuffix}_${getTodayISODate()}.pdf`);
   } finally {
     document.body.removeChild(container);
   }

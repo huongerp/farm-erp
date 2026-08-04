@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { X, Printer, FileDown, FileText, Table } from 'lucide-react';
 import { useThanhToanDoiTacById } from './hooks/use-thanh-toan-doi-tac';
 import { exportThanhToanDoiTacToPDF, exportThanhToanDoiTacToDoc, exportThanhToanDoiTacToXLSX } from './utils/export-thanh-toan-doi-tac';
@@ -47,10 +48,13 @@ const ThanhToanDoiTacPreviewPage: React.FC = () => {
     setExporting(true);
     try {
       await exportThanhToanDoiTacToPDF(item);
+    } catch (e) {
+      if (import.meta.env.DEV) console.error('Export error:', e);
+      toast.error(t('common.exportError'));
     } finally {
       setExporting(false);
     }
-  }, [item]);
+  }, [item, t]);
 
   const handleDownloadDoc = useCallback(() => {
     if (!item) return;
@@ -62,10 +66,13 @@ const ThanhToanDoiTacPreviewPage: React.FC = () => {
     setExporting(true);
     try {
       await exportThanhToanDoiTacToXLSX(item);
+    } catch (e) {
+      if (import.meta.env.DEV) console.error('Export error:', e);
+      toast.error(t('common.exportError'));
     } finally {
       setExporting(false);
     }
-  }, [item]);
+  }, [item, t]);
 
   if (isLoading) {
     return (

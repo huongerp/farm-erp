@@ -6,6 +6,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { X, Printer, Download, ChevronDown, FileText, FileType, FileSpreadsheet } from 'lucide-react';
 import { useDonDatHangById } from './hooks/use-don-dat-hang';
 import { exportDonDatHangToPDF, exportDonDatHangToDoc, exportDonDatHangToXLSX } from './utils/export-don-dat-hang';
@@ -88,11 +89,14 @@ const DonDatHangPreviewPage: React.FC = () => {
         if (format === 'pdf') await exportDonDatHangToPDF(po, chiTiet);
         else if (format === 'doc') await exportDonDatHangToDoc(po, chiTiet);
         else if (format === 'xlsx') await exportDonDatHangToXLSX(po, chiTiet);
+      } catch (e) {
+        if (import.meta.env.DEV) console.error('Export error:', e);
+        toast.error(t('common.exportError'));
       } finally {
         setExporting(false);
       }
     },
-    [po]
+    [po, t]
   );
 
   if (isLoading) {

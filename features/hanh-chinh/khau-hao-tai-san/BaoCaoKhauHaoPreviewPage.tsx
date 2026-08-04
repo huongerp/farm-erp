@@ -5,6 +5,7 @@
 import React, { useCallback, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { X, Printer, Download } from 'lucide-react';
 import { useKyKhauHaoById, useChiTietKhauHao } from './hooks/use-khau-hao-tai-san';
 import { exportBaoCaoKhauHaoToPDF } from './utils/export-bao-cao-khau-hao';
@@ -53,10 +54,13 @@ const BaoCaoKhauHaoPreviewPage: React.FC = () => {
     setExporting(true);
     try {
       await exportBaoCaoKhauHaoToPDF(ky, chiTiet);
+    } catch (e) {
+      if (import.meta.env.DEV) console.error('Export error:', e);
+      toast.error(t('common.exportError'));
     } finally {
       setExporting(false);
     }
-  }, [ky, chiTiet]);
+  }, [ky, chiTiet, t]);
 
   if (isLoading) {
     return (

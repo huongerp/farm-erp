@@ -3,6 +3,7 @@
  */
 import type { ThanhToanDoiTac } from '../core/types';
 import { formatDate, formatDateTime, getTodayISODate } from '../../../../lib/utils';
+import { downloadBlob } from '../../../../lib/download-blob';
 import i18n from '../../../../lib/i18n';
 import { ensureJsPDFVietnameseFont } from '../../../../lib/jspdf-vietnamese-font';
 import { useUIStore } from '../../../../store/useStore';
@@ -100,12 +101,7 @@ export async function exportThanhToanDoiTacToPDF(item: ThanhToanDoiTac): Promise
     });
 
     const blob = doc.output('blob');
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${getFileName(item)}.pdf`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadBlob(blob, `${getFileName(item)}.pdf`);
   } finally {
     document.body.removeChild(container);
   }
@@ -116,12 +112,7 @@ export function exportThanhToanDoiTacToDoc(item: ThanhToanDoiTac): void {
   const body = buildThanhToanDoiTacBodyHTML(item);
   const html = `<!DOCTYPE html><html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="UTF-8"></head><body>${body}</body></html>`;
   const blob = new Blob(['\ufeff' + html], { type: 'application/msword' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${getFileName(item)}.doc`;
-  a.click();
-  URL.revokeObjectURL(url);
+  downloadBlob(blob, `${getFileName(item)}.doc`);
 }
 
 /** Xuất thanh toán đối tác ra Excel */

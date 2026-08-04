@@ -386,7 +386,26 @@ export async function exportDonDatHangToXLSX(po: DonDatHang, chiTiet: DonDatHang
     });
   }
   const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols'] = [{ wch: 20 }, { wch: 35 }];
+  ws['!cols'] = [
+    { wch: 4 },
+    { wch: 16 },
+    { wch: 28 },
+    { wch: 10 },
+    { wch: 10 },
+    { wch: 14 },
+    { wch: 14 },
+    { wch: 24 },
+    { wch: 24 },
+  ];
+  // Đơn giá (col F, idx 5) và Thành tiền (col G, idx 6) là số thật → định dạng phân tách hàng nghìn
+  const detailStartRow = infoRows.length + 2; // sau info + dòng trống + header
+  const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+  for (let R = detailStartRow; R <= range.e.r; R++) {
+    for (const C of [5, 6]) {
+      const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
+      if (cell && typeof cell.v === 'number') cell.z = '#,##0';
+    }
+  }
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'DonDatHang');
   XLSX.writeFile(wb, `${getFileName(po)}.xlsx`);

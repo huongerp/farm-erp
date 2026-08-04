@@ -5,6 +5,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { X, Printer, Download, ChevronDown, FileText, FileType, FileSpreadsheet } from 'lucide-react';
 import { usePhieuById } from './hooks/use-cap-phat-thu-hoi';
 import { exportPhieuToPDF, exportPhieuToDoc, exportPhieuToXLSX } from './utils/export-phieu';
@@ -77,11 +78,14 @@ const PhieuCPTHPreviewPage: React.FC = () => {
         if (format === 'pdf') await exportPhieuToPDF(phieu);
         else if (format === 'doc') await exportPhieuToDoc(phieu);
         else if (format === 'xlsx') await exportPhieuToXLSX(phieu);
+      } catch (e) {
+        if (import.meta.env.DEV) console.error('Export error:', e);
+        toast.error(t('common.exportError'));
       } finally {
         setExporting(false);
       }
     },
-    [phieu]
+    [phieu, t]
   );
 
   if (isLoading) {

@@ -499,7 +499,9 @@ export async function exportThongKeSanXuatToPDF(
     const pxToMm = 25.4 / 96;
     const wMm = (canvas.width / 2) * pxToMm;
     const hMm = (canvas.height / 2) * pxToMm;
-    const scale = Math.min((pageW - margin * 2) / wMm, (pageH - margin * 2) / hMm, 1);
+    // Chỉ co theo chiều rộng trang — không kẹp theo chiều cao, nếu không nội dung dài sẽ
+    // luôn bị ép vừa 1 trang (nhánh chia nhiều trang dưới sẽ không bao giờ chạy).
+    const scale = Math.min((pageW - margin * 2) / wMm, 1);
     const drawW = wMm * scale, drawH = hMm * scale;
 
     if (drawH <= pageH - margin * 2) {
@@ -541,7 +543,13 @@ export function printThongKeSanXuat(
     `<style>*{box-sizing:border-box}body{margin:0;padding:20px;font-family:${FONT};font-size:10pt;color:#222}@media print{@page{size:A4;margin:12mm}}</style>`,
     '</head><body>',
     bodyContent,
-    '<script>window.onload=()=>{window.print();window.close();}</' + 'script>',
+    // print() trả về ngay ở Safari/Firefox trước khi hộp thoại in đóng lại, nên không thể
+    // close() liền sau đó — chờ afterprint (kèm timeout dự phòng nếu trình duyệt không bắn event).
+    '<script>window.onload=()=>{' +
+      'window.addEventListener("afterprint",()=>window.close());' +
+      'window.print();' +
+      'setTimeout(()=>window.close(),60000);' +
+      '}</' + 'script>',
     '</body></html>',
   ].join(''));
   w.document.close();

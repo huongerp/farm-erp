@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { Download, X, FileSpreadsheet, FileText, Check } from 'lucide-react';
 import Button from '../ui/Button';
 import { cn, getTodayISODate } from '../../lib/utils';
+import { downloadBlob } from '../../lib/download-blob';
 import { useEnterTransition } from '../../lib/usePresenceTransition';
 
 function escapeCsvCell(val: unknown): string {
@@ -96,8 +98,12 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
   const exportCols = columns.filter(c => selectedCols.has(c.key));
 
   const handleExport = async () => {
-    setExporting(true);
     const rows = getExportData();
+    if (rows.length === 0) {
+      toast.warning(t('shared.export.noData'));
+      return;
+    }
+    setExporting(true);
     const dateStr = getTodayISODate();
     const fullName = `${fileName}_${dateStr}`;
 
@@ -117,12 +123,7 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
           const blob = new Blob([`\uFEFF${[headerLine, ...dataLines].join('\n')}`], {
             type: 'text/csv;charset=utf-8;',
           });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `${fullName}.csv`;
-          a.click();
-          URL.revokeObjectURL(url);
+          downloadBlob(blob, `${fullName}.csv`);
         } else {
           const ws = XLSX.utils.aoa_to_sheet(wsData);
           ws['!cols'] = exportCols.map((col) => ({
@@ -168,11 +169,14 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
 
         doc.save(`${fullName}.pdf`);
       }
+      toast.success(t('shared.export.success'));
+      onClose();
     } catch (e) {
       if (import.meta.env.DEV) console.error('Export error:', e);
+      toast.error(t('shared.export.error'));
+    } finally {
+      setExporting(false);
     }
-    setExporting(false);
-    onClose();
   };
 
   if (!open) return null;

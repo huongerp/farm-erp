@@ -5,6 +5,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { X, Printer, Download, ChevronDown, FileText, FileSpreadsheet, FileType } from 'lucide-react';
 import { useBaoCaoSoCheById } from './hooks/use-bao-cao-so-che';
 import { useBaoCaoNhanCongList } from '../bao-cao-nhan-cong/hooks/use-bao-cao-nhan-cong';
@@ -86,11 +87,14 @@ const BaoCaoSoChePreviewPage: React.FC = () => {
         if (format === 'pdf') await exportBaoCaoSoCheToPDF(data, bcncList, dbdtList);
         else if (format === 'doc') await exportBaoCaoSoCheToDoc(data, bcncList, dbdtList);
         else if (format === 'xlsx') await exportBaoCaoSoCheToXLSX(data, bcncList, dbdtList);
+      } catch (e) {
+        if (import.meta.env.DEV) console.error('Export error:', e);
+        toast.error(t('common.exportError'));
       } finally {
         setExporting(false);
       }
     },
-    [data, bcncList, dbdtList]
+    [data, bcncList, dbdtList, t]
   );
 
   if (isLoading) {

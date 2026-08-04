@@ -4,6 +4,7 @@
  */
 import type { DotKiemKe, ChiTietKiemKe } from '../core/types';
 import { formatDate, formatDateTime, getTodayISODate } from '../../../../lib/utils';
+import { downloadBlob } from '../../../../lib/download-blob';
 import i18n from '../../../../lib/i18n';
 import { ensureJsPDFVietnameseFont } from '../../../../lib/jspdf-vietnamese-font';
 import { useUIStore } from '../../../../store/useStore';
@@ -137,12 +138,7 @@ export async function exportPhieuKiemKeToPDF(
     });
 
     const blob = doc.output('blob');
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${getFileName(dot)}.pdf`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadBlob(blob, `${getFileName(dot)}.pdf`);
   } finally {
     document.body.removeChild(container);
   }

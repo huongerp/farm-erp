@@ -5,6 +5,7 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { X, Printer, Download, ChevronDown, FileText, FileSpreadsheet, FileType } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 import { useTaiSanList } from './hooks/use-danh-muc-tai-san';
@@ -77,6 +78,9 @@ const HoSoTaiSanPreviewPage: React.FC = () => {
       if (format === 'pdf') await exportHoSoTaiSanPDF(record);
       else if (format === 'excel') await exportHoSoTaiSanExcel(record);
       else await exportHoSoTaiSanDoc(record);
+    } catch (e) {
+      if (import.meta.env.DEV) console.error('Export error:', e);
+      toast.error(t('common.exportError'));
     } finally {
       setExporting(false);
     }

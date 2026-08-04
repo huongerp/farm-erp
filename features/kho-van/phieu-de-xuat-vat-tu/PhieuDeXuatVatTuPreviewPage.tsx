@@ -5,6 +5,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { X, Printer, Download, ChevronDown, FileText, FileSpreadsheet, FileType } from 'lucide-react';
 import { usePhieuDeXuatVatTuById } from './hooks/use-phieu-de-xuat-vat-tu';
 import { exportPhieuDeXuatVatTuToPDF, exportPhieuDeXuatVatTuToDoc, exportPhieuDeXuatVatTuToXLSX } from './utils/export-phieu-de-xuat-vat-tu';
@@ -87,11 +88,14 @@ const PhieuDeXuatVatTuPreviewPage: React.FC = () => {
         if (format === 'pdf') await exportPhieuDeXuatVatTuToPDF(phieu, chiTiet);
         else if (format === 'doc') await exportPhieuDeXuatVatTuToDoc(phieu, chiTiet);
         else if (format === 'xlsx') await exportPhieuDeXuatVatTuToXLSX(phieu, chiTiet);
+      } catch (e) {
+        if (import.meta.env.DEV) console.error('Export error:', e);
+        toast.error(t('common.exportError'));
       } finally {
         setExporting(false);
       }
     },
-    [phieu]
+    [phieu, t]
   );
 
   if (isLoading) {

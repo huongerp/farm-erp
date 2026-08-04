@@ -4,6 +4,7 @@
  */
 import type { BangLuongRecord } from '../core/types';
 import { formatCurrency, formatDateTime, getTodayISODate } from '../../../../lib/utils';
+import { downloadBlob } from '../../../../lib/download-blob';
 import i18n from '../../../../lib/i18n';
 import { ensureJsPDFVietnameseFont } from '../../../../lib/jspdf-vietnamese-font';
 import { useUIStore } from '../../../../store/useStore';
@@ -209,13 +210,8 @@ export async function exportBangLuongPDF(record: BangLuongRecord): Promise<void>
       windowWidth: 794,
     });
     const blob = doc.output('blob');
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
     const { empLabel, periodStr } = getPayslipData(record);
-    a.download = `Phieu_luong_${sanitizeFileName(empLabel)}_${periodStr}_${getTodayISODate()}.pdf`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadBlob(blob, `Phieu_luong_${sanitizeFileName(empLabel)}_${periodStr}_${getTodayISODate()}.pdf`);
   } finally {
     document.body.removeChild(container);
   }
@@ -291,10 +287,5 @@ export async function exportBangLuongDoc(record: BangLuongRecord): Promise<void>
   const { periodStr, empLabel } = getPayslipData(record);
   const html = buildPayslipFullHTML(record);
   const blob = new Blob(['\ufeff' + html], { type: 'application/msword' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `Phieu_luong_${sanitizeFileName(empLabel)}_${periodStr}_${getTodayISODate()}.doc`;
-  a.click();
-  URL.revokeObjectURL(url);
+  downloadBlob(blob, `Phieu_luong_${sanitizeFileName(empLabel)}_${periodStr}_${getTodayISODate()}.doc`);
 }

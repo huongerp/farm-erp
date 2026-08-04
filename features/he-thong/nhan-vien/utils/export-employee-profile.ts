@@ -4,6 +4,7 @@
  */
 import type { Employee } from '../core/types';
 import { formatDateTime, getTodayISODate } from '../../../../lib/utils';
+import { downloadBlob } from '../../../../lib/download-blob';
 import i18n from '../../../../lib/i18n';
 import { useUIStore } from '../../../../store/useStore';
 import { buildEmployeeProfileSections } from './print-employee-pdf';
@@ -111,10 +112,5 @@ export async function exportEmployeeProfileExcel(emp: Employee): Promise<void> {
 export async function exportEmployeeProfileDoc(emp: Employee): Promise<void> {
   const html = buildProfileFullHTML(emp);
   const blob = new Blob(['\ufeff' + html], { type: 'application/msword' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `Ho_so_${safeFileName(emp.ho_ten)}_${emp.ma_nhan_vien}_${getTodayISODate()}.doc`;
-  a.click();
-  URL.revokeObjectURL(url);
+  downloadBlob(blob, `Ho_so_${safeFileName(emp.ho_ten)}_${emp.ma_nhan_vien}_${getTodayISODate()}.doc`);
 }

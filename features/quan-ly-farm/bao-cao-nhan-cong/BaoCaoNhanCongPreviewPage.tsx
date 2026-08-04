@@ -5,6 +5,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { X, Printer, Download, ChevronDown, FileText, FileSpreadsheet, FileType } from 'lucide-react';
 import { useBaoCaoNhanCongById } from './hooks/use-bao-cao-nhan-cong';
 import {
@@ -90,11 +91,14 @@ const BaoCaoNhanCongPreviewPage: React.FC = () => {
         if (format === 'pdf') await exportBaoCaoNhanCongToPDF(data);
         else if (format === 'doc') await exportBaoCaoNhanCongToDoc(data);
         else if (format === 'xlsx') await exportBaoCaoNhanCongToXLSX(data);
+      } catch (e) {
+        if (import.meta.env.DEV) console.error('Export error:', e);
+        toast.error(t('common.exportError'));
       } finally {
         setExporting(false);
       }
     },
-    [data]
+    [data, t]
   );
 
   if (isLoading) {

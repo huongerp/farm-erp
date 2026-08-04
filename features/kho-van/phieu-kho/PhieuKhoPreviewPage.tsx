@@ -5,6 +5,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { X, Printer, Download, ChevronDown, FileText, FileSpreadsheet, FileType } from 'lucide-react';
 import { usePhieuKhoById } from './hooks/use-phieu-kho';
 import { exportPhieuKhoToPDF, exportPhieuKhoToDoc, exportPhieuKhoToXLSX } from './utils/export-phieu-kho';
@@ -91,11 +92,14 @@ const PhieuKhoPreviewPage: React.FC = () => {
         if (format === 'pdf') await exportPhieuKhoToPDF(phieu, chiTiet);
         else if (format === 'doc') await exportPhieuKhoToDoc(phieu, chiTiet);
         else if (format === 'xlsx') await exportPhieuKhoToXLSX(phieu, chiTiet);
+      } catch (e) {
+        if (import.meta.env.DEV) console.error('Export error:', e);
+        toast.error(t('common.exportError'));
       } finally {
         setExporting(false);
       }
     },
-    [phieu]
+    [phieu, t]
   );
 
   if (isLoading) {

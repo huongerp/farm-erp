@@ -3,6 +3,7 @@
  */
 import type { TaiSan } from '../core/types';
 import { formatCurrency, formatDate, formatDateTime, getTodayISODate } from '../../../../lib/utils';
+import { downloadBlob } from '../../../../lib/download-blob';
 import i18n from '../../../../lib/i18n';
 import { ensureJsPDFVietnameseFont } from '../../../../lib/jspdf-vietnamese-font';
 import { useUIStore } from '../../../../store/useStore';
@@ -119,12 +120,7 @@ export async function exportHoSoTaiSanPDF(record: TaiSan): Promise<void> {
     });
 
     const blob = doc.output('blob');
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${getFileName(record)}.pdf`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadBlob(blob, `${getFileName(record)}.pdf`);
   } finally {
     document.body.removeChild(container);
   }
@@ -172,10 +168,5 @@ export async function exportHoSoTaiSanExcel(record: TaiSan): Promise<void> {
 export async function exportHoSoTaiSanDoc(record: TaiSan): Promise<void> {
   const html = buildHoSoTaiSanFullHTML(record);
   const blob = new Blob(['\ufeff' + html], { type: 'application/msword' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${getFileName(record)}.doc`;
-  a.click();
-  URL.revokeObjectURL(url);
+  downloadBlob(blob, `${getFileName(record)}.doc`);
 }

@@ -3,7 +3,7 @@
  * Đủ cột theo bảng fp_ts_tai_san, dễ mở rộng thêm trường (Thương hiệu, Model, Xuất xứ, Nhà cung cấp đã có).
  */
 import type { TaiSan } from '../core/types';
-import { formatDate, formatCurrency } from '../../../../lib/utils';
+import { formatDate } from '../../../../lib/utils';
 import i18n from '../../../../lib/i18n';
 
 /** Một dòng xuất – đủ trường theo bảng, dạng get dữ liệu để xuất, có thể thêm cột mới. */
@@ -23,10 +23,10 @@ export interface TaiSanExportRow {
   ten_nguoi_tao: string;
   ten_nguoi_dang_giu: string;
   ngay_nhap: string;
-  nguyen_gia: string;
+  nguyen_gia: number | null;
   ngay_bat_dau_trich_khau_hao: string;
-  gia_tri_con_lai: string;
-  khau_hao_luy_ke: string;
+  gia_tri_con_lai: number | null;
+  khau_hao_luy_ke: number | null;
   ghi_chu: string;
   trang_thai: string;
 }
@@ -75,10 +75,10 @@ export function taiSanToExportRow(a: TaiSan): TaiSanExportRow {
     ten_nguoi_tao: a.ten_nguoi_tao ?? '',
     ten_nguoi_dang_giu: a.ten_nhan_vien_dang_giu ?? '',
     ngay_nhap: formatDate(a.ngay_nhap),
-    nguyen_gia: a.nguyen_gia != null ? formatCurrency(a.nguyen_gia) : '',
+    nguyen_gia: a.nguyen_gia ?? null,
     ngay_bat_dau_trich_khau_hao: a.ngay_bat_dau_trich_khau_hao ? formatDate(a.ngay_bat_dau_trich_khau_hao) : '',
-    gia_tri_con_lai: a.gia_tri_con_lai != null ? formatCurrency(a.gia_tri_con_lai) : '',
-    khau_hao_luy_ke: a.khau_hao_luy_ke != null ? formatCurrency(a.khau_hao_luy_ke) : '',
+    gia_tri_con_lai: a.gia_tri_con_lai ?? null,
+    khau_hao_luy_ke: a.khau_hao_luy_ke ?? null,
     ghi_chu: a.ghi_chu ?? '',
     trang_thai: a.trang_thai === 1 ? t('common.activeStatus') : t('common.inactiveStatus'),
   };

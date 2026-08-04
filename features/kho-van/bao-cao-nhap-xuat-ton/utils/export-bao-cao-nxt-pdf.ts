@@ -2,6 +2,7 @@
  * Xuất báo cáo NXT ra PDF – header công ty + kỳ báo cáo + bảng tổng hợp theo kho và theo hàng.
  */
 import { formatDateTime, getTodayISODate } from '../../../../lib/utils';
+import { downloadBlob } from '../../../../lib/download-blob';
 import { useUIStore } from '../../../../store/useStore';
 import i18n from '../../../../lib/i18n';
 import { ensureJsPDFVietnameseFont } from '../../../../lib/jspdf-vietnamese-font';
@@ -176,12 +177,7 @@ export async function exportBaoCaoNXTToPdf(
     });
 
     const blob = doc.output('blob');
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `bao_cao_nhap_xuat_ton_${filters.dateFrom}_${filters.dateTo}_${getTodayISODate()}.pdf`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadBlob(blob, `bao_cao_nhap_xuat_ton_${filters.dateFrom}_${filters.dateTo}_${getTodayISODate()}.pdf`);
   } finally {
     document.body.removeChild(container);
   }

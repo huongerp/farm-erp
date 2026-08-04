@@ -5,6 +5,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { X, Printer, Download, ChevronDown, FileText, FileSpreadsheet, FileType } from 'lucide-react';
 import { useDotKiemKeKhoById, useChiTietByDot } from './hooks/use-kiem-ke-kho';
 import {
@@ -96,10 +97,13 @@ const PhieuKiemKeKhoPreviewPage: React.FC = () => {
       if (format === 'pdf') await exportPhieuKiemKeKhoToPDF(dot, chiTiet);
       else if (format === 'doc') await exportPhieuKiemKeKhoToDoc(dot, chiTiet);
       else if (format === 'xlsx') await exportPhieuKiemKeKhoToXLSX(dot, chiTiet);
+    } catch (e) {
+      if (import.meta.env.DEV) console.error('Export error:', e);
+      toast.error(t('common.exportError'));
     } finally {
       setExporting(false);
     }
-  }, [dot, chiTiet]);
+  }, [dot, chiTiet, t]);
 
   if (isLoading) {
     return (
