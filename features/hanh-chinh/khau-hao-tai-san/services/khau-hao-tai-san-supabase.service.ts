@@ -107,7 +107,8 @@ function roundMoney(value: number): number {
   return Math.round(value);
 }
 
-function tinhKhauHaoKy(
+/** export để unit test — logic tính khấu hao 1 kỳ, không phụ thuộc Supabase. */
+export function tinhKhauHaoKy(
   nguyenGia: number,
   giaTriConLaiDauKy: number,
   khauHaoLuyKeHienTai: number,
