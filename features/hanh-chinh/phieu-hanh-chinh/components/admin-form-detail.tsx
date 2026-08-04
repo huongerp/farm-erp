@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FileText, Calendar, Clock, User, Building2, ShieldCheck, XCircle, CheckCircle2, Ban, MessageSquare, X, Trash2 } from 'lucide-react';
+import { FileText, Calendar, Clock, User, Building2, ShieldCheck, XCircle, CheckCircle2, Ban, MessageSquare, X } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
+import DetailDrawerFooter from '../../../../components/shared/DetailDrawerFooter';
 import Textarea from '../../../../components/ui/Textarea';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
 import DetailSection from '../../../../components/shared/DetailSection';
@@ -12,7 +13,6 @@ import { formatDate, formatDateTimeShort } from '../../../../lib/utils';
 import { AdminFormRequest } from '../core/types';
 import { getAdminFormShiftLabel, getAdminFormStatusLabel, getApprovalStatusLabel } from '../core/constants';
 import { getAdminFormTypeLabel } from '../../thiet-lap-cong-luong/core/constants';
-import { BTN_CLOSE, BTN_EDIT } from '../../../../lib/button-labels';
 import { useAuthStore } from '../../../../store/useStore';
 import {
   useApproveAdminFormByManager,
@@ -156,36 +156,13 @@ const AdminFormDetail: React.FC<Props> = ({
   }, [canCancel, canManagerApprove, canHcnsApprove, canUpdate, data.id, onApproveHcns, onRejectHcns, onCancel, t]);
 
   const renderFooter = (
-    <div className="flex items-center justify-between w-full gap-2">
-      <Button variant="ghost" onClick={onClose} className="text-muted-foreground hover:text-foreground border border-border">
-        {BTN_CLOSE()}
-      </Button>
-      <div className="flex items-center gap-2">
-        {canUpdate && onEdit && (
-          <Button
-            onClick={() => {
-              onEdit(data);
-              onClose();
-            }}
-            className="bg-primary text-white shadow-lg hover:bg-primary/90"
-          >
-            <FileText size={16} className="mr-2" /> {BTN_EDIT()}
-          </Button>
-        )}
-        {canDelete && onDelete && (
-          <Button
-            variant="outline"
-            onClick={() => {
-              onDelete(data.id);
-              onClose();
-            }}
-            className="border-rose-200 text-rose-600 hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-950/30"
-          >
-            <Trash2 size={16} className="mr-2" /> {t('common.delete')}
-          </Button>
-        )}
-      </div>
-    </div>
+    <DetailDrawerFooter
+      onClose={onClose}
+      canUpdate={canUpdate}
+      canDelete={canDelete}
+      onEdit={onEdit ? () => { onEdit(data); onClose(); } : undefined}
+      onDelete={onDelete ? () => { onDelete(data.id); onClose(); } : undefined}
+    />
   );
 
   const isModalOpen = modalType !== null;

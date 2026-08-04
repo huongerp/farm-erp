@@ -1,14 +1,14 @@
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ClipboardCheck, List, CheckCircle, Edit, Printer, Power, PackagePlus, Plus, FileText, X } from 'lucide-react';
+import { ClipboardCheck, List, CheckCircle, Printer, Power, PackagePlus, Plus, FileText, X } from 'lucide-react';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
 import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';
 import DetailToolbar, { DetailToolbarAction } from '../../../../components/shared/DetailToolbar';
 import Button from '../../../../components/ui/Button';
+import DetailDrawerFooter from '../../../../components/shared/DetailDrawerFooter';
 import Textarea from '../../../../components/ui/Textarea';
-import { BTN_CLOSE, BTN_EDIT } from '../../../../lib/button-labels';
 import { formatDate, cn } from '../../../../lib/utils';
 import { useAuthStore } from '../../../../store/useStore';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
@@ -164,25 +164,11 @@ const DotKiemKeDetail: React.FC<Props> = ({
   }, [data, isDraft, isDangKiemKe, onTaoDanhSach, onHoanThanh, onStatusChange, taoDanhSachLoading, hoanThanhLoading, t]);
 
   const renderFooter = (
-    <div className="flex items-center justify-between w-full flex-wrap gap-2">
-      <Button
-        variant="ghost"
-        onClick={onClose}
-        className="text-muted-foreground hover:text-foreground border border-border"
-      >
-        {BTN_CLOSE()}
-      </Button>
-      <div className="flex items-center gap-3 flex-wrap">
-        {(isDraft || isDangKiemKe) && onEdit && (
-          <Button
-            onClick={() => onEdit(data)}
-            className="bg-primary text-white shadow-lg hover:bg-primary/90"
-          >
-            <Edit size={16} className="mr-2" /> {BTN_EDIT()}
-          </Button>
-        )}
-      </div>
-    </div>
+    <DetailDrawerFooter
+      onClose={onClose}
+      canUpdate={isDraft || isDangKiemKe}
+      onEdit={onEdit ? () => onEdit(data) : undefined}
+    />
   );
 
   return (

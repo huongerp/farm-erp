@@ -1,14 +1,15 @@
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calculator, List, Edit, Printer, FileText, RefreshCw, X } from 'lucide-react';
+import { Calculator, List, Printer, FileText, RefreshCw, X } from 'lucide-react';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
 import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';
 import DetailToolbar, { DetailToolbarAction } from '../../../../components/shared/DetailToolbar';
 import Button from '../../../../components/ui/Button';
+import DetailDrawerFooter from '../../../../components/shared/DetailDrawerFooter';
 import Textarea from '../../../../components/ui/Textarea';
-import { BTN_CLOSE, BTN_EDIT, CONFIRM_YES } from '../../../../lib/button-labels';
+import { CONFIRM_YES } from '../../../../lib/button-labels';
 import { formatCurrency, cn } from '../../../../lib/utils';
 import { getTrangThaiKyLabel, TRANG_THAI_KY_OPTIONS } from '../core/constants';
 import { useUpdateKyKhauHaoGhiChu, useUpdateKyKhauHaoTrangThai } from '../hooks/use-khau-hao-tai-san';
@@ -155,25 +156,11 @@ const KyKhauHaoDetail: React.FC<Props> = ({
   ]);
 
   const renderFooter = (
-    <div className="flex items-center justify-between w-full flex-wrap gap-2">
-      <Button
-        variant="ghost"
-        onClick={onClose}
-        className="text-muted-foreground hover:text-foreground border border-border"
-      >
-        {BTN_CLOSE()}
-      </Button>
-      <div className="flex items-center gap-3 flex-wrap">
-        {isDraft && onEdit && (
-          <Button
-            onClick={() => onEdit(data)}
-            className="bg-primary text-white shadow-lg hover:bg-primary/90"
-          >
-            <Edit size={16} className="mr-2" /> {BTN_EDIT()}
-          </Button>
-        )}
-      </div>
-    </div>
+    <DetailDrawerFooter
+      onClose={onClose}
+      canUpdate={isDraft}
+      onEdit={onEdit ? () => onEdit(data) : undefined}
+    />
   );
 
   return (

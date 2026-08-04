@@ -12,12 +12,12 @@ import DetailField from '../../../../components/shared/DetailField';
 import GenericSubTableSection from '../../../../components/shared/GenericSubTableSection';
 import TabGroup from '../../../../components/ui/TabGroup';
 import Button from '../../../../components/ui/Button';
+import DetailDrawerFooter from '../../../../components/shared/DetailDrawerFooter';
 import Tooltip from '../../../../components/ui/Tooltip';
 import Textarea from '../../../../components/ui/Textarea';
 import Input from '../../../../components/ui/Input';
 import Combobox from '../../../../components/ui/Combobox';
 import { formatDateTimeShort, cn } from '../../../../lib/utils';
-import { BTN_CLOSE, BTN_EDIT, BTN_DELETE } from '../../../../lib/button-labels';
 import type { CongViec, TraoDoiEntry } from '../core/types';
 import type { CongViecTrangThai } from '../core/types';
 import { getTrangThaiLabel, getUuTienLabel, getTrangThaiOptions } from '../core/constants';
@@ -156,33 +156,13 @@ const CongViecDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onAd
   ];
 
   const renderFooter = (
-    <div className="flex items-center justify-between w-full">
-      <Button variant="ghost" onClick={onClose} className="text-muted-foreground hover:text-foreground border border-border">
-        {BTN_CLOSE()}
-      </Button>
-      <div className="flex items-center gap-3">
-        {canUpdate && (
-          <Button
-            onClick={() => {
-              onEdit(data);
-              onClose();
-            }}
-            className="bg-primary text-white shadow-lg hover:bg-primary/90"
-          >
-            <Edit size={16} className="mr-2" /> {BTN_EDIT()}
-          </Button>
-        )}
-        {canDelete && onDelete && (
-          <Button
-            variant="ghost"
-            onClick={() => onDelete(data.id)}
-            className="text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/50 dark:text-rose-400 border border-rose-200 hover:border-rose-300 dark:border-rose-800 dark:hover:border-rose-700"
-          >
-            <Trash2 size={16} className="mr-2" /> {BTN_DELETE()}
-          </Button>
-        )}
-      </div>
-    </div>
+    <DetailDrawerFooter
+      onClose={onClose}
+      canUpdate={canUpdate}
+      canDelete={canDelete}
+      onEdit={() => { onEdit(data); onClose(); }}
+      onDelete={onDelete ? () => onDelete(data.id) : undefined}
+    />
   );
 
   const subtitle = [getEmployeeName(data.trach_nhiem), getTrangThaiLabel(data.trang_thai, t)].filter(Boolean).join(' · ');
