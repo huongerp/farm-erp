@@ -3,8 +3,7 @@ import ReactDOM from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import BaoCaoNhanCongChuyenTable from './BaoCaoNhanCongChuyenTable';
 import { useTranslation } from 'react-i18next';
-import { Copy, Edit, Lock, Printer, Trash2, Unlock, Users, Images, X, ZoomIn, ChevronLeft, ChevronRight } from 'lucide-react';
-import Button from '../../../../components/ui/Button';
+import { Copy, Lock, Printer, Unlock, Users, Images, X, ZoomIn, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { FarmBaoCaoNhanCong } from '../core/types';
 import {
   sumSlCongNgay,
@@ -20,11 +19,12 @@ import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';
 import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
 import DetailToolbar, { type DetailToolbarAction } from '../../../../components/shared/DetailToolbar';
-import { BTN_CLOSE, BTN_EDIT, BTN_DELETE, CONFIRM_YES } from '../../../../lib/button-labels';
+import { CONFIRM_YES } from '../../../../lib/button-labels';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { useCopyBaoCaoNhanCongToNextDay, useUpdateBaoCaoNhanCongTrangThai } from '../hooks/use-bao-cao-nhan-cong';
 import { TRANG_THAI_BAO_CAO_NHAN_CONG } from '../core/types';
 import { getBaoCaoNhanCongPreviewUrl } from '../core/preview-url';
+import DetailDrawerFooter from '../../../../components/shared/DetailDrawerFooter';
 
 interface Props {
   data: FarmBaoCaoNhanCong;
@@ -70,36 +70,15 @@ const BaoCaoNhanCongDetail: React.FC<Props> = ({
   const goNext = () => setLightboxIndex((i) => (i !== null && i < hinhAnhUrls.length - 1 ? i + 1 : i));
 
   const renderFooter = (
-    <div className="flex items-center justify-between w-full">
-      <Button variant="ghost" onClick={onClose} className="text-muted-foreground hover:text-foreground border border-border">
-        {BTN_CLOSE()}
-      </Button>
-      <div className="flex items-center gap-3">
-        {canUpdate && onEdit && (
-          <Button
-            onClick={() => {
-              onEdit(data);
-              onClose();
-            }}
-            className="bg-primary text-white shadow-lg hover:bg-primary/90"
-          >
-            <Edit size={16} className="mr-2" /> {BTN_EDIT()}
-          </Button>
-        )}
-        {canDelete && onDelete && (
-          <Button
-            variant="ghost"
-            onClick={() => {
-              onDelete(data.id);
-              onClose();
-            }}
-            className="text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/50 dark:text-rose-400 border border-rose-200 hover:border-rose-300 dark:border-rose-800 dark:hover:border-rose-700"
-          >
-            <Trash2 size={16} className="mr-2" /> {BTN_DELETE()}
-          </Button>
-        )}
-      </div>
-    </div>
+    <DetailDrawerFooter
+      onClose={onClose}
+      canUpdate={canUpdate}
+      canDelete={canDelete}
+      onEdit={onEdit ? () => { onEdit(data);
+              onClose(); } : undefined}
+      onDelete={onDelete ? () => { onDelete(data.id);
+              onClose(); } : undefined}
+    />
   );
 
   const toolbarActions: DetailToolbarAction[] = [

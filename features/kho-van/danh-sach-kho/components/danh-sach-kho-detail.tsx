@@ -1,7 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Edit, Trash2, Warehouse, MapPin, FileText, ArrowUpFromLine, Calendar, Power, Building2 } from 'lucide-react';
-import Button from '../../../../components/ui/Button';
+import { Warehouse, MapPin, FileText, ArrowUpFromLine, Calendar, Power, Building2 } from 'lucide-react';
 import { Kho } from '../core/types';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { formatDate, formatDateTimeShort } from '../../../../lib/utils';
@@ -9,7 +8,7 @@ import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/share
 import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';
 import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
-import { BTN_CLOSE, BTN_EDIT, BTN_DELETE } from '../../../../lib/button-labels';
+import DetailDrawerFooter from '../../../../components/shared/DetailDrawerFooter';
 
 interface Props {
   data: Kho;
@@ -29,40 +28,13 @@ const DanhSachKhoDetail: React.FC<Props> = ({
   const isActive = data.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
 
   const renderFooter = (
-    <div className="flex items-center justify-between w-full">
-      <Button
-        variant="ghost"
-        onClick={onClose}
-        className="text-muted-foreground hover:text-foreground border border-border"
-      >
-        {BTN_CLOSE()}
-      </Button>
-      <div className="flex items-center gap-3">
-        {onEdit && (
-          <Button
-            onClick={() => {
-              onEdit(data);
-              onClose();
-            }}
-            className="bg-primary text-white shadow-lg hover:bg-primary/90"
-          >
-            <Edit size={16} className="mr-2" /> {BTN_EDIT()}
-          </Button>
-        )}
-        {onDelete && (
-          <Button
-            variant="ghost"
-            onClick={() => {
-              onDelete(data.id);
-              onClose();
-            }}
-            className="text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/50 dark:text-rose-400 border border-rose-200 hover:border-rose-300 dark:border-rose-800 dark:hover:border-rose-700"
-          >
-            <Trash2 size={16} className="mr-2" /> {BTN_DELETE()}
-          </Button>
-        )}
-      </div>
-    </div>
+    <DetailDrawerFooter
+      onClose={onClose}
+      onEdit={onEdit ? () => { onEdit(data);
+              onClose(); } : undefined}
+      onDelete={onDelete ? () => { onDelete(data.id);
+              onClose(); } : undefined}
+    />
   );
 
   return (

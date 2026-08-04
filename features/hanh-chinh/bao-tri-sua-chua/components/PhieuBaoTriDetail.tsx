@@ -1,15 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { Wrench, Edit, Trash2, User, FileText, Power } from 'lucide-react';
+import { Wrench, User, FileText, Power } from 'lucide-react';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
 import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';
 import DetailToolbar, { type DetailToolbarAction } from '../../../../components/shared/DetailToolbar';
-import Button from '../../../../components/ui/Button';
+import DetailDrawerFooter from '../../../../components/shared/DetailDrawerFooter';
 import Combobox from '../../../../components/ui/Combobox';
 import Textarea from '../../../../components/ui/Textarea';
-import { BTN_CLOSE, BTN_EDIT, BTN_DELETE, CONFIRM_YES } from '../../../../lib/button-labels';
+import { CONFIRM_YES } from '../../../../lib/button-labels';
 import { formatDateTimeShort, formatDate, formatCurrency } from '../../../../lib/utils';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { usePhieuBaoTriById, useUpdatePhieuBaoTri } from '../hooks/use-bao-tri-sua-chua';
@@ -142,38 +142,11 @@ const PhieuBaoTriDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, c
   }, [canAdmin, t, handleChangeStatus, updateMutation.isPending]);
 
   const footer = (
-    <div className="flex items-center justify-between w-full flex-wrap gap-2">
-      <Button variant="ghost" onClick={onClose} className="text-muted-foreground hover:text-foreground border border-border">
-        {BTN_CLOSE()}
-      </Button>
-      <div className="flex items-center gap-3">
-        {onEdit && (
-          <Button
-            onClick={() => {
-              onClose();
-              onEdit(displayData);
-            }}
-            className="bg-primary text-white shadow-lg hover:bg-primary/90"
-          >
-            <Edit size={16} className="mr-2" />
-            {BTN_EDIT()}
-          </Button>
-        )}
-        {onDelete && (
-          <Button
-            variant="ghost"
-            onClick={() => {
-              onDelete(displayData.id);
-              onClose();
-            }}
-            className="text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/50 dark:text-rose-400 border border-rose-200 hover:border-rose-300 dark:border-rose-800 dark:hover:border-rose-700"
-          >
-            <Trash2 size={16} className="mr-2" />
-            {BTN_DELETE()}
-          </Button>
-        )}
-      </div>
-    </div>
+    <DetailDrawerFooter
+      onClose={onClose}
+      onEdit={onEdit ? () => { onClose(); onEdit(displayData); } : undefined}
+      onDelete={onDelete ? () => { onDelete(displayData.id); onClose(); } : undefined}
+    />
   );
 
   return (

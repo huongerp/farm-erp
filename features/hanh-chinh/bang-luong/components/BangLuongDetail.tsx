@@ -1,13 +1,12 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Banknote, User, Building2, Calendar, Edit, Trash2, FileText } from 'lucide-react';
-import Button from '../../../../components/ui/Button';
+import { Banknote, User, Building2, Calendar, FileText } from 'lucide-react';
+import DetailDrawerFooter from '../../../../components/shared/DetailDrawerFooter';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
 import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';
 import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
 import DetailToolbar, { DetailToolbarAction } from '../../../../components/shared/DetailToolbar';
-import { BTN_CLOSE, BTN_EDIT, BTN_DELETE } from '../../../../lib/button-labels';
 import { formatCurrency, cn } from '../../../../lib/utils';
 import type { BangLuongRecord } from '../core/types';
 
@@ -38,34 +37,13 @@ const BangLuongDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, can
   ];
 
   const renderFooter = (
-    <div className="flex items-center justify-between w-full">
-      <Button
-        variant="ghost"
-        onClick={onClose}
-        className="text-muted-foreground hover:text-foreground border border-border"
-      >
-        {BTN_CLOSE()}
-      </Button>
-      <div className="flex gap-3">
-        {canUpdate && onEdit && (
-          <Button
-            onClick={() => { onEdit(data); onClose(); }}
-            className="bg-primary text-white shadow-lg hover:bg-primary/90"
-          >
-            <Edit size={16} className="mr-2" /> {BTN_EDIT()}
-          </Button>
-        )}
-        {canDelete && onDelete && (
-          <Button
-            variant="ghost"
-            onClick={() => { onDelete(data.id); onClose(); }}
-            className="text-rose-600 hover:bg-rose-50 border border-rose-200 hover:border-rose-300"
-          >
-            <Trash2 size={16} className="mr-2" /> {BTN_DELETE()}
-          </Button>
-        )}
-      </div>
-    </div>
+    <DetailDrawerFooter
+      onClose={onClose}
+      canUpdate={canUpdate}
+      canDelete={canDelete}
+      onEdit={onEdit ? () => { onEdit(data); onClose(); } : undefined}
+      onDelete={onDelete ? () => { onDelete(data.id); onClose(); } : undefined}
+    />
   );
 
   return (

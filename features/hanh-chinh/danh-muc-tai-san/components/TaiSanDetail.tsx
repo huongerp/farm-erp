@@ -8,8 +8,9 @@ import DetailField from '../../../../components/shared/DetailField';
 import DetailToolbar, { DetailToolbarAction } from '../../../../components/shared/DetailToolbar';
 import EmptyState from '../../../../components/shared/EmptyState';
 import Button from '../../../../components/ui/Button';
+import DetailDrawerFooter from '../../../../components/shared/DetailDrawerFooter';
 import Textarea from '../../../../components/ui/Textarea';
-import { BTN_CLOSE, BTN_EDIT, BTN_DELETE } from '../../../../lib/button-labels';
+import { BTN_CLOSE } from '../../../../lib/button-labels';
 import { formatDateTimeShort, formatCurrency, formatDate, cn } from '../../../../lib/utils';
 import { usePhieuChiTietByTaiSan } from '../../cap-phat-thu-hoi/hooks/use-cap-phat-thu-hoi';
 import { getLoaiPhieuLabel } from '../../cap-phat-thu-hoi/core/constants';
@@ -155,40 +156,13 @@ const TaiSanDetail: React.FC<Props> = ({
   );
 
   const renderFooter = showActions ? (
-    <div className="flex items-center justify-between w-full flex-wrap gap-2">
-      <Button
-        variant="ghost"
-        onClick={onClose}
-        className="text-muted-foreground hover:text-foreground border border-border"
-      >
-        {BTN_CLOSE()}
-      </Button>
-      <div className="flex items-center gap-3 flex-wrap">
-        {canUpdate && (
-          <Button
-            onClick={() => {
-              onEdit(data);
-              onClose();
-            }}
-            className="bg-primary text-white shadow-lg hover:bg-primary/90"
-          >
-            <Edit size={16} className="mr-2" /> {BTN_EDIT()}
-          </Button>
-        )}
-        {canDelete && onDelete && (
-          <Button
-            variant="ghost"
-            onClick={() => {
-              onDelete(data.id);
-              onClose();
-            }}
-            className="text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/50 dark:text-rose-400 border border-rose-200 hover:border-rose-300 dark:border-rose-800 dark:hover:border-rose-700"
-          >
-            <Trash2 size={16} className="mr-2" /> {BTN_DELETE()}
-          </Button>
-        )}
-      </div>
-    </div>
+    <DetailDrawerFooter
+      onClose={onClose}
+      canUpdate={canUpdate}
+      canDelete={canDelete}
+      onEdit={() => { onEdit(data); onClose(); }}
+      onDelete={onDelete ? () => { onDelete(data.id); onClose(); } : undefined}
+    />
   ) : (
     <Button variant="outline" onClick={onClose} className="border border-border">
       {BTN_CLOSE()}

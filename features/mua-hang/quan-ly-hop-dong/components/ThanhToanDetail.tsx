@@ -1,16 +1,15 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Wallet, Edit, Trash2, FileText } from 'lucide-react';
-import Button from '../../../../components/ui/Button';
+import { Wallet, FileText } from 'lucide-react';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
 import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';
 import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
-import { BTN_CLOSE, BTN_EDIT, BTN_DELETE } from '../../../../lib/button-labels';
 import type { HopDongChiTietEnriched } from '../core/types';
 import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
 import { cn, formatDateShort, formatDateTimeShort, formatNumberVN } from '../../../../lib/utils';
 import { TRANG_THAI_HOP_DONG } from '../core/constants';
+import DetailDrawerFooter from '../../../../components/shared/DetailDrawerFooter';
 
 interface Props {
   data: HopDongChiTietEnriched;
@@ -39,27 +38,11 @@ const ThanhToanDetail: React.FC<Props> = ({ data, chiNhanhList, onClose, onEdit,
         : '—';
 
   const renderFooter = (
-    <div className="flex items-center justify-between w-full">
-      <Button variant="ghost" onClick={onClose} className="text-muted-foreground hover:text-foreground border border-border">
-        {BTN_CLOSE()}
-      </Button>
-      <div className="flex items-center gap-3">
-        {onEdit && (
-          <Button onClick={() => onEdit(data)} className="bg-primary text-white shadow-lg hover:bg-primary/90">
-            <Edit size={16} className="mr-2" /> {BTN_EDIT()}
-          </Button>
-        )}
-        {onDelete && (
-          <Button
-            variant="ghost"
-            onClick={() => onDelete(data)}
-            className="text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/50 dark:text-rose-400 border border-rose-200 dark:border-rose-800"
-          >
-            <Trash2 size={16} className="mr-2" /> {BTN_DELETE()}
-          </Button>
-        )}
-      </div>
-    </div>
+    <DetailDrawerFooter
+      onClose={onClose}
+      onEdit={onEdit ? () => onEdit(data) : undefined}
+      onDelete={onDelete ? () => onDelete(data) : undefined}
+    />
   );
 
   return (
