@@ -22,7 +22,7 @@ interface Props {
 
 const NoiLuuToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onStatusChangeMany, canCreate = true, canUpdate = true, canDelete = true }) => {
   const { t } = useTranslation();
-  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useNoiLuuStore);
+  const { searchInput, setSearchInput } = useGenericToolbarSearch(useNoiLuuStore);
   const filters = useNoiLuuStore((s) => s.filters);
   const setFilter = useNoiLuuStore((s) => s.setFilter);
   const columns = useNoiLuuStore((s) => s.columns);

@@ -125,7 +125,6 @@ export async function getNextMaTaiSanSupabase(): Promise<string> {
   if (error) throwSupabaseError(error);
   const list = (data ?? []) as { ma_tai_san: string }[];
   let maxNum = 0;
-  const prefixLower = MA_TAI_SAN_PREFIX.toLowerCase();
   for (const row of list) {
     const ma = (row.ma_tai_san || '').trim();
     if (ma.length <= MA_TAI_SAN_PREFIX.length) continue;

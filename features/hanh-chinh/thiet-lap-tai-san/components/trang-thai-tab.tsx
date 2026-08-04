@@ -30,7 +30,6 @@ const TrangThaiTab: React.FC = () => {
     sort,
     resetState,
     clearSelection,
-    selectedIds,
   } = useTrangThaiStore();
 
   const [showForm, setShowForm] = useState(false);

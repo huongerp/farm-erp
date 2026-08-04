@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ClipboardList, Edit, MessageSquare, ListTree, Plus, Send, User, Trash2, RefreshCw } from 'lucide-react';
+import { ClipboardList, Edit, MessageSquare, ListTree, Send, User, Trash2, RefreshCw } from 'lucide-react';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
 import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
 import { getDrawerWidthClass } from '../../../../lib/dialog-sizes';

@@ -17,7 +17,7 @@ import { usePhieuBaoTriList } from '../../bao-tri-sua-chua/hooks/use-bao-tri-sua
 import { getHangMucLabel, getTrangThaiLabel } from '../../bao-tri-sua-chua/core/constants';
 import type { TaiSan } from '../core/types';
 import BarcodeQRDisplay from './BarcodeQRDisplay';
-import type { PhieuCapPhatThuHoi, PhieuChiTietWithHeader } from '../../cap-phat-thu-hoi/core/types';
+import type { PhieuCapPhatThuHoi } from '../../cap-phat-thu-hoi/core/types';
 import type { PhieuBaoTriSuaChua } from '../../bao-tri-sua-chua/core/types';
 
 interface Props {

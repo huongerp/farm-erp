@@ -2,10 +2,7 @@
  * Service đợt kiểm kê kho – gọi Supabase (fp_mh_dot_kiem_ke_kho, fp_mh_dot_kiem_ke_kho_kho, fp_mh_dot_kiem_ke_kho_chi_tiet).
  */
 import type {
-  DotKiemKeKho,
   ChiTietKiemKeKho,
-  DotKiemKeKhoCreate,
-  ChiTietKiemKeKhoUpdate,
   TrangThaiDotKiemKeKho,
 } from '../core/types';
 import {

@@ -28,7 +28,7 @@ const KiemKeTaiSanToolbar: React.FC<Props> = ({
   canDelete = true,
 }) => {
   const { t } = useTranslation();
-  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useKiemKeTaiSanStore);
+  const { searchInput, setSearchInput } = useGenericToolbarSearch(useKiemKeTaiSanStore);
   const filters = useKiemKeTaiSanStore((s) => s.filters);
   const setFilter = useKiemKeTaiSanStore((s) => s.setFilter);
   const resetFilters = useKiemKeTaiSanStore((s) => s.resetFilters);

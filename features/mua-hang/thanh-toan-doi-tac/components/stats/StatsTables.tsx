@@ -80,7 +80,6 @@ interface Props {
 const StatsTables: React.FC<Props> = ({ byTrangThai, byDoiTac, byDonVi, byNhom }) => {
   const { t } = useTranslation();
 
-  const statusTableData = byTrangThai.map((r) => ({ name: r.ten, value: r.count, amount: r.amount }));
   const doiTacTableData = byDoiTac.map((r) => ({ name: r.name, value: r.value, amount: r.amount }));
   const donViTableData = byDonVi.map((r) => ({ name: r.name, value: r.value, amount: r.amount }));
   const nhomTableData = byNhom.map((r) => ({ name: r.name, value: r.value, amount: r.amount }));

@@ -13,9 +13,8 @@ import {
   sumSoGioTc,
   sumTongCongQuyDoiPhieu,
   sumTongGioTangCaTichPhieu,
-  normalizeChiTietForDisplay,
 } from '../core/types';
-import { sumDisplayLoaiTotalsOnRows } from '../core/ct-sub';import { cn, formatDateShort, formatDateTimeShort, formatNumberVN } from '../../../../lib/utils';
+import { cn, formatDateShort, formatDateTimeShort, formatNumberVN } from '../../../../lib/utils';
 import GenericDrawer, { DRAWER_WIDTH_BAO_CAO_NHAN_CONG } from '../../../../components/shared/GenericDrawer';
 import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';

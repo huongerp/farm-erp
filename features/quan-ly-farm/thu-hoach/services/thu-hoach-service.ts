@@ -1,4 +1,4 @@
-import type { ThuHoachKeHoachFormValues, ThuHoachThucTeFormValues } from '../core/schema';
+import type { ThuHoachKeHoachFormValues } from '../core/schema';
 import type { FarmThuHoach } from '../core/types';
 import {
   getAllThuHoachSupabase,

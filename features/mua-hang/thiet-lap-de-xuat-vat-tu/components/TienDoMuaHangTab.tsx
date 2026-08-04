@@ -29,7 +29,6 @@ const TienDoMuaHangTab: React.FC = () => {
     sort,
     resetState,
     clearSelection,
-    selectedIds,
   } = useTienDoMuaHangStore();
 
   const [showForm, setShowForm] = useState(false);

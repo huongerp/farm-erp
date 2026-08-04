@@ -2,7 +2,6 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { FarmBaoCaoNhanCongCt } from '../core/types';
 import {
-  type LoaiChiTieu,
   hasSubLinesOnCt,
   subAlignedRowCount,
   isSubFormRowEmpty,

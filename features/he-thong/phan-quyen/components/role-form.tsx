@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Shield, Save, Check, X, ShieldCheck, Star, Briefcase, Minus } from 'lucide-react';
+import { Save, Check, Star, Briefcase, Minus } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Input from '../../../../components/ui/Input';
 import { roleSchema, RoleFormValues } from '../core/schema';

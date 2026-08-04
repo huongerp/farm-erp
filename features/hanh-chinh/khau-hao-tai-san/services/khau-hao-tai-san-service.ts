@@ -1,7 +1,7 @@
 /**
  * Service khấu hao tài sản – dùng Supabase (fp_ts_ky_khau_hao, fp_ts_chi_tiet_khau_hao).
  */
-import type { KyKhauHao, ChiTietKhauHao, KyKhauHaoCreate, TrangThaiKyKhauHao } from '../core/types';
+import type { ChiTietKhauHao } from '../core/types';
 import {
   getKyKhauHaoListSupabase,
   getKyKhauHaoByIdSupabase,

@@ -12,7 +12,6 @@ import {
   type ChiTietSubFormByLoai,
   normalizeChiTietSubFormByLoai,
   syncChiTietTotalsFromSub,
-  defaultCtSubFormRow,
   padSubToRowCount,
   subAlignedRowCount,
   ensureSubFormMinRows,

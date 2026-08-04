@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ClipboardCheck, List, CheckCircle, Edit, Printer, Power, PackagePlus, Plus, RefreshCw, FileText, X } from 'lucide-react';
+import { ClipboardCheck, List, CheckCircle, Edit, Printer, Power, PackagePlus, Plus, FileText, X } from 'lucide-react';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
 import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';

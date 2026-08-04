@@ -21,7 +21,7 @@ interface Props {
 
 const TrangThaiToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onStatusChangeMany, canCreate = true, canUpdate = true, canDelete = true }) => {
   const { t } = useTranslation();
-  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useTrangThaiStore);
+  const { searchInput, setSearchInput } = useGenericToolbarSearch(useTrangThaiStore);
   const filters = useTrangThaiStore((s) => s.filters);
   const setFilter = useTrangThaiStore((s) => s.setFilter);
   const columns = useTrangThaiStore((s) => s.columns);

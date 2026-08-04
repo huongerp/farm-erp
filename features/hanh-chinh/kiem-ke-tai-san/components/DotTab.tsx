@@ -21,7 +21,7 @@ const DotTab: React.FC = () => {
   const { t } = useTranslation();
   const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
-  const { searchTerm, filters, sort, resetState, selectedIds, clearSelection } = useKiemKeTaiSanStore();
+  const { searchTerm, filters, sort, resetState, clearSelection } = useKiemKeTaiSanStore();
   const user = useAuthStore((s) => s.user);
   const { viewAll } = useKiemKeTaiSanViewScope();
   const { data: list = [], isLoading } = useDotKiemKeList({

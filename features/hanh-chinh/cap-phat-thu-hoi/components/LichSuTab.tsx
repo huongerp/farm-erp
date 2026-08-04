@@ -20,7 +20,7 @@ const LichSuTab: React.FC<Props> = ({ defaultTaiSanId }) => {
   const { t } = useTranslation();
   const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
-  const { searchTerm, filters, sort, resetState, selectedIds, clearSelection, pagination } = useCapPhatThuHoiStore();
+  const { searchTerm, filters, sort, resetState, clearSelection } = useCapPhatThuHoiStore();
   const { data: list = [], isLoading } = usePhieuList({
     filter: 'all',
     q: searchTerm || undefined,

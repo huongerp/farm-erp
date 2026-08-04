@@ -29,7 +29,6 @@ const TrangThaiThanhToanDoiTacTab: React.FC = () => {
     sort,
     resetState,
     clearSelection,
-    selectedIds,
   } = useTrangThaiThanhToanDoiTacStore();
 
   const [showForm, setShowForm] = useState(false);

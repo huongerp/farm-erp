@@ -113,7 +113,6 @@ const DanhSachTab: React.FC = () => {
   const sort = useDanhSachTaiSanStore((s) => s.sort);
   const resetState = useDanhSachTaiSanStore((s) => s.resetState);
   const clearSelection = useDanhSachTaiSanStore((s) => s.clearSelection);
-  const selectedIds = useDanhSachTaiSanStore((s) => s.selectedIds);
   const deleteMutation = useDeleteTaiSan();
   const statusMutation = useUpdateTaiSanStatus();
   const updateMutation = useUpdateTaiSan();

@@ -2,20 +2,9 @@ import type { LucideIcon } from 'lucide-react';
 import {
   Banknote,
   Receipt,
-  Calendar,
   Settings,
-  FileText,
-  Archive,
   ClipboardList,
-  ClipboardCheck,
-  Car,
-  CalendarCheck,
-  Fuel,
-  UserCircle,
-  Target,
   Scale,
-  FolderOpen,
-  BarChart3,
 } from 'lucide-react';
 import { danhMucTaiSanMenuConfig } from '@/features/hanh-chinh/danh-muc-tai-san/menu-config';
 import { capPhatThuHoiMenuConfig } from '@/features/hanh-chinh/cap-phat-thu-hoi/menu-config';

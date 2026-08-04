@@ -49,13 +49,6 @@ const TRANG_THAI_VI_TO_APP: Record<string, AdminFormStatus> = {
   'Từ chối': 'rejected',
   'Đã hủy': 'cancelled',
 };
-const TRANG_THAI_APP_TO_VI: Record<AdminFormStatus, string> = {
-  pending: 'Chờ duyệt',
-  manager_approved: 'Đã duyệt',
-  approved: 'Đã duyệt',
-  rejected: 'Từ chối',
-  cancelled: 'Đã hủy',
-};
 
 const DUYET_VI_TO_APP: Record<string, ApprovalStatus> = {
   'Chờ duyệt': 'pending',

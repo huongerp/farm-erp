@@ -86,7 +86,6 @@ const EmployeeStats: React.FC<EmployeeStatsProps> = ({
 
   const {
     filtered,
-    total,
     trends,
     deptData,
     statusData,

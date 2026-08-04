@@ -29,7 +29,6 @@ const DiemCongTruPage: React.FC = () => {
     sort,
     resetState,
     clearSelection,
-    selectedIds,
   } = useDiemCongTruStore();
 
   const [showForm, setShowForm] = useState(false);

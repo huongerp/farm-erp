@@ -40,8 +40,6 @@ const NoiLuuTab: React.FC<NoiLuuTabProps> = ({ viewScope }) => {
     sort,
     resetState,
     clearSelection,
-    selectedIds,
-    pagination,
   } = useNoiLuuStore();
 
   const [showForm, setShowForm] = useState(false);

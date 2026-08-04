@@ -25,7 +25,6 @@ const BranchPage: React.FC = () => {
     sort,
     resetState,
     clearSelection,
-    selectedIds,
   } = useBranchStore();
 
   const [showForm, setShowForm] = useState(false);

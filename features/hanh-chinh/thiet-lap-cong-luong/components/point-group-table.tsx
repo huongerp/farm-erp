@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Edit, Trash2, Scale } from 'lucide-react';
 import GenericTable from '../../../../components/shared/GenericTable';

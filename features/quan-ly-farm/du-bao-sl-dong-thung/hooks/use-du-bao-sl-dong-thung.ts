@@ -12,7 +12,7 @@ import {
   updateDuBaoSlDongThungTrangThai,
 } from '../services/du-bao-sl-dong-thung-service';
 import type { DuBaoSlDongThungFormValues } from '../core/schema';
-import type { FarmDuBaoSlDongThung, TrangThaiDuBaoSlDongThungPhieu } from '../core/types';
+import type { TrangThaiDuBaoSlDongThungPhieu } from '../core/types';
 
 export const QUERY_KEY_DU_BAO_SL_DONG_THUNG = ['duBaoSlDongThung'] as const;
 

@@ -13,8 +13,6 @@ import {
   getChiNhanhOptions,
 } from '../core/compute';
 
-const DEFAULT_PRESET = 'all';
-
 const DEFAULT_DATE_RANGE: DateRangeValue = {
   preset: 'all',
   customStart: '',

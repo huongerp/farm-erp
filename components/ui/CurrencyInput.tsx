@@ -47,13 +47,6 @@ const CurrencyInput = React.forwardRef<HTMLInputElement, CurrencyInputProps>(
       return new Intl.NumberFormat(getLocale()).format(n);
     }, []);
 
-    // Parse formatted string back to number
-    const parseNumber = useCallback((str: string): number => {
-      const cleaned = str.replace(/\./g, '').replace(/,/g, '');
-      const num = parseFloat(cleaned);
-      return isNaN(num) ? 0 : num;
-    }, []);
-
     const [displayValue, setDisplayValue] = useState(() => formatNumber(value ?? 0));
 
     // Sync external value changes

@@ -23,7 +23,6 @@ import { useListWithFilter } from '../../../lib/hooks';
 import { useExportData } from '../../../lib/useExportData';
 import { TRANG_THAI_HOAT_DONG } from '../../../lib/constants';
 import { Kho } from './core/types';
-import type { KhoFormValues } from './core/schema';
 
 const DanhSachKhoPage: React.FC = () => {
   const { t } = useTranslation();

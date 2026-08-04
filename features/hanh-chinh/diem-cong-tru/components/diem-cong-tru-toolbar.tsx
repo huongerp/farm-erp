@@ -21,7 +21,7 @@ interface Props {
 
 const DiemCongTruToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, canCreate = true, canDelete = true }) => {
   const { t } = useTranslation();
-  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useDiemCongTruStore);
+  const { searchInput, setSearchInput } = useGenericToolbarSearch(useDiemCongTruStore);
   const filters = useDiemCongTruStore((s) => s.filters);
   const setFilter = useDiemCongTruStore((s) => s.setFilter);
   const columns = useDiemCongTruStore((s) => s.columns);

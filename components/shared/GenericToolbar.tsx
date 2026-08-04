@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
     Search, X, Check, Trash2, Power, Filter, LayoutTemplate,
-    ChevronDown, ArrowLeft, MoreVertical, Plus
+    ArrowLeft, MoreVertical, Plus
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../lib/utils';

@@ -27,7 +27,7 @@ const PositionToolbar: React.FC<Props> = ({
   canCreate = true, canUpdate = true, canDelete = true,
 }) => {
   const { t } = useTranslation();
-  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(usePositionStore);
+  const { searchInput, setSearchInput } = useGenericToolbarSearch(usePositionStore);
   const filters = usePositionStore((s) => s.filters);
   const setFilter = usePositionStore((s) => s.setFilter);
   const columns = usePositionStore((s) => s.columns);

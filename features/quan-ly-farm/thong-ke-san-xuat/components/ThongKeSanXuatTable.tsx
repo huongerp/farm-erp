@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ChevronDown, ChevronRight, CheckCircle2, XCircle, Minus } from 'lucide-react';
+import { ChevronDown, ChevronRight, CheckCircle2, Minus } from 'lucide-react';
 import { cn } from '../../../../lib/utils';
 import { formatDateShort, formatNumberVN } from '../../../../lib/utils';
 import {
   normalizeChiTietForDisplay,
-  CHUYEN_PRODUCTION_CODES,
   chuyenTtLabelByThuTu,
   tongCongQuyDoiNgayVaNua,
   tongGioTangCaTichMotDong,
@@ -34,7 +33,6 @@ const currency = (v: number) =>
     ? `${formatNumberVN(v / 1_000_000, { maxFractionDigits: 2 })}tr`
     : formatNumberVN(v, { maxFractionDigits: 0 });
 
-const KPI_DAT_SET = new Set(['Đạt', 'Tốt']);
 const KPI_BADGE: Record<string, { label: string; cls: string }> = {
   Đạt: { label: 'Đạt', cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' },
   Tốt: { label: 'Tốt', cls: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400' },

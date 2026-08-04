@@ -12,7 +12,6 @@ export function getDateRangeFromPreset(presetId: string): { dateFrom: string; da
 
   switch (presetId) {
     case 'thisMonth': {
-      const first = new Date(y, m, 1);
       return {
         dateFrom: `${y}-${pad(m + 1)}-01`,
         dateTo: today,

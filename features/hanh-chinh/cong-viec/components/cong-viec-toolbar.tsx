@@ -33,7 +33,7 @@ interface Props {
 const CongViecToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onExport, onImport, viewMode = 'list', onViewModeChange, hideViewMode, canCreate = true, canDelete = true }) => {
   const { t } = useTranslation();
   const { data: employees = [] } = useEmployeesRefQuery();
-  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useCongViecStore);
+  const { searchInput, setSearchInput } = useGenericToolbarSearch(useCongViecStore);
   const filters = useCongViecStore((s) => s.filters);
   const setFilter = useCongViecStore((s) => s.setFilter);
   const columns = useCongViecStore((s) => s.columns);

@@ -67,7 +67,6 @@ const TABLE_CELL = (F: string) => (label: string, value: string) =>
 export function buildDonDatHangBodyHTML(po: DonDatHang, chiTiet: DonDatHangChiTiet[]): string {
   const t = i18n.t.bind(i18n);
   const F = FONT;
-  const info = useUIStore.getState().companyInfo;
   const dateLine = formatDateVietnameseLong(po.ngay_dat);
   const printedAt = formatDateTime(new Date());
 

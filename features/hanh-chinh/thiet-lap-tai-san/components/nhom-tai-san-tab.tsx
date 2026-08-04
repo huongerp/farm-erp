@@ -30,7 +30,6 @@ const NhomTaiSanTab: React.FC = () => {
     sort,
     resetState,
     clearSelection,
-    selectedIds,
   } = useNhomTaiSanStore();
 
   const [showForm, setShowForm] = useState(false);

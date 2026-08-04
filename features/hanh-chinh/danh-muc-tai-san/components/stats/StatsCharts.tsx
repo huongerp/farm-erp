@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Layers, MapPin, Tag, BarChart3 } from 'lucide-react';
+import { Layers, MapPin, BarChart3 } from 'lucide-react';
 import {
   PieChart,
   Pie,

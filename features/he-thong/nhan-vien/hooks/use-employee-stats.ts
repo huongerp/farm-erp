@@ -17,7 +17,6 @@ import {
 } from '../core/stats-constants';
 import type { StatsDateRange, KpiItem, StatsTrends, StatsMiniSummary } from '../core/stats-types';
 import {
-  getDateRangeFromPreset,
   isEmployedOnOrBefore,
   getMonthKeysEndingAt,
 } from '../utils/stats-date-range';

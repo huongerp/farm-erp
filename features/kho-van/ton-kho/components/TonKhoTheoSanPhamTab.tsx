@@ -356,7 +356,6 @@ const TonKhoTheoSanPhamTab: React.FC = () => {
   const commitSearchTerm = useTonKhoByProductStore((s) => s.commitSearchTerm);
   const filters = useTonKhoByProductStore((s) => s.filters);
   const setFilter = useTonKhoByProductStore((s) => s.setFilter);
-  const resetFilters = useTonKhoByProductStore((s) => s.resetFilters);
   const columns = useTonKhoByProductStore((s) => s.columns);
   const toggleColumn = useTonKhoByProductStore((s) => s.toggleColumn);
   const reorderColumns = useTonKhoByProductStore((s) => s.reorderColumns);

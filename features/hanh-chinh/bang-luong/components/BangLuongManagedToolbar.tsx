@@ -22,7 +22,7 @@ interface Props {
 
 const BangLuongManagedToolbar: React.FC<Props> = ({ items = [], onAdd, onClearSelection, selectedCount, onDeleteMany, canCreate = true, canDelete = true }) => {
   const { t } = useTranslation();
-  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useBangLuongManagedStore);
+  const { searchInput, setSearchInput } = useGenericToolbarSearch(useBangLuongManagedStore);
   const filters = useBangLuongManagedStore((s) => s.filters);
   const setFilter = useBangLuongManagedStore((s) => s.setFilter);
   const columns = useBangLuongManagedStore((s) => s.columns);

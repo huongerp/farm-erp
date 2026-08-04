@@ -21,7 +21,7 @@ interface Props {
 
 const NhomTaiSanToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onStatusChangeMany, canCreate = true, canUpdate = true, canDelete = true }) => {
   const { t } = useTranslation();
-  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useNhomTaiSanStore);
+  const { searchInput, setSearchInput } = useGenericToolbarSearch(useNhomTaiSanStore);
   const filters = useNhomTaiSanStore((s) => s.filters);
   const setFilter = useNhomTaiSanStore((s) => s.setFilter);
   const columns = useNhomTaiSanStore((s) => s.columns);

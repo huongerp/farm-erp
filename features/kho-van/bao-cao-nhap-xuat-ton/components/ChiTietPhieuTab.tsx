@@ -4,7 +4,7 @@ import { FileText, Package } from 'lucide-react';
 import { usePhieuInPeriod } from '../hooks/use-bao-cao-nxt';
 import { usePhieuKhoById } from '../../phieu-kho/hooks/use-phieu-kho';
 import type { NXTReportFilters } from '../core/types';
-import type { PhieuKho, LoaiPhieuKho, TrangThaiPhieuKho } from '../../phieu-kho/core/types';
+import type { LoaiPhieuKho, TrangThaiPhieuKho } from '../../phieu-kho/core/types';
 import { getTrangThaiPhieuBadgeClass, trangThaiToI18nKey } from '../../phieu-kho/core/constants';
 import Button from '../../../../components/ui/Button';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';

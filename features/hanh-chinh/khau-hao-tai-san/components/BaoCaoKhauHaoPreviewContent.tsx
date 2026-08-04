@@ -4,7 +4,7 @@
  */
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { formatDate, formatDateTime, formatCurrency } from '../../../../lib/utils';
+import { formatDateTime, formatCurrency } from '../../../../lib/utils';
 import { useUIStore } from '../../../../store/useStore';
 import { getTrangThaiKyLabel } from '../core/constants';
 import type { KyKhauHao, ChiTietKhauHao } from '../core/types';

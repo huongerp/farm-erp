@@ -121,12 +121,6 @@ const DuBaoSlDongThungDetail: React.FC<Props> = ({
     });
   }
 
-  const cellNum = (n: number | null, bold?: boolean) => (
-    <span className={cn('tabular-nums text-sm', bold ? 'font-bold text-primary' : 'text-foreground')}>
-      {n == null ? '—' : formatNumberVN(n)}
-    </span>
-  );
-
   return (
     <GenericDrawer
       title={t('duBaoSlDongThung.detail.title')}

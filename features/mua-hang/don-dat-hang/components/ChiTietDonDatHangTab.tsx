@@ -266,12 +266,6 @@ const ChiTietDonDatHangTab: React.FC = () => {
     setViewingDonId(null);
   }, []);
 
-  const handleEdit = useCallback((item: DonDatHang) => {
-    setEditingItem(item);
-    setViewingDonId(null);
-    setShowForm(true);
-  }, []);
-
   const handleCloseForm = useCallback(() => {
     setShowForm(false);
     if (editingItem?.id === openedFormFromDetailId) setOpenedFormFromDetailId(null);

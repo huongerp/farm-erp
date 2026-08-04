@@ -8,7 +8,6 @@ import type {
   DotKiemKeCreate,
   ChiTietKiemKeUpdate,
   TrangThaiDotKiemKe,
-  KetQuaKiemKe,
 } from '../core/types';
 import {
   getDotKiemKeListSupabase,

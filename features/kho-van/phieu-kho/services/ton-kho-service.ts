@@ -5,7 +5,6 @@
 
 import {
   getAllTonKhoSupabase,
-  getTonKhoMatrixSupabase,
   getTonKhoSupabase,
   getTonKhoTheoKhoSupabase,
   getTonKhoTheoHangHoaSupabase,

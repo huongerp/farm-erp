@@ -6,7 +6,6 @@ import {
 } from '../../../bao-cao-so-che/core/bcsc-kpi';
 import { BCSC_KPI_THUONG_PRESETS } from '../../../bao-cao-so-che/core/kpi-thuong-presets';
 import { sumPhamCapDisplayTotals } from '../../../bao-cao-so-che/core/pham-cap-derived';
-import { computeKpiPhanTram } from '../../../shared/kpi-thuong/types';
 import type { FarmBaoCaoNhanCong } from '../../../bao-cao-nhan-cong/core/types';
 import type { FarmBaoCaoSoChe } from '../../../bao-cao-so-che/core/types';
 import type { FarmDuBaoSlDongThung } from '../../../du-bao-sl-dong-thung/core/types';

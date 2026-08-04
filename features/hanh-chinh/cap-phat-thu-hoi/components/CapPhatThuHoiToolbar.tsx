@@ -28,7 +28,7 @@ const CapPhatThuHoiToolbar: React.FC<Props> = ({
   canDelete = true,
 }) => {
   const { t } = useTranslation();
-  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useCapPhatThuHoiStore);
+  const { searchInput, setSearchInput } = useGenericToolbarSearch(useCapPhatThuHoiStore);
   const filters = useCapPhatThuHoiStore((s) => s.filters);
   const setFilter = useCapPhatThuHoiStore((s) => s.setFilter);
   const resetFilters = useCapPhatThuHoiStore((s) => s.resetFilters);

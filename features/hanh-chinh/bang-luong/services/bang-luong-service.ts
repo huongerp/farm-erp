@@ -127,8 +127,7 @@ async function fetchNhanVienPhongBanMaps(
 /** Các kỳ (nam-thang) cần tính bảng lương (có dữ liệu chấm công / KPI) */
 const PAYROLL_PERIODS = ['2024-12', '2025-01', '2025-02'] as const;
 
-/** In-memory store: seed từ tính toán lần đầu, sau đó dùng save/delete */
-let dbBangLuong: BangLuongRecord[] = [];
+/** Guard chỉ seed một lần; kết quả tính toán hiện chưa được cache lại (xem getBangLuongRecords). */
 let dbSeeded = false;
 
 function buildKpiMap(records: ChamDiemKpiRecord[]): Map<string, ChamDiemKpiRecord> {
@@ -245,11 +244,6 @@ async function seedDb(): Promise<void> {
     }
   });
 
-  dbBangLuong = results.sort((a, b) => {
-    const keyA = `${a.nam}-${String(a.thang).padStart(2, '0')}-${a.id_nhan_vien}`;
-    const keyB = `${b.nam}-${String(b.thang).padStart(2, '0')}-${b.id_nhan_vien}`;
-    return keyB.localeCompare(keyA);
-  });
   dbSeeded = true;
 }
 

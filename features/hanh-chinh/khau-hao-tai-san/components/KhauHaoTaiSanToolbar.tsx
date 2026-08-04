@@ -19,7 +19,7 @@ interface Props {
 
 const KhauHaoTaiSanToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, showAdd = true }) => {
   const { t } = useTranslation();
-  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useKhauHaoTaiSanStore);
+  const { searchInput, setSearchInput } = useGenericToolbarSearch(useKhauHaoTaiSanStore);
   const filters = useKhauHaoTaiSanStore((s) => s.filters);
   const setFilter = useKhauHaoTaiSanStore((s) => s.setFilter);
   const resetFilters = useKhauHaoTaiSanStore((s) => s.resetFilters);

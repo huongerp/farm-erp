@@ -1,7 +1,7 @@
 /**
  * Phiếu kho phân thuốc — Supabase (fp_farm_phieu_kho_phan_thuoc + chi tiết + views).
  */
-import { supabase, fetchAllRows, fetchTablePage, type PaginatedTableResult, throwSupabaseError } from '../../../../lib/supabase';
+import { supabase, fetchTablePage, type PaginatedTableResult, throwSupabaseError } from '../../../../lib/supabase';
 import type {
   PhieuKhoPT,
   PhieuKhoPTChiTiet,
@@ -342,7 +342,6 @@ export async function updatePhieuKhoPTSupabase(id: string, data: PhieuKhoPTFormV
     nvMap[e.id] = e.ho_ten;
   });
 
-  const loaiDb = (oldRow as PhieuKhoPTDbRow).loai as LoaiPhieuKhoPT;
   const nguoiTaoId = data.nguoi_tao_id != null ? Number(data.nguoi_tao_id) : null;
 
   const payload = {

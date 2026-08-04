@@ -61,7 +61,7 @@ function phieuToFormValues(phieu: PhieuDeXuatVatTu): PhieuDeXuatVatTuFormValues 
 
 const ChiTietTab: React.FC = () => {
   const { t } = useTranslation();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [, setSearchParams] = useSearchParams();
   const confirm = useConfirmStore((s) => s.confirm);
   const user = useAuthStore((s) => s.user);
   const { data: employees = [] } = useEmployeesRefQuery();
@@ -99,9 +99,6 @@ const ChiTietTab: React.FC = () => {
     toggleSelection,
     toggleAllSelection,
     clearSelection,
-    toggleColumn,
-    reorderColumns,
-    resetColumns,
     sort,
     setSort,
     resetState,

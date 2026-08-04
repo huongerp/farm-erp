@@ -30,7 +30,6 @@ const LoaiChiPhiTab: React.FC = () => {
     sort,
     resetState,
     clearSelection,
-    selectedIds,
   } = useLoaiChiPhiStore();
 
   const [showForm, setShowForm] = useState(false);

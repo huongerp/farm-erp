@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import BaoCaoDeXuatVatTuToolbar from './components/BaoCaoDeXuatVatTuToolbar';
 const TongHopDayDuTab = lazy(() => import('./components/TongHopDayDuTab'));
@@ -24,7 +24,6 @@ const DEFAULT_FILTERS: BaoCaoDeXuatVatTuFilters = {
 
 const BaoCaoDeXuatVatTuPage: React.FC = () => {
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
   const [filters, setFilters] = useState<BaoCaoDeXuatVatTuFilters>(DEFAULT_FILTERS);
   const viewScope = usePhieuDeXuatVatTuViewScope();
 

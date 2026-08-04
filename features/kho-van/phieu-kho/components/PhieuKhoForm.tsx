@@ -6,7 +6,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { FileText, Calendar, Warehouse, ArrowRightLeft, Package, Trash2, AlertTriangle, Truck, ShoppingCart, Edit } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
 import Textarea from '../../../../components/ui/Textarea';
-import Select from '../../../../components/ui/Select';
 import Combobox from '../../../../components/ui/Combobox';
 import { PhieuKhoFormValues, phieuKhoSchema, filterPhieuKhoChiTietForSave } from '../core/schema';
 import type { PhieuKho, LoaiPhieuKhoTab } from '../core/types';

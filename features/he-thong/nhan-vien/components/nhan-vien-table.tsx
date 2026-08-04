@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Edit, Trash2, Phone, Briefcase, Building2, Mail, MapPin, Calendar, IdCard } from 'lucide-react';
+import { Edit, Trash2, Phone, Briefcase, Building2, Mail, MapPin, IdCard } from 'lucide-react';
 import { Employee } from '../core/types';
 import type { Position } from '../../chuc-vu/core/types';
 import { useEmployeeStore } from '../store/useEmployeeStore';

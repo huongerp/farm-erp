@@ -14,7 +14,7 @@ import {
 import type { ChiTietPhieuKhoPTListServerQuery, PhieuKhoPTListServerQuery } from '../services/phieu-kho-pt-list-query';
 import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
 import type { PhieuKhoPTFormValues } from '../core/schema';
-import type { LoaiPhieuKhoPT, PhieuKhoPT } from '../core/types';
+import type { LoaiPhieuKhoPT } from '../core/types';
 import i18n from '../../../../lib/i18n';
 import { FARM_TON_KHO_PT_QUERY_KEY } from '../../ton-kho-phan-thuoc/hooks/use-farm-ton-kho-pt';
 

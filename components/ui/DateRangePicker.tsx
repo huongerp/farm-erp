@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Calendar, ChevronDown, X } from 'lucide-react';
+import { Calendar, ChevronDown } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 /* ------------------------------------------------------------------ */

@@ -58,10 +58,6 @@ const CAN_DELETE_DOT: TrangThaiDotKiemKe[] = [TRANG_THAI_NHAP, TRANG_THAI_DANG_K
 const TRANG_THAI_ACTIVE_DEFAULT = 'Đang hoạt động';
 const KET_QUA_CHUA_KIEM: KetQuaKiemKe = 'Chưa kiểm';
 
-function toStr(n: number | null | undefined): string {
-  if (n == null) return '';
-  return String(n);
-}
 function toNum(s: string | null | undefined): number | null {
   if (s == null || s === '') return null;
   const n = Number(s);

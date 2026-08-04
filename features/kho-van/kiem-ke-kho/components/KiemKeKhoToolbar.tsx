@@ -32,7 +32,7 @@ const KiemKeKhoToolbar: React.FC<Props> = ({
   canDelete = true,
 }) => {
   const { t } = useTranslation();
-  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useKiemKeKhoStore);
+  const { searchInput, setSearchInput } = useGenericToolbarSearch(useKiemKeKhoStore);
   const filters = useKiemKeKhoStore((s) => s.filters);
   const setFilter = useKiemKeKhoStore((s) => s.setFilter);
   const resetFilters = useKiemKeKhoStore((s) => s.resetFilters);

@@ -19,7 +19,7 @@ const CuaToiTab: React.FC = () => {
   const user = useAuthStore((s) => s.user);
   const confirm = useConfirmStore((s) => s.confirm);
   const currentUserId = user?.id ?? '';
-  const { searchTerm, filters, sort, resetState, selectedIds, clearSelection, pagination } = useCapPhatThuHoiStore();
+  const { searchTerm, filters, sort, resetState, clearSelection } = useCapPhatThuHoiStore();
   const { data: list = [], isLoading } = usePhieuList({
     filter: 'mine',
     id_nguoi: currentUserId,

@@ -26,7 +26,6 @@ import type { CongViecScope } from '../core/scope';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
 import { useListWithFilter } from '../../../../lib/hooks';
 import { getLanguage, exportToExcel } from '../../../../lib/utils';
-import { getTrangThaiLabel, getUuTienLabel } from '../core/constants';
 import type { CongViec } from '../core/types';
 import type { CongViecFilters } from '../store/useCongViecStore';
 
@@ -53,7 +52,6 @@ const CongViecScopeTab: React.FC<Props> = ({ scope }) => {
     resetState,
     clearSelection,
     selectedIds,
-    setFilter,
     columns,
     pagination,
     setPage,

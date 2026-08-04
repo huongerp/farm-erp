@@ -12,7 +12,7 @@ import type { FarmHangHoa } from '../../hang-hoa-phan-thuoc/core/types';
 import type { FarmDanhMucCap2WithParent } from '../../hang-hoa-phan-thuoc/services/farm-danh-muc-service';
 import type { LoaiPhieuKhoPT } from '../../phieu-kho-phan-thuoc/core/types';
 import { useTonKhoPTStore } from '../store/useTonKhoPTStore';
-import { getDateRangeFromPreset, getPresetFromDates } from '../core/datePresets';
+import { getPresetFromDates } from '../core/datePresets';
 import { FARM_TON_KHO_PT_QUERY_KEY } from '../hooks/use-farm-ton-kho-pt';
 import { cn } from '../../../../lib/utils';
 

@@ -16,7 +16,6 @@ import type { DateRangePresetId } from '../../../he-thong/nhan-vien/core/stats-c
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
 import type { PhieuKho, LoaiPhieuKhoTab } from '../core/types';
-import { LOAI_TAB_TO_DB } from '../core/types';
 import { canMutatePhieuKhoByTrangThai } from '../core/constants';
 import type { Kho } from '../../danh-sach-kho/core/types';
 import type { HangHoa } from '../../danh-sach-hang-hoa/core/types';
@@ -42,7 +41,6 @@ interface Props {
 }
 
 const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
-  const loaiDb = LOAI_TAB_TO_DB[loaiTab];
   const { t } = useTranslation();
   const { canCreate, canUpdate, canDelete, canApprove } = useModulePermissionFromContext();
   const { canCreate: canCreateHangHoa } = useModulePermission('kho-van/danh-sach-hang-hoa');

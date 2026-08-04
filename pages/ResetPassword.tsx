@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import Button from '../components/ui/Button';
-import Input from '../components/ui/Input';
 import { toast } from 'sonner';
 import { supabase } from '../lib/supabase';
 import { updatePassword } from '../lib/auth';

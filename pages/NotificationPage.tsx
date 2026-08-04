@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Bell } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { useNotificationStore } from '../store/useNotificationStore';
 import NotificationItem from '../components/notification/NotificationItem';
 import Section from '../components/shared/Section';

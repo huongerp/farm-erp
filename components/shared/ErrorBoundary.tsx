@@ -1,4 +1,4 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { Component, ErrorInfo, ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { captureExceptionWithSentry } from '../../lib/sentry-client';
 import ErrorState from './ErrorState';

@@ -30,7 +30,7 @@ const DotTab: React.FC = () => {
   const { t } = useTranslation();
   const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
-  const { searchTerm, filters, sort, resetState, selectedIds, clearSelection } = useKiemKeKhoStore();
+  const { searchTerm, filters, sort, resetState, clearSelection } = useKiemKeKhoStore();
   const { data: list = [], isLoading } = useDotKiemKeKhoList({
     q: searchTerm || undefined,
     trang_thai_dot: filters.trang_thai_dot.length ? (filters.trang_thai_dot as TrangThaiDotKiemKeKho[]) : undefined,

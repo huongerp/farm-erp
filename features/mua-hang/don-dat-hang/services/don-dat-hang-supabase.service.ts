@@ -9,7 +9,6 @@ import { TRANG_THAI_NHAP } from '../core/types';
 import i18n from '../../../../lib/i18n';
 import { getKhoRef } from '../../../kho-van/danh-sach-kho/services/kho-service';
 import { getDoiTacRef } from '../../../kho-van/danh-sach-doi-tac/services/doi-tac-service';
-import { getEmployeesRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
 import { getHangHoaRef, type HangHoaRefLite } from '../../../kho-van/danh-sach-hang-hoa/services/hang-hoa-service';
 import type { BranchListScope } from '../../../../lib/branch-scope-query';
 import { postgrestQuotedIlikePattern } from '../../../../lib/postgrest-or-ilike';

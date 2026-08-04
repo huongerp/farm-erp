@@ -57,11 +57,6 @@ interface DotRow {
   tg_cap_nhat: string | null;
 }
 
-interface DotKhoRow {
-  id_dot_kiem_ke_kho: number;
-  id_kho: number;
-}
-
 interface ChiTietRow {
   id: number;
   id_dot_kiem_ke_kho: number;

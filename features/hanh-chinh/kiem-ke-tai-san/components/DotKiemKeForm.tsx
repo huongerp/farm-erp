@@ -37,7 +37,6 @@ interface Props {
   onSuccessAfterEdit?: (item: DotKiemKe) => void;
 }
 
-const RequiredStar = () => <span className="text-destructive ml-0.5">*</span>;
 
 const DotKiemKeForm: React.FC<Props> = ({ onClose, initialData, onSuccessAfterEdit }) => {
   const { t } = useTranslation();

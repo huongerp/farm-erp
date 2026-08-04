@@ -21,7 +21,7 @@ interface Props {
 
 const TrangThaiThanhToanDoiTacToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onStatusChangeMany, canCreate = true, canDelete = true }) => {
   const { t } = useTranslation();
-  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useTrangThaiThanhToanDoiTacStore);
+  const { searchInput, setSearchInput } = useGenericToolbarSearch(useTrangThaiThanhToanDoiTacStore);
   const filters = useTrangThaiThanhToanDoiTacStore((s) => s.filters);
   const setFilter = useTrangThaiThanhToanDoiTacStore((s) => s.setFilter);
   const columns = useTrangThaiThanhToanDoiTacStore((s) => s.columns);

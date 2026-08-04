@@ -21,7 +21,7 @@ interface Props {
 
 const BranchToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onStatusChangeMany, canCreate = true, canUpdate = true, canDelete = true }) => {
   const { t } = useTranslation();
-  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useBranchStore);
+  const { searchInput, setSearchInput } = useGenericToolbarSearch(useBranchStore);
   const filters = useBranchStore((s) => s.filters);
   const setFilter = useBranchStore((s) => s.setFilter);
   const columns = useBranchStore((s) => s.columns);

@@ -28,7 +28,6 @@ import {
 } from '../core/form-mappers';
 import BaoCaoNhanCongChuyenSubEditor from './BaoCaoNhanCongChuyenSubEditor';
 import {
-  emptySubFormByLoai,
   findSubSlGioPairIssues,
   formatGioTbVN,
   tongGioCongNgayVaNua,

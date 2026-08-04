@@ -23,7 +23,7 @@ interface Props {
 
 const PayrollWifiIpToolbar: React.FC<Props> = ({ items = [], onAdd, onImport, onExport, onDeleteMany, onStatusChangeMany }) => {
   const { t } = useTranslation();
-  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(usePayrollWifiIpStore);
+  const { searchInput, setSearchInput } = useGenericToolbarSearch(usePayrollWifiIpStore);
   const filters = usePayrollWifiIpStore((s) => s.filters);
   const setFilter = usePayrollWifiIpStore((s) => s.setFilter);
   const columns = usePayrollWifiIpStore((s) => s.columns);

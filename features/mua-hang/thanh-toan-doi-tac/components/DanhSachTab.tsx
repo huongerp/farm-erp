@@ -15,7 +15,6 @@ import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-label
 import type { ThanhToanDoiTac } from '../core/types';
 import type { ThanhToanDoiTacFilters } from '../store/useThanhToanDoiTacStore';
 import type { ThanhToanDoiTacFormValues } from '../core/schema';
-import { getTodayISO } from '../../../../lib/utils';
 import ThanhToanDoiTacToolbar from './ThanhToanDoiTacToolbar';
 import ThanhToanDoiTacList from './ThanhToanDoiTacList';
 import ThanhToanDoiTacForm from './ThanhToanDoiTacForm';
@@ -61,7 +60,6 @@ const DanhSachTab: React.FC = () => {
   const { data: allList = [], isLoading } = useThanhToanDoiTacList();
   const { data: doiTacList = [] } = useDoiTacRefQuery('nha_cung_cap');
   const { data: chiNhanhList = [] } = useBranches();
-  const donViList = chiNhanhList; // Đơn vị = chi nhánh (alias để tương thích)
   const { data: employees = [] } = useEmployeesRefQuery();
   const { data: statusList = [] } = useTrangThaiThanhToanDoiTacList();
   const viewScope = useThanhToanDoiTacViewScope();

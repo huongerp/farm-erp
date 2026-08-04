@@ -37,6 +37,7 @@ export default defineConfig(() => {
             if (id.includes('react-dom') || id.includes('/react/')) return 'react-vendor';
             if (id.includes('i18next') || id.includes('react-i18next')) return 'i18n';
             if (id.includes('@sentry')) return 'sentry';
+            return undefined;
           },
         },
       },

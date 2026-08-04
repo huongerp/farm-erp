@@ -29,7 +29,7 @@ interface Props {
 
 const DanhSachTaiSanToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onStatusChangeMany, onExportExcel, onExportPDF, canCreate = true, canUpdate = true, canDelete = true }) => {
   const { t } = useTranslation();
-  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useDanhSachTaiSanStore);
+  const { searchInput, setSearchInput } = useGenericToolbarSearch(useDanhSachTaiSanStore);
   const filters = useDanhSachTaiSanStore((s) => s.filters);
   const setFilter = useDanhSachTaiSanStore((s) => s.setFilter);
   const columns = useDanhSachTaiSanStore((s) => s.columns);

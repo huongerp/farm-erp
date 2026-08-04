@@ -30,7 +30,6 @@ const PayrollPointGroupTab: React.FC = () => {
     sort,
     resetState,
     clearSelection,
-    selectedIds,
   } = usePayrollPointGroupStore();
 
   const [showForm, setShowForm] = useState(false);

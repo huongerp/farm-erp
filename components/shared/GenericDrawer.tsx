@@ -5,7 +5,6 @@ import { cn } from '../../lib/utils';
 import { useEnterTransition } from '../../lib/usePresenceTransition';
 import {
   getDrawerWidthClass,
-  DRAWER_WIDTH_FORM,
   DRAWER_Z_BASE,
   DRAWER_Z_CONTENT_BASE,
 } from '../../lib/dialog-sizes';

@@ -20,7 +20,7 @@ interface Props {
 
 const LoaiChiPhiToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onStatusChangeMany, canCreate = true, canUpdate = true, canDelete = true }) => {
   const { t } = useTranslation();
-  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useLoaiChiPhiStore);
+  const { searchInput, setSearchInput } = useGenericToolbarSearch(useLoaiChiPhiStore);
   const filters = useLoaiChiPhiStore((s) => s.filters);
   const setFilter = useLoaiChiPhiStore((s) => s.setFilter);
   const columns = useLoaiChiPhiStore((s) => s.columns);

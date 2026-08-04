@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { Edit, Trash2, FileText } from 'lucide-react';
 import { cn, formatDateShort, formatNumberVN } from '../../../../lib/utils';
 import type { PhieuKiemKe } from '../core/types';
-import { TRANG_THAI_KIEM_KE } from '../core/constants';
 import EmptyState from '../../../../components/shared/EmptyState';
 import ListPageSkeleton from '../../../../components/shared/ListPageSkeleton';
 import TablePaginationFooter from '../../../../components/shared/TablePaginationFooter';

@@ -2,7 +2,6 @@ import { supabase, fetchAllRows } from '../../../../lib/supabase';
 import type { JobLevel } from '../core/types';
 import type { JobLevelFormValues } from '../core/schema';
 import { TRANG_THAI, TRANG_THAI_HOAT_DONG, type TrangThaiHoatDong } from '../../../../lib/constants';
-import i18n from '../../../../lib/i18n';
 
 const TABLE = 'fp_var_cap_bac';
 

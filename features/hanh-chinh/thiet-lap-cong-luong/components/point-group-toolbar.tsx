@@ -23,7 +23,7 @@ interface Props {
 
 const PayrollPointGroupToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onStatusChangeMany, canCreate = true, canUpdate = true, canDelete = true }) => {
   const { t } = useTranslation();
-  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(usePayrollPointGroupStore);
+  const { searchInput, setSearchInput } = useGenericToolbarSearch(usePayrollPointGroupStore);
   const filters = usePayrollPointGroupStore((s) => s.filters);
   const setFilter = usePayrollPointGroupStore((s) => s.setFilter);
   const columns = usePayrollPointGroupStore((s) => s.columns);

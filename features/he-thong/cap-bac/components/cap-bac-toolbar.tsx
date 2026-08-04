@@ -27,7 +27,7 @@ const JobLevelToolbar: React.FC<Props> = ({
   canCreate = true, canUpdate = true, canDelete = true,
 }) => {
   const { t } = useTranslation();
-  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useJobLevelStore);
+  const { searchInput, setSearchInput } = useGenericToolbarSearch(useJobLevelStore);
   const filters = useJobLevelStore((s) => s.filters);
   const setFilter = useJobLevelStore((s) => s.setFilter);
   const columns = useJobLevelStore((s) => s.columns);

@@ -17,7 +17,7 @@ interface Props {
 
 const BangLuongMyToolbar: React.FC<Props> = ({ onAdd, onClearSelection, selectedCount, onDeleteMany, canCreate = true, canDelete = true }) => {
   const { t } = useTranslation();
-  const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useBangLuongMyStore);
+  const { searchInput, setSearchInput } = useGenericToolbarSearch(useBangLuongMyStore);
   const filters = useBangLuongMyStore((s) => s.filters);
   const setFilter = useBangLuongMyStore((s) => s.setFilter);
   const columns = useBangLuongMyStore((s) => s.columns);
