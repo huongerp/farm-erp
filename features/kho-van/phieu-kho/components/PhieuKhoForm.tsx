@@ -233,7 +233,7 @@ const PhieuKhoForm: React.FC<Props> = ({
       return;
     }
     const validChiTiet = filterPhieuKhoChiTietForSave(data.chi_tiet);
-    if (!isEdit && validChiTiet.length === 0) {
+    if (validChiTiet.length === 0) {
       toast.error(t('phieuKho.validation.atLeastOneItem'));
       return;
     }

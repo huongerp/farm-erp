@@ -3,7 +3,7 @@
  */
 import type { DonDatHangFormValues } from '../core/schema';
 import type { PaginatedTableResult } from '../../../../lib/supabase';
-import type { ChiTietDonDatHangFlat, DonDatHang } from '../core/types';
+import type { ChiTietDonDatHangFlat, DonDatHang, DonDatHangTrangThai } from '../core/types';
 import {
   getAllDonDatHangSupabase,
   getDonDatHangByIdSupabase,
@@ -14,6 +14,7 @@ import {
   getPhanLoaiDonDatHangChiTietSupabase,
   createDonDatHangSupabase,
   updateDonDatHangSupabase,
+  updateDonDatHangTrangThaiSupabase,
   deleteDonDatHangSupabase,
   deleteDonDatHangManySupabase,
   getNextSoPoDonDatHangSupabase,
@@ -57,6 +58,11 @@ export const getNextSoPoDonDatHang = getNextSoPoFormatted;
 export const getDonDatHangById = getDonDatHangByIdSupabase;
 export const createDonDatHang = (data: DonDatHangFormValues) => createDonDatHangSupabase(data);
 export const updateDonDatHang = updateDonDatHangSupabase;
+export const updateDonDatHangTrangThai = (
+  id: string,
+  trang_thai: DonDatHangTrangThai,
+  options?: { ghi_chu?: string; notePrefix?: string }
+) => updateDonDatHangTrangThaiSupabase(id, trang_thai, options);
 export const deleteDonDatHang = deleteDonDatHangSupabase;
 export const deleteDonDatHangMany = deleteDonDatHangManySupabase;
 export const fetchChiTietForCategoryStats = fetchChiTietForCategoryStatsSupabase;

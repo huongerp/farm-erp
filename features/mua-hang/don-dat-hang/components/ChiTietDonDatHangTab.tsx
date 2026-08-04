@@ -10,7 +10,7 @@ import {
   useChiTietDonDatHangListPaged,
   useDonDatHangById,
   useDeleteDonDatHang,
-  useUpdateDonDatHang,
+  useUpdateDonDatHangTrangThai,
   usePhanLoaiDonDatHangChiTiet,
 } from '../hooks/use-don-dat-hang';
 import { useDonDatHangViewScope } from '../hooks/use-don-dat-hang-view-scope';
@@ -21,7 +21,6 @@ import { useKhoList } from '../../../kho-van/danh-sach-kho/hooks/use-kho';
 import { useChiTietDonDatHangStore } from '../store/useChiTietDonDatHangStore';
 import type { ChiTietDonDatHangFlat, DonDatHang } from '../core/types';
 import { TRANG_THAI_KEY } from '../core/constants';
-import { donDatHangToFormValues } from '../core/don-dat-hang-to-form-values';
 import ChiTietDonDatHangToolbar from './ChiTietDonDatHangToolbar';
 import DonDatHangDetail from './DonDatHangDetail';
 import DonDatHangForm from './DonDatHangForm';
@@ -135,7 +134,7 @@ const ChiTietDonDatHangTab: React.FC = () => {
   const { data: viewingPoFull } = useDonDatHangById(viewingDonId ?? undefined);
   const { data: editingPoFull } = useDonDatHangById(editingItem?.id);
   const deleteMutation = useDeleteDonDatHang();
-  const updateMutation = useUpdateDonDatHang();
+  const updateTrangThaiMutation = useUpdateDonDatHangTrangThai();
 
   const phanLoaiOptions = useMemo(() => {
     return phanLoaiList.map((value) => ({ label: value, value, count: 1 }));
@@ -274,29 +273,24 @@ const ChiTietDonDatHangTab: React.FC = () => {
 
   const handleApprove = useCallback(
     (item: DonDatHang, payload: { trangThai: 'Đã xác nhận' | 'Hủy'; ghiChu?: string }) => {
-      const full = viewingPoFull ?? item;
-      const mergedGhiChu = payload.ghiChu
-        ? (full.ghi_chu ? full.ghi_chu + '\n' : '') + `[Ghi chú phê duyệt]: ${payload.ghiChu}`
-        : undefined;
-      const data = donDatHangToFormValues(full, payload.trangThai, mergedGhiChu);
-      updateMutation.mutate(
-        { id: full.id, data },
+      updateTrangThaiMutation.mutate(
+        { id: item.id, trangThai: payload.trangThai, ghiChu: payload.ghiChu, notePrefix: '[Ghi chú phê duyệt]: ' },
         { onSuccess: () => setViewingDonId(null) }
       );
     },
-    [updateMutation, viewingPoFull]
+    [updateTrangThaiMutation]
   );
 
   const handleChangeStatus = useCallback(
     (item: DonDatHang, payload: { trangThai: DonDatHang['trang_thai']; ghiChu?: string }) => {
-      const full = viewingPoFull ?? item;
-      const mergedGhiChu = payload.ghiChu
-        ? (full.ghi_chu ? full.ghi_chu + '\n' : '') + `[Chuyển trạng thái]: ${payload.ghiChu}`
-        : undefined;
-      const data = donDatHangToFormValues(full, payload.trangThai, mergedGhiChu);
-      updateMutation.mutate({ id: full.id, data });
+      updateTrangThaiMutation.mutate({
+        id: item.id,
+        trangThai: payload.trangThai,
+        ghiChu: payload.ghiChu,
+        notePrefix: '[Chuyển trạng thái]: ',
+      });
     },
-    [updateMutation, viewingPoFull]
+    [updateTrangThaiMutation]
   );
 
   const handleDelete = useCallback(

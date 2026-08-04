@@ -469,10 +469,18 @@ export async function updatePhieuKhoSupabase(id: string, data: PhieuKhoFormValue
     ten_nguoi_tao: nguoiTaoId != null ? (nvMap[String(nguoiTaoId)] ?? null) : null,
   };
 
+  // Chặn ghi đè chi_tiet bằng payload rỗng: nếu data.chi_tiet trống (ví dụ do
+  // form được mở từ một dòng "summary" chưa load đủ chi_tiet — xem
+  // usePhieuKhoById trong PhieuKhoTabContent), lưu edit sẽ xoá sạch dòng hàng
+  // của phiếu mà không có cách nào phục hồi. Từ chối ngay tại đây, không chỉ
+  // ở form, vì dữ liệu tới service có thể đã cũ hơn lúc form validate.
+  const chiTietPayload = filterPhieuKhoChiTietForSave(data.chi_tiet);
+  if (chiTietPayload.length === 0) {
+    throw new Error(i18n.t('phieuKho.validation.atLeastOneItem'));
+  }
+
   const { error: updateErr } = await supabase.from(TABLE_PHIEU).update(payload).eq('id', idNum);
   if (updateErr) throwSupabaseError(updateErr);
-
-  await supabase.from(TABLE_CHI_TIET).delete().eq('id_phieu_kho', idNum);
 
   const hangHoaList = await getHangHoaRef();
   const hangHoaMap: Record<string, { ten_hang_hoa: string; don_vi_tinh?: string; pham_cap?: string | null }> = {};
@@ -484,30 +492,44 @@ export async function updatePhieuKhoSupabase(id: string, data: PhieuKhoFormValue
     };
   });
 
-  const chiTietPayload = filterPhieuKhoChiTietForSave(data.chi_tiet);
-  if (chiTietPayload.length > 0) {
-    const ctRows = chiTietPayload.map((c) => {
-      const h = hangHoaMap[c.id_hang_hoa.trim()];
-      const sl = Number(c.so_luong);
-      const dg = c.don_gia != null ? Number(c.don_gia) : 0;
-      const phamCap = c.pham_cap?.trim() || h?.pham_cap?.trim() || null;
-      return {
-        id_phieu_kho: idNum,
-        id_hang_hoa: Number(c.id_hang_hoa),
-        ten_hang_hoa: h?.ten_hang_hoa ?? null,
-        don_vi_tinh: h?.don_vi_tinh ?? null,
-        pham_cap: phamCap,
-        so_luong: sl,
-        don_gia: dg,
-        thanh_tien: sl * dg,
-        so_lot: c.so_lot?.trim() || null,
-        ghi_chu: c.ghi_chu?.trim() || null,
-        nguoi_tao_id: nguoiTaoId,
-        ten_nguoi_tao: nguoiTaoId != null ? (nvMap[String(nguoiTaoId)] ?? null) : null,
-      };
-    });
-    const { error: errCt } = await supabase.from(TABLE_CHI_TIET).insert(ctRows);
-    if (errCt) throwSupabaseError(errCt);
+  // Không có transaction ở tầng client, nên thứ tự các bước được chọn để
+  // giảm thiệt hại nếu đứt giữa chừng: chèn dòng mới TRƯỚC, chỉ xoá dòng cũ
+  // (theo id đã chụp từ đầu) SAU KHI chèn thành công. Nếu insert lỗi, dòng cũ
+  // vẫn còn nguyên — hỏng ở bước xoá thì thừa dữ liệu (dễ dọn) thay vì mất
+  // sạch dòng hàng (không thể phục hồi).
+  const { data: oldCtRows, error: oldCtErr } = await supabase
+    .from(TABLE_CHI_TIET)
+    .select('id')
+    .eq('id_phieu_kho', idNum);
+  if (oldCtErr) throwSupabaseError(oldCtErr);
+  const oldCtIds = (oldCtRows ?? []).map((r: { id: number }) => r.id);
+
+  const ctRows = chiTietPayload.map((c) => {
+    const h = hangHoaMap[c.id_hang_hoa.trim()];
+    const sl = Number(c.so_luong);
+    const dg = c.don_gia != null ? Number(c.don_gia) : 0;
+    const phamCap = c.pham_cap?.trim() || h?.pham_cap?.trim() || null;
+    return {
+      id_phieu_kho: idNum,
+      id_hang_hoa: Number(c.id_hang_hoa),
+      ten_hang_hoa: h?.ten_hang_hoa ?? null,
+      don_vi_tinh: h?.don_vi_tinh ?? null,
+      pham_cap: phamCap,
+      so_luong: sl,
+      don_gia: dg,
+      thanh_tien: sl * dg,
+      so_lot: c.so_lot?.trim() || null,
+      ghi_chu: c.ghi_chu?.trim() || null,
+      nguoi_tao_id: nguoiTaoId,
+      ten_nguoi_tao: nguoiTaoId != null ? (nvMap[String(nguoiTaoId)] ?? null) : null,
+    };
+  });
+  const { error: errCt } = await supabase.from(TABLE_CHI_TIET).insert(ctRows);
+  if (errCt) throwSupabaseError(errCt);
+
+  if (oldCtIds.length > 0) {
+    const { error: delErr } = await supabase.from(TABLE_CHI_TIET).delete().in('id', oldCtIds);
+    if (delErr) throwSupabaseError(delErr);
   }
 
   const got = await getPhieuKhoByIdSupabase(id);

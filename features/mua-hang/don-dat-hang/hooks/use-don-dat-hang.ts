@@ -7,6 +7,7 @@ import {
   getDonDatHangById,
   createDonDatHang,
   updateDonDatHang,
+  updateDonDatHangTrangThai,
   deleteDonDatHang,
   deleteDonDatHangMany,
   getPhanLoaiDonDatHangChiTiet,
@@ -109,6 +110,33 @@ export const useUpdateDonDatHang = (onSuccess?: () => void) => {
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'chiTietPaged'] });
       qc.invalidateQueries({ queryKey: PHAN_LOAI_CHI_TIET_QUERY_KEY });
+      toast.success(i18n.t('donDatHang.toast.updateSuccess'));
+      onSuccess?.();
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+};
+
+/** Duyệt / chuyển trạng thái PO — chỉ đổi trang_thai + ghi_chu, không đụng chi_tiet. */
+export const useUpdateDonDatHangTrangThai = (onSuccess?: () => void) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      trangThai,
+      ghiChu,
+      notePrefix,
+    }: {
+      id: string;
+      trangThai: DonDatHang['trang_thai'];
+      ghiChu?: string;
+      notePrefix?: string;
+    }) => updateDonDatHangTrangThai(id, trangThai, { ghi_chu: ghiChu, notePrefix }),
+    onSuccess: async (_void, { id }) => {
+      qc.invalidateQueries({ queryKey: QUERY_KEY });
+      qc.invalidateQueries({ queryKey: [...QUERY_KEY, id] });
+      qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
+      qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'chiTietPaged'] });
       toast.success(i18n.t('donDatHang.toast.updateSuccess'));
       onSuccess?.();
     },

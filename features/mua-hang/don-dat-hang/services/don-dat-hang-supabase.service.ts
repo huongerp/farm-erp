@@ -674,6 +674,38 @@ export async function updateDonDatHangSupabase(id: string, data: DonDatHangFormV
   return got;
 }
 
+/**
+ * Đổi trạng thái PO (duyệt/chuyển trạng thái) — chỉ update trang_thai + ghi_chu,
+ * KHÔNG đụng chi_tiet. Tự đọc ghi_chu hiện tại từ DB để nối thêm ghi chú, không
+ * phụ thuộc vào object PO caller đang giữ (item/viewingPoFull) — tránh lặp lại
+ * bug "duyệt khi viewingPoFull chưa load xong ⇒ gửi object cũ/thiếu chi_tiet
+ * ⇒ updateDonDatHangSupabase xoá sạch dòng hàng" vì đường này không gọi
+ * updateDonDatHangSupabase (full update) nữa.
+ */
+export async function updateDonDatHangTrangThaiSupabase(
+  id: string,
+  trang_thai: DonDatHangTrangThai,
+  options?: { ghi_chu?: string; notePrefix?: string }
+): Promise<void> {
+  const idNum = Number(id);
+  if (Number.isNaN(idNum)) throw new Error(i18n.t('donDatHang.service.notFound'));
+
+  const { data: row, error: fetchErr } = await supabase.from(TABLE_DON).select('ghi_chu').eq('id', idNum).maybeSingle();
+  if (fetchErr || !row) throw new Error(i18n.t('donDatHang.service.notFound'));
+
+  const existingGhiChu = (row as { ghi_chu?: string | null } | null)?.ghi_chu ?? '';
+  const noteText = options?.ghi_chu?.trim();
+  const mergedGhiChu = noteText
+    ? (existingGhiChu ? existingGhiChu + '\n' : '') + `${options?.notePrefix ?? ''}${noteText}`
+    : existingGhiChu || null;
+
+  const { error } = await supabase
+    .from(TABLE_DON)
+    .update({ trang_thai, ghi_chu: mergedGhiChu })
+    .eq('id', idNum);
+  if (error) throwSupabaseError(error);
+}
+
 export async function deleteDonDatHangSupabase(id: string): Promise<void> {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('donDatHang.service.notFound'));
