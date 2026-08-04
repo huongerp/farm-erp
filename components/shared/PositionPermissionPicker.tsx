@@ -95,10 +95,10 @@ const PositionPermissionPicker: React.FC<Props> = ({
       variant="modal"
       footer={
         <div className="flex items-center justify-end gap-2 w-full">
-          <Button variant="ghost" onClick={onClose} className="text-muted-foreground border border-border">
+          <Button variant="ghost" size="sm" onClick={onClose} className="text-muted-foreground border border-border">
             {BTN_CLOSE()}
           </Button>
-          <Button onClick={handleSave} className="bg-primary text-white hover:bg-primary/90">
+          <Button size="sm" onClick={handleSave} className="bg-primary text-white hover:bg-primary/90">
             {t('common.save')}
           </Button>
         </div>

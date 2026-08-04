@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { cn } from '../../../../lib/utils';
 import Button from '../../../../components/ui/Button';
+import DetailDrawerFooter from '../../../../components/shared/DetailDrawerFooter';
 import Input from '../../../../components/ui/Input';
 import Combobox from '../../../../components/ui/Combobox';
 import EmptyState from '../../../../components/shared/EmptyState';
@@ -30,7 +31,6 @@ import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolb
 import { useDinhMucTonStore } from '../store/useDinhMucTonStore';
 import { formatNumberVN } from '../../../../lib/utils';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
-import { BTN_CLOSE, BTN_EDIT, BTN_DELETE } from '../../../../lib/button-labels';
 import { dinhMucTonSchema, type DinhMucTonFormValues } from '../core/schema';
 import type { ColumnConfig } from '../../../../store/createGenericStore';
 import { getColumnCellStyle } from '../../../../store/createGenericStore';
@@ -484,23 +484,11 @@ const DinhMucTonDetailDrawer: React.FC<DinhMucTonDetailDrawerProps> = ({
       onClose={onClose}
       maxWidthClass={DRAWER_WIDTH_DETAIL}
       footer={
-        <div className="flex items-center justify-between w-full">
-          <Button variant="ghost" onClick={onClose} className="text-muted-foreground hover:text-foreground border border-border">
-            {BTN_CLOSE()}
-          </Button>
-          <div className="flex items-center gap-3">
-            <Button onClick={onEdit} className="bg-primary text-white shadow-lg hover:bg-primary/90">
-              <Edit size={16} className="mr-2" /> {BTN_EDIT()}
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={onDelete}
-              className="text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/50 dark:text-rose-400 border border-rose-200"
-            >
-              <Trash2 size={16} className="mr-2" /> {BTN_DELETE()}
-            </Button>
-          </div>
-        </div>
+        <DetailDrawerFooter
+          onClose={onClose}
+          onEdit={onEdit}
+          onDelete={onDelete}
+        />
       }
     >
       <DetailSection title={t('hangHoa.detail.dinhMucSection')} icon={<Warehouse size={14} />} variant="primary">

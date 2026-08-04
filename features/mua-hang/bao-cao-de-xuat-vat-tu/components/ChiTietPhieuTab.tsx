@@ -36,7 +36,7 @@ function PhieuDetailDrawer({ phieuId, onClose }: { phieuId: string; onClose: () 
       maxWidthClass={DRAWER_WIDTH_DETAIL}
       footer={
         <div className="flex justify-start w-full">
-          <Button variant="outline" onClick={onClose} className="border-border">
+          <Button variant="outline" size="sm" onClick={onClose} className="border-border">
             {BTN_CLOSE()}
           </Button>
         </div>

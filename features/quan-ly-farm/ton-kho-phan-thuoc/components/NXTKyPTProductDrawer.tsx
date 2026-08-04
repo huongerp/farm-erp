@@ -38,7 +38,7 @@ const NXTKyPTProductDrawer: React.FC<Props> = ({ product, filters, onClose }) =>
       maxWidthClass={DRAWER_WIDTH_DETAIL}
       footer={
         <div className="flex w-full justify-end">
-          <Button variant="ghost" onClick={onClose} className="text-muted-foreground border border-border">
+          <Button variant="ghost" size="sm" onClick={onClose} className="text-muted-foreground border border-border">
             {BTN_CLOSE()}
           </Button>
         </div>

@@ -100,10 +100,10 @@ const ChiTietLineDrawer: React.FC<ChiTietLineDrawerProps> = ({
       stackLevel={1}
       footer={
         <div className="flex items-center justify-between w-full">
-          <Button type="button" variant="ghost" onClick={onClose} className="border border-border">
+          <Button type="button" variant="ghost" size="sm" onClick={onClose} className="border border-border">
             {t('common.cancel')}
           </Button>
-          <Button type="submit" form="don-dat-hang-line-form" className="bg-primary text-white hover:bg-primary/90">
+          <Button type="submit" form="don-dat-hang-line-form" size="sm" className="bg-primary text-white hover:bg-primary/90">
             {t('common.save')}
           </Button>
         </div>

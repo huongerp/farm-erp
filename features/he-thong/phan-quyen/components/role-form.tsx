@@ -91,8 +91,8 @@ const RoleForm: React.FC<Props> = ({ initialData, onClose }) => {
 
   const renderFooter = (
       <>
-          <Button variant="outline" size="lg" onClick={onClose} className="flex-1 border-border h-11 sm:h-12">{t('common.cancelAction')}</Button>
-          <Button type="submit" form="role-form" isLoading={createMutation.isPending} size="lg" className="flex-[2] bg-primary text-white shadow-lg h-11 sm:h-12">
+          <Button variant="outline" size="sm" onClick={onClose} className="flex-1 border-border">{t('common.cancelAction')}</Button>
+          <Button type="submit" form="role-form" isLoading={createMutation.isPending} size="sm" className="flex-[2] bg-primary text-white shadow-lg">
             <Save className="mr-2 h-4 w-4" /> {isEdit ? t('permission.form.update') : t('permission.form.create')}
           </Button>
       </>

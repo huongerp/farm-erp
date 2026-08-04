@@ -30,7 +30,7 @@ const TonKhoPTProductDetail: React.FC<Props> = ({ agg, onClose }) => {
       maxWidthClass={DRAWER_WIDTH_DETAIL}
       footer={
         <div className="flex w-full justify-end">
-          <Button variant="ghost" onClick={onClose} className="text-muted-foreground border border-border">
+          <Button variant="ghost" size="sm" onClick={onClose} className="text-muted-foreground border border-border">
             {BTN_CLOSE()}
           </Button>
         </div>
