@@ -29,6 +29,7 @@ import { getTodayISO } from '../../../../lib/utils';
 import { Employee } from '../core/types';
 import { getDefaultEmployeeFormValues, employeeToFormValues } from '../utils/employee-to-form';
 import { useCreateEmployee, useUpdateEmployee } from '../hooks/use-nhan-vien';
+import { useSubmitOnce } from '../../../../lib/hooks/use-submit-once';
 import { useDepartments } from '@/features/he-thong/phong-ban/hooks/use-phong-ban';
 import { usePositions } from '../../chuc-vu/hooks/use-chuc-vu';
 import { useJobLevels } from '../../cap-bac/hooks/use-cap-bac';
@@ -147,15 +148,17 @@ const EmployeeForm: React.FC<Props> = ({ initialData, prefillData, onClose }) =>
     }
   }, [initialData, prefillData, reset]);
 
-  const onSubmit = (data: EmployeeFormValues) => {
+  const isLoading = createMutation.isPending || updateMutation.isPending;
+
+  const xuLySubmit = (data: EmployeeFormValues) => {
     if (isEdit && initialData) {
       updateMutation.mutate({ id: initialData.id, data });
     } else {
       createMutation.mutate(data);
     }
   };
-
-  const isLoading = createMutation.isPending || updateMutation.isPending;
+  // Chặn một lần bấm gửi hai lượt — xem lib/hooks/use-submit-once.ts.
+  const onSubmit = useSubmitOnce(xuLySubmit, isLoading);
 
   const renderFooter = (
     <div className="flex items-center justify-between w-full gap-3">
