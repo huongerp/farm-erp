@@ -108,6 +108,21 @@ export async function getTaiSanListSupabase(): Promise<TaiSan[]> {
   return (data ?? []).map((row) => rowToTaiSan(row as DbTaiSanRow));
 }
 
+/**
+ * Lấy đầy đủ 1 tài sản (gồm hinh_anh) — dùng khi mở form sửa, vì row lấy từ
+ * getTaiSanListSupabase() (LITE) thiếu hinh_anh nên sẽ hiện trống nếu dùng thẳng.
+ */
+export async function getTaiSanByIdSupabase(id: string): Promise<TaiSan | undefined> {
+  const numId = Number(id);
+  if (Number.isNaN(numId)) return undefined;
+  const { data, error } = await db.from(TABLE).select(TAI_SAN_DETAIL_COLUMNS).eq('id', numId).single();
+  if (error) {
+    if (error.code === 'PGRST116') return undefined;
+    throwSupabaseError(error);
+  }
+  return data ? rowToTaiSan(data as DbTaiSanRow) : undefined;
+}
+
 const MA_TAI_SAN_PREFIX = 'TS';
 const MA_TAI_SAN_PAD = 5;
 

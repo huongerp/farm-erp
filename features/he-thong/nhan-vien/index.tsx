@@ -23,7 +23,7 @@ import {
   useDeleteWithUndo,
   useUpdateStatusEmployee,
 } from './hooks/use-nhan-vien';
-import { fetchEmployeeRowsAllMatching, enrichEmployeesWithRefDataAsync } from './services/nhan-vien-service';
+import { fetchEmployeeRowsAllMatching, enrichEmployeesWithRefDataAsync, getEmployeeById } from './services/nhan-vien-service';
 import type { EmployeeListQuery } from './services/nhan-vien-service';
 import { usePositions } from '@/features/he-thong/chuc-vu/hooks/use-chuc-vu';
 import { useModulePermissionFromContext } from '@/components/shared/ModulePermissionGuard';
@@ -205,9 +205,16 @@ const EmployeePage: React.FC = () => {
 
   const visibleColumnKeys = useMemo(() => columns.filter(c => c.visible).map(c => c.id), [columns]);
 
-  const handleEdit = (item: Employee) => {
+  const handleEdit = async (item: Employee) => {
     setFormOrigin(viewingEmp ? 'detail' : 'list');
-    setEditingEmp(item);
+    // Row từ danh sách/thống kê chỉ có cột lite (thiếu dan_toc, cmnd_cccd, ngay_sinh...) —
+    // phải tải lại bản đầy đủ, nếu không form sửa sẽ hiện placeholder trống thay vì giá trị đã lưu.
+    try {
+      const full = await getEmployeeById(item.id);
+      setEditingEmp(full ?? item);
+    } catch {
+      setEditingEmp(item);
+    }
     setShowForm(true);
   };
 

@@ -115,12 +115,19 @@ const GenericDrawer: React.FC<GenericDrawerProps> = ({
     onClose();
   }, [isDirty, onClose, confirm, t]);
 
+  // Giữ tham chiếu tới requestClose mới nhất mà không đưa vào dependency của effect bên dưới,
+  // vì requestClose đổi identity mỗi khi isDirty đổi (gõ ký tự đầu tiên) và effect đó không được chạy lại.
+  const requestCloseRef = useRef(requestClose);
+  useEffect(() => {
+    requestCloseRef.current = requestClose;
+  }, [requestClose]);
+
   // Escape key to close + focus trap
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         if (overlayIdRef.current != null && !isTopOverlay(overlayIdRef.current)) return;
-        requestClose();
+        requestCloseRef.current();
         return;
       }
       if (e.key === 'Tab' && drawerRef.current) {
@@ -142,7 +149,7 @@ const GenericDrawer: React.FC<GenericDrawerProps> = ({
     document.addEventListener('keydown', handleKeyDown);
     setTimeout(() => drawerRef.current?.focus(), 100);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [requestClose]);
+  }, []);
 
   const Content = (
     <>

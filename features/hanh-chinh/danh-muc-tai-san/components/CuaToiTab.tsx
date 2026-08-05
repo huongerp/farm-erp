@@ -6,6 +6,7 @@ import { useAuthStore } from '../../../../store/useStore';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { useTaiSanList, useDeleteTaiSan, useUpdateTaiSanStatus, useUpdateTaiSan } from '../hooks/use-danh-muc-tai-san';
+import { getTaiSanByIdSupabase } from '../services/danh-muc-tai-san-supabase.service';
 import { useListWithFilter } from '../../../../lib/hooks';
 import { getLanguage } from '../../../../lib/utils';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
@@ -280,9 +281,16 @@ const CuaToiTab: React.FC = () => {
     setEditingItem(null);
     setShowForm(true);
   };
-  const handleEdit = (item: TaiSan) => {
-    setEditingItem(item);
+  const handleEdit = async (item: TaiSan) => {
+    // Row từ danh sách là bản LITE (thiếu hinh_anh) — tải bản đầy đủ, tránh form
+    // hiện ảnh trống dù đã lưu (xem getTaiSanByIdSupabase).
     setViewingItem(null);
+    try {
+      const full = await getTaiSanByIdSupabase(item.id);
+      setEditingItem(full ?? item);
+    } catch {
+      setEditingItem(item);
+    }
     setShowForm(true);
   };
   const handleDelete = (id: string) => {
