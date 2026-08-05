@@ -9,8 +9,8 @@
  * trả ID token ký RS256, xác minh cần khoá công khai RSA của Google mà pgcrypto
  * không làm được. Chi tiết: docs/VPS_POSTGREST_PLAN.md
  *
- * Traefik (và Vite proxy) cắt tiền tố `/auth` trước khi forward — route ở đây
- * không có tiền tố đó. Client vẫn gọi `/auth/dang-nhap` như cũ.
+ * Client gọi `/auth/dang-nhap`. Traefik có thể strip `/auth` (giống `/api`) hoặc
+ * forward nguyên path — đăng ký cả hai để không phụ thuộc cấu hình Dokploy.
  */
 import { createHash } from 'node:crypto';
 import { serve } from '@hono/node-server';
@@ -50,6 +50,12 @@ function bam(token: string): string {
 }
 
 const app = new Hono();
+
+/** Header để xác nhận request đã tới bản auth-service mới sau deploy. */
+app.use('*', async (c, next) => {
+  await next();
+  c.header('X-Farm-Auth', '1');
+});
 
 function ip(c: { req: { header: (n: string) => string | undefined } }): string | null {
   const xff = c.req.header('x-forwarded-for');
@@ -95,16 +101,25 @@ async function traVePhien(kq: Extract<KetQuaDangNhap, { ok: true }>) {
   };
 }
 
-app.get('/khoe', async (c) => {
+type Ctx = {
+  req: {
+    header: (n: string) => string | undefined;
+    json: () => Promise<unknown>;
+  };
+  json: (body: unknown, status?: number) => Response;
+  body: (data: null, status: 204) => Response;
+};
+
+async function xuLyKhoe(c: Ctx) {
   try {
     await kiemTraKetNoi();
-    return c.json({ ok: true });
+    return c.json({ ok: true, service: 'farm-erp-auth' });
   } catch {
-    return c.json({ ok: false }, 503);
+    return c.json({ ok: false, service: 'farm-erp-auth' }, 503);
   }
-});
+}
 
-app.post('/dang-nhap', async (c) => {
+async function xuLyDangNhap(c: Ctx) {
   const body = await docJson(c);
   const email = chuoi(body?.email).trim();
   const matKhau = chuoi(body?.mat_khau);
@@ -116,9 +131,9 @@ app.post('/dang-nhap', async (c) => {
   const kq = await dangNhapMatKhau(email, matKhau, userAgent(c), ip(c));
   if (!kq.ok) return c.json({ ly_do: kq.ly_do }, MA_LOI[kq.ly_do] ?? 401);
   return c.json(await traVePhien(kq));
-});
+}
 
-app.post('/dang-nhap-google', async (c) => {
+async function xuLyDangNhapGoogle(c: Ctx) {
   if (!googleClient) {
     return c.json({ ly_do: 'google_chua_cau_hinh' }, 503);
   }
@@ -148,9 +163,9 @@ app.post('/dang-nhap-google', async (c) => {
   const kq = await dangNhapGoogle(email, userAgent(c), ip(c));
   if (!kq.ok) return c.json({ ly_do: kq.ly_do }, MA_LOI[kq.ly_do] ?? 401);
   return c.json(await traVePhien(kq));
-});
+}
 
-app.post('/lam-moi', async (c) => {
+async function xuLyLamMoi(c: Ctx) {
   const body = await docJson(c);
   const refreshToken = chuoi(body?.refresh_token);
   if (!refreshToken) return c.json({ ly_do: 'thieu_thong_tin' }, 400);
@@ -165,15 +180,27 @@ app.post('/lam-moi', async (c) => {
     email: kq.email,
     nhan_vien_id: kq.nhan_vien_id,
   });
-});
+}
 
-app.post('/dang-xuat', async (c) => {
+async function xuLyDangXuat(c: Ctx) {
   const body = await docJson(c);
   const refreshToken = chuoi(body?.refresh_token);
   // Đăng xuất luôn thành công dưới góc nhìn client: token rác cũng coi như xong.
   if (refreshToken) await thuHoiPhien(bam(refreshToken));
   return c.body(null, 204);
-});
+}
+
+/** Đăng ký cùng handler cho path đã strip (`/dang-nhap`) và path đầy đủ (`/auth/dang-nhap`). */
+function dangKy(prefix: '' | '/auth') {
+  app.get(`${prefix}/khoe`, (c) => xuLyKhoe(c));
+  app.post(`${prefix}/dang-nhap`, (c) => xuLyDangNhap(c));
+  app.post(`${prefix}/dang-nhap-google`, (c) => xuLyDangNhapGoogle(c));
+  app.post(`${prefix}/lam-moi`, (c) => xuLyLamMoi(c));
+  app.post(`${prefix}/dang-xuat`, (c) => xuLyDangXuat(c));
+}
+
+dangKy('');
+dangKy('/auth');
 
 app.onError((err, c) => {
   // Không trả chi tiết lỗi DB ra ngoài.
