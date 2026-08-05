@@ -8,6 +8,7 @@ import PhieuTable from './PhieuTable';
 import PhieuDetail from './PhieuDetail';
 import TaoPhieuForm from './TaoPhieuForm';
 import { usePhieuList, usePhieuById, useDeletePhieu } from '../hooks/use-cap-phat-thu-hoi';
+import { getPhieuById } from '../services/cap-phat-thu-hoi-service';
 import { useCapPhatThuHoiStore } from '../store/useCapPhatThuHoiStore';
 import { getLanguage } from '../../../../lib/utils';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
@@ -75,14 +76,21 @@ const CuaToiTab: React.FC = () => {
     setShowForm(false);
   }, []);
   /** Nút Sửa (từ list hoặc từ detail) → mở form sửa; ghi nhớ nguồn để Hủy quay đúng (list vs detail) */
-  const handleEdit = useCallback((item: PhieuCapPhatThuHoi) => {
+  const handleEdit = useCallback(async (item: PhieuCapPhatThuHoi) => {
     if (detailItem?.id === item.id) {
       setOpenedFormFromDetailId(item.id);
     } else {
       setOpenedFormFromDetailId(null);
     }
     setDetailItem(null);
-    setEditingPhieu(item);
+    // Row từ danh sách thiếu chi_tiet (tài sản cấp phát/thu hồi) — tải bản đầy đủ,
+    // tránh form hiện trống dòng chi tiết dù đã lưu (xem getPhieuById).
+    try {
+      const full = await getPhieuById(item.id);
+      setEditingPhieu(full ?? item);
+    } catch {
+      setEditingPhieu(item);
+    }
     setShowForm(true);
   }, [detailItem?.id]);
   /** Finish view: sau khi lưu form sửa thành công → đóng form và mở detail bản ghi vừa sửa */
