@@ -16,9 +16,12 @@ const Button: React.FC<ButtonProps> = React.memo(({
   size = 'default', 
   isLoading: isLoadingProp = false,
   loading = false,
-  children, 
+  children,
   disabled,
-  ...props 
+  // Mặc định của HTML là "submit": mọi <Button> đặt trong <form> mà quên khai type
+  // sẽ submit ngầm khi bấm. Đặt "button" cho an toàn; nút submit phải khai rõ.
+  type = 'button',
+  ...props
 }) => {
   const isLoading = isLoadingProp || loading;
   const variants = {
@@ -38,7 +41,8 @@ const Button: React.FC<ButtonProps> = React.memo(({
   };
 
   return (
-    <button 
+    <button
+      type={type}
       className={cn(
         "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
         variants[variant],

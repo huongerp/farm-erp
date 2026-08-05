@@ -4,6 +4,7 @@ import { X } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useEnterTransition } from '../../lib/usePresenceTransition';
 import { pushOverlay, popOverlay, isTopOverlay } from '../../lib/overlay-stack';
+import { lockBodyScroll } from '../../lib/body-scroll-lock';
 import { useConfirmStore } from '../../store/useConfirmStore';
 import {
   getDrawerWidthClass,
@@ -98,6 +99,9 @@ const GenericDrawer: React.FC<GenericDrawerProps> = ({
     overlayIdRef.current = id;
     return () => popOverlay(id);
   }, []);
+
+  // Khoá cuộn nền: trước đây trang phía sau vẫn cuộn được khi drawer đang mở.
+  useEffect(() => lockBodyScroll(), []);
 
   /** Đóng có xác nhận nếu form đang có thay đổi chưa lưu. */
   const requestClose = useCallback(() => {

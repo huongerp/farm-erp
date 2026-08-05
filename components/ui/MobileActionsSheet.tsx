@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import { X, Settings2, type LucideIcon } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { lockBodyScroll } from '../../lib/body-scroll-lock';
 
 export interface ActionItem {
   key?: string;
@@ -31,14 +32,10 @@ const MobileActionsSheet: React.FC<MobileActionsSheetProps> = ({
   const resolvedTitle = title || t('shared.mobileActions.title');
   const sheetRef = useRef<HTMLDivElement>(null);
 
-  // Body scroll lock
+  // Body scroll lock — qua bộ đếm chung để 2 sheet chồng nhau không kẹt overflow.
   useEffect(() => {
     if (!open) return;
-    const original = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = original;
-    };
+    return lockBodyScroll();
   }, [open]);
 
   // Đóng khi kéo xuống

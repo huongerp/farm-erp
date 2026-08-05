@@ -5,6 +5,7 @@ import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import { X, Check, ChevronDown, Filter, Search } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { filterOptionsWithCount } from '../../lib/filterOptionsWithCount';
+import { lockBodyScroll } from '../../lib/body-scroll-lock';
 
 export interface FilterGroup {
   key: string;
@@ -203,14 +204,10 @@ const MobileFilterSheet: React.FC<MobileFilterSheetProps> = ({ open, onClose, gr
   // Tổng số filter đang active
   const totalActive = groups.reduce((sum, g) => sum + g.value.length, 0);
 
-  // Body scroll lock
+  // Body scroll lock — qua bộ đếm chung để 2 sheet chồng nhau không kẹt overflow.
   useEffect(() => {
     if (!open) return;
-    const original = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = original;
-    };
+    return lockBodyScroll();
   }, [open]);
 
   // Đóng khi kéo xuống (drag)

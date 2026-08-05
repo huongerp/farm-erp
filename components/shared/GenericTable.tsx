@@ -191,7 +191,14 @@ function GenericTable<T>({
     const ro = new ResizeObserver(updateScrollShadow);
     ro.observe(el);
     return () => { el.removeEventListener('scroll', updateScrollShadow); ro.disconnect(); };
-  }, [updateScrollShadow, isLoading, isFetching]);
+    // Giữ isLoading vì vùng cuộn chỉ tồn tại sau khi tải xong; KHÔNG đưa isFetching vào —
+    // nó bật/tắt mỗi lần refetch nền, khiến bảng lớn liên tục gỡ rồi tạo lại ResizeObserver.
+  }, [updateScrollShadow, isLoading]);
+
+  // Refetch nền làm nội dung đổi -> chỉ tính lại bóng cuộn, không gắn lại listener.
+  useEffect(() => {
+    updateScrollShadow();
+  }, [isFetching, updateScrollShadow]);
 
   // Go-to-page
   const [editingPage, setEditingPage] = useState(false);
