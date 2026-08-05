@@ -165,7 +165,7 @@
   "baoCaoNhanCong.sub.loai.TANG_CA": "Tăng ca",
   "baoCaoNhanCong.sub.viewBreakdown": "Xem chi tiết dòng",
   "baoCaoNhanCong.sub.panelHint": "Mỗi dòng nhập SL công nhân và số giờ (có thể 1, 1,5, 7,5…). Giờ×SL tự tính.",
-  "baoCaoNhanCong.sub.gioPlaceholder": "1,5",
+  "baoCaoNhanCong.sub.gioPlaceholder": "VD: 1,5",
   "baoCaoNhanCong.sub.emptyTab": "Chưa có dòng — bấm \"Thêm dòng\" bên dưới.",
   "baoCaoNhanCong.sub.ghiChuPlaceholder": "Ghi chú (tùy chọn)",
   "baoCaoNhanCong.sub.splitLines": "Tách nhiều dòng",

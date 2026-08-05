@@ -34,7 +34,7 @@ const TrangThaiForm: React.FC<Props> = ({ initialData, onClose }) => {
   const createMutation = useCreateAssetStatus(onClose);
   const updateMutation = useUpdateAssetStatus(onClose);
 
-  const { register, handleSubmit, formState: { errors }, reset, control } = useForm<AssetStatusFormValues>({
+  const { register, handleSubmit, formState: { errors, isDirty }, reset, control } = useForm<AssetStatusFormValues>({
     resolver: zodResolver(assetStatusSchema),
     defaultValues: DEFAULT_VALUES,
   });
@@ -69,6 +69,7 @@ const TrangThaiForm: React.FC<Props> = ({ initialData, onClose }) => {
 
   return (
     <GenericDrawer
+      isDirty={isDirty}
       title={isEdit ? t('thietLapTaiSan.trangThai.form.editTitle') : t('thietLapTaiSan.trangThai.form.createTitle')}
       icon={<Tag size={20} />}
       onClose={onClose}

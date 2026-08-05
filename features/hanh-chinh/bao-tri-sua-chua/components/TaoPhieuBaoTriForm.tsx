@@ -80,7 +80,7 @@ const TaoPhieuBaoTriForm: React.FC<Props> = ({ onClose, defaultTaiSanId, initial
       }
     : { ...DEFAULT_VALUES, id_tai_san: defaultTaiSanId ?? '' };
 
-  const { register, handleSubmit, formState: { errors }, control, setValue, getValues } = useForm<PhieuBaoTriSuaChuaFormValues>({
+  const { register, handleSubmit, formState: { errors, isDirty }, control, setValue, getValues } = useForm<PhieuBaoTriSuaChuaFormValues>({
     resolver: zodResolver(phieuBaoTriSuaChuaSchema),
     defaultValues: defaultValuesFromData,
   });
@@ -153,6 +153,7 @@ const TaoPhieuBaoTriForm: React.FC<Props> = ({ onClose, defaultTaiSanId, initial
 
   return (
     <GenericDrawer
+      isDirty={isDirty}
       title={t(isEdit ? 'baoTriSuaChua.form.editTitle' : 'baoTriSuaChua.form.createTitle')}
       icon={<Wrench size={20} />}
       onClose={onClose}

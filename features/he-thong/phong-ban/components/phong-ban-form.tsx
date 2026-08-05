@@ -33,7 +33,7 @@ const DepartmentForm: React.FC<Props> = ({ initialData, onClose }) => {
     trang_thai: TRANG_THAI.DANG_DUNG,
   };
 
-  const { register, handleSubmit, formState: { errors }, reset, control } = useForm<DepartmentFormValues>({
+  const { register, handleSubmit, formState: { errors, isDirty }, reset, control } = useForm<DepartmentFormValues>({
     resolver: zodResolver(departmentSchema) as any,
     defaultValues,
   });
@@ -67,6 +67,7 @@ const DepartmentForm: React.FC<Props> = ({ initialData, onClose }) => {
 
   return (
     <GenericDrawer
+      isDirty={isDirty}
       title={isEdit ? t('department.form.editTitle') : t('department.form.createTitle')}
       icon={<Building size={20} />}
       onClose={onClose}

@@ -32,7 +32,7 @@ const ThuHoachTraoDoiDialog: React.FC<Props> = ({ data, onClose }) => {
     control,
     handleSubmit,
     reset,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<ThuHoachTraoDoiAppendValues>({
     resolver: zodResolver(thuHoachTraoDoiAppendSchema),
     defaultValues: { noi_dung: '' },
@@ -54,6 +54,7 @@ const ThuHoachTraoDoiDialog: React.FC<Props> = ({ data, onClose }) => {
 
   return (
     <GenericDrawer
+      isDirty={isDirty}
       title={t('thuHoach.traoDoiDialog.title')}
       subtitle={`${t('thuHoach.store.colNam')} ${data.nam} · ${t('thuHoach.store.colTuan')} ${data.tuan}`}
       icon={<MessageSquare className="text-violet-600" size={22} />}

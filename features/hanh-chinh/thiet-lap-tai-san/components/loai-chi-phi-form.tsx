@@ -34,7 +34,7 @@ const LoaiChiPhiForm: React.FC<Props> = ({ initialData, onClose }) => {
   const createMutation = useCreateLoaiChiPhi(onClose);
   const updateMutation = useUpdateLoaiChiPhi(onClose);
 
-  const { register, handleSubmit, formState: { errors }, reset, control } = useForm<LoaiChiPhiFormValues>({
+  const { register, handleSubmit, formState: { errors, isDirty }, reset, control } = useForm<LoaiChiPhiFormValues>({
     resolver: zodResolver(loaiChiPhiSchema),
     defaultValues: DEFAULT_VALUES,
   });
@@ -69,6 +69,7 @@ const LoaiChiPhiForm: React.FC<Props> = ({ initialData, onClose }) => {
 
   return (
     <GenericDrawer
+      isDirty={isDirty}
       title={isEdit ? t('thietLapTaiSan.loaiChiPhi.form.editTitle') : t('thietLapTaiSan.loaiChiPhi.form.createTitle')}
       icon={<CircleDollarSign size={20} />}
       onClose={onClose}

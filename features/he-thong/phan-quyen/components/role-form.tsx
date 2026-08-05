@@ -11,7 +11,7 @@ import { PositionPermission, ModulePermission, ActionType } from '../core/types'
 import { hasApproveFeature } from '../core/permission-modules-config';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { SYSTEM_MODULES_CONFIG } from '../services/phan-quyen-service';
-import { useCreateRole } from '../hooks/use-phan-quyen';
+import { useCreateRole, useUpdateRole } from '../hooks/use-phan-quyen';
 import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/GenericDrawer';
 
 interface Props {
@@ -34,12 +34,15 @@ const RoleForm: React.FC<Props> = ({ initialData, onClose }) => {
     { id: 'all', label: t('permission.form.all'), isSpecial: true },
   ];
   const createMutation = useCreateRole(onClose);
-  
+  const updateMutation = useUpdateRole(onClose);
+
   const [permissions, setPermissions] = useState<ModulePermission[]>(
       SYSTEM_MODULES_CONFIG.map(m => ({ module_id: m.id, module_name: m.nameKey, actions: [] }))
   );
+  /** Ma trận quyền nằm ngoài react-hook-form nên isDirty của form không thấy — theo dõi riêng. */
+  const [permissionsDirty, setPermissionsDirty] = useState(false);
 
-  const { register, handleSubmit, formState: { errors }, reset } = useForm<RoleFormValues>({
+  const { register, handleSubmit, formState: { errors, isDirty }, reset } = useForm<RoleFormValues>({
     resolver: zodResolver(roleSchema),
     defaultValues: { ma_vai_tro: '', ten_vai_tro: '', mo_ta: '', trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG }
   });
@@ -57,6 +60,7 @@ const RoleForm: React.FC<Props> = ({ initialData, onClose }) => {
   }, [initialData, reset]);
 
   const toggleAction = (moduleId: string, action: ActionType) => {
+      setPermissionsDirty(true);
       setPermissions(prev => prev.map(p => {
           if (p.module_id === moduleId) {
               const hasAction = p.actions.includes(action);
@@ -73,6 +77,7 @@ const RoleForm: React.FC<Props> = ({ initialData, onClose }) => {
       const config = SYSTEM_MODULES_CONFIG.find(m => m.id === moduleId);
       if (!config) return;
 
+      setPermissionsDirty(true);
       setPermissions(prev => prev.map(p => {
           if (p.module_id === moduleId) {
               const isFull = p.actions.length === config.allowedActions.length;
@@ -86,13 +91,19 @@ const RoleForm: React.FC<Props> = ({ initialData, onClose }) => {
   };
 
   const onSubmit = (data: RoleFormValues) => {
-    createMutation.mutate({ data, permissions });
+    if (isEdit && initialData) {
+      updateMutation.mutate({ id: initialData.id, data, permissions });
+    } else {
+      createMutation.mutate({ data, permissions });
+    }
   };
+
+  const isLoading = createMutation.isPending || updateMutation.isPending;
 
   const renderFooter = (
       <>
-          <Button variant="outline" size="sm" onClick={onClose} className="flex-1 border-border">{t('common.cancelAction')}</Button>
-          <Button type="submit" form="role-form" isLoading={createMutation.isPending} size="sm" className="flex-[2] bg-primary text-white shadow-lg">
+          <Button variant="outline" size="sm" onClick={onClose} disabled={isLoading} className="flex-1 border-border">{t('common.cancelAction')}</Button>
+          <Button type="submit" form="role-form" isLoading={isLoading} size="sm" className="flex-[2] bg-primary text-white shadow-lg">
             <Save className="mr-2 h-4 w-4" /> {isEdit ? t('permission.form.update') : t('permission.form.create')}
           </Button>
       </>
@@ -100,6 +111,7 @@ const RoleForm: React.FC<Props> = ({ initialData, onClose }) => {
 
   return (
     <GenericDrawer
+        isDirty={isDirty || permissionsDirty}
         title={isEdit ? t('permission.form.editTitle') : t('permission.form.createTitle')}
         subtitle={t('permission.form.subtitle')}
         icon={<Briefcase size={20} />}

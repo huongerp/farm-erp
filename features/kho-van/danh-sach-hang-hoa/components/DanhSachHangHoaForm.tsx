@@ -80,7 +80,7 @@ const DanhSachHangHoaForm: React.FC<Props> = ({
 
   const [isImageUploading, setIsImageUploading] = useState(false);
 
-  const { register, handleSubmit, formState: { errors }, reset, control } = useForm<HangHoaFormValues>({
+  const { register, handleSubmit, formState: { errors, isDirty }, reset, control } = useForm<HangHoaFormValues>({
     resolver: zodResolver(hangHoaSchema) as any,
     defaultValues,
   });
@@ -143,6 +143,7 @@ const DanhSachHangHoaForm: React.FC<Props> = ({
 
   return (
     <GenericDrawer
+      isDirty={isDirty}
       title={isEdit ? t('hangHoa.form.editTitle') : t('hangHoa.form.createTitle')}
       icon={<Package size={20} />}
       onClose={onClose}

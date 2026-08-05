@@ -487,7 +487,7 @@ const EmployeeForm: React.FC<Props> = ({ initialData, prefillData, onClose }) =>
                         label={isEdit ? t('employee.form.passwordEdit') : t('employee.form.password')}
                         type="password"
                         autoComplete="new-password"
-                        placeholder="••••••••"
+                        placeholder={isEdit ? 'Bỏ trống nếu không đổi mật khẩu' : 'Bỏ trống để dùng mật khẩu mặc định'}
                         icon={<KeyRound className="w-4 h-4 text-muted-foreground" />}
                         {...register('mat_khau')}
                         error={errors.mat_khau?.message}

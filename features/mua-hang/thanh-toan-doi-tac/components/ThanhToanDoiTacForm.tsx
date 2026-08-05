@@ -289,7 +289,7 @@ const ThanhToanDoiTacForm: React.FC<Props> = ({
                   onChange={field.onChange}
                   onBlur={field.onBlur}
                   min={1}
-                  placeholder="0"
+                  placeholder="Nhập số tiền"
                   icon={<CreditCard size={12} />}
                   required
                   error={errors.so_tien?.message}

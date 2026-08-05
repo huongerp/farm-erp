@@ -119,6 +119,8 @@ const BulkEditSheet: React.FC<Props> = ({ selectedEmployees, onClose, onSuccess 
 
   return (
     <GenericDrawer
+      // Đã bật ô nào để sửa hàng loạt tức là có thay đổi chưa lưu.
+      isDirty={enabledFields.size > 0}
       title={t('employee.bulk.title')}
       subtitle={`${selectedEmployees.length} ${t('employee.bulk.subtitle')}`}
       icon={<Users size={20} />}

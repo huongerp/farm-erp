@@ -43,7 +43,7 @@ const DiemCongTruForm: React.FC<Props> = ({ initialData, onClose }) => {
   const { data: pointGroups = [] } = usePayrollPointGroupsForDiemCongTru();
   const { data: employees = [] } = useEmployeesForDiemCongTru();
 
-  const { register, handleSubmit, formState: { errors }, reset, control } = useForm<DiemCongTruFormValues>({
+  const { register, handleSubmit, formState: { errors, isDirty }, reset, control } = useForm<DiemCongTruFormValues>({
     resolver: zodResolver(diemCongTruSchema),
     defaultValues: DEFAULT_VALUES,
   });
@@ -99,6 +99,7 @@ const DiemCongTruForm: React.FC<Props> = ({ initialData, onClose }) => {
 
   return (
     <GenericDrawer
+      isDirty={isDirty}
       title={isEdit ? t('diemCongTru.form.editTitle') : t('diemCongTru.form.createTitle')}
       icon={<Scale size={20} />}
       onClose={onClose}

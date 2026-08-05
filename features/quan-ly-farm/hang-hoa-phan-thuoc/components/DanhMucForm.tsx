@@ -46,7 +46,7 @@ const DanhMucForm: React.FC<Props> = ({
     mo_ta: '',
   };
 
-  const { register, handleSubmit, formState: { errors }, reset, control } = useForm<FarmDanhMucFormValues>({
+  const { register, handleSubmit, formState: { errors, isDirty }, reset, control } = useForm<FarmDanhMucFormValues>({
     resolver: zodResolver(farmDanhMucSchema) as any,
     defaultValues,
   });
@@ -86,6 +86,7 @@ const DanhMucForm: React.FC<Props> = ({
 
   return (
     <GenericDrawer
+      isDirty={isDirty}
       title={isEdit ? t('farmHangHoaPhanThuoc.danhMuc.form.editTitle') : t('farmHangHoaPhanThuoc.danhMuc.form.createTitle')}
       icon={<List size={20} />}
       onClose={onClose}

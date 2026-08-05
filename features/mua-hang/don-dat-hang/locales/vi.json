@@ -22,7 +22,7 @@
   "donDatHang.form.warehouse": "Kho nhận hàng",
   "donDatHang.form.warehousePlaceholder": "Chọn kho nhận (không bắt buộc)",
   "donDatHang.form.linkRequest": "Phiếu đề xuất",
-  "donDatHang.form.linkRequestPlaceholder": "Không liên kết",
+  "donDatHang.form.linkRequestPlaceholder": "Chọn phiếu đề xuất (nếu có)",
   "donDatHang.form.buyer": "Người đặt",
   "donDatHang.form.buyerPlaceholder": "Chọn người đặt",
   "donDatHang.form.approver": "Người duyệt PO",

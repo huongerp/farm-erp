@@ -42,7 +42,7 @@ const PayrollWifiIpForm: React.FC<Props> = ({ initialData, onClose }) => {
     subLabel: b.ma_chi_nhanh,
   }));
 
-  const { register, handleSubmit, formState: { errors }, reset, control } = useForm<PayrollWifiIpFormValues>({
+  const { register, handleSubmit, formState: { errors, isDirty }, reset, control } = useForm<PayrollWifiIpFormValues>({
     resolver: zodResolver(payrollWifiIpSchema),
     defaultValues: DEFAULT_VALUES,
   });
@@ -77,6 +77,7 @@ const PayrollWifiIpForm: React.FC<Props> = ({ initialData, onClose }) => {
 
   return (
     <GenericDrawer
+      isDirty={isDirty}
       title={isEdit ? t('payrollIp.form.editTitle') : t('payrollIp.form.createTitle')}
       icon={<Wifi size={20} />}
       onClose={onClose}

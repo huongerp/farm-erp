@@ -38,7 +38,7 @@ const NhomTaiSanForm: React.FC<Props> = ({ initialData, onClose }) => {
   const createMutation = useCreateAssetGroup(onClose);
   const updateMutation = useUpdateAssetGroup(onClose);
 
-  const { register, handleSubmit, formState: { errors }, reset, control } = useForm<AssetGroupFormValues>({
+  const { register, handleSubmit, formState: { errors, isDirty }, reset, control } = useForm<AssetGroupFormValues>({
     resolver: zodResolver(assetGroupSchema),
     defaultValues: DEFAULT_VALUES,
   });
@@ -78,6 +78,7 @@ const NhomTaiSanForm: React.FC<Props> = ({ initialData, onClose }) => {
 
   return (
     <GenericDrawer
+      isDirty={isDirty}
       title={isEdit ? t('thietLapTaiSan.nhomTaiSan.form.editTitle') : t('thietLapTaiSan.nhomTaiSan.form.createTitle')}
       icon={<Layers size={20} />}
       onClose={onClose}

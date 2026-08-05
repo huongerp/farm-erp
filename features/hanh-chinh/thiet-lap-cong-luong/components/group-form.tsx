@@ -35,7 +35,7 @@ const PayrollFormGroupForm: React.FC<Props> = ({ initialData, onClose }) => {
   const createMutation = useCreatePayrollAdminFormGroup(onClose);
   const updateMutation = useUpdatePayrollAdminFormGroup(onClose);
 
-  const { register, handleSubmit, formState: { errors }, reset, control } = useForm<PayrollAdminFormGroupFormValues>({
+  const { register, handleSubmit, formState: { errors, isDirty }, reset, control } = useForm<PayrollAdminFormGroupFormValues>({
     resolver: zodResolver(payrollAdminFormGroupSchema),
     defaultValues: DEFAULT_VALUES,
   });
@@ -71,6 +71,7 @@ const PayrollFormGroupForm: React.FC<Props> = ({ initialData, onClose }) => {
 
   return (
     <GenericDrawer
+      isDirty={isDirty}
       title={isEdit ? t('payrollIp.groups.form.editTitle') : t('payrollIp.groups.form.createTitle')}
       icon={<FileText size={20} />}
       onClose={onClose}

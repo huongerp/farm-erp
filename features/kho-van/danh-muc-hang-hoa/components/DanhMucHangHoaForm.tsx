@@ -50,7 +50,7 @@ const DanhMucHangHoaForm: React.FC<Props> = ({
     trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG,
   };
 
-  const { register, handleSubmit, formState: { errors }, reset, control } = useForm<
+  const { register, handleSubmit, formState: { errors, isDirty }, reset, control } = useForm<
     DanhMucHangHoaFormValues
   >({
     resolver: zodResolver(danhMucHangHoaSchema) as any,
@@ -93,6 +93,7 @@ const DanhMucHangHoaForm: React.FC<Props> = ({
 
   return (
     <GenericDrawer
+      isDirty={isDirty}
       title={isEdit ? t('danhMucHangHoa.form.editTitle') : t('danhMucHangHoa.form.createTitle')}
       icon={<List size={20} />}
       onClose={onClose}

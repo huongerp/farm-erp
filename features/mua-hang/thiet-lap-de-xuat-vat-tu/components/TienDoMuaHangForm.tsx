@@ -36,7 +36,7 @@ const TienDoMuaHangForm: React.FC<Props> = ({ initialData, onClose }) => {
   const createMutation = useCreateTienDoMuaHang(onClose);
   const updateMutation = useUpdateTienDoMuaHang(onClose);
 
-  const { register, handleSubmit, formState: { errors }, reset, control } = useForm<TienDoMuaHangFormValues>({
+  const { register, handleSubmit, formState: { errors, isDirty }, reset, control } = useForm<TienDoMuaHangFormValues>({
     resolver: zodResolver(tienDoMuaHangSchema),
     defaultValues: DEFAULT_VALUES,
   });
@@ -73,6 +73,7 @@ const TienDoMuaHangForm: React.FC<Props> = ({ initialData, onClose }) => {
 
   return (
     <GenericDrawer
+      isDirty={isDirty}
       title={isEdit ? t('thietLapDeXuatVatTu.tienDoMuaHang.form.editTitle') : t('thietLapDeXuatVatTu.tienDoMuaHang.form.createTitle')}
       icon={<Package size={20} />}
       onClose={onClose}
@@ -140,7 +141,7 @@ const TienDoMuaHangForm: React.FC<Props> = ({ initialData, onClose }) => {
                   </div>
                   <div className="flex gap-2 items-end">
                     <Input
-                      placeholder="#6366f1"
+                      placeholder="VD: #6366f1"
                       value={field.value || ''}
                       onChange={(e) => field.onChange(e.target.value)}
                       error={errors.mau?.message}

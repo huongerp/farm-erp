@@ -39,7 +39,7 @@ const JobLevelForm: React.FC<Props> = ({ initialData, onClose }) => {
     ? Math.max(0, ...jobLevels.map((l) => l.cap_bac)) + 1
     : 1;
 
-  const { register, handleSubmit, formState: { errors }, reset, control } = useForm<JobLevelFormValues>({
+  const { register, handleSubmit, formState: { errors, isDirty }, reset, control } = useForm<JobLevelFormValues>({
     resolver: zodResolver(jobLevelSchema),
     defaultValues: DEFAULT_VALUES,
   });
@@ -72,6 +72,7 @@ const JobLevelForm: React.FC<Props> = ({ initialData, onClose }) => {
 
   return (
     <GenericDrawer
+        isDirty={isDirty}
         title={isEdit ? t('jobLevel.form.editTitle') : t('jobLevel.form.createTitle')}
         icon={<Layers size={20} />}
         onClose={onClose}

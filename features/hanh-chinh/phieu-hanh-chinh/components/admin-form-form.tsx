@@ -40,7 +40,7 @@ const AdminFormForm: React.FC<Props> = ({ initialData, onClose }) => {
   const createMutation = useCreateAdminForm(onClose);
   const updateMutation = useUpdateAdminForm(onClose);
 
-  const { register, handleSubmit, formState: { errors }, reset, control } = useForm<AdminFormValues>({
+  const { register, handleSubmit, formState: { errors, isDirty }, reset, control } = useForm<AdminFormValues>({
     resolver: zodResolver(adminFormSchema),
     defaultValues: DEFAULT_VALUES,
   });
@@ -85,6 +85,7 @@ const AdminFormForm: React.FC<Props> = ({ initialData, onClose }) => {
 
   return (
     <GenericDrawer
+      isDirty={isDirty}
       title={isEdit ? t('adminForm.form.editTitle') : t('adminForm.form.createTitle')}
       icon={<FileText size={20} />}
       onClose={onClose}

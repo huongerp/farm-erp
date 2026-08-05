@@ -33,7 +33,7 @@ const KyKhauHaoForm: React.FC<Props> = ({ initialData, onClose }) => {
   const updateMutation = useUpdateKyKhauHao(onClose);
   const isEdit = !!initialData?.id;
 
-  const { register, handleSubmit, formState: { errors }, reset, control } = useForm<KyKhauHaoFormValues>({
+  const { register, handleSubmit, formState: { errors, isDirty }, reset, control } = useForm<KyKhauHaoFormValues>({
     resolver: zodResolver(kyKhauHaoSchema),
     defaultValues: DEFAULT_VALUES,
   });
@@ -64,6 +64,7 @@ const KyKhauHaoForm: React.FC<Props> = ({ initialData, onClose }) => {
 
   return (
     <GenericDrawer
+      isDirty={isDirty}
       title={isEdit ? t('khauHaoTaiSan.form.editTitle') : t('khauHaoTaiSan.form.createTitle')}
       icon={<Calculator size={20} />}
       onClose={onClose}

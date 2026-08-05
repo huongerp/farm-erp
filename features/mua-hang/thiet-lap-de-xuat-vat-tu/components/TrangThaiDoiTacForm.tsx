@@ -36,7 +36,7 @@ const TrangThaiDoiTacForm: React.FC<Props> = ({ initialData, onClose }) => {
   const createMutation = useCreateTrangThaiDoiTac(onClose);
   const updateMutation = useUpdateTrangThaiDoiTac(onClose);
 
-  const { register, handleSubmit, formState: { errors }, reset, control } = useForm<TrangThaiDoiTacFormValues>({
+  const { register, handleSubmit, formState: { errors, isDirty }, reset, control } = useForm<TrangThaiDoiTacFormValues>({
     resolver: zodResolver(trangThaiDoiTacSchema),
     defaultValues: DEFAULT_VALUES,
   });
@@ -73,6 +73,7 @@ const TrangThaiDoiTacForm: React.FC<Props> = ({ initialData, onClose }) => {
 
   return (
     <GenericDrawer
+      isDirty={isDirty}
       title={isEdit ? t('thietLapDeXuatVatTu.doiTac.form.editTitle') : t('thietLapDeXuatVatTu.doiTac.form.createTitle')}
       icon={<Tag size={20} />}
       onClose={onClose}
@@ -121,7 +122,7 @@ const TrangThaiDoiTacForm: React.FC<Props> = ({ initialData, onClose }) => {
                 <div className="flex gap-2 items-end">
                   <Input
                     label={t('thietLapDeXuatVatTu.doiTac.form.mau')}
-                    placeholder="#6366f1"
+                    placeholder="VD: #6366f1"
                     value={field.value || ''}
                     onChange={(e) => field.onChange(e.target.value)}
                     error={errors.mau?.message}

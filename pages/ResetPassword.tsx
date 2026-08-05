@@ -88,7 +88,7 @@ const ResetPassword: React.FC = () => {
                 type={showNewPassword ? 'text' : 'password'}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="••••••••"
+                placeholder="Nhập mật khẩu mới"
                 autoComplete="new-password"
                 className="flex h-11 w-full rounded-lg border border-input bg-background pl-3 pr-10 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                 minLength={PASSWORD_MIN_LENGTH}
@@ -109,7 +109,7 @@ const ResetPassword: React.FC = () => {
                 type={showConfirm ? 'text' : 'password'}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="••••••••"
+                placeholder="Nhập lại mật khẩu mới"
                 autoComplete="new-password"
                 className="flex h-11 w-full rounded-lg border border-input bg-background pl-3 pr-10 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                 minLength={PASSWORD_MIN_LENGTH}

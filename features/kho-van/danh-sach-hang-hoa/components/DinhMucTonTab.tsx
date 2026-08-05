@@ -541,7 +541,7 @@ const DinhMucTonFormDrawer: React.FC<DinhMucTonFormDrawerProps> = ({
     ton_toi_thieu: editingRow?.ton_toi_thieu ?? 0,
   };
 
-  const { register, handleSubmit, formState: { errors }, control, reset } = useForm<DinhMucTonFormValues>({
+  const { register, handleSubmit, formState: { errors, isDirty }, control, reset } = useForm<DinhMucTonFormValues>({
     resolver: zodResolver(dinhMucTonSchema) as any,
     defaultValues,
   });
@@ -585,6 +585,7 @@ const DinhMucTonFormDrawer: React.FC<DinhMucTonFormDrawerProps> = ({
 
   return (
     <GenericDrawer
+      isDirty={isDirty}
       title={isEdit ? t('hangHoa.dinhMuc.formEditTitle') : t('hangHoa.dinhMuc.formTitle')}
       icon={<Warehouse size={20} />}
       onClose={onClose}

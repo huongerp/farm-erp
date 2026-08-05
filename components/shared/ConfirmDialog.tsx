@@ -42,7 +42,13 @@ const ConfirmDialog: React.FC = () => {
     };
   }, [isOpen]);
 
+  // Chặn chạy onConfirm hai lần: nhiều nơi truyền `() => mutation.mutate(...)` trả về
+  // void nên `await` bên dưới xong ngay, isLoading chưa kịp vô hiệu hoá nút.
+  const dangXacNhanRef = useRef(false);
+
   const handleConfirm = async () => {
+    if (dangXacNhanRef.current) return;
+    dangXacNhanRef.current = true;
     try {
       setLoading(true);
       await onConfirm();
@@ -52,6 +58,8 @@ const ConfirmDialog: React.FC = () => {
       const msg = error instanceof Error && error.message.trim() ? error.message.trim() : '';
       toast.error(msg || i18n.t('common.error'));
       setLoading(false);
+    } finally {
+      dangXacNhanRef.current = false;
     }
   };
 
@@ -60,6 +68,14 @@ const ConfirmDialog: React.FC = () => {
     close();
   }, [onCancel, close]);
 
+  // Giữ bản mới nhất để effect gắn listener bên dưới không phải phụ thuộc vào chúng.
+  const handleCancelRef = useRef(handleCancel);
+  const isLoadingRef = useRef(isLoading);
+  useEffect(() => {
+    handleCancelRef.current = handleCancel;
+    isLoadingRef.current = isLoading;
+  }, [handleCancel, isLoading]);
+
   // Focus trap + Escape key
   useEffect(() => {
     if (!isOpen) return;
@@ -67,9 +83,9 @@ const ConfirmDialog: React.FC = () => {
     if (el) el.focus();
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !isLoading) {
+      if (e.key === 'Escape' && !isLoadingRef.current) {
         if (overlayIdRef.current != null && !isTopOverlay(overlayIdRef.current)) return;
-        handleCancel();
+        handleCancelRef.current();
         return;
       }
       // Trap focus within dialog
@@ -89,7 +105,9 @@ const ConfirmDialog: React.FC = () => {
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, isLoading, handleCancel]);
+    // Chỉ chạy khi mở/đóng: nếu phụ thuộc isLoading/handleCancel thì mỗi lần chúng đổi
+    // sẽ gắn lại listener và el.focus() ở trên giật focus khỏi thứ người dùng đang thao tác.
+  }, [isOpen]);
 
   const getIcon = () => {
     switch (variant) {

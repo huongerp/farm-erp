@@ -66,7 +66,7 @@ const DotKiemKeForm: React.FC<Props> = ({ onClose, initialData, onSuccessAfterEd
       }
     : DEFAULT_VALUES;
 
-  const { register, handleSubmit, formState: { errors }, control, setValue, reset } = useForm<DotKiemKeFormValues>({
+  const { register, handleSubmit, formState: { errors, isDirty }, control, setValue, reset } = useForm<DotKiemKeFormValues>({
     resolver: zodResolver(dotKiemKeSchema),
     defaultValues: defaultValuesFromData,
   });
@@ -135,6 +135,7 @@ const DotKiemKeForm: React.FC<Props> = ({ onClose, initialData, onSuccessAfterEd
 
   return (
     <GenericDrawer
+      isDirty={isDirty}
       title={isEdit ? t('kiemKeTaiSan.form.editTitle') : t('kiemKeTaiSan.form.createTitle')}
       onClose={onClose}
       maxWidthClass={DRAWER_WIDTH_FORM}

@@ -47,7 +47,7 @@ const NoiLuuForm: React.FC<Props> = ({ initialData, onClose }) => {
     [branches]
   );
 
-  const { register, handleSubmit, formState: { errors }, reset, control } = useForm<AssetStorageLocationFormValues>({
+  const { register, handleSubmit, formState: { errors, isDirty }, reset, control } = useForm<AssetStorageLocationFormValues>({
     resolver: zodResolver(assetStorageLocationSchema),
     defaultValues: DEFAULT_VALUES,
   });
@@ -82,6 +82,7 @@ const NoiLuuForm: React.FC<Props> = ({ initialData, onClose }) => {
 
   return (
     <GenericDrawer
+      isDirty={isDirty}
       title={isEdit ? t('thietLapTaiSan.noiLuu.form.editTitle') : t('thietLapTaiSan.noiLuu.form.createTitle')}
       icon={<MapPin size={20} />}
       onClose={onClose}

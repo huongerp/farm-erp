@@ -32,7 +32,7 @@ const ThucTeDialog: React.FC<Props> = ({ data, onClose }) => {
     handleSubmit,
     reset,
     watch,
-    formState: { isSubmitting },
+    formState: { isSubmitting, isDirty },
   } = useForm<ThuHoachThucTeFormValues>({
     resolver: zodResolver(thuHoachThucTeFormSchema),
     defaultValues,
@@ -58,6 +58,7 @@ const ThucTeDialog: React.FC<Props> = ({ data, onClose }) => {
 
   return (
     <GenericDrawer
+      isDirty={isDirty}
       title={t('thuHoach.thucTe.title')}
       subtitle={`${t('thuHoach.store.colNam')} ${data.nam} · ${t('thuHoach.store.colTuan')} ${data.tuan}`}
       icon={<ClipboardList className="text-primary" size={22} />}

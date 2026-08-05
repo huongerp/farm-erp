@@ -22,7 +22,7 @@
   "diemCongTru.form.month": "Tháng",
   "diemCongTru.form.monthPlaceholder": "1–12",
   "diemCongTru.form.loai": "Loại",
-  "diemCongTru.form.loaiPlaceholder": "Cộng hoặc Trừ",
+  "diemCongTru.form.loaiPlaceholder": "Chọn loại (Cộng/Trừ)",
   "diemCongTru.form.category": "Hạng mục",
   "diemCongTru.form.categoryPlaceholder": "Chọn hạng mục (thiết lập tại Thiết lập công lương)...",
   "diemCongTru.form.diem": "Điểm",

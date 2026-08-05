@@ -49,7 +49,7 @@ const DanhSachKhoForm: React.FC<Props> = ({ initialData, defaultThuTu, onClose, 
     thu_tu: defaultThuTu ?? 1,
   };
 
-  const { register, handleSubmit, formState: { errors }, reset, control } = useForm<KhoFormValues>({
+  const { register, handleSubmit, formState: { errors, isDirty }, reset, control } = useForm<KhoFormValues>({
     resolver: zodResolver(khoSchema) as any,
     defaultValues,
   });
@@ -96,6 +96,7 @@ const DanhSachKhoForm: React.FC<Props> = ({ initialData, defaultThuTu, onClose, 
 
   return (
     <GenericDrawer
+      isDirty={isDirty}
       title={isEdit ? t('kho.form.editTitle') : t('kho.form.createTitle')}
       icon={<Warehouse size={20} />}
       onClose={onClose}

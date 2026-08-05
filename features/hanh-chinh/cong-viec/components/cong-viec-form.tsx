@@ -65,7 +65,7 @@ const CongViecForm: React.FC<Props> = ({ initialData, parentId, onClose, stackLe
     [employees, user?.id, user?.email]
   );
 
-  const { register, handleSubmit, formState: { errors }, reset, control } = useForm<CongViecFormValues>({
+  const { register, handleSubmit, formState: { errors, isDirty }, reset, control } = useForm<CongViecFormValues>({
     resolver: zodResolver(congViecSchema),
     defaultValues: DEFAULT_VALUES,
   });
@@ -133,6 +133,7 @@ const CongViecForm: React.FC<Props> = ({ initialData, parentId, onClose, stackLe
 
   return (
     <GenericDrawer
+      isDirty={isDirty}
       title={isEdit ? t('congViec.form.editTitle') : t('congViec.form.createTitle')}
       subtitle={isEdit && initialData ? initialData.tieu_de : t('congViec.form.createSubtitle')}
       icon={<ClipboardList size={20} />}

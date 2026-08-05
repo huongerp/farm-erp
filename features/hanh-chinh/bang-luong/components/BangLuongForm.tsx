@@ -64,6 +64,8 @@ const BangLuongForm: React.FC<Props> = ({ initialRecord, defaultEmployeeId, onCl
   /** Cộng trừ khác: một số (dương = cộng, âm = trừ) */
   const [cong_tru_khac, setCongTruKhac] = useState(defaultNumbers.cong_tru_net);
   const [ghi_chu, setGhiChu] = useState('');
+  /** Đã có thao tác nhập liệu chưa — dùng để cảnh báo khi đóng form giữa chừng. */
+  const [daNhap, setDaNhap] = useState(false);
 
   // Dropdown chọn nhân viên: dùng ref-query (id, ho_ten, ma_nhan_vien, email, trang_thai)
   // thay cho `getEmployees` (60+ cột + base64). Key `['employees','ref']` để tránh đụng
@@ -336,7 +338,7 @@ const BangLuongForm: React.FC<Props> = ({ initialRecord, defaultEmployeeId, onCl
           value={cong_tru_khac === 0 ? '' : cong_tru_khac}
           onChange={(e) => setCongTruKhac(Number(e.target.value) || 0)}
           className="mt-1"
-          placeholder="0"
+          placeholder="Nhập số tiền cộng/trừ"
         />
       </div>
     </FormSection>
@@ -360,6 +362,7 @@ const BangLuongForm: React.FC<Props> = ({ initialRecord, defaultEmployeeId, onCl
 
   return (
     <GenericDrawer
+      isDirty={daNhap}
       title={isEdit ? t('bangLuong.form.editTitle') : t('bangLuong.form.addTitle')}
       icon={<Banknote size={20} />}
       onClose={onClose}
@@ -378,6 +381,10 @@ const BangLuongForm: React.FC<Props> = ({ initialRecord, defaultEmployeeId, onCl
       <form
         id={formId}
         onSubmit={isEdit ? handleSubmitEdit : handleSubmitCreate}
+        // Form này giữ giá trị trong 19 useState rời nên không có isDirty sẵn như
+        // react-hook-form; bắt sự kiện nổi bọt để biết người dùng đã nhập gì chưa.
+        onInput={() => setDaNhap(true)}
+        onChange={() => setDaNhap(true)}
         className="flex flex-col h-full"
       >
         <div className="flex-1 overflow-y-auto space-y-4 px-1">

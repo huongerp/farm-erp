@@ -37,7 +37,7 @@ const BranchForm: React.FC<Props> = ({ initialData, onClose }) => {
   const createMutation = useCreateBranch(onClose);
   const updateMutation = useUpdateBranch(onClose);
 
-  const { register, handleSubmit, formState: { errors }, reset, control } = useForm<BranchFormValues>({
+  const { register, handleSubmit, formState: { errors, isDirty }, reset, control } = useForm<BranchFormValues>({
     resolver: zodResolver(branchSchema),
     defaultValues: DEFAULT_VALUES,
   });
@@ -85,6 +85,7 @@ const BranchForm: React.FC<Props> = ({ initialData, onClose }) => {
 
   return (
     <GenericDrawer
+      isDirty={isDirty}
       title={isEdit ? t('branch.form.editTitle') : t('branch.form.createTitle')}
       icon={<MapPin size={20} />}
       onClose={onClose}

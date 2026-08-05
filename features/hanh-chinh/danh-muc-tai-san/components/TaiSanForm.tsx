@@ -98,7 +98,7 @@ const TaiSanForm: React.FC<Props> = ({ initialData, onClose }) => {
     [employees]
   );
 
-  const { register, handleSubmit, formState: { errors }, reset, control, setValue, setError, watch } = useForm<TaiSanFormValues>({
+  const { register, handleSubmit, formState: { errors, isDirty }, reset, control, setValue, setError, watch } = useForm<TaiSanFormValues>({
     resolver: zodResolver(taiSanSchema),
     defaultValues: DEFAULT_VALUES,
   });
@@ -239,6 +239,7 @@ const TaiSanForm: React.FC<Props> = ({ initialData, onClose }) => {
 
   return (
     <GenericDrawer
+      isDirty={isDirty}
       title={isEdit ? t('danhSachTaiSan.form.editTitle') : t('danhSachTaiSan.form.createTitle')}
       icon={<Building2 size={20} />}
       onClose={onClose}

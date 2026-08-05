@@ -36,7 +36,7 @@ const TrangThaiThanhToanDoiTacForm: React.FC<Props> = ({ initialData, onClose })
   const createMutation = useCreateTrangThaiThanhToanDoiTac(onClose);
   const updateMutation = useUpdateTrangThaiThanhToanDoiTac(onClose);
 
-  const { register, handleSubmit, formState: { errors }, reset, control } = useForm<TrangThaiThanhToanDoiTacFormValues>({
+  const { register, handleSubmit, formState: { errors, isDirty }, reset, control } = useForm<TrangThaiThanhToanDoiTacFormValues>({
     resolver: zodResolver(trangThaiThanhToanDoiTacSchema),
     defaultValues: DEFAULT_VALUES,
   });
@@ -73,6 +73,7 @@ const TrangThaiThanhToanDoiTacForm: React.FC<Props> = ({ initialData, onClose })
 
   return (
     <GenericDrawer
+      isDirty={isDirty}
       title={isEdit ? t('thietLapDeXuatVatTu.thanhToan.form.editTitle') : t('thietLapDeXuatVatTu.thanhToan.form.createTitle')}
       icon={<CreditCard size={20} />}
       onClose={onClose}
@@ -140,7 +141,7 @@ const TrangThaiThanhToanDoiTacForm: React.FC<Props> = ({ initialData, onClose })
                   </div>
                   <div className="flex gap-2 items-end">
                     <Input
-                      placeholder="#6366f1"
+                      placeholder="VD: #6366f1"
                       value={field.value || ''}
                       onChange={(e) => field.onChange(e.target.value)}
                       error={errors.mau?.message}

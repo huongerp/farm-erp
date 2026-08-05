@@ -55,7 +55,7 @@ const HangHoaForm: React.FC<Props> = ({ initialData, existingDvtList = [], onClo
     mo_ta: null,
   };
 
-  const { register, handleSubmit, formState: { errors }, reset, control, watch } = useForm<FarmHangHoaFormValues>({
+  const { register, handleSubmit, formState: { errors, isDirty }, reset, control, watch } = useForm<FarmHangHoaFormValues>({
     resolver: zodResolver(farmHangHoaSchema) as any,
     defaultValues,
   });
@@ -113,6 +113,7 @@ const HangHoaForm: React.FC<Props> = ({ initialData, existingDvtList = [], onClo
 
   return (
     <GenericDrawer
+      isDirty={isDirty}
       title={isEdit ? t('farmHangHoaPhanThuoc.hangHoa.form.editTitle') : t('farmHangHoaPhanThuoc.hangHoa.form.createTitle')}
       icon={<Package size={20} />}
       onClose={onClose}

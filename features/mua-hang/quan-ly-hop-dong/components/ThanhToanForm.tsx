@@ -70,7 +70,7 @@ const ThanhToanForm: React.FC<Props> = ({
     control,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<ThanhToanFormValues>({
     resolver: zodResolver(thanhToanFormSchema) as any,
     defaultValues: emptyValues(),
@@ -97,6 +97,7 @@ const ThanhToanForm: React.FC<Props> = ({
 
   return (
     <GenericDrawer
+      isDirty={isDirty}
       title={isEdit ? t('hopDong.chiTiet.editTitle') : t('hopDong.chiTiet.addTitle')}
       icon={<Wallet size={20} />}
       onClose={onClose}

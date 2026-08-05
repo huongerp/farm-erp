@@ -185,6 +185,102 @@ export const createRole = async (
   };
 };
 
+/**
+ * Cập nhật vai trò đang có (không tạo mới).
+ *
+ * Trước đây form sửa vai trò gọi nhầm `createRole`, mỗi lần bấm "Cập nhật" lại sinh
+ * thêm một chức vụ trùng tên thay vì sửa bản ghi cũ.
+ *
+ * Quyền được ghi theo kiểu update cái đã có / insert cái thiếu / xoá module bị bỏ,
+ * cùng cách với `updateModulePermissions` — tránh xoá sạch rồi chèn lại, vì nếu lỗi
+ * giữa chừng thì vai trò sẽ mất trắng quyền.
+ */
+export const updateRole = async (
+  id: string,
+  data: RoleFormValues,
+  permissions: ModulePermission[],
+): Promise<PositionPermission> => {
+  const numId = Number(id);
+  if (Number.isNaN(numId)) throw new Error(i18n.t('permission.matrix.loading'));
+
+  const { data: updatedChucVu, error: errChucVu } = await db
+    .from(TABLE_CHUC_VU)
+    .update({
+      ten_chuc_vu: data.ten_vai_tro.trim(),
+      mo_ta: data.mo_ta?.trim() ?? null,
+      trang_thai: data.trang_thai,
+    })
+    .eq('id', numId)
+    .select('id, ten_chuc_vu, phong_ban_id, mo_ta, tt, trang_thai, tg_cap_nhat')
+    .single();
+  if (errChucVu) throw new Error(errChucVu.message ?? i18n.t('permission.matrix.loading'));
+
+  const { data: existing, error: errExisting } = await db
+    .from(TABLE_PHAN_QUYEN)
+    .select('id, module_id')
+    .eq('chuc_vu_id', numId);
+  if (errExisting) throw new Error(errExisting.message);
+
+  const idByModule = new Map<string, number>();
+  (existing ?? []).forEach((row: { id: number; module_id: string }) => {
+    idByModule.set(row.module_id, row.id);
+  });
+
+  const toInsert = permissions
+    .filter((p) => !idByModule.has(p.module_id))
+    .map((p) => ({ chuc_vu_id: numId, module_id: p.module_id, actions: p.actions }));
+  const toUpdate = permissions
+    .filter((p) => idByModule.has(p.module_id))
+    .map((p) => ({ id: idByModule.get(p.module_id)!, actions: p.actions }));
+  const keptModules = new Set(permissions.map((p) => p.module_id));
+  const toDelete = (existing ?? [])
+    .filter((row: { module_id: string }) => !keptModules.has(row.module_id))
+    .map((row: { id: number }) => row.id);
+
+  if (toUpdate.length > 0) {
+    const results = await Promise.all(
+      toUpdate.map(({ id: rowId, actions }) =>
+        db
+          .from(TABLE_PHAN_QUYEN)
+          .update({ actions, tg_cap_nhat: new Date().toISOString() })
+          .eq('id', rowId),
+      ),
+    );
+    const failed = results.find((r) => r.error);
+    if (failed?.error) throw new Error(failed.error.message);
+  }
+  if (toInsert.length > 0) {
+    const { error } = await db.from(TABLE_PHAN_QUYEN).insert(toInsert);
+    if (error) throw new Error(error.message);
+  }
+  if (toDelete.length > 0) {
+    const { error } = await db.from(TABLE_PHAN_QUYEN).delete().in('id', toDelete);
+    if (error) throw new Error(error.message);
+  }
+
+  const trangThai =
+    updatedChucVu.trang_thai === TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG
+      ? TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG
+      : TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
+  const strId = String(updatedChucVu.id);
+  return {
+    id: strId,
+    id_chuc_vu: strId,
+    ten_chuc_vu: updatedChucVu.ten_chuc_vu ?? '',
+    ma_chuc_vu: data.ma_vai_tro,
+    ten_phong_ban: 'permission.matrix.otherDept',
+    thu_tu_phong_ban: 9999,
+    thu_tu_chuc_vu: updatedChucVu.tt ?? 0,
+    mo_ta: updatedChucVu.mo_ta ?? null,
+    so_nhan_vien: 0,
+    quyen_han: permissions,
+    trang_thai: trangThai,
+    tg_cap_nhat: updatedChucVu.tg_cap_nhat
+      ? new Date(updatedChucVu.tg_cap_nhat).toISOString()
+      : new Date().toISOString(),
+  };
+};
+
 /** Xóa chức vụ và toàn bộ quyền trong fp_var_phan_quyen (ids = id chức vụ). */
 export const deleteRoles = async (ids: string[]): Promise<void> => {
   if (ids.length === 0) return;

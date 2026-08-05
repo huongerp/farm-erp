@@ -91,7 +91,7 @@ const DoiTacForm: React.FC<Props> = ({ initialData, loaiDoiTac, nhomList, tagLis
     thu_tu: defaultThuTu ?? 1,
   };
 
-  const { register, handleSubmit, formState: { errors }, reset, control } = useForm<DoiTacFormValues>({
+  const { register, handleSubmit, formState: { errors, isDirty }, reset, control } = useForm<DoiTacFormValues>({
     resolver: zodResolver(doiTacSchema) as any,
     defaultValues,
   });
@@ -161,6 +161,7 @@ const DoiTacForm: React.FC<Props> = ({ initialData, loaiDoiTac, nhomList, tagLis
 
   return (
     <GenericDrawer
+      isDirty={isDirty}
       title={isEdit ? t('doiTac.form.editTitle') : t('doiTac.form.createTitle')}
       icon={<Users size={20} />}
       onClose={onClose}

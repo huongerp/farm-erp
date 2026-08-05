@@ -113,7 +113,7 @@ const CongViecDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onAd
   const {
     register: regBinhLuan,
     handleSubmit: handleBinhLuanSubmit,
-    formState: { errors: errBinhLuan },
+    formState: { errors: errBinhLuan, isDirty },
     reset: resetBinhLuan,
   } = useForm<BinhLuanFormValues>({
     resolver: zodResolver(binhLuanSchema),
@@ -171,6 +171,7 @@ const CongViecDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onAd
 
   return (
     <GenericDrawer
+      isDirty={isDirty}
       title={data.tieu_de}
       icon={<ClipboardList size={20} />}
       subtitle={subtitle || undefined}

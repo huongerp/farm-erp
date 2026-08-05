@@ -115,7 +115,7 @@ const NhomFormDrawer: React.FC<NhomFormDrawerProps> = ({ initialData, defaultThu
               type="number"
               min={0}
               label={t('doiTac.danhMuc.form.thuTu')}
-              placeholder="0"
+              placeholder="Nhập thứ tự hiển thị"
               icon={<ArrowUpFromLine size={12} />}
               value={thuTu}
               onChange={(e) => setThuTu(Number(e.target.value) || 0)}

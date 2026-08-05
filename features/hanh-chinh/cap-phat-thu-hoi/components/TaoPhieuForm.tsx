@@ -76,7 +76,7 @@ const TaoPhieuForm: React.FC<Props> = ({ onClose, defaultTaiSanId, initialData, 
         }
       : DEFAULT_VALUES;
 
-  const { register, handleSubmit, formState: { errors }, control, setValue } = useForm<PhieuCapPhatThuHoiFormValues>({
+  const { register, handleSubmit, formState: { errors, isDirty }, control, setValue } = useForm<PhieuCapPhatThuHoiFormValues>({
     resolver: zodResolver(phieuCapPhatThuHoiSchema),
     defaultValues: defaultValuesFromData,
   });
@@ -160,6 +160,7 @@ const TaoPhieuForm: React.FC<Props> = ({ onClose, defaultTaiSanId, initialData, 
 
   return (
     <GenericDrawer
+      isDirty={isDirty}
       title={t(isEdit ? 'capPhatThuHoi.form.editTitle' : 'capPhatThuHoi.form.createTitle')}
       icon={<Package size={20} />}
       onClose={onClose}

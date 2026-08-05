@@ -58,7 +58,7 @@ const PositionForm: React.FC<Props> = ({ initialData, onClose }) => {
     subLabel: undefined,
   }));
 
-  const { register, handleSubmit, formState: { errors }, reset, control } = useForm<PositionFormValues>({
+  const { register, handleSubmit, formState: { errors, isDirty }, reset, control } = useForm<PositionFormValues>({
     resolver: zodResolver(positionSchema),
     defaultValues: DEFAULT_VALUES,
   });
@@ -99,6 +99,7 @@ const PositionForm: React.FC<Props> = ({ initialData, onClose }) => {
 
   return (
     <GenericDrawer
+        isDirty={isDirty}
         title={isEdit ? t('position.form.editTitle') : t('position.form.createTitle')}
         icon={<Briefcase size={20} />}
         onClose={onClose}

@@ -54,7 +54,7 @@
   "phieuKho.form.editSelectedCustomer": "Sửa khách hàng đang chọn",
   "phieuKho.form.partnerEditNotFound": "Không tìm thấy đối tác trong danh sách. Tải lại trang hoặc chọn lại.",
   "phieuKho.form.linkPo": "Đơn đặt hàng",
-  "phieuKho.form.linkPoPlaceholder": "Không chọn",
+  "phieuKho.form.linkPoPlaceholder": "Chọn đơn đặt hàng (nếu có)",
   "phieuKho.form.customer": "Khách hàng",
   "phieuKho.form.customerPlaceholder": "Chọn khách hàng (không bắt buộc)",
   "phieuKho.form.description": "Mô tả",
