@@ -201,7 +201,8 @@ const Login: React.FC = () => {
       </div>
 
       {/* Right Side - Login Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 md:p-12 relative">
+      {/* Xếp dọc thay vì đặt footer absolute: trên màn hình thấp footer cũ đè lên nút đăng nhập. */}
+      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center gap-8 p-6 md:p-12 relative">
         <div className="login-form-enter w-full max-w-md space-y-8">
             <div className="text-center lg:text-left">
                 <h2 className="text-3xl font-bold text-foreground tracking-tight">{t('page.login.welcome')}</h2>
@@ -223,7 +224,8 @@ const Login: React.FC = () => {
                     </div>
                     <div className="space-y-1">
                          <div className="flex items-center justify-between">
-                            <label className="text-sm font-medium leading-none mb-2 block">
+                            {/* text-xs cho khớp nhãn của <Input> dùng ở ô Email ngay trên. */}
+                            <label htmlFor="login-password" className="text-xs font-medium leading-none mb-2 block">
                               {t('page.login.password')}
                               <span className="text-red-500 ml-0.5">*</span>
                             </label>
@@ -237,9 +239,13 @@ const Login: React.FC = () => {
                          </div>
                         <div className="relative">
                             <input
+                                id="login-password"
                                 type={showPassword ? 'text' : 'password'}
-                                className={`flex h-11 w-full rounded-lg border bg-background pl-3 pr-10 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${errors.password ? 'border-destructive focus-visible:ring-destructive' : 'border-input'}`}
-                                placeholder="••••••••"
+                                aria-invalid={errors.password ? true : undefined}
+                                // Cùng bộ class với <Input> (components/ui/Input.tsx) để ô Mật khẩu
+                                // không lệch cỡ chữ/viền so với ô Email ngay trên.
+                                className={`flex h-11 w-full rounded-lg border bg-background pl-3 pr-10 py-2 text-body-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary/40 disabled:cursor-not-allowed disabled:opacity-50 ${errors.password ? 'border-destructive focus-visible:ring-destructive' : 'border-border'}`}
+                                placeholder={t('page.login.passwordPlaceholder')}
                                 {...register('password')}
                             />
                             <button
@@ -338,7 +344,7 @@ const Login: React.FC = () => {
         </div>
         
         {/* Footer info for Login page */}
-        <div className="absolute bottom-6 text-center text-xs text-muted-foreground w-full left-0 px-4">
+        <div className="w-full max-w-md text-center text-xs text-muted-foreground px-4">
              {t('page.login.copyright')} {companyInfo.companyName || t('page.login.companyFallback')}. {t('page.login.legal')}
         </div>
       </div>

@@ -565,7 +565,7 @@ const PermissionMatrix: React.FC<Props> = ({ roles, isLoading, canUpdate = true 
                           <div className="flex items-center gap-2 mb-2">
                             <span className="w-1.5 h-1.5 rounded-full bg-primary/40 shrink-0" />
                             <span className="text-xs font-semibold text-foreground flex-1 truncate">{role.ten_chuc_vu}</span>
-                            <span className="text-[9px] font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{role.ma_chuc_vu}</span>
+                            <span className="text-2xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{role.ma_chuc_vu}</span>
                           </div>
                           <div className="grid grid-cols-3 gap-1.5">
                             {displayActions.map((a) => (

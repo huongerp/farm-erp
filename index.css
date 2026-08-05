@@ -44,12 +44,17 @@
   --shadow-medium: 0 4px 20px rgba(0, 0, 0, 0.06);
   --font-sans: 'Inter', 'Noto Sans', system-ui, sans-serif;
   --font-serif: 'Merriweather', serif;
-  --text-2xs: 0.625rem;
-  --text-2xs--line-height: 0.875rem;
-  --text-caption: 0.6875rem;
+  /* Thang chữ nhỏ. Lưu ý các cỡ này còn nhân với thiết lập cỡ chữ của người dùng
+     (html[data-text-size] ở cuối file): mức "small" = root 14px nên mọi giá trị
+     dưới đây co lại 87,5%. Vì vậy không hạ thấp hơn nữa. */
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 0.9375rem;
+  --text-caption: 0.75rem;
   --text-caption--line-height: 1rem;
-  --text-body-sm: 0.8125rem;
-  --text-body-sm--line-height: 1.125rem;
+  /* Input.tsx dùng cỡ này cho MỌI ô nhập toàn app — 0.8125rem (13px) tụt xuống
+     11,4px ở mức chữ "small", quá nhỏ để đọc. */
+  --text-body-sm: 0.875rem;
+  --text-body-sm--line-height: 1.25rem;
 }
 
 :root {
@@ -167,6 +172,23 @@ body {
 html[data-text-size="small"] { font-size: 14px; }
 html[data-text-size="medium"] { font-size: 16px; }
 html[data-text-size="large"] { font-size: 18px; }
+
+/**
+ * Trên thiết bị cảm ứng, Safari iOS tự phóng to cả trang khi người dùng chạm vào
+ * ô nhập có cỡ chữ dưới 16px. Trang giật một nhịp rồi lệch vị trí, cảm giác đúng
+ * như "bị khựng, phải bấm lại ô nhập" — trước đây 31/34 ô trong app dính lỗi này.
+ *
+ * Dùng max() để vẫn tôn trọng thiết lập cỡ chữ: mức "large" giữ nguyên 18px, còn
+ * "small"/"medium" được nâng lên đúng ngưỡng 16px. Không đặt maximum-scale ở meta
+ * viewport vì cách đó chặn luôn quyền phóng to của người dùng.
+ */
+@media (pointer: coarse) {
+  input,
+  select,
+  textarea {
+    font-size: max(1rem, 16px);
+  }
+}
 
 ::-webkit-scrollbar {
   width: 8px;

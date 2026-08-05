@@ -103,7 +103,7 @@ const ThucTeDialog: React.FC<Props> = ({ data, onClose }) => {
                   {/* Kế hoạch luôn trên, thực tế luôn dưới — mọi kích thước màn hình */}
                   <div className="flex flex-col gap-1.5 min-w-0 w-full">
                     <div className="w-full min-w-0 rounded border border-border/60 bg-muted/30 px-2 py-1.5">
-                      <span className="text-[9px] sm:text-2xs uppercase tracking-wide text-muted-foreground">
+                      <span className="text-2xs uppercase tracking-wide text-muted-foreground">
                         {t('thuHoach.stats.abbrKH')}
                       </span>
                       <p className="text-xs sm:text-sm font-semibold tabular-nums text-foreground leading-none mt-0.5">
@@ -136,7 +136,7 @@ const ThucTeDialog: React.FC<Props> = ({ data, onClose }) => {
           </div>
           <div className="mt-2 grid grid-cols-2 gap-1.5 sm:gap-2 rounded-md border border-border bg-muted/25 px-2 py-1.5 min-w-0">
             <div className="min-w-0 overflow-hidden">
-              <p className="text-[9px] sm:text-2xs font-medium text-muted-foreground leading-tight line-clamp-2">
+              <p className="text-2xs font-medium text-muted-foreground leading-tight line-clamp-2">
                 {t('thuHoach.store.colTongKeHoach')}
               </p>
               <p className="text-sm sm:text-base font-semibold tabular-nums text-foreground mt-0.5 truncate">
@@ -144,7 +144,7 @@ const ThucTeDialog: React.FC<Props> = ({ data, onClose }) => {
               </p>
             </div>
             <div className="min-w-0 overflow-hidden">
-              <p className="text-[9px] sm:text-2xs font-medium text-muted-foreground leading-tight line-clamp-2">
+              <p className="text-2xs font-medium text-muted-foreground leading-tight line-clamp-2">
                 {t('thuHoach.store.colTongThucTe')}
               </p>
               <p className="text-sm sm:text-base font-semibold tabular-nums text-primary mt-0.5 truncate">

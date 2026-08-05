@@ -261,6 +261,7 @@
   "page.login.email": "Email",
   "page.login.emailPlaceholder": "Nhập email đăng nhập",
   "page.login.password": "Mật khẩu",
+  "page.login.passwordPlaceholder": "Nhập mật khẩu",
   "page.login.showPassword": "Hiện mật khẩu",
   "page.login.hidePassword": "Ẩn mật khẩu",
   "page.login.forgotPassword": "Quên mật khẩu?",

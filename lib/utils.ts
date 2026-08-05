@@ -1,5 +1,5 @@
 import { type ClassValue, clsx } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { extendTailwindMerge } from "tailwind-merge"
 import dayjs from "dayjs"
 import utc from "dayjs/plugin/utc"
 import timezone from "dayjs/plugin/timezone"
@@ -9,6 +9,23 @@ import { toast } from "sonner"
 
 dayjs.extend(utc)
 dayjs.extend(timezone)
+
+/**
+ * tailwind-merge chỉ biết các cỡ chữ mặc định (text-xs, text-sm…). Ba token riêng
+ * của dự án khai trong @theme (index.css) không nằm trong danh sách đó, nên nó xếp
+ * nhầm `text-body-sm` vào nhóm MÀU chữ — gặp `text-foreground` đứng sau là loại bỏ
+ * luôn cỡ chữ.
+ *
+ * Hậu quả trước khi khai báo: mọi <Input> dùng cn() đều mất `text-body-sm` và rơi
+ * về cỡ chữ thừa kế, khiến ô nhập không theo thang chữ lẫn thiết lập cỡ chữ.
+ */
+const twMerge = extendTailwindMerge({
+  extend: {
+    classGroups: {
+      'font-size': ['text-2xs', 'text-caption', 'text-body-sm'],
+    },
+  },
+})
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
