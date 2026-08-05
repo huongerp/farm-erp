@@ -8,12 +8,8 @@ import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinner
 import EmptyState from '../../../../components/shared/EmptyState';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import ChartTooltip from '../../../../components/ui/ChartTooltip';
+import { formatYmdToDisplay } from '../../../../lib/utils';
 
-function formatDateDisplay(ymd: string): string {
-  if (!ymd) return '';
-  const [y, m, d] = ymd.split('-');
-  return `${d}/${m}/${y}`;
-}
 
 function getTrangThaiLabel(trang_thai: string, t: (k: string) => string): string {
   return getBaoCaoTrangThaiLabel(trang_thai, t);
@@ -82,8 +78,8 @@ const TongHopKyTab: React.FC<TongHopKyTabProps> = ({ filters, onClearFilters }) 
   }
 
   const periodLabel = t('baoCaodeXuatVatTu.periodLabel', {
-    from: formatDateDisplay(filters.dateFrom),
-    to: formatDateDisplay(filters.dateTo),
+    from: formatYmdToDisplay(filters.dateFrom),
+    to: formatYmdToDisplay(filters.dateTo),
   });
 
   const cards = [

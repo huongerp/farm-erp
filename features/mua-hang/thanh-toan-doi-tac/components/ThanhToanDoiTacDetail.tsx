@@ -9,7 +9,7 @@ import Textarea from '../../../../components/ui/Textarea';
 import Combobox from '../../../../components/ui/Combobox';
 import type { ThanhToanDoiTac } from '../core/types';
 import type { TrangThaiThanhToanDoiTac } from '../../thiet-lap-de-xuat-vat-tu/core/types';
-import { formatDateTimeShort, getTodayISO } from '../../../../lib/utils';
+import { formatDateTimeShort, getTodayISO, formatNumberVN } from '../../../../lib/utils';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
 import DetailToolbar, { type DetailToolbarAction } from '../../../../components/shared/DetailToolbar';
 import DetailSection from '../../../../components/shared/DetailSection';
@@ -168,7 +168,7 @@ const ThanhToanDoiTacDetail: React.FC<Props> = ({
                 }
                 icon={<Tag size={12} />}
               />
-              <DetailField label={t('thanhToanDoiTac.form.soTien')} value={data.so_tien != null ? data.so_tien.toLocaleString('vi-VN') : '—'} icon={<CreditCard size={12} />} />
+              <DetailField label={t('thanhToanDoiTac.form.soTien')} value={formatNumberVN(data.so_tien)} icon={<CreditCard size={12} />} />
               <DetailField label={t('thanhToanDoiTac.form.ngayXuLy')} value={data.ngay_xu_ly ?? '—'} icon={<Calendar size={12} />} />
               <DetailField label={t('thanhToanDoiTac.form.ghiChu')} value={data.ghi_chu ?? '—'} icon={<CreditCard size={12} />} className="col-span-1 sm:col-span-2" />
               <DetailField label={t('thanhToanDoiTac.form.nguoiTao')} value={data.ten_nguoi_tao ?? '—'} icon={<User size={12} />} />

@@ -2,7 +2,7 @@
  * Xuất thanh toán đối tác ra PDF – header công ty + thông tin phiếu.
  */
 import type { ThanhToanDoiTac } from '../core/types';
-import { formatDate, formatDateTime, getTodayISODate } from '../../../../lib/utils';
+import { formatDate, formatDateTime, getTodayISODate, formatNumberVN } from '../../../../lib/utils';
 import { downloadBlob } from '../../../../lib/download-blob';
 import i18n from '../../../../lib/i18n';
 import { ensureJsPDFVietnameseFont } from '../../../../lib/jspdf-vietnamese-font';
@@ -54,7 +54,7 @@ export function buildThanhToanDoiTacBodyHTML(item: ThanhToanDoiTac): string {
     [t('thanhToanDoiTac.store.nhomDoiTacCol'), item.ten_nhom ?? '—'],
     [t('thanhToanDoiTac.form.doiTac'), item.ten_doi_tac ?? '—'],
     [t('thanhToanDoiTac.form.trangThai'), item.ten_trang_thai ?? '—'],
-    [t('thanhToanDoiTac.form.soTien'), item.so_tien != null ? item.so_tien.toLocaleString('vi-VN') : '—'],
+    [t('thanhToanDoiTac.form.soTien'), formatNumberVN(item.so_tien)],
     [t('thanhToanDoiTac.form.ngayXuLy'), item.ngay_xu_ly ? formatDate(item.ngay_xu_ly) : '—'],
     [t('thanhToanDoiTac.form.ghiChu'), item.ghi_chu ?? '—'],
     [t('thanhToanDoiTac.form.nguoiTao'), item.ten_nguoi_tao ?? '—'],

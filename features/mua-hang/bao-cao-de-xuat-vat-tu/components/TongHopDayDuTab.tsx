@@ -14,13 +14,8 @@ import EmptyState from '../../../../components/shared/EmptyState';
 import Button from '../../../../components/ui/Button';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
 import { BTN_CLOSE } from '../../../../lib/button-labels';
-import { cn } from '../../../../lib/utils';
+import { cn, formatYmdToDisplay } from '../../../../lib/utils';
 
-function formatDateDisplay(ymd: string): string {
-  if (!ymd) return '';
-  const [y, m, d] = ymd.split('-');
-  return `${d}/${m}/${y}`;
-}
 
 /** Màu chart: dễ nhìn, rõ ràng */
 const STATUS_CHART_COLORS = ['#f59e0b', '#0ea5e9', '#10b981', '#ef4444'];
@@ -216,8 +211,8 @@ const TongHopDayDuTab: React.FC<TongHopDayDuTabProps> = ({ filters, onClearFilte
   const periodLabel =
     filters?.dateFrom && filters?.dateTo
       ? t('baoCaodeXuatVatTu.periodLabel', {
-          from: formatDateDisplay(filters.dateFrom),
-          to: formatDateDisplay(filters.dateTo),
+          from: formatYmdToDisplay(filters.dateFrom),
+          to: formatYmdToDisplay(filters.dateTo),
         })
       : null;
 

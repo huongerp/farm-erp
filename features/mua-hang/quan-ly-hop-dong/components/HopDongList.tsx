@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Edit, Trash2 } from 'lucide-react';
-import { cn, formatDateShort } from '../../../../lib/utils';
+import { cn, formatDateShort, formatNumberVN } from '../../../../lib/utils';
 import type { HopDong } from '../core/types';
 import GenericTable from '../../../../components/shared/GenericTable';
 import type { ColumnConfig } from '../../../../store/createGenericStore';
@@ -82,19 +82,19 @@ const HopDongList: React.FC<Props> = ({
       case 'thanh_tien':
         return (
           <span className="text-sm tabular-nums font-medium">
-            {item.thanh_tien != null ? item.thanh_tien.toLocaleString('vi-VN') : '—'}
+            {formatNumberVN(item.thanh_tien)}
           </span>
         );
       case 'so_luong_cay':
         return (
           <span className="text-sm tabular-nums">
-            {item.so_luong_cay != null ? Number(item.so_luong_cay).toLocaleString('vi-VN') : '—'}
+            {formatNumberVN(Number(item.so_luong_cay))}
           </span>
         );
       case 'tong_da_thanh_toan':
         return (
           <span className="text-sm tabular-nums font-medium">
-            {item.tong_da_thanh_toan != null ? item.tong_da_thanh_toan.toLocaleString('vi-VN') : '—'}
+            {formatNumberVN(item.tong_da_thanh_toan)}
           </span>
         );
       case 'so_dot_thanh_toan':
@@ -106,7 +106,7 @@ const HopDongList: React.FC<Props> = ({
       case 'tong_cay_da_giao':
         return (
           <span className="text-sm tabular-nums">
-            {item.tong_cay_da_giao != null ? Number(item.tong_cay_da_giao).toLocaleString('vi-VN') : '—'}
+            {formatNumberVN(Number(item.tong_cay_da_giao))}
           </span>
         );
       case 'tien_con_lai':
@@ -117,7 +117,7 @@ const HopDongList: React.FC<Props> = ({
               item.tien_con_lai != null && item.tien_con_lai < 0 && 'text-rose-600'
             )}
           >
-            {item.tien_con_lai != null ? item.tien_con_lai.toLocaleString('vi-VN') : '—'}
+            {formatNumberVN(item.tien_con_lai)}
           </span>
         );
       case 'cay_con_lai':
@@ -128,7 +128,7 @@ const HopDongList: React.FC<Props> = ({
               item.cay_con_lai != null && Number(item.cay_con_lai) < 0 && 'text-rose-600'
             )}
           >
-            {item.cay_con_lai != null ? Number(item.cay_con_lai).toLocaleString('vi-VN') : '—'}
+            {formatNumberVN(Number(item.cay_con_lai))}
           </span>
         );
       case 'hinh_anh': {
@@ -222,13 +222,13 @@ const HopDongList: React.FC<Props> = ({
       <div className="text-xs text-muted-foreground space-y-0.5 mb-2 tabular-nums">
         <div>
           {t('hopDong.store.thanhTienCol')}:{' '}
-          {item.thanh_tien != null ? item.thanh_tien.toLocaleString('vi-VN') : '—'} · {t('hopDong.store.tongDaThanhToanCol')}:{' '}
-          {item.tong_da_thanh_toan != null ? item.tong_da_thanh_toan.toLocaleString('vi-VN') : '—'}
+          {formatNumberVN(item.thanh_tien)} · {t('hopDong.store.tongDaThanhToanCol')}:{' '}
+          {formatNumberVN(item.tong_da_thanh_toan)}
         </div>
         <div>
           {t('hopDong.store.tienConLaiCol')}:{' '}
-          {item.tien_con_lai != null ? item.tien_con_lai.toLocaleString('vi-VN') : '—'} · {t('hopDong.store.cayConLaiCol')}:{' '}
-          {item.cay_con_lai != null ? Number(item.cay_con_lai).toLocaleString('vi-VN') : '—'}
+          {formatNumberVN(item.tien_con_lai)} · {t('hopDong.store.cayConLaiCol')}:{' '}
+          {formatNumberVN(Number(item.cay_con_lai))}
         </div>
       </div>
       <div className="flex justify-between items-center pt-2 border-t border-border">

@@ -6,12 +6,8 @@ import type { NXTReportFilters } from '../core/types';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import EmptyState from '../../../../components/shared/EmptyState';
 import NXTSummaryCards from './NXTSummaryCards';
+import { formatYmdToDisplay } from '../../../../lib/utils';
 
-function formatDateDisplay(ymd: string): string {
-  if (!ymd) return '';
-  const [y, m, d] = ymd.split('-');
-  return `${d}/${m}/${y}`;
-}
 
 interface TongHopNXTKyTabProps {
   filters: NXTReportFilters | null;
@@ -81,8 +77,8 @@ const TongHopNXTKyTab: React.FC<TongHopNXTKyTabProps> = ({ filters, onClearFilte
   }
 
   const periodLabel = t('baoCaonhapXuatTon.periodLabel', {
-    from: formatDateDisplay(filters.dateFrom),
-    to: formatDateDisplay(filters.dateTo),
+    from: formatYmdToDisplay(filters.dateFrom),
+    to: formatYmdToDisplay(filters.dateTo),
   });
 
   return (

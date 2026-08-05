@@ -5,6 +5,7 @@ import {
   formatCurrency,
   formatDate,
   formatDateShort,
+  formatYmdToDisplay,
 } from '../utils';
 
 describe('parseFormattedNumber', () => {
@@ -73,5 +74,26 @@ describe('formatDate / formatDateShort', () => {
     // 2024-06-15T10:00:00Z = 2024-06-15 17:00 giờ VN — cùng ngày, tránh lệch múi giờ ở biên ngày.
     expect(formatDate('2024-06-15T10:00:00Z')).toBe('15/06/2024');
     expect(formatDateShort('2024-06-15T10:00:00Z')).toBe('15/06');
+  });
+});
+
+describe('formatYmdToDisplay', () => {
+  it('đổi YYYY-MM-DD sang DD/MM/YYYY', () => {
+    expect(formatYmdToDisplay('2026-08-05')).toBe('05/08/2026');
+  });
+
+  it('trả rỗng cho giá trị rỗng', () => {
+    expect(formatYmdToDisplay('')).toBe('');
+    expect(formatYmdToDisplay(null)).toBe('');
+    expect(formatYmdToDisplay(undefined)).toBe('');
+  });
+
+  it('giữ nguyên chuỗi không đúng dạng thay vì trả ra rác', () => {
+    expect(formatYmdToDisplay('05/08/2026')).toBe('05/08/2026');
+  });
+
+  it('KHÔNG lệch ngày ở biên tháng (lý do không dùng formatDate có đổi múi giờ)', () => {
+    expect(formatYmdToDisplay('2026-01-01')).toBe('01/01/2026');
+    expect(formatYmdToDisplay('2026-12-31')).toBe('31/12/2026');
   });
 });

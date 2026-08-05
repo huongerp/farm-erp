@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Edit, Trash2 } from 'lucide-react';
-import { cn, formatDateShort } from '../../../../lib/utils';
+import { cn, formatDateShort, formatNumberVN } from '../../../../lib/utils';
 import type { ThanhToanDoiTac } from '../core/types';
 import GenericTable from '../../../../components/shared/GenericTable';
 import type { ColumnConfig } from '../../../../store/createGenericStore';
@@ -82,7 +82,7 @@ const ThanhToanDoiTacList: React.FC<Props> = ({
       case 'so_tien':
         return (
           <span className="text-sm tabular-nums font-medium">
-            {item.so_tien != null ? item.so_tien.toLocaleString('vi-VN') : '—'}
+            {formatNumberVN(item.so_tien)}
           </span>
         );
       case 'tg_cap_nhat':
@@ -129,7 +129,7 @@ const ThanhToanDoiTacList: React.FC<Props> = ({
         {[item.ten_nhom, item.ten_doi_tac].filter(Boolean).join(' · ') || '—'} · {item.ngay}
       </div>
       <div className="text-sm tabular-nums font-medium mb-2">
-        {item.so_tien != null ? item.so_tien.toLocaleString('vi-VN') : '—'}
+        {formatNumberVN(item.so_tien)}
       </div>
       <div className="flex justify-between items-center pt-2 border-t border-border">
         <span className="text-xs text-muted-foreground">{formatDateShort(item.tg_cap_nhat)}</span>

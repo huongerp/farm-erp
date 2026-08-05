@@ -85,6 +85,22 @@ export const DATE_DISPLAY_FORMAT = 'DD/MM/YYYY'
 export const DATETIME_DISPLAY_FORMAT = 'DD/MM/YYYY HH:mm'
 export const DATETIME_DISPLAY_FORMAT_SHORT = 'HH:mm - DD/MM/YYYY'
 
+/**
+ * Đổi chuỗi ngày thuần `YYYY-MM-DD` sang `DD/MM/YYYY` bằng cắt chuỗi.
+ *
+ * KHÔNG dùng formatDate() cho loại dữ liệu này: hàm đó đưa giá trị qua dayjs rồi đổi
+ * múi giờ, nên một ngày trần (không kèm giờ) có thể bị lệch sang ngày hôm trước/sau —
+ * rất khó phát hiện trong các bảng báo cáo theo kỳ.
+ *
+ * Trước đây hàm này bị chép nguyên văn ở 4 file báo cáo khác nhau.
+ */
+export function formatYmdToDisplay(ymd: string | null | undefined): string {
+  if (!ymd) return ''
+  const [y, m, d] = ymd.split('-')
+  if (!y || !m || !d) return ymd
+  return `${d}/${m}/${y}`
+}
+
 export function formatDate(value: string | Date | dayjs.Dayjs | null | undefined): string {
   if (value == null) return ''
   return toTz(value).format(getDisplayDateFormat())

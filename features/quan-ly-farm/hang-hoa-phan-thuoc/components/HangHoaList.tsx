@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Edit, Trash2 } from 'lucide-react';
-import { cn, formatDateShort } from '../../../../lib/utils';
+import { cn, formatDateShort, formatNumberVN } from '../../../../lib/utils';
 import type { FarmHangHoa } from '../core/types';
 import GenericTable from '../../../../components/shared/GenericTable';
 import type { ColumnConfig } from '../../../../store/createGenericStore';
@@ -61,7 +61,7 @@ const HangHoaList: React.FC<Props> = ({
       case 'don_gia':
         return (
           <span className="text-sm text-muted-foreground tabular-nums">
-            {item.don_gia != null ? item.don_gia.toLocaleString('vi-VN') : '—'}
+            {formatNumberVN(item.don_gia)}
           </span>
         );
       case 'mo_ta':
@@ -131,7 +131,7 @@ const HangHoaList: React.FC<Props> = ({
         {item.ten_danh_muc ?? '—'} · {item.dvt ?? '—'}
       </div>
       {item.don_gia != null && (
-        <div className="text-sm tabular-nums text-muted-foreground mb-2">{item.don_gia.toLocaleString('vi-VN')}</div>
+        <div className="text-sm tabular-nums text-muted-foreground mb-2">{formatNumberVN(item.don_gia)}</div>
       )}
       <div className="flex justify-between items-center pt-2 border-t border-border">
         <span className="text-xs text-muted-foreground">{formatDateShort(item.tg_cap_nhat)}</span>

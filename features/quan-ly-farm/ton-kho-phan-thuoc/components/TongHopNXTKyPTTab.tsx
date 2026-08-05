@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BarChart3 } from 'lucide-react';
-import { cn } from '../../../../lib/utils';
+import { cn, formatYmdToDisplay } from '../../../../lib/utils';
 import { useFarmNXTPT, isNXTDateRangeValid } from '../hooks/use-farm-ton-kho-pt';
 import { useTonKhoPTStore } from '../store/useTonKhoPTStore';
 import { sumNXTPTSummary } from '../services/farm-ton-kho-pt';
@@ -12,11 +12,6 @@ import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinner
 import EmptyState from '../../../../components/shared/EmptyState';
 import NXTSummaryCardsPT from './NXTSummaryCardsPT';
 
-function formatDateDisplay(ymd: string): string {
-  if (!ymd) return '';
-  const [y, m, d] = ymd.split('-');
-  return `${d}/${m}/${y}`;
-}
 
 interface Props {
   onClearFilters?: () => void;
@@ -105,8 +100,8 @@ const TongHopNXTKyPTTab: React.FC<Props> = ({ onClearFilters }) => {
   }
 
   const periodLabel = t('tonKhoPhanThuoc.nxt.periodLabel', {
-    from: formatDateDisplay(nxtDateFrom),
-    to: formatDateDisplay(nxtDateTo),
+    from: formatYmdToDisplay(nxtDateFrom),
+    to: formatYmdToDisplay(nxtDateTo),
   });
 
   return (

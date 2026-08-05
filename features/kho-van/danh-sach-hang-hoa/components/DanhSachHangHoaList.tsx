@@ -96,7 +96,7 @@ const DanhSachHangHoaList: React.FC<Props> = ({
       case 'don_gia':
         return (
           <span className="text-sm text-muted-foreground tabular-nums whitespace-nowrap">
-            {item.don_gia != null ? item.don_gia.toLocaleString('vi-VN') : '—'}
+            {formatNumberVN(item.don_gia)}
           </span>
         );
       case 'mo_ta':
@@ -203,7 +203,7 @@ const DanhSachHangHoaList: React.FC<Props> = ({
       </div>
       {item.don_gia != null && (
         <div className="text-sm tabular-nums text-muted-foreground mb-2">
-          {item.don_gia.toLocaleString('vi-VN')}
+          {formatNumberVN(item.don_gia)}
         </div>
       )}
       <div className="flex justify-between items-center pt-2 border-t border-border">
