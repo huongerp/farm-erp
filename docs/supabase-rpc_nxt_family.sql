@@ -1,6 +1,10 @@
 -- =============================================================================
 -- RPC gia đình báo cáo NXT — giảm egress (thay client fallback ~22k dòng)
 -- Chạy trên Supabase SQL Editor. Mirror logic bao-cao-nxt-service.ts
+--
+-- CẬP NHẬT: rpc_nxt_by_period (cần `byCell` cho tab Tra cứu theo kỳ) đã chuyển sang
+--   docs/supabase-v_mh_nxt_movement.sql  ← chạy file đó thay cho hàm bên dưới.
+-- File này vẫn giữ rpc_phieu_in_period / rpc_ton_at_date.
 -- =============================================================================
 
 CREATE OR REPLACE FUNCTION public._nxt_norm_loai(p_loai text)

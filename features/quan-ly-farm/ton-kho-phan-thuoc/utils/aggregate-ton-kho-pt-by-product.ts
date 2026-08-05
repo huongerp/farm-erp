@@ -13,10 +13,13 @@ export function aggregateTonKhoPTByProduct(rows: TonKhoPTDisplayRow[]): TonKhoPT
     const first = list[0];
     let tong = 0;
     let khoCoTon = 0;
+    const by_kho: Record<string, number> = {};
     for (const r of list) {
       const q = Number(r.so_luong) || 0;
       tong += q;
       if (q > 0) khoCoTon += 1;
+      const kid = String(r.id_kho);
+      by_kho[kid] = (by_kho[kid] ?? 0) + q;
     }
     out.push({
       id_hang_hoa,
@@ -27,6 +30,7 @@ export function aggregateTonKhoPTByProduct(rows: TonKhoPTDisplayRow[]): TonKhoPT
       don_vi_tinh: first.don_vi_tinh,
       tong_so_luong: tong,
       so_kho_co_ton: khoCoTon,
+      by_kho,
       rows: list,
     });
   });

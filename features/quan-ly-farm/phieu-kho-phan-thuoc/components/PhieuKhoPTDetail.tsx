@@ -1,11 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FileText, Calendar, Warehouse, ArrowRightLeft, Package, Printer, CheckCircle, XCircle, Copy } from 'lucide-react';
+import { FileText, Calendar, Warehouse, ArrowRightLeft, Package, Printer, CheckCircle, XCircle, Copy, AlertTriangle } from 'lucide-react';
+import { toast } from 'sonner';
 import Button from '../../../../components/ui/Button';
 import DetailDrawerFooter from '../../../../components/shared/DetailDrawerFooter';
 import Textarea from '../../../../components/ui/Textarea';
 import { cn } from '../../../../lib/utils';
-import type { PhieuKhoPT, LoaiPhieuKhoPT } from '../core/types';
+import type { PhieuKhoPT, LoaiPhieuKhoPT, TrangThaiPhieuKhoPT } from '../core/types';
 import { formatDateTimeShort, formatNumberVN } from '../../../../lib/utils';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
 import DetailToolbar, { type DetailToolbarAction } from '../../../../components/shared/DetailToolbar';
@@ -13,9 +14,10 @@ import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';
 import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
 import GenericSubTableSection from '../../../../components/shared/GenericSubTableSection';
-import { BTN_CLOSE } from '../../../../lib/button-labels';
+import { BTN_CLOSE, CONFIRM_YES } from '../../../../lib/button-labels';
 import { useUpdatePhieuKhoPTTrangThai } from '../hooks/use-phieu-kho-pt';
 import { useAuthStore } from '../../../../store/useStore';
+import { useConfirmStore } from '../../../../store/useConfirmStore';
 
 interface Props {
   data: PhieuKhoPT;
@@ -35,6 +37,7 @@ function loaiLabel(loai: LoaiPhieuKhoPT, t: (k: string) => string): string {
 const PhieuKhoPTDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onCopy, canApprove = true }) => {
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
+  const confirm = useConfirmStore((s) => s.confirm);
   const nguoiDuyetId = user?.id != null ? Number(user.id) : null;
   const nguoiDuyetIdValid = nguoiDuyetId != null && !Number.isNaN(nguoiDuyetId) ? nguoiDuyetId : null;
   const nguoiDuyetTen = user?.ho_va_ten?.trim() || user?.full_name?.trim() || user?.email?.trim() || '';
@@ -43,6 +46,7 @@ const PhieuKhoPTDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
   const [duyetOption, setDuyetOption] = useState<'Đã duyệt' | 'Không duyệt'>('Đã duyệt');
   const updateTrangThaiMutation = useUpdatePhieuKhoPTTrangThai(() => setShowDuyetPopup(false));
 
+  const isDaQuyetDinh = data.trang_thai === 'Đã duyệt' || data.trang_thai === 'Không duyệt';
   const statusLabel =
     data.trang_thai === 'Chờ duyệt'
       ? t('phieuKhoPhanThuoc.status.pending')
@@ -57,11 +61,56 @@ const PhieuKhoPTDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
 
   const previewPath = `/quan-ly-farm/phieu-kho-phan-thuoc/preview/${data.id}`;
 
+  const optionLabel = (value: TrangThaiPhieuKhoPT) =>
+    value === 'Đã duyệt'
+      ? t('phieuKhoPhanThuoc.status.approved')
+      : value === 'Không duyệt'
+        ? t('phieuKhoPhanThuoc.status.rejected')
+        : t('phieuKhoPhanThuoc.status.pending');
+
+  const applyTrangThai = (trangThai: 'Đã duyệt' | 'Không duyệt') => {
+    updateTrangThaiMutation.mutate(
+      {
+        id: data.id,
+        trang_thai: trangThai,
+        ghi_chu: duyetGhiChu.trim() || undefined,
+        id_nguoi_duyet: nguoiDuyetIdValid,
+        ten_nguoi_duyet_hien_thi: nguoiDuyetTen || undefined,
+      },
+      { onSuccess: () => setShowDuyetPopup(false) }
+    );
+  };
+
+  const submitDuyet = () => {
+    if (duyetOption === data.trang_thai) {
+      toast.message(t('phieuKhoPhanThuoc.approveDialog.sameStatus'));
+      return;
+    }
+    if (isDaQuyetDinh) {
+      if (!duyetGhiChu.trim()) {
+        toast.warning(t('phieuKhoPhanThuoc.approveDialog.noteRequired'));
+        return;
+      }
+      confirm({
+        title: t('phieuKhoPhanThuoc.approveDialog.redecideConfirmTitle'),
+        message: t('phieuKhoPhanThuoc.approveDialog.redecideConfirmMessage', {
+          from: statusLabel,
+          to: optionLabel(duyetOption),
+        }),
+        variant: 'warning',
+        confirmText: CONFIRM_YES(),
+        onConfirm: () => applyTrangThai(duyetOption),
+      });
+      return;
+    }
+    applyTrangThai(duyetOption);
+  };
+
   const detailToolbarActions: DetailToolbarAction[] = useMemo(() => {
     const actions: DetailToolbarAction[] = [];
     if (canApprove) {
       actions.push({
-        label: t('phieuKhoPhanThuoc.approveAction'),
+        label: isDaQuyetDinh ? t('phieuKhoPhanThuoc.approveActionChange') : t('phieuKhoPhanThuoc.approveAction'),
         icon: <CheckCircle size={16} />,
         onClick: () => {
           setDuyetGhiChu('');
@@ -87,7 +136,7 @@ const PhieuKhoPTDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
       onClick: () => window.open(previewPath, '_blank', 'noopener,noreferrer'),
     });
     return actions;
-  }, [data, canApprove, onCopy, onClose, previewPath, t]);
+  }, [data, canApprove, isDaQuyetDinh, onCopy, onClose, previewPath, t]);
 
   const renderFooter = (
     <DetailDrawerFooter
@@ -264,6 +313,13 @@ const PhieuKhoPTDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
           >
             <h3 className="text-lg font-semibold text-foreground">{t('phieuKhoPhanThuoc.approveDialog.title')}</h3>
 
+            {isDaQuyetDinh && (
+              <div className="flex gap-2.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-sm text-amber-800 dark:text-amber-200">
+                <AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
+                <p>{t('phieuKhoPhanThuoc.approveDialog.redecideWarning', { status: statusLabel })}</p>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-2.5">
               {(
                 [
@@ -310,7 +366,11 @@ const PhieuKhoPTDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
 
             <Textarea
               label={t('phieuKhoPhanThuoc.approveDialog.note')}
-              placeholder={t('phieuKhoPhanThuoc.approveDialog.notePlaceholder')}
+              placeholder={
+                isDaQuyetDinh
+                  ? t('phieuKhoPhanThuoc.approveDialog.notePlaceholderRequired')
+                  : t('phieuKhoPhanThuoc.approveDialog.notePlaceholder')
+              }
               value={duyetGhiChu}
               onChange={(e) => setDuyetGhiChu(e.target.value)}
               rows={3}
@@ -321,19 +381,8 @@ const PhieuKhoPTDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
                 {BTN_CLOSE()}
               </Button>
               <Button
-                onClick={() => {
-                  updateTrangThaiMutation.mutate(
-                    {
-                      id: data.id,
-                      trang_thai: duyetOption,
-                      ghi_chu: duyetGhiChu.trim() || undefined,
-                      id_nguoi_duyet: nguoiDuyetIdValid,
-                      ten_nguoi_duyet_hien_thi: nguoiDuyetTen || undefined,
-                    },
-                    { onSuccess: () => setShowDuyetPopup(false) }
-                  );
-                }}
-                disabled={updateTrangThaiMutation.isPending}
+                onClick={submitDuyet}
+                disabled={updateTrangThaiMutation.isPending || duyetOption === data.trang_thai}
                 className="bg-primary text-white shadow-lg hover:bg-primary/90"
               >
                 {updateTrangThaiMutation.isPending ? '...' : t('phieuKhoPhanThuoc.approveDialog.submit')}

@@ -32,9 +32,14 @@ export function filterKeyToTrangThai(key: TrangThaiFilterKey): TrangThaiPhieuKho
   return TRANG_THAI_KHONG_DUYET;
 }
 
-/** Phiếu còn trong luồng phê duyệt (hiện nút / popup phê duyệt). */
+/** Phiếu còn trong luồng phê duyệt ban đầu (Chờ / Đợi duyệt). */
 export function isTrangThaiChoPheDuyet(trangThai: string): boolean {
   return trangThai === TRANG_THAI_CHO_DUYET || trangThai === TRANG_THAI_DOI_DUYET;
+}
+
+/** Đã có quyết định duyệt/từ chối — đổi lại cần ghi chú + xác nhận. */
+export function isTrangThaiDaQuyetDinh(trangThai: string): boolean {
+  return trangThai === TRANG_THAI_DA_DUYET || trangThai === TRANG_THAI_KHONG_DUYET;
 }
 
 export function isTrangThaiDaDuyet(trangThai: string): boolean {

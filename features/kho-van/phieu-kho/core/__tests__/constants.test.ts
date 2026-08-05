@@ -7,6 +7,7 @@ import {
   trangThaiToFilterKey,
   filterKeyToTrangThai,
   isTrangThaiChoPheDuyet,
+  isTrangThaiDaQuyetDinh,
   canMutatePhieuKhoByTrangThai,
 } from '../constants';
 
@@ -38,6 +39,18 @@ describe('isTrangThaiChoPheDuyet', () => {
   it('false cho Đã duyệt và Không duyệt', () => {
     expect(isTrangThaiChoPheDuyet(TRANG_THAI_DA_DUYET)).toBe(false);
     expect(isTrangThaiChoPheDuyet(TRANG_THAI_KHONG_DUYET)).toBe(false);
+  });
+});
+
+describe('isTrangThaiDaQuyetDinh', () => {
+  it('true cho Đã duyệt và Không duyệt', () => {
+    expect(isTrangThaiDaQuyetDinh(TRANG_THAI_DA_DUYET)).toBe(true);
+    expect(isTrangThaiDaQuyetDinh(TRANG_THAI_KHONG_DUYET)).toBe(true);
+  });
+
+  it('false cho Chờ duyệt và Đợi duyệt', () => {
+    expect(isTrangThaiDaQuyetDinh(TRANG_THAI_CHO_DUYET)).toBe(false);
+    expect(isTrangThaiDaQuyetDinh(TRANG_THAI_DOI_DUYET)).toBe(false);
   });
 });
 

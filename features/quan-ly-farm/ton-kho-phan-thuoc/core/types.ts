@@ -28,6 +28,8 @@ export interface TonKhoPTProductAgg {
   don_vi_tinh: string;
   tong_so_luong: number;
   so_kho_co_ton: number;
+  /** SL tồn theo id_kho — dùng cho cột động trên list */
+  by_kho: Record<string, number>;
   rows: TonKhoPTDisplayRow[];
 }
 

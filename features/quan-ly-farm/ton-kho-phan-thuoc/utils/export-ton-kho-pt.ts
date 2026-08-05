@@ -25,8 +25,12 @@ export async function exportTonKhoPTToExcel(rows: TonKhoPTDisplayRow[], t: TFunc
   XLSX.writeFile(wb, `ton_kho_phan_thuoc_${getTodayISODate()}.xlsx`);
 }
 
-/** Tab Tồn sản phẩm: gom theo hàng (đồng bộ cột bảng). */
-export async function exportTonKhoPTByProductToExcel(rows: TonKhoPTProductAgg[], t: TFunction): Promise<void> {
+/** Tab Tồn sản phẩm: gom theo hàng (đồng bộ cột bảng, gồm cột kho động). */
+export async function exportTonKhoPTByProductToExcel(
+  rows: TonKhoPTProductAgg[],
+  khoList: { id: string; ten_kho: string }[],
+  t: TFunction
+): Promise<void> {
   const XLSX = await import('xlsx');
   const colMaHang = t('tonKhoPhanThuoc.export.maHang');
   const colTenHang = t('tonKhoPhanThuoc.export.tenHang');
@@ -34,14 +38,20 @@ export async function exportTonKhoPTByProductToExcel(rows: TonKhoPTProductAgg[],
   const colDvt = t('tonKhoPhanThuoc.export.dvt');
   const colSoKho = t('tonKhoPhanThuoc.byProduct.warehouseCount');
   const colTongSl = t('tonKhoPhanThuoc.byProduct.totalQty');
-  const sheet = rows.map((r) => ({
-    [colMaHang]: r.ma_hang,
-    [colTenHang]: r.ten_hang,
-    [colDm]: r.ten_danh_muc ?? '',
-    [colDvt]: r.don_vi_tinh,
-    [colSoKho]: r.so_kho_co_ton,
-    [colTongSl]: r.tong_so_luong,
-  }));
+  const sheet = rows.map((r) => {
+    const base: Record<string, string | number> = {
+      [colMaHang]: r.ma_hang,
+      [colTenHang]: r.ten_hang,
+      [colDm]: r.ten_danh_muc ?? '',
+      [colDvt]: r.don_vi_tinh,
+      [colSoKho]: r.so_kho_co_ton,
+      [colTongSl]: r.tong_so_luong,
+    };
+    for (const k of khoList) {
+      base[k.ten_kho] = r.by_kho[String(k.id)] ?? 0;
+    }
+    return base;
+  });
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.json_to_sheet(sheet);
   XLSX.utils.book_append_sheet(wb, ws, 'Ton_san_pham');

@@ -127,15 +127,27 @@ export async function getNXTByPeriod(filters: NXTReportFilters): Promise<NXTByPe
     ) {
       return data as NXTByPeriodResult;
     }
+    if (!error && data != null && typeof data === 'object') {
+      console.warn(
+        '[bao-cao-nxt] rpc_nxt_by_period thiếu byCell (hoặc schema cũ) — dùng fallback. Chạy docs/supabase-v_mh_nxt_movement.sql'
+      );
+    } else if (error) {
+      console.warn(
+        '[bao-cao-nxt] rpc_nxt_by_period lỗi — dùng fallback. Chạy docs/supabase-v_mh_nxt_movement.sql',
+        error.message ?? error
+      );
+    }
   } catch {
-    /* RPC chưa tạo trên Supabase — xem docs/supabase-rpc_nxt_family.sql */
+    /* RPC chưa tạo trên DB — xem docs/supabase-v_mh_nxt_movement.sql */
+    console.warn(
+      '[bao-cao-nxt] rpc_nxt_by_period chưa có — dùng fallback. Chạy docs/supabase-v_mh_nxt_movement.sql'
+    );
   }
 
   const { dateFrom, dateTo, warehouseIds, loaiPhieu, hangHoaIds, categoryIds, allowedBranchIds, allowedCreatorUserId } =
     filters;
 
   // ── 1. Load all data in parallel (single bulk queries, no N+1) ──
-  console.warn('[bao-cao-nxt] RPC rpc_nxt_by_period failed or missing — using client fallback');
   const [allPhieu, khoList, hangHoaList, tonKhoList, allCtRaw] = await Promise.all([
     getAllPhieuKho(),
     getKhoList(),

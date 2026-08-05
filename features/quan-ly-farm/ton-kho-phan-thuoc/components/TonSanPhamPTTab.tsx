@@ -3,12 +3,18 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Package, Warehouse, FolderOpen } from 'lucide-react';
 import { useKhoList } from '../../../kho-van/danh-sach-kho/hooks/use-kho';
+import type { Kho } from '../../../kho-van/danh-sach-kho/core/types';
 import { useFarmDanhMucCap2WithParent } from '../../hang-hoa-phan-thuoc/hooks/use-farm-danh-muc';
 import { useFarmTonKhoPTDisplay } from '../hooks/use-farm-ton-kho-pt';
 import { aggregateTonKhoPTByProduct } from '../utils/aggregate-ton-kho-pt-by-product';
 import { exportTonKhoPTByProductToExcel } from '../utils/export-ton-kho-pt';
 import type { TonKhoPTProductAgg } from '../core/types';
 import type { TonKhoFilters } from '../../../kho-van/ton-kho/store/useTonKhoStore';
+import {
+  isKhoColumnId,
+  khoIdFromColumnId,
+  mergeWarehouseColumns,
+} from '../../../kho-van/ton-kho/store/useTonKhoStore';
 import { useTonKhoPTByProductStore } from '../store/useTonKhoPTByProductStore';
 import { useSearchInputCommit } from '../../../../lib/hooks/use-search-input-commit';
 import { useListWithFilter } from '../../../../lib/hooks';
@@ -40,11 +46,52 @@ const TonSanPhamPTTab: React.FC = () => {
   const toggleColumn = useTonKhoPTByProductStore((s) => s.toggleColumn);
   const reorderColumns = useTonKhoPTByProductStore((s) => s.reorderColumns);
   const resetColumns = useTonKhoPTByProductStore((s) => s.resetColumns);
+  const setColumns = useTonKhoPTByProductStore((s) => s.setColumns);
 
   const { inputValue: searchInput, setInputValue: setSearchInput } = useSearchInputCommit({
     committedTerm: searchTerm,
     commit: commitSearchTerm,
   });
+
+  /** Kho xuất hiện trong ma trận tồn farm (đã phát sinh phiếu NX và còn tồn ≠ 0). */
+  const farmKhoList = useMemo((): Kho[] => {
+    const khoMap = new Map(khoList.map((k) => [String(k.id), k]));
+    const seen = new Map<string, { id: string; ten_kho: string; ma_kho: string }>();
+    for (const r of displayRows) {
+      const id = String(r.id_kho);
+      if (seen.has(id)) continue;
+      const master = khoMap.get(id);
+      seen.set(id, {
+        id,
+        ten_kho: master?.ten_kho ?? r.ten_kho,
+        ma_kho: master?.ma_kho ?? r.ma_kho,
+      });
+    }
+    return [...seen.values()]
+      .sort((a, b) => a.ten_kho.localeCompare(b.ten_kho))
+      .map(
+        (k) =>
+          ({
+            id: k.id,
+            ma_kho: k.ma_kho,
+            ten_kho: k.ten_kho,
+          }) as Kho
+      );
+  }, [displayRows, khoList]);
+
+  const displayKhoList = useMemo(() => {
+    const filterSet =
+      (filters.warehouseIds?.length ?? 0) > 0 ? new Set(filters.warehouseIds!.map(String)) : null;
+    if (!filterSet) return farmKhoList;
+    return farmKhoList.filter((k) => filterSet.has(String(k.id)));
+  }, [farmKhoList, filters.warehouseIds]);
+
+  useEffect(() => {
+    const next = mergeWarehouseColumns(columns, displayKhoList);
+    if (next !== columns) {
+      setColumns(() => next);
+    }
+  }, [displayKhoList, columns, setColumns]);
 
   const flatFiltered = useMemo(() => {
     let r = displayRows;
@@ -78,19 +125,19 @@ const TonSanPhamPTTab: React.FC = () => {
       toast.warning(t('tonKhoPhanThuoc.byProduct.noExportData'));
       return;
     }
-    void exportTonKhoPTByProductToExcel(filteredList, t)
+    void exportTonKhoPTByProductToExcel(filteredList, displayKhoList, t)
       .then(() => toast.success(t('tonKhoPhanThuoc.export.success')))
       .catch(() => toast.error(t('tonKhoPhanThuoc.export.error')));
-  }, [filteredList, t]);
+  }, [filteredList, displayKhoList, t]);
 
   const khoOptions = useMemo(
     () =>
-      khoList.map((k) => ({
+      farmKhoList.map((k) => ({
         value: k.id,
         label: k.ten_kho,
         count: displayRows.filter((r) => String(r.id_kho) === String(k.id)).length || 0,
       })),
-    [khoList, displayRows]
+    [farmKhoList, displayRows]
   );
 
   const categoryOptions = useMemo(
@@ -178,6 +225,16 @@ const TonSanPhamPTTab: React.FC = () => {
   const [detail, setDetail] = useState<TonKhoPTProductAgg | null>(null);
 
   const renderCell = (item: TonKhoPTProductAgg, col: ColumnConfig) => {
+    if (isKhoColumnId(col.id)) {
+      const qty = item.by_kho[khoIdFromColumnId(col.id)] ?? 0;
+      return (
+        <td key={col.id} className="px-4 py-3 text-right" style={getColumnCellStyle(col)}>
+          <span className="font-medium tabular-nums text-sm">
+            {qty !== 0 ? formatNumberVN(qty) : '—'}
+          </span>
+        </td>
+      );
+    }
     switch (col.id) {
       case 'ma_hang':
         return (
@@ -273,7 +330,10 @@ const TonSanPhamPTTab: React.FC = () => {
                   <thead className="sticky top-0 z-10 bg-muted/95 border-b border-border">
                     <tr>
                       {visibleColumns.map((col) => {
-                        const isNumeric = col.id === 'tong_so_luong' || col.id === 'so_kho_co_ton';
+                        const isNumeric =
+                          col.id === 'tong_so_luong' ||
+                          col.id === 'so_kho_co_ton' ||
+                          isKhoColumnId(col.id);
                         return (
                           <th
                             key={col.id}
