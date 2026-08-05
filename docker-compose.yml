@@ -72,6 +72,8 @@ services:
       - traefik.http.routers.farm-auth.entrypoints=websecure
       - traefik.http.routers.farm-auth.tls.certResolver=letsencrypt
       - traefik.http.routers.farm-auth.priority=100
+      - traefik.http.routers.farm-auth.middlewares=farm-auth-strip
+      - traefik.http.middlewares.farm-auth-strip.stripprefix.prefixes=/auth
       - traefik.http.services.farm-auth.loadbalancer.server.port=3001
 
   web:

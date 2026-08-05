@@ -83,11 +83,11 @@ Thư mục `services/auth/`: Node 22 + Hono + TypeScript, `pg` để gọi RPC, 
 
 | Endpoint | Việc |
 | --- | --- |
-| `POST /auth/dang-nhap` | `{email, mat_khau}` → `rpc_dang_nhap` → cấp cặp token |
+| `POST /auth/dang-nhap` | Public path (Traefik strip `/auth` → service nhận `/dang-nhap`). `{email, mat_khau}` → `rpc_dang_nhap` → cấp cặp token |
 | `POST /auth/dang-nhap-google` | `{id_token}` → verify với `audience = GOOGLE_CLIENT_ID` và `email_verified` → `rpc_tim_nhan_vien_theo_email`. Không có hồ sơ nhân viên → 403 kèm mã lỗi để UI hiện `page.login.googleNoEmployee` như hiện tại |
 | `POST /auth/lam-moi` | Rotation refresh token |
 | `POST /auth/dang-xuat` | Thu hồi phiên |
-| `GET /auth/khoe` | Health check cho Dokploy |
+| `GET /auth/khoe` | Health check cho Dokploy (service nhận `/khoe`) |
 
 Access token 15 phút, claim `{role: 'authenticated', email, nv, iat, exp}`, HS256 bằng `PGRST_JWT_SECRET`. Refresh token 30 ngày, chuỗi random 32 byte, DB chỉ giữ SHA-256.
 

@@ -19,10 +19,13 @@ export default defineConfig(({ mode }) => {
       port: 3000,
       host: '0.0.0.0',
       proxy: {
-        // auth-service tự khai đủ tiền tố /auth trong route (giống Traefik không strip).
-        '/auth': { target: authProxyTarget, changeOrigin: true },
-        // PostgREST không biết gì về /api — Traefik strip tiền tố trước khi forward,
-        // proxy dev phải làm y hệt.
+        // Auth-service và PostgREST đều không biết tiền tố công khai — Traefik
+        // strip `/auth` / `/api` trước khi forward; proxy dev làm y hệt.
+        '/auth': {
+          target: authProxyTarget,
+          changeOrigin: true,
+          rewrite: (p) => p.replace(/^\/auth/, ''),
+        },
         '/api': {
           target: apiProxyTarget,
           changeOrigin: true,

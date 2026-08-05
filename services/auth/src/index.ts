@@ -9,8 +9,8 @@
  * trả ID token ký RS256, xác minh cần khoá công khai RSA của Google mà pgcrypto
  * không làm được. Chi tiết: docs/VPS_POSTGREST_PLAN.md
  *
- * Traefik KHÔNG cắt tiền tố /auth (xem docker-compose.yml) nên route ở đây khai
- * đủ đường dẫn.
+ * Traefik (và Vite proxy) cắt tiền tố `/auth` trước khi forward — route ở đây
+ * không có tiền tố đó. Client vẫn gọi `/auth/dang-nhap` như cũ.
  */
 import { createHash } from 'node:crypto';
 import { serve } from '@hono/node-server';
@@ -95,7 +95,7 @@ async function traVePhien(kq: Extract<KetQuaDangNhap, { ok: true }>) {
   };
 }
 
-app.get('/auth/khoe', async (c) => {
+app.get('/khoe', async (c) => {
   try {
     await kiemTraKetNoi();
     return c.json({ ok: true });
@@ -104,7 +104,7 @@ app.get('/auth/khoe', async (c) => {
   }
 });
 
-app.post('/auth/dang-nhap', async (c) => {
+app.post('/dang-nhap', async (c) => {
   const body = await docJson(c);
   const email = chuoi(body?.email).trim();
   const matKhau = chuoi(body?.mat_khau);
@@ -118,7 +118,7 @@ app.post('/auth/dang-nhap', async (c) => {
   return c.json(await traVePhien(kq));
 });
 
-app.post('/auth/dang-nhap-google', async (c) => {
+app.post('/dang-nhap-google', async (c) => {
   if (!googleClient) {
     return c.json({ ly_do: 'google_chua_cau_hinh' }, 503);
   }
@@ -150,7 +150,7 @@ app.post('/auth/dang-nhap-google', async (c) => {
   return c.json(await traVePhien(kq));
 });
 
-app.post('/auth/lam-moi', async (c) => {
+app.post('/lam-moi', async (c) => {
   const body = await docJson(c);
   const refreshToken = chuoi(body?.refresh_token);
   if (!refreshToken) return c.json({ ly_do: 'thieu_thong_tin' }, 400);
@@ -167,7 +167,7 @@ app.post('/auth/lam-moi', async (c) => {
   });
 });
 
-app.post('/auth/dang-xuat', async (c) => {
+app.post('/dang-xuat', async (c) => {
   const body = await docJson(c);
   const refreshToken = chuoi(body?.refresh_token);
   // Đăng xuất luôn thành công dưới góc nhìn client: token rác cũng coi như xong.
