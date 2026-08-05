@@ -6,7 +6,6 @@ import type { NXTReportFilters } from '../core/types';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import EmptyState from '../../../../components/shared/EmptyState';
 import NXTSummaryCards from './NXTSummaryCards';
-import { formatYmdToDisplay } from '../../../../lib/utils';
 
 
 interface TongHopNXTKyTabProps {
@@ -76,18 +75,9 @@ const TongHopNXTKyTab: React.FC<TongHopNXTKyTabProps> = ({ filters, onClearFilte
     );
   }
 
-  const periodLabel = t('baoCaonhapXuatTon.periodLabel', {
-    from: formatYmdToDisplay(filters.dateFrom),
-    to: formatYmdToDisplay(filters.dateTo),
-  });
-
   return (
     <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
       <div className="p-3 sm:p-4 space-y-4 print:overflow-visible">
-        <p className="text-sm text-muted-foreground font-medium print:text-foreground" aria-label="Kỳ báo cáo">
-          {periodLabel}
-        </p>
-
         {byWarehouse.length > 0 && (
           <>
             <NXTSummaryCards summary={summary} />

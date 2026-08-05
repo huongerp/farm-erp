@@ -66,6 +66,7 @@ export const useChiTietKiemKeTaiSanStore = create<GenericState<ChiTietKiemKeTaiS
     }),
   })),
   resetColumns: () => set({ columns: DEFAULT_COLUMNS.map((c, i) => ({ ...c, order: c.order ?? i })) }),
+  setColumns: (updater) => set((state) => ({ columns: updater(state.columns) })),
   setSort: (column, direction) => set({ sort: { column, direction } }),
   resetState: () => set({
     searchTerm: '',

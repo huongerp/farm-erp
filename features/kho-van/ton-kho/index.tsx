@@ -1,13 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
-import { Package, MapPin, BarChart3 } from 'lucide-react';
+import { Package, BarChart3, Clock } from 'lucide-react';
 import TabGroup from '../../../components/ui/TabGroup';
 import TonKhoTheoSanPhamTab from './components/TonKhoTheoSanPhamTab';
-import TonKhoTheoNoiLuuTab from './components/TonKhoTheoNoiLuuTab';
+import TonKhoTonThoiDiemTab from './components/TonKhoTonThoiDiemTab';
 import TonKhoThongKeTab from './components/TonKhoThongKeTab';
 
-const VALID_TABS = ['byProduct', 'byLocation', 'stats'] as const;
+const VALID_TABS = ['byProduct', 'tonThoiDiem', 'stats'] as const;
 type TabId = (typeof VALID_TABS)[number];
 
 const TonKhoPage: React.FC = () => {
@@ -34,7 +34,7 @@ const TonKhoPage: React.FC = () => {
   const tabs = useMemo(
     () => [
       { id: 'byProduct', label: t('tonKho.tabs.byProduct'), icon: Package },
-      { id: 'byLocation', label: t('tonKho.tabs.byLocation'), icon: MapPin },
+      { id: 'tonThoiDiem', label: t('tonKho.tabs.tonThoiDiem'), icon: Clock },
       { id: 'stats', label: t('tonKho.tabs.stats'), icon: BarChart3 },
     ],
     [t]
@@ -47,7 +47,7 @@ const TonKhoPage: React.FC = () => {
       </div>
       <div className="flex-1 min-h-0 flex flex-col mt-1.5">
         {activeTab === 'byProduct' && <TonKhoTheoSanPhamTab />}
-        {activeTab === 'byLocation' && <TonKhoTheoNoiLuuTab />}
+        {activeTab === 'tonThoiDiem' && <TonKhoTonThoiDiemTab />}
         {activeTab === 'stats' && <TonKhoThongKeTab />}
       </div>
     </div>

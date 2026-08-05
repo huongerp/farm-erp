@@ -1,10 +1,21 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FileDown, Printer, RefreshCw, ChevronDown, Warehouse, ClipboardList, Tags, Package } from 'lucide-react';
+import {
+  FileDown,
+  Printer,
+  RefreshCw,
+  ChevronDown,
+  Warehouse,
+  ClipboardList,
+  Tags,
+  Package,
+  Filter,
+} from 'lucide-react';
 import DashboardToolbar from '../../../../components/shared/DashboardToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import DateRangePicker from '../../../../components/ui/DateRangePicker';
 import type { DateRangeValue } from '../../../../components/ui/DateRangePicker';
+import MobileFilterSheet from '../../../../components/ui/MobileFilterSheet';
 import type { FilterGroup } from '../../../../components/ui/MobileFilterSheet';
 import type { NXTReportFilters } from '../core/types';
 import type { LoaiPhieuKho } from '../../phieu-kho/core/types';
@@ -28,6 +39,8 @@ interface BaoCaoNXTToolbarProps {
 }
 
 const CUSTOM_PRESET_ID = 'custom';
+/** Số FilterChip tối đa hiện ngoài toolbar (không tính DateRange). */
+const MAX_VISIBLE_FILTER_CHIPS = 3;
 
 const BaoCaoNXTToolbar: React.FC<BaoCaoNXTToolbarProps> = ({
   filters,
@@ -42,6 +55,7 @@ const BaoCaoNXTToolbar: React.FC<BaoCaoNXTToolbarProps> = ({
 }) => {
   const { t } = useTranslation();
   const [exportOpen, setExportOpen] = useState(false);
+  const [showOverflowFilters, setShowOverflowFilters] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
 
   const { data: hangHoaList = [], isLoading: hangHoaLoading } = useHangHoaRefQuery();
@@ -189,6 +203,40 @@ const BaoCaoNXTToolbar: React.FC<BaoCaoNXTToolbarProps> = ({
     ]
   );
 
+  /** Chip hiện ngoài (desktop); phần còn lại vào nút Filter. */
+  const visibleFilterGroups = useMemo(
+    () => filterGroups.slice(0, MAX_VISIBLE_FILTER_CHIPS),
+    [filterGroups]
+  );
+  const overflowFilterGroups = useMemo(
+    () => filterGroups.slice(MAX_VISIBLE_FILTER_CHIPS),
+    [filterGroups]
+  );
+  const overflowActiveCount = useMemo(
+    () => overflowFilterGroups.reduce((sum, g) => sum + g.value.length, 0),
+    [overflowFilterGroups]
+  );
+
+  const handleClearOverflowFilters = () => {
+    onFiltersChange({ ...filters, categoryIds: [], hangHoaIds: [] });
+  };
+
+  const chipClassByKey: Record<string, string> = {
+    warehouseIds: 'w-full sm:w-[180px]',
+    loaiPhieu: 'w-full sm:w-[160px]',
+    trangThaiPhieu: 'w-full sm:w-[150px]',
+    categoryIds: 'w-full sm:w-[200px]',
+    hangHoaIds: 'w-full sm:w-[200px]',
+  };
+
+  const placeholderByKey: Record<string, string> = {
+    warehouseIds: t('baoCaonhapXuatTon.filter.warehousePlaceholder'),
+    loaiPhieu: t('baoCaonhapXuatTon.filter.loaiPhieuPlaceholder'),
+    trangThaiPhieu: t('baoCaonhapXuatTon.filter.trangThaiPlaceholder'),
+    categoryIds: t('baoCaonhapXuatTon.filter.categoryPlaceholder'),
+    hangHoaIds: t('baoCaonhapXuatTon.filter.productPlaceholder'),
+  };
+
   const renderFilters = (
     <>
       <DateRangePicker
@@ -199,53 +247,39 @@ const BaoCaoNXTToolbar: React.FC<BaoCaoNXTToolbarProps> = ({
         customPresetId={CUSTOM_PRESET_ID}
         className="shrink-0"
       />
-      <FilterChipMultiSelect
-        options={warehouseOptions}
-        value={filters.warehouseIds}
-        onChange={(v) => onFiltersChange({ ...filters, warehouseIds: v })}
-        placeholder={t('baoCaonhapXuatTon.filter.warehousePlaceholder')}
-        icon={Warehouse}
-        className="w-full sm:w-[180px]"
-        size="md"
-      />
-      <FilterChipMultiSelect
-        options={loaiOptions}
-        value={filters.loaiPhieu}
-        onChange={(v) => onFiltersChange({ ...filters, loaiPhieu: v as unknown as LoaiPhieuKho[] })}
-        placeholder={t('baoCaonhapXuatTon.filter.loaiPhieuPlaceholder')}
-        icon={ClipboardList}
-        className="w-full sm:w-[160px]"
-        size="md"
-      />
-      <FilterChipMultiSelect
-        options={trangThaiOptions.map((o) => ({ label: o.label, value: String(o.value) }))}
-        value={filters.trangThaiPhieu.map(String)}
-        onChange={(v) =>
-          onFiltersChange({ ...filters, trangThaiPhieu: v.map(Number) as (0 | 1 | 2 | 3)[] })
-        }
-        placeholder={t('baoCaonhapXuatTon.filter.trangThaiPlaceholder')}
-        icon={ClipboardList}
-        className="w-full sm:w-[150px]"
-        size="md"
-      />
-      <FilterChipMultiSelect
-        options={categoryOptions}
-        value={filters.categoryIds}
-        onChange={(v) => onFiltersChange({ ...filters, categoryIds: v })}
-        placeholder={t('baoCaonhapXuatTon.filter.categoryPlaceholder')}
-        icon={Tags}
-        className="w-full sm:w-[200px]"
-        size="md"
-      />
-      <FilterChipMultiSelect
-        options={productOptions}
-        value={filters.hangHoaIds}
-        onChange={(v) => onFiltersChange({ ...filters, hangHoaIds: v })}
-        placeholder={t('baoCaonhapXuatTon.filter.productPlaceholder')}
-        icon={Package}
-        className="w-full sm:w-[200px]"
-        size="md"
-      />
+      {visibleFilterGroups.map((group) => (
+        <FilterChipMultiSelect
+          key={group.key}
+          options={group.options}
+          value={group.value}
+          onChange={group.onChange}
+          placeholder={placeholderByKey[group.key] ?? group.label}
+          icon={group.icon}
+          className={chipClassByKey[group.key] ?? 'w-full sm:w-[180px]'}
+          size="md"
+        />
+      ))}
+      {overflowFilterGroups.length > 0 && (
+        <button
+          type="button"
+          onClick={() => setShowOverflowFilters(true)}
+          aria-label={t('common.openFiltersAria')}
+          className={cn(
+            'shrink-0 h-8 px-3 flex items-center gap-1.5 rounded-lg border text-xs font-medium transition-all',
+            overflowActiveCount > 0
+              ? 'bg-primary/5 border-primary/40 text-primary'
+              : 'bg-background border-border text-muted-foreground hover:text-foreground hover:bg-muted/50'
+          )}
+        >
+          <Filter size={14} />
+          <span>{t('shared.mobileFilter.title')}</span>
+          {overflowActiveCount > 0 && (
+            <span className="ml-0.5 min-w-[1.125rem] h-[1.125rem] px-1 flex items-center justify-center bg-primary text-white text-2xs font-bold rounded-full tabular-nums">
+              {overflowActiveCount}
+            </span>
+          )}
+        </button>
+      )}
     </>
   );
 
@@ -313,15 +347,25 @@ const BaoCaoNXTToolbar: React.FC<BaoCaoNXTToolbarProps> = ({
   );
 
   return (
-    <DashboardToolbar
-      onBack={() => window.history.back()}
-      filters={renderFilters}
-      filterGroups={filterGroups}
-      activeFilterCount={activeFilterCount}
-      onClearFilters={onClearAllFilters}
-      actions={actions}
-      className="print:hidden"
-    />
+    <>
+      <DashboardToolbar
+        onBack={() => window.history.back()}
+        filters={renderFilters}
+        filterGroups={filterGroups}
+        activeFilterCount={activeFilterCount}
+        onClearFilters={onClearAllFilters}
+        actions={actions}
+        className="print:hidden"
+      />
+      {overflowFilterGroups.length > 0 && (
+        <MobileFilterSheet
+          open={showOverflowFilters}
+          onClose={() => setShowOverflowFilters(false)}
+          groups={overflowFilterGroups}
+          onClearAll={handleClearOverflowFilters}
+        />
+      )}
+    </>
   );
 };
 

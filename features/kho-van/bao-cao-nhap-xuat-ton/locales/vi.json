@@ -1,7 +1,6 @@
 {
   "baoCaonhapXuatTon.tabs.tongHop": "Tổng hợp NXT theo kỳ",
   "baoCaonhapXuatTon.tabs.chiTietPhieu": "Chi tiết phiếu",
-  "baoCaonhapXuatTon.tabs.tonTaiThoiDiem": "Tồn tại thời điểm",
   "baoCaonhapXuatTon.filter.dateFrom": "Từ ngày",
   "baoCaonhapXuatTon.filter.dateTo": "Đến ngày",
   "baoCaonhapXuatTon.filter.periodPlaceholder": "Chọn kỳ báo cáo",
@@ -75,6 +74,5 @@
   "baoCaonhapXuatTon.summary.tonCuoiKy": "Tổng tồn cuối kỳ",
   "baoCaonhapXuatTon.summary.soPhieu": "Số phiếu",
   "baoCaonhapXuatTon.summary.soMatHang": "Số mặt hàng",
-  "baoCaonhapXuatTon.periodLabel": "Kỳ: {{from}} – {{to}}",
   "baoCaonhapXuatTon.apply": "Áp dụng"
 }

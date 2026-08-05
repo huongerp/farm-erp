@@ -17,7 +17,7 @@
    ```bash
    npm run dev
    ```
-4. Mở trình duyệt theo địa chỉ in ra (thường là `http://localhost:5173`).
+4. Mở trình duyệt theo địa chỉ in ra (`http://localhost:3000`).
 
 ## Scripts
 
@@ -31,9 +31,34 @@
 
 ## Chạy full-stack ở local (PostgREST + auth-service)
 
-Mặc định `npm run dev` chỉ chạy SPA. Đăng nhập/gọi API cần thêm PostgREST và auth-service — Vite dev server proxy `/api` và `/auth` sang hai service này (xem `vite.config.ts`), giống hệt cách Traefik route ở production, nên **không cần đặt `VITE_API_URL`/`VITE_AUTH_URL`**.
+Đăng nhập và mọi request dữ liệu cần thêm hai service: PostgREST (`/api`) và auth-service (`/auth`). Vite dev server proxy sang chúng giống hệt cách Traefik route ở production, nên **không cần đặt `VITE_API_URL`/`VITE_AUTH_URL`**.
 
-Cả hai service đều nối thẳng ra Postgres trên VPS qua host **ngoài** (không nằm trong mạng nội bộ Dokploy) — dùng `VPS_DB_URL` đã có trong `.env` để lấy host/port/dbname:
+Không phải chạy tay: plugin `vite/dev-services.ts` bật cả hai kèm `npm run dev` và tắt theo khi bạn `Ctrl+C`. Log của chúng in chung terminal với tiền tố `[postgrest]` / `[auth]`.
+
+Chuẩn bị một lần:
+
+```bash
+brew install postgrest          # hoặc dùng bản Docker, xem phần chạy tay bên dưới
+npm ci --prefix services/auth
+```
+
+Yêu cầu kèm theo: `.env` phải có `VPS_DB_URL`, `PGRST_AUTHENTICATOR_PASSWORD`, `AUTH_SERVICE_DB_PASSWORD`, `PGRST_JWT_SECRET`. Hai mật khẩu role và `PGRST_JWT_SECRET` phải khớp giá trị đã đặt lúc chạy `docs/vps-01-prepare-target.sql` / `docs/vps-04-auth-schema.sql` trên VPS. Cả hai service nối thẳng ra Postgres trên VPS qua host **ngoài**, nên port 5432 phải đang mở (đóng lại theo `docs/VPS_CUTOVER.md` mục 7 thì cách này cũng dừng theo). Thiếu biến nào plugin chỉ cảnh báo rồi bỏ qua, SPA vẫn chạy.
+
+Kiểm tra nhanh sau khi dev server lên:
+
+```bash
+curl -s localhost:3000/auth/khoe   # {"ok":true,"service":"farm-erp-auth"}
+```
+
+Khi nào plugin **không** spawn: đặt `DEV_SKIP_SERVICES=1`, hoặc port đã có process khác nghe (chạy tay từ terminal riêng), hoặc `DEV_API_PROXY_TARGET`/`DEV_AUTH_PROXY_TARGET` trỏ ra host không phải localhost — hữu ích khi muốn dev frontend nhắm thẳng API đã deploy:
+
+```bash
+DEV_API_PROXY_TARGET=https://<APP_DOMAIN>/api
+DEV_AUTH_PROXY_TARGET=https://<APP_DOMAIN>/auth
+```
+
+<details>
+<summary>Chạy tay hai service (khi cần debug riêng)</summary>
 
 ```bash
 source .env
@@ -56,7 +81,7 @@ GOOGLE_CLIENT_ID="$VITE_GOOGLE_CLIENT_ID" \
 npm run dev
 ```
 
-Mật khẩu hai role (`PGRST_AUTHENTICATOR_PASSWORD`, `AUTH_SERVICE_DB_PASSWORD`) và `PGRST_JWT_SECRET` phải khớp giá trị đã đặt lúc chạy `docs/vps-01-prepare-target.sql` / `docs/vps-04-auth-schema.sql` trên VPS. Port 5432 của VPS Postgres phải đang mở ra ngoài (đóng lại theo `docs/VPS_CUTOVER.md` mục 7 thì cách này cũng dừng theo).
+</details>
 
 ## Tài liệu
 

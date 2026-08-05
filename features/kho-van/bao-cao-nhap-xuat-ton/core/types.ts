@@ -56,8 +56,20 @@ export interface TonTaiThoiDiemRow {
   so_luong: number;
 }
 
+/** Ô ma trận NXT kho × hàng hóa trong kỳ */
+export interface NXTKHCell {
+  id_kho: string;
+  id_hang_hoa: string;
+  ton_dau_ky: number;
+  tong_nhap: number;
+  tong_xuat: number;
+  ton_cuoi_ky: number;
+}
+
 /** Kết quả báo cáo tổng hợp NXT theo kỳ */
 export interface NXTByPeriodResult {
   byWarehouse: NXTByWarehouseRow[];
   byProduct: NXTByProductRow[];
+  /** Ma trận chi tiết kho × hàng — dùng cho pivot cột theo kho. */
+  byCell?: NXTKHCell[];
 }

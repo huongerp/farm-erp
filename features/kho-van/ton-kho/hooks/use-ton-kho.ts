@@ -25,6 +25,51 @@ function tonKhoMatrixQueryKey(scope: TonKhoMatrixScope | 'wait'): readonly unkno
   return [...TON_KHO_QUERY_KEY, 'matrix', 'ids', [...scope.ids].sort().join(',')];
 }
 
+export type TonKhoKyFilters = {
+  dateFrom: string;
+  dateTo: string;
+  warehouseIds: string[];
+};
+
+/**
+ * Báo cáo NXT theo kỳ (ma trận kho × hàng) — dùng tab Tra cứu theo kỳ.
+ * Áp phân quyền chi nhánh của module tồn kho.
+ */
+export function useTonKhoNxtByPeriod(filters: TonKhoKyFilters | null) {
+  const scope = useTonKhoViewScope();
+  const enabled =
+    !!filters &&
+    !!filters.dateFrom &&
+    !!filters.dateTo &&
+    !scope.isLoading;
+
+  return useQuery({
+    queryKey: [
+      ...TON_KHO_QUERY_KEY,
+      'nxtByPeriod',
+      filters?.dateFrom,
+      filters?.dateTo,
+      ...(filters?.warehouseIds ?? []),
+      scope.viewAll ? 'all' : [...scope.allowedBranchIds].sort().join(','),
+    ],
+    queryFn: async () => {
+      const { getNXTByPeriod } = await import('../../bao-cao-nhap-xuat-ton/services/bao-cao-nxt-service');
+      return getNXTByPeriod({
+        dateFrom: filters!.dateFrom,
+        dateTo: filters!.dateTo,
+        warehouseIds: filters!.warehouseIds,
+        loaiPhieu: [],
+        trangThaiPhieu: [],
+        hangHoaIds: [],
+        categoryIds: [],
+        allowedBranchIds: scope.viewAll ? undefined : scope.allowedBranchIds,
+      });
+    },
+    enabled,
+    staleTime: 1000 * 60 * 2,
+  });
+}
+
 /**
  * Ma trận tồn kho theo phân quyền chi nhánh — chỉ tải dữ liệu kho được phép (giảm egress).
  * staleTime không đổi: dữ liệu vẫn được invalidate sau nhập/xuất như trước.

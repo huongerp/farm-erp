@@ -17,10 +17,15 @@ import GenericSubTableSection from '../../../../components/shared/GenericSubTabl
 import TonKhoToolbar from './TonKhoToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import { useSearchInputCommit } from '../../../../lib/hooks/use-search-input-commit';
-import { useTonKhoByProductStore } from '../store/useTonKhoStore';
+import {
+  useTonKhoByProductStore,
+  mergeWarehouseColumns,
+  isKhoColumnId,
+  khoIdFromColumnId,
+} from '../store/useTonKhoStore';
 import type { TonKhoFilters } from '../store/useTonKhoStore';
 import { useListWithFilter } from '../../../../lib/hooks';
-import { getColumnCellStyle } from '../../../../store/createGenericStore';
+import { getColumnCellStyle, getEffectiveColumnMinWidth } from '../../../../store/createGenericStore';
 import type { ColumnConfig } from '../../../../store/createGenericStore';
 import type { HangHoaRefLite } from '../../danh-sach-hang-hoa/services/hang-hoa-service';
 import type { LichSuNhapXuatRow } from '../../phieu-kho/services/phieu-kho-service';
@@ -28,6 +33,10 @@ import { BTN_CLOSE } from '../../../../lib/button-labels';
 import { cn, formatDateTime } from '../../../../lib/utils';
 import { TonKhoLoaiBadge } from './TonKhoLoaiBadge';
 import { computeTonSauByChiTiet } from '../utils/lich-su-ton-sau';
+import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
+
+/** Cột cố định bên trái khi cuộn ngang trên tab Theo sản phẩm. */
+const STICKY_LEFT_COL_IDS = new Set(['ma_hang', 'ten_hang']);
 
 function lichSuRowTouchesKho(row: LichSuNhapXuatRow, idKho: string): boolean {
   if (row.loai === 'chuyển') {
@@ -45,6 +54,8 @@ export type RowProduct = {
   tong_so_luong: number;
   ton_toi_thieu?: number | null;
   canh_bao: boolean;
+  /** Số lượng tồn theo từng kho (id_kho → so_luong). */
+  by_kho: Record<string, number>;
 };
 
 function useProductRows(tonKhoListOverride?: TonKhoRecord[]) {
@@ -72,9 +83,11 @@ function useProductRows(tonKhoListOverride?: TonKhoRecord[]) {
         const h = hangHoaMap[id_hang_hoa];
         const tong_so_luong = byProduct.get(id_hang_hoa) ?? 0;
         const tonByKho = tonKhoList.filter((r) => r.id_hang_hoa === id_hang_hoa);
+        const by_kho: Record<string, number> = {};
         let ton_toi_thieu: number | null = null;
         let canh_bao = false;
         tonByKho.forEach((r) => {
+          by_kho[r.id_kho] = (by_kho[r.id_kho] ?? 0) + r.so_luong;
           const dm = map.get(dinhMucKey(r.id_kho, id_hang_hoa));
           if (dm != null) {
             if (ton_toi_thieu == null || dm < ton_toi_thieu) ton_toi_thieu = dm;
@@ -90,6 +103,7 @@ function useProductRows(tonKhoListOverride?: TonKhoRecord[]) {
           tong_so_luong,
           ton_toi_thieu: ton_toi_thieu ?? undefined,
           canh_bao,
+          by_kho,
         };
       })
       .filter((r) => r.tong_so_luong !== 0)
@@ -360,6 +374,7 @@ const TonKhoTheoSanPhamTab: React.FC = () => {
   const toggleColumn = useTonKhoByProductStore((s) => s.toggleColumn);
   const reorderColumns = useTonKhoByProductStore((s) => s.reorderColumns);
   const resetColumns = useTonKhoByProductStore((s) => s.resetColumns);
+  const setColumns = useTonKhoByProductStore((s) => s.setColumns);
   const pagination = useTonKhoByProductStore((s) => s.pagination);
   const setPage = useTonKhoByProductStore((s) => s.setPage);
   const setPageSize = useTonKhoByProductStore((s) => s.setPageSize);
@@ -371,6 +386,14 @@ const TonKhoTheoSanPhamTab: React.FC = () => {
   });
 
   const { rows, isLoading, isFetchingOverlay } = useProductRows();
+  const { data: khoList = [] } = useKhoList();
+
+  useEffect(() => {
+    const next = mergeWarehouseColumns(columns, khoList);
+    if (next !== columns) {
+      setColumns(() => next);
+    }
+  }, [khoList, columns, setColumns]);
 
   const filterFn = useCallback((item: RowProduct, term: string, f: TonKhoFilters) => {
     if (term.trim()) {
@@ -462,16 +485,69 @@ const TonKhoTheoSanPhamTab: React.FC = () => {
     () => columns.filter((c) => c.visible).sort((a, b) => a.order - b.order),
     [columns]
   );
+
+  /** left offset tích lũy cho cột sticky (mã hàng, tên hàng). */
+  const stickyLeftById = useMemo(() => {
+    const map = new Map<string, number>();
+    let acc = 0;
+    for (const col of visibleColumns) {
+      if (!STICKY_LEFT_COL_IDS.has(col.id)) continue;
+      map.set(col.id, acc);
+      acc += col.width ?? getEffectiveColumnMinWidth(col, 120);
+    }
+    return map;
+  }, [visibleColumns]);
+
+  const lastStickyColId = useMemo(() => {
+    let last: string | null = null;
+    for (const col of visibleColumns) {
+      if (STICKY_LEFT_COL_IDS.has(col.id)) last = col.id;
+    }
+    return last;
+  }, [visibleColumns]);
+
+  const tableMinWidth = useMemo(
+    () =>
+      visibleColumns.reduce(
+        (sum, c) => sum + (c.width ?? getEffectiveColumnMinWidth(c, 120)),
+        0
+      ),
+    [visibleColumns]
+  );
+
   const paginatedData = useMemo(() => {
     const start = (pagination.page - 1) * pagination.pageSize;
     return filteredList.slice(start, start + pagination.pageSize);
   }, [filteredList, pagination.page, pagination.pageSize]);
 
   const renderCell = (item: RowProduct, col: ColumnConfig) => {
+    const stickyLeft = stickyLeftById.get(col.id);
+    const isSticky = stickyLeft !== undefined;
+    const stickyClass = isSticky
+      ? cn(
+          'sticky z-[1] bg-card group-hover:bg-muted/50',
+          col.id === lastStickyColId && 'border-r border-border'
+        )
+      : undefined;
+    const baseStyle = {
+      ...getColumnCellStyle(col),
+      ...(isSticky ? { left: stickyLeft } : null),
+    };
+
+    if (isKhoColumnId(col.id)) {
+      const qty = item.by_kho[khoIdFromColumnId(col.id)] ?? 0;
+      return (
+        <td key={col.id} className="px-4 py-3 text-right" style={baseStyle}>
+          <span className="font-medium tabular-nums text-sm">
+            {qty !== 0 ? qty.toLocaleString() : '—'}
+          </span>
+        </td>
+      );
+    }
     switch (col.id) {
       case 'ma_hang':
         return (
-          <td key={col.id} className="px-4 py-3" style={getColumnCellStyle(col)}>
+          <td key={col.id} className={cn('px-4 py-3', stickyClass)} style={baseStyle}>
             <span className="font-mono text-xs font-medium text-muted-foreground bg-muted px-2 py-1 rounded border border-border">
               {item.ma_hang}
             </span>
@@ -479,31 +555,31 @@ const TonKhoTheoSanPhamTab: React.FC = () => {
         );
       case 'ten_hang':
         return (
-          <td key={col.id} className="px-4 py-3" style={getColumnCellStyle(col)}>
+          <td key={col.id} className={cn('px-4 py-3', stickyClass)} style={baseStyle}>
             <span className="font-medium text-foreground">{item.ten_hang}</span>
           </td>
         );
       case 'tong_so_luong':
         return (
-          <td key={col.id} className="px-4 py-3 text-right" style={getColumnCellStyle(col)}>
-            <span className="font-medium">{item.tong_so_luong.toLocaleString()}</span>
+          <td key={col.id} className="px-4 py-3 text-right" style={baseStyle}>
+            <span className="font-medium tabular-nums text-sm">{item.tong_so_luong.toLocaleString()}</span>
           </td>
         );
       case 'ten_danh_muc':
         return (
-          <td key={col.id} className="px-4 py-3 text-muted-foreground" style={getColumnCellStyle(col)}>
+          <td key={col.id} className="px-4 py-3 text-muted-foreground" style={baseStyle}>
             {item.ten_danh_muc ?? '—'}
           </td>
         );
       case 'ton_toi_thieu':
         return (
-          <td key={col.id} className="px-4 py-3 text-right tabular-nums" style={getColumnCellStyle(col)}>
+          <td key={col.id} className="px-4 py-3 text-right tabular-nums text-sm" style={baseStyle}>
             {item.ton_toi_thieu != null ? item.ton_toi_thieu.toLocaleString() : '—'}
           </td>
         );
       case 'canh_bao':
         return (
-          <td key={col.id} className="px-4 py-3" style={getColumnCellStyle(col)}>
+          <td key={col.id} className="px-4 py-3" style={baseStyle}>
             {item.canh_bao ? (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 text-xs font-medium">
                 {t('tonKho.byProduct.filterBelowMin')}
@@ -515,12 +591,12 @@ const TonKhoTheoSanPhamTab: React.FC = () => {
         );
       case 'don_vi_tinh':
         return (
-          <td key={col.id} className="px-4 py-3 text-muted-foreground" style={getColumnCellStyle(col)}>
+          <td key={col.id} className="px-4 py-3 text-muted-foreground" style={baseStyle}>
             {item.don_vi_tinh}
           </td>
         );
       default:
-        return <td key={col.id} className="px-4 py-3" style={getColumnCellStyle(col)} />;
+        return <td key={col.id} className="px-4 py-3" style={baseStyle} />;
     }
   };
 
@@ -573,19 +649,32 @@ const TonKhoTheoSanPhamTab: React.FC = () => {
           ) : (
             <>
               <div className="flex-1 min-h-0 overflow-auto custom-scrollbar">
-                <table className="w-full text-sm text-left border-collapse">
-                  <thead className="sticky top-0 z-10 bg-muted/95 border-b border-border">
+                <table
+                  className="w-full text-sm text-left border-separate border-spacing-0"
+                  style={{ minWidth: tableMinWidth }}
+                >
+                  <thead className="sticky top-0 z-10 bg-muted/95">
                     <tr>
                       {visibleColumns.map((col) => {
-                        const isNumeric = col.id === 'tong_so_luong' || col.id === 'ton_toi_thieu';
+                        const isNumeric =
+                          col.id === 'tong_so_luong' ||
+                          col.id === 'ton_toi_thieu' ||
+                          isKhoColumnId(col.id);
+                        const stickyLeft = stickyLeftById.get(col.id);
+                        const isSticky = stickyLeft !== undefined;
                         return (
                           <th
                             key={col.id}
                             className={cn(
-                              'px-4 py-3 font-semibold text-muted-foreground text-xs whitespace-nowrap',
-                              isNumeric && 'text-right'
+                              'px-4 py-3 font-semibold text-muted-foreground text-xs whitespace-nowrap border-b border-border bg-muted/95',
+                              isNumeric && 'text-right',
+                              isSticky && 'sticky z-[11]',
+                              isSticky && col.id === lastStickyColId && 'border-r border-border'
                             )}
-                            style={getColumnCellStyle(col)}
+                            style={{
+                              ...getColumnCellStyle(col),
+                              ...(isSticky ? { left: stickyLeft } : null),
+                            }}
                           >
                             {col.label}
                           </th>
@@ -593,7 +682,7 @@ const TonKhoTheoSanPhamTab: React.FC = () => {
                       })}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border [&>tr:last-child>td]:border-b [&>tr:last-child>td]:border-border">
+                  <tbody className="[&>tr>td]:border-b [&>tr>td]:border-border">
                     {paginatedData.map((item) => (
                       <tr
                         key={item.id_hang_hoa}

@@ -118,7 +118,13 @@ export async function getNXTByPeriod(filters: NXTReportFilters): Promise<NXTByPe
     const { data, error } = await db.rpc('rpc_nxt_by_period', {
       p_filters: nxtFiltersToRpcPayload(filters),
     });
-    if (!error && data != null && typeof data === 'object' && Array.isArray((data as NXTByPeriodResult).byWarehouse)) {
+    if (
+      !error &&
+      data != null &&
+      typeof data === 'object' &&
+      Array.isArray((data as NXTByPeriodResult).byWarehouse) &&
+      Array.isArray((data as NXTByPeriodResult).byCell)
+    ) {
       return data as NXTByPeriodResult;
     }
   } catch {
@@ -370,7 +376,7 @@ export async function getNXTByPeriod(filters: NXTReportFilters): Promise<NXTByPe
     };
   });
 
-  return { byWarehouse: byWarehouseRows, byProduct: byProductRows };
+  return { byWarehouse: byWarehouseRows, byProduct: byProductRows, byCell: detailRows };
 }
 
 /* ────────────────────────── other exports ────────────────────────── */

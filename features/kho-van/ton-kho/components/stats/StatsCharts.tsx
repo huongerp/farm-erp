@@ -58,7 +58,7 @@ const StatsCharts: React.FC<Props> = ({ byWarehouse, topProducts }) => {
               <XAxis type="number" tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} axisLine={false} tickLine={false} allowDecimals={false} />
               <YAxis type="category" dataKey="name" width={80} tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} axisLine={false} tickLine={false} />
               <Tooltip content={<ChartTooltip />} />
-              <Bar dataKey="value" radius={[0, 6, 6, 0]} name={t('tonKho.byLocation.totalQty')}>
+              <Bar dataKey="value" radius={[0, 6, 6, 0]} name={t('tonKho.stats.qtyCol')}>
                 {byWarehouse.map((_, i) => (
                   <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
                 ))}

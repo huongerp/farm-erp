@@ -10,7 +10,7 @@ export async function exportBaoCaoNXTToExcel(
   t: TFunction
 ): Promise<void> {
   const [nxtResult, phieuList, tonRows] = await Promise.all([
-    filters.dateFrom && filters.dateTo ? getNXTByPeriod(filters) : Promise.resolve({ byWarehouse: [], byProduct: [] }),
+    filters.dateFrom && filters.dateTo ? getNXTByPeriod(filters) : Promise.resolve({ byWarehouse: [], byProduct: [], byCell: [] }),
     filters.dateFrom && filters.dateTo ? getPhieuInPeriod(filters) : Promise.resolve([]),
     getTonAtDate(filters),
   ]);

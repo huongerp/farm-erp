@@ -281,6 +281,8 @@ export interface GenericState<TFilters> {
   reorderColumns: (fromIndex: number, toIndex: number) => void;
   resizeColumn: (id: string, width: number) => void;
   resetColumns: () => void;
+  /** Cập nhật cột theo updater (dùng cho cột động). */
+  setColumns: (updater: (cols: ColumnConfig[]) => ColumnConfig[]) => void;
   setSort: (column: string | null, direction: 'asc' | 'desc' | null) => void;
   resetState: () => void;
 }
@@ -377,6 +379,10 @@ export const createGenericStore = <TFilters>(
   resetColumns: () => set({
     columns: defaultColumns.map((col, i) => ({ ...col, order: col.order ?? i }))
   }),
+
+  setColumns: (updater) => set((state) => ({
+    columns: updater(state.columns),
+  })),
 
   setSort: (column, direction) => set({ sort: { column, direction } }),
 

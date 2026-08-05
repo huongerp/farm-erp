@@ -1,14 +1,13 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
-import { BarChart3, FileText, Package } from 'lucide-react';
+import { BarChart3, FileText } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import TabGroup from '../../../components/ui/TabGroup';
 import BaoCaoNXTToolbar from './components/BaoCaoNXTToolbar';
 import TongHopNXTKyTab from './components/TongHopNXTKyTab';
 import ChiTietPhieuTab from './components/ChiTietPhieuTab';
-import TonTaiThoiDiemTab from './components/TonTaiThoiDiemTab';
 import type { NXTReportFilters } from './core/types';
 import { getDateRangeFromPreset } from './core/datePresets';
 import { usePhieuKhoViewScope } from '../phieu-kho/hooks/use-phieu-kho-view-scope';
@@ -24,7 +23,7 @@ const DEFAULT_FILTERS: NXTReportFilters = {
   categoryIds: [],
 };
 
-const VALID_TABS = ['tongHop', 'chiTietPhieu', 'tonThoiDiem'] as const;
+const VALID_TABS = ['tongHop', 'chiTietPhieu'] as const;
 type TabId = (typeof VALID_TABS)[number];
 
 const BaoCaoNhapXuatTonPage: React.FC = () => {
@@ -115,7 +114,6 @@ const BaoCaoNhapXuatTonPage: React.FC = () => {
     () => [
       { id: 'tongHop', label: t('baoCaonhapXuatTon.tabs.tongHop'), icon: BarChart3 },
       { id: 'chiTietPhieu', label: t('baoCaonhapXuatTon.tabs.chiTietPhieu'), icon: FileText },
-      { id: 'tonThoiDiem', label: t('baoCaonhapXuatTon.tabs.tonTaiThoiDiem'), icon: Package },
     ],
     [t]
   );
@@ -141,7 +139,6 @@ const BaoCaoNhapXuatTonPage: React.FC = () => {
       <div className="bao-cao-nxt-stats-content flex-1 min-h-0 flex flex-col mt-1.5 overflow-hidden print:overflow-visible">
         {activeTab === 'tongHop' && <TongHopNXTKyTab filters={effectiveFilters} onClearFilters={handleClearAllFilters} />}
         {activeTab === 'chiTietPhieu' && <ChiTietPhieuTab filters={effectiveFilters} />}
-        {activeTab === 'tonThoiDiem' && <TonTaiThoiDiemTab filters={effectiveFilters} />}
       </div>
     </div>
   );
