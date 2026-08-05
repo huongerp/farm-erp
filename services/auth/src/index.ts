@@ -190,17 +190,31 @@ async function xuLyDangXuat(c: Ctx) {
   return c.body(null, 204);
 }
 
-/** Đăng ký cùng handler cho path đã strip (`/dang-nhap`) và path đầy đủ (`/auth/dang-nhap`). */
-function dangKy(prefix: '' | '/auth') {
-  app.get(`${prefix}/khoe`, (c) => xuLyKhoe(c));
-  app.post(`${prefix}/dang-nhap`, (c) => xuLyDangNhap(c));
-  app.post(`${prefix}/dang-nhap-google`, (c) => xuLyDangNhapGoogle(c));
-  app.post(`${prefix}/lam-moi`, (c) => xuLyLamMoi(c));
-  app.post(`${prefix}/dang-xuat`, (c) => xuLyDangXuat(c));
-}
+const TUYEN: Record<string, { phuongThuc: 'GET' | 'POST'; xuLy: (c: Ctx) => Promise<Response> }> = {
+  khoe: { phuongThuc: 'GET', xuLy: xuLyKhoe },
+  'dang-nhap': { phuongThuc: 'POST', xuLy: xuLyDangNhap },
+  'dang-nhap-google': { phuongThuc: 'POST', xuLy: xuLyDangNhapGoogle },
+  'lam-moi': { phuongThuc: 'POST', xuLy: xuLyLamMoi },
+  'dang-xuat': { phuongThuc: 'POST', xuLy: xuLyDangXuat },
+};
 
-dangKy('');
-dangKy('/auth');
+/**
+ * Khớp theo đoạn cuối của path, không theo path đầy đủ.
+ *
+ * Tiền tố `/auth` có thể bị strip trước khi tới đây hoặc không, tuỳ cấu hình
+ * Traefik (domain khai trong Dokploy và label trong docker-compose.yml là hai
+ * nguồn chồng nhau). Chỉ request khớp `PathPrefix(/auth)` mới vào được service
+ * này nên khớp đoạn cuối vẫn đủ chặt.
+ */
+app.all('*', async (c) => {
+  const duongDan = c.req.path;
+  const ten = duongDan.replace(/\/+$/, '').split('/').pop() ?? '';
+  const tuyen = TUYEN[ten];
+  // Trả `duong_dan` để biết Traefik đã biến đổi path thế nào khi soi lỗi deploy.
+  if (!tuyen) return c.json({ ly_do: 'khong_tim_thay', duong_dan: duongDan }, 404);
+  if (c.req.method !== tuyen.phuongThuc) return c.json({ ly_do: 'sai_phuong_thuc' }, 405);
+  return tuyen.xuLy(c);
+});
 
 app.onError((err, c) => {
   // Không trả chi tiết lỗi DB ra ngoài.
