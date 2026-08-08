@@ -70,7 +70,7 @@ const PhieuTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, onDelete
       case 'actions':
         if (!showActions) return null;
         return (
-          <div className="flex flex-col gap-1">
+          <div className="flex items-center justify-center gap-1">
             {onEdit && (
               <Tooltip content={t('common.edit')} placement="left">
                 <button

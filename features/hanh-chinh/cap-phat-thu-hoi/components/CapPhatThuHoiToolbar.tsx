@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Package, User, Calendar } from 'lucide-react';
+import { Plus, Package, User, Calendar, Upload, Download } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
+import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
@@ -16,6 +17,8 @@ interface Props {
   items?: PhieuCapPhatThuHoi[];
   onAdd: () => void;
   onDeleteMany: (ids: string[]) => void;
+  onImport?: () => void;
+  onExport?: () => void;
   showAdd?: boolean;
   canDelete?: boolean;
 }
@@ -24,6 +27,8 @@ const CapPhatThuHoiToolbar: React.FC<Props> = ({
   items = [],
   onAdd,
   onDeleteMany,
+  onImport,
+  onExport,
   showAdd = true,
   canDelete = true,
 }) => {
@@ -121,6 +126,34 @@ const CapPhatThuHoiToolbar: React.FC<Props> = ({
 
   const renderActions = (
     <div className="flex items-center gap-2">
+      {showAdd && onImport && (
+        <Tooltip content={t('capPhatThuHoi.toolbar.importData')} placement="bottom">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onImport}
+            className="inline-flex min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-8 w-8 p-0 items-center justify-center border-border text-muted-foreground hover:bg-muted"
+            aria-label={t('capPhatThuHoi.toolbar.importData')}
+          >
+            <Upload className="w-4 h-4" />
+          </Button>
+        </Tooltip>
+      )}
+      {onExport && (
+        <Tooltip content={t('capPhatThuHoi.toolbar.exportData')} placement="bottom">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onExport}
+            className="inline-flex min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-8 w-8 p-0 items-center justify-center border-border text-muted-foreground hover:bg-muted"
+            aria-label={t('capPhatThuHoi.toolbar.exportData')}
+          >
+            <Download className="w-4 h-4" />
+          </Button>
+        </Tooltip>
+      )}
       {showAdd && (
         <Button
           onClick={onAdd}
@@ -134,10 +167,19 @@ const CapPhatThuHoiToolbar: React.FC<Props> = ({
     </div>
   );
 
-  const mobileActions: ActionItem[] = useMemo(
-    () => [{ label: t('common.addNew'), icon: Plus, onClick: onAdd }],
-    [t, onAdd]
-  );
+  const mobileActions: ActionItem[] = useMemo(() => {
+    const actions: ActionItem[] = [];
+    if (showAdd && onImport) {
+      actions.push({ label: t('common.import'), icon: Upload, onClick: onImport });
+    }
+    if (onExport) {
+      actions.push({ label: t('common.export'), icon: Download, onClick: onExport });
+    }
+    if (showAdd) {
+      actions.push({ label: t('common.addNew'), icon: Plus, onClick: onAdd });
+    }
+    return actions;
+  }, [t, onAdd, onImport, onExport, showAdd]);
 
   return (
     <GenericToolbar

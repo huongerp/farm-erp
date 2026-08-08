@@ -7,8 +7,12 @@ import {
   deletePhieuSupabase,
   getPhieuChiTietByTaiSanIdSupabase,
   getAllPhieuChiTietSupabase,
+  importPhieuCapPhatThuHoiListSupabase,
+  type PhieuCapPhatThuHoiImportRow,
 } from './cap-phat-thu-hoi-supabase.service';
 import { getEmployeesRef } from '@/features/he-thong/nhan-vien/services/nhan-vien-service';
+
+export type { PhieuCapPhatThuHoiImportRow };
 
 async function enrichPhieu(items: PhieuCapPhatThuHoi[]): Promise<PhieuCapPhatThuHoi[]> {
   const employees = await getEmployeesRef();
@@ -88,3 +92,8 @@ export const getPhieuChiTietByTaiSan = async (
 export const getAllPhieuChiTiet = async (): Promise<PhieuChiTietRow[]> => {
   return getAllPhieuChiTietSupabase();
 };
+
+export const importPhieuCapPhatThuHoiList = (
+  rows: PhieuCapPhatThuHoiImportRow[]
+): Promise<{ created: number; errors: string[] }> =>
+  importPhieuCapPhatThuHoiListSupabase(rows);

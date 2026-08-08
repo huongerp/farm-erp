@@ -9,7 +9,9 @@ import {
   updatePhieu,
   getPhieuChiTietByTaiSan,
   getAllPhieuChiTiet,
+  importPhieuCapPhatThuHoiList,
   type GetPhieuListParams,
+  type PhieuCapPhatThuHoiImportRow,
 } from '../services/cap-phat-thu-hoi-service';
 import type { PhieuCapPhatThuHoi, PhieuCapPhatThuHoiCreate, PhieuChiTietWithHeader, PhieuChiTietRow } from '../core/types';
 
@@ -94,6 +96,28 @@ export const useUpdatePhieu = (onSuccess?: (data?: PhieuCapPhatThuHoi) => void) 
       queryClient.invalidateQueries({ queryKey: ['taiSanList'] });
       toast.success(i18n.t('capPhatThuHoi.toast.updateSuccess'));
       if (onSuccess) onSuccess(data);
+    },
+    onError: (err: unknown) => toast.error((err as Error).message),
+  });
+};
+
+export const useImportPhieuCapPhatThuHoi = (onSuccess?: () => void) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (rows: PhieuCapPhatThuHoiImportRow[]) => importPhieuCapPhatThuHoiList(rows),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ['taiSanList'] });
+      const msg =
+        result.errors.length > 0
+          ? i18n.t('capPhatThuHoi.toast.importPartial', {
+              created: result.created,
+              errors: result.errors.length,
+            })
+          : i18n.t('capPhatThuHoi.toast.importSuccess', { count: result.created });
+      toast.success(msg);
+      if (result.errors.length > 0) result.errors.forEach((e) => toast.error(e));
+      onSuccess?.();
     },
     onError: (err: unknown) => toast.error((err as Error).message),
   });

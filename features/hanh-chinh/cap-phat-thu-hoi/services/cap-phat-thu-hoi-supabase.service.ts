@@ -444,3 +444,215 @@ export async function deletePhieuSupabase(ids: string[]): Promise<void> {
   const { error } = await db.from(TABLE).delete().in('id', numIds);
   if (error) throwSupabaseError(error);
 }
+
+// ---------------------------------------------------------------------------
+// IMPORT
+// ---------------------------------------------------------------------------
+
+export type PhieuCapPhatThuHoiImportRow = {
+  loai_phieu?: string;
+  ngay_thuc_hien?: string;
+  ma_nguoi_thuc_hien?: string;
+  ma_nguoi_giu_truoc?: string;
+  ma_nguoi_giu_sau?: string;
+  ghi_chu_phieu?: string;
+  ma_tai_san?: string;
+  ma_noi_luu_sau?: string;
+  ghi_chu_dong?: string;
+};
+
+const LOAI_PHIEU_KEYS: LoaiPhieu[] = [
+  'cap_phat',
+  'thu_hoi',
+  'luan_chuyen_vi_tri',
+  'luan_chuyen_nguoi',
+  'luan_chuyen_ca_hai',
+];
+
+function parseLoaiPhieu(raw: string): LoaiPhieu | null {
+  const s = raw.trim();
+  if (!s) return null;
+  const lower = s.toLowerCase();
+  if ((LOAI_PHIEU_KEYS as string[]).includes(lower)) return lower as LoaiPhieu;
+  if (LOAI_PHIEU_FROM_DB[s]) return LOAI_PHIEU_FROM_DB[s];
+  const byLabel = Object.entries(LOAI_PHIEU_TO_DB).find(([, label]) => label.toLowerCase() === lower);
+  return byLabel ? (byLabel[0] as LoaiPhieu) : null;
+}
+
+/** Chuẩn hóa ngày về YYYY-MM-DD (Excel serial hoặc chuỗi). */
+function parseNgayThucHien(raw: unknown): string | null {
+  if (raw == null || raw === '') return null;
+  if (typeof raw === 'number' && Number.isFinite(raw)) {
+    // Excel serial date (days since 1899-12-30)
+    const ms = (raw - 25569) * 86400 * 1000;
+    const d = new Date(ms);
+    if (Number.isNaN(d.getTime())) return null;
+    return d.toISOString().slice(0, 10);
+  }
+  const s = String(raw).trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+  const m = s.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/);
+  if (m) {
+    const dd = m[1].padStart(2, '0');
+    const mm = m[2].padStart(2, '0');
+    return `${m[3]}-${mm}-${dd}`;
+  }
+  return null;
+}
+
+function resolveEmployeeId(
+  code: string,
+  byMa: Map<string, string>,
+  byId: Map<string, string>
+): string | null {
+  const s = code.trim();
+  if (!s) return null;
+  const upper = s.toUpperCase();
+  return byMa.get(upper) ?? byId.get(s) ?? byId.get(upper.replace(/^NV/i, '')) ?? null;
+}
+
+type ResolvedLine = {
+  rowNum: number;
+  loai_phieu: LoaiPhieu;
+  ngay_thuc_hien: string;
+  id_nguoi_thuc_hien: string;
+  id_nguoi_giu_truoc: string | null;
+  id_nguoi_giu_sau: string | null;
+  ghi_chu_phieu: string | null;
+  id_tai_san: string;
+  id_noi_luu_sau: string;
+  ghi_chu_dong: string | null;
+};
+
+function groupKey(line: ResolvedLine): string {
+  return [
+    line.loai_phieu,
+    line.ngay_thuc_hien,
+    line.id_nguoi_thuc_hien,
+    line.id_nguoi_giu_truoc ?? '',
+    line.id_nguoi_giu_sau ?? '',
+    line.ghi_chu_phieu ?? '',
+  ].join('|');
+}
+
+/**
+ * Import phiếu từ dòng Excel phẳng (1 dòng = 1 tài sản).
+ * Gộp phiếu theo khóa header rồi gọi createPhieuSupabase từng nhóm.
+ */
+export async function importPhieuCapPhatThuHoiListSupabase(
+  rows: PhieuCapPhatThuHoiImportRow[]
+): Promise<{ created: number; errors: string[] }> {
+  const errors: string[] = [];
+  let created = 0;
+
+  const [employees, assets, locations] = await Promise.all([
+    getEmployeesRef(),
+    getTaiSanList(),
+    getAssetStorageLocations(),
+  ]);
+
+  const empByMa = new Map(employees.map((e) => [e.ma_nhan_vien.trim().toUpperCase(), e.id]));
+  const empById = new Map(employees.map((e) => [e.id, e.id]));
+  const assetByMa = new Map(assets.map((a) => [a.ma_tai_san.trim().toUpperCase(), a.id]));
+  const locByMa = new Map(locations.map((l) => [l.ma_noi_luu.trim().toUpperCase(), l.id]));
+
+  const resolved: ResolvedLine[] = [];
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const rowNum = i + 2;
+    const rowErrors: string[] = [];
+
+    const loai = parseLoaiPhieu(String(row.loai_phieu ?? ''));
+    if (!loai) rowErrors.push('Loại phiếu không hợp lệ');
+
+    const ngay = parseNgayThucHien(row.ngay_thuc_hien);
+    if (!ngay) rowErrors.push('Ngày thực hiện không hợp lệ (YYYY-MM-DD)');
+
+    const maNguoiTh = String(row.ma_nguoi_thuc_hien ?? '').trim();
+    const idNguoiTh = resolveEmployeeId(maNguoiTh, empByMa, empById);
+    if (!maNguoiTh || !idNguoiTh) rowErrors.push(`Không tìm thấy người thực hiện: ${maNguoiTh || '(trống)'}`);
+
+    const maGiuTruoc = String(row.ma_nguoi_giu_truoc ?? '').trim();
+    let idGiuTruoc: string | null = null;
+    if (maGiuTruoc) {
+      idGiuTruoc = resolveEmployeeId(maGiuTruoc, empByMa, empById);
+      if (!idGiuTruoc) rowErrors.push(`Không tìm thấy người giữ trước: ${maGiuTruoc}`);
+    }
+
+    const maGiuSau = String(row.ma_nguoi_giu_sau ?? '').trim();
+    let idGiuSau: string | null = null;
+    if (maGiuSau) {
+      idGiuSau = resolveEmployeeId(maGiuSau, empByMa, empById);
+      if (!idGiuSau) rowErrors.push(`Không tìm thấy người giữ sau: ${maGiuSau}`);
+    }
+
+    if (
+      loai &&
+      (loai === 'cap_phat' || loai === 'luan_chuyen_nguoi' || loai === 'luan_chuyen_ca_hai') &&
+      !idGiuSau
+    ) {
+      rowErrors.push('Loại phiếu này bắt buộc người giữ sau');
+    }
+
+    const maTs = String(row.ma_tai_san ?? '').trim().toUpperCase();
+    const idTs = maTs ? assetByMa.get(maTs) : undefined;
+    if (!maTs || !idTs) rowErrors.push(`Không tìm thấy tài sản: ${maTs || '(trống)'}`);
+
+    const maNoi = String(row.ma_noi_luu_sau ?? '').trim().toUpperCase();
+    const idNoi = maNoi ? locByMa.get(maNoi) : undefined;
+    if (!maNoi || !idNoi) rowErrors.push(`Không tìm thấy nơi lưu sau: ${maNoi || '(trống)'}`);
+
+    if (rowErrors.length > 0) {
+      errors.push(`Dòng ${rowNum}: ${rowErrors.join('; ')}`);
+      continue;
+    }
+
+    resolved.push({
+      rowNum,
+      loai_phieu: loai!,
+      ngay_thuc_hien: ngay!,
+      id_nguoi_thuc_hien: idNguoiTh!,
+      id_nguoi_giu_truoc: idGiuTruoc,
+      id_nguoi_giu_sau: idGiuSau,
+      ghi_chu_phieu: String(row.ghi_chu_phieu ?? '').trim() || null,
+      id_tai_san: idTs!,
+      id_noi_luu_sau: idNoi!,
+      ghi_chu_dong: String(row.ghi_chu_dong ?? '').trim() || null,
+    });
+  }
+
+  const groups = new Map<string, ResolvedLine[]>();
+  for (const line of resolved) {
+    const key = groupKey(line);
+    const list = groups.get(key);
+    if (list) list.push(line);
+    else groups.set(key, [line]);
+  }
+
+  for (const lines of groups.values()) {
+    const first = lines[0];
+    const data: PhieuCapPhatThuHoiCreate = {
+      loai_phieu: first.loai_phieu,
+      ngay_thuc_hien: first.ngay_thuc_hien,
+      id_nguoi_thuc_hien: first.id_nguoi_thuc_hien,
+      id_nguoi_giu_truoc: first.id_nguoi_giu_truoc,
+      id_nguoi_giu_sau: first.id_nguoi_giu_sau,
+      ghi_chu: first.ghi_chu_phieu,
+      chi_tiet: lines.map((l) => ({
+        id_tai_san: l.id_tai_san,
+        id_noi_luu_sau: l.id_noi_luu_sau,
+        ghi_chu: l.ghi_chu_dong,
+      })),
+    };
+    try {
+      await createPhieuSupabase(data, first.id_nguoi_thuc_hien);
+      created++;
+    } catch (e: unknown) {
+      const rowHint = lines.map((l) => l.rowNum).join(', ');
+      errors.push(`Nhóm dòng ${rowHint}: ${(e as Error).message || 'Lỗi tạo phiếu'}`);
+    }
+  }
+
+  return { created, errors };
+}

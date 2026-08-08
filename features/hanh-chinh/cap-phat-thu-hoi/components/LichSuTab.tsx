@@ -2,11 +2,14 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
+import ImportDialog from '../../../../components/shared/LazyImportDialog';
+import ExportDialog from '../../../../components/shared/LazyExportDialog';
 import CapPhatThuHoiToolbar from './CapPhatThuHoiToolbar';
 import PhieuTable from './PhieuTable';
 import PhieuDetail from './PhieuDetail';
 import TaoPhieuForm from './TaoPhieuForm';
 import { usePhieuList, usePhieuById, useDeletePhieu } from '../hooks/use-cap-phat-thu-hoi';
+import { useCpthListImportExport } from '../hooks/use-cpth-list-import-export';
 import { getPhieuById } from '../services/cap-phat-thu-hoi-service';
 import { useCapPhatThuHoiStore } from '../store/useCapPhatThuHoiStore';
 import { getLanguage } from '../../../../lib/utils';
@@ -22,10 +25,7 @@ const LichSuTab: React.FC<Props> = ({ defaultTaiSanId }) => {
   const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
   const { searchTerm, filters, sort, resetState, clearSelection } = useCapPhatThuHoiStore();
-  const { data: list = [], isLoading } = usePhieuList({
-    filter: 'all',
-    q: searchTerm || undefined,
-  });
+  const { data: list = [], isLoading } = usePhieuList({ filter: 'all' });
   const deleteMutation = useDeletePhieu();
   const [detailItem, setDetailItem] = useState<PhieuCapPhatThuHoi | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -46,14 +46,23 @@ const LichSuTab: React.FC<Props> = ({ defaultTaiSanId }) => {
   }, [resetState]);
 
   const filteredList = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
     return list.filter((p) => {
+      if (q) {
+        const matchSearch =
+          p.ma_phieu.toLowerCase().includes(q) ||
+          (p.ten_nguoi_thuc_hien && p.ten_nguoi_thuc_hien.toLowerCase().includes(q)) ||
+          (p.ten_nguoi_giu_sau && p.ten_nguoi_giu_sau.toLowerCase().includes(q)) ||
+          (p.ten_nguoi_giu_truoc && p.ten_nguoi_giu_truoc.toLowerCase().includes(q));
+        if (!matchSearch) return false;
+      }
       if (filters.loai_phieu.length > 0 && !filters.loai_phieu.includes(p.loai_phieu)) return false;
       if (filters.dateFrom && p.ngay_thuc_hien < filters.dateFrom) return false;
       if (filters.dateTo && p.ngay_thuc_hien > filters.dateTo) return false;
       if (filters.id_nguoi_thuc_hien.length > 0 && !filters.id_nguoi_thuc_hien.includes(p.id_nguoi_thuc_hien)) return false;
       return true;
     });
-  }, [list, filters]);
+  }, [list, filters, searchTerm]);
 
   const sortedList = useMemo(() => {
     if (!sort.column || !sort.direction) return filteredList;
@@ -69,6 +78,24 @@ const LichSuTab: React.FC<Props> = ({ defaultTaiSanId }) => {
     });
     return sorted;
   }, [filteredList, sort]);
+
+  const {
+    showImport,
+    setShowImport,
+    showExport,
+    setShowExport,
+    IMPORT_COLUMNS,
+    importSampleRows,
+    importReferenceSheets,
+    exportColumns,
+    exportData,
+    paginatedData,
+    selectedData,
+    handleExport,
+    handleImportData,
+    templateFileName,
+    exportFileName,
+  } = useCpthListImportExport(sortedList);
 
   const handleAdd = useCallback(() => {
     setEditingPhieu(null);
@@ -153,6 +180,8 @@ const LichSuTab: React.FC<Props> = ({ defaultTaiSanId }) => {
           items={list}
           onAdd={handleAdd}
           onDeleteMany={handleDeleteMany}
+          onImport={canCreate ? () => setShowImport(true) : undefined}
+          onExport={handleExport}
           showAdd={canCreate}
           canDelete={canDelete}
         />
@@ -193,6 +222,24 @@ const LichSuTab: React.FC<Props> = ({ defaultTaiSanId }) => {
           onSuccessAfterEdit={handleSuccessAfterEdit}
         />
       )}
+      <ImportDialog
+        open={showImport}
+        onClose={() => setShowImport(false)}
+        columns={IMPORT_COLUMNS}
+        onImport={handleImportData}
+        templateFileName={templateFileName}
+        sampleRows={importSampleRows}
+        referenceSheets={importReferenceSheets}
+      />
+      <ExportDialog
+        open={showExport}
+        onClose={() => setShowExport(false)}
+        columns={exportColumns}
+        data={exportData}
+        paginatedData={paginatedData}
+        selectedData={selectedData}
+        fileName={exportFileName}
+      />
     </>
   );
 };
