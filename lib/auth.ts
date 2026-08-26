@@ -249,6 +249,28 @@ export async function changeOwnPassword(newPassword: string): Promise<void> {
 }
 
 /**
+ * Đổi mật khẩu của chính mình NHƯNG bắt nhập đúng mật khẩu hiện tại trước.
+ *
+ * `rpc_verify_mat_khau` cố ý không grant cho role `authenticated`
+ * (docs/vps-03-cleanup-after-restore.sql), nên cách xác minh duy nhất từ trình
+ * duyệt là gọi lại chính endpoint đăng nhập: sai mật khẩu → `WrongCredentialsError`
+ * và dính luôn cơ chế chặn thử sai của auth-service. Phiên mới trả về được lưu
+ * đè lên phiên cũ để không bỏ rơi cặp token vừa cấp.
+ */
+export async function changeOwnPasswordVerified(
+  currentPassword: string,
+  newPassword: string
+): Promise<void> {
+  const email = emailPhienHienTai();
+  if (!email) throw new Error('Chưa đăng nhập.');
+
+  const res = await goiAuth('/dang-nhap', { email, mat_khau: currentPassword });
+  luuPhienTuPhanHoi(res);
+
+  await changeOwnPassword(newPassword);
+}
+
+/**
  * Bootstrap phiên trong 1 request duy nhất (RPC `rpc_get_session_bootstrap`).
  *
  * Thay cho chuỗi: `getEmployeeByEmail` + `prefetch getCurrentRoleContext` (×2 request

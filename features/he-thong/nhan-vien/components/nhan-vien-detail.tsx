@@ -16,12 +16,13 @@ import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
 import DetailToolbar, { DetailToolbarAction } from '../../../../components/shared/DetailToolbar';
 import DetailDrawerFooter from '../../../../components/shared/DetailDrawerFooter';
 import Select from '../../../../components/ui/Select';
+import Input from '../../../../components/ui/Input';
 import EnumBadge from '../../../../components/ui/EnumBadge';
 import AvatarWithFallback from '../../../../components/ui/AvatarWithFallback';
 import { formatDate, getTenureText, cn } from '@/lib/utils';
 import { CONFIRM_YES } from '../../../../lib/button-labels';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
-import { useUpdateStatusEmployee } from '../hooks/use-nhan-vien';
+import { useUpdateStatusEmployee, useResetPasswordEmployee } from '../hooks/use-nhan-vien';
 import {
   STATUS_BADGE_CONFIG,
   GENDER_BADGE_CONFIG,
@@ -29,7 +30,7 @@ import {
   CONTRACT_BADGE_CONFIG,
   EDUCATION_BADGE_CONFIG,
 } from '../core/constants';
-import { TRANG_THAI_NV } from '../../../../lib/constants';
+import { DEFAULT_PASSWORD, TRANG_THAI_NV } from '../../../../lib/constants';
 
 interface Props {
   data: Employee;
@@ -46,6 +47,7 @@ const EmployeeDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, canU
   const { t } = useTranslation();
   const confirm = useConfirmStore(state => state.confirm);
   const statusMutation = useUpdateStatusEmployee();
+  const resetPasswordMutation = useResetPasswordEmployee();
 
   const handleUpdateStatus = () => {
     let selectedStatus = data.trang_thai;
@@ -75,6 +77,46 @@ const EmployeeDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, canU
     });
   };
 
+
+  /**
+   * Đặt lại mật khẩu cho nhân viên. Bỏ trống ô nhập = cấp lại mật khẩu mặc định
+   * + bật cờ buộc đổi ở lần đăng nhập kế tiếp (xem lib/mat-khau.ts).
+   *
+   * Lỗi được ném ra để ConfirmDialog toast và giữ nguyên dialog cho admin nhập lại.
+   */
+  const handleResetPassword = () => {
+    let matKhauMoi = '';
+
+    confirm({
+      title: t('employee.detail.resetPasswordTitle'),
+      message: (
+        <div className="space-y-3 text-left py-2">
+          <p className="text-sm">
+            {t('employee.detail.resetPasswordMessage')} <strong>{data.ho_ten}</strong>
+            {data.email ? ` (${data.email})` : ''}
+          </p>
+          <Input
+            type="password"
+            autoComplete="new-password"
+            label={t('employee.form.passwordEdit')}
+            placeholder={t('employee.detail.resetPasswordPlaceholder')}
+            onChange={(e) => { matKhauMoi = e.target.value; }}
+          />
+          <p className="text-xs text-muted-foreground">
+            {t('employee.detail.resetPasswordHint', { password: DEFAULT_PASSWORD })}
+          </p>
+        </div>
+      ),
+      variant: 'warning',
+      confirmText: CONFIRM_YES(),
+      onConfirm: async () => {
+        const mk = matKhauMoi.trim();
+        if (mk && mk.length < 6) throw new Error(t('employee.validation.passwordMin'));
+        await resetPasswordMutation.mutateAsync({ id: data.id, email: data.email, matKhau: mk });
+      },
+    });
+  };
+
   const toolbarActions: DetailToolbarAction[] = [
     ...(canUpdate ? [{
       label: t('employee.detail.changeStatus'),
@@ -88,12 +130,12 @@ const EmployeeDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, canU
       onClick: () => window.open(`${window.location.origin}/ho-so-nhan-vien/${encodeURIComponent(data.id)}`, '_blank', 'noopener,noreferrer'),
       variant: "secondary"
     },
-    {
+    ...(canUpdate ? [{
       label: t('employee.detail.changePassword'),
       icon: <Key />,
-      onClick: () => { /* TODO: implement reset password */ },
+      onClick: handleResetPassword,
       variant: "warning"
-    },
+    } as DetailToolbarAction] : []),
     {
       label: t('employee.detail.sendEmail'),
       icon: <Mail />,

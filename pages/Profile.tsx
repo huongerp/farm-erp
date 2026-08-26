@@ -27,7 +27,8 @@ import {
 } from '../features/he-thong/nhan-vien/core/constants';
 import { canEditProfile } from '../lib/profile-permissions';
 import type { Employee } from '../features/he-thong/nhan-vien/core/types';
-import { TRANG_THAI_NV } from '../lib/constants';
+import { PASSWORD_MIN_LENGTH, TRANG_THAI_NV } from '../lib/constants';
+import { changeOwnPasswordVerified } from '../lib/auth';
 import { useEmployee, useUpdateEmployee } from '../features/he-thong/nhan-vien/hooks/use-nhan-vien';
 import { employeeToFormValues } from '../features/he-thong/nhan-vien/utils/employee-to-form';
 
@@ -57,6 +58,10 @@ const Profile: React.FC = () => {
 
   const [avatarModalOpen, setAvatarModalOpen] = useState(false);
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordLoading, setPasswordLoading] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
   const editable = canEditProfile(user);
@@ -87,6 +92,43 @@ const Profile: React.FC = () => {
     }
     setAvatarModalOpen(false);
     setAvatarPreview(null);
+  };
+
+  const closePasswordModal = () => {
+    setPasswordModalOpen(false);
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+  };
+
+  /**
+   * Đổi mật khẩu của chính mình. Khác modal ở Layout (chỉ hỏi mật khẩu mới),
+   * form này bắt nhập đúng mật khẩu hiện tại — xem `changeOwnPasswordVerified`.
+   */
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentPassword) {
+      toast.error(t('page.profile.currentPasswordRequired'));
+      return;
+    }
+    if (newPassword.length < PASSWORD_MIN_LENGTH) {
+      toast.error(t('nav.changePasswordMin'));
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error(t('nav.changePasswordMismatch'));
+      return;
+    }
+    setPasswordLoading(true);
+    try {
+      await changeOwnPasswordVerified(currentPassword, newPassword);
+      toast.success(t('nav.changePasswordSuccess'));
+      closePasswordModal();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('nav.changePasswordError'));
+    } finally {
+      setPasswordLoading(false);
+    }
   };
 
   const roleLabel = user?.role === 'admin' ? t('nav.roleAdmin') : t('page.profile.roleUser');
@@ -403,7 +445,7 @@ const Profile: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* ===== Modal: Đổi mật khẩu (Coming soon) ===== */}
+      {/* ===== Modal: Đổi mật khẩu ===== */}
       <AnimatePresence>
         {passwordModalOpen && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -412,20 +454,21 @@ const Profile: React.FC = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-              onClick={() => setPasswordModalOpen(false)}
+              onClick={closePasswordModal}
             />
-            <motion.div
+            <motion.form
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               className="relative bg-card rounded-2xl shadow-xl border border-border w-full max-w-md p-6"
               onClick={(e) => e.stopPropagation()}
+              onSubmit={handlePasswordSubmit}
             >
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-foreground">{t('page.profile.changePasswordTitle')}</h3>
                 <button
                   type="button"
-                  onClick={() => setPasswordModalOpen(false)}
+                  onClick={closePasswordModal}
                   className="p-1.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
                   aria-label={t('common.close')}
                 >
@@ -434,20 +477,43 @@ const Profile: React.FC = () => {
               </div>
               <p className="text-sm text-muted-foreground mb-4">{t('page.profile.changePasswordDesc')}</p>
               <div className="space-y-4">
-                <Input label={t('page.profile.currentPassword')} type="password" placeholder={t('page.profile.passwordPlaceholder')} disabled />
-                <Input label={t('page.profile.newPassword')} type="password" placeholder={t('page.profile.passwordPlaceholder')} disabled />
-                <Input label={t('page.profile.confirmPassword')} type="password" placeholder={t('page.profile.passwordPlaceholder')} disabled />
+                <Input
+                  label={t('page.profile.currentPassword')}
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  placeholder={t('page.profile.passwordPlaceholder')}
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                />
+                <Input
+                  label={t('page.profile.newPassword')}
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                  placeholder={t('page.profile.passwordPlaceholder')}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
+                <Input
+                  label={t('page.profile.confirmPassword')}
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                  placeholder={t('page.profile.passwordPlaceholder')}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
               </div>
-              <div className="mt-4 p-3 rounded-xl bg-muted/50 text-center">
-                <p className="text-xs font-medium text-muted-foreground">{t('page.profile.comingSoon')}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{t('page.profile.comingSoonDesc')}</p>
-              </div>
-              <div className="flex justify-end mt-6">
-                <Button variant="outline" className="rounded-xl" onClick={() => setPasswordModalOpen(false)}>
-                  {t('common.close')}
+              <div className="flex gap-2 mt-6">
+                <Button type="button" variant="outline" className="flex-1 rounded-xl" onClick={closePasswordModal}>
+                  {t('common.cancel')}
+                </Button>
+                <Button type="submit" className="flex-1 rounded-xl" isLoading={passwordLoading}>
+                  <Key size={16} className="mr-2" /> {t('nav.changePasswordSubmit')}
                 </Button>
               </div>
-            </motion.div>
+            </motion.form>
           </div>
         )}
       </AnimatePresence>

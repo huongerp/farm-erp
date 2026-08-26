@@ -10,6 +10,7 @@ import {
   updateEmployee,
   deleteEmployees,
   updateEmployeeStatus,
+  resetEmployeePassword,
   bulkUpdateEmployees,
   restoreEmployees,
   type EmployeeListQuery,
@@ -183,6 +184,26 @@ export const useUpdateStatusEmployee = () => {
       onError: (err: any) => toast.error(`Lỗi: ${err.message}`)
     });
 };
+
+/**
+ * Đặt lại mật khẩu cho 1 nhân viên (nút "Đổi MK" ở drawer chi tiết).
+ *
+ * Không bắt lỗi tại đây: caller gọi trong `onConfirm` của ConfirmDialog — dialog
+ * sẽ toast lỗi và GIỮ NGUYÊN form để admin nhập lại.
+ */
+export const useResetPasswordEmployee = () =>
+  useMutation({
+    mutationFn: ({ id, matKhau }: { id: string; email?: string; matKhau?: string }) =>
+      resetEmployeePassword(id, matKhau),
+    onSuccess: (res, variables) => {
+      const email = variables.email || '';
+      toast.success(
+        res.dungMacDinh
+          ? i18n.t('employee.toast.defaultPasswordSet', { email })
+          : i18n.t('employee.toast.passwordSet', { email })
+      );
+    },
+  });
 
 export const useBulkUpdateEmployees = (onSuccess?: () => void) => {
   const queryClient = useQueryClient();

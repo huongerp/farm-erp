@@ -545,6 +545,22 @@ export const updateEmployee = async (id: string, data: EmployeeFormValues): Prom
   return emp;
 };
 
+/**
+ * Đặt lại mật khẩu cho một nhân viên (admin dùng ở drawer chi tiết).
+ *
+ * Bỏ trống `matKhau` → cấp lại mật khẩu mặc định và bật cờ buộc nhân viên đổi ở
+ * lần đăng nhập kế tiếp. Khác `applyMatKhau`: đây là hành động độc lập nên lỗi
+ * PHẢI ném ra để UI biết là thất bại.
+ */
+export const resetEmployeePassword = async (
+  id: string,
+  matKhau?: string
+): Promise<{ dungMacDinh: boolean }> => {
+  const mk = matKhau?.trim();
+  await setMatKhauHash(id, mk || DEFAULT_PASSWORD, !mk);
+  return { dungMacDinh: !mk };
+};
+
 export const updateEmployeeStatus = async (ids: string[], status: string): Promise<void> => {
   const { error } = await db
     .from(TABLE)
