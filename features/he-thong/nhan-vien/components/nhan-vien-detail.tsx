@@ -41,9 +41,14 @@ interface Props {
   canUpdate?: boolean;
   /** Phân quyền: có quyền xoá (admin hoặc delete) */
   canDelete?: boolean;
+  /**
+   * Được đặt lại mật khẩu cho nhân viên này (xem core/quyen-mat-khau.ts).
+   * Hẹp hơn `canUpdate`: RPC dưới DB chỉ nhận chính chủ, cấp bậc 1 hoặc admin.
+   */
+  canResetPassword?: boolean;
 }
 
-const EmployeeDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, canUpdate = true, canDelete = true }) => {
+const EmployeeDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, canUpdate = true, canDelete = true, canResetPassword = true }) => {
   const { t } = useTranslation();
   const confirm = useConfirmStore(state => state.confirm);
   const statusMutation = useUpdateStatusEmployee();
@@ -130,7 +135,7 @@ const EmployeeDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, canU
       onClick: () => window.open(`${window.location.origin}/ho-so-nhan-vien/${encodeURIComponent(data.id)}`, '_blank', 'noopener,noreferrer'),
       variant: "secondary"
     },
-    ...(canUpdate ? [{
+    ...(canResetPassword ? [{
       label: t('employee.detail.changePassword'),
       icon: <Key />,
       onClick: handleResetPassword,

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
 import { tinhKhauHaoKy } from '../khau-hao-tai-san-supabase.service';
 import type { AssetGroup } from '../../../thiet-lap-tai-san/core/types';

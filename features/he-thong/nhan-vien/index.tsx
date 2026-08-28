@@ -36,6 +36,8 @@ import { useExportData } from '../../../lib/useExportData';
 import { TRANG_THAI_NV, type TrangThaiNV } from '../../../lib/constants';
 import { stableListQueryKeyPart } from '../../../lib/list-query-key';
 import { useShallow } from 'zustand/react/shallow';
+import { useAuthStore } from '../../../store/useStore';
+import { coQuyenDatMatKhau } from './core/quyen-mat-khau';
 
 type FormOrigin = 'list' | 'detail';
 
@@ -43,7 +45,8 @@ const EMPTY_EMPLOYEES: Employee[] = [];
 
 const EmployeePage: React.FC = () => {
   const { t } = useTranslation();
-  const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
+  const { canCreate, canUpdate, canDelete, canAdmin } = useModulePermissionFromContext();
+  const currentUser = useAuthStore((s) => s.user);
 
   const IMPORT_COLUMNS = useMemo(() => [
     { key: 'ho_ten', label: t('employee.name'), required: true },
@@ -360,6 +363,12 @@ const EmployeePage: React.FC = () => {
                 onDelete={handleDelete}
                 canUpdate={canUpdate}
                 canDelete={canDelete}
+                canResetPassword={coQuyenDatMatKhau({
+                  nhanVienDangNhapId: currentUser?.id,
+                  nhanVienMucTieuId: viewingEmp.id,
+                  capBac: currentUser?.cap_bac,
+                  canAdmin,
+                })}
             />
         )}
       </AnimatePresence>
