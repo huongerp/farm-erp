@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { pushOverlay, popOverlay, isTopOverlay } from '../overlay-stack';
+import { isAppBusy } from '../app-busy';
 
 // Module giữ state toàn cục (stack) — mỗi test cần dọn sạch bằng cách pop hết những gì đã push.
 // Không có API reset công khai (đúng ý — chỉ push/pop/isTop), nên ta tự theo dõi id đã tạo trong test.
@@ -47,5 +48,41 @@ describe('overlay-stack', () => {
 
   it('stack rỗng: isTopOverlay luôn false', () => {
     expect(isTopOverlay(1)).toBe(false);
+  });
+
+  // Cổng chặn auto-update: app không được tự reload khi còn overlay đang mở
+  // (xem lib/app-busy.ts + components/shared/PwaRegister.tsx).
+  describe('nối với app-busy', () => {
+    it('còn overlay đang mở thì app được coi là bận', () => {
+      expect(isAppBusy()).toBe(false);
+      const drawer = push();
+      expect(isAppBusy()).toBe(true);
+      popOverlay(drawer);
+      created = created.filter((id) => id !== drawer);
+      expect(isAppBusy()).toBe(false);
+    });
+
+    it('overlay xếp lớp: chỉ hết bận khi cái cuối cùng đóng', () => {
+      const form = push();
+      const lineItem = push();
+      popOverlay(lineItem);
+      created = created.filter((id) => id !== lineItem);
+      expect(isAppBusy()).toBe(true);
+      popOverlay(form);
+      created = created.filter((id) => id !== form);
+      expect(isAppBusy()).toBe(false);
+    });
+
+    it('pop trùng lặp không làm app kẹt ở trạng thái rảnh giả', () => {
+      const a = push();
+      const b = push();
+      popOverlay(a);
+      popOverlay(a);
+      created = created.filter((id) => id !== a);
+      expect(isAppBusy()).toBe(true);
+      popOverlay(b);
+      created = created.filter((id) => id !== b);
+      expect(isAppBusy()).toBe(false);
+    });
   });
 });

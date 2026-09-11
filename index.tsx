@@ -7,7 +7,11 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import ErrorBoundary from './components/shared/ErrorBoundary';
 import { queryClient } from './lib/query-client';
 
+import { toast } from 'sonner';
 import { ensureSentryInitialized } from './lib/sentry-client';
+import i18n from './lib/i18n';
+import { isAppBusy } from './lib/app-busy';
+import { PRELOAD_ERROR_RELOAD_KEY, requestReloadWhenIdle } from './lib/app-update';
 
 void ensureSentryInitialized();
 
@@ -18,11 +22,28 @@ void ensureSentryInitialized();
  * script → lỗi "Expected a JavaScript-or-Wasm module script...". Vite bắn event này đúng lúc đó;
  * tải lại trang là cách khắc phục chính thức (index.html mới sẽ trỏ đúng hash chunk mới).
  * Giới hạn 1 lần/phiên để tránh lặp vô hạn nếu lỗi không phải do stale chunk.
+ *
+ * Nhưng KHÔNG reload khi người dùng đang nhập dở — trước đây chỗ này reload vô điều kiện,
+ * đang điền phiếu là mất trắng. Lúc đó chỉ báo và ghi nhận yêu cầu; PwaRegister sẽ reload
+ * ngay khi app hết bận (xem lib/app-busy.ts, lib/app-update.ts).
  */
 window.addEventListener('vite:preloadError', () => {
-  const key = 'vite-preload-error-reloaded';
-  if (window.sessionStorage.getItem(key)) return;
-  window.sessionStorage.setItem(key, '1');
+  if (window.sessionStorage.getItem(PRELOAD_ERROR_RELOAD_KEY)) return;
+  if (isAppBusy()) {
+    requestReloadWhenIdle();
+    toast.error(i18n.t('app.chunkStaleBusy'), {
+      action: {
+        label: i18n.t('app.reloadNow'),
+        onClick: () => {
+          window.sessionStorage.setItem(PRELOAD_ERROR_RELOAD_KEY, '1');
+          window.location.reload();
+        },
+      },
+      duration: Infinity,
+    });
+    return;
+  }
+  window.sessionStorage.setItem(PRELOAD_ERROR_RELOAD_KEY, '1');
   window.location.reload();
 });
 

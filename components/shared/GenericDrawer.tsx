@@ -5,6 +5,7 @@ import { cn } from '../../lib/utils';
 import { useEnterTransition } from '../../lib/usePresenceTransition';
 import { pushOverlay, popOverlay, isTopOverlay } from '../../lib/overlay-stack';
 import { lockBodyScroll } from '../../lib/body-scroll-lock';
+import { registerBusy } from '../../lib/app-busy';
 import { useConfirmStore } from '../../store/useConfirmStore';
 import {
   getDrawerWidthClass,
@@ -102,6 +103,13 @@ const GenericDrawer: React.FC<GenericDrawerProps> = ({
 
   // Khoá cuộn nền: trước đây trang phía sau vẫn cuộn được khi drawer đang mở.
   useEffect(() => lockBodyScroll(), []);
+
+  // Báo "có dữ liệu chưa lưu" cho lib/app-busy.ts: chặn cảnh báo F5/đóng tab và chặn
+  // app tự reload để áp bản cập nhật mới trong lúc đang nhập dở.
+  useEffect(() => {
+    if (!isDirty) return;
+    return registerBusy('dirty');
+  }, [isDirty]);
 
   /** Đóng có xác nhận nếu form đang có thay đổi chưa lưu. */
   const requestClose = useCallback(() => {

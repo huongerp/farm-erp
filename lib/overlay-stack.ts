@@ -9,21 +9,32 @@
  *
  * Registry này cho từng overlay biết "tôi có đang là overlay trên cùng không" để chỉ overlay
  * đó phản hồi Escape.
+ *
+ * Registry cũng là nguồn tín hiệu 'overlay' của `lib/app-busy.ts`: hễ còn overlay đang mở
+ * thì app được coi là bận và không tự reload để áp bản cập nhật mới. Nối ở đây thay vì ở
+ * từng component để mọi GenericDrawer/ConfirmDialog được tính mà không phải sửa nơi gọi.
  */
+
+import { registerBusy } from './app-busy';
 
 let stack: number[] = [];
 let nextId = 1;
+/** Hàm gỡ "bận" tương ứng từng overlay đang mở. */
+const busyReleases = new Map<number, () => void>();
 
 /** Đăng ký một overlay mới lên đỉnh stack, trả về id để dùng cho pop/isTop. */
 export function pushOverlay(): number {
   const id = nextId++;
   stack = [...stack, id];
+  busyReleases.set(id, registerBusy('overlay'));
   return id;
 }
 
 /** Gỡ overlay khỏi stack (khi unmount hoặc đóng). An toàn khi gọi nhiều lần / id không tồn tại. */
 export function popOverlay(id: number): void {
   stack = stack.filter((x) => x !== id);
+  busyReleases.get(id)?.();
+  busyReleases.delete(id);
 }
 
 /** true nếu overlay này đang ở trên cùng (là overlay duy nhất nên phản hồi Escape). */
