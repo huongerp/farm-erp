@@ -12,9 +12,10 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'ten_hang_hoa', label: i18n.t('farmHangHoaPhanThuoc.hangHoa.store.nameCol'), visible: true, minWidth: 180, maxWidth: 320, order: 1 },
   { id: 'ten_danh_muc', label: i18n.t('farmHangHoaPhanThuoc.hangHoa.store.categoryCol'), visible: true, minWidth: 160, maxWidth: 280, order: 2 },
   { id: 'dvt', label: i18n.t('farmHangHoaPhanThuoc.hangHoa.store.unitCol'), visible: true, minWidth: 80, maxWidth: 120, order: 3 },
-  { id: 'don_gia', label: i18n.t('farmHangHoaPhanThuoc.hangHoa.store.priceCol'), visible: true, minWidth: 100, maxWidth: 140, order: 4 },
-  { id: 'mo_ta', label: i18n.t('farmHangHoaPhanThuoc.hangHoa.store.descCol'), visible: true, minWidth: 140, maxWidth: 280, order: 5 },
-  { id: 'tg_cap_nhat', label: i18n.t('farmHangHoaPhanThuoc.hangHoa.store.updatedCol'), visible: true, minWidth: 100, maxWidth: 140, order: 6 },
+  { id: 'pham_cap', label: i18n.t('farmHangHoaPhanThuoc.hangHoa.store.phamCapCol'), visible: true, minWidth: 100, maxWidth: 160, order: 4 },
+  { id: 'don_gia', label: i18n.t('farmHangHoaPhanThuoc.hangHoa.store.priceCol'), visible: true, minWidth: 100, maxWidth: 140, order: 5 },
+  { id: 'mo_ta', label: i18n.t('farmHangHoaPhanThuoc.hangHoa.store.descCol'), visible: true, minWidth: 140, maxWidth: 280, order: 6 },
+  { id: 'tg_cap_nhat', label: i18n.t('farmHangHoaPhanThuoc.hangHoa.store.updatedCol'), visible: true, minWidth: 100, maxWidth: 140, order: 7 },
 ];
 
 const initialFilters: FarmHangHoaFilters = {

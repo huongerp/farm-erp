@@ -258,6 +258,9 @@ const PhieuKhoPTDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[140px]">
                     {t('phieuKhoPhanThuoc.form.itemName')}
                   </th>
+                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[100px]">
+                    {t('phieuKhoPhanThuoc.form.phamCap')}
+                  </th>
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap w-20">
                     {t('phieuKhoPhanThuoc.form.unit')}
                   </th>
@@ -284,6 +287,12 @@ const PhieuKhoPTDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
                     <td className="px-4 py-2.5 text-muted-foreground tabular-nums">{idx + 1}</td>
                     <td className="px-4 py-2.5 font-mono text-xs">{ct.ma_hang ?? '—'}</td>
                     <td className="px-4 py-2.5 text-sm">{ct.ten_hang ?? ct.ten_hang_hoa ?? '—'}</td>
+                    <td
+                      className="px-4 py-2.5 text-xs text-muted-foreground max-w-[120px] truncate"
+                      title={ct.pham_cap ?? undefined}
+                    >
+                      {ct.pham_cap ?? '—'}
+                    </td>
                     <td className="px-4 py-2.5 text-xs text-muted-foreground">{ct.don_vi_tinh ?? '—'}</td>
                     <td className="px-4 py-2.5 tabular-nums">{formatNumberVN(ct.so_luong)}</td>
                     <td className="px-4 py-2.5 tabular-nums">{formatNumberVN(ct.don_gia)}</td>

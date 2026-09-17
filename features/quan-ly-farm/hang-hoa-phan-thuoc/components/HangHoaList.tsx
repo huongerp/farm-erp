@@ -58,6 +58,12 @@ const HangHoaList: React.FC<Props> = ({
         return <span className="text-sm text-muted-foreground">{item.ten_danh_muc ?? '—'}</span>;
       case 'dvt':
         return <span className="text-sm text-muted-foreground">{item.dvt ?? '—'}</span>;
+      case 'pham_cap':
+        return (
+          <span className="block truncate whitespace-nowrap text-sm text-muted-foreground" title={item.pham_cap ?? undefined}>
+            {item.pham_cap ?? '—'}
+          </span>
+        );
       case 'don_gia':
         return (
           <span className="text-sm text-muted-foreground tabular-nums">

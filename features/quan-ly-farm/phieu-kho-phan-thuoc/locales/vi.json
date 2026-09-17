@@ -46,6 +46,9 @@
   "phieuKhoPhanThuoc.form.unitPrice": "Đơn giá",
   "phieuKhoPhanThuoc.form.amount": "Thành tiền",
   "phieuKhoPhanThuoc.form.unit": "ĐVT",
+  "phieuKhoPhanThuoc.form.phamCap": "Phẩm cấp",
+  "phieuKhoPhanThuoc.form.phamCapPlaceholder": "VD: XK, NĐ, Loại 1…",
+  "phieuKhoPhanThuoc.form.phamCapCreatableLabel": "Thêm phẩm cấp",
   "phieuKhoPhanThuoc.form.note": "Ghi chú dòng",
   "phieuKhoPhanThuoc.form.itemsSection": "Chi tiết hàng hóa",
   "phieuKhoPhanThuoc.form.addRow": "Thêm dòng",
@@ -105,6 +108,7 @@
   "phieuKhoPhanThuoc.preview.danhMuc": "Danh mục",
   "phieuKhoPhanThuoc.preview.soLot": "Số LOT",
   "phieuKhoPhanThuoc.preview.totalQty": "Tổng số lượng",
+  "phieuKhoPhanThuoc.preview.totalQtyByPhamCap": "Tổng SL — {{phamCap}}",
   "phieuKhoPhanThuoc.preview.danhSachChiTiet": "Danh sách chi tiết",
   "phieuKhoPhanThuoc.preview.signHint": "(Ký, ghi rõ họ tên)",
   "phieuKhoPhanThuoc.preview.signCreator": "Người lập phiếu",
@@ -179,6 +183,8 @@
   "phieuKhoPhanThuoc.export.chiTiet.don_gia": "Đơn giá",
   "phieuKhoPhanThuoc.export.chiTiet.thanh_tien": "Thành tiền",
   "phieuKhoPhanThuoc.export.chiTiet.don_vi_tinh": "ĐVT",
+  "phieuKhoPhanThuoc.export.chiTiet.pham_cap": "Phẩm cấp",
   "phieuKhoPhanThuoc.export.chiTiet.so_lot": "Số LOT",
-  "phieuKhoPhanThuoc.export.chiTiet.ghi_chu": "Ghi chú"
+  "phieuKhoPhanThuoc.export.chiTiet.ghi_chu": "Ghi chú",
+  "phieuKhoPhanThuoc.store.phamCapCol": "Phẩm cấp"
 }

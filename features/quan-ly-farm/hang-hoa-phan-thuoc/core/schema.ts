@@ -27,6 +27,7 @@ export const farmHangHoaSchema = z.object({
   ten_hang_hoa: z.string().min(1, hh('validation.nameRequired')).max(255, hh('validation.nameMax')),
   id_danh_muc_cap2: z.preprocess((v) => (v == null ? '' : v), z.string().min(1, hh('validation.categoryRequired'))),
   dvt: z.preprocess((v) => (v == null ? '' : v), z.string().min(1, hh('validation.unitRequired'))),
+  pham_cap: z.string().optional().nullable(),
   don_gia: z.preprocess(
     (val) => (val === '' || val === null || val === undefined ? undefined : Number(val)),
     z.number({ message: hh('validation.priceMin') }).min(0, hh('validation.priceMin')).optional(),

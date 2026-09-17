@@ -18,6 +18,8 @@ export interface FarmHangHoa {
   ma_hang_hoa: string;
   ten_hang_hoa: string;
   dvt: string | null;
+  /** Phẩm cấp (cột pham_cap, tùy chọn) — text tự do, app gợi ý từ giá trị đã có. */
+  pham_cap?: string | null;
   don_gia: number | null;
   tg_tao: string;
   tg_cap_nhat: string;

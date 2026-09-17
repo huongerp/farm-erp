@@ -26,6 +26,8 @@ export interface PhieuKhoPTChiTiet {
   don_gia?: number;
   thanh_tien?: number;
   don_vi_tinh?: string;
+  /** Phẩm cấp (snapshot fp_farm_phieu_kho_phan_thuoc_chi_tiet.pham_cap). */
+  pham_cap?: string | null;
   so_lot?: string;
   ghi_chu?: string;
   nguoi_tao_id?: number | null;
@@ -92,6 +94,8 @@ export interface ChiTietPhieuKhoPTFlat {
   don_gia?: number;
   thanh_tien?: number;
   don_vi_tinh?: string;
+  /** Phẩm cấp (snapshot fp_farm_phieu_kho_phan_thuoc_chi_tiet.pham_cap). */
+  pham_cap?: string | null;
   so_lot?: string;
   ghi_chu?: string;
   chi_tiet_nguoi_tao_id?: number | null;

@@ -108,12 +108,25 @@ const PhieuKhoPTForm: React.FC<Props> = ({ khoList, initialData, prefillValues, 
   );
 
   const hangHoaMap = useMemo(() => {
-    const m: Record<string, { don_vi_tinh?: string; don_gia?: number }> = {};
+    const m: Record<string, { don_vi_tinh?: string; don_gia?: number; pham_cap?: string }> = {};
     hangHoaList.forEach((h) => {
-      m[h.id] = { don_vi_tinh: h.dvt ?? undefined, don_gia: h.don_gia != null ? Number(h.don_gia) : undefined };
+      m[h.id] = {
+        don_vi_tinh: h.dvt ?? undefined,
+        don_gia: h.don_gia != null ? Number(h.don_gia) : undefined,
+        pham_cap: h.pham_cap ?? undefined,
+      };
     });
     return m;
   }, [hangHoaList]);
+
+  /** Gợi ý phẩm cấp: gom các giá trị đã có trong danh mục hàng hóa farm. */
+  const phamCapComboboxOptions = useMemo(
+    () =>
+      [...new Set(hangHoaList.map((h) => h.pham_cap).filter((x): x is string => x != null && x.trim() !== ''))]
+        .sort((a, b) => a.localeCompare(b, 'vi'))
+        .map((v) => ({ value: v, label: v })),
+    [hangHoaList]
+  );
 
   const { fields, append, remove } = useFieldArray({ control, name: 'chi_tiet' });
 
@@ -139,6 +152,7 @@ const PhieuKhoPTForm: React.FC<Props> = ({ khoList, initialData, prefillValues, 
           id_hang_hoa: ct.id_hang_hoa,
           so_luong: ct.so_luong,
           don_gia: ct.don_gia,
+          pham_cap: ct.pham_cap ?? hangHoaMap[ct.id_hang_hoa]?.pham_cap ?? '',
           so_lot: ct.so_lot ?? '',
           ghi_chu: ct.ghi_chu ?? '',
         })),
@@ -147,10 +161,22 @@ const PhieuKhoPTForm: React.FC<Props> = ({ khoList, initialData, prefillValues, 
         setValue('nguoi_tao_id', Number(user.id));
       }
     } else {
-      reset({ ...defaultValues, ngay: today(), loai: 'nhập', ...prefillValues });
+      // Dòng điền sẵn (từ Đề xuất mua hàng) chưa có phẩm cấp → lấy của danh mục hàng hóa
+      // để người lập thấy ngay trước khi lưu, vẫn sửa lẻ được.
+      const prefillChiTiet = prefillValues?.chi_tiet?.map((c) => ({
+        ...c,
+        pham_cap: c.pham_cap?.trim() || hangHoaMap[c.id_hang_hoa]?.pham_cap || '',
+      }));
+      reset({
+        ...defaultValues,
+        ngay: today(),
+        loai: 'nhập',
+        ...prefillValues,
+        ...(prefillChiTiet ? { chi_tiet: prefillChiTiet } : {}),
+      });
       if (user?.id) setValue('nguoi_tao_id', Number(user.id));
     }
-  }, [initialData, prefillValues, reset, user?.id, setValue, isDirty]);
+  }, [initialData, prefillValues, hangHoaMap, reset, user?.id, setValue, isDirty]);
 
   useEffect(() => {
     if (loaiWatch !== 'chuyển') {
@@ -196,6 +222,7 @@ const PhieuKhoPTForm: React.FC<Props> = ({ khoList, initialData, prefillValues, 
         id_hang_hoa: c.id_hang_hoa.trim(),
         so_luong: Number(c.so_luong),
         don_gia: c.don_gia != null ? Number(c.don_gia) : undefined,
+        pham_cap: c.pham_cap?.trim() || undefined,
         so_lot: c.so_lot?.trim() || undefined,
         ghi_chu: c.ghi_chu?.trim() || undefined,
       })),
@@ -210,7 +237,7 @@ const PhieuKhoPTForm: React.FC<Props> = ({ khoList, initialData, prefillValues, 
   const isLoading = createMutation.isPending || updateMutation.isPending;
   const isChuyen = loaiWatch === 'chuyển';
 
-  const chiTietValues: { id_hang_hoa?: string; so_luong?: number; don_gia?: number; so_lot?: string; ghi_chu?: string }[] =
+  const chiTietValues: { id_hang_hoa?: string; so_luong?: number; don_gia?: number; pham_cap?: string | null; so_lot?: string; ghi_chu?: string }[] =
     Array.isArray(watch('chi_tiet')) ? watch('chi_tiet') : [];
 
   const loaiComboboxOptions = useMemo(
@@ -361,7 +388,7 @@ const PhieuKhoPTForm: React.FC<Props> = ({ khoList, initialData, prefillValues, 
           icon={<Package size={14} className="text-primary" />}
           count={fields.length}
           addLabel={t('phieuKhoPhanThuoc.form.addRow')}
-          onAdd={() => append({ id_hang_hoa: '', so_luong: 0, don_gia: 0, so_lot: '', ghi_chu: '' })}
+          onAdd={() => append({ id_hang_hoa: '', so_luong: 0, don_gia: 0, pham_cap: '', so_lot: '', ghi_chu: '' })}
           emptyTitle={t('phieuKhoPhanThuoc.form.noItems')}
           emptyDescription={t('phieuKhoPhanThuoc.form.noItemsHint')}
           maxTableHeight="320px"
@@ -371,6 +398,9 @@ const PhieuKhoPTForm: React.FC<Props> = ({ khoList, initialData, prefillValues, 
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap w-10">#</th>
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[200px]">
                 {t('phieuKhoPhanThuoc.form.item')}
+              </th>
+              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[120px]">
+                {t('phieuKhoPhanThuoc.form.phamCap')}
               </th>
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[110px]">
                 {t('phieuKhoPhanThuoc.form.quantity')}
@@ -398,7 +428,7 @@ const PhieuKhoPTForm: React.FC<Props> = ({ khoList, initialData, prefillValues, 
           <tbody className="[&>tr>td]:border-b [&>tr>td]:border-border">
             {fields.length === 0 ? (
               <tr>
-                <td colSpan={9} className="px-4 py-6 text-center text-muted-foreground text-xs">
+                <td colSpan={10} className="px-4 py-6 text-center text-muted-foreground text-xs">
                   {t('phieuKhoPhanThuoc.form.noItems')}
                 </td>
               </tr>
@@ -427,6 +457,10 @@ const PhieuKhoPTForm: React.FC<Props> = ({ khoList, initialData, prefillValues, 
                                     setValue(`chi_tiet.${index}.id_hang_hoa`, h.id);
                                     const dg = hangHoaMap[h.id]?.don_gia;
                                     setValue(`chi_tiet.${index}.don_gia`, dg != null ? dg : 0);
+                                    setValue(
+                                      `chi_tiet.${index}.pham_cap`,
+                                      h.pham_cap ?? hangHoaMap[h.id]?.pham_cap ?? ''
+                                    );
                                   }
                                 });
                                 return;
@@ -434,6 +468,7 @@ const PhieuKhoPTForm: React.FC<Props> = ({ khoList, initialData, prefillValues, 
                               f.onChange(v ?? '');
                               const dg = v ? hangHoaMap[String(v)]?.don_gia : undefined;
                               setValue(`chi_tiet.${index}.don_gia`, dg != null ? dg : 0);
+                              setValue(`chi_tiet.${index}.pham_cap`, v ? (hangHoaMap[String(v)]?.pham_cap ?? '') : '');
                             }}
                             placeholder={isLoadingHangHoa ? t('common.loading') : t('phieuKhoPhanThuoc.form.itemPlaceholder')}
                             searchPlaceholder={t('phieuKhoPhanThuoc.form.itemSearchPlaceholder')}
@@ -442,6 +477,25 @@ const PhieuKhoPTForm: React.FC<Props> = ({ khoList, initialData, prefillValues, 
                             triggerClassName="h-9 text-sm border-border rounded-md"
                             dropdownInPortal
                             renderOption={renderAddOption}
+                          />
+                        )}
+                      />
+                    </td>
+                    <td className="px-4 py-2.5 min-w-[120px] align-top">
+                      <Controller
+                        name={`chi_tiet.${index}.pham_cap`}
+                        control={control}
+                        render={({ field: f }) => (
+                          <Combobox
+                            options={phamCapComboboxOptions}
+                            value={f.value || null}
+                            onChange={(v) => f.onChange(v ?? '')}
+                            placeholder={t('phieuKhoPhanThuoc.form.phamCapPlaceholder')}
+                            searchable
+                            creatable
+                            creatableLabel={t('phieuKhoPhanThuoc.form.phamCapCreatableLabel')}
+                            dropdownInPortal
+                            triggerClassName="h-9 text-sm border-border rounded-md"
                           />
                         )}
                       />

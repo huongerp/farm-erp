@@ -19,12 +19,13 @@ import Textarea from '../../../../components/ui/Textarea';
 interface Props {
   initialData?: FarmHangHoa | null;
   existingDvtList?: string[];
+  existingPhamCapList?: string[];
   onClose: () => void;
   /** Gọi sau khi tạo mới thành công (trước khi đóng drawer nếu onClose được gọi trong callback). */
   onSuccessCreate?: (item: FarmHangHoa) => void;
 }
 
-const HangHoaForm: React.FC<Props> = ({ initialData, existingDvtList = [], onClose, onSuccessCreate }) => {
+const HangHoaForm: React.FC<Props> = ({ initialData, existingDvtList = [], existingPhamCapList = [], onClose, onSuccessCreate }) => {
   const { t } = useTranslation();
   const isEdit = !!initialData;
   const createMutation = useCreateFarmHangHoa((created) => {
@@ -51,6 +52,7 @@ const HangHoaForm: React.FC<Props> = ({ initialData, existingDvtList = [], onClo
     ten_hang_hoa: '',
     id_danh_muc_cap2: '',
     dvt: '',
+    pham_cap: null,
     don_gia: undefined,
     mo_ta: null,
   };
@@ -73,6 +75,19 @@ const HangHoaForm: React.FC<Props> = ({ initialData, existingDvtList = [], onClo
     return [...items].sort((a, b) => a.localeCompare(b, 'vi')).map((d) => ({ value: d, label: d }));
   }, [existingDvtList, dvtWatch]);
 
+  const phamCapWatch = watch('pham_cap');
+
+  const phamCapOptions = useMemo(() => {
+    const items = new Set<string>();
+    existingPhamCapList.forEach((d) => {
+      const s = d?.trim();
+      if (s) items.add(s);
+    });
+    const cur = String(phamCapWatch ?? '').trim();
+    if (cur) items.add(cur);
+    return [...items].sort((a, b) => a.localeCompare(b, 'vi')).map((d) => ({ value: d, label: d }));
+  }, [existingPhamCapList, phamCapWatch]);
+
   useEffect(() => {
     if (initialData) {
       reset({
@@ -80,6 +95,7 @@ const HangHoaForm: React.FC<Props> = ({ initialData, existingDvtList = [], onClo
         ten_hang_hoa: initialData.ten_hang_hoa,
         id_danh_muc_cap2: initialData.danh_muc_id ?? '',
         dvt: initialData.dvt ?? '',
+        pham_cap: initialData.pham_cap ?? null,
         don_gia: initialData.don_gia ?? undefined,
         mo_ta: initialData.mo_ta ?? null,
       });
@@ -89,6 +105,7 @@ const HangHoaForm: React.FC<Props> = ({ initialData, existingDvtList = [], onClo
         ten_hang_hoa: '',
         id_danh_muc_cap2: '',
         dvt: '',
+        pham_cap: null,
         don_gia: undefined,
         mo_ta: null,
       });
@@ -100,6 +117,7 @@ const HangHoaForm: React.FC<Props> = ({ initialData, existingDvtList = [], onClo
     // (schema.ts: min(1) / z.number()) trước khi RHF gọi handler này.
     const sanitized = {
       ...data,
+      pham_cap: data.pham_cap?.trim() || null,
       mo_ta: data.mo_ta?.trim() || null,
     };
     if (isEdit && initialData) {
@@ -190,6 +208,26 @@ const HangHoaForm: React.FC<Props> = ({ initialData, existingDvtList = [], onClo
                   dropdownInPortal
                   required
                   error={errors.dvt?.message}
+                />
+              )}
+            />
+            <Controller
+              name="pham_cap"
+              control={control}
+              render={({ field }) => (
+                <Combobox
+                  label={t('farmHangHoaPhanThuoc.hangHoa.form.phamCap')}
+                  icon={<Package size={12} />}
+                  options={phamCapOptions}
+                  value={field.value ?? ''}
+                  onChange={(v) => field.onChange(typeof v === 'string' ? v : String(v ?? ''))}
+                  placeholder={t('farmHangHoaPhanThuoc.hangHoa.form.phamCapPlaceholder')}
+                  searchPlaceholder={t('farmHangHoaPhanThuoc.hangHoa.form.phamCapSearchPlaceholder')}
+                  creatable
+                  creatableLabel={t('farmHangHoaPhanThuoc.hangHoa.form.phamCapCreatableLabel')}
+                  searchable
+                  dropdownInPortal
+                  error={errors.pham_cap?.message}
                 />
               )}
             />

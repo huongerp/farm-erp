@@ -153,6 +153,14 @@ const ChiTietList: React.FC<Props> = ({
             {formatNumberVN(row.thanh_tien)}
           </td>
         );
+      case 'pham_cap':
+        return (
+          <td key={col.id} className="px-4 py-3 text-xs text-muted-foreground" style={getColumnCellStyle(col)}>
+            <span className="block truncate whitespace-nowrap" title={row.pham_cap ?? undefined}>
+              {row.pham_cap ?? '—'}
+            </span>
+          </td>
+        );
       case 'don_vi_tinh':
         return (
           <td key={col.id} className="px-4 py-3 text-xs text-muted-foreground" style={getColumnCellStyle(col)}>

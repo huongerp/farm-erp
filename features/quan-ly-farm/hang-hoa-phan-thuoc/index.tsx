@@ -88,6 +88,13 @@ const HangHoaPhanThuocPage: React.FC = () => {
       ),
     [hhList]
   );
+  const existingPhamCapList = useMemo(
+    () =>
+      [...new Set(hhList.map((h) => h.pham_cap).filter((x): x is string => x != null && x.trim() !== ''))].sort((a, b) =>
+        a.localeCompare(b, 'vi')
+      ),
+    [hhList]
+  );
   const deleteHh = useDeleteFarmHangHoa();
   const deleteHhMany = useDeleteFarmHangHoaMany();
 
@@ -137,7 +144,8 @@ const HangHoaPhanThuocPage: React.FC = () => {
       item.ten_hang_hoa.toLowerCase().includes(searchLower) ||
       item.ma_hang_hoa.toLowerCase().includes(searchLower) ||
       (item.ten_danh_muc?.toLowerCase().includes(searchLower) ?? false) ||
-      (item.dvt?.toLowerCase().includes(searchLower) ?? false);
+      (item.dvt?.toLowerCase().includes(searchLower) ?? false) ||
+      (item.pham_cap?.toLowerCase().includes(searchLower) ?? false);
     const matchesDanhMucCha =
       f.id_danh_muc_cha.length === 0 ||
       (item.danh_muc_cha_id != null && f.id_danh_muc_cha.includes(item.danh_muc_cha_id));
@@ -368,6 +376,7 @@ const HangHoaPhanThuocPage: React.FC = () => {
           <HangHoaForm
             initialData={hhEditing}
             existingDvtList={existingDvtList}
+            existingPhamCapList={existingPhamCapList}
             onClose={() => {
               setShowHhForm(false);
               setHhEditing(null);

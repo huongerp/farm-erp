@@ -23,7 +23,7 @@ const VIEW_SUMMARY = 'v_farm_phieu_kho_phan_thuoc_summary';
 const VIEW_FLAT = 'v_farm_phieu_kho_phan_thuoc_chi_tiet_flat';
 
 const PHIEU_PT_CHI_TIET_ROW_SELECT =
-  'id, id_phieu_kho, id_hang_hoa, ten_hang_hoa, don_vi_tinh, so_luong, don_gia, thanh_tien, so_lot, ghi_chu, nguoi_tao_id, ten_nguoi_tao, tg_tao, tg_cap_nhat';
+  'id, id_phieu_kho, id_hang_hoa, ten_hang_hoa, don_vi_tinh, pham_cap, so_luong, don_gia, thanh_tien, so_lot, ghi_chu, nguoi_tao_id, ten_nguoi_tao, tg_tao, tg_cap_nhat';
 
 const PHIEU_PT_SUMMARY_SELECT =
   'id, so_phieu, ngay, loai, kho_id, ten_kho, kho_den_id, ten_kho_den, trang_thai, mo_ta, id_nguoi_duyet, nguoi_tao_id, ten_nguoi_tao, id_de_xuat_mua_hang, so_phieu_de_xuat, tg_tao, tg_cap_nhat, so_dong, tong_so_luong, tong_tien, ref_ten_kho, ref_ten_kho_den, ref_ten_nguoi_tao, ref_ten_nguoi_duyet';
@@ -58,6 +58,7 @@ interface ChiTietDbRow {
   id_hang_hoa: number;
   ten_hang_hoa: string | null;
   don_vi_tinh: string | null;
+  pham_cap: string | null;
   so_luong: number;
   don_gia: number | null;
   thanh_tien: number | null;
@@ -97,6 +98,7 @@ interface PhieuKhoPTChiTietFlatViewRow {
   id_hang_hoa: number;
   ten_hang_hoa: string | null;
   don_vi_tinh: string | null;
+  pham_cap: string | null;
   so_luong: number | string | null;
   don_gia: number | string | null;
   thanh_tien: number | string | null;
@@ -126,7 +128,7 @@ interface PhieuKhoPTChiTietFlatViewRow {
 }
 
 const PHIEU_PT_CHI_TIET_FLAT_SELECT =
-  'chi_tiet_id, id_phieu_kho, id_hang_hoa, ten_hang_hoa, don_vi_tinh, so_luong, don_gia, thanh_tien, so_lot, ghi_chu, chi_tiet_nguoi_tao_id, chi_tiet_ten_nguoi_tao, chi_tiet_tg_tao, chi_tiet_tg_cap_nhat, phieu_id, so_phieu, ngay, loai, kho_id, ten_kho, kho_den_id, ten_kho_den, trang_thai, mo_ta, trao_doi, phieu_nguoi_tao_id, phieu_ten_nguoi_tao, id_nguoi_duyet, phieu_tg_tao, phieu_tg_cap_nhat, ma_hang';
+  'chi_tiet_id, id_phieu_kho, id_hang_hoa, ten_hang_hoa, don_vi_tinh, pham_cap, so_luong, don_gia, thanh_tien, so_lot, ghi_chu, chi_tiet_nguoi_tao_id, chi_tiet_ten_nguoi_tao, chi_tiet_tg_tao, chi_tiet_tg_cap_nhat, phieu_id, so_phieu, ngay, loai, kho_id, ten_kho, kho_den_id, ten_kho_den, trang_thai, mo_ta, trao_doi, phieu_nguoi_tao_id, phieu_ten_nguoi_tao, id_nguoi_duyet, phieu_tg_tao, phieu_tg_cap_nhat, ma_hang';
 
 function rowToPhieu(
   row: PhieuKhoPTDbRow,
@@ -174,6 +176,7 @@ function rowToChiTiet(
     don_gia: row.don_gia != null ? Number(row.don_gia) : undefined,
     thanh_tien: row.thanh_tien != null ? Number(row.thanh_tien) : undefined,
     don_vi_tinh: row.don_vi_tinh ?? undefined,
+    pham_cap: row.pham_cap ?? null,
     so_lot: row.so_lot ?? undefined,
     ghi_chu: row.ghi_chu ?? undefined,
     nguoi_tao_id: row.nguoi_tao_id ?? undefined,
@@ -306,9 +309,9 @@ export async function createPhieuKhoPTSupabase(data: PhieuKhoPTFormValues): Prom
   const idStr = String(idPhieu);
 
   const hangHoaList = await getAllFarmHangHoa();
-  const hangHoaMap: Record<string, { ten_hang_hoa: string; don_vi_tinh?: string }> = {};
+  const hangHoaMap: Record<string, { ten_hang_hoa: string; don_vi_tinh?: string; pham_cap?: string | null }> = {};
   hangHoaList.forEach((h) => {
-    hangHoaMap[h.id] = { ten_hang_hoa: h.ten_hang_hoa ?? '', don_vi_tinh: h.dvt ?? undefined };
+    hangHoaMap[h.id] = { ten_hang_hoa: h.ten_hang_hoa ?? '', don_vi_tinh: h.dvt ?? undefined, pham_cap: h.pham_cap ?? null };
   });
 
   const chiTietPayload = (data.chi_tiet ?? []).filter((c) => c.id_hang_hoa?.trim() && Number(c.so_luong) > 0);
@@ -322,6 +325,8 @@ export async function createPhieuKhoPTSupabase(data: PhieuKhoPTFormValues): Prom
         id_hang_hoa: Number(c.id_hang_hoa),
         ten_hang_hoa: h?.ten_hang_hoa ?? null,
         don_vi_tinh: h?.don_vi_tinh ?? null,
+        // Để trống trên form → lấy phẩm cấp của danh mục hàng hóa (snapshot lúc lập phiếu).
+        pham_cap: c.pham_cap?.trim() || h?.pham_cap || null,
         so_luong: sl,
         don_gia: dg,
         thanh_tien: sl * dg,
@@ -392,9 +397,9 @@ export async function updatePhieuKhoPTSupabase(id: string, data: PhieuKhoPTFormV
   await db.from(TABLE_CHI_TIET).delete().eq('id_phieu_kho', idNum);
 
   const hangHoaList = await getAllFarmHangHoa();
-  const hangHoaMap: Record<string, { ten_hang_hoa: string; don_vi_tinh?: string }> = {};
+  const hangHoaMap: Record<string, { ten_hang_hoa: string; don_vi_tinh?: string; pham_cap?: string | null }> = {};
   hangHoaList.forEach((h) => {
-    hangHoaMap[h.id] = { ten_hang_hoa: h.ten_hang_hoa ?? '', don_vi_tinh: h.dvt ?? undefined };
+    hangHoaMap[h.id] = { ten_hang_hoa: h.ten_hang_hoa ?? '', don_vi_tinh: h.dvt ?? undefined, pham_cap: h.pham_cap ?? null };
   });
 
   const chiTietPayload = (data.chi_tiet ?? []).filter((c) => c.id_hang_hoa?.trim() && Number(c.so_luong) > 0);
@@ -408,6 +413,8 @@ export async function updatePhieuKhoPTSupabase(id: string, data: PhieuKhoPTFormV
         id_hang_hoa: Number(c.id_hang_hoa),
         ten_hang_hoa: h?.ten_hang_hoa ?? null,
         don_vi_tinh: h?.don_vi_tinh ?? null,
+        // Để trống trên form → lấy phẩm cấp của danh mục hàng hóa (snapshot lúc lập phiếu).
+        pham_cap: c.pham_cap?.trim() || h?.pham_cap || null,
         so_luong: sl,
         don_gia: dg,
         thanh_tien: sl * dg,
@@ -594,6 +601,7 @@ function mapPhieuKhoPTChiTietFlatViewRows(flatRows: PhieuKhoPTChiTietFlatViewRow
       don_gia: r.don_gia != null ? Number(r.don_gia) : undefined,
       thanh_tien: r.thanh_tien != null ? Number(r.thanh_tien) : undefined,
       don_vi_tinh: r.don_vi_tinh ?? undefined,
+      pham_cap: r.pham_cap ?? null,
       so_lot: r.so_lot ?? undefined,
       ghi_chu: r.ghi_chu ?? undefined,
       chi_tiet_nguoi_tao_id: lineNvId,
