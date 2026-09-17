@@ -15,6 +15,7 @@
   "phieuDeXuatVatTu.store.nguoiDeXuatCol": "Người đề xuất",
   "phieuDeXuatVatTu.store.nguoiDuyetCol": "Người duyệt",
   "phieuDeXuatVatTu.store.notesCol": "Ghi chú",
+  "phieuDeXuatVatTu.store.traoDoiGanNhatCol": "Trao đổi gần nhất",
   "phieuDeXuatVatTu.store.lineItemsCol": "Số mặt hàng",
   "phieuDeXuatVatTu.store.totalQuantityCol": "Tổng số lượng",
   "phieuDeXuatVatTu.store.createdAtCol": "Ngày tạo",

@@ -1,6 +1,6 @@
 /**
  * Phạm vi xem Nơi quản lý theo phân quyền:
- * - quan_tri (admin/all) hoặc thu_tu chức vụ = 1 → viewAll.
+ * - quan_tri (admin/all) hoặc nhân viên cấp bậc 1 → viewAll.
  * - Ngược lại → nơi lưu thuộc chi nhánh được phân (chi_nhanh_ids).
  */
 import { useMemo } from 'react';

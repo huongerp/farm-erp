@@ -29,7 +29,8 @@ import { useExportData } from '../../../lib/useExportData';
 import { TRANG_THAI_HOAT_DONG } from '../../../lib/constants';
 import type { HangHoa } from './core/types';
 import type { DinhMucSummaryMap } from './components/DanhSachHangHoaList';
-import type { HangHoaImportRow, ImportHangHoaResult } from './services/hang-hoa-service';
+import type { HangHoaRefColumn, ImportHangHoaResult } from './services/hang-hoa-service';
+import type { ImportMode, ImportOptions } from '../../../lib/import-types';
 
 const DanhSachHangHoaPage: React.FC = () => {
   const { t } = useTranslation();
@@ -323,26 +324,33 @@ const DanhSachHangHoaPage: React.FC = () => {
     setEditingItem(null);
   };
 
-  const handleImportData = async (data: Record<string, unknown>[]) => {
+  const handleImportData = async (data: Record<string, unknown>[], { mode, refColumn }: ImportOptions) => {
     setImportErrors([]);
-    const rows: HangHoaImportRow[] = data.map((row) => ({
-      ma_hang_hoa: row.ma_hang_hoa != null ? String(row.ma_hang_hoa) : undefined,
-      ten_hang_hoa: row.ten_hang_hoa != null ? String(row.ten_hang_hoa) : undefined,
-      danh_muc: row.danh_muc != null ? String(row.danh_muc) : undefined,
-      dvt: row.dvt != null ? String(row.dvt) : undefined,
-      don_gia: row.don_gia as string | number | undefined,
-      pham_cap: row.pham_cap != null ? String(row.pham_cap) : undefined,
-      mo_ta: row.mo_ta != null ? String(row.mo_ta) : undefined,
-      trang_thai: row.trang_thai != null ? String(row.trang_thai) : undefined,
-    }));
-    const result = await importMutation.mutateAsync(rows);
-    if (result.errors.length > 0) {
-      setImportErrors(result.errors);
-    }
-    if (result.created > 0 || result.updated > 0) {
-      if (result.errors.length === 0) setShowImport(false);
-    }
+    const result = await importMutation.mutateAsync({
+      rows: data,
+      mode,
+      refColumn: (refColumn as HangHoaRefColumn) ?? 'ma_hang_hoa',
+    });
+    setImportErrors(result.errors);
+    return { created: result.created, updated: result.updated };
   };
+
+  /**
+   * Nút Import chỉ mở cho người có quyền tạo (mọi chế độ đều có thể sinh dòng mới),
+   * còn chế độ ghi đè thì phải có thêm quyền sửa.
+   */
+  const importModes = useMemo<ImportMode[]>(
+    () => (canUpdate ? (['create', 'upsert'] as ImportMode[]) : (['create'] as ImportMode[])),
+    [canUpdate]
+  );
+
+  const importRefColumns = useMemo(
+    () => [
+      { key: 'ma_hang_hoa', label: t('hangHoa.form.code') },
+      { key: 'ten_hang_hoa', label: t('hangHoa.form.name') },
+    ],
+    [t]
+  );
 
   const tabs = useMemo(
     () => [
@@ -365,7 +373,7 @@ const DanhSachHangHoaPage: React.FC = () => {
               selectedCount={selectedIds.size}
               onAdd={handleAdd}
               onExport={() => setShowExport(true)}
-              onImport={() => setShowImport(true)}
+              onImport={canCreate ? () => setShowImport(true) : undefined}
               onDeleteMany={handleDeleteMany}
               onStatusChangeMany={handleStatusChangeMany}
               canCreate={canCreate}
@@ -433,6 +441,8 @@ const DanhSachHangHoaPage: React.FC = () => {
             referenceSheets={importReferenceSheets}
             sampleRows={importSampleRows}
             importErrors={importErrors}
+            modes={importModes}
+            refColumns={importRefColumns}
           />
         )}
       </AnimatePresence>

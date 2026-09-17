@@ -8,12 +8,15 @@ import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolb
 import { useFarmHangHoaStore } from '../store/useFarmHangHoaStore';
 import { useFarmDanhMucList } from '../hooks/use-farm-danh-muc';
 import type { FarmHangHoa } from '../core/types';
+import ImportExportButtons, { buildImportExportMobileActions } from './ImportExportButtons';
 
 interface Props {
   data: FarmHangHoa[];
   selectedCount: number;
   onAdd: () => void;
   onDeleteMany: () => void;
+  onImport?: () => void;
+  onExport?: () => void;
   canCreate?: boolean;
   canDelete?: boolean;
 }
@@ -23,6 +26,8 @@ const HangHoaToolbar: React.FC<Props> = ({
   selectedCount,
   onAdd,
   onDeleteMany,
+  onImport,
+  onExport,
   canCreate = true,
   canDelete = true,
 }) => {
@@ -172,16 +177,26 @@ const HangHoaToolbar: React.FC<Props> = ({
     ]
   );
 
-  const renderActions = canCreate ? (
-    <Button
-      onClick={onAdd}
-      size="sm"
-      className="bg-primary text-white hover:bg-primary/90 shadow-md shadow-primary/20 h-9 px-3 sm:px-4"
-    >
-      <Plus className="w-5 h-5 sm:w-4 sm:h-4 sm:mr-2" />
-      <span className="hidden sm:inline">{t('common.addNew')}</span>
-    </Button>
-  ) : null;
+  const mobileActions = useMemo(
+    () => buildImportExportMobileActions(t, onImport, onExport),
+    [t, onImport, onExport]
+  );
+
+  const renderActions = (
+    <>
+      <ImportExportButtons onImport={onImport} onExport={onExport} />
+      {canCreate && (
+        <Button
+          onClick={onAdd}
+          size="sm"
+          className="bg-primary text-white hover:bg-primary/90 shadow-md shadow-primary/20 h-9 px-3 sm:px-4"
+        >
+          <Plus className="w-5 h-5 sm:w-4 sm:h-4 sm:mr-2" />
+          <span className="hidden sm:inline">{t('common.addNew')}</span>
+        </Button>
+      )}
+    </>
+  );
 
   return (
     <GenericToolbar
@@ -193,6 +208,7 @@ const HangHoaToolbar: React.FC<Props> = ({
       actions={renderActions}
       filters={renderFilters}
       filterGroups={filterGroups}
+      mobileActions={mobileActions}
       onAdd={canCreate ? onAdd : undefined}
       showBack
       searchPlaceholder={t('farmHangHoaPhanThuoc.hangHoa.searchPlaceholder')}

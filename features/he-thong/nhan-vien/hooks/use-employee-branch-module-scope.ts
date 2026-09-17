@@ -6,6 +6,7 @@
 import { useMemo } from 'react';
 import { useAuthStore } from '../../../../store/useStore';
 import { useCurrentRoleContext } from '../../phan-quyen/hooks/use-phan-quyen';
+import { useCapBacToanQuyen } from '../../phan-quyen/hooks/use-cap-bac-toan-quyen';
 import type { ActionType } from '../../phan-quyen/core/types';
 import { useEmployee } from './use-nhan-vien';
 
@@ -21,19 +22,25 @@ export interface EmployeeBranchModuleScope {
 export function useEmployeeBranchModuleScope(moduleId: string): EmployeeBranchModuleScope {
   const user = useAuthStore((s) => s.user);
   const { data: ctx, isPending: ctxPending } = useCurrentRoleContext();
+  const toanQuyen = useCapBacToanQuyen();
   const uid = user?.id ? String(user.id) : null;
   const { data: me, isPending: mePending } = useEmployee(uid);
 
   return useMemo(() => {
     const ownId = uid;
 
-    const loadingScope: EmployeeBranchModuleScope = {
+    const viewAllScope: EmployeeBranchModuleScope = {
       viewAll: true,
       viewByBranch: false,
       allowedBranchIds: [],
       currentEmployeeId: ownId,
-      isLoading: true,
+      isLoading: false,
     };
+
+    // Cấp bậc 1 → xem toàn phạm vi, không chờ phân quyền.
+    if (toanQuyen) return viewAllScope;
+
+    const loadingScope: EmployeeBranchModuleScope = { ...viewAllScope, isLoading: true };
 
     if (ctxPending) return loadingScope;
 
@@ -53,17 +60,8 @@ export function useEmployeeBranchModuleScope(moduleId: string): EmployeeBranchMo
     const actions: ActionType[] = modulePerm?.actions ?? [];
     const has = (key: ActionType) => actions.includes(key);
     const hasAdminOrAll = has('admin') || has('all');
-    const thuTuChucVu = ctx?.thuTuChucVu ?? 999;
 
-    if (hasAdminOrAll || thuTuChucVu === 1) {
-      return {
-        viewAll: true,
-        viewByBranch: false,
-        allowedBranchIds: [],
-        currentEmployeeId: ownId,
-        isLoading: false,
-      };
-    }
+    if (hasAdminOrAll) return viewAllScope;
 
     if (mePending) return loadingScope;
 
@@ -75,5 +73,5 @@ export function useEmployeeBranchModuleScope(moduleId: string): EmployeeBranchMo
       currentEmployeeId: ownId,
       isLoading: false,
     };
-  }, [moduleId, user?.id_chuc_vu, ctx, ctxPending, me, mePending, uid]);
+  }, [moduleId, user?.id_chuc_vu, ctx, ctxPending, me, mePending, uid, toanQuyen]);
 }

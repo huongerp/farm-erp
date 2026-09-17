@@ -8,12 +8,15 @@ import {
   updateFarmHangHoa,
   deleteFarmHangHoa,
   deleteFarmHangHoaMany,
+  importFarmHangHoa,
 } from '../services/farm-hang-hoa-service';
 import type { FarmHangHoaFormValues } from '../core/schema';
 import type { FarmHangHoa } from '../core/types';
 import i18n from '../../../../lib/i18n';
 import { FARM_TON_KHO_PT_QUERY_KEY } from '../../ton-kho-phan-thuoc/hooks/use-farm-ton-kho-pt';
 import { invalidateRefCache } from '../../../../lib/ref-cache';
+import type { ImportMode } from '../../../../lib/import-types';
+import type { HangHoaRefColumn } from '../utils/import-hang-hoa';
 
 export const FARM_HANG_HOA_QUERY_KEY = ['farmHangHoaPhanThuoc'] as const;
 
@@ -104,6 +107,39 @@ export const useDeleteFarmHangHoaMany = () => {
       qc.invalidateQueries({ queryKey: FARM_DANH_MUC_QUERY_KEY });
       qc.invalidateQueries({ queryKey: FARM_TON_KHO_PT_QUERY_KEY });
       toast.success(i18n.t('farmHangHoaPhanThuoc.hangHoa.toast.deleteSuccess'));
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+};
+
+/**
+ * Import hàng loạt. `onSuccess` invalidate đúng bộ key như các mutation khác —
+ * thiếu bước này thì combobox ở Đề xuất mua hàng / Phiếu kho / Tồn kho còn cũ tới 15 phút.
+ */
+export const useImportFarmHangHoa = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      rows,
+      mode,
+      refColumn,
+    }: {
+      rows: Record<string, unknown>[];
+      mode: ImportMode;
+      refColumn: HangHoaRefColumn;
+    }) => importFarmHangHoa(rows, { mode, refColumn }),
+    onSuccess: (result) => {
+      invalidateRefCache('farmHangHoa');
+      qc.invalidateQueries({ queryKey: FARM_HANG_HOA_QUERY_KEY });
+      qc.invalidateQueries({ queryKey: FARM_DANH_MUC_QUERY_KEY });
+      qc.invalidateQueries({ queryKey: FARM_TON_KHO_PT_QUERY_KEY });
+      const msgs: string[] = [];
+      if (result.created > 0) msgs.push(i18n.t('farmHangHoaPhanThuoc.hangHoa.toast.importCreated', { count: result.created }));
+      if (result.updated > 0) msgs.push(i18n.t('farmHangHoaPhanThuoc.hangHoa.toast.importUpdated', { count: result.updated }));
+      if (msgs.length > 0) toast.success(msgs.join('. '));
+      if (result.errors.length > 0) {
+        toast.warning(i18n.t('farmHangHoaPhanThuoc.hangHoa.toast.importErrors', { count: result.errors.length }));
+      }
     },
     onError: (err: Error) => toast.error(err.message),
   });

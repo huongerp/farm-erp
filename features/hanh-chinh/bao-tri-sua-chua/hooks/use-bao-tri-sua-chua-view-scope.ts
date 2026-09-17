@@ -1,11 +1,12 @@
 /**
  * Phạm vi xem Bảo trì sửa chữa (Chi phí tài sản) theo phân quyền:
- * - quan_tri (admin/all) hoặc thu_tu chức vụ = 1 → viewAll: xem tất cả phiếu + Thống kê đầy đủ.
+ * - quan_tri (admin/all) hoặc nhân viên cấp bậc 1 → viewAll: xem tất cả phiếu + Thống kê đầy đủ.
  * - Ngược lại → chỉ xem phiếu "của tôi": id_nguoi_tao = user.id hoặc phiếu thuộc tài sản đang do user giữ (id_nhan_vien_dang_giu = user.id).
  */
 import { useMemo } from 'react';
 import { useAuthStore } from '../../../../store/useStore';
 import { useCurrentRoleContext } from '../../../he-thong/phan-quyen/hooks/use-phan-quyen';
+import { useCapBacToanQuyen } from '../../../he-thong/phan-quyen/hooks/use-cap-bac-toan-quyen';
 import type { ActionType } from '../../../he-thong/phan-quyen/core/types';
 
 const MODULE_ID = 'hanh-chinh/chi-phi-tai-san';
@@ -19,12 +20,16 @@ export interface BaoTriSuaChuaViewScope {
 export function useBaoTriSuaChuaViewScope(): BaoTriSuaChuaViewScope {
   const user = useAuthStore((s) => s.user);
   const { data: ctx, isPending: ctxPending } = useCurrentRoleContext();
+  const toanQuyen = useCapBacToanQuyen();
 
   return useMemo(() => {
     const defaultScope: BaoTriSuaChuaViewScope = {
       viewAll: false,
       isLoading: ctxPending,
     };
+
+    // Cấp bậc 1 → toàn quyền, không chờ phân quyền.
+    if (toanQuyen) return { viewAll: true, isLoading: false };
 
     if (ctxPending) return defaultScope;
 
@@ -36,12 +41,11 @@ export function useBaoTriSuaChuaViewScope(): BaoTriSuaChuaViewScope {
     const actions: ActionType[] = modulePerm?.actions ?? [];
     const has = (key: ActionType) => actions.includes(key);
     const hasAdminOrAll = has('admin') || has('all');
-    const thuTuChucVu = ctx?.thuTuChucVu ?? 999;
 
-    if (hasAdminOrAll || thuTuChucVu === 1) {
+    if (hasAdminOrAll) {
       return { viewAll: true, isLoading: false };
     }
 
     return { viewAll: false, isLoading: false };
-  }, [user?.id_chuc_vu, ctx, ctxPending]);
+  }, [user?.id_chuc_vu, ctx, ctxPending, toanQuyen]);
 }

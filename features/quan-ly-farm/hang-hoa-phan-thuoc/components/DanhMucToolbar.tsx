@@ -5,11 +5,14 @@ import Button from '../../../../components/ui/Button';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useFarmDanhMucStore } from '../store/useFarmDanhMucStore';
+import ImportExportButtons, { buildImportExportMobileActions } from './ImportExportButtons';
 
 interface Props {
   selectedCount: number;
   onAdd: () => void;
   onDeleteMany: () => void;
+  onImport?: () => void;
+  onExport?: () => void;
   canCreate?: boolean;
   canDelete?: boolean;
 }
@@ -18,6 +21,8 @@ const DanhMucToolbar: React.FC<Props> = ({
   selectedCount,
   onAdd,
   onDeleteMany,
+  onImport,
+  onExport,
   canCreate = true,
   canDelete = true,
 }) => {
@@ -35,16 +40,26 @@ const DanhMucToolbar: React.FC<Props> = ({
     commitSearchTerm('');
   };
 
-  const renderActions = canCreate ? (
-    <Button
-      onClick={onAdd}
-      size="sm"
-      className="bg-primary text-white hover:bg-primary/90 shadow-md shadow-primary/20 h-9 px-3 sm:px-4"
-    >
-      <Plus className="w-5 h-5 sm:w-4 sm:h-4 sm:mr-2" />
-      <span className="hidden sm:inline">{t('common.addNew')}</span>
-    </Button>
-  ) : null;
+  const mobileActions = useMemo(
+    () => buildImportExportMobileActions(t, onImport, onExport),
+    [t, onImport, onExport]
+  );
+
+  const renderActions = (
+    <>
+      <ImportExportButtons onImport={onImport} onExport={onExport} />
+      {canCreate && (
+        <Button
+          onClick={onAdd}
+          size="sm"
+          className="bg-primary text-white hover:bg-primary/90 shadow-md shadow-primary/20 h-9 px-3 sm:px-4"
+        >
+          <Plus className="w-5 h-5 sm:w-4 sm:h-4 sm:mr-2" />
+          <span className="hidden sm:inline">{t('common.addNew')}</span>
+        </Button>
+      )}
+    </>
+  );
 
   return (
     <GenericToolbar
@@ -54,6 +69,7 @@ const DanhMucToolbar: React.FC<Props> = ({
       onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
       actions={renderActions}
+      mobileActions={mobileActions}
       onAdd={canCreate ? onAdd : undefined}
       showBack
       searchPlaceholder={t('farmHangHoaPhanThuoc.danhMuc.searchPlaceholder')}

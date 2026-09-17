@@ -14,6 +14,8 @@ import type { HangHoaFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
 import { HANG_HOA_REF_QUERY_KEY } from '../../../../lib/hooks/use-supabase-ref-queries';
 import { invalidateRefCache } from '../../../../lib/ref-cache';
+import type { ImportMode } from '../../../../lib/import-types';
+import type { HangHoaRefColumn } from '../services/hang-hoa-service';
 
 /** Query key thống nhất cho danh sách hàng hóa đầy đủ (tránh trùng hangHoaList / hangHoaListThemDong). */
 export const HANG_HOA_QUERY_KEY = ['hangHoa'] as const;
@@ -110,7 +112,15 @@ export const useDeleteHangHoaMany = () => {
 export const useImportHangHoa = (onSuccess?: () => void) => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (rows: import('../services/hang-hoa-service').HangHoaImportRow[]) => importHangHoa(rows, 'create'),
+    mutationFn: ({
+      rows,
+      mode,
+      refColumn,
+    }: {
+      rows: Record<string, unknown>[];
+      mode: ImportMode;
+      refColumn: HangHoaRefColumn;
+    }) => importHangHoa(rows, { mode, refColumn }),
     onSuccess: (result) => {
       qc.invalidateQueries({ queryKey: HANG_HOA_QUERY_KEY });
       qc.invalidateQueries({ queryKey: HANG_HOA_REF_QUERY_KEY });

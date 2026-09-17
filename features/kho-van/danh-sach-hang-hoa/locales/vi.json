@@ -122,5 +122,7 @@
   "hangHoa.toast.importCreated": "Đã tạo mới {{count}} hàng hóa",
   "hangHoa.toast.importUpdated": "Đã cập nhật {{count}} hàng hóa",
   "hangHoa.toast.importErrors": "{{count}} dòng bị lỗi — xem chi tiết trong bảng",
-  "hangHoa.toast.importSuccess": "Đã import {{count}} hàng hóa thành công"
+  "hangHoa.toast.importSuccess": "Đã import {{count}} hàng hóa thành công",
+  "hangHoa.import.priceInvalid": "Đơn giá \"{{value}}\" không phải số hợp lệ",
+  "hangHoa.import.refAmbiguous": "Có nhiều hàng hóa cùng \"{{value}}\" — không xác định được dòng cần ghi đè"
 }

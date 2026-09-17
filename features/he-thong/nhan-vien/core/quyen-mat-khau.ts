@@ -8,6 +8,8 @@
  * Trước đây nút "Đổi MK" chỉ gác bằng `canUpdate`, rộng hơn cổng dưới DB nên
  * người có quyền sửa nhân viên bấm vào là dính [P0001] từ RPC.
  */
+import { laCapBacToanQuyen } from '../../phan-quyen/core/cap-bac-toan-quyen';
+
 export interface QuyenDatMatKhauInput {
   /** Id nhân viên đang đăng nhập (null khi chưa có phiên). */
   nhanVienDangNhapId?: string | number | null;
@@ -30,5 +32,5 @@ export function coQuyenDatMatKhau({
 
   if (toi !== '' && toi === mucTieu) return true;
 
-  return canAdmin || Number(capBac) === 1;
+  return canAdmin || laCapBacToanQuyen(capBac);
 }

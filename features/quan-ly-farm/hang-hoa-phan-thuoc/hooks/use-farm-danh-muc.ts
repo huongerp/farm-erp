@@ -8,10 +8,13 @@ import {
   updateFarmDanhMuc,
   deleteFarmDanhMuc,
   deleteFarmDanhMucMany,
+  importFarmDanhMuc,
 } from '../services/farm-danh-muc-service';
 import type { FarmDanhMucFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
 import { FARM_HANG_HOA_QUERY_KEY } from './use-farm-hang-hoa';
+import { invalidateRefCache } from '../../../../lib/ref-cache';
+import type { ImportMode } from '../../../../lib/import-types';
 
 const QUERY_KEY = ['farmDanhMucHangHoa'] as const;
 
@@ -88,6 +91,28 @@ export const useDeleteFarmDanhMucMany = () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY });
       qc.invalidateQueries({ queryKey: FARM_HANG_HOA_QUERY_KEY });
       toast.success(i18n.t('farmHangHoaPhanThuoc.danhMuc.toast.deleteSuccess'));
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+};
+
+/** Import hàng loạt danh mục (cây 2 cấp) — làm mới cả danh sách hàng hóa vì tên danh mục là cột suy ra. */
+export const useImportFarmDanhMuc = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ rows, mode }: { rows: Record<string, unknown>[]; mode: ImportMode }) =>
+      importFarmDanhMuc(rows, { mode }),
+    onSuccess: (result) => {
+      invalidateRefCache('farmHangHoa');
+      qc.invalidateQueries({ queryKey: QUERY_KEY });
+      qc.invalidateQueries({ queryKey: FARM_HANG_HOA_QUERY_KEY });
+      const msgs: string[] = [];
+      if (result.created > 0) msgs.push(i18n.t('farmHangHoaPhanThuoc.danhMuc.toast.importCreated', { count: result.created }));
+      if (result.updated > 0) msgs.push(i18n.t('farmHangHoaPhanThuoc.danhMuc.toast.importUpdated', { count: result.updated }));
+      if (msgs.length > 0) toast.success(msgs.join('. '));
+      if (result.errors.length > 0) {
+        toast.warning(i18n.t('farmHangHoaPhanThuoc.danhMuc.toast.importErrors', { count: result.errors.length }));
+      }
     },
     onError: (err: Error) => toast.error(err.message),
   });

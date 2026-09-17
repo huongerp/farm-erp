@@ -4,6 +4,15 @@ import type { FarmHangHoa } from '../core/types';
 import type { FarmHangHoaFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
 import { getAllFarmDanhMuc } from './farm-danh-muc-service';
+import { bulkInsert, bulkUpdateById, bulkUpsert } from '../../../../lib/import-bulk';
+import type { ImportErrorRow, ImportMode } from '../../../../lib/import-types';
+import { planFarmHangHoaImport } from '../utils/import-hang-hoa';
+import type {
+  HangHoaRefColumn,
+  PlannedInsert,
+  PlannedUpdate,
+  FarmHangHoaPayload,
+} from '../utils/import-hang-hoa';
 
 const TABLE = 'fp_farm_danh_sach_hang_hoa';
 
@@ -223,4 +232,112 @@ export const deleteFarmHangHoaMany = async (ids: string[]): Promise<void> => {
   if (idNums.length === 0) return;
   const { error } = await db.from(TABLE).delete().in('id', idNums);
   if (error) throw new Error(error.message ?? i18n.t('farmHangHoaPhanThuoc.hangHoa.service.notFound'));
+};
+
+// ---------------------------------------------------------------------------
+// Import hàng loạt
+// ---------------------------------------------------------------------------
+
+export interface FarmHangHoaImportResult {
+  created: number;
+  updated: number;
+  errors: ImportErrorRow[];
+}
+
+/** Dòng đã validate, kèm cờ để đếm đúng created/updated sau khi upsert gộp. */
+type TaggedItem = (PlannedInsert | PlannedUpdate) & { isUpdate: boolean };
+
+function withTimestamp<T extends { payload: FarmHangHoaPayload }>(item: T, now: string) {
+  return { ...item, payload: { ...item.payload, tg_cap_nhat: now } };
+}
+
+function toError(item: { row: number; values: Record<string, unknown> }, msg: string): ImportErrorRow {
+  return { row: item.row, msg, values: item.values };
+}
+
+/**
+ * Import hàng loạt hàng hóa farm.
+ *
+ * Toàn bộ validate chạy trước ở `planFarmHangHoaImport` (thuần, có test), phần này chỉ lo
+ * số request: 2 request đọc dữ liệu đối chiếu + 1 request ghi cho mỗi lô 500 dòng.
+ */
+export const importFarmHangHoa = async (
+  rows: Record<string, unknown>[],
+  { mode, refColumn }: { mode: ImportMode; refColumn: HangHoaRefColumn }
+): Promise<FarmHangHoaImportResult> => {
+  const [dmList, existingRows] = await Promise.all([
+    getAllFarmDanhMuc(),
+    fetchAllRows<Pick<FarmHangHoaRow, 'id' | 'ma_hang_hoa' | 'ten_hang_hoa'>>((from, to) =>
+      db.from(TABLE).select('id,ma_hang_hoa,ten_hang_hoa').order('id', { ascending: true }).range(from, to)
+    ),
+  ]);
+
+  const existing = existingRows.map((r) => ({
+    id: String(r.id),
+    ma_hang_hoa: r.ma_hang_hoa ?? '',
+    ten_hang_hoa: r.ten_hang_hoa ?? '',
+  }));
+
+  const plan = planFarmHangHoaImport(rows, { danhMuc: dmList, existing, mode, refColumn });
+  const errors: ImportErrorRow[] = [...plan.errors];
+  const now = new Date().toISOString();
+  let created = 0;
+  let updated = 0;
+
+  // Đường nhanh: một request/lô cho cả thêm mới lẫn ghi đè, dựa vào unique index trên ma_hang_hoa.
+  if (mode === 'upsert' && refColumn === 'ma_hang_hoa' && plan.toUpdate.length > 0) {
+    const tagged: TaggedItem[] = [
+      ...plan.toInsert.map((i) => ({ ...i, isUpdate: false })),
+      ...plan.toUpdate.map((i) => ({ ...i, isUpdate: true })),
+    ].map((i) => withTimestamp(i, now));
+
+    const res = await bulkUpsert(TABLE, tagged, 'ma_hang_hoa');
+    if (!res.unsupported) {
+      res.done.forEach((item) => {
+        if (item.isUpdate) updated++;
+        else created++;
+      });
+      res.failed.forEach(({ item, msg }) => errors.push(toError(item, msg)));
+      return { created, updated, errors: errors.sort((a, b) => a.row - b.row) };
+    }
+    // Chưa chạy migration unique → rơi xuống đường lui bên dưới.
+  }
+
+  if (plan.toInsert.length > 0) {
+    const res = await bulkInsert(
+      TABLE,
+      plan.toInsert.map((i) => withTimestamp(i, now))
+    );
+    created = res.done.length;
+    res.failed.forEach(({ item, msg }) => errors.push(toError(item, msg)));
+  }
+
+  if (plan.toUpdate.length > 0) {
+    const res = await bulkUpdateById(
+      TABLE,
+      plan.toUpdate.map((i) => withTimestamp(i, now))
+    );
+    updated = res.done.length;
+    res.failed.forEach(({ item, msg }) => errors.push(toError(item, msg)));
+  }
+
+  return { created, updated, errors: errors.sort((a, b) => a.row - b.row) };
+};
+
+/** Danh mục cấp 2 kèm tên cha — dựng sheet tham chiếu trong file mẫu import. */
+export const getFarmDanhMucRefForImport = async (): Promise<
+  Array<{ ma_danh_muc: string; ten_danh_muc: string; ten_cap1: string }>
+> => {
+  const dmList = await getAllFarmDanhMuc();
+  const byId: Record<string, string> = {};
+  dmList.forEach((d) => {
+    byId[d.id] = d.ten_danh_muc;
+  });
+  return dmList
+    .filter((d) => d.id_cha != null && d.id_cha.trim() !== '')
+    .map((d) => ({
+      ma_danh_muc: d.ma_danh_muc,
+      ten_danh_muc: d.ten_danh_muc,
+      ten_cap1: (d.id_cha && byId[d.id_cha]) ?? '',
+    }));
 };

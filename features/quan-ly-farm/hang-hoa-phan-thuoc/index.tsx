@@ -12,6 +12,9 @@ import HangHoaToolbar from './components/HangHoaToolbar';
 import HangHoaList from './components/HangHoaList';
 import HangHoaForm from './components/HangHoaForm';
 import HangHoaDetail from './components/HangHoaDetail';
+import ImportDialog from '../../../components/shared/LazyImportDialog';
+import ExportDialog from '../../../components/shared/LazyExportDialog';
+import { useFarmDanhMucImportExport, useFarmHangHoaImportExport } from './hooks/use-farm-import-export';
 import {
   useFarmDanhMucList,
   useDeleteFarmDanhMuc,
@@ -167,6 +170,23 @@ const HangHoaPhanThuocPage: React.FC = () => {
     if (hhPagination.page > hhMaxPage) setHhPage(hhMaxPage);
   }, [hhPagination.page, hhPagination.pageSize, hhMaxPage, setHhPage]);
 
+  const dmIO = useFarmDanhMucImportExport({
+    list: dmList,
+    filteredList: filteredDm,
+    selectedIds: dmSelectedIds,
+    pagination: { page: dmPage, pageSize: dmPageSize },
+    canUpdate,
+  });
+
+  const hhIO = useFarmHangHoaImportExport({
+    list: hhList,
+    danhMucList: dmList,
+    filteredList: filteredHh,
+    selectedIds: hhSelectedIds,
+    pagination: hhPagination,
+    canUpdate,
+  });
+
   const tabs = useMemo(
     () => [
       { id: 'danhMuc', label: t('farmHangHoaPhanThuoc.tabs.danhMuc'), icon: BookOpen },
@@ -259,6 +279,8 @@ const HangHoaPhanThuocPage: React.FC = () => {
               setShowDmForm(true);
             }}
             onDeleteMany={handleDmDeleteMany}
+            onImport={canCreate ? dmIO.openImport : undefined}
+            onExport={dmIO.openExport}
             canCreate={canCreate}
             canDelete={canDelete}
           />
@@ -301,6 +323,8 @@ const HangHoaPhanThuocPage: React.FC = () => {
               setShowHhForm(true);
             }}
             onDeleteMany={handleHhDeleteMany}
+            onImport={canCreate ? hhIO.openImport : undefined}
+            onExport={hhIO.openExport}
             canCreate={canCreate}
             canDelete={canDelete}
           />
@@ -384,6 +408,53 @@ const HangHoaPhanThuocPage: React.FC = () => {
           />
         )}
       </AnimatePresence>
+
+      <ImportDialog
+        open={dmIO.showImport}
+        onClose={dmIO.closeImport}
+        columns={dmIO.importColumns}
+        onImport={dmIO.handleImport}
+        templateFileName={dmIO.templateFileName}
+        referenceSheets={dmIO.referenceSheets}
+        sampleRows={dmIO.sampleRows}
+        importErrors={dmIO.importErrors}
+        modes={dmIO.modes}
+      />
+
+      <ExportDialog
+        open={dmIO.showExport}
+        onClose={dmIO.closeExport}
+        columns={dmIO.exportColumns}
+        data={dmIO.exportData}
+        paginatedData={dmIO.paginatedExportData}
+        selectedData={dmIO.selectedExportData}
+        fileName={dmIO.exportFileName}
+        visibleColumnKeys={dmIO.visibleColumnKeys}
+      />
+
+      <ImportDialog
+        open={hhIO.showImport}
+        onClose={hhIO.closeImport}
+        columns={hhIO.importColumns}
+        onImport={hhIO.handleImport}
+        templateFileName={hhIO.templateFileName}
+        referenceSheets={hhIO.referenceSheets}
+        sampleRows={hhIO.sampleRows}
+        importErrors={hhIO.importErrors}
+        modes={hhIO.modes}
+        refColumns={hhIO.refColumns}
+      />
+
+      <ExportDialog
+        open={hhIO.showExport}
+        onClose={hhIO.closeExport}
+        columns={hhIO.exportColumns}
+        data={hhIO.exportData}
+        paginatedData={hhIO.paginatedExportData}
+        selectedData={hhIO.selectedExportData}
+        fileName={hhIO.exportFileName}
+        visibleColumnKeys={hhIO.visibleColumnKeys}
+      />
 
       <AnimatePresence>
         {hhViewing && !showHhForm && (

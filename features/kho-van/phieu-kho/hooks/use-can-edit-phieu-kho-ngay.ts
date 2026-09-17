@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useAuthStore } from '../../../../store/useStore';
 import { useModulePermission } from '../../../he-thong/phan-quyen/hooks/use-module-permission';
+import { laCapBacToanQuyen } from '../../../he-thong/phan-quyen/core/cap-bac-toan-quyen';
 
 const MODULE_ID = 'kho-van/phieu-kho';
 
@@ -10,5 +11,8 @@ const MODULE_ID = 'kho-van/phieu-kho';
 export function useCanEditPhieuKhoNgay(): boolean {
   const user = useAuthStore((s) => s.user);
   const { canAdmin } = useModulePermission(MODULE_ID);
-  return useMemo(() => canAdmin || user?.cap_bac === 1, [canAdmin, user?.cap_bac]);
+  return useMemo(
+    () => canAdmin || laCapBacToanQuyen(user?.cap_bac),
+    [canAdmin, user?.cap_bac]
+  );
 }

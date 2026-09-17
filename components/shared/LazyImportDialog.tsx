@@ -1,9 +1,27 @@
 import React, { lazy, Suspense } from 'react';
-import type { ImportColumn, ImportReferenceSheet, ImportSampleRow } from './ImportDialog';
+import type {
+  ImportColumn,
+  ImportReferenceSheet,
+  ImportSampleRow,
+  ImportMode,
+  ImportRefColumn,
+  ImportErrorRow,
+  ImportSummary,
+  ImportOptions,
+} from './ImportDialog';
 
 const ImportDialog = lazy(() => import('./ImportDialog'));
 
-export type { ImportColumn, ImportReferenceSheet, ImportSampleRow };
+export type {
+  ImportColumn,
+  ImportReferenceSheet,
+  ImportSampleRow,
+  ImportMode,
+  ImportRefColumn,
+  ImportErrorRow,
+  ImportSummary,
+  ImportOptions,
+};
 
 type ImportDialogProps = React.ComponentProps<typeof ImportDialog>;
 

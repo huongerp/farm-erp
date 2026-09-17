@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useAuthStore } from '../../../../store/useStore';
 import { useCurrentRoleContext } from './use-phan-quyen';
+import { useCapBacToanQuyen } from './use-cap-bac-toan-quyen';
 import type { ActionType } from '../core/types';
 import {
   getModuleIdsBySubmenuPath,
@@ -18,15 +19,29 @@ export interface ModulePermissionFlags {
   isLoading: boolean;
 }
 
+const FULL_PERMISSION: ModulePermissionFlags = {
+  canView: true,
+  canCreate: true,
+  canUpdate: true,
+  canDelete: true,
+  canApprove: true,
+  canAdmin: true,
+  isLoading: false,
+};
+
 /**
  * Kiểm tra quyền theo module của user đăng nhập (dựa trên chức vụ id_chuc_vu).
  * Dữ liệu từ getCurrentRoleContext (nhẹ), không tải getRoles toàn phần.
+ * Nhân viên cấp bậc 1 → toàn quyền, không cần cấp quyền trong fp_var_phan_quyen.
  */
 export function useModulePermission(moduleId: string): ModulePermissionFlags {
   const user = useAuthStore((s) => s.user);
   const { data, isPending } = useCurrentRoleContext();
+  const toanQuyen = useCapBacToanQuyen();
 
   return useMemo(() => {
+    if (toanQuyen) return FULL_PERMISSION;
+
     const noPermission: ModulePermissionFlags = {
       canView: false,
       canCreate: false,
@@ -58,15 +73,17 @@ export function useModulePermission(moduleId: string): ModulePermissionFlags {
       canAdmin: hasAdminOrAll,
       isLoading: false,
     };
-  }, [moduleId, user?.id_chuc_vu, data, isPending]);
+  }, [moduleId, user?.id_chuc_vu, data, isPending, toanQuyen]);
 }
 
 export function useSubmenuVisible(path: string): boolean {
   const user = useAuthStore((s) => s.user);
   const { data, isPending } = useCurrentRoleContext();
+  const toanQuyen = useCapBacToanQuyen();
 
   return useMemo(() => {
     if (!isSubmenuWithPermission(path)) return true;
+    if (toanQuyen) return true;
     if (user?.id_chuc_vu && isPending) return false;
 
     const chucVuId = user?.id_chuc_vu ?? null;
@@ -85,16 +102,18 @@ export function useSubmenuVisible(path: string): boolean {
       const actions: ActionType[] = modulePerm?.actions ?? [];
       return hasView(actions);
     });
-  }, [path, user?.id_chuc_vu, data, isPending]);
+  }, [path, user?.id_chuc_vu, data, isPending, toanQuyen]);
 }
 
 export function useModulesWithViewPermission(path: string): Set<string> {
   const user = useAuthStore((s) => s.user);
   const { data, isPending } = useCurrentRoleContext();
+  const toanQuyen = useCapBacToanQuyen();
 
   return useMemo(() => {
     const viewable = new Set<string>();
     if (!isSubmenuWithPermission(path)) return viewable;
+    if (toanQuyen) return new Set(getModuleIdsBySubmenuPath(path));
     if (user?.id_chuc_vu && isPending) return viewable;
 
     const chucVuId = user?.id_chuc_vu ?? null;
@@ -112,7 +131,7 @@ export function useModulesWithViewPermission(path: string): Set<string> {
       if (hasView(actions)) viewable.add(moduleId);
     });
     return viewable;
-  }, [path, user?.id_chuc_vu, data, isPending]);
+  }, [path, user?.id_chuc_vu, data, isPending, toanQuyen]);
 }
 
 export { isSubmenuWithPermission, getModuleIdsBySubmenuPath, getPermissionModuleIdFromPath };

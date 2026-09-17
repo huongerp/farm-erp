@@ -145,7 +145,8 @@ export function employeeToUser(emp: Employee): User {
     id_phong_ban: emp.id_phong_ban ?? null,
     id_chuc_vu: emp.id_chuc_vu ?? null,
     id_chi_nhanh: emp.id_chi_nhanh?.[0] ?? null,
-    cap_bac: emp.cap_bac ?? (emp.id_cap_bac != null ? Number(emp.id_cap_bac) : null),
+    // Chỉ lấy đúng cột cap_bac; id_cap_bac là khoá ngoại fp_var_cap_bac.id, không phải số cấp bậc.
+    cap_bac: emp.cap_bac ?? null,
   };
 }
 

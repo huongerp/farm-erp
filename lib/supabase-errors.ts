@@ -106,6 +106,20 @@ export function formatSupabaseError(err: unknown, ctx?: { resource?: string }): 
     return i18n.t('errors.db.forbiddenRls', { code: code || '42501' }) + suffix;
   }
 
+  // 23505 — đụng unique index (vd uq_fp_farm_danh_sach_hang_hoa_ma). Xảy ra khi hai
+  // người lưu cùng lúc, hoặc khi import chen vào giữa lúc app vừa kiểm tra trùng.
+  if (code === '23505' || /duplicate key value violates unique constraint/i.test(msg)) {
+    const field = /Key \((?<col>[^)]+)\)=\((?<val>[^)]*)\)/.exec(
+      (isRecord(err) && typeof err.details === 'string' ? err.details : '') || msg
+    );
+    return (
+      i18n.t('errors.db.uniqueViolation', {
+        code: code || '23505',
+        field: field?.groups ? `${field.groups.col} = ${field.groups.val}` : msg.trim(),
+      }) + suffix
+    );
+  }
+
   if (code === 'PGRST301' || /jwt expired|invalid jwt|jwt/i.test(msg)) {
     return i18n.t('errors.db.jwt', { code: code || 'JWT' }) + suffix;
   }

@@ -29,7 +29,8 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'ten_nguoi_duyet', label: i18n.t('phieuDeXuatVatTu.store.nguoiDuyetCol'), visible: true, minWidth: 150, maxWidth: 220, order: 11 },
   { id: 'thong_so', label: i18n.t('phieuDeXuatVatTu.form.specs'), visible: false, minWidth: 180, maxWidth: 260, order: 12 },
   { id: 'ghi_chu', label: i18n.t('phieuDeXuatVatTu.form.note'), visible: true, minWidth: 180, maxWidth: 280, order: 13 },
-  { id: 'actions', label: '', visible: true, minWidth: 80, maxWidth: 80, order: 14 },
+  { id: 'trao_doi', label: i18n.t('phieuDeXuatVatTu.store.traoDoiGanNhatCol'), visible: false, minWidth: 220, maxWidth: 360, order: 14 },
+  { id: 'actions', label: '', visible: true, minWidth: 80, maxWidth: 80, order: 15 },
 ];
 
 const initialFilters: ChiTietTabFilters = {

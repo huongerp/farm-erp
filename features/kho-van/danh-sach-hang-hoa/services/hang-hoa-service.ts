@@ -8,6 +8,10 @@ import {
   getAllDanhMucHangHoa,
   getDanhMucHangHoaRefRows,
 } from '../../danh-muc-hang-hoa/services/danh-muc-hang-hoa-service';
+import { bulkInsert, bulkUpdateById, bulkUpsert } from '../../../../lib/import-bulk';
+import { IMPORT_ROW_KEY } from '../../../../lib/import-types';
+import type { ImportErrorRow, ImportMode } from '../../../../lib/import-types';
+import { matchKey, normalizeText, parseImportNumber } from '../../../../lib/import-common';
 
 const TABLE = 'fp_mh_danh_sach_hang_hoa';
 
@@ -317,24 +321,12 @@ export const deleteHangHoaMany = async (ids: string[]): Promise<void> => {
   if (error) throw new Error(error.message ?? i18n.t('hangHoa.service.notFound'));
 };
 
-/** Dòng dữ liệu import từ Excel (key theo cột đã map). */
-export interface HangHoaImportRow {
-  ma_hang_hoa?: string;
-  ten_hang_hoa?: string;
-  danh_muc?: string;
-  dvt?: string;
-  don_gia?: string | number;
-  pham_cap?: string;
-  mo_ta?: string;
-  trang_thai?: string;
-}
-
-export type ImportMode = 'create' | 'upsert';
+export type { ImportMode };
 
 export interface ImportHangHoaResult {
   created: number;
   updated: number;
-  errors: Array<{ row: number; ma_hang_hoa: string; ten_hang_hoa: string; msg: string }>;
+  errors: ImportErrorRow[];
 }
 
 /**
@@ -355,58 +347,84 @@ function resolveDanhMucCap2(
   return null;
 }
 
-const BATCH_SIZE = 200;
+/** Cột dùng để nhận diện dòng đã có trong hệ thống. */
+export type HangHoaRefColumn = 'ma_hang_hoa' | 'ten_hang_hoa';
+
+interface PlannedRow {
+  row: number;
+  values: Record<string, unknown>;
+  payload: Record<string, unknown>;
+}
+
+function excelRowOf(row: Record<string, unknown>, fallbackIdx: number): number {
+  const n = Number(row[IMPORT_ROW_KEY]);
+  return Number.isFinite(n) && n > 0 ? n : fallbackIdx + 2;
+}
+
+function cleanValues(row: Record<string, unknown>): Record<string, unknown> {
+  const { [IMPORT_ROW_KEY]: _ignored, ...rest } = row;
+  return rest;
+}
 
 /**
- * Import hàng hóa — batch validate + batch insert/upsert.
- * Cột danh_muc: chấp nhận mã danh mục cấp 2 HOẶC tên danh mục cấp 2 (case-insensitive).
+ * Import hàng hóa — validate toàn bộ trước rồi ghi theo lô.
+ *
+ * Cột `danh_muc` nhận mã HOẶC tên danh mục cấp 2 (không phân biệt hoa thường).
+ * `refColumn` quyết định lấy gì làm khóa đối chiếu với dữ liệu đã có; `mode = 'upsert'`
+ * thì dòng trùng khóa sẽ được ghi đè, `'create'` thì báo lỗi.
  */
 export const importHangHoa = async (
-  rows: HangHoaImportRow[],
-  mode: ImportMode = 'create',
+  rows: Record<string, unknown>[],
+  {
+    mode = 'create',
+    refColumn = 'ma_hang_hoa',
+  }: { mode?: ImportMode; refColumn?: HangHoaRefColumn } = {},
 ): Promise<ImportHangHoaResult> => {
-  const errors: ImportHangHoaResult['errors'] = [];
+  const errors: ImportErrorRow[] = [];
   let created = 0;
   let updated = 0;
 
-  // Phase 1: Load reference data (1 request)
-  const dmList = await getAllDanhMucHangHoa();
+  // Đọc dữ liệu đối chiếu: danh mục + hàng hóa đã có + thu_tu lớn nhất.
+  const [dmList, existingRows, maxRowRes] = await Promise.all([
+    getAllDanhMucHangHoa(),
+    fetchAllRows<{ id: number; ma_hang_hoa: string | null; ten_hang_hoa: string | null }>((from, to) =>
+      db.from(TABLE).select('id,ma_hang_hoa,ten_hang_hoa').order('id', { ascending: true }).range(from, to)
+    ),
+    db.from(TABLE).select('thu_tu').order('thu_tu', { ascending: false }).limit(1).maybeSingle(),
+  ]);
+
   const danhMucCap2 = dmList.filter((d) => d.id_cha != null && d.id_cha.trim() !== '');
   const dmByMa = new Map(danhMucCap2.map((d) => [d.ma_danh_muc.trim().toUpperCase(), { id: d.id, id_cha: d.id_cha }]));
   const dmByTen = new Map(danhMucCap2.map((d) => [d.ten_danh_muc.trim().toLowerCase(), { id: d.id, id_cha: d.id_cha }]));
 
-  // Phase 2: Load existing ma_hang_hoa for duplicate check (1 request)
-  const { data: existingRows } = await db.from(TABLE).select('id, ma_hang_hoa');
-  const existingByMa = new Map<string, number>();
-  (existingRows ?? []).forEach((r: { id: number; ma_hang_hoa: string | null }) => {
-    if (r.ma_hang_hoa) existingByMa.set(r.ma_hang_hoa.trim().toUpperCase(), r.id);
+  const refIndex = new Map<string, number | null>();
+  const idByMa = new Map<string, number>();
+  existingRows.forEach((r) => {
+    const ma = (r.ma_hang_hoa ?? '').trim().toUpperCase();
+    if (ma) idByMa.set(ma, r.id);
+    const key = refColumn === 'ma_hang_hoa' ? ma : matchKey(r.ten_hang_hoa);
+    if (!key) return;
+    refIndex.set(key, refIndex.has(key) ? null : r.id);
   });
 
-  // Phase 3: Get current max thu_tu (1 request)
-  const { data: maxRow } = await db.from(TABLE).select('thu_tu').order('thu_tu', { ascending: false }).limit(1).maybeSingle();
-  let nextThuTu = Math.max(1, (maxRow?.thu_tu != null ? Number(maxRow.thu_tu) : 0) + 1);
+  const maxThuTu = maxRowRes.data?.thu_tu;
+  let nextThuTu = Math.max(1, (maxThuTu != null ? Number(maxThuTu) : 0) + 1);
 
-  // Phase 4: Validate all rows client-side
-  interface ValidatedInsert {
-    rowIdx: number;
-    payload: Record<string, unknown>;
-  }
-  interface ValidatedUpdate {
-    rowIdx: number;
-    existingId: number;
-    payload: Record<string, unknown>;
-  }
-  const toInsert: ValidatedInsert[] = [];
-  const toUpdate: ValidatedUpdate[] = [];
-  const seenMaCodes = new Set<string>();
+  const toInsert: PlannedRow[] = [];
+  const toUpdate: (PlannedRow & { id: string })[] = [];
+  const seenKeys = new Map<string, number>();
 
-  for (let i = 0; i < rows.length; i++) {
-    const row = rows[i];
-    const ma = String(row.ma_hang_hoa ?? '').trim().toUpperCase();
-    const ten = String(row.ten_hang_hoa ?? '').trim();
-    const danhMucInput = String(row.danh_muc ?? '').trim();
-    const dvt = row.dvt != null && String(row.dvt).trim() !== '' ? String(row.dvt).trim() : null;
-    const rawTrangThai = String(row.trang_thai ?? '').trim();
+  rows.forEach((raw, idx) => {
+    const excelRow = excelRowOf(raw, idx);
+    const values = cleanValues(raw);
+    const rowErrors: string[] = [];
+
+    const ma = String(raw.ma_hang_hoa ?? '').trim().toUpperCase();
+    const ten = normalizeText(raw.ten_hang_hoa);
+    const danhMucInput = normalizeText(raw.danh_muc);
+    const dvt = normalizeText(raw.dvt) || null;
+
+    const rawTrangThai = normalizeText(raw.trang_thai);
     const trangThai =
       rawTrangThai === TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG ||
       rawTrangThai.toLowerCase() === 'ngừng hoạt động' ||
@@ -415,118 +433,109 @@ export const importHangHoa = async (
         ? TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG
         : TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
 
-    const rowErrors: string[] = [];
     if (!ma) rowErrors.push(i18n.t('hangHoa.validation.codeRequired'));
     if (!ten) rowErrors.push(i18n.t('hangHoa.validation.nameRequired'));
+    if (!dvt) rowErrors.push(i18n.t('hangHoa.validation.unitRequired'));
 
     const dm = resolveDanhMucCap2(danhMucInput, dmByMa, dmByTen);
     if (!dm) rowErrors.push(i18n.t('hangHoa.import.categoryNotFound', { value: danhMucInput || '(trống)' }));
-    if (!dvt) rowErrors.push(i18n.t('hangHoa.validation.unitRequired'));
 
-    if (seenMaCodes.has(ma) && ma) {
+    // Đơn giá không parse được thì báo lỗi, không âm thầm gán 0.
+    const donGia = parseImportNumber(raw.don_gia);
+    if (!donGia.ok) rowErrors.push(i18n.t('hangHoa.import.priceInvalid', { value: String(raw.don_gia ?? '') }));
+
+    const refValue = refColumn === 'ma_hang_hoa' ? ma : matchKey(ten);
+    if (refValue && seenKeys.has(refValue)) {
       rowErrors.push(i18n.t('hangHoa.import.duplicateInFile'));
     }
 
     if (rowErrors.length > 0) {
-      errors.push({ row: i + 2, ma_hang_hoa: ma, ten_hang_hoa: ten, msg: rowErrors.join('; ') });
-      continue;
+      errors.push({ row: excelRow, ma_hang_hoa: ma, ten_hang_hoa: ten, msg: rowErrors.join('; '), values });
+      return;
     }
-    seenMaCodes.add(ma);
+    seenKeys.set(refValue, excelRow);
 
-    const donGiaRaw = row.don_gia;
-    const donGia = donGiaRaw != null && donGiaRaw !== '' && !Number.isNaN(Number(donGiaRaw)) ? Number(donGiaRaw) : 0;
+    const basePayload = {
+      danh_muc_id: dm!.danh_muc_id,
+      danh_muc_cha_id: dm!.danh_muc_cha_id,
+      ma_hang_hoa: ma,
+      ten_hang_hoa: ten,
+      dvt,
+      trang_thai: trangThai,
+      don_gia: donGia.ok ? donGia.value ?? 0 : 0,
+      pham_cap: normalizeText(raw.pham_cap) || null,
+      mo_ta: normalizeText(raw.mo_ta) || null,
+    };
 
-    const existingId = existingByMa.get(ma);
-    if (existingId != null) {
-      if (mode === 'upsert') {
-        toUpdate.push({
-          rowIdx: i,
-          existingId,
-          payload: {
-            danh_muc_id: dm!.danh_muc_id,
-            danh_muc_cha_id: dm!.danh_muc_cha_id,
-            ma_hang_hoa: ma,
-            ten_hang_hoa: ten,
-            dvt,
-            trang_thai: trangThai,
-            don_gia: donGia,
-            pham_cap: row.pham_cap != null ? String(row.pham_cap).trim() || null : null,
-            mo_ta: row.mo_ta != null ? String(row.mo_ta).trim() || null : null,
-            tg_cap_nhat: new Date().toISOString(),
-          },
-        });
-      } else {
-        errors.push({ row: i + 2, ma_hang_hoa: ma, ten_hang_hoa: ten, msg: i18n.t('hangHoa.service.duplicateCode') });
+    const existingId = refIndex.get(refValue);
+
+    if (existingId === undefined) {
+      if (refColumn === 'ten_hang_hoa' && idByMa.has(ma)) {
+        errors.push({ row: excelRow, ma_hang_hoa: ma, ten_hang_hoa: ten, msg: i18n.t('hangHoa.service.duplicateCode'), values });
+        return;
       }
-    } else {
-      toInsert.push({
-        rowIdx: i,
-        payload: {
-          danh_muc_id: dm!.danh_muc_id,
-          danh_muc_cha_id: dm!.danh_muc_cha_id,
-          ma_hang_hoa: ma,
-          ten_hang_hoa: ten,
-          dvt,
-          thu_tu: nextThuTu++,
-          trang_thai: trangThai,
-          don_gia: donGia,
-          pham_cap: row.pham_cap != null ? String(row.pham_cap).trim() || null : null,
-          mo_ta: row.mo_ta != null ? String(row.mo_ta).trim() || null : null,
-        },
+      toInsert.push({ row: excelRow, values, payload: { ...basePayload, thu_tu: nextThuTu++ } });
+      return;
+    }
+
+    if (existingId === null) {
+      errors.push({ row: excelRow, ma_hang_hoa: ma, ten_hang_hoa: ten, msg: i18n.t('hangHoa.import.refAmbiguous', { value: refColumn === 'ma_hang_hoa' ? ma : ten }), values });
+      return;
+    }
+
+    if (mode === 'create') {
+      errors.push({ row: excelRow, ma_hang_hoa: ma, ten_hang_hoa: ten, msg: i18n.t('hangHoa.service.duplicateCode'), values });
+      return;
+    }
+
+    if (refColumn === 'ten_hang_hoa') {
+      const clashId = idByMa.get(ma);
+      if (clashId != null && clashId !== existingId) {
+        errors.push({ row: excelRow, ma_hang_hoa: ma, ten_hang_hoa: ten, msg: i18n.t('hangHoa.service.duplicateCode'), values });
+        return;
+      }
+    }
+
+    toUpdate.push({
+      row: excelRow,
+      values,
+      id: String(existingId),
+      payload: { ...basePayload, tg_cap_nhat: new Date().toISOString() },
+    });
+  });
+
+  // Đường nhanh: một request/lô cho cả thêm mới lẫn ghi đè (cần unique index trên ma_hang_hoa).
+  if (mode === 'upsert' && refColumn === 'ma_hang_hoa' && toUpdate.length > 0) {
+    const now = new Date().toISOString();
+    const tagged = [
+      ...toInsert.map((i) => ({ ...i, isUpdate: false })),
+      ...toUpdate.map((i) => ({ ...i, isUpdate: true })),
+    ].map((i) => ({ ...i, payload: { ...i.payload, tg_cap_nhat: now } }));
+
+    const res = await bulkUpsert(TABLE, tagged, 'ma_hang_hoa');
+    if (!res.unsupported) {
+      res.done.forEach((item) => {
+        if (item.isUpdate) updated++;
+        else created++;
       });
+      res.failed.forEach(({ item, msg }) => errors.push({ row: item.row, msg, values: item.values }));
+      return { created, updated, errors: errors.sort((a, b) => a.row - b.row) };
     }
   }
 
-  // Phase 5: Batch insert (chunks of BATCH_SIZE)
-  for (let i = 0; i < toInsert.length; i += BATCH_SIZE) {
-    const chunk = toInsert.slice(i, i + BATCH_SIZE);
-    const { error } = await db.from(TABLE).insert(chunk.map((c) => c.payload));
-    if (error) {
-      chunk.forEach((c) => {
-        const row = rows[c.rowIdx];
-        errors.push({
-          row: c.rowIdx + 2,
-          ma_hang_hoa: String(row.ma_hang_hoa ?? ''),
-          ten_hang_hoa: String(row.ten_hang_hoa ?? ''),
-          msg: error.message,
-        });
-      });
-    } else {
-      created += chunk.length;
-    }
+  if (toInsert.length > 0) {
+    const res = await bulkInsert(TABLE, toInsert);
+    created = res.done.length;
+    res.failed.forEach(({ item, msg }) => errors.push({ row: item.row, msg, values: item.values }));
   }
 
-  // Phase 6: Batch update for upsert (individual updates — Supabase doesn't support batch update by different IDs)
   if (toUpdate.length > 0) {
-    const UPDATE_CHUNK = 50;
-    for (let i = 0; i < toUpdate.length; i += UPDATE_CHUNK) {
-      const chunk = toUpdate.slice(i, i + UPDATE_CHUNK);
-      const results = await Promise.allSettled(
-        chunk.map((c) =>
-          db.from(TABLE).update(c.payload).eq('id', c.existingId)
-        )
-      );
-      results.forEach((res, idx) => {
-        const c = chunk[idx];
-        const row = rows[c.rowIdx];
-        if (res.status === 'fulfilled' && !res.value.error) {
-          updated++;
-        } else {
-          const errMsg = res.status === 'rejected'
-            ? (res.reason as Error).message
-            : res.value.error?.message ?? 'Unknown error';
-          errors.push({
-            row: c.rowIdx + 2,
-            ma_hang_hoa: String(row.ma_hang_hoa ?? ''),
-            ten_hang_hoa: String(row.ten_hang_hoa ?? ''),
-            msg: errMsg,
-          });
-        }
-      });
-    }
+    const res = await bulkUpdateById(TABLE, toUpdate);
+    updated = res.done.length;
+    res.failed.forEach(({ item, msg }) => errors.push({ row: item.row, msg, values: item.values }));
   }
 
-  return { created, updated, errors };
+  return { created, updated, errors: errors.sort((a, b) => a.row - b.row) };
 };
 
 /** Lấy danh mục cấp 2 kèm tên cha (dùng cho sheet tham chiếu trong template import). */

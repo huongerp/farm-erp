@@ -34,7 +34,8 @@ import ListPageSkeleton from '../../../../components/shared/ListPageSkeleton';
 import ChiTietRowDetail from './ChiTietRowDetail';
 import ChiTietRowEditModal, { type ChiTietRowEditPayload } from './ChiTietRowEditModal';
 import ChuyenTienDoModal, { type ChuyenTienDoResult } from './ChuyenTienDoModal';
-import { cn } from '../../../../lib/utils';
+import { cn, formatDateShortTime } from '../../../../lib/utils';
+import { parseTraoDoiGanNhat } from '../utils/trao-doi-gan-nhat';
 import { CONFIRM_DELETE } from '../../../../lib/button-labels';
 
 function phieuToFormValues(phieu: PhieuDeXuatVatTu): PhieuDeXuatVatTuFormValues {
@@ -412,6 +413,21 @@ const ChiTietTab: React.FC = () => {
           return (
             <span className="block truncate whitespace-nowrap text-xs text-muted-foreground" title={item.ghi_chu ?? ''}>{item.ghi_chu ?? '—'}</span>
           );
+        case 'trao_doi': {
+          const ganNhat = parseTraoDoiGanNhat(item.trao_doi);
+          if (!ganNhat) return <span className="text-xs text-muted-foreground">—</span>;
+          const thoiDiem = ganNhat.timestamp ? formatDateShortTime(ganNhat.timestamp) : '';
+          return (
+            <span
+              className="block truncate whitespace-nowrap text-xs text-muted-foreground"
+              title={item.trao_doi ?? ''}
+            >
+              {thoiDiem && <span className="tabular-nums text-foreground/70">{thoiDiem}</span>}
+              {thoiDiem && ganNhat.noiDung ? ' · ' : ''}
+              {ganNhat.noiDung || (thoiDiem ? '' : '—')}
+            </span>
+          );
+        }
         case 'actions':
           return (
             <div className="flex items-center justify-center gap-1">
