@@ -486,6 +486,27 @@ export async function deleteBaoCaoSoCheManySupabase(ids: string[]): Promise<void
   if (error) throwSupabaseError(error, { resource: `${TABLE_CHA}.deleteMany` });
 }
 
+/**
+ * Khóa / mở khóa hàng loạt. Bảng không có log nối thêm nên gộp được thành một UPDATE ... IN —
+ * hoặc cả lô thành công, hoặc ném lỗi để UI báo, không có trạng thái dở dang từng phiếu.
+ */
+export async function updateBaoCaoSoCheTrangThaiManySupabase(
+  ids: string[],
+  trang_thai: TrangThaiBaoCaoSoChePhieu
+): Promise<void> {
+  const numIds = ids.map((x) => Number(x)).filter((n) => Number.isFinite(n));
+  if (numIds.length === 0) return;
+  const next =
+    trang_thai === TRANG_THAI_BAO_CAO_SO_CHE.KHOA
+      ? TRANG_THAI_BAO_CAO_SO_CHE.KHOA
+      : TRANG_THAI_BAO_CAO_SO_CHE.MO;
+  const { error } = await db
+    .from(TABLE_CHA)
+    .update({ trang_thai: next, tg_cap_nhat: new Date().toISOString() })
+    .in('id', numIds);
+  if (error) throwSupabaseError(error, { resource: `${TABLE_CHA}.updateTrangThaiMany` });
+}
+
 export async function updateBaoCaoSoCheTrangThaiSupabase(
   id: string,
   trang_thai: TrangThaiBaoCaoSoChePhieu

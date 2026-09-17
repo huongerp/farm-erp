@@ -27,6 +27,8 @@ interface Props {
   canDelete?: boolean;
   /** fromRows: đếm từ `data`. unweighted: chip luôn hiện khi danh sách chỉ một trang server. */
   chipCountsMode?: 'fromRows' | 'unweighted';
+  /** Nút bulk riêng của module (duyệt/hủy hàng loạt), hiện cạnh nút Xóa khi có dòng được chọn. */
+  bulkActions?: React.ReactNode;
 }
 
 const DonDatHangToolbar: React.FC<Props> = ({
@@ -41,6 +43,7 @@ const DonDatHangToolbar: React.FC<Props> = ({
   canCreate = true,
   canDelete = true,
   chipCountsMode = 'fromRows',
+  bulkActions,
 }) => {
   const { t } = useTranslation();
   const unweighted = chipCountsMode === 'unweighted';
@@ -290,7 +293,12 @@ const DonDatHangToolbar: React.FC<Props> = ({
       onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
       actions={renderActions}
-      bulkActions={bulkExport}
+      bulkActions={
+        <>
+          {bulkActions}
+          {bulkExport}
+        </>
+      }
       filters={renderFilters}
       filterGroups={filterGroups}
       mobileActions={mobileActions}

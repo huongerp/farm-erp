@@ -1,10 +1,17 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
+import { CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import { useModulePermission } from '../../../he-thong/phan-quyen/hooks/use-module-permission';
-import { usePhieuKhoListPaged, usePhieuKhoById, useDeletePhieuKho, useDeletePhieuKhoMany } from '../hooks/use-phieu-kho';
+import {
+  usePhieuKhoListPaged,
+  usePhieuKhoById,
+  useDeletePhieuKho,
+  useDeletePhieuKhoMany,
+  useUpdatePhieuKhoTrangThaiMany,
+} from '../hooks/use-phieu-kho';
 import { usePhieuKhoViewScope } from '../hooks/use-phieu-kho-view-scope';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import { buildPhieuKhoListServerQuery, fetchAllPhieuKhoForListQuery } from '../services/phieu-kho-service';
@@ -14,9 +21,10 @@ import { usePhieuKhoStore } from '../store/usePhieuKhoStore';
 import { getDateRangeFromPreset } from '../../../he-thong/nhan-vien/utils/stats-date-range';
 import type { DateRangePresetId } from '../../../he-thong/nhan-vien/core/stats-constants';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
+import { useAuthStore } from '../../../../store/useStore';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
-import type { PhieuKho, LoaiPhieuKhoTab } from '../core/types';
-import { canMutatePhieuKhoByTrangThai } from '../core/constants';
+import type { PhieuKho, LoaiPhieuKhoTab, TrangThaiPhieuKho } from '../core/types';
+import { canMutatePhieuKhoByTrangThai, canBulkApprovePhieuKho } from '../core/constants';
 import type { Kho } from '../../danh-sach-kho/core/types';
 import type { HangHoa } from '../../danh-sach-hang-hoa/core/types';
 import type { DoiTac } from '../../danh-sach-doi-tac/core/types';
@@ -24,6 +32,7 @@ import PhieuKhoToolbar from './PhieuKhoToolbar';
 import PhieuKhoList from './PhieuKhoList';
 import PhieuKhoForm from './PhieuKhoForm';
 import PhieuKhoDetail from './PhieuKhoDetail';
+import PhieuKhoBulkApproveDialog from './PhieuKhoBulkApproveDialog';
 import DanhSachKhoForm from '../../danh-sach-kho/components/danh-sach-kho-form';
 import DanhSachHangHoaForm from '../../danh-sach-hang-hoa/components/DanhSachHangHoaForm';
 import DoiTacForm from '../../danh-sach-doi-tac/components/DoiTacForm';
@@ -67,6 +76,7 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
   const [showAddDoiTac, setShowAddDoiTac] = useState<'nha_cung_cap' | 'khach_hang' | null>(null);
   const [editingDoiTacNested, setEditingDoiTacNested] = useState<DoiTac | null>(null);
   const [showExport, setShowExport] = useState(false);
+  const [bulkApprove, setBulkApprove] = useState<{ ids: string[]; skipped: number } | null>(null);
   const [exportRows, setExportRows] = useState<PhieuKho[]>([]);
   const [exportLoading, setExportLoading] = useState(false);
   const addKhoResolveRef = useRef<(k: Kho | null) => void>(null);
@@ -89,6 +99,11 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
   const { data: editingPhieuFull } = usePhieuKhoById(editingItem?.id);
   const deleteMutation = useDeletePhieuKho();
   const deleteManyMutation = useDeletePhieuKhoMany();
+  const approveManyMutation = useUpdatePhieuKhoTrangThaiMany();
+  const user = useAuthStore((s) => s.user);
+  const nguoiDuyetIdRaw = user?.id != null ? Number(user.id) : null;
+  const nguoiDuyetId = nguoiDuyetIdRaw != null && !Number.isNaN(nguoiDuyetIdRaw) ? nguoiDuyetIdRaw : null;
+  const nguoiDuyetTen = user?.ho_va_ten?.trim() || user?.full_name?.trim() || user?.email?.trim() || '';
 
   const dateRangeStr = useMemo(() => {
     const dp = typeof filters.datePreset === 'string' ? filters.datePreset : 'all';
@@ -282,6 +297,53 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
     });
   };
 
+  /** Lọc lô về đúng phiếu còn trong luồng duyệt; phiếu đã có quyết định bị bỏ qua, không chặn cả lô. */
+  const handleApproveMany = () => {
+    const selected = Array.from(selectedIds);
+    const allowedIds = selected.filter((id) => {
+      const item = tableRows.find((p) => p.id === id);
+      return item && canBulkApprovePhieuKho(item.trang_thai, canApprove);
+    });
+    if (allowedIds.length === 0) {
+      toast.message(t('phieuKho.toast.bulkApproveNoneAllowed'));
+      return;
+    }
+    setBulkApprove({ ids: allowedIds, skipped: selected.length - allowedIds.length });
+  };
+
+  const submitApproveMany = (trangThai: TrangThaiPhieuKho, ghiChu: string) => {
+    if (!bulkApprove) return;
+    const ids = bulkApprove.ids;
+    approveManyMutation.mutate(
+      {
+        ids,
+        trang_thai: trangThai,
+        ghi_chu: ghiChu || undefined,
+        id_nguoi_duyet: nguoiDuyetId,
+        ten_nguoi_duyet_hien_thi: nguoiDuyetTen || undefined,
+      },
+      {
+        onSuccess: () => {
+          setBulkApprove(null);
+          clearSelection();
+          if (viewingItem && ids.includes(viewingItem.id)) setViewingItem(null);
+        },
+      }
+    );
+  };
+
+  const bulkActions =
+    selectedIds.size > 0 && canApprove ? (
+      <button
+        type="button"
+        onClick={handleApproveMany}
+        className="h-8 px-3 flex items-center gap-1.5 rounded-lg border border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/15 transition-all active:scale-95"
+      >
+        <CheckCircle size={14} className="stroke-[2.5px] shrink-0" />
+        <span className="text-xs font-medium">{t('phieuKho.bulkApproveAction')}</span>
+      </button>
+    ) : null;
+
   const canEditItem = useCallback(
     (item: PhieuKho) => canMutatePhieuKhoByTrangThai(item.trang_thai, canUpdate, canApprove),
     [canUpdate, canApprove]
@@ -315,6 +377,7 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
         }}
         onDeleteMany={handleDeleteMany}
         onExport={handleExport}
+        bulkActions={bulkActions}
         canCreate={canCreate}
         canDelete={canDelete}
       />
@@ -475,6 +538,16 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
           />
         )}
       </AnimatePresence>
+
+      {bulkApprove && (
+        <PhieuKhoBulkApproveDialog
+          count={bulkApprove.ids.length}
+          skipped={bulkApprove.skipped}
+          isPending={approveManyMutation.isPending}
+          onClose={() => setBulkApprove(null)}
+          onConfirm={submitApproveMany}
+        />
+      )}
 
       <AnimatePresence>
         {showExport && (

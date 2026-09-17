@@ -12,6 +12,7 @@ import {
   getChiTietPhieuKhoAll,
   getNextSoPhieu,
   updatePhieuKhoTrangThai,
+  updatePhieuKhoTrangThaiMany,
 } from '../services/phieu-kho-service';
 import type { ChiTietPhieuKhoListServerQuery, PhieuKhoListServerQuery } from '../services/phieu-kho-list-query';
 import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
@@ -199,6 +200,57 @@ export const useUpdatePhieuKhoTrangThai = (onSuccess?: () => void) => {
         qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
       }
       toast.success(i18n.t('phieuKho.toast.updateSuccess'));
+      onSuccess?.();
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+};
+
+/**
+ * Duyệt hàng loạt. Khác bản lẻ ở hai chỗ:
+ * - không refetch lại từng phiếu (N request thừa) — chỉ bỏ cache chi tiết rồi để list tự nạp lại;
+ * - lỗi một phần không làm hỏng cả lô: service trả về danh sách thành công/thất bại, toast báo rõ.
+ */
+export const useUpdatePhieuKhoTrangThaiMany = (onSuccess?: () => void) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      ids,
+      trang_thai,
+      ghi_chu,
+      id_nguoi_duyet,
+      ten_nguoi_duyet_hien_thi,
+    }: {
+      ids: string[];
+      trang_thai: import('../core/types').TrangThaiPhieuKho;
+      ghi_chu?: string;
+      id_nguoi_duyet?: number | null;
+      ten_nguoi_duyet_hien_thi?: string;
+    }) =>
+      updatePhieuKhoTrangThaiMany(ids, trang_thai, {
+        ghi_chu,
+        id_nguoi_duyet,
+        ten_nguoi_duyet_hien_thi,
+      }),
+    onSuccess: (result, { ids }) => {
+      result.okIds.forEach((id) => qc.removeQueries({ queryKey: [...QUERY_KEY, id] }));
+      qc.invalidateQueries({ queryKey: QUERY_KEY_CHI_TIET });
+      qc.invalidateQueries({ queryKey: [...QUERY_KEY_CHI_TIET, 'paged'] });
+      qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
+      invalidateTonKho(qc);
+
+      if (result.failed.length === 0) {
+        toast.success(i18n.t('phieuKho.toast.bulkApproveSuccess', { count: result.okIds.length }));
+      } else {
+        toast.warning(
+          i18n.t('phieuKho.toast.bulkApprovePartial', {
+            ok: result.okIds.length,
+            total: ids.length,
+            failed: result.failed.length,
+          })
+        );
+        toast.error(result.failed[0].message);
+      }
       onSuccess?.();
     },
     onError: (err: Error) => toast.error(err.message),

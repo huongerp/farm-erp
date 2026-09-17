@@ -13,13 +13,16 @@
  * - `dirty`: form bên trong có thay đổi CHƯA LƯU (GenericDrawer báo qua prop `isDirty`,
  *   form full-page báo qua `useUnsavedGuard`). Chỉ loại này mới chặn F5/đóng tab.
  * - `mutation`: đang có request ghi dữ liệu chạy dở (cầu nối từ `useIsMutating`).
+ * - `typing`: con trỏ đang nằm trong một ô nhập bất kỳ (nối tự động từ `lib/typing-busy.ts`).
+ *   Bắt được cả ô tìm kiếm, bộ lọc và bảng nhập inline — những chỗ không đi qua
+ *   GenericDrawer nên không có `isDirty`.
  *
  * Module thuần, không phụ thuộc React, để `index.tsx` dùng được trước khi React mount.
  */
 
-export type BusyKind = 'overlay' | 'dirty' | 'mutation';
+export type BusyKind = 'overlay' | 'dirty' | 'mutation' | 'typing';
 
-const counts: Record<BusyKind, number> = { overlay: 0, dirty: 0, mutation: 0 };
+const counts: Record<BusyKind, number> = { overlay: 0, dirty: 0, mutation: 0, typing: 0 };
 const listeners = new Set<() => void>();
 
 function notify(): void {
@@ -58,12 +61,13 @@ export function setMutationCount(n: number): void {
 
 /** true khi có bất kỳ lý do nào khiến reload lúc này là thô lỗ. */
 export function isAppBusy(): boolean {
-  return counts.overlay > 0 || counts.dirty > 0 || counts.mutation > 0;
+  return counts.overlay > 0 || counts.dirty > 0 || counts.mutation > 0 || counts.typing > 0;
 }
 
 /**
  * true khi có dữ liệu người dùng đã gõ mà chưa lưu. Hẹp hơn `isAppBusy` — chỉ dùng cho
- * cảnh báo `beforeunload`, vì chặn F5 chỉ vì có drawer xem chi tiết đang mở là phiền.
+ * cảnh báo `beforeunload`, vì chặn F5 chỉ vì có drawer xem chi tiết đang mở, hay vì con trỏ
+ * đang đậu trong ô tìm kiếm (`typing`), là phiền.
  */
 export function hasUnsavedInput(): boolean {
   return counts.dirty > 0;
@@ -82,6 +86,7 @@ export function __resetAppBusy(): void {
   counts.overlay = 0;
   counts.dirty = 0;
   counts.mutation = 0;
+  counts.typing = 0;
   listeners.clear();
 }
 

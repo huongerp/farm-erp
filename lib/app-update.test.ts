@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
-  SOFT_NOTIFY_AFTER_MS,
   __resetPendingReload,
   decideUpdateAction,
   getPendingReloadAt,
@@ -13,8 +12,6 @@ const base: UpdateState = {
   updateReady: true,
   busy: false,
   trigger: 'route',
-  msSinceReady: 1_000,
-  alreadyNotified: false,
 };
 
 const ALL_TRIGGERS: UpdateTrigger[] = ['ready', 'route', 'idle', 'visible', 'tick'];
@@ -31,44 +28,10 @@ describe('decideUpdateAction', () => {
     }
   });
 
-  it('đang bận thì không bao giờ reload, kể cả đã chờ rất lâu', () => {
+  it('đang bận thì luôn chờ — không reload, cũng không nhắc gì', () => {
     for (const trigger of ALL_TRIGGERS) {
-      const decision = decideUpdateAction({
-        ...base,
-        trigger,
-        busy: true,
-        msSinceReady: 10 * SOFT_NOTIFY_AFTER_MS,
-      });
-      expect(decision).not.toBe('apply');
+      expect(decideUpdateAction({ ...base, trigger, busy: true })).toBe('wait');
     }
-  });
-
-  it('bận lâu quá thì nhắc mềm — nhưng chỉ ở nhịp định kỳ', () => {
-    const stuck = { ...base, busy: true, msSinceReady: SOFT_NOTIFY_AFTER_MS };
-    expect(decideUpdateAction({ ...stuck, trigger: 'tick' })).toBe('notify');
-    expect(decideUpdateAction({ ...stuck, trigger: 'route' })).toBe('wait');
-    expect(decideUpdateAction({ ...stuck, trigger: 'idle' })).toBe('wait');
-  });
-
-  it('bận nhưng chưa đủ lâu thì chưa nhắc', () => {
-    const decision = decideUpdateAction({
-      ...base,
-      busy: true,
-      trigger: 'tick',
-      msSinceReady: SOFT_NOTIFY_AFTER_MS - 1,
-    });
-    expect(decision).toBe('wait');
-  });
-
-  it('đã nhắc rồi thì không nhắc lại', () => {
-    const decision = decideUpdateAction({
-      ...base,
-      busy: true,
-      trigger: 'tick',
-      msSinceReady: 5 * SOFT_NOTIFY_AFTER_MS,
-      alreadyNotified: true,
-    });
-    expect(decision).toBe('wait');
   });
 });
 

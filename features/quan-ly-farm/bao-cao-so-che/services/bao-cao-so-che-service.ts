@@ -9,6 +9,7 @@ import {
   deleteBaoCaoSoCheSupabase,
   deleteBaoCaoSoCheManySupabase,
   updateBaoCaoSoCheTrangThaiSupabase,
+  updateBaoCaoSoCheTrangThaiManySupabase,
 } from './bao-cao-so-che-supabase.service';
 
 async function enrichTenNguoiTao(items: FarmBaoCaoSoChe[]): Promise<FarmBaoCaoSoChe[]> {
@@ -57,6 +58,13 @@ export async function deleteBaoCaoSoChe(id: string): Promise<void> {
 
 export async function deleteBaoCaoSoCheMany(ids: string[]): Promise<void> {
   await deleteBaoCaoSoCheManySupabase(ids);
+}
+
+export async function updateBaoCaoSoCheTrangThaiMany(
+  ids: string[],
+  trang_thai: TrangThaiBaoCaoSoChePhieu
+): Promise<void> {
+  await updateBaoCaoSoCheTrangThaiManySupabase(ids, trang_thai);
 }
 
 export async function updateBaoCaoSoCheTrangThai(

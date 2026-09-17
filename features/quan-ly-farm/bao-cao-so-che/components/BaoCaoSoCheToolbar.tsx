@@ -19,6 +19,8 @@ interface Props {
   onExport: () => void;
   canCreate?: boolean;
   canDelete?: boolean;
+  /** Nút bulk riêng của module (khóa/mở khóa hàng loạt), hiện cạnh nút Xóa khi có dòng được chọn. */
+  bulkActions?: React.ReactNode;
 }
 
 function ngayToYear(ngay: string): string {
@@ -38,6 +40,7 @@ const BaoCaoSoCheToolbar: React.FC<Props> = ({
   onExport,
   canCreate = true,
   canDelete = true,
+  bulkActions,
 }) => {
   const { t } = useTranslation();
   const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useBaoCaoSoCheStore);
@@ -268,6 +271,7 @@ const BaoCaoSoCheToolbar: React.FC<Props> = ({
   return (
     <GenericToolbar
       selectedCount={selectedCount}
+      bulkActions={bulkActions}
       onDeleteMany={canDelete ? onDeleteMany : undefined}
       searchTerm={searchInput}
       onSearchChange={setSearchInput}

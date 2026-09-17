@@ -9,6 +9,7 @@ import {
   isTrangThaiChoPheDuyet,
   isTrangThaiDaQuyetDinh,
   canMutatePhieuKhoByTrangThai,
+  canBulkApprovePhieuKho,
 } from '../constants';
 
 describe('trangThaiToFilterKey / filterKeyToTrangThai', () => {
@@ -69,5 +70,28 @@ describe('canMutatePhieuKhoByTrangThai — cổng quyền sửa/xoá phiếu kho
   it('phiếu đã duyệt: chỉ người có quyền bypass (canApprove/canAdmin) mới sửa được', () => {
     expect(canMutatePhieuKhoByTrangThai(TRANG_THAI_DA_DUYET, true, true)).toBe(true);
     expect(canMutatePhieuKhoByTrangThai(TRANG_THAI_DA_DUYET, true, false)).toBe(false);
+  });
+});
+
+describe('canBulkApprovePhieuKho — cổng lọc phiếu cho duyệt hàng loạt', () => {
+  it('không có quyền duyệt → false với mọi trạng thái', () => {
+    expect(canBulkApprovePhieuKho(TRANG_THAI_CHO_DUYET, false)).toBe(false);
+    expect(canBulkApprovePhieuKho(TRANG_THAI_DOI_DUYET, false)).toBe(false);
+    expect(canBulkApprovePhieuKho(TRANG_THAI_DA_DUYET, false)).toBe(false);
+    expect(canBulkApprovePhieuKho(TRANG_THAI_KHONG_DUYET, false)).toBe(false);
+  });
+
+  it('có quyền duyệt: chỉ phiếu còn trong luồng duyệt mới vào được lô', () => {
+    expect(canBulkApprovePhieuKho(TRANG_THAI_CHO_DUYET, true)).toBe(true);
+    expect(canBulkApprovePhieuKho(TRANG_THAI_DOI_DUYET, true)).toBe(true);
+  });
+
+  it('phiếu đã có quyết định bị loại khỏi lô — đổi lại phải qua drawer chi tiết', () => {
+    expect(canBulkApprovePhieuKho(TRANG_THAI_DA_DUYET, true)).toBe(false);
+    expect(canBulkApprovePhieuKho(TRANG_THAI_KHONG_DUYET, true)).toBe(false);
+  });
+
+  it('trạng thái lạ trong DB không được lọt vào lô', () => {
+    expect(canBulkApprovePhieuKho('giá trị lạ', true)).toBe(false);
   });
 });

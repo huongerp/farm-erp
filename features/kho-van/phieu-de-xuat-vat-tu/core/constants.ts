@@ -91,3 +91,12 @@ export function getTienDoMhBadgeClass(tenTienDo: string | null | undefined): str
   if (!tenTienDo?.trim()) return 'bg-muted text-muted-foreground border-border';
   return TIEN_DO_MH_COLORS[tenTienDo.trim()] ?? 'bg-muted text-muted-foreground border-border';
 }
+
+/**
+ * Duyệt hàng loạt: chỉ áp cho phiếu còn trong luồng duyệt (Chờ / Đợi duyệt).
+ * Phiếu đã có quyết định phải đổi lẻ ở drawer chi tiết.
+ */
+export function canBulkApprovePhieuDeXuat(trangThai: string, canApprove: boolean): boolean {
+  if (!canApprove) return false;
+  return isTrangThaiChoPheDuyet(trangThai);
+}

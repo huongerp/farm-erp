@@ -65,6 +65,10 @@ const PhieuKhoPTPreviewPage = lazyWithFeatureI18n(
   'phieu-kho-phan-thuoc',
   () => import('./features/quan-ly-farm/phieu-kho-phan-thuoc/PhieuKhoPTPreviewPage')
 );
+const DeXuatMuaHangPreviewPage = lazyWithFeatureI18n(
+  'de-xuat-mua-hang',
+  () => import('./features/quan-ly-farm/de-xuat-mua-hang/DeXuatMuaHangPreviewPage')
+);
 const PhieuDeXuatVatTuPreviewPage = lazyWithFeatureI18n(
   'phieu-de-xuat-vat-tu',
   () => import('./features/kho-van/phieu-de-xuat-vat-tu/PhieuDeXuatVatTuPreviewPage')
@@ -195,6 +199,18 @@ const App = () => {
         <Route path="/phieu-kiem-ke/:id" element={<ProtectedRoute><Suspense fallback={<PageFallback />}><PhieuKiemKePreviewPage /></Suspense></ProtectedRoute>} />
         <Route path="/mua-hang/kiem-ke-kho/preview/:id" element={<ProtectedRoute><Suspense fallback={<PageFallback />}><PhieuKiemKeKhoPreviewPage /></Suspense></ProtectedRoute>} />
         <Route path="/mua-hang/phieu-kho/preview/:id" element={<ProtectedRoute><Suspense fallback={<PageFallback />}><PhieuKhoPreviewPage /></Suspense></ProtectedRoute>} />
+        <Route
+          path="/quan-ly-farm/de-xuat-mua-hang/preview/:id"
+          element={
+            <ProtectedRoute>
+              <ModulePermissionGuard moduleId="quan-ly-farm/de-xuat-mua-hang">
+                <Suspense fallback={<PageFallback />}>
+                  <DeXuatMuaHangPreviewPage />
+                </Suspense>
+              </ModulePermissionGuard>
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/quan-ly-farm/phieu-kho-phan-thuoc/preview/:id"
           element={

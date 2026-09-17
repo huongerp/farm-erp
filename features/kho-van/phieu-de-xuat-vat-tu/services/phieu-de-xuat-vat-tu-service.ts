@@ -13,6 +13,8 @@ import {
   updatePhieuDeXuatVatTuSupabase,
   deletePhieuDeXuatVatTuSupabase,
   deletePhieuDeXuatVatTuManySupabase,
+  updatePhieuDeXuatVatTuTrangThaiSupabase,
+  updatePhieuDeXuatVatTuTrangThaiManySupabase,
   getAllPhieuDeXuatVatTuChiTietSupabase,
   getPhieuDeXuatVatTuChiTietPageSupabase,
   fetchAllPhieuDeXuatVatTuChiTietForListQuerySupabase,
@@ -46,3 +48,9 @@ export const createPhieuDeXuatVatTu = (data: PhieuDeXuatVatTuFormValues) => crea
 export const updatePhieuDeXuatVatTu = updatePhieuDeXuatVatTuSupabase;
 export const deletePhieuDeXuatVatTu = deletePhieuDeXuatVatTuSupabase;
 export const deletePhieuDeXuatVatTuMany = deletePhieuDeXuatVatTuManySupabase;
+export const updatePhieuDeXuatVatTuTrangThai = updatePhieuDeXuatVatTuTrangThaiSupabase;
+export const updatePhieuDeXuatVatTuTrangThaiMany = updatePhieuDeXuatVatTuTrangThaiManySupabase;
+export type {
+  UpdatePhieuDeXuatTrangThaiOptions,
+  UpdatePhieuDeXuatTrangThaiManyResult,
+} from './phieu-de-xuat-vat-tu-supabase.service';

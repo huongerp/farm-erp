@@ -21,6 +21,7 @@ import { signOut, changeOwnPassword } from '../../lib/auth';
 import { toast } from 'sonner';
 import { useCompanyInfo } from '../../features/he-thong/thong-tin-cong-ty/hooks/use-thong-tin-cong-ty';
 import { warmupNavigationTarget } from '../../lib/submenu-prefetch';
+import { consumeReloadContext, restoreReloadScroll } from '../../lib/reload-context';
 
 /** Sidebar width: expanded 240px (gọn), collapsed 64px (4rem, 8px grid) */
 const SIDEBAR_WIDTH_EXPANDED = 240;
@@ -57,6 +58,13 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     const id = window.setTimeout(() => setIsRouteLoading(false), 400);
     return () => window.clearTimeout(id);
   }, [location.pathname]);
+
+  // Vừa reload để áp bản cập nhật: quay lại đúng vị trí cuộn cũ thay vì nhảy về đầu danh
+  // sách (xem lib/reload-context.ts). Chỉ chạy một lần khi khung ứng dụng vừa mount.
+  useEffect(() => {
+    const ctx = consumeReloadContext(window.location.pathname + window.location.search);
+    if (ctx != null) restoreReloadScroll(ctx.scrollTop);
+  }, []);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const [changePasswordNew, setChangePasswordNew] = useState('');

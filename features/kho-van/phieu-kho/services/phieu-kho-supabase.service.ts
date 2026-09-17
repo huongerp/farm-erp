@@ -550,22 +550,20 @@ export interface UpdatePhieuKhoTrangThaiOptions {
   ten_nguoi_duyet_hien_thi?: string;
 }
 
-/** Cập nhật chỉ trạng thái, id_nguoi_duyet và trao_doi; không đụng bảng chi tiết. */
-export async function updatePhieuKhoTrangThaiSupabase(
-  id: string,
-  trang_thai: TrangThaiPhieuKho,
-  options?: UpdatePhieuKhoTrangThaiOptions
-): Promise<void> {
-  const idNum = Number(id);
-  if (Number.isNaN(idNum)) throw new Error(i18n.t('phieuKho.service.notFound'));
-  const ghi_chu = options?.ghi_chu;
-  const idNguoiDuyet =
-    options?.id_nguoi_duyet != null && Number.isFinite(options.id_nguoi_duyet) && !Number.isNaN(options.id_nguoi_duyet)
-      ? options.id_nguoi_duyet
-      : null;
+/** Bỏ NaN/không hữu hạn — dùng chung cho duyệt lẻ và duyệt hàng loạt. */
+function normalizeNguoiDuyetId(id?: number | null): number | null {
+  return id != null && Number.isFinite(id) && !Number.isNaN(id) ? id : null;
+}
 
-  const { data: row } = await db.from(TABLE_PHIEU).select('trao_doi').eq('id', idNum).maybeSingle();
-  const existing = (row as { trao_doi?: string } | null)?.trao_doi ?? '';
+/**
+ * Dòng log nối vào cột trao_doi khi đổi trạng thái.
+ * Duyệt lẻ và duyệt hàng loạt phải đi qua đây để định dạng log không lệch nhau.
+ */
+function buildTraoDoiEntry(
+  trang_thai: TrangThaiPhieuKho,
+  idNguoiDuyet: number | null,
+  options?: UpdatePhieuKhoTrangThaiOptions
+): string {
   const ts = formatPhieuKhoTraoDoiTimestamp();
   const who =
     options?.ten_nguoi_duyet_hien_thi?.trim() ||
@@ -576,15 +574,87 @@ export async function updatePhieuKhoTrangThaiSupabase(
       : trang_thai === 'Đợi duyệt'
         ? 'chuyển sang đợi duyệt'
         : 'không duyệt';
-  const entry = ghi_chu?.trim()
+  const ghi_chu = options?.ghi_chu;
+  return ghi_chu?.trim()
     ? `${ts} — ${who} ${actionVerb}. Ghi chú: ${ghi_chu.trim()}`
     : `${ts} — ${who} ${actionVerb}.`;
-  const newTraoDoi = existing ? existing + '\n' + entry : entry;
+}
+
+function appendTraoDoi(existing: string | null | undefined, entry: string): string {
+  return existing ? existing + '\n' + entry : entry;
+}
+
+/** Cập nhật chỉ trạng thái, id_nguoi_duyet và trao_doi; không đụng bảng chi tiết. */
+export async function updatePhieuKhoTrangThaiSupabase(
+  id: string,
+  trang_thai: TrangThaiPhieuKho,
+  options?: UpdatePhieuKhoTrangThaiOptions
+): Promise<void> {
+  const idNum = Number(id);
+  if (Number.isNaN(idNum)) throw new Error(i18n.t('phieuKho.service.notFound'));
+  const idNguoiDuyet = normalizeNguoiDuyetId(options?.id_nguoi_duyet);
+
+  const { data: row } = await db.from(TABLE_PHIEU).select('trao_doi').eq('id', idNum).maybeSingle();
+  const existing = (row as { trao_doi?: string } | null)?.trao_doi ?? '';
+  const newTraoDoi = appendTraoDoi(existing, buildTraoDoiEntry(trang_thai, idNguoiDuyet, options));
   const { error } = await db
     .from(TABLE_PHIEU)
     .update({ trang_thai, trao_doi: newTraoDoi, id_nguoi_duyet: idNguoiDuyet })
     .eq('id', idNum);
   if (error) throwSupabaseError(error);
+}
+
+export interface UpdatePhieuKhoTrangThaiManyResult {
+  okIds: string[];
+  failed: { id: string; message: string }[];
+}
+
+/**
+ * Đổi trạng thái hàng loạt (duyệt hàng loạt).
+ *
+ * Cột trao_doi là log nối thêm, nội dung trước đó khác nhau từng phiếu, nên KHÔNG gộp được thành
+ * một `update().in()`. Thay vào đó: gom log cũ bằng 1 SELECT, rồi PATCH tuần tự từng phiếu và gom
+ * lỗi lại thay vì dừng cả lô — phiếu lỗi không chặn phiếu còn lại.
+ */
+export async function updatePhieuKhoTrangThaiManySupabase(
+  ids: string[],
+  trang_thai: TrangThaiPhieuKho,
+  options?: UpdatePhieuKhoTrangThaiOptions
+): Promise<UpdatePhieuKhoTrangThaiManyResult> {
+  const numIds = ids.map((id) => Number(id)).filter((n) => !Number.isNaN(n));
+  if (numIds.length === 0) return { okIds: [], failed: [] };
+
+  const idNguoiDuyet = normalizeNguoiDuyetId(options?.id_nguoi_duyet);
+  const { data, error: selErr } = await db.from(TABLE_PHIEU).select('id,trao_doi').in('id', numIds);
+  if (selErr) throwSupabaseError(selErr);
+  const traoDoiById = new Map<number, string>();
+  ((data ?? []) as { id: number; trao_doi?: string | null }[]).forEach((row) => {
+    traoDoiById.set(Number(row.id), row.trao_doi ?? '');
+  });
+
+  // Cả lô dùng chung một mốc thời gian + ghi chú: đây là một thao tác duyệt duy nhất.
+  const entry = buildTraoDoiEntry(trang_thai, idNguoiDuyet, options);
+  const okIds: string[] = [];
+  const failed: { id: string; message: string }[] = [];
+
+  for (const idNum of numIds) {
+    try {
+      const { error } = await db
+        .from(TABLE_PHIEU)
+        .update({
+          trang_thai,
+          trao_doi: appendTraoDoi(traoDoiById.get(idNum), entry),
+          id_nguoi_duyet: idNguoiDuyet,
+        })
+        .eq('id', idNum);
+      if (error) throwSupabaseError(error);
+      okIds.push(String(idNum));
+    } catch (err) {
+      failed.push({ id: String(idNum), message: err instanceof Error ? err.message : String(err) });
+    }
+  }
+
+  return { okIds, failed };
 }
 
 export async function deletePhieuKhoSupabase(id: string): Promise<void> {

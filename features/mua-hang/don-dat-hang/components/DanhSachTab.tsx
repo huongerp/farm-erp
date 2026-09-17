@@ -1,9 +1,17 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
+import { CheckCircle, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
-import { useDonDatHangListPaged, useDonDatHangById, useDeleteDonDatHang, useDeleteDonDatHangMany, useUpdateDonDatHangTrangThai } from '../hooks/use-don-dat-hang';
+import {
+  useDonDatHangListPaged,
+  useDonDatHangById,
+  useDeleteDonDatHang,
+  useDeleteDonDatHangMany,
+  useUpdateDonDatHangTrangThai,
+  useUpdateDonDatHangTrangThaiMany,
+} from '../hooks/use-don-dat-hang';
 import { useDonDatHangViewScope } from '../hooks/use-don-dat-hang-view-scope';
 import { buildDonDatHangListServerQuery, fetchAllDonDatHangForListQuery } from '../services/don-dat-hang-service';
 import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
@@ -11,8 +19,10 @@ import { useDoiTacRefQuery, useEmployeesRefQuery, usePhieuDeXuatSoPhieuMinimalQu
 import { useKhoList } from '../../../kho-van/danh-sach-kho/hooks/use-kho';
 import { useDonDatHangStore } from '../store/useDonDatHangStore';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
-import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
+import { CONFIRM_DELETE, CONFIRM_DELETE_ALL, CONFIRM_YES } from '../../../../lib/button-labels';
 import type { DonDatHang } from '../core/types';
+import { TRANG_THAI_DA_XAC_NHAN, TRANG_THAI_HUY } from '../core/types';
+import { canBulkApproveDonDatHang } from '../core/constants';
 import DonDatHangToolbar from './DonDatHangToolbar';
 import DonDatHangList from './DonDatHangList';
 import DonDatHangForm from './DonDatHangForm';
@@ -85,6 +95,7 @@ const DanhSachTab: React.FC = () => {
   const deleteMutation = useDeleteDonDatHang();
   const deleteManyMutation = useDeleteDonDatHangMany();
   const updateTrangThaiMutation = useUpdateDonDatHangTrangThai();
+  const trangThaiManyMutation = useUpdateDonDatHangTrangThaiMany();
 
   useEffect(() => {
     return () => resetState();
@@ -213,6 +224,61 @@ const DanhSachTab: React.FC = () => {
     });
   };
 
+  /** Duyệt / hủy hàng loạt — chỉ chạy đơn đang Chờ duyệt, đơn khác bị bỏ qua và báo số đã bỏ. */
+  const handleApproveMany = (trangThai: typeof TRANG_THAI_DA_XAC_NHAN | typeof TRANG_THAI_HUY) => {
+    const ids = Array.from(selectedIds);
+    const allowedIds = ids.filter((id) => {
+      const item = tableRows.find((p) => p.id === id);
+      return item && canBulkApproveDonDatHang(item.trang_thai, canApprove);
+    });
+    if (allowedIds.length === 0) {
+      toast.message(t('donDatHang.toast.bulkApproveNoneAllowed'));
+      return;
+    }
+    const skipped = ids.length - allowedIds.length;
+    const isHuy = trangThai === TRANG_THAI_HUY;
+    confirm({
+      title: isHuy ? t('donDatHang.bulkRejectTitle') : t('donDatHang.bulkApproveTitle'),
+      message: isHuy
+        ? t('donDatHang.bulkRejectMessage', { count: allowedIds.length })
+        : t('donDatHang.bulkApproveMessage', { count: allowedIds.length }),
+      variant: isHuy ? 'danger' : 'warning',
+      confirmText: CONFIRM_YES(),
+      onConfirm: async () => {
+        if (skipped > 0) toast.message(t('donDatHang.toast.bulkApprovePartialSkipped'));
+        await trangThaiManyMutation.mutateAsync({
+          ids: allowedIds,
+          trangThai,
+          notePrefix: '[Ghi chú phê duyệt]: ',
+        });
+        clearSelection();
+        if (viewingItem && allowedIds.includes(viewingItem.id)) setViewingItem(null);
+      },
+    });
+  };
+
+  const bulkActions =
+    selectedIds.size > 0 && canApprove ? (
+      <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={() => handleApproveMany(TRANG_THAI_DA_XAC_NHAN)}
+          className="h-8 px-3 flex items-center gap-1.5 rounded-lg border border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/15 transition-all active:scale-95"
+        >
+          <CheckCircle size={14} className="stroke-[2.5px] shrink-0" />
+          <span className="text-xs font-medium">{t('donDatHang.bulkApproveAction')}</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => handleApproveMany(TRANG_THAI_HUY)}
+          className="h-8 px-3 flex items-center gap-1.5 rounded-lg border border-rose-500/25 bg-rose-500/10 text-rose-700 dark:text-rose-300 hover:bg-rose-500/15 transition-all active:scale-95"
+        >
+          <XCircle size={14} className="stroke-[2.5px] shrink-0" />
+          <span className="text-xs font-medium">{t('donDatHang.bulkRejectAction')}</span>
+        </button>
+      </div>
+    ) : null;
+
   return (
     <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
       <DonDatHangToolbar
@@ -229,6 +295,7 @@ const DanhSachTab: React.FC = () => {
         }}
         onDeleteMany={handleDeleteMany}
         onExport={handleExport}
+        bulkActions={bulkActions}
         canCreate={canCreate}
         canDelete={canDelete}
       />

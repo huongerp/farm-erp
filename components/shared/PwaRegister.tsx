@@ -5,10 +5,13 @@ import { useIsMutating } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { isAppBusy, setMutationCount, subscribe as subscribeAppBusy } from '../../lib/app-busy';
+import { isTypingNow, startTypingBusy } from '../../lib/typing-busy';
+import { saveReloadContext } from '../../lib/reload-context';
 import {
   APPLY_TOAST_MS,
   HIDDEN_THRESHOLD_MS,
   PRELOAD_ERROR_RELOAD_KEY,
+  RETRY_WHEN_BUSY_MS,
   SAFE_MOMENT_DEBOUNCE_MS,
   UPDATE_CHECK_INTERVAL_MS,
   decideUpdateAction,
@@ -52,8 +55,10 @@ async function unregisterLegacyServiceWorkersOnce(): Promise<void> {
  * - Chủ động hỏi server xem có bản mới chưa (SPA không navigate nên SW không tự hỏi).
  * - Khi có bản mới, KHÔNG reload ngay. Chờ tới lúc người dùng vừa xong việc — lưu xong
  *   phiếu, đóng drawer, đổi trang, hoặc quay lại tab — và `isAppBusy()` là false.
- * - Không bao giờ reload khi đang có form mở hoặc đang nhập dở (xem `lib/app-busy.ts`).
- * - Ngồi lì trong một form quá lâu thì chỉ nhắc mềm bằng toast, không ép.
+ * - Không bao giờ reload khi đang có form mở hoặc đang nhập dở (xem `lib/app-busy.ts`,
+ *   `lib/typing-busy.ts`).
+ * - Bận bao lâu cũng chờ, không toast hỏi, không nút "Tải lại" — người dùng không phải bấm gì.
+ * - Reload xong quay lại đúng trang và đúng vị trí cuộn (xem `lib/reload-context.ts`).
  */
 const PwaRegister: React.FC = () => {
   const { t } = useTranslation();
@@ -64,14 +69,23 @@ const PwaRegister: React.FC = () => {
   const registrationRef = useRef<ServiceWorkerRegistration | null>(null);
   /** Thời điểm SW báo có bản mới; null = chưa có gì để áp. */
   const readyAtRef = useRef<number | null>(null);
-  const notifiedRef = useRef(false);
   const applyingRef = useRef(false);
   const debounceRef = useRef<number | null>(null);
+  const retryRef = useRef<number | null>(null);
 
   // Cầu nối React Query → app-busy, để cả index.tsx cũng biết đang có mutation chạy dở.
   useEffect(() => {
     setMutationCount(mutatingCount);
   }, [mutatingCount]);
+
+  // Con trỏ đang nằm trong một ô nhập bất kỳ cũng là "đang bận" — xem lib/typing-busy.ts.
+  useEffect(() => startTypingBusy(), []);
+
+  // `t` dùng trong effect đăng ký SW (chạy một lần) — giữ qua ref để không phải đăng ký lại.
+  const tRef = useRef(t);
+  useEffect(() => {
+    tRef.current = t;
+  }, [t]);
 
   const applyUpdate = useCallback(() => {
     if (applyingRef.current) return;
@@ -81,6 +95,8 @@ const PwaRegister: React.FC = () => {
     const viaServiceWorker = readyAtRef.current != null;
     toast.success(t('app.updating'), { duration: APPLY_TOAST_MS });
     window.setTimeout(() => {
+      // Ghi ngay trước khi rời trang để vị trí cuộn là mới nhất.
+      saveReloadContext();
       if (viaServiceWorker) {
         void updateSWRef.current?.(true);
         return;
@@ -90,31 +106,30 @@ const PwaRegister: React.FC = () => {
     }, APPLY_TOAST_MS);
   }, [t]);
 
-  const notifyManually = useCallback(() => {
-    if (notifiedRef.current) return;
-    notifiedRef.current = true;
-    toast.info(t('app.updateAvailable'), {
-      description: t('app.updateAvailableDesc'),
-      action: { label: t('app.reloadNow'), onClick: () => applyUpdate() },
-      duration: Infinity,
-    });
-  }, [t, applyUpdate]);
-
   const evaluate = useCallback(
     (trigger: UpdateTrigger) => {
       const readyAt = readyAtRef.current ?? getPendingReloadAt();
       if (readyAt == null || applyingRef.current) return;
       const decision = decideUpdateAction({
         updateReady: true,
-        busy: isAppBusy(),
+        // `isTypingNow()` đọc thẳng DOM: người dùng ngừng gõ nhưng con trỏ vẫn đậu trong ô
+        // thì vẫn chưa phải lúc reload.
+        busy: isAppBusy() || isTypingNow(),
         trigger,
-        msSinceReady: Date.now() - readyAt,
-        alreadyNotified: notifiedRef.current,
       });
-      if (decision === 'apply') applyUpdate();
-      else if (decision === 'notify') notifyManually();
+      if (decision === 'apply') {
+        applyUpdate();
+        return;
+      }
+      // Còn bận: hẹn xét lại. Tín hiệu "vừa hết bận" không phải lúc nào cũng có — ô nhập bị
+      // gỡ khỏi DOM lúc đóng drawer không phát sự kiện nào cả.
+      if (retryRef.current != null) window.clearTimeout(retryRef.current);
+      retryRef.current = window.setTimeout(() => {
+        retryRef.current = null;
+        scheduleEvaluateRef.current('tick');
+      }, RETRY_WHEN_BUSY_MS);
     },
-    [applyUpdate, notifyManually]
+    [applyUpdate]
   );
 
   /**
@@ -156,7 +171,7 @@ const PwaRegister: React.FC = () => {
           scheduleEvaluateRef.current('ready');
         },
         onOfflineReady() {
-          toast.success('Ứng dụng sẵn sàng dùng offline.');
+          toast.success(tRef.current('app.offlineReady'));
         },
         onRegisteredSW(_swUrl, registration) {
           registrationRef.current = registration ?? null;
@@ -220,6 +235,7 @@ const PwaRegister: React.FC = () => {
   useEffect(
     () => () => {
       if (debounceRef.current != null) window.clearTimeout(debounceRef.current);
+      if (retryRef.current != null) window.clearTimeout(retryRef.current);
     },
     []
   );

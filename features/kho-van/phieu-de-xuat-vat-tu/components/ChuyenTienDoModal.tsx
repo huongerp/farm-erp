@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Package, X } from 'lucide-react';
+import { Calendar, Package, X } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Combobox from '../../../../components/ui/Combobox';
+import Input from '../../../../components/ui/Input';
 import Textarea from '../../../../components/ui/Textarea';
 import { BTN_CANCEL } from '../../../../lib/button-labels';
 import { useTienDoMuaHangList } from '../../../mua-hang/thiet-lap-de-xuat-vat-tu/hooks/use-tien-do-mua-hang';
@@ -13,20 +14,25 @@ export interface ChuyenTienDoResult {
   id_tien_do_mh: string;
   ten_tien_do_mh: string;
   ghi_chu: string;
+  /** Ngày cần mới của phiếu; null = giữ nguyên ngày cần hiện tại. */
+  ngay_can: string | null;
 }
 
 interface Props {
   open: boolean;
   selectedCount: number;
+  /** Ngày cần hiện tại của các dòng đã chọn (chỉ khi mọi dòng cùng một ngày). */
+  defaultNgayCan?: string | null;
   onClose: () => void;
   onConfirm: (result: ChuyenTienDoResult) => void;
 }
 
-const ChuyenTienDoModal: React.FC<Props> = ({ open, selectedCount, onClose, onConfirm }) => {
+const ChuyenTienDoModal: React.FC<Props> = ({ open, selectedCount, defaultNgayCan, onClose, onConfirm }) => {
   const { t } = useTranslation();
   const { data: tienDoMuaHangList = [] } = useTienDoMuaHangList();
   const [idTienDo, setIdTienDo] = useState<string | null>(null);
   const [ghiChu, setGhiChu] = useState('');
+  const [ngayCan, setNgayCan] = useState('');
 
   const options = useMemo(
     () =>
@@ -41,17 +47,20 @@ const ChuyenTienDoModal: React.FC<Props> = ({ open, selectedCount, onClose, onCo
     if (open) {
       setIdTienDo(options[0]?.value ?? null);
       setGhiChu('');
+      setNgayCan(defaultNgayCan ?? '');
     }
-  }, [open, options]);
+  }, [open, options, defaultNgayCan]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const item = tienDoMuaHangList.find((x) => x.id === idTienDo);
     if (!item) return;
+    const ngayCanTrimmed = ngayCan.trim();
     onConfirm({
       id_tien_do_mh: item.id,
       ten_tien_do_mh: item.ten,
       ghi_chu: ghiChu.trim(),
+      ngay_can: ngayCanTrimmed && ngayCanTrimmed !== (defaultNgayCan ?? '') ? ngayCanTrimmed : null,
     });
     onClose();
   };
@@ -110,6 +119,18 @@ const ChuyenTienDoModal: React.FC<Props> = ({ open, selectedCount, onClose, onCo
               searchable
               required
             />
+            <div>
+              <Input
+                label={t('phieuDeXuatVatTu.form.requiredDate')}
+                type="date"
+                icon={<Calendar size={12} />}
+                value={ngayCan}
+                onChange={(e) => setNgayCan(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                {t('phieuDeXuatVatTu.chiTietTab.ngayCanHint')}
+              </p>
+            </div>
             <Textarea
               label={t('phieuDeXuatVatTu.chiTietTab.traoDoiLabel')}
               placeholder={t('phieuDeXuatVatTu.chiTietTab.traoDoiPlaceholder')}

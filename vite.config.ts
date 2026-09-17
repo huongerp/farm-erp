@@ -18,7 +18,8 @@ export default defineConfig(({ mode }) => {
 
   return {
     server: {
-      port: 3000,
+      // PORT cho phép chạy song song nhiều dev server (mặc định vẫn 3000).
+      port: Number(process.env.PORT) || Number(env.PORT) || 3000,
       host: '0.0.0.0',
       proxy: {
         // Auth-service và PostgREST đều không biết tiền tố công khai — Traefik

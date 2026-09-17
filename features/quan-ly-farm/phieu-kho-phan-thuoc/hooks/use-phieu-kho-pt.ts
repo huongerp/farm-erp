@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tansta
 import { toast } from 'sonner';
 import {
   getPhieuKhoPTById,
+  getPhieuKhoPTByDeXuatIds,
   getPhieuKhoPTPage,
   getChiTietPhieuKhoPTPage,
   createPhieuKhoPT,
@@ -10,6 +11,7 @@ import {
   deletePhieuKhoPTMany,
   getNextSoPhieuFarmPt,
   updatePhieuKhoPTTrangThai,
+  updatePhieuKhoPTTrangThaiMany,
 } from '../services/phieu-kho-pt-service';
 import type { ChiTietPhieuKhoPTListServerQuery, PhieuKhoPTListServerQuery } from '../services/phieu-kho-pt-list-query';
 import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
@@ -23,6 +25,17 @@ const QUERY_KEY_CHI_TIET = ['phieuKhoPhanThuoc', 'chiTiet'] as const;
 
 const PHIEU_KHO_PT_PAGE_SIZE = 50;
 const CHI_TIET_PAGE_SIZE = 100;
+
+/** Phiếu kho đã sinh từ các đề xuất mua hàng — dùng ở module Đề xuất để chặn tạo trùng. */
+export const usePhieuKhoPTByDeXuat = (deXuatIds: string[]) => {
+  const ids = [...new Set(deXuatIds.filter(Boolean))].sort();
+  return useQuery({
+    queryKey: [...QUERY_KEY, 'byDeXuat', ids] as const,
+    queryFn: () => getPhieuKhoPTByDeXuatIds(ids),
+    enabled: ids.length > 0,
+    staleTime: 1000 * 60 * 2,
+  });
+};
 
 export const usePhieuKhoPTListPaged = (pageIndex: number, listQuery: PhieuKhoPTListServerQuery) => {
   const qPart = stableListQueryKeyPart(listQuery);
@@ -69,6 +82,8 @@ export const useCreatePhieuKhoPT = (onSuccess?: () => void) => {
       qc.invalidateQueries({ queryKey: QUERY_KEY_CHI_TIET });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY_CHI_TIET, 'paged'] });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
+      // Badge "Đã tạo phiếu kho" ở module Đề xuất mua hàng đọc từ query này.
+      qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'byDeXuat'] });
       qc.invalidateQueries({ queryKey: FARM_TON_KHO_PT_QUERY_KEY });
       toast.success(i18n.t('phieuKhoPhanThuoc.toast.createSuccess'));
       onSuccess?.();
@@ -104,6 +119,7 @@ export const useDeletePhieuKhoPT = () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY_CHI_TIET });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY_CHI_TIET, 'paged'] });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
+      qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'byDeXuat'] });
       qc.invalidateQueries({ queryKey: FARM_TON_KHO_PT_QUERY_KEY });
       toast.success(i18n.t('phieuKhoPhanThuoc.toast.deleteSuccess'));
     },
@@ -152,6 +168,58 @@ export const useUpdatePhieuKhoPTTrangThai = (onSuccess?: () => void) => {
   });
 };
 
+/**
+ * Duyệt hàng loạt. Không refetch từng phiếu như bản lẻ (N request thừa) — chỉ bỏ cache chi tiết.
+ * Lỗi một phần không làm hỏng cả lô: service trả danh sách thành công/thất bại để toast báo rõ.
+ */
+export const useUpdatePhieuKhoPTTrangThaiMany = (onSuccess?: () => void) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      ids,
+      trang_thai,
+      ghi_chu,
+      id_nguoi_duyet,
+      ten_nguoi_duyet_hien_thi,
+    }: {
+      ids: string[];
+      trang_thai: import('../core/types').TrangThaiPhieuKhoPT;
+      ghi_chu?: string;
+      id_nguoi_duyet?: number | null;
+      ten_nguoi_duyet_hien_thi?: string;
+    }) =>
+      updatePhieuKhoPTTrangThaiMany(ids, trang_thai, {
+        ghi_chu,
+        id_nguoi_duyet,
+        ten_nguoi_duyet_hien_thi,
+      }),
+    onSuccess: (result, { ids }) => {
+      result.okIds.forEach((id) => qc.removeQueries({ queryKey: [...QUERY_KEY, id] }));
+      qc.invalidateQueries({ queryKey: QUERY_KEY_CHI_TIET });
+      qc.invalidateQueries({ queryKey: [...QUERY_KEY_CHI_TIET, 'paged'] });
+      qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
+      qc.invalidateQueries({ queryKey: FARM_TON_KHO_PT_QUERY_KEY });
+
+      if (result.failed.length === 0) {
+        toast.success(
+          i18n.t('phieuKhoPhanThuoc.toast.bulkApproveSuccess', { count: result.okIds.length })
+        );
+      } else {
+        toast.warning(
+          i18n.t('phieuKhoPhanThuoc.toast.bulkApprovePartial', {
+            ok: result.okIds.length,
+            total: ids.length,
+            failed: result.failed.length,
+          })
+        );
+        toast.error(result.failed[0].message);
+      }
+      onSuccess?.();
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+};
+
 export const useDeletePhieuKhoPTMany = () => {
   const qc = useQueryClient();
   return useMutation({
@@ -161,6 +229,7 @@ export const useDeletePhieuKhoPTMany = () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY_CHI_TIET });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY_CHI_TIET, 'paged'] });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
+      qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'byDeXuat'] });
       qc.invalidateQueries({ queryKey: FARM_TON_KHO_PT_QUERY_KEY });
       toast.success(i18n.t('phieuKhoPhanThuoc.toast.deleteSuccess'));
     },

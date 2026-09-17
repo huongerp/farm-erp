@@ -49,3 +49,16 @@ export const STATUS_VARIANTS: Record<string, string> = {
   [TRANG_THAI_DA_DONG]: 'bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/20',
   [TRANG_THAI_HUY]: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20',
 };
+
+/** Trạng thái đích của thao tác duyệt đơn (khớp popup duyệt ở drawer chi tiết). */
+export const TRANG_THAI_DICH_DUYET_DON = [TRANG_THAI_DA_XAC_NHAN, TRANG_THAI_HUY] as const;
+
+/**
+ * Duyệt / hủy hàng loạt: chỉ áp cho đơn đang "Chờ duyệt" — đúng điều kiện mà nút duyệt đơn lẻ
+ * ở drawer chi tiết đang dùng. Đơn đã đi tiếp trong luồng (Đã gửi, Đang giao…) phải chuyển
+ * trạng thái lẻ để không nhảy cóc quy trình.
+ */
+export function canBulkApproveDonDatHang(trangThai: string, canApprove: boolean): boolean {
+  if (!canApprove) return false;
+  return trangThai === TRANG_THAI_CHO_DUYET;
+}

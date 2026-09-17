@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
   getAllFarmHangHoa,
+  getFarmHangHoaRef,
   getFarmHangHoaById,
   createFarmHangHoa,
   updateFarmHangHoa,
@@ -12,6 +13,7 @@ import type { FarmHangHoaFormValues } from '../core/schema';
 import type { FarmHangHoa } from '../core/types';
 import i18n from '../../../../lib/i18n';
 import { FARM_TON_KHO_PT_QUERY_KEY } from '../../ton-kho-phan-thuoc/hooks/use-farm-ton-kho-pt';
+import { invalidateRefCache } from '../../../../lib/ref-cache';
 
 export const FARM_HANG_HOA_QUERY_KEY = ['farmHangHoaPhanThuoc'] as const;
 
@@ -22,6 +24,17 @@ export const useFarmHangHoaList = () => {
   return useQuery({
     queryKey: FARM_HANG_HOA_QUERY_KEY,
     queryFn: getAllFarmHangHoa,
+    staleTime: 1000 * 60 * 15,
+  });
+};
+
+export const FARM_HANG_HOA_REF_QUERY_KEY = [...FARM_HANG_HOA_QUERY_KEY, 'ref'] as const;
+
+/** Ref rút gọn cho combobox (Đề xuất mua hàng) — nhẹ hơn danh sách đầy đủ. */
+export const useFarmHangHoaRefQuery = () => {
+  return useQuery({
+    queryKey: FARM_HANG_HOA_REF_QUERY_KEY,
+    queryFn: getFarmHangHoaRef,
     staleTime: 1000 * 60 * 15,
   });
 };
@@ -39,6 +52,7 @@ export const useCreateFarmHangHoa = (onSuccess?: (created?: FarmHangHoa) => void
   return useMutation({
     mutationFn: createFarmHangHoa,
     onSuccess: (created) => {
+      invalidateRefCache('farmHangHoa');
       qc.invalidateQueries({ queryKey: FARM_HANG_HOA_QUERY_KEY });
       qc.invalidateQueries({ queryKey: FARM_DANH_MUC_QUERY_KEY });
       qc.invalidateQueries({ queryKey: FARM_TON_KHO_PT_QUERY_KEY });
@@ -54,6 +68,7 @@ export const useUpdateFarmHangHoa = (onSuccess?: () => void) => {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: FarmHangHoaFormValues }) => updateFarmHangHoa(id, data),
     onSuccess: () => {
+      invalidateRefCache('farmHangHoa');
       qc.invalidateQueries({ queryKey: FARM_HANG_HOA_QUERY_KEY });
       qc.invalidateQueries({ queryKey: FARM_DANH_MUC_QUERY_KEY });
       qc.invalidateQueries({ queryKey: FARM_TON_KHO_PT_QUERY_KEY });
@@ -69,6 +84,7 @@ export const useDeleteFarmHangHoa = () => {
   return useMutation({
     mutationFn: deleteFarmHangHoa,
     onSuccess: () => {
+      invalidateRefCache('farmHangHoa');
       qc.invalidateQueries({ queryKey: FARM_HANG_HOA_QUERY_KEY });
       qc.invalidateQueries({ queryKey: FARM_DANH_MUC_QUERY_KEY });
       qc.invalidateQueries({ queryKey: FARM_TON_KHO_PT_QUERY_KEY });
@@ -83,6 +99,7 @@ export const useDeleteFarmHangHoaMany = () => {
   return useMutation({
     mutationFn: deleteFarmHangHoaMany,
     onSuccess: () => {
+      invalidateRefCache('farmHangHoa');
       qc.invalidateQueries({ queryKey: FARM_HANG_HOA_QUERY_KEY });
       qc.invalidateQueries({ queryKey: FARM_DANH_MUC_QUERY_KEY });
       qc.invalidateQueries({ queryKey: FARM_TON_KHO_PT_QUERY_KEY });

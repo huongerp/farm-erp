@@ -57,6 +57,16 @@ export function canMutatePhieuKhoByTrangThai(
   return true;
 }
 
+/**
+ * Duyệt hàng loạt: chỉ áp cho phiếu còn trong luồng duyệt.
+ * Phiếu đã có quyết định (Đã duyệt / Không duyệt) phải đổi lẻ ở drawer chi tiết, vì ở đó mới bắt
+ * buộc ghi chú + xác nhận lại.
+ */
+export function canBulkApprovePhieuKho(trangThai: string, canApprove: boolean): boolean {
+  if (!canApprove) return false;
+  return isTrangThaiChoPheDuyet(trangThai);
+}
+
 /** i18n key suffix cho trạng thái phiếu (phieuKho.status.*). */
 export function trangThaiToI18nKey(trangThai: string): string {
   if (trangThai === TRANG_THAI_CHO_DUYET) return 'pending';

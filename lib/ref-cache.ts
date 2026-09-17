@@ -11,6 +11,7 @@ export const REF_CACHE_KEYS = {
   kho: 'ref:kho',
   employees: 'ref:employees',
   hangHoa: 'ref:hang_hoa:v2',
+  farmHangHoa: 'ref:farm_hang_hoa',
   doiTac: (loai?: string) => `ref:doi_tac:${loai ?? 'all'}`,
 } as const;
 
@@ -24,7 +25,7 @@ export async function getCachedRef<T>(key: string, fetcher: () => Promise<T>, tt
 }
 
 /** Clear one ref category, or entire cache if omitted. */
-export function invalidateRefCache(category?: 'kho' | 'employees' | 'hangHoa' | 'doiTac'): void {
+export function invalidateRefCache(category?: 'kho' | 'employees' | 'hangHoa' | 'farmHangHoa' | 'doiTac'): void {
   if (!category) {
     store.clear();
     return;
@@ -35,10 +36,11 @@ export function invalidateRefCache(category?: 'kho' | 'employees' | 'hangHoa' | 
     }
     return;
   }
-  const single: Record<'kho' | 'employees' | 'hangHoa', string> = {
+  const single: Record<'kho' | 'employees' | 'hangHoa' | 'farmHangHoa', string> = {
     kho: REF_CACHE_KEYS.kho,
     employees: REF_CACHE_KEYS.employees,
     hangHoa: REF_CACHE_KEYS.hangHoa,
+    farmHangHoa: REF_CACHE_KEYS.farmHangHoa,
   };
   store.delete(single[category]);
 }

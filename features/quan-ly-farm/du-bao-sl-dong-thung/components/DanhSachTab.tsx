@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { AnimatePresence } from 'framer-motion';
+import { Lock, Unlock } from 'lucide-react';
 import {
   useDuBaoSlDongThungList,
   useDuBaoSlDongThungById,
@@ -12,10 +13,13 @@ import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
 import { useDuBaoSlDongThungStore, type DuBaoSlDongThungFilters } from '../store/useDuBaoSlDongThungStore';
 import { useListWithFilter } from '../../../../lib/hooks';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
-import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
+import { CONFIRM_DELETE, CONFIRM_DELETE_ALL, CONFIRM_YES } from '../../../../lib/button-labels';
 import type { FarmDuBaoSlDongThung } from '../core/types';
 import { getPreferredBranchFromUserLastRecords } from '../core/form-mappers';
 import { useDuBaoSlDongThungPermissions } from '../hooks/use-du-bao-sl-dong-thung-permissions';
+import { useUpdateDuBaoSlDongThungTrangThaiMany } from '../hooks/use-du-bao-sl-dong-thung';
+import { TRANG_THAI_DU_BAO_SL_DONG_THUNG } from '../core/types';
+import type { TrangThaiDuBaoSlDongThungPhieu } from '../core/types';
 import { useAuthStore } from '../../../../store/useStore';
 import ExportDialog from '../../../../components/shared/LazyExportDialog';
 import { useExportData } from '../../../../lib/useExportData';
@@ -76,6 +80,7 @@ const DanhSachTab: React.FC = () => {
   const { data: editingFull } = useDuBaoSlDongThungById(editingItem?.id);
   const deleteMutation = useDeleteDuBaoSlDongThung();
   const deleteManyMutation = useDeleteDuBaoSlDongThungMany();
+  const trangThaiManyMutation = useUpdateDuBaoSlDongThungTrangThaiMany();
 
   const filterFn = useCallback((item: FarmDuBaoSlDongThung, term: string, f: DuBaoSlDongThungFilters) => {
     const q = term.trim().toLowerCase();
@@ -205,6 +210,59 @@ const DanhSachTab: React.FC = () => {
     });
   };
 
+  /**
+   * Khóa / mở khóa hàng loạt. Chỉ chạy phiếu đang khác trạng thái đích — phiếu đã đúng trạng thái
+   * bị bỏ qua để không ghi đè tg_cap_nhat vô ích.
+   */
+  const handleToggleTrangThaiMany = (trangThai: TrangThaiDuBaoSlDongThungPhieu) => {
+    const ids = Array.from(selectedIds);
+    const allowedIds = ids.filter((id) => {
+      const item = allList.find((r) => r.id === id);
+      return item && item.trang_thai !== trangThai;
+    });
+    if (allowedIds.length === 0) {
+      toast.message(t('duBaoSlDongThung.toast.trangThaiManyNoneAllowed'));
+      return;
+    }
+    const skippedCount = ids.length - allowedIds.length;
+    const isKhoa = trangThai === TRANG_THAI_DU_BAO_SL_DONG_THUNG.KHOA;
+    confirm({
+      title: isKhoa ? t('duBaoSlDongThung.bulkLockTitle') : t('duBaoSlDongThung.bulkUnlockTitle'),
+      message: isKhoa
+        ? t('duBaoSlDongThung.bulkLockMessage', { count: allowedIds.length })
+        : t('duBaoSlDongThung.bulkUnlockMessage', { count: allowedIds.length }),
+      variant: isKhoa ? 'warning' : 'default',
+      confirmText: CONFIRM_YES(),
+      onConfirm: async () => {
+        await trangThaiManyMutation.mutateAsync({ ids: allowedIds, trang_thai: trangThai });
+        if (skippedCount > 0) toast.message(t('duBaoSlDongThung.toast.trangThaiManyPartial'));
+        clearSelection();
+      },
+    });
+  };
+
+  const bulkActions =
+    selectedIds.size > 0 && canToggleTrangThai ? (
+      <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={() => handleToggleTrangThaiMany(TRANG_THAI_DU_BAO_SL_DONG_THUNG.KHOA)}
+          className="h-8 px-3 flex items-center gap-1.5 rounded-lg border border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-300 hover:bg-amber-500/15 transition-all active:scale-95"
+        >
+          <Lock size={14} className="stroke-[2.5px] shrink-0" />
+          <span className="text-xs font-medium">{t('duBaoSlDongThung.bulkLockAction')}</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => handleToggleTrangThaiMany(TRANG_THAI_DU_BAO_SL_DONG_THUNG.MO)}
+          className="h-8 px-3 flex items-center gap-1.5 rounded-lg border border-border bg-muted/50 text-muted-foreground hover:bg-muted transition-all active:scale-95"
+        >
+          <Unlock size={14} className="stroke-[2.5px] shrink-0" />
+          <span className="text-xs font-medium">{t('duBaoSlDongThung.bulkUnlockAction')}</span>
+        </button>
+      </div>
+    ) : null;
+
   const canBulkDeleteSelection = useMemo(() => {
     if (!canDelete) return false;
     if (selectedIds.size === 0) return true;
@@ -229,6 +287,7 @@ const DanhSachTab: React.FC = () => {
           setShowForm(true);
         }}
         onDeleteMany={canBulkDeleteSelection ? handleDeleteMany : undefined}
+        bulkActions={bulkActions}
         onExport={handleExport}
         canCreate={canCreate}
         canDelete={canDelete}

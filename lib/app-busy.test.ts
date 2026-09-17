@@ -25,6 +25,14 @@ describe('isAppBusy', () => {
     expect(isAppBusy()).toBe(false);
   });
 
+  it('con trỏ đang nằm trong ô nhập cũng là bận', () => {
+    const release = registerBusy('typing');
+    expect(isAppBusy()).toBe(true);
+    expect(hasUnsavedInput()).toBe(false);
+    release();
+    expect(isAppBusy()).toBe(false);
+  });
+
   it('đếm chồng nhiều overlay — chỉ rảnh khi cái cuối cùng đóng', () => {
     const a = registerBusy('overlay');
     const b = registerBusy('overlay');
@@ -47,11 +55,13 @@ describe('isAppBusy', () => {
 });
 
 describe('hasUnsavedInput', () => {
-  it('chỉ tính dirty, không tính overlay hay mutation', () => {
+  it('chỉ tính dirty, không tính overlay, mutation hay typing', () => {
     const overlay = registerBusy('overlay');
+    const typing = registerBusy('typing');
     setMutationCount(2);
     expect(isAppBusy()).toBe(true);
     expect(hasUnsavedInput()).toBe(false);
+    typing();
 
     const dirty = registerBusy('dirty');
     expect(hasUnsavedInput()).toBe(true);

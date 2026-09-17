@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { ensureSentryInitialized } from './lib/sentry-client';
 import i18n from './lib/i18n';
 import { isAppBusy } from './lib/app-busy';
+import { isTypingNow } from './lib/typing-busy';
 import { PRELOAD_ERROR_RELOAD_KEY, requestReloadWhenIdle } from './lib/app-update';
 
 void ensureSentryInitialized();
@@ -29,7 +30,7 @@ void ensureSentryInitialized();
  */
 window.addEventListener('vite:preloadError', () => {
   if (window.sessionStorage.getItem(PRELOAD_ERROR_RELOAD_KEY)) return;
-  if (isAppBusy()) {
+  if (isAppBusy() || isTypingNow()) {
     requestReloadWhenIdle();
     toast.error(i18n.t('app.chunkStaleBusy'), {
       action: {

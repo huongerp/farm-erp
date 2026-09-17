@@ -26,10 +26,10 @@ const PHIEU_PT_CHI_TIET_ROW_SELECT =
   'id, id_phieu_kho, id_hang_hoa, ten_hang_hoa, don_vi_tinh, so_luong, don_gia, thanh_tien, so_lot, ghi_chu, nguoi_tao_id, ten_nguoi_tao, tg_tao, tg_cap_nhat';
 
 const PHIEU_PT_SUMMARY_SELECT =
-  'id, so_phieu, ngay, loai, kho_id, ten_kho, kho_den_id, ten_kho_den, trang_thai, mo_ta, id_nguoi_duyet, nguoi_tao_id, ten_nguoi_tao, tg_tao, tg_cap_nhat, so_dong, tong_so_luong, tong_tien, ref_ten_kho, ref_ten_kho_den, ref_ten_nguoi_tao, ref_ten_nguoi_duyet';
+  'id, so_phieu, ngay, loai, kho_id, ten_kho, kho_den_id, ten_kho_den, trang_thai, mo_ta, id_nguoi_duyet, nguoi_tao_id, ten_nguoi_tao, id_de_xuat_mua_hang, so_phieu_de_xuat, tg_tao, tg_cap_nhat, so_dong, tong_so_luong, tong_tien, ref_ten_kho, ref_ten_kho_den, ref_ten_nguoi_tao, ref_ten_nguoi_duyet';
 
 const PHIEU_PT_HEADER_ROW_SELECT =
-  'id, so_phieu, ngay, loai, kho_id, ten_kho, kho_den_id, ten_kho_den, trang_thai, mo_ta, trao_doi, id_nguoi_duyet, nguoi_tao_id, ten_nguoi_tao, tg_tao, tg_cap_nhat';
+  'id, so_phieu, ngay, loai, kho_id, ten_kho, kho_den_id, ten_kho_den, trang_thai, mo_ta, trao_doi, id_nguoi_duyet, nguoi_tao_id, ten_nguoi_tao, id_de_xuat_mua_hang, so_phieu_de_xuat, tg_tao, tg_cap_nhat';
 
 interface PhieuKhoPTDbRow {
   id: number;
@@ -46,6 +46,8 @@ interface PhieuKhoPTDbRow {
   id_nguoi_duyet?: number | null;
   nguoi_tao_id: number | null;
   ten_nguoi_tao: string | null;
+  id_de_xuat_mua_hang?: number | null;
+  so_phieu_de_xuat?: string | null;
   tg_tao: string | null;
   tg_cap_nhat: string | null;
 }
@@ -151,6 +153,8 @@ function rowToPhieu(
     ten_nguoi_duyet: enrich?.ten_nguoi_duyet,
     nguoi_tao_id: row.nguoi_tao_id ?? undefined,
     ten_nguoi_tao: enrich?.ten_nguoi_tao ?? row.ten_nguoi_tao ?? undefined,
+    id_de_xuat_mua_hang: row.id_de_xuat_mua_hang != null ? String(row.id_de_xuat_mua_hang) : null,
+    so_phieu_de_xuat: row.so_phieu_de_xuat ?? null,
     tg_tao: row.tg_tao ?? new Date().toISOString(),
     tg_cap_nhat: row.tg_cap_nhat ?? new Date().toISOString(),
   };
@@ -242,6 +246,26 @@ export async function getPhieuKhoPTByIdSupabase(id: string): Promise<PhieuKhoPT 
   return phieu;
 }
 
+/** Phiếu kho đã sinh ra từ một đề xuất mua hàng (badge + chặn tạo trùng ở module Đề xuất). */
+export type PhieuKhoPTByDeXuat = { id: string; so_phieu: string; loai: LoaiPhieuKhoPT; id_de_xuat_mua_hang: string };
+
+export async function getPhieuKhoPTByDeXuatIdsSupabase(deXuatIds: string[]): Promise<PhieuKhoPTByDeXuat[]> {
+  const numIds = [...new Set(deXuatIds.map((s) => Number(s)).filter((n) => !Number.isNaN(n)))];
+  if (numIds.length === 0) return [];
+  const { data, error } = await db
+    .from(TABLE_PHIEU)
+    .select('id, so_phieu, loai, id_de_xuat_mua_hang')
+    .in('id_de_xuat_mua_hang', numIds)
+    .order('id', { ascending: true });
+  if (error) throwSupabaseError(error);
+  return ((data ?? []) as { id: number; so_phieu: string | null; loai: string; id_de_xuat_mua_hang: number }[]).map((r) => ({
+    id: String(r.id),
+    so_phieu: r.so_phieu ?? '',
+    loai: r.loai as LoaiPhieuKhoPT,
+    id_de_xuat_mua_hang: String(r.id_de_xuat_mua_hang),
+  }));
+}
+
 export async function createPhieuKhoPTSupabase(data: PhieuKhoPTFormValues): Promise<PhieuKhoPT> {
   const loai = data.loai as LoaiPhieuKhoPT;
   const soPhieu = data.so_phieu.trim();
@@ -272,6 +296,8 @@ export async function createPhieuKhoPTSupabase(data: PhieuKhoPTFormValues): Prom
     mo_ta: data.mo_ta?.trim() || null,
     nguoi_tao_id: nguoiTaoId,
     ten_nguoi_tao: nguoiTaoId != null ? (nvMap[String(nguoiTaoId)] ?? null) : null,
+    id_de_xuat_mua_hang: data.id_de_xuat_mua_hang ? Number(data.id_de_xuat_mua_hang) : null,
+    so_phieu_de_xuat: data.so_phieu_de_xuat?.trim() || null,
   };
 
   const { data: inserted, error } = await db.from(TABLE_PHIEU).insert(payload).select(PHIEU_PT_HEADER_ROW_SELECT).single();
@@ -356,6 +382,8 @@ export async function updatePhieuKhoPTSupabase(id: string, data: PhieuKhoPTFormV
     mo_ta: data.mo_ta?.trim() || null,
     nguoi_tao_id: nguoiTaoId,
     ten_nguoi_tao: nguoiTaoId != null ? (nvMap[String(nguoiTaoId)] ?? null) : null,
+    id_de_xuat_mua_hang: data.id_de_xuat_mua_hang ? Number(data.id_de_xuat_mua_hang) : null,
+    so_phieu_de_xuat: data.so_phieu_de_xuat?.trim() || null,
   };
 
   const { error: updateErr } = await db.from(TABLE_PHIEU).update(payload).eq('id', idNum);
@@ -409,6 +437,32 @@ export interface UpdatePhieuKhoPTTrangThaiOptions {
   ten_nguoi_duyet_hien_thi?: string;
 }
 
+/** Bỏ NaN/không hữu hạn — dùng chung cho duyệt lẻ và duyệt hàng loạt. */
+function normalizeNguoiDuyetIdPT(id?: number | null): number | null {
+  return id != null && Number.isFinite(id) && !Number.isNaN(id) ? id : null;
+}
+
+/** Dòng log nối vào cột trao_doi. Duyệt lẻ và duyệt hàng loạt phải ra cùng định dạng. */
+function buildTraoDoiEntryPT(
+  trang_thai: TrangThaiPhieuKhoPT,
+  idNguoiDuyet: number | null,
+  options?: UpdatePhieuKhoPTTrangThaiOptions
+): string {
+  const ts = formatPhieuKhoPTTraoDoiTimestamp();
+  const who =
+    options?.ten_nguoi_duyet_hien_thi?.trim() ||
+    (idNguoiDuyet != null ? `Nhân viên #${idNguoiDuyet}` : 'Người dùng');
+  const actionVerb = trang_thai === 'Đã duyệt' ? 'đã duyệt' : 'không duyệt';
+  const ghi_chu = options?.ghi_chu;
+  return ghi_chu?.trim()
+    ? `${ts} — ${who} ${actionVerb}. Ghi chú: ${ghi_chu.trim()}`
+    : `${ts} — ${who} ${actionVerb}.`;
+}
+
+function appendTraoDoiPT(existing: string | null | undefined, entry: string): string {
+  return existing ? existing + '\n' + entry : entry;
+}
+
 export async function updatePhieuKhoPTTrangThaiSupabase(
   id: string,
   trang_thai: TrangThaiPhieuKhoPT,
@@ -416,28 +470,65 @@ export async function updatePhieuKhoPTTrangThaiSupabase(
 ): Promise<void> {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('phieuKhoPhanThuoc.service.notFound'));
-  const ghi_chu = options?.ghi_chu;
-  const idNguoiDuyet =
-    options?.id_nguoi_duyet != null && Number.isFinite(options.id_nguoi_duyet) && !Number.isNaN(options.id_nguoi_duyet)
-      ? options.id_nguoi_duyet
-      : null;
+  const idNguoiDuyet = normalizeNguoiDuyetIdPT(options?.id_nguoi_duyet);
 
   const { data: row } = await db.from(TABLE_PHIEU).select('trao_doi').eq('id', idNum).maybeSingle();
   const existing = (row as { trao_doi?: string } | null)?.trao_doi ?? '';
-  const ts = formatPhieuKhoPTTraoDoiTimestamp();
-  const who =
-    options?.ten_nguoi_duyet_hien_thi?.trim() ||
-    (idNguoiDuyet != null ? `Nhân viên #${idNguoiDuyet}` : 'Người dùng');
-  const actionVerb = trang_thai === 'Đã duyệt' ? 'đã duyệt' : 'không duyệt';
-  const entry = ghi_chu?.trim()
-    ? `${ts} — ${who} ${actionVerb}. Ghi chú: ${ghi_chu.trim()}`
-    : `${ts} — ${who} ${actionVerb}.`;
-  const newTraoDoi = existing ? existing + '\n' + entry : entry;
+  const newTraoDoi = appendTraoDoiPT(existing, buildTraoDoiEntryPT(trang_thai, idNguoiDuyet, options));
   const { error } = await db
     .from(TABLE_PHIEU)
     .update({ trang_thai, trao_doi: newTraoDoi, id_nguoi_duyet: idNguoiDuyet })
     .eq('id', idNum);
   if (error) throwSupabaseError(error);
+}
+
+export interface UpdatePhieuKhoPTTrangThaiManyResult {
+  okIds: string[];
+  failed: { id: string; message: string }[];
+}
+
+/**
+ * Đổi trạng thái hàng loạt. Cột trao_doi là log nối thêm riêng từng phiếu nên không gộp được
+ * thành một `update().in()`: gom log cũ bằng 1 SELECT, PATCH tuần tự và gom lỗi thay vì dừng lô.
+ */
+export async function updatePhieuKhoPTTrangThaiManySupabase(
+  ids: string[],
+  trang_thai: TrangThaiPhieuKhoPT,
+  options?: UpdatePhieuKhoPTTrangThaiOptions
+): Promise<UpdatePhieuKhoPTTrangThaiManyResult> {
+  const numIds = ids.map((id) => Number(id)).filter((n) => !Number.isNaN(n));
+  if (numIds.length === 0) return { okIds: [], failed: [] };
+
+  const idNguoiDuyet = normalizeNguoiDuyetIdPT(options?.id_nguoi_duyet);
+  const { data, error: selErr } = await db.from(TABLE_PHIEU).select('id,trao_doi').in('id', numIds);
+  if (selErr) throwSupabaseError(selErr);
+  const traoDoiById = new Map<number, string>();
+  ((data ?? []) as { id: number; trao_doi?: string | null }[]).forEach((row) => {
+    traoDoiById.set(Number(row.id), row.trao_doi ?? '');
+  });
+
+  const entry = buildTraoDoiEntryPT(trang_thai, idNguoiDuyet, options);
+  const okIds: string[] = [];
+  const failed: { id: string; message: string }[] = [];
+
+  for (const idNum of numIds) {
+    try {
+      const { error } = await db
+        .from(TABLE_PHIEU)
+        .update({
+          trang_thai,
+          trao_doi: appendTraoDoiPT(traoDoiById.get(idNum), entry),
+          id_nguoi_duyet: idNguoiDuyet,
+        })
+        .eq('id', idNum);
+      if (error) throwSupabaseError(error);
+      okIds.push(String(idNum));
+    } catch (err) {
+      failed.push({ id: String(idNum), message: err instanceof Error ? err.message : String(err) });
+    }
+  }
+
+  return { okIds, failed };
 }
 
 export async function deletePhieuKhoPTSupabase(id: string): Promise<void> {

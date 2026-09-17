@@ -41,6 +41,8 @@ import quanLyHopDong from '../../features/mua-hang/quan-ly-hop-dong/locales/vi.j
 import thanhToanDoiTac from '../../features/mua-hang/thanh-toan-doi-tac/locales/vi.json';
 import thietLapDeXuatVatTu from '../../features/mua-hang/thiet-lap-de-xuat-vat-tu/locales/vi.json';
 import baoCaoNhanCong from '../../features/quan-ly-farm/bao-cao-nhan-cong/locales/vi.json';
+import deXuatMuaHang from '../../features/quan-ly-farm/de-xuat-mua-hang/locales/vi.json';
+import thietLapDeXuatMuaHang from '../../features/quan-ly-farm/thiet-lap-de-xuat-mua-hang/locales/vi.json';
 import baoCaoSoChe from '../../features/quan-ly-farm/bao-cao-so-che/locales/vi.json';
 import duBaoSlDongThung from '../../features/quan-ly-farm/du-bao-sl-dong-thung/locales/vi.json';
 import hangHoaPhanThuoc from '../../features/quan-ly-farm/hang-hoa-phan-thuoc/locales/vi.json';
@@ -88,6 +90,8 @@ const viCore = {
   ...(thanhToanDoiTac as Record<string, string>),
   ...(thietLapDeXuatVatTu as Record<string, string>),
   ...(baoCaoNhanCong as Record<string, string>),
+  ...(deXuatMuaHang as Record<string, string>),
+  ...(thietLapDeXuatMuaHang as Record<string, string>),
   ...(baoCaoSoChe as Record<string, string>),
   ...(duBaoSlDongThung as Record<string, string>),
   ...(hangHoaPhanThuoc as Record<string, string>),

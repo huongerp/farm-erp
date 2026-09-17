@@ -1,4 +1,5 @@
 import { db, fetchAllRows } from '../../../../lib/db';
+import { getCachedRef, REF_CACHE_KEYS } from '../../../../lib/ref-cache';
 import type { FarmHangHoa } from '../core/types';
 import type { FarmHangHoaFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
@@ -83,6 +84,44 @@ export const getAllFarmHangHoa = async (): Promise<FarmHangHoa[]> => {
   );
   return enrichWithTenDanhMuc(rows);
 };
+
+/**
+ * Bản rút gọn cho combobox / enrich dòng chi tiết (Đề xuất mua hàng, Phiếu kho phân thuốc).
+ * Tên trường trùng HangHoaRefLite của Kho vận để component dùng chung được.
+ */
+export type FarmHangHoaRefLite = {
+  id: string;
+  ma_hang: string;
+  ma_hang_hoa: string;
+  ten_hang: string;
+  ten_hang_hoa: string;
+  don_vi_tinh: string | undefined;
+  dvt: string | null;
+  danh_muc_id: string | null;
+  danh_muc_cha_id: string | null;
+  ten_danh_muc?: string;
+  /** Đơn giá mặc định (điền sẵn khi tạo phiếu kho nhập). */
+  don_gia: number | null;
+};
+
+/** Danh sách hàng hóa farm dạng ref (cache TTL — nhiều trang list cùng gọi). */
+export const getFarmHangHoaRef = async (): Promise<FarmHangHoaRefLite[]> =>
+  getCachedRef(REF_CACHE_KEYS.farmHangHoa, async () => {
+    const list = await getAllFarmHangHoa();
+    return list.map((h) => ({
+      id: h.id,
+      ma_hang: h.ma_hang_hoa,
+      ma_hang_hoa: h.ma_hang_hoa,
+      ten_hang: h.ten_hang_hoa,
+      ten_hang_hoa: h.ten_hang_hoa,
+      don_vi_tinh: h.dvt ?? undefined,
+      dvt: h.dvt,
+      danh_muc_id: h.danh_muc_id,
+      danh_muc_cha_id: h.danh_muc_cha_id,
+      ten_danh_muc: h.ten_danh_muc,
+      don_gia: h.don_gia,
+    }));
+  });
 
 export const getFarmHangHoaById = async (id: string): Promise<FarmHangHoa | null> => {
   const idNum = Number(id);

@@ -10,6 +10,7 @@ import {
   deleteBaoCaoSoChe,
   deleteBaoCaoSoCheMany,
   updateBaoCaoSoCheTrangThai,
+  updateBaoCaoSoCheTrangThaiMany,
 } from '../services/bao-cao-so-che-service';
 import { findBaoCaoSoCheDuplicateByBranchAndDate, farmBaoCaoSoCheToFormNextDay } from '../core/form-mappers';
 import type { BaoCaoSoCheFormValues } from '../core/schema';
@@ -106,6 +107,21 @@ export function useDeleteBaoCaoSoCheMany() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY_BAO_CAO_SO_CHE });
       toast.success(i18n.t('baoCaoSoChe.toast.deleteManySuccess'));
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+}
+
+/** Khóa / mở khóa hàng loạt — một UPDATE ... IN, không có trạng thái dở dang từng phiếu. */
+export function useUpdateBaoCaoSoCheTrangThaiMany() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ ids, trang_thai }: { ids: string[]; trang_thai: TrangThaiBaoCaoSoChePhieu }) =>
+      updateBaoCaoSoCheTrangThaiMany(ids, trang_thai),
+    onSuccess: (_void, { ids }) => {
+      qc.invalidateQueries({ queryKey: QUERY_KEY_BAO_CAO_SO_CHE });
+      ids.forEach((id) => qc.removeQueries({ queryKey: [...QUERY_KEY_BAO_CAO_SO_CHE, id] }));
+      toast.success(i18n.t('baoCaoSoChe.toast.trangThaiUpdatedMany', { count: ids.length }));
     },
     onError: (err: Error) => toast.error(err.message),
   });

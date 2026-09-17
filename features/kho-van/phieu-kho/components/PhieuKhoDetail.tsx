@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence, motion } from 'framer-motion';
-import { FileText, Calendar, Warehouse, ArrowRightLeft, Package, Truck, Printer, CheckCircle, X, Copy, Hourglass, AlertTriangle } from 'lucide-react';
+import { FileText, Calendar, Warehouse, ArrowRightLeft, Package, Truck, Printer, CheckCircle, X, Copy, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import Button from '../../../../components/ui/Button';
 import DetailDrawerFooter from '../../../../components/shared/DetailDrawerFooter';
@@ -27,41 +27,7 @@ import { BTN_CLOSE, CONFIRM_YES } from '../../../../lib/button-labels';
 import { useUpdatePhieuKhoTrangThai } from '../hooks/use-phieu-kho';
 import { useAuthStore } from '../../../../store/useStore';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
-
-interface ApproveOptionProps {
-  label: string;
-  icon: React.ReactNode;
-  iconWrapClass: string;
-  buttonClass: string;
-  onClick: () => void;
-  disabled?: boolean;
-}
-
-const ApproveOption: React.FC<ApproveOptionProps> = ({
-  label,
-  icon,
-  iconWrapClass,
-  buttonClass,
-  onClick,
-  disabled,
-}) => (
-  <button
-    type="button"
-    onClick={onClick}
-    disabled={disabled}
-    className={cn(
-      'group flex flex-col items-center justify-center gap-1.5 rounded-lg border px-2 py-2.5 text-center transition-all',
-      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-      'hover:shadow-sm active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50',
-      buttonClass,
-    )}
-  >
-    <span className={cn('flex h-7 w-7 shrink-0 items-center justify-center rounded-full', iconWrapClass)}>
-      {icon}
-    </span>
-    <span className="text-xs font-medium leading-tight">{label}</span>
-  </button>
-);
+import ApproveOption, { APPROVE_OPTION_STYLE } from './ApproveOption';
 
 interface Props {
   data: PhieuKho;
@@ -394,25 +360,19 @@ const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete
                   <div className="grid grid-cols-3 gap-2">
                     <ApproveOption
                       label={t('phieuKho.status.approved')}
-                      icon={<CheckCircle size={14} />}
-                      iconWrapClass="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-                      buttonClass="border-emerald-500/25 bg-emerald-500/[0.04] text-emerald-800 dark:text-emerald-200 hover:border-emerald-500/45 hover:bg-emerald-500/10"
+                      {...APPROVE_OPTION_STYLE[TRANG_THAI_DA_DUYET]}
                       onClick={() => submitApprove(TRANG_THAI_DA_DUYET)}
                       disabled={updateTrangThaiMutation.isPending || data.trang_thai === TRANG_THAI_DA_DUYET}
                     />
                     <ApproveOption
                       label={t('phieuKho.status.waiting')}
-                      icon={<Hourglass size={14} />}
-                      iconWrapClass="bg-sky-500/15 text-sky-600 dark:text-sky-400"
-                      buttonClass="border-sky-500/25 bg-sky-500/[0.04] text-sky-800 dark:text-sky-200 hover:border-sky-500/45 hover:bg-sky-500/10"
+                      {...APPROVE_OPTION_STYLE[TRANG_THAI_DOI_DUYET]}
                       onClick={() => submitApprove(TRANG_THAI_DOI_DUYET)}
                       disabled={updateTrangThaiMutation.isPending || data.trang_thai === TRANG_THAI_DOI_DUYET}
                     />
                     <ApproveOption
                       label={t('phieuKho.status.rejected')}
-                      icon={<X size={14} />}
-                      iconWrapClass="bg-rose-500/15 text-rose-600 dark:text-rose-400"
-                      buttonClass="border-rose-500/25 bg-rose-500/[0.04] text-rose-800 dark:text-rose-200 hover:border-rose-500/45 hover:bg-rose-500/10"
+                      {...APPROVE_OPTION_STYLE[TRANG_THAI_KHONG_DUYET]}
                       onClick={() => submitApprove(TRANG_THAI_KHONG_DUYET)}
                       disabled={updateTrangThaiMutation.isPending || data.trang_thai === TRANG_THAI_KHONG_DUYET}
                     />

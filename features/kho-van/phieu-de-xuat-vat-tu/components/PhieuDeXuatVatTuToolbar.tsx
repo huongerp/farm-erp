@@ -28,6 +28,8 @@ interface Props {
   canCreate?: boolean;
   canDelete?: boolean;
   chipCountsMode?: 'fromRows' | 'unweighted';
+  /** Nút bulk riêng của module (duyệt hàng loạt), hiện cạnh nút Xóa khi có dòng được chọn. */
+  bulkActions?: React.ReactNode;
 }
 
 const PhieuDeXuatVatTuToolbar: React.FC<Props> = ({
@@ -42,6 +44,7 @@ const PhieuDeXuatVatTuToolbar: React.FC<Props> = ({
   canCreate = true,
   canDelete = true,
   chipCountsMode = 'fromRows',
+  bulkActions,
 }) => {
   const { t } = useTranslation();
   const unweighted = chipCountsMode === 'unweighted';
@@ -399,7 +402,12 @@ const PhieuDeXuatVatTuToolbar: React.FC<Props> = ({
       onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
       actions={renderActions}
-      bulkActions={bulkExport}
+      bulkActions={
+        <>
+          {bulkActions}
+          {bulkExport}
+        </>
+      }
       filters={renderFilters}
       filterGroups={filterGroups}
       mobileActions={mobileActions}

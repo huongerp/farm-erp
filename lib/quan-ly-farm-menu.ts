@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { Sprout, PackagePlus, Package, BookOpen, Users, Layers, Boxes, BarChart3 } from 'lucide-react';
+import { Sprout, PackagePlus, Package, BookOpen, Users, Layers, Boxes, BarChart3, ClipboardList, Settings } from 'lucide-react';
 import type { ModuleItem } from '../components/dashboard/SubModuleCard';
 import type { ModuleGroup } from '../components/dashboard/ModuleDashboardLayout';
 
@@ -29,9 +29,11 @@ export const QUAN_LY_FARM_MODULE_SLUGS: string[] = [
   'bao-cao-so-che',
   'du-bao-sl-dong-thung',
   'thong-ke-san-xuat',
+  'de-xuat-mua-hang',
   'phieu-kho-phan-thuoc',
   'ton-kho-phan-thuoc',
   'hang-hoa-phan-thuoc',
+  'thiet-lap-de-xuat-mua-hang',
 ];
 
 function buildItem(
@@ -103,6 +105,13 @@ export function getQuanLyFarmGroups(
       groupTitle: t('page.quanLyFarm.groupKhoPhanThuoc'),
       items: [
         item({
+          slug: 'de-xuat-mua-hang',
+          titleKey: 'page.quanLyFarm.modules.deXuatMuaHang',
+          descKey: 'page.quanLyFarm.descs.deXuatMuaHang',
+          icon: ClipboardList,
+          color: 'bg-orange-500',
+        }),
+        item({
           slug: 'phieu-kho-phan-thuoc',
           titleKey: 'page.quanLyFarm.modules.phieuKhoPhanThuoc',
           descKey: 'page.quanLyFarm.descs.phieuKhoPhanThuoc',
@@ -122,6 +131,13 @@ export function getQuanLyFarmGroups(
           descKey: 'page.quanLyFarm.descs.hangHoaPhanThuoc',
           icon: BookOpen,
           color: 'bg-amber-600',
+        }),
+        item({
+          slug: 'thiet-lap-de-xuat-mua-hang',
+          titleKey: 'page.quanLyFarm.modules.thietLapDeXuatMuaHang',
+          descKey: 'page.quanLyFarm.descs.thietLapDeXuatMuaHang',
+          icon: Settings,
+          color: 'bg-slate-500',
         }),
       ],
     },

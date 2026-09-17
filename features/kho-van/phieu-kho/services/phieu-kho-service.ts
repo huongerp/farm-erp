@@ -17,11 +17,13 @@ import {
   getLichSuNhapXuatByKhoSupabase,
   getNextSoPhieuSupabase,
   updatePhieuKhoTrangThaiSupabase,
+  updatePhieuKhoTrangThaiManySupabase,
   getPhieuKhoPageSupabase,
   getChiTietPhieuKhoPageSupabase,
   fetchAllPhieuKhoForListQuerySupabase,
   fetchAllChiTietPhieuKhoForListQuerySupabase,
   type UpdatePhieuKhoTrangThaiOptions,
+  type UpdatePhieuKhoTrangThaiManyResult,
 } from './phieu-kho-supabase.service';
 
 export type { PhieuKhoListServerQuery, ChiTietPhieuKhoListServerQuery } from './phieu-kho-list-query';
@@ -41,10 +43,16 @@ export const getChiTietPhieuKhoAll = getChiTietPhieuKhoAllSupabase;
 export const getLichSuNhapXuatByHangHoa = getLichSuNhapXuatByHangHoaSupabase;
 export const getLichSuNhapXuatByKho = getLichSuNhapXuatByKhoSupabase;
 export const getNextSoPhieu = getNextSoPhieuSupabase;
-export type { UpdatePhieuKhoTrangThaiOptions };
+export type { UpdatePhieuKhoTrangThaiOptions, UpdatePhieuKhoTrangThaiManyResult };
 
 export const updatePhieuKhoTrangThai = (id: string, trang_thai: TrangThaiPhieuKho, opts?: UpdatePhieuKhoTrangThaiOptions) =>
   updatePhieuKhoTrangThaiSupabase(id, trang_thai, opts);
+
+export const updatePhieuKhoTrangThaiMany = (
+  ids: string[],
+  trang_thai: TrangThaiPhieuKho,
+  opts?: UpdatePhieuKhoTrangThaiOptions
+) => updatePhieuKhoTrangThaiManySupabase(ids, trang_thai, opts);
 
 export const getPhieuKhoPage = getPhieuKhoPageSupabase;
 export const getChiTietPhieuKhoPage = getChiTietPhieuKhoPageSupabase;

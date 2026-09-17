@@ -32,6 +32,8 @@ interface Props {
   employeesForChips?: { id: string; ho_ten: string }[];
   /** Bắt buộc khi unweighted + tab nhập/xuất — chip đối tác */
   doiTacForChips?: { id: string; ten_ncc: string }[];
+  /** Nút bulk riêng của module (duyệt hàng loạt), hiện cạnh nút Xóa khi có dòng được chọn. */
+  bulkActions?: React.ReactNode;
 }
 
 /** Tránh crash MultiSelect khi state/HMR để filter không phải mảng. */
@@ -54,6 +56,7 @@ const PhieuKhoToolbar: React.FC<Props> = ({
   chipCountsMode = 'fromRows',
   employeesForChips = [],
   doiTacForChips = [],
+  bulkActions,
 }) => {
   const data = Array.isArray(dataProp) ? dataProp : [];
   const khoList = Array.isArray(khoListProp) ? khoListProp : [];
@@ -465,6 +468,7 @@ const PhieuKhoToolbar: React.FC<Props> = ({
     <GenericToolbar
       selectedCount={selectedCount}
       onDeleteMany={canDelete ? onDeleteMany : undefined}
+      bulkActions={bulkActions}
       searchTerm={searchInput}
       onSearchChange={setSearchInput}
       onClearSelection={clearSelection}

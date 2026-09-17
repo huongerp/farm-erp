@@ -9,6 +9,7 @@ import {
   deleteDuBaoSlDongThungSupabase,
   deleteDuBaoSlDongThungManySupabase,
   updateDuBaoSlDongThungTrangThaiSupabase,
+  updateDuBaoSlDongThungTrangThaiManySupabase,
 } from './du-bao-sl-dong-thung-supabase.service';
 
 async function enrichTenNguoiTao(items: FarmDuBaoSlDongThung[]): Promise<FarmDuBaoSlDongThung[]> {
@@ -57,6 +58,13 @@ export async function deleteDuBaoSlDongThung(id: string): Promise<void> {
 
 export async function deleteDuBaoSlDongThungMany(ids: string[]): Promise<void> {
   await deleteDuBaoSlDongThungManySupabase(ids);
+}
+
+export async function updateDuBaoSlDongThungTrangThaiMany(
+  ids: string[],
+  trang_thai: TrangThaiDuBaoSlDongThungPhieu
+): Promise<void> {
+  await updateDuBaoSlDongThungTrangThaiManySupabase(ids, trang_thai);
 }
 
 export async function updateDuBaoSlDongThungTrangThai(

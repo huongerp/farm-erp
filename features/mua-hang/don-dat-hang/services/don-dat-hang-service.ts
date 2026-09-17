@@ -15,12 +15,13 @@ import {
   createDonDatHangSupabase,
   updateDonDatHangSupabase,
   updateDonDatHangTrangThaiSupabase,
+  updateDonDatHangTrangThaiManySupabase,
   deleteDonDatHangSupabase,
   deleteDonDatHangManySupabase,
   getNextSoPoDonDatHangSupabase,
   fetchChiTietForCategoryStatsSupabase,
 } from './don-dat-hang-supabase.service';
-export type { ChiTietCategoryStatsItem } from './don-dat-hang-supabase.service';
+export type { ChiTietCategoryStatsItem, UpdateDonDatHangTrangThaiManyResult } from './don-dat-hang-supabase.service';
 import { buildDonDatHangListServerQuery, type DonDatHangListServerQuery } from './don-dat-hang-list-query';
 
 export type { DonDatHangListServerQuery };
@@ -63,6 +64,12 @@ export const updateDonDatHangTrangThai = (
   trang_thai: DonDatHangTrangThai,
   options?: { ghi_chu?: string; notePrefix?: string }
 ) => updateDonDatHangTrangThaiSupabase(id, trang_thai, options);
+
+export const updateDonDatHangTrangThaiMany = (
+  ids: string[],
+  trang_thai: DonDatHangTrangThai,
+  options?: { ghi_chu?: string; notePrefix?: string }
+) => updateDonDatHangTrangThaiManySupabase(ids, trang_thai, options);
 export const deleteDonDatHang = deleteDonDatHangSupabase;
 export const deleteDonDatHangMany = deleteDonDatHangManySupabase;
 export const fetchChiTietForCategoryStats = fetchChiTietForCategoryStatsSupabase;

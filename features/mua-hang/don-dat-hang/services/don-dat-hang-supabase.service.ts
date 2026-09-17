@@ -706,6 +706,56 @@ export async function updateDonDatHangTrangThaiSupabase(
   if (error) throwSupabaseError(error);
 }
 
+export interface UpdateDonDatHangTrangThaiManyResult {
+  okIds: string[];
+  failed: { id: string; message: string }[];
+}
+
+/**
+ * Đổi trạng thái hàng loạt (duyệt / hủy theo lô).
+ *
+ * Ghi chú duyệt được nối vào cột `ghi_chu` vốn khác nhau từng đơn, nên không gộp được thành một
+ * `update().in()`: gom ghi chú cũ bằng 1 SELECT, rồi PATCH tuần tự và gom lỗi thay vì dừng cả lô.
+ */
+export async function updateDonDatHangTrangThaiManySupabase(
+  ids: string[],
+  trang_thai: DonDatHangTrangThai,
+  options?: { ghi_chu?: string; notePrefix?: string }
+): Promise<UpdateDonDatHangTrangThaiManyResult> {
+  const numIds = ids.map((s) => Number(s)).filter((n) => !Number.isNaN(n));
+  if (numIds.length === 0) return { okIds: [], failed: [] };
+
+  const { data, error: selErr } = await db.from(TABLE_DON).select('id,ghi_chu').in('id', numIds);
+  if (selErr) throwSupabaseError(selErr);
+  const ghiChuById = new Map<number, string>();
+  ((data ?? []) as { id: number; ghi_chu?: string | null }[]).forEach((row) => {
+    ghiChuById.set(Number(row.id), row.ghi_chu ?? '');
+  });
+
+  const noteText = options?.ghi_chu?.trim();
+  const okIds: string[] = [];
+  const failed: { id: string; message: string }[] = [];
+
+  for (const idNum of numIds) {
+    try {
+      const existing = ghiChuById.get(idNum) ?? '';
+      const mergedGhiChu = noteText
+        ? (existing ? existing + '\n' : '') + `${options?.notePrefix ?? ''}${noteText}`
+        : existing || null;
+      const { error } = await db
+        .from(TABLE_DON)
+        .update({ trang_thai, ghi_chu: mergedGhiChu })
+        .eq('id', idNum);
+      if (error) throwSupabaseError(error);
+      okIds.push(String(idNum));
+    } catch (err) {
+      failed.push({ id: String(idNum), message: err instanceof Error ? err.message : String(err) });
+    }
+  }
+
+  return { okIds, failed };
+}
+
 export async function deleteDonDatHangSupabase(id: string): Promise<void> {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('donDatHang.service.notFound'));

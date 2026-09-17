@@ -10,10 +10,13 @@ import {
   updatePhieuDeXuatVatTu,
   deletePhieuDeXuatVatTu,
   deletePhieuDeXuatVatTuMany,
+  updatePhieuDeXuatVatTuTrangThai,
+  updatePhieuDeXuatVatTuTrangThaiMany,
 } from '../services/phieu-de-xuat-vat-tu-service';
 import type { PhieuDeXuatChiTietListServerQuery, PhieuDeXuatVatTuListServerQuery } from '../services/phieu-de-xuat-list-query';
 import type { PhieuDeXuatVatTuFormValues } from '../core/schema';
 import type { PhieuDeXuatVatTu } from '../core/types';
+import type { TrangThaiPhieuDeXuatVatTu } from '../core/constants';
 import i18n from '../../../../lib/i18n';
 import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
 import { PHIEU_DE_XUAT_SO_PHIEU_QUERY_KEY } from '../../../../lib/hooks/use-supabase-ref-queries';
@@ -103,6 +106,81 @@ export const useUpdatePhieuDeXuatVatTu = (onSuccess?: () => void) => {
       qc.invalidateQueries({ queryKey: [...QUERY_KEY_CHI_TIET, 'paged'] });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
       toast.success(i18n.t('phieuDeXuatVatTu.toast.updateSuccess'));
+      onSuccess?.();
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+};
+
+/** Đổi riêng trạng thái duyệt — không ghi lại cả phiếu + chi tiết như useUpdatePhieuDeXuatVatTu. */
+export const useUpdatePhieuDeXuatVatTuTrangThai = (onSuccess?: () => void) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      trang_thai,
+      ghi_chu,
+      notePrefix,
+      id_nguoi_duyet,
+    }: {
+      id: string;
+      trang_thai: TrangThaiPhieuDeXuatVatTu;
+      ghi_chu?: string;
+      notePrefix?: string;
+      id_nguoi_duyet?: string | null;
+    }) => updatePhieuDeXuatVatTuTrangThai(id, trang_thai, { ghi_chu, notePrefix, id_nguoi_duyet }),
+    onSuccess: (_void, { id }) => {
+      qc.removeQueries({ queryKey: [...QUERY_KEY, id] });
+      qc.invalidateQueries({ queryKey: QUERY_KEY_CHI_TIET });
+      qc.invalidateQueries({ queryKey: [...QUERY_KEY_CHI_TIET, 'paged'] });
+      qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
+      toast.success(i18n.t('phieuDeXuatVatTu.toast.updateSuccess'));
+      onSuccess?.();
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+};
+
+/**
+ * Duyệt hàng loạt. Lỗi một phần không làm hỏng cả lô: service trả danh sách thành công / thất bại
+ * để toast báo rõ số phiếu đã chạy.
+ */
+export const useUpdatePhieuDeXuatVatTuTrangThaiMany = (onSuccess?: () => void) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      ids,
+      trang_thai,
+      ghi_chu,
+      notePrefix,
+      id_nguoi_duyet,
+    }: {
+      ids: string[];
+      trang_thai: TrangThaiPhieuDeXuatVatTu;
+      ghi_chu?: string;
+      notePrefix?: string;
+      id_nguoi_duyet?: string | null;
+    }) => updatePhieuDeXuatVatTuTrangThaiMany(ids, trang_thai, { ghi_chu, notePrefix, id_nguoi_duyet }),
+    onSuccess: (result, { ids }) => {
+      result.okIds.forEach((id) => qc.removeQueries({ queryKey: [...QUERY_KEY, id] }));
+      qc.invalidateQueries({ queryKey: QUERY_KEY_CHI_TIET });
+      qc.invalidateQueries({ queryKey: [...QUERY_KEY_CHI_TIET, 'paged'] });
+      qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
+
+      if (result.failed.length === 0) {
+        toast.success(
+          i18n.t('phieuDeXuatVatTu.toast.bulkApproveSuccess', { count: result.okIds.length })
+        );
+      } else {
+        toast.warning(
+          i18n.t('phieuDeXuatVatTu.toast.bulkApprovePartial', {
+            ok: result.okIds.length,
+            total: ids.length,
+            failed: result.failed.length,
+          })
+        );
+        toast.error(result.failed[0].message);
+      }
       onSuccess?.();
     },
     onError: (err: Error) => toast.error(err.message),

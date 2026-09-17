@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { changeOwnPassword } from '../lib/auth';
 import { emailPhienHienTai, phaiDoiMatKhau } from '../lib/token-store';
 import { PASSWORD_MIN_LENGTH } from '../lib/constants';
+import { useUnsavedGuard } from '../lib/use-unsaved-guard';
 
 /**
  * Đổi mật khẩu cho người ĐANG đăng nhập.
@@ -26,6 +27,9 @@ const ResetPassword: React.FC = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Trang đứng riêng, không qua GenericDrawer — báo tay để app không reload khi đang nhập dở.
+  useUnsavedGuard(newPassword !== '' || confirmPassword !== '');
 
   const email = emailPhienHienTai();
   const batBuocDoi = phaiDoiMatKhau();

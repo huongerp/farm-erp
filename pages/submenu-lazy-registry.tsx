@@ -37,6 +37,8 @@ const RAW_SUBMENU_MODULE_IMPORTS = {
   'du-bao-sl-dong-thung': () => import('../features/quan-ly-farm/du-bao-sl-dong-thung'),
   'thong-ke-san-xuat': () => import('../features/quan-ly-farm/thong-ke-san-xuat'),
   'hang-hoa-phan-thuoc': () => import('../features/quan-ly-farm/hang-hoa-phan-thuoc'),
+  'de-xuat-mua-hang': () => import('../features/quan-ly-farm/de-xuat-mua-hang'),
+  'thiet-lap-de-xuat-mua-hang': () => import('../features/quan-ly-farm/thiet-lap-de-xuat-mua-hang'),
   'phieu-kho-phan-thuoc': () => import('../features/quan-ly-farm/phieu-kho-phan-thuoc'),
   'ton-kho-phan-thuoc': () => import('../features/quan-ly-farm/ton-kho-phan-thuoc'),
 } as const;

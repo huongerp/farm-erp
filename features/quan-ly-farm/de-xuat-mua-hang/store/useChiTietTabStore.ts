@@ -1,0 +1,49 @@
+import { createGenericStore, type ColumnConfig } from '../../../../store/createGenericStore';
+import i18n from '../../../../lib/i18n';
+import type { DateRangePresetId } from '../../../he-thong/nhan-vien/core/stats-constants';
+
+/** Bộ lọc tab Chi tiết: trạng thái + nơi/người + tiến độ mh (theo text vì row không có id) */
+export interface ChiTietTabFilters {
+  status: string[];
+  datePreset: DateRangePresetId;
+  customDateFrom: string;
+  customDateEnd: string;
+  noiDeXuat: string[];
+  nguoiDeXuat: string[];
+  nguoiDuyet: string[];
+  tienDoMh: string[];
+}
+
+const DEFAULT_COLUMNS: ColumnConfig[] = [
+  { id: 'so_phieu', label: i18n.t('deXuatMuaHang.store.soPhieuCol'), visible: true, minWidth: 120, maxWidth: 170, order: 0 },
+  { id: 'ngay', label: i18n.t('deXuatMuaHang.store.ngayCol'), visible: true, minWidth: 132, maxWidth: 168, order: 1 },
+  { id: 'ngay_can', label: i18n.t('deXuatMuaHang.store.ngayCanCol'), visible: true, minWidth: 132, maxWidth: 168, order: 2 },
+  { id: 'ten_noi_de_xuat', label: i18n.t('deXuatMuaHang.store.noiDeXuatCol'), visible: true, minWidth: 160, maxWidth: 240, order: 3 },
+  { id: 'ten_nguoi_de_xuat', label: i18n.t('deXuatMuaHang.store.nguoiDeXuatCol'), visible: true, minWidth: 150, maxWidth: 220, order: 4 },
+  { id: 'trang_thai_phieu', label: i18n.t('deXuatMuaHang.store.statusCol'), visible: true, minWidth: 120, maxWidth: 180, order: 5 },
+  { id: 'ma_hang', label: i18n.t('deXuatMuaHang.form.itemCode'), visible: true, minWidth: 130, maxWidth: 180, order: 6 },
+  { id: 'ten_hang', label: i18n.t('deXuatMuaHang.form.itemName'), visible: true, minWidth: 320, maxWidth: 520, order: 7 },
+  { id: 'so_luong', label: i18n.t('deXuatMuaHang.form.quantity'), visible: true, minWidth: 100, maxWidth: 130, order: 8 },
+  { id: 'don_vi_tinh', label: i18n.t('deXuatMuaHang.form.unit'), visible: true, minWidth: 90, maxWidth: 120, order: 9 },
+  { id: 'ten_tien_do_mh', label: i18n.t('deXuatMuaHang.form.tienDoMh'), visible: true, minWidth: 140, maxWidth: 200, order: 10 },
+  { id: 'ten_nguoi_duyet', label: i18n.t('deXuatMuaHang.store.nguoiDuyetCol'), visible: true, minWidth: 150, maxWidth: 220, order: 11 },
+  { id: 'thong_so', label: i18n.t('deXuatMuaHang.form.specs'), visible: false, minWidth: 180, maxWidth: 260, order: 12 },
+  { id: 'ghi_chu', label: i18n.t('deXuatMuaHang.form.note'), visible: true, minWidth: 180, maxWidth: 280, order: 13 },
+  { id: 'actions', label: '', visible: true, minWidth: 80, maxWidth: 80, order: 14 },
+];
+
+const initialFilters: ChiTietTabFilters = {
+  status: [],
+  datePreset: 'all',
+  customDateFrom: '',
+  customDateEnd: '',
+  noiDeXuat: [],
+  nguoiDeXuat: [],
+  nguoiDuyet: [],
+  tienDoMh: [],
+};
+
+export const useChiTietTabStore = createGenericStore<ChiTietTabFilters>(
+  initialFilters,
+  DEFAULT_COLUMNS
+);

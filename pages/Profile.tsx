@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../store/useStore';
+import { useUnsavedGuard } from '../lib/use-unsaved-guard';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import SingleImageInput from '../components/ui/SingleImageInput';
@@ -63,6 +64,15 @@ const Profile: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+
+  // Form đổi mật khẩu / đổi ảnh ở đây không nằm trong GenericDrawer nên không tự báo dirty:
+  // phải báo tay, nếu không app sẽ tự reload áp bản mới ngay giữa lúc đang gõ.
+  useUnsavedGuard(
+    currentPassword !== '' ||
+      newPassword !== '' ||
+      confirmPassword !== '' ||
+      avatarPreview !== null
+  );
 
   const editable = canEditProfile(user);
 

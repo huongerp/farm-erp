@@ -29,6 +29,8 @@ const ADD_HANG_HOA = '__add_hang_hoa__';
 interface Props {
   khoList: Kho[];
   initialData?: PhieuKhoPT | null;
+  /** Giá trị điền sẵn khi tạo mới từ module khác (Đề xuất mua hàng → "Tạo phiếu kho"). */
+  prefillValues?: Partial<PhieuKhoPTFormValues>;
   onClose: () => void;
   onRequestAddKho?: () => Promise<Kho | null>;
   onRequestAddHangHoa?: () => Promise<FarmHangHoa | null>;
@@ -42,7 +44,7 @@ const LOAI_OPTIONS: { value: LoaiPhieuKhoPT; labelKey: string }[] = [
   { value: 'chuyển', labelKey: 'phieuKhoPhanThuoc.tabs.chuyen' },
 ];
 
-const PhieuKhoPTForm: React.FC<Props> = ({ khoList, initialData, onClose, onRequestAddKho, onRequestAddHangHoa }) => {
+const PhieuKhoPTForm: React.FC<Props> = ({ khoList, initialData, prefillValues, onClose, onRequestAddKho, onRequestAddHangHoa }) => {
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const isEdit = !!initialData?.id;
@@ -145,10 +147,10 @@ const PhieuKhoPTForm: React.FC<Props> = ({ khoList, initialData, onClose, onRequ
         setValue('nguoi_tao_id', Number(user.id));
       }
     } else {
-      reset({ ...defaultValues, ngay: today(), loai: 'nhập' });
+      reset({ ...defaultValues, ngay: today(), loai: 'nhập', ...prefillValues });
       if (user?.id) setValue('nguoi_tao_id', Number(user.id));
     }
-  }, [initialData, reset, user?.id, setValue, isDirty]);
+  }, [initialData, prefillValues, reset, user?.id, setValue, isDirty]);
 
   useEffect(() => {
     if (loaiWatch !== 'chuyển') {
@@ -187,6 +189,9 @@ const PhieuKhoPTForm: React.FC<Props> = ({ khoList, initialData, onClose, onRequ
       so_phieu: soPhieu || data.so_phieu?.trim() || '',
       kho_den_id: data.kho_den_id === '' || data.kho_den_id === undefined ? null : data.kho_den_id,
       mo_ta: data.mo_ta?.trim() || undefined,
+      // Liên kết đề xuất: giữ nguyên qua submit dù không có input nào hiển thị.
+      id_de_xuat_mua_hang: data.id_de_xuat_mua_hang ?? prefillValues?.id_de_xuat_mua_hang ?? null,
+      so_phieu_de_xuat: data.so_phieu_de_xuat ?? prefillValues?.so_phieu_de_xuat ?? null,
       chi_tiet: validChiTiet.map((c) => ({
         id_hang_hoa: c.id_hang_hoa.trim(),
         so_luong: Number(c.so_luong),

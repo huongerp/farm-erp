@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
+import { CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import { useModulePermission } from '../../../he-thong/phan-quyen/hooks/use-module-permission';
@@ -9,6 +10,7 @@ import {
   usePhieuKhoPTById,
   useDeletePhieuKhoPT,
   useDeletePhieuKhoPTMany,
+  useUpdatePhieuKhoPTTrangThaiMany,
 } from '../hooks/use-phieu-kho-pt';
 import { useKhoList } from '../../../kho-van/danh-sach-kho/hooks/use-kho';
 import { buildPhieuKhoPTListServerQuery, fetchAllPhieuKhoPTForListQuery } from '../services/phieu-kho-pt-service';
@@ -18,13 +20,16 @@ import { usePhieuKhoPTStore } from '../store/usePhieuKhoPTStore';
 import { getDateRangeFromPreset } from '../../../he-thong/nhan-vien/utils/stats-date-range';
 import type { DateRangePresetId } from '../../../he-thong/nhan-vien/core/stats-constants';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
+import { useAuthStore } from '../../../../store/useStore';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
-import type { PhieuKhoPT } from '../core/types';
+import type { PhieuKhoPT, TrangThaiPhieuKhoPT } from '../core/types';
+import { canBulkApprovePhieuKhoPT } from '../core/constants';
 import type { Kho } from '../../../kho-van/danh-sach-kho/core/types';
 import DanhSachToolbar from './DanhSachToolbar';
 import DanhSachList from './DanhSachList';
 import PhieuKhoPTForm from './PhieuKhoPTForm';
 import PhieuKhoPTDetail from './PhieuKhoPTDetail';
+import PhieuKhoPTBulkApproveDialog from './PhieuKhoPTBulkApproveDialog';
 import DanhSachKhoForm from '../../../kho-van/danh-sach-kho/components/danh-sach-kho-form';
 import HangHoaForm from '../../hang-hoa-phan-thuoc/components/HangHoaForm';
 import ExportDialog from '../../../../components/shared/LazyExportDialog';
@@ -56,6 +61,7 @@ const DanhSachTab: React.FC = () => {
   const [showAddKho, setShowAddKho] = useState(false);
   const [showAddHangHoa, setShowAddHangHoa] = useState(false);
   const [showExport, setShowExport] = useState(false);
+  const [bulkApprove, setBulkApprove] = useState<{ ids: string[]; skipped: number } | null>(null);
   const [exportRows, setExportRows] = useState<PhieuKhoPT[]>([]);
   const [exportLoading, setExportLoading] = useState(false);
   const addKhoResolveRef = useRef<(k: Kho | null) => void>(null);
@@ -67,6 +73,11 @@ const DanhSachTab: React.FC = () => {
   const { data: editingPhieuFull } = usePhieuKhoPTById(editingItem?.id);
   const deleteMutation = useDeletePhieuKhoPT();
   const deleteManyMutation = useDeletePhieuKhoPTMany();
+  const approveManyMutation = useUpdatePhieuKhoPTTrangThaiMany();
+  const user = useAuthStore((s) => s.user);
+  const nguoiDuyetIdRaw = user?.id != null ? Number(user.id) : null;
+  const nguoiDuyetId = nguoiDuyetIdRaw != null && !Number.isNaN(nguoiDuyetIdRaw) ? nguoiDuyetIdRaw : null;
+  const nguoiDuyetTen = user?.ho_va_ten?.trim() || user?.full_name?.trim() || user?.email?.trim() || '';
 
   const dateRangeStr = useMemo(() => {
     const dp = typeof filters.datePreset === 'string' ? filters.datePreset : 'all';
@@ -219,6 +230,53 @@ const DanhSachTab: React.FC = () => {
     });
   };
 
+  /** Lọc lô về đúng phiếu còn chờ duyệt; phiếu đã có quyết định bị bỏ qua, không chặn cả lô. */
+  const handleApproveMany = () => {
+    const selected = Array.from(selectedIds);
+    const allowedIds = selected.filter((id) => {
+      const item = tableRows.find((p) => p.id === id);
+      return item && canBulkApprovePhieuKhoPT(item.trang_thai, canApprove);
+    });
+    if (allowedIds.length === 0) {
+      toast.message(t('phieuKhoPhanThuoc.toast.bulkApproveNoneAllowed'));
+      return;
+    }
+    setBulkApprove({ ids: allowedIds, skipped: selected.length - allowedIds.length });
+  };
+
+  const submitApproveMany = (trangThai: TrangThaiPhieuKhoPT, ghiChu: string) => {
+    if (!bulkApprove) return;
+    const ids = bulkApprove.ids;
+    approveManyMutation.mutate(
+      {
+        ids,
+        trang_thai: trangThai,
+        ghi_chu: ghiChu || undefined,
+        id_nguoi_duyet: nguoiDuyetId,
+        ten_nguoi_duyet_hien_thi: nguoiDuyetTen || undefined,
+      },
+      {
+        onSuccess: () => {
+          setBulkApprove(null);
+          clearSelection();
+          if (viewingItem && ids.includes(viewingItem.id)) setViewingItem(null);
+        },
+      }
+    );
+  };
+
+  const bulkActions =
+    selectedIds.size > 0 && canApprove ? (
+      <button
+        type="button"
+        onClick={handleApproveMany}
+        className="h-8 px-3 flex items-center gap-1.5 rounded-lg border border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/15 transition-all active:scale-95"
+      >
+        <CheckCircle size={14} className="stroke-[2.5px] shrink-0" />
+        <span className="text-xs font-medium">{t('phieuKhoPhanThuoc.bulkApproveAction')}</span>
+      </button>
+    ) : null;
+
   const canEditItem = (item: PhieuKhoPT) => item.trang_thai === 'Chờ duyệt';
 
   return (
@@ -235,6 +293,7 @@ const DanhSachTab: React.FC = () => {
         }}
         onDeleteMany={handleDeleteMany}
         onExport={handleExport}
+        bulkActions={bulkActions}
         canCreate={canCreate}
         canDelete={canDelete}
       />
@@ -343,6 +402,16 @@ const DanhSachTab: React.FC = () => {
           />
         )}
       </AnimatePresence>
+
+      {bulkApprove && (
+        <PhieuKhoPTBulkApproveDialog
+          count={bulkApprove.ids.length}
+          skipped={bulkApprove.skipped}
+          isPending={approveManyMutation.isPending}
+          onClose={() => setBulkApprove(null)}
+          onConfirm={submitApproveMany}
+        />
+      )}
 
       <ExportDialog
         open={showExport}

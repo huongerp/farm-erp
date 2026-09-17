@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { AnimatePresence } from 'framer-motion';
+import { Lock, Unlock } from 'lucide-react';
 import {
   useBaoCaoSoCheList,
   useBaoCaoSoCheById,
@@ -12,10 +13,13 @@ import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
 import { useBaoCaoSoCheStore, type BaoCaoSoCheFilters } from '../store/useBaoCaoSoCheStore';
 import { useListWithFilter } from '../../../../lib/hooks';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
-import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
+import { CONFIRM_DELETE, CONFIRM_DELETE_ALL, CONFIRM_YES } from '../../../../lib/button-labels';
 import type { FarmBaoCaoSoChe } from '../core/types';
 import { getPreferredBranchFromUserLastRecords } from '../core/form-mappers';
 import { useBaoCaoSoChePermissions } from '../hooks/use-bao-cao-so-che-permissions';
+import { useUpdateBaoCaoSoCheTrangThaiMany } from '../hooks/use-bao-cao-so-che';
+import { TRANG_THAI_BAO_CAO_SO_CHE } from '../core/types';
+import type { TrangThaiBaoCaoSoChePhieu } from '../core/types';
 import { useAuthStore } from '../../../../store/useStore';
 import ExportDialog from '../../../../components/shared/LazyExportDialog';
 import { useExportData } from '../../../../lib/useExportData';
@@ -78,6 +82,7 @@ const DanhSachTab: React.FC = () => {
   const { data: editingFull } = useBaoCaoSoCheById(editingItem?.id);
   const deleteMutation = useDeleteBaoCaoSoChe();
   const deleteManyMutation = useDeleteBaoCaoSoCheMany();
+  const trangThaiManyMutation = useUpdateBaoCaoSoCheTrangThaiMany();
 
   const filterFn = useCallback((item: FarmBaoCaoSoChe, term: string, f: BaoCaoSoCheFilters) => {
     const q = term.trim().toLowerCase();
@@ -229,6 +234,59 @@ const DanhSachTab: React.FC = () => {
     });
   };
 
+  /**
+   * Khóa / mở khóa hàng loạt. Chỉ chạy phiếu đang khác trạng thái đích — phiếu đã đúng trạng thái
+   * bị bỏ qua để không ghi đè tg_cap_nhat vô ích.
+   */
+  const handleToggleTrangThaiMany = (trangThai: TrangThaiBaoCaoSoChePhieu) => {
+    const ids = Array.from(selectedIds);
+    const allowedIds = ids.filter((id) => {
+      const item = allList.find((r) => r.id === id);
+      return item && item.trang_thai !== trangThai;
+    });
+    if (allowedIds.length === 0) {
+      toast.message(t('baoCaoSoChe.toast.trangThaiManyNoneAllowed'));
+      return;
+    }
+    const skippedCount = ids.length - allowedIds.length;
+    const isKhoa = trangThai === TRANG_THAI_BAO_CAO_SO_CHE.KHOA;
+    confirm({
+      title: isKhoa ? t('baoCaoSoChe.bulkLockTitle') : t('baoCaoSoChe.bulkUnlockTitle'),
+      message: isKhoa
+        ? t('baoCaoSoChe.bulkLockMessage', { count: allowedIds.length })
+        : t('baoCaoSoChe.bulkUnlockMessage', { count: allowedIds.length }),
+      variant: isKhoa ? 'warning' : 'default',
+      confirmText: CONFIRM_YES(),
+      onConfirm: async () => {
+        await trangThaiManyMutation.mutateAsync({ ids: allowedIds, trang_thai: trangThai });
+        if (skippedCount > 0) toast.message(t('baoCaoSoChe.toast.trangThaiManyPartial'));
+        clearSelection();
+      },
+    });
+  };
+
+  const bulkActions =
+    selectedIds.size > 0 && canToggleTrangThai ? (
+      <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={() => handleToggleTrangThaiMany(TRANG_THAI_BAO_CAO_SO_CHE.KHOA)}
+          className="h-8 px-3 flex items-center gap-1.5 rounded-lg border border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-300 hover:bg-amber-500/15 transition-all active:scale-95"
+        >
+          <Lock size={14} className="stroke-[2.5px] shrink-0" />
+          <span className="text-xs font-medium">{t('baoCaoSoChe.bulkLockAction')}</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => handleToggleTrangThaiMany(TRANG_THAI_BAO_CAO_SO_CHE.MO)}
+          className="h-8 px-3 flex items-center gap-1.5 rounded-lg border border-border bg-muted/50 text-muted-foreground hover:bg-muted transition-all active:scale-95"
+        >
+          <Unlock size={14} className="stroke-[2.5px] shrink-0" />
+          <span className="text-xs font-medium">{t('baoCaoSoChe.bulkUnlockAction')}</span>
+        </button>
+      </div>
+    ) : null;
+
   const canBulkDeleteSelection = useMemo(() => {
     if (!canDelete) return false;
     if (selectedIds.size === 0) return true;
@@ -256,6 +314,7 @@ const DanhSachTab: React.FC = () => {
         }}
         onDeleteMany={canBulkDeleteSelection ? handleDeleteMany : undefined}
         onExport={handleExport}
+        bulkActions={bulkActions}
         canCreate={canCreate}
         canDelete={canDelete}
       />

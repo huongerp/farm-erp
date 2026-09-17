@@ -25,9 +25,11 @@ export type FeatureI18nKey =
   | 'thiet-lap-de-xuat-vat-tu'
   | 'bao-cao-nhan-cong'
   | 'bao-cao-so-che'
+  | 'de-xuat-mua-hang'
   | 'du-bao-sl-dong-thung'
   | 'hang-hoa-phan-thuoc'
   | 'phieu-kho-phan-thuoc'
+  | 'thiet-lap-de-xuat-mua-hang'
   | 'thong-ke-san-xuat'
   | 'thu-hoach'
   | 'ton-kho-phan-thuoc';
@@ -55,9 +57,11 @@ const FEATURE_I18N_KEYS = new Set<FeatureI18nKey>([
   'thiet-lap-de-xuat-vat-tu',
   'bao-cao-nhan-cong',
   'bao-cao-so-che',
+  'de-xuat-mua-hang',
   'du-bao-sl-dong-thung',
   'hang-hoa-phan-thuoc',
   'phieu-kho-phan-thuoc',
+  'thiet-lap-de-xuat-mua-hang',
   'thong-ke-san-xuat',
   'thu-hoach',
   'ton-kho-phan-thuoc',

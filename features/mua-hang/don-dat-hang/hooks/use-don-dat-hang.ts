@@ -8,6 +8,7 @@ import {
   createDonDatHang,
   updateDonDatHang,
   updateDonDatHangTrangThai,
+  updateDonDatHangTrangThaiMany,
   deleteDonDatHang,
   deleteDonDatHangMany,
   getPhanLoaiDonDatHangChiTiet,
@@ -138,6 +139,48 @@ export const useUpdateDonDatHangTrangThai = (onSuccess?: () => void) => {
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'chiTietPaged'] });
       toast.success(i18n.t('donDatHang.toast.updateSuccess'));
+      onSuccess?.();
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+};
+
+/**
+ * Duyệt / hủy hàng loạt. Lỗi một phần không làm hỏng cả lô: service trả danh sách thành công /
+ * thất bại để toast báo rõ số đơn đã chạy.
+ */
+export const useUpdateDonDatHangTrangThaiMany = (onSuccess?: () => void) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      ids,
+      trangThai,
+      ghiChu,
+      notePrefix,
+    }: {
+      ids: string[];
+      trangThai: DonDatHang['trang_thai'];
+      ghiChu?: string;
+      notePrefix?: string;
+    }) => updateDonDatHangTrangThaiMany(ids, trangThai, { ghi_chu: ghiChu, notePrefix }),
+    onSuccess: (result, { ids }) => {
+      qc.invalidateQueries({ queryKey: QUERY_KEY });
+      result.okIds.forEach((id) => qc.removeQueries({ queryKey: [...QUERY_KEY, id] }));
+      qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
+      qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'chiTietPaged'] });
+
+      if (result.failed.length === 0) {
+        toast.success(i18n.t('donDatHang.toast.bulkApproveSuccess', { count: result.okIds.length }));
+      } else {
+        toast.warning(
+          i18n.t('donDatHang.toast.bulkApprovePartial', {
+            ok: result.okIds.length,
+            total: ids.length,
+            failed: result.failed.length,
+          })
+        );
+        toast.error(result.failed[0].message);
+      }
       onSuccess?.();
     },
     onError: (err: Error) => toast.error(err.message),

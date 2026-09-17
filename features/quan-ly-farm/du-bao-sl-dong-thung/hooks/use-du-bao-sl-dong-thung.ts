@@ -10,6 +10,7 @@ import {
   deleteDuBaoSlDongThung,
   deleteDuBaoSlDongThungMany,
   updateDuBaoSlDongThungTrangThai,
+  updateDuBaoSlDongThungTrangThaiMany,
 } from '../services/du-bao-sl-dong-thung-service';
 import type { DuBaoSlDongThungFormValues } from '../core/schema';
 import type { TrangThaiDuBaoSlDongThungPhieu } from '../core/types';
@@ -79,6 +80,21 @@ export function useDeleteDuBaoSlDongThungMany() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY_DU_BAO_SL_DONG_THUNG });
       toast.success(i18n.t('duBaoSlDongThung.toast.deleteManySuccess'));
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+}
+
+/** Khóa / mở khóa hàng loạt — một UPDATE ... IN, không có trạng thái dở dang từng phiếu. */
+export function useUpdateDuBaoSlDongThungTrangThaiMany() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ ids, trang_thai }: { ids: string[]; trang_thai: TrangThaiDuBaoSlDongThungPhieu }) =>
+      updateDuBaoSlDongThungTrangThaiMany(ids, trang_thai),
+    onSuccess: (_void, { ids }) => {
+      qc.invalidateQueries({ queryKey: QUERY_KEY_DU_BAO_SL_DONG_THUNG });
+      ids.forEach((id) => qc.removeQueries({ queryKey: [...QUERY_KEY_DU_BAO_SL_DONG_THUNG, id] }));
+      toast.success(i18n.t('duBaoSlDongThung.toast.trangThaiUpdatedMany', { count: ids.length }));
     },
     onError: (err: Error) => toast.error(err.message),
   });

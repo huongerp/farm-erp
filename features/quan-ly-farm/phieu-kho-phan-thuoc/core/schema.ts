@@ -21,6 +21,9 @@ export const phieuKhoPTSchema = z
     mo_ta: z.string().optional(),
     trang_thai: z.enum(TRANG_THAI_VALUES, { message: i18n.t('phieuKhoPhanThuoc.validation.statusInvalid') }),
     nguoi_tao_id: z.coerce.number().optional().nullable(),
+    /** Đề xuất mua hàng farm đã sinh ra phiếu này (nút "Tạo phiếu kho"). */
+    id_de_xuat_mua_hang: z.string().optional().nullable(),
+    so_phieu_de_xuat: z.string().optional().nullable(),
     chi_tiet: z.array(phieuKhoPTChiTietFormItemSchema).default([]),
   })
   .superRefine((data, ctx) => {

@@ -53,6 +53,9 @@ export interface PhieuKhoPT {
   ten_nguoi_duyet?: string;
   nguoi_tao_id?: number | null;
   ten_nguoi_tao?: string;
+  /** Đề xuất mua hàng farm đã sinh ra phiếu này (null nếu lập tay). */
+  id_de_xuat_mua_hang?: string | null;
+  so_phieu_de_xuat?: string | null;
   tg_tao: string;
   tg_cap_nhat: string;
   chi_tiet?: PhieuKhoPTChiTiet[];

@@ -16,7 +16,13 @@ import type {
   PhieuDeXuatVatTuStatsSummary,
   StatsChartItem,
 } from '../components/stats/usePhieuDeXuatVatTuStats';
-import { filterKeyToTrangThai, TRANG_THAI_PHIEU_DE_XUAT_VAT_TU, trangThaiToI18nKey, type TrangThaiFilterKey } from '../core/constants';
+import {
+  filterKeyToTrangThai,
+  TRANG_THAI_PHIEU_DE_XUAT_VAT_TU,
+  trangThaiToI18nKey,
+  type TrangThaiFilterKey,
+  type TrangThaiPhieuDeXuatVatTu,
+} from '../core/constants';
 
 const TABLE_PHIEU = 'fp_mh_phieu_de_xuat_vat_tu';
 const TABLE_CHI_TIET = 'fp_mh_phieu_de_xuat_vat_tu_chi_tiet';
@@ -631,6 +637,96 @@ export async function deletePhieuDeXuatVatTuSupabase(id: string): Promise<void> 
   if (Number.isNaN(idNum)) throw new Error(i18n.t('phieuDeXuatVatTu.service.notFound'));
   const { error } = await db.from(TABLE_PHIEU).delete().eq('id', idNum);
   if (error) throwSupabaseError(error);
+}
+
+export interface UpdatePhieuDeXuatTrangThaiOptions {
+  /** Ghi chú duyệt, được nối vào cột ghi_chu sẵn có kèm tiền tố. */
+  ghi_chu?: string;
+  notePrefix?: string;
+  id_nguoi_duyet?: string | null;
+}
+
+export interface UpdatePhieuDeXuatTrangThaiManyResult {
+  okIds: string[];
+  failed: { id: string; message: string }[];
+}
+
+function mergeGhiChuDuyet(existing: string | null | undefined, options?: UpdatePhieuDeXuatTrangThaiOptions) {
+  const noteText = options?.ghi_chu?.trim();
+  if (!noteText) return existing || null;
+  return (existing ? existing + '\n' : '') + `${options?.notePrefix ?? ''}${noteText}`;
+}
+
+/**
+ * Đổi riêng trạng thái duyệt — KHÔNG đụng bảng chi tiết.
+ *
+ * Trước đây duyệt đi qua `updatePhieuDeXuatVatTuSupabase` (ghi lại cả phiếu + xoá/chèn lại toàn
+ * bộ dòng chi tiết) chỉ để đổi một cột; duyệt lẻ và duyệt hàng loạt đều dùng hàm này thay thế.
+ */
+export async function updatePhieuDeXuatVatTuTrangThaiSupabase(
+  id: string,
+  trang_thai: TrangThaiPhieuDeXuatVatTu,
+  options?: UpdatePhieuDeXuatTrangThaiOptions
+): Promise<void> {
+  const idNum = Number(id);
+  if (Number.isNaN(idNum)) throw new Error(i18n.t('phieuDeXuatVatTu.service.notFound'));
+
+  const { data: row, error: fetchErr } = await db
+    .from(TABLE_PHIEU)
+    .select('ghi_chu')
+    .eq('id', idNum)
+    .maybeSingle();
+  if (fetchErr || !row) throw new Error(i18n.t('phieuDeXuatVatTu.service.notFound'));
+
+  const payload: Record<string, unknown> = {
+    trang_thai,
+    ghi_chu: mergeGhiChuDuyet((row as { ghi_chu?: string | null }).ghi_chu, options),
+  };
+  if (options?.id_nguoi_duyet !== undefined) payload.id_nguoi_duyet = toNum(options.id_nguoi_duyet);
+
+  const { error } = await db.from(TABLE_PHIEU).update(payload).eq('id', idNum);
+  if (error) throwSupabaseError(error);
+}
+
+/**
+ * Duyệt hàng loạt. Ghi chú duyệt nối vào cột `ghi_chu` vốn khác nhau từng phiếu nên không gộp
+ * được thành một `update().in()`: gom ghi chú cũ bằng 1 SELECT, PATCH tuần tự và gom lỗi thay vì
+ * dừng cả lô.
+ */
+export async function updatePhieuDeXuatVatTuTrangThaiManySupabase(
+  ids: string[],
+  trang_thai: TrangThaiPhieuDeXuatVatTu,
+  options?: UpdatePhieuDeXuatTrangThaiOptions
+): Promise<UpdatePhieuDeXuatTrangThaiManyResult> {
+  const numIds = ids.map((s) => Number(s)).filter((n) => !Number.isNaN(n));
+  if (numIds.length === 0) return { okIds: [], failed: [] };
+
+  const { data, error: selErr } = await db.from(TABLE_PHIEU).select('id,ghi_chu').in('id', numIds);
+  if (selErr) throwSupabaseError(selErr);
+  const ghiChuById = new Map<number, string | null>();
+  ((data ?? []) as { id: number; ghi_chu?: string | null }[]).forEach((row) => {
+    ghiChuById.set(Number(row.id), row.ghi_chu ?? null);
+  });
+
+  const okIds: string[] = [];
+  const failed: { id: string; message: string }[] = [];
+
+  for (const idNum of numIds) {
+    try {
+      const payload: Record<string, unknown> = {
+        trang_thai,
+        ghi_chu: mergeGhiChuDuyet(ghiChuById.get(idNum), options),
+      };
+      if (options?.id_nguoi_duyet !== undefined) payload.id_nguoi_duyet = toNum(options.id_nguoi_duyet);
+      const { error } = await db.from(TABLE_PHIEU).update(payload).eq('id', idNum);
+      if (error) throwSupabaseError(error);
+      okIds.push(String(idNum));
+    } catch (err) {
+      failed.push({ id: String(idNum), message: err instanceof Error ? err.message : String(err) });
+    }
+  }
+
+  return { okIds, failed };
 }
 
 export async function deletePhieuDeXuatVatTuManySupabase(ids: string[]): Promise<void> {

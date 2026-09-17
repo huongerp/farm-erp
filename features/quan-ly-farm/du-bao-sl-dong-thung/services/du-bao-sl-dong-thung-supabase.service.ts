@@ -167,6 +167,27 @@ export async function deleteDuBaoSlDongThungManySupabase(ids: string[]): Promise
   if (error) throwSupabaseError(error, { resource: `${TABLE}.deleteMany` });
 }
 
+/**
+ * Khóa / mở khóa hàng loạt. Bảng không có log nối thêm nên gộp được thành một UPDATE ... IN —
+ * hoặc cả lô thành công, hoặc ném lỗi để UI báo, không có trạng thái dở dang từng phiếu.
+ */
+export async function updateDuBaoSlDongThungTrangThaiManySupabase(
+  ids: string[],
+  trang_thai: TrangThaiDuBaoSlDongThungPhieu
+): Promise<void> {
+  const numIds = ids.map((x) => Number(x)).filter((n) => Number.isFinite(n));
+  if (numIds.length === 0) return;
+  const next =
+    trang_thai === TRANG_THAI_DU_BAO_SL_DONG_THUNG.KHOA
+      ? TRANG_THAI_DU_BAO_SL_DONG_THUNG.KHOA
+      : TRANG_THAI_DU_BAO_SL_DONG_THUNG.MO;
+  const { error } = await db
+    .from(TABLE)
+    .update({ trang_thai: next, tg_cap_nhat: new Date().toISOString() })
+    .in('id', numIds);
+  if (error) throwSupabaseError(error, { resource: `${TABLE}.updateTrangThaiMany` });
+}
+
 export async function updateDuBaoSlDongThungTrangThaiSupabase(
   id: string,
   trang_thai: TrangThaiDuBaoSlDongThungPhieu

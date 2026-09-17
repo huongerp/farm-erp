@@ -32,6 +32,7 @@ export const APPROVE_ACTION = 'approve' as const;
 export const MODULES_WITH_APPROVE = new Set<string>([
   'kho-van/phieu-kho',
   'quan-ly-farm/phieu-kho-phan-thuoc',
+  'quan-ly-farm/de-xuat-mua-hang',
   /** Phiếu đề xuất vật tư: module_id trong phân quyền là mua-hang/... (URL /mua-hang/phieu-de-xuat-vat-tu) */
   'mua-hang/phieu-de-xuat-vat-tu',
   'mua-hang/don-dat-hang',
@@ -125,6 +126,7 @@ export const PERMISSION_FUNCTIONS: PermissionFunction[] = [
        * gán thêm quyền kho-van/danh-sach-kho (submenu Mua hàng), không nằm trong các module farm dưới đây.
        */
       { groupTitleKey: 'page.quanLyFarm.groupKhoPhanThuocNhapXuat', modules: [
+        { id: BASE('quan-ly-farm', 'de-xuat-mua-hang'), nameKey: 'page.quanLyFarm.modules.deXuatMuaHang' },
         { id: BASE('quan-ly-farm', 'phieu-kho-phan-thuoc'), nameKey: 'page.quanLyFarm.modules.phieuKhoPhanThuoc' },
       ]},
       { groupTitleKey: 'page.quanLyFarm.groupKhoPhanThuocBaoCao', modules: [
@@ -132,6 +134,7 @@ export const PERMISSION_FUNCTIONS: PermissionFunction[] = [
       ]},
       { groupTitleKey: 'page.quanLyFarm.groupKhoPhanThuocDanhMuc', modules: [
         { id: BASE('quan-ly-farm', 'hang-hoa-phan-thuoc'), nameKey: 'page.quanLyFarm.modules.hangHoaPhanThuoc' },
+        { id: BASE('quan-ly-farm', 'thiet-lap-de-xuat-mua-hang'), nameKey: 'page.quanLyFarm.modules.thietLapDeXuatMuaHang' },
       ]},
     ],
   },

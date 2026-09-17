@@ -167,6 +167,15 @@ const ChiTietTab: React.FC = () => {
 
   const hasSelection = selectedIds.size > 0;
 
+  /** Ngày cần để prefill popup chuyển tiến độ — chỉ khi mọi dòng đã chọn cùng một ngày. */
+  const chuyenTienDoDefaultNgayCan = useMemo(() => {
+    const rows = singleRowForChuyenTienDo
+      ? [singleRowForChuyenTienDo]
+      : tableRows.filter((r) => selectedIds.has(r.id));
+    const values = new Set(rows.map((r) => r.ngay_can ?? ''));
+    return values.size === 1 ? ([...values][0] || null) : null;
+  }, [singleRowForChuyenTienDo, tableRows, selectedIds]);
+
   const handleSaveEdit = useCallback(
     (payload: ChiTietRowEditPayload) => {
       if (!editingRow || !phieuForEdit) return;
@@ -198,7 +207,10 @@ const ChiTietTab: React.FC = () => {
         list.push(r);
         byPhieu.set(r.id_phieu_de_xuat_vat_tu, list);
       });
-      const traoDoiLine = `[${new Date().toISOString()}] Chuyển tiến độ sang: ${result.ten_tien_do_mh}. Ghi chú: ${result.ghi_chu || '—'}`;
+      const traoDoiLine =
+        `[${new Date().toISOString()}] Chuyển tiến độ sang: ${result.ten_tien_do_mh}.` +
+        (result.ngay_can ? ` Ngày cần: ${result.ngay_can}.` : '') +
+        ` Ghi chú: ${result.ghi_chu || '—'}`;
       try {
         for (const [phieuId, list] of byPhieu) {
           const phieu = await getPhieuDeXuatVatTuById(phieuId);
@@ -230,6 +242,7 @@ const ChiTietTab: React.FC = () => {
           });
           const data: PhieuDeXuatVatTuFormValues = {
             ...phieuToFormValues(phieu),
+            ...(result.ngay_can ? { ngay_can: result.ngay_can } : {}),
             chi_tiet,
           };
           await updateMutation.mutateAsync({ id: phieuId, data });
@@ -571,6 +584,7 @@ const ChiTietTab: React.FC = () => {
       <ChuyenTienDoModal
         open={showChuyenTienDoModal}
         selectedCount={singleRowForChuyenTienDo ? 1 : selectedIds.size}
+        defaultNgayCan={chuyenTienDoDefaultNgayCan}
         onClose={() => {
           setShowChuyenTienDoModal(false);
           setSingleRowForChuyenTienDo(null);

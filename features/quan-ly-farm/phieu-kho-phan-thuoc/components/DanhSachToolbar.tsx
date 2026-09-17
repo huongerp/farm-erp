@@ -25,6 +25,8 @@ interface Props {
   canDelete?: boolean;
   chipCountsMode?: 'fromRows' | 'unweighted';
   employeesForChips?: { id: string; ho_ten: string }[];
+  /** Nút bulk riêng của module (duyệt hàng loạt), hiện cạnh nút Xóa khi có dòng được chọn. */
+  bulkActions?: React.ReactNode;
 }
 
 function asStringArray(v: unknown): string[] {
@@ -44,6 +46,7 @@ const DanhSachToolbar: React.FC<Props> = ({
   canDelete = true,
   chipCountsMode = 'fromRows',
   employeesForChips = [],
+  bulkActions,
 }) => {
   const data = Array.isArray(dataProp) ? dataProp : [];
   const khoList = Array.isArray(khoListProp) ? khoListProp : [];
@@ -370,6 +373,7 @@ const DanhSachToolbar: React.FC<Props> = ({
     <GenericToolbar
       selectedCount={selectedCount}
       onDeleteMany={canDelete ? onDeleteMany : undefined}
+      bulkActions={bulkActions}
       searchTerm={searchInput}
       onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
