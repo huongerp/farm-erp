@@ -36,6 +36,7 @@ const ChiTietKiemKeTaiSanTable: React.FC<Props> = ({
   const { t } = useTranslation();
   const {
     columns,
+    resizeColumn,
     pagination,
     setPage,
     setPageSize,
@@ -220,6 +221,7 @@ const ChiTietKiemKeTaiSanTable: React.FC<Props> = ({
     <GenericTable<ChiTietKiemKe>
       data={data}
       columns={columns}
+      onResizeColumn={resizeColumn}
       isLoading={isLoading}
       loadingText={t('kiemKeTaiSan.loading')}
       emptyTitle={t('kiemKeTaiSan.chiTietEmpty')}

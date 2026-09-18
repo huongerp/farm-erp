@@ -6,7 +6,7 @@ export interface BangLuongManagedFilters {
   phongBan: string[];
 }
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'ten_nhan_vien', label: i18n.t('bangLuong.store.employeeCol'), visible: true, minWidth: 160, order: 0 },
   { id: 'period', label: i18n.t('bangLuong.store.periodCol'), visible: true, minWidth: 100, order: 1 },
   { id: 'ten_phong_ban', label: i18n.t('bangLuong.store.departmentCol'), visible: true, minWidth: 140, order: 2 },
@@ -27,5 +27,6 @@ const initialFilters: BangLuongManagedFilters = {
 
 export const useBangLuongManagedStore = createGenericStore<BangLuongManagedFilters>(
   initialFilters,
-  DEFAULT_COLUMNS
+  DEFAULT_COLUMNS,
+  'table-bang-luong-managed'
 );

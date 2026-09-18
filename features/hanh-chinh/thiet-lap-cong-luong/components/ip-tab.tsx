@@ -7,7 +7,7 @@ import PayrollWifiIpTable from './ip-table';
 import PayrollWifiIpForm from './ip-form';
 import PayrollWifiIpDetail from './ip-detail';
 import { usePayrollWifiIps, useDeletePayrollWifiIps, useUpdatePayrollWifiIpStatus, useImportPayrollWifiIps } from '../hooks/use-payroll-wifi-ip';
-import { usePayrollWifiIpStore } from '../store/usePayrollWifiIpStore';
+import { usePayrollWifiIpStore, DEFAULT_COLUMNS } from '../store/usePayrollWifiIpStore';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_YES, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
 import { useListWithFilter } from '../../../../lib/hooks';
@@ -18,6 +18,10 @@ import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
 import ImportDialog from '../../../../components/shared/LazyImportDialog';
 import ExportDialog from '../../../../components/shared/LazyExportDialog';
 import { useExportData } from '../../../../lib/useExportData';
+import { createListSearchMatcher } from '../../../../lib/list-search-matcher';
+
+/** Ô tìm kiếm quét MỌI cột của bảng, bỏ dấu tiếng Việt — xem lib/list-search-matcher.ts. */
+const khopTimKiem = createListSearchMatcher({ columns: DEFAULT_COLUMNS });
 
 const PayrollWifiIpTab: React.FC = () => {
   const { t } = useTranslation();
@@ -51,12 +55,7 @@ const PayrollWifiIpTab: React.FC = () => {
 
   const filterFn = useCallback(
     (item: PayrollWifiIp, term: string, f: typeof filters) => {
-      const searchLower = term.toLowerCase();
-      const matchesSearch = Boolean(
-        !term ||
-        item.ip_wifi.toLowerCase().includes(searchLower) ||
-        (item.ten_chi_nhanh && item.ten_chi_nhanh.toLowerCase().includes(searchLower))
-      );
+      const matchesSearch = khopTimKiem(item, term);
       const statusKey = item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? 'Active' : 'Inactive';
       const matchesStatus = f.status.length === 0 || f.status.includes(statusKey);
       const matchesBranch = f.id_chi_nhanh.length === 0 || f.id_chi_nhanh.includes(item.id_chi_nhanh);

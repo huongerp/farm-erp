@@ -91,7 +91,7 @@ const TaoPhieuBaoTriForm: React.FC<Props> = ({ onClose, defaultTaiSanId, initial
   }, [isEdit, firstLoaiId, getValues, setValue]);
 
   const assetOptions = React.useMemo(
-    () => assets.filter((a) => a.trang_thai === 1).map((a) => ({
+    () => assets.map((a) => ({
       value: a.id,
       label: `${a.ma_tai_san} - ${a.ten_tai_san}`,
       subLabel: a.ten_noi_luu ?? undefined,

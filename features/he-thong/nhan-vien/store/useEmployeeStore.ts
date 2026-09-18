@@ -3,7 +3,7 @@ import { createGenericStore, ColumnConfig } from '../../../../store/createGeneri
 import { EmployeeFilters } from '../core/types';
 import i18n from '../../../../lib/i18n';
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
   // ── Hiện mặc định ──
   { id: 'ma_nhan_vien', label: i18n.t('employee.store.codeCol'), visible: true, minWidth: 90, maxWidth: 140, order: 0 },
   { id: 'ho_ten', label: i18n.t('employee.store.nameCol'), visible: true, minWidth: 200, order: 1 },
@@ -34,5 +34,6 @@ const initialFilters: EmployeeFilters = {
 
 export const useEmployeeStore = createGenericStore<EmployeeFilters>(
   initialFilters,
-  DEFAULT_COLUMNS
+  DEFAULT_COLUMNS,
+  'table-nhan-vien-employee'
 );

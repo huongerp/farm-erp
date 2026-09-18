@@ -44,6 +44,7 @@ const BaoTriSuaChuaToolbar: React.FC<Props> = ({
   const toggleColumn = useBaoTriSuaChuaStore((s) => s.toggleColumn);
   const reorderColumns = useBaoTriSuaChuaStore((s) => s.reorderColumns);
   const resetColumns = useBaoTriSuaChuaStore((s) => s.resetColumns);
+  const resetColumnWidths = useBaoTriSuaChuaStore((s) => s.resetColumnWidths);
   const selectedIds = useBaoTriSuaChuaStore((s) => s.selectedIds);
   const clearSelection = useBaoTriSuaChuaStore((s) => s.clearSelection);
   const { data: assets = [] } = useTaiSanList();
@@ -315,7 +316,6 @@ const BaoTriSuaChuaToolbar: React.FC<Props> = ({
       filters={renderFilters}
       filterGroups={filterGroups}
       onAdd={onAdd}
-      searchPlaceholder={t('baoTriSuaChua.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       onDeleteMany={canDelete && selectedCount > 0 ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
@@ -323,6 +323,7 @@ const BaoTriSuaChuaToolbar: React.FC<Props> = ({
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
+      onResetColumnWidths={resetColumnWidths}
       showBack
       mobileActions={mobileActions}
     />

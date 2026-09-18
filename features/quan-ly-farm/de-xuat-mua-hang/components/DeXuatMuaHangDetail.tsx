@@ -23,6 +23,7 @@ import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';
 import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
 import GenericSubTableSection from '../../../../components/shared/GenericSubTableSection';
+import ThuChiLienQuanSection from '../../../tai-chinh/thu-chi-quy/components/shared/ThuChiLienQuanSection';
 
 const PREVIEW_BASE = '/quan-ly-farm/de-xuat-mua-hang/preview';
 
@@ -79,6 +80,8 @@ interface Props {
   canEdit?: boolean;
   canDelete?: boolean;
   showOverdueBadge?: boolean;
+  /** Chi nhánh của kho nơi đề xuất — prefill khi tạo phiếu thu chi quỹ liên quan. */
+  idChiNhanhNoiDeXuat?: string | null;
 }
 
 const DeXuatMuaHangDetail: React.FC<Props> = ({
@@ -93,6 +96,7 @@ const DeXuatMuaHangDetail: React.FC<Props> = ({
   canEdit = true,
   canDelete = true,
   showOverdueBadge = false,
+  idChiNhanhNoiDeXuat,
 }) => {
   const { t } = useTranslation();
   const canApprove = isTrangThaiChoPheDuyet(data.trang_thai) && !!onApprove;
@@ -290,6 +294,15 @@ const DeXuatMuaHangDetail: React.FC<Props> = ({
             </>
           )}
         </GenericSubTableSection>
+
+        <ThuChiLienQuanSection
+          loaiChungTu="de_xuat_mua_hang"
+          idChungTu={data.id}
+          soChungTu={data.so_phieu}
+          idChiNhanhMacDinh={idChiNhanhNoiDeXuat ?? null}
+          ngayMacDinh={data.ngay}
+          dienGiaiMacDinh={`${t('deXuatMuaHang.detail.thuChiPrefix')} ${data.so_phieu}`}
+        />
 
         <DetailSection title={t('deXuatMuaHang.detail.systemInfo')} icon={<Calendar size={14} />} variant="secondary">
           <DetailFieldGrid>

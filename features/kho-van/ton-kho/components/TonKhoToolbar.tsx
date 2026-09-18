@@ -10,11 +10,11 @@ import type { FilterGroup } from '../../../../components/ui/MobileFilterSheet';
 interface TonKhoToolbarProps {
   searchTerm: string;
   onSearchChange: (term: string) => void;
-  searchPlaceholder: string;
   columns: ColumnConfig[];
   onToggleColumn: (id: string) => void;
   onReorderColumns: (fromIndex: number, toIndex: number) => void;
   onResetColumns: () => void;
+  onResetColumnWidths: () => void;
   filters?: React.ReactNode;
   activeFilterCount?: number;
   onClearAllFilters?: () => void;
@@ -29,11 +29,11 @@ interface TonKhoToolbarProps {
 const TonKhoToolbar: React.FC<TonKhoToolbarProps> = ({
   searchTerm,
   onSearchChange,
-  searchPlaceholder,
   columns,
   onToggleColumn,
   onReorderColumns,
   onResetColumns,
+  onResetColumnWidths,
   filters,
   activeFilterCount = 0,
   onClearAllFilters,
@@ -72,7 +72,6 @@ const TonKhoToolbar: React.FC<TonKhoToolbarProps> = ({
       onClearSelection={() => {}}
       searchTerm={searchTerm}
       onSearchChange={onSearchChange}
-      searchPlaceholder={searchPlaceholder}
       showBack
       actions={actions}
       mobileActions={mobileActions}
@@ -84,6 +83,7 @@ const TonKhoToolbar: React.FC<TonKhoToolbarProps> = ({
       onToggleColumn={onToggleColumn}
       onReorderColumns={onReorderColumns}
       onResetColumns={onResetColumns}
+      onResetColumnWidths={onResetColumnWidths}
     />
   );
 };

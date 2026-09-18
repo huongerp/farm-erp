@@ -1,7 +1,20 @@
 /**
  * Dự báo SL đóng thùng — Supabase fp_farm_du_bao_sl_dong_thung
  */
-import { db, throwSupabaseError, formatSupabaseError } from '../../../../lib/db';
+import {
+  db,
+  fetchAllRows,
+  fetchTablePage,
+  throwSupabaseError,
+  formatSupabaseError,
+  type PaginatedTableResult,
+} from '../../../../lib/db';
+import { applyPostgrestSearch, dieuKienKyTheoNgay } from '../../../../lib/postgrest-search';
+import {
+  DBDT_SORTABLE_DB_COLUMNS,
+  DBDT_SORT_MAC_DINH,
+  type DuBaoSlDongThungListServerQuery,
+} from './du-bao-sl-dong-thung-list-query';
 import type { FarmDuBaoSlDongThung, TrangThaiDuBaoSlDongThungPhieu } from '../core/types';
 import { TRANG_THAI_DU_BAO_SL_DONG_THUNG } from '../core/types';
 import type { DuBaoSlDongThungFormValues } from '../core/schema';
@@ -110,6 +123,90 @@ function bodyFromForm(values: DuBaoSlDongThungFormValues, trangThai: TrangThaiDu
     trang_thai: trangThai,
     tg_cap_nhat: new Date().toISOString(),
   };
+}
+
+/** Cột tham gia ô tìm kiếm ở server. */
+const DBDT_SEARCH_SPEC = {
+  text: ['ten_chi_nhanh', 'ghi_chu', 'trang_thai', 'quy_cach_dong_thung_ke_hoach', 'quy_cach_dong_thung_thuc_te'],
+  numeric: ['id'],
+  dates: ['ngay'],
+} as const;
+
+/** Lọc + sắp xếp dùng chung cho trang danh sách và cho lượt tải phục vụ xuất file. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyDbdtListQuery(q: any, query: DuBaoSlDongThungListServerQuery): any {
+  let sel = q;
+
+  if (!query.viewAll) {
+    const ids = query.allowedBranchIds.map(Number).filter(Number.isFinite);
+    sel = ids.length === 0 ? sel.eq('id', -1) : sel.in('id_chi_nhanh', ids);
+  }
+  if (query.idChiNhanh.length > 0) {
+    sel = sel.in('id_chi_nhanh', query.idChiNhanh.map(Number).filter(Number.isFinite));
+  }
+  if (query.trangThai.length > 0) sel = sel.in('trang_thai', query.trangThai);
+
+  if (query.ngayFrom) sel = sel.gte('ngay', query.ngayFrom);
+  if (query.ngayTo) sel = sel.lte('ngay', query.ngayTo);
+
+  const ky = dieuKienKyTheoNgay(query.nam, query.thang);
+  if (ky.length > 0) sel = sel.or(ky.join(','));
+
+  sel = applyPostgrestSearch(sel, query.searchTerm, DBDT_SEARCH_SPEC);
+
+  const dbSortable = query.sortColumn != null && DBDT_SORTABLE_DB_COLUMNS.has(query.sortColumn);
+  const sortCol = dbSortable ? query.sortColumn! : DBDT_SORT_MAC_DINH.column;
+  const ascending = dbSortable ? query.sortDirection !== 'desc' : DBDT_SORT_MAC_DINH.ascending;
+
+  return sel.order(sortCol, { ascending }).order('id', { ascending: false });
+}
+
+export async function getDuBaoSlDongThungPageSupabase(
+  query: DuBaoSlDongThungListServerQuery
+): Promise<PaginatedTableResult<FarmDuBaoSlDongThung>> {
+  const result = await fetchTablePage<DbRow>(query.page, query.pageSize, async (from, to) => {
+    const res = await applyDbdtListQuery(
+      db.from(TABLE).select(ROW_SELECT, { count: 'exact' }),
+      query
+    ).range(from, to);
+    return { data: (res.data as DbRow[] | null) ?? null, error: res.error, count: res.count };
+  });
+  return { ...result, data: result.data.map(rowToModel) };
+}
+
+/** Toàn bộ bản ghi khớp bộ lọc — CHỈ dùng khi bấm Xuất file. */
+export async function fetchAllDuBaoSlDongThungForListQuery(
+  query: DuBaoSlDongThungListServerQuery
+): Promise<FarmDuBaoSlDongThung[]> {
+  const rows = await fetchAllRows<DbRow>((from, to) =>
+    applyDbdtListQuery(db.from(TABLE).select(ROW_SELECT), query).range(from, to)
+  );
+  return rows.map(rowToModel);
+}
+
+/** Danh sách TÓM TẮT — chip lọc + số đếm, gợi ý chi nhánh, chặn trùng ngày×chi nhánh. */
+export async function getDuBaoSlDongThungTomTatSupabase(
+  viewAll: boolean,
+  allowedBranchIds: string[]
+): Promise<DuBaoSlDongThungTomTatRow[]> {
+  return fetchAllRows<DuBaoSlDongThungTomTatRow>((from, to) => {
+    let sel = db.from(TABLE).select('id,ngay,trang_thai,id_chi_nhanh,ten_chi_nhanh,id_nguoi_tao,tg_tao');
+    if (!viewAll) {
+      const ids = allowedBranchIds.map(Number).filter(Number.isFinite);
+      sel = ids.length === 0 ? sel.eq('id', -1) : sel.in('id_chi_nhanh', ids);
+    }
+    return sel.order('ngay', { ascending: false }).range(from, to);
+  });
+}
+
+export interface DuBaoSlDongThungTomTatRow {
+  id: number;
+  ngay: string;
+  trang_thai: string | null;
+  id_chi_nhanh: number | null;
+  ten_chi_nhanh: string | null;
+  id_nguoi_tao: number | null;
+  tg_tao: string | null;
 }
 
 export async function getAllDuBaoSlDongThungSupabase(): Promise<FarmDuBaoSlDongThung[]> {

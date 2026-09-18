@@ -5,7 +5,7 @@ import { AnimatePresence } from 'framer-motion';
 import { FileText } from 'lucide-react';
 import { useAllPhieuChiTiet, usePhieuById } from '../hooks/use-cap-phat-thu-hoi';
 import { useCapPhatThuHoiViewScope } from '../hooks/use-cap-phat-thu-hoi-view-scope';
-import { useChiTietTabStore } from '../store/useChiTietTabStore';
+import { useChiTietTabStore, DEFAULT_COLUMNS } from '../store/useChiTietTabStore';
 import { getLoaiPhieuLabel } from '../core/constants';
 import type { PhieuChiTietRow } from '../core/types';
 import ChiTietTabToolbar from './ChiTietTabToolbar';
@@ -15,6 +15,10 @@ import EmptyState from '../../../../components/shared/EmptyState';
 import ListPageSkeleton from '../../../../components/shared/ListPageSkeleton';
 import Tooltip from '../../../../components/ui/Tooltip';
 import { formatDate } from '../../../../lib/utils';
+import { createListSearchMatcher } from '../../../../lib/list-search-matcher';
+
+/** Ô tìm kiếm quét MỌI cột của bảng, bỏ dấu tiếng Việt — xem lib/list-search-matcher.ts. */
+const khopTimKiem = createListSearchMatcher({ columns: DEFAULT_COLUMNS });
 const ChiTietTab: React.FC = () => {
   const { t } = useTranslation();
   const [, setSearchParams] = useSearchParams();
@@ -36,6 +40,7 @@ const ChiTietTab: React.FC = () => {
     searchTerm,
     filters,
     columns,
+    resizeColumn,
     pagination,
     setPage,
     setPageSize,
@@ -61,15 +66,7 @@ const ChiTietTab: React.FC = () => {
     let result = sortedRows;
 
     if (searchTerm.trim()) {
-      const q = searchTerm.trim().toLowerCase();
-      result = result.filter(
-        (r) =>
-          (r.ma_phieu ?? '').toLowerCase().includes(q) ||
-          (r.ma_tai_san ?? '').toLowerCase().includes(q) ||
-          (r.ten_tai_san ?? '').toLowerCase().includes(q) ||
-          (r.ten_noi_luu_truoc ?? '').toLowerCase().includes(q) ||
-          (r.ten_noi_luu_sau ?? '').toLowerCase().includes(q)
-      );
+      result = result.filter((r) => khopTimKiem(r, searchTerm));
     }
 
     const loaiList = filters.loaiPhieu ?? [];
@@ -191,6 +188,7 @@ const ChiTietTab: React.FC = () => {
         <GenericTable<PhieuChiTietRow>
           data={filteredRows}
           columns={columns}
+          onResizeColumn={resizeColumn}
           isLoading={false}
           selectedIds={new Set()}
           onToggleSelection={() => {}}

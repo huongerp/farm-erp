@@ -23,6 +23,7 @@ const PayrollPointGroupTable: React.FC<Props> = ({ data, isLoading, onEdit, onDe
   const { t } = useTranslation();
   const {
     columns,
+    resizeColumn,
     pagination,
     setPage,
     setPageSize,
@@ -207,6 +208,7 @@ const PayrollPointGroupTable: React.FC<Props> = ({ data, isLoading, onEdit, onDe
     <GenericTable
       data={data}
       columns={columns}
+      onResizeColumn={resizeColumn}
       isLoading={isLoading}
       loadingText={t('payrollIp.pointGroups.loading')}
       selectedIds={selectedIds}

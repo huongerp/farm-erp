@@ -1,11 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import type { BangLuongListServerQuery } from '../services/bang-luong-list-query';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../../../../store/useStore';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
-import { useBangLuongRecords, useDeleteBangLuong } from '../hooks/use-bang-luong';
-import { useListWithFilter } from '../../../../lib/hooks';
-import { getLanguage } from '../../../../lib/utils';
+import { useBangLuongPage, useDeleteBangLuong } from '../hooks/use-bang-luong';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
 import BangLuongManagedToolbar from './BangLuongManagedToolbar';
 import BangLuongManagedTable from './BangLuongManagedTable';
@@ -26,6 +25,7 @@ const DanhSachTab: React.FC = () => {
     searchTerm,
     filters,
     sort,
+    pagination,
     resetState,
     clearSelection,
     selectedIds,
@@ -36,69 +36,38 @@ const DanhSachTab: React.FC = () => {
   const [editingRecord, setEditingRecord] = useState<BangLuongRecord | null>(null);
   const [viewingRecord, setViewingRecord] = useState<BangLuongRecord | null>(null);
 
-  const { data: records = [], isLoading, isError } = useBangLuongRecords();
+  /**
+   * Bộ lọc gửi thẳng xuống PostgREST — trước đây tab này tải TOÀN BỘ bảng lương
+   * (tăng theo số nhân viên × số tháng) rồi mới lọc ở trình duyệt.
+   */
+  const listServerQuery: BangLuongListServerQuery = useMemo(
+    () => ({
+      page: pagination.page - 1,
+      pageSize: pagination.pageSize,
+      searchTerm,
+      yearMonth: filters.yearMonth ?? '',
+      // Không phải admin thì chỉ xem lương phòng ban của mình.
+      phongBan: filters.phongBan?.length ? filters.phongBan : isAdmin ? [] : myPhongBan ? [myPhongBan] : [],
+      nhanVienId: null,
+      // Tab Quản lý không hiển thị bảng lương của chính người đang đăng nhập.
+      loaiTruNhanVienId: user?.id ? String(user.id) : null,
+      sortColumn: sort.column,
+      sortDirection: sort.direction,
+    }),
+    [pagination.page, pagination.pageSize, searchTerm, filters, sort, isAdmin, myPhongBan, user?.id]
+  );
 
-  const managedRecords = useMemo(() => {
-    if (isAdmin) {
-      return records.filter((r) => r.id_nhan_vien !== (user?.id ?? ''));
-    }
-    return records.filter(
-      (r) =>
-        r.id_phong_ban === myPhongBan && r.id_nhan_vien !== (user?.id ?? '')
-    );
-  }, [records, isAdmin, myPhongBan, user?.id]);
+  const pageQuery = useBangLuongPage(listServerQuery);
+  const pageList = pageQuery.data?.data ?? [];
+  const totalCount = pageQuery.data?.totalCount ?? 0;
+  const isLoading = !pageQuery.data && pageQuery.isPending;
+  const isFetching = !!pageQuery.data && pageQuery.isFetching;
+  const isError = pageQuery.isError;
 
   useEffect(() => {
     return () => resetState();
   }, [resetState]);
 
-  const filterFn = useCallback(
-    (item: BangLuongRecord, term: string, f: typeof filters) => {
-      const searchLower = term.toLowerCase();
-      const periodStr = `${item.nam}-${String(item.thang).padStart(2, '0')}`;
-      const matchesSearch =
-        !term ||
-        (item.ten_nhan_vien?.toLowerCase().includes(searchLower)) ||
-        (item.ma_nhan_vien?.toLowerCase().includes(searchLower)) ||
-        (item.ten_phong_ban?.toLowerCase().includes(searchLower)) ||
-        periodStr.includes(term);
-      const matchesPeriod = !f.yearMonth || periodStr.startsWith(f.yearMonth);
-      const matchesPhong =
-        f.phongBan.length === 0 ||
-        (item.id_phong_ban != null && f.phongBan.includes(item.id_phong_ban));
-      return matchesSearch && matchesPeriod && matchesPhong;
-    },
-    []
-  );
-
-  const filteredList = useListWithFilter(
-    managedRecords,
-    searchTerm,
-    filters,
-    filterFn
-  );
-
-  const sortedList = useMemo(() => {
-    if (!sort.column || !sort.direction) return filteredList;
-    const sorted = [...filteredList];
-    const periodKey = (r: BangLuongRecord) =>
-      `${r.nam}-${String(r.thang).padStart(2, '0')}`;
-    const sortableValue = (record: BangLuongRecord, col: string): string | number => {
-      if (col === 'period') return periodKey(record);
-      const raw = record[col as keyof BangLuongRecord];
-      return typeof raw === 'string' || typeof raw === 'number' ? raw : '';
-    };
-    sorted.sort((a, b) => {
-      const aVal = sortableValue(a, sort.column ?? '');
-      const bVal = sortableValue(b, sort.column ?? '');
-      const cmp =
-        typeof aVal === 'number' && typeof bVal === 'number'
-          ? aVal - bVal
-          : String(aVal).localeCompare(String(bVal), getLanguage());
-      return sort.direction === 'desc' ? -cmp : cmp;
-    });
-    return sorted;
-  }, [filteredList, sort]);
 
   const handleView = (record: BangLuongRecord) => setViewingRecord(record);
 
@@ -156,7 +125,7 @@ const DanhSachTab: React.FC = () => {
     <div className="flex flex-col h-full">
       <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
         <BangLuongManagedToolbar
-          items={managedRecords}
+          items={pageList}
           onAdd={canCreate ? handleAdd : undefined}
           selectedCount={selectedIds.size}
           onClearSelection={clearSelection}
@@ -166,7 +135,9 @@ const DanhSachTab: React.FC = () => {
         />
         <div className="flex-1 min-h-0">
           <BangLuongManagedTable
-            data={sortedList}
+            data={pageList}
+            totalRecordsOverride={totalCount}
+            isFetching={isFetching}
             isLoading={isLoading}
             onView={handleView}
             onEdit={handleEdit}

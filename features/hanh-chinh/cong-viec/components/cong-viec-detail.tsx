@@ -311,7 +311,7 @@ const CongViecDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onAd
           {children.length > 0 && (
             <>
               <thead>
-                <tr className="border-b border-border bg-muted/50">
+                <tr className="border-b border-border bg-muted">
                   <th className="text-left py-2 px-3 font-medium text-muted-foreground">{t('congViec.store.tieuDeCol')}</th>
                   <th className="text-left py-2 px-3 font-medium text-muted-foreground">{t('congViec.store.trangThaiCol')}</th>
                   <th className="text-right py-2 px-3 font-medium text-muted-foreground w-28">{t('common.actions')}</th>

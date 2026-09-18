@@ -1,4 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import type { ThuHoachListServerQuery } from '../services/thu-hoach-list-query';
 import { toast } from 'sonner';
 import i18n from '../../../../lib/i18n';
 import { useAuthStore } from '../../../../store/useStore';
@@ -11,10 +12,33 @@ import {
   deleteThuHoach,
   deleteThuHoachMany,
   appendThuHoachTraoDoi,
+  getThuHoachPage,
+  getThuHoachTomTat,
 } from '../services/thu-hoach-service';
 import type { ThuHoachKeHoachFormValues, ThuHoachThucTeFormValues } from '../core/schema';
 
 export const QUERY_KEY_THU_HOACH = ['thuHoach'] as const;
+
+/** Một trang danh sách — lọc / sắp xếp / phân trang chạy ở PostgREST. */
+export function useThuHoachPage(query: ThuHoachListServerQuery, enabled = true) {
+  return useQuery({
+    queryKey: [...QUERY_KEY_THU_HOACH, 'page', query],
+    queryFn: () => getThuHoachPage(query),
+    enabled,
+    placeholderData: keepPreviousData,
+    staleTime: 1000 * 60 * 2,
+  });
+}
+
+/** Tóm tắt toàn bộ phiếu: chip lọc + gợi ý chi nhánh. */
+export function useThuHoachTomTat(viewAll: boolean, allowedBranchIds: string[], enabled = true) {
+  return useQuery({
+    queryKey: [...QUERY_KEY_THU_HOACH, 'tomTat', viewAll, [...allowedBranchIds].sort().join(',')],
+    queryFn: () => getThuHoachTomTat(viewAll, allowedBranchIds),
+    enabled,
+    staleTime: 1000 * 60 * 5,
+  });
+}
 
 export function useThuHoachList() {
   return useQuery({

@@ -3,7 +3,7 @@ import { createGenericStore, ColumnConfig } from '../../../../store/createGeneri
 import { LogFilters } from '../core/types';
 import i18n from '../../../../lib/i18n';
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'nguoi_dung', label: i18n.t('permission.store.logUserCol'), visible: true, minWidth: 220, order: 0 },
   { id: 'hanh_dong', label: i18n.t('permission.store.logActionCol'), visible: true, minWidth: 200, order: 1 },
   { id: 'thong_tin', label: i18n.t('permission.store.logDeviceCol'), visible: true, minWidth: 250, order: 2 },
@@ -17,5 +17,6 @@ const initialFilters: LogFilters = {
 
 export const useLogStore = createGenericStore<LogFilters>(
   initialFilters,
-  DEFAULT_COLUMNS
+  DEFAULT_COLUMNS,
+  'table-phan-quyen-log'
 );

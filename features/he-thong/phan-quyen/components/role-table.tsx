@@ -17,7 +17,7 @@ interface Props {
 const RoleTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete }) => {
   const { t } = useTranslation();
   const { 
-    columns, pagination, setPage, setPageSize,
+    columns, resizeColumn, pagination, setPage, setPageSize,
     selectedIds, toggleSelection, toggleAllSelection 
   } = useRoleStore();
 
@@ -110,6 +110,7 @@ const RoleTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete }) => {
     <GenericTable
         data={data}
         columns={columns}
+        onResizeColumn={resizeColumn}
         isLoading={isLoading}
         loadingText={t('permission.matrix.loading')}
         selectedIds={selectedIds}

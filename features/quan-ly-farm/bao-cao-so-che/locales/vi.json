@@ -52,7 +52,6 @@
   "baoCaoSoChe.toast.deleteManyPartial": "Đã bỏ qua một số phiếu (đã khóa hoặc không thuộc quyền của bạn).",
   "baoCaoSoChe.toast.deleteNotAllowed": "Bạn không được phép xóa báo cáo này.",
   "baoCaoSoChe.toast.editNotAllowed": "Bạn không được phép sửa báo cáo này.",
-  "baoCaoSoChe.toolbar.searchPlaceholder": "Tìm theo chi nhánh, ghi chú, KPI thưởng, người tạo…",
   "baoCaoSoChe.toolbar.filterBranch": "Chi nhánh",
   "baoCaoSoChe.toolbar.filterNam": "Năm",
   "baoCaoSoChe.toolbar.filterThang": "Tháng",

@@ -21,7 +21,7 @@ const JobLevelTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onS
   const handleRowAction = onView ?? onEdit;
   const { t } = useTranslation();
   const {
-    columns, pagination, setPage, setPageSize,
+    columns, resizeColumn, pagination, setPage, setPageSize,
     selectedIds, toggleSelection, toggleAllSelection,
     sort, setSort
   } = useJobLevelStore();
@@ -141,6 +141,7 @@ const JobLevelTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onS
     <GenericTable
         data={data}
         columns={columns}
+        onResizeColumn={resizeColumn}
         isLoading={isLoading}
         loadingText={t('jobLevel.loading')}
         selectedIds={selectedIds}

@@ -2,7 +2,7 @@ import { createGenericStore, type ColumnConfig } from '../../../../store/createG
 import i18n from '../../../../lib/i18n';
 import type { HopDongFilters } from '../core/types';
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'ma_hop_dong', label: i18n.t('hopDong.store.maCol'), visible: true, minWidth: 120, maxWidth: 160, order: 0 },
   { id: 'ten_hop_dong', label: i18n.t('hopDong.store.tenCol'), visible: true, minWidth: 200, maxWidth: 340, order: 1 },
   { id: 'ngay', label: i18n.t('hopDong.store.ngayCol'), visible: true, minWidth: 100, maxWidth: 120, order: 2 },
@@ -28,4 +28,4 @@ const initialFilters: HopDongFilters = {
   nguoiTaoIds: [],
 };
 
-export const useHopDongStore = createGenericStore<HopDongFilters>(initialFilters, DEFAULT_COLUMNS);
+export const useHopDongStore = createGenericStore<HopDongFilters>(initialFilters, DEFAULT_COLUMNS, 'table-quan-ly-hop-dong-hop-dong');

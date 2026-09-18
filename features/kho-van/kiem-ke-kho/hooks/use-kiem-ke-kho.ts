@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import i18n from '../../../../lib/i18n';
 import {
@@ -17,6 +17,7 @@ import {
   hoanThanhDot,
   changeTrangThaiDot,
   getNextMaDotDotKiemKeKho,
+  getDotKiemKeKhoPageSupabase,
 } from '../services/kiem-ke-kho-service';
 import type { TaoDanhSachKiemKeKhoFilters } from '../services/kiem-ke-kho-service';
 import type { DotKiemKeKhoCreate, ChiTietKiemKeKhoUpdate, TrangThaiDotKiemKeKho } from '../core/types';
@@ -33,6 +34,21 @@ export interface UseDotKiemKeKhoListParams {
   dateTo?: string;
   id_nguoi_phu_trach?: string[];
   id_kho?: string[];
+}
+
+/** Một trang danh sách đợt — lọc / phân trang chạy ở PostgREST. */
+export function useDotKiemKeKhoPage(
+  page: number,
+  pageSize: number,
+  params: Parameters<typeof getDotKiemKeKhoPageSupabase>[2],
+  phamVi: Parameters<typeof getDotKiemKeKhoPageSupabase>[3]
+) {
+  return useQuery({
+    queryKey: ['kiemKeKho', 'dot', 'page', page, pageSize, params, phamVi],
+    queryFn: () => getDotKiemKeKhoPageSupabase(page, pageSize, params, phamVi),
+    placeholderData: keepPreviousData,
+    staleTime: 1000 * 60 * 2,
+  });
 }
 
 export function useDotKiemKeKhoList(params: UseDotKiemKeKhoListParams = {}) {

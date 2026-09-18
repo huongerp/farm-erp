@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import type { HopDongListServerQuery } from '../services/hop-dong-list-query';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -6,6 +7,7 @@ import ExportDialog from '../../../../components/shared/LazyExportDialog';
 import { useExportData } from '../../../../lib/useExportData';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import {
+  useHopDongPage,
   useHopDongList,
   useHopDongById,
   useDeleteHopDong,
@@ -14,15 +16,14 @@ import {
 import { useDoiTacRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
 import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
 import { useHopDongStore } from '../store/useHopDongStore';
-import { useListWithFilter } from '../../../../lib/hooks';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
-import type { HopDong, HopDongFilters } from '../core/types';
-import { matchesHopDongFilters } from '../core/list-filter-helpers';
+import type { HopDong } from '../core/types';
 import HopDongToolbar from './HopDongToolbar';
 import HopDongList from './HopDongList';
 import HopDongForm from './HopDongForm';
 import HopDongDetail from './HopDongDetail';
+
 import {
   getExportColumnsHopDongList,
   mapHopDongListRow,
@@ -41,12 +42,14 @@ const DanhSachTab: React.FC = () => {
     resetState,
     selectedIds,
     columns,
+    resizeColumn,
     clearSelection,
     toggleSelection,
     toggleAllSelection,
     pagination,
     setPage,
     setPageSize,
+    sort,
   } = useHopDongStore();
 
   const [showForm, setShowForm] = useState(false);
@@ -54,7 +57,31 @@ const DanhSachTab: React.FC = () => {
   const [viewingItem, setViewingItem] = useState<HopDong | null>(null);
   const [showExport, setShowExport] = useState(false);
 
-  const { data: allList = [], isLoading } = useHopDongList();
+  /** Bộ lọc gửi thẳng xuống PostgREST — trước đây tải toàn bộ hợp đồng + chi tiết. */
+  const listServerQuery: HopDongListServerQuery = useMemo(
+    () => ({
+      page: pagination.page - 1,
+      pageSize: pagination.pageSize,
+      searchTerm,
+      trangThai: filters.trangThai ?? [],
+      nccIds: filters.nccIds ?? [],
+      dateFrom: filters.dateFrom ?? '',
+      dateTo: filters.dateTo ?? '',
+      nguoiTaoIds: filters.nguoiTaoIds ?? [],
+      sortColumn: sort.column,
+      sortDirection: sort.direction,
+    }),
+    [pagination.page, pagination.pageSize, searchTerm, filters, sort]
+  );
+
+  const pageQuery = useHopDongPage(listServerQuery);
+  const pageList = pageQuery.data?.data ?? [];
+  const totalCount = pageQuery.data?.totalCount ?? 0;
+  const isLoading = !pageQuery.data && pageQuery.isPending;
+  const isFetching = !!pageQuery.data && pageQuery.isFetching;
+
+  /** Toàn bộ hợp đồng cho chip lọc (đếm theo trạng thái / NCC / người tạo). */
+  const { data: allList = [] } = useHopDongList();
   const { data: doiTacList = [] } = useDoiTacRefQuery('nha_cung_cap');
   const { data: chiNhanhList = [] } = useBranches();
 
@@ -63,24 +90,11 @@ const DanhSachTab: React.FC = () => {
   const deleteMutation = useDeleteHopDong();
   const deleteManyMutation = useDeleteHopDongMany();
 
-  const filterFn = useCallback((item: HopDong, term: string, f: HopDongFilters) => {
-    const q = term.toLowerCase();
-    const matchesSearch =
-      !term ||
-      item.ma_hop_dong.toLowerCase().includes(q) ||
-      (item.ten_hop_dong?.toLowerCase().includes(q) ?? false) ||
-      (item.ten_nha_cung_cap?.toLowerCase().includes(q) ?? false) ||
-      (item.ghi_chu?.toLowerCase().includes(q) ?? false);
-    return matchesSearch && matchesHopDongFilters(item, f);
-  }, []);
-
-  const filteredList = useListWithFilter(allList, searchTerm, filters, filterFn);
-
   const exportColumnsList = useMemo(() => getExportColumnsHopDongList(t), [t]);
   const exportMapList = useCallback((item: HopDong) => mapHopDongListRow(item, t), [t]);
   const { exportData, paginatedData: paginatedExportData, selectedData: selectedExportData } =
     useExportData<HopDong>({
-      data: filteredList,
+      data: pageList,
       isOpen: showExport,
       mapFn: exportMapList,
       pagination,
@@ -95,18 +109,15 @@ const DanhSachTab: React.FC = () => {
   }, [columns]);
 
   const handleExport = useCallback(() => {
-    if (filteredList.length === 0) {
+    if (totalCount === 0) {
       toast.warning(t('hopDong.noExportData'));
       return;
     }
     setShowExport(true);
-  }, [filteredList.length, t]);
+  }, [totalCount, t]);
 
   useEffect(() => resetState(), [resetState]);
-  useEffect(() => {
-    setPage(1);
-  }, [filteredList.length, setPage]);
-  const maxPage = Math.max(1, Math.ceil(filteredList.length / pagination.pageSize));
+  const maxPage = Math.max(1, Math.ceil(totalCount / pagination.pageSize));
   useEffect(() => {
     if (pagination.page > maxPage) setPage(maxPage);
   }, [pagination.page, pagination.pageSize, maxPage, setPage]);
@@ -173,8 +184,11 @@ const DanhSachTab: React.FC = () => {
       />
       <div className="flex-1 min-h-0 flex flex-col px-4 pb-4 pt-1">
         <HopDongList
-          data={filteredList}
+          data={pageList}
+          totalRecordsOverride={totalCount}
+          isFetching={isFetching}
           columns={columns}
+          onResizeColumn={resizeColumn}
           selectedIds={selectedIds}
           onToggleSelection={toggleSelection}
           onToggleAllSelection={toggleAllSelection}

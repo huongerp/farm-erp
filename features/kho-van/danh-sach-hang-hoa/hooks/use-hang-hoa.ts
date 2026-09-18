@@ -1,7 +1,10 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import type { HangHoaListServerQuery } from '../services/hang-hoa-list-query';
 import { toast } from 'sonner';
 import {
   getAllHangHoa,
+  getHangHoaPage,
+  getHangHoaTomTat,
   getHangHoaById,
   createHangHoa,
   updateHangHoa,
@@ -19,6 +22,26 @@ import type { HangHoaRefColumn } from '../services/hang-hoa-service';
 
 /** Query key thống nhất cho danh sách hàng hóa đầy đủ (tránh trùng hangHoaList / hangHoaListThemDong). */
 export const HANG_HOA_QUERY_KEY = ['hangHoa'] as const;
+
+/** Một trang danh sách — lọc / sắp xếp / phân trang chạy ở PostgREST. */
+export function useHangHoaPage(query: HangHoaListServerQuery, enabled = true) {
+  return useQuery({
+    queryKey: [...HANG_HOA_QUERY_KEY, 'page', query],
+    queryFn: () => getHangHoaPage(query),
+    enabled,
+    placeholderData: keepPreviousData,
+    staleTime: 1000 * 60 * 2,
+  });
+}
+
+/** Tóm tắt toàn bộ hàng hoá (id / thứ tự / đvt) — cho số thứ tự kế tiếp và gợi ý ĐVT. */
+export function useHangHoaTomTat() {
+  return useQuery({
+    queryKey: [...HANG_HOA_QUERY_KEY, 'tomTat'],
+    queryFn: getHangHoaTomTat,
+    staleTime: 1000 * 60 * 10,
+  });
+}
 
 export const useHangHoaList = () => {
   return useQuery({

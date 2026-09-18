@@ -12,13 +12,17 @@ import {
   useDeleteLoaiChiPhiList,
   useUpdateLoaiChiPhiStatus,
 } from '../hooks/use-loai-chi-phi';
-import { useLoaiChiPhiStore } from '../store/useLoaiChiPhiStore';
+import { useLoaiChiPhiStore, DEFAULT_COLUMNS } from '../store/useLoaiChiPhiStore';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_YES, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
 import { useListWithFilter } from '../../../../lib/hooks';
 import { getLanguage } from '../../../../lib/utils';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { LoaiChiPhi } from '../core/types';
+import { createListSearchMatcher } from '../../../../lib/list-search-matcher';
+
+/** Ô tìm kiếm quét MỌI cột của bảng, bỏ dấu tiếng Việt — xem lib/list-search-matcher.ts. */
+const khopTimKiem = createListSearchMatcher({ columns: DEFAULT_COLUMNS });
 
 const LoaiChiPhiTab: React.FC = () => {
   const { t } = useTranslation();
@@ -56,13 +60,7 @@ const LoaiChiPhiTab: React.FC = () => {
 
   const filterFn = useCallback(
     (item: LoaiChiPhi, term: string, f: typeof filters) => {
-      const searchLower = term.toLowerCase();
-      const matchesSearch = Boolean(
-        !term ||
-        item.ma.toLowerCase().includes(searchLower) ||
-        item.ten.toLowerCase().includes(searchLower) ||
-        (item.ghi_chu && item.ghi_chu.toLowerCase().includes(searchLower))
-      );
+      const matchesSearch = khopTimKiem(item, term);
       const statusKey = item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? 'Active' : 'Inactive';
       const matchesStatus = f.status.length === 0 || f.status.includes(statusKey);
       return matchesSearch && matchesStatus;

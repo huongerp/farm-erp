@@ -16,7 +16,6 @@
   "thietLapDeXuatMuaHang.tienDoMuaHang.form.ten": "Tên",
   "thietLapDeXuatMuaHang.tienDoMuaHang.form.tenPlaceholder": "VD: Chưa mua",
   "thietLapDeXuatMuaHang.tienDoMuaHang.form.thuTu": "Thứ tự",
-  "thietLapDeXuatMuaHang.tienDoMuaHang.searchPlaceholder": "Tìm theo mã, tên...",
   "thietLapDeXuatMuaHang.tienDoMuaHang.service.duplicateMa": "Mã tiến độ đã tồn tại",
   "thietLapDeXuatMuaHang.tienDoMuaHang.service.notFound": "Không tìm thấy tiến độ mua hàng",
   "thietLapDeXuatMuaHang.tienDoMuaHang.statusChangeMessage": "Đổi {{count}} trạng thái sang \"{{status}}\"?",

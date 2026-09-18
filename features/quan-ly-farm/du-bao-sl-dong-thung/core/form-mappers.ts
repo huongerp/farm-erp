@@ -56,15 +56,21 @@ export function computeKpiFromForm(values: DuBaoSlDongThungFormValues) {
   return computeDuBaoSlDongThungKpi(formValuesToKpiInput(values));
 }
 
+/** Chỉ cần bốn trường này để đoán chi nhánh người dùng hay nhập. */
+export type PhieuTomTatChiNhanh = Pick<
+  FarmDuBaoSlDongThung,
+  'id_nguoi_tao' | 'id_chi_nhanh' | 'ten_chi_nhanh'
+> & { tg_tao: string | null };
+
 export function getPreferredBranchFromUserLastRecords(
-  items: FarmDuBaoSlDongThung[],
+  items: PhieuTomTatChiNhanh[],
   userId: string | number | undefined
 ): { id_chi_nhanh: string; ten_chi_nhanh: string } | null {
   if (userId == null || userId === '') return null;
   const uid = String(userId);
   const mine = items
     .filter((r) => r.id_nguoi_tao === uid && r.id_chi_nhanh && r.ten_chi_nhanh)
-    .sort((a, b) => new Date(b.tg_tao).getTime() - new Date(a.tg_tao).getTime());
+    .sort((a, b) => new Date(b.tg_tao ?? 0).getTime() - new Date(a.tg_tao ?? 0).getTime());
   const first = mine[0];
   if (!first?.id_chi_nhanh || !first.ten_chi_nhanh) return null;
   return { id_chi_nhanh: first.id_chi_nhanh, ten_chi_nhanh: first.ten_chi_nhanh };

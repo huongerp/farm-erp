@@ -7,11 +7,15 @@ import DanhMucHangHoaList from './components/DanhMucHangHoaList';
 import DanhMucHangHoaForm from './components/DanhMucHangHoaForm';
 import DanhMucHangHoaDetail from './components/DanhMucHangHoaDetail';
 import { useDanhMucHangHoaList, useDeleteDanhMucHangHoa, useDeleteDanhMucHangHoaMany } from './hooks/use-danh-muc-hang-hoa';
-import { useDanhMucHangHoaStore } from './store/useDanhMucHangHoaStore';
+import { useDanhMucHangHoaStore, DEFAULT_COLUMNS } from './store/useDanhMucHangHoaStore';
 import { useConfirmStore } from '../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../lib/button-labels';
 import { useListWithFilter } from '../../../lib/hooks';
 import type { DanhMucHangHoa } from './core/types';
+import { createListSearchMatcher } from '../../../lib/list-search-matcher';
+
+/** Ô tìm kiếm quét MỌI cột của bảng, bỏ dấu tiếng Việt — xem lib/list-search-matcher.ts. */
+const khopTimKiem = createListSearchMatcher({ columns: DEFAULT_COLUMNS });
 
 const DanhMucHangHoaPage: React.FC = () => {
   const { t } = useTranslation();
@@ -55,11 +59,7 @@ const DanhMucHangHoaPage: React.FC = () => {
 
   const filterFn = useCallback(
     (item: DanhMucHangHoa, term: string, f: typeof filters) => {
-      const searchLower = term.toLowerCase();
-      const matchesSearch =
-        !term ||
-        item.ten_danh_muc.toLowerCase().includes(searchLower) ||
-        item.ma_danh_muc.toLowerCase().includes(searchLower);
+      const matchesSearch = khopTimKiem(item, term);
       const statusKey = item.trang_thai === 'Đang hoạt động' ? 'Active' : 'Inactive';
       const matchesStatus = f.status.length === 0 || f.status.includes(statusKey);
       return matchesSearch && matchesStatus;

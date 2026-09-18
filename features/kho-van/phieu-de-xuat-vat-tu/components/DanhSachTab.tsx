@@ -60,6 +60,7 @@ const DanhSachTab: React.FC = () => {
     resetState,
     selectedIds,
     columns,
+    resizeColumn,
     clearSelection,
     toggleSelection,
     toggleAllSelection,
@@ -351,6 +352,7 @@ const DanhSachTab: React.FC = () => {
         <PhieuDeXuatVatTuList
           data={tableRows}
           columns={columns}
+          onResizeColumn={resizeColumn}
           selectedIds={selectedIds}
           onToggleSelection={toggleSelection}
           onToggleAllSelection={toggleAllSelection}

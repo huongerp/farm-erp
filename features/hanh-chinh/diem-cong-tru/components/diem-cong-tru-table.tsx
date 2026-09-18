@@ -11,6 +11,10 @@ import { getDiemCongTruLoaiLabel } from '../core/constants';
 interface Props {
   data: DiemCongTruRecord[];
   isLoading: boolean;
+  /** Đang tải trang mới nhưng đã có dữ liệu cũ — hiện lớp phủ mờ thay vì skeleton. */
+  isFetching?: boolean;
+  /** Tổng số bản ghi khớp bộ lọc (phân trang ở server). */
+  totalRecordsOverride?: number;
   onEdit: (item: DiemCongTruRecord) => void;
   onDelete: (id: string) => void;
   onView?: (item: DiemCongTruRecord) => void;
@@ -18,10 +22,11 @@ interface Props {
   canDelete?: boolean;
 }
 
-const DiemCongTruTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onView, canUpdate = true, canDelete = true }) => {
+const DiemCongTruTable: React.FC<Props> = ({ isFetching, totalRecordsOverride, data, isLoading, onEdit, onDelete, onView, canUpdate = true, canDelete = true }) => {
   const { t } = useTranslation();
   const {
     columns,
+    resizeColumn,
     pagination,
     setPage,
     setPageSize,
@@ -217,7 +222,10 @@ const DiemCongTruTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, 
     <GenericTable
       data={data}
       columns={columns}
+      onResizeColumn={resizeColumn}
       isLoading={isLoading}
+      isFetching={isFetching}
+      totalRecordsOverride={totalRecordsOverride}
       loadingText={t('diemCongTru.loading')}
       selectedIds={selectedIds}
       onToggleSelection={toggleSelection}

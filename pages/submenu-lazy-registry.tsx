@@ -41,6 +41,9 @@ const RAW_SUBMENU_MODULE_IMPORTS = {
   'thiet-lap-de-xuat-mua-hang': () => import('../features/quan-ly-farm/thiet-lap-de-xuat-mua-hang'),
   'phieu-kho-phan-thuoc': () => import('../features/quan-ly-farm/phieu-kho-phan-thuoc'),
   'ton-kho-phan-thuoc': () => import('../features/quan-ly-farm/ton-kho-phan-thuoc'),
+  'thiet-lap-quy': () => import('../features/tai-chinh/thiet-lap-quy'),
+  'thu-chi-quy': () => import('../features/tai-chinh/thu-chi-quy'),
+  'thong-ke-quy': () => import('../features/tai-chinh/thong-ke-quy'),
 } as const;
 
 /** Hàm import thuần — dùng cho prefetch (hover) trước khi React.lazy chạy. */
@@ -66,6 +69,7 @@ const DASHBOARD_IMPORTS = {
   '/hanh-chinh': () => import('./dashboards/HanhChinhDashboard'),
   '/mua-hang': () => import('./dashboards/MuaHangDashboard'),
   '/quan-ly-farm': () => import('./dashboards/QuanLyFarmDashboard'),
+  '/tai-chinh': () => import('./dashboards/TaiChinhDashboard'),
 } as const;
 
 export function prefetchSubmenuDashboardForBase(basePath: keyof typeof DASHBOARD_IMPORTS): void {
@@ -96,6 +100,7 @@ export const SubmenuChunkFallback = () => (
 export const LazyHanhChinhDashboard = lazy(() => import('./dashboards/HanhChinhDashboard'));
 export const LazyMuaHangDashboard = lazy(() => import('./dashboards/MuaHangDashboard'));
 export const LazyQuanLyFarmDashboard = lazy(() => import('./dashboards/QuanLyFarmDashboard'));
+export const LazyTaiChinhDashboard = lazy(() => import('./dashboards/TaiChinhDashboard'));
 
 export const SUBMENU_MODULE_LAZY = Object.fromEntries(
   (Object.entries(SUBMENU_MODULE_IMPORTS) as [SubmenuLazySlug, (typeof SUBMENU_MODULE_IMPORTS)[SubmenuLazySlug]][]).map(

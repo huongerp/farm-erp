@@ -20,6 +20,7 @@ const PayrollWifiIpTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete
   const { t } = useTranslation();
   const {
     columns,
+    resizeColumn,
     pagination,
     setPage,
     setPageSize,
@@ -168,6 +169,7 @@ const PayrollWifiIpTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete
     <GenericTable
       data={data}
       columns={columns}
+      onResizeColumn={resizeColumn}
       isLoading={isLoading}
       loadingText={t('payrollIp.loading')}
       selectedIds={selectedIds}

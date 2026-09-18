@@ -5,7 +5,7 @@ import { Tag, Layers, MapPin } from 'lucide-react';
 import { useAuthStore } from '../../../../store/useStore';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
-import { useTaiSanList, useDeleteTaiSan, useUpdateTaiSanStatus, useUpdateTaiSan } from '../hooks/use-danh-muc-tai-san';
+import { useTaiSanList, useDeleteTaiSan, useUpdateTaiSan } from '../hooks/use-danh-muc-tai-san';
 import { getTaiSanByIdSupabase } from '../services/danh-muc-tai-san-supabase.service';
 import { useListWithFilter } from '../../../../lib/hooks';
 import { getLanguage } from '../../../../lib/utils';
@@ -21,7 +21,7 @@ import { useDeletePhieu } from '../../cap-phat-thu-hoi/hooks/use-cap-phat-thu-ho
 import TaoPhieuBaoTriForm from '../../bao-tri-sua-chua/components/TaoPhieuBaoTriForm';
 import { useDeletePhieuBaoTri } from '../../bao-tri-sua-chua/hooks/use-bao-tri-sua-chua';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
-import { useDanhSachTaiSanStore } from '../store/useDanhSachTaiSanStore';
+import { useDanhSachTaiSanStore, DEFAULT_COLUMNS } from '../store/useDanhSachTaiSanStore';
 import { useAssetGroups } from '../../thiet-lap-tai-san/hooks/use-nhom-tai-san';
 import { useAssetStorageLocations } from '../../thiet-lap-tai-san/hooks/use-noi-luu';
 import { useAssetStatuses } from '../../thiet-lap-tai-san/hooks/use-trang-thai';
@@ -92,6 +92,10 @@ import type { TaiSanFormValues } from '../core/schema';
 import type { DanhSachTaiSanFilters } from '../store/useDanhSachTaiSanStore';
 import type { PhieuCapPhatThuHoi } from '../../cap-phat-thu-hoi/core/types';
 import type { PhieuBaoTriSuaChua } from '../../bao-tri-sua-chua/core/types';
+import { createListSearchMatcher } from '../../../../lib/list-search-matcher';
+
+/** Ô tìm kiếm quét MỌI cột của bảng, bỏ dấu tiếng Việt — xem lib/list-search-matcher.ts. */
+const khopTimKiem = createListSearchMatcher({ columns: DEFAULT_COLUMNS });
 
 function taiSanToFormValues(a: TaiSan, overrideIdTrangThai?: string): TaiSanFormValues {
   return {
@@ -123,19 +127,11 @@ const CuaToiTab: React.FC = () => {
   const resetState = useDanhSachTaiSanStore((s) => s.resetState);
   const clearSelection = useDanhSachTaiSanStore((s) => s.clearSelection);
   const deleteMutation = useDeleteTaiSan();
-  const statusMutation = useUpdateTaiSanStatus();
   const updateMutation = useUpdateTaiSan();
   const { data: groups = [] } = useAssetGroups();
   const { data: locations = [] } = useAssetStorageLocations();
   const { data: statuses = [] } = useAssetStatuses();
 
-  const statusOptions = useMemo(
-    () => [
-      { label: t('common.activeStatus'), value: 'Active' },
-      { label: t('common.inactiveStatus'), value: 'Inactive' },
-    ],
-    [t]
-  );
   const groupOptions = useMemo(
     () => groups.map((g) => ({ label: g.ten, value: g.id, subLabel: g.ma })),
     [groups]
@@ -155,36 +151,24 @@ const CuaToiTab: React.FC = () => {
   const statusSelectionRef = useRef<string>('');
   const imageUrlRef = useRef<string>('');
   const activeFilterCount =
-    filters.status.length +
     filters.id_nhom.length +
     filters.id_noi_luu.length +
     filters.id_trang_thai.length;
   const handleClearAllFilters = () => {
-    setFilter('status', []);
     setFilter('id_nhom', []);
     setFilter('id_noi_luu', []);
     setFilter('id_trang_thai', []);
   };
   const filterGroups = useMemo(
     () => [
-      { key: 'status', label: t('common.status'), icon: Tag, options: statusOptions, value: filters.status, onChange: (val: string[]) => setFilter('status', val) },
       { key: 'id_nhom', label: t('danhSachTaiSan.store.nhomCol'), icon: Layers, options: groupOptions, value: filters.id_nhom, onChange: (val: string[]) => setFilter('id_nhom', val) },
       { key: 'id_noi_luu', label: t('danhSachTaiSan.store.noiLuuCol'), icon: MapPin, options: locationOptions, value: filters.id_noi_luu, onChange: (val: string[]) => setFilter('id_noi_luu', val) },
       { key: 'id_trang_thai', label: t('danhSachTaiSan.store.trangThaiCol'), icon: Tag, options: assetStatusOptions, value: filters.id_trang_thai, onChange: (val: string[]) => setFilter('id_trang_thai', val) },
     ],
-    [filters, statusOptions, groupOptions, locationOptions, assetStatusOptions, setFilter, t]
+    [filters, groupOptions, locationOptions, assetStatusOptions, setFilter, t]
   );
   const renderFilters = (
     <>
-      <FilterChipMultiSelect
-        options={statusOptions}
-        value={filters.status}
-        onChange={(val) => setFilter('status', val)}
-        placeholder={t('common.status')}
-        icon={Tag}
-        className="w-full sm:w-[140px]"
-        size="md"
-      />
       <FilterChipMultiSelect
         options={groupOptions}
         value={filters.id_nhom}
@@ -235,22 +219,11 @@ const CuaToiTab: React.FC = () => {
 
   const filterFn = useCallback(
     (item: TaiSan, term: string, f: DanhSachTaiSanFilters) => {
-      const searchLower = term.toLowerCase();
-      const matchesSearch = Boolean(
-        !term ||
-        (item.ma_tai_san?.toLowerCase().includes(searchLower)) ||
-        (item.ten_tai_san?.toLowerCase().includes(searchLower)) ||
-        (item.ten_nhom?.toLowerCase().includes(searchLower)) ||
-        (item.ten_noi_luu?.toLowerCase().includes(searchLower))
-      );
-      const matchesStatus =
-        f.status.length === 0 ||
-        (f.status.includes('Active') && item.trang_thai === 1) ||
-        (f.status.includes('Inactive') && item.trang_thai === 0);
+      const matchesSearch = khopTimKiem(item, term);
       const matchesNhom = f.id_nhom.length === 0 || Boolean(item.id_nhom && f.id_nhom.includes(item.id_nhom));
       const matchesNoiLuu = f.id_noi_luu.length === 0 || Boolean(item.id_noi_luu && f.id_noi_luu.includes(item.id_noi_luu));
       const matchesTrangThai = f.id_trang_thai.length === 0 || Boolean(item.id_trang_thai && f.id_trang_thai.includes(item.id_trang_thai));
-      return matchesSearch && matchesStatus && matchesNhom && matchesNoiLuu && matchesTrangThai;
+      return matchesSearch && matchesNhom && matchesNoiLuu && matchesTrangThai;
     },
     []
   );
@@ -458,21 +431,6 @@ const CuaToiTab: React.FC = () => {
     [confirm, t, statusOptionsForSelect, statuses, updateMutation]
   );
 
-  const handleStatusChangeMany = (ids: string[], status: 0 | 1) => {
-    const statusLabel = status === 1 ? t('common.activeStatus') : t('common.inactiveStatus');
-    confirm({
-      title: t('danhSachTaiSan.statusChangeTitle'),
-      message: t('danhSachTaiSan.statusChangeMessage', { count: ids.length, status: statusLabel }),
-      variant: 'default',
-      confirmText: t('common.confirm'),
-      onConfirm: () => {
-        statusMutation.mutate({ ids, status }, {
-          onSuccess: () => clearSelection(),
-        });
-      },
-    });
-  };
-
   if (isError) {
     return (
       <p className="text-sm text-destructive p-4">
@@ -489,7 +447,6 @@ const CuaToiTab: React.FC = () => {
             items={myList}
             onAdd={handleAdd}
             onDeleteMany={handleDeleteMany}
-            onStatusChangeMany={handleStatusChangeMany}
             canCreate={canCreate}
             canUpdate={canUpdate}
             canDelete={canDelete}
@@ -504,7 +461,6 @@ const CuaToiTab: React.FC = () => {
             filterGroups={filterGroups}
             activeFilterCount={activeFilterCount}
             onClearAllFilters={handleClearAllFilters}
-            searchPlaceholder={t('danhSachTaiSan.searchPlaceholder')}
             showBack
           />
         )}

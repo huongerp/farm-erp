@@ -1,24 +1,23 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import type { ThanhToanDoiTacListServerQuery } from '../services/thanh-toan-doi-tac-list-query';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
-import { useThanhToanDoiTacList, useThanhToanDoiTacById, useDeleteThanhToanDoiTac, useDeleteThanhToanDoiTacMany, useUpdateThanhToanDoiTac } from '../hooks/use-thanh-toan-doi-tac';
+import { useThanhToanDoiTacPage, useThanhToanDoiTacTomTat, useThanhToanDoiTacById, useDeleteThanhToanDoiTac, useDeleteThanhToanDoiTacMany, useUpdateThanhToanDoiTac } from '../hooks/use-thanh-toan-doi-tac';
 import { useThanhToanDoiTacViewScope } from '../hooks/use-thanh-toan-doi-tac-view-scope';
-import { filterThanhToanDoiTacListByViewScope } from '../utils/thanh-toan-doi-tac-view-scope-filter';
 import { useDoiTacRefQuery, useEmployeesRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
 import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
 import { useTrangThaiThanhToanDoiTacList } from '../../thiet-lap-de-xuat-vat-tu/hooks/use-trang-thai-thanh-toan-doi-tac';
 import { useThanhToanDoiTacStore } from '../store/useThanhToanDoiTacStore';
-import { useListWithFilter } from '../../../../lib/hooks';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
 import type { ThanhToanDoiTac } from '../core/types';
-import type { ThanhToanDoiTacFilters } from '../store/useThanhToanDoiTacStore';
 import type { ThanhToanDoiTacFormValues } from '../core/schema';
 import ThanhToanDoiTacToolbar from './ThanhToanDoiTacToolbar';
 import ThanhToanDoiTacList from './ThanhToanDoiTacList';
 import ThanhToanDoiTacForm from './ThanhToanDoiTacForm';
 import ThanhToanDoiTacDetail from './ThanhToanDoiTacDetail';
+
 
 function thanhToanToFormValues(item: ThanhToanDoiTac, override?: Partial<ThanhToanDoiTacFormValues>): ThanhToanDoiTacFormValues {
   return {
@@ -45,29 +44,53 @@ const DanhSachTab: React.FC = () => {
     resetState,
     selectedIds,
     columns,
+    resizeColumn,
     clearSelection,
     toggleSelection,
     toggleAllSelection,
     pagination,
     setPage,
     setPageSize,
+    sort,
   } = useThanhToanDoiTacStore();
 
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<ThanhToanDoiTac | null>(null);
   const [viewingItem, setViewingItem] = useState<ThanhToanDoiTac | null>(null);
 
-  const { data: allList = [], isLoading } = useThanhToanDoiTacList();
   const { data: doiTacList = [] } = useDoiTacRefQuery('nha_cung_cap');
   const { data: chiNhanhList = [] } = useBranches();
   const { data: employees = [] } = useEmployeesRefQuery();
   const { data: statusList = [] } = useTrangThaiThanhToanDoiTacList();
   const viewScope = useThanhToanDoiTacViewScope();
 
-  const viewableList = useMemo(
-    () => filterThanhToanDoiTacListByViewScope(allList, viewScope),
-    [allList, viewScope]
+  /** Bộ lọc + phạm vi xem gửi thẳng xuống PostgREST — trước đây tải toàn bộ bảng. */
+  const listServerQuery: ThanhToanDoiTacListServerQuery = useMemo(
+    () => ({
+      page: pagination.page - 1,
+      pageSize: pagination.pageSize,
+      searchTerm,
+      statusIds: filters.statusIds ?? [],
+      doiTacIds: filters.doiTacIds ?? [],
+      donViIds: filters.donViIds ?? [],
+      viewAll: viewScope.viewAll,
+      viewByBranch: viewScope.viewByBranch,
+      allowedBranchIds: viewScope.allowedBranchIds,
+      currentEmployeeId: viewScope.currentEmployeeId,
+      sortColumn: sort.column,
+      sortDirection: sort.direction,
+    }),
+    [pagination.page, pagination.pageSize, searchTerm, filters, sort, viewScope]
   );
+
+  /** Tóm tắt toàn bộ cho chip lọc (đếm theo trạng thái / đối tác / đơn vị). */
+  const { data: tomTatList = [] } = useThanhToanDoiTacTomTat();
+
+  const pageQuery = useThanhToanDoiTacPage(listServerQuery, !viewScope.isLoading);
+  const pageList = pageQuery.data?.data ?? [];
+  const totalCount = pageQuery.data?.totalCount ?? 0;
+  const isLoading = !pageQuery.data && pageQuery.isPending;
+  const isFetching = !!pageQuery.data && pageQuery.isFetching;
 
   const { data: viewingFull } = useThanhToanDoiTacById(viewingItem?.id);
   const { data: editingFull } = useThanhToanDoiTacById(editingItem?.id);
@@ -75,37 +98,17 @@ const DanhSachTab: React.FC = () => {
   const deleteManyMutation = useDeleteThanhToanDoiTacMany();
   const updateMutation = useUpdateThanhToanDoiTac();
 
-  const filterFn = useCallback((item: ThanhToanDoiTac, term: string, f: ThanhToanDoiTacFilters) => {
-    const searchLower = term.toLowerCase();
-    const matchesSearch =
-      !term ||
-      item.so_phieu.toLowerCase().includes(searchLower) ||
-      (item.hang_muc_thanh_toan?.toLowerCase().includes(searchLower) ?? false) ||
-      (item.ten_doi_tac?.toLowerCase().includes(searchLower) ?? false) ||
-      (item.ten_nhom?.toLowerCase().includes(searchLower) ?? false) ||
-      (item.ten_don_vi?.toLowerCase().includes(searchLower) ?? false) ||
-      (item.ghi_chu?.toLowerCase().includes(searchLower) ?? false);
-    const matchesStatus = (f.statusIds?.length ?? 0) === 0 || (f.statusIds ?? []).includes(item.id_trang_thai_thanh_toan);
-    const matchesDoiTac = (f.doiTacIds?.length ?? 0) === 0 || (f.doiTacIds ?? []).includes(item.id_doi_tac);
-    const matchesDonVi = (f.donViIds?.length ?? 0) === 0 || (item.id_don_vi != null && (f.donViIds ?? []).includes(item.id_don_vi)); // id_don_vi = chi nhánh
-    return matchesSearch && matchesStatus && matchesDoiTac && matchesDonVi;
-  }, []);
-
-  const filteredList = useListWithFilter(viewableList, searchTerm, filters, filterFn);
-
   useEffect(() => resetState(), [resetState]);
-  useEffect(() => {
-    setPage(1);
-  }, [filteredList.length, setPage]);
-  const maxPage = Math.max(1, Math.ceil(filteredList.length / pagination.pageSize));
+  const maxPage = Math.max(1, Math.ceil(totalCount / pagination.pageSize));
   useEffect(() => {
     if (pagination.page > maxPage) setPage(maxPage);
   }, [pagination.page, pagination.pageSize, maxPage, setPage]);
   useEffect(() => {
     if (!viewingItem) return;
-    const fresh = viewableList.find((p) => p.id === viewingItem.id);
+    // Bản ghi đang mở vừa cập nhật ở trang hiện tại → đồng bộ lại drawer.
+    const fresh = pageList.find((p) => p.id === viewingItem.id);
     if (fresh && fresh !== viewingItem) setViewingItem(fresh);
-  }, [viewableList, viewingItem?.id]);
+  }, [pageList, viewingItem?.id]);
 
   const handleEdit = (item: ThanhToanDoiTac) => {
     setEditingItem(item);
@@ -171,7 +174,7 @@ const DanhSachTab: React.FC = () => {
   return (
     <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
       <ThanhToanDoiTacToolbar
-        data={filteredList}
+        data={tomTatList}
         doiTacList={doiTacList}
         chiNhanhList={chiNhanhList}
         statusList={statusList}
@@ -186,8 +189,11 @@ const DanhSachTab: React.FC = () => {
       />
       <div className="flex-1 min-h-0 flex flex-col px-4 pb-4 pt-1">
         <ThanhToanDoiTacList
-          data={filteredList}
+          data={pageList}
+          totalRecordsOverride={totalCount}
+          isFetching={isFetching}
           columns={columns}
+          onResizeColumn={resizeColumn}
           selectedIds={selectedIds}
           onToggleSelection={toggleSelection}
           onToggleAllSelection={toggleAllSelection}

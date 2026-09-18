@@ -1,7 +1,19 @@
 /**
  * Quản lý hợp đồng – Supabase (fp_mh_hop_dong, fp_mh_hop_dong_ct, v_hop_dong_summary)
  */
-import { db, fetchAllRows, throwSupabaseError } from '../../../../lib/db';
+import {
+  db,
+  fetchAllRows,
+  fetchTablePage,
+  throwSupabaseError,
+  type PaginatedTableResult,
+} from '../../../../lib/db';
+import { applyPostgrestSearch } from '../../../../lib/postgrest-search';
+import {
+  HOP_DONG_SORTABLE_DB_COLUMNS,
+  HOP_DONG_SORT_MAC_DINH,
+  type HopDongListServerQuery,
+} from './hop-dong-list-query';
 import type { HopDong, HopDongChiTiet, HopDongChiTietEnriched } from '../core/types';
 import type { HopDongFormValues, HopDongChiTietLineValues } from '../core/schema';
 import type { TrangThaiHopDong } from '../core/constants';
@@ -210,6 +222,78 @@ function lineToCtPayload(
     id_chi_nhanh: toNum(c.id_chi_nhanh ?? undefined),
     id_nguoi_tao: idNguoiTaoNum != null && Number.isFinite(idNguoiTaoNum) ? idNguoiTaoNum : null,
   };
+}
+
+/** Cột tham gia ô tìm kiếm ở server. */
+const HOP_DONG_SEARCH_SPEC = {
+  text: ['ma_hop_dong', 'ten_hop_dong', 'ten_nha_cung_cap', 'noi_dung', 'ghi_chu', 'trang_thai'],
+  numeric: ['id', 'so_luong_cay', 'thanh_tien'],
+  dates: ['ngay'],
+} as const;
+
+/** Lọc + sắp xếp dùng chung cho trang danh sách và cho lượt tải phục vụ xuất file. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyHopDongListQuery(q: any, query: HopDongListServerQuery): any {
+  let sel = q;
+
+  if (query.trangThai.length > 0) sel = sel.in('trang_thai', query.trangThai);
+  if (query.nccIds.length > 0) {
+    sel = sel.in('id_nha_cung_cap', query.nccIds.map(Number).filter(Number.isFinite));
+  }
+  if (query.nguoiTaoIds.length > 0) {
+    sel = sel.in('id_nguoi_tao', query.nguoiTaoIds.map(Number).filter(Number.isFinite));
+  }
+  if (query.dateFrom) sel = sel.gte('ngay', query.dateFrom);
+  if (query.dateTo) sel = sel.lte('ngay', query.dateTo);
+
+  sel = applyPostgrestSearch(sel, query.searchTerm, HOP_DONG_SEARCH_SPEC);
+
+  const dbSortable = query.sortColumn != null && HOP_DONG_SORTABLE_DB_COLUMNS.has(query.sortColumn);
+  const sortCol = dbSortable ? query.sortColumn! : HOP_DONG_SORT_MAC_DINH.column;
+  const ascending = dbSortable ? query.sortDirection !== 'desc' : HOP_DONG_SORT_MAC_DINH.ascending;
+
+  return sel.order(sortCol, { ascending, nullsFirst: false }).order('id', { ascending: false });
+}
+
+/** Tổng hợp chi tiết (số đợt / tiền / cây) cho đúng các hợp đồng trong trang. */
+async function ctAggChoIds(ids: number[]): Promise<Map<number, CtAgg>> {
+  if (ids.length === 0) return new Map();
+  const { data, error } = await db.from(TABLE_CT).select(CT_AGG_SELECT).in('id_hop_dong', ids);
+  if (error) throwSupabaseError(error, { resource: `${TABLE_CT}.agg` });
+  return buildCtAggMap((data ?? []) as CtAggRow[]);
+}
+
+export async function getHopDongPageSupabase(
+  query: HopDongListServerQuery
+): Promise<PaginatedTableResult<HopDong>> {
+  const result = await fetchTablePage<HopSummaryRow>(query.page, query.pageSize, async (from, to) => {
+    const res = await applyHopDongListQuery(
+      db.from(VIEW_SUMMARY).select(VIEW_SUMMARY_SELECT, { count: 'exact' }),
+      query
+    ).range(from, to);
+    return { data: (res.data as unknown as HopSummaryRow[] | null) ?? null, error: res.error, count: res.count };
+  });
+
+  const aggMap = await ctAggChoIds(result.data.map((r) => r.id));
+  return {
+    ...result,
+    data: result.data.map((row) => {
+      const agg = aggMap.get(row.id) ?? { dot: 0, tongTien: 0, tongCay: 0 };
+      return rowToHop(enrichSummaryRowWithCtAgg(row, agg));
+    }),
+  };
+}
+
+/** Toàn bộ bản ghi khớp bộ lọc — chỉ gọi khi mở hộp thoại Xuất file. */
+export async function fetchAllHopDongForListQuery(query: HopDongListServerQuery): Promise<HopDong[]> {
+  const rows = await fetchAllRows<HopSummaryRow>((from, to) =>
+    applyHopDongListQuery(db.from(VIEW_SUMMARY).select(VIEW_SUMMARY_SELECT), query).range(from, to)
+  );
+  const aggMap = await ctAggChoIds(rows.map((r) => r.id));
+  return rows.map((row) => {
+    const agg = aggMap.get(row.id) ?? { dot: 0, tongTien: 0, tongCay: 0 };
+    return rowToHop(enrichSummaryRowWithCtAgg(row, agg));
+  });
 }
 
 export async function getAllHopDongSupabase(): Promise<HopDong[]> {

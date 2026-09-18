@@ -10,6 +10,8 @@ import type { ColumnConfig } from '../../../../store/createGenericStore';
 interface Props {
   data: DeXuatMuaHang[];
   columns: ColumnConfig[];
+  /** Cho phép kéo đổi bề rộng cột — truyền `resizeColumn` của store. */
+  onResizeColumn?: (id: string, width: number) => void;
   selectedIds: Set<string>;
   onToggleSelection: (id: string) => void;
   onToggleAllSelection: (ids: string[]) => void;
@@ -31,6 +33,7 @@ interface Props {
 const DeXuatMuaHangList: React.FC<Props> = ({
   data,
   columns,
+  onResizeColumn,
   selectedIds,
   onToggleSelection,
   onToggleAllSelection,
@@ -182,6 +185,7 @@ const DeXuatMuaHangList: React.FC<Props> = ({
     <GenericTable<DeXuatMuaHang>
       data={data}
       columns={visibleColumns}
+      onResizeColumn={onResizeColumn}
       isLoading={isLoading}
       isFetching={isFetching}
       loadingText={t('deXuatMuaHang.loading')}

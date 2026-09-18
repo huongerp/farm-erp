@@ -2,7 +2,19 @@
  * Service thanh toán đối tác – đọc/ghi Supabase (fp_mh_thanh_toan_doi_tac).
  * Dùng id_trang_thai_thanh_toan (FK) và trang_thai (text denormalize).
  */
-import { db, fetchAllRows, throwSupabaseError } from '../../../../lib/db';
+import {
+  db,
+  fetchAllRows,
+  fetchTablePage,
+  throwSupabaseError,
+  type PaginatedTableResult,
+} from '../../../../lib/db';
+import { applyPostgrestSearch } from '../../../../lib/postgrest-search';
+import {
+  TTDT_SORTABLE_DB_COLUMNS,
+  TTDT_SORT_MAC_DINH,
+  type ThanhToanDoiTacListServerQuery,
+} from './thanh-toan-doi-tac-list-query';
 import type { ThanhToanDoiTac } from '../core/types';
 import type { ThanhToanDoiTacFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
@@ -138,22 +150,14 @@ function rowToItem(
   };
 }
 
-export async function getAllThanhToanDoiTac(): Promise<ThanhToanDoiTac[]> {
-  const [rows, branches, doiTacMap, employees, statusList] = await Promise.all([
-    fetchAllRows<DbRow>((from, to) =>
-      db
-        .from(TABLE)
-        .select(THANH_TOAN_ROW_COLUMNS)
-        .order('ngay', { ascending: false })
-        .order('so_phieu', { ascending: false })
-        .range(from, to)
-    ),
-    getBranches(),
-    loadDoiTacEnrichMap('nha_cung_cap'),
-    getEmployeesRef(),
-    getTrangThaiThanhToanDoiTacList(),
-  ]);
-
+/** Ghép bản ghi thô với các bảng tham chiếu đã tải. */
+function mapRowsWithRefs(
+  rows: DbRow[],
+  branches: Awaited<ReturnType<typeof getBranches>>,
+  doiTacMap: Awaited<ReturnType<typeof loadDoiTacEnrichMap>>,
+  employees: Awaited<ReturnType<typeof getEmployeesRef>>,
+  statusList: Awaited<ReturnType<typeof getTrangThaiThanhToanDoiTacList>>
+): ThanhToanDoiTac[] {
   const donViMap: Record<string, string> = {};
   branches.forEach((b) => {
     donViMap[b.id] = b.ten_chi_nhanh;
@@ -192,6 +196,132 @@ export async function getAllThanhToanDoiTac(): Promise<ThanhToanDoiTac[]> {
       mau_trang_thai,
     });
   });
+}
+
+/** Cột tham gia ô tìm kiếm ở server. */
+const TTDT_SEARCH_SPEC = {
+  text: ['so_phieu', 'hang_muc_thanh_toan', 'ghi_chu', 'trang_thai'],
+  numeric: ['id', 'so_tien'],
+  dates: ['ngay', 'ngay_xu_ly'],
+} as const;
+
+/** Lọc + sắp xếp dùng chung cho trang danh sách và cho lượt tải phục vụ xuất file. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyTtdtListQuery(q: any, query: ThanhToanDoiTacListServerQuery): any {
+  let sel = q;
+
+  if (query.statusIds.length > 0) {
+    sel = sel.in('id_trang_thai_thanh_toan', query.statusIds.map(Number).filter(Number.isFinite));
+  }
+  if (query.doiTacIds.length > 0) {
+    sel = sel.in('id_doi_tac', query.doiTacIds.map(Number).filter(Number.isFinite));
+  }
+  if (query.donViIds.length > 0) {
+    sel = sel.in('id_don_vi', query.donViIds.map(Number).filter(Number.isFinite));
+  }
+
+  // Phạm vi xem — khớp với filterThanhToanDoiTacListByViewScope ở client cũ.
+  if (!query.viewAll) {
+    const me = query.currentEmployeeId != null ? Number(query.currentEmployeeId) : NaN;
+    const ve: string[] = [];
+    if (Number.isFinite(me)) ve.push(`id_nguoi_tao.eq.${me}`);
+    if (query.viewByBranch) {
+      const ids = query.allowedBranchIds.map(Number).filter(Number.isFinite);
+      if (ids.length > 0) ve.push(`id_don_vi.in.(${ids.join(',')})`);
+    }
+    sel = ve.length > 0 ? sel.or(ve.join(',')) : sel.eq('id', -1);
+  }
+
+  sel = applyPostgrestSearch(sel, query.searchTerm, TTDT_SEARCH_SPEC);
+
+  const dbSortable = query.sortColumn != null && TTDT_SORTABLE_DB_COLUMNS.has(query.sortColumn);
+  const sortCol = dbSortable ? query.sortColumn! : TTDT_SORT_MAC_DINH.column;
+  const ascending = dbSortable ? query.sortDirection !== 'desc' : TTDT_SORT_MAC_DINH.ascending;
+
+  sel = sel.order(sortCol, { ascending });
+  if (sortCol === 'ngay') sel = sel.order('so_phieu', { ascending: false });
+  return sel.order('id', { ascending: false });
+}
+
+export async function getThanhToanDoiTacPage(
+  query: ThanhToanDoiTacListServerQuery
+): Promise<PaginatedTableResult<ThanhToanDoiTac>> {
+  const result = await fetchTablePage<DbRow>(query.page, query.pageSize, async (from, to) => {
+    const res = await applyTtdtListQuery(
+      db.from(TABLE).select(THANH_TOAN_ROW_COLUMNS, { count: 'exact' }),
+      query
+    ).range(from, to);
+    return { data: (res.data as unknown as DbRow[] | null) ?? null, error: res.error, count: res.count };
+  });
+  return { ...result, data: await enrichThanhToanRows(result.data) };
+}
+
+/** Toàn bộ bản ghi khớp bộ lọc — chỉ gọi khi mở hộp thoại Xuất file. */
+export async function fetchAllThanhToanDoiTacForListQuery(
+  query: ThanhToanDoiTacListServerQuery
+): Promise<ThanhToanDoiTac[]> {
+  const rows = await fetchAllRows<DbRow>((from, to) =>
+    applyTtdtListQuery(db.from(TABLE).select(THANH_TOAN_ROW_COLUMNS), query).range(from, to)
+  );
+  return enrichThanhToanRows(rows);
+}
+
+/**
+ * Tóm tắt toàn bộ phiếu (4 cột) — chip lọc phải đếm trên toàn bộ dữ liệu chứ
+ * không riêng trang đang xem.
+ */
+export async function getThanhToanDoiTacTomTat(): Promise<ThanhToanDoiTacTomTat[]> {
+  const rows = await fetchAllRows<{
+    id: number;
+    id_trang_thai_thanh_toan: number | null;
+    id_doi_tac: number | null;
+    id_don_vi: number | null;
+  }>((from, to) =>
+    db.from(TABLE).select('id,id_trang_thai_thanh_toan,id_doi_tac,id_don_vi').range(from, to)
+  );
+  return rows.map((r) => ({
+    id: String(r.id),
+    id_trang_thai_thanh_toan: r.id_trang_thai_thanh_toan != null ? String(r.id_trang_thai_thanh_toan) : '',
+    id_doi_tac: r.id_doi_tac != null ? String(r.id_doi_tac) : '',
+    id_don_vi: r.id_don_vi != null ? String(r.id_don_vi) : null,
+  }));
+}
+
+export interface ThanhToanDoiTacTomTat {
+  id: string;
+  id_trang_thai_thanh_toan: string;
+  id_doi_tac: string;
+  id_don_vi: string | null;
+}
+
+/** Gắn tên chi nhánh / đối tác / người tạo / trạng thái cho một tập bản ghi. */
+async function enrichThanhToanRows(rows: DbRow[]): Promise<ThanhToanDoiTac[]> {
+  const [branches, doiTacMap, employees, statusList] = await Promise.all([
+    getBranches(),
+    loadDoiTacEnrichMap('nha_cung_cap'),
+    getEmployeesRef(),
+    getTrangThaiThanhToanDoiTacList(),
+  ]);
+  return mapRowsWithRefs(rows, branches, doiTacMap, employees, statusList);
+}
+
+export async function getAllThanhToanDoiTac(): Promise<ThanhToanDoiTac[]> {
+  const [rows, branches, doiTacMap, employees, statusList] = await Promise.all([
+    fetchAllRows<DbRow>((from, to) =>
+      db
+        .from(TABLE)
+        .select(THANH_TOAN_ROW_COLUMNS)
+        .order('ngay', { ascending: false })
+        .order('so_phieu', { ascending: false })
+        .range(from, to)
+    ),
+    getBranches(),
+    loadDoiTacEnrichMap('nha_cung_cap'),
+    getEmployeesRef(),
+    getTrangThaiThanhToanDoiTacList(),
+  ]);
+
+  return mapRowsWithRefs(rows, branches, doiTacMap, employees, statusList);
 }
 
 export async function getThanhToanDoiTacById(id: string): Promise<ThanhToanDoiTac | null> {

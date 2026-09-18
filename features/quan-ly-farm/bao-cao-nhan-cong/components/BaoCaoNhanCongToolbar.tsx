@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import type { BaoCaoNhanCongTomTat } from '../services/bao-cao-nhan-cong-service';
 import { useTranslation } from 'react-i18next';
 import { Plus, Building2, Calendar, Hash, ToggleLeft, Download } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
@@ -7,11 +8,14 @@ import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useBaoCaoNhanCongStore, type BaoCaoNhanCongFilters } from '../store/useBaoCaoNhanCongStore';
-import type { FarmBaoCaoNhanCong } from '../core/types';
 import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
 
 interface Props {
-  data: FarmBaoCaoNhanCong[];
+  /**
+   * Danh sách TÓM TẮT toàn bộ phiếu (không phải trang đang xem) — chip lọc phải
+   * đếm trên toàn bộ dữ liệu, xem `getBaoCaoNhanCongTomTat`.
+   */
+  data: BaoCaoNhanCongTomTat[];
   branches: Branch[];
   selectedCount: number;
   onAdd: () => void;
@@ -52,6 +56,7 @@ const BaoCaoNhanCongToolbar: React.FC<Props> = ({
   const toggleColumn = useBaoCaoNhanCongStore((s) => s.toggleColumn);
   const reorderColumns = useBaoCaoNhanCongStore((s) => s.reorderColumns);
   const resetColumns = useBaoCaoNhanCongStore((s) => s.resetColumns);
+  const resetColumnWidths = useBaoCaoNhanCongStore((s) => s.resetColumnWidths);
 
   const branchOptions = useMemo(
     () =>
@@ -254,13 +259,13 @@ const BaoCaoNhanCongToolbar: React.FC<Props> = ({
       mobileActions={mobileActions}
       onAdd={canCreate ? onAdd : undefined}
       showBack
-      searchPlaceholder={t('baoCaoNhanCong.toolbar.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       columns={columns}
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
+      onResetColumnWidths={resetColumnWidths}
     />
   );
 };

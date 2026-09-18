@@ -59,6 +59,7 @@ const DanhSachTab: React.FC = () => {
     resetState,
     selectedIds,
     columns,
+    resizeColumn,
     clearSelection,
     toggleSelection,
     toggleAllSelection,
@@ -355,6 +356,7 @@ const DanhSachTab: React.FC = () => {
         <DeXuatMuaHangList
           data={tableRows}
           columns={columns}
+          onResizeColumn={resizeColumn}
           selectedIds={selectedIds}
           onToggleSelection={toggleSelection}
           onToggleAllSelection={toggleAllSelection}
@@ -448,6 +450,11 @@ const DanhSachTab: React.FC = () => {
             canEdit={!!canUpdate}
             canDelete={canDelete}
             showOverdueBadge={isOverdue(viewingPhieuFull ?? viewingItem)}
+            idChiNhanhNoiDeXuat={
+              khoList.find(
+                (k) => String(k.id) === String((viewingPhieuFull ?? viewingItem).id_noi_de_xuat)
+              )?.id_chi_nhanh ?? null
+            }
           />
         )}
       </AnimatePresence>

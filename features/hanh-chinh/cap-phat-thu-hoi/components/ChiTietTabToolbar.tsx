@@ -22,6 +22,7 @@ const ChiTietTabToolbar: React.FC<Props> = ({ data, onBack }) => {
   const toggleColumn = useChiTietTabStore((s) => s.toggleColumn);
   const reorderColumns = useChiTietTabStore((s) => s.reorderColumns);
   const resetColumns = useChiTietTabStore((s) => s.resetColumns);
+  const resetColumnWidths = useChiTietTabStore((s) => s.resetColumnWidths);
 
   const loaiPhieuLen = filters.loaiPhieu?.length ?? 0;
   const activeFilterCount = useMemo(
@@ -79,13 +80,13 @@ const ChiTietTabToolbar: React.FC<Props> = ({ data, onBack }) => {
       filterGroups={filterGroups}
       showBack={!!onBack}
       onBack={onBack}
-      searchPlaceholder={t('capPhatThuHoi.chiTiet.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       columns={columns}
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
+      onResetColumnWidths={resetColumnWidths}
     />
   );
 };

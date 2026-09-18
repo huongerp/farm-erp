@@ -49,6 +49,7 @@ const ChiTietPhieuKhoToolbar: React.FC<Props> = ({
   const toggleColumn = useChiTietPhieuKhoStore((s) => s.toggleColumn);
   const reorderColumns = useChiTietPhieuKhoStore((s) => s.reorderColumns);
   const resetColumns = useChiTietPhieuKhoStore((s) => s.resetColumns);
+  const resetColumnWidths = useChiTietPhieuKhoStore((s) => s.resetColumnWidths);
 
   const { inputValue: searchInput, setInputValue: setSearchInput } = useSearchInputCommit({
     committedTerm: searchTerm,
@@ -419,7 +420,6 @@ const ChiTietPhieuKhoToolbar: React.FC<Props> = ({
       filterGroups={filterGroupsComputed}
       mobileActions={mobileActions}
       showBack
-      searchPlaceholder={t('phieuKho.chiTietTab.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={() => {
         commitSearchTerm('');
@@ -438,6 +438,7 @@ const ChiTietPhieuKhoToolbar: React.FC<Props> = ({
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
+      onResetColumnWidths={resetColumnWidths}
     />
   );
 };

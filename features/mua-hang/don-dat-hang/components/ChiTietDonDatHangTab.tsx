@@ -551,6 +551,9 @@ const ChiTietDonDatHangTab: React.FC = () => {
           onChangeStatus={canAdmin ? handleChangeStatus : undefined}
           // Chờ viewingPoFull load xong mới cho tạo phiếu nhập — xem giải thích trong DanhSachTab.tsx.
           onCreatePhieuNhapKho={canCreate && viewingPoFull ? () => setCreatePhieuNhapFrom(viewingPoFull) : undefined}
+          idChiNhanhKhoNhan={
+            khoList.find((k) => String(k.id) === String(viewingPoFull.id_kho_nhan))?.id_chi_nhanh ?? null
+          }
         />
       )}
 

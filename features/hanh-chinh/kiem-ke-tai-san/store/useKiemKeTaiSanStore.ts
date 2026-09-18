@@ -20,8 +20,8 @@ export interface KiemKeTaiSanFilters {
   id_nguoi_phu_trach: string[];
 }
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
-  { id: 'ma_dot', label: i18n.t('kiemKeTaiSan.store.maDotCol'), visible: true, minWidth: COLUMN_WIDTH_CODE_MIN, maxWidth: COLUMN_WIDTH_CODE_MAX, order: 0 },
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
+  { id: 'ma_dot', label: i18n.t('kiemKeTaiSan.store.maDotCol', 'table-kiem-ke-tai-san'), visible: true, minWidth: COLUMN_WIDTH_CODE_MIN, maxWidth: COLUMN_WIDTH_CODE_MAX, order: 0 },
   { id: 'ten_dot', label: i18n.t('kiemKeTaiSan.store.tenDotCol'), visible: true, minWidth: COLUMN_WIDTH_NAME_MIN, maxWidth: COLUMN_WIDTH_NAME_MAX, order: 1 },
   { id: 'ngay_bat_dau', label: i18n.t('kiemKeTaiSan.store.ngayBatDauCol'), visible: true, order: 2 },
   { id: 'ngay_ket_thuc', label: i18n.t('kiemKeTaiSan.store.ngayKetThucCol'), visible: true, order: 3 },
@@ -40,5 +40,6 @@ const initialFilters: KiemKeTaiSanFilters = {
 
 export const useKiemKeTaiSanStore = createGenericStore<KiemKeTaiSanFilters>(
   initialFilters,
-  DEFAULT_COLUMNS
+  DEFAULT_COLUMNS,
+  'table-kiem-ke-tai-san'
 );

@@ -28,6 +28,7 @@ const DiemCongTruToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, 
   const toggleColumn = useDiemCongTruStore((s) => s.toggleColumn);
   const reorderColumns = useDiemCongTruStore((s) => s.reorderColumns);
   const resetColumns = useDiemCongTruStore((s) => s.resetColumns);
+  const resetColumnWidths = useDiemCongTruStore((s) => s.resetColumnWidths);
   const selectedIds = useDiemCongTruStore((s) => s.selectedIds);
   const clearSelection = useDiemCongTruStore((s) => s.clearSelection);
   const { typeCounts } = useDiemCongTruFilterCounts(items, filters);
@@ -87,7 +88,6 @@ const DiemCongTruToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, 
       filters={renderFilters}
       filterGroups={[]}
       onAdd={canCreate ? onAdd : undefined}
-      searchPlaceholder={t('diemCongTru.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       onDeleteMany={canDelete && onDeleteMany ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
@@ -95,6 +95,7 @@ const DiemCongTruToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, 
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
+      onResetColumnWidths={resetColumnWidths}
       showBack
     />
   );

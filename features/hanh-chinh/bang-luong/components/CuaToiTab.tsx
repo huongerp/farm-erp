@@ -1,11 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import type { BangLuongListServerQuery } from '../services/bang-luong-list-query';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../../../../store/useStore';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
-import { useBangLuongRecords, useDeleteBangLuong } from '../hooks/use-bang-luong';
-import { useListWithFilter } from '../../../../lib/hooks';
-import { getLanguage } from '../../../../lib/utils';
+import { useBangLuongPage, useDeleteBangLuong } from '../hooks/use-bang-luong';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
 import BangLuongMyToolbar from './BangLuongMyToolbar';
 import BangLuongMyTable from './BangLuongMyTable';
@@ -25,6 +24,7 @@ const CuaToiTab: React.FC = () => {
     searchTerm,
     filters,
     sort,
+    pagination,
     resetState,
     clearSelection,
     selectedIds,
@@ -35,55 +35,33 @@ const CuaToiTab: React.FC = () => {
   const [editingRecord, setEditingRecord] = useState<BangLuongRecord | null>(null);
   const [viewingRecord, setViewingRecord] = useState<BangLuongRecord | null>(null);
 
-  const { data: records = [], isLoading, isError } = useBangLuongRecords();
-
-  const myRecords = useMemo(
-    () => records.filter((r) => r.id_nhan_vien === currentUserId),
-    [records, currentUserId]
+  /** Bộ lọc gửi thẳng xuống PostgREST — chỉ tải bảng lương của chính mình, đúng một trang. */
+  const listServerQuery: BangLuongListServerQuery = useMemo(
+    () => ({
+      page: pagination.page - 1,
+      pageSize: pagination.pageSize,
+      searchTerm,
+      yearMonth: filters.yearMonth ?? '',
+      phongBan: [],
+      nhanVienId: currentUserId || null,
+      loaiTruNhanVienId: null,
+      sortColumn: sort.column,
+      sortDirection: sort.direction,
+    }),
+    [pagination.page, pagination.pageSize, searchTerm, filters, sort, currentUserId]
   );
+
+  const pageQuery = useBangLuongPage(listServerQuery, Boolean(currentUserId));
+  const pageList = pageQuery.data?.data ?? [];
+  const totalCount = pageQuery.data?.totalCount ?? 0;
+  const isLoading = !pageQuery.data && pageQuery.isPending;
+  const isFetching = !!pageQuery.data && pageQuery.isFetching;
+  const isError = pageQuery.isError;
 
   useEffect(() => {
     return () => resetState();
   }, [resetState]);
 
-  const filterFn = useCallback(
-    (item: BangLuongRecord, term: string, f: typeof filters) => {
-      const searchLower = term.toLowerCase();
-      const periodStr = `${item.nam}-${String(item.thang).padStart(2, '0')}`;
-      const matchesSearch = Boolean(
-        !term ||
-        periodStr.includes(term) ||
-        (item.ten_phong_ban?.toLowerCase().includes(searchLower))
-      );
-      const matchesPeriod = !f.yearMonth || periodStr.startsWith(f.yearMonth);
-      return matchesSearch && matchesPeriod;
-    },
-    []
-  );
-
-  const filteredList = useListWithFilter(myRecords, searchTerm, filters, filterFn);
-
-  const sortedList = useMemo(() => {
-    if (!sort.column || !sort.direction) return filteredList;
-    const sorted = [...filteredList];
-    const periodKey = (r: BangLuongRecord) =>
-      `${r.nam}-${String(r.thang).padStart(2, '0')}`;
-    const sortableValue = (record: BangLuongRecord, col: string): string | number => {
-      if (col === 'period') return periodKey(record);
-      const raw = record[col as keyof BangLuongRecord];
-      return typeof raw === 'string' || typeof raw === 'number' ? raw : '';
-    };
-    sorted.sort((a, b) => {
-      const aVal = sortableValue(a, sort.column ?? '');
-      const bVal = sortableValue(b, sort.column ?? '');
-      const cmp =
-        typeof aVal === 'number' && typeof bVal === 'number'
-          ? aVal - bVal
-          : String(aVal).localeCompare(String(bVal), getLanguage());
-      return sort.direction === 'desc' ? -cmp : cmp;
-    });
-    return sorted;
-  }, [filteredList, sort]);
 
   const handleView = (record: BangLuongRecord) => setViewingRecord(record);
 
@@ -150,7 +128,9 @@ const CuaToiTab: React.FC = () => {
         />
         <div className="flex-1 min-h-0">
           <BangLuongMyTable
-            data={sortedList}
+            data={pageList}
+            totalRecordsOverride={totalCount}
+            isFetching={isFetching}
             isLoading={isLoading}
             onView={handleView}
             onEdit={handleEdit}

@@ -1,5 +1,10 @@
 -- =============================================================================
--- Tối ưu tìm kiếm: PostgREST `.or(...ilike.%...%)` trên nhiều cột
+-- [BẢN NHÁP — KHÔNG CHẠY] Tối ưu tìm kiếm: PostgREST `.or(...ilike.%...%)`
+-- =============================================================================
+-- Toàn bộ CREATE INDEX dưới đây đang được comment và chưa bao giờ chạy.
+-- Bản chạy được, đã rà đúng tên bảng/cột theo services hiện tại:
+--   docs/vps-06-index-tim-kiem-va-sap-xep.sql
+-- Giữ file này làm ghi chú giải thích vì sao cần pg_trgm.
 -- =============================================================================
 -- Chạy trên Supabase SQL Editor (hoặc migration) sau khi rà đúng tên bảng/view
 -- thực tế. Điều chỉnh schema (public) và tên object theo DB của bạn.

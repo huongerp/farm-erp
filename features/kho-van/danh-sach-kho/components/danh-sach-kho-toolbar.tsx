@@ -45,6 +45,7 @@ const DanhSachKhoToolbar: React.FC<Props> = ({
   const toggleColumn = useKhoStore((s) => s.toggleColumn);
   const reorderColumns = useKhoStore((s) => s.reorderColumns);
   const resetColumns = useKhoStore((s) => s.resetColumns);
+  const resetColumnWidths = useKhoStore((s) => s.resetColumnWidths);
 
   const activeFilterCount = useMemo(
     () =>
@@ -200,13 +201,13 @@ const DanhSachKhoToolbar: React.FC<Props> = ({
       mobileActions={mobileActions}
       onAdd={canCreate ? onAdd : undefined}
       showBack
-      searchPlaceholder={t('kho.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       columns={columns}
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
+      onResetColumnWidths={resetColumnWidths}
     />
   );
 };

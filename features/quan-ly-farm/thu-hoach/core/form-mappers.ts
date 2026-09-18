@@ -3,15 +3,20 @@ import { THU_HOACH_DAY_SUFFIXES } from './types';
 import type { ThuHoachKeHoachFormValues, ThuHoachThucTeFormValues } from './schema';
 
 /** Chi nhánh từ bản ghi thu hoạch gần nhất do cùng user tạo (theo tg_tao). */
+/** Chỉ cần bốn trường này để đoán chi nhánh người dùng hay nhập. */
+export type PhieuTomTatChiNhanh = Pick<FarmThuHoach, 'id_nguoi_tao' | 'id_chi_nhanh' | 'ten_chi_nhanh'> & {
+  tg_tao: string | null;
+};
+
 export function getPreferredBranchFromUserLastRecords(
-  rows: FarmThuHoach[],
+  rows: PhieuTomTatChiNhanh[],
   userId: string | null | undefined
 ): { id_chi_nhanh: string; ten_chi_nhanh: string } | null {
   if (userId == null || userId === '') return null;
   const uid = String(userId);
   const mine = rows.filter((r) => r.id_nguoi_tao != null && String(r.id_nguoi_tao) === uid);
   if (mine.length === 0) return null;
-  mine.sort((a, b) => new Date(b.tg_tao).getTime() - new Date(a.tg_tao).getTime());
+  mine.sort((a, b) => new Date(b.tg_tao ?? 0).getTime() - new Date(a.tg_tao ?? 0).getTime());
   const top = mine[0];
   if (!top.id_chi_nhanh) return null;
   return {
@@ -21,12 +26,15 @@ export function getPreferredBranchFromUserLastRecords(
 }
 
 /** Bản ghi đã tồn tại cùng chi nhánh + năm + tuần (dùng cảnh báo khi tạo mới, không chặn). */
-export function findThuHoachDuplicateByBranchYearWeek(
-  rows: FarmThuHoach[],
+/** Chỉ cần bốn trường này để biết một tuần × chi nhánh đã có phiếu hay chưa. */
+export type PhieuTomTatTrung = Pick<FarmThuHoach, 'id' | 'nam' | 'tuan' | 'id_chi_nhanh' | 'ten_chi_nhanh'>;
+
+export function findThuHoachDuplicateByBranchYearWeek<T extends PhieuTomTatTrung>(
+  rows: T[],
   idChiNhanh: string,
   nam: number,
   tuan: number
-): FarmThuHoach | undefined {
+): T | undefined {
   if (!idChiNhanh) return undefined;
   return rows.find(
     (r) =>

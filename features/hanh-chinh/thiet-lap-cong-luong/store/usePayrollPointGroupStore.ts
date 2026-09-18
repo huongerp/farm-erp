@@ -6,7 +6,7 @@ export interface PayrollPointGroupFilters {
   type: string[];
 }
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'ma', label: i18n.t('payrollIp.pointGroups.store.maCol'), visible: true, minWidth: 140, order: 0 },
   { id: 'ten', label: i18n.t('payrollIp.pointGroups.store.tenCol'), visible: true, minWidth: 220, order: 1 },
   { id: 'loai', label: i18n.t('payrollIp.pointGroups.store.loaiCol'), visible: true, minWidth: 120, order: 2 },
@@ -23,5 +23,6 @@ const initialFilters: PayrollPointGroupFilters = {
 
 export const usePayrollPointGroupStore = createGenericStore<PayrollPointGroupFilters>(
   initialFilters,
-  DEFAULT_COLUMNS
+  DEFAULT_COLUMNS,
+  'table-thiet-lap-cong-luong-payroll-point-group'
 );

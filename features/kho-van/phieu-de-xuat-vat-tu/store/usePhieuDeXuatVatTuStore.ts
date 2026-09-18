@@ -12,7 +12,7 @@ export interface PhieuDeXuatVatTuFilters {
   nguoiDuyetIds: string[];
 }
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'so_phieu', label: i18n.t('phieuDeXuatVatTu.store.soPhieuCol'), visible: true, minWidth: 130, maxWidth: 180, order: 0 },
   { id: 'ngay', label: i18n.t('phieuDeXuatVatTu.store.ngayCol'), visible: true, minWidth: 110, maxWidth: 140, order: 1 },
   { id: 'ngay_can', label: i18n.t('phieuDeXuatVatTu.store.ngayCanCol'), visible: true, minWidth: 110, maxWidth: 140, order: 2 },
@@ -39,5 +39,6 @@ const initialFilters: PhieuDeXuatVatTuFilters = {
 
 export const usePhieuDeXuatVatTuStore = createGenericStore<PhieuDeXuatVatTuFilters>(
   initialFilters,
-  DEFAULT_COLUMNS
+  DEFAULT_COLUMNS,
+  'table-phieu-de-xuat-vat-tu'
 );

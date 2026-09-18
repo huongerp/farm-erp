@@ -1,32 +1,33 @@
 import { useMemo, useState } from 'react';
 import type { DateRangeValue } from '../../../../components/ui/DateRangePicker';
 import { useEmployeeBranchModuleScope } from '../../../he-thong/nhan-vien/hooks/use-employee-branch-module-scope';
-import { useBaoCaoNhanCongList } from '../../bao-cao-nhan-cong/hooks/use-bao-cao-nhan-cong';
-import { useBaoCaoSoCheList } from '../../bao-cao-so-che/hooks/use-bao-cao-so-che';
-import { useDuBaoSlDongThungList } from '../../du-bao-sl-dong-thung/hooks/use-du-bao-sl-dong-thung';
+import { useQuery } from '@tanstack/react-query';
+import { fetchAllBaoCaoNhanCongForListQuery } from '../../bao-cao-nhan-cong/services/bao-cao-nhan-cong-service';
+import { fetchAllBaoCaoSoCheForListQuery } from '../../bao-cao-so-che/services/bao-cao-so-che-service';
+import { fetchAllDuBaoSlDongThungForListQuery } from '../../du-bao-sl-dong-thung/services/du-bao-sl-dong-thung-service';
 import {
   mergeThongKeSanXuatRows,
   filterThongKeSanXuatRows,
   computeThongKeSanXuatSummary,
   resolveDateRange,
+  DEFAULT_DATE_PRESET,
   countActiveFilters,
   getChiNhanhOptions,
 } from '../core/compute';
 
+/**
+ * Mặc định "tháng này" thay vì "tất cả": màn này gộp ba nguồn dữ liệu, mở ra mà
+ * kéo về toàn bộ lịch sử thì chậm và gần như không ai đọc hết. Chọn "Tất cả"
+ * trong bộ lọc vẫn tải đủ như trước.
+ */
 const DEFAULT_DATE_RANGE: DateRangeValue = {
-  preset: 'all',
+  preset: DEFAULT_DATE_PRESET,
   customStart: '',
   customEnd: '',
 };
 
 export function useThongKeSanXuat() {
-  const bcncQuery = useBaoCaoNhanCongList();
-  const bcscQuery = useBaoCaoSoCheList();
-  const dbdtQuery = useDuBaoSlDongThungList();
   const viewScope = useEmployeeBranchModuleScope('quan-ly-farm/thong-ke-san-xuat');
-
-  const isLoading = bcncQuery.isLoading || bcscQuery.isLoading || dbdtQuery.isLoading;
-  const isError = bcncQuery.isError || bcscQuery.isError || dbdtQuery.isError;
 
   // ── Filter state ──────────────────────────────────────────────────────────
   const [dateRange, setDateRange] = useState<DateRangeValue>(DEFAULT_DATE_RANGE);
@@ -41,6 +42,52 @@ export function useThongKeSanXuat() {
     () => resolveDateRange(dateRange.preset, dateRange.customStart, dateRange.customEnd),
     [dateRange]
   );
+
+  /**
+   * Khoảng ngày + phạm vi chi nhánh đẩy xuống PostgREST: trước đây màn này kéo
+   * TOÀN BỘ ba bảng cha kèm năm bảng con về trình duyệt rồi mới lọc.
+   */
+  const nguonQuery = useMemo(
+    () => ({
+      page: 0,
+      pageSize: 1000,
+      searchTerm: '',
+      viewAll: viewScope.viewAll,
+      allowedBranchIds: viewScope.allowedBranchIds,
+      nam: [],
+      thang: [],
+      trangThai: [],
+      idChiNhanh: chiNhanhIds,
+      ngayFrom: dateFrom,
+      ngayTo: dateTo,
+      sortColumn: null,
+      sortDirection: null,
+    }),
+    [viewScope.viewAll, viewScope.allowedBranchIds, chiNhanhIds, dateFrom, dateTo]
+  );
+
+  const enabled = !viewScope.isLoading;
+  const bcncQuery = useQuery({
+    queryKey: ['thongKeSanXuat', 'bcnc', nguonQuery],
+    queryFn: () => fetchAllBaoCaoNhanCongForListQuery(nguonQuery),
+    enabled,
+    staleTime: 1000 * 60 * 2,
+  });
+  const bcscQuery = useQuery({
+    queryKey: ['thongKeSanXuat', 'bcsc', nguonQuery],
+    queryFn: () => fetchAllBaoCaoSoCheForListQuery({ ...nguonQuery, donViTinh: [] }),
+    enabled,
+    staleTime: 1000 * 60 * 2,
+  });
+  const dbdtQuery = useQuery({
+    queryKey: ['thongKeSanXuat', 'dbdt', nguonQuery],
+    queryFn: () => fetchAllDuBaoSlDongThungForListQuery(nguonQuery),
+    enabled,
+    staleTime: 1000 * 60 * 2,
+  });
+
+  const isLoading = bcncQuery.isLoading || bcscQuery.isLoading || dbdtQuery.isLoading;
+  const isError = bcncQuery.isError || bcscQuery.isError || dbdtQuery.isError;
 
   // ── Merged rows (unfiltered) ──────────────────────────────────────────────
   const allRows = useMemo(

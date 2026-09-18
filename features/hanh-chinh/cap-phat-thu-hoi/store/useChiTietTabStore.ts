@@ -5,7 +5,7 @@ export interface ChiTietTabFilters {
   loaiPhieu: string[];
 }
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'ma_phieu', label: i18n.t('capPhatThuHoi.store.maPhieuCol'), visible: true, minWidth: 100, maxWidth: 140, order: 0 },
   { id: 'loai_phieu', label: i18n.t('capPhatThuHoi.store.loaiCol'), visible: true, minWidth: 90, maxWidth: 140, order: 1 },
   { id: 'ngay_thuc_hien', label: i18n.t('capPhatThuHoi.store.ngayCol'), visible: true, minWidth: 90, maxWidth: 120, order: 2 },
@@ -25,5 +25,6 @@ const initialFilters: ChiTietTabFilters = {
 
 export const useChiTietTabStore = createGenericStore<ChiTietTabFilters>(
   initialFilters,
-  DEFAULT_COLUMNS
+  DEFAULT_COLUMNS,
+  'table-cap-phat-thu-hoi-chi-tiet-tab'
 );

@@ -46,6 +46,7 @@ const EmployeeToolbar: React.FC<Props> = ({
   const toggleColumn = useEmployeeStore((s) => s.toggleColumn);
   const reorderColumns = useEmployeeStore((s) => s.reorderColumns);
   const resetColumns = useEmployeeStore((s) => s.resetColumns);
+  const resetColumnWidths = useEmployeeStore((s) => s.resetColumnWidths);
   const selectedIds = useEmployeeStore((s) => s.selectedIds);
   const clearSelection = useEmployeeStore((s) => s.clearSelection);
 
@@ -216,8 +217,8 @@ const EmployeeToolbar: React.FC<Props> = ({
         onToggleColumn={toggleColumn}
         onReorderColumns={reorderColumns}
         onResetColumns={resetColumns}
+        onResetColumnWidths={resetColumnWidths}
         showBack
-        searchPlaceholder={t('common.searchPlaceholder')}
         activeFilterCount={activeFilterCount}
         onClearAllFilters={handleClearAllFilters}
     />

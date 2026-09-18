@@ -25,6 +25,7 @@ import {
   defaultFormValues,
   farmBaoCaoNhanCongToForm,
   findBaoCaoDuplicateByBranchAndDate,
+  type PhieuTomTatTrung,
 } from '../core/form-mappers';
 import BaoCaoNhanCongChuyenSubEditor from './BaoCaoNhanCongChuyenSubEditor';
 import {
@@ -81,7 +82,8 @@ interface Props {
   initialData?: FarmBaoCaoNhanCong | null;
   preferredBranch?: { id_chi_nhanh: string; ten_chi_nhanh: string } | null;
   /** Danh sách đã tải — dùng chặn trùng cặp (ngày, chi nhánh). */
-  existingList: FarmBaoCaoNhanCong[];
+  /** Danh sách tóm tắt để chặn trùng ngày × chi nhánh (xem service `getBaoCaoNhanCongTomTat`). */
+  existingList: PhieuTomTatTrung[];
   onClose: () => void;
 }
 
@@ -376,7 +378,6 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
                   value={field.value ?? ''}
                   onChange={(v) => field.onChange(v ? String(v) : '')}
                   placeholder={t('baoCaoNhanCong.form.branchPlaceholder')}
-                  searchPlaceholder={t('baoCaoNhanCong.form.branchPlaceholder')}
                   required
                   error={errors.id_chi_nhanh?.message as string | undefined}
                 />

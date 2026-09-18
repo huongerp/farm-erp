@@ -15,7 +15,7 @@ import {
   khoIdFromColumnId,
   mergeWarehouseColumns,
 } from '../../../kho-van/ton-kho/store/useTonKhoStore';
-import { useTonKhoPTByProductStore } from '../store/useTonKhoPTByProductStore';
+import { useTonKhoPTByProductStore, DEFAULT_COLUMNS } from '../store/useTonKhoPTByProductStore';
 import { useSearchInputCommit } from '../../../../lib/hooks/use-search-input-commit';
 import { useListWithFilter } from '../../../../lib/hooks';
 import { getColumnCellStyle } from '../../../../store/createGenericStore';
@@ -27,6 +27,10 @@ import ListPageSkeleton from '../../../../components/shared/ListPageSkeleton';
 import TablePaginationFooter from '../../../../components/shared/TablePaginationFooter';
 import TonKhoPTProductDetail from './TonKhoPTProductDetail';
 import { cn, formatNumberVN } from '../../../../lib/utils';
+import { createListSearchMatcher } from '../../../../lib/list-search-matcher';
+
+/** Ô tìm kiếm quét MỌI cột của bảng, bỏ dấu tiếng Việt — xem lib/list-search-matcher.ts. */
+const khopTimKiem = createListSearchMatcher({ columns: DEFAULT_COLUMNS });
 
 const TonSanPhamPTTab: React.FC = () => {
   const { t } = useTranslation();
@@ -46,6 +50,7 @@ const TonSanPhamPTTab: React.FC = () => {
   const toggleColumn = useTonKhoPTByProductStore((s) => s.toggleColumn);
   const reorderColumns = useTonKhoPTByProductStore((s) => s.reorderColumns);
   const resetColumns = useTonKhoPTByProductStore((s) => s.resetColumns);
+  const resetColumnWidths = useTonKhoPTByProductStore((s) => s.resetColumnWidths);
   const setColumns = useTonKhoPTByProductStore((s) => s.setColumns);
 
   const { inputValue: searchInput, setInputValue: setSearchInput } = useSearchInputCommit({
@@ -109,13 +114,7 @@ const TonSanPhamPTTab: React.FC = () => {
   const aggregated = useMemo(() => aggregateTonKhoPTByProduct(flatFiltered), [flatFiltered]);
 
   const filterFn = useCallback((item: TonKhoPTProductAgg, term: string, _f: TonKhoFilters) => {
-    const q = term.trim().toLowerCase();
-    if (!q) return true;
-    return (
-      item.ma_hang.toLowerCase().includes(q) ||
-      item.ten_hang.toLowerCase().includes(q) ||
-      (item.ten_danh_muc ?? '').toLowerCase().includes(q)
-    );
+    return khopTimKiem(item, term);
   }, []);
 
   const filteredList = useListWithFilter(aggregated, searchTerm, filters, filterFn);
@@ -285,11 +284,11 @@ const TonSanPhamPTTab: React.FC = () => {
         <TonKhoToolbar
           searchTerm={searchInput}
           onSearchChange={setSearchInput}
-          searchPlaceholder={t('tonKhoPhanThuoc.byProduct.searchPlaceholder')}
           columns={columns}
           onToggleColumn={toggleColumn}
           onReorderColumns={reorderColumns}
           onResetColumns={resetColumns}
+          onResetColumnWidths={resetColumnWidths}
           filters={renderFilters}
           activeFilterCount={activeFilterCount}
           onClearAllFilters={handleClearAllFilters}

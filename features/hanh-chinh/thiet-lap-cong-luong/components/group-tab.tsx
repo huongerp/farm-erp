@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import i18n from '../../../../lib/i18n';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
 import PayrollFormGroupToolbar from './group-toolbar';
@@ -10,7 +11,7 @@ import {
   useDeletePayrollAdminFormGroups,
   useUpdatePayrollAdminFormGroupStatus,
 } from '../hooks/use-payroll-form-group';
-import { usePayrollFormGroupStore } from '../store/usePayrollFormGroupStore';
+import { usePayrollFormGroupStore, DEFAULT_COLUMNS } from '../store/usePayrollFormGroupStore';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_YES, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
 import { useListWithFilter } from '../../../../lib/hooks';
@@ -19,6 +20,14 @@ import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { PayrollAdminFormGroup } from '../core/types';
 import { getAdminFormTypeLabel } from '../core/constants';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
+import { createListSearchMatcher } from '../../../../lib/list-search-matcher';
+
+/** Ô tìm kiếm quét MỌI cột của bảng, bỏ dấu tiếng Việt — xem lib/list-search-matcher.ts. */
+const khopTimKiem = createListSearchMatcher<PayrollAdminFormGroup>({
+  columns: DEFAULT_COLUMNS,
+  // Nhãn tiếng Việt của loại chỉ có sau khi dịch — không nằm trên bản ghi.
+  getCellText: (colId, item) => (colId === 'loai_phieu' ? getAdminFormTypeLabel(item.loai_phieu, i18n.t.bind(i18n)) : ''),
+});
 
 const PayrollFormGroupTab: React.FC = () => {
   const { t } = useTranslation();
@@ -47,13 +56,7 @@ const PayrollFormGroupTab: React.FC = () => {
 
   const filterFn = useCallback(
     (item: PayrollAdminFormGroup, term: string, f: typeof filters) => {
-      const searchLower = term.toLowerCase();
-      const typeLabel = getAdminFormTypeLabel(item.loai_phieu, t).toLowerCase();
-      const matchesSearch = Boolean(
-        !term ||
-        typeLabel.includes(searchLower) ||
-        (item.ghi_chu && item.ghi_chu.toLowerCase().includes(searchLower))
-      );
+      const matchesSearch = khopTimKiem(item, term);
       const statusKey = item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? 'Active' : 'Inactive';
       const matchesStatus = f.status.length === 0 || f.status.includes(statusKey);
       const matchesType = f.type.length === 0 || f.type.includes(item.loai_phieu);

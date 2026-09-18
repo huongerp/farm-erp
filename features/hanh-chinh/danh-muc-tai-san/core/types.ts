@@ -42,7 +42,6 @@ export interface TaiSan {
   /** URL ảnh tài sản (mẫu hoặc upload) */
   hinh_anh?: string | null;
   ghi_chu?: string | null;
-  trang_thai: 0 | 1;
   tg_tao: string;
   tg_cap_nhat: string;
 }
@@ -65,5 +64,4 @@ export interface TaiSanFormState {
   nguyen_gia?: number | null;
   ngay_bat_dau_trich_khau_hao?: string | null;
   ghi_chu?: string | null;
-  trang_thai: number;
 }

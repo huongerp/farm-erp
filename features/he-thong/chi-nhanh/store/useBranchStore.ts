@@ -6,7 +6,7 @@ export interface BranchFilters {
   status: string[];
 }
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'ten_chi_nhanh', label: i18n.t('branch.store.nameCol'), visible: true, minWidth: 220, order: 0 },
   { id: 'ma_chi_nhanh', label: i18n.t('branch.store.codeCol'), visible: true, minWidth: 140, order: 1 },
   { id: 'dia_chi', label: i18n.t('branch.store.addressCol'), visible: true, minWidth: 260, order: 2 },
@@ -21,5 +21,6 @@ const initialFilters: BranchFilters = {
 
 export const useBranchStore = createGenericStore<BranchFilters>(
   initialFilters,
-  DEFAULT_COLUMNS
+  DEFAULT_COLUMNS,
+  'table-chi-nhanh-branch'
 );

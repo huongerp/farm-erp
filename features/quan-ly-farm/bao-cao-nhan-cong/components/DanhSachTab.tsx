@@ -4,14 +4,16 @@ import { toast } from 'sonner';
 import { AnimatePresence } from 'framer-motion';
 import { Lock, Unlock } from 'lucide-react';
 import {
-  useBaoCaoNhanCongList,
+  useBaoCaoNhanCongPage,
+  useBaoCaoNhanCongTomTat,
   useBaoCaoNhanCongById,
   useDeleteBaoCaoNhanCong,
   useDeleteBaoCaoNhanCongMany,
 } from '../hooks/use-bao-cao-nhan-cong';
 import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
-import { useBaoCaoNhanCongStore, type BaoCaoNhanCongFilters } from '../store/useBaoCaoNhanCongStore';
-import { useListWithFilter } from '../../../../lib/hooks';
+import { useBaoCaoNhanCongStore } from '../store/useBaoCaoNhanCongStore';
+import { fetchAllBaoCaoNhanCongForListQuery } from '../services/bao-cao-nhan-cong-service';
+import type { BaoCaoNhanCongListServerQuery } from '../services/bao-cao-nhan-cong-list-query';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL, CONFIRM_YES } from '../../../../lib/button-labels';
 import type { FarmBaoCaoNhanCong } from '../core/types';
@@ -51,12 +53,15 @@ const DanhSachTab: React.FC = () => {
     resetState,
     selectedIds,
     columns,
+    resizeColumn,
     clearSelection,
     toggleSelection,
     toggleAllSelection,
     pagination,
     setPage,
     setPageSize,
+    sort,
+    setSort,
   } = useBaoCaoNhanCongStore();
 
   const [showForm, setShowForm] = useState(false);
@@ -65,17 +70,47 @@ const DanhSachTab: React.FC = () => {
   const [openedFormFromDetailId, setOpenedFormFromDetailId] = useState<string | null>(null);
   const [showExport, setShowExport] = useState(false);
 
-  const { data: allList = [], isLoading } = useBaoCaoNhanCongList();
   const viewScope = useBaoCaoNhanCongViewScope();
-  const scopedList = useMemo(() => {
-    if (viewScope.isLoading || viewScope.viewAll) return allList;
-    return allList.filter((item) => viewScope.allowedBranchIds.includes(item.id_chi_nhanh ?? ''));
-  }, [allList, viewScope]);
+
+  /**
+   * Bộ lọc gửi thẳng xuống PostgREST: màn này chỉ tải ĐÚNG một trang thay vì cả
+   * bảng cha + hai bảng con như trước.
+   */
+  const listServerQuery: BaoCaoNhanCongListServerQuery = useMemo(
+    () => ({
+      page: pagination.page - 1,
+      pageSize: pagination.pageSize,
+      searchTerm,
+      viewAll: viewScope.viewAll,
+      allowedBranchIds: viewScope.allowedBranchIds,
+      nam: filters.nam ?? [],
+      thang: filters.thang ?? [],
+      trangThai: filters.trang_thai ?? [],
+      idChiNhanh: filters.id_chi_nhanh ?? [],
+      sortColumn: sort.column,
+      sortDirection: sort.direction,
+    }),
+    [pagination.page, pagination.pageSize, searchTerm, viewScope.viewAll, viewScope.allowedBranchIds, filters, sort]
+  );
+
+  const pageQuery = useBaoCaoNhanCongPage(listServerQuery, !viewScope.isLoading);
+  const pageList = pageQuery.data?.data ?? [];
+  const totalCount = pageQuery.data?.totalCount ?? 0;
+  const isLoading = !pageQuery.data && pageQuery.isPending;
+  const isFetching = !!pageQuery.data && pageQuery.isFetching;
+
+  /** Bản tóm tắt toàn bộ (7 cột): chip lọc + số đếm, gợi ý chi nhánh, chặn trùng ngày. */
+  const { data: tomTatList = [] } = useBaoCaoNhanCongTomTat(
+    viewScope.viewAll,
+    viewScope.allowedBranchIds,
+    !viewScope.isLoading
+  );
+
   const { data: branches = [] } = useBranches();
   const user = useAuthStore((s) => s.user);
   const preferredBranch = useMemo(
-    () => getPreferredBranchFromUserLastRecords(allList, user?.id),
-    [allList, user?.id]
+    () => getPreferredBranchFromUserLastRecords(tomTatList, user?.id),
+    [tomTatList, user?.id]
   );
   const { data: viewingFull } = useBaoCaoNhanCongById(viewingItem?.id);
   const { data: editingFull } = useBaoCaoNhanCongById(editingItem?.id);
@@ -83,36 +118,45 @@ const DanhSachTab: React.FC = () => {
   const deleteManyMutation = useDeleteBaoCaoNhanCongMany();
   const trangThaiManyMutation = useUpdateBaoCaoNhanCongTrangThaiMany();
 
-  const filterFn = useCallback((item: FarmBaoCaoNhanCong, term: string, f: BaoCaoNhanCongFilters) => {
-    const q = term.trim().toLowerCase();
-    const matchesSearch =
-      !q ||
-      (item.ten_chi_nhanh?.toLowerCase().includes(q) ?? false) ||
-      (item.ten_nguoi_tao?.toLowerCase().includes(q) ?? false) ||
-      (item.ghi_chu?.toLowerCase().includes(q) ?? false) ||
-      String(item.ngay).includes(q);
-    const matchesBranch =
-      (f.id_chi_nhanh?.length ?? 0) === 0 ||
-      (item.id_chi_nhanh != null && (f.id_chi_nhanh ?? []).includes(item.id_chi_nhanh));
-    const y = item.ngay?.slice(0, 4) ?? '';
-    const ym = item.ngay?.slice(0, 7) ?? '';
-    const matchesNam = (f.nam?.length ?? 0) === 0 || (f.nam ?? []).includes(y);
-    const matchesThang = (f.thang?.length ?? 0) === 0 || (f.thang ?? []).includes(ym);
-    const matchesTrangThai = (f.trang_thai?.length ?? 0) === 0 || (f.trang_thai ?? []).includes(item.trang_thai ?? '');
-    return matchesSearch && matchesBranch && matchesNam && matchesThang && matchesTrangThai;
-  }, []);
-
-  const filteredList = useListWithFilter(scopedList, searchTerm, filters, filterFn);
-
   const exportColumns = useMemo(() => getExportColumnsBaoCaoNhanCongList(t), [t]);
   const exportMapFn = useCallback(
     (item: FarmBaoCaoNhanCong) => mapFarmBaoCaoNhanCongListRow(item, t),
     [t]
   );
+
+  /**
+   * Xuất file cần TẤT CẢ bản ghi khớp bộ lọc, không chỉ trang đang xem — nên chỉ
+   * tải khi người dùng thực sự mở hộp thoại Xuất.
+   */
+  const [exportRows, setExportRows] = useState<FarmBaoCaoNhanCong[]>([]);
+  const [exportLoading, setExportLoading] = useState(false);
+  useEffect(() => {
+    if (!showExport) {
+      setExportRows([]);
+      setExportLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setExportLoading(true);
+    fetchAllBaoCaoNhanCongForListQuery(listServerQuery)
+      .then((rows) => {
+        if (!cancelled) setExportRows(rows);
+      })
+      .catch(() => {
+        if (!cancelled) setExportRows([]);
+      })
+      .finally(() => {
+        if (!cancelled) setExportLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [showExport, listServerQuery]);
+
   const { exportData, paginatedData: paginatedExportData, selectedData: selectedExportData } =
     useExportData({
-      data: filteredList,
-      isOpen: showExport,
+      data: exportRows,
+      isOpen: showExport && !exportLoading,
       mapFn: exportMapFn,
       pagination,
       selectedIds,
@@ -120,32 +164,29 @@ const DanhSachTab: React.FC = () => {
     });
 
   const handleExport = useCallback(() => {
-    if (filteredList.length === 0) {
+    if (totalCount === 0) {
       toast.warning(t('baoCaoNhanCong.noExportData'));
       return;
     }
     setShowExport(true);
-  }, [filteredList.length, t]);
+  }, [totalCount, t]);
 
   useEffect(() => {
     return () => resetState();
   }, [resetState]);
 
-  useEffect(() => {
-    setPage(1);
-  }, [filteredList.length, setPage]);
-
-  const maxPage = Math.max(1, Math.ceil(filteredList.length / pagination.pageSize));
+  // Xoá bớt bản ghi (xoá / đổi bộ lọc) làm tổng số giảm: lùi về trang cuối còn dữ liệu.
+  const maxPage = Math.max(1, Math.ceil(totalCount / pagination.pageSize));
   useEffect(() => {
     if (pagination.page > maxPage) setPage(maxPage);
   }, [pagination.page, pagination.pageSize, maxPage, setPage]);
 
+  // Phiếu đang mở vừa được cập nhật ở trang hiện tại → đồng bộ lại drawer chi tiết.
   useEffect(() => {
     if (!viewingItem) return;
-    const fresh = allList.find((p) => p.id === viewingItem.id);
+    const fresh = pageList.find((p) => p.id === viewingItem.id);
     if (fresh && fresh !== viewingItem) setViewingItem(fresh);
-    if (!fresh) setViewingItem(null);
-  }, [allList, viewingItem]);
+  }, [pageList, viewingItem]);
 
   const handleEdit = (item: FarmBaoCaoNhanCong, fromDetail = false) => {
     if (!canEditRow(item)) {
@@ -169,13 +210,13 @@ const DanhSachTab: React.FC = () => {
     setEditingItem(null);
     setOpenedFormFromDetailId(null);
     if (wasFromDetail && detailId) {
-      const fresh = allList.find((r) => r.id === detailId) ?? null;
+      const fresh = pageList.find((r) => r.id === detailId) ?? null;
       setViewingItem(fresh);
     }
   };
 
   const handleDelete = (id: string) => {
-    const item = allList.find((r) => r.id === id);
+    const item = pageList.find((r) => r.id === id);
     if (!item || !canDeleteRow(item)) {
       toast.message(t('baoCaoNhanCong.toast.deleteNotAllowed'));
       return;
@@ -198,7 +239,7 @@ const DanhSachTab: React.FC = () => {
   const handleDeleteMany = () => {
     const ids = Array.from(selectedIds);
     const allowedIds = ids.filter((id) => {
-      const item = allList.find((r) => r.id === id);
+      const item = pageList.find((r) => r.id === id);
       return item && canDeleteRow(item);
     });
     if (allowedIds.length === 0) {
@@ -229,7 +270,7 @@ const DanhSachTab: React.FC = () => {
   const handleToggleTrangThaiMany = (trangThai: TrangThaiBaoCaoNhanCongPhieu) => {
     const ids = Array.from(selectedIds);
     const allowedIds = ids.filter((id) => {
-      const item = allList.find((r) => r.id === id);
+      const item = pageList.find((r) => r.id === id);
       return item && item.trang_thai !== trangThai;
     });
     if (allowedIds.length === 0) {
@@ -279,10 +320,10 @@ const DanhSachTab: React.FC = () => {
     if (!canDelete) return false;
     if (selectedIds.size === 0) return true;
     return Array.from(selectedIds).some((id) => {
-      const item = allList.find((r) => r.id === id);
+      const item = pageList.find((r) => r.id === id);
       return item && canDeleteRow(item);
     });
-  }, [canDelete, selectedIds, allList, canDeleteRow]);
+  }, [canDelete, selectedIds, pageList, canDeleteRow]);
 
   const viewedRow = viewingFull ?? viewingItem;
   const detailCanUpdate = viewedRow ? canEditRow(viewedRow) : false;
@@ -292,7 +333,7 @@ const DanhSachTab: React.FC = () => {
   return (
     <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
       <BaoCaoNhanCongToolbar
-        data={filteredList}
+        data={tomTatList}
         branches={branches}
         selectedCount={selectedIds.size}
         onAdd={() => {
@@ -308,8 +349,13 @@ const DanhSachTab: React.FC = () => {
       />
       <div className="flex-1 min-h-0 flex flex-col px-4 pb-4 pt-1">
         <BaoCaoNhanCongList
-          data={filteredList}
+          data={pageList}
+          totalRecordsOverride={totalCount}
           columns={columns}
+          onResizeColumn={resizeColumn}
+          sort={sort}
+          onSort={setSort}
+          isFetching={isFetching}
           selectedIds={selectedIds}
           onToggleSelection={toggleSelection}
           onToggleAllSelection={toggleAllSelection}
@@ -346,7 +392,7 @@ const DanhSachTab: React.FC = () => {
             branches={branches}
             initialData={editingFull ?? editingItem}
             preferredBranch={editingItem ? undefined : preferredBranch}
-            existingList={allList}
+            existingList={tomTatList}
             onClose={handleCloseForm}
           />
         )}
@@ -356,7 +402,7 @@ const DanhSachTab: React.FC = () => {
         {viewingItem && !showForm && (
           <BaoCaoNhanCongDetail
             data={viewingFull ?? viewingItem}
-            existingList={allList}
+            existingList={tomTatList}
             onClose={() => setViewingItem(null)}
             onEdit={detailCanUpdate ? (item) => handleEdit(item, true) : undefined}
             onDelete={detailCanDelete ? handleDelete : undefined}

@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import type { PhieuTomTatTrung } from '../core/form-mappers';
 import { useTranslation } from 'react-i18next';
 import { Copy, ChevronDown, Boxes, Layers, Lock, MessageSquare, Printer, Unlock, Users, Calculator, Package } from 'lucide-react';
 import type { FarmBaoCaoSoChe } from '../core/types';
@@ -54,7 +55,8 @@ import DetailDrawerFooter from '../../../../components/shared/DetailDrawerFooter
 
 interface Props {
   data: FarmBaoCaoSoChe;
-  existingList: FarmBaoCaoSoChe[];
+  /** Danh sách tóm tắt để chặn trùng ngày × chi nhánh (xem `getBaoCaoSoCheTomTat`). */
+  existingList: PhieuTomTatTrung[];
   onClose: () => void;
   onEdit?: (item: FarmBaoCaoSoChe) => void;
   onDelete?: (id: string) => void;

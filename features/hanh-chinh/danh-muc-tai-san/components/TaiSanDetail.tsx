@@ -80,8 +80,6 @@ const TaiSanDetail: React.FC<Props> = ({
     setGhiChuOpen(false);
   }, [data, ghiChuValue, onUpdateGhiChu]);
 
-  const isActive = data.trang_thai === 1;
-
   /** URL trang in hồ sơ tài sản (mở tab mới), dùng HashRouter */
   const getHoSoTaiSanPreviewUrl = (id: string) =>
     `/ho-so-tai-san/${encodeURIComponent(id)}`;
@@ -199,15 +197,6 @@ const TaiSanDetail: React.FC<Props> = ({
               {data.ma_tai_san} · {data.ten_nhom || '—'}
             </p>
             <div className="mt-1.5 flex flex-wrap items-center gap-2">
-              {isActive ? (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium border border-primary/20">
-                  {t('common.active')}
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-xs font-medium border border-border">
-                  {t('common.inactive')}
-                </span>
-              )}
               {data.ten_trang_thai && (
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-muted/50 text-foreground text-xs font-medium border border-border">
                   {data.ten_trang_thai}

@@ -17,6 +17,7 @@ import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';
 import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
 import GenericSubTableSection from '../../../../components/shared/GenericSubTableSection';
+import ThuChiLienQuanSection from '../../../tai-chinh/thu-chi-quy/components/shared/ThuChiLienQuanSection';
 
 const PREVIEW_BASE = '/mua-hang/don-dat-hang/preview';
 
@@ -43,9 +44,11 @@ interface Props {
   onPrint?: (item: DonDatHang) => void;
   /** Mở form phiếu nhập kho với dữ liệu từ đơn (tab Mua hàng). */
   onCreatePhieuNhapKho?: (item: DonDatHang) => void;
+  /** Chi nhánh của kho nhận — prefill khi tạo phiếu thu chi quỹ liên quan. */
+  idChiNhanhKhoNhan?: string | null;
 }
 
-const DonDatHangDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onApprove, onChangeStatus, onPrint, onCreatePhieuNhapKho }) => {
+const DonDatHangDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onApprove, onChangeStatus, onPrint, onCreatePhieuNhapKho, idChiNhanhKhoNhan }) => {
   const { t } = useTranslation();
   const canApprove = data.trang_thai === TRANG_THAI_CHO_DUYET && !!onApprove;
   const [showApprovePopup, setShowApprovePopup] = useState(false);
@@ -230,6 +233,16 @@ const DonDatHangDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
             </>
           )}
         </GenericSubTableSection>
+
+        <ThuChiLienQuanSection
+          loaiChungTu="don_dat_hang"
+          idChungTu={data.id}
+          soChungTu={data.so_po}
+          idChiNhanhMacDinh={idChiNhanhKhoNhan ?? null}
+          ngayMacDinh={data.ngay_dat}
+          dienGiaiMacDinh={`${t('donDatHang.detail.thuChiPrefix')} ${data.so_po}`}
+          soTienGoiY={(data.chi_tiet ?? []).reduce((sum, ct) => sum + (ct.thanh_tien ?? 0), 0) || null}
+        />
 
         <DetailSection title={t('donDatHang.detail.systemInfo')} icon={<Calendar size={14} />} variant="muted">
           <DetailFieldGrid>

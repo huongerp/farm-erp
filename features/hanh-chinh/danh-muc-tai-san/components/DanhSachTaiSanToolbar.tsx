@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
+import type { TaiSanTomTat } from '../services/danh-muc-tai-san-service';
 import { useTranslation } from 'react-i18next';
 import { Plus, Tag, Layers, MapPin, FileSpreadsheet, FileDown, ChevronDown } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
@@ -10,14 +11,16 @@ import { useAssetGroups } from '../../thiet-lap-tai-san/hooks/use-nhom-tai-san';
 import { useAssetStorageLocations } from '../../thiet-lap-tai-san/hooks/use-noi-luu';
 import { useAssetStatuses } from '../../thiet-lap-tai-san/hooks/use-trang-thai';
 import { useDanhSachTaiSanFilterCounts } from '../hooks/use-danh-sach-tai-san-filter-counts';
-import type { TaiSan } from '../core/types';
 
 interface Props {
   /** Danh sách tài sản người dùng được xem. Count filter chip đếm trên list này. */
-  items?: TaiSan[];
+  /**
+   * Danh sách TÓM TẮT toàn bộ tài sản (không phải trang đang xem) — chip lọc phải
+   * đếm trên toàn bộ dữ liệu, xem `getTaiSanTomTat`.
+   */
+  items?: TaiSanTomTat[];
   onAdd: () => void;
   onDeleteMany: (ids: string[]) => void;
-  onStatusChangeMany: (ids: string[], status: 0 | 1) => void;
   /** Xuất danh sách hiện tại ra Excel */
   onExportExcel?: () => void;
   /** Xuất danh sách hiện tại ra PDF */
@@ -27,7 +30,7 @@ interface Props {
   canDelete?: boolean;
 }
 
-const DanhSachTaiSanToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onStatusChangeMany, onExportExcel, onExportPDF, canCreate = true, canUpdate = true, canDelete = true }) => {
+const DanhSachTaiSanToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onExportExcel, onExportPDF, canCreate = true, canUpdate = true, canDelete = true }) => {
   const { t } = useTranslation();
   const { searchInput, setSearchInput } = useGenericToolbarSearch(useDanhSachTaiSanStore);
   const filters = useDanhSachTaiSanStore((s) => s.filters);
@@ -36,33 +39,25 @@ const DanhSachTaiSanToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMan
   const toggleColumn = useDanhSachTaiSanStore((s) => s.toggleColumn);
   const reorderColumns = useDanhSachTaiSanStore((s) => s.reorderColumns);
   const resetColumns = useDanhSachTaiSanStore((s) => s.resetColumns);
+  const resetColumnWidths = useDanhSachTaiSanStore((s) => s.resetColumnWidths);
   const selectedIds = useDanhSachTaiSanStore((s) => s.selectedIds);
   const clearSelection = useDanhSachTaiSanStore((s) => s.clearSelection);
   const { data: groups = [] } = useAssetGroups();
   const { data: locations = [] } = useAssetStorageLocations();
   const { data: statuses = [] } = useAssetStatuses();
-  const { statusCounts, nhomCounts, noiLuuCounts, trangThaiCounts } = useDanhSachTaiSanFilterCounts(items, filters);
+  const { nhomCounts, noiLuuCounts, trangThaiCounts } = useDanhSachTaiSanFilterCounts(items, filters);
 
   const selectedCount = selectedIds.size;
   const activeFilterCount =
-    filters.status.length +
     filters.id_nhom.length +
     filters.id_noi_luu.length +
     filters.id_trang_thai.length;
   const handleClearAllFilters = () => {
-    setFilter('status', []);
     setFilter('id_nhom', []);
     setFilter('id_noi_luu', []);
     setFilter('id_trang_thai', []);
   };
 
-  const statusOptions = useMemo(
-    () => [
-      { label: t('common.activeStatus'), value: 'Active', count: statusCounts.Active ?? 0 },
-      { label: t('common.inactiveStatus'), value: 'Inactive', count: statusCounts.Inactive ?? 0 },
-    ],
-    [t, statusCounts]
-  );
   const groupOptions = useMemo(
     () => groups.map((g) => ({ label: g.ten, value: g.id, subLabel: g.ma, count: nhomCounts[g.id] ?? 0 })),
     [groups, nhomCounts]
@@ -78,15 +73,6 @@ const DanhSachTaiSanToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMan
 
   const renderFilters = (
     <>
-      <FilterChipMultiSelect
-        options={statusOptions}
-        value={filters.status}
-        onChange={(val) => setFilter('status', val)}
-        placeholder={t('common.status')}
-        icon={Tag}
-        className="w-full sm:w-[140px]"
-        size="md"
-      />
       <FilterChipMultiSelect
         options={groupOptions}
         value={filters.id_nhom}
@@ -185,12 +171,11 @@ const DanhSachTaiSanToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMan
 
   const filterGroups = useMemo(
     () => [
-      { key: 'status', label: t('common.status'), icon: Tag, options: statusOptions, value: filters.status, onChange: (val: string[]) => setFilter('status', val) },
       { key: 'id_nhom', label: t('danhSachTaiSan.store.nhomCol'), icon: Layers, options: groupOptions, value: filters.id_nhom, onChange: (val: string[]) => setFilter('id_nhom', val) },
       { key: 'id_noi_luu', label: t('danhSachTaiSan.store.noiLuuCol'), icon: MapPin, options: locationOptions, value: filters.id_noi_luu, onChange: (val: string[]) => setFilter('id_noi_luu', val) },
       { key: 'id_trang_thai', label: t('danhSachTaiSan.store.trangThaiCol'), icon: Tag, options: assetStatusOptions, value: filters.id_trang_thai, onChange: (val: string[]) => setFilter('id_trang_thai', val) },
     ],
-    [filters, statusOptions, groupOptions, locationOptions, assetStatusOptions, setFilter, t]
+    [filters, groupOptions, locationOptions, assetStatusOptions, setFilter, t]
   );
 
   return (
@@ -203,15 +188,14 @@ const DanhSachTaiSanToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMan
       filters={renderFilters}
       filterGroups={filterGroups}
       onAdd={canCreate ? onAdd : undefined}
-      searchPlaceholder={t('danhSachTaiSan.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       onDeleteMany={canDelete ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
-      onStatusChangeMany={canUpdate ? (status) => onStatusChangeMany(Array.from(selectedIds), status) : undefined}
       columns={columns}
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
+      onResetColumnWidths={resetColumnWidths}
       showBack
     />
   );

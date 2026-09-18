@@ -7,7 +7,7 @@ export interface CongViecFilters {
   trach_nhiem: number[];
 }
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'tieu_de', label: i18n.t('congViec.store.tieuDeCol'), visible: true, minWidth: 200, order: 0 },
   { id: 'mo_ta', label: i18n.t('congViec.store.moTaCol'), visible: true, minWidth: 180, order: 1 },
   { id: 'id_nguoi_giao', label: i18n.t('congViec.form.nguoiGiao'), visible: true, minWidth: 120, order: 2 },
@@ -26,5 +26,6 @@ const initialFilters: CongViecFilters = {
 
 export const useCongViecStore = createGenericStore<CongViecFilters>(
   initialFilters,
-  DEFAULT_COLUMNS
+  DEFAULT_COLUMNS,
+  'table-cong-viec'
 );

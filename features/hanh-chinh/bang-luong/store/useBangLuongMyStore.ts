@@ -5,7 +5,7 @@ export interface BangLuongMyFilters {
   yearMonth: string;
 }
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'period', label: i18n.t('bangLuong.store.periodCol'), visible: true, minWidth: 100, order: 0 },
   { id: 'ten_phong_ban', label: i18n.t('bangLuong.store.departmentCol'), visible: true, minWidth: 140, order: 1 },
   { id: 'ngay_cong', label: i18n.t('bangLuong.store.ngayCongCol'), visible: true, minWidth: 90, order: 2 },
@@ -24,5 +24,6 @@ const initialFilters: BangLuongMyFilters = {
 
 export const useBangLuongMyStore = createGenericStore<BangLuongMyFilters>(
   initialFilters,
-  DEFAULT_COLUMNS
+  DEFAULT_COLUMNS,
+  'table-bang-luong-my'
 );

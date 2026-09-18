@@ -34,6 +34,7 @@ const PositionToolbar: React.FC<Props> = ({
   const toggleColumn = usePositionStore((s) => s.toggleColumn);
   const reorderColumns = usePositionStore((s) => s.reorderColumns);
   const resetColumns = usePositionStore((s) => s.resetColumns);
+  const resetColumnWidths = usePositionStore((s) => s.resetColumnWidths);
   const selectedIds = usePositionStore((s) => s.selectedIds);
   const clearSelection = usePositionStore((s) => s.clearSelection);
 
@@ -116,7 +117,6 @@ const PositionToolbar: React.FC<Props> = ({
         filterGroups={filterGroups}
         mobileActions={mobileActions}
         onAdd={canCreate ? onAdd : undefined}
-        searchPlaceholder={t('common.searchPlaceholder')}
         activeFilterCount={activeFilterCount}
         onClearAllFilters={handleClearAllFilters}
         onDeleteMany={canDelete ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
@@ -125,6 +125,7 @@ const PositionToolbar: React.FC<Props> = ({
         onToggleColumn={toggleColumn}
         onReorderColumns={reorderColumns}
         onResetColumns={resetColumns}
+        onResetColumnWidths={resetColumnWidths}
         showBack
     />
   );

@@ -10,7 +10,7 @@ import DepartmentDetail from './components/phong-ban-detail';
 import ExportDialog from '../../../components/shared/LazyExportDialog';
 import ImportDialog from '../../../components/shared/LazyImportDialog';
 import { useDepartments, useDeleteDepartment, useUpdateStatusDepartment, useImportDepartments } from './hooks/use-phong-ban';
-import { useDepartmentStore } from './store/useDepartmentStore';
+import { useDepartmentStore, DEFAULT_COLUMNS } from './store/useDepartmentStore';
 import { useConfirmStore } from '../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL, CONFIRM_YES } from '../../../lib/button-labels';
 import { useListWithFilter } from '../../../lib/hooks';
@@ -18,12 +18,16 @@ import { useExportData } from '../../../lib/useExportData';
 import { Department } from './core/types';
 import type { DepartmentFormValues } from './core/schema';
 import { TRANG_THAI, type TrangThai } from '../../../lib/constants';
+import { createListSearchMatcher } from '../../../lib/list-search-matcher';
+
+/** Ô tìm kiếm quét MỌI cột của bảng, bỏ dấu tiếng Việt — xem lib/list-search-matcher.ts. */
+const khopTimKiem = createListSearchMatcher({ columns: DEFAULT_COLUMNS });
 
 const DepartmentPage = () => {
   const { t } = useTranslation();
   const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
-  const { searchTerm, filters, resetState, selectedIds, columns, clearSelection, toggleSelection, toggleAllSelection } = useDepartmentStore();
+  const { searchTerm, filters, resetState, selectedIds, columns, resizeColumn, clearSelection, toggleSelection, toggleAllSelection } = useDepartmentStore();
 
   const [showForm, setShowForm] = useState(false);
   const [editingDept, setEditingDept] = useState<Department | null>(null);
@@ -60,11 +64,7 @@ const DepartmentPage = () => {
 
   const filterFn = useCallback(
     (item: Department, term: string, f: typeof filters) => {
-      const searchLower = term.toLowerCase();
-      const matchesSearch =
-        !term ||
-        item.ten_phong_ban.toLowerCase().includes(searchLower) ||
-        (item.chuc_nang ?? '').toLowerCase().includes(searchLower);
+      const matchesSearch = khopTimKiem(item, term);
       const statusKey = item.trang_thai === TRANG_THAI.DANG_DUNG ? 'Active' : 'Inactive';
       const matchesStatus = f.status.length === 0 || f.status.includes(statusKey);
       const matchesPhong = f.id_phong_goc.length === 0 || f.id_phong_goc.includes(item.id);
@@ -257,6 +257,7 @@ const DepartmentPage = () => {
           <DepartmentList
             data={filteredDepartments}
             columns={columns}
+            onResizeColumn={resizeColumn}
             selectedIds={selectedIds}
             onToggleSelection={toggleSelection}
             onToggleAllSelection={toggleAllSelection}

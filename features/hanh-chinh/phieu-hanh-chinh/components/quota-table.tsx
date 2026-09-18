@@ -21,6 +21,7 @@ const AdminFormQuotaTable: React.FC<Props> = ({ data, isLoading, useStore }) => 
   const { t } = useTranslation();
   const {
     columns,
+    resizeColumn,
     pagination,
     setPage,
     setPageSize,
@@ -114,6 +115,7 @@ const AdminFormQuotaTable: React.FC<Props> = ({ data, isLoading, useStore }) => 
     <GenericTable
       data={data}
       columns={columns}
+      onResizeColumn={resizeColumn}
       isLoading={isLoading}
       loadingText={t('adminForm.quota.loading')}
       selectedIds={selectedIds}

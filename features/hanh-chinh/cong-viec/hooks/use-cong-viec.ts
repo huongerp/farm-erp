@@ -2,7 +2,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import i18n from '../../../../lib/i18n';
 import { useAuthStore } from '../../../../store/useStore';
-import { useNotificationStore } from '../../../../store/useNotificationStore';
 import {
   getCongViecList,
   getCongViecById,
@@ -36,16 +35,13 @@ export const useCreateCongViec = (onSuccess?: () => void) => {
   return useMutation({
     mutationFn: (data: CongViecFormValues) =>
       createCongViec(data, (user?.id as number | string) ?? 0),
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: CONG_VIEC_QUERY_KEY });
       toast.success(i18n.t('congViec.toast.createSuccess'));
-      const add = useNotificationStore.getState().add;
-      const title = i18n.t('congViec.notif.assigned');
-      const link = `/hanh-chinh/cong-viec?detail=${data.id}`;
-      const recipients = [data.trach_nhiem, ...(data.nguoi_ho_tro ?? [])].filter((id): id is number => id != null);
-      recipients.forEach(() => {
-        add({ title, message: data.tieu_de, type: 'info', link });
-      });
+      // Thông báo cho người chịu trách nhiệm và nhóm hỗ trợ do trigger DB sinh ra
+      // (docs/supabase-trigger_thong_bao_7_module.sql). Trước đây chỗ này tự thêm
+      // thông báo vào store phía client — chúng chỉ hiện với chính người tạo và
+      // không bao giờ tới được người nhận thật.
       onSuccess?.();
     },
     onError: (err: unknown) => toast.error((err as Error).message),

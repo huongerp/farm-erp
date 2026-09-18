@@ -83,3 +83,5 @@ export const dieuChinhTonTheoKetQua = dieuChinhTonTheoKetQuaSupabase;
 export const dieuChinhTonTheoDot = dieuChinhTonTheoDotSupabase;
 export const hoanThanhDot = hoanThanhDotSupabase;
 export const getNextMaDotDotKiemKeKho = getNextMaDotDotKiemKeKhoSupabase;
+
+export { getDotKiemKeKhoPageSupabase } from './kiem-ke-kho-supabase.service';

@@ -21,6 +21,7 @@ const TrangThaiThanhToanDoiTacTable: React.FC<Props> = ({ data, isLoading, onEdi
   const { t } = useTranslation();
   const {
     columns,
+    resizeColumn,
     pagination,
     setPage,
     setPageSize,
@@ -190,6 +191,7 @@ const TrangThaiThanhToanDoiTacTable: React.FC<Props> = ({ data, isLoading, onEdi
     <GenericTable
       data={data}
       columns={columns}
+      onResizeColumn={resizeColumn}
       isLoading={isLoading}
       loadingText={t('common.loading')}
       selectedIds={selectedIds}

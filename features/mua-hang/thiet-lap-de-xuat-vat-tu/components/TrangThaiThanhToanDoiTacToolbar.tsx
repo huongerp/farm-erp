@@ -28,6 +28,7 @@ const TrangThaiThanhToanDoiTacToolbar: React.FC<Props> = ({ items = [], onAdd, o
   const toggleColumn = useTrangThaiThanhToanDoiTacStore((s) => s.toggleColumn);
   const reorderColumns = useTrangThaiThanhToanDoiTacStore((s) => s.reorderColumns);
   const resetColumns = useTrangThaiThanhToanDoiTacStore((s) => s.resetColumns);
+  const resetColumnWidths = useTrangThaiThanhToanDoiTacStore((s) => s.resetColumnWidths);
   const selectedIds = useTrangThaiThanhToanDoiTacStore((s) => s.selectedIds);
   const clearSelection = useTrangThaiThanhToanDoiTacStore((s) => s.clearSelection);
 
@@ -89,7 +90,6 @@ const TrangThaiThanhToanDoiTacToolbar: React.FC<Props> = ({ items = [], onAdd, o
       filters={renderFilters}
       filterGroups={filterGroups}
       onAdd={canCreate ? onAdd : undefined}
-      searchPlaceholder={t('thietLapDeXuatVatTu.thanhToan.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       onDeleteMany={canDelete ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
@@ -98,6 +98,7 @@ const TrangThaiThanhToanDoiTacToolbar: React.FC<Props> = ({ items = [], onAdd, o
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
+      onResetColumnWidths={resetColumnWidths}
       showBack
     />
   );

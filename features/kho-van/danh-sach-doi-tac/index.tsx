@@ -1,4 +1,5 @@
-import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import type { DoiTacListServerQuery } from './services/doi-tac-list-query';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
@@ -12,7 +13,7 @@ import DoiTacDetail from './components/DoiTacDetail';
 import DanhMucTab from './components/DanhMucTab';
 import TagTab from './components/TagTab';
 import NhomFormDrawer from './components/NhomFormDrawer';
-import { useDoiTacList, useNhomDoiTacList, useTagList, useDeleteDoiTac, useDeleteDoiTacMany, useCreateNhomDoiTac } from './hooks/use-doi-tac';
+import { useDoiTacPage, useDoiTacTomTat, useNhomDoiTacList, useTagList, useDeleteDoiTac, useDeleteDoiTacMany, useCreateNhomDoiTac } from './hooks/use-doi-tac';
 import type { LoaiDoiTac, NhomDoiTac } from './core/types';
 import type { NhomDoiTacFormValues } from './services/doi-tac-service';
 import { useDoiTacStore } from './store/useDoiTacStore';
@@ -21,9 +22,9 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getPhieuKhoByDoiTac } from '../phieu-kho/services/phieu-kho-service';
 import { useDeletePhieuKho } from '../phieu-kho/hooks/use-phieu-kho';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../lib/button-labels';
-import { useListWithFilter } from '../../../lib/hooks';
 import type { DoiTac } from './core/types';
 import type { PhieuKho } from '../phieu-kho/core/types';
+
 
 type TabId = 'nha_cung_cap' | 'khach_hang' | 'danh_muc' | 'tag';
 
@@ -48,12 +49,14 @@ const DanhSachDoiTacPage: React.FC = () => {
     resetState,
     selectedIds,
     columns,
+    resizeColumn,
     clearSelection,
     toggleSelection,
     toggleAllSelection,
     pagination,
     setPage,
     setPageSize,
+    sort,
   } = useDoiTacStore();
 
   const [showForm, setShowForm] = useState(false);
@@ -65,10 +68,34 @@ const DanhSachDoiTacPage: React.FC = () => {
   const createNhomFromDoiTac = useCreateNhomDoiTac();
   const deletePhieuMutation = useDeletePhieuKho();
 
-  const { data: listAll = [], isLoading } = useDoiTacList();
-  const filteredByTab = useMemo(
-    () => listAll.filter((d) => d.loai_doi_tac === activeTab),
-    [listAll, activeTab]
+  const laTabDoiTac = activeTab === 'nha_cung_cap' || activeTab === 'khach_hang';
+
+  /** Bộ lọc gửi thẳng xuống PostgREST — trước đây tải toàn bộ danh sách đối tác. */
+  const listServerQuery: DoiTacListServerQuery = useMemo(
+    () => ({
+      page: pagination.page - 1,
+      pageSize: pagination.pageSize,
+      searchTerm,
+      status: filters.status ?? [],
+      idNhom: filters.id_nhom ?? [],
+      loai: laTabDoiTac ? activeTab : null,
+      sortColumn: sort.column,
+      sortDirection: sort.direction,
+    }),
+    [pagination.page, pagination.pageSize, searchTerm, filters, sort, activeTab, laTabDoiTac]
+  );
+
+  const pageQuery = useDoiTacPage(listServerQuery, laTabDoiTac);
+  const pageList = pageQuery.data?.data ?? [];
+  const totalCount = pageQuery.data?.totalCount ?? 0;
+  const isLoading = !pageQuery.data && pageQuery.isPending;
+  const isFetching = !!pageQuery.data && pageQuery.isFetching;
+
+  /** Tóm tắt toàn bộ đối tác cho chip lọc + số thứ tự kế tiếp. */
+  const { data: tomTatList = [] } = useDoiTacTomTat();
+  const tomTatTheoTab = useMemo(
+    () => tomTatList.filter((d) => d.loai_doi_tac === activeTab),
+    [tomTatList, activeTab]
   );
   const { data: nhomList = [] } = useNhomDoiTacList();
   const { data: tagList = [] } = useTagList();
@@ -79,8 +106,8 @@ const DanhSachDoiTacPage: React.FC = () => {
   /** Thứ tự tự tăng khi tạo mới đối tác (theo danh sách cùng tab). */
   const nextThuTuForDoiTac = useMemo(() => {
     if (activeTab !== 'nha_cung_cap' && activeTab !== 'khach_hang') return 1;
-    return filteredByTab.length === 0 ? 1 : Math.max(...filteredByTab.map((d) => d.thu_tu ?? 0)) + 1;
-  }, [activeTab, filteredByTab]);
+    return tomTatTheoTab.length === 0 ? 1 : Math.max(...tomTatTheoTab.map((d) => d.thu_tu ?? 0)) + 1;
+  }, [activeTab, tomTatTheoTab]);
   const deleteMutation = useDeleteDoiTac();
   const deleteManyMutation = useDeleteDoiTacMany();
 
@@ -96,9 +123,9 @@ const DanhSachDoiTacPage: React.FC = () => {
 
   useEffect(() => {
     if (!viewingItem) return;
-    const fresh = listAll.find((n) => n.id === viewingItem.id);
+    const fresh = pageList.find((n) => n.id === viewingItem.id);
     if (fresh && fresh !== viewingItem) setViewingItem(fresh);
-  }, [listAll, viewingItem?.id]);
+  }, [pageList, viewingItem?.id]);
 
   const handleTabChange = (id: string) => {
     if (id === 'nha_cung_cap' || id === 'khach_hang' || id === 'danh_muc' || id === 'tag') {
@@ -121,29 +148,8 @@ const DanhSachDoiTacPage: React.FC = () => {
     [t]
   );
 
-  const filterFn = useCallback(
-    (item: DoiTac, term: string, f: typeof filters) => {
-      const searchLower = term.toLowerCase();
-      const matchesSearch =
-        !term ||
-        item.ten_ncc.toLowerCase().includes(searchLower) ||
-        item.ma_ncc.toLowerCase().includes(searchLower) ||
-        (item.ten_nhom?.toLowerCase().includes(searchLower) ?? false);
-      const statusKey = item.trang_thai === 'Đang hoạt động' ? 'Active' : 'Inactive';
-      const matchesStatus = f.status.length === 0 || f.status.includes(statusKey);
-      const matchesNhom = f.id_nhom.length === 0 || (item.id_nhom != null && f.id_nhom.includes(item.id_nhom));
-      return matchesSearch && matchesStatus && matchesNhom;
-    },
-    []
-  );
 
-  const filteredList = useListWithFilter(filteredByTab, searchTerm, filters, filterFn);
-
-  useEffect(() => {
-    setPage(1);
-  }, [filteredList.length, setPage]);
-
-  const maxPage = Math.max(1, Math.ceil(filteredList.length / pagination.pageSize));
+  const maxPage = Math.max(1, Math.ceil(totalCount / pagination.pageSize));
   useEffect(() => {
     if (pagination.page > maxPage) setPage(maxPage);
   }, [pagination.page, pagination.pageSize, maxPage, setPage]);
@@ -254,7 +260,7 @@ const DanhSachDoiTacPage: React.FC = () => {
       ) : (
         <div className="flex-1 min-h-0 flex flex-col mt-1.5 rounded-xl border border-border bg-card shadow-sm overflow-hidden relative z-0">
           <DoiTacToolbar
-            data={filteredByTab}
+            data={tomTatTheoTab}
             nhomList={nhomList}
             selectedCount={selectedIds.size}
             onAdd={handleAdd}
@@ -265,8 +271,11 @@ const DanhSachDoiTacPage: React.FC = () => {
 
           <div className="flex-1 min-h-0 flex flex-col px-4 pb-4 pt-1">
             <DoiTacList
-            data={filteredList}
+            data={pageList}
+            totalRecordsOverride={totalCount}
+            isFetching={isFetching}
             columns={columns}
+            onResizeColumn={resizeColumn}
             selectedIds={selectedIds}
             onToggleSelection={toggleSelection}
             onToggleAllSelection={toggleAllSelection}

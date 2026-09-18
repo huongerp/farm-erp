@@ -21,13 +21,18 @@ import {
   useDeleteFarmDanhMucMany,
 } from './hooks/use-farm-danh-muc';
 import { useFarmHangHoaList, useDeleteFarmHangHoa, useDeleteFarmHangHoaMany } from './hooks/use-farm-hang-hoa';
-import { useFarmDanhMucStore } from './store/useFarmDanhMucStore';
-import { useFarmHangHoaStore } from './store/useFarmHangHoaStore';
+import { useFarmDanhMucStore, DEFAULT_COLUMNS as DM_COLUMNS } from './store/useFarmDanhMucStore';
+import { useFarmHangHoaStore, DEFAULT_COLUMNS as HH_COLUMNS } from './store/useFarmHangHoaStore';
 import { useConfirmStore } from '../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../lib/button-labels';
 import { useListWithFilter } from '../../../lib/hooks';
 import type { FarmDanhMuc } from './core/types';
 import type { FarmHangHoa } from './core/types';
+import { createListSearchMatcher } from '../../../lib/list-search-matcher';
+
+/** Ô tìm kiếm quét MỌI cột của bảng, bỏ dấu tiếng Việt — xem lib/list-search-matcher.ts. */
+const khopTimKiemDanhMuc = createListSearchMatcher({ columns: DM_COLUMNS });
+const khopTimKiemHangHoa = createListSearchMatcher({ columns: HH_COLUMNS });
 
 const HangHoaPhanThuocPage: React.FC = () => {
   const { t } = useTranslation();
@@ -55,6 +60,7 @@ const HangHoaPhanThuocPage: React.FC = () => {
     resetState: resetHhState,
     selectedIds: hhSelectedIds,
     columns: hhColumns,
+    resizeColumn: resizeHhColumn,
     clearSelection: clearHhSelection,
     toggleSelection: toggleHhSelection,
     toggleAllSelection: toggleHhAllSelection,
@@ -120,14 +126,10 @@ const HangHoaPhanThuocPage: React.FC = () => {
     if (fresh && fresh !== hhViewing) setHhViewing(fresh);
   }, [hhList, hhViewing?.id]);
 
-  const dmFilterFn = useCallback((item: FarmDanhMuc, term: string, _f: typeof dmFilters) => {
-    const searchLower = term.toLowerCase();
-    return (
-      !term ||
-      item.ten_danh_muc.toLowerCase().includes(searchLower) ||
-      item.ma_danh_muc.toLowerCase().includes(searchLower)
-    );
-  }, []);
+  const dmFilterFn = useCallback(
+    (item: FarmDanhMuc, term: string, _f: typeof dmFilters) => khopTimKiemDanhMuc(item, term),
+    []
+  );
 
   const filteredDm = useListWithFilter(dmList, dmSearch, dmFilters, dmFilterFn);
 
@@ -141,14 +143,7 @@ const HangHoaPhanThuocPage: React.FC = () => {
   }, [dmPageSize, dmMaxPage]);
 
   const hhFilterFn = useCallback((item: FarmHangHoa, term: string, f: typeof hhFilters) => {
-    const searchLower = term.toLowerCase();
-    const matchesSearch =
-      !term ||
-      item.ten_hang_hoa.toLowerCase().includes(searchLower) ||
-      item.ma_hang_hoa.toLowerCase().includes(searchLower) ||
-      (item.ten_danh_muc?.toLowerCase().includes(searchLower) ?? false) ||
-      (item.dvt?.toLowerCase().includes(searchLower) ?? false) ||
-      (item.pham_cap?.toLowerCase().includes(searchLower) ?? false);
+    const matchesSearch = khopTimKiemHangHoa(item, term);
     const matchesDanhMucCha =
       f.id_danh_muc_cha.length === 0 ||
       (item.danh_muc_cha_id != null && f.id_danh_muc_cha.includes(item.danh_muc_cha_id));
@@ -332,6 +327,7 @@ const HangHoaPhanThuocPage: React.FC = () => {
             <HangHoaList
               data={filteredHh}
               columns={hhColumns}
+              onResizeColumn={resizeHhColumn}
               selectedIds={hhSelectedIds}
               onToggleSelection={toggleHhSelection}
               onToggleAllSelection={toggleHhAllSelection}

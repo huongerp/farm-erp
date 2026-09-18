@@ -7,7 +7,7 @@ export interface DepartmentFilters {
   id_phong_goc: string[];
 }
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'tt', label: i18n.t('department.store.orderCol'), visible: true, minWidth: 80, maxWidth: 100, order: 0 },
   { id: 'ten_phong_ban', label: i18n.t('department.store.nameCol'), visible: true, minWidth: 180, maxWidth: 320, order: 1 },
   { id: 'chuc_nang', label: i18n.t('department.store.chucNangCol'), visible: true, minWidth: 160, maxWidth: 280, order: 2 },
@@ -22,5 +22,6 @@ const initialFilters: DepartmentFilters = {
 
 export const useDepartmentStore = createGenericStore<DepartmentFilters>(
   initialFilters,
-  DEFAULT_COLUMNS
+  DEFAULT_COLUMNS,
+  'table-phong-ban-department'
 );

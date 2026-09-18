@@ -4,13 +4,10 @@
   "thietLapDeXuatVatTu.tabs.tienDoMh": "Tiến độ mh",
   "thietLapDeXuatVatTu.tabs.trangThaiDoiTac": "Trạng thái đối tác",
   "thietLapDeXuatVatTu.tabs.trangThaiThanhToan": "Trạng thái thanh toán đối tác",
-
   "thietLapDeXuatVatTu.validation.maRequired": "Vui lòng nhập mã",
   "thietLapDeXuatVatTu.validation.tenRequired": "Vui lòng nhập tên",
   "thietLapDeXuatVatTu.validation.thuTuMin": "Thứ tự tối thiểu 0",
   "thietLapDeXuatVatTu.validation.statusInvalid": "Trạng thái không hợp lệ",
-
-  "thietLapDeXuatVatTu.doiTac.searchPlaceholder": "Tìm theo mã, tên...",
   "thietLapDeXuatVatTu.doiTac.form.createTitle": "Thêm trạng thái đối tác",
   "thietLapDeXuatVatTu.doiTac.form.editTitle": "Sửa trạng thái đối tác",
   "thietLapDeXuatVatTu.doiTac.form.basicInfo": "Thông tin cơ bản",
@@ -42,8 +39,6 @@
   "thietLapDeXuatVatTu.doiTac.statusChangeTitle": "Đổi trạng thái",
   "thietLapDeXuatVatTu.doiTac.statusChangeMessage": "Đổi {{count}} trạng thái sang \"{{status}}\"?",
   "thietLapDeXuatVatTu.doiTac.service.notFound": "Không tìm thấy trạng thái đối tác",
-
-  "thietLapDeXuatVatTu.thanhToan.searchPlaceholder": "Tìm theo mã, tên...",
   "thietLapDeXuatVatTu.thanhToan.form.createTitle": "Thêm trạng thái thanh toán",
   "thietLapDeXuatVatTu.thanhToan.form.editTitle": "Sửa trạng thái thanh toán",
   "thietLapDeXuatVatTu.thanhToan.form.basicInfo": "Thông tin cơ bản",
@@ -76,8 +71,6 @@
   "thietLapDeXuatVatTu.thanhToan.statusChangeMessage": "Đổi {{count}} trạng thái sang \"{{status}}\"?",
   "thietLapDeXuatVatTu.thanhToan.service.notFound": "Không tìm thấy trạng thái thanh toán",
   "thietLapDeXuatVatTu.thanhToan.service.duplicateMa": "Mã trạng thái đã tồn tại",
-
-  "thietLapDeXuatVatTu.tienDoMuaHang.searchPlaceholder": "Tìm theo mã, tên...",
   "thietLapDeXuatVatTu.tienDoMuaHang.form.createTitle": "Thêm trạng thái tiến độ mh",
   "thietLapDeXuatVatTu.tienDoMuaHang.form.editTitle": "Sửa trạng thái tiến độ mh",
   "thietLapDeXuatVatTu.tienDoMuaHang.form.basicInfo": "Thông tin cơ bản",

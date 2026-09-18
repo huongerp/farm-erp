@@ -80,13 +80,15 @@ const Home: React.FC = () => {
   const showHanhChinh = useSubmenuVisible('/hanh-chinh');
   const showMuaHang = useSubmenuVisible('/mua-hang');
   const showQuanLyFarm = useSubmenuVisible('/quan-ly-farm');
+  const showTaiChinh = useSubmenuVisible('/tai-chinh');
   const showHeThong = useSubmenuVisible('/he-thong');
   const viewableHanhChinh = useModulesWithViewPermission('/hanh-chinh');
   const viewableMuaHang = useModulesWithViewPermission('/mua-hang');
   const viewableQuanLyFarm = useModulesWithViewPermission('/quan-ly-farm');
+  const viewableTaiChinh = useModulesWithViewPermission('/tai-chinh');
   const viewableIds = useMemo(
-    () => new Set([...viewableHanhChinh, ...viewableMuaHang, ...viewableQuanLyFarm]),
-    [viewableHanhChinh, viewableMuaHang, viewableQuanLyFarm]
+    () => new Set([...viewableHanhChinh, ...viewableMuaHang, ...viewableQuanLyFarm, ...viewableTaiChinh]),
+    [viewableHanhChinh, viewableMuaHang, viewableQuanLyFarm, viewableTaiChinh]
   );
   const visibleMenu = useMemo(
     () =>
@@ -96,10 +98,11 @@ const Home: React.FC = () => {
         if (m.path === '/hanh-chinh') return showHanhChinh;
         if (m.path === '/mua-hang') return showMuaHang;
         if (m.path === '/quan-ly-farm') return showQuanLyFarm;
+        if (m.path === '/tai-chinh') return showTaiChinh;
         if (m.path === '/he-thong') return showHeThong;
         return true;
       }),
-    [showHanhChinh, showMuaHang, showQuanLyFarm, showHeThong]
+    [showHanhChinh, showMuaHang, showQuanLyFarm, showTaiChinh, showHeThong]
   );
   /** Thẻ chức năng: bỏ Trang chủ (path === '/'), ẩn submenu không có quyền xem module nào */
   const modules = useMemo(

@@ -6,7 +6,7 @@ import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import GenericTable from '../../../../components/shared/GenericTable';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
-import { useDanhMucDoiTacStore } from '../store/useDanhMucDoiTacStore';
+import { useDanhMucDoiTacStore, DEFAULT_COLUMNS } from '../store/useDanhMucDoiTacStore';
 import { useNhomDoiTacList, useCreateNhomDoiTac, useUpdateNhomDoiTac, useDeleteNhomDoiTac, useDeleteNhomDoiTacMany } from '../hooks/use-doi-tac';
 import { useListWithFilter } from '../../../../lib/hooks';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
@@ -15,6 +15,10 @@ import type { NhomDoiTac } from '../core/types';
 import type { NhomDoiTacFormValues } from '../services/doi-tac-service';
 import NhomFormDrawer from './NhomFormDrawer';
 import NhomDetailDrawer from './NhomDetailDrawer';
+import { createListSearchMatcher } from '../../../../lib/list-search-matcher';
+
+/** Ô tìm kiếm quét MỌI cột của bảng, bỏ dấu tiếng Việt — xem lib/list-search-matcher.ts. */
+const khopTimKiem = createListSearchMatcher({ columns: DEFAULT_COLUMNS });
 
 const DanhMucTab: React.FC = () => {
   const { t } = useTranslation();
@@ -26,6 +30,7 @@ const DanhMucTab: React.FC = () => {
   const resetState = useDanhMucDoiTacStore((s) => s.resetState);
   const selectedIds = useDanhMucDoiTacStore((s) => s.selectedIds);
   const columns = useDanhMucDoiTacStore((s) => s.columns);
+  const resizeColumn = useDanhMucDoiTacStore((s) => s.resizeColumn);
   const clearSelection = useDanhMucDoiTacStore((s) => s.clearSelection);
   const toggleSelection = useDanhMucDoiTacStore((s) => s.toggleSelection);
   const toggleAllSelection = useDanhMucDoiTacStore((s) => s.toggleAllSelection);
@@ -45,11 +50,7 @@ const DanhMucTab: React.FC = () => {
 
   const filterFn = useCallback(
     (item: NhomDoiTac, term: string, f: typeof filters) => {
-      const searchLower = term.toLowerCase();
-      const matchesSearch =
-        !term ||
-        item.ma_nhom.toLowerCase().includes(searchLower) ||
-        item.ten_nhom.toLowerCase().includes(searchLower);
+      const matchesSearch = khopTimKiem(item, term);
       const statusKey = item.trang_thai === 'Đang hoạt động' ? 'Active' : 'Inactive';
       const matchesStatus = f.status.length === 0 || f.status.includes(statusKey);
       return matchesSearch && matchesStatus;
@@ -284,7 +285,6 @@ const DanhMucTab: React.FC = () => {
           onClearSelection={clearSelection}
           searchTerm={searchInput}
           onSearchChange={setSearchInput}
-          searchPlaceholder={t('doiTac.danhMuc.searchPlaceholder')}
           activeFilterCount={activeFilterCount}
           onClearAllFilters={handleClearAllFilters}
           filterGroups={filterGroups}
@@ -313,6 +313,7 @@ const DanhMucTab: React.FC = () => {
           onToggleColumn={(id) => useDanhMucDoiTacStore.getState().toggleColumn(id)}
           onReorderColumns={(from, to) => useDanhMucDoiTacStore.getState().reorderColumns(from, to)}
           onResetColumns={() => useDanhMucDoiTacStore.getState().resetColumns()}
+          onResetColumnWidths={() => useDanhMucDoiTacStore.getState().resetColumnWidths()}
           onAdd={() => { setEditingItem(null); setViewingItem(null); setShowForm(true); }}
         />
       </div>
@@ -321,6 +322,7 @@ const DanhMucTab: React.FC = () => {
         <GenericTable<NhomDoiTac>
           data={filteredList}
           columns={columns}
+          onResizeColumn={resizeColumn}
           isLoading={isLoading}
           selectedIds={selectedIds}
           onToggleSelection={toggleSelection}

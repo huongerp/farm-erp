@@ -9,7 +9,7 @@ còn phụ thuộc Supabase.
 
 | Việc | Lệnh |
 |---|---|
-| Dev (tự spawn PostgREST + auth-service) | `npm run dev` |
+| Dev (tự spawn PostgREST + auth-service + notify-service) | `npm run dev` |
 | Typecheck (incremental, lần sau ~1,5s) | `npm run typecheck` |
 | Test toàn bộ | `npm test` |
 | Test theo file đang sửa | `npm run test:changed -- <path>` |
@@ -18,8 +18,8 @@ còn phụ thuộc Supabase.
 | Lint | `npm run lint` |
 | Kiểm tra kích thước bundle | `npm run check:bundle` |
 
-Dev server **không** chạy bằng lệnh nền thủ công — `vite/dev-services.ts` tự bật PostgREST và
-auth-service kèm `npm run dev` (bỏ qua bằng `DEV_SKIP_SERVICES=1`). Chi tiết biến môi trường:
+Dev server **không** chạy bằng lệnh nền thủ công — `vite/dev-services.ts` tự bật PostgREST,
+auth-service và notify-service kèm `npm run dev` (bỏ qua bằng `DEV_SKIP_SERVICES=1`). Chi tiết biến môi trường:
 [README.md](README.md).
 
 ## Bản đồ thư mục
@@ -35,6 +35,10 @@ auth-service kèm `npm run dev` (bỏ qua bằng `DEV_SKIP_SERVICES=1`). Chi ti�
 - `pages/` — trang đơn (Login, Profile, Settings, dashboards…).
 - `locales/` — `vi.json`, `en.json`. Không hardcode chuỗi hiển thị.
 - `services/auth/` — auth-service (Node/Hono): đăng nhập mật khẩu + Google, ký JWT, refresh token.
+- `services/notify/` — notify-service (Node/Hono): worker thông báo (outbox + LISTEN/NOTIFY) và
+  endpoint đăng ký Web Push. Logic "ai nhận / viết gì" nằm ở `src/core/` và có test cạnh file.
+- `sw/sw.ts` — service worker tự viết (vite-plugin-pwa chế độ `injectManifest`): precache, runtime
+  caching và listener `push` / `notificationclick`.
 - `docs/` — SQL migration + tài liệu vận hành.
 - `deploy/`, `docker-compose.yml` — Nginx + Docker cho production.
 
@@ -56,6 +60,56 @@ Mỗi module trong `features/` theo cùng một khuôn:
 - Truy vấn dữ liệu: `db` từ `lib/db.ts` (PostgREST), **không** import supabase-js cho dữ liệu nghiệp vụ.
 - Lỗi từ PostgREST format qua `lib/supabase-errors.ts` để hiện toast tiếng Việt kèm mã lỗi.
 - Bảng dữ liệu đặt tên `fp_var_*` (danh mục/hệ thống), `fp_farm_*` (nghiệp vụ farm), `fp_hr_*` (nhân sự).
+
+### Danh sách: phân trang ở SERVER, không tải cả bảng
+
+Module có dữ liệu lớn dần theo thời gian (phiếu, báo cáo, danh mục hàng hoá) phải
+lọc / sắp xếp / cắt trang ở PostgREST. Khuôn đã áp dụng — xem
+`features/quan-ly-farm/bao-cao-nhan-cong` làm mẫu đầy đủ nhất:
+
+```
+services/<module>-list-query.ts   # kiểu XListServerQuery + cột sort được ở DB
+services/<module>-supabase...ts   # apply<X>ListQuery dùng chung cho:
+                                  #   get<X>Page()            → một trang (fetchTablePage)
+                                  #   fetchAll<X>ForListQuery() → CHỈ khi bấm Xuất file
+                                  #   get<X>TomTat()          → vài cột cho chip lọc/gợi ý
+hooks/use-<module>.ts             # use<X>Page(query) + placeholderData: keepPreviousData
+components/<X>List.tsx            # GenericTable nhận totalRecordsOverride + isFetching
+```
+
+- Ô tìm kiếm ở server: `applyPostgrestSearch` (`lib/postgrest-search.ts`) — tự escape
+  `%`/`_`, chỉ so cột số khi từ khoá là số nguyên, cột ngày nhận `dd/mm/yyyy`.
+- Lọc theo kỳ (năm/tháng): `dieuKienKyTheoNgay` cùng file.
+- Cần lọc theo cột của bảng khác (tên nhân viên, chi nhánh của tài sản): tra id trước
+  bằng một truy vấn nhẹ rồi `.in('cot_id', ids)` — xem `bang-luong-service.ts`.
+- Bảng cha kèm bảng con: dùng embed của PostgREST
+  (`ban_cha(cot,...,bang_con(cot,...))`) để lấy một trang trong MỘT request, thay vì
+  `.in()` với toàn bộ id.
+- Chip lọc và số đếm phải tính trên **toàn bộ** dữ liệu → dùng bản `TomTat` vài cột,
+  không dùng dữ liệu của trang đang xem.
+
+**Cố ý GIỮ lọc ở client** (chuyển sang server là sai hướng, không phải bỏ sót):
+
+- **Bảng cây** — Công việc (`id_cha`), Phòng ban: cắt trang ở DB làm mất nhánh cha
+  hoặc con nằm ngoài trang, cây dựng ra sẽ sai.
+- **Danh mục cấu hình dùng làm ref chung** — kho, chi nhánh, chức vụ, cấp bậc, nhóm
+  tài sản, nơi lưu, hạng mục thu chi…: số dòng cố định nhỏ, lại được cache IndexedDB
+  và dùng lại ở form/phiếu khắp nơi; phân trang riêng cho màn danh sách sẽ phá cache
+  dùng chung đó.
+- **Kanban / Gantt / báo cáo tổng hợp**: bản chất cần toàn bộ tập dữ liệu trong phạm
+  vi, nên lọc ở server theo kỳ + phạm vi thay vì cắt trang.
+
+### Bảng dùng chung
+
+- `GenericTable` / `HierarchyTable` đặt `table-layout: fixed` + `<colgroup>` + một
+  `<col>` đệm. Thiếu ba thứ này thì kéo đổi bề rộng cột sẽ "không ăn".
+- Kéo cột: truyền `onResizeColumn={resizeColumn}` của store; logic nằm ở
+  `lib/table-core/use-column-resize.ts` (pointer event, ←/→, double-click auto-fit).
+- Ẩn/hiện cột, thứ tự và bề rộng được lưu qua `zustand/persist`; mỗi store khai
+  `storageKey` dạng `table-<module>`. `resetState()` CỐ Ý không đụng `columns`.
+- Ô tìm kiếm quét **mọi cột** qua `createListSearchMatcher` (`lib/list-search-matcher.ts`),
+  bỏ dấu tiếng Việt. Placeholder dùng chung `common.searchPlaceholder` — không đặt
+  gợi ý riêng từng module (làm người dùng tưởng chỉ tìm được vài cột được kể tên).
 
 ## Phân quyền — hai tầng phải khớp nhau
 
@@ -84,6 +138,8 @@ xem mẫu ở các hook `use-*-view-scope.ts`.
 - [docs/VPS_POSTGREST_PLAN.md](docs/VPS_POSTGREST_PLAN.md), [docs/VPS_CUTOVER.md](docs/VPS_CUTOVER.md) — kiến trúc self-host và runbook cut-over.
 - [docs/RUI_RO_NEN_TANG_DU_LIEU.md](docs/RUI_RO_NEN_TANG_DU_LIEU.md) — rủi ro nền tảng dữ liệu.
 - [docs/BUNDLE_OPTIMIZATION.md](docs/BUNDLE_OPTIMIZATION.md), [docs/EGRESS_OPTIMIZATION.md](docs/EGRESS_OPTIMIZATION.md) — tối ưu bundle và egress.
+- [docs/THONG_BAO_PUSH.md](docs/THONG_BAO_PUSH.md) — thông báo + Web Push: kiến trúc outbox, thứ tự chạy SQL,
+  catalog sự kiện (bắn gì / khi nào / cho ai), cách đấu thêm module, soi lỗi.
 - SQL migration: `docs/vps-0*.sql` (VPS, chạy tuần tự), `docs/supabase-*.sql` (bảng/RPC theo module).
 
 ## Lưu ý khi sửa
@@ -91,4 +147,6 @@ xem mẫu ở các hook `use-*-view-scope.ts`.
 - Migration SQL mới: thêm file vào `docs/`, không sửa đè file đã chạy trên VPS.
 - Mật khẩu chỉ ghi qua RPC `rpc_set_mat_khau` (bcrypt server-side); không hash ở browser,
   không UPDATE thẳng `mat_khau_hash`.
+- Thông báo sinh bằng trigger DB ghi vào outbox, **không** gọi thêm insert từ frontend sau mutation —
+  làm vậy sẽ sót khi dữ liệu đổi từ SQL tay hoặc module khác. Xem [docs/THONG_BAO_PUSH.md](docs/THONG_BAO_PUSH.md).
 - Thêm chuỗi hiển thị phải thêm cả `vi.json` và `en.json` (`node scripts/check-i18n-keys.mjs` để soi thiếu).

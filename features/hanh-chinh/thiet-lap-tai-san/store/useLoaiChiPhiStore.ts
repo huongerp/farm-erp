@@ -5,7 +5,7 @@ export interface LoaiChiPhiFilters {
   status: string[];
 }
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'ma', label: i18n.t('thietLapTaiSan.loaiChiPhi.store.maCol'), visible: true, minWidth: 140, order: 0 },
   { id: 'ten', label: i18n.t('thietLapTaiSan.loaiChiPhi.store.tenCol'), visible: true, minWidth: 220, order: 1 },
   { id: 'thu_tu', label: i18n.t('thietLapTaiSan.loaiChiPhi.store.thuTuCol'), visible: true, minWidth: 100, order: 2 },
@@ -20,5 +20,6 @@ const initialFilters: LoaiChiPhiFilters = {
 
 export const useLoaiChiPhiStore = createGenericStore<LoaiChiPhiFilters>(
   initialFilters,
-  DEFAULT_COLUMNS
+  DEFAULT_COLUMNS,
+  'table-thiet-lap-tai-san-loai-chi-phi'
 );

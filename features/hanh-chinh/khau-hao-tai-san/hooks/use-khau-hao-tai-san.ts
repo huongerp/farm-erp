@@ -1,4 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import type { KyKhauHaoListServerQuery } from '../services/khau-hao-list-query';
 import { toast } from 'sonner';
 import i18n from '../../../../lib/i18n';
 import {
@@ -12,11 +13,23 @@ import {
   deleteKyKhauHao,
   updateKyKhauHaoGhiChu,
   updateKyKhauHaoTrangThai,
+  getKyKhauHaoPageSupabase,
 } from '../services/khau-hao-tai-san-service';
 import type { KyKhauHaoFormValues } from '../core/schema';
 
 const QUERY_KEY_KY = ['khauHaoTaiSan', 'ky'] as const;
 const queryKeyChiTiet = (idKy: string) => ['khauHaoTaiSan', 'chiTiet', idKy] as const;
+
+/** Một trang danh sách — lọc / sắp xếp / phân trang chạy ở PostgREST. */
+export function useKyKhauHaoPage(query: KyKhauHaoListServerQuery, enabled = true) {
+  return useQuery({
+    queryKey: [...QUERY_KEY_KY, 'page', query],
+    queryFn: () => getKyKhauHaoPageSupabase(query),
+    enabled,
+    placeholderData: keepPreviousData,
+    staleTime: 1000 * 60 * 2,
+  });
+}
 
 export const useKyKhauHaoList = () => {
   return useQuery({

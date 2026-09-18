@@ -9,6 +9,8 @@ import type { ColumnConfig } from '../../../../store/createGenericStore';
 interface Props {
   data: FarmHangHoa[];
   columns: ColumnConfig[];
+  /** Cho phép kéo đổi bề rộng cột — truyền `resizeColumn` của store. */
+  onResizeColumn?: (id: string, width: number) => void;
   selectedIds: Set<string>;
   onToggleSelection: (id: string) => void;
   onToggleAllSelection: (ids: string[]) => void;
@@ -25,6 +27,7 @@ interface Props {
 const HangHoaList: React.FC<Props> = ({
   data,
   columns,
+  onResizeColumn,
   selectedIds,
   onToggleSelection,
   onToggleAllSelection,
@@ -177,6 +180,7 @@ const HangHoaList: React.FC<Props> = ({
     <GenericTable<FarmHangHoa>
       data={data}
       columns={visibleColumns}
+      onResizeColumn={onResizeColumn}
       isLoading={isLoading}
       loadingText={t('farmHangHoaPhanThuoc.hangHoa.loading')}
       selectedIds={selectedIds}

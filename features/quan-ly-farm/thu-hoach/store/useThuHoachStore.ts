@@ -18,7 +18,7 @@ const DAY_LIST_COLUMNS: ColumnConfig[] = THU_HOACH_DAY_SUFFIXES.map((s, i) => ({
   order: 6 + i,
 }));
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'nam', label: i18n.t('thuHoach.store.colNam'), visible: true, minWidth: 72, maxWidth: 100, order: 0 },
   { id: 'tuan', label: i18n.t('thuHoach.store.colTuan'), visible: true, minWidth: 64, maxWidth: 90, order: 1 },
   { id: 'ten_chi_nhanh', label: i18n.t('thuHoach.store.colBranch'), visible: true, minWidth: 140, maxWidth: 220, order: 2 },
@@ -46,4 +46,4 @@ const initialFilters: ThuHoachFilters = {
   id_chi_nhanh: [],
 };
 
-export const useThuHoachStore = createGenericStore<ThuHoachFilters>(initialFilters, DEFAULT_COLUMNS);
+export const useThuHoachStore = createGenericStore<ThuHoachFilters>(initialFilters, DEFAULT_COLUMNS, 'table-thu-hoach');

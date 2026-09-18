@@ -105,3 +105,5 @@ export async function hoanThanhDot(id_dot_kiem_ke: string): Promise<DotKiemKe> {
 }
 
 export { getNextMaDotDotKiemKeTaiSan };
+
+export { getDotKiemKePageSupabase } from './kiem-ke-tai-san-supabase.service';

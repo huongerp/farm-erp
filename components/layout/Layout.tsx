@@ -14,6 +14,8 @@ import { cn } from '../../lib/utils';
 import { usePresenceTransition } from '../../lib/usePresenceTransition';
 import Breadcrumbs from '../shared/Breadcrumbs';
 import LiveClock from './LiveClock';
+import NotificationBell from '../notification/NotificationBell';
+import BannerBatThongBao from '../../features/thong-bao/components/BannerBatThongBao';
 import MobileBottomNav from './MobileBottomNav';
 import { SIDEBAR_MENU } from '../../lib/sidebar-menu';
 import { useSubmenuVisible, isSubmenuWithPermission } from '../../features/he-thong/phan-quyen/hooks/use-module-permission';
@@ -154,6 +156,7 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const showHanhChinh = useSubmenuVisible('/hanh-chinh');
   const showMuaHang = useSubmenuVisible('/mua-hang');
   const showQuanLyFarm = useSubmenuVisible('/quan-ly-farm');
+  const showTaiChinh = useSubmenuVisible('/tai-chinh');
   const showHeThong = useSubmenuVisible('/he-thong');
   const visibleMenu = React.useMemo(
     () =>
@@ -162,10 +165,11 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
         if (m.path === '/hanh-chinh') return showHanhChinh;
         if (m.path === '/mua-hang') return showMuaHang;
         if (m.path === '/quan-ly-farm') return showQuanLyFarm;
+        if (m.path === '/tai-chinh') return showTaiChinh;
         if (m.path === '/he-thong') return showHeThong;
         return true;
       }),
-    [showHanhChinh, showMuaHang, showQuanLyFarm, showHeThong]
+    [showHanhChinh, showMuaHang, showQuanLyFarm, showTaiChinh, showHeThong]
   );
   const navItems = visibleMenu.map(({ path, nameKey, icon }) => ({ name: t(nameKey), icon, path }));
 
@@ -335,9 +339,11 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
             </div>
           </div>
 
-          {/* Right: Clock + User */}
+          {/* Right: Clock + Notification + User */}
           <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
             <LiveClock />
+
+            <NotificationBell />
 
             {/* User Profile Dropdown */}
             <div className="relative" ref={userMenuRef}>
@@ -357,7 +363,7 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                 </div>
                 <div className="hidden md:block text-left">
                   <p className="text-xs font-semibold text-foreground leading-tight">{user?.full_name || t('nav.guestUser')}</p>
-                  <p className="text-xs font-normal text-muted-foreground leading-tight">{user?.role === 'admin' ? t('nav.roleAdmin') : t('nav.roleMember')}</p>
+                  <p className="text-xs font-normal text-muted-foreground leading-tight">{user?.ten_chuc_vu || (user?.role === 'admin' ? t('nav.roleAdmin') : t('nav.roleMember'))}</p>
                 </div>
                 <ChevronDown size={12} className={cn("text-muted-foreground/50 hidden md:block transition-transform", isUserMenuOpen ? "rotate-180" : "")} />
               </button>
@@ -400,6 +406,8 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
             </div>
           </div>
         </header>
+
+        <BannerBatThongBao />
 
         {/* Content Area - scroll trên main nên sticky hoạt động */}
         <div className="flex-1 min-h-0">

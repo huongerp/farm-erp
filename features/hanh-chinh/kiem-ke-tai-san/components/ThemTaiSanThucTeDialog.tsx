@@ -44,7 +44,7 @@ const ThemTaiSanThucTeDialog: React.FC<Props> = ({
   const { data: employees = [] } = useEmployeesRefQuery();
 
   const assetOptions = assets
-    .filter((a) => a.trang_thai === 1 && !existingTaiSanIds.has(a.id))
+    .filter((a) => !existingTaiSanIds.has(a.id))
     .map((a) => ({
       label: a.ten_tai_san || a.ma_tai_san || a.id,
       value: a.id,

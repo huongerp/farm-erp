@@ -38,6 +38,8 @@ interface GenericToolbarProps {
     onToggleColumn?: (id: string) => void;
     onReorderColumns?: (fromIndex: number, toIndex: number) => void;
     onResetColumns?: () => void;
+    /** Trả cột về bề rộng tự tính (đi cùng resize cột). */
+    onResetColumnWidths?: () => void;
 
     // Navigation
     showBack?: boolean;
@@ -45,7 +47,6 @@ interface GenericToolbarProps {
     onBack?: () => void;
 
     // Search
-    searchPlaceholder?: string;
     /** Ẩn ô tìm kiếm (desktop + mobile) khi module không dùng search */
     hideSearch?: boolean;
 
@@ -72,10 +73,9 @@ const GenericToolbar: React.FC<GenericToolbarProps> = ({
     searchTerm, onSearchChange, onClearSelection,
     actions, bulkActions, filters,
     onDeleteMany, onStatusChangeMany,
-    columns, onToggleColumn, onReorderColumns, onResetColumns,
+    columns, onToggleColumn, onReorderColumns, onResetColumns, onResetColumnWidths,
     showBack = false,
     onBack,
-    searchPlaceholder,
     hideSearch = false,
     activeFilterCount = 0,
     onClearAllFilters,
@@ -85,7 +85,12 @@ const GenericToolbar: React.FC<GenericToolbarProps> = ({
     searchTrailing,
 }) => {
     const { t } = useTranslation();
-    const resolvedSearchPlaceholder = searchPlaceholder ?? t('common.searchPlaceholder');
+    /**
+     * Một gợi ý duy nhất cho mọi bảng: ô tìm kiếm quét TẤT CẢ các cột (kể cả cột
+     * đang ẩn), nên gợi ý kiểu "tìm theo tên, mã hoặc địa chỉ" chỉ làm người dùng
+     * tưởng phạm vi tìm hẹp hơn thực tế.
+     */
+    const resolvedSearchPlaceholder = t('common.searchPlaceholder');
     const [showMobileFilters, setShowMobileFilters] = useState(false);
     const [showMobileActions, setShowMobileActions] = useState(false);
     const [showColumnMenu, setShowColumnMenu] = useState(false);
@@ -453,6 +458,7 @@ const GenericToolbar: React.FC<GenericToolbarProps> = ({
                                                         onToggleColumn={onToggleColumn!}
                                                         onReorderColumns={onReorderColumns || (() => {})}
                                                         onResetColumns={onResetColumns || (() => {})}
+                                                    onResetColumnWidths={onResetColumnWidths}
                                                     />
                                                 </motion.div>
                                             )}

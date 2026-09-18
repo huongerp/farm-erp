@@ -41,6 +41,7 @@ const HangHoaToolbar: React.FC<Props> = ({
   const toggleColumn = useFarmHangHoaStore((s) => s.toggleColumn);
   const reorderColumns = useFarmHangHoaStore((s) => s.reorderColumns);
   const resetColumns = useFarmHangHoaStore((s) => s.resetColumns);
+  const resetColumnWidths = useFarmHangHoaStore((s) => s.resetColumnWidths);
 
   const danhMucChaList = useMemo(
     () => danhMucList.filter((d) => !d.id_cha || d.id_cha.trim() === ''),
@@ -211,13 +212,13 @@ const HangHoaToolbar: React.FC<Props> = ({
       mobileActions={mobileActions}
       onAdd={canCreate ? onAdd : undefined}
       showBack
-      searchPlaceholder={t('farmHangHoaPhanThuoc.hangHoa.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       columns={columns}
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
+      onResetColumnWidths={resetColumnWidths}
     />
   );
 };

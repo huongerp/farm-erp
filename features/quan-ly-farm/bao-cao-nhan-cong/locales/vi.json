@@ -60,7 +60,6 @@
   "baoCaoNhanCong.toast.deleteNotAllowed": "Bạn không được phép xóa báo cáo này.",
   "baoCaoNhanCong.toast.editNotAllowed": "Bạn không được phép sửa báo cáo này.",
   "baoCaoNhanCong.toast.createNotAllowed": "Bạn không được phép tạo báo cáo.",
-  "baoCaoNhanCong.toolbar.searchPlaceholder": "Tìm theo chi nhánh, ghi chú, người tạo…",
   "baoCaoNhanCong.toolbar.filterBranch": "Chi nhánh",
   "baoCaoNhanCong.toolbar.filterNam": "Năm",
   "baoCaoNhanCong.toolbar.filterThang": "Tháng",

@@ -15,6 +15,8 @@ import { getColumnCellStyle } from '../../../../store/createGenericStore';
 interface Props {
   data: Department[];
   columns: ColumnConfig[];
+  /** Cho phép kéo đổi bề rộng cột — truyền `resizeColumn` của store. */
+  onResizeColumn?: (id: string, width: number) => void;
   selectedIds: Set<string>;
   onToggleSelection: (id: string) => void;
   onToggleAllSelection: (ids: string[]) => void;
@@ -39,7 +41,7 @@ const treeOptions = {
 };
 
 const DepartmentList: React.FC<Props> = ({
-  data, columns, selectedIds, onToggleSelection, onToggleAllSelection, isLoading,
+  data, columns, onResizeColumn, selectedIds, onToggleSelection, onToggleAllSelection, isLoading,
   page, pageSize, onPageChange, onPageSizeChange,
   onEdit, onDelete, onView,
   canUpdate = true, canDelete = true,
@@ -220,6 +222,7 @@ const DepartmentList: React.FC<Props> = ({
           <HierarchyTable<Department>
             data={paginatedData}
             columns={visibleColumns}
+            onResizeColumn={onResizeColumn}
             selectedIds={selectedIds}
             getId={(d) => d.id}
             getLevel={() => 1}

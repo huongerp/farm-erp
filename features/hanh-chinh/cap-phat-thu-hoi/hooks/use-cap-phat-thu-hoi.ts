@@ -1,8 +1,10 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import type { CapPhatThuHoiListServerQuery } from '../services/cap-phat-thu-hoi-list-query';
 import { toast } from 'sonner';
 import i18n from '../../../../lib/i18n';
 import {
   getPhieuList,
+  getPhieuCapPhatPage,
   getPhieuById,
   deletePhieu,
   createPhieuAndExecute,
@@ -16,6 +18,17 @@ import {
 import type { PhieuCapPhatThuHoi, PhieuCapPhatThuHoiCreate, PhieuChiTietWithHeader, PhieuChiTietRow } from '../core/types';
 
 const QUERY_KEY = ['phieuCapPhatThuHoi'] as const;
+
+/** Một trang danh sách — lọc / sắp xếp / phân trang chạy ở PostgREST. */
+export function usePhieuCapPhatPage(query: CapPhatThuHoiListServerQuery, enabled = true) {
+  return useQuery({
+    queryKey: [...QUERY_KEY, 'page', query],
+    queryFn: () => getPhieuCapPhatPage(query),
+    enabled,
+    placeholderData: keepPreviousData,
+    staleTime: 1000 * 60 * 2,
+  });
+}
 
 export const usePhieuList = (params: GetPhieuListParams = {}) =>
   useQuery({

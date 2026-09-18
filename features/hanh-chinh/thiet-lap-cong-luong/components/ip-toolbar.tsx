@@ -30,6 +30,7 @@ const PayrollWifiIpToolbar: React.FC<Props> = ({ items = [], onAdd, onImport, on
   const toggleColumn = usePayrollWifiIpStore((s) => s.toggleColumn);
   const reorderColumns = usePayrollWifiIpStore((s) => s.reorderColumns);
   const resetColumns = usePayrollWifiIpStore((s) => s.resetColumns);
+  const resetColumnWidths = usePayrollWifiIpStore((s) => s.resetColumnWidths);
   const selectedIds = usePayrollWifiIpStore((s) => s.selectedIds);
   const clearSelection = usePayrollWifiIpStore((s) => s.clearSelection);
   const { data: branches = [] } = useBranches();
@@ -167,7 +168,6 @@ const PayrollWifiIpToolbar: React.FC<Props> = ({ items = [], onAdd, onImport, on
       filterGroups={filterGroups}
       mobileActions={mobileActions}
       onAdd={onAdd}
-      searchPlaceholder={t('payrollIp.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       onDeleteMany={() => onDeleteMany(Array.from(selectedIds))}
@@ -176,6 +176,7 @@ const PayrollWifiIpToolbar: React.FC<Props> = ({ items = [], onAdd, onImport, on
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
+      onResetColumnWidths={resetColumnWidths}
       showBack
     />
   );

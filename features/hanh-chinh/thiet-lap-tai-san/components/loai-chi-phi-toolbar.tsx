@@ -27,6 +27,7 @@ const LoaiChiPhiToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, o
   const toggleColumn = useLoaiChiPhiStore((s) => s.toggleColumn);
   const reorderColumns = useLoaiChiPhiStore((s) => s.reorderColumns);
   const resetColumns = useLoaiChiPhiStore((s) => s.resetColumns);
+  const resetColumnWidths = useLoaiChiPhiStore((s) => s.resetColumnWidths);
   const selectedIds = useLoaiChiPhiStore((s) => s.selectedIds);
   const clearSelection = useLoaiChiPhiStore((s) => s.clearSelection);
 
@@ -74,7 +75,6 @@ const LoaiChiPhiToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, o
       filters={renderFilters}
       filterGroups={[{ key: 'status', label: t('common.status'), icon: CircleDollarSign, options: statusOptions, value: filters.status, onChange: (val: string[]) => setFilter('status', val) }]}
       onAdd={canCreate ? onAdd : undefined}
-      searchPlaceholder={t('thietLapTaiSan.loaiChiPhi.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       onDeleteMany={canDelete ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
@@ -83,6 +83,7 @@ const LoaiChiPhiToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, o
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
+      onResetColumnWidths={resetColumnWidths}
       showBack
     />
   );

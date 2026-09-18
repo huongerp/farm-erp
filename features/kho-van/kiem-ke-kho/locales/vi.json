@@ -46,7 +46,6 @@
   "kiemKeKho.validation.idKhoRequired": "Vui lòng chọn ít nhất một kho",
   "kiemKeKho.validation.ngayKetThucAfterBatDau": "Ngày kết thúc phải sau ngày bắt đầu",
   "kiemKeKho.validation.soLuongNonNegative": "Số lượng phải ≥ 0",
-  "kiemKeKho.searchPlaceholder": "Tìm theo mã, tên đợt, người tạo, người phụ trách...",
   "kiemKeKho.loading": "Đang tải...",
   "kiemKeKho.empty": "Chưa có đợt kiểm kê",
   "kiemKeKho.emptyHint": "Bấm Tạo đợt kiểm kê để bắt đầu.",

@@ -2,7 +2,7 @@ import { createGenericStore, type ColumnConfig } from '../../../../store/createG
 import i18n from '../../../../lib/i18n';
 import type { ThanhToanFilters } from '../core/types';
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'ngay', label: i18n.t('hopDong.thanhToan.store.ngayCol'), visible: true, minWidth: 100, maxWidth: 120, order: 0 },
   {
     id: 'ma_hop_dong',
@@ -43,4 +43,4 @@ const initialFilters: ThanhToanFilters = {
   nguoiTaoIds: [],
 };
 
-export const useThanhToanStore = createGenericStore<ThanhToanFilters>(initialFilters, DEFAULT_COLUMNS);
+export const useThanhToanStore = createGenericStore<ThanhToanFilters>(initialFilters, DEFAULT_COLUMNS, 'table-quan-ly-hop-dong-thanh-toan');

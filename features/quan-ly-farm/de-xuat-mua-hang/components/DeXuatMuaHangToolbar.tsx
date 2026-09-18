@@ -57,6 +57,7 @@ const DeXuatMuaHangToolbar: React.FC<Props> = ({
   const toggleColumn = useDeXuatMuaHangStore((s) => s.toggleColumn);
   const reorderColumns = useDeXuatMuaHangStore((s) => s.reorderColumns);
   const resetColumns = useDeXuatMuaHangStore((s) => s.resetColumns);
+  const resetColumnWidths = useDeXuatMuaHangStore((s) => s.resetColumnWidths);
 
   const { inputValue: searchInput, setInputValue: setSearchInput } = useSearchInputCommit({
     committedTerm: searchTerm,
@@ -414,13 +415,13 @@ const DeXuatMuaHangToolbar: React.FC<Props> = ({
       searchTrailing={searchTrailingExport}
       onAdd={canCreate ? onAdd : undefined}
       showBack
-      searchPlaceholder={t('deXuatMuaHang.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       columns={columns}
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
+      onResetColumnWidths={resetColumnWidths}
     />
   );
 };

@@ -56,6 +56,7 @@ const DonDatHangToolbar: React.FC<Props> = ({
   const toggleColumn = useDonDatHangStore((s) => s.toggleColumn);
   const reorderColumns = useDonDatHangStore((s) => s.reorderColumns);
   const resetColumns = useDonDatHangStore((s) => s.resetColumns);
+  const resetColumnWidths = useDonDatHangStore((s) => s.resetColumnWidths);
 
   const { inputValue: searchInput, setInputValue: setSearchInput } = useSearchInputCommit({
     committedTerm: searchTerm,
@@ -305,13 +306,13 @@ const DonDatHangToolbar: React.FC<Props> = ({
       searchTrailing={searchTrailingExport}
       onAdd={canCreate ? onAdd : undefined}
       showBack
-      searchPlaceholder={t('donDatHang.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       columns={columns}
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
+      onResetColumnWidths={resetColumnWidths}
     />
   );
 };

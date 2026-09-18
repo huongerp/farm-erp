@@ -1,4 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import type { HopDongListServerQuery } from '../services/hop-dong-list-query';
 import { toast } from 'sonner';
 import i18n from '../../../../lib/i18n';
 import {
@@ -13,6 +14,7 @@ import {
   deleteHopDongSupabase,
   deleteHopDongManySupabase,
   getAllHopDongChiTietEnrichedSupabase,
+  getHopDongPageSupabase as getHopDongPage,
 } from '../services/hop-dong-supabase.service';
 import type { HopDongFormValues, HopDongChiTietLineValues } from '../core/schema';
 import type { TrangThaiHopDong } from '../core/constants';
@@ -26,6 +28,17 @@ function invalidateHopDongQueries(queryClient: ReturnType<typeof useQueryClient>
   if (idHopDong) {
     queryClient.invalidateQueries({ queryKey: [...HOP_DONG_QUERY_KEY, 'detail', idHopDong] });
   }
+}
+
+/** Một trang danh sách — lọc / sắp xếp / phân trang chạy ở PostgREST. */
+export function useHopDongPage(query: HopDongListServerQuery, enabled = true) {
+  return useQuery({
+    queryKey: [...HOP_DONG_QUERY_KEY, 'page', query],
+    queryFn: () => getHopDongPage(query),
+    enabled,
+    placeholderData: keepPreviousData,
+    staleTime: 1000 * 60 * 2,
+  });
 }
 
 export function useHopDongList() {

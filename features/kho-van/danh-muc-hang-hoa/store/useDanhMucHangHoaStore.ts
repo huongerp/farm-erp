@@ -5,7 +5,7 @@ export interface DanhMucHangHoaFilters {
   status: string[];
 }
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'thu_tu', label: i18n.t('danhMucHangHoa.store.orderCol'), visible: true, minWidth: 80, maxWidth: 100, order: 0 },
   { id: 'ten_danh_muc', label: i18n.t('danhMucHangHoa.store.nameCol'), visible: true, minWidth: 180, maxWidth: 320, order: 1 },
   { id: 'ma_danh_muc', label: i18n.t('danhMucHangHoa.store.codeCol'), visible: true, minWidth: 120, maxWidth: 180, order: 2 },
@@ -21,5 +21,6 @@ const initialFilters: DanhMucHangHoaFilters = {
 
 export const useDanhMucHangHoaStore = createGenericStore<DanhMucHangHoaFilters>(
   initialFilters,
-  DEFAULT_COLUMNS
+  DEFAULT_COLUMNS,
+  'table-danh-muc-hang-hoa'
 );

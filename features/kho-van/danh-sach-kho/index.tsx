@@ -16,13 +16,17 @@ import {
   useDeleteKhoMany,
   useImportKho,
 } from './hooks/use-kho';
-import { useKhoStore } from './store/useKhoStore';
+import { useKhoStore, DEFAULT_COLUMNS } from './store/useKhoStore';
 import { useConfirmStore } from '../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL, CONFIRM_YES } from '../../../lib/button-labels';
 import { useListWithFilter } from '../../../lib/hooks';
 import { useExportData } from '../../../lib/useExportData';
 import { TRANG_THAI_HOAT_DONG } from '../../../lib/constants';
 import { Kho } from './core/types';
+import { createListSearchMatcher } from '../../../lib/list-search-matcher';
+
+/** Ô tìm kiếm quét MỌI cột của bảng, bỏ dấu tiếng Việt — xem lib/list-search-matcher.ts. */
+const khopTimKiem = createListSearchMatcher({ columns: DEFAULT_COLUMNS });
 
 const DanhSachKhoPage: React.FC = () => {
   const { t } = useTranslation();
@@ -34,6 +38,7 @@ const DanhSachKhoPage: React.FC = () => {
     resetState,
     selectedIds,
     columns,
+    resizeColumn,
     clearSelection,
     toggleSelection,
     toggleAllSelection,
@@ -82,13 +87,7 @@ const DanhSachKhoPage: React.FC = () => {
   }, [khoList, viewingItem?.id]);
 
   const filterFn = useCallback((item: Kho, term: string, f: typeof filters) => {
-    const searchLower = term.toLowerCase();
-    const matchesSearch =
-      !term ||
-      item.ten_kho.toLowerCase().includes(searchLower) ||
-      item.ma_kho.toLowerCase().includes(searchLower) ||
-      (item.dia_chi?.toLowerCase().includes(searchLower) ?? false) ||
-      (item.ten_chi_nhanh?.toLowerCase().includes(searchLower) ?? false);
+    const matchesSearch = khopTimKiem(item, term);
     const statusKey = item.trang_thai === 'Đang hoạt động' ? 'Active' : 'Inactive';
     const matchesStatus = f.status.length === 0 || f.status.includes(statusKey);
     const matchesBranch =
@@ -261,6 +260,7 @@ const DanhSachKhoPage: React.FC = () => {
           <DanhSachKhoList
             data={filteredList}
             columns={columns}
+            onResizeColumn={resizeColumn}
             selectedIds={selectedIds}
             onToggleSelection={toggleSelection}
             onToggleAllSelection={toggleAllSelection}

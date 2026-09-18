@@ -106,7 +106,6 @@
   "thanhToanDoiTac.toast.createSuccess": "Tạo phiếu thanh toán thành công",
   "thanhToanDoiTac.toast.updateSuccess": "Cập nhật phiếu thanh toán thành công",
   "thanhToanDoiTac.toast.deleteSuccess": "Xóa phiếu thanh toán thành công",
-  "thanhToanDoiTac.searchPlaceholder": "Tìm theo số phiếu, hạng mục, đối tác, đơn vị...",
   "thanhToanDoiTac.loading": "Đang tải...",
   "thanhToanDoiTac.empty": "Chưa có phiếu nào",
   "thanhToanDoiTac.emptyHint": "Thêm phiếu mới bằng nút Thêm mới",

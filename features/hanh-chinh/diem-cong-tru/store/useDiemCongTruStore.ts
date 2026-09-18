@@ -7,7 +7,7 @@ export interface DiemCongTruFilters {
   yearMonth: string;
 }
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'ten_nhan_vien', label: i18n.t('diemCongTru.store.employeeCol'), visible: true, minWidth: 180, order: 0 },
   { id: 'period', label: i18n.t('diemCongTru.store.periodCol'), visible: true, minWidth: 120, order: 1 },
   { id: 'loai', label: i18n.t('diemCongTru.store.loaiCol'), visible: true, minWidth: 100, order: 2 },
@@ -25,5 +25,6 @@ const initialFilters: DiemCongTruFilters = {
 
 export const useDiemCongTruStore = createGenericStore<DiemCongTruFilters>(
   initialFilters,
-  DEFAULT_COLUMNS
+  DEFAULT_COLUMNS,
+  'table-diem-cong-tru'
 );

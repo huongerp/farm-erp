@@ -13,6 +13,10 @@ import { getStatusBadgeClass } from '../../../../lib/status-badge';
 interface Props {
   data: AdminFormRequest[];
   isLoading: boolean;
+  /** Đang tải trang mới nhưng đã có dữ liệu cũ — hiện lớp phủ mờ thay vì skeleton. */
+  isFetching?: boolean;
+  /** Tổng số bản ghi khớp bộ lọc (phân trang ở server). */
+  totalRecordsOverride?: number;
   onView?: (item: AdminFormRequest) => void;
   onEdit?: (item: AdminFormRequest) => void;
   onDelete?: (id: string) => void;
@@ -21,10 +25,11 @@ interface Props {
   canDelete?: boolean;
 }
 
-const AdminFormTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, onDelete, useStore, canUpdate = true, canDelete = true }) => {
+const AdminFormTable: React.FC<Props> = ({ isFetching, totalRecordsOverride, data, isLoading, onView, onEdit, onDelete, useStore, canUpdate = true, canDelete = true }) => {
   const { t } = useTranslation();
   const {
     columns,
+    resizeColumn,
     pagination,
     setPage,
     setPageSize,
@@ -243,7 +248,10 @@ const AdminFormTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, onDe
     <GenericTable
       data={data}
       columns={columns}
+      onResizeColumn={resizeColumn}
       isLoading={isLoading}
+      isFetching={isFetching}
+      totalRecordsOverride={totalRecordsOverride}
       loadingText={t('adminForm.loading')}
       selectedIds={selectedIds}
       onToggleSelection={toggleSelection}

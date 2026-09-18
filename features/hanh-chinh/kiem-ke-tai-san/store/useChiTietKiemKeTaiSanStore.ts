@@ -7,7 +7,7 @@ export interface ChiTietKiemKeTaiSanFilters {
   ket_qua: string[];
 }
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'tai_san', label: i18n.t('kiemKeTaiSan.store.taiSanCol'), visible: true, minWidth: 160, order: 0 },
   { id: 'noi_luu_so', label: i18n.t('kiemKeTaiSan.store.noiLuuSoCol'), visible: true, minWidth: 120, order: 1 },
   { id: 'nguoi_giu_so', label: i18n.t('kiemKeTaiSan.store.nguoiGiuSoCol'), visible: true, minWidth: 120, order: 2 },
@@ -66,6 +66,7 @@ export const useChiTietKiemKeTaiSanStore = create<GenericState<ChiTietKiemKeTaiS
     }),
   })),
   resetColumns: () => set({ columns: DEFAULT_COLUMNS.map((c, i) => ({ ...c, order: c.order ?? i })) }),
+  resetColumnWidths: () => set((state) => ({ columns: state.columns.map((c) => ({ ...c, width: undefined })) })),
   setColumns: (updater) => set((state) => ({ columns: updater(state.columns) })),
   setSort: (column, direction) => set({ sort: { column, direction } }),
   resetState: () => set({
@@ -74,6 +75,6 @@ export const useChiTietKiemKeTaiSanStore = create<GenericState<ChiTietKiemKeTaiS
     pagination: { page: 1, pageSize: CHILD_PAGE_SIZE },
     sort: { column: null, direction: null },
     selectedIds: new Set(),
-    columns: DEFAULT_COLUMNS.map((c, i) => ({ ...c, order: c.order ?? i })),
+    // Không reset `columns`: tuỳ chỉnh cột là cấu hình cá nhân, xem createGenericStore.
   }),
 }));

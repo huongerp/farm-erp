@@ -5,7 +5,7 @@ export interface TienDoMuaHangFilters {
   status: string[];
 }
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'ma', label: i18n.t('thietLapDeXuatVatTu.tienDoMuaHang.store.maCol'), visible: true, minWidth: 120, order: 0 },
   { id: 'ten', label: i18n.t('thietLapDeXuatVatTu.tienDoMuaHang.store.tenCol'), visible: true, minWidth: 140, order: 1 },
   { id: 'thu_tu', label: i18n.t('thietLapDeXuatVatTu.tienDoMuaHang.store.thuTuCol'), visible: true, minWidth: 90, order: 2 },
@@ -15,4 +15,4 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'tg_cap_nhat', label: i18n.t('thietLapDeXuatVatTu.tienDoMuaHang.store.updatedCol'), visible: false, minWidth: 140, order: 6 },
 ];
 
-export const useTienDoMuaHangStore = createGenericStore<TienDoMuaHangFilters>({ status: [] }, DEFAULT_COLUMNS);
+export const useTienDoMuaHangStore = createGenericStore<TienDoMuaHangFilters>({ status: [] }, DEFAULT_COLUMNS, 'table-thiet-lap-de-xuat-vat-tu-tien-do-mua-hang');

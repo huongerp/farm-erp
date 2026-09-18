@@ -8,7 +8,10 @@ import ErrorState from './ErrorState';
 import LoadingSpinnerWithText from './LoadingSpinnerWithText';
 import { cn } from '../../lib/utils';
 import type { ColumnConfig, SortState } from '../../store/createGenericStore';
-import { getColumnCellStyle, getEffectiveColumnMinWidth, usesColumnNoWrapPreset } from '../../store/createGenericStore';
+import { getColumnCellStyle, usesColumnNoWrapPreset } from '../../store/createGenericStore';
+import { resolveAutoFitWidth } from '../../lib/table-core/column-autofit';
+import { useAutoFitColumns } from '../../lib/table-core/use-auto-fit-columns';
+import ColumnResizeHandle from './column-header/ColumnResizeHandle';
 
 /** Ngưỡng kích hoạt virtual scroll tự động (số dòng trên trang) */
 const VIRTUAL_THRESHOLD = 50;
@@ -16,8 +19,6 @@ const VIRTUAL_THRESHOLD = 50;
 const TABLE_CHECKBOX_WIDTH = 44;
 /** Chiều rộng mặc định cột Thao tác (px) */
 const DEFAULT_TABLE_ACTION_COLUMN_WIDTH = 80;
-/** MinWidth mặc định cho cột khi tính sticky offset (px) */
-const DEFAULT_COLUMN_MIN_WIDTH = 128;
 
 interface GenericTableProps<T> {
   data: T[];
@@ -124,28 +125,38 @@ function GenericTable<T>({
   );
 
   const actionColWidth = showActionsColumn ? actionsColumnWidth : 0;
-  const bodyColSpan = dataColumns.length + 1 + (showActionsColumn ? 1 : 0);
+  // +1 checkbox, +1 cột đệm (nuốt phần dư bề rộng), +1 cột Thao tác nếu hiện.
+  const bodyColSpan = dataColumns.length + 2 + (showActionsColumn ? 1 : 0);
 
-  /** Tổng minWidth của bảng để luôn cuộn ngang khi nhiều cột, tránh ép cột xuống dòng */
-  const tableMinWidth = useMemo(() => {
-    const cols = dataColumns.reduce(
-      (sum, c) => sum + (c.width ?? getEffectiveColumnMinWidth(c, DEFAULT_COLUMN_MIN_WIDTH)),
-      0
-    );
-    return TABLE_CHECKBOX_WIDTH + cols + actionColWidth;
-  }, [dataColumns, actionColWidth]);
+  /**
+   * Bề rộng thật của từng cột dữ liệu (px) — nguồn DUY NHẤT cho `<colgroup>`,
+   * tổng bề rộng bảng và offset sticky. Ưu tiên: user kéo tay > số tự đo > preset.
+   */
+  const { autoWidths, setHeaderCellRef } = useAutoFitColumns(
+    !isLoading && data.length > 0,
+    dataColumns.map((c) => c.id).join('|')
+  );
+  const columnWidths = useMemo(
+    () => dataColumns.map((col) => resolveAutoFitWidth(col, autoWidths.get(col.id))),
+    [dataColumns, autoWidths]
+  );
+
+  /** Tổng bề rộng tối thiểu của bảng để luôn cuộn ngang khi nhiều cột. */
+  const tableMinWidth = useMemo(
+    () => TABLE_CHECKBOX_WIDTH + columnWidths.reduce((sum, w) => sum + w, 0) + actionColWidth,
+    [columnWidths, actionColWidth]
+  );
 
   /** Tính left offset tích lũy cho từng cột sticky (sau checkbox) */
   const stickyLeftOffsets = useMemo(() => {
     const offsets: number[] = [];
     let acc = TABLE_CHECKBOX_WIDTH - 1; // -1px overlap checkbox → cột đầu
-    for (let i = 0; i < stickyLeftCount && i < dataColumns.length; i++) {
+    for (let i = 0; i < stickyLeftCount && i < columnWidths.length; i++) {
       offsets.push(acc);
-      const col = dataColumns[i];
-      acc += col.width ?? getEffectiveColumnMinWidth(col, DEFAULT_COLUMN_MIN_WIDTH);
+      acc += columnWidths[i];
     }
     return offsets;
-  }, [dataColumns, stickyLeftCount]);
+  }, [columnWidths, stickyLeftCount]);
   const totalRecords = totalRecordsOverride ?? data.length;
   const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
 
@@ -222,33 +233,6 @@ function GenericTable<T>({
       onSort(colId, 'asc');
     }
   }, [onSort, sort]);
-
-  // Column resize handler
-  const resizingRef = useRef<{ colId: string; startX: number; startW: number } | null>(null);
-
-  const handleResizeStart = useCallback((e: React.MouseEvent, colId: string, currentWidth: number) => {
-    e.preventDefault();
-    e.stopPropagation();
-    resizingRef.current = { colId, startX: e.clientX, startW: currentWidth };
-
-    const onMove = (ev: MouseEvent) => {
-      if (!resizingRef.current) return;
-      const delta = ev.clientX - resizingRef.current.startX;
-      const newW = Math.max(resizingRef.current.startW + delta, 50);
-      onResizeColumn?.(resizingRef.current.colId, newW);
-    };
-    const onUp = () => {
-      resizingRef.current = null;
-      document.removeEventListener('mousemove', onMove);
-      document.removeEventListener('mouseup', onUp);
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-    };
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseup', onUp);
-    document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none';
-  }, [onResizeColumn]);
 
   // Density padding
   const cellPy = density === 'compact' ? 'py-1.5' : density === 'comfortable' ? 'py-3' : 'py-2';
@@ -348,10 +332,27 @@ function GenericTable<T>({
         <div className={cn("absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-card/80 to-transparent z-[4] pointer-events-none transition-opacity", scrollShadow.right ? "opacity-100" : "opacity-0")} />
 
         <div ref={(el) => { (scrollRef as any).current = el; (virtualParentRef as any).current = el; }} className="h-full overflow-auto custom-scrollbar" style={{ overscrollBehavior: 'contain' }}>
-          <table className="text-body-sm text-left border-separate border-spacing-0" style={{ minWidth: tableMinWidth, width: '100%' }}>
+          {/*
+            `tableLayout: 'fixed'` là BẮT BUỘC cho resize: với 'auto' trình duyệt tính
+            lại bề rộng theo ô rộng nhất, kéo cột sẽ "không ăn". `width: 100%` kèm
+            `minWidth` (không phải width cứng) + một <col> đệm KHÔNG width để phần dư
+            dồn vào cột đệm, thay vì chia lại cho các cột thật.
+          */}
+          <table
+            className="text-body-sm text-left border-separate border-spacing-0"
+            style={{ minWidth: tableMinWidth, width: '100%', tableLayout: 'fixed' }}
+          >
+            <colgroup>
+              <col style={{ width: TABLE_CHECKBOX_WIDTH }} />
+              {dataColumns.map((col, index) => (
+                <col key={col.id} style={{ width: columnWidths[index] }} />
+              ))}
+              <col />
+              {showActionsColumn && <col style={{ width: actionColWidth }} />}
+            </colgroup>
             <thead className="sticky top-0 z-[2]">
               {renderSummaryRow && (
-                <tr className="bg-muted/60 border-b border-border/80">
+                <tr className="bg-muted border-b border-border/80">
                   <th
                     className={cn(
                       "sticky left-0 z-[3] px-3 py-1.5 border-b border-r border-border/80 text-center text-xs font-medium",
@@ -366,9 +367,9 @@ function GenericTable<T>({
                   </th>
                   {dataColumns.map((col, index) => {
                     const isSticky = index < stickyLeftCount;
-                    const colStyle: React.CSSProperties = col.width
-                      ? { ...getColumnCellStyle(col), width: col.width }
-                      : getColumnCellStyle(col);
+                    // Bề rộng do <colgroup> quyết định (table-layout: fixed) — ô chỉ
+                    // cần biết offset sticky.
+                    const colStyle: React.CSSProperties = {};
                     if (isSticky) {
                       colStyle.left = stickyLeftOffsets[index];
                     }
@@ -376,8 +377,10 @@ function GenericTable<T>({
                       <th
                         key={col.id}
                         className={cn(
-                          "px-4 py-1.5 text-xs font-medium text-muted-foreground border-b border-border/80 whitespace-nowrap",
-                          isSticky && "sticky z-[3] bg-muted border-r border-border/80"
+                          // Hàng tổng nằm trong thead sticky → nền phải ĐỤC, nếu không
+                          // dòng dữ liệu cuộn bên dưới sẽ nhìn xuyên qua.
+                          "px-4 py-1.5 text-xs font-medium text-muted-foreground border-b border-border/80 whitespace-nowrap bg-muted",
+                          isSticky && "sticky z-[3] border-r border-border/80"
                         )}
                         style={colStyle}
                       >
@@ -387,6 +390,9 @@ function GenericTable<T>({
                       </th>
                     );
                   })}
+                  {/* Cột đệm: nuốt phần dư khi khung rộng hơn tổng bề rộng cột. */}
+                  <th className="bg-muted border-b border-border/80" aria-hidden />
+
                   {showActionsColumn && (
                   <th
                     className="sticky right-0 z-[3] px-3 py-1.5 bg-muted border-b border-l border-border/80 text-center"
@@ -414,16 +420,15 @@ function GenericTable<T>({
                   const isSticky = index < stickyLeftCount;
                   const isSorted = sort?.column === col.id;
                   const sortable = !!onSort;
-                  const colStyle: React.CSSProperties = col.width
-                    ? { ...getColumnCellStyle(col), width: col.width }
-                    : getColumnCellStyle(col);
+                  const colStyle: React.CSSProperties = {};
                   if (isSticky) {
                     colStyle.left = stickyLeftOffsets[index];
                   }
                   return (
                     <th
                       key={col.id}
-                        onClick={() => sortable && handleHeaderClick(col.id)}
+                      ref={(el) => setHeaderCellRef(col.id, el)}
+                      onClick={() => sortable && handleHeaderClick(col.id)}
                       className={cn(
                         "px-4 font-semibold text-foreground/80 border-b border-border text-xs whitespace-nowrap transition-colors select-none relative",
                         headerPy,
@@ -443,23 +448,13 @@ function GenericTable<T>({
                           </span>
                         )}
                       </div>
-                      {/* Column resize handle */}
-                      {onResizeColumn && (
-                        <div
-                          role="separator"
-                          aria-orientation="vertical"
-                          onMouseDown={(e) => {
-                            const th = e.currentTarget.parentElement;
-                            handleResizeStart(e, col.id, th?.offsetWidth ?? col.minWidth ?? 100);
-                          }}
-                          className="absolute right-0 top-0 bottom-0 w-[5px] cursor-col-resize z-10 group/handle hover:bg-primary/30 active:bg-primary/50 transition-colors"
-                        >
-                          <div className="absolute right-[2px] top-1/2 -translate-y-1/2 w-[1px] h-3.5 bg-border group-hover/handle:bg-primary/60 transition-colors" />
-                        </div>
-                      )}
+                      <ColumnResizeHandle col={col} onResizeColumn={onResizeColumn} />
                     </th>
                   );
                 })}
+
+                {/* Cột đệm: nuốt phần dư khi khung rộng hơn tổng bề rộng cột. */}
+                <th className={cn("bg-muted border-b border-border", headerPy)} aria-hidden />
 
                 {showActionsColumn && (
                 <th className={cn("sticky right-0 z-[3] px-3 bg-muted border-b border-l border-border text-center font-semibold text-foreground/80 text-xs", headerPy)} style={{ width: actionColWidth }}>
@@ -528,10 +523,7 @@ function GenericTable<T>({
 
                             {dataColumns.map((col, index) => {
                               const isSticky = index < stickyLeftCount;
-                              const tdStyle: React.CSSProperties = {
-                                ...getColumnCellStyle(col),
-                                ...(col.width != null ? { width: col.width } : {}),
-                              };
+                              const tdStyle: React.CSSProperties = {};
                               if (isSticky) {
                                 tdStyle.left = stickyLeftOffsets[index];
                               }
@@ -555,6 +547,8 @@ function GenericTable<T>({
                                 </td>
                               );
                             })}
+
+                            <td aria-hidden />
 
                             {showActionsColumn && (
                             <td

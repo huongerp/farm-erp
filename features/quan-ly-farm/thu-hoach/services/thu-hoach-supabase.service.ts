@@ -1,7 +1,19 @@
 /**
  * Thu hoạch — Supabase fp_farm_thu_hoach
  */
-import { db, fetchAllRows, throwSupabaseError } from '../../../../lib/db';
+import {
+  db,
+  fetchAllRows,
+  fetchTablePage,
+  throwSupabaseError,
+  type PaginatedTableResult,
+} from '../../../../lib/db';
+import { applyPostgrestSearch } from '../../../../lib/postgrest-search';
+import {
+  THU_HOACH_SORTABLE_DB_COLUMNS,
+  THU_HOACH_SORT_MAC_DINH,
+  type ThuHoachListServerQuery,
+} from './thu-hoach-list-query';
 import i18n from '../../../../lib/i18n';
 import type { FarmThuHoach } from '../core/types';
 import { THU_HOACH_DAY_SUFFIXES } from '../core/types';
@@ -140,6 +152,86 @@ export async function appendThuHoachTraoDoiSupabase(
     .single();
   if (error) throwSupabaseError(error);
   return rowToModel(data as DbRow);
+}
+
+/** Cột tham gia ô tìm kiếm ở server. */
+const THU_HOACH_SEARCH_SPEC = {
+  text: ['ten_chi_nhanh', 'ghi_chu', 'trao_doi'],
+  numeric: ['id', 'nam', 'tuan'],
+} as const;
+
+/** Lọc + sắp xếp dùng chung cho trang danh sách và cho lượt tải phục vụ xuất file. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyThuHoachListQuery(q: any, query: ThuHoachListServerQuery): any {
+  let sel = q;
+
+  if (!query.viewAll) {
+    const ids = query.allowedBranchIds.map(Number).filter(Number.isFinite);
+    sel = ids.length === 0 ? sel.eq('id', -1) : sel.in('id_chi_nhanh', ids);
+  }
+  if (query.idChiNhanh.length > 0) {
+    sel = sel.in('id_chi_nhanh', query.idChiNhanh.map(Number).filter(Number.isFinite));
+  }
+  if (query.nam.length > 0) sel = sel.in('nam', query.nam.map(Number).filter(Number.isFinite));
+  if (query.tuan.length > 0) sel = sel.in('tuan', query.tuan.map(Number).filter(Number.isFinite));
+
+  sel = applyPostgrestSearch(sel, query.searchTerm, THU_HOACH_SEARCH_SPEC);
+
+  const dbSortable = query.sortColumn != null && THU_HOACH_SORTABLE_DB_COLUMNS.has(query.sortColumn);
+  const sortCol = dbSortable ? query.sortColumn! : THU_HOACH_SORT_MAC_DINH.column;
+  const ascending = dbSortable ? query.sortDirection !== 'desc' : THU_HOACH_SORT_MAC_DINH.ascending;
+
+  sel = sel.order(sortCol, { ascending });
+  if (sortCol === 'nam') sel = sel.order('tuan', { ascending });
+  return sel.order('id', { ascending: false });
+}
+
+export async function getThuHoachPageSupabase(
+  query: ThuHoachListServerQuery
+): Promise<PaginatedTableResult<FarmThuHoach>> {
+  const result = await fetchTablePage<DbRow>(query.page, query.pageSize, async (from, to) => {
+    const res = await applyThuHoachListQuery(
+      db.from(TABLE).select(THU_HOACH_ROW_COLUMNS, { count: 'exact' }),
+      query
+    ).range(from, to);
+    return { data: (res.data as DbRow[] | null) ?? null, error: res.error, count: res.count };
+  });
+  return { ...result, data: result.data.map(rowToModel) };
+}
+
+/** Toàn bộ bản ghi khớp bộ lọc — chỉ gọi khi mở hộp thoại Xuất file. */
+export async function fetchAllThuHoachForListQuery(
+  query: ThuHoachListServerQuery
+): Promise<FarmThuHoach[]> {
+  const rows = await fetchAllRows<DbRow>((from, to) =>
+    applyThuHoachListQuery(db.from(TABLE).select(THU_HOACH_ROW_COLUMNS), query).range(from, to)
+  );
+  return rows.map(rowToModel);
+}
+
+/** Tóm tắt toàn bộ phiếu (5 cột) — chip lọc năm/tuần/chi nhánh + gợi ý chi nhánh. */
+export async function getThuHoachTomTatSupabase(
+  viewAll: boolean,
+  allowedBranchIds: string[]
+): Promise<ThuHoachTomTatRow[]> {
+  return fetchAllRows<ThuHoachTomTatRow>((from, to) => {
+    let sel = db.from(TABLE).select('id,nam,tuan,id_chi_nhanh,ten_chi_nhanh,id_nguoi_tao,tg_tao');
+    if (!viewAll) {
+      const ids = allowedBranchIds.map(Number).filter(Number.isFinite);
+      sel = ids.length === 0 ? sel.eq('id', -1) : sel.in('id_chi_nhanh', ids);
+    }
+    return sel.order('nam', { ascending: false }).range(from, to);
+  });
+}
+
+export interface ThuHoachTomTatRow {
+  id: number;
+  nam: number;
+  tuan: number;
+  id_chi_nhanh: number | null;
+  ten_chi_nhanh: string | null;
+  id_nguoi_tao: number | null;
+  tg_tao: string | null;
 }
 
 export async function getAllThuHoachSupabase(): Promise<FarmThuHoach[]> {

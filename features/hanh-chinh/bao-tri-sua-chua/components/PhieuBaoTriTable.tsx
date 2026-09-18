@@ -11,16 +11,21 @@ import { useBaoTriSuaChuaStore } from '../store/useBaoTriSuaChuaStore';
 interface Props {
   data: PhieuBaoTriSuaChua[];
   isLoading: boolean;
+  /** Đang tải trang mới nhưng đã có dữ liệu cũ — hiện lớp phủ mờ thay vì skeleton. */
+  isFetching?: boolean;
+  /** Tổng số bản ghi khớp bộ lọc (phân trang ở server). */
+  totalRecordsOverride?: number;
   onView?: (item: PhieuBaoTriSuaChua) => void;
   onEdit?: (item: PhieuBaoTriSuaChua) => void;
   onDelete?: (item: PhieuBaoTriSuaChua) => void;
   showActions?: boolean;
 }
 
-const PhieuBaoTriTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, onDelete, showActions = true }) => {
+const PhieuBaoTriTable: React.FC<Props> = ({ isFetching, totalRecordsOverride, data, isLoading, onView, onEdit, onDelete, showActions = true }) => {
   const { t } = useTranslation();
   const {
     columns,
+    resizeColumn,
     pagination,
     setPage,
     setPageSize,
@@ -169,7 +174,10 @@ const PhieuBaoTriTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, on
     <GenericTable<PhieuBaoTriSuaChua>
       data={data}
       columns={columns}
+      onResizeColumn={resizeColumn}
       isLoading={isLoading}
+      isFetching={isFetching}
+      totalRecordsOverride={totalRecordsOverride}
       selectedIds={selectedIds}
       onToggleSelection={toggleSelection}
       onToggleAll={toggleAllSelection}

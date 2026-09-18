@@ -2,7 +2,19 @@
  * Service danh mục tài sản – đọc/ghi Supabase (bảng fp_ts_tai_san).
  * Map: DB id_nhan_vien/ten_nhan_vien ↔ App id_nhan_vien_dang_giu/ten_nhan_vien_dang_giu.
  */
-import { db, throwSupabaseError } from '../../../../lib/db';
+import {
+  db,
+  fetchAllRows,
+  fetchTablePage,
+  throwSupabaseError,
+  type PaginatedTableResult,
+} from '../../../../lib/db';
+import { applyPostgrestSearch } from '../../../../lib/postgrest-search';
+import {
+  TAI_SAN_SORTABLE_DB_COLUMNS,
+  TAI_SAN_SORT_MAC_DINH,
+  type DanhSachTaiSanListServerQuery,
+} from './danh-muc-tai-san-list-query';
 import type { TaiSan } from '../core/types';
 import type { TaiSanFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
@@ -79,7 +91,6 @@ function rowToTaiSan(row: DbTaiSanRow): TaiSan {
     khau_hao_luy_ke: row.khau_hao_luy_ke ?? null,
     hinh_anh: row.hinh_anh ?? null,
     ghi_chu: row.ghi_chu ?? null,
-    trang_thai: 1,
     tg_tao: row.tg_tao ?? new Date().toISOString(),
     tg_cap_nhat: row.tg_cap_nhat ?? new Date().toISOString(),
   };
@@ -98,6 +109,96 @@ const TAI_SAN_DETAIL_COLUMNS =
 /** Danh sách — bỏ hinh_anh (base64) để giảm egress. */
 const TAI_SAN_LIST_LITE =
   'id,ma_tai_san,ten_tai_san,id_nhom,ten_nhom,id_noi_luu,ten_noi_luu,id_chi_nhanh,ten_chi_nhanh,id_trang_thai,ten_trang_thai,id_nhan_vien,ten_nhan_vien,thuong_hieu,model,serial,xuat_xu,ma_barcode,ten_nha_cung_cap,id_nguoi_tao,ten_nguoi_tao,ngay_nhap,nguyen_gia,ngay_bat_dau_trich_khau_hao,gia_tri_con_lai,khau_hao_luy_ke,ghi_chu,tg_tao,tg_cap_nhat';
+
+/** Cột tham gia ô tìm kiếm ở server. */
+const TAI_SAN_SEARCH_SPEC = {
+  text: [
+    'ma_tai_san',
+    'ten_tai_san',
+    'ten_nhom',
+    'ten_noi_luu',
+    'ten_trang_thai',
+    'ten_nhan_vien',
+    'ten_chi_nhanh',
+    'thuong_hieu',
+    'model',
+    'serial',
+    'xuat_xu',
+    'ma_barcode',
+    'ten_nha_cung_cap',
+    'ghi_chu',
+  ],
+  numeric: ['id', 'nguyen_gia'],
+  dates: ['ngay_nhap'],
+} as const;
+
+/** Lọc + sắp xếp dùng chung cho trang danh sách và cho lượt tải phục vụ xuất file. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyTaiSanListQuery(q: any, query: DanhSachTaiSanListServerQuery): any {
+  let sel = q;
+
+  if (query.idNhom.length > 0) sel = sel.in('id_nhom', query.idNhom.map(Number).filter(Number.isFinite));
+  if (query.idNoiLuu.length > 0) sel = sel.in('id_noi_luu', query.idNoiLuu.map(Number).filter(Number.isFinite));
+  if (query.idTrangThai.length > 0) {
+    sel = sel.in('id_trang_thai', query.idTrangThai.map(Number).filter(Number.isFinite));
+  }
+
+  sel = applyPostgrestSearch(sel, query.searchTerm, TAI_SAN_SEARCH_SPEC);
+
+  const dbSortable = query.sortColumn != null && TAI_SAN_SORTABLE_DB_COLUMNS.has(query.sortColumn);
+  const sortCol = dbSortable ? query.sortColumn! : TAI_SAN_SORT_MAC_DINH.column;
+  const ascending = dbSortable ? query.sortDirection !== 'desc' : TAI_SAN_SORT_MAC_DINH.ascending;
+
+  return sel.order(sortCol, { ascending }).order('id', { ascending: false });
+}
+
+export async function getTaiSanPageSupabase(
+  query: DanhSachTaiSanListServerQuery
+): Promise<PaginatedTableResult<TaiSan>> {
+  const result = await fetchTablePage<DbTaiSanRow>(query.page, query.pageSize, async (from, to) => {
+    const res = await applyTaiSanListQuery(
+      db.from(TABLE).select(TAI_SAN_LIST_LITE, { count: 'exact' }),
+      query
+    ).range(from, to);
+    return { data: (res.data as unknown as DbTaiSanRow[] | null) ?? null, error: res.error, count: res.count };
+  });
+  return { ...result, data: result.data.map(rowToTaiSan) };
+}
+
+/** Toàn bộ bản ghi khớp bộ lọc — CHỈ dùng khi bấm Xuất file. */
+export async function fetchAllTaiSanForListQuery(
+  query: DanhSachTaiSanListServerQuery
+): Promise<TaiSan[]> {
+  const rows = await fetchAllRows<DbTaiSanRow>((from, to) =>
+    applyTaiSanListQuery(db.from(TABLE).select(TAI_SAN_LIST_LITE), query).range(from, to)
+  );
+  return rows.map(rowToTaiSan);
+}
+
+/**
+ * Tóm tắt tài sản (7 cột) — cho các màn chỉ cần biết tài sản thuộc chi nhánh nào
+ * ai đang giữ và thuộc nhóm/nơi lưu/trạng thái nào (chip lọc phải đếm trên
+ * TOÀN BỘ dữ liệu, không phải trang đang xem), thay vì tải cả danh mục.
+ */
+export async function getTaiSanTomTatSupabase(): Promise<TaiSanTomTatRow[]> {
+  return fetchAllRows<TaiSanTomTatRow>((from, to) =>
+    db
+      .from(TABLE)
+      .select('id,ma_tai_san,id_chi_nhanh,id_nhan_vien,id_nhom,id_noi_luu,id_trang_thai')
+      .order('id', { ascending: true })
+      .range(from, to)
+  );
+}
+
+export interface TaiSanTomTatRow {
+  id: number;
+  ma_tai_san: string | null;
+  id_chi_nhanh: number | null;
+  id_nhan_vien: number | null;
+  id_nhom: number | null;
+  id_noi_luu: number | null;
+  id_trang_thai: number | null;
+}
 
 export async function getTaiSanListSupabase(): Promise<TaiSan[]> {
   const { data, error } = await db

@@ -1,14 +1,16 @@
 import { useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import type { DanhSachTaiSanListServerQuery } from '../services/danh-muc-tai-san-list-query';
+import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import i18n from '../../../../lib/i18n';
 import { useAuthStore } from '../../../../store/useStore';
 import {
   getTaiSanList,
+  getTaiSanPage,
+  getTaiSanTomTat,
   createTaiSan,
   updateTaiSan,
   deleteTaiSan,
-  updateTaiSanStatus,
   getNextMaTaiSan,
   checkMaTaiSanExists,
   getDistinctThuongHieu,
@@ -34,6 +36,26 @@ export function useAllowedTaiSanIds(): Set<string> | null {
     // Sau này: lấy danh sách id tài sản user được quyền (API hoặc id_phong_ban, cây quản lý)
     return null;
   }, [user]);
+}
+
+/** Một trang danh sách — lọc / sắp xếp / phân trang chạy ở PostgREST. */
+export function useTaiSanPage(query: DanhSachTaiSanListServerQuery, enabled = true) {
+  return useQuery({
+    queryKey: [...TAI_SAN_LIST_QUERY_KEY, 'page', query],
+    queryFn: () => getTaiSanPage(query),
+    enabled,
+    placeholderData: keepPreviousData,
+    staleTime: 1000 * 60 * 2,
+  });
+}
+
+/** Tóm tắt tài sản (id / mã / chi nhánh / người giữ) — nhẹ hơn danh sách đầy đủ rất nhiều. */
+export function useTaiSanTomTat() {
+  return useQuery({
+    queryKey: [...TAI_SAN_LIST_QUERY_KEY, 'tomTat'],
+    queryFn: getTaiSanTomTat,
+    staleTime: 1000 * 60 * 10,
+  });
 }
 
 export const useTaiSanList = () => {
@@ -77,20 +99,6 @@ export const useUpdateTaiSan = (onSuccess?: () => void) => {
       queryClient.invalidateQueries({ queryKey: ['taiSanDistinctNhaCungCap'] });
       toast.success(i18n.t('danhSachTaiSan.toast.updateSuccess'));
       if (onSuccess) onSuccess();
-    },
-    onError: (err: unknown) => toast.error((err as Error).message),
-  });
-};
-
-export const useUpdateTaiSanStatus = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ ids, status }: { ids: string[]; status: 0 | 1 }) => updateTaiSanStatus(ids, status),
-    onSuccess: (_data, variables) => {
-      queryClient.setQueryData(TAI_SAN_LIST_QUERY_KEY, (old: TaiSan[] | undefined) =>
-        old?.map((t) => (variables.ids.includes(t.id) ? { ...t, trang_thai: variables.status } : t)) ?? []
-      );
-      toast.success(i18n.t('danhSachTaiSan.toast.statusUpdate', { count: variables.ids.length }));
     },
     onError: (err: unknown) => toast.error((err as Error).message),
   });

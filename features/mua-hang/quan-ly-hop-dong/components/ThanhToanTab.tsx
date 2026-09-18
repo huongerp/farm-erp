@@ -13,7 +13,7 @@ import {
   useDeleteHopDongChiTiet,
 } from '../hooks/use-hop-dong';
 import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
-import { useThanhToanStore } from '../store/useThanhToanStore';
+import { useThanhToanStore, DEFAULT_COLUMNS } from '../store/useThanhToanStore';
 import { useListWithFilter } from '../../../../lib/hooks';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
@@ -26,6 +26,10 @@ import ThanhToanToolbar from './ThanhToanToolbar';
 import ThanhToanList from './ThanhToanList';
 import ThanhToanDetail from './ThanhToanDetail';
 import ThanhToanForm from './ThanhToanForm';
+import { createListSearchMatcher } from '../../../../lib/list-search-matcher';
+
+/** Ô tìm kiếm quét MỌI cột của bảng, bỏ dấu tiếng Việt — xem lib/list-search-matcher.ts. */
+const khopTimKiem = createListSearchMatcher({ columns: DEFAULT_COLUMNS });
 import {
   getExportColumnsThanhToanList,
   mapThanhToanListRow,
@@ -46,6 +50,7 @@ const ThanhToanTab: React.FC = () => {
     resetState,
     selectedIds,
     columns,
+    resizeColumn,
     clearSelection,
     toggleSelection,
     toggleAllSelection,
@@ -68,14 +73,7 @@ const ThanhToanTab: React.FC = () => {
   const deleteCt = useDeleteHopDongChiTiet();
 
   const filterFn = useCallback((item: HopDongChiTietEnriched, term: string, f: ThanhToanFilters) => {
-    const q = term.toLowerCase();
-    const matchesSearch =
-      !term ||
-      (item.ma_hop_dong?.toLowerCase().includes(q) ?? false) ||
-      (item.ten_dot?.toLowerCase().includes(q) ?? false) ||
-      (item.ten_nha_cung_cap?.toLowerCase().includes(q) ?? false) ||
-      (item.ghi_chu?.toLowerCase().includes(q) ?? false) ||
-      (item.ten_hop_dong?.toLowerCase().includes(q) ?? false);
+    const matchesSearch = khopTimKiem(item, term);
     return matchesSearch && matchesThanhToanFilters(item, f);
   }, []);
 
@@ -226,6 +224,7 @@ const ThanhToanTab: React.FC = () => {
         <ThanhToanList
           data={filteredList}
           columns={columns}
+          onResizeColumn={resizeColumn}
           chiNhanhList={chiNhanhList}
           selectedIds={selectedIds}
           onToggleSelection={toggleSelection}

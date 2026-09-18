@@ -8,7 +8,7 @@ export interface ChiTietKiemKeFilters {
   id_kho: string[];
 }
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'ten_kho', label: i18n.t('kiemKeKho.store.khoCol'), visible: true, minWidth: 180, width: 200, order: 0 },
   {
     id: 'ten_hang',
@@ -79,6 +79,7 @@ export const useChiTietKiemKeStore = create<GenericState<ChiTietKiemKeFilters>>(
     }),
   })),
   resetColumns: () => set({ columns: DEFAULT_COLUMNS.map((c, i) => ({ ...c, order: c.order ?? i })) }),
+  resetColumnWidths: () => set((state) => ({ columns: state.columns.map((c) => ({ ...c, width: undefined })) })),
   setColumns: (updater) => set((state) => ({ columns: updater(state.columns) })),
   setSort: (column, direction) => set({ sort: { column, direction } }),
   resetState: () => set({
@@ -87,6 +88,6 @@ export const useChiTietKiemKeStore = create<GenericState<ChiTietKiemKeFilters>>(
     pagination: { page: 1, pageSize: CHILD_PAGE_SIZE },
     sort: { column: null, direction: null },
     selectedIds: new Set(),
-    columns: DEFAULT_COLUMNS.map((c, i) => ({ ...c, order: c.order ?? i })),
+    // Không reset `columns`: tuỳ chỉnh cột là cấu hình cá nhân, xem createGenericStore.
   }),
 }));

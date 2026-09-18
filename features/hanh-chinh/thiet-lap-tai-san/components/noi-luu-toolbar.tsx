@@ -29,6 +29,7 @@ const NoiLuuToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onSta
   const toggleColumn = useNoiLuuStore((s) => s.toggleColumn);
   const reorderColumns = useNoiLuuStore((s) => s.reorderColumns);
   const resetColumns = useNoiLuuStore((s) => s.resetColumns);
+  const resetColumnWidths = useNoiLuuStore((s) => s.resetColumnWidths);
   const selectedIds = useNoiLuuStore((s) => s.selectedIds);
   const clearSelection = useNoiLuuStore((s) => s.clearSelection);
   const { data: branches = [] } = useBranches();
@@ -126,7 +127,6 @@ const NoiLuuToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onSta
       filters={renderFilters}
       filterGroups={filterGroups}
       onAdd={canCreate ? onAdd : undefined}
-      searchPlaceholder={t('thietLapTaiSan.noiLuu.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       onDeleteMany={canDelete ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
@@ -135,6 +135,7 @@ const NoiLuuToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onSta
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
+      onResetColumnWidths={resetColumnWidths}
       showBack
     />
   );

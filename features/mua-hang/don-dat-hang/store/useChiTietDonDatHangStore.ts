@@ -32,4 +32,4 @@ const initialFilters: DonDatHangFilters = {
   phanLoai: [],
 };
 
-export const useChiTietDonDatHangStore = createGenericStore<DonDatHangFilters>(initialFilters, getDefaultColumns());
+export const useChiTietDonDatHangStore = createGenericStore<DonDatHangFilters>(initialFilters, getDefaultColumns(), 'table-don-dat-hang-chi-tiet-don-dat-hang');

@@ -1,9 +1,12 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import i18n from '../../../../lib/i18n';
 import { useAuthStore } from '../../../../store/useStore';
+import type { BaoCaoSoCheListServerQuery } from '../services/bao-cao-so-che-list-query';
 import {
   getAllBaoCaoSoChe,
+  getBaoCaoSoChePage,
+  getBaoCaoSoCheTomTat,
   getBaoCaoSoCheById,
   createBaoCaoSoChe,
   updateBaoCaoSoChe,
@@ -12,11 +15,36 @@ import {
   updateBaoCaoSoCheTrangThai,
   updateBaoCaoSoCheTrangThaiMany,
 } from '../services/bao-cao-so-che-service';
-import { findBaoCaoSoCheDuplicateByBranchAndDate, farmBaoCaoSoCheToFormNextDay } from '../core/form-mappers';
+import {
+  findBaoCaoSoCheDuplicateByBranchAndDate,
+  farmBaoCaoSoCheToFormNextDay,
+  type PhieuTomTatTrung,
+} from '../core/form-mappers';
 import type { BaoCaoSoCheFormValues } from '../core/schema';
 import type { FarmBaoCaoSoChe, TrangThaiBaoCaoSoChePhieu } from '../core/types';
 
 export const QUERY_KEY_BAO_CAO_SO_CHE = ['baoCaoSoChe'] as const;
+
+/** Một trang danh sách — lọc / sắp xếp / phân trang chạy ở PostgREST. */
+export function useBaoCaoSoChePage(query: BaoCaoSoCheListServerQuery, enabled = true) {
+  return useQuery({
+    queryKey: [...QUERY_KEY_BAO_CAO_SO_CHE, 'page', query],
+    queryFn: () => getBaoCaoSoChePage(query),
+    enabled,
+    placeholderData: keepPreviousData,
+    staleTime: 1000 * 60 * 2,
+  });
+}
+
+/** Danh sách tóm tắt: chip lọc + số đếm, gợi ý chi nhánh, chặn trùng ngày. */
+export function useBaoCaoSoCheTomTat(viewAll: boolean, allowedBranchIds: string[], enabled = true) {
+  return useQuery({
+    queryKey: [...QUERY_KEY_BAO_CAO_SO_CHE, 'tomTat', viewAll, [...allowedBranchIds].sort().join(',')],
+    queryFn: () => getBaoCaoSoCheTomTat(viewAll, allowedBranchIds),
+    enabled,
+    staleTime: 1000 * 60 * 5,
+  });
+}
 
 export function useBaoCaoSoCheList() {
   return useQuery({
@@ -57,7 +85,8 @@ export function useCopyBaoCaoSoCheToNextDay() {
       existingList,
     }: {
       source: FarmBaoCaoSoChe;
-      existingList: FarmBaoCaoSoChe[];
+      /** Danh sách tóm tắt (id / ngày / chi nhánh) — đủ để biết ngày kế đã có phiếu chưa. */
+      existingList: PhieuTomTatTrung[];
     }) => {
       const values = farmBaoCaoSoCheToFormNextDay(source);
       const dup = findBaoCaoSoCheDuplicateByBranchAndDate(existingList, values.ngay, values.id_chi_nhanh, null);

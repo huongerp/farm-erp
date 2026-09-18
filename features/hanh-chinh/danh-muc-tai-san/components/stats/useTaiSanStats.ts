@@ -39,7 +39,6 @@ export function useTaiSanStats(list: TaiSan[]) {
         byTrangThai.set(item.id_trang_thai, cur);
       }
       if (item.nguyen_gia != null) totalNguyenGia += item.nguyen_gia;
-      if (item.trang_thai === 1) activeCount += 1;
     });
 
     const byNhomList: StatsByGroup[] = Array.from(byNhom.entries()).map(([id, v]) => ({ id, ...v }));

@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import type { DiemCongTruListServerQuery } from './services/diem-cong-tru-list-query';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
 import { useModulePermissionFromContext } from '../../../components/shared/ModulePermissionGuard';
@@ -8,16 +9,15 @@ import DiemCongTruTable from './components/diem-cong-tru-table';
 import DiemCongTruForm from './components/diem-cong-tru-form';
 import DiemCongTruDetail from './components/diem-cong-tru-detail';
 import {
-  useDiemCongTruRecords,
+  useDiemCongTruPage,
   useDeleteDiemCongTruRecords,
 } from './hooks/use-diem-cong-tru';
 import { useDiemCongTruViewScope } from './hooks/use-diem-cong-tru-view-scope';
 import { useDiemCongTruStore } from './store/useDiemCongTruStore';
 import { useConfirmStore } from '../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../lib/button-labels';
-import { useListWithFilter } from '../../../lib/hooks';
-import { getLanguage } from '../../../lib/utils';
 import { DiemCongTruRecord } from './core/types';
+
 
 const DiemCongTruPage: React.FC = () => {
   const { t } = useTranslation();
@@ -27,6 +27,7 @@ const DiemCongTruPage: React.FC = () => {
     searchTerm,
     filters,
     sort,
+    pagination,
     resetState,
     clearSelection,
   } = useDiemCongTruStore();
@@ -39,63 +40,36 @@ const DiemCongTruPage: React.FC = () => {
 
   const user = useAuthStore((s) => s.user);
   const { viewAll } = useDiemCongTruViewScope();
-  const { data: records = [], isLoading } = useDiemCongTruRecords();
-  const deleteMutation = useDeleteDiemCongTruRecords();
+  /** Bộ lọc gửi thẳng xuống PostgREST — trước đây tải toàn bộ bảng điểm. */
+  const listServerQuery: DiemCongTruListServerQuery = useMemo(
+    () => ({
+      page: pagination.page - 1,
+      pageSize: pagination.pageSize,
+      searchTerm,
+      loai: filters.type ?? [],
+      yearMonth: filters.yearMonth ?? '',
+      idNhanVien: viewAll ? null : (user?.id ? String(user.id) : null),
+      sortColumn: sort.column,
+      sortDirection: sort.direction,
+    }),
+    [pagination.page, pagination.pageSize, searchTerm, filters, sort, viewAll, user?.id]
+  );
 
-  const viewableList = useMemo(() => {
-    if (viewAll) return records;
-    const myId = user?.id ?? '';
-    return records.filter((r) => String(r.id_nhan_vien) === String(myId));
-  }, [records, viewAll, user?.id]);
+  const pageQuery = useDiemCongTruPage(listServerQuery);
+  const pageList = pageQuery.data?.data ?? [];
+  const totalCount = pageQuery.data?.totalCount ?? 0;
+  const isLoading = !pageQuery.data && pageQuery.isPending;
+  const isFetching = !!pageQuery.data && pageQuery.isFetching;
+  const deleteMutation = useDeleteDiemCongTruRecords();
 
   useEffect(() => {
     return () => resetState();
   }, [resetState]);
 
   useEffect(() => {
-    if (detailItem && !viewableList.some((r) => r.id === detailItem.id)) setDetailItem(null);
-  }, [viewableList, detailItem]);
+    if (detailItem && !pageList.some((r) => r.id === detailItem.id)) setDetailItem(null);
+  }, [pageList, detailItem]);
 
-  const filterFn = useCallback(
-    (item: DiemCongTruRecord, term: string, f: typeof filters) => {
-      const searchLower = term.toLowerCase();
-      const periodStr = `${item.nam}-${String(item.thang).padStart(2, '0')}`;
-      const matchesSearch =
-        !term ||
-        (item.ten_nhan_vien && item.ten_nhan_vien.toLowerCase().includes(searchLower)) ||
-        (item.ma_nhan_vien && item.ma_nhan_vien.toLowerCase().includes(searchLower)) ||
-        (item.ten_hang_muc && item.ten_hang_muc.toLowerCase().includes(searchLower)) ||
-        (item.ma_hang_muc && item.ma_hang_muc.toLowerCase().includes(searchLower)) ||
-        (item.mo_ta && item.mo_ta.toLowerCase().includes(searchLower)) ||
-        periodStr.includes(term);
-      const matchesType = f.type.length === 0 || f.type.includes(item.loai);
-      const matchesMonth = !f.yearMonth || periodStr.startsWith(f.yearMonth);
-      return matchesSearch && matchesType && matchesMonth;
-    },
-    []
-  );
-
-  const filteredList = useListWithFilter(viewableList, searchTerm, filters, filterFn);
-
-  const sortedList = useMemo(() => {
-    if (!sort.column || !sort.direction) return filteredList;
-    const sorted = [...filteredList];
-    const periodKey = (r: DiemCongTruRecord) => `${r.nam}-${String(r.thang).padStart(2, '0')}`;
-    sorted.sort((a, b) => {
-      let aVal: string | number = a[sort.column as keyof DiemCongTruRecord] ?? '';
-      let bVal: string | number = b[sort.column as keyof DiemCongTruRecord] ?? '';
-      if (sort.column === 'period') {
-        aVal = periodKey(a);
-        bVal = periodKey(b);
-      }
-      const cmp =
-        typeof aVal === 'number' && typeof bVal === 'number'
-          ? aVal - bVal
-          : String(aVal).localeCompare(String(bVal), getLanguage());
-      return sort.direction === 'desc' ? -cmp : cmp;
-    });
-    return sorted;
-  }, [filteredList, sort]);
 
   const handleView = (item: DiemCongTruRecord) => {
     setEditingItem(null);
@@ -155,7 +129,7 @@ const DiemCongTruPage: React.FC = () => {
     setEditingItem(null);
     setOpenedFormFromDetailId(null);
     if (wasFromDetail && editingId) {
-      const fresh = viewableList.find((r) => r.id === editingId) ?? null;
+      const fresh = pageList.find((r) => r.id === editingId) ?? null;
       setDetailItem(fresh);
     }
   };
@@ -164,7 +138,7 @@ const DiemCongTruPage: React.FC = () => {
     <div className="flex flex-col h-[calc(100dvh-3.75rem)] md:h-[calc(100dvh-4.5rem)]">
       <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
         <DiemCongTruToolbar
-          items={viewableList}
+          items={pageList}
           onAdd={canCreate ? () => {
             setDetailItem(null);
             setEditingItem(null);
@@ -176,7 +150,9 @@ const DiemCongTruPage: React.FC = () => {
         />
         <div className="flex-1 min-h-0">
           <DiemCongTruTable
-            data={sortedList}
+            data={pageList}
+            totalRecordsOverride={totalCount}
+            isFetching={isFetching}
             isLoading={isLoading}
             onEdit={handleEdit}
             onDelete={handleDelete}

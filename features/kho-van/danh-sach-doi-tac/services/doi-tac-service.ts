@@ -1,4 +1,10 @@
-import { db, fetchAllRows } from '../../../../lib/db';
+import { db, fetchAllRows, fetchTablePage, type PaginatedTableResult } from '../../../../lib/db';
+import { applyPostgrestSearch } from '../../../../lib/postgrest-search';
+import {
+  DOI_TAC_SORTABLE_DB_COLUMNS,
+  DOI_TAC_SORT_MAC_DINH,
+  type DoiTacListServerQuery,
+} from './doi-tac-list-query';
 import { getCachedRef, REF_CACHE_KEYS } from '../../../../lib/ref-cache';
 import type { DoiTac, LoaiDoiTac, NhomDoiTac, Tag, TrangThaiDoiTac } from '../core/types';
 import { TRANG_THAI_DOI_TAC } from '../core/types';
@@ -240,6 +246,100 @@ export const deleteTagMany = async (ids: string[]): Promise<void> => {
 };
 
 // ============ Danh sách đối tác ============
+
+/** Cột tham gia ô tìm kiếm ở server. */
+const DOI_TAC_SEARCH_SPEC = {
+  text: [
+    'ma_doi_tac',
+    'ten_doi_tac',
+    'loai_doi_tac',
+    'dia_chi',
+    'dien_thoai',
+    'email',
+    'mo_ta',
+    'so_tai_khoan',
+    'chu_tai_khoan',
+    'trang_thai',
+  ],
+  numeric: ['id', 'thu_tu'],
+} as const;
+
+/** Lọc + sắp xếp dùng chung cho trang danh sách và cho lượt tải phục vụ xuất file. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyDoiTacListQuery(q: any, query: DoiTacListServerQuery): any {
+  let sel = q;
+
+  if (query.loai) sel = sel.eq('loai_doi_tac', query.loai);
+  if (query.status.length === 1) {
+    sel = sel.eq(
+      'trang_thai',
+      query.status[0] === 'Active' ? TRANG_THAI_DOI_TAC.DANG_HOAT_DONG : TRANG_THAI_DOI_TAC.NGUNG_HOAT_DONG
+    );
+  }
+  if (query.idNhom.length > 0) sel = sel.in('id_nhom', query.idNhom.map(Number).filter(Number.isFinite));
+
+  sel = applyPostgrestSearch(sel, query.searchTerm, DOI_TAC_SEARCH_SPEC);
+
+  const dbSortable = query.sortColumn != null && DOI_TAC_SORTABLE_DB_COLUMNS.has(query.sortColumn);
+  const sortCol = dbSortable ? query.sortColumn! : DOI_TAC_SORT_MAC_DINH.column;
+  const ascending = dbSortable ? query.sortDirection !== 'desc' : DOI_TAC_SORT_MAC_DINH.ascending;
+
+  sel = sel.order(sortCol, { ascending });
+  if (sortCol === 'thu_tu') sel = sel.order('ma_doi_tac', { ascending: true });
+  return sel.order('id', { ascending: false });
+}
+
+export async function getDoiTacPage(query: DoiTacListServerQuery): Promise<PaginatedTableResult<DoiTac>> {
+  const [nhomList, tagList] = await Promise.all([getAllNhomDoiTac(), getAllTag()]);
+  const result = await fetchTablePage<DoiTacRow>(query.page, query.pageSize, async (from, to) => {
+    const res = await applyDoiTacListQuery(
+      db.from(TABLE_DOI_TAC).select(DOI_TAC_ROW_COLUMNS, { count: 'exact' }),
+      query
+    ).range(from, to);
+    return { data: (res.data as unknown as DoiTacRow[] | null) ?? null, error: res.error, count: res.count };
+  });
+  return { ...result, data: enrichDoiTacList(result.data, nhomList, tagList) };
+}
+
+/** Toàn bộ bản ghi khớp bộ lọc — chỉ gọi khi mở hộp thoại Xuất file. */
+export async function fetchAllDoiTacForListQuery(query: DoiTacListServerQuery): Promise<DoiTac[]> {
+  const [nhomList, tagList] = await Promise.all([getAllNhomDoiTac(), getAllTag()]);
+  const rows = await fetchAllRows<DoiTacRow>((from, to) =>
+    applyDoiTacListQuery(db.from(TABLE_DOI_TAC).select(DOI_TAC_ROW_COLUMNS), query).range(from, to)
+  );
+  return enrichDoiTacList(rows, nhomList, tagList);
+}
+
+/**
+ * Tóm tắt toàn bộ đối tác (5 cột) — chip lọc phải đếm trên TOÀN BỘ dữ liệu và
+ * form cần số thứ tự kế tiếp, nhưng không cần tải cả bảng như trước.
+ */
+export async function getDoiTacTomTat(): Promise<DoiTacTomTat[]> {
+  const rows = await fetchAllRows<{
+    id: number;
+    loai_doi_tac: string;
+    id_nhom: number | null;
+    trang_thai: string | null;
+    thu_tu: number | null;
+  }>((from, to) =>
+    db.from(TABLE_DOI_TAC).select('id,loai_doi_tac,id_nhom,trang_thai,thu_tu').range(from, to)
+  );
+  return rows.map((r) => ({
+    id: String(r.id),
+    loai_doi_tac: r.loai_doi_tac as DoiTac['loai_doi_tac'],
+    id_nhom: r.id_nhom != null ? String(r.id_nhom) : null,
+    trang_thai: (r.trang_thai as DoiTac['trang_thai']) ?? TRANG_THAI_DOI_TAC.DANG_HOAT_DONG,
+    thu_tu: r.thu_tu ?? 0,
+  }));
+}
+
+export interface DoiTacTomTat {
+  id: string;
+  loai_doi_tac: DoiTac['loai_doi_tac'];
+  id_nhom: string | null;
+  trang_thai: DoiTac['trang_thai'];
+  thu_tu: number;
+}
 
 export const getAllDoiTac = async (loai?: LoaiDoiTac): Promise<DoiTac[]> => {
   const [nhomList, tagList] = await Promise.all([getAllNhomDoiTac(), getAllTag()]);

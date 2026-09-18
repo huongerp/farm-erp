@@ -6,7 +6,7 @@ interface JobLevelFilters {
   status: string[];
 }
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'cap_bac', label: i18n.t('jobLevel.store.orderCol'), visible: true, minWidth: 80, order: 0 },
   { id: 'ten_cap_bac', label: i18n.t('jobLevel.store.nameCol'), visible: true, minWidth: 200, order: 1 },
   { id: 'mo_ta', label: i18n.t('jobLevel.store.descCol'), visible: true, minWidth: 250, order: 2 },
@@ -21,5 +21,6 @@ const initialFilters: JobLevelFilters = {
 // Create specific store using the generic factory
 export const useJobLevelStore = createGenericStore<JobLevelFilters>(
   initialFilters,
-  DEFAULT_COLUMNS
+  DEFAULT_COLUMNS,
+  'table-cap-bac-job-level'
 );

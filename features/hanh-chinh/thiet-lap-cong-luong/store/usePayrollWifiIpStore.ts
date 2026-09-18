@@ -6,7 +6,7 @@ export interface PayrollWifiIpFilters {
   id_chi_nhanh: string[];
 }
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'ten_chi_nhanh', label: i18n.t('payrollIp.store.branchCol'), visible: true, minWidth: 200, order: 0 },
   { id: 'ip_wifi', label: i18n.t('payrollIp.store.ipCol'), visible: true, minWidth: 160, order: 1 },
   { id: 'ghi_chu', label: i18n.t('payrollIp.store.noteCol'), visible: true, minWidth: 200, order: 2 },
@@ -21,5 +21,6 @@ const initialFilters: PayrollWifiIpFilters = {
 
 export const usePayrollWifiIpStore = createGenericStore<PayrollWifiIpFilters>(
   initialFilters,
-  DEFAULT_COLUMNS
+  DEFAULT_COLUMNS,
+  'table-thiet-lap-cong-luong-payroll-wifi-ip'
 );

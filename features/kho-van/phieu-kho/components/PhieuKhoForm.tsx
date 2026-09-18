@@ -361,7 +361,6 @@ const PhieuKhoForm: React.FC<Props> = ({
                       field.onChange(v ?? '');
                     }}
                     placeholder={t('phieuKho.form.warehousePlaceholder')}
-                    searchPlaceholder={t('phieuKho.form.itemSearchPlaceholder')}
                     searchable
                     dropdownInPortal
                     icon={<Warehouse size={12} />}
@@ -597,7 +596,6 @@ const PhieuKhoForm: React.FC<Props> = ({
                               setValue(`chi_tiet.${index}.pham_cap`, v ? (hangHoaMap[String(v)]?.pham_cap ?? '') : '');
                             }}
                             placeholder={isLoadingHangHoa ? 'Đang tải...' : t('phieuKho.form.itemPlaceholder')}
-                            searchPlaceholder={t('phieuKho.form.itemSearchPlaceholder')}
                             searchable
                             disabled={isLoadingHangHoa}
                             triggerClassName="h-9 text-sm border-border rounded-md"

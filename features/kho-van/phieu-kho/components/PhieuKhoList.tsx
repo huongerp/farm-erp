@@ -11,6 +11,8 @@ interface Props {
   data: PhieuKho[];
   loai: LoaiPhieuKhoTab;
   columns: ColumnConfig[];
+  /** Cho phép kéo đổi bề rộng cột — truyền `resizeColumn` của store. */
+  onResizeColumn?: (id: string, width: number) => void;
   selectedIds: Set<string>;
   onToggleSelection: (id: string) => void;
   onToggleAllSelection: (ids: string[]) => void;
@@ -35,6 +37,7 @@ const PhieuKhoList: React.FC<Props> = ({
   data,
   loai,
   columns,
+  onResizeColumn,
   selectedIds,
   onToggleSelection,
   onToggleAllSelection,
@@ -270,6 +273,7 @@ const PhieuKhoList: React.FC<Props> = ({
     <GenericTable<PhieuKho>
       data={data}
       columns={columnsForTable}
+      onResizeColumn={onResizeColumn}
       isLoading={isLoading}
       isFetching={isFetching}
       loadingText={t('phieuKho.loading')}

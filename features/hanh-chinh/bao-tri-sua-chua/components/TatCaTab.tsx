@@ -1,4 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import type { BaoTriSuaChuaListServerQuery } from '../services/bao-tri-sua-chua-list-query';
+import { fetchAllPhieuBaoTriForListQuery } from '../services/bao-tri-sua-chua-service';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -10,13 +12,11 @@ import BaoTriSuaChuaToolbar from './BaoTriSuaChuaToolbar';
 import PhieuBaoTriTable from './PhieuBaoTriTable';
 import PhieuBaoTriDetail from './PhieuBaoTriDetail';
 import TaoPhieuBaoTriForm from './TaoPhieuBaoTriForm';
-import { usePhieuBaoTriList, useDeletePhieuBaoTri } from '../hooks/use-bao-tri-sua-chua';
+import { usePhieuBaoTriPage, useDeletePhieuBaoTri } from '../hooks/use-bao-tri-sua-chua';
 import { useBaoTriSuaChuaViewScope } from '../hooks/use-bao-tri-sua-chua-view-scope';
 import { useAuthStore } from '../../../../store/useStore';
-import { useTaiSanList } from '../../danh-muc-tai-san/hooks/use-danh-muc-tai-san';
+import { useTaiSanTomTat } from '../../danh-muc-tai-san/hooks/use-danh-muc-tai-san';
 import { useBaoTriSuaChuaStore } from '../store/useBaoTriSuaChuaStore';
-import { getLanguage } from '../../../../lib/utils';
-import { buildTaiSanChiNhanhMap, filterPhieuChiPhi } from '../utils/filter-phieu-chi-phi';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
 import type { PhieuBaoTriSuaChua } from '../core/types';
 import {
@@ -49,25 +49,47 @@ const TatCaTab: React.FC<Props> = ({ defaultTaiSanId }) => {
   } = useBaoTriSuaChuaStore();
   const user = useAuthStore((s) => s.user);
   const { viewAll } = useBaoTriSuaChuaViewScope();
-  const { data: taiSanList = [] } = useTaiSanList();
-  const { data: list = [], isLoading } = usePhieuBaoTriList({
-    q: searchTerm || undefined,
-    hang_muc: filters.hang_muc.length > 0 ? filters.hang_muc : undefined,
-    dateFrom: filters.dateFrom || undefined,
-    dateTo: filters.dateTo || undefined,
-    id_tai_san: filters.id_tai_san.length > 0 ? filters.id_tai_san : undefined,
-  });
+  const { data: taiSanList = [] } = useTaiSanTomTat();
+  /**
+   * Phạm vi xem + lọc chi nhánh đều dựa trên TÀI SẢN, nên tính sẵn danh sách id
+   * tài sản hợp lệ rồi gửi kèm xuống PostgREST — trước đây tải hết phiếu rồi lọc.
+   */
+  const idTaiSanChoPhep = useMemo(() => {
+    const theoChiNhanh =
+      filters.id_chi_nhanh.length > 0
+        ? taiSanList.filter((a) => a.id_chi_nhanh != null && filters.id_chi_nhanh.includes(a.id_chi_nhanh))
+        : taiSanList;
+    if (viewAll) {
+      return filters.id_chi_nhanh.length > 0 ? theoChiNhanh.map((a) => a.id) : null;
+    }
+    const myId = String(user?.id ?? '');
+    return theoChiNhanh.filter((a) => String(a.id_nhan_vien_dang_giu) === myId).map((a) => a.id);
+  }, [taiSanList, filters.id_chi_nhanh, viewAll, user?.id]);
 
-  const viewableList = useMemo(() => {
-    if (viewAll) return list;
-    const myId = user?.id ?? '';
-    const assetIdsHeldByUser = new Set(
-      taiSanList.filter((a) => String(a.id_nhan_vien_dang_giu) === String(myId)).map((a) => a.id)
-    );
-    return list.filter(
-      (p) => String(p.id_nguoi_tao) === String(myId) || assetIdsHeldByUser.has(p.id_tai_san)
-    );
-  }, [list, viewAll, user?.id, taiSanList]);
+  const listServerQuery: BaoTriSuaChuaListServerQuery = useMemo(
+    () => ({
+      page: pagination.page - 1,
+      pageSize: pagination.pageSize,
+      searchTerm,
+      hangMuc: filters.hang_muc ?? [],
+      ngayFrom: filters.dateFrom ?? '',
+      ngayTo: filters.dateTo ?? '',
+      idTaiSan: filters.id_tai_san ?? [],
+      trangThai: filters.trang_thai ?? [],
+      idNguoiTao: filters.id_nguoi_tao ?? [],
+      idTaiSanChoPhep,
+      idNguoiTaoCuaToi: viewAll ? null : (user?.id ? String(user.id) : null),
+      sortColumn: sort.column,
+      sortDirection: sort.direction,
+    }),
+    [pagination.page, pagination.pageSize, searchTerm, filters, sort, idTaiSanChoPhep, viewAll, user?.id]
+  );
+
+  const pageQuery = usePhieuBaoTriPage(listServerQuery);
+  const pageList = pageQuery.data?.data ?? [];
+  const totalCount = pageQuery.data?.totalCount ?? 0;
+  const isLoading = !pageQuery.data && pageQuery.isPending;
+  const isFetching = !!pageQuery.data && pageQuery.isFetching;
 
   const deleteMutation = useDeletePhieuBaoTri();
   const [showExport, setShowExport] = useState(false);
@@ -86,34 +108,44 @@ const TatCaTab: React.FC<Props> = ({ defaultTaiSanId }) => {
     setShowForm(true);
   }, [defaultTaiSanId, setFilter]);
 
-  const branchMap = useMemo(() => buildTaiSanChiNhanhMap(taiSanList), [taiSanList]);
+  /** Xuất file cần TẤT CẢ bản ghi khớp bộ lọc — chỉ tải khi mở hộp thoại Xuất. */
+  const [exportRows, setExportRows] = useState<PhieuBaoTriSuaChua[]>([]);
+  const [exportLoading, setExportLoading] = useState(false);
+  useEffect(() => {
+    if (!showExport) {
+      setExportRows([]);
+      setExportLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setExportLoading(true);
+    fetchAllPhieuBaoTriForListQuery(listServerQuery)
+      .then((rows) => {
+        if (!cancelled) setExportRows(rows);
+      })
+      .catch(() => {
+        if (!cancelled) setExportRows([]);
+      })
+      .finally(() => {
+        if (!cancelled) setExportLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [showExport, listServerQuery]);
 
-  const filteredList = useMemo(
-    () => filterPhieuChiPhi(viewableList, filters, branchMap),
-    [viewableList, filters, branchMap]
+  /** Map tài sản → chi nhánh (từ bản tóm tắt nhẹ), cho drawer chi tiết. */
+  const branchMap = useMemo(
+    () => new Map(taiSanList.map((a) => [a.id, a.id_chi_nhanh])),
+    [taiSanList]
   );
-
-  const sortedList = useMemo(() => {
-    if (!sort.column || !sort.direction) return filteredList;
-    const sorted = [...filteredList];
-    sorted.sort((a, b) => {
-      const aVal = a[sort.column as keyof PhieuBaoTriSuaChua] ?? '';
-      const bVal = b[sort.column as keyof PhieuBaoTriSuaChua] ?? '';
-      const cmp =
-        typeof aVal === 'number' && typeof bVal === 'number'
-          ? aVal - bVal
-          : String(aVal).localeCompare(String(bVal), getLanguage());
-      return sort.direction === 'desc' ? -cmp : cmp;
-    });
-    return sorted;
-  }, [filteredList, sort]);
 
   const exportColumnsList = useMemo(() => getExportColumnsPhieuChiPhiTaiSanList(t), [t]);
   const exportMapList = useCallback((item: PhieuBaoTriSuaChua) => mapPhieuChiPhiTaiSanListRow(item, t), [t]);
   const { exportData, paginatedData: paginatedExportData, selectedData: selectedExportData } =
     useExportData<PhieuBaoTriSuaChua>({
-      data: sortedList,
-      isOpen: showExport,
+      data: exportRows,
+      isOpen: showExport && !exportLoading,
       mapFn: exportMapList,
       pagination,
       selectedIds,
@@ -127,12 +159,12 @@ const TatCaTab: React.FC<Props> = ({ defaultTaiSanId }) => {
   }, [columns]);
 
   const handleExport = useCallback(() => {
-    if (sortedList.length === 0) {
+    if (totalCount === 0) {
       toast.warning(t('baoTriSuaChua.noExportData'));
       return;
     }
     setShowExport(true);
-  }, [sortedList.length, t]);
+  }, [totalCount, t]);
 
   const handleAdd = useCallback(() => {
     setEditingPhieu(null);
@@ -196,7 +228,7 @@ const TatCaTab: React.FC<Props> = ({ defaultTaiSanId }) => {
     <>
       <div className="flex flex-col flex-1 min-h-0 rounded-xl border border-border bg-card shadow-sm overflow-hidden">
         <BaoTriSuaChuaToolbar
-          items={viewableList}
+          items={pageList}
           onAdd={handleAdd}
           onDeleteMany={handleDeleteMany}
           onExport={handleExport}
@@ -205,7 +237,9 @@ const TatCaTab: React.FC<Props> = ({ defaultTaiSanId }) => {
         />
         <div className="flex-1 min-h-0 overflow-auto">
           <PhieuBaoTriTable
-            data={sortedList}
+            data={pageList}
+            totalRecordsOverride={totalCount}
+            isFetching={isFetching}
             isLoading={isLoading}
             onView={handleView}
             onEdit={canUpdate ? handleEdit : undefined}
@@ -220,6 +254,7 @@ const TatCaTab: React.FC<Props> = ({ defaultTaiSanId }) => {
           canAdmin={canAdmin}
           onEdit={canUpdate ? handleEdit : undefined}
           onDelete={canDelete ? () => handleDelete(detailItem) : undefined}
+          idChiNhanhTaiSan={branchMap.get(String(detailItem.id_tai_san)) ?? null}
         />
       )}
       <AnimatePresence>
@@ -248,7 +283,7 @@ const TatCaTab: React.FC<Props> = ({ defaultTaiSanId }) => {
             setEditingPhieu(null);
             setOpenedFormFromDetailId(null);
             if (wasFromDetail && itemToRestore) {
-              const fresh = sortedList.find((p) => p.id === itemToRestore.id) ?? itemToRestore;
+              const fresh = pageList.find((p) => p.id === itemToRestore.id) ?? itemToRestore;
               setDetailItem(fresh);
             }
           }}

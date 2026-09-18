@@ -8,7 +8,21 @@ import type {
 import { NGAY_CONG_CHUAN_THANG, NGUONG_DAT_KPI, TY_LE_LUONG_KPI_KHONG_DAT } from '../core/constants';
 import { getEmployees } from '@/features/he-thong/nhan-vien/services/nhan-vien-service';
 import type { Employee } from '@/features/he-thong/nhan-vien/core/types';
-import { db } from '../../../../lib/db';
+import {
+  db,
+  fetchAllRows,
+  fetchTablePage,
+  throwSupabaseError,
+  type PaginatedTableResult,
+} from '../../../../lib/db';
+import { applyPostgrestSearch } from '../../../../lib/postgrest-search';
+import { postgrestQuotedIlikePattern } from '../../../../lib/postgrest-or-ilike';
+import {
+  BANG_LUONG_SORTABLE_DB_COLUMNS,
+  BANG_LUONG_SORT_MAC_DINH,
+  tachKyLuong,
+  type BangLuongListServerQuery,
+} from './bang-luong-list-query';
 import i18n from '../../../../lib/i18n';
 
 const TABLE = 'fp_hr_bang_luong';
@@ -245,6 +259,120 @@ async function seedDb(): Promise<void> {
   });
 
   dbSeeded = true;
+}
+
+/** Cột của chính bảng lương tham gia ô tìm kiếm. */
+const BANG_LUONG_SEARCH_SPEC = {
+  text: ['ghi_chu'],
+  numeric: ['id', 'nam', 'thang', 'tong_luong', 'ngay_cong'],
+} as const;
+
+/**
+ * Id nhân viên khớp từ khoá (tên / mã / email).
+ *
+ * Tên nhân viên nằm ở bảng khác nên không `OR` chung với cột bảng lương được;
+ * tra id trước rồi lọc `nhan_vien_id.in.(...)` — cùng cách phiếu đề xuất vật tư
+ * đang làm với phạm vi kho.
+ */
+async function timNhanVienIdsTheoTuKhoa(term: string): Promise<number[]> {
+  const t = term.trim();
+  if (!t) return [];
+  const esc = t.replace(/%/g, '\\%').replace(/_/g, '\\_');
+  const pat = postgrestQuotedIlikePattern(`%${esc}%`);
+  const { data, error } = await db
+    .from(TABLE_NHAN_VIEN)
+    .select('id')
+    .or(`ho_va_ten.ilike.${pat},ma_nhan_vien.ilike.${pat},email.ilike.${pat}`)
+    .limit(500);
+  if (error) throwSupabaseError(error, { resource: `${TABLE_NHAN_VIEN}.search` });
+  return (data ?? []).map((r) => Number((r as { id: unknown }).id)).filter(Number.isFinite);
+}
+
+/** Id nhân viên thuộc các phòng ban đã chọn. */
+async function timNhanVienIdsTheoPhongBan(phongBanIds: string[]): Promise<number[]> {
+  const ids = phongBanIds.map(Number).filter(Number.isFinite);
+  if (ids.length === 0) return [];
+  const { data, error } = await db.from(TABLE_NHAN_VIEN).select('id').in('phong_ban_id', ids);
+  if (error) throwSupabaseError(error, { resource: `${TABLE_NHAN_VIEN}.byPhongBan` });
+  return (data ?? []).map((r) => Number((r as { id: unknown }).id)).filter(Number.isFinite);
+}
+
+/** Lọc + sắp xếp dùng chung cho trang danh sách và cho lượt tải phục vụ xuất file. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyBangLuongListQuery(q: any, query: BangLuongListServerQuery, nhanVienIds: number[] | null): any {
+  let sel = q;
+
+  const ky = tachKyLuong(query.yearMonth);
+  if (ky) sel = sel.eq('nam', ky.nam).eq('thang', ky.thang);
+
+  if (query.nhanVienId) {
+    const n = Number(query.nhanVienId);
+    sel = Number.isFinite(n) ? sel.eq('nhan_vien_id', n) : sel.eq('id', -1);
+  }
+  if (query.loaiTruNhanVienId) {
+    const n = Number(query.loaiTruNhanVienId);
+    if (Number.isFinite(n)) sel = sel.neq('nhan_vien_id', n);
+  }
+
+  if (nhanVienIds != null) {
+    // Không nhân viên nào khớp → danh sách rỗng, đừng bỏ qua điều kiện.
+    sel = nhanVienIds.length === 0 ? sel.eq('id', -1) : sel.in('nhan_vien_id', nhanVienIds);
+  }
+
+  sel = applyPostgrestSearch(sel, query.searchTerm, BANG_LUONG_SEARCH_SPEC);
+
+  const dbSortable = query.sortColumn != null && BANG_LUONG_SORTABLE_DB_COLUMNS.has(query.sortColumn);
+  const sortCol = dbSortable ? query.sortColumn! : BANG_LUONG_SORT_MAC_DINH.column;
+  const ascending = dbSortable ? query.sortDirection !== 'desc' : BANG_LUONG_SORT_MAC_DINH.ascending;
+
+  sel = sel.order(sortCol, { ascending });
+  if (sortCol === 'nam') sel = sel.order('thang', { ascending });
+  return sel.order('id', { ascending: false });
+}
+
+/**
+ * Gộp hai nguồn ràng buộc theo nhân viên (phòng ban + từ khoá) thành một danh sách
+ * id; `null` nghĩa là không ràng buộc.
+ */
+async function nhanVienIdsChoQuery(query: BangLuongListServerQuery): Promise<number[] | null> {
+  const [theoPhongBan, theoTuKhoa] = await Promise.all([
+    query.phongBan.length > 0 ? timNhanVienIdsTheoPhongBan(query.phongBan) : Promise.resolve(null),
+    query.searchTerm.trim() ? timNhanVienIdsTheoTuKhoa(query.searchTerm) : Promise.resolve(null),
+  ]);
+  if (theoPhongBan == null) return theoTuKhoa;
+  if (theoTuKhoa == null) return theoPhongBan;
+  const set = new Set(theoTuKhoa);
+  return theoPhongBan.filter((id) => set.has(id));
+}
+
+export async function getBangLuongPage(
+  query: BangLuongListServerQuery
+): Promise<PaginatedTableResult<BangLuongRecord>> {
+  const nhanVienIds = await nhanVienIdsChoQuery(query);
+  const result = await fetchTablePage<Row>(query.page, query.pageSize, async (from, to) => {
+    const res = await applyBangLuongListQuery(
+      db.from(TABLE).select(BANG_LUONG_ROW_COLUMNS, { count: 'exact' }),
+      query,
+      nhanVienIds
+    ).range(from, to);
+    return { data: (res.data as Row[] | null) ?? null, error: res.error, count: res.count };
+  });
+  const ids = result.data.map((r) => Number(r.nhan_vien_id)).filter((n) => !Number.isNaN(n));
+  const { nhanVienMap, phongBanMap } = await fetchNhanVienPhongBanMaps(ids);
+  return { ...result, data: result.data.map((r) => rowToRecord(r, nhanVienMap, phongBanMap)) };
+}
+
+/** Toàn bộ bản ghi khớp bộ lọc — chỉ gọi khi mở hộp thoại Xuất file. */
+export async function fetchAllBangLuongForListQuery(
+  query: BangLuongListServerQuery
+): Promise<BangLuongRecord[]> {
+  const nhanVienIds = await nhanVienIdsChoQuery(query);
+  const rows = await fetchAllRows<Row>((from, to) =>
+    applyBangLuongListQuery(db.from(TABLE).select(BANG_LUONG_ROW_COLUMNS), query, nhanVienIds).range(from, to)
+  );
+  const ids = rows.map((r) => Number(r.nhan_vien_id)).filter((n) => !Number.isNaN(n));
+  const { nhanVienMap, phongBanMap } = await fetchNhanVienPhongBanMaps(ids);
+  return rows.map((r) => rowToRecord(r, nhanVienMap, phongBanMap));
 }
 
 export async function getBangLuongRecords(): Promise<BangLuongRecord[]> {

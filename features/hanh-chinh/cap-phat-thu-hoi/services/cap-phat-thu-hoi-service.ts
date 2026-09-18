@@ -1,4 +1,6 @@
 import type { PhieuCapPhatThuHoi, PhieuCapPhatThuHoiCreate, PhieuChiTietWithHeader, PhieuChiTietRow } from '../core/types';
+import type { PaginatedTableResult } from '@/lib/db';
+import type { CapPhatThuHoiListServerQuery } from './cap-phat-thu-hoi-list-query';
 import {
   getPhieuListSupabase,
   getPhieuByIdSupabase,
@@ -9,6 +11,8 @@ import {
   getAllPhieuChiTietSupabase,
   importPhieuCapPhatThuHoiListSupabase,
   type PhieuCapPhatThuHoiImportRow,
+  getPhieuCapPhatPageSupabase,
+  fetchAllPhieuCapPhatForListQuery as fetchAllPhieuCapPhatForListQuerySupabase,
 } from './cap-phat-thu-hoi-supabase.service';
 import { getEmployeesRef } from '@/features/he-thong/nhan-vien/services/nhan-vien-service';
 
@@ -40,6 +44,21 @@ export interface GetPhieuListParams {
   id_nguoi?: string;
   q?: string;
   id_tai_san?: string;
+}
+
+/** Một trang danh sách (lọc / sắp xếp / phân trang ở PostgREST). */
+export async function getPhieuCapPhatPage(
+  query: CapPhatThuHoiListServerQuery
+): Promise<PaginatedTableResult<PhieuCapPhatThuHoi>> {
+  const page = await getPhieuCapPhatPageSupabase(query);
+  return { ...page, data: await enrichPhieu(page.data) };
+}
+
+/** Toàn bộ bản ghi khớp bộ lọc — chỉ gọi khi mở hộp thoại Xuất file. */
+export async function fetchAllPhieuCapPhatForListQuery(
+  query: CapPhatThuHoiListServerQuery
+): Promise<PhieuCapPhatThuHoi[]> {
+  return enrichPhieu(await fetchAllPhieuCapPhatForListQuerySupabase(query));
 }
 
 export const getPhieuList = async (

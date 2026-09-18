@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import type { CapPhatThuHoiListServerQuery } from '../services/cap-phat-thu-hoi-list-query';
 import { useTranslation } from 'react-i18next';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
@@ -8,13 +9,13 @@ import CapPhatThuHoiToolbar from './CapPhatThuHoiToolbar';
 import PhieuTable from './PhieuTable';
 import PhieuDetail from './PhieuDetail';
 import TaoPhieuForm from './TaoPhieuForm';
-import { usePhieuList, usePhieuById, useDeletePhieu } from '../hooks/use-cap-phat-thu-hoi';
+import { usePhieuCapPhatPage, usePhieuById, useDeletePhieu } from '../hooks/use-cap-phat-thu-hoi';
 import { useCpthListImportExport } from '../hooks/use-cpth-list-import-export';
 import { getPhieuById } from '../services/cap-phat-thu-hoi-service';
 import { useCapPhatThuHoiStore } from '../store/useCapPhatThuHoiStore';
-import { getLanguage } from '../../../../lib/utils';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
 import type { PhieuCapPhatThuHoi } from '../core/types';
+
 
 interface Props {
   defaultTaiSanId?: string;
@@ -24,8 +25,30 @@ const LichSuTab: React.FC<Props> = ({ defaultTaiSanId }) => {
   const { t } = useTranslation();
   const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
-  const { searchTerm, filters, sort, resetState, clearSelection } = useCapPhatThuHoiStore();
-  const { data: list = [], isLoading } = usePhieuList({ filter: 'all' });
+  // Phân trang/sắp xếp do PhieuTable đọc thẳng từ store; ở đây chỉ cần giá trị để dựng query.
+  const { searchTerm, filters, sort, pagination, resetState, clearSelection } = useCapPhatThuHoiStore();
+  /** Bộ lọc gửi thẳng xuống PostgREST — trước đây tab này tải toàn bộ bảng phiếu. */
+  const listServerQuery: CapPhatThuHoiListServerQuery = useMemo(
+    () => ({
+      page: pagination.page - 1,
+      pageSize: pagination.pageSize,
+      searchTerm,
+      loaiPhieu: filters.loai_phieu ?? [],
+      ngayFrom: filters.dateFrom ?? '',
+      ngayTo: filters.dateTo ?? '',
+      idNguoiThucHien: filters.id_nguoi_thuc_hien ?? [],
+      idNguoiCuaToi: null,
+      sortColumn: sort.column,
+      sortDirection: sort.direction,
+    }),
+    [pagination.page, pagination.pageSize, searchTerm, filters, sort]
+  );
+
+  const pageQuery = usePhieuCapPhatPage(listServerQuery);
+  const pageList = pageQuery.data?.data ?? [];
+  const totalCount = pageQuery.data?.totalCount ?? 0;
+  const isLoading = !pageQuery.data && pageQuery.isPending;
+  const isFetching = !!pageQuery.data && pageQuery.isFetching;
   const deleteMutation = useDeletePhieu();
   const [detailItem, setDetailItem] = useState<PhieuCapPhatThuHoi | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -45,40 +68,6 @@ const LichSuTab: React.FC<Props> = ({ defaultTaiSanId }) => {
     return () => resetState();
   }, [resetState]);
 
-  const filteredList = useMemo(() => {
-    const q = searchTerm.trim().toLowerCase();
-    return list.filter((p) => {
-      if (q) {
-        const matchSearch =
-          p.ma_phieu.toLowerCase().includes(q) ||
-          (p.ten_nguoi_thuc_hien && p.ten_nguoi_thuc_hien.toLowerCase().includes(q)) ||
-          (p.ten_nguoi_giu_sau && p.ten_nguoi_giu_sau.toLowerCase().includes(q)) ||
-          (p.ten_nguoi_giu_truoc && p.ten_nguoi_giu_truoc.toLowerCase().includes(q));
-        if (!matchSearch) return false;
-      }
-      if (filters.loai_phieu.length > 0 && !filters.loai_phieu.includes(p.loai_phieu)) return false;
-      if (filters.dateFrom && p.ngay_thuc_hien < filters.dateFrom) return false;
-      if (filters.dateTo && p.ngay_thuc_hien > filters.dateTo) return false;
-      if (filters.id_nguoi_thuc_hien.length > 0 && !filters.id_nguoi_thuc_hien.includes(p.id_nguoi_thuc_hien)) return false;
-      return true;
-    });
-  }, [list, filters, searchTerm]);
-
-  const sortedList = useMemo(() => {
-    if (!sort.column || !sort.direction) return filteredList;
-    const sorted = [...filteredList];
-    sorted.sort((a, b) => {
-      const aVal = a[sort.column as keyof PhieuCapPhatThuHoi] ?? '';
-      const bVal = b[sort.column as keyof PhieuCapPhatThuHoi] ?? '';
-      const cmp =
-        typeof aVal === 'number' && typeof bVal === 'number'
-          ? aVal - bVal
-          : String(aVal).localeCompare(String(bVal), getLanguage());
-      return sort.direction === 'desc' ? -cmp : cmp;
-    });
-    return sorted;
-  }, [filteredList, sort]);
-
   const {
     showImport,
     setShowImport,
@@ -95,7 +84,7 @@ const LichSuTab: React.FC<Props> = ({ defaultTaiSanId }) => {
     handleImportData,
     templateFileName,
     exportFileName,
-  } = useCpthListImportExport(sortedList);
+  } = useCpthListImportExport(pageList);
 
   const handleAdd = useCallback(() => {
     setEditingPhieu(null);
@@ -177,7 +166,7 @@ const LichSuTab: React.FC<Props> = ({ defaultTaiSanId }) => {
     <>
       <div className="flex flex-col flex-1 min-h-0 rounded-xl border border-border bg-card shadow-sm overflow-hidden">
         <CapPhatThuHoiToolbar
-          items={list}
+          items={pageList}
           onAdd={handleAdd}
           onDeleteMany={handleDeleteMany}
           onImport={canCreate ? () => setShowImport(true) : undefined}
@@ -187,7 +176,9 @@ const LichSuTab: React.FC<Props> = ({ defaultTaiSanId }) => {
         />
         <div className="flex-1 min-h-0 overflow-auto">
           <PhieuTable
-            data={sortedList}
+            data={pageList}
+            totalRecordsOverride={totalCount}
+            isFetching={isFetching}
             isLoading={isLoading}
             onView={handleView}
             onEdit={canUpdate ? handleEdit : undefined}
@@ -213,7 +204,7 @@ const LichSuTab: React.FC<Props> = ({ defaultTaiSanId }) => {
             setEditingPhieu(null);
             setOpenedFormFromDetailId(null);
             if (wasFromDetail && itemToRestore) {
-              const fresh = sortedList.find((p) => p.id === itemToRestore.id) ?? itemToRestore;
+              const fresh = pageList.find((p) => p.id === itemToRestore.id) ?? itemToRestore;
               setDetailItem(fresh);
             }
           }}

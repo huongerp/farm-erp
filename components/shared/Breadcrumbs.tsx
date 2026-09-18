@@ -7,6 +7,7 @@ import { TFunction } from 'i18next';
 import { HANH_CHINH_MODULE_SLUGS, getModuleTitleKeyBySlug } from '../../lib/hanh-chinh-menu';
 import { MUA_HANG_MODULE_SLUGS, getMuaHangModuleTitleKeyBySlug } from '../../lib/mua-hang-menu';
 import { QUAN_LY_FARM_MODULE_SLUGS, getQuanLyFarmModuleTitleKeyBySlug } from '../../lib/quan-ly-farm-menu';
+import { TAI_CHINH_MODULE_SLUGS, getTaiChinhModuleTitleKeyBySlug } from '../../lib/tai-chinh-menu';
 
 interface RouteConfig {
   label: string;
@@ -34,6 +35,12 @@ interface RouteConfig {
       { label: t(getQuanLyFarmModuleTitleKeyBySlug(slug)), parentPath: '/quan-ly-farm' },
     ])
   );
+  const taiChinhModuleRoutes = Object.fromEntries(
+    TAI_CHINH_MODULE_SLUGS.map((slug) => [
+      `/tai-chinh/${slug}`,
+      { label: t(getTaiChinhModuleTitleKeyBySlug(slug)), parentPath: '/tai-chinh' },
+    ])
+  );
   return {
     // --- GỐC ---
     '/': { label: t('breadcrumb.home') },
@@ -44,6 +51,7 @@ interface RouteConfig {
     '/hanh-chinh': { label: t('breadcrumb.hanhChinh'), parentPath: '/' },
     '/mua-hang': { label: t('breadcrumb.muaHang'), parentPath: '/' },
     '/quan-ly-farm': { label: t('breadcrumb.quanLyFarm'), parentPath: '/' },
+    '/tai-chinh': { label: t('breadcrumb.taiChinh'), parentPath: '/' },
 
     // --- HỆ THỐNG ---
     '/nhan-vien': { label: t('breadcrumb.employee'), parentPath: '/he-thong' },
@@ -62,6 +70,9 @@ interface RouteConfig {
 
     // --- QUẢN LÝ FARM (module con) ---
     ...quanLyFarmModuleRoutes,
+
+    // --- TÀI CHÍNH (module con) ---
+    ...taiChinhModuleRoutes,
 
     // --- KHÁC ---
     '/ho-so': { label: t('breadcrumb.profile') },

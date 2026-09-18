@@ -1,9 +1,12 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import i18n from '../../../../lib/i18n';
 import { useAuthStore } from '../../../../store/useStore';
+import type { BaoCaoNhanCongListServerQuery } from '../services/bao-cao-nhan-cong-list-query';
 import {
   getAllBaoCaoNhanCong,
+  getBaoCaoNhanCongPage,
+  getBaoCaoNhanCongTomTat,
   getBaoCaoNhanCongById,
   createBaoCaoNhanCong,
   updateBaoCaoNhanCong,
@@ -12,7 +15,11 @@ import {
   updateBaoCaoNhanCongTrangThai,
   updateBaoCaoNhanCongTrangThaiMany,
 } from '../services/bao-cao-nhan-cong-service';
-import { findBaoCaoDuplicateByBranchAndDate, farmBaoCaoNhanCongToFormNextDay } from '../core/form-mappers';
+import {
+  findBaoCaoDuplicateByBranchAndDate,
+  farmBaoCaoNhanCongToFormNextDay,
+  type PhieuTomTatTrung,
+} from '../core/form-mappers';
 import type { BaoCaoNhanCongFormValues } from '../core/schema';
 import type { FarmBaoCaoNhanCong, TrangThaiBaoCaoNhanCongPhieu } from '../core/types';
 
@@ -23,6 +30,35 @@ export function useBaoCaoNhanCongList() {
     queryKey: QUERY_KEY_BAO_CAO_NHAN_CONG,
     queryFn: getAllBaoCaoNhanCong,
     staleTime: 1000 * 60 * 2,
+  });
+}
+
+/**
+ * Một trang danh sách — lọc / sắp xếp / phân trang chạy ở PostgREST.
+ *
+ * `placeholderData: keepPreviousData` để chuyển trang hoặc gõ tìm kiếm không
+ * nháy skeleton: bảng giữ dữ liệu cũ tới khi trang mới về.
+ */
+export function useBaoCaoNhanCongPage(query: BaoCaoNhanCongListServerQuery, enabled = true) {
+  return useQuery({
+    queryKey: [...QUERY_KEY_BAO_CAO_NHAN_CONG, 'page', query],
+    queryFn: () => getBaoCaoNhanCongPage(query),
+    enabled,
+    placeholderData: keepPreviousData,
+    staleTime: 1000 * 60 * 2,
+  });
+}
+
+/**
+ * Danh sách tóm tắt (6 cột): chip lọc + số đếm, chi nhánh gợi ý khi thêm phiếu,
+ * và chặn trùng ngày × chi nhánh trong form.
+ */
+export function useBaoCaoNhanCongTomTat(viewAll: boolean, allowedBranchIds: string[], enabled = true) {
+  return useQuery({
+    queryKey: [...QUERY_KEY_BAO_CAO_NHAN_CONG, 'tomTat', viewAll, [...allowedBranchIds].sort().join(',')],
+    queryFn: () => getBaoCaoNhanCongTomTat(viewAll, allowedBranchIds),
+    enabled,
+    staleTime: 1000 * 60 * 5,
   });
 }
 
@@ -58,7 +94,8 @@ export function useCopyBaoCaoNhanCongToNextDay() {
       existingList,
     }: {
       source: FarmBaoCaoNhanCong;
-      existingList: FarmBaoCaoNhanCong[];
+      /** Danh sách tóm tắt (id / ngày / chi nhánh) — đủ để biết ngày kế đã có phiếu chưa. */
+      existingList: PhieuTomTatTrung[];
     }) => {
       const values = farmBaoCaoNhanCongToFormNextDay(source);
       const dup = findBaoCaoDuplicateByBranchAndDate(

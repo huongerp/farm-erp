@@ -70,6 +70,7 @@ const PhieuKhoToolbar: React.FC<Props> = ({
   const toggleColumn = usePhieuKhoStore((s) => s.toggleColumn);
   const reorderColumns = usePhieuKhoStore((s) => s.reorderColumns);
   const resetColumns = usePhieuKhoStore((s) => s.resetColumns);
+  const resetColumnWidths = usePhieuKhoStore((s) => s.resetColumnWidths);
 
   const { inputValue: searchInput, setInputValue: setSearchInput } = useSearchInputCommit({
     committedTerm: searchTerm,
@@ -478,13 +479,13 @@ const PhieuKhoToolbar: React.FC<Props> = ({
       mobileActions={mobileActions}
       onAdd={canCreate ? onAdd : undefined}
       showBack
-      searchPlaceholder={t('phieuKho.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       columns={columns}
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
+      onResetColumnWidths={resetColumnWidths}
     />
   );
 };

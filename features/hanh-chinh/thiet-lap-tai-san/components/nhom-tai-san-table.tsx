@@ -20,6 +20,7 @@ const NhomTaiSanTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, o
   const { t } = useTranslation();
   const {
     columns,
+    resizeColumn,
     pagination,
     setPage,
     setPageSize,
@@ -189,6 +190,7 @@ const NhomTaiSanTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, o
     <GenericTable
       data={data}
       columns={columns}
+      onResizeColumn={resizeColumn}
       isLoading={isLoading}
       loadingText={t('thietLapTaiSan.nhomTaiSan.loading')}
       selectedIds={selectedIds}

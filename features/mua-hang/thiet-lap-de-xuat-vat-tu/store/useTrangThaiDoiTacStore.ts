@@ -5,7 +5,7 @@ export interface TrangThaiDoiTacFilters {
   status: string[];
 }
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'ma', label: i18n.t('thietLapDeXuatVatTu.doiTac.store.maCol'), visible: true, minWidth: 120, order: 0 },
   { id: 'ten', label: i18n.t('thietLapDeXuatVatTu.doiTac.store.tenCol'), visible: true, minWidth: 140, order: 1 },
   { id: 'thu_tu', label: i18n.t('thietLapDeXuatVatTu.doiTac.store.thuTuCol'), visible: true, minWidth: 90, order: 2 },
@@ -15,4 +15,4 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'tg_cap_nhat', label: i18n.t('thietLapDeXuatVatTu.doiTac.store.updatedCol'), visible: false, minWidth: 140, order: 6 },
 ];
 
-export const useTrangThaiDoiTacStore = createGenericStore<TrangThaiDoiTacFilters>({ status: [] }, DEFAULT_COLUMNS);
+export const useTrangThaiDoiTacStore = createGenericStore<TrangThaiDoiTacFilters>({ status: [] }, DEFAULT_COLUMNS, 'table-thiet-lap-de-xuat-vat-tu-trang-thai-doi-tac');

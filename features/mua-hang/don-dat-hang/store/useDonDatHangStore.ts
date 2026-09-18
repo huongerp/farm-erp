@@ -34,5 +34,6 @@ const initialFilters: DonDatHangFilters = {
 
 export const useDonDatHangStore = createGenericStore<DonDatHangFilters>(
   initialFilters,
-  getDefaultColumns()
+  getDefaultColumns(),
+  'table-don-dat-hang'
 );

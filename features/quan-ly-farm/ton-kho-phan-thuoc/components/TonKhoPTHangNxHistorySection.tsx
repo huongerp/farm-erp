@@ -61,7 +61,7 @@ const TonKhoPTHangNxHistorySection: React.FC<Props> = ({ idHangHoa }) => {
     >
       {!isLoading && !isError && data.length > 0 ? (
         <>
-          <thead className="bg-muted/80 border-b border-border">
+          <thead className="sticky top-0 z-[1] bg-muted border-b border-border">
             <tr>
               <th className="text-left px-3 py-2 text-xs font-semibold whitespace-nowrap">
                 {t('tonKhoPhanThuoc.detail.historyNx.colDate')}

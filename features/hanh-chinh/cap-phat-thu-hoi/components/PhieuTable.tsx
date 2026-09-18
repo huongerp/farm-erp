@@ -11,16 +11,21 @@ import { useCapPhatThuHoiStore } from '../store/useCapPhatThuHoiStore';
 interface Props {
   data: PhieuCapPhatThuHoi[];
   isLoading: boolean;
+  /** Đang tải trang mới nhưng đã có dữ liệu cũ — hiện lớp phủ mờ thay vì skeleton. */
+  isFetching?: boolean;
+  /** Tổng số bản ghi khớp bộ lọc (phân trang ở server). */
+  totalRecordsOverride?: number;
   onView?: (item: PhieuCapPhatThuHoi) => void;
   onEdit?: (item: PhieuCapPhatThuHoi) => void;
   onDelete?: (item: PhieuCapPhatThuHoi) => void;
   showActions?: boolean;
 }
 
-const PhieuTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, onDelete, showActions = true }) => {
+const PhieuTable: React.FC<Props> = ({ data, isFetching, totalRecordsOverride, isLoading, onView, onEdit, onDelete, showActions = true }) => {
   const { t } = useTranslation();
   const {
     columns,
+    resizeColumn,
     pagination,
     setPage,
     setPageSize,
@@ -129,7 +134,10 @@ const PhieuTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, onDelete
     <GenericTable<PhieuCapPhatThuHoi>
       data={data}
       columns={columns}
+      onResizeColumn={resizeColumn}
       isLoading={isLoading}
+      isFetching={isFetching}
+      totalRecordsOverride={totalRecordsOverride}
       selectedIds={selectedIds}
       onToggleSelection={toggleSelection}
       onToggleAll={toggleAllSelection}

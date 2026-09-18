@@ -22,6 +22,7 @@ const BranchTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onVie
   const { t } = useTranslation();
   const {
     columns,
+    resizeColumn,
     pagination,
     setPage,
     setPageSize,
@@ -189,6 +190,7 @@ const BranchTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onVie
     <GenericTable
       data={data}
       columns={columns}
+      onResizeColumn={resizeColumn}
       isLoading={isLoading}
       loadingText={t('branch.loading')}
       selectedIds={selectedIds}

@@ -15,6 +15,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   const authProxyTarget = env.DEV_AUTH_PROXY_TARGET || 'http://127.0.0.1:3001';
   const apiProxyTarget = env.DEV_API_PROXY_TARGET || 'http://127.0.0.1:3010';
+  const notifyProxyTarget = env.DEV_NOTIFY_PROXY_TARGET || 'http://127.0.0.1:3002';
 
   return {
     server: {
@@ -33,6 +34,12 @@ export default defineConfig(({ mode }) => {
           target: apiProxyTarget,
           changeOrigin: true,
           rewrite: (p) => p.replace(/^\/api/, ''),
+        },
+        // Service thông báo: đăng ký Web Push và khoá VAPID công khai.
+        '/notify': {
+          target: notifyProxyTarget,
+          changeOrigin: true,
+          rewrite: (p) => p.replace(/^\/notify/, ''),
         },
       },
     },
@@ -82,7 +89,13 @@ export default defineConfig(({ mode }) => {
         },
       },
       react(),
-      devServices({ env, root: __dirname, apiTarget: apiProxyTarget, authTarget: authProxyTarget }),
+      devServices({
+        env,
+        root: __dirname,
+        apiTarget: apiProxyTarget,
+        authTarget: authProxyTarget,
+        notifyTarget: notifyProxyTarget,
+      }),
       ...(analyze
         ? [
             visualizer({
@@ -95,6 +108,12 @@ export default defineConfig(({ mode }) => {
         : []),
       VitePWA({
         registerType: 'prompt',
+        // injectManifest thay vì generateSW: chế độ generateSW dựng trọn file
+        // service worker nên không có chỗ nào chèn listener `push`. Nội dung SW
+        // nay nằm ở sw/sw.ts, giữ nguyên precache + 3 quy tắc runtime caching cũ.
+        strategies: 'injectManifest',
+        srcDir: 'sw',
+        filename: 'sw.ts',
         manifest: {
           name: 'Forpeasantz',
           short_name: 'Forpeasantz',
@@ -118,41 +137,15 @@ export default defineConfig(({ mode }) => {
             },
           ],
         },
-        workbox: {
+        injectManifest: {
+          // Giữ đúng danh sách precache của cấu hình generateSW trước đây.
           globPatterns: ['**/*.html', 'favicon.svg', 'manifest.webmanifest', 'fonts/**/*'],
           globIgnores: ['**/stats.html'],
-          navigateFallback: 'index.html',
-          cleanupOutdatedCaches: true,
-          runtimeCaching: [
-            {
-              urlPattern: ({ url }) =>
-                url.origin === self.location.origin && /^\/assets\/.*\.(js|css)$/.test(url.pathname),
-              handler: 'StaleWhileRevalidate',
-              options: {
-                cacheName: 'app-assets',
-                expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 30 },
-                cacheableResponse: { statuses: [0, 200] },
-              },
-            },
-            {
-              urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-              handler: 'CacheFirst',
-              options: {
-                cacheName: 'google-fonts-cache',
-                expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
-                cacheableResponse: { statuses: [0, 200] },
-              },
-            },
-            {
-              urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-              handler: 'CacheFirst',
-              options: {
-                cacheName: 'gstatic-fonts-cache',
-                expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
-                cacheableResponse: { statuses: [0, 200] },
-              },
-            },
-          ],
+        },
+        devOptions: {
+          // Bật SW ở dev để thử push mà không phải build production.
+          enabled: false,
+          type: 'module',
         },
       }),
     ],

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo } from 'react';
+import type { PhieuTomTatTrung } from '../core/form-mappers';
 import { useTranslation } from 'react-i18next';
 import { useForm, Controller, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -33,7 +34,8 @@ interface Props {
   /** Chi nhánh mặc định khi tạo mới: từ bản ghi gần nhất do user hiện tại tạo */
   preferredBranch?: { id_chi_nhanh: string; ten_chi_nhanh: string } | null;
   /** Danh sách đã tải — dùng cảnh báo trùng farm/chi nhánh + năm + tuần khi tạo mới */
-  existingThuHoach?: FarmThuHoach[];
+  /** Danh sách tóm tắt để chặn trùng tuần × chi nhánh (xem `getThuHoachTomTat`). */
+  existingThuHoach?: PhieuTomTatTrung[];
   onClose: () => void;
 }
 
@@ -273,7 +275,6 @@ const ThuHoachForm: React.FC<Props> = ({
                     value={value || null}
                     onChange={(v: string | number | null) => onChange(v != null ? String(v) : '')}
                     error={errors.id_chi_nhanh?.message}
-                    searchPlaceholder={t('common.search')}
                   />
                 </div>
               )}

@@ -1,9 +1,12 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import i18n from '../../../../lib/i18n';
 import { useAuthStore } from '../../../../store/useStore';
+import type { DuBaoSlDongThungListServerQuery } from '../services/du-bao-sl-dong-thung-list-query';
 import {
   getAllDuBaoSlDongThung,
+  getDuBaoSlDongThungPage,
+  getDuBaoSlDongThungTomTat,
   getDuBaoSlDongThungById,
   createDuBaoSlDongThung,
   updateDuBaoSlDongThung,
@@ -16,6 +19,27 @@ import type { DuBaoSlDongThungFormValues } from '../core/schema';
 import type { TrangThaiDuBaoSlDongThungPhieu } from '../core/types';
 
 export const QUERY_KEY_DU_BAO_SL_DONG_THUNG = ['duBaoSlDongThung'] as const;
+
+/** Một trang danh sách — lọc / sắp xếp / phân trang chạy ở PostgREST. */
+export function useDuBaoSlDongThungPage(query: DuBaoSlDongThungListServerQuery, enabled = true) {
+  return useQuery({
+    queryKey: [...QUERY_KEY_DU_BAO_SL_DONG_THUNG, 'page', query],
+    queryFn: () => getDuBaoSlDongThungPage(query),
+    enabled,
+    placeholderData: keepPreviousData,
+    staleTime: 1000 * 60 * 2,
+  });
+}
+
+/** Danh sách tóm tắt: chip lọc + số đếm, gợi ý chi nhánh, chặn trùng ngày. */
+export function useDuBaoSlDongThungTomTat(viewAll: boolean, allowedBranchIds: string[], enabled = true) {
+  return useQuery({
+    queryKey: [...QUERY_KEY_DU_BAO_SL_DONG_THUNG, 'tomTat', viewAll, [...allowedBranchIds].sort().join(',')],
+    queryFn: () => getDuBaoSlDongThungTomTat(viewAll, allowedBranchIds),
+    enabled,
+    staleTime: 1000 * 60 * 5,
+  });
+}
 
 export function useDuBaoSlDongThungList() {
   return useQuery({

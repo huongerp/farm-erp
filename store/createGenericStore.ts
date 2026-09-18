@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import type { CSSProperties } from 'react';
 
 /**
@@ -20,6 +21,9 @@ export interface ColumnConfig {
 
 /** Giá trị maxWidth mặc định khi cột không khai báo (tránh cột trải quá rộng). */
 export const DEFAULT_COLUMN_MAX_WIDTH = 400;
+
+/** Bề rộng dùng khi cột không khai minWidth và không khớp preset nào. */
+export const DEFAULT_COLUMN_WIDTH = 150;
 
 /** Cột chỉ ngày (date): đủ một dòng cho DD/MM/YYYY và header tiếng Việt. */
 export const COLUMN_WIDTH_DATE_MIN = 132;
@@ -204,6 +208,24 @@ export function getEffectiveColumnMinWidth(col: Pick<ColumnConfig, 'id' | 'minWi
   return preset ? Math.max(base, preset.minWidth) : base;
 }
 
+/**
+ * Bề rộng hiệu lực của cột khi vẽ `<colgroup>` (px).
+ *
+ * Thứ tự ưu tiên: người dùng đã kéo tay (`width`, đã lưu) → minWidth hiệu dụng
+ * theo preset tên cột. Bảng dùng `table-layout: fixed`, nên mọi cột đều phải ra
+ * được một con số — không có "auto".
+ */
+export function resolveColumnWidth(col: ColumnConfig, fallback = DEFAULT_COLUMN_WIDTH): number {
+  if (col.width != null) return col.width;
+  return getEffectiveColumnMinWidth(col, fallback);
+}
+
+/** Kẹp bề rộng vào [min, max] của cột — dùng cả lúc kéo lẫn lúc đọc bản đã lưu. */
+export function clampColumnWidth(col: ColumnConfig, width: number): number {
+  const { min, max } = getEffectiveColumnResizeBounds(col);
+  return Math.min(Math.max(width, min), max);
+}
+
 /** Min/max khi kéo resize cột — tôn trọng preset. */
 export function getEffectiveColumnResizeBounds(col: ColumnConfig): { min: number; max: number } {
   const preset = inferColumnSizingPreset(col.id);
@@ -280,6 +302,8 @@ export interface GenericState<TFilters> {
   toggleColumn: (id: string) => void;
   reorderColumns: (fromIndex: number, toIndex: number) => void;
   resizeColumn: (id: string, width: number) => void;
+  /** Trả mọi cột về bề rộng tự tính, giữ nguyên ẩn/hiện và thứ tự. */
+  resetColumnWidths: () => void;
   resetColumns: () => void;
   /** Cập nhật cột theo updater (dùng cho cột động). */
   setColumns: (updater: (cols: ColumnConfig[]) => ColumnConfig[]) => void;
@@ -287,10 +311,43 @@ export interface GenericState<TFilters> {
   resetState: () => void;
 }
 
+/**
+ * Hợp nhất cột đã lưu với cột khai trong code.
+ *
+ * Chỉ lấy `visible` / `order` / `width` từ bản lưu; `label`, `minWidth`, `maxWidth`
+ * LUÔN lấy từ code — nếu không, đổi nhãn hay thêm cột mới sẽ không tới được người
+ * dùng đã mở bảng một lần. Cột lạ trong bản lưu (đã xoá khỏi code) bị bỏ qua.
+ */
+export function mergeColumns(
+  defaultColumns: ColumnConfig[],
+  persisted?: Pick<ColumnConfig, 'id' | 'visible' | 'order' | 'width'>[]
+): ColumnConfig[] {
+  const base = defaultColumns.map((col, i) => ({ ...col, order: col.order ?? i }));
+  if (!persisted?.length) return base;
+  const byId = new Map(persisted.map((col) => [col.id, col]));
+  return base.map((col) => {
+    const saved = byId.get(col.id);
+    if (!saved) return col;
+    return {
+      ...col,
+      visible: saved.visible ?? col.visible,
+      order: saved.order ?? col.order,
+      // Kẹp lại: bounds trong code có thể đã đổi kể từ lần lưu.
+      width: saved.width != null ? clampColumnWidth(col, saved.width) : undefined,
+    };
+  });
+}
+
+/**
+ * @param storageKey Khoá localStorage nhớ tuỳ chỉnh cột, dạng `table-<module>`
+ *   (vd. `table-nhan-vien`). Bắt buộc — mỗi bảng một khoá riêng, trùng khoá là
+ *   hai bảng ghi đè cấu hình cột của nhau.
+ */
 export const createGenericStore = <TFilters>(
   initialFilters: TFilters,
-  defaultColumns: ColumnConfig[]
-) => create<GenericState<TFilters>>((set) => ({
+  defaultColumns: ColumnConfig[],
+  storageKey: string
+) => create<GenericState<TFilters>>()(persist((set) => ({
   searchTerm: '',
   filters: initialFilters,
   pagination: {
@@ -369,16 +426,16 @@ export const createGenericStore = <TFilters>(
   }),
 
   resizeColumn: (id, width) => set((state) => ({
-    columns: state.columns.map(col => {
-      if (col.id !== id) return col;
-      const { min, max } = getEffectiveColumnResizeBounds(col);
-      return { ...col, width: Math.min(Math.max(width, min), max) };
-    })
+    columns: state.columns.map(col => (col.id === id ? { ...col, width: clampColumnWidth(col, width) } : col))
   })),
 
   resetColumns: () => set({
     columns: defaultColumns.map((col, i) => ({ ...col, order: col.order ?? i }))
   }),
+
+  resetColumnWidths: () => set((state) => ({
+    columns: state.columns.map((col) => ({ ...col, width: undefined })),
+  })),
 
   setColumns: (updater) => set((state) => ({
     columns: updater(state.columns),
@@ -386,12 +443,36 @@ export const createGenericStore = <TFilters>(
 
   setSort: (column, direction) => set({ sort: { column, direction } }),
 
+  /**
+   * Về trạng thái xem mặc định khi rời module: xoá tìm kiếm, bộ lọc, sắp xếp,
+   * lựa chọn dòng.
+   *
+   * CỐ Ý không đụng `columns`: ẩn/hiện, thứ tự và bề rộng cột là cấu hình cá nhân
+   * đã lưu — reset ở đây thì rời trang một lần là người dùng mất sạch tuỳ chỉnh.
+   * Muốn trả cột về mặc định thì dùng `resetColumns` / `resetColumnWidths`.
+   */
   resetState: () => set({
     searchTerm: '',
     filters: initialFilters,
     pagination: { page: 1, pageSize: 20 },
     sort: { column: null, direction: null },
     selectedIds: new Set(),
-    columns: defaultColumns.map((col, i) => ({ ...col, order: col.order ?? i }))
   })
+}), {
+  name: storageKey,
+  version: 1,
+  /**
+   * CHỈ lưu cấu hình cột (ẩn/hiện, thứ tự, bề rộng) — đó là lựa chọn cá nhân,
+   * giữ lại giữa các phiên. KHÔNG lưu `filters`/`sort`/`searchTerm`/`selectedIds`:
+   * người dùng mở lại trang mà thấy bộ lọc cũ còn nguyên sẽ tưởng thiếu dữ liệu.
+   */
+  partialize: (state) => ({
+    columns: state.columns.map(({ id, visible, order, width }) => ({ id, visible, order, width })),
+  }),
+  merge: (persisted, currentState) => {
+    const saved = persisted as
+      | { columns?: Pick<ColumnConfig, 'id' | 'visible' | 'order' | 'width'>[] }
+      | undefined;
+    return { ...currentState, columns: mergeColumns(defaultColumns, saved?.columns) };
+  },
 }));

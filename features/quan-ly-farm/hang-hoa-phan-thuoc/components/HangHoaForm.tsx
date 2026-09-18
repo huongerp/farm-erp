@@ -201,7 +201,6 @@ const HangHoaForm: React.FC<Props> = ({ initialData, existingDvtList = [], exist
                   value={field.value ?? ''}
                   onChange={(v) => field.onChange(typeof v === 'string' ? v : String(v ?? ''))}
                   placeholder={t('farmHangHoaPhanThuoc.hangHoa.form.unitPlaceholder')}
-                  searchPlaceholder={t('farmHangHoaPhanThuoc.hangHoa.form.unitSearchPlaceholder')}
                   creatable
                   creatableLabel={t('farmHangHoaPhanThuoc.hangHoa.form.unitCreatableLabel')}
                   searchable
@@ -222,7 +221,6 @@ const HangHoaForm: React.FC<Props> = ({ initialData, existingDvtList = [], exist
                   value={field.value ?? ''}
                   onChange={(v) => field.onChange(typeof v === 'string' ? v : String(v ?? ''))}
                   placeholder={t('farmHangHoaPhanThuoc.hangHoa.form.phamCapPlaceholder')}
-                  searchPlaceholder={t('farmHangHoaPhanThuoc.hangHoa.form.phamCapSearchPlaceholder')}
                   creatable
                   creatableLabel={t('farmHangHoaPhanThuoc.hangHoa.form.phamCapCreatableLabel')}
                   searchable

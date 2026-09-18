@@ -10,6 +10,10 @@ import { useBangLuongManagedStore } from '../store/useBangLuongManagedStore';
 interface Props {
   data: BangLuongRecord[];
   isLoading: boolean;
+  /** Đang tải trang mới nhưng đã có dữ liệu cũ — hiện lớp phủ mờ thay vì skeleton. */
+  isFetching?: boolean;
+  /** Tổng số bản ghi khớp bộ lọc (phân trang ở server). */
+  totalRecordsOverride?: number;
   onView: (item: BangLuongRecord) => void;
   onEdit?: (item: BangLuongRecord) => void;
   onDelete?: (id: string) => void;
@@ -20,10 +24,11 @@ interface Props {
 const formatPeriod = (nam: number, thang: number) =>
   `${nam}-${String(thang).padStart(2, '0')}`;
 
-const BangLuongManagedTable: React.FC<Props> = ({ data, isLoading, onView, onEdit, onDelete, canUpdate = true, canDelete = true }) => {
+const BangLuongManagedTable: React.FC<Props> = ({ isFetching, totalRecordsOverride, data, isLoading, onView, onEdit, onDelete, canUpdate = true, canDelete = true }) => {
   const { t } = useTranslation();
   const {
     columns,
+    resizeColumn,
     pagination,
     setPage,
     setPageSize,
@@ -203,7 +208,10 @@ const BangLuongManagedTable: React.FC<Props> = ({ data, isLoading, onView, onEdi
     <GenericTable
       data={data}
       columns={columns}
+      onResizeColumn={resizeColumn}
       isLoading={isLoading}
+      isFetching={isFetching}
+      totalRecordsOverride={totalRecordsOverride}
       loadingText={t('bangLuong.managed.loading')}
       selectedIds={selectedIds}
       onToggleSelection={toggleSelection}

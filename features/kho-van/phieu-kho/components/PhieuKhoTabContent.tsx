@@ -60,6 +60,7 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
   const resetState = usePhieuKhoStore((s) => s.resetState);
   const selectedIds = usePhieuKhoStore((s) => s.selectedIds);
   const columns = usePhieuKhoStore((s) => s.columns);
+  const resizeColumn = usePhieuKhoStore((s) => s.resizeColumn);
   const clearSelection = usePhieuKhoStore((s) => s.clearSelection);
   const toggleSelection = usePhieuKhoStore((s) => s.toggleSelection);
   const toggleAllSelection = usePhieuKhoStore((s) => s.toggleAllSelection);
@@ -387,6 +388,7 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
           serverTotalCount={totalCount}
           loai={loaiTab}
           columns={columns}
+          onResizeColumn={resizeColumn}
           selectedIds={selectedIds}
           onToggleSelection={toggleSelection}
           onToggleAllSelection={toggleAllSelection}

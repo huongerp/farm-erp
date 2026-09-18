@@ -1,7 +1,8 @@
 /**
  * Cấu hình module phân quyền theo 3 cấp: Chức năng → Nhóm module → Module.
- * Chỉ giữ các module đang hiển thị trên submenu: hanh-chinh, mua-hang (gồm kho-van), quan-ly-farm, he-thong.
- * Các module đã ẩn (nhan-su, kinh-doanh, marketing, tai-chinh, dieu-hanh) đã được xoá.
+ * Chỉ giữ các module đang hiển thị trên submenu: hanh-chinh, mua-hang (gồm kho-van), quan-ly-farm,
+ * tai-chinh (quỹ farm), he-thong.
+ * Các module đã ẩn (nhan-su, kinh-doanh, marketing, dieu-hanh) đã được xoá.
  */
 
 export interface PermissionModuleItem {
@@ -139,6 +140,24 @@ export const PERMISSION_FUNCTIONS: PermissionFunction[] = [
     ],
   },
   {
+    id: 'tai-chinh',
+    nameKey: 'nav.taiChinh',
+    color: 'cyan',
+    groups: [
+      /**
+       * Quỹ farm — sổ quỹ tiền mặt theo CHI NHÁNH (không theo kho).
+       * Phạm vi xem: farm nào xem farm đó (chi_nhanh_ids của nhân viên);
+       * cap_bac = 1 hoặc quyền admin/all trên module → xem mọi chi nhánh.
+       * Không có luồng duyệt nên không khai trong MODULES_WITH_APPROVE.
+       */
+      { groupTitleKey: 'page.taiChinh.groupQuyFarm', modules: [
+        { id: BASE('tai-chinh', 'thu-chi-quy'), nameKey: 'page.taiChinh.modules.thuChiQuy' },
+        { id: BASE('tai-chinh', 'thong-ke-quy'), nameKey: 'page.taiChinh.modules.thongKeQuy' },
+        { id: BASE('tai-chinh', 'thiet-lap-quy'), nameKey: 'page.taiChinh.modules.thietLapQuy' },
+      ]},
+    ],
+  },
+  {
     id: 'he-thong',
     nameKey: 'nav.system',
     color: 'slate',
@@ -170,7 +189,7 @@ export function getAllPermissionModules(): { id: string; nameKey: string }[] {
 }
 
 /** Path submenu có phân quyền (khớp với SIDEBAR_MENU) */
-const SUBMENU_PATHS_WITH_PERMISSION = ['/hanh-chinh', '/mua-hang', '/quan-ly-farm', '/he-thong'] as const;
+const SUBMENU_PATHS_WITH_PERMISSION = ['/hanh-chinh', '/mua-hang', '/quan-ly-farm', '/tai-chinh', '/he-thong'] as const;
 
 /**
  * Lấy danh sách module id thuộc một submenu theo path (vd: /hanh-chinh -> [hanh-chinh/cong-viec, ...]).

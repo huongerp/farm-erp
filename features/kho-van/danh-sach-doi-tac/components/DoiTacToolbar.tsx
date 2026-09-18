@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import type { DoiTacTomTat } from '../services/doi-tac-service';
 import { useTranslation } from 'react-i18next';
 import { Plus, Tag, Folder } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
@@ -6,11 +7,14 @@ import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useDoiTacStore } from '../store/useDoiTacStore';
-import type { DoiTac } from '../core/types';
 import type { NhomDoiTac } from '../core/types';
 
 interface Props {
-  data: DoiTac[];
+  /**
+   * Danh sách TÓM TẮT toàn bộ đối tác của tab (không phải trang đang xem) — chip
+   * lọc phải đếm trên toàn bộ dữ liệu.
+   */
+  data: DoiTacTomTat[];
   nhomList: NhomDoiTac[];
   selectedCount: number;
   onAdd: () => void;
@@ -37,6 +41,7 @@ const DoiTacToolbar: React.FC<Props> = ({
   const toggleColumn = useDoiTacStore((s) => s.toggleColumn);
   const reorderColumns = useDoiTacStore((s) => s.reorderColumns);
   const resetColumns = useDoiTacStore((s) => s.resetColumns);
+  const resetColumnWidths = useDoiTacStore((s) => s.resetColumnWidths);
 
   const activeFilterCount = useMemo(
     () =>
@@ -144,13 +149,13 @@ const DoiTacToolbar: React.FC<Props> = ({
       filterGroups={filterGroups}
       onAdd={canCreate ? onAdd : undefined}
       showBack
-      searchPlaceholder={t('doiTac.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       columns={columns}
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
+      onResetColumnWidths={resetColumnWidths}
     />
   );
 };

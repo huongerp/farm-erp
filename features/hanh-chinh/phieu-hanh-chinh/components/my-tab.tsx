@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import type { AdminFormListServerQuery } from '../services/admin-form-list-query';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
 import { Ban } from 'lucide-react';
@@ -8,7 +9,7 @@ import AdminFormTable from './admin-form-table';
 import AdminFormForm from './admin-form-form';
 import AdminFormDetail from './admin-form-detail';
 import {
-  useAdminForms,
+  useAdminFormPage,
   useCancelAdminForm,
   useDeleteAdminForm,
   useDeleteAdminForms,
@@ -18,10 +19,7 @@ import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolb
 import { useAdminFormMyStore } from '../store/useAdminFormMyStore';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_YES } from '../../../../lib/button-labels';
-import { useListWithFilter } from '../../../../lib/hooks';
-import { getLanguage } from '../../../../lib/utils';
 import { AdminFormRequest } from '../core/types';
-import { getAdminFormTypeLabel } from '../../thiet-lap-cong-luong/core/constants';
 import { useAuthStore } from '../../../../store/useStore';
 
 const AdminFormMyTab: React.FC = () => {
@@ -33,6 +31,7 @@ const AdminFormMyTab: React.FC = () => {
   const searchTerm = useAdminFormMyStore((s) => s.searchTerm);
   const filters = useAdminFormMyStore((s) => s.filters);
   const sort = useAdminFormMyStore((s) => s.sort);
+  const pagination = useAdminFormMyStore((s) => s.pagination);
   const resetState = useAdminFormMyStore((s) => s.resetState);
   const clearSelection = useAdminFormMyStore((s) => s.clearSelection);
   const selectedIds = useAdminFormMyStore((s) => s.selectedIds);
@@ -41,12 +40,37 @@ const AdminFormMyTab: React.FC = () => {
   const toggleColumn = useAdminFormMyStore((s) => s.toggleColumn);
   const reorderColumns = useAdminFormMyStore((s) => s.reorderColumns);
   const resetColumns = useAdminFormMyStore((s) => s.resetColumns);
+  const resetColumnWidths = useAdminFormMyStore((s) => s.resetColumnWidths);
 
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<AdminFormRequest | null>(null);
   const [viewingItem, setViewingItem] = useState<AdminFormRequest | null>(null);
 
-  const { data: forms = [], isLoading } = useAdminForms();
+  const currentUserId = user?.id ?? '';
+
+  /** Bộ lọc gửi thẳng xuống PostgREST — trước đây tab này tải toàn bộ bảng phiếu. */
+  const listServerQuery: AdminFormListServerQuery = useMemo(
+    () => ({
+      page: pagination.page - 1,
+      pageSize: pagination.pageSize,
+      searchTerm,
+      status: filters.status ?? [],
+      type: filters.type ?? [],
+      shift: filters.shift ?? [],
+      month: filters.month ?? '',
+      nguoiTaoId: currentUserId || null,
+      loaiTruNguoiTaoId: null,
+      sortColumn: sort.column,
+      sortDirection: sort.direction,
+    }),
+    [pagination.page, pagination.pageSize, searchTerm, filters, sort, currentUserId]
+  );
+
+  const pageQuery = useAdminFormPage(listServerQuery, Boolean(currentUserId));
+  const pageList = pageQuery.data?.data ?? [];
+  const totalCount = pageQuery.data?.totalCount ?? 0;
+  const isLoading = !pageQuery.data && pageQuery.isPending;
+  const isFetching = !!pageQuery.data && pageQuery.isFetching;
   const cancelMutation = useCancelAdminForm();
   const deleteMutation = useDeleteAdminForm();
   const deleteManyMutation = useDeleteAdminForms();
@@ -56,50 +80,6 @@ const AdminFormMyTab: React.FC = () => {
     return () => resetState();
   }, [resetState]);
 
-  const filterFn = useCallback(
-    (item: AdminFormRequest, term: string, f: typeof filters) => {
-      const searchLower = term.toLowerCase();
-      const typeLabel = getAdminFormTypeLabel(item.loai_phieu, t).toLowerCase();
-      const matchesSearch =
-        !term ||
-        typeLabel.includes(searchLower) ||
-        item.ly_do.toLowerCase().includes(searchLower) ||
-        item.ngay.includes(term);
-      const matchesStatus = f.status.length === 0 || f.status.includes(item.trang_thai);
-      const matchesType = f.type.length === 0 || f.type.includes(item.loai_phieu);
-      const matchesShift = f.shift.length === 0 || f.shift.includes(item.ca);
-      const matchesMonth = !f.month || item.ngay.startsWith(f.month);
-      return matchesSearch && matchesStatus && matchesType && matchesShift && matchesMonth;
-    },
-    [t, filters]
-  );
-
-  const currentUserId = user?.id ?? 'emp-000';
-  const effectiveUserId = useMemo(() => {
-    if (forms.some((f) => f.nguoi_tao_id === currentUserId)) return currentUserId;
-    if (forms.some((f) => f.nguoi_tao_id === 'emp-000')) return 'emp-000';
-    return currentUserId;
-  }, [forms, currentUserId]);
-  const myForms = useMemo(
-    () => forms.filter((f) => f.nguoi_tao_id === effectiveUserId),
-    [forms, effectiveUserId]
-  );
-  const filteredList = useListWithFilter(myForms, searchTerm, filters, filterFn);
-
-  const sortedList = useMemo(() => {
-    if (!sort.column || !sort.direction) return filteredList;
-    const sorted = [...filteredList];
-    sorted.sort((a: any, b: any) => {
-      const aVal = a[sort.column!] ?? '';
-      const bVal = b[sort.column!] ?? '';
-      const cmp =
-        typeof aVal === 'number' && typeof bVal === 'number'
-          ? aVal - bVal
-          : String(aVal).localeCompare(String(bVal), getLanguage());
-      return sort.direction === 'desc' ? -cmp : cmp;
-    });
-    return sorted;
-  }, [filteredList, sort]);
 
   const handleEdit = (item: AdminFormRequest) => {
     setEditingItem(item);
@@ -175,7 +155,7 @@ const AdminFormMyTab: React.FC = () => {
   return (
     <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
       <AdminFormToolbar
-        items={myForms}
+        items={pageList}
         searchTerm={searchInput}
         setSearchTerm={setSearchInput}
         filters={filters}
@@ -184,16 +164,18 @@ const AdminFormMyTab: React.FC = () => {
         toggleColumn={toggleColumn}
         reorderColumns={reorderColumns}
         resetColumns={resetColumns}
+        resetColumnWidths={resetColumnWidths}
         selectedIds={selectedIds}
         clearSelection={clearSelection}
         onAdd={canCreate ? () => setShowForm(true) : undefined}
         onDeleteMany={canDelete ? handleDeleteMany : undefined}
         bulkActions={bulkActions}
-        searchPlaceholder={t('adminForm.my.searchPlaceholder')}
       />
       <div className="flex-1 min-h-0">
         <AdminFormTable
-          data={sortedList}
+          data={pageList}
+          totalRecordsOverride={totalCount}
+          isFetching={isFetching}
           isLoading={isLoading}
           onView={handleView}
           onEdit={handleEdit}

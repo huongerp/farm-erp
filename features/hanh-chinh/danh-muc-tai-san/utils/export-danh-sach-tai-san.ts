@@ -28,7 +28,6 @@ export interface TaiSanExportRow {
   gia_tri_con_lai: number | null;
   khau_hao_luy_ke: number | null;
   ghi_chu: string;
-  trang_thai: string;
 }
 
 const t = i18n.t.bind(i18n);
@@ -55,7 +54,6 @@ export const TAI_SAN_EXPORT_COLUMNS: { key: keyof TaiSanExportRow; label: string
   { key: 'gia_tri_con_lai', label: t('danhSachTaiSan.detail.giaTriConLai') },
   { key: 'khau_hao_luy_ke', label: t('danhSachTaiSan.detail.khauHaoLuyKe') },
   { key: 'ghi_chu', label: t('danhSachTaiSan.form.ghiChu') },
-  { key: 'trang_thai', label: t('danhSachTaiSan.form.status') },
 ];
 
 export function taiSanToExportRow(a: TaiSan): TaiSanExportRow {
@@ -80,7 +78,6 @@ export function taiSanToExportRow(a: TaiSan): TaiSanExportRow {
     gia_tri_con_lai: a.gia_tri_con_lai ?? null,
     khau_hao_luy_ke: a.khau_hao_luy_ke ?? null,
     ghi_chu: a.ghi_chu ?? '',
-    trang_thai: a.trang_thai === 1 ? t('common.activeStatus') : t('common.inactiveStatus'),
   };
 }
 

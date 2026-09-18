@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import type { BaoCaoSoCheTomTat } from '../services/bao-cao-so-che-service';
 import { useTranslation } from 'react-i18next';
 import { Plus, Building2, Calendar, Hash, ToggleLeft, Ruler, Download } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
@@ -7,11 +8,14 @@ import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useBaoCaoSoCheStore, type BaoCaoSoCheFilters } from '../store/useBaoCaoSoCheStore';
-import type { FarmBaoCaoSoChe } from '../core/types';
 import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
 
 interface Props {
-  data: FarmBaoCaoSoChe[];
+  /**
+   * Danh sách TÓM TẮT toàn bộ phiếu (không phải trang đang xem) — chip lọc phải
+   * đếm trên toàn bộ dữ liệu, xem `getBaoCaoSoCheTomTat`.
+   */
+  data: BaoCaoSoCheTomTat[];
   branches: Branch[];
   selectedCount: number;
   onAdd: () => void;
@@ -51,6 +55,7 @@ const BaoCaoSoCheToolbar: React.FC<Props> = ({
   const toggleColumn = useBaoCaoSoCheStore((s) => s.toggleColumn);
   const reorderColumns = useBaoCaoSoCheStore((s) => s.reorderColumns);
   const resetColumns = useBaoCaoSoCheStore((s) => s.resetColumns);
+  const resetColumnWidths = useBaoCaoSoCheStore((s) => s.resetColumnWidths);
 
   const branchOptions = useMemo(
     () =>
@@ -282,13 +287,13 @@ const BaoCaoSoCheToolbar: React.FC<Props> = ({
       mobileActions={mobileActions}
       onAdd={canCreate ? onAdd : undefined}
       showBack
-      searchPlaceholder={t('baoCaoSoChe.toolbar.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       columns={columns}
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
+      onResetColumnWidths={resetColumnWidths}
     />
   );
 };

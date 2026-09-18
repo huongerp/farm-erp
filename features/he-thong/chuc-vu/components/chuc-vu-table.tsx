@@ -23,7 +23,7 @@ interface Props {
 const PositionTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onStatusChange, onView, canUpdate = true, canDelete = true }) => {
   const { t } = useTranslation();
   const { 
-    columns, pagination, setPage, setPageSize,
+    columns, resizeColumn, pagination, setPage, setPageSize,
     selectedIds, toggleSelection, toggleAllSelection,
     sort, setSort
   } = usePositionStore();
@@ -177,6 +177,7 @@ const PositionTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onS
     <GenericTable
         data={data}
         columns={columns}
+        onResizeColumn={resizeColumn}
         isLoading={isLoading}
         loadingText={t('position.loading')}
         selectedIds={selectedIds}

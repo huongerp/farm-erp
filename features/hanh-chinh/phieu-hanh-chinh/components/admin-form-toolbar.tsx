@@ -34,12 +34,12 @@ interface Props {
   toggleColumn: (id: string) => void;
   reorderColumns: (fromIndex: number, toIndex: number) => void;
   resetColumns: () => void;
+  resetColumnWidths: () => void;
   selectedIds: Set<string>;
   clearSelection: () => void;
   onAdd?: () => void;
   onDeleteMany?: (ids: string[]) => void;
   bulkActions?: React.ReactNode;
-  searchPlaceholder: string;
 }
 
 const AdminFormToolbar: React.FC<Props> = ({
@@ -52,12 +52,12 @@ const AdminFormToolbar: React.FC<Props> = ({
   toggleColumn,
   reorderColumns,
   resetColumns,
+  resetColumnWidths,
   selectedIds,
   clearSelection,
   onAdd,
   onDeleteMany,
   bulkActions,
-  searchPlaceholder,
 }) => {
   const { t } = useTranslation();
   const { statusCounts, typeCounts, shiftCounts } = useAdminFormFilterCounts(items, filters);
@@ -176,7 +176,6 @@ const AdminFormToolbar: React.FC<Props> = ({
       filters={renderFilters}
       filterGroups={filterGroups}
       onAdd={onAdd}
-      searchPlaceholder={searchPlaceholder}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       onDeleteMany={onDeleteMany ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
@@ -184,6 +183,7 @@ const AdminFormToolbar: React.FC<Props> = ({
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
+      onResetColumnWidths={resetColumnWidths}
       showBack
     />
   );

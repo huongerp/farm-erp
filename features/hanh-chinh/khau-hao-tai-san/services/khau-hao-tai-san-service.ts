@@ -32,3 +32,5 @@ export const chotKy = chotKySupabase;
 export const deleteKyKhauHao = deleteKyKhauHaoSupabase;
 export const updateKyKhauHaoGhiChu = updateKyKhauHaoGhiChuSupabase;
 export const updateKyKhauHaoTrangThai = updateKyKhauHaoTrangThaiSupabase;
+
+export { getKyKhauHaoPageSupabase } from './khau-hao-tai-san-supabase.service';

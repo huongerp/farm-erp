@@ -7,7 +7,7 @@ export interface FarmHangHoaFilters {
   dvt: string[];
 }
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'ma_hang_hoa', label: i18n.t('farmHangHoaPhanThuoc.hangHoa.store.codeCol'), visible: true, minWidth: 120, maxWidth: 180, order: 0 },
   { id: 'ten_hang_hoa', label: i18n.t('farmHangHoaPhanThuoc.hangHoa.store.nameCol'), visible: true, minWidth: 180, maxWidth: 320, order: 1 },
   { id: 'ten_danh_muc', label: i18n.t('farmHangHoaPhanThuoc.hangHoa.store.categoryCol'), visible: true, minWidth: 160, maxWidth: 280, order: 2 },
@@ -24,4 +24,4 @@ const initialFilters: FarmHangHoaFilters = {
   dvt: [],
 };
 
-export const useFarmHangHoaStore = createGenericStore<FarmHangHoaFilters>(initialFilters, DEFAULT_COLUMNS);
+export const useFarmHangHoaStore = createGenericStore<FarmHangHoaFilters>(initialFilters, DEFAULT_COLUMNS, 'table-hang-hoa-phan-thuoc-farm-hang-hoa');

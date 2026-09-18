@@ -22,6 +22,7 @@ type Options = {
   root: string;
   apiTarget: string;
   authTarget: string;
+  notifyTarget: string;
 };
 
 /**
@@ -161,7 +162,7 @@ function gan(nhan: string, child: ChildProcess, logger: Logger) {
   }
 }
 
-export function devServices({ env, root, apiTarget, authTarget }: Options): Plugin {
+export function devServices({ env, root, apiTarget, authTarget, notifyTarget }: Options): Plugin {
   return {
     name: 'farm-erp:dev-services',
     apply: 'serve',
@@ -171,7 +172,8 @@ export function devServices({ env, root, apiTarget, authTarget }: Options): Plug
 
       const apiPort = localPort(apiTarget);
       const authPort = localPort(authTarget);
-      if (apiPort === null && authPort === null) return;
+      const notifyPort = localPort(notifyTarget);
+      if (apiPort === null && authPort === null && notifyPort === null) return;
 
       const db = thongTinDb(env.VPS_DB_URL ?? '');
       if (!db) {
@@ -185,7 +187,7 @@ export function devServices({ env, root, apiTarget, authTarget }: Options): Plug
 
       // Đổi cổng trong .env rồi restart: process cũ không còn ai proxy tới nữa.
       for (const port of [...registry.keys()]) {
-        if (port !== apiPort && port !== authPort) {
+        if (port !== apiPort && port !== authPort && port !== notifyPort) {
           docMuc(registry, port)?.child.kill('SIGTERM');
           registry.delete(port);
         }
@@ -263,6 +265,33 @@ export function devServices({ env, root, apiTarget, authTarget }: Options): Plug
                 JWT_SECRET: env.PGRST_JWT_SECRET,
                 PORT: String(authPort),
                 GOOGLE_CLIENT_ID: env.VITE_GOOGLE_CLIENT_ID ?? '',
+              },
+            }),
+          );
+        }
+      }
+
+      if (notifyPort !== null) {
+        const notifyDir = path.join(root, 'services', 'notify');
+        if (!env.NOTIFY_SERVICE_DB_PASSWORD || !env.PGRST_JWT_SECRET) {
+          logger.warn('[notify] thiếu NOTIFY_SERVICE_DB_PASSWORD hoặc PGRST_JWT_SECRET — bỏ qua.');
+        } else if (!existsSync(path.join(notifyDir, 'node_modules'))) {
+          logger.warn('[notify] chưa cài phụ thuộc — chạy `npm ci --prefix services/notify` rồi mở lại dev.');
+        } else {
+          await batDau(notifyPort, '[notify]', '/khoe', 'cần Node >= 22.6 (--experimental-strip-types)', () =>
+            spawn(process.execPath, ['--watch', '--experimental-strip-types', 'src/index.ts'], {
+              cwd: notifyDir,
+              stdio: ['ignore', 'pipe', 'pipe'],
+              env: {
+                ...process.env,
+                DATABASE_URL: ketNoi('notify_service', env.NOTIFY_SERVICE_DB_PASSWORD),
+                JWT_SECRET: env.PGRST_JWT_SECRET,
+                PORT: String(notifyPort),
+                // Thiếu khoá VAPID thì service vẫn chạy, chỉ tắt phần đẩy push.
+                VAPID_PUBLIC_KEY: env.VITE_VAPID_PUBLIC_KEY ?? '',
+                VAPID_PRIVATE_KEY: env.VAPID_PRIVATE_KEY ?? '',
+                VAPID_SUBJECT: env.VAPID_SUBJECT ?? '',
+                COMPANY_TZ: env.COMPANY_TZ ?? '',
               },
             }),
           );

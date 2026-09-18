@@ -1,4 +1,6 @@
 import type { PhieuBaoTriSuaChua, PhieuBaoTriSuaChuaCreate } from '../core/types';
+import type { PaginatedTableResult } from '../../../../lib/db';
+import type { BaoTriSuaChuaListServerQuery } from './bao-tri-sua-chua-list-query';
 import { getTaiSanList } from '../../danh-muc-tai-san/services/danh-muc-tai-san-service';
 import { getEmployeesRef } from '@/features/he-thong/nhan-vien/services/nhan-vien-service';
 import { getLoaiChiPhiList } from '../../thiet-lap-tai-san/services/loai-chi-phi-service';
@@ -6,6 +8,8 @@ import { getHangMucLabel } from '../core/constants';
 import i18n from '../../../../lib/i18n';
 import {
   getPhieuChiPhiListSupabase,
+  getPhieuChiPhiPageSupabase,
+  fetchAllPhieuChiPhiForListQuery as fetchAllPhieuChiPhiForListQuerySupabase,
   getPhieuChiPhiByIdSupabase,
   createPhieuChiPhiSupabase,
   updatePhieuChiPhiSupabase,
@@ -41,6 +45,21 @@ async function enrichPhieu(items: PhieuBaoTriSuaChua[]): Promise<PhieuBaoTriSuaC
 }
 
 export type GetPhieuBaoTriListParams = GetPhieuChiPhiListParams;
+
+/** Một trang danh sách (lọc / sắp xếp / phân trang ở PostgREST). */
+export async function getPhieuBaoTriPage(
+  query: BaoTriSuaChuaListServerQuery
+): Promise<PaginatedTableResult<PhieuBaoTriSuaChua>> {
+  const page = await getPhieuChiPhiPageSupabase(query);
+  return { ...page, data: await enrichPhieu(page.data) };
+}
+
+/** Toàn bộ bản ghi khớp bộ lọc — chỉ gọi khi mở hộp thoại Xuất file. */
+export async function fetchAllPhieuBaoTriForListQuery(
+  query: BaoTriSuaChuaListServerQuery
+): Promise<PhieuBaoTriSuaChua[]> {
+  return enrichPhieu(await fetchAllPhieuChiPhiForListQuerySupabase(query));
+}
 
 export const getPhieuBaoTriList = async (
   params: GetPhieuBaoTriListParams = {}

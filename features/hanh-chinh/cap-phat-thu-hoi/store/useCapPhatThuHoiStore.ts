@@ -8,7 +8,7 @@ export interface CapPhatThuHoiFilters {
   id_nguoi_thuc_hien: string[];
 }
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'ma_phieu', label: i18n.t('capPhatThuHoi.store.maPhieuCol'), visible: true, minWidth: 120, order: 0 },
   { id: 'loai_phieu', label: i18n.t('capPhatThuHoi.store.loaiCol'), visible: true, minWidth: 140, order: 1 },
   { id: 'ten_nguoi_giu_truoc', label: i18n.t('capPhatThuHoi.store.nguoiGiuTruocCol'), visible: true, minWidth: 120, order: 2 },
@@ -28,5 +28,6 @@ const initialFilters: CapPhatThuHoiFilters = {
 
 export const useCapPhatThuHoiStore = createGenericStore<CapPhatThuHoiFilters>(
   initialFilters,
-  DEFAULT_COLUMNS
+  DEFAULT_COLUMNS,
+  'table-cap-phat-thu-hoi'
 );

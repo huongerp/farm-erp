@@ -1,8 +1,9 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import i18n from '../../../../lib/i18n';
 import {
   getBangLuongRecords,
+  getBangLuongPage,
   getBangLuongById,
   addBangLuong,
   saveBangLuong,
@@ -10,12 +11,24 @@ import {
   createBangLuongFromRecord,
 } from '../services/bang-luong-service';
 import type { BangLuongRecord } from '../core/types';
+import type { BangLuongListServerQuery } from '../services/bang-luong-list-query';
 
 export const BANG_LUONG_KEYS = {
   all: ['bangLuong'] as const,
   list: () => [...BANG_LUONG_KEYS.all, 'list'] as const,
   detail: (id: string) => [...BANG_LUONG_KEYS.all, 'detail', id] as const,
 };
+
+/** Một trang danh sách — lọc / sắp xếp / phân trang chạy ở PostgREST. */
+export function useBangLuongPage(query: BangLuongListServerQuery, enabled = true) {
+  return useQuery({
+    queryKey: [...BANG_LUONG_KEYS.all, 'page', query],
+    queryFn: () => getBangLuongPage(query),
+    enabled,
+    placeholderData: keepPreviousData,
+    staleTime: 1000 * 60 * 2,
+  });
+}
 
 export function useBangLuongRecords() {
   return useQuery({

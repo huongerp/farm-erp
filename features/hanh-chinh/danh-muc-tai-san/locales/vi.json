@@ -98,7 +98,6 @@
   "danhSachTaiSan.validation.trangThaiRequired": "Vui lòng chọn trạng thái tài sản",
   "danhSachTaiSan.validation.ngayNhapRequired": "Vui lòng chọn ngày nhập",
   "danhSachTaiSan.validation.statusInvalid": "Trạng thái không hợp lệ",
-  "danhSachTaiSan.searchPlaceholder": "Tìm theo mã, tên, nhóm...",
   "danhSachTaiSan.loading": "Đang tải...",
   "danhSachTaiSan.deleteTitle": "Xóa tài sản",
   "danhSachTaiSan.deleteMessage": "Bạn có chắc chắn muốn xóa tài sản này?",

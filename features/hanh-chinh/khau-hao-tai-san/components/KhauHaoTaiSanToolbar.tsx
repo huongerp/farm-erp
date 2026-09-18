@@ -27,6 +27,7 @@ const KhauHaoTaiSanToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany
   const toggleColumn = useKhauHaoTaiSanStore((s) => s.toggleColumn);
   const reorderColumns = useKhauHaoTaiSanStore((s) => s.reorderColumns);
   const resetColumns = useKhauHaoTaiSanStore((s) => s.resetColumns);
+  const resetColumnWidths = useKhauHaoTaiSanStore((s) => s.resetColumnWidths);
   const selectedIds = useKhauHaoTaiSanStore((s) => s.selectedIds);
   const clearSelection = useKhauHaoTaiSanStore((s) => s.clearSelection);
 
@@ -131,7 +132,6 @@ const KhauHaoTaiSanToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany
       filters={renderFilters}
       filterGroups={filterGroups}
       onAdd={onAdd}
-      searchPlaceholder={t('khauHaoTaiSan.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       onDeleteMany={onDeleteMany && selectedCount > 0 ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
@@ -139,6 +139,7 @@ const KhauHaoTaiSanToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
+      onResetColumnWidths={resetColumnWidths}
       showBack
       mobileActions={mobileActions}
     />

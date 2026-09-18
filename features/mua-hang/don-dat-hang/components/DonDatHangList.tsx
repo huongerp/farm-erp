@@ -10,6 +10,8 @@ import type { ColumnConfig } from '../../../../store/createGenericStore';
 interface Props {
   data: DonDatHang[];
   columns: ColumnConfig[];
+  /** Cho phép kéo đổi bề rộng cột — truyền `resizeColumn` của store. */
+  onResizeColumn?: (id: string, width: number) => void;
   selectedIds: Set<string>;
   onToggleSelection: (id: string) => void;
   onToggleAllSelection: (ids: string[]) => void;
@@ -29,6 +31,7 @@ interface Props {
 const DonDatHangList: React.FC<Props> = ({
   data,
   columns,
+  onResizeColumn,
   selectedIds,
   onToggleSelection,
   onToggleAllSelection,
@@ -144,6 +147,7 @@ const DonDatHangList: React.FC<Props> = ({
     <GenericTable<DonDatHang>
       data={data}
       columns={visibleColumns}
+      onResizeColumn={onResizeColumn}
       isLoading={isLoading}
       isFetching={isFetching}
       loadingText={t('donDatHang.loading')}

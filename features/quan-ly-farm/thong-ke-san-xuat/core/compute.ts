@@ -220,14 +220,22 @@ export function resolveDateRange(presetId: string, customStart: string, customEn
   }
 }
 
+/**
+ * Kỳ mặc định của màn Thống kê sản xuất.
+ *
+ * "Tất cả" theo yêu cầu — màn này vẫn tải theo kỳ ở PostgREST (xem
+ * `use-thong-ke-san-xuat.ts`), nên chọn kỳ hẹp hơn sẽ nhẹ hơn hẳn.
+ */
+export const DEFAULT_DATE_PRESET = 'all';
+
 export function defaultFilters(): ThongKeSanXuatFilters {
-  return { datePreset: 'all', dateFrom: '', dateTo: '', chiNhanhIds: [], kpiFilter: [], hienThiFilter: [], trangThaiBcncFilter: [], trangThaiBcscFilter: [] };
+  return { datePreset: DEFAULT_DATE_PRESET, dateFrom: '', dateTo: '', chiNhanhIds: [], kpiFilter: [], hienThiFilter: [], trangThaiBcncFilter: [], trangThaiBcscFilter: [] };
 }
 
-/** Preset 'all' = mặc định, không tính là active filter. */
+/** Kỳ mặc định (DEFAULT_DATE_PRESET) không tính là bộ lọc đang bật. */
 export function countActiveFilters(f: ThongKeSanXuatFilters): number {
   let n = 0;
-  if (f.datePreset !== 'all') n++;
+  if (f.datePreset !== DEFAULT_DATE_PRESET) n++;
   if (f.chiNhanhIds.length > 0) n++;
   if (f.kpiFilter.length > 0) n++;
   if (f.hienThiFilter.length > 0) n++;

@@ -22,8 +22,8 @@ export interface KiemKeKhoFilters {
   id_kho: string[];
 }
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
-  { id: 'ma_dot', label: i18n.t('kiemKeKho.store.maDotCol'), visible: true, minWidth: COLUMN_WIDTH_CODE_MIN, maxWidth: COLUMN_WIDTH_CODE_MAX, order: 0 },
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
+  { id: 'ma_dot', label: i18n.t('kiemKeKho.store.maDotCol', 'table-kiem-ke-kho'), visible: true, minWidth: COLUMN_WIDTH_CODE_MIN, maxWidth: COLUMN_WIDTH_CODE_MAX, order: 0 },
   { id: 'ten_dot', label: i18n.t('kiemKeKho.store.tenDotCol'), visible: true, minWidth: COLUMN_WIDTH_NAME_MIN, maxWidth: COLUMN_WIDTH_NAME_MAX, order: 1 },
   { id: 'ngay_bat_dau', label: i18n.t('kiemKeKho.store.ngayBatDauCol'), visible: true, order: 2 },
   { id: 'ngay_ket_thuc', label: i18n.t('kiemKeKho.store.ngayKetThucCol'), visible: true, order: 3 },
@@ -48,5 +48,6 @@ const initialFilters: KiemKeKhoFilters = {
 
 export const useKiemKeKhoStore = createGenericStore<KiemKeKhoFilters>(
   initialFilters,
-  DEFAULT_COLUMNS
+  DEFAULT_COLUMNS,
+  'table-kiem-ke-kho'
 );

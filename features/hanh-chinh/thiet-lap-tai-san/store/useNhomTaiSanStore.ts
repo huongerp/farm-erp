@@ -5,7 +5,7 @@ export interface NhomTaiSanFilters {
   status: string[];
 }
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'ma', label: i18n.t('thietLapTaiSan.nhomTaiSan.store.maCol'), visible: true, minWidth: 140, order: 0 },
   { id: 'ten', label: i18n.t('thietLapTaiSan.nhomTaiSan.store.tenCol'), visible: true, minWidth: 220, order: 1 },
   { id: 'thu_tu', label: i18n.t('thietLapTaiSan.nhomTaiSan.store.thuTuCol'), visible: true, minWidth: 100, order: 2 },
@@ -20,5 +20,6 @@ const initialFilters: NhomTaiSanFilters = {
 
 export const useNhomTaiSanStore = createGenericStore<NhomTaiSanFilters>(
   initialFilters,
-  DEFAULT_COLUMNS
+  DEFAULT_COLUMNS,
+  'table-thiet-lap-tai-san-nhom-tai-san'
 );

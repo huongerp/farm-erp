@@ -22,6 +22,7 @@ const CongViecTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onV
   const { data: employees = [] } = useEmployeesRefQuery();
   const {
     columns,
+    resizeColumn,
     pagination,
     setPage,
     setPageSize,
@@ -205,6 +206,7 @@ const CongViecTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onV
     <GenericTable
       data={data}
       columns={columns}
+      onResizeColumn={resizeColumn}
       isLoading={isLoading}
       density="compact"
       loadingText={t('congViec.loading')}

@@ -93,6 +93,7 @@ const ChiTietTab: React.FC = () => {
     searchTerm,
     filters,
     columns,
+    resizeColumn,
     pagination,
     setPage,
     setPageSize,
@@ -568,6 +569,7 @@ const ChiTietTab: React.FC = () => {
         <GenericTable<PhieuDeXuatVatTuChiTietRow>
           data={sortedRows}
           columns={columns}
+          onResizeColumn={resizeColumn}
           isLoading={isInitialLoading}
           isFetching={isFetchingOverlay}
           totalRecordsOverride={totalCount}

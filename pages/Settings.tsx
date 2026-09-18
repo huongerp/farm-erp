@@ -5,7 +5,6 @@ import {
   Palette,
   Type,
   Globe,
-  Bell,
   RotateCcw,
   Sun,
   Moon,
@@ -17,7 +16,7 @@ import {
 } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Combobox from '../components/ui/Combobox';
-import ToggleSwitch from '../components/ui/ToggleSwitch';
+import CaiDatThongBaoCard from '../features/thong-bao/components/CaiDatThongBaoCard';
 import { useUIStore, type PrimaryColor } from '../store/useStore';
 import { toast } from 'sonner';
 import { cn } from '../lib/utils';
@@ -371,41 +370,9 @@ const Settings: React.FC = () => {
             </div>
           </motion.div>
 
-          {/* Thông báo - A4+B5: Coming Soon overlay */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="bg-card p-5 rounded-xl border border-border shadow-sm relative"
-          >
-            <h3 className="font-semibold text-foreground mb-6 flex items-center gap-2 border-b border-border pb-3">
-              <Bell className="w-4 h-4 text-muted-foreground" />
-              {t('settings.notifications')}
-              <span className="ml-auto text-xs font-normal text-muted-foreground bg-muted rounded-full px-2.5 py-0.5">
-                {t('settings.comingSoon')}
-              </span>
-            </h3>
-            <div className="space-y-3 opacity-50 pointer-events-none" aria-disabled="true">
-              {/* C1+D1: Using ToggleSwitch with role="switch" + aria-checked */}
-              <ToggleSwitch
-                checked={false}
-                onChange={() => {}}
-                disabled
-                label={t('settings.emailNotification')}
-                description={t('settings.emailNotificationDesc')}
-              />
-              <ToggleSwitch
-                checked={false}
-                onChange={() => {}}
-                disabled
-                label={t('settings.browserNotification')}
-                description={t('settings.browserNotificationDesc')}
-              />
-            </div>
-            <p className="text-xs text-muted-foreground mt-3 text-center italic">
-              {t('settings.comingSoonDesc')}
-            </p>
-          </motion.div>
+          {/* Thông báo — card thật, thay cho overlay "Sắp ra mắt" trước đây */}
+          <CaiDatThongBaoCard />
+
         </div>
       </div>
 

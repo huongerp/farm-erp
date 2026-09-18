@@ -1,8 +1,10 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import type { AdminFormListServerQuery } from '../services/admin-form-list-query';
 import { toast } from 'sonner';
 import i18n from '../../../../lib/i18n';
 import {
   getAdminForms,
+  getAdminFormPage,
   getAdminFormsByUserAndMonth,
   createAdminForm,
   updateAdminForm,
@@ -21,6 +23,17 @@ import {
   updateAdminFormGhiChu,
 } from '../services/admin-form-service';
 import { AdminFormValues } from '../core/schema';
+
+/** Một trang danh sách — lọc / sắp xếp / phân trang chạy ở PostgREST. */
+export function useAdminFormPage(query: AdminFormListServerQuery, enabled = true) {
+  return useQuery({
+    queryKey: ['adminForms', 'page', query],
+    queryFn: () => getAdminFormPage(query),
+    enabled,
+    placeholderData: keepPreviousData,
+    staleTime: 1000 * 60 * 2,
+  });
+}
 
 export const useAdminForms = () =>
   useQuery({

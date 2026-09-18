@@ -4,7 +4,10 @@ import { useTranslation } from 'react-i18next';
 import { Info, CheckCircle, AlertTriangle, AlertCircle, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '../../lib/utils';
-import type { Notification, NotificationType } from '../../types';
+import type { NotificationType } from '../../types';
+import type { ThongBao } from '../../features/thong-bao/core/types';
+import { kieuHienThi, khoaI18nTenModule } from '../../features/thong-bao/core/loai-su-kien';
+import { nhanThoiGian } from '../../features/thong-bao/core/nhom-theo-ngay';
 
 const typeConfig: Record<
   NotificationType,
@@ -17,18 +20,25 @@ const typeConfig: Record<
 };
 
 interface NotificationItemProps {
-  item: Notification;
+  item: ThongBao;
   onMarkRead: (id: string) => void;
   onRemove: (id: string) => void;
+  /** Đóng panel sau khi điều hướng, để người dùng thấy ngay trang vừa mở. */
+  onNavigate?: () => void;
+  /** Hiện tên module trên dòng thời gian — chỉ cần khi danh sách trộn nhiều module. */
+  hienTenModule?: boolean;
 }
 
 const NotificationItem: React.FC<NotificationItemProps> = ({
   item,
   onMarkRead,
   onRemove,
+  onNavigate,
+  hienTenModule = false,
 }) => {
   const { t } = useTranslation();
-  const config = typeConfig[item.type || 'info'];
+  const khoaTenModule = hienTenModule ? khoaI18nTenModule(item.moduleId) : null;
+  const config = typeConfig[kieuHienThi(item.loaiSuKien)];
   const Icon = config.icon;
 
   const content = (
@@ -44,29 +54,47 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
       <div className="min-w-0 flex-1">
         <p className={cn(
           'text-xs leading-tight',
-          item.read
+          item.daDoc
             ? 'font-medium text-foreground'
             : 'font-semibold text-primary'
         )}>
-          {item.title}
+          {item.tieuDe}
         </p>
-        <p className={cn(
-          'text-xs mt-0.5 line-clamp-2',
-          item.read ? 'text-muted-foreground' : 'text-foreground/80'
-        )}>
-          {item.message}
+        {item.noiDung && (
+          <p className={cn(
+            'text-xs mt-0.5 line-clamp-2',
+            item.daDoc ? 'text-muted-foreground' : 'text-foreground/80'
+          )}>
+            {item.noiDung}
+          </p>
+        )}
+        <p className="text-2xs text-muted-foreground mt-1 flex items-center gap-1.5 flex-wrap">
+          {khoaTenModule && (
+            <>
+              <span className="font-medium text-foreground/70">{t(khoaTenModule)}</span>
+              <span aria-hidden>·</span>
+            </>
+          )}
+          <span>{nhanThoiGian(item.tgTao, t)}</span>
+          {/* Sự kiện lặp lại được gộp vào một dòng — hiện số lần để không mất thông tin. */}
+          {item.soLan > 1 && (
+            <span className="px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">
+              {t('notification.repeated', { count: item.soLan })}
+            </span>
+          )}
         </p>
       </div>
     </>
   );
 
   const handleClick = () => {
-    if (!item.read) onMarkRead(item.id);
+    if (!item.daDoc) onMarkRead(item.id);
+    onNavigate?.();
   };
 
   const wrapperClass = cn(
     'flex gap-3 p-3 rounded-xl transition-colors text-left w-full relative',
-    item.read
+    item.daDoc
       ? 'hover:bg-muted/60'
       : 'bg-primary/10 hover:bg-primary/15 border-l-[3px] border-primary'
   );
@@ -104,7 +132,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
           e.stopPropagation();
           onRemove(item.id);
         }}
-        className="absolute top-2.5 right-2 p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted opacity-0 group-hover:opacity-100 transition-opacity"
+        className="absolute top-2.5 right-2 p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
       >
         <X size={14} />
       </button>

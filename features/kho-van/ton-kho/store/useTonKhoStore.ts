@@ -16,7 +16,7 @@ const initialTonKhoFilters: TonKhoFilters = {
   warehouseIds: [],
 };
 
-const DEFAULT_COLUMNS_BY_PRODUCT: ColumnConfig[] = [
+export const DEFAULT_COLUMNS_BY_PRODUCT: ColumnConfig[] = [
   { id: 'ma_hang', label: i18n.t('tonKho.byProduct.code'), visible: true, minWidth: 100, maxWidth: 160, order: 0 },
   { id: 'ten_hang', label: i18n.t('tonKho.byProduct.name'), visible: true, minWidth: 240, maxWidth: 420, order: 1 },
   { id: 'ten_danh_muc', label: i18n.t('tonKho.byProduct.category'), visible: true, minWidth: 180, maxWidth: 300, order: 2 },
@@ -27,7 +27,7 @@ const DEFAULT_COLUMNS_BY_PRODUCT: ColumnConfig[] = [
 ];
 
 /** Cột cố định tab Tra cứu theo kỳ (sản phẩm + tổng kỳ); cột theo kho merge động. */
-const DEFAULT_COLUMNS_TON_THOI_DIEM: ColumnConfig[] = [
+export const DEFAULT_COLUMNS_TON_THOI_DIEM: ColumnConfig[] = [
   { id: 'ma_hang', label: i18n.t('tonKho.byProduct.code'), visible: true, minWidth: 100, maxWidth: 160, order: 0 },
   { id: 'ten_hang', label: i18n.t('tonKho.byProduct.name'), visible: true, minWidth: 240, maxWidth: 420, order: 1 },
   { id: 'ten_danh_muc', label: i18n.t('tonKho.byProduct.category'), visible: true, minWidth: 180, maxWidth: 300, order: 2 },
@@ -140,5 +140,5 @@ export function mergeWarehousePeriodColumns(cols: ColumnConfig[], khoList: Kho[]
   return [...before, ...newCols, ...after].map((col, i) => ({ ...col, order: i }));
 }
 
-export const useTonKhoByProductStore = createGenericStore<TonKhoFilters>(initialTonKhoFilters, DEFAULT_COLUMNS_BY_PRODUCT);
-export const useTonKhoTonThoiDiemStore = createGenericStore<TonKhoFilters>(initialTonKhoFilters, DEFAULT_COLUMNS_TON_THOI_DIEM);
+export const useTonKhoByProductStore = createGenericStore<TonKhoFilters>(initialTonKhoFilters, DEFAULT_COLUMNS_BY_PRODUCT, 'table-ton-kho-theo-san-pham');
+export const useTonKhoTonThoiDiemStore = createGenericStore<TonKhoFilters>(initialTonKhoFilters, DEFAULT_COLUMNS_TON_THOI_DIEM, 'table-ton-kho-ton-thoi-diem');

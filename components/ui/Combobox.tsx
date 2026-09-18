@@ -39,6 +39,12 @@ interface ComboboxProps {
   creatable?: boolean;
   /** Nhãn cho hành động thêm giá trị mới (mặc định "Thêm mới"). */
   creatableLabel?: string;
+  /**
+   * Cho dropdown co theo số mục thay vì luôn cao 320px. Dùng khi danh sách ngắn
+   * và cố định (vd. lọc theo module trong panel thông báo) — chiều cao cố định
+   * lúc đó để lại một mảng trống lớn. Mặc định false để không đổi 53 chỗ đang dùng.
+   */
+  dropdownAutoHeight?: boolean;
 }
 
 const Combobox: React.FC<ComboboxProps> = ({
@@ -61,6 +67,7 @@ const Combobox: React.FC<ComboboxProps> = ({
   dropdownInPortal = true,
   creatable = false,
   creatableLabel = 'Thêm mới',
+  dropdownAutoHeight = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -297,7 +304,7 @@ const Combobox: React.FC<ComboboxProps> = ({
                 left: dropdownRect.left,
                 width: Math.max(dropdownRect.width, 280),
                 maxHeight: 320,
-                height: 320,
+                ...(dropdownAutoHeight ? {} : { height: 320 }),
               }}
             >
               {searchable && (

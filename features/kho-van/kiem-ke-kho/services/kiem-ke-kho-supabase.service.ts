@@ -1,7 +1,8 @@
 /**
  * Service đợt kiểm kê kho – Supabase (fp_mh_dot_kiem_ke_kho, fp_mh_dot_kiem_ke_kho_kho, fp_mh_dot_kiem_ke_kho_chi_tiet).
  */
-import { db, throwSupabaseError } from '../../../../lib/db';
+import { db, fetchTablePage, throwSupabaseError, type PaginatedTableResult } from '../../../../lib/db';
+import { buildPostgrestSearchOr } from '../../../../lib/postgrest-search';
 import type {
   DotKiemKeKho,
   ChiTietKiemKeKho,
@@ -193,6 +194,156 @@ async function getDotKhoIds(idDot: number): Promise<string[]> {
     .eq('id_dot_kiem_ke_kho', idDot);
   if (error) throwSupabaseError(error);
   return (data ?? []).map((r: { id_kho: number }) => String(r.id_kho));
+}
+
+/** Cột tham gia ô tìm kiếm ở server. */
+const DOT_KK_KHO_SEARCH_SPEC = {
+  text: ['ma_dot', 'ten_dot', 'trang_thai', 'ghi_chu'],
+  numeric: ['id'],
+  dates: ['ngay_bat_dau', 'ngay_ket_thuc'],
+} as const;
+
+/** Kho của nhiều đợt trong MỘT request (bản cũ gọi `getDotKhoIds` trong vòng lặp). */
+async function khoTheoDotIds(dotIds: number[]): Promise<Map<number, string[]>> {
+  const map = new Map<number, string[]>();
+  if (dotIds.length === 0) return map;
+  const { data, error } = await db
+    .from(TABLE_DOT_KHO)
+    .select('id_dot_kiem_ke_kho,id_kho')
+    .in('id_dot_kiem_ke_kho', dotIds);
+  if (error) throwSupabaseError(error);
+  for (const r of (data ?? []) as { id_dot_kiem_ke_kho: number; id_kho: number }[]) {
+    const arr = map.get(r.id_dot_kiem_ke_kho) ?? [];
+    arr.push(String(r.id_kho));
+    map.set(r.id_dot_kiem_ke_kho, arr);
+  }
+  return map;
+}
+
+/** Id đợt có ít nhất một kho trong danh sách đã chọn. */
+async function dotIdsTheoKho(khoIds: string[]): Promise<number[]> {
+  const ids = khoIds.map(Number).filter(Number.isFinite);
+  if (ids.length === 0) return [];
+  const { data, error } = await db.from(TABLE_DOT_KHO).select('id_dot_kiem_ke_kho').in('id_kho', ids);
+  if (error) throwSupabaseError(error);
+  return [...new Set((data ?? []).map((r) => Number((r as { id_dot_kiem_ke_kho: unknown }).id_dot_kiem_ke_kho)))];
+}
+
+/** Thống kê số dòng / số lệch của các đợt trong trang. */
+async function thongKeChiTietTheoDot(
+  dotIds: number[]
+): Promise<Record<number, { so_hang_hoa: number; so_lech: number }>> {
+  const out: Record<number, { so_hang_hoa: number; so_lech: number }> = {};
+  if (dotIds.length === 0) return out;
+  const { data } = await db
+    .from(TABLE_CHI_TIET)
+    .select('id_dot_kiem_ke_kho, ket_qua')
+    .in('id_dot_kiem_ke_kho', dotIds);
+  for (const r of (data ?? []) as { id_dot_kiem_ke_kho: number; ket_qua: string | null }[]) {
+    if (!out[r.id_dot_kiem_ke_kho]) out[r.id_dot_kiem_ke_kho] = { so_hang_hoa: 0, so_lech: 0 };
+    out[r.id_dot_kiem_ke_kho].so_hang_hoa += 1;
+    if (r.ket_qua === 'thieu' || r.ket_qua === 'thua') out[r.id_dot_kiem_ke_kho].so_lech += 1;
+  }
+  return out;
+}
+
+/**
+ * Một trang danh sách đợt kiểm kê kho — lọc / phân trang ở PostgREST.
+ *
+ * Lọc theo kho và tìm theo tên người phụ trách đều nằm ở bảng khác, nên tra id
+ * trước rồi mới ràng buộc `id.in.(...)`.
+ */
+export async function getDotKiemKeKhoPageSupabase(
+  page: number,
+  pageSize: number,
+  params: GetDotKiemKeKhoListParamsSupabase = {},
+  /**
+   * Phạm vi xem: đợt của chính mình HOẶC đợt chạm kho được phép. `null` = xem tất cả.
+   * Component tính sẵn vì danh sách kho ↔ chi nhánh nằm ở module khác.
+   */
+  phamVi: { khoChoPhep: string[]; currentEmployeeId: string | null } | null = null
+): Promise<PaginatedTableResult<DotKiemKeKho>> {
+  const employees = await getEmployeesRef();
+  const empMap = new Map(employees.map((e) => [e.id, { ten: e.ho_ten, ma: e.ma_nhan_vien }]));
+
+  const term = params.q?.trim() ?? '';
+  const nhanVienIdsTheoTen = term
+    ? employees
+        .filter(
+          (e) =>
+            (e.ho_ten ?? '').toLowerCase().includes(term.toLowerCase()) ||
+            (e.ma_nhan_vien ?? '').toLowerCase().includes(term.toLowerCase())
+        )
+        .map((e) => Number(e.id))
+        .filter(Number.isFinite)
+    : [];
+
+  const dotIdsKho = params.id_kho?.length ? await dotIdsTheoKho(params.id_kho) : null;
+  const dotIdsPhamVi = phamVi ? await dotIdsTheoKho(phamVi.khoChoPhep) : null;
+
+  const result = await fetchTablePage<DotRow>(page, pageSize, async (from, to) => {
+    let sel = db.from(TABLE_DOT).select(DOT_KK_KHO_COLUMNS, { count: 'exact' });
+
+    if (params.trang_thai_dot?.length) sel = sel.in('trang_thai', params.trang_thai_dot);
+    if (params.dateFrom) sel = sel.gte('ngay_ket_thuc', params.dateFrom);
+    if (params.dateTo) sel = sel.lte('ngay_bat_dau', params.dateTo);
+    if (params.id_nguoi_phu_trach?.length) {
+      sel = sel.in('id_nguoi_phu_trach', params.id_nguoi_phu_trach.map(Number).filter(Number.isFinite));
+    }
+    if (params.filter === 'mine' && params.id_nguoi) {
+      const n = Number(params.id_nguoi);
+      sel = Number.isFinite(n) ? sel.eq('id_nguoi_phu_trach', n) : sel.eq('id', -1);
+    }
+    if (dotIdsKho != null) {
+      sel = dotIdsKho.length === 0 ? sel.eq('id', -1) : sel.in('id', dotIdsKho);
+    }
+    if (dotIdsPhamVi != null) {
+      const ve: string[] = [];
+      const me = phamVi?.currentEmployeeId != null ? Number(phamVi.currentEmployeeId) : NaN;
+      if (Number.isFinite(me)) ve.push(`id_nguoi_phu_trach.eq.${me}`, `id_nguoi_tao.eq.${me}`);
+      if (dotIdsPhamVi.length > 0) ve.push(`id.in.(${dotIdsPhamVi.join(',')})`);
+      sel = ve.length > 0 ? sel.or(ve.join(',')) : sel.eq('id', -1);
+    }
+
+    if (term) {
+      const parts = buildPostgrestSearchOr(term, DOT_KK_KHO_SEARCH_SPEC);
+      if (nhanVienIdsTheoTen.length > 0) {
+        parts.push(
+          `id_nguoi_phu_trach.in.(${nhanVienIdsTheoTen.join(',')})`,
+          `id_nguoi_tao.in.(${nhanVienIdsTheoTen.join(',')})`
+        );
+      }
+      if (parts.length > 0) sel = sel.or(parts.join(','));
+    }
+
+    const res = await sel
+      .order('ngay_ket_thuc', { ascending: false })
+      .order('id', { ascending: false })
+      .range(from, to);
+    return { data: (res.data as unknown as DotRow[] | null) ?? null, error: res.error, count: res.count };
+  });
+
+  const dotIds = result.data.map((r) => r.id);
+  const [khoMap, stats] = await Promise.all([khoTheoDotIds(dotIds), thongKeChiTietTheoDot(dotIds)]);
+
+  return {
+    ...result,
+    data: result.data.map((row) => {
+      const empPhuTrach = empMap.get(String(row.id_nguoi_phu_trach));
+      const empTao = row.id_nguoi_tao != null ? empMap.get(String(row.id_nguoi_tao)) : undefined;
+      return rowToDot(
+        row,
+        khoMap.get(row.id) ?? [],
+        {
+          ten_nguoi_phu_trach: empPhuTrach?.ten ?? null,
+          ma_nguoi_phu_trach: empPhuTrach?.ma ?? null,
+          ten_nguoi_tao: empTao?.ten ?? null,
+          ma_nguoi_tao: empTao?.ma ?? null,
+        },
+        stats[row.id]
+      );
+    }),
+  };
 }
 
 export async function getDotKiemKeKhoListSupabase(

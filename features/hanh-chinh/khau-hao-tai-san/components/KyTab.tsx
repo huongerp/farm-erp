@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import type { KyKhauHaoListServerQuery } from '../services/khau-hao-list-query';
 import { useTranslation } from 'react-i18next';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
@@ -6,11 +7,10 @@ import KhauHaoTaiSanToolbar from './KhauHaoTaiSanToolbar';
 import KyKhauHaoTable from './KyKhauHaoTable';
 import KyKhauHaoDetail from './KyKhauHaoDetail';
 import KyKhauHaoForm from './KyKhauHaoForm';
-import { useKyKhauHaoList, useChiTietKhauHao, useTinhToanKhauHaoKy, useChotKy, useDeleteKyKhauHao } from '../hooks/use-khau-hao-tai-san';
+import { useKyKhauHaoPage, useChiTietKhauHao, useTinhToanKhauHaoKy, useChotKy, useDeleteKyKhauHao } from '../hooks/use-khau-hao-tai-san';
 import { useKhauHaoTaiSanViewScope } from '../hooks/use-khau-hao-tai-san-view-scope';
 import { useAuthStore } from '../../../../store/useStore';
 import { useKhauHaoTaiSanStore } from '../store/useKhauHaoTaiSanStore';
-import { getLanguage } from '../../../../lib/utils';
 import { CONFIRM_DELETE } from '../../../../lib/button-labels';
 import type { KyKhauHao } from '../core/types';
 
@@ -20,14 +20,28 @@ const KyTab: React.FC = () => {
   const confirm = useConfirmStore((s) => s.confirm);
   const user = useAuthStore((s) => s.user);
   const { viewAll } = useKhauHaoTaiSanViewScope();
-  const { searchTerm, filters, sort, resetState } = useKhauHaoTaiSanStore();
-  const { data: list = [], isLoading } = useKyKhauHaoList();
+  const { searchTerm, filters, sort, pagination, resetState } = useKhauHaoTaiSanStore();
+  /** Bộ lọc gửi thẳng xuống PostgREST — trước đây tải toàn bộ kỳ khấu hao. */
+  const listServerQuery: KyKhauHaoListServerQuery = useMemo(
+    () => ({
+      page: pagination.page - 1,
+      pageSize: pagination.pageSize,
+      searchTerm,
+      nam: filters.nam ?? '',
+      thang: filters.thang ?? [],
+      trangThai: filters.trang_thai_ky ?? [],
+      idNguoiTao: viewAll ? null : (user?.id ? String(user.id) : null),
+      sortColumn: sort.column,
+      sortDirection: sort.direction,
+    }),
+    [pagination.page, pagination.pageSize, searchTerm, filters, sort, viewAll, user?.id]
+  );
 
-  const viewableList = useMemo(() => {
-    if (viewAll) return list;
-    const myId = user?.id ?? '';
-    return list.filter((k) => String(k.id_nguoi_tao) === String(myId));
-  }, [list, viewAll, user?.id]);
+  const pageQuery = useKyKhauHaoPage(listServerQuery);
+  const pageList = pageQuery.data?.data ?? [];
+  const totalCount = pageQuery.data?.totalCount ?? 0;
+  const isLoading = !pageQuery.data && pageQuery.isPending;
+  const isFetching = !!pageQuery.data && pageQuery.isFetching;
 
   const deleteMutation = useDeleteKyKhauHao();
   const [detailItem, setDetailItem] = useState<KyKhauHao | null>(null);
@@ -42,37 +56,6 @@ const KyTab: React.FC = () => {
     return () => resetState();
   }, [resetState]);
 
-  const filterFn = useCallback(
-    (item: KyKhauHao) => {
-      const matchSearch =
-        !searchTerm ||
-        String(item.thang).includes(searchTerm) ||
-        String(item.nam).includes(searchTerm);
-      const matchNam = !filters.nam || String(item.nam) === filters.nam;
-      const matchThang = filters.thang.length === 0 || filters.thang.includes(String(item.thang));
-      const matchTrangThai =
-        filters.trang_thai_ky.length === 0 || filters.trang_thai_ky.includes(item.trang_thai);
-      return matchSearch && matchNam && matchThang && matchTrangThai;
-    },
-    [searchTerm, filters.nam, filters.thang, filters.trang_thai_ky]
-  );
-
-  const filteredList = useMemo(() => viewableList.filter(filterFn), [viewableList, filterFn]);
-
-  const sortedList = useMemo(() => {
-    if (!sort.column || !sort.direction) return filteredList;
-    const sorted = [...filteredList];
-    sorted.sort((a, b) => {
-      const aVal = a[sort.column as keyof KyKhauHao] ?? '';
-      const bVal = b[sort.column as keyof KyKhauHao] ?? '';
-      const cmp =
-        typeof aVal === 'number' && typeof bVal === 'number'
-          ? aVal - bVal
-          : String(aVal).localeCompare(String(bVal), getLanguage());
-      return sort.direction === 'desc' ? -cmp : cmp;
-    });
-    return sorted;
-  }, [filteredList, sort]);
 
   const handleAdd = useCallback(() => {
     setEditingItem(null);
@@ -144,10 +127,12 @@ const KyTab: React.FC = () => {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 gap-3">
-      <KhauHaoTaiSanToolbar items={viewableList} onAdd={handleAdd} showAdd={canCreate} />
+      <KhauHaoTaiSanToolbar items={pageList} onAdd={handleAdd} showAdd={canCreate} />
       <div className="flex-1 min-h-0 rounded-xl border border-border bg-card shadow-sm overflow-hidden">
         <KyKhauHaoTable
-          data={sortedList}
+          data={pageList}
+          totalRecordsOverride={totalCount}
+          isFetching={isFetching}
           isLoading={isLoading}
           onView={handleView}
           onEdit={canUpdate ? handleEdit : undefined}

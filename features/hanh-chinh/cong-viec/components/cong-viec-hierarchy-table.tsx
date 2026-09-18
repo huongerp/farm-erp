@@ -13,6 +13,8 @@ export type CongViecRow = { item: CongViec; level: number };
 interface Props {
   data: CongViecRow[];
   columns: ColumnConfig[];
+  /** Cho phép kéo đổi bề rộng cột — truyền `resizeColumn` của store. */
+  onResizeColumn?: (id: string, width: number) => void;
   selectedIds: Set<string>;
   onToggleSelection: (id: string) => void;
   onToggleAllSelection: (ids: string[]) => void;
@@ -26,6 +28,7 @@ interface Props {
 const CongViecHierarchyTable: React.FC<Props> = ({
   data,
   columns,
+  onResizeColumn,
   selectedIds,
   onToggleSelection,
   onToggleAllSelection,
@@ -115,6 +118,7 @@ const CongViecHierarchyTable: React.FC<Props> = ({
     <HierarchyTable<CongViecRow>
       data={data}
       columns={visibleColumns}
+      onResizeColumn={onResizeColumn}
       selectedIds={selectedIds}
       getId={(row) => String(row.item.id)}
       getLevel={(row) => row.level}

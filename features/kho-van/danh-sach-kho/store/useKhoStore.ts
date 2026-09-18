@@ -6,7 +6,7 @@ export interface KhoFilters {
   id_chi_nhanh: string[];
 }
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'thu_tu', label: i18n.t('kho.store.orderCol'), visible: true, minWidth: 80, maxWidth: 100, order: 0 },
   { id: 'ten_chi_nhanh', label: i18n.t('kho.store.branchCol'), visible: true, minWidth: 140, maxWidth: 220, order: 1 },
   { id: 'ma_kho', label: i18n.t('kho.store.codeCol'), visible: true, minWidth: 120, maxWidth: 180, order: 2 },
@@ -22,4 +22,4 @@ const initialFilters: KhoFilters = {
   id_chi_nhanh: [],
 };
 
-export const useKhoStore = createGenericStore<KhoFilters>(initialFilters, DEFAULT_COLUMNS);
+export const useKhoStore = createGenericStore<KhoFilters>(initialFilters, DEFAULT_COLUMNS, 'table-danh-sach-kho-kho');

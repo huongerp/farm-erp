@@ -49,6 +49,7 @@ const ThanhToanToolbar: React.FC<Props> = ({
   const toggleColumn = useThanhToanStore((s) => s.toggleColumn);
   const reorderColumns = useThanhToanStore((s) => s.reorderColumns);
   const resetColumns = useThanhToanStore((s) => s.resetColumns);
+  const resetColumnWidths = useThanhToanStore((s) => s.resetColumnWidths);
 
   const { inputValue: searchInput, setInputValue: setSearchInput } = useSearchInputCommit({
     committedTerm: searchTerm,
@@ -345,13 +346,13 @@ const ThanhToanToolbar: React.FC<Props> = ({
       filterGroups={filterGroups}
       onAdd={canCreate ? onAdd : undefined}
       showBack
-      searchPlaceholder={t('hopDong.thanhToan.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       columns={columns}
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
+      onResetColumnWidths={resetColumnWidths}
     />
   );
 };

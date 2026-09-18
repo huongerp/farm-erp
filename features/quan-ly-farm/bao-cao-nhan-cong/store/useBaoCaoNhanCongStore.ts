@@ -10,7 +10,7 @@ export interface BaoCaoNhanCongFilters {
   trang_thai: string[];
 }
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'ngay', label: i18n.t('baoCaoNhanCong.store.colNgay'), visible: true, minWidth: 110, maxWidth: 130, order: 0 },
   { id: 'ten_chi_nhanh', label: i18n.t('baoCaoNhanCong.store.colBranch'), visible: true, minWidth: 140, maxWidth: 220, order: 1 },
   {
@@ -104,4 +104,4 @@ const initialFilters: BaoCaoNhanCongFilters = {
   trang_thai: [],
 };
 
-export const useBaoCaoNhanCongStore = createGenericStore<BaoCaoNhanCongFilters>(initialFilters, DEFAULT_COLUMNS);
+export const useBaoCaoNhanCongStore = createGenericStore<BaoCaoNhanCongFilters>(initialFilters, DEFAULT_COLUMNS, 'table-bao-cao-nhan-cong');

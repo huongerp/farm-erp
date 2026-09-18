@@ -18,6 +18,7 @@ import {
   isKhoPeriodColumnId,
   parseKhoPeriodColumnId,
   type KhoPeriodMetric,
+  DEFAULT_COLUMNS_TON_THOI_DIEM,
 } from '../store/useTonKhoStore';
 import type { TonKhoFilters } from '../store/useTonKhoStore';
 import { useListWithFilter } from '../../../../lib/hooks';
@@ -31,6 +32,10 @@ import {
   getPresetFromDates,
 } from '../../bao-cao-nhap-xuat-ton/core/datePresets';
 import { cn } from '../../../../lib/utils';
+import { createListSearchMatcher } from '../../../../lib/list-search-matcher';
+
+/** Ô tìm kiếm quét MỌI cột của bảng, bỏ dấu tiếng Việt — xem lib/list-search-matcher.ts. */
+const khopTimKiem = createListSearchMatcher({ columns: DEFAULT_COLUMNS_TON_THOI_DIEM });
 
 const CUSTOM_PRESET_ID = 'custom';
 const STICKY_LEFT_COL_IDS = new Set(['ma_hang', 'ten_hang']);
@@ -108,6 +113,7 @@ const TonKhoTonThoiDiemTab: React.FC = () => {
   const toggleColumn = useTonKhoTonThoiDiemStore((s) => s.toggleColumn);
   const reorderColumns = useTonKhoTonThoiDiemStore((s) => s.reorderColumns);
   const resetColumns = useTonKhoTonThoiDiemStore((s) => s.resetColumns);
+  const resetColumnWidths = useTonKhoTonThoiDiemStore((s) => s.resetColumnWidths);
   const setColumns = useTonKhoTonThoiDiemStore((s) => s.setColumns);
   const pagination = useTonKhoTonThoiDiemStore((s) => s.pagination);
   const setPage = useTonKhoTonThoiDiemStore((s) => s.setPage);
@@ -223,12 +229,7 @@ const TonKhoTonThoiDiemTab: React.FC = () => {
   }, [nxt?.byCell, hangHoaMap, filters.warehouseIds]);
 
   const filterFn = useCallback((item: RowKyProduct, term: string, f: TonKhoFilters) => {
-    if (term.trim()) {
-      const s = term.toLowerCase();
-      if (!item.ma_hang.toLowerCase().includes(s) && !item.ten_hang.toLowerCase().includes(s)) {
-        return false;
-      }
-    }
+    if (!khopTimKiem(item, term)) return false;
     if ((f.categoryIds?.length ?? 0) > 0) {
       const cat = item.ten_danh_muc ?? '';
       if (!f.categoryIds!.includes(cat)) return false;
@@ -540,11 +541,11 @@ const TonKhoTonThoiDiemTab: React.FC = () => {
         <TonKhoToolbar
           searchTerm={searchInput}
           onSearchChange={setSearchInput}
-          searchPlaceholder={t('tonKho.tonThoiDiem.searchPlaceholder')}
           columns={columns}
           onToggleColumn={toggleColumn}
           onReorderColumns={reorderColumns}
           onResetColumns={resetColumns}
+          onResetColumnWidths={resetColumnWidths}
           filters={renderFilters}
           activeFilterCount={activeFilterCount}
           onClearAllFilters={handleClearAllFilters}

@@ -2,7 +2,20 @@
  * Service điểm cộng trừ – đọc/ghi Supabase (fp_hr_diem_cong_tru).
  * Bảng liên kết: id_hang_muc → fp_hr_thiet_lap_diem_cong_tru(id); id_nhan_vien → fp_var_nhan_vien(id).
  */
-import { db, fetchAllRows, throwSupabaseError } from '../../../../lib/db';
+import {
+  db,
+  fetchAllRows,
+  fetchTablePage,
+  throwSupabaseError,
+  type PaginatedTableResult,
+} from '../../../../lib/db';
+import { applyPostgrestSearch } from '../../../../lib/postgrest-search';
+import { postgrestQuotedIlikePattern } from '../../../../lib/postgrest-or-ilike';
+import {
+  DIEM_CT_SORTABLE_DB_COLUMNS,
+  DIEM_CT_SORT_MAC_DINH,
+  type DiemCongTruListServerQuery,
+} from './diem-cong-tru-list-query';
 import type { DiemCongTruRecord } from '../core/types';
 import type { DiemCongTruFormValues } from '../core/schema';
 import { getPayrollPointGroups } from '../../thiet-lap-cong-luong/services/payroll-point-group-service';
@@ -56,6 +69,88 @@ function rowToItem(
     tg_tao: row.tg_tao ?? new Date().toISOString(),
     tg_cap_nhat: row.tg_cap_nhat ?? new Date().toISOString(),
   };
+}
+
+/** Cột tham gia ô tìm kiếm ở server. */
+const DIEM_CT_SEARCH_SPEC = {
+  text: ['ten_hang_muc', 'mo_ta', 'ghi_chu', 'loai'],
+  numeric: ['id', 'nam', 'thang', 'diem'],
+} as const;
+
+/** Lọc + sắp xếp dùng chung cho trang danh sách và cho lượt tải phục vụ xuất file. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyDiemCtListQuery(q: any, query: DiemCongTruListServerQuery, nhanVienIds: number[] | null): any {
+  let sel = q;
+
+  if (query.loai.length > 0) sel = sel.in('loai', query.loai);
+  if (/^\d{4}-\d{2}$/.test(query.yearMonth)) {
+    const [y, m] = query.yearMonth.split('-').map(Number);
+    sel = sel.eq('nam', y).eq('thang', m);
+  }
+  if (query.idNhanVien) {
+    const n = Number(query.idNhanVien);
+    sel = Number.isFinite(n) ? sel.eq('id_nhan_vien', n) : sel.eq('id', -1);
+  }
+  if (nhanVienIds != null) {
+    sel = nhanVienIds.length === 0 ? sel.eq('id', -1) : sel.in('id_nhan_vien', nhanVienIds);
+  }
+
+  sel = applyPostgrestSearch(sel, query.searchTerm, DIEM_CT_SEARCH_SPEC);
+
+  const dbSortable = query.sortColumn != null && DIEM_CT_SORTABLE_DB_COLUMNS.has(query.sortColumn);
+  const sortCol = dbSortable ? query.sortColumn! : DIEM_CT_SORT_MAC_DINH.column;
+  const ascending = dbSortable ? query.sortDirection !== 'desc' : DIEM_CT_SORT_MAC_DINH.ascending;
+
+  sel = sel.order(sortCol, { ascending });
+  if (sortCol === 'nam') sel = sel.order('thang', { ascending });
+  return sel.order('id', { ascending: false });
+}
+
+/**
+ * Tên nhân viên nằm ở bảng khác nên không `OR` chung với cột bảng điểm được:
+ * tra id trước rồi lọc `id_nhan_vien.in.(...)`.
+ */
+async function timNhanVienIdsTheoTuKhoa(term: string): Promise<number[]> {
+  const t = term.trim();
+  if (!t) return [];
+  const esc = t.replace(/%/g, '\\%').replace(/_/g, '\\_');
+  const pat = postgrestQuotedIlikePattern(`%${esc}%`);
+  const { data, error } = await db
+    .from('fp_var_nhan_vien')
+    .select('id')
+    .or(`ho_va_ten.ilike.${pat},ma_nhan_vien.ilike.${pat}`)
+    .limit(500);
+  if (error) throwSupabaseError(error, { resource: 'fp_var_nhan_vien.search' });
+  return (data ?? []).map((r) => Number((r as { id: unknown }).id)).filter(Number.isFinite);
+}
+
+export async function getDiemCongTruPage(
+  query: DiemCongTruListServerQuery
+): Promise<PaginatedTableResult<DiemCongTruRecord>> {
+  const term = query.searchTerm.trim();
+  const [nhanVienIdsTheoTen, pointGroups, employees] = await Promise.all([
+    term ? timNhanVienIdsTheoTuKhoa(term) : Promise.resolve(null),
+    getPayrollPointGroups(),
+    getEmployeesRef(),
+  ]);
+
+  const result = await fetchTablePage<DbRow>(query.page, query.pageSize, async (from, to) => {
+    let sel = applyDiemCtListQuery(
+      db.from(TABLE).select(ROW_COLUMNS, { count: 'exact' }),
+      query,
+      null
+    );
+    // Từ khoá khớp tên nhân viên HOẶC các cột của chính bảng điểm.
+    if (nhanVienIdsTheoTen != null && nhanVienIdsTheoTen.length > 0) {
+      sel = sel.or(`id_nhan_vien.in.(${nhanVienIdsTheoTen.join(',')})`);
+    }
+    const res = await sel.range(from, to);
+    return { data: (res.data as DbRow[] | null) ?? null, error: res.error, count: res.count };
+  });
+
+  const employeeMap = new Map(employees.map((e) => [e.id, { ho_ten: e.ho_ten, ma_nhan_vien: e.ma_nhan_vien }]));
+  const hangMucMap = new Map(pointGroups.map((g) => [g.id, { ten: g.ten, ma: g.ma }]));
+  return { ...result, data: result.data.map((row) => rowToItem(row, employeeMap, hangMucMap)) };
 }
 
 export async function getDiemCongTruRecords(): Promise<DiemCongTruRecord[]> {

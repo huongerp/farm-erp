@@ -9,7 +9,7 @@ export interface BaoCaoSoCheFilters {
   don_vi_tinh: string[];
 }
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'stt', label: i18n.t('baoCaoSoChe.store.colStt'), visible: true, minWidth: 48, maxWidth: 64, order: 0 },
   { id: 'ngay', label: i18n.t('baoCaoSoChe.store.colNgay'), visible: true, minWidth: 110, maxWidth: 130, order: 1 },
   { id: 'ten_chi_nhanh', label: i18n.t('baoCaoSoChe.store.colBranch'), visible: true, minWidth: 140, maxWidth: 220, order: 2 },
@@ -123,4 +123,4 @@ const initialFilters: BaoCaoSoCheFilters = {
   don_vi_tinh: [],
 };
 
-export const useBaoCaoSoCheStore = createGenericStore<BaoCaoSoCheFilters>(initialFilters, DEFAULT_COLUMNS);
+export const useBaoCaoSoCheStore = createGenericStore<BaoCaoSoCheFilters>(initialFilters, DEFAULT_COLUMNS, 'table-bao-cao-so-che');

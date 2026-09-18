@@ -123,7 +123,6 @@ const BaoCaoSoCheSoLieuBuongFormTable: React.FC<Props> = ({ control, errors, stt
                             )
                           }
                           placeholder={isQcPct ? SO_LIEU_ROW_DVT_QC_PCT : SO_LIEU_ROW_DVT_DEFAULT}
-                          searchPlaceholder={t('baoCaoSoChe.readout.dvtComboboxSearch')}
                           creatable
                           creatableLabel={t('baoCaoSoChe.readout.dvtCreatable')}
                           error={metaErrDvt}

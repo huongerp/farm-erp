@@ -12,6 +12,12 @@ import {
 } from './thanh-toan-doi-tac-supabase.service';
 
 export const getAllThanhToanDoiTac = getAllSupabase;
+export {
+  getThanhToanDoiTacPage,
+  fetchAllThanhToanDoiTacForListQuery,
+  getThanhToanDoiTacTomTat,
+  type ThanhToanDoiTacTomTat,
+} from './thanh-toan-doi-tac-supabase.service';
 export const getThanhToanDoiTacById = getByIdSupabase;
 export const createThanhToanDoiTac = (data: ThanhToanDoiTacFormValues) => createSupabase(data);
 export const updateThanhToanDoiTac = updateSupabase;

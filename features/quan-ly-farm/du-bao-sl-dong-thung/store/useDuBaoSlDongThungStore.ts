@@ -8,7 +8,7 @@ export interface DuBaoSlDongThungFilters {
   trang_thai: string[];
 }
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'ngay', label: i18n.t('duBaoSlDongThung.store.colNgay'), visible: true, minWidth: 110, maxWidth: 130, order: 0 },
   { id: 'ten_chi_nhanh', label: i18n.t('duBaoSlDongThung.store.colBranch'), visible: true, minWidth: 140, maxWidth: 220, order: 1 },
   {
@@ -69,4 +69,4 @@ const initialFilters: DuBaoSlDongThungFilters = {
   trang_thai: [],
 };
 
-export const useDuBaoSlDongThungStore = createGenericStore<DuBaoSlDongThungFilters>(initialFilters, DEFAULT_COLUMNS);
+export const useDuBaoSlDongThungStore = createGenericStore<DuBaoSlDongThungFilters>(initialFilters, DEFAULT_COLUMNS, 'table-du-bao-sl-dong-thung');

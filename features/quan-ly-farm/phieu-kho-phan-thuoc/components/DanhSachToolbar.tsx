@@ -60,6 +60,7 @@ const DanhSachToolbar: React.FC<Props> = ({
   const toggleColumn = usePhieuKhoPTStore((s) => s.toggleColumn);
   const reorderColumns = usePhieuKhoPTStore((s) => s.reorderColumns);
   const resetColumns = usePhieuKhoPTStore((s) => s.resetColumns);
+  const resetColumnWidths = usePhieuKhoPTStore((s) => s.resetColumnWidths);
 
   const { inputValue: searchInput, setInputValue: setSearchInput } = useSearchInputCommit({
     committedTerm: searchTerm,
@@ -383,13 +384,13 @@ const DanhSachToolbar: React.FC<Props> = ({
       mobileActions={mobileActions}
       onAdd={canCreate ? onAdd : undefined}
       showBack
-      searchPlaceholder={t('phieuKhoPhanThuoc.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       columns={columns}
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
+      onResetColumnWidths={resetColumnWidths}
     />
   );
 };

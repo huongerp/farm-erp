@@ -1,7 +1,12 @@
 import type { ThuHoachKeHoachFormValues } from '../core/schema';
 import type { FarmThuHoach } from '../core/types';
+import type { PaginatedTableResult } from '../../../../lib/db';
+import type { ThuHoachListServerQuery } from './thu-hoach-list-query';
 import {
   getAllThuHoachSupabase,
+  getThuHoachPageSupabase,
+  getThuHoachTomTatSupabase,
+  fetchAllThuHoachForListQuery as fetchAllThuHoachForListQuerySupabase,
   getThuHoachByIdSupabase,
   createThuHoachSupabase,
   updateThuHoachKeHoachSupabase,
@@ -22,6 +27,48 @@ async function enrichTenNguoiTao(items: FarmThuHoach[]): Promise<FarmThuHoach[]>
       item.id_nguoi_tao != null && item.id_nguoi_tao !== ''
         ? (hoTenById.get(String(item.id_nguoi_tao)) ?? null)
         : null,
+  }));
+}
+
+/** Một trang danh sách (lọc / sắp xếp / phân trang ở PostgREST). */
+export async function getThuHoachPage(
+  query: ThuHoachListServerQuery
+): Promise<PaginatedTableResult<FarmThuHoach>> {
+  const page = await getThuHoachPageSupabase(query);
+  return { ...page, data: await enrichTenNguoiTao(page.data) };
+}
+
+/** Toàn bộ bản ghi khớp bộ lọc — chỉ gọi khi mở hộp thoại Xuất file. */
+export async function fetchAllThuHoachForListQuery(
+  query: ThuHoachListServerQuery
+): Promise<FarmThuHoach[]> {
+  return enrichTenNguoiTao(await fetchAllThuHoachForListQuerySupabase(query));
+}
+
+/** Bản rút gọn: chip lọc năm/tuần/chi nhánh và gợi ý chi nhánh khi thêm phiếu. */
+export interface ThuHoachTomTat {
+  id: string;
+  nam: number;
+  tuan: number;
+  id_chi_nhanh: string | null;
+  ten_chi_nhanh: string | null;
+  id_nguoi_tao: string | null;
+  tg_tao: string | null;
+}
+
+export async function getThuHoachTomTat(
+  viewAll: boolean,
+  allowedBranchIds: string[]
+): Promise<ThuHoachTomTat[]> {
+  const rows = await getThuHoachTomTatSupabase(viewAll, allowedBranchIds);
+  return rows.map((r) => ({
+    id: String(r.id),
+    nam: r.nam,
+    tuan: r.tuan,
+    id_chi_nhanh: r.id_chi_nhanh != null ? String(r.id_chi_nhanh) : null,
+    ten_chi_nhanh: r.ten_chi_nhanh ?? null,
+    id_nguoi_tao: r.id_nguoi_tao != null ? String(r.id_nguoi_tao) : null,
+    tg_tao: r.tg_tao ?? null,
   }));
 }
 

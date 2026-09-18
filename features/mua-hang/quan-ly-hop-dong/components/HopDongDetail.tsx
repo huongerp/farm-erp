@@ -283,7 +283,7 @@ const HopDongDetail: React.FC<Props> = ({
               {canUpdateChiTiet && <col style={{ width: '88px', minWidth: '88px' }} />}
             </colgroup>
             <thead>
-              <tr className="border-b border-border bg-muted/40">
+              <tr className="border-b border-border bg-muted">
                 <th className="text-left py-2.5 px-3 text-xs font-semibold text-muted-foreground whitespace-nowrap min-w-[104px]">
                   {t('hopDong.form.ctNgay')}
                 </th>
@@ -303,7 +303,7 @@ const HopDongDetail: React.FC<Props> = ({
                   {t('hopDong.form.ctGhiChu')}
                 </th>
                 {canUpdateChiTiet && (
-                  <th className="text-right py-2.5 px-3 text-xs font-semibold text-muted-foreground whitespace-nowrap w-[88px] shrink-0 sticky right-0 bg-muted/40">
+                  <th className="text-right py-2.5 px-3 text-xs font-semibold text-muted-foreground whitespace-nowrap w-[88px] shrink-0 sticky right-0 bg-muted">
                     {t('hopDong.chiTiet.actions')}
                   </th>
                 )}

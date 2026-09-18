@@ -50,7 +50,6 @@
   "kiemKeTaiSan.validation.ngayKetThucRequired": "Vui lòng chọn ngày kết thúc",
   "kiemKeTaiSan.validation.nguoiPhuTrachRequired": "Vui lòng chọn người phụ trách",
   "kiemKeTaiSan.validation.ngayKetThucAfterBatDau": "Ngày kết thúc phải sau ngày bắt đầu",
-  "kiemKeTaiSan.searchPlaceholder": "Tìm theo mã, tên đợt, người phụ trách...",
   "kiemKeTaiSan.loading": "Đang tải...",
   "kiemKeTaiSan.empty": "Chưa có đợt kiểm kê",
   "kiemKeTaiSan.emptyHint": "Bấm Tạo đợt kiểm kê để bắt đầu.",

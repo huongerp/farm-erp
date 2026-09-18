@@ -1,0 +1,26 @@
+{
+  "name": "farm-erp-notify",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Worker thông báo: đọc outbox sự kiện, định tuyến người nhận, ghi thông báo và gửi Web Push",
+  "scripts": {
+    "dev": "node --watch --experimental-strip-types src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.1.0",
+    "hono": "^4.13.0",
+    "jose": "^6.2.8",
+    "pg": "^8.22.0",
+    "web-push": "^3.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "@types/pg": "^8.20.3",
+    "@types/web-push": "^3.6.4",
+    "typescript": "^7.0.2"
+  }
+}

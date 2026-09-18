@@ -28,6 +28,7 @@ const FarmTienDoMuaHangToolbar: React.FC<Props> = ({ items = [], onAdd, onDelete
   const toggleColumn = useFarmTienDoMuaHangStore((s) => s.toggleColumn);
   const reorderColumns = useFarmTienDoMuaHangStore((s) => s.reorderColumns);
   const resetColumns = useFarmTienDoMuaHangStore((s) => s.resetColumns);
+  const resetColumnWidths = useFarmTienDoMuaHangStore((s) => s.resetColumnWidths);
   const selectedIds = useFarmTienDoMuaHangStore((s) => s.selectedIds);
   const clearSelection = useFarmTienDoMuaHangStore((s) => s.clearSelection);
 
@@ -89,7 +90,6 @@ const FarmTienDoMuaHangToolbar: React.FC<Props> = ({ items = [], onAdd, onDelete
       filters={renderFilters}
       filterGroups={filterGroups}
       onAdd={canCreate ? onAdd : undefined}
-      searchPlaceholder={t('thietLapDeXuatMuaHang.tienDoMuaHang.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       onDeleteMany={canDelete ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
@@ -98,6 +98,7 @@ const FarmTienDoMuaHangToolbar: React.FC<Props> = ({ items = [], onAdd, onDelete
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
+      onResetColumnWidths={resetColumnWidths}
       showBack
     />
   );

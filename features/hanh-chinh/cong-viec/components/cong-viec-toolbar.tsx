@@ -40,6 +40,7 @@ const CongViecToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onE
   const toggleColumn = useCongViecStore((s) => s.toggleColumn);
   const reorderColumns = useCongViecStore((s) => s.reorderColumns);
   const resetColumns = useCongViecStore((s) => s.resetColumns);
+  const resetColumnWidths = useCongViecStore((s) => s.resetColumnWidths);
   const selectedIds = useCongViecStore((s) => s.selectedIds);
   const clearSelection = useCongViecStore((s) => s.clearSelection);
   const { trangThaiCounts, uuTienCounts, trachNhiemCounts } = useCongViecFilterCounts(items, filters);
@@ -191,7 +192,6 @@ const CongViecToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onE
       filters={renderFilters}
       filterGroups={[]}
       onAdd={canCreate ? onAdd : undefined}
-      searchPlaceholder={t('congViec.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       onDeleteMany={canDelete && onDeleteMany ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
@@ -199,6 +199,7 @@ const CongViecToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onE
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
+      onResetColumnWidths={resetColumnWidths}
       showBack
     />
   );

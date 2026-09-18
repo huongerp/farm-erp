@@ -46,7 +46,6 @@
   "duBaoSlDongThung.toast.deleteManyPartial": "Đã bỏ qua một số phiếu (đã khóa hoặc không thuộc quyền của bạn).",
   "duBaoSlDongThung.toast.deleteNotAllowed": "Bạn không được phép xóa phiếu này.",
   "duBaoSlDongThung.toast.editNotAllowed": "Bạn không được phép sửa phiếu này.",
-  "duBaoSlDongThung.toolbar.searchPlaceholder": "Tìm theo chi nhánh, ghi chú, người tạo…",
   "duBaoSlDongThung.toolbar.filterBranch": "Chi nhánh",
   "duBaoSlDongThung.toolbar.filterNam": "Năm",
   "duBaoSlDongThung.toolbar.filterThang": "Tháng",

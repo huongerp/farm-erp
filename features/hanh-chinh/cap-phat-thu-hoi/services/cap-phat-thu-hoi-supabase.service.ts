@@ -3,7 +3,19 @@
  * Bảng cha: fp_ts_phieu_cap_phat_thu_hoi (header)
  * Bảng con: fp_ts_phieu_cap_phat_thu_hoi_ct (chi tiết – mỗi dòng 1 tài sản)
  */
-import { db, throwSupabaseError } from '@/lib/db';
+import {
+  db,
+  fetchAllRows,
+  fetchTablePage,
+  throwSupabaseError,
+  type PaginatedTableResult,
+} from '@/lib/db';
+import { applyPostgrestSearch } from '@/lib/postgrest-search';
+import {
+  CPTH_SORTABLE_DB_COLUMNS,
+  CPTH_SORT_MAC_DINH,
+  type CapPhatThuHoiListServerQuery,
+} from './cap-phat-thu-hoi-list-query';
 import type {
   LoaiPhieu,
   PhieuCapPhatThuHoi,
@@ -154,6 +166,75 @@ export interface GetPhieuListParams {
 // ---------------------------------------------------------------------------
 // READ
 // ---------------------------------------------------------------------------
+
+/** Cột tham gia ô tìm kiếm ở server. */
+const CPTH_SEARCH_SPEC = {
+  text: [
+    'ma_phieu',
+    'loai_phieu',
+    'ten_nguoi_thuc_hien',
+    'ten_nguoi_giu_truoc',
+    'ten_nguoi_giu_sau',
+    'ma_nguoi_giu_truoc',
+    'ma_nguoi_giu_sau',
+    'ten_nguoi_tao',
+    'ghi_chu',
+    'trang_thai',
+  ],
+  numeric: ['id'],
+  dates: ['ngay_thuc_hien'],
+} as const;
+
+/** Lọc + sắp xếp dùng chung cho trang danh sách và cho lượt tải phục vụ xuất file. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyCpthListQuery(q: any, query: CapPhatThuHoiListServerQuery): any {
+  let sel = q;
+
+  if (query.loaiPhieu.length > 0) sel = sel.in('loai_phieu', query.loaiPhieu);
+  if (query.ngayFrom) sel = sel.gte('ngay_thuc_hien', query.ngayFrom);
+  if (query.ngayTo) sel = sel.lte('ngay_thuc_hien', query.ngayTo);
+  if (query.idNguoiThucHien.length > 0) {
+    sel = sel.in('id_nguoi_thuc_hien', query.idNguoiThucHien.map(Number).filter(Number.isFinite));
+  }
+  // Tab "Của tôi": phiếu do mình thực hiện, hoặc mình là người giữ trước/sau.
+  if (query.idNguoiCuaToi) {
+    const n = Number(query.idNguoiCuaToi);
+    if (Number.isFinite(n)) {
+      sel = sel.or(`id_nguoi_thuc_hien.eq.${n},id_nguoi_giu_truoc.eq.${n},id_nguoi_giu_sau.eq.${n}`);
+    }
+  }
+
+  sel = applyPostgrestSearch(sel, query.searchTerm, CPTH_SEARCH_SPEC);
+
+  const dbSortable = query.sortColumn != null && CPTH_SORTABLE_DB_COLUMNS.has(query.sortColumn);
+  const sortCol = dbSortable ? query.sortColumn! : CPTH_SORT_MAC_DINH.column;
+  const ascending = dbSortable ? query.sortDirection !== 'desc' : CPTH_SORT_MAC_DINH.ascending;
+
+  return sel.order(sortCol, { ascending }).order('id', { ascending: false });
+}
+
+export async function getPhieuCapPhatPageSupabase(
+  query: CapPhatThuHoiListServerQuery
+): Promise<PaginatedTableResult<PhieuCapPhatThuHoi>> {
+  const result = await fetchTablePage<DbPhieuRow>(query.page, query.pageSize, async (from, to) => {
+    const res = await applyCpthListQuery(
+      db.from(TABLE).select(PHIEU_CP_TH_COLUMNS, { count: 'exact' }),
+      query
+    ).range(from, to);
+    return { data: (res.data as unknown as DbPhieuRow[] | null) ?? null, error: res.error, count: res.count };
+  });
+  return { ...result, data: result.data.map((row) => rowToPhieu(row)) };
+}
+
+/** Toàn bộ bản ghi khớp bộ lọc — CHỈ dùng khi bấm Xuất file. */
+export async function fetchAllPhieuCapPhatForListQuery(
+  query: CapPhatThuHoiListServerQuery
+): Promise<PhieuCapPhatThuHoi[]> {
+  const rows = await fetchAllRows<DbPhieuRow>((from, to) =>
+    applyCpthListQuery(db.from(TABLE).select(PHIEU_CP_TH_COLUMNS), query).range(from, to)
+  );
+  return rows.map((row) => rowToPhieu(row));
+}
 
 export async function getPhieuListSupabase(
   params: GetPhieuListParams = {}

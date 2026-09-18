@@ -3,8 +3,6 @@
   "thietLapTaiSan.tabs.noiLuu": "Thiết lập nơi lưu",
   "thietLapTaiSan.tabs.nhomTaiSan": "Thiết lập nhóm tài sản",
   "thietLapTaiSan.tabs.trangThai": "Thiết lập trạng thái",
-
-  "thietLapTaiSan.noiLuu.searchPlaceholder": "Tìm theo mã, tên nơi lưu, chi nhánh...",
   "thietLapTaiSan.noiLuu.loading": "Đang tải...",
   "thietLapTaiSan.noiLuu.form.basicInfo": "Thông tin cơ bản",
   "thietLapTaiSan.noiLuu.form.branch": "Chi nhánh",
@@ -41,8 +39,6 @@
   "thietLapTaiSan.noiLuu.bulkDeleteMessage": "Bạn có chắc muốn xóa {{count}} nơi lưu đã chọn?",
   "thietLapTaiSan.noiLuu.statusChangeTitle": "Đổi trạng thái",
   "thietLapTaiSan.noiLuu.statusChangeMessage": "Đổi trạng thái {{count}} nơi lưu thành \"{{status}}\"?",
-
-  "thietLapTaiSan.nhomTaiSan.searchPlaceholder": "Tìm theo mã, tên nhóm tài sản...",
   "thietLapTaiSan.nhomTaiSan.loading": "Đang tải...",
   "thietLapTaiSan.nhomTaiSan.form.basicInfo": "Thông tin cơ bản",
   "thietLapTaiSan.nhomTaiSan.form.ma": "Mã nhóm",
@@ -89,8 +85,6 @@
   "thietLapTaiSan.nhomTaiSan.bulkDeleteMessage": "Bạn có chắc muốn xóa {{count}} nhóm tài sản đã chọn?",
   "thietLapTaiSan.nhomTaiSan.statusChangeTitle": "Đổi trạng thái",
   "thietLapTaiSan.nhomTaiSan.statusChangeMessage": "Đổi trạng thái {{count}} nhóm thành \"{{status}}\"?",
-
-  "thietLapTaiSan.trangThai.searchPlaceholder": "Tìm theo mã, tên trạng thái...",
   "thietLapTaiSan.trangThai.loading": "Đang tải...",
   "thietLapTaiSan.trangThai.form.basicInfo": "Thông tin cơ bản",
   "thietLapTaiSan.trangThai.form.ma": "Mã trạng thái",
@@ -127,9 +121,7 @@
   "thietLapTaiSan.trangThai.bulkDeleteMessage": "Bạn có chắc muốn xóa {{count}} trạng thái đã chọn?",
   "thietLapTaiSan.trangThai.statusChangeTitle": "Đổi trạng thái",
   "thietLapTaiSan.trangThai.statusChangeMessage": "Đổi trạng thái {{count}} mục thành \"{{status}}\"?",
-
   "thietLapTaiSan.tabs.loaiChiPhi": "Loại chi phí",
-  "thietLapTaiSan.loaiChiPhi.searchPlaceholder": "Tìm theo mã, tên loại chi phí...",
   "thietLapTaiSan.loaiChiPhi.loading": "Đang tải...",
   "thietLapTaiSan.loaiChiPhi.form.basicInfo": "Thông tin cơ bản",
   "thietLapTaiSan.loaiChiPhi.form.ma": "Mã loại chi phí",

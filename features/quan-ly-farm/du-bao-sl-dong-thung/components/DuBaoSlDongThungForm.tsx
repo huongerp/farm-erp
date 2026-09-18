@@ -167,7 +167,6 @@ const DuBaoSlDongThungForm: React.FC<Props> = ({ branches, initialData, preferre
                   value={field.value ?? ''}
                   onChange={(v) => field.onChange(v ? String(v) : '')}
                   placeholder={t('duBaoSlDongThung.form.branchPlaceholder')}
-                  searchPlaceholder={t('duBaoSlDongThung.form.branchPlaceholder')}
                   required
                   error={errors.id_chi_nhanh?.message as string | undefined}
                 />

@@ -50,6 +50,7 @@ const DinhMucTonTab: React.FC<DinhMucTonTabProps> = ({ onBack }) => {
   const toggleColumn = useDinhMucTonStore((s) => s.toggleColumn);
   const reorderColumns = useDinhMucTonStore((s) => s.reorderColumns);
   const resetColumns = useDinhMucTonStore((s) => s.resetColumns);
+  const resetColumnWidths = useDinhMucTonStore((s) => s.resetColumnWidths);
   const pagination = useDinhMucTonStore((s) => s.pagination);
   const setPage = useDinhMucTonStore((s) => s.setPage);
   const setPageSize = useDinhMucTonStore((s) => s.setPageSize);
@@ -277,7 +278,6 @@ const DinhMucTonTab: React.FC<DinhMucTonTabProps> = ({ onBack }) => {
           onClearSelection={clearSelection}
           showBack
           onBack={onBack}
-          searchPlaceholder={t('hangHoa.dinhMuc.searchPlaceholder')}
           actions={renderActions}
           onAdd={handleAdd}
           filters={renderFilters}
@@ -288,6 +288,7 @@ const DinhMucTonTab: React.FC<DinhMucTonTabProps> = ({ onBack }) => {
           onToggleColumn={toggleColumn}
           onReorderColumns={reorderColumns}
           onResetColumns={resetColumns}
+          onResetColumnWidths={resetColumnWidths}
         />
         <div className="flex-1 min-h-0 flex flex-col bg-card overflow-hidden">
           {isLoading ? (

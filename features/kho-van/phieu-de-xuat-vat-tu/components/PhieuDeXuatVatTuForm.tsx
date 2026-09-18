@@ -350,7 +350,6 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
                   value={field.value || null}
                   onChange={(v) => field.onChange(v ?? '')}
                   placeholder={t('phieuDeXuatVatTu.form.placePlaceholder')}
-                  searchPlaceholder={t('phieuDeXuatVatTu.form.itemSearchPlaceholder')}
                   icon={<Warehouse size={12} />}
                   required
                   disabled={readOnly}
@@ -370,7 +369,6 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
                   value={field.value || null}
                   onChange={(v) => field.onChange(v ?? '')}
                   placeholder={t('phieuDeXuatVatTu.form.requesterPlaceholder')}
-                  searchPlaceholder={t('phieuDeXuatVatTu.form.itemSearchPlaceholder')}
                   icon={<User size={12} />}
                   required
                   disabled={readOnly}
@@ -391,7 +389,6 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
                     value={field.value ?? null}
                     onChange={(v) => field.onChange(v === '' || v == null ? null : v)}
                     placeholder={t('phieuDeXuatVatTu.form.approverPlaceholder')}
-                    searchPlaceholder={t('phieuDeXuatVatTu.form.itemSearchPlaceholder')}
                     icon={<UserCheck size={12} />}
                     disabled={readOnly}
                     error={errors.id_nguoi_duyet?.message}
@@ -427,7 +424,6 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
                       value={field.value ?? ''}
                       onChange={(v) => field.onChange(v ?? TRANG_THAI_CHO_DUYET)}
                       placeholder={t('phieuDeXuatVatTu.form.status')}
-                      searchPlaceholder={t('phieuDeXuatVatTu.form.itemSearchPlaceholder')}
                       disabled={readOnly}
                       searchable
                       dropdownInPortal
@@ -518,7 +514,6 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
                               f.onChange(v ?? '');
                             }}
                             placeholder={t('phieuDeXuatVatTu.form.itemPlaceholder')}
-                            searchPlaceholder={t('phieuDeXuatVatTu.form.itemSearchPlaceholder')}
                             searchable
                             triggerClassName="h-9 text-sm border-border rounded-md"
                             dropdownInPortal
@@ -560,7 +555,6 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
                               if (item) setValue(`chi_tiet.${index}.ten_tien_do_mh`, item.ten);
                             }}
                             placeholder={t('phieuDeXuatVatTu.form.tienDoMhPlaceholder')}
-                            searchPlaceholder={t('phieuDeXuatVatTu.form.itemSearchPlaceholder')}
                             searchable
                             triggerClassName="h-9 text-sm border-border rounded-md"
                             dropdownInPortal

@@ -30,6 +30,7 @@ const PayrollPointGroupToolbar: React.FC<Props> = ({ items = [], onAdd, onDelete
   const toggleColumn = usePayrollPointGroupStore((s) => s.toggleColumn);
   const reorderColumns = usePayrollPointGroupStore((s) => s.reorderColumns);
   const resetColumns = usePayrollPointGroupStore((s) => s.resetColumns);
+  const resetColumnWidths = usePayrollPointGroupStore((s) => s.resetColumnWidths);
   const selectedIds = usePayrollPointGroupStore((s) => s.selectedIds);
   const clearSelection = usePayrollPointGroupStore((s) => s.clearSelection);
 
@@ -131,7 +132,6 @@ const PayrollPointGroupToolbar: React.FC<Props> = ({ items = [], onAdd, onDelete
       filters={renderFilters}
       filterGroups={filterGroups}
       onAdd={canCreate ? onAdd : undefined}
-      searchPlaceholder={t('payrollIp.pointGroups.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       onDeleteMany={canDelete && onDeleteMany ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
@@ -140,6 +140,7 @@ const PayrollPointGroupToolbar: React.FC<Props> = ({ items = [], onAdd, onDelete
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
+      onResetColumnWidths={resetColumnWidths}
       showBack
     />
   );

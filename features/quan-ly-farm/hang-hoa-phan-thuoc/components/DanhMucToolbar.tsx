@@ -33,6 +33,7 @@ const DanhMucToolbar: React.FC<Props> = ({
   const toggleColumn = useFarmDanhMucStore((s) => s.toggleColumn);
   const reorderColumns = useFarmDanhMucStore((s) => s.reorderColumns);
   const resetColumns = useFarmDanhMucStore((s) => s.resetColumns);
+  const resetColumnWidths = useFarmDanhMucStore((s) => s.resetColumnWidths);
 
   const activeFilterCount = useMemo(() => (searchInput.trim() ? 1 : 0), [searchInput]);
 
@@ -72,13 +73,13 @@ const DanhMucToolbar: React.FC<Props> = ({
       mobileActions={mobileActions}
       onAdd={canCreate ? onAdd : undefined}
       showBack
-      searchPlaceholder={t('farmHangHoaPhanThuoc.danhMuc.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       columns={columns}
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
+      onResetColumnWidths={resetColumnWidths}
     />
   );
 };

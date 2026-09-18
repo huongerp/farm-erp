@@ -3,7 +3,8 @@
  * Trạng thái lưu tiếng Việt: Nháp | Đang kiểm kê | Hoàn thành; Đang hoạt động | Ngừng hoạt động;
  * Kết quả: Chưa kiểm | Khớp | Chênh nơi lưu | Chênh người giữ | Chênh trạng thái | Thiếu.
  */
-import { db, throwSupabaseError } from '../../../../lib/db';
+import { db, fetchTablePage, throwSupabaseError, type PaginatedTableResult } from '../../../../lib/db';
+import { applyPostgrestSearch } from '../../../../lib/postgrest-search';
 import type {
   DotKiemKe,
   ChiTietKiemKe,
@@ -211,6 +212,52 @@ export async function getNextMaDotDotKiemKeTaiSan(): Promise<number> {
   if (typeof data === 'number' && Number.isFinite(data)) return data;
   const n = Number(data);
   return Number.isFinite(n) ? n : 1;
+}
+
+/** Cột tham gia ô tìm kiếm ở server. */
+const DOT_KIEM_KE_SEARCH_SPEC = {
+  text: ['ma_dot', 'ten_dot', 'trang_thai', 'ghi_chu'],
+  numeric: ['id'],
+  dates: ['ngay_bat_dau', 'ngay_ket_thuc'],
+} as const;
+
+/** Lọc + sắp xếp dùng chung — cùng điều kiện với `getDotKiemKeListSupabase`. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyDotKiemKeListQuery(q: any, params: GetDotKiemKeListParams, idNguoiPhuTrachCuaToi: string | null): any {
+  let sel = q;
+
+  if (idNguoiPhuTrachCuaToi) {
+    const n = toNum(idNguoiPhuTrachCuaToi);
+    sel = n != null ? sel.eq('id_nguoi_phu_trach', n) : sel.eq('id', -1);
+  }
+  if (params.trang_thai_dot?.length) sel = sel.in('trang_thai', params.trang_thai_dot);
+  if (params.dateFrom) sel = sel.gte('ngay_ket_thuc', params.dateFrom);
+  if (params.dateTo) sel = sel.lte('ngay_bat_dau', params.dateTo);
+  if (params.id_nguoi_phu_trach?.length) {
+    const ids = params.id_nguoi_phu_trach.map((x) => toNum(x)).filter((n): n is number => n != null);
+    if (ids.length) sel = sel.in('id_nguoi_phu_trach', ids);
+  }
+
+  sel = applyPostgrestSearch(sel, params.q ?? '', DOT_KIEM_KE_SEARCH_SPEC);
+  return sel.order('tg_cap_nhat', { ascending: false }).order('id', { ascending: false });
+}
+
+/** Một trang danh sách đợt kiểm kê (lọc / phân trang ở PostgREST). */
+export async function getDotKiemKePageSupabase(
+  page: number,
+  pageSize: number,
+  params: GetDotKiemKeListParams = {},
+  idNguoiPhuTrachCuaToi: string | null = null
+): Promise<PaginatedTableResult<DotKiemKe>> {
+  const result = await fetchTablePage<DbDotRow>(page, pageSize, async (from, to) => {
+    const res = await applyDotKiemKeListQuery(
+      db.from(TABLE_DOT).select(DOT_LIST_SELECT, { count: 'exact' }),
+      params,
+      idNguoiPhuTrachCuaToi
+    ).range(from, to);
+    return { data: (res.data as unknown as DbDotRow[] | null) ?? null, error: res.error, count: res.count };
+  });
+  return { ...result, data: await enrichDots(result.data.map((row) => rowToDot(row))) };
 }
 
 export async function getDotKiemKeListSupabase(params: GetDotKiemKeListParams = {}): Promise<DotKiemKe[]> {

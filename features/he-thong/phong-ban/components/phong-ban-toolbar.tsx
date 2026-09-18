@@ -38,6 +38,7 @@ const PhongBanToolbar: React.FC<Props> = ({
   const toggleColumn = useDepartmentStore((s) => s.toggleColumn);
   const reorderColumns = useDepartmentStore((s) => s.reorderColumns);
   const resetColumns = useDepartmentStore((s) => s.resetColumns);
+  const resetColumnWidths = useDepartmentStore((s) => s.resetColumnWidths);
 
   /** 1 cấp: tất cả là "root", getParentId luôn null */
   const phongOptionsWithCount = useHierarchyRootFilter({
@@ -185,13 +186,13 @@ const PhongBanToolbar: React.FC<Props> = ({
       mobileActions={mobileActions}
       onAdd={canCreate ? onAdd : undefined}
       showBack
-      searchPlaceholder={t('common.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       columns={columns}
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
+      onResetColumnWidths={resetColumnWidths}
     />
   );
 };

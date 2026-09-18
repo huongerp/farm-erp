@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo } from 'react';
+import type { PhieuTomTatTrung } from '../core/form-mappers';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useForm, Controller, type SubmitHandler } from 'react-hook-form';
@@ -41,7 +42,8 @@ interface Props {
   branches: Branch[];
   initialData?: FarmBaoCaoSoChe | null;
   preferredBranch?: { id_chi_nhanh: string; ten_chi_nhanh: string } | null;
-  existingList: FarmBaoCaoSoChe[];
+  /** Danh sách tóm tắt để chặn trùng ngày × chi nhánh (xem `getBaoCaoSoCheTomTat`). */
+  existingList: PhieuTomTatTrung[];
   onClose: () => void;
   /** Chỉ quản trị mới được thao tác section Phẩm cấp và KPI/thưởng. */
   canAdmin?: boolean;
@@ -233,7 +235,6 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
                   value={field.value ?? ''}
                   onChange={(v) => field.onChange(v ? String(v) : '')}
                   placeholder={t('baoCaoSoChe.form.branchPlaceholder')}
-                  searchPlaceholder={t('baoCaoSoChe.form.branchPlaceholder')}
                   required
                   error={errors.id_chi_nhanh?.message as string | undefined}
                 />

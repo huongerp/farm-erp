@@ -6,7 +6,7 @@ export interface DoiTacFilters {
   id_nhom: string[];
 }
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'thu_tu', label: i18n.t('doiTac.store.orderCol'), visible: true, minWidth: 80, maxWidth: 100, order: 0 },
   { id: 'loai_doi_tac', label: i18n.t('doiTac.store.loaiCol'), visible: true, minWidth: 120, maxWidth: 160, order: 1 },
   { id: 'ma_ncc', label: i18n.t('doiTac.store.codeCol'), visible: true, minWidth: 120, maxWidth: 180, order: 2 },
@@ -24,4 +24,4 @@ const initialFilters: DoiTacFilters = {
   id_nhom: [],
 };
 
-export const useDoiTacStore = createGenericStore<DoiTacFilters>(initialFilters, DEFAULT_COLUMNS);
+export const useDoiTacStore = createGenericStore<DoiTacFilters>(initialFilters, DEFAULT_COLUMNS, 'table-danh-sach-doi-tac-doi-tac');

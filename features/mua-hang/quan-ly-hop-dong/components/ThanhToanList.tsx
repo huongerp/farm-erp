@@ -10,6 +10,8 @@ import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
 interface Props {
   data: HopDongChiTietEnriched[];
   columns: ColumnConfig[];
+  /** Cho phép kéo đổi bề rộng cột — truyền `resizeColumn` của store. */
+  onResizeColumn?: (id: string, width: number) => void;
   chiNhanhList: Branch[];
   selectedIds: Set<string>;
   onToggleSelection: (id: string) => void;
@@ -27,6 +29,7 @@ interface Props {
 const ThanhToanList: React.FC<Props> = ({
   data,
   columns,
+  onResizeColumn,
   chiNhanhList,
   selectedIds,
   onToggleSelection,
@@ -200,6 +203,7 @@ const ThanhToanList: React.FC<Props> = ({
     <GenericTable<HopDongChiTietEnriched>
       data={data}
       columns={visibleColumns}
+      onResizeColumn={onResizeColumn}
       isLoading={isLoading}
       loadingText={t('hopDong.loading')}
       selectedIds={selectedIds}

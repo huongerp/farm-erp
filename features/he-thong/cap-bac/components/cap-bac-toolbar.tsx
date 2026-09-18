@@ -34,6 +34,7 @@ const JobLevelToolbar: React.FC<Props> = ({
   const toggleColumn = useJobLevelStore((s) => s.toggleColumn);
   const reorderColumns = useJobLevelStore((s) => s.reorderColumns);
   const resetColumns = useJobLevelStore((s) => s.resetColumns);
+  const resetColumnWidths = useJobLevelStore((s) => s.resetColumnWidths);
   const selectedIds = useJobLevelStore((s) => s.selectedIds);
   const clearSelection = useJobLevelStore((s) => s.clearSelection);
 
@@ -116,7 +117,6 @@ const JobLevelToolbar: React.FC<Props> = ({
         filterGroups={filterGroups}
         mobileActions={mobileActions}
         onAdd={canCreate ? onAdd : undefined}
-        searchPlaceholder={t('common.searchPlaceholder')}
         activeFilterCount={activeFilterCount}
         onClearAllFilters={handleClearAllFilters}
         onDeleteMany={canDelete ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
@@ -125,6 +125,7 @@ const JobLevelToolbar: React.FC<Props> = ({
         onToggleColumn={toggleColumn}
         onReorderColumns={reorderColumns}
         onResetColumns={resetColumns}
+        onResetColumnWidths={resetColumnWidths}
         showBack
     />
   );

@@ -9,6 +9,8 @@ import type { ColumnConfig } from '../../../../store/createGenericStore';
 interface Props {
   data: Kho[];
   columns: ColumnConfig[];
+  /** Cho phép kéo đổi bề rộng cột — truyền `resizeColumn` của store. */
+  onResizeColumn?: (id: string, width: number) => void;
   selectedIds: Set<string>;
   onToggleSelection: (id: string) => void;
   onToggleAllSelection: (ids: string[]) => void;
@@ -25,6 +27,7 @@ interface Props {
 const DanhSachKhoList: React.FC<Props> = ({
   data,
   columns,
+  onResizeColumn,
   selectedIds,
   onToggleSelection,
   onToggleAllSelection,
@@ -147,6 +150,7 @@ const DanhSachKhoList: React.FC<Props> = ({
     <GenericTable<Kho>
       data={data}
       columns={visibleColumns}
+      onResizeColumn={onResizeColumn}
       isLoading={isLoading}
       loadingText={t('kho.loading')}
       selectedIds={selectedIds}

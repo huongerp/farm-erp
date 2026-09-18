@@ -1,4 +1,6 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import type { HangHoaListServerQuery } from './services/hang-hoa-list-query';
+import { fetchAllHangHoaForListQuery } from './services/hang-hoa-service';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
 import { Package, ClipboardList } from 'lucide-react';
@@ -13,7 +15,8 @@ import ImportDialog from '../../../components/shared/LazyImportDialog';
 import type { ImportReferenceSheet, ImportSampleRow } from '../../../components/shared/ImportDialog';
 import ExportDialog from '../../../components/shared/LazyExportDialog';
 import {
-  useHangHoaList,
+  useHangHoaPage,
+  useHangHoaTomTat,
   useDeleteHangHoa,
   useDeleteHangHoaMany,
   useUpdateHangHoaStatus,
@@ -24,13 +27,13 @@ import { useDanhMucHangHoaList } from '../danh-muc-hang-hoa/hooks/use-danh-muc-h
 import { useHangHoaStore } from './store/useHangHoaStore';
 import { useConfirmStore } from '../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL, CONFIRM_YES } from '../../../lib/button-labels';
-import { useListWithFilter } from '../../../lib/hooks';
 import { useExportData } from '../../../lib/useExportData';
 import { TRANG_THAI_HOAT_DONG } from '../../../lib/constants';
 import type { HangHoa } from './core/types';
 import type { DinhMucSummaryMap } from './components/DanhSachHangHoaList';
 import type { HangHoaRefColumn, ImportHangHoaResult } from './services/hang-hoa-service';
 import type { ImportMode, ImportOptions } from '../../../lib/import-types';
+
 
 const DanhSachHangHoaPage: React.FC = () => {
   const { t } = useTranslation();
@@ -42,12 +45,14 @@ const DanhSachHangHoaPage: React.FC = () => {
     resetState,
     selectedIds,
     columns,
+    resizeColumn,
     clearSelection,
     toggleSelection,
     toggleAllSelection,
     pagination,
     setPage,
     setPageSize,
+    sort,
   } = useHangHoaStore();
 
   const [activeTab, setActiveTab] = useState<'danhSach' | 'dinhMucTon'>('danhSach');
@@ -58,7 +63,33 @@ const DanhSachHangHoaPage: React.FC = () => {
   const [viewingItem, setViewingItem] = useState<HangHoa | null>(null);
   const [importErrors, setImportErrors] = useState<ImportHangHoaResult['errors']>([]);
 
-  const { data: list = [], isLoading } = useHangHoaList();
+  /**
+   * Bộ lọc gửi thẳng xuống PostgREST — trước đây trang này tải toàn bộ danh mục
+   * hàng hoá (hàng nghìn dòng, kèm mô tả và ảnh) rồi mới lọc ở trình duyệt.
+   */
+  const listServerQuery: HangHoaListServerQuery = useMemo(
+    () => ({
+      page: pagination.page - 1,
+      pageSize: pagination.pageSize,
+      searchTerm,
+      status: filters.status ?? [],
+      idDanhMucCha: filters.id_danh_muc_cha ?? [],
+      idDanhMuc: filters.id_danh_muc ?? [],
+      dvt: filters.dvt ?? [],
+      sortColumn: sort.column,
+      sortDirection: sort.direction,
+    }),
+    [pagination.page, pagination.pageSize, searchTerm, filters, sort]
+  );
+
+  /** Tóm tắt 3 cột cho số thứ tự kế tiếp + gợi ý đơn vị tính (không tải cả bảng). */
+  const { data: tomTatList = [] } = useHangHoaTomTat();
+
+  const pageQuery = useHangHoaPage(listServerQuery);
+  const pageList = pageQuery.data?.data ?? [];
+  const totalCount = pageQuery.data?.totalCount ?? 0;
+  const isLoading = !pageQuery.data && pageQuery.isPending;
+  const isFetching = !!pageQuery.data && pageQuery.isFetching;
   const { data: danhMucList = [] } = useDanhMucHangHoaList();
   const { data: dinhMucMap } = useDinhMucTonKho();
 
@@ -75,24 +106,24 @@ const DanhSachHangHoaPage: React.FC = () => {
     return out;
   }, [dinhMucMap]);
   const nextThuTu = useMemo(
-    () => (list.length === 0 ? 1 : Math.max(...list.map((h) => h.thu_tu ?? 0)) + 1),
-    [list]
+    () => (tomTatList.length === 0 ? 1 : Math.max(...tomTatList.map((h) => h.thu_tu ?? 0)) + 1),
+    [tomTatList]
   );
   /** Các đơn vị tính đã có trong bảng – gợi ý khi nhập DVT (datalist). */
   const existingDvtList = useMemo(
     () =>
-      [...new Set(list.map((h) => h.dvt).filter((x): x is string => x != null && x.trim() !== ''))].sort((a, b) =>
+      [...new Set(tomTatList.map((h) => h.dvt).filter((x): x is string => x != null && x.trim() !== ''))].sort((a, b) =>
         a.localeCompare(b)
       ),
-    [list]
+    [tomTatList]
   );
   /** Các phẩm cấp đã có trong bảng – gợi ý khi nhập phẩm cấp (datalist). */
   const existingPhamCapList = useMemo(
     () =>
-      [...new Set(list.map((h) => h.pham_cap).filter((x): x is string => x != null && x.trim() !== ''))].sort((a, b) =>
-        a.localeCompare(b)
+      [...new Set(tomTatList.map((h) => h.pham_cap).filter((x): x is string => x != null && x.trim() !== ''))].sort(
+        (a, b) => a.localeCompare(b)
       ),
-    [list]
+    [tomTatList]
   );
   const deleteMutation = useDeleteHangHoa();
   const deleteManyMutation = useDeleteHangHoaMany();
@@ -133,7 +164,7 @@ const DanhSachHangHoaPage: React.FC = () => {
       d.id_cha ? chaById[d.id_cha] ?? '' : '',
     ]);
 
-    const dvtSet = [...new Set(list.map((h) => h.dvt).filter((x): x is string => x != null && x.trim() !== ''))].sort();
+    const dvtSet = [...new Set(tomTatList.map((h) => h.dvt).filter((x): x is string => x != null && x.trim() !== ''))].sort();
 
     const sheets: ImportReferenceSheet[] = [
       {
@@ -152,7 +183,7 @@ const DanhSachHangHoaPage: React.FC = () => {
     }
 
     return sheets;
-  }, [danhMucList, list, t]);
+  }, [danhMucList, tomTatList, t]);
 
   const EXPORT_COLUMNS = useMemo(
     () => [
@@ -175,55 +206,40 @@ const DanhSachHangHoaPage: React.FC = () => {
 
   useEffect(() => {
     if (!viewingItem) return;
-    const fresh = list.find((h) => h.id === viewingItem.id);
+    // Bản ghi đang mở vừa được cập nhật ở trang hiện tại → đồng bộ lại drawer.
+    const fresh = pageList.find((h) => h.id === viewingItem.id);
     if (fresh && fresh !== viewingItem) setViewingItem(fresh);
-  }, [list, viewingItem?.id]);
+  }, [pageList, viewingItem?.id]);
 
-  const filterFn = useCallback(
-    (item: HangHoa, term: string, f: typeof filters) => {
-      const searchLower = term.toLowerCase();
-      const matchesSearch =
-        !term ||
-        item.ten_hang_hoa.toLowerCase().includes(searchLower) ||
-        item.ma_hang_hoa.toLowerCase().includes(searchLower) ||
-        (item.ten_danh_muc?.toLowerCase().includes(searchLower) ?? false) ||
-        (item.dvt?.toLowerCase().includes(searchLower) ?? false) ||
-        (item.pham_cap?.toLowerCase().includes(searchLower) ?? false);
-      const statusKey = item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? 'Active' : 'Inactive';
-      const matchesStatus = f.status.length === 0 || f.status.includes(statusKey);
-      const matchesDanhMucCha =
-        f.id_danh_muc_cha.length === 0 ||
-        (item.danh_muc_cha_id != null && f.id_danh_muc_cha.includes(item.danh_muc_cha_id));
-      const matchesDanhMucCon =
-        f.id_danh_muc.length === 0 ||
-        (item.danh_muc_id != null && f.id_danh_muc.includes(item.danh_muc_id));
-      const matchesDvt =
-        f.dvt.length === 0 || (item.dvt != null && item.dvt.trim() !== '' && f.dvt.includes(item.dvt.trim()));
-      return (
-        matchesSearch &&
-        matchesStatus &&
-        matchesDanhMucCha &&
-        matchesDanhMucCon &&
-        matchesDvt
-      );
-    },
-    []
-  );
-
-  const filteredList = useListWithFilter(list, searchTerm, filters, filterFn);
-
+  /** Xuất file cần TẤT CẢ bản ghi khớp bộ lọc — chỉ tải khi mở hộp thoại Xuất. */
+  const [exportRows, setExportRows] = useState<HangHoa[]>([]);
+  const [exportLoading, setExportLoading] = useState(false);
   useEffect(() => {
-    setPage(1);
-  }, [filteredList.length, setPage]);
-
-  const maxPage = Math.max(1, Math.ceil(filteredList.length / pagination.pageSize));
-  useEffect(() => {
-    if (pagination.page > maxPage) setPage(maxPage);
-  }, [pagination.page, pagination.pageSize, maxPage, setPage]);
+    if (!showExport) {
+      setExportRows([]);
+      setExportLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setExportLoading(true);
+    fetchAllHangHoaForListQuery(listServerQuery)
+      .then((rows) => {
+        if (!cancelled) setExportRows(rows);
+      })
+      .catch(() => {
+        if (!cancelled) setExportRows([]);
+      })
+      .finally(() => {
+        if (!cancelled) setExportLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [showExport, listServerQuery]);
 
   const exportPagination = useMemo(
-    () => ({ page: 1, pageSize: Math.max(filteredList.length, 1) }),
-    [filteredList.length]
+    () => ({ page: 1, pageSize: Math.max(exportRows.length, 1) }),
+    [exportRows.length]
   );
 
   const exportMapFn = useCallback(
@@ -243,8 +259,8 @@ const DanhSachHangHoaPage: React.FC = () => {
   );
 
   const { exportData, paginatedData: paginatedExportData, selectedData: selectedExportData } = useExportData({
-    data: filteredList,
-    isOpen: showExport,
+    data: exportRows,
+    isOpen: showExport && !exportLoading,
     mapFn: exportMapFn,
     pagination: exportPagination,
     selectedIds,
@@ -369,7 +385,7 @@ const DanhSachHangHoaPage: React.FC = () => {
         {activeTab === 'danhSach' && (
           <>
             <DanhSachHangHoaToolbar
-              data={list}
+              data={tomTatList}
               selectedCount={selectedIds.size}
               onAdd={handleAdd}
               onExport={() => setShowExport(true)}
@@ -382,8 +398,11 @@ const DanhSachHangHoaPage: React.FC = () => {
             />
             <div className="flex-1 min-h-0 flex flex-col">
               <DanhSachHangHoaList
-                data={filteredList}
+                data={pageList}
+            totalRecordsOverride={totalCount}
+            isFetching={isFetching}
                 columns={columns}
+                onResizeColumn={resizeColumn}
                 selectedIds={selectedIds}
                 onToggleSelection={toggleSelection}
                 onToggleAllSelection={toggleAllSelection}

@@ -1,7 +1,13 @@
 /**
  * Service khấu hao tài sản – đọc/ghi Supabase (fp_ts_ky_khau_hao, fp_ts_chi_tiet_khau_hao).
  */
-import { db, throwSupabaseError } from '../../../../lib/db';
+import { db, fetchTablePage, throwSupabaseError, type PaginatedTableResult } from '../../../../lib/db';
+import { applyPostgrestSearch } from '../../../../lib/postgrest-search';
+import {
+  KY_KHAU_HAO_SORTABLE_DB_COLUMNS,
+  KY_KHAU_HAO_SORT_MAC_DINH,
+  type KyKhauHaoListServerQuery,
+} from './khau-hao-list-query';
 import type { KyKhauHao, ChiTietKhauHao, KyKhauHaoCreate, TrangThaiKyKhauHao } from '../core/types';
 import { getTaiSanList } from '../../danh-muc-tai-san/services/danh-muc-tai-san-service';
 import { updateTaiSanKhauHao } from '../../danh-muc-tai-san/services/danh-muc-tai-san-service';
@@ -134,6 +140,43 @@ export function tinhKhauHaoKy(
   return { khau_hao_ky: khauHaoKy, khau_hao_luy_ke: khauHaoLuyKe, gia_tri_con_lai_cuoi_ky: giaTriConLaiCuoiKy };
 }
 
+/** Cột tham gia ô tìm kiếm ở server. */
+const KY_KHAU_HAO_SEARCH_SPEC = {
+  text: ['trang_thai', 'ghi_chu', 'ten_nguoi_tao'],
+  numeric: ['id', 'nam', 'thang', 'tong_nguyen_gia', 'tong_khau_hao_ky'],
+} as const;
+
+export async function getKyKhauHaoPageSupabase(
+  query: KyKhauHaoListServerQuery
+): Promise<PaginatedTableResult<KyKhauHao>> {
+  const result = await fetchTablePage<DbKyKhauHaoRow>(query.page, query.pageSize, async (from, to) => {
+    let sel = db.from(TABLE_KY).select(KY_KHAU_HAO_COLUMNS, { count: 'exact' });
+
+    if (query.nam) {
+      const n = Number(query.nam);
+      if (Number.isFinite(n)) sel = sel.eq('nam', n);
+    }
+    if (query.thang.length > 0) sel = sel.in('thang', query.thang.map(Number).filter(Number.isFinite));
+    if (query.trangThai.length > 0) sel = sel.in('trang_thai', query.trangThai);
+    if (query.idNguoiTao) {
+      const n = Number(query.idNguoiTao);
+      sel = Number.isFinite(n) ? sel.eq('id_nguoi_tao', n) : sel.eq('id', -1);
+    }
+
+    sel = applyPostgrestSearch(sel, query.searchTerm, KY_KHAU_HAO_SEARCH_SPEC);
+
+    const dbSortable = query.sortColumn != null && KY_KHAU_HAO_SORTABLE_DB_COLUMNS.has(query.sortColumn);
+    const sortCol = dbSortable ? query.sortColumn! : KY_KHAU_HAO_SORT_MAC_DINH.column;
+    const ascending = dbSortable ? query.sortDirection !== 'desc' : KY_KHAU_HAO_SORT_MAC_DINH.ascending;
+    sel = sel.order(sortCol, { ascending });
+    if (sortCol === 'nam') sel = sel.order('thang', { ascending });
+
+    const res = await sel.order('id', { ascending: false }).range(from, to);
+    return { data: (res.data as unknown as DbKyKhauHaoRow[] | null) ?? null, error: res.error, count: res.count };
+  });
+  return { ...result, data: result.data.map((row) => rowToKy(row)) };
+}
+
 export async function getKyKhauHaoListSupabase(): Promise<KyKhauHao[]> {
   const { data, error } = await db
     .from(TABLE_KY)
@@ -233,7 +276,6 @@ export async function tinhToanKhauHaoKySupabase(
   const groupMap = new Map<string, AssetGroup>(groups.map((g) => [g.id, g]));
   const endDate = lastDayOfMonth(kyRow.nam, kyRow.thang);
   const eligible: TaiSan[] = taiSanList.filter((ts) => {
-    if (ts.trang_thai !== 1) return false;
     const nguyenGia = ts.nguyen_gia ?? 0;
     if (nguyenGia <= 0) return false;
     const ngayBatDau = ts.ngay_bat_dau_trich_khau_hao ?? ts.ngay_nhap ?? '';

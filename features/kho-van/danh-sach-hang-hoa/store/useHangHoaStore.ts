@@ -12,7 +12,7 @@ import i18n from '../../../../lib/i18n';
 
 export interface HangHoaFilters {
   status: string[];
-  /** Danh mục cấp 1 (cha). */
+  /** Danh mục cấp 1 (cha, 'table-danh-sach-hang-hoa-hang-hoa'). */
   id_danh_muc_cha: string[];
   /** Danh mục cấp 2 (con). */
   id_danh_muc: string[];
@@ -20,7 +20,7 @@ export interface HangHoaFilters {
   dvt: string[];
 }
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'hinh_anh', label: i18n.t('hangHoa.store.imageCol'), visible: true, minWidth: COLUMN_WIDTH_COMPACT_MIN, maxWidth: COLUMN_WIDTH_COMPACT_MAX, order: 0 },
   { id: 'thu_tu', label: i18n.t('hangHoa.store.orderCol'), visible: true, minWidth: 80, maxWidth: 100, order: 1 },
   { id: 'ma_hang_hoa', label: i18n.t('hangHoa.store.codeCol'), visible: true, minWidth: 140, maxWidth: 200, order: 2 },
@@ -44,4 +44,4 @@ const initialFilters: HangHoaFilters = {
   dvt: [],
 };
 
-export const useHangHoaStore = createGenericStore<HangHoaFilters>(initialFilters, DEFAULT_COLUMNS);
+export const useHangHoaStore = createGenericStore<HangHoaFilters>(initialFilters, DEFAULT_COLUMNS, 'table-danh-sach-hang-hoa');

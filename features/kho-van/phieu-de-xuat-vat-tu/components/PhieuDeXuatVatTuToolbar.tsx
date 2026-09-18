@@ -57,6 +57,7 @@ const PhieuDeXuatVatTuToolbar: React.FC<Props> = ({
   const toggleColumn = usePhieuDeXuatVatTuStore((s) => s.toggleColumn);
   const reorderColumns = usePhieuDeXuatVatTuStore((s) => s.reorderColumns);
   const resetColumns = usePhieuDeXuatVatTuStore((s) => s.resetColumns);
+  const resetColumnWidths = usePhieuDeXuatVatTuStore((s) => s.resetColumnWidths);
 
   const { inputValue: searchInput, setInputValue: setSearchInput } = useSearchInputCommit({
     committedTerm: searchTerm,
@@ -414,13 +415,13 @@ const PhieuDeXuatVatTuToolbar: React.FC<Props> = ({
       searchTrailing={searchTrailingExport}
       onAdd={canCreate ? onAdd : undefined}
       showBack
-      searchPlaceholder={t('phieuDeXuatVatTu.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       columns={columns}
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
+      onResetColumnWidths={resetColumnWidths}
     />
   );
 };

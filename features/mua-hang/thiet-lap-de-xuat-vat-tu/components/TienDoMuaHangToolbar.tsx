@@ -28,6 +28,7 @@ const TienDoMuaHangToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany
   const toggleColumn = useTienDoMuaHangStore((s) => s.toggleColumn);
   const reorderColumns = useTienDoMuaHangStore((s) => s.reorderColumns);
   const resetColumns = useTienDoMuaHangStore((s) => s.resetColumns);
+  const resetColumnWidths = useTienDoMuaHangStore((s) => s.resetColumnWidths);
   const selectedIds = useTienDoMuaHangStore((s) => s.selectedIds);
   const clearSelection = useTienDoMuaHangStore((s) => s.clearSelection);
 
@@ -89,7 +90,6 @@ const TienDoMuaHangToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany
       filters={renderFilters}
       filterGroups={filterGroups}
       onAdd={canCreate ? onAdd : undefined}
-      searchPlaceholder={t('thietLapDeXuatVatTu.tienDoMuaHang.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       onDeleteMany={canDelete ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
@@ -98,6 +98,7 @@ const TienDoMuaHangToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
+      onResetColumnWidths={resetColumnWidths}
       showBack
     />
   );

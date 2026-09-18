@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import type { HangHoaTomTat } from '../services/hang-hoa-service';
 import { useTranslation } from 'react-i18next';
 import { Plus, Download, Upload, Tag, Folder, FolderTree, Ruler } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
@@ -8,11 +9,14 @@ import FilterChipMultiSelect from '../../../../components/shared/FilterChipMulti
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useHangHoaStore } from '../store/useHangHoaStore';
 import { useDanhMucHangHoaList } from '../../danh-muc-hang-hoa/hooks/use-danh-muc-hang-hoa';
-import type { HangHoa } from '../core/types';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 
 interface Props {
-  data: HangHoa[];
+  /**
+   * Danh sách TÓM TẮT toàn bộ hàng hoá (không phải trang đang xem) — chip lọc
+   * phải đếm trên toàn bộ dữ liệu, xem `getHangHoaTomTat`.
+   */
+  data: HangHoaTomTat[];
   selectedCount: number;
   onAdd: () => void;
   onExport?: () => void;
@@ -46,6 +50,7 @@ const DanhSachHangHoaToolbar: React.FC<Props> = ({
   const toggleColumn = useHangHoaStore((s) => s.toggleColumn);
   const reorderColumns = useHangHoaStore((s) => s.reorderColumns);
   const resetColumns = useHangHoaStore((s) => s.resetColumns);
+  const resetColumnWidths = useHangHoaStore((s) => s.resetColumnWidths);
 
   const danhMucChaList = useMemo(
     () => danhMucList.filter((d) => !d.id_cha || d.id_cha.trim() === ''),
@@ -303,13 +308,13 @@ const DanhSachHangHoaToolbar: React.FC<Props> = ({
       mobileActions={mobileActions}
       onAdd={canCreate ? onAdd : undefined}
       showBack
-      searchPlaceholder={t('hangHoa.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       columns={columns}
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
+      onResetColumnWidths={resetColumnWidths}
     />
   );
 };

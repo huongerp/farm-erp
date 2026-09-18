@@ -10,6 +10,7 @@ import {
   LazyHanhChinhDashboard,
   LazyMuaHangDashboard,
   LazyQuanLyFarmDashboard,
+  LazyTaiChinhDashboard,
   renderLazySubmenuModule,
   SubmenuChunkFallback,
 } from './submenu-lazy-registry';
@@ -17,11 +18,13 @@ import { SUBMENU_PATHS, SIDEBAR_MENU } from '../lib/sidebar-menu';
 import { getModuleTitleKeyBySlug, HANH_CHINH_MODULE_SLUGS } from '../lib/hanh-chinh-menu';
 import { getMuaHangModuleTitleKeyBySlug, MUA_HANG_MODULE_SLUGS } from '../lib/mua-hang-menu';
 import { getQuanLyFarmModuleTitleKeyBySlug, QUAN_LY_FARM_MODULE_SLUGS } from '../lib/quan-ly-farm-menu';
+import { getTaiChinhModuleTitleKeyBySlug, TAI_CHINH_MODULE_SLUGS } from '../lib/tai-chinh-menu';
 
 const PATH_TO_BREADCRUMB_KEY: Record<string, string> = {
   '/hanh-chinh': 'breadcrumb.hanhChinh',
   '/mua-hang': 'breadcrumb.muaHang',
   '/quan-ly-farm': 'breadcrumb.quanLyFarm',
+  '/tai-chinh': 'breadcrumb.taiChinh',
   '/kho-van': 'breadcrumb.khoVan',
 };
 
@@ -70,6 +73,16 @@ const SubmenuPage: React.FC = () => {
       <ErrorBoundary>
         <Suspense fallback={<SubmenuChunkFallback />}>
           <LazyQuanLyFarmDashboard />
+        </Suspense>
+      </ErrorBoundary>
+    );
+  }
+
+  if (basePath === '/tai-chinh' && !moduleId) {
+    return (
+      <ErrorBoundary>
+        <Suspense fallback={<SubmenuChunkFallback />}>
+          <LazyTaiChinhDashboard />
         </Suspense>
       </ErrorBoundary>
     );
@@ -151,6 +164,23 @@ const SubmenuPage: React.FC = () => {
             submenuPath={basePath ?? '/'}
             submenuTitle={title}
             moduleTitle={farmTitle}
+            icon={icon}
+          />
+        </ErrorBoundary>
+      ));
+    }
+    if (basePath === '/tai-chinh' && TAI_CHINH_MODULE_SLUGS.includes(decodedSlug)) {
+      const body = renderLazySubmenuModule(decodedSlug);
+      if (body) {
+        return wrapWithPermission(basePath, decodedSlug, <ErrorBoundary>{body}</ErrorBoundary>);
+      }
+      const taiChinhTitle = t(getTaiChinhModuleTitleKeyBySlug(decodedSlug));
+      return wrapWithPermission(basePath, decodedSlug, (
+        <ErrorBoundary>
+          <ModulePlaceholder
+            submenuPath={basePath}
+            submenuTitle={title}
+            moduleTitle={taiChinhTitle}
             icon={icon}
           />
         </ErrorBoundary>

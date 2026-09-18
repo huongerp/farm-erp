@@ -5,7 +5,7 @@ import Button from '../../../../components/ui/Button';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import GenericTable from '../../../../components/shared/GenericTable';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
-import { useTagDoiTacStore } from '../store/useTagDoiTacStore';
+import { useTagDoiTacStore, DEFAULT_COLUMNS } from '../store/useTagDoiTacStore';
 import { useTagList, useCreateTag, useUpdateTag, useDeleteTag, useDeleteTagMany } from '../hooks/use-doi-tac';
 import { useListWithFilter } from '../../../../lib/hooks';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
@@ -13,6 +13,10 @@ import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-label
 import type { Tag as TagType } from '../core/types';
 import TagFormDrawer from './TagFormDrawer';
 import TagDetailDrawer from './TagDetailDrawer';
+import { createListSearchMatcher } from '../../../../lib/list-search-matcher';
+
+/** Ô tìm kiếm quét MỌI cột của bảng, bỏ dấu tiếng Việt — xem lib/list-search-matcher.ts. */
+const khopTimKiem = createListSearchMatcher({ columns: DEFAULT_COLUMNS });
 
 const TagTab: React.FC = () => {
   const { t } = useTranslation();
@@ -22,6 +26,7 @@ const TagTab: React.FC = () => {
   const resetState = useTagDoiTacStore((s) => s.resetState);
   const selectedIds = useTagDoiTacStore((s) => s.selectedIds);
   const columns = useTagDoiTacStore((s) => s.columns);
+  const resizeColumn = useTagDoiTacStore((s) => s.resizeColumn);
   const clearSelection = useTagDoiTacStore((s) => s.clearSelection);
   const toggleSelection = useTagDoiTacStore((s) => s.toggleSelection);
   const toggleAllSelection = useTagDoiTacStore((s) => s.toggleAllSelection);
@@ -39,11 +44,10 @@ const TagTab: React.FC = () => {
   const [editingItem, setEditingItem] = useState<TagType | null>(null);
   const [viewingItem, setViewingItem] = useState<TagType | null>(null);
 
-  const filterFn = useCallback((item: TagType, term: string, _f: Record<string, never>) => {
-    if (!term) return true;
-    const searchLower = term.toLowerCase();
-    return item.ten_tag.toLowerCase().includes(searchLower);
-  }, []);
+  const filterFn = useCallback(
+    (item: TagType, term: string, _f: Record<string, never>) => khopTimKiem(item, term),
+    []
+  );
 
   const filteredList = useListWithFilter(tagList, searchTerm, {}, filterFn);
 
@@ -186,7 +190,6 @@ const TagTab: React.FC = () => {
           onClearSelection={clearSelection}
           searchTerm={searchInput}
           onSearchChange={setSearchInput}
-          searchPlaceholder={t('doiTac.danhMuc.tagSearchPlaceholder')}
           actions={
             <Button
               size="sm"
@@ -202,6 +205,7 @@ const TagTab: React.FC = () => {
           onToggleColumn={(id) => useTagDoiTacStore.getState().toggleColumn(id)}
           onReorderColumns={(from, to) => useTagDoiTacStore.getState().reorderColumns(from, to)}
           onResetColumns={() => useTagDoiTacStore.getState().resetColumns()}
+          onResetColumnWidths={() => useTagDoiTacStore.getState().resetColumnWidths()}
           onAdd={() => { setEditingItem(null); setViewingItem(null); setShowForm(true); }}
         />
       </div>
@@ -210,6 +214,7 @@ const TagTab: React.FC = () => {
         <GenericTable<TagType>
           data={filteredList}
           columns={columns}
+          onResizeColumn={resizeColumn}
           isLoading={isLoading}
           selectedIds={selectedIds}
           onToggleSelection={toggleSelection}

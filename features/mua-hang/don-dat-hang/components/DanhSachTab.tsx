@@ -50,6 +50,7 @@ const DanhSachTab: React.FC = () => {
     resetState,
     selectedIds,
     columns,
+    resizeColumn,
     clearSelection,
     toggleSelection,
     toggleAllSelection,
@@ -303,6 +304,7 @@ const DanhSachTab: React.FC = () => {
         <DonDatHangList
           data={tableRows}
           columns={columns}
+          onResizeColumn={resizeColumn}
           selectedIds={selectedIds}
           onToggleSelection={toggleSelection}
           onToggleAllSelection={toggleAllSelection}
@@ -366,6 +368,9 @@ const DanhSachTab: React.FC = () => {
             // Chờ viewingPoFull load xong mới cho tạo phiếu nhập — nếu không, item có thể là dòng
             // summary (chưa có chi_tiet) và phiếu nhập tạo ra sẽ trống, không có dòng hàng nào.
             onCreatePhieuNhapKho={canCreate && viewingPoFull ? () => setCreatePhieuNhapFrom(viewingPoFull) : undefined}
+            idChiNhanhKhoNhan={
+              khoList.find((k) => String(k.id) === String((viewingPoFull ?? viewingItem).id_kho_nhan))?.id_chi_nhanh ?? null
+            }
           />
         )}
       </AnimatePresence>

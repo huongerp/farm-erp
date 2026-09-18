@@ -127,7 +127,6 @@ const ChiTietLineDrawer: React.FC<ChiTietLineDrawerProps> = ({
                   }));
                 }}
                 placeholder={t('donDatHang.form.itemPlaceholder')}
-                searchPlaceholder={t('donDatHang.form.itemSearchPlaceholder')}
                 searchable
                 dropdownInPortal
                 error={itemInvalid ? t('donDatHang.validation.itemRequired') : undefined}
@@ -152,7 +151,6 @@ const ChiTietLineDrawer: React.FC<ChiTietLineDrawerProps> = ({
               value={formValue.phan_loai ?? ''}
               onChange={(v) => setFormValue((prev) => ({ ...prev, phan_loai: typeof v === 'string' ? v : String(v ?? '') }))}
               placeholder={t('donDatHang.form.classificationPlaceholder')}
-              searchPlaceholder={t('donDatHang.form.classificationSearchPlaceholder')}
               creatable
               creatableLabel={t('donDatHang.form.creatableNew')}
               searchable

@@ -28,28 +28,18 @@ const ThongKeTab: React.FC = () => {
   const [filterNhom, setFilterNhom] = useState<string[]>([]);
   const [filterNoiLuu, setFilterNoiLuu] = useState<string[]>([]);
   const [filterTrangThai, setFilterTrangThai] = useState<string[]>([]);
-  const [filterStatus, setFilterStatus] = useState<string[]>([]);
 
   const filteredList = useMemo(() => {
     return list.filter((item: TaiSan) => {
       const matchNhom = filterNhom.length === 0 || (item.id_nhom && filterNhom.includes(item.id_nhom));
       const matchNoiLuu = filterNoiLuu.length === 0 || (item.id_noi_luu && filterNoiLuu.includes(item.id_noi_luu));
       const matchTrangThai = filterTrangThai.length === 0 || (item.id_trang_thai && filterTrangThai.includes(item.id_trang_thai));
-      const matchStatus = filterStatus.length === 0 || filterStatus.includes(String(item.trang_thai ?? 1));
-      return matchNhom && matchNoiLuu && matchTrangThai && matchStatus;
+      return matchNhom && matchNoiLuu && matchTrangThai;
     });
-  }, [list, filterNhom, filterNoiLuu, filterTrangThai, filterStatus]);
+  }, [list, filterNhom, filterNoiLuu, filterTrangThai]);
 
   const stats = useTaiSanStats(filteredList);
 
-  const countByStatus = useMemo(() => {
-    const m: Record<string, number> = { '1': 0, '0': 0 };
-    list.forEach((item) => {
-      const k = String(item.trang_thai ?? 1);
-      if (k in m) m[k]++;
-    });
-    return m;
-  }, [list]);
   const countByNhom = useMemo(() => {
     const m: Record<string, number> = {};
     list.forEach((item) => {
@@ -84,43 +74,25 @@ const ThongKeTab: React.FC = () => {
     () => statuses.map((s) => ({ label: s.ten, value: s.id, subLabel: s.ma, count: countByTrangThai[s.id] ?? 0 })),
     [statuses, countByTrangThai]
   );
-  const statusActiveInactiveOptions = useMemo(
-    () => [
-      { label: t('danhSachTaiSan.stats.active'), value: '1', subLabel: undefined, count: countByStatus['1'] ?? 0 },
-      { label: t('danhSachTaiSan.stats.inactive'), value: '0', subLabel: undefined, count: countByStatus['0'] ?? 0 },
-    ],
-    [t, countByStatus]
-  );
 
-  const activeFilterCount = filterNhom.length + filterNoiLuu.length + filterTrangThai.length + filterStatus.length;
+  const activeFilterCount = filterNhom.length + filterNoiLuu.length + filterTrangThai.length;
   const handleClearFilters = () => {
     setFilterNhom([]);
     setFilterNoiLuu([]);
     setFilterTrangThai([]);
-    setFilterStatus([]);
   };
 
   const filterGroups = useMemo(
     () => [
-      { key: 'status', label: t('danhSachTaiSan.stats.statusLabel'), icon: Tag, options: statusActiveInactiveOptions, value: filterStatus, onChange: setFilterStatus },
       { key: 'id_nhom', label: t('danhSachTaiSan.store.nhomCol'), icon: Layers, options: groupOptions, value: filterNhom, onChange: setFilterNhom },
       { key: 'id_noi_luu', label: t('danhSachTaiSan.store.noiLuuCol'), icon: MapPin, options: locationOptions, value: filterNoiLuu, onChange: setFilterNoiLuu },
       { key: 'id_trang_thai', label: t('danhSachTaiSan.store.trangThaiCol'), icon: Tag, options: assetStatusOptions, value: filterTrangThai, onChange: setFilterTrangThai },
     ],
-    [groupOptions, locationOptions, assetStatusOptions, statusActiveInactiveOptions, filterNhom, filterNoiLuu, filterTrangThai, filterStatus, t]
+    [groupOptions, locationOptions, assetStatusOptions, filterNhom, filterNoiLuu, filterTrangThai, t]
   );
 
   const renderFilters = (
     <>
-      <FilterChipMultiSelect
-        options={statusActiveInactiveOptions}
-        value={filterStatus}
-        onChange={setFilterStatus}
-        placeholder={t('danhSachTaiSan.stats.statusLabel')}
-        icon={Tag}
-        className="w-full sm:w-[140px]"
-        size="md"
-      />
       <FilterChipMultiSelect
         options={groupOptions}
         value={filterNhom}

@@ -69,12 +69,15 @@ export function farmBaoCaoSoCheToFormNextDay(row: FarmBaoCaoSoChe): BaoCaoSoCheF
   return { ...base, ngay: addCalendarDaysIso(row.ngay, 1) };
 }
 
-export function findBaoCaoSoCheDuplicateByBranchAndDate(
-  items: FarmBaoCaoSoChe[],
+/** Chỉ cần ba trường này để biết một ngày × chi nhánh đã có phiếu hay chưa. */
+export type PhieuTomTatTrung = Pick<FarmBaoCaoSoChe, 'id' | 'ngay' | 'id_chi_nhanh'>;
+
+export function findBaoCaoSoCheDuplicateByBranchAndDate<T extends PhieuTomTatTrung>(
+  items: T[],
   ngay: string,
   idChiNhanh: string | null | undefined,
   excludeId?: string | null
-): FarmBaoCaoSoChe | undefined {
+): T | undefined {
   if (!idChiNhanh || String(idChiNhanh).trim() === '' || !ngay) return undefined;
   const idStr = String(idChiNhanh);
   return items.find(
@@ -86,15 +89,21 @@ export function findBaoCaoSoCheDuplicateByBranchAndDate(
   );
 }
 
+/** Chỉ cần bốn trường này để đoán chi nhánh người dùng hay nhập. */
+export type PhieuTomTatChiNhanh = Pick<
+  FarmBaoCaoSoChe,
+  'id_nguoi_tao' | 'id_chi_nhanh' | 'ten_chi_nhanh'
+> & { tg_tao: string | null };
+
 export function getPreferredBranchFromUserLastRecords(
-  items: FarmBaoCaoSoChe[],
+  items: PhieuTomTatChiNhanh[],
   userId: string | number | undefined
 ): { id_chi_nhanh: string; ten_chi_nhanh: string } | null {
   if (userId == null || userId === '') return null;
   const uid = String(userId);
   const mine = items
     .filter((r) => r.id_nguoi_tao === uid && r.id_chi_nhanh && r.ten_chi_nhanh)
-    .sort((a, b) => new Date(b.tg_tao).getTime() - new Date(a.tg_tao).getTime());
+    .sort((a, b) => new Date(b.tg_tao ?? 0).getTime() - new Date(a.tg_tao ?? 0).getTime());
   const first = mine[0];
   if (!first?.id_chi_nhanh || !first.ten_chi_nhanh) return null;
   return { id_chi_nhanh: first.id_chi_nhanh, ten_chi_nhanh: first.ten_chi_nhanh };

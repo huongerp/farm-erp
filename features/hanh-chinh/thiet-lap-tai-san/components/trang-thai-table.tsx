@@ -20,6 +20,7 @@ const TrangThaiTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, on
   const { t } = useTranslation();
   const {
     columns,
+    resizeColumn,
     pagination,
     setPage,
     setPageSize,
@@ -189,6 +190,7 @@ const TrangThaiTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, on
     <GenericTable
       data={data}
       columns={columns}
+      onResizeColumn={resizeColumn}
       isLoading={isLoading}
       loadingText={t('thietLapTaiSan.trangThai.loading')}
       selectedIds={selectedIds}

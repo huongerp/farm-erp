@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Check, RotateCcw, GripVertical } from 'lucide-react';
+import { Check, RotateCcw, GripVertical, Columns3 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import type { ColumnConfig } from '../../store/createGenericStore';
 import Tooltip from '../ui/Tooltip';
@@ -10,10 +10,12 @@ interface ColumnManagerProps {
   onToggleColumn: (id: string) => void;
   onReorderColumns: (fromIndex: number, toIndex: number) => void;
   onResetColumns: () => void;
+  /** Trả cột về bề rộng tự tính; không truyền thì ẩn nút. */
+  onResetColumnWidths?: () => void;
 }
 
 const ColumnManager: React.FC<ColumnManagerProps> = ({
-  columns, onToggleColumn, onReorderColumns, onResetColumns
+  columns, onToggleColumn, onReorderColumns, onResetColumns, onResetColumnWidths
 }) => {
   const { t } = useTranslation();
   const [dragIndex, setDragIndex] = useState<number | null>(null);
@@ -58,14 +60,27 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
             {visibleCount}/{sorted.length}
           </span>
         </div>
-        <Tooltip content={t('common.reset')} placement="bottom">
-          <button
-            onClick={onResetColumns}
-            className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
-          >
-            <RotateCcw size={12} />
-          </button>
-        </Tooltip>
+        <div className="flex items-center gap-0.5">
+          {onResetColumnWidths && (
+            <Tooltip content={t('common.resetColumnWidths')} placement="bottom">
+              <button
+                onClick={onResetColumnWidths}
+                aria-label={t('common.resetColumnWidths')}
+                className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
+              >
+                <Columns3 size={12} />
+              </button>
+            </Tooltip>
+          )}
+          <Tooltip content={t('common.reset')} placement="bottom">
+            <button
+              onClick={onResetColumns}
+              className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
+            >
+              <RotateCcw size={12} />
+            </button>
+          </Tooltip>
+        </div>
       </div>
 
       {/* Column List */}

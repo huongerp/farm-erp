@@ -1,4 +1,11 @@
-import { db, fetchAllRows } from '../../../../lib/db';
+import { db, fetchAllRows, fetchTablePage, type PaginatedTableResult } from '../../../../lib/db';
+import { applyPostgrestSearch } from '../../../../lib/postgrest-search';
+import {
+  ADMIN_FORM_SORTABLE_DB_COLUMNS,
+  ADMIN_FORM_SORT_MAC_DINH,
+  khoangNgayCuaThang,
+  type AdminFormListServerQuery,
+} from './admin-form-list-query';
 import type { AdminFormRequest } from '../core/types';
 import type { AdminFormValues } from '../core/schema';
 import type { AdminFormStatus, ApprovalStatus } from '../core/constants';
@@ -115,6 +122,82 @@ async function fetchMaps(rows: Row[]): Promise<{ mapLoaiPhieu: Record<number, st
     (nvRows ?? []).forEach((r: Row) => { mapTenNhanVien[Number(r.id)] = (r.ho_va_ten as string) ?? ''; });
   }
   return { mapLoaiPhieu, mapTenNhanVien };
+}
+
+/** Cột tham gia ô tìm kiếm ở server. */
+const ADMIN_FORM_SEARCH_SPEC = {
+  text: ['ly_do', 'ghi_chu', 'ca', 'trang_thai'],
+  numeric: ['id'],
+  dates: ['ngay'],
+} as const;
+
+/** Id nhóm phiếu ứng với các mã loại phiếu app đã chọn. */
+async function timLoaiPhieuIds(types: string[]): Promise<number[]> {
+  if (types.length === 0) return [];
+  const tenVi = types.map((t) => LOAI_PHIEU_APP_TO_VI[t as AdminFormType]).filter(Boolean);
+  if (tenVi.length === 0) return [];
+  const { data } = await db.from(TABLE_NHOM).select('id').in('loai_phieu', tenVi);
+  return (data ?? []).map((r) => Number((r as Row).id)).filter(Number.isFinite);
+}
+
+/** Lọc + sắp xếp dùng chung cho trang danh sách và cho lượt tải phục vụ xuất file. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyAdminFormListQuery(q: any, query: AdminFormListServerQuery, loaiPhieuIds: number[] | null): any {
+  let sel = q;
+
+  if (query.status.length > 0) sel = sel.in('trang_thai', query.status);
+  if (query.shift.length > 0) sel = sel.in('ca', query.shift);
+  if (loaiPhieuIds != null) {
+    sel = loaiPhieuIds.length === 0 ? sel.eq('id', -1) : sel.in('loai_phieu_id', loaiPhieuIds);
+  }
+
+  const thang = khoangNgayCuaThang(query.month);
+  if (thang) sel = sel.gte('ngay', thang.from).lte('ngay', thang.to);
+
+  if (query.nguoiTaoId) {
+    const n = Number(query.nguoiTaoId);
+    sel = Number.isFinite(n) ? sel.eq('nguoi_tao_id', n) : sel.eq('id', -1);
+  }
+  if (query.loaiTruNguoiTaoId) {
+    const n = Number(query.loaiTruNguoiTaoId);
+    if (Number.isFinite(n)) sel = sel.neq('nguoi_tao_id', n);
+  }
+
+  sel = applyPostgrestSearch(sel, query.searchTerm, ADMIN_FORM_SEARCH_SPEC);
+
+  const dbSortable = query.sortColumn != null && ADMIN_FORM_SORTABLE_DB_COLUMNS.has(query.sortColumn);
+  const sortCol = dbSortable ? query.sortColumn! : ADMIN_FORM_SORT_MAC_DINH.column;
+  const ascending = dbSortable ? query.sortDirection !== 'desc' : ADMIN_FORM_SORT_MAC_DINH.ascending;
+
+  return sel.order(sortCol, { ascending }).order('id', { ascending: false });
+}
+
+export async function getAdminFormPage(
+  query: AdminFormListServerQuery
+): Promise<PaginatedTableResult<AdminFormRequest>> {
+  const loaiPhieuIds = query.type.length > 0 ? await timLoaiPhieuIds(query.type) : null;
+  const result = await fetchTablePage<Row>(query.page, query.pageSize, async (from, to) => {
+    const res = await applyAdminFormListQuery(
+      db.from(TABLE).select(ADMIN_FORM_ROW_COLUMNS, { count: 'exact' }),
+      query,
+      loaiPhieuIds
+    ).range(from, to);
+    return { data: (res.data as Row[] | null) ?? null, error: res.error, count: res.count };
+  });
+  const { mapLoaiPhieu, mapTenNhanVien } = await fetchMaps(result.data);
+  return { ...result, data: result.data.map((r) => rowToRequest(r, mapLoaiPhieu, mapTenNhanVien)) };
+}
+
+/** Toàn bộ bản ghi khớp bộ lọc — chỉ gọi khi mở hộp thoại Xuất file. */
+export async function fetchAllAdminFormsForListQuery(
+  query: AdminFormListServerQuery
+): Promise<AdminFormRequest[]> {
+  const loaiPhieuIds = query.type.length > 0 ? await timLoaiPhieuIds(query.type) : null;
+  const rows = await fetchAllRows<Row>((from, to) =>
+    applyAdminFormListQuery(db.from(TABLE).select(ADMIN_FORM_ROW_COLUMNS), query, loaiPhieuIds).range(from, to)
+  );
+  const { mapLoaiPhieu, mapTenNhanVien } = await fetchMaps(rows);
+  return rows.map((r) => rowToRequest(r, mapLoaiPhieu, mapTenNhanVien));
 }
 
 export async function getAdminForms(): Promise<AdminFormRequest[]> {

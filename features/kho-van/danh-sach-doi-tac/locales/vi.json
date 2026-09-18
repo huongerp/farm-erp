@@ -1,7 +1,6 @@
 {
   "doiTac.tabs.nhaCungCap": "Nhà cung cấp",
   "doiTac.tabs.khachHang": "Khách hàng",
-  "doiTac.searchPlaceholder": "Tìm theo mã, tên đối tác, nhóm...",
   "doiTac.loading": "Đang tải danh sách đối tác...",
   "doiTac.empty": "Chưa có đối tác nào",
   "doiTac.emptyHint": "Thêm đối tác để bắt đầu.",
@@ -105,7 +104,6 @@
   "doiTac.danhMuc.deleteTagConfirm": "Bạn có chắc muốn xóa tag này?",
   "doiTac.danhMuc.emptyNhom": "Chưa có nhóm nào",
   "doiTac.danhMuc.emptyTag": "Chưa có tag nào",
-  "doiTac.danhMuc.searchPlaceholder": "Tìm theo mã, tên nhóm...",
   "doiTac.danhMuc.loadingNhom": "Đang tải danh mục...",
   "doiTac.danhMuc.loadingTag": "Đang tải tag...",
   "doiTac.danhMuc.form.maNhom": "Mã nhóm",

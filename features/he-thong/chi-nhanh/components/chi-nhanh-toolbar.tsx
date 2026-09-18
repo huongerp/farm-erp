@@ -28,6 +28,7 @@ const BranchToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onSta
   const toggleColumn = useBranchStore((s) => s.toggleColumn);
   const reorderColumns = useBranchStore((s) => s.reorderColumns);
   const resetColumns = useBranchStore((s) => s.resetColumns);
+  const resetColumnWidths = useBranchStore((s) => s.resetColumnWidths);
   const selectedIds = useBranchStore((s) => s.selectedIds);
   const clearSelection = useBranchStore((s) => s.clearSelection);
 
@@ -87,7 +88,6 @@ const BranchToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onSta
       filters={renderFilters}
       filterGroups={filterGroups}
       onAdd={canCreate ? onAdd : undefined}
-      searchPlaceholder={t('branch.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       onDeleteMany={canDelete ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
@@ -96,6 +96,7 @@ const BranchToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onSta
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
+      onResetColumnWidths={resetColumnWidths}
       showBack
     />
   );

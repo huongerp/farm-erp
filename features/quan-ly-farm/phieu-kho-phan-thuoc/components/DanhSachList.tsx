@@ -9,6 +9,8 @@ import type { ColumnConfig } from '../../../../store/createGenericStore';
 interface Props {
   data: PhieuKhoPT[];
   columns: ColumnConfig[];
+  /** Cho phép kéo đổi bề rộng cột — truyền `resizeColumn` của store. */
+  onResizeColumn?: (id: string, width: number) => void;
   selectedIds: Set<string>;
   onToggleSelection: (id: string) => void;
   onToggleAllSelection: (ids: string[]) => void;
@@ -43,6 +45,7 @@ function LoaiBadge({ loai }: { loai: LoaiPhieuKhoPT }) {
 const DanhSachList: React.FC<Props> = ({
   data,
   columns,
+  onResizeColumn,
   selectedIds,
   onToggleSelection,
   onToggleAllSelection,
@@ -233,6 +236,7 @@ const DanhSachList: React.FC<Props> = ({
     <GenericTable<PhieuKhoPT>
       data={data}
       columns={visibleColumns}
+      onResizeColumn={onResizeColumn}
       selectedIds={selectedIds}
       onToggleSelection={onToggleSelection}
       onToggleAll={onToggleAllSelection}

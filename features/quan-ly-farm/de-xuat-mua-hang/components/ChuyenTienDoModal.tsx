@@ -115,7 +115,6 @@ const ChuyenTienDoModal: React.FC<Props> = ({ open, selectedCount, defaultNgayCa
               value={idTienDo}
               onChange={(v) => setIdTienDo(v ?? null)}
               placeholder={t('deXuatMuaHang.form.tienDoMhPlaceholder')}
-              searchPlaceholder={t('deXuatMuaHang.form.itemSearchPlaceholder')}
               searchable
               required
             />

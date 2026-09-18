@@ -6,7 +6,7 @@ export interface NoiLuuFilters {
   id_chi_nhanh: string[];
 }
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'ten_chi_nhanh', label: i18n.t('thietLapTaiSan.noiLuu.store.branchCol'), visible: true, minWidth: 200, order: 0 },
   { id: 'ma_noi_luu', label: i18n.t('thietLapTaiSan.noiLuu.store.maCol'), visible: true, minWidth: 140, order: 1 },
   { id: 'ten_noi_luu', label: i18n.t('thietLapTaiSan.noiLuu.store.tenCol'), visible: true, minWidth: 200, order: 2 },
@@ -22,5 +22,6 @@ const initialFilters: NoiLuuFilters = {
 
 export const useNoiLuuStore = createGenericStore<NoiLuuFilters>(
   initialFilters,
-  DEFAULT_COLUMNS
+  DEFAULT_COLUMNS,
+  'table-thiet-lap-tai-san-noi-luu'
 );

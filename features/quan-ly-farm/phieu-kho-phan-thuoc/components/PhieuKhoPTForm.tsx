@@ -296,7 +296,6 @@ const PhieuKhoPTForm: React.FC<Props> = ({ khoList, initialData, prefillValues, 
                     value={field.value}
                     onChange={(v) => field.onChange((v ?? 'nhập') as LoaiPhieuKhoPT)}
                     placeholder={t('phieuKhoPhanThuoc.form.loaiPlaceholder')}
-                    searchPlaceholder={t('phieuKhoPhanThuoc.form.itemSearchPlaceholder')}
                     searchable={false}
                     dropdownInPortal
                     required
@@ -324,7 +323,6 @@ const PhieuKhoPTForm: React.FC<Props> = ({ khoList, initialData, prefillValues, 
                       field.onChange(v ?? '');
                     }}
                     placeholder={t('phieuKhoPhanThuoc.form.warehousePlaceholder')}
-                    searchPlaceholder={t('phieuKhoPhanThuoc.form.itemSearchPlaceholder')}
                     searchable
                     dropdownInPortal
                     icon={<Warehouse size={12} />}
@@ -471,7 +469,6 @@ const PhieuKhoPTForm: React.FC<Props> = ({ khoList, initialData, prefillValues, 
                               setValue(`chi_tiet.${index}.pham_cap`, v ? (hangHoaMap[String(v)]?.pham_cap ?? '') : '');
                             }}
                             placeholder={isLoadingHangHoa ? t('common.loading') : t('phieuKhoPhanThuoc.form.itemPlaceholder')}
-                            searchPlaceholder={t('phieuKhoPhanThuoc.form.itemSearchPlaceholder')}
                             searchable
                             disabled={isLoadingHangHoa}
                             triggerClassName="h-9 text-sm border-border rounded-md"

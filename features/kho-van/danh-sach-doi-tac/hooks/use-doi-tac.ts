@@ -1,4 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import type { DoiTacListServerQuery } from '../services/doi-tac-list-query';
 import { toast } from 'sonner';
 import {
   getAllDoiTac,
@@ -17,6 +18,8 @@ import {
   updateDoiTac,
   deleteDoiTac,
   deleteDoiTacMany,
+  getDoiTacPage,
+  getDoiTacTomTat,
 } from '../services/doi-tac-service';
 import type { DoiTacFormValues } from '../core/schema';
 import type { NhomDoiTacFormValues } from '../services/doi-tac-service';
@@ -28,6 +31,26 @@ import { invalidateRefCache } from '../../../../lib/ref-cache';
 const QUERY_KEY_DOI_TAC = ['doiTac'] as const;
 const QUERY_KEY_NHOM = ['nhomDoiTac'] as const;
 const QUERY_KEY_TAG = ['tagDoiTac'] as const;
+
+/** Tóm tắt toàn bộ đối tác (5 cột) cho chip lọc + số thứ tự kế tiếp. */
+export function useDoiTacTomTat() {
+  return useQuery({
+    queryKey: [...QUERY_KEY_DOI_TAC, 'tomTat'],
+    queryFn: getDoiTacTomTat,
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
+/** Một trang danh sách — lọc / sắp xếp / phân trang chạy ở PostgREST. */
+export function useDoiTacPage(query: DoiTacListServerQuery, enabled = true) {
+  return useQuery({
+    queryKey: [...QUERY_KEY_DOI_TAC, 'page', query],
+    queryFn: () => getDoiTacPage(query),
+    enabled,
+    placeholderData: keepPreviousData,
+    staleTime: 1000 * 60 * 2,
+  });
+}
 
 export const useDoiTacList = (loai?: LoaiDoiTac) => {
   return useQuery({

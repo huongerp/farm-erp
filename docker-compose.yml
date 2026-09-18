@@ -4,6 +4,7 @@
 #   /        → web        (SPA Vite, nginx)
 #   /api/*   → postgrest  (thay Supabase REST)
 #   /auth/*  → auth       (thay Supabase Auth)
+#   /notify/*→ notify     (đăng ký Web Push + worker thông báo)
 #
 # Một domain nên KHÔNG có CORS và không có request cross-site nào.
 # Frontend gọi bằng đường dẫn tương đối `/api`, `/auth` → không phải build
@@ -45,8 +46,12 @@ services:
       - traefik.http.routers.farm-api.entrypoints=websecure
       - traefik.http.routers.farm-api.tls.certResolver=letsencrypt
       - traefik.http.routers.farm-api.priority=100
-      - traefik.http.routers.farm-api.middlewares=farm-api-strip
+      - traefik.http.routers.farm-api.middlewares=farm-api-strip,farm-api-compress
       - traefik.http.middlewares.farm-api-strip.stripprefix.prefixes=/api
+      # PostgREST không tự nén; nginx chỉ phục vụ SPA nên không chạm được /api.
+      # JSON lặp key nén còn ~10-20% — đòn bẩy egress lớn nhất của app.
+      - traefik.http.middlewares.farm-api-compress.compress=true
+      - traefik.http.middlewares.farm-api-compress.compress.minresponsebodybytes=1024
       - traefik.http.services.farm-api.loadbalancer.server.port=3000
 
   auth:
@@ -76,6 +81,37 @@ services:
       - traefik.http.middlewares.farm-auth-strip.stripprefix.prefixes=/auth
       - traefik.http.services.farm-auth.loadbalancer.server.port=3001
 
+  notify:
+    build:
+      context: ./services/notify
+    restart: always
+    environment:
+      # Role `notify_service` — chỉ chạm được 4 bảng thông báo và 3 RPC tra cứu.
+      DATABASE_URL: ${NOTIFY_DATABASE_URL}
+      # Dùng chung secret để xác thực access token do auth-service ký.
+      JWT_SECRET: ${PGRST_JWT_SECRET}
+      # Sinh một lần bằng `npx web-push generate-vapid-keys`. Thiếu hai biến này
+      # thì chuông trong app vẫn chạy, chỉ tắt phần đẩy ra màn hình khoá.
+      VAPID_PUBLIC_KEY: ${VITE_VAPID_PUBLIC_KEY}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY}
+      VAPID_SUBJECT: ${VAPID_SUBJECT}
+      COMPANY_TZ: ${COMPANY_TZ:-Asia/Ho_Chi_Minh}
+      PORT: '3002'
+    expose:
+      - '3002'
+    networks:
+      - dokploy-network
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=dokploy-network
+      - traefik.http.routers.farm-notify.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/notify`)
+      - traefik.http.routers.farm-notify.entrypoints=websecure
+      - traefik.http.routers.farm-notify.tls.certResolver=letsencrypt
+      - traefik.http.routers.farm-notify.priority=100
+      - traefik.http.routers.farm-notify.middlewares=farm-notify-strip
+      - traefik.http.middlewares.farm-notify-strip.stripprefix.prefixes=/notify
+      - traefik.http.services.farm-notify.loadbalancer.server.port=3002
+
   web:
     build:
       context: .
@@ -86,6 +122,7 @@ services:
         VITE_CLOUDINARY_CLOUD_NAME: ${VITE_CLOUDINARY_CLOUD_NAME}
         VITE_CLOUDINARY_UPLOAD_PRESET: ${VITE_CLOUDINARY_UPLOAD_PRESET}
         VITE_SENTRY_DSN: ${VITE_SENTRY_DSN}
+        VITE_VAPID_PUBLIC_KEY: ${VITE_VAPID_PUBLIC_KEY}
     restart: always
     expose:
       - '80'

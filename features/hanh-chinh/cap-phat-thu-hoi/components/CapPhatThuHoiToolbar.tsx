@@ -41,6 +41,7 @@ const CapPhatThuHoiToolbar: React.FC<Props> = ({
   const toggleColumn = useCapPhatThuHoiStore((s) => s.toggleColumn);
   const reorderColumns = useCapPhatThuHoiStore((s) => s.reorderColumns);
   const resetColumns = useCapPhatThuHoiStore((s) => s.resetColumns);
+  const resetColumnWidths = useCapPhatThuHoiStore((s) => s.resetColumnWidths);
   const selectedIds = useCapPhatThuHoiStore((s) => s.selectedIds);
   const clearSelection = useCapPhatThuHoiStore((s) => s.clearSelection);
   const { data: employees = [] } = useEmployeesRefQuery();
@@ -191,7 +192,6 @@ const CapPhatThuHoiToolbar: React.FC<Props> = ({
       filters={renderFilters}
       filterGroups={filterGroups}
       onAdd={onAdd}
-      searchPlaceholder={t('capPhatThuHoi.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       onDeleteMany={canDelete && selectedCount > 0 ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
@@ -199,6 +199,7 @@ const CapPhatThuHoiToolbar: React.FC<Props> = ({
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
+      onResetColumnWidths={resetColumnWidths}
       showBack
       mobileActions={mobileActions}
     />

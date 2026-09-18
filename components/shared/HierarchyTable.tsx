@@ -3,7 +3,13 @@ import { useTranslation } from 'react-i18next';
 import { Edit, Trash2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import type { ColumnConfig } from '../../store/createGenericStore';
-import { getColumnCellStyle } from '../../store/createGenericStore';
+import { resolveAutoFitWidth } from '../../lib/table-core/column-autofit';
+import { useAutoFitColumns } from '../../lib/table-core/use-auto-fit-columns';
+import ColumnResizeHandle from './column-header/ColumnResizeHandle';
+
+/** Bề rộng cột checkbox và cột Thao tác (px) — khớp với <colgroup>. */
+const CHECKBOX_WIDTH = 44;
+const ACTIONS_WIDTH = 80;
 
 export interface HierarchyTableProps<T> {
   /** Dữ liệu đã flatten + đã paginate (một trang) */
@@ -25,6 +31,8 @@ export interface HierarchyTableProps<T> {
   actionsColumnLabel?: string;
   /** Class cho container scroll */
   className?: string;
+  /** Cho phép kéo đổi bề rộng cột — truyền `resizeColumn` của store. */
+  onResizeColumn?: (id: string, width: number) => void;
 }
 
 /**
@@ -45,6 +53,7 @@ export function HierarchyTable<T>({
   onView,
   actionsColumnLabel,
   className,
+  onResizeColumn,
 }: HierarchyTableProps<T>) {
   const { t } = useTranslation();
   const currentPageIds = data.map(getId);
@@ -52,6 +61,18 @@ export function HierarchyTable<T>({
   const isIndeterminate =
     currentPageIds.some((id) => selectedIds.has(id)) && !isAllSelected;
   const actionsLabel = actionsColumnLabel ?? t('common.actions');
+  const { autoWidths, setHeaderCellRef } = useAutoFitColumns(
+    data.length > 0,
+    columns.map((c) => c.id).join('|')
+  );
+  const columnWidths = React.useMemo(
+    () => columns.map((col) => resolveAutoFitWidth(col, autoWidths.get(col.id))),
+    [columns, autoWidths]
+  );
+  const tableMinWidth = React.useMemo(
+    () => CHECKBOX_WIDTH + columnWidths.reduce((sum, w) => sum + w, 0) + ACTIONS_WIDTH,
+    [columnWidths]
+  );
 
   return (
     <div
@@ -61,7 +82,20 @@ export function HierarchyTable<T>({
       )}
       style={{ overscrollBehavior: 'contain' }}
     >
-      <table className="w-full text-sm text-left border-separate border-spacing-0">
+      {/* `table-layout: fixed` + <colgroup>: xem chú thích trong GenericTable —
+          không có nó thì kéo cột sẽ "không ăn". */}
+      <table
+        className="text-sm text-left border-separate border-spacing-0"
+        style={{ width: '100%', minWidth: tableMinWidth, tableLayout: 'fixed' }}
+      >
+        <colgroup>
+          <col style={{ width: CHECKBOX_WIDTH }} />
+          {columns.map((col, index) => (
+            <col key={col.id} style={{ width: columnWidths[index] }} />
+          ))}
+          <col />
+          <col style={{ width: ACTIONS_WIDTH }} />
+        </colgroup>
         <thead className="sticky top-0 z-[2]">
           <tr className="bg-muted border-b border-border">
             <th
@@ -83,13 +117,16 @@ export function HierarchyTable<T>({
             {columns.map((col) => (
               <th
                 key={col.id}
-                className="px-3 py-1.5 font-semibold text-foreground/80 border-b border-border text-xs whitespace-nowrap min-w-0"
-                style={getColumnCellStyle(col)}
+                ref={(el) => setHeaderCellRef(col.id, el)}
+                className="relative px-3 py-1.5 font-semibold text-foreground/80 border-b border-border text-xs whitespace-nowrap min-w-0"
               >
                 {col.label}
+                <ColumnResizeHandle col={col} onResizeColumn={onResizeColumn} />
               </th>
             ))}
-            <th className="sticky right-0 z-[3] w-20 min-w-[80px] px-2 py-1.5 bg-muted border-b border-l border-border text-center font-semibold text-foreground/80 text-xs">
+            {/* Cột đệm: nuốt phần dư khi khung rộng hơn tổng bề rộng cột. */}
+            <th className="bg-muted border-b border-border" aria-hidden />
+            <th className="sticky right-0 z-[3] px-2 py-1.5 bg-muted border-b border-l border-border text-center font-semibold text-foreground/80 text-xs">
               {actionsLabel}
             </th>
           </tr>
@@ -131,9 +168,10 @@ export function HierarchyTable<T>({
                   />
                 </td>
                 {columns.map((col) => renderCell(item, col))}
+                <td aria-hidden />
                 <td
                   className={cn(
-                    'sticky right-0 z-[1] w-20 min-w-[80px] px-2 py-1.5 border-l border-border text-center transition-colors',
+                    'sticky right-0 z-[1] px-2 py-1.5 border-l border-border text-center transition-colors',
                     isRoot ? 'bg-muted/40' : 'bg-card',
                     isSelected && 'bg-primary/5',
                     'group-hover:bg-muted/80'

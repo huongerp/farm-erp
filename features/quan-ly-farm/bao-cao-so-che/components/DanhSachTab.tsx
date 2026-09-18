@@ -4,14 +4,16 @@ import { toast } from 'sonner';
 import { AnimatePresence } from 'framer-motion';
 import { Lock, Unlock } from 'lucide-react';
 import {
-  useBaoCaoSoCheList,
+  useBaoCaoSoChePage,
+  useBaoCaoSoCheTomTat,
   useBaoCaoSoCheById,
   useDeleteBaoCaoSoChe,
   useDeleteBaoCaoSoCheMany,
 } from '../hooks/use-bao-cao-so-che';
 import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
-import { useBaoCaoSoCheStore, type BaoCaoSoCheFilters } from '../store/useBaoCaoSoCheStore';
-import { useListWithFilter } from '../../../../lib/hooks';
+import type { BaoCaoSoCheListServerQuery } from '../services/bao-cao-so-che-list-query';
+import { fetchAllBaoCaoSoCheForListQuery } from '../services/bao-cao-so-che-service';
+import { useBaoCaoSoCheStore } from '../store/useBaoCaoSoCheStore';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL, CONFIRM_YES } from '../../../../lib/button-labels';
 import type { FarmBaoCaoSoChe } from '../core/types';
@@ -28,6 +30,7 @@ import BaoCaoSoCheToolbar from './BaoCaoSoCheToolbar';
 import BaoCaoSoCheList from './BaoCaoSoCheList';
 import BaoCaoSoCheForm from './BaoCaoSoCheForm';
 import BaoCaoSoCheDetail from './BaoCaoSoCheDetail';
+
 import {
   mapFarmBaoCaoSoCheListRow,
   getExportColumnsBaoCaoSoCheList,
@@ -52,13 +55,18 @@ const DanhSachTab: React.FC = () => {
     resetState,
     selectedIds,
     columns,
+    resizeColumn,
     clearSelection,
     toggleSelection,
     toggleAllSelection,
     pagination,
     setPage,
     setPageSize,
+    sort,
+    setSort,
   } = useBaoCaoSoCheStore();
+
+  const viewScope = useBaoCaoSoCheViewScope();
 
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<FarmBaoCaoSoChe | null>(null);
@@ -66,17 +74,46 @@ const DanhSachTab: React.FC = () => {
   const [openedFormFromDetailId, setOpenedFormFromDetailId] = useState<string | null>(null);
   const [showExport, setShowExport] = useState(false);
 
-  const { data: allList = [], isLoading } = useBaoCaoSoCheList();
-  const viewScope = useBaoCaoSoCheViewScope();
-  const scopedList = useMemo(() => {
-    if (viewScope.isLoading || viewScope.viewAll) return allList;
-    return allList.filter((item) => viewScope.allowedBranchIds.includes(item.id_chi_nhanh ?? ''));
-  }, [allList, viewScope]);
+  /**
+   * Bộ lọc gửi thẳng xuống PostgREST: màn này chỉ tải ĐÚNG một trang thay vì cả
+   * bảng cha + ba bảng con như trước.
+   */
+  const listServerQuery: BaoCaoSoCheListServerQuery = useMemo(
+    () => ({
+      page: pagination.page - 1,
+      pageSize: pagination.pageSize,
+      searchTerm,
+      viewAll: viewScope.viewAll,
+      allowedBranchIds: viewScope.allowedBranchIds,
+      nam: filters.nam ?? [],
+      thang: filters.thang ?? [],
+      trangThai: filters.trang_thai ?? [],
+      idChiNhanh: filters.id_chi_nhanh ?? [],
+      donViTinh: filters.don_vi_tinh ?? [],
+      sortColumn: sort.column,
+      sortDirection: sort.direction,
+    }),
+    [pagination.page, pagination.pageSize, searchTerm, viewScope.viewAll, viewScope.allowedBranchIds, filters, sort]
+  );
+
+  const pageQuery = useBaoCaoSoChePage(listServerQuery, !viewScope.isLoading);
+  const pageList = pageQuery.data?.data ?? [];
+  const totalCount = pageQuery.data?.totalCount ?? 0;
+  const isLoading = !pageQuery.data && pageQuery.isPending;
+  const isFetching = !!pageQuery.data && pageQuery.isFetching;
+
+  /** Bản tóm tắt toàn bộ: chip lọc + số đếm, gợi ý chi nhánh, chặn trùng ngày. */
+  const { data: tomTatList = [] } = useBaoCaoSoCheTomTat(
+    viewScope.viewAll,
+    viewScope.allowedBranchIds,
+    !viewScope.isLoading
+  );
+
   const { data: branches = [] } = useBranches();
   const user = useAuthStore((s) => s.user);
   const preferredBranch = useMemo(
-    () => getPreferredBranchFromUserLastRecords(allList, user?.id),
-    [allList, user?.id]
+    () => getPreferredBranchFromUserLastRecords(tomTatList, user?.id),
+    [tomTatList, user?.id]
   );
   const { data: viewingFull } = useBaoCaoSoCheById(viewingItem?.id);
   const { data: editingFull } = useBaoCaoSoCheById(editingItem?.id);
@@ -84,51 +121,44 @@ const DanhSachTab: React.FC = () => {
   const deleteManyMutation = useDeleteBaoCaoSoCheMany();
   const trangThaiManyMutation = useUpdateBaoCaoSoCheTrangThaiMany();
 
-  const filterFn = useCallback((item: FarmBaoCaoSoChe, term: string, f: BaoCaoSoCheFilters) => {
-    const q = term.trim().toLowerCase();
-    const kpiTextBlob = (item.kpi_thuong ?? [])
-      .flatMap((k) => [
-        k.ten_hang_muc,
-        k.don_vi_tinh,
-        k.muc_tieu,
-        k.thuc_te,
-        k.danh_gia,
-        k.ghi_chu,
-      ])
-      .filter(Boolean)
-      .join(' ')
-      .toLowerCase();
-    const matchesSearch =
-      !q ||
-      (item.ten_chi_nhanh?.toLowerCase().includes(q) ?? false) ||
-      (item.ten_nguoi_tao?.toLowerCase().includes(q) ?? false) ||
-      (item.ghi_chu?.toLowerCase().includes(q) ?? false) ||
-      (item.don_vi_tinh?.toLowerCase().includes(q) ?? false) ||
-      kpiTextBlob.includes(q) ||
-      String(item.ngay).includes(q);
-    const matchesBranch =
-      (f.id_chi_nhanh?.length ?? 0) === 0 ||
-      (item.id_chi_nhanh != null && (f.id_chi_nhanh ?? []).includes(item.id_chi_nhanh));
-    const y = item.ngay?.slice(0, 4) ?? '';
-    const ym = item.ngay?.slice(0, 7) ?? '';
-    const matchesNam = (f.nam?.length ?? 0) === 0 || (f.nam ?? []).includes(y);
-    const matchesThang = (f.thang?.length ?? 0) === 0 || (f.thang ?? []).includes(ym);
-    const matchesTrangThai = (f.trang_thai?.length ?? 0) === 0 || (f.trang_thai ?? []).includes(item.trang_thai ?? '');
-    const matchesDvt = (f.don_vi_tinh?.length ?? 0) === 0 || (f.don_vi_tinh ?? []).includes(item.don_vi_tinh ?? '');
-    return matchesSearch && matchesBranch && matchesNam && matchesThang && matchesTrangThai && matchesDvt;
-  }, []);
-
-  const filteredList = useListWithFilter(scopedList, searchTerm, filters, filterFn);
-
   const exportColumns = useMemo(() => getExportColumnsBaoCaoSoCheList(t), [t]);
   const exportMapFn = useCallback(
     (item: FarmBaoCaoSoChe) => mapFarmBaoCaoSoCheListRow(item, t),
     [t]
   );
+  /**
+   * Xuất file cần TẤT CẢ bản ghi khớp bộ lọc, không chỉ trang đang xem — nên chỉ
+   * tải khi người dùng thực sự mở hộp thoại Xuất.
+   */
+  const [exportRows, setExportRows] = useState<FarmBaoCaoSoChe[]>([]);
+  const [exportLoading, setExportLoading] = useState(false);
+  useEffect(() => {
+    if (!showExport) {
+      setExportRows([]);
+      setExportLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setExportLoading(true);
+    fetchAllBaoCaoSoCheForListQuery(listServerQuery)
+      .then((rows) => {
+        if (!cancelled) setExportRows(rows);
+      })
+      .catch(() => {
+        if (!cancelled) setExportRows([]);
+      })
+      .finally(() => {
+        if (!cancelled) setExportLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [showExport, listServerQuery]);
+
   const { exportData, paginatedData: paginatedExportData, selectedData: selectedExportData } =
     useExportData({
-      data: filteredList,
-      isOpen: showExport,
+      data: exportRows,
+      isOpen: showExport && !exportLoading,
       mapFn: exportMapFn,
       pagination,
       selectedIds,
@@ -136,32 +166,29 @@ const DanhSachTab: React.FC = () => {
     });
 
   const handleExport = useCallback(() => {
-    if (filteredList.length === 0) {
+    if (totalCount === 0) {
       toast.warning(t('baoCaoSoChe.noExportData'));
       return;
     }
     setShowExport(true);
-  }, [filteredList.length, t]);
+  }, [totalCount, t]);
 
   useEffect(() => {
     return () => resetState();
   }, [resetState]);
 
-  useEffect(() => {
-    setPage(1);
-  }, [filteredList.length, setPage]);
-
-  const maxPage = Math.max(1, Math.ceil(filteredList.length / pagination.pageSize));
+  // Xoá bớt bản ghi hoặc đổi bộ lọc làm tổng số giảm: lùi về trang cuối còn dữ liệu.
+  const maxPage = Math.max(1, Math.ceil(totalCount / pagination.pageSize));
   useEffect(() => {
     if (pagination.page > maxPage) setPage(maxPage);
   }, [pagination.page, pagination.pageSize, maxPage, setPage]);
 
   useEffect(() => {
     if (!viewingItem) return;
-    const fresh = allList.find((p) => p.id === viewingItem.id);
+    const fresh = pageList.find((p) => p.id === viewingItem.id);
     if (fresh && fresh !== viewingItem) setViewingItem(fresh);
     if (!fresh) setViewingItem(null);
-  }, [allList, viewingItem]);
+  }, [pageList, viewingItem]);
 
   const handleEdit = (item: FarmBaoCaoSoChe, fromDetail = false) => {
     if (!canEditRow(item)) {
@@ -181,13 +208,13 @@ const DanhSachTab: React.FC = () => {
     setEditingItem(null);
     setOpenedFormFromDetailId(null);
     if (wasFromDetail && detailId) {
-      const fresh = allList.find((r) => r.id === detailId) ?? null;
+      const fresh = pageList.find((r) => r.id === detailId) ?? null;
       setViewingItem(fresh);
     }
   };
 
   const handleDelete = (id: string) => {
-    const item = allList.find((r) => r.id === id);
+    const item = pageList.find((r) => r.id === id);
     if (!item || !canDeleteRow(item)) {
       toast.message(t('baoCaoSoChe.toast.deleteNotAllowed'));
       return;
@@ -210,7 +237,7 @@ const DanhSachTab: React.FC = () => {
   const handleDeleteMany = () => {
     const ids = Array.from(selectedIds);
     const allowedIds = ids.filter((id) => {
-      const item = allList.find((r) => r.id === id);
+      const item = pageList.find((r) => r.id === id);
       return item && canDeleteRow(item);
     });
     if (allowedIds.length === 0) {
@@ -241,7 +268,7 @@ const DanhSachTab: React.FC = () => {
   const handleToggleTrangThaiMany = (trangThai: TrangThaiBaoCaoSoChePhieu) => {
     const ids = Array.from(selectedIds);
     const allowedIds = ids.filter((id) => {
-      const item = allList.find((r) => r.id === id);
+      const item = pageList.find((r) => r.id === id);
       return item && item.trang_thai !== trangThai;
     });
     if (allowedIds.length === 0) {
@@ -291,10 +318,10 @@ const DanhSachTab: React.FC = () => {
     if (!canDelete) return false;
     if (selectedIds.size === 0) return true;
     return Array.from(selectedIds).some((id) => {
-      const item = allList.find((r) => r.id === id);
+      const item = pageList.find((r) => r.id === id);
       return item && canDeleteRow(item);
     });
-  }, [canDelete, selectedIds, allList, canDeleteRow]);
+  }, [canDelete, selectedIds, pageList, canDeleteRow]);
 
   const viewedRow = viewingFull ?? viewingItem;
   const detailCanUpdate = viewedRow ? canEditRow(viewedRow) : false;
@@ -304,7 +331,7 @@ const DanhSachTab: React.FC = () => {
   return (
     <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
       <BaoCaoSoCheToolbar
-        data={filteredList}
+        data={tomTatList}
         branches={branches}
         selectedCount={selectedIds.size}
         onAdd={() => {
@@ -320,8 +347,13 @@ const DanhSachTab: React.FC = () => {
       />
       <div className="flex-1 min-h-0 flex flex-col px-4 pb-4 pt-1">
         <BaoCaoSoCheList
-          data={filteredList}
+          data={pageList}
+          totalRecordsOverride={totalCount}
+          isFetching={isFetching}
+          sort={sort}
+          onSort={setSort}
           columns={columns}
+          onResizeColumn={resizeColumn}
           selectedIds={selectedIds}
           onToggleSelection={toggleSelection}
           onToggleAllSelection={toggleAllSelection}
@@ -358,7 +390,7 @@ const DanhSachTab: React.FC = () => {
             branches={branches}
             initialData={editingFull ?? editingItem}
             preferredBranch={editingItem ? undefined : preferredBranch}
-            existingList={allList}
+            existingList={tomTatList}
             onClose={handleCloseForm}
             canAdmin={canAdmin}
           />
@@ -369,7 +401,7 @@ const DanhSachTab: React.FC = () => {
         {viewingItem && !showForm && (
           <BaoCaoSoCheDetail
             data={viewingFull ?? viewingItem}
-            existingList={allList}
+            existingList={tomTatList}
             onClose={() => setViewingItem(null)}
             onEdit={detailCanUpdate ? (item) => handleEdit(item, true) : undefined}
             onDelete={detailCanDelete ? handleDelete : undefined}

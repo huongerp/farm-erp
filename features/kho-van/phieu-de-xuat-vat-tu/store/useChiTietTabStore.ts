@@ -14,7 +14,7 @@ export interface ChiTietTabFilters {
   tienDoMh: string[];
 }
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'so_phieu', label: i18n.t('phieuDeXuatVatTu.store.soPhieuCol'), visible: true, minWidth: 120, maxWidth: 170, order: 0 },
   { id: 'ngay', label: i18n.t('phieuDeXuatVatTu.store.ngayCol'), visible: true, minWidth: 132, maxWidth: 168, order: 1 },
   { id: 'ngay_can', label: i18n.t('phieuDeXuatVatTu.store.ngayCanCol'), visible: true, minWidth: 132, maxWidth: 168, order: 2 },
@@ -46,5 +46,6 @@ const initialFilters: ChiTietTabFilters = {
 
 export const useChiTietTabStore = createGenericStore<ChiTietTabFilters>(
   initialFilters,
-  DEFAULT_COLUMNS
+  DEFAULT_COLUMNS,
+  'table-phieu-de-xuat-vat-tu-chi-tiet-tab'
 );

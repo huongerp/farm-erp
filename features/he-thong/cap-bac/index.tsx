@@ -12,13 +12,17 @@ import JobLevelTable from './components/cap-bac-table';
 import ExportDialog from '../../../components/shared/LazyExportDialog';
 
 import { useJobLevels, useDeleteJobLevel, useUpdateStatusJobLevel } from './hooks/use-cap-bac';
-import { useJobLevelStore } from './store/useJobLevelStore';
+import { useJobLevelStore, DEFAULT_COLUMNS } from './store/useJobLevelStore';
 import { useConfirmStore } from '../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_YES, CONFIRM_DELETE_ALL } from '../../../lib/button-labels';
 import { useListWithFilter } from '../../../lib/hooks';
 import { useExportData } from '../../../lib/useExportData';
 import { JobLevel } from './core/types';
 import { TRANG_THAI_HOAT_DONG, type TrangThaiHoatDong } from '../../../lib/constants';
+import { createListSearchMatcher } from '../../../lib/list-search-matcher';
+
+/** Ô tìm kiếm quét MỌI cột của bảng, bỏ dấu tiếng Việt — xem lib/list-search-matcher.ts. */
+const khopTimKiem = createListSearchMatcher({ columns: DEFAULT_COLUMNS });
 
 const JobLevelPage: React.FC = () => {
   const { t } = useTranslation();
@@ -59,12 +63,7 @@ const JobLevelPage: React.FC = () => {
 
   const filterFn = useCallback(
     (item: JobLevel, term: string, f: typeof filters) => {
-      const searchLower = term.toLowerCase();
-      const matchesSearch =
-        !term ||
-        item.ten_cap_bac.toLowerCase().includes(searchLower) ||
-        (item.mo_ta && item.mo_ta.toLowerCase().includes(searchLower)) ||
-        String(item.cap_bac).includes(term);
+      const matchesSearch = khopTimKiem(item, term);
       const statusKey = item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? 'Active' : 'Inactive';
       const matchesStatus = f.status.length === 0 || f.status.includes(statusKey);
       return matchesSearch && matchesStatus;

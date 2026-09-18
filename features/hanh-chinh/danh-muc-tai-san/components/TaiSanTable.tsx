@@ -10,6 +10,10 @@ import { formatDateTimeShort, formatCurrency, formatDate } from '../../../../lib
 interface Props {
   data: TaiSan[];
   isLoading: boolean;
+  /** Đang tải trang mới nhưng đã có dữ liệu cũ — hiện lớp phủ mờ thay vì skeleton. */
+  isFetching?: boolean;
+  /** Tổng số bản ghi khớp bộ lọc (phân trang ở server). */
+  totalRecordsOverride?: number;
   onEdit: (item: TaiSan) => void;
   onDelete: (id: string) => void;
   onView?: (item: TaiSan) => void;
@@ -21,6 +25,8 @@ interface Props {
 const TaiSanTable: React.FC<Props> = ({
   data,
   isLoading,
+  isFetching,
+  totalRecordsOverride,
   onEdit,
   onDelete,
   onView,
@@ -31,6 +37,7 @@ const TaiSanTable: React.FC<Props> = ({
   const { t } = useTranslation();
   const {
     columns,
+    resizeColumn,
     pagination,
     setPage,
     setPageSize,
@@ -40,17 +47,6 @@ const TaiSanTable: React.FC<Props> = ({
     sort,
     setSort,
   } = useDanhSachTaiSanStore();
-
-  const renderStatusBadge = (status: number) =>
-    status === 1 ? (
-      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
-        {t('common.active')}
-      </span>
-    ) : (
-      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border">
-        {t('common.inactive')}
-      </span>
-    );
 
   const renderCell = (colId: string, item: TaiSan) => {
     switch (colId) {
@@ -176,8 +172,6 @@ const TaiSanTable: React.FC<Props> = ({
         ) : (
           <span className="text-xs text-muted-foreground">—</span>
         );
-      case 'trang_thai':
-        return renderStatusBadge(item.trang_thai);
       case 'tg_cap_nhat':
         return (
           <span className="text-xs text-muted-foreground tabular-nums">
@@ -263,7 +257,6 @@ const TaiSanTable: React.FC<Props> = ({
           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
             <span className="text-xs font-mono text-muted-foreground">{item.ma_tai_san}</span>
             <span className="text-xs text-muted-foreground">{item.ten_nhom || '—'}</span>
-            {renderStatusBadge(item.trang_thai)}
           </div>
         </div>
       </div>
@@ -312,7 +305,10 @@ const TaiSanTable: React.FC<Props> = ({
     <GenericTable
       data={data}
       columns={columns}
+      onResizeColumn={resizeColumn}
       isLoading={isLoading}
+      isFetching={isFetching}
+      totalRecordsOverride={totalRecordsOverride}
       loadingText={t('danhSachTaiSan.loading')}
       selectedIds={selectedIds}
       onToggleSelection={toggleSelection}

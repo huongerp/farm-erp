@@ -18,3 +18,5 @@ export const createDiemCongTruRecord = (
 export const updateDiemCongTruRecord = updateDiemCongTruRecordSupabase;
 
 export const deleteDiemCongTruRecords = deleteDiemCongTruRecordsSupabase;
+
+export { getDiemCongTruPage } from './diem-cong-tru-supabase.service';

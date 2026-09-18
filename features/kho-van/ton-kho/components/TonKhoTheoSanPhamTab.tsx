@@ -22,6 +22,7 @@ import {
   mergeWarehouseColumns,
   isKhoColumnId,
   khoIdFromColumnId,
+  DEFAULT_COLUMNS_BY_PRODUCT,
 } from '../store/useTonKhoStore';
 import type { TonKhoFilters } from '../store/useTonKhoStore';
 import { useListWithFilter } from '../../../../lib/hooks';
@@ -34,6 +35,10 @@ import { cn, formatDateTime } from '../../../../lib/utils';
 import { TonKhoLoaiBadge } from './TonKhoLoaiBadge';
 import { computeTonSauByChiTiet } from '../utils/lich-su-ton-sau';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
+import { createListSearchMatcher } from '../../../../lib/list-search-matcher';
+
+/** Ô tìm kiếm quét MỌI cột của bảng, bỏ dấu tiếng Việt — xem lib/list-search-matcher.ts. */
+const khopTimKiem = createListSearchMatcher({ columns: DEFAULT_COLUMNS_BY_PRODUCT });
 
 /** Cột cố định bên trái khi cuộn ngang trên tab Theo sản phẩm. */
 const STICKY_LEFT_COL_IDS = new Set(['ma_hang', 'ten_hang']);
@@ -374,6 +379,7 @@ const TonKhoTheoSanPhamTab: React.FC = () => {
   const toggleColumn = useTonKhoByProductStore((s) => s.toggleColumn);
   const reorderColumns = useTonKhoByProductStore((s) => s.reorderColumns);
   const resetColumns = useTonKhoByProductStore((s) => s.resetColumns);
+  const resetColumnWidths = useTonKhoByProductStore((s) => s.resetColumnWidths);
   const setColumns = useTonKhoByProductStore((s) => s.setColumns);
   const pagination = useTonKhoByProductStore((s) => s.pagination);
   const setPage = useTonKhoByProductStore((s) => s.setPage);
@@ -396,10 +402,7 @@ const TonKhoTheoSanPhamTab: React.FC = () => {
   }, [khoList, columns, setColumns]);
 
   const filterFn = useCallback((item: RowProduct, term: string, f: TonKhoFilters) => {
-    if (term.trim()) {
-      const s = term.toLowerCase();
-      if (!item.ma_hang.toLowerCase().includes(s) && !item.ten_hang.toLowerCase().includes(s)) return false;
-    }
+    if (!khopTimKiem(item, term)) return false;
     if (f.belowMinStock?.includes('Yes') && !item.canh_bao) return false;
     if ((f.categoryIds?.length ?? 0) > 0) {
       const cat = item.ten_danh_muc ?? '';
@@ -606,11 +609,11 @@ const TonKhoTheoSanPhamTab: React.FC = () => {
         <TonKhoToolbar
           searchTerm={searchInput}
           onSearchChange={setSearchInput}
-          searchPlaceholder={t('tonKho.byProduct.searchPlaceholder')}
           columns={columns}
           onToggleColumn={toggleColumn}
           onReorderColumns={reorderColumns}
           onResetColumns={resetColumns}
+          onResetColumnWidths={resetColumnWidths}
           filters={renderFilters}
           activeFilterCount={activeFilterCount}
           onClearAllFilters={handleClearAllFilters}

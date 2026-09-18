@@ -7,11 +7,10 @@ import DotKiemKeTable from './DotKiemKeTable';
 import DotKiemKeDetail from './DotKiemKeDetail';
 import DotKiemKeForm from './DotKiemKeForm';
 import TaoDanhSachKiemKeDialog from './TaoDanhSachKiemKeDialog';
-import { useDotKiemKeList, useDotKiemKeById, useChiTietByDot, useDeleteDotKiemKe, useTaoDanhSachKiemKe, useHoanThanhDot, useChangeTrangThaiDot } from '../hooks/use-kiem-ke-tai-san';
+import { useDotKiemKePage, useDotKiemKeById, useChiTietByDot, useDeleteDotKiemKe, useTaoDanhSachKiemKe, useHoanThanhDot, useChangeTrangThaiDot } from '../hooks/use-kiem-ke-tai-san';
 import { useKiemKeTaiSanViewScope } from '../hooks/use-kiem-ke-tai-san-view-scope';
 import { useAuthStore } from '../../../../store/useStore';
 import { useKiemKeTaiSanStore } from '../store/useKiemKeTaiSanStore';
-import { getLanguage } from '../../../../lib/utils';
 import Select from '../../../../components/ui/Select';
 import { CONFIRM_DELETE, CONFIRM_YES } from '../../../../lib/button-labels';
 import { TRANG_THAI_DOT_OPTIONS } from '../core/constants';
@@ -21,22 +20,31 @@ const DotTab: React.FC = () => {
   const { t } = useTranslation();
   const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
-  const { searchTerm, filters, sort, resetState, clearSelection } = useKiemKeTaiSanStore();
+  const { searchTerm, filters, pagination, resetState, clearSelection } = useKiemKeTaiSanStore();
   const user = useAuthStore((s) => s.user);
   const { viewAll } = useKiemKeTaiSanViewScope();
-  const { data: list = [], isLoading } = useDotKiemKeList({
-    q: searchTerm || undefined,
-    trang_thai_dot: filters.trang_thai_dot.length ? filters.trang_thai_dot : undefined,
-    dateFrom: filters.dateFrom || undefined,
-    dateTo: filters.dateTo || undefined,
-    id_nguoi_phu_trach: filters.id_nguoi_phu_trach.length ? filters.id_nguoi_phu_trach : undefined,
-  });
+  /** Bộ lọc + phạm vi xem gửi thẳng xuống PostgREST — trước đây tải hết đợt rồi lọc. */
+  const listParams = useMemo(
+    () => ({
+      q: searchTerm || undefined,
+      trang_thai_dot: filters.trang_thai_dot.length ? filters.trang_thai_dot : undefined,
+      dateFrom: filters.dateFrom || undefined,
+      dateTo: filters.dateTo || undefined,
+      id_nguoi_phu_trach: filters.id_nguoi_phu_trach.length ? filters.id_nguoi_phu_trach : undefined,
+    }),
+    [searchTerm, filters]
+  );
 
-  const viewableList = useMemo(() => {
-    if (viewAll) return list;
-    const myId = user?.id ?? '';
-    return list.filter((d) => String(d.id_nguoi_phu_trach) === String(myId));
-  }, [list, viewAll, user?.id]);
+  const pageQuery = useDotKiemKePage(
+    pagination.page - 1,
+    pagination.pageSize,
+    listParams,
+    viewAll ? null : (user?.id ? String(user.id) : null)
+  );
+  const pageList = pageQuery.data?.data ?? [];
+  const totalCount = pageQuery.data?.totalCount ?? 0;
+  const isLoading = !pageQuery.data && pageQuery.isPending;
+  const isFetching = !!pageQuery.data && pageQuery.isFetching;
 
   const deleteMutation = useDeleteDotKiemKe();
   const taoDanhSachMutation = useTaoDanhSachKiemKe();
@@ -52,20 +60,6 @@ const DotTab: React.FC = () => {
     return () => resetState();
   }, [resetState]);
 
-  const sortedList = useMemo(() => {
-    if (!sort.column || !sort.direction) return viewableList;
-    const sorted = [...viewableList];
-    sorted.sort((a, b) => {
-      const aVal = a[sort.column as keyof DotKiemKe] ?? '';
-      const bVal = b[sort.column as keyof DotKiemKe] ?? '';
-      const cmp =
-        typeof aVal === 'number' && typeof bVal === 'number'
-          ? aVal - bVal
-          : String(aVal).localeCompare(String(bVal), getLanguage());
-      return sort.direction === 'desc' ? -cmp : cmp;
-    });
-    return sorted;
-  }, [viewableList, sort]);
 
   const handleAdd = useCallback(() => {
     setEditingDot(null);
@@ -156,7 +150,7 @@ const DotTab: React.FC = () => {
   return (
     <div className="flex flex-col flex-1 min-h-0">
       <KiemKeTaiSanToolbar
-        items={sortedList}
+        items={pageList}
         onAdd={handleAdd}
         onDeleteMany={handleDeleteMany}
         showAdd={canCreate}
@@ -164,7 +158,9 @@ const DotTab: React.FC = () => {
       />
       <div className="flex-1 min-h-0 mt-1.5">
         <DotKiemKeTable
-          data={sortedList}
+          data={pageList}
+          totalRecordsOverride={totalCount}
+          isFetching={isFetching}
           isLoading={isLoading}
           onView={handleView}
           onEdit={canUpdate ? handleEdit : undefined}

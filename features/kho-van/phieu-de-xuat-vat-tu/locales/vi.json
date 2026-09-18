@@ -122,7 +122,6 @@
   "phieuDeXuatVatTu.toast.bulkApproveSuccess": "Đã cập nhật {{count}} phiếu",
   "phieuDeXuatVatTu.toast.bulkApprovePartial": "Đã cập nhật {{ok}}/{{total}} phiếu, {{failed}} phiếu lỗi",
   "phieuDeXuatVatTu.toast.deleteSuccess": "Xóa phiếu đề xuất vật tư thành công",
-  "phieuDeXuatVatTu.searchPlaceholder": "tìm kiếm...",
   "phieuDeXuatVatTu.noExportData": "Không có dữ liệu để xuất.",
   "phieuDeXuatVatTu.export.list.so_phieu": "Số phiếu",
   "phieuDeXuatVatTu.export.list.ngay": "Ngày",

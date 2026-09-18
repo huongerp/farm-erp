@@ -144,7 +144,6 @@ const ChiTietRowEditModal: React.FC<Props> = ({ open, initialData, onClose, onSa
                 setTenTienDoMh(item?.ten ?? null);
               }}
               placeholder={t('phieuDeXuatVatTu.form.tienDoMhPlaceholder')}
-              searchPlaceholder={t('phieuDeXuatVatTu.form.itemSearchPlaceholder')}
               searchable
             />
             <div className="flex justify-end gap-2 pt-2">

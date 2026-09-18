@@ -8,7 +8,7 @@ export interface AdminFormFilters {
   month: string;
 }
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'ngay', label: i18n.t('adminForm.store.dateCol'), visible: true, minWidth: 110, order: 0 },
   { id: 'loai_phieu', label: i18n.t('adminForm.store.typeCol'), visible: true, minWidth: 160, order: 1 },
   { id: 'ca', label: i18n.t('adminForm.store.shiftCol'), visible: true, minWidth: 100, order: 2 },
@@ -27,5 +27,6 @@ const initialFilters: AdminFormFilters = {
 
 export const useAdminFormMyStore = createGenericStore<AdminFormFilters>(
   initialFilters,
-  DEFAULT_COLUMNS
+  DEFAULT_COLUMNS,
+  'table-phieu-hanh-chinh-admin-form-my'
 );

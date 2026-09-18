@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import type { PhieuTomTatTrung } from '../core/form-mappers';
 import ReactDOM from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import BaoCaoNhanCongChuyenTable from './BaoCaoNhanCongChuyenTable';
@@ -28,7 +29,8 @@ import DetailDrawerFooter from '../../../../components/shared/DetailDrawerFooter
 
 interface Props {
   data: FarmBaoCaoNhanCong;
-  existingList: FarmBaoCaoNhanCong[];
+  /** Danh sách tóm tắt để chặn trùng ngày × chi nhánh (xem service `getBaoCaoNhanCongTomTat`). */
+  existingList: PhieuTomTatTrung[];
   onClose: () => void;
   onEdit?: (item: FarmBaoCaoNhanCong) => void;
   onDelete?: (id: string) => void;

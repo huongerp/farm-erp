@@ -1,7 +1,6 @@
 {
   "farmHangHoaPhanThuoc.tabs.danhMuc": "Danh mục",
   "farmHangHoaPhanThuoc.tabs.hangHoa": "Hàng hóa",
-  "farmHangHoaPhanThuoc.danhMuc.searchPlaceholder": "Tìm theo mã, tên danh mục...",
   "farmHangHoaPhanThuoc.danhMuc.loading": "Đang tải danh mục...",
   "farmHangHoaPhanThuoc.danhMuc.empty": "Chưa có danh mục nào",
   "farmHangHoaPhanThuoc.danhMuc.emptyHint": "Thêm nhóm hoặc danh mục con để bắt đầu.",
@@ -52,7 +51,6 @@
   "farmHangHoaPhanThuoc.danhMuc.service.hasChildren": "Không thể xóa danh mục đang có danh mục con.",
   "farmHangHoaPhanThuoc.danhMuc.service.hasHangHoa": "Không thể xóa danh mục đang được dùng bởi hàng hóa (tab Hàng hóa). Hãy gỡ hoặc đổi danh mục của các hàng hóa liên quan trước.",
   "farmHangHoaPhanThuoc.danhMuc.footerRecords": "bản ghi",
-  "farmHangHoaPhanThuoc.hangHoa.searchPlaceholder": "Tìm theo mã, tên hàng, danh mục, đơn vị...",
   "farmHangHoaPhanThuoc.hangHoa.filters.danhMucCha": "Danh mục cấp 1",
   "farmHangHoaPhanThuoc.hangHoa.filters.danhMucCon": "Danh mục cấp 2",
   "farmHangHoaPhanThuoc.hangHoa.filters.dvt": "Đơn vị tính",

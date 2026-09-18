@@ -337,7 +337,6 @@ const DeXuatMuaHangForm: React.FC<Props> = ({ khoList, employees, initialData, o
                   value={field.value || null}
                   onChange={(v) => field.onChange(v ?? '')}
                   placeholder={t('deXuatMuaHang.form.placePlaceholder')}
-                  searchPlaceholder={t('deXuatMuaHang.form.itemSearchPlaceholder')}
                   icon={<Warehouse size={12} />}
                   required
                   disabled={readOnly}
@@ -357,7 +356,6 @@ const DeXuatMuaHangForm: React.FC<Props> = ({ khoList, employees, initialData, o
                   value={field.value || null}
                   onChange={(v) => field.onChange(v ?? '')}
                   placeholder={t('deXuatMuaHang.form.requesterPlaceholder')}
-                  searchPlaceholder={t('deXuatMuaHang.form.itemSearchPlaceholder')}
                   icon={<User size={12} />}
                   required
                   disabled={readOnly}
@@ -378,7 +376,6 @@ const DeXuatMuaHangForm: React.FC<Props> = ({ khoList, employees, initialData, o
                     value={field.value ?? null}
                     onChange={(v) => field.onChange(v === '' || v == null ? null : v)}
                     placeholder={t('deXuatMuaHang.form.approverPlaceholder')}
-                    searchPlaceholder={t('deXuatMuaHang.form.itemSearchPlaceholder')}
                     icon={<UserCheck size={12} />}
                     disabled={readOnly}
                     error={errors.id_nguoi_duyet?.message}
@@ -414,7 +411,6 @@ const DeXuatMuaHangForm: React.FC<Props> = ({ khoList, employees, initialData, o
                       value={field.value ?? ''}
                       onChange={(v) => field.onChange(v ?? TRANG_THAI_CHO_DUYET)}
                       placeholder={t('deXuatMuaHang.form.status')}
-                      searchPlaceholder={t('deXuatMuaHang.form.itemSearchPlaceholder')}
                       disabled={readOnly}
                       searchable
                       dropdownInPortal
@@ -503,7 +499,6 @@ const DeXuatMuaHangForm: React.FC<Props> = ({ khoList, employees, initialData, o
                               f.onChange(v ?? '');
                             }}
                             placeholder={t('deXuatMuaHang.form.itemPlaceholder')}
-                            searchPlaceholder={t('deXuatMuaHang.form.itemSearchPlaceholder')}
                             searchable
                             triggerClassName="h-9 text-sm border-border rounded-md"
                             dropdownInPortal
@@ -545,7 +540,6 @@ const DeXuatMuaHangForm: React.FC<Props> = ({ khoList, employees, initialData, o
                               if (item) setValue(`chi_tiet.${index}.ten_tien_do_mh`, item.ten);
                             }}
                             placeholder={t('deXuatMuaHang.form.tienDoMhPlaceholder')}
-                            searchPlaceholder={t('deXuatMuaHang.form.itemSearchPlaceholder')}
                             searchable
                             triggerClassName="h-9 text-sm border-border rounded-md"
                             dropdownInPortal

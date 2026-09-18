@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo } from 'react';
+import i18n from '../../../../lib/i18n';
 import { useTranslation } from 'react-i18next';
 import AdminFormQuotaToolbar from './quota-toolbar';
 import AdminFormQuotaTable from './quota-table';
-import { useAdminFormQuotaStore } from '../store/useAdminFormQuotaStore';
+import { useAdminFormQuotaStore, DEFAULT_COLUMNS } from '../store/useAdminFormQuotaStore';
 import { useAdminForms } from '../hooks/use-admin-form';
 import { usePayrollAdminFormGroups } from '../../thiet-lap-cong-luong/hooks/use-payroll-form-group';
 import { useAuthStore } from '../../../../store/useStore';
@@ -10,6 +11,15 @@ import { getAdminFormTypeLabel } from '../../thiet-lap-cong-luong/core/constants
 import { ADMIN_FORM_SHIFT_WEIGHT } from '../core/constants';
 import { AdminFormQuotaRow } from '../core/types';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
+import { createListSearchMatcher } from '../../../../lib/list-search-matcher';
+
+/** Ô tìm kiếm quét MỌI cột của bảng, bỏ dấu tiếng Việt — xem lib/list-search-matcher.ts. */
+const khopTimKiem = createListSearchMatcher<AdminFormQuotaRow>({
+  columns: DEFAULT_COLUMNS,
+  // Nhãn tiếng Việt của loại phiếu chỉ có sau khi dịch — không nằm trên bản ghi.
+  getCellText: (colId, item) =>
+    colId === 'loai_phieu' ? getAdminFormTypeLabel(item.loai_phieu, i18n.t.bind(i18n)) : '',
+});
 
 const AdminFormQuotaTab: React.FC = () => {
   const { t } = useTranslation();
@@ -22,6 +32,7 @@ const AdminFormQuotaTab: React.FC = () => {
   const toggleColumn = useAdminFormQuotaStore((s) => s.toggleColumn);
   const reorderColumns = useAdminFormQuotaStore((s) => s.reorderColumns);
   const resetColumns = useAdminFormQuotaStore((s) => s.resetColumns);
+  const resetColumnWidths = useAdminFormQuotaStore((s) => s.resetColumnWidths);
   const selectedIds = useAdminFormQuotaStore((s) => s.selectedIds);
   const clearSelection = useAdminFormQuotaStore((s) => s.clearSelection);
   const resetState = useAdminFormQuotaStore((s) => s.resetState);
@@ -65,10 +76,8 @@ const AdminFormQuotaTab: React.FC = () => {
   }, [forms, groups, filters.month, effectiveUserId]);
 
   const filteredRows = useMemo(() => {
-    const searchLower = searchTerm.toLowerCase();
     return rows.filter((row) => {
-      const matchesSearch =
-        !searchTerm || getAdminFormTypeLabel(row.loai_phieu, t).toLowerCase().includes(searchLower);
+      const matchesSearch = khopTimKiem(row, searchTerm);
       const matchesType = filters.type.length === 0 || filters.type.includes(row.loai_phieu);
       return matchesSearch && matchesType;
     });
@@ -86,9 +95,9 @@ const AdminFormQuotaTab: React.FC = () => {
         toggleColumn={toggleColumn}
         reorderColumns={reorderColumns}
         resetColumns={resetColumns}
+        resetColumnWidths={resetColumnWidths}
         selectedIds={selectedIds}
         clearSelection={clearSelection}
-        searchPlaceholder={t('adminForm.quota.searchPlaceholder')}
       />
       <div className="flex-1 min-h-0">
         <AdminFormQuotaTable

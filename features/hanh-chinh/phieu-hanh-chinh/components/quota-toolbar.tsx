@@ -31,9 +31,9 @@ interface Props {
   toggleColumn: (id: string) => void;
   reorderColumns: (fromIndex: number, toIndex: number) => void;
   resetColumns: () => void;
+  resetColumnWidths: () => void;
   selectedIds: Set<string>;
   clearSelection: () => void;
-  searchPlaceholder: string;
 }
 
 const AdminFormQuotaToolbar: React.FC<Props> = ({
@@ -46,9 +46,9 @@ const AdminFormQuotaToolbar: React.FC<Props> = ({
   toggleColumn,
   reorderColumns,
   resetColumns,
+  resetColumnWidths,
   selectedIds,
   clearSelection,
-  searchPlaceholder,
 }) => {
   const { t } = useTranslation();
   const selectedCount = selectedIds.size;
@@ -121,13 +121,13 @@ const AdminFormQuotaToolbar: React.FC<Props> = ({
       onClearSelection={clearSelection}
       filters={renderFilters}
       filterGroups={filterGroups}
-      searchPlaceholder={searchPlaceholder}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       columns={columns}
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
+      onResetColumnWidths={resetColumnWidths}
       showBack
     />
   );

@@ -28,6 +28,7 @@ const NhomTaiSanToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, o
   const toggleColumn = useNhomTaiSanStore((s) => s.toggleColumn);
   const reorderColumns = useNhomTaiSanStore((s) => s.reorderColumns);
   const resetColumns = useNhomTaiSanStore((s) => s.resetColumns);
+  const resetColumnWidths = useNhomTaiSanStore((s) => s.resetColumnWidths);
   const selectedIds = useNhomTaiSanStore((s) => s.selectedIds);
   const clearSelection = useNhomTaiSanStore((s) => s.clearSelection);
 
@@ -75,7 +76,6 @@ const NhomTaiSanToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, o
       filters={renderFilters}
       filterGroups={[{ key: 'status', label: t('common.status'), icon: Layers, options: statusOptions, value: filters.status, onChange: (val: string[]) => setFilter('status', val) }]}
       onAdd={canCreate ? onAdd : undefined}
-      searchPlaceholder={t('thietLapTaiSan.nhomTaiSan.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       onDeleteMany={canDelete ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
@@ -84,6 +84,7 @@ const NhomTaiSanToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, o
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
+      onResetColumnWidths={resetColumnWidths}
       showBack
     />
   );

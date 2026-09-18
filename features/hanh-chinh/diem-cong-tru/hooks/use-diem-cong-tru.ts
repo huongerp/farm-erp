@@ -1,4 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import type { DiemCongTruListServerQuery } from '../services/diem-cong-tru-list-query';
 import { toast } from 'sonner';
 import i18n from '../../../../lib/i18n';
 import {
@@ -7,10 +8,22 @@ import {
   updateDiemCongTruRecord,
   deleteDiemCongTruRecords,
   getPayrollPointGroupsForModule,
+  getDiemCongTruPage,
 } from '../services/diem-cong-tru-service';
 import { getEmployeesRef } from '@/features/he-thong/nhan-vien/services/nhan-vien-service';
 import { useAuthStore } from '../../../../store/useStore';
 import { DiemCongTruFormValues } from '../core/schema';
+
+/** Một trang danh sách — lọc / sắp xếp / phân trang chạy ở PostgREST. */
+export function useDiemCongTruPage(query: DiemCongTruListServerQuery, enabled = true) {
+  return useQuery({
+    queryKey: ['diemCongTruRecords', 'page', query],
+    queryFn: () => getDiemCongTruPage(query),
+    enabled,
+    placeholderData: keepPreviousData,
+    staleTime: 1000 * 60 * 2,
+  });
+}
 
 export const useDiemCongTruRecords = () =>
   useQuery({

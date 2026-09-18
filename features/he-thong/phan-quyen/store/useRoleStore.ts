@@ -3,7 +3,7 @@ import { createGenericStore, ColumnConfig } from '../../../../store/createGeneri
 import { RoleFilters } from '../core/types';
 import i18n from '../../../../lib/i18n';
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'vai_tro', label: i18n.t('permission.store.roleCol'), visible: true, minWidth: 220, order: 0 },
   { id: 'mo_ta', label: i18n.t('permission.store.descCol'), visible: true, minWidth: 300, order: 1 },
   { id: 'thong_ke', label: i18n.t('permission.store.statsCol'), visible: true, minWidth: 150, order: 2 },
@@ -18,5 +18,6 @@ const initialFilters: RoleFilters = {
 
 export const useRoleStore = createGenericStore<RoleFilters>(
   initialFilters,
-  DEFAULT_COLUMNS
+  DEFAULT_COLUMNS,
+  'table-phan-quyen-role'
 );

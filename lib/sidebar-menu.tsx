@@ -5,6 +5,7 @@ import {
   FileText,
   ShoppingCart,
   Sprout,
+  Wallet,
   Layers,
 } from 'lucide-react';
 
@@ -32,11 +33,10 @@ export const SIDEBAR_MENU: MenuItem[] = [
     icon: FileText,
     gradient: 'bg-gradient-to-br from-amber-600 to-amber-800',
   },
-  // Ẩn: Nhân sự, Kinh doanh, Marketing, Tài chính, Điều hành
+  // Ẩn: Nhân sự, Kinh doanh, Marketing, Điều hành
   // { path: '/nhan-su', nameKey: 'nav.nhanSu', ... },
   // { path: '/kinh-doanh', nameKey: 'nav.kinhDoanh', ... },
   // { path: '/marketing', nameKey: 'nav.marketing', ... },
-  // { path: '/tai-chinh', nameKey: 'nav.taiChinh', ... },
   {
     path: '/mua-hang',
     nameKey: 'nav.muaHang',
@@ -50,6 +50,13 @@ export const SIDEBAR_MENU: MenuItem[] = [
     descriptionKey: 'page.home.quanLyFarmDesc',
     icon: Sprout,
     gradient: 'bg-gradient-to-br from-emerald-600 to-emerald-900',
+  },
+  {
+    path: '/tai-chinh',
+    nameKey: 'nav.taiChinh',
+    descriptionKey: 'page.home.taiChinhDesc',
+    icon: Wallet,
+    gradient: 'bg-gradient-to-br from-rose-600 to-rose-800',
   },
   // Kho vận đã chuyển vào submenu Mua hàng
   // Ẩn: Điều hành
@@ -70,11 +77,12 @@ export const SIDEBAR_MENU: MenuItem[] = [
   },
 ];
 
-/** Các path là submenu (trang danh sách chức năng). Ẩn: tai-chinh. Kho vận đã gộp vào Mua hàng. */
+/** Các path là submenu (trang danh sách chức năng). Kho vận đã gộp vào Mua hàng. */
 export const SUBMENU_PATHS = [
   '/hanh-chinh',
   '/mua-hang',
   '/quan-ly-farm',
+  '/tai-chinh',
 ];
 
 export function isSubmenuPath(path: string): boolean {

@@ -12,13 +12,17 @@ import {
   useDeleteAssetStorageLocations,
   useUpdateAssetStorageLocationStatus,
 } from '../hooks/use-noi-luu';
-import { useNoiLuuStore } from '../store/useNoiLuuStore';
+import { useNoiLuuStore, DEFAULT_COLUMNS } from '../store/useNoiLuuStore';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_YES, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
 import { useListWithFilter } from '../../../../lib/hooks';
 import { getLanguage } from '../../../../lib/utils';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { AssetStorageLocation } from '../core/types';
+import { createListSearchMatcher } from '../../../../lib/list-search-matcher';
+
+/** Ô tìm kiếm quét MỌI cột của bảng, bỏ dấu tiếng Việt — xem lib/list-search-matcher.ts. */
+const khopTimKiem = createListSearchMatcher({ columns: DEFAULT_COLUMNS });
 
 export interface NoiLuuTabViewScope {
   viewAll: false;
@@ -73,14 +77,7 @@ const NoiLuuTab: React.FC<NoiLuuTabProps> = ({ viewScope }) => {
 
   const filterFn = useCallback(
     (item: AssetStorageLocation, term: string, f: typeof filters) => {
-      const searchLower = term.toLowerCase();
-      const matchesSearch = Boolean(
-        !term ||
-        item.ma_noi_luu.toLowerCase().includes(searchLower) ||
-        item.ten_noi_luu.toLowerCase().includes(searchLower) ||
-        (item.ten_chi_nhanh && item.ten_chi_nhanh.toLowerCase().includes(searchLower)) ||
-        (item.ghi_chu && item.ghi_chu.toLowerCase().includes(searchLower))
-      );
+      const matchesSearch = khopTimKiem(item, term);
       const statusKey = item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? 'Active' : 'Inactive';
       const matchesStatus = f.status.length === 0 || f.status.includes(statusKey);
       const matchesBranch = f.id_chi_nhanh.length === 0 || f.id_chi_nhanh.includes(item.id_chi_nhanh);

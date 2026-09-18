@@ -3,7 +3,19 @@
  * Bảng: fp_ts_chi_phi_tai_san (phiếu), fp_ts_trang_thai_chi_phi_tai_san (thiết lập trạng thái).
  * Map: id_trang_thai + ten_trang_thai (DB) <-> trang_thai enum (app: cho_duyet | da_duyet | khong_duyet).
  */
-import { db, throwSupabaseError } from '../../../../lib/db';
+import {
+  db,
+  fetchAllRows,
+  fetchTablePage,
+  throwSupabaseError,
+  type PaginatedTableResult,
+} from '../../../../lib/db';
+import { applyPostgrestSearch } from '../../../../lib/postgrest-search';
+import {
+  BTSC_SORTABLE_DB_COLUMNS,
+  BTSC_SORT_MAC_DINH,
+  type BaoTriSuaChuaListServerQuery,
+} from './bao-tri-sua-chua-list-query';
 import { formatDate, formatDateShort } from '../../../../lib/utils';
 import type { PhieuBaoTriSuaChua, PhieuBaoTriSuaChuaCreate } from '../core/types';
 import type { TrangThaiPhieu } from '../core/types';
@@ -159,6 +171,81 @@ export interface GetPhieuChiPhiListParams {
   dateFrom?: string;
   dateTo?: string;
   id_tai_san?: string | string[];
+}
+
+/** Cột tham gia ô tìm kiếm ở server. */
+const BTSC_SEARCH_SPEC = {
+  text: [
+    'ma_phieu',
+    'ma_tai_san',
+    'ten_tai_san',
+    'ten_hang_muc',
+    'mo_ta',
+    'ghi_chu',
+    'ten_trang_thai',
+    'nguoi_duyet',
+    'ten_nguoi_tao',
+  ],
+  numeric: ['id', 'so_tien'],
+  dates: ['ngay'],
+} as const;
+
+/** Lọc + sắp xếp dùng chung cho trang danh sách và cho lượt tải phục vụ xuất file. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyBtscListQuery(q: any, query: BaoTriSuaChuaListServerQuery): any {
+  let sel = q;
+
+  if (query.idTaiSan.length > 0) {
+    sel = sel.in('id_tai_san', query.idTaiSan.map(Number).filter(Number.isFinite));
+  }
+  if (query.hangMuc.length > 0) sel = sel.in('id_hang_muc', query.hangMuc);
+  if (query.trangThai.length > 0) sel = sel.in('id_trang_thai', query.trangThai);
+  if (query.idNguoiTao.length > 0) {
+    sel = sel.in('id_nguoi_tao', query.idNguoiTao.map(Number).filter(Number.isFinite));
+  }
+  if (query.ngayFrom) sel = sel.gte('ngay', query.ngayFrom);
+  if (query.ngayTo) sel = sel.lte('ngay', query.ngayTo);
+
+  // Phạm vi xem: phiếu do mình tạo HOẶC phiếu của tài sản mình được xem.
+  if (query.idTaiSanChoPhep != null) {
+    const ids = query.idTaiSanChoPhep.map(Number).filter(Number.isFinite);
+    const me = query.idNguoiTaoCuaToi != null ? Number(query.idNguoiTaoCuaToi) : NaN;
+    const veChuoi: string[] = [];
+    if (Number.isFinite(me)) veChuoi.push(`id_nguoi_tao.eq.${me}`);
+    if (ids.length > 0) veChuoi.push(`id_tai_san.in.(${ids.join(',')})`);
+    sel = veChuoi.length > 0 ? sel.or(veChuoi.join(',')) : sel.eq('id', -1);
+  }
+
+  sel = applyPostgrestSearch(sel, query.searchTerm, BTSC_SEARCH_SPEC);
+
+  const dbSortable = query.sortColumn != null && BTSC_SORTABLE_DB_COLUMNS.has(query.sortColumn);
+  const sortCol = dbSortable ? query.sortColumn! : BTSC_SORT_MAC_DINH.column;
+  const ascending = dbSortable ? query.sortDirection !== 'desc' : BTSC_SORT_MAC_DINH.ascending;
+
+  return sel.order(sortCol, { ascending }).order('id', { ascending: false });
+}
+
+export async function getPhieuChiPhiPageSupabase(
+  query: BaoTriSuaChuaListServerQuery
+): Promise<PaginatedTableResult<PhieuBaoTriSuaChua>> {
+  const result = await fetchTablePage<DbPhieuRow>(query.page, query.pageSize, async (from, to) => {
+    const res = await applyBtscListQuery(
+      db.from(TABLE_PHIEU).select(PHIEU_CHI_PHI_ROW_COLUMNS, { count: 'exact' }),
+      query
+    ).range(from, to);
+    return { data: (res.data as unknown as DbPhieuRow[] | null) ?? null, error: res.error, count: res.count };
+  });
+  return { ...result, data: result.data.map((r) => rowToPhieu(r)) };
+}
+
+/** Toàn bộ bản ghi khớp bộ lọc — chỉ gọi khi mở hộp thoại Xuất file. */
+export async function fetchAllPhieuChiPhiForListQuery(
+  query: BaoTriSuaChuaListServerQuery
+): Promise<PhieuBaoTriSuaChua[]> {
+  const rows = await fetchAllRows<DbPhieuRow>((from, to) =>
+    applyBtscListQuery(db.from(TABLE_PHIEU).select(PHIEU_CHI_PHI_ROW_COLUMNS), query).range(from, to)
+  );
+  return rows.map((r) => rowToPhieu(r));
 }
 
 export async function getPhieuChiPhiListSupabase(

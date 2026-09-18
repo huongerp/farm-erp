@@ -1,4 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import type { BaoTriSuaChuaListServerQuery } from '../services/bao-tri-sua-chua-list-query';
 import { toast } from 'sonner';
 import i18n from '../../../../lib/i18n';
 import {
@@ -7,11 +8,23 @@ import {
   deletePhieuBaoTri,
   createPhieuBaoTri,
   updatePhieuBaoTri,
+  getPhieuBaoTriPage,
   type GetPhieuBaoTriListParams,
 } from '../services/bao-tri-sua-chua-service';
 import type { PhieuBaoTriSuaChua, PhieuBaoTriSuaChuaCreate } from '../core/types';
 
 const QUERY_KEY = ['phieuBaoTriSuaChua'] as const;
+
+/** Một trang danh sách — lọc / sắp xếp / phân trang chạy ở PostgREST. */
+export function usePhieuBaoTriPage(query: BaoTriSuaChuaListServerQuery, enabled = true) {
+  return useQuery({
+    queryKey: [...QUERY_KEY, 'page', query],
+    queryFn: () => getPhieuBaoTriPage(query),
+    enabled,
+    placeholderData: keepPreviousData,
+    staleTime: 1000 * 60 * 2,
+  });
+}
 
 export const usePhieuBaoTriList = (params: GetPhieuBaoTriListParams = {}) =>
   useQuery({

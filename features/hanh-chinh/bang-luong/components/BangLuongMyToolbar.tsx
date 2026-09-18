@@ -24,6 +24,7 @@ const BangLuongMyToolbar: React.FC<Props> = ({ onAdd, onClearSelection, selected
   const toggleColumn = useBangLuongMyStore((s) => s.toggleColumn);
   const reorderColumns = useBangLuongMyStore((s) => s.reorderColumns);
   const resetColumns = useBangLuongMyStore((s) => s.resetColumns);
+  const resetColumnWidths = useBangLuongMyStore((s) => s.resetColumnWidths);
   const selectedIds = useBangLuongMyStore((s) => s.selectedIds);
 
   const activeFilterCount = filters.yearMonth ? 1 : 0;
@@ -62,13 +63,13 @@ const BangLuongMyToolbar: React.FC<Props> = ({ onAdd, onClearSelection, selected
       filters={renderFilters}
       onDeleteMany={canDelete && onDeleteMany && selectedIds.size > 0 ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
       filterGroups={[]}
-      searchPlaceholder={t('bangLuong.my.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       columns={columns}
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
+      onResetColumnWidths={resetColumnWidths}
       showBack
     />
   );

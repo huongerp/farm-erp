@@ -6,7 +6,7 @@ export interface PayrollFormGroupFilters {
   type: string[];
 }
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'loai_phieu', label: i18n.t('payrollIp.groups.store.typeCol'), visible: true, minWidth: 200, order: 0 },
   { id: 'so_luong_thang', label: i18n.t('payrollIp.groups.store.quotaCol'), visible: true, minWidth: 140, order: 1 },
   { id: 'ghi_chu', label: i18n.t('payrollIp.groups.store.noteCol'), visible: true, minWidth: 200, order: 2 },
@@ -21,5 +21,6 @@ const initialFilters: PayrollFormGroupFilters = {
 
 export const usePayrollFormGroupStore = createGenericStore<PayrollFormGroupFilters>(
   initialFilters,
-  DEFAULT_COLUMNS
+  DEFAULT_COLUMNS,
+  'table-thiet-lap-cong-luong-payroll-form-group'
 );

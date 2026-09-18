@@ -5,15 +5,23 @@ import { cn, formatDateShort, formatDateTimeShort, formatNumberVN } from '../../
 import type { FarmDuBaoSlDongThung } from '../core/types';
 import { computeDuBaoSlDongThungKpiFromFarm } from '../core/kpi';
 import GenericTable from '../../../../components/shared/GenericTable';
-import type { ColumnConfig } from '../../../../store/createGenericStore';
+import type { ColumnConfig, SortState } from '../../../../store/createGenericStore';
 
 interface Props {
   data: FarmDuBaoSlDongThung[];
   columns: ColumnConfig[];
+  /** Cho phép kéo đổi bề rộng cột — truyền `resizeColumn` của store. */
+  onResizeColumn?: (id: string, width: number) => void;
   selectedIds: Set<string>;
   onToggleSelection: (id: string) => void;
   onToggleAllSelection: (ids: string[]) => void;
   isLoading: boolean;
+  /** Đang tải trang mới nhưng đã có dữ liệu cũ — hiện lớp phủ mờ thay vì skeleton. */
+  isFetching?: boolean;
+  /** Tổng số bản ghi khớp bộ lọc (phân trang ở server). */
+  totalRecordsOverride?: number;
+  sort?: SortState;
+  onSort?: (column: string | null, direction: 'asc' | 'desc' | null) => void;
   page: number;
   pageSize: number;
   onPageChange: (page: number) => void;
@@ -27,7 +35,12 @@ interface Props {
 
 const DuBaoSlDongThungList: React.FC<Props> = ({
   data,
+  isFetching,
+  totalRecordsOverride,
+  sort,
+  onSort,
   columns,
+  onResizeColumn,
   selectedIds,
   onToggleSelection,
   onToggleAllSelection,
@@ -248,7 +261,12 @@ const DuBaoSlDongThungList: React.FC<Props> = ({
     <GenericTable<FarmDuBaoSlDongThung>
       data={data}
       columns={visibleColumns}
+      onResizeColumn={onResizeColumn}
       isLoading={isLoading}
+      isFetching={isFetching}
+      totalRecordsOverride={totalRecordsOverride}
+      sort={sort}
+      onSort={onSort}
       loadingText={t('duBaoSlDongThung.loading')}
       selectedIds={selectedIds}
       onToggleSelection={onToggleSelection}

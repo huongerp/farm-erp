@@ -43,7 +43,10 @@ export type FeatureI18nKey =
   | 'thiet-lap-de-xuat-mua-hang'
   | 'thong-ke-san-xuat'
   | 'thu-hoach'
-  | 'ton-kho-phan-thuoc';
+  | 'ton-kho-phan-thuoc'
+  | 'thiet-lap-quy'
+  | 'thu-chi-quy'
+  | 'thong-ke-quy';
 
 const FEATURE_I18N_KEYS = new Set<FeatureI18nKey>([
   'bao-tri-sua-chua',
@@ -76,6 +79,9 @@ const FEATURE_I18N_KEYS = new Set<FeatureI18nKey>([
   'thong-ke-san-xuat',
   'thu-hoach',
   'ton-kho-phan-thuoc',
+  'thiet-lap-quy',
+  'thu-chi-quy',
+  'thong-ke-quy',
 ]);
 
 /** Slug submenu → key locale (khi slug ≠ tên file feature). */
@@ -122,6 +128,9 @@ const FEATURE_I18N_LOADERS: Record<FeatureI18nKey, () => Promise<{ default: Reco
   'thong-ke-san-xuat': () => import('../features/quan-ly-farm/thong-ke-san-xuat/locales/vi.json'),
   'thu-hoach': () => import('../features/quan-ly-farm/thu-hoach/locales/vi.json'),
   'ton-kho-phan-thuoc': () => import('../features/quan-ly-farm/ton-kho-phan-thuoc/locales/vi.json'),
+  'thiet-lap-quy': () => import('../features/tai-chinh/thiet-lap-quy/locales/vi.json'),
+  'thu-chi-quy': () => import('../features/tai-chinh/thu-chi-quy/locales/vi.json'),
+  'thong-ke-quy': () => import('../features/tai-chinh/thong-ke-quy/locales/vi.json'),
 };
 
 /**
@@ -134,13 +143,13 @@ const FEATURE_I18N_DEPS: Partial<Record<FeatureI18nKey, FeatureI18nKey[]>> = {
   'bao-cao-nhan-cong': ['bao-cao-so-che'],
   'bao-cao-nhap-xuat-ton': ['danh-muc-hang-hoa', 'danh-sach-hang-hoa', 'phieu-kho'],
   'bao-cao-so-che': ['bao-cao-nhan-cong', 'du-bao-sl-dong-thung'],
-  'bao-tri-sua-chua': ['danh-muc-tai-san', 'thiet-lap-tai-san'],
+  'bao-tri-sua-chua': ['danh-muc-tai-san', 'thiet-lap-tai-san', 'thu-chi-quy'],
   'cap-phat-thu-hoi': ['danh-muc-tai-san', 'thiet-lap-tai-san'],
   'danh-muc-tai-san': ['bao-tri-sua-chua', 'cap-phat-thu-hoi', 'thiet-lap-tai-san'],
   'danh-sach-doi-tac': ['phieu-kho'],
   'danh-sach-hang-hoa': ['danh-muc-hang-hoa', 'ton-kho'],
-  'de-xuat-mua-hang': ['hang-hoa-phan-thuoc', 'phieu-kho', 'phieu-kho-phan-thuoc', 'thiet-lap-de-xuat-mua-hang'],
-  'don-dat-hang': ['danh-sach-doi-tac', 'danh-sach-hang-hoa', 'phieu-de-xuat-vat-tu', 'phieu-kho'],
+  'de-xuat-mua-hang': ['hang-hoa-phan-thuoc', 'phieu-kho', 'phieu-kho-phan-thuoc', 'thiet-lap-de-xuat-mua-hang', 'thu-chi-quy'],
+  'don-dat-hang': ['danh-sach-doi-tac', 'danh-sach-hang-hoa', 'phieu-de-xuat-vat-tu', 'phieu-kho', 'thu-chi-quy'],
   'hang-hoa-phan-thuoc': ['ton-kho-phan-thuoc'],
   'khau-hao-tai-san': ['danh-muc-tai-san', 'thiet-lap-tai-san'],
   'kiem-ke-kho': ['danh-muc-hang-hoa', 'danh-sach-hang-hoa', 'phieu-kho', 'ton-kho'],
@@ -154,6 +163,8 @@ const FEATURE_I18N_DEPS: Partial<Record<FeatureI18nKey, FeatureI18nKey[]>> = {
   'thiet-lap-tai-san': ['danh-muc-tai-san'],
   'thong-ke-san-xuat': ['bao-cao-nhan-cong', 'bao-cao-so-che', 'du-bao-sl-dong-thung'],
   'ton-kho': ['bao-cao-nhap-xuat-ton', 'phieu-kho'],
+  'thong-ke-quy': ['thu-chi-quy'],
+  'thu-chi-quy': ['thiet-lap-quy'],
   'ton-kho-phan-thuoc': ['hang-hoa-phan-thuoc', 'phieu-kho', 'phieu-kho-phan-thuoc', 'ton-kho'],
 };
 
@@ -201,6 +212,27 @@ export async function loadFeatureI18n(key: FeatureI18nKey): Promise<void> {
 export async function loadFeatureI18nForSubmenuSlug(slug: string): Promise<void> {
   const key = resolveFeatureI18nKey(slug);
   if (key) await loadFeatureI18n(key);
+}
+
+/**
+ * Nội dung trang hướng dẫn (locales/vi/guide.json, 188 khoá ~53 KB) — nạp khi mở
+ * route `/:nhom/:moduleId/huong-dan`, không nằm trong chunk chính. Hai khoá dùng
+ * ở shell (nút Hướng dẫn, breadcrumb) vẫn eager qua locales/vi/guide-shell.json.
+ */
+let guideI18nPending: Promise<void> | null = null;
+
+export function loadGuideI18n(): Promise<void> {
+  if (!guideI18nPending) {
+    guideI18nPending = import('../locales/vi/guide.json')
+      .then((mod) => {
+        i18n.addResourceBundle('vi', 'translation', mod.default, true, true);
+      })
+      .catch((err) => {
+        guideI18nPending = null;
+        console.error('[feature-i18n] không nạp được locale "guide":', err);
+      });
+  }
+  return guideI18nPending;
 }
 
 export function wrapModuleImportWithFeatureI18n<T extends { default: unknown }>(

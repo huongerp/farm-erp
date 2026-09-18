@@ -144,6 +144,7 @@ export function employeeToUser(emp: Employee): User {
     created_at: new Date().toISOString(),
     id_phong_ban: emp.id_phong_ban ?? null,
     id_chuc_vu: emp.id_chuc_vu ?? null,
+    ten_chuc_vu: emp.ten_chuc_vu ?? null,
     id_chi_nhanh: emp.id_chi_nhanh?.[0] ?? null,
     // Chỉ lấy đúng cột cap_bac; id_cap_bac là khoá ngoại fp_var_cap_bac.id, không phải số cấp bậc.
     cap_bac: emp.cap_bac ?? null,

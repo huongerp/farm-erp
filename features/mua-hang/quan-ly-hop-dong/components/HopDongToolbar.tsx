@@ -50,6 +50,7 @@ const HopDongToolbar: React.FC<Props> = ({
   const toggleColumn = useHopDongStore((s) => s.toggleColumn);
   const reorderColumns = useHopDongStore((s) => s.reorderColumns);
   const resetColumns = useHopDongStore((s) => s.resetColumns);
+  const resetColumnWidths = useHopDongStore((s) => s.resetColumnWidths);
 
   const { inputValue: searchInput, setInputValue: setSearchInput } = useSearchInputCommit({
     committedTerm: searchTerm,
@@ -299,13 +300,13 @@ const HopDongToolbar: React.FC<Props> = ({
       filterGroups={filterGroups}
       onAdd={canCreate ? onAdd : undefined}
       showBack
-      searchPlaceholder={t('hopDong.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       columns={columns}
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
+      onResetColumnWidths={resetColumnWidths}
     />
   );
 };

@@ -1,7 +1,20 @@
 /**
  * Báo cáo sơ chế — Supabase fp_farm_bao_cao_so_che + fp_farm_bao_cao_so_che_ct + fp_farm_bao_cao_so_che_pham_cap + fp_farm_bao_cao_so_che_kpi
  */
-import { db, throwSupabaseError, formatSupabaseError } from '../../../../lib/db';
+import {
+  db,
+  fetchAllRows,
+  fetchTablePage,
+  throwSupabaseError,
+  formatSupabaseError,
+  type PaginatedTableResult,
+} from '../../../../lib/db';
+import { applyPostgrestSearch, dieuKienKyTheoNgay } from '../../../../lib/postgrest-search';
+import {
+  BCSC_SORTABLE_DB_COLUMNS,
+  BCSC_SORT_MAC_DINH,
+  type BaoCaoSoCheListServerQuery,
+} from './bao-cao-so-che-list-query';
 import i18n from '../../../../lib/i18n';
 import type { FarmBaoCaoSoChe, FarmBaoCaoKpiThuongRow, TrangThaiBaoCaoSoChePhieu } from '../core/types';
 import { computeKpiPhanTram } from '../../shared/kpi-thuong/types';
@@ -378,6 +391,125 @@ function pcapRowsFromForm(values: BaoCaoSoCheFormValues, idBaoCao: number) {
       ghi_chu: r.ghi_chu?.trim() || null,
       thu_tu: idx + 1,
     }));
+}
+
+/** Cột tham gia ô tìm kiếm ở server (cột của bảng cha). */
+const BCSC_SEARCH_SPEC = {
+  text: ['ten_chi_nhanh', 'ghi_chu', 'trang_thai'],
+  numeric: ['id', 'tong_luong'],
+  dates: ['ngay'],
+} as const;
+
+/** Bản ghi cha kèm ba bảng con lồng (embed). */
+interface DbRowChaEmbed extends DbRowCha {
+  [TABLE_CT]?: DbRowCt[];
+  [TABLE_PCAP]?: DbRowPcap[];
+  [TABLE_KPI]?: DbRowKpi[];
+}
+
+function embedRowToModel(row: DbRowChaEmbed): FarmBaoCaoSoChe {
+  return chaRowToModel(
+    row,
+    row[TABLE_CT] ?? [],
+    row[TABLE_PCAP] ?? [],
+    (row[TABLE_KPI] ?? []).map(kpiRowToModel)
+  );
+}
+
+/** Lọc + sắp xếp dùng chung cho trang danh sách và cho lượt tải phục vụ xuất file. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyBcscListQuery(q: any, query: BaoCaoSoCheListServerQuery): any {
+  let sel = q;
+
+  if (!query.viewAll) {
+    const ids = query.allowedBranchIds.map(Number).filter(Number.isFinite);
+    sel = ids.length === 0 ? sel.eq('id', -1) : sel.in('id_chi_nhanh', ids);
+  }
+  if (query.idChiNhanh.length > 0) {
+    sel = sel.in('id_chi_nhanh', query.idChiNhanh.map(Number).filter(Number.isFinite));
+  }
+  if (query.trangThai.length > 0) sel = sel.in('trang_thai', query.trangThai);
+  // Đơn vị tính nằm ở bảng con: lọc qua embed (select đã dùng `!inner` khi có filter).
+  if (query.donViTinh.length > 0) sel = sel.in(`${TABLE_CT}.don_vi_tinh`, query.donViTinh);
+
+  if (query.ngayFrom) sel = sel.gte('ngay', query.ngayFrom);
+  if (query.ngayTo) sel = sel.lte('ngay', query.ngayTo);
+
+  const ky = dieuKienKyTheoNgay(query.nam, query.thang);
+  if (ky.length > 0) sel = sel.or(ky.join(','));
+
+  sel = applyPostgrestSearch(sel, query.searchTerm, BCSC_SEARCH_SPEC);
+
+  const dbSortable = query.sortColumn != null && BCSC_SORTABLE_DB_COLUMNS.has(query.sortColumn);
+  const sortCol = dbSortable ? query.sortColumn! : BCSC_SORT_MAC_DINH.column;
+  const ascending = dbSortable ? query.sortDirection !== 'desc' : BCSC_SORT_MAC_DINH.ascending;
+
+  return sel.order(sortCol, { ascending }).order('id', { ascending: false });
+}
+
+/**
+ * `!inner` chỉ khi thực sự lọc theo đơn vị tính — inner join làm biến mất phiếu
+ * chưa có dòng chi tiết nào, nên không bật mặc định.
+ */
+function bcscListSelect(query: BaoCaoSoCheListServerQuery): string {
+  const ct = query.donViTinh.length > 0 ? `${TABLE_CT}!inner(${ROW_CT})` : `${TABLE_CT}(${ROW_CT})`;
+  return `${ROW_CHA},${ct},${TABLE_PCAP}(${ROW_PCAP}),${TABLE_KPI}(${ROW_KPI})`;
+}
+
+export async function getBaoCaoSoChePageSupabase(
+  query: BaoCaoSoCheListServerQuery
+): Promise<PaginatedTableResult<FarmBaoCaoSoChe>> {
+  const result = await fetchTablePage<DbRowChaEmbed>(query.page, query.pageSize, async (from, to) => {
+    const sel = applyBcscListQuery(
+      db.from(TABLE_CHA).select(bcscListSelect(query), { count: 'exact' }),
+      query
+    );
+    const res = await sel.range(from, to);
+    return { data: (res.data as unknown as DbRowChaEmbed[] | null) ?? null, error: res.error, count: res.count };
+  });
+  return { ...result, data: result.data.map(embedRowToModel) };
+}
+
+/** Toàn bộ bản ghi khớp bộ lọc — CHỈ dùng khi bấm Xuất file. */
+export async function fetchAllBaoCaoSoCheForListQuery(
+  query: BaoCaoSoCheListServerQuery
+): Promise<FarmBaoCaoSoChe[]> {
+  const rows = await fetchAllRows<DbRowChaEmbed>((from, to) =>
+    applyBcscListQuery(db.from(TABLE_CHA).select(bcscListSelect(query)), query).range(from, to)
+  );
+  return rows.map(embedRowToModel);
+}
+
+/**
+ * Danh sách TÓM TẮT — chip lọc + số đếm, gợi ý chi nhánh, chặn trùng ngày×chi nhánh.
+ * Không kèm bảng con nên nhẹ hơn danh sách cũ rất nhiều.
+ */
+export async function getBaoCaoSoCheTomTatSupabase(
+  viewAll: boolean,
+  allowedBranchIds: string[]
+): Promise<BaoCaoSoCheTomTatRow[]> {
+  return fetchAllRows<BaoCaoSoCheTomTatRow>((from, to) => {
+    // `don_vi_tinh` nằm ở bảng con nhưng chip lọc cần nó — embed đúng một cột.
+    let sel = db
+      .from(TABLE_CHA)
+      .select(`id,ngay,trang_thai,id_chi_nhanh,ten_chi_nhanh,id_nguoi_tao,tg_tao,${TABLE_CT}(don_vi_tinh)`);
+    if (!viewAll) {
+      const ids = allowedBranchIds.map(Number).filter(Number.isFinite);
+      sel = ids.length === 0 ? sel.eq('id', -1) : sel.in('id_chi_nhanh', ids);
+    }
+    return sel.order('ngay', { ascending: false }).range(from, to);
+  });
+}
+
+export interface BaoCaoSoCheTomTatRow {
+  id: number;
+  [TABLE_CT]?: { don_vi_tinh: string | null }[];
+  ngay: string;
+  trang_thai: string | null;
+  id_chi_nhanh: number | null;
+  ten_chi_nhanh: string | null;
+  id_nguoi_tao: number | null;
+  tg_tao: string | null;
 }
 
 export async function getAllBaoCaoSoCheSupabase(): Promise<FarmBaoCaoSoChe[]> {

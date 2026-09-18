@@ -8,7 +8,7 @@ import DotKiemKeKhoDetail from './DotKiemKeKhoDetail';
 import DotKiemKeKhoForm from './DotKiemKeKhoForm';
 import TaoDanhSachKiemKeDialog from './TaoDanhSachKiemKeDialog';
 import {
-  useDotKiemKeKhoList,
+  useDotKiemKeKhoPage,
   useDotKiemKeKhoById,
   useChiTietByDot,
   useDeleteDotKiemKeKho,
@@ -17,10 +17,8 @@ import {
   useChangeTrangThaiDot,
 } from '../hooks/use-kiem-ke-kho';
 import { useKiemKeKhoViewScope } from '../hooks/use-kiem-ke-kho-view-scope';
-import { filterDotKiemKeListByViewScope } from '../utils/dot-kiem-ke-view-scope-filter';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import { useKiemKeKhoStore } from '../store/useKiemKeKhoStore';
-import { getLanguage } from '../../../../lib/utils';
 import Select from '../../../../components/ui/Select';
 import { CONFIRM_DELETE, CONFIRM_YES } from '../../../../lib/button-labels';
 import { TRANG_THAI_DOT_OPTIONS } from '../core/constants';
@@ -30,22 +28,43 @@ const DotTab: React.FC = () => {
   const { t } = useTranslation();
   const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
-  const { searchTerm, filters, sort, resetState, clearSelection } = useKiemKeKhoStore();
-  const { data: list = [], isLoading } = useDotKiemKeKhoList({
-    q: searchTerm || undefined,
-    trang_thai_dot: filters.trang_thai_dot.length ? (filters.trang_thai_dot as TrangThaiDotKiemKeKho[]) : undefined,
-    dateFrom: filters.dateFrom || undefined,
-    dateTo: filters.dateTo || undefined,
-    id_nguoi_phu_trach: filters.id_nguoi_phu_trach.length ? filters.id_nguoi_phu_trach : undefined,
-    id_kho: filters.id_kho.length ? filters.id_kho : undefined,
-  });
+  const { searchTerm, filters, pagination, resetState, clearSelection } = useKiemKeKhoStore();
   const { data: khoList = [] } = useKhoList();
   const viewScope = useKiemKeKhoViewScope();
 
-  const viewableList = useMemo(
-    () => filterDotKiemKeListByViewScope(list, khoList, viewScope),
-    [list, khoList, viewScope]
+  /**
+   * Phạm vi xem dựa trên kho được phép — tính sẵn ở đây rồi gửi kèm xuống
+   * PostgREST, thay vì tải hết đợt rồi lọc như trước.
+   */
+  const phamVi = useMemo(() => {
+    if (viewScope.viewAll) return null;
+    const khoChoPhep = viewScope.viewByBranch
+      ? khoList
+          .filter((k) => k.id_chi_nhanh != null && viewScope.allowedBranchIds.includes(k.id_chi_nhanh))
+          .map((k) => k.id)
+      : [];
+    return { khoChoPhep, currentEmployeeId: viewScope.currentEmployeeId };
+  }, [viewScope, khoList]);
+
+  const listParams = useMemo(
+    () => ({
+      q: searchTerm || undefined,
+      trang_thai_dot: filters.trang_thai_dot.length
+        ? (filters.trang_thai_dot as TrangThaiDotKiemKeKho[])
+        : undefined,
+      dateFrom: filters.dateFrom || undefined,
+      dateTo: filters.dateTo || undefined,
+      id_nguoi_phu_trach: filters.id_nguoi_phu_trach.length ? filters.id_nguoi_phu_trach : undefined,
+      id_kho: filters.id_kho.length ? filters.id_kho : undefined,
+    }),
+    [searchTerm, filters]
   );
+
+  const pageQuery = useDotKiemKeKhoPage(pagination.page - 1, pagination.pageSize, listParams, phamVi);
+  const pageList = pageQuery.data?.data ?? [];
+  const totalCount = pageQuery.data?.totalCount ?? 0;
+  const isLoading = !pageQuery.data && pageQuery.isPending;
+  const isFetching = !!pageQuery.data && pageQuery.isFetching;
 
   const deleteMutation = useDeleteDotKiemKeKho();
   const taoDanhSachMutation = useTaoDanhSachKiemKe();
@@ -61,20 +80,6 @@ const DotTab: React.FC = () => {
     return () => resetState();
   }, [resetState]);
 
-  const sortedList = useMemo(() => {
-    if (!sort.column || !sort.direction) return viewableList;
-    const sorted = [...viewableList];
-    sorted.sort((a, b) => {
-      const aVal = a[sort.column as keyof DotKiemKeKho] ?? '';
-      const bVal = b[sort.column as keyof DotKiemKeKho] ?? '';
-      const cmp =
-        typeof aVal === 'number' && typeof bVal === 'number'
-          ? aVal - bVal
-          : String(aVal).localeCompare(String(bVal), getLanguage());
-      return sort.direction === 'desc' ? -cmp : cmp;
-    });
-    return sorted;
-  }, [viewableList, sort]);
 
   const handleAdd = useCallback(() => {
     setEditingDot(null);
@@ -165,7 +170,7 @@ const DotTab: React.FC = () => {
   return (
     <div className="flex flex-col flex-1 min-h-0">
       <KiemKeKhoToolbar
-        items={sortedList}
+        items={pageList}
         onAdd={handleAdd}
         onDeleteMany={handleDeleteMany}
         showAdd={canCreate}
@@ -174,7 +179,9 @@ const DotTab: React.FC = () => {
       />
       <div className="flex-1 min-h-0 mt-1.5">
         <DotKiemKeKhoTable
-          data={sortedList}
+          data={pageList}
+          totalRecordsOverride={totalCount}
+          isFetching={isFetching}
           isLoading={isLoading}
           onView={handleView}
           onEdit={canUpdate ? handleEdit : undefined}

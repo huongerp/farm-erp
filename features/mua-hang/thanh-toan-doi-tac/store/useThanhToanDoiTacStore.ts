@@ -7,7 +7,7 @@ export interface ThanhToanDoiTacFilters {
   donViIds: string[];
 }
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'so_phieu', label: i18n.t('thanhToanDoiTac.store.soPhieuCol'), visible: true, minWidth: 120, maxWidth: 160, order: 0 },
   { id: 'hang_muc_thanh_toan', label: i18n.t('thanhToanDoiTac.store.hangMucCol'), visible: true, minWidth: 180, maxWidth: 280, order: 1 },
   { id: 'ngay_xu_ly', label: i18n.t('thanhToanDoiTac.store.ngayXuLyCol'), visible: true, minWidth: 100, maxWidth: 120, order: 2 },
@@ -28,5 +28,6 @@ const initialFilters: ThanhToanDoiTacFilters = {
 
 export const useThanhToanDoiTacStore = createGenericStore<ThanhToanDoiTacFilters>(
   initialFilters,
-  DEFAULT_COLUMNS
+  DEFAULT_COLUMNS,
+  'table-thanh-toan-doi-tac'
 );

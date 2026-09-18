@@ -5,6 +5,7 @@ import { Wrench, User, FileText, Power } from 'lucide-react';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
 import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';
+import ThuChiLienQuanSection from '../../../tai-chinh/thu-chi-quy/components/shared/ThuChiLienQuanSection';
 import DetailToolbar, { type DetailToolbarAction } from '../../../../components/shared/DetailToolbar';
 import DetailDrawerFooter from '../../../../components/shared/DetailDrawerFooter';
 import Combobox from '../../../../components/ui/Combobox';
@@ -93,9 +94,18 @@ interface Props {
   onDelete?: (id: string) => void;
   /** Chỉ quản trị (admin | all trên module) mới đổi trạng thái từ toolbar */
   canAdmin?: boolean;
+  /** Chi nhánh suy từ tài sản — prefill khi lập phiếu thu chi quỹ liên quan. */
+  idChiNhanhTaiSan?: string | null;
 }
 
-const PhieuBaoTriDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, canAdmin = false }) => {
+const PhieuBaoTriDetail: React.FC<Props> = ({
+  data,
+  onClose,
+  onEdit,
+  onDelete,
+  canAdmin = false,
+  idChiNhanhTaiSan,
+}) => {
   const { t } = useTranslation();
   const confirm = useConfirmStore((s) => s.confirm);
   const { data: fresh } = usePhieuBaoTriById(data.id);
@@ -201,6 +211,23 @@ const PhieuBaoTriDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, c
             <DetailField label={t('baoTriSuaChua.store.ghiChuCol')} value={displayData.ghi_chu || '—'} />
           </div>
         </DetailSection>
+
+        <ThuChiLienQuanSection
+          loaiChungTu="chi_phi_tai_san"
+          idChungTu={displayData.id}
+          soChungTu={displayData.ma_phieu}
+          idChiNhanhMacDinh={idChiNhanhTaiSan ?? null}
+          ngayMacDinh={displayData.ngay}
+          dienGiaiMacDinh={[
+            t('baoTriSuaChua.detail.thuChiPrefix'),
+            displayData.ma_phieu,
+            displayData.ten_tai_san ? `- ${displayData.ten_tai_san}` : '',
+          ]
+            .filter(Boolean)
+            .join(' ')
+            .trim()}
+          soTienGoiY={displayData.so_tien ?? null}
+        />
       </div>
     </GenericDrawer>
   );

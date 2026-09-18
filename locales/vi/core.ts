@@ -24,7 +24,10 @@ import adminForm from './admin-form.json';
 import diemCongTru from './diem-cong-tru.json';
 import bangLuong from './bang-luong.json';
 import congViec from './cong-viec.json';
-import guide from './guide.json';
+// Chỉ 2 khoá guide dùng ngoài trang hướng dẫn (nút mở + breadcrumb). 186 khoá nội
+// dung còn lại nằm ở guide.json, nạp lazy trong loadGuideI18n() — để eager thì
+// riêng nó đã cộng 53 KB vào chunk chính.
+import guideShell from './guide-shell.json';
 import kho from './kho.json';
 
 
@@ -44,7 +47,7 @@ const viCore = {
   ...(diemCongTru as Record<string, string>),
   ...(bangLuong as Record<string, string>),
   ...(congViec as Record<string, string>),
-  ...(guide as Record<string, string>),
+  ...(guideShell as Record<string, string>),
   ...(kho as Record<string, string>),
 };
 

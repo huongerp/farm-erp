@@ -18,7 +18,7 @@ import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinner
 import TablePaginationFooter from '../../../../components/shared/TablePaginationFooter';
 import { flattenCongViecWithLevel } from '../services/cong-viec-service';
 import { useCongViecList, useDeleteCongViecList, useImportCongViec } from '../hooks/use-cong-viec';
-import { useCongViecStore } from '../store/useCongViecStore';
+import { useCongViecStore, DEFAULT_COLUMNS } from '../store/useCongViecStore';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { useAuthStore } from '../../../../store/useStore';
 import { filterCongViecByScope } from '../core/scope';
@@ -28,6 +28,10 @@ import { useListWithFilter } from '../../../../lib/hooks';
 import { getLanguage, exportToExcel } from '../../../../lib/utils';
 import type { CongViec } from '../core/types';
 import type { CongViecFilters } from '../store/useCongViecStore';
+import { createListSearchMatcher } from '../../../../lib/list-search-matcher';
+
+/** Ô tìm kiếm quét MỌI cột của bảng, bỏ dấu tiếng Việt — xem lib/list-search-matcher.ts. */
+const khopTimKiem = createListSearchMatcher({ columns: DEFAULT_COLUMNS });
 
 type TabId = 'my' | 'list' | 'kanban' | 'gantt';
 
@@ -52,6 +56,7 @@ const CongViecScopeTab: React.FC<Props> = ({ scope }) => {
     clearSelection,
     selectedIds,
     columns,
+    resizeColumn,
     pagination,
     setPage,
     setPageSize,
@@ -90,9 +95,13 @@ const CongViecScopeTab: React.FC<Props> = ({ scope }) => {
     [list, scope, userId]
   );
 
+  /**
+   * Công việc là bảng CÂY (cha – con qua `id_cha`): cắt trang ở PostgREST sẽ làm
+   * mất nhánh cha hoặc con nằm ngoài trang, cây dựng ra sẽ sai. Vì vậy module này
+   * cố ý giữ lọc + phân trang ở client — xem CLAUDE.md § Danh sách.
+   */
   const tabFilteredList = useMemo(() => {
     if (activeTabId === 'my') return filterCongViecByScope(list, 'my', userId);
-    if (activeTabId === 'list') return scopeList;
     return scopeList;
   }, [scopeList, list, activeTabId, userId]);
 
@@ -101,12 +110,7 @@ const CongViecScopeTab: React.FC<Props> = ({ scope }) => {
       const trangThai = f.trang_thai ?? [];
       const uuTien = f.uu_tien ?? [];
       const trachNhiem = f.trach_nhiem ?? [];
-      const searchLower = term.toLowerCase();
-      const matchesSearch = Boolean(
-        !term ||
-        item.tieu_de.toLowerCase().includes(searchLower) ||
-        (item.mo_ta && item.mo_ta.toLowerCase().includes(searchLower))
-      );
+      const matchesSearch = khopTimKiem(item, term);
       const matchesTrangThai = trangThai.length === 0 || trangThai.includes(item.trang_thai);
       const matchesUuTien = uuTien.length === 0 || uuTien.includes(item.uu_tien);
       const matchesTrachNhiem =
@@ -134,6 +138,7 @@ const CongViecScopeTab: React.FC<Props> = ({ scope }) => {
     });
     return sorted;
   }, [filteredList, sort]);
+
 
   const sortedListForKanbanGantt = useMemo(() => {
     if (!sort.column || !sort.direction) return listForKanbanGantt;
@@ -355,6 +360,7 @@ const CongViecScopeTab: React.FC<Props> = ({ scope }) => {
               <CongViecHierarchyTable
                 data={paginatedFlattened}
                 columns={columns}
+                onResizeColumn={resizeColumn}
                 selectedIds={selectedIds}
                 onToggleSelection={toggleSelection}
                 onToggleAllSelection={toggleAllSelection}

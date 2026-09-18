@@ -25,13 +25,18 @@ import { dangKyKhiMatPhien, emailPhienHienTai } from './lib/token-store';
 import { toast } from 'sonner';
 import i18n from './lib/i18n';
 import { lazyWithFeatureI18n } from './lib/lazy-with-feature-i18n';
+import { loadGuideI18n } from './lib/feature-i18n';
 
 const Home = lazy(() => import('./pages/Home'));
 const LicenseInfo = lazy(() => import('./pages/LicenseInfo'));
 const NotificationPage = lazy(() => import('./pages/NotificationPage'));
 const SystemDashboard = lazy(() => import('./pages/dashboards/SystemDashboard'));
 const SubmenuPage = lazy(() => import('./pages/SubmenuPage'));
-const ModuleGuidePage = lazy(() => import('./pages/ModuleGuidePage'));
+// Nội dung hướng dẫn (53 KB locale) đi cùng trang, không nằm trong chunk chính.
+const ModuleGuidePage = lazy(async () => {
+  await loadGuideI18n();
+  return import('./pages/ModuleGuidePage');
+});
 const Profile = lazy(() => import('./pages/Profile'));
 const Settings = lazy(() => import('./pages/Settings'));
 
@@ -281,6 +286,9 @@ const App = () => {
                   <Route path="/quan-ly-farm" element={<SubmenuPage />} />
                   <Route path="/quan-ly-farm/:moduleId/huong-dan" element={<ModuleGuidePage />} />
                   <Route path="/quan-ly-farm/:moduleId" element={<SubmenuPage />} />
+                  <Route path="/tai-chinh" element={<SubmenuPage />} />
+                  <Route path="/tai-chinh/:moduleId/huong-dan" element={<ModuleGuidePage />} />
+                  <Route path="/tai-chinh/:moduleId" element={<SubmenuPage />} />
                   <Route path="/kho-van" element={<Navigate to="/mua-hang" replace />} />
                   <Route path="/kho-van/:moduleId/huong-dan" element={<NavigateToMuaHangModule />} />
                   <Route path="/kho-van/:moduleId" element={<NavigateToMuaHangModule />} />

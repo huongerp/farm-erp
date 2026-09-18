@@ -233,7 +233,6 @@ const DoiTacForm: React.FC<Props> = ({ initialData, loaiDoiTac, nhomList, tagLis
                       field.onChange(v ?? '');
                     }}
                     placeholder={t('doiTac.form.groupPlaceholder')}
-                    searchPlaceholder={t('doiTac.danhMuc.searchPlaceholder')}
                     searchable
                     dropdownInPortal
                     required
@@ -339,7 +338,6 @@ const DoiTacForm: React.FC<Props> = ({ initialData, loaiDoiTac, nhomList, tagLis
                     value={field.value ?? ''}
                     onChange={(v) => field.onChange(v ?? '')}
                     placeholder={t('doiTac.form.bankPlaceholder')}
-                    searchPlaceholder={t('doiTac.form.bankSearchPlaceholder')}
                     searchable
                     dropdownInPortal
                     error={errors.ngan_hang_bin?.message}

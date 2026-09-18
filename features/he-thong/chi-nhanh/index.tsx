@@ -7,13 +7,17 @@ import BranchTable from './components/chi-nhanh-table';
 import BranchForm from './components/chi-nhanh-form';
 import BranchDetail from './components/chi-nhanh-detail';
 import { useBranches, useDeleteBranches, useUpdateStatusBranch } from './hooks/use-chi-nhanh';
-import { useBranchStore } from './store/useBranchStore';
+import { useBranchStore, DEFAULT_COLUMNS } from './store/useBranchStore';
 import { useConfirmStore } from '../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_YES, CONFIRM_DELETE_ALL } from '../../../lib/button-labels';
 import { useListWithFilter } from '../../../lib/hooks';
 import { getLanguage } from '../../../lib/utils';
 import { TRANG_THAI } from '../../../lib/constants';
 import { Branch } from './core/types';
+import { createListSearchMatcher } from '../../../lib/list-search-matcher';
+
+/** Ô tìm kiếm quét MỌI cột của bảng, bỏ dấu tiếng Việt — xem lib/list-search-matcher.ts. */
+const khopTimKiem = createListSearchMatcher({ columns: DEFAULT_COLUMNS });
 
 const BranchPage: React.FC = () => {
   const { t } = useTranslation();
@@ -48,14 +52,7 @@ const BranchPage: React.FC = () => {
 
   const filterFn = useCallback(
     (item: Branch, term: string, f: typeof filters) => {
-      const searchLower = term.toLowerCase();
-      const matchesSearch =
-        !term ||
-        item.ten_chi_nhanh.toLowerCase().includes(searchLower) ||
-        item.ma_chi_nhanh.toLowerCase().includes(searchLower) ||
-        item.dia_chi.toLowerCase().includes(searchLower) ||
-        item.tinh_thanh.toLowerCase().includes(searchLower) ||
-        item.quan_huyen.toLowerCase().includes(searchLower);
+      const matchesSearch = khopTimKiem(item, term);
       const statusKey = item.trang_thai === TRANG_THAI.DANG_DUNG ? 'Active' : 'Inactive';
       const matchesStatus = f.status.length === 0 || f.status.includes(statusKey);
       return matchesSearch && matchesStatus;

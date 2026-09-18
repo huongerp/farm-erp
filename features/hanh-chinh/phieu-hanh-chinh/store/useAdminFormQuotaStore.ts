@@ -6,7 +6,7 @@ export interface AdminFormQuotaFilters {
   month: string;
 }
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'loai_phieu', label: i18n.t('adminForm.store.typeCol'), visible: true, minWidth: 200, order: 0 },
   { id: 'so_luong_thang', label: i18n.t('adminForm.store.quotaCol'), visible: true, minWidth: 140, order: 1 },
   { id: 'da_dung', label: i18n.t('adminForm.store.usedCol'), visible: true, minWidth: 120, order: 2 },
@@ -20,5 +20,6 @@ const initialFilters: AdminFormQuotaFilters = {
 
 export const useAdminFormQuotaStore = createGenericStore<AdminFormQuotaFilters>(
   initialFilters,
-  DEFAULT_COLUMNS
+  DEFAULT_COLUMNS,
+  'table-phieu-hanh-chinh-admin-form-quota'
 );

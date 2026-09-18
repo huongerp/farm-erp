@@ -6,7 +6,7 @@ interface PositionFilters {
   status: string[];
 }
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'thu_tu', label: i18n.t('position.store.orderCol'), visible: true, minWidth: 80, order: 0 },
   { id: 'ma_chuc_vu', label: i18n.t('position.store.codeCol'), visible: true, minWidth: 120, order: 1 },
   { id: 'ten_chuc_vu', label: i18n.t('position.store.nameCol'), visible: true, minWidth: 200, order: 2 },
@@ -23,5 +23,6 @@ const initialFilters: PositionFilters = {
 
 export const usePositionStore = createGenericStore<PositionFilters>(
   initialFilters,
-  DEFAULT_COLUMNS
+  DEFAULT_COLUMNS,
+  'table-chuc-vu-position'
 );

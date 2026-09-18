@@ -16,10 +16,16 @@ const buildQrThumbUrl = (item: DoiTac): string | null => {
 interface Props {
   data: DoiTac[];
   columns: ColumnConfig[];
+  /** Cho phép kéo đổi bề rộng cột — truyền `resizeColumn` của store. */
+  onResizeColumn?: (id: string, width: number) => void;
   selectedIds: Set<string>;
   onToggleSelection: (id: string) => void;
   onToggleAllSelection: (ids: string[]) => void;
   isLoading: boolean;
+  /** Đang tải trang mới nhưng đã có dữ liệu cũ — hiện lớp phủ mờ thay vì skeleton. */
+  isFetching?: boolean;
+  /** Tổng số bản ghi khớp bộ lọc (phân trang ở server). */
+  totalRecordsOverride?: number;
   page: number;
   pageSize: number;
   onPageChange: (page: number) => void;
@@ -31,7 +37,10 @@ interface Props {
 
 const DoiTacList: React.FC<Props> = ({
   data,
+  isFetching,
+  totalRecordsOverride,
   columns,
+  onResizeColumn,
   selectedIds,
   onToggleSelection,
   onToggleAllSelection,
@@ -217,7 +226,10 @@ const DoiTacList: React.FC<Props> = ({
     <GenericTable<DoiTac>
       data={data}
       columns={visibleColumns}
+      onResizeColumn={onResizeColumn}
       isLoading={isLoading}
+      isFetching={isFetching}
+      totalRecordsOverride={totalRecordsOverride}
       loadingText={t('doiTac.loading')}
       selectedIds={selectedIds}
       onToggleSelection={onToggleSelection}

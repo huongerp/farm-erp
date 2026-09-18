@@ -36,6 +36,7 @@ const KiemKeTaiSanToolbar: React.FC<Props> = ({
   const toggleColumn = useKiemKeTaiSanStore((s) => s.toggleColumn);
   const reorderColumns = useKiemKeTaiSanStore((s) => s.reorderColumns);
   const resetColumns = useKiemKeTaiSanStore((s) => s.resetColumns);
+  const resetColumnWidths = useKiemKeTaiSanStore((s) => s.resetColumnWidths);
   const selectedIds = useKiemKeTaiSanStore((s) => s.selectedIds);
   const clearSelection = useKiemKeTaiSanStore((s) => s.clearSelection);
   const { data: employees = [] } = useEmployeesRefQuery();
@@ -149,7 +150,6 @@ const KiemKeTaiSanToolbar: React.FC<Props> = ({
       filters={renderFilters}
       filterGroups={filterGroups}
       onAdd={onAdd}
-      searchPlaceholder={t('kiemKeTaiSan.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       onDeleteMany={canDelete && selectedCount > 0 ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
@@ -157,6 +157,7 @@ const KiemKeTaiSanToolbar: React.FC<Props> = ({
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
+      onResetColumnWidths={resetColumnWidths}
       showBack
       mobileActions={mobileActions}
     />

@@ -4,8 +4,13 @@ import { getAssetGroups } from '../../thiet-lap-tai-san/services/nhom-tai-san-se
 import { getAssetStorageLocations } from '../../thiet-lap-tai-san/services/noi-luu-service';
 import { getAssetStatuses } from '../../thiet-lap-tai-san/services/trang-thai-service';
 import { getEmployeesRef } from '@/features/he-thong/nhan-vien/services/nhan-vien-service';
+import type { PaginatedTableResult } from '../../../../lib/db';
+import type { DanhSachTaiSanListServerQuery } from './danh-muc-tai-san-list-query';
 import {
   getTaiSanListSupabase,
+  getTaiSanPageSupabase,
+  getTaiSanTomTatSupabase,
+  fetchAllTaiSanForListQuery as fetchAllTaiSanForListQuerySupabase,
   createTaiSanSupabase,
   updateTaiSanSupabase,
   updateTaiSanKhauHaoSupabase,
@@ -48,6 +53,45 @@ async function enrichTaiSan(items: TaiSan[]): Promise<TaiSan[]> {
         : null,
     };
   });
+}
+
+/** Một trang danh sách (lọc / sắp xếp / phân trang ở PostgREST). */
+export async function getTaiSanPage(
+  query: DanhSachTaiSanListServerQuery
+): Promise<PaginatedTableResult<TaiSan>> {
+  const page = await getTaiSanPageSupabase(query);
+  return { ...page, data: await enrichTaiSan(page.data) };
+}
+
+/** Toàn bộ bản ghi khớp bộ lọc — chỉ gọi khi mở hộp thoại Xuất file. */
+export async function fetchAllTaiSanForListQuery(
+  query: DanhSachTaiSanListServerQuery
+): Promise<TaiSan[]> {
+  return enrichTaiSan(await fetchAllTaiSanForListQuerySupabase(query));
+}
+
+/** Tóm tắt tài sản: id / mã / chi nhánh / người giữ. */
+export async function getTaiSanTomTat(): Promise<TaiSanTomTat[]> {
+  const rows = await getTaiSanTomTatSupabase();
+  return rows.map((r) => ({
+    id: String(r.id),
+    ma_tai_san: r.ma_tai_san ?? '',
+    id_chi_nhanh: r.id_chi_nhanh != null ? String(r.id_chi_nhanh) : null,
+    id_nhan_vien_dang_giu: r.id_nhan_vien != null ? String(r.id_nhan_vien) : null,
+    id_nhom: r.id_nhom != null ? String(r.id_nhom) : '',
+    id_noi_luu: r.id_noi_luu != null ? String(r.id_noi_luu) : '',
+    id_trang_thai: r.id_trang_thai != null ? String(r.id_trang_thai) : '',
+  }));
+}
+
+export interface TaiSanTomTat {
+  id: string;
+  ma_tai_san: string;
+  id_chi_nhanh?: string | null;
+  id_nhan_vien_dang_giu?: string | null;
+  id_nhom: string;
+  id_noi_luu: string;
+  id_trang_thai: string;
 }
 
 export const getTaiSanList = async (): Promise<TaiSan[]> => {
@@ -93,10 +137,6 @@ export const updateTaiSanFromKiemKe = async (
 };
 
 /** Bảng fp_ts_tai_san không có cột trang_thai (0/1); no-op khi dùng Supabase. */
-export const updateTaiSanStatus = async (_ids: string[], _status: 0 | 1): Promise<void> => {
-  /* no-op: schema dùng id_trang_thai + ten_trang_thai */
-};
-
 export const deleteTaiSan = deleteTaiSanSupabase;
 
 /** Mã tài sản tiếp theo dạng TS00001 (cho form tạo mới, user có thể sửa). */

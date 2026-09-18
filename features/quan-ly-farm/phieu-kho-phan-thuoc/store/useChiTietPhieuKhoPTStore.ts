@@ -24,7 +24,7 @@ export interface ChiTietPhieuKhoPTFilters {
   nguoiDuyetIds: string[];
 }
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'so_phieu', label: i18n.t('phieuKhoPhanThuoc.store.soPhieuCol'), visible: true, minWidth: 100, maxWidth: 160, order: 0 },
   { id: 'ngay', label: i18n.t('phieuKhoPhanThuoc.store.ngayCol'), visible: true, minWidth: 100, maxWidth: 120, order: 1 },
   { id: 'loai', label: i18n.t('phieuKhoPhanThuoc.chiTietTab.loaiPhieuCol'), visible: true, minWidth: 90, maxWidth: 120, order: 2 },
@@ -55,4 +55,4 @@ const initialFilters: ChiTietPhieuKhoPTFilters = {
   nguoiDuyetIds: [],
 };
 
-export const useChiTietPhieuKhoPTStore = createGenericStore<ChiTietPhieuKhoPTFilters>(initialFilters, DEFAULT_COLUMNS);
+export const useChiTietPhieuKhoPTStore = createGenericStore<ChiTietPhieuKhoPTFilters>(initialFilters, DEFAULT_COLUMNS, 'table-phieu-kho-phan-thuoc-chi-tiet-phieu-kho-p-t');

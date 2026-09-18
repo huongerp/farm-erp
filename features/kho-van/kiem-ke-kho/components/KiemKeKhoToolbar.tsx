@@ -40,6 +40,7 @@ const KiemKeKhoToolbar: React.FC<Props> = ({
   const toggleColumn = useKiemKeKhoStore((s) => s.toggleColumn);
   const reorderColumns = useKiemKeKhoStore((s) => s.reorderColumns);
   const resetColumns = useKiemKeKhoStore((s) => s.resetColumns);
+  const resetColumnWidths = useKiemKeKhoStore((s) => s.resetColumnWidths);
   const selectedIds = useKiemKeKhoStore((s) => s.selectedIds);
   const clearSelection = useKiemKeKhoStore((s) => s.clearSelection);
   const { data: employees = [] } = useEmployeesRefQuery();
@@ -178,7 +179,6 @@ const KiemKeKhoToolbar: React.FC<Props> = ({
       filters={renderFilters}
       filterGroups={filterGroups}
       onAdd={canCreate ? onAdd : undefined}
-      searchPlaceholder={t('kiemKeKho.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       onDeleteMany={canDelete && selectedCount > 0 ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
@@ -186,6 +186,7 @@ const KiemKeKhoToolbar: React.FC<Props> = ({
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
+      onResetColumnWidths={resetColumnWidths}
       showBack
       mobileActions={mobileActions}
     />

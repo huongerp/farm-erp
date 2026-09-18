@@ -29,6 +29,7 @@ const BangLuongManagedToolbar: React.FC<Props> = ({ items = [], onAdd, onClearSe
   const toggleColumn = useBangLuongManagedStore((s) => s.toggleColumn);
   const reorderColumns = useBangLuongManagedStore((s) => s.reorderColumns);
   const resetColumns = useBangLuongManagedStore((s) => s.resetColumns);
+  const resetColumnWidths = useBangLuongManagedStore((s) => s.resetColumnWidths);
   const selectedIds = useBangLuongManagedStore((s) => s.selectedIds);
   const { data: departments = [] } = useDepartments();
 
@@ -98,13 +99,13 @@ const BangLuongManagedToolbar: React.FC<Props> = ({ items = [], onAdd, onClearSe
       filters={renderFilters}
       onDeleteMany={canDelete && onDeleteMany && selectedIds.size > 0 ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
       filterGroups={[]}
-      searchPlaceholder={t('bangLuong.managed.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       columns={columns}
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
+      onResetColumnWidths={resetColumnWidths}
       showBack
     />
   );

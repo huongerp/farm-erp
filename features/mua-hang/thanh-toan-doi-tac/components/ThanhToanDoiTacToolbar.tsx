@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import type { ThanhToanDoiTacTomTat } from '../services/thanh-toan-doi-tac-service';
 import { useTranslation } from 'react-i18next';
 import { Plus, Tag, Building2, Users } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
@@ -6,13 +7,16 @@ import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useThanhToanDoiTacStore } from '../store/useThanhToanDoiTacStore';
-import type { ThanhToanDoiTac } from '../core/types';
 import type { DoiTacRefLite } from '../../../kho-van/danh-sach-doi-tac/services/doi-tac-service';
 import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
 import type { TrangThaiThanhToanDoiTac } from '../../thiet-lap-de-xuat-vat-tu/core/types';
 
 interface Props {
-  data: ThanhToanDoiTac[];
+  /**
+   * Danh sách TÓM TẮT toàn bộ phiếu (không phải trang đang xem) — chip lọc phải
+   * đếm trên toàn bộ dữ liệu.
+   */
+  data: ThanhToanDoiTacTomTat[];
   doiTacList: DoiTacRefLite[];
   chiNhanhList: Branch[];
   statusList: TrangThaiThanhToanDoiTac[];
@@ -43,6 +47,7 @@ const ThanhToanDoiTacToolbar: React.FC<Props> = ({
   const toggleColumn = useThanhToanDoiTacStore((s) => s.toggleColumn);
   const reorderColumns = useThanhToanDoiTacStore((s) => s.reorderColumns);
   const resetColumns = useThanhToanDoiTacStore((s) => s.resetColumns);
+  const resetColumnWidths = useThanhToanDoiTacStore((s) => s.resetColumnWidths);
 
   const statusOptions = useMemo(
     () =>
@@ -172,13 +177,13 @@ const ThanhToanDoiTacToolbar: React.FC<Props> = ({
       filterGroups={filterGroups}
       onAdd={canCreate ? onAdd : undefined}
       showBack
-      searchPlaceholder={t('thanhToanDoiTac.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       columns={columns}
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
+      onResetColumnWidths={resetColumnWidths}
     />
   );
 };

@@ -19,13 +19,13 @@ export interface BaoTriSuaChuaFilters {
   dateFrom: string;
   dateTo: string;
   id_tai_san: string[];
-  /** Chi nhánh của tài sản (phiếu không có cột chi nhánh, suy ra từ tài sản) */
+  /** Chi nhánh của tài sản (phiếu không có cột chi nhánh, suy ra từ tài sản, 'table-bao-tri-sua-chua') */
   id_chi_nhanh: string[];
   trang_thai: string[];
   id_nguoi_tao: string[];
 }
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'ngay', label: i18n.t('baoTriSuaChua.store.ngayCol'), visible: true, minWidth: 110, order: 0 },
   { id: 'ten_hang_muc', label: i18n.t('baoTriSuaChua.store.hangMucCol'), visible: true, minWidth: 100, order: 1 },
   { id: 'ma_phieu', label: i18n.t('baoTriSuaChua.store.maPhieuCol'), visible: true, minWidth: COLUMN_WIDTH_CODE_MIN, maxWidth: COLUMN_WIDTH_CODE_MAX, order: 2 },
@@ -53,5 +53,6 @@ const initialFilters: BaoTriSuaChuaFilters = {
 
 export const useBaoTriSuaChuaStore = createGenericStore<BaoTriSuaChuaFilters>(
   initialFilters,
-  DEFAULT_COLUMNS
+  DEFAULT_COLUMNS,
+  'table-bao-tri-sua-chua'
 );

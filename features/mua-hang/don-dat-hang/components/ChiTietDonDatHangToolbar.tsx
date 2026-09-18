@@ -48,6 +48,7 @@ const ChiTietDonDatHangToolbar: React.FC<Props> = ({
   const toggleColumn = useChiTietDonDatHangStore((s) => s.toggleColumn);
   const reorderColumns = useChiTietDonDatHangStore((s) => s.reorderColumns);
   const resetColumns = useChiTietDonDatHangStore((s) => s.resetColumns);
+  const resetColumnWidths = useChiTietDonDatHangStore((s) => s.resetColumnWidths);
 
   const { inputValue: searchInput, setInputValue: setSearchInput } = useSearchInputCommit({
     committedTerm: searchTerm,
@@ -306,13 +307,13 @@ const ChiTietDonDatHangToolbar: React.FC<Props> = ({
       filterGroups={filterGroups}
       mobileActions={mobileActions}
       showBack
-      searchPlaceholder={t('donDatHang.chiTietTab.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       columns={columns}
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
+      onResetColumnWidths={resetColumnWidths}
     />
   );
 };

@@ -53,6 +53,7 @@ const DanhSachTab: React.FC = () => {
   const setPage = usePhieuKhoPTStore((s) => s.setPage);
   const setPageSize = usePhieuKhoPTStore((s) => s.setPageSize);
   const columns = usePhieuKhoPTStore((s) => s.columns);
+  const resizeColumn = usePhieuKhoPTStore((s) => s.resizeColumn);
 
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<PhieuKhoPT | null>(null);
@@ -302,6 +303,7 @@ const DanhSachTab: React.FC = () => {
           data={tableRows}
           serverTotalCount={totalCount}
           columns={columns}
+          onResizeColumn={resizeColumn}
           selectedIds={selectedIds}
           onToggleSelection={toggleSelection}
           onToggleAllSelection={toggleAllSelection}

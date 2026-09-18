@@ -34,6 +34,7 @@ const DanhMucHangHoaToolbar: React.FC<Props> = ({
   const toggleColumn = useDanhMucHangHoaStore((s) => s.toggleColumn);
   const reorderColumns = useDanhMucHangHoaStore((s) => s.reorderColumns);
   const resetColumns = useDanhMucHangHoaStore((s) => s.resetColumns);
+  const resetColumnWidths = useDanhMucHangHoaStore((s) => s.resetColumnWidths);
 
   const activeFilterCount = useMemo(
     () => (searchInput.trim() ? 1 : 0) + (filters.status.length > 0 ? 1 : 0),
@@ -109,13 +110,13 @@ const DanhMucHangHoaToolbar: React.FC<Props> = ({
       filterGroups={filterGroups}
       onAdd={canCreate ? onAdd : undefined}
       showBack
-      searchPlaceholder={t('danhMucHangHoa.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       columns={columns}
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
+      onResetColumnWidths={resetColumnWidths}
     />
   );
 };

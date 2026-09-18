@@ -15,7 +15,7 @@ interface Props {
 const LogTable: React.FC<Props> = ({ data, isLoading }) => {
   const { t } = useTranslation();
   const { 
-    columns, pagination, setPage, setPageSize 
+    columns, resizeColumn, pagination, setPage, setPageSize 
   } = useLogStore();
 
   const getStatusBadge = (status: string) => {
@@ -96,6 +96,7 @@ const LogTable: React.FC<Props> = ({ data, isLoading }) => {
     <GenericTable
         data={data}
         columns={columns}
+        onResizeColumn={resizeColumn}
         isLoading={isLoading}
         loadingText={t('permission.matrix.loading')}
         selectedIds={new Set()}

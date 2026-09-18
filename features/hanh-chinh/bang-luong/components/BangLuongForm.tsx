@@ -401,7 +401,6 @@ const BangLuongForm: React.FC<Props> = ({ initialRecord, defaultEmployeeId, onCl
                 value={id_nhan_vien || null}
                 onChange={(v) => setIdNhanVien(v ? String(v) : '')}
                 placeholder={t('common.select')}
-                searchPlaceholder={t('common.search')}
                 required
                 icon={<User size={14} />}
                 searchable

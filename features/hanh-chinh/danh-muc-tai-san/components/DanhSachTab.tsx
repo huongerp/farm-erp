@@ -4,10 +4,9 @@ import { useSearchParams } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
-import { useTaiSanList, useDeleteTaiSan, useUpdateTaiSanStatus, useUpdateTaiSan, useAllowedTaiSanIds } from '../hooks/use-danh-muc-tai-san';
+import { useTaiSanPage, useTaiSanTomTat, useDeleteTaiSan, useUpdateTaiSan } from '../hooks/use-danh-muc-tai-san';
 import { getTaiSanByIdSupabase } from '../services/danh-muc-tai-san-supabase.service';
-import { useListWithFilter } from '../../../../lib/hooks';
-import { getLanguage, exportToExcel, exportToPDF } from '../../../../lib/utils';
+import { exportToExcel, exportToPDF } from '../../../../lib/utils';
 import { taiSanToExportRow, TAI_SAN_EXPORT_FILENAME } from '../utils/export-danh-sach-tai-san';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
 import DanhSachTaiSanToolbar from './DanhSachTaiSanToolbar';
@@ -20,6 +19,8 @@ import TaoPhieuBaoTriForm from '../../bao-tri-sua-chua/components/TaoPhieuBaoTri
 import { useDeletePhieuBaoTri } from '../../bao-tri-sua-chua/hooks/use-bao-tri-sua-chua';
 import { useAssetStatuses } from '../../thiet-lap-tai-san/hooks/use-trang-thai';
 import { useDanhSachTaiSanStore } from '../store/useDanhSachTaiSanStore';
+import type { DanhSachTaiSanListServerQuery } from '../services/danh-muc-tai-san-list-query';
+import { fetchAllTaiSanForListQuery } from '../services/danh-muc-tai-san-service';
 import Combobox from '../../../../components/ui/Combobox';
 import SingleImageInput from '../../../../components/ui/SingleImageInput';
 import type { TaiSan } from '../core/types';
@@ -84,9 +85,9 @@ const ImageInputForConfirm: React.FC<ImageInputForConfirmProps> = ({
   );
 };
 import type { TaiSanFormValues } from '../core/schema';
-import type { DanhSachTaiSanFilters } from '../store/useDanhSachTaiSanStore';
 import type { PhieuCapPhatThuHoi } from '../../cap-phat-thu-hoi/core/types';
 import type { PhieuBaoTriSuaChua } from '../../bao-tri-sua-chua/core/types';
+
 
 function taiSanToFormValues(a: TaiSan, overrideIdTrangThai?: string): TaiSanFormValues {
   return {
@@ -112,10 +113,10 @@ const DanhSachTab: React.FC = () => {
   const filters = useDanhSachTaiSanStore((s) => s.filters);
   const setFilter = useDanhSachTaiSanStore((s) => s.setFilter);
   const sort = useDanhSachTaiSanStore((s) => s.sort);
+  const pagination = useDanhSachTaiSanStore((s) => s.pagination);
   const resetState = useDanhSachTaiSanStore((s) => s.resetState);
   const clearSelection = useDanhSachTaiSanStore((s) => s.clearSelection);
   const deleteMutation = useDeleteTaiSan();
-  const statusMutation = useUpdateTaiSanStatus();
   const updateMutation = useUpdateTaiSan();
   const { data: assetStatuses = [] } = useAssetStatuses();
   const statusOptions = useMemo(
@@ -134,54 +135,36 @@ const DanhSachTab: React.FC = () => {
   const [showBaoTriForm, setShowBaoTriForm] = useState(false);
   const [editingPhieuBaoTri, setEditingPhieuBaoTri] = useState<PhieuBaoTriSuaChua | null>(null);
 
-  const { data: list = [], isLoading, isError } = useTaiSanList();
-  const allowedIds = useAllowedTaiSanIds();
-  const baseList = useMemo(
-    () => (allowedIds == null ? list : list.filter((ts) => allowedIds.has(ts.id))),
-    [list, allowedIds]
+  /**
+   * Bộ lọc gửi thẳng xuống PostgREST — trước đây màn này tải toàn bộ bảng tài sản
+   * rồi lọc/sắp xếp bằng useMemo.
+   */
+  const listServerQuery: DanhSachTaiSanListServerQuery = useMemo(
+    () => ({
+      page: pagination.page - 1,
+      pageSize: pagination.pageSize,
+      searchTerm,
+      idNhom: filters.id_nhom ?? [],
+      idNoiLuu: filters.id_noi_luu ?? [],
+      idTrangThai: filters.id_trang_thai ?? [],
+      sortColumn: sort.column,
+      sortDirection: sort.direction,
+    }),
+    [pagination.page, pagination.pageSize, searchTerm, filters, sort]
   );
+
+  /** Tóm tắt toàn bộ tài sản cho chip lọc + số đếm. */
+  const { data: tomTatList = [] } = useTaiSanTomTat();
+
+  const pageQuery = useTaiSanPage(listServerQuery);
+  const pageList = pageQuery.data?.data ?? [];
+  const totalCount = pageQuery.data?.totalCount ?? 0;
+  const isLoading = !pageQuery.data && pageQuery.isPending;
+  const isFetching = !!pageQuery.data && pageQuery.isFetching;
+  const isError = pageQuery.isError;
+
   const deletePhieuMutation = useDeletePhieu();
   const deletePhieuBaoTriMutation = useDeletePhieuBaoTri();
-
-  const filterFn = useCallback(
-    (item: TaiSan, term: string, f: DanhSachTaiSanFilters) => {
-      const searchLower = term.toLowerCase();
-      const matchesSearch = Boolean(
-        !term ||
-        (item.ma_tai_san?.toLowerCase().includes(searchLower)) ||
-        (item.ten_tai_san?.toLowerCase().includes(searchLower)) ||
-        (item.ten_nhom?.toLowerCase().includes(searchLower)) ||
-        (item.ten_noi_luu?.toLowerCase().includes(searchLower)) ||
-        (item.ten_nhan_vien_dang_giu?.toLowerCase().includes(searchLower))
-      );
-      const matchesStatus =
-        f.status.length === 0 ||
-        (f.status.includes('Active') && item.trang_thai === 1) ||
-        (f.status.includes('Inactive') && item.trang_thai === 0);
-      const matchesNhom = f.id_nhom.length === 0 || Boolean(item.id_nhom && f.id_nhom.includes(item.id_nhom));
-      const matchesNoiLuu = f.id_noi_luu.length === 0 || Boolean(item.id_noi_luu && f.id_noi_luu.includes(item.id_noi_luu));
-      const matchesTrangThai = f.id_trang_thai.length === 0 || Boolean(item.id_trang_thai && f.id_trang_thai.includes(item.id_trang_thai));
-      return matchesSearch && matchesStatus && matchesNhom && matchesNoiLuu && matchesTrangThai;
-    },
-    []
-  );
-
-  const filteredList = useListWithFilter(baseList, searchTerm, filters, filterFn);
-
-  const sortedList = useMemo(() => {
-    if (!sort.column || !sort.direction) return filteredList;
-    const sorted = [...filteredList];
-    sorted.sort((a, b) => {
-      const aVal = a[sort.column as keyof TaiSan] ?? '';
-      const bVal = b[sort.column as keyof TaiSan] ?? '';
-      const cmp =
-        typeof aVal === 'number' && typeof bVal === 'number'
-          ? aVal - bVal
-          : String(aVal).localeCompare(String(bVal), getLanguage());
-      return sort.direction === 'desc' ? -cmp : cmp;
-    });
-    return sorted;
-  }, [filteredList, sort]);
 
   useEffect(() => {
     return () => resetState();
@@ -382,21 +365,6 @@ const DanhSachTab: React.FC = () => {
     [updateMutation]
   );
 
-  const handleStatusChangeMany = (ids: string[], status: 0 | 1) => {
-    const statusLabel = status === 1 ? t('common.activeStatus') : t('common.inactiveStatus');
-    confirm({
-      title: t('danhSachTaiSan.statusChangeTitle'),
-      message: t('danhSachTaiSan.statusChangeMessage', { count: ids.length, status: statusLabel }),
-      variant: 'default',
-      confirmText: t('common.confirm'),
-      onConfirm: () => {
-        statusMutation.mutate({ ids, status }, {
-          onSuccess: () => clearSelection(),
-        });
-      },
-    });
-  };
-
   if (isError) {
     return (
       <p className="text-sm text-destructive p-4">
@@ -409,16 +377,16 @@ const DanhSachTab: React.FC = () => {
     <div className="flex flex-col h-full">
       <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
         <DanhSachTaiSanToolbar
-          items={baseList}
+          items={tomTatList}
           onAdd={handleAdd}
           onDeleteMany={handleDeleteMany}
-          onStatusChangeMany={handleStatusChangeMany}
-          onExportExcel={() => {
-            const rows = sortedList.map(taiSanToExportRow);
+          onExportExcel={async () => {
+            // Xuất TẤT CẢ bản ghi khớp bộ lọc, không chỉ trang đang xem.
+            const rows = (await fetchAllTaiSanForListQuery(listServerQuery)).map(taiSanToExportRow);
             exportToExcel(rows, TAI_SAN_EXPORT_FILENAME);
           }}
-          onExportPDF={() => {
-            const rows = sortedList.map(taiSanToExportRow);
+          onExportPDF={async () => {
+            const rows = (await fetchAllTaiSanForListQuery(listServerQuery)).map(taiSanToExportRow);
             exportToPDF(rows, TAI_SAN_EXPORT_FILENAME, undefined);
           }}
           canCreate={canCreate}
@@ -427,7 +395,9 @@ const DanhSachTab: React.FC = () => {
         />
         <div className="flex-1 min-h-0">
           <TaiSanTable
-            data={sortedList}
+            data={pageList}
+            totalRecordsOverride={totalCount}
+            isFetching={isFetching}
             isLoading={isLoading}
             onView={handleView}
             onEdit={handleEdit}

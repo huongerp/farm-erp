@@ -28,6 +28,7 @@ const TrangThaiToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, on
   const toggleColumn = useTrangThaiStore((s) => s.toggleColumn);
   const reorderColumns = useTrangThaiStore((s) => s.reorderColumns);
   const resetColumns = useTrangThaiStore((s) => s.resetColumns);
+  const resetColumnWidths = useTrangThaiStore((s) => s.resetColumnWidths);
   const selectedIds = useTrangThaiStore((s) => s.selectedIds);
   const clearSelection = useTrangThaiStore((s) => s.clearSelection);
 
@@ -75,7 +76,6 @@ const TrangThaiToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, on
       filters={renderFilters}
       filterGroups={[{ key: 'status', label: t('common.status'), icon: Tag, options: statusOptions, value: filters.status, onChange: (val: string[]) => setFilter('status', val) }]}
       onAdd={canCreate ? onAdd : undefined}
-      searchPlaceholder={t('thietLapTaiSan.trangThai.searchPlaceholder')}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       onDeleteMany={canDelete ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
@@ -84,6 +84,7 @@ const TrangThaiToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, on
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
+      onResetColumnWidths={resetColumnWidths}
       showBack
     />
   );

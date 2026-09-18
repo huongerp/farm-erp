@@ -1,4 +1,10 @@
-import { db, fetchAllRows } from '../../../../lib/db';
+import { db, fetchAllRows, fetchTablePage, type PaginatedTableResult } from '../../../../lib/db';
+import { applyPostgrestSearch } from '../../../../lib/postgrest-search';
+import {
+  HANG_HOA_SORTABLE_DB_COLUMNS,
+  HANG_HOA_SORT_MAC_DINH,
+  type HangHoaListServerQuery,
+} from './hang-hoa-list-query';
 import { getCachedRef, REF_CACHE_KEYS } from '../../../../lib/ref-cache';
 import type { HangHoa } from '../core/types';
 import type { HangHoaFormValues } from '../core/schema';
@@ -105,6 +111,103 @@ async function enrichWithTenDanhMuc(rows: HangHoaRow[]): Promise<HangHoa[]> {
     const danhMuc = buildDanhMucNames(dmList, danh_muc_id, danh_muc_cha_id);
     return rowToHangHoa(row, danhMuc);
   });
+}
+
+/** Cột tham gia ô tìm kiếm ở server. */
+const HANG_HOA_SEARCH_SPEC = {
+  text: ['ma_hang_hoa', 'ten_hang_hoa', 'dvt', 'pham_cap', 'mo_ta', 'trang_thai'],
+  numeric: ['id', 'don_gia'],
+} as const;
+
+/** Lọc + sắp xếp dùng chung cho trang danh sách và cho lượt tải phục vụ xuất file. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyHangHoaListQuery(q: any, query: HangHoaListServerQuery): any {
+  let sel = q;
+
+  if (query.status.length === 1) {
+    sel = sel.eq('trang_thai', query.status[0] === 'Active' ? TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG : TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG);
+  }
+  if (query.idDanhMucCha.length > 0) {
+    sel = sel.in('danh_muc_cha_id', query.idDanhMucCha.map(Number).filter(Number.isFinite));
+  }
+  if (query.idDanhMuc.length > 0) {
+    sel = sel.in('danh_muc_id', query.idDanhMuc.map(Number).filter(Number.isFinite));
+  }
+  if (query.dvt.length > 0) sel = sel.in('dvt', query.dvt);
+
+  sel = applyPostgrestSearch(sel, query.searchTerm, HANG_HOA_SEARCH_SPEC);
+
+  const dbSortable = query.sortColumn != null && HANG_HOA_SORTABLE_DB_COLUMNS.has(query.sortColumn);
+  const sortCol = dbSortable ? query.sortColumn! : HANG_HOA_SORT_MAC_DINH.column;
+  const ascending = dbSortable ? query.sortDirection !== 'desc' : HANG_HOA_SORT_MAC_DINH.ascending;
+
+  sel = sel.order(sortCol, { ascending });
+  if (sortCol === 'thu_tu') sel = sel.order('ma_hang_hoa', { ascending: true });
+  return sel.order('id', { ascending: false });
+}
+
+export async function getHangHoaPage(
+  query: HangHoaListServerQuery
+): Promise<PaginatedTableResult<HangHoa>> {
+  const result = await fetchTablePage<HangHoaRow>(query.page, query.pageSize, async (from, to) => {
+    const res = await applyHangHoaListQuery(
+      db.from(TABLE).select(HANG_HOA_LIST_COLUMNS, { count: 'exact' }),
+      query
+    ).range(from, to);
+    return { data: (res.data as unknown as HangHoaRow[] | null) ?? null, error: res.error, count: res.count };
+  });
+  return { ...result, data: await enrichWithTenDanhMuc(result.data) };
+}
+
+/** Toàn bộ bản ghi khớp bộ lọc — chỉ gọi khi mở hộp thoại Xuất file. */
+export async function fetchAllHangHoaForListQuery(
+  query: HangHoaListServerQuery
+): Promise<HangHoa[]> {
+  const rows = await fetchAllRows<HangHoaRow>((from, to) =>
+    applyHangHoaListQuery(db.from(TABLE).select(HANG_HOA_LIST_COLUMNS), query).range(from, to)
+  );
+  return enrichWithTenDanhMuc(rows);
+}
+
+/**
+ * Tóm tắt toàn bộ hàng hoá (4 cột) — đủ cho số thứ tự kế tiếp khi thêm mới và
+ * gợi ý đơn vị tính / phẩm cấp, mà không phải tải cả danh mục như trước.
+ */
+export interface HangHoaTomTat {
+  id: string;
+  thu_tu: number;
+  dvt: string | null;
+  pham_cap: string | null;
+  danh_muc_id: string | null;
+  danh_muc_cha_id: string | null;
+  trang_thai: string | null;
+}
+
+export async function getHangHoaTomTat(): Promise<HangHoaTomTat[]> {
+  const rows = await fetchAllRows<{
+    id: number;
+    thu_tu: number | null;
+    dvt: string | null;
+    pham_cap: string | null;
+    danh_muc_id: number | null;
+    danh_muc_cha_id: number | null;
+    trang_thai: string | null;
+  }>((from, to) =>
+    db
+      .from(TABLE)
+      .select('id,thu_tu,dvt,pham_cap,danh_muc_id,danh_muc_cha_id,trang_thai')
+      .order('thu_tu', { ascending: true })
+      .range(from, to)
+  );
+  return rows.map((r) => ({
+    id: String(r.id),
+    thu_tu: r.thu_tu ?? 0,
+    dvt: r.dvt,
+    pham_cap: r.pham_cap,
+    danh_muc_id: r.danh_muc_id != null ? String(r.danh_muc_id) : null,
+    danh_muc_cha_id: r.danh_muc_cha_id != null ? String(r.danh_muc_cha_id) : null,
+    trang_thai: r.trang_thai,
+  }));
 }
 
 export const getAllHangHoa = async (): Promise<HangHoa[]> => {

@@ -8,7 +8,7 @@ export interface KhauHaoTaiSanFilters {
   id_nhom: string[];
 }
 
-const DEFAULT_COLUMNS: ColumnConfig[] = [
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'ma_ky', label: i18n.t('khauHaoTaiSan.store.maKyCol'), visible: true, minWidth: 100, order: 0 },
   { id: 'thang', label: i18n.t('khauHaoTaiSan.store.thangCol'), visible: true, minWidth: 70, order: 1 },
   { id: 'nam', label: i18n.t('khauHaoTaiSan.store.namCol'), visible: true, minWidth: 70, order: 2 },
@@ -27,5 +27,6 @@ const initialFilters: KhauHaoTaiSanFilters = {
 
 export const useKhauHaoTaiSanStore = createGenericStore<KhauHaoTaiSanFilters>(
   initialFilters,
-  DEFAULT_COLUMNS
+  DEFAULT_COLUMNS,
+  'table-khau-hao-tai-san'
 );
