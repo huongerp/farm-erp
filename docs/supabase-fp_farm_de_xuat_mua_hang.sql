@@ -1,5 +1,5 @@
 -- =============================================================================
--- Đề xuất mua hàng (Quản lý farm) — bước đứng trước Phiếu kho phân thuốc
+-- Đề xuất mua hàng (Quản lý nhà sơ chế) — bước đứng trước Phiếu kho phân thuốc
 -- Liên kết: id_noi_de_xuat → fp_mh_danh_sach_kho(id) (kho dùng chung với Mua hàng)
 --           id_nguoi_de_xuat, id_nguoi_duyet → fp_var_nhan_vien(id)
 --           id_hang_hoa (chi tiết) → fp_farm_danh_sach_hang_hoa(id)

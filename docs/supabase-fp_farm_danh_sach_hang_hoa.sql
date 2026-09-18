@@ -1,5 +1,5 @@
 -- =============================================================================
--- Module Hàng hóa – Quản lý farm (tab Hàng hóa)
+-- Module Hàng hóa – Quản lý nhà sơ chế (tab Hàng hóa)
 -- Bảng: fp_farm_danh_sach_hang_hoa
 -- Liên kết: danh_muc_id (cấp 2), danh_muc_cha_id (cấp 1) → fp_farm_danh_muc_hang_hoa(id).
 -- Chạy trong Supabase Dashboard → SQL Editor (chạy sau fp_farm_danh_muc_hang_hoa)

@@ -1,6 +1,6 @@
 -- =============================================================================
 -- RLS: fp_farm_danh_muc_hang_hoa, fp_farm_danh_sach_hang_hoa
--- Module Quản lý farm → Hàng hóa (app dùng Supabase client với JWT authenticated).
+-- Module Quản lý nhà sơ chế → Hàng hóa (app dùng Supabase client với JWT authenticated).
 --
 -- Nếu bảng đã bật RLS nhưng không có policy phù hợp, SELECT qua API trả [] —
 -- app hiển thị "Chưa có danh mục/hàng hóa" dù Table Editor vẫn thấy dữ liệu.

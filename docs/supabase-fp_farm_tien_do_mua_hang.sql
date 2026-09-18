@@ -1,4 +1,4 @@
--- Bảng trạng thái tiến độ mua hàng (Quản lý farm - module Thiết lập đề xuất mua hàng)
+-- Bảng trạng thái tiến độ mua hàng (Quản lý nhà sơ chế - module Thiết lập đề xuất mua hàng)
 -- Pattern giống fp_mh_trang_thai_thanh_toan_doi_tac
 
 CREATE TABLE IF NOT EXISTS fp_farm_tien_do_mua_hang (

@@ -1,5 +1,5 @@
 -- =============================================================================
--- UNIQUE mã cho module Hàng hóa – Quản lý farm
+-- UNIQUE mã cho module Hàng hóa – Quản lý nhà sơ chế
 --   fp_farm_danh_muc_hang_hoa(ma_danh_muc)
 --   fp_farm_danh_sach_hang_hoa(ma_hang_hoa)
 --

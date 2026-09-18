@@ -79,16 +79,16 @@ const Home: React.FC = () => {
 
   const showHanhChinh = useSubmenuVisible('/hanh-chinh');
   const showMuaHang = useSubmenuVisible('/mua-hang');
-  const showQuanLyFarm = useSubmenuVisible('/quan-ly-farm');
+  const showQuanLyNhaSoChe = useSubmenuVisible('/quan-ly-nha-so-che');
   const showTaiChinh = useSubmenuVisible('/tai-chinh');
   const showHeThong = useSubmenuVisible('/he-thong');
   const viewableHanhChinh = useModulesWithViewPermission('/hanh-chinh');
   const viewableMuaHang = useModulesWithViewPermission('/mua-hang');
-  const viewableQuanLyFarm = useModulesWithViewPermission('/quan-ly-farm');
+  const viewableQuanLyNhaSoChe = useModulesWithViewPermission('/quan-ly-nha-so-che');
   const viewableTaiChinh = useModulesWithViewPermission('/tai-chinh');
   const viewableIds = useMemo(
-    () => new Set([...viewableHanhChinh, ...viewableMuaHang, ...viewableQuanLyFarm, ...viewableTaiChinh]),
-    [viewableHanhChinh, viewableMuaHang, viewableQuanLyFarm, viewableTaiChinh]
+    () => new Set([...viewableHanhChinh, ...viewableMuaHang, ...viewableQuanLyNhaSoChe, ...viewableTaiChinh]),
+    [viewableHanhChinh, viewableMuaHang, viewableQuanLyNhaSoChe, viewableTaiChinh]
   );
   const visibleMenu = useMemo(
     () =>
@@ -97,12 +97,12 @@ const Home: React.FC = () => {
         if (!isSubmenuWithPermission(m.path)) return true;
         if (m.path === '/hanh-chinh') return showHanhChinh;
         if (m.path === '/mua-hang') return showMuaHang;
-        if (m.path === '/quan-ly-farm') return showQuanLyFarm;
+        if (m.path === '/quan-ly-nha-so-che') return showQuanLyNhaSoChe;
         if (m.path === '/tai-chinh') return showTaiChinh;
         if (m.path === '/he-thong') return showHeThong;
         return true;
       }),
-    [showHanhChinh, showMuaHang, showQuanLyFarm, showTaiChinh, showHeThong]
+    [showHanhChinh, showMuaHang, showQuanLyNhaSoChe, showTaiChinh, showHeThong]
   );
   /** Thẻ chức năng: bỏ Trang chủ (path === '/'), ẩn submenu không có quyền xem module nào */
   const modules = useMemo(
@@ -117,7 +117,7 @@ const Home: React.FC = () => {
     [t, visibleMenu]
   );
 
-  /** Tất cả nhóm module (Hành chính + Mua hàng + Quản lý farm), chỉ hiển thị module user có quyền xem */
+  /** Tất cả nhóm module (Hành chính + Mua hàng + Quản lý nhà sơ chế), chỉ hiển thị module user có quyền xem */
   const allGroups = useMemo(() => {
     const raw = getAllSubmenuGroups(t, navigate);
     return raw

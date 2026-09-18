@@ -14,7 +14,7 @@ describe('matchReloadContext', () => {
   });
 
   it('khác trang thì bỏ qua — không kéo người dùng về vị trí của trang khác', () => {
-    expect(matchReloadContext(raw({}), '/quan-ly-farm/thu-hoach', NOW)).toBeNull();
+    expect(matchReloadContext(raw({}), '/quan-ly-nha-so-che/thu-hoach', NOW)).toBeNull();
   });
 
   it('phân biệt cả query string', () => {

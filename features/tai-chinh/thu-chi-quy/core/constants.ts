@@ -43,7 +43,7 @@ export function nguonChungTuFullI18nKey(nguon: ThuChiNguon): string {
 /** Đường dẫn module nguồn để mở phiếu gốc từ phiếu quỹ. */
 export const NGUON_CHUNG_TU_PATH: Record<ThuChiNguon, string> = {
   don_dat_hang: '/mua-hang/don-dat-hang',
-  de_xuat_mua_hang: '/quan-ly-farm/de-xuat-mua-hang',
+  de_xuat_mua_hang: '/quan-ly-nha-so-che/de-xuat-mua-hang',
   chi_phi_tai_san: '/hanh-chinh/chi-phi-tai-san',
 };
 

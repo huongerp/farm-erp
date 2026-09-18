@@ -38,12 +38,12 @@ CREATE TRIGGER tr_thong_bao_fp_mh_phieu_de_xuat_vat_tu
 DROP TRIGGER IF EXISTS tr_thong_bao_fp_farm_de_xuat_mua_hang ON public.fp_farm_de_xuat_mua_hang;
 CREATE TRIGGER tr_thong_bao_fp_farm_de_xuat_mua_hang
   AFTER INSERT OR UPDATE ON public.fp_farm_de_xuat_mua_hang
-  FOR EACH ROW EXECUTE FUNCTION public.fn_ghi_su_kien_thong_bao('quan-ly-farm/de-xuat-mua-hang', 'trang_thai');
+  FOR EACH ROW EXECUTE FUNCTION public.fn_ghi_su_kien_thong_bao('quan-ly-nha-so-che/de-xuat-mua-hang', 'trang_thai');
 
 DROP TRIGGER IF EXISTS tr_thong_bao_fp_farm_phieu_kho_phan_thuoc ON public.fp_farm_phieu_kho_phan_thuoc;
 CREATE TRIGGER tr_thong_bao_fp_farm_phieu_kho_phan_thuoc
   AFTER INSERT OR UPDATE ON public.fp_farm_phieu_kho_phan_thuoc
-  FOR EACH ROW EXECUTE FUNCTION public.fn_ghi_su_kien_thong_bao('quan-ly-farm/phieu-kho-phan-thuoc', 'trang_thai');
+  FOR EACH ROW EXECUTE FUNCTION public.fn_ghi_su_kien_thong_bao('quan-ly-nha-so-che/phieu-kho-phan-thuoc', 'trang_thai');
 
 -- -----------------------------------------------------------------------------
 -- 3) Phiếu hành chính — một cấp duyệt

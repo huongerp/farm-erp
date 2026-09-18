@@ -1,6 +1,6 @@
 -- =============================================================================
 -- Cấp quyền cho 3 module Quỹ farm (Tài chính) theo đúng khuôn đang dùng ở các
--- module farm khác (tham chiếu: quan-ly-farm/de-xuat-mua-hang).
+-- module farm khác (tham chiếu: quan-ly-nha-so-che/de-xuat-mua-hang).
 --
 --   - Tổng Giám Đốc (tt = 1): all  → xem/sửa MỌI farm (quy ước "cấp cao" của app)
 --   - Trưởng nhóm / Quản lý điều hành: view+create+update+delete trong phạm vi
@@ -36,7 +36,7 @@ CROSS JOIN (VALUES
   ('tai-chinh/thong-ke-quy'),
   ('tai-chinh/thiet-lap-quy')
 ) AS m(module_id)
-WHERE pq.module_id = 'quan-ly-farm/de-xuat-mua-hang'
+WHERE pq.module_id = 'quan-ly-nha-so-che/de-xuat-mua-hang'
   AND pq.actions @> ARRAY['update']::text[]
 ON CONFLICT (chuc_vu_id, module_id) DO UPDATE SET actions = EXCLUDED.actions;
 

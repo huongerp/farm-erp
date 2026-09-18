@@ -68,11 +68,11 @@ const PhieuKhoPreviewPage = lazyWithFeatureI18n(
 );
 const PhieuKhoPTPreviewPage = lazyWithFeatureI18n(
   'phieu-kho-phan-thuoc',
-  () => import('./features/quan-ly-farm/phieu-kho-phan-thuoc/PhieuKhoPTPreviewPage')
+  () => import('./features/quan-ly-nha-so-che/phieu-kho-phan-thuoc/PhieuKhoPTPreviewPage')
 );
 const DeXuatMuaHangPreviewPage = lazyWithFeatureI18n(
   'de-xuat-mua-hang',
-  () => import('./features/quan-ly-farm/de-xuat-mua-hang/DeXuatMuaHangPreviewPage')
+  () => import('./features/quan-ly-nha-so-che/de-xuat-mua-hang/DeXuatMuaHangPreviewPage')
 );
 const PhieuDeXuatVatTuPreviewPage = lazyWithFeatureI18n(
   'phieu-de-xuat-vat-tu',
@@ -92,15 +92,15 @@ const BaoCaoKhauHaoPreviewPage = lazyWithFeatureI18n(
 );
 const BaoCaoNhanCongPreviewPage = lazyWithFeatureI18n(
   'bao-cao-nhan-cong',
-  () => import('./features/quan-ly-farm/bao-cao-nhan-cong/BaoCaoNhanCongPreviewPage')
+  () => import('./features/quan-ly-nha-so-che/bao-cao-nhan-cong/BaoCaoNhanCongPreviewPage')
 );
 const BaoCaoSoChePreviewPage = lazyWithFeatureI18n(
   'bao-cao-so-che',
-  () => import('./features/quan-ly-farm/bao-cao-so-che/BaoCaoSoChePreviewPage')
+  () => import('./features/quan-ly-nha-so-che/bao-cao-so-che/BaoCaoSoChePreviewPage')
 );
 const DuBaoSlDongThungPreviewPage = lazyWithFeatureI18n(
   'du-bao-sl-dong-thung',
-  () => import('./features/quan-ly-farm/du-bao-sl-dong-thung/DuBaoSlDongThungPreviewPage')
+  () => import('./features/quan-ly-nha-so-che/du-bao-sl-dong-thung/DuBaoSlDongThungPreviewPage')
 );
 
 const EmployeePage = lazy(() => import('./features/he-thong/nhan-vien/index'));
@@ -125,6 +125,16 @@ const NavigateToMuaHangModule = () => {
   const { moduleId } = useParams<{ moduleId: string }>();
   const location = useLocation();
   const to = moduleId ? `/mua-hang/${moduleId}${location.pathname.endsWith('/huong-dan') ? '/huong-dan' : ''}` : '/mua-hang';
+  return <Navigate to={to} replace />;
+};
+
+/**
+ * Tương thích URL cũ: nhóm đổi tên /quan-ly-farm -> /quan-ly-nha-so-che.
+ * Giữ nguyên phần đuôi để link trong thông báo cũ (fp_var_thong_bao.link) và bookmark còn dùng được.
+ */
+const NavigateToNhaSoChe = () => {
+  const location = useLocation();
+  const to = location.pathname.replace('/quan-ly-farm', '/quan-ly-nha-so-che') + location.search;
   return <Navigate to={to} replace />;
 };
 
@@ -205,10 +215,10 @@ const App = () => {
         <Route path="/mua-hang/kiem-ke-kho/preview/:id" element={<ProtectedRoute><Suspense fallback={<PageFallback />}><PhieuKiemKeKhoPreviewPage /></Suspense></ProtectedRoute>} />
         <Route path="/mua-hang/phieu-kho/preview/:id" element={<ProtectedRoute><Suspense fallback={<PageFallback />}><PhieuKhoPreviewPage /></Suspense></ProtectedRoute>} />
         <Route
-          path="/quan-ly-farm/de-xuat-mua-hang/preview/:id"
+          path="/quan-ly-nha-so-che/de-xuat-mua-hang/preview/:id"
           element={
             <ProtectedRoute>
-              <ModulePermissionGuard moduleId="quan-ly-farm/de-xuat-mua-hang">
+              <ModulePermissionGuard moduleId="quan-ly-nha-so-che/de-xuat-mua-hang">
                 <Suspense fallback={<PageFallback />}>
                   <DeXuatMuaHangPreviewPage />
                 </Suspense>
@@ -217,10 +227,10 @@ const App = () => {
           }
         />
         <Route
-          path="/quan-ly-farm/phieu-kho-phan-thuoc/preview/:id"
+          path="/quan-ly-nha-so-che/phieu-kho-phan-thuoc/preview/:id"
           element={
             <ProtectedRoute>
-              <ModulePermissionGuard moduleId="quan-ly-farm/phieu-kho-phan-thuoc">
+              <ModulePermissionGuard moduleId="quan-ly-nha-so-che/phieu-kho-phan-thuoc">
                 <Suspense fallback={<PageFallback />}>
                   <PhieuKhoPTPreviewPage />
                 </Suspense>
@@ -229,10 +239,10 @@ const App = () => {
           }
         />
         <Route
-          path="/quan-ly-farm/bao-cao-nhan-cong/preview/:id"
+          path="/quan-ly-nha-so-che/bao-cao-nhan-cong/preview/:id"
           element={
             <ProtectedRoute>
-              <ModulePermissionGuard moduleId="quan-ly-farm/bao-cao-nhan-cong">
+              <ModulePermissionGuard moduleId="quan-ly-nha-so-che/bao-cao-nhan-cong">
                 <Suspense fallback={<PageFallback />}>
                   <BaoCaoNhanCongPreviewPage />
                 </Suspense>
@@ -241,10 +251,10 @@ const App = () => {
           }
         />
         <Route
-          path="/quan-ly-farm/bao-cao-so-che/preview/:id"
+          path="/quan-ly-nha-so-che/bao-cao-so-che/preview/:id"
           element={
             <ProtectedRoute>
-              <ModulePermissionGuard moduleId="quan-ly-farm/bao-cao-so-che">
+              <ModulePermissionGuard moduleId="quan-ly-nha-so-che/bao-cao-so-che">
                 <Suspense fallback={<PageFallback />}>
                   <BaoCaoSoChePreviewPage />
                 </Suspense>
@@ -253,10 +263,10 @@ const App = () => {
           }
         />
         <Route
-          path="/quan-ly-farm/du-bao-sl-dong-thung/preview/:id"
+          path="/quan-ly-nha-so-che/du-bao-sl-dong-thung/preview/:id"
           element={
             <ProtectedRoute>
-              <ModulePermissionGuard moduleId="quan-ly-farm/du-bao-sl-dong-thung">
+              <ModulePermissionGuard moduleId="quan-ly-nha-so-che/du-bao-sl-dong-thung">
                 <Suspense fallback={<PageFallback />}>
                   <DuBaoSlDongThungPreviewPage />
                 </Suspense>
@@ -283,9 +293,10 @@ const App = () => {
                   <Route path="/mua-hang" element={<SubmenuPage />} />
                   <Route path="/mua-hang/:moduleId/huong-dan" element={<ModuleGuidePage />} />
                   <Route path="/mua-hang/:moduleId" element={<SubmenuPage />} />
-                  <Route path="/quan-ly-farm" element={<SubmenuPage />} />
-                  <Route path="/quan-ly-farm/:moduleId/huong-dan" element={<ModuleGuidePage />} />
-                  <Route path="/quan-ly-farm/:moduleId" element={<SubmenuPage />} />
+                  <Route path="/quan-ly-nha-so-che" element={<SubmenuPage />} />
+                  <Route path="/quan-ly-nha-so-che/:moduleId/huong-dan" element={<ModuleGuidePage />} />
+                  <Route path="/quan-ly-nha-so-che/:moduleId" element={<SubmenuPage />} />
+                  <Route path="/quan-ly-farm/*" element={<NavigateToNhaSoChe />} />
                   <Route path="/tai-chinh" element={<SubmenuPage />} />
                   <Route path="/tai-chinh/:moduleId/huong-dan" element={<ModuleGuidePage />} />
                   <Route path="/tai-chinh/:moduleId" element={<SubmenuPage />} />

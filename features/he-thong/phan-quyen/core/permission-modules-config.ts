@@ -1,6 +1,6 @@
 /**
  * Cấu hình module phân quyền theo 3 cấp: Chức năng → Nhóm module → Module.
- * Chỉ giữ các module đang hiển thị trên submenu: hanh-chinh, mua-hang (gồm kho-van), quan-ly-farm,
+ * Chỉ giữ các module đang hiển thị trên submenu: hanh-chinh, mua-hang (gồm kho-van), quan-ly-nha-so-che,
  * tai-chinh (quỹ farm), he-thong.
  * Các module đã ẩn (nhan-su, kinh-doanh, marketing, dieu-hanh) đã được xoá.
  */
@@ -32,8 +32,8 @@ export const APPROVE_ACTION = 'approve' as const;
 /** Module có chức năng phê duyệt (nút Duyệt/Phê duyệt trên giao diện) */
 export const MODULES_WITH_APPROVE = new Set<string>([
   'kho-van/phieu-kho',
-  'quan-ly-farm/phieu-kho-phan-thuoc',
-  'quan-ly-farm/de-xuat-mua-hang',
+  'quan-ly-nha-so-che/phieu-kho-phan-thuoc',
+  'quan-ly-nha-so-che/de-xuat-mua-hang',
   /** Phiếu đề xuất vật tư: module_id trong phân quyền là mua-hang/... (URL /mua-hang/phieu-de-xuat-vat-tu) */
   'mua-hang/phieu-de-xuat-vat-tu',
   'mua-hang/don-dat-hang',
@@ -101,17 +101,17 @@ export const PERMISSION_FUNCTIONS: PermissionFunction[] = [
     ],
   },
   {
-    id: 'quan-ly-farm',
-    nameKey: 'nav.quanLyFarm',
+    id: 'quan-ly-nha-so-che',
+    nameKey: 'nav.quanLyNhaSoChe',
     color: 'emerald',
     groups: [
-      { groupTitleKey: 'page.quanLyFarm.groupKeHoach', modules: [
-        { id: BASE('quan-ly-farm', 'thu-hoach'), nameKey: 'page.quanLyFarm.modules.thuHoach' },
+      { groupTitleKey: 'page.quanLyNhaSoChe.groupKeHoach', modules: [
+        { id: BASE('quan-ly-nha-so-che', 'thu-hoach'), nameKey: 'page.quanLyNhaSoChe.modules.thuHoach' },
         /** BCNC: quyền Sửa/Xóa thường chỉ áp dụng cho phiếu mình tạo và chưa khóa; quản trị sửa/xóa tất cả. */
-        { id: BASE('quan-ly-farm', 'bao-cao-nhan-cong'), nameKey: 'page.quanLyFarm.modules.baoCaoNhanCong' },
-        { id: BASE('quan-ly-farm', 'bao-cao-so-che'), nameKey: 'page.quanLyFarm.modules.baoCaoSoChe' },
-        { id: BASE('quan-ly-farm', 'du-bao-sl-dong-thung'), nameKey: 'page.quanLyFarm.modules.duBaoSlDongThung' },
-        { id: BASE('quan-ly-farm', 'thong-ke-san-xuat'), nameKey: 'page.quanLyFarm.modules.thongKeSanXuat' },
+        { id: BASE('quan-ly-nha-so-che', 'bao-cao-nhan-cong'), nameKey: 'page.quanLyNhaSoChe.modules.baoCaoNhanCong' },
+        { id: BASE('quan-ly-nha-so-che', 'bao-cao-so-che'), nameKey: 'page.quanLyNhaSoChe.modules.baoCaoSoChe' },
+        { id: BASE('quan-ly-nha-so-che', 'du-bao-sl-dong-thung'), nameKey: 'page.quanLyNhaSoChe.modules.duBaoSlDongThung' },
+        { id: BASE('quan-ly-nha-so-che', 'thong-ke-san-xuat'), nameKey: 'page.quanLyNhaSoChe.modules.thongKeSanXuat' },
       ]},
       /**
        * Kho phân thuốc — bố cục nhóm giống Kho vận (Mua hàng): nhập xuất / báo cáo / danh mục.
@@ -126,16 +126,16 @@ export const PERMISSION_FUNCTIONS: PermissionFunction[] = [
        * Dữ liệu kho chung: UI tồn/NXT farm đọc danh sách kho từ Kho vận — nếu cần hạn chế sửa “danh mục kho”,
        * gán thêm quyền kho-van/danh-sach-kho (submenu Mua hàng), không nằm trong các module farm dưới đây.
        */
-      { groupTitleKey: 'page.quanLyFarm.groupKhoPhanThuocNhapXuat', modules: [
-        { id: BASE('quan-ly-farm', 'de-xuat-mua-hang'), nameKey: 'page.quanLyFarm.modules.deXuatMuaHang' },
-        { id: BASE('quan-ly-farm', 'phieu-kho-phan-thuoc'), nameKey: 'page.quanLyFarm.modules.phieuKhoPhanThuoc' },
+      { groupTitleKey: 'page.quanLyNhaSoChe.groupKhoPhanThuocNhapXuat', modules: [
+        { id: BASE('quan-ly-nha-so-che', 'de-xuat-mua-hang'), nameKey: 'page.quanLyNhaSoChe.modules.deXuatMuaHang' },
+        { id: BASE('quan-ly-nha-so-che', 'phieu-kho-phan-thuoc'), nameKey: 'page.quanLyNhaSoChe.modules.phieuKhoPhanThuoc' },
       ]},
-      { groupTitleKey: 'page.quanLyFarm.groupKhoPhanThuocBaoCao', modules: [
-        { id: BASE('quan-ly-farm', 'ton-kho-phan-thuoc'), nameKey: 'page.quanLyFarm.modules.tonKhoPhanThuoc' },
+      { groupTitleKey: 'page.quanLyNhaSoChe.groupKhoPhanThuocBaoCao', modules: [
+        { id: BASE('quan-ly-nha-so-che', 'ton-kho-phan-thuoc'), nameKey: 'page.quanLyNhaSoChe.modules.tonKhoPhanThuoc' },
       ]},
-      { groupTitleKey: 'page.quanLyFarm.groupKhoPhanThuocDanhMuc', modules: [
-        { id: BASE('quan-ly-farm', 'hang-hoa-phan-thuoc'), nameKey: 'page.quanLyFarm.modules.hangHoaPhanThuoc' },
-        { id: BASE('quan-ly-farm', 'thiet-lap-de-xuat-mua-hang'), nameKey: 'page.quanLyFarm.modules.thietLapDeXuatMuaHang' },
+      { groupTitleKey: 'page.quanLyNhaSoChe.groupKhoPhanThuocDanhMuc', modules: [
+        { id: BASE('quan-ly-nha-so-che', 'hang-hoa-phan-thuoc'), nameKey: 'page.quanLyNhaSoChe.modules.hangHoaPhanThuoc' },
+        { id: BASE('quan-ly-nha-so-che', 'thiet-lap-de-xuat-mua-hang'), nameKey: 'page.quanLyNhaSoChe.modules.thietLapDeXuatMuaHang' },
       ]},
     ],
   },
@@ -189,7 +189,7 @@ export function getAllPermissionModules(): { id: string; nameKey: string }[] {
 }
 
 /** Path submenu có phân quyền (khớp với SIDEBAR_MENU) */
-const SUBMENU_PATHS_WITH_PERMISSION = ['/hanh-chinh', '/mua-hang', '/quan-ly-farm', '/tai-chinh', '/he-thong'] as const;
+const SUBMENU_PATHS_WITH_PERMISSION = ['/hanh-chinh', '/mua-hang', '/quan-ly-nha-so-che', '/tai-chinh', '/he-thong'] as const;
 
 /**
  * Lấy danh sách module id thuộc một submenu theo path (vd: /hanh-chinh -> [hanh-chinh/cong-viec, ...]).

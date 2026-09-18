@@ -12,10 +12,10 @@ export function prefetchSubmenuPageChunk(): void {
   void import('../pages/SubmenuPage');
 }
 
-const BASE_TO_DASH: Record<string, '/hanh-chinh' | '/mua-hang' | '/quan-ly-farm' | '/tai-chinh'> = {
+const BASE_TO_DASH: Record<string, '/hanh-chinh' | '/mua-hang' | '/quan-ly-nha-so-che' | '/tai-chinh'> = {
   'hanh-chinh': '/hanh-chinh',
   'mua-hang': '/mua-hang',
-  'quan-ly-farm': '/quan-ly-farm',
+  'quan-ly-nha-so-che': '/quan-ly-nha-so-che',
   'tai-chinh': '/tai-chinh',
 };
 

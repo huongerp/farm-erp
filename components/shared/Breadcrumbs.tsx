@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { TFunction } from 'i18next';
 import { HANH_CHINH_MODULE_SLUGS, getModuleTitleKeyBySlug } from '../../lib/hanh-chinh-menu';
 import { MUA_HANG_MODULE_SLUGS, getMuaHangModuleTitleKeyBySlug } from '../../lib/mua-hang-menu';
-import { QUAN_LY_FARM_MODULE_SLUGS, getQuanLyFarmModuleTitleKeyBySlug } from '../../lib/quan-ly-farm-menu';
+import { QUAN_LY_NHA_SO_CHE_MODULE_SLUGS, getQuanLyNhaSoCheModuleTitleKeyBySlug } from '../../lib/quan-ly-nha-so-che-menu';
 import { TAI_CHINH_MODULE_SLUGS, getTaiChinhModuleTitleKeyBySlug } from '../../lib/tai-chinh-menu';
 
 interface RouteConfig {
@@ -29,10 +29,10 @@ interface RouteConfig {
       { label: t(getMuaHangModuleTitleKeyBySlug(slug)), parentPath: '/mua-hang' },
     ])
   );
-  const quanLyFarmModuleRoutes = Object.fromEntries(
-    QUAN_LY_FARM_MODULE_SLUGS.map((slug) => [
-      `/quan-ly-farm/${slug}`,
-      { label: t(getQuanLyFarmModuleTitleKeyBySlug(slug)), parentPath: '/quan-ly-farm' },
+  const quanLyNhaSoCheModuleRoutes = Object.fromEntries(
+    QUAN_LY_NHA_SO_CHE_MODULE_SLUGS.map((slug) => [
+      `/quan-ly-nha-so-che/${slug}`,
+      { label: t(getQuanLyNhaSoCheModuleTitleKeyBySlug(slug)), parentPath: '/quan-ly-nha-so-che' },
     ])
   );
   const taiChinhModuleRoutes = Object.fromEntries(
@@ -50,7 +50,7 @@ interface RouteConfig {
     '/he-thong': { label: t('breadcrumb.systemAdmin'), parentPath: '/' },
     '/hanh-chinh': { label: t('breadcrumb.hanhChinh'), parentPath: '/' },
     '/mua-hang': { label: t('breadcrumb.muaHang'), parentPath: '/' },
-    '/quan-ly-farm': { label: t('breadcrumb.quanLyFarm'), parentPath: '/' },
+    '/quan-ly-nha-so-che': { label: t('breadcrumb.quanLyNhaSoChe'), parentPath: '/' },
     '/tai-chinh': { label: t('breadcrumb.taiChinh'), parentPath: '/' },
 
     // --- HỆ THỐNG ---
@@ -69,7 +69,7 @@ interface RouteConfig {
     ...muaHangModuleRoutes,
 
     // --- QUẢN LÝ FARM (module con) ---
-    ...quanLyFarmModuleRoutes,
+    ...quanLyNhaSoCheModuleRoutes,
 
     // --- TÀI CHÍNH (module con) ---
     ...taiChinhModuleRoutes,

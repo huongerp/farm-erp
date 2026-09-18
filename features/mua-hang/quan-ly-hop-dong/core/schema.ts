@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import i18n from '../../../../lib/i18n';
 import { TRANG_THAI_HOP_DONG } from './constants';
-import { hinhAnhUrlsSchema } from '../../../quan-ly-farm/shared/hinh-anh-url-schema';
+import { hinhAnhUrlsSchema } from '../../../quan-ly-nha-so-che/shared/hinh-anh-url-schema';
 
 /** Một dòng thanh toán (modal trong chi tiết HĐ) — trừ ghi chú, các trường đều bắt buộc */
 export const hopDongChiTietLineSchema = z.object({

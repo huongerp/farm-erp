@@ -56,8 +56,8 @@ export const MO_TA_BANG: Record<string, MoTaBang> = {
   },
   fp_farm_de_xuat_mua_hang: {
     bang: 'fp_farm_de_xuat_mua_hang',
-    moduleId: 'quan-ly-farm/de-xuat-mua-hang',
-    duongDan: '/quan-ly-farm/de-xuat-mua-hang',
+    moduleId: 'quan-ly-nha-so-che/de-xuat-mua-hang',
+    duongDan: '/quan-ly-nha-so-che/de-xuat-mua-hang',
     tenChungTu: 'Đề xuất mua hàng',
     cotSoPhieu: 'so_phieu',
     cotNguoiTao: 'id_nguoi_de_xuat',
@@ -66,8 +66,8 @@ export const MO_TA_BANG: Record<string, MoTaBang> = {
   },
   fp_farm_phieu_kho_phan_thuoc: {
     bang: 'fp_farm_phieu_kho_phan_thuoc',
-    moduleId: 'quan-ly-farm/phieu-kho-phan-thuoc',
-    duongDan: '/quan-ly-farm/phieu-kho-phan-thuoc',
+    moduleId: 'quan-ly-nha-so-che/phieu-kho-phan-thuoc',
+    duongDan: '/quan-ly-nha-so-che/phieu-kho-phan-thuoc',
     tenChungTu: 'Phiếu kho phân thuốc',
     cotSoPhieu: 'so_phieu',
     cotNguoiTao: 'nguoi_tao_id',

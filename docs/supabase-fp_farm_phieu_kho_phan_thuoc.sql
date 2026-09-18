@@ -1,5 +1,5 @@
 -- =============================================================================
--- Phiếu kho phân thuốc (Quản lý farm) — nhập / xuất / chuyển
+-- Phiếu kho phân thuốc (Quản lý nhà sơ chế) — nhập / xuất / chuyển
 -- kho_id → fp_mh_danh_sach_kho (dùng chung với Mua hàng)
 -- id_hang_hoa chi tiết → fp_farm_danh_sach_hang_hoa
 -- Chạy sau: fp_mh_danh_sach_kho, fp_farm_danh_sach_hang_hoa

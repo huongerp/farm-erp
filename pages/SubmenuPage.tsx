@@ -9,7 +9,7 @@ import ModulePlaceholder from '../components/placeholder/ModulePlaceholder';
 import {
   LazyHanhChinhDashboard,
   LazyMuaHangDashboard,
-  LazyQuanLyFarmDashboard,
+  LazyQuanLyNhaSoCheDashboard,
   LazyTaiChinhDashboard,
   renderLazySubmenuModule,
   SubmenuChunkFallback,
@@ -17,13 +17,13 @@ import {
 import { SUBMENU_PATHS, SIDEBAR_MENU } from '../lib/sidebar-menu';
 import { getModuleTitleKeyBySlug, HANH_CHINH_MODULE_SLUGS } from '../lib/hanh-chinh-menu';
 import { getMuaHangModuleTitleKeyBySlug, MUA_HANG_MODULE_SLUGS } from '../lib/mua-hang-menu';
-import { getQuanLyFarmModuleTitleKeyBySlug, QUAN_LY_FARM_MODULE_SLUGS } from '../lib/quan-ly-farm-menu';
+import { getQuanLyNhaSoCheModuleTitleKeyBySlug, QUAN_LY_NHA_SO_CHE_MODULE_SLUGS } from '../lib/quan-ly-nha-so-che-menu';
 import { getTaiChinhModuleTitleKeyBySlug, TAI_CHINH_MODULE_SLUGS } from '../lib/tai-chinh-menu';
 
 const PATH_TO_BREADCRUMB_KEY: Record<string, string> = {
   '/hanh-chinh': 'breadcrumb.hanhChinh',
   '/mua-hang': 'breadcrumb.muaHang',
-  '/quan-ly-farm': 'breadcrumb.quanLyFarm',
+  '/quan-ly-nha-so-che': 'breadcrumb.quanLyNhaSoChe',
   '/tai-chinh': 'breadcrumb.taiChinh',
   '/kho-van': 'breadcrumb.khoVan',
 };
@@ -68,11 +68,11 @@ const SubmenuPage: React.FC = () => {
       </ErrorBoundary>
     );
   }
-  if (basePath === '/quan-ly-farm' && !moduleId) {
+  if (basePath === '/quan-ly-nha-so-che' && !moduleId) {
     return (
       <ErrorBoundary>
         <Suspense fallback={<SubmenuChunkFallback />}>
-          <LazyQuanLyFarmDashboard />
+          <LazyQuanLyNhaSoCheDashboard />
         </Suspense>
       </ErrorBoundary>
     );
@@ -100,13 +100,13 @@ const SubmenuPage: React.FC = () => {
         return <Navigate to="/hanh-chinh/cong-viec" replace />;
       }
     }
-    if (basePath === '/quan-ly-farm' && decodedSlug === 'kiem-ke-kho-phan-thuoc') {
-      return <Navigate to="/quan-ly-farm" replace />;
+    if (basePath === '/quan-ly-nha-so-che' && decodedSlug === 'kiem-ke-kho-phan-thuoc') {
+      return <Navigate to="/quan-ly-nha-so-che" replace />;
     }
-    if (basePath === '/quan-ly-farm' && decodedSlug === 'thuong-kpi') {
-      return <Navigate to="/quan-ly-farm" replace />;
+    if (basePath === '/quan-ly-nha-so-che' && decodedSlug === 'thuong-kpi') {
+      return <Navigate to="/quan-ly-nha-so-che" replace />;
     }
-    if (basePath === '/quan-ly-farm' && QUAN_LY_FARM_MODULE_SLUGS.includes(decodedSlug)) {
+    if (basePath === '/quan-ly-nha-so-che' && QUAN_LY_NHA_SO_CHE_MODULE_SLUGS.includes(decodedSlug)) {
       if (decodedSlug === 'thu-hoach') {
         return wrapWithPermission(basePath ?? '', decodedSlug, (
           <ErrorBoundary>{renderLazySubmenuModule('thu-hoach')}</ErrorBoundary>
@@ -157,7 +157,7 @@ const SubmenuPage: React.FC = () => {
           <ErrorBoundary>{renderLazySubmenuModule('ton-kho-phan-thuoc')}</ErrorBoundary>
         ));
       }
-      const farmTitle = t(getQuanLyFarmModuleTitleKeyBySlug(decodedSlug));
+      const farmTitle = t(getQuanLyNhaSoCheModuleTitleKeyBySlug(decodedSlug));
       return wrapWithPermission(basePath ?? '', decodedSlug, (
         <ErrorBoundary>
           <ModulePlaceholder

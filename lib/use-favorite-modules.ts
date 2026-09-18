@@ -8,6 +8,18 @@ const EMPTY_FAVORITES: string[] = [];
 let cachedRaw: string | null = null;
 let cachedSnapshot: string[] = EMPTY_FAVORITES;
 
+/**
+ * Nhóm /quan-ly-farm đã đổi tên thành /quan-ly-nha-so-che — đổi tiền tố id đã ghim từ trước
+ * để người dùng không mất dấu ghim sau khi cập nhật.
+ */
+function chuanHoaIdCu(ids: string[]): string[] {
+  if (!ids.some((id) => id.startsWith('/quan-ly-farm/'))) return ids;
+  const daDoi = ids.map((id) =>
+    id.startsWith('/quan-ly-farm/') ? id.replace('/quan-ly-farm/', '/quan-ly-nha-so-che/') : id
+  );
+  return [...new Set(daDoi)];
+}
+
 function getSnapshot(): string[] {
   if (typeof window === 'undefined' || typeof localStorage === 'undefined') return EMPTY_FAVORITES;
   try {
@@ -22,8 +34,8 @@ function getSnapshot(): string[] {
     const arr =
       Array.isArray(parsed) && parsed.every((x) => typeof x === 'string') ? (parsed as string[]) : [];
     cachedRaw = raw;
-    cachedSnapshot = arr;
-    return arr;
+    cachedSnapshot = chuanHoaIdCu(arr);
+    return cachedSnapshot;
   } catch {
     cachedRaw = null;
     cachedSnapshot = EMPTY_FAVORITES;

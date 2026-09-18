@@ -45,9 +45,9 @@ export const SIDEBAR_MENU: MenuItem[] = [
     gradient: 'bg-gradient-to-br from-orange-600 to-orange-800',
   },
   {
-    path: '/quan-ly-farm',
-    nameKey: 'nav.quanLyFarm',
-    descriptionKey: 'page.home.quanLyFarmDesc',
+    path: '/quan-ly-nha-so-che',
+    nameKey: 'nav.quanLyNhaSoChe',
+    descriptionKey: 'page.home.quanLyNhaSoCheDesc',
     icon: Sprout,
     gradient: 'bg-gradient-to-br from-emerald-600 to-emerald-900',
   },
@@ -81,7 +81,7 @@ export const SIDEBAR_MENU: MenuItem[] = [
 export const SUBMENU_PATHS = [
   '/hanh-chinh',
   '/mua-hang',
-  '/quan-ly-farm',
+  '/quan-ly-nha-so-che',
   '/tai-chinh',
 ];
 

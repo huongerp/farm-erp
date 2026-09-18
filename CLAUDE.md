@@ -26,7 +26,7 @@ auth-service và notify-service kèm `npm run dev` (bỏ qua bằng `DEV_SKIP_SE
 
 - `App.tsx` — router, theme, ngôn ngữ, route bảo vệ, bootstrap phiên.
 - `features/<nhóm>/<module>/` — nghiệp vụ theo nhóm: `he-thong`, `hanh-chinh`, `kho-van`,
-  `mua-hang`, `quan-ly-farm`.
+  `mua-hang`, `quan-ly-nha-so-che`.
 - `components/` — `ui/` (Button, Input, Table…), `shared/` (ConfirmDialog, Section,
   ModulePermissionGuard…), `layout/`, `auth/`.
 - `lib/` — hạ tầng dùng chung: `db.ts` (PostgrestClient), `auth.ts`, `token-store.ts`,
@@ -65,7 +65,7 @@ Mỗi module trong `features/` theo cùng một khuôn:
 
 Module có dữ liệu lớn dần theo thời gian (phiếu, báo cáo, danh mục hàng hoá) phải
 lọc / sắp xếp / cắt trang ở PostgREST. Khuôn đã áp dụng — xem
-`features/quan-ly-farm/bao-cao-nhan-cong` làm mẫu đầy đủ nhất:
+`features/quan-ly-nha-so-che/bao-cao-nhan-cong` làm mẫu đầy đủ nhất:
 
 ```
 services/<module>-list-query.ts   # kiểu XListServerQuery + cột sort được ở DB

@@ -1,5 +1,5 @@
 -- =============================================================================
--- Module Hàng hóa – Quản lý farm (tab Danh mục)
+-- Module Hàng hóa – Quản lý nhà sơ chế (tab Danh mục)
 -- Bảng: fp_farm_danh_muc_hang_hoa (cây 2 cấp: danh_muc_cha_id = null là cấp 1)
 -- Chạy trong Supabase Dashboard → SQL Editor
 -- (Bảng cũ có trang_thai: chạy docs/supabase-fp_farm_alter_drop_trang_thai_va_thu_tu_hang_hoa.sql)

@@ -31,16 +31,16 @@ const RAW_SUBMENU_MODULE_IMPORTS = {
   'thanh-toan-doi-tac': () => import('../features/mua-hang/thanh-toan-doi-tac'),
   'quan-ly-hop-dong': () => import('../features/mua-hang/quan-ly-hop-dong'),
   'bao-cao-de-xuat-vat-tu': () => import('../features/mua-hang/bao-cao-de-xuat-vat-tu'),
-  'thu-hoach': () => import('../features/quan-ly-farm/thu-hoach'),
-  'bao-cao-nhan-cong': () => import('../features/quan-ly-farm/bao-cao-nhan-cong'),
-  'bao-cao-so-che': () => import('../features/quan-ly-farm/bao-cao-so-che'),
-  'du-bao-sl-dong-thung': () => import('../features/quan-ly-farm/du-bao-sl-dong-thung'),
-  'thong-ke-san-xuat': () => import('../features/quan-ly-farm/thong-ke-san-xuat'),
-  'hang-hoa-phan-thuoc': () => import('../features/quan-ly-farm/hang-hoa-phan-thuoc'),
-  'de-xuat-mua-hang': () => import('../features/quan-ly-farm/de-xuat-mua-hang'),
-  'thiet-lap-de-xuat-mua-hang': () => import('../features/quan-ly-farm/thiet-lap-de-xuat-mua-hang'),
-  'phieu-kho-phan-thuoc': () => import('../features/quan-ly-farm/phieu-kho-phan-thuoc'),
-  'ton-kho-phan-thuoc': () => import('../features/quan-ly-farm/ton-kho-phan-thuoc'),
+  'thu-hoach': () => import('../features/quan-ly-nha-so-che/thu-hoach'),
+  'bao-cao-nhan-cong': () => import('../features/quan-ly-nha-so-che/bao-cao-nhan-cong'),
+  'bao-cao-so-che': () => import('../features/quan-ly-nha-so-che/bao-cao-so-che'),
+  'du-bao-sl-dong-thung': () => import('../features/quan-ly-nha-so-che/du-bao-sl-dong-thung'),
+  'thong-ke-san-xuat': () => import('../features/quan-ly-nha-so-che/thong-ke-san-xuat'),
+  'hang-hoa-phan-thuoc': () => import('../features/quan-ly-nha-so-che/hang-hoa-phan-thuoc'),
+  'de-xuat-mua-hang': () => import('../features/quan-ly-nha-so-che/de-xuat-mua-hang'),
+  'thiet-lap-de-xuat-mua-hang': () => import('../features/quan-ly-nha-so-che/thiet-lap-de-xuat-mua-hang'),
+  'phieu-kho-phan-thuoc': () => import('../features/quan-ly-nha-so-che/phieu-kho-phan-thuoc'),
+  'ton-kho-phan-thuoc': () => import('../features/quan-ly-nha-so-che/ton-kho-phan-thuoc'),
   'thiet-lap-quy': () => import('../features/tai-chinh/thiet-lap-quy'),
   'thu-chi-quy': () => import('../features/tai-chinh/thu-chi-quy'),
   'thong-ke-quy': () => import('../features/tai-chinh/thong-ke-quy'),
@@ -68,7 +68,7 @@ export function prefetchSubmenuModuleSlug(slug: string): void {
 const DASHBOARD_IMPORTS = {
   '/hanh-chinh': () => import('./dashboards/HanhChinhDashboard'),
   '/mua-hang': () => import('./dashboards/MuaHangDashboard'),
-  '/quan-ly-farm': () => import('./dashboards/QuanLyFarmDashboard'),
+  '/quan-ly-nha-so-che': () => import('./dashboards/QuanLyNhaSoCheDashboard'),
   '/tai-chinh': () => import('./dashboards/TaiChinhDashboard'),
 } as const;
 
@@ -99,7 +99,7 @@ export const SubmenuChunkFallback = () => (
 
 export const LazyHanhChinhDashboard = lazy(() => import('./dashboards/HanhChinhDashboard'));
 export const LazyMuaHangDashboard = lazy(() => import('./dashboards/MuaHangDashboard'));
-export const LazyQuanLyFarmDashboard = lazy(() => import('./dashboards/QuanLyFarmDashboard'));
+export const LazyQuanLyNhaSoCheDashboard = lazy(() => import('./dashboards/QuanLyNhaSoCheDashboard'));
 export const LazyTaiChinhDashboard = lazy(() => import('./dashboards/TaiChinhDashboard'));
 
 export const SUBMENU_MODULE_LAZY = Object.fromEntries(
