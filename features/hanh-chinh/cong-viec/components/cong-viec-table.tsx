@@ -57,7 +57,10 @@ const CongViecTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onV
         );
       case 'mo_ta':
         return (
-          <span className="text-sm text-muted-foreground line-clamp-2 max-w-[320px]">
+          <span
+            className="text-sm text-muted-foreground line-clamp-2 max-w-[320px] whitespace-pre-line"
+            title={item.mo_ta?.trim() || undefined}
+          >
             {item.mo_ta?.trim() || '—'}
           </span>
         );
@@ -151,7 +154,9 @@ const CongViecTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onV
             </div>
           </div>
           {item.mo_ta?.trim() && (
-            <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{item.mo_ta.trim()}</p>
+            <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5 whitespace-pre-line" title={item.mo_ta.trim()}>
+              {item.mo_ta.trim()}
+            </p>
           )}
           <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-xs text-muted-foreground">
             <span><span className="font-medium text-foreground/80">{t('congViec.form.trachNhiem')}:</span> {getEmployeeName(item.trach_nhiem)}</span>

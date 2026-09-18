@@ -69,7 +69,12 @@ const CongViecHierarchyTable: React.FC<Props> = ({
         );
       case 'mo_ta':
         return baseTd(
-          <span className="text-sm text-muted-foreground line-clamp-2 max-w-[320px]">{item.mo_ta?.trim() || '—'}</span>
+          <span
+            className="text-sm text-muted-foreground line-clamp-2 max-w-[320px] whitespace-pre-line"
+            title={item.mo_ta?.trim() || undefined}
+          >
+            {item.mo_ta?.trim() || '—'}
+          </span>
         );
       case 'id_nguoi_giao':
         return baseTd(

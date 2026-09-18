@@ -1,14 +1,15 @@
 import React, { useMemo, useState, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Wrench, Calendar } from 'lucide-react';
+import { Wrench, Calendar, MapPin, Tag } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePhieuBaoTriList } from '../hooks/use-bao-tri-sua-chua';
 import { useBaoTriSuaChuaViewScope } from '../hooks/use-bao-tri-sua-chua-view-scope';
 import { useAuthStore } from '../../../../store/useStore';
 import { useTaiSanList } from '../../danh-muc-tai-san/hooks/use-danh-muc-tai-san';
 import { useLoaiChiPhiList } from '../../thiet-lap-tai-san/hooks/use-loai-chi-phi';
+import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
-import { getTrangThaiLabel, getHangMucLabel } from '../core/constants';
+import { getTrangThaiLabel, getHangMucLabel, TRANG_THAI_OPTIONS } from '../core/constants';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import EmptyState from '../../../../components/shared/EmptyState';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
@@ -18,6 +19,8 @@ const StatsCharts = lazy(() => import('./stats/StatsCharts'));
 import StatsTables from './stats/StatsTables';
 import { usePhieuBaoTriStats } from './stats/usePhieuBaoTriStats';
 import { exportToExcel, formatCurrency } from '../../../../lib/utils';
+import { buildTaiSanChiNhanhMap, filterPhieuChiPhi, getChiNhanhCuaPhieu } from '../utils/filter-phieu-chi-phi';
+import type { BaoTriSuaChuaFilters } from '../store/useBaoTriSuaChuaStore';
 import type { PhieuBaoTriSuaChua } from '../core/types';
 import type { TFunction } from 'i18next';
 
@@ -40,6 +43,7 @@ const ThongKeTab: React.FC = () => {
   const { viewAll } = useBaoTriSuaChuaViewScope();
   const { data: taiSanList = [] } = useTaiSanList();
   const { data: loaiChiPhi = [] } = useLoaiChiPhiList();
+  const { data: branches = [] } = useBranches();
   const { data: list = [], isLoading, isError } = usePhieuBaoTriList({});
 
   const activeLoai = useMemo(
@@ -61,15 +65,28 @@ const ThongKeTab: React.FC = () => {
   const [filterHangMuc, setFilterHangMuc] = useState<string[]>([]);
   const [filterDateFrom, setFilterDateFrom] = useState('');
   const [filterDateTo, setFilterDateTo] = useState('');
+  const [filterChiNhanh, setFilterChiNhanh] = useState<string[]>([]);
+  const [filterTrangThai, setFilterTrangThai] = useState<string[]>([]);
 
-  const filteredList = useMemo(() => {
-    return viewableList.filter((p: PhieuBaoTriSuaChua) => {
-      if (filterHangMuc.length > 0 && !filterHangMuc.includes(p.id_hang_muc)) return false;
-      if (filterDateFrom && p.ngay < filterDateFrom) return false;
-      if (filterDateTo && p.ngay > filterDateTo) return false;
-      return true;
-    });
-  }, [viewableList, filterHangMuc, filterDateFrom, filterDateTo]);
+  const branchMap = useMemo(() => buildTaiSanChiNhanhMap(taiSanList), [taiSanList]);
+
+  const statsFilters: BaoTriSuaChuaFilters = useMemo(
+    () => ({
+      hang_muc: filterHangMuc,
+      dateFrom: filterDateFrom,
+      dateTo: filterDateTo,
+      id_tai_san: [],
+      id_chi_nhanh: filterChiNhanh,
+      trang_thai: filterTrangThai,
+      id_nguoi_tao: [],
+    }),
+    [filterHangMuc, filterDateFrom, filterDateTo, filterChiNhanh, filterTrangThai]
+  );
+
+  const filteredList = useMemo(
+    () => filterPhieuChiPhi(viewableList, statsFilters, branchMap),
+    [viewableList, statsFilters, branchMap]
+  );
 
   const stats = usePhieuBaoTriStats(filteredList, loaiChiPhi);
 
@@ -95,19 +112,53 @@ const ThongKeTab: React.FC = () => {
     return [...fromLoai, ...legacyExtras];
   }, [activeLoai, countByHangMuc, t]);
 
+  const chiNhanhOptions = useMemo(() => {
+    const countByBranch: Record<string, number> = {};
+    for (const p of viewableList) {
+      const id = getChiNhanhCuaPhieu(p, branchMap);
+      if (id) countByBranch[id] = (countByBranch[id] ?? 0) + 1;
+    }
+    return branches.map((b) => ({
+      label: b.ten_chi_nhanh,
+      value: b.id,
+      subLabel: b.ma_chi_nhanh,
+      count: countByBranch[b.id] ?? 0,
+    }));
+  }, [branches, viewableList, branchMap]);
+
+  const trangThaiOptions = useMemo(() => {
+    const countByTrangThai: Record<string, number> = {};
+    for (const p of viewableList) {
+      countByTrangThai[p.trang_thai] = (countByTrangThai[p.trang_thai] ?? 0) + 1;
+    }
+    return TRANG_THAI_OPTIONS.map((o) => ({
+      label: t(o.labelKey),
+      value: o.value,
+      count: countByTrangThai[o.value] ?? 0,
+    }));
+  }, [viewableList, t]);
+
   const activeFilterCount =
-    filterHangMuc.length + (filterDateFrom ? 1 : 0) + (filterDateTo ? 1 : 0);
+    filterHangMuc.length +
+    filterChiNhanh.length +
+    filterTrangThai.length +
+    (filterDateFrom ? 1 : 0) +
+    (filterDateTo ? 1 : 0);
   const handleClearFilters = () => {
     setFilterHangMuc([]);
     setFilterDateFrom('');
     setFilterDateTo('');
+    setFilterChiNhanh([]);
+    setFilterTrangThai([]);
   };
 
   const filterGroups = useMemo(
     () => [
       { key: 'hang_muc', label: t('baoTriSuaChua.store.hangMucCol'), icon: Wrench, options: hangMucOptions, value: filterHangMuc, onChange: setFilterHangMuc },
+      { key: 'id_chi_nhanh', label: t('baoTriSuaChua.store.chiNhanhCol'), icon: MapPin, options: chiNhanhOptions, value: filterChiNhanh, onChange: setFilterChiNhanh },
+      { key: 'trang_thai', label: t('baoTriSuaChua.store.trangThaiCol'), icon: Tag, options: trangThaiOptions, value: filterTrangThai, onChange: setFilterTrangThai },
     ],
-    [hangMucOptions, filterHangMuc, t]
+    [hangMucOptions, filterHangMuc, chiNhanhOptions, filterChiNhanh, trangThaiOptions, filterTrangThai, t]
   );
 
   const renderFilters = (
@@ -141,6 +192,24 @@ const ThongKeTab: React.FC = () => {
           placeholder={t('baoTriSuaChua.filter.dateTo')}
         />
       </div>
+      <FilterChipMultiSelect
+        options={chiNhanhOptions}
+        value={filterChiNhanh}
+        onChange={setFilterChiNhanh}
+        placeholder={t('baoTriSuaChua.store.chiNhanhCol')}
+        icon={MapPin}
+        className="w-full sm:w-[170px]"
+        size="md"
+      />
+      <FilterChipMultiSelect
+        options={trangThaiOptions}
+        value={filterTrangThai}
+        onChange={setFilterTrangThai}
+        placeholder={t('baoTriSuaChua.store.trangThaiCol')}
+        icon={Tag}
+        className="w-full sm:w-[150px]"
+        size="md"
+      />
     </>
   );
 

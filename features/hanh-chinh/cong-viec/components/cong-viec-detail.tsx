@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useForm, SubmitHandler } from 'react-hook-form';
+import { useForm, useWatch, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ClipboardList, Edit, MessageSquare, ListTree, Send, User, Trash2, RefreshCw } from 'lucide-react';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
@@ -31,6 +31,18 @@ import {
 import { useEmployeesRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
 
 const TAB_IDS = { info: 'info', traoDoi: 'traoDoi' } as const;
+
+/**
+ * Giá trị long text trong detail: giữ nguyên ngắt dòng người dùng nhập,
+ * ngắt từ dài (link/không dấu cách) và cuộn khi nội dung quá dài.
+ */
+const LongTextValue: React.FC<{ value?: string | null }> = ({ value }) => {
+  const text = value?.trim();
+  if (!text) return <span className="text-muted-foreground">—</span>;
+  return (
+    <span className="block whitespace-pre-line break-words max-h-64 overflow-y-auto">{text}</span>
+  );
+};
 
 interface Props {
   data: CongViec;
@@ -115,10 +127,12 @@ const CongViecDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onAd
     handleSubmit: handleBinhLuanSubmit,
     formState: { errors: errBinhLuan, isDirty },
     reset: resetBinhLuan,
+    control: controlBinhLuan,
   } = useForm<BinhLuanFormValues>({
     resolver: zodResolver(binhLuanSchema),
     defaultValues: { noi_dung: '' },
   });
+  const binhLuanValue = useWatch({ control: controlBinhLuan, name: 'noi_dung' });
 
   const onBinhLuanSubmit: SubmitHandler<BinhLuanFormValues> = (values) => {
     createBinhLuan.mutate(values.noi_dung, { onSuccess: () => resetBinhLuan() });
@@ -226,8 +240,8 @@ const CongViecDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onAd
               <DetailField label={t('congViec.store.updatedCol')} value={formatDateTimeShort(data.tg_cap_nhat)} />
             </DetailFieldGrid>
             <DetailFieldGrid cols={1} className="mt-4">
-              <DetailField label={t('congViec.form.moTa')} value={data.mo_ta || '—'} />
-              <DetailField label={t('congViec.detail.ketQua')} value={data.ket_qua || '—'} />
+              <DetailField label={t('congViec.form.moTa')} value={<LongTextValue value={data.mo_ta} />} />
+              <DetailField label={t('congViec.detail.ketQua')} value={<LongTextValue value={data.ket_qua} />} />
               <DetailField
                 label={t('congViec.detail.linkKetQua')}
                 value={
@@ -246,12 +260,15 @@ const CongViecDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onAd
 
       {activeTab === TAB_IDS.traoDoi && (
         <div className="space-y-4">
-          <form onSubmit={handleBinhLuanSubmit(onBinhLuanSubmit)} className="flex gap-2">
+          <form onSubmit={handleBinhLuanSubmit(onBinhLuanSubmit)} className="flex items-end gap-2">
             <Textarea
               label={t('congViec.binhLuan.noiDung')}
               placeholder={t('congViec.binhLuan.placeholder')}
               required
-              className="min-h-[80px] flex-1"
+              rows={4}
+              autoResize
+              resizeDep={binhLuanValue}
+              className="flex-1"
               {...regBinhLuan('noi_dung')}
               error={errBinhLuan.noi_dung?.message}
             />
@@ -361,7 +378,7 @@ const CongViecDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onAd
       {showTrangThaiModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50" onClick={handleCloseTrangThaiModal}>
           <div
-            className="bg-card border border-border rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto p-5 space-y-4"
+            className="bg-card border border-border rounded-xl shadow-xl max-w-xl w-full max-h-[90vh] overflow-y-auto p-5 space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
             <Combobox
@@ -376,8 +393,9 @@ const CongViecDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onAd
               placeholder={t('congViec.detail.ketQuaPlaceholder')}
               value={modalKetQua}
               onChange={(e) => setModalKetQua(e.target.value)}
-              rows={3}
-              className="resize-y min-h-[80px]"
+              rows={5}
+              autoResize
+              resizeDep={modalKetQua}
             />
             <Input
               label={t('congViec.detail.linkKetQua')}
@@ -391,8 +409,9 @@ const CongViecDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onAd
               placeholder={t('congViec.detail.ghiChuPlaceholder')}
               value={modalGhiChu}
               onChange={(e) => setModalGhiChu(e.target.value)}
-              rows={2}
-              className="resize-y min-h-[60px]"
+              rows={4}
+              autoResize
+              resizeDep={modalGhiChu}
             />
             <div className="flex justify-end gap-2 pt-2">
               <Button type="button" variant="outline" onClick={handleCloseTrangThaiModal}>

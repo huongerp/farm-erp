@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useForm, Controller, SubmitHandler } from 'react-hook-form';
+import { useForm, useWatch, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ClipboardList, Type, ListOrdered, Tag, User } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
@@ -95,6 +95,9 @@ const CongViecForm: React.FC<Props> = ({ initialData, parentId, onClose, stackLe
     }
   }, [initialData, parentId, reset, currentUserEmployeeId]);
 
+  /** Theo dõi mô tả để textarea tự giãn theo số dòng (kể cả khi reset từ initialData) */
+  const moTaValue = useWatch({ control, name: 'mo_ta' });
+
   const trangThaiOptions = useMemo(() => getTrangThaiOptions(t), [t]);
   const uuTienOptions = useMemo(() => getUuTienOptions(t), [t]);
   const employeeOptions = useMemo(() => {
@@ -166,6 +169,9 @@ const CongViecForm: React.FC<Props> = ({ initialData, parentId, onClose, stackLe
               <Textarea
                 label={t('congViec.form.moTa')}
                 placeholder={t('congViec.form.moTaPlaceholder')}
+                rows={5}
+                autoResize
+                resizeDep={moTaValue}
                 {...register('mo_ta')}
                 error={errors.mo_ta?.message}
               />

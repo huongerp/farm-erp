@@ -1,4 +1,13 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
+import i18n from '../../../../lib/i18n';
+import viFeature from '../locales/vi.json';
+
+// Locale feature nạp lazy (lib/feature-i18n.ts). Trong app, wrapModuleImportWithFeatureI18n
+// nạp xong mới import module; test phải tự làm đúng bước đó, nếu không i18n.t() trả về
+// tên key và các assert về nội dung thông báo lỗi sẽ vô nghĩa.
+beforeAll(() => {
+  i18n.addResourceBundle('vi', 'translation', viFeature, true, true);
+});
 import { planFarmHangHoaImport } from './import-hang-hoa';
 import type { DanhMucRefLite, ExistingHangHoaLite } from './import-hang-hoa';
 

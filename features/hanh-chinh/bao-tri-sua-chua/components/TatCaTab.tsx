@@ -16,6 +16,7 @@ import { useAuthStore } from '../../../../store/useStore';
 import { useTaiSanList } from '../../danh-muc-tai-san/hooks/use-danh-muc-tai-san';
 import { useBaoTriSuaChuaStore } from '../store/useBaoTriSuaChuaStore';
 import { getLanguage } from '../../../../lib/utils';
+import { buildTaiSanChiNhanhMap, filterPhieuChiPhi } from '../utils/filter-phieu-chi-phi';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
 import type { PhieuBaoTriSuaChua } from '../core/types';
 import {
@@ -85,15 +86,12 @@ const TatCaTab: React.FC<Props> = ({ defaultTaiSanId }) => {
     setShowForm(true);
   }, [defaultTaiSanId, setFilter]);
 
-  const filteredList = useMemo(() => {
-    return viewableList.filter((p) => {
-      if (filters.hang_muc.length > 0 && !filters.hang_muc.includes(p.id_hang_muc)) return false;
-      if (filters.dateFrom && p.ngay < filters.dateFrom) return false;
-      if (filters.dateTo && p.ngay > filters.dateTo) return false;
-      if (filters.id_tai_san.length > 0 && !filters.id_tai_san.includes(p.id_tai_san)) return false;
-      return true;
-    });
-  }, [viewableList, filters]);
+  const branchMap = useMemo(() => buildTaiSanChiNhanhMap(taiSanList), [taiSanList]);
+
+  const filteredList = useMemo(
+    () => filterPhieuChiPhi(viewableList, filters, branchMap),
+    [viewableList, filters, branchMap]
+  );
 
   const sortedList = useMemo(() => {
     if (!sort.column || !sort.direction) return filteredList;
@@ -198,7 +196,7 @@ const TatCaTab: React.FC<Props> = ({ defaultTaiSanId }) => {
     <>
       <div className="flex flex-col flex-1 min-h-0 rounded-xl border border-border bg-card shadow-sm overflow-hidden">
         <BaoTriSuaChuaToolbar
-          items={list}
+          items={viewableList}
           onAdd={handleAdd}
           onDeleteMany={handleDeleteMany}
           onExport={handleExport}

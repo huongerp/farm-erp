@@ -1,6 +1,16 @@
 import { useMemo } from 'react';
 import type { PhieuBaoTriSuaChua } from '../core/types';
 import type { BaoTriSuaChuaFilters } from '../store/useBaoTriSuaChuaStore';
+import {
+  getChiNhanhCuaPhieu,
+  matchChiNhanh,
+  matchHangMuc,
+  matchNgay,
+  matchNguoiTao,
+  matchTaiSan,
+  matchTrangThai,
+  type TaiSanChiNhanhMap,
+} from '../utils/filter-phieu-chi-phi';
 
 /**
  * Đếm số phiếu theo từng giá trị filter (exclude-self) để hiển thị count trong filter chip.
@@ -8,32 +18,45 @@ import type { BaoTriSuaChuaFilters } from '../store/useBaoTriSuaChuaStore';
 export function useBaoTriSuaChuaFilterCounts(
   list: PhieuBaoTriSuaChua[],
   filters: BaoTriSuaChuaFilters,
+  branchMap: TaiSanChiNhanhMap = new Map(),
 ) {
   return useMemo(() => {
     const hangMucCounts: Record<string, number> = {};
     const taiSanCounts: Record<string, number> = {};
+    const chiNhanhCounts: Record<string, number> = {};
+    const trangThaiCounts: Record<string, number> = {};
+    const nguoiTaoCounts: Record<string, number> = {};
 
-    const matchHangMuc = (p: PhieuBaoTriSuaChua) =>
-      filters.hang_muc.length === 0 || filters.hang_muc.includes(p.id_hang_muc);
-    const matchDateFrom = (p: PhieuBaoTriSuaChua) =>
-      !filters.dateFrom || p.ngay >= filters.dateFrom;
-    const matchDateTo = (p: PhieuBaoTriSuaChua) =>
-      !filters.dateTo || p.ngay <= filters.dateTo;
-    const matchTaiSan = (p: PhieuBaoTriSuaChua) =>
-      filters.id_tai_san.length === 0 || filters.id_tai_san.includes(p.id_tai_san);
+    const bump = (acc: Record<string, number>, key: string) => {
+      if (!key) return;
+      acc[key] = (acc[key] || 0) + 1;
+    };
 
     for (const p of list) {
-      const passDate = matchDateFrom(p) && matchDateTo(p);
-      const passTaiSan = matchTaiSan(p);
+      const passHangMuc = matchHangMuc(p, filters);
+      const passDate = matchNgay(p, filters);
+      const passTaiSan = matchTaiSan(p, filters);
+      const passChiNhanh = matchChiNhanh(p, filters, branchMap);
+      const passTrangThai = matchTrangThai(p, filters);
+      const passNguoiTao = matchNguoiTao(p, filters);
 
-      if (passDate && passTaiSan) {
-        hangMucCounts[p.id_hang_muc] = (hangMucCounts[p.id_hang_muc] || 0) + 1;
+      if (passDate && passTaiSan && passChiNhanh && passTrangThai && passNguoiTao) {
+        bump(hangMucCounts, p.id_hang_muc);
       }
-      if (matchHangMuc(p) && passDate) {
-        taiSanCounts[p.id_tai_san] = (taiSanCounts[p.id_tai_san] || 0) + 1;
+      if (passHangMuc && passDate && passChiNhanh && passTrangThai && passNguoiTao) {
+        bump(taiSanCounts, p.id_tai_san);
+      }
+      if (passHangMuc && passDate && passTaiSan && passTrangThai && passNguoiTao) {
+        bump(chiNhanhCounts, getChiNhanhCuaPhieu(p, branchMap));
+      }
+      if (passHangMuc && passDate && passTaiSan && passChiNhanh && passNguoiTao) {
+        bump(trangThaiCounts, p.trang_thai);
+      }
+      if (passHangMuc && passDate && passTaiSan && passChiNhanh && passTrangThai) {
+        bump(nguoiTaoCounts, String(p.id_nguoi_tao ?? ''));
       }
     }
 
-    return { hangMucCounts, taiSanCounts };
-  }, [list, filters]);
+    return { hangMucCounts, taiSanCounts, chiNhanhCounts, trangThaiCounts, nguoiTaoCounts };
+  }, [list, filters, branchMap]);
 }

@@ -19,6 +19,10 @@ export interface BaoTriSuaChuaFilters {
   dateFrom: string;
   dateTo: string;
   id_tai_san: string[];
+  /** Chi nhánh của tài sản (phiếu không có cột chi nhánh, suy ra từ tài sản) */
+  id_chi_nhanh: string[];
+  trang_thai: string[];
+  id_nguoi_tao: string[];
 }
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
@@ -42,6 +46,9 @@ const initialFilters: BaoTriSuaChuaFilters = {
   dateFrom: '',
   dateTo: '',
   id_tai_san: [],
+  id_chi_nhanh: [],
+  trang_thai: [],
+  id_nguoi_tao: [],
 };
 
 export const useBaoTriSuaChuaStore = createGenericStore<BaoTriSuaChuaFilters>(
