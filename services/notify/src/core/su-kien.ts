@@ -9,6 +9,7 @@
  */
 
 import type { DongOutbox, SuKienDaPhanTich } from './types.ts';
+import { soSanhCotPhieu } from './thay-doi-phieu.ts';
 
 // --- Trạng thái, lấy đúng chuỗi mà app đang ghi xuống DB ---------------------
 
@@ -104,9 +105,17 @@ function phanTichPhieuDuyet(dong: DongOutbox): SuKienDaPhanTich[] {
   }
 
   // Không đổi trạng thái mà phiếu đang ở "Đã duyệt" nghĩa là nội dung phiếu đã
-  // duyệt bị sửa — người duyệt cần biết vì họ đã ký vào bản cũ.
+  // duyệt bị sửa — người duyệt cần biết vì họ đã ký vào bản cũ. Kèm luôn danh
+  // sách cột đã đổi để thông báo nói rõ sửa gì, khỏi phải mở phiếu ra dò.
   if (tt === TT_DA_DUYET) {
-    return [{ loai: 'phieu.sua_sau_duyet', muc: 'cao', vai: ['nguoi_tao', 'nguoi_duyet'], duLieu: {} }];
+    return [
+      {
+        loai: 'phieu.sua_sau_duyet',
+        muc: 'cao',
+        vai: ['nguoi_tao', 'nguoi_duyet'],
+        duLieu: { thayDoi: soSanhCotPhieu(dong) },
+      },
+    ];
   }
 
   return [];

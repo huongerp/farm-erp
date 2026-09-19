@@ -7,8 +7,12 @@
 
 import type { DongOutbox, SuKienDaPhanTich } from './types.ts';
 import type { MoTaBang } from './mo-ta-bang.ts';
+import type { ThayDoiCot } from './thay-doi-phieu.ts';
 
 const DAI_TOI_DA_TRAO_DOI = 120;
+
+/** Liệt kê quá dài thì chuông và push đều bị cắt — nêu vài cột rồi đếm phần còn lại. */
+const SO_THAY_DOI_KE_TEN = 4;
 
 export interface NguCanhRender {
   moTa: MoTaBang;
@@ -59,6 +63,34 @@ function boiActor(tenActor: string | null, hanhDong: string): string {
   return tenActor ? `${tenActor} ${hanhDong}` : `Có người ${hanhDong}`;
 }
 
+/** "Ngày cần: 17/09/2026 → 19/09/2026" — cột khoá ngoại thì chỉ nêu tên cột. */
+function moTaMotThayDoi(td: ThayDoiCot): string {
+  return td.cu === null || td.moi === null ? `đổi ${td.nhan.toLowerCase()}` : `${td.nhan}: ${td.cu} → ${td.moi}`;
+}
+
+function docThayDoi(duLieu: Record<string, unknown>): ThayDoiCot[] {
+  const v = duLieu['thayDoi'];
+  return Array.isArray(v) ? (v as ThayDoiCot[]) : [];
+}
+
+/**
+ * Câu kể cụ thể cho ca "phiếu đã duyệt bị sửa".
+ *
+ * Không cột nào của phiếu đổi nghĩa là người dùng sửa danh sách mặt hàng: app
+ * lưu phiếu bằng cách ghi lại bảng cha (chỉ `tg_cap_nhat` khác) rồi xoá/chèn lại
+ * bảng chi tiết. Nói thẳng điều đó thay vì im lặng.
+ */
+function noiDungSuaSauDuyet(tenActor: string | null, thayDoi: ThayDoiCot[]): string {
+  const mo = boiActor(tenActor, 'đã sửa phiếu sau khi phiếu được duyệt.');
+  if (thayDoi.length === 0) {
+    return `${mo} Thông tin chung không đổi — thay đổi nằm ở danh sách mặt hàng.`;
+  }
+
+  const keTen = thayDoi.slice(0, SO_THAY_DOI_KE_TEN).map(moTaMotThayDoi).join('; ');
+  const conLai = thayDoi.length - SO_THAY_DOI_KE_TEN;
+  return conLai > 0 ? `${mo} ${keTen}; và ${conLai} thay đổi khác.` : `${mo} ${keTen}.`;
+}
+
 export function renderThongBao(nc: NguCanhRender): NoiDungThongBao {
   const { moTa, dong, suKien, tenActor } = nc;
   const nhan = nhanChungTu(moTa, dong);
@@ -92,7 +124,7 @@ export function renderThongBao(nc: NguCanhRender): NoiDungThongBao {
     case 'phieu.sua_sau_duyet':
       return {
         tieuDe: `${nhan} đã duyệt vừa bị sửa`,
-        noiDung: boiActor(tenActor, 'đã sửa nội dung phiếu sau khi phiếu được duyệt.'),
+        noiDung: noiDungSuaSauDuyet(tenActor, docThayDoi(suKien.duLieu)),
       };
 
     // --- Công việc -----------------------------------------------------------

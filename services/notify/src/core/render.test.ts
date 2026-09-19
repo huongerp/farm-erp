@@ -58,6 +58,49 @@ describe('phiếu có luồng duyệt', () => {
     expect(kq.noiDung).toBe('Có người đã duyệt phiếu của bạn.');
   });
 
+  it('sửa sau duyệt thì kể rõ cột nào đổi, cũ → mới', () => {
+    const kq = renderThongBao(
+      nguCanh(
+        'fp_mh_phieu_de_xuat_vat_tu',
+        'phieu.sua_sau_duyet',
+        { so_phieu: 'PDX-0796' },
+        {
+          thayDoi: [
+            { cot: 'ngay_can', nhan: 'Ngày cần', cu: '17/09/2026', moi: '19/09/2026' },
+            { cot: 'id_nguoi_duyet', nhan: 'Người duyệt', cu: null, moi: null },
+          ],
+        },
+        'Vi Thị Thủy'
+      )
+    );
+    expect(kq.tieuDe).toBe('Phiếu đề xuất vật tư PDX-0796 đã duyệt vừa bị sửa');
+    expect(kq.noiDung).toBe(
+      'Vi Thị Thủy đã sửa phiếu sau khi phiếu được duyệt. Ngày cần: 17/09/2026 → 19/09/2026; đổi người duyệt.'
+    );
+  });
+
+  it('sửa sau duyệt mà cột phiếu không đổi thì chỉ ra chỗ thay đổi là mặt hàng', () => {
+    const kq = renderThongBao(
+      nguCanh('fp_mh_phieu_de_xuat_vat_tu', 'phieu.sua_sau_duyet', { so_phieu: 'PDX-0796' }, { thayDoi: [] })
+    );
+    expect(kq.noiDung).toBe(
+      'Nguyễn Văn A đã sửa phiếu sau khi phiếu được duyệt. Thông tin chung không đổi — thay đổi nằm ở danh sách mặt hàng.'
+    );
+  });
+
+  it('nhiều thay đổi thì kể bốn cái rồi đếm phần còn lại', () => {
+    const thayDoi = ['Số phiếu', 'Ngày', 'Ngày cần', 'Ghi chú', 'Mô tả', 'Kho'].map((nhan, i) => ({
+      cot: `c${i}`,
+      nhan,
+      cu: 'a',
+      moi: 'b',
+    }));
+    const kq = renderThongBao(
+      nguCanh('fp_mh_phieu_kho', 'phieu.sua_sau_duyet', { so_phieu: 'PX-1' }, { thayDoi })
+    );
+    expect(kq.noiDung).toContain('Số phiếu: a → b; Ngày: a → b; Ngày cần: a → b; Ghi chú: a → b; và 2 thay đổi khác.');
+  });
+
   it('mỗi module dùng đúng tên chứng từ của nó', () => {
     expect(
       renderThongBao(nguCanh('fp_mh_phieu_de_xuat_vat_tu', 'phieu.da_duyet', { so_phieu: 'DX-1' })).tieuDe

@@ -83,6 +83,15 @@ Mức **cao** = rung push ngay; **thường** = vào chuông, push theo cài đ�
 | `phieu.khong_duyet` | → `Không duyệt` | Người tạo (kèm lý do) | **cao** |
 | `phieu.sua_sau_duyet` | Sửa nội dung khi đang `Đã duyệt` | Người tạo + người duyệt | **cao** |
 
+Riêng `phieu.sua_sau_duyet`, nội dung thông báo kể rõ cột nào đổi (`Ngày cần: 17/09/2026 →
+19/09/2026; đổi người duyệt.`) — diff nằm ở `services/notify/src/core/thay-doi-phieu.ts`, so
+`payload_cu` với `payload`, bỏ cột kỹ thuật (`tg_cap_nhat`, `trang_thai`…) và không in giá trị
+của cột khoá ngoại vì id không nói lên điều gì. **Giới hạn:** chỉ thấy cột của bảng phiếu. Bảng
+`*_chi_tiet` chưa gắn trigger outbox, mà app lưu phiếu bằng cách ghi lại bảng cha rồi xoá/chèn
+lại toàn bộ dòng chi tiết — nên khi người dùng chỉ sửa mặt hàng, bảng cha không có cột nghiệp vụ
+nào khác biệt và câu thông báo nói thẳng "thay đổi nằm ở danh sách mặt hàng". Muốn nêu đích danh
+mặt hàng nào đổi thì phải gắn trigger cho bảng chi tiết (kể cả DELETE) và gom sự kiện ở worker.
+
 ### Công việc — `hanh-chinh/cong-viec`
 
 | Sự kiện | Khi | Ai nhận | Mức |
