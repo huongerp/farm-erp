@@ -5,6 +5,7 @@ import { Bell } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import { useQueryClient } from '@tanstack/react-query';
 import { useDemChuaDoc, napSanNoiDungChuong } from '../../features/thong-bao/hooks/use-thong-bao';
+import { useAppBadge } from '../../features/thong-bao/hooks/use-app-badge';
 import { cn } from '../../lib/utils';
 
 /**
@@ -44,6 +45,10 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ placement = 'defaul
   // sách đầy đủ chỉ tải khi panel mở.
   const { data: count = 0 } = useDemChuaDoc();
   const queryClient = useQueryClient();
+
+  // Chuông có mặt ở mọi trang nên đây là chỗ duy nhất cần gắn: badge trên icon
+  // app luôn khớp con số đang hiện trên chuông.
+  useAppBadge(count);
 
   /**
    * Nạp sẵn nội dung panel ngay khi con trỏ chạm vào chuông (hoặc khi nút nhận

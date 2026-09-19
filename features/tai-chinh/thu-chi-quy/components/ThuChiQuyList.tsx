@@ -5,6 +5,7 @@ import GenericTable from '../../../../components/shared/GenericTable';
 import Tooltip from '../../../../components/ui/Tooltip';
 import { formatDate, formatDateTimeShort, formatNumberVN } from '../../../../lib/utils';
 import { getLoaiBadgeClass, loaiThuChiToI18nKey, nguonChungTuToI18nKey } from '../core/constants';
+import { getTrangThaiQuyBadgeClass, trangThaiQuyToI18nKey } from '../core/trang-thai';
 import type { ThuChiQuy, ThuChiQuyRow } from '../core/types';
 import { useThuChiQuyStore } from '../store/useThuChiQuyStore';
 
@@ -20,6 +21,9 @@ interface Props {
   tenChiNhanhDangXem?: string;
   onEdit?: (item: ThuChiQuy) => void;
   onDelete?: (item: ThuChiQuy) => void;
+  /** Gác theo TỪNG dòng: phiếu đã khoá thì ẩn nút với người thường. */
+  canEditRow?: (item: ThuChiQuyRow) => boolean;
+  canDeleteRow?: (item: ThuChiQuyRow) => boolean;
   onRowClick?: (item: ThuChiQuyRow) => void;
 }
 
@@ -34,6 +38,8 @@ const ThuChiQuyList: React.FC<Props> = ({
   tenChiNhanhDangXem = '',
   onEdit,
   onDelete,
+  canEditRow,
+  canDeleteRow,
   onRowClick,
 }) => {
   const { t } = useTranslation();
@@ -138,6 +144,14 @@ const ThuChiQuyList: React.FC<Props> = ({
             {money(item.ton_quy)}
           </span>
         );
+      case 'trang_thai':
+        return (
+          <span
+            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getTrangThaiQuyBadgeClass(item.trang_thai)}`}
+          >
+            {t(trangThaiQuyToI18nKey(item.trang_thai))}
+          </span>
+        );
       case 'so_chung_tu':
         return <span className="text-xs text-muted-foreground">{item.so_chung_tu || '—'}</span>;
       case 'nguon':
@@ -170,10 +184,12 @@ const ThuChiQuyList: React.FC<Props> = ({
             {formatDateTimeShort(item.tg_cap_nhat)}
           </span>
         );
-      case 'actions':
+      case 'actions': {
+        const showEdit = !!onEdit && (canEditRow ? canEditRow(item) : true);
+        const showDelete = !!onDelete && (canDeleteRow ? canDeleteRow(item) : true);
         return (
           <div className="flex items-center justify-center gap-1">
-            {onEdit && (
+            {showEdit && onEdit && (
               <Tooltip content={t('common.edit')} placement="left">
                 <button
                   type="button"
@@ -188,7 +204,7 @@ const ThuChiQuyList: React.FC<Props> = ({
                 </button>
               </Tooltip>
             )}
-            {onDelete && (
+            {showDelete && onDelete && (
               <Tooltip content={t('common.delete')} placement="left">
                 <button
                   type="button"
@@ -205,6 +221,7 @@ const ThuChiQuyList: React.FC<Props> = ({
             )}
           </div>
         );
+      }
       default:
         return null;
     }

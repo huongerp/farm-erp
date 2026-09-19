@@ -200,6 +200,53 @@ describe('đơn đặt hàng', () => {
   });
 });
 
+describe('sổ quỹ — khoá / xin mở khoá', () => {
+  const quy = (cu: string | null, moi: string, payload: Record<string, unknown> = {}) =>
+    phanTichSuKien(
+      dong({
+        bang: 'fp_tc_quy_thu_chi',
+        module_id: 'tai-chinh/thu-chi-quy',
+        trang_thai_cu: cu,
+        trang_thai_moi: moi,
+        payload,
+      })
+    );
+
+  it('khoá phiếu là việc thường ngày, không báo cho ai', () => {
+    expect(quy('mo', 'khoa')).toEqual([]);
+  });
+
+  it('xin mở khoá thì báo nhóm duyệt, mức cao, kèm lý do', () => {
+    const kq = quy('khoa', 'cho_mo', { ly_do_yeu_cau_mo: 'Nhập nhầm số tiền' });
+    expect(kq).toHaveLength(1);
+    expect(kq[0]!.loai).toBe('quy.xin_mo_khoa');
+    expect(kq[0]!.vai).toEqual(['nhom_duyet']);
+    expect(kq[0]!.muc).toBe('cao');
+    expect(kq[0]!.duLieu['lyDo']).toBe('Nhập nhầm số tiền');
+  });
+
+  it('duyệt mở (cho_mo → mo) báo cho đúng người đã xin, không phải người tạo', () => {
+    const kq = quy('cho_mo', 'mo');
+    expect(kq[0]!.loai).toBe('quy.duyet_mo_khoa');
+    expect(kq[0]!.vai).toEqual(['nguoi_yeu_cau_mo']);
+  });
+
+  it('cấp cao mở thẳng phiếu khoá thì báo cho người tạo phiếu', () => {
+    expect(quy('khoa', 'mo')[0]!.vai).toEqual(['nguoi_tao']);
+  });
+
+  it('từ chối (cho_mo → khoa) báo lại cho người xin', () => {
+    const kq = quy('cho_mo', 'khoa');
+    expect(kq[0]!.loai).toBe('quy.tu_choi_mo_khoa');
+    expect(kq[0]!.vai).toEqual(['nguoi_yeu_cau_mo']);
+  });
+
+  it('trạng thái không đổi thì im lặng (import Excel, sửa nội dung)', () => {
+    expect(quy('khoa', 'khoa')).toEqual([]);
+    expect(phanTichSuKien(dong({ bang: 'fp_tc_quy_thu_chi', trang_thai_moi: null }))).toEqual([]);
+  });
+});
+
 describe('bảng chưa đấu thông báo', () => {
   it('không sinh sự kiện nào', () => {
     expect(phanTichSuKien(dong({ bang: 'fp_hr_bang_luong', trang_thai_moi: 'x' }))).toEqual([]);

@@ -1,19 +1,24 @@
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ClipboardCheck, List, CheckCircle, Printer, Power, RefreshCw, FileText, X, Plus } from 'lucide-react';
+import { ClipboardCheck, List, CheckCircle, Printer, Power, RefreshCw, FileText, X, Calendar, User, Warehouse, BarChart3 } from 'lucide-react';
 import GenericDrawer, { DRAWER_WIDTH_KIEM_KE_KHO } from '../../../../components/shared/GenericDrawer';
 import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';
+import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
 import DetailToolbar, { DetailToolbarAction } from '../../../../components/shared/DetailToolbar';
+import GenericSubTableSection from '../../../../components/shared/GenericSubTableSection';
 import Button from '../../../../components/ui/Button';
 import DetailDrawerFooter from '../../../../components/shared/DetailDrawerFooter';
 import Textarea from '../../../../components/ui/Textarea';
-import { formatDate, cn } from '../../../../lib/utils';
+import { formatDate, formatDateTimeShort, cn } from '../../../../lib/utils';
+import { getStatusBadgeClass } from '../../../../lib/status-badge';
 import { useAuthStore } from '../../../../store/useStore';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
-import { getTrangThaiDotLabel } from '../core/constants';
-import type { DotKiemKeKho, ChiTietKiemKeKho, ChiTietKiemKeKhoUpdate } from '../core/types';
+import { getTrangThaiDotLabel, TRANG_THAI_DOT_SEMANTIC, KET_QUA_SEMANTIC } from '../core/constants';
+import { coTheSuaChiTiet, coTheChuyenTrangThaiDot } from '../core/quyen-sua-dot';
+import { useKiemKeCapCao } from '../hooks/use-kiem-ke-cap-cao';
+import type { DotKiemKeKho, ChiTietKiemKeKho, ChiTietKiemKeKhoUpdate, KetQuaKiemKeKho } from '../core/types';
 import {
   useUpdateChiTietKetQua,
   useCreateChiTietKiemKe,
@@ -24,9 +29,24 @@ import {
 } from '../hooks/use-kiem-ke-kho';
 import NhapKetQuaKiemKeDialog from './NhapKetQuaKiemKeDialog';
 import ThemDongKiemKeDialog from './ThemDongKiemKeDialog';
-import ChiTietKiemKeTable from './ChiTietKiemKeTable';
+import ChiTietKiemKeSubTable from './ChiTietKiemKeSubTable';
 
 const getPhieuKiemKeKhoPreviewUrl = (id: string) => `/mua-hang/kiem-ke-kho/preview/${encodeURIComponent(id)}`;
+
+interface ChiTietStats {
+  khop: number;
+  thieu: number;
+  thua: number;
+  chuaKiem: number;
+  total: number;
+}
+
+const KET_QUA_CHIPS: { key: KetQuaKiemKeKho; value: (s: ChiTietStats) => number }[] = [
+  { key: 'khop', value: (s) => s.khop },
+  { key: 'thieu', value: (s) => s.thieu },
+  { key: 'thua', value: (s) => s.thua },
+  { key: 'chua_kiem', value: (s) => s.chuaKiem },
+];
 
 interface Props {
   data: DotKiemKeKho;
@@ -73,8 +93,11 @@ const DotKiemKeKhoDetail: React.FC<Props> = ({
   const dieuChinhDotMutation = useDieuChinhTonTheoDot(data.id);
   const confirm = useConfirmStore((s) => s.confirm);
 
-  const isDraft = data.trang_thai === 'draft';
   const isDangKiemKe = data.trang_thai === 'dang_kiem_ke';
+  // Đợt đã chốt sổ chỉ cấp cao mới sửa được — cùng luật với service.
+  const capCao = useKiemKeCapCao();
+  const canEditLines = coTheSuaChiTiet(data.trang_thai, capCao);
+  const canChangeStatus = coTheChuyenTrangThaiDot(data.trang_thai, capCao);
 
   const handleNhapKetQuaSave = useCallback(
     (payload: ChiTietKiemKeKhoUpdate) => {
@@ -163,7 +186,7 @@ const DotKiemKeKhoDetail: React.FC<Props> = ({
       onClick: () => setGhiChuOpen(true),
       variant: 'secondary',
     });
-    if ((isDraft || isDangKiemKe) && onTaoDanhSach) {
+    if (canEditLines && onTaoDanhSach) {
       actions.push({
         label: t('kiemKeKho.taoDanhSach'),
         icon: <List size={16} />,
@@ -181,7 +204,7 @@ const DotKiemKeKhoDetail: React.FC<Props> = ({
         disabled: hoanThanhLoading,
       });
     }
-    if (onStatusChange) {
+    if (onStatusChange && canChangeStatus) {
       actions.push({
         label: t('kiemKeKho.changeStatus'),
         icon: <Power size={16} />,
@@ -192,7 +215,8 @@ const DotKiemKeKhoDetail: React.FC<Props> = ({
     return actions;
   }, [
     data,
-    isDraft,
+    canEditLines,
+    canChangeStatus,
     isDangKiemKe,
     pendingDieuChinhCount,
     handleDieuChinhDotClick,
@@ -208,7 +232,7 @@ const DotKiemKeKhoDetail: React.FC<Props> = ({
   const renderFooter = (
     <DetailDrawerFooter
       onClose={onClose}
-      canUpdate={isDraft || isDangKiemKe}
+      canUpdate={canEditLines}
       onEdit={onEdit ? () => onEdit(data) : undefined}
     />
   );
@@ -222,90 +246,149 @@ const DotKiemKeKhoDetail: React.FC<Props> = ({
       maxWidthClass={DRAWER_WIDTH_KIEM_KE_KHO}
       footer={renderFooter}
     >
-      {toolbarActions.length > 0 && (
-        <DetailToolbar actions={toolbarActions} className="bg-card rounded-xl border border-border mb-4" />
-      )}
-      <DetailSection title={t('kiemKeKho.form.infoSection')} icon={<ClipboardCheck size={14} />} variant="primary">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <DetailField label={t('kiemKeKho.store.maDotCol')} value={data.ma_dot} />
-          <DetailField label={t('kiemKeKho.store.tenDotCol')} value={data.ten_dot} />
-          <DetailField label={t('kiemKeKho.store.ngayBatDauCol')} value={formatDate(data.ngay_bat_dau)} />
-          <DetailField label={t('kiemKeKho.store.ngayKetThucCol')} value={formatDate(data.ngay_ket_thuc)} />
-          <DetailField
-            label={t('kiemKeKho.store.trangThaiCol')}
-            value={getTrangThaiDotLabel(data.trang_thai, t)}
-          />
-          <DetailField
-            label={t('kiemKeKho.store.nguoiTaoCol')}
-            value={data.ten_nguoi_tao || data.ma_nguoi_tao || '—'}
-          />
-          <DetailField
-            label={t('kiemKeKho.store.nguoiPhuTrachCol')}
-            value={data.ten_nguoi_phu_trach || data.ma_nguoi_phu_trach || '—'}
-          />
-          <DetailField label={t('kiemKeKho.store.ghiChuCol')} value={data.ghi_chu} className="sm:col-span-2" />
-        </div>
-      </DetailSection>
-
-      <DetailSection
-        title={t('kiemKeKho.chiTietSection')}
-        icon={<List size={14} />}
-        variant="primary"
-        action={
-          (isDraft || isDangKiemKe) ? (
-            <Button
-              type="button"
-              size="sm"
-              onClick={() => setShowThemDong(true)}
-              className="bg-primary text-white hover:bg-primary/90 shadow-sm h-8 px-3"
-              disabled={createChiTietMutation.isPending}
-            >
-              <Plus size={14} className="mr-1.5" />
-              {t('kiemKeKho.table.themDong')}
-            </Button>
-          ) : undefined
-        }
-      >
-        {chiTiet.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-3">
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
-              {t('kiemKeKho.stats.total')}: {stats.total}
-            </span>
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
-              {t('kiemKeKho.ketQua.khop')}: {stats.khop}
-            </span>
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-rose-500/10 text-rose-700 dark:text-rose-300">
-              {t('kiemKeKho.ketQua.thieu')}: {stats.thieu}
-            </span>
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-violet-500/10 text-violet-700 dark:text-violet-300">
-              {t('kiemKeKho.ketQua.thua')}: {stats.thua}
-            </span>
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground">
-              {t('kiemKeKho.ketQua.chua_kiem')}: {stats.chuaKiem}
-            </span>
+      <div className="space-y-5">
+        <div className="bg-card p-4 rounded-xl border border-border/50 shadow-sm flex items-center gap-4">
+          <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-white shadow-primary/20 shadow-lg shrink-0">
+            <ClipboardCheck size={24} className="text-white" />
           </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-base font-bold text-foreground leading-tight truncate">{data.ma_dot}</h2>
+            <p className="text-body-sm text-muted-foreground mt-0.5 line-clamp-1">{data.ten_dot}</p>
+            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+              <span
+                className={cn(
+                  'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border',
+                  getStatusBadgeClass(TRANG_THAI_DOT_SEMANTIC[data.trang_thai])
+                )}
+              >
+                {getTrangThaiDotLabel(data.trang_thai, t)}
+              </span>
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border tabular-nums">
+                {formatDate(data.ngay_bat_dau)} – {formatDate(data.ngay_ket_thuc)}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {toolbarActions.length > 0 && (
+          <DetailToolbar actions={toolbarActions} className="bg-card rounded-xl border border-border" />
         )}
-        <ChiTietKiemKeTable
-          data={chiTiet}
-          isLoading={chiTietLoading}
-          showActions={isDraft || isDangKiemKe}
-          isDangKiemKe={isDangKiemKe}
-          onNhapKetQua={(item) => setNhapKetQuaRow(item)}
-          onDieuChinh={handleDieuChinhRow}
-          onDelete={(item) => {
-            confirm({
-              title: t('kiemKeKho.table.xoaDong'),
-              message: t('kiemKeKho.detail.deleteLineConfirm'),
-              variant: 'danger',
-              confirmText: t('common.delete'),
-              onConfirm: () => deleteChiTietMutation.mutateAsync(item.id),
-            });
-          }}
-          dieuChinhLoading={dieuChinhRowMutation.isPending}
-          nhapKetQuaLoading={updateKetQuaMutation.isPending}
-          deleteLoading={deleteChiTietMutation.isPending}
-        />
-      </DetailSection>
+
+        <DetailSection title={t('kiemKeKho.form.infoSection')} icon={<ClipboardCheck size={14} />} variant="primary">
+          <DetailFieldGrid>
+            <DetailField label={t('kiemKeKho.store.maDotCol')} value={data.ma_dot} icon={<FileText size={12} />} />
+            <DetailField label={t('kiemKeKho.store.tenDotCol')} value={data.ten_dot} icon={<FileText size={12} />} />
+            <DetailField
+              label={t('kiemKeKho.store.trangThaiCol')}
+              value={getTrangThaiDotLabel(data.trang_thai, t)}
+              icon={<CheckCircle size={12} />}
+            />
+            <DetailField
+              label={t('kiemKeKho.store.ngayBatDauCol')}
+              value={formatDate(data.ngay_bat_dau)}
+              icon={<Calendar size={12} />}
+            />
+            <DetailField
+              label={t('kiemKeKho.store.ngayKetThucCol')}
+              value={formatDate(data.ngay_ket_thuc)}
+              icon={<Calendar size={12} />}
+            />
+            <DetailField
+              label={t('kiemKeKho.store.soKhoCol')}
+              value={String(data.id_kho?.length ?? 0)}
+              icon={<Warehouse size={12} />}
+            />
+            <DetailField
+              label={t('kiemKeKho.store.nguoiTaoCol')}
+              value={data.ten_nguoi_tao || data.ma_nguoi_tao || '—'}
+              icon={<User size={12} />}
+            />
+            <DetailField
+              label={t('kiemKeKho.store.nguoiPhuTrachCol')}
+              value={data.ten_nguoi_phu_trach || data.ma_nguoi_phu_trach || '—'}
+              icon={<User size={12} />}
+            />
+            <DetailField
+              label={t('kiemKeKho.store.ghiChuCol')}
+              value={data.ghi_chu ?? '—'}
+              icon={<FileText size={12} />}
+              className="col-span-1 sm:col-span-2 lg:col-span-3"
+            />
+          </DetailFieldGrid>
+        </DetailSection>
+
+        {chiTiet.length > 0 && (
+          <DetailSection title={t('kiemKeKho.detail.progress')} icon={<BarChart3 size={14} />} variant="secondary">
+            <div className="flex flex-wrap gap-2">
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border bg-primary/10 text-primary border-primary/20 tabular-nums">
+                {t('kiemKeKho.stats.total')}: {stats.total}
+              </span>
+              {KET_QUA_CHIPS.map(({ key, value }) => (
+                <span
+                  key={key}
+                  className={cn(
+                    'inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border tabular-nums',
+                    getStatusBadgeClass(KET_QUA_SEMANTIC[key])
+                  )}
+                >
+                  {t(`kiemKeKho.ketQua.${key}`)}: {value(stats)}
+                </span>
+              ))}
+            </div>
+          </DetailSection>
+        )}
+
+        <GenericSubTableSection
+          title={t('kiemKeKho.chiTietSection')}
+          icon={<List size={14} className="text-primary" />}
+          count={chiTiet.length}
+          addLabel={canEditLines ? t('kiemKeKho.table.themDong') : undefined}
+          onAdd={canEditLines ? () => setShowThemDong(true) : undefined}
+          loading={chiTietLoading}
+          loadingText={t('kiemKeKho.loading')}
+          emptyTitle={t('kiemKeKho.chiTietEmpty')}
+          emptyDescription={t('kiemKeKho.chiTietEmptyHint')}
+          maxTableHeight="360px"
+          tableClassName="min-w-max"
+        >
+          {chiTiet.length > 0 && (
+            <ChiTietKiemKeSubTable
+              data={chiTiet}
+              showActions={canEditLines}
+              isDangKiemKe={isDangKiemKe}
+              onNhapKetQua={(item) => setNhapKetQuaRow(item)}
+              onDieuChinh={handleDieuChinhRow}
+              onDelete={(item) => {
+                confirm({
+                  title: t('kiemKeKho.table.xoaDong'),
+                  message: t('kiemKeKho.detail.deleteLineConfirm'),
+                  variant: 'danger',
+                  confirmText: t('common.delete'),
+                  onConfirm: () => deleteChiTietMutation.mutateAsync(item.id),
+                });
+              }}
+              dieuChinhLoading={dieuChinhRowMutation.isPending}
+              nhapKetQuaLoading={updateKetQuaMutation.isPending}
+              deleteLoading={deleteChiTietMutation.isPending}
+            />
+          )}
+        </GenericSubTableSection>
+
+        <DetailSection title={t('kiemKeKho.detail.systemInfo')} icon={<Calendar size={14} />} variant="secondary">
+          <DetailFieldGrid>
+            <DetailField
+              label={t('kiemKeKho.store.createdAtCol')}
+              value={formatDateTimeShort(data.tg_tao)}
+              icon={<Calendar size={12} />}
+            />
+            <DetailField
+              label={t('kiemKeKho.store.updatedCol')}
+              value={formatDateTimeShort(data.tg_cap_nhat)}
+              icon={<Calendar size={12} />}
+            />
+          </DetailFieldGrid>
+        </DetailSection>
+      </div>
 
       <NhapKetQuaKiemKeDialog
         open={nhapKetQuaRow != null}

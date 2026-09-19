@@ -69,6 +69,11 @@ export function giaiVaiTheoPayload(
       const id = soNguyen(p['trach_nhiem']);
       return id === null ? [] : [id];
     }
+    case 'nguoi_yeu_cau_mo': {
+      // Người XIN mở khoá, không nhất thiết là người lập phiếu.
+      const id = soNguyen(p['id_nguoi_yeu_cau_mo']);
+      return id === null ? [] : [id];
+    }
     case 'ho_tro':
       return mangSo(p['nguoi_ho_tro']);
     case 'ho_tro_moi':

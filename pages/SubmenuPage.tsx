@@ -100,9 +100,6 @@ const SubmenuPage: React.FC = () => {
         return <Navigate to="/hanh-chinh/cong-viec" replace />;
       }
     }
-    if (basePath === '/quan-ly-nha-so-che' && decodedSlug === 'kiem-ke-kho-phan-thuoc') {
-      return <Navigate to="/quan-ly-nha-so-che" replace />;
-    }
     if (basePath === '/quan-ly-nha-so-che' && decodedSlug === 'thuong-kpi') {
       return <Navigate to="/quan-ly-nha-so-che" replace />;
     }
@@ -150,6 +147,11 @@ const SubmenuPage: React.FC = () => {
       if (decodedSlug === 'phieu-kho-phan-thuoc') {
         return wrapWithPermission(basePath ?? '', decodedSlug, (
           <ErrorBoundary>{renderLazySubmenuModule('phieu-kho-phan-thuoc')}</ErrorBoundary>
+        ));
+      }
+      if (decodedSlug === 'kiem-ke-kho-phan-thuoc') {
+        return wrapWithPermission(basePath ?? '', decodedSlug, (
+          <ErrorBoundary>{renderLazySubmenuModule('kiem-ke-kho-phan-thuoc')}</ErrorBoundary>
         ));
       }
       if (decodedSlug === 'ton-kho-phan-thuoc') {

@@ -168,6 +168,21 @@ export async function gopThongBao(
 
 // --- Cài đặt người nhận ------------------------------------------------------
 
+/**
+ * Số thông báo chưa đọc của một người — gửi kèm payload push để service worker
+ * đặt badge trên icon app. Tính ở server vì lúc push đến, app có thể đang đóng
+ * và service worker không có token để tự hỏi PostgREST.
+ */
+export async function demChuaDoc(nhanVienId: number): Promise<number> {
+  const kq = await pool.query<{ so: string }>(
+    `SELECT count(*)::text AS so
+       FROM public.fp_var_thong_bao
+      WHERE nguoi_nhan_id = $1 AND da_doc = false AND da_xoa = false`,
+    [nhanVienId]
+  );
+  return Number(kq.rows[0]?.so ?? 0);
+}
+
 export async function layCaiDatNgoaiLe(nhanVienId: number): Promise<CaiDatNgoaiLe[]> {
   const kq = await pool.query<{ module_id: string; loai_su_kien: string; trong_app: boolean; push: boolean }>(
     `SELECT module_id, loai_su_kien, trong_app, push

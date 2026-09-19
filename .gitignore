@@ -30,3 +30,6 @@ Thumbs.db
 
 # TypeScript incremental build cache
 *.tsbuildinfo
+
+# File điền khoá thủ công (chứa secret - không commit)
+*.local.txt

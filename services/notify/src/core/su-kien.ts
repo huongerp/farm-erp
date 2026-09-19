@@ -31,6 +31,11 @@ export const TT_DH_DANG_GIAO = 'Đang giao';
 export const TT_DH_DA_NHAN_DU = 'Đã nhận đủ';
 export const TT_DH_HUY = 'Hủy';
 
+/** Sổ quỹ — mã không dấu, khớp CHECK của fp_tc_quy_thu_chi. */
+export const TT_QUY_MO = 'mo';
+export const TT_QUY_KHOA = 'khoa';
+export const TT_QUY_CHO_MO = 'cho_mo';
+
 /** Công việc — mã không dấu. */
 export const TT_CV_CHO_BAO_CAO = 'cho_bao_cao';
 export const TT_CV_HOAN_THANH = 'hoan_thanh';
@@ -246,6 +251,53 @@ function phanTichDonDatHang(dong: DongOutbox): SuKienDaPhanTich[] {
   }
 }
 
+// --- Sổ quỹ: khoá / xin mở khoá ---------------------------------------------
+
+/**
+ * Chỉ ba mốc đáng báo. `mo → khoa` KHÔNG báo: đó là thao tác thường ngày của
+ * chính người lập phiếu, báo lên sẽ thành tiếng ồn hằng ngày cho nhóm duyệt.
+ */
+function phanTichQuyThuChi(dong: DongOutbox): SuKienDaPhanTich[] {
+  if (!daDoiTrangThai(dong)) return [];
+
+  switch (dong.trang_thai_moi) {
+    case TT_QUY_CHO_MO:
+      return [
+        {
+          loai: 'quy.xin_mo_khoa',
+          muc: 'cao',
+          vai: ['nhom_duyet'],
+          duLieu: { lyDo: dong.payload['ly_do_yeu_cau_mo'] ?? null },
+        },
+      ];
+    case TT_QUY_MO:
+      // Về "mo" từ "cho_mo" là DUYỆT; từ "khoa" là cấp cao mở thẳng, người tạo
+      // cũng cần biết phiếu của mình sửa lại được.
+      return [
+        {
+          loai: 'quy.duyet_mo_khoa',
+          muc: 'cao',
+          vai: dong.trang_thai_cu === TT_QUY_CHO_MO ? ['nguoi_yeu_cau_mo'] : ['nguoi_tao'],
+          duLieu: {},
+        },
+      ];
+    case TT_QUY_KHOA:
+      // khoa ← cho_mo là TỪ CHỐI; khoa ← mo là khoá thường, không báo.
+      return dong.trang_thai_cu === TT_QUY_CHO_MO
+        ? [
+            {
+              loai: 'quy.tu_choi_mo_khoa',
+              muc: 'cao',
+              vai: ['nguoi_yeu_cau_mo'],
+              duLieu: { lyDo: dong.payload['ly_do_yeu_cau_mo'] ?? null },
+            },
+          ]
+        : [];
+    default:
+      return [];
+  }
+}
+
 // --- Cổng vào ----------------------------------------------------------------
 
 export function phanTichSuKien(dong: DongOutbox): SuKienDaPhanTich[] {
@@ -253,5 +305,6 @@ export function phanTichSuKien(dong: DongOutbox): SuKienDaPhanTich[] {
   if (dong.bang === 'fp_hc_cong_viec') return phanTichCongViec(dong);
   if (dong.bang === 'fp_hr_phieu_hanh_chinh') return phanTichPhieuHanhChinh(dong);
   if (dong.bang === 'fp_mh_don_dat_hang') return phanTichDonDatHang(dong);
+  if (dong.bang === 'fp_tc_quy_thu_chi') return phanTichQuyThuChi(dong);
   return [];
 }

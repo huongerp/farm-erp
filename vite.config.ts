@@ -80,7 +80,7 @@ export default defineConfig(({ mode }) => {
           server.middlewares.use((req, res, next) => {
             if (req.url === '/favicon.ico') {
               res.statusCode = 302;
-              res.setHeader('Location', '/favicon.svg');
+              res.setHeader('Location', '/icons/favicon-32.png');
               res.end();
               return;
             }
@@ -122,24 +122,24 @@ export default defineConfig(({ mode }) => {
           background_color: '#ffffff',
           display: 'standalone',
           start_url: '/',
+          // Icon phải nằm cùng origin: icon trỏ ra dịch vụ ngoài thì máy không
+          // tải được lúc cài (hoặc lúc offline) là PWA hiện ô trắng không logo.
           icons: [
+            { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+            { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+            // Bản maskable để riêng: Android cắt icon theo khuôn của máy, dùng
+            // chung bản 'any' bo góc sẵn sẽ bị cắt cụt mất chữ.
             {
-              src: 'https://ui-avatars.com/api/?name=FP&background=16a34a&color=fff&size=192',
-              sizes: '192x192',
-              type: 'image/png',
-              purpose: 'any',
-            },
-            {
-              src: 'https://ui-avatars.com/api/?name=FP&background=16a34a&color=fff&size=512',
+              src: '/icons/icon-maskable-512.png',
               sizes: '512x512',
               type: 'image/png',
-              purpose: 'any maskable',
+              purpose: 'maskable',
             },
           ],
         },
         injectManifest: {
           // Giữ đúng danh sách precache của cấu hình generateSW trước đây.
-          globPatterns: ['**/*.html', 'favicon.svg', 'manifest.webmanifest', 'fonts/**/*'],
+          globPatterns: ['**/*.html', 'icons/*.png', 'manifest.webmanifest', 'fonts/**/*'],
           globIgnores: ['**/stats.html'],
         },
         devOptions: {

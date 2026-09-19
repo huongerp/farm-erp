@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Wallet, Tags, Link2, Building2, User } from 'lucide-react';
+import { Plus, Wallet, Tags, Link2, Building2, User, Lock } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
@@ -11,6 +11,7 @@ import { DATE_RANGE_PRESETS, type DateRangePresetId } from '../../../he-thong/nh
 import { getDateRangeFromPreset } from '../../../he-thong/nhan-vien/utils/stats-date-range';
 import { useThuChiQuyStore } from '../store/useThuChiQuyStore';
 import { LOAI_THU_CHI, NGUON_CHUNG_TU, loaiThuChiToI18nKey, nguonChungTuToI18nKey } from '../core/constants';
+import { TRANG_THAI_THU_CHI_QUY_VALUES, trangThaiQuyToI18nKey } from '../core/trang-thai';
 import type { HangMucThuChi } from '../../thiet-lap-quy/core/types';
 
 interface BranchOption {
@@ -101,6 +102,11 @@ const ThuChiQuyToolbar: React.FC<Props> = ({
     [nguoiTaoList]
   );
 
+  const trangThaiOptions = useMemo(
+    () => TRANG_THAI_THU_CHI_QUY_VALUES.map((v) => ({ label: t(trangThaiQuyToI18nKey(v)), value: v })),
+    [t]
+  );
+
   const branchOptions = useMemo(
     () => branches.map((b) => ({ label: b.ten_chi_nhanh, value: String(b.id) })),
     [branches]
@@ -112,6 +118,7 @@ const ThuChiQuyToolbar: React.FC<Props> = ({
     filters.hangMucIds.length +
     filters.nguonChungTu.length +
     filters.nguoiTaoIds.length +
+    filters.trangThai.length +
     (datePreset !== 'all' ? 1 : 0);
 
   const clearAllFilters = () => {
@@ -120,6 +127,7 @@ const ThuChiQuyToolbar: React.FC<Props> = ({
     setFilter('hangMucIds', []);
     setFilter('nguonChungTu', []);
     setFilter('nguoiTaoIds', []);
+    setFilter('trangThai', []);
     setFilter('datePreset', 'all');
     setFilter('customDateFrom', '');
     setFilter('customDateEnd', '');
@@ -167,6 +175,14 @@ const ThuChiQuyToolbar: React.FC<Props> = ({
         value: filters.nguoiTaoIds,
         onChange: (val: string[]) => setFilter('nguoiTaoIds', val),
       },
+      {
+        key: 'trangThai',
+        label: t('thuChiQuy.filters.trangThai'),
+        icon: Lock,
+        options: trangThaiOptions,
+        value: filters.trangThai,
+        onChange: (val: string[]) => setFilter('trangThai', val),
+      },
     ],
     [
       t,
@@ -177,6 +193,8 @@ const ThuChiQuyToolbar: React.FC<Props> = ({
       hangMucOptions,
       nguonOptions,
       nguoiTaoOptions,
+      trangThaiOptions,
+      filters.trangThai,
       filters.loai,
       filters.hangMucIds,
       filters.nguonChungTu,
@@ -226,6 +244,14 @@ const ThuChiQuyToolbar: React.FC<Props> = ({
         placeholder={t('thuChiQuy.store.nguoiTaoCol')}
         icon={User}
         className="w-full sm:w-[170px]"
+      />
+      <FilterChipMultiSelect
+        options={trangThaiOptions}
+        value={filters.trangThai}
+        onChange={(v) => setFilter('trangThai', v)}
+        placeholder={t('thuChiQuy.filters.trangThai')}
+        icon={Lock}
+        className="w-full sm:w-[150px]"
       />
       <DateRangePicker
         presets={dateRangePresets}

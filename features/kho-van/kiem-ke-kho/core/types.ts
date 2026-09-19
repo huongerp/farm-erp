@@ -36,6 +36,27 @@ export interface DotKiemKeKho {
   so_lech?: number;
 }
 
+/**
+ * Bản tóm tắt đợt — vài cột, phủ TOÀN BỘ dữ liệu trong phạm vi xem.
+ * Dùng cho chip lọc (phải đếm trên toàn bộ, không phải trang đang xem) và tab Thống kê.
+ */
+export interface DotKiemKeKhoTomTat {
+  id: string;
+  ma_dot: string;
+  ten_dot: string;
+  ngay_bat_dau: string;
+  ngay_ket_thuc: string;
+  trang_thai: TrangThaiDotKiemKeKho;
+  id_nguoi_phu_trach: string;
+  ten_nguoi_phu_trach?: string | null;
+  id_nguoi_tao?: string | null;
+  ten_nguoi_tao?: string | null;
+  id_kho: string[];
+  so_kho: number;
+  so_hang_hoa: number;
+  so_lech: number;
+}
+
 /** Chi tiết kiểm kê — một dòng = một (kho, hàng hóa) trong đợt */
 export interface ChiTietKiemKeKho {
   id: string;

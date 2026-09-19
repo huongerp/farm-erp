@@ -1,9 +1,11 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, User, Calendar, Warehouse } from 'lucide-react';
+import { Plus, User, Calendar, Warehouse, ToggleLeft } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import DateRangePicker, { type DateRangeValue } from '../../../../components/ui/DateRangePicker';
+import { getDateRangeFromPreset, getPresetFromDates } from '../../../../lib/date-presets';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useKiemKeKhoStore } from '../store/useKiemKeKhoStore';
 import { useEmployeesRefQuery } from '@/lib/hooks/use-supabase-ref-queries';
@@ -11,11 +13,17 @@ import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { TRANG_THAI_DOT_OPTIONS } from '../core/constants';
 import { useKiemKeKhoFilterCounts } from '../hooks/use-kiem-ke-kho-filter-counts';
-import type { DotKiemKeKho } from '../core/types';
+import type { DotKiemKeKhoTomTat } from '../core/types';
 import type { ActionItem } from '../../../../components/ui/MobileActionsSheet';
 
+const CUSTOM_PRESET_ID = 'custom';
+
 interface Props {
-  items?: DotKiemKeKho[];
+  /**
+   * Tóm tắt TOÀN BỘ đợt trong phạm vi xem (không phải trang đang xem) — chip lọc
+   * phải đếm trên toàn bộ dữ liệu, xem `getDotKiemKeKhoTomTat`.
+   */
+  tomTat?: DotKiemKeKhoTomTat[];
   onAdd: () => void;
   onDeleteMany: (ids: string[]) => void;
   showAdd?: boolean;
@@ -24,7 +32,7 @@ interface Props {
 }
 
 const KiemKeKhoToolbar: React.FC<Props> = ({
-  items = [],
+  tomTat = [],
   onAdd,
   onDeleteMany,
   showAdd = true,
@@ -45,7 +53,7 @@ const KiemKeKhoToolbar: React.FC<Props> = ({
   const clearSelection = useKiemKeKhoStore((s) => s.clearSelection);
   const { data: employees = [] } = useEmployeesRefQuery();
   const { data: khoList = [] } = useKhoList();
-  const { trangThaiCounts, nguoiPhuTrachCounts, idKhoCounts } = useKiemKeKhoFilterCounts(items, filters);
+  const { trangThaiCounts, nguoiPhuTrachCounts, idKhoCounts } = useKiemKeKhoFilterCounts(tomTat, filters);
 
   const selectedCount = selectedIds.size;
   const trangThaiOptions = useMemo(
@@ -79,6 +87,35 @@ const KiemKeKhoToolbar: React.FC<Props> = ({
         })),
     [khoList, idKhoCounts]
   );
+  const dateRangePresets = useMemo(
+    () => [
+      { id: 'all', label: t('kiemKeKho.filter.periodPlaceholder') },
+      { id: 'thisMonth', label: t('kiemKeKho.preset.thisMonth') },
+      { id: 'lastMonth', label: t('kiemKeKho.preset.lastMonth') },
+      { id: 'thisQuarter', label: t('kiemKeKho.preset.thisQuarter') },
+      { id: 'thisYear', label: t('kiemKeKho.preset.thisYear') },
+    ],
+    [t]
+  );
+  const dateRangeValue: DateRangeValue = useMemo(
+    () => ({
+      preset: getPresetFromDates(filters.dateFrom, filters.dateTo),
+      customStart: filters.dateFrom,
+      customEnd: filters.dateTo,
+    }),
+    [filters.dateFrom, filters.dateTo]
+  );
+  const handleDateRangeChange = (value: DateRangeValue) => {
+    if (value.preset === CUSTOM_PRESET_ID) {
+      setFilter('dateFrom', value.customStart);
+      setFilter('dateTo', value.customEnd);
+      return;
+    }
+    const { dateFrom, dateTo } = getDateRangeFromPreset(value.preset);
+    setFilter('dateFrom', dateFrom);
+    setFilter('dateTo', dateTo);
+  };
+
   const activeFilterCount =
     filters.trang_thai_dot.length +
     filters.id_nguoi_phu_trach.length +
@@ -89,12 +126,20 @@ const KiemKeKhoToolbar: React.FC<Props> = ({
 
   const renderFilters = (
     <>
+      <DateRangePicker
+        presets={dateRangePresets}
+        value={dateRangeValue}
+        onChange={handleDateRangeChange}
+        placeholder={t('kiemKeKho.filter.periodPlaceholder')}
+        customPresetId={CUSTOM_PRESET_ID}
+        className="shrink-0"
+      />
       <FilterChipMultiSelect
         options={trangThaiOptions}
         value={filters.trang_thai_dot}
         onChange={(v) => setFilter('trang_thai_dot', v)}
         placeholder={t('kiemKeKho.store.trangThaiCol')}
-        icon={Calendar}
+        icon={ToggleLeft}
         className="w-full sm:w-[160px]"
         size="md"
       />
@@ -116,36 +161,34 @@ const KiemKeKhoToolbar: React.FC<Props> = ({
         className="w-full sm:w-[180px]"
         size="md"
       />
-      <div className="relative w-full sm:w-[140px]">
-        <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-        <input
-          type="date"
-          value={filters.dateFrom}
-          onChange={(e) => setFilter('dateFrom', e.target.value)}
-          className="w-full h-9 pl-8 pr-2 bg-muted/40 border border-border/60 rounded-lg text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40"
-          placeholder={t('kiemKeKho.filter.dateFrom')}
-        />
-      </div>
-      <div className="relative w-full sm:w-[140px]">
-        <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-        <input
-          type="date"
-          value={filters.dateTo}
-          onChange={(e) => setFilter('dateTo', e.target.value)}
-          className="w-full h-9 pl-8 pr-2 bg-muted/40 border border-border/60 rounded-lg text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40"
-          placeholder={t('kiemKeKho.filter.dateTo')}
-        />
-      </div>
     </>
   );
 
+  /**
+   * Bộ lọc mobile (bottom-sheet) phải có ĐỦ các nhóm của hàng chip desktop, kể cả kỳ —
+   * thiếu nhóm nào thì trên điện thoại không lọc được theo tiêu chí đó.
+   * Sheet chỉ hỗ trợ multi-select nên kỳ được mô phỏng bằng một nhóm chọn-một.
+   */
   const filterGroups = useMemo(
     () => [
-      { key: 'trang_thai_dot', label: t('kiemKeKho.store.trangThaiCol'), icon: Calendar, options: trangThaiOptions, value: filters.trang_thai_dot, onChange: (val: string[]) => setFilter('trang_thai_dot', val) },
+      {
+        key: 'ky',
+        label: t('kiemKeKho.filter.periodPlaceholder'),
+        icon: Calendar,
+        options: dateRangePresets.map((p) => ({ label: p.label, value: p.id })),
+        value: dateRangeValue.preset === 'all' ? [] : [dateRangeValue.preset],
+        onChange: (val: string[]) => {
+          const next = val.find((v) => v !== dateRangeValue.preset) ?? 'all';
+          const { dateFrom, dateTo } = getDateRangeFromPreset(next);
+          setFilter('dateFrom', dateFrom);
+          setFilter('dateTo', dateTo);
+        },
+      },
+      { key: 'trang_thai_dot', label: t('kiemKeKho.store.trangThaiCol'), icon: ToggleLeft, options: trangThaiOptions, value: filters.trang_thai_dot, onChange: (val: string[]) => setFilter('trang_thai_dot', val) },
       { key: 'id_kho', label: t('kiemKeKho.store.khoCol'), icon: Warehouse, options: idKhoOptions, value: filters.id_kho, onChange: (val: string[]) => setFilter('id_kho', val) },
       { key: 'id_nguoi_phu_trach', label: t('kiemKeKho.store.nguoiPhuTrachCol'), icon: User, options: nguoiPhuTrachOptions, value: filters.id_nguoi_phu_trach, onChange: (val: string[]) => setFilter('id_nguoi_phu_trach', val) },
     ],
-    [trangThaiOptions, idKhoOptions, nguoiPhuTrachOptions, filters.trang_thai_dot, filters.id_kho, filters.id_nguoi_phu_trach, setFilter, t]
+    [trangThaiOptions, idKhoOptions, nguoiPhuTrachOptions, filters.trang_thai_dot, filters.id_kho, filters.id_nguoi_phu_trach, dateRangePresets, dateRangeValue.preset, setFilter, t]
   );
 
   const showAddButton = showAdd && canCreate;

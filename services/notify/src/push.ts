@@ -24,6 +24,8 @@ export interface NoiDungPush {
   /** Gom thông báo cùng một bản ghi vào một chỗ trên màn hình khoá. */
   tag: string;
   muc: 'cao' | 'thuong';
+  /** Tổng số chưa đọc sau sự kiện này — service worker dùng để đặt badge trên icon app. */
+  soChuaDoc?: number;
 }
 
 /**

@@ -1,8 +1,9 @@
-import type { DotKiemKeKho } from '../core/types';
+import type { DotKiemKeKhoTomTat } from '../core/types';
 import type { KiemKeKhoFilters } from '../store/useKiemKeKhoStore';
 
+/** Đếm cho chip lọc — nhận bản TÓM TẮT toàn bộ, không phải trang đang xem. */
 export function useKiemKeKhoFilterCounts(
-  items: DotKiemKeKho[],
+  items: DotKiemKeKhoTomTat[],
   _filters: KiemKeKhoFilters
 ) {
   const trangThaiCounts: Record<string, number> = {};

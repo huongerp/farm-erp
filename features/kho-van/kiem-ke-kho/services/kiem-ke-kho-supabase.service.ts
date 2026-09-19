@@ -5,6 +5,7 @@ import { db, fetchTablePage, throwSupabaseError, type PaginatedTableResult } fro
 import { buildPostgrestSearchOr } from '../../../../lib/postgrest-search';
 import type {
   DotKiemKeKho,
+  DotKiemKeKhoTomTat,
   ChiTietKiemKeKho,
   DotKiemKeKhoCreate,
   ChiTietKiemKeKhoUpdate,
@@ -33,6 +34,12 @@ import { getKhoRef } from '../../danh-sach-kho/services/kho-service';
 import { getHangHoaRef } from '../../danh-sach-hang-hoa/services/hang-hoa-service';
 import { getEmployeesRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
 import i18n from '../../../../lib/i18n';
+import {
+  coTheSuaDot,
+  coTheXoaDot,
+  coTheSuaChiTiet,
+  coTheChuyenTrangThaiDot,
+} from '../core/quyen-sua-dot';
 
 const TABLE_DOT = 'fp_mh_dot_kiem_ke_kho';
 const TABLE_DOT_KHO = 'fp_mh_dot_kiem_ke_kho_kho';
@@ -196,6 +203,21 @@ async function getDotKhoIds(idDot: number): Promise<string[]> {
   return (data ?? []).map((r: { id_kho: number }) => String(r.id_kho));
 }
 
+/** Cột cho bản tóm tắt (chip lọc + tab Thống kê). */
+const DOT_KK_KHO_TOM_TAT_COLUMNS =
+  'id,ma_dot,ten_dot,ngay_bat_dau,ngay_ket_thuc,trang_thai,id_nguoi_phu_trach,id_nguoi_tao';
+
+interface TomTatRow {
+  id: number;
+  ma_dot: string;
+  ten_dot: string;
+  ngay_bat_dau: string;
+  ngay_ket_thuc: string;
+  trang_thai: string;
+  id_nguoi_phu_trach: number;
+  id_nguoi_tao: number | null;
+}
+
 /** Cột tham gia ô tìm kiếm ở server. */
 const DOT_KK_KHO_SEARCH_SPEC = {
   text: ['ma_dot', 'ten_dot', 'trang_thai', 'ghi_chu'],
@@ -245,6 +267,59 @@ async function thongKeChiTietTheoDot(
     if (r.ket_qua === 'thieu' || r.ket_qua === 'thua') out[r.id_dot_kiem_ke_kho].so_lech += 1;
   }
   return out;
+}
+
+/**
+ * Tóm tắt TOÀN BỘ đợt trong phạm vi xem — vài cột, 3 request cố định.
+ *
+ * Chip lọc và tab Thống kê phải tính trên toàn bộ dữ liệu, không phải trang đang
+ * xem; đây là nguồn thay cho bản `getDotKiemKeKhoList` cũ (tải cả bảng rồi gọi
+ * `getDotKhoIds` trong vòng lặp — N+1).
+ */
+export async function getDotKiemKeKhoTomTatSupabase(
+  phamVi: { khoChoPhep: string[]; currentEmployeeId: string | null } | null = null
+): Promise<DotKiemKeKhoTomTat[]> {
+  const employees = await getEmployeesRef();
+  const empMap = new Map(employees.map((e) => [e.id, e.ho_ten]));
+
+  const dotIdsPhamVi = phamVi ? await dotIdsTheoKho(phamVi.khoChoPhep) : null;
+
+  let sel = db.from(TABLE_DOT).select(DOT_KK_KHO_TOM_TAT_COLUMNS);
+  if (dotIdsPhamVi != null) {
+    const ve: string[] = [];
+    const me = phamVi?.currentEmployeeId != null ? Number(phamVi.currentEmployeeId) : NaN;
+    if (Number.isFinite(me)) ve.push(`id_nguoi_phu_trach.eq.${me}`, `id_nguoi_tao.eq.${me}`);
+    if (dotIdsPhamVi.length > 0) ve.push(`id.in.(${dotIdsPhamVi.join(',')})`);
+    // Không có điều kiện hợp lệ nào = không được phép xem gì, KHÔNG phải xem tất cả.
+    sel = ve.length > 0 ? sel.or(ve.join(',')) : sel.eq('id', -1);
+  }
+  const { data, error } = await sel.order('ngay_ket_thuc', { ascending: false }).order('id', { ascending: false });
+  if (error) throwSupabaseError(error);
+
+  const rows = (data ?? []) as TomTatRow[];
+  const dotIds = rows.map((r) => r.id);
+  const [khoMap, stats] = await Promise.all([khoTheoDotIds(dotIds), thongKeChiTietTheoDot(dotIds)]);
+
+  return rows.map((row) => {
+    const idKho = khoMap.get(row.id) ?? [];
+    const st = stats[row.id];
+    return {
+      id: String(row.id),
+      ma_dot: row.ma_dot,
+      ten_dot: row.ten_dot,
+      ngay_bat_dau: row.ngay_bat_dau,
+      ngay_ket_thuc: row.ngay_ket_thuc,
+      trang_thai: row.trang_thai as DotKiemKeKhoTomTat['trang_thai'],
+      id_nguoi_phu_trach: String(row.id_nguoi_phu_trach),
+      ten_nguoi_phu_trach: empMap.get(String(row.id_nguoi_phu_trach)) ?? null,
+      id_nguoi_tao: row.id_nguoi_tao != null ? String(row.id_nguoi_tao) : null,
+      ten_nguoi_tao: row.id_nguoi_tao != null ? empMap.get(String(row.id_nguoi_tao)) ?? null : null,
+      id_kho: idKho,
+      so_kho: idKho.length,
+      so_hang_hoa: st?.so_hang_hoa ?? 0,
+      so_lech: st?.so_lech ?? 0,
+    };
+  });
 }
 
 /**
@@ -346,91 +421,6 @@ export async function getDotKiemKeKhoPageSupabase(
   };
 }
 
-export async function getDotKiemKeKhoListSupabase(
-  params: GetDotKiemKeKhoListParamsSupabase = {}
-): Promise<DotKiemKeKho[]> {
-  const employees = await getEmployeesRef();
-  const empMap = new Map(employees.map((e) => [e.id, { ten: e.ho_ten, ma: e.ma_nhan_vien }]));
-
-  let query = db.from(TABLE_DOT).select(DOT_KK_KHO_COLUMNS).order('ngay_ket_thuc', { ascending: false });
-
-  if (params.trang_thai_dot?.length) {
-    query = query.in('trang_thai', params.trang_thai_dot);
-  }
-  if (params.dateFrom) {
-    query = query.gte('ngay_ket_thuc', params.dateFrom);
-  }
-  if (params.dateTo) {
-    query = query.lte('ngay_bat_dau', params.dateTo);
-  }
-  if (params.id_nguoi_phu_trach?.length) {
-    query = query.in('id_nguoi_phu_trach', params.id_nguoi_phu_trach.map(Number));
-  }
-
-  const { data: rows, error } = await query;
-  if (error) throwSupabaseError(error);
-  const dotRows = (rows ?? []) as DotRow[];
-
-  const dotIds = dotRows.map((r) => r.id);
-  const chiTietCounts: Record<number, { so_hang_hoa: number; so_lech: number }> = {};
-  if (dotIds.length > 0) {
-    const { data: chiTietRows } = await db
-      .from(TABLE_CHI_TIET)
-      .select('id_dot_kiem_ke_kho, ket_qua')
-      .in('id_dot_kiem_ke_kho', dotIds);
-    const rows = (chiTietRows ?? []) as { id_dot_kiem_ke_kho: number; ket_qua: string | null }[];
-    for (const r of rows) {
-      if (!chiTietCounts[r.id_dot_kiem_ke_kho]) {
-        chiTietCounts[r.id_dot_kiem_ke_kho] = { so_hang_hoa: 0, so_lech: 0 };
-      }
-      chiTietCounts[r.id_dot_kiem_ke_kho].so_hang_hoa += 1;
-      if (r.ket_qua === 'thieu' || r.ket_qua === 'thua') {
-        chiTietCounts[r.id_dot_kiem_ke_kho].so_lech += 1;
-      }
-    }
-  }
-
-  const result: DotKiemKeKho[] = [];
-  for (const row of dotRows) {
-    const idKhoList = await getDotKhoIds(row.id);
-    if (params.id_kho?.length && !idKhoList.some((k) => params.id_kho!.includes(k))) continue;
-    if (params.filter === 'mine' && params.id_nguoi && String(row.id_nguoi_phu_trach) !== params.id_nguoi) continue;
-    if (params.q?.trim()) {
-      const q = params.q.trim().toLowerCase();
-      const empPhuTrach = empMap.get(String(row.id_nguoi_phu_trach));
-      const empTao = row.id_nguoi_tao != null ? empMap.get(String(row.id_nguoi_tao)) : undefined;
-      if (
-        !(
-          row.ma_dot?.toLowerCase().includes(q) ||
-          row.ten_dot?.toLowerCase().includes(q) ||
-          (empPhuTrach?.ten ?? '').toLowerCase().includes(q) ||
-          (empPhuTrach?.ma ?? '').toLowerCase().includes(q) ||
-          (empTao?.ten ?? '').toLowerCase().includes(q) ||
-          (empTao?.ma ?? '').toLowerCase().includes(q)
-        )
-      )
-        continue;
-    }
-    const empPhuTrach = empMap.get(String(row.id_nguoi_phu_trach));
-    const empTao = row.id_nguoi_tao != null ? empMap.get(String(row.id_nguoi_tao)) : undefined;
-    const stats = chiTietCounts[row.id];
-    result.push(
-      rowToDot(
-        row,
-        idKhoList,
-        {
-          ten_nguoi_phu_trach: empPhuTrach?.ten ?? null,
-          ma_nguoi_phu_trach: empPhuTrach?.ma ?? null,
-          ten_nguoi_tao: empTao?.ten ?? null,
-          ma_nguoi_tao: empTao?.ma ?? null,
-        },
-        stats
-      )
-    );
-  }
-  return result;
-}
-
 export async function getDotKiemKeKhoByIdSupabase(id: string): Promise<DotKiemKeKho | null> {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) return null;
@@ -519,14 +509,20 @@ export async function createDotKiemKeKhoSupabase(
   return created;
 }
 
-export async function updateDotKiemKeKhoSupabase(id: string, data: Partial<DotKiemKeKhoCreate>): Promise<DotKiemKeKho> {
+export async function updateDotKiemKeKhoSupabase(
+  id: string,
+  data: Partial<DotKiemKeKhoCreate>,
+  /** Cấp cao (cap_bac = 1 hoặc admin/all) được sửa cả đợt đã hoàn thành. */
+  capCao = false
+): Promise<DotKiemKeKho> {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('kiemKeKho.service.notFound'));
   const existing = await getDotKiemKeKhoByIdSupabase(id);
   if (!existing) throw new Error(i18n.t('kiemKeKho.service.notFound'));
-  if (existing.trang_thai === 'hoan_thanh') {
+  if (!coTheSuaDot(existing.trang_thai, capCao)) {
+    // Ghi chú vẫn cho sửa: đó là chỗ ghi lý do chốt sổ, không đụng số liệu.
     const onlyGhiChu = data.ghi_chu !== undefined && Object.keys(data).length === 1;
-    if (!onlyGhiChu) throw new Error(i18n.t('kiemKeKho.service.onlyEditDraft'));
+    if (!onlyGhiChu) throw new Error(i18n.t('kiemKeKho.service.hoanThanhChiCapCao'));
   }
   const payload: Record<string, unknown> = {};
   if (data.ma_dot != null) payload.ma_dot = data.ma_dot.trim();
@@ -553,19 +549,31 @@ export async function updateDotKiemKeKhoSupabase(id: string, data: Partial<DotKi
   return updated;
 }
 
-export async function deleteDotKiemKeKhoSupabase(ids: string[]): Promise<void> {
+export async function deleteDotKiemKeKhoSupabase(ids: string[], capCao = false): Promise<void> {
   const idNums = ids.map((s) => Number(s)).filter((n) => !Number.isNaN(n));
   if (idNums.length === 0) return;
   const { data: dots } = await db.from(TABLE_DOT).select('id, trang_thai').in('id', idNums);
-  const completed = (dots ?? []).filter((d: { trang_thai: string }) => d.trang_thai === 'hoan_thanh');
-  if (completed.length > 0) throw new Error(i18n.t('kiemKeKho.service.onlyDeleteNotCompleted'));
+  const chanLai = (dots ?? []).filter(
+    (d: { trang_thai: TrangThaiDotKiemKeKho }) => !coTheXoaDot(d.trang_thai, capCao)
+  );
+  if (chanLai.length > 0) throw new Error(i18n.t('kiemKeKho.service.hoanThanhChiCapCaoXoa'));
   const { error } = await db.from(TABLE_DOT).delete().in('id', idNums);
   if (error) throwSupabaseError(error);
 }
 
-export async function changeTrangThaiDotSupabase(id: string, trang_thai: TrangThaiDotKiemKeKho): Promise<DotKiemKeKho> {
+export async function changeTrangThaiDotSupabase(
+  id: string,
+  trang_thai: TrangThaiDotKiemKeKho,
+  capCao = false
+): Promise<DotKiemKeKho> {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('kiemKeKho.service.notFound'));
+  const existing = await getDotKiemKeKhoByIdSupabase(id);
+  if (!existing) throw new Error(i18n.t('kiemKeKho.service.notFound'));
+  // Chặn lối vòng: đưa đợt đã chốt về Đang kiểm kê rồi sửa thoải mái.
+  if (!coTheChuyenTrangThaiDot(existing.trang_thai, capCao)) {
+    throw new Error(i18n.t('kiemKeKho.service.hoanThanhChiCapCaoDoiTrangThai'));
+  }
   const { error } = await db.from(TABLE_DOT).update({ trang_thai }).eq('id', idNum);
   if (error) throwSupabaseError(error);
   const updated = await getDotKiemKeKhoByIdSupabase(id);
@@ -575,11 +583,14 @@ export async function changeTrangThaiDotSupabase(id: string, trang_thai: TrangTh
 
 export async function taoDanhSachKiemKeSupabase(
   id_dot_kiem_ke_kho: string,
-  filters?: TaoDanhSachKiemKeKhoFiltersSupabase
+  filters?: TaoDanhSachKiemKeKhoFiltersSupabase,
+  capCao = false
 ): Promise<ChiTietKiemKeKho[]> {
   const dot = await getDotKiemKeKhoByIdSupabase(id_dot_kiem_ke_kho);
   if (!dot) throw new Error(i18n.t('kiemKeKho.service.notFound'));
-  if (dot.trang_thai === 'hoan_thanh') throw new Error(i18n.t('kiemKeKho.service.onlyTaoDanhSachWhenDraft'));
+  if (!coTheSuaChiTiet(dot.trang_thai, capCao)) {
+    throw new Error(i18n.t('kiemKeKho.service.hoanThanhChiCapCao'));
+  }
   if (!dot.id_kho?.length) throw new Error(i18n.t('kiemKeKho.service.dotChuaChonKho'));
 
   const hangHoaList = await getHangHoaRef();
@@ -641,11 +652,14 @@ export async function taoDanhSachKiemKeSupabase(
 export async function createChiTietKiemKeSupabase(
   id_dot_kiem_ke_kho: string,
   id_kho: string,
-  id_hang_hoa: string
+  id_hang_hoa: string,
+  capCao = false
 ): Promise<ChiTietKiemKeKho> {
   const dot = await getDotKiemKeKhoByIdSupabase(id_dot_kiem_ke_kho);
   if (!dot) throw new Error(i18n.t('kiemKeKho.service.notFound'));
-  if (dot.trang_thai === 'hoan_thanh') throw new Error(i18n.t('kiemKeKho.service.onlyEditDraft'));
+  if (!coTheSuaChiTiet(dot.trang_thai, capCao)) {
+    throw new Error(i18n.t('kiemKeKho.service.hoanThanhChiCapCao'));
+  }
   if (!dot.id_kho.includes(id_kho)) throw new Error(i18n.t('kiemKeKho.service.khoNotInDot'));
   const existing = await getChiTietByDotSupabase(id_dot_kiem_ke_kho);
   if (existing.some((c) => c.id_kho === id_kho && c.id_hang_hoa === id_hang_hoa))
@@ -675,14 +689,16 @@ export async function createChiTietKiemKeSupabase(
   return found;
 }
 
-export async function deleteChiTietKiemKeSupabase(id_chi_tiet: string): Promise<void> {
+export async function deleteChiTietKiemKeSupabase(id_chi_tiet: string, capCao = false): Promise<void> {
   const idNum = Number(id_chi_tiet);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('kiemKeKho.service.chiTietNotFound'));
   const { data: row, error: fetchErr } = await db.from(TABLE_CHI_TIET).select('id_dot_kiem_ke_kho').eq('id', idNum).maybeSingle();
   if (fetchErr || !row) throw new Error(i18n.t('kiemKeKho.service.chiTietNotFound'));
   const dot = await getDotKiemKeKhoByIdSupabase(String((row as { id_dot_kiem_ke_kho: number }).id_dot_kiem_ke_kho));
   if (!dot) throw new Error(i18n.t('kiemKeKho.service.notFound'));
-  if (dot.trang_thai === 'hoan_thanh') throw new Error(i18n.t('kiemKeKho.service.onlyEditDraft'));
+  if (!coTheSuaChiTiet(dot.trang_thai, capCao)) {
+    throw new Error(i18n.t('kiemKeKho.service.hoanThanhChiCapCao'));
+  }
   const { error } = await db.from(TABLE_CHI_TIET).delete().eq('id', idNum);
   if (error) throwSupabaseError(error);
 }

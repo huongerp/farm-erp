@@ -149,4 +149,8 @@ xem mẫu ở các hook `use-*-view-scope.ts`.
   không UPDATE thẳng `mat_khau_hash`.
 - Thông báo sinh bằng trigger DB ghi vào outbox, **không** gọi thêm insert từ frontend sau mutation —
   làm vậy sẽ sót khi dữ liệu đổi từ SQL tay hoặc module khác. Xem [docs/THONG_BAO_PUSH.md](docs/THONG_BAO_PUSH.md).
+- Sổ quỹ (`features/tai-chinh/thu-chi-quy`) có trạng thái khoá: `mo` / `khoa` / `cho_mo`. Luật thuần ở
+  `core/trang-thai.ts` (có test), cổng theo người dùng ở `hooks/use-thu-chi-quy-permissions.ts`. Mở khoá
+  chỉ dành cho `cap_bac = 1` / quản trị; phiếu khoá phải chặn cả ở `ThuChiLienQuanSection` (bảng nhúng
+  trong drawer của 3 module khác, KHÔNG đọc được ModulePermissionGuard của quỹ).
 - Thêm chuỗi hiển thị phải thêm cả `vi.json` và `en.json` (`node scripts/check-i18n-keys.mjs` để soi thiếu).

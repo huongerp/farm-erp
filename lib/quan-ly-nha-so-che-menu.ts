@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { Sprout, PackagePlus, Package, BookOpen, Users, Layers, Boxes, BarChart3, ClipboardList, Settings } from 'lucide-react';
+import { Sprout, PackagePlus, Package, BookOpen, Users, Layers, Boxes, BarChart3, ClipboardList, ClipboardCheck, Settings } from 'lucide-react';
 import type { ModuleItem } from '../components/dashboard/SubModuleCard';
 import type { ModuleGroup } from '../components/dashboard/ModuleDashboardLayout';
 
@@ -31,6 +31,7 @@ export const QUAN_LY_NHA_SO_CHE_MODULE_SLUGS: string[] = [
   'thong-ke-san-xuat',
   'de-xuat-mua-hang',
   'phieu-kho-phan-thuoc',
+  'kiem-ke-kho-phan-thuoc',
   'ton-kho-phan-thuoc',
   'hang-hoa-phan-thuoc',
   'thiet-lap-de-xuat-mua-hang',
@@ -117,6 +118,13 @@ export function getQuanLyNhaSoCheGroups(
           descKey: 'page.quanLyNhaSoChe.descs.phieuKhoPhanThuoc',
           icon: PackagePlus,
           color: 'bg-lime-600',
+        }),
+        item({
+          slug: 'kiem-ke-kho-phan-thuoc',
+          titleKey: 'page.quanLyNhaSoChe.modules.kiemKeKhoPhanThuoc',
+          descKey: 'page.quanLyNhaSoChe.descs.kiemKeKhoPhanThuoc',
+          icon: ClipboardCheck,
+          color: 'bg-rose-600',
         }),
         item({
           slug: 'ton-kho-phan-thuoc',

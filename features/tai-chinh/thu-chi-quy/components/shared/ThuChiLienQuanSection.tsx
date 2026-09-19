@@ -8,6 +8,9 @@ import { formatDate, formatNumberVN } from '../../../../../lib/utils';
 import { CONFIRM_DELETE } from '../../../../../lib/button-labels';
 import { useConfirmStore } from '../../../../../store/useConfirmStore';
 import { useModulePermission } from '../../../../he-thong/phan-quyen/hooks/use-module-permission';
+import { laCapBacToanQuyen } from '../../../../he-thong/phan-quyen/core/cap-bac-toan-quyen';
+import { useAuthStore } from '../../../../../store/useStore';
+import { canMutateThuChiQuy } from '../../core/trang-thai';
 import { useThuChiQuyByChungTu, useDeleteThuChiQuy } from '../../hooks/use-thu-chi-quy';
 import { THU_CHI_QUY_MODULE_ID, useThuChiQuyViewScope } from '../../hooks/use-thu-chi-quy-view-scope';
 import { getLoaiBadgeClass, loaiThuChiToI18nKey } from '../../core/constants';
@@ -57,6 +60,7 @@ const ThuChiLienQuanSection: React.FC<ThuChiLienQuanSectionProps> = ({
   const { t } = useTranslation();
   const confirm = useConfirmStore((s) => s.confirm);
   const perm = useModulePermission(THU_CHI_QUY_MODULE_ID);
+  const capBac = useAuthStore((s) => s.user?.cap_bac);
   const viewScope = useThuChiQuyViewScope();
   const idStr = idChungTu != null ? String(idChungTu) : '';
 
@@ -100,6 +104,14 @@ const ThuChiLienQuanSection: React.FC<ThuChiLienQuanSectionProps> = ({
   const canCreate = !readOnly && perm.canCreate;
   const canUpdate = !readOnly && perm.canUpdate;
   const canDelete = !readOnly && perm.canDelete;
+  /**
+   * Bảng này nhúng trong drawer của 3 module khác nên KHÔNG đọc được
+   * ModulePermissionGuard của Thu chi quỹ — phải tự tra quyền + cấp bậc, nếu
+   * không phiếu đã khoá vẫn còn đường vòng để sửa/xoá từ đây.
+   */
+  const laCapCao = perm.canAdmin || laCapBacToanQuyen(capBac);
+  const canEditRow = (item: ThuChiQuy) => canMutateThuChiQuy(item, canUpdate, laCapCao);
+  const canDeleteRow = (item: ThuChiQuy) => canMutateThuChiQuy(item, canDelete, laCapCao);
   const money = (v: number) => formatNumberVN(v, { maxFractionDigits: 0 });
 
   const handleDelete = (item: ThuChiQuy) => {
@@ -219,7 +231,7 @@ const ThuChiLienQuanSection: React.FC<ThuChiLienQuanSectionProps> = ({
                           <Eye size={14} />
                         </button>
                       </Tooltip>
-                      {canUpdate && (
+                      {canEditRow(item) && (
                         <Tooltip content={t('common.edit')} placement="left">
                           <button
                             type="button"
@@ -234,7 +246,7 @@ const ThuChiLienQuanSection: React.FC<ThuChiLienQuanSectionProps> = ({
                           </button>
                         </Tooltip>
                       )}
-                      {canDelete && (
+                      {canDeleteRow(item) && (
                         <Tooltip content={t('common.delete')} placement="left">
                           <button
                             type="button"
@@ -291,8 +303,8 @@ const ThuChiLienQuanSection: React.FC<ThuChiLienQuanSectionProps> = ({
             data={detailItem}
             stackLevel={1}
             onClose={() => setDetailItem(null)}
-            onEdit={canUpdate ? openEdit : undefined}
-            onDelete={canDelete ? handleDelete : undefined}
+            onEdit={canEditRow(detailItem) ? openEdit : undefined}
+            onDelete={canDeleteRow(detailItem) ? handleDelete : undefined}
           />
         )}
       </AnimatePresence>

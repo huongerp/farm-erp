@@ -43,6 +43,7 @@ export type FeatureI18nKey =
   | 'thiet-lap-de-xuat-mua-hang'
   | 'thong-ke-san-xuat'
   | 'thu-hoach'
+  | 'kiem-ke-kho-phan-thuoc'
   | 'ton-kho-phan-thuoc'
   | 'thiet-lap-quy'
   | 'thu-chi-quy'
@@ -78,6 +79,7 @@ const FEATURE_I18N_KEYS = new Set<FeatureI18nKey>([
   'thiet-lap-de-xuat-mua-hang',
   'thong-ke-san-xuat',
   'thu-hoach',
+  'kiem-ke-kho-phan-thuoc',
   'ton-kho-phan-thuoc',
   'thiet-lap-quy',
   'thu-chi-quy',
@@ -127,6 +129,7 @@ const FEATURE_I18N_LOADERS: Record<FeatureI18nKey, () => Promise<{ default: Reco
   'thiet-lap-de-xuat-mua-hang': () => import('../features/quan-ly-nha-so-che/thiet-lap-de-xuat-mua-hang/locales/vi.json'),
   'thong-ke-san-xuat': () => import('../features/quan-ly-nha-so-che/thong-ke-san-xuat/locales/vi.json'),
   'thu-hoach': () => import('../features/quan-ly-nha-so-che/thu-hoach/locales/vi.json'),
+  'kiem-ke-kho-phan-thuoc': () => import('../features/quan-ly-nha-so-che/kiem-ke-kho-phan-thuoc/locales/vi.json'),
   'ton-kho-phan-thuoc': () => import('../features/quan-ly-nha-so-che/ton-kho-phan-thuoc/locales/vi.json'),
   'thiet-lap-quy': () => import('../features/tai-chinh/thiet-lap-quy/locales/vi.json'),
   'thu-chi-quy': () => import('../features/tai-chinh/thu-chi-quy/locales/vi.json'),
@@ -165,6 +168,7 @@ const FEATURE_I18N_DEPS: Partial<Record<FeatureI18nKey, FeatureI18nKey[]>> = {
   'ton-kho': ['bao-cao-nhap-xuat-ton', 'phieu-kho'],
   'thong-ke-quy': ['thu-chi-quy'],
   'thu-chi-quy': ['thiet-lap-quy'],
+  'kiem-ke-kho-phan-thuoc': ['hang-hoa-phan-thuoc', 'phieu-kho-phan-thuoc', 'ton-kho-phan-thuoc'],
   'ton-kho-phan-thuoc': ['hang-hoa-phan-thuoc', 'phieu-kho', 'phieu-kho-phan-thuoc', 'ton-kho'],
 };
 

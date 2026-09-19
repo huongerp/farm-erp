@@ -3,7 +3,8 @@
  * không đụng PostgREST). Service chỉ việc áp object này lên query builder.
  */
 import { resolveAllowedChiNhanhIds, type QuyBranchScope } from '../utils/quy-view-scope';
-import type { LoaiThuChi, ThuChiNguon } from '../core/types';
+import { TRANG_THAI_THU_CHI_QUY } from '../core/types';
+import type { LoaiThuChi, ThuChiNguon, TrangThaiThuChiQuy } from '../core/types';
 import type { ThuChiQuyFilters } from '../store/useThuChiQuyStore';
 
 function strArr(v: unknown): string[] {
@@ -28,6 +29,8 @@ export interface ThuChiQuyListServerQuery {
   hangMucIds: number[];
   nguonChungTu: ThuChiNguon[];
   nguoiTaoIds: number[];
+  /** Rỗng = không lọc trạng thái (thấy cả phiếu mở lẫn phiếu đã khoá). */
+  trangThai: TrangThaiThuChiQuy[];
   ngayFrom: string;
   ngayTo: string;
 }
@@ -56,6 +59,11 @@ export function buildThuChiQuyListServerQuery(params: {
   const nguonChungTu = strArr(filters.nguonChungTu).filter((v): v is ThuChiNguon =>
     v === 'don_dat_hang' || v === 'de_xuat_mua_hang' || v === 'chi_phi_tai_san'
   );
+  const trangThai = strArr(filters.trangThai).filter((v): v is TrangThaiThuChiQuy =>
+    v === TRANG_THAI_THU_CHI_QUY.MO ||
+    v === TRANG_THAI_THU_CHI_QUY.KHOA ||
+    v === TRANG_THAI_THU_CHI_QUY.CHO_MO
+  );
 
   return {
     searchTerm: (searchTerm ?? '').trim(),
@@ -64,6 +72,7 @@ export function buildThuChiQuyListServerQuery(params: {
     hangMucIds: toNumIds(strArr(filters.hangMucIds)),
     nguonChungTu: [...new Set(nguonChungTu)].sort(),
     nguoiTaoIds: toNumIds(strArr(filters.nguoiTaoIds)),
+    trangThai: [...new Set(trangThai)].sort(),
     ngayFrom,
     ngayTo,
   };

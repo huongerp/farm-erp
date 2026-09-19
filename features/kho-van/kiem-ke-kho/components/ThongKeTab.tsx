@@ -1,25 +1,28 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { User, Calendar, Warehouse } from 'lucide-react';
+import { User, Calendar, Warehouse, ToggleLeft } from 'lucide-react';
 import { toast } from 'sonner';
-import { useDotKiemKeKhoList } from '../hooks/use-kiem-ke-kho';
+import { useDotKiemKeKhoTomTat } from '../hooks/use-kiem-ke-kho';
 import {
   exportKiemKeKhoThongKeToPDF,
   exportKiemKeKhoThongKeToXLSX,
 } from '../utils/export-kiem-ke-kho-thong-ke';
 import { useKiemKeKhoViewScope } from '../hooks/use-kiem-ke-kho-view-scope';
-import { filterDotKiemKeListByViewScope } from '../utils/dot-kiem-ke-view-scope-filter';
 import { useEmployeesRefQuery } from '@/lib/hooks/use-supabase-ref-queries';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import EmptyState from '../../../../components/shared/EmptyState';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import DateRangePicker, { type DateRangeValue } from '../../../../components/ui/DateRangePicker';
+import { getDateRangeFromPreset, getPresetFromDates } from '../../../../lib/date-presets';
 import { useKiemKeKhoStats } from './stats/useKiemKeKhoStats';
 import StatsToolbar from './stats/StatsToolbar';
 import StatsCards from './stats/StatsCards';
 import StatsTables from './stats/StatsTables';
-import type { DotKiemKeKho } from '../core/types';
+import type { DotKiemKeKhoTomTat } from '../core/types';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
+
+const CUSTOM_PRESET_ID = 'custom';
 
 const TRANG_THAI_OPTIONS = [
   { value: 'draft', labelKey: 'kiemKeKho.trangThaiDot.draft' },
@@ -27,7 +30,7 @@ const TRANG_THAI_OPTIONS = [
   { value: 'hoan_thanh', labelKey: 'kiemKeKho.trangThaiDot.hoan_thanh' },
 ];
 
-function useStatsFilterCounts(items: DotKiemKeKho[]) {
+function useStatsFilterCounts(items: DotKiemKeKhoTomTat[]) {
   return useMemo(() => {
     const trangThaiCounts: Record<string, number> = {};
     const nguoiPhuTrachCounts: Record<string, number> = {};
@@ -45,15 +48,22 @@ function useStatsFilterCounts(items: DotKiemKeKho[]) {
 
 const ThongKeTab: React.FC = () => {
   const { t } = useTranslation();
-  const { data: list = [], isLoading, isError } = useDotKiemKeKhoList({});
   const { data: employees = [] } = useEmployeesRefQuery();
   const { data: khoList = [] } = useKhoList();
   const viewScope = useKiemKeKhoViewScope();
 
-  const viewableList = useMemo(
-    () => filterDotKiemKeListByViewScope(list, khoList, viewScope),
-    [list, khoList, viewScope]
-  );
+  /** Phạm vi xem áp ở server (giống tab Đợt) — `null` = xem tất cả. */
+  const phamVi = useMemo(() => {
+    if (viewScope.viewAll) return null;
+    const khoChoPhep = viewScope.viewByBranch
+      ? khoList
+          .filter((k) => k.id_chi_nhanh != null && viewScope.allowedBranchIds.includes(k.id_chi_nhanh))
+          .map((k) => k.id)
+      : [];
+    return { khoChoPhep, currentEmployeeId: viewScope.currentEmployeeId };
+  }, [viewScope, khoList]);
+
+  const { data: viewableList = [], isLoading, isError } = useDotKiemKeKhoTomTat(phamVi);
 
   const { trangThaiCounts, nguoiPhuTrachCounts, idKhoCounts } = useStatsFilterCounts(viewableList);
 
@@ -63,13 +73,18 @@ const ThongKeTab: React.FC = () => {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
 
+  /**
+   * Lọc kỳ theo GIAO khoảng ("đợt có chạm vào kỳ"), đúng như tab Đợt lọc ở server
+   * (`gte(ngay_ket_thuc, from)` + `lte(ngay_bat_dau, to)`). Trước đây tab này lọc
+   * "đợt nằm trọn trong kỳ" nên hai tab ra số khác nhau trên cùng bộ lọc.
+   */
   const filteredList = useMemo(() => {
-    return viewableList.filter((d: DotKiemKeKho) => {
+    return viewableList.filter((d: DotKiemKeKhoTomTat) => {
       const matchTrangThai = filterTrangThai.length === 0 || filterTrangThai.includes(d.trang_thai);
       const matchNguoi = filterNguoiPhuTrach.length === 0 || (d.id_nguoi_phu_trach && filterNguoiPhuTrach.includes(d.id_nguoi_phu_trach));
       const matchKho = filterIdKho.length === 0 || (d.id_kho && d.id_kho.some((k) => filterIdKho.includes(k)));
-      const matchFrom = !dateFrom || (d.ngay_bat_dau && d.ngay_bat_dau >= dateFrom);
-      const matchTo = !dateTo || (d.ngay_ket_thuc && d.ngay_ket_thuc <= dateTo);
+      const matchFrom = !dateFrom || (d.ngay_ket_thuc && d.ngay_ket_thuc >= dateFrom);
+      const matchTo = !dateTo || (d.ngay_bat_dau && d.ngay_bat_dau <= dateTo);
       return matchTrangThai && matchNguoi && matchKho && matchFrom && matchTo;
     });
   }, [viewableList, filterTrangThai, filterNguoiPhuTrach, filterIdKho, dateFrom, dateTo]);
@@ -109,6 +124,31 @@ const ThongKeTab: React.FC = () => {
     [khoList, idKhoCounts]
   );
 
+  const dateRangePresets = useMemo(
+    () => [
+      { id: 'all', label: t('kiemKeKho.filter.periodPlaceholder') },
+      { id: 'thisMonth', label: t('kiemKeKho.preset.thisMonth') },
+      { id: 'lastMonth', label: t('kiemKeKho.preset.lastMonth') },
+      { id: 'thisQuarter', label: t('kiemKeKho.preset.thisQuarter') },
+      { id: 'thisYear', label: t('kiemKeKho.preset.thisYear') },
+    ],
+    [t]
+  );
+  const dateRangeValue: DateRangeValue = useMemo(
+    () => ({ preset: getPresetFromDates(dateFrom, dateTo), customStart: dateFrom, customEnd: dateTo }),
+    [dateFrom, dateTo]
+  );
+  const handleDateRangeChange = (value: DateRangeValue) => {
+    if (value.preset === CUSTOM_PRESET_ID) {
+      setDateFrom(value.customStart);
+      setDateTo(value.customEnd);
+      return;
+    }
+    const next = getDateRangeFromPreset(value.preset);
+    setDateFrom(next.dateFrom);
+    setDateTo(next.dateTo);
+  };
+
   const activeFilterCount =
     filterTrangThai.length +
     filterNguoiPhuTrach.length +
@@ -125,44 +165,45 @@ const ThongKeTab: React.FC = () => {
 
   const filterGroups = useMemo(
     () => [
-      { key: 'trang_thai', label: t('kiemKeKho.store.trangThaiCol'), icon: Calendar, options: statusOptions, value: filterTrangThai, onChange: setFilterTrangThai },
+      {
+        key: 'ky',
+        label: t('kiemKeKho.filter.periodPlaceholder'),
+        icon: Calendar,
+        options: dateRangePresets.map((p) => ({ label: p.label, value: p.id })),
+        value: dateRangeValue.preset === 'all' ? [] : [dateRangeValue.preset],
+        onChange: (val: string[]) => {
+          const next = val.find((v) => v !== dateRangeValue.preset) ?? 'all';
+          const r = getDateRangeFromPreset(next);
+          setDateFrom(r.dateFrom);
+          setDateTo(r.dateTo);
+        },
+      },
+      { key: 'trang_thai', label: t('kiemKeKho.store.trangThaiCol'), icon: ToggleLeft, options: statusOptions, value: filterTrangThai, onChange: setFilterTrangThai },
       { key: 'id_kho', label: t('kiemKeKho.store.khoCol'), icon: Warehouse, options: idKhoOptions, value: filterIdKho, onChange: setFilterIdKho },
       { key: 'id_nguoi_phu_trach', label: t('kiemKeKho.store.nguoiPhuTrachCol'), icon: User, options: nguoiPhuTrachOptions, value: filterNguoiPhuTrach, onChange: setFilterNguoiPhuTrach },
     ],
-    [statusOptions, idKhoOptions, nguoiPhuTrachOptions, filterTrangThai, filterIdKho, filterNguoiPhuTrach, t]
+    [statusOptions, idKhoOptions, nguoiPhuTrachOptions, filterTrangThai, filterIdKho, filterNguoiPhuTrach, dateRangePresets, dateRangeValue.preset, t]
   );
 
   const renderFilters = (
     <>
+      <DateRangePicker
+        presets={dateRangePresets}
+        value={dateRangeValue}
+        onChange={handleDateRangeChange}
+        placeholder={t('kiemKeKho.filter.periodPlaceholder')}
+        customPresetId={CUSTOM_PRESET_ID}
+        className="shrink-0"
+      />
       <FilterChipMultiSelect
         options={statusOptions}
         value={filterTrangThai}
         onChange={setFilterTrangThai}
         placeholder={t('kiemKeKho.store.trangThaiCol')}
-        icon={Calendar}
+        icon={ToggleLeft}
         className="w-full sm:w-[160px]"
         size="md"
       />
-      <div className="relative w-full sm:w-[140px]">
-        <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-        <input
-          type="date"
-          value={dateFrom}
-          onChange={(e) => setDateFrom(e.target.value)}
-          className="w-full h-9 pl-8 pr-2 bg-muted/40 border border-border/60 rounded-lg text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40"
-          placeholder={t('kiemKeKho.filter.dateFrom')}
-        />
-      </div>
-      <div className="relative w-full sm:w-[140px]">
-        <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-        <input
-          type="date"
-          value={dateTo}
-          onChange={(e) => setDateTo(e.target.value)}
-          className="w-full h-9 pl-8 pr-2 bg-muted/40 border border-border/60 rounded-lg text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40"
-          placeholder={t('kiemKeKho.filter.dateTo')}
-        />
-      </div>
       <FilterChipMultiSelect
         options={idKhoOptions}
         value={filterIdKho}
@@ -227,7 +268,7 @@ const ThongKeTab: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col h-full">
+      <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
         <div className="shrink-0 py-3 px-3 sm:px-4 border-b border-border/50 bg-muted/20">
           <LoadingSpinnerWithText text={t('kiemKeKho.stats.loading')} centered />
         </div>
@@ -247,7 +288,7 @@ const ThongKeTab: React.FC = () => {
   const isEmpty = filteredList.length === 0;
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
       <StatsToolbar
         className="static z-auto print:hidden"
         filters={renderFilters}

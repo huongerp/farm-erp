@@ -84,6 +84,35 @@ interface NoiDungPush {
   link?: string | null;
   tag?: string;
   muc?: 'cao' | 'thuong';
+  /** Tổng số chưa đọc, do notify-service tính sẵn — dùng đặt badge trên icon app. */
+  soChuaDoc?: number;
+}
+
+/**
+ * Badging API chưa có trong lib.webworker của TypeScript nên phải tự khai.
+ * Safari iOS 16.4+ và Chrome/Edge trên máy tính có; nơi nào không có thì bỏ qua.
+ */
+type NavigatorCoBadge = WorkerNavigator & {
+  setAppBadge?: (so?: number) => Promise<void>;
+  clearAppBadge?: () => Promise<void>;
+};
+
+/**
+ * Đặt con số đỏ trên icon app ngoài màn hình chính.
+ *
+ * iOS chỉ cho đặt badge khi PWA đã được thêm vào màn hình chính và người dùng đã
+ * cấp quyền thông báo — chưa đủ điều kiện thì lời gọi ném lỗi, nuốt luôn để
+ * không làm hỏng việc hiện thông báo.
+ */
+async function datBadge(so: number | undefined): Promise<void> {
+  if (typeof so !== 'number' || !Number.isFinite(so)) return;
+  const nav = self.navigator as NavigatorCoBadge;
+  try {
+    if (so > 0) await nav.setAppBadge?.(so);
+    else await nav.clearAppBadge?.();
+  } catch {
+    // Trình duyệt không hỗ trợ hoặc chưa đủ quyền — badge chỉ là phần thêm.
+  }
 }
 
 function docPayload(event: PushEvent): NoiDungPush {
@@ -102,16 +131,20 @@ self.addEventListener('push', (event: PushEvent) => {
   const tieuDe = nd.tieuDe ?? 'Thông báo mới';
 
   event.waitUntil(
-    self.registration.showNotification(tieuDe, {
-      body: nd.noiDung ?? undefined,
-      icon: '/favicon.svg',
-      badge: '/favicon.svg',
-      // Gom theo bản ghi: sửa một phiếu nhiều lần không xếp chồng nhiều thẻ.
-      tag: nd.tag ?? 'farm-erp',
-      renotify: true,
-      requireInteraction: nd.muc === 'cao',
-      data: { link: nd.link ?? '/thong-bao' },
-    } as NotificationOptions)
+    Promise.all([
+      datBadge(nd.soChuaDoc),
+      self.registration.showNotification(tieuDe, {
+        body: nd.noiDung ?? undefined,
+        // PNG chứ không SVG: Android không vẽ được icon SVG trong thông báo.
+        icon: '/icons/icon-192.png',
+        badge: '/icons/badge-96.png',
+        // Gom theo bản ghi: sửa một phiếu nhiều lần không xếp chồng nhiều thẻ.
+        tag: nd.tag ?? 'farm-erp',
+        renotify: true,
+        requireInteraction: nd.muc === 'cao',
+        data: { link: nd.link ?? '/thong-bao' },
+      } as NotificationOptions),
+    ])
   );
 });
 

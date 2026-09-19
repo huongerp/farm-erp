@@ -8,6 +8,7 @@ const emptyFilters: ThuChiQuyFilters = {
   hangMucIds: [],
   nguonChungTu: [],
   nguoiTaoIds: [],
+  trangThai: [],
   datePreset: 'all',
   customDateFrom: '',
   customDateEnd: '',
@@ -81,5 +82,19 @@ describe('buildThuChiQuyListServerQuery', () => {
     expect(q.nguoiTaoIds).toEqual([]);
     expect(q.ngayFrom).toBe('2026-07-01');
     expect(q.ngayTo).toBe('2026-07-31');
+  });
+
+  it('lọc trạng thái: khử trùng, sắp xếp, loại giá trị lạ', () => {
+    const q = call({
+      filters: {
+        ...emptyFilters,
+        trangThai: ['khoa', 'mo', 'khoa', 'dang_mo' as never, ''],
+      },
+    });
+    expect(q.trangThai).toEqual(['khoa', 'mo']);
+  });
+
+  it('không chọn trạng thái nào = xem cả phiếu mở lẫn phiếu khoá', () => {
+    expect(call().trangThai).toEqual([]);
   });
 });

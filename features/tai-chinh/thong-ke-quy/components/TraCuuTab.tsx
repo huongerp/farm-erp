@@ -65,6 +65,7 @@ const TraCuuTab: React.FC = () => {
       hangMucIds: [],
       nguonChungTu: [],
       nguoiTaoIds: [],
+      trangThai: [],
       ngayFrom: range.tuNgay,
       ngayTo: range.denNgay,
     }),

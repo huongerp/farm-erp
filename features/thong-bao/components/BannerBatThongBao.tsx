@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Bell, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuthStore } from '../../../store/useStore';
-import { batPush, dongBoLaiDangKy, trangThaiPushHienTai } from '../services/push-service';
+import { batPush, dongBoLaiDangKy, napKhoaVapid, trangThaiPushHienTai } from '../services/push-service';
 
 const KHOA_BO_QUA = 'thong-bao-banner-bo-qua';
 
@@ -36,7 +36,16 @@ const BannerBatThongBao: React.FC = () => {
     } catch {
       // Chế độ riêng tư chặn localStorage — coi như chưa bỏ qua.
     }
-    setHien(!daBoQua && trangThaiPushHienTai() === 'chua_cap_quyen');
+    if (daBoQua) return;
+
+    // Khoá VAPID có thể chỉ có ở phía server — nạp xong mới biết trạng thái thật.
+    let con = true;
+    void napKhoaVapid().then(() => {
+      if (con) setHien(trangThaiPushHienTai() === 'chua_cap_quyen');
+    });
+    return () => {
+      con = false;
+    };
   }, [user]);
 
   const boQua = () => {

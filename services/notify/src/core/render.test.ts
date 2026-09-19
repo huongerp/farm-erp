@@ -64,7 +64,7 @@ describe('phiếu có luồng duyệt', () => {
     ).toBe('Phiếu đề xuất vật tư DX-1 đã được duyệt');
     expect(
       renderThongBao(nguCanh('fp_farm_phieu_kho_phan_thuoc', 'phieu.da_duyet', { so_phieu: 'PT-1' })).tieuDe
-    ).toBe('Phiếu kho phân thuốc PT-1 đã được duyệt');
+    ).toBe('Phiếu kho farm PT-1 đã được duyệt');
   });
 });
 
@@ -123,6 +123,30 @@ describe('đơn đặt hàng', () => {
       nguCanh('fp_mh_don_dat_hang', 'don_hang.dang_giao', { so_po: 'PO-1', ngay_giao_dk: '2026-09-25' })
     );
     expect(kq.noiDung).toBe('Hàng đang trên đường giao, dự kiến 25/09.');
+  });
+});
+
+describe('sổ quỹ', () => {
+  it('xin mở khoá nêu số phiếu và lý do', () => {
+    const kq = renderThongBao(
+      nguCanh('fp_tc_quy_thu_chi', 'quy.xin_mo_khoa', { so_phieu: 'PC-0007' }, { lyDo: 'Nhập nhầm số tiền' })
+    );
+    expect(kq.tieuDe).toBe('Phiếu quỹ PC-0007 xin mở khoá');
+    expect(kq.noiDung).toBe('Nguyễn Văn A xin mở khoá phiếu quỹ. Lý do: Nhập nhầm số tiền');
+  });
+
+  it('thiếu lý do vẫn ra câu đọc được', () => {
+    const kq = renderThongBao(nguCanh('fp_tc_quy_thu_chi', 'quy.xin_mo_khoa', { so_phieu: 'PC-1' }));
+    expect(kq.noiDung).toBe('Nguyễn Văn A xin mở khoá phiếu quỹ, chờ bạn duyệt.');
+  });
+
+  it('duyệt và từ chối nói rõ phiếu còn khoá hay không', () => {
+    expect(
+      renderThongBao(nguCanh('fp_tc_quy_thu_chi', 'quy.duyet_mo_khoa', { so_phieu: 'PT-9' })).tieuDe
+    ).toBe('Phiếu quỹ PT-9 đã được mở khoá');
+    expect(
+      renderThongBao(nguCanh('fp_tc_quy_thu_chi', 'quy.tu_choi_mo_khoa', { so_phieu: 'PT-9' })).noiDung
+    ).toBe('Nguyễn Văn A đã từ chối yêu cầu mở khoá; phiếu vẫn đang khoá.');
   });
 });
 

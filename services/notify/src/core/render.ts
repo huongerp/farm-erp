@@ -193,6 +193,25 @@ export function renderThongBao(nc: NguCanhRender): NoiDungThongBao {
         noiDung: boiActor(tenActor, 'đã huỷ đơn đặt hàng này.'),
       };
 
+    // --- Sổ quỹ: khoá / xin mở khoá ------------------------------------------
+    case 'quy.xin_mo_khoa':
+      return {
+        tieuDe: `${nhan} xin mở khoá`,
+        noiDung: lyDo
+          ? `${boiActor(tenActor, 'xin mở khoá phiếu quỹ.')} Lý do: ${catBot(lyDo, DAI_TOI_DA_TRAO_DOI)}`
+          : boiActor(tenActor, 'xin mở khoá phiếu quỹ, chờ bạn duyệt.'),
+      };
+    case 'quy.duyet_mo_khoa':
+      return {
+        tieuDe: `${nhan} đã được mở khoá`,
+        noiDung: boiActor(tenActor, 'đã mở khoá phiếu, bạn sửa lại được rồi.'),
+      };
+    case 'quy.tu_choi_mo_khoa':
+      return {
+        tieuDe: `${nhan} bị từ chối mở khoá`,
+        noiDung: boiActor(tenActor, 'đã từ chối yêu cầu mở khoá; phiếu vẫn đang khoá.'),
+      };
+
     default:
       return { tieuDe: nhan, noiDung: null };
   }

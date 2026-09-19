@@ -12,7 +12,15 @@ import { bulkInsert } from '../../../../lib/import-bulk';
 import { postgrestQuotedIlikePattern } from '../../../../lib/postgrest-or-ilike';
 import i18n from '../../../../lib/i18n';
 import { buildSoPhieu } from '../core/constants';
-import type { LoaiThuChi, QuySoDu, ThuChiNguon, ThuChiQuy, ThuChiQuyRow } from '../core/types';
+import { TRANG_THAI_THU_CHI_QUY } from '../core/types';
+import type {
+  LoaiThuChi,
+  QuySoDu,
+  ThuChiNguon,
+  ThuChiQuy,
+  ThuChiQuyRow,
+  TrangThaiThuChiQuy,
+} from '../core/types';
 import type { ThuChiQuyFormValues } from '../core/schema';
 import type { ThuChiQuyListServerQuery } from './thu-chi-quy-list-query';
 
@@ -28,7 +36,9 @@ const RPC_NEXT_SO_PHIEU_BATCH = 'get_next_so_phieu_tc_quy_batch';
 const BASE_COLUMNS =
   'id,so_phieu,ngay,id_chi_nhanh,ten_chi_nhanh,loai,so_tien,so_luong,don_gia,' +
   'id_hang_muc,ten_hang_muc,dien_giai,ghi_chu,loai_chung_tu,id_chung_tu,so_chung_tu,' +
-  'id_nguoi_tao,ten_nguoi_tao,tg_tao,tg_cap_nhat';
+  'id_nguoi_tao,ten_nguoi_tao,trang_thai,id_nguoi_yeu_cau_mo,ten_nguoi_yeu_cau_mo,' +
+  'ly_do_yeu_cau_mo,tg_yeu_cau_mo,id_nguoi_xu_ly_mo,ten_nguoi_xu_ly_mo,tg_xu_ly_mo,' +
+  'tg_tao,tg_cap_nhat';
 
 /** Không select ref_tim_kiem (chuỗi dài, chỉ phục vụ ilike ở server). */
 const SUMMARY_COLUMNS = `${BASE_COLUMNS},thu,chi,ton_quy,ref_ten_chi_nhanh,ref_ten_hang_muc,ref_ten_nguoi_tao`;
@@ -52,6 +62,14 @@ interface DbRow {
   so_chung_tu: string | null;
   id_nguoi_tao: number | null;
   ten_nguoi_tao: string | null;
+  trang_thai: string | null;
+  id_nguoi_yeu_cau_mo: number | null;
+  ten_nguoi_yeu_cau_mo: string | null;
+  ly_do_yeu_cau_mo: string | null;
+  tg_yeu_cau_mo: string | null;
+  id_nguoi_xu_ly_mo: number | null;
+  ten_nguoi_xu_ly_mo: string | null;
+  tg_xu_ly_mo: string | null;
   tg_tao: string | null;
   tg_cap_nhat: string | null;
 }
@@ -86,6 +104,11 @@ function normalizeNguon(v: string | null): ThuChiNguon | null {
   return null;
 }
 
+function normalizeTrangThai(v: string | null): TrangThaiThuChiQuy {
+  if (v === TRANG_THAI_THU_CHI_QUY.KHOA || v === TRANG_THAI_THU_CHI_QUY.CHO_MO) return v;
+  return TRANG_THAI_THU_CHI_QUY.MO;
+}
+
 function rowToItem(row: DbRow): ThuChiQuy {
   return {
     id: String(row.id),
@@ -106,6 +129,14 @@ function rowToItem(row: DbRow): ThuChiQuy {
     so_chung_tu: row.so_chung_tu ?? null,
     id_nguoi_tao: row.id_nguoi_tao != null ? String(row.id_nguoi_tao) : null,
     ten_nguoi_tao: row.ten_nguoi_tao ?? undefined,
+    trang_thai: normalizeTrangThai(row.trang_thai),
+    id_nguoi_yeu_cau_mo: row.id_nguoi_yeu_cau_mo != null ? String(row.id_nguoi_yeu_cau_mo) : null,
+    ten_nguoi_yeu_cau_mo: row.ten_nguoi_yeu_cau_mo ?? null,
+    ly_do_yeu_cau_mo: row.ly_do_yeu_cau_mo ?? null,
+    tg_yeu_cau_mo: row.tg_yeu_cau_mo ?? null,
+    id_nguoi_xu_ly_mo: row.id_nguoi_xu_ly_mo != null ? String(row.id_nguoi_xu_ly_mo) : null,
+    ten_nguoi_xu_ly_mo: row.ten_nguoi_xu_ly_mo ?? null,
+    tg_xu_ly_mo: row.tg_xu_ly_mo ?? null,
     tg_tao: row.tg_tao ?? new Date().toISOString(),
     tg_cap_nhat: row.tg_cap_nhat ?? new Date().toISOString(),
   };
@@ -168,6 +199,7 @@ function applyListQuery(q: QueryBuilder, query: ThuChiQuyListServerQuery): Query
   if (query.hangMucIds.length > 0) b = b.in('id_hang_muc', query.hangMucIds);
   if (query.nguonChungTu.length > 0) b = b.in('loai_chung_tu', query.nguonChungTu);
   if (query.nguoiTaoIds.length > 0) b = b.in('id_nguoi_tao', query.nguoiTaoIds);
+  if (query.trangThai.length > 0) b = b.in('trang_thai', query.trangThai);
   if (query.ngayFrom) b = b.gte('ngay', query.ngayFrom);
   if (query.ngayTo) b = b.lte('ngay', query.ngayTo);
   if (query.searchTerm) {
@@ -367,6 +399,81 @@ export async function updateThuChiQuy(
   const row = await getThuChiQuyById(id);
   if (!row) throw new Error(i18n.t('thuChiQuy.service.notFound'));
   return row;
+}
+
+/* ------------------------------------------------------------------ */
+/* Khoá / mở khoá phiếu                                                */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Ba hàm dưới đây CỐ Ý không đi qua `toPayload`: chúng chỉ chạm cột trạng thái,
+ * không ghi đè nội dung phiếu. Trigger `tr_thong_bao_fp_tc_quy_thu_chi` chỉ bắn
+ * khi cột `trang_thai` đổi giá trị, nên mỗi lệnh ở đây sinh đúng một sự kiện.
+ */
+async function updateTrangThai(id: string, patch: Record<string, unknown>): Promise<ThuChiQuy> {
+  const idNum = Number(id);
+  if (Number.isNaN(idNum)) throw new Error(i18n.t('thuChiQuy.service.notFound'));
+
+  const { error } = await db.from(TABLE).update(patch).eq('id', idNum);
+  if (error) throwSupabaseError(error);
+
+  const row = await getThuChiQuyById(id);
+  if (!row) throw new Error(i18n.t('thuChiQuy.service.notFound'));
+  return row;
+}
+
+/** Chốt phiếu: mo → khoa. Xoá dấu vết yêu cầu mở cũ để lần sau xin lại từ đầu. */
+export async function khoaThuChiQuy(id: string): Promise<ThuChiQuy> {
+  return updateTrangThai(id, {
+    trang_thai: TRANG_THAI_THU_CHI_QUY.KHOA,
+    id_nguoi_yeu_cau_mo: null,
+    ten_nguoi_yeu_cau_mo: null,
+    ly_do_yeu_cau_mo: null,
+    tg_yeu_cau_mo: null,
+    id_nguoi_xu_ly_mo: null,
+    ten_nguoi_xu_ly_mo: null,
+    tg_xu_ly_mo: null,
+  });
+}
+
+export interface XinMoThuChiQuyExtra {
+  lyDo: string;
+  idNguoiYeuCau?: string | null;
+  tenNguoiYeuCau?: string | null;
+}
+
+/** khoa → cho_mo. Lý do bắt buộc (form đã chặn, đây là lưới an toàn cuối). */
+export async function xinMoThuChiQuy(id: string, extra: XinMoThuChiQuyExtra): Promise<ThuChiQuy> {
+  const lyDo = extra.lyDo.trim();
+  if (!lyDo) throw new Error(i18n.t('thuChiQuy.moKhoa.lyDoRequired'));
+
+  return updateTrangThai(id, {
+    trang_thai: TRANG_THAI_THU_CHI_QUY.CHO_MO,
+    id_nguoi_yeu_cau_mo: extra.idNguoiYeuCau ? Number(extra.idNguoiYeuCau) : null,
+    ten_nguoi_yeu_cau_mo: extra.tenNguoiYeuCau ?? null,
+    ly_do_yeu_cau_mo: lyDo,
+    tg_yeu_cau_mo: new Date().toISOString(),
+    id_nguoi_xu_ly_mo: null,
+    ten_nguoi_xu_ly_mo: null,
+    tg_xu_ly_mo: null,
+  });
+}
+
+export interface XuLyMoThuChiQuyExtra {
+  /** true = duyệt (→ mo); false = từ chối (→ khoa, giữ nguyên nội dung yêu cầu). */
+  duyet: boolean;
+  idNguoiXuLy?: string | null;
+  tenNguoiXuLy?: string | null;
+}
+
+/** cho_mo → mo (duyệt) hoặc cho_mo → khoa (từ chối); cấp cao mở thẳng phiếu khoa cũng dùng hàm này. */
+export async function xuLyMoThuChiQuy(id: string, extra: XuLyMoThuChiQuyExtra): Promise<ThuChiQuy> {
+  return updateTrangThai(id, {
+    trang_thai: extra.duyet ? TRANG_THAI_THU_CHI_QUY.MO : TRANG_THAI_THU_CHI_QUY.KHOA,
+    id_nguoi_xu_ly_mo: extra.idNguoiXuLy ? Number(extra.idNguoiXuLy) : null,
+    ten_nguoi_xu_ly_mo: extra.tenNguoiXuLy ?? null,
+    tg_xu_ly_mo: new Date().toISOString(),
+  });
 }
 
 export async function deleteThuChiQuyList(ids: string[]): Promise<void> {

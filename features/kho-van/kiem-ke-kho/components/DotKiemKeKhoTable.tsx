@@ -4,8 +4,10 @@ import { Edit, Trash2 } from 'lucide-react';
 import GenericTable from '../../../../components/shared/GenericTable';
 import Tooltip from '../../../../components/ui/Tooltip';
 import { formatDateTimeShort, formatDate, cn } from '../../../../lib/utils';
+import { getStatusBadgeClass } from '../../../../lib/status-badge';
+import { useKiemKeCapCao } from '../hooks/use-kiem-ke-cap-cao';
 import type { DotKiemKeKho } from '../core/types';
-import { getTrangThaiDotLabel } from '../core/constants';
+import { getTrangThaiDotLabel, TRANG_THAI_DOT_SEMANTIC } from '../core/constants';
 import { useKiemKeKhoStore } from '../store/useKiemKeKhoStore';
 
 interface Props {
@@ -23,6 +25,8 @@ interface Props {
 
 const DotKiemKeKhoTable: React.FC<Props> = ({ isFetching, totalRecordsOverride, data, isLoading, onView, onEdit, onDelete, showActions = true }) => {
   const { t } = useTranslation();
+  // Đợt đã chốt sổ: chỉ cấp cao còn thấy nút Sửa / Xoá.
+  const capCao = useKiemKeCapCao();
   const {
     columns,
     resizeColumn,
@@ -36,19 +40,16 @@ const DotKiemKeKhoTable: React.FC<Props> = ({ isFetching, totalRecordsOverride, 
     setSort,
   } = useKiemKeKhoStore();
 
-  const renderTrangThaiBadge = (status: DotKiemKeKho['trang_thai']) => {
-    const variant =
-      status === 'hoan_thanh'
-        ? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20'
-        : status === 'dang_kiem_ke'
-          ? 'bg-amber-500/10 text-amber-700 border-amber-500/20'
-          : 'bg-muted text-muted-foreground border-border';
-    return (
-      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${variant}`}>
-        {getTrangThaiDotLabel(status, t)}
-      </span>
-    );
-  };
+  const renderTrangThaiBadge = (status: DotKiemKeKho['trang_thai']) => (
+    <span
+      className={cn(
+        'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border',
+        getStatusBadgeClass(TRANG_THAI_DOT_SEMANTIC[status])
+      )}
+    >
+      {getTrangThaiDotLabel(status, t)}
+    </span>
+  );
 
   const renderCell = (colId: string, item: DotKiemKeKho) => {
     switch (colId) {
@@ -117,8 +118,8 @@ const DotKiemKeKhoTable: React.FC<Props> = ({ isFetching, totalRecordsOverride, 
       case 'actions':
         if (!showActions) return null;
         return (
-          <div className="flex items-center justify-center gap-1">
-            {onEdit && item.trang_thai !== 'hoan_thanh' && (
+          <div className="flex items-center justify-center gap-0.5">
+            {onEdit && (capCao || item.trang_thai !== 'hoan_thanh') && (
               <Tooltip content={t('common.edit')} placement="left">
                 <button
                   type="button"
@@ -126,14 +127,14 @@ const DotKiemKeKhoTable: React.FC<Props> = ({ isFetching, totalRecordsOverride, 
                     e.stopPropagation();
                     onEdit(item);
                   }}
-                  className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-all"
+                  className="p-1.5 text-primary hover:bg-primary/10 rounded-md transition-all"
                   aria-label={t('common.edit')}
                 >
-                  <Edit size={16} />
+                  <Edit size={14} />
                 </button>
               </Tooltip>
             )}
-            {onDelete && item.trang_thai !== 'hoan_thanh' && (
+            {onDelete && (capCao || item.trang_thai !== 'hoan_thanh') && (
               <Tooltip content={t('common.delete')} placement="left">
                 <button
                   type="button"
@@ -141,10 +142,10 @@ const DotKiemKeKhoTable: React.FC<Props> = ({ isFetching, totalRecordsOverride, 
                     e.stopPropagation();
                     onDelete(item);
                   }}
-                  className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition-all"
+                  className="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-md transition-all"
                   aria-label={t('common.delete')}
                 >
-                  <Trash2 size={16} />
+                  <Trash2 size={14} />
                 </button>
               </Tooltip>
             )}

@@ -1,6 +1,20 @@
 /** Loại phiếu quỹ: thu (tiền vào) / chi (tiền ra). */
 export type LoaiThuChi = 'thu' | 'chi';
 
+/**
+ * Trạng thái chốt sổ của một phiếu quỹ:
+ * - `mo`     — đang mở, sửa/xoá bình thường.
+ * - `khoa`   — đã chốt; người thường hết sửa/xoá, chỉ cấp cao thao tác được.
+ * - `cho_mo` — người lập phiếu đã xin mở lại, đang chờ cấp cao duyệt (vẫn khoá).
+ */
+export type TrangThaiThuChiQuy = 'mo' | 'khoa' | 'cho_mo';
+
+export const TRANG_THAI_THU_CHI_QUY = {
+  MO: 'mo',
+  KHOA: 'khoa',
+  CHO_MO: 'cho_mo',
+} as const satisfies Record<string, TrangThaiThuChiQuy>;
+
 /** Nguồn chứng từ liên kết với phiếu quỹ (đa hình: 3 bảng khác nhau). */
 export type ThuChiNguon = 'don_dat_hang' | 'de_xuat_mua_hang' | 'chi_phi_tai_san';
 
@@ -26,6 +40,16 @@ export interface ThuChiQuy {
   so_chung_tu?: string | null;
   id_nguoi_tao?: string | null;
   ten_nguoi_tao?: string;
+  trang_thai: TrangThaiThuChiQuy;
+  /** Người bấm "Xin mở khoá" — chỉ có khi phiếu từng ở trạng thái cho_mo */
+  id_nguoi_yeu_cau_mo?: string | null;
+  ten_nguoi_yeu_cau_mo?: string | null;
+  ly_do_yeu_cau_mo?: string | null;
+  tg_yeu_cau_mo?: string | null;
+  /** Người duyệt / từ chối yêu cầu mở khoá */
+  id_nguoi_xu_ly_mo?: string | null;
+  ten_nguoi_xu_ly_mo?: string | null;
+  tg_xu_ly_mo?: string | null;
   tg_tao: string;
   tg_cap_nhat: string;
 }

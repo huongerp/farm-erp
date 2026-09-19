@@ -114,7 +114,7 @@ export const PERMISSION_FUNCTIONS: PermissionFunction[] = [
         { id: BASE('quan-ly-nha-so-che', 'thong-ke-san-xuat'), nameKey: 'page.quanLyNhaSoChe.modules.thongKeSanXuat' },
       ]},
       /**
-       * Kho phân thuốc — bố cục nhóm giống Kho vận (Mua hàng): nhập xuất / báo cáo / danh mục.
+       * Kho (phân thuốc farm) — bố cục nhóm giống Kho vận (Mua hàng): nhập xuất / báo cáo / danh mục.
        * module_id không đổi (tránh migrate quyen_han).
        *
        * Gợi ý gán quyền (view / create / update / delete / admin / all; approve chỉ cho phiếu):
@@ -129,6 +129,7 @@ export const PERMISSION_FUNCTIONS: PermissionFunction[] = [
       { groupTitleKey: 'page.quanLyNhaSoChe.groupKhoPhanThuocNhapXuat', modules: [
         { id: BASE('quan-ly-nha-so-che', 'de-xuat-mua-hang'), nameKey: 'page.quanLyNhaSoChe.modules.deXuatMuaHang' },
         { id: BASE('quan-ly-nha-so-che', 'phieu-kho-phan-thuoc'), nameKey: 'page.quanLyNhaSoChe.modules.phieuKhoPhanThuoc' },
+        { id: BASE('quan-ly-nha-so-che', 'kiem-ke-kho-phan-thuoc'), nameKey: 'page.quanLyNhaSoChe.modules.kiemKeKhoPhanThuoc' },
       ]},
       { groupTitleKey: 'page.quanLyNhaSoChe.groupKhoPhanThuocBaoCao', modules: [
         { id: BASE('quan-ly-nha-so-che', 'ton-kho-phan-thuoc'), nameKey: 'page.quanLyNhaSoChe.modules.tonKhoPhanThuoc' },

@@ -124,6 +124,8 @@ export async function xuLyMotSuKien(dong: DongOutbox): Promise<void> {
         link,
         tag: `${dong.bang}:${dong.ban_ghi_id}`,
         muc: suKien.muc,
+        // Đếm SAU khi đã ghi chuông ở trên nên đã tính cả thông báo này.
+        soChuaDoc: await db.demChuaDoc(nn.id),
       });
     }
   }

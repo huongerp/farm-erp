@@ -1,0 +1,212 @@
+import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useForm, Controller, SubmitHandler } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { User, Warehouse, FileText } from 'lucide-react';
+import Input from '../../../../components/ui/Input';
+import Textarea from '../../../../components/ui/Textarea';
+import Combobox from '../../../../components/ui/Combobox';
+import MultiSelect from '../../../../components/ui/MultiSelect';
+import GenericDrawer, { DRAWER_WIDTH_KIEM_KE_KHO } from '../../../../components/shared/GenericDrawer';
+import FormSection from '../../../../components/shared/FormSection';
+import FormGrid from '../../../../components/shared/FormGrid';
+import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
+import { dotKiemKePTSchema, type DotKiemKePTFormValues } from '../core/schema';
+import { useCreateDotKiemKePT, useUpdateDotKiemKePT, useNextMaDotKiemKePT } from '../hooks/use-kiem-ke-pt';
+import { formatMaDotKiemKePT } from '../core/ma-dot';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
+import { useKhoList } from '../../../kho-van/danh-sach-kho/hooks/use-kho';
+import { useEmployeesRefQuery } from '@/lib/hooks/use-supabase-ref-queries';
+import type { DotKiemKePT } from '../core/types';
+
+const DEFAULT_VALUES: DotKiemKePTFormValues = {
+  ma_dot: '',
+  ten_dot: '',
+  ngay_bat_dau: new Date().toISOString().slice(0, 10),
+  ngay_ket_thuc: new Date().toISOString().slice(0, 10),
+  id_nguoi_phu_trach: '',
+  id_kho: [],
+  ghi_chu: null,
+};
+
+interface Props {
+  onClose: () => void;
+  initialData?: DotKiemKePT | null;
+  onSuccessAfterEdit?: (item: DotKiemKePT) => void;
+}
+
+const DotKiemKePTForm: React.FC<Props> = ({ onClose, initialData, onSuccessAfterEdit }) => {
+  const { t } = useTranslation();
+  const isEdit = !!initialData;
+  const createMutation = useCreateDotKiemKePT(onClose);
+  const updateMutation = useUpdateDotKiemKePT(() => {
+    onClose();
+    if (initialData) onSuccessAfterEdit?.(initialData);
+  });
+  const nextMaDot = useNextMaDotKiemKePT();
+  const { data: khoList = [] } = useKhoList();
+  const { data: employees = [] } = useEmployeesRefQuery();
+
+  const defaultValuesFromData = initialData
+    ? {
+        ma_dot: initialData.ma_dot,
+        ten_dot: initialData.ten_dot,
+        ngay_bat_dau: initialData.ngay_bat_dau,
+        ngay_ket_thuc: initialData.ngay_ket_thuc,
+        id_nguoi_phu_trach: initialData.id_nguoi_phu_trach,
+        id_kho: initialData.id_kho ?? [],
+        ghi_chu: initialData.ghi_chu ?? null,
+      }
+    : DEFAULT_VALUES;
+
+  const { register, handleSubmit, formState: { errors, isDirty }, control, setValue, reset } = useForm<DotKiemKePTFormValues>({
+    resolver: zodResolver(dotKiemKePTSchema),
+    defaultValues: defaultValuesFromData,
+  });
+
+  useEffect(() => {
+    if (initialData) {
+      reset(defaultValuesFromData);
+    }
+  }, [initialData?.id]);
+
+  useEffect(() => {
+    if (!isEdit && !nextMaDot.isSuccess) {
+      nextMaDot.mutate(undefined, {
+        onSuccess: (seq) => setValue('ma_dot', formatMaDotKiemKePT(seq)),
+      });
+    }
+  }, [isEdit]);
+
+  const onSubmit: SubmitHandler<DotKiemKePTFormValues> = (data) => {
+    const payload = {
+      ma_dot: data.ma_dot.trim(),
+      ten_dot: data.ten_dot.trim(),
+      ngay_bat_dau: data.ngay_bat_dau,
+      ngay_ket_thuc: data.ngay_ket_thuc,
+      id_nguoi_phu_trach: data.id_nguoi_phu_trach,
+      id_kho: data.id_kho ?? [],
+      ghi_chu: data.ghi_chu?.trim() || null,
+    };
+    if (isEdit && initialData) {
+      updateMutation.mutate({ id: initialData.id, data: payload });
+    } else {
+      createMutation.mutate(payload);
+    }
+  };
+
+  const khoOptions = khoList
+    .filter((k) => k.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG)
+    .map((k) => ({ label: k.ten_kho, value: k.id, subLabel: k.ma_kho }));
+  const employeeOptions = employees.map((e) => ({
+    label: e.ho_ten,
+    value: e.id,
+    subLabel: e.ma_nhan_vien,
+  }));
+
+  const isSubmitting = createMutation.isPending || updateMutation.isPending;
+  const isLoadingMaDot = !isEdit && nextMaDot.isPending;
+
+  return (
+    <GenericDrawer
+      isDirty={isDirty}
+      title={isEdit ? t('kiemKeKhoPT.form.editTitle') : t('kiemKeKhoPT.form.createTitle')}
+      onClose={onClose}
+      maxWidthClass={DRAWER_WIDTH_KIEM_KE_KHO}
+      footer={
+        <FormDrawerFooter
+          formId="dot-kiem-ke-pt-form"
+          onCancel={onClose}
+          isLoading={isSubmitting || isLoadingMaDot}
+          isEdit={isEdit}
+          saveLabel={t('common.save')}
+          createLabel={t('kiemKeKhoPT.form.create')}
+        />
+      }
+    >
+      <form id="dot-kiem-ke-pt-form" onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
+        <FormSection title={t('kiemKeKhoPT.form.infoSection')} icon={<FileText size={14} />} variant="primary">
+          <FormGrid cols={2}>
+            <Input
+              label={t('kiemKeKhoPT.store.maDotCol')}
+              {...register('ma_dot')}
+              error={errors.ma_dot?.message}
+              placeholder={t('kiemKeKhoPT.form.maDotPlaceholder')}
+              disabled={!isEdit}
+              readOnly={!isEdit}
+            />
+            <Input
+              label={t('kiemKeKhoPT.store.tenDotCol')}
+              {...register('ten_dot')}
+              error={errors.ten_dot?.message}
+              placeholder={t('kiemKeKhoPT.form.tenDotPlaceholder')}
+              required
+            />
+            <Input
+              type="date"
+              label={t('kiemKeKhoPT.store.ngayBatDauCol')}
+              {...register('ngay_bat_dau')}
+              error={errors.ngay_bat_dau?.message}
+              required
+            />
+            <Input
+              type="date"
+              label={t('kiemKeKhoPT.store.ngayKetThucCol')}
+              {...register('ngay_ket_thuc')}
+              error={errors.ngay_ket_thuc?.message}
+              required
+            />
+            <Controller
+              name="id_nguoi_phu_trach"
+              control={control}
+              render={({ field }) => (
+                <Combobox
+                  label={t('kiemKeKhoPT.store.nguoiPhuTrachCol')}
+                  options={employeeOptions}
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder={t('kiemKeKhoPT.form.nguoiPhuTrachPlaceholder')}
+                  error={errors.id_nguoi_phu_trach?.message}
+                  icon={<User size={12} />}
+                  required
+                />
+              )}
+            />
+          </FormGrid>
+          <Controller
+            name="ghi_chu"
+            control={control}
+            render={({ field }) => (
+              <Textarea
+                label={t('kiemKeKhoPT.store.ghiChuCol')}
+                {...field}
+                value={field.value ?? ''}
+                onChange={(e) => field.onChange(e.target.value || null)}
+                placeholder={t('kiemKeKhoPT.form.ghiChuPlaceholder')}
+              />
+            )}
+          />
+        </FormSection>
+        <FormSection title={t('kiemKeKhoPT.form.phamViKhoSection')} icon={<Warehouse size={14} />} variant="primary">
+          <p className="text-sm text-muted-foreground mb-3">{t('kiemKeKhoPT.form.phamViKhoHint')}</p>
+          <Controller
+            name="id_kho"
+            control={control}
+            render={({ field }) => (
+              <MultiSelect
+                label={t('kiemKeKhoPT.store.khoCol')}
+                options={khoOptions}
+                value={field.value}
+                onChange={field.onChange}
+                placeholder={t('kiemKeKhoPT.form.idKhoPlaceholder')}
+                error={errors.id_kho?.message}
+              />
+            )}
+          />
+        </FormSection>
+      </form>
+    </GenericDrawer>
+  );
+};
+
+export default DotKiemKePTForm;

@@ -33,6 +33,9 @@ export const LOAI_SU_KIEN_THEO_MODULE: Record<string, readonly string[]> = {
     'don_hang.cho_duyet', 'don_hang.da_xac_nhan', 'don_hang.dang_giao',
     'don_hang.da_nhan_du', 'don_hang.huy',
   ],
+  'tai-chinh/thu-chi-quy': [
+    'quy.xin_mo_khoa', 'quy.duyet_mo_khoa', 'quy.tu_choi_mo_khoa',
+  ],
 };
 
 /** Module đã đấu thông báo, theo thứ tự hiện trên hàng chip lọc. */
@@ -62,6 +65,10 @@ const KIEU_THEO_LOAI: Record<string, NotificationType> = {
   'don_hang.dang_giao': 'info',
   'don_hang.da_nhan_du': 'success',
   'don_hang.huy': 'error',
+
+  'quy.xin_mo_khoa': 'warning',
+  'quy.duyet_mo_khoa': 'success',
+  'quy.tu_choi_mo_khoa': 'error',
 };
 
 export function kieuHienThi(loaiSuKien: string): NotificationType {

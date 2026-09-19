@@ -66,6 +66,20 @@ export async function getTonKhoPTMatrix(): Promise<TonKhoPTRecord[]> {
   return rows.map(rowToTonKho);
 }
 
+/**
+ * Tồn theo danh sách kho — dùng cho snapshot kiểm kê (một request thay vì một
+ * request mỗi kho). Mảng rỗng = lấy mọi kho.
+ */
+export async function getTonKhoPTMatrixByKhoIds(khoIds: string[]): Promise<TonKhoPTRecord[]> {
+  if (khoIds.length === 0) return getTonKhoPTMatrix();
+  const ids = khoIds.map(Number).filter(Number.isFinite);
+  if (ids.length === 0) return [];
+  const rows = await fetchAllRows<TonKhoViewRow>((from, to) =>
+    db.from(VIEW_TON).select('id_kho, id_hang_hoa, so_luong').in('id_kho', ids).range(from, to)
+  );
+  return rows.map(rowToTonKho);
+}
+
 /** Dòng hiển thị đã join tên kho / hàng. */
 export async function getTonKhoPTDisplayRows(): Promise<TonKhoPTDisplayRow[]> {
   const [matrix, khoList, hangList] = await Promise.all([getTonKhoPTMatrix(), getKhoList(), getAllFarmHangHoa()]);

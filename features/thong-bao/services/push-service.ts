@@ -1,8 +1,9 @@
 /**
  * Đăng ký / gỡ Web Push ở phía trình duyệt.
  *
- * Khoá VAPID công khai nhúng sẵn trong bundle; phần ký payload nằm ở service
- * notify. Không phụ thuộc Firebase hay SDK bên thứ ba nào.
+ * Khoá VAPID công khai lấy từ bundle, thiếu thì hỏi notify-service lúc chạy;
+ * phần ký payload nằm ở service notify. Không phụ thuộc Firebase hay SDK bên
+ * thứ ba nào.
  */
 
 import { NOTIFY_URL, VAPID_PUBLIC_KEY } from '../../../lib/api-config';
@@ -43,6 +44,35 @@ export function hoTroPush(): boolean {
 }
 
 /**
+ * Khoá VAPID đang dùng. Ưu tiên biến nhúng lúc build, nhưng bundle build thiếu
+ * `VITE_VAPID_PUBLIC_KEY` là ca thường gặp (build trên máy khác, quên biến) và
+ * khi đó trang Cài đặt ẩn luôn công tắc bật thông báo. Vì khoá công khai vốn
+ * không bí mật, hỏi thẳng notify-service lúc chạy là cách chắc chắn hơn.
+ */
+let khoaVapid = VAPID_PUBLIC_KEY;
+let dangNap: Promise<string> | null = null;
+
+export async function napKhoaVapid(): Promise<string> {
+  if (khoaVapid) return khoaVapid;
+  dangNap ??= (async () => {
+    try {
+      const res = await fetch(`${NOTIFY_URL}/vapid-public-key`);
+      if (res.ok) {
+        const kq = (await res.json()) as { publicKey?: string | null };
+        if (kq.publicKey) khoaVapid = kq.publicKey;
+      }
+    } catch {
+      // Mất mạng hoặc service chưa lên — giữ nguyên trạng thái "chưa cấu hình".
+    } finally {
+      // Cho phép thử lại ở lần sau thay vì nhớ mãi một lần hỏng.
+      dangNap = null;
+    }
+    return khoaVapid;
+  })();
+  return dangNap;
+}
+
+/**
  * Safari trên iPhone/iPad chỉ cho phép Web Push khi trang đã được "Thêm vào màn
  * hình chính". Chưa cài thì công tắc bật cũng vô nghĩa, nên phải phát hiện để
  * hiện hướng dẫn thay vì để người dùng bấm mãi không lên.
@@ -61,7 +91,7 @@ export function laIosChuaCaiPwa(): boolean {
 export function trangThaiPushHienTai(): TrangThaiPush {
   if (!hoTroPush()) return laIosChuaCaiPwa() ? 'ios_chua_cai_pwa' : 'khong_ho_tro';
   if (laIosChuaCaiPwa()) return 'ios_chua_cai_pwa';
-  if (!VAPID_PUBLIC_KEY) return 'chua_cau_hinh';
+  if (!khoaVapid) return 'chua_cau_hinh';
 
   switch (Notification.permission) {
     case 'granted':
@@ -99,6 +129,7 @@ export interface KetQuaBatPush {
  * app nữa.
  */
 export async function batPush(): Promise<KetQuaBatPush> {
+  await napKhoaVapid();
   const truoc = trangThaiPushHienTai();
   if (truoc === 'khong_ho_tro' || truoc === 'ios_chua_cai_pwa' || truoc === 'chua_cau_hinh') {
     return { ok: false, trangThai: truoc };
@@ -114,7 +145,7 @@ export async function batPush(): Promise<KetQuaBatPush> {
     (await dangKy.pushManager.getSubscription()) ??
     (await dangKy.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: base64UrlSangUint8Array(VAPID_PUBLIC_KEY),
+      applicationServerKey: base64UrlSangUint8Array(khoaVapid),
     }));
 
   const res = await goiNotify('/subscribe', sub.toJSON());
@@ -143,8 +174,9 @@ export async function tatPushTrenThietBiNay(): Promise<void> {
  * phải làm gì.
  */
 export async function dongBoLaiDangKy(): Promise<void> {
-  if (!hoTroPush() || !VAPID_PUBLIC_KEY) return;
+  if (!hoTroPush()) return;
   if (Notification.permission !== 'granted') return;
+  if (!(await napKhoaVapid())) return;
 
   try {
     const dangKy = await navigator.serviceWorker.ready;
@@ -152,7 +184,7 @@ export async function dongBoLaiDangKy(): Promise<void> {
       (await dangKy.pushManager.getSubscription()) ??
       (await dangKy.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: base64UrlSangUint8Array(VAPID_PUBLIC_KEY),
+        applicationServerKey: base64UrlSangUint8Array(khoaVapid),
       }));
     await goiNotify('/subscribe', sub.toJSON());
   } catch {

@@ -9,6 +9,7 @@ import DotKiemKeKhoForm from './DotKiemKeKhoForm';
 import TaoDanhSachKiemKeDialog from './TaoDanhSachKiemKeDialog';
 import {
   useDotKiemKeKhoPage,
+  useDotKiemKeKhoTomTat,
   useDotKiemKeKhoById,
   useChiTietByDot,
   useDeleteDotKiemKeKho,
@@ -61,6 +62,8 @@ const DotTab: React.FC = () => {
   );
 
   const pageQuery = useDotKiemKeKhoPage(pagination.page - 1, pagination.pageSize, listParams, phamVi);
+  // Chip lọc đếm trên TOÀN BỘ đợt trong phạm vi xem, không phải trang đang xem.
+  const { data: tomTat = [] } = useDotKiemKeKhoTomTat(phamVi);
   const pageList = pageQuery.data?.data ?? [];
   const totalCount = pageQuery.data?.totalCount ?? 0;
   const isLoading = !pageQuery.data && pageQuery.isPending;
@@ -168,16 +171,16 @@ const DotTab: React.FC = () => {
   const detailData = detailDot ?? detailItem;
 
   return (
-    <div className="flex flex-col flex-1 min-h-0">
+    <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
       <KiemKeKhoToolbar
-        items={pageList}
+        tomTat={tomTat}
         onAdd={handleAdd}
         onDeleteMany={handleDeleteMany}
         showAdd={canCreate}
         canCreate={canCreate}
         canDelete={canDelete}
       />
-      <div className="flex-1 min-h-0 mt-1.5">
+      <div className="flex-1 min-h-0 flex flex-col px-4 pb-4 pt-1">
         <DotKiemKeKhoTable
           data={pageList}
           totalRecordsOverride={totalCount}

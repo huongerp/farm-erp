@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { DotKiemKeKho } from '../../core/types';
+import type { TrangThaiDotKiemKeKho } from '../../core/types';
 
 export interface KiemKeKhoStatsSummary {
   total: number;
@@ -14,7 +14,8 @@ export interface KiemKeKhoStatsByTrangThai {
   count: number;
 }
 
-export function useKiemKeKhoStats(list: DotKiemKeKho[]) {
+/** Chỉ cần trạng thái — nhận được cả bản đầy đủ lẫn bản tóm tắt. */
+export function useKiemKeKhoStats(list: { trang_thai: TrangThaiDotKiemKeKho }[]) {
   return useMemo(() => {
     const draft = list.filter((d) => d.trang_thai === 'draft').length;
     const dangKiemKe = list.filter((d) => d.trang_thai === 'dang_kiem_ke').length;

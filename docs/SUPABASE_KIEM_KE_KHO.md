@@ -71,3 +71,43 @@ App (`kiem-ke-kho-supabase.service.ts`) gọi hai RPC trên; không dùng `capNh
 | **Flow** | Tạo đợt (draft) → Chọn phạm vi kho → **Tạo danh sách** (lấy tồn theo từng kho, có lọc hàng hóa/danh mục) → Đợt chuyển **Đang kiểm kê** → Nhập **số lượng thực tế** từng dòng → (Tùy chọn) **Điều chỉnh tồn** (tạo phiếu nhập/xuất, cập nhật view tồn) → **Hoàn thành đợt**. |
 
 Sau khi chạy đủ script SQL trên Supabase (đợt kiểm kê + điều chỉnh tồn), module Kiểm kê kho ghi nhận điều chỉnh qua **phiếu kho** và hiển thị trạng thái từng dòng.
+
+---
+
+## Bản song sinh bên Quản lý nhà sơ chế — Kiểm kê kho phân thuốc
+
+Module `features/quan-ly-nha-so-che/kiem-ke-kho-phan-thuoc` dùng **cùng flow** (đợt → tạo danh
+sách → nhập kết quả → điều chỉnh tồn → hoàn thành) nhưng trên dữ liệu phân thuốc của farm.
+
+### Thứ tự chạy SQL
+
+1. **`docs/supabase-fp_farm_dot_kiem_ke_pt.sql`** — 3 bảng `fp_farm_dot_kiem_ke_pt`,
+   `_kho`, `_chi_tiet` + index, trigger `tg_cap_nhat`, RLS + GRANT, sequence
+   `fp_farm_dot_kiem_ke_pt_ma_seq` và RPC **`get_next_ma_dot_farm_kiem_ke_pt()`**
+   (app format: `KKPT-YYYY-NNNN`).
+   Chạy **sau** `supabase-fp_farm_phieu_kho_phan_thuoc.sql`,
+   `supabase-fp_farm_danh_sach_hang_hoa.sql` và `supabase-v_farm_ton_kho_phan_thuoc.sql`.
+   File dùng `CREATE TABLE IF NOT EXISTS` (không DROP) nên chạy lại được an toàn.
+
+2. **`docs/supabase-fp_farm_dot_kiem_ke_pt_dieu_chinh_ton.sql`** — 2 RPC
+   **`farm_kiem_ke_pt_apply_dieu_chinh_chi_tiet`** / **`farm_kiem_ke_pt_apply_dieu_chinh_dot`**
+   (sinh phiếu `fp_farm_phieu_kho_phan_thuoc` trạng thái `Đã duyệt`, số phiếu qua
+   `get_next_so_phieu_farm_pt` → `FNK-`/`FXK-`), cùng trigger **BEFORE DELETE** trên
+   `fp_farm_phieu_kho_phan_thuoc`: xoá phiếu điều chỉnh thì dòng chi tiết gỡ sạch 3 cột liên kết.
+
+Chạy xong nhớ **reload schema cache** của PostgREST, nếu không RPC sẽ báo `PGRST202`
+(app dịch thành thông báo "Chưa triển khai RPC điều chỉnh tồn trên máy chủ").
+
+### Khác biệt so với bản kho mua hàng
+
+| Điểm | Kho (Mua hàng) | Kho phân thuốc (Farm) |
+|---|---|---|
+| Bảng đợt | `fp_mh_dot_kiem_ke_kho` | `fp_farm_dot_kiem_ke_pt` (hậu tố `_pt` cho khớp các object farm sẵn có và tránh tên constraint vượt 63 ký tự) |
+| Tồn sổ | view `fp_mh_ton_kho` | view `v_farm_ton_kho_phan_thuoc` — tính mọi phiếu `trang_thai <> 'Không duyệt'` (kể cả *Chờ duyệt*) |
+| Hàng hóa | `fp_mh_danh_sach_hang_hoa` | `fp_farm_danh_sach_hang_hoa` — **không còn cột `trang_thai`**, nên không lọc hàng hóa theo trạng thái |
+| Phiếu điều chỉnh | `fp_mh_phieu_kho` | `fp_farm_phieu_kho_phan_thuoc` — không có `id_nha_cung_cap` / `id_khach_hang`, chi tiết có thêm `pham_cap` và ràng buộc `CHECK (so_luong > 0)` |
+| Kho | `fp_mh_danh_sach_kho` | dùng chung `fp_mh_danh_sach_kho` |
+| module_id phân quyền | `kho-van/kiem-ke-kho` | `quan-ly-nha-so-che/kiem-ke-kho-phan-thuoc` |
+
+Không cần port `reconcileKiemKeChiTietOrphanPhieuLinks` (bản vá dọn liên kết mồ côi ở client
+của module cũ): bên farm FK đã `ON DELETE SET NULL` và có trigger dọn 3 cột ngay từ đầu.

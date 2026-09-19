@@ -40,6 +40,7 @@ const RAW_SUBMENU_MODULE_IMPORTS = {
   'de-xuat-mua-hang': () => import('../features/quan-ly-nha-so-che/de-xuat-mua-hang'),
   'thiet-lap-de-xuat-mua-hang': () => import('../features/quan-ly-nha-so-che/thiet-lap-de-xuat-mua-hang'),
   'phieu-kho-phan-thuoc': () => import('../features/quan-ly-nha-so-che/phieu-kho-phan-thuoc'),
+  'kiem-ke-kho-phan-thuoc': () => import('../features/quan-ly-nha-so-che/kiem-ke-kho-phan-thuoc'),
   'ton-kho-phan-thuoc': () => import('../features/quan-ly-nha-so-che/ton-kho-phan-thuoc'),
   'thiet-lap-quy': () => import('../features/tai-chinh/thiet-lap-quy'),
   'thu-chi-quy': () => import('../features/tai-chinh/thu-chi-quy'),

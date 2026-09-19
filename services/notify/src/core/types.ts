@@ -20,7 +20,8 @@ export type VaiNguoiNhan =
   | 'trach_nhiem'
   | 'ho_tro'
   | 'ho_tro_moi'
-  | 'nguoi_giao';
+  | 'nguoi_giao'
+  | 'nguoi_yeu_cau_mo';
 
 /** Một dòng trong fp_var_su_kien_thong_bao. */
 export interface DongOutbox {

@@ -9,10 +9,15 @@
     <!-- Open Graph (share preview) – dùng logo app (URL local để tránh 403 từ Facebook CDN) -->
     <meta property="og:title" content="Forpeasantz" />
     <meta property="og:description" content="Hợp Tác Xã Nông Nghiệp Công Nghệ Cao FP - Forpeasantz" />
-    <meta property="og:image" content="/favicon.svg" />
-    <!-- Favicon & logo app (logo trên browser tab) – dùng file local thay vì URL Facebook (403) -->
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="apple-touch-icon" href="/favicon.svg" />
+    <meta property="og:image" content="/icons/icon-512.png" />
+    <!-- Favicon & logo app (logo trên browser tab) – logo công ty, khai nhiều cỡ
+         để màn hình HiDPI lấy bản nét thay vì phóng to bản 32px. -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/icons/favicon-48.png" />
+    <link rel="icon" type="image/png" sizes="96x96" href="/icons/favicon-96.png" />
+    <!-- iOS bỏ qua icon trong manifest và KHÔNG đọc được SVG ở đây; thiếu file
+         PNG này thì icon ngoài màn hình chính chỉ là ảnh chụp trang trắng. -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
     
     <!-- Default font (Inter) + Noto Sans fallback – other fonts lazy-loaded on demand -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

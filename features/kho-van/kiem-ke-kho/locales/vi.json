@@ -10,6 +10,12 @@
   "kiemKeKho.ketQua.thua": "Thừa",
   "kiemKeKho.filter.dateFrom": "Từ ngày",
   "kiemKeKho.filter.dateTo": "Đến ngày",
+  "kiemKeKho.filter.periodPlaceholder": "Khoảng thời gian",
+  "kiemKeKho.preset.all": "Tất cả",
+  "kiemKeKho.preset.thisMonth": "Tháng này",
+  "kiemKeKho.preset.lastMonth": "Tháng trước",
+  "kiemKeKho.preset.thisQuarter": "Quý này",
+  "kiemKeKho.preset.thisYear": "Năm nay",
   "kiemKeKho.store.maDotCol": "Mã đợt",
   "kiemKeKho.store.tenDotCol": "Tên đợt",
   "kiemKeKho.store.ngayBatDauCol": "Ngày bắt đầu",
@@ -125,6 +131,9 @@
   "kiemKeKho.detail.chenhLech": "Chênh lệch",
   "kiemKeKho.service.notFound": "Không tìm thấy đợt kiểm kê",
   "kiemKeKho.service.onlyEditDraft": "Chỉ được sửa đợt ở trạng thái Nháp",
+  "kiemKeKho.service.hoanThanhChiCapCao": "Đợt đã hoàn thành — chỉ cấp cao (cấp bậc 1 hoặc quyền quản trị) mới sửa được.",
+  "kiemKeKho.service.hoanThanhChiCapCaoXoa": "Đợt đã hoàn thành — chỉ cấp cao (cấp bậc 1 hoặc quyền quản trị) mới xóa được.",
+  "kiemKeKho.service.hoanThanhChiCapCaoDoiTrangThai": "Đợt đã hoàn thành — chỉ cấp cao (cấp bậc 1 hoặc quyền quản trị) mới chuyển được sang trạng thái khác.",
   "kiemKeKho.service.onlyDeleteDraft": "Chỉ được xóa đợt ở trạng thái Nháp",
   "kiemKeKho.service.onlyDeleteNotCompleted": "Không thể xóa đợt đã hoàn thành",
   "kiemKeKho.service.onlyTaoDanhSachWhenDraft": "Không thể tạo danh sách cho đợt đã hoàn thành",
@@ -156,5 +165,7 @@
   "kiemKeKho.dieuChinhStatus.done": "Đã xử lý",
   "kiemKeKho.dieuChinhStatus.pending": "Chưa",
   "kiemKeKho.chiTietEmpty": "Chưa có dữ liệu kiểm kê",
-  "kiemKeKho.chiTietEmptyHint": "Bấm \"Tạo danh sách kiểm kê\" trên thanh công cụ hoặc \"Thêm dòng\" để bắt đầu."
+  "kiemKeKho.chiTietEmptyHint": "Bấm \"Tạo danh sách kiểm kê\" trên thanh công cụ hoặc \"Thêm dòng\" để bắt đầu.",
+  "kiemKeKho.detail.progress": "Tiến độ kiểm kê",
+  "kiemKeKho.detail.systemInfo": "Thông tin hệ thống"
 }

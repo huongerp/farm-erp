@@ -68,7 +68,7 @@ export const MO_TA_BANG: Record<string, MoTaBang> = {
     bang: 'fp_farm_phieu_kho_phan_thuoc',
     moduleId: 'quan-ly-nha-so-che/phieu-kho-phan-thuoc',
     duongDan: '/quan-ly-nha-so-che/phieu-kho-phan-thuoc',
-    tenChungTu: 'Phiếu kho phân thuốc',
+    tenChungTu: 'Phiếu kho farm',
     cotSoPhieu: 'so_phieu',
     cotNguoiTao: 'nguoi_tao_id',
     cotNguoiDuyet: 'id_nguoi_duyet',
@@ -92,6 +92,16 @@ export const MO_TA_BANG: Record<string, MoTaBang> = {
     duongDan: '/hanh-chinh/phieu-hanh-chinh',
     tenChungTu: 'Phiếu hành chính',
     cotNguoiTao: 'nguoi_tao_id',
+  },
+
+  // --- Sổ quỹ (khoá / xin mở khoá) ------------------------------------------
+  fp_tc_quy_thu_chi: {
+    bang: 'fp_tc_quy_thu_chi',
+    moduleId: 'tai-chinh/thu-chi-quy',
+    duongDan: '/tai-chinh/thu-chi-quy',
+    tenChungTu: 'Phiếu quỹ',
+    cotSoPhieu: 'so_phieu',
+    cotNguoiTao: 'id_nguoi_tao',
   },
 
   // --- Đơn đặt hàng ---------------------------------------------------------

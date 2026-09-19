@@ -38,6 +38,7 @@ Chạy **đúng thứ tự** này trên Postgres của VPS:
 | 4 | `docs/supabase-fp_var_push_subscription.sql` | Bảng thiết bị đăng ký push |
 | 5 | `docs/supabase-rpc_thong_bao_dinh_tuyen.sql` | RPC tra người duyệt / chi nhánh / tên nhân viên |
 | 6 | `docs/supabase-trigger_thong_bao_7_module.sql` | Gắn trigger cho 7 bảng nghiệp vụ |
+| 7 | `docs/supabase-trigger_thong_bao_thu_chi_quy.sql` | Trigger sổ quỹ + nhánh chi nhánh cho `rpc_tb_chi_nhanh_phieu` |
 
 File **#1 tự tạo role `notify_service` và in mật khẩu ra NOTICE** — chép mật khẩu đó vào
 `NOTIFY_DATABASE_URL` rồi xoá khỏi log. Chạy lại file này không đổi mật khẩu role đã có.
@@ -119,12 +120,46 @@ Máy trạng thái 7 bước, chỉ báo 5 mốc có người phải hành độ
 | `don_hang.da_nhan_du` | → `Đã nhận đủ` | Người đặt | thường |
 | `don_hang.huy` | → `Hủy` | Người đặt + người duyệt | **cao** |
 
+### Thu chi quỹ — `tai-chinh/thu-chi-quy`
+
+Không có luồng duyệt phiếu; chỉ báo quanh việc **khoá / mở khoá sổ quỹ**. Trigger ở đây khác 7 module
+trên: chỉ `AFTER UPDATE OF trang_thai ... WHEN (OLD.trang_thai IS DISTINCT FROM NEW.trang_thai)`, vì
+module có luồng import Excel hàng trăm dòng — bắt cả INSERT sẽ đổ rác vào outbox.
+
+| Sự kiện | Khi | Ai nhận | Mức |
+|---|---|---|---|
+| `quy.xin_mo_khoa` | `khoa → cho_mo` | Cấp bậc 1 / quản trị module | **cao** |
+| `quy.duyet_mo_khoa` | `cho_mo → mo` | Người đã xin mở (`id_nguoi_yeu_cau_mo`) | **cao** |
+| `quy.duyet_mo_khoa` | `khoa → mo` (mở thẳng) | Người tạo phiếu | **cao** |
+| `quy.tu_choi_mo_khoa` | `cho_mo → khoa` | Người đã xin mở | **cao** |
+
+`mo → khoa` **không** báo cho ai: khoá sổ là thao tác thường ngày của chính người lập phiếu.
+Vai `nguoi_yeu_cau_mo` là vai riêng của module này (xem `routing.ts`), không dùng lại `nguoi_tao`
+vì người xin mở chưa chắc là người lập phiếu.
+
 ### Ba luật chống ồn
 
 1. **Không gửi ngược cho người gây ra sự kiện.** Người tự duyệt phiếu mình tạo chỉ nhận một thông báo.
 2. **Gộp trùng trong 60 giây.** Cùng bản ghi + cùng loại thì tăng `so_lan` thay vì tạo dòng mới.
 3. **Cấp bậc 1 nhận ở mức im lặng.** Vào chuông đầy đủ, chỉ rung push với sự kiện mức cao — nếu không,
    điện thoại lãnh đạo rung hàng chục lần mỗi ngày rồi họ tắt hẳn thông báo.
+
+## Badge trên icon app
+
+Con số đỏ trên icon ngoài màn hình chính đi theo hai đường, phải giữ cả hai khớp nhau:
+
+- **App đang mở** — `useAppBadge` (`features/thong-bao/hooks/use-app-badge.ts`) gắn trong
+  `NotificationBell`, đặt badge đúng bằng số đang hiện trên chuông. Người dùng đọc xong thì badge tụt theo.
+- **App đã đóng** — worker gửi kèm `soChuaDoc` trong payload push, service worker (`sw/sw.ts`) gọi
+  `setAppBadge` ngay khi nhận. Số phải tính ở server vì lúc đó không có token để hỏi PostgREST.
+
+Điều kiện để badge hiện: trên iOS phải là PWA đã **thêm vào màn hình chính** và đã cấp quyền thông báo
+(Safari trong tab không có badge). Máy không hỗ trợ thì mọi lời gọi bị nuốt im lặng — chuông trong app
+vẫn chạy bình thường.
+
+Icon PWA nằm ở `public/icons/` (`icon-192`, `icon-512`, `icon-maskable-512`, `apple-touch-icon` 180px,
+`badge-96` cho thanh trạng thái Android). iOS **không** đọc icon trong manifest và không nhận SVG, nên
+thẻ `apple-touch-icon` trong `index.html` bắt buộc trỏ tới file PNG.
 
 ## Đấu thêm module
 

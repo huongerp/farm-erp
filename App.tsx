@@ -70,6 +70,10 @@ const PhieuKhoPTPreviewPage = lazyWithFeatureI18n(
   'phieu-kho-phan-thuoc',
   () => import('./features/quan-ly-nha-so-che/phieu-kho-phan-thuoc/PhieuKhoPTPreviewPage')
 );
+const PhieuKiemKePTPreviewPage = lazyWithFeatureI18n(
+  'kiem-ke-kho-phan-thuoc',
+  () => import('./features/quan-ly-nha-so-che/kiem-ke-kho-phan-thuoc/PhieuKiemKePTPreviewPage')
+);
 const DeXuatMuaHangPreviewPage = lazyWithFeatureI18n(
   'de-xuat-mua-hang',
   () => import('./features/quan-ly-nha-so-che/de-xuat-mua-hang/DeXuatMuaHangPreviewPage')
@@ -233,6 +237,18 @@ const App = () => {
               <ModulePermissionGuard moduleId="quan-ly-nha-so-che/phieu-kho-phan-thuoc">
                 <Suspense fallback={<PageFallback />}>
                   <PhieuKhoPTPreviewPage />
+                </Suspense>
+              </ModulePermissionGuard>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/quan-ly-nha-so-che/kiem-ke-kho-phan-thuoc/preview/:id"
+          element={
+            <ProtectedRoute>
+              <ModulePermissionGuard moduleId="quan-ly-nha-so-che/kiem-ke-kho-phan-thuoc">
+                <Suspense fallback={<PageFallback />}>
+                  <PhieuKiemKePTPreviewPage />
                 </Suspense>
               </ModulePermissionGuard>
             </ProtectedRoute>

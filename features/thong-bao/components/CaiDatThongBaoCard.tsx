@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Bell, BellOff, Smartphone, Trash2, Send, ShieldAlert, Loader2, Info } from 'lucide-react';
@@ -18,6 +18,7 @@ import {
   batPush,
   tatPushTrenThietBiNay,
   trangThaiPushHienTai,
+  napKhoaVapid,
   guiThuPush,
   type TrangThaiPush,
 } from '../services/push-service';
@@ -43,6 +44,18 @@ const CaiDatThongBaoCard: React.FC = () => {
   const [trangThai, setTrangThai] = useState<TrangThaiPush>(() => trangThaiPushHienTai());
   const [dangXuLy, setDangXuLy] = useState(false);
   const [moduleMoRong, setModuleMoRong] = useState<string | null>(null);
+
+  // Bundle có thể được build thiếu VITE_VAPID_PUBLIC_KEY; hỏi notify-service một
+  // lần khi mở trang để công tắc bật thông báo không bị ẩn oan.
+  useEffect(() => {
+    let con = true;
+    void napKhoaVapid().then(() => {
+      if (con) setTrangThai(trangThaiPushHienTai());
+    });
+    return () => {
+      con = false;
+    };
+  }, []);
 
   const { data, isPending } = useCaiDatThongBao();
   const { data: thietBi = [] } = useThietBiPush();

@@ -12,9 +12,13 @@ import {
   createThuChiQuy,
   updateThuChiQuy,
   deleteThuChiQuyList,
+  khoaThuChiQuy,
+  xinMoThuChiQuy,
+  xuLyMoThuChiQuy,
 } from '../services/thu-chi-quy-service';
 import { PAGE_SIZE } from '../core/constants';
 import type { ThuChiQuyListServerQuery } from '../services/thu-chi-quy-list-query';
+import type { XinMoThuChiQuyExtra, XuLyMoThuChiQuyExtra } from '../services/thu-chi-quy-service';
 import type { ThuChiQuyFormValues } from '../core/schema';
 import type { ThuChiNguon } from '../core/types';
 
@@ -133,6 +137,51 @@ export const useDeleteThuChiQuy = () => {
     onSuccess: (_d, ids) => {
       invalidateAll(qc);
       toast.success(i18n.t('thuChiQuy.toast.deleteSuccess', { count: ids.length }));
+    },
+    onError: (e: unknown) => toast.error((e as Error).message),
+  });
+};
+
+/* ------------------------------------------------------------------ */
+/* Khoá / mở khoá                                                      */
+/* ------------------------------------------------------------------ */
+
+export const useKhoaThuChiQuy = (onSuccess?: () => void) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => khoaThuChiQuy(id),
+    onSuccess: () => {
+      invalidateAll(qc);
+      toast.success(i18n.t('thuChiQuy.toast.khoaSuccess'));
+      onSuccess?.();
+    },
+    onError: (e: unknown) => toast.error((e as Error).message),
+  });
+};
+
+export const useXinMoThuChiQuy = (onSuccess?: () => void) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, extra }: { id: string; extra: XinMoThuChiQuyExtra }) => xinMoThuChiQuy(id, extra),
+    onSuccess: () => {
+      invalidateAll(qc);
+      toast.success(i18n.t('thuChiQuy.toast.xinMoSuccess'));
+      onSuccess?.();
+    },
+    onError: (e: unknown) => toast.error((e as Error).message),
+  });
+};
+
+export const useXuLyMoThuChiQuy = (onSuccess?: () => void) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, extra }: { id: string; extra: XuLyMoThuChiQuyExtra }) => xuLyMoThuChiQuy(id, extra),
+    onSuccess: (_d, { extra }) => {
+      invalidateAll(qc);
+      toast.success(
+        i18n.t(extra.duyet ? 'thuChiQuy.toast.moSuccess' : 'thuChiQuy.toast.tuChoiMoSuccess')
+      );
+      onSuccess?.();
     },
     onError: (e: unknown) => toast.error((e as Error).message),
   });

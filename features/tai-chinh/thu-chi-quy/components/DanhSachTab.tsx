@@ -7,7 +7,7 @@ import { useModulePermissionFromContext } from '../../../../components/shared/Mo
 import LazyExportDialog from '../../../../components/shared/LazyExportDialog';
 import LazyImportDialog from '../../../../components/shared/LazyImportDialog';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
-import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
+import { CONFIRM_DELETE, CONFIRM_DELETE_ALL, CONFIRM_YES } from '../../../../lib/button-labels';
 import { formatDate } from '../../../../lib/utils';
 import type { ImportErrorRow, ImportSummary } from '../../../../lib/import-types';
 import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
@@ -19,9 +19,19 @@ import ThuChiQuyToolbar from './ThuChiQuyToolbar';
 import ThuChiQuyList from './ThuChiQuyList';
 import ThuChiQuyForm from './ThuChiQuyForm';
 import ThuChiQuyDetail from './ThuChiQuyDetail';
+import XinMoKhoaDialog from './XinMoKhoaDialog';
 import { useThuChiQuyStore } from '../store/useThuChiQuyStore';
 import { useThuChiQuyViewScope } from '../hooks/use-thu-chi-quy-view-scope';
-import { useDeleteThuChiQuy, useQuySoDu, useThuChiQuyPage } from '../hooks/use-thu-chi-quy';
+import {
+  useDeleteThuChiQuy,
+  useKhoaThuChiQuy,
+  useQuySoDu,
+  useThuChiQuyPage,
+  useXinMoThuChiQuy,
+  useXuLyMoThuChiQuy,
+} from '../hooks/use-thu-chi-quy';
+import { useThuChiQuyPermissions } from '../hooks/use-thu-chi-quy-permissions';
+import { useAuthStore } from '../../../../store/useStore';
 import { buildThuChiQuyListServerQuery } from '../services/thu-chi-quy-list-query';
 import { getSoPhieuBatch, getThuChiQuyAll, insertThuChiQuyBulk } from '../services/thu-chi-quy-service';
 import { buildThuChiQuyImportPlan } from '../utils/import-thu-chi-quy';
@@ -35,6 +45,8 @@ function toYyyyMmDd(d: Date): string {
 const DanhSachTab: React.FC = () => {
   const { t } = useTranslation();
   const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
+  const perms = useThuChiQuyPermissions();
+  const user = useAuthStore((s) => s.user);
   const confirm = useConfirmStore((s) => s.confirm);
 
   const { searchTerm, filters, pagination, setPage, resetState, clearSelection, selectedIds } =
@@ -53,6 +65,7 @@ const DanhSachTab: React.FC = () => {
   const [exportRows, setExportRows] = useState<ThuChiQuyRow[]>([]);
   const [exportLoading, setExportLoading] = useState(false);
   const [showImport, setShowImport] = useState(false);
+  const [xinMoItem, setXinMoItem] = useState<ThuChiQuy | null>(null);
   const [importErrors, setImportErrors] = useState<ImportErrorRow[]>([]);
 
   useEffect(() => () => resetState(), [resetState]);
@@ -105,6 +118,11 @@ const DanhSachTab: React.FC = () => {
   );
 
   const deleteMutation = useDeleteThuChiQuy();
+  const khoaMutation = useKhoaThuChiQuy();
+  const xinMoMutation = useXinMoThuChiQuy(() => setXinMoItem(null));
+  const xuLyMoMutation = useXuLyMoThuChiQuy();
+  const trangThaiPending =
+    khoaMutation.isPending || xinMoMutation.isPending || xuLyMoMutation.isPending;
 
   const hasOtherFilter =
     filters.loai.length > 0 ||
@@ -139,6 +157,10 @@ const DanhSachTab: React.FC = () => {
   );
 
   const handleEdit = (item: ThuChiQuy) => {
+    if (!perms.canEditRow(item)) {
+      toast.error(t('thuChiQuy.toast.lockedEdit'));
+      return;
+    }
     warnIfBackdated(
       item,
       () => {
@@ -151,6 +173,10 @@ const DanhSachTab: React.FC = () => {
   };
 
   const handleDelete = (item: ThuChiQuy) => {
+    if (!perms.canDeleteRow(item)) {
+      toast.error(t('thuChiQuy.toast.lockedEdit'));
+      return;
+    }
     warnIfBackdated(
       item,
       () =>
@@ -163,14 +189,63 @@ const DanhSachTab: React.FC = () => {
     );
   };
 
+  /**
+   * Xoá hàng loạt chỉ chạy trên các phiếu người dùng thật sự được xoá — phiếu đã
+   * khoá bị loại ngay ở đây, báo rõ đã bỏ bao nhiêu dòng thay vì lặng lẽ xoá thiếu.
+   */
   const handleDeleteMany = (ids: string[]) => {
     if (ids.length === 0) return;
+    const byId = new Map(rows.map((r) => [r.id, r]));
+    const allowed = ids.filter((id) => {
+      const row = byId.get(id);
+      return row ? perms.canDeleteRow(row) : true;
+    });
+    const skipped = ids.length - allowed.length;
+    if (allowed.length === 0) {
+      toast.error(t('thuChiQuy.toast.lockedAllBulkDelete'));
+      return;
+    }
     confirm({
       title: t('thuChiQuy.bulkDeleteTitle'),
-      message: t('thuChiQuy.bulkDeleteMessage', { count: ids.length }),
+      message: t('thuChiQuy.bulkDeleteMessage', { count: allowed.length }),
       variant: 'danger',
       confirmText: CONFIRM_DELETE_ALL(),
-      onConfirm: async () => deleteMutation.mutate(ids, { onSuccess: () => clearSelection() }),
+      onConfirm: async () => {
+        if (skipped > 0) toast.warning(t('thuChiQuy.toast.lockedBulkDelete', { count: skipped }));
+        deleteMutation.mutate(allowed, { onSuccess: () => clearSelection() });
+      },
+    });
+  };
+
+  /* --- Khoá / mở khoá ------------------------------------------------- */
+
+  const handleKhoa = (item: ThuChiQuy) => {
+    confirm({
+      title: t('thuChiQuy.moKhoa.khoaTitle'),
+      message: t('thuChiQuy.moKhoa.khoaMessage', { soPhieu: item.so_phieu }),
+      variant: 'warning',
+      confirmText: CONFIRM_YES(),
+      onConfirm: () => khoaMutation.mutate(item.id),
+    });
+  };
+
+  const handleXuLyMo = (item: ThuChiQuy, duyet: boolean) => {
+    confirm({
+      title: t(duyet ? 'thuChiQuy.moKhoa.duyetTitle' : 'thuChiQuy.moKhoa.tuChoiTitle'),
+      message: t(duyet ? 'thuChiQuy.moKhoa.duyetMessage' : 'thuChiQuy.moKhoa.tuChoiMessage', {
+        soPhieu: item.so_phieu,
+      }),
+      variant: duyet ? 'warning' : 'danger',
+      confirmText: CONFIRM_YES(),
+      onConfirm: () =>
+        xuLyMoMutation.mutate({
+          id: item.id,
+          extra: {
+            duyet,
+            idNguoiXuLy: user?.id ?? null,
+            tenNguoiXuLy: user?.ho_va_ten || user?.full_name || null,
+          },
+        }),
     });
   };
 
@@ -334,6 +409,8 @@ const DanhSachTab: React.FC = () => {
           totalCount={totalCount}
           onEdit={canUpdate ? handleEdit : undefined}
           onDelete={canDelete ? handleDelete : undefined}
+          canEditRow={perms.canEditRow}
+          canDeleteRow={perms.canDeleteRow}
           onRowClick={setDetailItem}
         />
       </div>
@@ -357,8 +434,35 @@ const DanhSachTab: React.FC = () => {
           <ThuChiQuyDetail
             data={detailItem}
             onClose={() => setDetailItem(null)}
-            onEdit={canUpdate ? handleEdit : undefined}
-            onDelete={canDelete ? handleDelete : undefined}
+            onEdit={canUpdate && perms.canEditRow(detailItem) ? handleEdit : undefined}
+            onDelete={canDelete && perms.canDeleteRow(detailItem) ? handleDelete : undefined}
+            onKhoa={perms.canKhoa(detailItem) ? handleKhoa : undefined}
+            onXinMo={perms.canXinMo(detailItem) ? (item) => setXinMoItem(item) : undefined}
+            onDuyetMo={perms.canDuyetMo(detailItem) ? (item) => handleXuLyMo(item, true) : undefined}
+            onTuChoiMo={
+              perms.canTuChoiMo(detailItem) ? (item) => handleXuLyMo(item, false) : undefined
+            }
+            trangThaiPending={trangThaiPending}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {xinMoItem && (
+          <XinMoKhoaDialog
+            soPhieu={xinMoItem.so_phieu}
+            isPending={xinMoMutation.isPending}
+            onClose={() => setXinMoItem(null)}
+            onConfirm={(lyDo) =>
+              xinMoMutation.mutate({
+                id: xinMoItem.id,
+                extra: {
+                  lyDo,
+                  idNguoiYeuCau: user?.id ?? null,
+                  tenNguoiYeuCau: user?.ho_va_ten || user?.full_name || null,
+                },
+              })
+            }
           />
         )}
       </AnimatePresence>

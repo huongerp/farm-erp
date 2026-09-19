@@ -312,5 +312,8 @@
   "notification.event.don_hang_dang_giao": "Đơn đặt hàng đang giao",
   "notification.event.don_hang_da_nhan_du": "Đơn đặt hàng đã nhận đủ",
   "notification.event.don_hang_huy": "Đơn đặt hàng bị hủy",
+  "notification.event.quy_xin_mo_khoa": "Phiếu quỹ xin mở khoá",
+  "notification.event.quy_duyet_mo_khoa": "Phiếu quỹ được mở khoá",
+  "notification.event.quy_tu_choi_mo_khoa": "Phiếu quỹ bị từ chối mở khoá",
   "notification.filterModule": "Lọc theo module"
 }
