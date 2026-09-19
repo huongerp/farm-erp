@@ -2,8 +2,35 @@ import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import type { ManifestOptions } from 'vite-plugin-pwa';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { devServices } from './vite/dev-services';
+
+// Manifest PWA dùng chung cho cả build (VitePWA) và dev (plugin pwa-manifest-dev
+// bên dưới) — khai một chỗ để hai môi trường không lệch icon nhau.
+const pwaManifest: Partial<ManifestOptions> = {
+  name: 'Forpeasantz',
+  short_name: 'Forpeasantz',
+  description: 'Hợp Tác Xã Nông Nghiệp Công Nghệ Cao FP - Forpeasantz',
+  theme_color: '#ffffff',
+  background_color: '#ffffff',
+  display: 'standalone',
+  start_url: '/',
+  // Icon phải nằm cùng origin: icon trỏ ra dịch vụ ngoài thì máy không
+  // tải được lúc cài (hoặc lúc offline) là PWA hiện ô trắng không logo.
+  icons: [
+    { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+    { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+    // Bản maskable để riêng: Android cắt icon theo khuôn của máy, dùng
+    // chung bản 'any' bo góc sẵn sẽ bị cắt cụt mất chữ.
+    {
+      src: '/icons/icon-maskable-512.png',
+      sizes: '512x512',
+      type: 'image/png',
+      purpose: 'maskable',
+    },
+  ],
+};
 
 export default defineConfig(({ mode }) => {
   const analyze = process.env.ANALYZE === '1';
@@ -88,6 +115,36 @@ export default defineConfig(({ mode }) => {
           });
         },
       },
+      {
+        // VitePWA đang tắt ở dev (devOptions.enabled = false) nên nó KHÔNG sinh
+        // manifest.webmanifest và cũng không chèn <link rel="manifest">. Hệ quả:
+        // ở localhost, `/manifest.webmanifest` rơi vào fallback SPA trả về
+        // index.html (text/html), Chrome không đọc được manifest nên khi cài app
+        // chỉ còn favicon 32px để lấy icon — đúng cảnh "PWA không có logo".
+        // Plugin này chỉ bù manifest cho dev, service worker vẫn tắt như cũ.
+        name: 'pwa-manifest-dev',
+        apply: 'serve',
+        configureServer(server) {
+          server.middlewares.use((req, res, next) => {
+            if (!req.url || req.url.split('?')[0] !== '/manifest.webmanifest') {
+              next();
+              return;
+            }
+            res.setHeader('Content-Type', 'application/manifest+json');
+            res.setHeader('Cache-Control', 'no-cache');
+            res.end(JSON.stringify(pwaManifest));
+          });
+        },
+        transformIndexHtml() {
+          return [
+            {
+              tag: 'link',
+              attrs: { rel: 'manifest', href: '/manifest.webmanifest' },
+              injectTo: 'head' as const,
+            },
+          ];
+        },
+      },
       react(),
       devServices({
         env,
@@ -114,29 +171,7 @@ export default defineConfig(({ mode }) => {
         strategies: 'injectManifest',
         srcDir: 'sw',
         filename: 'sw.ts',
-        manifest: {
-          name: 'Forpeasantz',
-          short_name: 'Forpeasantz',
-          description: 'Hợp Tác Xã Nông Nghiệp Công Nghệ Cao FP - Forpeasantz',
-          theme_color: '#ffffff',
-          background_color: '#ffffff',
-          display: 'standalone',
-          start_url: '/',
-          // Icon phải nằm cùng origin: icon trỏ ra dịch vụ ngoài thì máy không
-          // tải được lúc cài (hoặc lúc offline) là PWA hiện ô trắng không logo.
-          icons: [
-            { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-            { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-            // Bản maskable để riêng: Android cắt icon theo khuôn của máy, dùng
-            // chung bản 'any' bo góc sẵn sẽ bị cắt cụt mất chữ.
-            {
-              src: '/icons/icon-maskable-512.png',
-              sizes: '512x512',
-              type: 'image/png',
-              purpose: 'maskable',
-            },
-          ],
-        },
+        manifest: pwaManifest,
         injectManifest: {
           // Giữ đúng danh sách precache của cấu hình generateSW trước đây.
           globPatterns: ['**/*.html', 'icons/*.png', 'manifest.webmanifest', 'fonts/**/*'],
