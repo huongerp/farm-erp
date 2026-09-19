@@ -498,7 +498,7 @@ const ChiTietTab: React.FC = () => {
             {item.ten_tien_do_mh ? renderTienDoBadge(item.ten_tien_do_mh) : null}
           </div>
         </div>
-        <p className="text-sm text-foreground mt-0.5">{item.ma_hang ?? item.ten_hang ?? '—'}</p>
+        <p className="text-sm text-foreground mt-0.5 line-clamp-2">{item.ten_hang || item.ma_hang || '—'}</p>
         <p className="text-xs text-muted-foreground mt-0.5">
           {Number(item.so_luong).toLocaleString()} {item.don_vi_tinh ?? ''} · {item.ten_noi_de_xuat ?? '—'}
         </p>
