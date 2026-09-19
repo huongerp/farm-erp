@@ -14,6 +14,13 @@ import { isAppBusy } from './lib/app-busy';
 import { isTypingNow } from './lib/typing-busy';
 import { PRELOAD_ERROR_RELOAD_KEY, requestReloadWhenIdle } from './lib/app-update';
 
+/**
+ * Báo cho lưới an toàn trong index.html biết bundle đã chạy được: từ đây trở đi,
+ * file nào tải hụt cũng là chunk lazy — `vite:preloadError` bên dưới lo — chứ không
+ * phải vỏ HTML hỏng, nên không được gỡ service worker và xoá cache.
+ */
+window.__APP_DA_KHOI_DONG = true;
+
 void ensureSentryInitialized();
 
 /**

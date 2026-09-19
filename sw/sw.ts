@@ -9,9 +9,15 @@
  * phần đó giữ nguyên đúng ba quy tắc cũ trong vite.config.ts.
  */
 
-import { precacheAndRoute, cleanupOutdatedCaches, createHandlerBoundToURL } from 'workbox-precaching';
+import {
+  precache,
+  addRoute as addPrecacheRoute,
+  cleanupOutdatedCaches,
+  createHandlerBoundToURL,
+} from 'workbox-precaching';
 import { registerRoute, NavigationRoute } from 'workbox-routing';
-import { StaleWhileRevalidate, CacheFirst } from 'workbox-strategies';
+import type { RouteHandlerCallbackOptions } from 'workbox-core/types';
+import { StaleWhileRevalidate, CacheFirst, NetworkFirst } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
 import { CacheableResponsePlugin } from 'workbox-cacheable-response';
 
@@ -19,16 +25,74 @@ declare let self: ServiceWorkerGlobalScope;
 
 // --- Precache -----------------------------------------------------------------
 
-precacheAndRoute(self.__WB_MANIFEST);
+/**
+ * Cố ý tách `precache()` và `addPrecacheRoute()` thay vì gọi `precacheAndRoute()`.
+ *
+ * Route của precache mặc định bật `directoryIndex: 'index.html'`, nghĩa là nó nhận
+ * luôn request điều hướng `/` và trả bản HTML trong precache. Đăng ký nó trước thì
+ * route điều hướng bên dưới không bao giờ được gọi cho trang gốc — đo trực tiếp thấy
+ * đúng như vậy: `/mua-hang` đi đường mạng-trước, còn `/` vẫn ăn vỏ cũ trong precache.
+ * Router của Workbox xét route theo thứ tự đăng ký, nên nạp precache trước (để
+ * `createHandlerBoundToURL` có cái mà trỏ), rồi route điều hướng, rồi mới route precache.
+ */
+precache(self.__WB_MANIFEST);
 cleanupOutdatedCaches();
 
-// SPA: mọi điều hướng đều trả về vỏ index.html. Trừ /api, /auth, /notify — đó là
-// request dữ liệu, không bao giờ được trả về HTML.
+// --- Vỏ SPA: MẠNG TRƯỚC, cache chỉ để dùng khi mất mạng ------------------------
+
+/**
+ * Trước đây mọi điều hướng lấy thẳng `index.html` từ precache. Cách đó làm trắng
+ * màn hình sau mỗi lần deploy: bản HTML cũ trong precache trỏ vào `/assets/index-<hash cũ>.js`
+ * đã bị xoá khỏi server, script entry trả 404 nên KHÔNG dòng JS nào chạy được —
+ * ErrorBoundary vô tác dụng (lỗi xảy ra trước React), `vite:preloadError` cũng không
+ * bắt (nó chỉ lo chunk import động). Tệ hơn: service worker mới chờ app gửi
+ * SKIP_WAITING mới được thay, mà app thì không khởi động nổi để gửi → kẹt vĩnh viễn,
+ * người dùng phải tự xoá dữ liệu trang mới thoát.
+ *
+ * Nay vỏ HTML luôn hỏi mạng trước (nginx đã đặt `no-cache` cho index.html), nên
+ * HTML và chunk luôn cùng một bản. Mất mạng hoặc mạng treo quá `networkTimeoutSeconds`
+ * thì mới rơi về bản đã lưu — offline vẫn chạy như cũ.
+ */
+const SHELL_CACHE = 'app-shell';
+
+const shellStrategy = new NetworkFirst({
+  cacheName: SHELL_CACHE,
+  // Mạng 3G chập chờn: chờ quá 3 giây thì dùng bản cũ cho người dùng vào được app,
+  // hơn là bắt họ nhìn màn trắng tới lúc request timeout thật.
+  networkTimeoutSeconds: 3,
+  // KHÔNG gắn ExpirationPlugin ở đây: cache này chỉ chứa đúng một khoá `/index.html`
+  // nên không bao giờ phình, mà `maxEntries: 1` lại xoá sạch chính bản vỏ vừa lưu —
+  // đo trực tiếp thấy cache rỗng sau mỗi lần tải, tức là mất luôn bản dự phòng offline.
+  plugins: [new CacheableResponsePlugin({ statuses: [200] })],
+});
+
+/** Bản precache — lưới cuối cùng cho lần mở đầu tiên khi đang offline. */
+const shellTuPrecache = createHandlerBoundToURL('index.html');
+
+/**
+ * Luôn xin đúng `/index.html` chứ không xin theo URL đang điều hướng: SPA có hàng
+ * chục route nhưng chỉ một vỏ, lưu theo URL sẽ nhân bản cùng một file nhiều lần.
+ */
+async function xuLyDieuHuong(options: RouteHandlerCallbackOptions): Promise<Response> {
+  const shellRequest = new Request(new URL('/index.html', self.location.origin).href);
+  try {
+    const res = await shellStrategy.handle({ ...options, request: shellRequest });
+    if (res) return res;
+  } catch {
+    // Offline và chưa từng lưu được vỏ nào — rơi xuống bản precache bên dưới.
+  }
+  return shellTuPrecache(options);
+}
+
+// Trừ /api, /auth, /notify — đó là request dữ liệu, không bao giờ được trả về HTML.
 registerRoute(
-  new NavigationRoute(createHandlerBoundToURL('index.html'), {
+  new NavigationRoute(xuLyDieuHuong, {
     denylist: [/^\/api\//, /^\/auth\//, /^\/notify\//],
   })
 );
+
+// Sau route điều hướng: icons, fonts, manifest vẫn phục vụ thẳng từ precache.
+addPrecacheRoute();
 
 // --- Runtime caching (giữ nguyên ba quy tắc của cấu hình cũ) -------------------
 

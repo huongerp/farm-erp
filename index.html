@@ -23,6 +23,79 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Lưới an toàn chống màn trắng: script entry không tải được (thường do service
+         worker cũ giữ index.html của bản deploy trước, trỏ vào chunk đã bị xoá) thì
+         không còn dòng JS nào chạy để tự sửa, mà service worker mới lại phải chờ app
+         gửi SKIP_WAITING nên trang kẹt trắng vĩnh viễn. Đoạn này gỡ service worker,
+         xoá cache vỏ rồi tải lại MỘT lần duy nhất trong phiên.
+
+         Ba cửa ải trước khi ra tay, để không phá nhầm bản chạy offline:
+         - phải đang có mạng: mất mạng thì tải lại cũng vô ích, mà xoá cache đi là
+           người dùng mất luôn khả năng dùng offline;
+         - app phải CHƯA khởi động: chunk tải hụt sau khi app đã chạy đã có
+           `vite:preloadError` trong index.tsx lo, không đụng tới;
+         - chỉ một lần mỗi phiên, tránh vòng lặp tải lại nếu nguyên nhân là thứ khác. -->
+    <script>
+      (function () {
+        var KEY = 'app-shell-tu-chua';
+        window.addEventListener(
+          'error',
+          function (e) {
+            var el = e && e.target;
+            if (!el || el === window) return;
+            // Chỉ vỏ hỏng mới làm trắng màn hình: đúng thẻ script bundle của app,
+            // cùng origin. Stylesheet hay font ngoài (Google Fonts) tải hụt chỉ làm
+            // trang xấu đi chứ app vẫn chạy — nổ ở đó là xoá cache oan.
+            if (el.tagName !== 'SCRIPT') return;
+            var src = el.src || '';
+            if (src.indexOf(window.location.origin + '/assets/') !== 0) return;
+            // App đã khởi động rồi thì đây là chunk lazy, không phải vỏ hỏng.
+            if (window.__APP_DA_KHOI_DONG) return;
+            // Mất mạng: giữ nguyên cache để lần sau còn vào được.
+            if (navigator.onLine === false) return;
+            // Không có service worker điều khiển thì lỗi nằm ở mạng hoặc server,
+            // tải lại cũng vô ích — để lỗi hiện nguyên trạng.
+            if (!navigator.serviceWorker || !navigator.serviceWorker.controller) return;
+            try {
+              if (sessionStorage.getItem(KEY)) return;
+              sessionStorage.setItem(KEY, '1');
+            } catch (err) {
+              return;
+            }
+            navigator.serviceWorker
+              .getRegistrations()
+              .then(function (dsReg) {
+                return Promise.all(
+                  dsReg.map(function (reg) {
+                    return reg.unregister();
+                  })
+                );
+              })
+              .then(function () {
+                if (typeof caches === 'undefined') return null;
+                return caches.keys().then(function (ten) {
+                  // Chỉ xoá cache chứa vỏ HTML hỏng; ảnh, font, chunk giữ nguyên.
+                  var voHtml = ten.filter(function (t) {
+                    return t === 'app-shell' || t.indexOf('workbox-precache') === 0;
+                  });
+                  return Promise.all(
+                    voHtml.map(function (t) {
+                      return caches.delete(t);
+                    })
+                  );
+                });
+              })
+              .catch(function () {
+                /* gỡ không được thì vẫn cứ tải lại, may ra vớt được */
+              })
+              .then(function () {
+                window.location.reload();
+              });
+          },
+          true
+        );
+      })();
+    </script>
     <!-- Áp dụng chế độ tối + cỡ chữ ngay khi tải (trước React) để tránh nháy -->
     <script>
       (function() {
