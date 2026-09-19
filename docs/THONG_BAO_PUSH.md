@@ -40,6 +40,7 @@ Chạy **đúng thứ tự** này trên Postgres của VPS:
 | 6 | `docs/supabase-trigger_thong_bao_7_module.sql` | Gắn trigger cho 7 bảng nghiệp vụ |
 | 7 | `docs/supabase-trigger_thong_bao_thu_chi_quy.sql` | Trigger sổ quỹ + nhánh chi nhánh cho `rpc_tb_chi_nhanh_phieu` |
 | 8 | `docs/supabase-thong_bao_phieu_hanh_chinh.sql` | RPC người duyệt theo phòng ban + RPC tên loại phiếu hành chính |
+| 9 | `docs/supabase-rpc_thong_bao_quan_tri_moi_chi_nhanh.sql` | Quản trị module (admin/all) nhận thông báo ở mọi chi nhánh |
 
 File **#1 tự tạo role `notify_service` và in mật khẩu ra NOTICE** — chép mật khẩu đó vào
 `NOTIFY_DATABASE_URL` rồi xoá khỏi log. Chạy lại file này không đổi mật khẩu role đã có.
@@ -191,6 +192,21 @@ vẫn chạy bình thường.
 Icon PWA nằm ở `public/icons/` (`icon-192`, `icon-512`, `icon-maskable-512`, `apple-touch-icon` 180px,
 `badge-96` cho thanh trạng thái Android). iOS **không** đọc icon trong manifest và không nhận SVG, nên
 thẻ `apple-touch-icon` trong `index.html` bắt buộc trỏ tới file PNG.
+
+### Giới hạn chi nhánh — ai được miễn
+
+`rpc_tb_nguoi_duyet` giới hạn người nhận theo chi nhánh của phiếu, trừ hai nhóm:
+
+- **cấp bậc 1** — luôn nhận mọi chi nhánh;
+- **quyền quản trị module** (`admin` | `all`) — nhận mọi chi nhánh, để khớp với cổng `viewAll` của
+  `useEmployeeBranchModuleScope` phía app.
+
+Quyền `approve` **không** được miễn: đó là quyền xử lý phiếu trong phạm vi chi nhánh của mình, và app
+cũng không mở `viewAll` cho nó.
+
+Trước bản vá #9, chỉ cấp bậc 1 được miễn, nên một quản trị viên chỉ được gán chi nhánh Văn Phòng mở app
+thì thấy đủ phiếu kho của các nhà sơ chế nhưng chưa từng nhận một thông báo phiếu kho nào — xem được mà
+không được báo.
 
 ## Đấu thêm module
 
