@@ -27,7 +27,13 @@ import { AdminFormRequest } from '../core/types';
 import { useAuthStore } from '../../../../store/useStore';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 
-const AdminFormManagedTab: React.FC = () => {
+/** Phiếu mở từ deep-link `?phieu=<id>` của thông báo — index.tsx đã nạp và kiểm quyền. */
+interface Props {
+  deepLinkItem?: AdminFormRequest | null;
+  onDeepLinkConsumed?: () => void;
+}
+
+const AdminFormManagedTab: React.FC<Props> = ({ deepLinkItem, onDeepLinkConsumed }) => {
   const { t } = useTranslation();
   const confirm = useConfirmStore((s) => s.confirm);
   const user = useAuthStore((s) => s.user);
@@ -86,6 +92,14 @@ const AdminFormManagedTab: React.FC = () => {
   useEffect(() => {
     return () => resetState();
   }, [resetState]);
+
+  // Phiếu đến từ thông báo: nhận sẵn cả đối tượng nên mở được kể cả khi nó
+  // không nằm trong trang đang xem (danh sách phân trang ở server).
+  useEffect(() => {
+    if (!deepLinkItem) return;
+    setViewingItem(deepLinkItem);
+    onDeepLinkConsumed?.();
+  }, [deepLinkItem, onDeepLinkConsumed]);
 
 
   const handleApproveHcns = (id: string) => {

@@ -106,5 +106,7 @@
   "adminForm.validation.reasonMin": "Lý do tối thiểu 5 ký tự",
   "adminForm.validation.reasonMax": "Lý do quá dài",
   "adminForm.service.notFound": "Phiếu hành chính không tồn tại",
-  "adminForm.service.invalidState": "Trạng thái phiếu không hợp lệ"
+  "adminForm.service.invalidState": "Trạng thái phiếu không hợp lệ",
+  "adminForm.deepLink.notFound": "Không mở được phiếu từ thông báo — phiếu có thể đã bị xóa",
+  "adminForm.deepLink.noPermission": "Bạn không có quyền xem phiếu hành chính này"
 }

@@ -307,6 +307,7 @@
   "notification.event.hanh_chinh_da_duyet": "Phiếu hành chính được duyệt",
   "notification.event.hanh_chinh_tu_choi": "Phiếu hành chính bị từ chối",
   "notification.event.hanh_chinh_da_huy": "Phiếu hành chính bị hủy",
+  "notification.event.hanh_chinh_sua_sau_duyet": "Phiếu hành chính đã duyệt bị sửa",
   "notification.event.don_hang_cho_duyet": "Đơn đặt hàng chờ bạn duyệt",
   "notification.event.don_hang_da_xac_nhan": "Đơn đặt hàng được xác nhận",
   "notification.event.don_hang_dang_giao": "Đơn đặt hàng đang giao",

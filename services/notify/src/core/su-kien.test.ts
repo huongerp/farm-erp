@@ -176,6 +176,97 @@ describe('phiếu hành chính — một cấp duyệt', () => {
     expect(kq[0]!.loai).toBe('hanh_chinh.da_huy');
     expect(kq[0]!.muc).toBe('thuong');
   });
+
+  // --- Sửa phiếu đã duyệt ---------------------------------------------------
+
+  /** Phiếu đã duyệt, không đổi trạng thái — chỉ khác nhau ở cột nội dung. */
+  const suaDaDuyet = (cu: Record<string, unknown>, moi: Record<string, unknown>) =>
+    phanTichSuKien(
+      hc({
+        trang_thai_cu: 'Đã duyệt',
+        trang_thai_moi: 'Đã duyệt',
+        payload_cu: { id: 10, trang_thai: 'Đã duyệt', ...cu },
+        payload: { id: 10, trang_thai: 'Đã duyệt', ...moi },
+      })
+    );
+
+  it('sửa ngày của phiếu đã duyệt thì báo người tạo và nhóm duyệt, mức cao', () => {
+    const kq = suaDaDuyet({ ngay: '2026-09-17' }, { ngay: '2026-09-19' });
+    expect(kq).toHaveLength(1);
+    expect(kq[0]!.loai).toBe('hanh_chinh.sua_sau_duyet');
+    expect(kq[0]!.muc).toBe('cao');
+    expect(kq[0]!.vai).toEqual(['nguoi_tao', 'nhom_duyet']);
+    const thayDoi = kq[0]!.duLieu['thayDoi'] as { cot: string }[];
+    expect(thayDoi.map((t) => t.cot)).toEqual(['ngay']);
+  });
+
+  it('CHỈ đổi ghi_chu thì KHÔNG báo — duyệt kèm ghi chú bắn hai update', () => {
+    // admin-form-detail.tsx: duyệt xong ghi ghi_chu thành một update riêng,
+    // không đổi trạng thái. Nếu bắt ca này thì mỗi lần duyệt kèm ghi chú lại
+    // đẻ thêm một thông báo "phiếu đã duyệt bị sửa" gửi cho cả nhóm duyệt.
+    expect(suaDaDuyet({ ghi_chu: null }, { ghi_chu: 'Đồng ý' })).toEqual([]);
+  });
+
+  it('chỉ đổi tg_cap_nhat thì không báo', () => {
+    expect(
+      suaDaDuyet({ tg_cap_nhat: '2026-09-18T01:00:00Z' }, { tg_cap_nhat: '2026-09-19T02:00:00Z' })
+    ).toEqual([]);
+  });
+
+  it('đổi ly_do lẫn ghi_chu thì chỉ kể ly_do', () => {
+    const kq = suaDaDuyet(
+      { ly_do: 'Việc nhà', ghi_chu: null },
+      { ly_do: 'Khám bệnh', ghi_chu: 'Đồng ý' }
+    );
+    const thayDoi = kq[0]!.duLieu['thayDoi'] as { cot: string }[];
+    expect(thayDoi.map((t) => t.cot)).toEqual(['ly_do']);
+  });
+
+  it('đổi cùng lúc loại phiếu và ca thì kể cả hai', () => {
+    const kq = suaDaDuyet(
+      { loai_phieu_id: 2, ca: 'Sáng' },
+      { loai_phieu_id: 6, ca: 'Cả ngày' }
+    );
+    const thayDoi = kq[0]!.duLieu['thayDoi'] as { cot: string; nhan: string }[];
+    expect(thayDoi.map((t) => t.cot).sort()).toEqual(['ca', 'loai_phieu_id']);
+    expect(thayDoi.map((t) => t.nhan).sort()).toEqual(['Ca', 'Loại phiếu']);
+  });
+
+  it('sửa nội dung khi phiếu còn Chờ duyệt thì không báo', () => {
+    const kq = phanTichSuKien(
+      hc({
+        trang_thai_cu: 'Chờ duyệt',
+        trang_thai_moi: 'Chờ duyệt',
+        payload_cu: { id: 10, ngay: '2026-09-17' },
+        payload: { id: 10, ngay: '2026-09-19' },
+      })
+    );
+    expect(kq).toEqual([]);
+  });
+
+  it('duyệt phiếu và đổi nội dung trong cùng một update thì chỉ báo đã duyệt', () => {
+    const kq = phanTichSuKien(
+      hc({
+        trang_thai_cu: 'Chờ duyệt',
+        trang_thai_moi: 'Đã duyệt',
+        payload_cu: { id: 10, ngay: '2026-09-17' },
+        payload: { id: 10, ngay: '2026-09-19' },
+      })
+    );
+    expect(kq.map((s) => s.loai)).toEqual(['hanh_chinh.da_duyet']);
+  });
+
+  it('payload_cu rỗng mà phiếu đang Đã duyệt thì không ném lỗi', () => {
+    expect(() =>
+      phanTichSuKien(
+        hc({ trang_thai_cu: 'Đã duyệt', trang_thai_moi: 'Đã duyệt', payload_cu: null })
+      )
+    ).not.toThrow();
+  });
+
+  it('INSERT thẳng ở Đã duyệt thì không báo', () => {
+    expect(phanTichSuKien(hc({ thao_tac: 'INSERT', trang_thai_moi: 'Đã duyệt' }))).toEqual([]);
+  });
 });
 
 describe('đơn đặt hàng', () => {

@@ -142,16 +142,96 @@ describe('công việc', () => {
 });
 
 describe('phiếu hành chính', () => {
-  it('tiêu đề mang ngày dạng dd/MM', () => {
+  /** Bảng này không có số phiếu: nhãn ghép từ loại phiếu + ngày + ca. */
+  function nguCanhHc(
+    loai: string,
+    payload: Record<string, unknown> = {},
+    duLieu: Record<string, unknown> = {},
+    tenLoaiPhieu: string | null = null,
+    tenLoaiPhieuCu: string | null = null
+  ) {
+    return {
+      ...nguCanh('fp_hr_phieu_hanh_chinh', loai, payload, duLieu),
+      tenLoaiPhieu,
+      tenLoaiPhieuCu,
+    };
+  }
+
+  it('nhãn ghép đủ loại phiếu, ngày và ca', () => {
     const kq = renderThongBao(
-      nguCanh('fp_hr_phieu_hanh_chinh', 'hanh_chinh.cho_duyet', { ngay: '2026-09-18' })
+      nguCanhHc('hanh_chinh.cho_duyet', { ngay: '2026-09-18', ca: 'Cả ngày' }, {}, 'Xin nghỉ phép')
     );
-    expect(kq.tieuDe).toBe('Phiếu hành chính ngày 18/09 chờ duyệt');
+    expect(kq.tieuDe).toBe('Xin nghỉ phép 18/09 (Cả ngày) chờ duyệt');
+    expect(kq.noiDung).toBe('Nguyễn Văn A vừa gửi phiếu, đang chờ bạn duyệt.');
   });
 
-  it('thiếu ngày thì bỏ phần ngày', () => {
-    const kq = renderThongBao(nguCanh('fp_hr_phieu_hanh_chinh', 'hanh_chinh.da_duyet', {}));
+  it('tra không ra tên loại phiếu thì lui về "Phiếu hành chính", không lòi null', () => {
+    const kq = renderThongBao(
+      nguCanhHc('hanh_chinh.cho_duyet', { ngay: '2026-09-18', ca: 'Sáng' })
+    );
+    expect(kq.tieuDe).toBe('Phiếu hành chính 18/09 (Sáng) chờ duyệt');
+  });
+
+  it('thiếu ca thì không lòi dấu ngoặc rỗng', () => {
+    const kq = renderThongBao(
+      nguCanhHc('hanh_chinh.cho_duyet', { ngay: '2026-09-18' }, {}, 'Tăng ca')
+    );
+    expect(kq.tieuDe).toBe('Tăng ca 18/09 chờ duyệt');
+  });
+
+  it('thiếu cả ngày, ca và loại phiếu thì vẫn ra câu đọc được', () => {
+    const kq = renderThongBao(nguCanhHc('hanh_chinh.da_duyet', {}));
     expect(kq.tieuDe).toBe('Phiếu hành chính đã được duyệt');
+  });
+
+  it('từ chối thì nêu lý do', () => {
+    const kq = renderThongBao(
+      nguCanhHc('hanh_chinh.tu_choi', { ngay: '2026-09-18' }, { lyDo: 'Hết định mức' }, 'Xin nghỉ phép')
+    );
+    expect(kq.tieuDe).toBe('Xin nghỉ phép 18/09 bị từ chối');
+    expect(kq.noiDung).toBe('Nguyễn Văn A đã từ chối phiếu. Lý do: Hết định mức');
+  });
+
+  it('sửa sau duyệt kể tên cột đã đổi', () => {
+    const kq = renderThongBao(
+      nguCanhHc(
+        'hanh_chinh.sua_sau_duyet',
+        { ngay: '2026-09-19' },
+        { thayDoi: [{ cot: 'ngay', nhan: 'Ngày', cu: '17/09/2026', moi: '19/09/2026' }] },
+        'Xin nghỉ phép'
+      )
+    );
+    expect(kq.tieuDe).toBe('Xin nghỉ phép 19/09 đã duyệt vừa bị sửa');
+    expect(kq.noiDung).toContain('Ngày: 17/09/2026 → 19/09/2026');
+    // Bảng này không có bảng chi tiết nên không được mượn câu của phiếu kho.
+    expect(kq.noiDung).not.toContain('danh sách mặt hàng');
+  });
+
+  it('đổi loại phiếu thì in TÊN loại, không in id', () => {
+    const kq = renderThongBao(
+      nguCanhHc(
+        'hanh_chinh.sua_sau_duyet',
+        {},
+        { thayDoi: [{ cot: 'loai_phieu_id', nhan: 'Loại phiếu', cu: null, moi: null }] },
+        'Xin nghỉ phép',
+        'Công tác'
+      )
+    );
+    expect(kq.noiDung).toContain('Loại phiếu: Công tác → Xin nghỉ phép');
+  });
+
+  it('đổi loại phiếu mà thiếu tên cũ thì lui về câu chung, không in id', () => {
+    const kq = renderThongBao(
+      nguCanhHc(
+        'hanh_chinh.sua_sau_duyet',
+        {},
+        { thayDoi: [{ cot: 'loai_phieu_id', nhan: 'Loại phiếu', cu: null, moi: null }] },
+        'Xin nghỉ phép'
+      )
+    );
+    // Khoá ngoại không có giá trị đọc được thì chỉ nói "đổi loại phiếu".
+    expect(kq.noiDung).toContain('đổi loại phiếu');
+    expect(kq.noiDung).not.toContain('→');
   });
 });
 

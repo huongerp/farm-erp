@@ -28,6 +28,7 @@ export const LOAI_SU_KIEN_THEO_MODULE: Record<string, readonly string[]> = {
   ],
   'hanh-chinh/phieu-hanh-chinh': [
     'hanh_chinh.cho_duyet', 'hanh_chinh.da_duyet', 'hanh_chinh.tu_choi', 'hanh_chinh.da_huy',
+    'hanh_chinh.sua_sau_duyet',
   ],
   'mua-hang/don-dat-hang': [
     'don_hang.cho_duyet', 'don_hang.da_xac_nhan', 'don_hang.dang_giao',
@@ -59,6 +60,7 @@ const KIEU_THEO_LOAI: Record<string, NotificationType> = {
   'hanh_chinh.da_duyet': 'success',
   'hanh_chinh.tu_choi': 'error',
   'hanh_chinh.da_huy': 'warning',
+  'hanh_chinh.sua_sau_duyet': 'warning',
 
   'don_hang.cho_duyet': 'info',
   'don_hang.da_xac_nhan': 'success',

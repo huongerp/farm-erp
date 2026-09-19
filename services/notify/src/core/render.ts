@@ -20,6 +20,10 @@ export interface NguCanhRender {
   suKien: SuKienDaPhanTich;
   /** Tên người gây ra sự kiện; null khi không tra được (đổi từ SQL tay, import…). */
   tenActor: string | null;
+  /** Tên loại phiếu tra từ danh mục; null khi module không có hoặc tra không ra. */
+  tenLoaiPhieu?: string | null;
+  /** Tên loại phiếu TRƯỚC khi sửa — chỉ dùng cho sự kiện sửa sau duyệt. */
+  tenLoaiPhieuCu?: string | null;
 }
 
 export interface NoiDungThongBao {
@@ -54,6 +58,19 @@ function nhanChungTu(moTa: MoTaBang, dong: DongOutbox): string {
   return so ? `${moTa.tenChungTu} ${so}` : moTa.tenChungTu;
 }
 
+/**
+ * Nhãn phiếu hành chính: "Xin nghỉ phép 19/09 (Cả ngày)".
+ * Bảng này không có số phiếu, nên loại phiếu + ngày + ca chính là thứ giúp
+ * người duyệt nhận ra phiếu nào mà không phải mở app. Thiếu phần nào thì bỏ
+ * phần đó, không bao giờ in "null" hay "()" rỗng.
+ */
+function nhanPhieuHanhChinh(nc: NguCanhRender): string {
+  const loai = chuoi(nc.tenLoaiPhieu) ?? 'Phiếu hành chính';
+  const ngay = ngayNgan(nc.dong.payload['ngay']);
+  const ca = chuoi(nc.dong.payload['ca']);
+  return `${loai}${ngay ? ` ${ngay}` : ''}${ca ? ` (${ca})` : ''}`;
+}
+
 /** Tiêu đề công việc dùng thay số phiếu. */
 function tenCongViec(dong: DongOutbox): string {
   return chuoi(dong.payload['tieu_de']) ?? 'Công việc';
@@ -85,10 +102,29 @@ function noiDungSuaSauDuyet(tenActor: string | null, thayDoi: ThayDoiCot[]): str
   if (thayDoi.length === 0) {
     return `${mo} Thông tin chung không đổi — thay đổi nằm ở danh sách mặt hàng.`;
   }
+  return `${mo} ${keTenThayDoi(thayDoi)}`;
+}
 
+/** Liệt kê tối đa SO_THAY_DOI_KE_TEN cột rồi đếm phần còn lại. */
+function keTenThayDoi(thayDoi: ThayDoiCot[]): string {
   const keTen = thayDoi.slice(0, SO_THAY_DOI_KE_TEN).map(moTaMotThayDoi).join('; ');
   const conLai = thayDoi.length - SO_THAY_DOI_KE_TEN;
-  return conLai > 0 ? `${mo} ${keTen}; và ${conLai} thay đổi khác.` : `${mo} ${keTen}.`;
+  return conLai > 0 ? `${keTen}; và ${conLai} thay đổi khác.` : `${keTen}.`;
+}
+
+/**
+ * Phiếu hành chính không có bảng chi tiết: đã bắn sự kiện thì chắc chắn có cột
+ * nghiệp vụ đổi, nên không có nhánh "thay đổi nằm ở danh sách mặt hàng".
+ * `loai_phieu_id` là khoá ngoại nên soSanhCotPhieu bỏ trống giá trị — worker đã
+ * tra sẵn tên cũ/mới, ghép vào đây để câu đọc được tên loại thay vì hai con số.
+ */
+function noiDungSuaSauDuyetHc(nc: NguCanhRender, thayDoi: ThayDoiCot[]): string {
+  const day = thayDoi.map((td) =>
+    td.cot === 'loai_phieu_id' && nc.tenLoaiPhieuCu && nc.tenLoaiPhieu
+      ? { ...td, cu: nc.tenLoaiPhieuCu, moi: nc.tenLoaiPhieu }
+      : td
+  );
+  return `${boiActor(nc.tenActor, 'đã sửa phiếu sau khi phiếu được duyệt.')} ${keTenThayDoi(day)}`;
 }
 
 export function renderThongBao(nc: NguCanhRender): NoiDungThongBao {
@@ -164,37 +200,33 @@ export function renderThongBao(nc: NguCanhRender): NoiDungThongBao {
       };
 
     // --- Phiếu hành chính ----------------------------------------------------
-    case 'hanh_chinh.cho_duyet': {
-      const ngay = ngayNgan(dong.payload['ngay']);
+    case 'hanh_chinh.cho_duyet':
       return {
-        tieuDe: ngay ? `Phiếu hành chính ngày ${ngay} chờ duyệt` : 'Phiếu hành chính chờ duyệt',
+        tieuDe: `${nhanPhieuHanhChinh(nc)} chờ duyệt`,
         noiDung: boiActor(tenActor, 'vừa gửi phiếu, đang chờ bạn duyệt.'),
       };
-    }
-    case 'hanh_chinh.da_duyet': {
-      const ngay = ngayNgan(dong.payload['ngay']);
+    case 'hanh_chinh.da_duyet':
       return {
-        tieuDe: ngay ? `Phiếu hành chính ngày ${ngay} đã được duyệt` : 'Phiếu hành chính đã được duyệt',
+        tieuDe: `${nhanPhieuHanhChinh(nc)} đã được duyệt`,
         noiDung: boiActor(tenActor, 'đã duyệt phiếu của bạn.'),
       };
-    }
-    case 'hanh_chinh.tu_choi': {
-      const ngay = ngayNgan(dong.payload['ngay']);
-      const tieuDe = ngay ? `Phiếu hành chính ngày ${ngay} bị từ chối` : 'Phiếu hành chính bị từ chối';
+    case 'hanh_chinh.tu_choi':
       return {
-        tieuDe,
+        tieuDe: `${nhanPhieuHanhChinh(nc)} bị từ chối`,
         noiDung: lyDo
           ? `${boiActor(tenActor, 'đã từ chối phiếu.')} Lý do: ${lyDo}`
           : boiActor(tenActor, 'đã từ chối phiếu.'),
       };
-    }
-    case 'hanh_chinh.da_huy': {
-      const ngay = ngayNgan(dong.payload['ngay']);
+    case 'hanh_chinh.da_huy':
       return {
-        tieuDe: ngay ? `Phiếu hành chính ngày ${ngay} đã huỷ` : 'Phiếu hành chính đã huỷ',
+        tieuDe: `${nhanPhieuHanhChinh(nc)} đã huỷ`,
         noiDung: boiActor(tenActor, 'đã huỷ phiếu.'),
       };
-    }
+    case 'hanh_chinh.sua_sau_duyet':
+      return {
+        tieuDe: `${nhanPhieuHanhChinh(nc)} đã duyệt vừa bị sửa`,
+        noiDung: noiDungSuaSauDuyetHc(nc, docThayDoi(suKien.duLieu)),
+      };
 
     // --- Đơn đặt hàng --------------------------------------------------------
     case 'don_hang.cho_duyet':

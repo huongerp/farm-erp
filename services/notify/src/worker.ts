@@ -9,10 +9,11 @@ import type { PoolClient } from 'pg';
 import { config } from './config.ts';
 import * as db from './db.ts';
 import { phanTichSuKien } from './core/su-kien.ts';
-import { dinhTuyen } from './core/routing.ts';
+import { dinhTuyen, giaiVaiTheoPayload } from './core/routing.ts';
 import { renderThongBao } from './core/render.ts';
 import { layMoTaBang, dungLink } from './core/mo-ta-bang.ts';
 import { nenGop } from './core/dedupe.ts';
+import { soHoacNull } from './core/chuan-hoa.ts';
 import {
   timCaiDat,
   nenGuiPush,
@@ -70,6 +71,20 @@ export async function xuLyMotSuKien(dong: DongOutbox): Promise<void> {
   const tenTheoId = dong.actor_id === null ? new Map<number, string>() : await db.layTenNhanVien([dong.actor_id]);
   const tenActor = dong.actor_id === null ? null : (tenTheoId.get(dong.actor_id) ?? null);
 
+  // Tên loại phiếu: tra TRƯỚC rồi truyền vào render, cùng mẫu với tenActor —
+  // lớp render phải thuần để test bằng vitest. Lấy cả id cũ để câu "sửa sau
+  // duyệt" đọc được "Loại phiếu: Công tác → Xin nghỉ phép" thay vì hai con số.
+  let tenLoaiPhieu: string | null = null;
+  let tenLoaiPhieuCu: string | null = null;
+  if (moTa.cotLoaiPhieu) {
+    const idMoi = soHoacNull(dong.payload[moTa.cotLoaiPhieu]);
+    const idCu = soHoacNull(dong.payload_cu?.[moTa.cotLoaiPhieu]);
+    const ids = [...new Set([idMoi, idCu].filter((n): n is number => n !== null))];
+    const ten = await db.layTenLoaiPhieu(ids);
+    tenLoaiPhieu = idMoi === null ? null : (ten.get(idMoi) ?? null);
+    tenLoaiPhieuCu = idCu === null ? null : (ten.get(idCu) ?? null);
+  }
+
   const bayGio = new Date();
   const gioHienTai = gioTheoMuiGioCongTy(bayGio);
   const bo = new BoNhoTam();
@@ -78,14 +93,23 @@ export async function xuLyMotSuKien(dong: DongOutbox): Promise<void> {
   for (const suKien of dsSuKien) {
     let nhomDuyet: Awaited<ReturnType<typeof db.layNguoiDuyet>> = [];
     if (suKien.vai.includes('nhom_duyet')) {
-      const chiNhanhId = await db.layChiNhanhPhieu(dong.bang, dong.ban_ghi_id);
-      nhomDuyet = await db.layNguoiDuyet(moTa.moduleId, chiNhanhId);
+      if (moTa.nhomDuyetTheoPhongBanNguoiTao) {
+        // Dùng chính bộ giải vai của routing để khỏi chép lại luật đọc cột
+        // người tạo — mỗi bảng đặt tên cột một kiểu.
+        const [nguoiTaoId] = giaiVaiTheoPayload('nguoi_tao', moTa, dong, suKien);
+        nhomDuyet = await db.layNguoiDuyetTheoPhongBan(moTa.moduleId, nguoiTaoId ?? null);
+      } else {
+        const chiNhanhId = await db.layChiNhanhPhieu(dong.bang, dong.ban_ghi_id);
+        nhomDuyet = await db.layNguoiDuyet(moTa.moduleId, chiNhanhId);
+      }
     }
 
     const nguoiNhan = dinhTuyen(dong, suKien, moTa, nhomDuyet);
     if (nguoiNhan.length === 0) continue;
 
-    const { tieuDe, noiDung } = renderThongBao({ moTa, dong, suKien, tenActor });
+    const { tieuDe, noiDung } = renderThongBao({
+      moTa, dong, suKien, tenActor, tenLoaiPhieu, tenLoaiPhieuCu,
+    });
 
     for (const nn of nguoiNhan) {
       const caiDat = timCaiDat(await bo.layCaiDat(nn.id), moTa.moduleId, suKien.loai);

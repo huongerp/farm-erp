@@ -30,6 +30,23 @@ export interface MoTaBang {
   cotNguoiDuyet?: string;
   /** Có trang xem trước riêng (/…/preview/:id) hay không. */
   coTrangPreview?: boolean;
+  /**
+   * Module không có trang preview nhưng mở được bản ghi bằng query param
+   * (`/duong-dan?<thamSoPhieu>=<id>`) — trang tự chọn tab rồi bật drawer chi
+   * tiết. Tên tham số khai ở đây vì mỗi module đã trót đặt một kiểu: phiếu
+   * hành chính dùng `phieu`, công việc đọc sẵn `detail`.
+   * Bỏ qua nếu `coTrangPreview` bật — trang preview luôn ưu tiên.
+   */
+  thamSoPhieu?: string;
+  /**
+   * Nhóm duyệt tra theo PHÒNG BAN CỦA NGƯỜI TẠO (rpc_tb_nguoi_duyet_phong_ban)
+   * thay vì theo chi nhánh của phiếu (rpc_tb_nguoi_duyet). Phiếu hành chính là
+   * module duy nhất như vậy: nó không gắn kho nào nên nhánh chi nhánh luôn trả
+   * NULL, mà người duyệt thật sự là quản lý phòng của người xin nghỉ.
+   */
+  nhomDuyetTheoPhongBanNguoiTao?: boolean;
+  /** Cột khoá ngoại trỏ danh mục loại phiếu — worker tra tên trước khi render. */
+  cotLoaiPhieu?: string;
 }
 
 export const MO_TA_BANG: Record<string, MoTaBang> = {
@@ -92,6 +109,9 @@ export const MO_TA_BANG: Record<string, MoTaBang> = {
     duongDan: '/hanh-chinh/phieu-hanh-chinh',
     tenChungTu: 'Phiếu hành chính',
     cotNguoiTao: 'nguoi_tao_id',
+    cotLoaiPhieu: 'loai_phieu_id',
+    thamSoPhieu: 'phieu',
+    nhomDuyetTheoPhongBanNguoiTao: true,
   },
 
   // --- Sổ quỹ (khoá / xin mở khoá) ------------------------------------------
@@ -123,5 +143,7 @@ export function layMoTaBang(bang: string): MoTaBang | null {
 
 /** Link điều hướng khi người dùng bấm vào thông báo. */
 export function dungLink(moTa: MoTaBang, banGhiId: number): string {
-  return moTa.coTrangPreview ? `${moTa.duongDan}/preview/${banGhiId}` : moTa.duongDan;
+  if (moTa.coTrangPreview) return `${moTa.duongDan}/preview/${banGhiId}`;
+  if (moTa.thamSoPhieu) return `${moTa.duongDan}?${moTa.thamSoPhieu}=${banGhiId}`;
+  return moTa.duongDan;
 }

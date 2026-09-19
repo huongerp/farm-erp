@@ -5,6 +5,7 @@ import i18n from '../../../../lib/i18n';
 import {
   getAdminForms,
   getAdminFormPage,
+  getAdminFormById,
   getAdminFormsByUserAndMonth,
   createAdminForm,
   updateAdminForm,
@@ -32,6 +33,21 @@ export function useAdminFormPage(query: AdminFormListServerQuery, enabled = true
     enabled,
     placeholderData: keepPreviousData,
     staleTime: 1000 * 60 * 2,
+  });
+}
+
+/**
+ * Một phiếu theo id — dùng cho deep-link `?phieu=<id>` từ thông báo.
+ * staleTime 0: vừa bấm thông báo thì phải thấy trạng thái mới nhất.
+ * retry false: phiếu đã xoá thì báo ngay thay vì quay ba vòng.
+ */
+export function useAdminFormById(id: string | null) {
+  return useQuery({
+    queryKey: ['adminForms', 'byId', id],
+    queryFn: () => getAdminFormById(id!),
+    enabled: !!id,
+    staleTime: 0,
+    retry: false,
   });
 }
 

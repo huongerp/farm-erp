@@ -158,3 +158,75 @@ describe('dinhTuyen — nhóm duyệt và cấp bậc 1', () => {
     expect(kq).toEqual([]);
   });
 });
+
+describe('phiếu hành chính — nhóm duyệt theo phòng ban của người tạo', () => {
+  const MO_TA_HC = MO_TA_BANG['fp_hr_phieu_hanh_chinh']!;
+  const hc = (p: Partial<DongOutbox> = {}) =>
+    dong({ bang: 'fp_hr_phieu_hanh_chinh', module_id: MO_TA_HC.moduleId, ...p });
+
+  it('cấu hình bật cờ tra theo phòng ban và khai đúng cột người tạo', () => {
+    // Hợp đồng giữa MO_TA_BANG và worker: sai một trong hai thì worker lại gọi
+    // nhánh chi nhánh cũ và quản lý phòng tiếp tục không nhận được gì.
+    expect(MO_TA_HC.nhomDuyetTheoPhongBanNguoiTao).toBe(true);
+    expect(MO_TA_HC.cotNguoiTao).toBe('nguoi_tao_id');
+  });
+
+  it('id người tạo rút từ payload chính là tham số worker đưa vào RPC', () => {
+    // node-postgres trả bigint dạng chuỗi; vẫn phải ra số.
+    const d = hc({ payload: { nguoi_tao_id: '41' } });
+    expect(giaiVaiTheoPayload('nguoi_tao', MO_TA_HC, d, suKien())).toEqual([41]);
+  });
+
+  it('phiếu chờ duyệt mức cao: cả ba quản lý phòng lẫn cấp bậc 1 đều rung push', () => {
+    const kq = dinhTuyen(
+      hc({ actor_id: 41, payload: { nguoi_tao_id: 41 } }),
+      suKien({ loai: 'hanh_chinh.cho_duyet', muc: 'cao', vai: ['nhom_duyet'] }),
+      MO_TA_HC,
+      [duyet(18), duyet(26), duyet(33), duyet(2, 2), duyet(1, 1)]
+    );
+    expect(kq.map((x) => x.id).sort((a, b) => a - b)).toEqual([1, 2, 18, 26, 33]);
+    expect(kq.every((x) => !x.imLang)).toBe(true);
+  });
+
+  it('sự kiện mức thường: cấp bậc 1 chỉ vào chuông, quản lý phòng vẫn rung', () => {
+    const kq = dinhTuyen(
+      hc({ actor_id: 41, payload: { nguoi_tao_id: 41 } }),
+      suKien({ loai: 'hanh_chinh.da_huy', muc: 'thuong', vai: ['nhom_duyet'] }),
+      MO_TA_HC,
+      [duyet(18), duyet(1, 1)]
+    );
+    expect(kq.find((x) => x.id === 1)!.imLang).toBe(true);
+    expect(kq.find((x) => x.id === 18)!.imLang).toBe(false);
+  });
+
+  it('quản lý phòng tự nộp phiếu thì không tự báo cho mình', () => {
+    const kq = dinhTuyen(
+      hc({ actor_id: 18, payload: { nguoi_tao_id: 18 } }),
+      suKien({ loai: 'hanh_chinh.cho_duyet', muc: 'cao', vai: ['nhom_duyet'] }),
+      MO_TA_HC,
+      [duyet(18), duyet(26), duyet(33)]
+    );
+    expect(kq.map((x) => x.id).sort((a, b) => a - b)).toEqual([26, 33]);
+  });
+
+  it('sửa sau duyệt: người tạo nhận, người đang sửa bị loại, mỗi người một dòng', () => {
+    const kq = dinhTuyen(
+      hc({ actor_id: 2, payload: { nguoi_tao_id: 41 } }),
+      suKien({ loai: 'hanh_chinh.sua_sau_duyet', muc: 'cao', vai: ['nguoi_tao', 'nhom_duyet'] }),
+      MO_TA_HC,
+      [duyet(18), duyet(2, 2), duyet(41)]
+    );
+    expect(kq.map((x) => x.id).sort((a, b) => a - b)).toEqual([18, 41]);
+    expect(kq.find((x) => x.id === 41)!.imLang).toBe(false);
+  });
+
+  it('phòng chưa có quản lý mà cũng chưa ai quản trị thì người tạo vẫn nhận', () => {
+    const kq = dinhTuyen(
+      hc({ actor_id: 7, payload: { nguoi_tao_id: 41 } }),
+      suKien({ loai: 'hanh_chinh.sua_sau_duyet', muc: 'cao', vai: ['nguoi_tao', 'nhom_duyet'] }),
+      MO_TA_HC,
+      []
+    );
+    expect(kq.map((x) => x.id)).toEqual([41]);
+  });
+});

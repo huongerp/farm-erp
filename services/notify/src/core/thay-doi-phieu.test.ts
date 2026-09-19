@@ -79,3 +79,31 @@ describe('soSanhCotPhieu', () => {
     expect(kq.map((t) => t.cot)).toEqual(['ghi_chu', 'id_nguoi_duyet']);
   });
 });
+
+describe('nhãn cột của phiếu hành chính', () => {
+  const hc = (cu: Record<string, unknown>, moi: Record<string, unknown>): DongOutbox => ({
+    id: 1,
+    module_id: 'hanh-chinh/phieu-hanh-chinh',
+    bang: 'fp_hr_phieu_hanh_chinh',
+    ban_ghi_id: 10,
+    thao_tac: 'UPDATE',
+    trang_thai_cu: 'Đã duyệt',
+    trang_thai_moi: 'Đã duyệt',
+    actor_id: 99,
+    payload: moi,
+    payload_cu: cu,
+  });
+
+  it('ca và ly_do có nhãn tiếng Việt riêng, không lui về tên cột', () => {
+    const kq = soSanhCotPhieu(hc({ ca: 'Sáng', ly_do: 'Việc nhà' }, { ca: 'Cả ngày', ly_do: 'Khám bệnh' }));
+    expect(kq).toEqual([
+      { cot: 'ca', nhan: 'Ca', cu: 'Sáng', moi: 'Cả ngày' },
+      { cot: 'ly_do', nhan: 'Lý do', cu: 'Việc nhà', moi: 'Khám bệnh' },
+    ]);
+  });
+
+  it('loai_phieu_id là khoá ngoại nên bỏ trống giá trị, render tự ghép tên', () => {
+    const kq = soSanhCotPhieu(hc({ loai_phieu_id: 2 }, { loai_phieu_id: 6 }));
+    expect(kq).toEqual([{ cot: 'loai_phieu_id', nhan: 'Loại phiếu', cu: null, moi: null }]);
+  });
+});

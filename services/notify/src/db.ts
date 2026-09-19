@@ -75,6 +75,23 @@ export async function layNguoiDuyet(moduleId: string, chiNhanhId: number | null)
   return kq.rows.map((r) => ({ nhanVienId: Number(r.nhan_vien_id), capBac: Number(r.cap_bac) }));
 }
 
+/**
+ * Nhóm duyệt theo phòng ban của người tạo. Hàm RIÊNG chứ không phải tham số
+ * thứ ba của rpc_tb_nguoi_duyet: Postgres phân biệt hàm theo số tham số, thêm
+ * một tham số vào hàm đó sẽ sinh overload và làm lời gọi hai tham số của 7
+ * module kia thành ambiguous.
+ */
+export async function layNguoiDuyetTheoPhongBan(
+  moduleId: string,
+  nguoiTaoId: number | null
+): Promise<NguoiDuyet[]> {
+  const kq = await pool.query<{ nhan_vien_id: string; cap_bac: number }>(
+    'SELECT nhan_vien_id, cap_bac FROM public.rpc_tb_nguoi_duyet_phong_ban($1, $2)',
+    [moduleId, nguoiTaoId]
+  );
+  return kq.rows.map((r) => ({ nhanVienId: Number(r.nhan_vien_id), capBac: Number(r.cap_bac) }));
+}
+
 export async function layChiNhanhPhieu(bang: string, banGhiId: number): Promise<number | null> {
   const kq = await pool.query<{ kq: string | null }>(
     'SELECT public.rpc_tb_chi_nhanh_phieu($1, $2) AS kq',
@@ -91,6 +108,20 @@ export async function layTenNhanVien(ids: number[]): Promise<Map<number, string>
     [ids]
   );
   return new Map(kq.rows.map((r) => [Number(r.id), r.ho_va_ten]));
+}
+
+/** Tên loại phiếu hành chính, tra trước khi render để câu chữ nói rõ loại. */
+export async function layTenLoaiPhieu(ids: number[]): Promise<Map<number, string>> {
+  if (ids.length === 0) return new Map();
+  const kq = await pool.query<{ id: string; loai_phieu: string | null }>(
+    'SELECT id, loai_phieu FROM public.rpc_tb_ten_loai_phieu_hanh_chinh($1::bigint[])',
+    [ids]
+  );
+  return new Map(
+    kq.rows
+      .filter((r): r is { id: string; loai_phieu: string } => r.loai_phieu !== null)
+      .map((r) => [Number(r.id), r.loai_phieu])
+  );
 }
 
 // --- Ghi thông báo -----------------------------------------------------------

@@ -239,6 +239,26 @@ export async function getAdminFormsByUserAndMonth(
   return list;
 }
 
+/**
+ * Một phiếu theo id — phục vụ deep-link `?phieu=<id>` từ thông báo. Phiếu cần
+ * mở thường KHÔNG nằm trong trang đang xem vì danh sách phân trang ở server.
+ * Trả null khi phiếu đã bị xoá, để tầng gọi phân biệt "không thấy" với lỗi mạng.
+ */
+export async function getAdminFormById(id: string): Promise<AdminFormRequest | null> {
+  const idNum = parseInt(id, 10);
+  if (Number.isNaN(idNum)) return null;
+  const { data, error } = await db
+    .from(TABLE)
+    .select(ADMIN_FORM_ROW_COLUMNS)
+    .eq('id', idNum)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) return null;
+  const row = data as Row;
+  const { mapLoaiPhieu, mapTenNhanVien } = await fetchMaps([row]);
+  return rowToRequest(row, mapLoaiPhieu, mapTenNhanVien);
+}
+
 /** Resolve loai_phieu (app) -> id nhóm phiếu (bigint) */
 async function resolveLoaiPhieuId(loaiPhieuApp: AdminFormType): Promise<number | null> {
   const loaiVi = LOAI_PHIEU_APP_TO_VI[loaiPhieuApp];

@@ -39,6 +39,7 @@ Chạy **đúng thứ tự** này trên Postgres của VPS:
 | 5 | `docs/supabase-rpc_thong_bao_dinh_tuyen.sql` | RPC tra người duyệt / chi nhánh / tên nhân viên |
 | 6 | `docs/supabase-trigger_thong_bao_7_module.sql` | Gắn trigger cho 7 bảng nghiệp vụ |
 | 7 | `docs/supabase-trigger_thong_bao_thu_chi_quy.sql` | Trigger sổ quỹ + nhánh chi nhánh cho `rpc_tb_chi_nhanh_phieu` |
+| 8 | `docs/supabase-thong_bao_phieu_hanh_chinh.sql` | RPC người duyệt theo phòng ban + RPC tên loại phiếu hành chính |
 
 File **#1 tự tạo role `notify_service` và in mật khẩu ra NOTICE** — chép mật khẩu đó vào
 `NOTIFY_DATABASE_URL` rồi xoá khỏi log. Chạy lại file này không đổi mật khẩu role đã có.
@@ -107,15 +108,36 @@ mặt hàng nào đổi thì phải gắn trigger cho bảng chi tiết (kể c�
 
 Bảng chỉ có **một cấp duyệt**. Hằng `ADMIN_FORM_STATUSES` phía app còn giá trị `manager_approved` nhưng đó là
 di sản: `admin-form-service.ts` chỉ ghi `Chờ duyệt / Đã duyệt / Từ chối / Đã hủy`, và bảng không có cột
-`quan_ly_id` hay `hcns_id`. Người duyệt xác định bằng quyền `admin`/`all` trên module (theo
-`usePhieuHanhChinhViewScope`), không phải bằng `approve`.
+`quan_ly_id` hay `hcns_id`.
+
+Đây là module **duy nhất không dùng `rpc_tb_nguoi_duyet`**. Hàm chung chỉ chọn cấp bậc 1 và chức vụ có
+`approve`/`admin`/`all`, mà quản lý phòng thường chỉ được tick `{view, create, update}` nên bị bỏ sót —
+đã từng có 16 phiếu chờ duyệt của Phòng Sản xuất mà cả ba quản lý phòng đó không nhận được gì. Nhóm nhận
+vì vậy tra bằng `rpc_tb_nguoi_duyet_phong_ban(module_id, nguoi_tao_id)`, gồm ba nhóm hợp lại:
+
+- **quản lý phòng ban của người tạo** — cùng `phong_ban_id`, cấp bậc 2 (Trưởng bộ phận) hoặc 3 (Quản lý);
+- **quản trị module** — chức vụ có `admin`/`all` (khớp cổng `usePhieuHanhChinhViewScope`, cố ý không gộp `approve`);
+- **cấp bậc 1**.
+
+Worker chọn hàm nào là theo cờ `nhomDuyetTheoPhongBanNguoiTao` trong `MO_TA_BANG`. Phòng chưa có ai cấp
+bậc 2/3 thì nhánh đầu rỗng, phiếu vẫn tới quản trị và cấp bậc 1 — không bao giờ rơi về số không.
+
+Tiêu đề ghép từ **loại phiếu + ngày + ca** (`Xin nghỉ phép 19/09 (Cả ngày) chờ duyệt`) vì bảng không có số
+phiếu; tên loại tra trước bằng `rpc_tb_ten_loai_phieu_hanh_chinh` rồi truyền vào `render.ts`, cùng mẫu với
+tên người thao tác. Link thông báo trỏ thẳng vào phiếu qua `?phieu=<id>` (`thamSoPhieu` trong `MO_TA_BANG`).
 
 | Sự kiện | Khi | Ai nhận | Mức |
 |---|---|---|---|
-| `hanh_chinh.cho_duyet` | INSERT `Chờ duyệt` | Người có quyền duyệt + cấp bậc 1 | **cao** |
+| `hanh_chinh.cho_duyet` | INSERT `Chờ duyệt` | Quản lý phòng của người tạo + quản trị + cấp bậc 1 | **cao** |
 | `hanh_chinh.da_duyet` | → `Đã duyệt` | Người tạo | **cao** |
 | `hanh_chinh.tu_choi` | → `Từ chối` | Người tạo | **cao** |
-| `hanh_chinh.da_huy` | → `Đã hủy` | Người duyệt | thường |
+| `hanh_chinh.da_huy` | → `Đã hủy` | Nhóm duyệt | thường |
+| `hanh_chinh.sua_sau_duyet` | Sửa `ngay`/`ca`/`loai_phieu_id`/`ly_do` khi đang `Đã duyệt` | Người tạo + nhóm duyệt | **cao** |
+
+Cột nội dung là một danh sách **trắng**, không phải danh sách đen như 4 module phiếu kho: luồng duyệt kèm
+ghi chú ở `admin-form-detail.tsx` bắn hai UPDATE — đổi trạng thái, rồi ghi `ghi_chu` riêng mà không đổi
+trạng thái. Tính `ghi_chu` là nội dung thì mỗi lần duyệt kèm ghi chú lại đẻ thêm một thông báo "phiếu đã
+duyệt bị sửa" gửi cho cả nhóm duyệt.
 
 ### Đơn đặt hàng — `mua-hang/don-dat-hang`
 
@@ -173,7 +195,8 @@ thẻ `apple-touch-icon` trong `index.html` bắt buộc trỏ tới file PNG.
 ## Đấu thêm module
 
 1. Thêm một mục vào `MO_TA_BANG` (`services/notify/src/core/mo-ta-bang.ts`) — khai `moduleId` (mã **phân quyền**,
-   không phải URL), đường dẫn, tên chứng từ, cột số phiếu và cột người tạo.
+   không phải URL), đường dẫn, tên chứng từ, cột số phiếu và cột người tạo. Module không có trang preview
+   mà mở bản ghi bằng drawer thì khai `thamSoPhieu` (tên query param) thay cho `coTrangPreview`.
 2. Thêm nhánh nhận diện sự kiện trong `services/notify/src/core/su-kien.ts` (hoặc dùng lại nhánh phiếu duyệt
    nếu module dùng chung bộ trạng thái).
 3. Thêm câu chữ trong `services/notify/src/core/render.ts` và key i18n `notification.event.*`.
@@ -181,6 +204,10 @@ thẻ `apple-touch-icon` trong `index.html` bắt buộc trỏ tới file PNG.
    ma trận cài đặt và chip lọc.
 5. Thêm một `CREATE TRIGGER` vào file SQL trigger.
 6. Nếu module gắn với kho, thêm nhánh vào `rpc_tb_chi_nhanh_phieu` để giới hạn người nhận theo chi nhánh.
+7. Nếu người duyệt xác định theo **phòng ban** chứ không theo chi nhánh, bật cờ `nhomDuyetTheoPhongBanNguoiTao`
+   và dùng `rpc_tb_nguoi_duyet_phong_ban`. **Tuyệt đối không** thêm tham số vào `rpc_tb_nguoi_duyet`: Postgres
+   phân biệt hàm theo số tham số, nên `CREATE OR REPLACE` với arity khác sẽ sinh hàm thứ hai chứ không thay
+   hàm cũ, và lời gọi hai tham số của các module kia lập tức thành ambiguous ("function is not unique").
 
 ## Soi lỗi
 

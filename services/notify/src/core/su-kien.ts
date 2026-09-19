@@ -199,6 +199,17 @@ function phanTichCongViec(dong: DongOutbox): SuKienDaPhanTich[] {
 // --- Phiếu hành chính --------------------------------------------------------
 
 /**
+ * Cột được coi là "nội dung phiếu" của phiếu hành chính — danh sách TRẮNG, cố ý.
+ *
+ * Dùng danh sách đen như 4 module phiếu kho sẽ báo nhầm ngay ngày đầu: luồng
+ * duyệt kèm ghi chú ở admin-form-detail.tsx bắn HAI update — đổi trạng thái,
+ * rồi ghi `ghi_chu` riêng mà không đổi trạng thái. Update thứ hai trông y hệt
+ * "phiếu đã duyệt bị sửa". `ghi_chu` ở bảng này còn là nơi ghi lý do từ chối,
+ * tức là ô làm việc của người duyệt chứ không phải nội dung người tạo khai.
+ */
+const COT_NOI_DUNG_PHIEU_HC = new Set(['ngay', 'ca', 'loai_phieu_id', 'ly_do']);
+
+/**
  * Một cấp duyệt. Hằng ADMIN_FORM_STATUSES phía app còn giá trị 'manager_approved'
  * nhưng đó là di sản: admin-form-service.ts chỉ ghi Chờ duyệt / Đã duyệt /
  * Từ chối / Đã hủy, và bảng không có cột quan_ly_id hay hcns_id.
@@ -212,7 +223,24 @@ function phanTichPhieuHanhChinh(dong: DongOutbox): SuKienDaPhanTich[] {
       : [];
   }
 
-  if (!daDoiTrangThai(dong)) return [];
+  // Không đổi trạng thái mà phiếu đang ở "Đã duyệt" = nội dung phiếu đã duyệt
+  // bị sửa. Người duyệt cần biết vì họ đã ký vào bản cũ; người tạo cần biết vì
+  // phiếu của mình có thể bị người khác sửa.
+  if (!daDoiTrangThai(dong)) {
+    if (dong.thao_tac !== 'UPDATE' || tt !== TT_HC_DA_DUYET) return [];
+    const thayDoi = soSanhCotPhieu(dong).filter((td) => COT_NOI_DUNG_PHIEU_HC.has(td.cot));
+    if (thayDoi.length === 0) return [];
+    return [
+      {
+        loai: 'hanh_chinh.sua_sau_duyet',
+        muc: 'cao',
+        // Bảng không có cột người duyệt, nên người đã ký chỉ tìm lại được qua
+        // nhóm duyệt (quản lý phòng của người tạo + quản trị + cấp bậc 1).
+        vai: ['nguoi_tao', 'nhom_duyet'],
+        duLieu: { thayDoi },
+      },
+    ];
+  }
 
   switch (tt) {
     case TT_HC_CHO_DUYET:

@@ -22,7 +22,13 @@ import { CONFIRM_DELETE, CONFIRM_YES } from '../../../../lib/button-labels';
 import { AdminFormRequest } from '../core/types';
 import { useAuthStore } from '../../../../store/useStore';
 
-const AdminFormMyTab: React.FC = () => {
+/** Phiếu mở từ deep-link `?phieu=<id>` của thông báo — index.tsx đã nạp và kiểm quyền. */
+interface Props {
+  deepLinkItem?: AdminFormRequest | null;
+  onDeepLinkConsumed?: () => void;
+}
+
+const AdminFormMyTab: React.FC<Props> = ({ deepLinkItem, onDeepLinkConsumed }) => {
   const { t } = useTranslation();
   const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
@@ -79,6 +85,14 @@ const AdminFormMyTab: React.FC = () => {
   useEffect(() => {
     return () => resetState();
   }, [resetState]);
+
+  // Phiếu đến từ thông báo: nhận sẵn cả đối tượng nên mở được kể cả khi nó
+  // không nằm trong trang đang xem (danh sách phân trang ở server).
+  useEffect(() => {
+    if (!deepLinkItem) return;
+    setViewingItem(deepLinkItem);
+    onDeepLinkConsumed?.();
+  }, [deepLinkItem, onDeepLinkConsumed]);
 
 
   const handleEdit = (item: AdminFormRequest) => {
