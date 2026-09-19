@@ -149,11 +149,15 @@ const TonSanPhamPTTab: React.FC = () => {
     [danhMucCap2, displayRows]
   );
 
-  const activeFilterCount = (filters.warehouseIds?.length ?? 0) + (filters.categoryIds?.length ?? 0);
+  const activeFilterCount =
+    (searchInput.trim() ? 1 : 0) +
+    (filters.warehouseIds?.length ?? 0) +
+    (filters.categoryIds?.length ?? 0);
   const handleClearAllFilters = useCallback(() => {
+    commitSearchTerm('');
     setFilter('warehouseIds', []);
     setFilter('categoryIds', []);
-  }, [setFilter]);
+  }, [setFilter, commitSearchTerm]);
 
   const filterGroups = useMemo(
     () => [

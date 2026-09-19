@@ -293,17 +293,19 @@ const TonKhoTonThoiDiemTab: React.FC = () => {
   };
 
   const activeFilterCount =
+    (searchInput.trim() ? 1 : 0) +
     (filters.warehouseIds?.length ?? 0) +
     (filters.categoryIds?.length ?? 0) +
     (getPresetFromDates(dateFrom, dateTo) !== 'thisMonth' ? 1 : 0);
 
   const handleClearAllFilters = useCallback(() => {
+    commitSearchTerm('');
     setFilter('warehouseIds', []);
     setFilter('categoryIds', []);
     const range = getDateRangeFromPreset('thisMonth');
     setDateFrom(range.dateFrom);
     setDateTo(range.dateTo);
-  }, [setFilter]);
+  }, [setFilter, commitSearchTerm]);
 
   const renderFilters = (
     <div className="flex flex-wrap items-center gap-2">

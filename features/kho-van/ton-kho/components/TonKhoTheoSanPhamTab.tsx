@@ -428,11 +428,15 @@ const TonKhoTheoSanPhamTab: React.FC = () => {
         count: rows.filter((r) => (r.ten_danh_muc ?? '') === label).length,
       }));
   }, [rows]);
-  const activeFilterCount = (filters.belowMinStock?.length ?? 0) + (filters.categoryIds?.length ?? 0);
+  const activeFilterCount =
+    (searchInput.trim() ? 1 : 0) +
+    (filters.belowMinStock?.length ?? 0) +
+    (filters.categoryIds?.length ?? 0);
   const handleClearAllFilters = useCallback(() => {
+    commitSearchTerm('');
     setFilter('belowMinStock', []);
     setFilter('categoryIds', []);
-  }, [setFilter]);
+  }, [setFilter, commitSearchTerm]);
   const belowMinOptions = useMemo(
     () => [{ label: t('tonKho.byProduct.filterBelowMin'), value: 'Yes', count: belowMinCount }],
     [t, belowMinCount]
