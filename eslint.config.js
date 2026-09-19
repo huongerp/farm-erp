@@ -7,7 +7,12 @@ import prettierConfig from 'eslint-config-prettier';
 import globals from 'globals';
 
 export default [
-  { ignores: ['dist/**', 'node_modules/**', '*.min.js', '.npm-cache/**'] },
+  // `dist/**` chỉ khớp thư mục build ở gốc; các service con cũng có dist riêng
+  // (services/auth/dist) — git đã ignore, nhưng eslint thì không, nên 11 lỗi
+  // `'process' is not defined` của code đã biên dịch cứ nổi lên mỗi lần lint.
+  {
+    ignores: ['**/dist/**', 'node_modules/**', '**/node_modules/**', '*.min.js', '.npm-cache/**'],
+  },
   {
     files: ['scripts/**/*.mjs'],
     languageOptions: {

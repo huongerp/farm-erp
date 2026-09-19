@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 /**
  * Bọc handler submit để một thao tác chỉ chạy đúng một lần.
@@ -24,9 +24,15 @@ export function useSubmitOnce<TArgs extends unknown[]>(
   const dangGuiRef = useRef(false);
 
   // Mutation chạy xong (dù thành công hay lỗi) thì mở khoá để người dùng sửa và gửi lại.
-  if (!dangChay && dangGuiRef.current) {
-    dangGuiRef.current = false;
-  }
+  // Mở khoá trong effect chứ không trong thân render: đụng vào ref lúc đang render là
+  // việc React cấm (render phải thuần), StrictMode render hai lần sẽ cho kết quả khác
+  // nhau. Effect chạy ngay sau khi commit, sớm hơn nhiều so với lần bấm kế tiếp của
+  // người dùng, nên khoá vẫn mở đúng lúc.
+  useEffect(() => {
+    if (!dangChay) {
+      dangGuiRef.current = false;
+    }
+  }, [dangChay]);
 
   return useCallback(
     (...args: TArgs) => {
