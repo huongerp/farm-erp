@@ -46,6 +46,7 @@ const JobLevelPage = lazy(() => import('./features/he-thong/cap-bac/index'));
 
 const PayslipPreviewPage = lazy(() => import('./features/hanh-chinh/bang-luong/PayslipPreviewPage'));
 const EmployeeProfilePreviewPage = lazy(() => import('./features/he-thong/nhan-vien/EmployeeProfilePreviewPage'));
+const CongViecPreviewPage = lazy(() => import('./features/hanh-chinh/cong-viec/CongViecPreviewPage'));
 const HoSoTaiSanPreviewPage = lazyWithFeatureI18n(
   'danh-muc-tai-san',
   () => import('./features/hanh-chinh/danh-muc-tai-san/HoSoTaiSanPreviewPage')
@@ -214,6 +215,18 @@ const App = () => {
         <Route path="/phieu-luong/:id" element={<ProtectedRoute><Suspense fallback={<PageFallback />}><PayslipPreviewPage /></Suspense></ProtectedRoute>} />
         <Route path="/ho-so-nhan-vien/:id" element={<ProtectedRoute><Suspense fallback={<PageFallback />}><EmployeeProfilePreviewPage /></Suspense></ProtectedRoute>} />
         <Route path="/ho-so-tai-san/:id" element={<ProtectedRoute><Suspense fallback={<PageFallback />}><HoSoTaiSanPreviewPage /></Suspense></ProtectedRoute>} />
+        <Route
+          path="/hanh-chinh/cong-viec/preview/:id"
+          element={
+            <ProtectedRoute>
+              <ModulePermissionGuard moduleId="hanh-chinh/cong-viec">
+                <Suspense fallback={<PageFallback />}>
+                  <CongViecPreviewPage />
+                </Suspense>
+              </ModulePermissionGuard>
+            </ProtectedRoute>
+          }
+        />
         <Route path="/hanh-chinh/cap-phat-thu-hoi/preview/:id" element={<ProtectedRoute><Suspense fallback={<PageFallback />}><PhieuCPTHPreviewPage /></Suspense></ProtectedRoute>} />
         <Route path="/phieu-kiem-ke/:id" element={<ProtectedRoute><Suspense fallback={<PageFallback />}><PhieuKiemKePreviewPage /></Suspense></ProtectedRoute>} />
         <Route path="/mua-hang/kiem-ke-kho/preview/:id" element={<ProtectedRoute><Suspense fallback={<PageFallback />}><PhieuKiemKeKhoPreviewPage /></Suspense></ProtectedRoute>} />

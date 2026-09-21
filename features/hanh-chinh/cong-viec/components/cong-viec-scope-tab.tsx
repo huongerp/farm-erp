@@ -75,8 +75,8 @@ const CongViecScopeTab: React.FC<Props> = ({ scope }) => {
 
   const { data: list = [], isLoading } = useCongViecList();
   const deleteMutation = useDeleteCongViecList();
-  const importMutation = useImportCongViec(() => setShowImport(false));
   const [showImport, setShowImport] = useState(false);
+  const importMutation = useImportCongViec(() => setShowImport(false));
 
   const IMPORT_COLUMNS = useMemo(
     () => [
