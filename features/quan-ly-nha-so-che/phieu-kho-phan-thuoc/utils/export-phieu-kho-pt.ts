@@ -53,7 +53,7 @@ function getNoiDiNoiDen(p: PhieuKhoPT): { noiDi: string; noiDen: string } {
 
 function titleOf(loai: LoaiPhieuKhoPT): string {
   const w = loai === 'nhập' ? 'NHẬP' : loai === 'xuất' ? 'XUẤT' : 'LUÂN CHUYỂN';
-  return `PHIẾU ${w} KHO PHÂN THUỐC`;
+  return `PHIẾU ${w} KHO NSC`;
 }
 
 function fileName(p: PhieuKhoPT): string {

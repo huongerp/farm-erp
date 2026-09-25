@@ -12,7 +12,7 @@ import { sumSoLuongByPhamCap } from '../utils/sum-so-luong-by-pham-cap';
 
 function getTitleUppercase(loai: LoaiPhieuKhoPT): string {
   const loaiUpper = loai === 'nhập' ? 'NHẬP' : loai === 'xuất' ? 'XUẤT' : 'LUÂN CHUYỂN';
-  return `PHIẾU ${loaiUpper} KHO PHÂN THUỐC`;
+  return `PHIẾU ${loaiUpper} KHO NSC`;
 }
 
 function getTrangThaiLabel(trangThai: string, t: (k: string) => string): string {
