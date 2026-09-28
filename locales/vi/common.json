@@ -1,7 +1,6 @@
 {
   "nav.home": "Trang chủ",
   "nav.back": "Quay lại",
-  "nav.licenseInfo": "Thông tin bản quyền",
   "nav.system": "Hệ thống",
   "nav.skipToMain": "Chuyển đến nội dung chính",
   "nav.collapseSidebar": "Thu gọn sidebar",
@@ -49,7 +48,6 @@
   "notification.collapse": "Thu gọn",
   "breadcrumb.label": "Đường dẫn",
   "breadcrumb.home": "Trang chủ",
-  "breadcrumb.licenseInfo": "Thông tin bản quyền",
   "breadcrumb.goHome": "Về trang chủ",
   "breadcrumb.systemAdmin": "Quản trị Hệ thống",
   "breadcrumb.deviceManagement": "Quản lý Thiết bị",

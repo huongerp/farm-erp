@@ -44,7 +44,6 @@ interface RouteConfig {
   return {
     // --- GỐC ---
     '/': { label: t('breadcrumb.home') },
-    '/thong-tin-ban-quyen': { label: t('breadcrumb.licenseInfo'), parentPath: '/' },
 
     // --- DASHBOARDS / SUBMENU (parent = Trang chủ) ---
     '/he-thong': { label: t('breadcrumb.systemAdmin'), parentPath: '/' },

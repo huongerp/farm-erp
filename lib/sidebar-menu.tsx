@@ -1,7 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import {
   Home as HomeIcon,
-  Copyright,
   FileText,
   ShoppingCart,
   Sprout,
@@ -67,13 +66,6 @@ export const SIDEBAR_MENU: MenuItem[] = [
     descriptionKey: 'page.home.systemModuleDesc',
     icon: Layers,
     gradient: 'bg-gradient-to-br from-slate-600 to-slate-800 dark:from-slate-500 dark:to-slate-700',
-  },
-  {
-    path: '/thong-tin-ban-quyen',
-    nameKey: 'nav.licenseInfo',
-    descriptionKey: 'page.home.licenseInfoDesc',
-    icon: Copyright,
-    gradient: 'bg-gradient-to-br from-blue-600 to-blue-800',
   },
 ];
 

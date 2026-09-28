@@ -28,7 +28,6 @@ import { lazyWithFeatureI18n } from './lib/lazy-with-feature-i18n';
 import { loadGuideI18n } from './lib/feature-i18n';
 
 const Home = lazy(() => import('./pages/Home'));
-const LicenseInfo = lazy(() => import('./pages/LicenseInfo'));
 const NotificationPage = lazy(() => import('./pages/NotificationPage'));
 const SystemDashboard = lazy(() => import('./pages/dashboards/SystemDashboard'));
 const SubmenuPage = lazy(() => import('./pages/SubmenuPage'));
@@ -314,7 +313,6 @@ const App = () => {
                 <Suspense fallback={<PageFallback />}>
                   <Routes>
                     <Route path="/" element={<Home />} />
-                  <Route path="/thong-tin-ban-quyen" element={<LicenseInfo />} />
 
                   <Route path="/hanh-chinh" element={<SubmenuPage />} />
                   <Route path="/hanh-chinh/:moduleId/huong-dan" element={<ModuleGuidePage />} />
