@@ -122,5 +122,13 @@
   "hangHoa.toast.importErrors": "{{count}} dòng bị lỗi — xem chi tiết trong bảng",
   "hangHoa.toast.importSuccess": "Đã import {{count}} hàng hóa thành công",
   "hangHoa.import.priceInvalid": "Đơn giá \"{{value}}\" không phải số hợp lệ",
-  "hangHoa.import.refAmbiguous": "Có nhiều hàng hóa cùng \"{{value}}\" — không xác định được dòng cần ghi đè"
+  "hangHoa.import.refAmbiguous": "Có nhiều hàng hóa cùng \"{{value}}\" — không xác định được dòng cần ghi đè",
+  "hangHoa.import.hint_ma_hang_hoa": "Chữ in hoa, số, \"_\" hoặc \"-\", tối đa 50 ký tự.",
+  "hangHoa.import.hint_ten_hang_hoa": "Tối đa 255 ký tự.",
+  "hangHoa.import.hint_danh_muc": "Mã hoặc tên danh mục cấp 2 — xem sheet \"Danh mục\".",
+  "hangHoa.import.hint_dvt": "Đơn vị tính, VD Cái, Hộp, Kg — xem sheet đơn vị tính.",
+  "hangHoa.import.hint_pham_cap": "Tuỳ chọn.",
+  "hangHoa.import.hint_don_gia": "Tuỳ chọn. Số, VD 50000 hoặc 50.000.",
+  "hangHoa.import.hint_mo_ta": "Tuỳ chọn.",
+  "hangHoa.import.hint_trang_thai": "Đang hoạt động / Ngừng hoạt động. Để trống = Đang hoạt động."
 }

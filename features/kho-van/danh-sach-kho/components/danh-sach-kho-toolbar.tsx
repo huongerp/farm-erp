@@ -15,7 +15,8 @@ interface Props {
   selectedCount: number;
   onAdd: () => void;
   onExport: () => void;
-  onImport: () => void;
+  /** Không truyền → ẩn nút Import (thiếu quyền tạo). */
+  onImport?: () => void;
   onDeleteMany: () => void;
   onStatusChangeMany: (status: 0 | 1) => void;
   canCreate?: boolean;
@@ -132,13 +133,9 @@ const DanhSachKhoToolbar: React.FC<Props> = ({
 
   const mobileActions = useMemo(
     () => [
-      {
-        key: 'import',
-        label: t('common.import'),
-        icon: Upload,
-        onClick: onImport,
-        description: '',
-      },
+      ...(onImport
+        ? [{ key: 'import', label: t('common.import'), icon: Upload, onClick: onImport, description: '' }]
+        : []),
       {
         key: 'export',
         label: t('common.export'),
@@ -153,16 +150,18 @@ const DanhSachKhoToolbar: React.FC<Props> = ({
   const renderActions = (
     <>
       <div className="hidden sm:flex items-center gap-2">
-        <Tooltip content={t('common.import')} placement="bottom">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onImport}
-            className="inline-flex min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-9 w-9 p-0 items-center justify-center border-border text-muted-foreground hover:bg-muted/50"
-          >
-            <Upload className="w-4 h-4" />
-          </Button>
-        </Tooltip>
+        {onImport && (
+          <Tooltip content={t('common.import')} placement="bottom">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onImport}
+              className="inline-flex min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-9 w-9 p-0 items-center justify-center border-border text-muted-foreground hover:bg-muted/50"
+            >
+              <Upload className="w-4 h-4" />
+            </Button>
+          </Tooltip>
+        )}
         <Tooltip content={t('common.export')} placement="bottom">
           <Button
             variant="outline"

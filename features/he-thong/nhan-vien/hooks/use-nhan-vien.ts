@@ -7,6 +7,7 @@ import {
   enrichEmployeesWithRefData,
   getEmployeeById,
   createEmployee,
+  importEmployees,
   updateEmployee,
   deleteEmployees,
   updateEmployeeStatus,
@@ -111,6 +112,27 @@ export const useEmployee = (id: string | null) => {
     queryKey: ['employee', id],
     queryFn: () => getEmployeeById(id!),
     enabled: !!id,
+  });
+};
+
+/** Import Excel: lỗi từng dòng trả về trong `errors` để ImportDialog hiển thị — không toast lỗi ở đây. */
+export const useImportEmployees = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ rows, refs }: { rows: Record<string, unknown>[]; refs: Parameters<typeof importEmployees>[1] }) =>
+      importEmployees(rows, refs),
+    onSuccess: (result) => {
+      if (result.created === 0) return;
+      queryClient.invalidateQueries({ queryKey: EMPLOYEES_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: EMPLOYEES_REF_QUERY_KEY });
+      invalidateRefCache('employees');
+      toast.success(i18n.t('employee.import.successCount', { count: result.created }));
+      if (result.passwordErrors.length > 0) {
+        toast.warning(
+          i18n.t('employee.import.passwordWarn', { count: result.passwordErrors.length, error: result.passwordErrors[0] })
+        );
+      }
+    },
   });
 };
 

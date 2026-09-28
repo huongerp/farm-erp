@@ -54,6 +54,48 @@ export function parseImportNumber(raw: unknown): ParsedNumber {
   return { ok: true, value: n };
 }
 
+/** Ô ngày Excel: chuỗi dd/mm/yyyy, yyyy-mm-dd, hoặc serial number của Excel. */
+export function parseImportDate(raw: unknown): string | null {
+  if (raw === null || raw === undefined) return null;
+
+  if (raw instanceof Date && !Number.isNaN(raw.getTime())) {
+    return toIso(raw.getFullYear(), raw.getMonth() + 1, raw.getDate());
+  }
+
+  if (typeof raw === 'number' && Number.isFinite(raw)) {
+    // Excel serial: ngày 1 = 1900-01-01, trừ lỗi năm nhuận 1900 của Excel.
+    const ms = Math.round((raw - 25569) * 86400 * 1000);
+    const d = new Date(ms);
+    if (Number.isNaN(d.getTime())) return null;
+    return toIso(d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate());
+  }
+
+  const s = String(raw).trim();
+  if (s === '') return null;
+
+  const iso = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (iso) return toIso(Number(iso[1]), Number(iso[2]), Number(iso[3]));
+
+  const vn = s.match(/^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2,4})$/);
+  if (vn) {
+    const day = Number(vn[1]);
+    const month = Number(vn[2]);
+    let year = Number(vn[3]);
+    if (year < 100) year += 2000;
+    return toIso(year, month, day);
+  }
+
+  return null;
+}
+
+/** Từ chối ngày không tồn tại (31/02, 30/02…) — để lọt xuống DB thì cả lô bị từ chối với lỗi khó hiểu. */
+function toIso(year: number, month: number, day: number): string | null {
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  const d = new Date(Date.UTC(year, month - 1, day));
+  if (d.getUTCFullYear() !== year || d.getUTCMonth() !== month - 1 || d.getUTCDate() !== day) return null;
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
 /** Parse số nguyên dương (thứ tự danh mục). */
 export function parseImportInt(raw: unknown): ParsedNumber {
   const parsed = parseImportNumber(raw);
@@ -117,4 +159,60 @@ export function buildAutoMapping(columns: ImportColumnLike[], headers: string[])
   });
 
   return result;
+}
+
+/**
+ * Tra danh mục theo mã trước rồi theo tên (bỏ dấu cách thừa, không phân biệt hoa thường).
+ * Trả `undefined` = không tìm thấy, `null` = nhiều bản ghi cùng tên (không đoán — bắt ghi mã).
+ */
+export function buildRefLookup<T>(
+  list: T[],
+  ma: (x: T) => string | null | undefined,
+  ten: (x: T) => string | null | undefined
+): (input: unknown) => T | null | undefined {
+  const byMa = new Map<string, T>();
+  const byTen = new Map<string, T | null>();
+  list.forEach((x) => {
+    const m = normalizeCode(ma(x));
+    if (m && !byMa.has(m)) byMa.set(m, x);
+    const n = matchKey(ten(x));
+    if (n) byTen.set(n, byTen.has(n) ? null : x);
+  });
+  return (input) => {
+    const m = normalizeCode(input);
+    if (!m) return undefined;
+    return byMa.get(m) ?? byTen.get(matchKey(input));
+  };
+}
+
+/**
+ * Khớp ô Excel với một tập giá trị cố định: nhận cả giá trị lưu DB lẫn nhãn hiển thị,
+ * bỏ dấu + hoa thường ("dang thuc hien" = "Đang thực hiện" = "dang_thuc_hien").
+ */
+export function pickImportOption<T extends string>(
+  raw: unknown,
+  options: { value: T; labels?: string[] }[]
+): T | null {
+  const n = normalizeHeader(String(raw ?? '')).replace(/_/g, ' ');
+  if (!n) return null;
+  const hit = options.find((o) =>
+    [o.value, ...(o.labels ?? [])].some((v) => normalizeHeader(v).replace(/_/g, ' ') === n)
+  );
+  return hit?.value ?? null;
+}
+
+/** Lỗi zod → thông điệp, bỏ các trường đã báo lỗi riêng (tránh báo hai lần cùng một ô). */
+export function schemaIssueMessages(
+  issues: { path: PropertyKey[]; message: string }[],
+  alreadyReported: Set<string>
+): string[] {
+  const out: string[] = [];
+  const seen = new Set(alreadyReported);
+  issues.forEach((i) => {
+    const field = String(i.path[0] ?? '');
+    if (seen.has(field)) return;
+    seen.add(field);
+    out.push(i.message);
+  });
+  return out;
 }

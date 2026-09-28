@@ -66,6 +66,7 @@ const CuaToiTab: React.FC = () => {
     setShowExport,
     IMPORT_COLUMNS,
     importSampleRows,
+    importGuideNotes,
     importReferenceSheets,
     exportColumns,
     exportData,
@@ -209,6 +210,7 @@ const CuaToiTab: React.FC = () => {
         onImport={handleImportData}
         templateFileName={templateFileName}
         sampleRows={importSampleRows}
+        guideNotes={importGuideNotes}
         referenceSheets={importReferenceSheets}
       />
       <ExportDialog

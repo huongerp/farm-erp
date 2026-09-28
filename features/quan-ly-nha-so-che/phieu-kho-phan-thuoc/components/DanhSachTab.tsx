@@ -33,6 +33,8 @@ import PhieuKhoPTBulkApproveDialog from './PhieuKhoPTBulkApproveDialog';
 import DanhSachKhoForm from '../../../kho-van/danh-sach-kho/components/danh-sach-kho-form';
 import HangHoaForm from '../../hang-hoa-phan-thuoc/components/HangHoaForm';
 import ExportDialog from '../../../../components/shared/LazyExportDialog';
+import LazyImportDialog from '../../../../components/shared/LazyImportDialog';
+import { usePhieuKhoPTImport } from '../hooks/use-phieu-kho-pt-import';
 import { useExportData } from '../../../../lib/useExportData';
 import { mapPhieuKhoPTListRow, getExportColumnsPhieuKhoPTList, exportFileNamePhieuKhoPTDanhSach } from '../utils/export-phieu-kho-pt-danh-sach';
 import type { FarmHangHoa } from '../../hang-hoa-phan-thuoc/core/types';
@@ -69,6 +71,7 @@ const DanhSachTab: React.FC = () => {
   const addHangHoaResolveRef = useRef<(h: FarmHangHoa | null) => void>(null);
 
   const { data: khoList = [] } = useKhoList();
+  const importer = usePhieuKhoPTImport(khoList);
   const { data: empRef = [] } = useEmployeesRefQuery();
   const { data: viewingPhieuFull } = usePhieuKhoPTById(viewingItem?.id);
   const { data: editingPhieuFull } = usePhieuKhoPTById(editingItem?.id);
@@ -294,6 +297,7 @@ const DanhSachTab: React.FC = () => {
         }}
         onDeleteMany={handleDeleteMany}
         onExport={handleExport}
+        onImport={canCreate ? importer.openImport : undefined}
         bulkActions={bulkActions}
         canCreate={canCreate}
         canDelete={canDelete}
@@ -414,6 +418,18 @@ const DanhSachTab: React.FC = () => {
           onConfirm={submitApproveMany}
         />
       )}
+
+      <LazyImportDialog
+        open={importer.showImport}
+        onClose={importer.closeImport}
+        columns={importer.importColumns}
+        onImport={importer.handleImport}
+        importErrors={importer.importErrors}
+        sampleRows={importer.sampleRows}
+        guideNotes={importer.guideNotes}
+        referenceSheets={importer.referenceSheets}
+        templateFileName={importer.templateFileName}
+      />
 
       <ExportDialog
         open={showExport}

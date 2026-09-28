@@ -9,7 +9,11 @@ import { buildAutoMapping, normalizeHeader } from '../../lib/import-common';
 import { useEnterTransition } from '../../lib/usePresenceTransition';
 import { DIALOG_SIZE } from '../../lib/dialog-sizes';
 import { IMPORT_ROW_KEY } from '../../lib/import-types';
+import { buildImportTemplate } from '../../lib/import-template';
 import type {
+  ImportColumn,
+  ImportReferenceSheet,
+  ImportSampleRow,
   ImportMode,
   ImportRefColumn,
   ImportErrorRow,
@@ -18,28 +22,21 @@ import type {
 } from '../../lib/import-types';
 
 export { IMPORT_ROW_KEY };
-export type { ImportMode, ImportRefColumn, ImportErrorRow, ImportSummary, ImportOptions };
+export type {
+  ImportColumn,
+  ImportReferenceSheet,
+  ImportSampleRow,
+  ImportMode,
+  ImportRefColumn,
+  ImportErrorRow,
+  ImportSummary,
+  ImportOptions,
+};
 
 type CellValue = string | number | boolean | null | undefined;
 
 /** Trần số dòng mỗi lần import — chặn file khổng lồ làm treo trình duyệt. */
 const DEFAULT_MAX_ROWS = 5000;
-
-export interface ImportColumn {
-  key: string;
-  label: string;
-  required?: boolean;
-}
-
-/** Sheet tham chiếu (tra cứu) đính kèm trong file mẫu. */
-export interface ImportReferenceSheet {
-  name: string;
-  headers: string[];
-  data: (string | number | null)[][];
-}
-
-/** Dòng dữ liệu mẫu hiển thị trong sheet "Nhập liệu". */
-export type ImportSampleRow = (string | number | null)[];
 
 interface ImportDialogProps {
   open: boolean;
@@ -49,8 +46,10 @@ interface ImportDialogProps {
   templateFileName?: string;
   /** Sheet tham chiếu thêm vào file mẫu (danh mục, kho...). */
   referenceSheets?: ImportReferenceSheet[];
-  /** Dòng dữ liệu mẫu (tương ứng columns). */
+  /** Dòng dữ liệu mẫu (tương ứng columns) — ghi ra sheet "Ví dụ mẫu", không ở sheet nhập. */
   sampleRows?: ImportSampleRow[];
+  /** Ghi chú riêng của module, thêm sau ghi chú chung ở sheet "Hướng dẫn". */
+  guideNotes?: string[];
   /** Danh sách lỗi có cấu trúc từ `onImport` — hiển thị bảng lỗi + nút tải báo cáo. */
   importErrors?: ImportErrorRow[];
   /** Truyền để hiện khối chọn chế độ import. Không truyền → luôn chạy `create` như trước. */
@@ -66,7 +65,7 @@ type Step = 'upload' | 'mapping' | 'result';
 
 const ImportDialog: React.FC<ImportDialogProps> = ({
   open, onClose, columns, onImport, templateFileName = 'template',
-  referenceSheets, sampleRows, importErrors,
+  referenceSheets, sampleRows, guideNotes, importErrors,
   modes, defaultMode, refColumns, defaultRefColumn, maxRows = DEFAULT_MAX_ROWS,
 }) => {
   const { t } = useTranslation();
@@ -245,34 +244,33 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
   const downloadTemplate = async () => {
     const XLSX = await import('xlsx');
     const wb = XLSX.utils.book_new();
-    const headerRow = columns.map((c) => c.label);
-    const templateData: CellValue[][] = [headerRow];
-    if (sampleRows && sampleRows.length > 0) {
-      sampleRows.forEach((sr) => templateData.push(sr));
-    }
-    const ws = XLSX.utils.aoa_to_sheet(templateData);
-
-    const colWidths = columns.map((c, i) => {
-      let max = c.label.length;
-      if (sampleRows) sampleRows.forEach((sr) => { max = Math.max(max, String(sr[i] ?? '').length); });
-      return { wch: Math.min(Math.max(max + 2, 12), 40) };
+    const sheets = buildImportTemplate({
+      columns,
+      sampleRows,
+      referenceSheets,
+      labels: {
+        inputSheet: t('shared.import.templateSheetName'),
+        guideSheet: t('shared.import.guideSheetName'),
+        exampleSheet: t('shared.import.exampleSheetName'),
+        guideColumn: t('shared.import.guideColumn'),
+        guideRequired: t('shared.import.guideRequired'),
+        guideRule: t('shared.import.guideRule'),
+        guideExample: t('shared.import.guideExample'),
+        yes: t('shared.import.guideYes'),
+        no: t('shared.import.guideNo'),
+        notes: [
+          ...(guideNotes ?? []),
+          t('shared.import.guideNote1'),
+          t('shared.import.guideNote2'),
+          t('shared.import.guideNote3'),
+        ],
+      },
     });
-    ws['!cols'] = colWidths;
-    XLSX.utils.book_append_sheet(wb, ws, t('shared.import.templateSheetName'));
-
-    if (referenceSheets) {
-      referenceSheets.forEach((ref) => {
-        const refData: CellValue[][] = [ref.headers, ...ref.data];
-        const refWs = XLSX.utils.aoa_to_sheet(refData);
-        refWs['!cols'] = ref.headers.map((h, i) => {
-          let max = h.length;
-          ref.data.forEach((row) => { max = Math.max(max, String(row[i] ?? '').length); });
-          return { wch: Math.min(Math.max(max + 2, 12), 40) };
-        });
-        XLSX.utils.book_append_sheet(wb, refWs, ref.name);
-      });
-    }
-
+    sheets.forEach((sheet) => {
+      const ws = XLSX.utils.aoa_to_sheet(sheet.rows);
+      ws['!cols'] = sheet.widths.map((wch) => ({ wch }));
+      XLSX.utils.book_append_sheet(wb, ws, sheet.name);
+    });
     XLSX.writeFile(wb, `${templateFileName}.xlsx`);
   };
 
@@ -389,11 +387,9 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
                     <Download size={13} /> {t('shared.import.downloadTemplate')}
                   </button>
                 </div>
-                {referenceSheets && referenceSheets.length > 0 && (
-                  <p className="text-2xs text-muted-foreground text-center mt-2">
-                    {t('shared.import.templateHasRefSheets', { count: referenceSheets.length })}
-                  </p>
-                )}
+                <p className="text-2xs text-muted-foreground text-center mt-2">
+                  {t('shared.import.templateHasGuide', { count: referenceSheets?.length ?? 0 })}
+                </p>
               </div>
             )}
 

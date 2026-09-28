@@ -3,6 +3,7 @@ import { getCachedRef, REF_CACHE_KEYS } from '../../../../lib/ref-cache';
 import { getBranches } from '../../../he-thong/chi-nhanh/services/chi-nhanh-service';
 import type { Kho } from '../core/types';
 import type { KhoFormValues } from '../core/schema';
+import { writeEachImportRow } from '../../../../lib/import-bulk';
 import i18n from '../../../../lib/i18n';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 
@@ -208,46 +209,6 @@ export const deleteKhoMany = async (ids: string[]): Promise<void> => {
   if (error) throw new Error(error.message ?? i18n.t('kho.service.notFound'));
 };
 
-export const importKho = async (
-  rows: (Omit<KhoFormValues, 'ma_kho' | 'ten_kho' | 'id_chi_nhanh'> & {
-    ma_kho?: string;
-    ten_kho?: string;
-    id_chi_nhanh?: string | null;
-  })[]
-): Promise<{ created: number; errors: string[] }> => {
-  const errors: string[] = [];
-  let created = 0;
-  for (let i = 0; i < rows.length; i++) {
-    try {
-      const row = rows[i];
-      const idChiNhanh = row.id_chi_nhanh != null && String(row.id_chi_nhanh).trim() !== ''
-        ? String(row.id_chi_nhanh).trim()
-        : null;
-      if (!idChiNhanh) {
-        errors.push(`Dòng ${i + 2}: ${i18n.t('kho.validation.branchRequired')}`);
-        continue;
-      }
-      const data: KhoFormValues = {
-        ma_kho: String(row.ma_kho ?? '').trim().toUpperCase(),
-        ten_kho: String(row.ten_kho ?? '').trim(),
-        dia_chi: row.dia_chi != null ? String(row.dia_chi).trim() : undefined,
-        mo_ta: row.mo_ta != null ? String(row.mo_ta).trim() : undefined,
-        id_chi_nhanh: idChiNhanh,
-        trang_thai:
-          String(row.trang_thai).trim() === 'Ngừng hoạt động'
-            ? TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG
-            : TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG,
-        thu_tu: Math.max(1, Number(row.thu_tu) || 1),
-      };
-      if (!data.ma_kho || !data.ten_kho) {
-        errors.push(`Dòng ${i + 2}: ${i18n.t('kho.validation.codeMin')}`);
-        continue;
-      }
-      await createKho(data);
-      created++;
-    } catch (e: unknown) {
-      errors.push(`Dòng ${i + 2}: ${e instanceof Error ? e.message : 'Lỗi'}`);
-    }
-  }
-  return { created, errors };
-};
+/** Ghi các dòng đã validate ở `planKhoImport`; lỗi DB gắn lại đúng dòng Excel. */
+export const importKho = (items: { row: number; values: Record<string, unknown>; data: KhoFormValues }[]) =>
+  writeEachImportRow(items, (data) => createKho(data));

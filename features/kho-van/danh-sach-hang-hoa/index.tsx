@@ -132,22 +132,22 @@ const DanhSachHangHoaPage: React.FC = () => {
 
   const IMPORT_COLUMNS = useMemo(
     () => [
-      { key: 'ma_hang_hoa', label: t('hangHoa.form.code'), required: true },
-      { key: 'ten_hang_hoa', label: t('hangHoa.form.name'), required: true },
-      { key: 'danh_muc', label: t('hangHoa.import.danhMucCol'), required: true },
-      { key: 'dvt', label: t('hangHoa.form.unit'), required: true },
-      { key: 'pham_cap', label: t('hangHoa.form.phamCap') },
-      { key: 'don_gia', label: t('hangHoa.form.price') },
-      { key: 'mo_ta', label: t('hangHoa.store.descCol') },
-      { key: 'trang_thai', label: t('hangHoa.store.statusCol') },
+      { key: 'ma_hang_hoa', label: t('hangHoa.form.code'), required: true, hint: t('hangHoa.import.hint_ma_hang_hoa') },
+      { key: 'ten_hang_hoa', label: t('hangHoa.form.name'), required: true, hint: t('hangHoa.import.hint_ten_hang_hoa') },
+      { key: 'danh_muc', label: t('hangHoa.import.danhMucCol'), required: true, hint: t('hangHoa.import.hint_danh_muc') },
+      { key: 'dvt', label: t('hangHoa.form.unit'), required: true, hint: t('hangHoa.import.hint_dvt') },
+      { key: 'pham_cap', label: t('hangHoa.form.phamCap'), hint: t('hangHoa.import.hint_pham_cap') },
+      { key: 'don_gia', label: t('hangHoa.form.price'), hint: t('hangHoa.import.hint_don_gia') },
+      { key: 'mo_ta', label: t('hangHoa.store.descCol'), hint: t('hangHoa.import.hint_mo_ta') },
+      { key: 'trang_thai', label: t('hangHoa.store.statusCol'), hint: t('hangHoa.import.hint_trang_thai') },
     ],
     [t]
   );
 
   const importSampleRows = useMemo<ImportSampleRow[]>(
     () => [
-      ['SP-001', 'Giấy A4 70gsm', 'VPP', 'Ram', 50000, 'Giấy in chất lượng cao', 'Đang hoạt động'],
-      ['SP-002', 'Bút bi xanh', 'VPP', 'Cây', 5000, '', 'Đang hoạt động'],
+      ['SP-001', 'Giấy A4 70gsm', 'VPP', 'Ram', '', 50000, 'Giấy in chất lượng cao', 'Đang hoạt động'],
+      ['SP-002', 'Bút bi xanh', 'VPP', 'Cây', '', 5000, '', 'Đang hoạt động'],
     ],
     []
   );

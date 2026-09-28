@@ -75,6 +75,7 @@ const LichSuTab: React.FC<Props> = ({ defaultTaiSanId }) => {
     setShowExport,
     IMPORT_COLUMNS,
     importSampleRows,
+    importGuideNotes,
     importReferenceSheets,
     exportColumns,
     exportData,
@@ -220,6 +221,7 @@ const LichSuTab: React.FC<Props> = ({ defaultTaiSanId }) => {
         onImport={handleImportData}
         templateFileName={templateFileName}
         sampleRows={importSampleRows}
+        guideNotes={importGuideNotes}
         referenceSheets={importReferenceSheets}
       />
       <ExportDialog

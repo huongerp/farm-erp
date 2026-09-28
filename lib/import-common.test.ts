@@ -5,6 +5,9 @@ import {
   matchKey,
   parseImportNumber,
   parseImportInt,
+  parseImportDate,
+  buildRefLookup,
+  pickImportOption,
   normalizeHeader,
   buildAutoMapping,
 } from './import-common';
@@ -121,5 +124,45 @@ describe('buildAutoMapping', () => {
   it('cột "Lỗi" của file báo lỗi không khớp vào cột nào → import lại được ngay', () => {
     const map = buildAutoMapping(columns, ['Mã hàng', 'Tên hàng', 'Đơn giá', 'Lỗi']);
     expect(Object.values(map)).not.toContain('Lỗi');
+  });
+});
+
+describe('parseImportDate', () => {
+  it('từ chối ngày không tồn tại thay vì để DB báo lỗi cả lô', () => {
+    expect(parseImportDate('31/02/2026')).toBeNull();
+    expect(parseImportDate('2026-04-31')).toBeNull();
+    expect(parseImportDate('29/02/2028')).toBe('2028-02-29');
+  });
+});
+
+describe('buildRefLookup / pickImportOption', () => {
+  const find = buildRefLookup(
+    [
+      { ma: 'FA', ten: 'Farm A' },
+      { ma: 'FB', ten: 'Farm B' },
+      { ma: 'FB2', ten: 'Farm B' },
+    ],
+    (x) => x.ma,
+    (x) => x.ten
+  );
+
+  it('mã trước, tên sau; tên trùng → null; không có → undefined', () => {
+    expect(find('fa')?.ma).toBe('FA');
+    expect(find('  farm a ')?.ma).toBe('FA');
+    expect(find('Farm B')).toBeNull();
+    expect(find('FB2')?.ma).toBe('FB2');
+    expect(find('Farm Z')).toBeUndefined();
+    expect(find('')).toBeUndefined();
+  });
+
+  it('nhận cả giá trị lưu DB lẫn nhãn, bỏ dấu', () => {
+    const opts = [
+      { value: 'dang_thuc_hien', labels: ['Đang thực hiện'] },
+      { value: 'draft', labels: ['Nháp'] },
+    ];
+    expect(pickImportOption('dang thuc hien', opts)).toBe('dang_thuc_hien');
+    expect(pickImportOption('DANG_THUC_HIEN', opts)).toBe('dang_thuc_hien');
+    expect(pickImportOption('nháp', opts)).toBe('draft');
+    expect(pickImportOption('xong', opts)).toBeNull();
   });
 });

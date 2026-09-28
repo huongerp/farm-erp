@@ -12,6 +12,7 @@ import {
   getNextSoPhieuFarmPt,
   updatePhieuKhoPTTrangThai,
   updatePhieuKhoPTTrangThaiMany,
+  importPhieuKhoPT,
 } from '../services/phieu-kho-pt-service';
 import type { ChiTietPhieuKhoPTListServerQuery, PhieuKhoPTListServerQuery } from '../services/phieu-kho-pt-list-query';
 import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
@@ -90,6 +91,21 @@ export const useCreatePhieuKhoPT = (onSuccess?: () => void) => {
       void newPhieu;
     },
     onError: (err: Error) => toast.error(err.message),
+  });
+};
+
+/** Import Excel: lỗi từng dòng trả về trong `errors` (ImportDialog hiển thị) — không toast lỗi ở đây. */
+export const useImportPhieuKhoPT = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ rows, nguoiTao }: { rows: Record<string, unknown>[]; nguoiTao: { id: number | null; ten: string | null } }) =>
+      importPhieuKhoPT(rows, nguoiTao),
+    onSuccess: (result) => {
+      if (result.created === 0) return;
+      qc.invalidateQueries({ queryKey: QUERY_KEY_CHI_TIET });
+      qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
+      qc.invalidateQueries({ queryKey: FARM_TON_KHO_PT_QUERY_KEY });
+    },
   });
 };
 

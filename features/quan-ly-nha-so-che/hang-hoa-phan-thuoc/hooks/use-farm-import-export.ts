@@ -49,13 +49,13 @@ export function useFarmHangHoaImportExport({
 
   const importColumns = useMemo<ImportColumn[]>(
     () => [
-      { key: 'ma_hang_hoa', label: t('farmHangHoaPhanThuoc.hangHoa.form.code'), required: true },
-      { key: 'ten_hang_hoa', label: t('farmHangHoaPhanThuoc.hangHoa.form.name'), required: true },
-      { key: 'danh_muc', label: t('farmHangHoaPhanThuoc.hangHoa.import.danhMucCol'), required: true },
-      { key: 'dvt', label: t('farmHangHoaPhanThuoc.hangHoa.form.unit'), required: true },
-      { key: 'pham_cap', label: t('farmHangHoaPhanThuoc.hangHoa.form.phamCap') },
-      { key: 'don_gia', label: t('farmHangHoaPhanThuoc.hangHoa.form.price') },
-      { key: 'mo_ta', label: t('farmHangHoaPhanThuoc.hangHoa.store.descCol') },
+      { key: 'ma_hang_hoa', label: t('farmHangHoaPhanThuoc.hangHoa.form.code'), required: true, hint: t('farmHangHoaPhanThuoc.hangHoa.import.hint_ma_hang_hoa') },
+      { key: 'ten_hang_hoa', label: t('farmHangHoaPhanThuoc.hangHoa.form.name'), required: true, hint: t('farmHangHoaPhanThuoc.hangHoa.import.hint_ten_hang_hoa') },
+      { key: 'danh_muc', label: t('farmHangHoaPhanThuoc.hangHoa.import.danhMucCol'), required: true, hint: t('farmHangHoaPhanThuoc.hangHoa.import.hint_danh_muc') },
+      { key: 'dvt', label: t('farmHangHoaPhanThuoc.hangHoa.form.unit'), required: true, hint: t('farmHangHoaPhanThuoc.hangHoa.import.hint_dvt') },
+      { key: 'pham_cap', label: t('farmHangHoaPhanThuoc.hangHoa.form.phamCap'), hint: t('farmHangHoaPhanThuoc.hangHoa.import.hint_pham_cap') },
+      { key: 'don_gia', label: t('farmHangHoaPhanThuoc.hangHoa.form.price'), hint: t('farmHangHoaPhanThuoc.hangHoa.import.hint_don_gia') },
+      { key: 'mo_ta', label: t('farmHangHoaPhanThuoc.hangHoa.store.descCol'), hint: t('farmHangHoaPhanThuoc.hangHoa.import.hint_mo_ta') },
     ],
     [t]
   );
@@ -228,11 +228,11 @@ export function useFarmDanhMucImportExport({
 
   const importColumns = useMemo<ImportColumn[]>(
     () => [
-      { key: 'ma_danh_muc', label: t('farmHangHoaPhanThuoc.danhMuc.form.code'), required: true },
-      { key: 'ten_danh_muc', label: t('farmHangHoaPhanThuoc.danhMuc.form.name'), required: true },
-      { key: 'danh_muc_cha', label: t('farmHangHoaPhanThuoc.danhMuc.import.chaCol') },
-      { key: 'thu_tu', label: t('farmHangHoaPhanThuoc.danhMuc.store.orderCol') },
-      { key: 'mo_ta', label: t('farmHangHoaPhanThuoc.danhMuc.store.descCol') },
+      { key: 'ma_danh_muc', label: t('farmHangHoaPhanThuoc.danhMuc.form.code'), required: true, hint: t('farmHangHoaPhanThuoc.danhMuc.import.hint_ma_danh_muc') },
+      { key: 'ten_danh_muc', label: t('farmHangHoaPhanThuoc.danhMuc.form.name'), required: true, hint: t('farmHangHoaPhanThuoc.danhMuc.import.hint_ten_danh_muc') },
+      { key: 'danh_muc_cha', label: t('farmHangHoaPhanThuoc.danhMuc.import.chaCol'), hint: t('farmHangHoaPhanThuoc.danhMuc.import.hint_danh_muc_cha') },
+      { key: 'thu_tu', label: t('farmHangHoaPhanThuoc.danhMuc.store.orderCol'), hint: t('farmHangHoaPhanThuoc.danhMuc.import.hint_thu_tu') },
+      { key: 'mo_ta', label: t('farmHangHoaPhanThuoc.danhMuc.store.descCol'), hint: t('farmHangHoaPhanThuoc.danhMuc.import.hint_mo_ta') },
     ],
     [t]
   );

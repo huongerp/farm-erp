@@ -9,14 +9,14 @@ import DepartmentForm from './components/phong-ban-form';
 import DepartmentDetail from './components/phong-ban-detail';
 import ExportDialog from '../../../components/shared/LazyExportDialog';
 import ImportDialog from '../../../components/shared/LazyImportDialog';
-import { useDepartments, useDeleteDepartment, useUpdateStatusDepartment, useImportDepartments } from './hooks/use-phong-ban';
+import { useDepartments, useDeleteDepartment, useUpdateStatusDepartment } from './hooks/use-phong-ban';
+import { usePhongBanImport } from './hooks/use-phong-ban-import';
 import { useDepartmentStore, DEFAULT_COLUMNS } from './store/useDepartmentStore';
 import { useConfirmStore } from '../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL, CONFIRM_YES } from '../../../lib/button-labels';
 import { useListWithFilter } from '../../../lib/hooks';
 import { useExportData } from '../../../lib/useExportData';
 import { Department } from './core/types';
-import type { DepartmentFormValues } from './core/schema';
 import { TRANG_THAI, type TrangThai } from '../../../lib/constants';
 import { createListSearchMatcher } from '../../../lib/list-search-matcher';
 
@@ -33,24 +33,13 @@ const DepartmentPage = () => {
   const [editingDept, setEditingDept] = useState<Department | null>(null);
   const [viewingDept, setViewingDept] = useState<Department | null>(null);
   const [showExport, setShowExport] = useState(false);
-  const [showImport, setShowImport] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
 
   const { data: departments = [], isLoading } = useDepartments();
   const deleteMutation = useDeleteDepartment();
   const statusMutation = useUpdateStatusDepartment();
-  const importMutation = useImportDepartments(() => setShowImport(false));
-
-  const IMPORT_COLUMNS = useMemo(
-    () => [
-      { key: 'ten_phong_ban', label: t('department.name'), required: true },
-      { key: 'chuc_nang', label: t('department.store.chucNangCol') },
-      { key: 'tt', label: t('department.detail.order') },
-      { key: 'trang_thai', label: t('common.status') },
-    ],
-    [t]
-  );
+  const importer = usePhongBanImport();
 
   useEffect(() => {
     return () => resetState();
@@ -209,16 +198,6 @@ const DepartmentPage = () => {
     });
   };
 
-  const handleImportData = async (data: Record<string, unknown>[]) => {
-    const rows: DepartmentFormValues[] = data.map((row) => ({
-      ten_phong_ban: String(row.ten_phong_ban ?? '').trim(),
-      chuc_nang: row.chuc_nang != null ? String(row.chuc_nang).trim() : undefined,
-      tt: Number(row.tt) || 0,
-      trang_thai: String(row.trang_thai).includes('Ngừng') ? TRANG_THAI.NGUNG : TRANG_THAI.DANG_DUNG,
-    }));
-    await importMutation.mutateAsync(rows);
-  };
-
   const handleCloseForm = () => {
     const wasEditing = editingDept;
     setShowForm(false);
@@ -245,7 +224,7 @@ const DepartmentPage = () => {
           selectedCount={selectedIds.size}
           onAdd={() => setShowForm(true)}
           onExport={handleExport}
-          onImport={() => setShowImport(true)}
+          onImport={importer.openImport}
           onDeleteMany={handleDeleteMany}
           onStatusChangeMany={handleStatusChangeMany}
           canCreate={canCreate}
@@ -315,13 +294,16 @@ const DepartmentPage = () => {
       </AnimatePresence>
 
       <AnimatePresence>
-        {showImport && (
+        {importer.showImport && (
           <ImportDialog
-            open={showImport}
-            onClose={() => setShowImport(false)}
-            columns={IMPORT_COLUMNS}
-            onImport={handleImportData}
-            templateFileName={t('department.importTemplateName')}
+            open={importer.showImport}
+            onClose={importer.closeImport}
+            columns={importer.importColumns}
+            sampleRows={importer.sampleRows}
+            referenceSheets={importer.referenceSheets}
+            importErrors={importer.importErrors}
+            onImport={importer.handleImport}
+            templateFileName={importer.templateFileName}
           />
         )}
       </AnimatePresence>

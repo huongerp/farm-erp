@@ -15,6 +15,8 @@ export {
   type UpdatePhieuKhoPTTrangThaiOptions,
   type UpdatePhieuKhoPTTrangThaiManyResult,
   type PhieuKhoPTByDeXuat,
+  importPhieuKhoPTSupabase as importPhieuKhoPT,
+  type ImportPhieuKhoPTResult,
 } from './phieu-kho-pt-supabase.service';
 
 export { buildPhieuKhoPTListServerQuery, buildChiTietPhieuKhoPTListServerQuery } from './phieu-kho-pt-list-query';

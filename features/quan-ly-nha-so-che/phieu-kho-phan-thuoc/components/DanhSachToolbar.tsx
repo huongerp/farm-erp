@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Tag, Warehouse, ArrowRightLeft, User, CheckCircle, Download, Layers } from 'lucide-react';
+import { Plus, Tag, Warehouse, ArrowRightLeft, User, CheckCircle, Download, Upload, Layers } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
@@ -21,6 +21,8 @@ interface Props {
   onAdd: () => void;
   onDeleteMany: () => void;
   onExport: () => void;
+  /** Chỉ truyền khi người dùng có quyền tạo phiếu. */
+  onImport?: () => void;
   canCreate?: boolean;
   canDelete?: boolean;
   chipCountsMode?: 'fromRows' | 'unweighted';
@@ -42,6 +44,7 @@ const DanhSachToolbar: React.FC<Props> = ({
   onAdd,
   onDeleteMany,
   onExport,
+  onImport,
   canCreate = true,
   canDelete = true,
   chipCountsMode = 'fromRows',
@@ -268,8 +271,13 @@ const DanhSachToolbar: React.FC<Props> = ({
   );
 
   const mobileActions = useMemo(
-    () => [{ key: 'export', label: t('common.export'), icon: Download, onClick: onExport, description: '' }],
-    [onExport, t]
+    () => [
+      ...(onImport
+        ? [{ key: 'import', label: t('phieuKhoPhanThuoc.import.action'), icon: Upload, onClick: onImport, description: '' }]
+        : []),
+      { key: 'export', label: t('common.export'), icon: Download, onClick: onExport, description: '' },
+    ],
+    [onExport, onImport, t]
   );
 
   const dateRangePickerPresets = useMemo(() => DATE_RANGE_PRESETS.map((p) => ({ id: p.id, label: p.label })), []);
@@ -346,6 +354,18 @@ const DanhSachToolbar: React.FC<Props> = ({
   const renderActions = (
     <>
       <div className="hidden sm:flex items-center gap-2">
+        {onImport ? (
+          <Tooltip content={t('phieuKhoPhanThuoc.import.action')} placement="bottom">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onImport}
+              className="inline-flex min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-9 w-9 p-0 items-center justify-center border-border text-muted-foreground hover:bg-muted/50"
+            >
+              <Upload className="w-4 h-4" />
+            </Button>
+          </Tooltip>
+        ) : null}
         <Tooltip content={t('common.export')} placement="bottom">
           <Button
             variant="outline"

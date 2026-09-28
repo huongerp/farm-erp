@@ -12,6 +12,10 @@ import type { Department } from '../../phong-ban/core/types';
 import type { Branch } from '../../chi-nhanh/core/types';
 import i18n from '../../../../lib/i18n';
 import { postgrestQuotedIlikePattern } from '../../../../lib/postgrest-or-ilike';
+import { chunkBy } from '../../../../lib/import-bulk';
+import { normalizeText } from '../../../../lib/import-common';
+import type { ImportErrorRow } from '../../../../lib/import-types';
+import { planNhanVienImport, type NhanVienImportInput } from '../utils/import-nhan-vien';
 
 const TABLE = 'fp_var_nhan_vien';
 
@@ -510,6 +514,47 @@ export const createEmployee = async (data: EmployeeFormValues): Promise<Employee
 
   await enrichEmployeesWithRefDataAsync([emp]);
   return emp;
+};
+
+export interface ImportEmployeesResult {
+  created: number;
+  errors: ImportErrorRow[];
+  /** Đã tạo nhân viên nhưng đặt mật khẩu lỗi — không đưa vào file lỗi (import lại sẽ trùng email). */
+  passwordErrors: string[];
+}
+
+/**
+ * Import nhân viên từ Excel. Validate trọn file trước khi ghi (`planNhanVienImport` chạy
+ * `employeeSchema` của form), rồi tạo từng người qua `createEmployee` — dùng chung luồng
+ * mật khẩu mặc định + buộc đổi lần đầu với form, không có đường ghi thứ hai.
+ */
+export const importEmployees = async (
+  rows: Record<string, unknown>[],
+  refs: Omit<NhanVienImportInput, 'existingEmails'>
+): Promise<ImportEmployeesResult> => {
+  const emails = [...new Set(rows.map((r) => normalizeText(r.email).toLowerCase()).filter(Boolean))];
+  const existingEmails: string[] = [];
+  for (const group of chunkBy(emails, 200)) {
+    const { data, error } = await db.from(TABLE).select('email').in('email', group);
+    if (error) throw new Error(error.message);
+    ((data ?? []) as { email: string | null }[]).forEach((r) => r.email && existingEmails.push(r.email));
+  }
+
+  const { toCreate, errors } = planNhanVienImport(rows, { ...refs, existingEmails });
+  const passwordErrors: string[] = [];
+  let created = 0;
+  for (const item of toCreate) {
+    try {
+      const emp = await createEmployee(item.data);
+      created++;
+      if (emp._passwordError) passwordErrors.push(`${emp.email ?? item.data.email}: ${emp._passwordError}`);
+    } catch (e: unknown) {
+      const msg = i18n.t('employee.import.errWrite', { msg: e instanceof Error ? e.message : String(e) });
+      errors.push({ row: item.row, msg, values: item.values });
+    }
+  }
+  errors.sort((a, b) => a.row - b.row);
+  return { created, errors, passwordErrors };
 };
 
 export const updateEmployee = async (id: string, data: EmployeeFormValues): Promise<EmployeeMutationResult> => {

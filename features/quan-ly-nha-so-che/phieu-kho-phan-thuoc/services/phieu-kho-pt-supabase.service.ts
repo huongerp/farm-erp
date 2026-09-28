@@ -16,6 +16,21 @@ import { getAllFarmHangHoa } from '../../hang-hoa-phan-thuoc/services/farm-hang-
 import { getEmployeesRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
 import { postgrestQuotedIlikePattern } from '../../../../lib/postgrest-or-ilike';
 import type { ChiTietPhieuKhoPTListServerQuery, PhieuKhoPTListServerQuery } from './phieu-kho-pt-list-query';
+import { formatSupabaseError } from '../../../../lib/supabase-errors';
+import { chunkBy } from '../../../../lib/import-bulk';
+import { normalizeText } from '../../../../lib/import-common';
+import type { ImportErrorRow } from '../../../../lib/import-types';
+import { planPhieuKhoPTImport, type ExistingSoPhieu, type PhieuKhoPTImportRow } from '../utils/import-phieu-kho-pt';
+import {
+  applyDelta,
+  buildTonMap,
+  findVuotTon,
+  khoCanKiemTra,
+  phieuDelta,
+  type TonMap,
+  type VuotTon,
+} from '../utils/ton-kho-check';
+import { getTonKhoPTMatrixByKhoIds } from '../../ton-kho-phan-thuoc/services/farm-ton-kho-pt';
 
 const TABLE_PHIEU = 'fp_farm_phieu_kho_phan_thuoc';
 const TABLE_CHI_TIET = 'fp_farm_phieu_kho_phan_thuoc_chi_tiet';
@@ -269,26 +284,102 @@ export async function getPhieuKhoPTByDeXuatIdsSupabase(deXuatIds: string[]): Pro
   }));
 }
 
-export async function createPhieuKhoPTSupabase(data: PhieuKhoPTFormValues): Promise<PhieuKhoPT> {
+type HangHoaSnapshot = Record<string, { ten_hang_hoa: string; don_vi_tinh?: string; pham_cap?: string | null }>;
+
+async function getHangHoaSnapshotMap(): Promise<{ map: HangHoaSnapshot; tenById: Record<string, string> }> {
+  const hangHoaList = await getAllFarmHangHoa();
+  const map: HangHoaSnapshot = {};
+  const tenById: Record<string, string> = {};
+  hangHoaList.forEach((h) => {
+    map[h.id] = { ten_hang_hoa: h.ten_hang_hoa ?? '', don_vi_tinh: h.dvt ?? undefined, pham_cap: h.pham_cap ?? null };
+    tenById[h.id] = h.ma_hang_hoa ? `${h.ma_hang_hoa} – ${h.ten_hang_hoa ?? ''}` : (h.ten_hang_hoa ?? h.id);
+  });
+  return { map, tenById };
+}
+
+/** Dòng chi tiết hợp lệ của form (bỏ dòng trống / số lượng 0 như trước). */
+function validChiTiet(data: PhieuKhoPTFormValues) {
+  return (data.chi_tiet ?? []).filter((c) => c.id_hang_hoa?.trim() && Number(c.so_luong) > 0);
+}
+
+function buildChiTietRows(
+  idPhieu: number,
+  chiTiet: ReturnType<typeof validChiTiet>,
+  hangHoaMap: HangHoaSnapshot,
+  nguoiTaoId: number | null,
+  tenNguoiTao: string | null
+) {
+  return chiTiet.map((c) => {
+    const h = hangHoaMap[c.id_hang_hoa.trim()];
+    const sl = Number(c.so_luong);
+    const dg = c.don_gia != null ? Number(c.don_gia) : 0;
+    return {
+      id_phieu_kho: idPhieu,
+      id_hang_hoa: Number(c.id_hang_hoa),
+      ten_hang_hoa: h?.ten_hang_hoa ?? null,
+      don_vi_tinh: h?.don_vi_tinh ?? null,
+      // Để trống trên form → lấy phẩm cấp của danh mục hàng hóa (snapshot lúc lập phiếu).
+      pham_cap: c.pham_cap?.trim() || h?.pham_cap || null,
+      so_luong: sl,
+      don_gia: dg,
+      thanh_tien: sl * dg,
+      so_lot: c.so_lot?.trim() || null,
+      ghi_chu: c.ghi_chu?.trim() || null,
+      nguoi_tao_id: nguoiTaoId,
+      ten_nguoi_tao: tenNguoiTao,
+    };
+  });
+}
+
+function formatSoLuongTon(n: number): string {
+  return n.toLocaleString('vi-VN', { maximumFractionDigits: 4 });
+}
+
+/** Thông điệp "vượt tồn" liệt kê từng hàng × kho để người dùng sửa đúng dòng. */
+function vuotTonMessage(
+  items: VuotTon[],
+  khoMap: Record<string, string>,
+  hangTenById: Record<string, string>
+): string {
+  const detail = items
+    .map((v) =>
+      i18n.t('phieuKhoPhanThuoc.service.vuotTonItem', {
+        hang: hangTenById[v.id_hang_hoa] ?? `#${v.id_hang_hoa}`,
+        kho: khoMap[v.id_kho] ?? `#${v.id_kho}`,
+        ton: formatSoLuongTon(v.ton),
+        can: formatSoLuongTon(v.can),
+      })
+    )
+    .join('; ');
+  return i18n.t('phieuKhoPhanThuoc.service.vuotTon', { detail });
+}
+
+/** Tồn hiện tại của các kho mà phiếu làm giảm (một request). */
+async function loadTonForDeltas(...deltas: TonMap[]): Promise<TonMap> {
+  const khoIds = khoCanKiemTra(...deltas);
+  if (khoIds.length === 0) return new Map();
+  return buildTonMap(await getTonKhoPTMatrixByKhoIds(khoIds));
+}
+
+function formToDeltaInput(data: PhieuKhoPTFormValues, lines: ReturnType<typeof validChiTiet>) {
+  return {
+    loai: data.loai as LoaiPhieuKhoPT,
+    kho_id: data.kho_id,
+    kho_den_id: data.loai === 'chuyển' ? data.kho_den_id : null,
+    trang_thai: data.trang_thai,
+    lines: lines.map((c) => ({ id_hang_hoa: c.id_hang_hoa.trim(), so_luong: Number(c.so_luong) })),
+  };
+}
+
+function headerPayloadFromForm(
+  data: PhieuKhoPTFormValues,
+  khoMap: Record<string, string>,
+  nguoiTaoId: number | null,
+  tenNguoiTao: string | null
+) {
   const loai = data.loai as LoaiPhieuKhoPT;
-  const soPhieu = data.so_phieu.trim();
-  const { data: existing } = await db.from(TABLE_PHIEU).select('id').eq('so_phieu', soPhieu).eq('loai', loai).maybeSingle();
-  if (existing) throw new Error(i18n.t('phieuKhoPhanThuoc.service.duplicateCode'));
-
-  const [khoList, employees] = await Promise.all([getKhoRef(), getEmployeesRef()]);
-  const khoMap: Record<string, string> = {};
-  khoList.forEach((k) => {
-    khoMap[k.id] = k.ten_kho;
-  });
-  const nvMap: Record<string, string> = {};
-  employees.forEach((e) => {
-    nvMap[e.id] = e.ho_ten;
-  });
-
-  const nguoiTaoId = data.nguoi_tao_id != null ? Number(data.nguoi_tao_id) : null;
-
-  const payload = {
-    so_phieu: soPhieu,
+  return {
+    so_phieu: data.so_phieu.trim(),
     ngay: data.ngay.trim(),
     loai,
     kho_id: Number(data.kho_id),
@@ -298,59 +389,85 @@ export async function createPhieuKhoPTSupabase(data: PhieuKhoPTFormValues): Prom
     trang_thai: data.trang_thai,
     mo_ta: data.mo_ta?.trim() || null,
     nguoi_tao_id: nguoiTaoId,
-    ten_nguoi_tao: nguoiTaoId != null ? (nvMap[String(nguoiTaoId)] ?? null) : null,
+    ten_nguoi_tao: tenNguoiTao,
     id_de_xuat_mua_hang: data.id_de_xuat_mua_hang ? Number(data.id_de_xuat_mua_hang) : null,
     so_phieu_de_xuat: data.so_phieu_de_xuat?.trim() || null,
   };
+}
 
-  const { data: inserted, error } = await db.from(TABLE_PHIEU).insert(payload).select(PHIEU_PT_HEADER_ROW_SELECT).single();
+async function loadKhoNvMaps() {
+  const [khoList, employees] = await Promise.all([getKhoRef(), getEmployeesRef()]);
+  const khoMap: Record<string, string> = {};
+  khoList.forEach((k) => {
+    khoMap[k.id] = k.ten_kho;
+  });
+  const nvMap: Record<string, string> = {};
+  employees.forEach((e) => {
+    nvMap[e.id] = e.ho_ten;
+  });
+  return { khoMap, nvMap };
+}
+
+export async function createPhieuKhoPTSupabase(data: PhieuKhoPTFormValues): Promise<PhieuKhoPT> {
+  const loai = data.loai as LoaiPhieuKhoPT;
+  const soPhieu = data.so_phieu.trim();
+  const { data: existing } = await db.from(TABLE_PHIEU).select('id').eq('so_phieu', soPhieu).eq('loai', loai).maybeSingle();
+  if (existing) throw new Error(i18n.t('phieuKhoPhanThuoc.service.duplicateCode'));
+
+  const chiTiet = validChiTiet(data);
+  const newDelta = phieuDelta(formToDeltaInput(data, chiTiet));
+  const [{ khoMap, nvMap }, { map: hangHoaMap, tenById }, ton] = await Promise.all([
+    loadKhoNvMaps(),
+    getHangHoaSnapshotMap(),
+    loadTonForDeltas(newDelta),
+  ]);
+  const vuot = findVuotTon(ton, newDelta);
+  if (vuot.length > 0) throw new Error(vuotTonMessage(vuot, khoMap, tenById));
+
+  const nguoiTaoId = data.nguoi_tao_id != null ? Number(data.nguoi_tao_id) : null;
+  const tenNguoiTao = nguoiTaoId != null ? (nvMap[String(nguoiTaoId)] ?? null) : null;
+
+  const { data: inserted, error } = await db
+    .from(TABLE_PHIEU)
+    .insert(headerPayloadFromForm(data, khoMap, nguoiTaoId, tenNguoiTao))
+    .select(PHIEU_PT_HEADER_ROW_SELECT)
+    .single();
   if (error) throwSupabaseError(error);
   const idPhieu = (inserted as PhieuKhoPTDbRow).id;
-  const idStr = String(idPhieu);
 
-  const hangHoaList = await getAllFarmHangHoa();
-  const hangHoaMap: Record<string, { ten_hang_hoa: string; don_vi_tinh?: string; pham_cap?: string | null }> = {};
-  hangHoaList.forEach((h) => {
-    hangHoaMap[h.id] = { ten_hang_hoa: h.ten_hang_hoa ?? '', don_vi_tinh: h.dvt ?? undefined, pham_cap: h.pham_cap ?? null };
-  });
-
-  const chiTietPayload = (data.chi_tiet ?? []).filter((c) => c.id_hang_hoa?.trim() && Number(c.so_luong) > 0);
-  if (chiTietPayload.length > 0) {
-    const ctRows = chiTietPayload.map((c) => {
-      const h = hangHoaMap[c.id_hang_hoa.trim()];
-      const sl = Number(c.so_luong);
-      const dg = c.don_gia != null ? Number(c.don_gia) : 0;
-      return {
-        id_phieu_kho: idPhieu,
-        id_hang_hoa: Number(c.id_hang_hoa),
-        ten_hang_hoa: h?.ten_hang_hoa ?? null,
-        don_vi_tinh: h?.don_vi_tinh ?? null,
-        // Để trống trên form → lấy phẩm cấp của danh mục hàng hóa (snapshot lúc lập phiếu).
-        pham_cap: c.pham_cap?.trim() || h?.pham_cap || null,
-        so_luong: sl,
-        don_gia: dg,
-        thanh_tien: sl * dg,
-        so_lot: c.so_lot?.trim() || null,
-        ghi_chu: c.ghi_chu?.trim() || null,
-        nguoi_tao_id: nguoiTaoId,
-        ten_nguoi_tao: nguoiTaoId != null ? (nvMap[String(nguoiTaoId)] ?? null) : null,
-      };
-    });
-    const { error: errCt } = await db.from(TABLE_CHI_TIET).insert(ctRows);
-    if (errCt) throwSupabaseError(errCt);
+  if (chiTiet.length > 0) {
+    const { error: errCt } = await db
+      .from(TABLE_CHI_TIET)
+      .insert(buildChiTietRows(idPhieu, chiTiet, hangHoaMap, nguoiTaoId, tenNguoiTao));
+    if (errCt) {
+      // Bù trừ: không để lại phiếu rỗng khi ghi dòng lỗi.
+      await db.from(TABLE_PHIEU).delete().eq('id', idPhieu);
+      throwSupabaseError(errCt);
+    }
   }
 
-  const got = await getPhieuKhoPTByIdSupabase(idStr);
+  const got = await getPhieuKhoPTByIdSupabase(String(idPhieu));
   if (!got) throw new Error(i18n.t('phieuKhoPhanThuoc.service.notFound'));
   return got;
 }
 
+/**
+ * Sửa phiếu theo thứ tự an toàn: ghi dòng MỚI trước, xong mới xoá dòng CŨ theo id.
+ * Bước nào lỗi thì hoàn lại header + bỏ dòng mới → phiếu giữ nguyên như trước khi sửa,
+ * không còn ca "xoá hết dòng rồi insert lỗi" làm phiếu mất dòng.
+ */
 export async function updatePhieuKhoPTSupabase(id: string, data: PhieuKhoPTFormValues): Promise<PhieuKhoPT> {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('phieuKhoPhanThuoc.service.notFound'));
 
-  const { data: oldRow, error: fetchErr } = await db.from(TABLE_PHIEU).select(PHIEU_PT_HEADER_ROW_SELECT).eq('id', idNum).maybeSingle();
+  const [{ data: oldRow, error: fetchErr }, { data: oldLines, error: oldLinesErr }] = await Promise.all([
+    db.from(TABLE_PHIEU).select(PHIEU_PT_HEADER_ROW_SELECT).eq('id', idNum).maybeSingle(),
+    db.from(TABLE_CHI_TIET).select('id, id_hang_hoa, so_luong').eq('id_phieu_kho', idNum),
+  ]);
   if (fetchErr || !oldRow) throw new Error(i18n.t('phieuKhoPhanThuoc.service.notFound'));
+  if (oldLinesErr) throwSupabaseError(oldLinesErr);
+  const old = oldRow as PhieuKhoPTDbRow;
+  const oldCt = (oldLines ?? []) as { id: number; id_hang_hoa: number; so_luong: number | string }[];
 
   const soPhieu = data.so_phieu.trim();
   const loaiForUnique = data.loai as LoaiPhieuKhoPT;
@@ -363,74 +480,202 @@ export async function updatePhieuKhoPTSupabase(id: string, data: PhieuKhoPTFormV
     .maybeSingle();
   if (other) throw new Error(i18n.t('phieuKhoPhanThuoc.service.duplicateCode'));
 
-  const [khoList, employees] = await Promise.all([getKhoRef(), getEmployeesRef()]);
-  const khoMap: Record<string, string> = {};
-  khoList.forEach((k) => {
-    khoMap[k.id] = k.ten_kho;
+  const chiTiet = validChiTiet(data);
+  const newDelta = phieuDelta(formToDeltaInput(data, chiTiet));
+  const oldDelta = phieuDelta({
+    loai: old.loai as LoaiPhieuKhoPT,
+    kho_id: String(old.kho_id),
+    kho_den_id: old.kho_den_id != null ? String(old.kho_den_id) : null,
+    trang_thai: old.trang_thai,
+    lines: oldCt.map((c) => ({ id_hang_hoa: String(c.id_hang_hoa), so_luong: Number(c.so_luong) })),
   });
-  const nvMap: Record<string, string> = {};
-  employees.forEach((e) => {
-    nvMap[e.id] = e.ho_ten;
-  });
+  const [{ khoMap, nvMap }, { map: hangHoaMap, tenById }, ton] = await Promise.all([
+    loadKhoNvMaps(),
+    getHangHoaSnapshotMap(),
+    loadTonForDeltas(newDelta, oldDelta),
+  ]);
+  const vuot = findVuotTon(ton, newDelta, oldDelta);
+  if (vuot.length > 0) throw new Error(vuotTonMessage(vuot, khoMap, tenById));
 
   const nguoiTaoId = data.nguoi_tao_id != null ? Number(data.nguoi_tao_id) : null;
+  const tenNguoiTao = nguoiTaoId != null ? (nvMap[String(nguoiTaoId)] ?? null) : null;
 
-  const payload = {
-    so_phieu: soPhieu,
-    ngay: data.ngay.trim(),
-    loai: data.loai as LoaiPhieuKhoPT,
-    kho_id: Number(data.kho_id),
-    ten_kho: khoMap[String(data.kho_id)] ?? null,
-    kho_den_id: data.loai === 'chuyển' && data.kho_den_id ? Number(data.kho_den_id) : null,
-    ten_kho_den: data.loai === 'chuyển' && data.kho_den_id ? (khoMap[String(data.kho_den_id)] ?? null) : null,
-    trang_thai: data.trang_thai,
-    mo_ta: data.mo_ta?.trim() || null,
-    nguoi_tao_id: nguoiTaoId,
-    ten_nguoi_tao: nguoiTaoId != null ? (nvMap[String(nguoiTaoId)] ?? null) : null,
-    id_de_xuat_mua_hang: data.id_de_xuat_mua_hang ? Number(data.id_de_xuat_mua_hang) : null,
-    so_phieu_de_xuat: data.so_phieu_de_xuat?.trim() || null,
-  };
-
-  const { error: updateErr } = await db.from(TABLE_PHIEU).update(payload).eq('id', idNum);
+  const { error: updateErr } = await db
+    .from(TABLE_PHIEU)
+    .update(headerPayloadFromForm(data, khoMap, nguoiTaoId, tenNguoiTao))
+    .eq('id', idNum);
   if (updateErr) throwSupabaseError(updateErr);
 
-  await db.from(TABLE_CHI_TIET).delete().eq('id_phieu_kho', idNum);
+  const restoreHeader = () =>
+    db
+      .from(TABLE_PHIEU)
+      .update({
+        so_phieu: old.so_phieu,
+        ngay: old.ngay,
+        loai: old.loai,
+        kho_id: old.kho_id,
+        ten_kho: old.ten_kho,
+        kho_den_id: old.kho_den_id,
+        ten_kho_den: old.ten_kho_den,
+        trang_thai: old.trang_thai,
+        mo_ta: old.mo_ta ?? null,
+        nguoi_tao_id: old.nguoi_tao_id,
+        ten_nguoi_tao: old.ten_nguoi_tao,
+        id_de_xuat_mua_hang: old.id_de_xuat_mua_hang ?? null,
+        so_phieu_de_xuat: old.so_phieu_de_xuat ?? null,
+      })
+      .eq('id', idNum);
 
-  const hangHoaList = await getAllFarmHangHoa();
-  const hangHoaMap: Record<string, { ten_hang_hoa: string; don_vi_tinh?: string; pham_cap?: string | null }> = {};
-  hangHoaList.forEach((h) => {
-    hangHoaMap[h.id] = { ten_hang_hoa: h.ten_hang_hoa ?? '', don_vi_tinh: h.dvt ?? undefined, pham_cap: h.pham_cap ?? null };
-  });
+  let newIds: number[] = [];
+  if (chiTiet.length > 0) {
+    const { data: insertedCt, error: errCt } = await db
+      .from(TABLE_CHI_TIET)
+      .insert(buildChiTietRows(idNum, chiTiet, hangHoaMap, nguoiTaoId, tenNguoiTao))
+      .select('id');
+    if (errCt) {
+      await restoreHeader();
+      throwSupabaseError(errCt);
+    }
+    newIds = ((insertedCt ?? []) as { id: number }[]).map((r) => r.id);
+  }
 
-  const chiTietPayload = (data.chi_tiet ?? []).filter((c) => c.id_hang_hoa?.trim() && Number(c.so_luong) > 0);
-  if (chiTietPayload.length > 0) {
-    const ctRows = chiTietPayload.map((c) => {
-      const h = hangHoaMap[c.id_hang_hoa.trim()];
-      const sl = Number(c.so_luong);
-      const dg = c.don_gia != null ? Number(c.don_gia) : 0;
-      return {
-        id_phieu_kho: idNum,
-        id_hang_hoa: Number(c.id_hang_hoa),
-        ten_hang_hoa: h?.ten_hang_hoa ?? null,
-        don_vi_tinh: h?.don_vi_tinh ?? null,
-        // Để trống trên form → lấy phẩm cấp của danh mục hàng hóa (snapshot lúc lập phiếu).
-        pham_cap: c.pham_cap?.trim() || h?.pham_cap || null,
-        so_luong: sl,
-        don_gia: dg,
-        thanh_tien: sl * dg,
-        so_lot: c.so_lot?.trim() || null,
-        ghi_chu: c.ghi_chu?.trim() || null,
-        nguoi_tao_id: nguoiTaoId,
-        ten_nguoi_tao: nguoiTaoId != null ? (nvMap[String(nguoiTaoId)] ?? null) : null,
-      };
-    });
-    const { error: errCt } = await db.from(TABLE_CHI_TIET).insert(ctRows);
-    if (errCt) throwSupabaseError(errCt);
+  const oldIds = oldCt.map((c) => c.id);
+  if (oldIds.length > 0) {
+    const { error: delErr } = await db.from(TABLE_CHI_TIET).delete().in('id', oldIds);
+    if (delErr) {
+      if (newIds.length > 0) await db.from(TABLE_CHI_TIET).delete().in('id', newIds);
+      await restoreHeader();
+      throwSupabaseError(delErr);
+    }
   }
 
   const got = await getPhieuKhoPTByIdSupabase(id);
   if (!got) throw new Error(i18n.t('phieuKhoPhanThuoc.service.notFound'));
   return got;
+}
+
+// ---------------------------------------------------------------------------
+// IMPORT
+// ---------------------------------------------------------------------------
+
+export interface ImportPhieuKhoPTResult {
+  created: number;
+  errors: ImportErrorRow[];
+}
+
+/** Số phiếu đã có trong DB (chỉ những số mà file có điền) — theo lô để URL `.in()` không quá dài. */
+async function getExistingSoPhieuPT(soPhieuList: string[]): Promise<ExistingSoPhieu[]> {
+  const out: ExistingSoPhieu[] = [];
+  for (const group of chunkBy([...new Set(soPhieuList)], 200)) {
+    const { data, error } = await db.from(TABLE_PHIEU).select('so_phieu, loai').in('so_phieu', group);
+    if (error) throwSupabaseError(error);
+    out.push(...((data ?? []) as ExistingSoPhieu[]));
+  }
+  return out;
+}
+
+/**
+ * Import phiếu từ Excel phẳng (1 dòng = 1 dòng hàng). Validate toàn bộ ở `planPhieuKhoPTImport`
+ * trước khi ghi; mỗi phiếu ghi header → dòng, dòng lỗi thì xoá header vừa tạo để không còn phiếu rỗng.
+ * Trạng thái luôn "Chờ duyệt" — import không được đi tắt luồng duyệt.
+ */
+export async function importPhieuKhoPTSupabase(
+  rows: PhieuKhoPTImportRow[],
+  nguoiTao: { id: number | null; ten: string | null }
+): Promise<ImportPhieuKhoPTResult> {
+  const soPhieuFile = rows.map((r) => normalizeText(r.so_phieu)).filter(Boolean);
+  const [khoList, hangHoaList, existingSoPhieu] = await Promise.all([
+    getKhoRef(),
+    getAllFarmHangHoa(),
+    soPhieuFile.length > 0 ? getExistingSoPhieuPT(soPhieuFile) : Promise.resolve([]),
+  ]);
+
+  const { phieus, errors } = planPhieuKhoPTImport(rows, {
+    khoList,
+    hangHoaList: hangHoaList.map((h) => ({
+      id: h.id,
+      ma_hang_hoa: h.ma_hang_hoa ?? '',
+      ten_hang_hoa: h.ten_hang_hoa ?? '',
+      dvt: h.dvt ?? null,
+      pham_cap: h.pham_cap ?? null,
+      don_gia: h.don_gia != null ? Number(h.don_gia) : null,
+    })),
+    existingSoPhieu,
+  });
+
+  // Tồn chạy dồn qua từng phiếu: phiếu sau thấy phần phiếu trước trong file đã lấy.
+  const deltas = phieus.map((p) =>
+    phieuDelta({ loai: p.loai, kho_id: p.kho_id, kho_den_id: p.kho_den_id, lines: p.lines })
+  );
+  const ton = await loadTonForDeltas(...deltas);
+  const khoMap: Record<string, string> = {};
+  khoList.forEach((k) => {
+    khoMap[k.id] = k.ten_kho;
+  });
+  const hangTenById: Record<string, string> = {};
+  hangHoaList.forEach((h) => {
+    hangTenById[h.id] = h.ma_hang_hoa ? `${h.ma_hang_hoa} – ${h.ten_hang_hoa ?? ''}` : (h.ten_hang_hoa ?? h.id);
+  });
+
+  let created = 0;
+  for (const [i, p] of phieus.entries()) {
+    const vuot = findVuotTon(ton, deltas[i]);
+    if (vuot.length > 0) {
+      const msg = vuotTonMessage(vuot, khoMap, hangTenById);
+      p.sourceRows.forEach((r) => errors.push({ row: r.row, msg, values: r.values }));
+      continue;
+    }
+    let idPhieu: number | null = null;
+    try {
+      const soPhieu = p.so_phieu ?? (await getNextSoPhieuFarmPtSupabase(p.loai));
+      const { data: inserted, error } = await db
+        .from(TABLE_PHIEU)
+        .insert({
+          so_phieu: soPhieu,
+          ngay: p.ngay,
+          loai: p.loai,
+          kho_id: p.kho_id,
+          ten_kho: p.ten_kho,
+          kho_den_id: p.kho_den_id,
+          ten_kho_den: p.ten_kho_den,
+          trang_thai: 'Chờ duyệt',
+          mo_ta: p.mo_ta,
+          nguoi_tao_id: nguoiTao.id,
+          ten_nguoi_tao: nguoiTao.ten,
+        })
+        .select('id')
+        .single();
+      if (error) throw error;
+      idPhieu = (inserted as { id: number }).id;
+
+      const { error: errCt } = await db.from(TABLE_CHI_TIET).insert(
+        p.lines.map((l) => ({
+          id_phieu_kho: idPhieu,
+          id_hang_hoa: l.id_hang_hoa,
+          ten_hang_hoa: l.ten_hang_hoa,
+          don_vi_tinh: l.don_vi_tinh,
+          pham_cap: l.pham_cap,
+          so_luong: l.so_luong,
+          don_gia: l.don_gia,
+          thanh_tien: l.so_luong * l.don_gia,
+          so_lot: l.so_lot,
+          ghi_chu: l.ghi_chu,
+          nguoi_tao_id: nguoiTao.id,
+          ten_nguoi_tao: nguoiTao.ten,
+        }))
+      );
+      if (errCt) throw errCt;
+      created++;
+      applyDelta(ton, deltas[i]);
+    } catch (err) {
+      if (idPhieu != null) await db.from(TABLE_PHIEU).delete().eq('id', idPhieu);
+      const msg = i18n.t('phieuKhoPhanThuoc.import.errWriteFailed', { msg: formatSupabaseError(err) });
+      p.sourceRows.forEach((r) => errors.push({ row: r.row, msg, values: r.values }));
+    }
+  }
+
+  errors.sort((a, b) => a.row - b.row);
+  return { created, errors };
 }
 
 function formatPhieuKhoPTTraoDoiTimestamp(d: Date = new Date()): string {

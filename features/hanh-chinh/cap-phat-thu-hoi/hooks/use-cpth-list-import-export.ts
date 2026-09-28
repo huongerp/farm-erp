@@ -29,18 +29,20 @@ export function useCpthListImportExport(sortedList: PhieuCapPhatThuHoi[]) {
 
   const IMPORT_COLUMNS = useMemo(
     () => [
-      { key: 'loai_phieu', label: t('capPhatThuHoi.form.loaiPhieu'), required: true },
-      { key: 'ngay_thuc_hien', label: t('capPhatThuHoi.form.ngayThucHien'), required: true },
-      { key: 'ma_nguoi_thuc_hien', label: t('capPhatThuHoi.import.maNguoiThucHien'), required: true },
-      { key: 'ma_nguoi_giu_truoc', label: t('capPhatThuHoi.import.maNguoiGiuTruoc') },
-      { key: 'ma_nguoi_giu_sau', label: t('capPhatThuHoi.import.maNguoiGiuSau') },
-      { key: 'ghi_chu_phieu', label: t('capPhatThuHoi.import.ghiChuPhieu') },
-      { key: 'ma_tai_san', label: t('capPhatThuHoi.store.maTaiSanCol'), required: true },
-      { key: 'ma_noi_luu_sau', label: t('capPhatThuHoi.import.maNoiLuuSau'), required: true },
-      { key: 'ghi_chu_dong', label: t('capPhatThuHoi.import.ghiChuDong') },
+      { key: 'loai_phieu', label: t('capPhatThuHoi.form.loaiPhieu'), required: true, hint: t('capPhatThuHoi.import.hint_loai_phieu') },
+      { key: 'ngay_thuc_hien', label: t('capPhatThuHoi.form.ngayThucHien'), required: true, hint: t('capPhatThuHoi.import.hint_ngay_thuc_hien') },
+      { key: 'ma_nguoi_thuc_hien', label: t('capPhatThuHoi.import.maNguoiThucHien'), required: true, hint: t('capPhatThuHoi.import.hint_ma_nguoi_thuc_hien') },
+      { key: 'ma_nguoi_giu_truoc', label: t('capPhatThuHoi.import.maNguoiGiuTruoc'), hint: t('capPhatThuHoi.import.hint_ma_nguoi_giu_truoc') },
+      { key: 'ma_nguoi_giu_sau', label: t('capPhatThuHoi.import.maNguoiGiuSau'), hint: t('capPhatThuHoi.import.hint_ma_nguoi_giu_sau') },
+      { key: 'ghi_chu_phieu', label: t('capPhatThuHoi.import.ghiChuPhieu'), hint: t('capPhatThuHoi.import.hint_ghi_chu_phieu') },
+      { key: 'ma_tai_san', label: t('capPhatThuHoi.store.maTaiSanCol'), required: true, hint: t('capPhatThuHoi.import.hint_ma_tai_san') },
+      { key: 'ma_noi_luu_sau', label: t('capPhatThuHoi.import.maNoiLuuSau'), required: true, hint: t('capPhatThuHoi.import.hint_ma_noi_luu_sau') },
+      { key: 'ghi_chu_dong', label: t('capPhatThuHoi.import.ghiChuDong'), hint: t('capPhatThuHoi.import.hint_ghi_chu_dong') },
     ],
     [t]
   );
+
+  const importGuideNotes = useMemo(() => [t('capPhatThuHoi.import.guideNoteGop')], [t]);
 
   const importSampleRows = useMemo<ImportSampleRow[]>(
     () => [
@@ -142,6 +144,7 @@ export function useCpthListImportExport(sortedList: PhieuCapPhatThuHoi[]) {
     setShowExport,
     IMPORT_COLUMNS,
     importSampleRows,
+    importGuideNotes,
     importReferenceSheets,
     exportColumns,
     exportData,

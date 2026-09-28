@@ -100,19 +100,16 @@ export const useDeleteKhoMany = () => {
   });
 };
 
-export const useImportKho = (onSuccess?: () => void) => {
+/** Import Excel: lỗi từng dòng trả về trong `errors` để ImportDialog hiển thị. */
+export const useImportKho = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: importKho,
     onSuccess: (result) => {
+      if (result.created === 0) return;
       invalidateRefCache('kho');
       qc.invalidateQueries({ queryKey: QUERY_KEY });
-      if (result.created > 0)
-        toast.success(i18n.t('kho.toast.importSuccess', { count: result.created }));
-      if (result.errors.length > 0)
-        toast.warning(result.errors.slice(0, 3).join('; '));
-      onSuccess?.();
+      toast.success(i18n.t('kho.toast.importSuccess', { count: result.created }));
     },
-    onError: (err: Error) => toast.error(err.message),
   });
 };

@@ -41,3 +41,27 @@ export interface ImportOptions {
   mode: ImportMode;
   refColumn?: string;
 }
+
+/** Cột hệ thống của một luồng import. */
+export interface ImportColumn {
+  key: string;
+  label: string;
+  required?: boolean;
+  /**
+   * Quy tắc điền hiện ở sheet "Hướng dẫn" của file mẫu: định dạng, giá trị hợp lệ,
+   * tra ở sheet nào, để trống thì hệ thống làm gì.
+   */
+  hint?: string;
+  /** Bắt buộc có điều kiện (VD "Khi loại = Chuyển") — thay cho "Có/Không" ở cột Bắt buộc. */
+  requiredWhen?: string;
+}
+
+/** Sheet tham chiếu (tra cứu) đính kèm trong file mẫu. */
+export interface ImportReferenceSheet {
+  name: string;
+  headers: string[];
+  data: (string | number | null)[][];
+}
+
+/** Dòng dữ liệu mẫu (thứ tự theo `columns`) — nằm ở sheet "Ví dụ mẫu", không ở sheet nhập. */
+export type ImportSampleRow = (string | number | null)[];

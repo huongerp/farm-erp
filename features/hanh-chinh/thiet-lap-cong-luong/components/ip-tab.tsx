@@ -6,7 +6,8 @@ import PayrollWifiIpToolbar from './ip-toolbar';
 import PayrollWifiIpTable from './ip-table';
 import PayrollWifiIpForm from './ip-form';
 import PayrollWifiIpDetail from './ip-detail';
-import { usePayrollWifiIps, useDeletePayrollWifiIps, useUpdatePayrollWifiIpStatus, useImportPayrollWifiIps } from '../hooks/use-payroll-wifi-ip';
+import { usePayrollWifiIps, useDeletePayrollWifiIps, useUpdatePayrollWifiIpStatus } from '../hooks/use-payroll-wifi-ip';
+import { useIpWifiImport } from '../hooks/use-ip-wifi-import';
 import { usePayrollWifiIpStore, DEFAULT_COLUMNS } from '../store/usePayrollWifiIpStore';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_YES, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
@@ -40,14 +41,13 @@ const PayrollWifiIpTab: React.FC = () => {
   const [editingItem, setEditingItem] = useState<PayrollWifiIp | null>(null);
   const [detailItem, setDetailItem] = useState<PayrollWifiIp | null>(null);
   const [openedFormFromDetailId, setOpenedFormFromDetailId] = useState<string | null>(null);
-  const [showImport, setShowImport] = useState(false);
   const [showExport, setShowExport] = useState(false);
 
   const { data: ipList = [], isLoading } = usePayrollWifiIps();
   const { data: branches = [] } = useBranches();
   const deleteMutation = useDeletePayrollWifiIps();
   const statusMutation = useUpdatePayrollWifiIpStatus();
-  const importMutation = useImportPayrollWifiIps(() => setShowImport(false));
+  const importer = useIpWifiImport(branches);
 
   useEffect(() => {
     return () => resetState();
@@ -84,16 +84,6 @@ const PayrollWifiIpTab: React.FC = () => {
   const branchById = useMemo(
     () => new Map(branches.map((b) => [b.id, b])),
     [branches]
-  );
-
-  const IMPORT_COLUMNS = useMemo(
-    () => [
-      { key: 'ma_chi_nhanh', label: t('branch.store.codeCol'), required: true },
-      { key: 'ip_wifi', label: t('payrollIp.store.ipCol'), required: true },
-      { key: 'ghi_chu', label: t('payrollIp.store.noteCol') },
-      { key: 'trang_thai', label: t('payrollIp.store.statusCol') },
-    ],
-    [t]
   );
 
   const EXPORT_COLUMNS = useMemo(
@@ -212,45 +202,6 @@ const PayrollWifiIpTab: React.FC = () => {
     });
   };
 
-  const handleImportData = async (data: Record<string, any>[]) => {
-    const branchByCode = new Map(branches.map((b) => [b.ma_chi_nhanh, b.id]));
-    const branchByName = new Map(branches.map((b) => [b.ten_chi_nhanh, b.id]));
-    const rows: { id_chi_nhanh: string; ip_wifi: string; ghi_chu?: string; trang_thai: import('../../../../lib/constants').TrangThaiHoatDong }[] = [];
-    const errors: string[] = [];
-
-    data.forEach((row, idx) => {
-      const rawBranch = String(row.ma_chi_nhanh ?? row.ten_chi_nhanh ?? row.id_chi_nhanh ?? '').trim();
-      const id_chi_nhanh =
-        branchByCode.get(rawBranch) || branchByName.get(rawBranch) || branchByCode.get(rawBranch.toUpperCase());
-      if (!id_chi_nhanh) {
-        errors.push(`Dòng ${idx + 2}: ${t('payrollIp.validation.branchRequired')}`);
-        return;
-      }
-      const ip_wifi = String(row.ip_wifi ?? '').trim();
-      if (!ip_wifi) {
-        errors.push(`Dòng ${idx + 2}: ${t('payrollIp.validation.ipRequired')}`);
-        return;
-      }
-      const statusRaw = String(row.trang_thai ?? '').toLowerCase();
-      const trang_thai =
-        statusRaw === '0' || statusRaw === 'inactive' || statusRaw === 'ngừng' || statusRaw === 'ngung' || statusRaw === 'ngừng hoạt động'
-          ? TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG
-          : TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
-      rows.push({
-        id_chi_nhanh,
-        ip_wifi,
-        ghi_chu: row.ghi_chu != null ? String(row.ghi_chu).trim() : undefined,
-        trang_thai,
-      });
-    });
-
-    if (errors.length > 0) {
-      toast.warning(errors.slice(0, 3).join('; '));
-    }
-    if (rows.length === 0) return;
-    await importMutation.mutateAsync(rows);
-  };
-
   const handleExport = () => {
     if (filteredList.length === 0) {
       toast.warning(t('payrollIp.noExportData'));
@@ -280,7 +231,7 @@ const PayrollWifiIpTab: React.FC = () => {
           setEditingItem(null);
           setShowForm(true);
         }}
-        onImport={() => setShowImport(true)}
+        onImport={importer.openImport}
         onExport={handleExport}
         onDeleteMany={handleDeleteMany}
         onStatusChangeMany={handleStatusChangeMany}
@@ -331,13 +282,16 @@ const PayrollWifiIpTab: React.FC = () => {
       </AnimatePresence>
 
       <AnimatePresence>
-        {showImport && (
+        {importer.showImport && (
           <ImportDialog
-            open={showImport}
-            onClose={() => setShowImport(false)}
-            columns={IMPORT_COLUMNS}
-            onImport={handleImportData}
-            templateFileName={t('payrollIp.importTemplateName')}
+            open={importer.showImport}
+            onClose={importer.closeImport}
+            columns={importer.importColumns}
+            sampleRows={importer.sampleRows}
+            referenceSheets={importer.referenceSheets}
+            importErrors={importer.importErrors}
+            onImport={importer.handleImport}
+            templateFileName={importer.templateFileName}
           />
         )}
       </AnimatePresence>

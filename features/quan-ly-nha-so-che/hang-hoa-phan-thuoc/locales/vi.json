@@ -173,5 +173,17 @@
   "farmHangHoaPhanThuoc.danhMuc.export.fileName": "Danh_muc_hang_hoa_farm",
   "farmHangHoaPhanThuoc.danhMuc.toast.importCreated": "Đã thêm mới {{count}} danh mục",
   "farmHangHoaPhanThuoc.danhMuc.toast.importUpdated": "Đã cập nhật {{count}} danh mục",
-  "farmHangHoaPhanThuoc.danhMuc.toast.importErrors": "{{count}} dòng không import được"
+  "farmHangHoaPhanThuoc.danhMuc.toast.importErrors": "{{count}} dòng không import được",
+  "farmHangHoaPhanThuoc.hangHoa.import.hint_ma_hang_hoa": "Chữ in hoa, số, \"_\" hoặc \"-\", tối đa 50 ký tự. Dùng để nhận diện dòng đã có khi chọn ghi đè.",
+  "farmHangHoaPhanThuoc.hangHoa.import.hint_ten_hang_hoa": "Tối đa 255 ký tự.",
+  "farmHangHoaPhanThuoc.hangHoa.import.hint_danh_muc": "Mã hoặc tên danh mục CẤP 2 — xem sheet \"Danh mục\".",
+  "farmHangHoaPhanThuoc.hangHoa.import.hint_dvt": "Đơn vị tính — xem sheet \"Đơn vị tính\".",
+  "farmHangHoaPhanThuoc.hangHoa.import.hint_pham_cap": "Tuỳ chọn — xem sheet \"Phẩm cấp\".",
+  "farmHangHoaPhanThuoc.hangHoa.import.hint_don_gia": "Tuỳ chọn. Số, VD 250000 hoặc 250.000.",
+  "farmHangHoaPhanThuoc.hangHoa.import.hint_mo_ta": "Tuỳ chọn.",
+  "farmHangHoaPhanThuoc.danhMuc.import.hint_ma_danh_muc": "Chữ in hoa, số, \"_\" hoặc \"-\".",
+  "farmHangHoaPhanThuoc.danhMuc.import.hint_ten_danh_muc": "Tên danh mục.",
+  "farmHangHoaPhanThuoc.danhMuc.import.hint_danh_muc_cha": "Để trống → danh mục cấp 1. Ghi mã hoặc tên danh mục cấp 1 → tạo danh mục cấp 2 — xem sheet \"Danh mục cấp 1\".",
+  "farmHangHoaPhanThuoc.danhMuc.import.hint_thu_tu": "Tuỳ chọn. Số nguyên.",
+  "farmHangHoaPhanThuoc.danhMuc.import.hint_mo_ta": "Tuỳ chọn."
 }

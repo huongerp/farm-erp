@@ -21,7 +21,8 @@ interface Props {
   employees: Employee[];
   onAdd: () => void;
   onExport: () => void;
-  onImport: () => void;
+  /** Không truyền → ẩn nút Import (thiếu quyền). */
+  onImport?: () => void;
   onDeleteMany: (ids: string[]) => void;
   onStatusChangeMany: (ids: string[], status: string) => void;
   onBulkEdit?: () => void;
@@ -154,13 +155,13 @@ const EmployeeToolbar: React.FC<Props> = ({
       onClick: onBulkEdit,
       description: t('employee.toolbar.bulkEditDesc', { count: selectedIds.size }),
     }] : []),
-    {
+    ...(onImport ? [{
       key: 'import',
       label: t('employee.toolbar.importData'),
       icon: Upload,
       onClick: onImport,
       description: t('employee.toolbar.importDesc'),
-    },
+    }] : []),
     {
       key: 'export',
       label: t('employee.toolbar.exportData'),
@@ -181,11 +182,13 @@ const EmployeeToolbar: React.FC<Props> = ({
             </Button>
           </Tooltip>
         )}
-        <Tooltip content={t('employee.toolbar.importData')} placement="bottom">
+        {onImport && (
+          <Tooltip content={t('employee.toolbar.importData')} placement="bottom">
             <Button variant="outline" size="sm" onClick={onImport} className="inline-flex min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-8 w-8 p-0 items-center justify-center border-border text-muted-foreground hover:bg-muted">
                 <Upload className="w-4 h-4" />
             </Button>
-        </Tooltip>
+          </Tooltip>
+        )}
         <Tooltip content={t('employee.toolbar.exportData')} placement="bottom">
             <Button variant="outline" size="sm" onClick={onExport} className="inline-flex min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-8 w-8 p-0 items-center justify-center border-border text-muted-foreground hover:bg-muted">
                 <Download className="w-4 h-4" />

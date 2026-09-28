@@ -1,7 +1,6 @@
 
 import React, { useState, useCallback, useEffect, useMemo, lazy, Suspense } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 
@@ -38,6 +37,7 @@ import { stableListQueryKeyPart } from '../../../lib/list-query-key';
 import { useShallow } from 'zustand/react/shallow';
 import { useAuthStore } from '../../../store/useStore';
 import { coQuyenDatMatKhau } from './core/quyen-mat-khau';
+import { useNhanVienImport } from './hooks/use-nhan-vien-import';
 
 type FormOrigin = 'list' | 'detail';
 
@@ -47,14 +47,12 @@ const EmployeePage: React.FC = () => {
   const { t } = useTranslation();
   const { canCreate, canUpdate, canDelete, canAdmin } = useModulePermissionFromContext();
   const currentUser = useAuthStore((s) => s.user);
+  // Import cấp mật khẩu mặc định cho người khác → cần cùng quyền với RPC rpc_set_mat_khau,
+  // không thì tạo xong nhân viên mà không đăng nhập được.
+  const importer = useNhanVienImport(
+    canCreate && coQuyenDatMatKhau({ nhanVienDangNhapId: currentUser?.id, capBac: currentUser?.cap_bac, canAdmin })
+  );
 
-  const IMPORT_COLUMNS = useMemo(() => [
-    { key: 'ho_ten', label: t('employee.name'), required: true },
-    { key: 'email', label: t('employee.email'), required: true },
-    { key: 'so_dien_thoai', label: t('employee.phone') },
-    { key: 'gioi_tinh', label: t('employee.gender') },
-    { key: 'ngay_vao_lam', label: t('employee.hireDate') },
-  ], [t]);
 
   const EXPORT_COLUMNS = useMemo(() => [
     { key: 'ma_nhan_vien', label: t('employee.code') },
@@ -79,7 +77,6 @@ const EmployeePage: React.FC = () => {
   const [editingEmp, setEditingEmp] = useState<Employee | null>(null);
   const [viewingEmp, setViewingEmp] = useState<Employee | null>(null);
   const [formOrigin, setFormOrigin] = useState<FormOrigin>('list');
-  const [showImport, setShowImport] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [showBulkEdit, setShowBulkEdit] = useState(false);
 
@@ -270,10 +267,6 @@ const EmployeePage: React.FC = () => {
       });
   };
 
-  const handleImportData = async (data: Record<string, unknown>[]) => {
-    // In real app, call API to bulk create employees
-    toast.success(t('employee.importSuccess', { count: data.length }));
-  };
 
   return (
     <div className="flex flex-col h-[calc(100dvh-3.75rem)] md:h-[calc(100dvh-4.5rem)] relative">
@@ -288,7 +281,7 @@ const EmployeePage: React.FC = () => {
             employees={employeesForCounts}
             onAdd={() => { setFormOrigin('list'); setShowForm(true); }}
             onExport={() => setShowExport(true)}
-            onImport={() => setShowImport(true)}
+            onImport={importer.canImport ? importer.openImport : undefined}
             onDeleteMany={handleDeleteMany}
             onStatusChangeMany={handleStatusChangeMany}
             onBulkEdit={() => setShowBulkEdit(true)}
@@ -374,13 +367,17 @@ const EmployeePage: React.FC = () => {
       </AnimatePresence>
 
       <AnimatePresence>
-        {showImport && (
+        {importer.showImport && (
           <ImportDialog
-            open={showImport}
-            onClose={() => setShowImport(false)}
-            columns={IMPORT_COLUMNS}
-            onImport={handleImportData}
-            templateFileName={t('employee.importTemplateName')}
+            open={importer.showImport}
+            onClose={importer.closeImport}
+            columns={importer.importColumns}
+            sampleRows={importer.sampleRows}
+            guideNotes={importer.guideNotes}
+            referenceSheets={importer.referenceSheets}
+            importErrors={importer.importErrors}
+            onImport={importer.handleImport}
+            templateFileName={importer.templateFileName}
           />
         )}
       </AnimatePresence>

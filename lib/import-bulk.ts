@@ -129,3 +129,25 @@ export async function bulkUpsert<T extends WriteItem>(
   }
   return result;
 }
+
+/**
+ * Ghi từng dòng đã validate bằng hàm tạo sẵn của module (vd `createKho`) — dùng khi hàm tạo có
+ * logic riêng (snapshot tên, mật khẩu, trigger…) nên không gộp lô được. Lỗi gắn lại đúng dòng Excel
+ * + dữ liệu gốc để file báo lỗi import lại được.
+ */
+export async function writeEachImportRow<T>(
+  items: { row: number; values: Record<string, unknown>; data: T }[],
+  write: (data: T) => Promise<unknown>
+): Promise<{ created: number; errors: { row: number; msg: string; values: Record<string, unknown> }[] }> {
+  const errors: { row: number; msg: string; values: Record<string, unknown> }[] = [];
+  let created = 0;
+  for (const item of items) {
+    try {
+      await write(item.data);
+      created++;
+    } catch (e) {
+      errors.push({ row: item.row, msg: e instanceof Error ? e.message : String(e), values: item.values });
+    }
+  }
+  return { created, errors };
+}

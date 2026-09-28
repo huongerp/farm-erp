@@ -63,20 +63,15 @@ export const useDeleteDepartment = () => {
   });
 };
 
-export const useImportDepartments = (onSuccess?: () => void) => {
+/** Import Excel: lỗi từng dòng trả về trong `errors` để ImportDialog hiển thị. */
+export const useImportDepartments = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: importDepartments,
     onSuccess: (result) => {
+      if (result.created === 0) return;
       queryClient.invalidateQueries({ queryKey: ['departments'] });
-      if (result.created > 0) {
-        toast.success(i18n.t('department.toast.importSuccess', { count: result.created }));
-      }
-      if (result.errors.length > 0) {
-        toast.warning(result.errors.slice(0, 3).join('; '));
-      }
-      if (onSuccess) onSuccess();
+      toast.success(i18n.t('department.toast.importSuccess', { count: result.created }));
     },
-    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : String(err)),
   });
 };

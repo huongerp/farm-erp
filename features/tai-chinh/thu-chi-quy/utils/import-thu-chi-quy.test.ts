@@ -9,7 +9,12 @@ const hangMuc: HangMucRefLite[] = [
   { id: '4', ma: 'CHI_KHAC', ten: 'Chi khác', loai: 'chi' },
 ];
 
-const input = { hangMuc, idChiNhanh: '5', tenChiNhanh: 'Farm A' };
+const chiNhanh = [
+  { id: '5', ma: 'FA', ten: 'Farm A' },
+  { id: '6', ma: 'FB', ten: 'Farm B' },
+];
+
+const input = { hangMuc, chiNhanh, defaultChiNhanhId: '5' };
 
 describe('parseImportDate', () => {
   it('nhận dd/mm/yyyy, yyyy-mm-dd và năm 2 số', () => {
@@ -137,11 +142,12 @@ describe('buildThuChiQuyImportPlan', () => {
   it('số lượng / đơn giá của sổ cũ được gộp vào ghi chú', () => {
     const plan = buildThuChiQuyImportPlan(
       [
-        { [IMPORT_ROW_KEY]: 2, ngay: '1/8/2026', dien_giai: 'A', chi: 1000, so_luong: '', don_gia: '' },
+        { [IMPORT_ROW_KEY]: 2, ngay: '1/8/2026', dien_giai: 'A', hang_muc: 'Vật tư', chi: 1000, so_luong: '', don_gia: '' },
         {
           [IMPORT_ROW_KEY]: 3,
           ngay: '1/8/2026',
           dien_giai: 'B',
+          hang_muc: 'Vật tư',
           chi: 80000,
           so_luong: 2,
           don_gia: '40.000',
@@ -152,5 +158,41 @@ describe('buildThuChiQuyImportPlan', () => {
     );
     expect(plan.toInsert[0].payload.ghi_chu).toBeNull();
     expect(plan.toInsert[1].payload.ghi_chu).toBe('thay lưỡi dao (SL 2 × ĐG 40.000)');
+    expect(plan.toInsert[1].payload).toMatchObject({ so_luong: 2, don_gia: 40000 });
+  });
+
+  it('farm theo mã hoặc tên; trống thì lấy farm đang chọn', () => {
+    const plan = buildThuChiQuyImportPlan(
+      [
+        { [IMPORT_ROW_KEY]: 2, ngay: '1/8/2026', chi_nhanh: 'fb', dien_giai: 'A', hang_muc: 'Vật tư', chi: 1000 },
+        { [IMPORT_ROW_KEY]: 3, ngay: '1/8/2026', chi_nhanh: 'farm b', dien_giai: 'A', hang_muc: 'Vật tư', chi: 1000 },
+        { [IMPORT_ROW_KEY]: 4, ngay: '1/8/2026', chi_nhanh: '', dien_giai: 'A', hang_muc: 'Vật tư', chi: 1000 },
+      ],
+      input
+    );
+    expect(plan.errors).toEqual([]);
+    expect(plan.toInsert.map((r) => r.payload.id_chi_nhanh)).toEqual([6, 6, 5]);
+    expect(plan.toInsert[0].payload.ten_chi_nhanh).toBe('Farm B');
+  });
+
+  it('farm trống mà không chọn farm mặc định, hoặc farm ngoài phạm vi → lỗi', () => {
+    const row = { [IMPORT_ROW_KEY]: 2, ngay: '1/8/2026', dien_giai: 'A', hang_muc: 'Vật tư', chi: 1000 };
+    expect(buildThuChiQuyImportPlan([row], { ...input, defaultChiNhanhId: null }).errors[0].msg).toContain('errFarmRequired');
+    expect(buildThuChiQuyImportPlan([{ ...row, chi_nhanh: 'FC' }], input).errors[0].msg).toContain('errFarmNotFound');
+  });
+
+  it('hạng mục bắt buộc như form; tên hạng mục trùng → không đoán', () => {
+    const row = { [IMPORT_ROW_KEY]: 2, ngay: '1/8/2026', dien_giai: 'A', chi: 1000 };
+    expect(buildThuChiQuyImportPlan([row], input).errors[0].msg).toContain('errHangMucRequired');
+    const trung = [...hangMuc, { id: '9', ma: 'VT2', ten: 'Vật tư', loai: 'chi' as const }];
+    expect(
+      buildThuChiQuyImportPlan([{ ...row, hang_muc: 'vật tư' }], { ...input, hangMuc: trung }).errors[0].msg
+    ).toContain('errHangMucAmbiguous');
+  });
+
+  it('gom mọi lỗi của một dòng và giữ dữ liệu gốc (không có __row) để xuất file lỗi', () => {
+    const plan = buildThuChiQuyImportPlan([{ [IMPORT_ROW_KEY]: 9, ngay: 'x', dien_giai: '', chi: 1000 }], input);
+    expect(plan.errors[0].msg.split('; ').length).toBeGreaterThanOrEqual(3);
+    expect(plan.errors[0].values).not.toHaveProperty(IMPORT_ROW_KEY);
   });
 });

@@ -4,6 +4,7 @@ import type { DepartmentFormValues } from '../core/schema';
 import type { TrangThai } from '../../../../lib/constants';
 import { TRANG_THAI } from '../../../../lib/constants';
 import i18n from '../../../../lib/i18n';
+import { writeEachImportRow } from '../../../../lib/import-bulk';
 
 const TABLE = 'fp_var_phong_ban';
 
@@ -91,19 +92,6 @@ export const deleteDepartment = async (id: string): Promise<void> => {
   if (error) throw new Error(error.message);
 };
 
-export const importDepartments = async (
-  rows: DepartmentFormValues[]
-): Promise<{ created: number; errors: string[] }> => {
-  const errors: string[] = [];
-  let created = 0;
-  for (let i = 0; i < rows.length; i++) {
-    try {
-      await createDepartment(rows[i]);
-      created++;
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Lỗi';
-      errors.push(`Dòng ${i + 2}: ${msg}`);
-    }
-  }
-  return { created, errors };
-};
+/** Ghi các dòng đã validate ở `planPhongBanImport`; lỗi DB gắn lại đúng dòng Excel. */
+export const importDepartments = (items: { row: number; values: Record<string, unknown>; data: DepartmentFormValues }[]) =>
+  writeEachImportRow(items, (data) => createDepartment(data));

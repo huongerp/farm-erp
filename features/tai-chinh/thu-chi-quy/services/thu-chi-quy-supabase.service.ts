@@ -507,10 +507,10 @@ export async function getSoPhieuBatch(loai: LoaiThuChi, soLuong: number): Promis
  * Ghi hàng loạt cho luồng import Excel — PostgREST nhận cả mảng trong một
  * request, `bulkInsert` chia lô 500 và gom lỗi theo lô.
  */
-export async function insertThuChiQuyBulk(
-  rows: Record<string, unknown>[]
-): Promise<{ done: number; failed: { msg: string }[] }> {
-  if (rows.length === 0) return { done: 0, failed: [] };
-  const outcome = await bulkInsert(TABLE, rows.map((payload) => ({ payload })));
-  return { done: outcome.done.length, failed: outcome.failed.map((f) => ({ msg: f.msg })) };
+export async function insertThuChiQuyBulk<T extends { payload: unknown }>(
+  items: T[]
+): Promise<{ done: number; failed: { item: T; msg: string }[] }> {
+  if (items.length === 0) return { done: 0, failed: [] };
+  const outcome = await bulkInsert(TABLE, items);
+  return { done: outcome.done.length, failed: outcome.failed };
 }

@@ -86,5 +86,15 @@
   "department.detail.childrenSection": "Phòng ban con",
   "department.detail.addChild": "Thêm",
   "department.detail.noChildren": "Chưa có phòng ban con",
-  "department.detail.noChildrenHint": "Bấm Thêm phòng ban con để tạo đơn vị cấp dưới trực tiếp."
+  "department.detail.noChildrenHint": "Bấm Thêm phòng ban con để tạo đơn vị cấp dưới trực tiếp.",
+  "department.import.hintTen": "2–500 ký tự.",
+  "department.import.hintChucNang": "Tuỳ chọn.",
+  "department.import.hintThuTu": "Số nguyên ≥ 0. Để trống = 0.",
+  "department.import.hintTrangThai": "Đang dùng / Ngừng. Để trống = Đang dùng.",
+  "department.import.exampleTen1": "Phòng Kỹ thuật",
+  "department.import.exampleChucNang1": "Quản lý quy trình canh tác",
+  "department.import.exampleTen2": "Phòng Kế toán",
+  "department.import.sheetTrangThai": "Trạng thái",
+  "department.import.errTrangThai": "Trạng thái không hợp lệ: \"{{value}}\" (Đang dùng / Ngừng)",
+  "department.import.errThuTu": "Thứ tự phải là số nguyên: \"{{value}}\""
 }

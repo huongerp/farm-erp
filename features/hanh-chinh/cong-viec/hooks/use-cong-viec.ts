@@ -79,31 +79,18 @@ export const useDeleteCongViecList = () => {
   });
 };
 
-export const useImportCongViec = (onSuccess?: () => void) => {
+/** Import Excel: lỗi từng dòng trả về trong `errors` để ImportDialog hiển thị. */
+export const useImportCongViec = () => {
   const queryClient = useQueryClient();
   const user = useAuthStore((s) => s.user);
   return useMutation({
-    mutationFn: (
-      rows: Array<{
-        tieu_de: string;
-        mo_ta?: string;
-        uu_tien?: string;
-        trang_thai?: string;
-        trach_nhiem?: string;
-        nguoi_ho_tro?: string;
-      }>
-    ) => importCongViecList(rows, (user?.id as number | string) ?? 0),
-    onSuccess: (result, _variables) => {
+    mutationFn: (items: Parameters<typeof importCongViecList>[0]) =>
+      importCongViecList(items, (user?.id as number | string) ?? 0),
+    onSuccess: (result) => {
+      if (result.created === 0) return;
       queryClient.invalidateQueries({ queryKey: CONG_VIEC_QUERY_KEY });
-      const msg =
-        result.errors.length > 0
-          ? i18n.t('congViec.toast.importPartial', { created: result.created, errors: result.errors.length })
-          : i18n.t('congViec.toast.importSuccess', { count: result.created });
-      toast.success(msg);
-      if (result.errors.length > 0) result.errors.forEach((e) => toast.error(e));
-      onSuccess?.();
+      toast.success(i18n.t('congViec.toast.importSuccess', { count: result.created }));
     },
-    onError: (err: unknown) => toast.error((err as Error).message),
   });
 };
 

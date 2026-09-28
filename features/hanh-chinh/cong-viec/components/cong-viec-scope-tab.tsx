@@ -17,7 +17,8 @@ import Button from '../../../../components/ui/Button';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import TablePaginationFooter from '../../../../components/shared/TablePaginationFooter';
 import { flattenCongViecWithLevel } from '../services/cong-viec-service';
-import { useCongViecList, useDeleteCongViecList, useImportCongViec } from '../hooks/use-cong-viec';
+import { useCongViecList, useDeleteCongViecList } from '../hooks/use-cong-viec';
+import { useCongViecImport } from '../hooks/use-cong-viec-import';
 import { useCongViecStore, DEFAULT_COLUMNS } from '../store/useCongViecStore';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { useAuthStore } from '../../../../store/useStore';
@@ -75,20 +76,7 @@ const CongViecScopeTab: React.FC<Props> = ({ scope }) => {
 
   const { data: list = [], isLoading } = useCongViecList();
   const deleteMutation = useDeleteCongViecList();
-  const [showImport, setShowImport] = useState(false);
-  const importMutation = useImportCongViec(() => setShowImport(false));
-
-  const IMPORT_COLUMNS = useMemo(
-    () => [
-      { key: 'tieu_de', label: t('congViec.form.tieuDe'), required: true },
-      { key: 'mo_ta', label: t('congViec.form.moTa') },
-      { key: 'uu_tien', label: t('congViec.form.uuTien') },
-      { key: 'trang_thai', label: t('congViec.form.trangThai') },
-      { key: 'trach_nhiem', label: t('congViec.form.trachNhiem') },
-      { key: 'nguoi_ho_tro', label: t('congViec.form.nguoiHoTro') },
-    ],
-    [t]
-  );
+  const importer = useCongViecImport();
 
   const scopeList = useMemo(
     () => filterCongViecByScope(list, scope, userId),
@@ -283,21 +271,6 @@ const CongViecScopeTab: React.FC<Props> = ({ scope }) => {
     exportToExcel(exportData, 'cong_viec');
   }, [exportData]);
 
-  const handleImportData = useCallback(
-    async (rows: Record<string, unknown>[]) => {
-      const payload = rows.map((row) => ({
-        tieu_de: String(row.tieu_de ?? '').trim(),
-        mo_ta: row.mo_ta != null ? String(row.mo_ta).trim() : undefined,
-        uu_tien: String(row.uu_tien ?? 'trung_binh').trim(),
-        trang_thai: String(row.trang_thai ?? 'draft').trim(),
-        trach_nhiem: row.trach_nhiem != null ? String(row.trach_nhiem).trim() : undefined,
-        nguoi_ho_tro: row.nguoi_ho_tro != null ? String(row.nguoi_ho_tro).trim() : undefined,
-      }));
-      await importMutation.mutateAsync(payload);
-    },
-    [importMutation]
-  );
-
   const isListView = activeTabId === 'my' || activeTabId === 'list';
   const isKanban = activeTabId === 'kanban';
   const isGantt = activeTabId === 'gantt';
@@ -319,7 +292,7 @@ const CongViecScopeTab: React.FC<Props> = ({ scope }) => {
           } : undefined}
           onDeleteMany={canDelete ? handleDeleteMany : undefined}
           onExport={handleExport}
-          onImport={canCreate ? () => setShowImport(true) : undefined}
+          onImport={canCreate ? importer.openImport : undefined}
           hideViewMode
           canCreate={canCreate}
           canDelete={canDelete}
@@ -418,13 +391,16 @@ const CongViecScopeTab: React.FC<Props> = ({ scope }) => {
           ))}
         </AnimatePresence>
 
-        {showImport && (
+        {importer.showImport && (
           <ImportDialog
-            open={showImport}
-            onClose={() => setShowImport(false)}
-            columns={IMPORT_COLUMNS}
-            onImport={handleImportData}
-            templateFileName="cong_viec"
+            open={importer.showImport}
+            onClose={importer.closeImport}
+            columns={importer.importColumns}
+            sampleRows={importer.sampleRows}
+            referenceSheets={importer.referenceSheets}
+            importErrors={importer.importErrors}
+            onImport={importer.handleImport}
+            templateFileName={importer.templateFileName}
           />
         )}
       </div>

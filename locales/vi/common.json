@@ -234,7 +234,6 @@
   "shared.import.importError": "Lỗi khi import dữ liệu",
   "shared.import.importRows": "Import {{count}} dòng",
   "shared.import.templateSheetName": "Nhập liệu",
-  "shared.import.templateHasRefSheets": "File mẫu kèm {{count}} sheet tra cứu (danh mục, đơn vị...)",
   "shared.import.errorCount": "{{count}} dòng bị lỗi",
   "shared.import.downloadErrors": "Tải báo cáo lỗi (.xlsx)",
   "shared.import.errorReportRow": "Dòng",
@@ -341,5 +340,17 @@
   "notification.event.quy_xin_mo_khoa": "Phiếu quỹ xin mở khoá",
   "notification.event.quy_duyet_mo_khoa": "Phiếu quỹ được mở khoá",
   "notification.event.quy_tu_choi_mo_khoa": "Phiếu quỹ bị từ chối mở khoá",
-  "notification.filterModule": "Lọc theo module"
+  "notification.filterModule": "Lọc theo module",
+  "shared.import.guideSheetName": "Hướng dẫn",
+  "shared.import.exampleSheetName": "Ví dụ mẫu",
+  "shared.import.guideColumn": "Cột",
+  "shared.import.guideRequired": "Bắt buộc",
+  "shared.import.guideRule": "Định dạng / giá trị hợp lệ",
+  "shared.import.guideExample": "Ví dụ",
+  "shared.import.guideYes": "Có",
+  "shared.import.guideNo": "Không",
+  "shared.import.guideNote1": "• Chỉ điền dữ liệu ở sheet \"Nhập liệu\". Sheet \"Ví dụ mẫu\" và các sheet tra cứu chỉ để tham khảo, không được import.",
+  "shared.import.guideNote2": "• Giữ nguyên dòng tiêu đề. Cột không bắt buộc có thể để trống.",
+  "shared.import.guideNote3": "• Có dòng lỗi: bấm \"Tải báo cáo lỗi\", sửa trực tiếp trong file đó rồi import lại chính file đó.",
+  "shared.import.templateHasGuide": "File mẫu gồm sheet Hướng dẫn, Ví dụ mẫu và {{count}} sheet tra cứu"
 }

@@ -5,6 +5,7 @@ import { db, fetchAllRows, throwSupabaseError } from '../../../../lib/db';
 import type { CongViec, TraoDoiEntry } from '../core/types';
 import type { CongViecFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
+import { writeEachImportRow } from '../../../../lib/import-bulk';
 
 const TABLE = 'fp_hc_cong_viec';
 
@@ -174,47 +175,10 @@ export async function createBinhLuan(
   return newEntry;
 }
 
+/** Ghi các dòng đã validate ở `planCongViecImport`; lỗi DB gắn lại đúng dòng Excel. */
 export async function importCongViecList(
-  rows: Array<{
-    tieu_de: string;
-    mo_ta?: string;
-    uu_tien?: string;
-    trang_thai?: string;
-    trach_nhiem?: string;
-    nguoi_ho_tro?: string;
-  }>,
+  items: { row: number; values: Record<string, unknown>; data: CongViecFormValues }[],
   id_nguoi_giao: number | string
-): Promise<{ created: number; errors: string[] }> {
-  const nguoiGiao = toNumericId(id_nguoi_giao);
-  const errors: string[] = [];
-  let created = 0;
-  for (let i = 0; i < rows.length; i++) {
-    try {
-      const row = rows[i];
-      const ten = String(row.tieu_de ?? '').trim();
-      if (!ten) {
-        errors.push(`Dòng ${i + 2}: Thiếu tiêu đề công việc`);
-        continue;
-      }
-      const uuTien = (['cao', 'trung_binh', 'thap'].includes(row.uu_tien ?? '') ? row.uu_tien : 'trung_binh') as CongViec['uu_tien'];
-      const trangThai = (['draft', 'dang_thuc_hien', 'cho_bao_cao', 'hoan_thanh', 'huy'].includes(row.trang_thai ?? '') ? row.trang_thai : 'draft') as CongViec['trang_thai'];
-      const trachNhiem = row.trach_nhiem != null ? Number(String(row.trach_nhiem).trim()) : null;
-      const nguoiHoTroStr = row.nguoi_ho_tro != null ? String(row.nguoi_ho_tro).trim() : '';
-      const nguoiHoTro = nguoiHoTroStr ? nguoiHoTroStr.split(/[,;]/).map((s) => Number(s.trim())).filter((n) => !Number.isNaN(n)) : [];
-      const data: CongViecFormValues = {
-        tieu_de: ten,
-        mo_ta: row.mo_ta != null ? String(row.mo_ta).trim() : undefined,
-        id_cha: null,
-        trach_nhiem: trachNhiem ?? null,
-        nguoi_ho_tro: nguoiHoTro,
-        uu_tien: uuTien,
-        trang_thai: trangThai,
-      };
-      await createCongViec(data, nguoiGiao);
-      created++;
-    } catch (e: unknown) {
-      errors.push(`Dòng ${i + 2}: ${(e as Error).message || 'Lỗi'}`);
-    }
-  }
-  return { created, errors };
+) {
+  return writeEachImportRow(items, (data) => createCongViec(data, id_nguoi_giao));
 }

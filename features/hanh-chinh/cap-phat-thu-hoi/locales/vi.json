@@ -129,5 +129,15 @@
   "capPhatThuHoi.preview.signNguoiNhan": "Người nhận",
   "capPhatThuHoi.preview.signNguoiThucHien": "Người thực hiện",
   "capPhatThuHoi.preview.signHint": "(Ký và ghi rõ họ tên)",
-  "capPhatThuHoi.preview.printedAt": "In lúc:"
+  "capPhatThuHoi.preview.printedAt": "In lúc:",
+  "capPhatThuHoi.import.hint_loai_phieu": "Mã loại phiếu — xem sheet \"Loại phiếu\".",
+  "capPhatThuHoi.import.hint_ngay_thuc_hien": "yyyy-mm-dd, dd/mm/yyyy hoặc ô ngày của Excel.",
+  "capPhatThuHoi.import.hint_ma_nguoi_thuc_hien": "Mã nhân viên — xem sheet \"Nhân viên\".",
+  "capPhatThuHoi.import.hint_ma_nguoi_giu_truoc": "Tuỳ chọn. Mã nhân viên đang giữ tài sản.",
+  "capPhatThuHoi.import.hint_ma_nguoi_giu_sau": "Mã nhân viên nhận tài sản. Bắt buộc với cấp phát / luân chuyển người.",
+  "capPhatThuHoi.import.hint_ghi_chu_phieu": "Tuỳ chọn. Ghi chú chung của phiếu.",
+  "capPhatThuHoi.import.hint_ma_tai_san": "Mã tài sản — xem sheet \"Tài sản\". Mỗi dòng một tài sản.",
+  "capPhatThuHoi.import.hint_ma_noi_luu_sau": "Mã nơi lưu sau khi chuyển — xem sheet \"Nơi lưu\".",
+  "capPhatThuHoi.import.hint_ghi_chu_dong": "Tuỳ chọn. Ghi chú riêng cho tài sản ở dòng này.",
+  "capPhatThuHoi.import.guideNoteGop": "• Các dòng cùng Loại phiếu + Ngày + Người thực hiện + Người giữ trước/sau + Ghi chú phiếu được gộp thành một phiếu."
 }

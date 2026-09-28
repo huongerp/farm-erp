@@ -9,7 +9,6 @@ import LazyImportDialog from '../../../../components/shared/LazyImportDialog';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL, CONFIRM_YES } from '../../../../lib/button-labels';
 import { formatDate } from '../../../../lib/utils';
-import type { ImportErrorRow, ImportSummary } from '../../../../lib/import-types';
 import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
 import { useEmployeesRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
 import type { DateRangePresetId } from '../../../he-thong/nhan-vien/core/stats-constants';
@@ -33,8 +32,8 @@ import {
 import { useThuChiQuyPermissions } from '../hooks/use-thu-chi-quy-permissions';
 import { useAuthStore } from '../../../../store/useStore';
 import { buildThuChiQuyListServerQuery } from '../services/thu-chi-quy-list-query';
-import { getSoPhieuBatch, getThuChiQuyAll, insertThuChiQuyBulk } from '../services/thu-chi-quy-service';
-import { buildThuChiQuyImportPlan } from '../utils/import-thu-chi-quy';
+import { getThuChiQuyAll } from '../services/thu-chi-quy-service';
+import { useThuChiQuyImport } from '../hooks/use-thu-chi-quy-import';
 import { nguonChungTuToI18nKey } from '../core/constants';
 import type { ThuChiQuy, ThuChiQuyRow } from '../core/types';
 
@@ -64,9 +63,7 @@ const DanhSachTab: React.FC = () => {
   const [showExport, setShowExport] = useState(false);
   const [exportRows, setExportRows] = useState<ThuChiQuyRow[]>([]);
   const [exportLoading, setExportLoading] = useState(false);
-  const [showImport, setShowImport] = useState(false);
   const [xinMoItem, setXinMoItem] = useState<ThuChiQuy | null>(null);
-  const [importErrors, setImportErrors] = useState<ImportErrorRow[]>([]);
 
   useEffect(() => () => resetState(), [resetState]);
 
@@ -75,6 +72,8 @@ const DanhSachTab: React.FC = () => {
     const allowed = new Set(viewScope.allowedBranchIds.map(String));
     return branches.filter((b) => allowed.has(String(b.id)));
   }, [branches, viewScope.viewAll, viewScope.allowedBranchIds]);
+
+  const importer = useThuChiQuyImport({ allowedBranches, chiNhanhDangXem, hangMucList });
 
   /**
    * Mặc định để TRỐNG = tất cả farm trong phạm vi xem (cấp bậc 1 / quyền admin
@@ -249,52 +248,6 @@ const DanhSachTab: React.FC = () => {
     });
   };
 
-  const handleImport = useCallback(
-    async (data: Record<string, unknown>[]): Promise<ImportSummary> => {
-      setImportErrors([]);
-      if (chiNhanhDangXem.length !== 1) {
-        const msg = t('thuChiQuy.import.errChiNhanh');
-        setImportErrors([{ row: 0, msg }]);
-        return { created: 0, skipped: data.length };
-      }
-      const farmId = chiNhanhDangXem[0];
-      const branch = branches.find((b) => String(b.id) === farmId);
-      const plan = buildThuChiQuyImportPlan(data, {
-        hangMuc: hangMucList.map((hm) => ({ id: hm.id, ma: hm.ma, ten: hm.ten, loai: hm.loai })),
-        idChiNhanh: farmId,
-        tenChiNhanh: branch?.ten_chi_nhanh ?? null,
-      });
-      setImportErrors(plan.errors);
-      if (plan.toInsert.length === 0) {
-        return { created: 0, skipped: plan.errors.length };
-      }
-      // Số phiếu lấy trọn lô từ cùng dãy sequence với phiếu nhập tay (2 request).
-      const soThu = plan.toInsert.filter((p) => p.payload.loai === 'thu').length;
-      const soChi = plan.toInsert.length - soThu;
-      const [soPhieuThu, soPhieuChi] = await Promise.all([
-        getSoPhieuBatch('thu', soThu),
-        getSoPhieuBatch('chi', soChi),
-      ]);
-      let iThu = 0;
-      let iChi = 0;
-      const rowsPayload = plan.toInsert.map((p) => ({
-        ...p.payload,
-        so_phieu: p.payload.loai === 'thu' ? soPhieuThu[iThu++] : soPhieuChi[iChi++],
-      }));
-
-      const outcome = await insertThuChiQuyBulk(rowsPayload as unknown as Record<string, unknown>[]);
-      if (outcome.failed.length > 0) {
-        setImportErrors([
-          ...plan.errors,
-          ...outcome.failed.map((f) => ({ row: 0, msg: f.msg })),
-        ]);
-      }
-      pageQuery.refetch();
-      return { created: outcome.done, skipped: plan.errors.length + outcome.failed.length };
-    },
-    [chiNhanhDangXem, branches, hangMucList, t, pageQuery]
-  );
-
   const exportColumns = useMemo(
     () => [
       { key: 'ngay', label: t('thuChiQuy.store.ngayCol') },
@@ -330,21 +283,6 @@ const DanhSachTab: React.FC = () => {
         nguoi_tao: r.ref_ten_nguoi_tao || r.ten_nguoi_tao || '',
       })),
     [exportRows, t]
-  );
-
-  const importColumns = useMemo(
-    () => [
-      { key: 'ngay', label: t('thuChiQuy.store.ngayCol'), required: true },
-      { key: 'dien_giai', label: t('thuChiQuy.store.dienGiaiCol'), required: true },
-      { key: 'so_luong', label: t('thuChiQuy.store.soLuongCol') },
-      { key: 'don_gia', label: t('thuChiQuy.store.donGiaCol') },
-      { key: 'hang_muc', label: t('thuChiQuy.store.hangMucCol') },
-      { key: 'thu', label: t('thuChiQuy.store.thuCol') },
-      { key: 'chi', label: t('thuChiQuy.store.chiCol') },
-      { key: 'so_chung_tu', label: t('thuChiQuy.store.soChungTuCol') },
-      { key: 'ghi_chu', label: t('thuChiQuy.store.ghiChuCol') },
-    ],
-    [t]
   );
 
   /** Xuất TẤT CẢ bản ghi khớp filter, không chỉ trang đang xem. */
@@ -385,7 +323,7 @@ const DanhSachTab: React.FC = () => {
         onDeleteMany={handleDeleteMany}
         onExport={handleOpenExport}
         exportLoading={exportLoading}
-        onImport={canCreate ? () => setShowImport(true) : undefined}
+        onImport={canCreate ? importer.openImport : undefined}
         canCreate={canCreate}
         canDelete={canDelete}
       />
@@ -482,21 +420,15 @@ const DanhSachTab: React.FC = () => {
       />
 
       <LazyImportDialog
-        open={showImport}
-        onClose={() => {
-          setShowImport(false);
-          setImportErrors([]);
-        }}
-        columns={importColumns}
-        importErrors={importErrors}
-        templateFileName={t('thuChiQuy.import.templateName')}
-        onImport={async (data) => {
-          const summary = await handleImport(data);
-          if ((summary.created ?? 0) > 0) {
-            toast.success(t('thuChiQuy.import.success', { count: summary.created }));
-          }
-          return summary;
-        }}
+        open={importer.showImport}
+        onClose={importer.closeImport}
+        columns={importer.importColumns}
+        sampleRows={importer.sampleRows}
+        guideNotes={importer.guideNotes}
+        referenceSheets={importer.referenceSheets}
+        importErrors={importer.importErrors}
+        templateFileName={importer.templateFileName}
+        onImport={importer.handleImport}
       />
     </div>
   );

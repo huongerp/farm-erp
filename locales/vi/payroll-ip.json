@@ -137,5 +137,19 @@
   "payrollIp.pointGroups.types.cong": "Cộng",
   "payrollIp.pointGroups.types.tru": "Trừ",
   "payrollIp.pointGroups.service.notFound": "Hạng mục không tồn tại",
-  "payrollIp.pointGroups.service.duplicateMa": "Mã hạng mục đã tồn tại"
+  "payrollIp.pointGroups.service.duplicateMa": "Mã hạng mục đã tồn tại",
+  "payrollIp.import.colChiNhanh": "Chi nhánh",
+  "payrollIp.import.hintChiNhanh": "Mã hoặc tên chi nhánh — xem sheet \"Chi nhánh\".",
+  "payrollIp.import.hintIp": "Địa chỉ IPv4 công khai của wifi, VD 113.161.10.25.",
+  "payrollIp.import.hintTuyChon": "Tuỳ chọn.",
+  "payrollIp.import.hintTrangThai": "Đang hoạt động / Ngừng hoạt động. Để trống = Đang hoạt động.",
+  "payrollIp.import.exampleGhiChu": "Wifi văn phòng",
+  "payrollIp.import.sheetChiNhanh": "Chi nhánh",
+  "payrollIp.import.sheetTrangThai": "Trạng thái",
+  "payrollIp.import.refMa": "Mã",
+  "payrollIp.import.refTen": "Tên",
+  "payrollIp.import.errChiNhanhNotFound": "Không tìm thấy chi nhánh: \"{{value}}\"",
+  "payrollIp.import.errChiNhanhAmbiguous": "Có nhiều chi nhánh cùng tên \"{{value}}\" — hãy ghi mã",
+  "payrollIp.import.errTrangThai": "Trạng thái không hợp lệ: \"{{value}}\"",
+  "payrollIp.import.errDuplicateInFile": "IP trùng với dòng {{row}} (cùng chi nhánh)"
 }

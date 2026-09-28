@@ -14,9 +14,9 @@ import {
   useDeleteKho,
   useUpdateKhoStatus,
   useDeleteKhoMany,
-  useImportKho,
 } from './hooks/use-kho';
 import { useKhoStore, DEFAULT_COLUMNS } from './store/useKhoStore';
+import { useKhoImport } from './hooks/use-kho-import';
 import { useConfirmStore } from '../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL, CONFIRM_YES } from '../../../lib/button-labels';
 import { useListWithFilter } from '../../../lib/hooks';
@@ -51,7 +51,6 @@ const DanhSachKhoPage: React.FC = () => {
   const [editingItem, setEditingItem] = useState<Kho | null>(null);
   const [viewingItem, setViewingItem] = useState<Kho | null>(null);
   const [showExport, setShowExport] = useState(false);
-  const [showImport, setShowImport] = useState(false);
 
   const { data: khoList = [], isLoading } = useKhoList();
   const nextThuTu = useMemo(
@@ -61,20 +60,7 @@ const DanhSachKhoPage: React.FC = () => {
   const deleteMutation = useDeleteKho();
   const deleteManyMutation = useDeleteKhoMany();
   const statusMutation = useUpdateKhoStatus();
-  const importMutation = useImportKho(() => setShowImport(false));
-
-  const IMPORT_COLUMNS = useMemo(
-    () => [
-      { key: 'ma_kho', label: t('kho.form.code'), required: true },
-      { key: 'ten_kho', label: t('kho.form.name'), required: true },
-      { key: 'id_chi_nhanh', label: t('kho.form.branch') },
-      { key: 'dia_chi', label: t('kho.form.address') },
-      { key: 'mo_ta', label: t('kho.detail.description') },
-      { key: 'thu_tu', label: t('kho.detail.order') },
-      { key: 'trang_thai', label: t('common.status') },
-    ],
-    [t]
-  );
+  const importer = useKhoImport();
 
   useEffect(() => {
     return () => resetState();
@@ -206,29 +192,6 @@ const DanhSachKhoPage: React.FC = () => {
     });
   };
 
-  const handleImportData = async (data: Record<string, unknown>[]) => {
-    const rows = data.map((row) => {
-      const raw = row.trang_thai;
-      const trangThai =
-        raw === 0 || String(raw).trim() === '0' || String(raw).trim().toLowerCase() === 'ngừng hoạt động'
-          ? TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG
-          : TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
-      const idChiNhanh = row.id_chi_nhanh != null && String(row.id_chi_nhanh).trim() !== ''
-        ? String(row.id_chi_nhanh).trim()
-        : null;
-      return {
-        ma_kho: String(row.ma_kho ?? '').trim().toUpperCase(),
-        ten_kho: String(row.ten_kho ?? '').trim(),
-        dia_chi: row.dia_chi != null ? String(row.dia_chi).trim() : undefined,
-        mo_ta: row.mo_ta != null ? String(row.mo_ta).trim() : undefined,
-        id_chi_nhanh: idChiNhanh,
-        thu_tu: Math.max(1, Number(row.thu_tu) || 1),
-        trang_thai: trangThai,
-      };
-    });
-    await importMutation.mutateAsync(rows);
-  };
-
   const handleExport = () => {
     if (filteredList.length === 0) {
       toast.warning(t('kho.noExportData'));
@@ -248,7 +211,7 @@ const DanhSachKhoPage: React.FC = () => {
             setShowForm(true);
           }}
           onExport={handleExport}
-          onImport={() => setShowImport(true)}
+          onImport={importer.openImport}
           onDeleteMany={handleDeleteMany}
           onStatusChangeMany={handleStatusChangeMany}
           canCreate={canCreate}
@@ -316,13 +279,16 @@ const DanhSachKhoPage: React.FC = () => {
       </AnimatePresence>
 
       <AnimatePresence>
-        {showImport && (
+        {importer.showImport && (
           <ImportDialog
-            open={showImport}
-            onClose={() => setShowImport(false)}
-            columns={IMPORT_COLUMNS}
-            onImport={handleImportData}
-            templateFileName={t('kho.importTemplateName')}
+            open={importer.showImport}
+            onClose={importer.closeImport}
+            columns={importer.importColumns}
+            sampleRows={importer.sampleRows}
+            referenceSheets={importer.referenceSheets}
+            importErrors={importer.importErrors}
+            onImport={importer.handleImport}
+            templateFileName={importer.templateFileName}
           />
         )}
       </AnimatePresence>
