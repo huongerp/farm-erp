@@ -121,7 +121,8 @@ const MobileActionsSheet: React.FC<MobileActionsSheetProps> = ({
                 const variant = item.variant || 'default';
                 return (
                   <button
-                    key={item.key}
+                    // `key` tuỳ chọn ở ActionItem — nhiều toolbar không truyền, React cảnh báo thiếu key.
+                    key={item.key ?? item.label}
                     type="button"
                     onClick={() => handleItemClick(item)}
                     className={cn(

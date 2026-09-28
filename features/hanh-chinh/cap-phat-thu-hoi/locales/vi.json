@@ -100,7 +100,6 @@
   "capPhatThuHoi.importTemplateName": "mau_import_cap_phat_thu_hoi",
   "capPhatThuHoi.noExportData": "Không có dữ liệu để xuất",
   "capPhatThuHoi.toast.importSuccess": "Đã import {{count}} phiếu",
-  "capPhatThuHoi.toast.importPartial": "Import {{created}} phiếu, {{errors}} lỗi",
   "capPhatThuHoi.import.maNguoiThucHien": "Mã người thực hiện",
   "capPhatThuHoi.import.maNguoiGiuTruoc": "Mã người giữ trước",
   "capPhatThuHoi.import.maNguoiGiuSau": "Mã người giữ sau",

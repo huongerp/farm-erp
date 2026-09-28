@@ -27,6 +27,8 @@ import type {
 import { getTaiSanList, updateTaiSanLocationAndHolder } from '../../danh-muc-tai-san/services/danh-muc-tai-san-service';
 import { getAssetStorageLocations } from '../../thiet-lap-tai-san/services/noi-luu-service';
 import { getEmployeesRef } from '@/features/he-thong/nhan-vien/services/nhan-vien-service';
+import type { ImportErrorRow } from '@/lib/import-types';
+import { parseImportDate } from '@/lib/import-common';
 
 const TABLE = 'fp_ts_phieu_cap_phat_thu_hoi';
 const TABLE_CT = 'fp_ts_phieu_cap_phat_thu_hoi_ct';
@@ -560,25 +562,13 @@ function parseLoaiPhieu(raw: string): LoaiPhieu | null {
   return byLabel ? (byLabel[0] as LoaiPhieu) : null;
 }
 
-/** Chuẩn hóa ngày về YYYY-MM-DD (Excel serial hoặc chuỗi). */
+/**
+ * Chuẩn hóa ngày về YYYY-MM-DD (Excel serial hoặc chuỗi) bằng hàm chung — hàm cũ để lọt
+ * ngày không tồn tại như 31/02. Vẫn nhận chuỗi ISO kèm giờ ("2026-01-15T08:00").
+ */
 function parseNgayThucHien(raw: unknown): string | null {
-  if (raw == null || raw === '') return null;
-  if (typeof raw === 'number' && Number.isFinite(raw)) {
-    // Excel serial date (days since 1899-12-30)
-    const ms = (raw - 25569) * 86400 * 1000;
-    const d = new Date(ms);
-    if (Number.isNaN(d.getTime())) return null;
-    return d.toISOString().slice(0, 10);
-  }
-  const s = String(raw).trim();
-  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
-  const m = s.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/);
-  if (m) {
-    const dd = m[1].padStart(2, '0');
-    const mm = m[2].padStart(2, '0');
-    return `${m[3]}-${mm}-${dd}`;
-  }
-  return null;
+  const isoWithTime = typeof raw === 'string' ? raw.trim().match(/^(\d{4}-\d{2}-\d{2})[T ]/) : null;
+  return parseImportDate(isoWithTime ? isoWithTime[1] : raw);
 }
 
 function resolveEmployeeId(
@@ -605,25 +595,35 @@ type ResolvedLine = {
   ghi_chu_dong: string | null;
 };
 
-function groupKey(line: ResolvedLine): string {
+/** Một dòng import kèm số dòng Excel thật + dữ liệu gốc (để xuất file lỗi import lại được). */
+export type PhieuCapPhatThuHoiImportItem = {
+  row: number;
+  values: Record<string, unknown>;
+  data: PhieuCapPhatThuHoiImportRow;
+};
+
+/** Khoá gộp từ chữ THÔ của file — dòng lỗi vẫn rơi đúng vào phiếu của nó để cả phiếu bị loại cùng. */
+function rawGroupKey(row: PhieuCapPhatThuHoiImportRow): string {
+  const norm = (v: unknown) => String(v ?? '').trim().toLowerCase();
   return [
-    line.loai_phieu,
-    line.ngay_thuc_hien,
-    line.id_nguoi_thuc_hien,
-    line.id_nguoi_giu_truoc ?? '',
-    line.id_nguoi_giu_sau ?? '',
-    line.ghi_chu_phieu ?? '',
+    norm(row.loai_phieu),
+    norm(row.ngay_thuc_hien),
+    norm(row.ma_nguoi_thuc_hien),
+    norm(row.ma_nguoi_giu_truoc),
+    norm(row.ma_nguoi_giu_sau),
+    norm(row.ghi_chu_phieu),
   ].join('|');
 }
 
 /**
  * Import phiếu từ dòng Excel phẳng (1 dòng = 1 tài sản).
- * Gộp phiếu theo khóa header rồi gọi createPhieuSupabase từng nhóm.
+ * Gộp phiếu theo khóa header rồi gọi createPhieuSupabase từng nhóm. Một dòng lỗi thì cả
+ * phiếu chứa nó không được tạo — không sinh phiếu thiếu tài sản so với file.
  */
 export async function importPhieuCapPhatThuHoiListSupabase(
-  rows: PhieuCapPhatThuHoiImportRow[]
-): Promise<{ created: number; errors: string[] }> {
-  const errors: string[] = [];
+  items: PhieuCapPhatThuHoiImportItem[]
+): Promise<{ created: number; errors: ImportErrorRow[] }> {
+  const errors: ImportErrorRow[] = [];
   let created = 0;
 
   const [employees, assets, locations] = await Promise.all([
@@ -637,18 +637,17 @@ export async function importPhieuCapPhatThuHoiListSupabase(
   const assetByMa = new Map(assets.map((a) => [a.ma_tai_san.trim().toUpperCase(), a.id]));
   const locByMa = new Map(locations.map((l) => [l.ma_noi_luu.trim().toUpperCase(), l.id]));
 
-  const resolved: ResolvedLine[] = [];
-
-  for (let i = 0; i < rows.length; i++) {
-    const row = rows[i];
-    const rowNum = i + 2;
+  type Checked = { item: PhieuCapPhatThuHoiImportItem; errs: string[]; line: ResolvedLine | null };
+  const checked: Checked[] = items.map((item) => {
+    const row = item.data;
+    const rowNum = item.row;
     const rowErrors: string[] = [];
 
     const loai = parseLoaiPhieu(String(row.loai_phieu ?? ''));
     if (!loai) rowErrors.push('Loại phiếu không hợp lệ');
 
     const ngay = parseNgayThucHien(row.ngay_thuc_hien);
-    if (!ngay) rowErrors.push('Ngày thực hiện không hợp lệ (YYYY-MM-DD)');
+    if (!ngay) rowErrors.push('Ngày thực hiện không hợp lệ (dd/mm/yyyy hoặc yyyy-mm-dd)');
 
     const maNguoiTh = String(row.ma_nguoi_thuc_hien ?? '').trim();
     const idNguoiTh = resolveEmployeeId(maNguoiTh, empByMa, empById);
@@ -668,10 +667,11 @@ export async function importPhieuCapPhatThuHoiListSupabase(
       if (!idGiuSau) rowErrors.push(`Không tìm thấy người giữ sau: ${maGiuSau}`);
     }
 
+    // Có ghi mã mà không tìm thấy thì đã báo ở trên — chỉ báo "bắt buộc" khi để trống thật.
     if (
       loai &&
       (loai === 'cap_phat' || loai === 'luan_chuyen_nguoi' || loai === 'luan_chuyen_ca_hai') &&
-      !idGiuSau
+      !maGiuSau
     ) {
       rowErrors.push('Loại phiếu này bắt buộc người giữ sau');
     }
@@ -684,34 +684,46 @@ export async function importPhieuCapPhatThuHoiListSupabase(
     const idNoi = maNoi ? locByMa.get(maNoi) : undefined;
     if (!maNoi || !idNoi) rowErrors.push(`Không tìm thấy nơi lưu sau: ${maNoi || '(trống)'}`);
 
-    if (rowErrors.length > 0) {
-      errors.push(`Dòng ${rowNum}: ${rowErrors.join('; ')}`);
+    if (rowErrors.length > 0) return { item, errs: rowErrors, line: null };
+    return {
+      item,
+      errs: [],
+      line: {
+        rowNum,
+        loai_phieu: loai!,
+        ngay_thuc_hien: ngay!,
+        id_nguoi_thuc_hien: idNguoiTh!,
+        id_nguoi_giu_truoc: idGiuTruoc,
+        id_nguoi_giu_sau: idGiuSau,
+        ghi_chu_phieu: String(row.ghi_chu_phieu ?? '').trim() || null,
+        id_tai_san: idTs!,
+        id_noi_luu_sau: idNoi!,
+        ghi_chu_dong: String(row.ghi_chu_dong ?? '').trim() || null,
+      },
+    };
+  });
+
+  const groups = new Map<string, Checked[]>();
+  for (const c of checked) {
+    const key = rawGroupKey(c.item.data);
+    const list = groups.get(key);
+    if (list) list.push(c);
+    else groups.set(key, [c]);
+  }
+
+  for (const list of groups.values()) {
+    const badRows = list.filter((c) => c.errs.length > 0).map((c) => c.item.row);
+    if (badRows.length > 0) {
+      list.forEach((c) =>
+        errors.push({
+          row: c.item.row,
+          msg: c.errs.length > 0 ? c.errs.join('; ') : `Phiếu không được tạo vì dòng ${badRows.join(', ')} lỗi`,
+          values: c.item.values,
+        })
+      );
       continue;
     }
-
-    resolved.push({
-      rowNum,
-      loai_phieu: loai!,
-      ngay_thuc_hien: ngay!,
-      id_nguoi_thuc_hien: idNguoiTh!,
-      id_nguoi_giu_truoc: idGiuTruoc,
-      id_nguoi_giu_sau: idGiuSau,
-      ghi_chu_phieu: String(row.ghi_chu_phieu ?? '').trim() || null,
-      id_tai_san: idTs!,
-      id_noi_luu_sau: idNoi!,
-      ghi_chu_dong: String(row.ghi_chu_dong ?? '').trim() || null,
-    });
-  }
-
-  const groups = new Map<string, ResolvedLine[]>();
-  for (const line of resolved) {
-    const key = groupKey(line);
-    const list = groups.get(key);
-    if (list) list.push(line);
-    else groups.set(key, [line]);
-  }
-
-  for (const lines of groups.values()) {
+    const lines = list.map((c) => c.line!);
     const first = lines[0];
     const data: PhieuCapPhatThuHoiCreate = {
       loai_phieu: first.loai_phieu,
@@ -730,10 +742,11 @@ export async function importPhieuCapPhatThuHoiListSupabase(
       await createPhieuSupabase(data, first.id_nguoi_thuc_hien);
       created++;
     } catch (e: unknown) {
-      const rowHint = lines.map((l) => l.rowNum).join(', ');
-      errors.push(`Nhóm dòng ${rowHint}: ${(e as Error).message || 'Lỗi tạo phiếu'}`);
+      const msg = (e as Error).message || 'Lỗi tạo phiếu';
+      list.forEach((c) => errors.push({ row: c.item.row, msg, values: c.item.values }));
     }
   }
 
+  errors.sort((a, b) => a.row - b.row);
   return { created, errors };
 }

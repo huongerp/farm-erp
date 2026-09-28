@@ -66,7 +66,9 @@ export function useThuChiQuyImport({ allowedBranches, chiNhanhDangXem, hangMucLi
 
   const sampleRows = useMemo<ImportSampleRow[]>(() => {
     const farm = allowedBranches[0]?.ma_chi_nhanh || 'FARM01';
-    const hmThu = hangMucList.find((h) => h.loai !== 'chi')?.ma || 'TAM_UNG';
+    const hmThuList = hangMucList.filter((h) => h.loai !== 'chi');
+    // Dòng mẫu là "Tạm ứng quỹ" → ưu tiên đúng hạng mục tạm ứng, không lấy đại mục thu đầu tiên.
+    const hmThu = (hmThuList.find((h) => /tam.?ung/i.test(h.ma)) ?? hmThuList[0])?.ma || 'TAM_UNG';
     const hmChi = hangMucList.filter((h) => h.loai !== 'thu');
     const chi1 = hmChi[0]?.ma || 'VAT_TU';
     const chi2 = hmChi[1]?.ma || chi1;

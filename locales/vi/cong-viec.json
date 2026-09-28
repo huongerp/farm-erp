@@ -26,7 +26,6 @@
   "congViec.toast.updateSuccess": "Cập nhật công việc thành công",
   "congViec.toast.deleteSuccess": "Đã xóa {{count}} công việc",
   "congViec.toast.importSuccess": "Đã nhập {{count}} công việc từ file",
-  "congViec.toast.importPartial": "Đã nhập {{created}} công việc; {{errors}} lỗi",
   "congViec.form.createTitle": "Thêm công việc",
   "congViec.form.editTitle": "Chỉnh sửa công việc",
   "congViec.form.createSubtitle": "Tạo công việc mới",

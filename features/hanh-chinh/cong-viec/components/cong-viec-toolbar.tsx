@@ -182,6 +182,19 @@ const CongViecToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onE
     </div>
   );
 
+  // Màn hẹp ẩn nhóm nút `renderActions` → Import / Xuất phải có mặt trong menu "⋮" của mobile.
+  const mobileActions = useMemo(
+    () => [
+      ...(canCreate && onImport
+        ? [{ key: 'import', label: t('congViec.toolbar.importData'), icon: Upload, onClick: onImport, description: '' }]
+        : []),
+      ...(onExport
+        ? [{ key: 'export', label: t('congViec.toolbar.exportData'), icon: Download, onClick: onExport, description: '' }]
+        : []),
+    ],
+    [canCreate, onImport, onExport, t]
+  );
+
   return (
     <GenericToolbar
       selectedCount={selectedCount}
@@ -191,6 +204,7 @@ const CongViecToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onE
       actions={renderActions}
       filters={renderFilters}
       filterGroups={[]}
+      mobileActions={mobileActions}
       onAdd={canCreate ? onAdd : undefined}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}

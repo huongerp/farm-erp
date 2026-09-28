@@ -11,12 +11,13 @@ import {
   getAllPhieuChiTietSupabase,
   importPhieuCapPhatThuHoiListSupabase,
   type PhieuCapPhatThuHoiImportRow,
+  type PhieuCapPhatThuHoiImportItem,
   getPhieuCapPhatPageSupabase,
   fetchAllPhieuCapPhatForListQuery as fetchAllPhieuCapPhatForListQuerySupabase,
 } from './cap-phat-thu-hoi-supabase.service';
 import { getEmployeesRef } from '@/features/he-thong/nhan-vien/services/nhan-vien-service';
 
-export type { PhieuCapPhatThuHoiImportRow };
+export type { PhieuCapPhatThuHoiImportRow, PhieuCapPhatThuHoiImportItem };
 
 async function enrichPhieu(items: PhieuCapPhatThuHoi[]): Promise<PhieuCapPhatThuHoi[]> {
   const employees = await getEmployeesRef();
@@ -112,7 +113,5 @@ export const getAllPhieuChiTiet = async (): Promise<PhieuChiTietRow[]> => {
   return getAllPhieuChiTietSupabase();
 };
 
-export const importPhieuCapPhatThuHoiList = (
-  rows: PhieuCapPhatThuHoiImportRow[]
-): Promise<{ created: number; errors: string[] }> =>
-  importPhieuCapPhatThuHoiListSupabase(rows);
+export const importPhieuCapPhatThuHoiList = (items: PhieuCapPhatThuHoiImportItem[]) =>
+  importPhieuCapPhatThuHoiListSupabase(items);

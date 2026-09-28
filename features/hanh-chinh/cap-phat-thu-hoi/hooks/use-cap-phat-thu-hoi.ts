@@ -13,7 +13,7 @@ import {
   getAllPhieuChiTiet,
   importPhieuCapPhatThuHoiList,
   type GetPhieuListParams,
-  type PhieuCapPhatThuHoiImportRow,
+  type PhieuCapPhatThuHoiImportItem,
 } from '../services/cap-phat-thu-hoi-service';
 import type { PhieuCapPhatThuHoi, PhieuCapPhatThuHoiCreate, PhieuChiTietWithHeader, PhieuChiTietRow } from '../core/types';
 
@@ -114,24 +114,16 @@ export const useUpdatePhieu = (onSuccess?: (data?: PhieuCapPhatThuHoi) => void) 
   });
 };
 
-export const useImportPhieuCapPhatThuHoi = (onSuccess?: () => void) => {
+/** Import Excel: lỗi từng dòng trả về trong `errors` để ImportDialog hiển thị. */
+export const useImportPhieuCapPhatThuHoi = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (rows: PhieuCapPhatThuHoiImportRow[]) => importPhieuCapPhatThuHoiList(rows),
+    mutationFn: (items: PhieuCapPhatThuHoiImportItem[]) => importPhieuCapPhatThuHoiList(items),
     onSuccess: (result) => {
+      if (result.created === 0) return;
       queryClient.invalidateQueries({ queryKey: QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ['taiSanList'] });
-      const msg =
-        result.errors.length > 0
-          ? i18n.t('capPhatThuHoi.toast.importPartial', {
-              created: result.created,
-              errors: result.errors.length,
-            })
-          : i18n.t('capPhatThuHoi.toast.importSuccess', { count: result.created });
-      toast.success(msg);
-      if (result.errors.length > 0) result.errors.forEach((e) => toast.error(e));
-      onSuccess?.();
+      toast.success(i18n.t('capPhatThuHoi.toast.importSuccess', { count: result.created }));
     },
-    onError: (err: unknown) => toast.error((err as Error).message),
   });
 };

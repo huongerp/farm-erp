@@ -62,6 +62,8 @@ const CuaToiTab: React.FC = () => {
   const {
     showImport,
     setShowImport,
+    importErrors,
+    closeImport,
     showExport,
     setShowExport,
     IMPORT_COLUMNS,
@@ -205,7 +207,8 @@ const CuaToiTab: React.FC = () => {
       )}
       <ImportDialog
         open={showImport}
-        onClose={() => setShowImport(false)}
+        onClose={closeImport}
+        importErrors={importErrors}
         columns={IMPORT_COLUMNS}
         onImport={handleImportData}
         templateFileName={templateFileName}

@@ -152,7 +152,7 @@
   "thuChiQuy.toolbar.export": "Xuất dữ liệu",
   "thuChiQuy.toolbar.exportDesc": "Tải sổ quỹ đang lọc ra Excel/CSV",
   "thuChiQuy.toolbar.import": "Nhập dữ liệu",
-  "thuChiQuy.toolbar.importDesc": "Đổ sổ quỹ Excel cũ vào farm đang chọn",
+  "thuChiQuy.toolbar.importDesc": "Nhập phiếu thu chi từ Excel, nhiều farm trong một file",
   "thuChiQuy.trangThai.choMo": "Chờ mở",
   "thuChiQuy.trangThai.khoa": "Khoá",
   "thuChiQuy.trangThai.mo": "Đang mở",

@@ -71,6 +71,8 @@ const LichSuTab: React.FC<Props> = ({ defaultTaiSanId }) => {
   const {
     showImport,
     setShowImport,
+    importErrors,
+    closeImport,
     showExport,
     setShowExport,
     IMPORT_COLUMNS,
@@ -216,7 +218,8 @@ const LichSuTab: React.FC<Props> = ({ defaultTaiSanId }) => {
       )}
       <ImportDialog
         open={showImport}
-        onClose={() => setShowImport(false)}
+        onClose={closeImport}
+        importErrors={importErrors}
         columns={IMPORT_COLUMNS}
         onImport={handleImportData}
         templateFileName={templateFileName}

@@ -224,7 +224,7 @@ const DepartmentPage = () => {
           selectedCount={selectedIds.size}
           onAdd={() => setShowForm(true)}
           onExport={handleExport}
-          onImport={importer.openImport}
+          onImport={canCreate ? importer.openImport : undefined}
           onDeleteMany={handleDeleteMany}
           onStatusChangeMany={handleStatusChangeMany}
           canCreate={canCreate}

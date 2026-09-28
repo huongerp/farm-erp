@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { ImportReferenceSheet, ImportSampleRow } from '../../../../components/shared/ImportDialog';
+import { IMPORT_ROW_KEY, type ImportErrorRow, type ImportSummary } from '../../../../lib/import-types';
 import type { ExportColumn } from '../../../../components/shared/LazyExportDialog';
 import { useExportData } from '../../../../lib/useExportData';
 import { useEmployeesRefQuery } from '@/lib/hooks/use-supabase-ref-queries';
@@ -21,7 +22,8 @@ export function useCpthListImportExport(sortedList: PhieuCapPhatThuHoi[]) {
   const [showExport, setShowExport] = useState(false);
   const pagination = useCapPhatThuHoiStore((s) => s.pagination);
   const selectedIds = useCapPhatThuHoiStore((s) => s.selectedIds);
-  const importMutation = useImportPhieuCapPhatThuHoi(() => setShowImport(false));
+  const [importErrors, setImportErrors] = useState<ImportErrorRow[]>([]);
+  const importMutation = useImportPhieuCapPhatThuHoi();
 
   const { data: employees = [] } = useEmployeesRefQuery();
   const { data: taiSanList = [] } = useTaiSanList();
@@ -120,19 +122,28 @@ export function useCpthListImportExport(sortedList: PhieuCapPhatThuHoi[]) {
   }, [sortedList.length, t]);
 
   const handleImportData = useCallback(
-    async (rows: Record<string, unknown>[]) => {
-      const payload: PhieuCapPhatThuHoiImportRow[] = rows.map((row) => ({
-        loai_phieu: row.loai_phieu != null ? String(row.loai_phieu) : undefined,
-        ngay_thuc_hien: row.ngay_thuc_hien != null ? String(row.ngay_thuc_hien) : undefined,
-        ma_nguoi_thuc_hien: row.ma_nguoi_thuc_hien != null ? String(row.ma_nguoi_thuc_hien) : undefined,
-        ma_nguoi_giu_truoc: row.ma_nguoi_giu_truoc != null ? String(row.ma_nguoi_giu_truoc) : undefined,
-        ma_nguoi_giu_sau: row.ma_nguoi_giu_sau != null ? String(row.ma_nguoi_giu_sau) : undefined,
-        ghi_chu_phieu: row.ghi_chu_phieu != null ? String(row.ghi_chu_phieu) : undefined,
-        ma_tai_san: row.ma_tai_san != null ? String(row.ma_tai_san) : undefined,
-        ma_noi_luu_sau: row.ma_noi_luu_sau != null ? String(row.ma_noi_luu_sau) : undefined,
-        ghi_chu_dong: row.ghi_chu_dong != null ? String(row.ghi_chu_dong) : undefined,
-      }));
-      await importMutation.mutateAsync(payload);
+    async (rows: Record<string, unknown>[]): Promise<ImportSummary> => {
+      setImportErrors([]);
+      const str = (v: unknown) => (v != null ? String(v) : undefined);
+      const items = rows.map((row, idx) => {
+        const { [IMPORT_ROW_KEY]: rowNo, ...values } = row;
+        const data: PhieuCapPhatThuHoiImportRow = {
+          loai_phieu: str(row.loai_phieu),
+          // Ô ngày Excel là số serial — giữ nguyên kiểu để service tự quy đổi.
+          ngay_thuc_hien: row.ngay_thuc_hien as string | undefined,
+          ma_nguoi_thuc_hien: str(row.ma_nguoi_thuc_hien),
+          ma_nguoi_giu_truoc: str(row.ma_nguoi_giu_truoc),
+          ma_nguoi_giu_sau: str(row.ma_nguoi_giu_sau),
+          ghi_chu_phieu: str(row.ghi_chu_phieu),
+          ma_tai_san: str(row.ma_tai_san),
+          ma_noi_luu_sau: str(row.ma_noi_luu_sau),
+          ghi_chu_dong: str(row.ghi_chu_dong),
+        };
+        return { row: Number(rowNo ?? idx + 2), values, data };
+      });
+      const result = await importMutation.mutateAsync(items);
+      setImportErrors(result.errors);
+      return { created: result.created, updated: 0 };
     },
     [importMutation]
   );
@@ -140,6 +151,11 @@ export function useCpthListImportExport(sortedList: PhieuCapPhatThuHoi[]) {
   return {
     showImport,
     setShowImport,
+    importErrors,
+    closeImport: () => {
+      setShowImport(false);
+      setImportErrors([]);
+    },
     showExport,
     setShowExport,
     IMPORT_COLUMNS,

@@ -1,24 +1,6 @@
 import type { TrangThaiHoatDong } from '../../../../lib/constants';
 import type { AdminFormType } from './constants';
 
-export interface PayrollWifiIp {
-  id: string;
-  id_chi_nhanh: string;
-  ten_chi_nhanh?: string;
-  ip_wifi: string;
-  ghi_chu?: string;
-  trang_thai: TrangThaiHoatDong;
-  tg_tao: string;
-  tg_cap_nhat: string;
-}
-
-export interface PayrollWifiIpFormState {
-  id_chi_nhanh: string;
-  ip_wifi: string;
-  ghi_chu?: string;
-  trang_thai: TrangThaiHoatDong;
-}
-
 export interface PayrollAdminFormGroup {
   id: string;
   loai_phieu: AdminFormType;
