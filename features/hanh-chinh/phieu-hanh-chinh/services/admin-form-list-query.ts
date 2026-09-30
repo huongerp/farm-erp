@@ -8,18 +8,18 @@ export interface AdminFormListServerQuery {
   status: string[];
   /** Loại phiếu — mã app, service tự đổi sang id nhóm phiếu. */
   type: string[];
-  shift: string[];
-  /** Tháng `yyyy-mm`; rỗng = mọi tháng. */
+  /** Tháng `yyyy-mm`; rỗng = mọi tháng. Phiếu khớp khi khoảng của nó chạm vào tháng. */
   month: string;
-  /** Chỉ phiếu do người này tạo (tab "Của tôi"). */
-  nguoiTaoId: string | null;
-  /** Bỏ phiếu do người này tạo (tab Quản lý không hiện phiếu của chính mình). */
-  loaiTruNguoiTaoId: string | null;
+  /**
+   * Chỉ phiếu của những người này. null = mọi người (chỉ người có viewAll);
+   * người không viewAll luôn bị ép `[chính mình]`.
+   */
+  nguoiTaoIds: string[] | null;
   sortColumn: string | null;
   sortDirection: 'asc' | 'desc' | null;
 }
 
-export const ADMIN_FORM_SORTABLE_DB_COLUMNS = new Set(['ngay', 'ca', 'trang_thai', 'tg_tao', 'tg_cap_nhat']);
+export const ADMIN_FORM_SORTABLE_DB_COLUMNS = new Set(['ngay', 'den_ngay', 'trang_thai', 'tg_tao', 'tg_cap_nhat']);
 
 export const ADMIN_FORM_SORT_MAC_DINH = { column: 'ngay', ascending: false } as const;
 

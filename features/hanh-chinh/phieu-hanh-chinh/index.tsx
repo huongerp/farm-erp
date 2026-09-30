@@ -2,10 +2,9 @@ import React, { useCallback, useMemo, useRef, useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ClipboardList, Users, BarChart3 } from 'lucide-react';
+import { ClipboardList, BarChart3 } from 'lucide-react';
 import TabGroup from '../../../components/ui/TabGroup';
-import AdminFormMyTab from './components/my-tab';
-import AdminFormManagedTab from './components/managed-tab';
+import AdminFormFormsTab from './components/forms-tab';
 import AdminFormQuotaTab from './components/quota-tab';
 import { usePhieuHanhChinhViewScope } from './hooks/use-phieu-hanh-chinh-view-scope';
 import { useAdminFormById } from './hooks/use-admin-form';
@@ -16,7 +15,7 @@ import type { AdminFormRequest } from './core/types';
 const AdminFormPage: React.FC = () => {
   const { t } = useTranslation();
   const { viewAll, isLoading: dangTaiPhamVi } = usePhieuHanhChinhViewScope();
-  const [activeTab, setActiveTab] = useState('my');
+  const [activeTab, setActiveTab] = useState('list');
 
   const [searchParams, setSearchParams] = useSearchParams();
   const currentUserId = useAuthStore((s) => s.user?.id ?? '');
@@ -25,14 +24,14 @@ const AdminFormPage: React.FC = () => {
   const [phieuMoTuLink, setPhieuMoTuLink] = useState<AdminFormRequest | null>(null);
   const daXuLyRef = useRef<string | null>(null);
 
-  const tabs = useMemo(() => {
-    const all = [
-      { id: 'my', label: t('adminForm.tabs.my'), icon: ClipboardList },
-      { id: 'managed', label: t('adminForm.tabs.managed'), icon: Users },
+  // Một tab "Phiếu" cho mọi người: có viewAll thì thấy thêm phiếu người khác + chip Người gửi.
+  const tabs = useMemo(
+    () => [
+      { id: 'list', label: t('adminForm.tabs.list'), icon: ClipboardList },
       { id: 'quota', label: t('adminForm.tabs.quota'), icon: BarChart3 },
-    ];
-    return viewAll ? all : [all[0], all[2]];
-  }, [t, viewAll]);
+    ],
+    [t]
+  );
 
   // Bấm lại đúng thông báo cũ sẽ đặt lại ?phieu=<id> đã bị xoá khỏi URL. Nhả
   // khoá khi param biến mất, thay vì khoá cứng theo id — nếu không thì lần bấm
@@ -44,7 +43,7 @@ const AdminFormPage: React.FC = () => {
   /**
    * Deep-link từ thông báo: `?phieu=<id>` → chọn đúng tab rồi bật drawer.
    * Phải chờ phạm vi xem nạp xong: viewAll khởi đầu là false, quyết sớm thì
-   * người có quyền quản lý bị đẩy nhầm về tab "Của tôi".
+   * người có quyền quản lý bị báo nhầm "không có quyền".
    */
   useEffect(() => {
     if (!idTuLink || dangTaiPhamVi || !currentUserId) return;
@@ -89,26 +88,17 @@ const AdminFormPage: React.FC = () => {
 
   const xoaPhieuMoTuLink = useCallback(() => setPhieuMoTuLink(null), []);
 
-  useEffect(() => {
-    if (!viewAll && activeTab === 'managed') setActiveTab('my');
-  }, [viewAll, activeTab]);
-
   return (
     <div className="flex flex-col h-[calc(100dvh-3.75rem)] md:h-[calc(100dvh-4.5rem)] relative">
       <div className="shrink-0 relative z-0">
         <TabGroup tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
       </div>
 
-      {activeTab === 'my' ? (
+      {activeTab === 'list' ? (
         <div className="flex-1 min-h-0 flex flex-col mt-1.5">
-          <AdminFormMyTab
-            deepLinkItem={phieuMoTuLink}
-            onDeepLinkConsumed={xoaPhieuMoTuLink}
-          />
-        </div>
-      ) : activeTab === 'managed' ? (
-        <div className="flex-1 min-h-0 flex flex-col mt-1.5">
-          <AdminFormManagedTab
+          <AdminFormFormsTab
+            viewAll={viewAll}
+            dangTaiPhamVi={dangTaiPhamVi}
             deepLinkItem={phieuMoTuLink}
             onDeepLinkConsumed={xoaPhieuMoTuLink}
           />

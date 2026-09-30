@@ -200,6 +200,15 @@ describe('phiếu hành chính — một cấp duyệt', () => {
     expect(thayDoi.map((t) => t.cot)).toEqual(['ngay']);
   });
 
+  it('kéo dài đến ngày / đổi buổi của phiếu nghỉ đã duyệt cũng báo', () => {
+    const kq = suaDaDuyet(
+      { den_ngay: '2026-09-19', den_buoi: 'Chiều' },
+      { den_ngay: '2026-09-20', den_buoi: 'Sáng' }
+    );
+    const thayDoi = kq[0]!.duLieu['thayDoi'] as { cot: string }[];
+    expect(thayDoi.map((t) => t.cot).sort()).toEqual(['den_buoi', 'den_ngay']);
+  });
+
   it('CHỈ đổi ghi_chu thì KHÔNG báo — duyệt kèm ghi chú bắn hai update', () => {
     // admin-form-detail.tsx: duyệt xong ghi ghi_chu thành một update riêng,
     // không đổi trạng thái. Nếu bắt ca này thì mỗi lần duyệt kèm ghi chú lại

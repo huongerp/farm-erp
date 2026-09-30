@@ -59,15 +59,23 @@ function nhanChungTu(moTa: MoTaBang, dong: DongOutbox): string {
 }
 
 /**
- * Nhãn phiếu hành chính: "Xin nghỉ phép 19/09 (Cả ngày)".
+ * Nhãn phiếu hành chính: "Xin nghỉ phép 19/09 (Cả ngày)", phiếu nhiều ngày
+ * "Xin nghỉ phép 01/09 (Chiều) → 03/09 (Sáng)".
  * Bảng này không có số phiếu, nên loại phiếu + ngày + ca chính là thứ giúp
  * người duyệt nhận ra phiếu nào mà không phải mở app. Thiếu phần nào thì bỏ
  * phần đó, không bao giờ in "null" hay "()" rỗng.
  */
 function nhanPhieuHanhChinh(nc: NguCanhRender): string {
   const loai = chuoi(nc.tenLoaiPhieu) ?? 'Phiếu hành chính';
-  const ngay = ngayNgan(nc.dong.payload['ngay']);
-  const ca = chuoi(nc.dong.payload['ca']);
+  const p = nc.dong.payload;
+  const ngay = ngayNgan(p['ngay']);
+  const denNgay = ngayNgan(p['den_ngay']);
+  if (ngay && denNgay && denNgay !== ngay) {
+    const tuBuoi = chuoi(p['tu_buoi']);
+    const denBuoi = chuoi(p['den_buoi']);
+    return `${loai} ${ngay}${tuBuoi ? ` (${tuBuoi})` : ''} → ${denNgay}${denBuoi ? ` (${denBuoi})` : ''}`;
+  }
+  const ca = chuoi(p['ca']);
   return `${loai}${ngay ? ` ${ngay}` : ''}${ca ? ` (${ca})` : ''}`;
 }
 

@@ -14,6 +14,8 @@ import { AdminFormRequest } from '../core/types';
 import { getAdminFormShiftLabel, getAdminFormStatusLabel, getApprovalStatusLabel } from '../core/constants';
 import { getAdminFormTypeLabel } from '../../thiet-lap-cong-luong/core/constants';
 import { useAuthStore } from '../../../../store/useStore';
+import { laLoaiTheoKhoang } from '../core/khoang-nghi';
+import { hienThiSoNgay } from '../utils/hien-thi-khoang';
 import {
   useApproveAdminFormByManager,
   useRejectAdminFormByManager,
@@ -187,8 +189,26 @@ const AdminFormDetail: React.FC<Props> = ({
           <DetailSection title={t('adminForm.detail.basicInfo')} icon={<FileText size={14} />} variant="primary">
             <DetailFieldGrid>
               <DetailField label={t('adminForm.form.type')} value={getAdminFormTypeLabel(data.loai_phieu, t)} icon={<FileText size={12} />} />
-              <DetailField label={t('adminForm.form.shift')} value={getAdminFormShiftLabel(data.ca, t)} icon={<Clock size={12} />} />
-              <DetailField label={t('adminForm.form.date')} value={data.ngay ? formatDate(data.ngay) : data.ngay} icon={<Calendar size={12} />} />
+              {laLoaiTheoKhoang(data.loai_phieu) ? (
+                <>
+                  <DetailField
+                    label={t('adminForm.form.fromDate')}
+                    value={data.ngay ? `${formatDate(data.ngay)} (${t(`adminForm.session.${data.tu_buoi}`)})` : '—'}
+                    icon={<Calendar size={12} />}
+                  />
+                  <DetailField
+                    label={t('adminForm.form.toDate')}
+                    value={data.den_ngay ? `${formatDate(data.den_ngay)} (${t(`adminForm.session.${data.den_buoi}`)})` : '—'}
+                    icon={<Calendar size={12} />}
+                  />
+                </>
+              ) : (
+                <>
+                  <DetailField label={t('adminForm.form.shift')} value={getAdminFormShiftLabel(data.ca, t)} icon={<Clock size={12} />} />
+                  <DetailField label={t('adminForm.form.date')} value={data.ngay ? formatDate(data.ngay) : data.ngay} icon={<Calendar size={12} />} />
+                </>
+              )}
+              <DetailField label={t('adminForm.store.daysCol')} value={hienThiSoNgay(data)} icon={<Clock size={12} />} />
               <DetailField label={t('adminForm.form.reason')} value={data.ly_do} icon={<FileText size={12} />} />
             </DetailFieldGrid>
           </DetailSection>

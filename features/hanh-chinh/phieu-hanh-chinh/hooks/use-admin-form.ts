@@ -3,8 +3,10 @@ import type { AdminFormListServerQuery } from '../services/admin-form-list-query
 import { toast } from 'sonner';
 import i18n from '../../../../lib/i18n';
 import {
-  getAdminForms,
   getAdminFormPage,
+  getAdminFormTomTat,
+  getAdminFormsCuaNguoi,
+  timPhieuTrung,
   getAdminFormById,
   getAdminFormsByUserAndMonth,
   createAdminForm,
@@ -24,6 +26,7 @@ import {
   updateAdminFormGhiChu,
 } from '../services/admin-form-service';
 import { AdminFormValues } from '../core/schema';
+import type { KhoangPhieu } from '../core/khoang-nghi';
 
 /** Một trang danh sách — lọc / sắp xếp / phân trang chạy ở PostgREST. */
 export function useAdminFormPage(query: AdminFormListServerQuery, enabled = true) {
@@ -51,11 +54,35 @@ export function useAdminFormById(id: string | null) {
   });
 }
 
-export const useAdminForms = () =>
-  useQuery({
-    queryKey: ['adminForms'],
-    queryFn: getAdminForms,
+/** Vài cột của toàn bộ phạm vi xem — cho chip lọc + số đếm. */
+export function useAdminFormTomTat(nguoiTaoIds: string[] | null, enabled = true) {
+  return useQuery({
+    queryKey: ['adminForms', 'tomTat', nguoiTaoIds],
+    queryFn: () => getAdminFormTomTat(nguoiTaoIds),
+    enabled,
+    staleTime: 1000 * 60 * 2,
   });
+}
+
+/** Phiếu của một người (tab Định mức), lọc theo tháng nếu có. */
+export function useAdminFormsCuaNguoi(userId: string, month: string) {
+  return useQuery({
+    queryKey: ['adminForms', 'cuaNguoi', userId, month],
+    queryFn: () => getAdminFormsCuaNguoi(userId, month),
+    enabled: !!userId,
+  });
+}
+
+/** Phiếu trùng thời gian — chỉ để cảnh báo trên form. */
+export function usePhieuTrung(nguoiTaoId: string, khoang: KhoangPhieu | null, boQuaId: string | null) {
+  return useQuery({
+    queryKey: ['adminForms', 'trung', nguoiTaoId, khoang, boQuaId],
+    queryFn: () => timPhieuTrung(nguoiTaoId, khoang!, boQuaId),
+    enabled: !!nguoiTaoId && !!khoang,
+    staleTime: 1000 * 30,
+    placeholderData: keepPreviousData,
+  });
+}
 
 export const useAdminFormsByUserMonth = (
   userId: string,

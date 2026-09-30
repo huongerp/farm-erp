@@ -1,7 +1,7 @@
 /**
  * Phạm vi xem Phiếu hành chính theo phân quyền:
- * - quan_tri (admin/all) hoặc nhân viên cấp bậc 1 → viewAll: hiển thị đủ tab "Tôi quản lý" + "Của tôi" + "Định mức".
- * - Ngược lại → chỉ hiển thị tab "Của tôi" và "Định mức", ẩn tab "Tôi quản lý".
+ * - quan_tri (admin/all) hoặc nhân viên cấp bậc 1 → viewAll: tab "Phiếu" thấy phiếu mọi người + chip Người gửi + duyệt.
+ * - Ngược lại → tab "Phiếu" chỉ thấy phiếu của chính mình.
  */
 import { useMemo } from 'react';
 import { useAuthStore } from '../../../../store/useStore';
@@ -12,7 +12,7 @@ import type { ActionType } from '../../../he-thong/phan-quyen/core/types';
 const MODULE_ID = 'hanh-chinh/phieu-hanh-chinh';
 
 export interface PhieuHanhChinhViewScope {
-  /** true: được xem tab Tôi quản lý (quan_tri hoặc cấp bậc 1). false: chỉ xem tab Của tôi + Định mức. */
+  /** true: xem + duyệt phiếu của mọi người (quan_tri hoặc cấp bậc 1). false: chỉ phiếu của mình. */
   viewAll: boolean;
   isLoading: boolean;
 }

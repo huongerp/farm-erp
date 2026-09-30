@@ -2,21 +2,21 @@ import { describe, it, expect } from 'vitest';
 import { chonTabChoPhieu } from './deep-link';
 
 describe('chonTabChoPhieu', () => {
-  it('phiếu của mình thì mở tab Của tôi', () => {
+  it('phiếu của mình thì mở', () => {
     expect(chonTabChoPhieu({ nguoiTaoId: '41', currentUserId: '41', viewAll: false })).toEqual({
-      tab: 'my',
+      tab: 'list',
     });
   });
 
-  it('phiếu của mình vẫn mở tab Của tôi dù có quyền quản lý', () => {
+  it('phiếu của mình vẫn mở khi có quyền quản lý', () => {
     expect(chonTabChoPhieu({ nguoiTaoId: '41', currentUserId: '41', viewAll: true })).toEqual({
-      tab: 'my',
+      tab: 'list',
     });
   });
 
-  it('phiếu người khác + có quyền quản lý thì mở tab Tôi quản lý', () => {
+  it('phiếu người khác + có quyền quản lý thì mở', () => {
     expect(chonTabChoPhieu({ nguoiTaoId: '41', currentUserId: '18', viewAll: true })).toEqual({
-      tab: 'managed',
+      tab: 'list',
     });
   });
 

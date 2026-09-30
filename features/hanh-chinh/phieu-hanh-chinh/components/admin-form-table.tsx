@@ -9,6 +9,7 @@ import { getAdminFormShiftLabel, getAdminFormStatusLabel } from '../core/constan
 import { getAdminFormTypeLabel } from '../../thiet-lap-cong-luong/core/constants';
 import type { GenericState } from '../../../../store/createGenericStore';
 import { getStatusBadgeClass } from '../../../../lib/status-badge';
+import { hienThiSoNgay, moTaKhoangNhieuNgay } from '../utils/hien-thi-khoang';
 
 interface Props {
   data: AdminFormRequest[];
@@ -99,7 +100,13 @@ const AdminFormTable: React.FC<Props> = ({ isFetching, totalRecordsOverride, dat
             </span>
           </div>
         );
-      case 'ca':
+      case 'so_ngay':
+        return <span className="text-sm text-foreground tabular-nums">{hienThiSoNgay(item)}</span>;
+      case 'thoi_gian': {
+        const nhieuNgay = moTaKhoangNhieuNgay(item, t);
+        if (nhieuNgay) {
+          return <span className="text-sm text-foreground tabular-nums whitespace-nowrap">{nhieuNgay}</span>;
+        }
         if (item.ca === 'morning') {
           return (
             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 border border-amber-100 dark:border-amber-900">
@@ -119,6 +126,7 @@ const AdminFormTable: React.FC<Props> = ({ isFetching, totalRecordsOverride, dat
             {getAdminFormShiftLabel(item.ca, t)}
           </span>
         );
+      }
       case 'ngay':
         return (
           <span className="text-sm text-foreground tabular-nums">
@@ -201,19 +209,21 @@ const AdminFormTable: React.FC<Props> = ({ isFetching, totalRecordsOverride, dat
             </div>
           </div>
           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-            <span className="text-xs text-muted-foreground">{item.ngay}</span>
+            <span className="text-xs text-muted-foreground">{item.ngay ? formatDate(item.ngay) : item.ngay}</span>
             {renderStatusBadge(item.trang_thai)}
           </div>
         </div>
       </div>
       <div className="grid grid-cols-2 gap-2 px-3 py-2 bg-muted/30 rounded-lg mb-3 text-body-sm">
         <div>
-          <p className="text-muted-foreground mb-0.5">{t('adminForm.store.shiftCol')}</p>
-          <p className="font-medium text-foreground">{getAdminFormShiftLabel(item.ca, t)}</p>
+          <p className="text-muted-foreground mb-0.5">{t('adminForm.store.periodCol')}</p>
+          <p className="font-medium text-foreground tabular-nums">
+            {moTaKhoangNhieuNgay(item, t) ?? getAdminFormShiftLabel(item.ca, t)}
+          </p>
         </div>
         <div>
-          <p className="text-muted-foreground mb-0.5">{t('adminForm.store.statusCol')}</p>
-          <p className="font-medium text-foreground">{getAdminFormStatusLabel(item.trang_thai, t)}</p>
+          <p className="text-muted-foreground mb-0.5">{t('adminForm.store.daysCol')}</p>
+          <p className="font-medium text-foreground tabular-nums">{hienThiSoNgay(item)}</p>
         </div>
       </div>
       <div className="flex justify-between items-center pt-2.5 border-t border-border">

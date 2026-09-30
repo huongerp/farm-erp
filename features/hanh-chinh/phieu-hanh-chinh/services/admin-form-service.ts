@@ -6,11 +6,19 @@ import {
   khoangNgayCuaThang,
   type AdminFormListServerQuery,
 } from './admin-form-list-query';
-import type { AdminFormRequest } from '../core/types';
+import type { AdminFormRequest, AdminFormTomTat } from '../core/types';
 import type { AdminFormValues } from '../core/schema';
 import type { AdminFormStatus, ApprovalStatus } from '../core/constants';
 import type { AdminFormType } from '../../thiet-lap-cong-luong/core/constants';
 import type { AdminFormShift } from '../core/constants';
+import {
+  caTuKhoang,
+  giaoNhau,
+  khoangTuCa,
+  khoangTuForm,
+  type AdminFormSession,
+  type KhoangPhieu,
+} from '../core/khoang-nghi';
 import i18n from '../../../../lib/i18n';
 
 const TABLE = 'fp_hr_phieu_hanh_chinh';
@@ -18,7 +26,7 @@ const TABLE_NHOM = 'fp_hr_nhom_phieu_hanh_chinh';
 const TABLE_NHAN_VIEN = 'fp_var_nhan_vien';
 
 const ADMIN_FORM_ROW_COLUMNS =
-  'id,loai_phieu_id,ngay,ca,ly_do,trang_thai,ghi_chu,nguoi_tao_id,tg_tao,tg_cap_nhat';
+  'id,loai_phieu_id,ngay,den_ngay,tu_buoi,den_buoi,ca,ly_do,trang_thai,ghi_chu,nguoi_tao_id,tg_tao,tg_cap_nhat';
 
 /** Loại phiếu: tiếng Việt (DB) <-> mã (app) */
 const LOAI_PHIEU_VI_TO_APP: Record<string, AdminFormType> = {
@@ -48,6 +56,9 @@ const CA_APP_TO_VI: Record<AdminFormShift, string> = {
   afternoon: 'Chiều',
   full: 'Cả ngày',
 };
+
+const BUOI_VI_TO_APP: Record<string, AdminFormSession> = { 'Sáng': 'morning', 'Chiều': 'afternoon' };
+const BUOI_APP_TO_VI: Record<AdminFormSession, string> = { morning: 'Sáng', afternoon: 'Chiều' };
 
 /** 1 cấp duyệt: trạng thái Chờ duyệt | Đã duyệt | Từ chối | Đã hủy */
 const TRANG_THAI_VI_TO_APP: Record<string, AdminFormStatus> = {
@@ -84,11 +95,24 @@ function rowToRequest(
   const caVi = (row.ca as string) ?? '';
   const ttVi = (row.trang_thai as string) ?? '';
   const approvalStatus: ApprovalStatus = DUYET_VI_TO_APP[ttVi] ?? 'pending';
+  const ngay = toDateString(row.ngay);
+  // Dòng chưa có khoảng (trước migration 002) → suy từ ca như trigger DB.
+  const caCu = CA_VI_TO_APP[caVi];
+  const khoangCu = khoangTuCa(ngay, caCu ?? 'full');
+  const khoang: KhoangPhieu = {
+    tu_ngay: ngay,
+    den_ngay: toDateString(row.den_ngay) || ngay,
+    tu_buoi: BUOI_VI_TO_APP[row.tu_buoi as string] ?? khoangCu.tu_buoi,
+    den_buoi: BUOI_VI_TO_APP[row.den_buoi as string] ?? khoangCu.den_buoi,
+  };
   return {
     id: String(row.id),
     loai_phieu: LOAI_PHIEU_VI_TO_APP[loaiVi] ?? 'late_early',
-    ca: CA_VI_TO_APP[caVi] ?? 'full',
-    ngay: toDateString(row.ngay),
+    ca: caCu ?? caTuKhoang(khoang) ?? 'full',
+    ngay,
+    den_ngay: khoang.den_ngay,
+    tu_buoi: khoang.tu_buoi,
+    den_buoi: khoang.den_buoi,
     ly_do: (row.ly_do as string) ?? '',
     nguoi_tao_id: String(row.nguoi_tao_id ?? ''),
     ten_nguoi_tao: (nguoiTaoId != null ? mapTenNhanVien[nguoiTaoId] : '') ?? '',
@@ -140,28 +164,29 @@ async function timLoaiPhieuIds(types: string[]): Promise<number[]> {
   return (data ?? []).map((r) => Number((r as Row).id)).filter(Number.isFinite);
 }
 
+/** null = mọi người; mảng rỗng / id lạ = không dòng nào (không bao giờ lộ cả bảng). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function locTheoNguoiTao(sel: any, nguoiTaoIds: string[] | null): any {
+  if (nguoiTaoIds == null) return sel;
+  const ids = nguoiTaoIds.map(Number).filter(Number.isFinite);
+  return ids.length === 0 ? sel.eq('id', -1) : sel.in('nguoi_tao_id', ids);
+}
+
 /** Lọc + sắp xếp dùng chung cho trang danh sách và cho lượt tải phục vụ xuất file. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function applyAdminFormListQuery(q: any, query: AdminFormListServerQuery, loaiPhieuIds: number[] | null): any {
   let sel = q;
 
   if (query.status.length > 0) sel = sel.in('trang_thai', query.status);
-  if (query.shift.length > 0) sel = sel.in('ca', query.shift);
   if (loaiPhieuIds != null) {
     sel = loaiPhieuIds.length === 0 ? sel.eq('id', -1) : sel.in('loai_phieu_id', loaiPhieuIds);
   }
 
+  // Phiếu nhiều ngày khớp tháng khi khoảng của nó chạm vào tháng.
   const thang = khoangNgayCuaThang(query.month);
-  if (thang) sel = sel.gte('ngay', thang.from).lte('ngay', thang.to);
+  if (thang) sel = sel.lte('ngay', thang.to).gte('den_ngay', thang.from);
 
-  if (query.nguoiTaoId) {
-    const n = Number(query.nguoiTaoId);
-    sel = Number.isFinite(n) ? sel.eq('nguoi_tao_id', n) : sel.eq('id', -1);
-  }
-  if (query.loaiTruNguoiTaoId) {
-    const n = Number(query.loaiTruNguoiTaoId);
-    if (Number.isFinite(n)) sel = sel.neq('nguoi_tao_id', n);
-  }
+  sel = locTheoNguoiTao(sel, query.nguoiTaoIds);
 
   sel = applyPostgrestSearch(sel, query.searchTerm, ADMIN_FORM_SEARCH_SPEC);
 
@@ -200,14 +225,6 @@ export async function fetchAllAdminFormsForListQuery(
   return rows.map((r) => rowToRequest(r, mapLoaiPhieu, mapTenNhanVien));
 }
 
-export async function getAdminForms(): Promise<AdminFormRequest[]> {
-  const rows = await fetchAllRows<Row>(async (from, to) =>
-    db.from(TABLE).select(ADMIN_FORM_ROW_COLUMNS).order('ngay', { ascending: false }).range(from, to)
-  );
-  const { mapLoaiPhieu, mapTenNhanVien } = await fetchMaps(rows);
-  return rows.map((r) => rowToRequest(r, mapLoaiPhieu, mapTenNhanVien));
-}
-
 export async function getAdminFormsByUserAndMonth(
   userId: string,
   monthKey: string
@@ -221,14 +238,14 @@ export async function getAdminFormsByUserAndMonth(
           .from(TABLE)
           .select(ADMIN_FORM_ROW_COLUMNS)
           .eq('nguoi_tao_id', nguoiTaoId)
-          .gte('ngay', prefix + '01')
+          .gte('den_ngay', prefix + '01')
           .lte('ngay', prefix + '31')
           .order('ngay', { ascending: false })
           .range(from, to)
       : db
           .from(TABLE)
           .select(ADMIN_FORM_ROW_COLUMNS)
-          .gte('ngay', prefix + '01')
+          .gte('den_ngay', prefix + '01')
           .lte('ngay', prefix + '31')
           .order('ngay', { ascending: false })
           .range(from, to);
@@ -259,6 +276,79 @@ export async function getAdminFormById(id: string): Promise<AdminFormRequest | n
   return rowToRequest(row, mapLoaiPhieu, mapTenNhanVien);
 }
 
+/**
+ * Bản vài cột cho chip lọc + số đếm (Trạng thái / Loại / Người gửi / tháng):
+ * đếm trên TOÀN BỘ phạm vi xem, không theo trang đang xem.
+ */
+export async function getAdminFormTomTat(nguoiTaoIds: string[] | null): Promise<AdminFormTomTat[]> {
+  const rows = await fetchAllRows<Row>((from, to) =>
+    locTheoNguoiTao(
+      db.from(TABLE).select('id,nguoi_tao_id,loai_phieu_id,trang_thai,ngay,den_ngay'),
+      nguoiTaoIds
+    )
+      .order('id', { ascending: false })
+      .range(from, to)
+  );
+  const { mapLoaiPhieu, mapTenNhanVien } = await fetchMaps(rows);
+  return rows.map((r) => {
+    const ngay = toDateString(r.ngay);
+    const nguoiTaoId = r.nguoi_tao_id != null ? Number(r.nguoi_tao_id) : null;
+    const loaiVi = r.loai_phieu_id != null ? mapLoaiPhieu[Number(r.loai_phieu_id)] ?? '' : '';
+    return {
+      id: String(r.id),
+      nguoi_tao_id: String(r.nguoi_tao_id ?? ''),
+      ten_nguoi_tao: (nguoiTaoId != null ? mapTenNhanVien[nguoiTaoId] : '') ?? '',
+      loai_phieu: LOAI_PHIEU_VI_TO_APP[loaiVi] ?? 'late_early',
+      trang_thai: TRANG_THAI_VI_TO_APP[(r.trang_thai as string) ?? ''] ?? 'pending',
+      ngay,
+      den_ngay: toDateString(r.den_ngay) || ngay,
+    };
+  });
+}
+
+/** Mọi phiếu của một người (tab Định mức) — trước đây tab này tải cả bảng rồi lọc ở client. */
+export async function getAdminFormsCuaNguoi(userId: string, month: string): Promise<AdminFormRequest[]> {
+  const thang = khoangNgayCuaThang(month);
+  const rows = await fetchAllRows<Row>((from, to) => {
+    let q = locTheoNguoiTao(db.from(TABLE).select(ADMIN_FORM_ROW_COLUMNS), [userId]);
+    if (thang) q = q.lte('ngay', thang.to).gte('den_ngay', thang.from);
+    return q.order('ngay', { ascending: false }).order('id', { ascending: false }).range(from, to);
+  });
+  const { mapLoaiPhieu, mapTenNhanVien } = await fetchMaps(rows);
+  return rows.map((r) => rowToRequest(r, mapLoaiPhieu, mapTenNhanVien));
+}
+
+/**
+ * Phiếu Chờ duyệt / Đã duyệt khác của cùng người có chung ít nhất nửa ngày với
+ * khoảng đang nhập — chỉ để CẢNH BÁO trên form, không chặn lưu.
+ */
+export async function timPhieuTrung(
+  nguoiTaoId: string,
+  khoang: KhoangPhieu,
+  boQuaId: string | null
+): Promise<AdminFormRequest[]> {
+  const n = Number(nguoiTaoId);
+  if (!Number.isFinite(n) || !khoang.tu_ngay || !khoang.den_ngay) return [];
+  let q = db
+    .from(TABLE)
+    .select(ADMIN_FORM_ROW_COLUMNS)
+    .eq('nguoi_tao_id', n)
+    .in('trang_thai', ['Chờ duyệt', 'Đã duyệt'])
+    .lte('ngay', khoang.den_ngay)
+    .gte('den_ngay', khoang.tu_ngay);
+  const boQua = boQuaId != null ? Number(boQuaId) : NaN;
+  if (Number.isFinite(boQua)) q = q.neq('id', boQua);
+  const { data, error } = await q.order('ngay', { ascending: true }).limit(20);
+  if (error) throw new Error(error.message);
+  const rows = (data as Row[] | null) ?? [];
+  const { mapLoaiPhieu, mapTenNhanVien } = await fetchMaps(rows);
+  return rows
+    .map((r) => rowToRequest(r, mapLoaiPhieu, mapTenNhanVien))
+    .filter((p) =>
+      giaoNhau(khoang, { tu_ngay: p.ngay, tu_buoi: p.tu_buoi, den_ngay: p.den_ngay, den_buoi: p.den_buoi })
+    );
+}
+
 /** Resolve loai_phieu (app) -> id nhóm phiếu (bigint) */
 async function resolveLoaiPhieuId(loaiPhieuApp: AdminFormType): Promise<number | null> {
   const loaiVi = LOAI_PHIEU_APP_TO_VI[loaiPhieuApp];
@@ -277,6 +367,19 @@ function resolveNguoiTaoId(creatorId: string): number | null {
   return Number.isNaN(n) ? null : n;
 }
 
+/** 5 cột thời gian sẽ ghi: ngay (từ ngày), den_ngay, tu_buoi, den_buoi, ca (null nếu nhiều ngày). */
+function cotKhoang(data: AdminFormValues) {
+  const k = khoangTuForm(data);
+  const ca = caTuKhoang(k);
+  return {
+    ngay: k.tu_ngay || null,
+    den_ngay: k.den_ngay || null,
+    tu_buoi: BUOI_APP_TO_VI[k.tu_buoi],
+    den_buoi: BUOI_APP_TO_VI[k.den_buoi],
+    ca: ca ? CA_APP_TO_VI[ca] : null,
+  };
+}
+
 export async function createAdminForm(
   data: AdminFormValues,
   creator: { id: string; name: string }
@@ -287,8 +390,7 @@ export async function createAdminForm(
 
   const row = {
     loai_phieu_id: loaiPhieuId,
-    ngay: data.ngay || null,
-    ca: CA_APP_TO_VI[data.ca],
+    ...cotKhoang(data),
     ly_do: data.ly_do?.trim() || null,
     trang_thai: 'Chờ duyệt',
     ghi_chu: null,
@@ -309,8 +411,7 @@ export async function updateAdminForm(id: string, data: AdminFormValues): Promis
   const loaiPhieuId = await resolveLoaiPhieuId(data.loai_phieu);
   const row = {
     loai_phieu_id: loaiPhieuId,
-    ngay: data.ngay || null,
-    ca: CA_APP_TO_VI[data.ca],
+    ...cotKhoang(data),
     ly_do: data.ly_do?.trim() || null,
     tg_cap_nhat: new Date().toISOString(),
   };
@@ -410,9 +511,13 @@ export async function createAdminFormSystem(data: {
   const nguoiTaoId = resolveNguoiTaoId(data.userId);
   if (nguoiTaoId == null) throw new Error(i18n.t('adminForm.service.notFound'));
   const loaiPhieuId = await resolveLoaiPhieuId('late_early');
+  const khoang = khoangTuCa(data.date, data.shift);
   const row = {
     loai_phieu_id: loaiPhieuId,
     ngay: data.date,
+    den_ngay: khoang.den_ngay,
+    tu_buoi: BUOI_APP_TO_VI[khoang.tu_buoi],
+    den_buoi: BUOI_APP_TO_VI[khoang.den_buoi],
     ca: CA_APP_TO_VI[data.shift],
     ly_do: data.reason?.trim() || null,
     trang_thai: 'Chờ duyệt',

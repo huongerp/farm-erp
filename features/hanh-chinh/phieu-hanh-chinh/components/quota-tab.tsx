@@ -4,11 +4,11 @@ import { useTranslation } from 'react-i18next';
 import AdminFormQuotaToolbar from './quota-toolbar';
 import AdminFormQuotaTable from './quota-table';
 import { useAdminFormQuotaStore, DEFAULT_COLUMNS } from '../store/useAdminFormQuotaStore';
-import { useAdminForms } from '../hooks/use-admin-form';
+import { useAdminFormsCuaNguoi } from '../hooks/use-admin-form';
 import { usePayrollAdminFormGroups } from '../../thiet-lap-cong-luong/hooks/use-payroll-form-group';
 import { useAuthStore } from '../../../../store/useStore';
 import { getAdminFormTypeLabel } from '../../thiet-lap-cong-luong/core/constants';
-import { ADMIN_FORM_SHIFT_WEIGHT } from '../core/constants';
+import { soNgayCuaPhieu, soNgayCuaPhieuTrongThang } from '../core/khoang-nghi';
 import { AdminFormQuotaRow } from '../core/types';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { createListSearchMatcher } from '../../../../lib/list-search-matcher';
@@ -37,31 +37,25 @@ const AdminFormQuotaTab: React.FC = () => {
   const clearSelection = useAdminFormQuotaStore((s) => s.clearSelection);
   const resetState = useAdminFormQuotaStore((s) => s.resetState);
 
-  const { data: forms = [], isLoading } = useAdminForms();
+  const currentUserId = user?.id ?? '';
+  const { data: forms = [], isLoading } = useAdminFormsCuaNguoi(currentUserId, filters.month);
   const { data: groups = [] } = usePayrollAdminFormGroups();
 
   useEffect(() => {
     return () => resetState();
   }, [resetState]);
 
-  const currentUserId = user?.id ?? 'emp-000';
-  const effectiveUserId = useMemo(() => {
-    if (forms.some((f) => f.nguoi_tao_id === currentUserId)) return currentUserId;
-    if (forms.some((f) => f.nguoi_tao_id === 'emp-000')) return 'emp-000';
-    return currentUserId;
-  }, [forms, currentUserId]);
   // Danh sách loại phiếu và định mức lấy từ nhóm hành chính (fp_hr_nhom_phieu_hanh_chinh).
-  // Đã dùng = tổng hệ số theo ca của phiếu chờ duyệt + đã duyệt (không cộng từ chối, đã hủy). Còn lại = định mức − đã dùng.
+  // Đã dùng = tổng số ngày của phiếu chờ duyệt + đã duyệt (không cộng từ chối, đã hủy);
+  // phiếu vắt qua tháng chỉ cộng phần rơi vào tháng đang lọc. Còn lại = định mức − đã dùng.
   const rows = useMemo<AdminFormQuotaRow[]>(() => {
-    const myForms = forms.filter((f) => f.nguoi_tao_id === effectiveUserId);
     const month = filters.month;
     const usedByType = new Map<string, number>();
     const statusCount = ['pending', 'manager_approved', 'approved'];
-    myForms.forEach((f) => {
+    forms.forEach((f) => {
       if (!statusCount.includes(f.trang_thai)) return; // bỏ qua từ chối, đã hủy
-      if (month && !f.ngay.startsWith(month)) return;
-      const weight = ADMIN_FORM_SHIFT_WEIGHT[f.ca] ?? 1;
-      usedByType.set(f.loai_phieu, (usedByType.get(f.loai_phieu) ?? 0) + weight);
+      const soNgay = month ? soNgayCuaPhieuTrongThang(f, month) : soNgayCuaPhieu(f);
+      usedByType.set(f.loai_phieu, (usedByType.get(f.loai_phieu) ?? 0) + soNgay);
     });
     return groups.map((g) => {
       const used = usedByType.get(g.loai_phieu) ?? 0;
@@ -73,7 +67,7 @@ const AdminFormQuotaTab: React.FC = () => {
         con_lai: Math.max(0, g.so_luong_thang - used),
       };
     });
-  }, [forms, groups, filters.month, effectiveUserId]);
+  }, [forms, groups, filters.month]);
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {

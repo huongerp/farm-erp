@@ -1,11 +1,17 @@
 import type { AdminFormType } from '../../thiet-lap-cong-luong/core/constants';
 import type { AdminFormShift, AdminFormStatus, ApprovalStatus } from './constants';
+import type { AdminFormSession } from './khoang-nghi';
 
 export interface AdminFormRequest {
   id: string;
   loai_phieu: AdminFormType;
+  /** Ca của phiếu trong 1 ngày; phiếu nhiều ngày lấy 'full' cho hiển thị cũ. */
   ca: AdminFormShift;
+  /** Từ ngày (yyyy-mm-dd) — cột `ngay` ở DB. */
   ngay: string;
+  den_ngay: string;
+  tu_buoi: AdminFormSession;
+  den_buoi: AdminFormSession;
   ly_do: string;
   nguoi_tao_id: string;
   ten_nguoi_tao: string;
@@ -23,11 +29,15 @@ export interface AdminFormRequest {
   tg_cap_nhat: string;
 }
 
-export interface AdminFormRequestFormState {
-  loai_phieu: AdminFormType | '';
-  ca: AdminFormShift | '';
+/** Vài cột cho chip lọc / số đếm — tính trên toàn bộ phạm vi, không theo trang. */
+export interface AdminFormTomTat {
+  id: string;
+  nguoi_tao_id: string;
+  ten_nguoi_tao: string;
+  loai_phieu: AdminFormType;
+  trang_thai: AdminFormStatus;
   ngay: string;
-  ly_do: string;
+  den_ngay: string;
 }
 
 export interface AdminFormQuotaRow {

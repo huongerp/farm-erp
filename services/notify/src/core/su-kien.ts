@@ -207,7 +207,7 @@ function phanTichCongViec(dong: DongOutbox): SuKienDaPhanTich[] {
  * "phiếu đã duyệt bị sửa". `ghi_chu` ở bảng này còn là nơi ghi lý do từ chối,
  * tức là ô làm việc của người duyệt chứ không phải nội dung người tạo khai.
  */
-const COT_NOI_DUNG_PHIEU_HC = new Set(['ngay', 'ca', 'loai_phieu_id', 'ly_do']);
+const COT_NOI_DUNG_PHIEU_HC = new Set(['ngay', 'den_ngay', 'tu_buoi', 'den_buoi', 'ca', 'loai_phieu_id', 'ly_do']);
 
 /**
  * Một cấp duyệt. Hằng ADMIN_FORM_STATUSES phía app còn giá trị 'manager_approved'

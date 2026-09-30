@@ -165,6 +165,30 @@ describe('phiếu hành chính', () => {
     expect(kq.noiDung).toBe('Nguyễn Văn A vừa gửi phiếu, đang chờ bạn duyệt.');
   });
 
+  it('phiếu nhiều ngày ghi khoảng kèm buổi hai đầu, bỏ ca', () => {
+    const kq = renderThongBao(
+      nguCanhHc(
+        'hanh_chinh.cho_duyet',
+        { ngay: '2026-09-01', den_ngay: '2026-09-03', tu_buoi: 'Chiều', den_buoi: 'Sáng', ca: null },
+        {},
+        'Xin nghỉ phép'
+      )
+    );
+    expect(kq.tieuDe).toBe('Xin nghỉ phép 01/09 (Chiều) → 03/09 (Sáng) chờ duyệt');
+  });
+
+  it('phiếu trong 1 ngày (den_ngay = ngay) vẫn ghi ca như cũ', () => {
+    const kq = renderThongBao(
+      nguCanhHc(
+        'hanh_chinh.cho_duyet',
+        { ngay: '2026-09-18', den_ngay: '2026-09-18', tu_buoi: 'Sáng', den_buoi: 'Chiều', ca: 'Cả ngày' },
+        {},
+        'Xin nghỉ phép'
+      )
+    );
+    expect(kq.tieuDe).toBe('Xin nghỉ phép 18/09 (Cả ngày) chờ duyệt');
+  });
+
   it('tra không ra tên loại phiếu thì lui về "Phiếu hành chính", không lòi null', () => {
     const kq = renderThongBao(
       nguCanhHc('hanh_chinh.cho_duyet', { ngay: '2026-09-18', ca: 'Sáng' })

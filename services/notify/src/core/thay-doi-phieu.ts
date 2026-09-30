@@ -55,6 +55,9 @@ const COT_ID_CO_COT_TEN: Record<string, string> = {
 const NHAN_COT: Record<string, string> = {
   so_phieu: 'Số phiếu',
   ngay: 'Ngày',
+  den_ngay: 'Đến ngày',
+  tu_buoi: 'Từ buổi',
+  den_buoi: 'Đến buổi',
   ngay_can: 'Ngày cần',
   ca: 'Ca',
   ly_do: 'Lý do',

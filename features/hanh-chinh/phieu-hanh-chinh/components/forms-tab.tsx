@@ -8,6 +8,7 @@ import AdminFormDetail from './admin-form-detail';
 import AdminFormForm from './admin-form-form';
 import {
   useAdminFormPage,
+  useAdminFormTomTat,
   useApproveAdminFormByHcns,
   useRejectAdminFormByHcns,
   useApproveAdminFormsByManager,
@@ -17,46 +18,61 @@ import {
   useDeleteAdminForm,
   useDeleteAdminForms,
   useCancelAdminForm,
+  useCancelAdminForms,
 } from '../hooks/use-admin-form';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
-import { useAdminFormManagedStore } from '../store/useAdminFormManagedStore';
+import { useAdminFormListStore } from '../store/useAdminFormListStore';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
-import { CONFIRM_YES } from '../../../../lib/button-labels';
-import { CheckCircle2, XCircle, ShieldCheck } from 'lucide-react';
+import { CONFIRM_DELETE, CONFIRM_YES } from '../../../../lib/button-labels';
+import { Ban, CheckCircle2, XCircle, ShieldCheck } from 'lucide-react';
 import { AdminFormRequest } from '../core/types';
 import { useAuthStore } from '../../../../store/useStore';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 
-/** Phiếu mở từ deep-link `?phieu=<id>` của thông báo — index.tsx đã nạp và kiểm quyền. */
 interface Props {
+  /** Được xem phiếu của mọi người + duyệt (quản trị / cấp bậc 1). */
+  viewAll: boolean;
+  /** Phạm vi xem chưa nạp xong — chưa truy vấn để không lộ phiếu người khác. */
+  dangTaiPhamVi: boolean;
+  /** Phiếu mở từ deep-link `?phieu=<id>` của thông báo — index.tsx đã nạp và kiểm quyền. */
   deepLinkItem?: AdminFormRequest | null;
   onDeepLinkConsumed?: () => void;
 }
 
-const AdminFormManagedTab: React.FC<Props> = ({ deepLinkItem, onDeepLinkConsumed }) => {
+/**
+ * Tab "Phiếu" duy nhất: gộp "Của tôi" + "Tôi quản lý" cũ.
+ * - viewAll: thấy phiếu mọi người (có cả phiếu của mình), lọc bằng chip Người gửi, được duyệt.
+ * - còn lại: chỉ phiếu của chính mình, như tab "Của tôi" cũ.
+ */
+const AdminFormFormsTab: React.FC<Props> = ({ viewAll, dangTaiPhamVi, deepLinkItem, onDeepLinkConsumed }) => {
   const { t } = useTranslation();
   const confirm = useConfirmStore((s) => s.confirm);
   const user = useAuthStore((s) => s.user);
-  const { canUpdate, canDelete } = useModulePermissionFromContext();
-  const { searchInput, setSearchInput } = useGenericToolbarSearch(useAdminFormManagedStore);
-  const searchTerm = useAdminFormManagedStore((s) => s.searchTerm);
-  const filters = useAdminFormManagedStore((s) => s.filters);
-  const sort = useAdminFormManagedStore((s) => s.sort);
-  const pagination = useAdminFormManagedStore((s) => s.pagination);
-  const resetState = useAdminFormManagedStore((s) => s.resetState);
-  const clearSelection = useAdminFormManagedStore((s) => s.clearSelection);
-  const selectedIds = useAdminFormManagedStore((s) => s.selectedIds);
-  const columns = useAdminFormManagedStore((s) => s.columns);
-  const setFilter = useAdminFormManagedStore((s) => s.setFilter);
-  const toggleColumn = useAdminFormManagedStore((s) => s.toggleColumn);
-  const reorderColumns = useAdminFormManagedStore((s) => s.reorderColumns);
-  const resetColumns = useAdminFormManagedStore((s) => s.resetColumns);
-  const resetColumnWidths = useAdminFormManagedStore((s) => s.resetColumnWidths);
+  const currentUserId = user?.id ?? '';
+  const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
+  const { searchInput, setSearchInput } = useGenericToolbarSearch(useAdminFormListStore);
+  const searchTerm = useAdminFormListStore((s) => s.searchTerm);
+  const filters = useAdminFormListStore((s) => s.filters);
+  const sort = useAdminFormListStore((s) => s.sort);
+  const pagination = useAdminFormListStore((s) => s.pagination);
+  const resetState = useAdminFormListStore((s) => s.resetState);
+  const clearSelection = useAdminFormListStore((s) => s.clearSelection);
+  const selectedIds = useAdminFormListStore((s) => s.selectedIds);
+  const columns = useAdminFormListStore((s) => s.columns);
+  const setFilter = useAdminFormListStore((s) => s.setFilter);
+  const toggleColumn = useAdminFormListStore((s) => s.toggleColumn);
+  const reorderColumns = useAdminFormListStore((s) => s.reorderColumns);
+  const resetColumns = useAdminFormListStore((s) => s.resetColumns);
+  const resetColumnWidths = useAdminFormListStore((s) => s.resetColumnWidths);
 
   const [viewingItem, setViewingItem] = useState<AdminFormRequest | null>(null);
   const [editingItem, setEditingItem] = useState<AdminFormRequest | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
 
-  /** Bộ lọc gửi thẳng xuống PostgREST — trước đây tab này tải toàn bộ bảng phiếu. */
+  /** Phạm vi người tạo: viewAll = mọi người (null); không thì ép đúng chính mình. */
+  const phamViNguoiTao: string[] | null = viewAll ? null : [currentUserId];
+  const duocTruyVan = !dangTaiPhamVi && !!currentUserId;
+
   const listServerQuery: AdminFormListServerQuery = useMemo(
     () => ({
       page: pagination.page - 1,
@@ -64,20 +80,21 @@ const AdminFormManagedTab: React.FC<Props> = ({ deepLinkItem, onDeepLinkConsumed
       searchTerm,
       status: filters.status ?? [],
       type: filters.type ?? [],
-      shift: filters.shift ?? [],
       month: filters.month ?? '',
-      nguoiTaoId: null,
-      loaiTruNguoiTaoId: null,
+      nguoiTaoIds: viewAll
+        ? (filters.nguoiTao ?? []).length > 0 ? filters.nguoiTao : null
+        : [currentUserId],
       sortColumn: sort.column,
       sortDirection: sort.direction,
     }),
-    [pagination.page, pagination.pageSize, searchTerm, filters, sort]
+    [pagination.page, pagination.pageSize, searchTerm, filters, sort, viewAll, currentUserId]
   );
 
-  const pageQuery = useAdminFormPage(listServerQuery);
+  const pageQuery = useAdminFormPage(listServerQuery, duocTruyVan);
+  const tomTatQuery = useAdminFormTomTat(phamViNguoiTao, duocTruyVan);
   const pageList = pageQuery.data?.data ?? [];
   const totalCount = pageQuery.data?.totalCount ?? 0;
-  const isLoading = !pageQuery.data && pageQuery.isPending;
+  const isLoading = !pageQuery.data && (pageQuery.isPending || !duocTruyVan);
   const isFetching = !!pageQuery.data && pageQuery.isFetching;
   const approveHcnsMutation = useApproveAdminFormByHcns();
   const rejectHcnsMutation = useRejectAdminFormByHcns();
@@ -88,6 +105,7 @@ const AdminFormManagedTab: React.FC<Props> = ({ deepLinkItem, onDeepLinkConsumed
   const deleteMutation = useDeleteAdminForm();
   const deleteManyMutation = useDeleteAdminForms();
   const cancelMutation = useCancelAdminForm();
+  const cancelManyMutation = useCancelAdminForms();
 
   useEffect(() => {
     return () => resetState();
@@ -100,7 +118,6 @@ const AdminFormManagedTab: React.FC<Props> = ({ deepLinkItem, onDeepLinkConsumed
     setViewingItem(deepLinkItem);
     onDeepLinkConsumed?.();
   }, [deepLinkItem, onDeepLinkConsumed]);
-
 
   const handleApproveHcns = (id: string) => {
     confirm({
@@ -131,7 +148,7 @@ const AdminFormManagedTab: React.FC<Props> = ({ deepLinkItem, onDeepLinkConsumed
       title: t('adminForm.deleteTitle'),
       message: t('adminForm.deleteMessage'),
       variant: 'danger',
-      confirmText: CONFIRM_YES(),
+      confirmText: CONFIRM_DELETE(),
       onConfirm: async () => {
         deleteMutation.mutate(id);
       },
@@ -156,9 +173,21 @@ const AdminFormManagedTab: React.FC<Props> = ({ deepLinkItem, onDeepLinkConsumed
       title: t('adminForm.deleteTitle'),
       message: t('adminForm.bulkDeleteMessage', { count: ids.length }),
       variant: 'danger',
-      confirmText: CONFIRM_YES(),
+      confirmText: CONFIRM_DELETE(),
       onConfirm: async () => {
         deleteManyMutation.mutate(ids, { onSuccess: () => clearSelection() });
+      },
+    });
+  };
+
+  const handleCancelMany = (ids: string[]) => {
+    confirm({
+      title: t('adminForm.bulkCancelTitle'),
+      message: t('adminForm.bulkCancelMessage', { count: ids.length }),
+      variant: 'warning',
+      confirmText: CONFIRM_YES(),
+      onConfirm: async () => {
+        cancelManyMutation.mutate(ids, { onSuccess: () => clearSelection() });
       },
     });
   };
@@ -211,43 +240,64 @@ const AdminFormManagedTab: React.FC<Props> = ({ deepLinkItem, onDeepLinkConsumed
     });
   };
 
+  // Duyệt / từ chối chỉ dành cho người có viewAll — nếu không, nhân viên thường
+  // có quyền sửa (để sửa phiếu của mình) sẽ thấy nút Duyệt sau khi gộp tab.
   const bulkActions = selectedIds.size > 0 && canUpdate ? (
     <div className="flex items-center gap-2">
-      <button
-        onClick={() => handleApproveMany(Array.from(selectedIds))}
-        className="inline-flex items-center gap-1.5 px-2.5 h-8 rounded-lg border border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-all active:scale-95 text-xs font-semibold"
-      >
-        <CheckCircle2 size={14} /> {t('adminForm.actions.approveManager')}
-      </button>
-      <button
-        onClick={() => handleRejectMany(Array.from(selectedIds))}
-        className="inline-flex items-center gap-1.5 px-2.5 h-8 rounded-lg border border-rose-200 text-rose-700 bg-rose-50 hover:bg-rose-100 transition-all active:scale-95 text-xs font-semibold"
-      >
-        <XCircle size={14} /> {t('adminForm.actions.rejectManager')}
-      </button>
-      {user?.role === 'admin' && (
+      {viewAll && (
         <>
           <button
-            onClick={() => handleApproveManyHcns(Array.from(selectedIds))}
-            className="inline-flex items-center gap-1.5 px-2.5 h-8 rounded-lg border border-sky-200 text-sky-700 bg-sky-50 hover:bg-sky-100 transition-all active:scale-95 text-xs font-semibold"
+            onClick={() => handleApproveMany(Array.from(selectedIds))}
+            className="inline-flex items-center gap-1.5 px-2.5 h-8 rounded-lg border border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-all active:scale-95 text-xs font-semibold"
           >
-            <ShieldCheck size={14} /> {t('adminForm.actions.approveHr')}
+            <CheckCircle2 size={14} /> {t('adminForm.actions.approveManager')}
           </button>
           <button
-            onClick={() => handleRejectManyHcns(Array.from(selectedIds))}
+            onClick={() => handleRejectMany(Array.from(selectedIds))}
             className="inline-flex items-center gap-1.5 px-2.5 h-8 rounded-lg border border-rose-200 text-rose-700 bg-rose-50 hover:bg-rose-100 transition-all active:scale-95 text-xs font-semibold"
           >
-            <XCircle size={14} /> {t('adminForm.actions.rejectHr')}
+            <XCircle size={14} /> {t('adminForm.actions.rejectManager')}
           </button>
+          {user?.role === 'admin' && (
+            <>
+              <button
+                onClick={() => handleApproveManyHcns(Array.from(selectedIds))}
+                className="inline-flex items-center gap-1.5 px-2.5 h-8 rounded-lg border border-sky-200 text-sky-700 bg-sky-50 hover:bg-sky-100 transition-all active:scale-95 text-xs font-semibold"
+              >
+                <ShieldCheck size={14} /> {t('adminForm.actions.approveHr')}
+              </button>
+              <button
+                onClick={() => handleRejectManyHcns(Array.from(selectedIds))}
+                className="inline-flex items-center gap-1.5 px-2.5 h-8 rounded-lg border border-rose-200 text-rose-700 bg-rose-50 hover:bg-rose-100 transition-all active:scale-95 text-xs font-semibold"
+              >
+                <XCircle size={14} /> {t('adminForm.actions.rejectHr')}
+              </button>
+            </>
+          )}
         </>
       )}
+      <button
+        onClick={() => handleCancelMany(Array.from(selectedIds))}
+        className="inline-flex items-center gap-1.5 px-2.5 h-8 rounded-lg border border-amber-200 text-amber-700 bg-amber-50 hover:bg-amber-100 transition-all active:scale-95 text-xs font-semibold"
+      >
+        <Ban size={14} /> {t('adminForm.actions.cancel')}
+      </button>
     </div>
   ) : null;
+
+  const formItem = editingItem;
+  const showForm = showCreate || !!editingItem;
+  const closeForm = () => {
+    setShowCreate(false);
+    setEditingItem(null);
+  };
 
   return (
     <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
       <AdminFormToolbar
-        items={pageList}
+        tomTat={tomTatQuery.data ?? []}
+        showPersonFilter={viewAll}
+        currentUserId={currentUserId}
         searchTerm={searchInput}
         setSearchTerm={setSearchInput}
         filters={filters}
@@ -259,6 +309,7 @@ const AdminFormManagedTab: React.FC<Props> = ({ deepLinkItem, onDeepLinkConsumed
         resetColumnWidths={resetColumnWidths}
         selectedIds={selectedIds}
         clearSelection={clearSelection}
+        onAdd={canCreate ? () => setShowCreate(true) : undefined}
         onDeleteMany={canDelete ? handleDeleteMany : undefined}
         bulkActions={bulkActions}
       />
@@ -271,7 +322,7 @@ const AdminFormManagedTab: React.FC<Props> = ({ deepLinkItem, onDeepLinkConsumed
           onView={(item) => setViewingItem(item)}
           onEdit={(item) => setEditingItem(item)}
           onDelete={handleDelete}
-          useStore={useAdminFormManagedStore}
+          useStore={useAdminFormListStore}
           canUpdate={canUpdate}
           canDelete={canDelete}
         />
@@ -288,8 +339,8 @@ const AdminFormManagedTab: React.FC<Props> = ({ deepLinkItem, onDeepLinkConsumed
             }}
             onDelete={handleDelete}
             onCancel={handleCancel}
-            onApproveHcns={handleApproveHcns}
-            onRejectHcns={handleRejectHcns}
+            onApproveHcns={viewAll ? handleApproveHcns : undefined}
+            onRejectHcns={viewAll ? handleRejectHcns : undefined}
             canUpdate={canUpdate}
             canDelete={canDelete}
           />
@@ -297,15 +348,10 @@ const AdminFormManagedTab: React.FC<Props> = ({ deepLinkItem, onDeepLinkConsumed
       </AnimatePresence>
 
       <AnimatePresence>
-        {editingItem && (
-          <AdminFormForm
-            initialData={editingItem}
-            onClose={() => setEditingItem(null)}
-          />
-        )}
+        {showForm && <AdminFormForm initialData={formItem} onClose={closeForm} />}
       </AnimatePresence>
     </div>
   );
 };
 
-export default AdminFormManagedTab;
+export default AdminFormFormsTab;
