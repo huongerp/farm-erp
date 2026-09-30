@@ -24,6 +24,7 @@ import DetailField from '../../../../components/shared/DetailField';
 import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
 import GenericSubTableSection from '../../../../components/shared/GenericSubTableSection';
 import SubTable, { type SubTableColumn } from '../../../../components/shared/sub-table/SubTable';
+import ThuChiLienQuanSection from '../../../tai-chinh/thu-chi-quy/components/shared/ThuChiLienQuanSection';
 
 const PREVIEW_BASE = '/mua-hang/phieu-de-xuat-vat-tu/preview';
 
@@ -79,6 +80,8 @@ interface Props {
   canEdit?: boolean;
   canDelete?: boolean;
   showOverdueBadge?: boolean;
+  /** Chi nhánh của kho nơi đề xuất — điền sẵn farm khi thêm phiếu thu chi liên quan */
+  idChiNhanhNoiDeXuat?: string | null;
 }
 
 const PhieuDeXuatVatTuDetail: React.FC<Props> = ({
@@ -93,6 +96,7 @@ const PhieuDeXuatVatTuDetail: React.FC<Props> = ({
   canEdit = true,
   canDelete = true,
   showOverdueBadge = false,
+  idChiNhanhNoiDeXuat,
 }) => {
   const { t } = useTranslation();
   const canApprove = isTrangThaiChoPheDuyet(data.trang_thai) && !!onApprove;
@@ -297,6 +301,15 @@ const PhieuDeXuatVatTuDetail: React.FC<Props> = ({
             />
           )}
         </GenericSubTableSection>
+
+        <ThuChiLienQuanSection
+          loaiChungTu="phieu_de_xuat_vat_tu"
+          idChungTu={data.id}
+          soChungTu={data.so_phieu}
+          idChiNhanhMacDinh={idChiNhanhNoiDeXuat ?? null}
+          ngayMacDinh={data.ngay}
+          dienGiaiMacDinh={`${t('phieuDeXuatVatTu.detail.thuChiPrefix')} ${data.so_phieu}`}
+        />
 
         <DetailSection title={t('phieuDeXuatVatTu.detail.systemInfo')} icon={<Calendar size={14} />} variant="secondary">
           <DetailFieldGrid>

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import i18n from '../../../../lib/i18n';
 import { coerceSoTien } from './money';
+import { NGUON_CHUNG_TU } from './constants';
 
 const optionalNumber = z
   .union([z.number(), z.string(), z.null(), z.undefined()])
@@ -21,7 +22,7 @@ export const thuChiQuySchema = z
     id_hang_muc: z.string().min(1, { message: i18n.t('thuChiQuy.validation.hangMucRequired') }),
     dien_giai: z.string().min(1, { message: i18n.t('thuChiQuy.validation.dienGiaiRequired') }),
     ghi_chu: z.string().optional().nullable(),
-    loai_chung_tu: z.enum(['don_dat_hang', 'de_xuat_mua_hang', 'chi_phi_tai_san']).nullable().optional(),
+    loai_chung_tu: z.enum(NGUON_CHUNG_TU).nullable().optional(),
     id_chung_tu: z.string().nullable().optional(),
     so_chung_tu: z.string().nullable().optional(),
   })

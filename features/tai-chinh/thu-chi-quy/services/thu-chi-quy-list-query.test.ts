@@ -70,7 +70,7 @@ describe('buildThuChiQuyListServerQuery', () => {
         ...emptyFilters,
         loai: ['chi', 'thu', 'chi', 'xxx' as never],
         hangMucIds: ['5', '2', '5', 'abc'],
-        nguonChungTu: ['don_dat_hang', 'sai' as never],
+        nguonChungTu: ['don_dat_hang', 'sai' as never, 'phieu_de_xuat_vat_tu'],
       },
       ngayFrom: '2026-07-01',
       ngayTo: '2026-07-31',
@@ -78,7 +78,7 @@ describe('buildThuChiQuyListServerQuery', () => {
     expect(q.searchTerm).toBe('mũi khoan');
     expect(q.loai).toEqual(['chi', 'thu']);
     expect(q.hangMucIds).toEqual([2, 5]);
-    expect(q.nguonChungTu).toEqual(['don_dat_hang']);
+    expect(q.nguonChungTu).toEqual(['don_dat_hang', 'phieu_de_xuat_vat_tu']);
     expect(q.nguoiTaoIds).toEqual([]);
     expect(q.ngayFrom).toBe('2026-07-01');
     expect(q.ngayTo).toBe('2026-07-31');

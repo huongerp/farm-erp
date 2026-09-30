@@ -75,6 +75,7 @@
   "phieuDeXuatVatTu.validation.quantityMin": "Số lượng phải lớn hơn 0",
   "phieuDeXuatVatTu.validation.atLeastOneItem": "Phiếu phải có ít nhất một dòng hàng hóa",
   "phieuDeXuatVatTu.validation.requiredDateNotBeforeDate": "Ngày cần không được trước ngày lập",
+  "phieuDeXuatVatTu.detail.thuChiPrefix": "Chi theo đề xuất vật tư",
   "phieuDeXuatVatTu.detail.title": "Chi tiết phiếu đề xuất vật tư",
   "phieuDeXuatVatTu.detail.toolbar.approve": "Phê duyệt",
   "phieuDeXuatVatTu.detail.toolbar.copy": "Sao chép phiếu",

@@ -443,6 +443,11 @@ const DanhSachTab: React.FC = () => {
             onCreateDonDatHang={canCreate ? (item) => setCreateDonDatHangFrom(viewingPhieuFull ?? item) : undefined}
             canEdit={!!canUpdate}
             canDelete={canDelete}
+            idChiNhanhNoiDeXuat={
+              khoList.find(
+                (k) => String(k.id) === String((viewingPhieuFull ?? viewingItem).id_noi_de_xuat)
+              )?.id_chi_nhanh ?? null
+            }
             showOverdueBadge={!!(config?.bat_canh_bao_qua_han && viewingItem?.trang_thai === TRANG_THAI_CHO_DUYET && (Math.floor((Date.now() - new Date((viewingPhieuFull ?? viewingItem).tg_tao).getTime()) / 86400000) > (config.thoi_han_duyet_ngay ?? 0)))}
           />
         )}

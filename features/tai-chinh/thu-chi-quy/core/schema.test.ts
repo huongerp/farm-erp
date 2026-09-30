@@ -51,6 +51,10 @@ describe('thuChiQuySchema', () => {
     expect(
       thuChiQuySchema.safeParse({ ...base, loai_chung_tu: 'chi_phi_tai_san', id_chung_tu: undefined }).success
     ).toBe(false);
+    // nguồn Phiếu đề xuất vật tư có chọn phiếu → hợp lệ
+    expect(
+      thuChiQuySchema.safeParse({ ...base, loai_chung_tu: 'phieu_de_xuat_vat_tu', id_chung_tu: '7' }).success
+    ).toBe(true);
     // không chọn module → phiếu quỹ độc lập, vẫn hợp lệ
     expect(thuChiQuySchema.safeParse({ ...base, loai_chung_tu: null, id_chung_tu: null }).success).toBe(true);
   });

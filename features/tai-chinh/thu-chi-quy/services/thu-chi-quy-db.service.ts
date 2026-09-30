@@ -11,7 +11,7 @@ import { db, fetchAllRows, fetchTablePage, throwDbError, type PaginatedTableResu
 import { bulkInsert } from '../../../../lib/import-bulk';
 import { postgrestQuotedIlikePattern } from '../../../../lib/postgrest-or-ilike';
 import i18n from '../../../../lib/i18n';
-import { buildSoPhieu } from '../core/constants';
+import { buildSoPhieu, isThuChiNguon } from '../core/constants';
 import { TRANG_THAI_THU_CHI_QUY } from '../core/types';
 import type {
   LoaiThuChi,
@@ -100,8 +100,7 @@ function normalizeLoai(v: string | null): LoaiThuChi {
 }
 
 function normalizeNguon(v: string | null): ThuChiNguon | null {
-  if (v === 'don_dat_hang' || v === 'de_xuat_mua_hang' || v === 'chi_phi_tai_san') return v;
-  return null;
+  return isThuChiNguon(v) ? v : null;
 }
 
 function normalizeTrangThai(v: string | null): TrangThaiThuChiQuy {
@@ -301,6 +300,7 @@ const CHUNG_TU_NGUON: Record<
   { table: string; cotSo: string; cotNgay: string; cotMoTa?: string }
 > = {
   don_dat_hang: { table: 'fp_mh_don_dat_hang', cotSo: 'so_po', cotNgay: 'ngay_dat', cotMoTa: 'ten_nha_cung_cap' },
+  phieu_de_xuat_vat_tu: { table: 'fp_mh_phieu_de_xuat_vat_tu', cotSo: 'so_phieu', cotNgay: 'ngay', cotMoTa: 'ghi_chu' },
   de_xuat_mua_hang: { table: 'fp_farm_de_xuat_mua_hang', cotSo: 'so_phieu', cotNgay: 'ngay', cotMoTa: 'ghi_chu' },
   chi_phi_tai_san: { table: 'fp_ts_chi_phi_tai_san', cotSo: 'ma_phieu', cotNgay: 'ngay', cotMoTa: 'ten_tai_san' },
 };

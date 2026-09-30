@@ -4,6 +4,7 @@
  */
 import { resolveAllowedChiNhanhIds, type QuyBranchScope } from '../utils/quy-view-scope';
 import { TRANG_THAI_THU_CHI_QUY } from '../core/types';
+import { isThuChiNguon } from '../core/constants';
 import type { LoaiThuChi, ThuChiNguon, TrangThaiThuChiQuy } from '../core/types';
 import type { ThuChiQuyFilters } from '../store/useThuChiQuyStore';
 
@@ -56,9 +57,7 @@ export function buildThuChiQuyListServerQuery(params: {
   }
 
   const loai = strArr(filters.loai).filter((v): v is LoaiThuChi => v === 'thu' || v === 'chi');
-  const nguonChungTu = strArr(filters.nguonChungTu).filter((v): v is ThuChiNguon =>
-    v === 'don_dat_hang' || v === 'de_xuat_mua_hang' || v === 'chi_phi_tai_san'
-  );
+  const nguonChungTu = strArr(filters.nguonChungTu).filter(isThuChiNguon);
   const trangThai = strArr(filters.trangThai).filter((v): v is TrangThaiThuChiQuy =>
     v === TRANG_THAI_THU_CHI_QUY.MO ||
     v === TRANG_THAI_THU_CHI_QUY.KHOA ||

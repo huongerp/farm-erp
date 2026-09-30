@@ -15,8 +15,8 @@ export const TRANG_THAI_THU_CHI_QUY = {
   CHO_MO: 'cho_mo',
 } as const satisfies Record<string, TrangThaiThuChiQuy>;
 
-/** Nguồn chứng từ liên kết với phiếu quỹ (đa hình: 3 bảng khác nhau). */
-export type ThuChiNguon = 'don_dat_hang' | 'de_xuat_mua_hang' | 'chi_phi_tai_san';
+/** Nguồn chứng từ liên kết với phiếu quỹ (đa hình: mỗi nguồn một bảng). */
+export type ThuChiNguon = 'don_dat_hang' | 'phieu_de_xuat_vat_tu' | 'de_xuat_mua_hang' | 'chi_phi_tai_san';
 
 /** Một phiếu thu/chi trong sổ quỹ (fp_tc_quy_thu_chi). */
 export interface ThuChiQuy {
