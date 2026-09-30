@@ -31,6 +31,7 @@ const RAW_SUBMENU_MODULE_IMPORTS = {
   'thanh-toan-doi-tac': () => import('../features/mua-hang/thanh-toan-doi-tac'),
   'quan-ly-hop-dong': () => import('../features/mua-hang/quan-ly-hop-dong'),
   'bao-cao-de-xuat-vat-tu': () => import('../features/mua-hang/bao-cao-de-xuat-vat-tu'),
+  'dang-ky-nhan-hang': () => import('../features/quan-ly-nha-so-che/dang-ky-nhan-hang'),
   'thu-hoach': () => import('../features/quan-ly-nha-so-che/thu-hoach'),
   'bao-cao-nhan-cong': () => import('../features/quan-ly-nha-so-che/bao-cao-nhan-cong'),
   'bao-cao-so-che': () => import('../features/quan-ly-nha-so-che/bao-cao-so-che'),

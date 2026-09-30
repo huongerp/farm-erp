@@ -2,7 +2,11 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Edit, Trash2, Package, ArrowUpFromLine, Calendar, Power, Folder, DollarSign, Plus, Warehouse, FileText } from 'lucide-react';
+import { Edit, Trash2, Package, ArrowUpFromLine, Calendar, Power, Folder, DollarSign, Plus, Warehouse, FileText, QrCode, Download, Printer } from 'lucide-react';
+import { AnimatePresence } from 'framer-motion';
+import QrCodeImage from '../../../../components/shared/QrCodeImage';
+import InTemQrDialog from './InTemQrDialog';
+import { taiQrPng } from '../utils/in-tem-qr';
 import Button from '../../../../components/ui/Button';
 import DetailDrawerFooter from '../../../../components/shared/DetailDrawerFooter';
 import type { HangHoa } from '../core/types';
@@ -43,6 +47,7 @@ const DanhSachHangHoaDetail: React.FC<Props> = ({
   const { data: khoList = [] } = useQuery<Kho[]>({ queryKey: ['kho'], queryFn: getKhoList });
   const [showDinhMucForm, setShowDinhMucForm] = useState(false);
   const [editingDinhMuc, setEditingDinhMuc] = useState<DinhMucTonKhoRow | null>(null);
+  const [showInTem, setShowInTem] = useState(false);
 
   const khoMap = React.useMemo(() => {
     const m: Record<string, Kho> = {};
@@ -161,6 +166,28 @@ const DanhSachHangHoaDetail: React.FC<Props> = ({
           </DetailFieldGrid>
         </DetailSection>
 
+        {data.ma_hang_hoa && (
+          <DetailSection title={t('hangHoa.qr.title')} icon={<QrCode size={14} />} variant="secondary">
+            <div className="flex items-center gap-4">
+              <QrCodeImage value={data.ma_hang_hoa} size={128} />
+              <div className="min-w-0 space-y-2">
+                <p className="text-xs text-muted-foreground">{t('hangHoa.qr.hint')}</p>
+                <p className="text-sm font-mono font-semibold">{data.ma_hang_hoa}</p>
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" variant="outline" size="sm" onClick={() => void taiQrPng(data.ma_hang_hoa)}>
+                    <Download size={14} className="mr-1.5" />
+                    {t('hangHoa.qr.taiPng')}
+                  </Button>
+                  <Button type="button" size="sm" onClick={() => setShowInTem(true)}>
+                    <Printer size={14} className="mr-1.5" />
+                    {t('hangHoa.qr.inTem')}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </DetailSection>
+        )}
+
         <DetailSection title={t('hangHoa.detail.systemInfo')} icon={<Calendar size={14} />} variant="primary">
           <DetailFieldGrid>
             <DetailField label={t('hangHoa.detail.createdAt')} value={formatDateShort(data.tg_tao)} icon={<Calendar size={12} />} />
@@ -246,6 +273,15 @@ const DanhSachHangHoaDetail: React.FC<Props> = ({
           }}
         />
       )}
+
+      <AnimatePresence>
+        {showInTem && data.ma_hang_hoa && (
+          <InTemQrDialog
+            items={[{ ma: data.ma_hang_hoa, ten: data.ten_hang_hoa, dvt: data.dvt }]}
+            onClose={() => setShowInTem(false)}
+          />
+        )}
+      </AnimatePresence>
     </GenericDrawer>
   );
 };

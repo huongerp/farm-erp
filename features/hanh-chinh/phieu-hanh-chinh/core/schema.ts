@@ -7,7 +7,6 @@ import { ADMIN_FORM_SESSIONS, kiemTraKhoang, laLoaiTheoKhoang, type LoiKhoang } 
 const THONG_BAO_LOI_KHOANG: Record<LoiKhoang, string> = {
   ngay_khong_hop_le: 'adminForm.validation.rangeInvalidDate',
   den_truoc_tu: 'adminForm.validation.rangeReversed',
-  chi_chu_nhat: 'adminForm.validation.rangeOnlySunday',
 };
 
 /**

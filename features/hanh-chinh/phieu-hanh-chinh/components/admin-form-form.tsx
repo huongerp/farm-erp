@@ -20,7 +20,6 @@ import { ADMIN_FORM_SHIFTS, getAdminFormShiftLabel } from '../core/constants';
 import {
   ADMIN_FORM_SESSIONS,
   chinhDenNgay,
-  demChuNhat,
   kiemTraKhoang,
   khoangTuForm,
   laLoaiTheoKhoang,
@@ -102,9 +101,8 @@ const AdminFormForm: React.FC<Props> = ({ initialData, onClose }) => {
 
   // Khoảng sẽ lưu + số ngày — cùng hàm với lúc lưu và lúc tính định mức.
   const khoang = useMemo(() => khoangTuForm(values), [values]);
-  const khoangHopLe = !!values.loai_phieu && kiemTraKhoang(khoang, theoKhoang) == null;
-  const soNgay = khoangHopLe ? tinhSoNgay(khoang, theoKhoang) : 0;
-  const soChuNhat = khoangHopLe && theoKhoang ? demChuNhat(khoang) : 0;
+  const khoangHopLe = !!values.loai_phieu && kiemTraKhoang(khoang) == null;
+  const soNgay = khoangHopLe ? tinhSoNgay(khoang) : 0;
 
   // Cảnh báo trùng: chỉ nhắc, không chặn lưu.
   const khoangDebounced = useDebouncedValue(khoangHopLe ? khoang : null, 400);
@@ -262,7 +260,6 @@ const AdminFormForm: React.FC<Props> = ({ initialData, onClose }) => {
                   {thuCua(khoang.tu_ngay)} {formatDate(khoang.tu_ngay)} ({t(`adminForm.session.${khoang.tu_buoi}`).toLocaleLowerCase('vi')})
                   {' → '}
                   {thuCua(khoang.den_ngay)} {formatDate(khoang.den_ngay)} ({t(`adminForm.session.${khoang.den_buoi}`).toLocaleLowerCase('vi')})
-                  {soChuNhat > 0 && ` · ${t('adminForm.form.summarySundays', { count: soChuNhat })}`}
                 </span>
               )}
             </div>

@@ -130,5 +130,18 @@
   "hangHoa.import.hint_pham_cap": "Tuỳ chọn.",
   "hangHoa.import.hint_don_gia": "Tuỳ chọn. Số, VD 50000 hoặc 50.000.",
   "hangHoa.import.hint_mo_ta": "Tuỳ chọn.",
-  "hangHoa.import.hint_trang_thai": "Đang hoạt động / Ngừng hoạt động. Để trống = Đang hoạt động."
+  "hangHoa.import.hint_trang_thai": "Đang hoạt động / Ngừng hoạt động. Để trống = Đang hoạt động.",
+  "hangHoa.qr.title": "Mã QR",
+  "hangHoa.qr.hint": "QR chứa đúng mã hàng — in tem dán lên thùng để quét khi xuất hàng (Đăng ký nhận hàng).",
+  "hangHoa.qr.taiPng": "Tải PNG",
+  "hangHoa.qr.inTem": "In tem QR",
+  "hangHoa.qr.inTemTitle": "In tem QR hàng hoá",
+  "hangHoa.qr.inTemSubtitle": "{{count}} mã hàng",
+  "hangHoa.qr.in": "In",
+  "hangHoa.qr.soTemMoiMa": "Số tem mỗi mã (mỗi thùng một tem)",
+  "hangHoa.qr.coTem": "Cỡ tem",
+  "hangHoa.qr.co.nho": "Nhỏ 40mm",
+  "hangHoa.qr.co.vua": "Vừa 50mm",
+  "hangHoa.qr.co.lon": "Lớn 70mm",
+  "hangHoa.qr.tongTem": "Tổng {{n}} tem"
 }

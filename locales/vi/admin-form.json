@@ -112,7 +112,6 @@
   "adminForm.form.fromSession": "Bắt đầu từ buổi",
   "adminForm.form.toSession": "Nghỉ hết buổi",
   "adminForm.form.summary": "Tổng: {{soNgay}} ngày",
-  "adminForm.form.summarySundays": "đã trừ {{count}} Chủ nhật",
   "adminForm.form.overlapTitle": "Trùng thời gian với phiếu khác của bạn",
   "adminForm.form.overlapHint": "Vẫn có thể gửi, nhưng hãy kiểm tra lại để tránh nghỉ trùng.",
   "adminForm.session.morning": "Sáng",
@@ -121,6 +120,5 @@
   "adminForm.store.daysCol": "Số ngày",
   "adminForm.filter.me": "Tôi",
   "adminForm.validation.rangeInvalidDate": "Ngày không hợp lệ",
-  "adminForm.validation.rangeReversed": "Đến ngày / buổi phải sau Từ ngày / buổi",
-  "adminForm.validation.rangeOnlySunday": "Khoảng đã chọn chỉ gồm Chủ nhật"
+  "adminForm.validation.rangeReversed": "Đến ngày / buổi phải sau Từ ngày / buổi"
 }

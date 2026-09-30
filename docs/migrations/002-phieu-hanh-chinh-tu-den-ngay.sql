@@ -9,7 +9,7 @@
 -- - `ca` chỉ còn ý nghĩa cho phiếu trong 1 ngày (Sáng / Chiều / Cả ngày); phiếu nhiều
 --   ngày để null.
 -- - Số ngày KHÔNG lưu: app tính lại từ 4 trường (features/hanh-chinh/phieu-hanh-chinh/
---   core/khoang-nghi.ts, trừ Chủ nhật với loại nghỉ / công tác).
+--   core/khoang-nghi.ts, tính cả Chủ nhật — farm làm cả tuần).
 -- - Trigger BEFORE tự suy 3 cột mới từ `ngay` + `ca` khi người ghi không gửi chúng
 --   (frontend bản cũ còn đang chạy lúc deploy, hoặc SQL tay) để NOT NULL không chặn ghi.
 -- =============================================================================

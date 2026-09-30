@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import type { HangHoaTomTat } from '../services/hang-hoa-service';
 import { useTranslation } from 'react-i18next';
-import { Plus, Download, Upload, Tag, Folder, FolderTree, Ruler } from 'lucide-react';
+import { Plus, Download, Upload, Tag, Folder, FolderTree, Ruler, QrCode } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
@@ -23,6 +23,8 @@ interface Props {
   onImport?: () => void;
   onDeleteMany: () => void;
   onStatusChangeMany?: (status: 0 | 1) => void;
+  /** In tem QR cho các hàng đang chọn. */
+  onPrintQrMany?: () => void;
   canCreate?: boolean;
   canUpdate?: boolean;
   canDelete?: boolean;
@@ -36,6 +38,7 @@ const DanhSachHangHoaToolbar: React.FC<Props> = ({
   onImport,
   onDeleteMany,
   onStatusChangeMany,
+  onPrintQrMany,
   canCreate = true,
   canUpdate = true,
   canDelete = true,
@@ -297,6 +300,19 @@ const DanhSachHangHoaToolbar: React.FC<Props> = ({
   return (
     <GenericToolbar
       selectedCount={selectedCount}
+      bulkActions={
+        onPrintQrMany ? (
+          <button
+            type="button"
+            onClick={onPrintQrMany}
+            aria-label={t('hangHoa.qr.inTem')}
+            className="min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-8 px-2 md:px-3 flex items-center gap-1.5 text-primary bg-primary/10 hover:bg-primary/20 rounded-lg border border-primary/20 transition-all active:scale-95"
+          >
+            <QrCode size={14} className="stroke-[2.5px] shrink-0" />
+            <span className="hidden md:inline text-xs font-medium">{t('hangHoa.qr.inTem')}</span>
+          </button>
+        ) : undefined
+      }
       onDeleteMany={canDelete ? onDeleteMany : undefined}
       onStatusChangeMany={canUpdate ? onStatusChangeMany : undefined}
       searchTerm={searchInput}

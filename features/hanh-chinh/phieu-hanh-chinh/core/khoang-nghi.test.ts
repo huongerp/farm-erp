@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import {
   kiemTraKhoang,
   tinhSoNgay,
-  demChuNhat,
   soNgayTrongThang,
   giaoNhau,
   khoangTuCa,
@@ -23,31 +22,29 @@ const k = (
 // 2026-10-01 là Thứ 5, 2026-10-03 Thứ 7, 2026-10-04 Chủ nhật.
 describe('tinhSoNgay', () => {
   it('trọn một ngày = 1', () => {
-    expect(tinhSoNgay(k('2026-10-01', 'morning', '2026-10-01', 'afternoon'), true)).toBe(1);
+    expect(tinhSoNgay(k('2026-10-01', 'morning', '2026-10-01', 'afternoon'))).toBe(1);
   });
 
   it('nửa ngày sáng hoặc chiều = 0,5', () => {
-    expect(tinhSoNgay(k('2026-10-01', 'morning', '2026-10-01', 'morning'), true)).toBe(0.5);
-    expect(tinhSoNgay(k('2026-10-01', 'afternoon', '2026-10-01', 'afternoon'), true)).toBe(0.5);
+    expect(tinhSoNgay(k('2026-10-01', 'morning', '2026-10-01', 'morning'))).toBe(0.5);
+    expect(tinhSoNgay(k('2026-10-01', 'afternoon', '2026-10-01', 'afternoon'))).toBe(0.5);
   });
 
   it('chiều hôm nay → sáng hôm sau = 1', () => {
-    expect(tinhSoNgay(k('2026-10-01', 'afternoon', '2026-10-02', 'morning'), true)).toBe(1);
+    expect(tinhSoNgay(k('2026-10-01', 'afternoon', '2026-10-02', 'morning'))).toBe(1);
   });
 
   it('chiều 01 → sáng 03 = 0,5 + 1 + 0,5', () => {
-    expect(tinhSoNgay(k('2026-10-01', 'afternoon', '2026-10-03', 'morning'), true)).toBe(2);
+    expect(tinhSoNgay(k('2026-10-01', 'afternoon', '2026-10-03', 'morning'))).toBe(2);
   });
 
-  it('trừ Chủ nhật khi bật, giữ khi tắt', () => {
-    const t7DenT2 = k('2026-10-03', 'morning', '2026-10-05', 'afternoon');
-    expect(tinhSoNgay(t7DenT2, true)).toBe(2);
-    expect(tinhSoNgay(t7DenT2, false)).toBe(3);
-    expect(demChuNhat(t7DenT2)).toBe(1);
+  it('tính cả Chủ nhật (farm làm cả tuần)', () => {
+    expect(tinhSoNgay(k('2026-10-03', 'morning', '2026-10-05', 'afternoon'))).toBe(3);
+    expect(tinhSoNgay(k('2026-10-04', 'morning', '2026-10-04', 'afternoon'))).toBe(1);
   });
 
   it('khoảng ngược chiều = 0', () => {
-    expect(tinhSoNgay(k('2026-10-02', 'morning', '2026-10-01', 'afternoon'), true)).toBe(0);
+    expect(tinhSoNgay(k('2026-10-02', 'morning', '2026-10-01', 'afternoon'))).toBe(0);
   });
 });
 
@@ -64,9 +61,8 @@ describe('kiemTraKhoang', () => {
     expect(kiemTraKhoang(k('2026-10-05', 'morning', '2026-10-01', 'afternoon'))).toBe('den_truoc_tu');
   });
 
-  it('khoảng chỉ gồm Chủ nhật', () => {
-    expect(kiemTraKhoang(k('2026-10-04', 'morning', '2026-10-04', 'afternoon'))).toBe('chi_chu_nhat');
-    expect(kiemTraKhoang(k('2026-10-04', 'morning', '2026-10-04', 'afternoon'), false)).toBeNull();
+  it('nghỉ riêng ngày Chủ nhật là hợp lệ', () => {
+    expect(kiemTraKhoang(k('2026-10-04', 'morning', '2026-10-04', 'afternoon'))).toBeNull();
   });
 
   it('ngày sai định dạng hoặc không tồn tại', () => {
@@ -79,9 +75,9 @@ describe('soNgayTrongThang', () => {
   it('phiếu vắt qua tháng chia đúng phần mỗi tháng', () => {
     // 29/09 (T3) chiều → 02/10 (T6) sáng
     const p = k('2026-09-29', 'afternoon', '2026-10-02', 'morning');
-    expect(soNgayTrongThang(p, '2026-09', true)).toBe(1.5);
-    expect(soNgayTrongThang(p, '2026-10', true)).toBe(1.5);
-    expect(soNgayTrongThang(p, '2026-11', true)).toBe(0);
+    expect(soNgayTrongThang(p, '2026-09')).toBe(1.5);
+    expect(soNgayTrongThang(p, '2026-10')).toBe(1.5);
+    expect(soNgayTrongThang(p, '2026-11')).toBe(0);
   });
 });
 
@@ -134,8 +130,8 @@ describe('khoangTuForm / soNgayCuaPhieu', () => {
     expect(khoangTuForm({ ...base, loai_phieu: 'overtime' })).toEqual(k('2026-10-03', 'morning', '2026-10-03', 'morning'));
   });
 
-  it('loại nghỉ lấy khoảng và trừ Chủ nhật; tăng ca Chủ nhật vẫn tính', () => {
-    expect(soNgayCuaPhieu({ ...base, loai_phieu: 'leave_paid' })).toBe(2);
+  it('loại nghỉ lấy khoảng, tính cả Chủ nhật; tăng ca Chủ nhật vẫn tính', () => {
+    expect(soNgayCuaPhieu({ ...base, loai_phieu: 'leave_paid' })).toBe(3);
     expect(
       soNgayCuaPhieu({ loai_phieu: 'overtime', ngay: '2026-10-04', den_ngay: '2026-10-04', tu_buoi: 'morning', den_buoi: 'morning' })
     ).toBe(0.5);

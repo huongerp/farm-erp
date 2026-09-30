@@ -11,6 +11,8 @@ import DanhSachHangHoaList from './components/DanhSachHangHoaList';
 import DanhSachHangHoaForm from './components/DanhSachHangHoaForm';
 import DanhSachHangHoaDetail from './components/DanhSachHangHoaDetail';
 import DinhMucTonTab from './components/DinhMucTonTab';
+import InTemQrDialog from './components/InTemQrDialog';
+import { useHangHoaRefQuery } from '../../../lib/hooks/use-ref-queries';
 import ImportDialog from '../../../components/shared/LazyImportDialog';
 import type { ImportReferenceSheet, ImportSampleRow } from '../../../components/shared/ImportDialog';
 import ExportDialog from '../../../components/shared/LazyExportDialog';
@@ -58,6 +60,9 @@ const DanhSachHangHoaPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'danhSach' | 'dinhMucTon'>('danhSach');
   const [showForm, setShowForm] = useState(false);
   const [showImport, setShowImport] = useState(false);
+  const [showInTem, setShowInTem] = useState(false);
+  /** Danh mục hàng hoá (cache dùng chung) — lấy mã/tên cho các dòng đã chọn ở mọi trang. */
+  const { data: hangHoaRef = [] } = useHangHoaRefQuery();
   const [showExport, setShowExport] = useState(false);
   const [editingItem, setEditingItem] = useState<HangHoa | null>(null);
   const [viewingItem, setViewingItem] = useState<HangHoa | null>(null);
@@ -392,6 +397,7 @@ const DanhSachHangHoaPage: React.FC = () => {
               onImport={canCreate ? () => setShowImport(true) : undefined}
               onDeleteMany={handleDeleteMany}
               onStatusChangeMany={handleStatusChangeMany}
+              onPrintQrMany={() => setShowInTem(true)}
               canCreate={canCreate}
               canUpdate={canUpdate}
               canDelete={canDelete}
@@ -477,6 +483,17 @@ const DanhSachHangHoaPage: React.FC = () => {
             selectedData={selectedExportData}
             fileName={t('hangHoa.export.fileName')}
             visibleColumnKeys={visibleColumnKeys}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showInTem && (
+          <InTemQrDialog
+            items={hangHoaRef
+              .filter((h) => selectedIds.has(h.id) && h.ma_hang)
+              .map((h) => ({ ma: h.ma_hang, ten: h.ten_hang, dvt: h.dvt }))}
+            onClose={() => setShowInTem(false)}
           />
         )}
       </AnimatePresence>

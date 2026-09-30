@@ -74,7 +74,7 @@ const GenericSubTableSection: React.FC<GenericSubTableSectionProps> = ({
         className
       )}
     >
-      <div className="flex items-center gap-3 pb-2 sm:pb-2.5">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 pb-2 sm:pb-2.5">
         <div className="flex items-center gap-2 shrink-0">
           {icon}
           <h4 className="text-caption sm:text-xs font-semibold uppercase tracking-wider text-primary font-bold">

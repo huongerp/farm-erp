@@ -23,7 +23,7 @@ export interface KhoangPhieu {
   den_buoi: AdminFormSession;
 }
 
-/** Loại phiếu nhập theo khoảng (và trừ Chủ nhật khi đếm). Các loại khác: 1 ngày + ca. */
+/** Loại phiếu nhập theo khoảng. Các loại khác: 1 ngày + ca. Farm làm cả Chủ nhật nên mọi ngày đều tính. */
 export const LOAI_PHIEU_THEO_KHOANG: ReadonlySet<AdminFormType> = new Set<AdminFormType>([
   'leave_paid',
   'leave_unpaid',
@@ -52,15 +52,14 @@ function nuaNgay(ngayMs: number, buoi: AdminFormSession): number {
   return (ngayMs / MS_NGAY) * 2 + (buoi === 'afternoon' ? 1 : 0);
 }
 
-export type LoiKhoang = 'ngay_khong_hop_le' | 'den_truoc_tu' | 'chi_chu_nhat';
+export type LoiKhoang = 'ngay_khong_hop_le' | 'den_truoc_tu';
 
-/** null = hợp lệ. `truChuNhat` để bắt khoảng chỉ gồm Chủ nhật (0 ngày). */
-export function kiemTraKhoang(k: KhoangPhieu, truChuNhat = true): LoiKhoang | null {
+/** null = hợp lệ. */
+export function kiemTraKhoang(k: KhoangPhieu): LoiKhoang | null {
   const tu = toUtc(k.tu_ngay);
   const den = toUtc(k.den_ngay);
   if (tu == null || den == null) return 'ngay_khong_hop_le';
   if (nuaNgay(den, k.den_buoi) < nuaNgay(tu, k.tu_buoi)) return 'den_truoc_tu';
-  if (tinhSoNgay(k, truChuNhat) === 0) return 'chi_chu_nhat';
   return null;
 }
 
@@ -72,16 +71,15 @@ export interface NgayTrongKhoang {
 
 /**
  * Từng ngày tính công nghỉ trong khoảng. Ngày đầu bắt đầu buổi chiều trừ 0,5;
- * ngày cuối kết thúc buổi sáng trừ 0,5; Chủ nhật bỏ qua khi `truChuNhat`.
+ * ngày cuối kết thúc buổi sáng trừ 0,5. Tính cả Chủ nhật (farm làm cả tuần).
  * Khoảng không hợp lệ trả mảng rỗng.
  */
-export function duyetTungNgay(k: KhoangPhieu, truChuNhat: boolean): NgayTrongKhoang[] {
+export function duyetTungNgay(k: KhoangPhieu): NgayTrongKhoang[] {
   const tu = toUtc(k.tu_ngay);
   const den = toUtc(k.den_ngay);
   if (tu == null || den == null || nuaNgay(den, k.den_buoi) < nuaNgay(tu, k.tu_buoi)) return [];
   const out: NgayTrongKhoang[] = [];
   for (let ms = tu; ms <= den; ms += MS_NGAY) {
-    if (truChuNhat && new Date(ms).getUTCDay() === 0) continue;
     let so = 1;
     if (ms === tu && k.tu_buoi === 'afternoon') so -= 0.5;
     if (ms === den && k.den_buoi === 'morning') so -= 0.5;
@@ -90,19 +88,14 @@ export function duyetTungNgay(k: KhoangPhieu, truChuNhat: boolean): NgayTrongKho
   return out;
 }
 
-export function tinhSoNgay(k: KhoangPhieu, truChuNhat: boolean): number {
-  return duyetTungNgay(k, truChuNhat).reduce((s, d) => s + d.soNgay, 0);
-}
-
-/** Số Chủ nhật nằm trong khoảng — để dòng tổng ghi rõ "đã trừ N Chủ nhật". */
-export function demChuNhat(k: KhoangPhieu): number {
-  return duyetTungNgay(k, false).filter((d) => new Date(`${d.ngay}T00:00:00Z`).getUTCDay() === 0).length;
+export function tinhSoNgay(k: KhoangPhieu): number {
+  return duyetTungNgay(k).reduce((s, d) => s + d.soNgay, 0);
 }
 
 /** Phần của khoảng rơi vào tháng `yyyy-mm` — định mức tính theo tháng, phiếu có thể vắt qua tháng. */
-export function soNgayTrongThang(k: KhoangPhieu, thang: string, truChuNhat: boolean): number {
+export function soNgayTrongThang(k: KhoangPhieu, thang: string): number {
   const prefix = `${thang}-`;
-  return duyetTungNgay(k, truChuNhat)
+  return duyetTungNgay(k)
     .filter((d) => d.ngay.startsWith(prefix))
     .reduce((s, d) => s + d.soNgay, 0);
 }
@@ -163,12 +156,10 @@ export const khoangCuaPhieu = (p: PhieuCoKhoang): KhoangPhieu => ({
   den_buoi: p.den_buoi,
 });
 
-/** Số ngày của phiếu — chỉ loại nghỉ / công tác trừ Chủ nhật (tăng ca Chủ nhật là có thật). */
-export const soNgayCuaPhieu = (p: PhieuCoKhoang): number =>
-  tinhSoNgay(khoangCuaPhieu(p), laLoaiTheoKhoang(p.loai_phieu));
+export const soNgayCuaPhieu = (p: PhieuCoKhoang): number => tinhSoNgay(khoangCuaPhieu(p));
 
 export const soNgayCuaPhieuTrongThang = (p: PhieuCoKhoang, thang: string): number =>
-  soNgayTrongThang(khoangCuaPhieu(p), thang, laLoaiTheoKhoang(p.loai_phieu));
+  soNgayTrongThang(khoangCuaPhieu(p), thang);
 
 /**
  * Khoảng sẽ lưu từ dữ liệu form: loại theo khoảng lấy thẳng 4 trường, loại

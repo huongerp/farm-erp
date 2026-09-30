@@ -106,6 +106,7 @@ export const PERMISSION_FUNCTIONS: PermissionFunction[] = [
     color: 'emerald',
     groups: [
       { groupTitleKey: 'page.quanLyNhaSoChe.groupKeHoach', modules: [
+        { id: BASE('quan-ly-nha-so-che', 'dang-ky-nhan-hang'), nameKey: 'page.quanLyNhaSoChe.modules.dangKyNhanHang' },
         { id: BASE('quan-ly-nha-so-che', 'thu-hoach'), nameKey: 'page.quanLyNhaSoChe.modules.thuHoach' },
         /** BCNC: quyền Sửa/Xóa thường chỉ áp dụng cho phiếu mình tạo và chưa khóa; quản trị sửa/xóa tất cả. */
         { id: BASE('quan-ly-nha-so-che', 'bao-cao-nhan-cong'), nameKey: 'page.quanLyNhaSoChe.modules.baoCaoNhanCong' },
