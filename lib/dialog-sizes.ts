@@ -22,11 +22,14 @@ export const DRAWER_WIDTH_FORM = 'sm:w-[48rem] sm:min-w-[48rem] sm:max-w-[48rem]
 /** Detail dùng chung với Form */
 export const DRAWER_WIDTH_DETAIL = DRAWER_WIDTH_FORM;
 
-/** Kiểm kê kho: form + detail cùng rộng hơn chuẩn (54rem ≈ 864px) cho bảng chi tiết */
-export const DRAWER_WIDTH_KIEM_KE_KHO = 'sm:w-[54rem] sm:min-w-[54rem] sm:max-w-[54rem]';
+/** Kiểm kê kho (kho vận + phân thuốc): form + detail rộng (60rem ≈ 960px) cho bảng chi tiết 10+ cột */
+export const DRAWER_WIDTH_KIEM_KE_KHO = 'sm:w-[60rem] sm:min-w-[60rem] sm:max-w-[60rem]';
 
-/** Phiếu kho: form + detail bảng chi tiết nhiều cột (số lot, tồn, cảnh báo) */
-export const DRAWER_WIDTH_PHIEU_KHO = DRAWER_WIDTH_KIEM_KE_KHO;
+/** Phiếu kho: form + detail bảng chi tiết nhiều cột (số lot, tồn, cảnh báo) — 54rem */
+export const DRAWER_WIDTH_PHIEU_KHO = 'sm:w-[54rem] sm:min-w-[54rem] sm:max-w-[54rem]';
+
+/** Đề xuất mua hàng / vật tư: form + detail có bảng dòng hàng 7–8 cột — 56rem */
+export const DRAWER_WIDTH_DE_XUAT = 'sm:w-[56rem] sm:min-w-[56rem] sm:max-w-[56rem]';
 
 /** Báo cáo nhân công: form + detail rộng hơn chút cho bảng chuyền */
 export const DRAWER_WIDTH_BAO_CAO_NHAN_CONG = 'sm:w-[60rem] sm:min-w-[60rem] sm:max-w-[60rem]';

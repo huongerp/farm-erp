@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
 import { cn } from '../../lib/utils';
@@ -12,6 +12,7 @@ import {
   DRAWER_Z_BASE,
   DRAWER_Z_CONTENT_BASE,
 } from '../../lib/dialog-sizes';
+import { useIsMobile } from '../../lib/hooks/use-is-mobile';
 
 export {
   DRAWER_WIDTH_FORM,
@@ -20,21 +21,8 @@ export {
   DRAWER_WIDTH_PHIEU_KHO,
   DRAWER_WIDTH_BAO_CAO_NHAN_CONG,
   DRAWER_WIDTH_BAO_CAO_SO_CHE,
+  DRAWER_WIDTH_DE_XUAT,
 } from '../../lib/dialog-sizes';
-
-const useIsMobile = (breakpoint = 768) => {
-  const [isMobile, setIsMobile] = useState(() =>
-    typeof window !== 'undefined' ? window.innerWidth < breakpoint : false
-  );
-  useEffect(() => {
-    const mq = window.matchMedia(`(max-width: ${breakpoint - 1}px)`);
-    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-    setIsMobile(mq.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, [breakpoint]);
-  return isMobile;
-};
 
 interface GenericDrawerProps {
   title: string;

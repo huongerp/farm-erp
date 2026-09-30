@@ -5,23 +5,25 @@ import { FileText, Calendar, Warehouse, User, UserCheck, Package, CheckCircle, P
 import Button from '../../../../components/ui/Button';
 import DetailDrawerFooter from '../../../../components/shared/DetailDrawerFooter';
 import Textarea from '../../../../components/ui/Textarea';
-import type { PhieuDeXuatVatTu } from '../core/types';
+import type { PhieuDeXuatVatTu, PhieuDeXuatVatTuChiTiet } from '../core/types';
 import type { TrangThaiPhieuDeXuatVatTu } from '../core/constants';
 import {
   TRANG_THAI_DA_DUYET,
   TRANG_THAI_DOI_DUYET,
   TRANG_THAI_KHONG_DUYET,
+  getTienDoMhBadgeClass,
   getTrangThaiPhieuBadgeClass,
   isTrangThaiChoPheDuyet,
   trangThaiToI18nKey,
 } from '../core/constants';
-import { cn, formatDateTimeShort } from '../../../../lib/utils';
-import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
+import { cn, formatDateTimeShort, formatNumberVN } from '../../../../lib/utils';
+import GenericDrawer, { DRAWER_WIDTH_DE_XUAT } from '../../../../components/shared/GenericDrawer';
 import DetailToolbar, { type DetailToolbarAction } from '../../../../components/shared/DetailToolbar';
 import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';
 import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
 import GenericSubTableSection from '../../../../components/shared/GenericSubTableSection';
+import SubTable, { type SubTableColumn } from '../../../../components/shared/sub-table/SubTable';
 
 const PREVIEW_BASE = '/mua-hang/phieu-de-xuat-vat-tu/preview';
 
@@ -158,6 +160,54 @@ const PhieuDeXuatVatTuDetail: React.FC<Props> = ({
     />
   );
 
+  const chiTietColumns: SubTableColumn[] = [
+    { id: 'ten_hang', label: t('phieuDeXuatVatTu.form.itemName'), width: 260, minWidth: 160, sticky: true, mobile: 'title' },
+    { id: 'ma_hang', label: t('phieuDeXuatVatTu.form.itemCode'), width: 130, minWidth: 90, mobile: 'hidden' },
+    { id: 'so_luong', label: t('phieuDeXuatVatTu.form.quantity'), width: 120, minWidth: 80, align: 'right' },
+    { id: 'don_vi_tinh', label: t('phieuDeXuatVatTu.form.unit'), width: 90, minWidth: 56 },
+    { id: 'tien_do', label: t('phieuDeXuatVatTu.form.tienDoMh'), width: 150, minWidth: 100, mobile: 'badge' },
+    { id: 'thong_so', label: t('phieuDeXuatVatTu.form.specs'), width: 220, minWidth: 120, mobile: 'full' },
+    { id: 'ghi_chu', label: t('phieuDeXuatVatTu.form.note'), width: 220, minWidth: 120, mobile: 'full' },
+  ];
+
+  const renderChiTietCell = (colId: string, ct: PhieuDeXuatVatTuChiTiet) => {
+    switch (colId) {
+      case 'ten_hang':
+        return (
+          <>
+            <span className="text-body-sm font-medium text-foreground">{ct.ten_hang ?? '—'}</span>
+            {/* Mobile ẩn cột Mã → hiện mã ngay dưới tên. */}
+            {ct.ma_hang && <span className="md:hidden block text-caption text-muted-foreground font-mono">{ct.ma_hang}</span>}
+          </>
+        );
+      case 'ma_hang':
+        return <span className="font-mono text-xs">{ct.ma_hang ?? '—'}</span>;
+      case 'so_luong':
+        return <span className="tabular-nums font-medium">{formatNumberVN(ct.so_luong)}</span>;
+      case 'don_vi_tinh':
+        return <span className="text-xs text-muted-foreground">{ct.don_vi_tinh ?? '—'}</span>;
+      case 'tien_do':
+        return ct.ten_tien_do_mh ? (
+          <span
+            className={cn(
+              'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border whitespace-nowrap',
+              getTienDoMhBadgeClass(ct.ten_tien_do_mh)
+            )}
+          >
+            {ct.ten_tien_do_mh}
+          </span>
+        ) : (
+          <span className="text-xs text-muted-foreground">—</span>
+        );
+      case 'thong_so':
+        return <span className="text-xs text-muted-foreground whitespace-pre-line">{ct.thong_so || '—'}</span>;
+      case 'ghi_chu':
+        return <span className="text-xs text-muted-foreground whitespace-pre-line">{ct.ghi_chu || '—'}</span>;
+      default:
+        return null;
+    }
+  };
+
   return (
     <>
     <GenericDrawer
@@ -166,7 +216,7 @@ const PhieuDeXuatVatTuDetail: React.FC<Props> = ({
       icon={<FileText size={18} />}
       onClose={onClose}
       footer={renderFooter}
-      maxWidthClass={DRAWER_WIDTH_DETAIL}
+      maxWidthClass={DRAWER_WIDTH_DE_XUAT}
     >
       <div className="space-y-5">
         <div className="bg-card p-4 rounded-xl border border-border/50 shadow-sm flex items-center gap-4">
@@ -235,47 +285,16 @@ const PhieuDeXuatVatTuDetail: React.FC<Props> = ({
           count={data.chi_tiet?.length ?? 0}
           emptyTitle={t('phieuDeXuatVatTu.form.noItems')}
           emptyDescription={t('phieuDeXuatVatTu.form.noItemsHint')}
-          maxTableHeight="320px"
+          contentMode="raw"
         >
           {data.chi_tiet && data.chi_tiet.length > 0 && (
-            <>
-              <thead className="sticky top-0 z-[1] bg-muted border-b border-border">
-                <tr>
-                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap w-10">#</th>
-                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[130px]">
-                    {t('phieuDeXuatVatTu.form.itemCode')}
-                  </th>
-                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[300px]">
-                    {t('phieuDeXuatVatTu.form.itemName')}
-                  </th>
-                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[90px]">
-                    {t('phieuDeXuatVatTu.form.unit')}
-                  </th>
-                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[110px]">
-                    {t('phieuDeXuatVatTu.form.quantity')}
-                  </th>
-                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[220px]">
-                    {t('phieuDeXuatVatTu.form.specs')}
-                  </th>
-                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[220px]">
-                    {t('phieuDeXuatVatTu.form.note')}
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="[&>tr>td]:border-b [&>tr>td]:border-border">
-                {data.chi_tiet.map((ct, idx) => (
-                  <tr key={ct.id} className="hover:bg-muted/60 transition-colors">
-                    <td className="px-4 py-2.5 text-muted-foreground tabular-nums">{idx + 1}</td>
-                    <td className="px-4 py-2.5 font-mono text-xs whitespace-nowrap">{ct.ma_hang ?? '—'}</td>
-                    <td className="px-4 py-2.5 text-sm whitespace-nowrap">{ct.ten_hang ?? '—'}</td>
-                    <td className="px-4 py-2.5 text-xs text-muted-foreground whitespace-nowrap">{ct.don_vi_tinh ?? '—'}</td>
-                    <td className="px-4 py-2.5 tabular-nums whitespace-nowrap">{ct.so_luong}</td>
-                    <td className="px-4 py-2.5 text-xs text-muted-foreground whitespace-nowrap">{ct.thong_so ?? '—'}</td>
-                    <td className="px-4 py-2.5 text-xs text-muted-foreground whitespace-nowrap">{ct.ghi_chu ?? '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </>
+            <SubTable
+              tableKey="phieu-de-xuat-vat-tu.detail"
+              columns={chiTietColumns}
+              rows={data.chi_tiet}
+              keyExtractor={(ct) => ct.id}
+              renderCell={renderChiTietCell}
+            />
           )}
         </GenericSubTableSection>
 

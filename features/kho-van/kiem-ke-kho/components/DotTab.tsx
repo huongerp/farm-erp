@@ -195,6 +195,8 @@ const DotTab: React.FC = () => {
 
       {detailData && (
         <DotKiemKeKhoDetail
+          canUpdate={canUpdate}
+          canDelete={canDelete}
           data={detailData}
           chiTiet={chiTiet}
           chiTietLoading={chiTietLoading}

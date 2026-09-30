@@ -281,6 +281,8 @@ const DanhSachTab: React.FC = () => {
       <AnimatePresence>
         {detailData && (
           <DotKiemKePTDetail
+            canUpdate={canUpdate}
+            canDelete={canDelete}
             data={detailData}
             chiTiet={chiTiet}
             chiTietLoading={chiTietLoading}

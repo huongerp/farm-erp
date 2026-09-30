@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useForm, Controller, SubmitHandler, useFieldArray } from 'react-hook-form';
+import { useForm, Controller, SubmitHandler, useFieldArray, type FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { FileText, Calendar, Warehouse, User, UserCheck, Package, Trash2 } from 'lucide-react';
@@ -28,11 +28,15 @@ import { useFarmHangHoaRefQuery } from '../../hang-hoa-phan-thuoc/hooks/use-farm
 import type { FarmHangHoaRefLite } from '../../hang-hoa-phan-thuoc/services/farm-hang-hoa-service';
 import { useFarmTienDoMuaHangList } from '../../thiet-lap-de-xuat-mua-hang/hooks/use-farm-tien-do-mua-hang';
 import { getNextSoPhieuDeXuatMuaHangRpc } from '../services/de-xuat-mua-hang-supabase.service';
-import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/GenericDrawer';
+import GenericDrawer, { DRAWER_WIDTH_DE_XUAT } from '../../../../components/shared/GenericDrawer';
 import FormSection from '../../../../components/shared/FormSection';
 import FormGrid from '../../../../components/shared/FormGrid';
 import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
 import GenericSubTableSection from '../../../../components/shared/GenericSubTableSection';
+import SubTable, { type SubTableColumn } from '../../../../components/shared/sub-table/SubTable';
+import SubTableActionButton from '../../../../components/shared/sub-table/SubTableActionButton';
+import { cn } from '../../../../lib/utils';
+import { dongDeXuatDoDang } from '../../../../lib/de-xuat-chi-tiet';
 
 function addDays(dateStr: string, days: number): string {
   const d = new Date(dateStr);
@@ -152,7 +156,7 @@ const DeXuatMuaHangForm: React.FC<Props> = ({ khoList, employees, initialData, o
     chi_tiet: [],
   };
 
-  const { register, handleSubmit, formState: { errors, isDirty }, reset, control, watch, setValue } = useForm<DeXuatMuaHangFormValues>({
+  const { register, handleSubmit, formState: { errors, isDirty, isSubmitted }, reset, control, watch, setValue } = useForm<DeXuatMuaHangFormValues>({
     resolver: zodResolver(deXuatMuaHangSchema) as any,
     defaultValues,
   });
@@ -232,6 +236,12 @@ const DeXuatMuaHangForm: React.FC<Props> = ({ khoList, employees, initialData, o
     const validChiTiet = (data.chi_tiet ?? []).filter(
       (c) => c.id_hang_hoa?.trim() && Number(c.so_luong) > 0
     );
+    const doDang = dongDeXuatDoDang(data.chi_tiet ?? []);
+    if (doDang.length > 0) {
+      // Trước đây dòng dở dang bị lọc ngầm — phiếu lưu xong thiếu hàng mà không ai biết.
+      toast.error(t('deXuatMuaHang.validation.lineIncomplete', { rows: doDang.map((i) => i + 1).join(', ') }));
+      return;
+    }
     if (validChiTiet.length === 0) {
       toast.error(t('deXuatMuaHang.validation.atLeastOneItem'));
       return;
@@ -270,6 +280,196 @@ const DeXuatMuaHangForm: React.FC<Props> = ({ khoList, employees, initialData, o
     }
   };
 
+  const onInvalid = (errs: FieldErrors<DeXuatMuaHangFormValues>) => {
+    const chiTietMsg = errs.chi_tiet?.message ?? errs.chi_tiet?.root?.message;
+    if (chiTietMsg) toast.error(chiTietMsg);
+  };
+
+  const addRow = () => {
+    append(
+      {
+        id_hang_hoa: '',
+        so_luong: 0,
+        thong_so: '',
+        ghi_chu: '',
+        id_tien_do_mh: defaultTienDoMuaHang?.id ?? null,
+        ten_tien_do_mh: defaultTienDoMuaHang?.ten ?? null,
+      },
+      { shouldFocus: false }
+    );
+    // Dòng mới nằm cuối danh sách — trên mobile thường khuất dưới màn hình.
+    const newIndex = fields.length;
+    requestAnimationFrame(() =>
+      document.getElementById(`de-xuat-mua-hang-form-row-${newIndex}`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    );
+  };
+
+  const chiTietError = errors.chi_tiet?.message ?? errors.chi_tiet?.root?.message;
+  // Chỉ tô đỏ sau lần bấm Lưu đầu tiên — không mắng khi đang nhập dở.
+  const dongDoDang = new Set(isSubmitted ? dongDeXuatDoDang(chiTietValues) : []);
+
+  const chiTietColumns: SubTableColumn[] = [
+    { id: 'hang_hoa', label: t('deXuatMuaHang.form.item'), width: 300, minWidth: 200, sticky: true },
+    { id: 'so_luong', label: t('deXuatMuaHang.form.quantity'), width: 130, minWidth: 96 },
+    { id: 'dvt', label: t('deXuatMuaHang.form.unit'), width: 80, minWidth: 56 },
+    { id: 'tien_do', label: t('deXuatMuaHang.form.tienDoMh'), width: 180, minWidth: 130 },
+    { id: 'thong_so', label: t('deXuatMuaHang.form.specs'), width: 220, minWidth: 140 },
+    { id: 'ghi_chu', label: t('deXuatMuaHang.form.note'), width: 220, minWidth: 140 },
+  ];
+
+  const renderChiTietField = (colId: string, index: number): React.ReactNode => {
+    const row = chiTietValues[index];
+    const idHangHoa = row?.id_hang_hoa ?? '';
+    const doDang = dongDoDang.has(index);
+    switch (colId) {
+      case 'hang_hoa':
+        return (
+          <Controller
+            name={`chi_tiet.${index}.id_hang_hoa`}
+            control={control}
+            render={({ field: f }) => (
+              <Combobox
+                options={hangHoaComboboxOptionsWithAdd}
+                value={f.value || null}
+                onChange={(v) => {
+                  if (v === ADD_HANG_HOA) {
+                    onRequestAddHangHoa?.().then((h) => {
+                      if (h) setValue(`chi_tiet.${index}.id_hang_hoa`, h.id);
+                    });
+                    return;
+                  }
+                  f.onChange(v ?? '');
+                }}
+                placeholder={t('deXuatMuaHang.form.itemPlaceholder')}
+                searchable
+                triggerClassName={cn('h-9 text-sm border-border rounded-md', doDang && !idHangHoa && 'border-rose-500')}
+                dropdownInPortal
+                renderOption={renderAddOption}
+                disabled={readOnly}
+              />
+            )}
+          />
+        );
+      case 'so_luong':
+        return (
+          <Controller
+            name={`chi_tiet.${index}.so_luong`}
+            control={control}
+            render={({ field }) => (
+              <NumberInput
+                value={field.value}
+                onChange={(v) => field.onChange(v)}
+                onBlur={field.onBlur}
+                min={0}
+                maxFractionDigits={4}
+                disabled={readOnly}
+                className={cn('w-full border-border', doDang && !!idHangHoa && 'border-rose-500')}
+                compact
+              />
+            )}
+          />
+        );
+      case 'dvt':
+        return (
+          <span className="text-xs text-muted-foreground whitespace-nowrap">
+            {idHangHoa ? (hangHoaMap[idHangHoa]?.don_vi_tinh ?? '—') : '—'}
+          </span>
+        );
+      case 'tien_do':
+        return (
+          <Controller
+            name={`chi_tiet.${index}.id_tien_do_mh`}
+            control={control}
+            render={({ field: f }) => (
+              <Combobox
+                options={tienDoMuaHangOptions}
+                value={f.value ?? null}
+                onChange={(v) => {
+                  const item = tienDoMuaHangList.find((td) => td.id === v);
+                  f.onChange(v ?? null);
+                  if (item) setValue(`chi_tiet.${index}.ten_tien_do_mh`, item.ten);
+                }}
+                placeholder={t('deXuatMuaHang.form.tienDoMhPlaceholder')}
+                searchable
+                triggerClassName="h-9 text-sm border-border rounded-md"
+                dropdownInPortal
+                disabled={readOnly}
+              />
+            )}
+          />
+        );
+      case 'thong_so':
+        return (
+          <Textarea
+            placeholder={t('deXuatMuaHang.form.specsPlaceholder')}
+            className="min-h-[52px] text-sm border-border w-full resize-y"
+            disabled={readOnly}
+            rows={2}
+            {...register(`chi_tiet.${index}.thong_so`)}
+          />
+        );
+      case 'ghi_chu':
+        return (
+          <Textarea
+            placeholder={t('deXuatMuaHang.form.notePlaceholder')}
+            className="min-h-[52px] text-sm border-border w-full resize-y"
+            disabled={readOnly}
+            rows={2}
+            {...register(`chi_tiet.${index}.ghi_chu`)}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
+  /** Mobile: một dòng hàng = một card xếp dọc, ô nhập full chiều ngang. */
+  const renderChiTietMobileCard = (index: number) => (
+    <div
+      id={`de-xuat-mua-hang-form-row-${index}`}
+      className={cn(
+        'rounded-xl border bg-card p-3 space-y-3 shadow-sm',
+        dongDoDang.has(index) ? 'border-rose-400' : 'border-border'
+      )}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <span className="inline-flex h-7 px-2.5 items-center rounded-md bg-muted text-xs font-semibold text-muted-foreground tabular-nums">
+          #{index + 1}
+        </span>
+        {!readOnly && (
+          <SubTableActionButton
+            tone="danger"
+            label={t('common.delete')}
+            icon={<Trash2 size={14} />}
+            onClick={() => remove(index)}
+          />
+        )}
+      </div>
+      {chiTietColumns
+        .filter((c) => c.id !== 'so_luong' && c.id !== 'dvt')
+        .map((c) => (
+          <React.Fragment key={c.id}>
+            <div className="space-y-1">
+              <span className="text-caption font-medium text-muted-foreground">{c.label}</span>
+              {renderChiTietField(c.id, index)}
+            </div>
+            {c.id === 'hang_hoa' && (
+              <div className="grid grid-cols-[1fr_auto] gap-3 items-end">
+                <div className="space-y-1 min-w-0">
+                  <span className="text-caption font-medium text-muted-foreground">{t('deXuatMuaHang.form.quantity')}</span>
+                  {renderChiTietField('so_luong', index)}
+                </div>
+                <div className="space-y-1 pb-2">
+                  <span className="text-caption font-medium text-muted-foreground block">{t('deXuatMuaHang.form.unit')}</span>
+                  {renderChiTietField('dvt', index)}
+                </div>
+              </div>
+            )}
+          </React.Fragment>
+        ))}
+    </div>
+  );
+
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
   return (
@@ -290,11 +490,11 @@ const DeXuatMuaHangForm: React.FC<Props> = ({ khoList, employees, initialData, o
           />
         )
       }
-      maxWidthClass={DRAWER_WIDTH_FORM}
+      maxWidthClass={DRAWER_WIDTH_DE_XUAT}
     >
       <form
         id="de-xuat-mua-hang-form"
-        onSubmit={handleSubmit(onSubmit)}
+        onSubmit={handleSubmit(onSubmit, onInvalid)}
         className="space-y-5"
       >
         <FormSection title={t('deXuatMuaHang.detail.basicInfo')} icon={<FileText size={14} />} variant="primary">
@@ -427,163 +627,41 @@ const DeXuatMuaHangForm: React.FC<Props> = ({ khoList, employees, initialData, o
           icon={<Package size={14} className="text-primary" />}
           count={fields.length}
           addLabel={t('deXuatMuaHang.form.addRow')}
-          onAdd={readOnly ? undefined : () => {
-            append({
-              id_hang_hoa: '',
-              so_luong: 0,
-              thong_so: '',
-              ghi_chu: '',
-              id_tien_do_mh: defaultTienDoMuaHang?.id ?? null,
-              ten_tien_do_mh: defaultTienDoMuaHang?.ten ?? null,
-            });
-          }}
+          onAdd={readOnly ? undefined : addRow}
           emptyTitle={t('deXuatMuaHang.form.noItems')}
           emptyDescription={t('deXuatMuaHang.form.noItemsHint')}
-          maxTableHeight="320px"
+          contentMode="raw"
         >
-          <thead className="sticky top-0 z-[1] bg-muted border-b border-border">
-            <tr>
-              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap w-10">#</th>
-              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[320px]">
-                {t('deXuatMuaHang.form.item')}
-              </th>
-              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[130px]">
-                {t('deXuatMuaHang.form.quantity')}
-              </th>
-              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[90px]">
-                {t('deXuatMuaHang.form.unit')}
-              </th>
-              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[180px]">
-                {t('deXuatMuaHang.form.tienDoMh')}
-              </th>
-              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[240px]">
-                {t('deXuatMuaHang.form.specs')}
-              </th>
-              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[240px]">
-                {t('deXuatMuaHang.form.note')}
-              </th>
-              <th className="sticky right-0 z-[2] px-4 py-2 font-semibold text-foreground/80 text-xs text-center w-16 bg-muted border-l border-border">
-                {t('common.actions')}
-              </th>
-            </tr>
-          </thead>
-          <tbody className="[&>tr>td]:border-b [&>tr>td]:border-border">
-            {fields.length === 0 ? (
-              <tr>
-                <td colSpan={8} className="px-4 py-6 text-center text-muted-foreground text-xs">
-                  {t('deXuatMuaHang.form.noItems')}
-                </td>
-              </tr>
-            ) : (
-              fields.map((field, index) => {
-                const idHangHoa = chiTietValues[index]?.id_hang_hoa ?? '';
-                const donVi = idHangHoa ? (hangHoaMap[idHangHoa]?.don_vi_tinh ?? '—') : '—';
-                return (
-                  <tr key={field.id} className="hover:bg-muted/60 transition-colors">
-                    <td className="px-4 py-2.5 text-muted-foreground tabular-nums">{index + 1}</td>
-                    <td className="px-4 py-2.5 min-w-[320px] align-top">
-                      <Controller
-                        name={`chi_tiet.${index}.id_hang_hoa`}
-                        control={control}
-                        render={({ field: f }) => (
-                          <Combobox
-                            options={hangHoaComboboxOptionsWithAdd}
-                            value={f.value || null}
-                            onChange={(v) => {
-                              if (v === ADD_HANG_HOA) {
-                                onRequestAddHangHoa?.().then((h) => {
-                                  if (h) setValue(`chi_tiet.${index}.id_hang_hoa`, h.id);
-                                });
-                                return;
-                              }
-                              f.onChange(v ?? '');
-                            }}
-                            placeholder={t('deXuatMuaHang.form.itemPlaceholder')}
-                            searchable
-                            triggerClassName="h-9 text-sm border-border rounded-md"
-                            dropdownInPortal
-                            renderOption={renderAddOption}
-                          />
-                        )}
+          {fields.length > 0 && (
+            <SubTable
+              tableKey="de-xuat-mua-hang.form"
+              columns={chiTietColumns}
+              rows={fields}
+              keyExtractor={(field) => field.id}
+              renderCell={(colId, _field, index) => renderChiTietField(colId, index)}
+              renderActions={
+                readOnly
+                  ? undefined
+                  : (_field, index) => (
+                      <SubTableActionButton
+                        tone="danger"
+                        label={t('common.delete')}
+                        icon={<Trash2 size={14} />}
+                        onClick={() => remove(index)}
                       />
-                    </td>
-                    <td className="px-4 py-2.5 min-w-[130px] align-top">
-                      <Controller
-                        name={`chi_tiet.${index}.so_luong`}
-                        control={control}
-                        render={({ field }) => (
-                          <NumberInput
-                            value={field.value}
-                            onChange={(v) => field.onChange(v)}
-                            onBlur={field.onBlur}
-                            min={0}
-                            maxFractionDigits={4}
-                            disabled={readOnly}
-                            className="min-w-[6rem] max-w-[10rem] border-border"
-                            compact
-                          />
-                        )}
-                      />
-                    </td>
-                    <td className="px-4 py-2.5 min-w-[90px] text-xs text-muted-foreground whitespace-nowrap">{donVi}</td>
-                    <td className="px-4 py-2.5 min-w-[180px] align-top">
-                      <Controller
-                        name={`chi_tiet.${index}.id_tien_do_mh`}
-                        control={control}
-                        render={({ field: f }) => (
-                          <Combobox
-                            options={tienDoMuaHangOptions}
-                            value={f.value ?? null}
-                            onChange={(v) => {
-                              const item = tienDoMuaHangList.find((t) => t.id === v);
-                              f.onChange(v ?? null);
-                              if (item) setValue(`chi_tiet.${index}.ten_tien_do_mh`, item.ten);
-                            }}
-                            placeholder={t('deXuatMuaHang.form.tienDoMhPlaceholder')}
-                            searchable
-                            triggerClassName="h-9 text-sm border-border rounded-md"
-                            dropdownInPortal
-                            disabled={readOnly}
-                          />
-                        )}
-                      />
-                    </td>
-                    <td className="px-4 py-2.5 min-w-[240px] align-top">
-                      <Textarea
-                        placeholder={t('deXuatMuaHang.form.specsPlaceholder')}
-                        className="min-h-[52px] text-sm border-border w-full resize-y"
-                        disabled={readOnly}
-                        rows={2}
-                        {...register(`chi_tiet.${index}.thong_so`)}
-                      />
-                    </td>
-                    <td className="px-4 py-2.5 min-w-[240px] align-top">
-                      <Textarea
-                        placeholder={t('deXuatMuaHang.form.notePlaceholder')}
-                        className="min-h-[52px] text-sm border-border w-full resize-y"
-                        disabled={readOnly}
-                        rows={2}
-                        {...register(`chi_tiet.${index}.ghi_chu`)}
-                      />
-                    </td>
-                    <td className="sticky right-0 z-[1] px-4 py-2.5 text-center bg-card border-l border-border/50">
-                      {!readOnly && (
-                        <button
-                          type="button"
-                          onClick={() => remove(index)}
-                          className="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-md"
-                          title={t('common.delete')}
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
+                    )
+              }
+              actionsWidth={64}
+              rowClassName={(_field, index) => (dongDoDang.has(index) ? 'bg-rose-50/60 dark:bg-rose-950/20' : undefined)}
+              renderMobileCard={(_field, index) => renderChiTietMobileCard(index)}
+            />
+          )}
         </GenericSubTableSection>
+        {chiTietError && (
+          <p role="alert" className="-mt-3 px-1 text-xs text-destructive">
+            {chiTietError}
+          </p>
+        )}
       </form>
     </GenericDrawer>
   );

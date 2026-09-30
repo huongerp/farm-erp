@@ -177,6 +177,7 @@ export function useDeleteChiTietKiemKe(_id_dot: string, onSuccess?: () => void) 
 
 export function useUpdateChiTietKetQua(_id_dot: string, onSuccess?: () => void) {
   const qc = useQueryClient();
+  const capCao = useKiemKeCapCao();
   return useMutation({
     mutationFn: ({
       id_chi_tiet,
@@ -186,7 +187,7 @@ export function useUpdateChiTietKetQua(_id_dot: string, onSuccess?: () => void) 
       id_chi_tiet: string;
       data: ChiTietKiemKeKhoUpdate;
       id_nguoi_kiem: string;
-    }) => updateChiTietKetQua(id_chi_tiet, data, id_nguoi_kiem),
+    }) => updateChiTietKetQua(id_chi_tiet, data, id_nguoi_kiem, capCao),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY_KIEM_KE_KHO });
       onSuccess?.();

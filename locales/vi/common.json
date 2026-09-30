@@ -352,5 +352,7 @@
   "shared.import.guideNote1": "• Chỉ điền dữ liệu ở sheet \"Nhập liệu\". Sheet \"Ví dụ mẫu\" và các sheet tra cứu chỉ để tham khảo, không được import.",
   "shared.import.guideNote2": "• Giữ nguyên dòng tiêu đề. Cột không bắt buộc có thể để trống.",
   "shared.import.guideNote3": "• Có dòng lỗi: bấm \"Tải báo cáo lỗi\", sửa trực tiếp trong file đó rồi import lại chính file đó.",
-  "shared.import.templateHasGuide": "File mẫu gồm sheet Hướng dẫn, Ví dụ mẫu và {{count}} sheet tra cứu"
+  "shared.import.templateHasGuide": "File mẫu gồm sheet Hướng dẫn, Ví dụ mẫu và {{count}} sheet tra cứu",
+  "shared.subTable.countFiltered": "{{shown}}/{{total}} dòng",
+  "shared.subTable.noMatch": "Không có dòng nào khớp bộ lọc."
 }

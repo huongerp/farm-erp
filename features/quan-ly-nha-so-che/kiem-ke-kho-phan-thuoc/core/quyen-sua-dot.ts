@@ -37,3 +37,17 @@ export function coTheChuyenTrangThaiDotPT(
 ): boolean {
   return capCao || trangThaiHienTai !== 'hoan_thanh';
 }
+
+/**
+ * Nhập lại kết quả / xoá MỘT dòng. Dòng đã sinh phiếu kho điều chỉnh tồn thì
+ * chỉ cấp cao được đụng: sửa số thực tế hay xoá dòng lúc này đều làm dòng kiểm
+ * kê lệch với phiếu điều chỉnh đã ghi vào tồn.
+ */
+export function coTheSuaDongKiemKePT(
+  dong: { id_phieu_kho_dieu_chinh?: string | null },
+  trangThai: TrangThaiDotKiemKePT,
+  capCao: boolean
+): boolean {
+  if (!coTheSuaChiTietPT(trangThai, capCao)) return false;
+  return capCao || !dong.id_phieu_kho_dieu_chinh;
+}

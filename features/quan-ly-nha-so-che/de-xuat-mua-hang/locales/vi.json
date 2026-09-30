@@ -48,7 +48,7 @@
   "deXuatMuaHang.form.itemName": "Tên hàng",
   "deXuatMuaHang.form.quantity": "Số lượng",
   "deXuatMuaHang.form.unit": "Đơn vị",
-  "deXuatMuaHang.form.tienDoMh": "Tiến độ mh",
+  "deXuatMuaHang.form.tienDoMh": "Tiến độ MH",
   "deXuatMuaHang.form.tienDoMhPlaceholder": "Chọn tiến độ",
   "deXuatMuaHang.form.specs": "Thông số",
   "deXuatMuaHang.form.specsPlaceholder": "Tự điền mỗi lần đề xuất",
@@ -209,5 +209,6 @@
   "deXuatMuaHang.exportChiTiet.idHangHoa": "ID hàng hóa",
   "deXuatMuaHang.exportChiTiet.idTienDoMh": "ID tiến độ mh",
   "deXuatMuaHang.exportChiTiet.traoDoi": "Trao đổi",
-  "deXuatMuaHang.detail.phieuKhoAlreadyCreated": "Đã tạo phiếu kho {{soPhieu}}"
+  "deXuatMuaHang.detail.phieuKhoAlreadyCreated": "Đã tạo phiếu kho {{soPhieu}}",
+  "deXuatMuaHang.validation.lineIncomplete": "Dòng {{rows}} chưa đủ: cần chọn hàng hoá và nhập số lượng > 0 (hoặc xoá dòng)."
 }

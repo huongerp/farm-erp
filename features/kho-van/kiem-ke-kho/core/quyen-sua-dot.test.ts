@@ -4,6 +4,7 @@ import {
   coTheXoaDot,
   coTheSuaChiTiet,
   coTheChuyenTrangThaiDot,
+  coTheSuaDongKiemKe,
 } from './quyen-sua-dot';
 
 const HANH_DONG = [
@@ -32,5 +33,24 @@ describe('quyền đụng vào đợt kiểm kê', () => {
     expect(coTheChuyenTrangThaiDot('hoan_thanh', false)).toBe(false);
     // Nhưng vẫn được chốt sổ một đợt đang kiểm kê.
     expect(coTheChuyenTrangThaiDot('dang_kiem_ke', false)).toBe(true);
+  });
+});
+
+describe('coTheSuaDongKiemKe — sửa / xoá một dòng', () => {
+  const chuaDieuChinh = { id_phieu_kho_dieu_chinh: null };
+  const daDieuChinh = { id_phieu_kho_dieu_chinh: '42' };
+
+  it('dòng chưa điều chỉnh: theo luật đợt như cũ', () => {
+    expect(coTheSuaDongKiemKe(chuaDieuChinh, 'dang_kiem_ke', false)).toBe(true);
+    expect(coTheSuaDongKiemKe(chuaDieuChinh, 'hoan_thanh', false)).toBe(false);
+  });
+
+  it('dòng đã sinh phiếu điều chỉnh: người thường bị chặn kể cả khi đợt đang kiểm kê', () => {
+    expect(coTheSuaDongKiemKe(daDieuChinh, 'dang_kiem_ke', false)).toBe(false);
+  });
+
+  it('cấp cao vẫn sửa được dòng đã điều chỉnh, kể cả đợt đã chốt', () => {
+    expect(coTheSuaDongKiemKe(daDieuChinh, 'dang_kiem_ke', true)).toBe(true);
+    expect(coTheSuaDongKiemKe(daDieuChinh, 'hoan_thanh', true)).toBe(true);
   });
 });

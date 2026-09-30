@@ -38,6 +38,7 @@ import {
   coTheSuaDot,
   coTheXoaDot,
   coTheSuaChiTiet,
+  coTheSuaDongKiemKe,
   coTheChuyenTrangThaiDot,
 } from '../core/quyen-sua-dot';
 
@@ -692,12 +693,21 @@ export async function createChiTietKiemKeSupabase(
 export async function deleteChiTietKiemKeSupabase(id_chi_tiet: string, capCao = false): Promise<void> {
   const idNum = Number(id_chi_tiet);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('kiemKeKho.service.chiTietNotFound'));
-  const { data: row, error: fetchErr } = await db.from(TABLE_CHI_TIET).select('id_dot_kiem_ke_kho').eq('id', idNum).maybeSingle();
+  const { data: row, error: fetchErr } = await db
+    .from(TABLE_CHI_TIET)
+    .select('id_dot_kiem_ke_kho,id_phieu_kho_dieu_chinh')
+    .eq('id', idNum)
+    .maybeSingle();
   if (fetchErr || !row) throw new Error(i18n.t('kiemKeKho.service.chiTietNotFound'));
-  const dot = await getDotKiemKeKhoByIdSupabase(String((row as { id_dot_kiem_ke_kho: number }).id_dot_kiem_ke_kho));
+  const r = row as { id_dot_kiem_ke_kho: number; id_phieu_kho_dieu_chinh: number | null };
+  const dot = await getDotKiemKeKhoByIdSupabase(String(r.id_dot_kiem_ke_kho));
   if (!dot) throw new Error(i18n.t('kiemKeKho.service.notFound'));
   if (!coTheSuaChiTiet(dot.trang_thai, capCao)) {
     throw new Error(i18n.t('kiemKeKho.service.hoanThanhChiCapCao'));
+  }
+  const dong = { id_phieu_kho_dieu_chinh: r.id_phieu_kho_dieu_chinh != null ? String(r.id_phieu_kho_dieu_chinh) : null };
+  if (!coTheSuaDongKiemKe(dong, dot.trang_thai, capCao)) {
+    throw new Error(i18n.t('kiemKeKho.service.daDieuChinhChiCapCao'));
   }
   const { error } = await db.from(TABLE_CHI_TIET).delete().eq('id', idNum);
   if (error) throwSupabaseError(error);
@@ -706,13 +716,18 @@ export async function deleteChiTietKiemKeSupabase(id_chi_tiet: string, capCao = 
 export async function updateChiTietKetQuaSupabase(
   id_chi_tiet: string,
   data: ChiTietKiemKeKhoUpdate,
-  id_nguoi_kiem: string
+  id_nguoi_kiem: string,
+  capCao = false
 ): Promise<ChiTietKiemKeKho> {
   const idNum = Number(id_chi_tiet);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('kiemKeKho.service.chiTietNotFound'));
   const { data: row, error: fetchErr } = await db.from(TABLE_CHI_TIET).select(CHI_TIET_KK_KHO_COLUMNS).eq('id', idNum).maybeSingle();
   if (fetchErr || !row) throw new Error(i18n.t('kiemKeKho.service.chiTietNotFound'));
   const r = row as ChiTietRow;
+  // Dòng đã sinh phiếu điều chỉnh tồn: đổi số thực tế sẽ lệch với phiếu đã ghi — chỉ cấp cao.
+  if (r.id_phieu_kho_dieu_chinh != null && !capCao) {
+    throw new Error(i18n.t('kiemKeKho.service.daDieuChinhChiCapCao'));
+  }
   const soLuongThucTe = data.so_luong_thuc_te !== undefined ? data.so_luong_thuc_te : r.so_luong_thuc_te;
   const ghiChuDong = data.ghi_chu_dong !== undefined ? data.ghi_chu_dong : r.ghi_chu_dong;
   const ketQua = computeKetQua(Number(r.so_luong_so), soLuongThucTe ?? null);

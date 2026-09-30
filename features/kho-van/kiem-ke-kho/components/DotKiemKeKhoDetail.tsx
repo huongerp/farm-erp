@@ -8,6 +8,8 @@ import DetailField from '../../../../components/shared/DetailField';
 import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
 import DetailToolbar, { DetailToolbarAction } from '../../../../components/shared/DetailToolbar';
 import GenericSubTableSection from '../../../../components/shared/GenericSubTableSection';
+import SubTableSearchBox from '../../../../components/shared/sub-table/SubTableSearchBox';
+import { locChiTietKiemKe, timDongChuaKiemTiepTheo } from '../../../../lib/kiem-ke-chi-tiet';
 import Button from '../../../../components/ui/Button';
 import DetailDrawerFooter from '../../../../components/shared/DetailDrawerFooter';
 import Textarea from '../../../../components/ui/Textarea';
@@ -16,7 +18,7 @@ import { getStatusBadgeClass } from '../../../../lib/status-badge';
 import { useAuthStore } from '../../../../store/useStore';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { getTrangThaiDotLabel, TRANG_THAI_DOT_SEMANTIC, KET_QUA_SEMANTIC } from '../core/constants';
-import { coTheSuaChiTiet, coTheChuyenTrangThaiDot } from '../core/quyen-sua-dot';
+import { coTheSuaDot, coTheSuaChiTiet, coTheChuyenTrangThaiDot } from '../core/quyen-sua-dot';
 import { useKiemKeCapCao } from '../hooks/use-kiem-ke-cap-cao';
 import type { DotKiemKeKho, ChiTietKiemKeKho, ChiTietKiemKeKhoUpdate, KetQuaKiemKeKho } from '../core/types';
 import {
@@ -59,6 +61,10 @@ interface Props {
   onStatusChange?: (item: DotKiemKeKho) => void;
   taoDanhSachLoading?: boolean;
   hoanThanhLoading?: boolean;
+  /** Quyền module — thêm dòng / nhập kết quả / điều chỉnh tồn / ghi chú đợt. */
+  canUpdate?: boolean;
+  /** Quyền module — xoá dòng. */
+  canDelete?: boolean;
 }
 
 const DotKiemKeKhoDetail: React.FC<Props> = ({
@@ -72,6 +78,8 @@ const DotKiemKeKhoDetail: React.FC<Props> = ({
   onStatusChange,
   taoDanhSachLoading,
   hoanThanhLoading,
+  canUpdate = false,
+  canDelete = false,
 }) => {
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
@@ -80,6 +88,8 @@ const DotKiemKeKhoDetail: React.FC<Props> = ({
   const [ghiChuOpen, setGhiChuOpen] = useState(false);
   const [ghiChuValue, setGhiChuValue] = useState(data.ghi_chu ?? '');
   const [showThemDong, setShowThemDong] = useState(false);
+  const [searchQ, setSearchQ] = useState('');
+  const [ketQuaFilter, setKetQuaFilter] = useState<KetQuaKiemKeKho | null>(null);
 
   useEffect(() => {
     if (ghiChuOpen) setGhiChuValue(data.ghi_chu ?? '');
@@ -96,19 +106,34 @@ const DotKiemKeKhoDetail: React.FC<Props> = ({
   const isDangKiemKe = data.trang_thai === 'dang_kiem_ke';
   // Đợt đã chốt sổ chỉ cấp cao mới sửa được — cùng luật với service.
   const capCao = useKiemKeCapCao();
-  const canEditLines = coTheSuaChiTiet(data.trang_thai, capCao);
+  const canEditLines = canUpdate && coTheSuaChiTiet(data.trang_thai, capCao);
   const canChangeStatus = coTheChuyenTrangThaiDot(data.trang_thai, capCao);
 
+  const visibleChiTiet = useMemo(
+    () => locChiTietKiemKe(chiTiet, { q: searchQ, ketQua: ketQuaFilter }),
+    [chiTiet, searchQ, ketQuaFilter]
+  );
+  // "Lưu & dòng tiếp" đi theo đúng thứ tự + bộ lọc đang hiển thị.
+  const nextRow = useMemo(
+    () => (nhapKetQuaRow ? timDongChuaKiemTiepTheo(visibleChiTiet, nhapKetQuaRow.id) : null),
+    [visibleChiTiet, nhapKetQuaRow]
+  );
+
   const handleNhapKetQuaSave = useCallback(
-    (payload: ChiTietKiemKeKhoUpdate) => {
+    (payload: ChiTietKiemKeKhoUpdate, next: boolean) => {
       if (!nhapKetQuaRow || !currentUserId) return;
-      updateKetQuaMutation.mutate({
-        id_chi_tiet: nhapKetQuaRow.id,
-        data: payload,
-        id_nguoi_kiem: currentUserId,
-      });
+      const nextTarget = next ? nextRow : null;
+      updateKetQuaMutation.mutate(
+        {
+          id_chi_tiet: nhapKetQuaRow.id,
+          data: payload,
+          id_nguoi_kiem: currentUserId,
+        },
+        // Hook đã đóng dialog ở onSuccess của nó; mở lại ngay với dòng kế tiếp.
+        { onSuccess: () => { if (nextTarget) setNhapKetQuaRow(nextTarget); } }
+      );
     },
-    [nhapKetQuaRow, currentUserId, updateKetQuaMutation]
+    [nhapKetQuaRow, currentUserId, updateKetQuaMutation, nextRow]
   );
 
   const stats = useMemo(() => {
@@ -171,7 +196,7 @@ const DotKiemKeKhoDetail: React.FC<Props> = ({
         variant: 'primary',
       },
     ];
-    if (isDangKiemKe && pendingDieuChinhCount > 0) {
+    if (canUpdate && isDangKiemKe && pendingDieuChinhCount > 0) {
       actions.push({
         label: t('kiemKeKho.dieuChinhTonDot'),
         icon: <RefreshCw size={16} />,
@@ -180,12 +205,14 @@ const DotKiemKeKhoDetail: React.FC<Props> = ({
         disabled: dieuChinhDotMutation.isPending,
       });
     }
-    actions.push({
-      label: t('kiemKeKho.detail.fillNote'),
-      icon: <FileText size={16} />,
-      onClick: () => setGhiChuOpen(true),
-      variant: 'secondary',
-    });
+    if (canUpdate && coTheSuaDot(data.trang_thai, capCao)) {
+      actions.push({
+        label: t('kiemKeKho.detail.fillNote'),
+        icon: <FileText size={16} />,
+        onClick: () => setGhiChuOpen(true),
+        variant: 'secondary',
+      });
+    }
     if (canEditLines && onTaoDanhSach) {
       actions.push({
         label: t('kiemKeKho.taoDanhSach'),
@@ -216,6 +243,8 @@ const DotKiemKeKhoDetail: React.FC<Props> = ({
   }, [
     data,
     canEditLines,
+    canUpdate,
+    capCao,
     canChangeStatus,
     isDangKiemKe,
     pendingDieuChinhCount,
@@ -320,19 +349,32 @@ const DotKiemKeKhoDetail: React.FC<Props> = ({
         {chiTiet.length > 0 && (
           <DetailSection title={t('kiemKeKho.detail.progress')} icon={<BarChart3 size={14} />} variant="secondary">
             <div className="flex flex-wrap gap-2">
-              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border bg-primary/10 text-primary border-primary/20 tabular-nums">
-                {t('kiemKeKho.stats.total')}: {stats.total}
-              </span>
+              {/* Chip bấm được = lọc bảng bên dưới; số đếm luôn tính trên toàn bộ dòng. */}
+              <button
+                type="button"
+                onClick={() => setKetQuaFilter(null)}
+                aria-pressed={ketQuaFilter == null}
+                className={cn(
+                  'inline-flex items-center min-h-[36px] sm:min-h-0 px-3 py-1 rounded-full text-xs font-medium border tabular-nums transition-all bg-primary/10 text-primary border-primary/20',
+                  ketQuaFilter == null && 'ring-2 ring-primary/40 ring-offset-1 ring-offset-card'
+                )}
+              >
+                {t('kiemKeKho.detail.tongDong')}: {stats.total}
+              </button>
               {KET_QUA_CHIPS.map(({ key, value }) => (
-                <span
+                <button
+                  type="button"
                   key={key}
+                  onClick={() => setKetQuaFilter((cur) => (cur === key ? null : key))}
+                  aria-pressed={ketQuaFilter === key}
                   className={cn(
-                    'inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border tabular-nums',
-                    getStatusBadgeClass(KET_QUA_SEMANTIC[key])
+                    'inline-flex items-center min-h-[36px] sm:min-h-0 px-3 py-1 rounded-full text-xs font-medium border tabular-nums transition-all',
+                    getStatusBadgeClass(KET_QUA_SEMANTIC[key]),
+                    ketQuaFilter === key ? 'ring-2 ring-primary/40 ring-offset-1 ring-offset-card' : 'hover:opacity-80'
                   )}
                 >
                   {t(`kiemKeKho.ketQua.${key}`)}: {value(stats)}
-                </span>
+                </button>
               ))}
             </div>
           </DetailSection>
@@ -348,29 +390,56 @@ const DotKiemKeKhoDetail: React.FC<Props> = ({
           loadingText={t('kiemKeKho.loading')}
           emptyTitle={t('kiemKeKho.chiTietEmpty')}
           emptyDescription={t('kiemKeKho.chiTietEmptyHint')}
-          maxTableHeight="360px"
-          tableClassName="min-w-max"
+          contentMode="raw"
         >
           {chiTiet.length > 0 && (
-            <ChiTietKiemKeSubTable
-              data={chiTiet}
-              showActions={canEditLines}
-              isDangKiemKe={isDangKiemKe}
-              onNhapKetQua={(item) => setNhapKetQuaRow(item)}
-              onDieuChinh={handleDieuChinhRow}
-              onDelete={(item) => {
-                confirm({
-                  title: t('kiemKeKho.table.xoaDong'),
-                  message: t('kiemKeKho.detail.deleteLineConfirm'),
-                  variant: 'danger',
-                  confirmText: t('common.delete'),
-                  onConfirm: () => deleteChiTietMutation.mutateAsync(item.id),
-                });
-              }}
-              dieuChinhLoading={dieuChinhRowMutation.isPending}
-              nhapKetQuaLoading={updateKetQuaMutation.isPending}
-              deleteLoading={deleteChiTietMutation.isPending}
-            />
+            <div className="space-y-2.5">
+              <SubTableSearchBox
+                value={searchQ}
+                onChange={setSearchQ}
+                shown={visibleChiTiet.length}
+                total={chiTiet.length}
+              />
+              <ChiTietKiemKeSubTable
+                data={visibleChiTiet}
+                trangThaiDot={data.trang_thai}
+                capCao={capCao}
+                canUpdate={canUpdate}
+                canDelete={canDelete}
+                onNhapKetQua={(item) => setNhapKetQuaRow(item)}
+                onDieuChinh={handleDieuChinhRow}
+                emptyContent={
+                  <div className="py-8 px-4 text-center space-y-3">
+                    <p className="text-sm text-muted-foreground">{t('shared.subTable.noMatch')}</p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSearchQ('');
+                        setKetQuaFilter(null);
+                      }}
+                    >
+                      {t('common.clearFilter')}
+                    </Button>
+                  </div>
+                }
+                onDelete={(item) => {
+                  confirm({
+                    title: t('kiemKeKho.table.xoaDong'),
+                    message: item.id_phieu_kho_dieu_chinh
+                      ? t('kiemKeKho.detail.deleteAdjustedLineConfirm')
+                      : t('kiemKeKho.detail.deleteLineConfirm'),
+                    variant: 'danger',
+                    confirmText: t('common.delete'),
+                    onConfirm: () => deleteChiTietMutation.mutateAsync(item.id),
+                  });
+                }}
+                dieuChinhLoading={dieuChinhRowMutation.isPending}
+                nhapKetQuaLoading={updateKetQuaMutation.isPending}
+                deleteLoading={deleteChiTietMutation.isPending}
+              />
+            </div>
           )}
         </GenericSubTableSection>
 
@@ -395,6 +464,7 @@ const DotKiemKeKhoDetail: React.FC<Props> = ({
         row={nhapKetQuaRow}
         onClose={() => setNhapKetQuaRow(null)}
         onSave={handleNhapKetQuaSave}
+        hasNext={nextRow != null}
         isLoading={updateKetQuaMutation.isPending}
       />
 

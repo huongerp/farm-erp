@@ -167,5 +167,11 @@
   "kiemKeKho.chiTietEmpty": "Chưa có dữ liệu kiểm kê",
   "kiemKeKho.chiTietEmptyHint": "Bấm \"Tạo danh sách kiểm kê\" trên thanh công cụ hoặc \"Thêm dòng\" để bắt đầu.",
   "kiemKeKho.detail.progress": "Tiến độ kiểm kê",
-  "kiemKeKho.detail.systemInfo": "Thông tin hệ thống"
+  "kiemKeKho.detail.systemInfo": "Thông tin hệ thống",
+  "kiemKeKho.service.daDieuChinhChiCapCao": "Dòng này đã điều chỉnh tồn — chỉ cấp cao (cấp bậc 1 hoặc quyền quản trị) mới sửa / xoá được.",
+  "kiemKeKho.nhapKetQua.saveAndNext": "Lưu & dòng tiếp",
+  "kiemKeKho.nhapKetQua.daDieuChinhWarning": "Dòng này đã sinh phiếu điều chỉnh tồn. Sửa số thực tế ở đây KHÔNG tự sửa phiếu điều chỉnh — cần kiểm tra lại phiếu kho.",
+  "kiemKeKho.detail.deleteAdjustedLineConfirm": "Dòng này đã sinh phiếu điều chỉnh tồn. Xoá dòng sẽ KHÔNG xoá phiếu điều chỉnh đã ghi vào tồn. Vẫn xoá?",
+  "kiemKeKho.detail.tongDong": "Tất cả",
+  "kiemKeKho.detail.locTheoKetQua": "Lọc theo kết quả"
 }

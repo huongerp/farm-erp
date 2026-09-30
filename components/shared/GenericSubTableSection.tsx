@@ -31,6 +31,11 @@ export interface GenericSubTableSectionProps {
   tableClassName?: string;
   className?: string;
   /**
+   * `table` (mặc định): `children` là thead + tbody, section tự bọc khung cuộn + `<table>`.
+   * `raw`: `children` tự lo khung (vd. `SubTable` — cần colgroup, sticky, card mobile).
+   */
+  contentMode?: 'table' | 'raw';
+  /**
    * Nội dung bảng: thead + tbody.
    * Khi không truyền và count === 0 → hiển thị EmptyState.
    * Khi truyền → bọc trong wrapper scroll + table.
@@ -56,6 +61,7 @@ const GenericSubTableSection: React.FC<GenericSubTableSectionProps> = ({
   maxTableHeight = '320px',
   tableClassName,
   className,
+  contentMode = 'table',
   children,
 }) => {
   const showEmpty = !loading && count !== undefined && count === 0 && !children;
@@ -125,7 +131,9 @@ const GenericSubTableSection: React.FC<GenericSubTableSectionProps> = ({
         />
       )}
 
-      {showTable && children != null && (
+      {showTable && children != null && contentMode === 'raw' && children}
+
+      {showTable && children != null && contentMode === 'table' && (
         <div className="rounded-xl border border-border overflow-hidden bg-card">
           <div
             className={cn(
