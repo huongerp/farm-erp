@@ -23,7 +23,7 @@ import type { Kho } from '../../danh-sach-kho/core/types';
 import { LOAI_PHIEU_OPTIONS, TRANG_THAI_PHIEU_OPTIONS } from '../core/constants';
 import { getDateRangeFromPreset, getPresetFromDates } from '../core/datePresets';
 import { cn } from '../../../../lib/utils';
-import { useHangHoaRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
+import { useHangHoaRefQuery } from '../../../../lib/hooks/use-ref-queries';
 import { useDanhMucCap2WithParent } from '../../danh-muc-hang-hoa/hooks/use-danh-muc-hang-hoa';
 
 interface BaoCaoNXTToolbarProps {

@@ -19,7 +19,7 @@ export {
   updateChiTietKetQuaPT,
   dieuChinhTonTheoKetQuaPT,
   dieuChinhTonTheoDotPT,
-} from './kiem-ke-pt-supabase.service';
+} from './kiem-ke-pt-db.service';
 
 export {
   buildDotKiemKePTListServerQuery,

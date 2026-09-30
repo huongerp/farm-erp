@@ -1,36 +1,36 @@
 /**
- * Service khấu hao tài sản – dùng Supabase (fp_ts_ky_khau_hao, fp_ts_chi_tiet_khau_hao).
+ * Service khấu hao tài sản – đọc/ghi DB (fp_ts_ky_khau_hao, fp_ts_chi_tiet_khau_hao).
  */
 import type { ChiTietKhauHao } from '../core/types';
 import {
-  getKyKhauHaoListSupabase,
-  getKyKhauHaoByIdSupabase,
-  createKyKhauHaoSupabase,
-  updateKyKhauHaoSupabase,
-  getChiTietKhauHaoSupabase,
-  tinhToanKhauHaoKySupabase,
-  chotKySupabase,
-  deleteKyKhauHaoSupabase,
-  updateKyKhauHaoGhiChuSupabase,
-  updateKyKhauHaoTrangThaiSupabase,
-} from './khau-hao-tai-san-supabase.service';
+  getKyKhauHaoListDb,
+  getKyKhauHaoByIdDb,
+  createKyKhauHaoDb,
+  updateKyKhauHaoDb,
+  getChiTietKhauHaoDb,
+  tinhToanKhauHaoKyDb,
+  chotKyDb,
+  deleteKyKhauHaoDb,
+  updateKyKhauHaoGhiChuDb,
+  updateKyKhauHaoTrangThaiDb,
+} from './khau-hao-tai-san-db.service';
 
-export const getKyKhauHaoList = getKyKhauHaoListSupabase;
-export const getKyKhauHaoById = getKyKhauHaoByIdSupabase;
-export const createKyKhauHao = createKyKhauHaoSupabase;
-export const updateKyKhauHao = updateKyKhauHaoSupabase;
-export const getChiTietKhauHao = getChiTietKhauHaoSupabase;
+export const getKyKhauHaoList = getKyKhauHaoListDb;
+export const getKyKhauHaoById = getKyKhauHaoByIdDb;
+export const createKyKhauHao = createKyKhauHaoDb;
+export const updateKyKhauHao = updateKyKhauHaoDb;
+export const getChiTietKhauHao = getChiTietKhauHaoDb;
 
 export const tinhToanKhauHaoKy = async (
   idKy: string,
   options?: { id_nguoi_tao?: string | null; ten_nguoi_tao?: string | null }
 ): Promise<ChiTietKhauHao[]> => {
-  return tinhToanKhauHaoKySupabase(idKy, options?.id_nguoi_tao, options?.ten_nguoi_tao);
+  return tinhToanKhauHaoKyDb(idKy, options?.id_nguoi_tao, options?.ten_nguoi_tao);
 };
 
-export const chotKy = chotKySupabase;
-export const deleteKyKhauHao = deleteKyKhauHaoSupabase;
-export const updateKyKhauHaoGhiChu = updateKyKhauHaoGhiChuSupabase;
-export const updateKyKhauHaoTrangThai = updateKyKhauHaoTrangThaiSupabase;
+export const chotKy = chotKyDb;
+export const deleteKyKhauHao = deleteKyKhauHaoDb;
+export const updateKyKhauHaoGhiChu = updateKyKhauHaoGhiChuDb;
+export const updateKyKhauHaoTrangThai = updateKyKhauHaoTrangThaiDb;
 
-export { getKyKhauHaoPageSupabase } from './khau-hao-tai-san-supabase.service';
+export { getKyKhauHaoPageDb } from './khau-hao-tai-san-db.service';

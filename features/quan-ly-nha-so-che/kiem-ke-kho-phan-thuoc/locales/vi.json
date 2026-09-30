@@ -145,7 +145,7 @@
   "kiemKeKhoPT.service.rpcAlreadyAdjusted": "Dòng này đã điều chỉnh tồn (đã có phiếu kho)",
   "kiemKeKhoPT.service.rpcNoVariance": "Không có chênh lệch để điều chỉnh (sổ bằng thực tế)",
   "kiemKeKhoPT.service.rpcUnknown": "Lỗi khi điều chỉnh tồn kiểm kê",
-  "kiemKeKhoPT.service.rpcFunctionNotFound": "Chưa triển khai RPC điều chỉnh tồn trên máy chủ. Chạy docs/supabase-fp_farm_dot_kiem_ke_pt_dieu_chinh_ton.sql rồi tải lại schema cache.",
+  "kiemKeKhoPT.service.rpcFunctionNotFound": "Máy chủ chưa có RPC điều chỉnh tồn kiểm kê kho phân thuốc. Báo quản trị hệ thống cập nhật DB rồi tải lại schema cache.",
   "kiemKeKhoPT.service.onlyHoanThanhWhenDangKiem": "Chỉ hoàn thành đợt đang kiểm kê",
   "kiemKeKhoPT.service.khoNotInDot": "Kho không thuộc phạm vi đợt kiểm kê",
   "kiemKeKhoPT.service.chiTietAlreadyExists": "Dòng (kho, hàng hóa) đã có trong danh sách",

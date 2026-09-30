@@ -1,9 +1,9 @@
 import { db } from './db';
-import { formatSupabaseError } from './supabase-errors';
+import { formatDbError } from './db-errors';
 
 /**
  * Ghi mật khẩu vào `fp_var_nhan_vien.mat_khau_hash` qua RPC `rpc_set_mat_khau`
- * (xem docs/supabase-fp_var_nhan_vien_mat_khau.sql).
+ * (xem docs/db-schema-baseline.sql).
  *
  * Hash bcrypt được sinh SERVER-SIDE bằng pgcrypto, không hash ở browser. RPC là
  * đường ghi duy nhất cho cột này — `authenticated` không có quyền UPDATE trực tiếp.
@@ -23,5 +23,5 @@ export async function setMatKhauHash(
     p_phai_doi: phaiDoi,
   });
 
-  if (error) throw new Error(formatSupabaseError(error, { resource: 'rpc_set_mat_khau' }));
+  if (error) throw new Error(formatDbError(error, { resource: 'rpc_set_mat_khau' }));
 }

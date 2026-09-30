@@ -53,7 +53,7 @@ import {
   useCongViecList,
   useUpdateCongViec,
 } from '../hooks/use-cong-viec';
-import { useEmployeesRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
+import { useEmployeesRefQuery } from '../../../../lib/hooks/use-ref-queries';
 
 const TAB_IDS = { info: 'info', traoDoi: 'traoDoi' } as const;
 

@@ -12,7 +12,7 @@ import {
   db,
   fetchAllRows,
   fetchTablePage,
-  throwSupabaseError,
+  throwDbError,
   type PaginatedTableResult,
 } from '../../../../lib/db';
 import { applyPostgrestSearch } from '../../../../lib/postgrest-search';
@@ -36,12 +36,12 @@ type Row = Record<string, unknown>;
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-/** Không còn module chấm điểm KPI — trả rỗng; có thể nối bảng Supabase sau. */
+/** Không còn module chấm điểm KPI — trả rỗng; có thể nối bảng DB sau. */
 async function getChamDiemKpiRecords(): Promise<ChamDiemKpiRecord[]> {
   return [];
 }
 
-/** Không còn module chấm công — trả rỗng; có thể nối bảng Supabase sau. */
+/** Không còn module chấm công — trả rỗng; có thể nối bảng DB sau. */
 async function getEmployeeAttendance(_monthKey: string): Promise<EmployeeAttendanceRow[]> {
   return [];
 }
@@ -284,7 +284,7 @@ async function timNhanVienIdsTheoTuKhoa(term: string): Promise<number[]> {
     .select('id')
     .or(`ho_va_ten.ilike.${pat},ma_nhan_vien.ilike.${pat},email.ilike.${pat}`)
     .limit(500);
-  if (error) throwSupabaseError(error, { resource: `${TABLE_NHAN_VIEN}.search` });
+  if (error) throwDbError(error, { resource: `${TABLE_NHAN_VIEN}.search` });
   return (data ?? []).map((r) => Number((r as { id: unknown }).id)).filter(Number.isFinite);
 }
 
@@ -293,7 +293,7 @@ async function timNhanVienIdsTheoPhongBan(phongBanIds: string[]): Promise<number
   const ids = phongBanIds.map(Number).filter(Number.isFinite);
   if (ids.length === 0) return [];
   const { data, error } = await db.from(TABLE_NHAN_VIEN).select('id').in('phong_ban_id', ids);
-  if (error) throwSupabaseError(error, { resource: `${TABLE_NHAN_VIEN}.byPhongBan` });
+  if (error) throwDbError(error, { resource: `${TABLE_NHAN_VIEN}.byPhongBan` });
   return (data ?? []).map((r) => Number((r as { id: unknown }).id)).filter(Number.isFinite);
 }
 

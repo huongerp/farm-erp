@@ -17,7 +17,7 @@ import { useDeXuatMuaHangViewScope } from '../hooks/use-de-xuat-mua-hang-view-sc
 import { buildDeXuatMuaHangListServerQuery, fetchAllDeXuatMuaHangForListQuery } from '../services/de-xuat-mua-hang-service';
 import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
 import { useKhoList } from '../../../kho-van/danh-sach-kho/hooks/use-kho';
-import { useEmployeesRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
+import { useEmployeesRefQuery } from '../../../../lib/hooks/use-ref-queries';
 import { getDateRangeFromPreset } from '../../../he-thong/nhan-vien/utils/stats-date-range';
 import type { DateRangePresetId } from '../../../he-thong/nhan-vien/core/stats-constants';
 import { useDeXuatMuaHangStore } from '../store/useDeXuatMuaHangStore';

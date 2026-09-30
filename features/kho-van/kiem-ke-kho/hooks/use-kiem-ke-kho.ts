@@ -16,8 +16,8 @@ import {
   hoanThanhDot,
   changeTrangThaiDot,
   getNextMaDotDotKiemKeKho,
-  getDotKiemKeKhoPageSupabase,
-  getDotKiemKeKhoTomTatSupabase,
+  getDotKiemKeKhoPageDb,
+  getDotKiemKeKhoTomTatDb,
 } from '../services/kiem-ke-kho-service';
 import type { TaoDanhSachKiemKeKhoFilters } from '../services/kiem-ke-kho-service';
 import type { DotKiemKeKhoCreate, ChiTietKiemKeKhoUpdate, TrangThaiDotKiemKeKho } from '../core/types';
@@ -36,12 +36,12 @@ export const QUERY_KEY_KIEM_KE_KHO = ['kiemKeKho'] as const;
 export function useDotKiemKeKhoPage(
   page: number,
   pageSize: number,
-  params: Parameters<typeof getDotKiemKeKhoPageSupabase>[2],
-  phamVi: Parameters<typeof getDotKiemKeKhoPageSupabase>[3]
+  params: Parameters<typeof getDotKiemKeKhoPageDb>[2],
+  phamVi: Parameters<typeof getDotKiemKeKhoPageDb>[3]
 ) {
   return useQuery({
     queryKey: [...QUERY_KEY_KIEM_KE_KHO, 'page', page, pageSize, params, phamVi],
-    queryFn: () => getDotKiemKeKhoPageSupabase(page, pageSize, params, phamVi),
+    queryFn: () => getDotKiemKeKhoPageDb(page, pageSize, params, phamVi),
     placeholderData: keepPreviousData,
     staleTime: 1000 * 60 * 2,
   });
@@ -49,11 +49,11 @@ export function useDotKiemKeKhoPage(
 
 /** Tóm tắt toàn bộ đợt trong phạm vi xem — nguồn đếm chip lọc và tab Thống kê. */
 export function useDotKiemKeKhoTomTat(
-  phamVi: Parameters<typeof getDotKiemKeKhoTomTatSupabase>[0]
+  phamVi: Parameters<typeof getDotKiemKeKhoTomTatDb>[0]
 ) {
   return useQuery({
     queryKey: [...QUERY_KEY_KIEM_KE_KHO, 'tomTat', phamVi],
-    queryFn: () => getDotKiemKeKhoTomTatSupabase(phamVi),
+    queryFn: () => getDotKiemKeKhoTomTatDb(phamVi),
     staleTime: 1000 * 60 * 5,
   });
 }

@@ -16,7 +16,7 @@ import {
 import { useDonDatHangViewScope } from '../hooks/use-don-dat-hang-view-scope';
 import { buildDonDatHangListServerQuery, fetchAllChiTietDonDatHangForListQuery } from '../services/don-dat-hang-service';
 import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
-import { useDoiTacRefQuery, useEmployeesRefQuery, useHangHoaRefQuery, usePhieuDeXuatSoPhieuMinimalQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
+import { useDoiTacRefQuery, useEmployeesRefQuery, useHangHoaRefQuery, usePhieuDeXuatSoPhieuMinimalQuery } from '../../../../lib/hooks/use-ref-queries';
 import { useKhoList } from '../../../kho-van/danh-sach-kho/hooks/use-kho';
 import { useChiTietDonDatHangStore } from '../store/useChiTietDonDatHangStore';
 import type { ChiTietDonDatHangFlat, DonDatHang } from '../core/types';
@@ -26,7 +26,7 @@ import DonDatHangDetail from './DonDatHangDetail';
 import DonDatHangForm from './DonDatHangForm';
 import PhieuKhoForm from '../../../kho-van/phieu-kho/components/PhieuKhoForm';
 import type { PhieuKhoFormValues } from '../../../kho-van/phieu-kho/core/schema';
-import type { DonDatHangSoPoOption } from '../services/don-dat-hang-supabase.service';
+import type { DonDatHangSoPoOption } from '../services/don-dat-hang-db.service';
 import EmptyState from '../../../../components/shared/EmptyState';
 import ListPageSkeleton from '../../../../components/shared/ListPageSkeleton';
 import TablePaginationFooter from '../../../../components/shared/TablePaginationFooter';

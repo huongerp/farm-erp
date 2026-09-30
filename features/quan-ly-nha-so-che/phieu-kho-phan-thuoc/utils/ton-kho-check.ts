@@ -1,6 +1,6 @@
 /**
- * Chặn phiếu làm tồn kho âm (xuất / chuyển vượt tồn, hoặc sửa phiếu nhập xuống dưới số đã xuất).
- * Thuần, không db → test trực tiếp.
+ * Phát hiện phiếu làm tồn kho âm (xuất / chuyển vượt tồn, hoặc sửa phiếu nhập xuống dưới số đã xuất)
+ * để CẢNH BÁO — phiếu vẫn được lưu, không chặn. Thuần, không db → test trực tiếp.
  *
  * Công thức khớp view `v_farm_ton_kho_phan_thuoc`: nhập +kho; xuất −kho; chuyển −kho nguồn +kho đích;
  * phiếu "Không duyệt" không tính. Tồn tính cả phiếu "Chờ duyệt" nên phiếu chờ duyệt cũng giữ chỗ.
@@ -62,7 +62,7 @@ export function phieuDelta(p: PhieuDeltaInput): TonMap {
 /**
  * Các (kho, hàng) mà phiếu mới làm tồn giảm xuống dưới 0.
  * Khi sửa, truyền `oldDelta` của phiếu cũ — phần đó đang nằm trong tồn nên phải trừ ra trước.
- * Chỉ chặn chỗ phiếu làm tồn GIẢM: tồn đã âm sẵn mà phiếu không đụng tới thì không chặn.
+ * Chỉ báo chỗ phiếu làm tồn GIẢM: tồn đã âm sẵn mà phiếu không đụng tới thì không báo.
  */
 export function findVuotTon(ton: TonMap, newDelta: TonMap, oldDelta: TonMap = new Map()): VuotTon[] {
   const keys = new Set([...newDelta.keys(), ...oldDelta.keys()]);

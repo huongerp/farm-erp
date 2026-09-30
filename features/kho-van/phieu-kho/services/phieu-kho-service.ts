@@ -1,60 +1,60 @@
 /**
- * Service phiếu kho: sử dụng Supabase (fp_mh_phieu_kho, fp_mh_phieu_kho_chi_tiet).
+ * Service phiếu kho: đọc/ghi DB (fp_mh_phieu_kho, fp_mh_phieu_kho_chi_tiet).
  * App liên kết và enrich với: danh sách kho, danh sách hàng hóa, nhân viên, danh sách đối tác.
  */
 import type { LoaiPhieuKho, TrangThaiPhieuKho } from '../core/types';
 import type { PhieuKhoFormValues } from '../core/schema';
 import {
-  getAllPhieuKhoSupabase,
-  getPhieuKhoByIdSupabase,
-  createPhieuKhoSupabase,
-  updatePhieuKhoSupabase,
-  deletePhieuKhoSupabase,
-  deletePhieuKhoManySupabase,
-  getPhieuKhoByDoiTacSupabase,
-  getChiTietPhieuKhoAllSupabase,
-  getLichSuNhapXuatByHangHoaSupabase,
-  getLichSuNhapXuatByKhoSupabase,
-  getNextSoPhieuSupabase,
-  updatePhieuKhoTrangThaiSupabase,
-  updatePhieuKhoTrangThaiManySupabase,
-  getPhieuKhoPageSupabase,
-  getChiTietPhieuKhoPageSupabase,
-  fetchAllPhieuKhoForListQuerySupabase,
-  fetchAllChiTietPhieuKhoForListQuerySupabase,
+  getAllPhieuKhoDb,
+  getPhieuKhoByIdDb,
+  createPhieuKhoDb,
+  updatePhieuKhoDb,
+  deletePhieuKhoDb,
+  deletePhieuKhoManyDb,
+  getPhieuKhoByDoiTacDb,
+  getChiTietPhieuKhoAllDb,
+  getLichSuNhapXuatByHangHoaDb,
+  getLichSuNhapXuatByKhoDb,
+  getNextSoPhieuDb,
+  updatePhieuKhoTrangThaiDb,
+  updatePhieuKhoTrangThaiManyDb,
+  getPhieuKhoPageDb,
+  getChiTietPhieuKhoPageDb,
+  fetchAllPhieuKhoForListQueryDb,
+  fetchAllChiTietPhieuKhoForListQueryDb,
   type UpdatePhieuKhoTrangThaiOptions,
   type UpdatePhieuKhoTrangThaiManyResult,
-} from './phieu-kho-supabase.service';
+} from './phieu-kho-db.service';
 
 export type { PhieuKhoListServerQuery, ChiTietPhieuKhoListServerQuery } from './phieu-kho-list-query';
 export { buildPhieuKhoListServerQuery, buildChiTietPhieuKhoListServerQuery } from './phieu-kho-list-query';
 
-export type { LichSuNhapXuatRow, LichSuNhapXuatByKhoRow } from './phieu-kho-supabase.service';
+export type { LichSuNhapXuatRow, LichSuNhapXuatByKhoRow } from './phieu-kho-db.service';
 export type { PaginatedTableResult } from '../../../../lib/db';
 
-export const getAllPhieuKho = getAllPhieuKhoSupabase;
-export const getPhieuKhoById = getPhieuKhoByIdSupabase;
-export const createPhieuKho = (loai: LoaiPhieuKho, data: PhieuKhoFormValues) => createPhieuKhoSupabase(loai, data);
-export const updatePhieuKho = updatePhieuKhoSupabase;
-export const deletePhieuKho = deletePhieuKhoSupabase;
-export const deletePhieuKhoMany = deletePhieuKhoManySupabase;
-export const getPhieuKhoByDoiTac = getPhieuKhoByDoiTacSupabase;
-export const getChiTietPhieuKhoAll = getChiTietPhieuKhoAllSupabase;
-export const getLichSuNhapXuatByHangHoa = getLichSuNhapXuatByHangHoaSupabase;
-export const getLichSuNhapXuatByKho = getLichSuNhapXuatByKhoSupabase;
-export const getNextSoPhieu = getNextSoPhieuSupabase;
+export const getAllPhieuKho = getAllPhieuKhoDb;
+export const getPhieuKhoById = getPhieuKhoByIdDb;
+export const createPhieuKho = (loai: LoaiPhieuKho, data: PhieuKhoFormValues) => createPhieuKhoDb(loai, data);
+export const updatePhieuKho = updatePhieuKhoDb;
+export const deletePhieuKho = deletePhieuKhoDb;
+export const deletePhieuKhoMany = deletePhieuKhoManyDb;
+export const getPhieuKhoByDoiTac = getPhieuKhoByDoiTacDb;
+export const getChiTietPhieuKhoAll = getChiTietPhieuKhoAllDb;
+export const getLichSuNhapXuatByHangHoa = getLichSuNhapXuatByHangHoaDb;
+export const getLichSuNhapXuatByKho = getLichSuNhapXuatByKhoDb;
+export const getNextSoPhieu = getNextSoPhieuDb;
 export type { UpdatePhieuKhoTrangThaiOptions, UpdatePhieuKhoTrangThaiManyResult };
 
 export const updatePhieuKhoTrangThai = (id: string, trang_thai: TrangThaiPhieuKho, opts?: UpdatePhieuKhoTrangThaiOptions) =>
-  updatePhieuKhoTrangThaiSupabase(id, trang_thai, opts);
+  updatePhieuKhoTrangThaiDb(id, trang_thai, opts);
 
 export const updatePhieuKhoTrangThaiMany = (
   ids: string[],
   trang_thai: TrangThaiPhieuKho,
   opts?: UpdatePhieuKhoTrangThaiOptions
-) => updatePhieuKhoTrangThaiManySupabase(ids, trang_thai, opts);
+) => updatePhieuKhoTrangThaiManyDb(ids, trang_thai, opts);
 
-export const getPhieuKhoPage = getPhieuKhoPageSupabase;
-export const getChiTietPhieuKhoPage = getChiTietPhieuKhoPageSupabase;
-export const fetchAllPhieuKhoForListQuery = fetchAllPhieuKhoForListQuerySupabase;
-export const fetchAllChiTietPhieuKhoForListQuery = fetchAllChiTietPhieuKhoForListQuerySupabase;
+export const getPhieuKhoPage = getPhieuKhoPageDb;
+export const getChiTietPhieuKhoPage = getChiTietPhieuKhoPageDb;
+export const fetchAllPhieuKhoForListQuery = fetchAllPhieuKhoForListQueryDb;
+export const fetchAllChiTietPhieuKhoForListQuery = fetchAllChiTietPhieuKhoForListQueryDb;

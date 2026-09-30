@@ -3,7 +3,7 @@ import { config } from './config.ts';
 
 /**
  * Kết nối bằng role `auth_service`: không có quyền bảng nào, chỉ EXECUTE được
- * các RPC dưới đây (docs/vps-04-auth-schema.sql). Nên nếu service này bị chiếm,
+ * các RPC dưới đây (docs/db-schema-baseline.sql). Nên nếu service này bị chiếm,
  * kẻ tấn công vẫn không SELECT thẳng được bảng nào.
  */
 const pool = new Pool({

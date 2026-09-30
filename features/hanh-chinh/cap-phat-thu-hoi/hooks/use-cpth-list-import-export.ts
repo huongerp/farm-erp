@@ -5,7 +5,7 @@ import type { ImportReferenceSheet, ImportSampleRow } from '../../../../componen
 import { IMPORT_ROW_KEY, type ImportErrorRow, type ImportSummary } from '../../../../lib/import-types';
 import type { ExportColumn } from '../../../../components/shared/LazyExportDialog';
 import { useExportData } from '../../../../lib/useExportData';
-import { useEmployeesRefQuery } from '@/lib/hooks/use-supabase-ref-queries';
+import { useEmployeesRefQuery } from '@/lib/hooks/use-ref-queries';
 import { useTaiSanList } from '../../danh-muc-tai-san/hooks/use-danh-muc-tai-san';
 import { useAssetStorageLocations } from '../../thiet-lap-tai-san/hooks/use-noi-luu';
 import { LOAI_PHIEU_OPTIONS } from '../core/constants';

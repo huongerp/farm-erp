@@ -1,6 +1,6 @@
 /**
  * In-memory TTL cache for lightweight ref fetchers (getKhoRef, getEmployeesRef, …).
- * Reduces Supabase egress when paged list services call the same refs on every page change.
+ * Reduces egress when paged list services call the same refs on every page change.
  */
 
 const store = new Map<string, { data: unknown; ts: number }>();

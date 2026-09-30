@@ -16,7 +16,7 @@ import type { CongViec } from '../core/types';
 import { CongViecFormValues, congViecSchema } from '../core/schema';
 import { getTrangThaiOptions, getUuTienOptions } from '../core/constants';
 import { useCreateCongViec, useUpdateCongViec } from '../hooks/use-cong-viec';
-import { useEmployeesRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
+import { useEmployeesRefQuery } from '../../../../lib/hooks/use-ref-queries';
 import { TRANG_THAI_NV } from '../../../../lib/constants';
 import { useAuthStore } from '../../../../store/useStore';
 

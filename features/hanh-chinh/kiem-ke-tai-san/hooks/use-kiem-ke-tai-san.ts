@@ -16,7 +16,7 @@ import {
   capNhatSoTheoKetQua,
   hoanThanhDot,
   changeTrangThaiDot,
-  getDotKiemKePageSupabase,
+  getDotKiemKePageDb,
 } from '../services/kiem-ke-tai-san-service';
 import type {
   TaoDanhSachKiemKeFilters,
@@ -45,7 +45,7 @@ export function useDotKiemKePage(
 ) {
   return useQuery({
     queryKey: ['kiemKeTaiSan', 'dot', 'page', page, pageSize, params, idNguoiPhuTrachCuaToi],
-    queryFn: () => getDotKiemKePageSupabase(page, pageSize, params, idNguoiPhuTrachCuaToi),
+    queryFn: () => getDotKiemKePageDb(page, pageSize, params, idNguoiPhuTrachCuaToi),
     placeholderData: keepPreviousData,
     staleTime: 1000 * 60 * 2,
   });

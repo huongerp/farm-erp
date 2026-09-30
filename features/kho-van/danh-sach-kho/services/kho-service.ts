@@ -12,7 +12,7 @@ const TABLE = 'fp_mh_danh_sach_kho';
 const KHO_ROW_COLUMNS =
   'id,chi_nhanh_id,ma_kho,ten_kho,dia_chi,mo_ta,thu_tu,trang_thai,tg_tao,tg_cap_nhat';
 
-/** Row từ Supabase fp_mh_danh_sach_kho */
+/** Row từ DB fp_mh_danh_sach_kho */
 interface KhoRow {
   id: number;
   chi_nhanh_id: number | null;
@@ -42,7 +42,7 @@ function rowToKho(row: KhoRow, tenChiNhanh?: string): Kho {
   };
 }
 
-/** Lấy danh sách kho từ Supabase và enrich ten_chi_nhanh từ module chi nhánh */
+/** Lấy danh sách kho từ DB và enrich ten_chi_nhanh từ module chi nhánh */
 export const getKhoList = async (): Promise<Kho[]> => {
   const [rows, branches] = await Promise.all([
     fetchAllRows<KhoRow>((from, to) =>

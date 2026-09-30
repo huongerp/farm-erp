@@ -7,7 +7,7 @@ import { formatDateTimeShort } from '../../../../lib/utils';
 import type { CongViec } from '../core/types';
 import { useCongViecStore } from '../store/useCongViecStore';
 import { renderTrangThaiBadge, renderUuTienBadge } from '../core/badges';
-import { useEmployeesRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
+import { useEmployeesRefQuery } from '../../../../lib/hooks/use-ref-queries';
 
 interface Props {
   data: CongViec[];

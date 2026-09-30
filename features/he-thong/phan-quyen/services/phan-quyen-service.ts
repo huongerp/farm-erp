@@ -64,7 +64,7 @@ export async function getCurrentRoleContext(chucVuId: string): Promise<CurrentRo
   return { quyenHan, thuTuChucVu };
 }
 
-/** Lấy danh sách chức vụ kèm quyền từ Supabase: fp_var_chuc_vu + fp_var_phan_quyen. */
+/** Lấy danh sách chức vụ kèm quyền từ DB: fp_var_chuc_vu + fp_var_phan_quyen. */
 export const getRoles = async (): Promise<PositionPermission[]> => {
   const [positions, departments, phanQuyenRows] = await Promise.all([
     getPositions(),
@@ -93,7 +93,7 @@ export const getRoles = async (): Promise<PositionPermission[]> => {
 
   // Đếm nhân viên theo chức vụ qua RPC thay vì fetchAllRows('fp_var_nhan_vien','chuc_vu_id').
   // Trước đây kéo N dòng (có thể hàng nghìn) chỉ để GROUP BY ở client → rất tốn egress.
-  // RPC trả về tối đa số chức vụ (vài chục dòng) → <1 KB. Xem docs/supabase-rpc_count_nhan_vien_by_chuc_vu.sql.
+  // RPC trả về tối đa số chức vụ (vài chục dòng) → <1 KB. Xem docs/db-schema-baseline.sql.
   let nhanVienCountMap: Record<string, number> = {};
   try {
     const { data: countRows, error: countErr } = await db.rpc('rpc_count_nhan_vien_by_chuc_vu');

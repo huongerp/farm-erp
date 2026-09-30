@@ -15,7 +15,7 @@ import { dotKiemKeKhoSchema, type DotKiemKeKhoFormValues } from '../core/schema'
 import { useCreateDotKiemKeKho, useUpdateDotKiemKeKho, useNextMaDotDotKiemKeKho, formatMaDotDotKiemKeKho } from '../hooks/use-kiem-ke-kho';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
-import { useEmployeesRefQuery } from '@/lib/hooks/use-supabase-ref-queries';
+import { useEmployeesRefQuery } from '@/lib/hooks/use-ref-queries';
 import type { DotKiemKeKho } from '../core/types';
 
 const DEFAULT_VALUES: DotKiemKeKhoFormValues = {

@@ -1,5 +1,8 @@
 # Cut-over: chuyển hẳn sang PostgREST self-host
 
+> **Lịch sử.** Việc chuyển đổi đã xong. Các file SQL nhắc trong tài liệu này (`docs/vps-*.sql`,
+> `docs/supabase-*.sql`) và `docs/VPS_MIGRATION.md` đã xoá; trạng thái DB hiện tại xem `docs/db-schema-baseline.sql`.
+
 Runbook thao tác cho ngày chuyển đổi. Thiết kế và lý do chọn từng phương án nằm ở `docs/VPS_POSTGREST_PLAN.md`; phần dữ liệu (dump/restore) ở `docs/VPS_MIGRATION.md`.
 
 Toàn bộ code đã xong: SQL, auth-service, docker-compose, frontend. Việc còn lại là chạy đúng thứ tự.
@@ -123,4 +126,4 @@ Chỉ làm sau khi app chạy ổn định vài ngày (Supabase là đường l�
 
 **`main` chunk đang 716 KB so với baseline 503 KB** (`scripts/bundle-baseline.json` từ 2026-06-13). Đây là nợ có trước, không do đợt này: bỏ `supabase-js` còn làm chunk `supabase` giảm từ 168 KB xuống 16 KB. Cần một đợt riêng để xử lý rồi cập nhật baseline.
 
-**Vài tên còn chữ "supabase"**: `lib/supabase-errors.ts` cùng `throwSupabaseError` / `formatSupabaseError` (27 chỗ gọi), và hai file `*-supabase.service.ts`, `use-supabase-ref-queries.ts`. Client đã đổi thành `lib/db.ts` / biến `db`; phần còn lại thuần đổi tên, để riêng một commit cho khỏi trộn vào diff cần review.
+**Vài tên còn chữ "supabase"**: `lib/db-errors.ts` cùng `throwDbError` / `formatDbError` (27 chỗ gọi), và hai file `*-db.service.ts`, `use-ref-queries.ts`. Client đã đổi thành `lib/db.ts` / biến `db`; phần còn lại thuần đổi tên, để riêng một commit cho khỏi trộn vào diff cần review.

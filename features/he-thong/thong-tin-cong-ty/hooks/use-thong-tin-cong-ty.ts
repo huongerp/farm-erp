@@ -8,7 +8,7 @@ import i18n from '../../../../lib/i18n';
 export const COMPANY_INFO_QUERY_KEY = ['companyInfo'] as const;
 
 /**
- * Lấy thông tin công ty từ Supabase. Khi có dữ liệu sẽ đồng bộ vào store (setCompanyInfo).
+ * Lấy thông tin công ty từ DB. Khi có dữ liệu sẽ đồng bộ vào store (setCompanyInfo).
  */
 export function useCompanyInfo() {
   const setCompanyInfo = useUIStore((s) => s.setCompanyInfo);
@@ -26,7 +26,7 @@ export function useCompanyInfo() {
 }
 
 /**
- * Mutation cập nhật thông tin công ty: ghi Supabase rồi cập nhật store.
+ * Mutation cập nhật thông tin công ty: ghi DB rồi cập nhật store.
  */
 export function useUpdateCompanyInfo(onSuccess?: () => void) {
   const queryClient = useQueryClient();

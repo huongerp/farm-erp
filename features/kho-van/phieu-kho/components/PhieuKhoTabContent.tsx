@@ -16,7 +16,7 @@ import { usePhieuKhoViewScope } from '../hooks/use-phieu-kho-view-scope';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import { buildPhieuKhoListServerQuery, fetchAllPhieuKhoForListQuery } from '../services/phieu-kho-service';
 import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
-import { useEmployeesRefQuery, useDoiTacRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
+import { useEmployeesRefQuery, useDoiTacRefQuery } from '../../../../lib/hooks/use-ref-queries';
 import { usePhieuKhoStore } from '../store/usePhieuKhoStore';
 import { getDateRangeFromPreset } from '../../../he-thong/nhan-vien/utils/stats-date-range';
 import type { DateRangePresetId } from '../../../he-thong/nhan-vien/core/stats-constants';

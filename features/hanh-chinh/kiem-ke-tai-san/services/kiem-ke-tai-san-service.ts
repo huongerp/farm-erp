@@ -1,6 +1,6 @@
 /**
- * Service kiểm kê tài sản – kết nối Supabase.
- * Re-export từ kiem-ke-tai-san-supabase.service, giữ API cho hooks/store.
+ * Service kiểm kê tài sản – đọc/ghi DB.
+ * Re-export từ kiem-ke-tai-san-db.service, giữ API cho hooks/store.
  */
 import type {
   DotKiemKe,
@@ -10,29 +10,29 @@ import type {
   TrangThaiDotKiemKe,
 } from '../core/types';
 import {
-  getDotKiemKeListSupabase,
-  getDotKiemKeByIdSupabase,
-  getChiTietByDotSupabase,
-  createDotKiemKeSupabase,
-  updateDotKiemKeSupabase,
-  deleteDotKiemKeSupabase,
-  changeTrangThaiDotSupabase,
-  taoDanhSachKiemKeSupabase,
-  updateChiTietKetQuaSupabase,
-  deleteChiTietKiemKeSupabase,
-  themChiTietPhatHienSupabase,
-  capNhatSoTheoKetQuaSupabase,
-  hoanThanhDotSupabase,
+  getDotKiemKeListDb,
+  getDotKiemKeByIdDb,
+  getChiTietByDotDb,
+  createDotKiemKeDb,
+  updateDotKiemKeDb,
+  deleteDotKiemKeDb,
+  changeTrangThaiDotDb,
+  taoDanhSachKiemKeDb,
+  updateChiTietKetQuaDb,
+  deleteChiTietKiemKeDb,
+  themChiTietPhatHienDb,
+  capNhatSoTheoKetQuaDb,
+  hoanThanhDotDb,
   getNextMaDotDotKiemKeTaiSan,
   type GetDotKiemKeListParams,
   type TaoDanhSachKiemKeFilters,
   type ThemChiTietPhatHienPayload,
-} from './kiem-ke-tai-san-supabase.service';
+} from './kiem-ke-tai-san-db.service';
 
 export type { GetDotKiemKeListParams, TaoDanhSachKiemKeFilters, ThemChiTietPhatHienPayload };
 
 export async function getDotKiemKeList(params: GetDotKiemKeListParams = {}): Promise<DotKiemKe[]> {
-  let list = await getDotKiemKeListSupabase(params);
+  let list = await getDotKiemKeListDb(params);
   if (params.q?.trim()) {
     const q = params.q.trim().toLowerCase();
     list = list.filter(
@@ -46,34 +46,34 @@ export async function getDotKiemKeList(params: GetDotKiemKeListParams = {}): Pro
 }
 
 export async function getDotKiemKeById(id: string): Promise<DotKiemKe | null> {
-  return getDotKiemKeByIdSupabase(id);
+  return getDotKiemKeByIdDb(id);
 }
 
 export async function getChiTietByDot(id_dot_kiem_ke: string): Promise<ChiTietKiemKe[]> {
-  return getChiTietByDotSupabase(id_dot_kiem_ke);
+  return getChiTietByDotDb(id_dot_kiem_ke);
 }
 
 export async function createDotKiemKe(data: DotKiemKeCreate): Promise<DotKiemKe> {
-  return createDotKiemKeSupabase(data);
+  return createDotKiemKeDb(data);
 }
 
 export async function updateDotKiemKe(id: string, data: Partial<DotKiemKeCreate>): Promise<DotKiemKe> {
-  return updateDotKiemKeSupabase(id, data);
+  return updateDotKiemKeDb(id, data);
 }
 
 export async function deleteDotKiemKe(ids: string[]): Promise<void> {
-  return deleteDotKiemKeSupabase(ids);
+  return deleteDotKiemKeDb(ids);
 }
 
 export async function changeTrangThaiDot(id: string, trang_thai: TrangThaiDotKiemKe): Promise<DotKiemKe> {
-  return changeTrangThaiDotSupabase(id, trang_thai);
+  return changeTrangThaiDotDb(id, trang_thai);
 }
 
 export async function taoDanhSachKiemKe(
   id_dot_kiem_ke: string,
   filters?: TaoDanhSachKiemKeFilters
 ): Promise<ChiTietKiemKe[]> {
-  return taoDanhSachKiemKeSupabase(id_dot_kiem_ke, filters);
+  return taoDanhSachKiemKeDb(id_dot_kiem_ke, filters);
 }
 
 export async function updateChiTietKetQua(
@@ -81,11 +81,11 @@ export async function updateChiTietKetQua(
   data: ChiTietKiemKeUpdate,
   id_nguoi_kiem: string
 ): Promise<ChiTietKiemKe> {
-  return updateChiTietKetQuaSupabase(id_chi_tiet, data, id_nguoi_kiem);
+  return updateChiTietKetQuaDb(id_chi_tiet, data, id_nguoi_kiem);
 }
 
 export async function deleteChiTietKiemKe(id_chi_tiet: string): Promise<void> {
-  return deleteChiTietKiemKeSupabase(id_chi_tiet);
+  return deleteChiTietKiemKeDb(id_chi_tiet);
 }
 
 export async function themChiTietPhatHien(
@@ -93,17 +93,17 @@ export async function themChiTietPhatHien(
   payload: ThemChiTietPhatHienPayload,
   id_nguoi_kiem: string
 ): Promise<ChiTietKiemKe> {
-  return themChiTietPhatHienSupabase(id_dot_kiem_ke, payload, id_nguoi_kiem);
+  return themChiTietPhatHienDb(id_dot_kiem_ke, payload, id_nguoi_kiem);
 }
 
 export async function capNhatSoTheoKetQua(id_chi_tiet: string): Promise<void> {
-  return capNhatSoTheoKetQuaSupabase(id_chi_tiet);
+  return capNhatSoTheoKetQuaDb(id_chi_tiet);
 }
 
 export async function hoanThanhDot(id_dot_kiem_ke: string): Promise<DotKiemKe> {
-  return hoanThanhDotSupabase(id_dot_kiem_ke);
+  return hoanThanhDotDb(id_dot_kiem_ke);
 }
 
 export { getNextMaDotDotKiemKeTaiSan };
 
-export { getDotKiemKePageSupabase } from './kiem-ke-tai-san-supabase.service';
+export { getDotKiemKePageDb } from './kiem-ke-tai-san-db.service';

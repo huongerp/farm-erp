@@ -6,7 +6,7 @@ import Button from '../../../../components/ui/Button';
 import { cn } from '../../../../lib/utils';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
-import { useHangHoaRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
+import { useHangHoaRefQuery } from '../../../../lib/hooks/use-ref-queries';
 import Select from '../../../../components/ui/Select';
 import type { ChiTietKiemKeKho } from '../core/types';
 

@@ -3,18 +3,18 @@ import type { FarmThuHoach } from '../core/types';
 import type { PaginatedTableResult } from '../../../../lib/db';
 import type { ThuHoachListServerQuery } from './thu-hoach-list-query';
 import {
-  getAllThuHoachSupabase,
-  getThuHoachPageSupabase,
-  getThuHoachTomTatSupabase,
-  fetchAllThuHoachForListQuery as fetchAllThuHoachForListQuerySupabase,
-  getThuHoachByIdSupabase,
-  createThuHoachSupabase,
-  updateThuHoachKeHoachSupabase,
-  updateThuHoachThucTeSupabase,
-  deleteThuHoachSupabase,
-  deleteThuHoachManySupabase,
-  appendThuHoachTraoDoiSupabase,
-} from './thu-hoach-supabase.service';
+  getAllThuHoachDb,
+  getThuHoachPageDb,
+  getThuHoachTomTatDb,
+  fetchAllThuHoachForListQuery as fetchAllThuHoachForListQueryDb,
+  getThuHoachByIdDb,
+  createThuHoachDb,
+  updateThuHoachKeHoachDb,
+  updateThuHoachThucTeDb,
+  deleteThuHoachDb,
+  deleteThuHoachManyDb,
+  appendThuHoachTraoDoiDb,
+} from './thu-hoach-db.service';
 import { getEmployeesRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
 
 async function enrichTenNguoiTao(items: FarmThuHoach[]): Promise<FarmThuHoach[]> {
@@ -34,7 +34,7 @@ async function enrichTenNguoiTao(items: FarmThuHoach[]): Promise<FarmThuHoach[]>
 export async function getThuHoachPage(
   query: ThuHoachListServerQuery
 ): Promise<PaginatedTableResult<FarmThuHoach>> {
-  const page = await getThuHoachPageSupabase(query);
+  const page = await getThuHoachPageDb(query);
   return { ...page, data: await enrichTenNguoiTao(page.data) };
 }
 
@@ -42,7 +42,7 @@ export async function getThuHoachPage(
 export async function fetchAllThuHoachForListQuery(
   query: ThuHoachListServerQuery
 ): Promise<FarmThuHoach[]> {
-  return enrichTenNguoiTao(await fetchAllThuHoachForListQuerySupabase(query));
+  return enrichTenNguoiTao(await fetchAllThuHoachForListQueryDb(query));
 }
 
 /** Bản rút gọn: chip lọc năm/tuần/chi nhánh và gợi ý chi nhánh khi thêm phiếu. */
@@ -60,7 +60,7 @@ export async function getThuHoachTomTat(
   viewAll: boolean,
   allowedBranchIds: string[]
 ): Promise<ThuHoachTomTat[]> {
-  const rows = await getThuHoachTomTatSupabase(viewAll, allowedBranchIds);
+  const rows = await getThuHoachTomTatDb(viewAll, allowedBranchIds);
   return rows.map((r) => ({
     id: String(r.id),
     nam: r.nam,
@@ -73,12 +73,12 @@ export async function getThuHoachTomTat(
 }
 
 export async function getAllThuHoach(): Promise<FarmThuHoach[]> {
-  const rows = await getAllThuHoachSupabase();
+  const rows = await getAllThuHoachDb();
   return enrichTenNguoiTao(rows);
 }
 
 export async function getThuHoachById(id: string): Promise<FarmThuHoach | null> {
-  const row = await getThuHoachByIdSupabase(id);
+  const row = await getThuHoachByIdDb(id);
   if (!row) return null;
   const [enriched] = await enrichTenNguoiTao([row]);
   return enriched;
@@ -89,14 +89,14 @@ export async function appendThuHoachTraoDoi(
   noiDung: string,
   tenNguoiGhi: string
 ): Promise<FarmThuHoach> {
-  const row = await appendThuHoachTraoDoiSupabase(id, noiDung, tenNguoiGhi);
+  const row = await appendThuHoachTraoDoiDb(id, noiDung, tenNguoiGhi);
   const [enriched] = await enrichTenNguoiTao([row]);
   return enriched;
 }
 
 export const createThuHoach = (values: ThuHoachKeHoachFormValues, idNguoiTao: string | null) =>
-  createThuHoachSupabase(values, idNguoiTao);
-export const updateThuHoachKeHoach = updateThuHoachKeHoachSupabase;
-export const updateThuHoachThucTe = updateThuHoachThucTeSupabase;
-export const deleteThuHoach = deleteThuHoachSupabase;
-export const deleteThuHoachMany = deleteThuHoachManySupabase;
+  createThuHoachDb(values, idNguoiTao);
+export const updateThuHoachKeHoach = updateThuHoachKeHoachDb;
+export const updateThuHoachThucTe = updateThuHoachThucTeDb;
+export const deleteThuHoach = deleteThuHoachDb;
+export const deleteThuHoachMany = deleteThuHoachManyDb;

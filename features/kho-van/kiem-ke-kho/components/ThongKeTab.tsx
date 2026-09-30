@@ -8,7 +8,7 @@ import {
   exportKiemKeKhoThongKeToXLSX,
 } from '../utils/export-kiem-ke-kho-thong-ke';
 import { useKiemKeKhoViewScope } from '../hooks/use-kiem-ke-kho-view-scope';
-import { useEmployeesRefQuery } from '@/lib/hooks/use-supabase-ref-queries';
+import { useEmployeesRefQuery } from '@/lib/hooks/use-ref-queries';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import EmptyState from '../../../../components/shared/EmptyState';

@@ -20,7 +20,7 @@ const TAG_DOI_TAC_COLUMNS = 'id,ten_tag';
 const DOI_TAC_ROW_COLUMNS =
   'id,ma_doi_tac,ten_doi_tac,loai_doi_tac,id_nhom,dia_chi,dien_thoai,email,mo_ta,ngan_hang_bin,so_tai_khoan,chu_tai_khoan,tag_ids,trang_thai,thu_tu,tg_tao,tg_cap_nhat';
 
-/** Row từ Supabase fp_mh_nhom_doi_tac */
+/** Row từ DB fp_mh_nhom_doi_tac */
 interface NhomRow {
   id: number;
   ma_nhom: string;
@@ -32,13 +32,13 @@ interface NhomRow {
   tg_cap_nhat: string | null;
 }
 
-/** Row từ Supabase fp_mh_tag_doi_tac */
+/** Row từ DB fp_mh_tag_doi_tac */
 interface TagRow {
   id: number;
   ten_tag: string;
 }
 
-/** Row từ Supabase fp_mh_danh_sach_doi_tac */
+/** Row từ DB fp_mh_danh_sach_doi_tac */
 interface DoiTacRow {
   id: number;
   ma_doi_tac: string;

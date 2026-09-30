@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 const DEFAULT_DEBOUNCE_MS = 300;
 
@@ -22,7 +22,10 @@ export function useSearchInputCommit(options: {
   const [inputValue, setInputValue] = useState(committedTerm);
 
   const commitRef = useRef(commit);
-  commitRef.current = commit;
+  // Cập nhật sau render (không ghi ref lúc render); layout effect chạy trước mọi event/timer.
+  useLayoutEffect(() => {
+    commitRef.current = commit;
+  });
   // Giá trị store hiện tại, đọc được trong timer mà không cần re-tạo callback.
   const committedRef = useRef(committedTerm);
   // Giá trị cuối cùng do CHÍNH hook này commit — để phân biệt thay đổi từ bên ngoài.

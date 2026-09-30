@@ -2,7 +2,6 @@ import React, { Suspense, lazy, useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import Layout from './components/layout/Layout';
-import Login from './pages/Login';
 import ResetPassword from './pages/ResetPassword';
 import ConfirmDialog from './components/shared/ConfirmDialog';
 import PwaRegister from './components/shared/PwaRegister';
@@ -27,6 +26,8 @@ import i18n from './lib/i18n';
 import { lazyWithFeatureI18n } from './lib/lazy-with-feature-i18n';
 import { loadGuideI18n } from './lib/feature-i18n';
 
+// Login dùng react-hook-form + zod: nạp lười để người đã đăng nhập không phải tải hai thư viện này.
+const Login = lazy(() => import('./pages/Login'));
 const Home = lazy(() => import('./pages/Home'));
 const NotificationPage = lazy(() => import('./pages/NotificationPage'));
 const SystemDashboard = lazy(() => import('./pages/dashboards/SystemDashboard'));
@@ -208,7 +209,7 @@ const App = () => {
       <PwaRegister />
       <Toaster position="top-right" richColors theme={resolvedTheme} />
       <Routes>
-        <Route path="/dang-nhap" element={<Login />} />
+        <Route path="/dang-nhap" element={<Suspense fallback={<PageFallback />}><Login /></Suspense>} />
         <Route path="/dat-lai-mat-khau" element={<ResetPassword />} />
         <Route path="/login" element={<Navigate to="/dang-nhap" replace />} />
         <Route path="/phieu-luong/:id" element={<ProtectedRoute><Suspense fallback={<PageFallback />}><PayslipPreviewPage /></Suspense></ProtectedRoute>} />

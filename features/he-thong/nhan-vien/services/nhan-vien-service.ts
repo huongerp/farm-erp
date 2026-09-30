@@ -15,7 +15,9 @@ import { postgrestQuotedIlikePattern } from '../../../../lib/postgrest-or-ilike'
 import { chunkBy } from '../../../../lib/import-bulk';
 import { normalizeText } from '../../../../lib/import-common';
 import type { ImportErrorRow } from '../../../../lib/import-types';
-import { planNhanVienImport, type NhanVienImportInput } from '../utils/import-nhan-vien';
+// Nạp động trong importEmployees: import-nhan-vien kéo theo zod (employeeSchema), mà service này
+// nằm trong luồng đăng nhập (lib/auth.ts) → import tĩnh sẽ đẩy zod vào chunk chính.
+import type { NhanVienImportInput } from '../utils/import-nhan-vien';
 
 const TABLE = 'fp_var_nhan_vien';
 
@@ -368,7 +370,7 @@ export type EmployeeRef = {
 };
 
 /**
- * Đọc từ VIEW `v_nhan_vien_ref` (xem `docs/supabase-v_nhan_vien_ref.sql`) thay vì
+ * Đọc từ VIEW `v_nhan_vien_ref` (xem `docs/db-schema-baseline.sql`) thay vì
  * `fp_var_nhan_vien` trực tiếp. View chỉ có 4 cột → payload nhỏ hơn, dễ áp RLS sau này.
  * Nếu view chưa được tạo, fallback về bảng gốc để app không gãy trên môi trường cũ.
  */
@@ -468,7 +470,7 @@ export type EmployeeMutationResult = Employee & {
  * toàn (và lần thử lại sẽ vướng "email trùng"). Trả về lỗi để hook cảnh báo,
  * admin đặt lại mật khẩu bằng cách sửa hồ sơ.
  *
- * Thường gặp khi chưa chạy docs/supabase-fp_var_nhan_vien_mat_khau.sql.
+ * Thường gặp khi DB thiếu RPC mật khẩu (xem docs/db-schema-baseline.sql).
  */
 async function applyMatKhau(
   emp: EmployeeMutationResult,
@@ -486,7 +488,7 @@ async function applyMatKhau(
 export const createEmployee = async (data: EmployeeFormValues): Promise<EmployeeMutationResult> => {
   const emailVal = data.email?.trim().toLowerCase();
   if (emailVal) {
-    // `.eq` nhanh hơn `.ilike` vì dùng được index (xem docs/supabase-fp_var_nhan_vien email lowercase).
+    // `.eq` nhanh hơn `.ilike` vì dùng được index (index email lowercase, xem docs/db-schema-baseline.sql).
     const { data: dup } = await db
       .from(TABLE)
       .select('id')
@@ -540,6 +542,7 @@ export const importEmployees = async (
     ((data ?? []) as { email: string | null }[]).forEach((r) => r.email && existingEmails.push(r.email));
   }
 
+  const { planNhanVienImport } = await import('../utils/import-nhan-vien');
   const { toCreate, errors } = planNhanVienImport(rows, { ...refs, existingEmails });
   const passwordErrors: string[] = [];
   let created = 0;
@@ -644,5 +647,5 @@ export const deleteEmployees = async (ids: string[]): Promise<void> => {
 };
 
 export const restoreEmployees = async (_employees: Employee[]): Promise<void> => {
-  // No-op when using Supabase
+  // No-op
 };

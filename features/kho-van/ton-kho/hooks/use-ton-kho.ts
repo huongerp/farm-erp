@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  getTonKhoMatrixSupabase,
+  getTonKhoMatrixDb,
   getTonKhoTheoHangHoa,
   getDinhMucTonKho,
   getDinhMucList,
@@ -97,7 +97,7 @@ export function useAllTonKho() {
     queryKey: tonKhoMatrixQueryKey(matrixScope),
     queryFn: () => {
       if (matrixScope === 'wait') return Promise.resolve([]);
-      return getTonKhoMatrixSupabase(matrixScope);
+      return getTonKhoMatrixDb(matrixScope);
     },
     enabled,
     staleTime: 1000 * 60 * 5,

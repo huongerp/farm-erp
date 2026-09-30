@@ -42,7 +42,7 @@ brew install postgrest          # hoặc dùng bản Docker, xem phần chạy t
 npm ci --prefix services/auth
 ```
 
-Yêu cầu kèm theo: `.env` phải có `VPS_DB_URL`, `PGRST_AUTHENTICATOR_PASSWORD`, `AUTH_SERVICE_DB_PASSWORD`, `PGRST_JWT_SECRET`. Hai mật khẩu role và `PGRST_JWT_SECRET` phải khớp giá trị đã đặt lúc chạy `docs/vps-01-prepare-target.sql` / `docs/vps-04-auth-schema.sql` trên VPS. Cả hai service nối thẳng ra Postgres trên VPS qua host **ngoài**, nên port 5432 phải đang mở (đóng lại theo `docs/VPS_CUTOVER.md` mục 7 thì cách này cũng dừng theo). Thiếu biến nào plugin chỉ cảnh báo rồi bỏ qua, SPA vẫn chạy.
+Yêu cầu kèm theo: `.env` phải có `VPS_DB_URL`, `PGRST_AUTHENTICATOR_PASSWORD`, `AUTH_SERVICE_DB_PASSWORD`, `PGRST_JWT_SECRET`. Hai mật khẩu role và `PGRST_JWT_SECRET` phải khớp giá trị đã đặt cho role `authenticator` / `auth_service` trên VPS (danh sách role ở đầu `docs/db-schema-baseline.sql`). Cả hai service nối thẳng ra Postgres trên VPS qua host **ngoài**, nên port 5432 phải đang mở (đóng lại theo `docs/VPS_CUTOVER.md` mục 7 thì cách này cũng dừng theo). Thiếu biến nào plugin chỉ cảnh báo rồi bỏ qua, SPA vẫn chạy.
 
 Kiểm tra nhanh sau khi dev server lên:
 

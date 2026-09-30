@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import type { ImportColumn, ImportReferenceSheet, ImportSampleRow } from '../../../../components/shared/LazyImportDialog';
 import type { ImportErrorRow, ImportSummary } from '../../../../lib/import-types';
 import { useAuthStore } from '../../../../store/useStore';
@@ -139,9 +140,17 @@ export function usePhieuKhoPTImport(khoList: Kho[]) {
         nguoiTao: { id: Number.isFinite(idRaw) ? idRaw : null, ten },
       });
       setImportErrors(result.errors);
+      if (result.warnings.length > 0) {
+        // Phiếu vẫn được tạo; gom cảnh báo tồn âm vào một toast, tối đa 3 phiếu để không quá dài.
+        const shown = result.warnings.slice(0, 3).join('; ');
+        const detail = result.warnings.length > 3 ? `${shown}; …` : shown;
+        toast.warning(t('phieuKhoPhanThuoc.import.warnTonAm', { count: result.warnings.length, detail }), {
+          duration: 10000,
+        });
+      }
       return { created: result.created, updated: 0 };
     },
-    [importMutation, user]
+    [importMutation, user, t]
   );
 
   return {

@@ -29,7 +29,7 @@ const HANG_HOA_LIST_COLUMNS =
 const HANG_HOA_DETAIL_COLUMNS =
   'id,danh_muc_id,danh_muc_cha_id,ma_hang_hoa,ten_hang_hoa,dvt,pham_cap,thu_tu,trang_thai,don_gia,mo_ta,hinh_anh,tg_tao,tg_cap_nhat';
 
-/** Row từ Supabase fp_mh_danh_sach_hang_hoa */
+/** Row từ DB fp_mh_danh_sach_hang_hoa */
 interface HangHoaRow {
   id: number;
   danh_muc_id: number | null;

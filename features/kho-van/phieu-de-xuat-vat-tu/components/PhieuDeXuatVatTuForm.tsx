@@ -17,11 +17,11 @@ import type { EmployeeRef } from '../../../he-thong/nhan-vien/services/nhan-vien
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { useAuthStore } from '../../../../store/useStore';
 import { useCreatePhieuDeXuatVatTu, useUpdatePhieuDeXuatVatTu } from '../hooks/use-phieu-de-xuat-vat-tu';
-import { useHangHoaRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
+import { useHangHoaRefQuery } from '../../../../lib/hooks/use-ref-queries';
 import type { HangHoaRefLite } from '../../danh-sach-hang-hoa/services/hang-hoa-service';
 import { useCauHinhDeXuatVatTu } from '../../../mua-hang/thiet-lap-de-xuat-vat-tu/hooks/use-cau-hinh-de-xuat-vat-tu';
 import { useTienDoMuaHangList } from '../../../mua-hang/thiet-lap-de-xuat-vat-tu/hooks/use-tien-do-mua-hang';
-import { getNextSoPhieuPhieuDeXuatVatTuRpc } from '../services/phieu-de-xuat-vat-tu-supabase.service';
+import { getNextSoPhieuPhieuDeXuatVatTuRpc } from '../services/phieu-de-xuat-vat-tu-db.service';
 import GenericDrawer, { DRAWER_WIDTH_DE_XUAT } from '../../../../components/shared/GenericDrawer';
 import FormSection from '../../../../components/shared/FormSection';
 import FormGrid from '../../../../components/shared/FormGrid';

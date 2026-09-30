@@ -1,56 +1,56 @@
 /**
- * Service phiếu đề xuất vật tư – sử dụng Supabase (fp_farm_de_xuat_mua_hang, fp_farm_de_xuat_mua_hang_chi_tiet).
+ * Service phiếu đề xuất vật tư – đọc/ghi DB (fp_farm_de_xuat_mua_hang, fp_farm_de_xuat_mua_hang_chi_tiet).
  */
 import type { PaginatedTableResult } from '../../../../lib/db';
 import type { DeXuatMuaHangFormValues } from '../core/schema';
 import type { DeXuatMuaHang, DeXuatMuaHangChiTietRow } from '../core/types';
 import {
-  getAllDeXuatMuaHangSupabase,
-  getDeXuatMuaHangByIdSupabase,
-  getDeXuatMuaHangPageSupabase,
-  fetchAllDeXuatMuaHangForListQuerySupabase,
-  createDeXuatMuaHangSupabase,
-  updateDeXuatMuaHangSupabase,
-  deleteDeXuatMuaHangSupabase,
-  deleteDeXuatMuaHangManySupabase,
-  updateDeXuatMuaHangTrangThaiSupabase,
-  updateDeXuatMuaHangTrangThaiManySupabase,
-  getAllDeXuatMuaHangChiTietSupabase,
-  getDeXuatMuaHangChiTietPageSupabase,
-  fetchAllDeXuatMuaHangChiTietForListQuerySupabase,
-} from './de-xuat-mua-hang-supabase.service';
+  getAllDeXuatMuaHangDb,
+  getDeXuatMuaHangByIdDb,
+  getDeXuatMuaHangPageDb,
+  fetchAllDeXuatMuaHangForListQueryDb,
+  createDeXuatMuaHangDb,
+  updateDeXuatMuaHangDb,
+  deleteDeXuatMuaHangDb,
+  deleteDeXuatMuaHangManyDb,
+  updateDeXuatMuaHangTrangThaiDb,
+  updateDeXuatMuaHangTrangThaiManyDb,
+  getAllDeXuatMuaHangChiTietDb,
+  getDeXuatMuaHangChiTietPageDb,
+  fetchAllDeXuatMuaHangChiTietForListQueryDb,
+} from './de-xuat-mua-hang-db.service';
 import type { DeXuatMuaHangChiTietListServerQuery, DeXuatMuaHangListServerQuery } from './de-xuat-mua-hang-list-query';
 import { buildDeXuatMuaHangChiTietListServerQuery, buildDeXuatMuaHangListServerQuery } from './de-xuat-mua-hang-list-query';
 
 export type { DeXuatMuaHangChiTietListServerQuery, DeXuatMuaHangListServerQuery };
 export { buildDeXuatMuaHangChiTietListServerQuery, buildDeXuatMuaHangListServerQuery };
 
-export const getAllDeXuatMuaHang = getAllDeXuatMuaHangSupabase;
+export const getAllDeXuatMuaHang = getAllDeXuatMuaHangDb;
 export async function getDeXuatMuaHangPage(
   page: number,
   pageSize?: number,
   listQuery?: DeXuatMuaHangListServerQuery
 ): Promise<PaginatedTableResult<DeXuatMuaHang>> {
-  return getDeXuatMuaHangPageSupabase(page, pageSize ?? 50, listQuery);
+  return getDeXuatMuaHangPageDb(page, pageSize ?? 50, listQuery);
 }
-export const fetchAllDeXuatMuaHangForListQuery = fetchAllDeXuatMuaHangForListQuerySupabase;
-export const getAllDeXuatMuaHangChiTiet = getAllDeXuatMuaHangChiTietSupabase;
+export const fetchAllDeXuatMuaHangForListQuery = fetchAllDeXuatMuaHangForListQueryDb;
+export const getAllDeXuatMuaHangChiTiet = getAllDeXuatMuaHangChiTietDb;
 export async function getDeXuatMuaHangChiTietPage(
   page: number,
   pageSize?: number,
   listQuery?: DeXuatMuaHangChiTietListServerQuery
 ): Promise<PaginatedTableResult<DeXuatMuaHangChiTietRow>> {
-  return getDeXuatMuaHangChiTietPageSupabase(page, pageSize ?? 100, listQuery);
+  return getDeXuatMuaHangChiTietPageDb(page, pageSize ?? 100, listQuery);
 }
-export const fetchAllDeXuatMuaHangChiTietForListQuery = fetchAllDeXuatMuaHangChiTietForListQuerySupabase;
-export const getDeXuatMuaHangById = getDeXuatMuaHangByIdSupabase;
-export const createDeXuatMuaHang = (data: DeXuatMuaHangFormValues) => createDeXuatMuaHangSupabase(data);
-export const updateDeXuatMuaHang = updateDeXuatMuaHangSupabase;
-export const deleteDeXuatMuaHang = deleteDeXuatMuaHangSupabase;
-export const deleteDeXuatMuaHangMany = deleteDeXuatMuaHangManySupabase;
-export const updateDeXuatMuaHangTrangThai = updateDeXuatMuaHangTrangThaiSupabase;
-export const updateDeXuatMuaHangTrangThaiMany = updateDeXuatMuaHangTrangThaiManySupabase;
+export const fetchAllDeXuatMuaHangChiTietForListQuery = fetchAllDeXuatMuaHangChiTietForListQueryDb;
+export const getDeXuatMuaHangById = getDeXuatMuaHangByIdDb;
+export const createDeXuatMuaHang = (data: DeXuatMuaHangFormValues) => createDeXuatMuaHangDb(data);
+export const updateDeXuatMuaHang = updateDeXuatMuaHangDb;
+export const deleteDeXuatMuaHang = deleteDeXuatMuaHangDb;
+export const deleteDeXuatMuaHangMany = deleteDeXuatMuaHangManyDb;
+export const updateDeXuatMuaHangTrangThai = updateDeXuatMuaHangTrangThaiDb;
+export const updateDeXuatMuaHangTrangThaiMany = updateDeXuatMuaHangTrangThaiManyDb;
 export type {
   UpdateDeXuatMuaHangTrangThaiOptions,
   UpdateDeXuatMuaHangTrangThaiManyResult,
-} from './de-xuat-mua-hang-supabase.service';
+} from './de-xuat-mua-hang-db.service';

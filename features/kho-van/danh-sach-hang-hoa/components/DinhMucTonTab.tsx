@@ -23,7 +23,7 @@ import DetailField from '../../../../components/shared/DetailField';
 import { useDinhMucList, useCreateDinhMucTonKho, useUpdateDinhMucTonKho, useDeleteDinhMucTonKho } from '../../ton-kho/hooks/use-ton-kho';
 import { getKhoList } from '../../danh-sach-kho/services/kho-service';
 import type { HangHoaRefLite } from '../services/hang-hoa-service';
-import { useHangHoaRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
+import { useHangHoaRefQuery } from '../../../../lib/hooks/use-ref-queries';
 import type { DinhMucTonKhoRow } from '../../phieu-kho/services/ton-kho-service';
 import type { Kho } from '../../danh-sach-kho/core/types';
 import { useConfirmStore } from '../../../../store/useConfirmStore';

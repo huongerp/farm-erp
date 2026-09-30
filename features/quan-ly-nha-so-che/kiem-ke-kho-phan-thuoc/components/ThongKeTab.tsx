@@ -9,7 +9,7 @@ import {
 } from '../utils/export-kiem-ke-pt-thong-ke';
 import { useKiemKeKhoPTViewScope } from '../hooks/use-kiem-ke-pt-view-scope';
 import { khoChoPhepTheoPhamVi } from '../services/kiem-ke-pt-service';
-import { useEmployeesRefQuery } from '@/lib/hooks/use-supabase-ref-queries';
+import { useEmployeesRefQuery } from '@/lib/hooks/use-ref-queries';
 import { useKhoList } from '../../../kho-van/danh-sach-kho/hooks/use-kho';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import EmptyState from '../../../../components/shared/EmptyState';

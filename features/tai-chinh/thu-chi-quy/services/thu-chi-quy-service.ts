@@ -16,9 +16,9 @@ export {
   khoaThuChiQuy,
   xinMoThuChiQuy,
   xuLyMoThuChiQuy,
-} from './thu-chi-quy-supabase.service';
+} from './thu-chi-quy-db.service';
 export type {
   ChungTuRef,
   XinMoThuChiQuyExtra,
   XuLyMoThuChiQuyExtra,
-} from './thu-chi-quy-supabase.service';
+} from './thu-chi-quy-db.service';

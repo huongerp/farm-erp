@@ -25,7 +25,7 @@ import type { DoiTacFormValues } from '../core/schema';
 import type { NhomDoiTacFormValues } from '../services/doi-tac-service';
 import type { LoaiDoiTac } from '../core/types';
 import i18n from '../../../../lib/i18n';
-import { DOI_TAC_REF_QUERY_KEY } from '../../../../lib/hooks/use-supabase-ref-queries';
+import { DOI_TAC_REF_QUERY_KEY } from '../../../../lib/hooks/use-ref-queries';
 import { invalidateRefCache } from '../../../../lib/ref-cache';
 
 const QUERY_KEY_DOI_TAC = ['doiTac'] as const;

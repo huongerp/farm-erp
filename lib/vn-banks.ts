@@ -1,6 +1,6 @@
 /**
  * Danh sách ngân hàng Việt Nam theo chuẩn Napas247 / VietQR.
- *  - `bin`: 6 chữ số (lưu vào Supabase, dùng build URL VietQR.io).
+ *  - `bin`: 6 chữ số (lưu vào DB, dùng build URL VietQR.io).
  *  - `code`: mã viết tắt phổ biến.
  *  - `ten`: tên đầy đủ tiếng Việt.
  *  - `shortName`: tên gọi ngắn quen thuộc (hiển thị UI).

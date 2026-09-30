@@ -15,7 +15,7 @@ import {
 import { useDonDatHangViewScope } from '../hooks/use-don-dat-hang-view-scope';
 import { buildDonDatHangListServerQuery, fetchAllDonDatHangForListQuery } from '../services/don-dat-hang-service';
 import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
-import { useDoiTacRefQuery, useEmployeesRefQuery, usePhieuDeXuatSoPhieuMinimalQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
+import { useDoiTacRefQuery, useEmployeesRefQuery, usePhieuDeXuatSoPhieuMinimalQuery } from '../../../../lib/hooks/use-ref-queries';
 import { useKhoList } from '../../../kho-van/danh-sach-kho/hooks/use-kho';
 import { useDonDatHangStore } from '../store/useDonDatHangStore';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
@@ -30,7 +30,7 @@ import DonDatHangDetail from './DonDatHangDetail';
 import ExportDialog from '../../../../components/shared/LazyExportDialog';
 import PhieuKhoForm from '../../../kho-van/phieu-kho/components/PhieuKhoForm';
 import type { PhieuKhoFormValues } from '../../../kho-van/phieu-kho/core/schema';
-import type { DonDatHangSoPoOption } from '../services/don-dat-hang-supabase.service';
+import type { DonDatHangSoPoOption } from '../services/don-dat-hang-db.service';
 import { useExportData } from '../../../../lib/useExportData';
 import {
   DON_DAT_HANG_LIST_EXPORT_KEYS,

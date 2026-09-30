@@ -1,6 +1,6 @@
 import type { TrangThai } from '../../../../lib/constants';
 
-/** Phòng ban – 1 cấp, đồng bộ bảng fp_var_phong_ban (Supabase) */
+/** Phòng ban – 1 cấp, đồng bộ bảng fp_var_phong_ban */
 export interface Department {
   id: string;
   ten_phong_ban: string;
@@ -9,7 +9,7 @@ export interface Department {
   trang_thai: TrangThai;
   tg_tao: string;
   tg_cap_nhat: string | null;
-  /** Cấp đơn vị (vd. 1 = phòng) — từ Supabase nếu có */
+  /** Cấp đơn vị (vd. 1 = phòng) — từ DB nếu có */
   cap_do?: number | null;
 }
 

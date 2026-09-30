@@ -12,7 +12,7 @@ import { cn } from '../../../../lib/utils';
 import { useTaiSanList } from '../../danh-muc-tai-san/hooks/use-danh-muc-tai-san';
 import { useAssetStorageLocations } from '../../thiet-lap-tai-san/hooks/use-noi-luu';
 import { useAssetStatuses } from '../../thiet-lap-tai-san/hooks/use-trang-thai';
-import { useEmployeesRefQuery } from '@/lib/hooks/use-supabase-ref-queries';
+import { useEmployeesRefQuery } from '@/lib/hooks/use-ref-queries';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import type { ThemChiTietPhatHienPayload } from '../services/kiem-ke-tai-san-service';
 

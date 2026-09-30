@@ -4,18 +4,18 @@ import { getEmployeesRef } from '../../../he-thong/nhan-vien/services/nhan-vien-
 import type { PaginatedTableResult } from '../../../../lib/db';
 import type { BaoCaoSoCheListServerQuery } from './bao-cao-so-che-list-query';
 import {
-  getAllBaoCaoSoCheSupabase,
-  getBaoCaoSoChePageSupabase,
-  getBaoCaoSoCheTomTatSupabase,
-  fetchAllBaoCaoSoCheForListQuery as fetchAllBaoCaoSoCheForListQuerySupabase,
-  getBaoCaoSoCheByIdSupabase,
-  createBaoCaoSoCheSupabase,
-  updateBaoCaoSoCheSupabase,
-  deleteBaoCaoSoCheSupabase,
-  deleteBaoCaoSoCheManySupabase,
-  updateBaoCaoSoCheTrangThaiSupabase,
-  updateBaoCaoSoCheTrangThaiManySupabase,
-} from './bao-cao-so-che-supabase.service';
+  getAllBaoCaoSoCheDb,
+  getBaoCaoSoChePageDb,
+  getBaoCaoSoCheTomTatDb,
+  fetchAllBaoCaoSoCheForListQuery as fetchAllBaoCaoSoCheForListQueryDb,
+  getBaoCaoSoCheByIdDb,
+  createBaoCaoSoCheDb,
+  updateBaoCaoSoCheDb,
+  deleteBaoCaoSoCheDb,
+  deleteBaoCaoSoCheManyDb,
+  updateBaoCaoSoCheTrangThaiDb,
+  updateBaoCaoSoCheTrangThaiManyDb,
+} from './bao-cao-so-che-db.service';
 
 async function enrichTenNguoiTao(items: FarmBaoCaoSoChe[]): Promise<FarmBaoCaoSoChe[]> {
   if (items.length === 0) return items;
@@ -34,7 +34,7 @@ async function enrichTenNguoiTao(items: FarmBaoCaoSoChe[]): Promise<FarmBaoCaoSo
 export async function getBaoCaoSoChePage(
   query: BaoCaoSoCheListServerQuery
 ): Promise<PaginatedTableResult<FarmBaoCaoSoChe>> {
-  const page = await getBaoCaoSoChePageSupabase(query);
+  const page = await getBaoCaoSoChePageDb(query);
   return { ...page, data: await enrichTenNguoiTao(page.data) };
 }
 
@@ -42,7 +42,7 @@ export async function getBaoCaoSoChePage(
 export async function fetchAllBaoCaoSoCheForListQuery(
   query: BaoCaoSoCheListServerQuery
 ): Promise<FarmBaoCaoSoChe[]> {
-  return enrichTenNguoiTao(await fetchAllBaoCaoSoCheForListQuerySupabase(query));
+  return enrichTenNguoiTao(await fetchAllBaoCaoSoCheForListQueryDb(query));
 }
 
 /** Bản rút gọn của một phiếu — đủ cho chip lọc, gợi ý chi nhánh và chặn trùng. */
@@ -63,7 +63,7 @@ export async function getBaoCaoSoCheTomTat(
   viewAll: boolean,
   allowedBranchIds: string[]
 ): Promise<BaoCaoSoCheTomTat[]> {
-  const rows = await getBaoCaoSoCheTomTatSupabase(viewAll, allowedBranchIds);
+  const rows = await getBaoCaoSoCheTomTatDb(viewAll, allowedBranchIds);
   return rows.map((r) => ({
     id: String(r.id),
     ngay: typeof r.ngay === 'string' ? r.ngay.slice(0, 10) : String(r.ngay),
@@ -78,12 +78,12 @@ export async function getBaoCaoSoCheTomTat(
 }
 
 export async function getAllBaoCaoSoChe(): Promise<FarmBaoCaoSoChe[]> {
-  const rows = await getAllBaoCaoSoCheSupabase();
+  const rows = await getAllBaoCaoSoCheDb();
   return enrichTenNguoiTao(rows);
 }
 
 export async function getBaoCaoSoCheById(id: string): Promise<FarmBaoCaoSoChe | null> {
-  const row = await getBaoCaoSoCheByIdSupabase(id);
+  const row = await getBaoCaoSoCheByIdDb(id);
   if (!row) return null;
   const [enriched] = await enrichTenNguoiTao([row]);
   return enriched;
@@ -93,37 +93,37 @@ export async function createBaoCaoSoChe(
   values: BaoCaoSoCheFormValues,
   idNguoiTao: string | null
 ): Promise<FarmBaoCaoSoChe> {
-  const row = await createBaoCaoSoCheSupabase(values, idNguoiTao);
+  const row = await createBaoCaoSoCheDb(values, idNguoiTao);
   const [enriched] = await enrichTenNguoiTao([row]);
   return enriched;
 }
 
 export async function updateBaoCaoSoChe(id: string, values: BaoCaoSoCheFormValues): Promise<FarmBaoCaoSoChe> {
-  const row = await updateBaoCaoSoCheSupabase(id, values);
+  const row = await updateBaoCaoSoCheDb(id, values);
   const [enriched] = await enrichTenNguoiTao([row]);
   return enriched;
 }
 
 export async function deleteBaoCaoSoChe(id: string): Promise<void> {
-  await deleteBaoCaoSoCheSupabase(id);
+  await deleteBaoCaoSoCheDb(id);
 }
 
 export async function deleteBaoCaoSoCheMany(ids: string[]): Promise<void> {
-  await deleteBaoCaoSoCheManySupabase(ids);
+  await deleteBaoCaoSoCheManyDb(ids);
 }
 
 export async function updateBaoCaoSoCheTrangThaiMany(
   ids: string[],
   trang_thai: TrangThaiBaoCaoSoChePhieu
 ): Promise<void> {
-  await updateBaoCaoSoCheTrangThaiManySupabase(ids, trang_thai);
+  await updateBaoCaoSoCheTrangThaiManyDb(ids, trang_thai);
 }
 
 export async function updateBaoCaoSoCheTrangThai(
   id: string,
   trang_thai: TrangThaiBaoCaoSoChePhieu
 ): Promise<FarmBaoCaoSoChe> {
-  const row = await updateBaoCaoSoCheTrangThaiSupabase(id, trang_thai);
+  const row = await updateBaoCaoSoCheTrangThaiDb(id, trang_thai);
   const [enriched] = await enrichTenNguoiTao([row]);
   return enriched;
 }

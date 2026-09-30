@@ -1,24 +1,24 @@
 import type { AssetStorageLocation } from '../core/types';
 import type { AssetStorageLocationFormValues } from '../core/schema';
 import {
-  getAssetStorageLocationsSupabase,
-  createAssetStorageLocationSupabase,
-  updateAssetStorageLocationSupabase,
-  updateAssetStorageLocationStatusSupabase,
-  deleteAssetStorageLocationsSupabase,
-} from './noi-luu-supabase.service';
+  getAssetStorageLocationsDb,
+  createAssetStorageLocationDb,
+  updateAssetStorageLocationDb,
+  updateAssetStorageLocationStatusDb,
+  deleteAssetStorageLocationsDb,
+} from './noi-luu-db.service';
 
-export const getAssetStorageLocations = getAssetStorageLocationsSupabase;
+export const getAssetStorageLocations = getAssetStorageLocationsDb;
 
 export const createAssetStorageLocation = (
   data: AssetStorageLocationFormValues
-): Promise<AssetStorageLocation> => createAssetStorageLocationSupabase(data);
+): Promise<AssetStorageLocation> => createAssetStorageLocationDb(data);
 
 export const updateAssetStorageLocation = (
   id: string,
   data: AssetStorageLocationFormValues
-): Promise<AssetStorageLocation> => updateAssetStorageLocationSupabase(id, data);
+): Promise<AssetStorageLocation> => updateAssetStorageLocationDb(id, data);
 
-export const updateAssetStorageLocationStatus = updateAssetStorageLocationStatusSupabase;
+export const updateAssetStorageLocationStatus = updateAssetStorageLocationStatusDb;
 
-export const deleteAssetStorageLocations = deleteAssetStorageLocationsSupabase;
+export const deleteAssetStorageLocations = deleteAssetStorageLocationsDb;

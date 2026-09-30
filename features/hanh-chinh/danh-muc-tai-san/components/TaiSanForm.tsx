@@ -24,7 +24,7 @@ import { useCreateTaiSan, useUpdateTaiSan, useGetNextMaTaiSan, checkMaTaiSanExis
 import { useAssetGroups } from '../../thiet-lap-tai-san/hooks/use-nhom-tai-san';
 import { useAssetStorageLocations } from '../../thiet-lap-tai-san/hooks/use-noi-luu';
 import { useAssetStatuses } from '../../thiet-lap-tai-san/hooks/use-trang-thai';
-import { useEmployeesRefQuery } from '@/lib/hooks/use-supabase-ref-queries';
+import { useEmployeesRefQuery } from '@/lib/hooks/use-ref-queries';
 import { generateAssetBarcode } from '../utils/barcode';
 import BarcodeQRDisplay from './BarcodeQRDisplay';
 import CurrencyInput from '../../../../components/ui/CurrencyInput';

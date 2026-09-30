@@ -13,7 +13,7 @@ import {
   deleteKyKhauHao,
   updateKyKhauHaoGhiChu,
   updateKyKhauHaoTrangThai,
-  getKyKhauHaoPageSupabase,
+  getKyKhauHaoPageDb,
 } from '../services/khau-hao-tai-san-service';
 import type { KyKhauHaoFormValues } from '../core/schema';
 
@@ -24,7 +24,7 @@ const queryKeyChiTiet = (idKy: string) => ['khauHaoTaiSan', 'chiTiet', idKy] as 
 export function useKyKhauHaoPage(query: KyKhauHaoListServerQuery, enabled = true) {
   return useQuery({
     queryKey: [...QUERY_KEY_KY, 'page', query],
-    queryFn: () => getKyKhauHaoPageSupabase(query),
+    queryFn: () => getKyKhauHaoPageDb(query),
     enabled,
     placeholderData: keepPreviousData,
     staleTime: 1000 * 60 * 2,

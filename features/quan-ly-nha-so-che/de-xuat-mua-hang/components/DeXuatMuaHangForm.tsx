@@ -27,7 +27,7 @@ import { useCreateDeXuatMuaHang, useUpdateDeXuatMuaHang } from '../hooks/use-de-
 import { useFarmHangHoaRefQuery } from '../../hang-hoa-phan-thuoc/hooks/use-farm-hang-hoa';
 import type { FarmHangHoaRefLite } from '../../hang-hoa-phan-thuoc/services/farm-hang-hoa-service';
 import { useFarmTienDoMuaHangList } from '../../thiet-lap-de-xuat-mua-hang/hooks/use-farm-tien-do-mua-hang';
-import { getNextSoPhieuDeXuatMuaHangRpc } from '../services/de-xuat-mua-hang-supabase.service';
+import { getNextSoPhieuDeXuatMuaHangRpc } from '../services/de-xuat-mua-hang-db.service';
 import GenericDrawer, { DRAWER_WIDTH_DE_XUAT } from '../../../../components/shared/GenericDrawer';
 import FormSection from '../../../../components/shared/FormSection';
 import FormGrid from '../../../../components/shared/FormGrid';

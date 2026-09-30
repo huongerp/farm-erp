@@ -22,7 +22,7 @@ import { EmployeeFormValues } from "../core/schema";
 import { Employee } from "../core/types";
 import { toast } from "sonner";
 import i18n from '../../../../lib/i18n';
-import { EMPLOYEES_REF_QUERY_KEY } from '../../../../lib/hooks/use-supabase-ref-queries';
+import { EMPLOYEES_REF_QUERY_KEY } from '../../../../lib/hooks/use-ref-queries';
 import { invalidateRefCache } from '../../../../lib/ref-cache';
 import { usePositions } from '../../chuc-vu/hooks/use-chuc-vu';
 import { useDepartments } from '../../phong-ban/hooks/use-phong-ban';
@@ -72,7 +72,7 @@ export const useEmployees = (options?: { enabled?: boolean }) => {
 };
 
 /**
- * Server-side pagination cho danh sách nhân viên: chỉ tải đúng 1 trang từ Supabase
+ * Server-side pagination cho danh sách nhân viên: chỉ tải đúng 1 trang từ DB
  * (dùng `.range` + `count: 'exact'`) — giảm egress tuyệt đối so với `useEmployees()`
  * fetch toàn bộ bảng.
  *

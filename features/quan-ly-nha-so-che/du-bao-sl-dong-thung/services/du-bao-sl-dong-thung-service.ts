@@ -4,18 +4,18 @@ import { getEmployeesRef } from '../../../he-thong/nhan-vien/services/nhan-vien-
 import type { PaginatedTableResult } from '../../../../lib/db';
 import type { DuBaoSlDongThungListServerQuery } from './du-bao-sl-dong-thung-list-query';
 import {
-  getAllDuBaoSlDongThungSupabase,
-  getDuBaoSlDongThungPageSupabase,
-  getDuBaoSlDongThungTomTatSupabase,
-  fetchAllDuBaoSlDongThungForListQuery as fetchAllDuBaoSlDongThungForListQuerySupabase,
-  getDuBaoSlDongThungByIdSupabase,
-  createDuBaoSlDongThungSupabase,
-  updateDuBaoSlDongThungSupabase,
-  deleteDuBaoSlDongThungSupabase,
-  deleteDuBaoSlDongThungManySupabase,
-  updateDuBaoSlDongThungTrangThaiSupabase,
-  updateDuBaoSlDongThungTrangThaiManySupabase,
-} from './du-bao-sl-dong-thung-supabase.service';
+  getAllDuBaoSlDongThungDb,
+  getDuBaoSlDongThungPageDb,
+  getDuBaoSlDongThungTomTatDb,
+  fetchAllDuBaoSlDongThungForListQuery as fetchAllDuBaoSlDongThungForListQueryDb,
+  getDuBaoSlDongThungByIdDb,
+  createDuBaoSlDongThungDb,
+  updateDuBaoSlDongThungDb,
+  deleteDuBaoSlDongThungDb,
+  deleteDuBaoSlDongThungManyDb,
+  updateDuBaoSlDongThungTrangThaiDb,
+  updateDuBaoSlDongThungTrangThaiManyDb,
+} from './du-bao-sl-dong-thung-db.service';
 
 async function enrichTenNguoiTao(items: FarmDuBaoSlDongThung[]): Promise<FarmDuBaoSlDongThung[]> {
   if (items.length === 0) return items;
@@ -34,7 +34,7 @@ async function enrichTenNguoiTao(items: FarmDuBaoSlDongThung[]): Promise<FarmDuB
 export async function getDuBaoSlDongThungPage(
   query: DuBaoSlDongThungListServerQuery
 ): Promise<PaginatedTableResult<FarmDuBaoSlDongThung>> {
-  const page = await getDuBaoSlDongThungPageSupabase(query);
+  const page = await getDuBaoSlDongThungPageDb(query);
   return { ...page, data: await enrichTenNguoiTao(page.data) };
 }
 
@@ -42,7 +42,7 @@ export async function getDuBaoSlDongThungPage(
 export async function fetchAllDuBaoSlDongThungForListQuery(
   query: DuBaoSlDongThungListServerQuery
 ): Promise<FarmDuBaoSlDongThung[]> {
-  return enrichTenNguoiTao(await fetchAllDuBaoSlDongThungForListQuerySupabase(query));
+  return enrichTenNguoiTao(await fetchAllDuBaoSlDongThungForListQueryDb(query));
 }
 
 /** Bản rút gọn của một phiếu — đủ cho chip lọc, gợi ý chi nhánh và chặn trùng. */
@@ -61,7 +61,7 @@ export async function getDuBaoSlDongThungTomTat(
   viewAll: boolean,
   allowedBranchIds: string[]
 ): Promise<DuBaoSlDongThungTomTat[]> {
-  const rows = await getDuBaoSlDongThungTomTatSupabase(viewAll, allowedBranchIds);
+  const rows = await getDuBaoSlDongThungTomTatDb(viewAll, allowedBranchIds);
   return rows.map((r) => ({
     id: String(r.id),
     ngay: typeof r.ngay === 'string' ? r.ngay.slice(0, 10) : String(r.ngay),
@@ -74,12 +74,12 @@ export async function getDuBaoSlDongThungTomTat(
 }
 
 export async function getAllDuBaoSlDongThung(): Promise<FarmDuBaoSlDongThung[]> {
-  const rows = await getAllDuBaoSlDongThungSupabase();
+  const rows = await getAllDuBaoSlDongThungDb();
   return enrichTenNguoiTao(rows);
 }
 
 export async function getDuBaoSlDongThungById(id: string): Promise<FarmDuBaoSlDongThung | null> {
-  const row = await getDuBaoSlDongThungByIdSupabase(id);
+  const row = await getDuBaoSlDongThungByIdDb(id);
   if (!row) return null;
   const [enriched] = await enrichTenNguoiTao([row]);
   return enriched;
@@ -89,37 +89,37 @@ export async function createDuBaoSlDongThung(
   values: DuBaoSlDongThungFormValues,
   idNguoiTao: string | null
 ): Promise<FarmDuBaoSlDongThung> {
-  const row = await createDuBaoSlDongThungSupabase(values, idNguoiTao);
+  const row = await createDuBaoSlDongThungDb(values, idNguoiTao);
   const [enriched] = await enrichTenNguoiTao([row]);
   return enriched;
 }
 
 export async function updateDuBaoSlDongThung(id: string, values: DuBaoSlDongThungFormValues): Promise<FarmDuBaoSlDongThung> {
-  const row = await updateDuBaoSlDongThungSupabase(id, values);
+  const row = await updateDuBaoSlDongThungDb(id, values);
   const [enriched] = await enrichTenNguoiTao([row]);
   return enriched;
 }
 
 export async function deleteDuBaoSlDongThung(id: string): Promise<void> {
-  await deleteDuBaoSlDongThungSupabase(id);
+  await deleteDuBaoSlDongThungDb(id);
 }
 
 export async function deleteDuBaoSlDongThungMany(ids: string[]): Promise<void> {
-  await deleteDuBaoSlDongThungManySupabase(ids);
+  await deleteDuBaoSlDongThungManyDb(ids);
 }
 
 export async function updateDuBaoSlDongThungTrangThaiMany(
   ids: string[],
   trang_thai: TrangThaiDuBaoSlDongThungPhieu
 ): Promise<void> {
-  await updateDuBaoSlDongThungTrangThaiManySupabase(ids, trang_thai);
+  await updateDuBaoSlDongThungTrangThaiManyDb(ids, trang_thai);
 }
 
 export async function updateDuBaoSlDongThungTrangThai(
   id: string,
   trang_thai: TrangThaiDuBaoSlDongThungPhieu
 ): Promise<FarmDuBaoSlDongThung> {
-  const row = await updateDuBaoSlDongThungTrangThaiSupabase(id, trang_thai);
+  const row = await updateDuBaoSlDongThungTrangThaiDb(id, trang_thai);
   const [enriched] = await enrichTenNguoiTao([row]);
   return enriched;
 }

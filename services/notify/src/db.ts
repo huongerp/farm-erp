@@ -2,7 +2,7 @@
  * Truy cập Postgres bằng role `notify_service`.
  *
  * Role này chỉ có quyền trên 4 bảng thông báo và 3 RPC tra cứu (xem
- * docs/supabase-fp_var_su_kien_thong_bao.sql). Nếu service bị chiếm, kẻ tấn công
+ * docs/db-schema-baseline.sql). Nếu service bị chiếm, kẻ tấn công
  * vẫn không đọc được bảng nghiệp vụ nào — cùng nguyên tắc với auth_service.
  */
 

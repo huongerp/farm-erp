@@ -271,7 +271,7 @@
   "shared.error.retry": "Thử lại",
   "shared.error.backHome": "Về trang chủ",
   "errors.db.network": "Lỗi mạng / mất kết nối tới máy chủ (Failed to fetch, ERR_CONNECTION_CLOSED, timeout…). Kiểm tra internet, VPN, firewall hoặc thử lại sau.",
-  "errors.db.forbidden403": "HTTP 403 Forbidden — không có quyền đọc/ghi dữ liệu. Thường do RLS (Row Level Security) trên Supabase, thiếu policy cho bảng, hoặc API key / phiên đăng nhập không hợp lệ. Kiểm tra Dashboard → Authentication & SQL policies.",
+  "errors.db.forbidden403": "HTTP 403 Forbidden — không có quyền đọc/ghi dữ liệu. Thường do tài khoản chưa được phân quyền, thiếu RLS policy cho bảng trên DB, hoặc phiên đăng nhập đã hết hạn. Thử đăng nhập lại; nếu vẫn lỗi, báo quản trị hệ thống.",
   "errors.db.unauthorized401": "HTTP 401 Unauthorized — phiên hết hạn hoặc chưa đăng nhập. Đăng xuất và đăng nhập lại.",
   "errors.db.notFound404": "HTTP 404 Not Found — bảng hoặc tài nguyên không tồn tại trên API (kiểm tra migration / tên bảng).",
   "errors.db.serverError": "Lỗi máy chủ HTTP {{status}}. Thử lại sau hoặc liên hệ quản trị.",

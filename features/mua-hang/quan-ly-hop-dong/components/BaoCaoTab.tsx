@@ -11,7 +11,7 @@ import { getDateRangeFromPreset, getPresetFromDates } from '../core/datePresets'
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import EmptyState from '../../../../components/shared/EmptyState';
 import { useHopDongList, useHopDongChiTietAllList } from '../hooks/use-hop-dong';
-import { useDoiTacRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
+import { useDoiTacRefQuery } from '../../../../lib/hooks/use-ref-queries';
 import { TRANG_THAI_HOP_DONG } from '../core/constants';
 import type { BaoCaoFilters, HopDong, HopDongChiTietEnriched } from '../core/types';
 import { cn, formatDateShort, formatNumberVN } from '../../../../lib/utils';

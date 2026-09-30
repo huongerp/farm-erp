@@ -60,7 +60,7 @@ Hướng xử lý: thêm cột xoá mềm (`da_xoa`, `nguoi_xoa`, `tg_xoa`) cho 
 
 ## 3. Không có sao lưu tự động
 
-Chỉ có script chạy tay `scripts/vps-dump-restore.sh`, không có cron/lịch trong
+Repo không có script sao lưu nào, không có cron/lịch trong
 `docker-compose.yml` hay `deploy/`, cũng chưa có quy trình kiểm tra phục hồi định kỳ.
 
 Rủi ro này cộng hưởng với mục 1 và 2: một thao tác sai là không có đường lùi.
@@ -68,7 +68,7 @@ Rủi ro này cộng hưởng với mục 1 và 2: một thao tác sai là khôn
 
 ## 4. Ghi nhiều bảng không nằm trong một giao dịch
 
-`features/kho-van/phieu-kho/services/phieu-kho-supabase.service.ts` — khi sửa phiếu, code
+`features/kho-van/phieu-kho/services/phieu-kho-db.service.ts` — khi sửa phiếu, code
 **chèn dòng chi tiết mới trước, rồi mới xoá dòng chi tiết cũ**. Nếu lệnh xoá lỗi giữa
 chừng, phiếu có cả hai bộ chi tiết.
 

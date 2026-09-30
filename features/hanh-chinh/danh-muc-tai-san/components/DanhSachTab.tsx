@@ -5,7 +5,7 @@ import { AnimatePresence } from 'framer-motion';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { useTaiSanPage, useTaiSanTomTat, useDeleteTaiSan, useUpdateTaiSan } from '../hooks/use-danh-muc-tai-san';
-import { getTaiSanByIdSupabase } from '../services/danh-muc-tai-san-supabase.service';
+import { getTaiSanByIdDb } from '../services/danh-muc-tai-san-db.service';
 import { exportToExcel, exportToPDF } from '../../../../lib/utils';
 import { taiSanToExportRow, TAI_SAN_EXPORT_FILENAME } from '../utils/export-danh-sach-tai-san';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
@@ -190,10 +190,10 @@ const DanhSachTab: React.FC = () => {
   };
   const handleEdit = async (item: TaiSan) => {
     // Row từ danh sách là bản LITE (thiếu hinh_anh) — tải bản đầy đủ, tránh form
-    // hiện ảnh trống dù đã lưu (xem getTaiSanByIdSupabase).
+    // hiện ảnh trống dù đã lưu (xem getTaiSanByIdDb).
     setViewingItem(null);
     try {
-      const full = await getTaiSanByIdSupabase(item.id);
+      const full = await getTaiSanByIdDb(item.id);
       setEditingItem(full ?? item);
     } catch {
       setEditingItem(item);

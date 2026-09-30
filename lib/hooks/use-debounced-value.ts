@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-/** Mặc định 300ms — tránh gọi Supabase mỗi ký tự khi gõ search. */
+/** Mặc định 300ms — tránh đọc/ghi DB mỗi ký tự khi gõ search. */
 const DEFAULT_DEBOUNCE_MS = 300;
 
 /**

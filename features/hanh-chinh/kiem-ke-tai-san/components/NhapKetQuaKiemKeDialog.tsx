@@ -11,7 +11,7 @@ import Textarea from '../../../../components/ui/Textarea';
 import { cn } from '../../../../lib/utils';
 import { useAssetStorageLocations } from '../../thiet-lap-tai-san/hooks/use-noi-luu';
 import { useAssetStatuses } from '../../thiet-lap-tai-san/hooks/use-trang-thai';
-import { useEmployeesRefQuery } from '@/lib/hooks/use-supabase-ref-queries';
+import { useEmployeesRefQuery } from '@/lib/hooks/use-ref-queries';
 import type { ChiTietKiemKe, ChiTietKiemKeUpdate } from '../core/types';
 
 interface Props {

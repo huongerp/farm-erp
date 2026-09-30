@@ -79,7 +79,7 @@ export const useCreatePhieuKhoPT = (onSuccess?: () => void) => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: PhieuKhoPTFormValues) => createPhieuKhoPT(data),
-    onSuccess: (newPhieu) => {
+    onSuccess: (result) => {
       qc.invalidateQueries({ queryKey: QUERY_KEY_CHI_TIET });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY_CHI_TIET, 'paged'] });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
@@ -87,8 +87,9 @@ export const useCreatePhieuKhoPT = (onSuccess?: () => void) => {
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'byDeXuat'] });
       qc.invalidateQueries({ queryKey: FARM_TON_KHO_PT_QUERY_KEY });
       toast.success(i18n.t('phieuKhoPhanThuoc.toast.createSuccess'));
+      // Tồn âm chỉ cảnh báo — phiếu đã lưu.
+      if (result.canhBaoTon) toast.warning(result.canhBaoTon, { duration: 8000 });
       onSuccess?.();
-      void newPhieu;
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -113,13 +114,14 @@ export const useUpdatePhieuKhoPT = (onSuccess?: () => void) => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: PhieuKhoPTFormValues }) => updatePhieuKhoPT(id, data),
-    onSuccess: (updated) => {
-      qc.setQueryData([...QUERY_KEY, updated.id], updated);
+    onSuccess: (result) => {
+      qc.setQueryData([...QUERY_KEY, result.phieu.id], result.phieu);
       qc.invalidateQueries({ queryKey: QUERY_KEY_CHI_TIET });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY_CHI_TIET, 'paged'] });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
       qc.invalidateQueries({ queryKey: FARM_TON_KHO_PT_QUERY_KEY });
       toast.success(i18n.t('phieuKhoPhanThuoc.toast.updateSuccess'));
+      if (result.canhBaoTon) toast.warning(result.canhBaoTon, { duration: 8000 });
       onSuccess?.();
     },
     onError: (err: Error) => toast.error(err.message),

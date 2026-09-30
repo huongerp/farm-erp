@@ -8,7 +8,7 @@ import FilterChipMultiSelect from '../../../../components/shared/FilterChipMulti
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useCongViecStore } from '../store/useCongViecStore';
 import { getTrangThaiOptions, getUuTienOptions } from '../core/constants';
-import { useEmployeesRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
+import { useEmployeesRefQuery } from '../../../../lib/hooks/use-ref-queries';
 import { useCongViecFilterCounts } from '../hooks/use-cong-viec-filter-counts';
 import { TRANG_THAI_NV } from '../../../../lib/constants';
 import type { CongViec } from '../core/types';

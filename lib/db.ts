@@ -1,17 +1,16 @@
 import { PostgrestClient } from '@supabase/postgrest-js';
 import { API_URL } from './api-config';
 import { layAccessToken, lamMoiNgay } from './token-store';
-import { throwSupabaseError } from './supabase-errors';
+import { throwDbError } from './db-errors';
 
-export { throwSupabaseError, formatSupabaseError } from './supabase-errors';
+export { throwDbError, formatDbError } from './db-errors';
 
 /**
- * Client dữ liệu — PostgREST self-host trên VPS (trước đây là Supabase).
+ * Client dữ liệu — PostgREST self-host trên VPS.
  *
- * Dùng `PostgrestClient` của `@supabase/postgrest-js`, đúng thư viện mà
- * `supabase-js` bọc bên trong, nên `.from()` và `.rpc()` giữ nguyên chữ ký:
- * toàn bộ ~345 chỗ gọi trong app không phải sửa. Chỉ phần xác thực là mới —
- * token do auth-service cấp, xem lib/token-store.ts.
+ * Dùng `PostgrestClient` của `@supabase/postgrest-js`: đây CHỈ là thư viện client
+ * PostgREST (query builder `.from()` / `.rpc()`), không gọi dịch vụ Supabase nào.
+ * Token do auth-service cấp, xem lib/token-store.ts.
  *
  * Runbook: docs/VPS_POSTGREST_PLAN.md
  */
@@ -128,7 +127,7 @@ export async function fetchAllRows<T>(
   let from = 0;
   while (true) {
     const { data, error } = await run(from, from + DB_PAGE_SIZE - 1);
-    if (error) throwSupabaseError(error);
+    if (error) throwDbError(error);
     const list = (data ?? []) as T[];
     all.push(...list);
     if (list.length < DB_PAGE_SIZE) break;
@@ -164,6 +163,6 @@ export async function fetchTablePage<T>(
   const from = p * size;
   const to = from + size - 1;
   const { data, error, count } = await run(from, to);
-  if (error) throwSupabaseError(error);
+  if (error) throwDbError(error);
   return { data: data ?? [], totalCount: count ?? 0, page: p, pageSize: size };
 }

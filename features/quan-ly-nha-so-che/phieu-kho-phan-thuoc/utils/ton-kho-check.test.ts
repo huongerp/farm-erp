@@ -24,7 +24,7 @@ describe('phieuDelta', () => {
 });
 
 describe('findVuotTon', () => {
-  it('xuất trong tồn thì qua, vượt tồn thì chặn', () => {
+  it('xuất trong tồn thì không báo, vượt tồn thì báo', () => {
     expect(findVuotTon(ton(), xuat(5))).toEqual([]);
     expect(findVuotTon(ton(), xuat(5.5))).toEqual([{ id_kho: '1', id_hang_hoa: '10', ton: 5, can: 5.5 }]);
     expect(findVuotTon(ton(), xuat(1, '9'))).toHaveLength(1);
@@ -36,14 +36,14 @@ describe('findVuotTon', () => {
     expect(findVuotTon(ton(), xuat(10), xuat(4))).toHaveLength(1);
   });
 
-  it('sửa phiếu nhập xuống dưới số đã xuất thì chặn', () => {
+  it('sửa phiếu nhập xuống dưới số đã xuất thì báo', () => {
     const nhap = (sl: number) => phieuDelta({ loai: 'nhập', kho_id: '2', lines: [{ id_hang_hoa: '10', so_luong: sl }] });
     // Kho 2 tồn 1 sau khi phiếu nhập cũ +10 → đã xuất 9; sửa nhập còn 8 thì âm.
     expect(findVuotTon(ton(), nhap(8), nhap(10))).toHaveLength(1);
     expect(findVuotTon(ton(), nhap(9), nhap(10))).toEqual([]);
   });
 
-  it('không chặn khi phiếu không làm tồn giảm (tồn đã âm sẵn)', () => {
+  it('không báo khi phiếu không làm tồn giảm (tồn đã âm sẵn)', () => {
     const am = buildTonMap([{ id_kho: '1', id_hang_hoa: '10', so_luong: -2 }]);
     expect(findVuotTon(am, xuat(3), xuat(3))).toEqual([]);
   });

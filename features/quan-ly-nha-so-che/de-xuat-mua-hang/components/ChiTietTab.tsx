@@ -16,7 +16,7 @@ import { useKhoList } from '../../../kho-van/danh-sach-kho/hooks/use-kho';
 import { useChiTietTabStore } from '../store/useChiTietTabStore';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { useAuthStore } from '../../../../store/useStore';
-import { useEmployeesRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
+import { useEmployeesRefQuery } from '../../../../lib/hooks/use-ref-queries';
 import { getDateRangeFromPreset } from '../../../he-thong/nhan-vien/utils/stats-date-range';
 import type { DateRangePresetId } from '../../../he-thong/nhan-vien/core/stats-constants';
 import type { Kho } from '../../../kho-van/danh-sach-kho/core/types';

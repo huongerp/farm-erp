@@ -400,7 +400,7 @@ const Profile: React.FC = () => {
             </div>
           </DetailSection>
 
-          {/* Section hệ thống: đã bỏ (không có trên Supabase) */}
+          {/* Section hệ thống: đã bỏ (không có trong DB) */}
         </motion.div>
       </div>
 

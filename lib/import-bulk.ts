@@ -1,5 +1,5 @@
 import { db } from './db';
-import { formatSupabaseError } from './supabase-errors';
+import { formatDbError } from './db-errors';
 
 /**
  * Ghi hàng loạt cho luồng import Excel.
@@ -41,7 +41,7 @@ export function chunkBy<T>(items: T[], size: number): T[][] {
 
 function errMessage(error: PostgrestErrorLike | null): string {
   if (error == null) return 'Unknown error';
-  return formatSupabaseError(error);
+  return formatDbError(error);
 }
 
 /** INSERT theo lô. Lô nào lỗi thì mọi dòng trong lô đó được báo lỗi kèm thông điệp của DB. */

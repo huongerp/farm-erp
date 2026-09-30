@@ -7,23 +7,23 @@ import { getEmployeesRef } from '@/features/he-thong/nhan-vien/services/nhan-vie
 import type { PaginatedTableResult } from '../../../../lib/db';
 import type { DanhSachTaiSanListServerQuery } from './danh-muc-tai-san-list-query';
 import {
-  getTaiSanListSupabase,
-  getTaiSanPageSupabase,
-  getTaiSanTomTatSupabase,
-  fetchAllTaiSanForListQuery as fetchAllTaiSanForListQuerySupabase,
-  createTaiSanSupabase,
-  updateTaiSanSupabase,
-  updateTaiSanKhauHaoSupabase,
-  updateTaiSanLocationAndHolderSupabase,
-  updateTaiSanFromKiemKeSupabase,
-  deleteTaiSanSupabase,
-  getNextMaTaiSanSupabase,
-  checkMaTaiSanExistsSupabase,
-  getDistinctThuongHieuSupabase,
-  getDistinctModelSupabase,
-  getDistinctXuatXuSupabase,
-  getDistinctNhaCungCapSupabase,
-} from './danh-muc-tai-san-supabase.service';
+  getTaiSanListDb,
+  getTaiSanPageDb,
+  getTaiSanTomTatDb,
+  fetchAllTaiSanForListQuery as fetchAllTaiSanForListQueryDb,
+  createTaiSanDb,
+  updateTaiSanDb,
+  updateTaiSanKhauHaoDb,
+  updateTaiSanLocationAndHolderDb,
+  updateTaiSanFromKiemKeDb,
+  deleteTaiSanDb,
+  getNextMaTaiSanDb,
+  checkMaTaiSanExistsDb,
+  getDistinctThuongHieuDb,
+  getDistinctModelDb,
+  getDistinctXuatXuDb,
+  getDistinctNhaCungCapDb,
+} from './danh-muc-tai-san-db.service';
 
 async function enrichTaiSan(items: TaiSan[]): Promise<TaiSan[]> {
   const [groups, locations, statuses, employees] = await Promise.all([
@@ -59,7 +59,7 @@ async function enrichTaiSan(items: TaiSan[]): Promise<TaiSan[]> {
 export async function getTaiSanPage(
   query: DanhSachTaiSanListServerQuery
 ): Promise<PaginatedTableResult<TaiSan>> {
-  const page = await getTaiSanPageSupabase(query);
+  const page = await getTaiSanPageDb(query);
   return { ...page, data: await enrichTaiSan(page.data) };
 }
 
@@ -67,12 +67,12 @@ export async function getTaiSanPage(
 export async function fetchAllTaiSanForListQuery(
   query: DanhSachTaiSanListServerQuery
 ): Promise<TaiSan[]> {
-  return enrichTaiSan(await fetchAllTaiSanForListQuerySupabase(query));
+  return enrichTaiSan(await fetchAllTaiSanForListQueryDb(query));
 }
 
 /** Tóm tắt tài sản: id / mã / chi nhánh / người giữ. */
 export async function getTaiSanTomTat(): Promise<TaiSanTomTat[]> {
-  const rows = await getTaiSanTomTatSupabase();
+  const rows = await getTaiSanTomTatDb();
   return rows.map((r) => ({
     id: String(r.id),
     ma_tai_san: r.ma_tai_san ?? '',
@@ -95,17 +95,17 @@ export interface TaiSanTomTat {
 }
 
 export const getTaiSanList = async (): Promise<TaiSan[]> => {
-  const list = await getTaiSanListSupabase();
+  const list = await getTaiSanListDb();
   return enrichTaiSan(list);
 };
 
 export const createTaiSan = async (data: TaiSanFormValues): Promise<TaiSan> => {
-  const created = await createTaiSanSupabase(data);
+  const created = await createTaiSanDb(data);
   return (await enrichTaiSan([created]))[0];
 };
 
 export const updateTaiSan = async (id: string, data: TaiSanFormValues): Promise<TaiSan> => {
-  const updated = await updateTaiSanSupabase(id, data);
+  const updated = await updateTaiSanDb(id, data);
   return (await enrichTaiSan([updated]))[0];
 };
 
@@ -114,7 +114,7 @@ export const updateTaiSanKhauHao = async (
   id: string,
   payload: { gia_tri_con_lai: number | null; khau_hao_luy_ke: number }
 ): Promise<TaiSan> => {
-  const updated = await updateTaiSanKhauHaoSupabase(id, payload);
+  const updated = await updateTaiSanKhauHaoDb(id, payload);
   return (await enrichTaiSan([updated]))[0];
 };
 
@@ -123,7 +123,7 @@ export const updateTaiSanLocationAndHolder = async (
   id: string,
   payload: { id_noi_luu?: string; id_nhan_vien_dang_giu?: string | null }
 ): Promise<TaiSan> => {
-  const updated = await updateTaiSanLocationAndHolderSupabase(id, payload);
+  const updated = await updateTaiSanLocationAndHolderDb(id, payload);
   return (await enrichTaiSan([updated]))[0];
 };
 
@@ -132,28 +132,28 @@ export const updateTaiSanFromKiemKe = async (
   id: string,
   payload: { id_noi_luu?: string | null; id_nhan_vien_dang_giu?: string | null; id_trang_thai?: string | null }
 ): Promise<TaiSan> => {
-  const updated = await updateTaiSanFromKiemKeSupabase(id, payload);
+  const updated = await updateTaiSanFromKiemKeDb(id, payload);
   return (await enrichTaiSan([updated]))[0];
 };
 
-/** Bảng fp_ts_tai_san không có cột trang_thai (0/1); no-op khi dùng Supabase. */
-export const deleteTaiSan = deleteTaiSanSupabase;
+/** Bảng fp_ts_tai_san không có cột trang_thai (0/1); no-op. */
+export const deleteTaiSan = deleteTaiSanDb;
 
 /** Mã tài sản tiếp theo dạng TS00001 (cho form tạo mới, user có thể sửa). */
-export const getNextMaTaiSan = getNextMaTaiSanSupabase;
+export const getNextMaTaiSan = getNextMaTaiSanDb;
 
 /** Kiểm tra mã tài sản đã tồn tại; excludeId = id bản ghi đang sửa (khi edit). */
 export const checkMaTaiSanExists = (ma: string, excludeId?: string | null) =>
-  checkMaTaiSanExistsSupabase(ma, excludeId);
+  checkMaTaiSanExistsDb(ma, excludeId);
 
 /** Danh sách giá trị distinct thương hiệu (cho combobox enum + thêm mới). */
-export const getDistinctThuongHieu = getDistinctThuongHieuSupabase;
+export const getDistinctThuongHieu = getDistinctThuongHieuDb;
 
 /** Danh sách giá trị distinct model (cho combobox enum + thêm mới). */
-export const getDistinctModel = getDistinctModelSupabase;
+export const getDistinctModel = getDistinctModelDb;
 
 /** Danh sách giá trị distinct xuất xứ (cho combobox enum + thêm mới). */
-export const getDistinctXuatXu = getDistinctXuatXuSupabase;
+export const getDistinctXuatXu = getDistinctXuatXuDb;
 
 /** Danh sách giá trị distinct nhà cung cấp (cho combobox enum + thêm mới). */
-export const getDistinctNhaCungCap = getDistinctNhaCungCapSupabase;
+export const getDistinctNhaCungCap = getDistinctNhaCungCapDb;

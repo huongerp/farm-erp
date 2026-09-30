@@ -1,21 +1,21 @@
 import type { AssetStatus } from '../core/types';
 import type { AssetStatusFormValues } from '../core/schema';
 import {
-  getAssetStatusesSupabase,
-  createAssetStatusSupabase,
-  updateAssetStatusSupabase,
-  updateAssetStatusStatusSupabase,
-  deleteAssetStatusesSupabase,
-} from './thiet-lap-tai-san-supabase.service';
+  getAssetStatusesDb,
+  createAssetStatusDb,
+  updateAssetStatusDb,
+  updateAssetStatusStatusDb,
+  deleteAssetStatusesDb,
+} from './thiet-lap-tai-san-db.service';
 
-export const getAssetStatuses = getAssetStatusesSupabase;
+export const getAssetStatuses = getAssetStatusesDb;
 
 export const createAssetStatus = (data: AssetStatusFormValues): Promise<AssetStatus> =>
-  createAssetStatusSupabase(data);
+  createAssetStatusDb(data);
 
 export const updateAssetStatus = (id: string, data: AssetStatusFormValues): Promise<AssetStatus> =>
-  updateAssetStatusSupabase(id, data);
+  updateAssetStatusDb(id, data);
 
-export const updateAssetStatusStatus = updateAssetStatusStatusSupabase;
+export const updateAssetStatusStatus = updateAssetStatusStatusDb;
 
-export const deleteAssetStatuses = deleteAssetStatusesSupabase;
+export const deleteAssetStatuses = deleteAssetStatusesDb;

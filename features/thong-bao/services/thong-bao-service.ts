@@ -2,11 +2,11 @@
  * Đọc và cập nhật thông báo qua PostgREST.
  *
  * RLS đã giới hạn mọi truy vấn về đúng nhân viên đang đăng nhập
- * (docs/supabase-fp_var_thong_bao.sql), nên không câu nào ở đây phải tự lọc
+ * (docs/db-schema-baseline.sql), nên không câu nào ở đây phải tự lọc
  * nguoi_nhan_id — và cũng không thể lách qua được.
  */
 
-import { db, throwSupabaseError } from '../../../lib/db';
+import { db, throwDbError } from '../../../lib/db';
 import type { CaiDatThongBao, DemTheoModule, ThongBao, ThietBiPush, TrangThongBao, TuyChonThongBao } from '../core/types';
 import { TUY_CHON_MAC_DINH } from '../core/types';
 
@@ -48,7 +48,7 @@ export async function demChuaDoc(): Promise<number> {
     .select('id', { count: 'exact', head: true })
     .eq('da_doc', false)
     .eq('da_xoa', false);
-  if (error) throwSupabaseError(error);
+  if (error) throwDbError(error);
   return count ?? 0;
 }
 
@@ -63,7 +63,7 @@ export async function demChuaDocTheoModule(): Promise<DemTheoModule> {
     .select('module_id')
     .eq('da_doc', false)
     .eq('da_xoa', false);
-  if (error) throwSupabaseError(error);
+  if (error) throwDbError(error);
 
   const dem: DemTheoModule = {};
   for (const row of (data ?? []) as Row[]) {
@@ -97,25 +97,25 @@ export async function layDanhSach(loc: BoLocThongBao = {}): Promise<TrangThongBa
   if (loc.chiChuaDoc) q = q.eq('da_doc', false);
 
   const { data, error, count } = await q;
-  if (error) throwSupabaseError(error);
+  if (error) throwDbError(error);
 
   return { items: ((data ?? []) as Row[]).map(chuanHoa), tong: count ?? 0 };
 }
 
 export async function danhDauDaDoc(id: string): Promise<void> {
   const { error } = await db.from(BANG).update({ da_doc: true }).eq('id', id);
-  if (error) throwSupabaseError(error);
+  if (error) throwDbError(error);
 }
 
 export async function xoaMot(id: string): Promise<void> {
   const { error } = await db.from(BANG).update({ da_xoa: true }).eq('id', id);
-  if (error) throwSupabaseError(error);
+  if (error) throwDbError(error);
 }
 
 /** Hoàn tác nút xoá lẻ — cho phép sửa sai bằng toast thay vì hỏi trước mỗi lần. */
 export async function hoanTacXoa(id: string): Promise<void> {
   const { error } = await db.from(BANG).update({ da_xoa: false }).eq('id', id);
-  if (error) throwSupabaseError(error);
+  if (error) throwDbError(error);
 }
 
 /**
@@ -124,13 +124,13 @@ export async function hoanTacXoa(id: string): Promise<void> {
  */
 export async function docTatCa(moduleId: string | null): Promise<number> {
   const { data, error } = await db.rpc('rpc_thong_bao_doc_tat_ca', { p_module_id: moduleId });
-  if (error) throwSupabaseError(error);
+  if (error) throwDbError(error);
   return Number(data ?? 0);
 }
 
 export async function xoaTatCa(moduleId: string | null): Promise<number> {
   const { data, error } = await db.rpc('rpc_thong_bao_xoa_tat_ca', { p_module_id: moduleId });
-  if (error) throwSupabaseError(error);
+  if (error) throwDbError(error);
   return Number(data ?? 0);
 }
 
@@ -138,7 +138,7 @@ export async function xoaTatCa(moduleId: string | null): Promise<number> {
 
 export async function layCaiDat(): Promise<CaiDatThongBao[]> {
   const { data, error } = await db.from(BANG_CAI_DAT).select('module_id,loai_su_kien,trong_app,push');
-  if (error) throwSupabaseError(error);
+  if (error) throwDbError(error);
   return ((data ?? []) as Row[]).map((r) => ({
     moduleId: (r['module_id'] as string) ?? '',
     loaiSuKien: (r['loai_su_kien'] as string) ?? '*',
@@ -163,7 +163,7 @@ export async function luuCaiDat(
       .delete()
       .eq('module_id', moduleId)
       .eq('loai_su_kien', loaiSuKien);
-    if (error) throwSupabaseError(error);
+    if (error) throwDbError(error);
     return;
   }
 
@@ -177,7 +177,7 @@ export async function luuCaiDat(
     },
     { onConflict: 'nhan_vien_id,module_id,loai_su_kien' }
   );
-  if (error) throwSupabaseError(error);
+  if (error) throwDbError(error);
 }
 
 export async function layTuyChon(): Promise<TuyChonThongBao> {
@@ -185,7 +185,7 @@ export async function layTuyChon(): Promise<TuyChonThongBao> {
     .from(BANG_TUY_CHON)
     .select('push_bat,gio_yen_lang_bat,gio_yen_lang_tu,gio_yen_lang_den')
     .limit(1);
-  if (error) throwSupabaseError(error);
+  if (error) throwDbError(error);
 
   const r = ((data ?? []) as Row[])[0];
   if (!r) return TUY_CHON_MAC_DINH;
@@ -208,7 +208,7 @@ export async function luuTuyChon(nhanVienId: number, gt: TuyChonThongBao): Promi
     },
     { onConflict: 'nhan_vien_id' }
   );
-  if (error) throwSupabaseError(error);
+  if (error) throwDbError(error);
 }
 
 // --- Thiết bị đã đăng ký push ------------------------------------------------
@@ -218,7 +218,7 @@ export async function layThietBi(): Promise<ThietBiPush[]> {
     .from(BANG_THIET_BI)
     .select('id,endpoint,ten_thiet_bi,tg_tao,tg_dung_cuoi')
     .order('tg_tao', { ascending: false });
-  if (error) throwSupabaseError(error);
+  if (error) throwDbError(error);
 
   return ((data ?? []) as Row[]).map((r) => ({
     id: String(r['id']),
@@ -231,5 +231,5 @@ export async function layThietBi(): Promise<ThietBiPush[]> {
 
 export async function xoaThietBi(id: string): Promise<void> {
   const { error } = await db.from(BANG_THIET_BI).delete().eq('id', id);
-  if (error) throwSupabaseError(error);
+  if (error) throwDbError(error);
 }

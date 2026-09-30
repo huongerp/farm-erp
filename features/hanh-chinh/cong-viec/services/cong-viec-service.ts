@@ -1,30 +1,30 @@
 import type { CongViec } from '../core/types';
 import {
-  getCongViecList as getCongViecListSupabase,
-  getCongViecById as getCongViecByIdSupabase,
-  createCongViec as createCongViecSupabase,
-  updateCongViec as updateCongViecSupabase,
-  deleteCongViecList as deleteCongViecListSupabase,
-  getBinhLuanByCongViecId as getBinhLuanByCongViecIdSupabase,
-  createBinhLuan as createBinhLuanSupabase,
-  importCongViecList as importCongViecListSupabase,
-} from './cong-viec-supabase.service';
+  getCongViecList as getCongViecListDb,
+  getCongViecById as getCongViecByIdDb,
+  createCongViec as createCongViecDb,
+  updateCongViec as updateCongViecDb,
+  deleteCongViecList as deleteCongViecListDb,
+  getBinhLuanByCongViecId as getBinhLuanByCongViecIdDb,
+  createBinhLuan as createBinhLuanDb,
+  importCongViecList as importCongViecListDb,
+} from './cong-viec-db.service';
 import type { CongViecFormValues } from '../core/schema';
 
-export const getCongViecList = getCongViecListSupabase;
-export const getCongViecById = getCongViecByIdSupabase;
+export const getCongViecList = getCongViecListDb;
+export const getCongViecById = getCongViecByIdDb;
 export const createCongViec = (
   data: CongViecFormValues,
   id_nguoi_giao: number | string
-) => createCongViecSupabase(data, id_nguoi_giao);
-export const updateCongViec = updateCongViecSupabase;
-export const deleteCongViecList = deleteCongViecListSupabase;
-export const getBinhLuanByCongViecId = getBinhLuanByCongViecIdSupabase;
-export const createBinhLuan = createBinhLuanSupabase;
+) => createCongViecDb(data, id_nguoi_giao);
+export const updateCongViec = updateCongViecDb;
+export const deleteCongViecList = deleteCongViecListDb;
+export const getBinhLuanByCongViecId = getBinhLuanByCongViecIdDb;
+export const createBinhLuan = createBinhLuanDb;
 export const importCongViecList = (
-  rows: Parameters<typeof importCongViecListSupabase>[0],
+  rows: Parameters<typeof importCongViecListDb>[0],
   id_nguoi_giao: number | string
-) => importCongViecListSupabase(rows, id_nguoi_giao);
+) => importCongViecListDb(rows, id_nguoi_giao);
 
 /** Flatten tree by parent: root first, then children at level 2, etc. */
 export function flattenCongViecWithLevel(

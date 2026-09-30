@@ -17,7 +17,7 @@ import { usePhieuDeXuatVatTuViewScope } from '../hooks/use-phieu-de-xuat-vat-tu-
 import { buildPhieuDeXuatVatTuListServerQuery, fetchAllPhieuDeXuatVatTuForListQuery } from '../services/phieu-de-xuat-vat-tu-service';
 import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
-import { useEmployeesRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
+import { useEmployeesRefQuery } from '../../../../lib/hooks/use-ref-queries';
 import { useCauHinhDeXuatVatTu } from '../../../mua-hang/thiet-lap-de-xuat-vat-tu/hooks/use-cau-hinh-de-xuat-vat-tu';
 import { getDateRangeFromPreset } from '../../../he-thong/nhan-vien/utils/stats-date-range';
 import type { DateRangePresetId } from '../../../he-thong/nhan-vien/core/stats-constants';
@@ -32,7 +32,7 @@ import type { HangHoa } from '../../danh-sach-hang-hoa/core/types';
 import DanhSachHangHoaForm from '../../danh-sach-hang-hoa/components/DanhSachHangHoaForm';
 import DonDatHangForm from '../../../mua-hang/don-dat-hang/components/DonDatHangForm';
 import { phieuDeXuatToDonDatHangPrefill } from '../../../mua-hang/don-dat-hang/core/don-dat-hang-to-form-values';
-import type { PhieuDeXuatSoPhieuOption } from '../services/phieu-de-xuat-vat-tu-supabase.service';
+import type { PhieuDeXuatSoPhieuOption } from '../services/phieu-de-xuat-vat-tu-db.service';
 import PhieuDeXuatBulkApproveDialog from './PhieuDeXuatBulkApproveDialog';
 import PhieuDeXuatVatTuToolbar from './PhieuDeXuatVatTuToolbar';
 import PhieuDeXuatVatTuList from './PhieuDeXuatVatTuList';

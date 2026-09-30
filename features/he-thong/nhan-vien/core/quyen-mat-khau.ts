@@ -1,6 +1,6 @@
 /**
  * Ai được đặt lại mật khẩu cho ai — bản sao phía UI của RPC `rpc_set_mat_khau`
- * (docs/vps-05-quyen-doi-mat-khau.sql):
+ * (docs/db-schema-baseline.sql):
  *
  * - Tự đổi mật khẩu của chính mình: luôn được.
  * - Đặt cho người khác: cấp bậc 1, hoặc có quyền admin/all trên module nhân viên.

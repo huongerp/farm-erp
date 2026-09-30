@@ -5,7 +5,7 @@ import { Package, MapPin } from 'lucide-react';
 import { useAllTonKho } from '../hooks/use-ton-kho';
 import { getKhoList } from '../../danh-sach-kho/services/kho-service';
 import { useQuery } from '@tanstack/react-query';
-import { useHangHoaRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
+import { useHangHoaRefQuery } from '../../../../lib/hooks/use-ref-queries';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import EmptyState from '../../../../components/shared/EmptyState';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';

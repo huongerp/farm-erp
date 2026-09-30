@@ -10,7 +10,7 @@ import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL, CONFIRM_YES } from '../../../../lib/button-labels';
 import { formatDate } from '../../../../lib/utils';
 import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
-import { useEmployeesRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
+import { useEmployeesRefQuery } from '../../../../lib/hooks/use-ref-queries';
 import type { DateRangePresetId } from '../../../he-thong/nhan-vien/core/stats-constants';
 import { getDateRangeFromPreset } from '../../../he-thong/nhan-vien/utils/stats-date-range';
 import { useHangMucThuChiRef } from '../../thiet-lap-quy/hooks/use-hang-muc-thu-chi';

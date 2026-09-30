@@ -75,6 +75,7 @@ export default defineConfig(({ mode }) => {
         output: {
           manualChunks(id) {
             if (!id.includes('node_modules')) return;
+            // @supabase/postgrest-js: chỉ là client PostgREST (lib/db.ts), không phải dịch vụ Supabase.
             if (id.includes('@supabase')) return 'postgrest';
             if (
               id.includes('@tanstack/react-query') ||

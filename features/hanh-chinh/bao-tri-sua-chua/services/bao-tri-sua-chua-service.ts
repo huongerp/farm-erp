@@ -7,15 +7,15 @@ import { getLoaiChiPhiList } from '../../thiet-lap-tai-san/services/loai-chi-phi
 import { getHangMucLabel } from '../core/constants';
 import i18n from '../../../../lib/i18n';
 import {
-  getPhieuChiPhiListSupabase,
-  getPhieuChiPhiPageSupabase,
-  fetchAllPhieuChiPhiForListQuery as fetchAllPhieuChiPhiForListQuerySupabase,
-  getPhieuChiPhiByIdSupabase,
-  createPhieuChiPhiSupabase,
-  updatePhieuChiPhiSupabase,
-  deletePhieuChiPhiSupabase,
+  getPhieuChiPhiListDb,
+  getPhieuChiPhiPageDb,
+  fetchAllPhieuChiPhiForListQuery as fetchAllPhieuChiPhiForListQueryDb,
+  getPhieuChiPhiByIdDb,
+  createPhieuChiPhiDb,
+  updatePhieuChiPhiDb,
+  deletePhieuChiPhiDb,
   type GetPhieuChiPhiListParams,
-} from './chi-phi-tai-san-supabase.service';
+} from './chi-phi-tai-san-db.service';
 
 async function enrichPhieu(items: PhieuBaoTriSuaChua[]): Promise<PhieuBaoTriSuaChua[]> {
   const [assets, employees, loaiChiPhi] = await Promise.all([
@@ -50,7 +50,7 @@ export type GetPhieuBaoTriListParams = GetPhieuChiPhiListParams;
 export async function getPhieuBaoTriPage(
   query: BaoTriSuaChuaListServerQuery
 ): Promise<PaginatedTableResult<PhieuBaoTriSuaChua>> {
-  const page = await getPhieuChiPhiPageSupabase(query);
+  const page = await getPhieuChiPhiPageDb(query);
   return { ...page, data: await enrichPhieu(page.data) };
 }
 
@@ -58,25 +58,25 @@ export async function getPhieuBaoTriPage(
 export async function fetchAllPhieuBaoTriForListQuery(
   query: BaoTriSuaChuaListServerQuery
 ): Promise<PhieuBaoTriSuaChua[]> {
-  return enrichPhieu(await fetchAllPhieuChiPhiForListQuerySupabase(query));
+  return enrichPhieu(await fetchAllPhieuChiPhiForListQueryDb(query));
 }
 
 export const getPhieuBaoTriList = async (
   params: GetPhieuBaoTriListParams = {}
 ): Promise<PhieuBaoTriSuaChua[]> => {
-  const list = await getPhieuChiPhiListSupabase(params);
+  const list = await getPhieuChiPhiListDb(params);
   return enrichPhieu(list);
 };
 
 export const getPhieuBaoTriById = async (id: string): Promise<PhieuBaoTriSuaChua | null> => {
-  const found = await getPhieuChiPhiByIdSupabase(id);
+  const found = await getPhieuChiPhiByIdDb(id);
   if (!found) return null;
   const [enriched] = await enrichPhieu([found]);
   return enriched;
 };
 
 export const deletePhieuBaoTri = async (ids: string[]): Promise<void> => {
-  await deletePhieuChiPhiSupabase(ids);
+  await deletePhieuChiPhiDb(ids);
 };
 
 export const createPhieuBaoTri = async (
@@ -84,7 +84,7 @@ export const createPhieuBaoTri = async (
   id_nguoi_tao: string,
   options?: { ten_nguoi_tao?: string | null }
 ): Promise<PhieuBaoTriSuaChua> => {
-  const created = await createPhieuChiPhiSupabase(
+  const created = await createPhieuChiPhiDb(
     { ...data, trang_thai: data.trang_thai ?? 'cho_duyet' },
     id_nguoi_tao,
     options
@@ -97,7 +97,7 @@ export const updatePhieuBaoTri = async (
   id: string,
   data: PhieuBaoTriSuaChuaCreate
 ): Promise<PhieuBaoTriSuaChua> => {
-  const updated = await updatePhieuChiPhiSupabase(id, data);
+  const updated = await updatePhieuChiPhiDb(id, data);
   const [enriched] = await enrichPhieu([updated]);
   return enriched;
 };

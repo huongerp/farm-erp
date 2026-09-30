@@ -21,7 +21,7 @@ import {
 
 /**
  * Bump chuỗi này khi nghi ngờ Service Worker cũ đang cache và gây "ma API"
- * (vd: request Supabase cũ vẫn bị SW bắt → đốt egress). Thay đổi giá trị sẽ
+ * (vd: request tới backend cũ vẫn bị SW bắt → đốt egress). Thay đổi giá trị sẽ
  * kích hoạt logic unregister SW cũ **một lần duy nhất** trên mỗi trình duyệt
  * (kiểm tra qua localStorage). Lần sau bạn deploy bản vá thực sự, bump tiếp
  * giá trị này hoặc giữ nguyên.
@@ -36,7 +36,7 @@ async function unregisterLegacyServiceWorkersOnce(): Promise<void> {
     if (applied === SW_UNREGISTER_BUSTER) return;
     const registrations = await navigator.serviceWorker.getRegistrations();
     await Promise.all(registrations.map((r) => r.unregister()));
-    // Xoá caches cũ do SW trước đó tạo — tránh cache response Supabase cũ.
+    // Xoá caches cũ do SW trước đó tạo — tránh cache response backend cũ.
     if (typeof caches !== 'undefined') {
       const names = await caches.keys();
       await Promise.all(names.map((n) => caches.delete(n)));

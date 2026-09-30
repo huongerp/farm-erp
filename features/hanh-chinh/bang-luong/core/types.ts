@@ -80,7 +80,7 @@ export interface BangLuongRecord {
   tg_cap_nhat: string;
 }
 
-/** Điểm KPI theo kỳ — trước đây lấy từ module chấm điểm KPI; có thể nối Supabase sau. */
+/** Điểm KPI theo kỳ — trước đây lấy từ module chấm điểm KPI; có thể nối DB sau. */
 export interface ChamDiemKpiRecord {
   id_nhan_vien: string;
   nam: number;

@@ -13,7 +13,7 @@ import {
   useDeleteHopDong,
   useDeleteHopDongMany,
 } from '../hooks/use-hop-dong';
-import { useDoiTacRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
+import { useDoiTacRefQuery } from '../../../../lib/hooks/use-ref-queries';
 import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
 import { useHopDongStore } from '../store/useHopDongStore';
 import { useConfirmStore } from '../../../../store/useConfirmStore';

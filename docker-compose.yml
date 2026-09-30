@@ -2,8 +2,8 @@
 # Deploy trên Dokploy — 3 service sau MỘT domain duy nhất
 #
 #   /        → web        (SPA Vite, nginx)
-#   /api/*   → postgrest  (thay Supabase REST)
-#   /auth/*  → auth       (thay Supabase Auth)
+#   /api/*   → postgrest  (REST cho dữ liệu nghiệp vụ)
+#   /auth/*  → auth       (đăng nhập, ký JWT)
 #   /notify/*→ notify     (đăng ký Web Push + worker thông báo)
 #
 # Một domain nên KHÔNG có CORS và không có request cross-site nào.
@@ -27,7 +27,7 @@ services:
       PGRST_DB_SCHEMAS: public
       PGRST_DB_ANON_ROLE: anon
       PGRST_JWT_SECRET: ${PGRST_JWT_SECRET}
-      # pgcrypto nằm ở schema `extensions` (giữ nguyên cách Supabase bố trí).
+      # pgcrypto nằm ở schema `extensions`.
       PGRST_DB_EXTRA_SEARCH_PATH: 'public, extensions'
       # Không phơi toàn bộ schema ra Internet.
       PGRST_OPENAPI_MODE: disabled

@@ -7,7 +7,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { X, Printer } from 'lucide-react';
 import { useCongViecList } from './hooks/use-cong-viec';
-import { useEmployeesRefQuery } from '../../../lib/hooks/use-supabase-ref-queries';
+import { useEmployeesRefQuery } from '../../../lib/hooks/use-ref-queries';
 import CongViecPreviewContent from './components/CongViecPreviewContent';
 
 const CongViecPreviewPage: React.FC = () => {

@@ -26,27 +26,28 @@ UPDATE fp_mh_phieu_kho SET trang_thai='Đã duyệt' …
 Trigger cố tình mỏng: nó chỉ chụp dòng dữ liệu, không chứa logic nghiệp vụ. Toàn bộ phần "ai nhận / viết gì"
 nằm trong TypeScript nên test được bằng vitest và sửa câu chữ không phải chạy migration.
 
-## Thứ tự chạy SQL
+## Đối tượng SQL
 
-Chạy **đúng thứ tự** này trên Postgres của VPS:
+Mọi bảng, hàm, trigger và RLS dưới đây đã có trên Postgres của VPS và nằm trong
+`docs/db-schema-baseline.sql` (tìm theo tên):
 
-| # | File | Tạo ra |
-|---|---|---|
-| 1 | `docs/supabase-fp_var_su_kien_thong_bao.sql` | Bảng outbox, `fn_ghi_su_kien_thong_bao()`, role `notify_service` |
-| 2 | `docs/supabase-fp_var_thong_bao.sql` | Bảng thông báo, RLS, RPC đọc/xoá tất cả |
-| 3 | `docs/supabase-fp_var_thong_bao_cai_dat.sql` | Bảng cài đặt + tuỳ chọn (giờ yên lặng) |
-| 4 | `docs/supabase-fp_var_push_subscription.sql` | Bảng thiết bị đăng ký push |
-| 5 | `docs/supabase-rpc_thong_bao_dinh_tuyen.sql` | RPC tra người duyệt / chi nhánh / tên nhân viên |
-| 6 | `docs/supabase-trigger_thong_bao_7_module.sql` | Gắn trigger cho 7 bảng nghiệp vụ |
-| 7 | `docs/supabase-trigger_thong_bao_thu_chi_quy.sql` | Trigger sổ quỹ + nhánh chi nhánh cho `rpc_tb_chi_nhanh_phieu` |
-| 8 | `docs/supabase-thong_bao_phieu_hanh_chinh.sql` | RPC người duyệt theo phòng ban + RPC tên loại phiếu hành chính |
-| 9 | `docs/supabase-rpc_thong_bao_quan_tri_moi_chi_nhanh.sql` | Quản trị module (admin/all) nhận thông báo ở mọi chi nhánh |
+| Đối tượng | Vai trò |
+|---|---|
+| `fp_var_su_kien_thong_bao`, `fn_ghi_su_kien_thong_bao()` | Bảng outbox + hàm trigger ghi sự kiện |
+| `fp_var_thong_bao` | Bảng thông báo, RLS, RPC đọc/xoá tất cả |
+| `fp_var_thong_bao_cai_dat`, `fp_var_thong_bao_tuy_chon` | Cài đặt + tuỳ chọn (giờ yên lặng) |
+| `fp_var_push_subscription` | Thiết bị đăng ký push |
+| `rpc_tb_*` | Tra người duyệt / chi nhánh / tên nhân viên / tên loại phiếu hành chính |
+| Trigger `tr_thong_bao_<bảng>` | Gắn outbox cho 7 bảng nghiệp vụ + sổ quỹ `fp_tc_quy_thu_chi` |
 
-File **#1 tự tạo role `notify_service` và in mật khẩu ra NOTICE** — chép mật khẩu đó vào
-`NOTIFY_DATABASE_URL` rồi xoá khỏi log. Chạy lại file này không đổi mật khẩu role đã có.
+Role `notify_service` (chỉ chạm được 4 bảng thông báo) đã tạo sẵn trên VPS; baseline có GRANT
+nhưng không có lệnh tạo role. Dựng DB mới thì tạo role trước, đặt mật khẩu, ghi vào
+`NOTIFY_DATABASE_URL`.
 
-Phụ thuộc có sẵn: `public.nhan_vien_hien_tai_id()` (`docs/vps-05-quyen-doi-mat-khau.sql`) và
-`auth.jwt()` (`docs/vps-01-prepare-target.sql`).
+Thêm trigger cho module mới: viết migration `docs/migrations/NNN-*.sql`, chép khuôn trigger của một
+module sẵn có trong baseline.
+
+Phụ thuộc có sẵn (cùng trong baseline): `public.nhan_vien_hien_tai_id()` và `auth.jwt()`.
 
 Sau khi chạy xong, PostgREST cần nạp lại schema cache để thấy bảng và RPC mới.
 

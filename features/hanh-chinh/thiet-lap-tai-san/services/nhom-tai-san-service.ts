@@ -1,21 +1,21 @@
 import type { AssetGroup } from '../core/types';
 import type { AssetGroupFormValues } from '../core/schema';
 import {
-  getAssetGroupsSupabase,
-  createAssetGroupSupabase,
-  updateAssetGroupSupabase,
-  updateAssetGroupStatusSupabase,
-  deleteAssetGroupsSupabase,
-} from './thiet-lap-tai-san-supabase.service';
+  getAssetGroupsDb,
+  createAssetGroupDb,
+  updateAssetGroupDb,
+  updateAssetGroupStatusDb,
+  deleteAssetGroupsDb,
+} from './thiet-lap-tai-san-db.service';
 
-export const getAssetGroups = getAssetGroupsSupabase;
+export const getAssetGroups = getAssetGroupsDb;
 
 export const createAssetGroup = (data: AssetGroupFormValues): Promise<AssetGroup> =>
-  createAssetGroupSupabase(data);
+  createAssetGroupDb(data);
 
 export const updateAssetGroup = (id: string, data: AssetGroupFormValues): Promise<AssetGroup> =>
-  updateAssetGroupSupabase(id, data);
+  updateAssetGroupDb(id, data);
 
-export const updateAssetGroupStatus = updateAssetGroupStatusSupabase;
+export const updateAssetGroupStatus = updateAssetGroupStatusDb;
 
-export const deleteAssetGroups = deleteAssetGroupsSupabase;
+export const deleteAssetGroups = deleteAssetGroupsDb;

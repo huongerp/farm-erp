@@ -1,14 +1,14 @@
 {
-  "updatedAt": "2026-06-13",
+  "updatedAt": "2026-09-30",
   "note": "Raw KB from dist/assets after vite build. Regenerate: npm run build && node scripts/update-bundle-baseline.mjs",
   "chunks": {
     "main": {
-      "rawKb": 503,
+      "rawKb": 408,
       "warnKb": 900,
       "maxIncreasePct": 5
     },
     "css": {
-      "rawKb": 174,
+      "rawKb": 187,
       "warnKb": 250
     },
     "vendorXlsx": {

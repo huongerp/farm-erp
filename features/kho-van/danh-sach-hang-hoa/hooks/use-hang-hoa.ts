@@ -15,7 +15,7 @@ import {
 } from '../services/hang-hoa-service';
 import type { HangHoaFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
-import { HANG_HOA_REF_QUERY_KEY } from '../../../../lib/hooks/use-supabase-ref-queries';
+import { HANG_HOA_REF_QUERY_KEY } from '../../../../lib/hooks/use-ref-queries';
 import { invalidateRefCache } from '../../../../lib/ref-cache';
 import type { ImportMode } from '../../../../lib/import-types';
 import type { HangHoaRefColumn } from '../services/hang-hoa-service';

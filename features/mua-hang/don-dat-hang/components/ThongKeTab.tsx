@@ -3,8 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { User, Calendar, Building2, Tag } from 'lucide-react';
 import { toast } from 'sonner';
-import { useDoiTacRefQuery, useEmployeesRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
-import { getAllDonDatHangSupabase, fetchDonDatHangThongKeFromRpc, fetchChiTietForCategoryStatsSupabase } from '../services/don-dat-hang-supabase.service';
+import { useDoiTacRefQuery, useEmployeesRefQuery } from '../../../../lib/hooks/use-ref-queries';
+import { getAllDonDatHangDb, fetchDonDatHangThongKeFromRpc, fetchChiTietForCategoryStatsDb } from '../services/don-dat-hang-db.service';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import EmptyState from '../../../../components/shared/EmptyState';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
@@ -64,7 +64,7 @@ const ThongKeTab: React.FC = () => {
         filterBuyer,
       });
       if (rpc) return { kind: 'rpc' as const, rpc };
-      const list = await getAllDonDatHangSupabase();
+      const list = await getAllDonDatHangDb();
       const filteredList = filterDonDatHangList(list, statsFilterParams);
       return { kind: 'fallback' as const, list, filteredList };
     },
@@ -74,7 +74,7 @@ const ThongKeTab: React.FC = () => {
   const { data: categoryRows } = useQuery({
     queryKey: ['donDatHang', 'categoryStats', filterStatus, filterSupplier, filterBuyer, dateFrom, dateTo],
     queryFn: () =>
-      fetchChiTietForCategoryStatsSupabase({
+      fetchChiTietForCategoryStatsDb({
         dateFrom: dateFrom || undefined,
         dateTo: dateTo || undefined,
         filterStatus: filterStatus.length ? filterStatus : undefined,

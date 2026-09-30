@@ -1,6 +1,6 @@
 import type { PhieuKho } from '../../phieu-kho/core/types';
 import type { NXTReportFilters, NXTByPeriodResult, TonTaiThoiDiemRow } from '../core/types';
-import { db, throwSupabaseError } from '../../../../lib/db';
+import { db, throwDbError } from '../../../../lib/db';
 
 /* ────────────────────────── main report ────────────────────────── */
 
@@ -25,11 +25,11 @@ export async function getNXTByPeriod(filters: NXTReportFilters): Promise<NXTByPe
   const { data, error } = await db.rpc('rpc_nxt_by_period', {
     p_filters: nxtFiltersToRpcPayload(filters),
   });
-  if (error) throwSupabaseError(error, { resource: 'rpc_nxt_by_period' });
+  if (error) throwDbError(error, { resource: 'rpc_nxt_by_period' });
   const ket_qua = data as NXTByPeriodResult | null;
   if (!ket_qua || !Array.isArray(ket_qua.byWarehouse) || !Array.isArray(ket_qua.byCell)) {
     throw new Error(
-      'RPC rpc_nxt_by_period trả về thiếu dữ liệu. Chạy docs/supabase-rpc_nxt_family.sql và docs/supabase-v_mh_nxt_movement.sql trên VPS.'
+      'RPC rpc_nxt_by_period trả về thiếu dữ liệu. Kiểm tra hàm trên DB (xem docs/db-schema-baseline.sql).'
     );
   }
   return ket_qua;
@@ -52,9 +52,9 @@ export async function getPhieuInPeriod(filters: NXTReportFilters): Promise<Phieu
   const { data, error } = await db.rpc('rpc_phieu_in_period', {
     p_filters: nxtFiltersToRpcPayload(filters),
   });
-  if (error) throwSupabaseError(error, { resource: 'rpc_phieu_in_period' });
+  if (error) throwDbError(error, { resource: 'rpc_phieu_in_period' });
   if (!Array.isArray(data)) {
-    throw new Error('RPC rpc_phieu_in_period trả về dữ liệu không hợp lệ. Chạy docs/supabase-rpc_nxt_family.sql trên VPS.');
+    throw new Error('RPC rpc_phieu_in_period trả về dữ liệu không hợp lệ. Kiểm tra hàm trên DB (xem docs/db-schema-baseline.sql).');
   }
   return data as PhieuKho[];
 }
@@ -66,9 +66,9 @@ export async function getTonAtDate(filters: Pick<NXTReportFilters, 'warehouseIds
   const { data, error } = await db.rpc('rpc_ton_at_date', {
     p_filters: filters as unknown as Record<string, unknown>,
   });
-  if (error) throwSupabaseError(error, { resource: 'rpc_ton_at_date' });
+  if (error) throwDbError(error, { resource: 'rpc_ton_at_date' });
   if (!Array.isArray(data)) {
-    throw new Error('RPC rpc_ton_at_date trả về dữ liệu không hợp lệ. Chạy docs/supabase-rpc_nxt_family.sql trên VPS.');
+    throw new Error('RPC rpc_ton_at_date trả về dữ liệu không hợp lệ. Kiểm tra hàm trên DB (xem docs/db-schema-baseline.sql).');
   }
   return data as TonTaiThoiDiemRow[];
 }

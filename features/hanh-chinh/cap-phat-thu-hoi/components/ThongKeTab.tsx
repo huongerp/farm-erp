@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Package, User } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePhieuList } from '../hooks/use-cap-phat-thu-hoi';
-import { useEmployeesRefQuery } from '@/lib/hooks/use-supabase-ref-queries';
+import { useEmployeesRefQuery } from '@/lib/hooks/use-ref-queries';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import EmptyState from '../../../../components/shared/EmptyState';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';

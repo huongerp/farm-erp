@@ -12,7 +12,7 @@ import { useUnsavedGuard } from '../lib/use-unsaved-guard';
 /**
  * Đổi mật khẩu cho người ĐANG đăng nhập.
  *
- * Trước đây trang này nhận link phục hồi qua email của Supabase Auth. Bản
+ * Trước đây trang này nhận link phục hồi qua email. Bản
  * self-host không có dịch vụ gửi mail nên luồng đổi thành: admin cấp lại mật
  * khẩu trên trang Nhân viên kèm cờ `phai_doi_mat_khau`, người dùng đăng nhập
  * bằng mật khẩu đó rồi bị đưa tới đây để đặt mật khẩu riêng.

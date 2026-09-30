@@ -7,7 +7,7 @@ import type {
   ImportSampleRow,
   ImportSummary,
 } from '../../../../lib/import-types';
-import { useEmployeesRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
+import { useEmployeesRefQuery } from '../../../../lib/hooks/use-ref-queries';
 import { CONG_VIEC_TRANG_THAI, CONG_VIEC_UU_TIEN, getTrangThaiLabel, getUuTienLabel } from '../core/constants';
 import { planCongViecImport } from '../utils/import-cong-viec';
 import { useImportCongViec } from './use-cong-viec';

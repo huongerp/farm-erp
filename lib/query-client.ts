@@ -38,7 +38,7 @@ export const queryClient = new QueryClient({
 
 /**
  * Whitelist cache cần persist qua F5. Đây là các REF TĨNH / ít đổi, nên giữ trong
- * IndexedDB (async) để tránh mỗi F5 là gọi lại Supabase — nguyên nhân chính đốt egress,
+ * IndexedDB (async) để tránh mỗi F5 là gọi lại DB — nguyên nhân chính đốt egress,
  * và tránh `localStorage.setItem` đồng bộ gây jank main thread.
  *
  * Blacklist (KHÔNG persist):

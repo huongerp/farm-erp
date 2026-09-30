@@ -19,7 +19,7 @@ import type { PhieuDeXuatVatTu } from '../core/types';
 import type { TrangThaiPhieuDeXuatVatTu } from '../core/constants';
 import i18n from '../../../../lib/i18n';
 import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
-import { PHIEU_DE_XUAT_SO_PHIEU_QUERY_KEY } from '../../../../lib/hooks/use-supabase-ref-queries';
+import { PHIEU_DE_XUAT_SO_PHIEU_QUERY_KEY } from '../../../../lib/hooks/use-ref-queries';
 
 const QUERY_KEY = ['phieuDeXuatVatTu'] as const;
 const QUERY_KEY_CHI_TIET = [...QUERY_KEY, 'chiTiet'] as const;

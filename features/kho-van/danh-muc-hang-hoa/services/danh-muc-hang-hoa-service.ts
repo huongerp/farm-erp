@@ -9,7 +9,7 @@ const TABLE = 'fp_mh_danh_muc_hang_hoa';
 const DM_HH_COLUMNS =
   'id,ma_danh_muc,ten_danh_muc,danh_muc_cha_id,thu_tu,mo_ta,trang_thai,tg_tao,tg_cap_nhat';
 
-/** Row từ Supabase fp_mh_danh_muc_hang_hoa */
+/** Row từ DB fp_mh_danh_muc_hang_hoa */
 interface DanhMucHangHoaRow {
   id: number;
   ma_danh_muc: string | null;

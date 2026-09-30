@@ -12,7 +12,7 @@ import {
 } from '../hooks/use-phieu-kho-pt';
 import { buildChiTietPhieuKhoPTListServerQuery, fetchAllChiTietPhieuKhoPTForListQuery } from '../services/phieu-kho-pt-service';
 import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
-import { useEmployeesRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
+import { useEmployeesRefQuery } from '../../../../lib/hooks/use-ref-queries';
 import { useKhoList } from '../../../kho-van/danh-sach-kho/hooks/use-kho';
 import { useChiTietPhieuKhoPTStore } from '../store/useChiTietPhieuKhoPTStore';
 import type { ChiTietPhieuKhoPTFlat, PhieuKhoPT } from '../core/types';

@@ -12,7 +12,7 @@ import { cn } from '../../../../lib/utils';
 import { TRANG_THAI, TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
 import { useAssetStorageLocations } from '../../thiet-lap-tai-san/hooks/use-noi-luu';
-import { useEmployeesRefQuery } from '@/lib/hooks/use-supabase-ref-queries';
+import { useEmployeesRefQuery } from '@/lib/hooks/use-ref-queries';
 import type { TaoDanhSachKiemKeFilters } from '../services/kiem-ke-tai-san-service';
 
 interface Props {

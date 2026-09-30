@@ -1,14 +1,14 @@
 import type { TienDoMuaHangFormValues } from '../core/schema';
 import {
-  getTienDoMuaHangList as getListSupabase,
-  createTienDoMuaHang as createSupabase,
-  updateTienDoMuaHang as updateSupabase,
-  updateTienDoMuaHangStatus as updateStatusSupabase,
-  deleteTienDoMuaHangList as deleteListSupabase,
-} from './tien-do-mua-hang-supabase.service';
+  getTienDoMuaHangList as getListDb,
+  createTienDoMuaHang as createDb,
+  updateTienDoMuaHang as updateDb,
+  updateTienDoMuaHangStatus as updateStatusDb,
+  deleteTienDoMuaHangList as deleteListDb,
+} from './tien-do-mua-hang-db.service';
 
-export const getTienDoMuaHangList = getListSupabase;
-export const createTienDoMuaHang = (data: TienDoMuaHangFormValues) => createSupabase(data);
-export const updateTienDoMuaHang = updateSupabase;
-export const updateTienDoMuaHangStatus = updateStatusSupabase;
-export const deleteTienDoMuaHangList = deleteListSupabase;
+export const getTienDoMuaHangList = getListDb;
+export const createTienDoMuaHang = (data: TienDoMuaHangFormValues) => createDb(data);
+export const updateTienDoMuaHang = updateDb;
+export const updateTienDoMuaHangStatus = updateStatusDb;
+export const deleteTienDoMuaHangList = deleteListDb;

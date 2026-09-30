@@ -1,13 +1,11 @@
-# Tối ưu egress Supabase — farm-erp
+# Tối ưu egress (băng thông) — farm-erp
 
-## Script SQL cần chạy trên Supabase (theo thứ tự)
+## RPC phía DB (đã có, xem `docs/db-schema-baseline.sql`)
 
-1. `docs/supabase-fp_farm_bao_cao_nhan_cong_egress_columns.sql` — **DROP** `so_anh`, `anh_thumbnail_url` (nếu đã thêm)
-1b. `docs/supabase-fp_farm_bao_cao_nhan_cong_migrate_anh_cloudinary.sql` — kiểm tra + migrate ảnh (kèm hướng dẫn)
-2. `docs/supabase-rpc_nxt_family.sql` — `rpc_nxt_by_period`, `rpc_phieu_in_period`, `rpc_ton_at_date`
-3. `docs/supabase-rpc_phieu_de_xuat_stats.sql` — tab Thống kê phiếu đề xuất
+- `rpc_nxt_by_period`, `rpc_phieu_in_period`, `rpc_ton_at_date` — báo cáo nhập xuất tồn
+- `rpc_phieu_de_xuat_stats` — tab Thống kê phiếu đề xuất
 
-Sau khi chạy: **Settings → API → Reload schema cache**.
+Đổi hàm/view thì reload schema cache của PostgREST: `NOTIFY pgrst, 'reload schema';`
 
 ## Kiểm tra egress / base64
 
@@ -25,14 +23,6 @@ FROM fp_farm_bao_cao_nhan_cong;
 
 Kỳ vọng: **0** sau migrate Cloudinary.
 
-## Migrate ảnh base64 → Cloudinary
-
-```bash
-# .env: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, CLOUDINARY_URL
-node scripts/migrate-base64-to-cloudinary.mjs --dry-run
-node scripts/migrate-base64-to-cloudinary.mjs
-```
-
 ## Dev: theo dõi request
 
 Trong `.env.local`:
@@ -42,10 +32,6 @@ VITE_API_REQUEST_LOGGER=1
 ```
 
 Mở Console — cảnh báo nếu >10 request/giây cùng bảng.
-
-## Dashboard
-
-**Project Settings → Usage → Egress** — so sánh trước/sau khi deploy SQL + app.
 
 ## Thay đổi app (đã merge)
 
@@ -63,4 +49,4 @@ Nếu RPC chưa deploy, Console vẫn có:
 
 `[bao-cao-nxt] RPC ... failed or missing — using client fallback`
 
-→ Chạy `docs/supabase-rpc_nxt_family.sql`.
+→ Kiểm tra các hàm `rpc_nxt_*` đã có trên DB (xem `docs/db-schema-baseline.sql`).

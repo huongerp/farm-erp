@@ -1,6 +1,6 @@
 /**
  * Kiểm kê kho phân thuốc: đợt kiểm kê + chi tiết từng (kho, hàng hóa) — sổ vs thực tế.
- * Bảng: fp_farm_dot_kiem_ke_pt, _kho, _chi_tiet (xem docs/supabase-fp_farm_dot_kiem_ke_pt.sql).
+ * Bảng: fp_farm_dot_kiem_ke_pt, _kho, _chi_tiet (xem docs/db-schema-baseline.sql).
  */
 
 /** Trạng thái đợt kiểm kê */

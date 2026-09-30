@@ -2,19 +2,19 @@ import type { PhieuCapPhatThuHoi, PhieuCapPhatThuHoiCreate, PhieuChiTietWithHead
 import type { PaginatedTableResult } from '@/lib/db';
 import type { CapPhatThuHoiListServerQuery } from './cap-phat-thu-hoi-list-query';
 import {
-  getPhieuListSupabase,
-  getPhieuByIdSupabase,
-  createPhieuSupabase,
-  updatePhieuSupabase,
-  deletePhieuSupabase,
-  getPhieuChiTietByTaiSanIdSupabase,
-  getAllPhieuChiTietSupabase,
-  importPhieuCapPhatThuHoiListSupabase,
+  getPhieuListDb,
+  getPhieuByIdDb,
+  createPhieuDb,
+  updatePhieuDb,
+  deletePhieuDb,
+  getPhieuChiTietByTaiSanIdDb,
+  getAllPhieuChiTietDb,
+  importPhieuCapPhatThuHoiListDb,
   type PhieuCapPhatThuHoiImportRow,
   type PhieuCapPhatThuHoiImportItem,
-  getPhieuCapPhatPageSupabase,
-  fetchAllPhieuCapPhatForListQuery as fetchAllPhieuCapPhatForListQuerySupabase,
-} from './cap-phat-thu-hoi-supabase.service';
+  getPhieuCapPhatPageDb,
+  fetchAllPhieuCapPhatForListQuery as fetchAllPhieuCapPhatForListQueryDb,
+} from './cap-phat-thu-hoi-db.service';
 import { getEmployeesRef } from '@/features/he-thong/nhan-vien/services/nhan-vien-service';
 
 export type { PhieuCapPhatThuHoiImportRow, PhieuCapPhatThuHoiImportItem };
@@ -51,7 +51,7 @@ export interface GetPhieuListParams {
 export async function getPhieuCapPhatPage(
   query: CapPhatThuHoiListServerQuery
 ): Promise<PaginatedTableResult<PhieuCapPhatThuHoi>> {
-  const page = await getPhieuCapPhatPageSupabase(query);
+  const page = await getPhieuCapPhatPageDb(query);
   return { ...page, data: await enrichPhieu(page.data) };
 }
 
@@ -59,25 +59,25 @@ export async function getPhieuCapPhatPage(
 export async function fetchAllPhieuCapPhatForListQuery(
   query: CapPhatThuHoiListServerQuery
 ): Promise<PhieuCapPhatThuHoi[]> {
-  return enrichPhieu(await fetchAllPhieuCapPhatForListQuerySupabase(query));
+  return enrichPhieu(await fetchAllPhieuCapPhatForListQueryDb(query));
 }
 
 export const getPhieuList = async (
   params: GetPhieuListParams = {}
 ): Promise<PhieuCapPhatThuHoi[]> => {
-  const list = await getPhieuListSupabase(params);
+  const list = await getPhieuListDb(params);
   return enrichPhieu(list);
 };
 
 export const getPhieuById = async (id: string): Promise<PhieuCapPhatThuHoi | null> => {
-  const found = await getPhieuByIdSupabase(id);
+  const found = await getPhieuByIdDb(id);
   if (!found) return null;
   const [enriched] = await enrichPhieu([found]);
   return enriched;
 };
 
 export const deletePhieu = async (ids: string[]): Promise<void> => {
-  await deletePhieuSupabase(ids);
+  await deletePhieuDb(ids);
 };
 
 export const createPhieuAndExecute = async (
@@ -86,7 +86,7 @@ export const createPhieuAndExecute = async (
   id_nguoi_tao?: string | null,
   ten_nguoi_tao?: string | null
 ): Promise<PhieuCapPhatThuHoi> => {
-  const created = await createPhieuSupabase(data, id_nguoi_thuc_hien, id_nguoi_tao, ten_nguoi_tao);
+  const created = await createPhieuDb(data, id_nguoi_thuc_hien, id_nguoi_tao, ten_nguoi_tao);
   const [enriched] = await enrichPhieu([created]);
   return enriched;
 };
@@ -96,7 +96,7 @@ export const updatePhieu = async (
   data: PhieuCapPhatThuHoiCreate,
   id_nguoi_thuc_hien: string
 ): Promise<PhieuCapPhatThuHoi> => {
-  const updated = await updatePhieuSupabase(id, data, id_nguoi_thuc_hien);
+  const updated = await updatePhieuDb(id, data, id_nguoi_thuc_hien);
   const [enriched] = await enrichPhieu([updated]);
   return enriched;
 };
@@ -105,13 +105,13 @@ export const updatePhieu = async (
 export const getPhieuChiTietByTaiSan = async (
   idTaiSan: string
 ): Promise<PhieuChiTietWithHeader[]> => {
-  return getPhieuChiTietByTaiSanIdSupabase(idTaiSan);
+  return getPhieuChiTietByTaiSanIdDb(idTaiSan);
 };
 
 /** Lấy toàn bộ dòng chi tiết kèm header – dùng cho tab "Chi tiết" tổng hợp */
 export const getAllPhieuChiTiet = async (): Promise<PhieuChiTietRow[]> => {
-  return getAllPhieuChiTietSupabase();
+  return getAllPhieuChiTietDb();
 };
 
 export const importPhieuCapPhatThuHoiList = (items: PhieuCapPhatThuHoiImportItem[]) =>
-  importPhieuCapPhatThuHoiListSupabase(items);
+  importPhieuCapPhatThuHoiListDb(items);

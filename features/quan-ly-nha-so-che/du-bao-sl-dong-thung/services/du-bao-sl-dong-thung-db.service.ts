@@ -1,0 +1,302 @@
+/**
+ * Dự báo SL đóng thùng — DB: fp_farm_du_bao_sl_dong_thung
+ */
+import {
+  db,
+  fetchAllRows,
+  fetchTablePage,
+  throwDbError,
+  formatDbError,
+  type PaginatedTableResult,
+} from '../../../../lib/db';
+import { applyPostgrestSearch, dieuKienKyTheoNgay } from '../../../../lib/postgrest-search';
+import {
+  DBDT_SORTABLE_DB_COLUMNS,
+  DBDT_SORT_MAC_DINH,
+  type DuBaoSlDongThungListServerQuery,
+} from './du-bao-sl-dong-thung-list-query';
+import type { FarmDuBaoSlDongThung, TrangThaiDuBaoSlDongThungPhieu } from '../core/types';
+import { TRANG_THAI_DU_BAO_SL_DONG_THUNG } from '../core/types';
+import type { DuBaoSlDongThungFormValues } from '../core/schema';
+
+const TABLE = 'fp_farm_du_bao_sl_dong_thung';
+
+const ROW_SELECT =
+  'id,ngay,id_chi_nhanh,ten_chi_nhanh,so_buong_can_mau,tong_can_nang_mau,tong_buong_nhap_ke_hoach,ty_le_thu_hoi_ke_hoach,quy_cach_dong_thung_ke_hoach,tong_buong_nhap_thuc_te,ty_le_thu_hoi_thuc_te,quy_cach_dong_thung_thuc_te,can_nang_binh_quan_buong,tong_khoi_luong_ke_hoach,tong_so_thung_ke_hoach,tong_khoi_luong_thuc_te,tong_so_thung_thuc_te,ghi_chu,id_nguoi_tao,trang_thai,tg_tao,tg_cap_nhat';
+
+function parseIdToInt8(id: string | null | undefined): number | null {
+  if (id == null || id === '') return null;
+  const n = Number(id);
+  return Number.isFinite(n) ? n : null;
+}
+
+function mapInsertUpdateError(err: unknown): Error {
+  return new Error(formatDbError(err, { resource: TABLE }));
+}
+
+function num(v: string | number | null | undefined): number {
+  if (v == null || v === '') return 0;
+  const n = typeof v === 'number' ? v : Number(v);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function normalizeTrangThaiDb(v: string | null | undefined): TrangThaiDuBaoSlDongThungPhieu {
+  return v === TRANG_THAI_DU_BAO_SL_DONG_THUNG.KHOA ? TRANG_THAI_DU_BAO_SL_DONG_THUNG.KHOA : TRANG_THAI_DU_BAO_SL_DONG_THUNG.MO;
+}
+
+interface DbRow {
+  id: number;
+  ngay: string;
+  id_chi_nhanh: number | null;
+  ten_chi_nhanh: string | null;
+  so_buong_can_mau: number | null;
+  tong_can_nang_mau: string | number | null;
+  tong_buong_nhap_ke_hoach: number | null;
+  ty_le_thu_hoi_ke_hoach: string | number | null;
+  quy_cach_dong_thung_ke_hoach: string | number | null;
+  tong_buong_nhap_thuc_te: number | null;
+  ty_le_thu_hoi_thuc_te: string | number | null;
+  quy_cach_dong_thung_thuc_te: string | number | null;
+  /** GENERATED — null khi so_buong_can_mau = 0 */
+  can_nang_binh_quan_buong: string | number | null;
+  /** GENERATED */
+  tong_khoi_luong_ke_hoach: string | number | null;
+  /** GENERATED */
+  tong_so_thung_ke_hoach: number | null;
+  /** GENERATED */
+  tong_khoi_luong_thuc_te: string | number | null;
+  /** GENERATED */
+  tong_so_thung_thuc_te: number | null;
+  ghi_chu: string | null;
+  id_nguoi_tao: number | null;
+  trang_thai: string | null;
+  tg_tao: string | null;
+  tg_cap_nhat: string | null;
+}
+
+function rowToModel(row: DbRow): FarmDuBaoSlDongThung {
+  return {
+    id: String(row.id),
+    ngay: typeof row.ngay === 'string' ? row.ngay.slice(0, 10) : String(row.ngay),
+    id_chi_nhanh: row.id_chi_nhanh != null ? String(row.id_chi_nhanh) : null,
+    ten_chi_nhanh: row.ten_chi_nhanh ?? null,
+    so_buong_can_mau: Math.max(0, Math.floor(num(row.so_buong_can_mau))),
+    tong_can_nang_mau: num(row.tong_can_nang_mau),
+    tong_buong_nhap_ke_hoach: Math.max(0, Math.floor(num(row.tong_buong_nhap_ke_hoach))),
+    ty_le_thu_hoi_ke_hoach: num(row.ty_le_thu_hoi_ke_hoach),
+    quy_cach_dong_thung_ke_hoach: num(row.quy_cach_dong_thung_ke_hoach),
+    tong_buong_nhap_thuc_te: Math.max(0, Math.floor(num(row.tong_buong_nhap_thuc_te))),
+    ty_le_thu_hoi_thuc_te: num(row.ty_le_thu_hoi_thuc_te),
+    quy_cach_dong_thung_thuc_te: num(row.quy_cach_dong_thung_thuc_te),
+    can_nang_binh_quan_buong: row.can_nang_binh_quan_buong != null ? num(row.can_nang_binh_quan_buong) : null,
+    tong_khoi_luong_ke_hoach: num(row.tong_khoi_luong_ke_hoach),
+    tong_so_thung_ke_hoach: Math.max(0, Math.floor(num(row.tong_so_thung_ke_hoach))),
+    tong_khoi_luong_thuc_te: num(row.tong_khoi_luong_thuc_te),
+    tong_so_thung_thuc_te: Math.max(0, Math.floor(num(row.tong_so_thung_thuc_te))),
+    ghi_chu: row.ghi_chu ?? null,
+    id_nguoi_tao: row.id_nguoi_tao != null ? String(row.id_nguoi_tao) : null,
+    ten_nguoi_tao: null,
+    trang_thai: normalizeTrangThaiDb(row.trang_thai),
+    tg_tao: row.tg_tao ?? new Date().toISOString(),
+    tg_cap_nhat: row.tg_cap_nhat ?? new Date().toISOString(),
+  };
+}
+
+function pctToFraction(pct: number): number {
+  return Math.min(1, Math.max(0, (Number(pct) || 0) / 100));
+}
+
+function bodyFromForm(values: DuBaoSlDongThungFormValues, trangThai: TrangThaiDuBaoSlDongThungPhieu) {
+  return {
+    ngay: values.ngay,
+    id_chi_nhanh: parseIdToInt8(values.id_chi_nhanh),
+    ten_chi_nhanh: values.ten_chi_nhanh?.trim() || null,
+    so_buong_can_mau: Math.max(0, Math.floor(Number(values.so_buong_can_mau) || 0)),
+    tong_can_nang_mau: Number(values.tong_can_nang_mau) || 0,
+    tong_buong_nhap_ke_hoach: Math.max(0, Math.floor(Number(values.tong_buong_nhap_ke_hoach) || 0)),
+    ty_le_thu_hoi_ke_hoach: pctToFraction(values.ty_le_thu_hoi_ke_hoach_pct),
+    quy_cach_dong_thung_ke_hoach: Number(values.quy_cach_dong_thung_ke_hoach) || 0,
+    tong_buong_nhap_thuc_te: Math.max(0, Math.floor(Number(values.tong_buong_nhap_thuc_te) || 0)),
+    ty_le_thu_hoi_thuc_te: pctToFraction(values.ty_le_thu_hoi_thuc_te_pct),
+    quy_cach_dong_thung_thuc_te: Number(values.quy_cach_dong_thung_thuc_te) || 0,
+    ghi_chu: values.ghi_chu?.trim() || null,
+    trang_thai: trangThai,
+    tg_cap_nhat: new Date().toISOString(),
+  };
+}
+
+/** Cột tham gia ô tìm kiếm ở server. */
+const DBDT_SEARCH_SPEC = {
+  text: ['ten_chi_nhanh', 'ghi_chu', 'trang_thai', 'quy_cach_dong_thung_ke_hoach', 'quy_cach_dong_thung_thuc_te'],
+  numeric: ['id'],
+  dates: ['ngay'],
+} as const;
+
+/** Lọc + sắp xếp dùng chung cho trang danh sách và cho lượt tải phục vụ xuất file. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyDbdtListQuery(q: any, query: DuBaoSlDongThungListServerQuery): any {
+  let sel = q;
+
+  if (!query.viewAll) {
+    const ids = query.allowedBranchIds.map(Number).filter(Number.isFinite);
+    sel = ids.length === 0 ? sel.eq('id', -1) : sel.in('id_chi_nhanh', ids);
+  }
+  if (query.idChiNhanh.length > 0) {
+    sel = sel.in('id_chi_nhanh', query.idChiNhanh.map(Number).filter(Number.isFinite));
+  }
+  if (query.trangThai.length > 0) sel = sel.in('trang_thai', query.trangThai);
+
+  if (query.ngayFrom) sel = sel.gte('ngay', query.ngayFrom);
+  if (query.ngayTo) sel = sel.lte('ngay', query.ngayTo);
+
+  const ky = dieuKienKyTheoNgay(query.nam, query.thang);
+  if (ky.length > 0) sel = sel.or(ky.join(','));
+
+  sel = applyPostgrestSearch(sel, query.searchTerm, DBDT_SEARCH_SPEC);
+
+  const dbSortable = query.sortColumn != null && DBDT_SORTABLE_DB_COLUMNS.has(query.sortColumn);
+  const sortCol = dbSortable ? query.sortColumn! : DBDT_SORT_MAC_DINH.column;
+  const ascending = dbSortable ? query.sortDirection !== 'desc' : DBDT_SORT_MAC_DINH.ascending;
+
+  return sel.order(sortCol, { ascending }).order('id', { ascending: false });
+}
+
+export async function getDuBaoSlDongThungPageDb(
+  query: DuBaoSlDongThungListServerQuery
+): Promise<PaginatedTableResult<FarmDuBaoSlDongThung>> {
+  const result = await fetchTablePage<DbRow>(query.page, query.pageSize, async (from, to) => {
+    const res = await applyDbdtListQuery(
+      db.from(TABLE).select(ROW_SELECT, { count: 'exact' }),
+      query
+    ).range(from, to);
+    return { data: (res.data as DbRow[] | null) ?? null, error: res.error, count: res.count };
+  });
+  return { ...result, data: result.data.map(rowToModel) };
+}
+
+/** Toàn bộ bản ghi khớp bộ lọc — CHỈ dùng khi bấm Xuất file. */
+export async function fetchAllDuBaoSlDongThungForListQuery(
+  query: DuBaoSlDongThungListServerQuery
+): Promise<FarmDuBaoSlDongThung[]> {
+  const rows = await fetchAllRows<DbRow>((from, to) =>
+    applyDbdtListQuery(db.from(TABLE).select(ROW_SELECT), query).range(from, to)
+  );
+  return rows.map(rowToModel);
+}
+
+/** Danh sách TÓM TẮT — chip lọc + số đếm, gợi ý chi nhánh, chặn trùng ngày×chi nhánh. */
+export async function getDuBaoSlDongThungTomTatDb(
+  viewAll: boolean,
+  allowedBranchIds: string[]
+): Promise<DuBaoSlDongThungTomTatRow[]> {
+  return fetchAllRows<DuBaoSlDongThungTomTatRow>((from, to) => {
+    let sel = db.from(TABLE).select('id,ngay,trang_thai,id_chi_nhanh,ten_chi_nhanh,id_nguoi_tao,tg_tao');
+    if (!viewAll) {
+      const ids = allowedBranchIds.map(Number).filter(Number.isFinite);
+      sel = ids.length === 0 ? sel.eq('id', -1) : sel.in('id_chi_nhanh', ids);
+    }
+    return sel.order('ngay', { ascending: false }).range(from, to);
+  });
+}
+
+export interface DuBaoSlDongThungTomTatRow {
+  id: number;
+  ngay: string;
+  trang_thai: string | null;
+  id_chi_nhanh: number | null;
+  ten_chi_nhanh: string | null;
+  id_nguoi_tao: number | null;
+  tg_tao: string | null;
+}
+
+export async function getAllDuBaoSlDongThungDb(): Promise<FarmDuBaoSlDongThung[]> {
+  const { data, error } = await db.from(TABLE).select(ROW_SELECT).order('ngay', { ascending: false });
+  if (error) throwDbError(error, { resource: `${TABLE}.list` });
+  return ((data ?? []) as DbRow[]).map(rowToModel);
+}
+
+export async function getDuBaoSlDongThungByIdDb(id: string): Promise<FarmDuBaoSlDongThung | null> {
+  const numId = Number(id);
+  if (!Number.isFinite(numId)) return null;
+  const { data, error } = await db.from(TABLE).select(ROW_SELECT).eq('id', numId).maybeSingle();
+  if (error) throwDbError(error, { resource: `${TABLE}.byId` });
+  if (!data) return null;
+  return rowToModel(data as DbRow);
+}
+
+export async function createDuBaoSlDongThungDb(
+  values: DuBaoSlDongThungFormValues,
+  idNguoiTao: string | null
+): Promise<FarmDuBaoSlDongThung> {
+  const payload = {
+    ...bodyFromForm(values, TRANG_THAI_DU_BAO_SL_DONG_THUNG.MO),
+    id_nguoi_tao: parseIdToInt8(idNguoiTao),
+    tg_tao: new Date().toISOString(),
+  };
+  const { data: inserted, error } = await db.from(TABLE).insert(payload).select(ROW_SELECT).single();
+  if (error) throw mapInsertUpdateError(error);
+  return rowToModel(inserted as DbRow);
+}
+
+export async function updateDuBaoSlDongThungDb(id: string, values: DuBaoSlDongThungFormValues): Promise<FarmDuBaoSlDongThung> {
+  const numId = Number(id);
+  if (!Number.isFinite(numId)) throw new Error('Invalid id');
+  const { data: existing, error: e0 } = await db.from(TABLE).select('trang_thai').eq('id', numId).maybeSingle();
+  if (e0) throwDbError(e0, { resource: `${TABLE}.readTrangThai` });
+  const trangThai = normalizeTrangThaiDb((existing as { trang_thai?: string } | null)?.trang_thai);
+  const updateBody = bodyFromForm(values, trangThai);
+  const { data, error } = await db.from(TABLE).update(updateBody).eq('id', numId).select(ROW_SELECT).single();
+  if (error) throw mapInsertUpdateError(error);
+  return rowToModel(data as DbRow);
+}
+
+export async function deleteDuBaoSlDongThungDb(id: string): Promise<void> {
+  const numId = Number(id);
+  if (!Number.isFinite(numId)) return;
+  const { error } = await db.from(TABLE).delete().eq('id', numId);
+  if (error) throwDbError(error, { resource: `${TABLE}.delete` });
+}
+
+export async function deleteDuBaoSlDongThungManyDb(ids: string[]): Promise<void> {
+  const numIds = ids.map((x) => Number(x)).filter((n) => Number.isFinite(n));
+  if (numIds.length === 0) return;
+  const { error } = await db.from(TABLE).delete().in('id', numIds);
+  if (error) throwDbError(error, { resource: `${TABLE}.deleteMany` });
+}
+
+/**
+ * Khóa / mở khóa hàng loạt. Bảng không có log nối thêm nên gộp được thành một UPDATE ... IN —
+ * hoặc cả lô thành công, hoặc ném lỗi để UI báo, không có trạng thái dở dang từng phiếu.
+ */
+export async function updateDuBaoSlDongThungTrangThaiManyDb(
+  ids: string[],
+  trang_thai: TrangThaiDuBaoSlDongThungPhieu
+): Promise<void> {
+  const numIds = ids.map((x) => Number(x)).filter((n) => Number.isFinite(n));
+  if (numIds.length === 0) return;
+  const next =
+    trang_thai === TRANG_THAI_DU_BAO_SL_DONG_THUNG.KHOA
+      ? TRANG_THAI_DU_BAO_SL_DONG_THUNG.KHOA
+      : TRANG_THAI_DU_BAO_SL_DONG_THUNG.MO;
+  const { error } = await db
+    .from(TABLE)
+    .update({ trang_thai: next, tg_cap_nhat: new Date().toISOString() })
+    .in('id', numIds);
+  if (error) throwDbError(error, { resource: `${TABLE}.updateTrangThaiMany` });
+}
+
+export async function updateDuBaoSlDongThungTrangThaiDb(
+  id: string,
+  trang_thai: TrangThaiDuBaoSlDongThungPhieu
+): Promise<FarmDuBaoSlDongThung> {
+  const numId = Number(id);
+  if (!Number.isFinite(numId)) throw new Error('Invalid id');
+  const next =
+    trang_thai === TRANG_THAI_DU_BAO_SL_DONG_THUNG.KHOA ? TRANG_THAI_DU_BAO_SL_DONG_THUNG.KHOA : TRANG_THAI_DU_BAO_SL_DONG_THUNG.MO;
+  const { error } = await db
+    .from(TABLE)
+    .update({ trang_thai: next, tg_cap_nhat: new Date().toISOString() })
+    .eq('id', numId);
+  if (error) throwDbError(error, { resource: `${TABLE}.updateTrangThai` });
+  return (await getDuBaoSlDongThungByIdDb(id))!;
+}

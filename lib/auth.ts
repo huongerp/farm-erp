@@ -116,7 +116,7 @@ function luuPhienTuPhanHoi(res: PhanHoiDangNhap): void {
 
 /**
  * Nhân viên bị chuyển sang Nghỉ việc trong lúc đang có phiên: server đã thu hồi
- * refresh token (trigger trong docs/vps-04-auth-schema.sql), nhưng access token
+ * refresh token (trigger trong docs/db-schema-baseline.sql), nhưng access token
  * cũ còn hạn tới 15 phút nên vẫn phải chặn ở client.
  */
 async function resolveEmployeeOrSignOutIfResigned(
@@ -131,7 +131,7 @@ async function resolveEmployeeOrSignOutIfResigned(
 
 /**
  * Chuyển bản ghi nhân viên (fp_var_nhan_vien) sang User để lưu store.
- * App nhận diện user bằng email so với Supabase Auth; sau đăng nhập lưu id, ho_va_ten, phong_ban_id, chuc_vu_id, id_chi_nhanh (chi nhánh mặc định = phần tử đầu của chi_nhanh_ids), cap_bac.
+ * App nhận diện user bằng email trong JWT do auth-service cấp; sau đăng nhập lưu id, ho_va_ten, phong_ban_id, chuc_vu_id, id_chi_nhanh (chi nhánh mặc định = phần tử đầu của chi_nhanh_ids), cap_bac.
  */
 export function employeeToUser(emp: Employee): User {
   return {
@@ -241,7 +241,7 @@ export async function getSessionEmployee(): Promise<Employee | null> {
  *
  * Ghi qua `rpc_set_mat_khau` (bcrypt server-side). Tự đổi thì các phiên khác
  * KHÔNG bị thu hồi — chỉ khi admin đặt lại mật khẩu cho người khác mới cắt phiên
- * (xem docs/vps-04-auth-schema.sql).
+ * (xem docs/db-schema-baseline.sql).
  */
 export async function changeOwnPassword(newPassword: string): Promise<void> {
   const nhanVienId = nhanVienIdPhienHienTai();
@@ -254,7 +254,7 @@ export async function changeOwnPassword(newPassword: string): Promise<void> {
  * Đổi mật khẩu của chính mình NHƯNG bắt nhập đúng mật khẩu hiện tại trước.
  *
  * `rpc_verify_mat_khau` cố ý không grant cho role `authenticated`
- * (docs/vps-03-cleanup-after-restore.sql), nên cách xác minh duy nhất từ trình
+ * (docs/db-schema-baseline.sql), nên cách xác minh duy nhất từ trình
  * duyệt là gọi lại chính endpoint đăng nhập: sai mật khẩu → `WrongCredentialsError`
  * và dính luôn cơ chế chặn thử sai của auth-service. Phiên mới trả về được lưu
  * đè lên phiên cũ để không bỏ rơi cặp token vừa cấp.
@@ -311,7 +311,7 @@ function bootstrapEmployeeFromRpc(row: Record<string, unknown> | null): Employee
     gioi_tinh: ((row.gioi_tinh as string) as 'Nam' | 'Nữ' | 'Khác') ?? 'Khác',
     trang_thai: (row.trang_thai as TrangThaiNV) ?? TRANG_THAI_NV.DANG_LAM_VIEC,
     ngay_vao_lam: (row.ngay_vao_lam as string) ?? '',
-    // Avatar chỉ lấy URL (Supabase Storage) — không kéo base64 trong bootstrap.
+    // Avatar chỉ lấy URL (Cloudinary) — không kéo base64 trong bootstrap.
     anh_dai_dien: (row.hinh_anh_url as string) ?? undefined,
   };
 }

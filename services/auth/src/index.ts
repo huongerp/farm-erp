@@ -1,5 +1,5 @@
 /**
- * Auth service thay Supabase Auth.
+ * Auth service (Hono + JWT).
  *
  * Việc duy nhất: xác định người dùng là ai, rồi ký một JWT mà PostgREST tin.
  * Không có endpoint nào đọc/ghi dữ liệu nghiệp vụ — phần đó frontend gọi thẳng

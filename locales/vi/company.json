@@ -37,5 +37,5 @@
   "company.validation.emailInvalid": "Email không hợp lệ",
   "company.service.loadError": "Không tải được thông tin công ty",
   "company.service.updateError": "Cập nhật thông tin công ty thất bại",
-  "company.service.noRecord": "Chưa có bản ghi thông tin công ty. Vui lòng chạy script seed trong Supabase."
+  "company.service.noRecord": "Chưa có bản ghi thông tin công ty. Vui lòng báo quản trị hệ thống tạo bản ghi."
 }

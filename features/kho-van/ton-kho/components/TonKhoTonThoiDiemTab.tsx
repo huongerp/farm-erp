@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Clock, FolderOpen, MapPin } from 'lucide-react';
 import { useTonKhoNxtByPeriod } from '../hooks/use-ton-kho';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
-import { useHangHoaRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
+import { useHangHoaRefQuery } from '../../../../lib/hooks/use-ref-queries';
 import EmptyState from '../../../../components/shared/EmptyState';
 import ListPageSkeleton from '../../../../components/shared/ListPageSkeleton';
 import TablePaginationFooter from '../../../../components/shared/TablePaginationFooter';

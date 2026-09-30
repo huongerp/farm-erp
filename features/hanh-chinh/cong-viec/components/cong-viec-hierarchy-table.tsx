@@ -6,7 +6,7 @@ import { getColumnCellStyle } from '../../../../store/createGenericStore';
 import type { ColumnConfig } from '../../../../store/createGenericStore';
 import type { CongViec } from '../core/types';
 import { renderTrangThaiBadge, renderUuTienBadge } from '../core/badges';
-import { useEmployeesRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
+import { useEmployeesRefQuery } from '../../../../lib/hooks/use-ref-queries';
 
 export type CongViecRow = { item: CongViec; level: number };
 

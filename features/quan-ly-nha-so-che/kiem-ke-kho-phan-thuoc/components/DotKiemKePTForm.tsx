@@ -16,7 +16,7 @@ import { useCreateDotKiemKePT, useUpdateDotKiemKePT, useNextMaDotKiemKePT } from
 import { formatMaDotKiemKePT } from '../core/ma-dot';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { useKhoList } from '../../../kho-van/danh-sach-kho/hooks/use-kho';
-import { useEmployeesRefQuery } from '@/lib/hooks/use-supabase-ref-queries';
+import { useEmployeesRefQuery } from '@/lib/hooks/use-ref-queries';
 import type { DotKiemKePT } from '../core/types';
 
 const DEFAULT_VALUES: DotKiemKePTFormValues = {

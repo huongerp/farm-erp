@@ -244,7 +244,8 @@
   "phieuKhoPhanThuoc.import.errSoPhieuExists": "Số phiếu \"{{value}}\" đã tồn tại",
   "phieuKhoPhanThuoc.import.errPhieuSkipped": "Phiếu không được tạo vì dòng {{rows}} lỗi",
   "phieuKhoPhanThuoc.import.errWriteFailed": "Không tạo được phiếu: {{msg}}",
-  "phieuKhoPhanThuoc.service.vuotTon": "Vượt tồn kho — {{detail}}",
+  "phieuKhoPhanThuoc.service.canhBaoTonAm": "Tồn kho sẽ âm — {{detail}}",
+  "phieuKhoPhanThuoc.import.warnTonAm": "Đã tạo phiếu nhưng {{count}} phiếu làm tồn kho âm: {{detail}}",
   "phieuKhoPhanThuoc.service.vuotTonItem": "{{hang}} tại {{kho}}: tồn {{ton}}, cần {{can}}",
   "phieuKhoPhanThuoc.import.guideNote5": "• Phiếu Xuất / Chuyển không được vượt tồn kho hiện tại (tính cả phiếu chờ duyệt và các phiếu phía trên trong cùng file)."
 }

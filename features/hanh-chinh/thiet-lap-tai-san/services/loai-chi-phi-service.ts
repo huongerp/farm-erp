@@ -1,21 +1,21 @@
 import type { LoaiChiPhi } from '../core/types';
 import type { LoaiChiPhiFormValues } from '../core/schema';
 import {
-  getLoaiChiPhiListSupabase,
-  createLoaiChiPhiSupabase,
-  updateLoaiChiPhiSupabase,
-  updateLoaiChiPhiStatusSupabase,
-  deleteLoaiChiPhiListSupabase,
-} from './thiet-lap-tai-san-supabase.service';
+  getLoaiChiPhiListDb,
+  createLoaiChiPhiDb,
+  updateLoaiChiPhiDb,
+  updateLoaiChiPhiStatusDb,
+  deleteLoaiChiPhiListDb,
+} from './thiet-lap-tai-san-db.service';
 
-export const getLoaiChiPhiList = getLoaiChiPhiListSupabase;
+export const getLoaiChiPhiList = getLoaiChiPhiListDb;
 
 export const createLoaiChiPhi = (data: LoaiChiPhiFormValues): Promise<LoaiChiPhi> =>
-  createLoaiChiPhiSupabase(data);
+  createLoaiChiPhiDb(data);
 
 export const updateLoaiChiPhi = (id: string, data: LoaiChiPhiFormValues): Promise<LoaiChiPhi> =>
-  updateLoaiChiPhiSupabase(id, data);
+  updateLoaiChiPhiDb(id, data);
 
-export const updateLoaiChiPhiStatus = updateLoaiChiPhiStatusSupabase;
+export const updateLoaiChiPhiStatus = updateLoaiChiPhiStatusDb;
 
-export const deleteLoaiChiPhiList = deleteLoaiChiPhiListSupabase;
+export const deleteLoaiChiPhiList = deleteLoaiChiPhiListDb;

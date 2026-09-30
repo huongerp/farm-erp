@@ -1,25 +1,25 @@
 /**
- * Service thanh toán đối tác – sử dụng Supabase (fp_mh_thanh_toan_doi_tac).
+ * Service thanh toán đối tác – đọc/ghi DB (fp_mh_thanh_toan_doi_tac).
  */
 import type { ThanhToanDoiTacFormValues } from '../core/schema';
 import {
-  getAllThanhToanDoiTac as getAllSupabase,
-  getThanhToanDoiTacById as getByIdSupabase,
-  createThanhToanDoiTac as createSupabase,
-  updateThanhToanDoiTac as updateSupabase,
-  deleteThanhToanDoiTac as deleteSupabase,
-  deleteThanhToanDoiTacMany as deleteManySupabase,
-} from './thanh-toan-doi-tac-supabase.service';
+  getAllThanhToanDoiTac as getAllDb,
+  getThanhToanDoiTacById as getByIdDb,
+  createThanhToanDoiTac as createDb,
+  updateThanhToanDoiTac as updateDb,
+  deleteThanhToanDoiTac as deleteDb,
+  deleteThanhToanDoiTacMany as deleteManyDb,
+} from './thanh-toan-doi-tac-db.service';
 
-export const getAllThanhToanDoiTac = getAllSupabase;
+export const getAllThanhToanDoiTac = getAllDb;
 export {
   getThanhToanDoiTacPage,
   fetchAllThanhToanDoiTacForListQuery,
   getThanhToanDoiTacTomTat,
   type ThanhToanDoiTacTomTat,
-} from './thanh-toan-doi-tac-supabase.service';
-export const getThanhToanDoiTacById = getByIdSupabase;
-export const createThanhToanDoiTac = (data: ThanhToanDoiTacFormValues) => createSupabase(data);
-export const updateThanhToanDoiTac = updateSupabase;
-export const deleteThanhToanDoiTac = deleteSupabase;
-export const deleteThanhToanDoiTacMany = deleteManySupabase;
+} from './thanh-toan-doi-tac-db.service';
+export const getThanhToanDoiTacById = getByIdDb;
+export const createThanhToanDoiTac = (data: ThanhToanDoiTacFormValues) => createDb(data);
+export const updateThanhToanDoiTac = updateDb;
+export const deleteThanhToanDoiTac = deleteDb;
+export const deleteThanhToanDoiTacMany = deleteManyDb;

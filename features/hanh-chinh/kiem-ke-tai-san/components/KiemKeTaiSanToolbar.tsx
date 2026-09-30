@@ -6,7 +6,7 @@ import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useKiemKeTaiSanStore } from '../store/useKiemKeTaiSanStore';
-import { useEmployeesRefQuery } from '@/lib/hooks/use-supabase-ref-queries';
+import { useEmployeesRefQuery } from '@/lib/hooks/use-ref-queries';
 import { TRANG_THAI_DOT_OPTIONS } from '../core/constants';
 import { useKiemKeFilterCounts } from '../hooks/use-kiem-ke-filter-counts';
 import type { DotKiemKe } from '../core/types';

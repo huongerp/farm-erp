@@ -8,7 +8,7 @@ import type {
 } from '../core/types';
 import { TRANG_THAI_CHO_DUYET, TRANG_THAI_DA_DUYET, TRANG_THAI_DOI_DUYET, TRANG_THAI_KHONG_DUYET } from '../../../kho-van/phieu-de-xuat-vat-tu/core/constants';
 import { TRANG_THAI_PHIEU_DE_XUAT_VAT_TU } from '../core/trang-thai-utils';
-import { fetchPhieuDeXuatStatsFromRpc } from '../../../kho-van/phieu-de-xuat-vat-tu/services/phieu-de-xuat-vat-tu-supabase.service';
+import { fetchPhieuDeXuatStatsFromRpc } from '../../../kho-van/phieu-de-xuat-vat-tu/services/phieu-de-xuat-vat-tu-db.service';
 import { getAllPhieuDeXuatVatTu } from '../../../kho-van/phieu-de-xuat-vat-tu/services/phieu-de-xuat-vat-tu-service';
 import { getAllDonDatHang } from '../../don-dat-hang/services/don-dat-hang-service';
 import { getKhoRef } from '../../../kho-van/danh-sach-kho/services/kho-service';

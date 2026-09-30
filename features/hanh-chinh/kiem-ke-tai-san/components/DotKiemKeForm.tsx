@@ -15,7 +15,7 @@ import { dotKiemKeSchema, type DotKiemKeFormValues } from '../core/schema';
 import { useCreateDotKiemKe, useUpdateDotKiemKe, useNextMaDotDotKiemKeTaiSan, formatMaDotDotKiemKeTaiSan } from '../hooks/use-kiem-ke-tai-san';
 import { useAssetGroups } from '../../thiet-lap-tai-san/hooks/use-nhom-tai-san';
 import { useAssetStorageLocations } from '../../thiet-lap-tai-san/hooks/use-noi-luu';
-import { useEmployeesRefQuery } from '@/lib/hooks/use-supabase-ref-queries';
+import { useEmployeesRefQuery } from '@/lib/hooks/use-ref-queries';
 import { useAuthStore } from '../../../../store/useStore';
 import type { DotKiemKe } from '../core/types';
 

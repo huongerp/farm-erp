@@ -11,7 +11,7 @@ import { useChiTietPhieuKhoPaged, usePhieuKhoById, useDeletePhieuKho } from '../
 import { usePhieuKhoViewScope } from '../hooks/use-phieu-kho-view-scope';
 import { buildChiTietPhieuKhoListServerQuery, fetchAllChiTietPhieuKhoForListQuery } from '../services/phieu-kho-service';
 import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
-import { useEmployeesRefQuery, useDoiTacRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
+import { useEmployeesRefQuery, useDoiTacRefQuery } from '../../../../lib/hooks/use-ref-queries';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import { useNhomDoiTacList, useTagList, useDoiTacList } from '../../danh-sach-doi-tac/hooks/use-doi-tac';
 import { useChiTietPhieuKhoStore } from '../store/useChiTietPhieuKhoStore';

@@ -1,6 +1,6 @@
 import type { TrangThaiHoatDong } from '../../../../lib/constants';
 
-/** Chức vụ – đồng bộ bảng fp_var_chuc_vu (Supabase). Liên kết fp_var_phong_ban, fp_var_cap_bac. */
+/** Chức vụ – đồng bộ bảng fp_var_chuc_vu. Liên kết fp_var_phong_ban, fp_var_cap_bac. */
 export interface Position {
   id: string;
   ten_chuc_vu: string;

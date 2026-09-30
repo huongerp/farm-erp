@@ -1,5 +1,8 @@
 # Chuyển app sang PostgREST self-host (bỏ hẳn Supabase)
 
+> **Lịch sử.** Việc chuyển đổi đã xong. Các file SQL nhắc trong tài liệu này (`docs/vps-*.sql`,
+> `docs/supabase-*.sql`) và `docs/VPS_MIGRATION.md` đã xoá; trạng thái DB hiện tại xem `docs/db-schema-baseline.sql`.
+
 Tiếp nối `docs/VPS_MIGRATION.md` (đã xong phần dữ liệu). Phần này dựng **PostgREST + auth-service** trên Dokploy và sửa frontend để không còn gọi `supabase.co` nữa.
 
 **Quyết định đã chốt**: JWT do một auth-service nhỏ ký (không ký trong Postgres, xem [Vì sao cần auth-service](#vì-sao-cần-auth-service)); giữ đăng nhập Google bằng luồng GIS popup; quên mật khẩu do admin cấp lại, không gửi email; có bảng phiên + refresh token để giữ đăng nhập lâu và khoá được tài khoản ngay; frontend deploy trên Dokploy cùng project.

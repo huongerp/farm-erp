@@ -39,7 +39,7 @@ export const useCreateCongViec = (onSuccess?: () => void) => {
       queryClient.invalidateQueries({ queryKey: CONG_VIEC_QUERY_KEY });
       toast.success(i18n.t('congViec.toast.createSuccess'));
       // Thông báo cho người chịu trách nhiệm và nhóm hỗ trợ do trigger DB sinh ra
-      // (docs/supabase-trigger_thong_bao_7_module.sql). Trước đây chỗ này tự thêm
+      // (docs/db-schema-baseline.sql). Trước đây chỗ này tự thêm
       // thông báo vào store phía client — chúng chỉ hiện với chính người tạo và
       // không bao giờ tới được người nhận thật.
       onSuccess?.();

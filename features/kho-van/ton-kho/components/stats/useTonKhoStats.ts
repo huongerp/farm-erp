@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useAllTonKho } from '../../hooks/use-ton-kho';
 import { getKhoList } from '../../../danh-sach-kho/services/kho-service';
 import { useQuery } from '@tanstack/react-query';
-import { useHangHoaRefQuery } from '../../../../../lib/hooks/use-supabase-ref-queries';
+import { useHangHoaRefQuery } from '../../../../../lib/hooks/use-ref-queries';
 import type { TonKhoRecord } from '../../../phieu-kho/services/ton-kho-service';
 import type { Kho } from '../../../danh-sach-kho/core/types';
 

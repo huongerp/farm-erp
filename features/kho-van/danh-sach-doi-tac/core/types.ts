@@ -3,7 +3,7 @@ import type { TrangThaiHoatDong } from '../../../../lib/constants';
 /** Loại đối tác: Nhà cung cấp (phiếu nhập) hoặc Khách hàng (phiếu xuất). */
 export type LoaiDoiTac = 'nha_cung_cap' | 'khach_hang';
 
-/** Trạng thái đối tác – dùng TRANG_THAI_HOAT_DONG từ lib (lưu text trong Supabase). */
+/** Trạng thái đối tác – dùng TRANG_THAI_HOAT_DONG từ lib (lưu text trong DB). */
 export type TrangThaiDoiTac = TrangThaiHoatDong;
 export { TRANG_THAI_HOAT_DONG as TRANG_THAI_DOI_TAC } from '../../../../lib/constants';
 
@@ -12,7 +12,7 @@ export interface NhomDoiTac {
   id: string;
   ma_nhom: string;
   ten_nhom: string;
-  /** Loại: nha_cung_cap | khach_hang (cột loai trên Supabase) */
+  /** Loại: nha_cung_cap | khach_hang (cột loai trong DB) */
   loai?: LoaiDoiTac | null;
   thu_tu?: number;
   trang_thai: TrangThaiHoatDong;

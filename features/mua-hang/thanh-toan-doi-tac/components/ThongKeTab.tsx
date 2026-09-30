@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { useThanhToanDoiTacList } from '../hooks/use-thanh-toan-doi-tac';
 import { useThanhToanDoiTacViewScope } from '../hooks/use-thanh-toan-doi-tac-view-scope';
 import { filterThanhToanDoiTacListByViewScope } from '../utils/thanh-toan-doi-tac-view-scope-filter';
-import { useDoiTacRefQuery } from '../../../../lib/hooks/use-supabase-ref-queries';
+import { useDoiTacRefQuery } from '../../../../lib/hooks/use-ref-queries';
 import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
 import { useTrangThaiThanhToanDoiTacList } from '../../thiet-lap-de-xuat-vat-tu/hooks/use-trang-thai-thanh-toan-doi-tac';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';

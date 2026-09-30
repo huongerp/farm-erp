@@ -1,9 +1,8 @@
 /**
- * Giữ phiên đăng nhập thay cho `supabase.auth` (trước đây SDK tự lo việc này).
+ * Giữ phiên đăng nhập: access token + refresh token do auth-service cấp.
  *
  * Access token sống 15 phút, refresh token 30 ngày và được luân chuyển mỗi lần
- * làm mới (xem docs/vps-04-auth-schema.sql). Cả hai lưu trong localStorage —
- * giống cách Supabase làm, nên không đổi mức rủi ro so với trước.
+ * làm mới (xem docs/db-schema-baseline.sql). Cả hai lưu trong localStorage.
  *
  * Ba việc dễ sai mà file này xử lý:
  *   1. Nhiều query song song cùng thấy token hết hạn → chỉ gọi /lam-moi MỘT lần
@@ -31,7 +30,7 @@ export type Phien = {
    * Cờ buộc đổi mật khẩu, do endpoint đăng nhập trả về.
    *
    * Phải giữ ở client vì `authenticated` không có quyền SELECT cột
-   * `phai_doi_mat_khau` (xem docs/vps-03-cleanup-after-restore.sql). Đây là lời
+   * `phai_doi_mat_khau` (xem docs/db-schema-baseline.sql). Đây là lời
    * nhắc chứ không phải rào bảo mật — người dùng sửa localStorage là bỏ qua được.
    */
   phai_doi_mat_khau: boolean;

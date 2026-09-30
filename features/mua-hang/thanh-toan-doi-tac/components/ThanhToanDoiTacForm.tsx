@@ -16,7 +16,7 @@ import type { TrangThaiThanhToanDoiTac } from '../../thiet-lap-de-xuat-vat-tu/co
 import { useCreateThanhToanDoiTac, useUpdateThanhToanDoiTac } from '../hooks/use-thanh-toan-doi-tac';
 import { useCauHinhSoPhieuThanhToan } from '../hooks/use-cau-hinh-so-phieu-thanh-toan';
 import { getNextSoPhieuThanhToanPreview } from '../services/cau-hinh-so-phieu-thanh-toan.service';
-import { getNextSoPhieuThanhToanDoiTacRpc } from '../services/thanh-toan-doi-tac-supabase.service';
+import { getNextSoPhieuThanhToanDoiTacRpc } from '../services/thanh-toan-doi-tac-db.service';
 import { getTodayISO } from '../../../../lib/utils';
 import { TRANG_THAI_HOAT_DONG, TRANG_THAI } from '../../../../lib/constants';
 import { useAuthStore } from '../../../../store/useStore';
