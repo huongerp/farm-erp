@@ -1,5 +1,7 @@
 import type { PhieuKhoPTFilters } from '../store/usePhieuKhoPTStore';
 import type { ChiTietPhieuKhoPTFilters } from '../store/useChiTietPhieuKhoPTStore';
+import type { Kho } from '../../../kho-van/danh-sach-kho/core/types';
+import type { EmployeeBranchModuleScope } from '../../../he-thong/nhan-vien/hooks/use-employee-branch-module-scope';
 
 const STATUS_KEY_TO_VI: Record<string, string> = {
   Pending: 'Chờ duyệt',
@@ -22,6 +24,53 @@ function toNumIds(strIds: string[]): number[] {
   return [...new Set(out)].sort((a, b) => a - b);
 }
 
+/**
+ * Phạm vi xem phiếu kho: cấp cao xem tất cả; còn lại thấy phiếu có kho đi HOẶC kho đến
+ * thuộc chi nhánh được phân, hoặc phiếu do chính mình lập.
+ */
+export type PhieuKhoPTPhamVi = {
+  viewAll: boolean;
+  /** Kho được phép xem khi không phải toàn phạm vi. Rỗng = không kho nào. */
+  allowedKhoIds: number[];
+  /** fp_var_nhan_vien.id — phiếu mình lập luôn thấy. */
+  currentEmployeeId: number | null;
+};
+
+export function buildPhieuKhoPTPhamVi(
+  viewScope: Pick<EmployeeBranchModuleScope, 'viewAll' | 'viewByBranch' | 'allowedBranchIds' | 'currentEmployeeId'>,
+  khoList: Kho[]
+): PhieuKhoPTPhamVi {
+  const me = viewScope.currentEmployeeId != null ? Number(viewScope.currentEmployeeId) : NaN;
+  // Không viewByBranch → không kho nào (chỉ còn phiếu mình lập), KHÔNG phải thấy tất cả.
+  const khoIds =
+    viewScope.viewAll || !viewScope.viewByBranch
+      ? []
+      : khoList
+          .filter((k) => k.id_chi_nhanh != null && viewScope.allowedBranchIds.includes(k.id_chi_nhanh))
+          .map((k) => k.id);
+  return {
+    viewAll: viewScope.viewAll,
+    allowedKhoIds: toNumIds(khoIds),
+    currentEmployeeId: Number.isFinite(me) ? me : null,
+  };
+}
+
+/**
+ * Điều kiện `or` của PostgREST cho phạm vi xem.
+ * - `null`  → xem tất cả, không thêm điều kiện.
+ * - `''`    → không được xem gì (service phải chặn hết, KHÔNG phải bỏ qua lọc).
+ */
+export function phamViOrFilter(phamVi: PhieuKhoPTPhamVi, cotNguoiTao: string): string | null {
+  if (phamVi.viewAll) return null;
+  const ve: string[] = [];
+  if (phamVi.allowedKhoIds.length > 0) {
+    const ids = phamVi.allowedKhoIds.join(',');
+    ve.push(`kho_id.in.(${ids})`, `kho_den_id.in.(${ids})`);
+  }
+  if (phamVi.currentEmployeeId != null) ve.push(`${cotNguoiTao}.eq.${phamVi.currentEmployeeId}`);
+  return ve.join(',');
+}
+
 const TAB_TO_DB: Record<string, string> = { nhap: 'nhập', xuat: 'xuất', chuyen: 'chuyển' };
 
 /** Tham số lọc server — tab Danh sách (gộp loại; loaiDb rỗng = cả 3). */
@@ -35,6 +84,7 @@ export type PhieuKhoPTListServerQuery = {
   ngayTo: string;
   nguoiTaoIds: number[];
   nguoiDuyetIds: number[];
+  phamVi: PhieuKhoPTPhamVi;
 };
 
 export type ChiTietPhieuKhoPTListServerQuery = {
@@ -47,6 +97,7 @@ export type ChiTietPhieuKhoPTListServerQuery = {
   ngayTo: string;
   nguoiTaoIds: number[];
   nguoiDuyetIds: number[];
+  phamVi: PhieuKhoPTPhamVi;
 };
 
 export function buildPhieuKhoPTListServerQuery(params: {
@@ -54,8 +105,9 @@ export function buildPhieuKhoPTListServerQuery(params: {
   filters: PhieuKhoPTFilters;
   ngayFrom: string;
   ngayTo: string;
+  phamVi: PhieuKhoPTPhamVi;
 }): PhieuKhoPTListServerQuery {
-  const { searchTerm, filters, ngayFrom, ngayTo } = params;
+  const { searchTerm, filters, ngayFrom, ngayTo, phamVi } = params;
   const loaiArr = strArr(filters.loaiKeys);
   const loaiDbResolved = [
     ...new Set(
@@ -75,6 +127,7 @@ export function buildPhieuKhoPTListServerQuery(params: {
     ngayTo,
     nguoiTaoIds: toNumIds(strArr(filters.nguoiTaoIds)),
     nguoiDuyetIds: toNumIds(strArr(filters.nguoiDuyetIds)),
+    phamVi,
   };
 }
 
@@ -83,8 +136,9 @@ export function buildChiTietPhieuKhoPTListServerQuery(params: {
   filters: ChiTietPhieuKhoPTFilters;
   ngayFrom: string;
   ngayTo: string;
+  phamVi: PhieuKhoPTPhamVi;
 }): ChiTietPhieuKhoPTListServerQuery {
-  const { searchTerm, filters, ngayFrom, ngayTo } = params;
+  const { searchTerm, filters, ngayFrom, ngayTo, phamVi } = params;
   const loaiArr = strArr(filters.loai);
   const loaiDbResolved = [
     ...new Set(
@@ -104,5 +158,6 @@ export function buildChiTietPhieuKhoPTListServerQuery(params: {
     ngayTo,
     nguoiTaoIds: toNumIds(strArr(filters.nguoiTaoIds)),
     nguoiDuyetIds: toNumIds(strArr(filters.nguoiDuyetIds)),
+    phamVi,
   };
 }

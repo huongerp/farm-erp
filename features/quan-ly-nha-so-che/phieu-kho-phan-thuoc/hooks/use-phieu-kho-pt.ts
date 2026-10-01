@@ -38,21 +38,28 @@ export const usePhieuKhoPTByDeXuat = (deXuatIds: string[]) => {
   });
 };
 
-export const usePhieuKhoPTListPaged = (pageIndex: number, listQuery: PhieuKhoPTListServerQuery) => {
+/** `enabled = false` khi phạm vi xem chưa tải xong — tránh lóe dữ liệu ngoài phạm vi. */
+export const usePhieuKhoPTListPaged = (pageIndex: number, listQuery: PhieuKhoPTListServerQuery, enabled = true) => {
   const qPart = stableListQueryKeyPart(listQuery);
   return useQuery({
     queryKey: [...QUERY_KEY, 'paged', pageIndex, PHIEU_KHO_PT_PAGE_SIZE, qPart] as const,
     queryFn: () => getPhieuKhoPTPage(pageIndex, PHIEU_KHO_PT_PAGE_SIZE, listQuery),
+    enabled,
     staleTime: 1000 * 60 * 2,
     placeholderData: keepPreviousData,
   });
 };
 
-export const useChiTietPhieuKhoPTPaged = (pageIndex: number, listQuery: ChiTietPhieuKhoPTListServerQuery) => {
+export const useChiTietPhieuKhoPTPaged = (
+  pageIndex: number,
+  listQuery: ChiTietPhieuKhoPTListServerQuery,
+  enabled = true
+) => {
   const qPart = stableListQueryKeyPart(listQuery);
   return useQuery({
     queryKey: [...QUERY_KEY_CHI_TIET, 'paged', pageIndex, CHI_TIET_PAGE_SIZE, qPart] as const,
     queryFn: () => getChiTietPhieuKhoPTPage(pageIndex, CHI_TIET_PAGE_SIZE, listQuery),
+    enabled,
     staleTime: 1000 * 60 * 2,
     placeholderData: keepPreviousData,
   });

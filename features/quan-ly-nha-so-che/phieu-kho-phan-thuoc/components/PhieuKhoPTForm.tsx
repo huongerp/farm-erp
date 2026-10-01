@@ -27,7 +27,10 @@ const ADD_KHO_DEN = '__add_kho_den__';
 const ADD_HANG_HOA = '__add_hang_hoa__';
 
 interface Props {
+  /** Kho được chọn làm kho lập phiếu (đã lọc theo phạm vi xem). */
   khoList: Kho[];
+  /** Kho đến của phiếu chuyển — mặc định = `khoList`; truyền toàn bộ kho để chuyển sang chi nhánh khác. */
+  khoDenList?: Kho[];
   initialData?: PhieuKhoPT | null;
   /** Giá trị điền sẵn khi tạo mới từ module khác (Đề xuất mua hàng → "Tạo phiếu kho"). */
   prefillValues?: Partial<PhieuKhoPTFormValues>;
@@ -44,7 +47,7 @@ const LOAI_OPTIONS: { value: LoaiPhieuKhoPT; labelKey: string }[] = [
   { value: 'chuyển', labelKey: 'phieuKhoPhanThuoc.tabs.chuyen' },
 ];
 
-const PhieuKhoPTForm: React.FC<Props> = ({ khoList, initialData, prefillValues, onClose, onRequestAddKho, onRequestAddHangHoa }) => {
+const PhieuKhoPTForm: React.FC<Props> = ({ khoList, khoDenList, initialData, prefillValues, onClose, onRequestAddKho, onRequestAddHangHoa }) => {
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const isEdit = !!initialData?.id;
@@ -71,21 +74,28 @@ const PhieuKhoPTForm: React.FC<Props> = ({ khoList, initialData, prefillValues, 
   const khoIdWatch = watch('kho_id');
   const loaiWatch = watch('loai') as LoaiPhieuKhoPT;
 
-  const khoOptions = useMemo(
-    () => [
+  const khoOptions = useMemo(() => {
+    const opts = khoList.map((k) => ({ value: k.id, label: k.ten_kho }));
+    // Sửa phiếu mình lập ở kho ngoài phạm vi: giữ lại option của giá trị hiện tại.
+    const cur = initialData?.kho_id;
+    if (cur && !opts.some((o) => o.value === cur)) opts.push({ value: cur, label: initialData?.ten_kho ?? cur });
+    return [
       ...(onRequestAddKho ? [{ value: ADD_KHO, label: `➕ ${t('phieuKhoPhanThuoc.form.addWarehouse')}` }] : []),
       { value: '', label: t('phieuKhoPhanThuoc.form.warehousePlaceholder') },
-      ...khoList.map((k) => ({ value: k.id, label: k.ten_kho })),
-    ],
-    [khoList, t, onRequestAddKho]
-  );
+      ...opts,
+    ];
+  }, [khoList, initialData?.kho_id, initialData?.ten_kho, t, onRequestAddKho]);
 
   const khoDenOptionsWithAdd = useMemo(() => {
-    const base = !khoIdWatch ? khoOptions : khoOptions.filter((o) => !o.value || o.value !== khoIdWatch);
+    const base = [
+      { value: '', label: t('phieuKhoPhanThuoc.form.warehousePlaceholder') },
+      ...(khoDenList ?? khoList)
+        .filter((k) => !khoIdWatch || k.id !== khoIdWatch)
+        .map((k) => ({ value: k.id, label: k.ten_kho })),
+    ];
     if (!onRequestAddKho) return base;
-    const addOpt = { value: ADD_KHO_DEN, label: `➕ ${t('phieuKhoPhanThuoc.form.addWarehouse')}` };
-    return [addOpt, ...base.filter((o) => o.value !== ADD_KHO)];
-  }, [khoOptions, khoIdWatch, t, onRequestAddKho]);
+    return [{ value: ADD_KHO_DEN, label: `➕ ${t('phieuKhoPhanThuoc.form.addWarehouse')}` }, ...base];
+  }, [khoDenList, khoList, khoIdWatch, t, onRequestAddKho]);
 
   const hangHoaComboboxOptions = useMemo(
     () =>

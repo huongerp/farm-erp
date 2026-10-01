@@ -13,6 +13,8 @@ import {
   useUpdatePhieuKhoPTTrangThaiMany,
 } from '../hooks/use-phieu-kho-pt';
 import { useKhoList } from '../../../kho-van/danh-sach-kho/hooks/use-kho';
+import { usePhieuKhoPTViewScope } from '../hooks/use-phieu-kho-pt-view-scope';
+import { buildPhieuKhoPTPhamVi } from '../services/phieu-kho-pt-list-query';
 import { buildPhieuKhoPTListServerQuery, fetchAllPhieuKhoPTForListQuery } from '../services/phieu-kho-pt-service';
 import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
 import { useEmployeesRefQuery } from '../../../../lib/hooks/use-ref-queries';
@@ -70,7 +72,15 @@ const DanhSachTab: React.FC = () => {
   const addKhoResolveRef = useRef<(k: Kho | null) => void>(null);
   const addHangHoaResolveRef = useRef<(h: FarmHangHoa | null) => void>(null);
 
-  const { data: khoList = [] } = useKhoList();
+  const { data: khoListAll = [], isPending: khoPending } = useKhoList();
+  const viewScope = usePhieuKhoPTViewScope();
+  const phamVi = useMemo(() => buildPhieuKhoPTPhamVi(viewScope, khoListAll), [viewScope, khoListAll]);
+  /** Kho trong phạm vi — dùng cho chip lọc và ô Kho của form. */
+  const khoList = useMemo(() => {
+    if (phamVi.viewAll) return khoListAll;
+    const allowed = new Set(phamVi.allowedKhoIds.map(String));
+    return khoListAll.filter((k) => allowed.has(String(k.id)));
+  }, [khoListAll, phamVi]);
   const importer = usePhieuKhoPTImport(khoList);
   const { data: empRef = [] } = useEmployeesRefQuery();
   const { data: viewingPhieuFull } = usePhieuKhoPTById(viewingItem?.id);
@@ -104,14 +114,20 @@ const DanhSachTab: React.FC = () => {
         filters,
         ngayFrom: dateRangeStr.start,
         ngayTo: dateRangeStr.end,
+        phamVi,
       }),
-    [searchTerm, filters, dateRangeStr.start, dateRangeStr.end]
+    [searchTerm, filters, dateRangeStr.start, dateRangeStr.end, phamVi]
   );
 
   const listQueryKey = useMemo(() => stableListQueryKeyPart(listServerQuery), [listServerQuery]);
 
   const pageIndex = Math.max(0, pagination.page - 1);
-  const pageQuery = usePhieuKhoPTListPaged(pageIndex, listServerQuery);
+  const pageQuery = usePhieuKhoPTListPaged(
+    pageIndex,
+    listServerQuery,
+    // Chờ đủ phạm vi + danh mục kho, nếu không sẽ query với allowedKhoIds rỗng rồi nháy lại.
+    !viewScope.isLoading && (phamVi.viewAll || !khoPending)
+  );
   const tableRows = pageQuery.data?.data ?? [];
   const totalCount = pageQuery.data?.totalCount ?? 0;
   const isInitialLoading = !pageQuery.data && pageQuery.isPending;
@@ -328,6 +344,7 @@ const DanhSachTab: React.FC = () => {
         {showForm && (
           <PhieuKhoPTForm
             khoList={khoList}
+            khoDenList={khoListAll}
             initialData={isCopyMode ? editingItem : (editingPhieuFull ?? editingItem)}
             onClose={() => {
               setShowForm(false);

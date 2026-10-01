@@ -15,7 +15,11 @@ import { getKhoRef } from '../../../kho-van/danh-sach-kho/services/kho-service';
 import { getAllFarmHangHoa } from '../../hang-hoa-phan-thuoc/services/farm-hang-hoa-service';
 import { getEmployeesRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
 import { postgrestQuotedIlikePattern } from '../../../../lib/postgrest-or-ilike';
-import type { ChiTietPhieuKhoPTListServerQuery, PhieuKhoPTListServerQuery } from './phieu-kho-pt-list-query';
+import {
+  phamViOrFilter,
+  type ChiTietPhieuKhoPTListServerQuery,
+  type PhieuKhoPTListServerQuery,
+} from './phieu-kho-pt-list-query';
 import { formatDbError } from '../../../../lib/db-errors';
 import { chunkBy } from '../../../../lib/import-bulk';
 import { normalizeText } from '../../../../lib/import-common';
@@ -873,6 +877,9 @@ function mapPhieuKhoPTChiTietFlatViewRows(flatRows: PhieuKhoPTChiTietFlatViewRow
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function applyPhieuKhoPTListQueryToSummarySelect(q: any, query: PhieuKhoPTListServerQuery): any {
   let b = q;
+  const phamVi = phamViOrFilter(query.phamVi, 'nguoi_tao_id');
+  // Chuỗi rỗng = không được xem phiếu nào, KHÔNG phải xem tất cả.
+  if (phamVi != null) b = phamVi ? b.or(phamVi) : b.eq('id', -1);
   if (query.loaiDb.length) b = b.in('loai', query.loaiDb);
   if (query.trangThaiViet.length) b = b.in('trang_thai', query.trangThaiViet);
   if (query.khoIds.length) b = b.in('kho_id', query.khoIds);
@@ -893,6 +900,8 @@ function applyPhieuKhoPTListQueryToSummarySelect(q: any, query: PhieuKhoPTListSe
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function applyChiTietPhieuKhoPTListQueryToFlatSelect(q: any, query: ChiTietPhieuKhoPTListServerQuery): any {
   let b = q;
+  const phamVi = phamViOrFilter(query.phamVi, 'phieu_nguoi_tao_id');
+  if (phamVi != null) b = phamVi ? b.or(phamVi) : b.eq('phieu_id', -1);
   if (query.loaiDb.length) b = b.in('loai', query.loaiDb);
   if (query.trangThaiViet.length) b = b.in('trang_thai', query.trangThaiViet);
   if (query.khoIds.length) b = b.in('kho_id', query.khoIds);
