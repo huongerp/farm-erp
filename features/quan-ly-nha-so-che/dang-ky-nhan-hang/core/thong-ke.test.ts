@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { tinhThongKeDangKyNhanHang } from './thong-ke';
+import { dienDuNgay, tinhThongKeDangKyNhanHang } from './thong-ke';
 import type { DangKyNhanHang, TongHangHoaPhieu } from './types';
 
 const VN = (hhmm: string, ngay = '2026-09-30') => {
@@ -93,5 +93,30 @@ describe('thống kê đăng ký nhận hàng', () => {
     expect(tk.xeLauNhat.map((r) => r.phieu.id)).toEqual(['2', '1']);
     expect(tk.xeTreHoacQuaGio.map((r) => r.phieu.id)).toEqual(['2']);
     expect(tk.xeChuaRa.map((r) => [r.phieu.id, r.phutTrongFarm])).toEqual([['3', 145]]);
+  });
+});
+
+describe('kỳ không có phiếu', () => {
+  it('KPI = 0, danh sách rỗng — không lỗi', () => {
+    const tk = tinhThongKeDangKyNhanHang([], []);
+    expect(tk.kpi).toMatchObject({ tongPhieu: 0, daRa: 0, tongSoLuong: 0, tbPhutTrongFarm: null, soXeVaoTre: 0 });
+    expect(tk.theoNgay).toEqual([]);
+    expect(tk.theoHangHoa).toEqual([]);
+  });
+
+  it('điền đủ ngày trong khoảng với số 0, giữ ngày có dữ liệu', () => {
+    const r = dienDuNgay([{ key: '2026-10-02', soXe: 2, soLuong: 10, tbPhut: 90 }], '2026-10-01', '2026-10-03');
+    expect(r.map((n) => [n.key, n.soXe])).toEqual([
+      ['2026-10-01', 0],
+      ['2026-10-02', 2],
+      ['2026-10-03', 0],
+    ]);
+    expect(dienDuNgay([], '2026-10-01', '2026-10-01')).toEqual([{ key: '2026-10-01', soXe: 0, soLuong: 0, tbPhut: null }]);
+  });
+
+  it('không có khoảng ngày ("Tất cả") hoặc khoảng quá dài → giữ nguyên', () => {
+    const data = [{ key: '2026-09-30', soXe: 1, soLuong: 0, tbPhut: null }];
+    expect(dienDuNgay(data)).toBe(data);
+    expect(dienDuNgay(data, '2020-01-01', '2026-12-31')).toBe(data);
   });
 });

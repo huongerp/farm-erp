@@ -18,7 +18,6 @@ import {
 import DashboardToolbar from '../../../../components/shared/DashboardToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import DateRangePicker from '../../../../components/ui/DateRangePicker';
-import EmptyState from '../../../../components/shared/EmptyState';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import { StatsKpiGrid, type StatsKpiCardItem } from '../../../../components/shared/stats';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
@@ -35,6 +34,8 @@ import DangKyNhanHangDetail from './DangKyNhanHangDetail';
 
 const ThongKeCharts = lazy(() => import('./stats/ThongKeCharts'));
 
+/** Mặc định không giới hạn thời gian (Tất cả). */
+const PRESET_MAC_DINH = 'all';
 const PRESET_IDS = ['today', '7days', 'thisMonth', 'lastMonth', 'thisQuarter', 'thisYear', 'all', 'custom'] as const;
 
 function addDaysIso(ymd: string, days: number): string {
@@ -58,7 +59,7 @@ const ThongKeTab: React.FC = () => {
   const viewScope = useDangKyNhanHangViewScope();
   const { data: branches = [] } = useBranches();
 
-  const [range, setRange] = useState({ preset: 'thisMonth', customStart: '', customEnd: '' });
+  const [range, setRange] = useState({ preset: PRESET_MAC_DINH, customStart: '', customEnd: '' });
   const [idChiNhanh, setIdChiNhanh] = useState<string[]>([]);
   const [khachHang, setKhachHang] = useState<string[]>([]);
   const [viewing, setViewing] = useState<DangKyNhanHang | null>(null);
@@ -83,7 +84,7 @@ const ThongKeTab: React.FC = () => {
       sortColumn: 'ngay_dang_ky',
       sortDirection: 'asc' as const,
     }),
-    [viewScope.viewAll, viewScope.allowedBranchIds, idChiNhanh, from, to]
+    [viewScope.viewAll, viewScope.allowedBranchIds, idChiNhanh, from, to],
   );
 
   const { data, isLoading, isFetching, isError } = useDangKyNhanHangThongKe(query, !viewScope.isLoading);
@@ -106,7 +107,7 @@ const ThongKeTab: React.FC = () => {
 
   const branchOptions = useMemo(
     () => branches.map((b) => ({ value: b.id, label: b.ten_chi_nhanh, subLabel: b.ma_chi_nhanh })),
-    [branches]
+    [branches],
   );
 
   const presets = PRESET_IDS.map((id) => ({ id, label: t(`dangKyNhanHang.stats.preset.${id}`) }));
@@ -115,16 +116,30 @@ const ThongKeTab: React.FC = () => {
       ? `${from ? formatYmdToDisplay(from) : '…'} – ${to ? formatYmdToDisplay(to) : '…'}`
       : undefined;
 
-  const activeFilterCount = idChiNhanh.length + khachHang.length + (range.preset !== 'thisMonth' ? 1 : 0);
+  const activeFilterCount = idChiNhanh.length + khachHang.length + (range.preset !== PRESET_MAC_DINH ? 1 : 0);
   const clearFilters = () => {
     setIdChiNhanh([]);
     setKhachHang([]);
-    setRange({ preset: 'thisMonth', customStart: '', customEnd: '' });
+    setRange({ preset: PRESET_MAC_DINH, customStart: '', customEnd: '' });
   };
 
   const filterGroups = [
-    { key: 'chiNhanh', label: t('dangKyNhanHang.col.chiNhanh'), icon: Building2, options: branchOptions, value: idChiNhanh, onChange: setIdChiNhanh },
-    { key: 'khachHang', label: t('dangKyNhanHang.col.khachHang'), icon: Users, options: khachHangOptions, value: khachHang, onChange: setKhachHang },
+    {
+      key: 'chiNhanh',
+      label: t('dangKyNhanHang.col.chiNhanh'),
+      icon: Building2,
+      options: branchOptions,
+      value: idChiNhanh,
+      onChange: setIdChiNhanh,
+    },
+    {
+      key: 'khachHang',
+      label: t('dangKyNhanHang.col.khachHang'),
+      icon: Users,
+      options: khachHangOptions,
+      value: khachHang,
+      onChange: setKhachHang,
+    },
   ];
 
   const renderFilters = (
@@ -160,15 +175,54 @@ const ThongKeTab: React.FC = () => {
   const tongXe = k.tongPhieu - k.huy;
   const pct = (n: number) => (tongXe > 0 ? `${Math.round((n / tongXe) * 100)}%` : null);
   const kpiItems: StatsKpiCardItem[] = [
-    { id: 'tongXe', label: t('dangKyNhanHang.stats.kpi.tongXe'), value: formatNumberVN(tongXe), icon: Truck, color: 'text-primary', bg: 'bg-primary/10' },
-    { id: 'daRa', label: t('dangKyNhanHang.stats.kpi.daRa'), value: formatNumberVN(k.daRa), icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-500/10', pct: pct(k.daRa) },
-    { id: 'dangTrong', label: t('dangKyNhanHang.stats.kpi.dangTrongFarm'), value: formatNumberVN(k.dangTrongFarm), icon: Hourglass, color: 'text-amber-600', bg: 'bg-amber-500/10' },
-    { id: 'choVao', label: t('dangKyNhanHang.stats.kpi.choVao'), value: formatNumberVN(k.choVao), icon: Clock, color: 'text-sky-600', bg: 'bg-sky-500/10' },
-    { id: 'tb', label: t('dangKyNhanHang.stats.kpi.tbTrongFarm'), value: formatThoiLuong(k.tbPhutTrongFarm), icon: Timer, color: 'text-violet-600', bg: 'bg-violet-500/10' },
+    {
+      id: 'tongXe',
+      label: t('dangKyNhanHang.stats.kpi.tongXe'),
+      value: formatNumberVN(tongXe),
+      icon: Truck,
+      color: 'text-primary',
+      bg: 'bg-primary/10',
+    },
+    {
+      id: 'daRa',
+      label: t('dangKyNhanHang.stats.kpi.daRa'),
+      value: formatNumberVN(k.daRa),
+      icon: CheckCircle2,
+      color: 'text-emerald-600',
+      bg: 'bg-emerald-500/10',
+      pct: pct(k.daRa),
+    },
+    {
+      id: 'dangTrong',
+      label: t('dangKyNhanHang.stats.kpi.dangTrongFarm'),
+      value: formatNumberVN(k.dangTrongFarm),
+      icon: Hourglass,
+      color: 'text-amber-600',
+      bg: 'bg-amber-500/10',
+    },
+    {
+      id: 'choVao',
+      label: t('dangKyNhanHang.stats.kpi.choVao'),
+      value: formatNumberVN(k.choVao),
+      icon: Clock,
+      color: 'text-sky-600',
+      bg: 'bg-sky-500/10',
+    },
+    {
+      id: 'tb',
+      label: t('dangKyNhanHang.stats.kpi.tbTrongFarm'),
+      value: formatThoiLuong(k.tbPhutTrongFarm),
+      icon: Timer,
+      color: 'text-violet-600',
+      bg: 'bg-violet-500/10',
+    },
     {
       id: 'minMax',
       label: t('dangKyNhanHang.stats.kpi.nhanhNhatLauNhat'),
-      value: k.minPhutTrongFarm == null ? '—' : `${formatThoiLuong(k.minPhutTrongFarm)} / ${formatThoiLuong(k.maxPhutTrongFarm)}`,
+      value:
+        k.minPhutTrongFarm == null
+          ? '—'
+          : `${formatThoiLuong(k.minPhutTrongFarm)} / ${formatThoiLuong(k.maxPhutTrongFarm)}`,
       icon: TimerOff,
       color: 'text-violet-600',
       bg: 'bg-violet-500/10',
@@ -205,10 +259,28 @@ const ThongKeTab: React.FC = () => {
 
   const cotLauNhat: CotBang<PhieuThoiGian>[] = [
     { key: 'xe', label: t('dangKyNhanHang.col.xeCont'), render: xeCot },
-    { key: 'vao', label: t('dangKyNhanHang.col.gioVao'), render: (r) => <span className="text-xs">{formatDateTimeShort(r.phieu.tg_vao_thuc_te)}</span> },
-    { key: 'ra', label: t('dangKyNhanHang.col.gioRa'), render: (r) => <span className="text-xs">{formatDateTimeShort(r.phieu.tg_ra_thuc_te)}</span> },
-    { key: 'tl', label: t('dangKyNhanHang.col.thoiLuong'), align: 'right', render: (r) => formatThoiLuong(r.phutTrongFarm) },
-    { key: 'sl', label: t('dangKyNhanHang.stats.soThung'), align: 'right', render: (r) => (r.soLuong ? formatNumberVN(r.soLuong) : '—') },
+    {
+      key: 'vao',
+      label: t('dangKyNhanHang.col.gioVao'),
+      render: (r) => <span className="text-xs">{formatDateTimeShort(r.phieu.tg_vao_thuc_te)}</span>,
+    },
+    {
+      key: 'ra',
+      label: t('dangKyNhanHang.col.gioRa'),
+      render: (r) => <span className="text-xs">{formatDateTimeShort(r.phieu.tg_ra_thuc_te)}</span>,
+    },
+    {
+      key: 'tl',
+      label: t('dangKyNhanHang.col.thoiLuong'),
+      align: 'right',
+      render: (r) => formatThoiLuong(r.phutTrongFarm),
+    },
+    {
+      key: 'sl',
+      label: t('dangKyNhanHang.stats.soThung'),
+      align: 'right',
+      render: (r) => (r.soLuong ? formatNumberVN(r.soLuong) : '—'),
+    },
   ];
 
   const lech = (p: number | null) =>
@@ -218,7 +290,9 @@ const ThongKeTab: React.FC = () => {
     {
       key: 'dk',
       label: t('dangKyNhanHang.col.gioDangKy'),
-      render: (r) => <span className="text-xs tabular-nums">{`${r.phieu.gio_dang_ky_tu ?? '…'} – ${r.phieu.gio_dang_ky_den ?? '…'}`}</span>,
+      render: (r) => (
+        <span className="text-xs tabular-nums">{`${r.phieu.gio_dang_ky_tu ?? '…'} – ${r.phieu.gio_dang_ky_den ?? '…'}`}</span>
+      ),
     },
     { key: 'tre', label: t('dangKyNhanHang.stats.vaoTre'), align: 'right', render: (r) => lech(r.phutVaoTre) },
     { key: 'qua', label: t('dangKyNhanHang.stats.raQuaGio'), align: 'right', render: (r) => lech(r.phutRaQuaGio) },
@@ -226,8 +300,19 @@ const ThongKeTab: React.FC = () => {
 
   const cotChuaRa: CotBang<PhieuThoiGian>[] = [
     { key: 'xe', label: t('dangKyNhanHang.col.xeCont'), render: xeCot },
-    { key: 'vao', label: t('dangKyNhanHang.col.gioVao'), render: (r) => <span className="text-xs">{formatDateTimeShort(r.phieu.tg_vao_thuc_te)}</span> },
-    { key: 'tl', label: t('dangKyNhanHang.detail.daOTrongFarm'), align: 'right', render: (r) => <span className="text-amber-600 dark:text-amber-400 font-medium">{formatThoiLuong(r.phutTrongFarm)}</span> },
+    {
+      key: 'vao',
+      label: t('dangKyNhanHang.col.gioVao'),
+      render: (r) => <span className="text-xs">{formatDateTimeShort(r.phieu.tg_vao_thuc_te)}</span>,
+    },
+    {
+      key: 'tl',
+      label: t('dangKyNhanHang.detail.daOTrongFarm'),
+      align: 'right',
+      render: (r) => (
+        <span className="text-amber-600 dark:text-amber-400 font-medium">{formatThoiLuong(r.phutTrongFarm)}</span>
+      ),
+    },
   ];
 
   const cotNhom = (labelKey: string): CotBang<ThongKeNhom>[] => [
@@ -255,37 +340,23 @@ const ThongKeTab: React.FC = () => {
             <p className="text-sm text-destructive">{t('dangKyNhanHang.stats.loadError')}</p>
           ) : isLoading || viewScope.isLoading ? (
             <LoadingSpinnerWithText text={t('dangKyNhanHang.loading')} centered className="py-10" />
-          ) : phieuLoc.length === 0 ? (
-            <EmptyState
-              title={t('dangKyNhanHang.stats.noData')}
-              description={t('dangKyNhanHang.stats.noDataHint')}
-              action={
-                activeFilterCount > 0 ? (
-                  <button type="button" onClick={clearFilters} className="text-sm font-medium text-primary hover:underline">
-                    {t('common.clearFilters', { count: activeFilterCount })}
-                  </button>
-                ) : undefined
-              }
-            />
           ) : (
             <div className={isFetching ? 'opacity-60 transition-opacity' : undefined}>
               <div className="space-y-4">
                 <StatsKpiGrid items={kpiItems} columns={4} />
                 <Suspense fallback={<LoadingSpinnerWithText text={t('common.loading')} className="py-8" centered />}>
-                  <ThongKeCharts tk={tk} />
+                  <ThongKeCharts tk={tk} from={from} to={to} />
                 </Suspense>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {tk.xeChuaRa.length > 0 && (
-                    <BangThongKe
-                      title={t('dangKyNhanHang.stats.xeChuaRa')}
-                      icon={Hourglass}
-                      rows={tk.xeChuaRa}
-                      columns={cotChuaRa}
-                      rowKey={(r) => r.phieu.id}
-                      onRowClick={moPhieu}
-                    />
-                  )}
+                  <BangThongKe
+                    title={t('dangKyNhanHang.stats.xeChuaRa')}
+                    icon={Hourglass}
+                    rows={tk.xeChuaRa}
+                    columns={cotChuaRa}
+                    rowKey={(r) => r.phieu.id}
+                    onRowClick={moPhieu}
+                  />
                   <BangThongKe
                     title={t('dangKyNhanHang.stats.xeLauNhat')}
                     icon={Timer}
@@ -317,8 +388,18 @@ const ThongKeTab: React.FC = () => {
                           </div>
                         ),
                       },
-                      { key: 'xe', label: t('dangKyNhanHang.stats.soXe'), align: 'right', render: (r) => formatNumberVN(r.soXe) },
-                      { key: 'sl', label: t('dangKyNhanHang.stats.soThung'), align: 'right', render: (r) => formatNumberVN(r.soLuong) },
+                      {
+                        key: 'xe',
+                        label: t('dangKyNhanHang.stats.soXe'),
+                        align: 'right',
+                        render: (r) => formatNumberVN(r.soXe),
+                      },
+                      {
+                        key: 'sl',
+                        label: t('dangKyNhanHang.stats.soThung'),
+                        align: 'right',
+                        render: (r) => formatNumberVN(r.soLuong),
+                      },
                     ]}
                     rowKey={(r) => r.id_hang_hoa}
                   />
@@ -336,15 +417,13 @@ const ThongKeTab: React.FC = () => {
                     columns={cotNhom('dangKyNhanHang.col.loaiHang')}
                     rowKey={(r) => r.key}
                   />
-                  {tk.theoChiNhanh.length > 1 && (
-                    <BangThongKe
-                      title={t('dangKyNhanHang.stats.theoChiNhanh')}
-                      icon={Building2}
-                      rows={tk.theoChiNhanh}
-                      columns={cotNhom('dangKyNhanHang.col.chiNhanh')}
-                      rowKey={(r) => r.key}
-                    />
-                  )}
+                  <BangThongKe
+                    title={t('dangKyNhanHang.stats.theoChiNhanh')}
+                    icon={Building2}
+                    rows={tk.theoChiNhanh}
+                    columns={cotNhom('dangKyNhanHang.col.chiNhanh')}
+                    rowKey={(r) => r.key}
+                  />
                   {k.huy > 0 && (
                     <p className="text-xs text-muted-foreground flex items-center gap-1.5 lg:col-span-2">
                       <Ban size={12} /> {t('dangKyNhanHang.stats.ghiChuHuy', { n: k.huy })}

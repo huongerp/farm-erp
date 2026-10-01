@@ -179,3 +179,29 @@ export function tinhThongKeDangKyNhanHang(
       .sort((a, b) => (b.phutTrongFarm ?? 0) - (a.phutTrongFarm ?? 0)),
   };
 }
+
+/** Giới hạn số ngày điền 0 — chọn "Năm nay" vẫn vẽ được, khoảng dài hơn thì giữ nguyên dữ liệu thật. */
+export const SO_NGAY_DIEN_TOI_DA = 366;
+
+/**
+ * Điền đủ các ngày trong [from, to] (YYYY-MM-DD) với số 0 cho ngày không có phiếu, để biểu đồ
+ * theo ngày luôn có trục — kể cả kỳ trống. Thiếu khoảng ngày hoặc khoảng quá dài → trả nguyên.
+ */
+export function dienDuNgay(theoNgay: ThongKeNhom[], from?: string, to?: string): ThongKeNhom[] {
+  if (!from || !to || from > to) return theoNgay;
+  const [y1, m1, d1] = from.split('-').map(Number);
+  const [y2, m2, d2] = to.split('-').map(Number);
+  const start = Date.UTC(y1, m1 - 1, d1);
+  const end = Date.UTC(y2, m2 - 1, d2);
+  const soNgay = Math.round((end - start) / 86400000) + 1;
+  if (!Number.isFinite(soNgay) || soNgay > SO_NGAY_DIEN_TOI_DA) return theoNgay;
+  const coSan = new Map(theoNgay.map((n) => [n.key, n]));
+  const out: ThongKeNhom[] = [];
+  for (let i = 0; i < soNgay; i++) {
+    const key = new Date(start + i * 86400000).toISOString().slice(0, 10);
+    out.push(coSan.get(key) ?? { key, soXe: 0, soLuong: 0, tbPhut: null });
+  }
+  // Ngày có phiếu nằm ngoài khoảng (không xảy ra khi lọc đúng) vẫn giữ lại.
+  for (const n of theoNgay) if (n.key < from || n.key > to) out.push(n);
+  return out.sort((a, b) => a.key.localeCompare(b.key));
+}

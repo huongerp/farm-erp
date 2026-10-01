@@ -18,7 +18,7 @@ import {
 } from 'recharts';
 import ChartTooltip from '../../../../../components/ui/ChartTooltip';
 import { StatsCard } from '../../../../../components/shared/stats';
-import type { ThongKeDangKyNhanHang } from '../../core/thong-ke';
+import { dienDuNgay, type ThongKeDangKyNhanHang } from '../../core/thong-ke';
 
 const CHART_HEIGHT = 240;
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#06b6d4', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
@@ -26,9 +26,29 @@ const axisTick = { fontSize: 10, fill: 'var(--muted-foreground)' };
 
 const ddmm = (ymd: string) => (ymd.length >= 10 ? `${ymd.slice(8, 10)}/${ymd.slice(5, 7)}` : ymd);
 
-const ThongKeCharts: React.FC<{ tk: ThongKeDangKyNhanHang }> = ({ tk }) => {
+/** Khung biểu đồ trống — giữ đúng chiều cao để bố cục không nhảy khi kỳ không có phiếu. */
+const ChuaCoDuLieu: React.FC = () => {
   const { t } = useTranslation();
-  const theoNgay = tk.theoNgay.map((n) => ({
+  return (
+    <div
+      className="flex items-center justify-center rounded-lg border border-dashed border-border text-xs text-muted-foreground"
+      style={{ height: CHART_HEIGHT }}
+    >
+      {t('dangKyNhanHang.stats.chuaCoDuLieu')}
+    </div>
+  );
+};
+
+interface Props {
+  tk: ThongKeDangKyNhanHang;
+  /** Khoảng ngày đang lọc (YYYY-MM-DD) — có thì trục ngày điền đủ, ngày trống = 0. */
+  from?: string;
+  to?: string;
+}
+
+const ThongKeCharts: React.FC<Props> = ({ tk, from, to }) => {
+  const { t } = useTranslation();
+  const theoNgay = dienDuNgay(tk.theoNgay, from, to).map((n) => ({
     name: ddmm(n.key),
     soXe: n.soXe,
     soLuong: n.soLuong,
@@ -41,24 +61,47 @@ const ThongKeCharts: React.FC<{ tk: ThongKeDangKyNhanHang }> = ({ tk }) => {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      {theoNgay.length > 0 && (
-        <StatsCard title={t('dangKyNhanHang.stats.chartTheoNgay')} icon={CalendarDays} spanTwo>
+      <StatsCard title={t('dangKyNhanHang.stats.chartTheoNgay')} icon={CalendarDays} spanTwo>
+        {theoNgay.length === 0 ? (
+          <ChuaCoDuLieu />
+        ) : (
           <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
             <BarChart data={theoNgay} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.5} />
               <XAxis dataKey="name" tick={axisTick} axisLine={false} tickLine={false} />
               <YAxis yAxisId="xe" tick={axisTick} axisLine={false} tickLine={false} allowDecimals={false} />
-              <YAxis yAxisId="sl" orientation="right" tick={axisTick} axisLine={false} tickLine={false} allowDecimals={false} />
+              <YAxis
+                yAxisId="sl"
+                orientation="right"
+                tick={axisTick}
+                axisLine={false}
+                tickLine={false}
+                allowDecimals={false}
+              />
               <Tooltip content={<ChartTooltip />} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
-              <Bar yAxisId="xe" dataKey="soXe" name={t('dangKyNhanHang.stats.soXe')} fill={COLORS[0]} radius={[4, 4, 0, 0]} />
-              <Bar yAxisId="sl" dataKey="soLuong" name={t('dangKyNhanHang.stats.soThung')} fill={COLORS[1]} radius={[4, 4, 0, 0]} />
+              <Bar
+                yAxisId="xe"
+                dataKey="soXe"
+                name={t('dangKyNhanHang.stats.soXe')}
+                fill={COLORS[0]}
+                radius={[4, 4, 0, 0]}
+              />
+              <Bar
+                yAxisId="sl"
+                dataKey="soLuong"
+                name={t('dangKyNhanHang.stats.soThung')}
+                fill={COLORS[1]}
+                radius={[4, 4, 0, 0]}
+              />
             </BarChart>
           </ResponsiveContainer>
-        </StatsCard>
-      )}
-      {coPhut && (
-        <StatsCard title={t('dangKyNhanHang.stats.chartThoiGianTb')} icon={Timer}>
+        )}
+      </StatsCard>
+      <StatsCard title={t('dangKyNhanHang.stats.chartThoiGianTb')} icon={Timer}>
+        {!coPhut ? (
+          <ChuaCoDuLieu />
+        ) : (
           <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
             <LineChart data={theoNgay} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.5} />
@@ -76,13 +119,24 @@ const ThongKeCharts: React.FC<{ tk: ThongKeDangKyNhanHang }> = ({ tk }) => {
               />
             </LineChart>
           </ResponsiveContainer>
-        </StatsCard>
-      )}
-      {pie.length > 0 && (
-        <StatsCard title={t('dangKyNhanHang.stats.chartHangHoa')} icon={Package}>
+        )}
+      </StatsCard>
+      <StatsCard title={t('dangKyNhanHang.stats.chartHangHoa')} icon={Package}>
+        {pie.length === 0 ? (
+          <ChuaCoDuLieu />
+        ) : (
           <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
             <PieChart>
-              <Pie data={pie} cx="50%" cy="50%" outerRadius={85} innerRadius={45} paddingAngle={2} dataKey="value" stroke="none">
+              <Pie
+                data={pie}
+                cx="50%"
+                cy="50%"
+                outerRadius={85}
+                innerRadius={45}
+                paddingAngle={2}
+                dataKey="value"
+                stroke="none"
+              >
                 {pie.map((_, i) => (
                   <Cell key={i} fill={COLORS[i % COLORS.length]} />
                 ))}
@@ -91,8 +145,8 @@ const ThongKeCharts: React.FC<{ tk: ThongKeDangKyNhanHang }> = ({ tk }) => {
               <Legend wrapperStyle={{ fontSize: 11 }} />
             </PieChart>
           </ResponsiveContainer>
-        </StatsCard>
-      )}
+        )}
+      </StatsCard>
     </div>
   );
 };
