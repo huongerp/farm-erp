@@ -11,6 +11,7 @@ import {
   LogIn,
   LogOut,
   Phone,
+  Printer,
   RotateCcw,
   ScanLine,
   Timer,
@@ -60,6 +61,7 @@ import HangHoaXuatSection from './HangHoaXuatSection';
 import CheckInOutDialog from './CheckInOutDialog';
 import HinhAnhDialog from './HinhAnhDialog';
 import ThemHangHoaDialog from './ThemHangHoaDialog';
+import ChonMauInDialog from './ChonMauInDialog';
 
 const QrScannerDialog = lazy(() => import('./QrScannerDialog'));
 
@@ -112,7 +114,7 @@ const DangKyNhanHangDetail: React.FC<Props> = ({
   const hoanTacDong = useHoanTacDongCuoi();
   const { data: chiTiet = [], isLoading: chiTietLoading } = useDangKyNhanHangChiTiet(data.id);
 
-  const [dialog, setDialog] = useState<null | 'checkIn' | 'checkOut' | 'anh' | 'themHang' | 'quet'>(null);
+  const [dialog, setDialog] = useState<null | 'checkIn' | 'checkOut' | 'anh' | 'themHang' | 'quet' | 'in'>(null);
 
   const { ghiNhan, lamMoiSauQuet } = useQuetHangHoa(data.id);
 
@@ -136,7 +138,10 @@ const DangKyNhanHangDetail: React.FC<Props> = ({
   );
 
   const toolbarActions: DetailToolbarAction[] = useMemo(() => {
-    const a: DetailToolbarAction[] = [];
+    // In: ai xem được phiếu cũng in được — đặt trước điều kiện quyền sửa.
+    const a: DetailToolbarAction[] = [
+      { label: t('dangKyNhanHang.toolbar.in'), icon: <Printer />, onClick: () => setDialog('in'), variant: 'outline' },
+    ];
     if (!canUpdate) return a;
     if (coTheCheckIn(tt)) {
       a.push({ label: t('dangKyNhanHang.toolbar.checkIn'), icon: <LogIn />, onClick: () => setDialog('checkIn'), variant: 'primary' });
@@ -304,6 +309,7 @@ const DangKyNhanHangDetail: React.FC<Props> = ({
         )}
         {dialog === 'anh' && <HinhAnhDialog data={data} onClose={() => setDialog(null)} />}
         {dialog === 'themHang' && <ThemHangHoaDialog idPhieu={data.id} onClose={() => setDialog(null)} />}
+        {dialog === 'in' && <ChonMauInDialog idPhieu={data.id} onClose={() => setDialog(null)} />}
         {dialog === 'quet' && (
           <Suspense fallback={null}>
             <QrScannerDialog

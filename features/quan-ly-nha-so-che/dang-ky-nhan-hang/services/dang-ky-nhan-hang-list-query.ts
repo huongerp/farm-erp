@@ -27,6 +27,7 @@ export const DKNH_SORTABLE_DB_COLUMNS = new Set([
   'so_xe',
   'so_cont',
   'ten_tai_xe',
+  'sdt_tai_xe',
   'gio_dang_ky_tu',
   'tg_vao_thuc_te',
   'tg_ra_thuc_te',

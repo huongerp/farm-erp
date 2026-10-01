@@ -1054,6 +1054,51 @@ html[data-text-size="large"] { font-size: 18px; }
     break-inside: avoid;
     page-break-inside: avoid;
   }
+  /* Đăng ký nhận hàng: 3 mẫu in, khổ A4/A5 dọc/ngang — bề rộng lấy từ style inline, @page chèn lúc bấm In */
+  .dknh-preview-backdrop,
+  .dknh-preview-body,
+  .dknh-preview-content-wrapper,
+  .dknh-preview-content-wrapper *,
+  .dknh-preview-content,
+  .dknh-preview-content * {
+    visibility: visible;
+  }
+  .dknh-preview-backdrop {
+    position: static !important;
+    height: auto !important;
+    overflow: visible !important;
+    background: white !important;
+    display: block !important;
+  }
+  .dknh-preview-toolbar {
+    display: none !important;
+  }
+  .dknh-preview-body {
+    position: static !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    display: block !important;
+    flex: none !important;
+  }
+  .dknh-preview-content-wrapper,
+  .dknh-preview-content {
+    position: static !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-height: 0 !important;
+    box-shadow: none !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    display: block !important;
+  }
+  .dknh-preview-content table thead {
+    display: table-header-group;
+  }
+  .dknh-preview-content tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
   /* Thanh toán đối tác: trước đây KHÔNG có khối in nào — in ra trang trắng hoàn toàn */
   .thanh-toan-doi-tac-preview-backdrop,
   .thanh-toan-doi-tac-preview-body,

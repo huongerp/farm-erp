@@ -36,7 +36,6 @@ import CheckInOutDialog from './CheckInOutDialog';
 
 /** Cột hiển thị → cột sắp xếp ở DB (cột ghép / tính toán không sort ở server). */
 const SORT_COLUMN_MAP: Record<string, string> = {
-  xe_cont: 'so_xe',
   gio_dang_ky: 'gio_dang_ky_tu',
 };
 

@@ -3,7 +3,14 @@ import { useTranslation } from 'react-i18next';
 import { Edit, LogIn, LogOut, Trash2 } from 'lucide-react';
 import GenericTable from '../../../../components/shared/GenericTable';
 import type { ColumnConfig, SortState } from '../../../../store/createGenericStore';
-import { cn, formatDateTimeShort, formatNumberVN, formatYmdToDisplay, getTimezone } from '../../../../lib/utils';
+import {
+  cn,
+  formatDateTimeShort,
+  formatNumberVN,
+  formatTimeDateShort,
+  formatYmdToDisplay,
+  getTimezone,
+} from '../../../../lib/utils';
 import type { DangKyNhanHang } from '../core/types';
 import { coTheCheckIn, coTheCheckOut } from '../core/trang-thai';
 import {
@@ -96,86 +103,98 @@ const DangKyNhanHangList: React.FC<Props> = ({
     );
   };
 
+  /** Check in / check out nhanh trong cột Thao tác (icon nhỏ, không làm hàng cao lên). */
+  const quickIcon = (item: DangKyNhanHang) => {
+    if (!onQuickAction) return null;
+    const mode = coTheCheckIn(item.trang_thai) ? 'checkIn' : coTheCheckOut(item.trang_thai) ? 'checkOut' : null;
+    if (!mode) return null;
+    const isIn = mode === 'checkIn';
+    const label = t(isIn ? 'dangKyNhanHang.toolbar.checkIn' : 'dangKyNhanHang.toolbar.checkOut');
+    return (
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onQuickAction(item, mode);
+        }}
+        className={cn(
+          'p-1.5 rounded-md',
+          isIn ? 'text-primary hover:bg-primary/10' : 'text-emerald-600 hover:bg-emerald-500/10'
+        )}
+        title={label}
+        aria-label={label}
+      >
+        {isIn ? <LogIn size={14} /> : <LogOut size={14} />}
+      </button>
+    );
+  };
+
   const renderCell = (colId: string, item: DangKyNhanHang) => {
+    // Mỗi ô đúng 1 dòng chữ (nowrap / truncate) — hàng thấp, dễ dò nhiều phiếu.
+    const one = (text: React.ReactNode, className?: string, title?: string) => (
+      <span className={cn('block truncate whitespace-nowrap text-sm', className)} title={title}>
+        {text}
+      </span>
+    );
     switch (colId) {
       case 'ngay_dang_ky':
-        return <span className="text-sm tabular-nums">{formatYmdToDisplay(item.ngay_dang_ky)}</span>;
+        return one(formatYmdToDisplay(item.ngay_dang_ky), 'tabular-nums');
       case 'trang_thai':
-        return (
-          <div className="flex flex-col items-start gap-1">
-            <TrangThaiBadge value={item.trang_thai} />
-            {quickBtn(item, 'sm')}
-          </div>
-        );
-      case 'xe_cont':
-        return (
-          <div className="text-sm leading-snug font-mono">
-            <div className="font-medium">{item.so_xe || '—'}</div>
-            {item.so_cont && <div className="text-xs text-muted-foreground">{item.so_cont}</div>}
-          </div>
-        );
+        return <TrangThaiBadge value={item.trang_thai} />;
+      case 'so_xe':
+        return one(item.so_xe || '—', 'font-mono font-medium');
+      case 'so_cont':
+        return one(item.so_cont || '—', 'font-mono text-muted-foreground');
       case 'khach_hang':
-        return <span className="text-sm">{item.khach_hang || '—'}</span>;
+        return one(item.khach_hang || '—', undefined, item.khach_hang ?? undefined);
       case 'loai_hang_hoa':
-        return <span className="text-sm">{item.loai_hang_hoa || '—'}</span>;
+        return one(item.loai_hang_hoa || '—', undefined, item.loai_hang_hoa ?? undefined);
       case 'ten_tai_xe':
-        return (
-          <div className="text-sm leading-snug">
-            <div>{item.ten_tai_xe || '—'}</div>
-            {item.sdt_tai_xe && <div className="text-xs text-muted-foreground">{item.sdt_tai_xe}</div>}
-          </div>
-        );
+        return one(item.ten_tai_xe || '—', undefined, item.ten_tai_xe ?? undefined);
+      case 'sdt_tai_xe':
+        return one(item.sdt_tai_xe || '—', 'tabular-nums text-muted-foreground');
       case 'gio_dang_ky':
-        return (
-          <span className="text-sm tabular-nums text-muted-foreground">
-            {item.gio_dang_ky_tu || item.gio_dang_ky_den
-              ? `${item.gio_dang_ky_tu ?? '…'} – ${item.gio_dang_ky_den ?? '…'}`
-              : '—'}
-          </span>
+        return one(
+          item.gio_dang_ky_tu || item.gio_dang_ky_den
+            ? `${item.gio_dang_ky_tu ?? '…'} – ${item.gio_dang_ky_den ?? '…'}`
+            : '—',
+          'tabular-nums text-muted-foreground'
         );
       case 'tg_vao_thuc_te': {
         const tre = soPhutVaoTre(item.ngay_dang_ky, item.gio_dang_ky_tu, item.tg_vao_thuc_te, tz);
-        return (
-          <span className={cn('text-xs tabular-nums', (tre ?? 0) > NGUONG_TRE_PHUT && 'text-rose-600 dark:text-rose-400 font-medium')}>
-            {item.tg_vao_thuc_te ? formatDateTimeShort(item.tg_vao_thuc_te) : '—'}
-          </span>
+        return one(
+          item.tg_vao_thuc_te ? formatTimeDateShort(item.tg_vao_thuc_te) : '—',
+          cn('tabular-nums', (tre ?? 0) > NGUONG_TRE_PHUT && 'text-rose-600 dark:text-rose-400 font-medium'),
+          item.tg_vao_thuc_te ? formatDateTimeShort(item.tg_vao_thuc_te) : undefined
         );
       }
       case 'tg_ra_thuc_te': {
         const qua = soPhutRaQuaGio(item.ngay_dang_ky, item.gio_dang_ky_tu, item.gio_dang_ky_den, item.tg_ra_thuc_te, tz);
-        return (
-          <span className={cn('text-xs tabular-nums', (qua ?? 0) > NGUONG_TRE_PHUT && 'text-rose-600 dark:text-rose-400 font-medium')}>
-            {item.tg_ra_thuc_te ? formatDateTimeShort(item.tg_ra_thuc_te) : '—'}
-          </span>
+        return one(
+          item.tg_ra_thuc_te ? formatTimeDateShort(item.tg_ra_thuc_te) : '—',
+          cn('tabular-nums', (qua ?? 0) > NGUONG_TRE_PHUT && 'text-rose-600 dark:text-rose-400 font-medium'),
+          item.tg_ra_thuc_te ? formatDateTimeShort(item.tg_ra_thuc_te) : undefined
         );
       }
       case 'thoi_luong': {
         const p = thoiLuong(item);
-        return (
-          <span className={cn('text-sm tabular-nums', item.trang_thai === 'da_vao' && 'text-amber-600 dark:text-amber-400')}>
-            {p != null ? formatThoiLuong(p) : '—'}
-          </span>
+        return one(
+          p != null ? formatThoiLuong(p) : '—',
+          cn('tabular-nums', item.trang_thai === 'da_vao' && 'text-amber-600 dark:text-amber-400')
         );
       }
       case 'tong_so_luong':
-        return (
-          <span className="text-sm tabular-nums font-medium">
-            {item.tong_so_luong ? formatNumberVN(item.tong_so_luong) : '—'}
-          </span>
-        );
+        return one(item.tong_so_luong ? formatNumberVN(item.tong_so_luong) : '—', 'tabular-nums font-medium');
       case 'ten_chi_nhanh':
-        return <span className="text-sm text-muted-foreground">{item.ten_chi_nhanh || '—'}</span>;
+        return one(item.ten_chi_nhanh || '—', 'text-muted-foreground');
       case 'ghi_chu':
-        return (
-          <span className="text-sm text-muted-foreground line-clamp-2" title={item.ghi_chu ?? ''}>
-            {item.ghi_chu || '—'}
-          </span>
-        );
+        return one(item.ghi_chu || '—', 'text-muted-foreground', item.ghi_chu ?? undefined);
       case 'ten_nguoi_tao':
-        return <span className="text-sm text-muted-foreground">{item.ten_nguoi_tao || '—'}</span>;
+        return one(item.ten_nguoi_tao || '—', 'text-muted-foreground');
       case 'actions':
         return (
           <div className="flex items-center justify-end gap-0.5">
+            {quickIcon(item)}
             {onEdit && (
               <button
                 type="button"
@@ -321,6 +340,7 @@ const DangKyNhanHangList: React.FC<Props> = ({
       renderMobileCard={renderMobileCard}
       keyExtractor={(item) => item.id}
       onRowClick={onView}
+      actionsColumnWidth={onQuickAction ? 100 : undefined}
       emptyTitle={t('dangKyNhanHang.empty')}
       emptyDescription={t('dangKyNhanHang.emptyHint')}
     />
