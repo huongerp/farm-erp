@@ -34,7 +34,6 @@ const BANG_LUONG_ROW_COLUMNS =
 
 type Row = Record<string, unknown>;
 
-const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /** Không còn module chấm điểm KPI — trả rỗng; có thể nối bảng DB sau. */
 async function getChamDiemKpiRecords(): Promise<ChamDiemKpiRecord[]> {
@@ -232,7 +231,6 @@ function buildOneRecord(
 
 async function seedDb(): Promise<void> {
   if (dbSeeded) return;
-  await delay(300);
   const [employees, kpiRecords, ...attendanceByMonth] = await Promise.all([
     getEmployees(),
     getChamDiemKpiRecords(),

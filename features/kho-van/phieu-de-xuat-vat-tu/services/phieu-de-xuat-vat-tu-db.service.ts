@@ -169,14 +169,17 @@ function rowToChiTiet(row: ChiTietDbRow, idPhieuStr: string, enrich?: { ma_hang?
 }
 
 export async function getAllPhieuDeXuatVatTuDb(): Promise<PhieuDeXuatVatTu[]> {
-  const rows = await fetchAllRows<PhieuDeXuatSummaryRow>((from, to) =>
-    db
-      .from(VIEW_PHIEU_DE_XUAT_SUMMARY)
-      .select(VIEW_PHIEU_DE_XUAT_SUMMARY_COLUMNS)
-      .order('ngay', { ascending: false })
-      .order('so_phieu', { ascending: false })
-      .range(from, to)
-  );
+  return getPhieuDeXuatVatTuTrongKyDb();
+}
+
+/** Phiếu trong kỳ [ngayFrom, ngayTo] (yyyy-mm-dd), lọc ở DB — báo cáo không phải tải cả bảng. */
+export async function getPhieuDeXuatVatTuTrongKyDb(ngayFrom?: string, ngayTo?: string): Promise<PhieuDeXuatVatTu[]> {
+  const rows = await fetchAllRows<PhieuDeXuatSummaryRow>((from, to) => {
+    let q = db.from(VIEW_PHIEU_DE_XUAT_SUMMARY).select(VIEW_PHIEU_DE_XUAT_SUMMARY_COLUMNS);
+    if (ngayFrom) q = q.gte('ngay', ngayFrom);
+    if (ngayTo) q = q.lte('ngay', ngayTo);
+    return q.order('ngay', { ascending: false }).order('so_phieu', { ascending: false }).range(from, to);
+  });
   return rows.map((row) => mapPhieuDeXuatSummaryRowToPhieu(row));
 }
 

@@ -1,0 +1,57 @@
+# Kiểm tra mỗi lần push / mở PR: typecheck, lint, test, build + ngân sách bundle.
+# Deploy vẫn làm qua Dokploy — chỉ deploy commit có dấu ✓ ở đây.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            services/*/package-lock.json
+      # Test ở gốc chạy cả test của services/* → cần dependency của từng service.
+      - run: npm ci
+      - run: npm ci --prefix services/auth
+      - run: npm ci --prefix services/notify
+      - run: npm ci --prefix services/sheets
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: node scripts/check-i18n-keys.mjs
+      - run: npm run build
+      - run: npm run check:bundle
+
+  services:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        service: [auth, notify, sheets]
+    defaults:
+      run:
+        working-directory: services/${{ matrix.service }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: services/${{ matrix.service }}/package-lock.json
+      - run: npm ci
+      # Giống bước build trong Dockerfile của service.
+      - run: npm run build

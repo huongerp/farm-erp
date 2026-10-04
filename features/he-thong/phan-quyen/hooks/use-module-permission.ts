@@ -3,6 +3,7 @@ import { useAuthStore } from '../../../../store/useStore';
 import { useCurrentRoleContext } from './use-phan-quyen';
 import { useCapBacToanQuyen } from './use-cap-bac-toan-quyen';
 import type { ActionType } from '../core/types';
+import { coQuyenXem, tinhCoQuyen } from '../core/quyen-module';
 import {
   getModuleIdsBySubmenuPath,
   isSubmenuWithPermission,
@@ -61,18 +62,7 @@ export function useModulePermission(moduleId: string): ModulePermissionFlags {
     const modulePerm = quyenHan.find((q) => q.module_id === moduleId);
     const actions: ActionType[] = modulePerm?.actions ?? [];
 
-    const has = (key: ActionType) => actions.includes(key);
-    const hasAdminOrAll = has('admin') || has('all');
-
-    return {
-      canView: hasAdminOrAll || has('view'),
-      canCreate: hasAdminOrAll || has('create'),
-      canUpdate: hasAdminOrAll || has('update'),
-      canDelete: hasAdminOrAll || has('delete'),
-      canApprove: hasAdminOrAll || has('approve'),
-      canAdmin: hasAdminOrAll,
-      isLoading: false,
-    };
+    return { ...tinhCoQuyen(actions), isLoading: false };
   }, [moduleId, user?.id_chuc_vu, data, isPending, toanQuyen]);
 }
 
@@ -94,13 +84,10 @@ export function useSubmenuVisible(path: string): boolean {
 
     const quyenHan = data?.quyenHan ?? [];
 
-    const hasView = (actions: ActionType[]) =>
-      actions.includes('admin') || actions.includes('all') || actions.includes('view');
-
     return moduleIds.some((moduleId) => {
       const modulePerm = quyenHan.find((q) => q.module_id === moduleId);
       const actions: ActionType[] = modulePerm?.actions ?? [];
-      return hasView(actions);
+      return coQuyenXem(actions);
     });
   }, [path, user?.id_chuc_vu, data, isPending, toanQuyen]);
 }
@@ -122,13 +109,10 @@ export function useModulesWithViewPermission(path: string): Set<string> {
     const moduleIds = getModuleIdsBySubmenuPath(path);
     const quyenHan = data?.quyenHan ?? [];
 
-    const hasView = (actions: ActionType[]) =>
-      actions.includes('admin') || actions.includes('all') || actions.includes('view');
-
     moduleIds.forEach((moduleId) => {
       const modulePerm = quyenHan.find((q) => q.module_id === moduleId);
       const actions: ActionType[] = modulePerm?.actions ?? [];
-      if (hasView(actions)) viewable.add(moduleId);
+      if (coQuyenXem(actions)) viewable.add(moduleId);
     });
     return viewable;
   }, [path, user?.id_chuc_vu, data, isPending, toanQuyen]);

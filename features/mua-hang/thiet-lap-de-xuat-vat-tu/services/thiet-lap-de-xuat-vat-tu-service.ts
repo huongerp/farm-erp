@@ -19,7 +19,6 @@ const DEFAULT_CONFIG: CauHinhDeXuatVatTu = {
   cho_phep_sua_sau_duyet: false,
 };
 
-const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 function mergeWithDefaults(parsed: Partial<CauHinhDeXuatVatTu>): CauHinhDeXuatVatTu {
   return {
@@ -42,7 +41,6 @@ function mergeWithDefaults(parsed: Partial<CauHinhDeXuatVatTu>): CauHinhDeXuatVa
 }
 
 export const getCauHinhDeXuatVatTu = async (): Promise<CauHinhDeXuatVatTu> => {
-  await delay(300);
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
@@ -58,7 +56,6 @@ export const getCauHinhDeXuatVatTu = async (): Promise<CauHinhDeXuatVatTu> => {
 export const saveCauHinhDeXuatVatTu = async (
   data: Partial<CauHinhDeXuatVatTu>
 ): Promise<CauHinhDeXuatVatTu> => {
-  await delay(400);
   const current = await getCauHinhDeXuatVatTu();
   const merged = mergeWithDefaults({ ...current, ...data });
   localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));

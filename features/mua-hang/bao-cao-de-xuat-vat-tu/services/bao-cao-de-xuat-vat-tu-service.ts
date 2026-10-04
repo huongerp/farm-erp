@@ -8,12 +8,16 @@ import type {
 } from '../core/types';
 import { TRANG_THAI_CHO_DUYET, TRANG_THAI_DA_DUYET, TRANG_THAI_DOI_DUYET, TRANG_THAI_KHONG_DUYET } from '../../../kho-van/phieu-de-xuat-vat-tu/core/constants';
 import { TRANG_THAI_PHIEU_DE_XUAT_VAT_TU } from '../core/trang-thai-utils';
-import { fetchPhieuDeXuatStatsFromRpc } from '../../../kho-van/phieu-de-xuat-vat-tu/services/phieu-de-xuat-vat-tu-db.service';
-import { getAllPhieuDeXuatVatTu } from '../../../kho-van/phieu-de-xuat-vat-tu/services/phieu-de-xuat-vat-tu-service';
-import { getAllDonDatHang } from '../../don-dat-hang/services/don-dat-hang-service';
+import {
+  fetchPhieuDeXuatStatsFromRpc,
+  getPhieuDeXuatVatTuTrongKyDb,
+} from '../../../kho-van/phieu-de-xuat-vat-tu/services/phieu-de-xuat-vat-tu-db.service';
+import type { PhieuDeXuatVatTu } from '../../../kho-van/phieu-de-xuat-vat-tu/core/types';
+import { db } from '../../../../lib/db';
+import { throwDbError } from '../../../../lib/db-errors';
+import { chunkBy } from '../../../../lib/import-bulk';
 import { getKhoRef } from '../../../kho-van/danh-sach-kho/services/kho-service';
 
-const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 function inDateRange(ngay: string, dateFrom: string, dateTo: string): boolean {
   return !!ngay && ngay >= dateFrom && ngay <= dateTo;
@@ -35,9 +39,9 @@ async function resolveScopeNoiDeXuatIds(
 }
 
 async function filterPhieuDeXuatForViewScope(
-  list: Awaited<ReturnType<typeof getAllPhieuDeXuatVatTu>>,
+  list: PhieuDeXuatVatTu[],
   opts: { allowedBranchIds?: string[]; allowedCreatorUserId?: string }
-): Promise<Awaited<ReturnType<typeof getAllPhieuDeXuatVatTu>>> {
+): Promise<PhieuDeXuatVatTu[]> {
   const scopeOn =
     opts.allowedBranchIds !== undefined || Boolean((opts.allowedCreatorUserId ?? '').trim());
   if (!scopeOn) return list;
@@ -61,7 +65,7 @@ async function filterPhieuDeXuatForViewScope(
 }
 
 function applyFilters(
-  list: Awaited<ReturnType<typeof getAllPhieuDeXuatVatTu>>,
+  list: PhieuDeXuatVatTu[],
   filters: BaoCaoDeXuatVatTuFilters
 ) {
   const { dateFrom, dateTo, trangThaiIds, noiDeXuatIds, nguoiDeXuatIds, nguoiDuyetIds } = filters;
@@ -82,8 +86,7 @@ function applyFilters(
 export async function getPhieuDeXuatInPeriod(
   filters: BaoCaoDeXuatVatTuFilters
 ): Promise<ChiTietPhieuRow[]> {
-  await delay(300);
-  const all = await getAllPhieuDeXuatVatTu();
+  const all = await getPhieuDeXuatVatTuTrongKyDb(filters.dateFrom, filters.dateTo);
   const scoped = await filterPhieuDeXuatForViewScope(all, {
     allowedBranchIds: filters.allowedBranchIds,
     allowedCreatorUserId: filters.allowedCreatorUserId,
@@ -147,8 +150,7 @@ export async function getTongHopDeXuatKy(
     };
   }
 
-  await delay(300);
-  const all = await getAllPhieuDeXuatVatTu();
+  const all = await getPhieuDeXuatVatTuTrongKyDb(filters.dateFrom, filters.dateTo);
   const scoped = await filterPhieuDeXuatForViewScope(all, {
     allowedBranchIds: filters.allowedBranchIds,
     allowedCreatorUserId: filters.allowedCreatorUserId,
@@ -211,24 +213,26 @@ export async function getTongHopDeXuatKy(
 export async function getLienKetDonHang(
   filters: BaoCaoDeXuatVatTuFilters
 ): Promise<LienKetDonHangRow[]> {
-  await delay(300);
-  const allPhieu = await getAllPhieuDeXuatVatTu();
+  const allPhieu = await getPhieuDeXuatVatTuTrongKyDb(filters.dateFrom, filters.dateTo);
   const scoped = await filterPhieuDeXuatForViewScope(allPhieu, {
     allowedBranchIds: filters.allowedBranchIds,
     allowedCreatorUserId: filters.allowedCreatorUserId,
   });
   const filtered = applyFilters(scoped, filters);
-  const allDon = await getAllDonDatHang();
 
+  // Chỉ lấy đơn gắn với phiếu trong kỳ, thay vì tải toàn bộ đơn đặt hàng.
   const phieuToDonMap = new Map<string, { so_phieu: string; id: string }>();
-  allDon.forEach((d) => {
-    if (d.id_phieu_de_xuat_vat_tu) {
-      phieuToDonMap.set(d.id_phieu_de_xuat_vat_tu, {
-        so_phieu: d.so_po ?? d.id,
-        id: d.id,
-      });
+  for (const ids of chunkBy(filtered.map((p) => p.id), 200)) {
+    const { data, error } = await db
+      .from('fp_mh_don_dat_hang')
+      .select('id, so_po, id_phieu_de_xuat_vat_tu')
+      .in('id_phieu_de_xuat_vat_tu', ids);
+    if (error) throwDbError(error);
+    for (const d of (data ?? []) as { id: number | string; so_po: string | null; id_phieu_de_xuat_vat_tu: number | string | null }[]) {
+      if (d.id_phieu_de_xuat_vat_tu == null) continue;
+      phieuToDonMap.set(String(d.id_phieu_de_xuat_vat_tu), { so_phieu: d.so_po ?? String(d.id), id: String(d.id) });
     }
-  });
+  }
 
   return filtered.map((p) => {
     const don = phieuToDonMap.get(p.id);

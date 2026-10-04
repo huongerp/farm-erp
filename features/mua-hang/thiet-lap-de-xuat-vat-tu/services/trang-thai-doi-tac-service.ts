@@ -17,7 +17,6 @@ function normalizeTrangThai(val: unknown): import('../../../../lib/constants').T
   return Number(val) === 0 ? TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG : TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
 }
 
-const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 function loadFromStorage(): TrangThaiDoiTac[] {
   try {
@@ -39,13 +38,11 @@ function saveToStorage(list: TrangThaiDoiTac[]) {
 let db: TrangThaiDoiTac[] = loadFromStorage();
 
 export const getTrangThaiDoiTacList = async (): Promise<TrangThaiDoiTac[]> => {
-  await delay(300);
   db = loadFromStorage();
   return [...db];
 };
 
 export const createTrangThaiDoiTac = async (data: TrangThaiDoiTacFormValues): Promise<TrangThaiDoiTac> => {
-  await delay(400);
   db = loadFromStorage();
   const now = new Date().toISOString();
   const newItem: TrangThaiDoiTac = {
@@ -65,7 +62,6 @@ export const createTrangThaiDoiTac = async (data: TrangThaiDoiTacFormValues): Pr
 };
 
 export const updateTrangThaiDoiTac = async (id: string, data: TrangThaiDoiTacFormValues): Promise<TrangThaiDoiTac> => {
-  await delay(400);
   db = loadFromStorage();
   const idx = db.findIndex((i) => i.id === id);
   if (idx === -1) throw new Error(i18n.t('thietLapDeXuatVatTu.doiTac.service.notFound'));
@@ -85,14 +81,12 @@ export const updateTrangThaiDoiTac = async (id: string, data: TrangThaiDoiTacFor
 };
 
 export const updateTrangThaiDoiTacStatus = async (ids: string[], status: import('../../../../lib/constants').TrangThaiHoatDong): Promise<void> => {
-  await delay(300);
   db = loadFromStorage();
   db = db.map((i) => (ids.includes(i.id) ? { ...i, trang_thai: status, tg_cap_nhat: new Date().toISOString() } : i));
   saveToStorage(db);
 };
 
 export const deleteTrangThaiDoiTacList = async (ids: string[]): Promise<void> => {
-  await delay(300);
   db = loadFromStorage();
   db = db.filter((i) => !ids.includes(i.id));
   saveToStorage(db);

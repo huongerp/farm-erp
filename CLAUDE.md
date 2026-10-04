@@ -173,6 +173,9 @@ xem mẫu ở các hook `use-*-view-scope.ts`.
   cũng gọi được. Luôn kèm `REVOKE ALL ON FUNCTION … FROM PUBLIC, anon;` + `GRANT EXECUTE … TO authenticated`
   (và service role cần dùng). Bảng mới không GRANT cho `anon`. Ghi bảng nhạy cảm theo
   `fn_co_quyen_module(module, actions)` thay vì `USING (true)` — mẫu ở migration 013, 014.
+- Bảng nghiệp vụ mới: gắn trigger nhật ký `CREATE TRIGGER trg_nhat_ky_thay_doi AFTER INSERT OR UPDATE OR DELETE
+  … EXECUTE FUNCTION fn_ghi_nhat_ky_thay_doi()` (migration 016). Nhật ký `fp_var_nhat_ky_thay_doi` ghi người
+  làm thật từ JWT và lưu dòng bị xoá — tra ai sửa/xoá gì, khôi phục dữ liệu xoá nhầm ở đó.
 - Mật khẩu chỉ ghi qua RPC `rpc_set_mat_khau` (bcrypt server-side); không hash ở browser,
   không UPDATE thẳng `mat_khau_hash`.
 - Thông báo sinh bằng trigger DB ghi vào outbox, **không** gọi thêm insert từ frontend sau mutation —
