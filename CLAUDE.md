@@ -16,6 +16,8 @@ trong `lib/db.ts` chỉ là thư viện client PostgREST, app **không** dùng d
 | Build production | `npm run build` |
 | Lint | `npm run lint` |
 | Kiểm tra kích thước bundle | `npm run check:bundle` |
+| Sao lưu DB trên VPS (chạy TRƯỚC migration) | `bash scripts/db-backup.sh <nhan>` |
+| Chạy SQL / migration lên VPS | `bash scripts/db-sql.sh -v ON_ERROR_STOP=1 -f docs/migrations/NNN-*.sql` |
 
 Dev server **không** chạy bằng lệnh nền thủ công — `vite/dev-services.ts` tự bật PostgREST,
 auth-service và notify-service kèm `npm run dev` (bỏ qua bằng `DEV_SKIP_SERVICES=1`). Chi tiết biến môi trường:
@@ -32,7 +34,8 @@ auth-service và notify-service kèm `npm run dev` (bỏ qua bằng `DEV_SKIP_SE
   `mat-khau.ts`, `constants.ts`, `i18n.ts`, menu, hooks.
 - `store/` — Zustand: `useStore.ts` (auth), `useConfirmStore.ts`, `createGenericStore.ts`.
 - `pages/` — trang đơn (Login, Profile, Settings, dashboards…).
-- `locales/` — `vi.json`, `en.json`. Không hardcode chuỗi hiển thị.
+- `locales/vi/` — chuỗi dùng chung (`common.json`, `pages.json`…); chuỗi riêng module ở
+  `features/<nhóm>/<module>/locales/vi.json`. App chỉ có tiếng Việt. Không hardcode chuỗi hiển thị.
 - `services/auth/` — auth-service (Node/Hono): đăng nhập mật khẩu + Google, ký JWT, refresh token.
 - `services/notify/` — notify-service (Node/Hono): worker thông báo (outbox + LISTEN/NOTIFY) và
   endpoint đăng ký Web Push. Logic "ai nhận / viết gì" nằm ở `src/core/` và có test cạnh file.
@@ -110,6 +113,21 @@ components/<X>List.tsx            # GenericTable nhận totalRecordsOverride + i
   bỏ dấu tiếng Việt. Placeholder dùng chung `common.searchPlaceholder` — không đặt
   gợi ý riêng từng module (làm người dùng tưởng chỉ tìm được vài cột được kể tên).
 
+### Toolbar lọc
+
+- Hàng chip desktop: truyền `filters={<ResponsiveFilterChips items={...} />}`
+  (`components/shared/ResponsiveFilterChips.tsx`, logic + test ở `lib/filter-chip-split.ts`).
+  Tối đa 5 bộ lọc ngoài toolbar ở màn ≥ 1024px, 3 ở 640–1024px, dư vào nút Filter.
+  Item `kind: 'custom'` (chọn khoảng ngày, ô ngày, nút gạt) luôn hiện nhưng vẫn tính chỗ;
+  bộ lọc ít dùng → `luonVaoFilter`. Không tự `.slice` / tự đặt `FilterOverflowDropdown`.
+- Điện thoại (< 640px) dùng bảng lọc từ `filterGroups`. Control không phải danh sách chọn
+  phải truyền thêm qua `mobileFilterExtra` (+ `mobileFilterExtraCount`) của GenericToolbar /
+  DashboardToolbar, bọc bằng `MobileFilterField`; chọn khoảng ngày dùng
+  `<DateRangePicker inline …/>` cùng value/onChange với desktop. Thiếu bước này thì điện
+  thoại không lọc được theo ngày.
+- Tab thống kê dùng `components/shared/StatsToolbar.tsx` (truyền nhãn đã dịch qua props),
+  không tạo bản sao `stats/StatsToolbar.tsx` riêng cho module.
+
 ## Phân quyền — hai tầng phải khớp nhau
 
 1. **Tầng app**: `fp_var_phan_quyen` (chuc_vu_id + module_id + actions) → `ModulePermissionGuard`
@@ -144,6 +162,8 @@ xem mẫu ở các hook `use-*-view-scope.ts`.
 ## Lưu ý khi sửa
 
 - Migration SQL mới: thêm `docs/migrations/NNN-<mo-ta>.sql` (đánh số tiếp), không sửa đè file đã chạy trên VPS.
+  Không có DB thử — migration chạy thẳng lên dữ liệu thật, nên LUÔN `bash scripts/db-backup.sh truoc-NNN`
+  trước (dump vào `backup/`, đã gitignore, chứa dữ liệu thật — không commit / gửi đi).
 - Mật khẩu chỉ ghi qua RPC `rpc_set_mat_khau` (bcrypt server-side); không hash ở browser,
   không UPDATE thẳng `mat_khau_hash`.
 - Thông báo sinh bằng trigger DB ghi vào outbox, **không** gọi thêm insert từ frontend sau mutation —
@@ -152,4 +172,11 @@ xem mẫu ở các hook `use-*-view-scope.ts`.
   `core/trang-thai.ts` (có test), cổng theo người dùng ở `hooks/use-thu-chi-quy-permissions.ts`. Mở khoá
   chỉ dành cho `cap_bac = 1` / quản trị; phiếu khoá phải chặn cả ở `ThuChiLienQuanSection` (bảng nhúng
   trong drawer của 3 module khác, KHÔNG đọc được ModulePermissionGuard của quỹ).
-- Thêm chuỗi hiển thị phải thêm cả `vi.json` và `en.json` (`node scripts/check-i18n-keys.mjs` để soi thiếu).
+- Thêm chuỗi hiển thị vào `vi.json` của module hoặc `locales/vi/*.json` (`node scripts/check-i18n-keys.mjs`
+  soi trùng khoá).
+- Format: ESLint là chuẩn bắt buộc. Prettier CHƯA áp cho toàn repo (`npm run format:check` đang báo rất
+  nhiều file) — đừng chạy `npm run format` cả repo trong một thay đổi tính năng (diff khổng lồ, đè việc
+  đang làm song song); nếu muốn áp prettier thì làm một commit riêng chỉ format.
+- Commit message: dòng đầu tiếng Việt có dấu nói rõ việc đã làm (vd "Thêm module Giám sát chất lượng"),
+  dòng trống, rồi gạch đầu dòng chi tiết nếu cần. Không dùng message vô nghĩa ("312313", "jhkjhk") —
+  lịch sử git là chỗ tra lại khi có lỗi.
