@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { Sprout, Truck, PackagePlus, Package, BookOpen, Users, Layers, Boxes, BarChart3, ClipboardList, ClipboardCheck, Settings } from 'lucide-react';
+import { Sprout, Truck, PackagePlus, Package, BookOpen, Users, Layers, Boxes, BarChart3, ClipboardList, ClipboardCheck, Settings, BadgeCheck } from 'lucide-react';
 import type { ModuleItem } from '../components/dashboard/SubModuleCard';
 import type { ModuleGroup } from '../components/dashboard/ModuleDashboardLayout';
 
@@ -24,6 +24,7 @@ export function getQuanLyNhaSoCheModuleTitleKeyBySlug(slug: string): string {
 
 /** Slug module Quản lý nhà sơ chế (dashboard, breadcrumb, hướng dẫn). Kho phân thuốc dùng slug riêng để không trùng kho vận /mua-hang. */
 export const QUAN_LY_NHA_SO_CHE_MODULE_SLUGS: string[] = [
+  'giam-sat-chat-luong',
   'dang-ky-nhan-hang',
   'thu-hoach',
   'bao-cao-nhan-cong',
@@ -66,6 +67,13 @@ export function getQuanLyNhaSoCheGroups(
     {
       groupTitle: t('page.quanLyNhaSoChe.groupKeHoach'),
       items: [
+        item({
+          slug: 'giam-sat-chat-luong',
+          titleKey: 'page.quanLyNhaSoChe.modules.giamSatChatLuong',
+          descKey: 'page.quanLyNhaSoChe.descs.giamSatChatLuong',
+          icon: BadgeCheck,
+          color: 'bg-teal-600',
+        }),
         item({
           slug: 'dang-ky-nhan-hang',
           titleKey: 'page.quanLyNhaSoChe.modules.dangKyNhanHang',

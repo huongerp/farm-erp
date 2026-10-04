@@ -354,5 +354,12 @@
   "shared.import.guideNote3": "• Có dòng lỗi: bấm \"Tải báo cáo lỗi\", sửa trực tiếp trong file đó rồi import lại chính file đó.",
   "shared.import.templateHasGuide": "File mẫu gồm sheet Hướng dẫn, Ví dụ mẫu và {{count}} sheet tra cứu",
   "shared.subTable.countFiltered": "{{shown}}/{{total}} dòng",
-  "shared.subTable.noMatch": "Không có dòng nào khớp bộ lọc."
+  "shared.subTable.noMatch": "Không có dòng nào khớp bộ lọc.",
+  "common.qrScanner.dangMoCamera": "Đang mở camera...",
+  "common.qrScanner.khongMoDuocCamera": "Không mở được camera (cần HTTPS và cho phép quyền camera). Có thể nhập mã bên dưới.",
+  "common.qrScanner.daQuet": "Đã quét {{n}} thùng",
+  "common.qrScanner.den": "Bật/tắt đèn",
+  "common.qrScanner.xong": "Xong",
+  "common.qrScanner.hoanTacCuoi": "Hoàn tác lần cuối",
+  "common.qrScanner.hoanTacXong": "Đã xoá lần ghi gần nhất"
 }

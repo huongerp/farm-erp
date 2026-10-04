@@ -104,6 +104,11 @@ const SubmenuPage: React.FC = () => {
       return <Navigate to="/quan-ly-nha-so-che" replace />;
     }
     if (basePath === '/quan-ly-nha-so-che' && QUAN_LY_NHA_SO_CHE_MODULE_SLUGS.includes(decodedSlug)) {
+      if (decodedSlug === 'giam-sat-chat-luong') {
+        return wrapWithPermission(basePath ?? '', decodedSlug, (
+          <ErrorBoundary>{renderLazySubmenuModule('giam-sat-chat-luong')}</ErrorBoundary>
+        ));
+      }
       if (decodedSlug === 'dang-ky-nhan-hang') {
         return wrapWithPermission(basePath ?? '', decodedSlug, (
           <ErrorBoundary>{renderLazySubmenuModule('dang-ky-nhan-hang')}</ErrorBoundary>

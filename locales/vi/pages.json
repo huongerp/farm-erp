@@ -79,6 +79,8 @@
   "page.quanLyNhaSoChe.groupKhoPhanThuocNhapXuat": "Nhập xuất kho",
   "page.quanLyNhaSoChe.groupKhoPhanThuocBaoCao": "Báo cáo tồn kho & NXT",
   "page.quanLyNhaSoChe.groupKhoPhanThuocDanhMuc": "Danh mục & hàng hóa",
+  "page.quanLyNhaSoChe.modules.giamSatChatLuong": "Giám sát chất lượng",
+  "page.quanLyNhaSoChe.descs.giamSatChatLuong": "Kiểm tra ngẫu nhiên thùng mẫu trên mỗi cây hàng, in tem QR, quét tem để chấm và kết luận đạt / không đạt.",
   "page.quanLyNhaSoChe.modules.dangKyNhanHang": "Đăng ký nhận hàng",
   "page.quanLyNhaSoChe.descs.dangKyNhanHang": "Đăng ký xe/cont nhận hàng, check in – check out, ảnh và hàng xuất theo QR.",
   "page.quanLyNhaSoChe.modules.thuHoach": "Thu hoạch",

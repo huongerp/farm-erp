@@ -1,0 +1,439 @@
+/**
+ * Giám sát chất lượng — DB: fp_farm_giam_sat_chat_luong (phiếu = cây hàng),
+ * fp_farm_giam_sat_chat_luong_ct (thùng mẫu, trigger sinh sẵn theo so_thung_mau),
+ * fp_farm_gscl_tieu_chi (danh mục tiêu chí).
+ */
+import { db, fetchAllRows, fetchTablePage, throwDbError, type PaginatedTableResult } from '../../../../lib/db';
+import { applyPostgrestSearch, dieuKienKyTheoNgay } from '../../../../lib/postgrest-search';
+import i18n from '../../../../lib/i18n';
+import type {
+  GiamSatChatLuong,
+  KetLuanGscl,
+  KetQuaThung,
+  LoaiTieuChi,
+  ThungMau,
+  TieuChi,
+  TieuChiDanhMuc,
+  TrangThaiGscl,
+} from '../core/types';
+import type { GiamSatChatLuongFormValues, TieuChiFormValues } from '../core/schema';
+import { ketLuanPhieu } from '../core/ket-luan';
+import { trangThaiTheoSoThung } from '../core/trang-thai';
+import { anhChupTieuChi, taoMaTieuChi } from '../core/tieu-chi';
+import {
+  GSCL_SORTABLE_DB_COLUMNS,
+  GSCL_SORT_MAC_DINH,
+  type GiamSatChatLuongListServerQuery,
+} from './giam-sat-chat-luong-list-query';
+
+const TABLE = 'fp_farm_giam_sat_chat_luong';
+const TABLE_CT = 'fp_farm_giam_sat_chat_luong_ct';
+const TABLE_TC = 'fp_farm_gscl_tieu_chi';
+
+const ROW_COLUMNS =
+  'id,so_phieu,ngay,id_chi_nhanh,id_hang_hoa,ma_cay_hang,so_thung_cay,so_thung_mau,tieu_chi,trang_thai,ket_luan,' +
+  'ghi_chu,id_nguoi_tao,tg_tao,tg_cap_nhat,chi_nhanh:fp_var_chi_nhanh(ten_chi_nhanh),' +
+  'hang_hoa:fp_mh_danh_sach_hang_hoa(ma_hang_hoa,ten_hang_hoa),thung:fp_farm_giam_sat_chat_luong_ct(da_kiem)';
+
+const CT_COLUMNS = 'id,id_phieu,stt_thung,ma_tem,ket_qua,da_kiem,tg_kiem,id_nguoi_kiem,ghi_chu';
+const TC_COLUMNS = 'id,ma,ten,loai,don_vi,nguong_min,nguong_max,thu_tu,dang_dung';
+
+interface DbRow {
+  id: number;
+  so_phieu: string | null;
+  ngay: string;
+  id_chi_nhanh: number;
+  id_hang_hoa: number | null;
+  ma_cay_hang: string | null;
+  so_thung_cay: number;
+  so_thung_mau: number;
+  tieu_chi: unknown;
+  trang_thai: TrangThaiGscl;
+  ket_luan: KetLuanGscl | null;
+  ghi_chu: string | null;
+  id_nguoi_tao: number | null;
+  tg_tao: string;
+  tg_cap_nhat: string;
+  chi_nhanh?: { ten_chi_nhanh: string | null } | null;
+  hang_hoa?: { ma_hang_hoa: string | null; ten_hang_hoa: string | null } | null;
+  thung?: { da_kiem: boolean }[] | null;
+}
+
+interface DbCtRow {
+  id: number;
+  id_phieu: number;
+  stt_thung: number;
+  ma_tem: string;
+  ket_qua: KetQuaThung | null;
+  da_kiem: boolean;
+  tg_kiem: string | null;
+  id_nguoi_kiem: number | null;
+  ghi_chu: string | null;
+}
+
+interface DbTcRow {
+  id: number;
+  ma: string;
+  ten: string;
+  loai: LoaiTieuChi;
+  don_vi: string | null;
+  nguong_min: string | number | null;
+  nguong_max: string | number | null;
+  thu_tu: number;
+  dang_dung: boolean;
+}
+
+const idStr = (v: number | null | undefined) => (v != null ? String(v) : null);
+const soHoacNull = (v: unknown) => {
+  if (v == null || v === '') return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+};
+
+function toIntId(id: string): number {
+  const n = Number(id);
+  if (!Number.isFinite(n)) throw new Error('Invalid id');
+  return n;
+}
+
+/** jsonb `tieu_chi` → mảng TieuChi (numeric trong jsonb có thể về dạng chuỗi). */
+function docTieuChi(raw: unknown): TieuChi[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((x): x is Record<string, unknown> => !!x && typeof x === 'object' && typeof x.ma === 'string')
+    .map((x) => ({
+      ma: String(x.ma),
+      ten: String(x.ten ?? x.ma),
+      loai: (x.loai === 'do_luong' || x.loai === 'dat_khong' ? x.loai : 'dem_loi') as LoaiTieuChi,
+      don_vi: typeof x.don_vi === 'string' ? x.don_vi : null,
+      nguong_min: soHoacNull(x.nguong_min),
+      nguong_max: soHoacNull(x.nguong_max),
+    }));
+}
+
+function rowToModel(row: DbRow): GiamSatChatLuong {
+  return {
+    id: String(row.id),
+    so_phieu: row.so_phieu ?? `#${row.id}`,
+    ngay: row.ngay,
+    id_chi_nhanh: String(row.id_chi_nhanh),
+    ten_chi_nhanh: row.chi_nhanh?.ten_chi_nhanh ?? null,
+    id_hang_hoa: idStr(row.id_hang_hoa),
+    ma_hang_hoa: row.hang_hoa?.ma_hang_hoa ?? null,
+    ten_hang_hoa: row.hang_hoa?.ten_hang_hoa ?? null,
+    ma_cay_hang: row.ma_cay_hang,
+    so_thung_cay: row.so_thung_cay,
+    so_thung_mau: row.so_thung_mau,
+    tieu_chi: docTieuChi(row.tieu_chi),
+    trang_thai: row.trang_thai,
+    ket_luan: row.ket_luan,
+    ghi_chu: row.ghi_chu,
+    id_nguoi_tao: idStr(row.id_nguoi_tao),
+    ten_nguoi_tao: null,
+    tg_tao: row.tg_tao,
+    tg_cap_nhat: row.tg_cap_nhat,
+    so_thung_da_kiem: (row.thung ?? []).filter((t) => t.da_kiem).length,
+  };
+}
+
+function ctToModel(row: DbCtRow): ThungMau {
+  return {
+    id: String(row.id),
+    id_phieu: String(row.id_phieu),
+    stt_thung: row.stt_thung,
+    ma_tem: row.ma_tem,
+    ket_qua: row.ket_qua ?? {},
+    da_kiem: row.da_kiem,
+    tg_kiem: row.tg_kiem,
+    id_nguoi_kiem: idStr(row.id_nguoi_kiem),
+    ten_nguoi_kiem: null,
+    ghi_chu: row.ghi_chu,
+  };
+}
+
+function tcToModel(row: DbTcRow): TieuChiDanhMuc {
+  return {
+    id: String(row.id),
+    ma: row.ma,
+    ten: row.ten,
+    loai: row.loai,
+    don_vi: row.don_vi,
+    nguong_min: soHoacNull(row.nguong_min),
+    nguong_max: soHoacNull(row.nguong_max),
+    thu_tu: row.thu_tu,
+    dang_dung: row.dang_dung,
+  };
+}
+
+const blank = (v: string | null | undefined) => {
+  const s = (v ?? '').trim();
+  return s === '' ? null : s;
+};
+
+function formPayload(v: GiamSatChatLuongFormValues): Record<string, unknown> {
+  return {
+    id_chi_nhanh: toIntId(v.id_chi_nhanh),
+    ngay: v.ngay,
+    id_hang_hoa: toIntId(v.id_hang_hoa),
+    ma_cay_hang: blank(v.ma_cay_hang),
+    so_thung_cay: v.so_thung_cay,
+    so_thung_mau: v.so_thung_mau,
+    ghi_chu: blank(v.ghi_chu),
+  };
+}
+
+/** Cột tham gia ô tìm kiếm ở server. */
+const GSCL_SEARCH_SPEC = {
+  text: ['so_phieu', 'ma_cay_hang', 'ghi_chu'],
+  numeric: ['id', 'so_thung_cay', 'so_thung_mau'],
+  dates: ['ngay'],
+};
+
+const nums = (ids: string[]) => ids.map(Number).filter(Number.isFinite);
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyPhamVi(q: any, viewAll: boolean, allowedBranchIds: string[]): any {
+  if (viewAll) return q;
+  const ids = nums(allowedBranchIds);
+  return ids.length === 0 ? q.eq('id', -1) : q.in('id_chi_nhanh', ids);
+}
+
+/** Lọc + sắp xếp dùng chung cho trang danh sách. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyGsclListQuery(q: any, query: GiamSatChatLuongListServerQuery): any {
+  let sel = applyPhamVi(q, query.viewAll, query.allowedBranchIds);
+  if (query.idChiNhanh.length > 0) sel = sel.in('id_chi_nhanh', nums(query.idChiNhanh));
+  if (query.idHangHoa.length > 0) sel = sel.in('id_hang_hoa', nums(query.idHangHoa));
+  if (query.trangThai.length > 0) sel = sel.in('trang_thai', query.trangThai);
+  if (query.ketLuan.length > 0) sel = sel.in('ket_luan', query.ketLuan);
+  const ky = dieuKienKyTheoNgay(query.nam, query.thang, 'ngay');
+  if (ky.length) sel = sel.or(ky.join(','));
+
+  sel = applyPostgrestSearch(sel, query.searchTerm, GSCL_SEARCH_SPEC);
+
+  const dbSortable = query.sortColumn != null && GSCL_SORTABLE_DB_COLUMNS.has(query.sortColumn);
+  const sortCol = dbSortable ? query.sortColumn! : GSCL_SORT_MAC_DINH.column;
+  const ascending = dbSortable ? query.sortDirection !== 'desc' : GSCL_SORT_MAC_DINH.ascending;
+  sel = sel.order(sortCol, { ascending, nullsFirst: false });
+  return sel.order('id', { ascending: false });
+}
+
+export async function getGsclPageDb(
+  query: GiamSatChatLuongListServerQuery
+): Promise<PaginatedTableResult<GiamSatChatLuong>> {
+  const result = await fetchTablePage<DbRow>(query.page, query.pageSize, async (from, to) => {
+    const res = await applyGsclListQuery(db.from(TABLE).select(ROW_COLUMNS, { count: 'exact' }), query).range(from, to);
+    return { data: (res.data as DbRow[] | null) ?? null, error: res.error, count: res.count };
+  });
+  return { ...result, data: result.data.map(rowToModel) };
+}
+
+export interface GsclTomTatRow {
+  id: number;
+  ngay: string;
+  id_chi_nhanh: number | null;
+  id_hang_hoa: number | null;
+  trang_thai: TrangThaiGscl;
+  ket_luan: KetLuanGscl | null;
+  id_nguoi_tao: number | null;
+}
+
+/** Vài cột của toàn bộ phiếu — chip lọc (đếm trên toàn bộ) + farm gần nhất của tôi. */
+export async function getGsclTomTatDb(viewAll: boolean, allowedBranchIds: string[]): Promise<GsclTomTatRow[]> {
+  return fetchAllRows<GsclTomTatRow>((from, to) =>
+    applyPhamVi(
+      db.from(TABLE).select('id,ngay,id_chi_nhanh,id_hang_hoa,trang_thai,ket_luan,id_nguoi_tao'),
+      viewAll,
+      allowedBranchIds
+    )
+      .order('ngay', { ascending: false })
+      .order('id', { ascending: false })
+      .range(from, to)
+  );
+}
+
+export async function getGsclByIdDb(id: string): Promise<GiamSatChatLuong | null> {
+  const { data, error } = await db.from(TABLE).select(ROW_COLUMNS).eq('id', toIntId(id)).maybeSingle();
+  if (error) throwDbError(error);
+  return data ? rowToModel(data as unknown as DbRow) : null;
+}
+
+export async function createGsclDb(values: GiamSatChatLuongFormValues, idNguoiTao: string | null): Promise<GiamSatChatLuong> {
+  // tieu_chi để trống → trigger chụp bộ tiêu chí đang dùng; so_phieu + thùng mẫu cũng do trigger sinh.
+  const payload = { ...formPayload(values), id_nguoi_tao: idNguoiTao ? toIntId(idNguoiTao) : null };
+  const { data, error } = await db.from(TABLE).insert(payload).select('id').single();
+  if (error) throwDbError(error);
+  const row = await getGsclByIdDb(String((data as { id: number }).id));
+  if (!row) throw new Error(i18n.t('giamSatChatLuong.service.notFound'));
+  return row;
+}
+
+export async function updateGsclDb(id: string, values: GiamSatChatLuongFormValues): Promise<GiamSatChatLuong> {
+  const { error } = await db.from(TABLE).update(formPayload(values)).eq('id', toIntId(id));
+  if (error) throwDbError(error);
+  // Đổi số thùng mẫu làm thay đổi "đã đủ thùng chưa" → tính lại.
+  return capNhatKetLuanDb(id);
+}
+
+export async function deleteGsclDb(id: string): Promise<void> {
+  const { error } = await db.from(TABLE).delete().eq('id', toIntId(id));
+  if (error) throwDbError(error);
+}
+
+export async function deleteGsclManyDb(ids: string[]): Promise<void> {
+  const list = nums(ids);
+  if (list.length === 0) return;
+  const { error } = await db.from(TABLE).delete().in('id', list);
+  if (error) throwDbError(error);
+}
+
+/** Huỷ có điều kiện đang kiểm — hai người bấm cùng lúc thì người sau nhận lỗi. */
+export async function huyGsclDb(id: string): Promise<void> {
+  const { data, error } = await db
+    .from(TABLE)
+    .update({ trang_thai: 'huy', ket_luan: null })
+    .eq('id', toIntId(id))
+    .eq('trang_thai', 'dang_kiem')
+    .select('id');
+  if (error) throwDbError(error);
+  if (((data as unknown[] | null) ?? []).length === 0) throw new Error(i18n.t('giamSatChatLuong.service.trangThaiDaDoi'));
+}
+
+export async function khoiPhucGsclDb(id: string): Promise<GiamSatChatLuong> {
+  const { data, error } = await db
+    .from(TABLE)
+    .update({ trang_thai: 'dang_kiem' })
+    .eq('id', toIntId(id))
+    .eq('trang_thai', 'huy')
+    .select('id');
+  if (error) throwDbError(error);
+  if (((data as unknown[] | null) ?? []).length === 0) throw new Error(i18n.t('giamSatChatLuong.service.trangThaiDaDoi'));
+  return capNhatKetLuanDb(id);
+}
+
+/** Chụp lại bộ tiêu chí đang dùng vào phiếu (cấp cao — vd vừa sửa ngưỡng) rồi tính lại kết luận. */
+export async function apDungTieuChiMoiDb(id: string): Promise<GiamSatChatLuong> {
+  const tieuChi = anhChupTieuChi(await getTieuChiDb());
+  const { error } = await db.from(TABLE).update({ tieu_chi: tieuChi }).eq('id', toIntId(id));
+  if (error) throwDbError(error);
+  return capNhatKetLuanDb(id);
+}
+
+// ── Thùng mẫu ─────────────────────────────────────────────────────────────────
+
+export async function getThungDb(idPhieu: string): Promise<ThungMau[]> {
+  const { data, error } = await db
+    .from(TABLE_CT)
+    .select(CT_COLUMNS)
+    .eq('id_phieu', toIntId(idPhieu))
+    .order('stt_thung', { ascending: true });
+  if (error) throwDbError(error);
+  return ((data as DbCtRow[] | null) ?? []).map(ctToModel);
+}
+
+export async function getThungTheoMaTemDb(maTem: string): Promise<ThungMau | null> {
+  const { data, error } = await db.from(TABLE_CT).select(CT_COLUMNS).eq('ma_tem', maTem).maybeSingle();
+  if (error) throwDbError(error);
+  return data ? ctToModel(data as DbCtRow) : null;
+}
+
+/**
+ * Tính lại trạng thái + kết luận từ các thùng đã kiểm và ghi vào phiếu (chỉ khi đổi).
+ * Kết luận chỉ ghi khi đủ thùng mẫu; chưa đủ thì để trống (chi tiết vẫn hiện "tạm tính").
+ */
+export async function capNhatKetLuanDb(idPhieu: string): Promise<GiamSatChatLuong> {
+  const phieu = await getGsclByIdDb(idPhieu);
+  if (!phieu) throw new Error(i18n.t('giamSatChatLuong.service.notFound'));
+  const thung = await getThungDb(idPhieu);
+  const daKiem = thung.filter((t) => t.da_kiem);
+  const trangThai = trangThaiTheoSoThung(phieu.trang_thai, daKiem.length, phieu.so_thung_mau);
+  const ketLuan =
+    trangThai === 'hoan_thanh'
+      ? ketLuanPhieu(phieu.tieu_chi, daKiem.map((t) => t.ket_qua), phieu.so_thung_mau).ketLuan
+      : null;
+  if (trangThai === phieu.trang_thai && ketLuan === phieu.ket_luan) return phieu;
+  const { error } = await db.from(TABLE).update({ trang_thai: trangThai, ket_luan: ketLuan }).eq('id', toIntId(idPhieu));
+  if (error) throwDbError(error);
+  return { ...phieu, trang_thai: trangThai, ket_luan: ketLuan };
+}
+
+export interface LuuKetQuaThungInput {
+  idThung: string;
+  idPhieu: string;
+  ketQua: KetQuaThung;
+  ghiChu: string | null;
+  idNguoi: string | null;
+}
+
+/** Ghi kết quả một thùng (đánh dấu đã kiểm) rồi tính lại phiếu. */
+export async function luuKetQuaThungDb(input: LuuKetQuaThungInput): Promise<GiamSatChatLuong> {
+  const { error } = await db
+    .from(TABLE_CT)
+    .update({
+      ket_qua: input.ketQua,
+      ghi_chu: blank(input.ghiChu),
+      da_kiem: true,
+      tg_kiem: new Date().toISOString(),
+      id_nguoi_kiem: input.idNguoi ? toIntId(input.idNguoi) : null,
+    })
+    .eq('id', toIntId(input.idThung))
+    .eq('id_phieu', toIntId(input.idPhieu));
+  if (error) throwDbError(error);
+  return capNhatKetLuanDb(input.idPhieu);
+}
+
+// ── Danh mục tiêu chí ──────────────────────────────────────────────────────────
+
+export async function getTieuChiDb(): Promise<TieuChiDanhMuc[]> {
+  const { data, error } = await db
+    .from(TABLE_TC)
+    .select(TC_COLUMNS)
+    .order('thu_tu', { ascending: true })
+    .order('id', { ascending: true });
+  if (error) throwDbError(error);
+  return ((data as DbTcRow[] | null) ?? []).map(tcToModel);
+}
+
+function tcPayload(v: TieuChiFormValues): Record<string, unknown> {
+  return {
+    ten: v.ten.trim(),
+    loai: v.loai,
+    don_vi: blank(v.don_vi),
+    nguong_min: v.loai === 'do_luong' ? v.nguong_min : null,
+    nguong_max: v.nguong_max,
+  };
+}
+
+export async function createTieuChiDb(v: TieuChiFormValues, danhMuc: TieuChiDanhMuc[]): Promise<void> {
+  const payload = {
+    ...tcPayload(v),
+    ma: taoMaTieuChi(v.ten, danhMuc.map((d) => d.ma)),
+    thu_tu: danhMuc.reduce((m, d) => Math.max(m, d.thu_tu), 0) + 1,
+  };
+  const { error } = await db.from(TABLE_TC).insert(payload);
+  if (error) throwDbError(error);
+}
+
+export async function updateTieuChiDb(id: string, v: TieuChiFormValues): Promise<void> {
+  const { error } = await db.from(TABLE_TC).update(tcPayload(v)).eq('id', toIntId(id));
+  if (error) throwDbError(error);
+}
+
+export async function datDangDungTieuChiDb(id: string, dangDung: boolean): Promise<void> {
+  const { error } = await db.from(TABLE_TC).update({ dang_dung: dangDung }).eq('id', toIntId(id));
+  if (error) throwDbError(error);
+}
+
+/** Xoá hẳn khỏi danh mục — phiếu cũ không ảnh hưởng vì đã chụp bộ tiêu chí riêng. */
+export async function deleteTieuChiDb(id: string): Promise<void> {
+  const { error } = await db.from(TABLE_TC).delete().eq('id', toIntId(id));
+  if (error) throwDbError(error);
+}
+
+/** Ghi lại thứ tự theo mảng id (sau khi kéo / bấm lên-xuống). */
+export async function sapXepTieuChiDb(ids: string[]): Promise<void> {
+  for (let i = 0; i < ids.length; i += 1) {
+    const { error } = await db.from(TABLE_TC).update({ thu_tu: i + 1 }).eq('id', toIntId(ids[i]));
+    if (error) throwDbError(error);
+  }
+}

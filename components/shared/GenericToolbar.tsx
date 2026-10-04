@@ -26,6 +26,8 @@ interface GenericToolbarProps {
 
     // Custom Render Props (desktop). filters: dùng FilterChipMultiSelect/FilterChipSingleSelect (quy chuẩn: Chọn tất cả + Xóa chọn trong dropdown)
     actions?: React.ReactNode;
+    /** Nút đặt ngay bên trái nút "Tuỳ chọn cột" (desktop), vd icon cài đặt của module. */
+    leadingActions?: React.ReactNode;
     bulkActions?: React.ReactNode;
     filters?: React.ReactNode;
 
@@ -71,7 +73,7 @@ interface GenericToolbarProps {
 const GenericToolbar: React.FC<GenericToolbarProps> = ({
     selectedCount,
     searchTerm, onSearchChange, onClearSelection,
-    actions, bulkActions, filters,
+    actions, leadingActions, bulkActions, filters,
     onDeleteMany, onStatusChangeMany,
     columns, onToggleColumn, onReorderColumns, onResetColumns, onResetColumnWidths,
     showBack = false,
@@ -428,6 +430,8 @@ const GenericToolbar: React.FC<GenericToolbarProps> = ({
                                 exit={{ opacity: 0, scale: 0.9 }}
                                 className="flex items-center gap-1.5"
                             >
+                                {leadingActions}
+
                                 {/* Column Manager (desktop) */}
                                 {hasColumnManager && (
                                     <div className="relative" ref={columnMenuRef}>
