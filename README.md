@@ -1,33 +1,63 @@
-# 5F Template – Ứng dụng quản lý nội bộ
+# farm-erp — Hệ thống quản lý nội bộ
 
-Ứng dụng web quản lý thiết bị / nhân sự và nghiệp vụ nội bộ: Trang chủ, Hệ thống (nhân viên, phòng ban, chức vụ, cấp bậc, thông tin công ty, sao lưu, phân quyền), Trợ lý AI, Cài đặt, Hồ sơ. Giao diện đa ngôn ngữ (Việt / Anh), dark mode, tùy chọn màu chủ đạo.
+Ứng dụng web (PWA) quản lý nghiệp vụ nội bộ: nhà sơ chế, kho vận, mua hàng, hành chính – nhân sự,
+tài chính (sổ quỹ) và hệ thống. Chỉ có tiếng Việt; hỗ trợ giao diện sáng/tối, cài lên điện thoại,
+thông báo đẩy, xuất Excel/CSV/PDF/Google Sheet.
+
+**Phiên bản:** xem `version` trong `package.json` (hiện ở cuối trang Cài đặt) và git tag `vX.Y.Z`.
+
+## Kiến trúc
+
+| Thành phần | Công nghệ | Thư mục |
+|---|---|---|
+| Giao diện (SPA) | React 19 + Vite + TypeScript, nginx khi chạy thật | gốc repo, `deploy/` |
+| API dữ liệu | PostgREST (REST tự sinh trên Postgres, phân quyền bằng RLS) | `docker-compose.yml` |
+| Đăng nhập | auth-service (Node/Hono): mật khẩu + Google, ký JWT | `services/auth` |
+| Thông báo | notify-service: outbox + Web Push | `services/notify` |
+| Google Sheet | sheets-service: xuất và đồng bộ tự động | `services/sheets` |
+| Cơ sở dữ liệu | PostgreSQL trên VPS (Dokploy) | `docs/db-schema-baseline.sql`, `docs/migrations/` |
+
+Tất cả nằm sau một domain, Traefik (Dokploy) chia đường: `/` → web, `/api` → PostgREST,
+`/auth`, `/notify`, `/sheets` → các service.
+
+## Chức năng (50 module)
+
+- **Hệ thống:** nhân viên, phòng ban, chức vụ, cấp bậc, chi nhánh, phân quyền, thông tin công ty.
+- **Hành chính:** bảng lương, thiết lập công lương, điểm cộng trừ, công việc, phiếu hành chính, tài sản
+  (danh mục, thiết lập, cấp phát – thu hồi, kiểm kê, khấu hao, bảo trì sửa chữa), nơi quản lý.
+- **Kho vận:** danh mục / danh sách hàng hoá, danh sách kho, đối tác, phiếu kho, phiếu đề xuất vật tư,
+  kiểm kê kho, tồn kho, báo cáo nhập – xuất – tồn.
+- **Mua hàng:** đơn đặt hàng, hợp đồng, thanh toán đối tác, báo cáo đề xuất vật tư, thiết lập.
+- **Quản lý nhà sơ chế:** thu hoạch, báo cáo sơ chế, báo cáo nhân công, thống kê sản xuất, dự báo sản lượng
+  đóng thùng, giám sát chất lượng, đăng ký nhận hàng, đề xuất mua hàng, hàng hoá / phiếu kho / kiểm kê /
+  tồn kho phân thuốc.
+- **Tài chính:** sổ thu chi quỹ, thiết lập quỹ, thống kê quỹ.
 
 ## Yêu cầu
 
-- Node.js (khuyến nghị LTS)
+- Node.js 22 (giống image Docker), npm.
+- Truy cập Postgres trên VPS (qua SSH tunnel — `scripts/db-sql.sh` tự mở) và file `.env` (mẫu: `.env.example`).
 
-## Chạy dự án
+## Lệnh
 
-1. Cài đặt phụ thuộc:
-   ```bash
-   npm install
-   ```
-2. (Tùy chọn) Tạo file `.env.local` và đặt `GEMINI_API_KEY` nếu dùng Trợ lý AI.
-3. Chạy máy chủ phát triển:
-   ```bash
-   npm run dev
-   ```
-4. Mở trình duyệt theo địa chỉ in ra (`http://localhost:3000`).
+| Việc | Lệnh |
+|---|---|
+| Chạy dev (tự bật PostgREST + 3 service) | `npm run dev` |
+| Typecheck | `npm run typecheck` |
+| Test | `npm test` · theo file: `npm run test:changed -- <path>` |
+| Lint | `npm run lint` |
+| Build production | `npm run build` |
+| Kiểm kích thước bundle | `npm run check:bundle` |
+| Sao lưu DB (trước migration) | `bash scripts/db-backup.sh <nhan>` |
+| Chạy SQL / migration | `bash scripts/db-sql.sh -v ON_ERROR_STOP=1 -f docs/migrations/NNN-*.sql` |
 
-## Scripts
+CI (`.github/workflows/ci.yml`) chạy typecheck, lint, test, build mỗi lần push lên `main`.
 
-| Lệnh | Mô tả |
-|------|--------|
-| `npm run dev` | Chạy dev server (Vite) |
-| `npm run build` | Build production (output trong `dist/`) |
-| `npm run preview` | Xem bản build (sau khi chạy `npm run build`) |
-| `npm run test` | Chạy test (Vitest) |
-| `npm run test:watch` | Chạy test ở chế độ watch |
+## Triển khai
+
+Deploy bằng Dokploy từ `docker-compose.yml`; biến môi trường khai trong tab Environment của Dokploy
+(danh sách: `.env.example`). Quy trình phát hành, chạy migration, xử lý sự cố, khôi phục dữ liệu:
+**[docs/VAN_HANH.md](docs/VAN_HANH.md)**.
 
 ## Chạy full-stack ở local (PostgREST + auth-service)
 
@@ -85,16 +115,15 @@ npm run dev
 
 ## Tài liệu
 
-- [Quy ước giao diện (UI Conventions)](docs/UI-CONVENTIONS.md) – Dialog/Drawer, Section, Design system (border radius, button, error message).
-- [Chuyển sang PostgREST self-host](docs/VPS_POSTGREST_PLAN.md), [runbook cut-over](docs/VPS_CUTOVER.md).
-- [Xuất & đồng bộ Google Sheet](docs/GOOGLE_SHEETS.md) – cấu hình Google Cloud, biến môi trường, soi lỗi.
-
-## Cấu trúc chính
-
-- `App.tsx` – Router, theme, ngôn ngữ, route bảo vệ.
-- `components/` – Layout, UI dùng chung (Button, Input, Table, …), shared (ConfirmDialog, ErrorState, …).
-- `features/he-thong/` – Module Hệ thống: nhân viên, phòng ban, chức vụ, cấp bậc, thông tin công ty, sao lưu, phân quyền.
-- `lib/` – Tiện ích, i18n, theme, dialog-sizes, sidebar menu.
-- `locales/` – Bản dịch (vi.json, en.json).
-- `pages/` – Trang đơn (Home, Login, Settings, Profile, …).
-- `store/` – Zustand (auth, UI, confirm).
+| Tài liệu | Nội dung |
+|---|---|
+| [docs/VAN_HANH.md](docs/VAN_HANH.md) | Runbook: phát hành, migration, sự cố, nhật ký thay đổi, khôi phục |
+| [docs/HAN_CHE_DA_BIET.md](docs/HAN_CHE_DA_BIET.md) | Hạn chế đã biết tại thời điểm bàn giao |
+| [docs/MA_TRAN_PHAN_QUYEN.md](docs/MA_TRAN_PHAN_QUYEN.md) | Chức vụ × module × quyền (sinh từ DB) |
+| [docs/BAN_GIAO_TAI_KHOAN.md](docs/BAN_GIAO_TAI_KHOAN.md) | Tài khoản dịch vụ, bí mật cần đổi sau bàn giao |
+| [docs/UI-CONVENTIONS.md](docs/UI-CONVENTIONS.md) | Quy ước giao diện |
+| [docs/THONG_BAO_PUSH.md](docs/THONG_BAO_PUSH.md) | Thông báo + Web Push |
+| [docs/GOOGLE_SHEETS.md](docs/GOOGLE_SHEETS.md) | Xuất / đồng bộ Google Sheet, cấu hình Google Cloud |
+| [docs/RUI_RO_NEN_TANG_DU_LIEU.md](docs/RUI_RO_NEN_TANG_DU_LIEU.md) | Rủi ro nền tảng dữ liệu |
+| [docs/VPS_POSTGREST_PLAN.md](docs/VPS_POSTGREST_PLAN.md), [docs/VPS_CUTOVER.md](docs/VPS_CUTOVER.md) | Kiến trúc self-host, runbook cut-over (lịch sử) |
+| [CLAUDE.md](CLAUDE.md) | Bản đồ thư mục và quy ước code chi tiết |

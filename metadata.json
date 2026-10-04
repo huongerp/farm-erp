@@ -1,7 +1,5 @@
 {
-  "name": "5F Enterprise Template",
-  "description": "Hệ thống quản lý doanh nghiệp tích hợp.",
-  "requestFramePermissions": [
-    "microphone"
-  ]
+  "name": "farm-erp",
+  "description": "Hệ thống quản lý nội bộ: nhà sơ chế, kho vận, mua hàng, hành chính – nhân sự, tài chính.",
+  "requestFramePermissions": []
 }
