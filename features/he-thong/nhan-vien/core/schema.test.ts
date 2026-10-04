@@ -167,17 +167,17 @@ describe('employeeSchema', () => {
 
   /* ────── Mật khẩu ────── */
   describe('mat_khau', () => {
-    it('chấp nhận bỏ trống (tạo mới = mật khẩu mặc định, sửa = không đổi)', () => {
+    it('chấp nhận bỏ trống (tạo mới = mật khẩu tạm ngẫu nhiên, sửa = không đổi)', () => {
       expect(parse({ mat_khau: '' }).success).toBe(true);
       expect(parse({ mat_khau: undefined }).success).toBe(true);
     });
 
-    it('chấp nhận từ 6 ký tự', () => {
-      expect(parse({ mat_khau: '123456' }).success).toBe(true);
+    it('chấp nhận từ 8 ký tự (khớp rpc_set_mat_khau, migration 015)', () => {
+      expect(parse({ mat_khau: 'abcd1234' }).success).toBe(true);
     });
 
-    it('từ chối dưới 6 ký tự', () => {
-      expect(parse({ mat_khau: '12345' }).success).toBe(false);
+    it('từ chối dưới 8 ký tự', () => {
+      expect(parse({ mat_khau: 'abc1234' }).success).toBe(false);
     });
   });
 

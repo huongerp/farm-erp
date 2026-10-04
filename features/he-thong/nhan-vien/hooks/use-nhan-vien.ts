@@ -24,6 +24,7 @@ import { toast } from "sonner";
 import i18n from '../../../../lib/i18n';
 import { EMPLOYEES_REF_QUERY_KEY } from '../../../../lib/hooks/use-ref-queries';
 import { invalidateRefCache } from '../../../../lib/ref-cache';
+import { downloadBlob } from '../../../../lib/download-blob';
 import { usePositions } from '../../chuc-vu/hooks/use-chuc-vu';
 import { useDepartments } from '../../phong-ban/hooks/use-phong-ban';
 import { useBranches } from '../../chi-nhanh/hooks/use-chi-nhanh';
@@ -127,6 +128,14 @@ export const useImportEmployees = () => {
       queryClient.invalidateQueries({ queryKey: EMPLOYEES_REF_QUERY_KEY });
       invalidateRefCache('employees');
       toast.success(i18n.t('employee.import.successCount', { count: result.created }));
+      if (result.matKhauTam.length > 0) {
+        const ds = result.matKhauTam;
+        toast.info(i18n.t('employee.import.tempPasswordList', { count: ds.length }), {
+          duration: Infinity,
+          closeButton: true,
+          action: { label: i18n.t('employee.import.tempPasswordDownload'), onClick: () => taiDanhSachMatKhauTam(ds) },
+        });
+      }
       if (result.passwordErrors.length > 0) {
         toast.warning(
           i18n.t('employee.import.passwordWarn', { count: result.passwordErrors.length, error: result.passwordErrors[0] })
@@ -135,6 +144,30 @@ export const useImportEmployees = () => {
     },
   });
 };
+
+/** Mật khẩu tạm chỉ hiện một lần → toast không tự tắt, có nút sao chép. */
+function baoMatKhauTam(email: string, matKhau: string) {
+  toast.info(i18n.t('employee.toast.tempPasswordSet', { email, password: matKhau }), {
+    duration: Infinity,
+    closeButton: true,
+    action: {
+      label: i18n.t('employee.toast.copyPassword'),
+      onClick: () => {
+        void navigator.clipboard?.writeText(matKhau);
+      },
+    },
+  });
+}
+
+function taiDanhSachMatKhauTam(ds: { hoTen: string; email: string; matKhau: string }[]) {
+  const o = (v: string) => `"${v.replace(/"/g, '""')}"`;
+  const dong = [
+    [i18n.t('employee.import.tempPasswordColName'), 'Email', i18n.t('employee.import.tempPasswordColPassword')],
+    ...ds.map((r) => [r.hoTen, r.email, r.matKhau]),
+  ].map((cot) => cot.map(o).join(','));
+  // BOM để Excel mở đúng tiếng Việt.
+  downloadBlob(new Blob(['\ufeff' + dong.join('\r\n')], { type: 'text/csv;charset=utf-8' }), 'mat-khau-tam-nhan-vien.csv');
+}
 
 export const useCreateEmployee = (onSuccess?: () => void) => {
   const queryClient = useQueryClient();
@@ -147,12 +180,10 @@ export const useCreateEmployee = (onSuccess?: () => void) => {
       queryClient.invalidateQueries({ queryKey: EMPLOYEES_REF_QUERY_KEY });
       invalidateRefCache('employees');
       toast.success(i18n.t('employee.toast.createSuccess'));
-      if (emp.email) {
-        toast.info(
-          emp._passwordSet
-            ? i18n.t('employee.toast.customPasswordSet', { email: emp.email })
-            : i18n.t('employee.toast.defaultPasswordSet', { email: emp.email })
-        );
+      if (emp._matKhauTam) {
+        baoMatKhauTam(emp.email || emp.ho_ten, emp._matKhauTam);
+      } else if (emp.email && emp._passwordSet) {
+        toast.info(i18n.t('employee.toast.customPasswordSet', { email: emp.email }));
       }
       if (emp._passwordError) {
         toast.warning(i18n.t('employee.toast.passwordSetFailed', { error: emp._passwordError }));
@@ -219,11 +250,8 @@ export const useResetPasswordEmployee = () =>
       resetEmployeePassword(id, matKhau),
     onSuccess: (res, variables) => {
       const email = variables.email || '';
-      toast.success(
-        res.dungMacDinh
-          ? i18n.t('employee.toast.defaultPasswordSet', { email })
-          : i18n.t('employee.toast.passwordSet', { email })
-      );
+      if (res.matKhauTam) baoMatKhauTam(email, res.matKhauTam);
+      else toast.success(i18n.t('employee.toast.passwordSet', { email }));
     },
   });
 

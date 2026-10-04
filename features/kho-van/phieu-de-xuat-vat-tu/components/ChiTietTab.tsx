@@ -401,7 +401,7 @@ const ChiTietTab: React.FC = () => {
             </span>
           );
         case 'so_luong':
-          return <span className="block text-sm text-right tabular-nums whitespace-nowrap">{Number(item.so_luong).toLocaleString()}</span>;
+          return <span className="block text-sm text-right tabular-nums whitespace-nowrap">{Number(item.so_luong).toLocaleString('vi-VN')}</span>;
         case 'don_vi_tinh':
           return <span className="block truncate whitespace-nowrap text-sm text-muted-foreground" title={item.don_vi_tinh ?? ''}>{item.don_vi_tinh ?? '—'}</span>;
         case 'ten_tien_do_mh':
@@ -500,7 +500,7 @@ const ChiTietTab: React.FC = () => {
         </div>
         <p className="text-sm text-foreground mt-0.5 line-clamp-2">{item.ten_hang || item.ma_hang || '—'}</p>
         <p className="text-xs text-muted-foreground mt-0.5">
-          {Number(item.so_luong).toLocaleString()} {item.don_vi_tinh ?? ''} · {item.ten_noi_de_xuat ?? '—'}
+          {Number(item.so_luong).toLocaleString('vi-VN')} {item.don_vi_tinh ?? ''} · {item.ten_noi_de_xuat ?? '—'}
         </p>
       </div>
     ),

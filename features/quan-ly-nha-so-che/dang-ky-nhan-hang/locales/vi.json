@@ -133,6 +133,8 @@
   "dangKyNhanHang.hangHoa.tongKet": "Tổng {{tong}} · {{soMa}} mã hàng",
   "dangKyNhanHang.hangHoa.cong1": "Thêm 1 thùng",
   "dangKyNhanHang.hangHoa.tru1": "Bớt 1 (xoá lần ghi mới nhất)",
+  "dangKyNhanHang.hangHoa.xoaDongTitle": "Xoá dòng hàng",
+  "dangKyNhanHang.hangHoa.xoaDongMessage": "Xoá dòng {{ten}} (số lượng {{soLuong}})?",
   "dangKyNhanHang.qr.titleLienTuc": "Quét QR hàng xuất",
   "dangKyNhanHang.qr.subtitleLienTuc": "Đưa camera lần lượt vào tem QR từng thùng — rời tem rồi mới tính thùng tiếp",
   "dangKyNhanHang.qr.subtitleMotLan": "Quét một tem QR để chọn hàng hoá",

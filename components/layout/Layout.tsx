@@ -24,6 +24,7 @@ import { toast } from 'sonner';
 import { useCompanyInfo } from '../../features/he-thong/thong-tin-cong-ty/hooks/use-thong-tin-cong-ty';
 import { warmupNavigationTarget } from '../../lib/submenu-prefetch';
 import { consumeReloadContext, restoreReloadScroll } from '../../lib/reload-context';
+import { PASSWORD_MIN_LENGTH } from '../../lib/constants';
 
 /** Sidebar width: expanded 240px (gọn), collapsed 64px (4rem, 8px grid) */
 const SIDEBAR_WIDTH_EXPANDED = 240;
@@ -131,7 +132,7 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
 
   const handleChangePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (changePasswordNew.length < 6) {
+    if (changePasswordNew.length < PASSWORD_MIN_LENGTH) {
       toast.error(t('nav.changePasswordMin'));
       return;
     }

@@ -221,8 +221,8 @@ const DonDatHangDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
                     <td className="px-4 py-2.5 text-sm min-w-[12rem] max-w-md truncate" title={ct.ten_hang ?? ''}>{ct.ten_hang ?? '—'}</td>
                     <td className="px-4 py-2.5 text-xs text-muted-foreground">{ct.don_vi_tinh ?? '—'}</td>
                     <td className="px-4 py-2.5 tabular-nums text-sm">{ct.so_luong}</td>
-                    <td className="px-4 py-2.5 tabular-nums text-right text-sm">{ct.don_gia != null ? ct.don_gia.toLocaleString() : '—'}</td>
-                    <td className="px-4 py-2.5 tabular-nums text-right font-medium text-sm">{ct.thanh_tien != null ? ct.thanh_tien.toLocaleString() : '—'}</td>
+                    <td className="px-4 py-2.5 tabular-nums text-right text-sm">{ct.don_gia != null ? ct.don_gia.toLocaleString('vi-VN') : '—'}</td>
+                    <td className="px-4 py-2.5 tabular-nums text-right font-medium text-sm">{ct.thanh_tien != null ? ct.thanh_tien.toLocaleString('vi-VN') : '—'}</td>
                     <td className="px-4 py-2.5 text-xs text-muted-foreground max-w-xs truncate" title={ct.muc_dich_su_dung ?? ''}>
                       {ct.muc_dich_su_dung?.trim() || '—'}
                     </td>

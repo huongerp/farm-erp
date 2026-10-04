@@ -99,6 +99,9 @@ export default defineConfig(({ mode }) => {
             if (id.includes('/node_modules/clsx/')) return 'react-vendor';
             // @supabase/postgrest-js: chỉ là client PostgREST (lib/db.ts), không phải dịch vụ Supabase.
             if (id.includes('@supabase')) return 'postgrest';
+            // Phải xét TRƯỚC react-vendor: đường dẫn `@sentry/react/…` chứa "/react/" nên từng bị gom
+            // vào react-vendor (tải lúc khởi động) → kéo cả chunk sentry ~400 KB vào lần mở đầu.
+            if (id.includes('@sentry')) return 'sentry';
             if (
               id.includes('@tanstack/react-query') ||
               id.includes('@tanstack/query-async-storage-persister') ||
@@ -118,7 +121,6 @@ export default defineConfig(({ mode }) => {
             if (id.includes('react-router')) return 'react-router';
             if (id.includes('react-dom') || id.includes('/react/')) return 'react-vendor';
             if (id.includes('i18next') || id.includes('react-i18next')) return 'i18n';
-            if (id.includes('@sentry')) return 'sentry';
             return undefined;
           },
         },

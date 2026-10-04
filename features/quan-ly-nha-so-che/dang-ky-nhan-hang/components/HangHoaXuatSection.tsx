@@ -7,6 +7,7 @@ import SubTableActionButton from '../../../../components/shared/sub-table/SubTab
 import Button from '../../../../components/ui/Button';
 import { cn, formatDateTimeShort, formatNumberVN } from '../../../../lib/utils';
 import { useAuthStore } from '../../../../store/useStore';
+import { useConfirmStore } from '../../../../store/useConfirmStore';
 import type { DangKyNhanHangCt } from '../core/types';
 import { gopTheoHangHoa, type NhomHangHoa } from '../core/gop-hang-hoa';
 import { useHoanTacDongCuoi, useThemDongHang, useXoaDongHang } from '../hooks/use-dang-ky-nhan-hang';
@@ -31,6 +32,18 @@ const HangHoaXuatSection: React.FC<Props> = ({ idPhieu, rows, loading, canEdit, 
   const userId = useAuthStore((s) => s.user?.id);
   const them = useThemDongHang();
   const xoa = useXoaDongHang();
+  const confirm = useConfirmStore((s) => s.confirm);
+  const xoaDong = (r: DangKyNhanHangCt) =>
+    confirm({
+      title: t('dangKyNhanHang.hangHoa.xoaDongTitle'),
+      message: t('dangKyNhanHang.hangHoa.xoaDongMessage', {
+        ten: r.ten_hang_hoa || r.ma_hang_hoa,
+        soLuong: formatNumberVN(r.so_luong),
+      }),
+      variant: 'danger',
+      confirmText: t('common.delete'),
+      onConfirm: () => xoa.mutate([r.id]),
+    });
   const hoanTac = useHoanTacDongCuoi();
 
   const nhom = useMemo(() => gopTheoHangHoa(rows), [rows]);
@@ -201,7 +214,7 @@ const HangHoaXuatSection: React.FC<Props> = ({ idPhieu, rows, loading, canEdit, 
                         icon={<Trash2 size={14} />}
                         tone="danger"
                         disabled={busy}
-                        onClick={() => xoa.mutate([r.id])}
+                        onClick={() => xoaDong(r)}
                       />
                     )
                   : undefined

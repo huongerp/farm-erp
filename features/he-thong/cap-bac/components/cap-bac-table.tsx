@@ -62,7 +62,7 @@ const JobLevelTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onS
         case 'tg_cap_nhat':
             return (
                 <span className="text-body-sm text-muted-foreground">
-                    {item.tg_cap_nhat ? new Date(item.tg_cap_nhat).toLocaleDateString() : '—'}
+                    {item.tg_cap_nhat ? new Date(item.tg_cap_nhat).toLocaleDateString('vi-VN') : '—'}
                 </span>
             );
         case 'actions':

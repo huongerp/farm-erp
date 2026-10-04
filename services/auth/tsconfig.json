@@ -18,5 +18,8 @@
     "skipLibCheck": true,
     "sourceMap": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  // Test chạy bằng vitest ở repo gốc (không có trong package.json của service này),
+  // nên bước build bằng tsc phải bỏ qua — image Docker chỉ COPY thư mục này.
+  "exclude": ["src/**/*.test.ts"]
 }

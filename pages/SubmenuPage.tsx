@@ -6,6 +6,7 @@ import ModulePermissionGuard from '../components/shared/ModulePermissionGuard';
 import { getPermissionModuleId, getAllPermissionModules } from '../features/he-thong/phan-quyen/core/permission-modules-config';
 import SubmenuPlaceholder from '../components/placeholder/SubmenuPlaceholder';
 import ModulePlaceholder from '../components/placeholder/ModulePlaceholder';
+import TrangTrangThai from '../components/shared/TrangTrangThai';
 import {
   LazyHanhChinhDashboard,
   LazyMuaHangDashboard,
@@ -15,8 +16,7 @@ import {
   SubmenuChunkFallback,
 } from './submenu-lazy-registry';
 import { SUBMENU_PATHS, SIDEBAR_MENU } from '../lib/sidebar-menu';
-import { getModuleTitleKeyBySlug, HANH_CHINH_MODULE_SLUGS } from '../lib/hanh-chinh-menu';
-import { getMuaHangModuleTitleKeyBySlug, MUA_HANG_MODULE_SLUGS } from '../lib/mua-hang-menu';
+import { HANH_CHINH_MODULE_SLUGS } from '../lib/hanh-chinh-menu';
 import { getQuanLyNhaSoCheModuleTitleKeyBySlug, QUAN_LY_NHA_SO_CHE_MODULE_SLUGS } from '../lib/quan-ly-nha-so-che-menu';
 import { getTaiChinhModuleTitleKeyBySlug, TAI_CHINH_MODULE_SLUGS } from '../lib/tai-chinh-menu';
 
@@ -90,7 +90,6 @@ const SubmenuPage: React.FC = () => {
 
   if (moduleId) {
     const decodedSlug = decodeURIComponent(moduleId);
-    let moduleTitle = decodedSlug;
 
     if ((basePath === '/kho-van' || basePath === '/mua-hang') && decodedSlug === 'danh-sach-nha-cung-cap') {
       return <Navigate to="/mua-hang/danh-sach-doi-tac" replace />;
@@ -242,10 +241,6 @@ const SubmenuPage: React.FC = () => {
       if (decodedSlug === 'khau-hao-tai-san') {
         return wrapWithPermission(basePath ?? '', decodedSlug, wrapLazy());
       }
-      moduleTitle = t(getModuleTitleKeyBySlug(decodedSlug));
-    }
-    if (basePath === '/mua-hang' && MUA_HANG_MODULE_SLUGS.includes(decodedSlug)) {
-      moduleTitle = t(getMuaHangModuleTitleKeyBySlug(decodedSlug));
     }
     const isKhoVanModule =
       decodedSlug === 'danh-muc-hang-hoa' ||
@@ -289,14 +284,7 @@ const SubmenuPage: React.FC = () => {
         <ErrorBoundary>{renderLazySubmenuModule('bao-cao-de-xuat-vat-tu')}</ErrorBoundary>
       ));
     }
-    return (
-      <ModulePlaceholder
-        submenuPath={basePath ?? '/'}
-        submenuTitle={title}
-        moduleTitle={moduleTitle}
-        icon={icon}
-      />
-    );
+    return <TrangTrangThai loai="404" veTrang={basePath ?? '/'} />;
   }
 
   return <SubmenuPlaceholder title={title} icon={icon} />;

@@ -71,7 +71,7 @@ const ChiTietRowDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
               {data.ma_hang ?? data.ten_hang ?? `#${data.id}`}
             </h2>
             <p className="text-body-sm text-muted-foreground mt-0.5">
-              {data.so_phieu ?? '—'} · {Number(data.so_luong).toLocaleString()} {data.don_vi_tinh ?? ''}
+              {data.so_phieu ?? '—'} · {Number(data.so_luong).toLocaleString('vi-VN')} {data.don_vi_tinh ?? ''}
             </p>
             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
               <span
@@ -148,7 +148,7 @@ const ChiTietRowDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
             />
             <DetailField
               label={t('deXuatMuaHang.form.quantity')}
-              value={Number(data.so_luong).toLocaleString()}
+              value={Number(data.so_luong).toLocaleString('vi-VN')}
               icon={<Package size={12} />}
             />
             <DetailField

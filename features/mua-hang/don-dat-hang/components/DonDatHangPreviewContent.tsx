@@ -138,8 +138,8 @@ const DonDatHangPreviewContent: React.FC<Props> = ({ po }) => {
                   <td className="border border-gray-300 p-1.5 min-w-[10rem] max-w-[14rem] truncate" title={ct.ten_hang ?? ''}>{ct.ten_hang ?? '—'}</td>
                   <td className="border border-gray-300 p-1.5 text-center text-gray-600">{ct.don_vi_tinh ?? '—'}</td>
                   <td className="border border-gray-300 p-1.5 text-right tabular-nums">{ct.so_luong}</td>
-                  <td className="border border-gray-300 p-1.5 text-right tabular-nums">{ct.don_gia != null ? ct.don_gia.toLocaleString() : '—'}</td>
-                  <td className="border border-gray-300 p-1.5 text-right tabular-nums font-medium">{ct.thanh_tien != null ? ct.thanh_tien.toLocaleString() : '—'}</td>
+                  <td className="border border-gray-300 p-1.5 text-right tabular-nums">{ct.don_gia != null ? ct.don_gia.toLocaleString('vi-VN') : '—'}</td>
+                  <td className="border border-gray-300 p-1.5 text-right tabular-nums font-medium">{ct.thanh_tien != null ? ct.thanh_tien.toLocaleString('vi-VN') : '—'}</td>
                   <td className="border border-gray-300 p-1.5 text-gray-600 text-xs max-w-[10rem] truncate" title={ct.muc_dich_su_dung ?? ''}>
                     {ct.muc_dich_su_dung?.trim() || '—'}
                   </td>

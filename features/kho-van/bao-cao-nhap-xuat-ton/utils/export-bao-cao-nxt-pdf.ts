@@ -75,10 +75,10 @@ function buildTableWarehouse(rows: { ma_kho: string; ten_kho: string; ton_dau_ky
     <tr>
       <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${e(safeStr(r.ma_kho))}</td>
       <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${e(safeStr(r.ten_kho))}</td>
-      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt;text-align:right">${r.ton_dau_ky.toLocaleString()}</td>
-      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt;text-align:right">${r.tong_nhap.toLocaleString()}</td>
-      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt;text-align:right">${r.tong_xuat.toLocaleString()}</td>
-      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt;text-align:right">${r.ton_cuoi_ky.toLocaleString()}</td>
+      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt;text-align:right">${r.ton_dau_ky.toLocaleString('vi-VN')}</td>
+      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt;text-align:right">${r.tong_nhap.toLocaleString('vi-VN')}</td>
+      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt;text-align:right">${r.tong_xuat.toLocaleString('vi-VN')}</td>
+      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt;text-align:right">${r.ton_cuoi_ky.toLocaleString('vi-VN')}</td>
     </tr>`).join('');
   return `<h2 style="font-size:11pt;margin:16px 0 8px;font-family:${FONT_STACK}">${t('baoCaonhapXuatTon.byWarehouse.tenKho')}</h2>
 <table style="width:100%;border-collapse:collapse;margin-top:8px;font-family:${FONT_STACK};font-size:9pt"><thead><tr>${thead}</tr></thead><tbody>${tbody}</tbody></table>`;
@@ -100,10 +100,10 @@ function buildTableProduct(rows: { ma_hang: string; ten_hang: string; ten_danh_m
       <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${e(safeStr(r.ma_hang))}</td>
       <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${e(safeStr(r.ten_hang))}</td>
       <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${e(safeStr(r.don_vi_tinh))}</td>
-      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt;text-align:right">${r.ton_dau_ky.toLocaleString()}</td>
-      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt;text-align:right">${r.tong_nhap.toLocaleString()}</td>
-      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt;text-align:right">${r.tong_xuat.toLocaleString()}</td>
-      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt;text-align:right">${r.ton_cuoi_ky.toLocaleString()}</td>
+      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt;text-align:right">${r.ton_dau_ky.toLocaleString('vi-VN')}</td>
+      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt;text-align:right">${r.tong_nhap.toLocaleString('vi-VN')}</td>
+      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt;text-align:right">${r.tong_xuat.toLocaleString('vi-VN')}</td>
+      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt;text-align:right">${r.ton_cuoi_ky.toLocaleString('vi-VN')}</td>
     </tr>`).join('');
   return `<h2 style="font-size:11pt;margin:16px 0 8px;font-family:${FONT_STACK}">${t('baoCaonhapXuatTon.byProduct.tenHang')}</h2>
 <table style="width:100%;border-collapse:collapse;margin-top:8px;font-family:${FONT_STACK};font-size:9pt"><thead><tr>${thead}</tr></thead><tbody>${tbody}</tbody></table>`;
@@ -145,7 +145,7 @@ export async function exportBaoCaoNXTToPdf(
         <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${e(r.ma_kho)}</td>
         <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${e(r.ten_kho)}</td>
         <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${e(r.ma_hang)}</td>
-        <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt;text-align:right">${r.so_luong.toLocaleString()}</td>
+        <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt;text-align:right">${r.so_luong.toLocaleString('vi-VN')}</td>
       </tr>`).join('');
     tonTable = `<h2 style="font-size:11pt;margin:16px 0 8px;font-family:${FONT_STACK}">${t('baoCaonhapXuatTon.tabs.tonTaiThoiDiem')}</h2>
 <table style="width:100%;border-collapse:collapse;margin-top:8px;font-family:${FONT_STACK};font-size:9pt"><thead><tr>${thead}</tr></thead><tbody>${tbody}</tbody></table>`;

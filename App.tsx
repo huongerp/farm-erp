@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useLocation, useParams } from 'react-router-do
 import { Toaster } from 'sonner';
 import Layout from './components/layout/Layout';
 import ResetPassword from './pages/ResetPassword';
+import TrangTrangThai from './components/shared/TrangTrangThai';
 import ConfirmDialog from './components/shared/ConfirmDialog';
 import PwaRegister from './components/shared/PwaRegister';
 import ModulePermissionGuard from './components/shared/ModulePermissionGuard';
@@ -389,7 +390,7 @@ const App = () => {
                   <Route path="/ho-so" element={<Profile />} />
                   <Route path="/cai-dat" element={<Settings />} />
                   <Route path="/thong-bao" element={<NotificationPage />} />
-                  <Route path="*" element={<Navigate to="/" replace />} />
+                  <Route path="*" element={<TrangTrangThai loai="404" />} />
                   </Routes>
                 </Suspense>
               </Layout>

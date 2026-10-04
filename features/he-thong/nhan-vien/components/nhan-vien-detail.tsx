@@ -30,7 +30,7 @@ import {
   CONTRACT_BADGE_CONFIG,
   EDUCATION_BADGE_CONFIG,
 } from '../core/constants';
-import { DEFAULT_PASSWORD, TRANG_THAI_NV } from '../../../../lib/constants';
+import { PASSWORD_MIN_LENGTH, TRANG_THAI_NV } from '../../../../lib/constants';
 
 interface Props {
   data: Employee;
@@ -108,7 +108,7 @@ const EmployeeDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, canU
             onChange={(e) => { matKhauMoi = e.target.value; }}
           />
           <p className="text-xs text-muted-foreground">
-            {t('employee.detail.resetPasswordHint', { password: DEFAULT_PASSWORD })}
+            {t('employee.detail.resetPasswordHint')}
           </p>
         </div>
       ),
@@ -116,7 +116,7 @@ const EmployeeDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, canU
       confirmText: CONFIRM_YES(),
       onConfirm: async () => {
         const mk = matKhauMoi.trim();
-        if (mk && mk.length < 6) throw new Error(t('employee.validation.passwordMin'));
+        if (mk && mk.length < PASSWORD_MIN_LENGTH) throw new Error(t('employee.validation.passwordMin'));
         await resetPasswordMutation.mutateAsync({ id: data.id, email: data.email, matKhau: mk });
       },
     });

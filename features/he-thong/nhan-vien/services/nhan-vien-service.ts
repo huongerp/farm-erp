@@ -3,7 +3,8 @@ import { getCachedRef, REF_CACHE_KEYS } from '../../../../lib/ref-cache';
 import { setMatKhauHash } from '../../../../lib/mat-khau';
 import type { Employee } from '../core/types';
 import type { EmployeeFormValues } from '../core/schema';
-import { DEFAULT_PASSWORD, TRANG_THAI_NV, type TrangThaiNV } from '../../../../lib/constants';
+import { TRANG_THAI_NV, type TrangThaiNV } from '../../../../lib/constants';
+import { taoMatKhauTam } from '../../../../lib/mat-khau-tam';
 import { getPositions } from '../../chuc-vu/services/chuc-vu-service';
 import { getDepartments } from '../../phong-ban/services/phong-ban-service';
 import { getBranches } from '../../chi-nhanh/services/chi-nhanh-service';
@@ -457,12 +458,14 @@ export const getEmployeeByEmail = async (email: string): Promise<Employee | null
 
 /**
  * Employee kèm cờ để hook quyết định toast nào cần hiện:
- * - `_passwordSet`: admin tự nhập mật khẩu (thay vì dùng mật khẩu mặc định).
+ * - `_passwordSet`: admin tự nhập mật khẩu (thay vì để hệ thống sinh mật khẩu tạm).
  * - `_passwordError`: ghi mật khẩu thất bại — hồ sơ vẫn lưu thành công.
+ * - `_matKhauTam`: mật khẩu tạm vừa cấp, hiện cho admin đúng một lần.
  */
 export type EmployeeMutationResult = Employee & {
   _passwordSet?: boolean;
   _passwordError?: string;
+  _matKhauTam?: string;
 };
 
 /**
@@ -509,11 +512,15 @@ export const createEmployee = async (data: EmployeeFormValues): Promise<Employee
   const emp: EmployeeMutationResult = rowToEmployee(inserted);
 
   // Mật khẩu không phải cột của bảng — ghi riêng qua RPC để hash bằng pgcrypto.
-  // Admin bỏ trống → cấp mật khẩu mặc định + buộc đổi ở lần đăng nhập đầu.
+  // Admin bỏ trống → cấp mật khẩu tạm ngẫu nhiên + buộc đổi ở lần đăng nhập đầu; UI hiện
+  // mật khẩu tạm đúng một lần để admin chuyển cho nhân viên.
   const matKhau = data.mat_khau?.trim();
-  await applyMatKhau(emp, matKhau || DEFAULT_PASSWORD, !matKhau);
-  // Dùng mật khẩu mặc định thì không cần toast "đã đặt mật khẩu" riêng.
-  if (!matKhau) emp._passwordSet = false;
+  const matKhauTam = matKhau ? null : taoMatKhauTam();
+  await applyMatKhau(emp, matKhau || matKhauTam!, !matKhau);
+  if (matKhauTam) {
+    emp._passwordSet = false;
+    if (!emp._passwordError) emp._matKhauTam = matKhauTam;
+  }
 
   await enrichEmployeesWithRefDataAsync([emp]);
   return emp;
@@ -524,6 +531,8 @@ export interface ImportEmployeesResult {
   errors: ImportErrorRow[];
   /** Đã tạo nhân viên nhưng đặt mật khẩu lỗi — không đưa vào file lỗi (import lại sẽ trùng email). */
   passwordErrors: string[];
+  /** Mật khẩu tạm đã cấp (file không có cột mật khẩu) — admin tải về để phát cho từng người. */
+  matKhauTam: { hoTen: string; email: string; matKhau: string }[];
 }
 
 /**
@@ -546,19 +555,23 @@ export const importEmployees = async (
   const { planNhanVienImport } = await import('../utils/import-nhan-vien');
   const { toCreate, errors } = planNhanVienImport(rows, { ...refs, existingEmails });
   const passwordErrors: string[] = [];
+  const matKhauTam: ImportEmployeesResult['matKhauTam'] = [];
   let created = 0;
   for (const item of toCreate) {
     try {
       const emp = await createEmployee(item.data);
       created++;
       if (emp._passwordError) passwordErrors.push(`${emp.email ?? item.data.email}: ${emp._passwordError}`);
+      if (emp._matKhauTam) {
+        matKhauTam.push({ hoTen: emp.ho_ten ?? '', email: emp.email ?? '', matKhau: emp._matKhauTam });
+      }
     } catch (e: unknown) {
       const msg = i18n.t('employee.import.errWrite', { msg: e instanceof Error ? e.message : String(e) });
       errors.push({ row: item.row, msg, values: item.values });
     }
   }
   errors.sort((a, b) => a.row - b.row);
-  return { created, errors, passwordErrors };
+  return { created, errors, passwordErrors, matKhauTam };
 };
 
 export const updateEmployee = async (id: string, data: EmployeeFormValues): Promise<EmployeeMutationResult> => {
@@ -597,17 +610,18 @@ export const updateEmployee = async (id: string, data: EmployeeFormValues): Prom
 /**
  * Đặt lại mật khẩu cho một nhân viên (admin dùng ở drawer chi tiết).
  *
- * Bỏ trống `matKhau` → cấp lại mật khẩu mặc định và bật cờ buộc nhân viên đổi ở
+ * Bỏ trống `matKhau` → cấp mật khẩu tạm ngẫu nhiên (trả về để UI hiện) và bật cờ buộc nhân viên đổi ở
  * lần đăng nhập kế tiếp. Khác `applyMatKhau`: đây là hành động độc lập nên lỗi
  * PHẢI ném ra để UI biết là thất bại.
  */
 export const resetEmployeePassword = async (
   id: string,
   matKhau?: string
-): Promise<{ dungMacDinh: boolean }> => {
+): Promise<{ matKhauTam: string | null }> => {
   const mk = matKhau?.trim();
-  await setMatKhauHash(id, mk || DEFAULT_PASSWORD, !mk);
-  return { dungMacDinh: !mk };
+  const matKhauTam = mk ? null : taoMatKhauTam();
+  await setMatKhauHash(id, mk || matKhauTam!, !mk);
+  return { matKhauTam };
 };
 
 export const updateEmployeeStatus = async (ids: string[], status: string): Promise<void> => {

@@ -74,7 +74,7 @@ function metricValue(cell: PeriodCell | undefined, metric: KhoPeriodMetric): num
 
 function formatQty(n: number): string {
   if (n === 0) return '—';
-  return n.toLocaleString();
+  return n.toLocaleString('vi-VN');
 }
 
 function formatTrongKy(cell: PeriodCell | undefined): React.ReactNode {
@@ -91,10 +91,10 @@ function formatTrongKy(cell: PeriodCell | undefined): React.ReactNode {
           net < 0 && 'text-rose-600 dark:text-rose-400'
         )}
       >
-        {net > 0 ? `+${net.toLocaleString()}` : net.toLocaleString()}
+        {net > 0 ? `+${net.toLocaleString('vi-VN')}` : net.toLocaleString('vi-VN')}
       </span>
       <span className="text-[10px] text-muted-foreground tabular-nums whitespace-nowrap">
-        +{cell.tong_nhap.toLocaleString()} / −{cell.tong_xuat.toLocaleString()}
+        +{cell.tong_nhap.toLocaleString('vi-VN')} / −{cell.tong_xuat.toLocaleString('vi-VN')}
       </span>
     </span>
   );

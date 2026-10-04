@@ -1,5 +1,5 @@
 import React, { createContext, useContext } from 'react';
-import { useTranslation } from 'react-i18next';
+import TrangTrangThai from './TrangTrangThai';
 import { useModulePermission, type ModulePermissionFlags } from '@/features/he-thong/phan-quyen/hooks/use-module-permission';
 
 const ModulePermissionContext = createContext<ModulePermissionFlags | null>(null);
@@ -31,15 +31,10 @@ interface ModulePermissionGuardProps {
  * Bọc nội dung theo phân quyền module: không có quyền xem thì hiển thị thông báo, có thì render children và cung cấp context canCreate/canUpdate/canDelete.
  */
 const ModulePermissionGuard: React.FC<ModulePermissionGuardProps> = ({ moduleId, children }) => {
-  const { t } = useTranslation();
   const { canView, canCreate, canUpdate, canDelete, canApprove, canAdmin, isLoading } = useModulePermission(moduleId);
 
   if (!isLoading && !canView) {
-    return (
-      <div className="flex flex-1 items-center justify-center rounded-xl border border-border bg-card p-8">
-        <p className="text-center text-muted-foreground">{t('permission.noAccessModule')}</p>
-      </div>
-    );
+    return <TrangTrangThai loai="403" />;
   }
 
   return (

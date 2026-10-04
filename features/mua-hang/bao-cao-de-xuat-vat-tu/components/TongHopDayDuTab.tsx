@@ -292,7 +292,7 @@ const TongHopDayDuTab: React.FC<TongHopDayDuTabProps> = ({ filters, onClearFilte
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-muted-foreground truncate">{t(item.labelKey)}</p>
-                      <p className="text-lg font-bold text-foreground tabular-nums mt-0.5">{typeof item.value === 'number' ? item.value.toLocaleString() : item.value}</p>
+                      <p className="text-lg font-bold text-foreground tabular-nums mt-0.5">{typeof item.value === 'number' ? item.value.toLocaleString('vi-VN') : item.value}</p>
                     </div>
                   </div>
                 </div>

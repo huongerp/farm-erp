@@ -17,10 +17,18 @@
 # Kế hoạch: docs/VPS_POSTGREST_PLAN.md
 # =====================================================================
 
+# Log Docker mặc định không giới hạn → chạy lâu đầy ổ VPS. Giữ tối đa 3 × 10 MB mỗi service.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: '10m'
+    max-file: '3'
+
 services:
   postgrest:
     image: postgrest/postgrest:v14.16
     restart: always
+    logging: *logging
     environment:
       # Role `authenticator`, hostname NỘI BỘ (không đi qua IP public).
       PGRST_DB_URI: ${PGRST_DB_URI}
@@ -58,6 +66,7 @@ services:
     build:
       context: ./services/auth
     restart: always
+    logging: *logging
     environment:
       # Role `auth_service` — chỉ EXECUTE được mấy RPC đăng nhập.
       DATABASE_URL: ${AUTH_DATABASE_URL}
@@ -85,6 +94,7 @@ services:
     build:
       context: ./services/notify
     restart: always
+    logging: *logging
     environment:
       # Role `notify_service` — chỉ chạm được 4 bảng thông báo và 3 RPC tra cứu.
       DATABASE_URL: ${NOTIFY_DATABASE_URL}
@@ -116,6 +126,7 @@ services:
     build:
       context: ./services/sheets
     restart: always
+    logging: *logging
     environment:
       # Role `sheets_service` — chỉ chạm bảng kết nối/lịch đồng bộ Google Sheet (docs/migrations/011-*).
       DATABASE_URL: ${SHEETS_DATABASE_URL}
@@ -165,6 +176,7 @@ services:
         VITE_GOOGLE_PICKER_API_KEY: ${VITE_GOOGLE_PICKER_API_KEY}
         VITE_GOOGLE_APP_ID: ${VITE_GOOGLE_APP_ID}
     restart: always
+    logging: *logging
     expose:
       - '80'
     networks:

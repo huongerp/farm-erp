@@ -27,6 +27,7 @@ import {
   thuHoiPhien,
   type KetQuaDangNhap,
 } from './db.ts';
+import { taoBoGioiHan } from './gioi-han-ip.ts';
 
 const secretKey = new TextEncoder().encode(config.jwtSecret);
 const googleClient = config.googleClientId ? new OAuth2Client(config.googleClientId) : null;
@@ -119,6 +120,9 @@ async function xuLyKhoe(c: Ctx) {
   }
 }
 
+/** 30 lần đăng nhập sai / 15 phút / IP — xem gioi-han-ip.ts. */
+const gioiHanIp = taoBoGioiHan(30, 15 * 60_000);
+
 async function xuLyDangNhap(c: Ctx) {
   const body = await docJson(c);
   const email = chuoi(body?.email).trim();
@@ -128,8 +132,15 @@ async function xuLyDangNhap(c: Ctx) {
     return c.json({ ly_do: 'thieu_thong_tin' }, 400);
   }
 
+  const khoaIp = ip(c) ?? 'khong-ro-ip';
+  // Dùng lại lý do `bi_chan` (429) — UI đã có thông báo "thử lại sau" cho nó.
+  if (gioiHanIp.biChan(khoaIp)) return c.json({ ly_do: 'bi_chan' }, 429);
+
   const kq = await dangNhapMatKhau(email, matKhau, userAgent(c), ip(c));
-  if (!kq.ok) return c.json({ ly_do: kq.ly_do }, MA_LOI[kq.ly_do] ?? 401);
+  if (!kq.ok) {
+    if (kq.ly_do === 'sai_thong_tin') gioiHanIp.ghiLanSai(khoaIp);
+    return c.json({ ly_do: kq.ly_do }, MA_LOI[kq.ly_do] ?? 401);
+  }
   return c.json(await traVePhien(kq));
 }
 

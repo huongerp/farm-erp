@@ -36,7 +36,7 @@ const NXTSummaryCards: React.FC<NXTSummaryCardsProps> = ({ summary }) => {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs text-muted-foreground truncate">{t(item.labelKey)}</p>
-                <p className="text-lg font-bold text-foreground tabular-nums mt-0.5">{item.value.toLocaleString()}</p>
+                <p className="text-lg font-bold text-foreground tabular-nums mt-0.5">{item.value.toLocaleString('vi-VN')}</p>
               </div>
             </div>
           </div>

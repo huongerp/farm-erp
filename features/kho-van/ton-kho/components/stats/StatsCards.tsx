@@ -14,7 +14,7 @@ interface Props {
 const StatsCards: React.FC<Props> = ({ summary }) => {
   const { t } = useTranslation();
   const items = [
-    { labelKey: 'tonKho.stats.totalStock', value: summary.totalStock.toLocaleString(), icon: Layers },
+    { labelKey: 'tonKho.stats.totalStock', value: summary.totalStock.toLocaleString('vi-VN'), icon: Layers },
     { labelKey: 'tonKho.stats.warehouses', value: String(summary.warehouseCount), icon: MapPin },
     { labelKey: 'tonKho.stats.productsWithStock', value: String(summary.productCount), icon: Package },
   ];

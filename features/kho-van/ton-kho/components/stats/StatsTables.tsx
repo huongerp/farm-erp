@@ -50,7 +50,7 @@ const StatsTables: React.FC<Props> = ({ byWarehouse, topProducts }) => {
                     <td className="px-4 py-2 text-muted-foreground tabular-nums">{idx + 1}</td>
                     <td className="px-4 py-2 text-foreground font-medium">{row.name}</td>
                     <td className="px-4 py-2 text-right font-semibold tabular-nums">
-                      {row.value.toLocaleString()}
+                      {row.value.toLocaleString('vi-VN')}
                     </td>
                   </tr>
                 ))
@@ -99,7 +99,7 @@ const StatsTables: React.FC<Props> = ({ byWarehouse, topProducts }) => {
                       {row.name}
                     </td>
                     <td className="px-4 py-2 text-right font-semibold tabular-nums">
-                      {row.value.toLocaleString()}
+                      {row.value.toLocaleString('vi-VN')}
                     </td>
                   </tr>
                 ))

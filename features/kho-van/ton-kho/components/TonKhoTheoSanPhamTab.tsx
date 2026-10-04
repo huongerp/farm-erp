@@ -184,7 +184,7 @@ function ProductDetailDrawer({
                   {t('tonKho.byProduct.detailMinStock')}
                 </p>
                 <p className="text-lg font-bold text-foreground tabular-nums mt-0.5">
-                  {ton_toi_thieu != null ? ton_toi_thieu.toLocaleString() : '—'}
+                  {ton_toi_thieu != null ? ton_toi_thieu.toLocaleString('vi-VN') : '—'}
                 </p>
               </div>
             </div>
@@ -199,7 +199,7 @@ function ProductDetailDrawer({
                   {t('tonKho.byProduct.detailCurrentStock')}
                 </p>
                 <p className="text-lg font-bold text-foreground tabular-nums mt-0.5">
-                  {tong_so_luong.toLocaleString()}
+                  {tong_so_luong.toLocaleString('vi-VN')}
                 </p>
               </div>
             </div>
@@ -250,10 +250,10 @@ function ProductDetailDrawer({
               />
             </div>
             <p className="text-xs text-muted-foreground mt-1.5 tabular-nums">
-              {tong_so_luong.toLocaleString()} / {ton_toi_thieu.toLocaleString()}
+              {tong_so_luong.toLocaleString('vi-VN')} / {ton_toi_thieu.toLocaleString('vi-VN')}
               {canh_bao && (
                 <span className="ml-2 text-amber-600 dark:text-amber-400 font-medium">
-                  ({(Math.max(0, ton_toi_thieu - tong_so_luong)).toLocaleString()} {t('tonKho.byProduct.detailShort')})
+                  ({(Math.max(0, ton_toi_thieu - tong_so_luong)).toLocaleString('vi-VN')} {t('tonKho.byProduct.detailShort')})
                 </span>
               )}
             </p>
@@ -302,7 +302,7 @@ function ProductDetailDrawer({
                       <Warehouse size={14} className="text-muted-foreground shrink-0" />
                       {khoMap[r.id_kho] ?? r.id_kho}
                     </td>
-                    <td className="px-4 py-2.5 text-right font-medium tabular-nums">{r.so_luong.toLocaleString()}</td>
+                    <td className="px-4 py-2.5 text-right font-medium tabular-nums">{r.so_luong.toLocaleString('vi-VN')}</td>
                   </tr>
                 ))}
               </tbody>
@@ -348,9 +348,9 @@ function ProductDetailDrawer({
                     </td>
                     <td className="px-4 py-2.5 text-sm text-muted-foreground">{histRow.ten_kho ?? '—'}</td>
                     <td className="px-4 py-2.5 text-sm text-muted-foreground">{histRow.ten_kho_den ?? '—'}</td>
-                    <td className="px-4 py-2.5 text-right font-medium tabular-nums">{histRow.so_luong.toLocaleString()}</td>
+                    <td className="px-4 py-2.5 text-right font-medium tabular-nums">{histRow.so_luong.toLocaleString('vi-VN')}</td>
                     <td className="px-4 py-2.5 text-right font-medium tabular-nums text-muted-foreground">
-                      {tonSau !== undefined ? tonSau.toLocaleString() : '—'}
+                      {tonSau !== undefined ? tonSau.toLocaleString('vi-VN') : '—'}
                     </td>
                     <td className="px-4 py-2.5 text-xs text-muted-foreground">{histRow.don_vi_tinh ?? '—'}</td>
                     <td className="px-4 py-2.5 text-sm text-muted-foreground align-top min-w-[min(420px,38vw)] w-[38%] max-w-[min(560px,42vw)] whitespace-normal break-words">
@@ -546,7 +546,7 @@ const TonKhoTheoSanPhamTab: React.FC = () => {
       return (
         <td key={col.id} className="px-4 py-3 text-right" style={baseStyle}>
           <span className="font-medium tabular-nums text-sm">
-            {qty !== 0 ? qty.toLocaleString() : '—'}
+            {qty !== 0 ? qty.toLocaleString('vi-VN') : '—'}
           </span>
         </td>
       );
@@ -569,7 +569,7 @@ const TonKhoTheoSanPhamTab: React.FC = () => {
       case 'tong_so_luong':
         return (
           <td key={col.id} className="px-4 py-3 text-right" style={baseStyle}>
-            <span className="font-medium tabular-nums text-sm">{item.tong_so_luong.toLocaleString()}</span>
+            <span className="font-medium tabular-nums text-sm">{item.tong_so_luong.toLocaleString('vi-VN')}</span>
           </td>
         );
       case 'ten_danh_muc':
@@ -581,7 +581,7 @@ const TonKhoTheoSanPhamTab: React.FC = () => {
       case 'ton_toi_thieu':
         return (
           <td key={col.id} className="px-4 py-3 text-right tabular-nums text-sm" style={baseStyle}>
-            {item.ton_toi_thieu != null ? item.ton_toi_thieu.toLocaleString() : '—'}
+            {item.ton_toi_thieu != null ? item.ton_toi_thieu.toLocaleString('vi-VN') : '—'}
           </td>
         );
       case 'canh_bao':

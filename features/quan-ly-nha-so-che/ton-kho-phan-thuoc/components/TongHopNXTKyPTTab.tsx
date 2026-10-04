@@ -168,14 +168,14 @@ const TongHopNXTKyPTTab: React.FC<Props> = ({ onClearFilters }) => {
                       <td className="px-4 py-3 font-medium">{row.ten_hang}</td>
                       <td className="px-4 py-3 text-muted-foreground">{row.ten_danh_muc ?? '—'}</td>
                       <td className="px-4 py-3 text-center text-muted-foreground">{row.don_vi_tinh}</td>
-                      <td className="px-4 py-3 text-right tabular-nums">{row.ton_dau_ky.toLocaleString()}</td>
+                      <td className="px-4 py-3 text-right tabular-nums">{row.ton_dau_ky.toLocaleString('vi-VN')}</td>
                       <td className="px-4 py-3 text-right tabular-nums text-emerald-600 dark:text-emerald-400">
-                        {row.tong_nhap.toLocaleString()}
+                        {row.tong_nhap.toLocaleString('vi-VN')}
                       </td>
                       <td className="px-4 py-3 text-right tabular-nums text-amber-600 dark:text-amber-400">
-                        {row.tong_xuat.toLocaleString()}
+                        {row.tong_xuat.toLocaleString('vi-VN')}
                       </td>
-                      <td className="px-4 py-3 text-right tabular-nums font-semibold">{row.ton_cuoi_ky.toLocaleString()}</td>
+                      <td className="px-4 py-3 text-right tabular-nums font-semibold">{row.ton_cuoi_ky.toLocaleString('vi-VN')}</td>
                     </tr>
                   ))}
                 </tbody>

@@ -129,7 +129,7 @@ function PhieuDetailDrawer({
                       <tr key={ct.id} className="border-b border-border/60">
                         <td className="px-3 py-2 font-mono text-xs">{ct.ma_hang ?? '—'}</td>
                         <td className="px-3 py-2">{ct.ten_hang ?? '—'}</td>
-                        <td className="px-3 py-2 text-right tabular-nums">{ct.so_luong.toLocaleString()}</td>
+                        <td className="px-3 py-2 text-right tabular-nums">{ct.so_luong.toLocaleString('vi-VN')}</td>
                         <td className="px-3 py-2 text-muted-foreground">{ct.don_vi_tinh ?? '—'}</td>
                       </tr>
                     ))}

@@ -22,10 +22,8 @@ export const TRANG_THAI_NV = {
 export type TrangThaiNV = (typeof TRANG_THAI_NV)[keyof typeof TRANG_THAI_NV];
 
 /**
- * Mật khẩu cấp cho tài khoản mới khi admin không tự nhập — kèm cờ
- * `phai_doi_mat_khau = true` để buộc user đổi ở lần đăng nhập kế tiếp.
+ * Độ dài mật khẩu tối thiểu khi ĐẶT mật khẩu mới – trùng ràng buộc trong RPC `rpc_set_mat_khau`
+ * (migration 015). Màn đăng nhập không áp số này: tài khoản cũ đặt 6–7 ký tự vẫn đăng nhập được.
+ * Tài khoản mới không tự nhập mật khẩu thì nhận mật khẩu tạm ngẫu nhiên (lib/mat-khau-tam.ts).
  */
-export const DEFAULT_PASSWORD = '123456';
-
-/** Độ dài mật khẩu tối thiểu – trùng ràng buộc trong RPC `rpc_set_mat_khau`. */
-export const PASSWORD_MIN_LENGTH = 6;
+export const PASSWORD_MIN_LENGTH = 8;
