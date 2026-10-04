@@ -11,7 +11,7 @@ import { useChiTietPhieuKhoPaged, usePhieuKhoById, useDeletePhieuKho } from '../
 import { usePhieuKhoViewScope } from '../hooks/use-phieu-kho-view-scope';
 import { buildChiTietPhieuKhoListServerQuery, fetchAllChiTietPhieuKhoForListQuery } from '../services/phieu-kho-service';
 import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
-import { useEmployeesRefQuery, useDoiTacRefQuery } from '../../../../lib/hooks/use-ref-queries';
+import { useEmployeesRefQuery, useDoiTacRefQuery, useHangHoaRefQuery } from '../../../../lib/hooks/use-ref-queries';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import { useNhomDoiTacList, useTagList, useDoiTacList } from '../../danh-sach-doi-tac/hooks/use-doi-tac';
 import { useChiTietPhieuKhoStore } from '../store/useChiTietPhieuKhoStore';
@@ -84,6 +84,7 @@ const ChiTietPhieuKhoTab: React.FC = () => {
   const { data: empRef = [] } = useEmployeesRefQuery();
   const { data: doiTacNccRef = [] } = useDoiTacRefQuery('nha_cung_cap');
   const { data: doiTacKhRef = [] } = useDoiTacRefQuery('khach_hang');
+  const { data: hangHoaRef = [] } = useHangHoaRefQuery();
   const { data: nhomList = [] } = useNhomDoiTacList();
   const { data: tagList = [] } = useTagList();
   const { data: doiTacListAll = [] } = useDoiTacList();
@@ -487,6 +488,7 @@ const ChiTietPhieuKhoTab: React.FC = () => {
         chipCountsMode="unweighted"
         employeesForChips={empRef}
         doiTacForChips={doiTacForChips}
+        hangHoaForChips={hangHoaRef}
         khoList={khoList}
         onExport={handleExport}
       />

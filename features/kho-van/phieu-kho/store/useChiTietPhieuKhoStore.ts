@@ -29,6 +29,10 @@ export interface ChiTietPhieuKhoFilters {
   nguoiDuyetIds: string[];
   /** NCC hoặc KH (id đối tác) */
   doiTacIds: string[];
+  /** id_hang_hoa — chip Mã hàng */
+  maHangIds: string[];
+  /** id_hang_hoa — chip Tên hàng */
+  tenHangIds: string[];
 }
 
 export const DEFAULT_COLUMNS: ColumnConfig[] = [
@@ -63,6 +67,8 @@ const initialFilters: ChiTietPhieuKhoFilters = {
   nguoiTaoIds: [],
   nguoiDuyetIds: [],
   doiTacIds: [],
+  maHangIds: [],
+  tenHangIds: [],
 };
 
 export const useChiTietPhieuKhoStore = createGenericStore<ChiTietPhieuKhoFilters>(initialFilters, DEFAULT_COLUMNS, 'table-phieu-kho-chi-tiet-phieu-kho');

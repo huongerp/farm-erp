@@ -5,6 +5,7 @@ import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import FilterOverflowDropdown from '../../../../components/shared/FilterOverflowDropdown';
 import { useSearchInputCommit } from '../../../../lib/hooks/use-search-input-commit';
 import { useChiTietDonDatHangStore } from '../store/useChiTietDonDatHangStore';
 import type { ChiTietDonDatHangFlat } from '../core/types';
@@ -26,6 +27,9 @@ interface Props {
   onExport: () => void;
   chipCountsMode?: 'fromRows' | 'unweighted';
 }
+
+/** Desktop: nhóm lọc gom vào nút Filter để hàng chip ngoài tối đa 5 (MobileFilterSheet vẫn đủ nhóm). */
+const OVERFLOW_FILTER_KEYS = new Set(['phanLoai', 'nguoiDatIds']);
 
 const ChiTietDonDatHangToolbar: React.FC<Props> = ({
   data,
@@ -249,22 +253,7 @@ const ChiTietDonDatHangToolbar: React.FC<Props> = ({
         icon={FolderTree}
         className="w-full sm:w-[170px]"
       />
-      <FilterChipMultiSelect
-        options={phanLoaiOptions}
-        value={filters.phanLoai ?? []}
-        onChange={(v) => setFilter('phanLoai', v)}
-        placeholder={t('donDatHang.chiTietTab.classificationCol')}
-        icon={Tag}
-        className="w-full sm:w-[150px]"
-      />
-      <FilterChipMultiSelect
-        options={buyerOptions}
-        value={filters.nguoiDatIds ?? []}
-        onChange={(v) => setFilter('nguoiDatIds', v)}
-        placeholder={t('donDatHang.form.buyer')}
-        icon={User}
-        className="w-full sm:w-[160px]"
-      />
+      <FilterOverflowDropdown groups={filterGroups.filter((g) => OVERFLOW_FILTER_KEYS.has(g.key))} />
     </>
   );
 

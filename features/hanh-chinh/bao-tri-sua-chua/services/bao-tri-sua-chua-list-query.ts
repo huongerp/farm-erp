@@ -8,11 +8,12 @@ export interface BaoTriSuaChuaListServerQuery {
   ngayFrom: string;
   ngayTo: string;
   idTaiSan: string[];
+  /** Chi nhánh lưu trên phiếu (cột id_chi_nhanh). */
+  idChiNhanh: string[];
   trangThai: string[];
   idNguoiTao: string[];
   /**
-   * Ràng buộc theo tài sản đã tính sẵn ở component (chi nhánh của tài sản + phạm
-   * vi xem). `null` = không ràng buộc; mảng rỗng = không có tài sản nào hợp lệ.
+   * Ràng buộc theo tài sản đã tính sẵn ở component (phạm vi xem "của tôi"). `null` = không ràng buộc; mảng rỗng = không có tài sản nào hợp lệ.
    */
   idTaiSanChoPhep: string[] | null;
   /** Chỉ phiếu do người này tạo (dùng cùng `idTaiSanChoPhep` cho phạm vi "của tôi"). */
@@ -26,8 +27,10 @@ export const BTSC_SORTABLE_DB_COLUMNS = new Set([
   'ngay',
   'ma_tai_san',
   'ten_tai_san',
+  'ten_chi_nhanh',
   'ten_hang_muc',
   'so_tien',
+  'ten_nha_cung_cap',
   'ten_trang_thai',
   'ten_nguoi_tao',
   'tg_tao',

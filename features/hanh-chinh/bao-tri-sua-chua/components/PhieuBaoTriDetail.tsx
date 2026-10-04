@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { Wrench, User, FileText, Power } from 'lucide-react';
+import { Wrench, User, FileText, Power, Printer } from 'lucide-react';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
 import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';
@@ -16,18 +16,24 @@ import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { usePhieuBaoTriById, useUpdatePhieuBaoTri } from '../hooks/use-bao-tri-sua-chua';
 import type { PhieuBaoTriSuaChua, PhieuBaoTriSuaChuaCreate, TrangThaiPhieu } from '../core/types';
 import { getTrangThaiLabel, TRANG_THAI_OPTIONS } from '../core/constants';
+import { getPhieuBaoTriPreviewUrl } from '../core/preview-url';
+import { thongTinDuyet } from '../core/duyet';
+import { useAuthStore } from '../../../../store/useStore';
 
 function toUpdatePayload(p: PhieuBaoTriSuaChua): PhieuBaoTriSuaChuaCreate {
   return {
     ngay: p.ngay,
     id_tai_san: p.id_tai_san,
+    id_chi_nhanh: p.id_chi_nhanh ?? null,
+    ten_chi_nhanh: p.ten_chi_nhanh ?? null,
     id_hang_muc: p.id_hang_muc,
     ten_hang_muc: p.ten_hang_muc ?? null,
     mo_ta: p.mo_ta,
     so_tien: p.so_tien,
+    id_nha_cung_cap: p.id_nha_cung_cap ?? null,
+    ten_nha_cung_cap: p.ten_nha_cung_cap ?? null,
     ghi_chu: p.ghi_chu ?? null,
     trang_thai: p.trang_thai,
-    nguoi_duyet: p.nguoi_duyet ?? null,
   };
 }
 
@@ -111,6 +117,11 @@ const PhieuBaoTriDetail: React.FC<Props> = ({
   const { data: fresh } = usePhieuBaoTriById(data.id);
   const displayData = fresh ?? data;
   const updateMutation = useUpdatePhieuBaoTri();
+  const user = useAuthStore((s) => s.user);
+  const nguoiDung = useMemo(
+    () => ({ id: String(user?.id ?? ''), hoTen: user?.ho_va_ten?.trim() || user?.full_name?.trim() || null }),
+    [user]
+  );
 
   const handleChangeStatus = useCallback(() => {
     const syncRef: ChangeStatusSyncRef = {
@@ -132,15 +143,22 @@ const PhieuBaoTriDetail: React.FC<Props> = ({
             ...toUpdatePayload(displayData),
             trang_thai,
             ghi_chu: ghi_chu.trim() || null,
+            duyet: thongTinDuyet(displayData.trang_thai, trang_thai, nguoiDung, new Date()),
           },
         });
       },
     });
-  }, [confirm, displayData, t, updateMutation]);
+  }, [confirm, displayData, t, updateMutation, nguoiDung]);
 
   const toolbarActions: DetailToolbarAction[] = useMemo(() => {
-    if (!canAdmin) return [];
+    const inPhieu: DetailToolbarAction = {
+      label: t('baoTriSuaChua.detail.printPhieu'),
+      icon: <Printer size={16} />,
+      onClick: () => window.open(getPhieuBaoTriPreviewUrl(displayData.id), '_blank', 'noopener,noreferrer'),
+    };
+    if (!canAdmin) return [inPhieu];
     return [
+      inPhieu,
       {
         label: t('baoTriSuaChua.detail.changeStatus'),
         icon: <Power size={16} />,
@@ -149,7 +167,7 @@ const PhieuBaoTriDetail: React.FC<Props> = ({
         disabled: updateMutation.isPending,
       },
     ];
-  }, [canAdmin, t, handleChangeStatus, updateMutation.isPending]);
+  }, [canAdmin, t, handleChangeStatus, updateMutation.isPending, displayData.id]);
 
   const footer = (
     <DetailDrawerFooter
@@ -180,9 +198,11 @@ const PhieuBaoTriDetail: React.FC<Props> = ({
             <DetailField label={t('baoTriSuaChua.store.maPhieuCol')} value={displayData.ma_phieu} />
             <DetailField label={t('baoTriSuaChua.store.ngayCol')} value={formatDate(displayData.ngay)} />
             <DetailField label={t('baoTriSuaChua.store.hangMucCol')} value={displayData.ten_hang_muc ?? displayData.id_hang_muc} />
+            <DetailField label={t('baoTriSuaChua.store.chiNhanhCol')} value={displayData.ten_chi_nhanh || '—'} />
             <DetailField label={t('baoTriSuaChua.store.maTaiSanCol')} value={displayData.ma_tai_san || '—'} />
             <DetailField label={t('baoTriSuaChua.store.tenTaiSanCol')} value={displayData.ten_tai_san || '—'} />
             <DetailField label={t('baoTriSuaChua.store.soTienCol')} value={formatCurrency(displayData.so_tien)} />
+            <DetailField label={t('baoTriSuaChua.store.nhaCungCapCol')} value={displayData.ten_nha_cung_cap || '—'} />
             <DetailField
               label={t('baoTriSuaChua.store.trangThaiCol')}
               value={getTrangThaiLabel(displayData.trang_thai, t)}
@@ -199,6 +219,10 @@ const PhieuBaoTriDetail: React.FC<Props> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <DetailField label={t('baoTriSuaChua.store.nguoiTaoCol')} value={displayData.ten_nguoi_tao || '—'} />
             <DetailField label={t('baoTriSuaChua.store.nguoiDuyetCol')} value={displayData.nguoi_duyet || '—'} />
+            <DetailField
+              label={t('baoTriSuaChua.detail.tgDuyet')}
+              value={displayData.tg_duyet ? formatDateTimeShort(displayData.tg_duyet) : '—'}
+            />
           </div>
         </DetailSection>
 

@@ -76,6 +76,14 @@ const PhieuBaoTriTable: React.FC<Props> = ({ isFetching, totalRecordsOverride, d
         return (
           <span className="text-sm text-foreground line-clamp-2">{item.ten_tai_san ?? '—'}</span>
         );
+      case 'ten_nha_cung_cap':
+        return (
+          <span className="text-sm text-foreground line-clamp-2">{item.ten_nha_cung_cap || '—'}</span>
+        );
+      case 'ten_chi_nhanh':
+        return (
+          <span className="text-sm text-foreground line-clamp-2">{item.ten_chi_nhanh || '—'}</span>
+        );
       case 'so_tien':
         return (
           <span className="text-sm tabular-nums font-medium">{formatCurrency(item.so_tien)}</span>

@@ -56,6 +56,18 @@ describe('filterPhieuChiPhi', () => {
     expect(got.map((p) => p.id)).toEqual(['1', '2']);
   });
 
+  it('chi nhánh lưu trên phiếu được ưu tiên hơn chi nhánh hiện tại của tài sản', () => {
+    const dsCoChiNhanh = [
+      phieu({ id: '1', id_tai_san: 'TS1', id_chi_nhanh: '2' }),
+      phieu({ id: '2', id_tai_san: 'TS3', id_chi_nhanh: '2' }),
+      phieu({ id: '3', id_tai_san: 'TS2' }),
+    ];
+    const got = filterPhieuChiPhi(dsCoChiNhanh, { ...emptyFilters, id_chi_nhanh: ['2'] }, branchMap);
+    expect(got.map((p) => p.id)).toEqual(['1', '2', '3']);
+    const theoCn1 = filterPhieuChiPhi(dsCoChiNhanh, { ...emptyFilters, id_chi_nhanh: ['1'] }, branchMap);
+    expect(theoCn1).toHaveLength(0);
+  });
+
   it('lọc theo trạng thái phiếu', () => {
     const got = filterPhieuChiPhi(list, { ...emptyFilters, trang_thai: ['da_duyet'] }, branchMap);
     expect(got.map((p) => p.id)).toEqual(['2', '3']);

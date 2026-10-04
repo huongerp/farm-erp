@@ -6,7 +6,11 @@ export interface AdminFormListFilters {
   type: string[];
   /** Người gửi (id nhân viên) — chỉ người có viewAll mới thấy chip này. */
   nguoiTao: string[];
-  month: string;
+  /** Mốc chip Thời gian: 'all' | 'thisMonth' | … | 'custom' — xem core/ky-loc.ts. */
+  kyPreset: string;
+  /** Từ ngày / đến ngày `yyyy-mm-dd`, chỉ dùng khi kyPreset = 'custom'. */
+  tuNgay: string;
+  denNgay: string;
 }
 
 export const DEFAULT_COLUMNS: ColumnConfig[] = [
@@ -17,7 +21,9 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'ly_do', label: i18n.t('adminForm.store.reasonCol'), visible: true, minWidth: 180, order: 4 },
   { id: 'trang_thai', label: i18n.t('adminForm.store.statusCol'), visible: true, minWidth: 120, order: 5 },
   { id: 'ten_nguoi_tao', label: i18n.t('adminForm.store.requesterCol'), visible: true, minWidth: 160, order: 6 },
-  { id: 'ten_phong_ban', label: i18n.t('adminForm.store.departmentCol'), visible: false, minWidth: 140, order: 7 },
+  // Id khác 'ten_phong_ban' cũ: bản lưu cũ ghi cột đó visible:false (hồi phòng ban còn gộp
+  // trong ô Người gửi) — giữ id cũ thì người đã mở bảng sẽ không thấy cột mới tách ra.
+  { id: 'phong_ban', label: i18n.t('adminForm.store.departmentCol'), visible: true, minWidth: 140, order: 7 },
   { id: 'tg_cap_nhat', label: i18n.t('adminForm.store.updatedCol'), visible: false, minWidth: 140, order: 8 },
 ];
 
@@ -25,7 +31,9 @@ const initialFilters: AdminFormListFilters = {
   status: [],
   type: [],
   nguoiTao: [],
-  month: '',
+  kyPreset: 'all',
+  tuNgay: '',
+  denNgay: '',
 };
 
 /** Giữ storageKey cũ của tab "Tôi quản lý" để người duyệt không mất cấu hình cột. */

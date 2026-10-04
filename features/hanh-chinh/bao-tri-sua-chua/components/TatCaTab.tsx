@@ -51,20 +51,14 @@ const TatCaTab: React.FC<Props> = ({ defaultTaiSanId }) => {
   const { viewAll } = useBaoTriSuaChuaViewScope();
   const { data: taiSanList = [] } = useTaiSanTomTat();
   /**
-   * Phạm vi xem + lọc chi nhánh đều dựa trên TÀI SẢN, nên tính sẵn danh sách id
-   * tài sản hợp lệ rồi gửi kèm xuống PostgREST — trước đây tải hết phiếu rồi lọc.
+   * Phạm vi xem "của tôi" dựa trên TÀI SẢN đang giữ, nên tính sẵn danh sách id tài sản
+   * hợp lệ rồi gửi kèm xuống PostgREST. Lọc chi nhánh dùng cột id_chi_nhanh của phiếu.
    */
   const idTaiSanChoPhep = useMemo(() => {
-    const theoChiNhanh =
-      filters.id_chi_nhanh.length > 0
-        ? taiSanList.filter((a) => a.id_chi_nhanh != null && filters.id_chi_nhanh.includes(a.id_chi_nhanh))
-        : taiSanList;
-    if (viewAll) {
-      return filters.id_chi_nhanh.length > 0 ? theoChiNhanh.map((a) => a.id) : null;
-    }
+    if (viewAll) return null;
     const myId = String(user?.id ?? '');
-    return theoChiNhanh.filter((a) => String(a.id_nhan_vien_dang_giu) === myId).map((a) => a.id);
-  }, [taiSanList, filters.id_chi_nhanh, viewAll, user?.id]);
+    return taiSanList.filter((a) => String(a.id_nhan_vien_dang_giu) === myId).map((a) => a.id);
+  }, [taiSanList, viewAll, user?.id]);
 
   const listServerQuery: BaoTriSuaChuaListServerQuery = useMemo(
     () => ({
@@ -75,6 +69,7 @@ const TatCaTab: React.FC<Props> = ({ defaultTaiSanId }) => {
       ngayFrom: filters.dateFrom ?? '',
       ngayTo: filters.dateTo ?? '',
       idTaiSan: filters.id_tai_san ?? [],
+      idChiNhanh: filters.id_chi_nhanh ?? [],
       trangThai: filters.trang_thai ?? [],
       idNguoiTao: filters.id_nguoi_tao ?? [],
       idTaiSanChoPhep,
@@ -254,7 +249,7 @@ const TatCaTab: React.FC<Props> = ({ defaultTaiSanId }) => {
           canAdmin={canAdmin}
           onEdit={canUpdate ? handleEdit : undefined}
           onDelete={canDelete ? () => handleDelete(detailItem) : undefined}
-          idChiNhanhTaiSan={branchMap.get(String(detailItem.id_tai_san)) ?? null}
+          idChiNhanhTaiSan={detailItem.id_chi_nhanh || branchMap.get(String(detailItem.id_tai_san)) || null}
         />
       )}
       <AnimatePresence>

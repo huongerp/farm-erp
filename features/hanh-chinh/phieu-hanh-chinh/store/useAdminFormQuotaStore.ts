@@ -3,7 +3,8 @@ import i18n from '../../../../lib/i18n';
 
 export interface AdminFormQuotaFilters {
   type: string[];
-  month: string;
+  /** Nhân viên đang xem định mức (chỉ người có viewAll chọn được); rỗng = chính mình. */
+  nguoiXem: string;
 }
 
 export const DEFAULT_COLUMNS: ColumnConfig[] = [
@@ -15,7 +16,7 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
 
 const initialFilters: AdminFormQuotaFilters = {
   type: [],
-  month: '',
+  nguoiXem: '',
 };
 
 export const useAdminFormQuotaStore = createGenericStore<AdminFormQuotaFilters>(

@@ -1,10 +1,12 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FileText, Warehouse, ArrowRightLeft, Tag, User, CheckCircle, Truck, Download } from 'lucide-react';
+import { FileText, Warehouse, ArrowRightLeft, Tag, User, CheckCircle, Truck, Download, Barcode, Package } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import FilterOverflowDropdown from '../../../../components/shared/FilterOverflowDropdown';
+import type { FilterGroup } from '../../../../components/ui/MobileFilterSheet';
 import DateRangePicker from '../../../../components/ui/DateRangePicker';
 import { useSearchInputCommit } from '../../../../lib/hooks/use-search-input-commit';
 import { useChiTietPhieuKhoStore, type DatePresetId } from '../store/useChiTietPhieuKhoStore';
@@ -22,7 +24,11 @@ interface Props {
   chipCountsMode?: 'fromRows' | 'unweighted';
   employeesForChips?: { id: string; ho_ten: string }[];
   doiTacForChips?: { id: string; ten_ncc: string }[];
+  hangHoaForChips?: { id: string; ma_hang: string; ten_hang: string }[];
 }
+
+/** Desktop: số filter chip tối đa hiện ngoài toolbar (tính cả chọn thời gian); còn lại vào nút Filter. */
+const MAX_VISIBLE_FILTER_CHIPS = 5;
 
 const PhieuStatus = {
   pending: 'Pending',
@@ -38,6 +44,7 @@ const ChiTietPhieuKhoToolbar: React.FC<Props> = ({
   chipCountsMode = 'fromRows',
   employeesForChips = [],
   doiTacForChips = [],
+  hangHoaForChips = [],
 }) => {
   const unweighted = chipCountsMode === 'unweighted';
   const { t } = useTranslation();
@@ -179,6 +186,35 @@ const ChiTietPhieuKhoToolbar: React.FC<Props> = ({
       .sort((a, b) => a.label.localeCompare(b.label, 'vi'));
   }, [data, unweighted, doiTacForChips]);
 
+  /** Chip Mã hàng / Tên hàng: value = id_hang_hoa. Không dùng chế độ đếm theo dòng của trang hiện tại. */
+  const { maHangOptions, tenHangOptions } = useMemo(() => {
+    const source =
+      unweighted && hangHoaForChips.length
+        ? hangHoaForChips.map((h) => ({ id: h.id, ma: h.ma_hang?.trim() ?? '', ten: h.ten_hang?.trim() ?? '' }))
+        : [
+            ...new Map(
+              data.map((d) => [d.id_hang_hoa, { id: d.id_hang_hoa, ma: d.ma_hang?.trim() ?? '', ten: d.ten_hang?.trim() ?? '' }])
+            ).values(),
+          ];
+    const countById = new Map<string, number>();
+    if (!unweighted) for (const d of data) countById.set(d.id_hang_hoa, (countById.get(d.id_hang_hoa) ?? 0) + 1);
+    const count = (id: string) => (unweighted ? 1 : countById.get(id) ?? 0);
+    const tenTrung = new Map<string, number>();
+    for (const h of source) tenTrung.set(h.ten, (tenTrung.get(h.ten) ?? 0) + 1);
+    const ma = source
+      .map((h) => ({ value: h.id, label: h.ma || h.ten || `#${h.id}`, count: count(h.id) }))
+      .sort((a, b) => a.label.localeCompare(b.label, 'vi', { numeric: true }));
+    const ten = source
+      .map((h) => ({
+        value: h.id,
+        // Trùng tên thì kèm mã để phân biệt.
+        label: (tenTrung.get(h.ten) ?? 0) > 1 && h.ma ? `${h.ten || h.ma} (${h.ma})` : h.ten || h.ma || `#${h.id}`,
+        count: count(h.id),
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label, 'vi'));
+    return { maHangOptions: ma, tenHangOptions: ten };
+  }, [data, unweighted, hangHoaForChips]);
+
   const dateRangeLabel = useMemo(() => {
     const range = getDateRangeFromPreset(
       (filters.datePreset ?? 'all') as DateRangePresetId,
@@ -206,7 +242,9 @@ const ChiTietPhieuKhoToolbar: React.FC<Props> = ({
       (filters.trangThaiKeys?.length ?? 0 ? 1 : 0) +
       (filters.nguoiTaoIds?.length ?? 0 ? 1 : 0) +
       (filters.nguoiDuyetIds?.length ?? 0 ? 1 : 0) +
-      (filters.doiTacIds?.length ?? 0 ? 1 : 0),
+      (filters.doiTacIds?.length ?? 0 ? 1 : 0) +
+      (filters.maHangIds?.length ?? 0 ? 1 : 0) +
+      (filters.tenHangIds?.length ?? 0 ? 1 : 0),
     [
       searchInput,
       filters.loai?.length,
@@ -217,10 +255,13 @@ const ChiTietPhieuKhoToolbar: React.FC<Props> = ({
       filters.nguoiTaoIds?.length,
       filters.nguoiDuyetIds?.length,
       filters.doiTacIds?.length,
+      filters.maHangIds?.length,
+      filters.tenHangIds?.length,
     ]
   );
 
-  const filterGroupsComputed = useMemo(
+  /** Thứ tự = thứ tự hiện trên desktop: MAX_VISIBLE_FILTER_CHIPS - 1 nhóm đầu ra ngoài (chừa 1 chỗ cho chọn thời gian). */
+  const filterGroupsComputed = useMemo<FilterGroup[]>(
     () => [
       {
         key: 'loai',
@@ -231,20 +272,36 @@ const ChiTietPhieuKhoToolbar: React.FC<Props> = ({
         onChange: (val: string[]) => setFilter('loai', val),
       },
       {
-        key: 'trangThai',
-        label: t('common.status'),
-        icon: Tag,
-        options: trangThaiOptions,
-        value: filters.trangThaiKeys ?? [],
-        onChange: (val: string[]) => setFilter('trangThaiKeys', val),
-      },
-      {
         key: 'khoIds',
         label: t('phieuKho.store.khoCol'),
         icon: Warehouse,
         options: khoOptions,
         value: filters.khoIds ?? [],
         onChange: (val: string[]) => setFilter('khoIds', val),
+      },
+      {
+        key: 'maHang',
+        label: t('phieuKho.form.itemCode'),
+        icon: Barcode,
+        options: maHangOptions,
+        value: filters.maHangIds ?? [],
+        onChange: (val: string[]) => setFilter('maHangIds', val),
+      },
+      {
+        key: 'tenHang',
+        label: t('phieuKho.form.itemName'),
+        icon: Package,
+        options: tenHangOptions,
+        value: filters.tenHangIds ?? [],
+        onChange: (val: string[]) => setFilter('tenHangIds', val),
+      },
+      {
+        key: 'trangThai',
+        label: t('common.status'),
+        icon: Tag,
+        options: trangThaiOptions,
+        value: filters.trangThaiKeys ?? [],
+        onChange: (val: string[]) => setFilter('trangThaiKeys', val),
       },
       {
         key: 'khoDenIds',
@@ -288,6 +345,8 @@ const ChiTietPhieuKhoToolbar: React.FC<Props> = ({
       nguoiTaoOptions,
       nguoiDuyetOptions,
       doiTacOptions,
+      maHangOptions,
+      tenHangOptions,
       filters.loai,
       filters.trangThaiKeys,
       filters.khoIds,
@@ -295,9 +354,14 @@ const ChiTietPhieuKhoToolbar: React.FC<Props> = ({
       filters.nguoiTaoIds,
       filters.nguoiDuyetIds,
       filters.doiTacIds,
+      filters.maHangIds,
+      filters.tenHangIds,
       setFilter,
     ]
   );
+
+  const visibleFilterGroups = filterGroupsComputed.slice(0, MAX_VISIBLE_FILTER_CHIPS - 1);
+  const overflowFilterGroups = filterGroupsComputed.slice(MAX_VISIBLE_FILTER_CHIPS - 1);
 
   const dateRangePickerPresets = useMemo(
     () => DATE_RANGE_PRESETS.map((p) => ({ id: p.id, label: p.label })),
@@ -332,24 +396,28 @@ const ChiTietPhieuKhoToolbar: React.FC<Props> = ({
     </div>
   );
 
+  const chipClassByKey: Record<string, string> = {
+    loai: 'w-full sm:w-[140px]',
+    khoIds: 'w-full sm:w-[160px]',
+    maHang: 'w-full sm:w-[150px]',
+    tenHang: 'w-full sm:w-[190px]',
+  };
+
+  const renderChip = (g: FilterGroup) => (
+    <FilterChipMultiSelect
+      key={g.key}
+      options={g.options}
+      value={g.value}
+      onChange={g.onChange}
+      placeholder={g.label}
+      icon={g.icon}
+      className={chipClassByKey[g.key] ?? 'w-full sm:w-[150px]'}
+    />
+  );
+
   const renderFilters = (
     <>
-      <FilterChipMultiSelect
-        options={loaiOptions}
-        value={filters.loai ?? []}
-        onChange={(v) => setFilter('loai', v)}
-        placeholder={t('phieuKho.chiTietTab.loaiPhieuCol')}
-        icon={FileText}
-        className="w-full sm:w-[140px]"
-      />
-      <FilterChipMultiSelect
-        options={trangThaiOptions}
-        value={filters.trangThaiKeys ?? []}
-        onChange={(v) => setFilter('trangThaiKeys', v)}
-        placeholder={t('common.status')}
-        icon={Tag}
-        className="w-full sm:w-[130px]"
-      />
+      {visibleFilterGroups.slice(0, 1).map(renderChip)}
       <DateRangePicker
         presets={dateRangePickerPresets}
         value={{
@@ -366,46 +434,8 @@ const ChiTietPhieuKhoToolbar: React.FC<Props> = ({
         placeholder={t('phieuKho.chiTietTab.dateRangePlaceholder')}
         className="w-full sm:w-auto"
       />
-      <FilterChipMultiSelect
-        options={khoOptions}
-        value={filters.khoIds ?? []}
-        onChange={(v) => setFilter('khoIds', v)}
-        placeholder={t('phieuKho.store.khoCol')}
-        icon={Warehouse}
-        className="w-full sm:w-[160px]"
-      />
-      <FilterChipMultiSelect
-        options={khoDenOptions}
-        value={filters.khoDenIds ?? []}
-        onChange={(v) => setFilter('khoDenIds', v)}
-        placeholder={t('phieuKho.form.warehouseTo')}
-        icon={ArrowRightLeft}
-        className="w-full sm:w-[160px]"
-      />
-      <FilterChipMultiSelect
-        options={nguoiTaoOptions}
-        value={filters.nguoiTaoIds ?? []}
-        onChange={(v) => setFilter('nguoiTaoIds', v)}
-        placeholder={t('phieuKho.filters.creator')}
-        icon={User}
-        className="w-full sm:w-[150px]"
-      />
-      <FilterChipMultiSelect
-        options={nguoiDuyetOptions}
-        value={filters.nguoiDuyetIds ?? []}
-        onChange={(v) => setFilter('nguoiDuyetIds', v)}
-        placeholder={t('phieuKho.filters.approver')}
-        icon={CheckCircle}
-        className="w-full sm:w-[150px]"
-      />
-      <FilterChipMultiSelect
-        options={doiTacOptions}
-        value={filters.doiTacIds ?? []}
-        onChange={(v) => setFilter('doiTacIds', v)}
-        placeholder={t('phieuKho.filters.partner')}
-        icon={Truck}
-        className="w-full sm:w-[170px]"
-      />
+      {visibleFilterGroups.slice(1).map(renderChip)}
+      <FilterOverflowDropdown groups={overflowFilterGroups} />
     </>
   );
 
@@ -433,6 +463,8 @@ const ChiTietPhieuKhoToolbar: React.FC<Props> = ({
         setFilter('nguoiTaoIds', []);
         setFilter('nguoiDuyetIds', []);
         setFilter('doiTacIds', []);
+        setFilter('maHangIds', []);
+        setFilter('tenHangIds', []);
       }}
       columns={columns}
       onToggleColumn={toggleColumn}

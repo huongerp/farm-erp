@@ -1,7 +1,8 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { FileText } from 'lucide-react';
+import { Edit, FileText } from 'lucide-react';
 import GenericTable from '../../../../components/shared/GenericTable';
+import Tooltip from '../../../../components/ui/Tooltip';
 import { AdminFormQuotaRow } from '../core/types';
 import { getAdminFormTypeLabel } from '../../thiet-lap-cong-luong/core/constants';
 import type { GenericState } from '../../../../store/createGenericStore';
@@ -10,6 +11,8 @@ interface Props {
   data: AdminFormQuotaRow[];
   isLoading: boolean;
   useStore: () => GenericState<any>;
+  /** Sửa định mức của loại phiếu — chỉ truyền khi người dùng có quyền (viewAll). */
+  onEdit?: (item: AdminFormQuotaRow) => void;
 }
 
 /** Hiển thị số định mức (số nguyên hoặc 1 chữ số thập phân) */
@@ -17,7 +20,7 @@ function formatQuotaValue(n: number): string {
   return n % 1 === 0 ? String(n) : n.toFixed(1);
 }
 
-const AdminFormQuotaTable: React.FC<Props> = ({ data, isLoading, useStore }) => {
+const AdminFormQuotaTable: React.FC<Props> = ({ data, isLoading, useStore, onEdit }) => {
   const { t } = useTranslation();
   const {
     columns,
@@ -60,7 +63,19 @@ const AdminFormQuotaTable: React.FC<Props> = ({ data, isLoading, useStore }) => 
           </span>
         );
       case 'actions':
-        return null;
+        return onEdit ? (
+          <div className="flex items-center justify-center">
+            <Tooltip content={t('adminForm.quota.editQuota')} placement="left">
+              <button
+                onClick={(e) => { e.stopPropagation(); onEdit(item); }}
+                className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-all active:scale-95"
+                aria-label={t('adminForm.quota.editQuota')}
+              >
+                <Edit size={16} />
+              </button>
+            </Tooltip>
+          </div>
+        ) : null;
       default:
         return null;
     }
@@ -81,7 +96,16 @@ const AdminFormQuotaTable: React.FC<Props> = ({ data, isLoading, useStore }) => 
             <h4 className="font-semibold text-foreground text-sm truncate">
               {getAdminFormTypeLabel(item.loai_phieu, t)}
             </h4>
-            <div className="shrink-0">
+            <div className="shrink-0 flex items-center gap-1">
+              {onEdit && (
+                <button
+                  onClick={() => onEdit(item)}
+                  className="p-1.5 text-primary hover:bg-primary/10 rounded-lg transition-all active:scale-95"
+                  aria-label={t('adminForm.quota.editQuota')}
+                >
+                  <Edit size={15} />
+                </button>
+              )}
               <input
                 type="checkbox"
                 checked={isSelected}
@@ -129,6 +153,7 @@ const AdminFormQuotaTable: React.FC<Props> = ({ data, isLoading, useStore }) => 
       onSort={setSort}
       renderCell={renderCell}
       renderMobileCard={renderMobileCard}
+      showActionsColumn={!!onEdit}
       keyExtractor={(item) => item.id}
     />
   );

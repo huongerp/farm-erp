@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import EmptyState from '../../../../components/shared/EmptyState';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import FilterOverflowDropdown from '../../../../components/shared/FilterOverflowDropdown';
 import DateRangePicker from '../../../../components/ui/DateRangePicker';
 import type { FilterGroup } from '../../../../components/ui/MobileFilterSheet';
 import { useThongKeSanXuat } from '../hooks/use-thong-ke-san-xuat';
@@ -20,6 +21,9 @@ import ThongKeSanXuatSummaryCards from './ThongKeSanXuatSummaryCards';
 import ThongKeSanXuatTable from './ThongKeSanXuatTable';
 import StatsToolbar from './stats/StatsToolbar';
 import StatsTables from './stats/StatsTables';
+
+/** Desktop: nhóm lọc gom vào nút Filter để hàng chip ngoài tối đa 5 (MobileFilterSheet vẫn đủ nhóm). */
+const OVERFLOW_FILTER_KEYS = new Set(['tt_bcsc']);
 
 const StatsCharts = lazy(() => import('./stats/StatsCharts'));
 
@@ -175,15 +179,7 @@ const ThongKeSanXuatPage: React.FC = () => {
         className="w-full sm:w-[110px]"
         size="md"
       />
-      <FilterChipMultiSelect
-        options={trangThaiOptions}
-        value={trangThaiBcscFilter}
-        onChange={setTrangThaiBcscFilter}
-        placeholder={t('thongKeSanXuat.filter.trangThaiBcsc')}
-        icon={Lock}
-        className="w-full sm:w-[110px]"
-        size="md"
-      />
+      <FilterOverflowDropdown groups={filterGroups.filter((g) => OVERFLOW_FILTER_KEYS.has(g.key))} />
     </>
   );
 

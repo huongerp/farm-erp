@@ -47,9 +47,14 @@ const JobLevelPage = lazy(() => import('./features/he-thong/cap-bac/index'));
 const PayslipPreviewPage = lazy(() => import('./features/hanh-chinh/bang-luong/PayslipPreviewPage'));
 const EmployeeProfilePreviewPage = lazy(() => import('./features/he-thong/nhan-vien/EmployeeProfilePreviewPage'));
 const CongViecPreviewPage = lazy(() => import('./features/hanh-chinh/cong-viec/CongViecPreviewPage'));
+const PhieuHanhChinhPreviewPage = lazy(() => import('./features/hanh-chinh/phieu-hanh-chinh/PhieuHanhChinhPreviewPage'));
 const HoSoTaiSanPreviewPage = lazyWithFeatureI18n(
   'danh-muc-tai-san',
   () => import('./features/hanh-chinh/danh-muc-tai-san/HoSoTaiSanPreviewPage')
+);
+const PhieuBaoTriPreviewPage = lazyWithFeatureI18n(
+  'bao-tri-sua-chua',
+  () => import('./features/hanh-chinh/bao-tri-sua-chua/PhieuBaoTriPreviewPage')
 );
 const PhieuCPTHPreviewPage = lazyWithFeatureI18n(
   'cap-phat-thu-hoi',
@@ -226,6 +231,30 @@ const App = () => {
               <ModulePermissionGuard moduleId="hanh-chinh/cong-viec">
                 <Suspense fallback={<PageFallback />}>
                   <CongViecPreviewPage />
+                </Suspense>
+              </ModulePermissionGuard>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/hanh-chinh/phieu-hanh-chinh/preview/:id"
+          element={
+            <ProtectedRoute>
+              <ModulePermissionGuard moduleId="hanh-chinh/phieu-hanh-chinh">
+                <Suspense fallback={<PageFallback />}>
+                  <PhieuHanhChinhPreviewPage />
+                </Suspense>
+              </ModulePermissionGuard>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/hanh-chinh/chi-phi-tai-san/preview/:id"
+          element={
+            <ProtectedRoute>
+              <ModulePermissionGuard moduleId="hanh-chinh/chi-phi-tai-san">
+                <Suspense fallback={<PageFallback />}>
+                  <PhieuBaoTriPreviewPage />
                 </Suspense>
               </ModulePermissionGuard>
             </ProtectedRoute>

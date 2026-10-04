@@ -4,6 +4,7 @@ import { Plus, Wallet, Tags, Link2, Building2, User, Lock } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import FilterOverflowDropdown from '../../../../components/shared/FilterOverflowDropdown';
 import DateRangePicker from '../../../../components/ui/DateRangePicker';
 import ImportExportButtons, { buildImportExportMobileActions } from './ImportExportButtons';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
@@ -39,6 +40,9 @@ interface Props {
   canCreate?: boolean;
   canDelete?: boolean;
 }
+
+/** Desktop: nhóm lọc gom vào nút Filter để hàng chip ngoài tối đa 5 (MobileFilterSheet vẫn đủ nhóm). */
+const OVERFLOW_FILTER_KEYS = new Set(['nguonChungTu', 'nguoiTaoIds']);
 
 const ThuChiQuyToolbar: React.FC<Props> = ({
   branches,
@@ -230,22 +234,6 @@ const ThuChiQuyToolbar: React.FC<Props> = ({
         className="w-full sm:w-[160px]"
       />
       <FilterChipMultiSelect
-        options={nguonOptions}
-        value={filters.nguonChungTu}
-        onChange={(v) => setFilter('nguonChungTu', v)}
-        placeholder={t('thuChiQuy.store.nguonCol')}
-        icon={Link2}
-        className="w-full sm:w-[170px]"
-      />
-      <FilterChipMultiSelect
-        options={nguoiTaoOptions}
-        value={filters.nguoiTaoIds}
-        onChange={(v) => setFilter('nguoiTaoIds', v)}
-        placeholder={t('thuChiQuy.store.nguoiTaoCol')}
-        icon={User}
-        className="w-full sm:w-[170px]"
-      />
-      <FilterChipMultiSelect
         options={trangThaiOptions}
         value={filters.trangThai}
         onChange={(v) => setFilter('trangThai', v)}
@@ -265,6 +253,7 @@ const ThuChiQuyToolbar: React.FC<Props> = ({
         placeholder={t('thuChiQuy.filters.dateRange')}
         className="w-full sm:w-auto"
       />
+      <FilterOverflowDropdown groups={filterGroups.filter((g) => OVERFLOW_FILTER_KEYS.has(g.key))} />
     </>
   );
 

@@ -81,13 +81,8 @@ const AdminFormTable: React.FC<Props> = ({ isFetching, totalRecordsOverride, dat
   const renderCell = (colId: string, item: AdminFormRequest) => {
     switch (colId) {
       case 'ten_nguoi_tao':
-        return (
-          <div className="flex flex-col gap-0.5 min-w-[160px]">
-            <span className="font-medium text-foreground text-sm">{item.ten_nguoi_tao}</span>
-            <span className="text-xs text-muted-foreground">{item.ten_phong_ban || '—'}</span>
-          </div>
-        );
-      case 'ten_phong_ban':
+        return <span className="font-medium text-foreground text-sm">{item.ten_nguoi_tao || '—'}</span>;
+      case 'phong_ban':
         return <span className="text-sm text-foreground">{item.ten_phong_ban || '—'}</span>;
       case 'loai_phieu':
         return (

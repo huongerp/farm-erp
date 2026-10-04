@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { cn, formatNumberVN, parseFormattedNumber, getLocale } from '../../lib/utils';
+import { dinhDangKhiGo } from '../../lib/number-input-format';
 
 export interface NumberInputProps {
   value?: number | string;
@@ -26,7 +27,8 @@ export interface NumberInputProps {
 }
 
 /**
- * NumberInput – ô nhập số có format phân tách hàng nghìn theo locale (vi-VN / en-US).
+ * NumberInput – ô nhập số có phân tách hàng nghìn theo vi-VN, định dạng ngay khi gõ
+ * (logic ở lib/number-input-format.ts); blur thì kẹp min/max và chuẩn hoá lại.
  */
 const NumberInput: React.FC<NumberInputProps> = ({
   value,
@@ -58,6 +60,7 @@ const NumberInput: React.FC<NumberInputProps> = ({
 
   const [displayValue, setDisplayValue] = useState(() => formatDisplay(safeNum));
   const [isFocused, setIsFocused] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!isFocused) {
@@ -66,16 +69,24 @@ const NumberInput: React.FC<NumberInputProps> = ({
   }, [safeNum, isFocused, formatDisplay]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = e.target.value;
-    setDisplayValue(raw);
-    const parsed = parseFormattedNumber(raw, getLocale());
+    const { text, caret } = dinhDangKhiGo(e.target.value, e.target.selectionStart ?? e.target.value.length, {
+      maxFractionDigits,
+      allowNegative: min < 0,
+    });
+    setDisplayValue(text);
+    // Đặt lại con trỏ sau khi React ghi giá trị mới (thêm/bớt dấu chấm làm lệch vị trí).
+    requestAnimationFrame(() => {
+      if (document.activeElement === inputRef.current) inputRef.current?.setSelectionRange(caret, caret);
+    });
+    const parsed = parseFormattedNumber(text, getLocale());
     const clamped = max != null && parsed > max ? max : parsed < min ? min : parsed;
     onChange?.(clamped);
   };
 
   const handleFocus = () => {
     setIsFocused(true);
-    setDisplayValue(safeNum === 0 ? '' : String(safeNum).replace('.', getLocale().startsWith('vi') ? ',' : '.'));
+    // Giữ nguyên dạng có phân tách hàng nghìn khi vào ô; chỉ bỏ "0" để gõ đè cho nhanh.
+    setDisplayValue(safeNum === 0 ? '' : formatNumberVN(safeNum, { maxFractionDigits, minFractionDigits: 0 }));
   };
 
   const handleBlur = () => {
@@ -97,6 +108,7 @@ const NumberInput: React.FC<NumberInputProps> = ({
         </label>
       )}
       <input
+        ref={inputRef}
         type="text"
         inputMode="decimal"
         value={displayValue}

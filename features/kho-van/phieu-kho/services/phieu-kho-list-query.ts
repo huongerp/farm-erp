@@ -51,6 +51,9 @@ export type ChiTietPhieuKhoListServerQuery = {
   nguoiTaoIds: number[];
   nguoiDuyetIds: number[];
   doiTacIds: number[];
+  /** Chip Mã hàng / Tên hàng — đều lọc theo id_hang_hoa, AND với nhau như các chip khác. */
+  maHangIds: number[];
+  tenHangIds: number[];
   scope: BranchListScope;
 };
 
@@ -132,6 +135,8 @@ export function buildChiTietPhieuKhoListServerQuery(params: {
     nguoiTaoIds: toNumIds(strArr(filters.nguoiTaoIds)),
     nguoiDuyetIds: toNumIds(strArr(filters.nguoiDuyetIds)),
     doiTacIds: toNumIds(strArr(filters.doiTacIds)),
+    maHangIds: toNumIds(strArr(filters.maHangIds)),
+    tenHangIds: toNumIds(strArr(filters.tenHangIds)),
     scope,
   };
 }

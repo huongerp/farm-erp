@@ -1,11 +1,13 @@
 import React, { useMemo, useState, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Wrench, Calendar, MapPin, Tag } from 'lucide-react';
+import { Wrench, MapPin, Tag } from 'lucide-react';
+import DateRangePicker from '../../../../components/ui/DateRangePicker';
+import { KY_CUSTOM, useKyChip } from './ky-loc-chip';
 import { toast } from 'sonner';
 import { usePhieuBaoTriList } from '../hooks/use-bao-tri-sua-chua';
 import { useBaoTriSuaChuaViewScope } from '../hooks/use-bao-tri-sua-chua-view-scope';
 import { useAuthStore } from '../../../../store/useStore';
-import { useTaiSanList } from '../../danh-muc-tai-san/hooks/use-danh-muc-tai-san';
+import { useTaiSanTomTat } from '../../danh-muc-tai-san/hooks/use-danh-muc-tai-san';
 import { useLoaiChiPhiList } from '../../thiet-lap-tai-san/hooks/use-loai-chi-phi';
 import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
@@ -18,21 +20,25 @@ import StatsCards from './stats/StatsCards';
 const StatsCharts = lazy(() => import('./stats/StatsCharts'));
 import StatsTables from './stats/StatsTables';
 import { usePhieuBaoTriStats } from './stats/usePhieuBaoTriStats';
-import { exportToExcel, formatCurrency } from '../../../../lib/utils';
+import { exportToExcel, formatDate } from '../../../../lib/utils';
 import { buildTaiSanChiNhanhMap, filterPhieuChiPhi, getChiNhanhCuaPhieu } from '../utils/filter-phieu-chi-phi';
 import type { BaoTriSuaChuaFilters } from '../store/useBaoTriSuaChuaStore';
 import type { PhieuBaoTriSuaChua } from '../core/types';
 import type { TFunction } from 'i18next';
 
-function phieuToExportRow(p: PhieuBaoTriSuaChua, t: TFunction): Record<string, string> {
-  const hangMucLabel = p.ten_hang_muc || getHangMucLabel(p.id_hang_muc, t);
+/** Dòng xuất báo cáo: số tiền để dạng SỐ (Excel cộng được), ngày dd/mm/yyyy. */
+function phieuToExportRow(p: PhieuBaoTriSuaChua, t: TFunction): Record<string, string | number> {
   return {
-    ngay: p.ngay,
-    hang_muc: hangMucLabel,
-    tai_san: p.ten_tai_san || p.ma_tai_san || '',
+    ma_phieu: p.ma_phieu,
+    ngay: formatDate(p.ngay),
+    chi_nhanh: p.ten_chi_nhanh || '',
+    hang_muc: p.ten_hang_muc || getHangMucLabel(p.id_hang_muc, t),
+    tai_san: [p.ma_tai_san, p.ten_tai_san].filter(Boolean).join(' – '),
     mo_ta: p.mo_ta || '',
-    so_tien: formatCurrency(p.so_tien),
+    nha_cung_cap: p.ten_nha_cung_cap || '',
+    so_tien: Number(p.so_tien) || 0,
     trang_thai: getTrangThaiLabel(p.trang_thai, t),
+    nguoi_tao: p.ten_nguoi_tao || '',
     nguoi_duyet: p.nguoi_duyet || '',
   };
 }
@@ -41,10 +47,20 @@ const ThongKeTab: React.FC = () => {
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const { viewAll } = useBaoTriSuaChuaViewScope();
-  const { data: taiSanList = [] } = useTaiSanList();
+  const { data: taiSanList = [] } = useTaiSanTomTat();
   const { data: loaiChiPhi = [] } = useLoaiChiPhiList();
   const { data: branches = [] } = useBranches();
-  const { data: list = [], isLoading, isError } = usePhieuBaoTriList({});
+  const [filterDateFrom, setFilterDateFrom] = useState('');
+  const [filterDateTo, setFilterDateTo] = useState('');
+  // Lọc kỳ ở server; các chip còn lại lọc trên tập đã thu hẹp theo kỳ.
+  const { data: list = [], isLoading, isError } = usePhieuBaoTriList({
+    dateFrom: filterDateFrom || undefined,
+    dateTo: filterDateTo || undefined,
+  });
+  const kyChip = useKyChip(filterDateFrom, filterDateTo, (from, to) => {
+    setFilterDateFrom(from);
+    setFilterDateTo(to);
+  });
 
   const activeLoai = useMemo(
     () => loaiChiPhi.filter((l) => l.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG),
@@ -63,8 +79,6 @@ const ThongKeTab: React.FC = () => {
   }, [list, viewAll, user?.id, taiSanList]);
 
   const [filterHangMuc, setFilterHangMuc] = useState<string[]>([]);
-  const [filterDateFrom, setFilterDateFrom] = useState('');
-  const [filterDateTo, setFilterDateTo] = useState('');
   const [filterChiNhanh, setFilterChiNhanh] = useState<string[]>([]);
   const [filterTrangThai, setFilterTrangThai] = useState<string[]>([]);
 
@@ -142,8 +156,7 @@ const ThongKeTab: React.FC = () => {
     filterHangMuc.length +
     filterChiNhanh.length +
     filterTrangThai.length +
-    (filterDateFrom ? 1 : 0) +
-    (filterDateTo ? 1 : 0);
+    (filterDateFrom || filterDateTo ? 1 : 0);
   const handleClearFilters = () => {
     setFilterHangMuc([]);
     setFilterDateFrom('');
@@ -172,26 +185,14 @@ const ThongKeTab: React.FC = () => {
         className="w-full sm:w-[160px]"
         size="md"
       />
-      <div className="relative w-full sm:w-[140px]">
-        <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-        <input
-          type="date"
-          value={filterDateFrom}
-          onChange={(e) => setFilterDateFrom(e.target.value)}
-          className="w-full h-9 pl-8 pr-2 bg-muted/40 border border-border/60 rounded-lg text-sm"
-          placeholder={t('baoTriSuaChua.filter.dateFrom')}
-        />
-      </div>
-      <div className="relative w-full sm:w-[140px]">
-        <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-        <input
-          type="date"
-          value={filterDateTo}
-          onChange={(e) => setFilterDateTo(e.target.value)}
-          className="w-full h-9 pl-8 pr-2 bg-muted/40 border border-border/60 rounded-lg text-sm"
-          placeholder={t('baoTriSuaChua.filter.dateTo')}
-        />
-      </div>
+      <DateRangePicker
+        presets={kyChip.presets}
+        value={kyChip.value}
+        onChange={kyChip.onChange}
+        placeholder={t('baoTriSuaChua.filter.period')}
+        customPresetId={KY_CUSTOM}
+        className="w-full sm:w-auto shrink-0"
+      />
       <FilterChipMultiSelect
         options={chiNhanhOptions}
         value={filterChiNhanh}
@@ -219,22 +220,26 @@ const ThongKeTab: React.FC = () => {
       return;
     }
     const headers = {
+      ma_phieu: t('baoTriSuaChua.store.maPhieuCol'),
       ngay: t('baoTriSuaChua.store.ngayCol'),
+      chi_nhanh: t('baoTriSuaChua.store.chiNhanhCol'),
       hang_muc: t('baoTriSuaChua.store.hangMucCol'),
       tai_san: t('baoTriSuaChua.store.taiSanCol'),
       mo_ta: t('baoTriSuaChua.store.moTaCol'),
+      nha_cung_cap: t('baoTriSuaChua.store.nhaCungCapCol'),
       so_tien: t('baoTriSuaChua.store.soTienCol'),
       trang_thai: t('baoTriSuaChua.store.trangThaiCol'),
+      nguoi_tao: t('baoTriSuaChua.store.nguoiTaoCol'),
       nguoi_duyet: t('baoTriSuaChua.store.nguoiDuyetCol'),
     };
     const dataForExport = filteredList.map((p) => {
       const row = phieuToExportRow(p, t);
-      const out: Record<string, string> = {};
-      Object.keys(headers).forEach((k) => { out[headers[k as keyof typeof headers]] = String(row[k] ?? ''); });
+      const out: Record<string, string | number> = {};
+      Object.keys(headers).forEach((k) => { out[headers[k as keyof typeof headers]] = row[k] ?? ''; });
       return out;
     });
     exportToExcel(dataForExport, t('baoTriSuaChua.export.fileName'));
-    toast.success(t('danhSachTaiSan.stats.exportReport'));
+    toast.success(t('baoTriSuaChua.stats.exportDone'));
   };
 
   const handlePrintReport = () => {
@@ -245,7 +250,7 @@ const ThongKeTab: React.FC = () => {
     return (
       <div className="flex-1 flex items-center justify-center p-4">
         <p className="text-sm text-destructive">
-          {t('common.error') || 'Có lỗi khi tải dữ liệu.'}
+          {t('baoTriSuaChua.stats.loadError')}
         </p>
       </div>
     );
@@ -296,7 +301,7 @@ const ThongKeTab: React.FC = () => {
               title={t('baoTriSuaChua.stats.noData')}
               description={
                 activeFilterCount > 0
-                  ? (t('danhSachTaiSan.stats.noDataHint') || 'Thử xóa bộ lọc.')
+                  ? t('baoTriSuaChua.stats.noDataFilterHint')
                   : t('baoTriSuaChua.stats.noDataHint')
               }
               action={
@@ -313,17 +318,15 @@ const ThongKeTab: React.FC = () => {
             />
           ) : (
             <>
-              <StatsCards summary={stats.summary} />
+              <StatsCards summary={stats.tongQuan} />
               <Suspense fallback={<LoadingSpinnerWithText text={t('common.loading')} className="py-8" centered />}>
-                <StatsCharts
-                  chartByHangMuc={stats.chartByHangMuc}
-                  chartByMonth={stats.chartByMonth}
-                  chartByTaiSan={stats.chartByTaiSan}
-                />
+                <StatsCharts byHangMuc={stats.theoHangMuc} byThang={stats.theoThang} byTaiSan={stats.theoTaiSan} />
               </Suspense>
               <StatsTables
-                byHangMuc={stats.byHangMuc}
-                byTaiSan={stats.byTaiSan}
+                byHangMuc={stats.theoHangMuc}
+                byChiNhanh={stats.theoChiNhanh}
+                byNhaCungCap={stats.theoNhaCungCap}
+                byTaiSan={stats.theoTaiSan}
               />
             </>
           )}

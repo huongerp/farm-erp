@@ -12,9 +12,11 @@ export interface ChartTooltipProps {
   active?: boolean;
   payload?: ChartTooltipPayloadItem[];
   label?: string;
+  /** Định dạng giá trị (vd. tiền); mặc định in nguyên số. */
+  formatValue?: (value: number) => string;
 }
 
-const ChartTooltip: React.FC<ChartTooltipProps> = ({ active: isActive, payload, label }) => {
+const ChartTooltip: React.FC<ChartTooltipProps> = ({ active: isActive, payload, label, formatValue }) => {
   if (!isActive || !payload?.length) return null;
   return (
     <div className="bg-card border border-border rounded-lg shadow-lg px-3 py-2 text-xs">
@@ -27,7 +29,9 @@ const ChartTooltip: React.FC<ChartTooltipProps> = ({ active: isActive, payload, 
             className="inline-block w-2 h-2 rounded-full mr-1.5"
             style={{ backgroundColor: p.color ?? p.fill }}
           />
-          {p.name}: <span className="font-semibold text-foreground">{p.value}</span>
+          {p.name}: <span className="font-semibold text-foreground">
+            {formatValue && typeof p.value === 'number' ? formatValue(p.value) : p.value}
+          </span>
         </p>
       ))}
     </div>

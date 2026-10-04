@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import type { AdminFormListServerQuery } from '../services/admin-form-list-query';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { AnimatePresence } from 'framer-motion';
 import AdminFormToolbar from './admin-form-toolbar';
 import AdminFormTable from './admin-form-table';
@@ -28,6 +29,16 @@ import { Ban, CheckCircle2, XCircle, ShieldCheck } from 'lucide-react';
 import { AdminFormRequest } from '../core/types';
 import { useAuthStore } from '../../../../store/useStore';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
+import { khoangKyLoc } from '../core/ky-loc';
+import ExportDialog from '../../../../components/shared/LazyExportDialog';
+import { useExportData } from '../../../../lib/useExportData';
+import { fetchAllAdminFormsForListQuery } from '../services/admin-form-service';
+import {
+  mapPhieuHanhChinhListRow,
+  getExportColumnsPhieuHanhChinhList,
+  exportFileNamePhieuHanhChinhDanhSach,
+  LIST_EXPORT_SHEET_NAME,
+} from '../utils/export-phieu-hanh-chinh-danh-sach';
 
 interface Props {
   /** Được xem phiếu của mọi người + duyệt (quản trị / cấp bậc 1). */
@@ -68,10 +79,16 @@ const AdminFormFormsTab: React.FC<Props> = ({ viewAll, dangTaiPhamVi, deepLinkIt
   const [viewingItem, setViewingItem] = useState<AdminFormRequest | null>(null);
   const [editingItem, setEditingItem] = useState<AdminFormRequest | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [showExport, setShowExport] = useState(false);
 
   /** Phạm vi người tạo: viewAll = mọi người (null); không thì ép đúng chính mình. */
   const phamViNguoiTao: string[] | null = viewAll ? null : [currentUserId];
   const duocTruyVan = !dangTaiPhamVi && !!currentUserId;
+
+  const ky = useMemo(
+    () => khoangKyLoc(filters.kyPreset, filters.tuNgay, filters.denNgay, new Date()),
+    [filters.kyPreset, filters.tuNgay, filters.denNgay]
+  );
 
   const listServerQuery: AdminFormListServerQuery = useMemo(
     () => ({
@@ -80,14 +97,14 @@ const AdminFormFormsTab: React.FC<Props> = ({ viewAll, dangTaiPhamVi, deepLinkIt
       searchTerm,
       status: filters.status ?? [],
       type: filters.type ?? [],
-      month: filters.month ?? '',
+      ky,
       nguoiTaoIds: viewAll
         ? (filters.nguoiTao ?? []).length > 0 ? filters.nguoiTao : null
         : [currentUserId],
       sortColumn: sort.column,
       sortDirection: sort.direction,
     }),
-    [pagination.page, pagination.pageSize, searchTerm, filters, sort, viewAll, currentUserId]
+    [pagination.page, pagination.pageSize, searchTerm, filters, ky, sort, viewAll, currentUserId]
   );
 
   const pageQuery = useAdminFormPage(listServerQuery, duocTruyVan);
@@ -106,6 +123,56 @@ const AdminFormFormsTab: React.FC<Props> = ({ viewAll, dangTaiPhamVi, deepLinkIt
   const deleteManyMutation = useDeleteAdminForms();
   const cancelMutation = useCancelAdminForm();
   const cancelManyMutation = useCancelAdminForms();
+
+  const exportColumns = useMemo(() => getExportColumnsPhieuHanhChinhList(t), [t]);
+  const exportMapFn = useCallback((item: AdminFormRequest) => mapPhieuHanhChinhListRow(item, t), [t]);
+
+  /**
+   * Xuất file cần TẤT CẢ phiếu khớp bộ lọc + phạm vi xem, không chỉ trang đang xem —
+   * nên chỉ tải khi người dùng thực sự mở hộp thoại Xuất.
+   */
+  const [exportRows, setExportRows] = useState<AdminFormRequest[]>([]);
+  const [exportLoading, setExportLoading] = useState(false);
+  useEffect(() => {
+    if (!showExport) {
+      setExportRows([]);
+      setExportLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setExportLoading(true);
+    fetchAllAdminFormsForListQuery(listServerQuery)
+      .then((rows) => {
+        if (!cancelled) setExportRows(rows);
+      })
+      .catch(() => {
+        if (!cancelled) setExportRows([]);
+      })
+      .finally(() => {
+        if (!cancelled) setExportLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [showExport, listServerQuery]);
+
+  const { exportData, paginatedData: paginatedExportData, selectedData: selectedExportData } =
+    useExportData({
+      data: exportRows,
+      isOpen: showExport && !exportLoading,
+      mapFn: exportMapFn,
+      pagination,
+      selectedIds,
+      keyExtractor: (item) => item.id,
+    });
+
+  const handleExport = useCallback(() => {
+    if (totalCount === 0) {
+      toast.warning(t('shared.export.noData'));
+      return;
+    }
+    setShowExport(true);
+  }, [totalCount, t]);
 
   useEffect(() => {
     return () => resetState();
@@ -296,6 +363,7 @@ const AdminFormFormsTab: React.FC<Props> = ({ viewAll, dangTaiPhamVi, deepLinkIt
     <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
       <AdminFormToolbar
         tomTat={tomTatQuery.data ?? []}
+        ky={ky}
         showPersonFilter={viewAll}
         currentUserId={currentUserId}
         searchTerm={searchInput}
@@ -311,6 +379,7 @@ const AdminFormFormsTab: React.FC<Props> = ({ viewAll, dangTaiPhamVi, deepLinkIt
         clearSelection={clearSelection}
         onAdd={canCreate ? () => setShowCreate(true) : undefined}
         onDeleteMany={canDelete ? handleDeleteMany : undefined}
+        onExport={handleExport}
         bulkActions={bulkActions}
       />
       <div className="flex-1 min-h-0">
@@ -327,6 +396,21 @@ const AdminFormFormsTab: React.FC<Props> = ({ viewAll, dangTaiPhamVi, deepLinkIt
           canDelete={canDelete}
         />
       </div>
+
+      <AnimatePresence>
+        {showExport && (
+          <ExportDialog
+            open={showExport}
+            onClose={() => setShowExport(false)}
+            columns={exportColumns}
+            data={exportData}
+            paginatedData={paginatedExportData}
+            selectedData={selectedExportData}
+            fileName={exportFileNamePhieuHanhChinhDanhSach()}
+            sheetName={LIST_EXPORT_SHEET_NAME}
+          />
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {viewingItem && (

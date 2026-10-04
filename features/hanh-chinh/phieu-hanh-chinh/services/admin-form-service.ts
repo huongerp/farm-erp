@@ -24,9 +24,10 @@ import i18n from '../../../../lib/i18n';
 const TABLE = 'fp_hr_phieu_hanh_chinh';
 const TABLE_NHOM = 'fp_hr_nhom_phieu_hanh_chinh';
 const TABLE_NHAN_VIEN = 'fp_var_nhan_vien';
+const TABLE_PHONG_BAN = 'fp_var_phong_ban';
 
 const ADMIN_FORM_ROW_COLUMNS =
-  'id,loai_phieu_id,ngay,den_ngay,tu_buoi,den_buoi,ca,ly_do,trang_thai,ghi_chu,nguoi_tao_id,tg_tao,tg_cap_nhat';
+  'id,loai_phieu_id,ngay,den_ngay,tu_buoi,den_buoi,ca,ly_do,trang_thai,ghi_chu,nguoi_tao_id,phong_ban_id,tg_tao,tg_cap_nhat';
 
 /** Loại phiếu: tiếng Việt (DB) <-> mã (app) */
 const LOAI_PHIEU_VI_TO_APP: Record<string, AdminFormType> = {
@@ -83,14 +84,17 @@ function toDateString(v: unknown): string {
   return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
 }
 
-/** Map loại phiếu + tên NV từ id (không dùng embed để tránh 400) */
-function rowToRequest(
-  row: Row,
-  mapLoaiPhieu: Record<number, string>,
-  mapTenNhanVien: Record<number, string>
-): AdminFormRequest {
+interface TenTheoId {
+  mapLoaiPhieu: Record<number, string>;
+  mapTenNhanVien: Record<number, string>;
+  mapTenPhongBan: Record<number, string>;
+}
+
+/** Map loại phiếu + tên NV + tên phòng ban từ id (không dùng embed để tránh 400) */
+function rowToRequest(row: Row, { mapLoaiPhieu, mapTenNhanVien, mapTenPhongBan }: TenTheoId): AdminFormRequest {
   const loaiPhieuId = row.loai_phieu_id != null ? Number(row.loai_phieu_id) : null;
   const nguoiTaoId = row.nguoi_tao_id != null ? Number(row.nguoi_tao_id) : null;
+  const phongBanId = row.phong_ban_id != null ? Number(row.phong_ban_id) : null;
   const loaiVi = (loaiPhieuId != null ? mapLoaiPhieu[loaiPhieuId] : '') ?? '';
   const caVi = (row.ca as string) ?? '';
   const ttVi = (row.trang_thai as string) ?? '';
@@ -116,8 +120,8 @@ function rowToRequest(
     ly_do: (row.ly_do as string) ?? '',
     nguoi_tao_id: String(row.nguoi_tao_id ?? ''),
     ten_nguoi_tao: (nguoiTaoId != null ? mapTenNhanVien[nguoiTaoId] : '') ?? '',
-    id_phong_ban: null,
-    ten_phong_ban: null,
+    id_phong_ban: phongBanId != null ? String(phongBanId) : null,
+    ten_phong_ban: (phongBanId != null ? mapTenPhongBan[phongBanId] : null) ?? null,
     quan_ly_id: null,
     ten_quan_ly: null,
     hcns_id: null,
@@ -131,11 +135,13 @@ function rowToRequest(
   };
 }
 
-async function fetchMaps(rows: Row[]): Promise<{ mapLoaiPhieu: Record<number, string>; mapTenNhanVien: Record<number, string> }> {
+async function fetchMaps(rows: Row[]): Promise<TenTheoId> {
   const loaiPhieuIds = [...new Set((rows.map((r) => r.loai_phieu_id).filter((id) => id != null) as number[]))];
   const nguoiTaoIds = [...new Set((rows.map((r) => r.nguoi_tao_id).filter((id) => id != null) as number[]))];
+  const phongBanIds = [...new Set((rows.map((r) => r.phong_ban_id).filter((id) => id != null) as number[]))];
   const mapLoaiPhieu: Record<number, string> = {};
   const mapTenNhanVien: Record<number, string> = {};
+  const mapTenPhongBan: Record<number, string> = {};
 
   if (loaiPhieuIds.length > 0) {
     const { data: nhomRows } = await db.from(TABLE_NHOM).select('id, loai_phieu').in('id', loaiPhieuIds);
@@ -145,7 +151,11 @@ async function fetchMaps(rows: Row[]): Promise<{ mapLoaiPhieu: Record<number, st
     const { data: nvRows } = await db.from(TABLE_NHAN_VIEN).select('id, ho_va_ten').in('id', nguoiTaoIds);
     (nvRows ?? []).forEach((r: Row) => { mapTenNhanVien[Number(r.id)] = (r.ho_va_ten as string) ?? ''; });
   }
-  return { mapLoaiPhieu, mapTenNhanVien };
+  if (phongBanIds.length > 0) {
+    const { data: pbRows } = await db.from(TABLE_PHONG_BAN).select('id, ten_phong_ban').in('id', phongBanIds);
+    (pbRows ?? []).forEach((r: Row) => { mapTenPhongBan[Number(r.id)] = (r.ten_phong_ban as string) ?? ''; });
+  }
+  return { mapLoaiPhieu, mapTenNhanVien, mapTenPhongBan };
 }
 
 /** Cột tham gia ô tìm kiếm ở server. */
@@ -182,9 +192,9 @@ function applyAdminFormListQuery(q: any, query: AdminFormListServerQuery, loaiPh
     sel = loaiPhieuIds.length === 0 ? sel.eq('id', -1) : sel.in('loai_phieu_id', loaiPhieuIds);
   }
 
-  // Phiếu nhiều ngày khớp tháng khi khoảng của nó chạm vào tháng.
-  const thang = khoangNgayCuaThang(query.month);
-  if (thang) sel = sel.lte('ngay', thang.to).gte('den_ngay', thang.from);
+  // Phiếu nhiều ngày khớp kỳ khi khoảng của nó chạm vào kỳ (cùng điều kiện với core/ky-loc#phieuChamKy).
+  if (query.ky?.to) sel = sel.lte('ngay', query.ky.to);
+  if (query.ky?.from) sel = sel.gte('den_ngay', query.ky.from);
 
   sel = locTheoNguoiTao(sel, query.nguoiTaoIds);
 
@@ -209,8 +219,8 @@ export async function getAdminFormPage(
     ).range(from, to);
     return { data: (res.data as Row[] | null) ?? null, error: res.error, count: res.count };
   });
-  const { mapLoaiPhieu, mapTenNhanVien } = await fetchMaps(result.data);
-  return { ...result, data: result.data.map((r) => rowToRequest(r, mapLoaiPhieu, mapTenNhanVien)) };
+  const maps = await fetchMaps(result.data);
+  return { ...result, data: result.data.map((r) => rowToRequest(r, maps)) };
 }
 
 /** Toàn bộ bản ghi khớp bộ lọc — chỉ gọi khi mở hộp thoại Xuất file. */
@@ -221,8 +231,8 @@ export async function fetchAllAdminFormsForListQuery(
   const rows = await fetchAllRows<Row>((from, to) =>
     applyAdminFormListQuery(db.from(TABLE).select(ADMIN_FORM_ROW_COLUMNS), query, loaiPhieuIds).range(from, to)
   );
-  const { mapLoaiPhieu, mapTenNhanVien } = await fetchMaps(rows);
-  return rows.map((r) => rowToRequest(r, mapLoaiPhieu, mapTenNhanVien));
+  const maps = await fetchMaps(rows);
+  return rows.map((r) => rowToRequest(r, maps));
 }
 
 export async function getAdminFormsByUserAndMonth(
@@ -250,8 +260,8 @@ export async function getAdminFormsByUserAndMonth(
           .order('ngay', { ascending: false })
           .range(from, to);
   const rows = await fetchAllRows<Row>(run);
-  const { mapLoaiPhieu, mapTenNhanVien } = await fetchMaps(rows);
-  let list = rows.map((r) => rowToRequest(r, mapLoaiPhieu, mapTenNhanVien));
+  const maps = await fetchMaps(rows);
+  let list = rows.map((r) => rowToRequest(r, maps));
   if (!isNum) list = list.filter((f) => f.nguoi_tao_id === userId);
   return list;
 }
@@ -272,8 +282,8 @@ export async function getAdminFormById(id: string): Promise<AdminFormRequest | n
   if (error) throw new Error(error.message);
   if (!data) return null;
   const row = data as Row;
-  const { mapLoaiPhieu, mapTenNhanVien } = await fetchMaps([row]);
-  return rowToRequest(row, mapLoaiPhieu, mapTenNhanVien);
+  const maps = await fetchMaps([row]);
+  return rowToRequest(row, maps);
 }
 
 /**
@@ -314,8 +324,8 @@ export async function getAdminFormsCuaNguoi(userId: string, month: string): Prom
     if (thang) q = q.lte('ngay', thang.to).gte('den_ngay', thang.from);
     return q.order('ngay', { ascending: false }).order('id', { ascending: false }).range(from, to);
   });
-  const { mapLoaiPhieu, mapTenNhanVien } = await fetchMaps(rows);
-  return rows.map((r) => rowToRequest(r, mapLoaiPhieu, mapTenNhanVien));
+  const maps = await fetchMaps(rows);
+  return rows.map((r) => rowToRequest(r, maps));
 }
 
 /**
@@ -341,9 +351,9 @@ export async function timPhieuTrung(
   const { data, error } = await q.order('ngay', { ascending: true }).limit(20);
   if (error) throw new Error(error.message);
   const rows = (data as Row[] | null) ?? [];
-  const { mapLoaiPhieu, mapTenNhanVien } = await fetchMaps(rows);
+  const maps = await fetchMaps(rows);
   return rows
-    .map((r) => rowToRequest(r, mapLoaiPhieu, mapTenNhanVien))
+    .map((r) => rowToRequest(r, maps))
     .filter((p) =>
       giaoNhau(khoang, { tu_ngay: p.ngay, tu_buoi: p.tu_buoi, den_ngay: p.den_ngay, den_buoi: p.den_buoi })
     );
@@ -401,8 +411,8 @@ export async function createAdminForm(
   const { data: inserted, error } = await db.from(TABLE).insert(row).select(ADMIN_FORM_ROW_COLUMNS).single();
   if (error) throw new Error(error.message);
   const insertedRow = inserted as Row;
-  const { mapLoaiPhieu, mapTenNhanVien } = await fetchMaps([insertedRow]);
-  return rowToRequest(insertedRow, mapLoaiPhieu, mapTenNhanVien);
+  const maps = await fetchMaps([insertedRow]);
+  return rowToRequest(insertedRow, maps);
 }
 
 export async function updateAdminForm(id: string, data: AdminFormValues): Promise<AdminFormRequest> {
@@ -423,8 +433,8 @@ export async function updateAdminForm(id: string, data: AdminFormValues): Promis
     .single();
   if (error) throw new Error(error.message ?? i18n.t('adminForm.service.notFound'));
   const updatedRow = updated as Row;
-  const { mapLoaiPhieu, mapTenNhanVien } = await fetchMaps([updatedRow]);
-  return rowToRequest(updatedRow, mapLoaiPhieu, mapTenNhanVien);
+  const maps = await fetchMaps([updatedRow]);
+  return rowToRequest(updatedRow, maps);
 }
 
 export async function cancelAdminForm(id: string): Promise<void> {
@@ -528,8 +538,8 @@ export async function createAdminFormSystem(data: {
   const { data: inserted, error } = await db.from(TABLE).insert(row).select(ADMIN_FORM_ROW_COLUMNS).single();
   if (error) throw new Error(error.message);
   const out = inserted as Row;
-  const { mapLoaiPhieu, mapTenNhanVien } = await fetchMaps([out]);
-  return rowToRequest(out, mapLoaiPhieu, mapTenNhanVien);
+  const maps = await fetchMaps([out]);
+  return rowToRequest(out, maps);
 }
 
 export async function updateAdminFormGhiChu(id: string, ghiChu: string | null): Promise<void> {

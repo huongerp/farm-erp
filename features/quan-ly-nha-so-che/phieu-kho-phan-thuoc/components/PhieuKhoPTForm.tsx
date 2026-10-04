@@ -5,6 +5,7 @@ import { useForm, Controller, SubmitHandler, useFieldArray } from 'react-hook-fo
 import { zodResolver } from '@hookform/resolvers/zod';
 import { FileText, Calendar, Warehouse, ArrowRightLeft, Package, Trash2 } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
+import NumberInput from '../../../../components/ui/NumberInput';
 import Textarea from '../../../../components/ui/Textarea';
 import Combobox from '../../../../components/ui/Combobox';
 import { phieuKhoPTSchema, type PhieuKhoPTFormValues } from '../core/schema';
@@ -517,12 +518,19 @@ const PhieuKhoPTForm: React.FC<Props> = ({ khoList, khoDenList, initialData, pre
                       />
                     </td>
                     <td className="px-4 py-2.5 min-w-[90px] align-top">
-                      <Input
-                        type="number"
-                        min={0}
-                        step="any"
-                        {...register(`chi_tiet.${index}.don_gia`, { valueAsNumber: true })}
-                        className="h-9"
+                      <Controller
+                        name={`chi_tiet.${index}.don_gia`}
+                        control={control}
+                        render={({ field }) => (
+                          <NumberInput
+                            compact
+                            value={field.value ?? 0}
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                            min={0}
+                            maxFractionDigits={2}
+                          />
+                        )}
                       />
                     </td>
                     <td className="px-4 py-2.5 tabular-nums text-sm text-muted-foreground align-middle">{formatNumberVN(thanhTien)}</td>

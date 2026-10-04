@@ -19,6 +19,7 @@ import {
 import { formatDate, formatDateShort } from '../../../../lib/utils';
 import type { PhieuBaoTriSuaChua, PhieuBaoTriSuaChuaCreate } from '../core/types';
 import type { TrangThaiPhieu } from '../core/types';
+import type { ThongTinDuyet } from '../core/duyet';
 import i18n from '../../../../lib/i18n';
 
 const TABLE_PHIEU = 'fp_ts_chi_phi_tai_san';
@@ -27,7 +28,7 @@ const TABLE_TAI_SAN = 'fp_ts_tai_san';
 const TABLE_NHAN_VIEN = 'fp_var_nhan_vien';
 
 const PHIEU_CHI_PHI_ROW_COLUMNS =
-  'id,ma_phieu,ngay,id_tai_san,ma_tai_san,ten_tai_san,id_hang_muc,ten_hang_muc,mo_ta,so_tien,ghi_chu,id_trang_thai,ten_trang_thai,nguoi_duyet,id_nguoi_tao,ten_nguoi_tao,tg_tao,tg_cap_nhat';
+  'id,ma_phieu,ngay,id_tai_san,ma_tai_san,ten_tai_san,id_chi_nhanh,ten_chi_nhanh,id_hang_muc,ten_hang_muc,mo_ta,so_tien,id_nha_cung_cap,ten_nha_cung_cap,ghi_chu,id_trang_thai,ten_trang_thai,nguoi_duyet,id_nguoi_duyet,tg_duyet,id_nguoi_tao,ten_nguoi_tao,tg_tao,tg_cap_nhat';
 
 const RPC_NEXT_MA_PHIEU = 'get_next_ma_phieu_chi_phi_tai_san';
 
@@ -63,6 +64,34 @@ async function fetchTaiSanMaTen(idTaiSan: string): Promise<{ ma_tai_san: string;
   };
 }
 
+/** id + tên chi nhánh lưu tắt trên phiếu (id rỗng / không phải số → null). */
+function chiNhanhPayload(data: PhieuBaoTriSuaChuaCreate): { id_chi_nhanh: number | null; ten_chi_nhanh: string | null } {
+  const n = data.id_chi_nhanh ? parseInt(data.id_chi_nhanh, 10) : NaN;
+  if (Number.isNaN(n)) return { id_chi_nhanh: null, ten_chi_nhanh: null };
+  return { id_chi_nhanh: n, ten_chi_nhanh: data.ten_chi_nhanh?.trim() || null };
+}
+
+/** id + tên nhà cung cấp lưu tắt (không chọn → cả hai null, để bỏ chọn khi sửa). */
+function nhaCungCapPayload(data: PhieuBaoTriSuaChuaCreate): { id_nha_cung_cap: number | null; ten_nha_cung_cap: string | null } {
+  const n = data.id_nha_cung_cap ? parseInt(data.id_nha_cung_cap, 10) : NaN;
+  if (Number.isNaN(n)) return { id_nha_cung_cap: null, ten_nha_cung_cap: null };
+  return { id_nha_cung_cap: n, ten_nha_cung_cap: data.ten_nha_cung_cap?.trim() || null };
+}
+
+/** Cột người duyệt; không có thông tin duyệt → để trống (phiếu mới). */
+function duyetPayload(duyet: ThongTinDuyet | null | undefined): {
+  id_nguoi_duyet: number | null;
+  nguoi_duyet: string | null;
+  tg_duyet: string | null;
+} {
+  const n = duyet?.id_nguoi_duyet ? parseInt(duyet.id_nguoi_duyet, 10) : NaN;
+  return {
+    id_nguoi_duyet: Number.isNaN(n) ? null : n,
+    nguoi_duyet: duyet?.nguoi_duyet?.trim() || null,
+    tg_duyet: duyet?.tg_duyet ?? null,
+  };
+}
+
 /** Map id_trang_thai (DB) -> TrangThaiPhieu (app). Seed order: 1=CHO_DUYET, 2=DA_DUYET, 3=KHONG_DUYET */
 const ID_TO_TRANG_THAI: Record<number, TrangThaiPhieu> = {
   1: 'cho_duyet',
@@ -87,14 +116,20 @@ interface DbPhieuRow {
   id_tai_san: number;
   ma_tai_san: string | null;
   ten_tai_san: string | null;
+  id_chi_nhanh: number | null;
+  ten_chi_nhanh: string | null;
   id_hang_muc: string;
   ten_hang_muc: string | null;
   mo_ta: string;
   so_tien: number;
+  id_nha_cung_cap: number | null;
+  ten_nha_cung_cap: string | null;
   ghi_chu: string | null;
   id_trang_thai: number;
   ten_trang_thai: string | null;
   nguoi_duyet: string | null;
+  id_nguoi_duyet: number | null;
+  tg_duyet: string | null;
   id_nguoi_tao: number | null;
   ten_nguoi_tao: string | null;
   tg_tao: string | null;
@@ -124,11 +159,13 @@ function phieuMatchesSearchQuery(p: PhieuBaoTriSuaChua, qRaw: string): boolean {
     p.id_tai_san,
     p.ma_tai_san,
     p.ten_tai_san,
+    p.ten_chi_nhanh,
     p.id_hang_muc,
     p.ten_hang_muc,
     p.mo_ta,
     tienStr,
     tienLocale,
+    p.ten_nha_cung_cap,
     p.ghi_chu,
     p.trang_thai,
     ...statusLabels,
@@ -151,13 +188,19 @@ function rowToPhieu(row: DbPhieuRow): PhieuBaoTriSuaChua {
     id_tai_san: String(row.id_tai_san),
     ma_tai_san: row.ma_tai_san ?? undefined,
     ten_tai_san: row.ten_tai_san ?? undefined,
+    id_chi_nhanh: row.id_chi_nhanh != null ? String(row.id_chi_nhanh) : null,
+    ten_chi_nhanh: row.ten_chi_nhanh ?? null,
     id_hang_muc: String(row.id_hang_muc),
     ten_hang_muc: row.ten_hang_muc ?? undefined,
     mo_ta: row.mo_ta,
     so_tien: Number(row.so_tien),
+    id_nha_cung_cap: row.id_nha_cung_cap != null ? String(row.id_nha_cung_cap) : null,
+    ten_nha_cung_cap: row.ten_nha_cung_cap ?? null,
     ghi_chu: row.ghi_chu ?? null,
     trang_thai: idTrangThaiToEnum(row.id_trang_thai),
     nguoi_duyet: row.nguoi_duyet ?? null,
+    id_nguoi_duyet: row.id_nguoi_duyet != null ? String(row.id_nguoi_duyet) : null,
+    tg_duyet: row.tg_duyet ?? null,
     id_nguoi_tao: row.id_nguoi_tao != null ? String(row.id_nguoi_tao) : '',
     ten_nguoi_tao: row.ten_nguoi_tao ?? null,
     tg_tao: row.tg_tao ?? new Date().toISOString(),
@@ -179,8 +222,10 @@ const BTSC_SEARCH_SPEC = {
     'ma_phieu',
     'ma_tai_san',
     'ten_tai_san',
+    'ten_chi_nhanh',
     'ten_hang_muc',
     'mo_ta',
+    'ten_nha_cung_cap',
     'ghi_chu',
     'ten_trang_thai',
     'nguoi_duyet',
@@ -197,6 +242,9 @@ function applyBtscListQuery(q: any, query: BaoTriSuaChuaListServerQuery): any {
 
   if (query.idTaiSan.length > 0) {
     sel = sel.in('id_tai_san', query.idTaiSan.map(Number).filter(Number.isFinite));
+  }
+  if (query.idChiNhanh.length > 0) {
+    sel = sel.in('id_chi_nhanh', query.idChiNhanh.map(Number).filter(Number.isFinite));
   }
   if (query.hangMuc.length > 0) sel = sel.in('id_hang_muc', query.hangMuc);
   if (query.trangThai.length > 0) sel = sel.in('id_trang_thai', query.trangThai);
@@ -317,14 +365,16 @@ export async function createPhieuChiPhiDb(
     id_tai_san: parseInt(data.id_tai_san, 10),
     ma_tai_san: taiSan?.ma_tai_san || null,
     ten_tai_san: taiSan?.ten_tai_san || null,
+    ...chiNhanhPayload(data),
     id_hang_muc: data.id_hang_muc,
     ten_hang_muc: data.ten_hang_muc?.trim() || null,
     mo_ta: data.mo_ta.trim(),
     so_tien: data.so_tien,
+    ...nhaCungCapPayload(data),
     ghi_chu: data.ghi_chu?.trim() ?? null,
     id_trang_thai: idTrangThai,
     ten_trang_thai: null,
-    nguoi_duyet: data.nguoi_duyet?.trim() ?? null,
+    ...duyetPayload(data.duyet),
     id_nguoi_tao: idNguoiNum,
     ten_nguoi_tao: tenNguoi,
   };
@@ -346,14 +396,17 @@ export async function updatePhieuChiPhiDb(
     id_tai_san: parseInt(data.id_tai_san, 10),
     ma_tai_san: taiSan?.ma_tai_san || null,
     ten_tai_san: taiSan?.ten_tai_san || null,
+    ...chiNhanhPayload(data),
     id_hang_muc: data.id_hang_muc,
     ten_hang_muc: data.ten_hang_muc?.trim() || null,
     mo_ta: data.mo_ta.trim(),
     so_tien: data.so_tien,
+    ...nhaCungCapPayload(data),
     ghi_chu: data.ghi_chu?.trim() ?? null,
-    nguoi_duyet: data.nguoi_duyet?.trim() ?? null,
   };
   if (idTrangThai !== undefined) payload.id_trang_thai = idTrangThai;
+  // Chỉ ghi người duyệt khi trạng thái đổi — sửa nội dung phiếu không xoá người đã duyệt.
+  if (data.duyet) Object.assign(payload, duyetPayload(data.duyet));
 
   const { error } = await db.from(TABLE_PHIEU).update(payload).eq('id', numId);
   if (error) throwDbError(error);

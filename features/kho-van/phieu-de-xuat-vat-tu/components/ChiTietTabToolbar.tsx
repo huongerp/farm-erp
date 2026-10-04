@@ -5,6 +5,7 @@ import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import FilterOverflowDropdown from '../../../../components/shared/FilterOverflowDropdown';
 import DateRangePicker from '../../../../components/ui/DateRangePicker';
 import { useSearchInputCommit } from '../../../../lib/hooks/use-search-input-commit';
 import { DATE_RANGE_PRESETS, type DateRangePresetId } from '../../../he-thong/nhan-vien/core/stats-constants';
@@ -30,6 +31,9 @@ interface Props {
   exportDisabled?: boolean;
   chipCountsMode?: 'fromRows' | 'unweighted';
 }
+
+/** Desktop: nhóm lọc gom vào nút Filter để hàng chip ngoài tối đa 5 (MobileFilterSheet vẫn đủ nhóm). */
+const OVERFLOW_FILTER_KEYS = new Set(['nguoiDuyet']);
 
 const ChiTietTabToolbar: React.FC<Props> = ({
   data,
@@ -372,14 +376,6 @@ const ChiTietTabToolbar: React.FC<Props> = ({
         className="w-full sm:w-[160px]"
       />
       <FilterChipMultiSelect
-        options={nguoiDuyetOptions}
-        value={filters.nguoiDuyet ?? []}
-        onChange={(v) => setFilter('nguoiDuyet', v)}
-        placeholder={t('phieuDeXuatVatTu.form.approver')}
-        icon={UserCheck}
-        className="w-full sm:w-[160px]"
-      />
-      <FilterChipMultiSelect
         options={tienDoMhOptions}
         value={filters.tienDoMh ?? []}
         onChange={(v) => setFilter('tienDoMh', v)}
@@ -387,6 +383,7 @@ const ChiTietTabToolbar: React.FC<Props> = ({
         icon={Package}
         className="w-full sm:w-[160px]"
       />
+      <FilterOverflowDropdown groups={filterGroups.filter((g) => OVERFLOW_FILTER_KEYS.has(g.key))} />
     </>
   );
 

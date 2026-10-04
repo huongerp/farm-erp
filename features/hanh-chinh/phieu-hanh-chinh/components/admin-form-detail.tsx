@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FileText, Calendar, Clock, User, Building2, ShieldCheck, XCircle, CheckCircle2, Ban, MessageSquare, X } from 'lucide-react';
+import { FileText, Calendar, Clock, User, Building2, ShieldCheck, XCircle, CheckCircle2, Ban, MessageSquare, X, Printer } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import DetailDrawerFooter from '../../../../components/shared/DetailDrawerFooter';
 import Textarea from '../../../../components/ui/Textarea';
@@ -16,6 +16,7 @@ import { getAdminFormTypeLabel } from '../../thiet-lap-cong-luong/core/constants
 import { useAuthStore } from '../../../../store/useStore';
 import { laLoaiTheoKhoang } from '../core/khoang-nghi';
 import { hienThiSoNgay } from '../utils/hien-thi-khoang';
+import { getPhieuHanhChinhPreviewUrl } from '../core/preview-url';
 import {
   useApproveAdminFormByManager,
   useRejectAdminFormByManager,
@@ -105,7 +106,14 @@ const AdminFormDetail: React.FC<Props> = ({
   };
 
   const toolbarActions = useMemo<DetailToolbarAction[]>(() => {
-    const actions: DetailToolbarAction[] = [];
+    const actions: DetailToolbarAction[] = [
+      {
+        label: t('adminForm.print.button'),
+        icon: <Printer size={16} />,
+        variant: 'primary',
+        onClick: () => window.open(getPhieuHanhChinhPreviewUrl(data.id), '_blank', 'noopener,noreferrer'),
+      },
+    ];
     if (canManagerApprove) {
       actions.push({
         label: t('adminForm.detail.toolbar.approve'),

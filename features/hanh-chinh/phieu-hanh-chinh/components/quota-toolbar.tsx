@@ -1,32 +1,27 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Calendar, ListOrdered, ChevronDown } from 'lucide-react';
+import { Calendar, ListOrdered, User } from 'lucide-react';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import FilterChipSingleSelect from '../../../../components/shared/FilterChipSingleSelect';
 import type { ColumnConfig } from '../../../../store/createGenericStore';
 import { getAdminFormTypeOptions } from '../../thiet-lap-cong-luong/core/constants';
 import type { AdminFormQuotaRow } from '../core/types';
-
-/** Preset thời gian: mặc định Tất cả (theo chuẩn tab Phiếu của tôi) */
-function getMonthPresetOptions(t: (key: string) => string) {
-  const now = new Date();
-  const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  const last = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const lastMonth = `${last.getFullYear()}-${String(last.getMonth() + 1).padStart(2, '0')}`;
-  return [
-    { value: '', label: t('adminForm.filter.timeAll') },
-    { value: thisMonth, label: t('adminForm.filter.thisMonth') },
-    { value: lastMonth, label: t('adminForm.filter.lastMonth') },
-  ];
-}
 
 interface Props {
   /** Danh sách dòng quota để đếm count theo loại phiếu. */
   items?: AdminFormQuotaRow[];
   searchTerm: string;
   setSearchTerm: (term: string) => void;
-  filters: { type: string[]; month: string };
-  setFilter: (key: 'type' | 'month', value: any) => void;
+  filters: { type: string[]; nguoiXem: string };
+  setFilter: (key: 'type' | 'nguoiXem', value: any) => void;
+  /** Kỳ đang tính định mức, vd "10/2026" — tab luôn tính theo tháng hiện tại. */
+  thangLabel: string;
+  /** Chip chọn nhân viên — chỉ truyền khi người dùng có viewAll. */
+  personOptions?: { value: string; label: string; count?: number }[];
+  /** Nhân viên đang xem (đã quy "chính mình" về id thật). */
+  nguoiDangXem: string;
+  currentUserId: string;
   columns: ColumnConfig[];
   toggleColumn: (id: string) => void;
   reorderColumns: (fromIndex: number, toIndex: number) => void;
@@ -49,10 +44,15 @@ const AdminFormQuotaToolbar: React.FC<Props> = ({
   resetColumnWidths,
   selectedIds,
   clearSelection,
+  thangLabel,
+  personOptions,
+  nguoiDangXem,
+  currentUserId,
 }) => {
   const { t } = useTranslation();
   const selectedCount = selectedIds.size;
-  const activeFilterCount = filters.type.length + (filters.month ? 1 : 0);
+  const dangXemNguoiKhac = !!personOptions && nguoiDangXem !== currentUserId;
+  const activeFilterCount = filters.type.length + (dangXemNguoiKhac ? 1 : 0);
   const typeCounts = useMemo(() => {
     const m: Record<string, number> = {};
     for (const row of items) {
@@ -75,8 +75,21 @@ const AdminFormQuotaToolbar: React.FC<Props> = ({
         value: filters.type,
         onChange: (val: string[]) => setFilter('type', val),
       },
+      ...(personOptions
+        ? [
+            {
+              key: 'nguoiXem',
+              label: t('adminForm.store.requesterCol'),
+              icon: User,
+              options: personOptions,
+              value: [nguoiDangXem],
+              // Sheet là chọn nhiều — giữ người vừa bấm; bỏ hết = quay về chính mình.
+              onChange: (val: string[]) => setFilter('nguoiXem', val.find((v) => v !== nguoiDangXem) ?? ''),
+            },
+          ]
+        : []),
     ],
-    [filters.type, setFilter, typeOptions, t]
+    [filters.type, setFilter, typeOptions, personOptions, nguoiDangXem, t]
   );
 
   const renderFilters = (
@@ -90,27 +103,27 @@ const AdminFormQuotaToolbar: React.FC<Props> = ({
         className="w-full sm:w-[220px]"
         size="sm"
       />
-      <div className="relative w-full sm:w-[170px]">
-        <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground pointer-events-none z-10" />
-        <select
-          value={filters.month}
-          onChange={(e) => setFilter('month', e.target.value)}
-          className="w-full h-7 min-h-[28px] pl-8 pr-8 bg-muted/40 border border-border/60 rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all appearance-none cursor-pointer"
-        >
-          {getMonthPresetOptions(t).map((opt) => (
-            <option key={opt.value || 'all'} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground pointer-events-none" />
-      </div>
+      {personOptions && (
+        <FilterChipSingleSelect
+          options={personOptions}
+          value={nguoiDangXem}
+          onChange={(val) => setFilter('nguoiXem', val ?? '')}
+          placeholder={t('adminForm.store.requesterCol')}
+          icon={User}
+          className="w-full sm:w-[220px]"
+        />
+      )}
+      {/* Định mức tính theo tháng — không cho chọn kỳ, chỉ ghi rõ tháng đang tính. */}
+      <span className="h-8 px-2.5 inline-flex items-center gap-1.5 rounded-lg border border-border/60 bg-muted/30 text-xs font-medium text-muted-foreground whitespace-nowrap">
+        <Calendar size={13} className="shrink-0" />
+        {t('adminForm.quota.kyThang', { thang: thangLabel })}
+      </span>
     </>
   );
 
   const handleClearAllFilters = () => {
     setFilter('type', []);
-    setFilter('month', '');
+    setFilter('nguoiXem', '');
   };
 
   return (

@@ -875,6 +875,8 @@ function applyChiTietPhieuKhoListQueryToFlatSelect(q: any, query: ChiTietPhieuKh
     const inl = `(${query.doiTacIds.join(',')})`;
     b = b.or(`id_nha_cung_cap.in.${inl},id_khach_hang.in.${inl}`);
   }
+  if (query.maHangIds.length) b = b.in('id_hang_hoa', query.maHangIds);
+  if (query.tenHangIds.length) b = b.in('id_hang_hoa', query.tenHangIds);
   const term = (query.searchTerm ?? '').trim();
   if (term) {
     const esc = term.replace(/%/g, '\\%').replace(/_/g, '\\_');

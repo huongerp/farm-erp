@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Banknote, User, Calendar } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
 import CurrencyInput from '../../../../components/ui/CurrencyInput';
+import NumberInput from '../../../../components/ui/NumberInput';
 import Combobox from '../../../../components/ui/Combobox';
 import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/GenericDrawer';
 import FormSection from '../../../../components/shared/FormSection';
@@ -333,10 +334,11 @@ const BangLuongForm: React.FC<Props> = ({ initialRecord, defaultEmployeeId, onCl
         <label className="text-xs text-muted-foreground">
           {t('bangLuong.store.congTruNetCol')} (dương = cộng, âm = trừ)
         </label>
-        <Input
-          type="number"
-          value={cong_tru_khac === 0 ? '' : cong_tru_khac}
-          onChange={(e) => setCongTruKhac(Number(e.target.value) || 0)}
+        <NumberInput
+          value={cong_tru_khac}
+          onChange={setCongTruKhac}
+          min={Number.MIN_SAFE_INTEGER}
+          maxFractionDigits={0}
           className="mt-1"
           placeholder="Nhập số tiền cộng/trừ"
         />

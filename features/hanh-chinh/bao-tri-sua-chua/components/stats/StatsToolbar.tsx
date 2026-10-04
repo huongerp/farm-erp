@@ -53,7 +53,7 @@ const StatsToolbar: React.FC<StatsToolbarProps> = ({
             : 'bg-background border-border text-muted-foreground hover:text-foreground hover:bg-muted/50'
         )}
       >
-        <span>{t('danhSachTaiSan.stats.actions')}</span>
+        <span>{t('baoTriSuaChua.stats.actions')}</span>
         <ChevronDown size={14} className={cn('transition-transform', actionsOpen && 'rotate-180')} />
       </button>
       {actionsOpen && (
@@ -67,7 +67,7 @@ const StatsToolbar: React.FC<StatsToolbarProps> = ({
             className="w-full h-9 px-3 flex items-center gap-2 text-left text-sm text-foreground hover:bg-muted/60 transition-colors"
           >
             <FileDown size={16} className="text-muted-foreground" />
-            {t('danhSachTaiSan.stats.exportReport')}
+            {t('baoTriSuaChua.stats.exportReport')}
           </button>
           <button
             type="button"
@@ -78,7 +78,7 @@ const StatsToolbar: React.FC<StatsToolbarProps> = ({
             className="w-full h-9 px-3 flex items-center gap-2 text-left text-sm text-foreground hover:bg-muted/60 transition-colors border-t border-border"
           >
             <Printer size={16} className="text-muted-foreground" />
-            {t('danhSachTaiSan.stats.printReport')}
+            {t('baoTriSuaChua.stats.printReport')}
           </button>
         </div>
       )}

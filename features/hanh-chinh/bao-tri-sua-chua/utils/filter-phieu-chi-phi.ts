@@ -2,8 +2,8 @@ import type { PhieuBaoTriSuaChua } from '../core/types';
 import type { BaoTriSuaChuaFilters } from '../store/useBaoTriSuaChuaStore';
 
 /**
- * Map id tài sản → id chi nhánh. Phiếu chi phí không có cột chi nhánh,
- * chi nhánh lấy theo tài sản (tài sản kế thừa chi nhánh của nơi lưu).
+ * Map id tài sản → id chi nhánh. Dự phòng cho phiếu chưa lưu chi nhánh
+ * (tài sản kế thừa chi nhánh của nơi lưu).
  */
 export type TaiSanChiNhanhMap = Map<string, string>;
 
@@ -19,11 +19,12 @@ export function buildTaiSanChiNhanhMap(
   return map;
 }
 
-/** Chi nhánh của phiếu (suy ra từ tài sản); '' nếu tài sản chưa gán chi nhánh. */
+/** Chi nhánh lưu trên phiếu; phiếu chưa có thì suy từ tài sản; '' nếu cả hai đều trống. */
 export function getChiNhanhCuaPhieu(
   p: PhieuBaoTriSuaChua,
   branchMap: TaiSanChiNhanhMap
 ): string {
+  if (p.id_chi_nhanh) return String(p.id_chi_nhanh);
   return branchMap.get(String(p.id_tai_san)) ?? '';
 }
 

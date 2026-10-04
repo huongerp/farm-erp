@@ -5,6 +5,7 @@ import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import FilterOverflowDropdown from '../../../../components/shared/FilterOverflowDropdown';
 import DateRangePicker from '../../../../components/ui/DateRangePicker';
 import { useSearchInputCommit } from '../../../../lib/hooks/use-search-input-commit';
 import { usePhieuKhoPTStore } from '../store/usePhieuKhoPTStore';
@@ -36,6 +37,9 @@ function asStringArray(v: unknown): string[] {
   if (Array.isArray(v)) return v.filter((x): x is string => typeof x === 'string');
   return [];
 }
+
+/** Desktop: nhóm lọc gom vào nút Filter để hàng chip ngoài tối đa 5 (MobileFilterSheet vẫn đủ nhóm). */
+const OVERFLOW_FILTER_KEYS = new Set(['nguoiTaoIds', 'nguoiDuyetIds']);
 
 const DanhSachToolbar: React.FC<Props> = ({
   data: dataProp,
@@ -332,22 +336,7 @@ const DanhSachToolbar: React.FC<Props> = ({
         icon={ArrowRightLeft}
         className="w-full sm:w-[160px]"
       />
-      <FilterChipMultiSelect
-        options={nguoiTaoOptions}
-        value={nguoiTaoArr}
-        onChange={(v) => setFilter('nguoiTaoIds', v)}
-        placeholder={t('phieuKhoPhanThuoc.filters.creator')}
-        icon={User}
-        className="w-full sm:w-[150px]"
-      />
-      <FilterChipMultiSelect
-        options={nguoiDuyetOptions}
-        value={nguoiDuyetArr}
-        onChange={(v) => setFilter('nguoiDuyetIds', v)}
-        placeholder={t('phieuKhoPhanThuoc.filters.approver')}
-        icon={CheckCircle}
-        className="w-full sm:w-[150px]"
-      />
+      <FilterOverflowDropdown groups={filterGroups.filter((g) => OVERFLOW_FILTER_KEYS.has(g.key))} />
     </>
   );
 

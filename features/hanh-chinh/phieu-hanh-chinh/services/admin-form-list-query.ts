@@ -1,3 +1,5 @@
+import type { KyLoc } from '../core/ky-loc';
+
 /** Tham số truy vấn danh sách Phiếu hành chính — lọc / sắp xếp / cắt trang ở PostgREST. */
 
 export interface AdminFormListServerQuery {
@@ -8,8 +10,8 @@ export interface AdminFormListServerQuery {
   status: string[];
   /** Loại phiếu — mã app, service tự đổi sang id nhóm phiếu. */
   type: string[];
-  /** Tháng `yyyy-mm`; rỗng = mọi tháng. Phiếu khớp khi khoảng của nó chạm vào tháng. */
-  month: string;
+  /** Kỳ của chip Thời gian; null = mọi lúc. Phiếu khớp khi khoảng của nó chạm vào kỳ. */
+  ky: KyLoc | null;
   /**
    * Chỉ phiếu của những người này. null = mọi người (chỉ người có viewAll);
    * người không viewAll luôn bị ép `[chính mình]`.

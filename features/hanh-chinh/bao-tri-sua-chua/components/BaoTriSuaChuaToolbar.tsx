@@ -1,10 +1,13 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Wrench, Calendar, Package, Download, MapPin, Tag, User } from 'lucide-react';
+import { Plus, Wrench, Package, Download, MapPin, Tag, User } from 'lucide-react';
+import DateRangePicker from '../../../../components/ui/DateRangePicker';
+import { KY_CUSTOM, useKyChip } from './ky-loc-chip';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import FilterOverflowDropdown from '../../../../components/shared/FilterOverflowDropdown';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useBaoTriSuaChuaStore } from '../store/useBaoTriSuaChuaStore';
 import { useTaiSanList } from '../../danh-muc-tai-san/hooks/use-danh-muc-tai-san';
@@ -26,6 +29,9 @@ interface Props {
   showAdd?: boolean;
   canDelete?: boolean;
 }
+
+/** Desktop: nhóm lọc gom vào nút Filter để hàng chip ngoài tối đa 5 (MobileFilterSheet vẫn đủ nhóm). */
+const OVERFLOW_FILTER_KEYS = new Set(['id_nguoi_tao']);
 
 const BaoTriSuaChuaToolbar: React.FC<Props> = ({
   items = [],
@@ -117,6 +123,10 @@ const BaoTriSuaChuaToolbar: React.FC<Props> = ({
       count: nguoiTaoCounts[id] ?? 0,
     }));
   }, [items, nguoiTaoCounts]);
+  const kyChip = useKyChip(filters.dateFrom, filters.dateTo, (from, to) => {
+    setFilter('dateFrom', from);
+    setFilter('dateTo', to);
+  });
   const activeFilterCount =
     (searchInput.trim() ? 1 : 0) +
     filters.hang_muc.length +
@@ -124,12 +134,35 @@ const BaoTriSuaChuaToolbar: React.FC<Props> = ({
     filters.id_chi_nhanh.length +
     filters.trang_thai.length +
     filters.id_nguoi_tao.length +
-    (filters.dateFrom ? 1 : 0) +
-    (filters.dateTo ? 1 : 0);
+    (filters.dateFrom || filters.dateTo ? 1 : 0);
   const handleClearAllFilters = () => {
     commitSearchTerm('');
     resetFilters();
   };
+
+  const filterGroups = useMemo(
+    () => [
+      { key: 'hang_muc', label: t('baoTriSuaChua.store.hangMucCol'), icon: Wrench, options: hangMucOptions, value: filters.hang_muc, onChange: (val: string[]) => setFilter('hang_muc', val) },
+      { key: 'id_tai_san', label: t('baoTriSuaChua.store.taiSanCol'), icon: Package, options: taiSanOptions, value: filters.id_tai_san, onChange: (val: string[]) => setFilter('id_tai_san', val) },
+      { key: 'id_chi_nhanh', label: t('baoTriSuaChua.store.chiNhanhCol'), icon: MapPin, options: chiNhanhOptions, value: filters.id_chi_nhanh, onChange: (val: string[]) => setFilter('id_chi_nhanh', val) },
+      { key: 'trang_thai', label: t('baoTriSuaChua.store.trangThaiCol'), icon: Tag, options: trangThaiOptions, value: filters.trang_thai, onChange: (val: string[]) => setFilter('trang_thai', val) },
+      { key: 'id_nguoi_tao', label: t('baoTriSuaChua.store.nguoiTaoCol'), icon: User, options: nguoiTaoOptions, value: filters.id_nguoi_tao, onChange: (val: string[]) => setFilter('id_nguoi_tao', val) },
+    ],
+    [
+      hangMucOptions,
+      taiSanOptions,
+      chiNhanhOptions,
+      trangThaiOptions,
+      nguoiTaoOptions,
+      filters.hang_muc,
+      filters.id_tai_san,
+      filters.id_chi_nhanh,
+      filters.trang_thai,
+      filters.id_nguoi_tao,
+      setFilter,
+      t,
+    ]
+  );
 
   const renderFilters = (
     <>
@@ -142,26 +175,14 @@ const BaoTriSuaChuaToolbar: React.FC<Props> = ({
         className="w-full sm:w-[160px]"
         size="md"
       />
-      <div className="relative w-full sm:w-[140px]">
-        <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-        <input
-          type="date"
-          value={filters.dateFrom}
-          onChange={(e) => setFilter('dateFrom', e.target.value)}
-          className="w-full h-9 pl-8 pr-2 bg-muted/40 border border-border/60 rounded-lg text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40"
-          placeholder={t('baoTriSuaChua.filter.dateFrom')}
-        />
-      </div>
-      <div className="relative w-full sm:w-[140px]">
-        <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-        <input
-          type="date"
-          value={filters.dateTo}
-          onChange={(e) => setFilter('dateTo', e.target.value)}
-          className="w-full h-9 pl-8 pr-2 bg-muted/40 border border-border/60 rounded-lg text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40"
-          placeholder={t('baoTriSuaChua.filter.dateTo')}
-        />
-      </div>
+      <DateRangePicker
+        presets={kyChip.presets}
+        value={kyChip.value}
+        onChange={kyChip.onChange}
+        placeholder={t('baoTriSuaChua.filter.period')}
+        customPresetId={KY_CUSTOM}
+        className="w-full sm:w-auto shrink-0"
+      />
       <FilterChipMultiSelect
         options={taiSanOptions}
         value={filters.id_tai_san}
@@ -189,40 +210,8 @@ const BaoTriSuaChuaToolbar: React.FC<Props> = ({
         className="w-full sm:w-[150px]"
         size="md"
       />
-      <FilterChipMultiSelect
-        options={nguoiTaoOptions}
-        value={filters.id_nguoi_tao}
-        onChange={(v) => setFilter('id_nguoi_tao', v)}
-        placeholder={t('baoTriSuaChua.store.nguoiTaoCol')}
-        icon={User}
-        className="w-full sm:w-[170px]"
-        size="md"
-      />
+      <FilterOverflowDropdown groups={filterGroups.filter((g) => OVERFLOW_FILTER_KEYS.has(g.key))} />
     </>
-  );
-
-  const filterGroups = useMemo(
-    () => [
-      { key: 'hang_muc', label: t('baoTriSuaChua.store.hangMucCol'), icon: Wrench, options: hangMucOptions, value: filters.hang_muc, onChange: (val: string[]) => setFilter('hang_muc', val) },
-      { key: 'id_tai_san', label: t('baoTriSuaChua.store.taiSanCol'), icon: Package, options: taiSanOptions, value: filters.id_tai_san, onChange: (val: string[]) => setFilter('id_tai_san', val) },
-      { key: 'id_chi_nhanh', label: t('baoTriSuaChua.store.chiNhanhCol'), icon: MapPin, options: chiNhanhOptions, value: filters.id_chi_nhanh, onChange: (val: string[]) => setFilter('id_chi_nhanh', val) },
-      { key: 'trang_thai', label: t('baoTriSuaChua.store.trangThaiCol'), icon: Tag, options: trangThaiOptions, value: filters.trang_thai, onChange: (val: string[]) => setFilter('trang_thai', val) },
-      { key: 'id_nguoi_tao', label: t('baoTriSuaChua.store.nguoiTaoCol'), icon: User, options: nguoiTaoOptions, value: filters.id_nguoi_tao, onChange: (val: string[]) => setFilter('id_nguoi_tao', val) },
-    ],
-    [
-      hangMucOptions,
-      taiSanOptions,
-      chiNhanhOptions,
-      trangThaiOptions,
-      nguoiTaoOptions,
-      filters.hang_muc,
-      filters.id_tai_san,
-      filters.id_chi_nhanh,
-      filters.trang_thai,
-      filters.id_nguoi_tao,
-      setFilter,
-      t,
-    ]
   );
 
   const renderActions = (
