@@ -24,6 +24,10 @@ interface DashboardToolbarProps {
   row2ContentMobileOnly?: boolean;
   /** Filter groups for mobile bottom sheet */
   filterGroups?: FilterGroup[];
+  /** Bộ lọc tự do cho bảng lọc mobile (khoảng ngày…) — xem MobileFilterSheet.extra. */
+  mobileFilterExtra?: React.ReactNode;
+  /** Số bộ lọc đang bật trong `mobileFilterExtra`. */
+  mobileFilterExtraCount?: number;
   /** Number of active filters */
   activeFilterCount?: number;
   /** Callback to clear all filters */
@@ -45,6 +49,8 @@ const DashboardToolbar: React.FC<DashboardToolbarProps> = ({
   row2Content,
   row2ContentMobileOnly = false,
   filterGroups,
+  mobileFilterExtra,
+  mobileFilterExtraCount,
   activeFilterCount = 0,
   onClearFilters,
   onBack,
@@ -55,7 +61,7 @@ const DashboardToolbar: React.FC<DashboardToolbarProps> = ({
   const navigate = useNavigate();
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const handleBack = onBack || (() => navigate(-1));
-  const hasFilters = filterGroups && filterGroups.length > 0;
+  const hasFilters = (filterGroups?.length ?? 0) > 0 || !!mobileFilterExtra;
   const row2 = row2Content ?? mobileRow2Content;
 
   return (
@@ -119,8 +125,10 @@ const DashboardToolbar: React.FC<DashboardToolbarProps> = ({
         <MobileFilterSheet
           open={showMobileFilters}
           onClose={() => setShowMobileFilters(false)}
-          groups={filterGroups!}
+          groups={filterGroups ?? []}
           onClearAll={onClearFilters}
+          extra={mobileFilterExtra}
+          extraActiveCount={mobileFilterExtraCount}
         />
       )}
 

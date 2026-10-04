@@ -1,11 +1,11 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Wallet, Tags, Link2, Building2, User, Lock } from 'lucide-react';
+import { Plus, Wallet, Tags, Link2, Building2, User, Lock, Calendar } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
-import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
-import FilterOverflowDropdown from '../../../../components/shared/FilterOverflowDropdown';
-import DateRangePicker from '../../../../components/ui/DateRangePicker';
+import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
+import DateRangePicker, { type DateRangeValue } from '../../../../components/ui/DateRangePicker';
+import { MobileFilterField } from '../../../../components/ui/MobileFilterSheet';
 import ImportExportButtons, { buildImportExportMobileActions } from './ImportExportButtons';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { DATE_RANGE_PRESETS, type DateRangePresetId } from '../../../he-thong/nhan-vien/core/stats-constants';
@@ -41,8 +41,8 @@ interface Props {
   canDelete?: boolean;
 }
 
-/** Desktop: nhóm lọc gom vào nút Filter để hàng chip ngoài tối đa 5 (MobileFilterSheet vẫn đủ nhóm). */
-const OVERFLOW_FILTER_KEYS = new Set(['nguonChungTu', 'nguoiTaoIds']);
+/** Desktop: nhóm lọc ít dùng luôn nằm trong nút Filter (MobileFilterSheet vẫn đủ nhóm). */
+const LUON_VAO_FILTER = ['nguonChungTu', 'nguoiTaoIds'];
 
 const ThuChiQuyToolbar: React.FC<Props> = ({
   branches,
@@ -85,6 +85,14 @@ const ThuChiQuyToolbar: React.FC<Props> = ({
   }, [datePreset, customDateFrom, customDateEnd]);
 
   const dateRangePresets = useMemo(() => DATE_RANGE_PRESETS.map((p) => ({ id: p.id, label: p.label })), []);
+
+  const dateRangeValue: DateRangeValue = { preset: datePreset, customStart: customDateFrom, customEnd: customDateEnd };
+  const handleDateRangeChange = (v: DateRangeValue) => {
+    setFilter('datePreset', v.preset);
+    setFilter('customDateFrom', v.customStart);
+    setFilter('customDateEnd', v.customEnd);
+  };
+  const dateRangeActive = datePreset !== 'all';
 
   const loaiOptions = useMemo(
     () => LOAI_THU_CHI.map((l) => ({ label: t(loaiThuChiToI18nKey(l)), value: l })),
@@ -207,55 +215,33 @@ const ThuChiQuyToolbar: React.FC<Props> = ({
     ]
   );
 
-  const renderFilters = (
-    <>
-      <FilterChipMultiSelect
-        options={branchOptions}
-        value={chiNhanhDangXem}
-        onChange={onChangeChiNhanh}
-        placeholder={t('thuChiQuy.filters.allBranches')}
-        icon={Building2}
-        className="w-full sm:w-[190px]"
-      />
-      <FilterChipMultiSelect
-        options={loaiOptions}
-        value={filters.loai}
-        onChange={(v) => setFilter('loai', v)}
-        placeholder={t('thuChiQuy.store.loaiCol')}
-        icon={Wallet}
-        className="w-full sm:w-[130px]"
-      />
-      <FilterChipMultiSelect
-        options={hangMucOptions}
-        value={filters.hangMucIds}
-        onChange={(v) => setFilter('hangMucIds', v)}
-        placeholder={t('thuChiQuy.store.hangMucCol')}
-        icon={Tags}
-        className="w-full sm:w-[160px]"
-      />
-      <FilterChipMultiSelect
-        options={trangThaiOptions}
-        value={filters.trangThai}
-        onChange={(v) => setFilter('trangThai', v)}
-        placeholder={t('thuChiQuy.filters.trangThai')}
-        icon={Lock}
-        className="w-full sm:w-[150px]"
-      />
-      <DateRangePicker
-        presets={dateRangePresets}
-        value={{ preset: datePreset, customStart: customDateFrom, customEnd: customDateEnd }}
-        onChange={(v) => {
-          setFilter('datePreset', v.preset);
-          setFilter('customDateFrom', v.customStart);
-          setFilter('customDateEnd', v.customEnd);
-        }}
-        displayLabel={dateRangeLabel}
-        placeholder={t('thuChiQuy.filters.dateRange')}
-        className="w-full sm:w-auto"
-      />
-      <FilterOverflowDropdown groups={filterGroups.filter((g) => OVERFLOW_FILTER_KEYS.has(g.key))} />
-    </>
-  );
+  const [chiNhanhGroup, loaiGroup, hangMucGroup, nguonGroup, nguoiTaoGroup, trangThaiGroup] = filterGroups;
+  const filterItems: FilterChipItem[] = [
+    {
+      kind: 'group',
+      group: { ...chiNhanhGroup, label: t('thuChiQuy.filters.allBranches') },
+      className: 'w-full sm:w-[190px]',
+    },
+    { kind: 'group', group: loaiGroup, className: 'w-full sm:w-[130px]' },
+    { kind: 'group', group: hangMucGroup, className: 'w-full sm:w-[160px]' },
+    { kind: 'group', group: trangThaiGroup, className: 'w-full sm:w-[150px]' },
+    {
+      kind: 'custom',
+      key: 'dateRange',
+      node: (
+        <DateRangePicker
+          presets={dateRangePresets}
+          value={dateRangeValue}
+          onChange={handleDateRangeChange}
+          displayLabel={dateRangeLabel}
+          placeholder={t('thuChiQuy.filters.dateRange')}
+          className="w-full sm:w-auto"
+        />
+      ),
+    },
+    { kind: 'group', group: nguonGroup },
+    { kind: 'group', group: nguoiTaoGroup },
+  ];
 
   const renderActions = (
     <>
@@ -289,8 +275,14 @@ const ThuChiQuyToolbar: React.FC<Props> = ({
       onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
       actions={renderActions}
-      filters={renderFilters}
+      filters={<ResponsiveFilterChips items={filterItems} luonVaoFilter={LUON_VAO_FILTER} />}
       filterGroups={filterGroups}
+      mobileFilterExtra={
+        <MobileFilterField label={t('thuChiQuy.filters.dateRange')} icon={Calendar} active={dateRangeActive}>
+          <DateRangePicker inline presets={dateRangePresets} value={dateRangeValue} onChange={handleDateRangeChange} />
+        </MobileFilterField>
+      }
+      mobileFilterExtraCount={dateRangeActive ? 1 : 0}
       mobileActions={mobileActions}
       onAdd={canCreate ? onAdd : undefined}
       activeFilterCount={activeFilterCount}

@@ -4,9 +4,10 @@ import { Plus, Tag, Calendar, ListOrdered, User, Download } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
-import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
 import DateRangePicker, { type DateRangeValue } from '../../../../components/ui/DateRangePicker';
 import type { ActionItem } from '../../../../components/ui/MobileActionsSheet';
+import { MobileFilterField } from '../../../../components/ui/MobileFilterSheet';
 import type { ColumnConfig } from '../../../../store/createGenericStore';
 import { getAdminFormTypeOptions } from '../../thiet-lap-cong-luong/core/constants';
 import { getAdminFormStatusLabel, ADMIN_FORM_STATUSES } from '../core/constants';
@@ -22,6 +23,13 @@ const KY_PRESET_LABEL_KEYS: Record<string, string> = {
   lastMonth: 'adminForm.filter.lastMonth',
   thisQuarter: 'adminForm.filter.thisQuarter',
   thisYear: 'adminForm.filter.thisYear',
+};
+
+/** Bề rộng chip desktop theo key nhóm lọc. */
+const CHIP_WIDTH: Record<string, string> = {
+  status: 'w-full sm:w-[160px]',
+  type: 'w-full sm:w-[220px]',
+  nguoiTao: 'w-full sm:w-[200px]',
 };
 
 interface Props {
@@ -141,75 +149,52 @@ const AdminFormToolbar: React.FC<Props> = ({
             },
           ]
         : []),
-      {
-        key: 'ky',
-        label: t('adminForm.store.periodCol'),
-        icon: Calendar,
-        // Sheet mobile chỉ có mốc nhanh; khoảng ngày tự do chọn trên desktop.
-        options: kyPresets.filter((p) => p.id !== 'all').map((p) => ({ label: p.label, value: p.id })),
-        value: filters.kyPreset === 'all' || filters.kyPreset === KY_CUSTOM ? [] : [filters.kyPreset],
-        // Sheet là chọn nhiều — giữ mốc vừa bấm để chip vẫn chỉ một mốc.
-        onChange: (val: string[]) => {
-          setFilter('kyPreset', val.find((v) => v !== filters.kyPreset) ?? 'all');
-          setFilter('tuNgay', '');
-          setFilter('denNgay', '');
-        },
-      },
     ],
     [
       filters.status,
       filters.type,
-      filters.kyPreset,
       nguoiTao,
       showPersonFilter,
       setFilter,
       statusOptions,
       typeOptions,
       personOptions,
-      kyPresets,
       t,
     ]
   );
 
-  const renderFilters = (
-    <>
+  // Desktop: chip Thời gian là DateRangePicker (custom); mobile dùng bản inline trong mobileFilterExtra.
+  const filterItems: FilterChipItem[] = [
+    {
+      kind: 'custom',
+      key: 'ky',
+      node: (
+        <DateRangePicker
+          presets={kyPresets}
+          value={kyValue}
+          onChange={handleKyChange}
+          // Chưa lọc: nút ghi "Thời gian" như các chip khác; mốc "Tất cả" chỉ hiện trong lưới chọn nhanh.
+          displayLabel={filters.kyPreset === 'all' ? t('adminForm.store.periodCol') : undefined}
+          placeholder={t('adminForm.store.periodCol')}
+          customPresetId={KY_CUSTOM}
+          className="shrink-0"
+        />
+      ),
+    },
+    ...filterGroups.map((g): FilterChipItem => ({ kind: 'group', group: g, className: CHIP_WIDTH[g.key] })),
+  ];
+
+  // Bảng lọc mobile: chip Thời gian đủ mốc nhanh + khoảng ngày tự do (trước đây sheet chỉ có mốc nhanh).
+  const mobileFilterExtra = (
+    <MobileFilterField label={t('adminForm.store.periodCol')} icon={Calendar} active={filters.kyPreset !== 'all'}>
       <DateRangePicker
+        inline
         presets={kyPresets}
         value={kyValue}
         onChange={handleKyChange}
-        // Chưa lọc: nút ghi "Thời gian" như các chip khác; mốc "Tất cả" chỉ hiện trong lưới chọn nhanh.
-        displayLabel={filters.kyPreset === 'all' ? t('adminForm.store.periodCol') : undefined}
-        placeholder={t('adminForm.store.periodCol')}
         customPresetId={KY_CUSTOM}
-        className="shrink-0"
       />
-      <FilterChipMultiSelect
-        options={statusOptions}
-        value={filters.status}
-        onChange={(val) => setFilter('status', val)}
-        placeholder={t('adminForm.store.statusCol')}
-        icon={Tag}
-        className="w-full sm:w-[160px]"
-      />
-      <FilterChipMultiSelect
-        options={typeOptions}
-        value={filters.type}
-        onChange={(val) => setFilter('type', val)}
-        placeholder={t('adminForm.store.typeCol')}
-        icon={ListOrdered}
-        className="w-full sm:w-[220px]"
-      />
-      {showPersonFilter && (
-        <FilterChipMultiSelect
-          options={personOptions}
-          value={nguoiTao}
-          onChange={(val) => setFilter('nguoiTao', val)}
-          placeholder={t('adminForm.store.requesterCol')}
-          icon={User}
-          className="w-full sm:w-[200px]"
-        />
-      )}
-    </>
+    </MobileFilterField>
   );
 
   const exportButton = (
@@ -269,8 +254,10 @@ const AdminFormToolbar: React.FC<Props> = ({
       onClearSelection={clearSelection}
       actions={renderActions}
       bulkActions={renderBulkActions}
-      filters={renderFilters}
+      filters={<ResponsiveFilterChips items={filterItems} />}
       filterGroups={filterGroups}
+      mobileFilterExtra={mobileFilterExtra}
+      mobileFilterExtraCount={filters.kyPreset !== 'all' ? 1 : 0}
       onAdd={onAdd}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}

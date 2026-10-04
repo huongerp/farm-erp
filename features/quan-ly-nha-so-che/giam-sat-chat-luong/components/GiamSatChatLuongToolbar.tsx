@@ -4,7 +4,7 @@ import { BadgeCheck, Building2, Calendar, CalendarDays, CircleDot, Package, Plus
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
-import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
 import { KET_LUAN_GSCL, TRANG_THAI_GSCL } from '../core/types';
@@ -110,22 +110,11 @@ const GiamSatChatLuongToolbar: React.FC<Props> = ({
     onChange: (v: string[]) => setFilter(g.key, v),
   }));
 
-  const renderFilters = (
-    <>
-      {groups.map((g) => (
-        <FilterChipMultiSelect
-          key={g.key}
-          options={options[g.key]}
-          value={filters[g.key] ?? []}
-          onChange={(v) => setFilter(g.key, v)}
-          placeholder={g.label}
-          icon={g.icon}
-          className={`w-full ${g.width}`}
-          size="md"
-        />
-      ))}
-    </>
-  );
+  const filterItems: FilterChipItem[] = filterGroups.map((g, i) => ({
+    kind: 'group',
+    group: g,
+    className: `w-full ${groups[i].width}`,
+  }));
 
   const iconBtn = 'h-8 w-8 flex items-center justify-center border rounded-lg transition-all bg-background border-border text-muted-foreground hover:bg-muted hover:text-foreground';
 
@@ -140,15 +129,17 @@ const GiamSatChatLuongToolbar: React.FC<Props> = ({
   const renderActions = (
     <>
       {canScan && (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onScan}
-          className="hidden sm:inline-flex h-9 px-3 items-center gap-1.5 border-border"
-        >
-          <ScanLine className="w-4 h-4" />
-          {t('giamSatChatLuong.toolbar.quetTem')}
-        </Button>
+        <Tooltip content={t('giamSatChatLuong.toolbar.quetTem')} placement="bottom">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onScan}
+            className="hidden sm:inline-flex h-9 w-9 lg:w-auto p-0 lg:px-3 items-center justify-center gap-1.5 border-border"
+          >
+            <ScanLine className="w-4 h-4" />
+            <span className="hidden lg:inline">{t('giamSatChatLuong.toolbar.quetTem')}</span>
+          </Button>
+        </Tooltip>
       )}
       {canCreate ? (
         <Button
@@ -179,7 +170,7 @@ const GiamSatChatLuongToolbar: React.FC<Props> = ({
       onClearSelection={clearSelection}
       leadingActions={leading}
       actions={renderActions}
-      filters={renderFilters}
+      filters={<ResponsiveFilterChips items={filterItems} />}
       filterGroups={filterGroups}
       mobileActions={mobileActions}
       onAdd={canCreate ? onAdd : undefined}

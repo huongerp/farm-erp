@@ -3,6 +3,7 @@ import type { TaiSanTomTat } from '../services/danh-muc-tai-san-service';
 import { useTranslation } from 'react-i18next';
 import { Plus, Tag, Layers, MapPin, FileSpreadsheet, FileDown, ChevronDown } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
+import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
@@ -119,17 +120,20 @@ const DanhSachTaiSanToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMan
     <>
       {hasExport && (
         <div className="relative" ref={exportMenuRef}>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-9 px-3 border-border"
-            onClick={() => setShowExportMenu((v) => !v)}
-          >
-            <FileDown className="w-4 h-4 sm:mr-2" />
-            <span className="hidden sm:inline">{t('danhSachTaiSan.stats.exportReport')}</span>
-            <ChevronDown className="w-4 h-4 ml-1" />
-          </Button>
+          <Tooltip content={t('danhSachTaiSan.stats.exportReport')} placement="bottom" disabled={showExportMenu}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-9 px-2 lg:px-3 border-border"
+              onClick={() => setShowExportMenu((v) => !v)}
+              aria-label={t('danhSachTaiSan.stats.exportReport')}
+            >
+              <FileDown className="w-4 h-4 lg:mr-2" />
+              <span className="hidden lg:inline">{t('danhSachTaiSan.stats.exportReport')}</span>
+              <ChevronDown className="w-4 h-4 ml-1" />
+            </Button>
+          </Tooltip>
           {showExportMenu && (
             <div className="absolute right-0 top-full mt-1 py-1 min-w-[140px] rounded-lg border border-border bg-card shadow-lg z-50">
               {onExportExcel && (

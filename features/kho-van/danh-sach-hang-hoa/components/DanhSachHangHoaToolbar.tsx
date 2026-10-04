@@ -5,7 +5,7 @@ import { Plus, Download, Upload, Tag, Folder, FolderTree, Ruler, QrCode } from '
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
-import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useHangHoaStore } from '../store/useHangHoaStore';
 import { useDanhMucHangHoaList } from '../../danh-muc-hang-hoa/hooks/use-danh-muc-hang-hoa';
@@ -144,43 +144,6 @@ const DanhSachHangHoaToolbar: React.FC<Props> = ({
     setFilter('dvt', []);
   };
 
-  const renderFilters = (
-    <>
-      <FilterChipMultiSelect
-        options={danhMucChaOptions}
-        value={filters.id_danh_muc_cha}
-        onChange={(v) => setFilter('id_danh_muc_cha', v)}
-        placeholder={t('hangHoa.filters.danhMucCha')}
-        icon={Folder}
-        className="w-full sm:w-[180px]"
-      />
-      <FilterChipMultiSelect
-        options={danhMucConOptions}
-        value={filters.id_danh_muc}
-        onChange={(v) => setFilter('id_danh_muc', v)}
-        placeholder={t('hangHoa.filters.danhMucCon')}
-        icon={FolderTree}
-        className="w-full sm:w-[200px]"
-      />
-      <FilterChipMultiSelect
-        options={dvtOptions}
-        value={filters.dvt}
-        onChange={(v) => setFilter('dvt', v)}
-        placeholder={t('hangHoa.filters.dvt')}
-        icon={Ruler}
-        className="w-full sm:w-[140px]"
-      />
-      <FilterChipMultiSelect
-        options={statusOptions}
-        value={filters.status}
-        onChange={(v) => setFilter('status', v)}
-        placeholder={t('common.status')}
-        icon={Tag}
-        className="w-full sm:w-[140px]"
-      />
-    </>
-  );
-
   const filterGroups = useMemo(
     () => [
       {
@@ -229,6 +192,13 @@ const DanhSachHangHoaToolbar: React.FC<Props> = ({
       statusOptions,
     ]
   );
+
+  const filterItems: FilterChipItem[] = [
+    { kind: 'group', group: filterGroups[0], className: 'w-full sm:w-[180px]' },
+    { kind: 'group', group: filterGroups[1], className: 'w-full sm:w-[200px]' },
+    { kind: 'group', group: filterGroups[2], className: 'w-full sm:w-[140px]' },
+    { kind: 'group', group: filterGroups[3], className: 'w-full sm:w-[140px]' },
+  ];
 
   const mobileActions = useMemo(
     () => [
@@ -319,7 +289,7 @@ const DanhSachHangHoaToolbar: React.FC<Props> = ({
       onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
       actions={renderActions}
-      filters={renderFilters}
+      filters={<ResponsiveFilterChips items={filterItems} />}
       filterGroups={filterGroups}
       mobileActions={mobileActions}
       onAdd={canCreate ? onAdd : undefined}

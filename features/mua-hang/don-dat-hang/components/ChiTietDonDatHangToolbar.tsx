@@ -4,8 +4,7 @@ import { Tag, Building2, Warehouse, User, Download, Folder, FolderTree } from 'l
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
-import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
-import FilterOverflowDropdown from '../../../../components/shared/FilterOverflowDropdown';
+import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
 import { useSearchInputCommit } from '../../../../lib/hooks/use-search-input-commit';
 import { useChiTietDonDatHangStore } from '../store/useChiTietDonDatHangStore';
 import type { ChiTietDonDatHangFlat } from '../core/types';
@@ -28,8 +27,14 @@ interface Props {
   chipCountsMode?: 'fromRows' | 'unweighted';
 }
 
-/** Desktop: nhóm lọc gom vào nút Filter để hàng chip ngoài tối đa 5 (MobileFilterSheet vẫn đủ nhóm). */
-const OVERFLOW_FILTER_KEYS = new Set(['phanLoai', 'nguoiDatIds']);
+/** Desktop: nhóm lọc ít dùng luôn nằm trong nút Filter (MobileFilterSheet vẫn đủ nhóm). */
+const LUON_VAO_FILTER = ['phanLoai', 'nguoiDatIds'];
+
+const CHIP_WIDTH: Record<string, string> = {
+  status: 'w-full sm:w-[140px]',
+  danhMucCap1Ids: 'w-full sm:w-[170px]',
+  danhMucCap2Ids: 'w-full sm:w-[170px]',
+};
 
 const ChiTietDonDatHangToolbar: React.FC<Props> = ({
   data,
@@ -211,51 +216,11 @@ const ChiTietDonDatHangToolbar: React.FC<Props> = ({
     ]
   );
 
-  const renderFilters = (
-    <>
-      <FilterChipMultiSelect
-        options={statusOptions}
-        value={filters.status ?? []}
-        onChange={(v) => setFilter('status', v)}
-        placeholder={t('common.status')}
-        icon={Tag}
-        className="w-full sm:w-[140px]"
-      />
-      <FilterChipMultiSelect
-        options={supplierOptions}
-        value={filters.nhaCungCapIds ?? []}
-        onChange={(v) => setFilter('nhaCungCapIds', v)}
-        placeholder={t('donDatHang.form.supplier')}
-        icon={Building2}
-        className="w-full sm:w-[160px]"
-      />
-      <FilterChipMultiSelect
-        options={khoOptions}
-        value={filters.khoNhanIds ?? []}
-        onChange={(v) => setFilter('khoNhanIds', v)}
-        placeholder={t('donDatHang.form.warehouse')}
-        icon={Warehouse}
-        className="w-full sm:w-[160px]"
-      />
-      <FilterChipMultiSelect
-        options={danhMucCap1Options}
-        value={filters.danhMucCap1Ids ?? []}
-        onChange={(v) => setFilter('danhMucCap1Ids', v)}
-        placeholder={t('donDatHang.chiTietTab.categoryLevel1Col')}
-        icon={Folder}
-        className="w-full sm:w-[170px]"
-      />
-      <FilterChipMultiSelect
-        options={danhMucCap2Options}
-        value={filters.danhMucCap2Ids ?? []}
-        onChange={(v) => setFilter('danhMucCap2Ids', v)}
-        placeholder={t('donDatHang.chiTietTab.categoryLevel2Col')}
-        icon={FolderTree}
-        className="w-full sm:w-[170px]"
-      />
-      <FilterOverflowDropdown groups={filterGroups.filter((g) => OVERFLOW_FILTER_KEYS.has(g.key))} />
-    </>
-  );
+  const filterItems: FilterChipItem[] = filterGroups.map((g) => ({
+    kind: 'group',
+    group: g,
+    className: CHIP_WIDTH[g.key] ?? 'w-full sm:w-[160px]',
+  }));
 
   const mobileActions = useMemo(
     () => [
@@ -292,7 +257,7 @@ const ChiTietDonDatHangToolbar: React.FC<Props> = ({
       onSearchChange={setSearchInput}
       onClearSelection={() => {}}
       actions={renderActions}
-      filters={renderFilters}
+      filters={<ResponsiveFilterChips items={filterItems} luonVaoFilter={LUON_VAO_FILTER} />}
       filterGroups={filterGroups}
       mobileActions={mobileActions}
       showBack

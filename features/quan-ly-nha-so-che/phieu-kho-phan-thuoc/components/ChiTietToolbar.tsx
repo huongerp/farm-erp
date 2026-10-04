@@ -1,12 +1,12 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FileText, Warehouse, ArrowRightLeft, Tag, User, CheckCircle, Download } from 'lucide-react';
+import { FileText, Warehouse, ArrowRightLeft, Tag, User, CheckCircle, Download, Calendar } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
-import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
-import FilterOverflowDropdown from '../../../../components/shared/FilterOverflowDropdown';
-import DateRangePicker from '../../../../components/ui/DateRangePicker';
+import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
+import DateRangePicker, { type DateRangeValue } from '../../../../components/ui/DateRangePicker';
+import { MobileFilterField } from '../../../../components/ui/MobileFilterSheet';
 import { useSearchInputCommit } from '../../../../lib/hooks/use-search-input-commit';
 import { useChiTietPhieuKhoPTStore, type DatePresetIdChiTietPT } from '../store/useChiTietPhieuKhoPTStore';
 import type { ChiTietPhieuKhoPTFlat } from '../core/types';
@@ -23,8 +23,8 @@ interface Props {
   employeesForChips?: { id: string; ho_ten: string }[];
 }
 
-/** Desktop: nhóm lọc gom vào nút Filter để hàng chip ngoài tối đa 5 (MobileFilterSheet vẫn đủ nhóm). */
-const OVERFLOW_FILTER_KEYS = new Set(['nguoiTao', 'nguoiDuyet']);
+/** Desktop: nhóm lọc ít dùng luôn nằm trong nút Filter (MobileFilterSheet vẫn đủ nhóm). */
+const LUON_VAO_FILTER = ['nguoiTao', 'nguoiDuyet'];
 
 const PhieuStatus = {
   pending: 'Pending',
@@ -284,59 +284,40 @@ const ChiTietToolbar: React.FC<Props> = ({
     </div>
   );
 
-  const renderFilters = (
-    <>
-      <FilterChipMultiSelect
-        options={loaiOptions}
-        value={filters.loai ?? []}
-        onChange={(v) => setFilter('loai', v)}
-        placeholder={t('phieuKhoPhanThuoc.chiTietTab.loaiPhieuCol')}
-        icon={FileText}
-        className="w-full sm:w-[140px]"
-      />
-      <FilterChipMultiSelect
-        options={trangThaiOptions}
-        value={filters.trangThaiKeys ?? []}
-        onChange={(v) => setFilter('trangThaiKeys', v)}
-        placeholder={t('common.status')}
-        icon={Tag}
-        className="w-full sm:w-[130px]"
-      />
-      <DateRangePicker
-        presets={dateRangePickerPresets}
-        value={{
-          preset: (filters.datePreset ?? 'all') as DateRangePresetId,
-          customStart: filters.customDateFrom ?? '',
-          customEnd: filters.customDateEnd ?? '',
-        }}
-        onChange={(v) => {
-          setFilter('datePreset', v.preset as DatePresetIdChiTietPT);
-          setFilter('customDateFrom', v.customStart);
-          setFilter('customDateEnd', v.customEnd);
-        }}
-        displayLabel={dateRangeLabel}
-        placeholder={t('phieuKhoPhanThuoc.chiTietTab.dateRangePlaceholder')}
-        className="w-full sm:w-auto"
-      />
-      <FilterChipMultiSelect
-        options={khoOptions}
-        value={filters.khoIds ?? []}
-        onChange={(v) => setFilter('khoIds', v)}
-        placeholder={t('phieuKhoPhanThuoc.store.khoCol')}
-        icon={Warehouse}
-        className="w-full sm:w-[160px]"
-      />
-      <FilterChipMultiSelect
-        options={khoDenOptions}
-        value={filters.khoDenIds ?? []}
-        onChange={(v) => setFilter('khoDenIds', v)}
-        placeholder={t('phieuKhoPhanThuoc.form.warehouseTo')}
-        icon={ArrowRightLeft}
-        className="w-full sm:w-[160px]"
-      />
-      <FilterOverflowDropdown groups={filterGroupsComputed.filter((g) => OVERFLOW_FILTER_KEYS.has(g.key))} />
-    </>
-  );
+  const dateRangeValue: DateRangeValue = {
+    preset: (filters.datePreset ?? 'all') as DateRangePresetId,
+    customStart: filters.customDateFrom ?? '',
+    customEnd: filters.customDateEnd ?? '',
+  };
+  const handleDateRangeChange = (v: DateRangeValue) => {
+    setFilter('datePreset', v.preset as DatePresetIdChiTietPT);
+    setFilter('customDateFrom', v.customStart);
+    setFilter('customDateEnd', v.customEnd);
+  };
+
+  const [loaiGroup, trangThaiGroup, khoGroup, khoDenGroup, nguoiTaoGroup, nguoiDuyetGroup] = filterGroupsComputed;
+  const filterItems: FilterChipItem[] = [
+    { kind: 'group', group: loaiGroup, className: 'w-full sm:w-[140px]' },
+    { kind: 'group', group: trangThaiGroup, className: 'w-full sm:w-[130px]' },
+    {
+      kind: 'custom',
+      key: 'dateRange',
+      node: (
+        <DateRangePicker
+          presets={dateRangePickerPresets}
+          value={dateRangeValue}
+          onChange={handleDateRangeChange}
+          displayLabel={dateRangeLabel}
+          placeholder={t('phieuKhoPhanThuoc.chiTietTab.dateRangePlaceholder')}
+          className="w-full sm:w-auto"
+        />
+      ),
+    },
+    { kind: 'group', group: khoGroup, className: 'w-full sm:w-[160px]' },
+    { kind: 'group', group: khoDenGroup, className: 'w-full sm:w-[160px]' },
+    { kind: 'group', group: nguoiTaoGroup },
+    { kind: 'group', group: nguoiDuyetGroup },
+  ];
 
   return (
     <GenericToolbar
@@ -345,8 +326,18 @@ const ChiTietToolbar: React.FC<Props> = ({
       onSearchChange={setSearchInput}
       onClearSelection={() => {}}
       actions={renderActions}
-      filters={renderFilters}
+      filters={<ResponsiveFilterChips items={filterItems} luonVaoFilter={LUON_VAO_FILTER} />}
       filterGroups={filterGroupsComputed}
+      mobileFilterExtra={
+        <MobileFilterField
+          label={t('phieuKhoPhanThuoc.chiTietTab.dateRangePlaceholder')}
+          icon={Calendar}
+          active={!!dateFilterActive}
+        >
+          <DateRangePicker inline presets={dateRangePickerPresets} value={dateRangeValue} onChange={handleDateRangeChange} />
+        </MobileFilterField>
+      }
+      mobileFilterExtraCount={dateFilterActive ? 1 : 0}
       mobileActions={mobileActions}
       showBack
       activeFilterCount={activeFilterCount}

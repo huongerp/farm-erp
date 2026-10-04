@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
-import { FileDown, Printer, RefreshCw, ChevronDown, Warehouse, ClipboardList, Tags, Package } from 'lucide-react';
+import { FileDown, Printer, RefreshCw, ChevronDown, Warehouse, ClipboardList, Tags, Package, Calendar } from 'lucide-react';
 import DashboardToolbar from '../../../../components/shared/DashboardToolbar';
-import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
 import DateRangePicker from '../../../../components/ui/DateRangePicker';
 import type { DateRangeValue } from '../../../../components/ui/DateRangePicker';
-import type { FilterGroup } from '../../../../components/ui/MobileFilterSheet';
+import { MobileFilterField, type FilterGroup } from '../../../../components/ui/MobileFilterSheet';
 import type { Kho } from '../../../kho-van/danh-sach-kho/core/types';
 import type { FarmHangHoa } from '../../hang-hoa-phan-thuoc/core/types';
 import type { FarmDanhMucCap2WithParent } from '../../hang-hoa-phan-thuoc/services/farm-danh-muc-service';
@@ -91,6 +91,9 @@ const BaoCaoNXTPTToolbar: React.FC<Props> = ({ khoList, danhMucCap2, hangHoaList
     }
   };
 
+  /** Kỳ mặc định là "Tháng này" (xem clearNxtFilters) — khác mặc định mới tính là đang lọc. */
+  const periodActive = dateRangeValue.preset !== 'thisMonth';
+
   const warehouseOptions = useMemo(
     () => khoList.map((k) => ({ label: k.ten_kho, value: String(k.id), subLabel: k.ma_kho })),
     [khoList]
@@ -133,8 +136,9 @@ const BaoCaoNXTPTToolbar: React.FC<Props> = ({ khoList, danhMucCap2, hangHoaList
       nxtWarehouseIds.length +
       nxtCategoryIds.length +
       nxtHangHoaIds.length +
-      nxtLoaiPhieu.length,
-    [nxtWarehouseIds, nxtCategoryIds, nxtHangHoaIds, nxtLoaiPhieu.length]
+      nxtLoaiPhieu.length +
+      (periodActive ? 1 : 0),
+    [nxtWarehouseIds, nxtCategoryIds, nxtHangHoaIds, nxtLoaiPhieu.length, periodActive]
   );
 
   const filterGroups: FilterGroup[] = useMemo(
@@ -189,54 +193,44 @@ const BaoCaoNXTPTToolbar: React.FC<Props> = ({ khoList, danhMucCap2, hangHoaList
     ]
   );
 
-  const renderFilters = (
-    <>
-      <DateRangePicker
-        presets={dateRangePresets}
-        value={dateRangeValue}
-        onChange={handleDateRangeChange}
-        placeholder={t('tonKhoPhanThuoc.nxt.periodPlaceholder')}
-        customPresetId={CUSTOM_PRESET_ID}
-        className="shrink-0"
-      />
-      <FilterChipMultiSelect
-        options={warehouseOptions}
-        value={nxtWarehouseIds}
-        onChange={setNxtWarehouseIds}
-        placeholder={t('tonKhoPhanThuoc.nxt.filterWarehousePlaceholder')}
-        icon={Warehouse}
-        className="w-full sm:w-[180px]"
-        size="md"
-      />
-      <FilterChipMultiSelect
-        options={loaiOptions}
-        value={nxtLoaiPhieu}
-        onChange={(v) => setNxtLoaiPhieu(v as LoaiPhieuKhoPT[])}
-        placeholder={t('tonKhoPhanThuoc.nxt.filterLoaiPlaceholder')}
-        icon={ClipboardList}
-        className="w-full sm:w-[160px]"
-        size="md"
-      />
-      <FilterChipMultiSelect
-        options={categoryOptions}
-        value={nxtCategoryIds}
-        onChange={setNxtCategoryIds}
-        placeholder={t('tonKhoPhanThuoc.nxt.filterCategoryPlaceholder')}
-        icon={Tags}
-        className="w-full sm:w-[200px]"
-        size="md"
-      />
-      <FilterChipMultiSelect
-        options={productOptions}
-        value={nxtHangHoaIds}
-        onChange={setNxtHangHoaIds}
-        placeholder={t('tonKhoPhanThuoc.nxt.filterProductPlaceholder')}
-        icon={Package}
-        className="w-full sm:w-[200px]"
-        size="md"
-      />
-    </>
-  );
+  /** Desktop: chip dùng placeholder "Tất cả …" thay cho nhãn nhóm của bảng lọc mobile. */
+  const [warehouseGroup, loaiGroup, categoryGroup, productGroup] = filterGroups;
+  const filterItems: FilterChipItem[] = [
+    {
+      kind: 'custom',
+      key: 'period',
+      node: (
+        <DateRangePicker
+          presets={dateRangePresets}
+          value={dateRangeValue}
+          onChange={handleDateRangeChange}
+          placeholder={t('tonKhoPhanThuoc.nxt.periodPlaceholder')}
+          customPresetId={CUSTOM_PRESET_ID}
+          className="shrink-0"
+        />
+      ),
+    },
+    {
+      kind: 'group',
+      group: { ...warehouseGroup, label: t('tonKhoPhanThuoc.nxt.filterWarehousePlaceholder') },
+      className: 'w-full sm:w-[180px]',
+    },
+    {
+      kind: 'group',
+      group: { ...loaiGroup, label: t('tonKhoPhanThuoc.nxt.filterLoaiPlaceholder') },
+      className: 'w-full sm:w-[160px]',
+    },
+    {
+      kind: 'group',
+      group: { ...categoryGroup, label: t('tonKhoPhanThuoc.nxt.filterCategoryPlaceholder') },
+      className: 'w-full sm:w-[200px]',
+    },
+    {
+      kind: 'group',
+      group: { ...productGroup, label: t('tonKhoPhanThuoc.nxt.filterProductPlaceholder') },
+      className: 'w-full sm:w-[200px]',
+    },
+  ];
 
   const actions = (
     <div className="flex items-center gap-2">
@@ -293,8 +287,20 @@ const BaoCaoNXTPTToolbar: React.FC<Props> = ({ khoList, danhMucCap2, hangHoaList
   return (
     <DashboardToolbar
       onBack={() => window.history.back()}
-      filters={renderFilters}
+      filters={<ResponsiveFilterChips items={filterItems} />}
       filterGroups={filterGroups}
+      mobileFilterExtra={
+        <MobileFilterField label={t('tonKhoPhanThuoc.nxt.periodPlaceholder')} icon={Calendar} active={periodActive}>
+          <DateRangePicker
+            inline
+            presets={dateRangePresets}
+            value={dateRangeValue}
+            onChange={handleDateRangeChange}
+            customPresetId={CUSTOM_PRESET_ID}
+          />
+        </MobileFilterField>
+      }
+      mobileFilterExtraCount={periodActive ? 1 : 0}
       activeFilterCount={activeFilterCount}
       onClearFilters={clearNxtFilters}
       actions={actions}

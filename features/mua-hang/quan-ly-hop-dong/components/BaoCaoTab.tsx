@@ -2,11 +2,12 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Tag, Building2 } from 'lucide-react';
+import { Tag, Building2, Calendar } from 'lucide-react';
 import DashboardToolbar from '../../../../components/shared/DashboardToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import DateRangePicker from '../../../../components/ui/DateRangePicker';
 import type { DateRangeValue } from '../../../../components/ui/DateRangePicker';
+import { MobileFilterField, type FilterGroup } from '../../../../components/ui/MobileFilterSheet';
 import { getDateRangeFromPreset, getPresetFromDates } from '../core/datePresets';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import EmptyState from '../../../../components/shared/EmptyState';
@@ -350,6 +351,30 @@ const BaoCaoTab: React.FC = () => {
     setFilters({ trangThai: [], nccIds: [], dateFrom: '', dateTo: '' });
   };
 
+  /** Bảng lọc mobile: hai nhóm chọn nhiều giống chip desktop + kỳ (DateRangePicker inline). */
+  const filterGroups: FilterGroup[] = useMemo(
+    () => [
+      {
+        key: 'trangThai',
+        label: t('hopDong.baoCao.filterStatus'),
+        icon: Tag,
+        options: statusOptions,
+        value: filters.trangThai,
+        onChange: (v: string[]) => setFilters((f) => ({ ...f, trangThai: v })),
+      },
+      {
+        key: 'nccIds',
+        label: t('hopDong.baoCao.filterNcc'),
+        icon: Building2,
+        options: nccOptions,
+        value: filters.nccIds,
+        onChange: (v: string[]) => setFilters((f) => ({ ...f, nccIds: v })),
+      },
+    ],
+    [t, statusOptions, nccOptions, filters.trangThai, filters.nccIds]
+  );
+  const kyActive = !!(filters.dateFrom || filters.dateTo);
+
   const renderFilters = (
     <>
       <DateRangePicker
@@ -394,6 +419,19 @@ const BaoCaoTab: React.FC = () => {
       <DashboardToolbar
         onBack={() => navigate(-1)}
         filters={renderFilters}
+        filterGroups={filterGroups}
+        mobileFilterExtra={
+          <MobileFilterField label={t('hopDong.baoCao.filterPeriod')} icon={Calendar} active={kyActive}>
+            <DateRangePicker
+              inline
+              presets={dateRangePresets}
+              value={dateRangeValue}
+              onChange={handleDateRangeChange}
+              customPresetId={CUSTOM_PRESET_ID}
+            />
+          </MobileFilterField>
+        }
+        mobileFilterExtraCount={kyActive ? 1 : 0}
         activeFilterCount={activeFilterCount}
         onClearFilters={handleClearFilters}
         actions={<HopDongExportDropdown onExport={handleExport} compact />}

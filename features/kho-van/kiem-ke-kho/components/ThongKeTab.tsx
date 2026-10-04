@@ -14,6 +14,7 @@ import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinner
 import EmptyState from '../../../../components/shared/EmptyState';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import DateRangePicker, { type DateRangeValue } from '../../../../components/ui/DateRangePicker';
+import { MobileFilterField } from '../../../../components/ui/MobileFilterSheet';
 import { getDateRangeFromPreset, getPresetFromDates } from '../../../../lib/date-presets';
 import { useKiemKeKhoStats } from './stats/useKiemKeKhoStats';
 import StatsToolbar from './stats/StatsToolbar';
@@ -163,26 +164,14 @@ const ThongKeTab: React.FC = () => {
     setDateTo('');
   };
 
+  // Kỳ không phải nhóm chọn — bảng lọc mobile nhận nó qua `mobileFilterExtra` bên dưới.
   const filterGroups = useMemo(
     () => [
-      {
-        key: 'ky',
-        label: t('kiemKeKho.filter.periodPlaceholder'),
-        icon: Calendar,
-        options: dateRangePresets.map((p) => ({ label: p.label, value: p.id })),
-        value: dateRangeValue.preset === 'all' ? [] : [dateRangeValue.preset],
-        onChange: (val: string[]) => {
-          const next = val.find((v) => v !== dateRangeValue.preset) ?? 'all';
-          const r = getDateRangeFromPreset(next);
-          setDateFrom(r.dateFrom);
-          setDateTo(r.dateTo);
-        },
-      },
       { key: 'trang_thai', label: t('kiemKeKho.store.trangThaiCol'), icon: ToggleLeft, options: statusOptions, value: filterTrangThai, onChange: setFilterTrangThai },
       { key: 'id_kho', label: t('kiemKeKho.store.khoCol'), icon: Warehouse, options: idKhoOptions, value: filterIdKho, onChange: setFilterIdKho },
       { key: 'id_nguoi_phu_trach', label: t('kiemKeKho.store.nguoiPhuTrachCol'), icon: User, options: nguoiPhuTrachOptions, value: filterNguoiPhuTrach, onChange: setFilterNguoiPhuTrach },
     ],
-    [statusOptions, idKhoOptions, nguoiPhuTrachOptions, filterTrangThai, filterIdKho, filterNguoiPhuTrach, dateRangePresets, dateRangeValue.preset, t]
+    [statusOptions, idKhoOptions, nguoiPhuTrachOptions, filterTrangThai, filterIdKho, filterNguoiPhuTrach, t]
   );
 
   const renderFilters = (
@@ -223,6 +212,19 @@ const ThongKeTab: React.FC = () => {
         size="md"
       />
     </>
+  );
+
+  const dateFilterActive = !!(dateFrom || dateTo);
+  const mobileFilterExtra = (
+    <MobileFilterField label={t('kiemKeKho.filter.periodPlaceholder')} icon={Calendar} active={dateFilterActive}>
+      <DateRangePicker
+        inline
+        presets={dateRangePresets}
+        value={dateRangeValue}
+        onChange={handleDateRangeChange}
+        customPresetId={CUSTOM_PRESET_ID}
+      />
+    </MobileFilterField>
   );
 
   const buildExportMeta = () => {
@@ -293,6 +295,8 @@ const ThongKeTab: React.FC = () => {
         className="static z-auto print:hidden"
         filters={renderFilters}
         filterGroups={filterGroups}
+        mobileFilterExtra={mobileFilterExtra}
+        mobileFilterExtraCount={dateFilterActive ? 1 : 0}
         activeFilterCount={activeFilterCount}
         onClearFilters={handleClearFilters}
         onExportReport={handleExportReport}

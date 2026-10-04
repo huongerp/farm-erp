@@ -1,11 +1,11 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Warehouse, User, UserCheck, Tag } from 'lucide-react';
+import { Warehouse, User, UserCheck, Tag, Calendar } from 'lucide-react';
 import DashboardToolbar from '../../../../components/shared/DashboardToolbar';
-import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
 import DateRangePicker from '../../../../components/ui/DateRangePicker';
 import type { DateRangeValue } from '../../../../components/ui/DateRangePicker';
-import type { FilterGroup } from '../../../../components/ui/MobileFilterSheet';
+import { MobileFilterField, type FilterGroup } from '../../../../components/ui/MobileFilterSheet';
 import type { BaoCaoDeXuatVatTuFilters } from '../core/types';
 import type { Kho } from '../../../kho-van/danh-sach-kho/core/types';
 import type { EmployeeRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
@@ -69,6 +69,8 @@ const BaoCaoDeXuatVatTuToolbar: React.FC<BaoCaoDeXuatVatTuToolbarProps> = ({
       onFiltersChange({ ...filters, dateFrom, dateTo });
     }
   };
+
+  const kyActive = !!(filters.dateFrom || filters.dateTo);
 
   const trangThaiOptions = useMemo(
     () =>
@@ -140,55 +142,30 @@ const BaoCaoDeXuatVatTuToolbar: React.FC<BaoCaoDeXuatVatTuToolbarProps> = ({
     [t, filters, trangThaiOptions, noiDeXuatOptions, nguoiDeXuatOptions, nguoiDuyetOptions, onFiltersChange]
   );
 
-  const renderFilters = (
-    <>
-      <DateRangePicker
-        presets={dateRangePresets}
-        value={dateRangeValue}
-        onChange={handleDateRangeChange}
-        placeholder={t('baoCaodeXuatVatTu.filter.periodPlaceholder')}
-        customPresetId={CUSTOM_PRESET_ID}
-        displayLabel={dateRangeDisplayLabel}
-        className="shrink-0"
-      />
-      <FilterChipMultiSelect
-        options={trangThaiOptions}
-        value={filters.trangThaiIds}
-        onChange={(v) => onFiltersChange({ ...filters, trangThaiIds: v as BaoCaoDeXuatVatTuFilters['trangThaiIds'] })}
-        placeholder={t('baoCaodeXuatVatTu.filter.trangThai')}
-        icon={Tag}
-        className="w-full sm:w-[160px]"
-        size="md"
-      />
-      <FilterChipMultiSelect
-        options={noiDeXuatOptions}
-        value={filters.noiDeXuatIds}
-        onChange={(v) => onFiltersChange({ ...filters, noiDeXuatIds: v })}
-        placeholder={t('baoCaodeXuatVatTu.filter.noiDeXuat')}
-        icon={Warehouse}
-        className="w-full sm:w-[180px]"
-        size="md"
-      />
-      <FilterChipMultiSelect
-        options={nguoiDeXuatOptions}
-        value={filters.nguoiDeXuatIds}
-        onChange={(v) => onFiltersChange({ ...filters, nguoiDeXuatIds: v })}
-        placeholder={t('baoCaodeXuatVatTu.filter.nguoiDeXuat')}
-        icon={User}
-        className="w-full sm:w-[180px]"
-        size="md"
-      />
-      <FilterChipMultiSelect
-        options={nguoiDuyetOptions}
-        value={filters.nguoiDuyetIds}
-        onChange={(v) => onFiltersChange({ ...filters, nguoiDuyetIds: v })}
-        placeholder={t('baoCaodeXuatVatTu.filter.nguoiDuyet')}
-        icon={UserCheck}
-        className="w-full sm:w-[180px]"
-        size="md"
-      />
-    </>
-  );
+  const filterItems: FilterChipItem[] = [
+    {
+      kind: 'custom',
+      key: 'ky',
+      node: (
+        <DateRangePicker
+          presets={dateRangePresets}
+          value={dateRangeValue}
+          onChange={handleDateRangeChange}
+          placeholder={t('baoCaodeXuatVatTu.filter.periodPlaceholder')}
+          customPresetId={CUSTOM_PRESET_ID}
+          displayLabel={dateRangeDisplayLabel}
+          className="shrink-0"
+        />
+      ),
+    },
+    ...filterGroups.map(
+      (g, i): FilterChipItem => ({
+        kind: 'group',
+        group: g,
+        className: i === 0 ? 'w-full sm:w-[160px]' : 'w-full sm:w-[180px]',
+      })
+    ),
+  ];
 
   const handleExport = async (format: 'excel' | 'pdf') => {
     await onExport(format);
@@ -203,8 +180,20 @@ const BaoCaoDeXuatVatTuToolbar: React.FC<BaoCaoDeXuatVatTuToolbarProps> = ({
   return (
     <DashboardToolbar
       onBack={() => window.history.back()}
-      filters={renderFilters}
+      filters={<ResponsiveFilterChips items={filterItems} />}
       filterGroups={filterGroups}
+      mobileFilterExtra={
+        <MobileFilterField label={t('baoCaodeXuatVatTu.filter.periodPlaceholder')} icon={Calendar} active={kyActive}>
+          <DateRangePicker
+            inline
+            presets={dateRangePresets}
+            value={dateRangeValue}
+            onChange={handleDateRangeChange}
+            customPresetId={CUSTOM_PRESET_ID}
+          />
+        </MobileFilterField>
+      }
+      mobileFilterExtraCount={kyActive ? 1 : 0}
       activeFilterCount={activeFilterCount}
       onClearFilters={onClearAllFilters}
       actions={actions}

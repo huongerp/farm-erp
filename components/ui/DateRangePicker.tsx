@@ -36,6 +36,11 @@ interface DateRangePickerProps {
   customPresetId?: string;
   /** Chiều cao trigger — 'md' (h-8, mặc định, khớp filter chip khác) hoặc 'sm' (h-7). */
   size?: 'sm' | 'md';
+  /**
+   * Hiện thẳng bảng chọn (không có nút bấm / popup) — dùng trong bảng lọc của điện thoại,
+   * nơi popup 380px không vừa và bị cắt bởi vùng cuộn của bảng.
+   */
+  inline?: boolean;
 }
 
 /* ------------------------------------------------------------------ */
@@ -51,6 +56,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
   className,
   customPresetId = 'custom',
   size = 'md',
+  inline = false,
 }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -85,6 +91,70 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
     }
   };
 
+  const oNgay = (label: string, v: string, doi: (x: string) => DateRangeValue) => (
+    <div>
+      <label className="text-2xs font-medium text-muted-foreground mb-1 block">{label}</label>
+      <input
+        type="date"
+        value={v}
+        onChange={(e) => onChange(doi(e.target.value))}
+        className={cn(
+          'w-full rounded-lg border border-border bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40',
+          inline ? 'h-10' : 'h-8'
+        )}
+      />
+    </div>
+  );
+
+  const tuNgay = oNgay('Từ ngày', value.customStart, (x) => ({
+    preset: customPresetId,
+    customStart: x,
+    customEnd: value.customEnd,
+  }));
+  const denNgay = oNgay('Đến ngày', value.customEnd, (x) => ({
+    preset: customPresetId,
+    customStart: value.customStart,
+    customEnd: x,
+  }));
+
+  const chonNhanh = (cot: 2 | 3) => (
+    <>
+      <p className="text-2xs font-semibold text-muted-foreground px-1.5 mb-1.5">Chọn nhanh</p>
+      <div className={cn('grid gap-1', cot === 3 ? 'grid-cols-3' : 'grid-cols-2')}>
+        {presets
+          .filter((p) => p.id !== customPresetId)
+          .map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => handlePreset(p.id)}
+              className={cn(
+                inline ? 'h-9' : 'h-7',
+                'px-2 rounded-lg text-xs font-medium transition-all text-left truncate',
+                value.preset === p.id
+                  ? 'bg-primary/10 text-primary border border-primary/20'
+                  : 'text-foreground hover:bg-muted border border-transparent'
+              )}
+            >
+              {p.label}
+            </button>
+          ))}
+      </div>
+    </>
+  );
+
+  if (inline) {
+    return (
+      <div className={cn('space-y-3', className)}>
+        <div>{chonNhanh(3)}</div>
+        <div className="grid grid-cols-2 gap-2">
+          {tuNgay}
+          {denNgay}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={cn('relative', className)} ref={ref}>
       {/* Trigger */}
@@ -110,30 +180,11 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
           <div className="flex">
             {/* Left column: From / To */}
             <div className="w-[180px] p-3 space-y-2.5 border-r border-border">
-              <div>
-                <label className="text-2xs font-medium text-muted-foreground mb-1 block">Từ ngày</label>
-                <input
-                  type="date"
-                  value={value.customStart}
-                  onChange={(e) =>
-                    onChange({ preset: customPresetId, customStart: e.target.value, customEnd: value.customEnd })
-                  }
-                  className="w-full h-8 rounded-lg border border-border bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40"
-                />
-              </div>
-              <div>
-                <label className="text-2xs font-medium text-muted-foreground mb-1 block">Đến ngày</label>
-                <input
-                  type="date"
-                  value={value.customEnd}
-                  onChange={(e) =>
-                    onChange({ preset: customPresetId, customStart: value.customStart, customEnd: e.target.value })
-                  }
-                  className="w-full h-8 rounded-lg border border-border bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40"
-                />
-              </div>
+              {tuNgay}
+              {denNgay}
               {isCustom && value.customStart && value.customEnd && (
                 <button
+                  type="button"
                   onClick={() => setOpen(false)}
                   className="w-full h-7 rounded-lg bg-primary text-white text-xs font-medium hover:bg-primary/90 transition-colors"
                 >
@@ -143,27 +194,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
             </div>
 
             {/* Right column: Preset grid (2 cols) */}
-            <div className="w-[200px] p-2">
-              <p className="text-2xs font-semibold text-muted-foreground px-1.5 mb-1.5">Chọn nhanh</p>
-              <div className="grid grid-cols-2 gap-1">
-                {presets
-                  .filter((p) => p.id !== customPresetId)
-                  .map((p) => (
-                    <button
-                      key={p.id}
-                      onClick={() => handlePreset(p.id)}
-                      className={cn(
-                        'h-7 px-2 rounded-lg text-xs font-medium transition-all text-left truncate',
-                        value.preset === p.id
-                          ? 'bg-primary/10 text-primary border border-primary/20'
-                          : 'text-foreground hover:bg-muted border border-transparent'
-                      )}
-                    >
-                      {p.label}
-                    </button>
-                  ))}
-              </div>
-            </div>
+            <div className="w-[200px] p-2">{chonNhanh(2)}</div>
           </div>
         </div>
       )}

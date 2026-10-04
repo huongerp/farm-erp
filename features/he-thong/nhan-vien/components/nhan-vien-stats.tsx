@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  Users, Building2, Tag, TrendingUp, PieChart as PieChartIcon, BarChart3, Inbox,
+  Users, Building2, Tag, TrendingUp, PieChart as PieChartIcon, BarChart3, Inbox, Calendar,
 } from 'lucide-react';
 import {
   PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer,
@@ -10,8 +10,9 @@ import {
 } from 'recharts';
 import { toast } from 'sonner';
 import MultiSelect from '../../../../components/ui/MultiSelect';
-import DateRangePicker from '../../../../components/ui/DateRangePicker';
+import DateRangePicker, { type DateRangeValue } from '../../../../components/ui/DateRangePicker';
 import DashboardToolbar from '../../../../components/shared/DashboardToolbar';
+import { MobileFilterField } from '../../../../components/ui/MobileFilterSheet';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import ChartTooltip from '../../../../components/ui/ChartTooltip';
 import { useDepartments } from '@/features/he-thong/phong-ban/hooks/use-phong-ban';
@@ -189,16 +190,26 @@ const EmployeeStats: React.FC<EmployeeStatsProps> = ({
 
   const dateRangePickerPresets = DATE_RANGE_PRESETS.map((p) => ({ id: p.id, label: p.label }));
 
+  const dateRangeValue = { preset: dateRangePreset, customStart, customEnd };
+  const handleDateRangeChange = (v: DateRangeValue) => {
+    setDateRangePreset(v.preset as DateRangePresetId);
+    setCustomStart(v.customStart);
+    setCustomEnd(v.customEnd);
+  };
+
+  // Điện thoại ẩn hàng lọc desktop → khoảng thời gian hiện thẳng trong bảng lọc mobile.
+  const mobileFilterExtra = (
+    <MobileFilterField label={t('employee.report.period')} icon={Calendar} active={dateRangePreset !== 'all'}>
+      <DateRangePicker inline presets={dateRangePickerPresets} value={dateRangeValue} onChange={handleDateRangeChange} />
+    </MobileFilterField>
+  );
+
   const renderFilters = (
     <>
       <DateRangePicker
         presets={dateRangePickerPresets}
-        value={{ preset: dateRangePreset, customStart, customEnd }}
-        onChange={(v) => {
-          setDateRangePreset(v.preset as DateRangePresetId);
-          setCustomStart(v.customStart);
-          setCustomEnd(v.customEnd);
-        }}
+        value={dateRangeValue}
+        onChange={handleDateRangeChange}
         displayLabel={dateRange.label}
       />
       <MultiSelect
@@ -275,6 +286,8 @@ const EmployeeStats: React.FC<EmployeeStatsProps> = ({
         }
         mobileActions={renderMobileExportAction}
         filterGroups={statsFilterGroups}
+        mobileFilterExtra={mobileFilterExtra}
+        mobileFilterExtraCount={dateRangePreset !== 'all' ? 1 : 0}
         activeFilterCount={statsActiveFilterCount}
         onClearFilters={handleClearStatsFilters}
         onBack={() => navigate(-1)}

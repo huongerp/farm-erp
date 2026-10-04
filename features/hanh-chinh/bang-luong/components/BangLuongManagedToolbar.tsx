@@ -4,6 +4,7 @@ import { Calendar, Building2, Plus } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import { MobileFilterField, type FilterGroup } from '../../../../components/ui/MobileFilterSheet';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useBangLuongManagedStore } from '../store/useBangLuongManagedStore';
 import { useDepartments } from '../../../he-thong/phong-ban/hooks/use-phong-ban';
@@ -56,6 +57,31 @@ const BangLuongManagedToolbar: React.FC<Props> = ({ items = [], onAdd, onClearSe
     setFilter('phongBan', []);
   };
 
+  // Bảng lọc mobile: nhóm phòng ban + ô chọn tháng (trước đây rỗng → điện thoại không có nút Lọc).
+  const filterGroups = useMemo<FilterGroup[]>(
+    () => [
+      {
+        key: 'phongBan',
+        label: t('bangLuong.filter.phong'),
+        icon: Building2,
+        options: phongOptions,
+        value: filters.phongBan,
+        onChange: (val) => setFilter('phongBan', val),
+      },
+    ],
+    [t, phongOptions, filters.phongBan, setFilter]
+  );
+  const mobileFilterExtra = (
+    <MobileFilterField label={t('bangLuong.filter.period')} icon={Calendar} active={!!filters.yearMonth}>
+      <input
+        type="month"
+        value={filters.yearMonth}
+        onChange={(e) => setFilter('yearMonth', e.target.value)}
+        className="w-full h-10 rounded-lg border border-border bg-background px-2 text-sm"
+      />
+    </MobileFilterField>
+  );
+
   const renderActions = canCreate && onAdd ? (
     <Button
       onClick={onAdd}
@@ -98,7 +124,9 @@ const BangLuongManagedToolbar: React.FC<Props> = ({ items = [], onAdd, onClearSe
       actions={renderActions}
       filters={renderFilters}
       onDeleteMany={canDelete && onDeleteMany && selectedIds.size > 0 ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
-      filterGroups={[]}
+      filterGroups={filterGroups}
+      mobileFilterExtra={mobileFilterExtra}
+      mobileFilterExtraCount={filters.yearMonth ? 1 : 0}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       columns={columns}

@@ -9,13 +9,13 @@ import {
   ClipboardList,
   Tags,
   Package,
+  Calendar,
 } from 'lucide-react';
 import DashboardToolbar from '../../../../components/shared/DashboardToolbar';
-import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
-import FilterOverflowDropdown from '../../../../components/shared/FilterOverflowDropdown';
+import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
 import DateRangePicker from '../../../../components/ui/DateRangePicker';
 import type { DateRangeValue } from '../../../../components/ui/DateRangePicker';
-import type { FilterGroup } from '../../../../components/ui/MobileFilterSheet';
+import { MobileFilterField, type FilterGroup } from '../../../../components/ui/MobileFilterSheet';
 import type { NXTReportFilters } from '../core/types';
 import type { LoaiPhieuKho } from '../../phieu-kho/core/types';
 import type { Kho } from '../../danh-sach-kho/core/types';
@@ -38,8 +38,6 @@ interface BaoCaoNXTToolbarProps {
 }
 
 const CUSTOM_PRESET_ID = 'custom';
-/** Số FilterChip tối đa hiện ngoài toolbar (không tính DateRange → tổng 5 chip). */
-const MAX_VISIBLE_FILTER_CHIPS = 4;
 
 const BaoCaoNXTToolbar: React.FC<BaoCaoNXTToolbarProps> = ({
   filters,
@@ -201,16 +199,6 @@ const BaoCaoNXTToolbar: React.FC<BaoCaoNXTToolbarProps> = ({
     ]
   );
 
-  /** Chip hiện ngoài (desktop); phần còn lại vào nút Filter. */
-  const visibleFilterGroups = useMemo(
-    () => filterGroups.slice(0, MAX_VISIBLE_FILTER_CHIPS),
-    [filterGroups]
-  );
-  const overflowFilterGroups = useMemo(
-    () => filterGroups.slice(MAX_VISIBLE_FILTER_CHIPS),
-    [filterGroups]
-  );
-
   const chipClassByKey: Record<string, string> = {
     warehouseIds: 'w-full sm:w-[180px]',
     loaiPhieu: 'w-full sm:w-[160px]',
@@ -227,30 +215,44 @@ const BaoCaoNXTToolbar: React.FC<BaoCaoNXTToolbarProps> = ({
     hangHoaIds: t('baoCaonhapXuatTon.filter.productPlaceholder'),
   };
 
-  const renderFilters = (
-    <>
+  /** Desktop: chip ghi placeholder "Chọn …" thay cho nhãn nhóm của sheet mobile. */
+  const filterItems: FilterChipItem[] = [
+    {
+      kind: 'custom',
+      key: 'ky',
+      node: (
+        <DateRangePicker
+          presets={dateRangePresets}
+          value={dateRangeValue}
+          onChange={handleDateRangeChange}
+          placeholder={t('baoCaonhapXuatTon.filter.periodPlaceholder')}
+          customPresetId={CUSTOM_PRESET_ID}
+          className="shrink-0"
+        />
+      ),
+    },
+    ...filterGroups.map(
+      (g): FilterChipItem => ({
+        kind: 'group',
+        group: { ...g, label: placeholderByKey[g.key] ?? g.label },
+        className: chipClassByKey[g.key] ?? 'w-full sm:w-[180px]',
+      })
+    ),
+  ];
+
+  // Bảng lọc mobile chỉ có các nhóm chọn — bù kỳ báo cáo của desktop. Mặc định là tháng này
+  // (xem DEFAULT_FILTERS ở index.tsx) nên chỉ tính là đang lọc khi khác mặc định.
+  const kyKhacMacDinh = dateRangeValue.preset !== 'thisMonth';
+  const mobileFilterExtra = (
+    <MobileFilterField label={t('baoCaonhapXuatTon.filter.periodPlaceholder')} icon={Calendar} active={kyKhacMacDinh}>
       <DateRangePicker
+        inline
         presets={dateRangePresets}
         value={dateRangeValue}
         onChange={handleDateRangeChange}
-        placeholder={t('baoCaonhapXuatTon.filter.periodPlaceholder')}
         customPresetId={CUSTOM_PRESET_ID}
-        className="shrink-0"
       />
-      {visibleFilterGroups.map((group) => (
-        <FilterChipMultiSelect
-          key={group.key}
-          options={group.options}
-          value={group.value}
-          onChange={group.onChange}
-          placeholder={placeholderByKey[group.key] ?? group.label}
-          icon={group.icon}
-          className={chipClassByKey[group.key] ?? 'w-full sm:w-[180px]'}
-          size="md"
-        />
-      ))}
-      <FilterOverflowDropdown groups={overflowFilterGroups} />
-    </>
+    </MobileFilterField>
   );
 
   const actions = (
@@ -320,8 +322,10 @@ const BaoCaoNXTToolbar: React.FC<BaoCaoNXTToolbarProps> = ({
     <>
       <DashboardToolbar
         onBack={() => window.history.back()}
-        filters={renderFilters}
+        filters={<ResponsiveFilterChips items={filterItems} />}
         filterGroups={filterGroups}
+        mobileFilterExtra={mobileFilterExtra}
+        mobileFilterExtraCount={kyKhacMacDinh ? 1 : 0}
         activeFilterCount={activeFilterCount}
         onClearFilters={onClearAllFilters}
         actions={actions}

@@ -10,6 +10,9 @@ interface StatsToolbarProps {
   className?: string;
   filters?: React.ReactNode;
   filterGroups?: FilterGroup[];
+  /** Bộ lọc tự do cho bảng lọc mobile (khoảng ngày…) — chuyển thẳng cho DashboardToolbar. */
+  mobileFilterExtra?: React.ReactNode;
+  mobileFilterExtraCount?: number;
   activeFilterCount?: number;
   onClearFilters?: () => void;
   onExportReport?: () => void;
@@ -21,6 +24,8 @@ const StatsToolbar: React.FC<StatsToolbarProps> = ({
   className,
   filters,
   filterGroups,
+  mobileFilterExtra,
+  mobileFilterExtraCount,
   activeFilterCount = 0,
   onClearFilters,
   onExportReport,
@@ -94,6 +99,8 @@ const StatsToolbar: React.FC<StatsToolbarProps> = ({
       onBack={() => navigate(-1)}
       filters={filters}
       filterGroups={filterGroups}
+      mobileFilterExtra={mobileFilterExtra}
+      mobileFilterExtraCount={mobileFilterExtraCount}
       activeFilterCount={activeFilterCount}
       onClearFilters={onClearFilters}
       actions={actions}

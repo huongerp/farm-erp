@@ -1,7 +1,8 @@
 import React, { useMemo, useState, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Wrench, MapPin, Tag } from 'lucide-react';
+import { Wrench, MapPin, Tag, Calendar } from 'lucide-react';
 import DateRangePicker from '../../../../components/ui/DateRangePicker';
+import { MobileFilterField } from '../../../../components/ui/MobileFilterSheet';
 import { KY_CUSTOM, useKyChip } from './ky-loc-chip';
 import { toast } from 'sonner';
 import { usePhieuBaoTriList } from '../hooks/use-bao-tri-sua-chua';
@@ -214,6 +215,20 @@ const ThongKeTab: React.FC = () => {
     </>
   );
 
+  const coKy = !!(filterDateFrom || filterDateTo);
+  // Điện thoại ẩn hàng chip → chip kỳ hiện thẳng trong bảng lọc mobile.
+  const mobileFilterExtra = (
+    <MobileFilterField label={t('baoTriSuaChua.filter.period')} icon={Calendar} active={coKy}>
+      <DateRangePicker
+        inline
+        presets={kyChip.presets}
+        value={kyChip.value}
+        onChange={kyChip.onChange}
+        customPresetId={KY_CUSTOM}
+      />
+    </MobileFilterField>
+  );
+
   const handleExportReport = () => {
     if (filteredList.length === 0) {
       toast.info(t('baoTriSuaChua.stats.noData'));
@@ -289,6 +304,8 @@ const ThongKeTab: React.FC = () => {
         className="static z-auto"
         filters={renderFilters}
         filterGroups={filterGroups}
+        mobileFilterExtra={mobileFilterExtra}
+        mobileFilterExtraCount={coKy ? 1 : 0}
         activeFilterCount={activeFilterCount}
         onClearFilters={handleClearFilters}
         onExportReport={handleExportReport}

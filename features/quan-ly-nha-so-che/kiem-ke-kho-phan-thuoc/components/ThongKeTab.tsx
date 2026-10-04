@@ -15,6 +15,7 @@ import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinner
 import EmptyState from '../../../../components/shared/EmptyState';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import DateRangePicker, { type DateRangeValue } from '../../../../components/ui/DateRangePicker';
+import { MobileFilterField } from '../../../../components/ui/MobileFilterSheet';
 import { getDateRangeFromPreset, getPresetFromDates } from '../../../../lib/date-presets';
 import { useKiemKeKhoPTStats } from './stats/useKiemKeKhoPTStats';
 import StatsToolbar from './stats/StatsToolbar';
@@ -165,25 +166,13 @@ const ThongKeTab: React.FC = () => {
 
   const filterGroups = useMemo(
     () => [
-      {
-        key: 'ky',
-        label: t('kiemKeKhoPT.filter.periodPlaceholder'),
-        icon: Calendar,
-        options: dateRangePresets.map((p) => ({ label: p.label, value: p.id })),
-        value: dateRangeValue.preset === 'all' ? [] : [dateRangeValue.preset],
-        onChange: (val: string[]) => {
-          const next = val.find((v) => v !== dateRangeValue.preset) ?? 'all';
-          const r = getDateRangeFromPreset(next);
-          setDateFrom(r.dateFrom);
-          setDateTo(r.dateTo);
-        },
-      },
       { key: 'trang_thai', label: t('kiemKeKhoPT.store.trangThaiCol'), icon: ToggleLeft, options: statusOptions, value: filterTrangThai, onChange: setFilterTrangThai },
       { key: 'id_kho', label: t('kiemKeKhoPT.store.khoCol'), icon: Warehouse, options: idKhoOptions, value: filterIdKho, onChange: setFilterIdKho },
       { key: 'id_nguoi_phu_trach', label: t('kiemKeKhoPT.store.nguoiPhuTrachCol'), icon: User, options: nguoiPhuTrachOptions, value: filterNguoiPhuTrach, onChange: setFilterNguoiPhuTrach },
     ],
-    [statusOptions, idKhoOptions, nguoiPhuTrachOptions, filterTrangThai, filterIdKho, filterNguoiPhuTrach, dateRangePresets, dateRangeValue.preset, t]
+    [statusOptions, idKhoOptions, nguoiPhuTrachOptions, filterTrangThai, filterIdKho, filterNguoiPhuTrach, t]
   );
+  const kyActive = !!(dateFrom || dateTo);
 
   const renderFilters = (
     <>
@@ -293,6 +282,18 @@ const ThongKeTab: React.FC = () => {
         className="static z-auto print:hidden"
         filters={renderFilters}
         filterGroups={filterGroups}
+        mobileFilterExtra={
+          <MobileFilterField label={t('kiemKeKhoPT.filter.periodPlaceholder')} icon={Calendar} active={kyActive}>
+            <DateRangePicker
+              inline
+              presets={dateRangePresets}
+              value={dateRangeValue}
+              onChange={handleDateRangeChange}
+              customPresetId={CUSTOM_PRESET_ID}
+            />
+          </MobileFilterField>
+        }
+        mobileFilterExtraCount={kyActive ? 1 : 0}
         activeFilterCount={activeFilterCount}
         onClearFilters={handleClearFilters}
         onExportReport={handleExportReport}

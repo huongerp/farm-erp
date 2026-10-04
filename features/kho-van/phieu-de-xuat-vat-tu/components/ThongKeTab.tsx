@@ -9,7 +9,8 @@ import { useEmployeesRefQuery } from '../../../../lib/hooks/use-ref-queries';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import EmptyState from '../../../../components/shared/EmptyState';
-import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
+import { MobileFilterField } from '../../../../components/ui/MobileFilterSheet';
 import StatsToolbar from './stats/StatsToolbar';
 import StatsCards from './stats/StatsCards';
 const StatsCharts = lazy(() => import('./stats/StatsCharts'));
@@ -139,65 +140,66 @@ const ThongKeTab: React.FC = () => {
     [t, statusOptions, noiDeXuatOptions, nguoiDeXuatOptions, nguoiDuyetOptions, filterStatus, filterNoiDeXuat, filterNguoiDeXuat, filterNguoiDuyet]
   );
 
-  const renderFilters = (
-    <>
-      <FilterChipMultiSelect
-        options={statusOptions}
-        value={filterStatus}
-        onChange={setFilterStatus}
-        placeholder={t('common.status')}
-        icon={Tag}
-        className="w-full sm:w-[160px]"
-        size="md"
-      />
-      <div className="relative w-full sm:w-[140px]">
-        <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+  const filterItems: FilterChipItem[] = [
+    { kind: 'group', group: filterGroups[0], className: 'w-full sm:w-[160px]' },
+    {
+      kind: 'custom',
+      key: 'dateFrom',
+      node: (
+        <div className="relative w-full sm:w-[140px]">
+          <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            className="w-full h-9 pl-8 pr-2 bg-muted/40 border border-border/60 rounded-lg text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40"
+            placeholder={t('phieuDeXuatVatTu.stats.dateFrom')}
+          />
+        </div>
+      ),
+    },
+    {
+      kind: 'custom',
+      key: 'dateTo',
+      node: (
+        <div className="relative w-full sm:w-[140px]">
+          <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+          <input
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            className="w-full h-9 pl-8 pr-2 bg-muted/40 border border-border/60 rounded-lg text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40"
+            placeholder={t('phieuDeXuatVatTu.stats.dateTo')}
+          />
+        </div>
+      ),
+    },
+    { kind: 'group', group: filterGroups[1], className: 'w-full sm:w-[160px]' },
+    { kind: 'group', group: filterGroups[2], className: 'w-full sm:w-[180px]' },
+    { kind: 'group', group: filterGroups[3], className: 'w-full sm:w-[180px]' },
+  ];
+
+  // Bảng lọc mobile chỉ có các nhóm chọn — bù ô Từ ngày / Đến ngày của desktop.
+  const mobileDateInputClass = 'w-full h-10 rounded-lg border border-border bg-background px-2 text-sm';
+  const mobileFilterExtra = (
+    <MobileFilterField label={t('phieuDeXuatVatTu.filters.datePhieu')} icon={Calendar} active={!!(dateFrom || dateTo)}>
+      <div className="grid grid-cols-2 gap-2">
         <input
           type="date"
           value={dateFrom}
           onChange={(e) => setDateFrom(e.target.value)}
-          className="w-full h-9 pl-8 pr-2 bg-muted/40 border border-border/60 rounded-lg text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40"
-          placeholder={t('phieuDeXuatVatTu.stats.dateFrom')}
+          className={mobileDateInputClass}
+          aria-label={t('phieuDeXuatVatTu.stats.dateFrom')}
         />
-      </div>
-      <div className="relative w-full sm:w-[140px]">
-        <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
         <input
           type="date"
           value={dateTo}
           onChange={(e) => setDateTo(e.target.value)}
-          className="w-full h-9 pl-8 pr-2 bg-muted/40 border border-border/60 rounded-lg text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40"
-          placeholder={t('phieuDeXuatVatTu.stats.dateTo')}
+          className={mobileDateInputClass}
+          aria-label={t('phieuDeXuatVatTu.stats.dateTo')}
         />
       </div>
-      <FilterChipMultiSelect
-        options={noiDeXuatOptions}
-        value={filterNoiDeXuat}
-        onChange={setFilterNoiDeXuat}
-        placeholder={t('phieuDeXuatVatTu.form.place')}
-        icon={Warehouse}
-        className="w-full sm:w-[160px]"
-        size="md"
-      />
-      <FilterChipMultiSelect
-        options={nguoiDeXuatOptions}
-        value={filterNguoiDeXuat}
-        onChange={setFilterNguoiDeXuat}
-        placeholder={t('phieuDeXuatVatTu.form.requester')}
-        icon={User}
-        className="w-full sm:w-[180px]"
-        size="md"
-      />
-      <FilterChipMultiSelect
-        options={nguoiDuyetOptions}
-        value={filterNguoiDuyet}
-        onChange={setFilterNguoiDuyet}
-        placeholder={t('phieuDeXuatVatTu.form.approver')}
-        icon={UserCheck}
-        className="w-full sm:w-[180px]"
-        size="md"
-      />
-    </>
+    </MobileFilterField>
   );
 
   const handleExportReport = () => {
@@ -241,8 +243,10 @@ const ThongKeTab: React.FC = () => {
     <div className="flex flex-col h-full">
       <StatsToolbar
         className="static z-auto"
-        filters={renderFilters}
+        filters={<ResponsiveFilterChips items={filterItems} />}
         filterGroups={filterGroups}
+        mobileFilterExtra={mobileFilterExtra}
+        mobileFilterExtraCount={dateFrom || dateTo ? 1 : 0}
         activeFilterCount={activeFilterCount}
         onClearFilters={handleClearFilters}
         onExportReport={handleExportReport}

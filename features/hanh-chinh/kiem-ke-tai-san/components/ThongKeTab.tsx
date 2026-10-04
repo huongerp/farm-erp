@@ -9,6 +9,7 @@ import { useEmployeesRefQuery } from '@/lib/hooks/use-ref-queries';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import EmptyState from '../../../../components/shared/EmptyState';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import { MobileFilterField } from '../../../../components/ui/MobileFilterSheet';
 import { useKiemKeStats } from './stats/useKiemKeStats';
 import StatsToolbar from './stats/StatsToolbar';
 import StatsCards from './stats/StatsCards';
@@ -101,6 +102,34 @@ const ThongKeTab: React.FC = () => {
       { key: 'id_nguoi_phu_trach', label: t('kiemKeTaiSan.store.nguoiPhuTrachCol'), icon: User, options: nguoiPhuTrachOptions, value: filterNguoiPhuTrach, onChange: setFilterNguoiPhuTrach },
     ],
     [statusOptions, nguoiPhuTrachOptions, filterTrangThai, filterNguoiPhuTrach, t]
+  );
+
+  // Điện thoại ẩn hàng chip → hai ô Từ ngày / Đến ngày hiện trong bảng lọc mobile.
+  const mobileFilterExtra = (
+    <MobileFilterField
+      label={`${t('kiemKeTaiSan.filter.dateFrom')} – ${t('kiemKeTaiSan.filter.dateTo')}`}
+      icon={Calendar}
+      active={!!(dateFrom || dateTo)}
+    >
+      <div className="grid grid-cols-2 gap-2">
+        <input
+          type="date"
+          value={dateFrom}
+          onChange={(e) => setDateFrom(e.target.value)}
+          className="w-full h-10 rounded-lg border border-border bg-background px-2 text-sm"
+          placeholder={t('kiemKeTaiSan.filter.dateFrom')}
+          aria-label={t('kiemKeTaiSan.filter.dateFrom')}
+        />
+        <input
+          type="date"
+          value={dateTo}
+          onChange={(e) => setDateTo(e.target.value)}
+          className="w-full h-10 rounded-lg border border-border bg-background px-2 text-sm"
+          placeholder={t('kiemKeTaiSan.filter.dateTo')}
+          aria-label={t('kiemKeTaiSan.filter.dateTo')}
+        />
+      </div>
+    </MobileFilterField>
   );
 
   const renderFilters = (
@@ -197,6 +226,8 @@ const ThongKeTab: React.FC = () => {
         className="static z-auto"
         filters={renderFilters}
         filterGroups={filterGroups}
+        mobileFilterExtra={mobileFilterExtra}
+        mobileFilterExtraCount={(dateFrom ? 1 : 0) + (dateTo ? 1 : 0)}
         activeFilterCount={activeFilterCount}
         onClearFilters={handleClearFilters}
         onExportReport={handleExportReport}

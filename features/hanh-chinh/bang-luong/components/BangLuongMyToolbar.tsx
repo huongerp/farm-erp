@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Calendar, Plus } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
+import { MobileFilterField } from '../../../../components/ui/MobileFilterSheet';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useBangLuongMyStore } from '../store/useBangLuongMyStore';
 
@@ -42,6 +43,18 @@ const BangLuongMyToolbar: React.FC<Props> = ({ onAdd, onClearSelection, selected
     </div>
   );
 
+  // Điện thoại ẩn hàng lọc desktop → đưa ô chọn tháng vào bảng lọc mobile.
+  const mobileFilterExtra = (
+    <MobileFilterField label={t('bangLuong.filter.period')} icon={Calendar} active={!!filters.yearMonth}>
+      <input
+        type="month"
+        value={filters.yearMonth}
+        onChange={(e) => setFilter('yearMonth', e.target.value)}
+        className="w-full h-10 rounded-lg border border-border bg-background px-2 text-sm"
+      />
+    </MobileFilterField>
+  );
+
   const renderActions = canCreate && onAdd ? (
     <Button
       onClick={onAdd}
@@ -63,6 +76,8 @@ const BangLuongMyToolbar: React.FC<Props> = ({ onAdd, onClearSelection, selected
       filters={renderFilters}
       onDeleteMany={canDelete && onDeleteMany && selectedIds.size > 0 ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
       filterGroups={[]}
+      mobileFilterExtra={mobileFilterExtra}
+      mobileFilterExtraCount={filters.yearMonth ? 1 : 0}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       columns={columns}

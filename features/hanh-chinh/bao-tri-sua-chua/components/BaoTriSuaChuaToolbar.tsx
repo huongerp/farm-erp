@@ -1,13 +1,13 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Wrench, Package, Download, MapPin, Tag, User } from 'lucide-react';
+import { Plus, Wrench, Package, Download, MapPin, Tag, User, Calendar } from 'lucide-react';
 import DateRangePicker from '../../../../components/ui/DateRangePicker';
+import { MobileFilterField } from '../../../../components/ui/MobileFilterSheet';
 import { KY_CUSTOM, useKyChip } from './ky-loc-chip';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
-import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
-import FilterOverflowDropdown from '../../../../components/shared/FilterOverflowDropdown';
+import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useBaoTriSuaChuaStore } from '../store/useBaoTriSuaChuaStore';
 import { useTaiSanList } from '../../danh-muc-tai-san/hooks/use-danh-muc-tai-san';
@@ -30,8 +30,8 @@ interface Props {
   canDelete?: boolean;
 }
 
-/** Desktop: nhóm lọc gom vào nút Filter để hàng chip ngoài tối đa 5 (MobileFilterSheet vẫn đủ nhóm). */
-const OVERFLOW_FILTER_KEYS = new Set(['id_nguoi_tao']);
+/** Desktop: nhóm lọc ít dùng luôn nằm trong nút Filter (MobileFilterSheet vẫn đủ nhóm). */
+const LUON_VAO_FILTER = ['id_nguoi_tao'];
 
 const BaoTriSuaChuaToolbar: React.FC<Props> = ({
   items = [],
@@ -164,54 +164,40 @@ const BaoTriSuaChuaToolbar: React.FC<Props> = ({
     ]
   );
 
-  const renderFilters = (
-    <>
-      <FilterChipMultiSelect
-        options={hangMucOptions}
-        value={filters.hang_muc}
-        onChange={(v) => setFilter('hang_muc', v)}
-        placeholder={t('baoTriSuaChua.store.hangMucCol')}
-        icon={Wrench}
-        className="w-full sm:w-[160px]"
-        size="md"
-      />
+  const filterItems: FilterChipItem[] = [
+    { kind: 'group', group: filterGroups[0], className: 'w-full sm:w-[160px]' },
+    {
+      kind: 'custom',
+      key: 'ky',
+      node: (
+        <DateRangePicker
+          presets={kyChip.presets}
+          value={kyChip.value}
+          onChange={kyChip.onChange}
+          placeholder={t('baoTriSuaChua.filter.period')}
+          customPresetId={KY_CUSTOM}
+          className="w-full sm:w-auto shrink-0"
+        />
+      ),
+    },
+    { kind: 'group', group: filterGroups[1], className: 'w-full sm:w-[180px]' },
+    { kind: 'group', group: filterGroups[2], className: 'w-full sm:w-[170px]' },
+    { kind: 'group', group: filterGroups[3], className: 'w-full sm:w-[150px]' },
+    { kind: 'group', group: filterGroups[4] },
+  ];
+
+  const coKy = !!(filters.dateFrom || filters.dateTo);
+  // Điện thoại không có hàng chip → chip kỳ (DateRangePicker) hiện thẳng trong bảng lọc.
+  const mobileFilterExtra = (
+    <MobileFilterField label={t('baoTriSuaChua.filter.period')} icon={Calendar} active={coKy}>
       <DateRangePicker
+        inline
         presets={kyChip.presets}
         value={kyChip.value}
         onChange={kyChip.onChange}
-        placeholder={t('baoTriSuaChua.filter.period')}
         customPresetId={KY_CUSTOM}
-        className="w-full sm:w-auto shrink-0"
       />
-      <FilterChipMultiSelect
-        options={taiSanOptions}
-        value={filters.id_tai_san}
-        onChange={(v) => setFilter('id_tai_san', v)}
-        placeholder={t('baoTriSuaChua.store.taiSanCol')}
-        icon={Package}
-        className="w-full sm:w-[180px]"
-        size="md"
-      />
-      <FilterChipMultiSelect
-        options={chiNhanhOptions}
-        value={filters.id_chi_nhanh}
-        onChange={(v) => setFilter('id_chi_nhanh', v)}
-        placeholder={t('baoTriSuaChua.store.chiNhanhCol')}
-        icon={MapPin}
-        className="w-full sm:w-[170px]"
-        size="md"
-      />
-      <FilterChipMultiSelect
-        options={trangThaiOptions}
-        value={filters.trang_thai}
-        onChange={(v) => setFilter('trang_thai', v)}
-        placeholder={t('baoTriSuaChua.store.trangThaiCol')}
-        icon={Tag}
-        className="w-full sm:w-[150px]"
-        size="md"
-      />
-      <FilterOverflowDropdown groups={filterGroups.filter((g) => OVERFLOW_FILTER_KEYS.has(g.key))} />
-    </>
+    </MobileFilterField>
   );
 
   const renderActions = (
@@ -302,8 +288,10 @@ const BaoTriSuaChuaToolbar: React.FC<Props> = ({
       actions={renderActionsWithExport}
       bulkActions={bulkExport}
       searchTrailing={searchTrailingExport}
-      filters={renderFilters}
+      filters={<ResponsiveFilterChips items={filterItems} luonVaoFilter={LUON_VAO_FILTER} />}
       filterGroups={filterGroups}
+      mobileFilterExtra={mobileFilterExtra}
+      mobileFilterExtraCount={coKy ? 1 : 0}
       onAdd={onAdd}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}

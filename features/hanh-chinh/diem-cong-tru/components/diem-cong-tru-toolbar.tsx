@@ -4,6 +4,7 @@ import { Plus, Calendar, ListOrdered } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import { MobileFilterField, type FilterGroup } from '../../../../components/ui/MobileFilterSheet';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useDiemCongTruStore } from '../store/useDiemCongTruStore';
 import { useDiemCongTruFilterCounts } from '../hooks/use-diem-cong-tru-filter-counts';
@@ -43,6 +44,31 @@ const DiemCongTruToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, 
   const typeOptions = useMemo(
     () => getDiemCongTruLoaiOptions(t).map((o) => ({ ...o, count: typeCounts[o.value] ?? 0 })),
     [t, typeCounts]
+  );
+
+  // Bảng lọc mobile: nhóm loại + ô chọn tháng (trước đây rỗng → điện thoại không có nút Lọc).
+  const filterGroups = useMemo<FilterGroup[]>(
+    () => [
+      {
+        key: 'type',
+        label: t('diemCongTru.form.loai'),
+        icon: ListOrdered,
+        options: typeOptions,
+        value: filters.type,
+        onChange: (val) => setFilter('type', val),
+      },
+    ],
+    [t, typeOptions, filters.type, setFilter]
+  );
+  const mobileFilterExtra = (
+    <MobileFilterField label={t('diemCongTru.store.periodCol')} icon={Calendar} active={!!filters.yearMonth}>
+      <input
+        type="month"
+        value={filters.yearMonth}
+        onChange={(e) => setFilter('yearMonth', e.target.value)}
+        className="w-full h-10 rounded-lg border border-border bg-background px-2 text-sm"
+      />
+    </MobileFilterField>
   );
 
   const renderFilters = (
@@ -86,7 +112,9 @@ const DiemCongTruToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, 
       onClearSelection={clearSelection}
       actions={renderActions}
       filters={renderFilters}
-      filterGroups={[]}
+      filterGroups={filterGroups}
+      mobileFilterExtra={mobileFilterExtra}
+      mobileFilterExtraCount={filters.yearMonth ? 1 : 0}
       onAdd={canCreate ? onAdd : undefined}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}

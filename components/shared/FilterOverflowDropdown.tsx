@@ -18,6 +18,8 @@ interface FilterOverflowDropdownProps {
 const FilterOverflowDropdown: React.FC<FilterOverflowDropdownProps> = ({ groups, onClear }) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  /** Căn popup theo mép phải nút khi bên phải không đủ chỗ cho 280px. */
+  const [canPhai, setCanPhai] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const activeCount = groups.filter((g) => g.value.length > 0).length;
   const handleClear = onClear ?? (() => groups.forEach((g) => g.onChange([])));
@@ -41,7 +43,11 @@ const FilterOverflowDropdown: React.FC<FilterOverflowDropdownProps> = ({ groups,
     <div className="relative shrink-0" ref={containerRef}>
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => {
+          const r = containerRef.current?.getBoundingClientRect();
+          setCanPhai(!!r && r.left + 288 > window.innerWidth);
+          setOpen((v) => !v);
+        }}
         aria-label={t('common.openFiltersAria')}
         aria-expanded={open}
         className={cn(
@@ -60,7 +66,13 @@ const FilterOverflowDropdown: React.FC<FilterOverflowDropdownProps> = ({ groups,
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full mt-1.5 z-40 w-[280px] bg-card rounded-xl shadow-xl border border-border p-3 space-y-2 animate-in fade-in slide-in-from-top-2 duration-150">
+        <div
+          className={cn(
+            'absolute top-full',
+            canPhai ? 'right-0' : 'left-0',
+            'mt-1.5 z-40 w-[280px] max-w-[calc(100vw-1rem)] bg-card rounded-xl shadow-xl border border-border p-3 space-y-2 animate-in fade-in slide-in-from-top-2 duration-150'
+          )}
+        >
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-foreground">{t('shared.mobileFilter.title')}</span>
             {activeCount > 0 && (

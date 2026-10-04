@@ -144,6 +144,7 @@
   "dangKyNhanHang.stats.loadError": "Không tải được thống kê",
   "dangKyNhanHang.stats.noData": "Không có phiếu trong khoảng thời gian này",
   "dangKyNhanHang.stats.noDataHint": "Đổi khoảng thời gian hoặc bỏ bớt bộ lọc.",
+  "dangKyNhanHang.stats.khoangThoiGian": "Khoảng thời gian",
   "dangKyNhanHang.stats.preset.today": "Hôm nay",
   "dangKyNhanHang.stats.preset.7days": "7 ngày qua",
   "dangKyNhanHang.stats.preset.thisMonth": "Tháng này",

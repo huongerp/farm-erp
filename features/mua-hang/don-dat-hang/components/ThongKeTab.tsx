@@ -8,6 +8,7 @@ import { getAllDonDatHangDb, fetchDonDatHangThongKeFromRpc, fetchChiTietForCateg
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import EmptyState from '../../../../components/shared/EmptyState';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import { MobileFilterField } from '../../../../components/ui/MobileFilterSheet';
 import {
   computeDonDatHangStats,
   computeDonDatHangCategoryStats,
@@ -252,6 +253,31 @@ const ThongKeTab: React.FC = () => {
     </>
   );
 
+  const mobileFilterExtra = (
+    <MobileFilterField
+      label={`${t('donDatHang.stats.dateFrom')} – ${t('donDatHang.stats.dateTo')}`}
+      icon={Calendar}
+      active={!!(dateFrom || dateTo)}
+    >
+      <div className="grid grid-cols-2 gap-2">
+        <input
+          type="date"
+          value={dateFrom}
+          onChange={(e) => setDateFrom(e.target.value)}
+          aria-label={t('donDatHang.stats.dateFrom')}
+          className="w-full h-10 rounded-lg border border-border bg-background px-2 text-sm"
+        />
+        <input
+          type="date"
+          value={dateTo}
+          onChange={(e) => setDateTo(e.target.value)}
+          aria-label={t('donDatHang.stats.dateTo')}
+          className="w-full h-10 rounded-lg border border-border bg-background px-2 text-sm"
+        />
+      </div>
+    </MobileFilterField>
+  );
+
   const filteredList = useMemo(() => thongKe?.filteredList ?? [], [thongKe]);
 
   const getReportFilters = (): DonDatHangReportFilters => ({
@@ -344,6 +370,8 @@ const ThongKeTab: React.FC = () => {
         className="static z-auto"
         filters={renderFilters}
         filterGroups={filterGroups}
+        mobileFilterExtra={mobileFilterExtra}
+        mobileFilterExtraCount={(dateFrom ? 1 : 0) + (dateTo ? 1 : 0)}
         activeFilterCount={activeFilterCount}
         onClearFilters={handleClearFilters}
         onExportReport={handleExportReport}

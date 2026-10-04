@@ -1,12 +1,12 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Tag, Warehouse, ArrowRightLeft, User, CheckCircle, Download, Upload, Layers } from 'lucide-react';
+import { Plus, Tag, Warehouse, ArrowRightLeft, User, CheckCircle, Download, Upload, Layers, Calendar } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
-import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
-import FilterOverflowDropdown from '../../../../components/shared/FilterOverflowDropdown';
-import DateRangePicker from '../../../../components/ui/DateRangePicker';
+import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
+import DateRangePicker, { type DateRangeValue } from '../../../../components/ui/DateRangePicker';
+import { MobileFilterField } from '../../../../components/ui/MobileFilterSheet';
 import { useSearchInputCommit } from '../../../../lib/hooks/use-search-input-commit';
 import { usePhieuKhoPTStore } from '../store/usePhieuKhoPTStore';
 import type { PhieuKhoPT } from '../core/types';
@@ -38,8 +38,8 @@ function asStringArray(v: unknown): string[] {
   return [];
 }
 
-/** Desktop: nhóm lọc gom vào nút Filter để hàng chip ngoài tối đa 5 (MobileFilterSheet vẫn đủ nhóm). */
-const OVERFLOW_FILTER_KEYS = new Set(['nguoiTaoIds', 'nguoiDuyetIds']);
+/** Desktop: nhóm lọc ít dùng luôn nằm trong nút Filter (MobileFilterSheet vẫn đủ nhóm). */
+const LUON_VAO_FILTER = ['nguoiTaoIds', 'nguoiDuyetIds'];
 
 const DanhSachToolbar: React.FC<Props> = ({
   data: dataProp,
@@ -286,59 +286,36 @@ const DanhSachToolbar: React.FC<Props> = ({
 
   const dateRangePickerPresets = useMemo(() => DATE_RANGE_PRESETS.map((p) => ({ id: p.id, label: p.label })), []);
 
-  const renderFilters = (
-    <>
-      <FilterChipMultiSelect
-        options={loaiOptions}
-        value={loaiKeysArr}
-        onChange={(v) => setFilter('loaiKeys', v)}
-        placeholder={t('phieuKhoPhanThuoc.filters.loaiPhieu')}
-        icon={Layers}
-        className="w-full sm:w-[160px]"
-      />
-      <FilterChipMultiSelect
-        options={statusOptions}
-        value={statusArr}
-        onChange={(v) => setFilter('status', v)}
-        placeholder={t('common.status')}
-        icon={Tag}
-        className="w-full sm:w-[140px]"
-      />
-      <DateRangePicker
-        presets={dateRangePickerPresets}
-        value={{
-          preset: datePreset,
-          customStart: customFrom,
-          customEnd: customEnd,
-        }}
-        onChange={(v) => {
-          setFilter('datePreset', v.preset as DateRangePresetId);
-          setFilter('customDateFrom', v.customStart);
-          setFilter('customDateEnd', v.customEnd);
-        }}
-        displayLabel={dateRangeLabel}
-        placeholder={t('phieuKhoPhanThuoc.filters.datePhieu')}
-        className="w-full sm:w-auto"
-      />
-      <FilterChipMultiSelect
-        options={khoOptions}
-        value={khoIdsArr}
-        onChange={(v) => setFilter('khoIds', v)}
-        placeholder={t('phieuKhoPhanThuoc.form.warehouse')}
-        icon={Warehouse}
-        className="w-full sm:w-[160px]"
-      />
-      <FilterChipMultiSelect
-        options={khoDenOptions}
-        value={khoDenIdsArr}
-        onChange={(v) => setFilter('khoDenIds', v)}
-        placeholder={t('phieuKhoPhanThuoc.form.warehouseTo')}
-        icon={ArrowRightLeft}
-        className="w-full sm:w-[160px]"
-      />
-      <FilterOverflowDropdown groups={filterGroups.filter((g) => OVERFLOW_FILTER_KEYS.has(g.key))} />
-    </>
-  );
+  const dateRangeValue: DateRangeValue = { preset: datePreset, customStart: customFrom, customEnd: customEnd };
+  const handleDateRangeChange = (v: DateRangeValue) => {
+    setFilter('datePreset', v.preset as DateRangePresetId);
+    setFilter('customDateFrom', v.customStart);
+    setFilter('customDateEnd', v.customEnd);
+  };
+
+  const [loaiGroup, statusGroup, khoGroup, khoDenGroup, nguoiTaoGroup, nguoiDuyetGroup] = filterGroups;
+  const filterItems: FilterChipItem[] = [
+    { kind: 'group', group: loaiGroup, className: 'w-full sm:w-[160px]' },
+    { kind: 'group', group: statusGroup, className: 'w-full sm:w-[140px]' },
+    {
+      kind: 'custom',
+      key: 'datePhieu',
+      node: (
+        <DateRangePicker
+          presets={dateRangePickerPresets}
+          value={dateRangeValue}
+          onChange={handleDateRangeChange}
+          displayLabel={dateRangeLabel}
+          placeholder={t('phieuKhoPhanThuoc.filters.datePhieu')}
+          className="w-full sm:w-auto"
+        />
+      ),
+    },
+    { kind: 'group', group: khoGroup, className: 'w-full sm:w-[160px]' },
+    { kind: 'group', group: khoDenGroup, className: 'w-full sm:w-[160px]' },
+    { kind: 'group', group: nguoiTaoGroup },
+    { kind: 'group', group: nguoiDuyetGroup },
+  ];
 
   const renderActions = (
     <>
@@ -388,8 +365,14 @@ const DanhSachToolbar: React.FC<Props> = ({
       onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
       actions={renderActions}
-      filters={renderFilters}
+      filters={<ResponsiveFilterChips items={filterItems} luonVaoFilter={LUON_VAO_FILTER} />}
       filterGroups={filterGroups}
+      mobileFilterExtra={
+        <MobileFilterField label={t('phieuKhoPhanThuoc.filters.datePhieu')} icon={Calendar} active={dateFilterActive}>
+          <DateRangePicker inline presets={dateRangePickerPresets} value={dateRangeValue} onChange={handleDateRangeChange} />
+        </MobileFilterField>
+      }
+      mobileFilterExtraCount={dateFilterActive ? 1 : 0}
       mobileActions={mobileActions}
       onAdd={canCreate ? onAdd : undefined}
       showBack

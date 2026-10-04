@@ -19,6 +19,9 @@ interface TonKhoToolbarProps {
   activeFilterCount?: number;
   onClearAllFilters?: () => void;
   filterGroups?: FilterGroup[];
+  /** Bộ lọc không phải danh sách chọn (khoảng ngày…) cho bảng lọc mobile — xem GenericToolbar. */
+  mobileFilterExtra?: React.ReactNode;
+  mobileFilterExtraCount?: number;
   /** Xuất (Excel): cùng pattern với GenericToolbar + DanhSachToolbar (desktop icon + mobile sheet). */
   onExport?: () => void;
 }
@@ -38,6 +41,8 @@ const TonKhoToolbar: React.FC<TonKhoToolbarProps> = ({
   activeFilterCount = 0,
   onClearAllFilters,
   filterGroups,
+  mobileFilterExtra,
+  mobileFilterExtraCount,
   onExport,
 }) => {
   const { t } = useTranslation();
@@ -79,6 +84,8 @@ const TonKhoToolbar: React.FC<TonKhoToolbarProps> = ({
       activeFilterCount={activeFilterCount}
       onClearAllFilters={onClearAllFilters}
       filterGroups={filterGroups}
+      mobileFilterExtra={mobileFilterExtra}
+      mobileFilterExtraCount={mobileFilterExtraCount}
       columns={columns}
       onToggleColumn={onToggleColumn}
       onReorderColumns={onReorderColumns}

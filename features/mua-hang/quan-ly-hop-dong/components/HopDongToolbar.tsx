@@ -1,11 +1,11 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Tag, Building2, Download, User } from 'lucide-react';
+import { Plus, Tag, Building2, Download, User, Calendar } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import type { ActionItem } from '../../../../components/ui/MobileActionsSheet';
-import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
 import DateRangePicker from '../../../../components/ui/DateRangePicker';
 import type { DateRangeValue } from '../../../../components/ui/DateRangePicker';
 import { useSearchInputCommit } from '../../../../lib/hooks/use-search-input-commit';
@@ -15,9 +15,11 @@ import type { DoiTacRefLite } from '../../../kho-van/danh-sach-doi-tac/services/
 import { TRANG_THAI_HOP_DONG } from '../core/constants';
 import { getDateRangeFromPreset, getPresetFromDates } from '../core/datePresets';
 import { matchesHopDongFilters } from '../core/list-filter-helpers';
-import type { FilterGroup } from '../../../../components/ui/MobileFilterSheet';
+import { MobileFilterField, type FilterGroup } from '../../../../components/ui/MobileFilterSheet';
 
 const CUSTOM_PRESET_ID = 'custom';
+/** Bề rộng chip desktop theo thứ tự filterGroups: trạng thái, NCC, người tạo. */
+const CHIP_WIDTHS = ['w-full sm:w-[160px]', 'w-full sm:w-[180px]', 'w-full sm:w-[160px]'];
 
 interface Props {
   data: HopDong[];
@@ -176,42 +178,27 @@ const HopDongToolbar: React.FC<Props> = ({
     [t, statusOptions, nccOptions, nguoiTaoOptions, filters, setFilter]
   );
 
-  const renderFilters = (
-    <>
-      <DateRangePicker
-        presets={dateRangePresets}
-        value={dateRangeValue}
-        onChange={handleDateRangeChange}
-        placeholder={t('hopDong.toolbar.filterPeriod')}
-        customPresetId={CUSTOM_PRESET_ID}
-        className="w-full sm:w-auto shrink-0"
-      />
-      <FilterChipMultiSelect
-        options={statusOptions}
-        value={filters.trangThai ?? []}
-        onChange={(v) => setFilter('trangThai', v)}
-        placeholder={t('hopDong.toolbar.filterStatus')}
-        icon={Tag}
-        className="w-full sm:w-[160px]"
-      />
-      <FilterChipMultiSelect
-        options={nccOptions}
-        value={filters.nccIds ?? []}
-        onChange={(v) => setFilter('nccIds', v)}
-        placeholder={t('hopDong.toolbar.filterNcc')}
-        icon={Building2}
-        className="w-full sm:w-[180px]"
-      />
-      <FilterChipMultiSelect
-        options={nguoiTaoOptions}
-        value={filters.nguoiTaoIds ?? []}
-        onChange={(v) => setFilter('nguoiTaoIds', v)}
-        placeholder={t('hopDong.toolbar.filterNguoiTao')}
-        icon={User}
-        className="w-full sm:w-[160px]"
-      />
-    </>
-  );
+  const kyActive = !!(filters.dateFrom || filters.dateTo);
+
+  const filterItems: FilterChipItem[] = [
+    {
+      kind: 'custom',
+      key: 'ky',
+      node: (
+        <DateRangePicker
+          presets={dateRangePresets}
+          value={dateRangeValue}
+          onChange={handleDateRangeChange}
+          placeholder={t('hopDong.toolbar.filterPeriod')}
+          customPresetId={CUSTOM_PRESET_ID}
+          className="w-full sm:w-auto shrink-0"
+        />
+      ),
+    },
+    ...filterGroups.map(
+      (g, i): FilterChipItem => ({ kind: 'group', group: g, className: CHIP_WIDTHS[i] })
+    ),
+  ];
 
   const mobileActions: ActionItem[] = useMemo(
     () => [
@@ -296,8 +283,20 @@ const HopDongToolbar: React.FC<Props> = ({
       bulkActions={bulkExport}
       mobileActions={mobileActions}
       searchTrailing={searchTrailingExport}
-      filters={renderFilters}
+      filters={<ResponsiveFilterChips items={filterItems} />}
       filterGroups={filterGroups}
+      mobileFilterExtra={
+        <MobileFilterField label={t('hopDong.toolbar.filterPeriod')} icon={Calendar} active={kyActive}>
+          <DateRangePicker
+            inline
+            presets={dateRangePresets}
+            value={dateRangeValue}
+            onChange={handleDateRangeChange}
+            customPresetId={CUSTOM_PRESET_ID}
+          />
+        </MobileFilterField>
+      }
+      mobileFilterExtraCount={kyActive ? 1 : 0}
       onAdd={canCreate ? onAdd : undefined}
       showBack
       activeFilterCount={activeFilterCount}

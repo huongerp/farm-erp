@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Plus, User, Calendar, Warehouse, ToggleLeft } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
-import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
 import DateRangePicker, { type DateRangeValue } from '../../../../components/ui/DateRangePicker';
 import { getDateRangeFromPreset, getPresetFromDates } from '../../../../lib/date-presets';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
@@ -15,6 +15,7 @@ import { TRANG_THAI_DOT_OPTIONS } from '../core/constants';
 import { useKiemKeKhoFilterCounts } from '../hooks/use-kiem-ke-kho-filter-counts';
 import type { DotKiemKeKhoTomTat } from '../core/types';
 import type { ActionItem } from '../../../../components/ui/MobileActionsSheet';
+import { MobileFilterField } from '../../../../components/ui/MobileFilterSheet';
 
 const CUSTOM_PRESET_ID = 'custom';
 
@@ -124,71 +125,51 @@ const KiemKeKhoToolbar: React.FC<Props> = ({
     (filters.dateTo ? 1 : 0);
   const handleClearAllFilters = () => resetFilters();
 
-  const renderFilters = (
-    <>
-      <DateRangePicker
-        presets={dateRangePresets}
-        value={dateRangeValue}
-        onChange={handleDateRangeChange}
-        placeholder={t('kiemKeKho.filter.periodPlaceholder')}
-        customPresetId={CUSTOM_PRESET_ID}
-        className="shrink-0"
-      />
-      <FilterChipMultiSelect
-        options={trangThaiOptions}
-        value={filters.trang_thai_dot}
-        onChange={(v) => setFilter('trang_thai_dot', v)}
-        placeholder={t('kiemKeKho.store.trangThaiCol')}
-        icon={ToggleLeft}
-        className="w-full sm:w-[160px]"
-        size="md"
-      />
-      <FilterChipMultiSelect
-        options={idKhoOptions}
-        value={filters.id_kho}
-        onChange={(v) => setFilter('id_kho', v)}
-        placeholder={t('kiemKeKho.store.khoCol')}
-        icon={Warehouse}
-        className="w-full sm:w-[160px]"
-        size="md"
-      />
-      <FilterChipMultiSelect
-        options={nguoiPhuTrachOptions}
-        value={filters.id_nguoi_phu_trach}
-        onChange={(v) => setFilter('id_nguoi_phu_trach', v)}
-        placeholder={t('kiemKeKho.store.nguoiPhuTrachCol')}
-        icon={User}
-        className="w-full sm:w-[180px]"
-        size="md"
-      />
-    </>
-  );
-
   /**
-   * Bộ lọc mobile (bottom-sheet) phải có ĐỦ các nhóm của hàng chip desktop, kể cả kỳ —
-   * thiếu nhóm nào thì trên điện thoại không lọc được theo tiêu chí đó.
-   * Sheet chỉ hỗ trợ multi-select nên kỳ được mô phỏng bằng một nhóm chọn-một.
+   * Bộ lọc mobile (bottom-sheet) phải có ĐỦ các bộ lọc của hàng chip desktop — thiếu cái nào
+   * thì trên điện thoại không lọc được theo tiêu chí đó. Kỳ không phải nhóm chọn nên đi qua
+   * `mobileFilterExtra` (DateRangePicker inline — có cả khoảng tự chọn).
    */
   const filterGroups = useMemo(
     () => [
-      {
-        key: 'ky',
-        label: t('kiemKeKho.filter.periodPlaceholder'),
-        icon: Calendar,
-        options: dateRangePresets.map((p) => ({ label: p.label, value: p.id })),
-        value: dateRangeValue.preset === 'all' ? [] : [dateRangeValue.preset],
-        onChange: (val: string[]) => {
-          const next = val.find((v) => v !== dateRangeValue.preset) ?? 'all';
-          const { dateFrom, dateTo } = getDateRangeFromPreset(next);
-          setFilter('dateFrom', dateFrom);
-          setFilter('dateTo', dateTo);
-        },
-      },
       { key: 'trang_thai_dot', label: t('kiemKeKho.store.trangThaiCol'), icon: ToggleLeft, options: trangThaiOptions, value: filters.trang_thai_dot, onChange: (val: string[]) => setFilter('trang_thai_dot', val) },
       { key: 'id_kho', label: t('kiemKeKho.store.khoCol'), icon: Warehouse, options: idKhoOptions, value: filters.id_kho, onChange: (val: string[]) => setFilter('id_kho', val) },
       { key: 'id_nguoi_phu_trach', label: t('kiemKeKho.store.nguoiPhuTrachCol'), icon: User, options: nguoiPhuTrachOptions, value: filters.id_nguoi_phu_trach, onChange: (val: string[]) => setFilter('id_nguoi_phu_trach', val) },
     ],
-    [trangThaiOptions, idKhoOptions, nguoiPhuTrachOptions, filters.trang_thai_dot, filters.id_kho, filters.id_nguoi_phu_trach, dateRangePresets, dateRangeValue.preset, setFilter, t]
+    [trangThaiOptions, idKhoOptions, nguoiPhuTrachOptions, filters.trang_thai_dot, filters.id_kho, filters.id_nguoi_phu_trach, setFilter, t]
+  );
+
+  const filterItems: FilterChipItem[] = [
+    {
+      kind: 'custom',
+      key: 'ky',
+      node: (
+        <DateRangePicker
+          presets={dateRangePresets}
+          value={dateRangeValue}
+          onChange={handleDateRangeChange}
+          placeholder={t('kiemKeKho.filter.periodPlaceholder')}
+          customPresetId={CUSTOM_PRESET_ID}
+          className="shrink-0"
+        />
+      ),
+    },
+    { kind: 'group', group: filterGroups[0], className: 'w-full sm:w-[160px]' },
+    { kind: 'group', group: filterGroups[1], className: 'w-full sm:w-[160px]' },
+    { kind: 'group', group: filterGroups[2], className: 'w-full sm:w-[180px]' },
+  ];
+
+  const dateFilterActive = !!(filters.dateFrom || filters.dateTo);
+  const mobileFilterExtra = (
+    <MobileFilterField label={t('kiemKeKho.filter.periodPlaceholder')} icon={Calendar} active={dateFilterActive}>
+      <DateRangePicker
+        inline
+        presets={dateRangePresets}
+        value={dateRangeValue}
+        onChange={handleDateRangeChange}
+        customPresetId={CUSTOM_PRESET_ID}
+      />
+    </MobileFilterField>
   );
 
   const showAddButton = showAdd && canCreate;
@@ -219,8 +200,10 @@ const KiemKeKhoToolbar: React.FC<Props> = ({
       onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
       actions={renderActions}
-      filters={renderFilters}
+      filters={<ResponsiveFilterChips items={filterItems} />}
       filterGroups={filterGroups}
+      mobileFilterExtra={mobileFilterExtra}
+      mobileFilterExtraCount={dateFilterActive ? 1 : 0}
       onAdd={canCreate ? onAdd : undefined}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}

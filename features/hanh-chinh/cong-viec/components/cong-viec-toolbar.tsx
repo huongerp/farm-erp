@@ -5,6 +5,7 @@ import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import type { FilterGroup } from '../../../../components/ui/MobileFilterSheet';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useCongViecStore } from '../store/useCongViecStore';
 import { getTrangThaiOptions, getUuTienOptions } from '../core/constants';
@@ -75,6 +76,37 @@ const CongViecToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onE
         return { label, value: key, count: trachNhiemCounts[key] ?? 0 };
       });
   }, [employees, trachNhiemCounts]);
+
+  // Bảng lọc mobile: đủ 3 nhóm như hàng chip desktop (trước đây rỗng → điện thoại không có nút Lọc).
+  const filterGroups = useMemo<FilterGroup[]>(
+    () => [
+      {
+        key: 'trang_thai',
+        label: t('congViec.store.trangThaiCol'),
+        icon: Tag,
+        options: trangThaiOptions,
+        value: filters.trang_thai ?? [],
+        onChange: (val) => setFilter('trang_thai', val),
+      },
+      {
+        key: 'uu_tien',
+        label: t('congViec.store.uuTienCol'),
+        icon: ListOrdered,
+        options: uuTienOptions,
+        value: filters.uu_tien ?? [],
+        onChange: (val) => setFilter('uu_tien', val),
+      },
+      {
+        key: 'trach_nhiem',
+        label: t('congViec.form.trachNhiem'),
+        icon: User,
+        options: trachNhiemOptions,
+        value: (filters.trach_nhiem ?? []).map(String),
+        onChange: (val) => setFilter('trach_nhiem', val.map(Number).filter((n) => !Number.isNaN(n))),
+      },
+    ],
+    [t, trangThaiOptions, uuTienOptions, trachNhiemOptions, filters.trang_thai, filters.uu_tien, filters.trach_nhiem, setFilter]
+  );
 
   const renderFilters = (
     <>
@@ -203,7 +235,7 @@ const CongViecToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onE
       onClearSelection={clearSelection}
       actions={renderActions}
       filters={renderFilters}
-      filterGroups={[]}
+      filterGroups={filterGroups}
       mobileActions={mobileActions}
       onAdd={canCreate ? onAdd : undefined}
       activeFilterCount={activeFilterCount}

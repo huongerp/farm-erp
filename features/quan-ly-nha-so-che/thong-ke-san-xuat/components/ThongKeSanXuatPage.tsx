@@ -1,16 +1,15 @@
 import React, { useMemo, lazy, Suspense, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Building2, BarChart3, CheckCircle2, Eye, Lock, AlertCircle } from 'lucide-react';
+import { Building2, BarChart3, CheckCircle2, Eye, Lock, AlertCircle, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import EmptyState from '../../../../components/shared/EmptyState';
-import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
-import FilterOverflowDropdown from '../../../../components/shared/FilterOverflowDropdown';
+import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
 import DateRangePicker from '../../../../components/ui/DateRangePicker';
-import type { FilterGroup } from '../../../../components/ui/MobileFilterSheet';
+import { MobileFilterField, type FilterGroup } from '../../../../components/ui/MobileFilterSheet';
 import { useThongKeSanXuat } from '../hooks/use-thong-ke-san-xuat';
 import { useThongKeSanXuatPermissions } from '../core/permissions';
-import { DATE_PRESETS } from '../core/compute';
+import { DATE_PRESETS, DEFAULT_DATE_PRESET } from '../core/compute';
 import { useThongKeSanXuatStats } from './stats/useThongKeSanXuatStats';
 import {
   exportThongKeSanXuatToPDF,
@@ -22,8 +21,8 @@ import ThongKeSanXuatTable from './ThongKeSanXuatTable';
 import StatsToolbar from './stats/StatsToolbar';
 import StatsTables from './stats/StatsTables';
 
-/** Desktop: nhóm lọc gom vào nút Filter để hàng chip ngoài tối đa 5 (MobileFilterSheet vẫn đủ nhóm). */
-const OVERFLOW_FILTER_KEYS = new Set(['tt_bcsc']);
+/** Desktop: nhóm lọc ít dùng luôn nằm trong nút Filter (MobileFilterSheet vẫn đủ nhóm). */
+const LUON_VAO_FILTER = ['tt_bcsc'];
 
 const StatsCharts = lazy(() => import('./stats/StatsCharts'));
 
@@ -134,53 +133,39 @@ const ThongKeSanXuatPage: React.FC = () => {
 
   // ── Desktop filter chips (single row) ───────────────────────────────────
 
-  const renderFilters = (
-    <>
-      <DateRangePicker
-        presets={DATE_PRESETS}
-        value={dateRange}
-        onChange={setDateRange}
-        className="w-full sm:w-auto"
-        customPresetId="custom"
-      />
-      <FilterChipMultiSelect
-        options={chiNhanhMsOptions}
-        value={chiNhanhIds}
-        onChange={setChiNhanhIds}
-        placeholder={t('thongKeSanXuat.filter.chiNhanhAll')}
-        icon={Building2}
-        className="w-full sm:w-[160px]"
-        size="md"
-      />
-      <FilterChipMultiSelect
-        options={kpiOptions}
-        value={kpiFilter}
-        onChange={setKpiFilter}
-        placeholder="KPI"
-        icon={CheckCircle2}
-        className="w-full sm:w-[130px]"
-        size="md"
-      />
-      <FilterChipMultiSelect
-        options={hienThiOptions}
-        value={hienThiFilter}
-        onChange={setHienThiFilter}
-        placeholder={t('thongKeSanXuat.filter.hienThi')}
-        icon={Eye}
-        className="w-full sm:w-[130px]"
-        size="md"
-      />
-      <FilterChipMultiSelect
-        options={trangThaiOptions}
-        value={trangThaiBcncFilter}
-        onChange={setTrangThaiBcncFilter}
-        placeholder={t('thongKeSanXuat.filter.trangThaiBcnc')}
-        icon={Lock}
-        className="w-full sm:w-[110px]"
-        size="md"
-      />
-      <FilterOverflowDropdown groups={filterGroups.filter((g) => OVERFLOW_FILTER_KEYS.has(g.key))} />
-    </>
+  const [chiNhanhGroup, kpiGroup, hienThiGroup, ttBcncGroup, ttBcscGroup] = filterGroups;
+  const filterItems: FilterChipItem[] = [
+    {
+      kind: 'custom',
+      key: 'dateRange',
+      node: (
+        <DateRangePicker
+          presets={DATE_PRESETS}
+          value={dateRange}
+          onChange={setDateRange}
+          className="w-full sm:w-auto"
+          customPresetId="custom"
+        />
+      ),
+    },
+    {
+      kind: 'group',
+      group: { ...chiNhanhGroup, label: t('thongKeSanXuat.filter.chiNhanhAll') },
+      className: 'w-full sm:w-[160px]',
+    },
+    { kind: 'group', group: kpiGroup, className: 'w-full sm:w-[130px]' },
+    { kind: 'group', group: hienThiGroup, className: 'w-full sm:w-[130px]' },
+    { kind: 'group', group: ttBcncGroup, className: 'w-full sm:w-[110px]' },
+    { kind: 'group', group: ttBcscGroup },
+  ];
+
+  const renderFilters = <ResponsiveFilterChips items={filterItems} luonVaoFilter={LUON_VAO_FILTER} />;
+
+  const dateRangeActive = dateRange.preset !== DEFAULT_DATE_PRESET;
+  const mobileFilterExtra = (
+    <MobileFilterField label={t('thongKeSanXuat.filter.dateRange')} icon={Calendar} active={dateRangeActive}>
+      <DateRangePicker inline presets={DATE_PRESETS} value={dateRange} onChange={setDateRange} customPresetId="custom" />
+    </MobileFilterField>
   );
 
   // ── Guards ───────────────────────────────────────────────────────────────
@@ -230,6 +215,8 @@ const ThongKeSanXuatPage: React.FC = () => {
         className="static z-auto"
         filters={renderFilters}
         filterGroups={filterGroups}
+        mobileFilterExtra={mobileFilterExtra}
+        mobileFilterExtraCount={dateRangeActive ? 1 : 0}
         activeFilterCount={activeFilterCount}
         onClearFilters={resetFilters}
         onExportXLSX={handleExportXLSX}

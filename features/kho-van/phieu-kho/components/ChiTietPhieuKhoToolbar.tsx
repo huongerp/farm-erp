@@ -1,13 +1,12 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FileText, Warehouse, ArrowRightLeft, Tag, User, CheckCircle, Truck, Download, Barcode, Package } from 'lucide-react';
+import { FileText, Warehouse, ArrowRightLeft, Tag, User, CheckCircle, Truck, Download, Barcode, Package, Calendar } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
-import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
-import FilterOverflowDropdown from '../../../../components/shared/FilterOverflowDropdown';
-import type { FilterGroup } from '../../../../components/ui/MobileFilterSheet';
-import DateRangePicker from '../../../../components/ui/DateRangePicker';
+import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
+import { MobileFilterField, type FilterGroup } from '../../../../components/ui/MobileFilterSheet';
+import DateRangePicker, { type DateRangeValue } from '../../../../components/ui/DateRangePicker';
 import { useSearchInputCommit } from '../../../../lib/hooks/use-search-input-commit';
 import { useChiTietPhieuKhoStore, type DatePresetId } from '../store/useChiTietPhieuKhoStore';
 import type { ChiTietPhieuKhoFlat } from '../core/types';
@@ -26,9 +25,6 @@ interface Props {
   doiTacForChips?: { id: string; ten_ncc: string }[];
   hangHoaForChips?: { id: string; ma_hang: string; ten_hang: string }[];
 }
-
-/** Desktop: số filter chip tối đa hiện ngoài toolbar (tính cả chọn thời gian); còn lại vào nút Filter. */
-const MAX_VISIBLE_FILTER_CHIPS = 5;
 
 const PhieuStatus = {
   pending: 'Pending',
@@ -260,7 +256,7 @@ const ChiTietPhieuKhoToolbar: React.FC<Props> = ({
     ]
   );
 
-  /** Thứ tự = thứ tự hiện trên desktop: MAX_VISIBLE_FILTER_CHIPS - 1 nhóm đầu ra ngoài (chừa 1 chỗ cho chọn thời gian). */
+  /** Thứ tự = thứ tự hiện trên desktop; ResponsiveFilterChips tự gom phần dư vào nút Filter. */
   const filterGroupsComputed = useMemo<FilterGroup[]>(
     () => [
       {
@@ -360,13 +356,20 @@ const ChiTietPhieuKhoToolbar: React.FC<Props> = ({
     ]
   );
 
-  const visibleFilterGroups = filterGroupsComputed.slice(0, MAX_VISIBLE_FILTER_CHIPS - 1);
-  const overflowFilterGroups = filterGroupsComputed.slice(MAX_VISIBLE_FILTER_CHIPS - 1);
-
   const dateRangePickerPresets = useMemo(
     () => DATE_RANGE_PRESETS.map((p) => ({ id: p.id, label: p.label })),
     []
   );
+  const dateValue: DateRangeValue = {
+    preset: filters.datePreset ?? 'all',
+    customStart: filters.customDateFrom ?? '',
+    customEnd: filters.customDateEnd ?? '',
+  };
+  const onDateChange = (v: DateRangeValue) => {
+    setFilter('datePreset', v.preset as DatePresetId);
+    setFilter('customDateFrom', v.customStart);
+    setFilter('customDateEnd', v.customEnd);
+  };
 
   const mobileActions = useMemo(
     () => [
@@ -403,40 +406,32 @@ const ChiTietPhieuKhoToolbar: React.FC<Props> = ({
     tenHang: 'w-full sm:w-[190px]',
   };
 
-  const renderChip = (g: FilterGroup) => (
-    <FilterChipMultiSelect
-      key={g.key}
-      options={g.options}
-      value={g.value}
-      onChange={g.onChange}
-      placeholder={g.label}
-      icon={g.icon}
-      className={chipClassByKey[g.key] ?? 'w-full sm:w-[150px]'}
-    />
-  );
-
-  const renderFilters = (
-    <>
-      {visibleFilterGroups.slice(0, 1).map(renderChip)}
+  const filterItems: FilterChipItem[] = filterGroupsComputed.map((g) => ({
+    kind: 'group',
+    group: g,
+    className: chipClassByKey[g.key] ?? 'w-full sm:w-[150px]',
+  }));
+  // Chọn thời gian đứng ngay sau chip đầu tiên (loại phiếu) như trước.
+  filterItems.splice(1, 0, {
+    kind: 'custom',
+    key: 'dateRange',
+    node: (
       <DateRangePicker
         presets={dateRangePickerPresets}
-        value={{
-          preset: filters.datePreset ?? 'all',
-          customStart: filters.customDateFrom ?? '',
-          customEnd: filters.customDateEnd ?? '',
-        }}
-        onChange={(v) => {
-          setFilter('datePreset', v.preset as DatePresetId);
-          setFilter('customDateFrom', v.customStart);
-          setFilter('customDateEnd', v.customEnd);
-        }}
+        value={dateValue}
+        onChange={onDateChange}
         displayLabel={dateRangeLabel}
         placeholder={t('phieuKho.chiTietTab.dateRangePlaceholder')}
         className="w-full sm:w-auto"
       />
-      {visibleFilterGroups.slice(1).map(renderChip)}
-      <FilterOverflowDropdown groups={overflowFilterGroups} />
-    </>
+    ),
+  });
+
+  // Bảng lọc mobile chỉ có các nhóm chọn — bù khoảng ngày của desktop.
+  const mobileFilterExtra = (
+    <MobileFilterField label={t('phieuKho.chiTietTab.dateRangePlaceholder')} icon={Calendar} active={!!dateFilterActive}>
+      <DateRangePicker inline presets={dateRangePickerPresets} value={dateValue} onChange={onDateChange} />
+    </MobileFilterField>
   );
 
   return (
@@ -446,8 +441,10 @@ const ChiTietPhieuKhoToolbar: React.FC<Props> = ({
       onSearchChange={setSearchInput}
       onClearSelection={() => {}}
       actions={renderActions}
-      filters={renderFilters}
+      filters={<ResponsiveFilterChips items={filterItems} />}
       filterGroups={filterGroupsComputed}
+      mobileFilterExtra={mobileFilterExtra}
+      mobileFilterExtraCount={dateFilterActive ? 1 : 0}
       mobileActions={mobileActions}
       showBack
       activeFilterCount={activeFilterCount}

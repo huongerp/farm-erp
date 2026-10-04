@@ -21,7 +21,30 @@ interface MobileFilterSheetProps {
   onClose: () => void;
   groups: FilterGroup[];
   onClearAll?: () => void;
+  /**
+   * Bộ lọc không phải danh sách chọn (khoảng ngày, tháng, nút gạt…) — hiện trên cùng của
+   * bảng. Bọc từng mục bằng `MobileFilterField` cho cùng kiểu với các nhóm.
+   */
+  extra?: React.ReactNode;
+  /** Số bộ lọc đang bật trong `extra` — cộng vào số đếm ở tiêu đề / nút Áp dụng. */
+  extraActiveCount?: number;
 }
+
+/** Một mục bộ lọc tự do trong bảng lọc mobile (tiêu đề + nội dung). */
+export const MobileFilterField: React.FC<{
+  label: string;
+  icon?: React.ElementType;
+  active?: boolean;
+  children: React.ReactNode;
+}> = ({ label, icon: Icon, active, children }) => (
+  <div className="border-b border-border px-4 py-3">
+    <div className="flex items-center gap-2.5 mb-2.5">
+      {Icon && <Icon size={16} className={cn(active ? 'text-primary' : 'text-muted-foreground')} />}
+      <span className="text-sm font-semibold text-foreground">{label}</span>
+    </div>
+    {children}
+  </div>
+);
 
 /* ------------------------------------------------------------------ */
 /*  Accordion section cho mỗi nhóm filter                            */
@@ -197,12 +220,19 @@ const FilterSection: React.FC<{
 /* ------------------------------------------------------------------ */
 /*  Bottom Sheet chính                                                 */
 /* ------------------------------------------------------------------ */
-const MobileFilterSheet: React.FC<MobileFilterSheetProps> = ({ open, onClose, groups, onClearAll }) => {
+const MobileFilterSheet: React.FC<MobileFilterSheetProps> = ({
+  open,
+  onClose,
+  groups,
+  onClearAll,
+  extra,
+  extraActiveCount = 0,
+}) => {
   const { t } = useTranslation();
   const sheetRef = useRef<HTMLDivElement>(null);
 
   // Tổng số filter đang active
-  const totalActive = groups.reduce((sum, g) => sum + g.value.length, 0);
+  const totalActive = groups.reduce((sum, g) => sum + g.value.length, 0) + extraActiveCount;
 
   // Body scroll lock — qua bộ đếm chung để 2 sheet chồng nhau không kẹt overflow.
   useEffect(() => {
@@ -276,6 +306,7 @@ const MobileFilterSheet: React.FC<MobileFilterSheetProps> = ({ open, onClose, gr
 
             {/* Body – cuộn được */}
             <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+              {extra}
               {groups.map((group) => (
                 <FilterSection key={group.key} group={group} defaultOpen={group.value.length > 0} />
               ))}

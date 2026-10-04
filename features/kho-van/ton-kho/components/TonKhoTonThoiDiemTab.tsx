@@ -1,6 +1,6 @@
 import React, { useMemo, useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Clock, FolderOpen, MapPin } from 'lucide-react';
+import { Calendar, Clock, FolderOpen, MapPin } from 'lucide-react';
 import { useTonKhoNxtByPeriod } from '../hooks/use-ton-kho';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import { useHangHoaRefQuery } from '../../../../lib/hooks/use-ref-queries';
@@ -11,6 +11,7 @@ import TonKhoToolbar from './TonKhoToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import DateRangePicker from '../../../../components/ui/DateRangePicker';
 import type { DateRangeValue } from '../../../../components/ui/DateRangePicker';
+import { MobileFilterField } from '../../../../components/ui/MobileFilterSheet';
 import { useSearchInputCommit } from '../../../../lib/hooks/use-search-input-commit';
 import {
   useTonKhoTonThoiDiemStore,
@@ -292,11 +293,13 @@ const TonKhoTonThoiDiemTab: React.FC = () => {
     }
   };
 
+  /** Kỳ mặc định là tháng này (xem handleClearAllFilters) — khác đi mới tính là đang lọc. */
+  const kyKhacMacDinh = dateRangeValue.preset !== 'thisMonth';
   const activeFilterCount =
     (searchInput.trim() ? 1 : 0) +
     (filters.warehouseIds?.length ?? 0) +
     (filters.categoryIds?.length ?? 0) +
-    (getPresetFromDates(dateFrom, dateTo) !== 'thisMonth' ? 1 : 0);
+    (kyKhacMacDinh ? 1 : 0);
 
   const handleClearAllFilters = useCallback(() => {
     commitSearchTerm('');
@@ -334,6 +337,19 @@ const TonKhoTonThoiDiemTab: React.FC = () => {
         className="w-full sm:w-[160px]"
       />
     </div>
+  );
+
+  // Bảng lọc mobile chỉ có các nhóm chọn — bù kỳ của desktop.
+  const mobileFilterExtra = (
+    <MobileFilterField label={t('tonKho.tonThoiDiem.periodPlaceholder')} icon={Calendar} active={kyKhacMacDinh}>
+      <DateRangePicker
+        inline
+        presets={dateRangePresets}
+        value={dateRangeValue}
+        onChange={handleDateRangeChange}
+        customPresetId={CUSTOM_PRESET_ID}
+      />
+    </MobileFilterField>
   );
 
   const filterGroups = useMemo(
@@ -552,6 +568,8 @@ const TonKhoTonThoiDiemTab: React.FC = () => {
           activeFilterCount={activeFilterCount}
           onClearAllFilters={handleClearAllFilters}
           filterGroups={filterGroups}
+          mobileFilterExtra={mobileFilterExtra}
+          mobileFilterExtraCount={kyKhacMacDinh ? 1 : 0}
         />
 
         <div className="flex-1 min-h-0 flex flex-col bg-card overflow-hidden relative">

@@ -4,7 +4,7 @@ import { Plus, Tag, Building2, Warehouse, User, Download } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
-import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
 import { useSearchInputCommit } from '../../../../lib/hooks/use-search-input-commit';
 import { useDonDatHangStore } from '../store/useDonDatHangStore';
 import type { DonDatHang } from '../core/types';
@@ -203,42 +203,11 @@ const DonDatHangToolbar: React.FC<Props> = ({
     ]
   );
 
-  const renderFilters = (
-    <>
-      <FilterChipMultiSelect
-        options={statusOptions}
-        value={filters.status ?? []}
-        onChange={(v) => setFilter('status', v)}
-        placeholder={t('common.status')}
-        icon={Tag}
-        className="w-full sm:w-[140px]"
-      />
-      <FilterChipMultiSelect
-        options={supplierOptions}
-        value={filters.nhaCungCapIds ?? []}
-        onChange={(v) => setFilter('nhaCungCapIds', v)}
-        placeholder={t('donDatHang.form.supplier')}
-        icon={Building2}
-        className="w-full sm:w-[160px]"
-      />
-      <FilterChipMultiSelect
-        options={khoOptions}
-        value={filters.khoNhanIds ?? []}
-        onChange={(v) => setFilter('khoNhanIds', v)}
-        placeholder={t('donDatHang.form.warehouse')}
-        icon={Warehouse}
-        className="w-full sm:w-[160px]"
-      />
-      <FilterChipMultiSelect
-        options={buyerOptions}
-        value={filters.nguoiDatIds ?? []}
-        onChange={(v) => setFilter('nguoiDatIds', v)}
-        placeholder={t('donDatHang.form.buyer')}
-        icon={User}
-        className="w-full sm:w-[160px]"
-      />
-    </>
-  );
+  const filterItems: FilterChipItem[] = filterGroups.map((g, i) => ({
+    kind: 'group',
+    group: g,
+    className: i === 0 ? 'w-full sm:w-[140px]' : 'w-full sm:w-[160px]',
+  }));
 
   /** Mobile: nút export cạnh ô tìm; desktop: nút export trong hàng actions (giống Phiếu kho). */
   const searchTrailingExport = (
@@ -265,11 +234,11 @@ const DonDatHangToolbar: React.FC<Props> = ({
             variant="outline"
             size="sm"
             onClick={onExport}
-            className="inline-flex min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-9 px-2 sm:px-2.5 gap-1.5 items-center justify-center border-border text-muted-foreground hover:bg-muted/50"
+            className="inline-flex min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-9 w-9 lg:w-auto p-0 lg:px-2.5 gap-1.5 items-center justify-center border-border text-muted-foreground hover:bg-muted/50"
             aria-label={t('common.export')}
           >
             <Download className="w-4 h-4 shrink-0" />
-            <span className="text-xs font-medium">{t('common.export')}</span>
+            <span className="hidden lg:inline text-xs font-medium">{t('common.export')}</span>
           </Button>
         </Tooltip>
       </div>
@@ -300,7 +269,7 @@ const DonDatHangToolbar: React.FC<Props> = ({
           {bulkExport}
         </>
       }
-      filters={renderFilters}
+      filters={<ResponsiveFilterChips items={filterItems} />}
       filterGroups={filterGroups}
       mobileActions={mobileActions}
       searchTrailing={searchTrailingExport}

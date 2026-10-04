@@ -196,8 +196,8 @@ const EmployeeToolbar: React.FC<Props> = ({
         </Tooltip>
         {canCreate && (
           <Button onClick={onAdd} size="sm" className="bg-primary text-white hover:bg-primary/90 shadow-sm h-8 px-3">
-              <Plus className="w-4 h-4 mr-1.5" /> 
-              <span className="text-xs">{BTN_ADD()}</span>
+              <Plus className="w-4 h-4 sm:mr-1.5" />
+              <span className="hidden sm:inline text-xs">{BTN_ADD()}</span>
           </Button>
         )}
     </>

@@ -1,11 +1,12 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Tag, Warehouse, User, UserCheck, Download } from 'lucide-react';
+import { Plus, Tag, Warehouse, User, UserCheck, Download, Calendar } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
-import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
-import DateRangePicker from '../../../../components/ui/DateRangePicker';
+import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
+import DateRangePicker, { type DateRangeValue } from '../../../../components/ui/DateRangePicker';
+import { MobileFilterField } from '../../../../components/ui/MobileFilterSheet';
 import { useSearchInputCommit } from '../../../../lib/hooks/use-search-input-commit';
 import { DATE_RANGE_PRESETS, type DateRangePresetId } from '../../../he-thong/nhan-vien/core/stats-constants';
 import { getDateRangeFromPreset } from '../../../he-thong/nhan-vien/utils/stats-date-range';
@@ -80,6 +81,12 @@ const DeXuatMuaHangToolbar: React.FC<Props> = ({
     return range.label;
   }, [datePreset, customDateFrom, customDateEnd]);
   const dateRangePickerPresets = useMemo(() => DATE_RANGE_PRESETS.map((p) => ({ id: p.id, label: p.label })), []);
+  const dateValue: DateRangeValue = { preset: datePreset, customStart: customDateFrom, customEnd: customDateEnd };
+  const onDateChange = (v: DateRangeValue) => {
+    setFilter('datePreset', v.preset as DateRangePresetId);
+    setFilter('customDateFrom', v.customStart);
+    setFilter('customDateEnd', v.customEnd);
+  };
 
   const statusLen = filters.status?.length ?? 0;
   const noiDeXuatLen = filters.noiDeXuatIds?.length ?? 0;
@@ -277,92 +284,101 @@ const DeXuatMuaHangToolbar: React.FC<Props> = ({
     ]
   );
 
-  const renderFilters = (
+  const mineToggleButton = (
+    <button
+      type="button"
+      onClick={toggleMine}
+      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+        filterMine
+          ? 'bg-primary text-primary-foreground border-primary'
+          : 'bg-card border-border text-muted-foreground hover:bg-muted'
+      }`}
+      title={t('deXuatMuaHang.filters.mineHint')}
+    >
+      <User className="w-3.5 h-3.5" />
+      {t('deXuatMuaHang.tabs.mine')}
+      {showMineApproveCounts && mineCount > 0 && (
+        <span className="opacity-80">({mineCount})</span>
+      )}
+    </button>
+  );
+  const toApproveToggleButton = (
+    <button
+      type="button"
+      onClick={toggleToApprove}
+      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+        filterToApprove
+          ? 'bg-primary text-primary-foreground border-primary'
+          : 'bg-card border-border text-muted-foreground hover:bg-muted'
+      }`}
+      title={t('deXuatMuaHang.filters.toApproveHint')}
+    >
+      <UserCheck className="w-3.5 h-3.5" />
+      {t('deXuatMuaHang.tabs.toApprove')}
+      {showMineApproveCounts && toApproveCount > 0 && (
+        <span className="opacity-80">({toApproveCount})</span>
+      )}
+    </button>
+  );
+
+  const toggleItems: FilterChipItem[] =
+    currentUserId
+      ? [
+          {
+            kind: 'custom',
+            // Hai nút gạt đi liền nhau, tính chung một chỗ trong giới hạn chip.
+            key: 'mineToApprove',
+            node: (
+              <div className="flex items-center gap-1.5">
+                {mineToggleButton}
+                {toApproveToggleButton}
+              </div>
+            ),
+          },
+        ]
+      : [];
+
+  const filterItems: FilterChipItem[] = [
+    ...toggleItems,
+    { kind: 'group', group: filterGroups[0], className: 'w-full sm:w-[140px]' },
+    {
+      kind: 'custom',
+      key: 'dateRange',
+      node: (
+        <DateRangePicker
+          presets={dateRangePickerPresets}
+          value={dateValue}
+          onChange={onDateChange}
+          displayLabel={dateRangeLabel}
+          placeholder={t('deXuatMuaHang.filters.datePhieu')}
+          className="w-full sm:w-auto"
+        />
+      ),
+    },
+    { kind: 'group', group: filterGroups[1], className: 'w-full sm:w-[160px]' },
+    { kind: 'group', group: filterGroups[2], className: 'w-full sm:w-[160px]' },
+    { kind: 'group', group: filterGroups[3], className: 'w-full sm:w-[160px]' },
+  ];
+
+  // Bảng lọc mobile chỉ có các nhóm chọn — bù hai nút gạt và khoảng ngày của desktop.
+  // Nút gạt chỉ đặt lọc người đề xuất / người duyệt (đã đếm trong nhóm), nên không cộng thêm.
+  const mobileFilterExtra = (
     <>
       {currentUserId && (
-        <>
-          <button
-            type="button"
-            onClick={toggleMine}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-              filterMine
-                ? 'bg-primary text-primary-foreground border-primary'
-                : 'bg-card border-border text-muted-foreground hover:bg-muted'
-            }`}
-            title={t('deXuatMuaHang.filters.mineHint')}
-          >
-            <User className="w-3.5 h-3.5" />
-            {t('deXuatMuaHang.tabs.mine')}
-            {showMineApproveCounts && mineCount > 0 && (
-              <span className="opacity-80">({mineCount})</span>
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={toggleToApprove}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-              filterToApprove
-                ? 'bg-primary text-primary-foreground border-primary'
-                : 'bg-card border-border text-muted-foreground hover:bg-muted'
-            }`}
-            title={t('deXuatMuaHang.filters.toApproveHint')}
-          >
-            <UserCheck className="w-3.5 h-3.5" />
-            {t('deXuatMuaHang.tabs.toApprove')}
-            {showMineApproveCounts && toApproveCount > 0 && (
-              <span className="opacity-80">({toApproveCount})</span>
-            )}
-          </button>
-        </>
+        <MobileFilterField
+          label={`${t('deXuatMuaHang.tabs.mine')} / ${t('deXuatMuaHang.tabs.toApprove')}`}
+          icon={User}
+          active={!!(filterMine || filterToApprove)}
+        >
+          <div className="flex flex-wrap gap-2">
+            {mineToggleButton}
+            {toApproveToggleButton}
+          </div>
+        </MobileFilterField>
       )}
-      <FilterChipMultiSelect
-        options={statusOptions}
-        value={filters.status ?? []}
-        onChange={(v) => setFilter('status', v)}
-        placeholder={t('common.status')}
-        icon={Tag}
-        className="w-full sm:w-[140px]"
-      />
-      <DateRangePicker
-        presets={dateRangePickerPresets}
-        value={{
-          preset: datePreset,
-          customStart: customDateFrom,
-          customEnd: customDateEnd,
-        }}
-        onChange={(v) => {
-          setFilter('datePreset', v.preset as DateRangePresetId);
-          setFilter('customDateFrom', v.customStart);
-          setFilter('customDateEnd', v.customEnd);
-        }}
-        displayLabel={dateRangeLabel}
-        placeholder={t('deXuatMuaHang.filters.datePhieu')}
-        className="w-full sm:w-auto"
-      />
-      <FilterChipMultiSelect
-        options={noiDeXuatOptions}
-        value={filters.noiDeXuatIds ?? []}
-        onChange={(v) => setFilter('noiDeXuatIds', v)}
-        placeholder={t('deXuatMuaHang.form.place')}
-        icon={Warehouse}
-        className="w-full sm:w-[160px]"
-      />
-      <FilterChipMultiSelect
-        options={nguoiDeXuatOptions}
-        value={filters.nguoiDeXuatIds ?? []}
-        onChange={(v) => setFilter('nguoiDeXuatIds', v)}
-        placeholder={t('deXuatMuaHang.form.requester')}
-        icon={User}
-        className="w-full sm:w-[160px]"
-      />
-      <FilterChipMultiSelect
-        options={nguoiDuyetOptions}
-        value={filters.nguoiDuyetIds ?? []}
-        onChange={(v) => setFilter('nguoiDuyetIds', v)}
-        placeholder={t('deXuatMuaHang.form.approver')}
-        icon={UserCheck}
-        className="w-full sm:w-[160px]"
-      />
+      <MobileFilterField label={t('deXuatMuaHang.filters.datePhieu')} icon={Calendar} active={dateFilterActive}>
+        <DateRangePicker inline presets={dateRangePickerPresets} value={dateValue} onChange={onDateChange} />
+      </MobileFilterField>
     </>
   );
 
@@ -409,8 +425,10 @@ const DeXuatMuaHangToolbar: React.FC<Props> = ({
           {bulkExport}
         </>
       }
-      filters={renderFilters}
+      filters={<ResponsiveFilterChips items={filterItems} />}
       filterGroups={filterGroups}
+      mobileFilterExtra={mobileFilterExtra}
+      mobileFilterExtraCount={dateFilterActive ? 1 : 0}
       mobileActions={mobileActions}
       searchTrailing={searchTrailingExport}
       onAdd={canCreate ? onAdd : undefined}

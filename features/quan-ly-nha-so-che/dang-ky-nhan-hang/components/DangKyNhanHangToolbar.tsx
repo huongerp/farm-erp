@@ -4,7 +4,7 @@ import { Building2, Calendar, CalendarDays, CircleDot, Download, Plus } from 'lu
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
-import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
 import { TRANG_THAI_DKNH } from '../core/types';
@@ -115,22 +115,11 @@ const DangKyNhanHangToolbar: React.FC<Props> = ({
     onChange: (v: string[]) => setFilter(g.key, v),
   }));
 
-  const renderFilters = (
-    <>
-      {groups.map((g) => (
-        <FilterChipMultiSelect
-          key={g.key}
-          options={g.options}
-          value={filters[g.key] ?? []}
-          onChange={(v) => setFilter(g.key, v)}
-          placeholder={g.label}
-          icon={g.icon}
-          className={`w-full ${g.width}`}
-          size="md"
-        />
-      ))}
-    </>
-  );
+  const filterItems: FilterChipItem[] = filterGroups.map((g, i) => ({
+    kind: 'group',
+    group: g,
+    className: `w-full ${groups[i].width}`,
+  }));
 
   const renderActions = (
     <>
@@ -167,7 +156,7 @@ const DangKyNhanHangToolbar: React.FC<Props> = ({
       onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
       actions={renderActions}
-      filters={renderFilters}
+      filters={<ResponsiveFilterChips items={filterItems} />}
       filterGroups={filterGroups}
       mobileActions={[{ key: 'export', label: t('common.export'), icon: Download, onClick: onExport, description: '' }]}
       onAdd={canCreate ? onAdd : undefined}

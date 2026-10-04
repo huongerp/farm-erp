@@ -4,8 +4,9 @@ import { Plus, User, Calendar, Warehouse, ToggleLeft, Download } from 'lucide-re
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
-import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
 import DateRangePicker, { type DateRangeValue } from '../../../../components/ui/DateRangePicker';
+import { MobileFilterField } from '../../../../components/ui/MobileFilterSheet';
 import { getDateRangeFromPreset, getPresetFromDates } from '../../../../lib/date-presets';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useEmployeesRefQuery } from '@/lib/hooks/use-ref-queries';
@@ -140,60 +141,9 @@ const KiemKeKhoPTToolbar: React.FC<Props> = ({
     filters.id_kho.length +
     (filters.dateFrom || filters.dateTo ? 1 : 0);
 
-  const renderFilters = (
-    <>
-      <DateRangePicker
-        presets={dateRangePresets}
-        value={dateRangeValue}
-        onChange={handleDateRangeChange}
-        placeholder={t('kiemKeKhoPT.filter.periodPlaceholder')}
-        customPresetId={CUSTOM_PRESET_ID}
-        className="shrink-0"
-      />
-      <FilterChipMultiSelect
-        options={trangThaiOptions}
-        value={filters.trang_thai}
-        onChange={(v) => setFilter('trang_thai', v)}
-        placeholder={t('kiemKeKhoPT.store.trangThaiCol')}
-        icon={ToggleLeft}
-        className="w-full sm:w-[160px]"
-        size="md"
-      />
-      <FilterChipMultiSelect
-        options={khoOptions}
-        value={filters.id_kho}
-        onChange={(v) => setFilter('id_kho', v)}
-        placeholder={t('kiemKeKhoPT.store.khoCol')}
-        icon={Warehouse}
-        className="w-full sm:w-[160px]"
-        size="md"
-      />
-      <FilterChipMultiSelect
-        options={nguoiPhuTrachOptions}
-        value={filters.id_nguoi_phu_trach}
-        onChange={(v) => setFilter('id_nguoi_phu_trach', v)}
-        placeholder={t('kiemKeKhoPT.store.nguoiPhuTrachCol')}
-        icon={User}
-        className="w-full sm:w-[180px]"
-        size="md"
-      />
-    </>
-  );
-
-  /**
-   * Bộ lọc mobile phải có ĐỦ các nhóm của hàng chip desktop, kể cả kỳ.
-   * Sheet chỉ hỗ trợ multi-select nên kỳ được mô phỏng bằng một nhóm chọn-một.
-   */
+  /** Kỳ không nằm ở đây — mobile dùng DateRangePicker inline qua `mobileFilterExtra`. */
   const filterGroups = useMemo(
     () => [
-      {
-        key: 'ky',
-        label: t('kiemKeKhoPT.filter.periodPlaceholder'),
-        icon: Calendar,
-        options: dateRangePresets.map((p) => ({ label: p.label, value: p.id })),
-        value: dateRangeValue.preset === 'all' ? [] : [dateRangeValue.preset],
-        onChange: (val: string[]) => apDungKy(val.find((v) => v !== dateRangeValue.preset) ?? 'all'),
-      },
       {
         key: 'trang_thai',
         label: t('kiemKeKhoPT.store.trangThaiCol'),
@@ -219,9 +169,30 @@ const KiemKeKhoPTToolbar: React.FC<Props> = ({
         onChange: (val: string[]) => setFilter('id_nguoi_phu_trach', val),
       },
     ],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [t, dateRangePresets, dateRangeValue.preset, trangThaiOptions, khoOptions, nguoiPhuTrachOptions, filters, setFilter]
+    [t, trangThaiOptions, khoOptions, nguoiPhuTrachOptions, filters, setFilter]
   );
+  const kyActive = !!(filters.dateFrom || filters.dateTo);
+
+  const [trangThaiGroup, khoGroup, nguoiPhuTrachGroup] = filterGroups;
+  const filterItems: FilterChipItem[] = [
+    {
+      kind: 'custom',
+      key: 'ky',
+      node: (
+        <DateRangePicker
+          presets={dateRangePresets}
+          value={dateRangeValue}
+          onChange={handleDateRangeChange}
+          placeholder={t('kiemKeKhoPT.filter.periodPlaceholder')}
+          customPresetId={CUSTOM_PRESET_ID}
+          className="shrink-0"
+        />
+      ),
+    },
+    { kind: 'group', group: trangThaiGroup, className: 'w-full sm:w-[160px]' },
+    { kind: 'group', group: khoGroup, className: 'w-full sm:w-[160px]' },
+    { kind: 'group', group: nguoiPhuTrachGroup, className: 'w-full sm:w-[180px]' },
+  ];
 
   const renderActions = (
     <div className="flex items-center gap-2">
@@ -265,8 +236,20 @@ const KiemKeKhoPTToolbar: React.FC<Props> = ({
       onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
       actions={renderActions}
-      filters={renderFilters}
+      filters={<ResponsiveFilterChips items={filterItems} />}
       filterGroups={filterGroups}
+      mobileFilterExtra={
+        <MobileFilterField label={t('kiemKeKhoPT.filter.periodPlaceholder')} icon={Calendar} active={kyActive}>
+          <DateRangePicker
+            inline
+            presets={dateRangePresets}
+            value={dateRangeValue}
+            onChange={handleDateRangeChange}
+            customPresetId={CUSTOM_PRESET_ID}
+          />
+        </MobileFilterField>
+      }
+      mobileFilterExtraCount={kyActive ? 1 : 0}
       onAdd={canCreate ? onAdd : undefined}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={resetFilters}

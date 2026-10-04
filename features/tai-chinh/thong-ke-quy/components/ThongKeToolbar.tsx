@@ -1,9 +1,10 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Building2, Wallet } from 'lucide-react';
+import { Building2, Wallet, Calendar } from 'lucide-react';
 import DashboardToolbar from '../../../../components/shared/DashboardToolbar';
 import FilterChipSingleSelect from '../../../../components/shared/FilterChipSingleSelect';
-import DateRangePicker from '../../../../components/ui/DateRangePicker';
+import DateRangePicker, { type DateRangeValue } from '../../../../components/ui/DateRangePicker';
+import { MobileFilterField } from '../../../../components/ui/MobileFilterSheet';
 import { DATE_RANGE_PRESETS, type DateRangePresetId } from '../../../he-thong/nhan-vien/core/stats-constants';
 import { getDateRangeFromPreset } from '../../../he-thong/nhan-vien/utils/stats-date-range';
 
@@ -83,8 +84,22 @@ const ThongKeToolbar: React.FC<Props> = ({
 
   const datePresets = useMemo(() => DATE_RANGE_PRESETS.map((p) => ({ id: p.id, label: p.label })), []);
 
+  const dateRangeValue: DateRangeValue = {
+    preset: datePreset,
+    customStart: value.customDateFrom,
+    customEnd: value.customDateEnd,
+  };
+  const handleDateRangeChange = (v: DateRangeValue) =>
+    onChange({
+      ...value,
+      datePreset: v.preset,
+      customDateFrom: v.customStart,
+      customDateEnd: v.customEnd,
+    });
+  const dateRangeActive = datePreset !== DEFAULT_THONG_KE_FILTER.datePreset;
+
   const activeFilterCount =
-    (value.chiNhanhId ? 1 : 0) + (datePreset !== 'all' ? 1 : 0) + (!hideLoai && value.loai ? 1 : 0);
+    (value.chiNhanhId ? 1 : 0) + (dateRangeActive ? 1 : 0) + (!hideLoai && value.loai ? 1 : 0);
 
   const clearFilters = () =>
     onChange({ ...DEFAULT_THONG_KE_FILTER, chiNhanhId: allowAllBranches ? '' : value.chiNhanhId });
@@ -97,7 +112,7 @@ const ThongKeToolbar: React.FC<Props> = ({
         icon: Building2,
         options: branchOptions,
         value: value.chiNhanhId ? [value.chiNhanhId] : [],
-        onChange: (val: string[]) => onChange({ ...value, chiNhanhId: val[0] ?? '' }),
+        onChange: (val: string[]) => onChange({ ...value, chiNhanhId: val[val.length - 1] ?? '' }),
       },
       ...(hideLoai
         ? []
@@ -109,7 +124,7 @@ const ThongKeToolbar: React.FC<Props> = ({
               options: loaiOptions,
               value: value.loai ? [value.loai] : [],
               onChange: (val: string[]) =>
-                onChange({ ...value, loai: (val[0] ?? '') as '' | 'thu' | 'chi' }),
+                onChange({ ...value, loai: (val[val.length - 1] ?? '') as '' | 'thu' | 'chi' }),
             },
           ]),
     ],
@@ -128,19 +143,8 @@ const ThongKeToolbar: React.FC<Props> = ({
       />
       <DateRangePicker
         presets={datePresets}
-        value={{
-          preset: datePreset,
-          customStart: value.customDateFrom,
-          customEnd: value.customDateEnd,
-        }}
-        onChange={(v) =>
-          onChange({
-            ...value,
-            datePreset: v.preset,
-            customDateFrom: v.customStart,
-            customDateEnd: v.customEnd,
-          })
-        }
+        value={dateRangeValue}
+        onChange={handleDateRangeChange}
         displayLabel={dateRangeLabel}
         placeholder={t('thongKeQuy.filters.dateRange')}
         className="w-full sm:w-auto"
@@ -166,6 +170,12 @@ const ThongKeToolbar: React.FC<Props> = ({
       filters={filters}
       actions={actions}
       filterGroups={filterGroups}
+      mobileFilterExtra={
+        <MobileFilterField label={t('thongKeQuy.filters.dateRange')} icon={Calendar} active={dateRangeActive}>
+          <DateRangePicker inline presets={datePresets} value={dateRangeValue} onChange={handleDateRangeChange} />
+        </MobileFilterField>
+      }
+      mobileFilterExtraCount={dateRangeActive ? 1 : 0}
       activeFilterCount={activeFilterCount}
       onClearFilters={clearFilters}
     />

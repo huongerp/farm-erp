@@ -5,6 +5,7 @@ import {
   AlarmClock,
   Ban,
   Building2,
+  Calendar,
   CheckCircle2,
   Clock,
   Hourglass,
@@ -17,7 +18,8 @@ import {
 } from 'lucide-react';
 import DashboardToolbar from '../../../../components/shared/DashboardToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
-import DateRangePicker from '../../../../components/ui/DateRangePicker';
+import DateRangePicker, { type DateRangeValue } from '../../../../components/ui/DateRangePicker';
+import { MobileFilterField } from '../../../../components/ui/MobileFilterSheet';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import { StatsKpiGrid, type StatsKpiCardItem } from '../../../../components/shared/stats';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
@@ -116,6 +118,10 @@ const ThongKeTab: React.FC = () => {
       ? `${from ? formatYmdToDisplay(from) : '…'} – ${to ? formatYmdToDisplay(to) : '…'}`
       : undefined;
 
+  const handleRangeChange = (v: DateRangeValue) =>
+    setRange({ preset: v.preset, customStart: v.customStart, customEnd: v.customEnd });
+  const rangeActive = range.preset !== PRESET_MAC_DINH;
+
   const activeFilterCount = idChiNhanh.length + khachHang.length + (range.preset !== PRESET_MAC_DINH ? 1 : 0);
   const clearFilters = () => {
     setIdChiNhanh([]);
@@ -147,7 +153,7 @@ const ThongKeTab: React.FC = () => {
       <DateRangePicker
         presets={presets}
         value={range}
-        onChange={(v) => setRange({ preset: v.preset, customStart: v.customStart, customEnd: v.customEnd })}
+        onChange={handleRangeChange}
         displayLabel={displayLabel}
       />
       <FilterChipMultiSelect
@@ -330,6 +336,12 @@ const ThongKeTab: React.FC = () => {
         className="static z-auto"
         filters={renderFilters}
         filterGroups={filterGroups}
+        mobileFilterExtra={
+          <MobileFilterField label={t('dangKyNhanHang.stats.khoangThoiGian')} icon={Calendar} active={rangeActive}>
+            <DateRangePicker inline presets={presets} value={range} onChange={handleRangeChange} />
+          </MobileFilterField>
+        }
+        mobileFilterExtraCount={rangeActive ? 1 : 0}
         activeFilterCount={activeFilterCount}
         onClearFilters={clearFilters}
       />

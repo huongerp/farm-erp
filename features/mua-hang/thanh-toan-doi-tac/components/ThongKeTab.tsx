@@ -11,6 +11,7 @@ import { useTrangThaiThanhToanDoiTacList } from '../../thiet-lap-de-xuat-vat-tu/
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import EmptyState from '../../../../components/shared/EmptyState';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import { MobileFilterField } from '../../../../components/ui/MobileFilterSheet';
 import { useThanhToanDoiTacStats } from './stats/useThanhToanDoiTacStats';
 import StatsToolbar from './stats/StatsToolbar';
 import StatsCards from './stats/StatsCards';
@@ -195,6 +196,31 @@ const ThongKeTab: React.FC = () => {
     </>
   );
 
+  const mobileFilterExtra = (
+    <MobileFilterField
+      label={`${t('thanhToanDoiTac.stats.dateFrom')} – ${t('thanhToanDoiTac.stats.dateTo')}`}
+      icon={Calendar}
+      active={!!(dateFrom || dateTo)}
+    >
+      <div className="grid grid-cols-2 gap-2">
+        <input
+          type="date"
+          value={dateFrom}
+          onChange={(e) => setDateFrom(e.target.value)}
+          aria-label={t('thanhToanDoiTac.stats.dateFrom')}
+          className="w-full h-10 rounded-lg border border-border bg-background px-2 text-sm"
+        />
+        <input
+          type="date"
+          value={dateTo}
+          onChange={(e) => setDateTo(e.target.value)}
+          aria-label={t('thanhToanDoiTac.stats.dateTo')}
+          className="w-full h-10 rounded-lg border border-border bg-background px-2 text-sm"
+        />
+      </div>
+    </MobileFilterField>
+  );
+
   const getReportFilters = (): ThanhToanDoiTacReportFilters => ({
     dateFrom,
     dateTo,
@@ -268,6 +294,8 @@ const ThongKeTab: React.FC = () => {
         className="static z-auto"
         filters={renderFilters}
         filterGroups={filterGroups}
+        mobileFilterExtra={mobileFilterExtra}
+        mobileFilterExtraCount={(dateFrom ? 1 : 0) + (dateTo ? 1 : 0)}
         activeFilterCount={activeFilterCount}
         onClearFilters={handleClearFilters}
         onExportReport={handleExportReport}

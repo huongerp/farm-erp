@@ -66,6 +66,14 @@ interface GenericToolbarProps {
     /** Callback khi bấm nút Thêm trên mobile */
     onAdd?: () => void;
 
+    /**
+     * Bộ lọc không phải danh sách chọn (khoảng ngày, tháng, nút gạt…) cho bảng lọc mobile —
+     * thường là bản `inline` của chính control đang đặt trong `filters` ở desktop.
+     */
+    mobileFilterExtra?: React.ReactNode;
+    /** Số bộ lọc đang bật trong `mobileFilterExtra`. */
+    mobileFilterExtraCount?: number;
+
     /** Nội dung nhỏ hiển thị bên phải ô search (desktop & mobile, khi không có selection) */
     searchTrailing?: React.ReactNode;
 }
@@ -85,6 +93,8 @@ const GenericToolbar: React.FC<GenericToolbarProps> = ({
     mobileActions,
     onAdd,
     searchTrailing,
+    mobileFilterExtra,
+    mobileFilterExtraCount,
 }) => {
     const { t } = useTranslation();
     /**
@@ -130,7 +140,7 @@ const GenericToolbar: React.FC<GenericToolbarProps> = ({
     }, [showColumnMenu]);
 
     const hasColumnManager = columns && onToggleColumn;
-    const hasFilters = filters && filterGroups && filterGroups.length > 0;
+    const hasFilters = !!filters && ((filterGroups?.length ?? 0) > 0 || !!mobileFilterExtra);
     const hasMobileActions = mobileActions && mobileActions.length > 0;
 
     return (
@@ -491,8 +501,10 @@ const GenericToolbar: React.FC<GenericToolbarProps> = ({
                 <MobileFilterSheet
                     open={showMobileFilters}
                     onClose={() => setShowMobileFilters(false)}
-                    groups={filterGroups!}
+                    groups={filterGroups ?? []}
                     onClearAll={onClearAllFilters}
+                    extra={mobileFilterExtra}
+                    extraActiveCount={mobileFilterExtraCount}
                 />
             )}
             {hasMobileActions && (

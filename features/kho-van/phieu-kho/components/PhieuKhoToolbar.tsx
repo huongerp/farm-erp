@@ -1,12 +1,12 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Tag, Warehouse, ArrowRightLeft, User, CheckCircle, Truck, Download } from 'lucide-react';
+import { Plus, Tag, Warehouse, ArrowRightLeft, User, CheckCircle, Truck, Download, Calendar } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
-import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
-import FilterOverflowDropdown from '../../../../components/shared/FilterOverflowDropdown';
-import DateRangePicker from '../../../../components/ui/DateRangePicker';
+import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
+import DateRangePicker, { type DateRangeValue } from '../../../../components/ui/DateRangePicker';
+import { MobileFilterField } from '../../../../components/ui/MobileFilterSheet';
 import { useSearchInputCommit } from '../../../../lib/hooks/use-search-input-commit';
 import { usePhieuKhoStore } from '../store/usePhieuKhoStore';
 import type { PhieuKho, LoaiPhieuKhoTab } from '../core/types';
@@ -44,8 +44,17 @@ function asStringArray(v: unknown): string[] {
   return [];
 }
 
-/** Desktop: nhóm lọc gom vào nút Filter để hàng chip ngoài tối đa 5 (MobileFilterSheet vẫn đủ nhóm). */
-const OVERFLOW_FILTER_KEYS = new Set(['nguoiDuyetIds']);
+/** Desktop: nhóm lọc ít dùng luôn nằm trong nút Filter (MobileFilterSheet vẫn đủ nhóm). */
+const LUON_VAO_FILTER = ['nguoiDuyetIds'];
+
+/** Bề rộng chip desktop theo key nhóm lọc. */
+const CHIP_WIDTH: Record<string, string> = {
+  status: 'w-full sm:w-[140px]',
+  khoIds: 'w-full sm:w-[160px]',
+  khoDenIds: 'w-full sm:w-[160px]',
+  nguoiTaoIds: 'w-full sm:w-[150px]',
+  doiTacIds: 'w-full sm:w-[170px]',
+};
 
 const PhieuKhoToolbar: React.FC<Props> = ({
   data: dataProp,
@@ -280,6 +289,12 @@ const PhieuKhoToolbar: React.FC<Props> = ({
   );
 
   const dateRangePickerPresets = useMemo(() => DATE_RANGE_PRESETS.map((p) => ({ id: p.id, label: p.label })), []);
+  const dateValue: DateRangeValue = { preset: datePreset, customStart: customFrom, customEnd: customEnd };
+  const onDateChange = (v: DateRangeValue) => {
+    setFilter('datePreset', v.preset as DateRangePresetId);
+    setFilter('customDateFrom', v.customStart);
+    setFilter('customDateEnd', v.customEnd);
+  };
 
   type FilterGroup = {
     key: string;
@@ -369,70 +384,32 @@ const PhieuKhoToolbar: React.FC<Props> = ({
     isXuat,
   ]);
 
-  const renderFilters = (
-    <>
-      <FilterChipMultiSelect
-        options={statusOptions}
-        value={statusArr}
-        onChange={(v) => setFilter('status', v)}
-        placeholder={t('common.status')}
-        icon={Tag}
-        className="w-full sm:w-[140px]"
-      />
+  const filterItems: FilterChipItem[] = filterGroups.map((g) => ({
+    kind: 'group',
+    group: g,
+    className: CHIP_WIDTH[g.key] ?? 'w-full sm:w-[160px]',
+  }));
+  // Chọn thời gian đứng ngay sau chip trạng thái như trước.
+  filterItems.splice(1, 0, {
+    kind: 'custom',
+    key: 'dateRange',
+    node: (
       <DateRangePicker
         presets={dateRangePickerPresets}
-        value={{
-          preset: datePreset,
-          customStart: customFrom,
-          customEnd: customEnd,
-        }}
-        onChange={(v) => {
-          setFilter('datePreset', v.preset as DateRangePresetId);
-          setFilter('customDateFrom', v.customStart);
-          setFilter('customDateEnd', v.customEnd);
-        }}
+        value={dateValue}
+        onChange={onDateChange}
         displayLabel={dateRangeLabel}
         placeholder={t('phieuKho.filters.datePhieu')}
         className="w-full sm:w-auto"
       />
-      <FilterChipMultiSelect
-        options={khoOptions}
-        value={khoIdsArr}
-        onChange={(v) => setFilter('khoIds', v)}
-        placeholder={labelKho}
-        icon={Warehouse}
-        className="w-full sm:w-[160px]"
-      />
-      {isChuyen && (
-        <FilterChipMultiSelect
-          options={khoDenOptions}
-          value={filters.khoDenIds ?? []}
-          onChange={(v) => setFilter('khoDenIds', v)}
-          placeholder={t('phieuKho.form.warehouseTo')}
-          icon={ArrowRightLeft}
-          className="w-full sm:w-[160px]"
-        />
-      )}
-      <FilterChipMultiSelect
-        options={nguoiTaoOptions}
-        value={nguoiTaoArr}
-        onChange={(v) => setFilter('nguoiTaoIds', v)}
-        placeholder={t('phieuKho.filters.creator')}
-        icon={User}
-        className="w-full sm:w-[150px]"
-      />
-      {(isNhap || isXuat) && (
-        <FilterChipMultiSelect
-          options={doiTacOptions}
-          value={doiTacArr}
-          onChange={(v) => setFilter('doiTacIds', v)}
-          placeholder={isNhap ? t('phieuKho.filters.supplier') : t('phieuKho.filters.customer')}
-          icon={Truck}
-          className="w-full sm:w-[170px]"
-        />
-      )}
-      <FilterOverflowDropdown groups={filterGroups.filter((g) => OVERFLOW_FILTER_KEYS.has(g.key))} />
-    </>
+    ),
+  });
+
+  // Bảng lọc mobile chỉ có các nhóm chọn — bù khoảng ngày của desktop.
+  const mobileFilterExtra = (
+    <MobileFilterField label={t('phieuKho.filters.datePhieu')} icon={Calendar} active={!!dateFilterActive}>
+      <DateRangePicker inline presets={dateRangePickerPresets} value={dateValue} onChange={onDateChange} />
+    </MobileFilterField>
   );
 
   const renderActions = (
@@ -471,8 +448,10 @@ const PhieuKhoToolbar: React.FC<Props> = ({
       onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
       actions={renderActions}
-      filters={renderFilters}
+      filters={<ResponsiveFilterChips items={filterItems} luonVaoFilter={LUON_VAO_FILTER} />}
       filterGroups={filterGroups}
+      mobileFilterExtra={mobileFilterExtra}
+      mobileFilterExtraCount={dateFilterActive ? 1 : 0}
       mobileActions={mobileActions}
       onAdd={canCreate ? onAdd : undefined}
       showBack

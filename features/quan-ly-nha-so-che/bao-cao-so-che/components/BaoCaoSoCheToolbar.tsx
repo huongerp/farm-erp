@@ -5,7 +5,7 @@ import { Plus, Building2, Calendar, Hash, ToggleLeft, Ruler, Download } from 'lu
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
-import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useBaoCaoSoCheStore, type BaoCaoSoCheFilters } from '../store/useBaoCaoSoCheStore';
 import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
@@ -183,55 +183,13 @@ const BaoCaoSoCheToolbar: React.FC<Props> = ({
     [t, namOptions, thangOptions, trangThaiOptions, donViTinhOptions, branchOptions, filters.nam, filters.thang, filters.trang_thai, filters.don_vi_tinh, filters.id_chi_nhanh, setFilter]
   );
 
-  const renderFilters = (
-    <div className="flex flex-wrap items-center gap-2 w-full">
-      <FilterChipMultiSelect
-        options={namOptions}
-        value={filters.nam ?? []}
-        onChange={(v) => setFilter('nam', v)}
-        placeholder={t('baoCaoSoChe.toolbar.filterNam')}
-        icon={Calendar}
-        className="w-full sm:w-[120px]"
-        size="md"
-      />
-      <FilterChipMultiSelect
-        options={thangOptions}
-        value={filters.thang ?? []}
-        onChange={(v) => setFilter('thang', v)}
-        placeholder={t('baoCaoSoChe.toolbar.filterThang')}
-        icon={Hash}
-        className="w-full sm:w-[140px]"
-        size="md"
-      />
-      <FilterChipMultiSelect
-        options={trangThaiOptions}
-        value={filters.trang_thai ?? []}
-        onChange={(v) => setFilter('trang_thai', v)}
-        placeholder={t('baoCaoSoChe.toolbar.filterTrangThai')}
-        icon={ToggleLeft}
-        className="w-full sm:w-[150px]"
-        size="md"
-      />
-      <FilterChipMultiSelect
-        options={donViTinhOptions}
-        value={filters.don_vi_tinh ?? []}
-        onChange={(v) => setFilter('don_vi_tinh', v)}
-        placeholder={t('baoCaoSoChe.toolbar.filterDvt')}
-        icon={Ruler}
-        className="w-full sm:w-[140px]"
-        size="md"
-      />
-      <FilterChipMultiSelect
-        options={branchOptions}
-        value={filters.id_chi_nhanh ?? []}
-        onChange={(v) => setFilter('id_chi_nhanh', v)}
-        placeholder={t('baoCaoSoChe.toolbar.filterBranch')}
-        icon={Building2}
-        className="w-full sm:w-[200px]"
-        size="md"
-      />
-    </div>
-  );
+  /** Bề rộng chip desktop, cùng thứ tự với filterGroups. */
+  const chipWidths = ['sm:w-[120px]', 'sm:w-[140px]', 'sm:w-[150px]', 'sm:w-[140px]', 'sm:w-[200px]'];
+  const filterItems: FilterChipItem[] = filterGroups.map((g, i) => ({
+    kind: 'group',
+    group: g,
+    className: `w-full ${chipWidths[i]}`,
+  }));
 
   const mobileActions = useMemo(
     () => [
@@ -282,7 +240,7 @@ const BaoCaoSoCheToolbar: React.FC<Props> = ({
       onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
       actions={renderActions}
-      filters={renderFilters}
+      filters={<ResponsiveFilterChips items={filterItems} />}
       filterGroups={filterGroups}
       mobileActions={mobileActions}
       onAdd={canCreate ? onAdd : undefined}
