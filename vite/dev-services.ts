@@ -23,6 +23,7 @@ type Options = {
   apiTarget: string;
   authTarget: string;
   notifyTarget: string;
+  sheetsTarget: string;
 };
 
 /**
@@ -162,7 +163,7 @@ function gan(nhan: string, child: ChildProcess, logger: Logger) {
   }
 }
 
-export function devServices({ env, root, apiTarget, authTarget, notifyTarget }: Options): Plugin {
+export function devServices({ env, root, apiTarget, authTarget, notifyTarget, sheetsTarget }: Options): Plugin {
   return {
     name: 'farm-erp:dev-services',
     apply: 'serve',
@@ -173,7 +174,8 @@ export function devServices({ env, root, apiTarget, authTarget, notifyTarget }: 
       const apiPort = localPort(apiTarget);
       const authPort = localPort(authTarget);
       const notifyPort = localPort(notifyTarget);
-      if (apiPort === null && authPort === null && notifyPort === null) return;
+      const sheetsPort = localPort(sheetsTarget);
+      if (apiPort === null && authPort === null && notifyPort === null && sheetsPort === null) return;
 
       const db = thongTinDb(env.VPS_DB_URL ?? '');
       if (!db) {
@@ -187,7 +189,7 @@ export function devServices({ env, root, apiTarget, authTarget, notifyTarget }: 
 
       // Đổi cổng trong .env rồi restart: process cũ không còn ai proxy tới nữa.
       for (const port of [...registry.keys()]) {
-        if (port !== apiPort && port !== authPort && port !== notifyPort) {
+        if (port !== apiPort && port !== authPort && port !== notifyPort && port !== sheetsPort) {
           docMuc(registry, port)?.child.kill('SIGTERM');
           registry.delete(port);
         }
@@ -291,6 +293,41 @@ export function devServices({ env, root, apiTarget, authTarget, notifyTarget }: 
                 VAPID_PUBLIC_KEY: env.VITE_VAPID_PUBLIC_KEY ?? '',
                 VAPID_PRIVATE_KEY: env.VAPID_PRIVATE_KEY ?? '',
                 VAPID_SUBJECT: env.VAPID_SUBJECT ?? '',
+                COMPANY_TZ: env.COMPANY_TZ ?? '',
+              },
+            }),
+          );
+        }
+      }
+
+      if (sheetsPort !== null) {
+        const sheetsDir = path.join(root, 'services', 'sheets');
+        const thieu = ['SHEETS_SERVICE_DB_PASSWORD', 'PGRST_JWT_SECRET', 'SHEETS_TOKEN_KEY', 'GOOGLE_OAUTH_CLIENT_SECRET'].filter(
+          (k) => !env[k],
+        );
+        if (thieu.length > 0) {
+          // Thiếu cấu hình Google thì chỉ tắt nút Google Sheet, phần còn lại của app chạy bình thường.
+          logger.info(`[sheets] thiếu ${thieu.join(', ')} — bỏ qua (xem docs/GOOGLE_SHEETS.md).`);
+        } else if (!existsSync(path.join(sheetsDir, 'node_modules'))) {
+          logger.warn('[sheets] chưa cài phụ thuộc — chạy `npm ci --prefix services/sheets` rồi mở lại dev.');
+        } else {
+          await batDau(sheetsPort, '[sheets]', '/khoe', 'cần Node >= 22.6 (--experimental-strip-types)', () =>
+            spawn(process.execPath, ['--watch', '--experimental-strip-types', 'src/index.ts'], {
+              cwd: sheetsDir,
+              stdio: ['ignore', 'pipe', 'pipe'],
+              env: {
+                ...process.env,
+                DATABASE_URL: ketNoi('sheets_service', env.SHEETS_SERVICE_DB_PASSWORD),
+                JWT_SECRET: env.PGRST_JWT_SECRET,
+                PORT: String(sheetsPort),
+                SHEETS_TOKEN_KEY: env.SHEETS_TOKEN_KEY,
+                GOOGLE_OAUTH_CLIENT_ID: env.GOOGLE_OAUTH_CLIENT_ID || env.VITE_GOOGLE_CLIENT_ID || '',
+                GOOGLE_OAUTH_CLIENT_SECRET: env.GOOGLE_OAUTH_CLIENT_SECRET,
+                // Dev để trống: service tự lập redirect_uri theo origin localhost đang chạy.
+                GOOGLE_OAUTH_REDIRECT_URI: '',
+                POSTGREST_URL: apiTarget,
+                // Dev và prod chung DB — worker đồng bộ chỉ bật khi cố ý test.
+                SHEETS_WORKER_BAT: env.DEV_SHEETS_WORKER_BAT === 'true' ? 'true' : 'false',
                 COMPANY_TZ: env.COMPANY_TZ ?? '',
               },
             }),

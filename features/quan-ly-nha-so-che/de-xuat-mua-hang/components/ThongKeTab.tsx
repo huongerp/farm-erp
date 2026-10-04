@@ -2,7 +2,6 @@ import React, { useMemo, useState, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { User, UserCheck, Calendar, Warehouse, Tag } from 'lucide-react';
-import { toast } from 'sonner';
 import { useDeXuatMuaHangViewScope } from '../hooks/use-de-xuat-mua-hang-view-scope';
 import { fetchDeXuatMuaHangStatsFromRpc } from '../services/de-xuat-mua-hang-db.service';
 import { useEmployeesRefQuery } from '../../../../lib/hooks/use-ref-queries';
@@ -202,9 +201,6 @@ const ThongKeTab: React.FC = () => {
     </MobileFilterField>
   );
 
-  const handleExportReport = () => {
-    toast.info(t('deXuatMuaHang.stats.exportReport') + ' – Đang phát triển');
-  };
 
   const handlePrintReport = () => {
     window.print();
@@ -252,7 +248,6 @@ const ThongKeTab: React.FC = () => {
         actionsLabel={t('deXuatMuaHang.stats.actions')}
         exportLabel={t('deXuatMuaHang.stats.exportReport')}
         printLabel={t('deXuatMuaHang.stats.printReport')}
-        onExportReport={handleExportReport}
         onPrintReport={handlePrintReport}
       />
 

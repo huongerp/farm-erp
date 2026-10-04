@@ -102,7 +102,10 @@ export function formatDbError(err: unknown, ctx?: { resource?: string }): string
     return i18n.t('errors.db.serverError', { status: String(status) }) + suffix;
   }
 
-  if (code === '42501' || /permission denied for|violates row-level security|row-level security/i.test(msg)) {
+  const rlsEnglish = /permission denied for|violates row-level security|row-level security/i.test(msg);
+  if (code === '42501' || rlsEnglish) {
+    // Trigger/RPC tự RAISE … USING ERRCODE = '42501' kèm câu tiếng Việt → giữ nguyên câu đó.
+    if (!rlsEnglish && msg.trim()) return `[42501] ${msg.trim()}${suffix}`;
     return i18n.t('errors.db.forbiddenRls', { code: code || '42501' }) + suffix;
   }
 
@@ -118,6 +121,23 @@ export function formatDbError(err: unknown, ctx?: { resource?: string }): string
         field: field?.groups ? `${field.groups.col} = ${field.groups.val}` : msg.trim(),
       }) + suffix
     );
+  }
+
+  // 23503 — khoá ngoại: xoá/sửa bản ghi đang được phiếu khác tham chiếu, hoặc ghi tham chiếu
+  // tới bản ghi đã bị xoá.
+  if (code === '23503' || /violates foreign key constraint/i.test(msg)) {
+    const key = /^insert or update on table/i.test(msg) ? 'errors.db.foreignKeyMissing' : 'errors.db.foreignKeyInUse';
+    return i18n.t(key, { code: code || '23503' }) + suffix;
+  }
+
+  if (code === '23502' || /null value in column/i.test(msg)) {
+    const col = /null value in column "(?<col>[^"]+)"/i.exec(msg)?.groups?.col ?? '';
+    return i18n.t('errors.db.notNull', { code: code || '23502', column: col }) + suffix;
+  }
+
+  if (code === '23514' || /violates check constraint/i.test(msg)) {
+    const ten = /check constraint "(?<ten>[^"]+)"/i.exec(msg)?.groups?.ten ?? '';
+    return i18n.t('errors.db.checkViolation', { code: code || '23514', constraint: ten }) + suffix;
   }
 
   if (code === 'PGRST301' || /jwt expired|invalid jwt|jwt/i.test(msg)) {

@@ -85,9 +85,11 @@ async function xuLyDieuHuong(options: RouteHandlerCallbackOptions): Promise<Resp
 }
 
 // Trừ /api, /auth, /notify — đó là request dữ liệu, không bao giờ được trả về HTML.
+// /sheets: popup OAuth điều hướng tới /sheets/google/callback — trả shell SPA ở đó là
+// mất mã xác thực. Trang .html tĩnh (chính sách riêng tư, điều khoản) đi thẳng nginx.
 registerRoute(
   new NavigationRoute(xuLyDieuHuong, {
-    denylist: [/^\/api\//, /^\/auth\//, /^\/notify\//],
+    denylist: [/^\/api\//, /^\/auth\//, /^\/notify\//, /^\/sheets\//, /\.html$/],
   })
 );
 

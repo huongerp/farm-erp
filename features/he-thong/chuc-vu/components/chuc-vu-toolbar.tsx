@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Download, Upload, Tag } from 'lucide-react';
+import { Plus, Download, Tag } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
@@ -13,7 +13,6 @@ interface Props {
   items?: { trang_thai: string }[];
   onAdd: () => void;
   onExport: () => void;
-  onImport: () => void;
   onDeleteMany: (ids: string[]) => void;
   onStatusChangeMany: (ids: string[], status: TrangThaiHoatDong) => void;
   canCreate?: boolean;
@@ -23,7 +22,7 @@ interface Props {
 
 const PositionToolbar: React.FC<Props> = ({
   items = [],
-  onAdd, onExport, onImport, onDeleteMany, onStatusChangeMany,
+  onAdd, onExport, onDeleteMany, onStatusChangeMany,
   canCreate = true, canUpdate = true, canDelete = true,
 }) => {
   const { t } = useTranslation();
@@ -77,20 +76,14 @@ const PositionToolbar: React.FC<Props> = ({
 
   const mobileActions = useMemo(
     () => [
-      { key: 'import', label: t('common.import'), icon: Upload, onClick: onImport, description: '' },
       { key: 'export', label: t('common.export'), icon: Download, onClick: onExport, description: '' },
     ],
-    [onImport, onExport, t]
+    [onExport, t]
   );
 
   const renderActions = (
     <>
       <div className="hidden sm:flex items-center gap-2">
-        <Tooltip content={t('common.import')} placement="bottom">
-          <Button variant="outline" size="sm" onClick={onImport} className="inline-flex min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-9 w-9 p-0 items-center justify-center border-border text-muted-foreground hover:bg-muted/50">
-            <Upload className="w-4 h-4" />
-          </Button>
-        </Tooltip>
         <Tooltip content={t('common.export')} placement="bottom">
           <Button variant="outline" size="sm" onClick={onExport} className="inline-flex min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-9 w-9 p-0 items-center justify-center border-border text-muted-foreground hover:bg-muted/50">
             <Download className="w-4 h-4" />

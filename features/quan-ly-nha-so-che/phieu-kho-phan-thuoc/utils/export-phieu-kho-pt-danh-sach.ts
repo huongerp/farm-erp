@@ -3,7 +3,24 @@
  */
 import type { TFunction } from 'i18next';
 import type { PhieuKhoPT, ChiTietPhieuKhoPTFlat } from '../core/types';
-import type { ExportColumn } from '../../../../components/shared/LazyExportDialog';
+import type { ExportColumn, KieuCotXuat } from '../../../../lib/export/dinh-dang-o';
+
+/** Kiểu cột để Excel nhận số/ngày thật — xem `lib/export/dinh-dang-o.ts`. Cột không có ở đây là chữ. */
+const KIEU_COT: Record<string, KieuCotXuat> = {
+  id: 'text',
+  id_phieu_kho: 'text',
+  ngay: 'date',
+  tg_tao: 'datetime',
+  tg_cap_nhat: 'datetime',
+  phieu_tg_tao: 'datetime',
+  phieu_tg_cap_nhat: 'datetime',
+  tong_so_dong: 'number',
+  tong_so_luong: 'number',
+  tong_tien: 'money',
+  so_luong: 'number',
+  don_gia: 'money',
+  thanh_tien: 'money',
+};
 
 export const PHIEU_KHO_PT_LIST_EXPORT_KEYS = [
   'id',
@@ -57,6 +74,7 @@ export function getExportColumnsPhieuKhoPTList(t: TFunction): ExportColumn[] {
   return PHIEU_KHO_PT_LIST_EXPORT_KEYS.map((key) => ({
     key,
     label: t(`phieuKhoPhanThuoc.export.list.${key}`),
+    type: KIEU_COT[key],
   }));
 }
 
@@ -130,6 +148,7 @@ export function getExportColumnsChiTietPhieuKhoPT(t: TFunction): ExportColumn[] 
   return CHI_TIET_PHIEU_KHO_PT_EXPORT_KEYS.map((key) => ({
     key,
     label: t(`phieuKhoPhanThuoc.export.chiTiet.${key}`),
+    type: KIEU_COT[key],
   }));
 }
 

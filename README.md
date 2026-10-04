@@ -87,6 +87,7 @@ npm run dev
 
 - [Quy ước giao diện (UI Conventions)](docs/UI-CONVENTIONS.md) – Dialog/Drawer, Section, Design system (border radius, button, error message).
 - [Chuyển sang PostgREST self-host](docs/VPS_POSTGREST_PLAN.md), [runbook cut-over](docs/VPS_CUTOVER.md).
+- [Xuất & đồng bộ Google Sheet](docs/GOOGLE_SHEETS.md) – cấu hình Google Cloud, biến môi trường, soi lỗi.
 
 ## Cấu trúc chính
 

@@ -75,11 +75,4 @@ export function duLieuPhieuIn(
 }
 
 /** Mọi giá trị người dùng nhập đều qua đây trước khi ghép vào HTML in. */
-export function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
+export { escapeHtml } from '../../../../lib/escape-html';

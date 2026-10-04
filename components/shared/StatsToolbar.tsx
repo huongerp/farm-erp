@@ -22,6 +22,7 @@ export interface StatsToolbarProps {
   actionsLabel: string;
   /** Nhãn mục xuất báo cáo (Excel). */
   exportLabel: string;
+  /** Không truyền → ẩn mục xuất (đừng truyền handler chỉ báo "đang phát triển"). */
   onExportReport?: () => void;
   /** Có nhãn thì menu thêm mục xuất PDF (giữa Excel và In) và rộng 170px. */
   exportPdfLabel?: string;
@@ -93,17 +94,27 @@ const StatsToolbar: React.FC<StatsToolbarProps> = ({
             hasPdf ? 'min-w-[170px]' : 'min-w-[160px]'
           )}
         >
-          <button type="button" onClick={runAndClose(onExportReport)} className={ITEM_CLASS}>
-            <FileDown size={16} className="text-muted-foreground" />
-            {exportLabel}
-          </button>
+          {onExportReport && (
+            <button type="button" onClick={runAndClose(onExportReport)} className={ITEM_CLASS}>
+              <FileDown size={16} className="text-muted-foreground" />
+              {exportLabel}
+            </button>
+          )}
           {hasPdf && (
-            <button type="button" onClick={runAndClose(onExportPDF)} className={cn(ITEM_CLASS, 'border-t border-border')}>
+            <button
+              type="button"
+              onClick={runAndClose(onExportPDF)}
+              className={cn(ITEM_CLASS, onExportReport && 'border-t border-border')}
+            >
               <FileText size={16} className="text-muted-foreground" />
               {exportPdfLabel}
             </button>
           )}
-          <button type="button" onClick={runAndClose(onPrintReport)} className={cn(ITEM_CLASS, 'border-t border-border')}>
+          <button
+            type="button"
+            onClick={runAndClose(onPrintReport)}
+            className={cn(ITEM_CLASS, (onExportReport || hasPdf) && 'border-t border-border')}
+          >
             <Printer size={16} className="text-muted-foreground" />
             {printLabel}
           </button>

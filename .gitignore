@@ -33,3 +33,6 @@ Thumbs.db
 
 # File điền khoá thủ công (chứa secret - không commit)
 *.local.txt
+
+# Biến môi trường Dokploy có secret (dokploy-sheets.txt)
+dokploy-*.txt

@@ -18,6 +18,7 @@ import { bulkInsert, bulkUpdateById, bulkUpsert } from '../../../../lib/import-b
 import { IMPORT_ROW_KEY } from '../../../../lib/import-types';
 import type { ImportErrorRow, ImportMode } from '../../../../lib/import-types';
 import { matchKey, normalizeText, parseImportNumber } from '../../../../lib/import-common';
+import { throwDbError } from '../../../../lib/db-errors';
 
 const TABLE = 'fp_mh_danh_sach_hang_hoa';
 
@@ -301,7 +302,7 @@ export const getHangHoaById = async (id: string): Promise<HangHoa | null> => {
     .select(HANG_HOA_DETAIL_COLUMNS)
     .eq('id', idNum)
     .maybeSingle();
-  if (error) throw new Error(error.message);
+  if (error) throwDbError(error);
   if (!row) return null;
   const [enriched] = await enrichWithTenDanhMuc([row as HangHoaRow]);
   return enriched;
@@ -313,7 +314,7 @@ export const getHangHoaDetail = getHangHoaById;
 /** Thứ tự mới khi tạo: max(thu_tu) + 1, tối thiểu 1. */
 export const getNextThuTu = async (): Promise<number> => {
   const { data, error } = await db.from(TABLE).select('thu_tu').order('thu_tu', { ascending: false }).limit(1).maybeSingle();
-  if (error) throw new Error(error.message);
+  if (error) throwDbError(error);
   const max = data?.thu_tu != null ? Number(data.thu_tu) : 0;
   return Math.max(1, max + 1);
 };
@@ -347,7 +348,7 @@ export const createHangHoa = async (data: HangHoaFormValues): Promise<HangHoa> =
   };
 
   const { data: inserted, error } = await db.from(TABLE).insert(payload).select(HANG_HOA_DETAIL_COLUMNS).single();
-  if (error) throw new Error(error.message);
+  if (error) throwDbError(error);
   const [enriched] = await enrichWithTenDanhMuc([inserted as HangHoaRow]);
   return enriched;
 };
@@ -390,7 +391,7 @@ export const updateHangHoa = async (id: string, data: HangHoaFormValues): Promis
     .eq('id', idNum)
     .select(HANG_HOA_DETAIL_COLUMNS)
     .single();
-  if (error) throw new Error(error.message ?? i18n.t('hangHoa.service.notFound'));
+  if (error) throwDbError(error);
   const [enriched] = await enrichWithTenDanhMuc([updated as HangHoaRow]);
   return enriched;
 };
@@ -404,7 +405,7 @@ export const updateHangHoaStatus = async (id: string, status: HangHoa['trang_tha
     .eq('id', idNum)
     .select(HANG_HOA_DETAIL_COLUMNS)
     .single();
-  if (error) throw new Error(error.message ?? i18n.t('hangHoa.service.notFound'));
+  if (error) throwDbError(error);
   const [enriched] = await enrichWithTenDanhMuc([updated as HangHoaRow]);
   return enriched;
 };
@@ -413,7 +414,7 @@ export const deleteHangHoa = async (id: string): Promise<void> => {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('hangHoa.service.notFound'));
   const { error } = await db.from(TABLE).delete().eq('id', idNum);
-  if (error) throw new Error(error.message ?? i18n.t('hangHoa.service.notFound'));
+  if (error) throwDbError(error);
 };
 
 export const deleteHangHoaMany = async (ids: string[]): Promise<void> => {
@@ -421,7 +422,7 @@ export const deleteHangHoaMany = async (ids: string[]): Promise<void> => {
   const idNums = ids.map(Number).filter((n) => !Number.isNaN(n));
   if (idNums.length === 0) return;
   const { error } = await db.from(TABLE).delete().in('id', idNums);
-  if (error) throw new Error(error.message ?? i18n.t('hangHoa.service.notFound'));
+  if (error) throwDbError(error);
 };
 
 export type { ImportMode };

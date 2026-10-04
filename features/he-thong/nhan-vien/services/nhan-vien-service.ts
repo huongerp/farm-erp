@@ -18,6 +18,7 @@ import type { ImportErrorRow } from '../../../../lib/import-types';
 // Nạp động trong importEmployees: import-nhan-vien kéo theo zod (employeeSchema), mà service này
 // nằm trong luồng đăng nhập (lib/auth.ts) → import tĩnh sẽ đẩy zod vào chunk chính.
 import type { NhanVienImportInput } from '../utils/import-nhan-vien';
+import { throwDbError } from '../../../../lib/db-errors';
 
 const TABLE = 'fp_var_nhan_vien';
 
@@ -411,7 +412,7 @@ export const getEmployeeById = async (id: string): Promise<Employee | undefined>
     .eq('id', id)
     .maybeSingle();
 
-  if (error) throw new Error(error.message);
+  if (error) throwDbError(error);
   if (!data) return undefined;
   const emp = rowToEmployee(data);
   await enrichEmployeesWithRefDataAsync([emp]);
@@ -435,7 +436,7 @@ export const getEmployeeByEmail = async (email: string): Promise<Employee | null
     .select(EMPLOYEE_AUTH_SELECT)
     .eq('email', normalized)
     .maybeSingle();
-  if (error) throw new Error(error.message);
+  if (error) throwDbError(error);
   if (data) {
     const emp = rowToEmployee(data);
     await enrichEmployeesWithRefDataAsync([emp]);
@@ -504,7 +505,7 @@ export const createEmployee = async (data: EmployeeFormValues): Promise<Employee
     .select(EMPLOYEE_DETAIL_SELECT)
     .single();
 
-  if (error) throw new Error(error.message);
+  if (error) throwDbError(error);
   const emp: EmployeeMutationResult = rowToEmployee(inserted);
 
   // Mật khẩu không phải cột của bảng — ghi riêng qua RPC để hash bằng pgcrypto.
@@ -538,7 +539,7 @@ export const importEmployees = async (
   const existingEmails: string[] = [];
   for (const group of chunkBy(emails, 200)) {
     const { data, error } = await db.from(TABLE).select('email').in('email', group);
-    if (error) throw new Error(error.message);
+    if (error) throwDbError(error);
     ((data ?? []) as { email: string | null }[]).forEach((r) => r.email && existingEmails.push(r.email));
   }
 
@@ -582,7 +583,7 @@ export const updateEmployee = async (id: string, data: EmployeeFormValues): Prom
     .select(EMPLOYEE_DETAIL_SELECT)
     .single();
 
-  if (error) throw new Error(error.message ?? i18n.t('employee.service.notFound'));
+  if (error) throwDbError(error);
   const emp: EmployeeMutationResult = rowToEmployee(updated);
 
   // Bỏ trống = không đổi mật khẩu.
@@ -615,7 +616,7 @@ export const updateEmployeeStatus = async (ids: string[], status: string): Promi
     .update({ trang_thai: status })
     .in('id', ids);
 
-  if (error) throw new Error(error.message);
+  if (error) throwDbError(error);
 };
 
 export const bulkUpdateEmployees = async (ids: string[], fields: Record<string, unknown>): Promise<void> => {
@@ -632,18 +633,18 @@ export const bulkUpdateEmployees = async (ids: string[], fields: Record<string, 
     .update(row)
     .in('id', ids);
 
-  if (error) throw new Error(error.message);
+  if (error) throwDbError(error);
 };
 
 export const deleteEmployee = async (id: string): Promise<void> => {
   const { error } = await db.from(TABLE).delete().eq('id', id);
-  if (error) throw new Error(error.message);
+  if (error) throwDbError(error);
 };
 
 export const deleteEmployees = async (ids: string[]): Promise<void> => {
   if (ids.length === 0) return;
   const { error } = await db.from(TABLE).delete().in('id', ids);
-  if (error) throw new Error(error.message);
+  if (error) throwDbError(error);
 };
 
 export const restoreEmployees = async (_employees: Employee[]): Promise<void> => {

@@ -13,14 +13,22 @@ import type {
 import {
   CHI_TIET_DON_DAT_HANG_EXPORT_KEYS,
   DON_DAT_HANG_LIST_EXPORT_KEYS,
+  KIEU_COT_DON_DAT_HANG,
   mapChiTietDonDatHangFlatRow,
   mapDonDatHangListRow,
 } from './export-don-dat-hang-danh-sach';
+import { dinhDangOXuat } from '../../../../lib/export/dinh-dang-o';
 import { fetchAllChiTietDonDatHangForListQuery } from '../services/don-dat-hang-service';
 import type { DonDatHangListServerQuery } from '../services/don-dat-hang-list-query';
 
 const FONT_STACK = "'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif";
 const FILENAME_PREFIX = 'bao_cao_don_dat_hang';
+
+/** Mapper trả giá trị thô; báo cáo này giữ số là số, ngày là chữ dd/mm/yyyy như trước. */
+function oBaoCao(gt: unknown, key: string): string | number {
+  const o = dinhDangOXuat(gt, KIEU_COT_DON_DAT_HANG[key]);
+  return typeof o.excel === 'number' ? o.excel : o.hienThi;
+}
 
 export interface DonDatHangCategoryReportStats {
   byDanhMucCap1: StatsChartItem[];
@@ -192,7 +200,7 @@ export async function exportDonDatHangReportToXLSX({
     const mapped = mapDonDatHangListRow(item);
     const row: Record<string, string | number> = {};
     DON_DAT_HANG_LIST_EXPORT_KEYS.forEach((key) => {
-      row[t(`donDatHang.export.list.${key}`)] = (mapped[key] as string | number) ?? '';
+      row[t(`donDatHang.export.list.${key}`)] = oBaoCao(mapped[key], key);
     });
     return row;
   });
@@ -246,7 +254,7 @@ export async function exportDonDatHangReportToXLSX({
     const mapped = mapChiTietDonDatHangFlatRow(row);
     const out: Record<string, string | number> = {};
     CHI_TIET_DON_DAT_HANG_EXPORT_KEYS.forEach((key) => {
-      out[t(`donDatHang.export.chiTiet.${key}`)] = (mapped[key] as string | number) ?? '';
+      out[t(`donDatHang.export.chiTiet.${key}`)] = oBaoCao(mapped[key], key);
     });
     return out;
   });

@@ -31,6 +31,7 @@
   "settings.fontSourceSansDesc": "Chuyên nghiệp",
   "settings.fontMerriweatherDesc": "Serif cổ điển",
   "settings.region": "Cấu hình vùng",
+  "settings.appVersion": "Phiên bản {{version}}",
   "settings.language": "Ngôn ngữ hiển thị",
   "settings.selectLanguage": "Chọn ngôn ngữ",
   "settings.timezone": "Múi giờ",

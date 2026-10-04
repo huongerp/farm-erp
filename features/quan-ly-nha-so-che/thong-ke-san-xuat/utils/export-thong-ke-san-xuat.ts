@@ -7,6 +7,7 @@ import { useUIStore } from '../../../../store/useStore';
 import type { ThongKeSanXuatStats, KpiAnalysis, ByChiNhanhRow } from '../components/stats/useThongKeSanXuatStats';
 import type { ThongKeSanXuatSummary, ThongKeSanXuatRow } from '../core/types';
 import { kpiThucTeDisplay } from '../core/kpi-display';
+import { escapeHtml as e } from '../../../../lib/escape-html';
 
 // ─── Style constants ──────────────────────────────────────────────────────────
 
@@ -94,14 +95,14 @@ function download(blob: Blob, name: string) {
 function buildCompanyHeader(): string {
   const info = useUIStore.getState().companyInfo;
   const logoHtml = info.appLogo
-    ? `<img src="${info.appLogo}" alt="Logo" style="width:52px;height:52px;object-fit:contain;flex-shrink:0" />`
+    ? `<img src="${e(info.appLogo)}" alt="Logo" style="width:52px;height:52px;object-fit:contain;flex-shrink:0" />`
     : '';
   return `
 <div style="display:flex;align-items:flex-start;gap:12px;padding-bottom:10px;margin-bottom:10px;border-bottom:2px solid #333;font-family:${FONT}">
   ${logoHtml}
   <div>
-    <div style="font-size:12pt;font-weight:bold;color:#111;text-transform:uppercase">${info.companyName}</div>
-    ${info.address ? `<p style="font-size:8pt;color:#444;margin:2px 0 0 0">Địa chỉ: ${info.address}</p>` : ''}
+    <div style="font-size:12pt;font-weight:bold;color:#111;text-transform:uppercase">${e(info.companyName)}</div>
+    ${info.address ? `<p style="font-size:8pt;color:#444;margin:2px 0 0 0">Địa chỉ: ${e(info.address)}</p>` : ''}
   </div>
 </div>`;
 }
@@ -189,7 +190,7 @@ function buildChiNhanhSection(rows: ByChiNhanhRow[]): string {
   const body = rows.map((r) => {
     const net = r.tienThuongDuong + r.tienThuongAm;
     return `<tr>
-      <td style="${td}">${r.ten}</td>
+      <td style="${td}">${e(r.ten)}</td>
       <td style="${tdC}">${fmtInt(r.tongNgay)}</td>
       <td style="${tdR};font-weight:600">${fmt1(r.tongCongQuyDoi)}</td>
       <td style="${tdR}">${fmt1(r.tbCongQuyDoiNgay)}</td>
@@ -321,7 +322,7 @@ function buildSoCheThungSection(byChiNhanh: ByChiNhanhRow[]): string {
   if (visible.length === 0) return '';
   const body = visible.map((r) =>
     `<tr>
-      <td style="${td}">${r.ten}</td>
+      <td style="${td}">${e(r.ten)}</td>
       <td style="${tdR}">${r.tongBuongSoChe > 0 ? fmtInt(r.tongBuongSoChe) : '—'}</td>
       <td style="${tdR}">${r.tongThungKH > 0 ? fmtInt(r.tongThungKH) : '—'}</td>
       <td style="${tdR};font-weight:600">${r.tongThungTT > 0 ? fmtInt(r.tongThungTT) : '—'}</td>
@@ -375,7 +376,7 @@ function buildDailyDetailSection(rows: ThongKeSanXuatRow[]): string {
       return `<tr>${cells
         .map((c, i) => {
           const style = i === 2 ? `${tdDaily};text-align:center` : i < 3 ? tdDaily : tdDailyR;
-          return `<td style="${style}">${c}</td>`;
+          return `<td style="${style}">${e(c)}</td>`;
         })
         .join('')}</tr>`;
     })
@@ -406,7 +407,7 @@ function buildBody(
   return [
     companyHeader,
     `<h1 style="text-align:center;font-size:14pt;font-weight:bold;text-transform:uppercase;margin:0 0 4px;font-family:${FONT}">THỐNG KÊ SẢN XUẤT</h1>`,
-    `<p style="text-align:center;font-size:9pt;color:#555;margin:0 0 12px;font-family:${FONT}">${periodLabel}</p>`,
+    `<p style="text-align:center;font-size:9pt;color:#555;margin:0 0 12px;font-family:${FONT}">${e(periodLabel)}</p>`,
     buildSummarySection(summary),
     buildChiNhanhSection(stats.byChiNhanh),
     buildKpiSection(stats.kpiAnalysis),

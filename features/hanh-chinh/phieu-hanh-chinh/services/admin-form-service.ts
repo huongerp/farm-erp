@@ -20,6 +20,7 @@ import {
   type KhoangPhieu,
 } from '../core/khoang-nghi';
 import i18n from '../../../../lib/i18n';
+import { throwDbError } from '../../../../lib/db-errors';
 
 const TABLE = 'fp_hr_phieu_hanh_chinh';
 const TABLE_NHOM = 'fp_hr_nhom_phieu_hanh_chinh';
@@ -279,7 +280,7 @@ export async function getAdminFormById(id: string): Promise<AdminFormRequest | n
     .select(ADMIN_FORM_ROW_COLUMNS)
     .eq('id', idNum)
     .maybeSingle();
-  if (error) throw new Error(error.message);
+  if (error) throwDbError(error);
   if (!data) return null;
   const row = data as Row;
   const maps = await fetchMaps([row]);
@@ -349,7 +350,7 @@ export async function timPhieuTrung(
   const boQua = boQuaId != null ? Number(boQuaId) : NaN;
   if (Number.isFinite(boQua)) q = q.neq('id', boQua);
   const { data, error } = await q.order('ngay', { ascending: true }).limit(20);
-  if (error) throw new Error(error.message);
+  if (error) throwDbError(error);
   const rows = (data as Row[] | null) ?? [];
   const maps = await fetchMaps(rows);
   return rows
@@ -409,7 +410,7 @@ export async function createAdminForm(
   };
 
   const { data: inserted, error } = await db.from(TABLE).insert(row).select(ADMIN_FORM_ROW_COLUMNS).single();
-  if (error) throw new Error(error.message);
+  if (error) throwDbError(error);
   const insertedRow = inserted as Row;
   const maps = await fetchMaps([insertedRow]);
   return rowToRequest(insertedRow, maps);
@@ -431,7 +432,7 @@ export async function updateAdminForm(id: string, data: AdminFormValues): Promis
     .eq('id', idNum)
     .select(ADMIN_FORM_ROW_COLUMNS)
     .single();
-  if (error) throw new Error(error.message ?? i18n.t('adminForm.service.notFound'));
+  if (error) throwDbError(error);
   const updatedRow = updated as Row;
   const maps = await fetchMaps([updatedRow]);
   return rowToRequest(updatedRow, maps);
@@ -444,14 +445,14 @@ export async function cancelAdminForm(id: string): Promise<void> {
     .from(TABLE)
     .update({ trang_thai: 'Đã hủy', tg_cap_nhat: new Date().toISOString() })
     .eq('id', idNum);
-  if (error) throw new Error(error.message ?? i18n.t('adminForm.service.notFound'));
+  if (error) throwDbError(error);
 }
 
 export async function deleteAdminForm(id: string): Promise<void> {
   const idNum = parseInt(id, 10);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('adminForm.service.notFound'));
   const { error } = await db.from(TABLE).delete().eq('id', idNum);
-  if (error) throw new Error(error.message ?? i18n.t('adminForm.service.notFound'));
+  if (error) throwDbError(error);
 }
 
 export async function deleteAdminForms(ids: string[]): Promise<void> {
@@ -459,7 +460,7 @@ export async function deleteAdminForms(ids: string[]): Promise<void> {
   const numIds = ids.map((id) => parseInt(id, 10)).filter((n) => !Number.isNaN(n));
   if (numIds.length === 0) return;
   const { error } = await db.from(TABLE).delete().in('id', numIds);
-  if (error) throw new Error(error.message ?? i18n.t('adminForm.service.notFound'));
+  if (error) throwDbError(error);
 }
 
 export async function cancelAdminForms(ids: string[]): Promise<void> {
@@ -470,7 +471,7 @@ export async function cancelAdminForms(ids: string[]): Promise<void> {
     .from(TABLE)
     .update({ trang_thai: 'Đã hủy', tg_cap_nhat: new Date().toISOString() })
     .in('id', numIds);
-  if (error) throw new Error(error.message ?? i18n.t('adminForm.service.notFound'));
+  if (error) throwDbError(error);
 }
 
 /** 1 cấp duyệt: quản lý duyệt */
@@ -485,7 +486,7 @@ export async function approveAdminFormsByManager(ids: string[]): Promise<void> {
       tg_cap_nhat: new Date().toISOString(),
     })
     .in('id', numIds);
-  if (error) throw new Error(error.message ?? i18n.t('adminForm.service.notFound'));
+  if (error) throwDbError(error);
 }
 
 export async function rejectAdminFormsByManager(ids: string[]): Promise<void> {
@@ -499,7 +500,7 @@ export async function rejectAdminFormsByManager(ids: string[]): Promise<void> {
       tg_cap_nhat: new Date().toISOString(),
     })
     .in('id', numIds);
-  if (error) throw new Error(error.message ?? i18n.t('adminForm.service.notFound'));
+  if (error) throwDbError(error);
 }
 
 /** 1 cấp duyệt: giữ API HCNS cho tương thích, coi như đã duyệt */
@@ -536,7 +537,7 @@ export async function createAdminFormSystem(data: {
     tg_cap_nhat: null,
   };
   const { data: inserted, error } = await db.from(TABLE).insert(row).select(ADMIN_FORM_ROW_COLUMNS).single();
-  if (error) throw new Error(error.message);
+  if (error) throwDbError(error);
   const out = inserted as Row;
   const maps = await fetchMaps([out]);
   return rowToRequest(out, maps);
@@ -549,7 +550,7 @@ export async function updateAdminFormGhiChu(id: string, ghiChu: string | null): 
     .from(TABLE)
     .update({ ghi_chu: ghiChu?.trim() || null, tg_cap_nhat: new Date().toISOString() })
     .eq('id', idNum);
-  if (error) throw new Error(error.message ?? i18n.t('adminForm.service.notFound'));
+  if (error) throwDbError(error);
 }
 
 export async function approveAdminFormByManager(id: string): Promise<void> {
@@ -562,7 +563,7 @@ export async function approveAdminFormByManager(id: string): Promise<void> {
       tg_cap_nhat: new Date().toISOString(),
     })
     .eq('id', idNum);
-  if (error) throw new Error(error.message ?? i18n.t('adminForm.service.notFound'));
+  if (error) throwDbError(error);
 }
 
 export async function rejectAdminFormByManager(id: string): Promise<void> {
@@ -575,7 +576,7 @@ export async function rejectAdminFormByManager(id: string): Promise<void> {
       tg_cap_nhat: new Date().toISOString(),
     })
     .eq('id', idNum);
-  if (error) throw new Error(error.message ?? i18n.t('adminForm.service.notFound'));
+  if (error) throwDbError(error);
 }
 
 /** Chỉ 1 cấp duyệt thật ở DB (trang_thai) — giữ API HCNS cho tương thích, coi như đã duyệt. */

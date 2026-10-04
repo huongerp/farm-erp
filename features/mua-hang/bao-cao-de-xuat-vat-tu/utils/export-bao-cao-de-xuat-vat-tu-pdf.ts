@@ -4,6 +4,7 @@
 import { formatDateTime, getTodayISODate } from '../../../../lib/utils';
 import { downloadBlob } from '../../../../lib/download-blob';
 import { useUIStore } from '../../../../store/useStore';
+import { escapeHtml as e } from '../../../../lib/escape-html';
 import i18n from '../../../../lib/i18n';
 import { ensureJsPDFVietnameseFont } from '../../../../lib/jspdf-vietnamese-font';
 import type { BaoCaoDeXuatVatTuFilters } from '../core/types';
@@ -21,18 +22,18 @@ function getTrangThaiLabel(trang_thai: string, t: TFunction): string {
 function buildCompanyHeaderHTML(): string {
   const info = useUIStore.getState().companyInfo;
   const logoHtml = info.appLogo
-    ? `<img src="${info.appLogo}" alt="Logo" style="width:64px;height:64px;object-fit:contain;flex-shrink:0" />`
+    ? `<img src="${e(info.appLogo)}" alt="Logo" style="width:64px;height:64px;object-fit:contain;flex-shrink:0" />`
     : '';
-  const addr = info.address ? `${i18n.t('company.address')}: ${info.address}` : '';
+  const addr = info.address ? `${i18n.t('company.address')}: ${e(info.address)}` : '';
   const contact: string[] = [];
-  if (info.email) contact.push(`${i18n.t('company.email')}: ${info.email}`);
-  if (info.phone) contact.push(`${i18n.t('company.phone')}: ${info.phone}`);
+  if (info.email) contact.push(`${i18n.t('company.email')}: ${e(info.email)}`);
+  if (info.phone) contact.push(`${i18n.t('company.phone')}: ${e(info.phone)}`);
   const contactLine = contact.join(' · ');
   return `
 <div style="display:flex;align-items:flex-start;gap:16px;padding-bottom:16px;margin-bottom:16px;border-bottom:2px solid #333;font-family:${FONT_STACK}">
   ${logoHtml}
   <div style="flex:1;min-width:0">
-    <div style="font-size:14pt;font-weight:bold;color:#111;text-transform:uppercase;letter-spacing:0.02em">${info.companyName}</div>
+    <div style="font-size:14pt;font-weight:bold;color:#111;text-transform:uppercase;letter-spacing:0.02em">${e(info.companyName)}</div>
     ${addr ? `<p style="font-size:9pt;color:#444;margin:2px 0 0 0">${addr}</p>` : ''}
     ${contactLine ? `<p style="font-size:9pt;color:#444;margin:2px 0 0 0">${contactLine}</p>` : ''}
   </div>
@@ -54,7 +55,7 @@ function buildTableTrangThai(
     .map(
       (r) => `
     <tr>
-      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${getTrangThaiLabel(r.trang_thai, t)}</td>
+      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${e(getTrangThaiLabel(r.trang_thai, t))}</td>
       <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt;text-align:right">${r.count}</td>
     </tr>`
     )
@@ -79,7 +80,7 @@ function buildTableNoiDeXuat(
     .map(
       (r) => `
     <tr>
-      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${r.ten_noi_de_xuat ?? r.id_noi_de_xuat}</td>
+      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${e(r.ten_noi_de_xuat ?? r.id_noi_de_xuat)}</td>
       <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt;text-align:right">${r.count}</td>
     </tr>`
     )
@@ -107,11 +108,11 @@ function buildTableChiTiet(
     .map(
       (p) => `
     <tr>
-      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${p.so_phieu}</td>
-      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${p.ngay}</td>
-      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${p.ten_noi_de_xuat ?? '—'}</td>
-      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${p.ten_nguoi_de_xuat ?? '—'}</td>
-      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${getTrangThaiLabel(p.trang_thai, t)}</td>
+      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${e(p.so_phieu)}</td>
+      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${e(p.ngay)}</td>
+      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${e(p.ten_noi_de_xuat ?? '—')}</td>
+      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${e(p.ten_nguoi_de_xuat ?? '—')}</td>
+      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${e(getTrangThaiLabel(p.trang_thai, t))}</td>
     </tr>`
     )
     .join('');
@@ -131,7 +132,7 @@ export async function exportBaoCaoDeXuatVatTuToPdf(
   const title = t('baoCaodeXuatVatTu.reportTitle');
   const period =
     filters.dateFrom && filters.dateTo
-      ? `${t('baoCaodeXuatVatTu.period')}: ${filters.dateFrom} – ${filters.dateTo}`
+      ? `${t('baoCaodeXuatVatTu.period')}: ${e(filters.dateFrom)} – ${e(filters.dateTo)}`
       : `${t('baoCaodeXuatVatTu.period')}: ${t('baoCaodeXuatVatTu.preset.all')}`;
   const printedAt = formatDateTime(new Date());
 

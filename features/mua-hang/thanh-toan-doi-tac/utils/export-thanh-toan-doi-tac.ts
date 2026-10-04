@@ -7,6 +7,7 @@ import { downloadBlob } from '../../../../lib/download-blob';
 import i18n from '../../../../lib/i18n';
 import { ensureJsPDFVietnameseFont } from '../../../../lib/jspdf-vietnamese-font';
 import { useUIStore } from '../../../../store/useStore';
+import { escapeHtml as e } from '../../../../lib/escape-html';
 
 const FONT_STACK = "'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif";
 
@@ -18,18 +19,18 @@ function safeStr(v: string | number | null | undefined): string {
 function buildCompanyHeaderHTML(): string {
   const info = useUIStore.getState().companyInfo;
   const logoHtml = info.appLogo
-    ? `<img src="${info.appLogo}" alt="Logo" style="width:64px;height:64px;object-fit:contain;flex-shrink:0" />`
+    ? `<img src="${e(info.appLogo)}" alt="Logo" style="width:64px;height:64px;object-fit:contain;flex-shrink:0" />`
     : '';
-  const addr = info.address ? `${i18n.t('company.address')}: ${info.address}` : '';
+  const addr = info.address ? `${i18n.t('company.address')}: ${e(info.address)}` : '';
   const contact: string[] = [];
-  if (info.email) contact.push(`${i18n.t('company.email')}: ${info.email}`);
-  if (info.phone) contact.push(`${i18n.t('company.phone')}: ${info.phone}`);
+  if (info.email) contact.push(`${i18n.t('company.email')}: ${e(info.email)}`);
+  if (info.phone) contact.push(`${i18n.t('company.phone')}: ${e(info.phone)}`);
   const contactLine = contact.join(' · ');
   return `
 <div style="display:flex;align-items:flex-start;gap:16px;padding-bottom:16px;margin-bottom:16px;border-bottom:2px solid #333;font-family:${FONT_STACK}">
   ${logoHtml}
   <div style="flex:1;min-width:0">
-    <div style="font-size:14pt;font-weight:bold;color:#111;text-transform:uppercase;letter-spacing:0.02em">${info.companyName}</div>
+    <div style="font-size:14pt;font-weight:bold;color:#111;text-transform:uppercase;letter-spacing:0.02em">${e(info.companyName)}</div>
     ${addr ? `<p style="font-size:9pt;color:#444;margin:2px 0 0 0">${addr}</p>` : ''}
     ${contactLine ? `<p style="font-size:9pt;color:#444;margin:2px 0 0 0">${contactLine}</p>` : ''}
   </div>
@@ -38,7 +39,7 @@ function buildCompanyHeaderHTML(): string {
 
 const TABLE_CELL =
   (label: string, value: string) =>
-  `<tr><td style="padding:4px 6px;border:1px solid #ddd;font-weight:600;width:40%;color:#444;font-family:${FONT_STACK}">${label}</td><td style="padding:4px 6px;border:1px solid #ddd;font-family:${FONT_STACK}">${value}</td></tr>`;
+  `<tr><td style="padding:4px 6px;border:1px solid #ddd;font-weight:600;width:40%;color:#444;font-family:${FONT_STACK}">${label}</td><td style="padding:4px 6px;border:1px solid #ddd;font-family:${FONT_STACK}">${e(value)}</td></tr>`;
 
 export function buildThanhToanDoiTacBodyHTML(item: ThanhToanDoiTac): string {
   const t = i18n.t.bind(i18n);
@@ -64,7 +65,7 @@ export function buildThanhToanDoiTacBodyHTML(item: ThanhToanDoiTac): string {
 <div style="font-family:${FONT_STACK};font-size:10pt;color:#222;padding:20px;min-width:600px">
 ${buildCompanyHeaderHTML()}
 <h1 style="font-size:16pt;text-align:center;margin:0 0 8px;font-family:${FONT_STACK}">${title}</h1>
-<p style="font-size:10pt;color:#555;text-align:center;margin-bottom:12px;font-family:${FONT_STACK}">${subtitle}</p>
+<p style="font-size:10pt;color:#555;text-align:center;margin-bottom:12px;font-family:${FONT_STACK}">${e(subtitle)}</p>
 <hr style="border:0;border-top:1px solid #ccc;margin:12px 0" />
 <table style="width:100%;border-collapse:collapse;margin-top:12px;font-family:${FONT_STACK};font-size:10pt">
   <thead><tr style="background:#3b82f6;color:#fff"><th colspan="2" style="padding:6px;text-align:left;font-size:9pt">${t('thanhToanDoiTac.detail.basicInfo')}</th></tr></thead>

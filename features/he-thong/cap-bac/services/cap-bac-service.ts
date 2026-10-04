@@ -2,6 +2,7 @@ import { db, fetchAllRows } from '../../../../lib/db';
 import type { JobLevel } from '../core/types';
 import type { JobLevelFormValues } from '../core/schema';
 import { TRANG_THAI, TRANG_THAI_HOAT_DONG, type TrangThaiHoatDong } from '../../../../lib/constants';
+import { throwDbError } from '../../../../lib/db-errors';
 
 const TABLE = 'fp_var_cap_bac';
 
@@ -50,7 +51,7 @@ export const createJobLevel = async (data: JobLevelFormValues): Promise<JobLevel
     .select('id, ten_cap_bac, cap_bac, mo_ta, trang_thai, tg_tao, tg_cap_nhat')
     .single();
 
-  if (error) throw new Error(error.message);
+  if (error) throwDbError(error);
   return rowToJobLevel(inserted);
 };
 
@@ -70,7 +71,7 @@ export const updateJobLevel = async (id: string, data: JobLevelFormValues): Prom
     .select('id, ten_cap_bac, cap_bac, mo_ta, trang_thai, tg_tao, tg_cap_nhat')
     .single();
 
-  if (error) throw new Error(error.message);
+  if (error) throwDbError(error);
   return rowToJobLevel(updated);
 };
 
@@ -83,7 +84,7 @@ export const updateJobLevelStatus = async (ids: string[], status: TrangThaiHoatD
       .select('id, ten_cap_bac, cap_bac, mo_ta, trang_thai, tg_tao, tg_cap_nhat')
       .single();
 
-    if (error) throw new Error(error.message);
+    if (error) throwDbError(error);
     return data ? rowToJobLevel(data) : undefined;
   }
 
@@ -92,7 +93,7 @@ export const updateJobLevelStatus = async (ids: string[], status: TrangThaiHoatD
     .update({ trang_thai: status, tg_cap_nhat: new Date().toISOString() })
     .in('id', ids);
 
-  if (error) throw new Error(error.message);
+  if (error) throwDbError(error);
   return undefined;
 };
 
@@ -102,5 +103,5 @@ export const deleteJobLevels = async (ids: string[]): Promise<void> => {
     .delete()
     .in('id', ids);
 
-  if (error) throw new Error(error.message);
+  if (error) throwDbError(error);
 };

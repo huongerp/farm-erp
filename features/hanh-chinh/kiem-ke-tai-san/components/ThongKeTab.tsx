@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { User, Calendar } from 'lucide-react';
-import { toast } from 'sonner';
 import { useDotKiemKeList } from '../hooks/use-kiem-ke-tai-san';
 import { useKiemKeTaiSanViewScope } from '../hooks/use-kiem-ke-tai-san-view-scope';
 import { useAuthStore } from '../../../../store/useStore';
@@ -175,9 +174,6 @@ const ThongKeTab: React.FC = () => {
     </>
   );
 
-  const handleExportReport = () => {
-    toast.info(t('kiemKeTaiSan.stats.exportReport') + ' – Đang phát triển');
-  };
 
   const handlePrintReport = () => {
     window.print();
@@ -233,7 +229,6 @@ const ThongKeTab: React.FC = () => {
         actionsLabel={t('kiemKeTaiSan.stats.actions')}
         exportLabel={t('kiemKeTaiSan.stats.exportReport')}
         printLabel={t('kiemKeTaiSan.stats.printReport')}
-        onExportReport={handleExportReport}
         onPrintReport={handlePrintReport}
       />
 

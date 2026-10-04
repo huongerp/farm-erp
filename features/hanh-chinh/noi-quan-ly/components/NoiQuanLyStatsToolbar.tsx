@@ -84,24 +84,29 @@ const NoiQuanLyStatsToolbar: React.FC<NoiQuanLyStatsToolbarProps> = ({
       </button>
       {actionsOpen && (
         <div className="absolute right-0 top-full mt-1.5 z-50 min-w-[180px] bg-card rounded-xl shadow-xl border border-border overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
-          <button
-            type="button"
-            onClick={() => {
-              onExportReport?.();
-              setActionsOpen(false);
-            }}
-            className="w-full h-9 px-3 flex items-center gap-2 text-left text-sm text-foreground hover:bg-muted/60 transition-colors"
-          >
-            <FileDown size={16} className="text-muted-foreground" />
-            {t('noiQuanLy.stats.exportReport')}
-          </button>
+          {onExportReport && (
+            <button
+              type="button"
+              onClick={() => {
+                onExportReport();
+                setActionsOpen(false);
+              }}
+              className="w-full h-9 px-3 flex items-center gap-2 text-left text-sm text-foreground hover:bg-muted/60 transition-colors"
+            >
+              <FileDown size={16} className="text-muted-foreground" />
+              {t('noiQuanLy.stats.exportReport')}
+            </button>
+          )}
           <button
             type="button"
             onClick={() => {
               onPrintReport?.();
               setActionsOpen(false);
             }}
-            className="w-full h-9 px-3 flex items-center gap-2 text-left text-sm text-foreground hover:bg-muted/60 transition-colors border-t border-border"
+            className={cn(
+              'w-full h-9 px-3 flex items-center gap-2 text-left text-sm text-foreground hover:bg-muted/60 transition-colors',
+              onExportReport && 'border-t border-border'
+            )}
           >
             <Printer size={16} className="text-muted-foreground" />
             {t('noiQuanLy.stats.printReport')}

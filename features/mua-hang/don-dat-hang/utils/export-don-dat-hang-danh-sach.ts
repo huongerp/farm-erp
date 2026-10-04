@@ -4,20 +4,26 @@
  */
 import type { TFunction } from 'i18next';
 import type { ChiTietDonDatHangFlat, DonDatHang } from '../core/types';
-import type { ExportColumn } from '../../../../components/shared/LazyExportDialog';
-import { formatDateShort, formatDateShortTime } from '../../../../lib/utils';
+import type { ExportColumn, KieuCotXuat } from '../../../../lib/export/dinh-dang-o';
 
-function cellDate(s: string | undefined | null): string {
-  if (s == null || String(s).trim() === '') return '';
-  const d = formatDateShort(s);
-  return d || String(s).trim();
-}
-
-function cellDateTime(s: string | undefined | null): string {
-  if (s == null || String(s).trim() === '') return '';
-  const d = formatDateShortTime(s);
-  return d || String(s).trim();
-}
+/**
+ * Mapper trả giá trị THÔ (số, `YYYY-MM-DD`, ISO); kiểu cột quyết định Excel nhận số/ngày thật
+ * — xem `lib/export/dinh-dang-o.ts`. Cột không có ở đây là chữ.
+ */
+export const KIEU_COT_DON_DAT_HANG: Record<string, KieuCotXuat> = {
+  id: 'text',
+  id_don_dat_hang: 'text',
+  chi_tiet_id: 'text',
+  ngay_dat: 'date',
+  ngay_giao_dk: 'date',
+  tg_tao: 'datetime',
+  tg_cap_nhat: 'datetime',
+  don_tg_tao: 'datetime',
+  don_tg_cap_nhat: 'datetime',
+  so_luong: 'number',
+  don_gia: 'money',
+  thanh_tien: 'money',
+};
 
 /** Thứ tự cột file xuất (Excel/CSV/PDF) — dễ lọc, dễ đọc. */
 export const DON_DAT_HANG_LIST_EXPORT_KEYS = [
@@ -49,8 +55,8 @@ export function mapDonDatHangListRow(p: DonDatHang): Record<string, unknown> {
   return {
     id: p.id,
     so_po: (p.so_po ?? '').trim(),
-    ngay_dat: cellDate(p.ngay_dat),
-    ngay_giao_dk: cellDate(p.ngay_giao_dk),
+    ngay_dat: p.ngay_dat ?? '',
+    ngay_giao_dk: p.ngay_giao_dk ?? '',
     id_nha_cung_cap: p.id_nha_cung_cap ?? '',
     ten_nha_cung_cap: (p.ten_nha_cung_cap ?? '').trim(),
     ma_nha_cung_cap: (p.ma_nha_cung_cap ?? '').trim(),
@@ -67,8 +73,8 @@ export function mapDonDatHangListRow(p: DonDatHang): Record<string, unknown> {
     dieu_khoan_thanh_toan: (p.dieu_khoan_thanh_toan ?? '').trim(),
     ghi_chu: (p.ghi_chu ?? '').trim(),
     trang_thai: p.trang_thai ?? '',
-    tg_tao: cellDateTime(p.tg_tao),
-    tg_cap_nhat: cellDateTime(p.tg_cap_nhat),
+    tg_tao: p.tg_tao ?? '',
+    tg_cap_nhat: p.tg_cap_nhat ?? '',
   };
 }
 
@@ -76,6 +82,7 @@ export function getExportColumnsDonDatHangList(t: TFunction): ExportColumn[] {
   return DON_DAT_HANG_LIST_EXPORT_KEYS.map((key) => ({
     key,
     label: t(`donDatHang.export.list.${key}`),
+    type: KIEU_COT_DON_DAT_HANG[key],
   }));
 }
 
@@ -128,8 +135,8 @@ export function mapChiTietDonDatHangFlatRow(row: ChiTietDonDatHangFlat): Record<
     chi_tiet_id: row.id,
     id_don_dat_hang: row.id_don_dat_hang,
     so_po: (row.so_po ?? '').trim(),
-    ngay_dat: cellDate(row.ngay_dat),
-    ngay_giao_dk: cellDate(row.ngay_giao_dk),
+    ngay_dat: row.ngay_dat ?? '',
+    ngay_giao_dk: row.ngay_giao_dk ?? '',
     id_nha_cung_cap: row.id_nha_cung_cap ?? '',
     ten_nha_cung_cap: (row.ten_nha_cung_cap ?? '').trim(),
     ma_nha_cung_cap: (row.ma_nha_cung_cap ?? '').trim(),
@@ -139,8 +146,8 @@ export function mapChiTietDonDatHangFlatRow(row: ChiTietDonDatHangFlat): Record<
     so_phieu_de_xuat: (row.so_phieu_de_xuat ?? '').trim(),
     trang_thai: row.trang_thai ?? '',
     don_ghi_chu: (row.don_ghi_chu ?? '').trim(),
-    don_tg_tao: cellDateTime(row.don_tg_tao),
-    don_tg_cap_nhat: cellDateTime(row.don_tg_cap_nhat),
+    don_tg_tao: row.don_tg_tao ?? '',
+    don_tg_cap_nhat: row.don_tg_cap_nhat ?? '',
     id_nguoi_dat: row.id_nguoi_dat ?? '',
     ten_nguoi_dat: (row.ten_nguoi_dat ?? '').trim(),
     ma_nguoi_dat: (row.ma_nguoi_dat ?? '').trim(),
@@ -166,6 +173,7 @@ export function getExportColumnsChiTietDonDatHang(t: TFunction): ExportColumn[] 
   return CHI_TIET_DON_DAT_HANG_EXPORT_KEYS.map((key) => ({
     key,
     label: t(`donDatHang.export.chiTiet.${key}`),
+    type: KIEU_COT_DON_DAT_HANG[key],
   }));
 }
 

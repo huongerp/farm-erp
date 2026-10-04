@@ -10,6 +10,7 @@ import { ensureJsPDFVietnameseFont } from '../../../../lib/jspdf-vietnamese-font
 import { useUIStore } from '../../../../store/useStore';
 import { getTrangThaiDotLabel } from '../core/constants';
 import { getKetQuaLabel } from '../core/constants';
+import { escapeHtml as e } from '../../../../lib/escape-html';
 
 const FONT_STACK = "'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif";
 
@@ -22,18 +23,18 @@ function safeStr(v: string | number | null | undefined): string {
 function buildCompanyHeaderHTML(): string {
   const info = useUIStore.getState().companyInfo;
   const logoHtml = info.appLogo
-    ? `<img src="${info.appLogo}" alt="Logo" style="width:64px;height:64px;object-fit:contain;flex-shrink:0" />`
+    ? `<img src="${e(info.appLogo)}" alt="Logo" style="width:64px;height:64px;object-fit:contain;flex-shrink:0" />`
     : '';
-  const addr = info.address ? `${i18n.t('company.address')}: ${info.address}` : '';
+  const addr = info.address ? `${i18n.t('company.address')}: ${e(info.address)}` : '';
   const contact: string[] = [];
-  if (info.email) contact.push(`${i18n.t('company.email')}: ${info.email}`);
-  if (info.phone) contact.push(`${i18n.t('company.phone')}: ${info.phone}`);
+  if (info.email) contact.push(`${i18n.t('company.email')}: ${e(info.email)}`);
+  if (info.phone) contact.push(`${i18n.t('company.phone')}: ${e(info.phone)}`);
   const contactLine = contact.join(' · ');
   return `
 <div style="display:flex;align-items:flex-start;gap:16px;padding-bottom:16px;margin-bottom:16px;border-bottom:2px solid #333;font-family:${FONT_STACK}">
   ${logoHtml}
   <div style="flex:1;min-width:0">
-    <div style="font-size:14pt;font-weight:bold;color:#111;text-transform:uppercase;letter-spacing:0.02em">${info.companyName}</div>
+    <div style="font-size:14pt;font-weight:bold;color:#111;text-transform:uppercase;letter-spacing:0.02em">${e(info.companyName)}</div>
     ${addr ? `<p style="font-size:9pt;color:#444;margin:2px 0 0 0">${addr}</p>` : ''}
     ${contactLine ? `<p style="font-size:9pt;color:#444;margin:2px 0 0 0">${contactLine}</p>` : ''}
   </div>
@@ -42,14 +43,14 @@ function buildCompanyHeaderHTML(): string {
 
 const TABLE_CELL =
   (label: string, value: string) =>
-  `<tr><td style="padding:4px 6px;border:1px solid #ddd;font-weight:600;width:40%;color:#444;font-family:${FONT_STACK}">${label}</td><td style="padding:4px 6px;border:1px solid #ddd;font-family:${FONT_STACK}">${value}</td></tr>`;
+  `<tr><td style="padding:4px 6px;border:1px solid #ddd;font-weight:600;width:40%;color:#444;font-family:${FONT_STACK}">${label}</td><td style="padding:4px 6px;border:1px solid #ddd;font-family:${FONT_STACK}">${e(value)}</td></tr>`;
 
 /** Nội dung HTML cho phiếu kiểm kê (body) – cấu trúc giống hồ sơ tài sản */
 function buildPhieuKiemKeBodyHTML(dot: DotKiemKe, chiTiet: ChiTietKiemKe[]): string {
   const t = i18n.t.bind(i18n);
   const title = t('kiemKeTaiSan.preview.title');
   const printedAt = formatDateTime(new Date());
-  const subtitle = `${dot.ma_dot} · ${dot.ten_dot} · ${getTrangThaiDotLabel(dot.trang_thai)}`;
+  const subtitle = `${e(dot.ma_dot)} · ${e(dot.ten_dot)} · ${e(getTrangThaiDotLabel(dot.trang_thai))}`;
 
   const infoRows = [
     [t('kiemKeTaiSan.store.maDotCol'), dot.ma_dot],
@@ -78,10 +79,10 @@ function buildPhieuKiemKeBodyHTML(dot: DotKiemKe, chiTiet: ChiTietKiemKe[]): str
       .map(
         (c) =>
           `<tr>
-            <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${safeStr(c.ten_tai_san || c.ma_tai_san)}</td>
-            <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${safeStr(c.ten_noi_luu_so)}</td>
-            <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${safeStr(c.ten_nguoi_giu_so)}</td>
-            <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${getKetQuaLabel(c.ket_qua)}</td>
+            <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${e(safeStr(c.ten_tai_san || c.ma_tai_san))}</td>
+            <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${e(safeStr(c.ten_noi_luu_so))}</td>
+            <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${e(safeStr(c.ten_nguoi_giu_so))}</td>
+            <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${e(getKetQuaLabel(c.ket_qua))}</td>
           </tr>`
       )
       .join('');

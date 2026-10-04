@@ -373,6 +373,9 @@ const Settings: React.FC = () => {
           {/* Thông báo — card thật, thay cho overlay "Sắp ra mắt" trước đây */}
           <CaiDatThongBaoCard />
 
+          <p className="text-center text-xs text-muted-foreground">
+            {t('settings.appVersion', { version: __APP_VERSION__ })}
+          </p>
         </div>
       </div>
 

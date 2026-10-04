@@ -1,0 +1,16 @@
+# Build context của image web (deploy/web.Dockerfile chạy `COPY . .`).
+# Biến build đi qua ARG nên không cần .env; backup/ là dump dữ liệu thật.
+.git
+node_modules
+**/node_modules
+dist
+**/dist
+.env
+.env.*
+!.env.example
+backup
+coverage
+*.tsbuildinfo
+*.local
+vapid.local.txt
+.claude

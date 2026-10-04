@@ -5,6 +5,7 @@ import i18n from '../../../../lib/i18n';
 import { bulkInsert, bulkUpdateById, bulkUpsert } from '../../../../lib/import-bulk';
 import type { ImportErrorRow, ImportMode } from '../../../../lib/import-types';
 import { planFarmDanhMucImport } from '../utils/import-danh-muc';
+import { throwDbError } from '../../../../lib/db-errors';
 
 const TABLE = 'fp_farm_danh_muc_hang_hoa';
 const TABLE_HANG_HOA = 'fp_farm_danh_sach_hang_hoa';
@@ -12,10 +13,10 @@ const TABLE_HANG_HOA = 'fp_farm_danh_sach_hang_hoa';
 async function assertNoHangHoaReferences(idNums: number[]): Promise<void> {
   if (idNums.length === 0) return;
   const { data: byDm, error: e1 } = await db.from(TABLE_HANG_HOA).select('id').in('danh_muc_id', idNums).limit(1);
-  if (e1) throw new Error(e1.message);
+  if (e1) throwDbError(e1);
   if (byDm && byDm.length > 0) throw new Error(i18n.t('farmHangHoaPhanThuoc.danhMuc.service.hasHangHoa'));
   const { data: byCha, error: e2 } = await db.from(TABLE_HANG_HOA).select('id').in('danh_muc_cha_id', idNums).limit(1);
-  if (e2) throw new Error(e2.message);
+  if (e2) throwDbError(e2);
   if (byCha && byCha.length > 0) throw new Error(i18n.t('farmHangHoaPhanThuoc.danhMuc.service.hasHangHoa'));
 }
 
@@ -84,7 +85,7 @@ export const getFarmDanhMucById = async (id: string): Promise<FarmDanhMuc | null
   const idNum = Number(id);
   if (Number.isNaN(idNum)) return null;
   const { data: row, error } = await db.from(TABLE).select(DM_COLUMNS).eq('id', idNum).maybeSingle();
-  if (error) throw new Error(error.message);
+  if (error) throwDbError(error);
   if (!row) return null;
   return rowToFarmDanhMuc(row as FarmDanhMucRow);
 };
@@ -98,7 +99,7 @@ export const createFarmDanhMuc = async (data: FarmDanhMucFormValues): Promise<Fa
     mo_ta: data.mo_ta?.trim() || null,
   };
   const { data: inserted, error } = await db.from(TABLE).insert(payload).select(DM_COLUMNS).single();
-  if (error) throw new Error(error.message);
+  if (error) throwDbError(error);
   return rowToFarmDanhMuc(inserted as FarmDanhMucRow);
 };
 
@@ -119,7 +120,7 @@ export const updateFarmDanhMuc = async (id: string, data: FarmDanhMucFormValues)
     .eq('id', idNum)
     .select(DM_COLUMNS)
     .single();
-  if (error) throw new Error(error.message ?? i18n.t('farmHangHoaPhanThuoc.danhMuc.service.notFound'));
+  if (error) throwDbError(error);
   return rowToFarmDanhMuc(updated as FarmDanhMucRow);
 };
 
@@ -131,11 +132,11 @@ export const deleteFarmDanhMuc = async (id: string): Promise<void> => {
     .select('id')
     .eq('danh_muc_cha_id', idNum)
     .limit(1);
-  if (errSelect) throw new Error(errSelect.message);
+  if (errSelect) throwDbError(errSelect);
   if (children && children.length > 0) throw new Error(i18n.t('farmHangHoaPhanThuoc.danhMuc.service.hasChildren'));
   await assertNoHangHoaReferences([idNum]);
   const { error } = await db.from(TABLE).delete().eq('id', idNum);
-  if (error) throw new Error(error.message ?? i18n.t('farmHangHoaPhanThuoc.danhMuc.service.notFound'));
+  if (error) throwDbError(error);
 };
 
 export const deleteFarmDanhMucMany = async (ids: string[]): Promise<void> => {
@@ -150,7 +151,7 @@ export const deleteFarmDanhMucMany = async (ids: string[]): Promise<void> => {
   if (children && children.length > 0) throw new Error(i18n.t('farmHangHoaPhanThuoc.danhMuc.service.hasChildren'));
   await assertNoHangHoaReferences(idNums);
   const { error } = await db.from(TABLE).delete().in('id', idNums);
-  if (error) throw new Error(error.message ?? i18n.t('farmHangHoaPhanThuoc.danhMuc.service.notFound'));
+  if (error) throwDbError(error);
 };
 
 // ---------------------------------------------------------------------------
@@ -278,7 +279,7 @@ export const importFarmDanhMuc = async (
     const parentIdByCode = new Map<string, number>();
     if (missingParents.length > 0) {
       const { data, error } = await db.from(TABLE).select('id,ma_danh_muc').in('ma_danh_muc', missingParents);
-      if (error) throw new Error(error.message);
+      if (error) throwDbError(error);
       (data ?? []).forEach((d: { id: number; ma_danh_muc: string | null }) => {
         if (d.ma_danh_muc) parentIdByCode.set(d.ma_danh_muc.trim().toUpperCase(), d.id);
       });

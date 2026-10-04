@@ -1,5 +1,5 @@
 import { db } from '../../../../lib/db';
-import i18n from '../../../../lib/i18n';
+import { throwDbError } from '../../../../lib/db-errors';
 
 const TABLE = 'fp_var_tt_cong_ty';
 
@@ -61,7 +61,7 @@ export async function getCompanyInfo(): Promise<CompanyInfoPayload | null> {
     .limit(1)
     .maybeSingle();
 
-  if (error) throw new Error(error.message ?? i18n.t('company.service.loadError'));
+  if (error) throwDbError(error);
   if (!data) return null;
   return rowToCompanyInfo(data);
 }
@@ -93,7 +93,7 @@ export async function updateCompanyInfo(
     .select(COMPANY_ROW_COLUMNS)
     .single();
 
-  if (error) throw new Error(error.message ?? i18n.t('company.service.updateError'));
+  if (error) throwDbError(error);
   return rowToCompanyInfo(updated);
 }
 
@@ -108,6 +108,6 @@ export async function getFirstCompanyId(): Promise<string | null> {
     .limit(1)
     .maybeSingle();
 
-  if (error) throw new Error(error.message ?? i18n.t('company.service.loadError'));
+  if (error) throwDbError(error);
   return data ? String(data.id) : null;
 }

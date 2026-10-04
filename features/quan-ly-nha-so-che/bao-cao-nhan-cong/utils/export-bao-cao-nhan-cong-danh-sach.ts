@@ -12,8 +12,24 @@ import {
   sumTongGioTangCaTichPhieu,
 } from '../core/types';
 import { TRANG_THAI_BAO_CAO_NHAN_CONG } from '../core/types';
-import type { ExportColumn } from '../../../../components/shared/LazyExportDialog';
-import { formatDateShort, formatDateTimeShort, formatNumberVN } from '../../../../lib/utils';
+import type { ExportColumn, KieuCotXuat } from '../../../../lib/export/dinh-dang-o';
+
+/** Kiểu cột để Excel nhận số/ngày thật — xem `lib/export/dinh-dang-o.ts`. Cột không có ở đây là chữ. */
+const KIEU_COT: Partial<Record<(typeof BAO_CAO_NHAN_CONG_LIST_EXPORT_KEYS)[number], KieuCotXuat>> = {
+  id: 'text',
+  id_chi_nhanh: 'text',
+  id_nguoi_tao: 'text',
+  ngay: 'date',
+  so_anh: 'number',
+  tong_cong_ngay: 'number',
+  tong_cong_nua: 'number',
+  tong_cong_quy_doi: 'number',
+  tong_tang_ca: 'number',
+  tong_gio_tc: 'number',
+  tong_gio_tang_ca_tich: 'number',
+  tg_tao: 'datetime',
+  tg_cap_nhat: 'datetime',
+};
 
 export const BAO_CAO_NHAN_CONG_LIST_EXPORT_KEYS = [
   'id',
@@ -44,23 +60,23 @@ export function mapFarmBaoCaoNhanCongListRow(
   const locked = item.trang_thai === TRANG_THAI_BAO_CAO_NHAN_CONG.KHOA;
   return {
     id: item.id,
-    ngay: formatDateShort(item.ngay),
+    ngay: item.ngay,
     id_chi_nhanh: item.id_chi_nhanh ?? '',
     ten_chi_nhanh: item.ten_chi_nhanh ?? '',
     trang_thai: locked ? t('baoCaoNhanCong.trangThai.khoa') : t('baoCaoNhanCong.trangThai.mo'),
     so_anh: urls.length,
     hinh_anh_urls: urls.join('\n'),
-    tong_cong_ngay: formatNumberVN(sumSlCongNgay(item)),
-    tong_cong_nua: formatNumberVN(sumSlCongNua(item)),
-    tong_cong_quy_doi: formatNumberVN(sumTongCongQuyDoiPhieu(item)),
-    tong_tang_ca: formatNumberVN(sumSlTangCa(item)),
-    tong_gio_tc: formatNumberVN(sumSoGioTc(item)),
-    tong_gio_tang_ca_tich: formatNumberVN(sumTongGioTangCaTichPhieu(item)),
+    tong_cong_ngay: sumSlCongNgay(item),
+    tong_cong_nua: sumSlCongNua(item),
+    tong_cong_quy_doi: sumTongCongQuyDoiPhieu(item),
+    tong_tang_ca: sumSlTangCa(item),
+    tong_gio_tc: sumSoGioTc(item),
+    tong_gio_tang_ca_tich: sumTongGioTangCaTichPhieu(item),
     ghi_chu: item.ghi_chu ?? '',
     id_nguoi_tao: item.id_nguoi_tao ?? '',
     ten_nguoi_tao: item.ten_nguoi_tao ?? '',
-    tg_tao: item.tg_tao ? formatDateTimeShort(item.tg_tao) : '',
-    tg_cap_nhat: item.tg_cap_nhat ? formatDateTimeShort(item.tg_cap_nhat) : '',
+    tg_tao: item.tg_tao ?? '',
+    tg_cap_nhat: item.tg_cap_nhat ?? '',
   };
 }
 
@@ -68,6 +84,7 @@ export function getExportColumnsBaoCaoNhanCongList(t: TFunction): ExportColumn[]
   return BAO_CAO_NHAN_CONG_LIST_EXPORT_KEYS.map((key) => ({
     key,
     label: t(`baoCaoNhanCong.export.list.${key}`),
+    type: KIEU_COT[key],
   }));
 }
 

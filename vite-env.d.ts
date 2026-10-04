@@ -1,5 +1,8 @@
 /// <reference types="vite/client" />
 
+/** Số phiên bản từ package.json, Vite nhúng lúc build (vite.config.ts → define). */
+declare const __APP_VERSION__: string;
+
 declare module 'virtual:pwa-register' {
   export interface RegisterSWOptions {
     immediate?: boolean;

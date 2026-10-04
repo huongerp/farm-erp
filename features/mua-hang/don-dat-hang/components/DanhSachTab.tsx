@@ -40,6 +40,9 @@ import {
   exportFileNameDonDatHangList,
 } from '../utils/export-don-dat-hang-danh-sach';
 
+/** Đồng bộ Google Sheet tự động — nguồn v_xuat_don_dat_hang (services/sheets/src/core/nguon-dong-bo.ts). */
+const DONG_BO_DON_DAT_HANG = { moduleId: 'mua-hang/don-dat-hang' };
+
 const DanhSachTab: React.FC = () => {
   const { t } = useTranslation();
   const { canCreate, canUpdate, canDelete, canApprove, canAdmin } = useModulePermissionFromContext();
@@ -347,6 +350,7 @@ const DanhSachTab: React.FC = () => {
             fileName={exportFileNameDonDatHangList()}
             visibleColumnKeys={[...DON_DAT_HANG_LIST_EXPORT_KEYS]}
             sheetName={LIST_EXPORT_SHEET_NAME}
+            dongBo={DONG_BO_DON_DAT_HANG}
           />
         )}
       </AnimatePresence>

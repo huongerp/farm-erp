@@ -232,7 +232,6 @@ const PositionPage: React.FC = () => {
           items={toolbarItems}
           onAdd={() => setShowForm(true)}
           onExport={handleExport}
-          onImport={() => toast.info(t('position.importDeveloping'))}
           onDeleteMany={handleDeleteMany}
           onStatusChangeMany={handleStatusChangeMany}
           canCreate={canCreate}

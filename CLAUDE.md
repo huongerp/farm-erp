@@ -20,7 +20,7 @@ trong `lib/db.ts` chỉ là thư viện client PostgREST, app **không** dùng d
 | Chạy SQL / migration lên VPS | `bash scripts/db-sql.sh -v ON_ERROR_STOP=1 -f docs/migrations/NNN-*.sql` |
 
 Dev server **không** chạy bằng lệnh nền thủ công — `vite/dev-services.ts` tự bật PostgREST,
-auth-service và notify-service kèm `npm run dev` (bỏ qua bằng `DEV_SKIP_SERVICES=1`). Chi tiết biến môi trường:
+auth-service, notify-service và sheets-service kèm `npm run dev` (bỏ qua bằng `DEV_SKIP_SERVICES=1`). Chi tiết biến môi trường:
 [README.md](README.md).
 
 ## Bản đồ thư mục
@@ -39,6 +39,9 @@ auth-service và notify-service kèm `npm run dev` (bỏ qua bằng `DEV_SKIP_SE
 - `services/auth/` — auth-service (Node/Hono): đăng nhập mật khẩu + Google, ký JWT, refresh token.
 - `services/notify/` — notify-service (Node/Hono): worker thông báo (outbox + LISTEN/NOTIFY) và
   endpoint đăng ký Web Push. Logic "ai nhận / viết gì" nằm ở `src/core/` và có test cạnh file.
+- `services/sheets/` — sheets-service (Node/Hono): kết nối Google (OAuth `drive.file`), xuất Google Sheet và
+  worker đồng bộ tự động. Luật thuần ở `src/core/` có test; `core/dinh-dang.ts` là bản sao của
+  `lib/export/dinh-dang-o.ts` (sửa cả hai, test parity canh).
 - `sw/sw.ts` — service worker tự viết (vite-plugin-pwa chế độ `injectManifest`): precache, runtime
   caching và listener `push` / `notificationclick`.
 - `docs/` — `db-schema-baseline.sql`, `migrations/` (SQL mới) + tài liệu vận hành.
@@ -154,6 +157,8 @@ xem mẫu ở các hook `use-*-view-scope.ts`.
 - [docs/VPS_POSTGREST_PLAN.md](docs/VPS_POSTGREST_PLAN.md), [docs/VPS_CUTOVER.md](docs/VPS_CUTOVER.md) — kiến trúc self-host và runbook cut-over.
 - [docs/RUI_RO_NEN_TANG_DU_LIEU.md](docs/RUI_RO_NEN_TANG_DU_LIEU.md) — rủi ro nền tảng dữ liệu.
 - [docs/BUNDLE_OPTIMIZATION.md](docs/BUNDLE_OPTIMIZATION.md), [docs/EGRESS_OPTIMIZATION.md](docs/EGRESS_OPTIMIZATION.md) — tối ưu bundle và egress.
+- [docs/GOOGLE_SHEETS.md](docs/GOOGLE_SHEETS.md) — dialog Xuất (Excel/CSV/PDF/Google Sheet), đồng bộ tự động,
+  cấu hình Google Cloud, đấu thêm module.
 - [docs/THONG_BAO_PUSH.md](docs/THONG_BAO_PUSH.md) — thông báo + Web Push: kiến trúc outbox, thứ tự chạy SQL,
   catalog sự kiện (bắn gì / khi nào / cho ai), cách đấu thêm module, soi lỗi.
 - SQL: `docs/db-schema-baseline.sql` (ảnh chụp ngày 2026-09-30: role, extension, schema `auth` + `public`: bảng, view,
@@ -164,6 +169,10 @@ xem mẫu ở các hook `use-*-view-scope.ts`.
 - Migration SQL mới: thêm `docs/migrations/NNN-<mo-ta>.sql` (đánh số tiếp), không sửa đè file đã chạy trên VPS.
   Không có DB thử — migration chạy thẳng lên dữ liệu thật, nên LUÔN `bash scripts/db-backup.sh truoc-NNN`
   trước (dump vào `backup/`, đã gitignore, chứa dữ liệu thật — không commit / gửi đi).
+- Hàm/RPC mới trong migration: Postgres mặc định cho PUBLIC gọi được → role `anon` (chưa đăng nhập)
+  cũng gọi được. Luôn kèm `REVOKE ALL ON FUNCTION … FROM PUBLIC, anon;` + `GRANT EXECUTE … TO authenticated`
+  (và service role cần dùng). Bảng mới không GRANT cho `anon`. Ghi bảng nhạy cảm theo
+  `fn_co_quyen_module(module, actions)` thay vì `USING (true)` — mẫu ở migration 013, 014.
 - Mật khẩu chỉ ghi qua RPC `rpc_set_mat_khau` (bcrypt server-side); không hash ở browser,
   không UPDATE thẳng `mat_khau_hash`.
 - Thông báo sinh bằng trigger DB ghi vào outbox, **không** gọi thêm insert từ frontend sau mutation —

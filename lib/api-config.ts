@@ -9,6 +9,14 @@
 export const API_URL = import.meta.env.VITE_API_URL ?? '/api';
 export const AUTH_URL = import.meta.env.VITE_AUTH_URL ?? '/auth';
 export const NOTIFY_URL = import.meta.env.VITE_NOTIFY_URL ?? '/notify';
+export const SHEETS_URL = import.meta.env.VITE_SHEETS_URL ?? '/sheets';
+
+/**
+ * Google Picker (chọn file Sheet có sẵn). Thiếu một trong hai thì dialog Xuất chỉ
+ * cho "Tạo file mới" — với scope drive.file app không mở được file chưa qua Picker.
+ */
+export const GOOGLE_PICKER_API_KEY = import.meta.env.VITE_GOOGLE_PICKER_API_KEY ?? '';
+export const GOOGLE_APP_ID = import.meta.env.VITE_GOOGLE_APP_ID ?? '';
 
 /** Rỗng thì trang đăng nhập ẩn luôn nút Google. */
 export const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? '';

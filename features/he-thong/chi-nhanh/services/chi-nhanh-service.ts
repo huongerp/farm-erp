@@ -3,7 +3,7 @@ import type { Branch } from '../core/types';
 import type { BranchFormValues } from '../core/schema';
 import type { TrangThai } from '../../../../lib/constants';
 import { TRANG_THAI } from '../../../../lib/constants';
-import i18n from '../../../../lib/i18n';
+import { throwDbError } from '../../../../lib/db-errors';
 
 const TABLE = 'fp_var_chi_nhanh';
 
@@ -53,7 +53,7 @@ export async function createBranch(data: BranchFormValues): Promise<Branch> {
     .select(CHI_NHANH_COLUMNS)
     .single();
 
-  if (error) throw new Error(error.message);
+  if (error) throwDbError(error);
   return rowToBranch(inserted);
 }
 
@@ -78,7 +78,7 @@ export async function updateBranch(id: string, data: BranchFormValues): Promise<
     .select(CHI_NHANH_COLUMNS)
     .single();
 
-  if (error) throw new Error(error.message ?? i18n.t('branch.service.notFound'));
+  if (error) throwDbError(error);
   return rowToBranch(updated);
 }
 
@@ -92,19 +92,19 @@ export async function updateBranchStatus(ids: string[], status: TrangThai): Prom
       .eq('id', ids[0])
       .select(CHI_NHANH_COLUMNS)
       .single();
-    if (error) throw new Error(error.message ?? i18n.t('branch.service.notFound'));
+    if (error) throwDbError(error);
     return data ? rowToBranch(data) : undefined;
   }
   const { error } = await db
     .from(TABLE)
     .update(updatePayload)
     .in('id', ids);
-  if (error) throw new Error(error.message ?? i18n.t('branch.service.notFound'));
+  if (error) throwDbError(error);
   return undefined;
 }
 
 export async function deleteBranches(ids: string[]): Promise<void> {
   if (ids.length === 0) return;
   const { error } = await db.from(TABLE).delete().in('id', ids);
-  if (error) throw new Error(error.message ?? i18n.t('branch.service.notFound'));
+  if (error) throwDbError(error);
 }

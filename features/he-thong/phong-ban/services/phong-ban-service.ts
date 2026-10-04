@@ -3,8 +3,8 @@ import type { Department } from '../core/types';
 import type { DepartmentFormValues } from '../core/schema';
 import type { TrangThai } from '../../../../lib/constants';
 import { TRANG_THAI } from '../../../../lib/constants';
-import i18n from '../../../../lib/i18n';
 import { writeEachImportRow } from '../../../../lib/import-bulk';
+import { throwDbError } from '../../../../lib/db-errors';
 
 const TABLE = 'fp_var_phong_ban';
 
@@ -51,7 +51,7 @@ export const createDepartment = async (data: DepartmentFormValues): Promise<Depa
     .select(PHONG_BAN_COLUMNS)
     .single();
 
-  if (error) throw new Error(error.message);
+  if (error) throwDbError(error);
   return rowToDepartment(inserted);
 };
 
@@ -71,7 +71,7 @@ export const updateDepartment = async (id: string, data: DepartmentFormValues): 
     .select(PHONG_BAN_COLUMNS)
     .single();
 
-  if (error) throw new Error(error.message ?? i18n.t('department.service.notFound'));
+  if (error) throwDbError(error);
   return rowToDepartment(updated);
 };
 
@@ -83,13 +83,13 @@ export const updateDepartmentStatus = async (id: string, status: TrangThai): Pro
     .select(PHONG_BAN_COLUMNS)
     .single();
 
-  if (error) throw new Error(error.message ?? i18n.t('department.service.notFound'));
+  if (error) throwDbError(error);
   return rowToDepartment(updated);
 };
 
 export const deleteDepartment = async (id: string): Promise<void> => {
   const { error } = await db.from(TABLE).delete().eq('id', id);
-  if (error) throw new Error(error.message);
+  if (error) throwDbError(error);
 };
 
 /** Ghi các dòng đã validate ở `planPhongBanImport`; lỗi DB gắn lại đúng dòng Excel. */

@@ -1,10 +1,6 @@
 import { useMemo } from 'react';
 import type { PaginationState } from '../store/createGenericStore';
-
-interface ExportColumn {
-  key: string;
-  label: string;
-}
+import type { ExportColumn } from './export/dinh-dang-o';
 
 interface UseExportDataOptions<T> {
   /** Danh sách data đã lọc */

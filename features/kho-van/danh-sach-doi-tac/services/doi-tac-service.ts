@@ -10,6 +10,7 @@ import type { DoiTac, LoaiDoiTac, NhomDoiTac, Tag, TrangThaiDoiTac } from '../co
 import { TRANG_THAI_DOI_TAC } from '../core/types';
 import type { DoiTacFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
+import { throwDbError } from '../../../../lib/db-errors';
 
 const TABLE_NHOM = 'fp_mh_nhom_doi_tac';
 const TABLE_TAG = 'fp_mh_tag_doi_tac';
@@ -153,7 +154,7 @@ export const createNhomDoiTac = async (data: NhomDoiTacFormValues): Promise<Nhom
   };
 
   const { data: inserted, error } = await db.from(TABLE_NHOM).insert(row).select(NHOM_DOI_TAC_COLUMNS).single();
-  if (error) throw new Error(error.message);
+  if (error) throwDbError(error);
   return rowToNhom(inserted as NhomRow);
 };
 
@@ -177,19 +178,19 @@ export const updateNhomDoiTac = async (id: string, data: NhomDoiTacFormValues): 
     .eq('id', Number(id))
     .select(NHOM_DOI_TAC_COLUMNS)
     .single();
-  if (error) throw new Error(error.message ?? i18n.t('doiTac.service.nhomNotFound'));
+  if (error) throwDbError(error);
   return rowToNhom(updated as NhomRow);
 };
 
 export const deleteNhomDoiTac = async (id: string): Promise<void> => {
   const { error } = await db.from(TABLE_NHOM).delete().eq('id', Number(id));
-  if (error) throw new Error(error.message ?? i18n.t('doiTac.service.nhomNotFound'));
+  if (error) throwDbError(error);
 };
 
 export const deleteNhomDoiTacMany = async (ids: string[]): Promise<void> => {
   const numIds = ids.map(Number);
   const { error } = await db.from(TABLE_NHOM).delete().in('id', numIds);
-  if (error) throw new Error(error.message);
+  if (error) throwDbError(error);
 };
 
 // ============ Tag đối tác ============
@@ -212,7 +213,7 @@ export const createTag = async (ten_tag: string): Promise<Tag> => {
   if (existing) return rowToTag(existing as TagRow);
 
   const { data: inserted, error } = await db.from(TABLE_TAG).insert({ ten_tag: name }).select(TAG_DOI_TAC_COLUMNS).single();
-  if (error) throw new Error(error.message);
+  if (error) throwDbError(error);
   return rowToTag(inserted as TagRow);
 };
 
@@ -225,24 +226,24 @@ export const updateTag = async (id: string, ten_tag: string): Promise<Tag> => {
     .eq('id', Number(id))
     .select(TAG_DOI_TAC_COLUMNS)
     .single();
-  if (error) throw new Error(error.message ?? i18n.t('doiTac.service.tagNotFound'));
+  if (error) throwDbError(error);
   return rowToTag(updated as TagRow);
 };
 
 export const deleteTag = async (id: string): Promise<void> => {
   const numId = Number(id);
   const { error: rpcErr } = await db.rpc('remove_tag_from_partners', { p_tag_id: numId });
-  if (rpcErr) throw new Error(rpcErr.message);
+  if (rpcErr) throwDbError(rpcErr);
   const { error } = await db.from(TABLE_TAG).delete().eq('id', numId);
-  if (error) throw new Error(error.message);
+  if (error) throwDbError(error);
 };
 
 export const deleteTagMany = async (ids: string[]): Promise<void> => {
   const numIds = ids.map(Number);
   const { error: rpcErr } = await db.rpc('remove_tags_from_partners', { p_tag_ids: numIds });
-  if (rpcErr) throw new Error(rpcErr.message);
+  if (rpcErr) throwDbError(rpcErr);
   const { error } = await db.from(TABLE_TAG).delete().in('id', numIds);
-  if (error) throw new Error(error.message);
+  if (error) throwDbError(error);
 };
 
 // ============ Danh sách đối tác ============
@@ -393,7 +394,7 @@ export const getDoiTacById = async (id: string): Promise<DoiTac | null> => {
     .select(DOI_TAC_ROW_COLUMNS)
     .eq('id', Number(id))
     .maybeSingle();
-  if (error) throw new Error(error.message);
+  if (error) throwDbError(error);
   if (!row) return null;
   const [nhomList, tagList] = await Promise.all([getAllNhomDoiTac(), getAllTag()]);
   const [enriched] = enrichDoiTacList([row as DoiTacRow], nhomList, tagList);
@@ -423,7 +424,7 @@ export const createDoiTac = async (data: DoiTacFormValues): Promise<DoiTac> => {
   };
 
   const { data: inserted, error } = await db.from(TABLE_DOI_TAC).insert(row).select(DOI_TAC_ROW_COLUMNS).single();
-  if (error) throw new Error(error.message);
+  if (error) throwDbError(error);
   const [nhomList, tagList] = await Promise.all([getAllNhomDoiTac(), getAllTag()]);
   const [enriched] = enrichDoiTacList([inserted as DoiTacRow], nhomList, tagList);
   return enriched;
@@ -464,7 +465,7 @@ export const updateDoiTac = async (id: string, data: DoiTacFormValues): Promise<
     .eq('id', numId)
     .select(DOI_TAC_ROW_COLUMNS)
     .single();
-  if (error) throw new Error(error.message ?? i18n.t('doiTac.service.notFound'));
+  if (error) throwDbError(error);
   const [nhomList, tagList] = await Promise.all([getAllNhomDoiTac(), getAllTag()]);
   const [enriched] = enrichDoiTacList([updated as DoiTacRow], nhomList, tagList);
   return enriched;
@@ -472,11 +473,11 @@ export const updateDoiTac = async (id: string, data: DoiTacFormValues): Promise<
 
 export const deleteDoiTac = async (id: string): Promise<void> => {
   const { error } = await db.from(TABLE_DOI_TAC).delete().eq('id', Number(id));
-  if (error) throw new Error(error.message ?? i18n.t('doiTac.service.notFound'));
+  if (error) throwDbError(error);
 };
 
 export const deleteDoiTacMany = async (ids: string[]): Promise<void> => {
   const numIds = ids.map(Number);
   const { error } = await db.from(TABLE_DOI_TAC).delete().in('id', numIds);
-  if (error) throw new Error(error.message);
+  if (error) throwDbError(error);
 };

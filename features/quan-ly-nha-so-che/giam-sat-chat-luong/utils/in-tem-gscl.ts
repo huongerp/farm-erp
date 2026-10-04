@@ -61,7 +61,7 @@ export function taoHtmlTemGscl(tems: { tem: TemGscl; qrSrc: string }[], c: CaiDa
     .map(({ tem, qrSrc }) => {
       const nhan = f.nhan
         ? c.logo
-          ? `<img class="logo" src="${c.logo}" alt="" />`
+          ? `<img class="logo" src="${esc(c.logo)}" alt="" />`
           : c.nhan.trim()
             ? `<span class="nhan">${esc(c.nhan.trim())}</span>`
             : ''

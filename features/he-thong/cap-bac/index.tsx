@@ -218,7 +218,6 @@ const JobLevelPage: React.FC = () => {
           items={jobLevels}
           onAdd={() => setShowForm(true)}
           onExport={handleExport}
-          onImport={() => toast.info(t('jobLevel.importDeveloping'))}
           onDeleteMany={handleDeleteMany}
           onStatusChangeMany={handleStatusChangeMany}
           canCreate={canCreate}

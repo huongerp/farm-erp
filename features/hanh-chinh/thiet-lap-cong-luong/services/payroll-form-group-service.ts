@@ -4,6 +4,7 @@ import type { PayrollAdminFormGroupFormValues } from '../core/schema';
 import type { AdminFormType } from '../core/constants';
 import i18n from '../../../../lib/i18n';
 import { TRANG_THAI_HOAT_DONG, type TrangThaiHoatDong } from '../../../../lib/constants';
+import { throwDbError } from '../../../../lib/db-errors';
 
 const TABLE = 'fp_hr_nhom_phieu_hanh_chinh';
 
@@ -72,7 +73,7 @@ export async function createPayrollAdminFormGroup(
     .select()
     .single();
 
-  if (error) throw new Error(error.message);
+  if (error) throwDbError(error);
   return rowToGroup(inserted);
 }
 
@@ -97,7 +98,7 @@ export async function updatePayrollAdminFormGroup(
     .select(ROW_COLUMNS)
     .single();
 
-  if (error) throw new Error(error.message ?? i18n.t('payrollIp.groups.service.notFound'));
+  if (error) throwDbError(error);
   return rowToGroup(updated);
 }
 
@@ -107,7 +108,7 @@ export async function updatePayrollAdminFormGroupStatus(ids: string[], status: T
   const numIds = ids.map((id) => parseInt(id, 10)).filter((n) => !Number.isNaN(n));
   if (numIds.length === 0) return;
   const { error } = await db.from(TABLE).update(payload).in('id', numIds);
-  if (error) throw new Error(error.message ?? i18n.t('payrollIp.groups.service.notFound'));
+  if (error) throwDbError(error);
 }
 
 export async function deletePayrollAdminFormGroups(ids: string[]): Promise<void> {
@@ -115,5 +116,5 @@ export async function deletePayrollAdminFormGroups(ids: string[]): Promise<void>
   const numIds = ids.map((id) => parseInt(id, 10)).filter((n) => !Number.isNaN(n));
   if (numIds.length === 0) return;
   const { error } = await db.from(TABLE).delete().in('id', numIds);
-  if (error) throw new Error(error.message ?? i18n.t('payrollIp.groups.service.notFound'));
+  if (error) throwDbError(error);
 }

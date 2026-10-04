@@ -112,6 +112,44 @@ services:
       - traefik.http.middlewares.farm-notify-strip.stripprefix.prefixes=/notify
       - traefik.http.services.farm-notify.loadbalancer.server.port=3002
 
+  sheets:
+    build:
+      context: ./services/sheets
+    restart: always
+    environment:
+      # Role `sheets_service` — chỉ chạm bảng kết nối/lịch đồng bộ Google Sheet (docs/migrations/011-*).
+      DATABASE_URL: ${SHEETS_DATABASE_URL}
+      # Dùng chung secret để xác thực access token do auth-service ký.
+      JWT_SECRET: ${PGRST_JWT_SECRET}
+      # Khoá mã hoá token Google (openssl rand -hex 32). Đổi khoá = mọi người phải kết nối lại.
+      SHEETS_TOKEN_KEY: ${SHEETS_TOKEN_KEY}
+      # OAuth client cho Google Sheet — biến RIÊNG, tách khỏi GOOGLE_CLIENT_ID (nút đăng nhập Google):
+      # điền biến này không làm bật đăng nhập Google. Xem docs/GOOGLE_SHEETS.md.
+      GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID}
+      GOOGLE_OAUTH_CLIENT_SECRET: ${GOOGLE_OAUTH_CLIENT_SECRET}
+      # Phải khai y hệt ở mục "Authorized redirect URIs" của OAuth client.
+      GOOGLE_OAUTH_REDIRECT_URI: https://${APP_DOMAIN}/sheets/google/callback
+      # Worker đọc dữ liệu nguồn qua PostgREST nội bộ, bằng JWT của người tạo lịch (RLS áp đúng).
+      POSTGREST_URL: http://postgrest:3000
+      # Chỉ bật ở production — dev dùng chung DB, hai worker sẽ ghi đè nhau.
+      SHEETS_WORKER_BAT: ${SHEETS_WORKER_BAT:-true}
+      COMPANY_TZ: ${COMPANY_TZ:-Asia/Ho_Chi_Minh}
+      PORT: '3003'
+    expose:
+      - '3003'
+    networks:
+      - dokploy-network
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=dokploy-network
+      - traefik.http.routers.farm-sheets.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/sheets`)
+      - traefik.http.routers.farm-sheets.entrypoints=websecure
+      - traefik.http.routers.farm-sheets.tls.certResolver=letsencrypt
+      - traefik.http.routers.farm-sheets.priority=100
+      - traefik.http.routers.farm-sheets.middlewares=farm-sheets-strip
+      - traefik.http.middlewares.farm-sheets-strip.stripprefix.prefixes=/sheets
+      - traefik.http.services.farm-sheets.loadbalancer.server.port=3003
+
   web:
     build:
       context: .
@@ -123,6 +161,9 @@ services:
         VITE_CLOUDINARY_UPLOAD_PRESET: ${VITE_CLOUDINARY_UPLOAD_PRESET}
         VITE_SENTRY_DSN: ${VITE_SENTRY_DSN}
         VITE_VAPID_PUBLIC_KEY: ${VITE_VAPID_PUBLIC_KEY}
+        # Google Picker — chọn file Sheet có sẵn khi xuất. Thiếu thì chỉ còn "Tạo file mới".
+        VITE_GOOGLE_PICKER_API_KEY: ${VITE_GOOGLE_PICKER_API_KEY}
+        VITE_GOOGLE_APP_ID: ${VITE_GOOGLE_APP_ID}
     restart: always
     expose:
       - '80'

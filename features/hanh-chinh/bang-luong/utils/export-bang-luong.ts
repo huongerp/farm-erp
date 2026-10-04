@@ -8,6 +8,7 @@ import { downloadBlob } from '../../../../lib/download-blob';
 import i18n from '../../../../lib/i18n';
 import { ensureJsPDFVietnameseFont } from '../../../../lib/jspdf-vietnamese-font';
 import { useUIStore } from '../../../../store/useStore';
+import { escapeHtml as e } from '../../../../lib/escape-html';
 
 const FONT_FAMILY = "'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif";
 const BORDER_COLOR = '#d1d5db';
@@ -42,8 +43,8 @@ function tableRow(
     .filter(Boolean)
     .join(';');
   return `<tr>
-<td style="width:40%;padding:6px 8px;border:1px solid ${BORDER_COLOR};font-size:10pt;font-weight:600;color:#4b5563;background:${LABEL_BG};font-family:${FONT_FAMILY}">${label}</td>
-<td style="${valueStyle}">${value}</td>
+<td style="width:40%;padding:6px 8px;border:1px solid ${BORDER_COLOR};font-size:10pt;font-weight:600;color:#4b5563;background:${LABEL_BG};font-family:${FONT_FAMILY}">${e(label)}</td>
+<td style="${valueStyle}">${e(value)}</td>
 </tr>`;
 }
 
@@ -64,7 +65,7 @@ function tableSection(title: string, rowsHtml: string) {
 function buildCompanyHeaderHTML(): string {
   const info = getCompanyInfo();
   const logoHtml = info.appLogo
-    ? `<img src="${info.appLogo}" alt="Logo" style="width:64px;height:64px;object-fit:contain;flex-shrink:0" />`
+    ? `<img src="${e(info.appLogo)}" alt="Logo" style="width:64px;height:64px;object-fit:contain;flex-shrink:0" />`
     : '';
   const addr = info.address ? `${i18n.t('company.address')}: ${info.address}` : '';
   const parts: string[] = [];
@@ -75,9 +76,9 @@ function buildCompanyHeaderHTML(): string {
 <div style="display:flex;align-items:flex-start;gap:16px;padding-bottom:16px;margin-bottom:16px;border-bottom:2px solid ${BORDER_COLOR};font-family:${FONT_FAMILY}">
   ${logoHtml}
   <div style="flex:1;min-width:0">
-    <div style="font-size:14pt;font-weight:bold;color:#111;text-transform:uppercase;letter-spacing:0.02em;font-family:${FONT_FAMILY}">${info.companyName}</div>
-    ${addr ? `<p style="font-size:9pt;color:#4b5563;margin:2px 0 0 0;font-family:${FONT_FAMILY}">${addr}</p>` : ''}
-    ${contactLine ? `<p style="font-size:9pt;color:#4b5563;margin:2px 0 0 0;font-family:${FONT_FAMILY}">${contactLine}</p>` : ''}
+    <div style="font-size:14pt;font-weight:bold;color:#111;text-transform:uppercase;letter-spacing:0.02em;font-family:${FONT_FAMILY}">${e(info.companyName)}</div>
+    ${addr ? `<p style="font-size:9pt;color:#4b5563;margin:2px 0 0 0;font-family:${FONT_FAMILY}">${e(addr)}</p>` : ''}
+    ${contactLine ? `<p style="font-size:9pt;color:#4b5563;margin:2px 0 0 0;font-family:${FONT_FAMILY}">${e(contactLine)}</p>` : ''}
   </div>
 </div>`;
 }
@@ -165,7 +166,7 @@ function buildPayslipBodyHTML(record: BangLuongRecord): string {
 <div style="font-family:${FONT_FAMILY};font-size:10pt;color:#222;padding:20px;min-width:600px;background:#fff">
 ${buildCompanyHeaderHTML()}
 <h1 style="font-size:16pt;text-align:center;margin:0 0 8px;font-weight:bold;font-family:${FONT_FAMILY}">${title}</h1>
-<p style="font-size:10pt;color:#6b7280;text-align:center;margin-bottom:12px;font-family:${FONT_FAMILY}">${i18n.t('bangLuong.detail.employee')}: ${empLabel} · ${i18n.t('bangLuong.detail.period')}: ${periodStr}</p>
+<p style="font-size:10pt;color:#6b7280;text-align:center;margin-bottom:12px;font-family:${FONT_FAMILY}">${i18n.t('bangLuong.detail.employee')}: ${e(empLabel)} · ${i18n.t('bangLuong.detail.period')}: ${periodStr}</p>
 <hr style="border:0;border-top:1px solid ${BORDER_COLOR};margin:12px 0" />
 
 ${basicRows}

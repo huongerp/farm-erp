@@ -9,6 +9,7 @@ import { ensureJsPDFVietnameseFont } from '../../../../lib/jspdf-vietnamese-font
 import type { NXTReportFilters } from '../core/types';
 import type { TFunction } from 'i18next';
 import { getNXTByPeriod, getPhieuInPeriod, getTonAtDate } from '../services/bao-cao-nxt-service';
+import { escapeHtml as e } from '../../../../lib/escape-html';
 
 const FONT_STACK = "'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif";
 
@@ -20,18 +21,18 @@ function safeStr(v: string | number | null | undefined): string {
 function buildCompanyHeaderHTML(): string {
   const info = useUIStore.getState().companyInfo;
   const logoHtml = info.appLogo
-    ? `<img src="${info.appLogo}" alt="Logo" style="width:64px;height:64px;object-fit:contain;flex-shrink:0" />`
+    ? `<img src="${e(info.appLogo)}" alt="Logo" style="width:64px;height:64px;object-fit:contain;flex-shrink:0" />`
     : '';
-  const addr = info.address ? `${i18n.t('company.address')}: ${info.address}` : '';
+  const addr = info.address ? `${i18n.t('company.address')}: ${e(info.address)}` : '';
   const contact: string[] = [];
-  if (info.email) contact.push(`${i18n.t('company.email')}: ${info.email}`);
-  if (info.phone) contact.push(`${i18n.t('company.phone')}: ${info.phone}`);
+  if (info.email) contact.push(`${i18n.t('company.email')}: ${e(info.email)}`);
+  if (info.phone) contact.push(`${i18n.t('company.phone')}: ${e(info.phone)}`);
   const contactLine = contact.join(' · ');
   return `
 <div style="display:flex;align-items:flex-start;gap:16px;padding-bottom:16px;margin-bottom:16px;border-bottom:2px solid #333;font-family:${FONT_STACK}">
   ${logoHtml}
   <div style="flex:1;min-width:0">
-    <div style="font-size:14pt;font-weight:bold;color:#111;text-transform:uppercase;letter-spacing:0.02em">${info.companyName}</div>
+    <div style="font-size:14pt;font-weight:bold;color:#111;text-transform:uppercase;letter-spacing:0.02em">${e(info.companyName)}</div>
     ${addr ? `<p style="font-size:9pt;color:#444;margin:2px 0 0 0">${addr}</p>` : ''}
     ${contactLine ? `<p style="font-size:9pt;color:#444;margin:2px 0 0 0">${contactLine}</p>` : ''}
   </div>
@@ -43,7 +44,7 @@ function buildBodyHTML(
   t: TFunction
 ): string {
   const title = t('baoCaonhapXuatTon.reportTitle');
-  const period = `${t('baoCaonhapXuatTon.period')}: ${filters.dateFrom} – ${filters.dateTo}`;
+  const period = `${t('baoCaonhapXuatTon.period')}: ${e(filters.dateFrom)} – ${e(filters.dateTo)}`;
   const printedAt = formatDateTime(new Date());
 
   return `
@@ -72,8 +73,8 @@ function buildTableWarehouse(rows: { ma_kho: string; ten_kho: string; ton_dau_ky
   ].map((text) => `<th style="padding:6px 8px;border:1px solid #ddd;text-align:left;font-size:9pt;font-family:${FONT_STACK};background:#6366f1;color:#fff">${text}</th>`).join('');
   const tbody = rows.map((r) => `
     <tr>
-      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${safeStr(r.ma_kho)}</td>
-      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${safeStr(r.ten_kho)}</td>
+      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${e(safeStr(r.ma_kho))}</td>
+      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${e(safeStr(r.ten_kho))}</td>
       <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt;text-align:right">${r.ton_dau_ky.toLocaleString()}</td>
       <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt;text-align:right">${r.tong_nhap.toLocaleString()}</td>
       <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt;text-align:right">${r.tong_xuat.toLocaleString()}</td>
@@ -96,9 +97,9 @@ function buildTableProduct(rows: { ma_hang: string; ten_hang: string; ten_danh_m
   ].map((text) => `<th style="padding:6px 8px;border:1px solid #ddd;text-align:left;font-size:9pt;font-family:${FONT_STACK};background:#6366f1;color:#fff">${text}</th>`).join('');
   const tbody = rows.slice(0, 50).map((r) => `
     <tr>
-      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${safeStr(r.ma_hang)}</td>
-      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${safeStr(r.ten_hang)}</td>
-      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${safeStr(r.don_vi_tinh)}</td>
+      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${e(safeStr(r.ma_hang))}</td>
+      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${e(safeStr(r.ten_hang))}</td>
+      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${e(safeStr(r.don_vi_tinh))}</td>
       <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt;text-align:right">${r.ton_dau_ky.toLocaleString()}</td>
       <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt;text-align:right">${r.tong_nhap.toLocaleString()}</td>
       <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt;text-align:right">${r.tong_xuat.toLocaleString()}</td>
@@ -126,11 +127,11 @@ export async function exportBaoCaoNXTToPdf(
       .map((text) => `<th style="padding:6px 8px;border:1px solid #ddd;font-size:9pt;font-family:${FONT_STACK};background:#6366f1;color:#fff">${text}</th>`).join('');
     const tbody = phieuList.slice(0, 30).map((p) => `
       <tr>
-        <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${p.so_phieu}</td>
-        <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${p.ngay}</td>
-        <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${p.loai}</td>
-        <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${safeStr(p.ten_kho)}</td>
-        <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${p.trang_thai}</td>
+        <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${e(p.so_phieu)}</td>
+        <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${e(p.ngay)}</td>
+        <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${e(p.loai)}</td>
+        <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${e(safeStr(p.ten_kho))}</td>
+        <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${e(p.trang_thai)}</td>
       </tr>`).join('');
     phieuTable = `<h2 style="font-size:11pt;margin:16px 0 8px;font-family:${FONT_STACK}">${t('baoCaonhapXuatTon.tabs.chiTietPhieu')}</h2>
 <table style="width:100%;border-collapse:collapse;margin-top:8px;font-family:${FONT_STACK};font-size:9pt"><thead><tr>${thead}</tr></thead><tbody>${tbody}</tbody></table>`;
@@ -141,9 +142,9 @@ export async function exportBaoCaoNXTToPdf(
       .map((text) => `<th style="padding:6px 8px;border:1px solid #ddd;font-size:9pt;font-family:${FONT_STACK};background:#6366f1;color:#fff">${text}</th>`).join('');
     const tbody = tonRows.slice(0, 40).map((r) => `
       <tr>
-        <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${r.ma_kho}</td>
-        <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${r.ten_kho}</td>
-        <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${r.ma_hang}</td>
+        <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${e(r.ma_kho)}</td>
+        <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${e(r.ten_kho)}</td>
+        <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${e(r.ma_hang)}</td>
         <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt;text-align:right">${r.so_luong.toLocaleString()}</td>
       </tr>`).join('');
     tonTable = `<h2 style="font-size:11pt;margin:16px 0 8px;font-family:${FONT_STACK}">${t('baoCaonhapXuatTon.tabs.tonTaiThoiDiem')}</h2>
@@ -151,10 +152,10 @@ export async function exportBaoCaoNXTToPdf(
   }
 
   const html = buildBodyHTML(filters, t)
-    .replace('{{BY_WAREHOUSE_TABLE}}', byWarehouseTable)
-    .replace('{{BY_PRODUCT_TABLE}}', byProductTable)
-    .replace('{{PHIEU_TABLE}}', phieuTable)
-    .replace('{{TON_TABLE}}', tonTable);
+    .replace('{{BY_WAREHOUSE_TABLE}}', () => byWarehouseTable)
+    .replace('{{BY_PRODUCT_TABLE}}', () => byProductTable)
+    .replace('{{PHIEU_TABLE}}', () => phieuTable)
+    .replace('{{TON_TABLE}}', () => tonTable);
 
   const [{ default: jsPDF }] = await Promise.all([import('jspdf')]);
   const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });

@@ -13,6 +13,7 @@ import type {
   PlannedUpdate,
   FarmHangHoaPayload,
 } from '../utils/import-hang-hoa';
+import { throwDbError } from '../../../../lib/db-errors';
 
 const TABLE = 'fp_farm_danh_sach_hang_hoa';
 
@@ -141,7 +142,7 @@ export const getFarmHangHoaById = async (id: string): Promise<FarmHangHoa | null
   const idNum = Number(id);
   if (Number.isNaN(idNum)) return null;
   const { data: row, error } = await db.from(TABLE).select(HANG_HOA_COLUMNS).eq('id', idNum).maybeSingle();
-  if (error) throw new Error(error.message);
+  if (error) throwDbError(error);
   if (!row) return null;
   const [enriched] = await enrichWithTenDanhMuc([row as FarmHangHoaRow]);
   return enriched;
@@ -173,7 +174,7 @@ export const createFarmHangHoa = async (data: FarmHangHoaFormValues): Promise<Fa
   };
 
   const { data: inserted, error } = await db.from(TABLE).insert(payload).select(HANG_HOA_COLUMNS).single();
-  if (error) throw new Error(error.message);
+  if (error) throwDbError(error);
   const [enriched] = await enrichWithTenDanhMuc([inserted as FarmHangHoaRow]);
   return enriched;
 };
@@ -214,7 +215,7 @@ export const updateFarmHangHoa = async (id: string, data: FarmHangHoaFormValues)
     .eq('id', idNum)
     .select(HANG_HOA_COLUMNS)
     .single();
-  if (error) throw new Error(error.message ?? i18n.t('farmHangHoaPhanThuoc.hangHoa.service.notFound'));
+  if (error) throwDbError(error);
   const [enriched] = await enrichWithTenDanhMuc([updated as FarmHangHoaRow]);
   return enriched;
 };
@@ -223,7 +224,7 @@ export const deleteFarmHangHoa = async (id: string): Promise<void> => {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('farmHangHoaPhanThuoc.hangHoa.service.notFound'));
   const { error } = await db.from(TABLE).delete().eq('id', idNum);
-  if (error) throw new Error(error.message ?? i18n.t('farmHangHoaPhanThuoc.hangHoa.service.notFound'));
+  if (error) throwDbError(error);
 };
 
 export const deleteFarmHangHoaMany = async (ids: string[]): Promise<void> => {
@@ -231,7 +232,7 @@ export const deleteFarmHangHoaMany = async (ids: string[]): Promise<void> => {
   const idNums = ids.map(Number).filter((n) => !Number.isNaN(n));
   if (idNums.length === 0) return;
   const { error } = await db.from(TABLE).delete().in('id', idNums);
-  if (error) throw new Error(error.message ?? i18n.t('farmHangHoaPhanThuoc.hangHoa.service.notFound'));
+  if (error) throwDbError(error);
 };
 
 // ---------------------------------------------------------------------------

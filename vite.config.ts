@@ -1,4 +1,5 @@
 import path from 'path';
+import { readFileSync } from 'node:fs';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
@@ -43,8 +44,16 @@ export default defineConfig(({ mode }) => {
   const authProxyTarget = env.DEV_AUTH_PROXY_TARGET || 'http://127.0.0.1:3001';
   const apiProxyTarget = env.DEV_API_PROXY_TARGET || 'http://127.0.0.1:3010';
   const notifyProxyTarget = env.DEV_NOTIFY_PROXY_TARGET || 'http://127.0.0.1:3002';
+  const sheetsProxyTarget = env.DEV_SHEETS_PROXY_TARGET || 'http://127.0.0.1:3003';
+
+  // Số phiên bản hiện ở trang Cài đặt — đổi ở package.json khi phát hành (kèm git tag vX.Y.Z).
+  const appVersion = (JSON.parse(readFileSync(path.resolve(__dirname, 'package.json'), 'utf-8')) as { version?: string })
+    .version ?? '0.0.0';
 
   return {
+    define: {
+      __APP_VERSION__: JSON.stringify(appVersion),
+    },
     server: {
       // PORT cho phép chạy song song nhiều dev server (mặc định vẫn 3000).
       port: Number(process.env.PORT) || Number(env.PORT) || 3000,
@@ -67,6 +76,13 @@ export default defineConfig(({ mode }) => {
           target: notifyProxyTarget,
           changeOrigin: true,
           rewrite: (p) => p.replace(/^\/notify/, ''),
+        },
+        // Service sheets: kết nối Google + xuất/đồng bộ Google Sheet. Header Origin
+        // giữ nguyên (changeOrigin chỉ đổi Host) — service dựa vào nó để lập redirect_uri.
+        '/sheets': {
+          target: sheetsProxyTarget,
+          changeOrigin: true,
+          rewrite: (p) => p.replace(/^\/sheets/, ''),
         },
       },
     },
@@ -95,6 +111,7 @@ export default defineConfig(({ mode }) => {
             if (id.includes('framer-motion')) return 'framer-motion';
             if (id.includes('@dnd-kit')) return 'dnd-kit';
             if (id.includes('recharts')) return 'recharts';
+            if (id.includes('exceljs')) return 'vendor-exceljs';
             if (id.includes('xlsx')) return 'vendor-xlsx';
             if (id.includes('jspdf')) return 'vendor-jspdf';
             if (id.includes('html2canvas')) return 'vendor-html2canvas';
@@ -159,6 +176,7 @@ export default defineConfig(({ mode }) => {
         apiTarget: apiProxyTarget,
         authTarget: authProxyTarget,
         notifyTarget: notifyProxyTarget,
+        sheetsTarget: sheetsProxyTarget,
       }),
       ...(analyze
         ? [

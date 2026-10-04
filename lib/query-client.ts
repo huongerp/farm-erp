@@ -4,6 +4,7 @@ import { persistQueryClient } from '@tanstack/react-query-persist-client';
 import { get, set, del } from 'idb-keyval';
 import { toast } from 'sonner';
 import i18n from './i18n';
+import { formatDbError } from './db-errors';
 
 /**
  * gcTime phải ≥ maxAge để persister có thể khôi phục cache sau F5 (TanStack v5).
@@ -19,7 +20,8 @@ const ONE_DAY_MS = 1000 * 60 * 60 * 24;
  */
 const queryCache = new QueryCache({
   onError: (error, query) => {
-    const message = error instanceof Error && error.message ? error.message : i18n.t('common.queryError');
+    // formatDbError: câu tiếng Việt kèm mã cho lỗi PostgREST thô; chuỗi đã chuẩn hoá thì giữ nguyên.
+    const message = error ? formatDbError(error) : i18n.t('common.queryError');
     toast.error(message, { id: `query-error:${JSON.stringify(query.queryKey)}` });
   },
 });

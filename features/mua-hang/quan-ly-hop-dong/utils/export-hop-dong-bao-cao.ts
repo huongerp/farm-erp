@@ -2,6 +2,7 @@ import type { TFunction } from 'i18next';
 import { formatDateTime, formatNumberVN, getTodayISODate } from '../../../../lib/utils';
 import { downloadBlob } from '../../../../lib/download-blob';
 import { useUIStore } from '../../../../store/useStore';
+import { escapeHtml as e } from '../../../../lib/escape-html';
 import i18n from '../../../../lib/i18n';
 import { ensureJsPDFVietnameseFont } from '../../../../lib/jspdf-vietnamese-font';
 
@@ -36,18 +37,18 @@ export interface BaoCaoHopDongExportSnapshot {
 function buildCompanyHeaderHTML(): string {
   const info = useUIStore.getState().companyInfo;
   const logoHtml = info.appLogo
-    ? `<img src="${info.appLogo}" alt="Logo" style="width:64px;height:64px;object-fit:contain;flex-shrink:0" />`
+    ? `<img src="${e(info.appLogo)}" alt="Logo" style="width:64px;height:64px;object-fit:contain;flex-shrink:0" />`
     : '';
-  const addr = info.address ? `${i18n.t('company.address')}: ${info.address}` : '';
+  const addr = info.address ? `${i18n.t('company.address')}: ${e(info.address)}` : '';
   const contact: string[] = [];
-  if (info.email) contact.push(`${i18n.t('company.email')}: ${info.email}`);
-  if (info.phone) contact.push(`${i18n.t('company.phone')}: ${info.phone}`);
+  if (info.email) contact.push(`${i18n.t('company.email')}: ${e(info.email)}`);
+  if (info.phone) contact.push(`${i18n.t('company.phone')}: ${e(info.phone)}`);
   const contactLine = contact.join(' · ');
   return `
 <div style="display:flex;align-items:flex-start;gap:16px;padding-bottom:16px;margin-bottom:16px;border-bottom:2px solid #333;font-family:${FONT_STACK}">
   ${logoHtml}
   <div style="flex:1;min-width:0">
-    <div style="font-size:14pt;font-weight:bold;color:#111;text-transform:uppercase;letter-spacing:0.02em">${info.companyName}</div>
+    <div style="font-size:14pt;font-weight:bold;color:#111;text-transform:uppercase;letter-spacing:0.02em">${e(info.companyName)}</div>
     ${addr ? `<p style="font-size:9pt;color:#444;margin:2px 0 0 0">${addr}</p>` : ''}
     ${contactLine ? `<p style="font-size:9pt;color:#444;margin:2px 0 0 0">${contactLine}</p>` : ''}
   </div>
@@ -60,8 +61,8 @@ function buildKpiTable(title: string, rows: { label: string; value: string }[]):
     .map(
       (r) => `
     <tr>
-      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${r.label}</td>
-      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt;text-align:right">${r.value}</td>
+      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${e(r.label)}</td>
+      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt;text-align:right">${e(r.value)}</td>
     </tr>`
     )
     .join('');
@@ -89,7 +90,7 @@ function buildNccTable(rows: BaoCaoNccRow[], t: TFunction): string {
     .map(
       (r) => `
     <tr>
-      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${r.tenNcc}</td>
+      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${e(r.tenNcc)}</td>
       <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt;text-align:right">${r.soHd}</td>
       <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt;text-align:right">${formatNumberVN(r.tongGiaTri)}</td>
       <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt;text-align:right">${formatNumberVN(r.daTT)}</td>
@@ -121,7 +122,7 @@ function buildMonthTable(rows: BaoCaoMonthRow[], t: TFunction): string {
     .map(
       (r) => `
     <tr>
-      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${r.label}</td>
+      <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt">${e(r.label)}</td>
       <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt;text-align:right">${r.soHd}</td>
       <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt;text-align:right">${r.soDot}</td>
       <td style="padding:4px 8px;border:1px solid #ddd;font-family:${FONT_STACK};font-size:9pt;text-align:right">${formatNumberVN(r.tongTien)}</td>
@@ -191,7 +192,7 @@ export async function exportBaoCaoHopDongToPdf(snapshot: BaoCaoHopDongExportSnap
 <div style="font-family:${FONT_STACK};font-size:10pt;color:#222;padding:20px;min-width:600px">
 ${buildCompanyHeaderHTML()}
 <h1 style="font-size:16pt;text-align:center;margin:0 0 8px;font-family:${FONT_STACK}">${title}</h1>
-<p style="font-size:10pt;color:#555;text-align:center;margin-bottom:12px;font-family:${FONT_STACK}">${snapshot.periodLabel}</p>
+<p style="font-size:10pt;color:#555;text-align:center;margin-bottom:12px;font-family:${FONT_STACK}">${e(snapshot.periodLabel)}</p>
 <p style="font-size:9pt;color:#888;margin-bottom:16px;font-family:${FONT_STACK}">${printedAt}</p>
 <hr style="border:0;border-top:1px solid #ccc;margin:12px 0" />
 ${buildKpiTable(t('hopDong.baoCao.sectionTongHop'), snapshot.kpiRows)}

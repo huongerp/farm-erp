@@ -6,6 +6,7 @@ import type { KhoFormValues } from '../core/schema';
 import { writeEachImportRow } from '../../../../lib/import-bulk';
 import i18n from '../../../../lib/i18n';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
+import { throwDbError } from '../../../../lib/db-errors';
 
 const TABLE = 'fp_mh_danh_sach_kho';
 
@@ -100,7 +101,7 @@ export const getKhoById = async (id: string): Promise<Kho | null> => {
     .select(KHO_ROW_COLUMNS)
     .eq('id', idNum)
     .maybeSingle();
-  if (error) throw new Error(error.message);
+  if (error) throwDbError(error);
   if (!row) return null;
   const branches = await getBranches();
   const tenChiNhanh =
@@ -129,7 +130,7 @@ export const createKho = async (data: KhoFormValues): Promise<Kho> => {
   };
 
   const { data: inserted, error } = await db.from(TABLE).insert(payload).select(KHO_ROW_COLUMNS).single();
-  if (error) throw new Error(error.message);
+  if (error) throwDbError(error);
   const branches = await getBranches();
   const tenChiNhanh =
     inserted.chi_nhanh_id != null
@@ -167,7 +168,7 @@ export const updateKho = async (id: string, data: KhoFormValues): Promise<Kho> =
     .eq('id', idNum)
     .select(KHO_ROW_COLUMNS)
     .single();
-  if (error) throw new Error(error.message ?? i18n.t('kho.service.notFound'));
+  if (error) throwDbError(error);
   const branches = await getBranches();
   const tenChiNhanh =
     updated.chi_nhanh_id != null
@@ -185,7 +186,7 @@ export const updateKhoStatus = async (id: string, status: Kho['trang_thai']): Pr
     .eq('id', idNum)
     .select(KHO_ROW_COLUMNS)
     .single();
-  if (error) throw new Error(error.message ?? i18n.t('kho.service.notFound'));
+  if (error) throwDbError(error);
   const branches = await getBranches();
   const tenChiNhanh =
     updated.chi_nhanh_id != null
@@ -198,7 +199,7 @@ export const deleteKho = async (id: string): Promise<void> => {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('kho.service.notFound'));
   const { error } = await db.from(TABLE).delete().eq('id', idNum);
-  if (error) throw new Error(error.message ?? i18n.t('kho.service.notFound'));
+  if (error) throwDbError(error);
 };
 
 export const deleteKhoMany = async (ids: string[]): Promise<void> => {
@@ -206,7 +207,7 @@ export const deleteKhoMany = async (ids: string[]): Promise<void> => {
   const idNums = ids.map(Number).filter((n) => !Number.isNaN(n));
   if (idNums.length === 0) return;
   const { error } = await db.from(TABLE).delete().in('id', idNums);
-  if (error) throw new Error(error.message ?? i18n.t('kho.service.notFound'));
+  if (error) throwDbError(error);
 };
 
 /** Ghi các dòng đã validate ở `planKhoImport`; lỗi DB gắn lại đúng dòng Excel. */

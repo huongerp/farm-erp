@@ -384,7 +384,7 @@ export async function getBangLuongRecords(): Promise<BangLuongRecord[]> {
     .select(BANG_LUONG_ROW_COLUMNS)
     .order('nam', { ascending: false })
     .order('thang', { ascending: false });
-  if (error) throw new Error(error.message ?? i18n.t('bangLuong.service.error'));
+  if (error) throwDbError(error);
   const list = (rows ?? []) as Row[];
   const nhanVienIds = list.map((r) => Number(r.nhan_vien_id)).filter((n) => !Number.isNaN(n));
   const { nhanVienMap, phongBanMap } = await fetchNhanVienPhongBanMaps(nhanVienIds);
@@ -395,7 +395,7 @@ export async function getBangLuongById(id: string): Promise<BangLuongRecord | nu
   const idNum = parseInt(id, 10);
   if (Number.isNaN(idNum)) return null;
   const { data: row, error } = await db.from(TABLE).select(BANG_LUONG_ROW_COLUMNS).eq('id', idNum).maybeSingle();
-  if (error) throw new Error(error.message ?? i18n.t('bangLuong.service.error'));
+  if (error) throwDbError(error);
   if (!row) return null;
   const nvId = Number((row as Row).nhan_vien_id);
   const { nhanVienMap, phongBanMap } = await fetchNhanVienPhongBanMaps([nvId]);
@@ -416,7 +416,7 @@ export async function getBangLuongByNhanVienPeriod(
     .eq('nam', nam)
     .eq('thang', thang)
     .maybeSingle();
-  if (error) throw new Error(error.message ?? i18n.t('bangLuong.service.error'));
+  if (error) throwDbError(error);
   if (!row) return null;
   const { nhanVienMap, phongBanMap } = await fetchNhanVienPhongBanMaps([nvId]);
   return rowToRecord(row as Row, nhanVienMap, phongBanMap);
@@ -491,7 +491,7 @@ export async function addBangLuong(
     tg_cap_nhat: null,
   };
   const { data: inserted, error } = await db.from(TABLE).insert(row).select(BANG_LUONG_ROW_COLUMNS).single();
-  if (error) throw new Error(error.message ?? i18n.t('bangLuong.service.error'));
+  if (error) throwDbError(error);
   const { nhanVienMap, phongBanMap } = await fetchNhanVienPhongBanMaps([nvId]);
   return rowToRecord(inserted as Row, nhanVienMap, phongBanMap);
 }
@@ -532,7 +532,7 @@ export async function saveBangLuong(record: BangLuongRecord): Promise<BangLuongR
     .eq('id', idNum)
     .select(BANG_LUONG_ROW_COLUMNS)
     .single();
-  if (error) throw new Error(error.message ?? i18n.t('bangLuong.service.error'));
+  if (error) throwDbError(error);
   const nvId = Number((updated as Row).nhan_vien_id);
   const { nhanVienMap, phongBanMap } = await fetchNhanVienPhongBanMaps([nvId]);
   return rowToRecord(updated as Row, nhanVienMap, phongBanMap);
@@ -576,7 +576,7 @@ export async function createBangLuongFromRecord(
     ghi_chu: record.ghi_chu ?? null,
   };
   const { data: inserted, error } = await db.from(TABLE).insert(row).select(BANG_LUONG_ROW_COLUMNS).single();
-  if (error) throw new Error(error.message ?? i18n.t('bangLuong.service.error'));
+  if (error) throwDbError(error);
   const { nhanVienMap, phongBanMap } = await fetchNhanVienPhongBanMaps([nvId]);
   return rowToRecord(inserted as Row, nhanVienMap, phongBanMap);
 }
@@ -586,5 +586,5 @@ export async function deleteBangLuong(ids: string[]): Promise<void> {
   const numIds = ids.map((id) => parseInt(id, 10)).filter((n) => !Number.isNaN(n));
   if (numIds.length === 0) return;
   const { error } = await db.from(TABLE).delete().in('id', numIds);
-  if (error) throw new Error(error.message ?? i18n.t('bangLuong.service.error'));
+  if (error) throwDbError(error);
 }

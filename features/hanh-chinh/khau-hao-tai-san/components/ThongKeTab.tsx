@@ -1,7 +1,6 @@
 import React, { useMemo, useState, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Layers, MapPin, Tag } from 'lucide-react';
-import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 import { getTaiSanList } from '../../danh-muc-tai-san/services/danh-muc-tai-san-service';
 import { useAssetGroups } from '../../thiet-lap-tai-san/hooks/use-nhom-tai-san';
@@ -104,9 +103,6 @@ const ThongKeTab: React.FC = () => {
     </>
   );
 
-  const handleExportReport = () => {
-    toast.info(t('khauHaoTaiSan.stats.exportReport') + ' – Đang phát triển');
-  };
 
   const handlePrintReport = () => {
     window.print();
@@ -160,7 +156,6 @@ const ThongKeTab: React.FC = () => {
         actionsLabel={t('khauHaoTaiSan.stats.actions')}
         exportLabel={t('khauHaoTaiSan.stats.exportReport')}
         printLabel={t('khauHaoTaiSan.stats.printReport')}
-        onExportReport={handleExportReport}
         onPrintReport={handlePrintReport}
       />
 

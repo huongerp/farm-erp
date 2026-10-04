@@ -3,6 +3,7 @@ import type { DanhMucHangHoa } from '../core/types';
 import type { DanhMucHangHoaFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
+import { throwDbError } from '../../../../lib/db-errors';
 
 const TABLE = 'fp_mh_danh_muc_hang_hoa';
 
@@ -103,7 +104,7 @@ export const getDanhMucHangHoaById = async (id: string): Promise<DanhMucHangHoa 
     .select(DM_HH_COLUMNS)
     .eq('id', idNum)
     .maybeSingle();
-  if (error) throw new Error(error.message);
+  if (error) throwDbError(error);
   if (!row) return null;
   return rowToDanhMuc(row as DanhMucHangHoaRow);
 };
@@ -121,7 +122,7 @@ export const createDanhMucHangHoa = async (
   };
 
   const { data: inserted, error } = await db.from(TABLE).insert(payload).select(DM_HH_COLUMNS).single();
-  if (error) throw new Error(error.message);
+  if (error) throwDbError(error);
   return rowToDanhMuc(inserted as DanhMucHangHoaRow);
 };
 
@@ -148,7 +149,7 @@ export const updateDanhMucHangHoa = async (
     .eq('id', idNum)
     .select(DM_HH_COLUMNS)
     .single();
-  if (error) throw new Error(error.message ?? i18n.t('danhMucHangHoa.service.notFound'));
+  if (error) throwDbError(error);
   return rowToDanhMuc(updated as DanhMucHangHoaRow);
 };
 
@@ -161,11 +162,11 @@ export const deleteDanhMucHangHoa = async (id: string): Promise<void> => {
     .select('id')
     .eq('danh_muc_cha_id', idNum)
     .limit(1);
-  if (errSelect) throw new Error(errSelect.message);
+  if (errSelect) throwDbError(errSelect);
   if (children && children.length > 0) throw new Error(i18n.t('danhMucHangHoa.service.hasChildren'));
 
   const { error } = await db.from(TABLE).delete().eq('id', idNum);
-  if (error) throw new Error(error.message ?? i18n.t('danhMucHangHoa.service.notFound'));
+  if (error) throwDbError(error);
 };
 
 export const deleteDanhMucHangHoaMany = async (ids: string[]): Promise<void> => {
@@ -181,5 +182,5 @@ export const deleteDanhMucHangHoaMany = async (ids: string[]): Promise<void> => 
   if (children && children.length > 0) throw new Error(i18n.t('danhMucHangHoa.service.hasChildren'));
 
   const { error } = await db.from(TABLE).delete().in('id', idNums);
-  if (error) throw new Error(error.message ?? i18n.t('danhMucHangHoa.service.notFound'));
+  if (error) throwDbError(error);
 };

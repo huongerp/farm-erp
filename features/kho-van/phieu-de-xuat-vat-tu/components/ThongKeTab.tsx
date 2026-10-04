@@ -2,7 +2,6 @@ import React, { useMemo, useState, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { User, UserCheck, Calendar, Warehouse, Tag } from 'lucide-react';
-import { toast } from 'sonner';
 import { usePhieuDeXuatVatTuViewScope } from '../hooks/use-phieu-de-xuat-vat-tu-view-scope';
 import { fetchPhieuDeXuatStatsFromRpc } from '../services/phieu-de-xuat-vat-tu-db.service';
 import { useEmployeesRefQuery } from '../../../../lib/hooks/use-ref-queries';
@@ -202,9 +201,6 @@ const ThongKeTab: React.FC = () => {
     </MobileFilterField>
   );
 
-  const handleExportReport = () => {
-    toast.info(t('phieuDeXuatVatTu.stats.exportReport') + ' – Đang phát triển');
-  };
 
   const handlePrintReport = () => {
     window.print();
@@ -252,7 +248,6 @@ const ThongKeTab: React.FC = () => {
         actionsLabel={t('phieuDeXuatVatTu.stats.actions')}
         exportLabel={t('phieuDeXuatVatTu.stats.exportReport')}
         printLabel={t('phieuDeXuatVatTu.stats.printReport')}
-        onExportReport={handleExportReport}
         onPrintReport={handlePrintReport}
       />
 

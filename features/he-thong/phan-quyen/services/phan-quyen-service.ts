@@ -11,6 +11,7 @@ import {
 import { getPositions } from '../../chuc-vu/services/chuc-vu-service';
 import { getDepartments } from '../../phong-ban/services/phong-ban-service';
 import i18n from '../../../../lib/i18n';
+import { throwDbError } from '../../../../lib/db-errors';
 
 const TABLE_PHAN_QUYEN = 'fp_var_phan_quyen';
 const TABLE_CHUC_VU = 'fp_var_chuc_vu';
@@ -154,7 +155,7 @@ export const createRole = async (
     .select('id, ten_chuc_vu, phong_ban_id, mo_ta, tt, trang_thai, tg_cap_nhat')
     .single();
 
-  if (errChucVu) throw new Error(errChucVu.message ?? i18n.t('permission.matrix.loading'));
+  if (errChucVu) throwDbError(errChucVu);
   const chucVuId = insertedChucVu.id;
 
   if (permissions.length > 0) {
@@ -164,7 +165,7 @@ export const createRole = async (
       actions: p.actions,
     }));
     const { error: errPQ } = await db.from(TABLE_PHAN_QUYEN).insert(rows);
-    if (errPQ) throw new Error(errPQ.message);
+    if (errPQ) throwDbError(errPQ);
   }
 
   const id = String(chucVuId);
@@ -213,13 +214,13 @@ export const updateRole = async (
     .eq('id', numId)
     .select('id, ten_chuc_vu, phong_ban_id, mo_ta, tt, trang_thai, tg_cap_nhat')
     .single();
-  if (errChucVu) throw new Error(errChucVu.message ?? i18n.t('permission.matrix.loading'));
+  if (errChucVu) throwDbError(errChucVu);
 
   const { data: existing, error: errExisting } = await db
     .from(TABLE_PHAN_QUYEN)
     .select('id, module_id')
     .eq('chuc_vu_id', numId);
-  if (errExisting) throw new Error(errExisting.message);
+  if (errExisting) throwDbError(errExisting);
 
   const idByModule = new Map<string, number>();
   (existing ?? []).forEach((row: { id: number; module_id: string }) => {
@@ -251,11 +252,11 @@ export const updateRole = async (
   }
   if (toInsert.length > 0) {
     const { error } = await db.from(TABLE_PHAN_QUYEN).insert(toInsert);
-    if (error) throw new Error(error.message);
+    if (error) throwDbError(error);
   }
   if (toDelete.length > 0) {
     const { error } = await db.from(TABLE_PHAN_QUYEN).delete().in('id', toDelete);
-    if (error) throw new Error(error.message);
+    if (error) throwDbError(error);
   }
 
   const trangThai =
@@ -288,10 +289,10 @@ export const deleteRoles = async (ids: string[]): Promise<void> => {
   if (numIds.length === 0) return;
 
   const { error: errDelPQ } = await db.from(TABLE_PHAN_QUYEN).delete().in('chuc_vu_id', numIds);
-  if (errDelPQ) throw new Error(errDelPQ.message);
+  if (errDelPQ) throwDbError(errDelPQ);
 
   const { error: errDelCV } = await db.from(TABLE_CHUC_VU).delete().in('id', numIds);
-  if (errDelCV) throw new Error(errDelCV.message);
+  if (errDelCV) throwDbError(errDelCV);
 };
 
 /** Cập nhật quyền theo module: update/insert fp_var_phan_quyen (roleId = chuc_vu_id). */
@@ -335,7 +336,7 @@ export const updateModulePermissions = async (
   }
   if (toInsert.length > 0) {
     const { error } = await db.from(TABLE_PHAN_QUYEN).insert(toInsert);
-    if (error) throw new Error(error.message);
+    if (error) throwDbError(error);
   }
 };
 

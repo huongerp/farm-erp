@@ -13,7 +13,7 @@ import {
   useUpdatePhieuKhoPTTrangThaiMany,
 } from '../hooks/use-phieu-kho-pt';
 import { useKhoList } from '../../../kho-van/danh-sach-kho/hooks/use-kho';
-import { usePhieuKhoPTViewScope } from '../hooks/use-phieu-kho-pt-view-scope';
+import { MODULE_ID_PHIEU_KHO_PT, usePhieuKhoPTViewScope } from '../hooks/use-phieu-kho-pt-view-scope';
 import { buildPhieuKhoPTPhamVi } from '../services/phieu-kho-pt-list-query';
 import { buildPhieuKhoPTListServerQuery, fetchAllPhieuKhoPTForListQuery } from '../services/phieu-kho-pt-service';
 import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
@@ -40,6 +40,9 @@ import { usePhieuKhoPTImport } from '../hooks/use-phieu-kho-pt-import';
 import { useExportData } from '../../../../lib/useExportData';
 import { mapPhieuKhoPTListRow, getExportColumnsPhieuKhoPTList, exportFileNamePhieuKhoPTDanhSach } from '../utils/export-phieu-kho-pt-danh-sach';
 import type { FarmHangHoa } from '../../hang-hoa-phan-thuoc/core/types';
+
+/** Đồng bộ Google Sheet tự động — nguồn v_xuat_phieu_kho_phan_thuoc (services/sheets/src/core/nguon-dong-bo.ts). */
+const DONG_BO_PHIEU_KHO_PT = { moduleId: MODULE_ID_PHIEU_KHO_PT };
 
 const DanhSachTab: React.FC = () => {
   const { t } = useTranslation();
@@ -456,6 +459,7 @@ const DanhSachTab: React.FC = () => {
         paginatedData={paginatedExportData}
         selectedData={selectedExportData}
         fileName={exportFileNamePhieuKhoPTDanhSach()}
+        dongBo={DONG_BO_PHIEU_KHO_PT}
       />
     </div>
   );

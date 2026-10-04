@@ -1,6 +1,5 @@
 import React, { useMemo, useState, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
 import { Package, MapPin } from 'lucide-react';
 import { useAllTonKho } from '../hooks/use-ton-kho';
 import { getKhoList } from '../../danh-sach-kho/services/kho-service';
@@ -80,13 +79,6 @@ const TonKhoThongKeTab: React.FC = () => {
     />
   );
 
-  const handleExportReport = () => {
-    if (!stats || (stats.byWarehouse.length === 0 && stats.topProducts.length === 0)) {
-      toast.info(t('tonKho.stats.noData'));
-      return;
-    }
-    toast.info(t('tonKho.stats.exportReport') + ' – Đang phát triển');
-  };
 
   const handlePrintReport = () => {
     window.print();
@@ -152,7 +144,6 @@ const TonKhoThongKeTab: React.FC = () => {
         actionsLabel={t('tonKho.stats.actions')}
         exportLabel={t('tonKho.stats.exportReport')}
         printLabel={t('tonKho.stats.printReport')}
-        onExportReport={handleExportReport}
         onPrintReport={handlePrintReport}
       />
       <div className="ton-kho-stats-content flex-1 min-h-0 overflow-y-auto custom-scrollbar print:overflow-visible">

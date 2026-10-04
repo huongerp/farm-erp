@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MapPin, Building2, Tag, Package } from 'lucide-react';
-import { toast } from 'sonner';
 import { useAssetStorageLocations } from '../../thiet-lap-tai-san/hooks/use-noi-luu';
 import { useTaiSanList } from '../../danh-muc-tai-san/hooks/use-danh-muc-tai-san';
 import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
@@ -91,9 +90,6 @@ const NoiQuanLyStatsTab: React.FC = () => {
     return Array.from(map.entries()).map(([id, v]) => ({ id_chi_nhanh: id, ...v }));
   }, [filteredLocations, branches]);
 
-  const handleExport = () => {
-    toast.info(t('noiQuanLy.stats.exportReport') + ' – Đang phát triển');
-  };
 
   const handlePrint = () => {
     window.print();
@@ -116,7 +112,6 @@ const NoiQuanLyStatsTab: React.FC = () => {
         branchOptions={branchOptions}
         filterIdChiNhanh={filterIdChiNhanh}
         onFilterIdChiNhanhChange={setFilterIdChiNhanh}
-        onExportReport={handleExport}
         onPrintReport={handlePrint}
       />
       <div className="noi-quan-ly-stats-content flex-1 min-h-0 overflow-y-auto custom-scrollbar print:overflow-visible">

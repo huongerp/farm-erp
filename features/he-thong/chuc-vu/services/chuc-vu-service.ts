@@ -4,7 +4,7 @@ import type { PositionFormValues } from '../core/schema';
 import { TRANG_THAI, TRANG_THAI_HOAT_DONG, type TrangThaiHoatDong } from '../../../../lib/constants';
 import { getJobLevels } from '../../cap-bac/services/cap-bac-service';
 import { getDepartments } from '../../phong-ban/services/phong-ban-service';
-import i18n from '../../../../lib/i18n';
+import { throwDbError } from '../../../../lib/db-errors';
 
 const TABLE = 'fp_var_chuc_vu';
 
@@ -78,7 +78,7 @@ export const createPosition = async (data: PositionFormValues): Promise<Position
     .select('id, ten_chuc_vu, phong_ban_id, cap_bac_id, mo_ta, tt, trang_thai, tg_tao, tg_cap_nhat')
     .single();
 
-  if (error) throw new Error(error.message);
+  if (error) throwDbError(error);
   const { deptMap, levelMap, capBacNumberMap } = await buildLookupMaps();
   return rowToPosition(inserted, deptMap, levelMap, capBacNumberMap);
 };
@@ -101,7 +101,7 @@ export const updatePosition = async (id: string, data: PositionFormValues): Prom
     .select('id, ten_chuc_vu, phong_ban_id, cap_bac_id, mo_ta, tt, trang_thai, tg_tao, tg_cap_nhat')
     .single();
 
-  if (error) throw new Error(error.message ?? i18n.t('position.service.notFound'));
+  if (error) throwDbError(error);
   const { deptMap, levelMap, capBacNumberMap } = await buildLookupMaps();
   return rowToPosition(updated, deptMap, levelMap, capBacNumberMap);
 };
@@ -118,7 +118,7 @@ export const updatePositionStatus = async (
       .select('id, ten_chuc_vu, phong_ban_id, cap_bac_id, mo_ta, tt, trang_thai, tg_tao, tg_cap_nhat')
       .single();
 
-    if (error) throw new Error(error.message);
+    if (error) throwDbError(error);
     if (!data) return undefined;
     const { deptMap, levelMap, capBacNumberMap } = await buildLookupMaps();
     return rowToPosition(data, deptMap, levelMap, capBacNumberMap);
@@ -129,11 +129,11 @@ export const updatePositionStatus = async (
     .update({ trang_thai: status, tg_cap_nhat: new Date().toISOString() })
     .in('id', ids);
 
-  if (error) throw new Error(error.message);
+  if (error) throwDbError(error);
   return undefined;
 };
 
 export const deletePositions = async (ids: string[]): Promise<void> => {
   const { error } = await db.from(TABLE).delete().in('id', ids);
-  if (error) throw new Error(error.message);
+  if (error) throwDbError(error);
 };
