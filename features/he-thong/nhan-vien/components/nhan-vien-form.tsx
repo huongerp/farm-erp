@@ -40,7 +40,7 @@ import {
   CONTRACT_TYPE_OPTIONS,
   RELATIONSHIP_OPTIONS,
 } from '../core/constants';
-import { TRANG_THAI, TRANG_THAI_NV } from '../../../../lib/constants';
+import { TRANG_THAI, TRANG_THAI_HOAT_DONG, TRANG_THAI_NV } from '../../../../lib/constants';
 
 interface Props {
   initialData?: Employee | null;
@@ -108,11 +108,11 @@ const EmployeeForm: React.FC<Props> = ({ initialData, prefillData, onClose }) =>
   // Danh sách cấp bậc: luôn gồm cấp bậc đang chọn theo chức vụ để Combobox hiển thị đúng
   const jobLevelOptions = useMemo(() => {
     const active = jobLevels
-      .filter((l: any) => l.trang_thai === TRANG_THAI.DANG_DUNG)
-      .map((l: any) => ({ label: l.ten_cap_bac, value: l.id, subLabel: String(l.cap_bac) }));
+      .filter((l) => l.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG)
+      .map((l) => ({ label: l.ten_cap_bac, value: l.id, subLabel: String(l.cap_bac) }));
     const fromPosId = selectedPosition?.cap_bac_id;
     if (fromPosId && !active.some((o) => o.value === fromPosId)) {
-      const level = jobLevels.find((l: any) => l.id === fromPosId);
+      const level = jobLevels.find((l) => l.id === fromPosId);
       const label = level?.ten_cap_bac ?? selectedPosition?.ten_cap_bac ?? fromPosId;
       const subLabel = level?.cap_bac != null ? String(level.cap_bac) : undefined;
       return [{ label, value: fromPosId, subLabel }, ...active];

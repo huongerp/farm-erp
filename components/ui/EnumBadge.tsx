@@ -52,7 +52,7 @@ export interface EnumBadgeProps {
   /** Giá trị enum hiện tại */
   value: string | number | undefined | null;
   /** Config map: value → { label, color, icon? } */
-  config: BadgeConfig<any>;
+  config: BadgeConfig;
   /** Label hiển thị khi value không có trong config */
   fallbackLabel?: string;
   /** Class bổ sung */

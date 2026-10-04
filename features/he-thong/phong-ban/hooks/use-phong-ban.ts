@@ -22,7 +22,7 @@ export const useCreateDepartment = (onSuccess?: () => void) => {
       toast.success(i18n.t('department.toast.createSuccess'));
       if (onSuccess) onSuccess();
     },
-    onError: (err: any) => toast.error(`Lỗi: ${err.message}`)
+    onError: (err: Error) => toast.error(`Lỗi: ${err.message}`)
   });
 };
 
@@ -35,7 +35,7 @@ export const useUpdateDepartment = (onSuccess?: () => void) => {
       toast.success(i18n.t('department.toast.updateSuccess'));
       if (onSuccess) onSuccess();
     },
-    onError: (err: any) => toast.error(`Lỗi: ${err.message}`)
+    onError: (err: Error) => toast.error(`Lỗi: ${err.message}`)
   });
 };
 
@@ -59,7 +59,7 @@ export const useDeleteDepartment = () => {
       queryClient.invalidateQueries({ queryKey: ['departments'] });
       toast.success(i18n.t('department.toast.deleteSuccess'));
     },
-    onError: (err: any) => toast.error(err.message)
+    onError: (err: Error) => toast.error(err.message)
   });
 };
 

@@ -13,7 +13,7 @@ import EmptyState from '../../../../components/shared/EmptyState';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import { MobileFilterField } from '../../../../components/ui/MobileFilterSheet';
 import { useThanhToanDoiTacStats } from './stats/useThanhToanDoiTacStats';
-import StatsToolbar from './stats/StatsToolbar';
+import StatsToolbar from '../../../../components/shared/StatsToolbar';
 import StatsCards from './stats/StatsCards';
 const StatsCharts = lazy(() => import('./stats/StatsCharts'));
 import StatsTables from './stats/StatsTables';
@@ -298,6 +298,9 @@ const ThongKeTab: React.FC = () => {
         mobileFilterExtraCount={(dateFrom ? 1 : 0) + (dateTo ? 1 : 0)}
         activeFilterCount={activeFilterCount}
         onClearFilters={handleClearFilters}
+        actionsLabel={t('thanhToanDoiTac.stats.actions')}
+        exportLabel={t('thanhToanDoiTac.stats.exportReport')}
+        printLabel={t('thanhToanDoiTac.stats.printReport')}
         onExportReport={handleExportReport}
         onPrintReport={handlePrintReport}
       />

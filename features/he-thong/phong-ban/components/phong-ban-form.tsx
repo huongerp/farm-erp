@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useForm, Controller, SubmitHandler } from 'react-hook-form';
+import { useForm, Controller, SubmitHandler, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Building, Building2, ArrowUpFromLine, Power, FileText } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
@@ -34,7 +34,7 @@ const DepartmentForm: React.FC<Props> = ({ initialData, onClose }) => {
   };
 
   const { register, handleSubmit, formState: { errors, isDirty }, reset, control } = useForm<DepartmentFormValues>({
-    resolver: zodResolver(departmentSchema) as any,
+    resolver: zodResolver(departmentSchema) as Resolver<DepartmentFormValues>,
     defaultValues,
   });
 

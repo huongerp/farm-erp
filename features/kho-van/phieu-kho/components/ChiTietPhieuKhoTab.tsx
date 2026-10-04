@@ -356,7 +356,13 @@ const ChiTietPhieuKhoTab: React.FC = () => {
       case 'so_phieu':
         return (
           <td key={col.id} className="px-4 py-3" style={getColumnCellStyle(col)}>
-            <span className="font-mono text-xs font-medium text-primary cursor-pointer hover:underline" onClick={() => handleRowClick(row)}>
+            <span
+              role="button"
+              tabIndex={0}
+              className="font-mono text-xs font-medium text-primary cursor-pointer hover:underline"
+              onClick={() => handleRowClick(row)}
+              onKeyDown={(e) => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); handleRowClick(row); } }}
+            >
               {row.so_phieu}
             </span>
           </td>

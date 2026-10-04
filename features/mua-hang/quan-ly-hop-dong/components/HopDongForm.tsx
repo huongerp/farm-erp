@@ -91,7 +91,7 @@ const HopDongForm: React.FC<Props> = ({ doiTacList, initialData, onClose }) => {
     reset,
     formState: { errors, isDirty },
   } = useForm<HopDongFormValues>({
-    resolver: zodResolver(hopDongSchema) as any,
+    resolver: zodResolver(hopDongSchema),
     defaultValues,
   });
 

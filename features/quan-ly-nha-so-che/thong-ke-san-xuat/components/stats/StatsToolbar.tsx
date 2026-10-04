@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ChevronDown, FileDown, Printer } from 'lucide-react';
 import { cn } from '../../../../../lib/utils';
 import DashboardToolbar from '../../../../../components/shared/DashboardToolbar';
@@ -32,6 +33,7 @@ const StatsToolbar: React.FC<StatsToolbarProps> = ({
   onPrint,
 }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -56,7 +58,7 @@ const StatsToolbar: React.FC<StatsToolbarProps> = ({
             : 'bg-background border-border text-muted-foreground hover:text-foreground hover:bg-muted/50'
         )}
       >
-        <span>Xuất / In</span>
+        <span>{t('thongKeSanXuat.toolbar.xuatIn')}</span>
         <ChevronDown size={13} className={cn('transition-transform', open && 'rotate-180')} />
       </button>
 
@@ -69,7 +71,7 @@ const StatsToolbar: React.FC<StatsToolbarProps> = ({
               className="w-full h-9 px-3 flex items-center gap-2 text-left text-sm text-foreground hover:bg-muted/60 transition-colors"
             >
               <FileDown size={15} className="text-emerald-600 shrink-0" />
-              Xuất Excel (XLSX)
+              {t('thongKeSanXuat.toolbar.xuatExcel')}
             </button>
           )}
           {onExportPDF && (
@@ -79,7 +81,7 @@ const StatsToolbar: React.FC<StatsToolbarProps> = ({
               className="w-full h-9 px-3 flex items-center gap-2 text-left text-sm text-foreground hover:bg-muted/60 transition-colors border-t border-border"
             >
               <FileDown size={15} className="text-red-500 shrink-0" />
-              Xuất PDF
+              {t('thongKeSanXuat.toolbar.xuatPdf')}
             </button>
           )}
           {onPrint && (
@@ -89,7 +91,7 @@ const StatsToolbar: React.FC<StatsToolbarProps> = ({
               className="w-full h-9 px-3 flex items-center gap-2 text-left text-sm text-foreground hover:bg-muted/60 transition-colors border-t border-border"
             >
               <Printer size={15} className="text-muted-foreground shrink-0" />
-              In báo cáo
+              {t('thongKeSanXuat.toolbar.inBaoCao')}
             </button>
           )}
         </div>

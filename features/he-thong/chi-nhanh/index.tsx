@@ -65,9 +65,9 @@ const BranchPage: React.FC = () => {
   const sortedBranches = useMemo(() => {
     if (!sort.column || !sort.direction) return filteredBranches;
     const sorted = [...filteredBranches];
-    sorted.sort((a: any, b: any) => {
-      const aVal = a[sort.column!] ?? '';
-      const bVal = b[sort.column!] ?? '';
+    sorted.sort((a, b) => {
+      const aVal = a[sort.column as keyof Branch] ?? '';
+      const bVal = b[sort.column as keyof Branch] ?? '';
       const cmp =
         typeof aVal === 'number' && typeof bVal === 'number'
           ? aVal - bVal

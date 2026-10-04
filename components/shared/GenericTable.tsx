@@ -331,7 +331,7 @@ function GenericTable<T>({
         <div className={cn("absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-card/80 to-transparent z-[4] pointer-events-none transition-opacity", scrollShadow.left ? "opacity-100" : "opacity-0")} />
         <div className={cn("absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-card/80 to-transparent z-[4] pointer-events-none transition-opacity", scrollShadow.right ? "opacity-100" : "opacity-0")} />
 
-        <div ref={(el) => { (scrollRef as any).current = el; (virtualParentRef as any).current = el; }} className="h-full overflow-auto custom-scrollbar" style={{ overscrollBehavior: 'contain' }}>
+        <div ref={(el) => { scrollRef.current = el; virtualParentRef.current = el; }} className="h-full overflow-auto custom-scrollbar" style={{ overscrollBehavior: 'contain' }}>
           {/*
             `tableLayout: 'fixed'` là BẮT BUỘC cho resize: với 'auto' trình duyệt tính
             lại bề rộng theo ô rộng nhất, kéo cột sẽ "không ăn". `width: 100%` kèm
@@ -687,11 +687,20 @@ function GenericTable<T>({
                     onBlur={handleGoToPage}
                     onKeyDown={(e) => e.key === 'Enter' && handleGoToPage()}
                     className="h-6 w-10 text-center text-xs font-bold border border-primary rounded bg-background text-foreground outline-none tabular-nums"
+                    // eslint-disable-next-line jsx-a11y/no-autofocus -- ô nhập trang chỉ hiện khi người dùng chủ động bấm đúp, cần focus ngay
                     autoFocus
                   />
                 ) : (
                   <span
+                    role="button"
+                    tabIndex={0}
                     onDoubleClick={() => { setEditingPage(true); setPageInput(String(page)); setTimeout(() => pageInputRef.current?.select(), 50); }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setEditingPage(true); setPageInput(String(page)); setTimeout(() => pageInputRef.current?.select(), 50);
+                      }
+                    }}
                     className="h-6 min-w-[24px] flex items-center justify-center rounded bg-primary text-white text-xs font-bold px-1 tabular-nums cursor-default"
                   >
                     {page}

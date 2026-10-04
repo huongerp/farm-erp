@@ -210,6 +210,7 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
         <div className="flex h-12 md:h-14 items-center px-3 shrink-0 overflow-hidden border-b border-border/50">
           <div className="flex items-center gap-3 min-w-[200px]">
             {companyInfo.appLogo && !logoError ? (
+              // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- onError là sự kiện tải ảnh lỗi, không phải tương tác người dùng
               <img
                 src={companyInfo.appLogo}
                 alt={companyInfo.appName || 'App Logo'}
@@ -426,6 +427,7 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
       {changePwMounted && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="change-password-title">
           <div
+            role="presentation"
             onClick={() => { setShowChangePasswordModal(false); setChangePasswordNew(''); setChangePasswordConfirm(''); }}
             className={cn(
               'absolute inset-0 bg-black/40 backdrop-blur-sm presence-overlay',
@@ -433,6 +435,7 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
             )}
           />
           <div
+            role="presentation"
             onClick={(e) => e.stopPropagation()}
             className={cn(
               'relative bg-card rounded-xl p-6 max-w-md w-full shadow-2xl border border-border/40 presence-dialog',
@@ -513,6 +516,7 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
       {logoutMounted && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div
+            role="presentation"
             onClick={() => setShowLogoutDialog(false)}
             className={cn(
               'absolute inset-0 bg-black/40 backdrop-blur-sm presence-overlay',

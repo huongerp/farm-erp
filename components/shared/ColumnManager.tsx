@@ -86,6 +86,7 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
       {/* Column List */}
       <div className="p-1.5 max-h-[320px] overflow-y-auto custom-scrollbar">
         {sorted.map((col, index) => (
+          // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- kéo thả HTML5 chỉ dùng chuột; bật/tắt cột bằng bàn phím qua checkbox bên trong
           <div
             key={col.id}
             draggable
@@ -103,15 +104,19 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
             <GripVertical size={12} className="text-muted-foreground/40 group-hover:text-muted-foreground shrink-0 transition-colors" />
 
             {/* Visibility checkbox */}
-            <div
+            <button
+              type="button"
+              role="checkbox"
+              aria-checked={col.visible}
+              aria-label={col.label}
               onClick={(e) => { e.stopPropagation(); onToggleColumn(col.id); }}
               className={cn(
-                "w-4 h-4 rounded border-2 flex items-center justify-center transition-all shrink-0 cursor-pointer",
+                "w-4 h-4 p-0 rounded border-2 flex items-center justify-center transition-all shrink-0 cursor-pointer",
                 col.visible ? 'bg-primary border-primary text-white' : 'border-border bg-background group-hover:border-primary/50'
               )}
             >
               {col.visible && <Check size={10} className="stroke-[3px]" />}
-            </div>
+            </button>
 
             {/* Label */}
             <span className={cn(

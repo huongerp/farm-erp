@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useForm, Controller, SubmitHandler, useFieldArray, type FieldErrors } from 'react-hook-form';
+import { useForm, Controller, SubmitHandler, useFieldArray, type FieldErrors, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { FileText, Calendar, Warehouse, User, UserCheck, Package, Trash2 } from 'lucide-react';
@@ -154,7 +154,7 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
   };
 
   const { register, handleSubmit, formState: { errors, isDirty, isSubmitted }, reset, control, watch, setValue } = useForm<PhieuDeXuatVatTuFormValues>({
-    resolver: zodResolver(phieuDeXuatVatTuSchema) as any,
+    resolver: zodResolver(phieuDeXuatVatTuSchema) as Resolver<PhieuDeXuatVatTuFormValues>,
     defaultValues,
   });
 

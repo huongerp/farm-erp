@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useForm, Controller, SubmitHandler, useWatch } from 'react-hook-form';
+import { useForm, Controller, SubmitHandler, useWatch, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Users, FileText, ArrowUpFromLine, Power, Folder, MapPin, Phone, Mail, Landmark, CreditCard, User } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
@@ -92,7 +92,7 @@ const DoiTacForm: React.FC<Props> = ({ initialData, loaiDoiTac, nhomList, tagLis
   };
 
   const { register, handleSubmit, formState: { errors, isDirty }, reset, control } = useForm<DoiTacFormValues>({
-    resolver: zodResolver(doiTacSchema) as any,
+    resolver: zodResolver(doiTacSchema) as Resolver<DoiTacFormValues>,
     defaultValues,
   });
 

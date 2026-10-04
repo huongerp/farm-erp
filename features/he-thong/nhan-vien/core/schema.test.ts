@@ -17,7 +17,7 @@ const validData = () => ({
   ngay_vao_lam: '2024-01-15',
 });
 
-const parse = (overrides: Record<string, any> = {}) =>
+const parse = (overrides: Record<string, unknown> = {}) =>
   employeeSchema.safeParse({ ...validData(), ...overrides });
 
 /* ================================================================ */

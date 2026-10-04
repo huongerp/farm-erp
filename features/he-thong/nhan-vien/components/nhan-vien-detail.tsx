@@ -70,7 +70,7 @@ const EmployeeDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, canU
               { label: t('employee.statusLeave'), value: TRANG_THAI_NV.NGHI_PHEP },
               { label: t('employee.statusResigned'), value: TRANG_THAI_NV.NGHI_VIEC },
             ]}
-            onChange={(e) => selectedStatus = e.target.value as any}
+            onChange={(e) => selectedStatus = e.target.value as typeof selectedStatus}
           />
         </div>
       ),

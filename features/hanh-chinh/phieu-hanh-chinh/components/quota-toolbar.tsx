@@ -7,6 +7,7 @@ import FilterChipSingleSelect from '../../../../components/shared/FilterChipSing
 import type { ColumnConfig } from '../../../../store/createGenericStore';
 import { getAdminFormTypeOptions } from '../../thiet-lap-cong-luong/core/constants';
 import type { AdminFormQuotaRow } from '../core/types';
+import type { AdminFormQuotaFilters } from '../store/useAdminFormQuotaStore';
 
 interface Props {
   /** Danh sách dòng quota để đếm count theo loại phiếu. */
@@ -14,7 +15,7 @@ interface Props {
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   filters: { type: string[]; nguoiXem: string };
-  setFilter: (key: 'type' | 'nguoiXem', value: any) => void;
+  setFilter: <K extends keyof AdminFormQuotaFilters>(key: K, value: AdminFormQuotaFilters[K]) => void;
   /** Kỳ đang tính định mức, vd "10/2026" — tab luôn tính theo tháng hiện tại. */
   thangLabel: string;
   /** Chip chọn nhân viên — chỉ truyền khi người dùng có viewAll. */

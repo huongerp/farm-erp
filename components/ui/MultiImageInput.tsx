@@ -302,7 +302,15 @@ const MultiImageInput: React.FC<MultiImageInputProps> = ({
                 ? 'border-destructive/50 bg-destructive/5'
                 : 'border-border hover:border-primary/40 bg-muted/30 hover:bg-muted/50',
           )}
+          role="button"
+          tabIndex={disabled ? -1 : 0}
           onClick={() => !disabled && inputRef.current?.click()}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              if (!disabled) inputRef.current?.click();
+            }
+          }}
           onDragEnter={handleDragEnter}
           onDragLeave={handleDragLeave}
           onDragOver={handleDragOver}

@@ -247,7 +247,7 @@ export function parseFormattedNumber(str: string, locale?: string): number {
   return Number.isNaN(num) ? 0 : num;
 }
 
-export function exportToExcel(data: any[], filename: string) {
+export function exportToExcel<T extends object>(data: T[], filename: string) {
   if (!data || !data.length) {
     toast.warning(i18n.t('common.exportNoData'));
     return;
@@ -271,7 +271,7 @@ export function exportToExcel(data: any[], filename: string) {
     .catch(() => toast.error(i18n.t('common.exportError')));
 }
 
-export function exportToPDF(data: any[], filename: string, title?: string) {
+export function exportToPDF<T extends object>(data: T[], filename: string, title?: string) {
   if (!data || !data.length) {
     toast.warning(i18n.t('common.exportNoData'));
     return;
@@ -297,7 +297,7 @@ export function exportToPDF(data: any[], filename: string, title?: string) {
         head: [headers],
         body: data.map((row) =>
           headers.map((h) => {
-            const v = row[h];
+            const v = (row as Record<string, unknown>)[h];
             return typeof v === 'number' ? formatNumberVN(v) : String(v ?? '');
           })
         ),
@@ -310,7 +310,7 @@ export function exportToPDF(data: any[], filename: string, title?: string) {
     .catch(() => toast.error(i18n.t('common.exportError')));
 }
 
-export function exportToCSV(data: any[], filename: string) {
+export function exportToCSV<T extends object>(data: T[], filename: string) {
   if (!data || !data.length) {
     toast.warning(i18n.t('common.exportNoData'));
     return;
@@ -323,11 +323,9 @@ export function exportToCSV(data: any[], filename: string) {
   const csvContent = [
     headers.join(','),
     ...data.map(row => headers.map(fieldName => {
-      let cell = row[fieldName];
-      // Xử lý null/undefined
-      if (cell === null || cell === undefined) cell = '';
-      // Convert sang string và escape dấu ngoặc kép
-      cell = cell.toString().replace(/"/g, '""');
+      const raw = (row as Record<string, unknown>)[fieldName];
+      // Xử lý null/undefined, convert sang string và escape dấu ngoặc kép
+      let cell = String(raw ?? '').replace(/"/g, '""');
       // Bọc trong ngoặc kép nếu có ký tự đặc biệt
       if (cell.search(/("|,|\n)/g) >= 0) cell = `"${cell}"`;
       return cell;

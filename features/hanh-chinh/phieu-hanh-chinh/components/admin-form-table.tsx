@@ -8,6 +8,7 @@ import { AdminFormRequest } from '../core/types';
 import { getAdminFormShiftLabel, getAdminFormStatusLabel } from '../core/constants';
 import { getAdminFormTypeLabel } from '../../thiet-lap-cong-luong/core/constants';
 import type { GenericState } from '../../../../store/createGenericStore';
+import type { AdminFormListFilters } from '../store/useAdminFormListStore';
 import { getStatusBadgeClass } from '../../../../lib/status-badge';
 import { hienThiSoNgay, moTaKhoangNhieuNgay } from '../utils/hien-thi-khoang';
 
@@ -21,7 +22,7 @@ interface Props {
   onView?: (item: AdminFormRequest) => void;
   onEdit?: (item: AdminFormRequest) => void;
   onDelete?: (id: string) => void;
-  useStore: () => GenericState<any>;
+  useStore: () => GenericState<AdminFormListFilters>;
   canUpdate?: boolean;
   canDelete?: boolean;
 }
@@ -193,7 +194,7 @@ const AdminFormTable: React.FC<Props> = ({ isFetching, totalRecordsOverride, dat
             <h4 className="font-semibold text-foreground text-sm truncate">
               {getAdminFormTypeLabel(item.loai_phieu, t)}
             </h4>
-            <div onClick={(e) => e.stopPropagation()} className="shrink-0">
+            <div role="presentation" onClick={(e) => e.stopPropagation()} className="shrink-0">
               <input
                 type="checkbox"
                 checked={isSelected}

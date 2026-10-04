@@ -159,7 +159,7 @@ export const useCreateEmployee = (onSuccess?: () => void) => {
       }
       if (onSuccess) onSuccess();
     },
-    onError: (err: any) => toast.error(`Lỗi: ${err.message}`)
+    onError: (err: Error) => toast.error(`Lỗi: ${err.message}`)
   });
 };
 
@@ -183,7 +183,7 @@ export const useUpdateEmployee = (onSuccess?: () => void) => {
       }
       if (onSuccess) onSuccess();
     },
-    onError: (err: any) => toast.error(`Lỗi: ${err.message}`)
+    onError: (err: Error) => toast.error(`Lỗi: ${err.message}`)
   });
 };
 
@@ -203,7 +203,7 @@ export const useUpdateStatusEmployee = () => {
         invalidateRefCache('employees');
         toast.success(i18n.t('employee.toast.statusUpdateSuccess', { count: variables.ids.length }));
       },
-      onError: (err: any) => toast.error(`Lỗi: ${err.message}`)
+      onError: (err: Error) => toast.error(`Lỗi: ${err.message}`)
     });
 };
 
@@ -230,7 +230,7 @@ export const useResetPasswordEmployee = () =>
 export const useBulkUpdateEmployees = (onSuccess?: () => void) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ ids, fields }: { ids: string[]; fields: Record<string, any> }) =>
+    mutationFn: ({ ids, fields }: { ids: string[]; fields: Record<string, unknown> }) =>
       bulkUpdateEmployees(ids, fields),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: EMPLOYEES_QUERY_KEY });
@@ -239,7 +239,7 @@ export const useBulkUpdateEmployees = (onSuccess?: () => void) => {
       toast.success(i18n.t('employee.toast.bulkUpdateSuccess', { count: variables.ids.length }));
       onSuccess?.();
     },
-    onError: (err: any) => toast.error(`Lỗi: ${err.message}`),
+    onError: (err: Error) => toast.error(`Lỗi: ${err.message}`),
   });
 };
 
@@ -256,7 +256,7 @@ export const useDeleteEmployees = () => {
       invalidateRefCache('employees');
       toast.success(i18n.t('employee.toast.deleteSuccess', { count: ids.length }));
     },
-    onError: (err: any) => toast.error(err.message)
+    onError: (err: Error) => toast.error(err.message)
   });
 };
 

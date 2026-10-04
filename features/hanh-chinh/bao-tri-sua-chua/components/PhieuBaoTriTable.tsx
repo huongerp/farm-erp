@@ -162,8 +162,11 @@ const PhieuBaoTriTable: React.FC<Props> = ({ isFetching, totalRecordsOverride, d
   const handleRowClick = onView ?? onEdit;
   const renderMobileCard = (item: PhieuBaoTriSuaChua, isSelected: boolean) => (
     <div
+      role="button"
+      tabIndex={0}
       className={isSelected ? 'border-primary bg-primary/5' : ''}
       onClick={() => handleRowClick?.(item)}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleRowClick?.(item); } }}
     >
       <div className="flex justify-between items-start gap-2">
         <span className="font-mono text-sm font-medium">{item.ma_phieu}</span>

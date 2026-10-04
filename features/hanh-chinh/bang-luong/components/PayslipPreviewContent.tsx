@@ -12,6 +12,27 @@ interface Props {
   record: BangLuongRecord;
 }
 
+const TableRow = ({
+  label,
+  value,
+  valueRight = false,
+}: {
+  label: string;
+  value: string | number;
+  valueRight?: boolean;
+}) => (
+  <tr>
+    <td className="w-[40%] border border-gray-300 p-1.5 text-[10pt] font-semibold text-gray-600 bg-gray-50/50">
+      {label}
+    </td>
+    <td
+      className={`border border-gray-300 p-1.5 text-[10pt] text-gray-900 ${valueRight ? 'text-right tabular-nums' : ''}`}
+    >
+      {value}
+    </td>
+  </tr>
+);
+
 const PayslipPreviewContent: React.FC<Props> = ({ record }) => {
   const { t } = useTranslation();
   const companyInfo = useUIStore((s) => s.companyInfo);
@@ -20,27 +41,6 @@ const PayslipPreviewContent: React.FC<Props> = ({ record }) => {
     ? `${record.ten_nhan_vien}${record.ma_nhan_vien ? ` (${record.ma_nhan_vien})` : ''}`
     : record.ma_nhan_vien || '—';
   const printedAt = formatDateTime(new Date());
-
-  const TableRow = ({
-    label,
-    value,
-    valueRight = false,
-  }: {
-    label: string;
-    value: string | number;
-    valueRight?: boolean;
-  }) => (
-    <tr>
-      <td className="w-[40%] border border-gray-300 p-1.5 text-[10pt] font-semibold text-gray-600 bg-gray-50/50">
-        {label}
-      </td>
-      <td
-        className={`border border-gray-300 p-1.5 text-[10pt] text-gray-900 ${valueRight ? 'text-right tabular-nums' : ''}`}
-      >
-        {value}
-      </td>
-    </tr>
-  );
 
   return (
     <div className="payslip-preview-content bg-white text-gray-900 font-sans text-[10pt] p-5 min-h-full">

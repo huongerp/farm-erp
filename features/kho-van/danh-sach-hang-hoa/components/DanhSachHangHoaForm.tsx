@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useId, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useForm, Controller, SubmitHandler } from 'react-hook-form';
+import { useForm, Controller, SubmitHandler, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Package, ArrowUpFromLine, Power, Folder, DollarSign, FileText, Camera } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
@@ -81,7 +81,7 @@ const DanhSachHangHoaForm: React.FC<Props> = ({
   const [isImageUploading, setIsImageUploading] = useState(false);
 
   const { register, handleSubmit, formState: { errors, isDirty }, reset, control } = useForm<HangHoaFormValues>({
-    resolver: zodResolver(hangHoaSchema) as any,
+    resolver: zodResolver(hangHoaSchema) as Resolver<HangHoaFormValues>,
     defaultValues,
   });
 

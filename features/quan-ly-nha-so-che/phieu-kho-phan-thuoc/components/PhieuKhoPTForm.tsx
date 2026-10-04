@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { useForm, Controller, SubmitHandler, useFieldArray } from 'react-hook-form';
+import { useForm, Controller, SubmitHandler, useFieldArray, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { FileText, Calendar, Warehouse, ArrowRightLeft, Package, Trash2 } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
@@ -68,7 +68,7 @@ const PhieuKhoPTForm: React.FC<Props> = ({ khoList, khoDenList, initialData, pre
   };
 
   const { register, handleSubmit, formState: { errors, isDirty }, reset, control, watch, setValue } = useForm<PhieuKhoPTFormValues>({
-    resolver: zodResolver(phieuKhoPTSchema) as any,
+    resolver: zodResolver(phieuKhoPTSchema) as Resolver<PhieuKhoPTFormValues>,
     defaultValues,
   });
 

@@ -53,12 +53,15 @@ function parseCongTruKhac(val: unknown): CongTruLuongItem[] {
     return [{ id: '', loai: n >= 0 ? 'cong' : 'tru', so_tien: Math.abs(n) }];
   }
   if (Array.isArray(val) && val.length > 0) {
-    return val.map((i: any) => ({
-      id: String(i?.id ?? ''),
-      loai: (i?.loai === 'tru' ? 'tru' : 'cong') as CongTruLuongItem['loai'],
-      so_tien: Number(i?.so_tien) || 0,
-      ly_do: i?.ly_do ? String(i.ly_do) : undefined,
-    }));
+    return val.map((raw: unknown) => {
+      const i = raw as { id?: unknown; loai?: unknown; so_tien?: unknown; ly_do?: unknown } | null | undefined;
+      return {
+        id: String(i?.id ?? ''),
+        loai: (i?.loai === 'tru' ? 'tru' : 'cong') as CongTruLuongItem['loai'],
+        so_tien: Number(i?.so_tien) || 0,
+        ly_do: i?.ly_do ? String(i.ly_do) : undefined,
+      };
+    });
   }
   return [];
 }

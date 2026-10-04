@@ -6,11 +6,12 @@ import Tooltip from '../../../../components/ui/Tooltip';
 import { AdminFormQuotaRow } from '../core/types';
 import { getAdminFormTypeLabel } from '../../thiet-lap-cong-luong/core/constants';
 import type { GenericState } from '../../../../store/createGenericStore';
+import type { AdminFormQuotaFilters } from '../store/useAdminFormQuotaStore';
 
 interface Props {
   data: AdminFormQuotaRow[];
   isLoading: boolean;
-  useStore: () => GenericState<any>;
+  useStore: () => GenericState<AdminFormQuotaFilters>;
   /** Sửa định mức của loại phiếu — chỉ truyền khi người dùng có quyền (viewAll). */
   onEdit?: (item: AdminFormQuotaRow) => void;
 }

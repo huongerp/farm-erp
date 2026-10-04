@@ -327,6 +327,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
   return (
     <>
       <div
+        role="presentation"
         onClick={handleClose}
         className={cn(
           'fixed inset-0 z-[60] bg-black/20 backdrop-blur-md presence-overlay',
@@ -362,7 +363,15 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
             {step === 'upload' && (
               <div key="upload">
                 <div
+                  role="button"
+                  tabIndex={0}
                   onClick={() => fileInputRef.current?.click()}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      fileInputRef.current?.click();
+                    }
+                  }}
                   onDrop={handleDrop}
                   onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
                   onDragLeave={() => setDragOver(false)}
@@ -422,6 +431,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
                         <p className="text-xs font-medium text-foreground mb-2">{t('shared.import.modeLabel')}</p>
                         <div className="grid gap-2 sm:grid-cols-2">
                           {modes!.map((m) => (
+                            // eslint-disable-next-line jsx-a11y/label-has-associated-control -- input radio lồng bên trong, chữ nhãn nằm ở span 2 tầng nên rule (depth 2) không thấy
                             <label
                               key={m}
                               className={cn(

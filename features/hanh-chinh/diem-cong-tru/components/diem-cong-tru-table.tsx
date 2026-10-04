@@ -151,7 +151,7 @@ const DiemCongTruTable: React.FC<Props> = ({ isFetching, totalRecordsOverride, d
                 ? `${item.ma_nhan_vien} - ${item.ten_nhan_vien}`
                 : item.ten_nhan_vien || item.ma_nhan_vien || '—'}
             </h4>
-            <div onClick={(e) => e.stopPropagation()} className="shrink-0">
+            <div role="presentation" onClick={(e) => e.stopPropagation()} className="shrink-0">
               <input
                 type="checkbox"
                 checked={isSelected}

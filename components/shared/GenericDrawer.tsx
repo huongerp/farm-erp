@@ -221,6 +221,7 @@ const GenericDrawer: React.FC<GenericDrawerProps> = ({
   return (
     <>
       <div
+        role="presentation"
         onClick={requestClose}
         className={cn(
           'fixed inset-0 bg-black/20 backdrop-blur-md presence-overlay',

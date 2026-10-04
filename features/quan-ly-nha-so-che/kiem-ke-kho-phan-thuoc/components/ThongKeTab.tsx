@@ -18,7 +18,7 @@ import DateRangePicker, { type DateRangeValue } from '../../../../components/ui/
 import { MobileFilterField } from '../../../../components/ui/MobileFilterSheet';
 import { getDateRangeFromPreset, getPresetFromDates } from '../../../../lib/date-presets';
 import { useKiemKeKhoPTStats } from './stats/useKiemKeKhoPTStats';
-import StatsToolbar from './stats/StatsToolbar';
+import StatsToolbar from '../../../../components/shared/StatsToolbar';
 import StatsCards from './stats/StatsCards';
 import StatsTables from './stats/StatsTables';
 import type { DotKiemKePTTomTat } from '../core/types';
@@ -296,6 +296,10 @@ const ThongKeTab: React.FC = () => {
         mobileFilterExtraCount={kyActive ? 1 : 0}
         activeFilterCount={activeFilterCount}
         onClearFilters={handleClearFilters}
+        actionsLabel={t('kiemKeKhoPT.stats.actions')}
+        exportLabel={`${t('kiemKeKhoPT.stats.exportReport')} (XLSX)`}
+        exportPdfLabel={`${t('kiemKeKhoPT.stats.exportReport')} (PDF)`}
+        printLabel={t('kiemKeKhoPT.stats.printReport')}
         onExportReport={handleExportReport}
         onExportPDF={handleExportPDF}
         onPrintReport={handlePrintReport}

@@ -292,6 +292,7 @@ export interface GenericState<TFilters> {
   // Actions — commitSearchTerm / setSearchTerm: cập nhật search + reset trang 1 (gọi sau debounce từ toolbar)
   commitSearchTerm: (term: string) => void;
   setSearchTerm: (term: string) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- giữ chữ ký công khai: 'unknown' vỡ store tự viết setFilter (kiem-ke-tai-san), kiểu TFilters[K] vỡ toolbar truyền string[]
   setFilter: (key: keyof TFilters, value: any) => void;
   resetFilters: () => void;
   setPage: (page: number) => void;

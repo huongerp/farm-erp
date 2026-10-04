@@ -265,7 +265,7 @@ const ThuHoachForm: React.FC<Props> = ({
               name="id_chi_nhanh"
               control={control}
               render={({ field: { onChange, onBlur, value } }) => (
-                <div onBlur={onBlur}>
+                <div role="presentation" onBlur={onBlur}>
                   <Combobox
                     label={t('thuHoach.form.branch')}
                     placeholder={t('thuHoach.form.branchPlaceholder')}

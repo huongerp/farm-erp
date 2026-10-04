@@ -14,25 +14,25 @@ interface Props {
   chiTiet: ChiTietKhauHao[];
 }
 
+const TableRow = ({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number | null | undefined;
+}) => (
+  <tr>
+    <td className="w-[40%] border border-gray-300 p-1.5 text-[10pt] font-semibold text-gray-600 bg-gray-50/50">
+      {label}
+    </td>
+    <td className="border border-gray-300 p-1.5 text-[10pt] text-gray-900">{value ?? '—'}</td>
+  </tr>
+);
+
 const BaoCaoKhauHaoPreviewContent: React.FC<Props> = ({ ky, chiTiet }) => {
   const { t } = useTranslation();
   const companyInfo = useUIStore((s) => s.companyInfo);
   const printedAt = formatDateTime(new Date());
-
-  const TableRow = ({
-    label,
-    value,
-  }: {
-    label: string;
-    value: string | number | null | undefined;
-  }) => (
-    <tr>
-      <td className="w-[40%] border border-gray-300 p-1.5 text-[10pt] font-semibold text-gray-600 bg-gray-50/50">
-        {label}
-      </td>
-      <td className="border border-gray-300 p-1.5 text-[10pt] text-gray-900">{value ?? '—'}</td>
-    </tr>
-  );
 
   return (
     <div className="bao-cao-khau-hao-preview-content bg-white text-gray-900 font-sans text-[10pt] p-5 min-h-full">

@@ -85,6 +85,8 @@
   "bangLuong.form.editTitle": "Sửa bảng lương",
   "bangLuong.form.employee": "Nhân viên",
   "bangLuong.form.period": "Kỳ (Năm - Tháng)",
+  "bangLuong.form.periodNam": "Kỳ - Năm",
+  "bangLuong.form.periodThang": "Tháng",
   "bangLuong.form.congTruKhac": "Cộng trừ lương khác",
   "bangLuong.form.addItem": "Thêm khoản",
   "bangLuong.form.loai": "Loại",

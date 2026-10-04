@@ -307,8 +307,15 @@ const ChiTietDonDatHangTab: React.FC = () => {
         return (
           <td key={col.id} className="px-4 py-3" style={getColumnCellStyle(col)}>
             <span
+              role="button"
+              tabIndex={0}
               className="inline-block max-w-full truncate whitespace-nowrap font-mono text-xs font-medium text-primary cursor-pointer hover:underline"
-              onClick={() => handleRowClick(row)}
+              onClick={(e) => {
+                // Dòng <tr> cũng mở chi tiết khi bấm — chặn nổi bọt để không gọi 2 lần.
+                e.stopPropagation();
+                handleRowClick(row);
+              }}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleRowClick(row); } }}
               title={row.so_po}
             >
               {row.so_po}

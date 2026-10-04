@@ -110,7 +110,7 @@ const ThanhToanDoiTacForm: React.FC<Props> = ({
   };
 
   const { register, handleSubmit, formState: { errors, isDirty }, reset, control, setValue } = useForm<ThanhToanDoiTacFormValues>({
-    resolver: zodResolver(thanhToanDoiTacSchema) as any,
+    resolver: zodResolver(thanhToanDoiTacSchema),
     defaultValues,
   });
 

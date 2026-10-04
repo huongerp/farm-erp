@@ -6,7 +6,7 @@ import Tooltip from '../../../../components/ui/Tooltip';
 import { cn } from '../../../../lib/utils';
 import { getKetQuaLabel } from '../core/constants';
 import { useChiTietKiemKeTaiSanStore } from '../store/useChiTietKiemKeTaiSanStore';
-import type { ChiTietKiemKe } from '../core/types';
+import type { ChiTietKiemKe, KetQuaKiemKe } from '../core/types';
 
 interface Props {
   data: ChiTietKiemKe[];
@@ -56,7 +56,7 @@ const ChiTietKiemKeTaiSanTable: React.FC<Props> = ({
     isChenh(c) &&
     (c.id_noi_luu_thuc_te != null || c.id_nguoi_giu_thuc_te != null || c.id_trang_thai_thuc_te != null);
 
-  const renderKetQuaBadge = (ket_qua: string) => {
+  const renderKetQuaBadge = (ket_qua: KetQuaKiemKe) => {
     const cls = cn(
       'inline-flex px-2 py-0.5 rounded-full text-xs font-medium border',
       ket_qua === 'Khớp' && 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20',
@@ -65,7 +65,7 @@ const ChiTietKiemKeTaiSanTable: React.FC<Props> = ({
         'bg-amber-500/10 text-amber-700 border-amber-500/20',
       ket_qua === 'Thiếu' && 'bg-rose-500/10 text-rose-700 border-rose-500/20'
     );
-    return <span className={cls}>{getKetQuaLabel(ket_qua as any)}</span>;
+    return <span className={cls}>{getKetQuaLabel(ket_qua)}</span>;
   };
 
   const renderCell = (colId: string, item: ChiTietKiemKe) => {

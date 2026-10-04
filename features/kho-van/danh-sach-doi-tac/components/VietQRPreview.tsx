@@ -64,6 +64,7 @@ const VietQRPreview: React.FC<Props> = ({
           {t('doiTac.form.qrLoadError')}
         </div>
       ) : (
+        // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- onError là sự kiện tải ảnh lỗi, không phải tương tác người dùng
         <img
           src={qrUrl}
           alt={`VietQR ${bank?.shortName ?? trimmedBin} ${trimmedAcc}`}

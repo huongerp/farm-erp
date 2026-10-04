@@ -188,7 +188,7 @@ const BangLuongForm: React.FC<Props> = ({ initialRecord, defaultEmployeeId, onCl
     <FormSection title={t('bangLuong.form.period')} icon={<Calendar size={14} />}>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-xs text-muted-foreground">{t('bangLuong.form.period')} - Năm</label>
+          <label className="text-xs text-muted-foreground">{t('bangLuong.form.periodNam')}</label>
           <Input
             type="number"
             min={2000}
@@ -200,8 +200,9 @@ const BangLuongForm: React.FC<Props> = ({ initialRecord, defaultEmployeeId, onCl
           />
         </div>
         <div>
-          <label className="text-xs text-muted-foreground">Tháng</label>
+          <label htmlFor={`${formId}-thang`} className="text-xs text-muted-foreground">{t('bangLuong.form.periodThang')}</label>
           <Input
+            id={`${formId}-thang`}
             type="number"
             min={1}
             max={12}

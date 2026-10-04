@@ -127,7 +127,10 @@ const PositionTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onS
   const renderMobileCard = (item: Position, isSelected: boolean) => (
       <div 
         key={item.id}
+        role="button"
+        tabIndex={0}
         onClick={(e) => { e.stopPropagation(); handleRowAction(item); }} 
+        onKeyDown={(e) => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); handleRowAction(item); } }}
         className={`bg-card rounded-xl border p-4 shadow-sm transition-all ${isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'}`}
     >
             <div className="flex items-start gap-4">
@@ -137,7 +140,7 @@ const PositionTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onS
                 <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-start mb-1">
                         <h4 className="font-semibold text-foreground truncate">{item.ten_chuc_vu}</h4>
-                        <div onClick={e => e.stopPropagation()}>
+                        <div role="presentation" onClick={e => e.stopPropagation()}>
                             <input type="checkbox" checked={isSelected} onChange={() => toggleSelection(item.id)} className="w-5 h-5 rounded border-border text-primary accent-primary" />
                         </div>
                     </div>

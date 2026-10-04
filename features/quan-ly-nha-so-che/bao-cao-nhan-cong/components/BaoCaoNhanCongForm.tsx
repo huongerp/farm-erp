@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { useForm, Controller, type SubmitHandler } from 'react-hook-form';
+import { useForm, Controller, type SubmitHandler, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Building2, Users, Images, ChevronDown } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
@@ -144,7 +144,7 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
     reset,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<BaoCaoNhanCongFormValues>({
-    resolver: zodResolver(baoCaoNhanCongFormSchema) as any,
+    resolver: zodResolver(baoCaoNhanCongFormSchema) as Resolver<BaoCaoNhanCongFormValues>,
     defaultValues,
     mode: 'onSubmit',
     reValidateMode: 'onSubmit',

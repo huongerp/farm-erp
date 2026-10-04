@@ -72,7 +72,7 @@ const ThanhToanForm: React.FC<Props> = ({
     reset,
     formState: { errors, isDirty },
   } = useForm<ThanhToanFormValues>({
-    resolver: zodResolver(thanhToanFormSchema) as any,
+    resolver: zodResolver(thanhToanFormSchema),
     defaultValues: emptyValues(),
   });
 

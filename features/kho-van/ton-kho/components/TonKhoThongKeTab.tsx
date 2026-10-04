@@ -9,7 +9,7 @@ import { useHangHoaRefQuery } from '../../../../lib/hooks/use-ref-queries';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import EmptyState from '../../../../components/shared/EmptyState';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
-import StatsToolbar from './stats/StatsToolbar';
+import StatsToolbar from '../../../../components/shared/StatsToolbar';
 import StatsCards from './stats/StatsCards';
 const StatsCharts = lazy(() => import('./stats/StatsCharts'));
 import StatsTables from './stats/StatsTables';
@@ -149,6 +149,9 @@ const TonKhoThongKeTab: React.FC = () => {
         filterGroups={filterGroups}
         activeFilterCount={activeFilterCount}
         onClearFilters={handleClearFilters}
+        actionsLabel={t('tonKho.stats.actions')}
+        exportLabel={t('tonKho.stats.exportReport')}
+        printLabel={t('tonKho.stats.printReport')}
         onExportReport={handleExportReport}
         onPrintReport={handlePrintReport}
       />

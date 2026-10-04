@@ -135,6 +135,7 @@ const Tooltip: React.FC<TooltipProps> = ({
     <>
       <div
         ref={wrapperRef}
+        role="presentation"
         className="relative inline-flex"
         onMouseEnter={show}
         onMouseLeave={hide}

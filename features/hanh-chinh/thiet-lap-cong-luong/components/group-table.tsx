@@ -134,7 +134,7 @@ const PayrollFormGroupTable: React.FC<Props> = ({ data, isLoading, onEdit, onDel
             <h4 className="font-semibold text-foreground text-sm truncate">
               {typeLabelById.get(item.id) || '—'}
             </h4>
-            <div onClick={(e) => e.stopPropagation()} className="shrink-0">
+            <div role="presentation" onClick={(e) => e.stopPropagation()} className="shrink-0">
               <input
                 type="checkbox"
                 checked={isSelected}

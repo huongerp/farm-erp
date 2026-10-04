@@ -2,7 +2,7 @@ import React, { useEffect, useMemo } from 'react';
 import type { PhieuTomTatTrung } from '../core/form-mappers';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { useForm, Controller, type SubmitHandler } from 'react-hook-form';
+import { useForm, Controller, type SubmitHandler, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Building2, Calculator, Layers, MessageSquare, Users } from 'lucide-react';
 import BaoCaoSoCheKpiThuongFormSection from './BaoCaoSoCheKpiThuongFormSection';
@@ -103,7 +103,7 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
     reset,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<BaoCaoSoCheFormValues>({
-    resolver: zodResolver(baoCaoSoCheFormSchema) as any,
+    resolver: zodResolver(baoCaoSoCheFormSchema) as Resolver<BaoCaoSoCheFormValues>,
     defaultValues,
   });
 

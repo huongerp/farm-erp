@@ -351,7 +351,7 @@ const DonDatHangForm: React.FC<Props> = ({
   const donDatHangSchema = useMemo(() => getDonDatHangSchema(), [t]);
 
   const { register, handleSubmit, formState: { errors, isDirty }, reset, control, watch, setValue } = useForm<DonDatHangFormValues>({
-    resolver: zodResolver(donDatHangSchema) as any,
+    resolver: zodResolver(donDatHangSchema),
     defaultValues,
   });
 

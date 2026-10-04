@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useForm, Controller, SubmitHandler } from 'react-hook-form';
+import { useForm, Controller, SubmitHandler, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Plus, Edit, Trash2, Package, Warehouse, MapPin } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
@@ -543,7 +543,7 @@ const DinhMucTonFormDrawer: React.FC<DinhMucTonFormDrawerProps> = ({
   };
 
   const { register, handleSubmit, formState: { errors, isDirty }, control, reset } = useForm<DinhMucTonFormValues>({
-    resolver: zodResolver(dinhMucTonSchema) as any,
+    resolver: zodResolver(dinhMucTonSchema) as Resolver<DinhMucTonFormValues>,
     defaultValues,
   });
 

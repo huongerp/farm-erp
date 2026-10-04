@@ -11,7 +11,7 @@ import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinner
 import EmptyState from '../../../../components/shared/EmptyState';
 import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
 import { MobileFilterField } from '../../../../components/ui/MobileFilterSheet';
-import StatsToolbar from './stats/StatsToolbar';
+import StatsToolbar from '../../../../components/shared/StatsToolbar';
 import StatsCards from './stats/StatsCards';
 const StatsCharts = lazy(() => import('./stats/StatsCharts'));
 import StatsTables from './stats/StatsTables';
@@ -249,6 +249,9 @@ const ThongKeTab: React.FC = () => {
         mobileFilterExtraCount={dateFrom || dateTo ? 1 : 0}
         activeFilterCount={activeFilterCount}
         onClearFilters={handleClearFilters}
+        actionsLabel={t('deXuatMuaHang.stats.actions')}
+        exportLabel={t('deXuatMuaHang.stats.exportReport')}
+        printLabel={t('deXuatMuaHang.stats.printReport')}
         onExportReport={handleExportReport}
         onPrintReport={handlePrintReport}
       />

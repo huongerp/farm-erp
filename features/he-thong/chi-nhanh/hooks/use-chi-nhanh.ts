@@ -30,7 +30,7 @@ export const useCreateBranch = (onSuccess?: () => void) => {
       toast.success(i18n.t('branch.toast.createSuccess'));
       if (onSuccess) onSuccess();
     },
-    onError: (err: any) => toast.error(`Lỗi: ${err.message}`),
+    onError: (err: Error) => toast.error(`Lỗi: ${err.message}`),
   });
 };
 
@@ -43,7 +43,7 @@ export const useUpdateBranch = (onSuccess?: () => void) => {
       toast.success(i18n.t('branch.toast.updateSuccess'));
       if (onSuccess) onSuccess();
     },
-    onError: (err: any) => toast.error(`Lỗi: ${err.message}`),
+    onError: (err: Error) => toast.error(`Lỗi: ${err.message}`),
   });
 };
 

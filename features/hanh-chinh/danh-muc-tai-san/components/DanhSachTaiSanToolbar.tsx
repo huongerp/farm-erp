@@ -31,7 +31,7 @@ interface Props {
   canDelete?: boolean;
 }
 
-const DanhSachTaiSanToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onExportExcel, onExportPDF, canCreate = true, canUpdate = true, canDelete = true }) => {
+const DanhSachTaiSanToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onExportExcel, onExportPDF, canCreate = true, canDelete = true }) => {
   const { t } = useTranslation();
   const { searchInput, setSearchInput } = useGenericToolbarSearch(useDanhSachTaiSanStore);
   const filters = useDanhSachTaiSanStore((s) => s.filters);

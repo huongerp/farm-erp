@@ -111,5 +111,9 @@
   "thongKeSanXuat.noPermission": "Bạn không có quyền xem trang này.",
 
   "thongKeSanXuat.summary.tongNgay": "tổng ngày",
-  "thongKeSanXuat.summary.ngayDu3Bc": "ngày có đủ 3 BC"
+  "thongKeSanXuat.summary.ngayDu3Bc": "ngày có đủ 3 BC",
+  "thongKeSanXuat.toolbar.xuatIn": "Xuất / In",
+  "thongKeSanXuat.toolbar.xuatExcel": "Xuất Excel (XLSX)",
+  "thongKeSanXuat.toolbar.xuatPdf": "Xuất PDF",
+  "thongKeSanXuat.toolbar.inBaoCao": "In báo cáo"
 }

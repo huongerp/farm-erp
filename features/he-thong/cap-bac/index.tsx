@@ -76,9 +76,9 @@ const JobLevelPage: React.FC = () => {
   const sortedLevels = useMemo(() => {
     if (!sort.column || !sort.direction) return filteredLevels;
     const sorted = [...filteredLevels];
-    sorted.sort((a: any, b: any) => {
-      const aVal = a[sort.column!] ?? '';
-      const bVal = b[sort.column!] ?? '';
+    sorted.sort((a, b) => {
+      const aVal = a[sort.column as keyof JobLevel] ?? '';
+      const bVal = b[sort.column as keyof JobLevel] ?? '';
       const cmp =
         typeof aVal === 'number' && typeof bVal === 'number'
           ? aVal - bVal

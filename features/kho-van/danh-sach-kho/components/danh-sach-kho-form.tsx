@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useForm, Controller, SubmitHandler } from 'react-hook-form';
+import { useForm, Controller, SubmitHandler, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Warehouse, MapPin, FileText, ArrowUpFromLine, Power, Building2 } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
@@ -50,7 +50,7 @@ const DanhSachKhoForm: React.FC<Props> = ({ initialData, defaultThuTu, onClose, 
   };
 
   const { register, handleSubmit, formState: { errors, isDirty }, reset, control } = useForm<KhoFormValues>({
-    resolver: zodResolver(khoSchema) as any,
+    resolver: zodResolver(khoSchema) as Resolver<KhoFormValues>,
     defaultValues,
   });
 

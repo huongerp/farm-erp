@@ -6,7 +6,7 @@
 export interface TreeItemLike {
   id: string;
   id_cha?: string | null;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export type GetIdFn<T> = (item: T) => string;

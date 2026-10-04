@@ -15,7 +15,7 @@ import { useBranches } from '../../chi-nhanh/hooks/use-chi-nhanh';
 import { CONTRACT_TYPE_OPTIONS, STATUS_OPTIONS } from '../core/constants';
 import { useBulkUpdateEmployees } from '../hooks/use-nhan-vien';
 import { Employee } from '../core/types';
-import { TRANG_THAI } from '../../../../lib/constants';
+import { TRANG_THAI, TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 
 export interface BulkEditFields {
   id_phong_ban?: string;
@@ -49,7 +49,7 @@ const BulkEditSheet: React.FC<Props> = ({ selectedEmployees, onClose, onSuccess 
 
   const departmentOptions = departments.map(d => ({ label: d.ten_phong_ban, value: d.id }));
   const positionOptions = positions.map(p => ({ label: p.ten_chuc_vu, value: p.id }));
-  const jobLevelOptions = jobLevels.filter((l: any) => l.trang_thai === TRANG_THAI.DANG_DUNG).map((l: any) => ({ label: l.ten_cap_bac, value: l.id }));
+  const jobLevelOptions = jobLevels.filter((l) => l.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG).map((l) => ({ label: l.ten_cap_bac, value: l.id }));
   const branchOptions = branches.filter(b => b.trang_thai === TRANG_THAI.DANG_DUNG).map(b => ({ label: b.ten_chi_nhanh, value: b.id }));
   const contractOptions = CONTRACT_TYPE_OPTIONS;
   const statusOptions = STATUS_OPTIONS.map(s => ({ value: s.value, label: s.label }));

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useForm, Controller, SubmitHandler, useFieldArray, type FieldErrors } from 'react-hook-form';
+import { useForm, Controller, SubmitHandler, useFieldArray, type FieldErrors, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { FileText, Calendar, Warehouse, User, UserCheck, Package, Trash2 } from 'lucide-react';
@@ -157,7 +157,7 @@ const DeXuatMuaHangForm: React.FC<Props> = ({ khoList, employees, initialData, o
   };
 
   const { register, handleSubmit, formState: { errors, isDirty, isSubmitted }, reset, control, watch, setValue } = useForm<DeXuatMuaHangFormValues>({
-    resolver: zodResolver(deXuatMuaHangSchema) as any,
+    resolver: zodResolver(deXuatMuaHangSchema) as Resolver<DeXuatMuaHangFormValues>,
     defaultValues,
   });
 

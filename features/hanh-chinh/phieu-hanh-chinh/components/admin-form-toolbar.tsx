@@ -43,7 +43,7 @@ interface Props {
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   filters: AdminFormListFilters;
-  setFilter: (key: keyof AdminFormListFilters, value: any) => void;
+  setFilter: <K extends keyof AdminFormListFilters>(key: K, value: AdminFormListFilters[K]) => void;
   columns: ColumnConfig[];
   toggleColumn: (id: string) => void;
   reorderColumns: (fromIndex: number, toIndex: number) => void;

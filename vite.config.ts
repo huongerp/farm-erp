@@ -74,7 +74,13 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         output: {
           manualChunks(id) {
+            // Helper __vitePreload của mọi import() động: để rollup tự xếp thì nó bị gộp vào
+            // vendor-jspdf → bundle chính import chunk đó → tải sẵn ~400 KB jspdf ngay khi mở app.
+            if (id.includes('vite/preload-helper')) return 'vite-preload';
             if (!id.includes('node_modules')) return;
+            // clsx (hàm cn) dùng khắp app; recharts cũng dùng → rollup gom vào chunk recharts,
+            // kéo ~380 KB recharts vào lần tải đầu. Cho về chunk react-vendor (vốn tải ngay).
+            if (id.includes('/node_modules/clsx/')) return 'react-vendor';
             // @supabase/postgrest-js: chỉ là client PostgREST (lib/db.ts), không phải dịch vụ Supabase.
             if (id.includes('@supabase')) return 'postgrest';
             if (

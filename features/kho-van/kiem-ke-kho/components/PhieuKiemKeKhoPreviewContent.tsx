@@ -21,26 +21,26 @@ interface Props {
   chiTiet: ChiTietKiemKeKho[];
 }
 
+const InfoRow = ({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number | null | undefined;
+}) => (
+  <tr>
+    <td className="w-[40%] border border-gray-300 p-1.5 text-[10pt] font-semibold text-gray-600 bg-gray-50/50">
+      {label}
+    </td>
+    <td className="border border-gray-300 p-1.5 text-[10pt] text-gray-900">{value ?? '—'}</td>
+  </tr>
+);
+
 const PhieuKiemKeKhoPreviewContent: React.FC<Props> = ({ dot, chiTiet }) => {
   const { t } = useTranslation();
   const companyInfo = useUIStore((s) => s.companyInfo);
   const printedAt = formatDateTime(new Date());
   const stats = getKiemKeKhoChiTietStats(chiTiet);
-
-  const InfoRow = ({
-    label,
-    value,
-  }: {
-    label: string;
-    value: string | number | null | undefined;
-  }) => (
-    <tr>
-      <td className="w-[40%] border border-gray-300 p-1.5 text-[10pt] font-semibold text-gray-600 bg-gray-50/50">
-        {label}
-      </td>
-      <td className="border border-gray-300 p-1.5 text-[10pt] text-gray-900">{value ?? '—'}</td>
-    </tr>
-  );
 
   return (
     <div className="phieu-kiem-ke-kho-preview-content bg-white text-gray-900 font-sans text-[10pt] pt-[15mm] pr-[15mm] pb-[15mm] pl-[20mm] print:p-0">

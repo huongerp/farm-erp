@@ -11,7 +11,7 @@ import EmptyState from '../../../../components/shared/EmptyState';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import { MobileFilterField } from '../../../../components/ui/MobileFilterSheet';
 import { useKiemKeStats } from './stats/useKiemKeStats';
-import StatsToolbar from './stats/StatsToolbar';
+import StatsToolbar from '../../../../components/shared/StatsToolbar';
 import StatsCards from './stats/StatsCards';
 import StatsTables from './stats/StatsTables';
 import type { DotKiemKe } from '../core/types';
@@ -230,6 +230,9 @@ const ThongKeTab: React.FC = () => {
         mobileFilterExtraCount={(dateFrom ? 1 : 0) + (dateTo ? 1 : 0)}
         activeFilterCount={activeFilterCount}
         onClearFilters={handleClearFilters}
+        actionsLabel={t('kiemKeTaiSan.stats.actions')}
+        exportLabel={t('kiemKeTaiSan.stats.exportReport')}
+        printLabel={t('kiemKeTaiSan.stats.printReport')}
         onExportReport={handleExportReport}
         onPrintReport={handlePrintReport}
       />

@@ -13,7 +13,7 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'auth-storage',
       version: 2,
-      migrate: (persisted: any, version: number) => {
+      migrate: (persisted: unknown, version: number) => {
         if (!persisted || typeof persisted !== 'object') return persisted as AuthState;
         const state = persisted as AuthState;
         if (version < 1) {
@@ -127,18 +127,18 @@ export const useUIStore = create<UIState>()(
     {
       name: 'ui-storage', // Persist UI settings including branding
       version: 3, // v3: bỏ language (app thuần tiếng Việt)
-      migrate: (persisted: any, version: number) => {
+      migrate: (persisted: unknown, version: number) => {
         // v0 → v1: fonts list reduced from 11 → 6, reset invalid fontFamily
         if (version === 0 && persisted && typeof persisted === 'object') {
-          const state = persisted as Record<string, any>;
-          if (state.fontFamily && !ALLOWED_FONTS.has(state.fontFamily as any)) {
+          const state = persisted as { fontFamily?: string };
+          if (state.fontFamily && !ALLOWED_FONTS.has(state.fontFamily as ThemeState['fontFamily'])) {
             state.fontFamily = 'Inter';
           }
         }
         // v1 → v2: default company info → Forpeasantz (chỉ áp dụng khi đang dùng mẫu cũ)
         if (version < 2 && persisted && typeof persisted === 'object') {
-          const state = persisted as Record<string, any>;
-          const ci = state.companyInfo;
+          const state = persisted as Record<string, unknown>;
+          const ci = state.companyInfo as Partial<CompanyInfo> | undefined;
           if (ci && (ci.companyName === '5F template' || ci.appName === '5F template')) {
             state.companyInfo = {
               appName: 'Forpeasantz',
@@ -159,8 +159,8 @@ export const useUIStore = create<UIState>()(
         }
         // Thay logo Facebook CDN (403 hotlink) bằng fallback
         if (persisted && typeof persisted === 'object') {
-          const state = persisted as Record<string, any>;
-          const ci = state.companyInfo;
+          const state = persisted as Record<string, unknown>;
+          const ci = state.companyInfo as Partial<CompanyInfo> | undefined;
           if (ci?.appLogo && String(ci.appLogo).includes('fbcdn.net')) {
             state.companyInfo = { ...ci, appLogo: 'https://ui-avatars.com/api/?name=FP&background=16a34a&color=fff&size=128' };
           }

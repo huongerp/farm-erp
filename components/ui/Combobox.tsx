@@ -13,6 +13,7 @@ export interface Option {
 interface ComboboxProps {
   options: Option[];
   value?: string | number | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- nơi gọi truyền handler kiểu (v: string) / setState<string|null>; thu hẹp kiểu sẽ phá ~12 chỗ dùng
   onChange: (value: any) => void;
   label?: string;
   placeholder?: string;
@@ -324,6 +325,7 @@ const Combobox: React.FC<ComboboxProps> = ({
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       onKeyDown={handleListKeyDown}
+                      // eslint-disable-next-line jsx-a11y/no-autofocus -- ô tìm kiếm trong dropdown vừa mở, focus ngay để gõ lọc
                       autoFocus
                       onClick={(e) => e.stopPropagation()}
                     />
@@ -332,13 +334,14 @@ const Combobox: React.FC<ComboboxProps> = ({
               )}
               <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar p-1.5 space-y-1">
                 {canCreateNew && (
-                  <div
-                    className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-body-sm cursor-pointer transition-colors text-primary hover:bg-primary/10 border border-primary/20"
+                  <button
+                    type="button"
+                    className="w-full text-left flex items-center gap-2 px-3 py-2.5 rounded-lg text-body-sm cursor-pointer transition-colors text-primary hover:bg-primary/10 border border-primary/20"
                     onClick={(e) => { e.stopPropagation(); handleCreateNew(); }}
                   >
                     <Plus size={16} className="shrink-0" />
                     <span>{creatableLabel}: &quot;{searchTerm.trim()}&quot;</span>
-                  </div>
+                  </button>
                 )}
                 {filteredOptions.length === 0 && !canCreateNew ? (
                   <div className="py-8 text-center text-body-sm text-muted-foreground flex flex-col items-center">
@@ -366,6 +369,13 @@ const Combobox: React.FC<ComboboxProps> = ({
                         onClick={(e) => {
                           e.stopPropagation();
                           handleSelect(option.value);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleSelect(option.value);
+                          }
                         }}
                       >
                         <div className="flex flex-col min-w-0 flex-1">
@@ -416,6 +426,7 @@ const Combobox: React.FC<ComboboxProps> = ({
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       onKeyDown={handleListKeyDown}
+                      // eslint-disable-next-line jsx-a11y/no-autofocus -- ô tìm kiếm trong dropdown vừa mở, focus ngay để gõ lọc
                       autoFocus
                       onClick={(e) => e.stopPropagation()}
                     />
@@ -424,13 +435,14 @@ const Combobox: React.FC<ComboboxProps> = ({
               )}
               <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar p-1.5 space-y-1">
                 {canCreateNew && (
-                  <div
-                    className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-body-sm cursor-pointer transition-colors text-primary hover:bg-primary/10 border border-primary/20"
+                  <button
+                    type="button"
+                    className="w-full text-left flex items-center gap-2 px-3 py-2.5 rounded-lg text-body-sm cursor-pointer transition-colors text-primary hover:bg-primary/10 border border-primary/20"
                     onClick={(e) => { e.stopPropagation(); handleCreateNew(); }}
                   >
                     <Plus size={16} className="shrink-0" />
                     <span>{creatableLabel}: &quot;{searchTerm.trim()}&quot;</span>
-                  </div>
+                  </button>
                 )}
                 {filteredOptions.length === 0 && !canCreateNew ? (
                   <div className="py-8 text-center text-body-sm text-muted-foreground flex flex-col items-center">
@@ -458,6 +470,13 @@ const Combobox: React.FC<ComboboxProps> = ({
                         onClick={(e) => {
                           e.stopPropagation();
                           handleSelect(option.value);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleSelect(option.value);
+                          }
                         }}
                       >
                         <div className="flex flex-col min-w-0 flex-1">

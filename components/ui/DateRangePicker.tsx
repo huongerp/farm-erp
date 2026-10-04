@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Calendar, ChevronDown } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -52,12 +53,13 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
   value,
   onChange,
   displayLabel,
-  placeholder = 'Khoảng thời gian',
+  placeholder,
   className,
   customPresetId = 'custom',
   size = 'md',
   inline = false,
 }) => {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -79,8 +81,8 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
       return `${formatDisplay(value.customStart)} – ${formatDisplay(value.customEnd)}`;
     }
     const found = presets.find((p) => p.id === value.preset);
-    return found?.label ?? placeholder;
-  }, [displayLabel, value, presets, placeholder, isCustom]);
+    return found?.label ?? placeholder ?? t('common.dateRange.placeholder');
+  }, [displayLabel, value, presets, placeholder, isCustom, t]);
 
   const handlePreset = (id: string) => {
     if (id === customPresetId) {
@@ -106,12 +108,12 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
     </div>
   );
 
-  const tuNgay = oNgay('Từ ngày', value.customStart, (x) => ({
+  const tuNgay = oNgay(t('common.dateRange.tuNgay'), value.customStart, (x) => ({
     preset: customPresetId,
     customStart: x,
     customEnd: value.customEnd,
   }));
-  const denNgay = oNgay('Đến ngày', value.customEnd, (x) => ({
+  const denNgay = oNgay(t('common.dateRange.denNgay'), value.customEnd, (x) => ({
     preset: customPresetId,
     customStart: value.customStart,
     customEnd: x,
@@ -119,7 +121,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
 
   const chonNhanh = (cot: 2 | 3) => (
     <>
-      <p className="text-2xs font-semibold text-muted-foreground px-1.5 mb-1.5">Chọn nhanh</p>
+      <p className="text-2xs font-semibold text-muted-foreground px-1.5 mb-1.5">{t('common.dateRange.chonNhanh')}</p>
       <div className={cn('grid gap-1', cot === 3 ? 'grid-cols-3' : 'grid-cols-2')}>
         {presets
           .filter((p) => p.id !== customPresetId)
@@ -188,7 +190,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
                   onClick={() => setOpen(false)}
                   className="w-full h-7 rounded-lg bg-primary text-white text-xs font-medium hover:bg-primary/90 transition-colors"
                 >
-                  Áp dụng
+                  {t('common.apply')}
                 </button>
               )}
             </div>

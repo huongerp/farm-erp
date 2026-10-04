@@ -40,10 +40,12 @@ const PhieuKhoPTBulkApproveDialog: React.FC<Props> = ({
 
   return (
     <div
+      role="presentation"
       className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50"
       onClick={isPending ? undefined : onClose}
     >
       <div
+        role="presentation"
         className="bg-card border border-border rounded-xl shadow-xl max-w-md w-full p-5 space-y-4"
         onClick={(e) => e.stopPropagation()}
       >

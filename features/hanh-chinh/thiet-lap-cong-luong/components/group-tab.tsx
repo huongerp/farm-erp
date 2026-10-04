@@ -70,9 +70,9 @@ const PayrollFormGroupTab: React.FC = () => {
   const sortedList = useMemo(() => {
     if (!sort.column || !sort.direction) return filteredList;
     const sorted = [...filteredList];
-    sorted.sort((a: any, b: any) => {
-      const aVal = a[sort.column!] ?? '';
-      const bVal = b[sort.column!] ?? '';
+    sorted.sort((a, b) => {
+      const aVal = (a as unknown as Record<string, unknown>)[sort.column!] ?? '';
+      const bVal = (b as unknown as Record<string, unknown>)[sort.column!] ?? '';
       const cmp =
         typeof aVal === 'number' && typeof bVal === 'number'
           ? aVal - bVal

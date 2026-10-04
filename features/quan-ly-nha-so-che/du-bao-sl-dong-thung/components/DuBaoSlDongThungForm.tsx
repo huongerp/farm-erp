@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useForm, Controller, type SubmitHandler } from 'react-hook-form';
+import { useForm, Controller, type SubmitHandler, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Building2, Boxes } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
@@ -77,7 +77,7 @@ const DuBaoSlDongThungForm: React.FC<Props> = ({ branches, initialData, preferre
     reset,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<DuBaoSlDongThungFormValues>({
-    resolver: zodResolver(duBaoSlDongThungFormSchema) as any,
+    resolver: zodResolver(duBaoSlDongThungFormSchema) as Resolver<DuBaoSlDongThungFormValues>,
     defaultValues,
   });
 

@@ -201,7 +201,15 @@ const SingleImageInput: React.FC<SingleImageInputProps> = ({
           ),
         )}
         style={{ aspectRatio }}
+        role="button"
+        tabIndex={value || disabled ? -1 : 0}
         onClick={() => !value && openPicker()}
+        onKeyDown={(e) => {
+          if (!value && (e.key === 'Enter' || e.key === ' ')) {
+            e.preventDefault();
+            openPicker();
+          }
+        }}
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
         onDragOver={handleDragOver}
@@ -292,6 +300,7 @@ const SingleImageInput: React.FC<SingleImageInputProps> = ({
       {/* ── Source picker (Portal) ── */}
       {showPicker && ReactDOM.createPortal(
         <div
+          role="presentation"
           className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center"
           onClick={() => setShowPicker(false)}
         >

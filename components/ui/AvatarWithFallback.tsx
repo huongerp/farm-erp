@@ -94,6 +94,7 @@ export const AvatarWithFallback: React.FC<AvatarWithFallbackProps> = ({
   }
 
   return (
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- onError là sự kiện tải ảnh lỗi, không phải tương tác người dùng
     <img
       src={src}
       alt={alt ?? name}

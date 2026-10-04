@@ -315,8 +315,9 @@ const PhieuKhoPTDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
       </div>
 
       {showDuyetPopup && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50" onClick={() => setShowDuyetPopup(false)}>
+        <div role="presentation" className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50" onClick={() => setShowDuyetPopup(false)}>
           <div
+            role="presentation"
             className="bg-card border border-border rounded-xl shadow-xl max-w-md w-full p-5 space-y-4"
             onClick={(e) => e.stopPropagation()}
           >

@@ -20,7 +20,7 @@ import {
   type DonDatHangReportFilters,
 } from '../utils/export-don-dat-hang-report';
 import { TRANG_THAI_DON_DAT_HANG, TRANG_THAI_KEY } from '../core/constants';
-import StatsToolbar from './stats/StatsToolbar';
+import StatsToolbar from '../../../../components/shared/StatsToolbar';
 import StatsCards from './stats/StatsCards';
 const StatsCharts = lazy(() => import('./stats/StatsCharts'));
 import StatsTables from './stats/StatsTables';
@@ -374,6 +374,9 @@ const ThongKeTab: React.FC = () => {
         mobileFilterExtraCount={(dateFrom ? 1 : 0) + (dateTo ? 1 : 0)}
         activeFilterCount={activeFilterCount}
         onClearFilters={handleClearFilters}
+        actionsLabel={t('donDatHang.stats.actions')}
+        exportLabel={t('donDatHang.stats.exportReport')}
+        printLabel={t('donDatHang.stats.printReport')}
         onExportReport={handleExportReport}
         onPrintReport={handlePrintReport}
       />

@@ -129,7 +129,7 @@ const AdminFormQuotaTab: React.FC = () => {
         searchTerm={searchInput}
         setSearchTerm={setSearchInput}
         filters={filters}
-        setFilter={setFilter as any}
+        setFilter={setFilter}
         columns={columns}
         toggleColumn={toggleColumn}
         reorderColumns={reorderColumns}

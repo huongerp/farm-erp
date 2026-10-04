@@ -139,7 +139,7 @@ const BangLuongMyTable: React.FC<Props> = ({ isFetching, totalRecordsOverride, d
             <h4 className="font-semibold text-foreground text-sm truncate">
               {formatPeriod(item.nam, item.thang)}
             </h4>
-            <div onClick={(e) => e.stopPropagation()} className="shrink-0">
+            <div role="presentation" onClick={(e) => e.stopPropagation()} className="shrink-0">
               <input
                 type="checkbox"
                 checked={isSelected}

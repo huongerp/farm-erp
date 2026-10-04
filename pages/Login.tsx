@@ -313,6 +313,7 @@ const Login: React.FC = () => {
                     'absolute inset-0 bg-black/50 presence-overlay',
                     forgotVisible && 'presence-visible',
                   )}
+                  role="presentation"
                   onClick={() => setForgotOpen(false)}
                 />
                 <div

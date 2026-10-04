@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useForm, Controller, SubmitHandler } from 'react-hook-form';
+import { useForm, Controller, SubmitHandler, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Package, Folder, DollarSign, FileText } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
@@ -58,7 +58,7 @@ const HangHoaForm: React.FC<Props> = ({ initialData, existingDvtList = [], exist
   };
 
   const { register, handleSubmit, formState: { errors, isDirty }, reset, control, watch } = useForm<FarmHangHoaFormValues>({
-    resolver: zodResolver(farmHangHoaSchema) as any,
+    resolver: zodResolver(farmHangHoaSchema) as Resolver<FarmHangHoaFormValues>,
     defaultValues,
   });
 

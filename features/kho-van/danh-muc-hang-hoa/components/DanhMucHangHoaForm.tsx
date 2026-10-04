@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useForm, Controller, SubmitHandler } from 'react-hook-form';
+import { useForm, Controller, SubmitHandler, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { List, FileText, ArrowUpFromLine, Power, Folder } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
@@ -53,7 +53,7 @@ const DanhMucHangHoaForm: React.FC<Props> = ({
   const { register, handleSubmit, formState: { errors, isDirty }, reset, control } = useForm<
     DanhMucHangHoaFormValues
   >({
-    resolver: zodResolver(danhMucHangHoaSchema) as any,
+    resolver: zodResolver(danhMucHangHoaSchema) as Resolver<DanhMucHangHoaFormValues>,
     defaultValues,
   });
 

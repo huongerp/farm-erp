@@ -147,14 +147,25 @@ export const TablePaginationFooter: React.FC<TablePaginationFooterProps> = ({
                 onBlur={handleGoToPage}
                 onKeyDown={(e) => e.key === 'Enter' && handleGoToPage()}
                 className="h-6 w-10 text-center text-xs font-bold border border-primary rounded bg-background text-foreground outline-none tabular-nums"
+                // eslint-disable-next-line jsx-a11y/no-autofocus -- ô nhập trang chỉ hiện khi người dùng chủ động bấm đúp, cần focus ngay
                 autoFocus
               />
             ) : (
               <span
+                role="button"
+                tabIndex={0}
                 onDoubleClick={() => {
                   setEditingPage(true);
                   setPageInput(String(page));
                   setTimeout(() => pageInputRef.current?.select(), 50);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setEditingPage(true);
+                    setPageInput(String(page));
+                    setTimeout(() => pageInputRef.current?.select(), 50);
+                  }
                 }}
                 className="h-6 min-w-[24px] flex items-center justify-center rounded bg-primary text-white text-xs font-bold px-1 tabular-nums cursor-default"
               >

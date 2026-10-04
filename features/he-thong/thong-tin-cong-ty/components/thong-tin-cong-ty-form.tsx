@@ -112,7 +112,10 @@ const CompanyInfoForm: React.FC<CompanyFormProps> = ({ initialValues, onSubmit, 
               onDragOver={onDragOver}
               onDragLeave={onDragLeave}
               onDrop={onDrop}
+              role="button"
+              tabIndex={0}
               onClick={() => fileInputRef.current?.click()}
+              onKeyDown={(e) => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); fileInputRef.current?.click(); } }}
               className={`flex flex-col items-center justify-center gap-4 p-6 border-2 border-dashed rounded-xl relative group transition-all cursor-pointer ${
                 isDragging
                   ? 'bg-primary/5 border-primary scale-[1.02]'
@@ -120,7 +123,7 @@ const CompanyInfoForm: React.FC<CompanyFormProps> = ({ initialValues, onSubmit, 
               }`}
             >
               {logoPreview ? (
-                <div className="relative group/preview" onClick={(e) => e.stopPropagation()}>
+                <div className="relative group/preview" role="presentation" onClick={(e) => e.stopPropagation()}>
                   <img src={logoPreview} alt="App Logo" className="h-24 w-24 object-contain" />
                   <button
                     type="button"

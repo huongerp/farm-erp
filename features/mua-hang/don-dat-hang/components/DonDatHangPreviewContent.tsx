@@ -18,26 +18,26 @@ interface Props {
   po: DonDatHang;
 }
 
+const TableRow = ({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number | null | undefined;
+}) => (
+  <tr>
+    <td className="w-[40%] border border-gray-300 p-1.5 text-[10pt] font-semibold text-gray-600 bg-gray-50/50">
+      {label}
+    </td>
+    <td className="border border-gray-300 p-1.5 text-[10pt] text-gray-900">{value ?? '—'}</td>
+  </tr>
+);
+
 const DonDatHangPreviewContent: React.FC<Props> = ({ po }) => {
   const { t } = useTranslation();
   const companyInfo = useUIStore((s) => s.companyInfo);
   const printedAt = formatDateTime(new Date());
   const chiTiet = po.chi_tiet ?? [];
-
-  const TableRow = ({
-    label,
-    value,
-  }: {
-    label: string;
-    value: string | number | null | undefined;
-  }) => (
-    <tr>
-      <td className="w-[40%] border border-gray-300 p-1.5 text-[10pt] font-semibold text-gray-600 bg-gray-50/50">
-        {label}
-      </td>
-      <td className="border border-gray-300 p-1.5 text-[10pt] text-gray-900">{value ?? '—'}</td>
-    </tr>
-  );
 
   return (
     <div className="don-dat-hang-preview-content don-dat-hang-preview bg-white text-gray-900 font-sans text-[10pt] pt-[15mm] pr-[15mm] pb-[15mm] pl-[20mm] print:p-0 min-h-full flex flex-col">

@@ -27,7 +27,10 @@ const CongViecKanbanCard: React.FC<Props> = ({ item, onClick }) => {
       ref={setNodeRef}
       {...listeners}
       {...attributes}
+      role="button"
+      tabIndex={attributes.tabIndex}
       onClick={onClick}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } }}
       className={cn(
         'rounded-lg border border-border bg-card p-3 shadow-sm cursor-grab active:cursor-grabbing',
         'transition-all hover:shadow-md hover:-translate-y-0.5',

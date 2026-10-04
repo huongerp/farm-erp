@@ -220,6 +220,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             onKeyDown={handleListKeyDown}
+            // eslint-disable-next-line jsx-a11y/no-autofocus -- ô tìm kiếm trong dropdown vừa mở, focus ngay để gõ lọc
             autoFocus
           />
         </div>
@@ -228,8 +229,16 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
         {filteredOptions.length > 0 && (
           <div className="flex items-center justify-between gap-2 px-2 py-1.5 text-xs font-medium text-muted-foreground border-b border-border mb-0.5">
             <div
+              role="button"
+              tabIndex={0}
               className="flex items-center flex-1 min-w-0 hover:bg-muted/50 rounded-lg cursor-pointer py-0.5 -my-0.5 px-1 -mx-1"
               onClick={handleSelectAll}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleSelectAll();
+                }
+              }}
             >
               <div className={cn(
                 "w-3.5 h-3.5 rounded border flex items-center justify-center mr-2 transition-colors shrink-0",
@@ -264,6 +273,12 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
                   tabIndex={-1}
                   aria-selected={isSelected}
                   onClick={() => !isZeroCount && handleSelect(option.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      if (!isZeroCount) handleSelect(option.value);
+                    }
+                  }}
                   className={cn(
                     "flex items-center px-2 py-1.5 text-xs rounded-lg transition-colors",
                     isZeroCount ? "opacity-40 cursor-not-allowed" : "cursor-pointer",
@@ -291,16 +306,17 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
               );
             })}
             {showCreateOption && (
-              <div
+              <button
+                type="button"
                 onClick={isCreating ? undefined : handleCreateOption}
                 className={cn(
-                  "flex items-center gap-2 px-2 py-1.5 text-xs rounded-lg transition-colors",
+                  "w-full text-left flex items-center gap-2 px-2 py-1.5 text-xs rounded-lg transition-colors",
                   isCreating ? "opacity-60 cursor-wait" : "cursor-pointer text-primary hover:bg-primary/10"
                 )}
               >
                 {isCreating ? <Loader2 size={14} className="animate-spin shrink-0" /> : <Plus size={14} className="shrink-0" />}
                 <span className="truncate">{createOptionLabel.replace(/%s/g, searchTrim)}</span>
-              </div>
+              </button>
             )}
           </>
         )}
@@ -369,7 +385,17 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
         <div className="flex items-center gap-1 shrink-0">
           {hasValue && (
             <div
+              role="button"
+              tabIndex={-1}
+              aria-label={t('common.clearSelection')}
               onClick={(e) => { e.stopPropagation(); onChange([]); }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onChange([]);
+                }
+              }}
               className="p-1 rounded-full hover:bg-muted text-muted-foreground transition-colors"
             >
               <X size={size === 'lg' ? 14 : 10} />

@@ -141,7 +141,7 @@ const EmployeeTable: React.FC<Props> = ({ data, totalRecordsOverride, isLoading,
     };
 
     const renderMobileCard = (item: Employee, isSelected: boolean) => (
-        <div key={item.id} onClick={() => onView(item)} className={cn(
+        <div key={item.id} role="button" tabIndex={0} onClick={() => onView(item)} onKeyDown={(e) => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onView(item); } }} className={cn(
             "bg-card rounded-xl border p-3.5 shadow-sm transition-all active:scale-[0.98]",
             isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'
         )}>
@@ -156,7 +156,7 @@ const EmployeeTable: React.FC<Props> = ({ data, totalRecordsOverride, isLoading,
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                         <h4 className="font-semibold text-foreground text-sm truncate">{item.ho_ten}</h4>
-                        <div onClick={e => e.stopPropagation()} className="ml-2">
+                        <div role="presentation" onClick={e => e.stopPropagation()} className="ml-2">
                             <input
                                 type="checkbox"
                                 checked={isSelected}

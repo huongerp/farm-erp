@@ -20,7 +20,7 @@ export function useTaiSanStats(list: TaiSan[]) {
     const byNoiLuu = new Map<string, { ten: string; count: number }>();
     const byTrangThai = new Map<string, { ten: string; count: number }>();
     let totalNguyenGia = 0;
-    let activeCount = 0;
+    const activeCount = 0;
 
     list.forEach((item) => {
       if (item.ten_nhom) {

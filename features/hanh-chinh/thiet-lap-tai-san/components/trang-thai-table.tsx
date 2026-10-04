@@ -130,7 +130,7 @@ const TrangThaiTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, on
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
             <h4 className="font-semibold text-foreground text-sm truncate">{item.ten}</h4>
-            <div onClick={(e) => e.stopPropagation()} className="shrink-0">
+            <div role="presentation" onClick={(e) => e.stopPropagation()} className="shrink-0">
               <input
                 type="checkbox"
                 checked={isSelected}

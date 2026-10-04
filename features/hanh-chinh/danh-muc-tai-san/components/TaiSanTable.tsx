@@ -243,7 +243,7 @@ const TaiSanTable: React.FC<Props> = ({
           <div className="flex items-center justify-between gap-2">
             <h4 className="font-semibold text-foreground text-sm truncate">{item.ten_tai_san}</h4>
             {showActions && (
-              <div onClick={(e) => e.stopPropagation()} className="shrink-0">
+              <div role="presentation" onClick={(e) => e.stopPropagation()} className="shrink-0">
                 <input
                   type="checkbox"
                   checked={isSelected}

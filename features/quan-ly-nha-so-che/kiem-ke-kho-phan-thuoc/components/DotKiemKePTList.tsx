@@ -181,8 +181,11 @@ const DotKiemKePTList: React.FC<Props> = ({
   const handleRowClick = onView ?? onEdit;
   const renderMobileCard = (item: DotKiemKePT, isSelected: boolean) => (
     <div
+      role="button"
+      tabIndex={0}
       className={isSelected ? 'border-primary bg-primary/5' : ''}
       onClick={() => handleRowClick?.(item)}
+      onKeyDown={(e) => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); handleRowClick?.(item); } }}
     >
       <div className="flex justify-between items-start gap-2">
         <span className="font-medium text-sm">{item.ma_dot}</span>

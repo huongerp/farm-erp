@@ -83,10 +83,19 @@ const ChiTietList: React.FC<Props> = ({
         return (
           <td key={col.id} className="px-4 py-3" style={getColumnCellStyle(col)}>
             <span
+              role="button"
+              tabIndex={0}
               className="font-mono text-xs font-medium text-primary cursor-pointer hover:underline"
               onClick={(e) => {
                 e.stopPropagation();
                 onRowClick(row);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onRowClick(row);
+                }
               }}
             >
               {row.so_phieu}

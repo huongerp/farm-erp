@@ -76,9 +76,9 @@ const PositionPage: React.FC = () => {
   const sortedPositions = useMemo(() => {
     const sorted = [...filteredPositions];
     if (sort.column && sort.direction) {
-      sorted.sort((a: any, b: any) => {
-        const aVal = a[sort.column!] ?? '';
-        const bVal = b[sort.column!] ?? '';
+      sorted.sort((a, b) => {
+        const aVal = a[sort.column as keyof Position] ?? '';
+        const bVal = b[sort.column as keyof Position] ?? '';
         const cmp =
           typeof aVal === 'number' && typeof bVal === 'number'
             ? aVal - bVal

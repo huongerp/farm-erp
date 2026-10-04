@@ -9,7 +9,7 @@ import {
   getCurrentRoleContext,
 } from '../services/phan-quyen-service';
 import { RoleFormValues } from '../core/schema';
-import { ModulePermission } from '../core/types';
+import { ActionType, ModulePermission } from '../core/types';
 import { toast } from 'sonner';
 import i18n from '../../../../lib/i18n';
 import { useAuthStore } from '../../../../store/useStore';
@@ -81,7 +81,7 @@ export const useDeleteRoles = () => {
 export const useUpdateModulePermissions = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ moduleId, updates }: { moduleId: string, updates: { roleId: string, actions: any[] }[] }) => updateModulePermissions(moduleId, updates),
+    mutationFn: ({ moduleId, updates }: { moduleId: string, updates: { roleId: string, actions: ActionType[] }[] }) => updateModulePermissions(moduleId, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['roles'] });
       queryClient.invalidateQueries({ queryKey: [CURRENT_ROLE_CONTEXT_KEY] });

@@ -61,7 +61,7 @@ const HopDongChiTietModal: React.FC<Props> = ({
     reset,
     formState: { errors },
   } = useForm<HopDongChiTietLineValues>({
-    resolver: zodResolver(hopDongChiTietLineSchema) as any,
+    resolver: zodResolver(hopDongChiTietLineSchema),
     defaultValues: emptyValues(),
   });
 
