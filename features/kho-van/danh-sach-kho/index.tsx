@@ -49,7 +49,8 @@ const DanhSachKhoPage: React.FC = () => {
 
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<Kho | null>(null);
-  const [viewingItem, setViewingItem] = useState<Kho | null>(null);
+  // Bản chụp lúc mở chi tiết; bản hiển thị (viewingItem) lấy dòng mới nhất từ list khi refetch.
+  const [viewingSnapshot, setViewingItem] = useState<Kho | null>(null);
   const [showExport, setShowExport] = useState(false);
 
   const { data: khoList = [], isLoading } = useKhoList();
@@ -66,11 +67,10 @@ const DanhSachKhoPage: React.FC = () => {
     return () => resetState();
   }, [resetState]);
 
-  useEffect(() => {
-    if (!viewingItem) return;
-    const fresh = khoList.find((k) => k.id === viewingItem.id);
-    if (fresh && fresh !== viewingItem) setViewingItem(fresh);
-  }, [khoList, viewingItem?.id]);
+  const viewingItem = useMemo(
+    () => (viewingSnapshot ? (khoList.find((k) => k.id === viewingSnapshot.id) ?? viewingSnapshot) : null),
+    [khoList, viewingSnapshot]
+  );
 
   const filterFn = useCallback((item: Kho, term: string, f: typeof filters) => {
     const matchesSearch = khopTimKiem(item, term);

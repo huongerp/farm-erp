@@ -71,8 +71,8 @@ const PhieuKhoToolbar: React.FC<Props> = ({
   doiTacForChips = [],
   bulkActions,
 }) => {
-  const data = Array.isArray(dataProp) ? dataProp : [];
-  const khoList = Array.isArray(khoListProp) ? khoListProp : [];
+  const data = useMemo(() => (Array.isArray(dataProp) ? dataProp : []), [dataProp]);
+  const khoList = useMemo(() => (Array.isArray(khoListProp) ? khoListProp : []), [khoListProp]);
   const { t } = useTranslation();
   const searchTerm = usePhieuKhoStore((s) => s.searchTerm);
   const commitSearchTerm = usePhieuKhoStore((s) => s.commitSearchTerm);

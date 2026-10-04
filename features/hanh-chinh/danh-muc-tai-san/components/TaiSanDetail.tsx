@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback, useEffect } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Building2, Edit, Trash2, ArrowLeftRight, Plus, Power, Image as ImageIcon, Wrench, Printer, FileText, X } from 'lucide-react';
@@ -71,9 +71,12 @@ const TaiSanDetail: React.FC<Props> = ({
   const [ghiChuOpen, setGhiChuOpen] = useState(false);
   const [ghiChuValue, setGhiChuValue] = useState(data.ghi_chu ?? '');
 
-  useEffect(() => {
+  // Mở ô ghi chú (hoặc ghi chú đổi khi đang mở) → nạp lại giá trị hiện tại; chỉnh ngay lúc render.
+  const [prevGhiChuSync, setPrevGhiChuSync] = useState({ open: ghiChuOpen, ghiChu: data.ghi_chu });
+  if (prevGhiChuSync.open !== ghiChuOpen || prevGhiChuSync.ghiChu !== data.ghi_chu) {
+    setPrevGhiChuSync({ open: ghiChuOpen, ghiChu: data.ghi_chu });
     if (ghiChuOpen) setGhiChuValue(data.ghi_chu ?? '');
-  }, [ghiChuOpen, data.ghi_chu]);
+  }
 
   const handleSaveGhiChu = useCallback(() => {
     if (onUpdateGhiChu) onUpdateGhiChu(data, ghiChuValue.trim());

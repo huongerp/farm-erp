@@ -106,6 +106,7 @@ const DeXuatMuaHangDetail: React.FC<Props> = ({
   const { data: phieuKhoLienKet = [] } = usePhieuKhoPTByDeXuat(daDuyet ? [data.id] : []);
   const soPhieuKhoDaTao = phieuKhoLienKet.map((p) => p.so_phieu).filter(Boolean).join(', ');
   const canCreatePhieuKho = daDuyet && !!onCreatePhieuKho;
+  const soPhieuKhoLienKet = phieuKhoLienKet.length;
   const [showApprovePopup, setShowApprovePopup] = useState(false);
   const [approveGhiChu, setApproveGhiChu] = useState('');
 
@@ -142,7 +143,7 @@ const DeXuatMuaHangDetail: React.FC<Props> = ({
               label: t('deXuatMuaHang.detail.toolbar.createPhieuKho'),
               icon: <PackagePlus size={16} />,
               onClick: () => onCreatePhieuKho?.(data),
-              disabled: phieuKhoLienKet.length > 0,
+              disabled: soPhieuKhoLienKet > 0,
             },
           ]
         : []),
@@ -156,7 +157,7 @@ const DeXuatMuaHangDetail: React.FC<Props> = ({
         variant: 'primary' as const,
       },
     ],
-    [canApprove, canCreatePhieuKho, data, onApprove, onCopy, onClose, onPrint, onCreatePhieuKho, phieuKhoLienKet.length, t]
+    [canApprove, canCreatePhieuKho, data, onCopy, onClose, onPrint, onCreatePhieuKho, soPhieuKhoLienKet, t, setShowApprovePopup]
   );
 
   const statusLabel = t(`deXuatMuaHang.status.${trangThaiToI18nKey(data.trang_thai)}`);

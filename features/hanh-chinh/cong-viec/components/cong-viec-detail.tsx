@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useForm, useWatch, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -99,14 +99,19 @@ const CongViecDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onAd
   const [modalLinkKetQua, setModalLinkKetQua] = useState(data.link_ket_qua ?? '');
   const [modalGhiChu, setModalGhiChu] = useState(data.mo_ta ?? '');
 
-  useEffect(() => {
+  // Mở modal trạng thái (hoặc dữ liệu đổi khi đang mở) → nạp lại giá trị hiện tại vào form modal.
+  // Chỉnh state ngay lúc render (mẫu "adjust state while rendering") thay vì effect.
+  const modalSyncKey = [showTrangThaiModal, data.id, data.trang_thai, data.ket_qua, data.link_ket_qua, data.mo_ta];
+  const [prevModalSyncKey, setPrevModalSyncKey] = useState(modalSyncKey);
+  if (modalSyncKey.some((v, i) => !Object.is(v, prevModalSyncKey[i]))) {
+    setPrevModalSyncKey(modalSyncKey);
     if (showTrangThaiModal) {
       setModalTrangThai(data.trang_thai);
       setModalKetQua(data.ket_qua ?? '');
       setModalLinkKetQua(data.link_ket_qua ?? '');
       setModalGhiChu(data.mo_ta ?? '');
     }
-  }, [showTrangThaiModal, data.id, data.trang_thai, data.ket_qua, data.link_ket_qua, data.mo_ta]);
+  }
 
   const { data: employees = [] } = useEmployeesRefQuery();
   const { data: traoDoiList = [] } = useBinhLuanByCongViecId(data.id);

@@ -174,6 +174,7 @@ function GenericTable<T>({
   const useVirtual = enableVirtualScroll && paginatedData.length > VIRTUAL_THRESHOLD;
   const virtualParentRef = useRef<HTMLDivElement>(null);
   const rowHeight = density === 'compact' ? 36 : density === 'comfortable' ? 48 : 42;
+  // eslint-disable-next-line react-hooks/incompatible-library -- thư viện chưa tương thích React Compiler; app không bật compiler
   const rowVirtualizer = useVirtualizer({
     count: paginatedData.length,
     getScrollElement: () => virtualParentRef.current,

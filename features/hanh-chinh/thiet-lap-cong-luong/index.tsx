@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { FileText, ListOrdered } from 'lucide-react';
@@ -12,14 +12,19 @@ const TAB_POINT_GROUPS = 'pointGroupsSetup';
 const PayrollSetupPage: React.FC = () => {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState(TAB_ADMIN_GROUPS);
-
   const tabFromUrl = searchParams.get('tab');
-  useEffect(() => {
-    if (tabFromUrl === TAB_ADMIN_GROUPS || tabFromUrl === TAB_POINT_GROUPS) {
-      setActiveTab(tabFromUrl);
-    }
-  }, [tabFromUrl]);
+  const isValidTab = (id: string | null): id is string =>
+    id === TAB_ADMIN_GROUPS || id === TAB_POINT_GROUPS;
+  const [activeTab, setActiveTab] = useState(() =>
+    isValidTab(tabFromUrl) ? tabFromUrl : TAB_ADMIN_GROUPS
+  );
+
+  // Đồng bộ tab khi ?tab= trên URL đổi — điều chỉnh state ngay lúc render thay vì effect.
+  const [prevTabFromUrl, setPrevTabFromUrl] = useState(tabFromUrl);
+  if (tabFromUrl !== prevTabFromUrl) {
+    setPrevTabFromUrl(tabFromUrl);
+    if (isValidTab(tabFromUrl)) setActiveTab(tabFromUrl);
+  }
 
   // Ghi tab vào URL — trước đây chỉ đọc, không ghi, nên bấm tab rồi F5 là nhảy về tab cũ.
   const handleTabChange = (id: string) => {

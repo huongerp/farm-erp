@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, lazy, Suspense } from 'react';
+import React, { useMemo, useState, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { User, Users, BarChart3 } from 'lucide-react';
 import TabGroup from '../../../components/ui/TabGroup';
@@ -21,9 +21,8 @@ const BangLuongPage: React.FC = () => {
     return viewAll ? all : [all[0]];
   }, [t, viewAll]);
 
-  useEffect(() => {
-    if (!viewAll && activeTab !== 'my') setActiveTab('my');
-  }, [viewAll, activeTab]);
+  // Mất quyền xem toàn bộ → ép về tab "Của tôi" (điều chỉnh ngay lúc render, không qua effect).
+  if (!viewAll && activeTab !== 'my') setActiveTab('my');
 
   return (
     <div className="flex flex-col h-[calc(100dvh-3.75rem)] md:h-[calc(100dvh-4.5rem)] relative">

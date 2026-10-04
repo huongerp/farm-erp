@@ -60,6 +60,7 @@ interface RouteConfig {
     '/thong-tin-cong-ty': { label: t('breadcrumb.companyInfo'), parentPath: '/he-thong' },
     '/chi-nhanh': { label: t('breadcrumb.branch'), parentPath: '/he-thong' },
     '/phan-quyen': { label: t('breadcrumb.permission'), parentPath: '/he-thong' },
+    '/ket-noi-google': { label: t('breadcrumb.googleConnection'), parentPath: '/he-thong' },
 
     // --- HÀNH CHÍNH (module con) ---
     ...hanhChinhModuleRoutes,
@@ -157,7 +158,7 @@ const Breadcrumbs: React.FC = () => {
     }
 
     return items;
-  }, [location.pathname, ROUTE_CONFIG]);
+  }, [location.pathname, ROUTE_CONFIG, t]);
 
   // Trang chủ - icon Home + Trang chủ theo pattern
   if (location.pathname === '/') {

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FileText, Calendar, Clock, User, Building2, ShieldCheck, XCircle, CheckCircle2, Ban, MessageSquare, X, Printer } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
@@ -71,18 +71,20 @@ const AdminFormDetail: React.FC<Props> = ({
     !['cancelled', 'rejected'].includes(data.trang_thai) &&
     (isAdmin || isHcns);
 
-  const openApproveModal = () => {
-    setGhiChuValue(data.ghi_chu ?? '');
+  // useCallback để toolbarActions (useMemo) giữ đúng deps và luôn đọc ghi chú mới nhất.
+  const ghiChuHienTai = data.ghi_chu;
+  const openApproveModal = useCallback(() => {
+    setGhiChuValue(ghiChuHienTai ?? '');
     setModalType('approve');
-  };
-  const openRejectModal = () => {
-    setGhiChuValue(data.ghi_chu ?? '');
+  }, [ghiChuHienTai]);
+  const openRejectModal = useCallback(() => {
+    setGhiChuValue(ghiChuHienTai ?? '');
     setModalType('reject');
-  };
-  const openGhiChuModal = () => {
-    setGhiChuValue(data.ghi_chu ?? '');
+  }, [ghiChuHienTai]);
+  const openGhiChuModal = useCallback(() => {
+    setGhiChuValue(ghiChuHienTai ?? '');
     setModalType('ghi_chu');
-  };
+  }, [ghiChuHienTai]);
 
   const handleConfirmApprove = async () => {
     await approveMutation.mutateAsync(data.id);
@@ -159,7 +161,7 @@ const AdminFormDetail: React.FC<Props> = ({
       });
     }
     return actions;
-  }, [canCancel, canManagerApprove, canHcnsApprove, canUpdate, data.id, onApproveHcns, onRejectHcns, onCancel, t]);
+  }, [canCancel, canManagerApprove, canHcnsApprove, canUpdate, data.id, onApproveHcns, onRejectHcns, onCancel, t, openApproveModal, openRejectModal, openGhiChuModal]);
 
   const renderFooter = (
     <DetailDrawerFooter

@@ -23,6 +23,8 @@ import { createListSearchMatcher } from '../../../lib/list-search-matcher';
 
 /** Ô tìm kiếm quét MỌI cột của bảng, bỏ dấu tiếng Việt — xem lib/list-search-matcher.ts. */
 const khopTimKiem = createListSearchMatcher({ columns: DEFAULT_COLUMNS });
+/** Mảng rỗng cố định khi chưa có dữ liệu — tránh tham chiếu mới mỗi render. */
+const KHONG_CO_DONG: JobLevel[] = [];
 
 const JobLevelPage: React.FC = () => {
   const { t } = useTranslation();
@@ -46,7 +48,7 @@ const JobLevelPage: React.FC = () => {
     columns,
   } = useJobLevelStore();
 
-  const { data: jobLevels = [], isLoading } = useJobLevels();
+  const { data: jobLevels = KHONG_CO_DONG, isLoading } = useJobLevels();
   const deleteMutation = useDeleteJobLevel();
   const statusMutation = useUpdateStatusJobLevel();
 
@@ -54,12 +56,14 @@ const JobLevelPage: React.FC = () => {
     return () => resetState();
   }, [resetState]);
 
-  // Đồng bộ viewing với list sau refetch (action từ detail hoặc từ nơi khác)
-  useEffect(() => {
-    if (!viewingLevel) return;
-    const fresh = jobLevels.find((l) => l.id === viewingLevel.id);
+  // Đồng bộ viewing với list sau refetch (action từ detail hoặc từ nơi khác). Điều chỉnh
+  // ngay lúc render khi list hoặc id đang xem đổi — cùng điều kiện với deps của effect cũ.
+  const [dongBoViewing, setDongBoViewing] = useState({ list: jobLevels, id: viewingLevel?.id });
+  if (dongBoViewing.list !== jobLevels || dongBoViewing.id !== viewingLevel?.id) {
+    setDongBoViewing({ list: jobLevels, id: viewingLevel?.id });
+    const fresh = viewingLevel ? jobLevels.find((l) => l.id === viewingLevel.id) : undefined;
     if (fresh && fresh !== viewingLevel) setViewingLevel(fresh);
-  }, [jobLevels, viewingLevel?.id]);
+  }
 
   const filterFn = useCallback(
     (item: JobLevel, term: string, f: typeof filters) => {

@@ -14,6 +14,9 @@ import StatsToolbar from '../../../../components/shared/StatsToolbar';
 import StatsCards from './stats/StatsCards';
 const StatsCharts = lazy(() => import('./stats/StatsCharts'));
 import StatsTables from './stats/StatsTables';
+/** Hằng rỗng dùng chung — tránh tạo `{}` mới mỗi render làm deps của useMemo luôn đổi. */
+const EMPTY_COUNTS: Record<string, number> = {};
+
 const ThongKeTab: React.FC = () => {
   const { t } = useTranslation();
   const { data: employees = [] } = useEmployeesRefQuery();
@@ -68,10 +71,10 @@ const ThongKeTab: React.FC = () => {
     staleTime: 60_000,
   });
 
-  const statusCounts = stats?.chipByStatusKey ?? {};
-  const noiDeXuatCounts = stats?.chipByNoiDeXuatId ?? {};
-  const nguoiDeXuatCounts = stats?.chipByNguoiDeXuatId ?? {};
-  const nguoiDuyetCounts = stats?.chipByNguoiDuyetId ?? {};
+  const statusCounts = stats?.chipByStatusKey ?? EMPTY_COUNTS;
+  const noiDeXuatCounts = stats?.chipByNoiDeXuatId ?? EMPTY_COUNTS;
+  const nguoiDeXuatCounts = stats?.chipByNguoiDeXuatId ?? EMPTY_COUNTS;
+  const nguoiDuyetCounts = stats?.chipByNguoiDuyetId ?? EMPTY_COUNTS;
 
   const statusOptions = useMemo(
     () => [

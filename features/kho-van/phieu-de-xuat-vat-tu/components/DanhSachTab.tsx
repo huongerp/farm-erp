@@ -72,7 +72,8 @@ const DanhSachTab: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<PhieuDeXuatVatTu | null>(null);
   const [isCopyMode, setIsCopyMode] = useState(false);
-  const [viewingItem, setViewingItem] = useState<PhieuDeXuatVatTu | null>(null);
+  // Bản chụp lúc mở chi tiết; bản hiển thị (viewingItem) lấy dòng mới nhất từ trang đang xem khi refetch.
+  const [viewingSnapshot, setViewingItem] = useState<PhieuDeXuatVatTu | null>(null);
   const [openedFormFromDetailId, setOpenedFormFromDetailId] = useState<string | null>(null);
   const [showAddHangHoa, setShowAddHangHoa] = useState(false);
   const addHangHoaResolveRef = useRef<(h: HangHoa | null) => void>(null);
@@ -82,7 +83,8 @@ const DanhSachTab: React.FC = () => {
   const [exportLoading, setExportLoading] = useState(false);
   const [createDonDatHangFrom, setCreateDonDatHangFrom] = useState<PhieuDeXuatVatTu | null>(null);
 
-  const { data: khoList = [] } = useKhoList();
+  const { data: khoListData } = useKhoList();
+  const khoList = useMemo(() => khoListData ?? [], [khoListData]);
   const { data: employees = [] } = useEmployeesRefQuery();
   const { data: config } = useCauHinhDeXuatVatTu();
   const viewScope = usePhieuDeXuatVatTuViewScope();
@@ -112,7 +114,11 @@ const DanhSachTab: React.FC = () => {
   const listQueryKey = useMemo(() => stableListQueryKeyPart(listServerQuery), [listServerQuery]);
   const pageIndex = Math.max(0, pagination.page - 1);
   const pageQuery = usePhieuDeXuatVatTuListPaged(pageIndex, listServerQuery);
-  const tableRows = pageQuery.data?.data ?? [];
+  const tableRows = useMemo(() => pageQuery.data?.data ?? [], [pageQuery.data]);
+  const viewingItem = useMemo(
+    () => (viewingSnapshot ? (tableRows.find((p) => p.id === viewingSnapshot.id) ?? viewingSnapshot) : null),
+    [tableRows, viewingSnapshot]
+  );
   const totalCount = pageQuery.data?.totalCount ?? 0;
   const isInitialLoading = !pageQuery.data && pageQuery.isPending;
   const isFetchingOverlay = !!pageQuery.data && pageQuery.isFetching;
@@ -142,12 +148,6 @@ const DanhSachTab: React.FC = () => {
     if (pagination.page > maxPage) setPage(maxPage);
   }, [pagination.page, pagination.pageSize, maxPage, setPage]);
 
-  useEffect(() => {
-    if (!viewingItem) return;
-    const fresh = tableRows.find((p) => p.id === viewingItem.id);
-    if (fresh && fresh !== viewingItem) setViewingItem(fresh);
-  }, [tableRows, viewingItem]);
-
   const exportColumnsList = useMemo(() => getExportColumnsPhieuDeXuatVatTuList(t), [t]);
   const exportMapList = useCallback((item: PhieuDeXuatVatTu) => mapPhieuDeXuatVatTuListRow(item), []);
   const { exportData, paginatedData: paginatedExportData, selectedData: selectedExportData } = useExportData({
@@ -159,14 +159,22 @@ const DanhSachTab: React.FC = () => {
     keyExtractor: (p) => p.id,
   });
 
-  useEffect(() => {
+  // Đóng hộp thoại → xoá dữ liệu xuất; mở (hoặc bộ lọc đổi khi đang mở) → bật loading.
+  // Chỉnh state ngay khi render (so theo listQueryKey dạng chuỗi); effect bên dưới chỉ lo tải dữ liệu.
+  const [prevExportSync, setPrevExportSync] = useState({ show: showExport, key: listQueryKey });
+  if (prevExportSync.show !== showExport || prevExportSync.key !== listQueryKey) {
+    setPrevExportSync({ show: showExport, key: listQueryKey });
     if (!showExport) {
       setExportRows([]);
       setExportLoading(false);
-      return;
+    } else {
+      setExportLoading(true);
     }
+  }
+
+  useEffect(() => {
+    if (!showExport) return;
     let cancelled = false;
-    setExportLoading(true);
     fetchAllPhieuDeXuatVatTuForListQuery(listServerQuery)
       .then((rows) => {
         if (!cancelled) setExportRows(rows);
@@ -448,7 +456,7 @@ const DanhSachTab: React.FC = () => {
                 (k) => String(k.id) === String((viewingPhieuFull ?? viewingItem).id_noi_de_xuat)
               )?.id_chi_nhanh ?? null
             }
-            showOverdueBadge={!!(config?.bat_canh_bao_qua_han && viewingItem?.trang_thai === TRANG_THAI_CHO_DUYET && (Math.floor((Date.now() - new Date((viewingPhieuFull ?? viewingItem).tg_tao).getTime()) / 86400000) > (config.thoi_han_duyet_ngay ?? 0)))}
+            showOverdueBadge={viewingItem.trang_thai === TRANG_THAI_CHO_DUYET && isOverdue(viewingPhieuFull ?? viewingItem)}
           />
         )}
       </AnimatePresence>

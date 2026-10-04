@@ -23,6 +23,8 @@ import { createListSearchMatcher } from '../../../lib/list-search-matcher';
 
 /** Ô tìm kiếm quét MỌI cột của bảng, bỏ dấu tiếng Việt — xem lib/list-search-matcher.ts. */
 const khopTimKiem = createListSearchMatcher({ columns: DEFAULT_COLUMNS });
+/** Mảng rỗng cố định khi chưa có dữ liệu — tránh tham chiếu mới mỗi render. */
+const KHONG_CO_DONG: Position[] = [];
 
 const PositionPage: React.FC = () => {
   const { t } = useTranslation();
@@ -46,7 +48,7 @@ const PositionPage: React.FC = () => {
     columns,
   } = usePositionStore();
 
-  const { data: positions = [], isLoading } = usePositions();
+  const { data: positions = KHONG_CO_DONG, isLoading } = usePositions();
   const deleteMutation = useDeletePosition();
   const statusMutation = useUpdateStatusPosition();
 
@@ -54,12 +56,14 @@ const PositionPage: React.FC = () => {
     return () => resetState();
   }, [resetState]);
 
-  // Đồng bộ viewing với list sau refetch (action từ detail hoặc từ nơi khác)
-  useEffect(() => {
-    if (!viewingPos) return;
-    const fresh = positions.find((p) => p.id === viewingPos.id);
+  // Đồng bộ viewing với list sau refetch (action từ detail hoặc từ nơi khác). Điều chỉnh
+  // ngay lúc render khi list hoặc id đang xem đổi — cùng điều kiện với deps của effect cũ.
+  const [dongBoViewing, setDongBoViewing] = useState({ list: positions, id: viewingPos?.id });
+  if (dongBoViewing.list !== positions || dongBoViewing.id !== viewingPos?.id) {
+    setDongBoViewing({ list: positions, id: viewingPos?.id });
+    const fresh = viewingPos ? positions.find((p) => p.id === viewingPos.id) : undefined;
     if (fresh && fresh !== viewingPos) setViewingPos(fresh);
-  }, [positions, viewingPos?.id]);
+  }
 
   const filterFn = useCallback(
     (item: Position, term: string, f: typeof filters) => {

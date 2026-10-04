@@ -34,7 +34,8 @@ const DanhMucHangHoaPage: React.FC = () => {
 
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<DanhMucHangHoa | null>(null);
-  const [viewingItem, setViewingItem] = useState<DanhMucHangHoa | null>(null);
+  // Bản chụp lúc mở chi tiết; bản hiển thị (viewingItem) lấy dòng mới nhất từ list khi list refetch.
+  const [viewingSnapshot, setViewingItem] = useState<DanhMucHangHoa | null>(null);
   const [defaultParentId, setDefaultParentId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
@@ -51,11 +52,10 @@ const DanhMucHangHoaPage: React.FC = () => {
     return () => resetState();
   }, [resetState]);
 
-  useEffect(() => {
-    if (!viewingItem) return;
-    const fresh = list.find((d) => d.id === viewingItem.id);
-    if (fresh && fresh !== viewingItem) setViewingItem(fresh);
-  }, [list, viewingItem?.id]);
+  const viewingItem = useMemo(
+    () => (viewingSnapshot ? (list.find((d) => d.id === viewingSnapshot.id) ?? viewingSnapshot) : null),
+    [list, viewingSnapshot]
+  );
 
   const filterFn = useCallback(
     (item: DanhMucHangHoa, term: string, f: typeof filters) => {
@@ -69,14 +69,15 @@ const DanhMucHangHoaPage: React.FC = () => {
 
   const filteredList = useListWithFilter(list, searchTerm, filters, filterFn);
 
-  useEffect(() => {
+  // Số dòng sau lọc đổi → về trang 1 (chỉnh state ngay khi render thay vì effect).
+  const [prevFilteredLen, setPrevFilteredLen] = useState(filteredList.length);
+  if (prevFilteredLen !== filteredList.length) {
+    setPrevFilteredLen(filteredList.length);
     setPage(1);
-  }, [filteredList.length]);
+  }
 
   const maxPage = Math.max(1, Math.ceil(filteredList.length / pageSize));
-  useEffect(() => {
-    setPage((p) => Math.min(p, maxPage));
-  }, [pageSize, maxPage]);
+  if (page > maxPage) setPage((p) => Math.min(p, maxPage));
 
   const handleEdit = (item: DanhMucHangHoa) => {
     setEditingItem(item);

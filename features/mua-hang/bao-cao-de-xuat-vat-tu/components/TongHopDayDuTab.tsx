@@ -165,7 +165,7 @@ const TongHopDayDuTab: React.FC<TongHopDayDuTabProps> = ({ filters, onClearFilte
   const doiDuyet = tongHopData?.doiDuyet ?? 0;
   const daDuyet = tongHopData?.daDuyet ?? 0;
   const khongDuyet = tongHopData?.khongDuyet ?? 0;
-  const byTrangThai = tongHopData?.byTrangThai ?? [];
+  const byTrangThai = useMemo(() => tongHopData?.byTrangThai ?? [], [tongHopData]);
   const byNoiDeXuat = tongHopData?.byNoiDeXuat ?? [];
   const byMonth = tongHopData?.byMonth ?? [];
   const hasAnyData = total > 0 || phieuList.length > 0 || lienKetList.length > 0;

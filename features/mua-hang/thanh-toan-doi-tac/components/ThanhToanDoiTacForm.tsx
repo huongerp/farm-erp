@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useEffectEvent, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -114,6 +114,11 @@ const ThanhToanDoiTacForm: React.FC<Props> = ({
     defaultValues,
   });
 
+  // Đọc defaultValues mới nhất mà không làm effect dưới chạy lại mỗi render.
+  const resetVeMacDinh = useEffectEvent(() => {
+    reset({ ...defaultValues, ngay: getTodayISO().slice(0, 10) });
+  });
+
   useEffect(() => {
     // Không reset nếu người dùng đã bắt đầu sửa — cùng lý do đã sửa ở DonDatHangForm.
     if (isDirty) return;
@@ -131,7 +136,7 @@ const ThanhToanDoiTacForm: React.FC<Props> = ({
         id_nguoi_tao: initialData.id_nguoi_tao,
       });
     } else {
-      reset({ ...defaultValues, ngay: getTodayISO().slice(0, 10) });
+      resetVeMacDinh();
       if (config?.tu_sinh_so_phieu) {
         getNextSoPhieuThanhToanPreview().then((preview) => {
           if (preview) setValue('so_phieu', preview);

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useForm, Controller, SubmitHandler, useFieldArray, type FieldErrors, type Resolver } from 'react-hook-form';
+import { useForm, useWatch, Controller, SubmitHandler, useFieldArray, type FieldErrors, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { FileText, Calendar, Warehouse, User, UserCheck, Package, Trash2 } from 'lucide-react';
@@ -56,6 +56,19 @@ function getUserBranchId(user: { id_chi_nhanh?: string | string[] | null } | nul
   if (!user?.id_chi_nhanh) return null;
   return Array.isArray(user.id_chi_nhanh) ? user.id_chi_nhanh[0] ?? null : (user.id_chi_nhanh as string) ?? null;
 }
+
+/** Giá trị mặc định của form — hằng ở cấp module để effect reset không phải khai deps. */
+const DEFAULT_VALUES: Partial<PhieuDeXuatVatTuFormValues> = {
+  so_phieu: '',
+  ngay: '',
+  ngay_can: '',
+  id_noi_de_xuat: '',
+  id_nguoi_de_xuat: '',
+  id_nguoi_duyet: null,
+  ghi_chu: '',
+  trang_thai: 'Chờ duyệt',
+  chi_tiet: [],
+};
 
 const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData, onClose, canEdit = true, onRequestAddHangHoa }) => {
   const { t } = useTranslation();
@@ -141,25 +154,13 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
     [tienDoMuaHangList]
   );
 
-  const defaultValues: Partial<PhieuDeXuatVatTuFormValues> = {
-    so_phieu: '',
-    ngay: '',
-    ngay_can: '',
-    id_noi_de_xuat: '',
-    id_nguoi_de_xuat: '',
-    id_nguoi_duyet: null,
-    ghi_chu: '',
-    trang_thai: 'Chờ duyệt',
-    chi_tiet: [],
-  };
-
-  const { register, handleSubmit, formState: { errors, isDirty, isSubmitted }, reset, control, watch, setValue } = useForm<PhieuDeXuatVatTuFormValues>({
+  const { register, handleSubmit, formState: { errors, isDirty, isSubmitted }, reset, control, setValue } = useForm<PhieuDeXuatVatTuFormValues>({
     resolver: zodResolver(phieuDeXuatVatTuSchema) as Resolver<PhieuDeXuatVatTuFormValues>,
-    defaultValues,
+    defaultValues: DEFAULT_VALUES,
   });
 
   const { fields, append, remove } = useFieldArray({ control, name: 'chi_tiet' });
-  const chiTietValues = watch('chi_tiet') ?? [];
+  const chiTietValues = useWatch({ control, name: 'chi_tiet' }) ?? [];
 
   const defaultKhoByBranch = useMemo(() => {
     const branchId = getUserBranchId(user);
@@ -215,7 +216,7 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
     } else if (config) {
       const today = new Date().toISOString().slice(0, 10);
       reset({
-        ...defaultValues,
+        ...DEFAULT_VALUES,
         so_phieu: '',
         ngay: today,
         ngay_can: addDays(today, config.so_ngay_mac_dinh_ngay_can ?? 0),
@@ -225,11 +226,11 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
       if (user?.id) setValue('id_nguoi_de_xuat', user.id);
       if (defaultKhoByBranch?.id) setValue('id_noi_de_xuat', defaultKhoByBranch.id);
     } else {
-      reset(defaultValues);
+      reset(DEFAULT_VALUES);
       if (user?.id) setValue('id_nguoi_de_xuat', user.id);
       if (defaultKhoByBranch?.id) setValue('id_noi_de_xuat', defaultKhoByBranch.id);
     }
-  }, [initialData, config, reset, user?.id, defaultKhoByBranch?.id, setValue, defaultTienDoMuaHang]);
+  }, [initialData, isCopy, config, reset, user?.id, defaultKhoByBranch?.id, setValue, defaultTienDoMuaHang]);
 
   // Không gọi RPC khi mở form — chỉ gọi khi submit để tránh tốn số sequence mỗi lần bấm Thêm phiếu.
 

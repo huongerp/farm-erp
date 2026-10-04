@@ -51,7 +51,7 @@ const KiemKeTaiSanToolbar: React.FC<Props> = ({
         value: o.value as string,
         count: trangThaiCounts[o.value] ?? 0,
       })),
-    [t, trangThaiCounts]
+    [trangThaiCounts]
   );
   const nguoiPhuTrachOptions = useMemo(
     () =>

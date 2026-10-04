@@ -62,7 +62,7 @@ const PayrollPointGroupTab: React.FC = () => {
       const matchesType = f.type.length === 0 || f.type.includes(item.loai);
       return matchesSearch && matchesStatus && matchesType;
     },
-    [t]
+    []
   );
 
   const filteredList = useListWithFilter(groups, searchTerm, filters, filterFn);

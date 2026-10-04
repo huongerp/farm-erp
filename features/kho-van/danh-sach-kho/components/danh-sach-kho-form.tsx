@@ -39,15 +39,18 @@ const DanhSachKhoForm: React.FC<Props> = ({ initialData, defaultThuTu, onClose, 
     [branches]
   );
 
-  const defaultValues: Partial<KhoFormValues> = {
-    ma_kho: '',
-    ten_kho: '',
-    dia_chi: '',
-    mo_ta: '',
-    id_chi_nhanh: '',
-    trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG,
-    thu_tu: defaultThuTu ?? 1,
-  };
+  const defaultValues = useMemo<Partial<KhoFormValues>>(
+    () => ({
+      ma_kho: '',
+      ten_kho: '',
+      dia_chi: '',
+      mo_ta: '',
+      id_chi_nhanh: '',
+      trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG,
+      thu_tu: defaultThuTu ?? 1,
+    }),
+    [defaultThuTu]
+  );
 
   const { register, handleSubmit, formState: { errors, isDirty }, reset, control } = useForm<KhoFormValues>({
     resolver: zodResolver(khoSchema) as Resolver<KhoFormValues>,
@@ -68,7 +71,7 @@ const DanhSachKhoForm: React.FC<Props> = ({ initialData, defaultThuTu, onClose, 
     } else {
       reset({ ...defaultValues, thu_tu: defaultThuTu ?? 1 });
     }
-  }, [initialData, defaultThuTu, reset]);
+  }, [initialData, defaultThuTu, defaultValues, reset]);
 
   const onSubmit: SubmitHandler<KhoFormValues> = (data) => {
     const sanitized = {

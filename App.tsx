@@ -122,6 +122,7 @@ const EmployeePage = lazy(() => import('./features/he-thong/nhan-vien/index'));
 const CompanyInfoPage = lazy(() => import('./features/he-thong/thong-tin-cong-ty/index'));
 const BranchPage = lazy(() => import('./features/he-thong/chi-nhanh/index'));
 const SecurityPage = lazy(() => import('./features/he-thong/phan-quyen/index'));
+const KetNoiGooglePage = lazyWithFeatureI18n('ket-noi-google', () => import('./features/he-thong/ket-noi-google/index'));
 
 const PageFallback = () => (
   <div className="flex flex-col items-center justify-center min-h-[40vh]" aria-busy="true" aria-label="Đang mở trang">
@@ -386,6 +387,7 @@ const App = () => {
                   <Route path="/thong-tin-cong-ty" element={<ModulePermissionGuard moduleId="he-thong/thong-tin-cong-ty"><CompanyInfoPage /></ModulePermissionGuard>} />
                   <Route path="/chi-nhanh" element={<ModulePermissionGuard moduleId="he-thong/chi-nhanh"><BranchPage /></ModulePermissionGuard>} />
                   <Route path="/phan-quyen" element={<ModulePermissionGuard moduleId="he-thong/phan-quyen"><SecurityPage /></ModulePermissionGuard>} />
+                  <Route path="/ket-noi-google" element={<ModulePermissionGuard moduleId="he-thong/ket-noi-google"><KetNoiGooglePage /></ModulePermissionGuard>} />
 
                   <Route path="/ho-so" element={<Profile />} />
                   <Route path="/cai-dat" element={<Settings />} />

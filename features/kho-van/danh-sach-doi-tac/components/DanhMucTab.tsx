@@ -102,25 +102,30 @@ const DanhMucTab: React.FC = () => {
     }
   };
 
-  const handleEdit = (item: NhomDoiTac) => {
+  // Ổn định tham chiếu để renderCell / renderMobileCard (useCallback) khai đủ deps mà không tạo lại mỗi render.
+  const handleEdit = useCallback((item: NhomDoiTac) => {
     setEditingItem(item);
     setViewingItem(null);
     setShowForm(true);
-  };
+  }, []);
 
-  const handleView = (item: NhomDoiTac) => {
+  const handleView = useCallback((item: NhomDoiTac) => {
     setViewingItem(item);
-  };
+  }, []);
 
-  const handleDelete = (id: string) => {
-    confirm({
-      title: t('doiTac.danhMuc.deleteNhom'),
-      message: t('doiTac.danhMuc.deleteNhomConfirm'),
-      variant: 'danger',
-      confirmText: CONFIRM_DELETE(),
-      onConfirm: () => deleteNhom.mutate(id),
-    });
-  };
+  const deleteNhomMutate = deleteNhom.mutate;
+  const handleDelete = useCallback(
+    (id: string) => {
+      confirm({
+        title: t('doiTac.danhMuc.deleteNhom'),
+        message: t('doiTac.danhMuc.deleteNhomConfirm'),
+        variant: 'danger',
+        confirmText: CONFIRM_DELETE(),
+        onConfirm: () => deleteNhomMutate(id),
+      });
+    },
+    [confirm, t, deleteNhomMutate]
+  );
 
   const handleDeleteMany = () => {
     const ids = Array.from(selectedIds);
@@ -207,7 +212,7 @@ const DanhMucTab: React.FC = () => {
           return null;
       }
     },
-    [t]
+    [t, handleEdit, handleDelete]
   );
 
   const renderMobileCard = useCallback(
@@ -260,7 +265,7 @@ const DanhMucTab: React.FC = () => {
         </div>
       </div>
     ),
-    [t, handleView]
+    [t, handleView, handleEdit, handleDelete]
   );
 
   const filterGroups = useMemo(

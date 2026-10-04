@@ -86,12 +86,10 @@ const BaoCaoSoCheBcncKpiReadout: React.FC<Props> = ({
   tongLuong = 0,
   bcncList,
   control,
-  donViTinh,
   sttOffset = 0,
   variant = 'full',
 }) => {
   const { t } = useTranslation();
-  const slipU = donViTinh?.trim() || t('baoCaoSoChe.readout.slipUnitFallback');
 
   const bcncSttBase = variant === 'bcnc' ? (sttOffset ?? 0) : 0;
   const kpiSttBase =
@@ -229,7 +227,7 @@ const BaoCaoSoCheBcncKpiReadout: React.FC<Props> = ({
         },
       ];
     },
-    [control, kpis, slipU, kpiSttBase, t, variant]
+    [control, kpis, kpiSttBase, t, variant]
   );
 
   const bcncBlock = (

@@ -18,10 +18,8 @@ export default [
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
-      globals: {
-        console: 'readonly',
-        process: 'readonly',
-      },
+      // Script chạy bằng Node: URL, Buffer, fetch… đều là global sẵn có.
+      globals: globals.node,
     },
   },
   eslint.configs.recommended,

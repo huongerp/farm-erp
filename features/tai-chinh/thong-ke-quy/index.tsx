@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { BarChart3, Search } from 'lucide-react';
@@ -9,17 +9,21 @@ import TraCuuTab from './components/TraCuuTab';
 
 const VALID_TABS = ['overview', 'lookup'] as const;
 type TabId = (typeof VALID_TABS)[number];
+const isValidTab = (id: string | null): id is TabId => VALID_TABS.includes(id as TabId);
 
 /** Thống kê & tra cứu quỹ (Tài chính). */
 const ThongKeQuyPage: React.FC = () => {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState<TabId>('overview');
-
   const tabFromUrl = searchParams.get('tab');
-  useEffect(() => {
-    if (VALID_TABS.includes(tabFromUrl as TabId)) setActiveTab(tabFromUrl as TabId);
-  }, [tabFromUrl]);
+  const [activeTab, setActiveTab] = useState<TabId>(() => (isValidTab(tabFromUrl) ? tabFromUrl : 'overview'));
+
+  // Đồng bộ tab khi ?tab= trên URL đổi — điều chỉnh state ngay lúc render thay vì effect.
+  const [prevTabFromUrl, setPrevTabFromUrl] = useState(tabFromUrl);
+  if (tabFromUrl !== prevTabFromUrl) {
+    setPrevTabFromUrl(tabFromUrl);
+    if (isValidTab(tabFromUrl)) setActiveTab(tabFromUrl);
+  }
 
   const handleTabChange = (id: string) => {
     if (!VALID_TABS.includes(id as TabId)) return;

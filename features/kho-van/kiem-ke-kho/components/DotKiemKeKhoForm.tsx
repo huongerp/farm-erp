@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useEffectEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -63,18 +63,27 @@ const DotKiemKeKhoForm: React.FC<Props> = ({ onClose, initialData, onSuccessAfte
     defaultValues: defaultValuesFromData,
   });
 
-  useEffect(() => {
+  // Chỉ reset khi đổi sang đợt khác (theo id), đọc dữ liệu mới nhất qua effect event.
+  const resetTheoDot = useEffectEvent(() => {
     if (initialData) {
       reset(defaultValuesFromData);
     }
-  }, [initialData?.id]);
-
+  });
+  const initialId = initialData?.id;
   useEffect(() => {
+    resetTheoDot();
+  }, [initialId]);
+
+  // Tạo mới → lấy mã đợt kế tiếp một lần (chỉ chạy lại khi isEdit đổi).
+  const layMaDotMoi = useEffectEvent(() => {
     if (!isEdit && !nextMaDot.isSuccess) {
       nextMaDot.mutate(undefined, {
         onSuccess: (seq) => setValue('ma_dot', formatMaDotDotKiemKeKho(seq)),
       });
     }
+  });
+  useEffect(() => {
+    layMaDotMoi();
   }, [isEdit]);
 
   const onSubmit: SubmitHandler<DotKiemKeKhoFormValues> = (data) => {

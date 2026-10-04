@@ -120,7 +120,7 @@ const AdminFormQuotaTab: React.FC = () => {
       const matchesType = filters.type.length === 0 || filters.type.includes(row.loai_phieu);
       return matchesSearch && matchesType;
     });
-  }, [rows, searchTerm, filters.type, t]);
+  }, [rows, searchTerm, filters.type]);
 
   return (
     <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">

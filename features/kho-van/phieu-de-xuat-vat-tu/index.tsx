@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { List, FileSpreadsheet, BarChart3 } from 'lucide-react';
@@ -16,9 +16,12 @@ const PhieuDeXuatVatTuPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabId>('list');
 
   const tabFromUrl = searchParams.get('tab');
-  useEffect(() => {
+  // Tham số ?tab= đổi (kể cả lần render đầu) → đồng bộ tab; chỉnh state ngay khi render thay vì effect.
+  const [prevTabFromUrl, setPrevTabFromUrl] = useState<string | null | undefined>(undefined);
+  if (prevTabFromUrl !== tabFromUrl) {
+    setPrevTabFromUrl(tabFromUrl);
     if (VALID_TABS.includes(tabFromUrl as TabId)) setActiveTab(tabFromUrl as TabId);
-  }, [tabFromUrl]);
+  }
 
   const handleTabChange = (id: string) => {
     if (VALID_TABS.includes(id as TabId)) {

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { BarChart3, List } from 'lucide-react';
@@ -12,12 +12,16 @@ type TabId = (typeof VALID_TABS)[number];
 const DangKyNhanHangPage: React.FC = () => {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState<TabId>('phieu');
-
   const tabFromUrl = searchParams.get('tab');
-  useEffect(() => {
+  const [activeTab, setActiveTab] = useState<TabId>(() =>
+    VALID_TABS.includes(tabFromUrl as TabId) ? (tabFromUrl as TabId) : 'phieu'
+  );
+  // Tab trên URL đổi (back/forward, link) → đồng bộ tab đang mở, điều chỉnh ngay lúc render.
+  const [prevTabFromUrl, setPrevTabFromUrl] = useState(tabFromUrl);
+  if (tabFromUrl !== prevTabFromUrl) {
+    setPrevTabFromUrl(tabFromUrl);
     if (VALID_TABS.includes(tabFromUrl as TabId)) setActiveTab(tabFromUrl as TabId);
-  }, [tabFromUrl]);
+  }
 
   const handleTabChange = (id: string) => {
     if (!VALID_TABS.includes(id as TabId)) return;

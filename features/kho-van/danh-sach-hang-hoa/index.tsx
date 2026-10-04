@@ -65,7 +65,8 @@ const DanhSachHangHoaPage: React.FC = () => {
   const { data: hangHoaRef = [] } = useHangHoaRefQuery();
   const [showExport, setShowExport] = useState(false);
   const [editingItem, setEditingItem] = useState<HangHoa | null>(null);
-  const [viewingItem, setViewingItem] = useState<HangHoa | null>(null);
+  // Bản chụp lúc mở chi tiết; bản hiển thị (viewingItem) lấy dòng mới nhất từ trang đang xem khi refetch.
+  const [viewingSnapshot, setViewingItem] = useState<HangHoa | null>(null);
   const [importErrors, setImportErrors] = useState<ImportHangHoaResult['errors']>([]);
 
   /**
@@ -91,7 +92,12 @@ const DanhSachHangHoaPage: React.FC = () => {
   const { data: tomTatList = [] } = useHangHoaTomTat();
 
   const pageQuery = useHangHoaPage(listServerQuery);
-  const pageList = pageQuery.data?.data ?? [];
+  const pageList = useMemo(() => pageQuery.data?.data ?? [], [pageQuery.data]);
+  // Bản ghi đang mở vừa được cập nhật ở trang hiện tại → drawer hiện bản mới.
+  const viewingItem = useMemo(
+    () => (viewingSnapshot ? (pageList.find((h) => h.id === viewingSnapshot.id) ?? viewingSnapshot) : null),
+    [pageList, viewingSnapshot]
+  );
   const totalCount = pageQuery.data?.totalCount ?? 0;
   const isLoading = !pageQuery.data && pageQuery.isPending;
   const isFetching = !!pageQuery.data && pageQuery.isFetching;
@@ -209,24 +215,25 @@ const DanhSachHangHoaPage: React.FC = () => {
     return () => resetState();
   }, [resetState]);
 
-  useEffect(() => {
-    if (!viewingItem) return;
-    // Bản ghi đang mở vừa được cập nhật ở trang hiện tại → đồng bộ lại drawer.
-    const fresh = pageList.find((h) => h.id === viewingItem.id);
-    if (fresh && fresh !== viewingItem) setViewingItem(fresh);
-  }, [pageList, viewingItem?.id]);
 
   /** Xuất file cần TẤT CẢ bản ghi khớp bộ lọc — chỉ tải khi mở hộp thoại Xuất. */
   const [exportRows, setExportRows] = useState<HangHoa[]>([]);
   const [exportLoading, setExportLoading] = useState(false);
-  useEffect(() => {
+  // Đóng hộp thoại → xoá dữ liệu xuất; mở (hoặc bộ lọc đổi khi đang mở) → bật loading.
+  // Chỉnh state ngay khi render; effect bên dưới chỉ lo tải dữ liệu.
+  const [prevExportSync, setPrevExportSync] = useState({ show: showExport, query: listServerQuery });
+  if (prevExportSync.show !== showExport || prevExportSync.query !== listServerQuery) {
+    setPrevExportSync({ show: showExport, query: listServerQuery });
     if (!showExport) {
       setExportRows([]);
       setExportLoading(false);
-      return;
+    } else {
+      setExportLoading(true);
     }
+  }
+  useEffect(() => {
+    if (!showExport) return;
     let cancelled = false;
-    setExportLoading(true);
     fetchAllHangHoaForListQuery(listServerQuery)
       .then((rows) => {
         if (!cancelled) setExportRows(rows);

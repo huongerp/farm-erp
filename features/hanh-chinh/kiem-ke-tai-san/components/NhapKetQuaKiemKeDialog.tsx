@@ -1,7 +1,7 @@
 /**
  * Dialog nhập kết quả kiểm cho một dòng chi tiết: nơi lưu thực tế, người giữ thực tế, trạng thái thực tế, ghi chú.
  */
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ClipboardCheck, X } from 'lucide-react';
@@ -51,15 +51,20 @@ const NhapKetQuaKiemKeDialog: React.FC<Props> = ({
     subLabel: e.ma_nhan_vien,
   }));
 
-  /** Pre-fill: ưu tiên thực tế đã nhập, chưa có thì lấy từ sổ để chỉnh nhanh */
-  useEffect(() => {
+  /**
+   * Pre-fill: ưu tiên thực tế đã nhập, chưa có thì lấy từ sổ để chỉnh nhanh.
+   * Chạy khi open/row đổi — chỉnh state ngay lúc render (mẫu "adjust state while rendering").
+   */
+  const [prevPrefill, setPrevPrefill] = useState<{ open: boolean; row: ChiTietKiemKe | null } | null>(null);
+  if (!prevPrefill || prevPrefill.open !== open || prevPrefill.row !== row) {
+    setPrevPrefill({ open, row });
     if (open && row) {
       setIdNoiLuuThucTe(row.id_noi_luu_thuc_te ?? row.id_noi_luu_so ?? '');
       setIdNguoiGiuThucTe(row.id_nguoi_giu_thuc_te ?? row.id_nguoi_giu_so ?? '');
       setIdTrangThaiThucTe(row.id_trang_thai_thuc_te ?? row.id_trang_thai_so ?? '');
       setGhiChuDong(row.ghi_chu_dong ?? '');
     }
-  }, [open, row]);
+  }
 
   const handleGiongSo = useCallback(() => {
     if (!row) return;

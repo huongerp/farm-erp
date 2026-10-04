@@ -19,6 +19,43 @@ interface TooltipProps {
   className?: string;
 }
 
+/** Tính toạ độ tooltip từ khung của phần tử bọc; tự lật nếu tràn viewport. */
+const tinhToaDo = (rect: DOMRect, placement: Placement): { left: number; top: number; placement: Placement } => {
+  let final = placement;
+  if (placement === 'top' && rect.top < 40) final = 'bottom';
+  if (placement === 'bottom' && rect.bottom > window.innerHeight - 40) final = 'top';
+  if (placement === 'left' && rect.left < 80) final = 'right';
+  if (placement === 'right' && rect.right > window.innerWidth - 80) final = 'left';
+
+  const gap = 6;
+  let left = 0;
+  let top = 0;
+  const w = rect.width;
+  const h = rect.height;
+  const cx = rect.left + w / 2;
+  const cy = rect.top + h / 2;
+
+  switch (final) {
+    case 'top':
+      top = rect.top - gap;
+      left = cx;
+      break;
+    case 'bottom':
+      top = rect.bottom + gap;
+      left = cx;
+      break;
+    case 'left':
+      left = rect.left - gap;
+      top = cy;
+      break;
+    case 'right':
+      left = rect.right + gap;
+      top = cy;
+      break;
+  }
+  return { left, top, placement: final };
+};
+
 /**
  * Tooltip component thống nhất.
  * Render qua Portal vào document.body với z-index cao (9999) để không bị che bởi tab group, overflow-hidden, v.v.
@@ -40,40 +77,7 @@ const Tooltip: React.FC<TooltipProps> = ({
 
   const updatePosition = useCallback(() => {
     if (!wrapperRef.current) return;
-    const rect = wrapperRef.current.getBoundingClientRect();
-    let final = placement;
-    if (placement === 'top' && rect.top < 40) final = 'bottom';
-    if (placement === 'bottom' && rect.bottom > window.innerHeight - 40) final = 'top';
-    if (placement === 'left' && rect.left < 80) final = 'right';
-    if (placement === 'right' && rect.right > window.innerWidth - 80) final = 'left';
-
-    const gap = 6;
-    let left = 0;
-    let top = 0;
-    const w = rect.width;
-    const h = rect.height;
-    const cx = rect.left + w / 2;
-    const cy = rect.top + h / 2;
-
-    switch (final) {
-      case 'top':
-        top = rect.top - gap;
-        left = cx;
-        break;
-      case 'bottom':
-        top = rect.bottom + gap;
-        left = cx;
-        break;
-      case 'left':
-        left = rect.left - gap;
-        top = cy;
-        break;
-      case 'right':
-        left = rect.right + gap;
-        top = cy;
-        break;
-    }
-    setCoords({ left, top, placement: final });
+    setCoords(tinhToaDo(wrapperRef.current.getBoundingClientRect(), placement));
   }, [placement]);
 
   const show = useCallback(() => {
@@ -93,9 +97,11 @@ const Tooltip: React.FC<TooltipProps> = ({
     setCoords(null);
   }, []);
 
+  // Đo lại vị trí khi hiện hoặc khi placement đổi lúc đang hiện (đọc DOM qua ref).
   useEffect(() => {
-    if (visible && wrapperRef.current) updatePosition();
-  }, [visible, updatePosition]);
+    const el = wrapperRef.current;
+    if (visible && el) setCoords(tinhToaDo(el.getBoundingClientRect(), placement));
+  }, [visible, placement]);
 
   useEffect(() => {
     return () => {

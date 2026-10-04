@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, Package, X } from 'lucide-react';
@@ -43,13 +43,20 @@ const ChuyenTienDoModal: React.FC<Props> = ({ open, selectedCount, defaultNgayCa
     [tienDoMuaHangList]
   );
 
-  useEffect(() => {
+  // Mở modal (hoặc tiến độ mặc định / ngày cần đổi khi đang mở) → nạp lại giá trị mặc định.
+  // Chỉnh state ngay khi render thay vì effect; so theo giá trị để không lặp render khi list đang tải.
+  const tienDoMacDinh = options[0]?.value ?? null;
+  const [prevSync, setPrevSync] = useState<{ open: boolean; tienDo: string | null; ngayCan: string | null | undefined } | null>(
+    null
+  );
+  if (!prevSync || prevSync.open !== open || prevSync.tienDo !== tienDoMacDinh || prevSync.ngayCan !== defaultNgayCan) {
+    setPrevSync({ open, tienDo: tienDoMacDinh, ngayCan: defaultNgayCan });
     if (open) {
-      setIdTienDo(options[0]?.value ?? null);
+      setIdTienDo(tienDoMacDinh);
       setGhiChu('');
       setNgayCan(defaultNgayCan ?? '');
     }
-  }, [open, options, defaultNgayCan]);
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

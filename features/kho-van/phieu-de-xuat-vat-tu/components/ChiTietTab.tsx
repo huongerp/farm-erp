@@ -74,7 +74,8 @@ const ChiTietTab: React.FC = () => {
       return next;
     });
   }, [setSearchParams]);
-  const { data: khoList = [] } = useKhoList();
+  const { data: khoListData } = useKhoList();
+  const khoList = useMemo(() => khoListData ?? [], [khoListData]);
   const viewScope = usePhieuDeXuatVatTuViewScope();
 
   const [viewingRow, setViewingRow] = useState<PhieuDeXuatVatTuChiTietRow | null>(null);
@@ -133,7 +134,7 @@ const ChiTietTab: React.FC = () => {
   const listQueryKey = useMemo(() => stableListQueryKeyPart(listServerQuery), [listServerQuery]);
   const pageIndex = Math.max(0, pagination.page - 1);
   const pageQuery = usePhieuDeXuatVatTuChiTietPaged(pageIndex, listServerQuery);
-  const tableRows = pageQuery.data?.data ?? [];
+  const tableRows = useMemo(() => pageQuery.data?.data ?? [], [pageQuery.data]);
   const totalCount = pageQuery.data?.totalCount ?? 0;
   const isInitialLoading = !pageQuery.data && pageQuery.isPending;
   const isFetchingOverlay = !!pageQuery.data && pageQuery.isFetching;
@@ -144,14 +145,22 @@ const ChiTietTab: React.FC = () => {
     setPage(1);
   }, [listQueryKey, setPage]);
 
-  useEffect(() => {
+  // Đóng hộp thoại → xoá dữ liệu xuất; mở (hoặc bộ lọc đổi khi đang mở) → bật loading.
+  // Chỉnh state ngay khi render (so theo listQueryKey dạng chuỗi); effect bên dưới chỉ lo tải dữ liệu.
+  const [prevExportSync, setPrevExportSync] = useState({ show: showExport, key: listQueryKey });
+  if (prevExportSync.show !== showExport || prevExportSync.key !== listQueryKey) {
+    setPrevExportSync({ show: showExport, key: listQueryKey });
     if (!showExport) {
       setExportRows([]);
       setExportLoading(false);
-      return;
+    } else {
+      setExportLoading(true);
     }
+  }
+
+  useEffect(() => {
+    if (!showExport) return;
     let cancelled = false;
-    setExportLoading(true);
     fetchAllPhieuDeXuatVatTuChiTietForListQuery(listServerQuery)
       .then((rows) => {
         if (!cancelled) setExportRows(rows);
@@ -477,7 +486,7 @@ const ChiTietTab: React.FC = () => {
           return <span className="text-sm">{String(item[colId as keyof PhieuDeXuatVatTuChiTietRow] ?? '—')}</span>;
       }
     },
-    [renderStatusBadge, t, handleDelete]
+    [renderStatusBadge, renderTienDoBadge, t, handleDelete]
   );
 
   const handleRowClick = useCallback((item: PhieuDeXuatVatTuChiTietRow) => setViewingRow(item), []);

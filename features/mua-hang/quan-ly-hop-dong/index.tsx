@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { FileText, Wallet, BarChart3 } from 'lucide-react';
@@ -13,12 +13,17 @@ type TabId = (typeof VALID_TABS)[number];
 const QuanLyHopDongPage: React.FC = () => {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState<TabId>('hopDong');
-
   const tabFromUrl = searchParams.get('tab');
-  useEffect(() => {
+  // Tab lấy từ URL ngay lần render đầu; URL đổi (back/forward, link) thì điều chỉnh lúc render
+  // thay vì setState trong effect.
+  const [activeTab, setActiveTab] = useState<TabId>(() =>
+    VALID_TABS.includes(tabFromUrl as TabId) ? (tabFromUrl as TabId) : 'hopDong'
+  );
+  const [prevTabFromUrl, setPrevTabFromUrl] = useState(tabFromUrl);
+  if (prevTabFromUrl !== tabFromUrl) {
+    setPrevTabFromUrl(tabFromUrl);
     if (VALID_TABS.includes(tabFromUrl as TabId)) setActiveTab(tabFromUrl as TabId);
-  }, [tabFromUrl]);
+  }
 
   const handleTabChange = (id: string) => {
     if (VALID_TABS.includes(id as TabId)) {

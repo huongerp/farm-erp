@@ -120,7 +120,7 @@ async function xuLyKhoe(c: Ctx) {
   }
 }
 
-/** 30 lần đăng nhập sai / 15 phút / IP — xem gioi-han-ip.ts. */
+/** 30 lần đăng nhập sai (mật khẩu + Google) / 15 phút / IP — xem gioi-han-ip.ts. */
 const gioiHanIp = taoBoGioiHan(30, 15 * 60_000);
 
 async function xuLyDangNhap(c: Ctx) {
@@ -153,6 +153,10 @@ async function xuLyDangNhapGoogle(c: Ctx) {
   const idToken = chuoi(body?.id_token);
   if (!idToken) return c.json({ ly_do: 'thieu_thong_tin' }, 400);
 
+  // Dùng chung bộ đếm với đăng nhập mật khẩu: kẻ dò không lách được bằng cách đổi cổng.
+  const khoaIp = ip(c) ?? 'khong-ro-ip';
+  if (gioiHanIp.biChan(khoaIp)) return c.json({ ly_do: 'bi_chan' }, 429);
+
   // Bước không được phép bỏ: xác minh chữ ký RS256 bằng khoá công khai Google
   // và đối chiếu `aud` với client id của mình. Thiếu bước này thì ai cũng tự
   // tạo được token ghi email bất kỳ.
@@ -164,15 +168,20 @@ async function xuLyDangNhapGoogle(c: Ctx) {
     });
     const payload = ticket.getPayload();
     if (!payload?.email || payload.email_verified !== true) {
+      gioiHanIp.ghiLanSai(khoaIp);
       return c.json({ ly_do: 'google_khong_hop_le' }, 401);
     }
     email = payload.email;
   } catch {
+    gioiHanIp.ghiLanSai(khoaIp);
     return c.json({ ly_do: 'google_khong_hop_le' }, 401);
   }
 
   const kq = await dangNhapGoogle(email, userAgent(c), ip(c));
-  if (!kq.ok) return c.json({ ly_do: kq.ly_do }, MA_LOI[kq.ly_do] ?? 401);
+  if (!kq.ok) {
+    if (kq.ly_do === 'khong_co_ho_so') gioiHanIp.ghiLanSai(khoaIp);
+    return c.json({ ly_do: kq.ly_do }, MA_LOI[kq.ly_do] ?? 401);
+  }
   return c.json(await traVePhien(kq));
 }
 

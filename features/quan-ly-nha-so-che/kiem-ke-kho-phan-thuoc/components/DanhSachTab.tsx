@@ -191,30 +191,35 @@ const DanhSachTab: React.FC = () => {
    * khi người dùng thực sự mở hộp thoại Xuất.
    */
   const [showExport, setShowExport] = useState(false);
-  const [exportRows, setExportRows] = useState<DotKiemKePT[]>([]);
-  const [exportLoading, setExportLoading] = useState(false);
+  // Mỗi lần mở hộp thoại (hoặc đổi bộ lọc khi đang mở) tạo một "yêu cầu" mới; kết quả
+  // chỉ dùng khi khớp đúng yêu cầu hiện tại → đang tải / dữ liệu suy ra lúc render.
+  const exportRequest = useMemo(
+    () => (showExport ? { query: listQuery } : null),
+    [showExport, listQuery]
+  );
+  const [exportResult, setExportResult] = useState<{
+    request: { query: typeof listQuery };
+    rows: DotKiemKePT[];
+  } | null>(null);
+  const exportLoading = exportRequest !== null && exportResult?.request !== exportRequest;
+  const exportRows = useMemo(
+    () => (exportRequest !== null && exportResult?.request === exportRequest ? exportResult.rows : []),
+    [exportRequest, exportResult]
+  );
   useEffect(() => {
-    if (!showExport) {
-      setExportRows([]);
-      setExportLoading(false);
-      return;
-    }
+    if (!exportRequest) return;
     let cancelled = false;
-    setExportLoading(true);
-    fetchAllDotKiemKePTForListQuery(listQuery)
+    fetchAllDotKiemKePTForListQuery(exportRequest.query)
       .then((rows) => {
-        if (!cancelled) setExportRows(rows);
+        if (!cancelled) setExportResult({ request: exportRequest, rows });
       })
       .catch(() => {
-        if (!cancelled) setExportRows([]);
-      })
-      .finally(() => {
-        if (!cancelled) setExportLoading(false);
+        if (!cancelled) setExportResult({ request: exportRequest, rows: [] });
       });
     return () => {
       cancelled = true;
     };
-  }, [showExport, listQuery]);
+  }, [exportRequest]);
 
   const exportColumns = useMemo(() => exportColumnsDotKiemKePT(t), [t]);
   const exportMapFn = useMemo(() => exportMapDotKiemKePT(t), [t]);

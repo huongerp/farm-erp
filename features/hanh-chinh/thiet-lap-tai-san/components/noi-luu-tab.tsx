@@ -68,12 +68,21 @@ const NoiLuuTab: React.FC<NoiLuuTabProps> = ({ viewScope }) => {
   }, [resetState]);
 
   const openId = searchParams.get('openId');
-  useEffect(() => {
-    if (!openId || viewableList.length === 0) return;
+  const coOpenIdHopLe = !!openId && viewableList.length > 0;
+  // ?openId= → mở drawer chi tiết ngay lúc render (mẫu "adjust state while rendering");
+  // ghi nhớ id đã mở để không đặt lại trong lúc chờ effect dọn URL.
+  const [openIdDaMo, setOpenIdDaMo] = useState<string | null>(null);
+  if (!openId && openIdDaMo !== null) setOpenIdDaMo(null);
+  if (coOpenIdHopLe && openIdDaMo !== openId) {
+    setOpenIdDaMo(openId);
     const item = viewableList.find((l) => l.id === openId);
     if (item) setDetailItem(item);
+  }
+  // Dọn tham số khỏi URL là tác dụng phụ (router) nên vẫn ở effect.
+  useEffect(() => {
+    if (!coOpenIdHopLe) return;
     setSearchParams({}, { replace: true });
-  }, [openId, viewableList, setSearchParams]);
+  }, [coOpenIdHopLe, setSearchParams]);
 
   const filterFn = useCallback(
     (item: AssetStorageLocation, term: string, f: typeof filters) => {

@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback, useEffect } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ClipboardCheck, List, CheckCircle, Printer, Power, RefreshCw, FileText, X, Calendar, User, Warehouse, BarChart3 } from 'lucide-react';
@@ -91,9 +91,12 @@ const DotKiemKeKhoDetail: React.FC<Props> = ({
   const [searchQ, setSearchQ] = useState('');
   const [ketQuaFilter, setKetQuaFilter] = useState<KetQuaKiemKeKho | null>(null);
 
-  useEffect(() => {
+  // Mở hộp ghi chú (hoặc ghi chú đổi khi đang mở) → nạp lại giá trị; chỉnh state ngay khi render thay vì effect.
+  const [prevGhiChuSync, setPrevGhiChuSync] = useState({ open: ghiChuOpen, ghiChu: data.ghi_chu });
+  if (prevGhiChuSync.open !== ghiChuOpen || prevGhiChuSync.ghiChu !== data.ghi_chu) {
+    setPrevGhiChuSync({ open: ghiChuOpen, ghiChu: data.ghi_chu });
     if (ghiChuOpen) setGhiChuValue(data.ghi_chu ?? '');
-  }, [ghiChuOpen, data.ghi_chu]);
+  }
 
   const updateDotMutation = useUpdateDotKiemKeKho(() => setGhiChuOpen(false));
   const updateKetQuaMutation = useUpdateChiTietKetQua(data.id, () => setNhapKetQuaRow(null));

@@ -113,24 +113,31 @@ const DanhSachTab: React.FC = () => {
   const goiYLoaiHang = useMemo(() => goiYGiaTri(tomTatList.map((r) => r.loai_hang_hoa)), [tomTatList]);
 
   /** Xuất file cần TẤT CẢ bản ghi khớp bộ lọc — chỉ tải khi mở hộp thoại Xuất. */
-  const [exportRows, setExportRows] = useState<DangKyNhanHang[]>([]);
-  const [exportLoading, setExportLoading] = useState(false);
+  // Mỗi lần mở hộp thoại (hoặc đổi bộ lọc khi đang mở) tạo một "yêu cầu" mới; kết quả
+  // chỉ dùng khi khớp đúng yêu cầu hiện tại → đang tải / dữ liệu suy ra lúc render.
+  const exportRequest = useMemo(
+    () => (showExport ? { query: listServerQuery } : null),
+    [showExport, listServerQuery]
+  );
+  const [exportResult, setExportResult] = useState<{
+    request: { query: typeof listServerQuery };
+    rows: DangKyNhanHang[];
+  } | null>(null);
+  const exportLoading = exportRequest !== null && exportResult?.request !== exportRequest;
+  const exportRows = useMemo(
+    () => (exportRequest !== null && exportResult?.request === exportRequest ? exportResult.rows : []),
+    [exportRequest, exportResult]
+  );
   useEffect(() => {
-    if (!showExport) {
-      setExportRows([]);
-      setExportLoading(false);
-      return;
-    }
+    if (!exportRequest) return;
     let cancelled = false;
-    setExportLoading(true);
-    fetchAllDkNhForListQuery(listServerQuery)
-      .then((rows) => !cancelled && setExportRows(rows))
-      .catch(() => !cancelled && setExportRows([]))
-      .finally(() => !cancelled && setExportLoading(false));
+    fetchAllDkNhForListQuery(exportRequest.query)
+      .then((rows) => !cancelled && setExportResult({ request: exportRequest, rows }))
+      .catch(() => !cancelled && setExportResult({ request: exportRequest, rows: [] }));
     return () => {
       cancelled = true;
     };
-  }, [showExport, listServerQuery]);
+  }, [exportRequest]);
 
   const exportColumns = useMemo(() => getExportColumnsDangKyNhanHang(t), [t]);
   const exportMap = useCallback((item: DangKyNhanHang) => mapDangKyNhanHangRow(item), []);

@@ -149,7 +149,7 @@ const PhieuDeXuatVatTuDetail: React.FC<Props> = ({
         variant: 'primary' as const,
       },
     ],
-    [canApprove, data, onApprove, onCopy, onClose, onPrint, onCreateDonDatHang, t]
+    [canApprove, data, onCopy, onClose, onPrint, onCreateDonDatHang, t]
   );
 
   const statusLabel = t(`phieuDeXuatVatTu.status.${trangThaiToI18nKey(data.trang_thai)}`);

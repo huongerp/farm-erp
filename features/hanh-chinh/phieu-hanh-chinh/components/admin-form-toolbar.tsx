@@ -82,7 +82,7 @@ const AdminFormToolbar: React.FC<Props> = ({
   const { t } = useTranslation();
   const { statusCounts, typeCounts, nguoiTaoCounts, nguoiGuiOptions } = useAdminFormFilterCounts(tomTat, filters, ky);
   const selectedCount = selectedIds.size;
-  const nguoiTao = filters.nguoiTao ?? [];
+  const nguoiTao = useMemo(() => filters.nguoiTao ?? [], [filters.nguoiTao]);
   const activeFilterCount =
     filters.status.length + filters.type.length + (showPersonFilter ? nguoiTao.length : 0) + (filters.kyPreset !== 'all' ? 1 : 0);
 

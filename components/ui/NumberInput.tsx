@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { cn, formatNumberVN, parseFormattedNumber, getLocale } from '../../lib/utils';
 import { dinhDangKhiGo } from '../../lib/number-input-format';
 
@@ -62,11 +62,17 @@ const NumberInput: React.FC<NumberInputProps> = ({
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (!isFocused) {
-      setDisplayValue(formatDisplay(safeNum));
-    }
-  }, [safeNum, isFocused, formatDisplay]);
+  // Không focus thì hiển thị theo value từ ngoài. Điều chỉnh ngay lúc render (so với lần
+  // trước) thay vì setState trong effect — cùng điều kiện kích hoạt như deps cũ.
+  const [prevSync, setPrevSync] = useState({ safeNum, isFocused, formatDisplay });
+  if (
+    !Object.is(prevSync.safeNum, safeNum) ||
+    prevSync.isFocused !== isFocused ||
+    prevSync.formatDisplay !== formatDisplay
+  ) {
+    setPrevSync({ safeNum, isFocused, formatDisplay });
+    if (!isFocused) setDisplayValue(formatDisplay(safeNum));
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { text, caret } = dinhDangKhiGo(e.target.value, e.target.selectionStart ?? e.target.value.length, {

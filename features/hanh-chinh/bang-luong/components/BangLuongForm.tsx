@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Banknote, User, Calendar } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
@@ -86,7 +86,11 @@ const BangLuongForm: React.FC<Props> = ({ initialRecord, defaultEmployeeId, onCl
     [employees]
   );
 
-  useEffect(() => {
+  // Nạp dữ liệu khi bản ghi sửa đổi — điều chỉnh state ngay lúc render (mẫu "adjust state
+  // while rendering" của React) thay vì effect, tránh render thừa.
+  const [prevInitialRecord, setPrevInitialRecord] = useState<BangLuongRecord | null | undefined>(undefined);
+  if (initialRecord !== prevInitialRecord) {
+    setPrevInitialRecord(initialRecord);
     if (initialRecord) {
       setIdNhanVien(initialRecord.id_nhan_vien);
       setNam(initialRecord.nam);
@@ -111,7 +115,7 @@ const BangLuongForm: React.FC<Props> = ({ initialRecord, defaultEmployeeId, onCl
       setCongTruKhac(net);
       setGhiChu(initialRecord.ghi_chu ?? '');
     }
-  }, [initialRecord]);
+  }
 
   const cong_tru_net = cong_tru_khac;
   const tong_luong =

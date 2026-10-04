@@ -1,6 +1,6 @@
 
 import React, { useCallback, useEffect, useMemo } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, useWatch, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
 import {
@@ -65,12 +65,12 @@ const EmployeeForm: React.FC<Props> = ({ initialData, prefillData, onClose }) =>
   const { data: branches = [] } = useBranches();
 
   const defaultValues = getDefaultEmployeeFormValues(getTodayISO());
-  const { register, handleSubmit, formState: { errors, isDirty }, reset, control, watch, setValue } = useForm<EmployeeFormValues>({
+  const { register, handleSubmit, formState: { errors, isDirty }, reset, control, setValue } = useForm<EmployeeFormValues>({
     resolver: zodResolver(employeeSchema),
     defaultValues,
   });
-  const selectedPhongBanId = watch('id_phong_ban');
-  const selectedChucVuId = watch('id_chuc_vu');
+  const selectedPhongBanId = useWatch({ control, name: 'id_phong_ban' });
+  const selectedChucVuId = useWatch({ control, name: 'id_chuc_vu' });
   const selectedPosition = selectedChucVuId ? positions.find((p) => p.id === selectedChucVuId) : undefined;
   const capBacFromChucVu = !!selectedPosition?.cap_bac_id;
 
@@ -106,19 +106,20 @@ const EmployeeForm: React.FC<Props> = ({ initialData, prefillData, onClose }) =>
       }));
 
   // Danh sách cấp bậc: luôn gồm cấp bậc đang chọn theo chức vụ để Combobox hiển thị đúng
+  const fromPosId = selectedPosition?.cap_bac_id;
+  const tenCapBacTheoChucVu = selectedPosition?.ten_cap_bac;
   const jobLevelOptions = useMemo(() => {
     const active = jobLevels
       .filter((l) => l.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG)
       .map((l) => ({ label: l.ten_cap_bac, value: l.id, subLabel: String(l.cap_bac) }));
-    const fromPosId = selectedPosition?.cap_bac_id;
     if (fromPosId && !active.some((o) => o.value === fromPosId)) {
       const level = jobLevels.find((l) => l.id === fromPosId);
-      const label = level?.ten_cap_bac ?? selectedPosition?.ten_cap_bac ?? fromPosId;
+      const label = level?.ten_cap_bac ?? tenCapBacTheoChucVu ?? fromPosId;
       const subLabel = level?.cap_bac != null ? String(level.cap_bac) : undefined;
       return [{ label, value: fromPosId, subLabel }, ...active];
     }
     return active;
-  }, [jobLevels, selectedPosition?.cap_bac_id, selectedPosition?.ten_cap_bac]);
+  }, [jobLevels, fromPosId, tenCapBacTheoChucVu]);
 
   const branchOptions = branches
     .filter((b) => b.trang_thai === TRANG_THAI.DANG_DUNG)

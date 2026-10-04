@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { List, User, BarChart3 } from 'lucide-react';
 import TabGroup from '../../../components/ui/TabGroup';
@@ -21,9 +21,8 @@ const DanhSachTaiSanPage: React.FC = () => {
     return viewAll ? all : [all[1], all[2]];
   }, [t, viewAll]);
 
-  useEffect(() => {
-    if (!viewAll && activeTab === 'list') setActiveTab('my');
-  }, [viewAll, activeTab]);
+  // Không có quyền xem toàn bộ → chuyển tab "Danh sách" sang "Của tôi" (điều chỉnh ngay lúc render).
+  if (!viewAll && activeTab === 'list') setActiveTab('my');
 
   return (
     <div className="flex flex-col h-[calc(100dvh-3.75rem)] md:h-[calc(100dvh-4.5rem)] relative">

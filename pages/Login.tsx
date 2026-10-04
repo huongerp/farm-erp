@@ -44,7 +44,10 @@ const Login: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
+  // Có email đã lưu thì mặc định tick "Ghi nhớ" ngay từ lần render đầu.
+  const [rememberMe, setRememberMe] = useState(
+    () => typeof window !== 'undefined' && !!localStorage.getItem(REMEMBER_EMAIL_KEY)
+  );
   const [forgotOpen, setForgotOpen] = useState(false);
   const { mounted: forgotMounted, visible: forgotVisible } = usePresenceTransition(forgotOpen);
 
@@ -61,10 +64,6 @@ const Login: React.FC = () => {
       password: ''
     }
   });
-
-  useEffect(() => {
-    if (savedEmail) setRememberMe(true);
-  }, []);
 
   /**
    * Phần dùng chung sau khi auth-service đã cấp token: seed cache rồi điều hướng.

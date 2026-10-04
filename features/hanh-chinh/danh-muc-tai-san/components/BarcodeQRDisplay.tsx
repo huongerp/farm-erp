@@ -26,11 +26,15 @@ const BarcodeQRDisplay: React.FC<Props> = ({
 
   const code = (value ?? '').trim();
 
+  // Mã bị xoá → bỏ ảnh QR cũ ngay lúc render (mẫu "adjust state while rendering"), không qua effect.
+  const [prevCode, setPrevCode] = useState(code);
+  if (code !== prevCode) {
+    setPrevCode(code);
+    if (!code) setQrDataUrl(null);
+  }
+
   useEffect(() => {
-    if (!code) {
-      setQrDataUrl(null);
-      return;
-    }
+    if (!code) return;
     QRCode.toDataURL(code, { width: qrSize, margin: 1 })
       .then(setQrDataUrl)
       .catch(() => setQrDataUrl(null));

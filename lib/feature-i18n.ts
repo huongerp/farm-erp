@@ -45,6 +45,7 @@ export type FeatureI18nKey =
   | 'thu-hoach'
   | 'dang-ky-nhan-hang'
   | 'giam-sat-chat-luong'
+  | 'ket-noi-google'
   | 'kiem-ke-kho-phan-thuoc'
   | 'ton-kho-phan-thuoc'
   | 'thiet-lap-quy'
@@ -83,6 +84,7 @@ const FEATURE_I18N_KEYS = new Set<FeatureI18nKey>([
   'thu-hoach',
   'dang-ky-nhan-hang',
   'giam-sat-chat-luong',
+  'ket-noi-google',
   'kiem-ke-kho-phan-thuoc',
   'ton-kho-phan-thuoc',
   'thiet-lap-quy',
@@ -135,6 +137,7 @@ const FEATURE_I18N_LOADERS: Record<FeatureI18nKey, () => Promise<{ default: Reco
   'thu-hoach': () => import('../features/quan-ly-nha-so-che/thu-hoach/locales/vi.json'),
   'dang-ky-nhan-hang': () => import('../features/quan-ly-nha-so-che/dang-ky-nhan-hang/locales/vi.json'),
   'giam-sat-chat-luong': () => import('../features/quan-ly-nha-so-che/giam-sat-chat-luong/locales/vi.json'),
+  'ket-noi-google': () => import('../features/he-thong/ket-noi-google/locales/vi.json'),
   'kiem-ke-kho-phan-thuoc': () => import('../features/quan-ly-nha-so-che/kiem-ke-kho-phan-thuoc/locales/vi.json'),
   'ton-kho-phan-thuoc': () => import('../features/quan-ly-nha-so-che/ton-kho-phan-thuoc/locales/vi.json'),
   'thiet-lap-quy': () => import('../features/tai-chinh/thiet-lap-quy/locales/vi.json'),

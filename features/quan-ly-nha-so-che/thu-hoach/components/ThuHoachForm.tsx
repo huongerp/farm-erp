@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo } from 'react';
 import type { PhieuTomTatTrung } from '../core/form-mappers';
 import { useTranslation } from 'react-i18next';
-import { useForm, Controller, type SubmitHandler } from 'react-hook-form';
+import { useForm, useWatch, Controller, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Sprout, Building2 } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
@@ -52,6 +52,12 @@ const ThuHoachForm: React.FC<Props> = ({
   const createMutation = useCreateThuHoach(onClose);
   const updateMutation = useUpdateThuHoachKeHoach(onClose);
 
+  // Tách giá trị nguyên thuỷ trước để deps của useMemo khớp đúng những gì thân hàm đọc.
+  const initialIdChiNhanh = initialData?.id_chi_nhanh;
+  const initialTenChiNhanh = initialData?.ten_chi_nhanh;
+  const preferredIdChiNhanh = preferredBranch?.id_chi_nhanh;
+  const preferredTenChiNhanh = preferredBranch?.ten_chi_nhanh;
+
   /** Danh sách chi nhánh từ module Hệ thống → Chi nhánh (chỉ đang hoạt động; khi sửa giữ option đã lưu nếu đã ngừng). */
   const branchComboboxOptions = useMemo(() => {
     /** Chi nhánh (fp_var_chi_nhanh) dùng TRANG_THAI: 'Đang dùng' | 'Ngừng' */
@@ -61,36 +67,35 @@ const ThuHoachForm: React.FC<Props> = ({
       label: `${b.ma_chi_nhanh} — ${b.ten_chi_nhanh}`,
       subLabel: b.ma_chi_nhanh,
     }));
-    if (initialData?.id_chi_nhanh && initialData.ten_chi_nhanh) {
-      const idStr = String(initialData.id_chi_nhanh);
+    if (initialIdChiNhanh && initialTenChiNhanh) {
+      const idStr = String(initialIdChiNhanh);
       if (!opts.some((o) => String(o.value) === idStr)) {
         opts.unshift({
           value: idStr,
-          label: `${initialData.ten_chi_nhanh} (${t('thuHoach.form.branchInactiveHint')})`,
+          label: `${initialTenChiNhanh} (${t('thuHoach.form.branchInactiveHint')})`,
           subLabel: idStr,
         });
       }
     }
     return opts;
-  }, [branches, initialData?.id_chi_nhanh, initialData?.ten_chi_nhanh, t]);
+  }, [branches, initialIdChiNhanh, initialTenChiNhanh, t]);
 
   const defaultValues = useMemo(() => {
     if (initialData) return farmThuHoachToKeHoachForm(initialData);
     const base = defaultKeHoachFormValues();
-    if (preferredBranch?.id_chi_nhanh) {
+    if (preferredIdChiNhanh) {
       return {
         ...base,
-        id_chi_nhanh: preferredBranch.id_chi_nhanh,
-        ten_chi_nhanh: preferredBranch.ten_chi_nhanh,
+        id_chi_nhanh: preferredIdChiNhanh,
+        ten_chi_nhanh: preferredTenChiNhanh ?? '',
       };
     }
     return base;
-  }, [initialData, preferredBranch?.id_chi_nhanh, preferredBranch?.ten_chi_nhanh]);
+  }, [initialData, preferredIdChiNhanh, preferredTenChiNhanh]);
 
   const {
     control,
     handleSubmit,
-    watch,
     setValue,
     reset,
     formState: { errors, isSubmitting, isDirty },
@@ -99,8 +104,8 @@ const ThuHoachForm: React.FC<Props> = ({
     defaultValues,
   });
 
-  const idChiNhanh = watch('id_chi_nhanh');
-  const watchedForm = watch();
+  const idChiNhanh = useWatch({ control, name: 'id_chi_nhanh' });
+  const watchedForm = useWatch({ control });
   const tongKeHoachTuan = useMemo(
     () => sumKeHoachWeek(watchedForm as unknown as Pick<FarmThuHoach, `ke_hoach_${(typeof THU_HOACH_DAY_SUFFIXES)[number]}`>),
     [watchedForm]

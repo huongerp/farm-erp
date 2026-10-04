@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuthStore, useUIStore } from '../../store/useStore';
 import Button from '../ui/Button';
 import { cn } from '../../lib/utils';
+import { useIsMobile } from '../../lib/hooks/use-is-mobile';
 import { usePresenceTransition } from '../../lib/usePresenceTransition';
 import Breadcrumbs from '../shared/Breadcrumbs';
 import LiveClock from './LiveClock';
@@ -29,21 +30,6 @@ import { PASSWORD_MIN_LENGTH } from '../../lib/constants';
 /** Sidebar width: expanded 240px (gọn), collapsed 64px (4rem, 8px grid) */
 const SIDEBAR_WIDTH_EXPANDED = 240;
 const SIDEBAR_WIDTH_COLLAPSED = 64;
-
-/** Reactive media query hook – replaces direct window.innerWidth in render */
-const useIsMobile = (breakpoint = 768) => {
-  const [isMobile, setIsMobile] = useState(() =>
-    typeof window !== 'undefined' ? window.innerWidth < breakpoint : false
-  );
-  useEffect(() => {
-    const mq = window.matchMedia(`(max-width: ${breakpoint - 1}px)`);
-    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-    setIsMobile(mq.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, [breakpoint]);
-  return isMobile;
-};
 
 const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const { t } = useTranslation();

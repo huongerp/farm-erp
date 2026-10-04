@@ -74,22 +74,25 @@ const DoiTacForm: React.FC<Props> = ({ initialData, loaiDoiTac, nhomList, tagLis
     [t]
   );
 
-  const defaultValues: Partial<DoiTacFormValues> = {
-    ma_ncc: '',
-    ten_ncc: '',
-    loai_doi_tac: loaiDoiTac,
-    id_nhom: '',
-    dia_chi: '',
-    dien_thoai: '',
-    email: '',
-    mo_ta: '',
-    ngan_hang_bin: '',
-    so_tai_khoan: '',
-    chu_tai_khoan: '',
-    tag_ids: [],
-    trang_thai: TRANG_THAI_DOI_TAC.DANG_HOAT_DONG,
-    thu_tu: defaultThuTu ?? 1,
-  };
+  const defaultValues = useMemo<Partial<DoiTacFormValues>>(
+    () => ({
+      ma_ncc: '',
+      ten_ncc: '',
+      loai_doi_tac: loaiDoiTac,
+      id_nhom: '',
+      dia_chi: '',
+      dien_thoai: '',
+      email: '',
+      mo_ta: '',
+      ngan_hang_bin: '',
+      so_tai_khoan: '',
+      chu_tai_khoan: '',
+      tag_ids: [],
+      trang_thai: TRANG_THAI_DOI_TAC.DANG_HOAT_DONG,
+      thu_tu: defaultThuTu ?? 1,
+    }),
+    [loaiDoiTac, defaultThuTu]
+  );
 
   const { register, handleSubmit, formState: { errors, isDirty }, reset, control } = useForm<DoiTacFormValues>({
     resolver: zodResolver(doiTacSchema) as Resolver<DoiTacFormValues>,
@@ -126,7 +129,7 @@ const DoiTacForm: React.FC<Props> = ({ initialData, loaiDoiTac, nhomList, tagLis
     } else {
       reset({ ...defaultValues, loai_doi_tac: loaiDoiTac, thu_tu: defaultThuTu ?? 1 });
     }
-  }, [initialData, loaiDoiTac, defaultThuTu, reset]);
+  }, [initialData, loaiDoiTac, defaultThuTu, defaultValues, reset]);
 
   const onSubmit: SubmitHandler<DoiTacFormValues> = (data) => {
     const sanitized = {

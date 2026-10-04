@@ -61,6 +61,7 @@
   "permission.module.branch": "Chi nhánh",
   "permission.module.functionTask": "Chức năng nhiệm vụ",
   "permission.module.permission": "Phân quyền",
+  "permission.module.googleConnection": "Kết nối Google",
   "permission.module.fullSystemDesc": "Toàn quyền hệ thống",
   "permission.module.hrManagerDesc": "Quản lý và duyệt hồ sơ nhân sự",
   "permission.module.undefined": "Chưa xác định",

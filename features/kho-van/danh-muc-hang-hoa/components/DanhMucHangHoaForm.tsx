@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useForm, Controller, SubmitHandler, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -41,14 +41,17 @@ const DanhMucHangHoaForm: React.FC<Props> = ({
   const createMutation = useCreateDanhMucHangHoa(onClose);
   const updateMutation = useUpdateDanhMucHangHoa(onClose);
 
-  const defaultValues: Partial<DanhMucHangHoaFormValues> = {
-    ma_danh_muc: '',
-    ten_danh_muc: '',
-    id_cha: '',
-    thu_tu: defaultThuTu ?? 1,
-    mo_ta: '',
-    trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG,
-  };
+  const defaultValues = useMemo<Partial<DanhMucHangHoaFormValues>>(
+    () => ({
+      ma_danh_muc: '',
+      ten_danh_muc: '',
+      id_cha: '',
+      thu_tu: defaultThuTu ?? 1,
+      mo_ta: '',
+      trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG,
+    }),
+    [defaultThuTu]
+  );
 
   const { register, handleSubmit, formState: { errors, isDirty }, reset, control } = useForm<
     DanhMucHangHoaFormValues
@@ -74,7 +77,7 @@ const DanhMucHangHoaForm: React.FC<Props> = ({
         thu_tu: defaultThuTu ?? 1,
       });
     }
-  }, [initialData, defaultParentId, defaultThuTu, allDanhMuc, reset]);
+  }, [initialData, defaultParentId, defaultThuTu, defaultValues, allDanhMuc, reset]);
 
   const onSubmit: SubmitHandler<DanhMucHangHoaFormValues> = (data) => {
     const sanitizedData = {

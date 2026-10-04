@@ -133,9 +133,12 @@ function ProductDetailDrawer({
   const { data: byKho = [], isLoading: loadingTonKho } = useTonKhoTheoHangHoa(id_hang_hoa);
   const { data: lichSu = [], isLoading: loadingLichSu } = useLichSuNhapXuatByHangHoa(id_hang_hoa);
   const [selectedKhoId, setSelectedKhoId] = useState<string | null>(null);
-  useEffect(() => {
+  // Đổi sản phẩm → bỏ chọn kho; chỉnh state ngay khi render thay vì effect.
+  const [prevIdHangHoa, setPrevIdHangHoa] = useState(id_hang_hoa);
+  if (prevIdHangHoa !== id_hang_hoa) {
+    setPrevIdHangHoa(id_hang_hoa);
     setSelectedKhoId(null);
-  }, [id_hang_hoa]);
+  }
   const lichSuFiltered = useMemo(() => {
     if (!selectedKhoId) return lichSu;
     return lichSu.filter((r) => lichSuRowTouchesKho(r, selectedKhoId));

@@ -115,7 +115,7 @@ const ChiTietDonDatHangTab: React.FC = () => {
   const listQueryKey = useMemo(() => stableListQueryKeyPart(listServerQuery), [listServerQuery]);
   const pageIndex = Math.max(0, pagination.page - 1);
   const pageQuery = useChiTietDonDatHangListPaged(pageIndex, listServerQuery);
-  const tableRows = pageQuery.data?.data ?? [];
+  const tableRows = useMemo(() => pageQuery.data?.data ?? [], [pageQuery.data]);
   const totalCount = pageQuery.data?.totalCount ?? 0;
   const isLoading = !pageQuery.data && pageQuery.isPending;
   const isFetchingOverlay = !!pageQuery.data && pageQuery.isFetching;
@@ -215,14 +215,26 @@ const ChiTietDonDatHangTab: React.FC = () => {
       keyExtractor: (row) => row.id,
     });
 
-  useEffect(() => {
+  // Phần đồng bộ (đóng dialog → xoá dữ liệu; mở / đổi bộ lọc → bật loading) điều chỉnh ngay
+  // lúc render khi deps đổi; effect chỉ còn tải dữ liệu (setState trong callback async).
+  const [exportSync, setExportSync] = useState({ showExport, listQueryKey, listServerQuery });
+  if (
+    exportSync.showExport !== showExport ||
+    exportSync.listQueryKey !== listQueryKey ||
+    exportSync.listServerQuery !== listServerQuery
+  ) {
+    setExportSync({ showExport, listQueryKey, listServerQuery });
     if (!showExport) {
       setExportRows([]);
       setExportLoading(false);
-      return;
+    } else {
+      setExportLoading(true);
     }
+  }
+
+  useEffect(() => {
+    if (!showExport) return;
     let cancelled = false;
-    setExportLoading(true);
     fetchAllChiTietDonDatHangForListQuery(listServerQuery)
       .then((rows) => {
         if (!cancelled) setExportRows(rows);

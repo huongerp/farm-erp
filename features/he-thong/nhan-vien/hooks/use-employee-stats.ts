@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   Users,
   UserCheck,
@@ -54,7 +54,10 @@ export function useEmployeeStats({
   const probation = filtered.filter((e) => e.trang_thai === TRANG_THAI_NV.THU_VIEC).length;
   const inactive = filtered.filter((e) => e.trang_thai === TRANG_THAI_NV.NGHI_VIEC || e.trang_thai === TRANG_THAI_NV.NGHI_PHEP).length;
 
-  const pct = (n: number) => (total > 0 ? `${((n / total) * 100).toFixed(1)}%` : '0%');
+  const pct = useCallback(
+    (n: number) => (total > 0 ? `${((n / total) * 100).toFixed(1)}%` : '0%'),
+    [total]
+  );
 
   const trends = useMemo((): StatsTrends => {
     const end = dateRange.end;

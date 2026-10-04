@@ -56,7 +56,7 @@ const DanhSachTab: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [editingItem, setEditingItem] = useState<FarmThuHoach | null>(null);
-  const [viewingItem, setViewingItem] = useState<FarmThuHoach | null>(null);
+  const [viewingItemRaw, setViewingItem] = useState<FarmThuHoach | null>(null);
 
   const viewScope = useThuHoachViewScope();
 
@@ -78,7 +78,12 @@ const DanhSachTab: React.FC = () => {
   );
 
   const pageQuery = useThuHoachPage(listServerQuery, !viewScope.isLoading);
-  const pageList = pageQuery.data?.data ?? [];
+  const pageList = useMemo(() => pageQuery.data?.data ?? [], [pageQuery.data?.data]);
+  // Phiếu đang mở vừa được cập nhật ở trang hiện tại → drawer chi tiết lấy bản mới nhất.
+  const viewingItem = useMemo(() => {
+    if (!viewingItemRaw) return null;
+    return pageList.find((p) => p.id === viewingItemRaw.id) ?? viewingItemRaw;
+  }, [pageList, viewingItemRaw]);
   const totalCount = pageQuery.data?.totalCount ?? 0;
   const isLoading = !pageQuery.data && pageQuery.isPending;
   const isFetching = !!pageQuery.data && pageQuery.isFetching;
@@ -105,30 +110,35 @@ const DanhSachTab: React.FC = () => {
   );
 
   /** Xuất file cần TẤT CẢ bản ghi khớp bộ lọc — chỉ tải khi mở hộp thoại Xuất. */
-  const [exportRows, setExportRows] = useState<FarmThuHoach[]>([]);
-  const [exportLoading, setExportLoading] = useState(false);
+  // Mỗi lần mở hộp thoại (hoặc đổi bộ lọc khi đang mở) tạo một "yêu cầu" mới; kết quả
+  // chỉ dùng khi khớp đúng yêu cầu hiện tại → đang tải / dữ liệu suy ra lúc render.
+  const exportRequest = useMemo(
+    () => (showExport ? { query: listServerQuery } : null),
+    [showExport, listServerQuery]
+  );
+  const [exportResult, setExportResult] = useState<{
+    request: { query: typeof listServerQuery };
+    rows: FarmThuHoach[];
+  } | null>(null);
+  const exportLoading = exportRequest !== null && exportResult?.request !== exportRequest;
+  const exportRows = useMemo(
+    () => (exportRequest !== null && exportResult?.request === exportRequest ? exportResult.rows : []),
+    [exportRequest, exportResult]
+  );
   useEffect(() => {
-    if (!showExport) {
-      setExportRows([]);
-      setExportLoading(false);
-      return;
-    }
+    if (!exportRequest) return;
     let cancelled = false;
-    setExportLoading(true);
-    fetchAllThuHoachForListQuery(listServerQuery)
+    fetchAllThuHoachForListQuery(exportRequest.query)
       .then((rows) => {
-        if (!cancelled) setExportRows(rows);
+        if (!cancelled) setExportResult({ request: exportRequest, rows });
       })
       .catch(() => {
-        if (!cancelled) setExportRows([]);
-      })
-      .finally(() => {
-        if (!cancelled) setExportLoading(false);
+        if (!cancelled) setExportResult({ request: exportRequest, rows: [] });
       });
     return () => {
       cancelled = true;
     };
-  }, [showExport, listServerQuery]);
+  }, [exportRequest]);
 
   const exportColumnsThuHoach = useMemo(() => getExportColumnsThuHoachList(t), [t]);
   const exportMapThuHoach = useCallback((item: FarmThuHoach) => mapFarmThuHoachListRow(item), []);
@@ -158,12 +168,6 @@ const DanhSachTab: React.FC = () => {
   useEffect(() => {
     if (pagination.page > maxPage) setPage(maxPage);
   }, [pagination.page, pagination.pageSize, maxPage, setPage]);
-
-  useEffect(() => {
-    if (!viewingItem) return;
-    const fresh = pageList.find((p) => p.id === viewingItem.id);
-    if (fresh && fresh !== viewingItem) setViewingItem(fresh);
-  }, [pageList, viewingItem]);
 
   const handleEdit = (item: FarmThuHoach) => {
     setEditingItem(item);

@@ -89,7 +89,7 @@ const DanhSachTab: React.FC = () => {
   const listQueryKey = useMemo(() => stableListQueryKeyPart(listServerQuery), [listServerQuery]);
   const pageIndex = Math.max(0, pagination.page - 1);
   const pageQuery = useDonDatHangListPaged(pageIndex, listServerQuery);
-  const tableRows = pageQuery.data?.data ?? [];
+  const tableRows = useMemo(() => pageQuery.data?.data ?? [], [pageQuery.data]);
   const totalCount = pageQuery.data?.totalCount ?? 0;
   const isInitialLoading = !pageQuery.data && pageQuery.isPending;
   const isFetchingOverlay = !!pageQuery.data && pageQuery.isFetching;
@@ -114,11 +114,14 @@ const DanhSachTab: React.FC = () => {
     if (pagination.page > maxPage) setPage(maxPage);
   }, [pagination.page, pagination.pageSize, maxPage, setPage]);
 
-  useEffect(() => {
-    if (!viewingItem) return;
-    const fresh = tableRows.find((p) => p.id === viewingItem.id);
+  // Đồng bộ viewing với bản mới trong trang sau refetch. Điều chỉnh ngay lúc render khi
+  // tableRows / viewingItem đổi — cùng điều kiện với deps của effect cũ.
+  const [dongBoViewing, setDongBoViewing] = useState({ tableRows, viewingItem });
+  if (dongBoViewing.tableRows !== tableRows || dongBoViewing.viewingItem !== viewingItem) {
+    setDongBoViewing({ tableRows, viewingItem });
+    const fresh = viewingItem ? tableRows.find((p) => p.id === viewingItem.id) : undefined;
     if (fresh && fresh !== viewingItem) setViewingItem(fresh);
-  }, [tableRows, viewingItem]);
+  }
 
   const exportColumnsList = useMemo(() => getExportColumnsDonDatHangList(t), [t]);
   const exportMapList = useCallback((item: DonDatHang) => mapDonDatHangListRow(item), []);
@@ -132,14 +135,26 @@ const DanhSachTab: React.FC = () => {
       keyExtractor: (p) => p.id,
     });
 
-  useEffect(() => {
+  // Phần đồng bộ (đóng dialog → xoá dữ liệu; mở / đổi bộ lọc → bật loading) điều chỉnh ngay
+  // lúc render khi deps đổi; effect chỉ còn tải dữ liệu (setState trong callback async).
+  const [exportSync, setExportSync] = useState({ showExport, listQueryKey, listServerQuery });
+  if (
+    exportSync.showExport !== showExport ||
+    exportSync.listQueryKey !== listQueryKey ||
+    exportSync.listServerQuery !== listServerQuery
+  ) {
+    setExportSync({ showExport, listQueryKey, listServerQuery });
     if (!showExport) {
       setExportRows([]);
       setExportLoading(false);
-      return;
+    } else {
+      setExportLoading(true);
     }
+  }
+
+  useEffect(() => {
+    if (!showExport) return;
     let cancelled = false;
-    setExportLoading(true);
     fetchAllDonDatHangForListQuery(listServerQuery)
       .then((rows) => {
         if (!cancelled) setExportRows(rows);

@@ -18,6 +18,8 @@ import { createListSearchMatcher } from '../../../lib/list-search-matcher';
 
 /** Ô tìm kiếm quét MỌI cột của bảng, bỏ dấu tiếng Việt — xem lib/list-search-matcher.ts. */
 const khopTimKiem = createListSearchMatcher({ columns: DEFAULT_COLUMNS });
+/** Mảng rỗng cố định khi chưa có dữ liệu — tránh tham chiếu mới mỗi render. */
+const KHONG_CO_DONG: Branch[] = [];
 
 const BranchPage: React.FC = () => {
   const { t } = useTranslation();
@@ -36,7 +38,7 @@ const BranchPage: React.FC = () => {
   const [viewingBranch, setViewingBranch] = useState<Branch | null>(null);
   const [formOrigin, setFormOrigin] = useState<'list' | 'detail'>('list');
 
-  const { data: branches = [], isLoading } = useBranches();
+  const { data: branches = KHONG_CO_DONG, isLoading } = useBranches();
   const deleteMutation = useDeleteBranches();
   const statusMutation = useUpdateStatusBranch();
 
@@ -44,11 +46,14 @@ const BranchPage: React.FC = () => {
     return () => resetState();
   }, [resetState]);
 
-  useEffect(() => {
-    if (!viewingBranch) return;
-    const fresh = branches.find((b) => b.id === viewingBranch.id);
+  // Đồng bộ viewing với list sau refetch (action từ detail hoặc từ nơi khác). Điều chỉnh
+  // ngay lúc render khi list hoặc id đang xem đổi — cùng điều kiện với deps của effect cũ.
+  const [dongBoViewing, setDongBoViewing] = useState({ list: branches, id: viewingBranch?.id });
+  if (dongBoViewing.list !== branches || dongBoViewing.id !== viewingBranch?.id) {
+    setDongBoViewing({ list: branches, id: viewingBranch?.id });
+    const fresh = viewingBranch ? branches.find((b) => b.id === viewingBranch.id) : undefined;
     if (fresh && fresh !== viewingBranch) setViewingBranch(fresh);
-  }, [branches, viewingBranch?.id]);
+  }
 
   const filterFn = useCallback(
     (item: Branch, term: string, f: typeof filters) => {

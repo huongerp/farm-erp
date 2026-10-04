@@ -65,18 +65,21 @@ const DanhSachHangHoaForm: React.FC<Props> = ({
     [danhMucCap2List, t]
   );
 
-  const defaultValues: Partial<HangHoaFormValues> = {
-    ma_hang_hoa: '',
-    ten_hang_hoa: '',
-    id_danh_muc_cap2: '',
-    dvt: '',
-    don_gia: undefined,
-    trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG,
-    thu_tu: defaultThuTu ?? 1,
-    pham_cap: null,
-    mo_ta: null,
-    hinh_anh: null,
-  };
+  const defaultValues = useMemo<Partial<HangHoaFormValues>>(
+    () => ({
+      ma_hang_hoa: '',
+      ten_hang_hoa: '',
+      id_danh_muc_cap2: '',
+      dvt: '',
+      don_gia: undefined,
+      trang_thai: TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG,
+      thu_tu: defaultThuTu ?? 1,
+      pham_cap: null,
+      mo_ta: null,
+      hinh_anh: null,
+    }),
+    [defaultThuTu]
+  );
 
   const [isImageUploading, setIsImageUploading] = useState(false);
 
@@ -112,7 +115,7 @@ const DanhSachHangHoaForm: React.FC<Props> = ({
     } else {
       reset({ ...defaultValues, thu_tu: defaultThuTu ?? 1 });
     }
-  }, [initialData, defaultThuTu, reset]);
+  }, [initialData, defaultThuTu, defaultValues, reset]);
 
   const onSubmit: SubmitHandler<HangHoaFormValues> = (data) => {
     // id_danh_muc_cap2/dvt/don_gia đã được zod validate là non-empty/non-null

@@ -65,16 +65,14 @@ const PhieuKhoList: React.FC<Props> = ({
     return out;
   }, [columns, loai]);
 
-  const getColumnLabel = (col: ColumnConfig) => {
-    if (col.id === 'ten_kho') return loai === 'nhap' ? t('phieuKho.form.warehouseTo') : t('phieuKho.form.warehouseFrom');
-    if (col.id === 'ten_kho_den') return t('phieuKho.form.warehouseTo');
-    return col.label;
-  };
-
-  const columnsForTable = useMemo(
-    () => visibleColumns.map((col) => ({ ...col, label: getColumnLabel(col) })),
-    [visibleColumns, loai, t]
-  );
+  const columnsForTable = useMemo(() => {
+    const getColumnLabel = (col: ColumnConfig) => {
+      if (col.id === 'ten_kho') return loai === 'nhap' ? t('phieuKho.form.warehouseTo') : t('phieuKho.form.warehouseFrom');
+      if (col.id === 'ten_kho_den') return t('phieuKho.form.warehouseTo');
+      return col.label;
+    };
+    return visibleColumns.map((col) => ({ ...col, label: getColumnLabel(col) }));
+  }, [visibleColumns, loai, t]);
 
   const renderStatusBadge = (item: PhieuKho) => (
     <span

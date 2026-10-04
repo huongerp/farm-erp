@@ -45,6 +45,7 @@ export function useSearchInputCommit(options: {
     // Thay đổi đến từ bên ngoài → thắng, huỷ commit đang chờ.
     lastCommittedRef.current = committedTerm;
     clearTimer();
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- phân biệt "store đổi từ ngoài" với "chính hook vừa commit" phải đọc ref (lastCommittedRef, ghi trong timer); đọc ref lúc render bị react-hooks/refs cấm, còn chuyển sang state thì lệch lane với cập nhật store → nuốt ký tự đang gõ
     setInputValue(committedTerm);
   }, [committedTerm]);
 

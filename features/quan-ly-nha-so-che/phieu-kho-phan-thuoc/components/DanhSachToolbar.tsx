@@ -55,8 +55,8 @@ const DanhSachToolbar: React.FC<Props> = ({
   employeesForChips = [],
   bulkActions,
 }) => {
-  const data = Array.isArray(dataProp) ? dataProp : [];
-  const khoList = Array.isArray(khoListProp) ? khoListProp : [];
+  const data = useMemo(() => (Array.isArray(dataProp) ? dataProp : []), [dataProp]);
+  const khoList = useMemo(() => (Array.isArray(khoListProp) ? khoListProp : []), [khoListProp]);
   const { t } = useTranslation();
   const searchTerm = usePhieuKhoPTStore((s) => s.searchTerm);
   const commitSearchTerm = usePhieuKhoPTStore((s) => s.commitSearchTerm);

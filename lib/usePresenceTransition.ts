@@ -9,13 +9,20 @@ export function usePresenceTransition(open: boolean, durationMs = 200) {
   const [mounted, setMounted] = useState(open);
   const [visible, setVisible] = useState(false);
 
+  // Phần đồng bộ (mount ngay khi mở / ẩn ngay khi đóng) điều chỉnh lúc render khi `open`
+  // đổi; effect chỉ còn hẹn giờ (rAF / timeout) — setState trong callback.
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (prevOpen !== open) {
+    setPrevOpen(open);
+    if (open) setMounted(true);
+    else setVisible(false);
+  }
+
   useEffect(() => {
     if (open) {
-      setMounted(true);
       const id = requestAnimationFrame(() => setVisible(true));
       return () => cancelAnimationFrame(id);
     }
-    setVisible(false);
     const timer = window.setTimeout(() => setMounted(false), durationMs);
     return () => window.clearTimeout(timer);
   }, [open, durationMs]);

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useEffectEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -71,25 +71,35 @@ const DotKiemKeForm: React.FC<Props> = ({ onClose, initialData, onSuccessAfterEd
     defaultValues: defaultValuesFromData,
   });
 
+  // Chỉ reset khi đổi sang bản ghi khác (theo id) — đọc giá trị mới nhất qua useEffectEvent
+  // để không reset lại mỗi lần initialData đổi tham chiếu.
+  const initialId = initialData?.id;
+  const resetTheoBanGhi = useEffectEvent(() => {
+    if (initialData) reset(defaultValuesFromData);
+  });
   useEffect(() => {
-    if (initialData) {
-      reset(defaultValuesFromData);
-    }
-  }, [initialData?.id]);
+    resetTheoBanGhi();
+  }, [initialId]);
 
-  useEffect(() => {
+  // Lấy mã đợt kế tiếp khi tạo mới — chỉ chạy theo isEdit; nextMaDot là object mutation đổi
+  // tham chiếu theo trạng thái nên đọc qua useEffectEvent, tránh gọi mutate lặp.
+  const layMaDotKeTiep = useEffectEvent(() => {
     if (!isEdit && !nextMaDot.isSuccess) {
       nextMaDot.mutate(undefined, {
         onSuccess: (seq) => setValue('ma_dot', formatMaDotDotKiemKeTaiSan(seq)),
       });
     }
+  });
+  useEffect(() => {
+    layMaDotKeTiep();
   }, [isEdit]);
 
+  const userId = user?.id;
   useEffect(() => {
-    if (!isEdit && user?.id) {
-      setValue('id_nguoi_phu_trach', String(user.id));
+    if (!isEdit && userId) {
+      setValue('id_nguoi_phu_trach', String(userId));
     }
-  }, [isEdit, user?.id]);
+  }, [isEdit, userId, setValue]);
 
   const onSubmit: SubmitHandler<DotKiemKeFormValues> = (data) => {
     const payload = {

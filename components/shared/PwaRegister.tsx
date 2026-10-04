@@ -106,6 +106,10 @@ const PwaRegister: React.FC = () => {
     }, APPLY_TOAST_MS);
   }, [t]);
 
+  // Khai báo TRƯỚC `evaluate` vì `evaluate` gọi nó trong timer: React Compiler chỉ cho gán
+  // `.current` trong effect khi biết chắc đây là ref ngay lúc nó bị closure bắt.
+  const scheduleEvaluateRef = useRef<(trigger: UpdateTrigger) => void>(() => {});
+
   const evaluate = useCallback(
     (trigger: UpdateTrigger) => {
       const readyAt = readyAtRef.current ?? getPendingReloadAt();
@@ -149,7 +153,8 @@ const PwaRegister: React.FC = () => {
   );
 
   // Giữ tham chiếu mới nhất cho các effect chỉ chạy một lần (đăng ký SW, listener toàn cục).
-  const scheduleEvaluateRef = useRef(scheduleEvaluate);
+  // Ref khai báo phía trên `evaluate` (xem đó); effect này phải đứng TRƯỚC các effect gọi ref
+  // lúc mount (đổi route…) để ref đã trỏ đúng hàm.
   useEffect(() => {
     scheduleEvaluateRef.current = scheduleEvaluate;
   }, [scheduleEvaluate]);

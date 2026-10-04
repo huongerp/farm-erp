@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Controller, useForm, type SubmitHandler } from 'react-hook-form';
+import { Controller, useForm, useWatch, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Clock, ImagePlus, LogIn, LogOut } from 'lucide-react';
 import GenericDrawer from '../../../../components/shared/GenericDrawer';
@@ -36,23 +36,25 @@ const CheckInOutDialog: React.FC<Props> = ({ mode, data, onClose }) => {
   const tz = getTimezone();
   const mutation = useChuyenTrangThaiDangKyNhanHang(onClose);
   const isIn = mode === 'checkIn';
+  // Giờ mặc định = lúc mở hộp thoại; lấy một lần (useForm chỉ đọc defaultValues lần đầu).
+  const [thoiDiemMacDinh] = useState(() => toDateTimeLocalValue(Date.now(), tz));
 
   const {
     control,
     handleSubmit,
     setValue,
-    watch,
     formState: { errors, isDirty },
   } = useForm<CheckInOutFormValues>({
     resolver: zodResolver(checkInOutFormSchema),
     defaultValues: {
-      thoi_diem: toDateTimeLocalValue(Date.now(), tz),
+      thoi_diem: thoiDiemMacDinh,
       hinh_anh_urls: [],
       ghi_chu: '',
     },
   });
 
-  const thoiDiemIso = fromDateTimeLocalValue(watch('thoi_diem'), tz);
+  const thoiDiem = useWatch({ control, name: 'thoi_diem' });
+  const thoiDiemIso = fromDateTimeLocalValue(thoiDiem, tz);
   const preview = useMemo(() => {
     if (!thoiDiemIso) return null;
     if (isIn) {

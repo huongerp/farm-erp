@@ -157,20 +157,28 @@ const CongViecScopeTab: React.FC<Props> = ({ scope }) => {
     return () => resetState();
   }, [resetState]);
 
-  useEffect(() => {
-    if (!detailIdFromQuery || !list.length) return;
+  // Đồng bộ chồng drawer chi tiết với danh sách — chỉnh state ngay lúc render (mẫu "adjust state
+  // while rendering") thay vì effect. Chỉ xét khi list có dữ liệu: `list = []` mặc định là mảng
+  // mới mỗi lần render, so sánh khi rỗng sẽ gây vòng lặp render.
+  //  - ?detail=<id> trên URL → mở drawer công việc đó.
+  //  - list đổi (refetch) → thay các mục trong chồng drawer bằng bản mới nhất.
+  const [prevDetailSync, setPrevDetailSync] = useState<{ detailId: string | null; list: CongViec[] } | null>(null);
+  if (list.length > 0 && (prevDetailSync?.detailId !== detailIdFromQuery || prevDetailSync?.list !== list)) {
+    const listChanged = prevDetailSync?.list !== list;
+    setPrevDetailSync({ detailId: detailIdFromQuery, list });
     const numId = Number(detailIdFromQuery);
-    const item = list.find((c) => c.id === numId || String(c.id) === detailIdFromQuery);
-    if (item) setDetailStack([item]);
-  }, [detailIdFromQuery, list]);
-
-  useEffect(() => {
-    if (!list.length) return;
-    setDetailStack((prev) => {
-      if (!prev.length) return prev;
-      return prev.map((it) => list.find((c) => c.id === it.id) ?? it).filter(Boolean) as CongViec[];
-    });
-  }, [list]);
+    const itemFromQuery = detailIdFromQuery
+      ? list.find((c) => c.id === numId || String(c.id) === detailIdFromQuery)
+      : undefined;
+    if (itemFromQuery) {
+      setDetailStack([itemFromQuery]);
+    } else if (listChanged) {
+      setDetailStack((prev) => {
+        if (!prev.length) return prev;
+        return prev.map((it) => list.find((c) => c.id === it.id) ?? it).filter(Boolean) as CongViec[];
+      });
+    }
+  }
 
   const tabs = useMemo(
     () => [

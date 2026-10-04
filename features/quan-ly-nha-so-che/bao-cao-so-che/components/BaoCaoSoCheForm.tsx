@@ -2,7 +2,7 @@ import React, { useEffect, useMemo } from 'react';
 import type { PhieuTomTatTrung } from '../core/form-mappers';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { useForm, Controller, type SubmitHandler, type Resolver } from 'react-hook-form';
+import { useForm, useWatch, Controller, type SubmitHandler, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Building2, Calculator, Layers, MessageSquare, Users } from 'lucide-react';
 import BaoCaoSoCheKpiThuongFormSection from './BaoCaoSoCheKpiThuongFormSection';
@@ -62,6 +62,12 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
   const createMutation = useCreateBaoCaoSoChe(onClose);
   const updateMutation = useUpdateBaoCaoSoChe(onClose);
 
+  // Tách giá trị nguyên thuỷ trước để deps của useMemo khớp đúng những gì thân hàm đọc.
+  const initialIdChiNhanh = initialData?.id_chi_nhanh;
+  const initialTenChiNhanh = initialData?.ten_chi_nhanh;
+  const preferredIdChiNhanh = preferredBranch?.id_chi_nhanh;
+  const preferredTenChiNhanh = preferredBranch?.ten_chi_nhanh;
+
   const branchComboboxOptions = useMemo(() => {
     const active = branches.filter((b) => b.trang_thai === TRANG_THAI.DANG_DUNG);
     const opts = active.map((b) => ({
@@ -69,36 +75,35 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
       label: `${b.ma_chi_nhanh} — ${b.ten_chi_nhanh}`,
       subLabel: b.ma_chi_nhanh,
     }));
-    if (initialData?.id_chi_nhanh && initialData.ten_chi_nhanh) {
-      const idStr = String(initialData.id_chi_nhanh);
+    if (initialIdChiNhanh && initialTenChiNhanh) {
+      const idStr = String(initialIdChiNhanh);
       if (!opts.some((o) => String(o.value) === idStr)) {
         opts.unshift({
           value: idStr,
-          label: `${initialData.ten_chi_nhanh} (${t('baoCaoSoChe.form.branchInactiveHint')})`,
+          label: `${initialTenChiNhanh} (${t('baoCaoSoChe.form.branchInactiveHint')})`,
           subLabel: '',
         });
       }
     }
     return opts;
-  }, [branches, initialData?.id_chi_nhanh, initialData?.ten_chi_nhanh, t]);
+  }, [branches, initialIdChiNhanh, initialTenChiNhanh, t]);
 
   const defaultValues = useMemo(() => {
     if (initialData) return farmBaoCaoSoCheToForm(initialData);
     const base = defaultFormValues();
-    if (preferredBranch?.id_chi_nhanh) {
+    if (preferredIdChiNhanh) {
       return {
         ...base,
-        id_chi_nhanh: preferredBranch.id_chi_nhanh,
-        ten_chi_nhanh: preferredBranch.ten_chi_nhanh,
+        id_chi_nhanh: preferredIdChiNhanh,
+        ten_chi_nhanh: preferredTenChiNhanh ?? '',
       };
     }
     return base;
-  }, [initialData, preferredBranch?.id_chi_nhanh, preferredBranch?.ten_chi_nhanh]);
+  }, [initialData, preferredIdChiNhanh, preferredTenChiNhanh]);
 
   const {
     control,
     handleSubmit,
-    watch,
     setValue,
     reset,
     formState: { errors, isSubmitting, isDirty },
@@ -107,18 +112,18 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
     defaultValues,
   });
 
-  const idChiNhanh = watch('id_chi_nhanh');
-  const ngay = watch('ngay');
-  const phamCap = watch('pham_cap');
-  const danhGiaLoiQcPct = watch('danh_gia_loi_qc_pct');
-  const tongLuong = watch('tong_luong');
+  const idChiNhanh = useWatch({ control, name: 'id_chi_nhanh' });
+  const ngay = useWatch({ control, name: 'ngay' });
+  const phamCap = useWatch({ control, name: 'pham_cap' });
+  const danhGiaLoiQcPct = useWatch({ control, name: 'danh_gia_loi_qc_pct' });
+  const tongLuong = useWatch({ control, name: 'tong_luong' });
   const phamCapTotals = useMemo(
     () => sumPhamCapDisplayTotals(phamCap ?? []),
     [phamCap]
   );
   const tongThungQD = phamCapTotals.so_thung_quy_doi;
   const tongKg = phamCapTotals.tong_kg;
-  const soLieuMeta = watch('so_lieu_row_meta');
+  const soLieuMeta = useWatch({ control, name: 'so_lieu_row_meta' });
   const donViTinhKpi = useMemo(
     () => deriveDonViTinhSlipFromSoLieuMeta(soLieuMeta),
     [soLieuMeta]

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useEffectEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -64,18 +64,26 @@ const DotKiemKePTForm: React.FC<Props> = ({ onClose, initialData, onSuccessAfter
     defaultValues: defaultValuesFromData,
   });
 
-  useEffect(() => {
+  // Chỉ reset khi đổi sang đợt khác (id), đọc giá trị mới nhất qua effect event.
+  const resetTheoDotDangSua = useEffectEvent(() => {
     if (initialData) {
       reset(defaultValuesFromData);
     }
+  });
+  useEffect(() => {
+    resetTheoDotDangSua();
   }, [initialData?.id]);
 
-  useEffect(() => {
+  // Chỉ xin mã đợt mới khi mở form thêm (isEdit đổi), không chạy lại theo trạng thái mutation.
+  const xinMaDotMoi = useEffectEvent(() => {
     if (!isEdit && !nextMaDot.isSuccess) {
       nextMaDot.mutate(undefined, {
         onSuccess: (seq) => setValue('ma_dot', formatMaDotKiemKePT(seq)),
       });
     }
+  });
+  useEffect(() => {
+    xinMaDotMoi();
   }, [isEdit]);
 
   const onSubmit: SubmitHandler<DotKiemKePTFormValues> = (data) => {

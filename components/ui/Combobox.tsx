@@ -102,9 +102,12 @@ const Combobox: React.FC<ComboboxProps> = ({
   }, [isOpen, dropdownInPortal]);
 
   // Reset highlight khi mở lại hoặc khi danh sách lọc đổi (gõ tìm kiếm) — luôn bắt đầu ở đầu danh sách.
-  useEffect(() => {
+  // Điều chỉnh ngay khi render (so với giá trị trước) thay vì setState trong effect.
+  const [prevHighlightKey, setPrevHighlightKey] = useState({ isOpen, searchTerm });
+  if (prevHighlightKey.isOpen !== isOpen || prevHighlightKey.searchTerm !== searchTerm) {
+    setPrevHighlightKey({ isOpen, searchTerm });
     setHighlightedIndex(0);
-  }, [isOpen, searchTerm]);
+  }
 
   useEffect(() => {
     if (!isOpen) return;

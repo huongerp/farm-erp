@@ -127,7 +127,7 @@ const DonDatHangDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
         variant: 'primary' as const,
       },
     ],
-    [showChangeStatusButton, canApprove, data, onApprove, onChangeStatus, onPrint, onCreatePhieuNhapKho, t]
+    [showChangeStatusButton, canApprove, data, onPrint, onCreatePhieuNhapKho, t]
   );
 
   const statusLabel = t(`donDatHang.status.${TRANG_THAI_KEY[data.trang_thai as keyof typeof TRANG_THAI_KEY] ?? 'draft'}`);

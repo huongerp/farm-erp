@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
 import { Users, FileText, ArrowUpFromLine, Calendar, Power, Folder, MapPin, Phone, Mail, Tag, Landmark, CreditCard, User } from 'lucide-react';
@@ -80,20 +80,25 @@ const DoiTacDetail: React.FC<Props> = ({
   const bank = getBankByBin(data.ngan_hang_bin);
   const hasBankInfo = !!(data.ngan_hang_bin || data.so_tai_khoan || data.chu_tai_khoan);
 
-  useEffect(() => {
+  // Mở modal gán tag (hoặc đối tác / tag_ids đổi khi modal đang mở) → nạp lại danh sách tag tạm.
+  // Chỉnh state ngay khi render thay vì effect.
+  const [prevTagSync, setPrevTagSync] = useState({ open: tagModalOpen, id: data.id, tagIds: data.tag_ids });
+  if (prevTagSync.open !== tagModalOpen || prevTagSync.id !== data.id || prevTagSync.tagIds !== data.tag_ids) {
+    setPrevTagSync({ open: tagModalOpen, id: data.id, tagIds: data.tag_ids });
     if (tagModalOpen) setTempTagIds(data.tag_ids ?? []);
-  }, [tagModalOpen, data.id, data.tag_ids]);
+  }
 
   const tagOptions = useMemo(
     () => tagList.map((tag) => ({ label: tag.ten_tag, value: tag.id })),
     [tagList]
   );
 
-  const handleStatusChange = () => {
+  const updateDoiTac = updateMutation.mutate;
+  const handleStatusChange = useCallback(() => {
     const nextStatus = isActive ? TRANG_THAI_DOI_TAC.NGUNG_HOAT_DONG : TRANG_THAI_DOI_TAC.DANG_HOAT_DONG;
     const payload = { ...toFormValues(data), trang_thai: nextStatus };
-    updateMutation.mutate({ id: data.id, data: payload });
-  };
+    updateDoiTac({ id: data.id, data: payload });
+  }, [isActive, data, updateDoiTac]);
 
   const handleSaveTags = () => {
     const payload = { ...toFormValues(data), tag_ids: tempTagIds };
@@ -119,7 +124,7 @@ const DoiTacDetail: React.FC<Props> = ({
         variant: 'secondary',
       },
     ],
-    [isActive, t, updateMutation.isPending]
+    [isActive, t, updateMutation.isPending, handleStatusChange]
   );
 
   const renderFooter = (

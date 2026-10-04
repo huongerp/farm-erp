@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { AlertTriangle, ExternalLink, FolderOpen, Link2Off, Loader2, Plus } from 'lucide-react';
@@ -45,6 +45,7 @@ const GoogleSheetPanel: React.FC<Props> = ({ kn, value, onChange, headerXuat }) 
   const { t } = useTranslation();
   const picker = useGooglePicker();
   const [dangDocFile, setDangDocFile] = useState(false);
+  const oTabMoiRef = useRef<HTMLInputElement>(null);
   const set = (p: Partial<CauHinhSheet>) => onChange({ ...value, ...p });
 
   if (kn.dangTai && !kn.trangThai) {
@@ -169,7 +170,11 @@ const GoogleSheetPanel: React.FC<Props> = ({ kn, value, onChange, headerXuat }) 
                   ))}
                   <button
                     type="button"
-                    onClick={() => set({ tabMoi: true, tenTab: '' })}
+                    onClick={() => {
+                      set({ tabMoi: true, tenTab: '' });
+                      // Đưa con trỏ vào ô tên tab ngay sau khi ô được vẽ.
+                      requestAnimationFrame(() => oTabMoiRef.current?.focus());
+                    }}
                     className={cn(
                       'flex items-center gap-1 px-2.5 py-1 rounded-full border border-dashed text-xs',
                       value.tabMoi ? 'border-primary text-primary' : 'border-border text-muted-foreground hover:border-primary/30',
@@ -180,7 +185,7 @@ const GoogleSheetPanel: React.FC<Props> = ({ kn, value, onChange, headerXuat }) 
                 </div>
                 {value.tabMoi && (
                   <Input
-                    autoFocus
+                    ref={oTabMoiRef}
                     placeholder={t('shared.export.gs.tabName')}
                     value={value.tenTab}
                     onChange={(e) => set({ tenTab: e.target.value })}

@@ -71,7 +71,8 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<PhieuKho | null>(null);
   const [isCopyMode, setIsCopyMode] = useState(false);
-  const [viewingItem, setViewingItem] = useState<PhieuKho | null>(null);
+  // Bản chụp lúc mở chi tiết; bản hiển thị (viewingItem) lấy dòng mới nhất từ trang đang xem khi refetch.
+  const [viewingSnapshot, setViewingItem] = useState<PhieuKho | null>(null);
   const [showAddKho, setShowAddKho] = useState(false);
   const [showAddHangHoa, setShowAddHangHoa] = useState(false);
   const [showAddDoiTac, setShowAddDoiTac] = useState<'nha_cung_cap' | 'khach_hang' | null>(null);
@@ -84,7 +85,8 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
   const addHangHoaResolveRef = useRef<(h: HangHoa | null) => void>(null);
   const addDoiTacResolveRef = useRef<(d: DoiTac | null) => void>(null);
 
-  const { data: khoList = [] } = useKhoList();
+  const { data: khoListData } = useKhoList();
+  const khoList = useMemo(() => khoListData ?? [], [khoListData]);
   const { data: empRef = [] } = useEmployeesRefQuery();
   const { data: doiTacNccRef = [] } = useDoiTacRefQuery('nha_cung_cap');
   const { data: doiTacKhRef = [] } = useDoiTacRefQuery('khach_hang');
@@ -96,7 +98,7 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
     const list = showAddDoiTac ? doiTacListAll.filter((d) => d.loai_doi_tac === showAddDoiTac) : [];
     return list.length === 0 ? 1 : Math.max(...list.map((d) => d.thu_tu ?? 0)) + 1;
   }, [doiTacListAll, showAddDoiTac]);
-  const { data: viewingPhieuFull } = usePhieuKhoById(viewingItem?.id);
+  const { data: viewingPhieuFull } = usePhieuKhoById(viewingSnapshot?.id);
   const { data: editingPhieuFull } = usePhieuKhoById(editingItem?.id);
   const deleteMutation = useDeletePhieuKho();
   const deleteManyMutation = useDeletePhieuKhoMany();
@@ -138,7 +140,11 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
 
   const pageIndex = Math.max(0, pagination.page - 1);
   const pageQuery = usePhieuKhoListPaged(pageIndex, listServerQuery);
-  const tableRows = pageQuery.data?.data ?? [];
+  const tableRows = useMemo(() => pageQuery.data?.data ?? [], [pageQuery.data]);
+  const viewingItem = useMemo(
+    () => (viewingSnapshot ? (tableRows.find((p) => p.id === viewingSnapshot.id) ?? viewingSnapshot) : null),
+    [tableRows, viewingSnapshot]
+  );
   const totalCount = pageQuery.data?.totalCount ?? 0;
   const isInitialLoading = !pageQuery.data && pageQuery.isPending;
   const isFetchingOverlay = !!pageQuery.data && pageQuery.isFetching;
@@ -161,14 +167,22 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
       keyExtractor: (p) => p.id,
     });
 
-  useEffect(() => {
+  // Đóng hộp thoại → xoá dữ liệu xuất; mở (hoặc bộ lọc đổi khi đang mở) → bật loading.
+  // Chỉnh state ngay khi render (so theo listQueryKey dạng chuỗi); effect bên dưới chỉ lo tải dữ liệu.
+  const [prevExportSync, setPrevExportSync] = useState({ show: showExport, key: listQueryKey });
+  if (prevExportSync.show !== showExport || prevExportSync.key !== listQueryKey) {
+    setPrevExportSync({ show: showExport, key: listQueryKey });
     if (!showExport) {
       setExportRows([]);
       setExportLoading(false);
-      return;
+    } else {
+      setExportLoading(true);
     }
+  }
+
+  useEffect(() => {
+    if (!showExport) return;
     let cancelled = false;
-    setExportLoading(true);
     fetchAllPhieuKhoForListQuery(listServerQuery)
       .then((rows) => {
         if (!cancelled) setExportRows(rows);
@@ -216,12 +230,6 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
   useEffect(() => {
     if (pagination.page > maxPage) setPage(maxPage);
   }, [pagination.page, pagination.pageSize, maxPage, setPage]);
-
-  useEffect(() => {
-    if (!viewingItem) return;
-    const fresh = tableRows.find((p) => p.id === viewingItem.id);
-    if (fresh && fresh !== viewingItem) setViewingItem(fresh);
-  }, [tableRows, viewingItem]);
 
   const handleEdit = (item: PhieuKho) => {
     if (!canMutatePhieuKhoByTrangThai(item.trang_thai, canUpdate, canApprove)) {

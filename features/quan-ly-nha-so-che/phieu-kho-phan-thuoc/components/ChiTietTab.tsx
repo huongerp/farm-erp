@@ -80,8 +80,6 @@ const ChiTietTab: React.FC = () => {
 
   const emptySelectedIds = useMemo(() => new Set<string>(), []);
   const [showExport, setShowExport] = useState(false);
-  const [exportRows, setExportRows] = useState<ChiTietPhieuKhoPTFlat[]>([]);
-  const [exportLoading, setExportLoading] = useState(false);
   const [viewingPhieuId, setViewingPhieuId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<PhieuKhoPT | null>(null);
@@ -134,6 +132,21 @@ const ChiTietTab: React.FC = () => {
 
   const visibleColumns = useMemo(() => columns.filter((c) => c.visible).sort((a, b) => a.order - b.order), [columns]);
 
+  // Mỗi lần mở hộp thoại (hoặc đổi bộ lọc khi đang mở) tạo một "yêu cầu" mới; kết quả
+  // chỉ dùng khi khớp đúng yêu cầu hiện tại → đang tải / dữ liệu suy ra lúc render.
+  const exportRequest = useMemo(
+    () => (showExport ? { query: listServerQuery } : null),
+    [showExport, listServerQuery]
+  );
+  const [exportResult, setExportResult] = useState<{
+    request: { query: typeof listServerQuery };
+    rows: ChiTietPhieuKhoPTFlat[];
+  } | null>(null);
+  const exportLoading = exportRequest !== null && exportResult?.request !== exportRequest;
+  const exportRows = useMemo(
+    () => (exportRequest !== null && exportResult?.request === exportRequest ? exportResult.rows : []),
+    [exportRequest, exportResult]
+  );
   const exportColumnsChiTiet = useMemo(() => getExportColumnsChiTietPhieuKhoPT(t), [t]);
   const exportMapChiTiet = useCallback((row: ChiTietPhieuKhoPTFlat) => mapChiTietPhieuKhoPTFlatRow(row), []);
   const { exportData, paginatedData: paginatedExportData, selectedData: selectedExportData } = useExportData({
@@ -146,27 +159,19 @@ const ChiTietTab: React.FC = () => {
   });
 
   useEffect(() => {
-    if (!showExport) {
-      setExportRows([]);
-      setExportLoading(false);
-      return;
-    }
+    if (!exportRequest) return;
     let cancelled = false;
-    setExportLoading(true);
-    fetchAllChiTietPhieuKhoPTForListQuery(listServerQuery)
+    fetchAllChiTietPhieuKhoPTForListQuery(exportRequest.query)
       .then((rows) => {
-        if (!cancelled) setExportRows(rows);
+        if (!cancelled) setExportResult({ request: exportRequest, rows });
       })
       .catch(() => {
-        if (!cancelled) setExportRows([]);
-      })
-      .finally(() => {
-        if (!cancelled) setExportLoading(false);
+        if (!cancelled) setExportResult({ request: exportRequest, rows: [] });
       });
     return () => {
       cancelled = true;
     };
-  }, [showExport, listQueryKey, listServerQuery]);
+  }, [exportRequest]);
 
   const handleExport = useCallback(() => {
     if (totalCount === 0) {

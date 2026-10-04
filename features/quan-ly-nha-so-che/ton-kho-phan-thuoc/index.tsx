@@ -20,15 +20,19 @@ function normalizeTabParam(raw: string | null): TabId | null {
 const TonKhoPhanThuocPage: React.FC = () => {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState<TabId>('byProduct');
   const setStoreTab = useTonKhoPTStore((s) => s.setActiveTab);
 
   const tabFromUrl = normalizeTabParam(searchParams.get('tab'));
+  const [activeTab, setActiveTab] = useState<TabId>(() => tabFromUrl ?? 'byProduct');
+  // Tab trên URL đổi (back/forward, link) → đồng bộ tab đang mở, điều chỉnh ngay lúc render.
+  const [prevTabFromUrl, setPrevTabFromUrl] = useState(tabFromUrl);
+  if (tabFromUrl !== prevTabFromUrl) {
+    setPrevTabFromUrl(tabFromUrl);
+    if (tabFromUrl) setActiveTab(tabFromUrl);
+  }
+  // Store zustand là nguồn ngoài React → vẫn đồng bộ trong effect.
   useEffect(() => {
-    if (tabFromUrl) {
-      setActiveTab(tabFromUrl);
-      setStoreTab(tabFromUrl);
-    }
+    if (tabFromUrl) setStoreTab(tabFromUrl);
   }, [tabFromUrl, setStoreTab]);
 
   const handleTabChange = (id: string) => {

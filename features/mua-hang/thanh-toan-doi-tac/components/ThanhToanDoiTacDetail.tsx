@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CreditCard, Calendar, Building2, Users, Tag, User, RefreshCw, Printer, X, Folder } from 'lucide-react';
@@ -35,6 +35,9 @@ interface Props {
   statusList?: TrangThaiThanhToanDoiTac[];
 }
 
+/** Mặc định ổn định cho statusList — tránh mảng mới mỗi render. */
+const KHONG_CO_TRANG_THAI: TrangThaiThanhToanDoiTac[] = [];
+
 const ThanhToanDoiTacDetail: React.FC<Props> = ({
   data,
   onClose,
@@ -42,7 +45,7 @@ const ThanhToanDoiTacDetail: React.FC<Props> = ({
   onDelete,
   onChangeStatus,
   onPrint,
-  statusList = [],
+  statusList = KHONG_CO_TRANG_THAI,
 }) => {
   const { t } = useTranslation();
   const [showChangeStatusPopup, setShowChangeStatusPopup] = useState(false);
@@ -56,13 +59,28 @@ const ThanhToanDoiTacDetail: React.FC<Props> = ({
     [statusList]
   );
 
-  useEffect(() => {
+  // Mở popup đổi trạng thái (hoặc dữ liệu nguồn đổi khi đang mở) → nạp giá trị mặc định.
+  // Điều chỉnh ngay lúc render thay cho setState trong effect — cùng điều kiện kích hoạt.
+  const nguonPopup = {
+    show: showChangeStatusPopup,
+    idTrangThai: data.id_trang_thai_thanh_toan,
+    ngayXuLy: data.ngay_xu_ly,
+    statusList,
+  };
+  const [dongBoPopup, setDongBoPopup] = useState(nguonPopup);
+  if (
+    dongBoPopup.show !== nguonPopup.show ||
+    dongBoPopup.idTrangThai !== nguonPopup.idTrangThai ||
+    dongBoPopup.ngayXuLy !== nguonPopup.ngayXuLy ||
+    dongBoPopup.statusList !== nguonPopup.statusList
+  ) {
+    setDongBoPopup(nguonPopup);
     if (showChangeStatusPopup) {
       setChangeStatusIdTrangThai(data.id_trang_thai_thanh_toan || (statusList[0]?.id ?? ''));
       setChangeStatusNgayXuLy(data.ngay_xu_ly ?? getTodayISO().slice(0, 10));
       setChangeStatusGhiChu('');
     }
-  }, [showChangeStatusPopup, data.id_trang_thai_thanh_toan, data.ngay_xu_ly, statusList]);
+  }
 
   const handleChangeStatusConfirm = () => {
     if (!changeStatusIdTrangThai) return;

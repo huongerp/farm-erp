@@ -7,6 +7,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useDemChuaDoc, napSanNoiDungChuong } from '../../features/thong-bao/hooks/use-thong-bao';
 import { useAppBadge } from '../../features/thong-bao/hooks/use-app-badge';
 import { cn } from '../../lib/utils';
+import { useIsMobile } from '../../lib/hooks/use-is-mobile';
 
 /**
  * Panel nằm trong chunk riêng: chuông có mặt trên MỌI trang nên mọi thứ nó kéo
@@ -19,20 +20,6 @@ interface NotificationBellProps {
   /** Khi 'top', dropdown mở phía trên (dùng trong bottom nav). */
   placement?: 'default' | 'top';
 }
-
-const useIsMobile = (breakpoint = 768) => {
-  const [isMobile, setIsMobile] = useState(
-    typeof window !== 'undefined' ? window.innerWidth < breakpoint : false
-  );
-  useEffect(() => {
-    const mq = window.matchMedia(`(max-width: ${breakpoint - 1}px)`);
-    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-    setIsMobile(mq.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, [breakpoint]);
-  return isMobile;
-};
 
 const NotificationBell: React.FC<NotificationBellProps> = ({ placement = 'default' }) => {
   const { t } = useTranslation();

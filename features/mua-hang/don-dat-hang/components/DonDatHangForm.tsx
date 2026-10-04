@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { useForm, Controller, SubmitHandler, useFieldArray } from 'react-hook-form';
+import { useForm, useWatch, Controller, SubmitHandler, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { FileText, Calendar, Building2, Warehouse, User, Package, CreditCard, Edit, Trash2, Tag } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
@@ -62,11 +62,18 @@ const ChiTietLineDrawer: React.FC<ChiTietLineDrawerProps> = ({
   const [formValue, setFormValue] = useState<DonDatHangChiTietFormItem>(initialData);
   const [submitted, setSubmitted] = useState(false);
 
-  useEffect(() => {
-    if (!open) return;
-    setFormValue(initialData);
-    setSubmitted(false);
-  }, [initialData, open]);
+  // Chỉ nạp lại form lúc drawer VỪA MỞ (đóng → mở). Không theo dõi `initialData`: form cha dựng
+  // object mới mỗi lần render, theo nó thì mỗi lần cha render lại (ref tải xong, đổi số PO…) là
+  // xoá mất phần người dùng đang nhập. Drawer phủ lên form cha nên lúc đang mở không đổi được
+  // sang dòng khác — giá trị lúc mở là đủ.
+  const [dangMo, setDangMo] = useState(open);
+  if (dangMo !== open) {
+    setDangMo(open);
+    if (open) {
+      setFormValue(initialData);
+      setSubmitted(false);
+    }
+  }
 
   if (!open) return null;
 
@@ -348,9 +355,10 @@ const DonDatHangForm: React.FC<Props> = ({
     chi_tiet: [],
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- t cố ý làm dep: schema đọc i18n.t toàn cục bên trong, phải tạo lại khi ngôn ngữ / namespace dịch đổi
   const donDatHangSchema = useMemo(() => getDonDatHangSchema(), [t]);
 
-  const { register, handleSubmit, formState: { errors, isDirty }, reset, control, watch, setValue } = useForm<DonDatHangFormValues>({
+  const { register, handleSubmit, formState: { errors, isDirty }, reset, control, setValue } = useForm<DonDatHangFormValues>({
     resolver: zodResolver(donDatHangSchema),
     defaultValues,
   });
@@ -364,7 +372,7 @@ const DonDatHangForm: React.FC<Props> = ({
     !isEdit ? (autoFillPhieuId ?? undefined) : undefined
   );
   const appliedPhieuIdRef = useRef<string | null>(null);
-  const chiTietValues = watch('chi_tiet') ?? [];
+  const chiTietValues = useWatch({ control, name: 'chi_tiet' }) ?? [];
 
   useEffect(() => {
     if (!isEdit && nextSoPo) {
@@ -390,6 +398,16 @@ const DonDatHangForm: React.FC<Props> = ({
       replace(mapPhieuDeXuatChiTietToDonDatHangLines(phieuForAutoFill.chi_tiet));
     }
   }, [phieuForAutoFill, replace, setValue]);
+
+  // Đọc defaultValues / prefillValues mới nhất mà không làm effect dưới chạy lại mỗi render.
+  const resetTheoPrefill = useEffectEvent(() => {
+    reset({
+      ...defaultValues,
+      ...prefillValues,
+      ngay_dat: getTodayISO().slice(0, 10),
+      ngay_giao_dk: prefillValues?.ngay_giao_dk ?? getEndOfMonthISO(),
+    });
+  });
 
   useEffect(() => {
     // Không reset nếu người dùng đã bắt đầu sửa — tránh ghi đè chữ đang gõ khi
@@ -418,12 +436,7 @@ const DonDatHangForm: React.FC<Props> = ({
         })),
       });
     } else {
-      reset({
-        ...defaultValues,
-        ...prefillValues,
-        ngay_dat: getTodayISO().slice(0, 10),
-        ngay_giao_dk: prefillValues?.ngay_giao_dk ?? getEndOfMonthISO(),
-      });
+      resetTheoPrefill();
     }
   }, [initialData, reset, isDirty]);
 

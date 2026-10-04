@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useForm, Controller, SubmitHandler, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -38,13 +38,16 @@ const DanhMucForm: React.FC<Props> = ({
   const createMutation = useCreateFarmDanhMuc(onClose);
   const updateMutation = useUpdateFarmDanhMuc(onClose);
 
-  const defaultValues: Partial<FarmDanhMucFormValues> = {
-    ma_danh_muc: '',
-    ten_danh_muc: '',
-    id_cha: '',
-    thu_tu: defaultThuTu ?? 1,
-    mo_ta: '',
-  };
+  const defaultValues = useMemo<Partial<FarmDanhMucFormValues>>(
+    () => ({
+      ma_danh_muc: '',
+      ten_danh_muc: '',
+      id_cha: '',
+      thu_tu: defaultThuTu ?? 1,
+      mo_ta: '',
+    }),
+    [defaultThuTu]
+  );
 
   const { register, handleSubmit, formState: { errors, isDirty }, reset, control } = useForm<FarmDanhMucFormValues>({
     resolver: zodResolver(farmDanhMucSchema) as Resolver<FarmDanhMucFormValues>,
@@ -67,7 +70,7 @@ const DanhMucForm: React.FC<Props> = ({
         thu_tu: defaultThuTu ?? 1,
       });
     }
-  }, [initialData, defaultParentId, defaultThuTu, allDanhMuc, reset]);
+  }, [initialData, defaultParentId, defaultThuTu, allDanhMuc, reset, defaultValues]);
 
   const onSubmit: SubmitHandler<FarmDanhMucFormValues> = (data) => {
     const sanitizedData = {

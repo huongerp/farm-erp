@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { cn, getLocale } from '../../lib/utils';
 
 export interface CurrencyInputProps {
@@ -49,11 +49,12 @@ const CurrencyInput = React.forwardRef<HTMLInputElement, CurrencyInputProps>(
 
     const [displayValue, setDisplayValue] = useState(() => formatNumber(value ?? 0));
 
-    // Sync external value changes
-    useEffect(() => {
-      const formatted = formatNumber(value ?? 0);
-      setDisplayValue(formatted);
-    }, [value, formatNumber]);
+    // Đồng bộ khi value từ ngoài đổi — điều chỉnh ngay lúc render thay vì setState trong effect.
+    const [prevValue, setPrevValue] = useState(value);
+    if (!Object.is(prevValue, value)) {
+      setPrevValue(value);
+      setDisplayValue(formatNumber(value ?? 0));
+    }
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const raw = e.target.value;

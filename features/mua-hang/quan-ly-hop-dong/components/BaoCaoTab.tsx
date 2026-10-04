@@ -252,8 +252,10 @@ const BaoCaoTab: React.FC = () => {
       .map(([key, v]) => ({ key, label: formatMonthLabel(key), ...v }));
   }, [filteredChiTiet, filteredHopDong]);
 
+  const { dateFrom: locTuNgay, dateTo: locDenNgay } = filters;
   const periodLabel = useMemo(() => {
-    const { dateFrom, dateTo } = filters;
+    const dateFrom = locTuNgay;
+    const dateTo = locDenNgay;
     if (!dateFrom && !dateTo) return t('hopDong.baoCao.preset.all');
     const preset = getPresetFromDates(dateFrom, dateTo);
     const presetOpt = dateRangePresets.find((p) => p.id === preset);
@@ -264,7 +266,7 @@ const BaoCaoTab: React.FC = () => {
     if (dateFrom) return `${t('hopDong.baoCao.filterDateFrom')}: ${formatDateShort(dateFrom)}`;
     if (dateTo) return `${t('hopDong.baoCao.filterDateTo')}: ${formatDateShort(dateTo)}`;
     return t('hopDong.baoCao.preset.all');
-  }, [filters.dateFrom, filters.dateTo, dateRangePresets, t]);
+  }, [locTuNgay, locDenNgay, dateRangePresets, t]);
 
   const exportSnapshot = useMemo((): BaoCaoHopDongExportSnapshot => {
     const num = (v: number) => formatNumberVN(v) ?? String(v);

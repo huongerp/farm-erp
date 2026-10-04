@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { useForm, Controller, SubmitHandler, useFieldArray, type Resolver } from 'react-hook-form';
+import { useForm, useWatch, Controller, SubmitHandler, useFieldArray, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { FileText, Calendar, Warehouse, ArrowRightLeft, Package, Trash2 } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
@@ -56,24 +56,29 @@ const PhieuKhoPTForm: React.FC<Props> = ({ khoList, khoDenList, initialData, pre
   const updateMutation = useUpdatePhieuKhoPT(onClose);
   const { data: hangHoaList = [], isLoading: isLoadingHangHoa, isError: isErrorHangHoa } = useFarmHangHoaList();
 
-  const defaultValues: Partial<PhieuKhoPTFormValues> = {
-    so_phieu: '',
-    ngay: today(),
-    loai: 'nhập',
-    kho_id: '',
-    kho_den_id: null,
-    mo_ta: '',
-    trang_thai: 'Chờ duyệt',
-    chi_tiet: [],
-  };
+  // Giữ nguyên tham chiếu suốt vòng đời form để effect reset không chạy lại mỗi lần render.
+  const defaultValues = useMemo<Partial<PhieuKhoPTFormValues>>(
+    () => ({
+      so_phieu: '',
+      ngay: today(),
+      loai: 'nhập',
+      kho_id: '',
+      kho_den_id: null,
+      mo_ta: '',
+      trang_thai: 'Chờ duyệt',
+      chi_tiet: [],
+    }),
+    []
+  );
 
-  const { register, handleSubmit, formState: { errors, isDirty }, reset, control, watch, setValue } = useForm<PhieuKhoPTFormValues>({
+  const { register, handleSubmit, formState: { errors, isDirty }, reset, control, setValue } = useForm<PhieuKhoPTFormValues>({
     resolver: zodResolver(phieuKhoPTSchema) as Resolver<PhieuKhoPTFormValues>,
     defaultValues,
   });
 
-  const khoIdWatch = watch('kho_id');
-  const loaiWatch = watch('loai') as LoaiPhieuKhoPT;
+  const khoIdWatch = useWatch({ control, name: 'kho_id' });
+  const loaiWatch = useWatch({ control, name: 'loai' }) as LoaiPhieuKhoPT;
+  const chiTietWatch = useWatch({ control, name: 'chi_tiet' });
 
   const khoOptions = useMemo(() => {
     const opts = khoList.map((k) => ({ value: k.id, label: k.ten_kho }));
@@ -187,7 +192,7 @@ const PhieuKhoPTForm: React.FC<Props> = ({ khoList, khoDenList, initialData, pre
       });
       if (user?.id) setValue('nguoi_tao_id', Number(user.id));
     }
-  }, [initialData, prefillValues, hangHoaMap, reset, user?.id, setValue, isDirty]);
+  }, [initialData, prefillValues, hangHoaMap, reset, user?.id, setValue, isDirty, defaultValues]);
 
   useEffect(() => {
     if (loaiWatch !== 'chuyển') {
@@ -249,7 +254,7 @@ const PhieuKhoPTForm: React.FC<Props> = ({ khoList, khoDenList, initialData, pre
   const isChuyen = loaiWatch === 'chuyển';
 
   const chiTietValues: { id_hang_hoa?: string; so_luong?: number; don_gia?: number; pham_cap?: string | null; so_lot?: string; ghi_chu?: string }[] =
-    Array.isArray(watch('chi_tiet')) ? watch('chi_tiet') : [];
+    Array.isArray(chiTietWatch) ? chiTietWatch : [];
 
   const loaiComboboxOptions = useMemo(
     () => LOAI_OPTIONS.map((o) => ({ value: o.value, label: t(o.labelKey) })),

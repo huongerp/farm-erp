@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useForm, Controller, SubmitHandler } from 'react-hook-form';
+import { useForm, useWatch, Controller, SubmitHandler } from 'react-hook-form';
 import { useConfirmStore } from '@/store/useConfirmStore';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Building2, Hash, Type, Layers, MapPin, Tag, User, Calendar, DollarSign, FileText, Image as ImageIcon, Package, Barcode, Truck } from 'lucide-react';
@@ -98,16 +98,16 @@ const TaiSanForm: React.FC<Props> = ({ initialData, onClose }) => {
     [employees]
   );
 
-  const { register, handleSubmit, formState: { errors, isDirty }, reset, control, setValue, setError, watch } = useForm<TaiSanFormValues>({
+  const { register, handleSubmit, formState: { errors, isDirty }, reset, control, setValue, setError, getValues } = useForm<TaiSanFormValues>({
     resolver: zodResolver(taiSanSchema),
     defaultValues: DEFAULT_VALUES,
   });
-  const maBarcode = watch('ma_barcode');
-  const maTaiSan = watch('ma_tai_san');
-  const thuongHieuValue = watch('thuong_hieu');
-  const modelValue = watch('model');
-  const xuatXuValue = watch('xuat_xu');
-  const nhaCungCapValue = watch('ten_nha_cung_cap');
+  const maBarcode = useWatch({ control, name: 'ma_barcode' });
+  const maTaiSan = useWatch({ control, name: 'ma_tai_san' });
+  const thuongHieuValue = useWatch({ control, name: 'thuong_hieu' });
+  const modelValue = useWatch({ control, name: 'model' });
+  const xuatXuValue = useWatch({ control, name: 'xuat_xu' });
+  const nhaCungCapValue = useWatch({ control, name: 'ten_nha_cung_cap' });
 
   const thuongHieuOptions = useMemo(() => {
     const opts = distinctThuongHieu.map((v) => ({ label: v, value: v }));
@@ -146,9 +146,9 @@ const TaiSanForm: React.FC<Props> = ({ initialData, onClose }) => {
   };
 
   const handleMaTaiSanBlur = () => {
-    const current = watch('ma_tai_san')?.trim() ?? '';
+    const current = getValues('ma_tai_san')?.trim() ?? '';
     if (current === lastMaTaiSanRef.current) return;
-    const hasBarcode = !!watch('ma_barcode')?.trim();
+    const hasBarcode = !!getValues('ma_barcode')?.trim();
     if (hasBarcode) {
       confirm({
         title: t('danhSachTaiSan.form.barcodeSyncTitle'),

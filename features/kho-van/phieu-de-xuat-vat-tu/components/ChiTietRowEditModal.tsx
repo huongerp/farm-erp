@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
@@ -44,7 +44,14 @@ const ChiTietRowEditModal: React.FC<Props> = ({ open, initialData, onClose, onSa
     [tienDoMuaHangList]
   );
 
-  useEffect(() => {
+  // Mở modal / đổi dòng → nạp lại giá trị; chỉnh state ngay khi render thay vì effect.
+  // Khởi tạo prev = đóng để lần render đầu (đã mở sẵn) cũng nạp giá trị như trước.
+  const [prevSync, setPrevSync] = useState<{ open: boolean; initialData: PhieuDeXuatVatTuChiTietRow | null }>({
+    open: false,
+    initialData: null,
+  });
+  if (prevSync.open !== open || prevSync.initialData !== initialData) {
+    setPrevSync({ open, initialData });
     if (open && initialData) {
       setSoLuong(String(initialData.so_luong ?? ''));
       setThongSo(initialData.thong_so ?? '');
@@ -52,7 +59,7 @@ const ChiTietRowEditModal: React.FC<Props> = ({ open, initialData, onClose, onSa
       setIdTienDoMh(initialData.id_tien_do_mh ?? null);
       setTenTienDoMh(initialData.ten_tien_do_mh ?? null);
     }
-  }, [open, initialData]);
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

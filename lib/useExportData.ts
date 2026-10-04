@@ -8,7 +8,7 @@ interface UseExportDataOptions<T> {
   /** Có đang mở dialog export không (lazy — chỉ tính khi true) */
   isOpen: boolean;
   /** Hàm chuyển đổi 1 item thành object phẳng cho export */
-  mapFn: (item: T) => Record<string, any>;
+  mapFn: (item: T) => Record<string, unknown>;
   /** Pagination hiện tại */
   pagination: PaginationState;
   /** Các id đang được chọn */
@@ -19,11 +19,11 @@ interface UseExportDataOptions<T> {
 
 interface ExportDataResult {
   /** Toàn bộ dữ liệu export (đã map) */
-  exportData: Record<string, any>[];
+  exportData: Record<string, unknown>[];
   /** Dữ liệu trang hiện tại */
-  paginatedData: Record<string, any>[];
+  paginatedData: Record<string, unknown>[];
   /** Dữ liệu các dòng đã chọn */
-  selectedData: Record<string, any>[];
+  selectedData: Record<string, unknown>[];
 }
 
 /**

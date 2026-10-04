@@ -1,15 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getRoles,
-  createRole,
-  updateRole,
   deleteRoles,
   updateModulePermissions,
   getLogs,
   getCurrentRoleContext,
 } from '../services/phan-quyen-service';
-import { RoleFormValues } from '../core/schema';
-import { ActionType, ModulePermission } from '../core/types';
+import { ActionType } from '../core/types';
 import { toast } from 'sonner';
 import i18n from '../../../../lib/i18n';
 import { useAuthStore } from '../../../../store/useStore';
@@ -33,35 +30,6 @@ export const useRoles = () => {
     queryKey: ['roles'],
     queryFn: getRoles,
     staleTime: 30 * 60 * 1000,
-  });
-};
-
-export const useCreateRole = (onSuccess?: () => void) => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ data, permissions }: { data: RoleFormValues, permissions: ModulePermission[] }) => createRole(data, permissions),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['roles'] });
-      queryClient.invalidateQueries({ queryKey: [CURRENT_ROLE_CONTEXT_KEY] });
-      toast.success(i18n.t('permission.toast.createSuccess'));
-      if (onSuccess) onSuccess();
-    },
-    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : String(err))
-  });
-};
-
-export const useUpdateRole = (onSuccess?: () => void) => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data, permissions }: { id: string; data: RoleFormValues; permissions: ModulePermission[] }) =>
-      updateRole(id, data, permissions),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['roles'] });
-      queryClient.invalidateQueries({ queryKey: [CURRENT_ROLE_CONTEXT_KEY] });
-      toast.success(i18n.t('permission.toast.updateSuccess'));
-      if (onSuccess) onSuccess();
-    },
-    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : String(err))
   });
 };
 

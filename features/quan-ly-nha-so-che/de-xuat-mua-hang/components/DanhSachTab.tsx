@@ -71,14 +71,12 @@ const DanhSachTab: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<DeXuatMuaHang | null>(null);
   const [isCopyMode, setIsCopyMode] = useState(false);
-  const [viewingItem, setViewingItem] = useState<DeXuatMuaHang | null>(null);
+  const [viewingItemRaw, setViewingItem] = useState<DeXuatMuaHang | null>(null);
   const [openedFormFromDetailId, setOpenedFormFromDetailId] = useState<string | null>(null);
   const [showAddHangHoa, setShowAddHangHoa] = useState(false);
   const addHangHoaResolveRef = useRef<(h: FarmHangHoa | null) => void>(null);
   const [showExport, setShowExport] = useState(false);
   const [bulkApprove, setBulkApprove] = useState<{ ids: string[]; skipped: number } | null>(null);
-  const [exportRows, setExportRows] = useState<DeXuatMuaHang[]>([]);
-  const [exportLoading, setExportLoading] = useState(false);
   const [createPhieuKhoFrom, setCreatePhieuKhoFrom] = useState<DeXuatMuaHang | null>(null);
 
   const { data: khoList = [] } = useKhoList();
@@ -110,7 +108,12 @@ const DanhSachTab: React.FC = () => {
   const listQueryKey = useMemo(() => stableListQueryKeyPart(listServerQuery), [listServerQuery]);
   const pageIndex = Math.max(0, pagination.page - 1);
   const pageQuery = useDeXuatMuaHangListPaged(pageIndex, listServerQuery);
-  const tableRows = pageQuery.data?.data ?? [];
+  const tableRows = useMemo(() => pageQuery.data?.data ?? [], [pageQuery.data?.data]);
+  // Phiếu đang mở vừa được cập nhật ở trang hiện tại → drawer chi tiết lấy bản mới nhất.
+  const viewingItem = useMemo(() => {
+    if (!viewingItemRaw) return null;
+    return tableRows.find((p) => p.id === viewingItemRaw.id) ?? viewingItemRaw;
+  }, [tableRows, viewingItemRaw]);
   const totalCount = pageQuery.data?.totalCount ?? 0;
   const isInitialLoading = !pageQuery.data && pageQuery.isPending;
   const isFetchingOverlay = !!pageQuery.data && pageQuery.isFetching;
@@ -146,12 +149,21 @@ const DanhSachTab: React.FC = () => {
     if (pagination.page > maxPage) setPage(maxPage);
   }, [pagination.page, pagination.pageSize, maxPage, setPage]);
 
-  useEffect(() => {
-    if (!viewingItem) return;
-    const fresh = tableRows.find((p) => p.id === viewingItem.id);
-    if (fresh && fresh !== viewingItem) setViewingItem(fresh);
-  }, [tableRows, viewingItem]);
-
+  // Mỗi lần mở hộp thoại (hoặc đổi bộ lọc khi đang mở) tạo một "yêu cầu" mới; kết quả
+  // chỉ dùng khi khớp đúng yêu cầu hiện tại → đang tải / dữ liệu suy ra lúc render.
+  const exportRequest = useMemo(
+    () => (showExport ? { query: listServerQuery } : null),
+    [showExport, listServerQuery]
+  );
+  const [exportResult, setExportResult] = useState<{
+    request: { query: typeof listServerQuery };
+    rows: DeXuatMuaHang[];
+  } | null>(null);
+  const exportLoading = exportRequest !== null && exportResult?.request !== exportRequest;
+  const exportRows = useMemo(
+    () => (exportRequest !== null && exportResult?.request === exportRequest ? exportResult.rows : []),
+    [exportRequest, exportResult]
+  );
   const exportColumnsList = useMemo(() => getExportColumnsDeXuatMuaHangList(t), [t]);
   const exportMapList = useCallback((item: DeXuatMuaHang) => mapDeXuatMuaHangListRow(item), []);
   const { exportData, paginatedData: paginatedExportData, selectedData: selectedExportData } = useExportData({
@@ -164,27 +176,19 @@ const DanhSachTab: React.FC = () => {
   });
 
   useEffect(() => {
-    if (!showExport) {
-      setExportRows([]);
-      setExportLoading(false);
-      return;
-    }
+    if (!exportRequest) return;
     let cancelled = false;
-    setExportLoading(true);
-    fetchAllDeXuatMuaHangForListQuery(listServerQuery)
+    fetchAllDeXuatMuaHangForListQuery(exportRequest.query)
       .then((rows) => {
-        if (!cancelled) setExportRows(rows);
+        if (!cancelled) setExportResult({ request: exportRequest, rows });
       })
       .catch(() => {
-        if (!cancelled) setExportRows([]);
-      })
-      .finally(() => {
-        if (!cancelled) setExportLoading(false);
+        if (!cancelled) setExportResult({ request: exportRequest, rows: [] });
       });
     return () => {
       cancelled = true;
     };
-  }, [showExport, listQueryKey, listServerQuery]);
+  }, [exportRequest]);
 
   const handleExport = useCallback(() => {
     if (totalCount === 0) {

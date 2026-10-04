@@ -44,47 +44,51 @@ const AdminFormPage: React.FC = () => {
    * Deep-link từ thông báo: `?phieu=<id>` → chọn đúng tab rồi bật drawer.
    * Phải chờ phạm vi xem nạp xong: viewAll khởi đầu là false, quyết sớm thì
    * người có quyền quản lý bị báo nhầm "không có quyền".
+   * Quyết định tính thuần lúc render; null = chưa đủ dữ liệu để quyết (đang tải).
    */
-  useEffect(() => {
-    if (!idTuLink || dangTaiPhamVi || !currentUserId) return;
-    if (daXuLyRef.current === idTuLink) return;
-
-    const donDep = () => {
-      daXuLyRef.current = idTuLink;
-      setSearchParams(
-        (prev) => {
-          const next = new URLSearchParams(prev);
-          next.delete(THAM_SO_PHIEU);
-          return next;
-        },
-        { replace: true }
-      );
-    };
-
-    if (isError || phieuTuLink === null) {
-      toast.error(t('adminForm.deepLink.notFound'));
-      donDep();
-      return;
-    }
-    if (!phieuTuLink) return; // đang tải
-
+  const ketQuaLink = useMemo(():
+    | { loai: 'loi'; thongBaoKey: string }
+    | { loai: 'mo'; tab: 'list'; phieu: AdminFormRequest }
+    | null => {
+    if (!idTuLink || dangTaiPhamVi || !currentUserId) return null;
+    if (isError || phieuTuLink === null) return { loai: 'loi', thongBaoKey: 'adminForm.deepLink.notFound' };
+    if (!phieuTuLink) return null; // đang tải
     const ketQua = chonTabChoPhieu({
       nguoiTaoId: phieuTuLink.nguoi_tao_id,
       currentUserId,
       viewAll,
     });
-    if (ketQua.tab === null) {
-      toast.error(t('adminForm.deepLink.noPermission'));
-      donDep();
-      return;
-    }
+    if (ketQua.tab === null) return { loai: 'loi', thongBaoKey: 'adminForm.deepLink.noPermission' };
+    return { loai: 'mo', tab: ketQua.tab, phieu: phieuTuLink };
+  }, [idTuLink, phieuTuLink, isError, viewAll, dangTaiPhamVi, currentUserId]);
 
-    setActiveTab(ketQua.tab);
-    // Giữ phiếu vào state TRƯỚC khi dọn param: dọn xong query bị tắt, data biến
-    // mất, truyền thẳng phieuTuLink xuống tab thì drawer chớp rồi tắt.
-    setPhieuMoTuLink(phieuTuLink);
-    donDep();
-  }, [idTuLink, phieuTuLink, isError, viewAll, dangTaiPhamVi, currentUserId, setSearchParams, t]);
+  // Chọn tab + giữ phiếu vào state ngay lúc render (mẫu "adjust state while rendering").
+  // Giữ phiếu vào state TRƯỚC khi dọn param: dọn xong query bị tắt, data biến
+  // mất, truyền thẳng phieuTuLink xuống tab thì drawer chớp rồi tắt.
+  // Param biến mất thì nhả khoá để bấm lại cùng thông báo vẫn mở được.
+  const [idDaMoTuLink, setIdDaMoTuLink] = useState<string | null>(null);
+  if (!idTuLink && idDaMoTuLink !== null) setIdDaMoTuLink(null);
+  if (ketQuaLink?.loai === 'mo' && idDaMoTuLink !== idTuLink) {
+    setIdDaMoTuLink(idTuLink);
+    setActiveTab(ketQuaLink.tab);
+    setPhieuMoTuLink(ketQuaLink.phieu);
+  }
+
+  // Phần tác dụng phụ (toast + dọn ?phieu= khỏi URL) vẫn chạy trong effect.
+  useEffect(() => {
+    if (!idTuLink || !ketQuaLink) return;
+    if (daXuLyRef.current === idTuLink) return;
+    if (ketQuaLink.loai === 'loi') toast.error(t(ketQuaLink.thongBaoKey));
+    daXuLyRef.current = idTuLink;
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete(THAM_SO_PHIEU);
+        return next;
+      },
+      { replace: true }
+    );
+  }, [idTuLink, ketQuaLink, setSearchParams, t]);
 
   const xoaPhieuMoTuLink = useCallback(() => setPhieuMoTuLink(null), []);
 

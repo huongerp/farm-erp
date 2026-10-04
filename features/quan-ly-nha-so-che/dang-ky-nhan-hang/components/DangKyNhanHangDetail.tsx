@@ -168,7 +168,7 @@ const DangKyNhanHangDetail: React.FC<Props> = ({
       a.push({ label: t('dangKyNhanHang.toolbar.hoanTacCheckOut'), icon: <Undo2 />, onClick: () => hoi('hoanTacCheckOut', 'hoanTacCheckOut'), variant: 'warning' });
     }
     return a;
-  }, [canUpdate, tt, capCao, canEditHang, t, hoi]);
+  }, [canUpdate, tt, capCao, canEditHang, t, hoi, setDialog]);
 
   const phutTrong =
     tt === 'da_vao' ? soPhutDangOTrongFarm(data.tg_vao_thuc_te) : soPhutTrongFarm(data.tg_vao_thuc_te, data.tg_ra_thuc_te);

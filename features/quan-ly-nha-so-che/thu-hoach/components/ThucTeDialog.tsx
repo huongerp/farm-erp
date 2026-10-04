@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useForm, Controller, type SubmitHandler } from 'react-hook-form';
+import { useForm, useWatch, Controller, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ClipboardList } from 'lucide-react';
 import NumberInput from '../../../../components/ui/NumberInput';
@@ -31,7 +31,6 @@ const ThucTeDialog: React.FC<Props> = ({ data, onClose }) => {
     control,
     handleSubmit,
     reset,
-    watch,
     formState: { isSubmitting, isDirty },
   } = useForm<ThuHoachThucTeFormValues>({
     resolver: zodResolver(thuHoachThucTeFormSchema),
@@ -42,7 +41,7 @@ const ThucTeDialog: React.FC<Props> = ({ data, onClose }) => {
     reset(defaultValues);
   }, [defaultValues, reset]);
 
-  const watched = watch();
+  const watched = useWatch({ control });
   const tongKeHoachTuan = useMemo(() => sumKeHoachWeek(data), [data]);
   const tongThucTeTuan = useMemo(
     () =>

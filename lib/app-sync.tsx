@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useSyncExternalStore } from 'react';
 import { useUIStore } from '../store/useStore';
 import { PRIMARY_COLOR_MAP } from './theme-utils';
 import i18n from './i18n';
@@ -114,6 +114,18 @@ export const LanguageSynchronizer: React.FC = () => {
 export function useResolvedTheme(): 'dark' | 'light' {
   const colorScheme = useUIStore((s) => s.colorScheme);
 
+  // Chế độ 'system' theo dõi media query như nguồn dữ liệu ngoài (useSyncExternalStore)
+  // thay vì setState trong effect; đổi colorScheme là có giá trị đúng ngay lúc render.
+  const subscribe = useCallback(
+    (onChange: () => void) => {
+      if (colorScheme !== 'system') return () => {};
+      const mq = window.matchMedia('(prefers-color-scheme: dark)');
+      mq.addEventListener('change', onChange);
+      return () => mq.removeEventListener('change', onChange);
+    },
+    [colorScheme]
+  );
+
   const resolve = (): 'dark' | 'light' => {
     if (colorScheme === 'dark') return 'dark';
     if (colorScheme === 'light') return 'light';
@@ -122,16 +134,5 @@ export function useResolvedTheme(): 'dark' | 'light' {
       : 'light';
   };
 
-  const [theme, setTheme] = useState<'dark' | 'light'>(resolve);
-
-  useEffect(() => {
-    setTheme(resolve());
-    if (colorScheme !== 'system') return;
-    const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    const handler = () => setTheme(mq.matches ? 'dark' : 'light');
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, [colorScheme]);
-
-  return theme;
+  return useSyncExternalStore(subscribe, resolve, () => (colorScheme === 'dark' ? 'dark' : 'light'));
 }

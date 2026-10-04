@@ -71,14 +71,14 @@ const HangHoaPhanThuocPage: React.FC = () => {
 
   const [showDmForm, setShowDmForm] = useState(false);
   const [dmEditing, setDmEditing] = useState<FarmDanhMuc | null>(null);
-  const [dmViewing, setDmViewing] = useState<FarmDanhMuc | null>(null);
+  const [dmViewingRaw, setDmViewing] = useState<FarmDanhMuc | null>(null);
   const [dmDefaultParentId, setDmDefaultParentId] = useState<string | null>(null);
   const [dmPage, setDmPage] = useState(1);
   const [dmPageSize, setDmPageSize] = useState(20);
 
   const [showHhForm, setShowHhForm] = useState(false);
   const [hhEditing, setHhEditing] = useState<FarmHangHoa | null>(null);
-  const [hhViewing, setHhViewing] = useState<FarmHangHoa | null>(null);
+  const [hhViewingRaw, setHhViewing] = useState<FarmHangHoa | null>(null);
 
   const { data: dmList = [], isLoading: dmLoading } = useFarmDanhMucList();
   const { data: hhList = [], isLoading: hhLoading } = useFarmHangHoaList();
@@ -114,17 +114,16 @@ const HangHoaPhanThuocPage: React.FC = () => {
     };
   }, [resetDmState, resetHhState]);
 
-  useEffect(() => {
-    if (!dmViewing) return;
-    const fresh = dmList.find((d) => d.id === dmViewing.id);
-    if (fresh && fresh !== dmViewing) setDmViewing(fresh);
-  }, [dmList, dmViewing?.id]);
+  // Bản ghi đang xem vừa được cập nhật trong danh sách → drawer chi tiết lấy bản mới nhất.
+  const dmViewing = useMemo(() => {
+    if (!dmViewingRaw) return null;
+    return dmList.find((d) => d.id === dmViewingRaw.id) ?? dmViewingRaw;
+  }, [dmList, dmViewingRaw]);
 
-  useEffect(() => {
-    if (!hhViewing) return;
-    const fresh = hhList.find((h) => h.id === hhViewing.id);
-    if (fresh && fresh !== hhViewing) setHhViewing(fresh);
-  }, [hhList, hhViewing?.id]);
+  const hhViewing = useMemo(() => {
+    if (!hhViewingRaw) return null;
+    return hhList.find((h) => h.id === hhViewingRaw.id) ?? hhViewingRaw;
+  }, [hhList, hhViewingRaw]);
 
   const dmFilterFn = useCallback(
     (item: FarmDanhMuc, term: string, _f: typeof dmFilters) => khopTimKiemDanhMuc(item, term),
@@ -133,14 +132,16 @@ const HangHoaPhanThuocPage: React.FC = () => {
 
   const filteredDm = useListWithFilter(dmList, dmSearch, dmFilters, dmFilterFn);
 
-  useEffect(() => {
+  // Số dòng sau lọc đổi → về trang 1; trang vượt quá số trang → lùi về trang cuối.
+  // Điều chỉnh state ngay lúc render thay vì effect.
+  const [prevFilteredDmLength, setPrevFilteredDmLength] = useState(filteredDm.length);
+  if (filteredDm.length !== prevFilteredDmLength) {
+    setPrevFilteredDmLength(filteredDm.length);
     setDmPage(1);
-  }, [filteredDm.length]);
+  }
 
   const dmMaxPage = Math.max(1, Math.ceil(filteredDm.length / dmPageSize));
-  useEffect(() => {
-    setDmPage((p) => Math.min(p, dmMaxPage));
-  }, [dmPageSize, dmMaxPage]);
+  if (dmPage > dmMaxPage) setDmPage(dmMaxPage);
 
   const hhFilterFn = useCallback((item: FarmHangHoa, term: string, f: typeof hhFilters) => {
     const matchesSearch = khopTimKiemHangHoa(item, term);

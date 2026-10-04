@@ -22,6 +22,8 @@ import { createListSearchMatcher } from '../../../lib/list-search-matcher';
 
 /** Ô tìm kiếm quét MỌI cột của bảng, bỏ dấu tiếng Việt — xem lib/list-search-matcher.ts. */
 const khopTimKiem = createListSearchMatcher({ columns: DEFAULT_COLUMNS });
+/** Mảng rỗng cố định khi chưa có dữ liệu — tránh tham chiếu mới mỗi render. */
+const KHONG_CO_DONG: Department[] = [];
 
 const DepartmentPage = () => {
   const { t } = useTranslation();
@@ -36,7 +38,7 @@ const DepartmentPage = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
 
-  const { data: departments = [], isLoading } = useDepartments();
+  const { data: departments = KHONG_CO_DONG, isLoading } = useDepartments();
   const deleteMutation = useDeleteDepartment();
   const statusMutation = useUpdateStatusDepartment();
   const importer = usePhongBanImport();
@@ -45,11 +47,14 @@ const DepartmentPage = () => {
     return () => resetState();
   }, [resetState]);
 
-  useEffect(() => {
-    if (!viewingDept) return;
-    const fresh = departments.find((d) => d.id === viewingDept.id);
+  // Đồng bộ viewing với list sau refetch (action từ detail hoặc từ nơi khác). Điều chỉnh
+  // ngay lúc render khi list hoặc id đang xem đổi — cùng điều kiện với deps của effect cũ.
+  const [dongBoViewing, setDongBoViewing] = useState({ list: departments, id: viewingDept?.id });
+  if (dongBoViewing.list !== departments || dongBoViewing.id !== viewingDept?.id) {
+    setDongBoViewing({ list: departments, id: viewingDept?.id });
+    const fresh = viewingDept ? departments.find((d) => d.id === viewingDept.id) : undefined;
     if (fresh && fresh !== viewingDept) setViewingDept(fresh);
-  }, [departments, viewingDept?.id]);
+  }
 
   const filterFn = useCallback(
     (item: Department, term: string, f: typeof filters) => {
@@ -69,14 +74,19 @@ const DepartmentPage = () => {
     filterFn
   );
 
-  useEffect(() => {
-    setPage(1);
-  }, [filteredDepartments.length]);
-
   const maxPage = Math.max(1, Math.ceil(filteredDepartments.length / pageSize));
-  useEffect(() => {
-    setPage((p) => Math.min(p, maxPage));
-  }, [pageSize, maxPage]);
+  // Số dòng lọc đổi → về trang 1; chỉ đổi cỡ trang → kẹp trang vào [1, maxPage].
+  // Điều chỉnh ngay lúc render thay cho hai effect setState cũ (cùng điều kiện kích hoạt).
+  const [phanTrangTruoc, setPhanTrangTruoc] = useState({ soDong: filteredDepartments.length, pageSize, maxPage });
+  if (
+    phanTrangTruoc.soDong !== filteredDepartments.length ||
+    phanTrangTruoc.pageSize !== pageSize ||
+    phanTrangTruoc.maxPage !== maxPage
+  ) {
+    setPhanTrangTruoc({ soDong: filteredDepartments.length, pageSize, maxPage });
+    if (phanTrangTruoc.soDong !== filteredDepartments.length) setPage(1);
+    else setPage((p) => Math.min(p, maxPage));
+  }
 
   const exportPagination = useMemo(
     () => ({ page: 1, pageSize: Math.max(filteredDepartments.length, 1) }),

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, Package, X } from 'lucide-react';
@@ -43,13 +43,28 @@ const ChuyenTienDoModal: React.FC<Props> = ({ open, selectedCount, defaultNgayCa
     [tienDoMuaHangList]
   );
 
-  useEffect(() => {
+  // Mở modal (hoặc danh sách tiến độ / ngày cần đổi khi đang mở) → đặt lại form, điều chỉnh
+  // state ngay lúc render. So danh sách theo nội dung (chuỗi id) vì list mặc định `[]` tạo mảng
+  // mới mỗi render khi đang tải — so tham chiếu sẽ thành vòng lặp render.
+  const optionsKey = options.map((o) => o.value).join('|');
+  const [prevResetDeps, setPrevResetDeps] = useState<{
+    open: boolean;
+    optionsKey: string;
+    defaultNgayCan: string | null | undefined;
+  } | null>(null);
+  if (
+    !prevResetDeps ||
+    prevResetDeps.open !== open ||
+    prevResetDeps.optionsKey !== optionsKey ||
+    prevResetDeps.defaultNgayCan !== defaultNgayCan
+  ) {
+    setPrevResetDeps({ open, optionsKey, defaultNgayCan });
     if (open) {
       setIdTienDo(options[0]?.value ?? null);
       setGhiChu('');
       setNgayCan(defaultNgayCan ?? '');
     }
-  }, [open, options, defaultNgayCan]);
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

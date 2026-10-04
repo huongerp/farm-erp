@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useForm, Controller, SubmitHandler, useFieldArray, type FieldErrors, type Resolver } from 'react-hook-form';
+import { useForm, useWatch, Controller, SubmitHandler, useFieldArray, type FieldErrors, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { FileText, Calendar, Warehouse, User, UserCheck, Package, Trash2 } from 'lucide-react';
@@ -62,6 +62,19 @@ function getUserBranchId(user: { id_chi_nhanh?: string | string[] | null } | nul
   if (!user?.id_chi_nhanh) return null;
   return Array.isArray(user.id_chi_nhanh) ? user.id_chi_nhanh[0] ?? null : (user.id_chi_nhanh as string) ?? null;
 }
+
+/** Giá trị trống của form — hằng ngoài component để effect reset không phụ thuộc tham chiếu mới mỗi lần render. */
+const DEFAULT_FORM_VALUES: Partial<DeXuatMuaHangFormValues> = {
+  so_phieu: '',
+  ngay: '',
+  ngay_can: '',
+  id_noi_de_xuat: '',
+  id_nguoi_de_xuat: '',
+  id_nguoi_duyet: null,
+  ghi_chu: '',
+  trang_thai: 'Chờ duyệt',
+  chi_tiet: [],
+};
 
 const DeXuatMuaHangForm: React.FC<Props> = ({ khoList, employees, initialData, onClose, canEdit = true, onRequestAddHangHoa }) => {
   const { t } = useTranslation();
@@ -144,25 +157,14 @@ const DeXuatMuaHangForm: React.FC<Props> = ({ khoList, employees, initialData, o
     [tienDoMuaHangList]
   );
 
-  const defaultValues: Partial<DeXuatMuaHangFormValues> = {
-    so_phieu: '',
-    ngay: '',
-    ngay_can: '',
-    id_noi_de_xuat: '',
-    id_nguoi_de_xuat: '',
-    id_nguoi_duyet: null,
-    ghi_chu: '',
-    trang_thai: 'Chờ duyệt',
-    chi_tiet: [],
-  };
 
-  const { register, handleSubmit, formState: { errors, isDirty, isSubmitted }, reset, control, watch, setValue } = useForm<DeXuatMuaHangFormValues>({
+  const { register, handleSubmit, formState: { errors, isDirty, isSubmitted }, reset, control, setValue } = useForm<DeXuatMuaHangFormValues>({
     resolver: zodResolver(deXuatMuaHangSchema) as Resolver<DeXuatMuaHangFormValues>,
-    defaultValues,
+    defaultValues: DEFAULT_FORM_VALUES,
   });
 
   const { fields, append, remove } = useFieldArray({ control, name: 'chi_tiet' });
-  const chiTietValues = watch('chi_tiet') ?? [];
+  const chiTietValues = useWatch({ control, name: 'chi_tiet' }) ?? [];
 
   const defaultKhoByBranch = useMemo(() => {
     const branchId = getUserBranchId(user);
@@ -218,7 +220,7 @@ const DeXuatMuaHangForm: React.FC<Props> = ({ khoList, employees, initialData, o
     } else {
       const today = new Date().toISOString().slice(0, 10);
       reset({
-        ...defaultValues,
+        ...DEFAULT_FORM_VALUES,
         so_phieu: '',
         ngay: today,
         ngay_can: addDays(today, SO_NGAY_MAC_DINH_NGAY_CAN),
@@ -228,7 +230,7 @@ const DeXuatMuaHangForm: React.FC<Props> = ({ khoList, employees, initialData, o
       if (user?.id) setValue('id_nguoi_de_xuat', user.id);
       if (defaultKhoByBranch?.id) setValue('id_noi_de_xuat', defaultKhoByBranch.id);
     }
-  }, [initialData, reset, user?.id, defaultKhoByBranch?.id, setValue, defaultTienDoMuaHang]);
+  }, [initialData, isCopy, reset, user?.id, defaultKhoByBranch?.id, setValue, defaultTienDoMuaHang]);
 
   // Không gọi RPC khi mở form — chỉ gọi khi submit để tránh tốn số sequence mỗi lần bấm Thêm phiếu.
 

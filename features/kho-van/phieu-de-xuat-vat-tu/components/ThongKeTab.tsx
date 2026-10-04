@@ -68,10 +68,10 @@ const ThongKeTab: React.FC = () => {
     staleTime: 60_000,
   });
 
-  const statusCounts = stats?.chipByStatusKey ?? {};
-  const noiDeXuatCounts = stats?.chipByNoiDeXuatId ?? {};
-  const nguoiDeXuatCounts = stats?.chipByNguoiDeXuatId ?? {};
-  const nguoiDuyetCounts = stats?.chipByNguoiDuyetId ?? {};
+  const statusCounts = useMemo(() => stats?.chipByStatusKey ?? {}, [stats?.chipByStatusKey]);
+  const noiDeXuatCounts = useMemo(() => stats?.chipByNoiDeXuatId ?? {}, [stats?.chipByNoiDeXuatId]);
+  const nguoiDeXuatCounts = useMemo(() => stats?.chipByNguoiDeXuatId ?? {}, [stats?.chipByNguoiDeXuatId]);
+  const nguoiDuyetCounts = useMemo(() => stats?.chipByNguoiDuyetId ?? {}, [stats?.chipByNguoiDuyetId]);
 
   const statusOptions = useMemo(
     () => [

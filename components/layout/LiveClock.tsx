@@ -62,27 +62,32 @@ const LiveClock: FC = () => {
   const { t } = useTranslation();
   const timezone = useUIStore((s) => s.timezone);
 
-  const dayNames = [
-    t('clock.sunday'),
-    t('clock.monday'),
-    t('clock.tuesday'),
-    t('clock.wednesday'),
-    t('clock.thursday'),
-    t('clock.friday'),
-    t('clock.saturday'),
-  ];
-
-  const [display, setDisplay] = useState<LiveClockDisplay>(() =>
-    formatDateWithDayNames(new Date(), timezone, dayNames)
+  const dayNames = useMemo(
+    () => [
+      t('clock.sunday'),
+      t('clock.monday'),
+      t('clock.tuesday'),
+      t('clock.wednesday'),
+      t('clock.thursday'),
+      t('clock.friday'),
+      t('clock.saturday'),
+    ],
+    [t]
   );
 
+  // State chỉ giữ thời điểm hiện tại (nhảy mỗi giây); chuỗi hiển thị suy ra khi render
+  // nên đổi timezone/ngôn ngữ là cập nhật ngay, không cần setState trong effect.
+  const [now, setNow] = useState(() => new Date());
+
   useEffect(() => {
-    setDisplay(formatDateWithDayNames(new Date(), timezone, dayNames));
-    const timer = setInterval(() => {
-      setDisplay(formatDateWithDayNames(new Date(), timezone, dayNames));
-    }, 1_000);
+    const timer = setInterval(() => setNow(new Date()), 1_000);
     return () => clearInterval(timer);
-  }, [timezone, t]);
+  }, []);
+
+  const display = useMemo<LiveClockDisplay>(
+    () => formatDateWithDayNames(now, timezone, dayNames),
+    [now, timezone, dayNames]
+  );
 
   const { y, m, d } = display;
   // Chỉ tính lại khi sang ngày mới, không phải mỗi giây.

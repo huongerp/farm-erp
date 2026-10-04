@@ -27,6 +27,8 @@ import {
   exportFileNamePhieuChiPhiTaiSanList,
 } from '../utils/export-bao-tri-sua-chua-danh-sach';
 
+const EMPTY_EXPORT_ROWS: PhieuBaoTriSuaChua[] = [];
+
 interface Props {
   /** Từ URL ?tai_san_id=... (vd: link từ chi tiết tài sản): lọc theo tài sản và mở form Thêm phiếu với tài sản mặc định */
   defaultTaiSanId?: string;
@@ -48,6 +50,7 @@ const TatCaTab: React.FC<Props> = ({ defaultTaiSanId }) => {
     pagination,
   } = useBaoTriSuaChuaStore();
   const user = useAuthStore((s) => s.user);
+  const userId = user?.id;
   const { viewAll } = useBaoTriSuaChuaViewScope();
   const { data: taiSanList = [] } = useTaiSanTomTat();
   /**
@@ -56,9 +59,9 @@ const TatCaTab: React.FC<Props> = ({ defaultTaiSanId }) => {
    */
   const idTaiSanChoPhep = useMemo(() => {
     if (viewAll) return null;
-    const myId = String(user?.id ?? '');
+    const myId = String(userId ?? '');
     return taiSanList.filter((a) => String(a.id_nhan_vien_dang_giu) === myId).map((a) => a.id);
-  }, [taiSanList, viewAll, user?.id]);
+  }, [taiSanList, viewAll, userId]);
 
   const listServerQuery: BaoTriSuaChuaListServerQuery = useMemo(
     () => ({
@@ -73,11 +76,11 @@ const TatCaTab: React.FC<Props> = ({ defaultTaiSanId }) => {
       trangThai: filters.trang_thai ?? [],
       idNguoiTao: filters.id_nguoi_tao ?? [],
       idTaiSanChoPhep,
-      idNguoiTaoCuaToi: viewAll ? null : (user?.id ? String(user.id) : null),
+      idNguoiTaoCuaToi: viewAll ? null : (userId ? String(userId) : null),
       sortColumn: sort.column,
       sortDirection: sort.direction,
     }),
-    [pagination.page, pagination.pageSize, searchTerm, filters, sort, idTaiSanChoPhep, viewAll, user?.id]
+    [pagination.page, pagination.pageSize, searchTerm, filters, sort, idTaiSanChoPhep, viewAll, userId]
   );
 
   const pageQuery = usePhieuBaoTriPage(listServerQuery);
@@ -96,33 +99,46 @@ const TatCaTab: React.FC<Props> = ({ defaultTaiSanId }) => {
 
   useEffect(() => resetState, [resetState]);
 
+  // Có ?tai_san_id= → mở form Thêm phiếu với tài sản mặc định. State cục bộ chỉnh ngay lúc
+  // render (mẫu "adjust state while rendering"); bộ lọc nằm ở store ngoài nên vẫn đặt trong effect.
+  const [prevDefaultTaiSanId, setPrevDefaultTaiSanId] = useState<string | undefined>(undefined);
+  if (defaultTaiSanId !== prevDefaultTaiSanId) {
+    setPrevDefaultTaiSanId(defaultTaiSanId);
+    if (defaultTaiSanId) {
+      setDefaultAssetId(defaultTaiSanId);
+      setShowForm(true);
+    }
+  }
   useEffect(() => {
     if (!defaultTaiSanId) return;
-    setDefaultAssetId(defaultTaiSanId);
     setFilter('id_tai_san', [defaultTaiSanId]);
-    setShowForm(true);
   }, [defaultTaiSanId, setFilter]);
 
-  /** Xuất file cần TẤT CẢ bản ghi khớp bộ lọc — chỉ tải khi mở hộp thoại Xuất. */
-  const [exportRows, setExportRows] = useState<PhieuBaoTriSuaChua[]>([]);
-  const [exportLoading, setExportLoading] = useState(false);
+  /**
+   * Xuất file cần TẤT CẢ bản ghi khớp bộ lọc — chỉ tải khi mở hộp thoại Xuất.
+   * Kết quả gắn với đúng query đã tải: query hiện tại chưa có kết quả ⇒ đang tải.
+   * Đóng hộp thoại thì bỏ kết quả cũ (lần mở sau tải lại).
+   */
+  const [exportResult, setExportResult] = useState<{
+    query: BaoTriSuaChuaListServerQuery;
+    rows: PhieuBaoTriSuaChua[];
+  } | null>(null);
+  const [prevShowExport, setPrevShowExport] = useState(showExport);
+  if (showExport !== prevShowExport) {
+    setPrevShowExport(showExport);
+    if (!showExport) setExportResult(null);
+  }
+  const exportRows = exportResult?.rows ?? EMPTY_EXPORT_ROWS;
+  const exportLoading = showExport && exportResult?.query !== listServerQuery;
   useEffect(() => {
-    if (!showExport) {
-      setExportRows([]);
-      setExportLoading(false);
-      return;
-    }
+    if (!showExport) return;
     let cancelled = false;
-    setExportLoading(true);
     fetchAllPhieuBaoTriForListQuery(listServerQuery)
       .then((rows) => {
-        if (!cancelled) setExportRows(rows);
+        if (!cancelled) setExportResult({ query: listServerQuery, rows });
       })
       .catch(() => {
-        if (!cancelled) setExportRows([]);
-      })
-      .finally(() => {
-        if (!cancelled) setExportLoading(false);
+        if (!cancelled) setExportResult({ query: listServerQuery, rows: [] });
       });
     return () => {
       cancelled = true;

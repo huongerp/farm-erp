@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import Button from '../ui/Button';
@@ -57,10 +57,6 @@ export const TablePaginationFooter: React.FC<TablePaginationFooterProps> = ({
     setEditingPage(false);
     setPageInput('');
   };
-
-  useEffect(() => {
-    if (!editingPage) setPageInput('');
-  }, [editingPage]);
 
   const showAllOption = totalRecords > 100 && !pageSizeOptions.includes(totalRecords);
 

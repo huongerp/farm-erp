@@ -87,7 +87,7 @@ const DanhSachTab: React.FC = () => {
   const { data: tomTatList = [] } = useThanhToanDoiTacTomTat();
 
   const pageQuery = useThanhToanDoiTacPage(listServerQuery, !viewScope.isLoading);
-  const pageList = pageQuery.data?.data ?? [];
+  const pageList = useMemo(() => pageQuery.data?.data ?? [], [pageQuery.data]);
   const totalCount = pageQuery.data?.totalCount ?? 0;
   const isLoading = !pageQuery.data && pageQuery.isPending;
   const isFetching = !!pageQuery.data && pageQuery.isFetching;
@@ -103,12 +103,14 @@ const DanhSachTab: React.FC = () => {
   useEffect(() => {
     if (pagination.page > maxPage) setPage(maxPage);
   }, [pagination.page, pagination.pageSize, maxPage, setPage]);
-  useEffect(() => {
-    if (!viewingItem) return;
-    // Bản ghi đang mở vừa cập nhật ở trang hiện tại → đồng bộ lại drawer.
-    const fresh = pageList.find((p) => p.id === viewingItem.id);
+  // Bản ghi đang mở vừa cập nhật ở trang hiện tại → đồng bộ lại drawer. Điều chỉnh ngay lúc
+  // render khi pageList hoặc id đang xem đổi — cùng điều kiện với deps của effect cũ.
+  const [dongBoViewing, setDongBoViewing] = useState({ pageList, id: viewingItem?.id });
+  if (dongBoViewing.pageList !== pageList || dongBoViewing.id !== viewingItem?.id) {
+    setDongBoViewing({ pageList, id: viewingItem?.id });
+    const fresh = viewingItem ? pageList.find((p) => p.id === viewingItem.id) : undefined;
     if (fresh && fresh !== viewingItem) setViewingItem(fresh);
-  }, [pageList, viewingItem?.id]);
+  }
 
   const handleEdit = (item: ThanhToanDoiTac) => {
     setEditingItem(item);

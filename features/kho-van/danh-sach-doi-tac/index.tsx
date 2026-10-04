@@ -38,9 +38,12 @@ const DanhSachDoiTacPage: React.FC = () => {
     return 'nha_cung_cap';
   });
 
-  useEffect(() => {
+  // Tham số ?tab= trên URL đổi → đồng bộ tab (chỉnh state ngay khi render thay vì effect).
+  const [prevTabFromUrl, setPrevTabFromUrl] = useState(tabFromUrl);
+  if (prevTabFromUrl !== tabFromUrl) {
+    setPrevTabFromUrl(tabFromUrl);
     if (tabFromUrl === 'nha_cung_cap' || tabFromUrl === 'khach_hang' || tabFromUrl === 'danh_muc' || tabFromUrl === 'tag') setActiveTab(tabFromUrl);
-  }, [tabFromUrl]);
+  }
 
   const confirm = useConfirmStore((s) => s.confirm);
   const {
@@ -61,7 +64,8 @@ const DanhSachDoiTacPage: React.FC = () => {
 
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<DoiTac | null>(null);
-  const [viewingItem, setViewingItem] = useState<DoiTac | null>(null);
+  // Bản chụp lúc mở chi tiết; bản hiển thị (viewingItem) lấy dòng mới nhất từ trang đang xem khi refetch.
+  const [viewingSnapshot, setViewingItem] = useState<DoiTac | null>(null);
   const [showAddNhomFromDoiTac, setShowAddNhomFromDoiTac] = useState(false);
   const addNhomResolveRef = useRef<((nhom: NhomDoiTac | null) => void) | null>(null);
   const queryClient = useQueryClient();
@@ -86,7 +90,11 @@ const DanhSachDoiTacPage: React.FC = () => {
   );
 
   const pageQuery = useDoiTacPage(listServerQuery, laTabDoiTac);
-  const pageList = pageQuery.data?.data ?? [];
+  const pageList = useMemo(() => pageQuery.data?.data ?? [], [pageQuery.data]);
+  const viewingItem = useMemo(
+    () => (viewingSnapshot ? (pageList.find((n) => n.id === viewingSnapshot.id) ?? viewingSnapshot) : null),
+    [pageList, viewingSnapshot]
+  );
   const totalCount = pageQuery.data?.totalCount ?? 0;
   const isLoading = !pageQuery.data && pageQuery.isPending;
   const isFetching = !!pageQuery.data && pageQuery.isFetching;
@@ -121,11 +129,6 @@ const DanhSachDoiTacPage: React.FC = () => {
     return () => resetState();
   }, [resetState]);
 
-  useEffect(() => {
-    if (!viewingItem) return;
-    const fresh = pageList.find((n) => n.id === viewingItem.id);
-    if (fresh && fresh !== viewingItem) setViewingItem(fresh);
-  }, [pageList, viewingItem?.id]);
 
   const handleTabChange = (id: string) => {
     if (id === 'nha_cung_cap' || id === 'khach_hang' || id === 'danh_muc' || id === 'tag') {

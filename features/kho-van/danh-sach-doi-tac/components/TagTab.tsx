@@ -69,25 +69,30 @@ const TagTab: React.FC = () => {
     }
   };
 
-  const handleEdit = (item: TagType) => {
+  // Ổn định tham chiếu để renderCell / renderMobileCard (useCallback) khai đủ deps mà không tạo lại mỗi render.
+  const handleEdit = useCallback((item: TagType) => {
     setEditingItem(item);
     setViewingItem(null);
     setShowForm(true);
-  };
+  }, []);
 
-  const handleView = (item: TagType) => {
+  const handleView = useCallback((item: TagType) => {
     setViewingItem(item);
-  };
+  }, []);
 
-  const handleDelete = (id: string) => {
-    confirm({
-      title: t('doiTac.danhMuc.deleteTag'),
-      message: t('doiTac.danhMuc.deleteTagConfirm'),
-      variant: 'danger',
-      confirmText: CONFIRM_DELETE(),
-      onConfirm: () => deleteTag.mutate(id),
-    });
-  };
+  const deleteTagMutate = deleteTag.mutate;
+  const handleDelete = useCallback(
+    (id: string) => {
+      confirm({
+        title: t('doiTac.danhMuc.deleteTag'),
+        message: t('doiTac.danhMuc.deleteTagConfirm'),
+        variant: 'danger',
+        confirmText: CONFIRM_DELETE(),
+        onConfirm: () => deleteTagMutate(id),
+      });
+    },
+    [confirm, t, deleteTagMutate]
+  );
 
   const handleDeleteMany = () => {
     const ids = Array.from(selectedIds);
@@ -144,7 +149,7 @@ const TagTab: React.FC = () => {
           return null;
       }
     },
-    [t]
+    [t, handleEdit, handleDelete]
   );
 
   const renderMobileCard = useCallback(
@@ -179,7 +184,7 @@ const TagTab: React.FC = () => {
         </div>
       </div>
     ),
-    [t, handleView]
+    [t, handleView, handleEdit, handleDelete]
   );
 
   return (

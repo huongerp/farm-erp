@@ -39,11 +39,20 @@ const NhapKetQuaKiemKeDialog: React.FC<Props> = ({
   const [error, setError] = useState<string | undefined>();
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
+  // Mở dialog / đổi dòng → nạp lại giá trị của dòng; chỉnh state ngay khi render thay vì effect.
+  // Khởi tạo prev = đóng để lần render đầu (đã mở sẵn) cũng nạp giá trị như trước.
+  const [prevSync, setPrevSync] = useState<{ open: boolean; row: ChiTietKiemKeKho | null }>({ open: false, row: null });
+  if (prevSync.open !== open || prevSync.row !== row) {
+    setPrevSync({ open, row });
     if (open && row) {
       setSoLuongThucTe(row.so_luong_thuc_te != null ? String(row.so_luong_thuc_te) : '');
       setGhiChuDong(row.ghi_chu_dong ?? '');
       setError(undefined);
+    }
+  }
+
+  useEffect(() => {
+    if (open && row) {
       // Đổi dòng (Lưu & dòng tiếp) thì dialog không mount lại — tự đặt con trỏ vào ô số.
       requestAnimationFrame(() => inputRef.current?.focus());
     }

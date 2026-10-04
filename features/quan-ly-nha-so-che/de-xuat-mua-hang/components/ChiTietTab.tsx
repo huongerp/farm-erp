@@ -80,8 +80,6 @@ const ChiTietTab: React.FC = () => {
   const [editingRow, setEditingRow] = useState<DeXuatMuaHangChiTietRow | null>(null);
   const [showChuyenTienDoModal, setShowChuyenTienDoModal] = useState(false);
   const [showExport, setShowExport] = useState(false);
-  const [exportRows, setExportRows] = useState<DeXuatMuaHangChiTietRow[]>([]);
-  const [exportLoading, setExportLoading] = useState(false);
   /** Khi mở "Chuyển tiến độ" từ drawer chi tiết 1 dòng */
   const [singleRowForChuyenTienDo, setSingleRowForChuyenTienDo] = useState<DeXuatMuaHangChiTietRow | null>(null);
 
@@ -132,7 +130,7 @@ const ChiTietTab: React.FC = () => {
   const listQueryKey = useMemo(() => stableListQueryKeyPart(listServerQuery), [listServerQuery]);
   const pageIndex = Math.max(0, pagination.page - 1);
   const pageQuery = useDeXuatMuaHangChiTietPaged(pageIndex, listServerQuery);
-  const tableRows = pageQuery.data?.data ?? [];
+  const tableRows = useMemo(() => pageQuery.data?.data ?? [], [pageQuery.data?.data]);
   const totalCount = pageQuery.data?.totalCount ?? 0;
   const isInitialLoading = !pageQuery.data && pageQuery.isPending;
   const isFetchingOverlay = !!pageQuery.data && pageQuery.isFetching;
@@ -142,29 +140,6 @@ const ChiTietTab: React.FC = () => {
   useEffect(() => {
     setPage(1);
   }, [listQueryKey, setPage]);
-
-  useEffect(() => {
-    if (!showExport) {
-      setExportRows([]);
-      setExportLoading(false);
-      return;
-    }
-    let cancelled = false;
-    setExportLoading(true);
-    fetchAllDeXuatMuaHangChiTietForListQuery(listServerQuery)
-      .then((rows) => {
-        if (!cancelled) setExportRows(rows);
-      })
-      .catch(() => {
-        if (!cancelled) setExportRows([]);
-      })
-      .finally(() => {
-        if (!cancelled) setExportLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [showExport, listQueryKey, listServerQuery]);
 
   const hasSelection = selectedIds.size > 0;
 
@@ -332,6 +307,36 @@ const ChiTietTab: React.FC = () => {
     [phieuById, employees, khoById]
   );
 
+  // Mỗi lần mở hộp thoại (hoặc đổi bộ lọc khi đang mở) tạo một "yêu cầu" mới; kết quả
+  // chỉ dùng khi khớp đúng yêu cầu hiện tại → đang tải / dữ liệu suy ra lúc render.
+  const exportRequest = useMemo(
+    () => (showExport ? { query: listServerQuery } : null),
+    [showExport, listServerQuery]
+  );
+  const [exportResult, setExportResult] = useState<{
+    request: { query: typeof listServerQuery };
+    rows: DeXuatMuaHangChiTietRow[];
+  } | null>(null);
+  const exportLoading = exportRequest !== null && exportResult?.request !== exportRequest;
+  const exportRows = useMemo(
+    () => (exportRequest !== null && exportResult?.request === exportRequest ? exportResult.rows : []),
+    [exportRequest, exportResult]
+  );
+  useEffect(() => {
+    if (!exportRequest) return;
+    let cancelled = false;
+    fetchAllDeXuatMuaHangChiTietForListQuery(exportRequest.query)
+      .then((rows) => {
+        if (!cancelled) setExportResult({ request: exportRequest, rows });
+      })
+      .catch(() => {
+        if (!cancelled) setExportResult({ request: exportRequest, rows: [] });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [exportRequest]);
+
   const { exportData, paginatedData: paginatedExportData, selectedData: selectedExportData } = useExportData({
     data: exportRows,
     isOpen: showExport && !exportLoading,
@@ -461,7 +466,7 @@ const ChiTietTab: React.FC = () => {
           return <span className="text-sm">{String(item[colId as keyof DeXuatMuaHangChiTietRow] ?? '—')}</span>;
       }
     },
-    [renderStatusBadge, t, handleDelete]
+    [renderStatusBadge, renderTienDoBadge, t, handleDelete]
   );
 
   const handleRowClick = useCallback((item: DeXuatMuaHangChiTietRow) => setViewingRow(item), []);

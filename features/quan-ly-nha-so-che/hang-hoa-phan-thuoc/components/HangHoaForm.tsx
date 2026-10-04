@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useForm, Controller, SubmitHandler, type Resolver } from 'react-hook-form';
+import { useForm, useWatch, Controller, SubmitHandler, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Package, Folder, DollarSign, FileText } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
@@ -57,12 +57,12 @@ const HangHoaForm: React.FC<Props> = ({ initialData, existingDvtList = [], exist
     mo_ta: null,
   };
 
-  const { register, handleSubmit, formState: { errors, isDirty }, reset, control, watch } = useForm<FarmHangHoaFormValues>({
+  const { register, handleSubmit, formState: { errors, isDirty }, reset, control } = useForm<FarmHangHoaFormValues>({
     resolver: zodResolver(farmHangHoaSchema) as Resolver<FarmHangHoaFormValues>,
     defaultValues,
   });
 
-  const dvtWatch = watch('dvt');
+  const dvtWatch = useWatch({ control, name: 'dvt' });
 
   const dvtOptions = useMemo(() => {
     const items = new Set<string>();
@@ -75,7 +75,7 @@ const HangHoaForm: React.FC<Props> = ({ initialData, existingDvtList = [], exist
     return [...items].sort((a, b) => a.localeCompare(b, 'vi')).map((d) => ({ value: d, label: d }));
   }, [existingDvtList, dvtWatch]);
 
-  const phamCapWatch = watch('pham_cap');
+  const phamCapWatch = useWatch({ control, name: 'pham_cap' });
 
   const phamCapOptions = useMemo(() => {
     const items = new Set<string>();

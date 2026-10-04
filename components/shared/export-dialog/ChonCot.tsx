@@ -68,7 +68,16 @@ const ChonCot: React.FC<ChonCotProps> = ({ ordered, selectedSet, onToggle, onTog
               onDragEnter={() => dragIndex !== null && dragIndex !== index && setOverIndex(index)}
               onDragOver={(e) => e.preventDefault()}
               onDragEnd={endDrag}
+              role="checkbox"
+              aria-checked={on}
+              tabIndex={0}
               onClick={() => onToggle(col.key)}
+              onKeyDown={(e) => {
+                if (e.key === ' ' || e.key === 'Enter') {
+                  e.preventDefault();
+                  onToggle(col.key);
+                }
+              }}
               className={cn(
                 'group flex items-center gap-1.5 px-2 py-1.5 rounded-lg cursor-pointer select-none transition-all text-xs',
                 on ? 'bg-primary/5 text-foreground' : 'text-muted-foreground hover:bg-muted/50',

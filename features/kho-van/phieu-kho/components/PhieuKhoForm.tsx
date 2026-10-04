@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { useForm, Controller, SubmitHandler, useFieldArray, type Resolver } from 'react-hook-form';
+import { useForm, useWatch, Controller, SubmitHandler, useFieldArray, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { FileText, Calendar, Warehouse, ArrowRightLeft, Package, Trash2, AlertTriangle, Truck, ShoppingCart, Edit } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
@@ -83,28 +83,33 @@ const PhieuKhoForm: React.FC<Props> = ({
   const { data: khachHangList = [] } = useDoiTacRefQuery('khach_hang');
   const { data: donDatHangMinimal = [] } = useDonDatHangSoPoMinimalQuery();
 
-  const defaultValues: Partial<PhieuKhoFormValues> = {
-    so_phieu: '',
-    ngay: today(),
-    kho_id: '',
-    kho_den_id: null,
-    id_nha_cung_cap: null,
-    id_khach_hang: null,
-    id_don_dat_hang: null,
-    mo_ta: '',
-    trang_thai: 'Chờ duyệt',
-    chi_tiet: [],
-  };
+  // Chỉ dùng lúc mount (useForm) và làm nền khi reset — `ngay` luôn được ghi đè bằng today() lúc reset.
+  const defaultValues = useMemo<Partial<PhieuKhoFormValues>>(
+    () => ({
+      so_phieu: '',
+      ngay: today(),
+      kho_id: '',
+      kho_den_id: null,
+      id_nha_cung_cap: null,
+      id_khach_hang: null,
+      id_don_dat_hang: null,
+      mo_ta: '',
+      trang_thai: 'Chờ duyệt',
+      chi_tiet: [],
+    }),
+    []
+  );
 
-  const { register, handleSubmit, formState: { errors, isDirty }, reset, control, watch, setValue } = useForm<PhieuKhoFormValues>({
+  const { register, handleSubmit, formState: { errors, isDirty }, reset, control, setValue } = useForm<PhieuKhoFormValues>({
     resolver: zodResolver(phieuKhoSchema) as Resolver<PhieuKhoFormValues>,
     defaultValues,
   });
 
-  const khoIdWatch = watch('kho_id');
-  const idNhaCungCapWatch = watch('id_nha_cung_cap');
-  const idKhachHangWatch = watch('id_khach_hang');
-  const moTaWatch = watch('mo_ta');
+  const khoIdWatch = useWatch({ control, name: 'kho_id' });
+  const idNhaCungCapWatch = useWatch({ control, name: 'id_nha_cung_cap' });
+  const idKhachHangWatch = useWatch({ control, name: 'id_khach_hang' });
+  const moTaWatch = useWatch({ control, name: 'mo_ta' });
+  const chiTietWatch = useWatch({ control, name: 'chi_tiet' });
 
   const khoOptions = useMemo(
     () => [
@@ -229,7 +234,7 @@ const PhieuKhoForm: React.FC<Props> = ({
       });
       if (user?.id) setValue('nguoi_tao_id', Number(user.id));
     }
-  }, [initialData, prefillValues, reset, user?.id, setValue, hangHoaMap, isDirty]);
+  }, [initialData, prefillValues, defaultValues, reset, user?.id, setValue, hangHoaMap, isDirty]);
 
   const onSubmit: SubmitHandler<PhieuKhoFormValues> = async (data) => {
     if (loai === 'chuyen' && !data.kho_den_id) {
@@ -301,7 +306,7 @@ const PhieuKhoForm: React.FC<Props> = ({
   const showCustomer = isXuat;
   const labelKho = isNhap ? t('phieuKho.form.warehouseTo') : t('phieuKho.form.warehouseFrom');
 
-  const chiTietValues: { id_hang_hoa?: string; so_luong?: number; don_gia?: number; so_lot?: string; ghi_chu?: string }[] = Array.isArray(watch('chi_tiet')) ? watch('chi_tiet') : [];
+  const chiTietValues: { id_hang_hoa?: string; so_luong?: number; don_gia?: number; so_lot?: string; ghi_chu?: string }[] = Array.isArray(chiTietWatch) ? chiTietWatch : [];
 
   return (
     <GenericDrawer

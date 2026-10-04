@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { Tag, Layers, CircleDollarSign } from 'lucide-react';
@@ -14,12 +14,17 @@ const ThietLapTaiSanPage: React.FC = () => {
   const { t } = useTranslation();
   const { viewAll, isLoading: scopeLoading } = useThietLapTaiSanViewScope();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState('nhomtaisan');
-
   const tabFromUrl = searchParams.get('tab');
-  useEffect(() => {
-    if (tabFromUrl === 'nhomtaisan' || tabFromUrl === 'trangthai' || tabFromUrl === 'loaichiphi') setActiveTab(tabFromUrl);
-  }, [tabFromUrl]);
+  const isValidTab = (id: string | null): id is string =>
+    id === 'nhomtaisan' || id === 'trangthai' || id === 'loaichiphi';
+  const [activeTab, setActiveTab] = useState(() => (isValidTab(tabFromUrl) ? tabFromUrl : 'nhomtaisan'));
+
+  // Đồng bộ tab khi ?tab= trên URL đổi — điều chỉnh state ngay lúc render thay vì effect.
+  const [prevTabFromUrl, setPrevTabFromUrl] = useState(tabFromUrl);
+  if (tabFromUrl !== prevTabFromUrl) {
+    setPrevTabFromUrl(tabFromUrl);
+    if (isValidTab(tabFromUrl)) setActiveTab(tabFromUrl);
+  }
 
   // Ghi tab vào URL — trước đây chỉ đọc, không ghi, nên bấm tab rồi F5 là nhảy về tab cũ.
   const handleTabChange = (id: string) => {

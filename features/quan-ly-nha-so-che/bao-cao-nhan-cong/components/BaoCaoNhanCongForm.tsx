@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { useForm, Controller, type SubmitHandler, type Resolver } from 'react-hook-form';
+import { useForm, useWatch, Controller, type SubmitHandler, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Building2, Users, Images, ChevronDown } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
@@ -100,6 +100,12 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
   const createMutation = useCreateBaoCaoNhanCong(onClose);
   const updateMutation = useUpdateBaoCaoNhanCong(onClose);
 
+  // Tách giá trị nguyên thuỷ trước để deps của useMemo khớp đúng những gì thân hàm đọc.
+  const initialIdChiNhanh = initialData?.id_chi_nhanh;
+  const initialTenChiNhanh = initialData?.ten_chi_nhanh;
+  const preferredIdChiNhanh = preferredBranch?.id_chi_nhanh;
+  const preferredTenChiNhanh = preferredBranch?.ten_chi_nhanh;
+
   const branchComboboxOptions = useMemo(() => {
     const active = branches.filter((b) => b.trang_thai === TRANG_THAI.DANG_DUNG);
     const opts = active.map((b) => ({
@@ -107,38 +113,37 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
       label: `${b.ma_chi_nhanh} — ${b.ten_chi_nhanh}`,
       subLabel: b.ma_chi_nhanh,
     }));
-    if (initialData?.id_chi_nhanh && initialData.ten_chi_nhanh) {
-      const idStr = String(initialData.id_chi_nhanh);
+    if (initialIdChiNhanh && initialTenChiNhanh) {
+      const idStr = String(initialIdChiNhanh);
       if (!opts.some((o) => String(o.value) === idStr)) {
         opts.unshift({
           value: idStr,
-          label: `${initialData.ten_chi_nhanh} (${t('baoCaoNhanCong.form.branchInactiveHint')})`,
+          label: `${initialTenChiNhanh} (${t('baoCaoNhanCong.form.branchInactiveHint')})`,
           subLabel: '',
         });
       }
     }
     return opts;
-  }, [branches, initialData?.id_chi_nhanh, initialData?.ten_chi_nhanh, t]);
+  }, [branches, initialIdChiNhanh, initialTenChiNhanh, t]);
 
   const defaultValues = useMemo(() => {
     if (initialData) return farmBaoCaoNhanCongToForm(initialData);
     const base = defaultFormValues();
-    if (preferredBranch?.id_chi_nhanh) {
+    if (preferredIdChiNhanh) {
       return {
         ...base,
-        id_chi_nhanh: preferredBranch.id_chi_nhanh,
-        ten_chi_nhanh: preferredBranch.ten_chi_nhanh,
+        id_chi_nhanh: preferredIdChiNhanh,
+        ten_chi_nhanh: preferredTenChiNhanh ?? '',
       };
     }
     return base;
-  }, [initialData, preferredBranch?.id_chi_nhanh, preferredBranch?.ten_chi_nhanh]);
+  }, [initialData, preferredIdChiNhanh, preferredTenChiNhanh]);
 
   const [expandedRows, setExpandedRows] = useState<Set<number>>(() => new Set());
 
   const {
     control,
     handleSubmit,
-    watch,
     setValue,
     getValues,
     reset,
@@ -150,14 +155,20 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
     reValidateMode: 'onSubmit',
   });
 
-  const idChiNhanh = watch('id_chi_nhanh');
+  const idChiNhanh = useWatch({ control, name: 'id_chi_nhanh' });
 
   useEffect(() => {
     // Không reset nếu người dùng đã bắt đầu sửa — cùng lý do đã sửa ở BaoCaoSoCheForm.
     if (isDirty) return;
     reset(defaultValues);
-    setExpandedRows(new Set());
   }, [defaultValues, reset, isDirty]);
+
+  // Thu gọn các dòng đang mở cùng lúc với lần reset ở trên — điều chỉnh state ngay lúc render.
+  const [prevResetDeps, setPrevResetDeps] = useState({ defaultValues, isDirty });
+  if (prevResetDeps.defaultValues !== defaultValues || prevResetDeps.isDirty !== isDirty) {
+    setPrevResetDeps({ defaultValues, isDirty });
+    if (!isDirty) setExpandedRows(new Set());
+  }
 
   useEffect(() => {
     if (!idChiNhanh) {
@@ -217,7 +228,7 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
     });
   }, []);
 
-  const chiTiet = watch('chi_tiet');
+  const chiTiet = useWatch({ control, name: 'chi_tiet' });
 
   const productionSlice = useMemo(() => (chiTiet ?? []).slice(0, 5), [chiTiet]);
   const rowV = chiTiet?.[5];

@@ -66,9 +66,8 @@ const DiemCongTruPage: React.FC = () => {
     return () => resetState();
   }, [resetState]);
 
-  useEffect(() => {
-    if (detailItem && !pageList.some((r) => r.id === detailItem.id)) setDetailItem(null);
-  }, [pageList, detailItem]);
+  // Bản ghi đang xem không còn trong trang hiện tại → đóng drawer (chỉnh ngay lúc render, không qua effect).
+  if (detailItem && !pageList.some((r) => r.id === detailItem.id)) setDetailItem(null);
 
 
   const handleView = (item: DiemCongTruRecord) => {

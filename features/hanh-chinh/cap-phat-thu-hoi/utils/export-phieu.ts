@@ -14,6 +14,9 @@ import i18n from '../../../../lib/i18n';
 import { useUIStore } from '../../../../store/useStore';
 import { getLoaiPhieuLabel } from '../core/constants';
 
+/** jspdf-autotable gắn `lastAutoTable` vào doc sau mỗi lần vẽ bảng — kiểu gốc của jsPDF không có. */
+type DocCoAutoTable = { lastAutoTable?: { finalY: number } };
+
 const FONT_DOC = "'Times New Roman', Times, serif";
 
 function safe(v: string | null | undefined): string {
@@ -108,7 +111,7 @@ export function exportPhieuToPDF(phieu: PhieuCapPhatThuHoi): Promise<void> {
 
     const chiTiet = phieu.chi_tiet ?? [];
     if (chiTiet.length > 0) {
-      const finalY = (doc as any).lastAutoTable?.finalY ?? 70;
+      const finalY = (doc as unknown as DocCoAutoTable).lastAutoTable?.finalY ?? 70;
       doc.setFontSize(11);
       doc.text('Danh sách tài sản', 14, finalY + 8);
 
@@ -137,9 +140,8 @@ export function exportPhieuToPDF(phieu: PhieuCapPhatThuHoi): Promise<void> {
       });
     }
 
-    const signY = (doc as any).lastAutoTable?.finalY
-      ? (doc as any).lastAutoTable.finalY + 20
-      : 200;
+    const yBangCuoi = (doc as unknown as DocCoAutoTable).lastAutoTable?.finalY;
+    const signY = yBangCuoi ? yBangCuoi + 20 : 200;
     doc.setFontSize(9);
     const col1 = 20;
     const col2 = 90;

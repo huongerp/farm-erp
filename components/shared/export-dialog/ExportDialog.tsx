@@ -58,9 +58,9 @@ export interface ExportDialogProps {
   onClose: () => void;
   /** Khai `type` trên cột để xlsx nhận số/ngày thật — xem `lib/export/dinh-dang-o.ts`. */
   columns: ExportColumn[];
-  data: Record<string, any>[];
-  selectedData?: Record<string, any>[];
-  paginatedData?: Record<string, any>[];
+  data: Record<string, unknown>[];
+  selectedData?: Record<string, unknown>[];
+  paginatedData?: Record<string, unknown>[];
   fileName: string;
   visibleColumnKeys?: string[];
   /** Tên sheet Excel (mặc định Data). Tối đa 31 ký tự sau khi làm sạch. */
@@ -130,7 +130,7 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
     };
   }, [format, fileNhoId, daKetNoi]);
 
-  const getExportData = (): Record<string, any>[] => {
+  const getExportData = (): Record<string, unknown>[] => {
     switch (scope) {
       case 'selected': return selectedData;
       case 'page': return paginatedData;
@@ -177,7 +177,7 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
     }
   };
 
-  async function xuatGoogleSheet(cols: ExportColumn[], rows: Record<string, any>[]) {
+  async function xuatGoogleSheet(cols: ExportColumn[], rows: Record<string, unknown>[]) {
     const tenTab = gs.tenTab.trim();
     if (!tenTab || (gs.loai === 'moi' && !gs.tenFile.trim())) {
       toast.warning(t('shared.export.gs.missingName'));
@@ -278,6 +278,7 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
   return (
     <>
       <div
+        role="presentation"
         onClick={exporting ? undefined : onClose}
         className={cn(
           'fixed inset-0 z-[60] bg-black/20 backdrop-blur-md presence-overlay',

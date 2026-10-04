@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, X } from 'lucide-react';
@@ -54,7 +54,22 @@ const ThemDongKiemKePTDialog: React.FC<Props> = ({
 
   const isSingleKho = khoOptions.length === 1;
 
-  useEffect(() => {
+  // Mở dialog (hoặc danh sách kho đổi khi đang mở) → đặt lại lựa chọn, điều chỉnh state ngay lúc render.
+  // So theo nội dung (chuỗi id kho) thay vì tham chiếu mảng: khoList mặc định `[]` tạo mảng mới
+  // mỗi render khi đang tải, so tham chiếu sẽ thành vòng lặp render.
+  const khoOptionsKey = khoOptions.map((k) => k.value).join('|');
+  const [prevResetDeps, setPrevResetDeps] = useState<{
+    open: boolean;
+    isSingleKho: boolean;
+    khoOptionsKey: string;
+  } | null>(null);
+  if (
+    !prevResetDeps ||
+    prevResetDeps.open !== open ||
+    prevResetDeps.isSingleKho !== isSingleKho ||
+    prevResetDeps.khoOptionsKey !== khoOptionsKey
+  ) {
+    setPrevResetDeps({ open, isSingleKho, khoOptionsKey });
     if (open) {
       setIdHangHoa('');
       if (isSingleKho) {
@@ -63,7 +78,7 @@ const ThemDongKiemKePTDialog: React.FC<Props> = ({
         setIdKho(ALL_KHO_VALUE);
       }
     }
-  }, [open, isSingleKho, khoOptions]);
+  }
 
   const resolvedKhoIds = useMemo(() => {
     if (id_kho === ALL_KHO_VALUE) return khoOptions.map((k) => k.value);

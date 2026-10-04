@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -65,9 +65,12 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   const docTatCa = useDocTatCa();
   const xoaTatCa = useXoaTatCa();
 
-  useEffect(() => {
+  // Đóng panel thì thu gọn lại — điều chỉnh ngay lúc render thay vì setState trong effect.
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  if (prevIsOpen !== isOpen) {
+    setPrevIsOpen(isOpen);
     if (!isOpen) setExpanded(false);
-  }, [isOpen]);
+  }
 
   const items = useMemo(() => trang?.items ?? [], [trang]);
   const tong = trang?.tong ?? 0;

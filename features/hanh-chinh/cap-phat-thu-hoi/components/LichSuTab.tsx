@@ -57,12 +57,15 @@ const LichSuTab: React.FC<Props> = ({ defaultTaiSanId }) => {
   const [openedFormFromDetailId, setOpenedFormFromDetailId] = useState<string | null>(null);
   const [defaultAssetId, setDefaultAssetId] = useState<string | undefined>(defaultTaiSanId);
 
-  useEffect(() => {
+  // Có ?tai_san_id= → mở form với tài sản mặc định; chỉnh state ngay lúc render thay vì effect.
+  const [prevDefaultTaiSanId, setPrevDefaultTaiSanId] = useState<string | undefined>(undefined);
+  if (defaultTaiSanId !== prevDefaultTaiSanId) {
+    setPrevDefaultTaiSanId(defaultTaiSanId);
     if (defaultTaiSanId) {
       setDefaultAssetId(defaultTaiSanId);
       setShowForm(true);
     }
-  }, [defaultTaiSanId]);
+  }
 
   useEffect(() => {
     return () => resetState();

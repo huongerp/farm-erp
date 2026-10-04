@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback, useEffect } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calculator, List, Printer, FileText, RefreshCw, X } from 'lucide-react';
@@ -49,9 +49,12 @@ const KyKhauHaoDetail: React.FC<Props> = ({
   const updateGhiChu = useUpdateKyKhauHaoGhiChu(() => setGhiChuOpen(false));
   const updateTrangThai = useUpdateKyKhauHaoTrangThai();
 
-  useEffect(() => {
+  // Mở ô ghi chú (hoặc ghi chú đổi khi đang mở) → nạp lại giá trị hiện tại; chỉnh ngay lúc render.
+  const [prevGhiChuSync, setPrevGhiChuSync] = useState({ open: ghiChuOpen, ghiChu: data.ghi_chu });
+  if (prevGhiChuSync.open !== ghiChuOpen || prevGhiChuSync.ghiChu !== data.ghi_chu) {
+    setPrevGhiChuSync({ open: ghiChuOpen, ghiChu: data.ghi_chu });
     if (ghiChuOpen) setGhiChuValue(data.ghi_chu ?? '');
-  }, [ghiChuOpen, data.ghi_chu]);
+  }
 
   const handleSaveGhiChu = useCallback(() => {
     updateGhiChu.mutate(

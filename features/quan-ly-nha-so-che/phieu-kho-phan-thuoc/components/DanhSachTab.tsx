@@ -65,13 +65,11 @@ const DanhSachTab: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<PhieuKhoPT | null>(null);
   const [isCopyMode, setIsCopyMode] = useState(false);
-  const [viewingItem, setViewingItem] = useState<PhieuKhoPT | null>(null);
+  const [viewingItemRaw, setViewingItem] = useState<PhieuKhoPT | null>(null);
   const [showAddKho, setShowAddKho] = useState(false);
   const [showAddHangHoa, setShowAddHangHoa] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [bulkApprove, setBulkApprove] = useState<{ ids: string[]; skipped: number } | null>(null);
-  const [exportRows, setExportRows] = useState<PhieuKhoPT[]>([]);
-  const [exportLoading, setExportLoading] = useState(false);
   const addKhoResolveRef = useRef<(k: Kho | null) => void>(null);
   const addHangHoaResolveRef = useRef<(h: FarmHangHoa | null) => void>(null);
 
@@ -86,7 +84,8 @@ const DanhSachTab: React.FC = () => {
   }, [khoListAll, phamVi]);
   const importer = usePhieuKhoPTImport(khoList);
   const { data: empRef = [] } = useEmployeesRefQuery();
-  const { data: viewingPhieuFull } = usePhieuKhoPTById(viewingItem?.id);
+  // Cùng id với viewingItem (bản suy ra bên dưới), dùng bản gốc vì khai báo trước tableRows.
+  const { data: viewingPhieuFull } = usePhieuKhoPTById(viewingItemRaw?.id);
   const { data: editingPhieuFull } = usePhieuKhoPTById(editingItem?.id);
   const deleteMutation = useDeletePhieuKhoPT();
   const deleteManyMutation = useDeletePhieuKhoPTMany();
@@ -131,11 +130,31 @@ const DanhSachTab: React.FC = () => {
     // Chờ đủ phạm vi + danh mục kho, nếu không sẽ query với allowedKhoIds rỗng rồi nháy lại.
     !viewScope.isLoading && (phamVi.viewAll || !khoPending)
   );
-  const tableRows = pageQuery.data?.data ?? [];
+  const tableRows = useMemo(() => pageQuery.data?.data ?? [], [pageQuery.data?.data]);
+  // Phiếu đang mở vừa được cập nhật ở trang hiện tại → drawer chi tiết lấy bản mới nhất.
+  const viewingItem = useMemo(() => {
+    if (!viewingItemRaw) return null;
+    return tableRows.find((p) => p.id === viewingItemRaw.id) ?? viewingItemRaw;
+  }, [tableRows, viewingItemRaw]);
   const totalCount = pageQuery.data?.totalCount ?? 0;
   const isInitialLoading = !pageQuery.data && pageQuery.isPending;
   const isFetchingOverlay = !!pageQuery.data && pageQuery.isFetching;
 
+  // Mỗi lần mở hộp thoại (hoặc đổi bộ lọc khi đang mở) tạo một "yêu cầu" mới; kết quả
+  // chỉ dùng khi khớp đúng yêu cầu hiện tại → đang tải / dữ liệu suy ra lúc render.
+  const exportRequest = useMemo(
+    () => (showExport ? { query: listServerQuery } : null),
+    [showExport, listServerQuery]
+  );
+  const [exportResult, setExportResult] = useState<{
+    request: { query: typeof listServerQuery };
+    rows: PhieuKhoPT[];
+  } | null>(null);
+  const exportLoading = exportRequest !== null && exportResult?.request !== exportRequest;
+  const exportRows = useMemo(
+    () => (exportRequest !== null && exportResult?.request === exportRequest ? exportResult.rows : []),
+    [exportRequest, exportResult]
+  );
   const exportColumns = useMemo(() => getExportColumnsPhieuKhoPTList(t), [t]);
   const exportMap = useCallback((item: PhieuKhoPT) => mapPhieuKhoPTListRow(item), []);
   const { exportData, paginatedData: paginatedExportData, selectedData: selectedExportData } = useExportData({
@@ -148,27 +167,19 @@ const DanhSachTab: React.FC = () => {
   });
 
   useEffect(() => {
-    if (!showExport) {
-      setExportRows([]);
-      setExportLoading(false);
-      return;
-    }
+    if (!exportRequest) return;
     let cancelled = false;
-    setExportLoading(true);
-    fetchAllPhieuKhoPTForListQuery(listServerQuery)
+    fetchAllPhieuKhoPTForListQuery(exportRequest.query)
       .then((rows) => {
-        if (!cancelled) setExportRows(rows);
+        if (!cancelled) setExportResult({ request: exportRequest, rows });
       })
       .catch(() => {
-        if (!cancelled) setExportRows([]);
-      })
-      .finally(() => {
-        if (!cancelled) setExportLoading(false);
+        if (!cancelled) setExportResult({ request: exportRequest, rows: [] });
       });
     return () => {
       cancelled = true;
     };
-  }, [showExport, listQueryKey, listServerQuery]);
+  }, [exportRequest]);
 
   const handleExport = useCallback(() => {
     if (totalCount === 0) {
@@ -190,12 +201,6 @@ const DanhSachTab: React.FC = () => {
   useEffect(() => {
     if (pagination.page > maxPage) setPage(maxPage);
   }, [pagination.page, pagination.pageSize, maxPage, setPage]);
-
-  useEffect(() => {
-    if (!viewingItem) return;
-    const fresh = tableRows.find((p) => p.id === viewingItem.id);
-    if (fresh && fresh !== viewingItem) setViewingItem(fresh);
-  }, [tableRows, viewingItem]);
 
   const handleEdit = (item: PhieuKhoPT) => {
     setEditingItem(item);

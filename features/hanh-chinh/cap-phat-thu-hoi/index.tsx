@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { History, User, FileSpreadsheet, BarChart3 } from 'lucide-react';
@@ -11,18 +11,26 @@ import { useCapPhatThuHoiViewScope } from './hooks/use-cap-phat-thu-hoi-view-sco
 
 const VALID_TABS = ['history', 'mine', 'detail', 'stats'] as const;
 type TabId = (typeof VALID_TABS)[number];
+const isValidTab = (id: string | null): id is TabId => VALID_TABS.includes(id as TabId);
 
 const CapPhatThuHoiPage: React.FC = () => {
   const { t } = useTranslation();
   const { viewAll } = useCapPhatThuHoiViewScope();
   const [searchParams, setSearchParams] = useSearchParams();
   const taiSanIdFromQuery = searchParams.get('tai_san_id') ?? undefined;
-  const [activeTab, setActiveTab] = useState<TabId>('history');
-
   const tabFromUrl = searchParams.get('tab');
-  useEffect(() => {
-    if (VALID_TABS.includes(tabFromUrl as TabId)) setActiveTab(tabFromUrl as TabId);
-  }, [tabFromUrl]);
+  // Tab ban đầu: có ?tai_san_id= (và xem được toàn bộ) thì ưu tiên "Lịch sử", sau đó mới tới ?tab=.
+  const [activeTab, setActiveTab] = useState<TabId>(() =>
+    taiSanIdFromQuery && viewAll ? 'history' : isValidTab(tabFromUrl) ? tabFromUrl : 'history'
+  );
+
+  // Các đồng bộ dưới đây điều chỉnh state ngay lúc render (mẫu "adjust state while rendering")
+  // thay vì effect; thứ tự giữ như các effect cũ: URL → tai_san_id → chặn tab "Lịch sử".
+  const [prevTabFromUrl, setPrevTabFromUrl] = useState(tabFromUrl);
+  if (tabFromUrl !== prevTabFromUrl) {
+    setPrevTabFromUrl(tabFromUrl);
+    if (isValidTab(tabFromUrl)) setActiveTab(tabFromUrl);
+  }
 
   const handleTabChange = (id: string) => {
     if (VALID_TABS.includes(id as TabId)) {
@@ -45,13 +53,13 @@ const CapPhatThuHoiPage: React.FC = () => {
     return viewAll ? all : [all[1], all[2], all[3]];
   }, [t, viewAll]);
 
-  useEffect(() => {
+  const [prevTaiSanScope, setPrevTaiSanScope] = useState({ taiSanIdFromQuery, viewAll });
+  if (prevTaiSanScope.taiSanIdFromQuery !== taiSanIdFromQuery || prevTaiSanScope.viewAll !== viewAll) {
+    setPrevTaiSanScope({ taiSanIdFromQuery, viewAll });
     if (taiSanIdFromQuery && viewAll) setActiveTab('history');
-  }, [taiSanIdFromQuery, viewAll]);
+  }
 
-  useEffect(() => {
-    if (!viewAll && activeTab === 'history') setActiveTab('mine');
-  }, [viewAll, activeTab]);
+  if (!viewAll && activeTab === 'history') setActiveTab('mine');
 
   return (
     <div className="flex flex-col h-[calc(100dvh-3.75rem)] md:h-[calc(100dvh-4.5rem)] relative">

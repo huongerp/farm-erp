@@ -20,18 +20,19 @@ interface Props {
   onClose: () => void;
 }
 
+/** Giá trị mặc định cố định — đặt ngoài component để tham chiếu ổn định trong deps. */
+const defaultValues: Partial<DepartmentFormValues> = {
+  ten_phong_ban: '',
+  chuc_nang: '',
+  tt: 0,
+  trang_thai: TRANG_THAI.DANG_DUNG,
+};
+
 const DepartmentForm: React.FC<Props> = ({ initialData, onClose }) => {
   const { t } = useTranslation();
   const isEdit = !!initialData;
   const createMutation = useCreateDepartment(onClose);
   const updateMutation = useUpdateDepartment(onClose);
-
-  const defaultValues: Partial<DepartmentFormValues> = {
-    ten_phong_ban: '',
-    chuc_nang: '',
-    tt: 0,
-    trang_thai: TRANG_THAI.DANG_DUNG,
-  };
 
   const { register, handleSubmit, formState: { errors, isDirty }, reset, control } = useForm<DepartmentFormValues>({
     resolver: zodResolver(departmentSchema) as Resolver<DepartmentFormValues>,

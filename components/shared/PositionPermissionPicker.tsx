@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Shield, Building2 } from 'lucide-react';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from './GenericDrawer';
@@ -35,9 +35,13 @@ const PositionPermissionPicker: React.FC<Props> = ({
   const { t } = useTranslation();
   const [selected, setSelected] = useState<Set<string>>(new Set(selectedIds));
 
-  useEffect(() => {
+  // Mở lại picker (hoặc selectedIds đổi khi đang mở) → nạp lại lựa chọn từ props.
+  // Điều chỉnh state ngay khi render thay vì trong effect để tránh render thừa.
+  const [prevSync, setPrevSync] = useState({ open, selectedIds });
+  if (prevSync.open !== open || prevSync.selectedIds !== selectedIds) {
+    setPrevSync({ open, selectedIds });
     if (open) setSelected(new Set(selectedIds));
-  }, [open, selectedIds]);
+  }
 
   const byPhong = useMemo(() => {
     const list = activeOnly && 'trang_thai' in (positions[0] ?? {})

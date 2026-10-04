@@ -80,7 +80,8 @@ const ChiTietPhieuKhoTab: React.FC = () => {
   const { canCreate, canUpdate, canDelete, canApprove } = useModulePermissionFromContext();
   const { canCreate: canCreateHangHoa } = useModulePermission('kho-van/danh-sach-hang-hoa');
   const { canUpdate: canUpdateDoiTac } = useModulePermission('kho-van/danh-sach-doi-tac');
-  const { data: khoList = [] } = useKhoList();
+  const { data: khoListData } = useKhoList();
+  const khoList = useMemo(() => khoListData ?? [], [khoListData]);
   const { data: empRef = [] } = useEmployeesRefQuery();
   const { data: doiTacNccRef = [] } = useDoiTacRefQuery('nha_cung_cap');
   const { data: doiTacKhRef = [] } = useDoiTacRefQuery('khach_hang');
@@ -173,7 +174,7 @@ const ChiTietPhieuKhoTab: React.FC = () => {
 
   const pageIndex = Math.max(0, pagination.page - 1);
   const pageQuery = useChiTietPhieuKhoPaged(pageIndex, listServerQuery);
-  const tableRows = pageQuery.data?.data ?? [];
+  const tableRows = useMemo(() => pageQuery.data?.data ?? [], [pageQuery.data]);
   const totalCount = pageQuery.data?.totalCount ?? 0;
   /** Chỉ skeleton lần đầu; overlay khi refetch (keepPreviousData). */
   const isLoading = !pageQuery.data && pageQuery.isPending;
@@ -241,14 +242,22 @@ const ChiTietPhieuKhoTab: React.FC = () => {
       keyExtractor: (row) => row.id,
     });
 
-  useEffect(() => {
+  // Đóng hộp thoại → xoá dữ liệu xuất; mở (hoặc bộ lọc đổi khi đang mở) → bật loading.
+  // Chỉnh state ngay khi render (so theo listQueryKey dạng chuỗi); effect bên dưới chỉ lo tải dữ liệu.
+  const [prevExportSync, setPrevExportSync] = useState({ show: showExport, key: listQueryKey });
+  if (prevExportSync.show !== showExport || prevExportSync.key !== listQueryKey) {
+    setPrevExportSync({ show: showExport, key: listQueryKey });
     if (!showExport) {
       setExportRows([]);
       setExportLoading(false);
-      return;
+    } else {
+      setExportLoading(true);
     }
+  }
+
+  useEffect(() => {
+    if (!showExport) return;
     let cancelled = false;
-    setExportLoading(true);
     fetchAllChiTietPhieuKhoForListQuery(listServerQuery)
       .then((rows) => {
         if (!cancelled) setExportRows(rows);

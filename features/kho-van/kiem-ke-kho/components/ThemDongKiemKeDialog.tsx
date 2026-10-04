@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, X } from 'lucide-react';
@@ -49,16 +49,17 @@ const ThemDongKiemKeDialog: React.FC<Props> = ({
 
   const isSingleKho = khoOptions.length === 1;
 
-  useEffect(() => {
+  // Mở dialog (hoặc kho mặc định đổi khi đang mở) → xoá hàng đã chọn, chọn kho mặc định.
+  // Chỉnh state ngay khi render thay vì effect; so theo giá trị để không lặp render khi list đang tải.
+  const khoMacDinh = isSingleKho ? khoOptions[0].value : ALL_KHO_VALUE;
+  const [prevSync, setPrevSync] = useState<{ open: boolean; kho: string } | null>(null);
+  if (!prevSync || prevSync.open !== open || prevSync.kho !== khoMacDinh) {
+    setPrevSync({ open, kho: khoMacDinh });
     if (open) {
       setIdHangHoa('');
-      if (isSingleKho) {
-        setIdKho(khoOptions[0].value);
-      } else {
-        setIdKho(ALL_KHO_VALUE);
-      }
+      setIdKho(khoMacDinh);
     }
-  }, [open, isSingleKho, khoOptions]);
+  }
 
   const resolvedKhoIds = useMemo(() => {
     if (id_kho === ALL_KHO_VALUE) return khoOptions.map((k) => k.value);

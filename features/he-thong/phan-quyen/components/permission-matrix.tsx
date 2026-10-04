@@ -268,13 +268,25 @@ const MobileTriBtn: React.FC<{
   </button>
 );
 
+/** Quyền của từng role trên một module (đã chuẩn hoá 'all'). */
+const quyenTheoModule = (roles: PositionPermission[], moduleId: string): Record<string, ActionType[]> => {
+  const p: Record<string, ActionType[]> = {};
+  roles.forEach((role) => {
+    const mp = role.quyen_han.find((q) => q.module_id === moduleId);
+    p[role.id] = mp ? syncAll([...mp.actions]) : [];
+  });
+  return p;
+};
+
 /* ─── Main Component ─── */
 const PermissionMatrix: React.FC<Props> = ({ roles, isLoading, canUpdate = true }) => {
   const { t } = useTranslation();
   const [selectedFunction, setSelectedFunction] = useState<PermissionFunction | null>(null);
   const [expandedFunctions, setExpandedFunctions] = useState<Set<string>>(() => new Set(PERMISSION_FUNCTIONS.map((f) => f.id)));
   const [selectedModuleId, setSelectedModuleId] = useState<string>(getFirstModuleId);
-  const [localPermissions, setLocalPermissions] = useState<Record<string, ActionType[]>>({});
+  const [localPermissions, setLocalPermissions] = useState<Record<string, ActionType[]>>(() =>
+    quyenTheoModule(roles, selectedModuleId)
+  );
   const [mobilePickerOpen, setMobilePickerOpen] = useState(false);
   const updateMutation = useUpdateModulePermissions();
 
@@ -296,14 +308,13 @@ const PermissionMatrix: React.FC<Props> = ({ roles, isLoading, canUpdate = true 
     [selectedModuleId]
   );
 
-  useEffect(() => {
-    const p: Record<string, ActionType[]> = {};
-    roles.forEach((role) => {
-      const mp = role.quyen_han.find((q) => q.module_id === selectedModuleId);
-      p[role.id] = mp ? syncAll([...mp.actions]) : [];
-    });
-    setLocalPermissions(p);
-  }, [selectedModuleId, roles]);
+  // Đổi module hoặc dữ liệu roles mới → nạp lại bản nháp quyền từ props. Điều chỉnh ngay
+  // lúc render (so với lần trước) thay cho setState trong effect.
+  const [dongBoQuyen, setDongBoQuyen] = useState({ selectedModuleId, roles });
+  if (dongBoQuyen.selectedModuleId !== selectedModuleId || dongBoQuyen.roles !== roles) {
+    setDongBoQuyen({ selectedModuleId, roles });
+    setLocalPermissions(quyenTheoModule(roles, selectedModuleId));
+  }
 
   const actionLabels: Record<string, string> = {
     view: t('permission.form.view'), create: t('permission.form.add'),

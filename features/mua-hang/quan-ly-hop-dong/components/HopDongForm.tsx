@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useForm, Controller, type SubmitHandler } from 'react-hook-form';
+import { useForm, useWatch, Controller, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { FileText, Images } from 'lucide-react';
 import { toast } from 'sonner';
@@ -86,7 +86,6 @@ const HopDongForm: React.FC<Props> = ({ doiTacList, initialData, onClose }) => {
     register,
     control,
     handleSubmit,
-    watch,
     setValue,
     reset,
     formState: { errors, isDirty },
@@ -101,8 +100,8 @@ const HopDongForm: React.FC<Props> = ({ doiTacList, initialData, onClose }) => {
     reset(hopDongToFormValues(initialData ?? null));
   }, [initialData, reset, isDirty]);
 
-  const sl = watch('so_luong_cay');
-  const dg = watch('don_gia');
+  const sl = useWatch({ control, name: 'so_luong_cay' });
+  const dg = useWatch({ control, name: 'don_gia' });
   useEffect(() => {
     const a = sl != null ? Number(sl) : NaN;
     const b = dg != null ? Number(dg) : NaN;
@@ -141,7 +140,7 @@ const HopDongForm: React.FC<Props> = ({ doiTacList, initialData, onClose }) => {
   };
 
   const pending = createMutation.isPending || updateMutation.isPending;
-  const thanhTien = watch('thanh_tien');
+  const thanhTien = useWatch({ control, name: 'thanh_tien' });
 
   const handleUploadImage = useCallback(
     (file: File) => uploadImageToCloudinary(file, 'farm-erp/hop-dong'),
