@@ -1,5 +1,5 @@
 /** Trạng thái phiếu — DB: fp_farm_giam_sat_chat_luong.trang_thai */
-export const TRANG_THAI_GSCL = ['dang_kiem', 'hoan_thanh', 'huy'] as const;
+export const TRANG_THAI_GSCL = ['dang_kiem', 'hoan_thanh', 'da_nop', 'huy'] as const;
 export type TrangThaiGscl = (typeof TRANG_THAI_GSCL)[number];
 
 /** Kết luận cây hàng — DB: fp_farm_giam_sat_chat_luong.ket_luan */
@@ -57,6 +57,10 @@ export interface GiamSatChatLuong {
   ten_nguoi_tao: string | null;
   tg_tao: string;
   tg_cap_nhat: string;
+  /** Thời điểm nộp phiếu (ISO); null khi chưa nộp / đã mở lại. */
+  tg_nop: string | null;
+  id_nguoi_nop: string | null;
+  ten_nguoi_nop: string | null;
   /** Số thùng mẫu đã kiểm (đếm từ bảng thùng). */
   so_thung_da_kiem: number;
 }

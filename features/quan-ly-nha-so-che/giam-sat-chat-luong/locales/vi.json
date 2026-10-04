@@ -4,11 +4,10 @@
   "giamSatChatLuong.emptyHint": "Bấm \"Thêm mới\" để tạo phiếu cho một cây hàng rồi in tem thùng mẫu.",
   "giamSatChatLuong.deleteTitle": "Xoá phiếu giám sát chất lượng",
   "giamSatChatLuong.deleteMessage": "Xoá phiếu này cùng toàn bộ kết quả thùng mẫu? Không thể hoàn tác.",
-  "giamSatChatLuong.khongSuaDuoc": "Phiếu đã hoàn thành / đã huỷ — chỉ cấp quản trị mới sửa được.",
-  "giamSatChatLuong.khongXoaDuoc": "Phiếu đã có thùng được kiểm — chỉ cấp quản trị mới xoá được.",
-
+  "giamSatChatLuong.khongSuaDuoc": "Phiếu đã nộp / đã huỷ — chỉ quản trị hoặc cấp bậc 1 mới sửa được.",
+  "giamSatChatLuong.khongXoaDuoc": "Phiếu đã nộp hoặc đã có thùng được kiểm — chỉ quản trị hoặc cấp bậc 1 mới xoá được.",
   "giamSatChatLuong.trangThai.dang_kiem": "Đang kiểm",
-  "giamSatChatLuong.trangThai.hoan_thanh": "Hoàn thành",
+  "giamSatChatLuong.trangThai.hoan_thanh": "Chờ nộp",
   "giamSatChatLuong.trangThai.huy": "Đã huỷ",
   "giamSatChatLuong.ketLuan.dat": "Đạt",
   "giamSatChatLuong.ketLuan.khong_dat": "Không đạt",
@@ -16,7 +15,6 @@
   "giamSatChatLuong.loai.dem_loi": "Đếm lỗi",
   "giamSatChatLuong.loai.do_luong": "Số đo",
   "giamSatChatLuong.loai.dat_khong": "Đạt / Không",
-
   "giamSatChatLuong.col.soPhieu": "Số phiếu",
   "giamSatChatLuong.col.ngay": "Ngày",
   "giamSatChatLuong.col.trangThai": "Trạng thái",
@@ -30,7 +28,6 @@
   "giamSatChatLuong.col.ghiChu": "Ghi chú",
   "giamSatChatLuong.col.nguoiTao": "Người tạo",
   "giamSatChatLuong.list.thungCay": "{{n}} thùng/cây",
-
   "giamSatChatLuong.toolbar.filterNam": "Năm",
   "giamSatChatLuong.toolbar.filterThang": "Tháng",
   "giamSatChatLuong.toolbar.quetTem": "Quét tem",
@@ -38,14 +35,12 @@
   "giamSatChatLuong.toolbar.huy": "Huỷ phiếu",
   "giamSatChatLuong.toolbar.khoiPhuc": "Khôi phục",
   "giamSatChatLuong.toolbar.apDungTieuChi": "Áp dụng tiêu chí mới",
-
   "giamSatChatLuong.confirm.huyTitle": "Huỷ phiếu giám sát",
   "giamSatChatLuong.confirm.huyMessage": "Huỷ phiếu này? Tem đã in sẽ không quét được nữa cho đến khi khôi phục.",
   "giamSatChatLuong.confirm.khoiPhucTitle": "Khôi phục phiếu",
   "giamSatChatLuong.confirm.khoiPhucMessage": "Khôi phục phiếu về trạng thái đang kiểm?",
   "giamSatChatLuong.confirm.apDungTieuChiTitle": "Áp dụng tiêu chí mới",
   "giamSatChatLuong.confirm.apDungTieuChiMessage": "Thay bộ tiêu chí + ngưỡng của phiếu này bằng bộ đang cài đặt hiện tại rồi tính lại kết luận? Kết quả đã nhập của tiêu chí trùng mã được giữ nguyên.",
-
   "giamSatChatLuong.toast.createSuccess": "Đã tạo phiếu — in tem cho các thùng mẫu",
   "giamSatChatLuong.toast.updateSuccess": "Đã cập nhật phiếu",
   "giamSatChatLuong.toast.deleteSuccess": "Đã xoá phiếu",
@@ -54,10 +49,8 @@
   "giamSatChatLuong.toast.khoiPhucSuccess": "Đã khôi phục phiếu",
   "giamSatChatLuong.toast.apDungTieuChiSuccess": "Đã áp dụng bộ tiêu chí mới",
   "giamSatChatLuong.toast.tieuChiSaved": "Đã lưu tiêu chí",
-
   "giamSatChatLuong.service.notFound": "Không tìm thấy phiếu",
   "giamSatChatLuong.service.trangThaiDaDoi": "Phiếu vừa được người khác đổi trạng thái — tải lại để xem.",
-
   "giamSatChatLuong.validation.farmRequired": "Chọn farm",
   "giamSatChatLuong.validation.ngayRequired": "Chọn ngày",
   "giamSatChatLuong.validation.thanhPhamRequired": "Chọn thành phẩm",
@@ -69,7 +62,6 @@
   "giamSatChatLuong.validation.mauVuotCay": "Số thùng mẫu không được lớn hơn số thùng của cây hàng",
   "giamSatChatLuong.validation.tenTieuChiRequired": "Nhập tên tiêu chí",
   "giamSatChatLuong.validation.minLonHonMax": "Tối thiểu phải nhỏ hơn hoặc bằng tối đa",
-
   "giamSatChatLuong.form.titleCreate": "Tạo phiếu giám sát chất lượng",
   "giamSatChatLuong.form.titleEdit": "Sửa phiếu giám sát chất lượng",
   "giamSatChatLuong.form.subtitle": "Mỗi phiếu là một cây hàng — tạo xong in tem cho các thùng mẫu",
@@ -77,7 +69,6 @@
   "giamSatChatLuong.form.cayHangPlaceholder": "VD: C-12 (tuỳ chọn)",
   "giamSatChatLuong.form.soThungMauHint": "Lấy ngẫu nhiên các thùng mẫu trên cây hàng. Ngưỡng lỗi đặt cho 10 thùng, số thùng mẫu khác 10 thì quy đổi theo tỉ lệ.",
   "giamSatChatLuong.form.soThungMauHintDaKiem": "Đã có thùng được kiểm: tăng số thùng mẫu sẽ sinh thêm tem; giảm thì chỉ bỏ được các thùng chưa kiểm ở cuối.",
-
   "giamSatChatLuong.detail.title": "Phiếu giám sát chất lượng",
   "giamSatChatLuong.detail.thongTin": "Thông tin cây hàng",
   "giamSatChatLuong.detail.ketQua": "Kết quả thùng mẫu ({{da}}/{{n}})",
@@ -94,7 +85,6 @@
   "giamSatChatLuong.detail.systemInfo": "Thông tin hệ thống",
   "giamSatChatLuong.detail.tgTao": "Thời gian tạo",
   "giamSatChatLuong.detail.tgCapNhat": "Cập nhật lần cuối",
-
   "giamSatChatLuong.nhap.title": "Thùng {{stt}}/{{n}}",
   "giamSatChatLuong.nhap.nhomLoi": "Số trái lỗi trong thùng",
   "giamSatChatLuong.nhap.nguongTong": "Ngưỡng: tổng ≤ {{max}} cho {{n}} thùng",
@@ -107,7 +97,6 @@
   "giamSatChatLuong.nhap.luuQuetTiep": "Lưu & quét tiếp",
   "giamSatChatLuong.nhap.daLuu": "Đã lưu thùng {{stt}}/{{n}}",
   "giamSatChatLuong.nhap.daXongPhieu": "Đã kiểm đủ thùng mẫu — kết luận: {{ket}}",
-
   "giamSatChatLuong.quet.title": "Quét tem thùng mẫu",
   "giamSatChatLuong.quet.titlePhieu": "Quét tem — {{so}}",
   "giamSatChatLuong.quet.subtitle": "Đưa camera vào tem QR đã dán trên thùng — quét xong mở form chấm thùng đó",
@@ -116,7 +105,6 @@
   "giamSatChatLuong.quet.temPhieuKhac": "Tem {{ma}} thuộc phiếu khác",
   "giamSatChatLuong.quet.khongCoQuyenFarm": "Không có quyền kiểm hàng của {{farm}}",
   "giamSatChatLuong.quet.khongKiemDuoc_huy": "Phiếu {{so}} đã huỷ",
-  "giamSatChatLuong.quet.khongKiemDuoc_hoan_thanh": "Phiếu {{so}} đã hoàn thành — chỉ cấp quản trị sửa lại",
   "giamSatChatLuong.quet.khongKiemDuoc_dang_kiem": "Không kiểm được phiếu {{so}}",
   "giamSatChatLuong.quet.daTim": "{{so}} — thùng {{stt}}/{{n}}",
   "giamSatChatLuong.quet.chonTay": "Chọn tay / máy quét cầm tay",
@@ -124,7 +112,6 @@
   "giamSatChatLuong.quet.goMaTem": "Gõ mã tem hoặc số thùng...",
   "giamSatChatLuong.quet.thungSo": "Thùng {{stt}}/{{n}}",
   "giamSatChatLuong.quet.daKiem": "đã kiểm",
-
   "giamSatChatLuong.inTem.title": "In tem thùng mẫu",
   "giamSatChatLuong.inTem.kho": "Khổ {{rong}}×{{cao}} mm",
   "giamSatChatLuong.inTem.chonThung": "Chọn thùng cần in",
@@ -132,10 +119,8 @@
   "giamSatChatLuong.inTem.boChon": "Bỏ chọn",
   "giamSatChatLuong.inTem.in": "In {{n}} tem",
   "giamSatChatLuong.inTem.hint": "Tem hỏng / mất: chọn đúng số thùng đó để in lại — mã tem không đổi.",
-
   "giamSatChatLuong.tem.thung": "Thùng {{stt}}/{{tong}}",
   "giamSatChatLuong.tem.cayHang": "Cây: {{ma}}",
-
   "giamSatChatLuong.caiDat.title": "Cài đặt",
   "giamSatChatLuong.caiDat.subtitle": "Tiêu chí đánh giá và mẫu tem in",
   "giamSatChatLuong.caiDat.tabTieuChi": "Tiêu chí",
@@ -169,7 +154,6 @@
   "giamSatChatLuong.caiDat.macDinh": "Về mặc định",
   "giamSatChatLuong.caiDat.luuTrenMay": "Mẫu tem tự lưu trên máy này — mỗi máy (máy in tem) có thể đặt khổ riêng.",
   "giamSatChatLuong.caiDat.khongLuuDuoc": "Không lưu được cài đặt trên trình duyệt này",
-
   "giamSatChatLuong.tieuChi.gioiThieu": "Bộ tiêu chí dùng chung cho mọi farm. Mỗi phiếu chụp lại bộ tiêu chí + ngưỡng tại lúc tạo.",
   "giamSatChatLuong.tieuChi.them": "Thêm tiêu chí",
   "giamSatChatLuong.tieuChi.ten": "Tên tiêu chí",
@@ -190,5 +174,28 @@
   "giamSatChatLuong.tieuChi.xoaTitle": "Xoá tiêu chí",
   "giamSatChatLuong.tieuChi.xoaMessage": "Xoá \"{{ten}}\" khỏi danh mục? Phiếu cũ vẫn giữ tiêu chí này. Muốn tạm bỏ thì bỏ tick \"Dùng\".",
   "giamSatChatLuong.tieuChi.ghiChuApDung": "Thay đổi áp dụng cho phiếu tạo sau. Phiếu đang kiểm muốn dùng ngưỡng mới: mở phiếu, bấm \"Áp dụng tiêu chí mới\".",
-  "giamSatChatLuong.tieuChi.chiXem": "Chỉ cấp quản trị mới sửa được bộ tiêu chí."
+  "giamSatChatLuong.tieuChi.chiXem": "Chỉ cấp quản trị mới sửa được bộ tiêu chí.",
+  "giamSatChatLuong.trangThai.da_nop": "Đã nộp",
+  "giamSatChatLuong.toolbar.nop": "Nộp phiếu",
+  "giamSatChatLuong.toolbar.moPhieu": "Mở phiếu",
+  "giamSatChatLuong.toolbar.inPhieu": "In phiếu",
+  "giamSatChatLuong.confirm.nopTitle": "Nộp phiếu giám sát",
+  "giamSatChatLuong.confirm.nopMessage": "Nộp phiếu này? Sau khi nộp, phiếu bị khoá — chỉ quản trị hoặc cấp bậc 1 mới sửa, xoá hoặc mở lại.",
+  "giamSatChatLuong.confirm.moPhieuTitle": "Mở lại phiếu đã nộp",
+  "giamSatChatLuong.confirm.moPhieuMessage": "Mở lại phiếu để người kiểm sửa / chấm lại? Phiếu sẽ về trạng thái \"Chờ nộp\".",
+  "giamSatChatLuong.toast.nopSuccess": "Đã nộp phiếu",
+  "giamSatChatLuong.toast.moPhieuSuccess": "Đã mở lại phiếu",
+  "giamSatChatLuong.detail.nguoiNop": "Người nộp",
+  "giamSatChatLuong.detail.tgNop": "Thời điểm nộp",
+  "giamSatChatLuong.quet.khongKiemDuoc_da_nop": "Phiếu {{so}} đã nộp — chỉ quản trị hoặc cấp bậc 1 chấm lại được",
+  "giamSatChatLuong.preview.title": "Phiếu giám sát chất lượng",
+  "giamSatChatLuong.preview.thongTin": "Thông tin cây hàng",
+  "giamSatChatLuong.preview.ketQua": "Kết quả kiểm tra thùng mẫu",
+  "giamSatChatLuong.preview.ketLuan": "Kết luận",
+  "giamSatChatLuong.preview.chuaKetLuan": "Chưa đủ thùng mẫu — chưa kết luận",
+  "giamSatChatLuong.preview.thung": "Thùng",
+  "giamSatChatLuong.preview.kyNguoiKiem": "Người kiểm tra",
+  "giamSatChatLuong.preview.kyQc": "QC",
+  "giamSatChatLuong.preview.kyQuanLyFarm": "Quản lý farm",
+  "giamSatChatLuong.preview.notFound": "Không tìm thấy phiếu hoặc bạn không có quyền xem."
 }

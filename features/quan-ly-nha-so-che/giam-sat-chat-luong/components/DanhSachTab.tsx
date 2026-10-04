@@ -134,7 +134,7 @@ const DanhSachTab: React.FC = () => {
 
   const handleDeleteMany = () => {
     const ids = Array.from(selectedIds);
-    const khongXoa = pageList.filter((p) => ids.includes(p.id) && !coTheXoaPhieu(p.so_thung_da_kiem, capCao));
+    const khongXoa = pageList.filter((p) => ids.includes(p.id) && !coTheXoaPhieu(p.trang_thai, p.so_thung_da_kiem, capCao));
     if (khongXoa.length > 0) {
       toast.info(t('giamSatChatLuong.khongXoaDuoc'));
       return;
@@ -197,7 +197,7 @@ const DanhSachTab: React.FC = () => {
             canDelete
               ? (id) => {
                   const item = pageList.find((p) => p.id === id);
-                  if (item && !coTheXoaPhieu(item.so_thung_da_kiem, capCao)) toast.info(t('giamSatChatLuong.khongXoaDuoc'));
+                  if (item && !coTheXoaPhieu(item.trang_thai, item.so_thung_da_kiem, capCao)) toast.info(t('giamSatChatLuong.khongXoaDuoc'));
                   else handleDelete(id);
                 }
               : undefined

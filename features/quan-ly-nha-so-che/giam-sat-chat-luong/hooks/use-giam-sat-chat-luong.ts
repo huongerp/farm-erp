@@ -21,6 +21,8 @@ import {
   huyGscl,
   khoiPhucGscl,
   luuKetQuaThung,
+  moPhieuGscl,
+  nopGscl,
   sapXepTieuChi,
   updateGscl,
   updateTieuChi,
@@ -125,14 +127,17 @@ export function useDeleteGiamSatChatLuongMany() {
   });
 }
 
-export type HanhDongPhieu = 'huy' | 'khoiPhuc' | 'apDungTieuChi';
+export type HanhDongPhieu = 'huy' | 'khoiPhuc' | 'apDungTieuChi' | 'nop' | 'moPhieu';
 
 export function useHanhDongGiamSatChatLuong() {
   const invalidate = useInvalidate();
+  const user = useAuthStore((s) => s.user);
   return useMutation({
     mutationFn: async ({ action, id }: { action: HanhDongPhieu; id: string }) => {
       if (action === 'huy') return huyGscl(id);
       if (action === 'khoiPhuc') return khoiPhucGscl(id);
+      if (action === 'nop') return nopGscl(id, idNguoiHienTai(user?.id));
+      if (action === 'moPhieu') return moPhieuGscl(id);
       return apDungTieuChiMoi(id);
     },
     onSuccess: (_r, { action }) => {

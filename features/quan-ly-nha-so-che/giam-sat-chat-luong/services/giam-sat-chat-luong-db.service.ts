@@ -18,7 +18,7 @@ import type {
 } from '../core/types';
 import type { GiamSatChatLuongFormValues, TieuChiFormValues } from '../core/schema';
 import { ketLuanPhieu } from '../core/ket-luan';
-import { trangThaiTheoSoThung } from '../core/trang-thai';
+import { coKetLuan, trangThaiTheoSoThung } from '../core/trang-thai';
 import { anhChupTieuChi, taoMaTieuChi } from '../core/tieu-chi';
 import {
   GSCL_SORTABLE_DB_COLUMNS,
@@ -32,7 +32,7 @@ const TABLE_TC = 'fp_farm_gscl_tieu_chi';
 
 const ROW_COLUMNS =
   'id,so_phieu,ngay,id_chi_nhanh,id_hang_hoa,ma_cay_hang,so_thung_cay,so_thung_mau,tieu_chi,trang_thai,ket_luan,' +
-  'ghi_chu,id_nguoi_tao,tg_tao,tg_cap_nhat,chi_nhanh:fp_var_chi_nhanh(ten_chi_nhanh),' +
+  'ghi_chu,id_nguoi_tao,tg_tao,tg_cap_nhat,tg_nop,id_nguoi_nop,chi_nhanh:fp_var_chi_nhanh(ten_chi_nhanh),' +
   'hang_hoa:fp_mh_danh_sach_hang_hoa(ma_hang_hoa,ten_hang_hoa),thung:fp_farm_giam_sat_chat_luong_ct(da_kiem)';
 
 const CT_COLUMNS = 'id,id_phieu,stt_thung,ma_tem,ket_qua,da_kiem,tg_kiem,id_nguoi_kiem,ghi_chu';
@@ -54,6 +54,8 @@ interface DbRow {
   id_nguoi_tao: number | null;
   tg_tao: string;
   tg_cap_nhat: string;
+  tg_nop: string | null;
+  id_nguoi_nop: number | null;
   chi_nhanh?: { ten_chi_nhanh: string | null } | null;
   hang_hoa?: { ma_hang_hoa: string | null; ten_hang_hoa: string | null } | null;
   thung?: { da_kiem: boolean }[] | null;
@@ -132,6 +134,9 @@ function rowToModel(row: DbRow): GiamSatChatLuong {
     ten_nguoi_tao: null,
     tg_tao: row.tg_tao,
     tg_cap_nhat: row.tg_cap_nhat,
+    tg_nop: row.tg_nop,
+    id_nguoi_nop: idStr(row.id_nguoi_nop),
+    ten_nguoi_nop: null,
     so_thung_da_kiem: (row.thung ?? []).filter((t) => t.da_kiem).length,
   };
 }
@@ -311,6 +316,35 @@ export async function khoiPhucGsclDb(id: string): Promise<GiamSatChatLuong> {
   return capNhatKetLuanDb(id);
 }
 
+/** Nộp phiếu: chỉ từ "hoàn thành" (đủ thùng). Có điều kiện trạng thái để hai người bấm cùng lúc không ghi đè. */
+export async function nopGsclDb(id: string, idNguoi: string | null): Promise<void> {
+  const { data, error } = await db
+    .from(TABLE)
+    .update({
+      trang_thai: 'da_nop',
+      tg_nop: new Date().toISOString(),
+      id_nguoi_nop: idNguoi ? toIntId(idNguoi) : null,
+    })
+    .eq('id', toIntId(id))
+    .eq('trang_thai', 'hoan_thanh')
+    .select('id');
+  if (error) throwDbError(error);
+  if (((data as unknown[] | null) ?? []).length === 0) throw new Error(i18n.t('giamSatChatLuong.service.trangThaiDaDoi'));
+}
+
+/** Mở lại phiếu đã nộp (cấp cao — DB chặn người khác) rồi tính lại trạng thái theo số thùng. */
+export async function moPhieuGsclDb(id: string): Promise<GiamSatChatLuong> {
+  const { data, error } = await db
+    .from(TABLE)
+    .update({ trang_thai: 'hoan_thanh', tg_nop: null, id_nguoi_nop: null })
+    .eq('id', toIntId(id))
+    .eq('trang_thai', 'da_nop')
+    .select('id');
+  if (error) throwDbError(error);
+  if (((data as unknown[] | null) ?? []).length === 0) throw new Error(i18n.t('giamSatChatLuong.service.trangThaiDaDoi'));
+  return capNhatKetLuanDb(id);
+}
+
 /** Chụp lại bộ tiêu chí đang dùng vào phiếu (cấp cao — vd vừa sửa ngưỡng) rồi tính lại kết luận. */
 export async function apDungTieuChiMoiDb(id: string): Promise<GiamSatChatLuong> {
   const tieuChi = anhChupTieuChi(await getTieuChiDb());
@@ -348,7 +382,7 @@ export async function capNhatKetLuanDb(idPhieu: string): Promise<GiamSatChatLuon
   const daKiem = thung.filter((t) => t.da_kiem);
   const trangThai = trangThaiTheoSoThung(phieu.trang_thai, daKiem.length, phieu.so_thung_mau);
   const ketLuan =
-    trangThai === 'hoan_thanh'
+    coKetLuan(trangThai)
       ? ketLuanPhieu(phieu.tieu_chi, daKiem.map((t) => t.ket_qua), phieu.so_thung_mau).ketLuan
       : null;
   if (trangThai === phieu.trang_thai && ketLuan === phieu.ket_luan) return phieu;

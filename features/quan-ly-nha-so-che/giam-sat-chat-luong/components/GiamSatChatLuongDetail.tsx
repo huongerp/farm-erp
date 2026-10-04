@@ -11,10 +11,13 @@ import {
   Hash,
   ListChecks,
   Package,
-  Printer,
+  FileText as FileTextIcon,
+  LockOpen,
   RefreshCw,
   RotateCcw,
   ScanLine,
+  Send,
+  Tag,
   User,
 } from 'lucide-react';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
@@ -26,7 +29,16 @@ import DetailDrawerFooter from '../../../../components/shared/DetailDrawerFooter
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { formatDateTimeShort, formatYmdToDisplay } from '../../../../lib/utils';
 import { ketLuanPhieu } from '../core/ket-luan';
-import { coTheHuy, coTheKhoiPhuc, coTheKiemThung, coTheSuaPhieu, coTheXoaPhieu } from '../core/trang-thai';
+import {
+  coTheHuy,
+  coTheKhoiPhuc,
+  coTheKiemThung,
+  coTheMoPhieu,
+  coTheNop,
+  coTheSuaPhieu,
+  coTheXoaPhieu,
+} from '../core/trang-thai';
+import { taoUrlInPhieu } from '../core/preview-url';
 import type { GiamSatChatLuong, ThungMau } from '../core/types';
 import { useHanhDongGiamSatChatLuong, useThungMau, type HanhDongPhieu } from '../hooks/use-giam-sat-chat-luong';
 import { useGiamSatChatLuongCapCao } from '../hooks/use-giam-sat-chat-luong-view-scope';
@@ -74,7 +86,7 @@ const GiamSatChatLuongDetail: React.FC<Props> = ({
   const tt = data.trang_thai;
   const canKiem = canUpdate && coTheKiemThung(tt, capCao);
   const canEditPhieu = canUpdate && coTheSuaPhieu(tt, capCao);
-  const canDeletePhieu = canDelete && coTheXoaPhieu(data.so_thung_da_kiem, capCao);
+  const canDeletePhieu = canDelete && coTheXoaPhieu(tt, data.so_thung_da_kiem, capCao);
 
   const daKiem = thung.filter((x) => x.da_kiem);
   const tamTinh = useMemo(
@@ -94,14 +106,28 @@ const GiamSatChatLuongDetail: React.FC<Props> = ({
     });
 
   const toolbarActions: DetailToolbarAction[] = useMemo(() => {
-    const a: DetailToolbarAction[] = [];
+    // In phiếu: ai xem được phiếu cũng in được.
+    const a: DetailToolbarAction[] = [
+      {
+        label: t('giamSatChatLuong.toolbar.inPhieu'),
+        icon: <FileTextIcon />,
+        onClick: () => window.open(taoUrlInPhieu(data.id), '_blank', 'noopener,noreferrer'),
+        variant: 'outline',
+      },
+    ];
     if (tt !== 'huy') {
-      a.push({ label: t('giamSatChatLuong.toolbar.inTem'), icon: <Printer />, onClick: () => setDialog('in'), variant: 'outline' });
+      a.push({ label: t('giamSatChatLuong.toolbar.inTem'), icon: <Tag />, onClick: () => setDialog('in'), variant: 'outline' });
     }
     if (canKiem) {
       a.push({ label: t('giamSatChatLuong.toolbar.quetTem'), icon: <ScanLine />, onClick: () => setDialog('quet'), variant: 'primary' });
     }
     if (!canUpdate) return a;
+    if (coTheNop(tt)) {
+      a.push({ label: t('giamSatChatLuong.toolbar.nop'), icon: <Send />, onClick: () => hoi('nop'), variant: 'success' });
+    }
+    if (coTheMoPhieu(tt, capCao)) {
+      a.push({ label: t('giamSatChatLuong.toolbar.moPhieu'), icon: <LockOpen />, onClick: () => hoi('moPhieu'), variant: 'warning' });
+    }
     if (coTheHuy(tt)) {
       a.push({ label: t('giamSatChatLuong.toolbar.huy'), icon: <Ban />, onClick: () => hoi('huy', 'danger'), variant: 'danger' });
     }
@@ -118,7 +144,7 @@ const GiamSatChatLuongDetail: React.FC<Props> = ({
     }
     return a;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tt, canKiem, canUpdate, capCao, t]);
+  }, [tt, canKiem, canUpdate, capCao, t, data.id]);
 
   return (
     <>
@@ -233,6 +259,12 @@ const GiamSatChatLuongDetail: React.FC<Props> = ({
               <DetailField label={t('giamSatChatLuong.col.nguoiTao')} value={data.ten_nguoi_tao ?? ''} emptyText="—" icon={<User size={12} />} />
               <DetailField label={t('giamSatChatLuong.detail.tgTao')} value={formatDateTimeShort(data.tg_tao)} icon={<Calendar size={12} />} />
               <DetailField label={t('giamSatChatLuong.detail.tgCapNhat')} value={formatDateTimeShort(data.tg_cap_nhat)} icon={<Calendar size={12} />} />
+              {data.tg_nop && (
+                <>
+                  <DetailField label={t('giamSatChatLuong.detail.nguoiNop')} value={data.ten_nguoi_nop ?? ''} emptyText="—" icon={<Send size={12} />} />
+                  <DetailField label={t('giamSatChatLuong.detail.tgNop')} value={formatDateTimeShort(data.tg_nop)} icon={<Calendar size={12} />} />
+                </>
+              )}
             </DetailFieldGrid>
           </DetailSection>
         </div>

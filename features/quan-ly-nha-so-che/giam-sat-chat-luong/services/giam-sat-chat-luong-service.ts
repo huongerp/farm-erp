@@ -11,6 +11,8 @@ export {
   deleteGsclManyDb as deleteGsclMany,
   huyGsclDb as huyGscl,
   khoiPhucGsclDb as khoiPhucGscl,
+  nopGsclDb as nopGscl,
+  moPhieuGsclDb as moPhieuGscl,
   apDungTieuChiMoiDb as apDungTieuChiMoi,
   getThungTheoMaTemDb as getThungTheoMaTem,
   luuKetQuaThungDb as luuKetQuaThung,
@@ -33,7 +35,7 @@ const ten = (m: Map<string, string>, id: string | null) => (id ? (m.get(id) ?? n
 async function enrich(items: GiamSatChatLuong[]): Promise<GiamSatChatLuong[]> {
   if (items.length === 0) return items;
   const m = await hoTenMap();
-  return items.map((i) => ({ ...i, ten_nguoi_tao: ten(m, i.id_nguoi_tao) }));
+  return items.map((i) => ({ ...i, ten_nguoi_tao: ten(m, i.id_nguoi_tao), ten_nguoi_nop: ten(m, i.id_nguoi_nop) }));
 }
 
 export async function getGsclPage(
