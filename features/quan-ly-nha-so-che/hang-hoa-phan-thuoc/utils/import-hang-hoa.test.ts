@@ -52,6 +52,7 @@ describe('planFarmHangHoaImport — dòng hợp lệ', () => {
       dvt: 'Bao',
       pham_cap: 'Loại 1',
       don_gia: 120000,
+      dinh_muc: null,
       mo_ta: null,
     });
   });
@@ -103,6 +104,16 @@ describe('planFarmHangHoaImport — validate', () => {
     const { toInsert, errors } = plan([row({ don_gia: '' })]);
     expect(errors).toEqual([]);
     expect(toInsert[0].payload.don_gia).toBeNull();
+  });
+
+  it('định mức: parse số VN, trống → null, âm hoặc rác báo lỗi', () => {
+    expect(plan([row({ dinh_muc: '1.500' })]).toInsert[0].payload.dinh_muc).toBe(1500);
+    expect(plan([row({ dinh_muc: '' })]).toInsert[0].payload.dinh_muc).toBeNull();
+    for (const bad of ['-5', '10 bao']) {
+      const { toInsert, errors } = plan([row({ dinh_muc: bad })]);
+      expect(toInsert).toEqual([]);
+      expect(errors[0].msg).toContain(bad);
+    }
   });
 
   it('trùng mã ngay trong file → dòng sau báo lỗi, dòng đầu vẫn chạy', () => {

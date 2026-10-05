@@ -16,6 +16,8 @@ export interface TonKhoPTDisplayRow extends TonKhoPTRecord {
   don_vi_tinh: string;
   ten_danh_muc?: string;
   danh_muc_id?: string | null;
+  /** Định mức tồn mỗi kho của hàng (null = không đặt). */
+  dinh_muc?: number | null;
 }
 
 /** Gom theo hàng (tab Chi tiết) */
@@ -26,6 +28,8 @@ export interface TonKhoPTProductAgg {
   ten_danh_muc?: string;
   danh_muc_id?: string | null;
   don_vi_tinh: string;
+  /** Định mức tồn mỗi kho — ô kho nào dưới mức này tô đỏ. */
+  dinh_muc: number | null;
   tong_so_luong: number;
   so_kho_co_ton: number;
   /** SL tồn theo id_kho — dùng cho cột động trên list */

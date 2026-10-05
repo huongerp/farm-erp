@@ -32,6 +32,10 @@ export const farmHangHoaSchema = z.object({
     (val) => (val === '' || val === null || val === undefined ? undefined : Number(val)),
     z.number({ message: hh('validation.priceMin') }).min(0, hh('validation.priceMin')).optional(),
   ),
+  dinh_muc: z.preprocess(
+    (val) => (val === '' || val === null || val === undefined ? undefined : Number(val)),
+    z.number({ message: hh('validation.dinhMucMin') }).min(0, hh('validation.dinhMucMin')).optional(),
+  ),
   mo_ta: z.string().optional().nullable(),
 });
 

@@ -10,12 +10,14 @@ import Textarea from '../../../../components/ui/Textarea';
 import Combobox from '../../../../components/ui/Combobox';
 import { phieuKhoPTSchema, type PhieuKhoPTFormValues } from '../core/schema';
 import type { PhieuKhoPT, LoaiPhieuKhoPT } from '../core/types';
-import { formatNumberVN } from '../../../../lib/utils';
+import { cn, formatNumberVN } from '../../../../lib/utils';
 import type { Kho } from '../../../kho-van/danh-sach-kho/core/types';
 import type { FarmHangHoa } from '../../hang-hoa-phan-thuoc/core/types';
 import { useCreatePhieuKhoPT, useUpdatePhieuKhoPT } from '../hooks/use-phieu-kho-pt';
 import { getNextSoPhieuFarmPt } from '../services/phieu-kho-pt-service';
 import { useFarmHangHoaList } from '../../hang-hoa-phan-thuoc/hooks/use-farm-hang-hoa';
+import { useFarmTonKhoPTTheoKho } from '../../ton-kho-phan-thuoc/hooks/use-farm-ton-kho-pt';
+import { buildTonMap, laDuoiDinhMuc, phieuDelta, tonSauPhieu, type TonMap } from '../utils/ton-kho-check';
 import { useAuthStore } from '../../../../store/useStore';
 import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/GenericDrawer';
 import FormSection from '../../../../components/shared/FormSection';
@@ -79,6 +81,12 @@ const PhieuKhoPTForm: React.FC<Props> = ({ khoList, khoDenList, initialData, pre
   const khoIdWatch = useWatch({ control, name: 'kho_id' });
   const loaiWatch = useWatch({ control, name: 'loai' }) as LoaiPhieuKhoPT;
   const chiTietWatch = useWatch({ control, name: 'chi_tiet' });
+  const trangThaiWatch = useWatch({ control, name: 'trang_thai' });
+  const khoDenIdWatch = useWatch({ control, name: 'kho_den_id' });
+
+  // Tồn của kho lập phiếu (kho nhập / kho xuất / kho nguồn của phiếu chuyển) để người lập soi từng dòng.
+  const { data: tonRows, isFetching: isFetchingTon } = useFarmTonKhoPTTheoKho(khoIdWatch || null);
+  const tonMap = useMemo(() => buildTonMap(tonRows ?? []), [tonRows]);
 
   const khoOptions = useMemo(() => {
     const opts = khoList.map((k) => ({ value: k.id, label: k.ten_kho }));
@@ -124,16 +132,47 @@ const PhieuKhoPTForm: React.FC<Props> = ({ khoList, khoDenList, initialData, pre
   );
 
   const hangHoaMap = useMemo(() => {
-    const m: Record<string, { don_vi_tinh?: string; don_gia?: number; pham_cap?: string }> = {};
+    const m: Record<string, { don_vi_tinh?: string; don_gia?: number; pham_cap?: string; dinh_muc?: number | null }> = {};
     hangHoaList.forEach((h) => {
       m[h.id] = {
         don_vi_tinh: h.dvt ?? undefined,
         don_gia: h.don_gia != null ? Number(h.don_gia) : undefined,
         pham_cap: h.pham_cap ?? undefined,
+        dinh_muc: h.dinh_muc,
       };
     });
     return m;
   }, [hangHoaList]);
+
+  /** Phần phiếu đang nhập đóng góp vào tồn — cùng công thức service dùng khi cảnh báo lúc lưu. */
+  const newDelta = useMemo<TonMap>(
+    () =>
+      phieuDelta({
+        loai: loaiWatch,
+        kho_id: khoIdWatch ?? '',
+        kho_den_id: loaiWatch === 'chuyển' ? khoDenIdWatch : null,
+        trang_thai: trangThaiWatch,
+        lines: (Array.isArray(chiTietWatch) ? chiTietWatch : [])
+          .filter((c) => c?.id_hang_hoa)
+          .map((c) => ({ id_hang_hoa: c.id_hang_hoa, so_luong: Number(c.so_luong) || 0 })),
+      }),
+    [loaiWatch, khoIdWatch, khoDenIdWatch, trangThaiWatch, chiTietWatch]
+  );
+
+  /** Khi sửa: phần của phiếu cũ đang nằm sẵn trong tồn, phải trừ ra trước. */
+  const oldDelta = useMemo<TonMap>(
+    () =>
+      initialData?.id
+        ? phieuDelta({
+            loai: initialData.loai,
+            kho_id: initialData.kho_id,
+            kho_den_id: initialData.kho_den_id ?? null,
+            trang_thai: initialData.trang_thai,
+            lines: (initialData.chi_tiet ?? []).map((c) => ({ id_hang_hoa: c.id_hang_hoa, so_luong: Number(c.so_luong) || 0 })),
+          })
+        : new Map(),
+    [initialData]
+  );
 
   /** Gợi ý phẩm cấp: gom các giá trị đã có trong danh mục hàng hóa farm. */
   const phamCapComboboxOptions = useMemo(
@@ -419,6 +458,12 @@ const PhieuKhoPTForm: React.FC<Props> = ({ khoList, khoDenList, initialData, pre
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[110px]">
                 {t('phieuKhoPhanThuoc.form.quantity')}
               </th>
+              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[90px] text-right">
+                {t('phieuKhoPhanThuoc.form.tonKho')}
+              </th>
+              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[100px] text-right">
+                {t('phieuKhoPhanThuoc.form.tonSauPhieu')}
+              </th>
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[100px]">
                 {t('phieuKhoPhanThuoc.form.unitPrice')}
               </th>
@@ -442,7 +487,7 @@ const PhieuKhoPTForm: React.FC<Props> = ({ khoList, khoDenList, initialData, pre
           <tbody className="[&>tr>td]:border-b [&>tr>td]:border-border">
             {fields.length === 0 ? (
               <tr>
-                <td colSpan={10} className="px-4 py-6 text-center text-muted-foreground text-xs">
+                <td colSpan={12} className="px-4 py-6 text-center text-muted-foreground text-xs">
                   {t('phieuKhoPhanThuoc.form.noItems')}
                 </td>
               </tr>
@@ -453,6 +498,19 @@ const PhieuKhoPTForm: React.FC<Props> = ({ khoList, khoDenList, initialData, pre
                 const donGia = Number(chiTietValues[index]?.don_gia) || 0;
                 const thanhTien = soLuong * donGia;
                 const donVi = idHangHoa ? (hangHoaMap[idHangHoa]?.don_vi_tinh ?? '—') : '—';
+                const coTon = !!khoIdWatch && !!idHangHoa;
+                const tonDong = coTon ? tonSauPhieu(tonMap, newDelta, oldDelta, khoIdWatch, idHangHoa) : null;
+                const dinhMuc = idHangHoa ? hangHoaMap[idHangHoa]?.dinh_muc : null;
+                const tonDo = tonDong != null && (tonDong.sau < 0 || laDuoiDinhMuc(tonDong.sau, dinhMuc));
+                const tonTitle =
+                  tonDong == null
+                    ? undefined
+                    : tonDong.sau < 0
+                      ? t('phieuKhoPhanThuoc.form.tonAmHint')
+                      : dinhMuc
+                        ? t('phieuKhoPhanThuoc.form.dinhMucHint', { dinhMuc: formatNumberVN(dinhMuc) })
+                        : undefined;
+                const hienTon = (n: number) => (isFetchingTon && !tonRows ? '…' : formatNumberVN(n));
                 return (
                   <tr key={field.id} className="hover:bg-muted/60 transition-colors">
                     <td className="px-4 py-2.5 text-muted-foreground tabular-nums">{index + 1}</td>
@@ -521,6 +579,18 @@ const PhieuKhoPTForm: React.FC<Props> = ({ khoList, khoDenList, initialData, pre
                         {...register(`chi_tiet.${index}.so_luong`, { valueAsNumber: true })}
                         className="h-9"
                       />
+                    </td>
+                    <td className="px-4 py-2.5 tabular-nums text-sm text-right text-muted-foreground align-middle">
+                      {tonDong ? hienTon(tonDong.truoc) : '—'}
+                    </td>
+                    <td
+                      className={cn(
+                        'px-4 py-2.5 tabular-nums text-sm text-right align-middle',
+                        tonDo ? 'text-destructive font-semibold bg-destructive/10' : 'text-foreground'
+                      )}
+                      title={tonTitle}
+                    >
+                      {tonDong ? hienTon(tonDong.sau) : '—'}
                     </td>
                     <td className="px-4 py-2.5 min-w-[90px] align-top">
                       <Controller

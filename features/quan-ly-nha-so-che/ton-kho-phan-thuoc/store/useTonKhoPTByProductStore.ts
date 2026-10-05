@@ -13,8 +13,9 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'ten_hang', label: i18n.t('tonKhoPhanThuoc.table.tenHang'), visible: true, minWidth: 160, maxWidth: 280, order: 1 },
   { id: 'ten_danh_muc', label: i18n.t('tonKhoPhanThuoc.table.danhMuc'), visible: true, minWidth: 110, maxWidth: 200, order: 2 },
   { id: 'don_vi_tinh', label: i18n.t('tonKhoPhanThuoc.table.dvt'), visible: true, minWidth: 70, maxWidth: 100, order: 3 },
-  { id: 'so_kho_co_ton', label: i18n.t('tonKhoPhanThuoc.byProduct.warehouseCount'), visible: true, minWidth: 88, maxWidth: 110, order: 4 },
-  { id: 'tong_so_luong', label: i18n.t('tonKhoPhanThuoc.byProduct.totalQty'), visible: true, minWidth: 100, maxWidth: 120, order: 5 },
+  { id: 'dinh_muc', label: i18n.t('tonKhoPhanThuoc.byProduct.dinhMuc'), visible: true, minWidth: 80, maxWidth: 110, order: 4 },
+  { id: 'so_kho_co_ton', label: i18n.t('tonKhoPhanThuoc.byProduct.warehouseCount'), visible: true, minWidth: 88, maxWidth: 110, order: 5 },
+  { id: 'tong_so_luong', label: i18n.t('tonKhoPhanThuoc.byProduct.totalQty'), visible: true, minWidth: 100, maxWidth: 120, order: 6 },
 ];
 
 export const useTonKhoPTByProductStore = createGenericStore<TonKhoFilters>(initialFilters, DEFAULT_COLUMNS, 'table-ton-kho-phan-thuoc-ton-kho-p-t-by-product');

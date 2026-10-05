@@ -28,9 +28,11 @@ import { planPhieuKhoPTImport, type ExistingSoPhieu, type PhieuKhoPTImportRow } 
 import {
   applyDelta,
   buildTonMap,
+  findDuoiDinhMuc,
   findVuotTon,
   khoCanKiemTra,
   phieuDelta,
+  type DuoiDinhMuc,
   type TonMap,
   type VuotTon,
 } from '../utils/ton-kho-check';
@@ -290,15 +292,21 @@ export async function getPhieuKhoPTByDeXuatIdsDb(deXuatIds: string[]): Promise<P
 
 type HangHoaSnapshot = Record<string, { ten_hang_hoa: string; don_vi_tinh?: string; pham_cap?: string | null }>;
 
-async function getHangHoaSnapshotMap(): Promise<{ map: HangHoaSnapshot; tenById: Record<string, string> }> {
+async function getHangHoaSnapshotMap(): Promise<{
+  map: HangHoaSnapshot;
+  tenById: Record<string, string>;
+  dinhMucById: Record<string, number | null>;
+}> {
   const hangHoaList = await getAllFarmHangHoa();
   const map: HangHoaSnapshot = {};
   const tenById: Record<string, string> = {};
+  const dinhMucById: Record<string, number | null> = {};
   hangHoaList.forEach((h) => {
     map[h.id] = { ten_hang_hoa: h.ten_hang_hoa ?? '', don_vi_tinh: h.dvt ?? undefined, pham_cap: h.pham_cap ?? null };
     tenById[h.id] = h.ma_hang_hoa ? `${h.ma_hang_hoa} – ${h.ten_hang_hoa ?? ''}` : (h.ten_hang_hoa ?? h.id);
+    dinhMucById[h.id] = h.dinh_muc;
   });
-  return { map, tenById };
+  return { map, tenById, dinhMucById };
 }
 
 /** Dòng chi tiết hợp lệ của form (bỏ dòng trống / số lượng 0 như trước). */
@@ -356,6 +364,36 @@ function vuotTonMessage(
     )
     .join('; ');
   return i18n.t('phieuKhoPhanThuoc.service.canhBaoTonAm', { detail });
+}
+
+/**
+ * Gộp cảnh báo tồn âm + dưới định mức thành một câu toast (null = không có gì để báo).
+ * Ô đã báo âm thì bỏ khỏi danh sách dưới định mức để không lặp.
+ */
+function canhBaoTonMessage(
+  vuot: VuotTon[],
+  duoi: DuoiDinhMuc[],
+  khoMap: Record<string, string>,
+  hangTenById: Record<string, string>
+): string | null {
+  const daBaoAm = new Set(vuot.map((v) => `${v.id_kho}|${v.id_hang_hoa}`));
+  const conLai = duoi.filter((d) => !daBaoAm.has(`${d.id_kho}|${d.id_hang_hoa}`));
+  const parts: string[] = [];
+  if (vuot.length > 0) parts.push(vuotTonMessage(vuot, khoMap, hangTenById));
+  if (conLai.length > 0) {
+    const detail = conLai
+      .map((d) =>
+        i18n.t('phieuKhoPhanThuoc.service.duoiDinhMucItem', {
+          hang: hangTenById[d.id_hang_hoa] ?? `#${d.id_hang_hoa}`,
+          kho: khoMap[d.id_kho] ?? `#${d.id_kho}`,
+          sau: formatSoLuongTon(d.sau),
+          dinhMuc: formatSoLuongTon(d.dinh_muc),
+        })
+      )
+      .join('; ');
+    parts.push(i18n.t('phieuKhoPhanThuoc.service.canhBaoDuoiDinhMuc', { detail }));
+  }
+  return parts.length > 0 ? parts.join('. ') : null;
 }
 
 /** Tồn hiện tại của các kho mà phiếu làm giảm (một request). */
@@ -426,13 +464,17 @@ export async function createPhieuKhoPTDb(data: PhieuKhoPTFormValues): Promise<Ph
 
   const chiTiet = validChiTiet(data);
   const newDelta = phieuDelta(formToDeltaInput(data, chiTiet));
-  const [{ khoMap, nvMap }, { map: hangHoaMap, tenById }, ton] = await Promise.all([
+  const [{ khoMap, nvMap }, { map: hangHoaMap, tenById, dinhMucById }, ton] = await Promise.all([
     loadKhoNvMaps(),
     getHangHoaSnapshotMap(),
     loadTonForDeltas(newDelta),
   ]);
-  const vuot = findVuotTon(ton, newDelta);
-  const canhBaoTon = vuot.length > 0 ? vuotTonMessage(vuot, khoMap, tenById) : null;
+  const canhBaoTon = canhBaoTonMessage(
+    findVuotTon(ton, newDelta),
+    findDuoiDinhMuc(ton, newDelta, new Map(), dinhMucById),
+    khoMap,
+    tenById
+  );
 
   const nguoiTaoId = data.nguoi_tao_id != null ? Number(data.nguoi_tao_id) : null;
   const tenNguoiTao = nguoiTaoId != null ? (nvMap[String(nguoiTaoId)] ?? null) : null;
@@ -499,13 +541,17 @@ export async function updatePhieuKhoPTDb(id: string, data: PhieuKhoPTFormValues)
     trang_thai: old.trang_thai,
     lines: oldCt.map((c) => ({ id_hang_hoa: String(c.id_hang_hoa), so_luong: Number(c.so_luong) })),
   });
-  const [{ khoMap, nvMap }, { map: hangHoaMap, tenById }, ton] = await Promise.all([
+  const [{ khoMap, nvMap }, { map: hangHoaMap, tenById, dinhMucById }, ton] = await Promise.all([
     loadKhoNvMaps(),
     getHangHoaSnapshotMap(),
     loadTonForDeltas(newDelta, oldDelta),
   ]);
-  const vuot = findVuotTon(ton, newDelta, oldDelta);
-  const canhBaoTon = vuot.length > 0 ? vuotTonMessage(vuot, khoMap, tenById) : null;
+  const canhBaoTon = canhBaoTonMessage(
+    findVuotTon(ton, newDelta, oldDelta),
+    findDuoiDinhMuc(ton, newDelta, oldDelta, dinhMucById),
+    khoMap,
+    tenById
+  );
 
   const nguoiTaoId = data.nguoi_tao_id != null ? Number(data.nguoi_tao_id) : null;
   const tenNguoiTao = nguoiTaoId != null ? (nvMap[String(nguoiTaoId)] ?? null) : null;
@@ -625,15 +671,22 @@ export async function importPhieuKhoPTDb(
     khoMap[k.id] = k.ten_kho;
   });
   const hangTenById: Record<string, string> = {};
+  const dinhMucById: Record<string, number | null> = {};
   hangHoaList.forEach((h) => {
     hangTenById[h.id] = h.ma_hang_hoa ? `${h.ma_hang_hoa} – ${h.ten_hang_hoa ?? ''}` : (h.ten_hang_hoa ?? h.id);
+    dinhMucById[h.id] = h.dinh_muc;
   });
 
   let created = 0;
   const warnings: string[] = [];
   for (const [i, p] of phieus.entries()) {
     // Tồn âm chỉ cảnh báo, không bỏ qua phiếu — tính trước applyDelta để đúng tồn trước phiếu này.
-    const vuot = findVuotTon(ton, deltas[i]);
+    const canhBao = canhBaoTonMessage(
+      findVuotTon(ton, deltas[i]),
+      findDuoiDinhMuc(ton, deltas[i], new Map(), dinhMucById),
+      khoMap,
+      hangTenById
+    );
     let idPhieu: number | null = null;
     try {
       const soPhieu = p.so_phieu ?? (await getNextSoPhieuFarmPtDb(p.loai));
@@ -676,7 +729,7 @@ export async function importPhieuKhoPTDb(
       if (errCt) throw errCt;
       created++;
       applyDelta(ton, deltas[i]);
-      if (vuot.length > 0) warnings.push(`${soPhieu}: ${vuotTonMessage(vuot, khoMap, hangTenById)}`);
+      if (canhBao) warnings.push(`${soPhieu}: ${canhBao}`);
     } catch (err) {
       if (idPhieu != null) await db.from(TABLE_PHIEU).delete().eq('id', idPhieu);
       const msg = i18n.t('phieuKhoPhanThuoc.import.errWriteFailed', { msg: formatDbError(err) });

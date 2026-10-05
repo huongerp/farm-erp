@@ -4,6 +4,7 @@ import {
   getNXTPTByPeriod,
   getNXTPTProductWarehouseBreakdown,
   getPhieuKhoPTHangNxHistory,
+  getTonKhoPTMatrixByKhoIds,
 } from '../services/farm-ton-kho-pt';
 import type { NXTPTFilters } from '../core/types';
 
@@ -14,6 +15,20 @@ export function useFarmTonKhoPTDisplay() {
     queryKey: FARM_TON_KHO_PT_QUERY_KEY,
     queryFn: getTonKhoPTDisplayRows,
     staleTime: 1000 * 60 * 5,
+  });
+}
+
+/**
+ * Tồn hiện tại của MỘT kho (form phiếu kho hiện "Tồn kho" từng dòng). Chưa chọn kho thì không gọi —
+ * `getTonKhoPTMatrixByKhoIds([])` nghĩa là tải mọi kho. Key nằm dưới FARM_TON_KHO_PT_QUERY_KEY nên
+ * lưu phiếu xong tự làm mới.
+ */
+export function useFarmTonKhoPTTheoKho(khoId: string | null | undefined) {
+  return useQuery({
+    queryKey: [...FARM_TON_KHO_PT_QUERY_KEY, 'theoKho', khoId] as const,
+    queryFn: () => getTonKhoPTMatrixByKhoIds([String(khoId)]),
+    enabled: !!khoId,
+    staleTime: 1000 * 30,
   });
 }
 

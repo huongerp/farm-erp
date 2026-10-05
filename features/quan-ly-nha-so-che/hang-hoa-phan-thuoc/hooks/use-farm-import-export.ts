@@ -55,6 +55,7 @@ export function useFarmHangHoaImportExport({
       { key: 'dvt', label: t('farmHangHoaPhanThuoc.hangHoa.form.unit'), required: true, hint: t('farmHangHoaPhanThuoc.hangHoa.import.hint_dvt') },
       { key: 'pham_cap', label: t('farmHangHoaPhanThuoc.hangHoa.form.phamCap'), hint: t('farmHangHoaPhanThuoc.hangHoa.import.hint_pham_cap') },
       { key: 'don_gia', label: t('farmHangHoaPhanThuoc.hangHoa.form.price'), hint: t('farmHangHoaPhanThuoc.hangHoa.import.hint_don_gia') },
+      { key: 'dinh_muc', label: t('farmHangHoaPhanThuoc.hangHoa.form.dinhMuc'), hint: t('farmHangHoaPhanThuoc.hangHoa.import.hint_dinh_muc') },
       { key: 'mo_ta', label: t('farmHangHoaPhanThuoc.hangHoa.store.descCol'), hint: t('farmHangHoaPhanThuoc.hangHoa.import.hint_mo_ta') },
     ],
     [t]
@@ -146,6 +147,7 @@ export function useFarmHangHoaImportExport({
       { key: 'dvt', label: t('farmHangHoaPhanThuoc.hangHoa.store.unitCol') },
       { key: 'pham_cap', label: t('farmHangHoaPhanThuoc.hangHoa.store.phamCapCol') },
       { key: 'don_gia', label: t('farmHangHoaPhanThuoc.hangHoa.store.priceCol') },
+      { key: 'dinh_muc', label: t('farmHangHoaPhanThuoc.hangHoa.store.dinhMucCol') },
       { key: 'mo_ta', label: t('farmHangHoaPhanThuoc.hangHoa.store.descCol') },
       { key: 'tg_cap_nhat', label: t('farmHangHoaPhanThuoc.hangHoa.store.updatedCol') },
     ],
@@ -160,6 +162,7 @@ export function useFarmHangHoaImportExport({
       dvt: item.dvt ?? '',
       pham_cap: item.pham_cap ?? '',
       don_gia: item.don_gia ?? '',
+      dinh_muc: item.dinh_muc ?? '',
       mo_ta: item.mo_ta ?? '',
       tg_cap_nhat: formatDateShort(item.tg_cap_nhat),
     }),

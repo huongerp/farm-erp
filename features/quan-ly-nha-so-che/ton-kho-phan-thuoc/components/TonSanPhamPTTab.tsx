@@ -27,6 +27,7 @@ import ListPageSkeleton from '../../../../components/shared/ListPageSkeleton';
 import TablePaginationFooter from '../../../../components/shared/TablePaginationFooter';
 import TonKhoPTProductDetail from './TonKhoPTProductDetail';
 import { cn, formatNumberVN } from '../../../../lib/utils';
+import { laDuoiDinhMuc } from '../../phieu-kho-phan-thuoc/utils/ton-kho-check';
 import { createListSearchMatcher } from '../../../../lib/list-search-matcher';
 
 /** Ô tìm kiếm quét MỌI cột của bảng, bỏ dấu tiếng Việt — xem lib/list-search-matcher.ts. */
@@ -229,10 +230,18 @@ const TonSanPhamPTTab: React.FC = () => {
 
   const renderCell = (item: TonKhoPTProductAgg, col: ColumnConfig) => {
     if (isKhoColumnId(col.id)) {
-      const qty = item.by_kho[khoIdFromColumnId(col.id)] ?? 0;
+      const khoId = khoIdFromColumnId(col.id);
+      const qty = item.by_kho[khoId] ?? 0;
+      // Chỉ tô kho có phát sinh tồn của hàng này — kho chưa từng nhập hàng thì không báo.
+      const duoiDinhMuc = khoId in item.by_kho && (qty < 0 || laDuoiDinhMuc(qty, item.dinh_muc));
       return (
-        <td key={col.id} className="px-4 py-3 text-right" style={getColumnCellStyle(col)}>
-          <span className="font-medium tabular-nums text-sm">
+        <td
+          key={col.id}
+          className={cn('px-4 py-3 text-right', duoiDinhMuc && 'bg-destructive/10')}
+          style={getColumnCellStyle(col)}
+          title={duoiDinhMuc && item.dinh_muc ? t('tonKhoPhanThuoc.byProduct.duoiDinhMucHint', { dinhMuc: formatNumberVN(item.dinh_muc) }) : undefined}
+        >
+          <span className={cn('font-medium tabular-nums text-sm', duoiDinhMuc && 'text-destructive font-semibold')}>
             {qty !== 0 ? formatNumberVN(qty) : '—'}
           </span>
         </td>
@@ -263,6 +272,12 @@ const TonSanPhamPTTab: React.FC = () => {
         return (
           <td key={col.id} className="px-4 py-3 text-muted-foreground" style={getColumnCellStyle(col)}>
             {item.don_vi_tinh}
+          </td>
+        );
+      case 'dinh_muc':
+        return (
+          <td key={col.id} className="px-4 py-3 text-right tabular-nums text-muted-foreground" style={getColumnCellStyle(col)}>
+            {item.dinh_muc ? formatNumberVN(item.dinh_muc) : '—'}
           </td>
         );
       case 'so_kho_co_ton':
@@ -336,6 +351,7 @@ const TonSanPhamPTTab: React.FC = () => {
                         const isNumeric =
                           col.id === 'tong_so_luong' ||
                           col.id === 'so_kho_co_ton' ||
+                          col.id === 'dinh_muc' ||
                           isKhoColumnId(col.id);
                         return (
                           <th

@@ -42,6 +42,10 @@
   "phieuKhoPhanThuoc.form.itemCode": "Mã hàng",
   "phieuKhoPhanThuoc.form.itemName": "Tên hàng",
   "phieuKhoPhanThuoc.form.quantity": "Số lượng",
+  "phieuKhoPhanThuoc.form.tonKho": "Tồn kho",
+  "phieuKhoPhanThuoc.form.tonSauPhieu": "Tồn sau phiếu",
+  "phieuKhoPhanThuoc.form.tonAmHint": "Tồn kho sẽ âm — vẫn lưu được",
+  "phieuKhoPhanThuoc.form.dinhMucHint": "Định mức {{dinhMuc}} — dưới mức này báo đỏ, vẫn lưu được",
   "phieuKhoPhanThuoc.form.unitPrice": "Đơn giá",
   "phieuKhoPhanThuoc.form.amount": "Thành tiền",
   "phieuKhoPhanThuoc.form.unit": "ĐVT",
@@ -245,7 +249,9 @@
   "phieuKhoPhanThuoc.import.errPhieuSkipped": "Phiếu không được tạo vì dòng {{rows}} lỗi",
   "phieuKhoPhanThuoc.import.errWriteFailed": "Không tạo được phiếu: {{msg}}",
   "phieuKhoPhanThuoc.service.canhBaoTonAm": "Tồn kho sẽ âm — {{detail}}",
-  "phieuKhoPhanThuoc.import.warnTonAm": "Đã tạo phiếu nhưng {{count}} phiếu làm tồn kho âm: {{detail}}",
+  "phieuKhoPhanThuoc.import.warnTonAm": "Đã tạo phiếu nhưng {{count}} phiếu cần chú ý tồn kho (âm hoặc dưới định mức): {{detail}}",
   "phieuKhoPhanThuoc.service.vuotTonItem": "{{hang}} tại {{kho}}: tồn {{ton}}, cần {{can}}",
+  "phieuKhoPhanThuoc.service.canhBaoDuoiDinhMuc": "Tồn dưới định mức — {{detail}}",
+  "phieuKhoPhanThuoc.service.duoiDinhMucItem": "{{hang}} tại {{kho}}: còn {{sau}}, định mức {{dinhMuc}}",
   "phieuKhoPhanThuoc.import.guideNote5": "• Phiếu Xuất / Chuyển không được vượt tồn kho hiện tại (tính cả phiếu chờ duyệt và các phiếu phía trên trong cùng file)."
 }

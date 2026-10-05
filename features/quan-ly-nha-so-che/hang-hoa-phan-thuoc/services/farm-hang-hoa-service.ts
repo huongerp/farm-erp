@@ -18,7 +18,7 @@ import { throwDbError } from '../../../../lib/db-errors';
 const TABLE = 'fp_farm_danh_sach_hang_hoa';
 
 const HANG_HOA_COLUMNS =
-  'id,danh_muc_id,danh_muc_cha_id,ma_hang_hoa,ten_hang_hoa,dvt,pham_cap,don_gia,mo_ta,tg_tao,tg_cap_nhat';
+  'id,danh_muc_id,danh_muc_cha_id,ma_hang_hoa,ten_hang_hoa,dvt,pham_cap,don_gia,dinh_muc,mo_ta,tg_tao,tg_cap_nhat';
 
 interface FarmHangHoaRow {
   id: number;
@@ -29,6 +29,7 @@ interface FarmHangHoaRow {
   dvt: string | null;
   pham_cap: string | null;
   don_gia: string | number | null;
+  dinh_muc: string | number | null;
   mo_ta: string | null;
   tg_tao: string | null;
   tg_cap_nhat: string | null;
@@ -36,6 +37,7 @@ interface FarmHangHoaRow {
 
 function rowToFarmHangHoa(row: FarmHangHoaRow, tenDanhMuc?: string): FarmHangHoa {
   const donGia = row.don_gia != null ? Number(row.don_gia) : null;
+  const dinhMuc = row.dinh_muc != null ? Number(row.dinh_muc) : null;
   const ma = row.ma_hang_hoa ?? '';
   const ten = row.ten_hang_hoa ?? '';
   const unit = row.dvt ?? null;
@@ -48,6 +50,7 @@ function rowToFarmHangHoa(row: FarmHangHoaRow, tenDanhMuc?: string): FarmHangHoa
     dvt: unit,
     pham_cap: row.pham_cap ?? null,
     don_gia: Number.isNaN(donGia) ? null : donGia,
+    dinh_muc: Number.isNaN(dinhMuc) ? null : dinhMuc,
     tg_tao: row.tg_tao ?? new Date().toISOString(),
     tg_cap_nhat: row.tg_cap_nhat ?? new Date().toISOString(),
     ten_danh_muc: tenDanhMuc,
@@ -170,6 +173,7 @@ export const createFarmHangHoa = async (data: FarmHangHoaFormValues): Promise<Fa
     dvt: data.dvt?.trim() || null,
     pham_cap: data.pham_cap?.trim() || null,
     don_gia: data.don_gia != null && !Number.isNaN(Number(data.don_gia)) ? Number(data.don_gia) : null,
+    dinh_muc: data.dinh_muc != null && !Number.isNaN(Number(data.dinh_muc)) ? Number(data.dinh_muc) : null,
     mo_ta: data.mo_ta?.trim() || null,
   };
 
@@ -205,6 +209,7 @@ export const updateFarmHangHoa = async (id: string, data: FarmHangHoaFormValues)
     dvt: data.dvt?.trim() || null,
     pham_cap: data.pham_cap?.trim() || null,
     don_gia: data.don_gia != null && !Number.isNaN(Number(data.don_gia)) ? Number(data.don_gia) : null,
+    dinh_muc: data.dinh_muc != null && !Number.isNaN(Number(data.dinh_muc)) ? Number(data.dinh_muc) : null,
     mo_ta: data.mo_ta?.trim() || null,
     tg_cap_nhat: new Date().toISOString(),
   };

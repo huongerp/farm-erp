@@ -73,6 +73,12 @@ const HangHoaList: React.FC<Props> = ({
             {formatNumberVN(item.don_gia)}
           </span>
         );
+      case 'dinh_muc':
+        return (
+          <span className="text-sm text-muted-foreground tabular-nums">
+            {item.dinh_muc != null ? formatNumberVN(item.dinh_muc) : '—'}
+          </span>
+        );
       case 'mo_ta':
         return (
           <span className="text-sm text-muted-foreground line-clamp-2 max-w-[200px]" title={item.mo_ta ?? undefined}>

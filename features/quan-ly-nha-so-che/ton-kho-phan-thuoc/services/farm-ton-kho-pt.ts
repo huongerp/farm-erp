@@ -91,10 +91,13 @@ export async function getTonKhoPTDisplayRows(): Promise<TonKhoPTDisplayRow[]> {
   hangList.forEach((h) => {
     hhMap[String(h.id)] = h;
   });
-  return matrix.map((r) => {
+  // View giữ cả dòng tồn 0 (migration 022): chỉ hiện khi hàng có định mức — hết hàng thì báo đỏ;
+  // hàng không đặt định mức mà tồn 0 thì ẩn như trước.
+  return matrix.flatMap((r) => {
     const k = khoMap[r.id_kho];
     const h = hhMap[r.id_hang_hoa];
-    return {
+    if (r.so_luong === 0 && !(h?.dinh_muc && h.dinh_muc > 0)) return [];
+    return [{
       ...r,
       ma_kho: k?.ma_kho ?? r.id_kho,
       ten_kho: k?.ten_kho ?? r.id_kho,
@@ -103,7 +106,8 @@ export async function getTonKhoPTDisplayRows(): Promise<TonKhoPTDisplayRow[]> {
       don_vi_tinh: h?.dvt ?? h?.don_vi_tinh ?? '—',
       ten_danh_muc: h?.ten_danh_muc,
       danh_muc_id: h?.danh_muc_id ?? null,
-    };
+      dinh_muc: h?.dinh_muc ?? null,
+    }];
   });
 }
 
@@ -187,7 +191,7 @@ interface NXTPTPeriodState {
 async function computeNXTPTPeriodState(filters: NXTPTFilters): Promise<NXTPTPeriodState> {
   const { dateFrom, dateTo, warehouseIds, loaiPhieu, hangHoaIds, categoryIds } = filters;
 
-  const [tonKhoList, flatRows, khoList, hangHoaList] = await Promise.all([
+  const [tonKhoAll, flatRows, khoList, hangHoaList] = await Promise.all([
     getTonKhoPTMatrix(),
     fetchAllRows<FarmPhieuKhoPTFlatRow>((from, to) =>
       db.from(VIEW_FLAT).select(FLAT_SELECT).range(from, to)
@@ -195,6 +199,9 @@ async function computeNXTPTPeriodState(filters: NXTPTFilters): Promise<NXTPTPeri
     getKhoList(),
     getAllFarmHangHoa(),
   ]);
+
+  // Dòng tồn 0 (view giữ từ migration 022) không đóng góp số dư — bỏ để báo cáo không hiện hàng toàn 0.
+  const tonKhoList = tonKhoAll.filter((r) => r.so_luong !== 0);
 
   const hangHoaMap: Record<string, FarmHangHoa> = {};
   hangHoaList.forEach((h) => {

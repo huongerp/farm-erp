@@ -21,6 +21,8 @@ export interface FarmHangHoa {
   /** Phẩm cấp (cột pham_cap, tùy chọn) — text tự do, app gợi ý từ giá trị đã có. */
   pham_cap?: string | null;
   don_gia: number | null;
+  /** Định mức tồn mỗi kho (cột dinh_muc) — tồn dưới mức này báo đỏ, không chặn lưu phiếu. */
+  dinh_muc: number | null;
   tg_tao: string;
   tg_cap_nhat: string;
   ten_danh_muc?: string;

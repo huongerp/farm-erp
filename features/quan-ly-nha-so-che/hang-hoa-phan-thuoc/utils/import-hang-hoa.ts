@@ -33,6 +33,7 @@ export interface FarmHangHoaPayload {
   dvt: string | null;
   pham_cap: string | null;
   don_gia: number | null;
+  dinh_muc: number | null;
   mo_ta: string | null;
 }
 
@@ -163,6 +164,9 @@ export function planFarmHangHoaImport(
 
     const donGia = parseImportNumber(row.don_gia);
     if (!donGia.ok) rowErrors.push(tr('errPriceInvalid', { value: String(row.don_gia ?? '') }));
+    const dinhMuc = parseImportNumber(row.dinh_muc);
+    if (!dinhMuc.ok || (dinhMuc.value != null && dinhMuc.value < 0))
+      rowErrors.push(tr('errDinhMucInvalid', { value: String(row.dinh_muc ?? '') }));
 
     const refValue = refColumn === 'ma_hang_hoa' ? ma : matchKey(ten);
     if (refValue) {
@@ -184,6 +188,7 @@ export function planFarmHangHoaImport(
       dvt: dvt || null,
       pham_cap: phamCap || null,
       don_gia: donGia.ok ? donGia.value : null,
+      dinh_muc: dinhMuc.ok ? dinhMuc.value : null,
       mo_ta: moTa || null,
     };
 

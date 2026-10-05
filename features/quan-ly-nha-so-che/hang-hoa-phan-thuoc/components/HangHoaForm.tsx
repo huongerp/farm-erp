@@ -2,10 +2,11 @@ import React, { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useForm, useWatch, Controller, SubmitHandler, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Package, Folder, DollarSign, FileText } from 'lucide-react';
+import { Package, Folder, DollarSign, FileText, Gauge } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
 import Combobox from '../../../../components/ui/Combobox';
 import CurrencyInput from '../../../../components/ui/CurrencyInput';
+import NumberInput from '../../../../components/ui/NumberInput';
 import { farmHangHoaSchema, type FarmHangHoaFormValues } from '../core/schema';
 import type { FarmHangHoa } from '../core/types';
 import { useCreateFarmHangHoa, useUpdateFarmHangHoa } from '../hooks/use-farm-hang-hoa';
@@ -54,6 +55,7 @@ const HangHoaForm: React.FC<Props> = ({ initialData, existingDvtList = [], exist
     dvt: '',
     pham_cap: null,
     don_gia: undefined,
+    dinh_muc: undefined,
     mo_ta: null,
   };
 
@@ -97,6 +99,7 @@ const HangHoaForm: React.FC<Props> = ({ initialData, existingDvtList = [], exist
         dvt: initialData.dvt ?? '',
         pham_cap: initialData.pham_cap ?? null,
         don_gia: initialData.don_gia ?? undefined,
+        dinh_muc: initialData.dinh_muc ?? undefined,
         mo_ta: initialData.mo_ta ?? null,
       });
     } else {
@@ -107,6 +110,7 @@ const HangHoaForm: React.FC<Props> = ({ initialData, existingDvtList = [], exist
         dvt: '',
         pham_cap: null,
         don_gia: undefined,
+        dinh_muc: undefined,
         mo_ta: null,
       });
     }
@@ -118,6 +122,8 @@ const HangHoaForm: React.FC<Props> = ({ initialData, existingDvtList = [], exist
     const sanitized = {
       ...data,
       pham_cap: data.pham_cap?.trim() || null,
+      // Ô trống / 0 = không đặt định mức.
+      dinh_muc: data.dinh_muc ? data.dinh_muc : undefined,
       mo_ta: data.mo_ta?.trim() || null,
     };
     if (isEdit && initialData) {
@@ -243,6 +249,25 @@ const HangHoaForm: React.FC<Props> = ({ initialData, existingDvtList = [], exist
                 />
               )}
             />
+            <div>
+              <Controller
+                name="dinh_muc"
+                control={control}
+                render={({ field }) => (
+                  <NumberInput
+                    label={t('farmHangHoaPhanThuoc.hangHoa.form.dinhMuc')}
+                    placeholder={t('farmHangHoaPhanThuoc.hangHoa.form.dinhMucPlaceholder')}
+                    icon={<Gauge size={12} />}
+                    value={field.value ?? 0}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    min={0}
+                    error={errors.dinh_muc?.message}
+                  />
+                )}
+              />
+              <p className="mt-1 text-xs text-muted-foreground">{t('farmHangHoaPhanThuoc.hangHoa.form.dinhMucHint')}</p>
+            </div>
             <div className="col-span-1 sm:col-span-2">
               <Textarea
                 {...register('mo_ta')}

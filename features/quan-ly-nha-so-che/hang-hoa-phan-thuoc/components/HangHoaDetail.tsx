@@ -77,6 +77,12 @@ const HangHoaDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete }) => 
               icon={<DollarSign size={12} />}
               emptyText="—"
             />
+            <DetailField
+              label={t('farmHangHoaPhanThuoc.hangHoa.form.dinhMuc')}
+              value={data.dinh_muc != null ? data.dinh_muc.toLocaleString('vi-VN') : ''}
+              icon={<Package size={12} />}
+              emptyText="—"
+            />
             {data.mo_ta != null && data.mo_ta !== '' && (
               <DetailField
                 label={t('farmHangHoaPhanThuoc.hangHoa.detail.description')}

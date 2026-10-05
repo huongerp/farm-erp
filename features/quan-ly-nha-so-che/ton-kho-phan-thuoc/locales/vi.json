@@ -7,6 +7,8 @@
   "tonKhoPhanThuoc.byProduct.emptyHint": "Thử đổi bộ lọc kho hoặc danh mục.",
   "tonKhoPhanThuoc.byProduct.totalQty": "Tổng SL",
   "tonKhoPhanThuoc.byProduct.warehouseCount": "Số kho có tồn",
+  "tonKhoPhanThuoc.byProduct.dinhMuc": "Định mức",
+  "tonKhoPhanThuoc.byProduct.duoiDinhMucHint": "Dưới định mức {{dinhMuc}}",
   "tonKhoPhanThuoc.byProduct.noExportData": "Không có dữ liệu để xuất.",
   "tonKhoPhanThuoc.toolbar.search": "Tìm kiếm",
   "tonKhoPhanThuoc.toolbar.warehouse": "Kho",

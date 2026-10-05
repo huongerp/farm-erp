@@ -90,3 +90,52 @@ export function khoCanKiemTra(...deltas: TonMap[]): string[] {
   deltas.forEach((d) => d.forEach((_v, k) => ids.add(k.split('|')[0])));
   return [...ids];
 }
+
+/** Tồn tại một (kho, hàng): `truoc` = khả dụng (đã trừ phần của chính phiếu cũ khi sửa), `sau` = sau phiếu này. */
+export function tonSauPhieu(
+  ton: TonMap,
+  newDelta: TonMap,
+  oldDelta: TonMap,
+  idKho: string | number,
+  idHang: string | number
+): { truoc: number; sau: number } {
+  const k = tonKey(idKho, idHang);
+  const truoc = (ton.get(k) ?? 0) - (oldDelta.get(k) ?? 0);
+  return { truoc, sau: truoc + (newDelta.get(k) ?? 0) };
+}
+
+/** Định mức trống / 0 = không đặt định mức → không bao giờ báo. */
+export function laDuoiDinhMuc(soLuong: number, dinhMuc: number | null | undefined): boolean {
+  return dinhMuc != null && dinhMuc > 0 && soLuong < dinhMuc - EPS;
+}
+
+export interface DuoiDinhMuc {
+  id_kho: string;
+  id_hang_hoa: string;
+  /** Tồn sau phiếu. */
+  sau: number;
+  dinh_muc: number;
+}
+
+/**
+ * Các (kho, hàng) mà phiếu làm tồn GIẢM và tồn sau phiếu dưới định mức — để cảnh báo, không chặn.
+ * Phiếu nhập (tồn tăng) không báo dù vẫn còn dưới định mức, tránh toast thừa mỗi lần nhập bù.
+ */
+export function findDuoiDinhMuc(
+  ton: TonMap,
+  newDelta: TonMap,
+  oldDelta: TonMap,
+  dinhMucByHang: Record<string, number | null | undefined>
+): DuoiDinhMuc[] {
+  const keys = new Set([...newDelta.keys(), ...oldDelta.keys()]);
+  const out: DuoiDinhMuc[] = [];
+  keys.forEach((k) => {
+    if ((newDelta.get(k) ?? 0) - (oldDelta.get(k) ?? 0) >= -EPS) return;
+    const [id_kho, id_hang_hoa] = k.split('|');
+    const dinhMuc = dinhMucByHang[id_hang_hoa];
+    const { sau } = tonSauPhieu(ton, newDelta, oldDelta, id_kho, id_hang_hoa);
+    if (!laDuoiDinhMuc(sau, dinhMuc)) return;
+    out.push({ id_kho, id_hang_hoa, sau, dinh_muc: dinhMuc as number });
+  });
+  return out;
+}

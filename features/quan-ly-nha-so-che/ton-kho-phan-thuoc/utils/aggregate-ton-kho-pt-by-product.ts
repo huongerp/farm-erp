@@ -28,6 +28,7 @@ export function aggregateTonKhoPTByProduct(rows: TonKhoPTDisplayRow[]): TonKhoPT
       ten_danh_muc: first.ten_danh_muc,
       danh_muc_id: first.danh_muc_id ?? null,
       don_vi_tinh: first.don_vi_tinh,
+      dinh_muc: first.dinh_muc ?? null,
       tong_so_luong: tong,
       so_kho_co_ton: khoCoTon,
       by_kho,
