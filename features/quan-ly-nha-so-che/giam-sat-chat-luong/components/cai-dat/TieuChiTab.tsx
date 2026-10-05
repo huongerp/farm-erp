@@ -75,7 +75,6 @@ const TieuChiForm: React.FC<{
               label={t('giamSatChatLuong.tieuChi.loai')}
               value={field.value}
               onChange={(e) => field.onChange(e.target.value)}
-              disabled={!!initial}
               options={LOAI_TIEU_CHI.map((v) => ({ value: v, label: t(`giamSatChatLuong.loai.${v}`) }))}
             />
           )}
@@ -100,6 +99,9 @@ const TieuChiForm: React.FC<{
         )}
       </div>
       <p className="text-xs text-muted-foreground m-0">{t(`giamSatChatLuong.tieuChi.hint_${loai}`)}</p>
+      {initial && loai !== initial.loai && (
+        <p className="text-xs text-amber-700 dark:text-amber-400 m-0">{t('giamSatChatLuong.tieuChi.doiKieuCanhBao')}</p>
+      )}
       <div className="flex justify-end gap-2">
         <Button type="button" variant="outline" size="sm" onClick={onDone}>
           {t('common.cancel')}

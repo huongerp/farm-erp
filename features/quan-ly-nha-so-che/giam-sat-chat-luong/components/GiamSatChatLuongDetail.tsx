@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 import {
   BadgeCheck,
   Ban,
@@ -13,6 +14,7 @@ import {
   Package,
   FileText as FileTextIcon,
   LockOpen,
+  Printer,
   RefreshCw,
   RotateCcw,
   ScanLine,
@@ -40,6 +42,10 @@ import {
   coTheXoaPhieu,
 } from '../core/trang-thai';
 import { taoUrlInPhieu } from '../core/preview-url';
+import { docCaiDatTem } from '../core/mau-tem';
+import { taoNoiDungQr } from '../core/qr';
+import { inTemGscl, temTuPhieu } from '../utils/in-tem-gscl';
+import QrCodeImage from '../../../../components/shared/QrCodeImage';
 import type { GiamSatChatLuong, ThungMau } from '../core/types';
 import {
   useHanhDongGiamSatChatLuong,
@@ -54,6 +60,7 @@ import InTemDialog from './InTemDialog';
 import NhapKetQuaThungDialog from './NhapKetQuaThungDialog';
 import QuetTemFlow from './QuetTemFlow';
 import ApDungTieuChiDialog from './ApDungTieuChiDialog';
+import QrThungDialog from './QrThungDialog';
 
 interface Props {
   data: GiamSatChatLuong;
@@ -90,6 +97,20 @@ const GiamSatChatLuongDetail: React.FC<Props> = ({
 
   const [dialog, setDialog] = useState<null | 'in' | 'quet' | 'apDung'>(moInTem ? 'in' : null);
   const [nhapThung, setNhapThung] = useState<ThungMau | null>(null);
+  const [qrThung, setQrThung] = useState<ThungMau | null>(null);
+  const [dangInThung, setDangInThung] = useState(false);
+
+  /** In lại tem của đúng một thùng, theo khổ tem trong Cài đặt. */
+  const inMotThung = async (x: ThungMau) => {
+    setDangInThung(true);
+    try {
+      await inTemGscl(temTuPhieu(data, [x]), docCaiDatTem());
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : String(e));
+    } finally {
+      setDangInThung(false);
+    }
+  };
 
   const tt = data.trang_thai;
   const canKiem = canUpdate && coTheKiemThung(tt, capCao);
@@ -250,7 +271,28 @@ const GiamSatChatLuongDetail: React.FC<Props> = ({
             <DetailSection title={t('giamSatChatLuong.detail.nguoiKiem')} icon={<User size={14} />} variant="muted">
               <ul className="m-0 p-0 list-none space-y-1 text-sm">
                 {daKiem.map((x) => (
-                  <li key={x.id} className="flex flex-wrap items-baseline gap-x-2">
+                  <li key={x.id} className="flex flex-wrap items-center gap-x-2">
+                    <button
+                      type="button"
+                      onClick={() => setQrThung(x)}
+                      title={t('giamSatChatLuong.detail.xemQr')}
+                      aria-label={t('giamSatChatLuong.detail.xemQr')}
+                      className="rounded-md hover:ring-2 hover:ring-primary/40 shrink-0"
+                    >
+                      <QrCodeImage value={taoNoiDungQr(x.ma_tem)} size={24} className="p-0.5 rounded-md" />
+                    </button>
+                    {tt !== 'huy' && (
+                      <button
+                        type="button"
+                        onClick={() => inMotThung(x)}
+                        disabled={dangInThung}
+                        title={t('giamSatChatLuong.detail.inTemThung')}
+                        aria-label={t('giamSatChatLuong.detail.inTemThung')}
+                        className="p-1.5 rounded-md text-muted-foreground hover:bg-muted hover:text-primary disabled:opacity-40 shrink-0"
+                      >
+                        <Printer size={14} />
+                      </button>
+                    )}
                     <span className="font-medium tabular-nums">{t('giamSatChatLuong.quet.thungSo', { stt: x.stt_thung, n: data.so_thung_mau })}</span>
                     <span className="text-muted-foreground">
                       {[x.ten_nguoi_kiem, x.tg_kiem ? formatDateTimeShort(x.tg_kiem) : null].filter(Boolean).join(' · ')}
@@ -318,6 +360,15 @@ const GiamSatChatLuongDetail: React.FC<Props> = ({
           />
         )}
         {nhapThung && <NhapKetQuaThungDialog phieu={data} thung={nhapThung} onClose={() => setNhapThung(null)} />}
+        {qrThung && (
+          <QrThungDialog
+            phieu={data}
+            thung={qrThung}
+            onClose={() => setQrThung(null)}
+            onIn={tt !== 'huy' ? () => inMotThung(qrThung) : undefined}
+            dangIn={dangInThung}
+          />
+        )}
       </AnimatePresence>
     </>
   );
