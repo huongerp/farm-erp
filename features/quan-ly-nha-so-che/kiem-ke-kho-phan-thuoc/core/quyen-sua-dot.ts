@@ -28,14 +28,13 @@ export function coTheSuaChiTietPT(trangThai: TrangThaiDotKiemKePT, capCao: boole
 }
 
 /**
- * Chuyển trạng thái đợt. Chặn cả lối vòng: người thường đưa đợt đã chốt về
- * `dang_kiem_ke` rồi sửa thoải mái thì chốt sổ thành vô nghĩa.
+ * Nút "Chuyển trạng thái" — đổi tự do sang bất kỳ trạng thái nào, kể cả đưa đợt
+ * đã chốt ngược về `dang_kiem_ke` / `draft` → chỉ cấp cao, ở MỌI trạng thái.
+ * Luồng nghiệp vụ thường không đi qua đây: Tạo danh sách (Nháp → Đang kiểm kê) và
+ * nút Hoàn thành (Đang kiểm kê → Hoàn thành) vẫn theo quyền `update`.
  */
-export function coTheChuyenTrangThaiDotPT(
-  trangThaiHienTai: TrangThaiDotKiemKePT,
-  capCao: boolean
-): boolean {
-  return capCao || trangThaiHienTai !== 'hoan_thanh';
+export function coTheChuyenTrangThaiDotPT(capCao: boolean): boolean {
+  return capCao;
 }
 
 /**

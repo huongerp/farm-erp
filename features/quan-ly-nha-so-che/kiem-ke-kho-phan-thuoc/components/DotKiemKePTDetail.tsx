@@ -101,7 +101,7 @@ const DotKiemKePTDetail: React.FC<Props> = ({
   const capCao = useKiemKeCapCaoPT();
   const coTheSuaDongTheoDot = coTheSuaChiTietPT(data.trang_thai, capCao);
   const canEditLines = canUpdate && coTheSuaDongTheoDot;
-  const canChangeStatus = coTheChuyenTrangThaiDotPT(data.trang_thai, capCao);
+  const canChangeStatus = coTheChuyenTrangThaiDotPT(capCao);
 
   const stats = useMemo(() => getChiTietKiemKePTStats(chiTiet), [chiTiet]);
   const pendingDieuChinhCount = useMemo(

@@ -11,7 +11,6 @@ const HANH_DONG = [
   ['sửa đợt', coTheSuaDotPT],
   ['xoá đợt', coTheXoaDotPT],
   ['sửa chi tiết', coTheSuaChiTietPT],
-  ['chuyển trạng thái', coTheChuyenTrangThaiDotPT],
 ] as const;
 
 describe('quyền đụng vào đợt kiểm kê', () => {
@@ -27,12 +26,13 @@ describe('quyền đụng vào đợt kiểm kê', () => {
   it.each(HANH_DONG)('%s: cấp cao mở khoá được đợt đã hoàn thành', (_ten, coThe) => {
     expect(coThe('hoan_thanh', true)).toBe(true);
   });
+});
 
-  it('chuyển trạng thái xét trạng thái HIỆN TẠI, không xét đích đến', () => {
-    // Người thường không được đưa đợt đã chốt về Đang kiểm kê để lách chốt sổ.
-    expect(coTheChuyenTrangThaiDotPT('hoan_thanh', false)).toBe(false);
-    // Nhưng vẫn được chốt sổ một đợt đang kiểm kê.
-    expect(coTheChuyenTrangThaiDotPT('dang_kiem_ke', false)).toBe(true);
+describe('coTheChuyenTrangThaiDotPT — nút Chuyển trạng thái', () => {
+  it('chỉ cấp cao (cấp bậc 1 / quản trị) mới được, ở mọi trạng thái', () => {
+    // Không phụ thuộc trạng thái: người thường bị chặn kể cả đợt Nháp / Đang kiểm kê.
+    expect(coTheChuyenTrangThaiDotPT(false)).toBe(false);
+    expect(coTheChuyenTrangThaiDotPT(true)).toBe(true);
   });
 });
 

@@ -487,12 +487,11 @@ export async function changeTrangThaiDotPT(
 ): Promise<DotKiemKePT> {
   const idNum = Number(id);
   if (!Number.isFinite(idNum)) throw new Error(i18n.t('kiemKeKhoPT.service.notFound'));
+  if (!coTheChuyenTrangThaiDotPT(capCao)) {
+    throw new Error(i18n.t('kiemKeKhoPT.service.chiCapCaoDoiTrangThai'));
+  }
   const existing = await getDotKiemKePTById(id);
   if (!existing) throw new Error(i18n.t('kiemKeKhoPT.service.notFound'));
-  // Chặn lối vòng: đưa đợt đã chốt về Đang kiểm kê rồi sửa thoải mái.
-  if (!coTheChuyenTrangThaiDotPT(existing.trang_thai, capCao)) {
-    throw new Error(i18n.t('kiemKeKhoPT.service.hoanThanhChiCapCaoDoiTrangThai'));
-  }
   const { error } = await db.from(TABLE_DOT).update({ trang_thai }).eq('id', idNum);
   if (error) throwDbError(error);
   const updated = await getDotKiemKePTById(id);

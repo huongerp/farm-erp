@@ -22,13 +22,14 @@ import {
   useChangeTrangThaiDotPT,
 } from '../hooks/use-kiem-ke-pt';
 import { useKiemKeKhoPTViewScope } from '../hooks/use-kiem-ke-pt-view-scope';
+import { useKiemKeCapCaoPT } from '../hooks/use-kiem-ke-cap-cao';
 import { useKiemKeKhoPTStore } from '../store/useKiemKeKhoPTStore';
 import {
   buildDotKiemKePTListServerQuery,
   khoChoPhepTheoPhamVi,
   fetchAllDotKiemKePTForListQuery,
 } from '../services/kiem-ke-pt-service';
-import { TRANG_THAI_DOT_OPTIONS_PT } from '../core/constants';
+import { TRANG_THAI_DOT_OPTIONS_PT, getTrangThaiDotLabelPT } from '../core/constants';
 import ExportDialog from '../../../../components/shared/LazyExportDialog';
 import { useExportData } from '../../../../lib/useExportData';
 import {
@@ -42,6 +43,8 @@ const DanhSachTab: React.FC = () => {
   const { t } = useTranslation();
   const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
+  // Nút "Chuyển trạng thái" chỉ dành cho cấp bậc 1 / quản trị module — xem core/quyen-sua-dot.ts.
+  const capCao = useKiemKeCapCaoPT();
   const {
     searchTerm,
     filters,
@@ -163,15 +166,20 @@ const DanhSachTab: React.FC = () => {
 
   const handleStatusChange = useCallback(
     (dot: DotKiemKePT) => {
-      let selectedTrangThai: TrangThaiDotKiemKePT = dot.trang_thai;
+      // Bỏ trạng thái hiện tại khỏi danh sách: trước đây ô chọn mặc định là chính trạng
+      // thái đang có, bấm Đồng ý không đổi gì mà vẫn báo thành công → tưởng nút hỏng.
+      const luaChon = TRANG_THAI_DOT_OPTIONS_PT.filter((o) => o.value !== dot.trang_thai);
+      let selectedTrangThai: TrangThaiDotKiemKePT = luaChon[0].value;
       confirm({
         title: t('kiemKeKhoPT.changeStatusTitle'),
         message: (
           <div className="space-y-4 text-left py-2">
-            <p className="text-body-sm">{t('kiemKeKhoPT.changeStatusMessage')}</p>
+            <p className="text-body-sm">
+              {t('kiemKeKhoPT.changeStatusMessage', { hienTai: getTrangThaiDotLabelPT(dot.trang_thai, t) })}
+            </p>
             <Select
-              defaultValue={dot.trang_thai}
-              options={TRANG_THAI_DOT_OPTIONS_PT.map((o) => ({ value: o.value, label: t(o.labelKey) }))}
+              defaultValue={selectedTrangThai}
+              options={luaChon.map((o) => ({ value: o.value, label: t(o.labelKey) }))}
               onChange={(e) => {
                 selectedTrangThai = e.target.value as TrangThaiDotKiemKePT;
               }}
@@ -302,7 +310,7 @@ const DanhSachTab: React.FC = () => {
                 : undefined
             }
             onHoanThanh={canUpdate ? () => hoanThanhMutation.mutate(detailData.id) : undefined}
-            onStatusChange={canUpdate ? handleStatusChange : undefined}
+            onStatusChange={capCao ? handleStatusChange : undefined}
             taoDanhSachLoading={taoDanhSachMutation.isPending}
             hoanThanhLoading={hoanThanhMutation.isPending}
           />
