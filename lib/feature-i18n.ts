@@ -157,6 +157,7 @@ const FEATURE_I18N_DEPS: Partial<Record<FeatureI18nKey, FeatureI18nKey[]>> = {
   'bao-cao-so-che': ['bao-cao-nhan-cong', 'du-bao-sl-dong-thung'],
   'bao-tri-sua-chua': ['danh-muc-tai-san', 'thiet-lap-tai-san', 'thu-chi-quy'],
   'cap-phat-thu-hoi': ['danh-muc-tai-san', 'thiet-lap-tai-san'],
+  'dang-ky-nhan-hang': ['giam-sat-chat-luong'],
   'danh-muc-tai-san': ['bao-tri-sua-chua', 'cap-phat-thu-hoi', 'thiet-lap-tai-san'],
   'danh-sach-doi-tac': ['phieu-kho'],
   'danh-sach-hang-hoa': ['danh-muc-hang-hoa', 'ton-kho'],

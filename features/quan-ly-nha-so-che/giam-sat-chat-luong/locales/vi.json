@@ -185,6 +185,8 @@
   "giamSatChatLuong.toast.moPhieuSuccess": "Đã mở lại phiếu",
   "giamSatChatLuong.detail.nguoiNop": "Người nộp",
   "giamSatChatLuong.detail.tgNop": "Thời điểm nộp",
+  "giamSatChatLuong.detail.daXepLenXe": "Đã xếp lên xe",
+  "giamSatChatLuong.detail.nhieuXe": "Cây hàng đang ghi trên nhiều xe — kiểm tra lại ở Đăng ký nhận hàng.",
   "giamSatChatLuong.quet.khongKiemDuoc_da_nop": "Phiếu {{so}} đã nộp — chỉ quản trị hoặc cấp bậc 1 chấm lại được",
   "giamSatChatLuong.preview.title": "Phiếu giám sát chất lượng",
   "giamSatChatLuong.preview.thongTin": "Thông tin cây hàng",

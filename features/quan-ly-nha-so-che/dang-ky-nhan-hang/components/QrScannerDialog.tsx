@@ -1,17 +1,16 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import SharedQrScannerDialog, { type KetQuaQuet } from '../../../../components/shared/QrScannerDialog';
-import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
-import { useHangHoaRefQuery } from '../../../../lib/hooks/use-ref-queries';
-import { chuanHoaMaQr } from '../core/qr';
+import { formatYmdToDisplay } from '../../../../lib/utils';
+import { TIEN_TO_CHON_TAY, usePhieuQcDaNop } from '../hooks/use-quet-cay-hang';
 
 export type { KetQuaQuet };
 
 interface Props {
-  /** `lien-tuc`: quét nhiều thùng liên tục; `mot-lan`: quét 1 mã rồi đóng (điền combobox). */
-  mode: 'lien-tuc' | 'mot-lan';
   title: string;
-  /** Nhận mã đã chuẩn hoá. Trả kết quả để hiện ngay dưới camera. */
+  /** Farm của xe — danh sách chọn tay lấy phiếu QC đã nộp của farm này. */
+  idChiNhanh: string;
+  /** Nhận chuỗi quét được (tem QC) hoặc `PHIEU:<id>` khi chọn tay. */
   onDetected: (ma: string) => Promise<KetQuaQuet> | KetQuaQuet;
   /** Xoá lần ghi gần nhất; trả `true` khi có dòng bị xoá. */
   onUndoLast?: () => Promise<boolean>;
@@ -19,38 +18,51 @@ interface Props {
   onClose: () => void;
 }
 
-const chuanHoa = (raw: string) => chuanHoaMaQr(raw);
+const trim = (raw: string) => raw.trim() || null;
 
-/** Quét QR mã hàng hoá — máy quét dùng chung + danh sách hàng hoá để chọn tay. */
-const QrScannerDialog: React.FC<Props> = ({ mode, title, onDetected, onUndoLast, undoPending, onClose }) => {
+/**
+ * Xếp cây hàng lên xe: quét tem QC liên tục. Tem hỏng / mất → chọn tay phiếu QC đã nộp
+ * của farm (máy quét cầm tay gõ số phiếu vào ô tìm cũng được).
+ */
+const QrScannerDialog: React.FC<Props> = ({ title, idChiNhanh, onDetected, onUndoLast, undoPending, onClose }) => {
   const { t } = useTranslation();
-  const { data: hangHoaList = [] } = useHangHoaRefQuery();
+  const { data: dsPhieu = [] } = usePhieuQcDaNop(idChiNhanh);
   const options = useMemo(
     () =>
-      hangHoaList
-        .filter((h) => h.ma_hang && h.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG)
-        .map((h) => ({ value: h.id, label: `${h.ma_hang} - ${h.ten_hang}`, subLabel: h.don_vi_tinh || undefined })),
-    [hangHoaList]
+      dsPhieu.map((p) => ({
+        value: p.id,
+        label: [p.so_phieu, p.ten_hang_hoa].filter(Boolean).join(' · '),
+        subLabel: [
+          formatYmdToDisplay(p.ngay),
+          p.ma_cay_hang ? t('dangKyNhanHang.cayHang.cay', { ma: p.ma_cay_hang }) : null,
+          t('dangKyNhanHang.cayHang.soThung', { n: p.so_thung_cay }),
+          p.ket_luan ? t(`dangKyNhanHang.cayHang.ketLuan_${p.ket_luan}`) : null,
+        ]
+          .filter(Boolean)
+          .join(' · '),
+      })),
+    [dsPhieu, t]
   );
 
   return (
     <SharedQrScannerDialog
-      mode={mode}
+      mode="lien-tuc"
       title={title}
-      subtitle={t(mode === 'lien-tuc' ? 'dangKyNhanHang.qr.subtitleLienTuc' : 'dangKyNhanHang.qr.subtitleMotLan')}
-      chuanHoa={chuanHoa}
+      subtitle={t('dangKyNhanHang.cayHang.subtitleQuet')}
+      chuanHoa={trim}
       onDetected={onDetected}
       onUndoLast={onUndoLast}
       undoPending={undoPending}
       undoLabel={t('dangKyNhanHang.hangHoa.hoanTacCuoi')}
       undoDoneMessage={t('dangKyNhanHang.toast.hoanTacDongSuccess')}
-      doneLabel={t(mode === 'lien-tuc' ? 'dangKyNhanHang.qr.xong' : 'common.close')}
+      doneLabel={t('dangKyNhanHang.qr.xong')}
+      nhanDem={(n) => t('dangKyNhanHang.cayHang.demQuet', { n })}
       chonTay={{
-        label: t('dangKyNhanHang.qr.nhapTay'),
-        placeholder: t(mode === 'lien-tuc' ? 'dangKyNhanHang.qr.chonDeThem' : 'dangKyNhanHang.hangHoa.chonHangHoa'),
-        searchPlaceholder: t('dangKyNhanHang.qr.timMaHoacTen'),
+        label: t('dangKyNhanHang.cayHang.chonTay'),
+        placeholder: t('dangKyNhanHang.cayHang.chonPhieuQc'),
+        searchPlaceholder: t('dangKyNhanHang.cayHang.timPhieuQc'),
         options,
-        toCode: (id) => hangHoaList.find((h) => h.id === id)?.ma_hang ?? null,
+        toCode: (id) => `${TIEN_TO_CHON_TAY}${id}`,
       }}
       onClose={onClose}
     />

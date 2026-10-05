@@ -39,19 +39,33 @@ export interface DangKyNhanHang {
   tong_so_luong: number;
 }
 
-/** Một dòng hàng xuất — mỗi thùng quét QR là 1 dòng. */
+/**
+ * Một cây hàng xếp lên xe — quét tem QC (Giám sát chất lượng) hoặc chọn tay phiếu QC.
+ * Thành phẩm lấy qua phiếu QC (không liên kết thẳng danh mục hàng hoá).
+ */
 export interface DangKyNhanHangCt {
   id: string;
   id_phieu: string;
-  id_hang_hoa: string;
+  id_phieu_gscl: string;
+  so_phieu_gscl: string | null;
+  /** YYYY-MM-DD — ngày phiếu QC */
+  ngay_gscl: string | null;
+  ma_cay_hang: string | null;
+  ket_luan_gscl: 'dat' | 'khong_dat' | null;
+  /** Thành phẩm của phiếu QC — dùng để gộp / in / thống kê. */
+  id_hang_hoa: string | null;
   ma_hang_hoa: string | null;
   ten_hang_hoa: string | null;
   dvt: string | null;
+  /** Số thùng của cây hàng lúc ghi. */
   so_luong: number;
   nguon: NguonDongHang;
+  ma_tem_quet: string | null;
   tg_quet: string;
   id_nguoi_quet: string | null;
   ten_nguoi_quet: string | null;
+  /** Số xe / cont của các xe KHÁC cũng có cây hàng này (cảnh báo). */
+  xe_khac: string[];
 }
 
 /** View v_farm_dang_ky_nhan_hang_tong_hh */

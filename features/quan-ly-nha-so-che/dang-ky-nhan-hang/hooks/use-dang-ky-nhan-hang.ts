@@ -22,11 +22,9 @@ import {
   hoanTacDongCuoi,
   huyDkNh,
   khoiPhucDkNh,
-  themDongHang,
   updateDkNh,
   xoaDongHang,
   type CheckInOutInput,
-  type ThemDongHangInput,
 } from '../services/dang-ky-nhan-hang-service';
 
 export const QUERY_KEY_DKNH = ['dangKyNhanHang'] as const;
@@ -185,16 +183,6 @@ export function useCapNhatAnhDangKyNhanHang(onSuccess?: () => void) {
       toast.success(i18n.t('dangKyNhanHang.toast.anhSuccess'));
       onSuccess?.();
     },
-    onError: onErr,
-  });
-}
-
-/** Thêm dòng hàng — không toast (quét liên tục tự báo trong dialog). */
-export function useThemDongHang() {
-  const invalidate = useInvalidate();
-  return useMutation({
-    mutationFn: (rows: ThemDongHangInput[]) => themDongHang(rows),
-    onSuccess: () => invalidate(),
     onError: onErr,
   });
 }

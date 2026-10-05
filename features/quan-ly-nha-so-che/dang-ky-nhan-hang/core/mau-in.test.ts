@@ -43,9 +43,16 @@ describe('tham số mẫu in', () => {
   });
 });
 
-const dong = (id: string, idHh: string, ma: string, sl = 1): DangKyNhanHangCt => ({
+const dong = (id: string, idHh: string, ma: string, sl = 60): DangKyNhanHangCt => ({
   id,
   id_phieu: '1',
+  id_phieu_gscl: `g${id}`,
+  so_phieu_gscl: null,
+  ngay_gscl: null,
+  ma_cay_hang: null,
+  ket_luan_gscl: null,
+  ma_tem_quet: null,
+  xe_khac: [],
   id_hang_hoa: idHh,
   ma_hang_hoa: ma,
   ten_hang_hoa: `Hàng ${ma}`,
@@ -60,11 +67,11 @@ const dong = (id: string, idHh: string, ma: string, sl = 1): DangKyNhanHangCt =>
 describe('gộp hàng + XLSX', () => {
   const rows = [dong('5', 'b', 'TQ402'), dong('4', 'a', 'TQ401'), dong('3', 'a', 'TQ401', 4)];
 
-  it('gộp theo mã, sắp theo mã, giữ dòng mới nhất', () => {
+  it('gộp cây hàng theo thành phẩm, sắp theo mã', () => {
     const g = gopTheoHangHoa(rows);
-    expect(g.map((n) => [n.ma_hang_hoa, n.so_luong, n.so_dong, n.dongMoiNhat.id])).toEqual([
-      ['TQ401', 5, 2, '4'],
-      ['TQ402', 1, 1, '5'],
+    expect(g.map((n) => [n.ma_hang_hoa, n.so_luong, n.so_dong])).toEqual([
+      ['TQ401', 64, 2],
+      ['TQ402', 60, 1],
     ]);
   });
 
@@ -82,6 +89,6 @@ describe('gộp hàng + XLSX', () => {
     expect(info.dong).toContainEqual(['col.ngay', '30/09/2026']);
     expect(info.dong).toContainEqual(['col.gioVao', '13:00 30/09/2026']);
     expect(info.dong).toContainEqual(['col.thoiLuong', '2 giờ 15 phút']);
-    expect(hh.dong.at(-1)).toEqual(['', '', 'preview.tong', '', 6]);
+    expect(hh.dong.at(-1)).toEqual(['', '', 'preview.tong', '', 124]);
   });
 });

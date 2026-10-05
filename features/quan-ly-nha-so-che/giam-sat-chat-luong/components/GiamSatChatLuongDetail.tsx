@@ -18,6 +18,7 @@ import {
   ScanLine,
   Send,
   Tag,
+  Truck,
   User,
 } from 'lucide-react';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
@@ -40,7 +41,12 @@ import {
 } from '../core/trang-thai';
 import { taoUrlInPhieu } from '../core/preview-url';
 import type { GiamSatChatLuong, ThungMau } from '../core/types';
-import { useHanhDongGiamSatChatLuong, useThungMau, type HanhDongPhieu } from '../hooks/use-giam-sat-chat-luong';
+import {
+  useHanhDongGiamSatChatLuong,
+  useThungMau,
+  useXeDaXepCayHang,
+  type HanhDongPhieu,
+} from '../hooks/use-giam-sat-chat-luong';
 import { useGiamSatChatLuongCapCao } from '../hooks/use-giam-sat-chat-luong-view-scope';
 import { KetLuanBadge, TrangThaiBadge } from './Badges';
 import BangKetQuaThung from './BangKetQuaThung';
@@ -80,6 +86,7 @@ const GiamSatChatLuongDetail: React.FC<Props> = ({
   const capCao = useGiamSatChatLuongCapCao();
   const hanhDong = useHanhDongGiamSatChatLuong();
   const { data: thung = [], isLoading: thungLoading } = useThungMau(data.id);
+  const { data: xeDaXep = [] } = useXeDaXepCayHang(data.id, data.trang_thai === 'da_nop');
 
   const [dialog, setDialog] = useState<null | 'in' | 'quet' | 'apDung'>(moInTem ? 'in' : null);
   const [nhapThung, setNhapThung] = useState<ThungMau | null>(null);
@@ -252,6 +259,22 @@ const GiamSatChatLuongDetail: React.FC<Props> = ({
                   </li>
                 ))}
               </ul>
+            </DetailSection>
+          )}
+
+          {xeDaXep.length > 0 && (
+            <DetailSection title={t('giamSatChatLuong.detail.daXepLenXe')} icon={<Truck size={14} />} variant="muted">
+              <ul className="m-0 p-0 list-none space-y-1 text-sm">
+                {xeDaXep.map((x) => (
+                  <li key={x.id_phieu_xe} className="flex flex-wrap items-baseline gap-x-2">
+                    <span className="font-medium">{[x.so_xe, x.so_cont].filter(Boolean).join(' / ') || '—'}</span>
+                    <span className="text-muted-foreground tabular-nums">{formatYmdToDisplay(x.ngay_dang_ky)}</span>
+                  </li>
+                ))}
+              </ul>
+              {xeDaXep.length > 1 && (
+                <p className="text-xs text-amber-700 dark:text-amber-400 mt-1.5 mb-0">{t('giamSatChatLuong.detail.nhieuXe')}</p>
+              )}
             </DetailSection>
           )}
 

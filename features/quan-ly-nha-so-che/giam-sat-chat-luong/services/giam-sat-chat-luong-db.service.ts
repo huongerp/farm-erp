@@ -11,10 +11,12 @@ import type {
   KetLuanGscl,
   KetQuaThung,
   LoaiTieuChi,
+  PhieuQcTomTat,
   ThungMau,
   TieuChi,
   TieuChiDanhMuc,
   TrangThaiGscl,
+  XeDaXepCayHang,
 } from '../core/types';
 import type { GiamSatChatLuongFormValues, TieuChiFormValues } from '../core/schema';
 import { ketLuanPhieu } from '../core/ket-luan';
@@ -471,4 +473,98 @@ export async function sapXepTieuChiDb(ids: string[]): Promise<void> {
     const { error } = await db.from(TABLE_TC).update({ thu_tu: i + 1 }).eq('id', toIntId(ids[i]));
     if (error) throwDbError(error);
   }
+}
+
+// ── Liên kết Đăng ký nhận hàng (xếp cây hàng lên xe) ──────────────────────────
+
+const PHIEU_QC_COLUMNS =
+  'id,so_phieu,ngay,id_chi_nhanh,trang_thai,ket_luan,so_thung_cay,ma_cay_hang,hang_hoa:fp_mh_danh_sach_hang_hoa(ten_hang_hoa)';
+
+interface DbPhieuQcRow {
+  id: number;
+  so_phieu: string;
+  ngay: string;
+  id_chi_nhanh: number;
+  trang_thai: TrangThaiGscl;
+  ket_luan: KetLuanGscl | null;
+  so_thung_cay: number;
+  ma_cay_hang: string | null;
+  hang_hoa?: { ten_hang_hoa: string | null } | null;
+}
+
+function phieuQcToModel(r: DbPhieuQcRow): PhieuQcTomTat {
+  return {
+    id: String(r.id),
+    so_phieu: r.so_phieu,
+    ngay: r.ngay,
+    id_chi_nhanh: String(r.id_chi_nhanh),
+    trang_thai: r.trang_thai,
+    ket_luan: r.ket_luan,
+    so_thung_cay: r.so_thung_cay,
+    ma_cay_hang: r.ma_cay_hang,
+    ten_hang_hoa: r.hang_hoa?.ten_hang_hoa ?? null,
+  };
+}
+
+/** Phiếu QC (cây hàng) của một tem — null khi không có tem này. */
+export async function timPhieuQcTheoMaTemDb(maTem: string): Promise<PhieuQcTomTat | null> {
+  const { data, error } = await db
+    .from(TABLE_CT)
+    .select(`phieu:${TABLE}(${PHIEU_QC_COLUMNS})`)
+    .eq('ma_tem', maTem)
+    .maybeSingle();
+  if (error) throwDbError(error);
+  const p = (data as { phieu?: DbPhieuQcRow | null } | null)?.phieu;
+  return p ? phieuQcToModel(p) : null;
+}
+
+export async function getPhieuQcTomTatDb(id: string): Promise<PhieuQcTomTat | null> {
+  const { data, error } = await db.from(TABLE).select(PHIEU_QC_COLUMNS).eq('id', toIntId(id)).maybeSingle();
+  if (error) throwDbError(error);
+  return data ? phieuQcToModel(data as unknown as DbPhieuQcRow) : null;
+}
+
+/** Phiếu QC đã nộp của một farm trong `soNgay` ngày gần đây — danh sách chọn tay khi tem hỏng. */
+export async function dsPhieuQcDaNopDb(idChiNhanh: string, soNgay = 60): Promise<PhieuQcTomTat[]> {
+  const tu = new Date(Date.now() - soNgay * 86_400_000).toISOString().slice(0, 10);
+  const { data, error } = await db
+    .from(TABLE)
+    .select(PHIEU_QC_COLUMNS)
+    .eq('id_chi_nhanh', toIntId(idChiNhanh))
+    .eq('trang_thai', 'da_nop')
+    .gte('ngay', tu)
+    .order('ngay', { ascending: false })
+    .order('stt_trong_ngay', { ascending: false })
+    .limit(500);
+  if (error) throwDbError(error);
+  return ((data as unknown as DbPhieuQcRow[] | null) ?? []).map(phieuQcToModel);
+}
+
+/** Các xe (phiếu Đăng ký nhận hàng) đã xếp những cây hàng này — map id phiếu QC → danh sách xe. */
+export async function getXeDaXepCayHangDb(idPhieuGscl: string[]): Promise<Map<string, XeDaXepCayHang[]>> {
+  const ids = nums(idPhieuGscl);
+  const out = new Map<string, XeDaXepCayHang[]>();
+  if (ids.length === 0) return out;
+  const { data, error } = await db
+    .from('fp_farm_dang_ky_nhan_hang_ct')
+    .select('id_phieu,id_phieu_gscl,xe:fp_farm_dang_ky_nhan_hang(so_xe,so_cont,ngay_dang_ky)')
+    .in('id_phieu_gscl', ids);
+  if (error) throwDbError(error);
+  type Row = {
+    id_phieu: number;
+    id_phieu_gscl: number;
+    xe?: { so_xe: string | null; so_cont: string | null; ngay_dang_ky: string } | null;
+  };
+  for (const r of (data as unknown as Row[] | null) ?? []) {
+    const k = String(r.id_phieu_gscl);
+    const list = out.get(k) ?? [];
+    list.push({
+      id_phieu_xe: String(r.id_phieu),
+      so_xe: r.xe?.so_xe ?? null,
+      so_cont: r.xe?.so_cont ?? null,
+      ngay_dang_ky: r.xe?.ngay_dang_ky ?? '',
+    });
+    out.set(k, list);
+  }
+  return out;
 }

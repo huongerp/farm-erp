@@ -1,26 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { chuanHoaMaQr, taoBoLocQuetTrung, taoMapMaHangHoa } from './qr';
+import { taoBoLocQuetTrung } from './qr-quet';
 
-describe('QR hàng hoá', () => {
-  it('chuẩn hoá chuỗi quét được', () => {
-    expect(chuanHoaMaQr(' tp-tq401 \n')).toBe('TP-TQ401');
-    expect(chuanHoaMaQr('HH:TP-TQ401')).toBe('TP-TQ401');
-    expect(chuanHoaMaQr('https://erp.vd/hang-hoa?ma=TP-TQ402')).toBe('TP-TQ402');
-    expect(chuanHoaMaQr('https://erp.vd/hh/TP-TQ403')).toBe('TP-TQ403');
-    expect(chuanHoaMaQr('   ')).toBeNull();
-    expect(chuanHoaMaQr(null)).toBeNull();
-  });
-
-  it('tra hàng hoá theo mã không phân biệt hoa thường', () => {
-    const m = taoMapMaHangHoa([
-      { id: '1', ma_hang: 'TP-TQ401' },
-      { id: '2', ma_hang: 'tp-tq402' },
-    ]);
-    expect(m.get(chuanHoaMaQr('tp-tq401')!)?.id).toBe('1');
-    expect(m.get('TP-TQ402')?.id).toBe('2');
-    expect(m.get('TP-XX')).toBeUndefined();
-  });
-
+describe('bộ lọc quét trùng', () => {
   it('giữ camera trên một tem chỉ tính 1 thùng — kể cả khi máy quét khựng giữa chừng', () => {
     const loc = taoBoLocQuetTrung();
     let dem = 0;

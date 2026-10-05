@@ -54,13 +54,12 @@ import {
   useHoanTacDongCuoi,
 } from '../hooks/use-dang-ky-nhan-hang';
 import { useDangKyNhanHangCapCao } from '../hooks/use-dang-ky-nhan-hang-view-scope';
-import { useQuetHangHoa } from '../hooks/use-quet-hang-hoa';
+import { useQuetCayHang } from '../hooks/use-quet-cay-hang';
 import TrangThaiBadge from './TrangThaiBadge';
 import HinhAnhGallery from './HinhAnhGallery';
-import HangHoaXuatSection from './HangHoaXuatSection';
+import CayHangXuatSection from './CayHangXuatSection';
 import CheckInOutDialog from './CheckInOutDialog';
 import HinhAnhDialog from './HinhAnhDialog';
-import ThemHangHoaDialog from './ThemHangHoaDialog';
 import ChonMauInDialog from './ChonMauInDialog';
 
 const QrScannerDialog = lazy(() => import('./QrScannerDialog'));
@@ -114,9 +113,9 @@ const DangKyNhanHangDetail: React.FC<Props> = ({
   const hoanTacDong = useHoanTacDongCuoi();
   const { data: chiTiet = [], isLoading: chiTietLoading } = useDangKyNhanHangChiTiet(data.id);
 
-  const [dialog, setDialog] = useState<null | 'checkIn' | 'checkOut' | 'anh' | 'themHang' | 'quet' | 'in'>(null);
+  const [dialog, setDialog] = useState<null | 'checkIn' | 'checkOut' | 'anh' | 'quet' | 'in'>(null);
 
-  const { ghiNhan, lamMoiSauQuet } = useQuetHangHoa(data.id);
+  const { ghiNhan, lamMoiSauQuet } = useQuetCayHang(data.id);
 
   const tt = data.trang_thai;
   const canEditHang = canUpdate && coTheSuaHangHoa(tt, capCao);
@@ -284,12 +283,11 @@ const DangKyNhanHangDetail: React.FC<Props> = ({
             )}
           </DetailSection>
 
-          <HangHoaXuatSection
+          <CayHangXuatSection
             idPhieu={data.id}
             rows={chiTiet}
             loading={chiTietLoading}
             canEdit={canEditHang}
-            onAdd={() => setDialog('themHang')}
             onScan={() => setDialog('quet')}
           />
 
@@ -308,13 +306,12 @@ const DangKyNhanHangDetail: React.FC<Props> = ({
           <CheckInOutDialog mode={dialog} data={data} onClose={() => setDialog(null)} />
         )}
         {dialog === 'anh' && <HinhAnhDialog data={data} onClose={() => setDialog(null)} />}
-        {dialog === 'themHang' && <ThemHangHoaDialog idPhieu={data.id} onClose={() => setDialog(null)} />}
         {dialog === 'in' && <ChonMauInDialog idPhieu={data.id} onClose={() => setDialog(null)} />}
         {dialog === 'quet' && (
           <Suspense fallback={null}>
             <QrScannerDialog
-              mode="lien-tuc"
               title={t('dangKyNhanHang.qr.titleLienTuc')}
+              idChiNhanh={data.id_chi_nhanh}
               onDetected={ghiNhan}
               onUndoLast={() => hoanTacDong.mutateAsync(data.id)}
               undoPending={hoanTacDong.isPending}

@@ -24,7 +24,9 @@ const ROW_COLUMNS =
   'trang_thai,ghi_chu,hinh_anh_urls,id_nguoi_tao,tg_tao,tg_cap_nhat,chi_nhanh:fp_var_chi_nhanh(ten_chi_nhanh)';
 
 const CT_COLUMNS =
-  'id,id_phieu,id_hang_hoa,ma_hang_hoa,so_luong,nguon,tg_quet,id_nguoi_quet,hang_hoa:fp_mh_danh_sach_hang_hoa(ten_hang_hoa,dvt)';
+  'id,id_phieu,id_phieu_gscl,so_luong,nguon,ma_tem_quet,tg_quet,id_nguoi_quet,' +
+  'gscl:fp_farm_giam_sat_chat_luong(so_phieu,ngay,ma_cay_hang,ket_luan,id_hang_hoa,' +
+  'hang_hoa:fp_mh_danh_sach_hang_hoa(ma_hang_hoa,ten_hang_hoa,dvt))';
 
 interface DbRow {
   id: number;
@@ -54,13 +56,20 @@ interface DbRow {
 interface DbCtRow {
   id: number;
   id_phieu: number;
-  id_hang_hoa: number;
-  ma_hang_hoa: string | null;
+  id_phieu_gscl: number;
   so_luong: string | number;
   nguon: NguonDongHang;
+  ma_tem_quet: string | null;
   tg_quet: string;
   id_nguoi_quet: number | null;
-  hang_hoa?: { ten_hang_hoa: string | null; dvt: string | null } | null;
+  gscl?: {
+    so_phieu: string | null;
+    ngay: string | null;
+    ma_cay_hang: string | null;
+    ket_luan: 'dat' | 'khong_dat' | null;
+    id_hang_hoa: number | null;
+    hang_hoa?: { ma_hang_hoa: string | null; ten_hang_hoa: string | null; dvt: string | null } | null;
+  } | null;
 }
 
 interface DbTongRow {
@@ -117,18 +126,26 @@ function rowToModel(row: DbRow): DangKyNhanHang {
 }
 
 function ctToModel(row: DbCtRow): DangKyNhanHangCt {
+  const g = row.gscl;
   return {
     id: String(row.id),
     id_phieu: String(row.id_phieu),
-    id_hang_hoa: String(row.id_hang_hoa),
-    ma_hang_hoa: row.ma_hang_hoa,
-    ten_hang_hoa: row.hang_hoa?.ten_hang_hoa ?? null,
-    dvt: row.hang_hoa?.dvt ?? null,
+    id_phieu_gscl: String(row.id_phieu_gscl),
+    so_phieu_gscl: g?.so_phieu ?? null,
+    ngay_gscl: g?.ngay ?? null,
+    ma_cay_hang: g?.ma_cay_hang ?? null,
+    ket_luan_gscl: g?.ket_luan ?? null,
+    id_hang_hoa: idStr(g?.id_hang_hoa),
+    ma_hang_hoa: g?.hang_hoa?.ma_hang_hoa ?? null,
+    ten_hang_hoa: g?.hang_hoa?.ten_hang_hoa ?? null,
+    dvt: g?.hang_hoa?.dvt ?? null,
     so_luong: num(row.so_luong),
     nguon: row.nguon,
+    ma_tem_quet: row.ma_tem_quet,
     tg_quet: row.tg_quet,
     id_nguoi_quet: idStr(row.id_nguoi_quet),
     ten_nguoi_quet: null,
+    xe_khac: [],
   };
 }
 
@@ -214,18 +231,6 @@ export async function getTongHangHoaTheoPhieuDb(idPhieu: string[]): Promise<Tong
     out.push(...rows.map(tongToModel));
   }
   return out;
-}
-
-/** Tổng số lượng hiện có của một mã hàng trên phiếu (đọc lại ngay sau khi quét). */
-export async function getTongMotHangDb(idPhieu: string, idHangHoa: string): Promise<number> {
-  const { data, error } = await db
-    .from(VIEW_TONG)
-    .select('tong_so_luong')
-    .eq('id_phieu', toIntId(idPhieu))
-    .eq('id_hang_hoa', toIntId(idHangHoa))
-    .maybeSingle();
-  if (error) throwDbError(error);
-  return num((data as { tong_so_luong?: string | number } | null)?.tong_so_luong);
 }
 
 async function ganTongSoLuong(items: DangKyNhanHang[]): Promise<DangKyNhanHang[]> {
@@ -426,25 +431,32 @@ export async function getChiTietDb(idPhieu: string): Promise<DangKyNhanHangCt[]>
 
 export interface ThemDongHangInput {
   id_phieu: string;
-  id_hang_hoa: string;
-  ma_hang_hoa: string | null;
+  id_phieu_gscl: string;
+  /** Số thùng của cây hàng (chụp lại so_thung_cay của phiếu QC). */
   so_luong: number;
   nguon: NguonDongHang;
+  ma_tem_quet: string | null;
   id_nguoi_quet: string | null;
 }
 
-export async function themDongHangDb(rows: ThemDongHangInput[]): Promise<void> {
-  if (rows.length === 0) return;
-  const payload = rows.map((r) => ({
-    id_phieu: toIntId(r.id_phieu),
-    id_hang_hoa: toIntId(r.id_hang_hoa),
-    ma_hang_hoa: r.ma_hang_hoa,
-    so_luong: r.so_luong,
-    nguon: r.nguon,
-    id_nguoi_quet: r.id_nguoi_quet ? toIntId(r.id_nguoi_quet) : null,
-  }));
-  const { error } = await db.from(TABLE_CT).insert(payload);
-  if (error) throwDbError(error);
+/**
+ * Ghi một cây hàng lên xe. Trả `false` khi cây hàng đã có trên xe này (unique
+ * (id_phieu, id_phieu_gscl) — hai người quét cùng lúc).
+ */
+export async function themDongHangDb(row: ThemDongHangInput): Promise<boolean> {
+  const { error } = await db.from(TABLE_CT).insert({
+    id_phieu: toIntId(row.id_phieu),
+    id_phieu_gscl: toIntId(row.id_phieu_gscl),
+    so_luong: row.so_luong,
+    nguon: row.nguon,
+    ma_tem_quet: row.ma_tem_quet,
+    id_nguoi_quet: row.id_nguoi_quet ? toIntId(row.id_nguoi_quet) : null,
+  });
+  if (error) {
+    if (error.code === '23505') return false;
+    throwDbError(error);
+  }
+  return true;
 }
 
 export async function xoaDongHangDb(ids: string[]): Promise<void> {

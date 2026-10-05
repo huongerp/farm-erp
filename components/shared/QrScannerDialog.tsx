@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CheckCircle2, ListPlus, Loader2, ScanLine, Undo2, XCircle, Zap } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ListPlus, Loader2, ScanLine, Undo2, XCircle, Zap } from 'lucide-react';
 import type QrScannerType from 'qr-scanner';
 import GenericDrawer from './GenericDrawer';
 import Button from '../ui/Button';
@@ -12,6 +12,8 @@ import { cn } from '../../lib/utils';
 export interface KetQuaQuet {
   ok: boolean;
   message: string;
+  /** Đã ghi nhận nhưng cần người quét để ý (hiện vàng, tiếng bíp khác). */
+  canhBao?: boolean;
 }
 
 /** Danh sách chọn tay dưới camera (tem hỏng / không có camera / máy quét cầm tay). */
@@ -40,6 +42,8 @@ export interface QrScannerDialogProps {
   undoDoneMessage?: string;
   doneLabel?: string;
   chonTay?: QrScannerChonTay;
+  /** Chữ bộ đếm khi quét liên tục, vd "Đã xếp 3 cây hàng". Mặc định "Đã quét N thùng". */
+  nhanDem?: (n: number) => string;
   onClose: () => void;
 }
 
@@ -48,9 +52,9 @@ interface LichSu extends KetQuaQuet {
 }
 
 /** Tiếng "bíp" ngắn + rung — người quét không phải nhìn màn hình từng thùng. */
-function baoHieu(ok: boolean) {
+function baoHieu(ok: boolean, canhBao = false) {
   try {
-    navigator.vibrate?.(ok ? 60 : [80, 60, 80]);
+    navigator.vibrate?.(ok ? (canhBao ? [60, 50, 60] : 60) : [80, 60, 80]);
   } catch {
     /* thiết bị không hỗ trợ rung */
   }
@@ -60,7 +64,7 @@ function baoHieu(ok: boolean) {
     const ctx = new Ctx();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
-    osc.frequency.value = ok ? 1200 : 300;
+    osc.frequency.value = ok ? (canhBao ? 700 : 1200) : 300;
     gain.gain.value = 0.08;
     osc.connect(gain).connect(ctx.destination);
     osc.start();
@@ -90,6 +94,7 @@ const QrScannerDialog: React.FC<QrScannerDialogProps> = ({
   undoDoneMessage,
   doneLabel,
   chonTay,
+  nhanDem,
   onClose,
 }) => {
   const { t } = useTranslation();
@@ -122,7 +127,7 @@ const QrScannerDialog: React.FC<QrScannerDialogProps> = ({
         } catch (e) {
           kq = { ok: false, message: e instanceof Error ? e.message : String(e) };
         }
-        baoHieu(kq.ok);
+        baoHieu(kq.ok, kq.canhBao);
         if (kq.ok) setSoThanhCong((n) => n + 1);
         setLichSu((cur) => [{ ...kq, id: now }, ...cur].slice(0, 8));
         if (mode === 'mot-lan') {
@@ -234,7 +239,7 @@ const QrScannerDialog: React.FC<QrScannerDialogProps> = ({
           )}
           {mode === 'lien-tuc' && (
             <div className="absolute top-2 left-2 rounded-full bg-black/60 text-white text-sm font-semibold px-3 py-1 tabular-nums">
-              {t('common.qrScanner.daQuet', { n: soThanhCong })}
+              {nhanDem ? nhanDem(soThanhCong) : t('common.qrScanner.daQuet', { n: soThanhCong })}
             </div>
           )}
           {hasFlash && (
@@ -268,15 +273,23 @@ const QrScannerDialog: React.FC<QrScannerDialogProps> = ({
               <li
                 key={l.id}
                 className={cn(
-                  'flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-sm',
-                  l.ok
-                    ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
-                    : 'border-rose-500/20 bg-rose-500/10 text-rose-700 dark:text-rose-300',
+                  'flex items-start gap-2 rounded-lg border px-2.5 py-1.5 text-sm',
+                  l.ok && l.canhBao
+                    ? 'border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-300'
+                    : l.ok
+                      ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                      : 'border-rose-500/20 bg-rose-500/10 text-rose-700 dark:text-rose-300',
                   i > 0 && 'opacity-70'
                 )}
               >
-                {l.ok ? <CheckCircle2 size={14} className="shrink-0" /> : <XCircle size={14} className="shrink-0" />}
-                <span className="min-w-0 truncate">{l.message}</span>
+                {l.ok && l.canhBao ? (
+                  <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+                ) : l.ok ? (
+                  <CheckCircle2 size={14} className="shrink-0 mt-0.5" />
+                ) : (
+                  <XCircle size={14} className="shrink-0 mt-0.5" />
+                )}
+                <span className="min-w-0 break-words">{l.message}</span>
               </li>
             ))}
           </ul>

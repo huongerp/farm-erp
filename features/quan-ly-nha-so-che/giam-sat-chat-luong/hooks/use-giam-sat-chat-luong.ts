@@ -18,6 +18,7 @@ import {
   getGsclTomTat,
   getThung,
   getTieuChi,
+  getXeDaXepCayHang,
   huyGscl,
   khoiPhucGscl,
   luuKetQuaThung,
@@ -66,6 +67,15 @@ export function useThungMau(idPhieu: string | undefined) {
     queryKey: [...QUERY_KEY_GSCL, 'thung', idPhieu],
     queryFn: () => getThung(idPhieu!),
     enabled: !!idPhieu,
+  });
+}
+
+/** Xe (Đăng ký nhận hàng) đã xếp cây hàng của phiếu này — chỉ đọc. */
+export function useXeDaXepCayHang(idPhieu: string | undefined, enabled = true) {
+  return useQuery({
+    queryKey: [...QUERY_KEY_GSCL, 'xeDaXep', idPhieu],
+    queryFn: async () => (await getXeDaXepCayHang([idPhieu!])).get(idPhieu!) ?? [],
+    enabled: !!idPhieu && enabled,
   });
 }
 

@@ -22,6 +22,10 @@ export {
   datDangDungTieuChiDb as datDangDungTieuChi,
   deleteTieuChiDb as deleteTieuChi,
   sapXepTieuChiDb as sapXepTieuChi,
+  timPhieuQcTheoMaTemDb as timPhieuQcTheoMaTem,
+  getPhieuQcTomTatDb as getPhieuQcTomTat,
+  dsPhieuQcDaNopDb as dsPhieuQcDaNop,
+  getXeDaXepCayHangDb as getXeDaXepCayHang,
   type LuuKetQuaThungInput,
 } from './giam-sat-chat-luong-db.service';
 

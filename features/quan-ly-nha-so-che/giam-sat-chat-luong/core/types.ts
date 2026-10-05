@@ -78,3 +78,26 @@ export interface ThungMau {
   ten_nguoi_kiem: string | null;
   ghi_chu: string | null;
 }
+
+/** Phiếu QC rút gọn — Đăng ký nhận hàng tra khi quét tem / chọn tay để xếp cây hàng lên xe. */
+export interface PhieuQcTomTat {
+  id: string;
+  so_phieu: string;
+  /** YYYY-MM-DD */
+  ngay: string;
+  id_chi_nhanh: string;
+  trang_thai: TrangThaiGscl;
+  ket_luan: KetLuanGscl | null;
+  so_thung_cay: number;
+  ma_cay_hang: string | null;
+  ten_hang_hoa: string | null;
+}
+
+/** Một xe (phiếu Đăng ký nhận hàng) đã xếp cây hàng này. */
+export interface XeDaXepCayHang {
+  id_phieu_xe: string;
+  so_xe: string | null;
+  so_cont: string | null;
+  /** YYYY-MM-DD */
+  ngay_dang_ky: string;
+}

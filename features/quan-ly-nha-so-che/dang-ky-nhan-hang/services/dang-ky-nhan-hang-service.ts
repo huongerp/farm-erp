@@ -2,6 +2,7 @@ import type { PaginatedTableResult } from '../../../../lib/db';
 import type { DangKyNhanHang, DangKyNhanHangCt, TrangThaiDkNh } from '../core/types';
 import type { DangKyNhanHangListServerQuery } from './dang-ky-nhan-hang-list-query';
 import { getEmployeesRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
+import { getXeDaXepCayHang } from '../../giam-sat-chat-luong/services/giam-sat-chat-luong-service';
 import {
   getDkNhPageDb,
   fetchAllDkNhForListQuery as fetchAllDkNhForListQueryDb,
@@ -26,7 +27,6 @@ export {
   xoaDongHangDb as xoaDongHang,
   hoanTacDongCuoiDb as hoanTacDongCuoi,
   getTongHangHoaTheoPhieuDb as getTongHangHoaTheoPhieu,
-  getTongMotHangDb as getTongMotHang,
   type CheckInOutInput,
   type ThemDongHangInput,
 } from './dang-ky-nhan-hang-db.service';
@@ -69,11 +69,18 @@ export async function getDkNhById(id: string): Promise<DangKyNhanHang | null> {
   return r;
 }
 
+/** Cây hàng trên xe + tên người ghi + các xe KHÁC cũng có cây hàng đó (để cảnh báo). */
 export async function getChiTiet(idPhieu: string): Promise<DangKyNhanHangCt[]> {
   const rows = await getChiTietDb(idPhieu);
   if (rows.length === 0) return rows;
-  const m = await hoTenMap();
-  return rows.map((r) => ({ ...r, ten_nguoi_quet: ten(m, r.id_nguoi_quet) }));
+  const [m, xe] = await Promise.all([hoTenMap(), getXeDaXepCayHang(rows.map((r) => r.id_phieu_gscl))]);
+  return rows.map((r) => ({
+    ...r,
+    ten_nguoi_quet: ten(m, r.id_nguoi_quet),
+    xe_khac: (xe.get(r.id_phieu_gscl) ?? [])
+      .filter((x) => x.id_phieu_xe !== idPhieu)
+      .map((x) => x.so_xe || x.so_cont || `#${x.id_phieu_xe}`),
+  }));
 }
 
 /** Bản rút gọn: chip lọc năm/tháng/trạng thái/chi nhánh + gợi ý khi thêm phiếu. */
