@@ -1,12 +1,18 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { Package, Warehouse, FolderOpen } from 'lucide-react';
+import { Package, Warehouse, FolderOpen, AlertTriangle } from 'lucide-react';
 import { useKhoList } from '../../../kho-van/danh-sach-kho/hooks/use-kho';
 import type { Kho } from '../../../kho-van/danh-sach-kho/core/types';
 import { useFarmDanhMucCap2WithParent } from '../../hang-hoa-phan-thuoc/hooks/use-farm-danh-muc';
 import { useFarmTonKhoPTDisplay } from '../hooks/use-farm-ton-kho-pt';
-import { aggregateTonKhoPTByProduct } from '../utils/aggregate-ton-kho-pt-by-product';
+import {
+  aggregateTonKhoPTByProduct,
+  laHangChuaPhatSinh,
+  laHangDuoiDinhMuc,
+  themHangChuaPhatSinh,
+} from '../utils/aggregate-ton-kho-pt-by-product';
+import { useFarmHangHoaList } from '../../hang-hoa-phan-thuoc/hooks/use-farm-hang-hoa';
 import { exportTonKhoPTByProductToExcel } from '../utils/export-ton-kho-pt';
 import type { TonKhoPTProductAgg } from '../core/types';
 import type { TonKhoFilters } from '../../../kho-van/ton-kho/store/useTonKhoStore';
@@ -38,6 +44,7 @@ const TonSanPhamPTTab: React.FC = () => {
   const { data: khoList = [] } = useKhoList();
   const { data: danhMucCap2 = [] } = useFarmDanhMucCap2WithParent();
   const { data: displayRows = [], isLoading, isFetching } = useFarmTonKhoPTDisplay();
+  const { data: hangHoaList = [] } = useFarmHangHoaList();
 
   const searchTerm = useTonKhoPTByProductStore((s) => s.searchTerm);
   const commitSearchTerm = useTonKhoPTByProductStore((s) => s.commitSearchTerm);
@@ -112,9 +119,19 @@ const TonSanPhamPTTab: React.FC = () => {
     return r;
   }, [displayRows, filters.warehouseIds, filters.categoryIds]);
 
-  const aggregated = useMemo(() => aggregateTonKhoPTByProduct(flatFiltered), [flatFiltered]);
+  const aggregated = useMemo(() => {
+    const agg = aggregateTonKhoPTByProduct(flatFiltered);
+    // Hàng có định mức chưa từng nhập kho nào không thuộc kho cụ thể → chỉ thêm khi không lọc kho.
+    if ((filters.warehouseIds?.length ?? 0) > 0) return agg;
+    const cat = (filters.categoryIds?.length ?? 0) > 0 ? new Set(filters.categoryIds!.map(String)) : null;
+    const hangCanXet = cat ? hangHoaList.filter((h) => h.danh_muc_id && cat.has(String(h.danh_muc_id))) : hangHoaList;
+    return themHangChuaPhatSinh(agg, hangCanXet, new Set(displayRows.map((r) => String(r.id_hang_hoa))));
+  }, [flatFiltered, filters.warehouseIds, filters.categoryIds, hangHoaList, displayRows]);
 
-  const filterFn = useCallback((item: TonKhoPTProductAgg, term: string, _f: TonKhoFilters) => {
+  const belowMinCount = useMemo(() => aggregated.filter(laHangDuoiDinhMuc).length, [aggregated]);
+
+  const filterFn = useCallback((item: TonKhoPTProductAgg, term: string, f: TonKhoFilters) => {
+    if (f.belowMinStock?.includes('Yes') && !laHangDuoiDinhMuc(item)) return false;
     return khopTimKiem(item, term);
   }, []);
 
@@ -150,18 +167,33 @@ const TonSanPhamPTTab: React.FC = () => {
     [danhMucCap2, displayRows]
   );
 
+  const belowMinOptions = useMemo(
+    () => [{ label: t('tonKhoPhanThuoc.byProduct.filterBelowMin'), value: 'Yes', count: belowMinCount }],
+    [t, belowMinCount]
+  );
+
   const activeFilterCount =
     (searchInput.trim() ? 1 : 0) +
+    (filters.belowMinStock?.length ?? 0) +
     (filters.warehouseIds?.length ?? 0) +
     (filters.categoryIds?.length ?? 0);
   const handleClearAllFilters = useCallback(() => {
     commitSearchTerm('');
+    setFilter('belowMinStock', []);
     setFilter('warehouseIds', []);
     setFilter('categoryIds', []);
   }, [setFilter, commitSearchTerm]);
 
   const filterGroups = useMemo(
     () => [
+      {
+        key: 'belowMinStock',
+        label: t('tonKhoPhanThuoc.byProduct.filterBelowMin'),
+        icon: AlertTriangle,
+        options: belowMinOptions,
+        value: filters.belowMinStock ?? [],
+        onChange: (val: string[]) => setFilter('belowMinStock', val),
+      },
       {
         key: 'warehouseIds',
         label: t('tonKhoPhanThuoc.toolbar.warehouse'),
@@ -179,11 +211,20 @@ const TonSanPhamPTTab: React.FC = () => {
         onChange: (val: string[]) => setFilter('categoryIds', val),
       },
     ],
-    [t, khoOptions, categoryOptions, filters.warehouseIds, filters.categoryIds, setFilter]
+    [t, belowMinOptions, khoOptions, categoryOptions, filters.belowMinStock, filters.warehouseIds, filters.categoryIds, setFilter]
   );
 
   const renderFilters = (
     <div className="flex flex-wrap items-center gap-2">
+      <FilterChipMultiSelect
+        options={belowMinOptions}
+        value={filters.belowMinStock ?? []}
+        onChange={(val) => setFilter('belowMinStock', val)}
+        placeholder={t('tonKhoPhanThuoc.byProduct.filterBelowMin')}
+        icon={AlertTriangle}
+        className="w-full sm:w-[160px]"
+        size="md"
+      />
       <FilterChipMultiSelect
         options={khoOptions}
         value={filters.warehouseIds ?? []}
@@ -286,12 +327,22 @@ const TonSanPhamPTTab: React.FC = () => {
             {item.so_kho_co_ton}
           </td>
         );
-      case 'tong_so_luong':
+      case 'tong_so_luong': {
+        // Hàng có định mức chưa nhập kho nào: không có ô kho để tô → báo đỏ ở Tổng SL.
+        const chuaNhap = laHangChuaPhatSinh(item);
         return (
-          <td key={col.id} className="px-4 py-3 text-right" style={getColumnCellStyle(col)}>
-            <span className="font-medium tabular-nums">{formatNumberVN(item.tong_so_luong)}</span>
+          <td
+            key={col.id}
+            className={cn('px-4 py-3 text-right', chuaNhap && 'bg-destructive/10')}
+            style={getColumnCellStyle(col)}
+            title={chuaNhap ? t('tonKhoPhanThuoc.byProduct.chuaNhapKhoHint') : undefined}
+          >
+            <span className={cn('font-medium tabular-nums', chuaNhap && 'text-destructive font-semibold')}>
+              {formatNumberVN(item.tong_so_luong)}
+            </span>
           </td>
         );
+      }
       default:
         return <td key={col.id} className="px-4 py-3" style={getColumnCellStyle(col)} />;
     }

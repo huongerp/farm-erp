@@ -9,6 +9,8 @@
   "tonKhoPhanThuoc.byProduct.warehouseCount": "Số kho có tồn",
   "tonKhoPhanThuoc.byProduct.dinhMuc": "Định mức",
   "tonKhoPhanThuoc.byProduct.duoiDinhMucHint": "Dưới định mức {{dinhMuc}}",
+  "tonKhoPhanThuoc.byProduct.chuaNhapKhoHint": "Có định mức nhưng chưa nhập vào kho nào",
+  "tonKhoPhanThuoc.byProduct.filterBelowMin": "Dưới định mức",
   "tonKhoPhanThuoc.byProduct.noExportData": "Không có dữ liệu để xuất.",
   "tonKhoPhanThuoc.toolbar.search": "Tìm kiếm",
   "tonKhoPhanThuoc.toolbar.warehouse": "Kho",
