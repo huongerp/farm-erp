@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import i18n from '../../../../lib/i18n';
 import { useAuthStore } from '../../../../store/useStore';
 import type { GiamSatChatLuongFormValues, TieuChiFormValues } from '../core/schema';
-import type { TieuChiDanhMuc } from '../core/types';
+import type { TieuChi, TieuChiDanhMuc } from '../core/types';
 import type { GiamSatChatLuongListServerQuery } from '../services/giam-sat-chat-luong-list-query';
 import {
   apDungTieuChiMoi,
@@ -127,7 +127,7 @@ export function useDeleteGiamSatChatLuongMany() {
   });
 }
 
-export type HanhDongPhieu = 'huy' | 'khoiPhuc' | 'apDungTieuChi' | 'nop' | 'moPhieu';
+export type HanhDongPhieu = 'huy' | 'khoiPhuc' | 'nop' | 'moPhieu';
 
 export function useHanhDongGiamSatChatLuong() {
   const invalidate = useInvalidate();
@@ -137,8 +137,7 @@ export function useHanhDongGiamSatChatLuong() {
       if (action === 'huy') return huyGscl(id);
       if (action === 'khoiPhuc') return khoiPhucGscl(id);
       if (action === 'nop') return nopGscl(id, idNguoiHienTai(user?.id));
-      if (action === 'moPhieu') return moPhieuGscl(id);
-      return apDungTieuChiMoi(id);
+      return moPhieuGscl(id);
     },
     onSuccess: (_r, { action }) => {
       invalidate();
@@ -161,11 +160,27 @@ export function useLuuKetQuaThung() {
 
 // ── Danh mục tiêu chí ──────────────────────────────────────────────────────────
 
-export function useTieuChiDanhMuc() {
+/** `luonMoi`: tải lại khi mở (popup áp dụng tiêu chí phải so với bộ mới nhất, không lấy cache). */
+export function useTieuChiDanhMuc(opts?: { luonMoi?: boolean }) {
   return useQuery({
     queryKey: QUERY_KEY_TIEU_CHI,
     queryFn: getTieuChi,
-    staleTime: 1000 * 60 * 5,
+    staleTime: opts?.luonMoi ? 0 : 1000 * 60 * 5,
+    refetchOnMount: opts?.luonMoi ? 'always' : true,
+  });
+}
+
+/** Thay bộ tiêu chí của phiếu bằng đúng bộ đã xác nhận trong popup, rồi tính lại kết luận. */
+export function useApDungTieuChiMoi(onSuccess?: () => void) {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: ({ id, tieuChi }: { id: string; tieuChi: TieuChi[] }) => apDungTieuChiMoi(id, tieuChi),
+    onSuccess: () => {
+      invalidate();
+      toast.success(i18n.t('giamSatChatLuong.toast.apDungTieuChiSuccess'));
+      onSuccess?.();
+    },
+    onError: onErr,
   });
 }
 

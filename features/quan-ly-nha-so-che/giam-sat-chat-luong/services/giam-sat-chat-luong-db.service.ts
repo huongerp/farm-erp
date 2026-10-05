@@ -346,8 +346,9 @@ export async function moPhieuGsclDb(id: string): Promise<GiamSatChatLuong> {
 }
 
 /** Chụp lại bộ tiêu chí đang dùng vào phiếu (cấp cao — vd vừa sửa ngưỡng) rồi tính lại kết luận. */
-export async function apDungTieuChiMoiDb(id: string): Promise<GiamSatChatLuong> {
-  const tieuChi = anhChupTieuChi(await getTieuChiDb());
+export async function apDungTieuChiMoiDb(id: string, boTieuChi?: TieuChi[]): Promise<GiamSatChatLuong> {
+  // Ưu tiên đúng bộ người dùng vừa xem trong popup xác nhận (tránh áp bộ khác nếu cài đặt vừa đổi).
+  const tieuChi = boTieuChi ?? anhChupTieuChi(await getTieuChiDb());
   const { error } = await db.from(TABLE).update({ tieu_chi: tieuChi }).eq('id', toIntId(id));
   if (error) throwDbError(error);
   return capNhatKetLuanDb(id);

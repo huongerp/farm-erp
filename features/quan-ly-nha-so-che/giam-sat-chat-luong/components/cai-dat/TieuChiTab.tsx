@@ -7,20 +7,12 @@ import Button from '../../../../../components/ui/Button';
 import Input from '../../../../../components/ui/Input';
 import Select from '../../../../../components/ui/Select';
 import { useConfirmStore } from '../../../../../store/useConfirmStore';
-import { cn, formatNumberVN } from '../../../../../lib/utils';
+import { cn } from '../../../../../lib/utils';
 import { tieuChiFormSchema, type TieuChiFormValues } from '../../core/schema';
 import { LOAI_TIEU_CHI, type TieuChiDanhMuc } from '../../core/types';
 import { useLuuTieuChi, useThaoTacTieuChi, useTieuChiDanhMuc } from '../../hooks/use-giam-sat-chat-luong';
+import { moTaNguongTieuChi } from '../../utils/mo-ta-nguong';
 
-const so = (n: number) => formatNumberVN(n, { maxFractionDigits: 2 });
-
-function moTaNguong(tc: TieuChiDanhMuc, t: (k: string, o?: Record<string, unknown>) => string): string {
-  if (tc.loai === 'dat_khong') return t('giamSatChatLuong.tieuChi.moTaDatKhong', { n: tc.nguong_max ?? 0 });
-  if (tc.loai === 'dem_loi') return tc.nguong_max != null ? t('giamSatChatLuong.tieuChi.moTaDemLoi', { max: so(tc.nguong_max) }) : t('giamSatChatLuong.tieuChi.khongXet');
-  const { nguong_min: a, nguong_max: b } = tc;
-  if (a == null && b == null) return t('giamSatChatLuong.tieuChi.khongXet');
-  return t('giamSatChatLuong.tieuChi.moTaDoLuong', { khoang: a != null && b != null ? `${so(a)}–${so(b)}` : a != null ? `≥ ${so(a)}` : `≤ ${so(b!)}` });
-}
 
 const RONG: TieuChiFormValues = { ten: '', loai: 'dem_loi', don_vi: 'trái', nguong_min: null, nguong_max: null };
 
@@ -193,7 +185,7 @@ const TieuChiTab: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
                     {tc.don_vi && <span className="text-xs text-muted-foreground font-normal"> ({tc.don_vi})</span>}
                   </div>
                   <div className="text-xs text-muted-foreground truncate">
-                    {t(`giamSatChatLuong.loai.${tc.loai}`)} · {moTaNguong(tc, t)}
+                    {t(`giamSatChatLuong.loai.${tc.loai}`)} · {moTaNguongTieuChi(tc, t)}
                   </div>
                 </div>
                 {canEdit && (

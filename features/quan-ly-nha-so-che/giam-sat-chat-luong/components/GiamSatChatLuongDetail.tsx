@@ -47,6 +47,7 @@ import BangKetQuaThung from './BangKetQuaThung';
 import InTemDialog from './InTemDialog';
 import NhapKetQuaThungDialog from './NhapKetQuaThungDialog';
 import QuetTemFlow from './QuetTemFlow';
+import ApDungTieuChiDialog from './ApDungTieuChiDialog';
 
 interface Props {
   data: GiamSatChatLuong;
@@ -80,7 +81,7 @@ const GiamSatChatLuongDetail: React.FC<Props> = ({
   const hanhDong = useHanhDongGiamSatChatLuong();
   const { data: thung = [], isLoading: thungLoading } = useThungMau(data.id);
 
-  const [dialog, setDialog] = useState<null | 'in' | 'quet'>(moInTem ? 'in' : null);
+  const [dialog, setDialog] = useState<null | 'in' | 'quet' | 'apDung'>(moInTem ? 'in' : null);
   const [nhapThung, setNhapThung] = useState<ThungMau | null>(null);
 
   const tt = data.trang_thai;
@@ -138,7 +139,7 @@ const GiamSatChatLuongDetail: React.FC<Props> = ({
       a.push({
         label: t('giamSatChatLuong.toolbar.apDungTieuChi'),
         icon: <RefreshCw />,
-        onClick: () => hoi('apDungTieuChi'),
+        onClick: () => setDialog('apDung'),
         variant: 'secondary',
       });
     }
@@ -282,6 +283,7 @@ const GiamSatChatLuongDetail: React.FC<Props> = ({
             }}
           />
         )}
+        {dialog === 'apDung' && <ApDungTieuChiDialog phieu={data} thung={thung} onClose={() => setDialog(null)} />}
         {dialog === 'quet' && (
           <QuetTemFlow
             viewAll={viewAll}
