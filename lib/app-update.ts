@@ -7,6 +7,10 @@
  *
  * Trước đây, ngồi lì trong một form quá lâu thì app nhắc bằng toast có nút "Tải lại ngay".
  * Đã bỏ: người dùng không phải bấm gì cả, bận thì cứ chờ — lần sau đóng form là app tự áp.
+ *
+ * Tab còn chạy bản cũ vẫn dùng tiếp được vì server giữ chunk của các bản trước
+ * (deploy/luu-asset-cu.sh). Chunk cũ hụt thật (`vite:preloadError`) cũng chỉ ghi nhận rồi
+ * chờ lúc rảnh như trên — không toast, không nút.
  */
 
 /** Điều gì vừa xảy ra khiến ta xét lại xem có nên áp bản mới. */

@@ -177,6 +177,14 @@ services:
         VITE_GOOGLE_APP_ID: ${VITE_GOOGLE_APP_ID}
     restart: always
     logging: *logging
+    environment:
+      # Số ngày giữ chunk của các bản cũ trong kho (deploy/luu-asset-cu.sh).
+      GIU_ASSET_CU_NGAY: '30'
+    volumes:
+      # Kho chunk JS/CSS của các bản đã deploy: tab mở từ trước vẫn tải được chunk hash cũ
+      # thay vì 404 + bắt tải lại trang. Xoá volume này không mất dữ liệu gì, chỉ mất khả
+      # năng phục vụ tab cũ ở lần deploy kế tiếp.
+      - web-assets-cu:/var/cache/farm-assets
     expose:
       - '80'
     networks:
@@ -195,3 +203,6 @@ services:
 networks:
   dokploy-network:
     external: true
+
+volumes:
+  web-assets-cu:

@@ -7,9 +7,8 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import ErrorBoundary from './components/shared/ErrorBoundary';
 import { queryClient } from './lib/query-client';
 
-import { toast } from 'sonner';
 import { ensureSentryInitialized } from './lib/sentry-client';
-import i18n from './lib/i18n';
+import './lib/i18n';
 import { isAppBusy } from './lib/app-busy';
 import { isTypingNow } from './lib/typing-busy';
 import { PRELOAD_ERROR_RELOAD_KEY, requestReloadWhenIdle } from './lib/app-update';
@@ -31,24 +30,15 @@ void ensureSentryInitialized();
  * tải lại trang là cách khắc phục chính thức (index.html mới sẽ trỏ đúng hash chunk mới).
  * Giới hạn 1 lần/phiên để tránh lặp vô hạn nếu lỗi không phải do stale chunk.
  *
- * Nhưng KHÔNG reload khi người dùng đang nhập dở — trước đây chỗ này reload vô điều kiện,
- * đang điền phiếu là mất trắng. Lúc đó chỉ báo và ghi nhận yêu cầu; PwaRegister sẽ reload
- * ngay khi app hết bận (xem lib/app-busy.ts, lib/app-update.ts).
+ * Đây chỉ là lưới phụ: server giữ chunk của các bản cũ (deploy/luu-asset-cu.sh) nên tab cũ
+ * thường vẫn tải được, không tới đây. Còn hụt (kho mới tạo, tab treo quá lâu) mà người dùng
+ * đang nhập dở thì KHÔNG reload và cũng không toast bắt bấm — chỉ ghi nhận; PwaRegister tự
+ * reload ngay khi app hết bận (xem lib/app-busy.ts, lib/app-update.ts).
  */
 window.addEventListener('vite:preloadError', () => {
   if (window.sessionStorage.getItem(PRELOAD_ERROR_RELOAD_KEY)) return;
   if (isAppBusy() || isTypingNow()) {
     requestReloadWhenIdle();
-    toast.error(i18n.t('app.chunkStaleBusy'), {
-      action: {
-        label: i18n.t('app.reloadNow'),
-        onClick: () => {
-          window.sessionStorage.setItem(PRELOAD_ERROR_RELOAD_KEY, '1');
-          window.location.reload();
-        },
-      },
-      duration: Infinity,
-    });
     return;
   }
   window.sessionStorage.setItem(PRELOAD_ERROR_RELOAD_KEY, '1');

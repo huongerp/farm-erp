@@ -32,4 +32,7 @@ FROM nginx:1.27-alpine
 COPY deploy/nginx.conf /etc/nginx/conf.d/default.conf
 COPY deploy/nginx-security-headers.conf /etc/nginx/snippets/security-headers.conf
 COPY --from=build /app/dist /usr/share/nginx/html
+# Lưu chunk của bản này vào kho asset cũ (volume web-assets-cu) mỗi lần container khởi động.
+COPY deploy/luu-asset-cu.sh /docker-entrypoint.d/40-luu-asset-cu.sh
+RUN chmod +x /docker-entrypoint.d/40-luu-asset-cu.sh
 EXPOSE 80

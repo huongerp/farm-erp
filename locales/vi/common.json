@@ -123,8 +123,6 @@
   "common.close": "Đóng",
   "app.updating": "Đang cập nhật lên bản mới…",
   "app.offlineReady": "Ứng dụng sẵn sàng dùng offline.",
-  "app.reloadNow": "Tải lại ngay",
-  "app.chunkStaleBusy": "Đã có bản mới, phần này chưa tải được. Hãy lưu việc đang làm rồi tải lại trang.",
   "common.unsavedChangesTitle": "Bỏ thay đổi chưa lưu?",
   "common.unsavedChangesMessage": "Bạn có thay đổi chưa được lưu. Nếu đóng lại bây giờ, các thay đổi này sẽ mất.",
   "common.discard": "Bỏ thay đổi",
