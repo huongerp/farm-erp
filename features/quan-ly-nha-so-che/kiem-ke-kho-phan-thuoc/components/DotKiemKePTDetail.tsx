@@ -161,6 +161,21 @@ const DotKiemKePTDetail: React.FC<Props> = ({
     [confirm, t, dieuChinhRowMutation]
   );
 
+  // Hoàn thành = chốt sổ: sau đó người thường không sửa được nữa → hỏi trước, nhắc số dòng chưa kiểm.
+  const handleHoanThanhClick = useCallback(() => {
+    if (!onHoanThanh) return;
+    confirm({
+      title: t('kiemKeKhoPT.confirm.hoanThanhTitle'),
+      message:
+        stats.chuaKiem > 0
+          ? t('kiemKeKhoPT.confirm.hoanThanhMessageConChuaKiem', { ma: data.ma_dot, count: stats.chuaKiem })
+          : t('kiemKeKhoPT.confirm.hoanThanhMessage', { ma: data.ma_dot }),
+      variant: 'warning',
+      confirmText: t('kiemKeKhoPT.hoanThanh'),
+      onConfirm: () => onHoanThanh(data.id),
+    });
+  }, [confirm, t, onHoanThanh, stats.chuaKiem, data.id, data.ma_dot]);
+
   const toolbarActions: DetailToolbarAction[] = useMemo(() => {
     const actions: DetailToolbarAction[] = [
       {
@@ -192,7 +207,7 @@ const DotKiemKePTDetail: React.FC<Props> = ({
       actions.push({
         label: t('kiemKeKhoPT.hoanThanh'),
         icon: <CheckCircle size={16} />,
-        onClick: () => onHoanThanh(data.id),
+        onClick: handleHoanThanhClick,
         variant: 'success',
         disabled: hoanThanhLoading,
       });
@@ -216,6 +231,7 @@ const DotKiemKePTDetail: React.FC<Props> = ({
     handleDieuChinhDotClick,
     onTaoDanhSach,
     onHoanThanh,
+    handleHoanThanhClick,
     onStatusChange,
     taoDanhSachLoading,
     hoanThanhLoading,
