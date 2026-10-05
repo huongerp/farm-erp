@@ -15,6 +15,10 @@
       "rawKb": 419,
       "warnKb": 400
     },
+    "vendorExceljs": {
+      "rawKb": 915,
+      "warnKb": 1000
+    },
     "vendorJspdf": {
       "rawKb": 408,
       "warnKb": 400

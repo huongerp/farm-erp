@@ -36,6 +36,7 @@ const entries = [
   { label: 'Main (index-*.js)', key: 'main', pattern: /^index-.*\.js$/, failOnExceed: true },
   { label: 'CSS (index-*.css)', key: 'css', pattern: /^index-.*\.css$/ },
   { label: 'vendor-xlsx', key: 'vendorXlsx', pattern: /vendor-xlsx-.*\.js$/ },
+  { label: 'vendor-exceljs', key: 'vendorExceljs', pattern: /vendor-exceljs-.*\.js$/ },
   { label: 'vendor-jspdf', key: 'vendorJspdf', pattern: /vendor-jspdf-.*\.js$/ },
   { label: 'vendor-html2canvas', key: 'vendorHtml2canvas', pattern: /vendor-html2canvas-.*\.js$/ },
   { label: 'recharts', key: 'recharts', pattern: /^recharts-.*\.js$/ },

@@ -87,6 +87,10 @@ export default defineConfig(({ mode }) => {
       },
     },
     build: {
+      // Chunk lớn nhất là vendor-exceljs (~915 KB) — thư viện xuất Excel, chỉ nạp lười (import()) khi
+      // bấm Xuất, không nằm trong lần tải đầu. Kích thước từng chunk do `npm run check:bundle` canh
+      // (scripts/bundle-baseline.json), nên ngưỡng cảnh báo mặc định 500 KB của Vite chỉ gây nhiễu.
+      chunkSizeWarningLimit: 1000,
       rollupOptions: {
         output: {
           manualChunks(id) {
