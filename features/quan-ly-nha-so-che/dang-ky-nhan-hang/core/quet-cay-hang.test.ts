@@ -19,13 +19,14 @@ describe('danhGiaQuetCayHang', () => {
     expect(danhGiaQuetCayHang(vao({ phieuQc: null }))).toMatchObject({ ghi: false, lyDo: 'khong_tim_thay' });
   });
 
-  it('phiếu chưa nộp (đang kiểm / chờ nộp / huỷ) → không ghi', () => {
-    for (const tt of ['dang_kiem', 'hoan_thanh', 'huy'] as const) {
-      expect(danhGiaQuetCayHang(vao({ phieuQc: { trang_thai: tt, ket_luan: null } }))).toMatchObject({
-        ghi: false,
-        lyDo: 'chua_nop',
-      });
+  it('phiếu chưa nộp (đang kiểm / chờ nộp) vẫn ghi; phiếu đã huỷ → không ghi', () => {
+    for (const tt of ['dang_kiem', 'hoan_thanh'] as const) {
+      expect(danhGiaQuetCayHang(vao({ phieuQc: { trang_thai: tt, ket_luan: null } }))).toEqual({ ghi: true, muc: 'ok', canhBao: [] });
     }
+    expect(danhGiaQuetCayHang(vao({ phieuQc: { trang_thai: 'huy', ket_luan: null } }))).toMatchObject({
+      ghi: false,
+      lyDo: 'da_huy',
+    });
   });
 
   it('đã có trên chính xe này → không ghi thêm', () => {

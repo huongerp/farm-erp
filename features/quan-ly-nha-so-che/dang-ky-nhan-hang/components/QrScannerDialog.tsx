@@ -2,13 +2,13 @@ import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import SharedQrScannerDialog, { type KetQuaQuet } from '../../../../components/shared/QrScannerDialog';
 import { formatYmdToDisplay } from '../../../../lib/utils';
-import { TIEN_TO_CHON_TAY, usePhieuQcDaNop } from '../hooks/use-quet-cay-hang';
+import { TIEN_TO_CHON_TAY, usePhieuQcXepXe } from '../hooks/use-quet-cay-hang';
 
 export type { KetQuaQuet };
 
 interface Props {
   title: string;
-  /** Farm của xe — danh sách chọn tay lấy phiếu QC đã nộp của farm này. */
+  /** Farm của xe — danh sách chọn tay lấy phiếu QC (trừ phiếu huỷ) của farm này. */
   idChiNhanh: string;
   /** Nhận chuỗi quét được (tem QC) hoặc `PHIEU:<id>` khi chọn tay. */
   onDetected: (ma: string) => Promise<KetQuaQuet> | KetQuaQuet;
@@ -21,12 +21,12 @@ interface Props {
 const trim = (raw: string) => raw.trim() || null;
 
 /**
- * Xếp cây hàng lên xe: quét tem QC liên tục. Tem hỏng / mất → chọn tay phiếu QC đã nộp
+ * Xếp cây hàng lên xe: quét tem QC liên tục. Tem hỏng / mất → chọn tay phiếu QC
  * của farm (máy quét cầm tay gõ số phiếu vào ô tìm cũng được).
  */
 const QrScannerDialog: React.FC<Props> = ({ title, idChiNhanh, onDetected, onUndoLast, undoPending, onClose }) => {
   const { t } = useTranslation();
-  const { data: dsPhieu = [] } = usePhieuQcDaNop(idChiNhanh);
+  const { data: dsPhieu = [] } = usePhieuQcXepXe(idChiNhanh);
   const options = useMemo(
     () =>
       dsPhieu.map((p) => ({

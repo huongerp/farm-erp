@@ -1,14 +1,14 @@
 /**
  * Luật xếp cây hàng lên xe bằng tem QC (Giám sát chất lượng) — quét 1 tem bất kỳ của cây
  * hàng = ghi cả cây hàng. Người dùng chốt:
- * - Phiếu QC phải ĐÃ NỘP; chưa nộp / huỷ → không ghi.
+ * - Phiếu QC chưa nộp vẫn quét được (không cần nộp trước); chỉ phiếu đã HUỶ → không ghi.
  * - Kết luận KHÔNG ĐẠT → vẫn ghi, cảnh báo.
  * - Cây hàng đã có trên XE KHÁC → vẫn ghi, cảnh báo kèm số xe.
  * - Đã có trên CHÍNH xe này → không ghi thêm (báo "đã có").
  */
 import type { KetLuanGscl, TrangThaiGscl } from '../../giam-sat-chat-luong/core/types';
 
-export type LyDoLoiQuet = 'khong_phai_tem' | 'khong_tim_thay' | 'chua_nop';
+export type LyDoLoiQuet = 'khong_phai_tem' | 'khong_tim_thay' | 'da_huy';
 export type CanhBaoQuet = 'khong_dat' | 'xe_khac';
 
 export type DanhGiaQuet =
@@ -28,7 +28,7 @@ export interface DauVaoQuet {
 export function danhGiaQuetCayHang(v: DauVaoQuet): DanhGiaQuet {
   if (!v.laTemQc) return { ghi: false, muc: 'loi', lyDo: 'khong_phai_tem' };
   if (!v.phieuQc) return { ghi: false, muc: 'loi', lyDo: 'khong_tim_thay' };
-  if (v.phieuQc.trang_thai !== 'da_nop') return { ghi: false, muc: 'loi', lyDo: 'chua_nop' };
+  if (v.phieuQc.trang_thai === 'huy') return { ghi: false, muc: 'loi', lyDo: 'da_huy' };
   if (v.daCoTrenXeNay) return { ghi: false, muc: 'da_co' };
   const canhBao: CanhBaoQuet[] = [];
   if (v.phieuQc.ket_luan === 'khong_dat') canhBao.push('khong_dat');

@@ -7,7 +7,7 @@ import type { KetQuaQuet } from '../../../../components/shared/QrScannerDialog';
 import { docMaTem } from '../../giam-sat-chat-luong/core/qr';
 import type { PhieuQcTomTat } from '../../giam-sat-chat-luong/core/types';
 import {
-  dsPhieuQcDaNop,
+  dsPhieuQcXepXe,
   getPhieuQcTomTat,
   getXeDaXepCayHang,
   timPhieuQcTheoMaTem,
@@ -92,11 +92,11 @@ export function useQuetCayHang(idPhieu: string) {
   return { ghiNhan, lamMoiSauQuet };
 }
 
-/** Phiếu QC đã nộp của farm — danh sách chọn tay trong máy quét khi tem hỏng / mất. */
-export function usePhieuQcDaNop(idChiNhanh: string | undefined) {
+/** Phiếu QC (trừ phiếu huỷ) của farm — danh sách chọn tay trong máy quét khi tem hỏng / mất. */
+export function usePhieuQcXepXe(idChiNhanh: string | undefined) {
   return useQuery({
-    queryKey: [...QUERY_KEY_DKNH, 'phieuQcDaNop', idChiNhanh],
-    queryFn: () => dsPhieuQcDaNop(idChiNhanh!),
+    queryKey: [...QUERY_KEY_DKNH, 'phieuQcXepXe', idChiNhanh],
+    queryFn: () => dsPhieuQcXepXe(idChiNhanh!),
     enabled: !!idChiNhanh,
     staleTime: 60_000,
   });

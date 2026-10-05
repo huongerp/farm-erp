@@ -524,14 +524,14 @@ export async function getPhieuQcTomTatDb(id: string): Promise<PhieuQcTomTat | nu
   return data ? phieuQcToModel(data as unknown as DbPhieuQcRow) : null;
 }
 
-/** Phiếu QC đã nộp của một farm trong `soNgay` ngày gần đây — danh sách chọn tay khi tem hỏng. */
-export async function dsPhieuQcDaNopDb(idChiNhanh: string, soNgay = 60): Promise<PhieuQcTomTat[]> {
+/** Phiếu QC (trừ phiếu huỷ) của một farm trong `soNgay` ngày gần đây — danh sách chọn tay khi tem hỏng. */
+export async function dsPhieuQcXepXeDb(idChiNhanh: string, soNgay = 60): Promise<PhieuQcTomTat[]> {
   const tu = new Date(Date.now() - soNgay * 86_400_000).toISOString().slice(0, 10);
   const { data, error } = await db
     .from(TABLE)
     .select(PHIEU_QC_COLUMNS)
     .eq('id_chi_nhanh', toIntId(idChiNhanh))
-    .eq('trang_thai', 'da_nop')
+    .neq('trang_thai', 'huy')
     .gte('ngay', tu)
     .order('ngay', { ascending: false })
     .order('stt_trong_ngay', { ascending: false })

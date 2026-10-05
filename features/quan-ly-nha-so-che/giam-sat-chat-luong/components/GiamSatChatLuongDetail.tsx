@@ -86,7 +86,7 @@ const GiamSatChatLuongDetail: React.FC<Props> = ({
   const capCao = useGiamSatChatLuongCapCao();
   const hanhDong = useHanhDongGiamSatChatLuong();
   const { data: thung = [], isLoading: thungLoading } = useThungMau(data.id);
-  const { data: xeDaXep = [] } = useXeDaXepCayHang(data.id, data.trang_thai === 'da_nop');
+  const { data: xeDaXep = [] } = useXeDaXepCayHang(data.id);
 
   const [dialog, setDialog] = useState<null | 'in' | 'quet' | 'apDung'>(moInTem ? 'in' : null);
   const [nhapThung, setNhapThung] = useState<ThungMau | null>(null);
