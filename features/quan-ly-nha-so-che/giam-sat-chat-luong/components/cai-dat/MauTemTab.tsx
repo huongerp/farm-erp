@@ -17,7 +17,7 @@ import {
 } from '../../core/mau-tem';
 import { TEM_MAU, dungHtmlTem, inTemGscl } from '../../utils/in-tem-gscl';
 
-const TRUONG: (keyof TruongTem)[] = ['soPhieu', 'thung', 'ngay', 'farm', 'thanhPham', 'cayHang', 'nhan'];
+const TRUONG: (keyof TruongTem)[] = ['soPhieu', 'thung', 'ngay', 'farm', 'thanhPham', 'hinhChuoi', 'cayHang', 'nhan'];
 
 /** px / mm ở 96dpi — khung xem trước vẽ đúng tỉ lệ tem rồi phóng to cho dễ nhìn. */
 const PX_MM = 96 / 25.4;
@@ -165,6 +165,19 @@ const MauTemTab: React.FC = () => {
             ))}
           </div>
         </div>
+
+        {c.truong.thanhPham && (
+          <div>
+            <Input
+              label={t('giamSatChatLuong.caiDat.tenHang')}
+              value={c.tenHang}
+              maxLength={40}
+              placeholder={t('giamSatChatLuong.caiDat.tenHangPlaceholder')}
+              onChange={(e) => doi({ tenHang: e.target.value })}
+            />
+            <p className="text-xs text-muted-foreground mt-1 mb-0">{t('giamSatChatLuong.caiDat.tenHangHint')}</p>
+          </div>
+        )}
 
         {c.truong.nhan && (
           <div className="flex items-end gap-2">

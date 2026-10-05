@@ -16,6 +16,14 @@ describe('chuanHoaCaiDatTem', () => {
     expect(c.cheDo).toBe('a4');
   });
 
+  it('cài đặt cũ chưa có tên hàng / hình chuối → nhận mặc định; để trống tên hàng vẫn giữ', () => {
+    const cu = chuanHoaCaiDatTem({ rong: 50, truong: { ngay: false } });
+    expect(cu.tenHang).toBe('Cavendish banana');
+    expect(cu.truong.hinhChuoi).toBe(true);
+    expect(chuanHoaCaiDatTem({ tenHang: '' }).tenHang).toBe('');
+    expect(chuanHoaCaiDatTem({ tenHang: 'x'.repeat(60) }).tenHang).toHaveLength(40);
+  });
+
   it('bỏ logo không phải ảnh data URL', () => {
     expect(chuanHoaCaiDatTem({ logo: 'https://x/y.png' }).logo).toBeNull();
     expect(chuanHoaCaiDatTem({ logo: 'data:image/png;base64,AAAA' }).logo).toBe('data:image/png;base64,AAAA');

@@ -13,6 +13,8 @@ export interface TruongTem {
   thanhPham: boolean;
   cayHang: boolean;
   nhan: boolean;
+  /** Hình quả chuối bên trái dòng tên hàng. */
+  hinhChuoi: boolean;
 }
 
 export interface CaiDatTem {
@@ -28,6 +30,8 @@ export interface CaiDatTem {
   /** Cỡ chữ dòng chính (pt). */
   coChu: number;
   truong: TruongTem;
+  /** Tên hàng in trên tem (vd "Cavendish banana"); để trống → in tên thành phẩm của phiếu. */
+  tenHang: string;
   /** Chữ nhãn khi không có logo, vd "QC". */
   nhan: string;
   /** Logo dạng data URL (thay chữ nhãn), null = dùng chữ. */
@@ -55,7 +59,8 @@ export const CAI_DAT_TEM_MAC_DINH: CaiDatTem = {
   le: 1.5,
   tiLeQr: 90,
   coChu: 8,
-  truong: { soPhieu: true, thung: true, ngay: true, farm: true, thanhPham: true, cayHang: true, nhan: true },
+  truong: { soPhieu: true, thung: true, ngay: true, farm: true, thanhPham: true, cayHang: true, nhan: true, hinhChuoi: true },
+  tenHang: 'Cavendish banana',
   nhan: 'QC',
   logo: null,
 };
@@ -83,6 +88,7 @@ export function chuanHoaCaiDatTem(raw: unknown): CaiDatTem {
     tiLeQr: kep(r.tiLeQr, 50, 100, d.tiLeQr),
     coChu: kep(r.coChu, 5, 20, d.coChu),
     truong,
+    tenHang: typeof r.tenHang === 'string' ? r.tenHang.slice(0, 40) : d.tenHang,
     nhan: typeof r.nhan === 'string' ? r.nhan.slice(0, 12) : d.nhan,
     logo,
   };

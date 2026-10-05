@@ -139,7 +139,7 @@
   "giamSatChatLuong.caiDat.truong_thung": "Thùng x/N",
   "giamSatChatLuong.caiDat.truong_ngay": "Ngày",
   "giamSatChatLuong.caiDat.truong_farm": "Farm",
-  "giamSatChatLuong.caiDat.truong_thanhPham": "Thành phẩm",
+  "giamSatChatLuong.caiDat.truong_thanhPham": "Tên hàng",
   "giamSatChatLuong.caiDat.truong_cayHang": "Cây hàng",
   "giamSatChatLuong.caiDat.truong_nhan": "Nhãn QC / logo",
   "giamSatChatLuong.caiDat.nhan": "Chữ nhãn",
@@ -220,5 +220,10 @@
   "giamSatChatLuong.apDung.chiDoiThuTu": "Chỉ đổi thứ tự hiển thị các tiêu chí.",
   "giamSatChatLuong.apDung.ketLuan": "Kết luận cây hàng",
   "giamSatChatLuong.apDung.ketLuanDoi": "Kết luận sẽ thay đổi",
-  "giamSatChatLuong.apDung.chuaCoKetLuan": "Phiếu chưa có thùng nào được kiểm nên chưa có kết luận."
+  "giamSatChatLuong.apDung.chuaCoKetLuan": "Phiếu chưa có thùng nào được kiểm nên chưa có kết luận.",
+  "giamSatChatLuong.caiDat.truong_hinhChuoi": "Hình quả chuối",
+  "giamSatChatLuong.caiDat.tenHang": "Tên in trên tem",
+  "giamSatChatLuong.caiDat.tenHangPlaceholder": "Cavendish banana",
+  "giamSatChatLuong.caiDat.tenHangHint": "Để trống thì tem in tên thành phẩm của phiếu.",
+  "giamSatChatLuong.form.ngayHint": "Số phiếu PPP-MM-DD theo ngày — đổi ngày sẽ cấp số mới theo ngày đó, tem đã in phải in lại."
 }

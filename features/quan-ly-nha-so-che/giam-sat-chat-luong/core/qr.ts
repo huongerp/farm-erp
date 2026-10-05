@@ -1,12 +1,13 @@
 /**
- * QR trên tem thùng mẫu: `GSCL:<ma_tem>`, vd `GSCL:GS-00012-03` (phiếu GS-00012, thùng 3).
- * Tiền tố riêng để không lẫn với QR mã hàng hoá mà module Đăng ký nhận hàng quét.
- * `ma_tem` do trigger DB sinh: `<so_phieu>-<stt 2 chữ số>`.
+ * QR trên tem thùng mẫu: `GSCL:<ma_tem>`, vd `GSCL:2026-001-10-04-03` = năm 2026, phiếu
+ * 001-10-04 (phiếu thứ 1 ngày 04/10), thùng 3. Năm nằm trong mã vì số phiếu PPP-MM-DD lặp lại
+ * mỗi năm. Tiền tố riêng để không lẫn với QR mã hàng hoá mà Đăng ký nhận hàng quét.
+ * `ma_tem` do trigger DB sinh (migration 019): `YYYY-<so_phieu>-<stt 2 chữ số>`.
  */
 
 export const TIEN_TO_QR_GSCL = 'GSCL:';
 
-const MA_TEM = /^GS-\d+-\d+$/;
+const MA_TEM = /^\d{4}-\d{3}-\d{2}-\d{2}-\d{2,3}$/;
 
 export function taoNoiDungQr(maTem: string): string {
   return `${TIEN_TO_QR_GSCL}${maTem}`;

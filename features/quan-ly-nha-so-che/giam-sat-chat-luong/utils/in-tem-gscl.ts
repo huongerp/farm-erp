@@ -10,6 +10,7 @@ import i18n from '../../../../lib/i18n';
 import { formatYmdToDisplay } from '../../../../lib/utils';
 import { bocCucTem, type CaiDatTem } from '../core/mau-tem';
 import { taoNoiDungQr } from '../core/qr';
+import { HINH_CHUOI_SVG } from './hinh-chuoi';
 import type { GiamSatChatLuong, ThungMau } from '../core/types';
 
 export interface TemGscl {
@@ -39,8 +40,8 @@ export function temTuPhieu(phieu: GiamSatChatLuong, thung: ThungMau[]): TemGscl[
 
 /** Tem mẫu cho khung xem trước trong Cài đặt. */
 export const TEM_MAU: TemGscl = {
-  maTem: 'GS-00012-03',
-  soPhieu: 'GS-00012',
+  maTem: '2026-001-10-04-03',
+  soPhieu: '001-10-04',
   stt: 3,
   tongThung: 10,
   ngay: new Date().toISOString().slice(0, 10),
@@ -75,7 +76,10 @@ export function taoHtmlTemGscl(tems: { tem: TemGscl; qrSrc: string }[], c: CaiDa
         .map(esc)
         .join(' · ');
       if (ngayFarm) dong.push(`<div class="phu">${ngayFarm}</div>`);
-      if (f.thanhPham && tem.thanhPham) dong.push(`<div class="phu">${esc(tem.thanhPham)}</div>`);
+      const tenHang = c.tenHang.trim() || tem.thanhPham;
+      if (f.thanhPham && tenHang) {
+        dong.push(`<div class="phu hang">${f.hinhChuoi ? HINH_CHUOI_SVG : ''}<span>${esc(tenHang)}</span></div>`);
+      }
       if (f.cayHang && tem.cayHang) dong.push(`<div class="phu">${t('cayHang', { ma: tem.cayHang })}</div>`);
       return `<div class="tem"><img class="qr" src="${qrSrc}" alt="" /><div class="chu">${dong.join('')}</div></div>`;
     })
@@ -109,6 +113,9 @@ export function taoHtmlTemGscl(tems: { tem: TemGscl; qrSrc: string }[], c: CaiDa
   .so { font-weight: 700; font-size: ${c.coChu}pt; letter-spacing: 0.1mm; }
   .thung { font-weight: 800; font-size: ${Math.round(c.coChu * 1.3 * 10) / 10}pt; }
   .phu { font-size: ${bc.coChuPhu}pt; }
+  .hang { display: flex; align-items: center; gap: 0.8mm; ${bc.ngang ? '' : 'justify-content: center;'} }
+  .hang span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .chuoi { height: 1.6em; width: 1.6em; flex-shrink: 0; }
 </style></head><body><div class="luoi">
 ${cells}
 </div></body></html>`;

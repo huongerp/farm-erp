@@ -255,6 +255,7 @@ const GiamSatChatLuongForm: React.FC<Props> = ({
           <p className="text-xs text-muted-foreground mt-2">
             {t(daKiemMot ? 'giamSatChatLuong.form.soThungMauHintDaKiem' : 'giamSatChatLuong.form.soThungMauHint')}
           </p>
+          {isEdit && <p className="text-xs text-amber-700 dark:text-amber-400 mt-1 mb-0">{t('giamSatChatLuong.form.ngayHint')}</p>}
           <div className="mt-3">
             <Controller
               name="ghi_chu"
