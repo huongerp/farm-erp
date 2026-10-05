@@ -123,6 +123,7 @@ Thiếu biến nào thì service bị bỏ qua và dialog Xuất tự ẩn lựa
 | Hiện tượng | Nguyên nhân thường gặp |
 |---|---|
 | Không thấy lựa chọn "Google Sheet" | service sheets không chạy / thiếu biến (`curl localhost:3000/sheets/khoe`) |
+| "Bạn chưa tick quyền Google Drive" | màn đồng ý của Google cho chọn từng quyền, người dùng bấm Tiếp tục khi chưa tick ô Drive → kết nối lại và tick. Ô Drive mờ/không hiện với tài khoản Workspace: admin chặn app bên thứ ba → Admin console → Security → API controls → đánh dấu app Trusted. Log `[sheets] thiếu scope drive.file` ghi scope Google đã cấp |
 | Popup báo `redirect_uri_mismatch` | URI ở bước 6 chưa khai đúng cổng/domain |
 | "File có sẵn" bị mờ | thiếu `VITE_GOOGLE_PICKER_API_KEY` / `VITE_GOOGLE_APP_ID` |
 | "App không mở được file này" | file chưa từng được chọn qua Picker (giới hạn của `drive.file`) → chọn lại |

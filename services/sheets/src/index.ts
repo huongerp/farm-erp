@@ -132,9 +132,21 @@ app.get('/google/callback', async (c) => {
   try {
     const t = await doiMa(code, s.origin);
     // Người dùng có thể bỏ tick quyền Drive ở màn hình đồng ý — khi đó kết nối vô dụng.
+    // Ngoài lý do bỏ tick, Workspace admin chặn app bên thứ ba cũng ra ca này — log scope để phân biệt.
     if (!t.scopes.includes(SCOPE_DRIVE_FILE)) {
+      console.warn('[sheets] thiếu scope drive.file', { nv: s.nv, email: t.email, scopes: t.scopes });
       await thuHoi(t.accessToken);
-      return c.html(trangKetQua({ ok: false, thongDiep: 'Cần cho phép quyền "tạo và sửa file Google Drive mà app dùng".' }, s.origin, s.popup));
+      return c.html(
+        trangKetQua(
+          {
+            ok: false,
+            thongDiep:
+              'Bạn chưa tick quyền Google Drive. Bấm "Kết nối Google" lại và tick ô "Xem, chỉnh sửa, tạo và xoá … tệp trên Google Drive mà bạn dùng với ứng dụng này" trước khi bấm Tiếp tục.',
+          },
+          s.origin,
+          s.popup,
+        ),
+      );
     }
     const daLuu = await db.luuKetNoi({ nhanVienId: s.nv, email: t.email, refreshToken: t.refreshToken, accessToken: t.accessToken, hetHan: t.hetHan });
     if (!daLuu) {
