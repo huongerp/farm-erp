@@ -26,7 +26,7 @@ export interface SingleImageInputProps {
   aspectRatio?: string;
   className?: string;
   disabled?: boolean;
-  /** Nếu có: upload file lên server (vd Cloudinary) rồi gọi onChange(url). Nếu không: dùng base64. */
+  /** Nếu có: upload file lên server (lib/media-upload.ts) rồi gọi onChange(url). Nếu không: dùng base64. */
   uploadFile?: (file: File) => Promise<string | null>;
 }
 

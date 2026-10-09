@@ -1,0 +1,25 @@
+{
+  "name": "farm-erp-media",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Lưu và phục vụ ảnh của app trên volume VPS (thay Cloudinary / base64 trong DB)",
+  "scripts": {
+    "dev": "node --watch --experimental-strip-types src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.1.0",
+    "hono": "^4.13.0",
+    "jose": "^6.2.8",
+    "sharp": "^0.34.5"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "@types/pg": "^8.20.3",
+    "pg": "^8.22.0",
+    "typescript": "^7.0.2"
+  }
+}

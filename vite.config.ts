@@ -45,6 +45,8 @@ export default defineConfig(({ mode }) => {
   const apiProxyTarget = env.DEV_API_PROXY_TARGET || 'http://127.0.0.1:3010';
   const notifyProxyTarget = env.DEV_NOTIFY_PROXY_TARGET || 'http://127.0.0.1:3002';
   const sheetsProxyTarget = env.DEV_SHEETS_PROXY_TARGET || 'http://127.0.0.1:3003';
+  // Dev dùng chung DB với production → ảnh cũng phải chung kho: proxy thẳng lên VPS, không có kho local.
+  const mediaProxyTarget = env.DEV_MEDIA_PROXY_TARGET || 'https://fpfarm.5fedu.com';
 
   // Số phiên bản hiện ở trang Cài đặt — đổi ở package.json khi phát hành (kèm git tag vX.Y.Z).
   const appVersion = (JSON.parse(readFileSync(path.resolve(__dirname, 'package.json'), 'utf-8')) as { version?: string })
@@ -83,6 +85,12 @@ export default defineConfig(({ mode }) => {
           target: sheetsProxyTarget,
           changeOrigin: true,
           rewrite: (p) => p.replace(/^\/sheets/, ''),
+        },
+        // Service ảnh (services/media) trên VPS — giữ nguyên tiền tố /media (Traefik bên đó tự strip).
+        '/media': {
+          target: mediaProxyTarget,
+          changeOrigin: true,
+          secure: true,
         },
       },
     },

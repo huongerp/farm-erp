@@ -5,11 +5,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Package, ArrowUpFromLine, Power, Folder, DollarSign, FileText, Camera } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
 import SingleImageInput from '../../../../components/ui/SingleImageInput';
-import { uploadImageToCloudinary } from '../../../../lib/cloudinary';
+import { uploadAnh } from '../../../../lib/media-upload';
 
-const CLOUDINARY_READY =
-  Boolean(import.meta.env.VITE_CLOUDINARY_CLOUD_NAME) &&
-  Boolean(import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
 import StatusToggle from '../../../../components/ui/StatusToggle';
 import Combobox from '../../../../components/ui/Combobox';
 import CurrencyInput from '../../../../components/ui/CurrencyInput';
@@ -89,10 +86,9 @@ const DanhSachHangHoaForm: React.FC<Props> = ({
   });
 
   const handleUploadImage = useCallback(async (file: File) => {
-    if (!CLOUDINARY_READY) return null;
     setIsImageUploading(true);
     try {
-      return await uploadImageToCloudinary(file, 'farm-erp/hang-hoa');
+      return await uploadAnh(file, 'hang-hoa');
     } finally {
       setIsImageUploading(false);
     }
@@ -318,7 +314,7 @@ const DanhSachHangHoaForm: React.FC<Props> = ({
                     onChange={field.onChange}
                     placeholder={t('hangHoa.form.imagePlaceholder')}
                     hint={t('hangHoa.form.imageHint')}
-                    uploadFile={CLOUDINARY_READY ? handleUploadImage : undefined}
+                    uploadFile={handleUploadImage}
                     shape="rounded"
                     aspectRatio="1/1"
                     maxSizeMB={2}

@@ -9,7 +9,7 @@ import Textarea from '../../../../components/ui/Textarea';
 import Combobox from '../../../../components/ui/Combobox';
 import CurrencyInput from '../../../../components/ui/CurrencyInput';
 import MultiImageInput, { type ImageItem } from '../../../../components/ui/MultiImageInput';
-import { uploadImageToCloudinary } from '../../../../lib/cloudinary';
+import { uploadAnh } from '../../../../lib/media-upload';
 import { hopDongSchema, type HopDongFormValues } from '../core/schema';
 import type { HopDong } from '../core/types';
 import type { DoiTacRefLite } from '../../../kho-van/danh-sach-doi-tac/services/doi-tac-service';
@@ -23,8 +23,6 @@ import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
 import { getTodayISO } from '../../../../lib/utils';
 import { useAuthStore } from '../../../../store/useStore';
 
-const CLOUDINARY_READY =
-  Boolean(import.meta.env.VITE_CLOUDINARY_CLOUD_NAME) && Boolean(import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
 
 function urlsToImageItems(urls: string[]): ImageItem[] {
   return urls.map((src) => ({ id: src, src }));
@@ -143,7 +141,7 @@ const HopDongForm: React.FC<Props> = ({ doiTacList, initialData, onClose }) => {
   const thanhTien = useWatch({ control, name: 'thanh_tien' });
 
   const handleUploadImage = useCallback(
-    (file: File) => uploadImageToCloudinary(file, 'farm-erp/hop-dong'),
+    (file: File) => uploadAnh(file, 'hop-dong'),
     []
   );
 
@@ -275,14 +273,10 @@ const HopDongForm: React.FC<Props> = ({ doiTacList, initialData, onClose }) => {
                   icon={<Images className="w-4 h-4 text-muted-foreground" />}
                   value={urlsToImageItems(field.value ?? [])}
                   onChange={(items) => field.onChange(imageItemsToUrls(items))}
-                  uploadFile={CLOUDINARY_READY ? handleUploadImage : undefined}
-                  hint={
-                    CLOUDINARY_READY
-                      ? t('hopDong.form.hinhAnhHint')
-                      : t('hopDong.form.hinhAnhOfflineHint')
-                  }
+                  uploadFile={handleUploadImage}
+                  hint={t('hopDong.form.hinhAnhHint')}
                   maxFiles={20}
-                  maxSizeMB={5}
+                  maxSizeMB={15}
                   columns={4}
                   error={errors.hinh_anh_urls?.message as string | undefined}
                 />

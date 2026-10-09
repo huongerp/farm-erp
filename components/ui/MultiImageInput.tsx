@@ -31,7 +31,7 @@ export interface MultiImageInputProps {
   aspectRatio?: string;
   className?: string;
   disabled?: boolean;
-  /** Nếu có: upload từng file (vd Cloudinary) rồi thêm preview bằng URL; không dùng base64. */
+  /** Nếu có: upload từng file (lib/media-upload.ts) rồi thêm preview bằng URL; không dùng base64. */
   uploadFile?: (file: File) => Promise<string | null>;
 }
 

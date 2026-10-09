@@ -29,6 +29,7 @@ jobs:
       - run: npm ci --prefix services/auth
       - run: npm ci --prefix services/notify
       - run: npm ci --prefix services/sheets
+      - run: npm ci --prefix services/media
       - run: npm run typecheck
       - run: npm run lint
       - run: npm test
@@ -41,7 +42,7 @@ jobs:
     timeout-minutes: 10
     strategy:
       matrix:
-        service: [auth, notify, sheets]
+        service: [auth, notify, sheets, media]
     defaults:
       run:
         working-directory: services/${{ matrix.service }}

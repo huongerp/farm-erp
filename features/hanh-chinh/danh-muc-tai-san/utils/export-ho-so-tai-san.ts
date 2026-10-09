@@ -8,6 +8,7 @@ import i18n from '../../../../lib/i18n';
 import { ensureJsPDFVietnameseFont } from '../../../../lib/jspdf-vietnamese-font';
 import { useUIStore } from '../../../../store/useStore';
 import { escapeHtml as e } from '../../../../lib/escape-html';
+import { urlAnhTuyetDoi } from '../../../../lib/media-upload';
 
 const FONT_STACK = "'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif";
 
@@ -20,7 +21,7 @@ function safeStr(v: string | number | null | undefined): string {
 function buildCompanyHeaderHTML(): string {
   const info = useUIStore.getState().companyInfo;
   const logoHtml = info.appLogo
-    ? `<img src="${e(info.appLogo)}" alt="Logo" style="width:64px;height:64px;object-fit:contain;flex-shrink:0" />`
+    ? `<img src="${e(urlAnhTuyetDoi(info.appLogo))}" alt="Logo" style="width:64px;height:64px;object-fit:contain;flex-shrink:0" />`
     : '';
   const addr = info.address ? `${i18n.t('company.address')}: ${e(info.address)}` : '';
   const contact: string[] = [];
@@ -67,7 +68,7 @@ function buildHoSoTaiSanBodyHTML(record: TaiSan): string {
   ];
 
   const imgHtml = record.hinh_anh
-    ? `<div style="text-align:center;margin-bottom:16px"><img src="${e(record.hinh_anh)}" alt="${e(record.ten_tai_san)}" style="max-width:120px;max-height:120px;object-fit:contain;border:1px solid #ddd;border-radius:4px" /></div>`
+    ? `<div style="text-align:center;margin-bottom:16px"><img src="${e(urlAnhTuyetDoi(record.hinh_anh))}" alt="${e(record.ten_tai_san)}" style="max-width:120px;max-height:120px;object-fit:contain;border:1px solid #ddd;border-radius:4px" /></div>`
     : '';
 
   return `

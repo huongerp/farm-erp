@@ -79,7 +79,7 @@ export interface ThungMau {
   id_nguoi_kiem: string | null;
   ten_nguoi_kiem: string | null;
   ghi_chu: string | null;
-  /** URL ảnh chụp thùng (Cloudinary). */
+  /** Đường dẫn ảnh chụp thùng (`/media/f/...`, kho ảnh trên VPS). */
   hinh_anh_urls: string[];
 }
 

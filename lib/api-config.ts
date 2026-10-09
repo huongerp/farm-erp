@@ -10,6 +10,7 @@ export const API_URL = import.meta.env.VITE_API_URL ?? '/api';
 export const AUTH_URL = import.meta.env.VITE_AUTH_URL ?? '/auth';
 export const NOTIFY_URL = import.meta.env.VITE_NOTIFY_URL ?? '/notify';
 export const SHEETS_URL = import.meta.env.VITE_SHEETS_URL ?? '/sheets';
+export const MEDIA_URL = import.meta.env.VITE_MEDIA_URL ?? '/media';
 
 /**
  * Google Picker (chọn file Sheet có sẵn). Thiếu một trong hai thì dialog Xuất chỉ

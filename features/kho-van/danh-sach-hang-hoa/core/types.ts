@@ -29,6 +29,6 @@ export interface HangHoa {
   pham_cap?: string | null;
   /** Mô tả hàng hóa (cột mo_ta trong DB). */
   mo_ta?: string | null;
-  /** URL hình ảnh (cột hinh_anh, lưu từ Cloudinary). */
+  /** Đường dẫn hình ảnh (cột hinh_anh, kho ảnh VPS `/media/f/...`). */
   hinh_anh?: string | null;
 }

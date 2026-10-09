@@ -25,7 +25,7 @@ export const hangHoaSchema = z.object({
   pham_cap: z.string().optional().nullable(),
   /** Mô tả hàng hóa. */
   mo_ta: z.string().optional().nullable(),
-  /** URL hình ảnh (Cloudinary). */
+  /** Đường dẫn hình ảnh (`/media/f/...`, kho ảnh VPS). */
   hinh_anh: z.string().optional().nullable(),
 });
 

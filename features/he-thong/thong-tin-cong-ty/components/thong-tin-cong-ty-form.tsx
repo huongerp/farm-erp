@@ -9,6 +9,7 @@ import {
 import { toast } from 'sonner';
 import Button from '../../../../components/ui/Button';
 import Input from '../../../../components/ui/Input';
+import { uploadAnh } from '../../../../lib/media-upload';
 import { companySchema } from '../core/schema';
 import type { CompanyFormValues } from '../core/types';
 
@@ -27,6 +28,7 @@ const CompanyInfoForm: React.FC<CompanyFormProps> = ({ initialValues, onSubmit, 
   const { t } = useTranslation();
   const [logoPreview, setLogoPreview] = useState<string | null>(initialValues.appLogo ?? null);
   const [isDragging, setIsDragging] = useState(false);
+  const [dangTaiLogo, setDangTaiLogo] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<CompanyFormValues>({
@@ -53,9 +55,12 @@ const CompanyInfoForm: React.FC<CompanyFormProps> = ({ initialValues, onSubmit, 
         toast.error(t('company.imageSizeError'));
         return;
       }
-      const reader = new FileReader();
-      reader.onloadend = () => setLogoPreview(reader.result as string);
-      reader.readAsDataURL(file);
+      // Logo lưu trên kho ảnh VPS (services/media), DB chỉ giữ đường dẫn — không base64.
+      setDangTaiLogo(true);
+      uploadAnh(file, 'cong-ty')
+        .then((url) => setLogoPreview(url))
+        .catch((e: unknown) => toast.error(e instanceof Error ? e.message : String(e)))
+        .finally(() => setDangTaiLogo(false));
     },
     [t]
   );
@@ -124,7 +129,7 @@ const CompanyInfoForm: React.FC<CompanyFormProps> = ({ initialValues, onSubmit, 
             >
               {logoPreview ? (
                 <div className="relative group/preview" role="presentation" onClick={(e) => e.stopPropagation()}>
-                  <img src={logoPreview} alt="App Logo" className="h-24 w-24 object-contain" />
+                  <img src={logoPreview} alt="App Logo" className={`h-24 w-24 object-contain ${dangTaiLogo ? 'opacity-40' : ''}`} />
                   <button
                     type="button"
                     onClick={removeLogo}
@@ -159,7 +164,7 @@ const CompanyInfoForm: React.FC<CompanyFormProps> = ({ initialValues, onSubmit, 
                     </>
                   )}
                 </div>
-                <p className="text-xs text-muted-foreground px-4">{t('company.imageHint')}</p>
+                <p className="text-xs text-muted-foreground px-4">{t(dangTaiLogo ? 'common.loading' : 'company.imageHint')}</p>
               </div>
 
               <input
@@ -266,7 +271,7 @@ const CompanyInfoForm: React.FC<CompanyFormProps> = ({ initialValues, onSubmit, 
             transition={{ delay: 0.2 }}
             className="flex justify-end pt-2"
           >
-            <Button type="submit" size="lg" className="w-full md:w-auto shadow-lg shadow-primary/20" isLoading={isSubmitting}>
+            <Button type="submit" size="lg" className="w-full md:w-auto shadow-lg shadow-primary/20" isLoading={isSubmitting} disabled={dangTaiLogo}>
               <Save className="w-4 h-4 mr-2" /> {t('company.saveButton')}
             </Button>
           </motion.div>

@@ -8,7 +8,7 @@ import Input from '../../../../components/ui/Input';
 import Textarea from '../../../../components/ui/Textarea';
 import Combobox from '../../../../components/ui/Combobox';
 import MultiImageInput, { type ImageItem } from '../../../../components/ui/MultiImageInput';
-import { uploadImageToCloudinary } from '../../../../lib/cloudinary';
+import { uploadAnh } from '../../../../lib/media-upload';
 import { baoCaoNhanCongFormSchema, type BaoCaoNhanCongFormValues } from '../core/schema';
 import type { FarmBaoCaoNhanCong } from '../core/types';
 import type { LoaiChuyen } from '../core/types';
@@ -66,8 +66,6 @@ import FormSection from '../../../../components/shared/FormSection';
 import FormGrid from '../../../../components/shared/FormGrid';
 import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
 
-const CLOUDINARY_READY =
-  Boolean(import.meta.env.VITE_CLOUDINARY_CLOUD_NAME) && Boolean(import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
 
 function urlsToImageItems(urls: string[]): ImageItem[] {
   return urls.map((src) => ({ id: src, src }));
@@ -342,7 +340,7 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
     );
   };
 
-  const handleUploadImage = useCallback((file: File) => uploadImageToCloudinary(file, 'farm-erp/bao-cao-nhan-cong'), []);
+  const handleUploadImage = useCallback((file: File) => uploadAnh(file, 'bao-cao-nhan-cong'), []);
 
   return (
     <GenericDrawer
@@ -417,14 +415,10 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
                 icon={<Images className="w-4 h-4 text-muted-foreground" />}
                 value={urlsToImageItems(field.value ?? [])}
                 onChange={(items) => field.onChange(imageItemsToUrls(items))}
-                uploadFile={CLOUDINARY_READY ? handleUploadImage : undefined}
-                hint={
-                  CLOUDINARY_READY
-                    ? t('baoCaoNhanCong.form.hinhAnhHint')
-                    : t('baoCaoNhanCong.form.hinhAnhOfflineHint')
-                }
+                uploadFile={handleUploadImage}
+                hint={t('baoCaoNhanCong.form.hinhAnhHint')}
                 maxFiles={20}
-                maxSizeMB={5}
+                maxSizeMB={15}
                 columns={4}
                 className="mt-3"
                 error={errors.hinh_anh_urls?.message as string | undefined}

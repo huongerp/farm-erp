@@ -189,7 +189,6 @@
   "giamSatChatLuong.anhThung.nut": "Ảnh thùng (chụp / xem)",
   "giamSatChatLuong.anhThung.placeholder": "Chụp ảnh hoặc chọn từ thư viện",
   "giamSatChatLuong.anhThung.hint": "Tối đa {{max}} ảnh/thùng · ảnh tự nén trước khi tải lên",
-  "giamSatChatLuong.anhThung.chuaCauHinh": "Chưa cấu hình nơi lưu ảnh (Cloudinary) nên chưa chụp được ảnh thùng.",
   "giamSatChatLuong.anhThung.chuaCoAnh": "Thùng này chưa có ảnh.",
   "giamSatChatLuong.quyTac.title": "Quy tắc kết luận",
   "giamSatChatLuong.quyTac.soTieuChiKhongDat": "Số tiêu chí không đạt thì cây hàng KHÔNG ĐẠT",

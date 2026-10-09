@@ -9,7 +9,7 @@ import { DIALOG_SIZE } from '../../../../lib/dialog-sizes';
 import type { GiamSatChatLuong, ThungMau } from '../core/types';
 import { useCapNhatAnhThung } from '../hooks/use-giam-sat-chat-luong';
 import { useUploadAnhThung } from '../hooks/use-upload-anh-thung';
-import { CLOUDINARY_READY, MAX_ANH_THUNG, MAX_MB_ANH_GOC, imageItemsToUrls, urlsToImageItems } from '../utils/anh-thung';
+import { MAX_ANH_THUNG, MAX_MB_ANH_GOC, imageItemsToUrls, urlsToImageItems } from '../utils/anh-thung';
 
 interface Props {
   phieu: GiamSatChatLuong;
@@ -25,7 +25,7 @@ const AnhThungDialog: React.FC<Props> = ({ phieu, thung, chiXem, onClose }) => {
   const [items, setItems] = useState<ImageItem[]>(() => urlsToImageItems(thung.hinh_anh_urls));
   const { upload, dangTai } = useUploadAnhThung();
   const mutation = useCapNhatAnhThung(onClose);
-  const sua = !chiXem && CLOUDINARY_READY;
+  const sua = !chiXem;
   const dirty = imageItemsToUrls(items).join('|') !== thung.hinh_anh_urls.join('|');
 
   return (
@@ -65,9 +65,6 @@ const AnhThungDialog: React.FC<Props> = ({ phieu, thung, chiXem, onClose }) => {
           mutation.mutate({ idThung: thung.id, idPhieu: phieu.id, urls: imageItemsToUrls(items) });
         }}
       >
-        {!CLOUDINARY_READY && !chiXem && (
-          <p className="text-xs text-muted-foreground m-0">{t('giamSatChatLuong.anhThung.chuaCauHinh')}</p>
-        )}
         {sua ? (
           <MultiImageInput
             value={items}

@@ -17,6 +17,7 @@ trong `lib/db.ts` chỉ là thư viện client PostgREST, app **không** dùng d
 | Lint | `npm run lint` |
 | Kiểm tra kích thước bundle | `npm run check:bundle` |
 | Sao lưu DB trên VPS (chạy TRƯỚC migration) | `bash scripts/db-backup.sh <nhan>` |
+| Sao lưu kho ảnh trên VPS | `bash scripts/media-backup.sh` |
 | Chạy SQL / migration lên VPS | `bash scripts/db-sql.sh -v ON_ERROR_STOP=1 -f docs/migrations/NNN-*.sql` |
 
 Dev server **không** chạy bằng lệnh nền thủ công — `vite/dev-services.ts` tự bật PostgREST,
@@ -48,6 +49,11 @@ auth-service, notify-service và sheets-service kèm `npm run dev` (bỏ qua b�
 - `services/sheets/` — sheets-service (Node/Hono): kết nối Google (OAuth `drive.file`), xuất Google Sheet và
   worker đồng bộ tự động. Luật thuần ở `src/core/` có test; `core/dinh-dang.ts` là bản sao của
   `lib/export/dinh-dang-o.ts` (sửa cả hai, test parity canh).
+- `services/media/` — media-service (Node/Hono + sharp): `POST /upload` (JWT app) lưu ảnh vào volume
+  `media-data`, `GET /f/...` phục vụ ảnh (tên file 128 bit ngẫu nhiên, cache 1 năm). Frontend tải ảnh qua
+  `lib/media-upload.ts` → `uploadAnh(file, thuMuc)`; thư mục mới phải thêm ở cả `ThuMucAnh` và
+  `src/core/duong-dan.ts`. DB chỉ lưu `/media/f/...` — KHÔNG Cloudinary, KHÔNG base64 (schema
+  `hinh-anh-url-schema.ts` từ chối `data:`). Dev proxy `/media` thẳng lên VPS.
 - `sw/sw.ts` — service worker tự viết (vite-plugin-pwa chế độ `injectManifest`): precache, runtime
   caching và listener `push` / `notificationclick`.
 - `docs/` — `db-schema-baseline.sql`, `migrations/` (SQL mới) + tài liệu vận hành.

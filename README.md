@@ -15,10 +15,16 @@ thông báo đẩy, xuất Excel/CSV/PDF/Google Sheet.
 | Đăng nhập | auth-service (Node/Hono): mật khẩu + Google, ký JWT | `services/auth` |
 | Thông báo | notify-service: outbox + Web Push | `services/notify` |
 | Google Sheet | sheets-service: xuất và đồng bộ tự động | `services/sheets` |
+| Ảnh | media-service: lưu ảnh trên volume VPS `media-data`, phục vụ `/media/f/...` | `services/media` |
 | Cơ sở dữ liệu | PostgreSQL trên VPS (Dokploy) | `docs/db-schema-baseline.sql`, `docs/migrations/` |
 
 Tất cả nằm sau một domain, Traefik (Dokploy) chia đường: `/` → web, `/api` → PostgREST,
-`/auth`, `/notify`, `/sheets` → các service.
+`/auth`, `/notify`, `/sheets`, `/media` → các service.
+
+Ảnh (hàng hoá, tài sản, báo cáo nhân công, thùng mẫu QC, logo…) tải lên qua `lib/media-upload.ts`
+(nén ở trình duyệt, service nén lại bằng sharp), DB chỉ lưu đường dẫn `/media/f/...`. Không dùng
+Cloudinary, không lưu base64 trong DB. Lúc `npm run dev`, `/media` được proxy thẳng lên VPS
+(`DEV_MEDIA_PROXY_TARGET`) vì local dùng chung DB với production.
 
 ## Chức năng (50 module)
 
@@ -49,6 +55,7 @@ Tất cả nằm sau một domain, Traefik (Dokploy) chia đường: `/` → web
 | Build production | `npm run build` |
 | Kiểm kích thước bundle | `npm run check:bundle` |
 | Sao lưu DB (trước migration) | `bash scripts/db-backup.sh <nhan>` |
+| Sao lưu kho ảnh trên VPS | `bash scripts/media-backup.sh` |
 | Chạy SQL / migration | `bash scripts/db-sql.sh -v ON_ERROR_STOP=1 -f docs/migrations/NNN-*.sql` |
 
 CI (`.github/workflows/ci.yml`) chạy typecheck, lint, test, build mỗi lần push lên `main`.

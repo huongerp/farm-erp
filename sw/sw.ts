@@ -84,12 +84,12 @@ async function xuLyDieuHuong(options: RouteHandlerCallbackOptions): Promise<Resp
   return shellTuPrecache(options);
 }
 
-// Trừ /api, /auth, /notify — đó là request dữ liệu, không bao giờ được trả về HTML.
+// Trừ /api, /auth, /notify, /media — đó là request dữ liệu/ảnh, không bao giờ được trả về HTML.
 // /sheets: popup OAuth điều hướng tới /sheets/google/callback — trả shell SPA ở đó là
 // mất mã xác thực. Trang .html tĩnh (chính sách riêng tư, điều khoản) đi thẳng nginx.
 registerRoute(
   new NavigationRoute(xuLyDieuHuong, {
-    denylist: [/^\/api\//, /^\/auth\//, /^\/notify\//, /^\/sheets\//, /\.html$/],
+    denylist: [/^\/api\//, /^\/auth\//, /^\/notify\//, /^\/sheets\//, /^\/media\//, /\.html$/],
   })
 );
 
@@ -127,6 +127,18 @@ registerRoute(
     plugins: [
       new ExpirationPlugin({ maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 }),
       new CacheableResponsePlugin({ statuses: [0, 200] }),
+    ],
+  })
+);
+
+// Ảnh trên kho VPS (services/media): tên file ngẫu nhiên, không bao giờ đổi nội dung → CacheFirst.
+registerRoute(
+  ({ url }) => url.origin === self.location.origin && url.pathname.startsWith('/media/f/'),
+  new CacheFirst({
+    cacheName: 'anh-media',
+    plugins: [
+      new ExpirationPlugin({ maxEntries: 300, maxAgeSeconds: 60 * 60 * 24 * 30, purgeOnQuotaError: true }),
+      new CacheableResponsePlugin({ statuses: [200] }),
     ],
   })
 );

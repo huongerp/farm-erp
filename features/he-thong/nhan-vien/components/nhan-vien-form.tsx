@@ -15,11 +15,8 @@ import Combobox from '../../../../components/ui/Combobox';
 import MultiSelect from '../../../../components/ui/MultiSelect';
 import RadioGroup from '../../../../components/ui/RadioGroup';
 import SingleImageInput from '../../../../components/ui/SingleImageInput';
-import { uploadImageToCloudinary } from '../../../../lib/cloudinary';
+import { uploadAnh } from '../../../../lib/media-upload';
 
-const CLOUDINARY_READY =
-  Boolean(import.meta.env.VITE_CLOUDINARY_CLOUD_NAME) &&
-  Boolean(import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
 import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/GenericDrawer';
 import FormSection from '../../../../components/shared/FormSection';
 import FormGrid from '../../../../components/shared/FormGrid';
@@ -55,7 +52,7 @@ const EmployeeForm: React.FC<Props> = ({ initialData, prefillData, onClose }) =>
   const updateMutation = useUpdateEmployee(onClose);
 
   const handleUploadAvatar = useCallback(
-    (file: File) => uploadImageToCloudinary(file, 'farm-erp/nhan-vien'),
+    (file: File) => uploadAnh(file, 'nhan-vien'),
     []
   );
 
@@ -204,7 +201,7 @@ const EmployeeForm: React.FC<Props> = ({ initialData, prefillData, onClose }) =>
                                 icon={<Camera className="w-4 h-4" />}
                                 value={field.value}
                                 onChange={field.onChange}
-                                uploadFile={CLOUDINARY_READY ? handleUploadAvatar : undefined}
+                                uploadFile={handleUploadAvatar}
                                 shape="circle"
                                 maxSizeMB={2}
                                 placeholder={t('employee.form.avatarPlaceholder')}

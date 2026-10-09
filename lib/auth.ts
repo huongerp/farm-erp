@@ -311,7 +311,7 @@ function bootstrapEmployeeFromRpc(row: Record<string, unknown> | null): Employee
     gioi_tinh: ((row.gioi_tinh as string) as 'Nam' | 'Nữ' | 'Khác') ?? 'Khác',
     trang_thai: (row.trang_thai as TrangThaiNV) ?? TRANG_THAI_NV.DANG_LAM_VIEC,
     ngay_vao_lam: (row.ngay_vao_lam as string) ?? '',
-    // Avatar chỉ lấy URL (Cloudinary) — không kéo base64 trong bootstrap.
+    // Avatar chỉ lấy URL — không kéo cột hinh_anh trong bootstrap.
     anh_dai_dien: (row.hinh_anh_url as string) ?? undefined,
   };
 }

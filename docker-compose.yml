@@ -5,6 +5,8 @@
 #   /api/*   → postgrest  (REST cho dữ liệu nghiệp vụ)
 #   /auth/*  → auth       (đăng nhập, ký JWT)
 #   /notify/*→ notify     (đăng ký Web Push + worker thông báo)
+#   /sheets/*→ sheets     (xuất / đồng bộ Google Sheet)
+#   /media/* → media      (lưu + phục vụ ảnh trên volume media-data)
 #
 # Một domain nên KHÔNG có CORS và không có request cross-site nào.
 # Frontend gọi bằng đường dẫn tương đối `/api`, `/auth` → không phải build
@@ -161,6 +163,36 @@ services:
       - traefik.http.middlewares.farm-sheets-strip.stripprefix.prefixes=/sheets
       - traefik.http.services.farm-sheets.loadbalancer.server.port=3003
 
+  media:
+    build:
+      context: ./services/media
+    restart: always
+    logging: *logging
+    environment:
+      # Dùng chung secret để xác thực access token do auth-service ký (chỉ người đăng nhập được tải ảnh lên).
+      JWT_SECRET: ${PGRST_JWT_SECRET}
+      MEDIA_DIR: /data/media
+      MEDIA_MAX_MB: '15'
+      PORT: '3004'
+    volumes:
+      # Kho ảnh của app (hàng hoá, tài sản, báo cáo nhân công, thùng mẫu QC…). ĐÂY LÀ DỮ LIỆU THẬT:
+      # xoá volume là mất hết ảnh. Sao lưu: bash scripts/media-backup.sh
+      - media-data:/data/media
+    expose:
+      - '3004'
+    networks:
+      - dokploy-network
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=dokploy-network
+      - traefik.http.routers.farm-media.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/media`)
+      - traefik.http.routers.farm-media.entrypoints=websecure
+      - traefik.http.routers.farm-media.tls.certResolver=letsencrypt
+      - traefik.http.routers.farm-media.priority=100
+      - traefik.http.routers.farm-media.middlewares=farm-media-strip
+      - traefik.http.middlewares.farm-media-strip.stripprefix.prefixes=/media
+      - traefik.http.services.farm-media.loadbalancer.server.port=3004
+
   web:
     build:
       context: .
@@ -168,8 +200,6 @@ services:
       args:
         # Vite nhúng biến vào bundle lúc build, nên phải truyền qua build args.
         VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
-        VITE_CLOUDINARY_CLOUD_NAME: ${VITE_CLOUDINARY_CLOUD_NAME}
-        VITE_CLOUDINARY_UPLOAD_PRESET: ${VITE_CLOUDINARY_UPLOAD_PRESET}
         VITE_SENTRY_DSN: ${VITE_SENTRY_DSN}
         VITE_VAPID_PUBLIC_KEY: ${VITE_VAPID_PUBLIC_KEY}
         # Google Picker — chọn file Sheet có sẵn khi xuất. Thiếu thì chỉ còn "Tạo file mới".
@@ -206,3 +236,4 @@ networks:
 
 volumes:
   web-assets-cu:
+  media-data:
