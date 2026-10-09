@@ -14,6 +14,7 @@ import {
   createPhieuChiPhiDb,
   updatePhieuChiPhiDb,
   deletePhieuChiPhiDb,
+  duyetPhieuChiPhiManyDb,
   type GetPhieuChiPhiListParams,
 } from './chi-phi-tai-san-db.service';
 
@@ -101,3 +102,5 @@ export const updatePhieuBaoTri = async (
   const [enriched] = await enrichPhieu([updated]);
   return enriched;
 };
+
+export const duyetPhieuBaoTriMany = duyetPhieuChiPhiManyDb;

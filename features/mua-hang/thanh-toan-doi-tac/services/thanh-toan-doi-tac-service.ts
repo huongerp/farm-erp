@@ -9,6 +9,7 @@ import {
   updateThanhToanDoiTac as updateDb,
   deleteThanhToanDoiTac as deleteDb,
   deleteThanhToanDoiTacMany as deleteManyDb,
+  chuyenTrangThaiThanhToanManyDb,
 } from './thanh-toan-doi-tac-db.service';
 
 export const getAllThanhToanDoiTac = getAllDb;
@@ -23,3 +24,4 @@ export const createThanhToanDoiTac = (data: ThanhToanDoiTacFormValues) => create
 export const updateThanhToanDoiTac = updateDb;
 export const deleteThanhToanDoiTac = deleteDb;
 export const deleteThanhToanDoiTacMany = deleteManyDb;
+export const chuyenTrangThaiThanhToanMany = chuyenTrangThaiThanhToanManyDb;

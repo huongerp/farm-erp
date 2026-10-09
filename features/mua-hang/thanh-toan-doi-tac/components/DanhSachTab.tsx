@@ -3,14 +3,18 @@ import type { ThanhToanDoiTacListServerQuery } from '../services/thanh-toan-doi-
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
-import { useThanhToanDoiTacPage, useThanhToanDoiTacTomTat, useThanhToanDoiTacById, useDeleteThanhToanDoiTac, useDeleteThanhToanDoiTacMany, useUpdateThanhToanDoiTac } from '../hooks/use-thanh-toan-doi-tac';
+import { useThanhToanDoiTacPage, useThanhToanDoiTacTomTat, useThanhToanDoiTacById, useDeleteThanhToanDoiTac, useDeleteThanhToanDoiTacMany, useUpdateThanhToanDoiTac, useChuyenTrangThaiThanhToanMany } from '../hooks/use-thanh-toan-doi-tac';
+import { CheckCircle2, XCircle } from 'lucide-react';
+import BulkActionButton from '../../../../components/shared/BulkActionButton';
+import { getTodayISO } from '../../../../lib/utils';
+import { MA_TRANG_THAI_DA_HUY, MA_TRANG_THAI_DA_THANH_TOAN } from '../core/constants';
 import { useThanhToanDoiTacViewScope } from '../hooks/use-thanh-toan-doi-tac-view-scope';
 import { useDoiTacRefQuery, useEmployeesRefQuery } from '../../../../lib/hooks/use-ref-queries';
 import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
 import { useTrangThaiThanhToanDoiTacList } from '../../thiet-lap-de-xuat-vat-tu/hooks/use-trang-thai-thanh-toan-doi-tac';
 import { useThanhToanDoiTacStore } from '../store/useThanhToanDoiTacStore';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
-import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
+import { CONFIRM_DELETE, CONFIRM_DELETE_ALL, CONFIRM_YES } from '../../../../lib/button-labels';
 import type { ThanhToanDoiTac } from '../core/types';
 import type { ThanhToanDoiTacFormValues } from '../core/schema';
 import ThanhToanDoiTacToolbar from './ThanhToanDoiTacToolbar';
@@ -173,6 +177,60 @@ const DanhSachTab: React.FC = () => {
     });
   };
 
+  /**
+   * Đánh dấu Đã thanh toán / Đã huỷ hàng loạt — quyền phê duyệt như nút đổi trạng thái
+   * đơn lẻ. Lựa chọn có thể nằm ở nhiều trang nên không lọc trước ở client: DB chỉ đổi
+   * phiếu chưa ở trạng thái kết thúc, số còn lại báo "bỏ qua".
+   */
+  const chuyenManyMutation = useChuyenTrangThaiThanhToanMany();
+  const statusDaThanhToan = statusList.find((s) => s.ma === MA_TRANG_THAI_DA_THANH_TOAN);
+  const statusDaHuy = statusList.find((s) => s.ma === MA_TRANG_THAI_DA_HUY);
+  const idsKetThuc = [statusDaThanhToan?.id, statusDaHuy?.id].filter((x): x is string => !!x);
+
+  const handleChuyenTrangThaiMany = (status: { id: string; ten: string }, laHuy: boolean) => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    confirm({
+      title: t(laHuy ? 'thanhToanDoiTac.bulk.huyTitle' : 'thanhToanDoiTac.bulk.daThanhToanTitle'),
+      message: t('thanhToanDoiTac.bulk.message', { count: ids.length, status: status.ten }),
+      variant: laHuy ? 'danger' : 'warning',
+      confirmText: CONFIRM_YES(),
+      onConfirm: async () => {
+        await chuyenManyMutation.mutateAsync({
+          ids,
+          status: { id: status.id, ten: status.ten },
+          idsKetThuc,
+          ngayXuLy: getTodayISO().slice(0, 10),
+        });
+        clearSelection();
+        if (viewingItem && ids.includes(viewingItem.id)) setViewingItem(null);
+      },
+    });
+  };
+
+  const bulkActions = canApprove ? (
+    <>
+      {statusDaThanhToan && (
+        <BulkActionButton
+          icon={CheckCircle2}
+          tone="success"
+          label={statusDaThanhToan.ten}
+          onClick={() => handleChuyenTrangThaiMany(statusDaThanhToan, false)}
+          disabled={chuyenManyMutation.isPending}
+        />
+      )}
+      {statusDaHuy && (
+        <BulkActionButton
+          icon={XCircle}
+          tone="danger"
+          label={statusDaHuy.ten}
+          onClick={() => handleChuyenTrangThaiMany(statusDaHuy, true)}
+          disabled={chuyenManyMutation.isPending}
+        />
+      )}
+    </>
+  ) : undefined;
+
   return (
     <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
       <ThanhToanDoiTacToolbar
@@ -186,6 +244,7 @@ const DanhSachTab: React.FC = () => {
           setShowForm(true);
         }}
         onDeleteMany={handleDeleteMany}
+        bulkActions={bulkActions}
         canCreate={canCreate}
         canDelete={canDelete}
       />

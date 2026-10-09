@@ -16,9 +16,14 @@ export {
   khoaThuChiQuy,
   xinMoThuChiQuy,
   xuLyMoThuChiQuy,
+  getThuChiQuyTrangThaiByIds,
+  khoaThuChiQuyMany,
+  xinMoThuChiQuyMany,
+  xuLyMoThuChiQuyMany,
 } from './thu-chi-quy-db.service';
 export type {
   ChungTuRef,
+  ThuChiQuyTrangThaiRow,
   XinMoThuChiQuyExtra,
   XuLyMoThuChiQuyExtra,
 } from './thu-chi-quy-db.service';

@@ -12,12 +12,15 @@ import BaoTriSuaChuaToolbar from './BaoTriSuaChuaToolbar';
 import PhieuBaoTriTable from './PhieuBaoTriTable';
 import PhieuBaoTriDetail from './PhieuBaoTriDetail';
 import TaoPhieuBaoTriForm from './TaoPhieuBaoTriForm';
-import { usePhieuBaoTriPage, useDeletePhieuBaoTri } from '../hooks/use-bao-tri-sua-chua';
+import { usePhieuBaoTriPage, useDeletePhieuBaoTri, useDuyetPhieuBaoTriMany } from '../hooks/use-bao-tri-sua-chua';
+import { thongTinDuyet } from '../core/duyet';
+import BulkActionButton from '../../../../components/shared/BulkActionButton';
+import { CheckCircle2, XCircle } from 'lucide-react';
 import { useBaoTriSuaChuaViewScope } from '../hooks/use-bao-tri-sua-chua-view-scope';
 import { useAuthStore } from '../../../../store/useStore';
 import { useTaiSanTomTat } from '../../danh-muc-tai-san/hooks/use-danh-muc-tai-san';
 import { useBaoTriSuaChuaStore } from '../store/useBaoTriSuaChuaStore';
-import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
+import { CONFIRM_DELETE, CONFIRM_DELETE_ALL, CONFIRM_YES } from '../../../../lib/button-labels';
 import type { PhieuBaoTriSuaChua } from '../core/types';
 import {
   CHI_PHI_TAI_SAN_LIST_EXPORT_KEYS,
@@ -235,6 +238,58 @@ const TatCaTab: React.FC<Props> = ({ defaultTaiSanId }) => {
     [confirm, t, deleteMutation, detailItem, clearSelection]
   );
 
+  /**
+   * Duyệt / không duyệt hàng loạt — chỉ quản trị (khớp nút "Chuyển trạng thái" trong drawer).
+   * Lựa chọn có thể nằm ở nhiều trang nên không lọc trước ở client: DB chỉ đổi phiếu còn
+   * Chờ duyệt, số còn lại báo "bỏ qua".
+   */
+  const duyetManyMutation = useDuyetPhieuBaoTriMany();
+  const handleDuyetMany = (trangThai: 'da_duyet' | 'khong_duyet') => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    const laDuyet = trangThai === 'da_duyet';
+    confirm({
+      title: t(laDuyet ? 'baoTriSuaChua.bulkDuyetTitle' : 'baoTriSuaChua.bulkTuChoiTitle'),
+      message: t(laDuyet ? 'baoTriSuaChua.bulkDuyetMessage' : 'baoTriSuaChua.bulkTuChoiMessage', {
+        count: ids.length,
+      }),
+      variant: laDuyet ? 'warning' : 'danger',
+      confirmText: CONFIRM_YES(),
+      onConfirm: async () => {
+        const nguoiDung = {
+          id: String(user?.id ?? ''),
+          hoTen: user?.ho_va_ten?.trim() || user?.full_name?.trim() || null,
+        };
+        await duyetManyMutation.mutateAsync({
+          ids,
+          trangThai,
+          duyet: thongTinDuyet('cho_duyet', trangThai, nguoiDung, new Date()),
+        });
+        clearSelection();
+        if (detailItem && ids.includes(detailItem.id)) setDetailItem(null);
+      },
+    });
+  };
+
+  const duyetBulkActions = canAdmin ? (
+    <>
+      <BulkActionButton
+        icon={CheckCircle2}
+        tone="success"
+        label={t('baoTriSuaChua.bulkDuyetAction')}
+        onClick={() => handleDuyetMany('da_duyet')}
+        disabled={duyetManyMutation.isPending}
+      />
+      <BulkActionButton
+        icon={XCircle}
+        tone="danger"
+        label={t('baoTriSuaChua.bulkTuChoiAction')}
+        onClick={() => handleDuyetMany('khong_duyet')}
+        disabled={duyetManyMutation.isPending}
+      />
+    </>
+  ) : null;
+
   return (
     <>
       <div className="flex flex-col flex-1 min-h-0 rounded-xl border border-border bg-card shadow-sm overflow-hidden">
@@ -245,6 +300,7 @@ const TatCaTab: React.FC<Props> = ({ defaultTaiSanId }) => {
           onExport={handleExport}
           showAdd={canCreate}
           canDelete={canDelete}
+          extraBulkActions={duyetBulkActions}
         />
         <div className="flex-1 min-h-0 overflow-auto">
           <PhieuBaoTriTable

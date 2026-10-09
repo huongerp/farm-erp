@@ -118,5 +118,7 @@
   "doiTac.toast.tagDeleteSuccess": "Xóa tag thành công",
   "doiTac.toast.tagUpdateSuccess": "Cập nhật tag thành công",
   "doiTac.service.tagNotFound": "Tag không tồn tại",
-  "doiTac.footerRecords": "bản ghi"
+  "doiTac.footerRecords": "bản ghi",
+  "doiTac.statusChangeManyTitle": "Đổi trạng thái đối tác",
+  "doiTac.toast.statusManySuccess": "Đã cập nhật trạng thái {{count}} đối tác"
 }

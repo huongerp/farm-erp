@@ -18,12 +18,13 @@ import {
   updateDoiTac,
   deleteDoiTac,
   deleteDoiTacMany,
+  updateDoiTacStatusMany,
   getDoiTacPage,
   getDoiTacTomTat,
 } from '../services/doi-tac-service';
 import type { DoiTacFormValues } from '../core/schema';
 import type { NhomDoiTacFormValues } from '../services/doi-tac-service';
-import type { LoaiDoiTac } from '../core/types';
+import type { LoaiDoiTac, TrangThaiDoiTac } from '../core/types';
 import i18n from '../../../../lib/i18n';
 import { DOI_TAC_REF_QUERY_KEY } from '../../../../lib/hooks/use-ref-queries';
 import { invalidateRefCache } from '../../../../lib/ref-cache';
@@ -257,6 +258,20 @@ export const useDeleteDoiTacMany = () => {
       qc.invalidateQueries({ queryKey: DOI_TAC_REF_QUERY_KEY });
       invalidateRefCache('doiTac');
       toast.success(i18n.t('doiTac.toast.deleteSuccess'));
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+};
+
+export const useUpdateDoiTacStatusMany = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ ids, status }: { ids: string[]; status: TrangThaiDoiTac }) => updateDoiTacStatusMany(ids, status),
+    onSuccess: (_d, { ids }) => {
+      qc.invalidateQueries({ queryKey: QUERY_KEY_DOI_TAC });
+      qc.invalidateQueries({ queryKey: DOI_TAC_REF_QUERY_KEY });
+      invalidateRefCache('doiTac');
+      toast.success(i18n.t('doiTac.toast.statusManySuccess', { count: ids.length }));
     },
     onError: (err: Error) => toast.error(err.message),
   });

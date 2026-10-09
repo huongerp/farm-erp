@@ -415,6 +415,28 @@ export async function updatePhieuChiPhiDb(
   return rowToPhieu(updated as DbPhieuRow);
 }
 
+/**
+ * Duyệt / không duyệt hàng loạt — một lệnh UPDATE, chỉ ăn vào phiếu còn Chờ duyệt
+ * (phiếu đã xử lý giữ nguyên người duyệt cũ). Không đụng ghi_chu. Trigger
+ * `sync_ten_trang_thai` tự điền tên trạng thái. Trả số phiếu đã đổi thật.
+ */
+export async function duyetPhieuChiPhiManyDb(
+  ids: string[],
+  trangThai: Exclude<TrangThaiPhieu, 'cho_duyet'>,
+  duyet: ThongTinDuyet | null
+): Promise<number> {
+  const numIds = ids.map((x) => parseInt(x, 10)).filter((n) => !Number.isNaN(n));
+  if (numIds.length === 0) return 0;
+  const { data, error } = await db
+    .from(TABLE_PHIEU)
+    .update({ id_trang_thai: TRANG_THAI_TO_ID[trangThai], ...duyetPayload(duyet) })
+    .in('id', numIds)
+    .eq('id_trang_thai', TRANG_THAI_TO_ID.cho_duyet)
+    .select('id');
+  if (error) throwDbError(error);
+  return data?.length ?? 0;
+}
+
 export async function deletePhieuChiPhiDb(ids: string[]): Promise<void> {
   const numIds = ids.map((x) => parseInt(x, 10)).filter((n) => !Number.isNaN(n));
   if (numIds.length === 0) return;

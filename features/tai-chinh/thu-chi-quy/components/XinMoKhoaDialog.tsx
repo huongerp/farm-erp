@@ -8,6 +8,8 @@ import { BTN_CANCEL } from '../../../../lib/button-labels';
 
 interface Props {
   soPhieu: string;
+  /** Tiêu đề thay thế — dùng cho xin mở hàng loạt (một lý do chung cho nhiều phiếu). */
+  title?: string;
   isPending: boolean;
   onClose: () => void;
   onConfirm: (lyDo: string) => void;
@@ -18,7 +20,7 @@ interface Props {
  * thì họ chỉ thấy "ai đó xin mở phiếu nào đó" và sẽ duyệt bừa.
  * Chỉ mount khi đang mở (cha render có điều kiện) nên state tự sạch mỗi lần mở lại.
  */
-const XinMoKhoaDialog: React.FC<Props> = ({ soPhieu, isPending, onClose, onConfirm }) => {
+const XinMoKhoaDialog: React.FC<Props> = ({ soPhieu, title, isPending, onClose, onConfirm }) => {
   const { t } = useTranslation();
   const [lyDo, setLyDo] = useState('');
   const [touched, setTouched] = useState(false);
@@ -56,7 +58,7 @@ const XinMoKhoaDialog: React.FC<Props> = ({ soPhieu, isPending, onClose, onConfi
                 <Unlock size={18} />
               </div>
               <h3 className="text-lg font-semibold text-foreground">
-                {t('thuChiQuy.moKhoa.xinMoTitle', { soPhieu })}
+                {title ?? t('thuChiQuy.moKhoa.xinMoTitle', { soPhieu })}
               </h3>
             </div>
             <button

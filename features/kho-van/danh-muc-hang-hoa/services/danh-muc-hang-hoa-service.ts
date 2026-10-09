@@ -184,3 +184,17 @@ export const deleteDanhMucHangHoaMany = async (ids: string[]): Promise<void> => 
   const { error } = await db.from(TABLE).delete().in('id', idNums);
   if (error) throwDbError(error);
 };
+
+/** Kích hoạt / ngừng nhiều danh mục — một lệnh UPDATE chỉ chạm cột trạng thái. */
+export const updateDanhMucHangHoaStatusMany = async (
+  ids: string[],
+  status: DanhMucHangHoa['trang_thai']
+): Promise<void> => {
+  const idNums = ids.map(Number).filter((n) => !Number.isNaN(n));
+  if (idNums.length === 0) return;
+  const { error } = await db
+    .from(TABLE)
+    .update({ trang_thai: status, tg_cap_nhat: new Date().toISOString() })
+    .in('id', idNums);
+  if (error) throwDbError(error);
+};

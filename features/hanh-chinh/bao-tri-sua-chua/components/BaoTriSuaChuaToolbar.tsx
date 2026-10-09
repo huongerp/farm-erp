@@ -28,6 +28,8 @@ interface Props {
   onExport: () => void;
   showAdd?: boolean;
   canDelete?: boolean;
+  /** Nút hàng loạt thêm (Duyệt / Không duyệt), đặt sau nút Xuất. */
+  extraBulkActions?: React.ReactNode;
 }
 
 /** Desktop: nhóm lọc ít dùng luôn nằm trong nút Filter (MobileFilterSheet vẫn đủ nhóm). */
@@ -40,6 +42,7 @@ const BaoTriSuaChuaToolbar: React.FC<Props> = ({
   onExport,
   showAdd = true,
   canDelete = true,
+  extraBulkActions,
 }) => {
   const { t } = useTranslation();
   const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useBaoTriSuaChuaStore);
@@ -286,7 +289,12 @@ const BaoTriSuaChuaToolbar: React.FC<Props> = ({
       onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
       actions={renderActionsWithExport}
-      bulkActions={bulkExport}
+      bulkActions={
+        <>
+          {bulkExport}
+          {extraBulkActions}
+        </>
+      }
       searchTrailing={searchTrailingExport}
       filters={<ResponsiveFilterChips items={filterItems} luonVaoFilter={LUON_VAO_FILTER} />}
       filterGroups={filterGroups}

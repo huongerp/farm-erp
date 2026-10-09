@@ -13,7 +13,7 @@ import DoiTacDetail from './components/DoiTacDetail';
 import DanhMucTab from './components/DanhMucTab';
 import TagTab from './components/TagTab';
 import NhomFormDrawer from './components/NhomFormDrawer';
-import { useDoiTacPage, useDoiTacTomTat, useNhomDoiTacList, useTagList, useDeleteDoiTac, useDeleteDoiTacMany, useCreateNhomDoiTac } from './hooks/use-doi-tac';
+import { useDoiTacPage, useDoiTacTomTat, useNhomDoiTacList, useTagList, useDeleteDoiTac, useDeleteDoiTacMany, useCreateNhomDoiTac, useUpdateDoiTacStatusMany } from './hooks/use-doi-tac';
 import type { LoaiDoiTac, NhomDoiTac } from './core/types';
 import type { NhomDoiTacFormValues } from './services/doi-tac-service';
 import { useDoiTacStore } from './store/useDoiTacStore';
@@ -21,7 +21,8 @@ import { useConfirmStore } from '../../../store/useConfirmStore';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getPhieuKhoByDoiTac } from '../phieu-kho/services/phieu-kho-service';
 import { useDeletePhieuKho } from '../phieu-kho/hooks/use-phieu-kho';
-import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../lib/button-labels';
+import { CONFIRM_DELETE, CONFIRM_DELETE_ALL, CONFIRM_YES } from '../../../lib/button-labels';
+import { TRANG_THAI_DOI_TAC } from './core/types';
 import type { DoiTac } from './core/types';
 import type { PhieuKho } from '../phieu-kho/core/types';
 
@@ -118,6 +119,7 @@ const DanhSachDoiTacPage: React.FC = () => {
   }, [activeTab, tomTatTheoTab]);
   const deleteMutation = useDeleteDoiTac();
   const deleteManyMutation = useDeleteDoiTacMany();
+  const statusManyMutation = useUpdateDoiTacStatusMany();
 
   const { data: phieuKhoList = [], isLoading: phieuKhoLoading } = useQuery({
     queryKey: ['phieuKhoByDoiTac', viewingItem?.id, viewingItem?.loai_doi_tac],
@@ -205,6 +207,27 @@ const DanhSachDoiTacPage: React.FC = () => {
     });
   };
 
+  const handleStatusChangeMany = (status: 0 | 1) => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    confirm({
+      title: t('doiTac.statusChangeManyTitle'),
+      message: t('common.statusChangeManyConfirm', {
+        count: ids.length,
+        status: t(status === 1 ? 'common.activeStatus' : 'common.inactiveStatus'),
+      }),
+      variant: 'warning',
+      confirmText: CONFIRM_YES(),
+      onConfirm: async () => {
+        await statusManyMutation.mutateAsync({
+          ids,
+          status: status === 1 ? TRANG_THAI_DOI_TAC.DANG_HOAT_DONG : TRANG_THAI_DOI_TAC.NGUNG_HOAT_DONG,
+        });
+        clearSelection();
+      },
+    });
+  };
+
   const handleCloseForm = () => {
     setShowForm(false);
     setEditingItem(null);
@@ -268,6 +291,7 @@ const DanhSachDoiTacPage: React.FC = () => {
             selectedCount={selectedIds.size}
             onAdd={handleAdd}
             onDeleteMany={handleDeleteMany}
+            onStatusChangeMany={canUpdate ? handleStatusChangeMany : undefined}
             canCreate={canCreate}
             canDelete={canDelete}
           />

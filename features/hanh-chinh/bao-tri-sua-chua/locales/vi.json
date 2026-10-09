@@ -164,5 +164,14 @@
   "baoTriSuaChua.stats.loadError": "Có lỗi khi tải dữ liệu thống kê.",
   "baoTriSuaChua.stats.actions": "Thao tác",
   "baoTriSuaChua.stats.exportReport": "Xuất báo cáo",
-  "baoTriSuaChua.stats.printReport": "In báo cáo"
+  "baoTriSuaChua.stats.printReport": "In báo cáo",
+  "baoTriSuaChua.bulkDuyetAction": "Duyệt",
+  "baoTriSuaChua.bulkDuyetTitle": "Duyệt nhiều phiếu?",
+  "baoTriSuaChua.bulkDuyetMessage": "Duyệt các phiếu đang Chờ duyệt trong {{count}} dòng đã chọn. Phiếu đã duyệt / không duyệt sẽ được giữ nguyên.",
+  "baoTriSuaChua.bulkTuChoiAction": "Không duyệt",
+  "baoTriSuaChua.bulkTuChoiTitle": "Không duyệt nhiều phiếu?",
+  "baoTriSuaChua.bulkTuChoiMessage": "Chuyển các phiếu đang Chờ duyệt trong {{count}} dòng đã chọn sang Không duyệt. Phiếu đã xử lý sẽ được giữ nguyên.",
+  "baoTriSuaChua.toast.bulkDuyetSuccess": "Đã duyệt {{count}} phiếu",
+  "baoTriSuaChua.toast.bulkTuChoiSuccess": "Đã chuyển {{count}} phiếu sang Không duyệt",
+  "baoTriSuaChua.toast.bulkBoQua": "Bỏ qua {{count}} phiếu không còn ở trạng thái Chờ duyệt"
 }

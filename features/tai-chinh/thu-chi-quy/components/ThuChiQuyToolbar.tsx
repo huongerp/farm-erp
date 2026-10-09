@@ -39,6 +39,8 @@ interface Props {
   exportLoading?: boolean;
   canCreate?: boolean;
   canDelete?: boolean;
+  /** Nút thao tác hàng loạt (khoá / mở khoá…) hiện khi có dòng được chọn. */
+  bulkActions?: React.ReactNode;
 }
 
 /** Desktop: nhóm lọc ít dùng luôn nằm trong nút Filter (MobileFilterSheet vẫn đủ nhóm). */
@@ -57,6 +59,7 @@ const ThuChiQuyToolbar: React.FC<Props> = ({
   exportLoading = false,
   canCreate = true,
   canDelete = true,
+  bulkActions,
 }) => {
   const { t } = useTranslation();
   const { searchInput, setSearchInput } = useGenericToolbarSearch(useThuChiQuyStore);
@@ -288,6 +291,7 @@ const ThuChiQuyToolbar: React.FC<Props> = ({
       activeFilterCount={activeFilterCount}
       onClearAllFilters={clearAllFilters}
       onDeleteMany={canDelete ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
+      bulkActions={bulkActions}
       columns={columns}
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}

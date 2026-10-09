@@ -9,9 +9,11 @@ import {
   createPhieuBaoTri,
   updatePhieuBaoTri,
   getPhieuBaoTriPage,
+  duyetPhieuBaoTriMany,
   type GetPhieuBaoTriListParams,
 } from '../services/bao-tri-sua-chua-service';
-import type { PhieuBaoTriSuaChua, PhieuBaoTriSuaChuaCreate } from '../core/types';
+import type { PhieuBaoTriSuaChua, PhieuBaoTriSuaChuaCreate, TrangThaiPhieu } from '../core/types';
+import type { ThongTinDuyet } from '../core/duyet';
 
 const QUERY_KEY = ['phieuBaoTriSuaChua'] as const;
 
@@ -89,6 +91,33 @@ export const useUpdatePhieuBaoTri = (onSuccess?: (data?: PhieuBaoTriSuaChua) => 
       queryClient.invalidateQueries({ queryKey: QUERY_KEY });
       toast.success(i18n.t('baoTriSuaChua.toast.updateSuccess'));
       if (onSuccess) onSuccess(data);
+    },
+    onError: (err: unknown) => toast.error((err as Error).message),
+  });
+};
+
+/** Duyệt / không duyệt hàng loạt; toast báo số phiếu đổi thật và số bị bỏ qua (không còn Chờ duyệt). */
+export const useDuyetPhieuBaoTriMany = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      ids,
+      trangThai,
+      duyet,
+    }: {
+      ids: string[];
+      trangThai: Exclude<TrangThaiPhieu, 'cho_duyet'>;
+      duyet: ThongTinDuyet | null;
+    }) => duyetPhieuBaoTriMany(ids, trangThai, duyet),
+    onSuccess: (count, { ids, trangThai }) => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+      toast.success(
+        i18n.t(trangThai === 'da_duyet' ? 'baoTriSuaChua.toast.bulkDuyetSuccess' : 'baoTriSuaChua.toast.bulkTuChoiSuccess', {
+          count,
+        })
+      );
+      const boQua = ids.length - count;
+      if (boQua > 0) toast.warning(i18n.t('baoTriSuaChua.toast.bulkBoQua', { count: boQua }));
     },
     onError: (err: unknown) => toast.error((err as Error).message),
   });

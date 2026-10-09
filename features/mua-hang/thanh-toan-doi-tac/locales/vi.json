@@ -122,5 +122,10 @@
   "thanhToanDoiTac.preview.downloadXlsx": "Tải XLSX",
   "thanhToanDoiTac.preview.printedAt": "In lúc",
   "thanhToanDoiTac.preview.notFound": "Không tìm thấy phiếu.",
-  "thanhToanDoiTac.preview.loadError": "Lỗi tải phiếu."
+  "thanhToanDoiTac.preview.loadError": "Lỗi tải phiếu.",
+  "thanhToanDoiTac.bulk.daThanhToanTitle": "Đánh dấu đã thanh toán?",
+  "thanhToanDoiTac.bulk.huyTitle": "Huỷ nhiều phiếu thanh toán?",
+  "thanhToanDoiTac.bulk.message": "Chuyển các phiếu chưa xử lý xong trong {{count}} dòng đã chọn sang “{{status}}”. Phiếu đã thanh toán / đã huỷ được giữ nguyên; phiếu chưa có ngày xử lý sẽ lấy ngày hôm nay.",
+  "thanhToanDoiTac.bulk.toast.success": "Đã chuyển {{count}} phiếu sang “{{status}}”",
+  "thanhToanDoiTac.bulk.toast.boQua": "Bỏ qua {{count}} phiếu đã ở trạng thái kết thúc"
 }

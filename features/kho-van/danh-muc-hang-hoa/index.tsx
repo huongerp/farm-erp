@@ -6,10 +6,11 @@ import DanhMucHangHoaToolbar from './components/DanhMucHangHoaToolbar';
 import DanhMucHangHoaList from './components/DanhMucHangHoaList';
 import DanhMucHangHoaForm from './components/DanhMucHangHoaForm';
 import DanhMucHangHoaDetail from './components/DanhMucHangHoaDetail';
-import { useDanhMucHangHoaList, useDeleteDanhMucHangHoa, useDeleteDanhMucHangHoaMany } from './hooks/use-danh-muc-hang-hoa';
+import { useDanhMucHangHoaList, useDeleteDanhMucHangHoa, useDeleteDanhMucHangHoaMany, useUpdateDanhMucHangHoaStatusMany } from './hooks/use-danh-muc-hang-hoa';
 import { useDanhMucHangHoaStore, DEFAULT_COLUMNS } from './store/useDanhMucHangHoaStore';
 import { useConfirmStore } from '../../../store/useConfirmStore';
-import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../lib/button-labels';
+import { CONFIRM_DELETE, CONFIRM_DELETE_ALL, CONFIRM_YES } from '../../../lib/button-labels';
+import { TRANG_THAI_HOAT_DONG } from '../../../lib/constants';
 import { useListWithFilter } from '../../../lib/hooks';
 import type { DanhMucHangHoa } from './core/types';
 import { createListSearchMatcher } from '../../../lib/list-search-matcher';
@@ -135,6 +136,28 @@ const DanhMucHangHoaPage: React.FC = () => {
     });
   };
 
+  const statusManyMutation = useUpdateDanhMucHangHoaStatusMany();
+  const handleStatusChangeMany = (status: 0 | 1) => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    confirm({
+      title: t('danhMucHangHoa.statusChangeManyTitle'),
+      message: t('common.statusChangeManyConfirm', {
+        count: ids.length,
+        status: t(status === 1 ? 'common.activeStatus' : 'common.inactiveStatus'),
+      }),
+      variant: 'warning',
+      confirmText: CONFIRM_YES(),
+      onConfirm: async () => {
+        await statusManyMutation.mutateAsync({
+          ids,
+          status: status === 1 ? TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG : TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG,
+        });
+        clearSelection();
+      },
+    });
+  };
+
   const handleCloseForm = () => {
     setShowForm(false);
     setEditingItem(null);
@@ -149,6 +172,7 @@ const DanhMucHangHoaPage: React.FC = () => {
           selectedCount={selectedIds.size}
           onAdd={handleAdd}
           onDeleteMany={handleDeleteMany}
+          onStatusChangeMany={canUpdate ? handleStatusChangeMany : undefined}
           canCreate={canCreate}
           canDelete={canDelete}
         />

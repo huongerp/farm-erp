@@ -19,6 +19,8 @@ interface Props {
   selectedCount: number;
   onAdd: () => void;
   onDeleteMany: () => void;
+  /** Kích hoạt (1) / ngừng (0) các dòng đã chọn. */
+  onStatusChangeMany?: (status: 0 | 1) => void;
   canCreate?: boolean;
   canDelete?: boolean;
 }
@@ -29,6 +31,7 @@ const DoiTacToolbar: React.FC<Props> = ({
   selectedCount,
   onAdd,
   onDeleteMany,
+  onStatusChangeMany,
   canCreate = true,
   canDelete = true,
 }) => {
@@ -141,6 +144,7 @@ const DoiTacToolbar: React.FC<Props> = ({
     <GenericToolbar
       selectedCount={selectedCount}
       onDeleteMany={canDelete ? onDeleteMany : undefined}
+      onStatusChangeMany={onStatusChangeMany}
       searchTerm={searchInput}
       onSearchChange={setSearchInput}
       onClearSelection={clearSelection}

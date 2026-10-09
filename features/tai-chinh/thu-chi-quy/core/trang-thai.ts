@@ -87,6 +87,71 @@ export function canTuChoiMoThuChiQuy(item: PhieuQuyTrangThai, laCapCao: boolean)
   return laCapCao && item.trang_thai === TRANG_THAI_THU_CHI_QUY.CHO_MO;
 }
 
+/* ------------------------------------------------------------------ */
+/* Thao tác hàng loạt                                                  */
+/* ------------------------------------------------------------------ */
+
+export type HanhDongBulkThuChiQuy = 'khoa' | 'mo' | 'tu_choi_mo' | 'xin_mo' | 'xoa';
+
+/**
+ * Trạng thái nguồn hợp lệ cho từng hành động — service dùng làm điều kiện
+ * `.in('trang_thai', …)` của lệnh UPDATE, nên phiếu vừa bị người khác đổi trạng
+ * thái giữa lúc chọn và lúc bấm sẽ không bị ghi đè.
+ */
+export const TRANG_THAI_NGUON_BULK: Record<Exclude<HanhDongBulkThuChiQuy, 'xoa'>, TrangThaiThuChiQuy[]> = {
+  khoa: [TRANG_THAI_THU_CHI_QUY.MO],
+  mo: [TRANG_THAI_THU_CHI_QUY.KHOA, TRANG_THAI_THU_CHI_QUY.CHO_MO],
+  tu_choi_mo: [TRANG_THAI_THU_CHI_QUY.CHO_MO],
+  xin_mo: [TRANG_THAI_THU_CHI_QUY.KHOA],
+};
+
+export interface NguCanhBulkThuChiQuy {
+  laCapCao: boolean;
+  userId: string | null | undefined;
+  /** Quyền xoá của module — chỉ dùng cho hành động `xoa`. */
+  coQuyenXoa?: boolean;
+}
+
+/**
+ * Lọc các phiếu đã chọn xuống những phiếu người dùng thật sự được làm `hanhDong`.
+ *
+ * Nhận `ids` (lựa chọn giữ qua nhiều trang) cùng `rows` tra từ DB theo đúng các id
+ * đó. Id không có trong `rows` (đã bị xoá / ngoài phạm vi) bị BỎ QUA — fail-closed,
+ * không mặc định cho phép như trước.
+ */
+export function phanLoaiBulkThuChiQuy<T extends PhieuQuyTrangThai & { id: string }>(
+  ids: readonly string[],
+  rows: readonly T[],
+  hanhDong: HanhDongBulkThuChiQuy,
+  ctx: NguCanhBulkThuChiQuy
+): { hopLe: T[]; boQua: number } {
+  const byId = new Map(rows.map((r) => [String(r.id), r]));
+  const duocPhep = (row: T): boolean => {
+    switch (hanhDong) {
+      case 'khoa':
+        return canKhoaThuChiQuy(row, ctx.laCapCao, ctx.userId);
+      case 'mo':
+        return canDuyetMoThuChiQuy(row, ctx.laCapCao);
+      case 'tu_choi_mo':
+        return canTuChoiMoThuChiQuy(row, ctx.laCapCao);
+      case 'xin_mo':
+        return canXinMoThuChiQuy(row, ctx.laCapCao, ctx.userId);
+      case 'xoa':
+        return canMutateThuChiQuy(row, !!ctx.coQuyenXoa, ctx.laCapCao);
+    }
+  };
+  const hopLe: T[] = [];
+  const daXet = new Set<string>();
+  for (const id of ids) {
+    const key = String(id);
+    if (daXet.has(key)) continue;
+    daXet.add(key);
+    const row = byId.get(key);
+    if (row && duocPhep(row)) hopLe.push(row);
+  }
+  return { hopLe, boQua: daXet.size - hopLe.length };
+}
+
 /** Khoá i18n nhãn trạng thái (thuChiQuy.trangThai.*). */
 export function trangThaiQuyToI18nKey(trangThai: string): string {
   switch (trangThai) {

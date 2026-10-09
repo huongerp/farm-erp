@@ -481,3 +481,14 @@ export const deleteDoiTacMany = async (ids: string[]): Promise<void> => {
   const { error } = await db.from(TABLE_DOI_TAC).delete().in('id', numIds);
   if (error) throwDbError(error);
 };
+
+/** Kích hoạt / ngừng nhiều đối tác — một lệnh UPDATE chỉ chạm cột trạng thái. */
+export const updateDoiTacStatusMany = async (ids: string[], status: TrangThaiDoiTac): Promise<void> => {
+  const numIds = ids.map(Number).filter((n) => !Number.isNaN(n));
+  if (numIds.length === 0) return;
+  const { error } = await db
+    .from(TABLE_DOI_TAC)
+    .update({ trang_thai: status, tg_cap_nhat: new Date().toISOString() })
+    .in('id', numIds);
+  if (error) throwDbError(error);
+};

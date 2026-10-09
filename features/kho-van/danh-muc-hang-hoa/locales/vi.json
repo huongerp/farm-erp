@@ -47,5 +47,7 @@
   "danhMucHangHoa.toast.deleteSuccess": "Xóa thành công",
   "danhMucHangHoa.service.notFound": "Danh mục không tồn tại",
   "danhMucHangHoa.service.hasChildren": "Không thể xóa danh mục đang có danh mục con.",
-  "danhMucHangHoa.footerRecords": "bản ghi"
+  "danhMucHangHoa.footerRecords": "bản ghi",
+  "danhMucHangHoa.statusChangeManyTitle": "Đổi trạng thái danh mục",
+  "danhMucHangHoa.toast.statusManySuccess": "Đã cập nhật trạng thái {{count}} danh mục"
 }

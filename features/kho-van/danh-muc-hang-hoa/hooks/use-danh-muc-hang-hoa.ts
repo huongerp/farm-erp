@@ -8,8 +8,10 @@ import {
   updateDanhMucHangHoa,
   deleteDanhMucHangHoa,
   deleteDanhMucHangHoaMany,
+  updateDanhMucHangHoaStatusMany,
 } from '../services/danh-muc-hang-hoa-service';
 import type { DanhMucHangHoaFormValues } from '../core/schema';
+import type { DanhMucHangHoa } from '../core/types';
 import i18n from '../../../../lib/i18n';
 
 const QUERY_KEY = ['danhMucHangHoa'] as const;
@@ -85,6 +87,19 @@ export const useDeleteDanhMucHangHoaMany = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY });
       toast.success(i18n.t('danhMucHangHoa.toast.deleteSuccess'));
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+};
+
+export const useUpdateDanhMucHangHoaStatusMany = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ ids, status }: { ids: string[]; status: DanhMucHangHoa['trang_thai'] }) =>
+      updateDanhMucHangHoaStatusMany(ids, status),
+    onSuccess: (_d, { ids }) => {
+      qc.invalidateQueries({ queryKey: QUERY_KEY });
+      toast.success(i18n.t('danhMucHangHoa.toast.statusManySuccess', { count: ids.length }));
     },
     onError: (err: Error) => toast.error(err.message),
   });

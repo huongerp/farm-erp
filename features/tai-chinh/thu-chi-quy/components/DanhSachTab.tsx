@@ -2,7 +2,8 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import { Info } from 'lucide-react';
+import { Info, Lock, Unlock, XCircle } from 'lucide-react';
+import BulkActionButton from '../../../../components/shared/BulkActionButton';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import LazyExportDialog from '../../../../components/shared/LazyExportDialog';
 import LazyImportDialog from '../../../../components/shared/LazyImportDialog';
@@ -24,15 +25,19 @@ import { useThuChiQuyViewScope } from '../hooks/use-thu-chi-quy-view-scope';
 import {
   useDeleteThuChiQuy,
   useKhoaThuChiQuy,
+  useKhoaThuChiQuyMany,
   useQuySoDu,
   useThuChiQuyPage,
   useXinMoThuChiQuy,
+  useXinMoThuChiQuyMany,
   useXuLyMoThuChiQuy,
+  useXuLyMoThuChiQuyMany,
 } from '../hooks/use-thu-chi-quy';
+import { phanLoaiBulkThuChiQuy, type HanhDongBulkThuChiQuy } from '../core/trang-thai';
 import { useThuChiQuyPermissions } from '../hooks/use-thu-chi-quy-permissions';
 import { useAuthStore } from '../../../../store/useStore';
 import { buildThuChiQuyListServerQuery } from '../services/thu-chi-quy-list-query';
-import { getThuChiQuyAll } from '../services/thu-chi-quy-service';
+import { getThuChiQuyAll, getThuChiQuyTrangThaiByIds } from '../services/thu-chi-quy-service';
 import { useThuChiQuyImport } from '../hooks/use-thu-chi-quy-import';
 import { nguonChungTuToI18nKey } from '../core/constants';
 import type { ThuChiQuy, ThuChiQuyRow } from '../core/types';
@@ -64,6 +69,9 @@ const DanhSachTab: React.FC = () => {
   const [exportRows, setExportRows] = useState<ThuChiQuyRow[]>([]);
   const [exportLoading, setExportLoading] = useState(false);
   const [xinMoItem, setXinMoItem] = useState<ThuChiQuy | null>(null);
+  /** Id các phiếu đang chờ nhập lý do xin mở hàng loạt (null = dialog đóng). */
+  const [xinMoBulkIds, setXinMoBulkIds] = useState<string[] | null>(null);
+  const [bulkChecking, setBulkChecking] = useState(false);
 
   useEffect(() => () => resetState(), [resetState]);
 
@@ -122,6 +130,11 @@ const DanhSachTab: React.FC = () => {
   const xuLyMoMutation = useXuLyMoThuChiQuy();
   const trangThaiPending =
     khoaMutation.isPending || xinMoMutation.isPending || xuLyMoMutation.isPending;
+  const khoaManyMutation = useKhoaThuChiQuyMany();
+  const xinMoManyMutation = useXinMoThuChiQuyMany(() => setXinMoBulkIds(null));
+  const xuLyMoManyMutation = useXuLyMoThuChiQuyMany();
+  const bulkBusy =
+    bulkChecking || khoaManyMutation.isPending || xinMoManyMutation.isPending || xuLyMoManyMutation.isPending;
 
   const hasOtherFilter =
     filters.loai.length > 0 ||
@@ -189,32 +202,138 @@ const DanhSachTab: React.FC = () => {
   };
 
   /**
+   * Lựa chọn giữ qua nhiều trang ⇒ tra trạng thái + người tạo của ĐÚNG các id đã
+   * chọn từ DB rồi mới xét quyền (luật ở `phanLoaiBulkThuChiQuy`). Id không tra
+   * được bị bỏ qua thay vì mặc định cho phép.
+   */
+  const locPhieuHopLe = async (
+    ids: string[],
+    hanhDong: HanhDongBulkThuChiQuy
+  ): Promise<{ ids: string[]; boQua: number } | null> => {
+    if (ids.length === 0) return null;
+    setBulkChecking(true);
+    try {
+      const rowsTra = await getThuChiQuyTrangThaiByIds(ids);
+      const { hopLe, boQua } = phanLoaiBulkThuChiQuy(ids, rowsTra, hanhDong, {
+        laCapCao: perms.laCapCao,
+        userId: user?.id ?? null,
+        coQuyenXoa: canDelete,
+      });
+      return { ids: hopLe.map((r) => r.id), boQua };
+    } catch (e) {
+      toast.error((e as Error).message);
+      return null;
+    } finally {
+      setBulkChecking(false);
+    }
+  };
+
+  /** Câu nhắc "đã bỏ qua N phiếu" nối vào cuối nội dung confirm. */
+  const ghiChuBoQua = (boQua: number) => (boQua > 0 ? ` ${t('thuChiQuy.bulk.boQuaNote', { count: boQua })}` : '');
+
+  /**
    * Xoá hàng loạt chỉ chạy trên các phiếu người dùng thật sự được xoá — phiếu đã
    * khoá bị loại ngay ở đây, báo rõ đã bỏ bao nhiêu dòng thay vì lặng lẽ xoá thiếu.
    */
-  const handleDeleteMany = (ids: string[]) => {
-    if (ids.length === 0) return;
-    const byId = new Map(rows.map((r) => [r.id, r]));
-    const allowed = ids.filter((id) => {
-      const row = byId.get(id);
-      return row ? perms.canDeleteRow(row) : true;
-    });
-    const skipped = ids.length - allowed.length;
-    if (allowed.length === 0) {
+  const handleDeleteMany = async (ids: string[]) => {
+    const kq = await locPhieuHopLe(ids, 'xoa');
+    if (!kq) return;
+    if (kq.ids.length === 0) {
       toast.error(t('thuChiQuy.toast.lockedAllBulkDelete'));
       return;
     }
     confirm({
       title: t('thuChiQuy.bulkDeleteTitle'),
-      message: t('thuChiQuy.bulkDeleteMessage', { count: allowed.length }),
+      message: t('thuChiQuy.bulkDeleteMessage', { count: kq.ids.length }),
       variant: 'danger',
       confirmText: CONFIRM_DELETE_ALL(),
       onConfirm: async () => {
-        if (skipped > 0) toast.warning(t('thuChiQuy.toast.lockedBulkDelete', { count: skipped }));
-        deleteMutation.mutate(allowed, { onSuccess: () => clearSelection() });
+        if (kq.boQua > 0) toast.warning(t('thuChiQuy.toast.lockedBulkDelete', { count: kq.boQua }));
+        deleteMutation.mutate(kq.ids, { onSuccess: () => clearSelection() });
       },
     });
   };
+
+  /** Khoá / mở khoá / từ chối mở hàng loạt — cùng một khuôn: lọc → confirm → một lệnh UPDATE. */
+  const handleTrangThaiMany = async (hanhDong: 'khoa' | 'mo' | 'tu_choi_mo') => {
+    const kq = await locPhieuHopLe(Array.from(selectedIds), hanhDong);
+    if (!kq) return;
+    if (kq.ids.length === 0) {
+      toast.error(t(`thuChiQuy.bulk.${hanhDong}.noneAllowed`));
+      return;
+    }
+    confirm({
+      title: t(`thuChiQuy.bulk.${hanhDong}.title`),
+      message: t(`thuChiQuy.bulk.${hanhDong}.message`, { count: kq.ids.length }) + ghiChuBoQua(kq.boQua),
+      variant: hanhDong === 'mo' ? 'warning' : hanhDong === 'tu_choi_mo' ? 'danger' : 'warning',
+      confirmText: CONFIRM_YES(),
+      onConfirm: async () => {
+        if (hanhDong === 'khoa') {
+          await khoaManyMutation.mutateAsync(kq.ids);
+        } else {
+          await xuLyMoManyMutation.mutateAsync({
+            ids: kq.ids,
+            extra: {
+              duyet: hanhDong === 'mo',
+              idNguoiXuLy: user?.id ?? null,
+              tenNguoiXuLy: user?.ho_va_ten || user?.full_name || null,
+            },
+          });
+        }
+        clearSelection();
+      },
+    });
+  };
+
+  /** Xin mở hàng loạt: lọc phiếu hợp lệ trước, rồi mở dialog nhập MỘT lý do chung. */
+  const handleXinMoMany = async () => {
+    const kq = await locPhieuHopLe(Array.from(selectedIds), 'xin_mo');
+    if (!kq) return;
+    if (kq.ids.length === 0) {
+      toast.error(t('thuChiQuy.bulk.xin_mo.noneAllowed'));
+      return;
+    }
+    if (kq.boQua > 0) toast.warning(t('thuChiQuy.bulk.boQuaNote', { count: kq.boQua }));
+    setXinMoBulkIds(kq.ids);
+  };
+
+  const bulkActions = (
+    <>
+      <BulkActionButton
+        icon={Lock}
+        tone="warning"
+        label={t('thuChiQuy.bulk.khoa.action')}
+        onClick={() => handleTrangThaiMany('khoa')}
+        disabled={bulkBusy}
+      />
+      {perms.laCapCao ? (
+        <>
+          <BulkActionButton
+            icon={Unlock}
+            tone="success"
+            label={t('thuChiQuy.bulk.mo.action')}
+            onClick={() => handleTrangThaiMany('mo')}
+            disabled={bulkBusy}
+          />
+          <BulkActionButton
+            icon={XCircle}
+            tone="danger"
+            label={t('thuChiQuy.bulk.tu_choi_mo.action')}
+            onClick={() => handleTrangThaiMany('tu_choi_mo')}
+            disabled={bulkBusy}
+          />
+        </>
+      ) : (
+        <BulkActionButton
+          icon={Unlock}
+          tone="muted"
+          label={t('thuChiQuy.bulk.xin_mo.action')}
+          onClick={handleXinMoMany}
+          disabled={bulkBusy}
+        />
+      )}
+    </>
+  );
 
   /* --- Khoá / mở khoá ------------------------------------------------- */
 
@@ -326,6 +445,7 @@ const DanhSachTab: React.FC = () => {
         onImport={canCreate ? importer.openImport : undefined}
         canCreate={canCreate}
         canDelete={canDelete}
+        bulkActions={bulkActions}
       />
 
       {hasOtherFilter && (
@@ -400,6 +520,30 @@ const DanhSachTab: React.FC = () => {
                   tenNguoiYeuCau: user?.ho_va_ten || user?.full_name || null,
                 },
               })
+            }
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {xinMoBulkIds && (
+          <XinMoKhoaDialog
+            soPhieu=""
+            title={t('thuChiQuy.bulk.xin_mo.title', { count: xinMoBulkIds.length })}
+            isPending={xinMoManyMutation.isPending}
+            onClose={() => setXinMoBulkIds(null)}
+            onConfirm={(lyDo) =>
+              xinMoManyMutation.mutate(
+                {
+                  ids: xinMoBulkIds,
+                  extra: {
+                    lyDo,
+                    idNguoiYeuCau: user?.id ?? null,
+                    tenNguoiYeuCau: user?.ho_va_ten || user?.full_name || null,
+                  },
+                },
+                { onSuccess: () => clearSelection() }
+              )
             }
           />
         )}

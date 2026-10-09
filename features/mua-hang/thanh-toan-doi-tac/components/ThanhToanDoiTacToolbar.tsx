@@ -23,6 +23,8 @@ interface Props {
   selectedCount: number;
   onAdd: () => void;
   onDeleteMany: () => void;
+  /** Nút thao tác hàng loạt (Đã thanh toán / Huỷ) hiện khi có dòng được chọn. */
+  bulkActions?: React.ReactNode;
   canCreate?: boolean;
   canDelete?: boolean;
 }
@@ -35,6 +37,7 @@ const ThanhToanDoiTacToolbar: React.FC<Props> = ({
   selectedCount,
   onAdd,
   onDeleteMany,
+  bulkActions,
   canCreate = true,
   canDelete = true,
 }) => {
@@ -169,6 +172,7 @@ const ThanhToanDoiTacToolbar: React.FC<Props> = ({
     <GenericToolbar
       selectedCount={selectedCount}
       onDeleteMany={canDelete ? onDeleteMany : undefined}
+      bulkActions={bulkActions}
       searchTerm={searchInput}
       onSearchChange={setSearchInput}
       onClearSelection={clearSelection}

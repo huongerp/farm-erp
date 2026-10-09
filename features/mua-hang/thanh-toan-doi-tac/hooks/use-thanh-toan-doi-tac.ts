@@ -10,6 +10,7 @@ import {
   updateThanhToanDoiTac,
   deleteThanhToanDoiTac,
   deleteThanhToanDoiTacMany,
+  chuyenTrangThaiThanhToanMany,
 } from '../services/thanh-toan-doi-tac-service';
 import type { ThanhToanDoiTacFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
@@ -98,6 +99,31 @@ export const useDeleteThanhToanDoiTacMany = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY });
       toast.success(i18n.t('thanhToanDoiTac.toast.deleteSuccess'));
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+};
+
+/** Đánh dấu Đã thanh toán / Đã huỷ hàng loạt; báo số phiếu bỏ qua (đã ở trạng thái kết thúc). */
+export const useChuyenTrangThaiThanhToanMany = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      ids,
+      status,
+      idsKetThuc,
+      ngayXuLy,
+    }: {
+      ids: string[];
+      status: { id: string; ten: string };
+      idsKetThuc: string[];
+      ngayXuLy: string;
+    }) => chuyenTrangThaiThanhToanMany(ids, status, idsKetThuc, ngayXuLy),
+    onSuccess: (count, { ids, status }) => {
+      qc.invalidateQueries({ queryKey: QUERY_KEY });
+      toast.success(i18n.t('thanhToanDoiTac.bulk.toast.success', { count, status: status.ten }));
+      const boQua = ids.length - count;
+      if (boQua > 0) toast.warning(i18n.t('thanhToanDoiTac.bulk.toast.boQua', { count: boQua }));
     },
     onError: (err: Error) => toast.error(err.message),
   });

@@ -8,10 +8,11 @@
  * sổ chỉ để lấy vài dòng.
  */
 import { db, fetchAllRows, fetchTablePage, throwDbError, type PaginatedTableResult } from '../../../../lib/db';
-import { bulkInsert } from '../../../../lib/import-bulk';
+import { bulkInsert, chunkBy } from '../../../../lib/import-bulk';
 import { postgrestQuotedIlikePattern } from '../../../../lib/postgrest-or-ilike';
 import i18n from '../../../../lib/i18n';
 import { buildSoPhieu, isThuChiNguon } from '../core/constants';
+import { TRANG_THAI_NGUON_BULK } from '../core/trang-thai';
 import { TRANG_THAI_THU_CHI_QUY } from '../core/types';
 import type {
   LoaiThuChi,
@@ -302,8 +303,8 @@ const CHUNG_TU_NGUON: Record<
   don_dat_hang: { table: 'fp_mh_don_dat_hang', cotSo: 'so_po', cotNgay: 'ngay_dat', cotMoTa: 'ten_nha_cung_cap' },
   phieu_de_xuat_vat_tu: { table: 'fp_mh_phieu_de_xuat_vat_tu', cotSo: 'so_phieu', cotNgay: 'ngay', cotMoTa: 'ghi_chu' },
   de_xuat_mua_hang: { table: 'fp_farm_de_xuat_mua_hang', cotSo: 'so_phieu', cotNgay: 'ngay', cotMoTa: 'ghi_chu' },
-  chi_phi_tai_san: { table: 'fp_ts_chi_phi_tai_san', cotSo: 'ma_phieu', cotNgay: 'ngay', cotMoTa: 'ten_tai_san' },
   pt_de_xuat_mua_hang: { table: 'fp_pt_de_xuat_mua_hang', cotSo: 'so_phieu', cotNgay: 'ngay', cotMoTa: 'ghi_chu' },
+  chi_phi_tai_san: { table: 'fp_ts_chi_phi_tai_san', cotSo: 'ma_phieu', cotNgay: 'ngay', cotMoTa: 'ten_tai_san' },
 };
 
 /**
@@ -424,8 +425,8 @@ async function updateTrangThai(id: string, patch: Record<string, unknown>): Prom
 }
 
 /** Chốt phiếu: mo → khoa. Xoá dấu vết yêu cầu mở cũ để lần sau xin lại từ đầu. */
-export async function khoaThuChiQuy(id: string): Promise<ThuChiQuy> {
-  return updateTrangThai(id, {
+function patchKhoa(): Record<string, unknown> {
+  return {
     trang_thai: TRANG_THAI_THU_CHI_QUY.KHOA,
     id_nguoi_yeu_cau_mo: null,
     ten_nguoi_yeu_cau_mo: null,
@@ -434,7 +435,11 @@ export async function khoaThuChiQuy(id: string): Promise<ThuChiQuy> {
     id_nguoi_xu_ly_mo: null,
     ten_nguoi_xu_ly_mo: null,
     tg_xu_ly_mo: null,
-  });
+  };
+}
+
+export async function khoaThuChiQuy(id: string): Promise<ThuChiQuy> {
+  return updateTrangThai(id, patchKhoa());
 }
 
 export interface XinMoThuChiQuyExtra {
@@ -444,11 +449,11 @@ export interface XinMoThuChiQuyExtra {
 }
 
 /** khoa → cho_mo. Lý do bắt buộc (form đã chặn, đây là lưới an toàn cuối). */
-export async function xinMoThuChiQuy(id: string, extra: XinMoThuChiQuyExtra): Promise<ThuChiQuy> {
+function patchXinMo(extra: XinMoThuChiQuyExtra): Record<string, unknown> {
   const lyDo = extra.lyDo.trim();
   if (!lyDo) throw new Error(i18n.t('thuChiQuy.moKhoa.lyDoRequired'));
 
-  return updateTrangThai(id, {
+  return {
     trang_thai: TRANG_THAI_THU_CHI_QUY.CHO_MO,
     id_nguoi_yeu_cau_mo: extra.idNguoiYeuCau ? Number(extra.idNguoiYeuCau) : null,
     ten_nguoi_yeu_cau_mo: extra.tenNguoiYeuCau ?? null,
@@ -457,7 +462,11 @@ export async function xinMoThuChiQuy(id: string, extra: XinMoThuChiQuyExtra): Pr
     id_nguoi_xu_ly_mo: null,
     ten_nguoi_xu_ly_mo: null,
     tg_xu_ly_mo: null,
-  });
+  };
+}
+
+export async function xinMoThuChiQuy(id: string, extra: XinMoThuChiQuyExtra): Promise<ThuChiQuy> {
+  return updateTrangThai(id, patchXinMo(extra));
 }
 
 export interface XuLyMoThuChiQuyExtra {
@@ -468,13 +477,102 @@ export interface XuLyMoThuChiQuyExtra {
 }
 
 /** cho_mo → mo (duyệt) hoặc cho_mo → khoa (từ chối); cấp cao mở thẳng phiếu khoa cũng dùng hàm này. */
-export async function xuLyMoThuChiQuy(id: string, extra: XuLyMoThuChiQuyExtra): Promise<ThuChiQuy> {
-  return updateTrangThai(id, {
+function patchXuLyMo(extra: XuLyMoThuChiQuyExtra): Record<string, unknown> {
+  return {
     trang_thai: extra.duyet ? TRANG_THAI_THU_CHI_QUY.MO : TRANG_THAI_THU_CHI_QUY.KHOA,
     id_nguoi_xu_ly_mo: extra.idNguoiXuLy ? Number(extra.idNguoiXuLy) : null,
     ten_nguoi_xu_ly_mo: extra.tenNguoiXuLy ?? null,
     tg_xu_ly_mo: new Date().toISOString(),
-  });
+  };
+}
+
+export async function xuLyMoThuChiQuy(id: string, extra: XuLyMoThuChiQuyExtra): Promise<ThuChiQuy> {
+  return updateTrangThai(id, patchXuLyMo(extra));
+}
+
+/* ------------------------------------------------------------------ */
+/* Khoá / mở khoá hàng loạt                                            */
+/* ------------------------------------------------------------------ */
+
+/** Lô id cho `.in()` — giữ URL PostgREST ngắn khi chọn nhiều phiếu. */
+const BULK_CHUNK = 200;
+
+export interface ThuChiQuyTrangThaiRow {
+  id: string;
+  so_phieu: string;
+  trang_thai: TrangThaiThuChiQuy;
+  id_nguoi_tao: string | null;
+}
+
+/**
+ * Tra trạng thái + người tạo của đúng các phiếu đã chọn. Lựa chọn giữ qua nhiều
+ * trang nên không thể dựa vào dữ liệu trang đang xem để xét quyền hàng loạt.
+ */
+export async function getThuChiQuyTrangThaiByIds(ids: string[]): Promise<ThuChiQuyTrangThaiRow[]> {
+  const numIds = ids.map(Number).filter((n) => !Number.isNaN(n));
+  const out: ThuChiQuyTrangThaiRow[] = [];
+  for (const chunk of chunkBy(numIds, BULK_CHUNK)) {
+    const { data, error } = await db
+      .from(TABLE)
+      .select('id,so_phieu,trang_thai,id_nguoi_tao')
+      .in('id', chunk);
+    if (error) throwDbError(error);
+    for (const r of (data ?? []) as {
+      id: number;
+      so_phieu: string;
+      trang_thai: TrangThaiThuChiQuy;
+      id_nguoi_tao: number | null;
+    }[]) {
+      out.push({
+        id: String(r.id),
+        so_phieu: r.so_phieu,
+        trang_thai: r.trang_thai,
+        id_nguoi_tao: r.id_nguoi_tao != null ? String(r.id_nguoi_tao) : null,
+      });
+    }
+  }
+  return out;
+}
+
+/**
+ * Một lệnh UPDATE cho cả lô, chỉ ăn vào phiếu còn ở trạng thái nguồn hợp lệ —
+ * phiếu vừa bị người khác đổi trạng thái sẽ đứng yên. Trả số phiếu đã đổi thật.
+ * Trigger thông báo chạy FOR EACH ROW nên mỗi phiếu vẫn sinh đúng một sự kiện.
+ */
+async function updateTrangThaiMany(
+  ids: string[],
+  tuTrangThai: TrangThaiThuChiQuy[],
+  patch: Record<string, unknown>
+): Promise<number> {
+  const numIds = ids.map(Number).filter((n) => !Number.isNaN(n));
+  let count = 0;
+  for (const chunk of chunkBy(numIds, BULK_CHUNK)) {
+    const { data, error } = await db
+      .from(TABLE)
+      .update(patch)
+      .in('id', chunk)
+      .in('trang_thai', tuTrangThai)
+      .select('id');
+    if (error) throwDbError(error);
+    count += data?.length ?? 0;
+  }
+  return count;
+}
+
+export async function khoaThuChiQuyMany(ids: string[]): Promise<number> {
+  return updateTrangThaiMany(ids, TRANG_THAI_NGUON_BULK.khoa, patchKhoa());
+}
+
+export async function xinMoThuChiQuyMany(ids: string[], extra: XinMoThuChiQuyExtra): Promise<number> {
+  return updateTrangThaiMany(ids, TRANG_THAI_NGUON_BULK.xin_mo, patchXinMo(extra));
+}
+
+export async function xuLyMoThuChiQuyMany(ids: string[], extra: XuLyMoThuChiQuyExtra): Promise<number> {
+  return updateTrangThaiMany(
+    ids,
+    extra.duyet ? TRANG_THAI_NGUON_BULK.mo : TRANG_THAI_NGUON_BULK.tu_choi_mo,
+    patchXuLyMo(extra)
+  );
 }
 
 export async function deleteThuChiQuyList(ids: string[]): Promise<void> {

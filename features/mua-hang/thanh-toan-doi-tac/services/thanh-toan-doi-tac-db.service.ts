@@ -117,6 +117,7 @@ function rowToItem(
     ten_nguoi_tao?: string;
     ma_nguoi_tao?: string;
     ten_trang_thai?: string;
+    ma_trang_thai?: string;
     mau_trang_thai?: string;
   }
 ): ThanhToanDoiTac {
@@ -138,6 +139,8 @@ function rowToItem(
     ten_nhom: enrich.ten_nhom,
     id_trang_thai_thanh_toan: idTrangThai,
     ten_trang_thai: tenTrangThai,
+    // Thẻ thống kê Chờ / Đã thanh toán / Đã huỷ đếm theo mã — thiếu là mọi thẻ = 0.
+    ma_trang_thai: enrich.ma_trang_thai,
     mau_trang_thai: enrich.mau_trang_thai,
     so_tien: Number(row.so_tien),
     ngay_xu_ly: row.ngay_xu_ly ?? null,
@@ -168,8 +171,10 @@ function mapRowsWithRefs(
   });
   const statusTenMap: Record<string, string> = {};
   const statusMauMap: Record<string, string> = {};
+  const statusMaMap: Record<string, string> = {};
   statusList.forEach((s) => {
     statusTenMap[s.id] = s.ten;
+    statusMaMap[s.id] = s.ma;
     if (s.mau) statusMauMap[s.id] = s.mau;
   });
 
@@ -193,6 +198,8 @@ function mapRowsWithRefs(
       ten_nguoi_tao: nv?.ten,
       ma_nguoi_tao: nv?.ma,
       ten_trang_thai: ten_trang_thai ?? row.trang_thai ?? undefined,
+      ma_trang_thai:
+        row.id_trang_thai_thanh_toan != null ? statusMaMap[String(row.id_trang_thai_thanh_toan)] : undefined,
       mau_trang_thai,
     });
   });
@@ -354,8 +361,10 @@ export async function getThanhToanDoiTacById(id: string): Promise<ThanhToanDoiTa
   });
   const statusTenMap: Record<string, string> = {};
   const statusMauMap: Record<string, string> = {};
+  const statusMaMap: Record<string, string> = {};
   statusList.forEach((s) => {
     statusTenMap[s.id] = s.ten;
+    statusMaMap[s.id] = s.ma;
     if (s.mau) statusMauMap[s.id] = s.mau;
   });
 
@@ -380,6 +389,8 @@ export async function getThanhToanDoiTacById(id: string): Promise<ThanhToanDoiTa
     ten_nguoi_tao: nv?.ten,
     ma_nguoi_tao: nv?.ma,
     ten_trang_thai: ten_trang_thai ?? r.trang_thai ?? undefined,
+    ma_trang_thai:
+      r.id_trang_thai_thanh_toan != null ? statusMaMap[String(r.id_trang_thai_thanh_toan)] : undefined,
     mau_trang_thai,
   });
 }
@@ -471,4 +482,40 @@ export async function deleteThanhToanDoiTacMany(ids: string[]): Promise<void> {
   if (numIds.length === 0) return;
   const { error } = await db.from(TABLE).delete().in('id', numIds);
   if (error) throwDbError(error);
+}
+
+/**
+ * Chuyển nhiều phiếu sang một trạng thái kết thúc (Đã thanh toán / Đã huỷ).
+ * Chỉ ăn vào phiếu CHƯA ở trạng thái kết thúc (`idsKetThuc`) — phiếu đã xử lý giữ nguyên.
+ * Ngày xử lý: phiếu chưa có thì điền `ngayXuLy`, phiếu đã có thì giữ (khớp dialog đơn lẻ).
+ * Trả số phiếu đã đổi thật.
+ */
+export async function chuyenTrangThaiThanhToanManyDb(
+  ids: string[],
+  status: { id: string; ten: string },
+  idsKetThuc: string[],
+  ngayXuLy: string
+): Promise<number> {
+  const numIds = ids.map((s) => Number(s)).filter((n) => !Number.isNaN(n));
+  if (numIds.length === 0) return 0;
+  const ketThuc = idsKetThuc.map(Number).filter((n) => !Number.isNaN(n));
+  const chuaKetThuc =
+    ketThuc.length > 0
+      ? `id_trang_thai_thanh_toan.is.null,id_trang_thai_thanh_toan.not.in.(${ketThuc.join(',')})`
+      : null;
+  const patch = { id_trang_thai_thanh_toan: Number(status.id), trang_thai: status.ten };
+
+  let count = 0;
+  for (const coNgay of [true, false]) {
+    let q = db
+      .from(TABLE)
+      .update(coNgay ? patch : { ...patch, ngay_xu_ly: ngayXuLy })
+      .in('id', numIds);
+    q = coNgay ? q.not('ngay_xu_ly', 'is', null) : q.is('ngay_xu_ly', null);
+    if (chuaKetThuc) q = q.or(chuaKetThuc);
+    const { data, error } = await q.select('id');
+    if (error) throwDbError(error);
+    count += data?.length ?? 0;
+  }
+  return count;
 }
