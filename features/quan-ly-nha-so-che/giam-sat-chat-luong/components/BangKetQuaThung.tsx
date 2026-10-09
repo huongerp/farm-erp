@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Check, Minus, X } from 'lucide-react';
 import { cn, formatNumberVN } from '../../../../lib/utils';
-import { ketLuanPhieu, type KetQuaTieuChi } from '../core/ket-luan';
+import { tinhTieuChi, type KetQuaTieuChi } from '../core/ket-luan';
 import { tiLeLoi } from '../core/ti-le';
 import type { GiaTriKetQua, ThungMau, TieuChi } from '../core/types';
 
@@ -60,10 +60,10 @@ const DatIcon: React.FC<{ dat: boolean | null }> = ({ dat }) =>
 /** Ma trận tiêu chí × thùng mẫu + cột tổng / ngưỡng / đạt (ngưỡng đã quy đổi theo số thùng mẫu). */
 const BangKetQuaThung: React.FC<Props> = ({ tieuChi, thung, soThungMau, onChonThung }) => {
   const { t } = useTranslation();
-  const ketQua = useMemo(
-    () => ketLuanPhieu(tieuChi, thung.filter((x) => x.da_kiem).map((x) => x.ket_qua), soThungMau),
-    [tieuChi, thung, soThungMau]
-  );
+  const chiTiet = useMemo(() => {
+    const kq = thung.filter((x) => x.da_kiem).map((x) => x.ket_qua);
+    return tieuChi.map((tc) => tinhTieuChi(tc, kq, soThungMau));
+  }, [tieuChi, thung, soThungMau]);
 
   if (tieuChi.length === 0) {
     return <p className="text-sm text-muted-foreground italic m-0">{t('giamSatChatLuong.detail.khongCoTieuChi')}</p>;
@@ -113,7 +113,7 @@ const BangKetQuaThung: React.FC<Props> = ({ tieuChi, thung, soThungMau, onChonTh
             <td className={cn(td, 'border-l border-border')} colSpan={3} />
           </tr>
           {tieuChi.map((tc, i) => {
-            const kq = ketQua.chiTiet[i];
+            const kq = chiTiet[i];
             return (
               <tr key={tc.ma} className={cn('border-b border-border last:border-0', kq.dat === false && 'bg-rose-500/5')}>
                 <td className={cn('px-2 py-1.5 text-sm', sticky, kq.dat === false && 'bg-rose-50 dark:bg-rose-950/30')}>

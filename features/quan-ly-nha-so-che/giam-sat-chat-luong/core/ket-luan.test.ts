@@ -80,19 +80,39 @@ describe('tinhTieuChi — dat_khong', () => {
 describe('ketLuanPhieu', () => {
   const bo = [
     tc({ ma: 'tray', loai: 'dem_loi', nguong_max: 5 }),
+    tc({ ma: 'rep', loai: 'dem_loi', nguong_max: 0 }),
     tc({ ma: 'tem', loai: 'dat_khong' }),
     tc({ ma: 'ghi', loai: 'dem_loi' }),
   ];
 
   it('chưa kiểm thùng nào → chưa kết luận', () => {
-    expect(ketLuanPhieu(bo, [], 10).ketLuan).toBeNull();
+    expect(ketLuanPhieu(bo, [], 10, 1).ketLuan).toBeNull();
   });
 
   it('mọi tiêu chí có ngưỡng đều đạt → ĐẠT', () => {
-    expect(ketLuanPhieu(bo, [{ tray: 1, tem: true, ghi: 50 }], 10).ketLuan).toBe('dat');
+    expect(ketLuanPhieu(bo, [{ tray: 1, tem: true, ghi: 50 }], 10, 1).ketLuan).toBe('dat');
   });
 
-  it('một tiêu chí rớt → KHÔNG ĐẠT', () => {
-    expect(ketLuanPhieu(bo, [{ tray: 1, tem: false }], 10).ketLuan).toBe('khong_dat');
+  it('ngưỡng 1: một tiêu chí rớt → KHÔNG ĐẠT', () => {
+    expect(ketLuanPhieu(bo, [{ tray: 1, tem: false }], 10, 1).ketLuan).toBe('khong_dat');
+  });
+
+  it('ngưỡng 3: dưới 3 tiêu chí rớt vẫn ĐẠT, đủ 3 thì KHÔNG ĐẠT', () => {
+    const haiRot = ketLuanPhieu(bo, [{ tray: 1, rep: 1, tem: false }], 10, 3);
+    expect(haiRot.soKhongDat).toBe(2);
+    expect(haiRot.ketLuan).toBe('dat');
+    const baRot = ketLuanPhieu(bo, [{ tray: 6, rep: 1, tem: false }], 10, 3);
+    expect(baRot.soKhongDat).toBe(3);
+    expect(baRot.ketLuan).toBe('khong_dat');
+  });
+
+  it('tiêu chí không có ngưỡng không tính vào số rớt', () => {
+    expect(ketLuanPhieu(bo, [{ ghi: 999 }], 10, 1).soKhongDat).toBe(0);
+  });
+
+  it('ngưỡng không hợp lệ (0, âm, NaN) → coi là 1', () => {
+    for (const n of [0, -2, Number.NaN]) {
+      expect(ketLuanPhieu(bo, [{ rep: 1 }], 10, n).ketLuan).toBe('khong_dat');
+    }
   });
 });

@@ -8,6 +8,7 @@ import {
   Boxes,
   Building2,
   Calendar,
+  Camera,
   FileText,
   Hash,
   ListChecks,
@@ -48,6 +49,7 @@ import { inTemGscl, temTuPhieu } from '../utils/in-tem-gscl';
 import QrCodeImage from '../../../../components/shared/QrCodeImage';
 import type { GiamSatChatLuong, ThungMau } from '../core/types';
 import {
+  useCaiDatGscl,
   useHanhDongGiamSatChatLuong,
   useThungMau,
   useXeDaXepCayHang,
@@ -61,6 +63,7 @@ import NhapKetQuaThungDialog from './NhapKetQuaThungDialog';
 import QuetTemFlow from './QuetTemFlow';
 import ApDungTieuChiDialog from './ApDungTieuChiDialog';
 import QrThungDialog from './QrThungDialog';
+import AnhThungDialog from './AnhThungDialog';
 
 interface Props {
   data: GiamSatChatLuong;
@@ -94,10 +97,12 @@ const GiamSatChatLuongDetail: React.FC<Props> = ({
   const hanhDong = useHanhDongGiamSatChatLuong();
   const { data: thung = [], isLoading: thungLoading } = useThungMau(data.id);
   const { data: xeDaXep = [] } = useXeDaXepCayHang(data.id);
+  const { data: caiDat } = useCaiDatGscl();
 
   const [dialog, setDialog] = useState<null | 'in' | 'quet' | 'apDung'>(moInTem ? 'in' : null);
   const [nhapThung, setNhapThung] = useState<ThungMau | null>(null);
   const [qrThung, setQrThung] = useState<ThungMau | null>(null);
+  const [anhThung, setAnhThung] = useState<ThungMau | null>(null);
   const [dangInThung, setDangInThung] = useState(false);
 
   /** In lại tem của đúng một thùng, theo khổ tem trong Cài đặt. */
@@ -118,9 +123,13 @@ const GiamSatChatLuongDetail: React.FC<Props> = ({
   const canDeletePhieu = canDelete && coTheXoaPhieu(tt, data.so_thung_da_kiem, capCao);
 
   const daKiem = thung.filter((x) => x.da_kiem);
+  const soTcKhongDat = caiDat?.so_tieu_chi_khong_dat;
   const tamTinh = useMemo(
-    () => (tt === 'dang_kiem' && daKiem.length > 0 ? ketLuanPhieu(data.tieu_chi, daKiem.map((x) => x.ket_qua), data.so_thung_mau).ketLuan : null),
-    [tt, daKiem, data.tieu_chi, data.so_thung_mau]
+    () =>
+      tt === 'dang_kiem' && daKiem.length > 0 && soTcKhongDat != null
+        ? ketLuanPhieu(data.tieu_chi, daKiem.map((x) => x.ket_qua), data.so_thung_mau, soTcKhongDat).ketLuan
+        : null,
+    [tt, daKiem, data.tieu_chi, data.so_thung_mau, soTcKhongDat]
   );
 
   const hoi = (action: HanhDongPhieu, variant: 'warning' | 'danger' = 'warning') =>
@@ -293,6 +302,20 @@ const GiamSatChatLuongDetail: React.FC<Props> = ({
                         <Printer size={14} />
                       </button>
                     )}
+                    {(canKiem || x.hinh_anh_urls.length > 0) && (
+                      <button
+                        type="button"
+                        onClick={() => setAnhThung(x)}
+                        title={t('giamSatChatLuong.anhThung.nut')}
+                        aria-label={t('giamSatChatLuong.anhThung.nut')}
+                        className="p-1.5 rounded-md text-muted-foreground hover:bg-muted hover:text-primary shrink-0 inline-flex items-center gap-0.5"
+                      >
+                        <Camera size={14} />
+                        {x.hinh_anh_urls.length > 0 && (
+                          <span className="text-[11px] font-semibold tabular-nums">{x.hinh_anh_urls.length}</span>
+                        )}
+                      </button>
+                    )}
                     <span className="font-medium tabular-nums">{t('giamSatChatLuong.quet.thungSo', { stt: x.stt_thung, n: data.so_thung_mau })}</span>
                     <span className="text-muted-foreground">
                       {[x.ten_nguoi_kiem, x.tg_kiem ? formatDateTimeShort(x.tg_kiem) : null].filter(Boolean).join(' · ')}
@@ -360,6 +383,9 @@ const GiamSatChatLuongDetail: React.FC<Props> = ({
           />
         )}
         {nhapThung && <NhapKetQuaThungDialog phieu={data} thung={nhapThung} onClose={() => setNhapThung(null)} />}
+        {anhThung && (
+          <AnhThungDialog phieu={data} thung={anhThung} chiXem={!canKiem} onClose={() => setAnhThung(null)} />
+        )}
         {qrThung && (
           <QrThungDialog
             phieu={data}

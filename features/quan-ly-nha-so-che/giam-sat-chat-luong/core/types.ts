@@ -79,6 +79,8 @@ export interface ThungMau {
   id_nguoi_kiem: string | null;
   ten_nguoi_kiem: string | null;
   ghi_chu: string | null;
+  /** URL ảnh chụp thùng (Cloudinary). */
+  hinh_anh_urls: string[];
 }
 
 /** Phiếu QC rút gọn — Đăng ký nhận hàng tra khi quét tem / chọn tay để xếp cây hàng lên xe. */

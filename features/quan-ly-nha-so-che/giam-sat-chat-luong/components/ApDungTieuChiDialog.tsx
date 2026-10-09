@@ -9,7 +9,7 @@ import { ketLuanPhieu } from '../core/ket-luan';
 import { anhChupTieuChi, soSanhBoTieuChi, type TruongTieuChi } from '../core/tieu-chi';
 import { coKetLuan } from '../core/trang-thai';
 import type { GiamSatChatLuong, KetLuanGscl, ThungMau, TieuChi } from '../core/types';
-import { useApDungTieuChiMoi, useTieuChiDanhMuc } from '../hooks/use-giam-sat-chat-luong';
+import { useApDungTieuChiMoi, useCaiDatGscl, useTieuChiDanhMuc } from '../hooks/use-giam-sat-chat-luong';
 import { moTaNguongTieuChi } from '../utils/mo-ta-nguong';
 import { KetLuanBadge } from './Badges';
 
@@ -27,6 +27,8 @@ const ApDungTieuChiDialog: React.FC<Props> = ({ phieu, thung, onClose }) => {
   const { t } = useTranslation();
   const { data: danhMuc, isLoading, isError, refetch } = useTieuChiDanhMuc({ luonMoi: true });
   const apDung = useApDungTieuChiMoi(onClose);
+  const { data: caiDat } = useCaiDatGscl();
+  const soTcKhongDat = caiDat?.so_tieu_chi_khong_dat;
 
   const boMoi = useMemo(() => (danhMuc ? anhChupTieuChi(danhMuc) : null), [danhMuc]);
   const ss = useMemo(() => (boMoi ? soSanhBoTieuChi(phieu.tieu_chi, boMoi) : null), [phieu.tieu_chi, boMoi]);
@@ -34,13 +36,14 @@ const ApDungTieuChiDialog: React.FC<Props> = ({ phieu, thung, onClose }) => {
   /** Kết luận trước / sau — tính lại từ các thùng đã kiểm (chưa đủ thùng thì là tạm tính). */
   const ketLuan = useMemo(() => {
     const daKiem = thung.filter((x) => x.da_kiem).map((x) => x.ket_qua);
-    const tinh = (bo: TieuChi[]): KetLuanGscl | null => ketLuanPhieu(bo, daKiem, phieu.so_thung_mau).ketLuan;
+    const tinh = (bo: TieuChi[]): KetLuanGscl | null =>
+      soTcKhongDat == null ? null : ketLuanPhieu(bo, daKiem, phieu.so_thung_mau, soTcKhongDat).ketLuan;
     return {
       tamTinh: !coKetLuan(phieu.trang_thai),
       truoc: coKetLuan(phieu.trang_thai) ? phieu.ket_luan : tinh(phieu.tieu_chi),
       sau: boMoi ? tinh(boMoi) : null,
     };
-  }, [thung, phieu, boMoi]);
+  }, [thung, phieu, boMoi, soTcKhongDat]);
 
   const nhanTruong = (k: TruongTieuChi) => t(`giamSatChatLuong.apDung.truong_${k}`);
   const moTa = (tc: TieuChi) => moTaNguongTieuChi(tc, t);

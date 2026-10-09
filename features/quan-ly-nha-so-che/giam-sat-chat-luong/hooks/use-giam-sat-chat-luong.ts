@@ -7,12 +7,14 @@ import type { TieuChi, TieuChiDanhMuc } from '../core/types';
 import type { GiamSatChatLuongListServerQuery } from '../services/giam-sat-chat-luong-list-query';
 import {
   apDungTieuChiMoi,
+  capNhatAnhThung,
   createGscl,
   createTieuChi,
   datDangDungTieuChi,
   deleteGscl,
   deleteGsclMany,
   deleteTieuChi,
+  getCaiDatGscl,
   getGsclById,
   getGsclPage,
   getGsclTomTat,
@@ -25,13 +27,16 @@ import {
   moPhieuGscl,
   nopGscl,
   sapXepTieuChi,
+  updateCaiDatGscl,
   updateGscl,
   updateTieuChi,
+  type CaiDatGscl,
   type LuuKetQuaThungInput,
 } from '../services/giam-sat-chat-luong-service';
 
 export const QUERY_KEY_GSCL = ['giamSatChatLuong'] as const;
 const QUERY_KEY_TIEU_CHI = ['giamSatChatLuong', 'tieuChi'] as const;
+const QUERY_KEY_CAI_DAT = ['giamSatChatLuong', 'caiDat'] as const;
 
 const onErr = (err: Error) => toast.error(err.message);
 
@@ -164,6 +169,38 @@ export function useLuuKetQuaThung() {
   return useMutation({
     mutationFn: (input: Omit<LuuKetQuaThungInput, 'idNguoi'>) => luuKetQuaThung({ ...input, idNguoi: idNguoiHienTai(user?.id) }),
     onSuccess: () => invalidate(),
+    onError: onErr,
+  });
+}
+
+export function useCapNhatAnhThung(onSuccess?: () => void) {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: ({ idThung, idPhieu, urls }: { idThung: string; idPhieu: string; urls: string[] }) =>
+      capNhatAnhThung(idThung, idPhieu, urls),
+    onSuccess: () => {
+      invalidate();
+      toast.success(i18n.t('giamSatChatLuong.toast.anhThungSaved'));
+      onSuccess?.();
+    },
+    onError: onErr,
+  });
+}
+
+// ── Cài đặt chung ──────────────────────────────────────────────────────────────
+
+export function useCaiDatGscl() {
+  return useQuery({ queryKey: QUERY_KEY_CAI_DAT, queryFn: getCaiDatGscl, staleTime: 1000 * 60 * 5 });
+}
+
+export function useLuuCaiDatGscl() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (v: CaiDatGscl) => updateCaiDatGscl(v),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QUERY_KEY_CAI_DAT });
+      toast.success(i18n.t('giamSatChatLuong.toast.caiDatSaved'));
+    },
     onError: onErr,
   });
 }

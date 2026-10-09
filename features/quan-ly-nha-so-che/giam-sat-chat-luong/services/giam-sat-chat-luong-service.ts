@@ -16,6 +16,9 @@ export {
   apDungTieuChiMoiDb as apDungTieuChiMoi,
   getThungTheoMaTemDb as getThungTheoMaTem,
   luuKetQuaThungDb as luuKetQuaThung,
+  capNhatAnhThungDb as capNhatAnhThung,
+  getCaiDatGsclDb as getCaiDatGscl,
+  updateCaiDatGsclDb as updateCaiDatGscl,
   getTieuChiDb as getTieuChi,
   createTieuChiDb as createTieuChi,
   updateTieuChiDb as updateTieuChi,
@@ -26,6 +29,7 @@ export {
   getPhieuQcTomTatDb as getPhieuQcTomTat,
   dsPhieuQcXepXeDb as dsPhieuQcXepXe,
   getXeDaXepCayHangDb as getXeDaXepCayHang,
+  type CaiDatGscl,
   type LuuKetQuaThungInput,
 } from './giam-sat-chat-luong-db.service';
 

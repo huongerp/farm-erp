@@ -10,12 +10,16 @@
  * - `dat_khong`: số thùng chọn "Không" ≤ ngưỡng_max (trống = 0). Ô trống không tính "Không".
  *
  * Tiêu chí không có ngưỡng (dem_loi / do_luong để trống cả hai) → `dat = null`, không ảnh
- * hưởng kết luận. Cây hàng KHÔNG ĐẠT khi có ít nhất một tiêu chí `dat === false`.
+ * hưởng kết luận. Cây hàng KHÔNG ĐẠT khi số tiêu chí `dat === false` ≥ `soTieuChiKhongDat`
+ * (đặt ở popup Cài đặt — bảng fp_farm_gscl_cai_dat, mặc định 3).
  */
 import type { KetLuanGscl, KetQuaThung, TieuChi } from './types';
 
 /** Ngưỡng `dem_loi` được nhập cho số thùng mẫu chuẩn này. */
 export const SO_THUNG_CHUAN = 10;
+
+/** Mặc định của cài đặt "số tiêu chí không đạt thì cây hàng KHÔNG ĐẠT". */
+export const SO_TIEU_CHI_KHONG_DAT_MAC_DINH = 3;
 
 export interface KetQuaTieuChi {
   ma: string;
@@ -101,13 +105,22 @@ export function tinhTieuChi(tc: TieuChi, thungs: KetQuaThung[], soThungMau: numb
 
 export interface KetLuanPhieu {
   chiTiet: KetQuaTieuChi[];
+  /** Số tiêu chí đang `dat === false`. */
+  soKhongDat: number;
   /** null khi chưa thùng nào kiểm. */
   ketLuan: KetLuanGscl | null;
 }
 
-/** `thungs` = ket_qua của các thùng ĐÃ kiểm. */
-export function ketLuanPhieu(tieuChi: TieuChi[], thungs: KetQuaThung[], soThungMau: number): KetLuanPhieu {
+/** `thungs` = ket_qua của các thùng ĐÃ kiểm. `soTieuChiKhongDat` < 1 hoặc không hợp lệ → coi là 1. */
+export function ketLuanPhieu(
+  tieuChi: TieuChi[],
+  thungs: KetQuaThung[],
+  soThungMau: number,
+  soTieuChiKhongDat: number
+): KetLuanPhieu {
   const chiTiet = tieuChi.map((tc) => tinhTieuChi(tc, thungs, soThungMau));
-  if (thungs.length === 0) return { chiTiet, ketLuan: null };
-  return { chiTiet, ketLuan: chiTiet.some((c) => c.dat === false) ? 'khong_dat' : 'dat' };
+  const soKhongDat = chiTiet.filter((c) => c.dat === false).length;
+  if (thungs.length === 0) return { chiTiet, soKhongDat, ketLuan: null };
+  const nguong = Number.isFinite(soTieuChiKhongDat) ? Math.max(1, Math.floor(soTieuChiKhongDat)) : 1;
+  return { chiTiet, soKhongDat, ketLuan: soKhongDat >= nguong ? 'khong_dat' : 'dat' };
 }

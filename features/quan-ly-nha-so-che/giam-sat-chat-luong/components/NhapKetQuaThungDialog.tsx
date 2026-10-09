@@ -5,12 +5,21 @@ import { Check, ClipboardCheck, Minus, Plus, ScanLine, X } from 'lucide-react';
 import GenericDrawer from '../../../../components/shared/GenericDrawer';
 import Button from '../../../../components/ui/Button';
 import Textarea from '../../../../components/ui/Textarea';
+import MultiImageInput, { type ImageItem } from '../../../../components/ui/MultiImageInput';
 import { DIALOG_SIZE } from '../../../../lib/dialog-sizes';
 import { cn, formatNumberVN } from '../../../../lib/utils';
 import { quyDoiNguong } from '../core/ket-luan';
 import { docTongNhanh } from '../core/ti-le';
 import type { GiamSatChatLuong, KetQuaThung, ThungMau, TieuChi } from '../core/types';
 import { useLuuKetQuaThung } from '../hooks/use-giam-sat-chat-luong';
+import {
+  CLOUDINARY_READY,
+  MAX_ANH_THUNG,
+  MAX_MB_ANH_GOC,
+  imageItemsToUrls,
+  urlsToImageItems,
+} from '../utils/anh-thung';
+import { useUploadAnhThung } from '../hooks/use-upload-anh-thung';
 
 interface Props {
   phieu: GiamSatChatLuong;
@@ -44,6 +53,9 @@ const NhapKetQuaThungDialog: React.FC<Props> = ({ phieu, thung, onClose, onQuetT
   const [tongNhanh, setTongNhanh] = useState(thung.tong_nhanh != null ? String(thung.tong_nhanh) : '');
   const [loiTongNhanh, setLoiTongNhanh] = useState(false);
   const [loi, setLoi] = useState<Record<string, string>>({});
+  const [anh, setAnh] = useState<ImageItem[]>(() => urlsToImageItems(thung.hinh_anh_urls));
+  const { upload, dangTai } = useUploadAnhThung();
+  const khoaLuu = luu.isPending || dangTai;
 
   const dat = (ma: string, v: string | boolean | null) => {
     setNhap((cur) => ({ ...cur, [ma]: v }));
@@ -101,7 +113,14 @@ const NhapKetQuaThungDialog: React.FC<Props> = ({ phieu, thung, onClose, onQuetT
       return;
     }
     luu.mutate(
-      { idThung: thung.id, idPhieu: phieu.id, ketQua, tongNhanh: tong, ghiChu },
+      {
+        idThung: thung.id,
+        idPhieu: phieu.id,
+        ketQua,
+        tongNhanh: tong,
+        ghiChu,
+        ...(CLOUDINARY_READY ? { hinhAnhUrls: imageItemsToUrls(anh) } : {}),
+      },
       {
         onSuccess: (p) => {
           if (p.trang_thai === 'hoan_thanh' && p.ket_luan) {
@@ -173,12 +192,12 @@ const NhapKetQuaThungDialog: React.FC<Props> = ({ phieu, thung, onClose, onQuetT
             {t('common.cancel')}
           </Button>
           {onQuetTiep && (
-            <Button type="button" variant="outline" size="sm" onClick={() => submit(true)} disabled={luu.isPending}>
+            <Button type="button" variant="outline" size="sm" onClick={() => submit(true)} disabled={khoaLuu}>
               <ScanLine size={14} className="mr-1.5" />
               {t('giamSatChatLuong.nhap.luuQuetTiep')}
             </Button>
           )}
-          <Button type="button" size="sm" onClick={() => submit(false)} disabled={luu.isPending}>
+          <Button type="button" size="sm" onClick={() => submit(false)} disabled={khoaLuu}>
             {t('common.save')}
           </Button>
         </div>
@@ -283,6 +302,26 @@ const NhapKetQuaThungDialog: React.FC<Props> = ({ phieu, thung, onClose, onQuetT
           onChange={(e) => setGhiChu(e.target.value)}
           rows={2}
         />
+
+        <div className="space-y-1.5 border-t border-border pt-3">
+          <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {t('giamSatChatLuong.anhThung.title')}
+          </div>
+          {CLOUDINARY_READY ? (
+            <MultiImageInput
+              value={anh}
+              onChange={setAnh}
+              uploadFile={upload}
+              maxFiles={MAX_ANH_THUNG}
+              maxSizeMB={MAX_MB_ANH_GOC}
+              columns={3}
+              placeholder={t('giamSatChatLuong.anhThung.placeholder')}
+              hint={t('giamSatChatLuong.anhThung.hint', { max: MAX_ANH_THUNG })}
+            />
+          ) : (
+            <p className="text-xs text-muted-foreground m-0">{t('giamSatChatLuong.anhThung.chuaCauHinh')}</p>
+          )}
+        </div>
       </div>
     </GenericDrawer>
   );

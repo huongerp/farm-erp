@@ -19,7 +19,7 @@ import type {
   XeDaXepCayHang,
 } from '../core/types';
 import type { GiamSatChatLuongFormValues, TieuChiFormValues } from '../core/schema';
-import { ketLuanPhieu } from '../core/ket-luan';
+import { ketLuanPhieu, SO_TIEU_CHI_KHONG_DAT_MAC_DINH } from '../core/ket-luan';
 import { coKetLuan, trangThaiTheoSoThung } from '../core/trang-thai';
 import { anhChupTieuChi, taoMaTieuChi } from '../core/tieu-chi';
 import {
@@ -31,13 +31,14 @@ import {
 const TABLE = 'fp_farm_giam_sat_chat_luong';
 const TABLE_CT = 'fp_farm_giam_sat_chat_luong_ct';
 const TABLE_TC = 'fp_farm_gscl_tieu_chi';
+const TABLE_CAI_DAT = 'fp_farm_gscl_cai_dat';
 
 const ROW_COLUMNS =
   'id,so_phieu,ngay,id_chi_nhanh,id_hang_hoa,ma_cay_hang,so_thung_cay,so_thung_mau,tieu_chi,trang_thai,ket_luan,' +
   'ghi_chu,id_nguoi_tao,tg_tao,tg_cap_nhat,tg_nop,id_nguoi_nop,chi_nhanh:fp_var_chi_nhanh(ten_chi_nhanh),' +
   'hang_hoa:fp_farm_danh_sach_hang_hoa(ma_hang_hoa,ten_hang_hoa),thung:fp_farm_giam_sat_chat_luong_ct(da_kiem)';
 
-const CT_COLUMNS = 'id,id_phieu,stt_thung,ma_tem,ket_qua,tong_nhanh,da_kiem,tg_kiem,id_nguoi_kiem,ghi_chu';
+const CT_COLUMNS = 'id,id_phieu,stt_thung,ma_tem,ket_qua,tong_nhanh,da_kiem,tg_kiem,id_nguoi_kiem,ghi_chu,hinh_anh_urls';
 const TC_COLUMNS = 'id,ma,ten,loai,don_vi,nguong_min,nguong_max,thu_tu,dang_dung';
 
 interface DbRow {
@@ -74,6 +75,7 @@ interface DbCtRow {
   tg_kiem: string | null;
   id_nguoi_kiem: number | null;
   ghi_chu: string | null;
+  hinh_anh_urls: string[] | null;
 }
 
 interface DbTcRow {
@@ -157,6 +159,7 @@ function ctToModel(row: DbCtRow): ThungMau {
     id_nguoi_kiem: idStr(row.id_nguoi_kiem),
     ten_nguoi_kiem: null,
     ghi_chu: row.ghi_chu,
+    hinh_anh_urls: row.hinh_anh_urls ?? [],
   };
 }
 
@@ -386,10 +389,14 @@ export async function capNhatKetLuanDb(idPhieu: string): Promise<GiamSatChatLuon
   const thung = await getThungDb(idPhieu);
   const daKiem = thung.filter((t) => t.da_kiem);
   const trangThai = trangThaiTheoSoThung(phieu.trang_thai, daKiem.length, phieu.so_thung_mau);
-  const ketLuan =
-    coKetLuan(trangThai)
-      ? ketLuanPhieu(phieu.tieu_chi, daKiem.map((t) => t.ket_qua), phieu.so_thung_mau).ketLuan
-      : null;
+  const ketLuan = coKetLuan(trangThai)
+    ? ketLuanPhieu(
+        phieu.tieu_chi,
+        daKiem.map((t) => t.ket_qua),
+        phieu.so_thung_mau,
+        (await getCaiDatGsclDb()).so_tieu_chi_khong_dat
+      ).ketLuan
+    : null;
   if (trangThai === phieu.trang_thai && ketLuan === phieu.ket_luan) return phieu;
   const { error } = await db.from(TABLE).update({ trang_thai: trangThai, ket_luan: ketLuan }).eq('id', toIntId(idPhieu));
   if (error) throwDbError(error);
@@ -404,6 +411,8 @@ export interface LuuKetQuaThungInput {
   tongNhanh: number;
   ghiChu: string | null;
   idNguoi: string | null;
+  /** Có truyền mới ghi đè ảnh thùng (luồng quét tem không đụng ảnh). */
+  hinhAnhUrls?: string[];
 }
 
 /** Ghi kết quả một thùng (đánh dấu đã kiểm) rồi tính lại phiếu. */
@@ -417,11 +426,50 @@ export async function luuKetQuaThungDb(input: LuuKetQuaThungInput): Promise<Giam
       da_kiem: true,
       tg_kiem: new Date().toISOString(),
       id_nguoi_kiem: input.idNguoi ? toIntId(input.idNguoi) : null,
+      ...(input.hinhAnhUrls ? { hinh_anh_urls: input.hinhAnhUrls } : {}),
     })
     .eq('id', toIntId(input.idThung))
     .eq('id_phieu', toIntId(input.idPhieu));
   if (error) throwDbError(error);
   return capNhatKetLuanDb(input.idPhieu);
+}
+
+/** Chỉ thay ảnh của thùng — không đổi kết quả, người kiểm, giờ kiểm hay kết luận phiếu. */
+export async function capNhatAnhThungDb(idThung: string, idPhieu: string, urls: string[]): Promise<void> {
+  const { data, error } = await db
+    .from(TABLE_CT)
+    .update({ hinh_anh_urls: urls })
+    .eq('id', toIntId(idThung))
+    .eq('id_phieu', toIntId(idPhieu))
+    .select('id');
+  if (error) throwDbError(error);
+  if (((data as unknown[] | null) ?? []).length === 0) throw new Error(i18n.t('giamSatChatLuong.service.notFound'));
+}
+
+// ── Cài đặt chung (một dòng id = 1) ───────────────────────────────────────────
+
+export interface CaiDatGscl {
+  /** Cây hàng KHÔNG ĐẠT khi có từ chừng này tiêu chí không đạt trở lên. */
+  so_tieu_chi_khong_dat: number;
+}
+
+/** Chưa có dòng cài đặt → dùng mặc định. */
+export async function getCaiDatGsclDb(): Promise<CaiDatGscl> {
+  const { data, error } = await db.from(TABLE_CAI_DAT).select('so_tieu_chi_khong_dat').eq('id', 1).maybeSingle();
+  if (error) throwDbError(error);
+  const n = Number((data as { so_tieu_chi_khong_dat: number } | null)?.so_tieu_chi_khong_dat);
+  return { so_tieu_chi_khong_dat: Number.isInteger(n) && n >= 1 ? n : SO_TIEU_CHI_KHONG_DAT_MAC_DINH };
+}
+
+/** Chỉ cấp cao — RLS chặn người khác (migration 030). */
+export async function updateCaiDatGsclDb(v: CaiDatGscl): Promise<void> {
+  const { data, error } = await db
+    .from(TABLE_CAI_DAT)
+    .update({ so_tieu_chi_khong_dat: v.so_tieu_chi_khong_dat })
+    .eq('id', 1)
+    .select('id');
+  if (error) throwDbError(error);
+  if (((data as unknown[] | null) ?? []).length === 0) throw new Error(i18n.t('giamSatChatLuong.service.khongCoQuyenCaiDat'));
 }
 
 // ── Danh mục tiêu chí ──────────────────────────────────────────────────────────

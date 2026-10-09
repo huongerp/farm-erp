@@ -8,7 +8,7 @@ import {
   TieuDeMuc,
 } from '../../../../../components/shared/phieu-in/PhieuInParts';
 import { cn, formatDateTimeShort, formatNumberVN, formatYmdToDisplay } from '../../../../../lib/utils';
-import { ketLuanPhieu, type KetQuaTieuChi } from '../../core/ket-luan';
+import { tinhTieuChi, type KetQuaTieuChi } from '../../core/ket-luan';
 import { tiLeLoi } from '../../core/ti-le';
 import { coKetLuan } from '../../core/trang-thai';
 import type { GiaTriKetQua, GiamSatChatLuong, ThungMau, TieuChi } from '../../core/types';
@@ -50,10 +50,10 @@ function oNguong(tc: TieuChi, kq: KetQuaTieuChi): string {
 const PhieuGsclPreview: React.FC<Props> = ({ phieu, thung, wMm, hMm, leMm }) => {
   const { t } = useTranslation();
   const daKiem = useMemo(() => thung.filter((x) => x.da_kiem), [thung]);
-  const kq = useMemo(
-    () => ketLuanPhieu(phieu.tieu_chi, daKiem.map((x) => x.ket_qua), phieu.so_thung_mau),
-    [phieu.tieu_chi, phieu.so_thung_mau, daKiem]
-  );
+  const chiTiet = useMemo(() => {
+    const kq = daKiem.map((x) => x.ket_qua);
+    return phieu.tieu_chi.map((tc) => tinhTieuChi(tc, kq, phieu.so_thung_mau));
+  }, [phieu.tieu_chi, phieu.so_thung_mau, daKiem]);
   const ketLuan = coKetLuan(phieu.trang_thai) ? phieu.ket_luan : null;
 
   const subtitle = [phieu.so_phieu, formatYmdToDisplay(phieu.ngay), t(`giamSatChatLuong.trangThai.${phieu.trang_thai}`)].join(
@@ -124,7 +124,7 @@ const PhieuGsclPreview: React.FC<Props> = ({ phieu, thung, wMm, hMm, leMm }) => 
             <td className={td} colSpan={3} />
           </tr>
           {phieu.tieu_chi.map((tc, i) => {
-            const c = kq.chiTiet[i];
+            const c = chiTiet[i];
             return (
               <tr key={tc.ma}>
                 <td className="border border-gray-300 px-1.5 py-0.5 font-medium">
