@@ -124,8 +124,12 @@ export function formatDbError(err: unknown, ctx?: { resource?: string }): string
   }
 
   // 23503 — khoá ngoại: xoá/sửa bản ghi đang được phiếu khác tham chiếu, hoặc ghi tham chiếu
-  // tới bản ghi đã bị xoá.
-  if (code === '23503' || /violates foreign key constraint/i.test(msg)) {
+  // tới bản ghi đã bị xoá. 23001 — cùng ca xoá, nhưng khoá khai ON DELETE RESTRICT.
+  if (
+    code === '23503' ||
+    code === '23001' ||
+    /violates (RESTRICT setting of )?foreign key constraint/i.test(msg)
+  ) {
     const key = /^insert or update on table/i.test(msg) ? 'errors.db.foreignKeyMissing' : 'errors.db.foreignKeyInUse';
     return i18n.t(key, { code: code || '23503' }) + suffix;
   }

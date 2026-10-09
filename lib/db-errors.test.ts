@@ -31,6 +31,17 @@ describe('formatDbError — ràng buộc dữ liệu không còn rơi về câu 
     expect(msg).not.toContain('violates');
   });
 
+  it('23001 xoá bản ghi đang được tham chiếu bởi khoá ON DELETE RESTRICT', () => {
+    const msg = formatDbError({
+      code: '23001',
+      message:
+        'update or delete on table "fp_mh_danh_sach_hang_hoa" violates RESTRICT setting of foreign key constraint "fp_mh_phieu_kho_chi_tiet_id_hang_hoa_fkey" on table "fp_mh_phieu_kho_chi_tiet"',
+    });
+    expect(msg).toContain('23001');
+    expect(msg).toContain('đang được dùng');
+    expect(msg).not.toContain('violates');
+  });
+
   it('23503 ghi tham chiếu tới bản ghi đã bị xoá', () => {
     const msg = formatDbError({
       code: '23503',

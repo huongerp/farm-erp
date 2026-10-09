@@ -19,6 +19,7 @@ import { IMPORT_ROW_KEY } from '../../../../lib/import-types';
 import type { ImportErrorRow, ImportMode } from '../../../../lib/import-types';
 import { matchKey, normalizeText, parseImportNumber } from '../../../../lib/import-common';
 import { throwDbError } from '../../../../lib/db-errors';
+import { tuDongRpc, type PhieuDangDung } from '../../../../lib/hang-hoa-dang-dung';
 
 const TABLE = 'fp_mh_danh_sach_hang_hoa';
 
@@ -415,6 +416,15 @@ export const deleteHangHoa = async (id: string): Promise<void> => {
   if (Number.isNaN(idNum)) throw new Error(i18n.t('hangHoa.service.notFound'));
   const { error } = await db.from(TABLE).delete().eq('id', idNum);
   if (error) throwDbError(error);
+};
+
+/** Phiếu (kho, ĐĐH, đề xuất vật tư, kiểm kê) đang dùng các hàng định xoá — RPC migration 025. */
+export const getHangHoaDangDung = async (ids: string[]): Promise<PhieuDangDung[]> => {
+  const idNums = ids.map(Number).filter((n) => !Number.isNaN(n));
+  if (idNums.length === 0) return [];
+  const { data, error } = await db.rpc('rpc_hang_hoa_dang_dung', { p_ids: idNums });
+  if (error) throwDbError(error);
+  return ((data ?? []) as Parameters<typeof tuDongRpc>[0][]).map(tuDongRpc);
 };
 
 export const deleteHangHoaMany = async (ids: string[]): Promise<void> => {

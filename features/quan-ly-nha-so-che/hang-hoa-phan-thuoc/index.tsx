@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 import { BookOpen, Package } from 'lucide-react';
 import TabGroup from '../../../components/ui/TabGroup';
 import { useModulePermissionFromContext } from '../../../components/shared/ModulePermissionGuard';
@@ -14,6 +15,9 @@ import HangHoaForm from './components/HangHoaForm';
 import HangHoaDetail from './components/HangHoaDetail';
 import ImportDialog from '../../../components/shared/LazyImportDialog';
 import ExportDialog from '../../../components/shared/LazyExportDialog';
+import XoaHangHoaDangDungDialog from '../../../components/shared/XoaHangHoaDangDungDialog';
+import { phanLoaiXoa, type PhanLoaiXoa } from '../../../lib/hang-hoa-dang-dung';
+import { getFarmHangHoaDangDung } from './services/farm-hang-hoa-service';
 import { useFarmDanhMucImportExport, useFarmHangHoaImportExport } from './hooks/use-farm-import-export';
 import {
   useFarmDanhMucList,
@@ -79,6 +83,8 @@ const HangHoaPhanThuocPage: React.FC = () => {
   const [showHhForm, setShowHhForm] = useState(false);
   const [hhEditing, setHhEditing] = useState<FarmHangHoa | null>(null);
   const [hhViewingRaw, setHhViewing] = useState<FarmHangHoa | null>(null);
+  /** Kết quả kiểm tra trước khi xoá — có hàng đang dùng ở phiếu thì mở dialog liệt kê phiếu. */
+  const [hhXoaPhanLoai, setHhXoaPhanLoai] = useState<PhanLoaiXoa | null>(null);
 
   const { data: dmList = [], isLoading: dmLoading } = useFarmDanhMucList();
   const { data: hhList = [], isLoading: hhLoading } = useFarmHangHoaList();
@@ -225,7 +231,44 @@ const HangHoaPhanThuocPage: React.FC = () => {
     });
   };
 
-  const handleHhDelete = (id: string) => {
+  /**
+   * Hỏi DB phiếu nào đang dùng các hàng định xoá. Không hàng nào bị dùng thì hỏi xác nhận như cũ.
+   * Nếu có, mở dialog: chỉ xoá hàng không dùng, liệt kê phiếu của các hàng còn lại.
+   */
+  const kiemTraTruocKhiXoaHh = async (ids: string[], xacNhanXoa: () => void) => {
+    const toastId = toast.loading(t('common.xoaDangDung.dangKiemTra'));
+    try {
+      const kq = phanLoaiXoa(ids, await getFarmHangHoaDangDung(ids));
+      if (kq.dangDung.length === 0) xacNhanXoa();
+      else setHhXoaPhanLoai(kq);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : String(err));
+    } finally {
+      toast.dismiss(toastId);
+    }
+  };
+
+  const thongTinHangXoa = useMemo(() => {
+    const m = new Map<string, { ma: string; ten: string }>();
+    if (!hhXoaPhanLoai) return m;
+    const can = new Set(hhXoaPhanLoai.dangDung.map((h) => h.idHangHoa));
+    for (const h of hhList) if (can.has(h.id)) m.set(h.id, { ma: h.ma_hang_hoa, ten: h.ten_hang_hoa });
+    return m;
+  }, [hhXoaPhanLoai, hhList]);
+
+  const handleHhXoaHangKhongDung = () => {
+    if (!hhXoaPhanLoai) return;
+    const ids = hhXoaPhanLoai.xoaDuoc;
+    deleteHhMany.mutate(ids, {
+      onSuccess: () => {
+        clearHhSelection();
+        if (hhViewing && ids.includes(hhViewing.id)) setHhViewing(null);
+        setHhXoaPhanLoai(null);
+      },
+    });
+  };
+
+  const handleHhDelete = (id: string) => kiemTraTruocKhiXoaHh([id], () => {
     confirm({
       title: t('farmHangHoaPhanThuoc.hangHoa.deleteTitle'),
       message: t('farmHangHoaPhanThuoc.hangHoa.deleteMessage'),
@@ -239,11 +282,11 @@ const HangHoaPhanThuocPage: React.FC = () => {
         });
       },
     });
-  };
+  });
 
   const handleHhDeleteMany = () => {
     const ids = Array.from(hhSelectedIds);
-    confirm({
+    kiemTraTruocKhiXoaHh(ids, () => confirm({
       title: t('farmHangHoaPhanThuoc.hangHoa.deleteTitle'),
       message: t('common.deleteManyConfirm', { count: ids.length }),
       variant: 'danger',
@@ -256,7 +299,7 @@ const HangHoaPhanThuocPage: React.FC = () => {
           },
         });
       },
-    });
+    }));
   };
 
   return (
@@ -468,6 +511,18 @@ const HangHoaPhanThuocPage: React.FC = () => {
                 : undefined
             }
             onDelete={canDelete ? (id) => { setHhViewing(null); handleHhDelete(id); } : undefined}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {hhXoaPhanLoai && (
+          <XoaHangHoaDangDungDialog
+            phanLoai={hhXoaPhanLoai}
+            thongTinHang={thongTinHangXoa}
+            isDeleting={deleteHhMany.isPending}
+            onXoa={handleHhXoaHangKhongDung}
+            onClose={() => setHhXoaPhanLoai(null)}
           />
         )}
       </AnimatePresence>

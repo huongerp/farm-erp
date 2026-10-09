@@ -1,7 +1,8 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import type { HangHoaListServerQuery } from './services/hang-hoa-list-query';
-import { fetchAllHangHoaForListQuery } from './services/hang-hoa-service';
+import { fetchAllHangHoaForListQuery, getHangHoaDangDung } from './services/hang-hoa-service';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { AnimatePresence } from 'framer-motion';
 import { Package, ClipboardList } from 'lucide-react';
 import TabGroup from '../../../components/ui/TabGroup';
@@ -12,6 +13,8 @@ import DanhSachHangHoaForm from './components/DanhSachHangHoaForm';
 import DanhSachHangHoaDetail from './components/DanhSachHangHoaDetail';
 import DinhMucTonTab from './components/DinhMucTonTab';
 import InTemQrDialog from './components/InTemQrDialog';
+import XoaHangHoaDangDungDialog from '../../../components/shared/XoaHangHoaDangDungDialog';
+import { phanLoaiXoa, type PhanLoaiXoa } from '../../../lib/hang-hoa-dang-dung';
 import { useHangHoaRefQuery } from '../../../lib/hooks/use-ref-queries';
 import ImportDialog from '../../../components/shared/LazyImportDialog';
 import type { ImportReferenceSheet, ImportSampleRow } from '../../../components/shared/ImportDialog';
@@ -68,6 +71,8 @@ const DanhSachHangHoaPage: React.FC = () => {
   // Bản chụp lúc mở chi tiết; bản hiển thị (viewingItem) lấy dòng mới nhất từ trang đang xem khi refetch.
   const [viewingSnapshot, setViewingItem] = useState<HangHoa | null>(null);
   const [importErrors, setImportErrors] = useState<ImportHangHoaResult['errors']>([]);
+  /** Kết quả kiểm tra trước khi xoá — có hàng đang dùng ở phiếu thì mở dialog liệt kê phiếu. */
+  const [xoaPhanLoai, setXoaPhanLoai] = useState<PhanLoaiXoa | null>(null);
 
   /**
    * Bộ lọc gửi thẳng xuống PostgREST — trước đây trang này tải toàn bộ danh mục
@@ -295,7 +300,44 @@ const DanhSachHangHoaPage: React.FC = () => {
     setViewingItem(item);
   };
 
-  const handleDelete = (id: string) => {
+  /**
+   * Hỏi DB phiếu nào đang dùng các hàng định xoá. Không hàng nào bị dùng thì hỏi xác nhận như cũ.
+   * Nếu có, mở dialog: chỉ xoá hàng không dùng, liệt kê phiếu của các hàng còn lại.
+   */
+  const kiemTraTruocKhiXoa = async (ids: string[], xacNhanXoa: () => void) => {
+    const toastId = toast.loading(t('common.xoaDangDung.dangKiemTra'));
+    try {
+      const kq = phanLoaiXoa(ids, await getHangHoaDangDung(ids));
+      if (kq.dangDung.length === 0) xacNhanXoa();
+      else setXoaPhanLoai(kq);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : String(err));
+    } finally {
+      toast.dismiss(toastId);
+    }
+  };
+
+  const thongTinHangXoa = useMemo(() => {
+    const m = new Map<string, { ma: string; ten: string }>();
+    if (!xoaPhanLoai) return m;
+    const can = new Set(xoaPhanLoai.dangDung.map((h) => h.idHangHoa));
+    for (const h of hangHoaRef) if (can.has(h.id)) m.set(h.id, { ma: h.ma_hang, ten: h.ten_hang });
+    return m;
+  }, [xoaPhanLoai, hangHoaRef]);
+
+  const handleXoaHangKhongDung = () => {
+    if (!xoaPhanLoai) return;
+    const ids = xoaPhanLoai.xoaDuoc;
+    deleteManyMutation.mutate(ids, {
+      onSuccess: () => {
+        clearSelection();
+        if (viewingItem && ids.includes(viewingItem.id)) setViewingItem(null);
+        setXoaPhanLoai(null);
+      },
+    });
+  };
+
+  const handleDelete = (id: string) => kiemTraTruocKhiXoa([id], () => {
     confirm({
       title: t('hangHoa.deleteTitle'),
       message: t('hangHoa.deleteMessage'),
@@ -309,11 +351,11 @@ const DanhSachHangHoaPage: React.FC = () => {
         });
       },
     });
-  };
+  });
 
   const handleDeleteMany = () => {
     const ids = Array.from(selectedIds);
-    confirm({
+    kiemTraTruocKhiXoa(ids, () => confirm({
       title: t('hangHoa.deleteTitle'),
       message: t('common.deleteManyConfirm', { count: ids.length }),
       variant: 'danger',
@@ -326,7 +368,7 @@ const DanhSachHangHoaPage: React.FC = () => {
           },
         });
       },
-    });
+    }));
   };
 
   const handleStatusChangeMany = (status: 0 | 1) => {
@@ -501,6 +543,18 @@ const DanhSachHangHoaPage: React.FC = () => {
               .filter((h) => selectedIds.has(h.id) && h.ma_hang)
               .map((h) => ({ ma: h.ma_hang, ten: h.ten_hang, dvt: h.dvt }))}
             onClose={() => setShowInTem(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {xoaPhanLoai && (
+          <XoaHangHoaDangDungDialog
+            phanLoai={xoaPhanLoai}
+            thongTinHang={thongTinHangXoa}
+            isDeleting={deleteManyMutation.isPending}
+            onXoa={handleXoaHangKhongDung}
+            onClose={() => setXoaPhanLoai(null)}
           />
         )}
       </AnimatePresence>
