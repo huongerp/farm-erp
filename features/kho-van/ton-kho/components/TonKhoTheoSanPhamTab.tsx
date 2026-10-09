@@ -201,7 +201,7 @@ function ProductDetailDrawer({
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                   {t('tonKho.byProduct.detailCurrentStock')}
                 </p>
-                <p className="text-lg font-bold text-foreground tabular-nums mt-0.5">
+                <p className={cn('text-lg font-bold tabular-nums mt-0.5', tong_so_luong < 0 ? 'text-destructive' : 'text-foreground')}>
                   {tong_so_luong.toLocaleString('vi-VN')}
                 </p>
               </div>
@@ -305,7 +305,7 @@ function ProductDetailDrawer({
                       <Warehouse size={14} className="text-muted-foreground shrink-0" />
                       {khoMap[r.id_kho] ?? r.id_kho}
                     </td>
-                    <td className="px-4 py-2.5 text-right font-medium tabular-nums">{r.so_luong.toLocaleString('vi-VN')}</td>
+                    <td className={cn('px-4 py-2.5 text-right font-medium tabular-nums', r.so_luong < 0 && 'text-destructive')}>{r.so_luong.toLocaleString('vi-VN')}</td>
                   </tr>
                 ))}
               </tbody>
@@ -352,7 +352,7 @@ function ProductDetailDrawer({
                     <td className="px-4 py-2.5 text-sm text-muted-foreground">{histRow.ten_kho ?? '—'}</td>
                     <td className="px-4 py-2.5 text-sm text-muted-foreground">{histRow.ten_kho_den ?? '—'}</td>
                     <td className="px-4 py-2.5 text-right font-medium tabular-nums">{histRow.so_luong.toLocaleString('vi-VN')}</td>
-                    <td className="px-4 py-2.5 text-right font-medium tabular-nums text-muted-foreground">
+                    <td className={cn('px-4 py-2.5 text-right font-medium tabular-nums', tonSau !== undefined && tonSau < 0 ? 'text-destructive' : 'text-muted-foreground')}>
                       {tonSau !== undefined ? tonSau.toLocaleString('vi-VN') : '—'}
                     </td>
                     <td className="px-4 py-2.5 text-xs text-muted-foreground">{histRow.don_vi_tinh ?? '—'}</td>
@@ -548,7 +548,7 @@ const TonKhoTheoSanPhamTab: React.FC = () => {
       const qty = item.by_kho[khoIdFromColumnId(col.id)] ?? 0;
       return (
         <td key={col.id} className="px-4 py-3 text-right" style={baseStyle}>
-          <span className="font-medium tabular-nums text-sm">
+          <span className={cn('font-medium tabular-nums text-sm', qty < 0 && 'text-destructive')}>
             {qty !== 0 ? qty.toLocaleString('vi-VN') : '—'}
           </span>
         </td>
@@ -572,7 +572,7 @@ const TonKhoTheoSanPhamTab: React.FC = () => {
       case 'tong_so_luong':
         return (
           <td key={col.id} className="px-4 py-3 text-right" style={baseStyle}>
-            <span className="font-medium tabular-nums text-sm">{item.tong_so_luong.toLocaleString('vi-VN')}</span>
+            <span className={cn('font-medium tabular-nums text-sm', item.tong_so_luong < 0 && 'text-destructive')}>{item.tong_so_luong.toLocaleString('vi-VN')}</span>
           </td>
         );
       case 'ten_danh_muc':

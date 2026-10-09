@@ -493,7 +493,7 @@ const TonKhoTonThoiDiemTab: React.FC = () => {
       const n = metricValue(cell, periodParsed.metric);
       return (
         <td key={col.id} className="px-3 py-2.5 text-right" style={baseStyle}>
-          <span className="font-medium tabular-nums text-sm">{formatQty(n)}</span>
+          <span className={cn('font-medium tabular-nums text-sm', n < 0 && 'text-destructive')}>{formatQty(n)}</span>
         </td>
       );
     }
@@ -528,7 +528,7 @@ const TonKhoTonThoiDiemTab: React.FC = () => {
       case 'tong_dau':
         return (
           <td key={col.id} className="px-3 py-2.5 text-right" style={baseStyle}>
-            <span className="font-medium tabular-nums text-sm">{formatQty(item.tong_dau)}</span>
+            <span className={cn('font-medium tabular-nums text-sm', item.tong_dau < 0 && 'text-destructive')}>{formatQty(item.tong_dau)}</span>
           </td>
         );
       case 'tong_trong':
@@ -545,7 +545,7 @@ const TonKhoTonThoiDiemTab: React.FC = () => {
       case 'tong_cuoi':
         return (
           <td key={col.id} className="px-3 py-2.5 text-right" style={baseStyle}>
-            <span className="font-semibold tabular-nums text-sm">{formatQty(item.tong_cuoi)}</span>
+            <span className={cn('font-semibold tabular-nums text-sm', item.tong_cuoi < 0 && 'text-destructive')}>{formatQty(item.tong_cuoi)}</span>
           </td>
         );
       default:
