@@ -13,7 +13,6 @@ import type { DeXuatMuaHang } from '../core/types';
 import {
   SO_NGAY_MAC_DINH_NGAY_CAN,
   SO_PHIEU_DO_DAI,
-  SO_PHIEU_TIEN_TO,
   TRANG_THAI_CHO_DUYET,
   TRANG_THAI_DE_XUAT_MUA_HANG,
   trangThaiToI18nKey,
@@ -37,6 +36,7 @@ import SubTable, { type SubTableColumn } from '../../../../components/shared/sub
 import SubTableActionButton from '../../../../components/shared/sub-table/SubTableActionButton';
 import { cn } from '../../../../lib/utils';
 import { dongDeXuatDoDang } from '../../../../lib/de-xuat-chi-tiet';
+import { useKhoBienThe } from '../../kho-bien-the/KhoBienTheProvider';
 
 function addDays(dateStr: string, days: number): string {
   const d = new Date(dateStr);
@@ -77,6 +77,7 @@ const DEFAULT_FORM_VALUES: Partial<DeXuatMuaHangFormValues> = {
 };
 
 const DeXuatMuaHangForm: React.FC<Props> = ({ khoList, employees, initialData, onClose, canEdit = true, onRequestAddHangHoa }) => {
+  const bt = useKhoBienThe();
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const isEdit = !!initialData?.id;
@@ -251,8 +252,8 @@ const DeXuatMuaHangForm: React.FC<Props> = ({ khoList, employees, initialData, o
     let soPhieu = data.so_phieu?.trim() ?? '';
     if (!isEdit) {
       try {
-        soPhieu = await getNextSoPhieuDeXuatMuaHangRpc({
-          tien_to_so_phieu: SO_PHIEU_TIEN_TO,
+        soPhieu = await getNextSoPhieuDeXuatMuaHangRpc(bt, {
+          tien_to_so_phieu: bt.tienTo.deXuat,
           do_dai_phan_so: SO_PHIEU_DO_DAI,
         });
       } catch {

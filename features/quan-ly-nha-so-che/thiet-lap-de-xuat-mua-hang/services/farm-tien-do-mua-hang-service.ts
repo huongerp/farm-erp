@@ -6,9 +6,10 @@ import {
   updateFarmTienDoMuaHangStatus as updateStatusDb,
   deleteFarmTienDoMuaHangList as deleteListDb,
 } from './farm-tien-do-mua-hang-db.service';
+import type { KhoBienThe } from '../../kho-bien-the/bien-the';
 
 export const getFarmTienDoMuaHangList = getListDb;
-export const createFarmTienDoMuaHang = (data: FarmTienDoMuaHangFormValues) => createDb(data);
+export const createFarmTienDoMuaHang = (bt: KhoBienThe, data: FarmTienDoMuaHangFormValues) => createDb(bt, data);
 export const updateFarmTienDoMuaHang = updateDb;
 export const updateFarmTienDoMuaHangStatus = updateStatusDb;
 export const deleteFarmTienDoMuaHangList = deleteListDb;

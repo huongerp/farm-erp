@@ -1,3 +1,5 @@
+import { storeTheoBienThe } from '../../kho-bien-the/KhoBienTheProvider';
+import { khoStorageKey } from '../../kho-bien-the/bien-the';
 import {
   createGenericStore,
   ColumnConfig,
@@ -47,8 +49,10 @@ const initialFilters: KiemKeKhoPTFilters = {
   dateTo: '',
 };
 
-export const useKiemKeKhoPTStore = createGenericStore<KiemKeKhoPTFilters>(
-  initialFilters,
-  DEFAULT_COLUMNS,
-  'table-kiem-ke-kho-pt'
+export const useKiemKeKhoPTStore = storeTheoBienThe((bt) =>
+  createGenericStore<KiemKeKhoPTFilters>(
+    initialFilters,
+    DEFAULT_COLUMNS,
+    khoStorageKey(bt, 'table-kiem-ke-kho-pt')
+  )
 );

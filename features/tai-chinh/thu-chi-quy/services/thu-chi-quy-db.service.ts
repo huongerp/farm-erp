@@ -303,6 +303,7 @@ const CHUNG_TU_NGUON: Record<
   phieu_de_xuat_vat_tu: { table: 'fp_mh_phieu_de_xuat_vat_tu', cotSo: 'so_phieu', cotNgay: 'ngay', cotMoTa: 'ghi_chu' },
   de_xuat_mua_hang: { table: 'fp_farm_de_xuat_mua_hang', cotSo: 'so_phieu', cotNgay: 'ngay', cotMoTa: 'ghi_chu' },
   chi_phi_tai_san: { table: 'fp_ts_chi_phi_tai_san', cotSo: 'ma_phieu', cotNgay: 'ngay', cotMoTa: 'ten_tai_san' },
+  pt_de_xuat_mua_hang: { table: 'fp_pt_de_xuat_mua_hang', cotSo: 'so_phieu', cotNgay: 'ngay', cotMoTa: 'ghi_chu' },
 };
 
 /**

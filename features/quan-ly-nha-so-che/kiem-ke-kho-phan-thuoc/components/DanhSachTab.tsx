@@ -38,8 +38,10 @@ import {
   exportFileNameDotKiemKePT,
 } from '../utils/export-kiem-ke-pt-danh-sach';
 import type { DotKiemKePT, TrangThaiDotKiemKePT } from '../core/types';
+import { useKhoBienThe } from '../../kho-bien-the/KhoBienTheProvider';
 
 const DanhSachTab: React.FC = () => {
+  const bt = useKhoBienThe();
   const { t } = useTranslation();
   const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
@@ -217,7 +219,7 @@ const DanhSachTab: React.FC = () => {
   useEffect(() => {
     if (!exportRequest) return;
     let cancelled = false;
-    fetchAllDotKiemKePTForListQuery(exportRequest.query)
+    fetchAllDotKiemKePTForListQuery(bt, exportRequest.query)
       .then((rows) => {
         if (!cancelled) setExportResult({ request: exportRequest, rows });
       })
@@ -227,7 +229,7 @@ const DanhSachTab: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [exportRequest]);
+  }, [bt, exportRequest]);
 
   const exportColumns = useMemo(() => exportColumnsDotKiemKePT(t), [t]);
   const exportMapFn = useMemo(() => exportMapDotKiemKePT(t), [t]);

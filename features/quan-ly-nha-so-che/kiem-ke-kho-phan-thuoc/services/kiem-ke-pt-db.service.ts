@@ -1,7 +1,6 @@
 /**
- * Kiểm kê kho phân thuốc — PostgREST.
- * Bảng: fp_farm_dot_kiem_ke_pt, _kho, _chi_tiet (docs/db-schema-baseline.sql).
- * Tồn sổ: v_farm_ton_kho_phan_thuoc. Điều chỉnh: RPC farm_kiem_ke_pt_apply_*.
+ * Kiểm kê kho nhóm kho farm — PostgREST, tên bảng/RPC theo biến thể (`bt`, kho-bien-the/bien-the.ts).
+ * Bảng: đợt, _kho, _chi_tiet. Tồn sổ: view tồn kho. Điều chỉnh: RPC *_kiem_ke_*_apply_dieu_chinh_*.
  */
 import { db, fetchTablePage, fetchAllRows, throwDbError, type PaginatedTableResult } from '../../../../lib/db';
 import { buildPostgrestSearchOr } from '../../../../lib/postgrest-search';
@@ -29,10 +28,7 @@ import type {
 } from '../core/types';
 import type { DotKiemKePTListServerQuery } from './kiem-ke-pt-list-query';
 import { KKPT_SORT_MAC_DINH } from './kiem-ke-pt-list-query';
-
-const TABLE_DOT = 'fp_farm_dot_kiem_ke_pt';
-const TABLE_DOT_KHO = 'fp_farm_dot_kiem_ke_pt_kho';
-const TABLE_CHI_TIET = 'fp_farm_dot_kiem_ke_pt_chi_tiet';
+import type { KhoBienThe } from '../../kho-bien-the/bien-the';
 
 const DOT_COLUMNS =
   'id,ma_dot,ten_dot,ngay_bat_dau,ngay_ket_thuc,trang_thai,id_nguoi_phu_trach,id_nguoi_tao,ghi_chu,tg_tao,tg_cap_nhat';
@@ -150,11 +146,11 @@ function rowToChiTiet(
 /* -------------------------------------------------------------------------- */
 
 /** Kho của nhiều đợt trong MỘT request. */
-async function khoTheoDotIds(dotIds: number[]): Promise<Map<number, string[]>> {
+async function khoTheoDotIds(bt: KhoBienThe, dotIds: number[]): Promise<Map<number, string[]>> {
   const map = new Map<number, string[]>();
   if (dotIds.length === 0) return map;
   const { data, error } = await db
-    .from(TABLE_DOT_KHO)
+    .from(bt.bang.dotKiemKeKho)
     .select('id_dot_kiem_ke_pt,id_kho')
     .in('id_dot_kiem_ke_pt', dotIds);
   if (error) throwDbError(error);
@@ -171,21 +167,22 @@ async function khoTheoDotIds(dotIds: number[]): Promise<Map<number, string[]>> {
  * Tra id trước rồi `.in('id', …)` thay vì embed `!inner`: inner-join làm nhân
  * dòng cha nên `count: 'exact'` sai và phân trang lệch.
  */
-async function dotIdsTheoKho(khoIds: string[]): Promise<number[]> {
+async function dotIdsTheoKho(bt: KhoBienThe, khoIds: string[]): Promise<number[]> {
   const ids = khoIds.map(Number).filter(Number.isFinite);
   if (ids.length === 0) return [];
-  const { data, error } = await db.from(TABLE_DOT_KHO).select('id_dot_kiem_ke_pt').in('id_kho', ids);
+  const { data, error } = await db.from(bt.bang.dotKiemKeKho).select('id_dot_kiem_ke_pt').in('id_kho', ids);
   if (error) throwDbError(error);
   return [...new Set((data ?? []).map((r) => Number((r as { id_dot_kiem_ke_pt: unknown }).id_dot_kiem_ke_pt)))];
 }
 
 /** Số dòng / số lệch của các đợt (một request `.in()`). */
 async function thongKeChiTietTheoDot(
+  bt: KhoBienThe,
   dotIds: number[]
 ): Promise<Record<number, { so_hang_hoa: number; so_lech: number }>> {
   const out: Record<number, { so_hang_hoa: number; so_lech: number }> = {};
   if (dotIds.length === 0) return out;
-  const { data } = await db.from(TABLE_CHI_TIET).select('id_dot_kiem_ke_pt,ket_qua').in('id_dot_kiem_ke_pt', dotIds);
+  const { data } = await db.from(bt.bang.dotKiemKeChiTiet).select('id_dot_kiem_ke_pt,ket_qua').in('id_dot_kiem_ke_pt', dotIds);
   for (const r of (data ?? []) as { id_dot_kiem_ke_pt: number; ket_qua: string | null }[]) {
     if (!out[r.id_dot_kiem_ke_pt]) out[r.id_dot_kiem_ke_pt] = { so_hang_hoa: 0, so_lech: 0 };
     out[r.id_dot_kiem_ke_pt].so_hang_hoa += 1;
@@ -251,7 +248,7 @@ function applyKKPTListQuery<T>(builder: T, query: DotKiemKePTListServerQuery, pr
   return sel.order(col, { ascending: asc }).order('id', { ascending: false }) as T;
 }
 
-async function giaiCacDieuKienPhu(query: DotKiemKePTListServerQuery): Promise<PreResolved> {
+async function giaiCacDieuKienPhu(bt: KhoBienThe, query: DotKiemKePTListServerQuery): Promise<PreResolved> {
   const employees = await getEmployeesRef();
   const term = query.searchTerm.toLowerCase();
   const nhanVienIdsTheoTen = term
@@ -265,17 +262,17 @@ async function giaiCacDieuKienPhu(query: DotKiemKePTListServerQuery): Promise<Pr
         .filter(Number.isFinite)
     : [];
 
-  const dotIdsLoc = query.idKho.length > 0 ? await dotIdsTheoKho(query.idKho) : null;
-  const dotIdsPhamVi = query.viewAll ? null : await dotIdsTheoKho(query.allowedKhoIds);
+  const dotIdsLoc = query.idKho.length > 0 ? await dotIdsTheoKho(bt, query.idKho) : null;
+  const dotIdsPhamVi = query.viewAll ? null : await dotIdsTheoKho(bt, query.allowedKhoIds);
 
   return { dotIdsLoc, dotIdsPhamVi, nhanVienIdsTheoTen };
 }
 
-async function enrichDotRows(rows: DotRow[]): Promise<DotKiemKePT[]> {
+async function enrichDotRows(bt: KhoBienThe, rows: DotRow[]): Promise<DotKiemKePT[]> {
   const employees = await getEmployeesRef();
   const empMap = new Map(employees.map((e) => [e.id, { ten: e.ho_ten, ma: e.ma_nhan_vien }]));
   const dotIds = rows.map((r) => r.id);
-  const [khoMap, stats] = await Promise.all([khoTheoDotIds(dotIds), thongKeChiTietTheoDot(dotIds)]);
+  const [khoMap, stats] = await Promise.all([khoTheoDotIds(bt, dotIds), thongKeChiTietTheoDot(bt, dotIds)]);
   return rows.map((row) => {
     const empPhuTrach = empMap.get(String(row.id_nguoi_phu_trach));
     const empTao = row.id_nguoi_tao != null ? empMap.get(String(row.id_nguoi_tao)) : undefined;
@@ -299,31 +296,33 @@ async function enrichDotRows(rows: DotRow[]): Promise<DotKiemKePT[]> {
 
 /** Một trang danh sách đợt — lọc / sắp xếp / cắt trang ở PostgREST. */
 export async function getDotKiemKePTPage(
+  bt: KhoBienThe,
   query: DotKiemKePTListServerQuery
 ): Promise<PaginatedTableResult<DotKiemKePT>> {
-  const pre = await giaiCacDieuKienPhu(query);
+  const pre = await giaiCacDieuKienPhu(bt, query);
 
   const result = await fetchTablePage<DotRow>(query.page, query.pageSize, async (from, to) => {
-    const sel = applyKKPTListQuery(db.from(TABLE_DOT).select(DOT_COLUMNS, { count: 'exact' }), query, pre);
+    const sel = applyKKPTListQuery(db.from(bt.bang.dotKiemKe).select(DOT_COLUMNS, { count: 'exact' }), query, pre);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const res = await (sel as any).range(from, to);
     return { data: (res.data as DotRow[] | null) ?? null, error: res.error, count: res.count };
   });
 
-  return { ...result, data: await enrichDotRows(result.data) };
+  return { ...result, data: await enrichDotRows(bt, result.data) };
 }
 
 /** Toàn bộ đợt khớp bộ lọc — CHỈ gọi khi bấm Xuất file. */
 export async function fetchAllDotKiemKePTForListQuery(
+  bt: KhoBienThe,
   query: DotKiemKePTListServerQuery
 ): Promise<DotKiemKePT[]> {
-  const pre = await giaiCacDieuKienPhu(query);
+  const pre = await giaiCacDieuKienPhu(bt, query);
   const rows = await fetchAllRows<DotRow>((from, to) => {
-    const sel = applyKKPTListQuery(db.from(TABLE_DOT).select(DOT_COLUMNS), query, pre);
+    const sel = applyKKPTListQuery(db.from(bt.bang.dotKiemKe).select(DOT_COLUMNS), query, pre);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return (sel as any).range(from, to);
   });
-  return enrichDotRows(rows);
+  return enrichDotRows(bt, rows);
 }
 
 /**
@@ -331,13 +330,14 @@ export async function fetchAllDotKiemKePTForListQuery(
  * Chip phải đếm trên toàn bộ dữ liệu, không phải trang đang xem.
  */
 export async function getDotKiemKePTTomTat(
+  bt: KhoBienThe,
   phamVi: { viewAll: boolean; allowedKhoIds: string[]; currentEmployeeId: string | null }
 ): Promise<DotKiemKePTTomTat[]> {
   const employees = await getEmployeesRef();
   const empMap = new Map(employees.map((e) => [e.id, e.ho_ten]));
-  const dotIdsPhamVi = phamVi.viewAll ? null : await dotIdsTheoKho(phamVi.allowedKhoIds);
+  const dotIdsPhamVi = phamVi.viewAll ? null : await dotIdsTheoKho(bt, phamVi.allowedKhoIds);
 
-  let sel = db.from(TABLE_DOT).select(DOT_TOM_TAT_COLUMNS);
+  let sel = db.from(bt.bang.dotKiemKe).select(DOT_TOM_TAT_COLUMNS);
   if (dotIdsPhamVi != null) {
     const ve: string[] = [];
     const me = phamVi.currentEmployeeId != null ? Number(phamVi.currentEmployeeId) : NaN;
@@ -352,7 +352,7 @@ export async function getDotKiemKePTTomTat(
 
   const rows = (data ?? []) as DotRow[];
   const dotIds = rows.map((r) => r.id);
-  const [khoMap, stats] = await Promise.all([khoTheoDotIds(dotIds), thongKeChiTietTheoDot(dotIds)]);
+  const [khoMap, stats] = await Promise.all([khoTheoDotIds(bt, dotIds), thongKeChiTietTheoDot(bt, dotIds)]);
 
   return rows.map((row) => {
     const idKho = khoMap.get(row.id) ?? [];
@@ -380,25 +380,26 @@ export async function getDotKiemKePTTomTat(
 /*  Đợt                                                                        */
 /* -------------------------------------------------------------------------- */
 
-export async function getDotKiemKePTById(id: string): Promise<DotKiemKePT | null> {
+export async function getDotKiemKePTById(bt: KhoBienThe, id: string): Promise<DotKiemKePT | null> {
   const idNum = Number(id);
   if (!Number.isFinite(idNum)) return null;
-  const { data: row, error } = await db.from(TABLE_DOT).select(DOT_COLUMNS).eq('id', idNum).maybeSingle();
+  const { data: row, error } = await db.from(bt.bang.dotKiemKe).select(DOT_COLUMNS).eq('id', idNum).maybeSingle();
   if (error) throwDbError(error);
   if (!row) return null;
-  const [enriched] = await enrichDotRows([row as DotRow]);
+  const [enriched] = await enrichDotRows(bt, [row as DotRow]);
   return enriched ?? null;
 }
 
 /** idNguoiTao = fp_var_nhan_vien.id của user đăng nhập (không fallback sang người phụ trách). */
 export async function createDotKiemKePT(
+  bt: KhoBienThe,
   data: DotKiemKePTCreate,
   idNguoiTao?: string | null
 ): Promise<DotKiemKePT> {
   const idNguoiTaoNum =
     idNguoiTao != null && idNguoiTao !== '' && Number.isFinite(Number(idNguoiTao)) ? Number(idNguoiTao) : null;
   const { data: row, error } = await db
-    .from(TABLE_DOT)
+    .from(bt.bang.dotKiemKe)
     .insert({
       ma_dot: data.ma_dot.trim(),
       ten_dot: data.ten_dot.trim(),
@@ -416,16 +417,17 @@ export async function createDotKiemKePT(
   const idDot = (row as DotRow).id;
   if ((data.id_kho ?? []).length > 0) {
     const { error: errKho } = await db
-      .from(TABLE_DOT_KHO)
+      .from(bt.bang.dotKiemKeKho)
       .insert(data.id_kho.map((id_kho) => ({ id_dot_kiem_ke_pt: idDot, id_kho: Number(id_kho) })));
     if (errKho) throwDbError(errKho);
   }
-  const created = await getDotKiemKePTById(String(idDot));
+  const created = await getDotKiemKePTById(bt, String(idDot));
   if (!created) throw new Error(i18n.t('kiemKeKhoPT.service.notFound'));
   return created;
 }
 
 export async function updateDotKiemKePT(
+  bt: KhoBienThe,
   id: string,
   data: Partial<DotKiemKePTCreate>,
   /** Cấp cao (cap_bac = 1 hoặc admin/all) được sửa cả đợt đã hoàn thành. */
@@ -433,7 +435,7 @@ export async function updateDotKiemKePT(
 ): Promise<DotKiemKePT> {
   const idNum = Number(id);
   if (!Number.isFinite(idNum)) throw new Error(i18n.t('kiemKeKhoPT.service.notFound'));
-  const existing = await getDotKiemKePTById(id);
+  const existing = await getDotKiemKePTById(bt, id);
   if (!existing) throw new Error(i18n.t('kiemKeKhoPT.service.notFound'));
   if (!coTheSuaDotPT(existing.trang_thai, capCao)) {
     // Ghi chú vẫn cho sửa: đó là chỗ ghi lý do chốt sổ, không đụng số liệu.
@@ -449,38 +451,39 @@ export async function updateDotKiemKePT(
   if (data.id_nguoi_phu_trach != null) payload.id_nguoi_phu_trach = Number(data.id_nguoi_phu_trach);
   if (data.ghi_chu !== undefined) payload.ghi_chu = data.ghi_chu?.trim() || null;
   if (Object.keys(payload).length > 0) {
-    const { error } = await db.from(TABLE_DOT).update(payload).eq('id', idNum);
+    const { error } = await db.from(bt.bang.dotKiemKe).update(payload).eq('id', idNum);
     if (error) throwDbError(error);
   }
 
   if (data.id_kho != null) {
-    await db.from(TABLE_DOT_KHO).delete().eq('id_dot_kiem_ke_pt', idNum);
+    await db.from(bt.bang.dotKiemKeKho).delete().eq('id_dot_kiem_ke_pt', idNum);
     if (data.id_kho.length > 0) {
       const { error } = await db
-        .from(TABLE_DOT_KHO)
+        .from(bt.bang.dotKiemKeKho)
         .insert(data.id_kho.map((id_kho) => ({ id_dot_kiem_ke_pt: idNum, id_kho: Number(id_kho) })));
       if (error) throwDbError(error);
     }
   }
 
-  const updated = await getDotKiemKePTById(id);
+  const updated = await getDotKiemKePTById(bt, id);
   if (!updated) throw new Error(i18n.t('kiemKeKhoPT.service.notFound'));
   return updated;
 }
 
-export async function deleteDotKiemKePT(ids: string[], capCao = false): Promise<void> {
+export async function deleteDotKiemKePT(bt: KhoBienThe, ids: string[], capCao = false): Promise<void> {
   const idNums = ids.map(Number).filter(Number.isFinite);
   if (idNums.length === 0) return;
-  const { data: dots } = await db.from(TABLE_DOT).select('id,trang_thai').in('id', idNums);
+  const { data: dots } = await db.from(bt.bang.dotKiemKe).select('id,trang_thai').in('id', idNums);
   const chanLai = (dots ?? []).filter(
     (d: { trang_thai: TrangThaiDotKiemKePT }) => !coTheXoaDotPT(d.trang_thai, capCao)
   );
   if (chanLai.length > 0) throw new Error(i18n.t('kiemKeKhoPT.service.hoanThanhChiCapCaoXoa'));
-  const { error } = await db.from(TABLE_DOT).delete().in('id', idNums);
+  const { error } = await db.from(bt.bang.dotKiemKe).delete().in('id', idNums);
   if (error) throwDbError(error);
 }
 
 export async function changeTrangThaiDotPT(
+  bt: KhoBienThe,
   id: string,
   trang_thai: TrangThaiDotKiemKePT,
   capCao = false
@@ -490,31 +493,31 @@ export async function changeTrangThaiDotPT(
   if (!coTheChuyenTrangThaiDotPT(capCao)) {
     throw new Error(i18n.t('kiemKeKhoPT.service.chiCapCaoDoiTrangThai'));
   }
-  const existing = await getDotKiemKePTById(id);
+  const existing = await getDotKiemKePTById(bt, id);
   if (!existing) throw new Error(i18n.t('kiemKeKhoPT.service.notFound'));
-  const { error } = await db.from(TABLE_DOT).update({ trang_thai }).eq('id', idNum);
+  const { error } = await db.from(bt.bang.dotKiemKe).update({ trang_thai }).eq('id', idNum);
   if (error) throwDbError(error);
-  const updated = await getDotKiemKePTById(id);
+  const updated = await getDotKiemKePTById(bt, id);
   if (!updated) throw new Error(i18n.t('kiemKeKhoPT.service.notFound'));
   return updated;
 }
 
-export async function hoanThanhDotPT(id: string): Promise<DotKiemKePT> {
-  const dot = await getDotKiemKePTById(id);
+export async function hoanThanhDotPT(bt: KhoBienThe, id: string): Promise<DotKiemKePT> {
+  const dot = await getDotKiemKePTById(bt, id);
   if (!dot) throw new Error(i18n.t('kiemKeKhoPT.service.notFound'));
   if (dot.trang_thai !== 'dang_kiem_ke') {
     throw new Error(i18n.t('kiemKeKhoPT.service.onlyHoanThanhWhenDangKiem'));
   }
-  const { error } = await db.from(TABLE_DOT).update({ trang_thai: 'hoan_thanh' }).eq('id', Number(id));
+  const { error } = await db.from(bt.bang.dotKiemKe).update({ trang_thai: 'hoan_thanh' }).eq('id', Number(id));
   if (error) throwDbError(error);
-  const updated = await getDotKiemKePTById(id);
+  const updated = await getDotKiemKePTById(bt, id);
   if (!updated) throw new Error(i18n.t('kiemKeKhoPT.service.notFound'));
   return updated;
 }
 
 /** Số thứ tự tiếp theo cho mã đợt (app ghép thành KKPT-YYYY-NNNN). */
-export async function getNextMaDotKiemKePT(): Promise<number> {
-  const { data, error } = await db.rpc('get_next_ma_dot_farm_kiem_ke_pt');
+export async function getNextMaDotKiemKePT(bt: KhoBienThe): Promise<number> {
+  const { data, error } = await db.rpc(bt.rpc.maDotKiemKe);
   if (error) throwDbError(error);
   const n = typeof data === 'number' ? data : Number(data);
   return Number.isFinite(n) ? n : 1;
@@ -524,11 +527,11 @@ export async function getNextMaDotKiemKePT(): Promise<number> {
 /*  Chi tiết                                                                   */
 /* -------------------------------------------------------------------------- */
 
-export async function getChiTietByDotPT(id_dot: string): Promise<ChiTietKiemKePT[]> {
+export async function getChiTietByDotPT(bt: KhoBienThe, id_dot: string): Promise<ChiTietKiemKePT[]> {
   const idNum = Number(id_dot);
   if (!Number.isFinite(idNum)) return [];
   const { data: rows, error } = await db
-    .from(TABLE_CHI_TIET)
+    .from(bt.bang.dotKiemKeChiTiet)
     .select(CHI_TIET_COLUMNS)
     .eq('id_dot_kiem_ke_pt', idNum)
     .order('id_kho')
@@ -537,7 +540,7 @@ export async function getChiTietByDotPT(id_dot: string): Promise<ChiTietKiemKePT
 
   const [khoList, hangHoaList, employees] = await Promise.all([
     getKhoRef(),
-    getFarmHangHoaRef(),
+    getFarmHangHoaRef(bt),
     getEmployeesRef(),
   ]);
   const khoMap = new Map(khoList.map((k) => [k.id, { ten: k.ten_kho, ma: k.ma_kho }]));
@@ -565,11 +568,12 @@ export async function getChiTietByDotPT(id_dot: string): Promise<ChiTietKiemKePT
  * (kể cả "Chờ duyệt"), nên phiếu điều chỉnh sinh ra sau này ("Đã duyệt") có hiệu lực ngay.
  */
 export async function taoDanhSachKiemKePT(
+  bt: KhoBienThe,
   id_dot: string,
   filters?: TaoDanhSachKiemKePTFilters,
   capCao = false
 ): Promise<ChiTietKiemKePT[]> {
-  const dot = await getDotKiemKePTById(id_dot);
+  const dot = await getDotKiemKePTById(bt, id_dot);
   if (!dot) throw new Error(i18n.t('kiemKeKhoPT.service.notFound'));
   if (!coTheSuaChiTietPT(dot.trang_thai, capCao)) {
     throw new Error(i18n.t('kiemKeKhoPT.service.hoanThanhChiCapCao'));
@@ -582,10 +586,10 @@ export async function taoDanhSachKiemKePT(
   if (khoIdsToProcess.length === 0) throw new Error(i18n.t('kiemKeKhoPT.service.dotChuaChonKho'));
 
   const [hangHoaList, existing, tonRows] = await Promise.all([
-    getFarmHangHoaRef(),
-    getChiTietByDotPT(id_dot),
+    getFarmHangHoaRef(bt),
+    getChiTietByDotPT(bt, id_dot),
     // Một request cho mọi kho trong phạm vi, thay vì một request mỗi kho.
-    getTonKhoPTMatrixByKhoIds(khoIdsToProcess),
+    getTonKhoPTMatrixByKhoIds(bt, khoIdsToProcess),
   ]);
 
   // `fp_farm_danh_sach_hang_hoa` không còn cột trang_thai → chỉ lọc theo danh mục / hàng hóa.
@@ -630,22 +634,23 @@ export async function taoDanhSachKiemKePT(
 
   if (toInsert.length === 0) throw new Error(i18n.t('kiemKeKhoPT.service.taoDanhSachEmpty'));
 
-  const { error } = await db.from(TABLE_CHI_TIET).insert(toInsert);
+  const { error } = await db.from(bt.bang.dotKiemKeChiTiet).insert(toInsert);
   if (error) throwDbError(error);
-  const { error: errDot } = await db.from(TABLE_DOT).update({ trang_thai: 'dang_kiem_ke' }).eq('id', idDotNum);
+  const { error: errDot } = await db.from(bt.bang.dotKiemKe).update({ trang_thai: 'dang_kiem_ke' }).eq('id', idDotNum);
   if (errDot) throwDbError(errDot);
 
-  return getChiTietByDotPT(id_dot);
+  return getChiTietByDotPT(bt, id_dot);
 }
 
 /** Thêm một hàng hóa vào nhiều kho trong MỘT request (bản kiểm kê kho cũ gọi tuần tự từng kho). */
 export async function createChiTietKiemKePT(
+  bt: KhoBienThe,
   id_dot: string,
   id_kho_list: string[],
   id_hang_hoa: string,
   capCao = false
 ): Promise<ChiTietKiemKePT[]> {
-  const dot = await getDotKiemKePTById(id_dot);
+  const dot = await getDotKiemKePTById(bt, id_dot);
   if (!dot) throw new Error(i18n.t('kiemKeKhoPT.service.notFound'));
   if (!coTheSuaChiTietPT(dot.trang_thai, capCao)) {
     throw new Error(i18n.t('kiemKeKhoPT.service.hoanThanhChiCapCao'));
@@ -654,15 +659,15 @@ export async function createChiTietKiemKePT(
   const khoHopLe = id_kho_list.filter((k) => dot.id_kho.includes(k));
   if (khoHopLe.length === 0) throw new Error(i18n.t('kiemKeKhoPT.service.khoNotInDot'));
 
-  const existing = await getChiTietByDotPT(id_dot);
+  const existing = await getChiTietByDotPT(bt, id_dot);
   const existingKeys = new Set(existing.map((c) => `${c.id_kho}|${c.id_hang_hoa}`));
   const khoCanThem = khoHopLe.filter((k) => !existingKeys.has(`${k}|${id_hang_hoa}`));
   if (khoCanThem.length === 0) throw new Error(i18n.t('kiemKeKhoPT.service.chiTietAlreadyExists'));
 
-  const tonRows = await getTonKhoPTMatrixByKhoIds(khoCanThem);
+  const tonRows = await getTonKhoPTMatrixByKhoIds(bt, khoCanThem);
   const tonMap = new Map(tonRows.filter((r) => r.id_hang_hoa === id_hang_hoa).map((r) => [r.id_kho, r.so_luong]));
 
-  const { error } = await db.from(TABLE_CHI_TIET).insert(
+  const { error } = await db.from(bt.bang.dotKiemKeChiTiet).insert(
     khoCanThem.map((id_kho) => ({
       id_dot_kiem_ke_pt: Number(id_dot),
       id_kho: Number(id_kho),
@@ -673,20 +678,20 @@ export async function createChiTietKiemKePT(
     }))
   );
   if (error) throwDbError(error);
-  return getChiTietByDotPT(id_dot);
+  return getChiTietByDotPT(bt, id_dot);
 }
 
-export async function deleteChiTietKiemKePT(id_chi_tiet: string, capCao = false): Promise<void> {
+export async function deleteChiTietKiemKePT(bt: KhoBienThe, id_chi_tiet: string, capCao = false): Promise<void> {
   const idNum = Number(id_chi_tiet);
   if (!Number.isFinite(idNum)) throw new Error(i18n.t('kiemKeKhoPT.service.chiTietNotFound'));
   const { data: row, error: fetchErr } = await db
-    .from(TABLE_CHI_TIET)
+    .from(bt.bang.dotKiemKeChiTiet)
     .select('id_dot_kiem_ke_pt,id_phieu_kho_dieu_chinh')
     .eq('id', idNum)
     .maybeSingle();
   if (fetchErr || !row) throw new Error(i18n.t('kiemKeKhoPT.service.chiTietNotFound'));
   const r = row as { id_dot_kiem_ke_pt: number; id_phieu_kho_dieu_chinh: number | null };
-  const dot = await getDotKiemKePTById(String(r.id_dot_kiem_ke_pt));
+  const dot = await getDotKiemKePTById(bt, String(r.id_dot_kiem_ke_pt));
   if (!dot) throw new Error(i18n.t('kiemKeKhoPT.service.notFound'));
   if (!coTheSuaChiTietPT(dot.trang_thai, capCao)) {
     throw new Error(i18n.t('kiemKeKhoPT.service.hoanThanhChiCapCao'));
@@ -695,11 +700,12 @@ export async function deleteChiTietKiemKePT(id_chi_tiet: string, capCao = false)
   if (!coTheSuaDongKiemKePT(dong, dot.trang_thai, capCao)) {
     throw new Error(i18n.t('kiemKeKhoPT.service.daDieuChinhChiCapCao'));
   }
-  const { error } = await db.from(TABLE_CHI_TIET).delete().eq('id', idNum);
+  const { error } = await db.from(bt.bang.dotKiemKeChiTiet).delete().eq('id', idNum);
   if (error) throwDbError(error);
 }
 
 export async function updateChiTietKetQuaPT(
+  bt: KhoBienThe,
   id_chi_tiet: string,
   data: ChiTietKiemKePTUpdate,
   id_nguoi_kiem: string,
@@ -708,7 +714,7 @@ export async function updateChiTietKetQuaPT(
   const idNum = Number(id_chi_tiet);
   if (!Number.isFinite(idNum)) throw new Error(i18n.t('kiemKeKhoPT.service.chiTietNotFound'));
   const { data: row, error: fetchErr } = await db
-    .from(TABLE_CHI_TIET)
+    .from(bt.bang.dotKiemKeChiTiet)
     .select(CHI_TIET_COLUMNS)
     .eq('id', idNum)
     .maybeSingle();
@@ -728,7 +734,7 @@ export async function updateChiTietKetQuaPT(
   const ghiChuDong = data.ghi_chu_dong !== undefined ? data.ghi_chu_dong : r.ghi_chu_dong;
 
   const { error } = await db
-    .from(TABLE_CHI_TIET)
+    .from(bt.bang.dotKiemKeChiTiet)
     .update({
       so_luong_thuc_te: soLuongThucTe ?? null,
       ghi_chu_dong: ghiChuDong?.trim() || null,
@@ -738,7 +744,7 @@ export async function updateChiTietKetQuaPT(
     })
     .eq('id', idNum);
   if (error) throwDbError(error);
-  return getChiTietByDotPT(String(r.id_dot_kiem_ke_pt));
+  return getChiTietByDotPT(bt, String(r.id_dot_kiem_ke_pt));
 }
 
 /* -------------------------------------------------------------------------- */
@@ -765,13 +771,14 @@ function throwKiemKePTRpcError(err: { message?: string; code?: string }): never 
 }
 
 export async function dieuChinhTonTheoKetQuaPT(
+  bt: KhoBienThe,
   id_chi_tiet: string,
   p_nguoi_tao_id?: number | null
 ): Promise<void> {
   const idNum = Number(id_chi_tiet);
   if (!Number.isFinite(idNum)) throw new Error(i18n.t('kiemKeKhoPT.service.chiTietNotFound'));
   const nv = p_nguoi_tao_id != null && Number.isFinite(Number(p_nguoi_tao_id)) ? Number(p_nguoi_tao_id) : null;
-  const { error } = await db.rpc('farm_kiem_ke_pt_apply_dieu_chinh_chi_tiet', {
+  const { error } = await db.rpc(bt.rpc.kiemKeDieuChinhChiTiet, {
     p_id_chi_tiet: idNum,
     p_nguoi_tao_id: nv,
   });
@@ -779,13 +786,14 @@ export async function dieuChinhTonTheoKetQuaPT(
 }
 
 export async function dieuChinhTonTheoDotPT(
+  bt: KhoBienThe,
   id_dot: string,
   p_nguoi_tao_id?: number | null
 ): Promise<number> {
   const idNum = Number(id_dot);
   if (!Number.isFinite(idNum)) throw new Error(i18n.t('kiemKeKhoPT.service.notFound'));
   const nv = p_nguoi_tao_id != null && Number.isFinite(Number(p_nguoi_tao_id)) ? Number(p_nguoi_tao_id) : null;
-  const { data, error } = await db.rpc('farm_kiem_ke_pt_apply_dieu_chinh_dot', {
+  const { data, error } = await db.rpc(bt.rpc.kiemKeDieuChinhDot, {
     p_id_dot: idNum,
     p_nguoi_tao_id: nv,
   });

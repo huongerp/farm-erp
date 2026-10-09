@@ -20,6 +20,7 @@ import type { PhieuKhoPTFormValues } from '../core/schema';
 import type { LoaiPhieuKhoPT } from '../core/types';
 import i18n from '../../../../lib/i18n';
 import { FARM_TON_KHO_PT_QUERY_KEY } from '../../ton-kho-phan-thuoc/hooks/use-farm-ton-kho-pt';
+import { useKhoBienThe } from '../../kho-bien-the/KhoBienTheProvider';
 
 const QUERY_KEY = ['phieuKhoPhanThuoc'] as const;
 const QUERY_KEY_CHI_TIET = ['phieuKhoPhanThuoc', 'chiTiet'] as const;
@@ -29,10 +30,11 @@ const CHI_TIET_PAGE_SIZE = 100;
 
 /** Phiếu kho đã sinh từ các đề xuất mua hàng — dùng ở module Đề xuất để chặn tạo trùng. */
 export const usePhieuKhoPTByDeXuat = (deXuatIds: string[]) => {
+  const bt = useKhoBienThe();
   const ids = [...new Set(deXuatIds.filter(Boolean))].sort();
   return useQuery({
-    queryKey: [...QUERY_KEY, 'byDeXuat', ids] as const,
-    queryFn: () => getPhieuKhoPTByDeXuatIds(ids),
+    queryKey: [...QUERY_KEY, 'byDeXuat', ids, bt.key] as const,
+    queryFn: () => getPhieuKhoPTByDeXuatIds(bt, ids),
     enabled: ids.length > 0,
     staleTime: 1000 * 60 * 2,
   });
@@ -40,10 +42,11 @@ export const usePhieuKhoPTByDeXuat = (deXuatIds: string[]) => {
 
 /** `enabled = false` khi phạm vi xem chưa tải xong — tránh lóe dữ liệu ngoài phạm vi. */
 export const usePhieuKhoPTListPaged = (pageIndex: number, listQuery: PhieuKhoPTListServerQuery, enabled = true) => {
+  const bt = useKhoBienThe();
   const qPart = stableListQueryKeyPart(listQuery);
   return useQuery({
-    queryKey: [...QUERY_KEY, 'paged', pageIndex, PHIEU_KHO_PT_PAGE_SIZE, qPart] as const,
-    queryFn: () => getPhieuKhoPTPage(pageIndex, PHIEU_KHO_PT_PAGE_SIZE, listQuery),
+    queryKey: [...QUERY_KEY, 'paged', pageIndex, PHIEU_KHO_PT_PAGE_SIZE, qPart, bt.key] as const,
+    queryFn: () => getPhieuKhoPTPage(bt, pageIndex, PHIEU_KHO_PT_PAGE_SIZE, listQuery),
     enabled,
     staleTime: 1000 * 60 * 2,
     placeholderData: keepPreviousData,
@@ -55,10 +58,11 @@ export const useChiTietPhieuKhoPTPaged = (
   listQuery: ChiTietPhieuKhoPTListServerQuery,
   enabled = true
 ) => {
+  const bt = useKhoBienThe();
   const qPart = stableListQueryKeyPart(listQuery);
   return useQuery({
-    queryKey: [...QUERY_KEY_CHI_TIET, 'paged', pageIndex, CHI_TIET_PAGE_SIZE, qPart] as const,
-    queryFn: () => getChiTietPhieuKhoPTPage(pageIndex, CHI_TIET_PAGE_SIZE, listQuery),
+    queryKey: [...QUERY_KEY_CHI_TIET, 'paged', pageIndex, CHI_TIET_PAGE_SIZE, qPart, bt.key] as const,
+    queryFn: () => getChiTietPhieuKhoPTPage(bt, pageIndex, CHI_TIET_PAGE_SIZE, listQuery),
     enabled,
     staleTime: 1000 * 60 * 2,
     placeholderData: keepPreviousData,
@@ -66,26 +70,29 @@ export const useChiTietPhieuKhoPTPaged = (
 };
 
 export const usePhieuKhoPTById = (id: string | undefined) => {
+  const bt = useKhoBienThe();
   return useQuery({
-    queryKey: [...QUERY_KEY, id],
-    queryFn: () => getPhieuKhoPTById(id!),
+    queryKey: [...QUERY_KEY, id, bt.key],
+    queryFn: () => getPhieuKhoPTById(bt, id!),
     enabled: !!id,
   });
 };
 
 export const useNextSoPhieuFarmPtQuery = (loai: LoaiPhieuKhoPT | undefined, enabled: boolean) => {
+  const bt = useKhoBienThe();
   return useQuery({
-    queryKey: ['phieuKhoPhanThuoc', 'nextSoPhieu', loai],
-    queryFn: () => getNextSoPhieuFarmPt(loai!),
+    queryKey: ['phieuKhoPhanThuoc', 'nextSoPhieu', loai, bt.key],
+    queryFn: () => getNextSoPhieuFarmPt(bt, loai!),
     enabled: enabled && !!loai,
     staleTime: 0,
   });
 };
 
 export const useCreatePhieuKhoPT = (onSuccess?: () => void) => {
+  const bt = useKhoBienThe();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: PhieuKhoPTFormValues) => createPhieuKhoPT(data),
+    mutationFn: (data: PhieuKhoPTFormValues) => createPhieuKhoPT(bt, data),
     onSuccess: (result) => {
       qc.invalidateQueries({ queryKey: QUERY_KEY_CHI_TIET });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY_CHI_TIET, 'paged'] });
@@ -104,10 +111,11 @@ export const useCreatePhieuKhoPT = (onSuccess?: () => void) => {
 
 /** Import Excel: lỗi từng dòng trả về trong `errors` (ImportDialog hiển thị) — không toast lỗi ở đây. */
 export const useImportPhieuKhoPT = () => {
+  const bt = useKhoBienThe();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ rows, nguoiTao }: { rows: Record<string, unknown>[]; nguoiTao: { id: number | null; ten: string | null } }) =>
-      importPhieuKhoPT(rows, nguoiTao),
+      importPhieuKhoPT(bt, rows, nguoiTao),
     onSuccess: (result) => {
       if (result.created === 0) return;
       qc.invalidateQueries({ queryKey: QUERY_KEY_CHI_TIET });
@@ -118,11 +126,12 @@ export const useImportPhieuKhoPT = () => {
 };
 
 export const useUpdatePhieuKhoPT = (onSuccess?: () => void) => {
+  const bt = useKhoBienThe();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: PhieuKhoPTFormValues }) => updatePhieuKhoPT(id, data),
+    mutationFn: ({ id, data }: { id: string; data: PhieuKhoPTFormValues }) => updatePhieuKhoPT(bt, id, data),
     onSuccess: (result) => {
-      qc.setQueryData([...QUERY_KEY, result.phieu.id], result.phieu);
+      qc.setQueryData([...QUERY_KEY, result.phieu.id, bt.key], result.phieu);
       qc.invalidateQueries({ queryKey: QUERY_KEY_CHI_TIET });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY_CHI_TIET, 'paged'] });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
@@ -136,9 +145,10 @@ export const useUpdatePhieuKhoPT = (onSuccess?: () => void) => {
 };
 
 export const useDeletePhieuKhoPT = () => {
+  const bt = useKhoBienThe();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: deletePhieuKhoPT,
+    mutationFn: (arg: Parameters<typeof deletePhieuKhoPT>[1]) => deletePhieuKhoPT(bt, arg),
     onSuccess: (_void, id) => {
       qc.removeQueries({ queryKey: [...QUERY_KEY, id] });
       qc.invalidateQueries({ queryKey: QUERY_KEY_CHI_TIET });
@@ -153,6 +163,7 @@ export const useDeletePhieuKhoPT = () => {
 };
 
 export const useUpdatePhieuKhoPTTrangThai = (onSuccess?: () => void) => {
+  const bt = useKhoBienThe();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({
@@ -168,7 +179,7 @@ export const useUpdatePhieuKhoPTTrangThai = (onSuccess?: () => void) => {
       id_nguoi_duyet?: number | null;
       ten_nguoi_duyet_hien_thi?: string;
     }) =>
-      updatePhieuKhoPTTrangThai(id, trang_thai, {
+      updatePhieuKhoPTTrangThai(bt, id, trang_thai, {
         ghi_chu,
         id_nguoi_duyet,
         ten_nguoi_duyet_hien_thi,
@@ -178,9 +189,9 @@ export const useUpdatePhieuKhoPTTrangThai = (onSuccess?: () => void) => {
       qc.invalidateQueries({ queryKey: [...QUERY_KEY_CHI_TIET, 'paged'] });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
       try {
-        const fresh = await getPhieuKhoPTById(id);
+        const fresh = await getPhieuKhoPTById(bt, id);
         if (fresh) {
-          qc.setQueryData([...QUERY_KEY, id], fresh);
+          qc.setQueryData([...QUERY_KEY, id, bt.key], fresh);
         }
       } catch {
         qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
@@ -198,6 +209,7 @@ export const useUpdatePhieuKhoPTTrangThai = (onSuccess?: () => void) => {
  * Lỗi một phần không làm hỏng cả lô: service trả danh sách thành công/thất bại để toast báo rõ.
  */
 export const useUpdatePhieuKhoPTTrangThaiMany = (onSuccess?: () => void) => {
+  const bt = useKhoBienThe();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({
@@ -213,7 +225,7 @@ export const useUpdatePhieuKhoPTTrangThaiMany = (onSuccess?: () => void) => {
       id_nguoi_duyet?: number | null;
       ten_nguoi_duyet_hien_thi?: string;
     }) =>
-      updatePhieuKhoPTTrangThaiMany(ids, trang_thai, {
+      updatePhieuKhoPTTrangThaiMany(bt, ids, trang_thai, {
         ghi_chu,
         id_nguoi_duyet,
         ten_nguoi_duyet_hien_thi,
@@ -246,9 +258,10 @@ export const useUpdatePhieuKhoPTTrangThaiMany = (onSuccess?: () => void) => {
 };
 
 export const useDeletePhieuKhoPTMany = () => {
+  const bt = useKhoBienThe();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: deletePhieuKhoPTMany,
+    mutationFn: (arg: Parameters<typeof deletePhieuKhoPTMany>[1]) => deletePhieuKhoPTMany(bt, arg),
     onSuccess: (_void, ids) => {
       ids.forEach((id) => qc.removeQueries({ queryKey: [...QUERY_KEY, id] }));
       qc.invalidateQueries({ queryKey: QUERY_KEY_CHI_TIET });

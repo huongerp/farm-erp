@@ -11,6 +11,7 @@ import { getPhieuKhoPTPreviewUrl } from '../core/preview-url';
 import { getLechKiemKePT, rowCanDieuChinhPT } from '../core/ket-qua';
 import { coTheSuaChiTietPT, coTheSuaDongKiemKePT } from '../core/quyen-sua-dot';
 import type { ChiTietKiemKePT, TrangThaiDotKiemKePT } from '../core/types';
+import { useKhoBienThe } from '../../kho-bien-the/KhoBienTheProvider';
 
 interface Props {
   data: ChiTietKiemKePT[];
@@ -46,6 +47,7 @@ const ChiTietKiemKePTSubTable: React.FC<Props> = ({
   deleteLoading,
   emptyContent,
 }) => {
+  const bt = useKhoBienThe();
   const { t } = useTranslation();
   const isDangKiemKe = trangThaiDot === 'dang_kiem_ke';
 
@@ -132,7 +134,7 @@ const ChiTietKiemKePTSubTable: React.FC<Props> = ({
             )}
             <Tooltip content={t('kiemKeKhoPT.table.xemPhieuDieuChinh')} placement="top">
               <a
-                href={getPhieuKhoPTPreviewUrl(item.id_phieu_kho_dieu_chinh)}
+                href={getPhieuKhoPTPreviewUrl(bt, item.id_phieu_kho_dieu_chinh)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-1 text-primary hover:bg-primary/10 rounded-md inline-flex"

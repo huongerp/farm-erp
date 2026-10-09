@@ -60,7 +60,7 @@ function fileName(p: PhieuKhoPT): string {
   const slug = `${p.so_phieu}_${p.loai}`
     .replace(/\s+/g, '_')
     .replace(/[^\w\u00C0-\u024F\-_]/gi, '');
-  return `Phieu_kho_phan_thuoc_${slug}_${getTodayISODate()}`;
+  return `Phieu_kho_${slug}_${getTodayISODate()}`;
 }
 
 function colHeaders(t: (k: string) => string) {

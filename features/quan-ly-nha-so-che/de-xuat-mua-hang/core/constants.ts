@@ -3,8 +3,8 @@
 /**
  * Cấu hình phiếu — cố định trong code (module này không có tab thiết lập cấu hình,
  * chỉ có danh mục Tiến độ mua hàng ở module Thiết lập đề xuất mua hàng).
+ * Tiền tố số phiếu theo biến thể: `bt.tienTo.deXuat` (kho-bien-the/bien-the.ts).
  */
-export const SO_PHIEU_TIEN_TO = 'FDX-';
 export const SO_PHIEU_DO_DAI = 4;
 /** Ngày cần mặc định = ngày lập + số ngày này. */
 export const SO_NGAY_MAC_DINH_NGAY_CAN = 7;

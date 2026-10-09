@@ -79,7 +79,7 @@ export function getExportColumnsPhieuKhoPTList(t: TFunction): ExportColumn[] {
 }
 
 export function exportFileNamePhieuKhoPTDanhSach(): string {
-  return 'Phieu_kho_phan_thuoc_danh_sach';
+  return 'Phieu_kho_danh_sach';
 }
 
 export const CHI_TIET_PHIEU_KHO_PT_EXPORT_KEYS = [
@@ -153,5 +153,5 @@ export function getExportColumnsChiTietPhieuKhoPT(t: TFunction): ExportColumn[] 
 }
 
 export function exportFileNamePhieuKhoPTChiTiet(): string {
-  return 'Phieu_kho_phan_thuoc_chi_tiet';
+  return 'Phieu_kho_chi_tiet';
 }

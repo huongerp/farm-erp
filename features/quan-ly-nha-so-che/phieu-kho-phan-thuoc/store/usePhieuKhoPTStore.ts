@@ -1,3 +1,5 @@
+import { storeTheoBienThe } from '../../kho-bien-the/KhoBienTheProvider';
+import { khoStorageKey } from '../../kho-bien-the/bien-the';
 import { createGenericStore, type ColumnConfig } from '../../../../store/createGenericStore';
 import i18n from '../../../../lib/i18n';
 import type { DateRangePresetId } from '../../../he-thong/nhan-vien/core/stats-constants';
@@ -44,4 +46,6 @@ const initialFilters: PhieuKhoPTFilters = {
   nguoiDuyetIds: [],
 };
 
-export const usePhieuKhoPTStore = createGenericStore<PhieuKhoPTFilters>(initialFilters, DEFAULT_COLUMNS, 'table-phieu-kho-phan-thuoc-phieu-kho-p-t');
+export const usePhieuKhoPTStore = storeTheoBienThe((bt) =>
+  createGenericStore<PhieuKhoPTFilters>(initialFilters, DEFAULT_COLUMNS, khoStorageKey(bt, 'table-phieu-kho-phan-thuoc-phieu-kho-p-t'))
+);

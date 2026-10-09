@@ -23,4 +23,8 @@ export const NGUON_DONG_BO: Readonly<Record<string, NguonDongBo>> = {
     nguon: 'v_xuat_phieu_kho_phan_thuoc',
     bangGoc: ['fp_farm_phieu_kho_phan_thuoc', 'fp_farm_phieu_kho_phan_thuoc_chi_tiet'],
   },
+  'phan-thuoc/phieu-kho-phan-thuoc': {
+    nguon: 'v_xuat_pt_phieu_kho',
+    bangGoc: ['fp_pt_phieu_kho', 'fp_pt_phieu_kho_chi_tiet'],
+  },
 };

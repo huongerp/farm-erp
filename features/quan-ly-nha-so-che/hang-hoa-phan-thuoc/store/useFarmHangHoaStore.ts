@@ -1,3 +1,5 @@
+import { storeTheoBienThe } from '../../kho-bien-the/KhoBienTheProvider';
+import { khoStorageKey } from '../../kho-bien-the/bien-the';
 import { createGenericStore, type ColumnConfig } from '../../../../store/createGenericStore';
 import i18n from '../../../../lib/i18n';
 
@@ -25,4 +27,6 @@ const initialFilters: FarmHangHoaFilters = {
   dvt: [],
 };
 
-export const useFarmHangHoaStore = createGenericStore<FarmHangHoaFilters>(initialFilters, DEFAULT_COLUMNS, 'table-hang-hoa-phan-thuoc-farm-hang-hoa');
+export const useFarmHangHoaStore = storeTheoBienThe((bt) =>
+  createGenericStore<FarmHangHoaFilters>(initialFilters, DEFAULT_COLUMNS, khoStorageKey(bt, 'table-hang-hoa-phan-thuoc-farm-hang-hoa'))
+);

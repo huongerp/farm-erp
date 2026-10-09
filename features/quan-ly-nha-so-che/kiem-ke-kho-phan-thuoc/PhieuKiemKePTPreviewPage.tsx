@@ -1,6 +1,6 @@
 /**
  * Trang preview phiếu kiểm kê kho (mở tab mới) – toolbar Đóng + Tải (PDF/DOC/XLSX) + In.
- * Route: /quan-ly-nha-so-che/kiem-ke-kho-phan-thuoc/preview/:id
+ * Route: /quan-ly-nha-so-che|phan-thuoc/kiem-ke-kho-phan-thuoc/preview/:id
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -14,6 +14,7 @@ import {
   exportPhieuKiemKePTToXLSX,
 } from './utils/export-phieu-kiem-ke-pt';
 import PhieuKiemKePTPreviewContent from './components/PhieuKiemKePTPreviewContent';
+import { useKhoBienThe } from '../kho-bien-the/KhoBienTheProvider';
 
 export type PhieuKiemKePTExportFormat = 'pdf' | 'doc' | 'xlsx';
 
@@ -24,6 +25,7 @@ const EXPORT_OPTIONS: { format: PhieuKiemKePTExportFormat; label: string; icon: 
 ];
 
 const PhieuKiemKePTPreviewPage: React.FC = () => {
+  const bt = useKhoBienThe();
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -48,9 +50,9 @@ const PhieuKiemKePTPreviewPage: React.FC = () => {
     } else {
       // window.open(..., 'noopener') → window.opener === null, browser chặn window.close().
       // Điều hướng về danh sách của module để vẫn thoát được khi mở qua deep-link / F5.
-      navigate('/quan-ly-nha-so-che/kiem-ke-kho-phan-thuoc', { replace: true });
+      navigate(`${bt.basePath}/kiem-ke-kho-phan-thuoc`, { replace: true });
     }
-  }, [navigate]);
+  }, [navigate, bt]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {

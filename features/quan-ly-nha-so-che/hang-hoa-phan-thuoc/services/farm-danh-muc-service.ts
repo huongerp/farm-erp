@@ -6,16 +6,14 @@ import { bulkInsert, bulkUpdateById, bulkUpsert } from '../../../../lib/import-b
 import type { ImportErrorRow, ImportMode } from '../../../../lib/import-types';
 import { planFarmDanhMucImport } from '../utils/import-danh-muc';
 import { throwDbError } from '../../../../lib/db-errors';
+import type { KhoBienThe } from '../../kho-bien-the/bien-the';
 
-const TABLE = 'fp_farm_danh_muc_hang_hoa';
-const TABLE_HANG_HOA = 'fp_farm_danh_sach_hang_hoa';
-
-async function assertNoHangHoaReferences(idNums: number[]): Promise<void> {
+async function assertNoHangHoaReferences(bt: KhoBienThe, idNums: number[]): Promise<void> {
   if (idNums.length === 0) return;
-  const { data: byDm, error: e1 } = await db.from(TABLE_HANG_HOA).select('id').in('danh_muc_id', idNums).limit(1);
+  const { data: byDm, error: e1 } = await db.from(bt.bang.hangHoa).select('id').in('danh_muc_id', idNums).limit(1);
   if (e1) throwDbError(e1);
   if (byDm && byDm.length > 0) throw new Error(i18n.t('farmHangHoaPhanThuoc.danhMuc.service.hasHangHoa'));
-  const { data: byCha, error: e2 } = await db.from(TABLE_HANG_HOA).select('id').in('danh_muc_cha_id', idNums).limit(1);
+  const { data: byCha, error: e2 } = await db.from(bt.bang.hangHoa).select('id').in('danh_muc_cha_id', idNums).limit(1);
   if (e2) throwDbError(e2);
   if (byCha && byCha.length > 0) throw new Error(i18n.t('farmHangHoaPhanThuoc.danhMuc.service.hasHangHoa'));
 }
@@ -46,10 +44,10 @@ function rowToFarmDanhMuc(row: FarmDanhMucRow): FarmDanhMuc {
   };
 }
 
-export async function getAllFarmDanhMuc(): Promise<FarmDanhMuc[]> {
+export async function getAllFarmDanhMuc(bt: KhoBienThe): Promise<FarmDanhMuc[]> {
   const data = await fetchAllRows<FarmDanhMucRow>((from, to) =>
     db
-      .from(TABLE)
+      .from(bt.bang.danhMucHangHoa)
       .select(DM_COLUMNS)
       .order('thu_tu', { ascending: true })
       .order('ma_danh_muc', { ascending: true })
@@ -65,8 +63,8 @@ export interface FarmDanhMucCap2WithParent {
   ten_danh_muc_cha: string;
 }
 
-export const getFarmDanhMucCap2WithParent = async (): Promise<FarmDanhMucCap2WithParent[]> => {
-  const all = await getAllFarmDanhMuc();
+export const getFarmDanhMucCap2WithParent = async (bt: KhoBienThe): Promise<FarmDanhMucCap2WithParent[]> => {
+  const all = await getAllFarmDanhMuc(bt);
   const byId: Record<string, string> = {};
   all.forEach((d) => {
     byId[d.id] = d.ten_danh_muc;
@@ -81,16 +79,16 @@ export const getFarmDanhMucCap2WithParent = async (): Promise<FarmDanhMucCap2Wit
     }));
 };
 
-export const getFarmDanhMucById = async (id: string): Promise<FarmDanhMuc | null> => {
+export const getFarmDanhMucById = async (bt: KhoBienThe, id: string): Promise<FarmDanhMuc | null> => {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) return null;
-  const { data: row, error } = await db.from(TABLE).select(DM_COLUMNS).eq('id', idNum).maybeSingle();
+  const { data: row, error } = await db.from(bt.bang.danhMucHangHoa).select(DM_COLUMNS).eq('id', idNum).maybeSingle();
   if (error) throwDbError(error);
   if (!row) return null;
   return rowToFarmDanhMuc(row as FarmDanhMucRow);
 };
 
-export const createFarmDanhMuc = async (data: FarmDanhMucFormValues): Promise<FarmDanhMuc> => {
+export const createFarmDanhMuc = async (bt: KhoBienThe, data: FarmDanhMucFormValues): Promise<FarmDanhMuc> => {
   const payload = {
     ma_danh_muc: data.ma_danh_muc.trim().toUpperCase(),
     ten_danh_muc: data.ten_danh_muc.trim(),
@@ -98,12 +96,12 @@ export const createFarmDanhMuc = async (data: FarmDanhMucFormValues): Promise<Fa
     thu_tu: Math.max(1, data.thu_tu ?? 1),
     mo_ta: data.mo_ta?.trim() || null,
   };
-  const { data: inserted, error } = await db.from(TABLE).insert(payload).select(DM_COLUMNS).single();
+  const { data: inserted, error } = await db.from(bt.bang.danhMucHangHoa).insert(payload).select(DM_COLUMNS).single();
   if (error) throwDbError(error);
   return rowToFarmDanhMuc(inserted as FarmDanhMucRow);
 };
 
-export const updateFarmDanhMuc = async (id: string, data: FarmDanhMucFormValues): Promise<FarmDanhMuc> => {
+export const updateFarmDanhMuc = async (bt: KhoBienThe, id: string, data: FarmDanhMucFormValues): Promise<FarmDanhMuc> => {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('farmHangHoaPhanThuoc.danhMuc.service.notFound'));
   const payload = {
@@ -115,7 +113,7 @@ export const updateFarmDanhMuc = async (id: string, data: FarmDanhMucFormValues)
     tg_cap_nhat: new Date().toISOString(),
   };
   const { data: updated, error } = await db
-    .from(TABLE)
+    .from(bt.bang.danhMucHangHoa)
     .update(payload)
     .eq('id', idNum)
     .select(DM_COLUMNS)
@@ -124,33 +122,33 @@ export const updateFarmDanhMuc = async (id: string, data: FarmDanhMucFormValues)
   return rowToFarmDanhMuc(updated as FarmDanhMucRow);
 };
 
-export const deleteFarmDanhMuc = async (id: string): Promise<void> => {
+export const deleteFarmDanhMuc = async (bt: KhoBienThe, id: string): Promise<void> => {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('farmHangHoaPhanThuoc.danhMuc.service.notFound'));
   const { data: children, error: errSelect } = await db
-    .from(TABLE)
+    .from(bt.bang.danhMucHangHoa)
     .select('id')
     .eq('danh_muc_cha_id', idNum)
     .limit(1);
   if (errSelect) throwDbError(errSelect);
   if (children && children.length > 0) throw new Error(i18n.t('farmHangHoaPhanThuoc.danhMuc.service.hasChildren'));
-  await assertNoHangHoaReferences([idNum]);
-  const { error } = await db.from(TABLE).delete().eq('id', idNum);
+  await assertNoHangHoaReferences(bt, [idNum]);
+  const { error } = await db.from(bt.bang.danhMucHangHoa).delete().eq('id', idNum);
   if (error) throwDbError(error);
 };
 
-export const deleteFarmDanhMucMany = async (ids: string[]): Promise<void> => {
+export const deleteFarmDanhMucMany = async (bt: KhoBienThe, ids: string[]): Promise<void> => {
   if (ids.length === 0) return;
   const idNums = ids.map(Number).filter((n) => !Number.isNaN(n));
   if (idNums.length === 0) return;
   const { data: children } = await db
-    .from(TABLE)
+    .from(bt.bang.danhMucHangHoa)
     .select('id, danh_muc_cha_id')
     .in('danh_muc_cha_id', idNums)
     .limit(1);
   if (children && children.length > 0) throw new Error(i18n.t('farmHangHoaPhanThuoc.danhMuc.service.hasChildren'));
-  await assertNoHangHoaReferences(idNums);
-  const { error } = await db.from(TABLE).delete().in('id', idNums);
+  await assertNoHangHoaReferences(bt, idNums);
+  const { error } = await db.from(bt.bang.danhMucHangHoa).delete().in('id', idNums);
   if (error) throwDbError(error);
 };
 
@@ -177,6 +175,7 @@ function toError(item: { row: number; values: Record<string, unknown> }, msg: st
 
 /** Ghi một nhóm dòng đã chốt đủ `danh_muc_cha_id`. Trả về số thêm mới / cập nhật + lỗi. */
 async function writeDanhMucGroup(
+  bt: KhoBienThe,
   items: DanhMucWriteItem[],
   mode: ImportMode
 ): Promise<{ created: number; updated: number; errors: ImportErrorRow[] }> {
@@ -190,7 +189,7 @@ async function writeDanhMucGroup(
 
   if (mode === 'upsert' && toUpdate.length > 0) {
     const tagged = items.map((i) => ({ ...i, isUpdate: i.existingId != null }));
-    const res = await bulkUpsert(TABLE, tagged, 'ma_danh_muc');
+    const res = await bulkUpsert(bt.bang.danhMucHangHoa, tagged, 'ma_danh_muc');
     if (!res.unsupported) {
       res.done.forEach((item) => {
         if (item.isUpdate) updated++;
@@ -202,13 +201,13 @@ async function writeDanhMucGroup(
   }
 
   if (toInsert.length > 0) {
-    const res = await bulkInsert(TABLE, toInsert);
+    const res = await bulkInsert(bt.bang.danhMucHangHoa, toInsert);
     created = res.done.length;
     res.failed.forEach(({ item, msg }) => errors.push(toError(item, msg)));
   }
   if (toUpdate.length > 0) {
     const res = await bulkUpdateById(
-      TABLE,
+      bt.bang.danhMucHangHoa,
       toUpdate.map((i) => ({ ...i, id: i.existingId }))
     );
     updated = res.done.length;
@@ -224,10 +223,11 @@ async function writeDanhMucGroup(
  * trong cùng file, id của cha chỉ có sau khi cha đã được ghi.
  */
 export const importFarmDanhMuc = async (
+  bt: KhoBienThe,
   rows: Record<string, unknown>[],
   { mode }: { mode: ImportMode }
 ): Promise<FarmDanhMucImportResult> => {
-  const existingAll = await getAllFarmDanhMuc();
+  const existingAll = await getAllFarmDanhMuc(bt);
   const plan = planFarmDanhMucImport(
     rows,
     {
@@ -268,7 +268,7 @@ export const importFarmDanhMuc = async (
   const cap1 = plan.rows.filter((r) => r.parentCode === null);
   const cap2 = plan.rows.filter((r) => r.parentCode !== null);
 
-  const r1 = await writeDanhMucGroup(cap1.map((r) => build(r, null)), mode);
+  const r1 = await writeDanhMucGroup(bt, cap1.map((r) => build(r, null)), mode);
   errors.push(...r1.errors);
   let created = r1.created;
   let updated = r1.updated;
@@ -278,7 +278,7 @@ export const importFarmDanhMuc = async (
     const missingParents = [...new Set(cap2.filter((r) => r.parentId == null).map((r) => r.parentCode!))];
     const parentIdByCode = new Map<string, number>();
     if (missingParents.length > 0) {
-      const { data, error } = await db.from(TABLE).select('id,ma_danh_muc').in('ma_danh_muc', missingParents);
+      const { data, error } = await db.from(bt.bang.danhMucHangHoa).select('id,ma_danh_muc').in('ma_danh_muc', missingParents);
       if (error) throwDbError(error);
       (data ?? []).forEach((d: { id: number; ma_danh_muc: string | null }) => {
         if (d.ma_danh_muc) parentIdByCode.set(d.ma_danh_muc.trim().toUpperCase(), d.id);
@@ -295,7 +295,7 @@ export const importFarmDanhMuc = async (
       ready.push(build(r, parentId));
     });
 
-    const r2 = await writeDanhMucGroup(ready, mode);
+    const r2 = await writeDanhMucGroup(bt, ready, mode);
     errors.push(...r2.errors);
     created += r2.created;
     updated += r2.updated;

@@ -10,19 +10,23 @@ import {
 } from '../services/farm-tien-do-mua-hang-service';
 import type { TrangThaiHoatDong } from '../../../../lib/constants';
 import type { FarmTienDoMuaHangFormValues } from '../core/schema';
+import { useKhoBienThe } from '../../kho-bien-the/KhoBienTheProvider';
 
 export const FARM_TIEN_DO_MUA_HANG_QUERY_KEY = ['farmTienDoMuaHang'];
 
-export const useFarmTienDoMuaHangList = () =>
-  useQuery({
-    queryKey: FARM_TIEN_DO_MUA_HANG_QUERY_KEY,
-    queryFn: getFarmTienDoMuaHangList,
+export const useFarmTienDoMuaHangList = () => {
+  const bt = useKhoBienThe();
+  return useQuery({
+    queryKey: [...FARM_TIEN_DO_MUA_HANG_QUERY_KEY, bt.key],
+    queryFn: () => getFarmTienDoMuaHangList(bt),
   });
+};
 
 export const useCreateFarmTienDoMuaHang = (onSuccess?: () => void) => {
+  const bt = useKhoBienThe();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: FarmTienDoMuaHangFormValues) => createFarmTienDoMuaHang(data),
+    mutationFn: (data: FarmTienDoMuaHangFormValues) => createFarmTienDoMuaHang(bt, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: FARM_TIEN_DO_MUA_HANG_QUERY_KEY });
       toast.success(i18n.t('thietLapDeXuatMuaHang.tienDoMuaHang.toast.createSuccess'));
@@ -33,9 +37,10 @@ export const useCreateFarmTienDoMuaHang = (onSuccess?: () => void) => {
 };
 
 export const useUpdateFarmTienDoMuaHang = (onSuccess?: () => void) => {
+  const bt = useKhoBienThe();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: FarmTienDoMuaHangFormValues }) => updateFarmTienDoMuaHang(id, data),
+    mutationFn: ({ id, data }: { id: string; data: FarmTienDoMuaHangFormValues }) => updateFarmTienDoMuaHang(bt, id, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: FARM_TIEN_DO_MUA_HANG_QUERY_KEY });
       toast.success(i18n.t('thietLapDeXuatMuaHang.tienDoMuaHang.toast.updateSuccess'));
@@ -46,9 +51,10 @@ export const useUpdateFarmTienDoMuaHang = (onSuccess?: () => void) => {
 };
 
 export const useUpdateFarmTienDoMuaHangStatus = () => {
+  const bt = useKhoBienThe();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ ids, status }: { ids: string[]; status: TrangThaiHoatDong }) => updateFarmTienDoMuaHangStatus(ids, status),
+    mutationFn: ({ ids, status }: { ids: string[]; status: TrangThaiHoatDong }) => updateFarmTienDoMuaHangStatus(bt, ids, status),
     onSuccess: (_d, v) => {
       qc.invalidateQueries({ queryKey: FARM_TIEN_DO_MUA_HANG_QUERY_KEY });
       toast.success(i18n.t('thietLapDeXuatMuaHang.tienDoMuaHang.toast.statusUpdate', { count: v.ids.length }));
@@ -58,9 +64,10 @@ export const useUpdateFarmTienDoMuaHangStatus = () => {
 };
 
 export const useDeleteFarmTienDoMuaHangList = () => {
+  const bt = useKhoBienThe();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (ids: string[]) => deleteFarmTienDoMuaHangList(ids),
+    mutationFn: (ids: string[]) => deleteFarmTienDoMuaHangList(bt, ids),
     onSuccess: (_d, ids) => {
       qc.invalidateQueries({ queryKey: FARM_TIEN_DO_MUA_HANG_QUERY_KEY });
       toast.success(i18n.t('thietLapDeXuatMuaHang.tienDoMuaHang.toast.deleteSuccess', { count: ids.length }));

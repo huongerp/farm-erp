@@ -28,6 +28,12 @@ auth-service, notify-service và sheets-service kèm `npm run dev` (bỏ qua b�
 - `App.tsx` — router, theme, ngôn ngữ, route bảo vệ, bootstrap phiên.
 - `features/<nhóm>/<module>/` — nghiệp vụ theo nhóm: `he-thong`, `hanh-chinh`, `kho-van`,
   `mua-hang`, `quan-ly-nha-so-che`.
+- Submenu **Phân thuốc** (`/phan-thuoc`) KHÔNG có thư mục riêng: dùng lại 6 module kho của
+  `quan-ly-nha-so-che` (hàng hoá, phiếu kho, kiểm kê, tồn kho, đề xuất mua hàng, thiết lập đề xuất)
+  qua biến thể `features/quan-ly-nha-so-che/kho-bien-the/` — tên bảng/view/RPC, module_id, tiền tố
+  số phiếu nằm ở `bien-the.ts`; Sơ chế dùng `fp_farm_*`, Phân thuốc dùng `fp_pt_*` (migration 029).
+  Service nhận `bt` làm tham số đầu, hook lấy `useKhoBienThe()` và gắn `bt.key` vào queryKey; store
+  bảng tạo qua `storeTheoBienThe`. Sửa SQL của một bên thì làm migration cho cả bên kia.
 - `components/` — `ui/` (Button, Input, Table…), `shared/` (ConfirmDialog, Section,
   ModulePermissionGuard…), `layout/`, `auth/`.
 - `lib/` — hạ tầng dùng chung: `db.ts` (PostgrestClient), `auth.ts`, `token-store.ts`,

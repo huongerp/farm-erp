@@ -10,6 +10,7 @@ export const NGUON_CHUNG_TU = [
   'don_dat_hang',
   'phieu_de_xuat_vat_tu',
   'de_xuat_mua_hang',
+  'pt_de_xuat_mua_hang',
   'chi_phi_tai_san',
 ] as const satisfies readonly ThuChiNguon[];
 
@@ -51,6 +52,7 @@ export const NGUON_CHUNG_TU_PATH: Record<ThuChiNguon, string> = {
   don_dat_hang: '/mua-hang/don-dat-hang',
   phieu_de_xuat_vat_tu: '/mua-hang/phieu-de-xuat-vat-tu',
   de_xuat_mua_hang: '/quan-ly-nha-so-che/de-xuat-mua-hang',
+  pt_de_xuat_mua_hang: '/phan-thuoc/de-xuat-mua-hang',
   chi_phi_tai_san: '/hanh-chinh/chi-phi-tai-san',
 };
 

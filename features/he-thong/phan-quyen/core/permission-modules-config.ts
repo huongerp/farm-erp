@@ -34,6 +34,8 @@ export const MODULES_WITH_APPROVE = new Set<string>([
   'kho-van/phieu-kho',
   'quan-ly-nha-so-che/phieu-kho-phan-thuoc',
   'quan-ly-nha-so-che/de-xuat-mua-hang',
+  'phan-thuoc/phieu-kho-phan-thuoc',
+  'phan-thuoc/de-xuat-mua-hang',
   /** Phiếu đề xuất vật tư: module_id trong phân quyền là mua-hang/... (URL /mua-hang/phieu-de-xuat-vat-tu) */
   'mua-hang/phieu-de-xuat-vat-tu',
   'mua-hang/don-dat-hang',
@@ -116,8 +118,9 @@ export const PERMISSION_FUNCTIONS: PermissionFunction[] = [
         { id: BASE('quan-ly-nha-so-che', 'thong-ke-san-xuat'), nameKey: 'page.quanLyNhaSoChe.modules.thongKeSanXuat' },
       ]},
       /**
-       * Kho (phân thuốc farm) — bố cục nhóm giống Kho vận (Mua hàng): nhập xuất / báo cáo / danh mục.
-       * module_id không đổi (tránh migrate quyen_han).
+       * Kho nhà sơ chế (vật tư, thành phẩm) — bố cục nhóm giống Kho vận (Mua hàng): nhập xuất / báo cáo / danh mục.
+       * Slug giữ hậu tố "-phan-thuoc" vì module_id đã nằm trong fp_var_phan_quyen (tránh migrate quyền).
+       * Bản Phân thuốc (bảng fp_pt_* riêng) nằm ở khối `phan-thuoc` bên dưới, dùng chung component.
        *
        * Gợi ý gán quyền (view / create / update / delete / admin / all; approve chỉ cho phiếu):
        * - Thủ kho farm: phiếu — view+create+update+approve (+ delete nếu quy trình cho); tồn/NXT — view; hàng — view+create+update.
@@ -139,6 +142,30 @@ export const PERMISSION_FUNCTIONS: PermissionFunction[] = [
       { groupTitleKey: 'page.quanLyNhaSoChe.groupKhoPhanThuocDanhMuc', modules: [
         { id: BASE('quan-ly-nha-so-che', 'hang-hoa-phan-thuoc'), nameKey: 'page.quanLyNhaSoChe.modules.hangHoaPhanThuoc' },
         { id: BASE('quan-ly-nha-so-che', 'thiet-lap-de-xuat-mua-hang'), nameKey: 'page.quanLyNhaSoChe.modules.thietLapDeXuatMuaHang' },
+      ]},
+    ],
+  },
+  {
+    /**
+     * Phân thuốc — phân bón, thuốc BVTV. Cùng component với nhóm Kho của Nhà sơ chế (biến thể
+     * `phan-thuoc`, features/quan-ly-nha-so-che/kho-bien-the), dữ liệu riêng ở bảng fp_pt_* (migration 029).
+     * Migration 029 đã chép quyền từ nhóm Kho của Sơ chế sang các module_id dưới đây.
+     */
+    id: 'phan-thuoc',
+    nameKey: 'nav.phanThuoc',
+    color: 'lime',
+    groups: [
+      { groupTitleKey: 'page.phanThuoc.groupNhapXuat', modules: [
+        { id: BASE('phan-thuoc', 'de-xuat-mua-hang'), nameKey: 'page.phanThuoc.modules.deXuatMuaHang' },
+        { id: BASE('phan-thuoc', 'phieu-kho-phan-thuoc'), nameKey: 'page.phanThuoc.modules.phieuKhoPhanThuoc' },
+        { id: BASE('phan-thuoc', 'kiem-ke-kho-phan-thuoc'), nameKey: 'page.phanThuoc.modules.kiemKeKhoPhanThuoc' },
+      ]},
+      { groupTitleKey: 'page.phanThuoc.groupBaoCao', modules: [
+        { id: BASE('phan-thuoc', 'ton-kho-phan-thuoc'), nameKey: 'page.phanThuoc.modules.tonKhoPhanThuoc' },
+      ]},
+      { groupTitleKey: 'page.phanThuoc.groupDanhMuc', modules: [
+        { id: BASE('phan-thuoc', 'hang-hoa-phan-thuoc'), nameKey: 'page.phanThuoc.modules.hangHoaPhanThuoc' },
+        { id: BASE('phan-thuoc', 'thiet-lap-de-xuat-mua-hang'), nameKey: 'page.phanThuoc.modules.thietLapDeXuatMuaHang' },
       ]},
     ],
   },
@@ -193,7 +220,7 @@ export function getAllPermissionModules(): { id: string; nameKey: string }[] {
 }
 
 /** Path submenu có phân quyền (khớp với SIDEBAR_MENU) */
-const SUBMENU_PATHS_WITH_PERMISSION = ['/hanh-chinh', '/mua-hang', '/quan-ly-nha-so-che', '/tai-chinh', '/he-thong'] as const;
+const SUBMENU_PATHS_WITH_PERMISSION = ['/hanh-chinh', '/mua-hang', '/quan-ly-nha-so-che', '/phan-thuoc', '/tai-chinh', '/he-thong'] as const;
 
 /**
  * Lấy danh sách module id thuộc một submenu theo path (vd: /hanh-chinh -> [hanh-chinh/cong-viec, ...]).

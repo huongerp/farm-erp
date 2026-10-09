@@ -36,6 +36,7 @@ import ChiTietRowEditModal, { type ChiTietRowEditPayload } from './ChiTietRowEdi
 import ChuyenTienDoModal, { type ChuyenTienDoResult } from './ChuyenTienDoModal';
 import { cn } from '../../../../lib/utils';
 import { CONFIRM_DELETE } from '../../../../lib/button-labels';
+import { useKhoBienThe } from '../../kho-bien-the/KhoBienTheProvider';
 
 function phieuToFormValues(phieu: DeXuatMuaHang): DeXuatMuaHangFormValues {
   return {
@@ -60,6 +61,7 @@ function phieuToFormValues(phieu: DeXuatMuaHang): DeXuatMuaHangFormValues {
 }
 
 const ChiTietTab: React.FC = () => {
+  const bt = useKhoBienThe();
   const { t } = useTranslation();
   const [, setSearchParams] = useSearchParams();
   const confirm = useConfirmStore((s) => s.confirm);
@@ -189,7 +191,7 @@ const ChiTietTab: React.FC = () => {
         ` Ghi chú: ${result.ghi_chu || '—'}`;
       try {
         for (const [phieuId, list] of byPhieu) {
-          const phieu = await getDeXuatMuaHangById(phieuId);
+          const phieu = await getDeXuatMuaHangById(bt, phieuId);
           if (!phieu?.chi_tiet?.length) continue;
           const idSet = new Set(list.map((r) => r.id));
           const chi_tiet = (phieu.chi_tiet ?? []).map((ct) => {
@@ -235,7 +237,7 @@ const ChiTietTab: React.FC = () => {
         toast.error((e as Error).message);
       }
     },
-    [selectedIds, tableRows, singleRowForChuyenTienDo, updateMutation, clearSelection, t]
+    [bt, selectedIds, tableRows, singleRowForChuyenTienDo, updateMutation, clearSelection, t]
   );
 
   const handleDelete = useCallback(
@@ -246,7 +248,7 @@ const ChiTietTab: React.FC = () => {
         variant: 'danger',
         confirmText: CONFIRM_DELETE(),
         onConfirm: async () => {
-          const phieu = await getDeXuatMuaHangById(row.id_de_xuat_mua_hang);
+          const phieu = await getDeXuatMuaHangById(bt, row.id_de_xuat_mua_hang);
           if (!phieu || !phieu.chi_tiet?.length) return;
           if (phieu.chi_tiet.length <= 1) {
             toast.error(t('deXuatMuaHang.chiTietTab.lastLineCannotDelete'));
@@ -275,7 +277,7 @@ const ChiTietTab: React.FC = () => {
         },
       });
     },
-    [confirm, t, updateMutation, viewingRow?.id]
+    [bt, confirm, t, updateMutation, viewingRow?.id]
   );
 
   const sortedRows = useMemo(() => {
@@ -325,7 +327,7 @@ const ChiTietTab: React.FC = () => {
   useEffect(() => {
     if (!exportRequest) return;
     let cancelled = false;
-    fetchAllDeXuatMuaHangChiTietForListQuery(exportRequest.query)
+    fetchAllDeXuatMuaHangChiTietForListQuery(bt, exportRequest.query)
       .then((rows) => {
         if (!cancelled) setExportResult({ request: exportRequest, rows });
       })
@@ -335,7 +337,7 @@ const ChiTietTab: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [exportRequest]);
+  }, [bt, exportRequest]);
 
   const { exportData, paginatedData: paginatedExportData, selectedData: selectedExportData } = useExportData({
     data: exportRows,

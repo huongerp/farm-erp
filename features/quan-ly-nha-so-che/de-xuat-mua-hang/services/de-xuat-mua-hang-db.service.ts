@@ -1,5 +1,5 @@
 /**
- * Service phiếu đề xuất vật tư – đọc/ghi DB (fp_farm_de_xuat_mua_hang, fp_farm_de_xuat_mua_hang_chi_tiet).
+ * Service phiếu đề xuất mua hàng – đọc/ghi DB theo biến thể (bt.bang.deXuat + chi tiết).
  */
 import { db, fetchAllRows, fetchTablePage, type PaginatedTableResult, throwDbError } from '../../../../lib/db';
 import type { DeXuatMuaHang, DeXuatMuaHangChiTiet, DeXuatMuaHangChiTietRow } from '../core/types';
@@ -23,15 +23,7 @@ import {
   type TrangThaiFilterKey,
   type TrangThaiDeXuatMuaHang,
 } from '../core/constants';
-
-const TABLE_PHIEU = 'fp_farm_de_xuat_mua_hang';
-const TABLE_CHI_TIET = 'fp_farm_de_xuat_mua_hang_chi_tiet';
-/** View: docs/db-schema-baseline.sql — JOIN mã/tên HH cho tìm kiếm tab Chi tiết. */
-const VIEW_CHI_TIET_FLAT = 'v_farm_de_xuat_mua_hang_chi_tiet_flat';
-const RPC_NEXT_SO_PHIEU = 'get_next_so_phieu_farm_de_xuat_mua_hang';
-
-/** View DB: xem docs/db-schema-baseline.sql; chi tiết đọc VIEW_CHI_TIET_FLAT (script trong docs). */
-const VIEW_DE_XUAT_SUMMARY = 'v_farm_de_xuat_mua_hang_summary';
+import type { KhoBienThe } from '../../kho-bien-the/bien-the';
 
 /** Cột view summary (đủ cho `mapDeXuatMuaHangSummaryRowToPhieu`). */
 const VIEW_DE_XUAT_SUMMARY_COLUMNS =
@@ -49,8 +41,8 @@ export interface NextSoPhieuConfig {
 }
 
 /** Gọi RPC lấy số thứ tự tiếp theo, format thành mã phiếu (tiền tố + pad). Nguồn sự thật duy nhất, tránh trùng khi nhiều user. */
-export async function getNextSoPhieuDeXuatMuaHangRpc(config: NextSoPhieuConfig): Promise<string> {
-  const { data, error } = await db.rpc(RPC_NEXT_SO_PHIEU);
+export async function getNextSoPhieuDeXuatMuaHangRpc(bt: KhoBienThe, config: NextSoPhieuConfig): Promise<string> {
+  const { data, error } = await db.rpc(bt.rpc.soPhieuDeXuat);
   if (error) throwDbError(error);
   const nextNum = Number(data);
   if (Number.isNaN(nextNum) || nextNum < 1) throw new Error('Invalid next number from RPC');
@@ -168,10 +160,10 @@ function rowToChiTiet(row: ChiTietDbRow, idPhieuStr: string, enrich?: { ma_hang?
   };
 }
 
-export async function getAllDeXuatMuaHangDb(): Promise<DeXuatMuaHang[]> {
+export async function getAllDeXuatMuaHangDb(bt: KhoBienThe): Promise<DeXuatMuaHang[]> {
   const rows = await fetchAllRows<DeXuatMuaHangSummaryRow>((from, to) =>
     db
-      .from(VIEW_DE_XUAT_SUMMARY)
+      .from(bt.view.deXuatSummary)
       .select(VIEW_DE_XUAT_SUMMARY_COLUMNS)
       .order('ngay', { ascending: false })
       .order('so_phieu', { ascending: false })
@@ -194,7 +186,7 @@ export type DeXuatMuaHangStatsRpcResult = {
 };
 
 /** Thống kê server-side — @see docs/db-schema-baseline.sql */
-export async function fetchDeXuatMuaHangStatsFromRpc(params: {
+export async function fetchDeXuatMuaHangStatsFromRpc(bt: KhoBienThe, params: {
   dateFrom: string;
   dateTo: string;
   filterStatus: string[];
@@ -236,7 +228,7 @@ export async function fetchDeXuatMuaHangStatsFromRpc(params: {
   const deXuatNums = params.filterNguoiDeXuat.map(Number).filter((n) => !Number.isNaN(n));
   const duyetNums = params.filterNguoiDuyet.map(Number).filter((n) => !Number.isNaN(n));
 
-  const { data, error } = await db.rpc('rpc_farm_de_xuat_mua_hang_stats', {
+  const { data, error } = await db.rpc(bt.rpc.deXuatStats, {
     p_date_from: toDate(params.dateFrom),
     p_date_to: toDate(params.dateTo),
     p_trang_thai: trangThai.length ? trangThai : null,
@@ -353,9 +345,9 @@ function applyDeXuatMuaHangListQuery(q: any, query: DeXuatMuaHangListServerQuery
   return b;
 }
 
-async function fetchPhieuIdsMatchingScope(scope: BranchListScope): Promise<number[]> {
+async function fetchPhieuIdsMatchingScope(bt: KhoBienThe, scope: BranchListScope): Promise<number[]> {
   const rows = await fetchAllRows<{ id: number }>((from, to) => {
-    const base = db.from(VIEW_DE_XUAT_SUMMARY).select('id');
+    const base = db.from(bt.view.deXuatSummary).select('id');
     const scoped = applyDeXuatMuaHangHeaderScope(base, scope);
     return scoped.order('id', { ascending: true }).range(from, to);
   });
@@ -413,12 +405,13 @@ function applyDeXuatMuaHangChiTietRowFilters(q: any, query: DeXuatMuaHangChiTiet
 }
 
 export async function getDeXuatMuaHangPageDb(
+  bt: KhoBienThe,
   page: number,
   pageSize: number = DE_XUAT_PAGE_SIZE_DEFAULT,
   listQuery?: DeXuatMuaHangListServerQuery
 ): Promise<PaginatedTableResult<DeXuatMuaHang>> {
   const pageResult = await fetchTablePage<DeXuatMuaHangSummaryRow>(page, pageSize, async (from, to) => {
-    let sel = db.from(VIEW_DE_XUAT_SUMMARY).select(VIEW_DE_XUAT_SUMMARY_COLUMNS, { count: 'exact' });
+    let sel = db.from(bt.view.deXuatSummary).select(VIEW_DE_XUAT_SUMMARY_COLUMNS, { count: 'exact' });
     if (listQuery) sel = applyDeXuatMuaHangListQuery(sel, listQuery);
     const res = await sel.order('ngay', { ascending: false }).order('so_phieu', { ascending: false }).range(from, to);
     return { data: res.data as DeXuatMuaHangSummaryRow[] | null, error: res.error, count: res.count };
@@ -428,6 +421,7 @@ export async function getDeXuatMuaHangPageDb(
 }
 
 export async function fetchAllDeXuatMuaHangForListQueryDb(
+  bt: KhoBienThe,
   listQuery: DeXuatMuaHangListServerQuery,
   pageSize = 500,
   maxRows = 25000
@@ -435,7 +429,7 @@ export async function fetchAllDeXuatMuaHangForListQueryDb(
   const out: DeXuatMuaHang[] = [];
   let page = 0;
   while (out.length < maxRows) {
-    const { data, totalCount } = await getDeXuatMuaHangPageDb(page, pageSize, listQuery);
+    const { data, totalCount } = await getDeXuatMuaHangPageDb(bt, page, pageSize, listQuery);
     out.push(...data);
     if (data.length === 0 || out.length >= totalCount) break;
     page += 1;
@@ -443,11 +437,11 @@ export async function fetchAllDeXuatMuaHangForListQueryDb(
   return out;
 }
 
-export async function getDeXuatMuaHangByIdDb(id: string): Promise<DeXuatMuaHang | null> {
+export async function getDeXuatMuaHangByIdDb(bt: KhoBienThe, id: string): Promise<DeXuatMuaHang | null> {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) return null;
   const { data: row, error } = await db
-    .from(TABLE_PHIEU)
+    .from(bt.bang.deXuat)
     .select(DE_XUAT_HEADER_SELECT)
     .eq('id', idNum)
     .maybeSingle();
@@ -458,12 +452,12 @@ export async function getDeXuatMuaHangByIdDb(id: string): Promise<DeXuatMuaHang 
     getKhoRef(),
     getEmployeesRef(),
     db
-      .from(TABLE_CHI_TIET)
+      .from(bt.bang.deXuatChiTiet)
       .select('id, id_de_xuat_mua_hang, id_hang_hoa, so_luong, don_vi_tinh, thong_so, ghi_chu, id_tien_do_mh, ten_tien_do_mh, trao_doi')
       .eq('id_de_xuat_mua_hang', idNum)
       .order('id', { ascending: true })
       .then((r) => r.data ?? []),
-    getFarmHangHoaRef(),
+    getFarmHangHoaRef(bt),
   ]);
   const khoMap: Record<string, string> = {};
   khoList.forEach((k) => {
@@ -496,9 +490,9 @@ export async function getDeXuatMuaHangByIdDb(id: string): Promise<DeXuatMuaHang 
   return phieu;
 }
 
-export async function createDeXuatMuaHangDb(data: DeXuatMuaHangFormValues): Promise<DeXuatMuaHang> {
+export async function createDeXuatMuaHangDb(bt: KhoBienThe, data: DeXuatMuaHangFormValues): Promise<DeXuatMuaHang> {
   const soPhieu = data.so_phieu.trim();
-  const { data: existing } = await db.from(TABLE_PHIEU).select('id').eq('so_phieu', soPhieu).maybeSingle();
+  const { data: existing } = await db.from(bt.bang.deXuat).select('id').eq('so_phieu', soPhieu).maybeSingle();
   if (existing) throw new Error(i18n.t('deXuatMuaHang.service.duplicateCode'));
 
   const payload = {
@@ -512,13 +506,13 @@ export async function createDeXuatMuaHangDb(data: DeXuatMuaHangFormValues): Prom
     trang_thai: data.trang_thai,
   };
 
-  const { data: inserted, error } = await db.from(TABLE_PHIEU).insert(payload).select(DE_XUAT_HEADER_SELECT).single();
+  const { data: inserted, error } = await db.from(bt.bang.deXuat).insert(payload).select(DE_XUAT_HEADER_SELECT).single();
   if (error) throwDbError(error);
   const idPhieu = (inserted as PhieuDbRow).id;
   const idStr = String(idPhieu);
 
   const [hangHoaList, khoList, employees] = await Promise.all([
-    getFarmHangHoaRef(),
+    getFarmHangHoaRef(bt),
     getKhoRef(),
     getEmployeesRef(),
   ]);
@@ -552,24 +546,24 @@ export async function createDeXuatMuaHangDb(data: DeXuatMuaHangFormValues): Prom
       ten_nguoi_duyet: tenNguoiDuyet,
       trang_thai_phieu: data.trang_thai,
     }));
-    const { error: errCt } = await db.from(TABLE_CHI_TIET).insert(ctRows);
+    const { error: errCt } = await db.from(bt.bang.deXuatChiTiet).insert(ctRows);
     if (errCt) throwDbError(errCt);
   }
 
-  const got = await getDeXuatMuaHangByIdDb(idStr);
+  const got = await getDeXuatMuaHangByIdDb(bt, idStr);
   if (!got) throw new Error(i18n.t('deXuatMuaHang.service.notFound'));
   return got;
 }
 
-export async function updateDeXuatMuaHangDb(id: string, data: DeXuatMuaHangFormValues): Promise<DeXuatMuaHang> {
+export async function updateDeXuatMuaHangDb(bt: KhoBienThe, id: string, data: DeXuatMuaHangFormValues): Promise<DeXuatMuaHang> {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('deXuatMuaHang.service.notFound'));
 
-  const { data: oldRow, error: fetchErr } = await db.from(TABLE_PHIEU).select(DE_XUAT_HEADER_SELECT).eq('id', idNum).maybeSingle();
+  const { data: oldRow, error: fetchErr } = await db.from(bt.bang.deXuat).select(DE_XUAT_HEADER_SELECT).eq('id', idNum).maybeSingle();
   if (fetchErr || !oldRow) throw new Error(i18n.t('deXuatMuaHang.service.notFound'));
 
   const soPhieu = data.so_phieu.trim();
-  const { data: other } = await db.from(TABLE_PHIEU).select('id').eq('so_phieu', soPhieu).neq('id', idNum).maybeSingle();
+  const { data: other } = await db.from(bt.bang.deXuat).select('id').eq('so_phieu', soPhieu).neq('id', idNum).maybeSingle();
   if (other) throw new Error(i18n.t('deXuatMuaHang.service.duplicateCode'));
 
   const payload = {
@@ -583,13 +577,13 @@ export async function updateDeXuatMuaHangDb(id: string, data: DeXuatMuaHangFormV
     trang_thai: data.trang_thai,
   };
 
-  const { error: updateErr } = await db.from(TABLE_PHIEU).update(payload).eq('id', idNum);
+  const { error: updateErr } = await db.from(bt.bang.deXuat).update(payload).eq('id', idNum);
   if (updateErr) throwDbError(updateErr);
 
-  await db.from(TABLE_CHI_TIET).delete().eq('id_de_xuat_mua_hang', idNum);
+  await db.from(bt.bang.deXuatChiTiet).delete().eq('id_de_xuat_mua_hang', idNum);
 
   const [hangHoaList, khoList, employees] = await Promise.all([
-    getFarmHangHoaRef(),
+    getFarmHangHoaRef(bt),
     getKhoRef(),
     getEmployeesRef(),
   ]);
@@ -623,19 +617,19 @@ export async function updateDeXuatMuaHangDb(id: string, data: DeXuatMuaHangFormV
       ten_nguoi_duyet: tenNguoiDuyet,
       trang_thai_phieu: data.trang_thai,
     }));
-    const { error: errCt } = await db.from(TABLE_CHI_TIET).insert(ctRows);
+    const { error: errCt } = await db.from(bt.bang.deXuatChiTiet).insert(ctRows);
     if (errCt) throwDbError(errCt);
   }
 
-  const got = await getDeXuatMuaHangByIdDb(id);
+  const got = await getDeXuatMuaHangByIdDb(bt, id);
   if (!got) throw new Error(i18n.t('deXuatMuaHang.service.notFound'));
   return got;
 }
 
-export async function deleteDeXuatMuaHangDb(id: string): Promise<void> {
+export async function deleteDeXuatMuaHangDb(bt: KhoBienThe, id: string): Promise<void> {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('deXuatMuaHang.service.notFound'));
-  const { error } = await db.from(TABLE_PHIEU).delete().eq('id', idNum);
+  const { error } = await db.from(bt.bang.deXuat).delete().eq('id', idNum);
   if (error) throwDbError(error);
 }
 
@@ -664,6 +658,7 @@ function mergeGhiChuDuyet(existing: string | null | undefined, options?: UpdateD
  * bộ dòng chi tiết) chỉ để đổi một cột; duyệt lẻ và duyệt hàng loạt đều dùng hàm này thay thế.
  */
 export async function updateDeXuatMuaHangTrangThaiDb(
+  bt: KhoBienThe,
   id: string,
   trang_thai: TrangThaiDeXuatMuaHang,
   options?: UpdateDeXuatMuaHangTrangThaiOptions
@@ -672,7 +667,7 @@ export async function updateDeXuatMuaHangTrangThaiDb(
   if (Number.isNaN(idNum)) throw new Error(i18n.t('deXuatMuaHang.service.notFound'));
 
   const { data: row, error: fetchErr } = await db
-    .from(TABLE_PHIEU)
+    .from(bt.bang.deXuat)
     .select('ghi_chu')
     .eq('id', idNum)
     .maybeSingle();
@@ -684,7 +679,7 @@ export async function updateDeXuatMuaHangTrangThaiDb(
   };
   if (options?.id_nguoi_duyet !== undefined) payload.id_nguoi_duyet = toNum(options.id_nguoi_duyet);
 
-  const { error } = await db.from(TABLE_PHIEU).update(payload).eq('id', idNum);
+  const { error } = await db.from(bt.bang.deXuat).update(payload).eq('id', idNum);
   if (error) throwDbError(error);
 }
 
@@ -694,6 +689,7 @@ export async function updateDeXuatMuaHangTrangThaiDb(
  * dừng cả lô.
  */
 export async function updateDeXuatMuaHangTrangThaiManyDb(
+  bt: KhoBienThe,
   ids: string[],
   trang_thai: TrangThaiDeXuatMuaHang,
   options?: UpdateDeXuatMuaHangTrangThaiOptions
@@ -701,7 +697,7 @@ export async function updateDeXuatMuaHangTrangThaiManyDb(
   const numIds = ids.map((s) => Number(s)).filter((n) => !Number.isNaN(n));
   if (numIds.length === 0) return { okIds: [], failed: [] };
 
-  const { data, error: selErr } = await db.from(TABLE_PHIEU).select('id,ghi_chu').in('id', numIds);
+  const { data, error: selErr } = await db.from(bt.bang.deXuat).select('id,ghi_chu').in('id', numIds);
   if (selErr) throwDbError(selErr);
   const ghiChuById = new Map<number, string | null>();
   ((data ?? []) as { id: number; ghi_chu?: string | null }[]).forEach((row) => {
@@ -718,7 +714,7 @@ export async function updateDeXuatMuaHangTrangThaiManyDb(
         ghi_chu: mergeGhiChuDuyet(ghiChuById.get(idNum), options),
       };
       if (options?.id_nguoi_duyet !== undefined) payload.id_nguoi_duyet = toNum(options.id_nguoi_duyet);
-      const { error } = await db.from(TABLE_PHIEU).update(payload).eq('id', idNum);
+      const { error } = await db.from(bt.bang.deXuat).update(payload).eq('id', idNum);
       if (error) throwDbError(error);
       okIds.push(String(idNum));
     } catch (err) {
@@ -729,22 +725,22 @@ export async function updateDeXuatMuaHangTrangThaiManyDb(
   return { okIds, failed };
 }
 
-export async function deleteDeXuatMuaHangManyDb(ids: string[]): Promise<void> {
+export async function deleteDeXuatMuaHangManyDb(bt: KhoBienThe, ids: string[]): Promise<void> {
   const numIds = ids.map((s) => Number(s)).filter((n) => !Number.isNaN(n));
   if (numIds.length === 0) return;
-  const { error } = await db.from(TABLE_PHIEU).delete().in('id', numIds);
+  const { error } = await db.from(bt.bang.deXuat).delete().in('id', numIds);
   if (error) throwDbError(error);
 }
 
 /** Map DB chi tiết + ref → dòng tab Chi tiết. */
-async function mapDeXuatMuaHangChiTietDbRowsToRows(rows: ChiTietFullDbRow[]): Promise<DeXuatMuaHangChiTietRow[]> {
+async function mapDeXuatMuaHangChiTietDbRowsToRows(bt: KhoBienThe, rows: ChiTietFullDbRow[]): Promise<DeXuatMuaHangChiTietRow[]> {
   if (rows.length === 0) return [];
-  const [hangHoaList, khoList, employees] = await Promise.all([getFarmHangHoaRef(), getKhoRef(), getEmployeesRef()]);
+  const [hangHoaList, khoList, employees] = await Promise.all([getFarmHangHoaRef(bt), getKhoRef(), getEmployeesRef()]);
 
   const phieuIds = [...new Set(rows.map((r) => r.id_de_xuat_mua_hang))];
   const phieuRows: PhieuDbRow[] = [];
   if (phieuIds.length > 0) {
-    const { data: phieuData } = await db.from(TABLE_PHIEU).select(DE_XUAT_HEADER_SELECT).in('id', phieuIds);
+    const { data: phieuData } = await db.from(bt.bang.deXuat).select(DE_XUAT_HEADER_SELECT).in('id', phieuIds);
     if (phieuData) phieuRows.push(...(phieuData as PhieuDbRow[]));
   }
   const nvMap: Record<string, { ho_ten: string }> = {};
@@ -805,36 +801,37 @@ async function mapDeXuatMuaHangChiTietDbRowsToRows(rows: ChiTietFullDbRow[]): Pr
 }
 
 /** Lấy toàn bộ dòng chi tiết từ bảng fp_farm_de_xuat_mua_hang_chi_tiet (phục vụ tab Chi tiết). Làm giàu ten_noi_de_xuat, ten_nguoi_de_xuat, ten_nguoi_duyet từ phiếu nếu chi tiết chưa có. */
-export async function getAllDeXuatMuaHangChiTietDb(): Promise<DeXuatMuaHangChiTietRow[]> {
+export async function getAllDeXuatMuaHangChiTietDb(bt: KhoBienThe): Promise<DeXuatMuaHangChiTietRow[]> {
   const rows = await fetchAllRows<ChiTietFullDbRow>((from, to) =>
     db
-      .from(VIEW_CHI_TIET_FLAT)
+      .from(bt.view.deXuatChiTietFlat)
       .select(CHI_TIET_TAB_SELECT)
       .order('id_de_xuat_mua_hang', { ascending: false })
       .order('id', { ascending: true })
       .range(from, to)
   );
-  return mapDeXuatMuaHangChiTietDbRowsToRows(rows);
+  return mapDeXuatMuaHangChiTietDbRowsToRows(bt, rows);
 }
 
 const CHI_TIET_DE_XUAT_MH_PAGE_SIZE_DEFAULT = 100;
 
 /** Một trang chi tiết đề xuất (server-side). */
 export async function getDeXuatMuaHangChiTietPageDb(
+  bt: KhoBienThe,
   page: number,
   pageSize: number = CHI_TIET_DE_XUAT_MH_PAGE_SIZE_DEFAULT,
   listQuery?: DeXuatMuaHangChiTietListServerQuery
 ): Promise<PaginatedTableResult<DeXuatMuaHangChiTietRow>> {
   let phieuIds: number[] | null = null;
   if (listQuery && !listQuery.scope.viewAll) {
-    phieuIds = await fetchPhieuIdsMatchingScope(listQuery.scope);
+    phieuIds = await fetchPhieuIdsMatchingScope(bt, listQuery.scope);
     if (phieuIds.length === 0) {
       return { data: [], totalCount: 0, page, pageSize };
     }
   }
 
   const pageResult = await fetchTablePage<ChiTietFullDbRow>(page, pageSize, async (from, to) => {
-    let sel = db.from(VIEW_CHI_TIET_FLAT).select(CHI_TIET_TAB_SELECT, { count: 'exact' });
+    let sel = db.from(bt.view.deXuatChiTietFlat).select(CHI_TIET_TAB_SELECT, { count: 'exact' });
     sel = applyPhieuIdConstraint(sel, phieuIds);
     if (listQuery) sel = applyDeXuatMuaHangChiTietRowFilters(sel, listQuery);
     const res = await sel
@@ -843,11 +840,12 @@ export async function getDeXuatMuaHangChiTietPageDb(
       .range(from, to);
     return { data: res.data as ChiTietFullDbRow[] | null, error: res.error, count: res.count };
   });
-  const data = await mapDeXuatMuaHangChiTietDbRowsToRows(pageResult.data);
+  const data = await mapDeXuatMuaHangChiTietDbRowsToRows(bt, pageResult.data);
   return { data, totalCount: pageResult.totalCount, page: pageResult.page, pageSize: pageResult.pageSize };
 }
 
 export async function fetchAllDeXuatMuaHangChiTietForListQueryDb(
+  bt: KhoBienThe,
   listQuery: DeXuatMuaHangChiTietListServerQuery,
   pageSize = 500,
   maxRows = 25000
@@ -855,7 +853,7 @@ export async function fetchAllDeXuatMuaHangChiTietForListQueryDb(
   const out: DeXuatMuaHangChiTietRow[] = [];
   let page = 0;
   while (out.length < maxRows) {
-    const { data, totalCount } = await getDeXuatMuaHangChiTietPageDb(page, pageSize, listQuery);
+    const { data, totalCount } = await getDeXuatMuaHangChiTietPageDb(bt, page, pageSize, listQuery);
     out.push(...data);
     if (data.length === 0 || out.length >= totalCount) break;
     page += 1;

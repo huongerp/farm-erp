@@ -47,6 +47,8 @@ const BANG_PHIEU_DUYET = new Set([
   'fp_mh_phieu_de_xuat_vat_tu',
   'fp_farm_de_xuat_mua_hang',
   'fp_farm_phieu_kho_phan_thuoc',
+  'fp_pt_de_xuat_mua_hang',
+  'fp_pt_phieu_kho',
 ]);
 
 // --- Tiện ích đọc payload ----------------------------------------------------

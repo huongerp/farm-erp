@@ -1,3 +1,5 @@
+import { storeTheoBienThe } from '../../kho-bien-the/KhoBienTheProvider';
+import { khoStorageKey } from '../../kho-bien-the/bien-the';
 import { createGenericStore, ColumnConfig } from '../../../../store/createGenericStore';
 import i18n from '../../../../lib/i18n';
 
@@ -15,4 +17,6 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'tg_cap_nhat', label: i18n.t('thietLapDeXuatMuaHang.tienDoMuaHang.store.updatedCol'), visible: false, minWidth: 140, order: 6 },
 ];
 
-export const useFarmTienDoMuaHangStore = createGenericStore<FarmTienDoMuaHangFilters>({ status: [] }, DEFAULT_COLUMNS, 'table-thiet-lap-de-xuat-mua-hang-farm-tien-do-mua-hang');
+export const useFarmTienDoMuaHangStore = storeTheoBienThe((bt) =>
+  createGenericStore<FarmTienDoMuaHangFilters>({ status: [] }, DEFAULT_COLUMNS, khoStorageKey(bt, 'table-thiet-lap-de-xuat-mua-hang-farm-tien-do-mua-hang'))
+);

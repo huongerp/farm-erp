@@ -1,7 +1,8 @@
-/** Đường dẫn trang in phiếu kiểm kê phân thuốc (route khai ở App.tsx). */
-export const getPhieuKiemKePTPreviewUrl = (id: string) =>
-  `/quan-ly-nha-so-che/kiem-ke-kho-phan-thuoc/preview/${encodeURIComponent(id)}`;
+import { khoPreviewUrl, type KhoBienThe } from '../../kho-bien-the/bien-the';
 
-/** Phiếu kho phân thuốc sinh ra khi điều chỉnh tồn. */
-export const getPhieuKhoPTPreviewUrl = (id: string) =>
-  `/quan-ly-nha-so-che/phieu-kho-phan-thuoc/preview/${encodeURIComponent(id)}`;
+/** Đường dẫn trang in phiếu kiểm kê (route khai ở App.tsx, theo submenu của biến thể). */
+export const getPhieuKiemKePTPreviewUrl = (bt: KhoBienThe, id: string) =>
+  khoPreviewUrl(bt, 'kiem-ke-kho-phan-thuoc', id);
+
+/** Phiếu kho sinh ra khi điều chỉnh tồn. */
+export const getPhieuKhoPTPreviewUrl = (bt: KhoBienThe, id: string) => khoPreviewUrl(bt, 'phieu-kho-phan-thuoc', id);

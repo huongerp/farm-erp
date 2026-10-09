@@ -1,3 +1,5 @@
+import { storeTheoBienThe } from '../../kho-bien-the/KhoBienTheProvider';
+import { khoStorageKey } from '../../kho-bien-the/bien-the';
 import { createGenericStore, type ColumnConfig } from '../../../../store/createGenericStore';
 import i18n from '../../../../lib/i18n';
 import type { DateRangePresetId } from '../../../he-thong/nhan-vien/core/stats-constants';
@@ -43,8 +45,10 @@ const initialFilters: ChiTietTabFilters = {
   tienDoMh: [],
 };
 
-export const useChiTietTabStore = createGenericStore<ChiTietTabFilters>(
-  initialFilters,
-  DEFAULT_COLUMNS,
-  'table-de-xuat-mua-hang-chi-tiet-tab'
+export const useChiTietTabStore = storeTheoBienThe((bt) =>
+  createGenericStore<ChiTietTabFilters>(
+    initialFilters,
+    DEFAULT_COLUMNS,
+    khoStorageKey(bt, 'table-de-xuat-mua-hang-chi-tiet-tab')
+  )
 );

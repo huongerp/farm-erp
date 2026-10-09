@@ -63,11 +63,13 @@ describe('phiếu có luồng duyệt', () => {
     expect(kq[0]!.vai).toEqual(['nguoi_tao', 'nguoi_duyet']);
   });
 
-  it('áp dụng cho cả ba bảng phiếu duyệt còn lại', () => {
+  it('áp dụng cho các bảng phiếu duyệt còn lại, kể cả bảng Phân thuốc', () => {
     for (const bang of [
       'fp_mh_phieu_de_xuat_vat_tu',
       'fp_farm_de_xuat_mua_hang',
       'fp_farm_phieu_kho_phan_thuoc',
+      'fp_pt_de_xuat_mua_hang',
+      'fp_pt_phieu_kho',
     ]) {
       const kq = phanTichSuKien(dong({ bang, trang_thai_cu: 'Chờ duyệt', trang_thai_moi: 'Đã duyệt' }));
       expect(kq[0]!.loai).toBe('phieu.da_duyet');

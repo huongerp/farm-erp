@@ -26,8 +26,9 @@ import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
 import GenericSubTableSection from '../../../../components/shared/GenericSubTableSection';
 import SubTable, { type SubTableColumn } from '../../../../components/shared/sub-table/SubTable';
 import ThuChiLienQuanSection from '../../../tai-chinh/thu-chi-quy/components/shared/ThuChiLienQuanSection';
+import { useKhoBienThe } from '../../kho-bien-the/KhoBienTheProvider';
+import { khoPreviewUrl } from '../../kho-bien-the/bien-the';
 
-const PREVIEW_BASE = '/quan-ly-nha-so-che/de-xuat-mua-hang/preview';
 
 interface ApproveOptionProps {
   label: string;
@@ -100,6 +101,7 @@ const DeXuatMuaHangDetail: React.FC<Props> = ({
   showOverdueBadge = false,
   idChiNhanhNoiDeXuat,
 }) => {
+  const bt = useKhoBienThe();
   const { t } = useTranslation();
   const canApprove = isTrangThaiChoPheDuyet(data.trang_thai) && !!onApprove;
   const daDuyet = data.trang_thai === TRANG_THAI_DA_DUYET;
@@ -152,12 +154,12 @@ const DeXuatMuaHangDetail: React.FC<Props> = ({
         icon: <Printer size={16} />,
         onClick: () => {
           if (onPrint) onPrint(data);
-          else window.open(`${PREVIEW_BASE}/${data.id}`, '_blank', 'noopener,noreferrer');
+          else window.open(khoPreviewUrl(bt, 'de-xuat-mua-hang', data.id), '_blank', 'noopener,noreferrer');
         },
         variant: 'primary' as const,
       },
     ],
-    [canApprove, canCreatePhieuKho, data, onCopy, onClose, onPrint, onCreatePhieuKho, soPhieuKhoLienKet, t, setShowApprovePopup]
+    [bt, canApprove, canCreatePhieuKho, data, onCopy, onClose, onPrint, onCreatePhieuKho, soPhieuKhoLienKet, t, setShowApprovePopup]
   );
 
   const statusLabel = t(`deXuatMuaHang.status.${trangThaiToI18nKey(data.trang_thai)}`);
@@ -316,7 +318,7 @@ const DeXuatMuaHangDetail: React.FC<Props> = ({
         </GenericSubTableSection>
 
         <ThuChiLienQuanSection
-          loaiChungTu="de_xuat_mua_hang"
+          loaiChungTu={bt.nguonThuChi}
           idChungTu={data.id}
           soChungTu={data.so_phieu}
           idChiNhanhMacDinh={idChiNhanhNoiDeXuat ?? null}

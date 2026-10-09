@@ -72,6 +72,7 @@ const DASHBOARD_IMPORTS = {
   '/hanh-chinh': () => import('./dashboards/HanhChinhDashboard'),
   '/mua-hang': () => import('./dashboards/MuaHangDashboard'),
   '/quan-ly-nha-so-che': () => import('./dashboards/QuanLyNhaSoCheDashboard'),
+  '/phan-thuoc': () => import('./dashboards/PhanThuocDashboard'),
   '/tai-chinh': () => import('./dashboards/TaiChinhDashboard'),
 } as const;
 
@@ -103,6 +104,7 @@ export const SubmenuChunkFallback = () => (
 export const LazyHanhChinhDashboard = lazy(() => import('./dashboards/HanhChinhDashboard'));
 export const LazyMuaHangDashboard = lazy(() => import('./dashboards/MuaHangDashboard'));
 export const LazyQuanLyNhaSoCheDashboard = lazy(() => import('./dashboards/QuanLyNhaSoCheDashboard'));
+export const LazyPhanThuocDashboard = lazy(() => import('./dashboards/PhanThuocDashboard'));
 export const LazyTaiChinhDashboard = lazy(() => import('./dashboards/TaiChinhDashboard'));
 
 export const SUBMENU_MODULE_LAZY = Object.fromEntries(

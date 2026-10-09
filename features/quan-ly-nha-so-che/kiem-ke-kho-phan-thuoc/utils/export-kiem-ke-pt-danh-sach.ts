@@ -45,5 +45,5 @@ export function exportMapDotKiemKePT(t: TFunction) {
 }
 
 export function exportFileNameDotKiemKePT(): string {
-  return `Kiem_ke_kho_phan_thuoc_${getTodayISODate()}`;
+  return `Kiem_ke_kho_${getTodayISODate()}`;
 }

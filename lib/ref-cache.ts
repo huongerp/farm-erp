@@ -11,7 +11,9 @@ export const REF_CACHE_KEYS = {
   kho: 'ref:kho',
   employees: 'ref:employees',
   hangHoa: 'ref:hang_hoa:v2',
-  farmHangHoa: 'ref:farm_hang_hoa',
+  /** Hàng hoá nhóm kho farm — mỗi biến thể (sơ chế / phân thuốc) một khoá. */
+  farmHangHoa: (bienThe: string = 'so-che') =>
+    bienThe === 'so-che' ? 'ref:farm_hang_hoa' : `ref:farm_hang_hoa:${bienThe}`,
   doiTac: (loai?: string) => `ref:doi_tac:${loai ?? 'all'}`,
 } as const;
 
@@ -30,17 +32,17 @@ export function invalidateRefCache(category?: 'kho' | 'employees' | 'hangHoa' | 
     store.clear();
     return;
   }
-  if (category === 'doiTac') {
+  if (category === 'doiTac' || category === 'farmHangHoa') {
+    const prefix = category === 'doiTac' ? 'ref:doi_tac:' : REF_CACHE_KEYS.farmHangHoa();
     for (const k of [...store.keys()]) {
-      if (k.startsWith('ref:doi_tac:')) store.delete(k);
+      if (k.startsWith(prefix)) store.delete(k);
     }
     return;
   }
-  const single: Record<'kho' | 'employees' | 'hangHoa' | 'farmHangHoa', string> = {
+  const single: Record<'kho' | 'employees' | 'hangHoa', string> = {
     kho: REF_CACHE_KEYS.kho,
     employees: REF_CACHE_KEYS.employees,
     hangHoa: REF_CACHE_KEYS.hangHoa,
-    farmHangHoa: REF_CACHE_KEYS.farmHangHoa,
   };
   store.delete(single[category]);
 }

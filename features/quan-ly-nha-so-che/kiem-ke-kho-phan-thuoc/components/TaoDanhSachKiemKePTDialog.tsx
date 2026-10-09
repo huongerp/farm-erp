@@ -14,6 +14,7 @@ import { getAllFarmDanhMuc } from '../../hang-hoa-phan-thuoc/services/farm-danh-
 import { getFarmHangHoaRef } from '../../hang-hoa-phan-thuoc/services/farm-hang-hoa-service';
 import { useKhoList } from '../../../kho-van/danh-sach-kho/hooks/use-kho';
 import type { TaoDanhSachKiemKePTFilters } from '../core/types';
+import { useKhoBienThe } from '../../kho-bien-the/KhoBienTheProvider';
 
 interface Props {
   open: boolean;
@@ -35,6 +36,7 @@ const TaoDanhSachKiemKePTDialog: React.FC<Props> = ({
   dotId,
   idKhoOfDot = [],
 }) => {
+  const bt = useKhoBienThe();
   const { t } = useTranslation();
   const [id_kho, setIdKho] = useState<string[]>([]);
   const [id_danh_muc, setIdDanhMuc] = useState<string[]>([]);
@@ -42,13 +44,13 @@ const TaoDanhSachKiemKePTDialog: React.FC<Props> = ({
 
   const { data: khoList = [] } = useKhoList();
   const { data: hangHoaList = [] } = useQuery({
-    queryKey: ['farmHangHoaRef'],
-    queryFn: getFarmHangHoaRef,
+    queryKey: ['farmHangHoaRef', bt.key],
+    queryFn: () => getFarmHangHoaRef(bt),
     enabled: open,
   });
   const { data: danhMucList = [] } = useQuery({
-    queryKey: ['farmDanhMucHangHoa'],
-    queryFn: getAllFarmDanhMuc,
+    queryKey: ['farmDanhMucHangHoa', bt.key],
+    queryFn: () => getAllFarmDanhMuc(bt),
     enabled: open,
   });
 

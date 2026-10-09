@@ -1,36 +1,43 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { Package, Warehouse, FolderOpen, AlertTriangle } from 'lucide-react';
+import { Warehouse, FolderOpen, AlertTriangle, Calendar, BadgeCheck } from 'lucide-react';
 import { useKhoList } from '../../../kho-van/danh-sach-kho/hooks/use-kho';
 import type { Kho } from '../../../kho-van/danh-sach-kho/core/types';
 import { useFarmDanhMucCap2WithParent } from '../../hang-hoa-phan-thuoc/hooks/use-farm-danh-muc';
-import { useFarmTonKhoPTDisplay } from '../hooks/use-farm-ton-kho-pt';
+import { useFarmHangHoaList } from '../../hang-hoa-phan-thuoc/hooks/use-farm-hang-hoa';
+import { useFarmTonKhoPTTheoKy } from '../hooks/use-farm-ton-kho-pt';
 import {
-  aggregateTonKhoPTByProduct,
+  gomTonKhoPTTheoKy,
   laHangChuaPhatSinh,
   laHangDuoiDinhMuc,
   themHangChuaPhatSinh,
-} from '../utils/aggregate-ton-kho-pt-by-product';
-import { useFarmHangHoaList } from '../../hang-hoa-phan-thuoc/hooks/use-farm-hang-hoa';
+  type HangHoaDinhMucLite,
+  type KhoLite,
+} from '../utils/ton-kho-theo-ky';
+import { sapXepTonKhoPT } from '../utils/sap-xep-ton-kho';
 import { exportTonKhoPTByProductToExcel } from '../utils/export-ton-kho-pt';
 import type { TonKhoPTProductAgg } from '../core/types';
-import type { TonKhoFilters } from '../../../kho-van/ton-kho/store/useTonKhoStore';
 import {
   isKhoColumnId,
   khoIdFromColumnId,
   mergeWarehouseColumns,
 } from '../../../kho-van/ton-kho/store/useTonKhoStore';
-import { useTonKhoPTByProductStore, DEFAULT_COLUMNS } from '../store/useTonKhoPTByProductStore';
+import {
+  useTonKhoPTByProductStore,
+  DEFAULT_COLUMNS,
+  initialTonKhoPTFilters,
+  type TonKhoPTFilters,
+} from '../store/useTonKhoPTByProductStore';
 import { useSearchInputCommit } from '../../../../lib/hooks/use-search-input-commit';
 import { useListWithFilter } from '../../../../lib/hooks';
-import { getColumnCellStyle } from '../../../../store/createGenericStore';
-import type { ColumnConfig } from '../../../../store/createGenericStore';
+import { getDateRangeFromPreset, getPresetFromDates } from '../../../../lib/date-presets';
 import TonKhoToolbar from '../../../kho-van/ton-kho/components/TonKhoToolbar';
-import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
-import EmptyState from '../../../../components/shared/EmptyState';
-import ListPageSkeleton from '../../../../components/shared/ListPageSkeleton';
-import TablePaginationFooter from '../../../../components/shared/TablePaginationFooter';
+import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
+import GenericTable from '../../../../components/shared/GenericTable';
+import DateRangePicker, { type DateRangeValue } from '../../../../components/ui/DateRangePicker';
+import { MobileFilterField, type FilterGroup } from '../../../../components/ui/MobileFilterSheet';
+import Tooltip from '../../../../components/ui/Tooltip';
 import TonKhoPTProductDetail from './TonKhoPTProductDetail';
 import { cn, formatNumberVN } from '../../../../lib/utils';
 import { laDuoiDinhMuc } from '../../phieu-kho-phan-thuoc/utils/ton-kho-check';
@@ -39,11 +46,16 @@ import { createListSearchMatcher } from '../../../../lib/list-search-matcher';
 /** Ô tìm kiếm quét MỌI cột của bảng, bỏ dấu tiếng Việt — xem lib/list-search-matcher.ts. */
 const khopTimKiem = createListSearchMatcher({ columns: DEFAULT_COLUMNS });
 
+const CUSTOM_PRESET_ID = 'custom';
+const KY_MAC_DINH = 'thisMonth';
+
+/** Số trong ô: 0 hiện "—" để bảng đỡ rối. */
+const so = (n: number) => (n !== 0 ? formatNumberVN(n) : '—');
+
 const TonSanPhamPTTab: React.FC = () => {
   const { t } = useTranslation();
   const { data: khoList = [] } = useKhoList();
   const { data: danhMucCap2 = [] } = useFarmDanhMucCap2WithParent();
-  const { data: displayRows = [], isLoading, isFetching } = useFarmTonKhoPTDisplay();
   const { data: hangHoaList = [] } = useFarmHangHoaList();
 
   const searchTerm = useTonKhoPTByProductStore((s) => s.searchTerm);
@@ -54,9 +66,15 @@ const TonSanPhamPTTab: React.FC = () => {
   const pagination = useTonKhoPTByProductStore((s) => s.pagination);
   const setPage = useTonKhoPTByProductStore((s) => s.setPage);
   const setPageSize = useTonKhoPTByProductStore((s) => s.setPageSize);
+  const sort = useTonKhoPTByProductStore((s) => s.sort);
+  const setSort = useTonKhoPTByProductStore((s) => s.setSort);
+  const selectedIds = useTonKhoPTByProductStore((s) => s.selectedIds);
+  const toggleSelection = useTonKhoPTByProductStore((s) => s.toggleSelection);
+  const toggleAllSelection = useTonKhoPTByProductStore((s) => s.toggleAllSelection);
   const columns = useTonKhoPTByProductStore((s) => s.columns);
   const toggleColumn = useTonKhoPTByProductStore((s) => s.toggleColumn);
   const reorderColumns = useTonKhoPTByProductStore((s) => s.reorderColumns);
+  const resizeColumn = useTonKhoPTByProductStore((s) => s.resizeColumn);
   const resetColumns = useTonKhoPTByProductStore((s) => s.resetColumns);
   const resetColumnWidths = useTonKhoPTByProductStore((s) => s.resetColumnWidths);
   const setColumns = useTonKhoPTByProductStore((s) => s.setColumns);
@@ -66,185 +84,212 @@ const TonSanPhamPTTab: React.FC = () => {
     commit: commitSearchTerm,
   });
 
-  /** Kho xuất hiện trong ma trận tồn farm (đã phát sinh phiếu NX và còn tồn ≠ 0). */
-  const farmKhoList = useMemo((): Kho[] => {
-    const khoMap = new Map(khoList.map((k) => [String(k.id), k]));
-    const seen = new Map<string, { id: string; ten_kho: string; ma_kho: string }>();
-    for (const r of displayRows) {
-      const id = String(r.id_kho);
-      if (seen.has(id)) continue;
-      const master = khoMap.get(id);
-      seen.set(id, {
-        id,
-        ten_kho: master?.ten_kho ?? r.ten_kho,
-        ma_kho: master?.ma_kho ?? r.ma_kho,
-      });
-    }
-    return [...seen.values()]
-      .sort((a, b) => a.ten_kho.localeCompare(b.ten_kho))
-      .map(
-        (k) =>
-          ({
-            id: k.id,
-            ma_kho: k.ma_kho,
-            ten_kho: k.ten_kho,
-          }) as Kho
-      );
-  }, [displayRows, khoList]);
+  const chiDaDuyet = filters.chiDaDuyet.includes('Yes');
+  const rangeOk = !filters.tu || !filters.den || filters.tu <= filters.den;
+  const {
+    data: cells = [],
+    isLoading,
+    isFetching,
+    isError,
+    refetch,
+  } = useFarmTonKhoPTTheoKy({ tu: filters.tu, den: filters.den, chiDaDuyet });
+
+  const hangMap = useMemo(() => {
+    const m: Record<string, HangHoaDinhMucLite> = {};
+    hangHoaList.forEach((h) => {
+      m[String(h.id)] = h;
+    });
+    return m;
+  }, [hangHoaList]);
+
+  const khoMap = useMemo(() => {
+    const m: Record<string, KhoLite> = {};
+    khoList.forEach((k) => {
+      m[String(k.id)] = { id: String(k.id), ma_kho: k.ma_kho, ten_kho: k.ten_kho };
+    });
+    return m;
+  }, [khoList]);
+
+  /** Chỉ kho có phát sinh phiếu phân thuốc — không liệt kê mọi kho của hệ thống. */
+  const farmKhoList = useMemo((): KhoLite[] => {
+    const ids = new Set(cells.map((c) => c.id_kho));
+    return [...ids]
+      .map((id) => khoMap[id] ?? { id, ma_kho: id, ten_kho: id })
+      .sort((a, b) => a.ten_kho.localeCompare(b.ten_kho, 'vi'));
+  }, [cells, khoMap]);
 
   const displayKhoList = useMemo(() => {
-    const filterSet =
-      (filters.warehouseIds?.length ?? 0) > 0 ? new Set(filters.warehouseIds!.map(String)) : null;
-    if (!filterSet) return farmKhoList;
-    return farmKhoList.filter((k) => filterSet.has(String(k.id)));
+    if (filters.warehouseIds.length === 0) return farmKhoList;
+    const wh = new Set(filters.warehouseIds.map(String));
+    return farmKhoList.filter((k) => wh.has(k.id));
   }, [farmKhoList, filters.warehouseIds]);
 
   useEffect(() => {
-    const next = mergeWarehouseColumns(columns, displayKhoList);
-    if (next !== columns) {
-      setColumns(() => next);
-    }
+    const next = mergeWarehouseColumns(columns, displayKhoList as unknown as Kho[]);
+    if (next !== columns) setColumns(() => next);
   }, [displayKhoList, columns, setColumns]);
 
-  const flatFiltered = useMemo(() => {
-    let r = displayRows;
-    if ((filters.warehouseIds?.length ?? 0) > 0) {
-      const wh = new Set(filters.warehouseIds!.map(String));
-      r = r.filter((x) => wh.has(String(x.id_kho)));
-    }
-    if ((filters.categoryIds?.length ?? 0) > 0) {
-      const cat = new Set(filters.categoryIds!.map(String));
-      r = r.filter((x) => x.danh_muc_id && cat.has(String(x.danh_muc_id)));
-    }
-    return r;
-  }, [displayRows, filters.warehouseIds, filters.categoryIds]);
+  /** Gom theo kho đang xem, chưa lọc danh mục — dùng đếm số trên chip danh mục. */
+  const aggTheoKho = useMemo(
+    () => gomTonKhoPTTheoKy(cells, { hangMap, khoMap, khoIds: filters.warehouseIds }),
+    [cells, hangMap, khoMap, filters.warehouseIds]
+  );
 
   const aggregated = useMemo(() => {
-    const agg = aggregateTonKhoPTByProduct(flatFiltered);
+    const cat = filters.categoryIds.length > 0 ? new Set(filters.categoryIds.map(String)) : null;
+    const agg = cat ? aggTheoKho.filter((r) => r.danh_muc_id && cat.has(String(r.danh_muc_id))) : aggTheoKho;
     // Hàng có định mức chưa từng nhập kho nào không thuộc kho cụ thể → chỉ thêm khi không lọc kho.
-    if ((filters.warehouseIds?.length ?? 0) > 0) return agg;
-    const cat = (filters.categoryIds?.length ?? 0) > 0 ? new Set(filters.categoryIds!.map(String)) : null;
+    if (filters.warehouseIds.length > 0) return agg;
     const hangCanXet = cat ? hangHoaList.filter((h) => h.danh_muc_id && cat.has(String(h.danh_muc_id))) : hangHoaList;
-    return themHangChuaPhatSinh(agg, hangCanXet, new Set(displayRows.map((r) => String(r.id_hang_hoa))));
-  }, [flatFiltered, filters.warehouseIds, filters.categoryIds, hangHoaList, displayRows]);
+    return themHangChuaPhatSinh(agg, hangCanXet, new Set(cells.map((c) => c.id_hang_hoa)));
+  }, [aggTheoKho, filters.categoryIds, filters.warehouseIds, hangHoaList, cells]);
 
   const belowMinCount = useMemo(() => aggregated.filter(laHangDuoiDinhMuc).length, [aggregated]);
 
-  const filterFn = useCallback((item: TonKhoPTProductAgg, term: string, f: TonKhoFilters) => {
-    if (f.belowMinStock?.includes('Yes') && !laHangDuoiDinhMuc(item)) return false;
+  const filterFn = useCallback((item: TonKhoPTProductAgg, term: string, f: TonKhoPTFilters) => {
+    if (f.belowMinStock.includes('Yes') && !laHangDuoiDinhMuc(item)) return false;
     return khopTimKiem(item, term);
   }, []);
 
   const filteredList = useListWithFilter(aggregated, searchTerm, filters, filterFn);
+  const sortedList = useMemo(() => sapXepTonKhoPT(filteredList, sort), [filteredList, sort]);
+
+  const visibleColumns = useMemo(
+    () => columns.filter((c) => c.visible).sort((a, b) => a.order - b.order),
+    [columns]
+  );
 
   const handleExport = useCallback(() => {
-    if (filteredList.length === 0) {
-      toast.warning(t('tonKhoPhanThuoc.byProduct.noExportData'));
+    if (sortedList.length === 0) {
+      toast.warning(t('tonKhoPhanThuoc.export.noData'));
       return;
     }
-    void exportTonKhoPTByProductToExcel(filteredList, displayKhoList, t)
+    void exportTonKhoPTByProductToExcel(sortedList, visibleColumns, { tu: filters.tu, den: filters.den }, t)
       .then(() => toast.success(t('tonKhoPhanThuoc.export.success')))
       .catch(() => toast.error(t('tonKhoPhanThuoc.export.error')));
-  }, [filteredList, displayKhoList, t]);
+  }, [sortedList, visibleColumns, filters.tu, filters.den, t]);
 
+  // ── Kỳ ────────────────────────────────────────────────────────────────────
+  const dateRangePresets = useMemo(
+    () =>
+      (['thisMonth', 'lastMonth', 'thisQuarter', 'thisYear', 'all'] as const).map((id) => ({
+        id,
+        label: t(`tonKhoPhanThuoc.filter.preset.${id}`),
+      })),
+    [t]
+  );
+
+  const dateRangeValue: DateRangeValue = useMemo(
+    () => ({ preset: getPresetFromDates(filters.tu, filters.den), customStart: filters.tu, customEnd: filters.den }),
+    [filters.tu, filters.den]
+  );
+
+  const handleDateRangeChange = useCallback(
+    (value: DateRangeValue) => {
+      const r =
+        value.preset === CUSTOM_PRESET_ID
+          ? { dateFrom: value.customStart, dateTo: value.customEnd }
+          : getDateRangeFromPreset(value.preset);
+      setFilter('tu', r.dateFrom);
+      setFilter('den', r.dateTo);
+    },
+    [setFilter]
+  );
+
+  /** Kỳ mặc định là tháng này — khác đi mới tính là đang lọc. */
+  const kyKhacMacDinh = dateRangeValue.preset !== KY_MAC_DINH;
+
+  // ── Chip lọc ──────────────────────────────────────────────────────────────
   const khoOptions = useMemo(
     () =>
       farmKhoList.map((k) => ({
         value: k.id,
         label: k.ten_kho,
-        count: displayRows.filter((r) => String(r.id_kho) === String(k.id)).length || 0,
+        subLabel: k.ma_kho,
+        count: cells.filter((c) => c.id_kho === k.id && c.ton_cuoi !== 0).length,
       })),
-    [farmKhoList, displayRows]
+    [farmKhoList, cells]
   );
 
   const categoryOptions = useMemo(
     () =>
       danhMucCap2.map((d) => ({
-        value: d.id,
+        value: String(d.id),
         label: d.ten_danh_muc_cha ? `${d.ten_danh_muc_cha} › ${d.ten_danh_muc}` : d.ten_danh_muc,
-        count: displayRows.filter((r) => String(r.danh_muc_id) === String(d.id)).length || 0,
+        count: aggTheoKho.filter((r) => String(r.danh_muc_id) === String(d.id)).length,
       })),
-    [danhMucCap2, displayRows]
+    [danhMucCap2, aggTheoKho]
   );
 
-  const belowMinOptions = useMemo(
-    () => [{ label: t('tonKhoPhanThuoc.byProduct.filterBelowMin'), value: 'Yes', count: belowMinCount }],
-    [t, belowMinCount]
-  );
-
-  const activeFilterCount =
-    (searchInput.trim() ? 1 : 0) +
-    (filters.belowMinStock?.length ?? 0) +
-    (filters.warehouseIds?.length ?? 0) +
-    (filters.categoryIds?.length ?? 0);
-  const handleClearAllFilters = useCallback(() => {
-    commitSearchTerm('');
-    setFilter('belowMinStock', []);
-    setFilter('warehouseIds', []);
-    setFilter('categoryIds', []);
-  }, [setFilter, commitSearchTerm]);
-
-  const filterGroups = useMemo(
+  const filterGroups: FilterGroup[] = useMemo(
     () => [
       {
-        key: 'belowMinStock',
-        label: t('tonKhoPhanThuoc.byProduct.filterBelowMin'),
-        icon: AlertTriangle,
-        options: belowMinOptions,
-        value: filters.belowMinStock ?? [],
-        onChange: (val: string[]) => setFilter('belowMinStock', val),
-      },
-      {
         key: 'warehouseIds',
-        label: t('tonKhoPhanThuoc.toolbar.warehouse'),
+        label: t('tonKhoPhanThuoc.filter.warehouse'),
         icon: Warehouse,
         options: khoOptions,
-        value: filters.warehouseIds ?? [],
+        value: filters.warehouseIds,
         onChange: (val: string[]) => setFilter('warehouseIds', val),
       },
       {
         key: 'categoryIds',
-        label: t('tonKhoPhanThuoc.toolbar.category'),
+        label: t('tonKhoPhanThuoc.filter.category'),
         icon: FolderOpen,
         options: categoryOptions,
-        value: filters.categoryIds ?? [],
+        value: filters.categoryIds,
         onChange: (val: string[]) => setFilter('categoryIds', val),
       },
+      {
+        key: 'belowMinStock',
+        label: t('tonKhoPhanThuoc.filter.belowMin'),
+        icon: AlertTriangle,
+        options: [{ label: t('tonKhoPhanThuoc.filter.belowMin'), value: 'Yes', count: belowMinCount }],
+        value: filters.belowMinStock,
+        onChange: (val: string[]) => setFilter('belowMinStock', val),
+      },
+      {
+        key: 'chiDaDuyet',
+        label: t('tonKhoPhanThuoc.filter.chiDaDuyet'),
+        icon: BadgeCheck,
+        options: [{ label: t('tonKhoPhanThuoc.filter.chiDaDuyetOption'), value: 'Yes' }],
+        value: filters.chiDaDuyet,
+        onChange: (val: string[]) => setFilter('chiDaDuyet', val),
+      },
     ],
-    [t, belowMinOptions, khoOptions, categoryOptions, filters.belowMinStock, filters.warehouseIds, filters.categoryIds, setFilter]
+    [t, khoOptions, categoryOptions, belowMinCount, filters.warehouseIds, filters.categoryIds, filters.belowMinStock, filters.chiDaDuyet, setFilter]
   );
 
-  const renderFilters = (
-    <div className="flex flex-wrap items-center gap-2">
-      <FilterChipMultiSelect
-        options={belowMinOptions}
-        value={filters.belowMinStock ?? []}
-        onChange={(val) => setFilter('belowMinStock', val)}
-        placeholder={t('tonKhoPhanThuoc.byProduct.filterBelowMin')}
-        icon={AlertTriangle}
-        className="w-full sm:w-[160px]"
-        size="md"
-      />
-      <FilterChipMultiSelect
-        options={khoOptions}
-        value={filters.warehouseIds ?? []}
-        onChange={(val) => setFilter('warehouseIds', val)}
-        placeholder={t('tonKhoPhanThuoc.toolbar.warehouse')}
-        icon={Warehouse}
-        className="w-full sm:w-[170px]"
-        size="md"
-      />
-      <FilterChipMultiSelect
-        options={categoryOptions}
-        value={filters.categoryIds ?? []}
-        onChange={(val) => setFilter('categoryIds', val)}
-        placeholder={t('tonKhoPhanThuoc.toolbar.category')}
-        icon={FolderOpen}
-        className="w-full sm:w-[200px]"
-        size="md"
-      />
-    </div>
-  );
+  const filterItems: FilterChipItem[] = [
+    {
+      kind: 'custom',
+      key: 'ky',
+      node: (
+        <DateRangePicker
+          presets={dateRangePresets}
+          value={dateRangeValue}
+          onChange={handleDateRangeChange}
+          placeholder={t('tonKhoPhanThuoc.filter.period')}
+          customPresetId={CUSTOM_PRESET_ID}
+          className="shrink-0"
+        />
+      ),
+    },
+    ...filterGroups.map((group): FilterChipItem => ({ kind: 'group', group })),
+  ];
+
+  const activeFilterCount =
+    (searchInput.trim() ? 1 : 0) +
+    filters.warehouseIds.length +
+    filters.categoryIds.length +
+    filters.belowMinStock.length +
+    filters.chiDaDuyet.length +
+    (kyKhacMacDinh ? 1 : 0);
+
+  const handleClearAllFilters = useCallback(() => {
+    commitSearchTerm('');
+    const init = initialTonKhoPTFilters();
+    (Object.keys(init) as (keyof TonKhoPTFilters)[]).forEach((k) => setFilter(k, init[k]));
+  }, [setFilter, commitSearchTerm]);
 
   useEffect(() => () => resetState(), [resetState]);
 
@@ -252,100 +297,144 @@ const TonSanPhamPTTab: React.FC = () => {
     setPage(1);
   }, [filteredList.length, setPage]);
 
-  const maxPage = Math.max(1, Math.ceil(filteredList.length / pagination.pageSize));
-  useEffect(() => {
-    if (pagination.page > maxPage) setPage(maxPage);
-  }, [pagination.page, pagination.pageSize, maxPage, setPage]);
-
-  const visibleColumns = useMemo(
-    () => columns.filter((c) => c.visible).sort((a, b) => a.order - b.order),
-    [columns]
-  );
-
-  const paginatedData = useMemo(() => {
-    const start = (pagination.page - 1) * pagination.pageSize;
-    return filteredList.slice(start, start + pagination.pageSize);
-  }, [filteredList, pagination.page, pagination.pageSize]);
-
   const [detail, setDetail] = useState<TonKhoPTProductAgg | null>(null);
 
-  const renderCell = (item: TonKhoPTProductAgg, col: ColumnConfig) => {
-    if (isKhoColumnId(col.id)) {
-      const khoId = khoIdFromColumnId(col.id);
+  // ── Ô bảng ────────────────────────────────────────────────────────────────
+  const renderCell = (colId: string, item: TonKhoPTProductAgg): React.ReactNode => {
+    if (isKhoColumnId(colId)) {
+      const khoId = khoIdFromColumnId(colId);
       const qty = item.by_kho[khoId] ?? 0;
-      // Chỉ tô kho có phát sinh tồn của hàng này — kho chưa từng nhập hàng thì không báo.
+      // Chỉ tô kho có phát sinh của hàng này — kho chưa từng nhập hàng thì không báo.
       const duoiDinhMuc = khoId in item.by_kho && (qty < 0 || laDuoiDinhMuc(qty, item.dinh_muc));
-      return (
-        <td
-          key={col.id}
-          className={cn('px-4 py-3 text-right', duoiDinhMuc && 'bg-destructive/10')}
-          style={getColumnCellStyle(col)}
-          title={duoiDinhMuc && item.dinh_muc ? t('tonKhoPhanThuoc.byProduct.duoiDinhMucHint', { dinhMuc: formatNumberVN(item.dinh_muc) }) : undefined}
-        >
-          <span className={cn('font-medium tabular-nums text-sm', duoiDinhMuc && 'text-destructive font-semibold')}>
-            {qty !== 0 ? formatNumberVN(qty) : '—'}
-          </span>
-        </td>
+      const num = (
+        <div className={cn('text-right tabular-nums', duoiDinhMuc && 'text-destructive font-semibold')}>{so(qty)}</div>
+      );
+      return duoiDinhMuc && item.dinh_muc ? (
+        <Tooltip content={t('tonKhoPhanThuoc.hint.duoiDinhMuc', { dinhMuc: formatNumberVN(item.dinh_muc) })}>{num}</Tooltip>
+      ) : (
+        num
       );
     }
-    switch (col.id) {
+    switch (colId) {
       case 'ma_hang':
         return (
-          <td key={col.id} className="px-4 py-3" style={getColumnCellStyle(col)}>
-            <span className="font-mono text-xs font-medium text-muted-foreground bg-muted px-2 py-1 rounded border border-border">
-              {item.ma_hang}
-            </span>
-          </td>
+          <span className="font-mono text-xs font-medium text-muted-foreground bg-muted px-2 py-1 rounded border border-border">
+            {item.ma_hang}
+          </span>
         );
       case 'ten_hang':
-        return (
-          <td key={col.id} className="px-4 py-3" style={getColumnCellStyle(col)}>
-            <span className="font-medium text-foreground">{item.ten_hang}</span>
-          </td>
-        );
+        return <span className="font-medium text-foreground">{item.ten_hang}</span>;
       case 'ten_danh_muc':
-        return (
-          <td key={col.id} className="px-4 py-3 text-muted-foreground" style={getColumnCellStyle(col)}>
-            {item.ten_danh_muc ?? '—'}
-          </td>
-        );
+        return <span className="text-muted-foreground">{item.ten_danh_muc ?? '—'}</span>;
       case 'don_vi_tinh':
-        return (
-          <td key={col.id} className="px-4 py-3 text-muted-foreground" style={getColumnCellStyle(col)}>
-            {item.don_vi_tinh}
-          </td>
-        );
+        return <span className="text-muted-foreground">{item.don_vi_tinh}</span>;
       case 'dinh_muc':
-        return (
-          <td key={col.id} className="px-4 py-3 text-right tabular-nums text-muted-foreground" style={getColumnCellStyle(col)}>
-            {item.dinh_muc ? formatNumberVN(item.dinh_muc) : '—'}
-          </td>
-        );
+        return <div className="text-right tabular-nums text-muted-foreground">{item.dinh_muc ? formatNumberVN(item.dinh_muc) : '—'}</div>;
       case 'so_kho_co_ton':
+        return <div className="text-right tabular-nums">{item.so_kho_co_ton}</div>;
+      case 'ton_dau':
+        return <div className={cn('text-right tabular-nums', item.ton_dau < 0 && 'text-destructive')}>{so(item.ton_dau)}</div>;
+      case 'nhap':
+        return <div className="text-right tabular-nums text-emerald-600 dark:text-emerald-400">{so(item.nhap)}</div>;
+      case 'xuat':
+        return <div className="text-right tabular-nums text-amber-600 dark:text-amber-400">{so(item.xuat)}</div>;
+      case 'chuyen':
         return (
-          <td key={col.id} className="px-4 py-3 text-right tabular-nums" style={getColumnCellStyle(col)}>
-            {item.so_kho_co_ton}
-          </td>
+          <div className="text-right tabular-nums text-muted-foreground">
+            {item.chuyen > 0 ? `+${formatNumberVN(item.chuyen)}` : so(item.chuyen)}
+          </div>
         );
-      case 'tong_so_luong': {
-        // Hàng có định mức chưa nhập kho nào: không có ô kho để tô → báo đỏ ở Tổng SL.
+      case 'ton_cuoi': {
+        // Hàng có định mức chưa nhập kho nào: không có ô kho để tô → báo đỏ ở Tồn cuối kỳ.
         const chuaNhap = laHangChuaPhatSinh(item);
-        return (
-          <td
-            key={col.id}
-            className={cn('px-4 py-3 text-right', chuaNhap && 'bg-destructive/10')}
-            style={getColumnCellStyle(col)}
-            title={chuaNhap ? t('tonKhoPhanThuoc.byProduct.chuaNhapKhoHint') : undefined}
+        const num = (
+          <div
+            className={cn(
+              'text-right tabular-nums font-semibold',
+              (chuaNhap || item.ton_cuoi < 0) && 'text-destructive'
+            )}
           >
-            <span className={cn('font-medium tabular-nums', chuaNhap && 'text-destructive font-semibold')}>
-              {formatNumberVN(item.tong_so_luong)}
-            </span>
-          </td>
+            {formatNumberVN(item.ton_cuoi)}
+          </div>
         );
+        return chuaNhap ? <Tooltip content={t('tonKhoPhanThuoc.hint.chuaNhapKho')}>{num}</Tooltip> : num;
       }
       default:
-        return <td key={col.id} className="px-4 py-3" style={getColumnCellStyle(col)} />;
+        return null;
     }
+  };
+
+  const renderSummaryRow = (colId: string, list: TonKhoPTProductAgg[]): React.ReactNode => {
+    const tong = (f: (r: TonKhoPTProductAgg) => number) => list.reduce((s, r) => s + f(r), 0);
+    if (isKhoColumnId(colId)) {
+      const khoId = khoIdFromColumnId(colId);
+      return <div className="text-right tabular-nums font-semibold">{so(tong((r) => r.by_kho[khoId] ?? 0))}</div>;
+    }
+    switch (colId) {
+      case 'ma_hang':
+        return <span className="text-muted-foreground">{t('tonKhoPhanThuoc.summary.total', { count: list.length })}</span>;
+      case 'ton_dau':
+        return <div className="text-right tabular-nums font-semibold">{so(tong((r) => r.ton_dau))}</div>;
+      case 'nhap':
+        return <div className="text-right tabular-nums font-semibold text-emerald-600 dark:text-emerald-400">{so(tong((r) => r.nhap))}</div>;
+      case 'xuat':
+        return <div className="text-right tabular-nums font-semibold text-amber-600 dark:text-amber-400">{so(tong((r) => r.xuat))}</div>;
+      case 'chuyen':
+        return <div className="text-right tabular-nums font-semibold text-muted-foreground">{so(tong((r) => r.chuyen))}</div>;
+      case 'ton_cuoi':
+        return <div className="text-right tabular-nums font-semibold">{formatNumberVN(tong((r) => r.ton_cuoi))}</div>;
+      default:
+        return null;
+    }
+  };
+
+  const renderMobileCard = (item: TonKhoPTProductAgg) => {
+    const canhBao = laHangDuoiDinhMuc(item);
+    return (
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => setDetail(item)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setDetail(item);
+          }
+        }}
+        className="bg-card rounded-xl border border-border p-3.5 shadow-sm cursor-pointer"
+      >
+        <div className="flex items-start justify-between gap-2 mb-2.5">
+          <div className="min-w-0">
+            <h4 className="font-semibold text-foreground text-sm line-clamp-1">{item.ten_hang}</h4>
+            <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
+              <span className="font-mono">{item.ma_hang}</span>
+              <span>{item.don_vi_tinh}</span>
+            </div>
+          </div>
+          <div className="text-right shrink-0">
+            <div className={cn('text-base font-bold tabular-nums', (canhBao || item.ton_cuoi < 0) && 'text-destructive')}>
+              {formatNumberVN(item.ton_cuoi)}
+            </div>
+            <div className="text-[11px] text-muted-foreground">{t('tonKhoPhanThuoc.table.tonCuoi')}</div>
+          </div>
+        </div>
+        <div className="grid grid-cols-4 gap-2 text-xs">
+          {(
+            [
+              ['tonDau', item.ton_dau, ''],
+              ['nhap', item.nhap, 'text-emerald-600 dark:text-emerald-400'],
+              ['xuat', item.xuat, 'text-amber-600 dark:text-amber-400'],
+              ['chuyen', item.chuyen, ''],
+            ] as const
+          ).map(([key, val, cls]) => (
+            <div key={key}>
+              <div className="text-muted-foreground">{t(`tonKhoPhanThuoc.table.${key}`)}</div>
+              <div className={cn('tabular-nums font-medium', cls)}>{so(val)}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -359,101 +448,71 @@ const TonSanPhamPTTab: React.FC = () => {
           onReorderColumns={reorderColumns}
           onResetColumns={resetColumns}
           onResetColumnWidths={resetColumnWidths}
-          filters={renderFilters}
+          filters={<ResponsiveFilterChips items={filterItems} />}
           activeFilterCount={activeFilterCount}
           onClearAllFilters={handleClearAllFilters}
           filterGroups={filterGroups}
+          mobileFilterExtra={
+            <MobileFilterField label={t('tonKhoPhanThuoc.filter.period')} icon={Calendar} active={kyKhacMacDinh}>
+              <DateRangePicker
+                inline
+                presets={dateRangePresets}
+                value={dateRangeValue}
+                onChange={handleDateRangeChange}
+                customPresetId={CUSTOM_PRESET_ID}
+              />
+            </MobileFilterField>
+          }
+          mobileFilterExtraCount={kyKhacMacDinh ? 1 : 0}
           onExport={handleExport}
         />
 
-        <div className="flex-1 min-h-0 flex flex-col bg-card overflow-hidden relative">
-          {isFetching && !isLoading ? (
-            <div
-              className="absolute inset-0 z-[25] pointer-events-none flex items-start justify-center pt-3 bg-background/30 backdrop-blur-[1px]"
-              aria-busy="true"
-              aria-live="polite"
-            >
-              <div className="h-6 w-6 rounded-full border-2 border-primary/35 border-t-primary animate-spin shadow-sm" aria-hidden />
-            </div>
-          ) : null}
-          {isLoading ? (
-            <ListPageSkeleton
-              loadingText={t('common.loading')}
-              tableColumns={visibleColumns.length}
-              tableRowCount={8}
-              tableColumnWithSubline={0}
-              cardCount={0}
-            />
-          ) : filteredList.length === 0 ? (
-            <div className="flex-1 min-h-0 flex items-center justify-center p-4">
-              <EmptyState
-                icon={<Package size={40} className="text-muted-foreground opacity-20" />}
-                title={t('tonKhoPhanThuoc.byProduct.empty')}
-                description={t('tonKhoPhanThuoc.byProduct.emptyHint')}
-              />
-            </div>
-          ) : (
-            <>
-              <div className="flex-1 min-h-0 overflow-auto custom-scrollbar">
-                <table className="w-full text-sm text-left border-collapse">
-                  <thead className="sticky top-0 z-10 bg-muted/95 border-b border-border">
-                    <tr>
-                      {visibleColumns.map((col) => {
-                        const isNumeric =
-                          col.id === 'tong_so_luong' ||
-                          col.id === 'so_kho_co_ton' ||
-                          col.id === 'dinh_muc' ||
-                          isKhoColumnId(col.id);
-                        return (
-                          <th
-                            key={col.id}
-                            className={cn(
-                              'px-4 py-3 font-semibold text-muted-foreground text-xs whitespace-nowrap',
-                              isNumeric && 'text-right'
-                            )}
-                            style={getColumnCellStyle(col)}
-                          >
-                            {col.label}
-                          </th>
-                        );
-                      })}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border [&>tr:last-child>td]:border-b [&>tr:last-child>td]:border-border">
-                    {paginatedData.map((item) => (
-                      <tr
-                        key={item.id_hang_hoa}
-                        className="group hover:bg-muted/50 transition-colors cursor-pointer"
-                        onClick={() => setDetail(item)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') setDetail(item);
-                        }}
-                        role="button"
-                        tabIndex={0}
-                      >
-                        {visibleColumns.map((col) => renderCell(item, col))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <div className="shrink-0 border-t border-border bg-muted/30">
-                <TablePaginationFooter
-                  totalRecords={filteredList.length}
-                  page={pagination.page}
-                  pageSize={pagination.pageSize}
-                  onPageChange={setPage}
-                  onPageSizeChange={setPageSize}
-                  selectedCount={0}
-                  recordsLabel={t('tonKho.records')}
-                />
-              </div>
-            </>
-          )}
+        <div className="flex-1 min-h-0 flex flex-col">
+          <GenericTable<TonKhoPTProductAgg>
+            data={rangeOk ? sortedList : []}
+            columns={columns}
+            onResizeColumn={resizeColumn}
+            isLoading={isLoading}
+            isFetching={isFetching && !isLoading}
+            isError={isError}
+            onRetry={() => void refetch()}
+            loadingText={t('common.loading')}
+            selectedIds={selectedIds}
+            onToggleSelection={toggleSelection}
+            onToggleAll={toggleAllSelection}
+            page={pagination.page}
+            pageSize={pagination.pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+            sort={sort}
+            onSort={setSort}
+            stickyLeftCount={2}
+            renderCell={renderCell}
+            renderSummaryRow={renderSummaryRow}
+            renderMobileCard={renderMobileCard}
+            keyExtractor={(item) => item.id_hang_hoa}
+            onRowClick={setDetail}
+            showActionsColumn={false}
+            emptyTitle={rangeOk ? t('tonKhoPhanThuoc.empty') : t('tonKhoPhanThuoc.dateInvalid')}
+            emptyDescription={rangeOk ? t('tonKhoPhanThuoc.emptyHint') : undefined}
+            emptyAction={
+              activeFilterCount > 0 ? (
+                <button type="button" onClick={handleClearAllFilters} className="text-sm font-medium text-primary hover:underline">
+                  {t('common.clearFilters', { count: activeFilterCount })}
+                </button>
+              ) : undefined
+            }
+          />
         </div>
       </div>
 
-      {detail && <TonKhoPTProductDetail agg={detail} onClose={() => setDetail(null)} />}
+      {detail && (
+        <TonKhoPTProductDetail
+          agg={detail}
+          ky={{ tu: filters.tu, den: filters.den }}
+          onClose={() => setDetail(null)}
+        />
+      )}
     </div>
   );
 };

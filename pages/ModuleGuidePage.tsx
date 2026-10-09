@@ -18,8 +18,9 @@ import { getModuleTitleKeyBySlug, HANH_CHINH_MODULE_SLUGS } from '../lib/hanh-ch
 import { getMuaHangModuleTitleKeyBySlug, MUA_HANG_MODULE_SLUGS } from '../lib/mua-hang-menu';
 import { KHO_VAN_MODULE_SLUGS } from '../lib/kho-van-menu';
 import { getQuanLyNhaSoCheModuleTitleKeyBySlug, QUAN_LY_NHA_SO_CHE_MODULE_SLUGS } from '../lib/quan-ly-nha-so-che-menu';
+import { getPhanThuocModuleTitleKeyBySlug, PHAN_THUOC_MODULE_SLUGS } from '../lib/phan-thuoc-menu';
 
-const SUBMENU_PATH = ['hanh-chinh', 'mua-hang', 'quan-ly-nha-so-che'] as const;
+const SUBMENU_PATH = ['hanh-chinh', 'mua-hang', 'quan-ly-nha-so-che', 'phan-thuoc'] as const;
 
 /** Convert slug (cham-cong) to camelCase (chamCong) for i18n key */
 function slugToCamel(slug: string): string {
@@ -41,6 +42,9 @@ function getModuleTitle(
   }
   if (submenu === 'quan-ly-nha-so-che' && QUAN_LY_NHA_SO_CHE_MODULE_SLUGS.includes(decoded)) {
     return t(getQuanLyNhaSoCheModuleTitleKeyBySlug(decoded));
+  }
+  if (submenu === 'phan-thuoc' && PHAN_THUOC_MODULE_SLUGS.includes(decoded)) {
+    return t(getPhanThuocModuleTitleKeyBySlug(decoded));
   }
   return decoded;
 }

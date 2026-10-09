@@ -10,6 +10,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getFarmHangHoaRef } from '../../hang-hoa-phan-thuoc/services/farm-hang-hoa-service';
 import Select from '../../../../components/ui/Select';
 import type { ChiTietKiemKePT } from '../core/types';
+import { useKhoBienThe } from '../../kho-bien-the/KhoBienTheProvider';
 
 const ALL_KHO_VALUE = '__ALL__';
 
@@ -30,14 +31,15 @@ const ThemDongKiemKePTDialog: React.FC<Props> = ({
   idKhoOfDot,
   chiTiet,
 }) => {
+  const bt = useKhoBienThe();
   const { t } = useTranslation();
   const [id_hang_hoa, setIdHangHoa] = useState('');
   const [id_kho, setIdKho] = useState('');
 
   const { data: khoList = [] } = useKhoList();
   const { data: hangHoaList = [] } = useQuery({
-    queryKey: ['farmHangHoaRef'],
-    queryFn: getFarmHangHoaRef,
+    queryKey: ['farmHangHoaRef', bt.key],
+    queryFn: () => getFarmHangHoaRef(bt),
     enabled: open,
   });
 

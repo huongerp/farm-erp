@@ -75,8 +75,9 @@ màn hình khoá.
 
 Mức **cao** = rung push ngay; **thường** = vào chuông, push theo cài đặt.
 
-### Bốn module phiếu có luồng duyệt
+### Các module phiếu có luồng duyệt
 `kho-van/phieu-kho` · `mua-hang/phieu-de-xuat-vat-tu` · `quan-ly-nha-so-che/de-xuat-mua-hang` · `quan-ly-nha-so-che/phieu-kho-phan-thuoc`
+· `phan-thuoc/de-xuat-mua-hang` · `phan-thuoc/phieu-kho-phan-thuoc` (bảng `fp_pt_*`, migration 029)
 
 | Sự kiện | Khi | Ai nhận | Mức |
 |---|---|---|---|

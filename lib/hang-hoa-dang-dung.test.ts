@@ -59,4 +59,10 @@ describe('duongDanPhieu', () => {
     expect(duongDanPhieu('phieu_kho_pt', '5')).toBe('/quan-ly-nha-so-che/phieu-kho-phan-thuoc/preview/5');
     expect(duongDanPhieu('phieu_kiem_ke', '5')).toBeNull();
   });
+
+  it('phiếu Phân thuốc mở đúng submenu /phan-thuoc, không lẫn sang Nhà sơ chế', () => {
+    expect(duongDanPhieu('pt_phieu_kho', '7')).toBe('/phan-thuoc/phieu-kho-phan-thuoc/preview/7');
+    expect(duongDanPhieu('pt_de_xuat_mua_hang', '7')).toBe('/phan-thuoc/de-xuat-mua-hang/preview/7');
+    expect(duongDanPhieu('pt_dot_kiem_ke', '7')).toBe('/phan-thuoc/kiem-ke-kho-phan-thuoc/preview/7');
+  });
 });

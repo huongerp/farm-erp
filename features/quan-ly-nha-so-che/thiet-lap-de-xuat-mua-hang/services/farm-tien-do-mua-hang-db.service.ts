@@ -6,8 +6,7 @@ import type { FarmTienDoMuaHang } from '../core/types';
 import type { FarmTienDoMuaHangFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
-
-const TABLE = 'fp_farm_tien_do_mua_hang';
+import type { KhoBienThe } from '../../kho-bien-the/bien-the';
 
 const ROW_COLUMNS = 'id,ma,ten,thu_tu,mau,ghi_chu,trang_thai,tg_tao,tg_cap_nhat';
 
@@ -43,10 +42,10 @@ function rowToItem(row: DbRow): FarmTienDoMuaHang {
   };
 }
 
-export async function getFarmTienDoMuaHangList(): Promise<FarmTienDoMuaHang[]> {
+export async function getFarmTienDoMuaHangList(bt: KhoBienThe): Promise<FarmTienDoMuaHang[]> {
   const rows = await fetchAllRows<DbRow>((from, to) =>
     db
-      .from(TABLE)
+      .from(bt.bang.tienDoMuaHang)
       .select(ROW_COLUMNS)
       .order('thu_tu', { ascending: true })
       .order('id', { ascending: true })
@@ -56,10 +55,11 @@ export async function getFarmTienDoMuaHangList(): Promise<FarmTienDoMuaHang[]> {
 }
 
 export async function createFarmTienDoMuaHang(
+  bt: KhoBienThe,
   data: FarmTienDoMuaHangFormValues
 ): Promise<FarmTienDoMuaHang> {
   const ma = data.ma.trim();
-  const { data: existing } = await db.from(TABLE).select('id').eq('ma', ma).maybeSingle();
+  const { data: existing } = await db.from(bt.bang.tienDoMuaHang).select('id').eq('ma', ma).maybeSingle();
   if (existing) throw new Error(i18n.t('thietLapDeXuatMuaHang.tienDoMuaHang.service.duplicateMa'));
 
   const payload = {
@@ -71,12 +71,13 @@ export async function createFarmTienDoMuaHang(
     trang_thai: data.trang_thai,
   };
 
-  const { data: inserted, error } = await db.from(TABLE).insert(payload).select(ROW_COLUMNS).single();
+  const { data: inserted, error } = await db.from(bt.bang.tienDoMuaHang).insert(payload).select(ROW_COLUMNS).single();
   if (error) throwDbError(error);
   return rowToItem(inserted as DbRow);
 }
 
 export async function updateFarmTienDoMuaHang(
+  bt: KhoBienThe,
   id: string,
   data: FarmTienDoMuaHangFormValues
 ): Promise<FarmTienDoMuaHang> {
@@ -84,7 +85,7 @@ export async function updateFarmTienDoMuaHang(
   if (Number.isNaN(idNum)) throw new Error(i18n.t('thietLapDeXuatMuaHang.tienDoMuaHang.service.notFound'));
 
   const ma = data.ma.trim();
-  const { data: other } = await db.from(TABLE).select('id').eq('ma', ma).neq('id', idNum).maybeSingle();
+  const { data: other } = await db.from(bt.bang.tienDoMuaHang).select('id').eq('ma', ma).neq('id', idNum).maybeSingle();
   if (other) throw new Error(i18n.t('thietLapDeXuatMuaHang.tienDoMuaHang.service.duplicateMa'));
 
   const payload = {
@@ -96,30 +97,31 @@ export async function updateFarmTienDoMuaHang(
     trang_thai: data.trang_thai,
   };
 
-  const { error } = await db.from(TABLE).update(payload).eq('id', idNum);
+  const { error } = await db.from(bt.bang.tienDoMuaHang).update(payload).eq('id', idNum);
   if (error) throwDbError(error);
 
-  const { data: row, error: fetchErr } = await db.from(TABLE).select(ROW_COLUMNS).eq('id', idNum).single();
+  const { data: row, error: fetchErr } = await db.from(bt.bang.tienDoMuaHang).select(ROW_COLUMNS).eq('id', idNum).single();
   if (fetchErr || !row) throw new Error(i18n.t('thietLapDeXuatMuaHang.tienDoMuaHang.service.notFound'));
   return rowToItem(row as DbRow);
 }
 
 export async function updateFarmTienDoMuaHangStatus(
+  bt: KhoBienThe,
   ids: string[],
   status: import('../../../../lib/constants').TrangThaiHoatDong
 ): Promise<void> {
   const numIds = ids.map((s) => Number(s)).filter((n) => !Number.isNaN(n));
   if (numIds.length === 0) return;
   const { error } = await db
-    .from(TABLE)
+    .from(bt.bang.tienDoMuaHang)
     .update({ trang_thai: status })
     .in('id', numIds);
   if (error) throwDbError(error);
 }
 
-export async function deleteFarmTienDoMuaHangList(ids: string[]): Promise<void> {
+export async function deleteFarmTienDoMuaHangList(bt: KhoBienThe, ids: string[]): Promise<void> {
   const numIds = ids.map((s) => Number(s)).filter((n) => !Number.isNaN(n));
   if (numIds.length === 0) return;
-  const { error } = await db.from(TABLE).delete().in('id', numIds);
+  const { error } = await db.from(bt.bang.tienDoMuaHang).delete().in('id', numIds);
   if (error) throwDbError(error);
 }

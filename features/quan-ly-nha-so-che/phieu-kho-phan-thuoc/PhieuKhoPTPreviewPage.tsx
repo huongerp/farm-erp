@@ -6,6 +6,7 @@ import { X, Printer, Download, ChevronDown, FileText, FileSpreadsheet, FileType 
 import { usePhieuKhoPTById } from './hooks/use-phieu-kho-pt';
 import { exportPhieuKhoPTToPDF, exportPhieuKhoPTToDoc, exportPhieuKhoPTToXLSX } from './utils/export-phieu-kho-pt';
 import PhieuKhoPTPreviewContent from './components/PhieuKhoPTPreviewContent';
+import { useKhoBienThe } from '../kho-bien-the/KhoBienTheProvider';
 
 export type PhieuKhoPTExportFormat = 'pdf' | 'doc' | 'xlsx';
 
@@ -16,6 +17,7 @@ const EXPORT_OPTIONS: { format: PhieuKhoPTExportFormat; label: string; icon: Rea
 ];
 
 const PhieuKhoPTPreviewPage: React.FC = () => {
+  const bt = useKhoBienThe();
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -39,9 +41,9 @@ const PhieuKhoPTPreviewPage: React.FC = () => {
     } else {
       // window.open(..., 'noopener') → window.opener === null, browser chặn window.close().
       // Điều hướng về danh sách của module để vẫn thoát được khi mở qua deep-link / F5.
-      navigate('/quan-ly-nha-so-che/phieu-kho-phan-thuoc', { replace: true });
+      navigate(`${bt.basePath}/phieu-kho-phan-thuoc`, { replace: true });
     }
-  }, [navigate]);
+  }, [navigate, bt]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {

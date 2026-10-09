@@ -14,10 +14,12 @@ import StatsToolbar from '../../../../components/shared/StatsToolbar';
 import StatsCards from './stats/StatsCards';
 const StatsCharts = lazy(() => import('./stats/StatsCharts'));
 import StatsTables from './stats/StatsTables';
+import { useKhoBienThe } from '../../kho-bien-the/KhoBienTheProvider';
 /** Hằng rỗng dùng chung — tránh tạo `{}` mới mỗi render làm deps của useMemo luôn đổi. */
 const EMPTY_COUNTS: Record<string, number> = {};
 
 const ThongKeTab: React.FC = () => {
+  const bt = useKhoBienThe();
   const { t } = useTranslation();
   const { data: employees = [] } = useEmployeesRefQuery();
   const { data: khoList = [] } = useKhoList();
@@ -56,7 +58,7 @@ const ThongKeTab: React.FC = () => {
       scopeNoiDeXuatIds,
     ],
     queryFn: async () => {
-      const rpc = await fetchDeXuatMuaHangStatsFromRpc({
+      const rpc = await fetchDeXuatMuaHangStatsFromRpc(bt, {
         dateFrom,
         dateTo,
         filterStatus,
@@ -65,7 +67,7 @@ const ThongKeTab: React.FC = () => {
         filterNguoiDuyet,
         scopeNoiDeXuatIds,
       });
-      if (!rpc) throw new Error('RPC rpc_farm_de_xuat_mua_hang_stats unavailable');
+      if (!rpc) throw new Error(`RPC ${bt.rpc.deXuatStats} unavailable`);
       return rpc;
     },
     staleTime: 60_000,

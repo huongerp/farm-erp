@@ -1,5 +1,5 @@
 /**
- * Phiếu kho phân thuốc — DB: (fp_farm_phieu_kho_phan_thuoc + chi tiết + views).
+ * Phiếu kho nhóm kho farm — DB theo biến thể (bt.bang.phieuKho + chi tiết + views).
  */
 import { db, fetchTablePage, type PaginatedTableResult, throwDbError } from '../../../../lib/db';
 import type {
@@ -37,11 +37,7 @@ import {
   type VuotTon,
 } from '../utils/ton-kho-check';
 import { getTonKhoPTMatrixByKhoIds } from '../../ton-kho-phan-thuoc/services/farm-ton-kho-pt';
-
-const TABLE_PHIEU = 'fp_farm_phieu_kho_phan_thuoc';
-const TABLE_CHI_TIET = 'fp_farm_phieu_kho_phan_thuoc_chi_tiet';
-const VIEW_SUMMARY = 'v_farm_phieu_kho_phan_thuoc_summary';
-const VIEW_FLAT = 'v_farm_phieu_kho_phan_thuoc_chi_tiet_flat';
+import type { KhoBienThe } from '../../kho-bien-the/bien-the';
 
 const PHIEU_PT_CHI_TIET_ROW_SELECT =
   'id, id_phieu_kho, id_hang_hoa, ten_hang_hoa, don_vi_tinh, pham_cap, so_luong, don_gia, thanh_tien, so_lot, ghi_chu, nguoi_tao_id, ten_nguoi_tao, tg_tao, tg_cap_nhat';
@@ -210,18 +206,18 @@ function rowToChiTiet(
   };
 }
 
-export async function getNextSoPhieuFarmPtDb(loai: LoaiPhieuKhoPT): Promise<string> {
-  const { data, error } = await db.rpc('get_next_so_phieu_farm_pt', { p_loai: loai });
+export async function getNextSoPhieuFarmPtDb(bt: KhoBienThe, loai: LoaiPhieuKhoPT): Promise<string> {
+  const { data, error } = await db.rpc(bt.rpc.soPhieuKho, { p_loai: loai });
   if (error) throwDbError(error);
-  if (typeof data !== 'string') throw new Error('get_next_so_phieu_farm_pt did not return string');
+  if (typeof data !== 'string') throw new Error(`${bt.rpc.soPhieuKho} did not return string`);
   return data;
 }
 
-export async function getPhieuKhoPTByIdDb(id: string): Promise<PhieuKhoPT | null> {
+export async function getPhieuKhoPTByIdDb(bt: KhoBienThe, id: string): Promise<PhieuKhoPT | null> {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) return null;
   const { data: row, error } = await db
-    .from(TABLE_PHIEU)
+    .from(bt.bang.phieuKho)
     .select(PHIEU_PT_HEADER_ROW_SELECT)
     .eq('id', idNum)
     .maybeSingle();
@@ -232,12 +228,12 @@ export async function getPhieuKhoPTByIdDb(id: string): Promise<PhieuKhoPT | null
     getKhoRef(),
     getEmployeesRef(),
     db
-      .from(TABLE_CHI_TIET)
+      .from(bt.bang.phieuKhoChiTiet)
       .select(PHIEU_PT_CHI_TIET_ROW_SELECT)
       .eq('id_phieu_kho', idNum)
       .order('id', { ascending: true })
       .then((r) => r.data ?? []),
-    getAllFarmHangHoa(),
+    getAllFarmHangHoa(bt),
   ]);
   const khoMap: Record<string, string> = {};
   khoList.forEach((k) => {
@@ -273,11 +269,11 @@ export async function getPhieuKhoPTByIdDb(id: string): Promise<PhieuKhoPT | null
 /** Phiếu kho đã sinh ra từ một đề xuất mua hàng (badge + chặn tạo trùng ở module Đề xuất). */
 export type PhieuKhoPTByDeXuat = { id: string; so_phieu: string; loai: LoaiPhieuKhoPT; id_de_xuat_mua_hang: string };
 
-export async function getPhieuKhoPTByDeXuatIdsDb(deXuatIds: string[]): Promise<PhieuKhoPTByDeXuat[]> {
+export async function getPhieuKhoPTByDeXuatIdsDb(bt: KhoBienThe, deXuatIds: string[]): Promise<PhieuKhoPTByDeXuat[]> {
   const numIds = [...new Set(deXuatIds.map((s) => Number(s)).filter((n) => !Number.isNaN(n)))];
   if (numIds.length === 0) return [];
   const { data, error } = await db
-    .from(TABLE_PHIEU)
+    .from(bt.bang.phieuKho)
     .select('id, so_phieu, loai, id_de_xuat_mua_hang')
     .in('id_de_xuat_mua_hang', numIds)
     .order('id', { ascending: true });
@@ -292,12 +288,12 @@ export async function getPhieuKhoPTByDeXuatIdsDb(deXuatIds: string[]): Promise<P
 
 type HangHoaSnapshot = Record<string, { ten_hang_hoa: string; don_vi_tinh?: string; pham_cap?: string | null }>;
 
-async function getHangHoaSnapshotMap(): Promise<{
+async function getHangHoaSnapshotMap(bt: KhoBienThe): Promise<{
   map: HangHoaSnapshot;
   tenById: Record<string, string>;
   dinhMucById: Record<string, number | null>;
 }> {
-  const hangHoaList = await getAllFarmHangHoa();
+  const hangHoaList = await getAllFarmHangHoa(bt);
   const map: HangHoaSnapshot = {};
   const tenById: Record<string, string> = {};
   const dinhMucById: Record<string, number | null> = {};
@@ -397,10 +393,10 @@ function canhBaoTonMessage(
 }
 
 /** Tồn hiện tại của các kho mà phiếu làm giảm (một request). */
-async function loadTonForDeltas(...deltas: TonMap[]): Promise<TonMap> {
+async function loadTonForDeltas(bt: KhoBienThe, ...deltas: TonMap[]): Promise<TonMap> {
   const khoIds = khoCanKiemTra(...deltas);
   if (khoIds.length === 0) return new Map();
-  return buildTonMap(await getTonKhoPTMatrixByKhoIds(khoIds));
+  return buildTonMap(await getTonKhoPTMatrixByKhoIds(bt, khoIds));
 }
 
 function formToDeltaInput(data: PhieuKhoPTFormValues, lines: ReturnType<typeof validChiTiet>) {
@@ -456,18 +452,18 @@ export interface PhieuKhoPTSaveResult {
   canhBaoTon: string | null;
 }
 
-export async function createPhieuKhoPTDb(data: PhieuKhoPTFormValues): Promise<PhieuKhoPTSaveResult> {
+export async function createPhieuKhoPTDb(bt: KhoBienThe, data: PhieuKhoPTFormValues): Promise<PhieuKhoPTSaveResult> {
   const loai = data.loai as LoaiPhieuKhoPT;
   const soPhieu = data.so_phieu.trim();
-  const { data: existing } = await db.from(TABLE_PHIEU).select('id').eq('so_phieu', soPhieu).eq('loai', loai).maybeSingle();
+  const { data: existing } = await db.from(bt.bang.phieuKho).select('id').eq('so_phieu', soPhieu).eq('loai', loai).maybeSingle();
   if (existing) throw new Error(i18n.t('phieuKhoPhanThuoc.service.duplicateCode'));
 
   const chiTiet = validChiTiet(data);
   const newDelta = phieuDelta(formToDeltaInput(data, chiTiet));
   const [{ khoMap, nvMap }, { map: hangHoaMap, tenById, dinhMucById }, ton] = await Promise.all([
     loadKhoNvMaps(),
-    getHangHoaSnapshotMap(),
-    loadTonForDeltas(newDelta),
+    getHangHoaSnapshotMap(bt),
+    loadTonForDeltas(bt, newDelta),
   ]);
   const canhBaoTon = canhBaoTonMessage(
     findVuotTon(ton, newDelta),
@@ -480,7 +476,7 @@ export async function createPhieuKhoPTDb(data: PhieuKhoPTFormValues): Promise<Ph
   const tenNguoiTao = nguoiTaoId != null ? (nvMap[String(nguoiTaoId)] ?? null) : null;
 
   const { data: inserted, error } = await db
-    .from(TABLE_PHIEU)
+    .from(bt.bang.phieuKho)
     .insert(headerPayloadFromForm(data, khoMap, nguoiTaoId, tenNguoiTao))
     .select(PHIEU_PT_HEADER_ROW_SELECT)
     .single();
@@ -489,16 +485,16 @@ export async function createPhieuKhoPTDb(data: PhieuKhoPTFormValues): Promise<Ph
 
   if (chiTiet.length > 0) {
     const { error: errCt } = await db
-      .from(TABLE_CHI_TIET)
+      .from(bt.bang.phieuKhoChiTiet)
       .insert(buildChiTietRows(idPhieu, chiTiet, hangHoaMap, nguoiTaoId, tenNguoiTao));
     if (errCt) {
       // Bù trừ: không để lại phiếu rỗng khi ghi dòng lỗi.
-      await db.from(TABLE_PHIEU).delete().eq('id', idPhieu);
+      await db.from(bt.bang.phieuKho).delete().eq('id', idPhieu);
       throwDbError(errCt);
     }
   }
 
-  const got = await getPhieuKhoPTByIdDb(String(idPhieu));
+  const got = await getPhieuKhoPTByIdDb(bt, String(idPhieu));
   if (!got) throw new Error(i18n.t('phieuKhoPhanThuoc.service.notFound'));
   return { phieu: got, canhBaoTon };
 }
@@ -508,13 +504,13 @@ export async function createPhieuKhoPTDb(data: PhieuKhoPTFormValues): Promise<Ph
  * Bước nào lỗi thì hoàn lại header + bỏ dòng mới → phiếu giữ nguyên như trước khi sửa,
  * không còn ca "xoá hết dòng rồi insert lỗi" làm phiếu mất dòng.
  */
-export async function updatePhieuKhoPTDb(id: string, data: PhieuKhoPTFormValues): Promise<PhieuKhoPTSaveResult> {
+export async function updatePhieuKhoPTDb(bt: KhoBienThe, id: string, data: PhieuKhoPTFormValues): Promise<PhieuKhoPTSaveResult> {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('phieuKhoPhanThuoc.service.notFound'));
 
   const [{ data: oldRow, error: fetchErr }, { data: oldLines, error: oldLinesErr }] = await Promise.all([
-    db.from(TABLE_PHIEU).select(PHIEU_PT_HEADER_ROW_SELECT).eq('id', idNum).maybeSingle(),
-    db.from(TABLE_CHI_TIET).select('id, id_hang_hoa, so_luong').eq('id_phieu_kho', idNum),
+    db.from(bt.bang.phieuKho).select(PHIEU_PT_HEADER_ROW_SELECT).eq('id', idNum).maybeSingle(),
+    db.from(bt.bang.phieuKhoChiTiet).select('id, id_hang_hoa, so_luong').eq('id_phieu_kho', idNum),
   ]);
   if (fetchErr || !oldRow) throw new Error(i18n.t('phieuKhoPhanThuoc.service.notFound'));
   if (oldLinesErr) throwDbError(oldLinesErr);
@@ -524,7 +520,7 @@ export async function updatePhieuKhoPTDb(id: string, data: PhieuKhoPTFormValues)
   const soPhieu = data.so_phieu.trim();
   const loaiForUnique = data.loai as LoaiPhieuKhoPT;
   const { data: other } = await db
-    .from(TABLE_PHIEU)
+    .from(bt.bang.phieuKho)
     .select('id')
     .eq('so_phieu', soPhieu)
     .eq('loai', loaiForUnique)
@@ -543,8 +539,8 @@ export async function updatePhieuKhoPTDb(id: string, data: PhieuKhoPTFormValues)
   });
   const [{ khoMap, nvMap }, { map: hangHoaMap, tenById, dinhMucById }, ton] = await Promise.all([
     loadKhoNvMaps(),
-    getHangHoaSnapshotMap(),
-    loadTonForDeltas(newDelta, oldDelta),
+    getHangHoaSnapshotMap(bt),
+    loadTonForDeltas(bt, newDelta, oldDelta),
   ]);
   const canhBaoTon = canhBaoTonMessage(
     findVuotTon(ton, newDelta, oldDelta),
@@ -557,14 +553,14 @@ export async function updatePhieuKhoPTDb(id: string, data: PhieuKhoPTFormValues)
   const tenNguoiTao = nguoiTaoId != null ? (nvMap[String(nguoiTaoId)] ?? null) : null;
 
   const { error: updateErr } = await db
-    .from(TABLE_PHIEU)
+    .from(bt.bang.phieuKho)
     .update(headerPayloadFromForm(data, khoMap, nguoiTaoId, tenNguoiTao))
     .eq('id', idNum);
   if (updateErr) throwDbError(updateErr);
 
   const restoreHeader = () =>
     db
-      .from(TABLE_PHIEU)
+      .from(bt.bang.phieuKho)
       .update({
         so_phieu: old.so_phieu,
         ngay: old.ngay,
@@ -585,7 +581,7 @@ export async function updatePhieuKhoPTDb(id: string, data: PhieuKhoPTFormValues)
   let newIds: number[] = [];
   if (chiTiet.length > 0) {
     const { data: insertedCt, error: errCt } = await db
-      .from(TABLE_CHI_TIET)
+      .from(bt.bang.phieuKhoChiTiet)
       .insert(buildChiTietRows(idNum, chiTiet, hangHoaMap, nguoiTaoId, tenNguoiTao))
       .select('id');
     if (errCt) {
@@ -597,15 +593,15 @@ export async function updatePhieuKhoPTDb(id: string, data: PhieuKhoPTFormValues)
 
   const oldIds = oldCt.map((c) => c.id);
   if (oldIds.length > 0) {
-    const { error: delErr } = await db.from(TABLE_CHI_TIET).delete().in('id', oldIds);
+    const { error: delErr } = await db.from(bt.bang.phieuKhoChiTiet).delete().in('id', oldIds);
     if (delErr) {
-      if (newIds.length > 0) await db.from(TABLE_CHI_TIET).delete().in('id', newIds);
+      if (newIds.length > 0) await db.from(bt.bang.phieuKhoChiTiet).delete().in('id', newIds);
       await restoreHeader();
       throwDbError(delErr);
     }
   }
 
-  const got = await getPhieuKhoPTByIdDb(id);
+  const got = await getPhieuKhoPTByIdDb(bt, id);
   if (!got) throw new Error(i18n.t('phieuKhoPhanThuoc.service.notFound'));
   return { phieu: got, canhBaoTon };
 }
@@ -622,10 +618,10 @@ export interface ImportPhieuKhoPTResult {
 }
 
 /** Số phiếu đã có trong DB (chỉ những số mà file có điền) — theo lô để URL `.in()` không quá dài. */
-async function getExistingSoPhieuPT(soPhieuList: string[]): Promise<ExistingSoPhieu[]> {
+async function getExistingSoPhieuPT(bt: KhoBienThe, soPhieuList: string[]): Promise<ExistingSoPhieu[]> {
   const out: ExistingSoPhieu[] = [];
   for (const group of chunkBy([...new Set(soPhieuList)], 200)) {
-    const { data, error } = await db.from(TABLE_PHIEU).select('so_phieu, loai').in('so_phieu', group);
+    const { data, error } = await db.from(bt.bang.phieuKho).select('so_phieu, loai').in('so_phieu', group);
     if (error) throwDbError(error);
     out.push(...((data ?? []) as ExistingSoPhieu[]));
   }
@@ -638,14 +634,15 @@ async function getExistingSoPhieuPT(soPhieuList: string[]): Promise<ExistingSoPh
  * Trạng thái luôn "Chờ duyệt" — import không được đi tắt luồng duyệt.
  */
 export async function importPhieuKhoPTDb(
+  bt: KhoBienThe,
   rows: PhieuKhoPTImportRow[],
   nguoiTao: { id: number | null; ten: string | null }
 ): Promise<ImportPhieuKhoPTResult> {
   const soPhieuFile = rows.map((r) => normalizeText(r.so_phieu)).filter(Boolean);
   const [khoList, hangHoaList, existingSoPhieu] = await Promise.all([
     getKhoRef(),
-    getAllFarmHangHoa(),
-    soPhieuFile.length > 0 ? getExistingSoPhieuPT(soPhieuFile) : Promise.resolve([]),
+    getAllFarmHangHoa(bt),
+    soPhieuFile.length > 0 ? getExistingSoPhieuPT(bt, soPhieuFile) : Promise.resolve([]),
   ]);
 
   const { phieus, errors } = planPhieuKhoPTImport(rows, {
@@ -665,7 +662,7 @@ export async function importPhieuKhoPTDb(
   const deltas = phieus.map((p) =>
     phieuDelta({ loai: p.loai, kho_id: p.kho_id, kho_den_id: p.kho_den_id, lines: p.lines })
   );
-  const ton = await loadTonForDeltas(...deltas);
+  const ton = await loadTonForDeltas(bt, ...deltas);
   const khoMap: Record<string, string> = {};
   khoList.forEach((k) => {
     khoMap[k.id] = k.ten_kho;
@@ -689,9 +686,9 @@ export async function importPhieuKhoPTDb(
     );
     let idPhieu: number | null = null;
     try {
-      const soPhieu = p.so_phieu ?? (await getNextSoPhieuFarmPtDb(p.loai));
+      const soPhieu = p.so_phieu ?? (await getNextSoPhieuFarmPtDb(bt, p.loai));
       const { data: inserted, error } = await db
-        .from(TABLE_PHIEU)
+        .from(bt.bang.phieuKho)
         .insert({
           so_phieu: soPhieu,
           ngay: p.ngay,
@@ -710,7 +707,7 @@ export async function importPhieuKhoPTDb(
       if (error) throw error;
       idPhieu = (inserted as { id: number }).id;
 
-      const { error: errCt } = await db.from(TABLE_CHI_TIET).insert(
+      const { error: errCt } = await db.from(bt.bang.phieuKhoChiTiet).insert(
         p.lines.map((l) => ({
           id_phieu_kho: idPhieu,
           id_hang_hoa: l.id_hang_hoa,
@@ -731,7 +728,7 @@ export async function importPhieuKhoPTDb(
       applyDelta(ton, deltas[i]);
       if (canhBao) warnings.push(`${soPhieu}: ${canhBao}`);
     } catch (err) {
-      if (idPhieu != null) await db.from(TABLE_PHIEU).delete().eq('id', idPhieu);
+      if (idPhieu != null) await db.from(bt.bang.phieuKho).delete().eq('id', idPhieu);
       const msg = i18n.t('phieuKhoPhanThuoc.import.errWriteFailed', { msg: formatDbError(err) });
       p.sourceRows.forEach((r) => errors.push({ row: r.row, msg, values: r.values }));
     }
@@ -779,6 +776,7 @@ function appendTraoDoiPT(existing: string | null | undefined, entry: string): st
 }
 
 export async function updatePhieuKhoPTTrangThaiDb(
+  bt: KhoBienThe,
   id: string,
   trang_thai: TrangThaiPhieuKhoPT,
   options?: UpdatePhieuKhoPTTrangThaiOptions
@@ -787,11 +785,11 @@ export async function updatePhieuKhoPTTrangThaiDb(
   if (Number.isNaN(idNum)) throw new Error(i18n.t('phieuKhoPhanThuoc.service.notFound'));
   const idNguoiDuyet = normalizeNguoiDuyetIdPT(options?.id_nguoi_duyet);
 
-  const { data: row } = await db.from(TABLE_PHIEU).select('trao_doi').eq('id', idNum).maybeSingle();
+  const { data: row } = await db.from(bt.bang.phieuKho).select('trao_doi').eq('id', idNum).maybeSingle();
   const existing = (row as { trao_doi?: string } | null)?.trao_doi ?? '';
   const newTraoDoi = appendTraoDoiPT(existing, buildTraoDoiEntryPT(trang_thai, idNguoiDuyet, options));
   const { error } = await db
-    .from(TABLE_PHIEU)
+    .from(bt.bang.phieuKho)
     .update({ trang_thai, trao_doi: newTraoDoi, id_nguoi_duyet: idNguoiDuyet })
     .eq('id', idNum);
   if (error) throwDbError(error);
@@ -807,6 +805,7 @@ export interface UpdatePhieuKhoPTTrangThaiManyResult {
  * thành một `update().in()`: gom log cũ bằng 1 SELECT, PATCH tuần tự và gom lỗi thay vì dừng lô.
  */
 export async function updatePhieuKhoPTTrangThaiManyDb(
+  bt: KhoBienThe,
   ids: string[],
   trang_thai: TrangThaiPhieuKhoPT,
   options?: UpdatePhieuKhoPTTrangThaiOptions
@@ -815,7 +814,7 @@ export async function updatePhieuKhoPTTrangThaiManyDb(
   if (numIds.length === 0) return { okIds: [], failed: [] };
 
   const idNguoiDuyet = normalizeNguoiDuyetIdPT(options?.id_nguoi_duyet);
-  const { data, error: selErr } = await db.from(TABLE_PHIEU).select('id,trao_doi').in('id', numIds);
+  const { data, error: selErr } = await db.from(bt.bang.phieuKho).select('id,trao_doi').in('id', numIds);
   if (selErr) throwDbError(selErr);
   const traoDoiById = new Map<number, string>();
   ((data ?? []) as { id: number; trao_doi?: string | null }[]).forEach((row) => {
@@ -829,7 +828,7 @@ export async function updatePhieuKhoPTTrangThaiManyDb(
   for (const idNum of numIds) {
     try {
       const { error } = await db
-        .from(TABLE_PHIEU)
+        .from(bt.bang.phieuKho)
         .update({
           trang_thai,
           trao_doi: appendTraoDoiPT(traoDoiById.get(idNum), entry),
@@ -846,17 +845,17 @@ export async function updatePhieuKhoPTTrangThaiManyDb(
   return { okIds, failed };
 }
 
-export async function deletePhieuKhoPTDb(id: string): Promise<void> {
+export async function deletePhieuKhoPTDb(bt: KhoBienThe, id: string): Promise<void> {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('phieuKhoPhanThuoc.service.notFound'));
-  const { error } = await db.from(TABLE_PHIEU).delete().eq('id', idNum);
+  const { error } = await db.from(bt.bang.phieuKho).delete().eq('id', idNum);
   if (error) throwDbError(error);
 }
 
-export async function deletePhieuKhoPTManyDb(ids: string[]): Promise<void> {
+export async function deletePhieuKhoPTManyDb(bt: KhoBienThe, ids: string[]): Promise<void> {
   const numIds = ids.map((id) => Number(id)).filter((n) => !Number.isNaN(n));
   if (numIds.length === 0) return;
-  const { error } = await db.from(TABLE_PHIEU).delete().in('id', numIds);
+  const { error } = await db.from(bt.bang.phieuKho).delete().in('id', numIds);
   if (error) throwDbError(error);
 }
 
@@ -976,12 +975,13 @@ const CHI_TIET_PAGE_SIZE_DEFAULT = 100;
 const DANH_SACH_PAGE_SIZE_DEFAULT = 50;
 
 export async function getPhieuKhoPTPageDb(
+  bt: KhoBienThe,
   page: number,
   pageSize: number = DANH_SACH_PAGE_SIZE_DEFAULT,
   listQuery?: PhieuKhoPTListServerQuery
 ): Promise<PaginatedTableResult<PhieuKhoPT>> {
   const pageResult = await fetchTablePage<PhieuKhoPTSummaryRow>(page, pageSize, async (from, to) => {
-    let sel = db.from(VIEW_SUMMARY).select(PHIEU_PT_SUMMARY_SELECT, { count: 'exact' });
+    let sel = db.from(bt.view.phieuKhoSummary).select(PHIEU_PT_SUMMARY_SELECT, { count: 'exact' });
     if (listQuery) sel = applyPhieuKhoPTListQueryToSummarySelect(sel, listQuery);
     const res = await sel.order('ngay', { ascending: false }).order('so_phieu', { ascending: false }).range(from, to);
     return { data: (res.data ?? null) as PhieuKhoPTSummaryRow[] | null, error: res.error, count: res.count };
@@ -991,13 +991,14 @@ export async function getPhieuKhoPTPageDb(
 }
 
 export async function getChiTietPhieuKhoPTPageDb(
+  bt: KhoBienThe,
   page: number,
   pageSize: number = CHI_TIET_PAGE_SIZE_DEFAULT,
   listQuery?: ChiTietPhieuKhoPTListServerQuery
 ): Promise<PaginatedTableResult<ChiTietPhieuKhoPTFlat>> {
   const [pageResult, nvMap] = await Promise.all([
     fetchTablePage<PhieuKhoPTChiTietFlatViewRow>(page, pageSize, async (from, to) => {
-      let sel = db.from(VIEW_FLAT).select(PHIEU_PT_CHI_TIET_FLAT_SELECT, { count: 'exact' });
+      let sel = db.from(bt.view.phieuKhoChiTietFlat).select(PHIEU_PT_CHI_TIET_FLAT_SELECT, { count: 'exact' });
       if (listQuery) sel = applyChiTietPhieuKhoPTListQueryToFlatSelect(sel, listQuery);
       const res = await sel
         .order('ngay', { ascending: false })
@@ -1013,6 +1014,7 @@ export async function getChiTietPhieuKhoPTPageDb(
 }
 
 export async function fetchAllPhieuKhoPTForListQueryDb(
+  bt: KhoBienThe,
   listQuery: PhieuKhoPTListServerQuery,
   pageSize = 500,
   maxRows = 25000
@@ -1020,7 +1022,7 @@ export async function fetchAllPhieuKhoPTForListQueryDb(
   const out: PhieuKhoPT[] = [];
   let p = 0;
   while (out.length < maxRows) {
-    const { data, totalCount } = await getPhieuKhoPTPageDb(p, pageSize, listQuery);
+    const { data, totalCount } = await getPhieuKhoPTPageDb(bt, p, pageSize, listQuery);
     out.push(...data);
     if (data.length === 0 || out.length >= totalCount) break;
     p += 1;
@@ -1029,6 +1031,7 @@ export async function fetchAllPhieuKhoPTForListQueryDb(
 }
 
 export async function fetchAllChiTietPhieuKhoPTForListQueryDb(
+  bt: KhoBienThe,
   listQuery: ChiTietPhieuKhoPTListServerQuery,
   pageSize = 500,
   maxRows = 25000
@@ -1036,7 +1039,7 @@ export async function fetchAllChiTietPhieuKhoPTForListQueryDb(
   const out: ChiTietPhieuKhoPTFlat[] = [];
   let p = 0;
   while (out.length < maxRows) {
-    const { data, totalCount } = await getChiTietPhieuKhoPTPageDb(p, pageSize, listQuery);
+    const { data, totalCount } = await getChiTietPhieuKhoPTPageDb(bt, p, pageSize, listQuery);
     out.push(...data);
     if (data.length === 0 || out.length >= totalCount) break;
     p += 1;

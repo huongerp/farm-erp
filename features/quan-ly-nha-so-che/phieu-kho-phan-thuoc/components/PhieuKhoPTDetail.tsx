@@ -18,6 +18,8 @@ import { BTN_CLOSE, CONFIRM_YES } from '../../../../lib/button-labels';
 import { useUpdatePhieuKhoPTTrangThai } from '../hooks/use-phieu-kho-pt';
 import { useAuthStore } from '../../../../store/useStore';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
+import { useKhoBienThe } from '../../kho-bien-the/KhoBienTheProvider';
+import { khoPreviewUrl } from '../../kho-bien-the/bien-the';
 
 interface Props {
   data: PhieuKhoPT;
@@ -35,6 +37,7 @@ function loaiLabel(loai: LoaiPhieuKhoPT, t: (k: string) => string): string {
 }
 
 const PhieuKhoPTDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onCopy, canApprove = true }) => {
+  const bt = useKhoBienThe();
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const confirm = useConfirmStore((s) => s.confirm);
@@ -59,7 +62,7 @@ const PhieuKhoPTDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
   const isNhap = data.loai === 'nhập';
   const isXuat = data.loai === 'xuất';
 
-  const previewPath = `/quan-ly-nha-so-che/phieu-kho-phan-thuoc/preview/${data.id}`;
+  const previewPath = khoPreviewUrl(bt, 'phieu-kho-phan-thuoc', data.id);
 
   const optionLabel = (value: TrangThaiPhieuKhoPT) =>
     value === 'Đã duyệt'

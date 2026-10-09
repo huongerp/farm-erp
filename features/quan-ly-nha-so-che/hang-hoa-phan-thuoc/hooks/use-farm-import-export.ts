@@ -242,10 +242,10 @@ export function useFarmDanhMucImportExport({
 
   const sampleRows = useMemo<ImportSampleRow[]>(() => {
     const cap1 = list.find((d) => !d.id_cha || d.id_cha.trim() === '');
-    const maCap1 = cap1?.ma_danh_muc ?? 'PHAN';
+    const maCap1 = cap1?.ma_danh_muc ?? 'BAO_BI';
     return [
-      [maCap1, cap1?.ten_danh_muc ?? 'Phân bón', '', 1, 'Danh mục cấp 1 — để trống cột cha'],
-      ['PHAN_HC', 'Phân hữu cơ', maCap1, 2, 'Danh mục cấp 2 — ghi mã hoặc tên danh mục cấp 1'],
+      [maCap1, cap1?.ten_danh_muc ?? 'Bao bì', '', 1, 'Danh mục cấp 1 — để trống cột cha'],
+      ['THUNG', 'Thùng carton', maCap1, 2, 'Danh mục cấp 2 — ghi mã hoặc tên danh mục cấp 1'],
     ];
   }, [list]);
 

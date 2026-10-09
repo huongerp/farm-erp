@@ -50,7 +50,7 @@ function download(blob: Blob, name: string) {
 }
 
 function getFileName(): string {
-  return `Thong_ke_kiem_ke_kho_phan_thuoc_${getTodayISODate()}`;
+  return `Thong_ke_kiem_ke_kho_${getTodayISODate()}`;
 }
 
 /* ------------------------------------------------------------------ */

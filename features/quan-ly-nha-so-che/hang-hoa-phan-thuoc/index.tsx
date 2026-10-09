@@ -33,12 +33,14 @@ import { useListWithFilter } from '../../../lib/hooks';
 import type { FarmDanhMuc } from './core/types';
 import type { FarmHangHoa } from './core/types';
 import { createListSearchMatcher } from '../../../lib/list-search-matcher';
+import { useKhoBienThe } from '../kho-bien-the/KhoBienTheProvider';
 
 /** Ô tìm kiếm quét MỌI cột của bảng, bỏ dấu tiếng Việt — xem lib/list-search-matcher.ts. */
 const khopTimKiemDanhMuc = createListSearchMatcher({ columns: DM_COLUMNS });
 const khopTimKiemHangHoa = createListSearchMatcher({ columns: HH_COLUMNS });
 
 const HangHoaPhanThuocPage: React.FC = () => {
+  const bt = useKhoBienThe();
   const { t } = useTranslation();
   const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
@@ -238,7 +240,7 @@ const HangHoaPhanThuocPage: React.FC = () => {
   const kiemTraTruocKhiXoaHh = async (ids: string[], xacNhanXoa: () => void) => {
     const toastId = toast.loading(t('common.xoaDangDung.dangKiemTra'));
     try {
-      const kq = phanLoaiXoa(ids, await getFarmHangHoaDangDung(ids));
+      const kq = phanLoaiXoa(ids, await getFarmHangHoaDangDung(bt, ids));
       if (kq.dangDung.length === 0) xacNhanXoa();
       else setHhXoaPhanLoai(kq);
     } catch (err) {

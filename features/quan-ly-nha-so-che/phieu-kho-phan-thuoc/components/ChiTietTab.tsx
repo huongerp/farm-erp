@@ -20,6 +20,8 @@ import { useChiTietPhieuKhoPTStore } from '../store/useChiTietPhieuKhoPTStore';
 import type { ChiTietPhieuKhoPTFlat, PhieuKhoPT } from '../core/types';
 import type { Kho } from '../../../kho-van/danh-sach-kho/core/types';
 import type { FarmHangHoa } from '../../hang-hoa-phan-thuoc/core/types';
+import { useKhoBienThe } from '../../kho-bien-the/KhoBienTheProvider';
+import { khoModuleId } from '../../kho-bien-the/bien-the';
 import { getDateRangeFromPreset } from '../../../he-thong/nhan-vien/utils/stats-date-range';
 import type { DateRangePresetId } from '../../../he-thong/nhan-vien/core/stats-constants';
 import ChiTietToolbar from './ChiTietToolbar';
@@ -41,7 +43,8 @@ import { CONFIRM_DELETE } from '../../../../lib/button-labels';
 const ChiTietTab: React.FC = () => {
   const { t } = useTranslation();
   const { canCreate, canUpdate, canDelete, canApprove } = useModulePermissionFromContext();
-  const { canCreate: canCreateHangHoa } = useModulePermission('quan-ly-nha-so-che/hang-hoa-phan-thuoc');
+  const bt = useKhoBienThe();
+  const { canCreate: canCreateHangHoa } = useModulePermission(khoModuleId(bt, 'hang-hoa-phan-thuoc'));
   const { data: khoListAll = [], isPending: khoPending } = useKhoList();
   const viewScope = usePhieuKhoPTViewScope();
   const phamVi = useMemo(() => buildPhieuKhoPTPhamVi(viewScope, khoListAll), [viewScope, khoListAll]);
@@ -161,7 +164,7 @@ const ChiTietTab: React.FC = () => {
   useEffect(() => {
     if (!exportRequest) return;
     let cancelled = false;
-    fetchAllChiTietPhieuKhoPTForListQuery(exportRequest.query)
+    fetchAllChiTietPhieuKhoPTForListQuery(bt, exportRequest.query)
       .then((rows) => {
         if (!cancelled) setExportResult({ request: exportRequest, rows });
       })
@@ -171,7 +174,7 @@ const ChiTietTab: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [exportRequest]);
+  }, [exportRequest, bt]);
 
   const handleExport = useCallback(() => {
     if (totalCount === 0) {

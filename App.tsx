@@ -26,6 +26,8 @@ import { toast } from 'sonner';
 import i18n from './lib/i18n';
 import { lazyWithFeatureI18n } from './lib/lazy-with-feature-i18n';
 import { loadGuideI18n } from './lib/feature-i18n';
+import { KhoBienTheProvider } from './features/quan-ly-nha-so-che/kho-bien-the/KhoBienTheProvider';
+import { BIEN_THE_PHAN_THUOC } from './features/quan-ly-nha-so-che/kho-bien-the/bien-the';
 
 // Login dùng react-hook-form + zod: nạp lười để người đã đăng nhập không phải tải hai thư viện này.
 const Login = lazy(() => import('./pages/Login'));
@@ -307,6 +309,48 @@ const App = () => {
           }
         />
         <Route
+          path="/phan-thuoc/de-xuat-mua-hang/preview/:id"
+          element={
+            <ProtectedRoute>
+              <ModulePermissionGuard moduleId="phan-thuoc/de-xuat-mua-hang">
+                <KhoBienTheProvider value={BIEN_THE_PHAN_THUOC}>
+                  <Suspense fallback={<PageFallback />}>
+                    <DeXuatMuaHangPreviewPage />
+                  </Suspense>
+                </KhoBienTheProvider>
+              </ModulePermissionGuard>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/phan-thuoc/phieu-kho-phan-thuoc/preview/:id"
+          element={
+            <ProtectedRoute>
+              <ModulePermissionGuard moduleId="phan-thuoc/phieu-kho-phan-thuoc">
+                <KhoBienTheProvider value={BIEN_THE_PHAN_THUOC}>
+                  <Suspense fallback={<PageFallback />}>
+                    <PhieuKhoPTPreviewPage />
+                  </Suspense>
+                </KhoBienTheProvider>
+              </ModulePermissionGuard>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/phan-thuoc/kiem-ke-kho-phan-thuoc/preview/:id"
+          element={
+            <ProtectedRoute>
+              <ModulePermissionGuard moduleId="phan-thuoc/kiem-ke-kho-phan-thuoc">
+                <KhoBienTheProvider value={BIEN_THE_PHAN_THUOC}>
+                  <Suspense fallback={<PageFallback />}>
+                    <PhieuKiemKePTPreviewPage />
+                  </Suspense>
+                </KhoBienTheProvider>
+              </ModulePermissionGuard>
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/quan-ly-nha-so-che/bao-cao-nhan-cong/preview/:id"
           element={
             <ProtectedRoute>
@@ -388,6 +432,9 @@ const App = () => {
                   <Route path="/quan-ly-nha-so-che/:moduleId/huong-dan" element={<ModuleGuidePage />} />
                   <Route path="/quan-ly-nha-so-che/:moduleId" element={<SubmenuPage />} />
                   <Route path="/quan-ly-farm/*" element={<NavigateToNhaSoChe />} />
+                  <Route path="/phan-thuoc" element={<SubmenuPage />} />
+                  <Route path="/phan-thuoc/:moduleId/huong-dan" element={<ModuleGuidePage />} />
+                  <Route path="/phan-thuoc/:moduleId" element={<SubmenuPage />} />
                   <Route path="/tai-chinh" element={<SubmenuPage />} />
                   <Route path="/tai-chinh/:moduleId/huong-dan" element={<ModuleGuidePage />} />
                   <Route path="/tai-chinh/:moduleId" element={<SubmenuPage />} />

@@ -35,31 +35,39 @@ function khoDisplay(row: TonKhoPTHangNxHistoryRow, t: TFunction): string {
 
 interface Props {
   idHangHoa: string;
+  /** Kỳ đang xem — chỉ hiện phiếu trong kỳ; rỗng = không giới hạn. */
+  ky: { tu: string; den: string };
 }
 
-const TonKhoPTHangNxHistorySection: React.FC<Props> = ({ idHangHoa }) => {
+const TonKhoPTHangNxHistorySection: React.FC<Props> = ({ idHangHoa, ky }) => {
   const { t } = useTranslation();
   const { data = [], isLoading, isError, error } = useFarmPhieuKhoPTHangNxHistory(idHangHoa);
 
   const errMsg = useMemo(() => (error instanceof Error ? error.message : String(error ?? '')), [error]);
 
+  // Tồn sau luỹ kế tính trên TOÀN BỘ lịch sử, rồi mới cắt theo kỳ để hiện.
   const tonSauByChiTiet = useMemo(() => {
     if (!data.length) return new Map<string, number>();
     return computeTonSauByChiTiet(farmNxHistoryToLichSuRows(data, idHangHoa), 'byProductGlobal');
   }, [data, idHangHoa]);
 
+  const rows = useMemo(
+    () => data.filter((r) => (!ky.tu || r.ngay >= ky.tu) && (!ky.den || r.ngay <= ky.den)),
+    [data, ky.tu, ky.den]
+  );
+
   return (
     <GenericSubTableSection
       title={t('tonKhoPhanThuoc.detail.historyNx.title')}
       icon={<History size={14} />}
-      count={isLoading ? undefined : data.length}
+      count={isLoading ? undefined : rows.length}
       loading={isLoading}
       loadingText={t('tonKhoPhanThuoc.detail.historyNx.loading')}
       emptyTitle={t('tonKhoPhanThuoc.detail.historyNx.empty')}
       emptyDescription={isError ? errMsg : t('tonKhoPhanThuoc.detail.historyNx.emptyHint')}
       maxTableHeight="260px"
     >
-      {!isLoading && !isError && data.length > 0 ? (
+      {!isLoading && !isError && rows.length > 0 ? (
         <>
           <thead className="sticky top-0 z-[1] bg-muted border-b border-border">
             <tr>
@@ -87,7 +95,7 @@ const TonKhoPTHangNxHistorySection: React.FC<Props> = ({ idHangHoa }) => {
             </tr>
           </thead>
           <tbody className="divide-y divide-border/70">
-            {data.map((row) => {
+            {rows.map((row) => {
               const tonSau = tonSauByChiTiet.get(String(row.chi_tiet_id));
               return (
               <tr key={row.chi_tiet_id} className="border-b border-border/70">

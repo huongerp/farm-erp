@@ -1,26 +1,37 @@
-import type { LoaiPhieuKhoPT } from '../../phieu-kho-phan-thuoc/core/types';
-
-/** Một ô ma trận từ view v_farm_ton_kho_phan_thuoc */
+/** Một ô ma trận từ view v_farm_ton_kho_phan_thuoc (tồn tức thời) */
 export interface TonKhoPTRecord {
   id_kho: string;
   id_hang_hoa: string;
   so_luong: number;
 }
 
-/** Dòng hiển thị tab Tồn kho (đã join kho + hàng) */
-export interface TonKhoPTDisplayRow extends TonKhoPTRecord {
-  ma_kho: string;
-  ten_kho: string;
-  ma_hang: string;
-  ten_hang: string;
-  don_vi_tinh: string;
-  ten_danh_muc?: string;
-  danh_muc_id?: string | null;
-  /** Định mức tồn mỗi kho của hàng (null = không đặt). */
-  dinh_muc?: number | null;
+/** Tham số kỳ cho rpc_farm_ton_kho_pt_theo_ky — ngày YYYY-MM-DD, rỗng = không giới hạn. */
+export interface TonKhoPTKyParams {
+  tu: string;
+  den: string;
+  /** true → chỉ tính phiếu 'Đã duyệt'; false → mọi phiếu trừ 'Không duyệt'. */
+  chiDaDuyet: boolean;
 }
 
-/** Gom theo hàng (tab Chi tiết) */
+/** Một ô kho × hàng trong kỳ, từ rpc_farm_ton_kho_pt_theo_ky. */
+export interface TonKhoPTKyCell {
+  id_kho: string;
+  id_hang_hoa: string;
+  ton_dau: number;
+  nhap: number;
+  xuat: number;
+  chuyen_den: number;
+  chuyen_di: number;
+  ton_cuoi: number;
+}
+
+/** Ô của một kho trong drawer chi tiết (đã gắn tên kho). */
+export interface TonKhoPTKhoKy extends TonKhoPTKyCell {
+  ma_kho: string;
+  ten_kho: string;
+}
+
+/** Một dòng bảng Tồn kho: gom các kho của một hàng trong kỳ. */
 export interface TonKhoPTProductAgg {
   id_hang_hoa: string;
   ma_hang: string;
@@ -30,75 +41,18 @@ export interface TonKhoPTProductAgg {
   don_vi_tinh: string;
   /** Định mức tồn mỗi kho — ô kho nào dưới mức này tô đỏ. */
   dinh_muc: number | null;
-  tong_so_luong: number;
+  ton_dau: number;
+  nhap: number;
+  xuat: number;
+  /** Chuyển kho ròng (đến − đi) trong phạm vi kho đang xem; xem mọi kho thì = 0. */
+  chuyen: number;
+  ton_cuoi: number;
+  /** Số kho có tồn cuối kỳ > 0 */
   so_kho_co_ton: number;
-  /** SL tồn theo id_kho — dùng cho cột động trên list */
+  /** Tồn cuối kỳ theo id_kho — cột động trên bảng */
   by_kho: Record<string, number>;
-  rows: TonKhoPTDisplayRow[];
-}
-
-/** Bộ lọc báo cáo NXT phân thuốc */
-export interface NXTPTFilters {
-  dateFrom: string;
-  dateTo: string;
-  warehouseIds: string[];
-  loaiPhieu: LoaiPhieuKhoPT[];
-  hangHoaIds: string[];
-  categoryIds: string[];
-}
-
-/** Tổng hợp NXT theo kho (kỳ) */
-export interface NXTByWarehousePTRow {
-  id_kho: string;
-  ma_kho: string;
-  ten_kho: string;
-  ton_dau_ky: number;
-  tong_nhap: number;
-  tong_xuat: number;
-  ton_cuoi_ky: number;
-}
-
-/** Tổng hợp NXT theo hàng hóa (kỳ) */
-export interface NXTByProductPTRow {
-  id_hang_hoa: string;
-  ma_hang: string;
-  ten_hang: string;
-  ten_danh_muc?: string;
-  don_vi_tinh: string;
-  ton_dau_ky: number;
-  tong_nhap: number;
-  tong_xuat: number;
-  ton_cuoi_ky: number;
-}
-
-export interface NXTPTByPeriodResult {
-  byWarehouse: NXTByWarehousePTRow[];
-  byProduct: NXTByProductPTRow[];
-}
-
-/** Tổng 4 số trên summary cards */
-export interface TonKhoPTSummaryTotals {
-  ton_dau_ky: number;
-  tong_nhap: number;
-  tong_xuat: number;
-  ton_cuoi_ky: number;
-}
-
-/** Alias theo plan: tổng 4 số summary */
-export type TonKhoPTSummaryRow = TonKhoPTSummaryTotals;
-
-/** Dòng flat từ view (đủ để tính NXT client-side) */
-export interface FarmPhieuKhoPTFlatRow {
-  id_phieu_kho: number;
-  so_phieu: string;
-  ngay: string;
-  loai: string;
-  kho_id: number;
-  kho_den_id: number | null;
-  trang_thai: string;
-  id_hang_hoa: number;
-  so_luong: number | string | null;
-  ma_hang: string | null;
+  /** Chi tiết từng kho (drawer). Rỗng = hàng có định mức chưa phát sinh ở kho nào. */
+  kho: TonKhoPTKhoKy[];
 }
 
 /** Một dòng lịch sử NX (nhập/xuất/chuyển) của hàng trong drawer tồn theo SP */

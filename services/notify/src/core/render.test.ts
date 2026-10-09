@@ -108,6 +108,9 @@ describe('phiếu có luồng duyệt', () => {
     expect(
       renderThongBao(nguCanh('fp_farm_phieu_kho_phan_thuoc', 'phieu.da_duyet', { so_phieu: 'PT-1' })).tieuDe
     ).toBe('Phiếu kho farm PT-1 đã được duyệt');
+    expect(
+      renderThongBao(nguCanh('fp_pt_phieu_kho', 'phieu.da_duyet', { so_phieu: 'PNK-0001' })).tieuDe
+    ).toBe('Phiếu kho phân thuốc PNK-0001 đã được duyệt');
   });
 });
 

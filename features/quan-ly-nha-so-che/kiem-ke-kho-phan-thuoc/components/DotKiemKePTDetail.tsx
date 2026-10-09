@@ -48,6 +48,7 @@ import NhapKetQuaKiemKePTDialog from './NhapKetQuaKiemKePTDialog';
 import ThemDongKiemKePTDialog from './ThemDongKiemKePTDialog';
 import ChiTietKiemKePTSubTable from './ChiTietKiemKePTSubTable';
 import type { DotKiemKePT, ChiTietKiemKePT, ChiTietKiemKePTUpdate, KetQuaKiemKePT } from '../core/types';
+import { useKhoBienThe } from '../../kho-bien-the/KhoBienTheProvider';
 
 const KET_QUA_CHIPS: KetQuaKiemKePT[] = ['khop', 'thieu', 'thua', 'chua_kiem'];
 
@@ -82,6 +83,7 @@ const DotKiemKePTDetail: React.FC<Props> = ({
   canUpdate = false,
   canDelete = false,
 }) => {
+  const bt = useKhoBienThe();
   const { t } = useTranslation();
   const confirm = useConfirmStore((s) => s.confirm);
   const currentUserId = useAuthStore((s) => s.user?.id ?? '');
@@ -181,7 +183,7 @@ const DotKiemKePTDetail: React.FC<Props> = ({
       {
         label: t('kiemKeKhoPT.printPhieu'),
         icon: <Printer size={16} />,
-        onClick: () => window.open(getPhieuKiemKePTPreviewUrl(data.id), '_blank', 'noopener,noreferrer'),
+        onClick: () => window.open(getPhieuKiemKePTPreviewUrl(bt, data.id), '_blank', 'noopener,noreferrer'),
         variant: 'primary',
       },
     ];
@@ -222,6 +224,7 @@ const DotKiemKePTDetail: React.FC<Props> = ({
     }
     return actions;
   }, [
+    bt,
     data,
     canEditLines,
     canUpdate,

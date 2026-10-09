@@ -1,6 +1,6 @@
 /**
  * Trang preview phiếu đề xuất vật tư (mở tab mới) – toolbar Đóng + Tải (PDF/DOC/XLSX) + In.
- * Route: /quan-ly-nha-so-che/de-xuat-mua-hang/preview/:id
+ * Route: /quan-ly-nha-so-che|phan-thuoc/de-xuat-mua-hang/preview/:id
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -10,6 +10,7 @@ import { X, Printer, Download, ChevronDown, FileText, FileSpreadsheet, FileType 
 import { useDeXuatMuaHangById } from './hooks/use-de-xuat-mua-hang';
 import { exportDeXuatMuaHangToPDF, exportDeXuatMuaHangToDoc, exportDeXuatMuaHangToXLSX } from './utils/export-de-xuat-mua-hang';
 import DeXuatMuaHangPreviewContent from './components/DeXuatMuaHangPreviewContent';
+import { useKhoBienThe } from '../kho-bien-the/KhoBienTheProvider';
 
 export type DeXuatMuaHangExportFormat = 'pdf' | 'doc' | 'xlsx';
 
@@ -20,6 +21,7 @@ const EXPORT_OPTIONS: { format: DeXuatMuaHangExportFormat; label: string; icon: 
 ];
 
 const DeXuatMuaHangPreviewPage: React.FC = () => {
+  const bt = useKhoBienThe();
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -43,9 +45,9 @@ const DeXuatMuaHangPreviewPage: React.FC = () => {
     } else {
       // window.open(..., 'noopener') → window.opener === null, browser chặn window.close().
       // Điều hướng về danh sách của module để vẫn thoát được khi mở qua deep-link / F5.
-      navigate('/quan-ly-nha-so-che/de-xuat-mua-hang', { replace: true });
+      navigate(`${bt.basePath}/de-xuat-mua-hang`, { replace: true });
     }
-  }, [navigate]);
+  }, [navigate, bt]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {

@@ -91,6 +91,27 @@ export const MO_TA_BANG: Record<string, MoTaBang> = {
     cotNguoiDuyet: 'id_nguoi_duyet',
     coTrangPreview: true,
   },
+  // Phân thuốc — bảng riêng fp_pt_* (migration 029), cùng luồng duyệt với bản Nhà sơ chế.
+  fp_pt_de_xuat_mua_hang: {
+    bang: 'fp_pt_de_xuat_mua_hang',
+    moduleId: 'phan-thuoc/de-xuat-mua-hang',
+    duongDan: '/phan-thuoc/de-xuat-mua-hang',
+    tenChungTu: 'Đề xuất mua phân thuốc',
+    cotSoPhieu: 'so_phieu',
+    cotNguoiTao: 'id_nguoi_de_xuat',
+    cotNguoiDuyet: 'id_nguoi_duyet',
+    coTrangPreview: true,
+  },
+  fp_pt_phieu_kho: {
+    bang: 'fp_pt_phieu_kho',
+    moduleId: 'phan-thuoc/phieu-kho-phan-thuoc',
+    duongDan: '/phan-thuoc/phieu-kho-phan-thuoc',
+    tenChungTu: 'Phiếu kho phân thuốc',
+    cotSoPhieu: 'so_phieu',
+    cotNguoiTao: 'nguoi_tao_id',
+    cotNguoiDuyet: 'id_nguoi_duyet',
+    coTrangPreview: true,
+  },
 
   // --- Công việc ------------------------------------------------------------
   fp_hc_cong_viec: {

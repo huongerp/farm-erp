@@ -45,12 +45,15 @@ import {
   getExportColumnsDeXuatMuaHangList,
   exportFileNameDeXuatMuaHangList,
 } from '../utils/export-de-xuat-mua-hang-danh-sach';
+import { useKhoBienThe } from '../../kho-bien-the/KhoBienTheProvider';
+import { khoModuleId } from '../../kho-bien-the/bien-the';
 
 const DanhSachTab: React.FC = () => {
+  const bt = useKhoBienThe();
   const { t } = useTranslation();
   const { canCreate, canUpdate, canDelete, canApprove } = useModulePermissionFromContext();
-  const { canCreate: canCreateHangHoa } = useModulePermission('quan-ly-nha-so-che/hang-hoa-phan-thuoc');
-  const { canCreate: canCreatePhieuKho } = useModulePermission('quan-ly-nha-so-che/phieu-kho-phan-thuoc');
+  const { canCreate: canCreateHangHoa } = useModulePermission(khoModuleId(bt, 'hang-hoa-phan-thuoc'));
+  const { canCreate: canCreatePhieuKho } = useModulePermission(khoModuleId(bt, 'phieu-kho-phan-thuoc'));
   const user = useAuthStore((s) => s.user);
   const confirm = useConfirmStore((s) => s.confirm);
   const {
@@ -178,7 +181,7 @@ const DanhSachTab: React.FC = () => {
   useEffect(() => {
     if (!exportRequest) return;
     let cancelled = false;
-    fetchAllDeXuatMuaHangForListQuery(exportRequest.query)
+    fetchAllDeXuatMuaHangForListQuery(bt, exportRequest.query)
       .then((rows) => {
         if (!cancelled) setExportResult({ request: exportRequest, rows });
       })
@@ -188,7 +191,7 @@ const DanhSachTab: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [exportRequest]);
+  }, [bt, exportRequest]);
 
   const handleExport = useCallback(() => {
     if (totalCount === 0) {

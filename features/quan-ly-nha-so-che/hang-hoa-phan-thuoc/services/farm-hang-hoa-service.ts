@@ -15,8 +15,7 @@ import type {
 } from '../utils/import-hang-hoa';
 import { throwDbError } from '../../../../lib/db-errors';
 import { tuDongRpc, type PhieuDangDung } from '../../../../lib/hang-hoa-dang-dung';
-
-const TABLE = 'fp_farm_danh_sach_hang_hoa';
+import type { KhoBienThe } from '../../kho-bien-the/bien-the';
 
 const HANG_HOA_COLUMNS =
   'id,danh_muc_id,danh_muc_cha_id,ma_hang_hoa,ten_hang_hoa,dvt,pham_cap,don_gia,dinh_muc,mo_ta,tg_tao,tg_cap_nhat';
@@ -75,10 +74,10 @@ function buildTenDanhMuc(
   return cap2.ten_danh_muc;
 }
 
-async function enrichWithTenDanhMuc(rows: FarmHangHoaRow[]): Promise<FarmHangHoa[]> {
+async function enrichWithTenDanhMuc(bt: KhoBienThe, rows: FarmHangHoaRow[]): Promise<FarmHangHoa[]> {
   let dmList: Awaited<ReturnType<typeof getAllFarmDanhMuc>> = [];
   try {
-    dmList = await getAllFarmDanhMuc();
+    dmList = await getAllFarmDanhMuc(bt);
   } catch (e) {
     console.warn('[farm-hang-hoa-service] Không tải được danh mục farm:', e);
   }
@@ -90,15 +89,15 @@ async function enrichWithTenDanhMuc(rows: FarmHangHoaRow[]): Promise<FarmHangHoa
   });
 }
 
-export const getAllFarmHangHoa = async (): Promise<FarmHangHoa[]> => {
+export const getAllFarmHangHoa = async (bt: KhoBienThe): Promise<FarmHangHoa[]> => {
   const rows = await fetchAllRows<FarmHangHoaRow>((from, to) =>
     db
-      .from(TABLE)
+      .from(bt.bang.hangHoa)
       .select(HANG_HOA_COLUMNS)
       .order('ma_hang_hoa', { ascending: true })
       .range(from, to)
   );
-  return enrichWithTenDanhMuc(rows);
+  return enrichWithTenDanhMuc(bt, rows);
 };
 
 /**
@@ -123,9 +122,9 @@ export type FarmHangHoaRefLite = {
 };
 
 /** Danh sách hàng hóa farm dạng ref (cache TTL — nhiều trang list cùng gọi). */
-export const getFarmHangHoaRef = async (): Promise<FarmHangHoaRefLite[]> =>
-  getCachedRef(REF_CACHE_KEYS.farmHangHoa, async () => {
-    const list = await getAllFarmHangHoa();
+export const getFarmHangHoaRef = async (bt: KhoBienThe): Promise<FarmHangHoaRefLite[]> =>
+  getCachedRef(REF_CACHE_KEYS.farmHangHoa(bt.key), async () => {
+    const list = await getAllFarmHangHoa(bt);
     return list.map((h) => ({
       id: h.id,
       ma_hang: h.ma_hang_hoa,
@@ -142,25 +141,25 @@ export const getFarmHangHoaRef = async (): Promise<FarmHangHoaRefLite[]> =>
     }));
   });
 
-export const getFarmHangHoaById = async (id: string): Promise<FarmHangHoa | null> => {
+export const getFarmHangHoaById = async (bt: KhoBienThe, id: string): Promise<FarmHangHoa | null> => {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) return null;
-  const { data: row, error } = await db.from(TABLE).select(HANG_HOA_COLUMNS).eq('id', idNum).maybeSingle();
+  const { data: row, error } = await db.from(bt.bang.hangHoa).select(HANG_HOA_COLUMNS).eq('id', idNum).maybeSingle();
   if (error) throwDbError(error);
   if (!row) return null;
-  const [enriched] = await enrichWithTenDanhMuc([row as FarmHangHoaRow]);
+  const [enriched] = await enrichWithTenDanhMuc(bt, [row as FarmHangHoaRow]);
   return enriched;
 };
 
-export const createFarmHangHoa = async (data: FarmHangHoaFormValues): Promise<FarmHangHoa> => {
-  const dmList = await getAllFarmDanhMuc();
+export const createFarmHangHoa = async (bt: KhoBienThe, data: FarmHangHoaFormValues): Promise<FarmHangHoa> => {
+  const dmList = await getAllFarmDanhMuc(bt);
   const cap2 =
     data.id_danh_muc_cap2 && data.id_danh_muc_cap2.trim() ? dmList.find((d) => d.id === data.id_danh_muc_cap2) : null;
   const danh_muc_id = cap2 ? Number(cap2.id) : null;
   const danh_muc_cha_id = cap2?.id_cha ? Number(cap2.id_cha) : null;
 
   const { data: existing } = await db
-    .from(TABLE)
+    .from(bt.bang.hangHoa)
     .select('id')
     .eq('ma_hang_hoa', data.ma_hang_hoa.trim().toUpperCase())
     .limit(1);
@@ -178,24 +177,24 @@ export const createFarmHangHoa = async (data: FarmHangHoaFormValues): Promise<Fa
     mo_ta: data.mo_ta?.trim() || null,
   };
 
-  const { data: inserted, error } = await db.from(TABLE).insert(payload).select(HANG_HOA_COLUMNS).single();
+  const { data: inserted, error } = await db.from(bt.bang.hangHoa).insert(payload).select(HANG_HOA_COLUMNS).single();
   if (error) throwDbError(error);
-  const [enriched] = await enrichWithTenDanhMuc([inserted as FarmHangHoaRow]);
+  const [enriched] = await enrichWithTenDanhMuc(bt, [inserted as FarmHangHoaRow]);
   return enriched;
 };
 
-export const updateFarmHangHoa = async (id: string, data: FarmHangHoaFormValues): Promise<FarmHangHoa> => {
+export const updateFarmHangHoa = async (bt: KhoBienThe, id: string, data: FarmHangHoaFormValues): Promise<FarmHangHoa> => {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('farmHangHoaPhanThuoc.hangHoa.service.notFound'));
 
-  const dmList = await getAllFarmDanhMuc();
+  const dmList = await getAllFarmDanhMuc(bt);
   const cap2 =
     data.id_danh_muc_cap2 && data.id_danh_muc_cap2.trim() ? dmList.find((d) => d.id === data.id_danh_muc_cap2) : null;
   const danh_muc_id = cap2 ? Number(cap2.id) : null;
   const danh_muc_cha_id = cap2?.id_cha ? Number(cap2.id_cha) : null;
 
   const { data: duplicate } = await db
-    .from(TABLE)
+    .from(bt.bang.hangHoa)
     .select('id')
     .eq('ma_hang_hoa', data.ma_hang_hoa.trim().toUpperCase())
     .neq('id', idNum)
@@ -216,37 +215,37 @@ export const updateFarmHangHoa = async (id: string, data: FarmHangHoaFormValues)
   };
 
   const { data: updated, error } = await db
-    .from(TABLE)
+    .from(bt.bang.hangHoa)
     .update(payload)
     .eq('id', idNum)
     .select(HANG_HOA_COLUMNS)
     .single();
   if (error) throwDbError(error);
-  const [enriched] = await enrichWithTenDanhMuc([updated as FarmHangHoaRow]);
+  const [enriched] = await enrichWithTenDanhMuc(bt, [updated as FarmHangHoaRow]);
   return enriched;
 };
 
-export const deleteFarmHangHoa = async (id: string): Promise<void> => {
+export const deleteFarmHangHoa = async (bt: KhoBienThe, id: string): Promise<void> => {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('farmHangHoaPhanThuoc.hangHoa.service.notFound'));
-  const { error } = await db.from(TABLE).delete().eq('id', idNum);
+  const { error } = await db.from(bt.bang.hangHoa).delete().eq('id', idNum);
   if (error) throwDbError(error);
 };
 
-/** Phiếu (kho PT, đề xuất mua hàng, kiểm kê PT, GSCL) đang dùng các hàng định xoá — RPC migration 026. */
-export const getFarmHangHoaDangDung = async (ids: string[]): Promise<PhieuDangDung[]> => {
+/** Phiếu đang dùng các hàng định xoá — RPC migration 026 (Sơ chế, gồm cả GSCL) / 029 (Phân thuốc). */
+export const getFarmHangHoaDangDung = async (bt: KhoBienThe, ids: string[]): Promise<PhieuDangDung[]> => {
   const idNums = ids.map(Number).filter((n) => !Number.isNaN(n));
   if (idNums.length === 0) return [];
-  const { data, error } = await db.rpc('rpc_farm_hang_hoa_dang_dung', { p_ids: idNums });
+  const { data, error } = await db.rpc(bt.rpc.hangHoaDangDung, { p_ids: idNums });
   if (error) throwDbError(error);
   return ((data ?? []) as Parameters<typeof tuDongRpc>[0][]).map(tuDongRpc);
 };
 
-export const deleteFarmHangHoaMany = async (ids: string[]): Promise<void> => {
+export const deleteFarmHangHoaMany = async (bt: KhoBienThe, ids: string[]): Promise<void> => {
   if (ids.length === 0) return;
   const idNums = ids.map(Number).filter((n) => !Number.isNaN(n));
   if (idNums.length === 0) return;
-  const { error } = await db.from(TABLE).delete().in('id', idNums);
+  const { error } = await db.from(bt.bang.hangHoa).delete().in('id', idNums);
   if (error) throwDbError(error);
 };
 
@@ -278,13 +277,14 @@ function toError(item: { row: number; values: Record<string, unknown> }, msg: st
  * số request: 2 request đọc dữ liệu đối chiếu + 1 request ghi cho mỗi lô 500 dòng.
  */
 export const importFarmHangHoa = async (
+  bt: KhoBienThe,
   rows: Record<string, unknown>[],
   { mode, refColumn }: { mode: ImportMode; refColumn: HangHoaRefColumn }
 ): Promise<FarmHangHoaImportResult> => {
   const [dmList, existingRows] = await Promise.all([
-    getAllFarmDanhMuc(),
+    getAllFarmDanhMuc(bt),
     fetchAllRows<Pick<FarmHangHoaRow, 'id' | 'ma_hang_hoa' | 'ten_hang_hoa'>>((from, to) =>
-      db.from(TABLE).select('id,ma_hang_hoa,ten_hang_hoa').order('id', { ascending: true }).range(from, to)
+      db.from(bt.bang.hangHoa).select('id,ma_hang_hoa,ten_hang_hoa').order('id', { ascending: true }).range(from, to)
     ),
   ]);
 
@@ -307,7 +307,7 @@ export const importFarmHangHoa = async (
       ...plan.toUpdate.map((i) => ({ ...i, isUpdate: true })),
     ].map((i) => withTimestamp(i, now));
 
-    const res = await bulkUpsert(TABLE, tagged, 'ma_hang_hoa');
+    const res = await bulkUpsert(bt.bang.hangHoa, tagged, 'ma_hang_hoa');
     if (!res.unsupported) {
       res.done.forEach((item) => {
         if (item.isUpdate) updated++;
@@ -321,7 +321,7 @@ export const importFarmHangHoa = async (
 
   if (plan.toInsert.length > 0) {
     const res = await bulkInsert(
-      TABLE,
+      bt.bang.hangHoa,
       plan.toInsert.map((i) => withTimestamp(i, now))
     );
     created = res.done.length;
@@ -330,7 +330,7 @@ export const importFarmHangHoa = async (
 
   if (plan.toUpdate.length > 0) {
     const res = await bulkUpdateById(
-      TABLE,
+      bt.bang.hangHoa,
       plan.toUpdate.map((i) => withTimestamp(i, now))
     );
     updated = res.done.length;
@@ -341,10 +341,10 @@ export const importFarmHangHoa = async (
 };
 
 /** Danh mục cấp 2 kèm tên cha — dựng sheet tham chiếu trong file mẫu import. */
-export const getFarmDanhMucRefForImport = async (): Promise<
+export const getFarmDanhMucRefForImport = async (bt: KhoBienThe): Promise<
   Array<{ ma_danh_muc: string; ten_danh_muc: string; ten_cap1: string }>
 > => {
-  const dmList = await getAllFarmDanhMuc();
+  const dmList = await getAllFarmDanhMuc(bt);
   const byId: Record<string, string> = {};
   dmList.forEach((d) => {
     byId[d.id] = d.ten_danh_muc;

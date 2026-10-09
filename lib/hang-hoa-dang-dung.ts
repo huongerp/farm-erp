@@ -1,10 +1,10 @@
 /**
  * Kiểm tra trước khi xoá hàng hoá: tách hàng "xoá được" / "đang dùng ở phiếu".
- * Dùng cho cả danh mục Mua hàng (RPC rpc_hang_hoa_dang_dung, migration 025) và Nhà sơ chế
- * (rpc_farm_hang_hoa_dang_dung, migration 026).
+ * Dùng cho danh mục Mua hàng (RPC rpc_hang_hoa_dang_dung, migration 025), Nhà sơ chế
+ * (rpc_farm_hang_hoa_dang_dung, migration 026) và Phân thuốc (rpc_pt_hang_hoa_dang_dung, migration 029).
  */
 
-/** Loại chứng từ đang dùng một hàng hoá — khớp cột `loai` của hai RPC trên. */
+/** Loại chứng từ đang dùng một hàng hoá — khớp cột `loai` của các RPC trên. */
 export type LoaiPhieuDangDung =
   | 'phieu_kho'
   | 'don_dat_hang'
@@ -14,7 +14,10 @@ export type LoaiPhieuDangDung =
   | 'phieu_kho_pt'
   | 'de_xuat_mua_hang'
   | 'dot_kiem_ke_pt'
-  | 'giam_sat_chat_luong';
+  | 'giam_sat_chat_luong'
+  | 'pt_phieu_kho'
+  | 'pt_de_xuat_mua_hang'
+  | 'pt_dot_kiem_ke';
 
 export interface PhieuDangDung {
   idHangHoa: string;
@@ -50,6 +53,9 @@ const THU_TU_LOAI: Record<LoaiPhieuDangDung, number> = {
   de_xuat_mua_hang: 1,
   dot_kiem_ke_pt: 2,
   giam_sat_chat_luong: 3,
+  pt_phieu_kho: 0,
+  pt_de_xuat_mua_hang: 1,
+  pt_dot_kiem_ke: 2,
 };
 
 /** Route xem phiếu (trang preview); null = chưa có màn hình xem riêng. */
@@ -71,6 +77,12 @@ export function duongDanPhieu(loai: LoaiPhieuDangDung, idPhieu: string): string 
       return `/quan-ly-nha-so-che/kiem-ke-kho-phan-thuoc/preview/${idPhieu}`;
     case 'giam_sat_chat_luong':
       return `/quan-ly-nha-so-che/giam-sat-chat-luong/preview/${idPhieu}`;
+    case 'pt_phieu_kho':
+      return `/phan-thuoc/phieu-kho-phan-thuoc/preview/${idPhieu}`;
+    case 'pt_de_xuat_mua_hang':
+      return `/phan-thuoc/de-xuat-mua-hang/preview/${idPhieu}`;
+    case 'pt_dot_kiem_ke':
+      return `/phan-thuoc/kiem-ke-kho-phan-thuoc/preview/${idPhieu}`;
     default:
       return null;
   }

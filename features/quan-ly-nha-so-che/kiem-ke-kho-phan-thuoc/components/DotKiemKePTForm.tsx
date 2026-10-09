@@ -14,6 +14,7 @@ import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
 import { dotKiemKePTSchema, type DotKiemKePTFormValues } from '../core/schema';
 import { useCreateDotKiemKePT, useUpdateDotKiemKePT, useNextMaDotKiemKePT } from '../hooks/use-kiem-ke-pt';
 import { formatMaDotKiemKePT } from '../core/ma-dot';
+import { useKhoBienThe } from '../../kho-bien-the/KhoBienTheProvider';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { useKhoList } from '../../../kho-van/danh-sach-kho/hooks/use-kho';
 import { useEmployeesRefQuery } from '@/lib/hooks/use-ref-queries';
@@ -36,6 +37,7 @@ interface Props {
 }
 
 const DotKiemKePTForm: React.FC<Props> = ({ onClose, initialData, onSuccessAfterEdit }) => {
+  const bt = useKhoBienThe();
   const { t } = useTranslation();
   const isEdit = !!initialData;
   const createMutation = useCreateDotKiemKePT(onClose);
@@ -78,7 +80,7 @@ const DotKiemKePTForm: React.FC<Props> = ({ onClose, initialData, onSuccessAfter
   const xinMaDotMoi = useEffectEvent(() => {
     if (!isEdit && !nextMaDot.isSuccess) {
       nextMaDot.mutate(undefined, {
-        onSuccess: (seq) => setValue('ma_dot', formatMaDotKiemKePT(seq)),
+        onSuccess: (seq) => setValue('ma_dot', formatMaDotKiemKePT(seq, undefined, bt.tienTo.dotKiemKe)),
       });
     }
   });

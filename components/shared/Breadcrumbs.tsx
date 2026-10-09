@@ -8,6 +8,7 @@ import { HANH_CHINH_MODULE_SLUGS, getModuleTitleKeyBySlug } from '../../lib/hanh
 import { MUA_HANG_MODULE_SLUGS, getMuaHangModuleTitleKeyBySlug } from '../../lib/mua-hang-menu';
 import { QUAN_LY_NHA_SO_CHE_MODULE_SLUGS, getQuanLyNhaSoCheModuleTitleKeyBySlug } from '../../lib/quan-ly-nha-so-che-menu';
 import { TAI_CHINH_MODULE_SLUGS, getTaiChinhModuleTitleKeyBySlug } from '../../lib/tai-chinh-menu';
+import { PHAN_THUOC_MODULE_SLUGS, getPhanThuocModuleTitleKeyBySlug } from '../../lib/phan-thuoc-menu';
 
 interface RouteConfig {
   label: string;
@@ -35,6 +36,12 @@ interface RouteConfig {
       { label: t(getQuanLyNhaSoCheModuleTitleKeyBySlug(slug)), parentPath: '/quan-ly-nha-so-che' },
     ])
   );
+  const phanThuocModuleRoutes = Object.fromEntries(
+    PHAN_THUOC_MODULE_SLUGS.map((slug) => [
+      `/phan-thuoc/${slug}`,
+      { label: t(getPhanThuocModuleTitleKeyBySlug(slug)), parentPath: '/phan-thuoc' },
+    ])
+  );
   const taiChinhModuleRoutes = Object.fromEntries(
     TAI_CHINH_MODULE_SLUGS.map((slug) => [
       `/tai-chinh/${slug}`,
@@ -50,6 +57,7 @@ interface RouteConfig {
     '/hanh-chinh': { label: t('breadcrumb.hanhChinh'), parentPath: '/' },
     '/mua-hang': { label: t('breadcrumb.muaHang'), parentPath: '/' },
     '/quan-ly-nha-so-che': { label: t('breadcrumb.quanLyNhaSoChe'), parentPath: '/' },
+    '/phan-thuoc': { label: t('breadcrumb.phanThuoc'), parentPath: '/' },
     '/tai-chinh': { label: t('breadcrumb.taiChinh'), parentPath: '/' },
 
     // --- HỆ THỐNG ---
@@ -70,6 +78,9 @@ interface RouteConfig {
 
     // --- QUẢN LÝ FARM (module con) ---
     ...quanLyNhaSoCheModuleRoutes,
+
+    // --- PHÂN THUỐC (module con) ---
+    ...phanThuocModuleRoutes,
 
     // --- TÀI CHÍNH (module con) ---
     ...taiChinhModuleRoutes,

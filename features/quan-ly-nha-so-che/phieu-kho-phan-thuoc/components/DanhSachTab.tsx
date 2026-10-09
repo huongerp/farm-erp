@@ -13,7 +13,7 @@ import {
   useUpdatePhieuKhoPTTrangThaiMany,
 } from '../hooks/use-phieu-kho-pt';
 import { useKhoList } from '../../../kho-van/danh-sach-kho/hooks/use-kho';
-import { MODULE_ID_PHIEU_KHO_PT, usePhieuKhoPTViewScope } from '../hooks/use-phieu-kho-pt-view-scope';
+import { usePhieuKhoPTViewScope } from '../hooks/use-phieu-kho-pt-view-scope';
 import { buildPhieuKhoPTPhamVi } from '../services/phieu-kho-pt-list-query';
 import { buildPhieuKhoPTListServerQuery, fetchAllPhieuKhoPTForListQuery } from '../services/phieu-kho-pt-service';
 import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
@@ -40,14 +40,16 @@ import { usePhieuKhoPTImport } from '../hooks/use-phieu-kho-pt-import';
 import { useExportData } from '../../../../lib/useExportData';
 import { mapPhieuKhoPTListRow, getExportColumnsPhieuKhoPTList, exportFileNamePhieuKhoPTDanhSach } from '../utils/export-phieu-kho-pt-danh-sach';
 import type { FarmHangHoa } from '../../hang-hoa-phan-thuoc/core/types';
-
-/** Đồng bộ Google Sheet tự động — nguồn v_xuat_phieu_kho_phan_thuoc (services/sheets/src/core/nguon-dong-bo.ts). */
-const DONG_BO_PHIEU_KHO_PT = { moduleId: MODULE_ID_PHIEU_KHO_PT };
+import { useKhoBienThe } from '../../kho-bien-the/KhoBienTheProvider';
+import { khoModuleId } from '../../kho-bien-the/bien-the';
 
 const DanhSachTab: React.FC = () => {
   const { t } = useTranslation();
   const { canCreate, canUpdate, canDelete, canApprove } = useModulePermissionFromContext();
-  const { canCreate: canCreateHangHoa } = useModulePermission('quan-ly-nha-so-che/hang-hoa-phan-thuoc');
+  const bt = useKhoBienThe();
+  const { canCreate: canCreateHangHoa } = useModulePermission(khoModuleId(bt, 'hang-hoa-phan-thuoc'));
+  /** Đồng bộ Google Sheet tự động — nguồn theo module_id (services/sheets/src/core/nguon-dong-bo.ts). */
+  const dongBo = useMemo(() => ({ moduleId: khoModuleId(bt, 'phieu-kho-phan-thuoc') }), [bt]);
   const confirm = useConfirmStore((s) => s.confirm);
   const searchTerm = usePhieuKhoPTStore((s) => s.searchTerm);
   const filters = usePhieuKhoPTStore((s) => s.filters);
@@ -169,7 +171,7 @@ const DanhSachTab: React.FC = () => {
   useEffect(() => {
     if (!exportRequest) return;
     let cancelled = false;
-    fetchAllPhieuKhoPTForListQuery(exportRequest.query)
+    fetchAllPhieuKhoPTForListQuery(bt, exportRequest.query)
       .then((rows) => {
         if (!cancelled) setExportResult({ request: exportRequest, rows });
       })
@@ -179,7 +181,7 @@ const DanhSachTab: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [exportRequest]);
+  }, [exportRequest, bt]);
 
   const handleExport = useCallback(() => {
     if (totalCount === 0) {
@@ -464,7 +466,7 @@ const DanhSachTab: React.FC = () => {
         paginatedData={paginatedExportData}
         selectedData={selectedExportData}
         fileName={exportFileNamePhieuKhoPTDanhSach()}
-        dongBo={DONG_BO_PHIEU_KHO_PT}
+        dongBo={dongBo}
       />
     </div>
   );

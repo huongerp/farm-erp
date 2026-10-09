@@ -7,11 +7,11 @@ import {
   useEmployeeBranchModuleScope,
   type EmployeeBranchModuleScope,
 } from '../../../he-thong/nhan-vien/hooks/use-employee-branch-module-scope';
-
-const MODULE_ID = 'quan-ly-nha-so-che/de-xuat-mua-hang';
+import { useKhoBienThe } from '../../kho-bien-the/KhoBienTheProvider';
+import { khoModuleId } from '../../kho-bien-the/bien-the';
 
 export type DeXuatMuaHangViewScope = EmployeeBranchModuleScope;
 
 export function useDeXuatMuaHangViewScope(): DeXuatMuaHangViewScope {
-  return useEmployeeBranchModuleScope(MODULE_ID);
+  return useEmployeeBranchModuleScope(khoModuleId(useKhoBienThe(), 'de-xuat-mua-hang'));
 }

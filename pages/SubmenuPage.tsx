@@ -11,6 +11,7 @@ import {
   LazyHanhChinhDashboard,
   LazyMuaHangDashboard,
   LazyQuanLyNhaSoCheDashboard,
+  LazyPhanThuocDashboard,
   LazyTaiChinhDashboard,
   renderLazySubmenuModule,
   SubmenuChunkFallback,
@@ -19,11 +20,15 @@ import { SUBMENU_PATHS, SIDEBAR_MENU } from '../lib/sidebar-menu';
 import { HANH_CHINH_MODULE_SLUGS } from '../lib/hanh-chinh-menu';
 import { getQuanLyNhaSoCheModuleTitleKeyBySlug, QUAN_LY_NHA_SO_CHE_MODULE_SLUGS } from '../lib/quan-ly-nha-so-che-menu';
 import { getTaiChinhModuleTitleKeyBySlug, TAI_CHINH_MODULE_SLUGS } from '../lib/tai-chinh-menu';
+import { PHAN_THUOC_MODULE_SLUGS } from '../lib/phan-thuoc-menu';
+import { KhoBienTheProvider } from '../features/quan-ly-nha-so-che/kho-bien-the/KhoBienTheProvider';
+import { BIEN_THE_PHAN_THUOC } from '../features/quan-ly-nha-so-che/kho-bien-the/bien-the';
 
 const PATH_TO_BREADCRUMB_KEY: Record<string, string> = {
   '/hanh-chinh': 'breadcrumb.hanhChinh',
   '/mua-hang': 'breadcrumb.muaHang',
   '/quan-ly-nha-so-che': 'breadcrumb.quanLyNhaSoChe',
+  '/phan-thuoc': 'breadcrumb.phanThuoc',
   '/tai-chinh': 'breadcrumb.taiChinh',
   '/kho-van': 'breadcrumb.khoVan',
 };
@@ -73,6 +78,15 @@ const SubmenuPage: React.FC = () => {
       <ErrorBoundary>
         <Suspense fallback={<SubmenuChunkFallback />}>
           <LazyQuanLyNhaSoCheDashboard />
+        </Suspense>
+      </ErrorBoundary>
+    );
+  }
+  if (basePath === '/phan-thuoc' && !moduleId) {
+    return (
+      <ErrorBoundary>
+        <Suspense fallback={<SubmenuChunkFallback />}>
+          <LazyPhanThuocDashboard />
         </Suspense>
       </ErrorBoundary>
     );
@@ -178,6 +192,14 @@ const SubmenuPage: React.FC = () => {
             icon={icon}
           />
         </ErrorBoundary>
+      ));
+    }
+    // Phân thuốc: cùng component module kho của Nhà sơ chế, chạy biến thể phan-thuoc (bảng fp_pt_*).
+    if (basePath === '/phan-thuoc' && PHAN_THUOC_MODULE_SLUGS.includes(decodedSlug)) {
+      return wrapWithPermission(basePath, decodedSlug, (
+        <KhoBienTheProvider value={BIEN_THE_PHAN_THUOC}>
+          <ErrorBoundary>{renderLazySubmenuModule(decodedSlug)}</ErrorBoundary>
+        </KhoBienTheProvider>
       ));
     }
     if (basePath === '/tai-chinh' && TAI_CHINH_MODULE_SLUGS.includes(decodedSlug)) {

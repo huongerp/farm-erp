@@ -24,6 +24,7 @@ import FormSection from '../../../../components/shared/FormSection';
 import FormGrid from '../../../../components/shared/FormGrid';
 import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
 import GenericSubTableSection from '../../../../components/shared/GenericSubTableSection';
+import { useKhoBienThe } from '../../kho-bien-the/KhoBienTheProvider';
 
 const ADD_KHO = '__add_kho__';
 const ADD_KHO_DEN = '__add_kho_den__';
@@ -51,6 +52,7 @@ const LOAI_OPTIONS: { value: LoaiPhieuKhoPT; labelKey: string }[] = [
 ];
 
 const PhieuKhoPTForm: React.FC<Props> = ({ khoList, khoDenList, initialData, prefillValues, onClose, onRequestAddKho, onRequestAddHangHoa }) => {
+  const bt = useKhoBienThe();
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const isEdit = !!initialData?.id;
@@ -259,7 +261,7 @@ const PhieuKhoPTForm: React.FC<Props> = ({ khoList, khoDenList, initialData, pre
     let soPhieu = data.so_phieu?.trim() ?? '';
     if (!isEdit) {
       try {
-        soPhieu = await getNextSoPhieuFarmPt(data.loai as LoaiPhieuKhoPT);
+        soPhieu = await getNextSoPhieuFarmPt(bt, data.loai as LoaiPhieuKhoPT);
       } catch (err) {
         toast.error(err instanceof Error ? err.message : t('phieuKhoPhanThuoc.validation.codeRequired'));
         return;

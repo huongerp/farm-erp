@@ -22,6 +22,12 @@ export const LOAI_SU_KIEN_THEO_MODULE: Record<string, readonly string[]> = {
   'quan-ly-nha-so-che/phieu-kho-phan-thuoc': [
     'phieu.cho_duyet', 'phieu.da_duyet', 'phieu.khong_duyet', 'phieu.sua_sau_duyet',
   ],
+  'phan-thuoc/de-xuat-mua-hang': [
+    'phieu.cho_duyet', 'phieu.doi_duyet', 'phieu.da_duyet', 'phieu.khong_duyet', 'phieu.sua_sau_duyet',
+  ],
+  'phan-thuoc/phieu-kho-phan-thuoc': [
+    'phieu.cho_duyet', 'phieu.da_duyet', 'phieu.khong_duyet', 'phieu.sua_sau_duyet',
+  ],
   'hanh-chinh/cong-viec': [
     'cong_viec.duoc_giao', 'cong_viec.them_ho_tro', 'cong_viec.trao_doi_moi',
     'cong_viec.cho_bao_cao', 'cong_viec.hoan_thanh', 'cong_viec.huy',

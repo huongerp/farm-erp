@@ -80,15 +80,24 @@ const Home: React.FC = () => {
   const showHanhChinh = useSubmenuVisible('/hanh-chinh');
   const showMuaHang = useSubmenuVisible('/mua-hang');
   const showQuanLyNhaSoChe = useSubmenuVisible('/quan-ly-nha-so-che');
+  const showPhanThuoc = useSubmenuVisible('/phan-thuoc');
   const showTaiChinh = useSubmenuVisible('/tai-chinh');
   const showHeThong = useSubmenuVisible('/he-thong');
   const viewableHanhChinh = useModulesWithViewPermission('/hanh-chinh');
   const viewableMuaHang = useModulesWithViewPermission('/mua-hang');
   const viewableQuanLyNhaSoChe = useModulesWithViewPermission('/quan-ly-nha-so-che');
+  const viewablePhanThuoc = useModulesWithViewPermission('/phan-thuoc');
   const viewableTaiChinh = useModulesWithViewPermission('/tai-chinh');
   const viewableIds = useMemo(
-    () => new Set([...viewableHanhChinh, ...viewableMuaHang, ...viewableQuanLyNhaSoChe, ...viewableTaiChinh]),
-    [viewableHanhChinh, viewableMuaHang, viewableQuanLyNhaSoChe, viewableTaiChinh]
+    () =>
+      new Set([
+        ...viewableHanhChinh,
+        ...viewableMuaHang,
+        ...viewableQuanLyNhaSoChe,
+        ...viewablePhanThuoc,
+        ...viewableTaiChinh,
+      ]),
+    [viewableHanhChinh, viewableMuaHang, viewableQuanLyNhaSoChe, viewablePhanThuoc, viewableTaiChinh]
   );
   const visibleMenu = useMemo(
     () =>
@@ -98,11 +107,12 @@ const Home: React.FC = () => {
         if (m.path === '/hanh-chinh') return showHanhChinh;
         if (m.path === '/mua-hang') return showMuaHang;
         if (m.path === '/quan-ly-nha-so-che') return showQuanLyNhaSoChe;
+        if (m.path === '/phan-thuoc') return showPhanThuoc;
         if (m.path === '/tai-chinh') return showTaiChinh;
         if (m.path === '/he-thong') return showHeThong;
         return true;
       }),
-    [showHanhChinh, showMuaHang, showQuanLyNhaSoChe, showTaiChinh, showHeThong]
+    [showHanhChinh, showMuaHang, showQuanLyNhaSoChe, showPhanThuoc, showTaiChinh, showHeThong]
   );
   /** Thẻ chức năng: bỏ Trang chủ (path === '/'), ẩn submenu không có quyền xem module nào */
   const modules = useMemo(

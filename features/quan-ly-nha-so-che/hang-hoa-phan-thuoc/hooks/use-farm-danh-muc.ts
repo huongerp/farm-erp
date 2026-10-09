@@ -15,37 +15,42 @@ import i18n from '../../../../lib/i18n';
 import { FARM_HANG_HOA_QUERY_KEY } from './use-farm-hang-hoa';
 import { invalidateRefCache } from '../../../../lib/ref-cache';
 import type { ImportMode } from '../../../../lib/import-types';
+import { useKhoBienThe } from '../../kho-bien-the/KhoBienTheProvider';
 
 const QUERY_KEY = ['farmDanhMucHangHoa'] as const;
 
 export const useFarmDanhMucList = () => {
+  const bt = useKhoBienThe();
   return useQuery({
-    queryKey: QUERY_KEY,
-    queryFn: getAllFarmDanhMuc,
+    queryKey: [...QUERY_KEY, bt.key],
+    queryFn: () => getAllFarmDanhMuc(bt),
     staleTime: 1000 * 60 * 30,
   });
 };
 
 export const useFarmDanhMucById = (id: string | undefined) => {
+  const bt = useKhoBienThe();
   return useQuery({
-    queryKey: [...QUERY_KEY, id],
-    queryFn: () => getFarmDanhMucById(id!),
+    queryKey: [...QUERY_KEY, bt.key, id],
+    queryFn: () => getFarmDanhMucById(bt, id!),
     enabled: !!id,
   });
 };
 
 export const useFarmDanhMucCap2WithParent = () => {
+  const bt = useKhoBienThe();
   return useQuery({
-    queryKey: [...QUERY_KEY, 'cap2WithParent'],
-    queryFn: getFarmDanhMucCap2WithParent,
+    queryKey: [...QUERY_KEY, bt.key, 'cap2WithParent'],
+    queryFn: () => getFarmDanhMucCap2WithParent(bt),
     staleTime: 1000 * 60 * 30,
   });
 };
 
 export const useCreateFarmDanhMuc = (onSuccess?: () => void) => {
+  const bt = useKhoBienThe();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: createFarmDanhMuc,
+    mutationFn: (arg: Parameters<typeof createFarmDanhMuc>[1]) => createFarmDanhMuc(bt, arg),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY });
       qc.invalidateQueries({ queryKey: FARM_HANG_HOA_QUERY_KEY });
@@ -57,9 +62,10 @@ export const useCreateFarmDanhMuc = (onSuccess?: () => void) => {
 };
 
 export const useUpdateFarmDanhMuc = (onSuccess?: () => void) => {
+  const bt = useKhoBienThe();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: FarmDanhMucFormValues }) => updateFarmDanhMuc(id, data),
+    mutationFn: ({ id, data }: { id: string; data: FarmDanhMucFormValues }) => updateFarmDanhMuc(bt, id, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY });
       qc.invalidateQueries({ queryKey: FARM_HANG_HOA_QUERY_KEY });
@@ -71,9 +77,10 @@ export const useUpdateFarmDanhMuc = (onSuccess?: () => void) => {
 };
 
 export const useDeleteFarmDanhMuc = () => {
+  const bt = useKhoBienThe();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: deleteFarmDanhMuc,
+    mutationFn: (arg: Parameters<typeof deleteFarmDanhMuc>[1]) => deleteFarmDanhMuc(bt, arg),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY });
       qc.invalidateQueries({ queryKey: FARM_HANG_HOA_QUERY_KEY });
@@ -84,9 +91,10 @@ export const useDeleteFarmDanhMuc = () => {
 };
 
 export const useDeleteFarmDanhMucMany = () => {
+  const bt = useKhoBienThe();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: deleteFarmDanhMucMany,
+    mutationFn: (arg: Parameters<typeof deleteFarmDanhMucMany>[1]) => deleteFarmDanhMucMany(bt, arg),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY });
       qc.invalidateQueries({ queryKey: FARM_HANG_HOA_QUERY_KEY });
@@ -98,10 +106,11 @@ export const useDeleteFarmDanhMucMany = () => {
 
 /** Import hàng loạt danh mục (cây 2 cấp) — làm mới cả danh sách hàng hóa vì tên danh mục là cột suy ra. */
 export const useImportFarmDanhMuc = () => {
+  const bt = useKhoBienThe();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ rows, mode }: { rows: Record<string, unknown>[]; mode: ImportMode }) =>
-      importFarmDanhMuc(rows, { mode }),
+      importFarmDanhMuc(bt, rows, { mode }),
     onSuccess: (result) => {
       invalidateRefCache('farmHangHoa');
       qc.invalidateQueries({ queryKey: QUERY_KEY });

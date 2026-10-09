@@ -61,7 +61,8 @@ Trong dialog Xuất → Google Sheet, module có khai `dongBo={{ moduleId }}` hi
 2. Thêm mục vào `services/sheets/src/core/nguon-dong-bo.ts` (`moduleId` = mã phân quyền).
 3. Truyền `dongBo={{ moduleId }}` cho `<ExportDialog>` của tab danh sách.
 
-Đang bật: `mua-hang/don-dat-hang`, `quan-ly-nha-so-che/phieu-kho-phan-thuoc`.
+Đang bật: `mua-hang/don-dat-hang`, `quan-ly-nha-so-che/phieu-kho-phan-thuoc`, `phan-thuoc/phieu-kho-phan-thuoc`
+(nguồn `v_xuat_pt_phieu_kho`, migration 029).
 
 ## Cấu hình Google Cloud (làm một lần)
 

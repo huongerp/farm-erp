@@ -4,6 +4,7 @@ import {
   FileText,
   ShoppingCart,
   Sprout,
+  FlaskConical,
   Wallet,
   Layers,
 } from 'lucide-react';
@@ -51,6 +52,13 @@ export const SIDEBAR_MENU: MenuItem[] = [
     gradient: 'bg-gradient-to-br from-emerald-600 to-emerald-900',
   },
   {
+    path: '/phan-thuoc',
+    nameKey: 'nav.phanThuoc',
+    descriptionKey: 'page.home.phanThuocDesc',
+    icon: FlaskConical,
+    gradient: 'bg-gradient-to-br from-lime-600 to-lime-900',
+  },
+  {
     path: '/tai-chinh',
     nameKey: 'nav.taiChinh',
     descriptionKey: 'page.home.taiChinhDesc',
@@ -74,6 +82,7 @@ export const SUBMENU_PATHS = [
   '/hanh-chinh',
   '/mua-hang',
   '/quan-ly-nha-so-che',
+  '/phan-thuoc',
   '/tai-chinh',
 ];
 

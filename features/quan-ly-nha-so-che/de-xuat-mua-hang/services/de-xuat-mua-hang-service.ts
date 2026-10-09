@@ -21,30 +21,33 @@ import {
 } from './de-xuat-mua-hang-db.service';
 import type { DeXuatMuaHangChiTietListServerQuery, DeXuatMuaHangListServerQuery } from './de-xuat-mua-hang-list-query';
 import { buildDeXuatMuaHangChiTietListServerQuery, buildDeXuatMuaHangListServerQuery } from './de-xuat-mua-hang-list-query';
+import type { KhoBienThe } from '../../kho-bien-the/bien-the';
 
 export type { DeXuatMuaHangChiTietListServerQuery, DeXuatMuaHangListServerQuery };
 export { buildDeXuatMuaHangChiTietListServerQuery, buildDeXuatMuaHangListServerQuery };
 
 export const getAllDeXuatMuaHang = getAllDeXuatMuaHangDb;
 export async function getDeXuatMuaHangPage(
+  bt: KhoBienThe,
   page: number,
   pageSize?: number,
   listQuery?: DeXuatMuaHangListServerQuery
 ): Promise<PaginatedTableResult<DeXuatMuaHang>> {
-  return getDeXuatMuaHangPageDb(page, pageSize ?? 50, listQuery);
+  return getDeXuatMuaHangPageDb(bt, page, pageSize ?? 50, listQuery);
 }
 export const fetchAllDeXuatMuaHangForListQuery = fetchAllDeXuatMuaHangForListQueryDb;
 export const getAllDeXuatMuaHangChiTiet = getAllDeXuatMuaHangChiTietDb;
 export async function getDeXuatMuaHangChiTietPage(
+  bt: KhoBienThe,
   page: number,
   pageSize?: number,
   listQuery?: DeXuatMuaHangChiTietListServerQuery
 ): Promise<PaginatedTableResult<DeXuatMuaHangChiTietRow>> {
-  return getDeXuatMuaHangChiTietPageDb(page, pageSize ?? 100, listQuery);
+  return getDeXuatMuaHangChiTietPageDb(bt, page, pageSize ?? 100, listQuery);
 }
 export const fetchAllDeXuatMuaHangChiTietForListQuery = fetchAllDeXuatMuaHangChiTietForListQueryDb;
 export const getDeXuatMuaHangById = getDeXuatMuaHangByIdDb;
-export const createDeXuatMuaHang = (data: DeXuatMuaHangFormValues) => createDeXuatMuaHangDb(data);
+export const createDeXuatMuaHang = (bt: KhoBienThe, data: DeXuatMuaHangFormValues) => createDeXuatMuaHangDb(bt, data);
 export const updateDeXuatMuaHang = updateDeXuatMuaHangDb;
 export const deleteDeXuatMuaHang = deleteDeXuatMuaHangDb;
 export const deleteDeXuatMuaHangMany = deleteDeXuatMuaHangManyDb;

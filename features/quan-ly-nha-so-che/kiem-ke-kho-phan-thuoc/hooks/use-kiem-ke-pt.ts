@@ -29,6 +29,7 @@ import type {
   TrangThaiDotKiemKePT,
   TaoDanhSachKiemKePTFilters,
 } from '../core/types';
+import { useKhoBienThe } from '../../kho-bien-the/KhoBienTheProvider';
 
 /**
  * MỌI query của module nằm dưới một prefix, và MỌI mutation invalidate đúng prefix
@@ -46,9 +47,10 @@ export interface PhamViKiemKePT {
 
 /** Một trang danh sách đợt — lọc / phân trang chạy ở PostgREST. */
 export function useDotKiemKePTPage(query: DotKiemKePTListServerQuery) {
+  const bt = useKhoBienThe();
   return useQuery({
-    queryKey: [...QUERY_KEY_KIEM_KE_PT, 'page', query],
-    queryFn: () => getDotKiemKePTPage(query),
+    queryKey: [...QUERY_KEY_KIEM_KE_PT, 'page', query, bt.key],
+    queryFn: () => getDotKiemKePTPage(bt, query),
     placeholderData: keepPreviousData,
     staleTime: 1000 * 60 * 2,
   });
@@ -56,25 +58,28 @@ export function useDotKiemKePTPage(query: DotKiemKePTListServerQuery) {
 
 /** Tóm tắt toàn bộ đợt trong phạm vi xem — nguồn đếm chip lọc và tab Thống kê. */
 export function useDotKiemKePTTomTat(phamVi: PhamViKiemKePT) {
+  const bt = useKhoBienThe();
   return useQuery({
-    queryKey: [...QUERY_KEY_KIEM_KE_PT, 'tomTat', phamVi],
-    queryFn: () => getDotKiemKePTTomTat(phamVi),
+    queryKey: [...QUERY_KEY_KIEM_KE_PT, 'tomTat', phamVi, bt.key],
+    queryFn: () => getDotKiemKePTTomTat(bt, phamVi),
     staleTime: 1000 * 60 * 5,
   });
 }
 
 export function useDotKiemKePTById(id: string | null) {
+  const bt = useKhoBienThe();
   return useQuery({
-    queryKey: [...QUERY_KEY_KIEM_KE_PT, 'dot', id],
-    queryFn: () => (id ? getDotKiemKePTById(id) : Promise.resolve(null)),
+    queryKey: [...QUERY_KEY_KIEM_KE_PT, 'dot', id, bt.key],
+    queryFn: () => (id ? getDotKiemKePTById(bt, id) : Promise.resolve(null)),
     enabled: !!id,
   });
 }
 
 export function useChiTietKiemKePT(id_dot: string | null) {
+  const bt = useKhoBienThe();
   return useQuery({
-    queryKey: [...QUERY_KEY_KIEM_KE_PT, 'chiTiet', id_dot],
-    queryFn: () => (id_dot ? getChiTietByDotPT(id_dot) : Promise.resolve([])),
+    queryKey: [...QUERY_KEY_KIEM_KE_PT, 'chiTiet', id_dot, bt.key],
+    queryFn: () => (id_dot ? getChiTietByDotPT(bt, id_dot) : Promise.resolve([])),
     enabled: !!id_dot,
   });
 }
@@ -87,12 +92,13 @@ function currentEmployeeIdNum(): number | null {
 }
 
 export function useCreateDotKiemKePT(onSuccess?: () => void) {
+  const bt = useKhoBienThe();
   const qc = useQueryClient();
   const userId = useAuthStore((s) => s.user?.id ?? null);
   return useMutation({
     mutationFn: (data: DotKiemKePTCreate) => {
       if (!userId) throw new Error(i18n.t('kiemKeKhoPT.validation.nguoiTaoSessionRequired'));
-      return createDotKiemKePT(data, userId);
+      return createDotKiemKePT(bt, data, userId);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY_KIEM_KE_PT });
@@ -104,10 +110,11 @@ export function useCreateDotKiemKePT(onSuccess?: () => void) {
 }
 
 export function useUpdateDotKiemKePT(onSuccess?: () => void) {
+  const bt = useKhoBienThe();
   const qc = useQueryClient();
   const capCao = useKiemKeCapCaoPT();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<DotKiemKePTCreate> }) => updateDotKiemKePT(id, data, capCao),
+    mutationFn: ({ id, data }: { id: string; data: Partial<DotKiemKePTCreate> }) => updateDotKiemKePT(bt, id, data, capCao),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY_KIEM_KE_PT });
       toast.success(i18n.t('kiemKeKhoPT.toast.updateSuccess'));
@@ -118,10 +125,11 @@ export function useUpdateDotKiemKePT(onSuccess?: () => void) {
 }
 
 export function useDeleteDotKiemKePT(onSuccess?: () => void) {
+  const bt = useKhoBienThe();
   const qc = useQueryClient();
   const capCao = useKiemKeCapCaoPT();
   return useMutation({
-    mutationFn: (ids: string[]) => deleteDotKiemKePT(ids, capCao),
+    mutationFn: (ids: string[]) => deleteDotKiemKePT(bt, ids, capCao),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY_KIEM_KE_PT });
       toast.success(i18n.t('kiemKeKhoPT.toast.deleteSuccess'));
@@ -132,11 +140,12 @@ export function useDeleteDotKiemKePT(onSuccess?: () => void) {
 }
 
 export function useChangeTrangThaiDotPT(onSuccess?: () => void) {
+  const bt = useKhoBienThe();
   const qc = useQueryClient();
   const capCao = useKiemKeCapCaoPT();
   return useMutation({
     mutationFn: ({ id, trang_thai }: { id: string; trang_thai: TrangThaiDotKiemKePT }) =>
-      changeTrangThaiDotPT(id, trang_thai, capCao),
+      changeTrangThaiDotPT(bt, id, trang_thai, capCao),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY_KIEM_KE_PT });
       toast.success(i18n.t('kiemKeKhoPT.toast.updateSuccess'));
@@ -147,9 +156,10 @@ export function useChangeTrangThaiDotPT(onSuccess?: () => void) {
 }
 
 export function useHoanThanhDotPT(onSuccess?: () => void) {
+  const bt = useKhoBienThe();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => hoanThanhDotPT(id),
+    mutationFn: (id: string) => hoanThanhDotPT(bt, id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY_KIEM_KE_PT });
       toast.success(i18n.t('kiemKeKhoPT.toast.hoanThanhSuccess'));
@@ -160,11 +170,12 @@ export function useHoanThanhDotPT(onSuccess?: () => void) {
 }
 
 export function useTaoDanhSachKiemKePT(onSuccess?: () => void) {
+  const bt = useKhoBienThe();
   const qc = useQueryClient();
   const capCao = useKiemKeCapCaoPT();
   return useMutation({
     mutationFn: ({ id_dot, filters }: { id_dot: string; filters?: TaoDanhSachKiemKePTFilters }) =>
-      taoDanhSachKiemKePT(id_dot, filters, capCao),
+      taoDanhSachKiemKePT(bt, id_dot, filters, capCao),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY_KIEM_KE_PT });
       toast.success(i18n.t('kiemKeKhoPT.toast.taoDanhSachSuccess'));
@@ -175,11 +186,12 @@ export function useTaoDanhSachKiemKePT(onSuccess?: () => void) {
 }
 
 export function useCreateChiTietKiemKePT(id_dot: string, onSuccess?: () => void) {
+  const bt = useKhoBienThe();
   const qc = useQueryClient();
   const capCao = useKiemKeCapCaoPT();
   return useMutation({
     mutationFn: ({ id_kho_list, id_hang_hoa }: { id_kho_list: string[]; id_hang_hoa: string }) =>
-      createChiTietKiemKePT(id_dot, id_kho_list, id_hang_hoa, capCao),
+      createChiTietKiemKePT(bt, id_dot, id_kho_list, id_hang_hoa, capCao),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY_KIEM_KE_PT });
       toast.success(i18n.t('kiemKeKhoPT.toast.addChiTietSuccess'));
@@ -190,10 +202,11 @@ export function useCreateChiTietKiemKePT(id_dot: string, onSuccess?: () => void)
 }
 
 export function useDeleteChiTietKiemKePT(onSuccess?: () => void) {
+  const bt = useKhoBienThe();
   const qc = useQueryClient();
   const capCao = useKiemKeCapCaoPT();
   return useMutation({
-    mutationFn: (id_chi_tiet: string) => deleteChiTietKiemKePT(id_chi_tiet, capCao),
+    mutationFn: (id_chi_tiet: string) => deleteChiTietKiemKePT(bt, id_chi_tiet, capCao),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY_KIEM_KE_PT });
       toast.success(i18n.t('kiemKeKhoPT.toast.deleteChiTietSuccess'));
@@ -204,6 +217,7 @@ export function useDeleteChiTietKiemKePT(onSuccess?: () => void) {
 }
 
 export function useUpdateChiTietKetQuaPT(onSuccess?: () => void) {
+  const bt = useKhoBienThe();
   const qc = useQueryClient();
   const capCao = useKiemKeCapCaoPT();
   return useMutation({
@@ -215,7 +229,7 @@ export function useUpdateChiTietKetQuaPT(onSuccess?: () => void) {
       id_chi_tiet: string;
       data: ChiTietKiemKePTUpdate;
       id_nguoi_kiem: string;
-    }) => updateChiTietKetQuaPT(id_chi_tiet, data, id_nguoi_kiem, capCao),
+    }) => updateChiTietKetQuaPT(bt, id_chi_tiet, data, id_nguoi_kiem, capCao),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY_KIEM_KE_PT });
       onSuccess?.();
@@ -232,9 +246,10 @@ function invalidateSauDieuChinh(qc: ReturnType<typeof useQueryClient>) {
 }
 
 export function useDieuChinhTonTheoKetQuaPT(onSuccess?: () => void) {
+  const bt = useKhoBienThe();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id_chi_tiet: string) => dieuChinhTonTheoKetQuaPT(id_chi_tiet, currentEmployeeIdNum()),
+    mutationFn: (id_chi_tiet: string) => dieuChinhTonTheoKetQuaPT(bt, id_chi_tiet, currentEmployeeIdNum()),
     onSuccess: () => {
       invalidateSauDieuChinh(qc);
       toast.success(i18n.t('kiemKeKhoPT.toast.dieuChinhTonSuccess'));
@@ -245,9 +260,10 @@ export function useDieuChinhTonTheoKetQuaPT(onSuccess?: () => void) {
 }
 
 export function useDieuChinhTonTheoDotPT(id_dot: string, onSuccess?: () => void) {
+  const bt = useKhoBienThe();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => dieuChinhTonTheoDotPT(id_dot, currentEmployeeIdNum()),
+    mutationFn: () => dieuChinhTonTheoDotPT(bt, id_dot, currentEmployeeIdNum()),
     onSuccess: (count) => {
       invalidateSauDieuChinh(qc);
       toast.success(i18n.t('kiemKeKhoPT.toast.dieuChinhTonDotSuccess', { count }));
@@ -258,5 +274,6 @@ export function useDieuChinhTonTheoDotPT(id_dot: string, onSuccess?: () => void)
 }
 
 export function useNextMaDotKiemKePT() {
-  return useMutation({ mutationFn: getNextMaDotKiemKePT });
+  const bt = useKhoBienThe();
+  return useMutation({ mutationFn: () => getNextMaDotKiemKePT(bt) });
 }

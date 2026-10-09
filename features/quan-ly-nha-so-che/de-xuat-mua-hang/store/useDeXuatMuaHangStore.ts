@@ -1,3 +1,5 @@
+import { storeTheoBienThe } from '../../kho-bien-the/KhoBienTheProvider';
+import { khoStorageKey } from '../../kho-bien-the/bien-the';
 import { createGenericStore, type ColumnConfig } from '../../../../store/createGenericStore';
 import i18n from '../../../../lib/i18n';
 import type { DateRangePresetId } from '../../../he-thong/nhan-vien/core/stats-constants';
@@ -37,8 +39,10 @@ const initialFilters: DeXuatMuaHangFilters = {
   nguoiDuyetIds: [],
 };
 
-export const useDeXuatMuaHangStore = createGenericStore<DeXuatMuaHangFilters>(
-  initialFilters,
-  DEFAULT_COLUMNS,
-  'table-de-xuat-mua-hang'
+export const useDeXuatMuaHangStore = storeTheoBienThe((bt) =>
+  createGenericStore<DeXuatMuaHangFilters>(
+    initialFilters,
+    DEFAULT_COLUMNS,
+    khoStorageKey(bt, 'table-de-xuat-mua-hang')
+  )
 );
