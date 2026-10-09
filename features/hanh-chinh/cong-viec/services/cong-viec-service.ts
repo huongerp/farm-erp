@@ -5,6 +5,7 @@ import {
   createCongViec as createCongViecDb,
   updateCongViec as updateCongViecDb,
   deleteCongViecList as deleteCongViecListDb,
+  updateCongViecMany as updateCongViecManyDb,
   getBinhLuanByCongViecId as getBinhLuanByCongViecIdDb,
   createBinhLuan as createBinhLuanDb,
   importCongViecList as importCongViecListDb,
@@ -19,6 +20,7 @@ export const createCongViec = (
 ) => createCongViecDb(data, id_nguoi_giao);
 export const updateCongViec = updateCongViecDb;
 export const deleteCongViecList = deleteCongViecListDb;
+export const updateCongViecMany = updateCongViecManyDb;
 export const getBinhLuanByCongViecId = getBinhLuanByCongViecIdDb;
 export const createBinhLuan = createBinhLuanDb;
 export const importCongViecList = (

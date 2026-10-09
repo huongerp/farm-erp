@@ -17,8 +17,8 @@ import { CongViecFormValues, congViecSchema } from '../core/schema';
 import { getTrangThaiOptions, getUuTienOptions } from '../core/constants';
 import { useCreateCongViec, useUpdateCongViec } from '../hooks/use-cong-viec';
 import { useEmployeesRefQuery } from '../../../../lib/hooks/use-ref-queries';
-import { TRANG_THAI_NV } from '../../../../lib/constants';
 import { useAuthStore } from '../../../../store/useStore';
+import { buildEmployeeOptions } from '../utils/employee-options';
 
 const DEFAULT_VALUES: CongViecFormValues = {
   tieu_de: '',
@@ -100,17 +100,7 @@ const CongViecForm: React.FC<Props> = ({ initialData, parentId, onClose, stackLe
 
   const trangThaiOptions = useMemo(() => getTrangThaiOptions(t), [t]);
   const uuTienOptions = useMemo(() => getUuTienOptions(t), [t]);
-  const employeeOptions = useMemo(() => {
-    return employees
-      .filter((e) => e.trang_thai === TRANG_THAI_NV.DANG_LAM_VIEC)
-      .slice(0, 300)
-      .map((e) => {
-        const numId = typeof e.id === 'number' ? e.id : parseInt(String(e.id).replace(/\D/g, ''), 10) || 0;
-        const label = e.ho_ten ? `${e.ho_ten}${e.ma_nhan_vien ? ` (${e.ma_nhan_vien})` : ''}` : e.ma_nhan_vien || String(e.id);
-        return { label, value: numId };
-      })
-      .filter((o) => o.value > 0);
-  }, [employees]);
+  const employeeOptions = useMemo(() => buildEmployeeOptions(employees), [employees]);
   const employeeOptionsForSelect = useMemo(
     () => employeeOptions.map((o) => ({ label: o.label, value: String(o.value) })),
     [employeeOptions]

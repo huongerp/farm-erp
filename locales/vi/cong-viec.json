@@ -182,5 +182,15 @@
   "congViec.nhapExcel.errNhanVienNotFound": "Không tìm thấy nhân viên: \"{{value}}\"",
   "congViec.nhapExcel.errNhanVienAmbiguous": "Có nhiều nhân viên tên \"{{value}}\" — hãy ghi mã NV",
   "congViec.nhapExcel.errUuTien": "Ưu tiên không hợp lệ: \"{{value}}\"",
-  "congViec.nhapExcel.errTrangThai": "Trạng thái không hợp lệ: \"{{value}}\""
+  "congViec.nhapExcel.errTrangThai": "Trạng thái không hợp lệ: \"{{value}}\"",
+  "congViec.bulk.trangThaiAction": "Đổi trạng thái",
+  "congViec.bulk.trangThaiTitle": "Đổi trạng thái {{count}} công việc",
+  "congViec.bulk.giaoLaiAction": "Giao lại",
+  "congViec.bulk.giaoLaiTitle": "Giao lại {{count}} công việc",
+  "congViec.bulk.giaoLaiHint": "Người được giao mới sẽ nhận thông báo cho từng công việc.",
+  "congViec.bulk.apDung": "Áp dụng",
+  "congViec.bulk.toast.trangThaiSuccess": "Đã đổi trạng thái {{count}} công việc",
+  "congViec.bulk.toast.giaoLaiSuccess": "Đã giao lại {{count}} công việc",
+  "congViec.bulk.toast.boQua": "Bỏ qua {{count}} công việc đã đúng giá trị chọn",
+  "congViec.bulk.toast.khongCoGiDoi": "Các công việc đã chọn đều đã đúng giá trị này — không có gì thay đổi"
 }

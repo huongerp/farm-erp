@@ -141,6 +141,22 @@ export async function updateCongViec(
   return updated;
 }
 
+/**
+ * Đổi trạng thái hoặc giao lại người phụ trách cho nhiều công việc — một lệnh UPDATE.
+ * Trigger thông báo chạy FOR EACH ROW nên mỗi công việc vẫn sinh đúng một sự kiện
+ * (vd. "được giao" tới người mới). Không cascade cha/con.
+ */
+export async function updateCongViecMany(
+  ids: (number | string)[],
+  patch: { trang_thai: CongViecFormValues['trang_thai'] } | { trach_nhiem: number }
+): Promise<number> {
+  const numIds = ids.map((x) => toNumericId(x)).filter((n) => n > 0);
+  if (numIds.length === 0) return 0;
+  const { data, error } = await db.from(TABLE).update(patch).in('id', numIds).select('id');
+  if (error) throwDbError(error);
+  return data?.length ?? 0;
+}
+
 export async function deleteCongViecList(ids: (number | string)[]): Promise<void> {
   const numIds = ids.map((x) => toNumericId(x)).filter((n) => n > 0);
   if (numIds.length === 0) return;
@@ -154,25 +170,18 @@ export async function getBinhLuanByCongViecId(id_cong_viec: number | string): Pr
   return [...traoDoi].reverse();
 }
 
-export async function createBinhLuan(
-  id_cong_viec: number | string,
-  noi_dung: string,
-  nguoi_gui_id: string,
-  ten_nguoi_gui?: string
-): Promise<TraoDoiEntry> {
-  const cv = await getCongViecById(id_cong_viec);
-  if (!cv) throw new Error(i18n.t('congViec.service.notFound'));
-  const now = new Date().toISOString();
-  const newEntry: TraoDoiEntry = {
-    id: `bl-${Date.now()}`,
-    noi_dung,
-    nguoi_gui_id,
-    ten_nguoi_gui: ten_nguoi_gui ?? undefined,
-    tg_gui: now,
-  };
-  const traoDoi = [...(cv.trao_doi ?? []), newEntry];
-  await updateCongViec(id_cong_viec, { trao_doi: traoDoi });
-  return newEntry;
+/**
+ * Bình luận đi qua RPC (migration 028): ai xem được công việc cũng bình luận được, kể cả
+ * không có quyền sửa — RLS UPDATE của bảng đã siết theo quyền module. RPC lấy người gửi
+ * từ JWT và nối nguyên tử vào trao_doi.
+ */
+export async function createBinhLuan(id_cong_viec: number | string, noi_dung: string): Promise<TraoDoiEntry> {
+  const { data, error } = await db.rpc('rpc_cong_viec_them_binh_luan', {
+    p_id_cong_viec: toNumericId(id_cong_viec),
+    p_noi_dung: noi_dung,
+  });
+  if (error) throwDbError(error);
+  return data as TraoDoiEntry;
 }
 
 /** Ghi các dòng đã validate ở `planCongViecImport`; lỗi DB gắn lại đúng dòng Excel. */

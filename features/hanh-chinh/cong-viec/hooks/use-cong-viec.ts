@@ -8,6 +8,7 @@ import {
   createCongViec,
   updateCongViec,
   deleteCongViecList,
+  updateCongViecMany,
   importCongViecList,
   getBinhLuanByCongViecId,
   createBinhLuan,
@@ -103,14 +104,30 @@ export const useBinhLuanByCongViecId = (id_cong_viec: number | string | null) =>
 
 export const useCreateBinhLuan = (id_cong_viec: number | string, onSuccess?: () => void) => {
   const queryClient = useQueryClient();
-  const user = useAuthStore((s) => s.user);
   return useMutation({
-    mutationFn: (noi_dung: string) =>
-      createBinhLuan(id_cong_viec, noi_dung, String(user?.id ?? ''), user?.full_name),
+    mutationFn: (noi_dung: string) => createBinhLuan(id_cong_viec, noi_dung),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: CONG_VIEC_QUERY_KEY });
       toast.success(i18n.t('congViec.binhLuan.toast.createSuccess'));
       onSuccess?.();
+    },
+    onError: (err: unknown) => toast.error((err as Error).message),
+  });
+};
+
+/** Đổi trạng thái / giao lại hàng loạt — một request, một toast (không loop useUpdateCongViec). */
+export const useUpdateCongViecMany = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ ids, patch }: { ids: (number | string)[]; patch: Parameters<typeof updateCongViecMany>[1] }) =>
+      updateCongViecMany(ids, patch),
+    onSuccess: (count, { patch }) => {
+      queryClient.invalidateQueries({ queryKey: CONG_VIEC_QUERY_KEY });
+      toast.success(
+        i18n.t('trang_thai' in patch ? 'congViec.bulk.toast.trangThaiSuccess' : 'congViec.bulk.toast.giaoLaiSuccess', {
+          count,
+        })
+      );
     },
     onError: (err: unknown) => toast.error((err as Error).message),
   });

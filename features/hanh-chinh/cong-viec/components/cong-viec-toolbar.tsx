@@ -29,9 +29,11 @@ interface Props {
   hideViewMode?: boolean;
   canCreate?: boolean;
   canDelete?: boolean;
+  /** Nút thao tác hàng loạt (đổi trạng thái, giao lại) hiện khi có dòng được chọn. */
+  bulkActions?: React.ReactNode;
 }
 
-const CongViecToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onExport, onImport, viewMode = 'list', onViewModeChange, hideViewMode, canCreate = true, canDelete = true }) => {
+const CongViecToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onExport, onImport, viewMode = 'list', onViewModeChange, hideViewMode, canCreate = true, canDelete = true, bulkActions }) => {
   const { t } = useTranslation();
   const { data: employees = [] } = useEmployeesRefQuery();
   const { searchInput, setSearchInput } = useGenericToolbarSearch(useCongViecStore);
@@ -241,6 +243,7 @@ const CongViecToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onE
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
       onDeleteMany={canDelete && onDeleteMany ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
+      bulkActions={bulkActions}
       columns={columns}
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}

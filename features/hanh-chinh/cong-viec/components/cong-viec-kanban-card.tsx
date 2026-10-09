@@ -8,17 +8,18 @@ import { getUuTienLabel } from '../core/constants';
 
 interface Props {
   item: CongViec;
+  draggable: boolean;
   onClick: () => void;
 }
 
-const CongViecKanbanCard: React.FC<Props> = ({ item, onClick }) => {
+const CongViecKanbanCard: React.FC<Props> = ({ item, draggable, onClick }) => {
   const { t } = useTranslation();
   const {
     attributes,
     listeners,
     setNodeRef,
     isDragging,
-  } = useDraggable({ id: item.id });
+  } = useDraggable({ id: item.id, disabled: !draggable });
 
   const uuTienLabel = getUuTienLabel(item.uu_tien, t);
 
@@ -32,7 +33,8 @@ const CongViecKanbanCard: React.FC<Props> = ({ item, onClick }) => {
       onClick={onClick}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } }}
       className={cn(
-        'rounded-lg border border-border bg-card p-3 shadow-sm cursor-grab active:cursor-grabbing',
+        'rounded-lg border border-border bg-card p-3 shadow-sm',
+        draggable ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer',
         'transition-all hover:shadow-md hover:-translate-y-0.5',
         isDragging && 'opacity-50 shadow-lg ring-2 ring-primary'
       )}

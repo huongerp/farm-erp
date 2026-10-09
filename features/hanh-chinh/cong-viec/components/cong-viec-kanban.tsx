@@ -19,9 +19,11 @@ import EmptyState from '../../../../components/shared/EmptyState';
 interface Props {
   data: CongViec[];
   onView: (item: CongViec) => void;
+  /** Không có quyền sửa → thẻ chỉ bấm xem, không kéo đổi trạng thái được. */
+  canUpdate: boolean;
 }
 
-const CongViecKanban: React.FC<Props> = ({ data, onView }) => {
+const CongViecKanban: React.FC<Props> = ({ data, onView, canUpdate }) => {
   const { t } = useTranslation();
   const updateMutation = useUpdateCongViec();
 
@@ -30,6 +32,7 @@ const CongViecKanban: React.FC<Props> = ({ data, onView }) => {
   );
 
   const handleDragEnd = (event: DragEndEvent) => {
+    if (!canUpdate) return;
     const { active, over } = event;
     if (!over || active.id === over.id) return;
     const taskId = String(active.id);
@@ -68,6 +71,7 @@ const CongViecKanban: React.FC<Props> = ({ data, onView }) => {
               <KanbanCard
                 key={item.id}
                 item={item}
+                draggable={canUpdate}
                 onClick={() => onView(item)}
               />
             ))}

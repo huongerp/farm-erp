@@ -2,7 +2,10 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
-import { ClipboardList, MessageSquare, LayoutGrid, GanttChart } from 'lucide-react';
+import { toast } from 'sonner';
+import { ClipboardList, MessageSquare, LayoutGrid, GanttChart, Tag, UserCheck } from 'lucide-react';
+import BulkActionButton from '../../../../components/shared/BulkActionButton';
+import CongViecBulkDialog, { type CongViecBulkMode } from './cong-viec-bulk-dialog';
 import TabGroup from '../../../../components/ui/TabGroup';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import CongViecToolbar from './cong-viec-toolbar';
@@ -17,7 +20,7 @@ import Button from '../../../../components/ui/Button';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import TablePaginationFooter from '../../../../components/shared/TablePaginationFooter';
 import { flattenCongViecWithLevel } from '../services/cong-viec-service';
-import { useCongViecList, useDeleteCongViecList } from '../hooks/use-cong-viec';
+import { useCongViecList, useDeleteCongViecList, useUpdateCongViecMany } from '../hooks/use-cong-viec';
 import { useCongViecImport } from '../hooks/use-cong-viec-import';
 import { useCongViecStore, DEFAULT_COLUMNS } from '../store/useCongViecStore';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
@@ -27,7 +30,7 @@ import type { CongViecScope } from '../core/scope';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
 import { useListWithFilter } from '../../../../lib/hooks';
 import { getLanguage, exportToExcel } from '../../../../lib/utils';
-import type { CongViec } from '../core/types';
+import type { CongViec, CongViecTrangThai } from '../core/types';
 import type { CongViecFilters } from '../store/useCongViecStore';
 import { createListSearchMatcher } from '../../../../lib/list-search-matcher';
 
@@ -76,6 +79,8 @@ const CongViecScopeTab: React.FC<Props> = ({ scope }) => {
 
   const { data: list = [], isLoading } = useCongViecList();
   const deleteMutation = useDeleteCongViecList();
+  const updateManyMutation = useUpdateCongViecMany();
+  const [bulkMode, setBulkMode] = useState<CongViecBulkMode | null>(null);
   const importer = useCongViecImport();
 
   const scopeList = useMemo(
@@ -248,6 +253,50 @@ const CongViecScopeTab: React.FC<Props> = ({ scope }) => {
     });
   };
 
+  /**
+   * Đổi trạng thái / giao lại hàng loạt. Danh sách đã tải đủ ở client nên bỏ qua trước
+   * những việc đã đúng giá trị đích (khỏi bắn thông báo thừa).
+   */
+  const handleBulkConfirm = (value: CongViecTrangThai | number) => {
+    if (!bulkMode) return;
+    const byId = new Map(list.map((c) => [String(c.id), c]));
+    const ids = Array.from(selectedIds).filter((id) => {
+      const item = byId.get(String(id));
+      if (!item) return false;
+      return bulkMode === 'trang_thai' ? item.trang_thai !== value : Number(item.trach_nhiem) !== value;
+    });
+    const boQua = selectedIds.size - ids.length;
+    if (ids.length === 0) {
+      toast.message(t('congViec.bulk.toast.khongCoGiDoi'));
+      setBulkMode(null);
+      return;
+    }
+    const patch =
+      bulkMode === 'trang_thai' ? { trang_thai: value as CongViecTrangThai } : { trach_nhiem: value as number };
+    updateManyMutation.mutate(
+      { ids, patch },
+      {
+        onSuccess: () => {
+          if (boQua > 0) toast.message(t('congViec.bulk.toast.boQua', { count: boQua }));
+          setBulkMode(null);
+          clearSelection();
+          setDetailStack((prev) => prev.filter((x) => !ids.includes(String(x.id))));
+        },
+      }
+    );
+  };
+
+  const bulkActions = canUpdate ? (
+    <>
+      <BulkActionButton icon={Tag} label={t('congViec.bulk.trangThaiAction')} onClick={() => setBulkMode('trang_thai')} />
+      <BulkActionButton
+        icon={UserCheck}
+        label={t('congViec.bulk.giaoLaiAction')}
+        onClick={() => setBulkMode('trach_nhiem')}
+      />
+    </>
+  ) : undefined;
+
   const handleCloseForm = () => {
     const wasFromDetail = openedFormFromDetailId != null;
     const editingId = editingItem?.id;
@@ -304,6 +353,7 @@ const CongViecScopeTab: React.FC<Props> = ({ scope }) => {
           hideViewMode
           canCreate={canCreate}
           canDelete={canDelete}
+          bulkActions={bulkActions}
         />
         <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
           {isLoading ? (
@@ -333,7 +383,7 @@ const CongViecScopeTab: React.FC<Props> = ({ scope }) => {
               />
             </div>
           ) : isKanban ? (
-            <CongViecKanban data={dataForKanbanGantt} onView={handleView} />
+            <CongViecKanban data={dataForKanbanGantt} onView={handleView} canUpdate={canUpdate} />
           ) : isGantt ? (
             <CongViecGantt data={dataForKanbanGantt} onView={handleView} />
           ) : (
@@ -409,6 +459,16 @@ const CongViecScopeTab: React.FC<Props> = ({ scope }) => {
             importErrors={importer.importErrors}
             onImport={importer.handleImport}
             templateFileName={importer.templateFileName}
+          />
+        )}
+
+        {bulkMode && (
+          <CongViecBulkDialog
+            mode={bulkMode}
+            count={selectedIds.size}
+            isPending={updateManyMutation.isPending}
+            onClose={() => setBulkMode(null)}
+            onConfirm={handleBulkConfirm}
           />
         )}
       </div>
