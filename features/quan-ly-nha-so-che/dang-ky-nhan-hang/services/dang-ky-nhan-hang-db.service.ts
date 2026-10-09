@@ -26,7 +26,7 @@ const ROW_COLUMNS =
 const CT_COLUMNS =
   'id,id_phieu,id_phieu_gscl,so_luong,nguon,ma_tem_quet,tg_quet,id_nguoi_quet,' +
   'gscl:fp_farm_giam_sat_chat_luong(so_phieu,ngay,ma_cay_hang,ket_luan,id_hang_hoa,' +
-  'hang_hoa:fp_mh_danh_sach_hang_hoa(ma_hang_hoa,ten_hang_hoa,dvt))';
+  'hang_hoa:fp_farm_danh_sach_hang_hoa(ma_hang_hoa,ten_hang_hoa,dvt))';
 
 interface DbRow {
   id: number;

@@ -72,6 +72,8 @@ export interface ThungMau {
   stt_thung: number;
   ma_tem: string;
   ket_qua: KetQuaThung;
+  /** Tổng số nhánh/nải trong thùng (mẫu số tỉ lệ lỗi); null = thùng kiểm trước khi có cột này. */
+  tong_nhanh: number | null;
   da_kiem: boolean;
   tg_kiem: string | null;
   id_nguoi_kiem: string | null;

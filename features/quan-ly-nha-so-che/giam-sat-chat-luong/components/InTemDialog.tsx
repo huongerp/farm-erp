@@ -105,7 +105,7 @@ const InTemDialog: React.FC<Props> = ({ phieu, thung, onClose, onOpenSettings })
                   : 'bg-background border-border text-muted-foreground hover:bg-muted'
               )}
             >
-              {x.stt_thung}
+              {t('giamSatChatLuong.detail.thungSo', { stt: x.stt_thung })}
             </button>
           ))}
         </div>

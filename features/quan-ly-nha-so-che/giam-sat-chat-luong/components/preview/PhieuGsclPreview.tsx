@@ -9,6 +9,7 @@ import {
 } from '../../../../../components/shared/phieu-in/PhieuInParts';
 import { cn, formatDateTimeShort, formatNumberVN, formatYmdToDisplay } from '../../../../../lib/utils';
 import { ketLuanPhieu, type KetQuaTieuChi } from '../../core/ket-luan';
+import { tiLeLoi } from '../../core/ti-le';
 import { coKetLuan } from '../../core/trang-thai';
 import type { GiaTriKetQua, GiamSatChatLuong, ThungMau, TieuChi } from '../../core/types';
 
@@ -21,6 +22,7 @@ interface Props {
 }
 
 const so = (n: number | null) => (n == null ? '—' : formatNumberVN(n, { maxFractionDigits: 2 }));
+const phanTram = (n: number | null) => (n == null ? '—' : `${formatNumberVN(n, { maxFractionDigits: 1 })}%`);
 
 function oThung(tc: TieuChi, v: GiaTriKetQua | undefined, daKiem: boolean): string {
   if (!daKiem) return '';
@@ -77,7 +79,7 @@ const PhieuGsclPreview: React.FC<Props> = ({ phieu, thung, wMm, hMm, leMm }) => 
   const td = 'border border-gray-300 px-1.5 py-0.5 text-center tabular-nums';
 
   return (
-    // compact: 11 tiêu chí × 10 thùng phải vừa MỘT trang A4 ngang (vùng in ~194 mm sau lề 8 mm).
+    // compact: 11 tiêu chí × 10 thùng (mỗi thùng 2 cột lỗi / tỉ lệ) phải vừa MỘT trang A4 ngang.
     <KhungPhieu wMm={wMm} hMm={hMm} leMm={leMm} title={t('giamSatChatLuong.preview.title')} subtitle={subtitle} compact>
       <TieuDeMuc>{t('giamSatChatLuong.preview.thongTin')}</TieuDeMuc>
       <BangThongTin rows={thongTin} />
@@ -86,18 +88,41 @@ const PhieuGsclPreview: React.FC<Props> = ({ phieu, thung, wMm, hMm, leMm }) => 
       <table className="w-full border-collapse">
         <thead>
           <tr>
-            <th className={cn(th, 'text-left')}>{t('giamSatChatLuong.detail.tieuChi')}</th>
+            <th rowSpan={2} className={cn(th, 'text-left')}>
+              {t('giamSatChatLuong.detail.tieuChi')}
+            </th>
             {thung.map((x) => (
-              <th key={x.id} className={cn(th, 'text-center w-[7mm]')}>
-                {x.stt_thung}
+              <th key={x.id} colSpan={2} className={cn(th, 'text-center whitespace-nowrap')}>
+                {t('giamSatChatLuong.detail.thungSo', { stt: x.stt_thung })}
               </th>
             ))}
-            <th className={cn(th, 'text-center')}>{t('giamSatChatLuong.detail.tong')}</th>
-            <th className={cn(th, 'text-center')}>{t('giamSatChatLuong.detail.nguong')}</th>
-            <th className={cn(th, 'text-center')}>{t('giamSatChatLuong.detail.dat')}</th>
+            <th rowSpan={2} className={cn(th, 'text-center')}>{t('giamSatChatLuong.detail.tong')}</th>
+            <th rowSpan={2} className={cn(th, 'text-center')}>{t('giamSatChatLuong.detail.nguong')}</th>
+            <th rowSpan={2} className={cn(th, 'text-center')}>{t('giamSatChatLuong.detail.dat')}</th>
+          </tr>
+          <tr>
+            {thung.map((x) => (
+              <React.Fragment key={x.id}>
+                <th className={cn(th, 'text-center font-medium text-[0.85em] leading-tight')}>
+                  {t('giamSatChatLuong.preview.loiThucTe')}
+                </th>
+                <th className={cn(th, 'text-center font-medium text-[0.85em] leading-tight')}>
+                  {t('giamSatChatLuong.preview.tiLe')}
+                </th>
+              </React.Fragment>
+            ))}
           </tr>
         </thead>
         <tbody>
+          <tr>
+            <td className="border border-gray-300 px-1.5 py-0.5 font-medium">{t('giamSatChatLuong.detail.tongNhanh')}</td>
+            {thung.map((x) => (
+              <td key={x.id} colSpan={2} className={cn(td, 'font-semibold')}>
+                {x.da_kiem ? so(x.tong_nhanh) : ''}
+              </td>
+            ))}
+            <td className={td} colSpan={3} />
+          </tr>
           {phieu.tieu_chi.map((tc, i) => {
             const c = kq.chiTiet[i];
             return (
@@ -106,11 +131,20 @@ const PhieuGsclPreview: React.FC<Props> = ({ phieu, thung, wMm, hMm, leMm }) => 
                   {tc.ten}
                   {tc.don_vi ? <span className="text-gray-500 font-normal"> ({tc.don_vi})</span> : null}
                 </td>
-                {thung.map((x) => (
-                  <td key={x.id} className={td}>
-                    {oThung(tc, x.ket_qua[tc.ma], x.da_kiem)}
-                  </td>
-                ))}
+                {thung.map((x) =>
+                  tc.loai === 'dem_loi' ? (
+                    <React.Fragment key={x.id}>
+                      <td className={td}>{oThung(tc, x.ket_qua[tc.ma], x.da_kiem)}</td>
+                      <td className={cn(td, 'text-gray-600 whitespace-nowrap')}>
+                        {x.da_kiem ? phanTram(tiLeLoi(tc, x.ket_qua[tc.ma], x.tong_nhanh)) : ''}
+                      </td>
+                    </React.Fragment>
+                  ) : (
+                    <td key={x.id} colSpan={2} className={td}>
+                      {oThung(tc, x.ket_qua[tc.ma], x.da_kiem)}
+                    </td>
+                  )
+                )}
                 <td className={cn(td, 'font-semibold')}>{oTong(tc, c)}</td>
                 <td className={cn(td, 'text-gray-600')}>{oNguong(tc, c)}</td>
                 <td className={cn(td, 'font-bold', c.dat === false && 'text-red-700')}>

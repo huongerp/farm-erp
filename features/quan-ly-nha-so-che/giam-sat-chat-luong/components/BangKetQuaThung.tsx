@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Check, Minus, X } from 'lucide-react';
 import { cn, formatNumberVN } from '../../../../lib/utils';
 import { ketLuanPhieu, type KetQuaTieuChi } from '../core/ket-luan';
+import { tiLeLoi } from '../core/ti-le';
 import type { GiaTriKetQua, ThungMau, TieuChi } from '../core/types';
 
 interface Props {
@@ -14,6 +15,7 @@ interface Props {
 }
 
 const so = (n: number | null) => (n == null ? '—' : formatNumberVN(n, { maxFractionDigits: 2 }));
+const phanTram = (n: number) => `${formatNumberVN(n, { maxFractionDigits: 1 })}%`;
 
 function oGiaTri(tc: TieuChi, v: GiaTriKetQua | undefined, daKiem: boolean): React.ReactNode {
   if (!daKiem) return <span className="text-muted-foreground/40">·</span>;
@@ -90,7 +92,7 @@ const BangKetQuaThung: React.FC<Props> = ({ tieuChi, thung, soThungMau, onChonTh
                     onChonThung && 'hover:bg-primary/10 cursor-pointer'
                   )}
                 >
-                  {x.stt_thung}
+                  {t('giamSatChatLuong.detail.thungSo', { stt: x.stt_thung })}
                   {x.da_kiem && <Check size={11} />}
                 </button>
               </th>
@@ -101,6 +103,15 @@ const BangKetQuaThung: React.FC<Props> = ({ tieuChi, thung, soThungMau, onChonTh
           </tr>
         </thead>
         <tbody>
+          <tr className="border-b border-border bg-muted/20">
+            <td className={cn('px-2 py-1.5 text-sm font-medium', sticky, 'bg-muted')}>{t('giamSatChatLuong.detail.tongNhanh')}</td>
+            {thung.map((x) => (
+              <td key={x.id} className={cn(td, 'font-medium')}>
+                {x.da_kiem ? so(x.tong_nhanh) : <span className="text-muted-foreground/40">·</span>}
+              </td>
+            ))}
+            <td className={cn(td, 'border-l border-border')} colSpan={3} />
+          </tr>
           {tieuChi.map((tc, i) => {
             const kq = ketQua.chiTiet[i];
             return (
@@ -109,11 +120,15 @@ const BangKetQuaThung: React.FC<Props> = ({ tieuChi, thung, soThungMau, onChonTh
                   <span className="font-medium">{tc.ten}</span>
                   {tc.don_vi && <span className="text-xs text-muted-foreground"> ({tc.don_vi})</span>}
                 </td>
-                {thung.map((x) => (
-                  <td key={x.id} className={td}>
-                    {oGiaTri(tc, x.ket_qua[tc.ma], x.da_kiem)}
-                  </td>
-                ))}
+                {thung.map((x) => {
+                  const tiLe = x.da_kiem ? tiLeLoi(tc, x.ket_qua[tc.ma], x.tong_nhanh) : null;
+                  return (
+                    <td key={x.id} className={td}>
+                      {oGiaTri(tc, x.ket_qua[tc.ma], x.da_kiem)}
+                      {tiLe != null && <span className="ml-1 text-[11px] text-muted-foreground">{phanTram(tiLe)}</span>}
+                    </td>
+                  );
+                })}
                 <td className={cn(td, 'font-semibold border-l border-border')}>{tongHienThi(tc, kq)}</td>
                 <td className={cn(td, 'text-muted-foreground')}>{nguongHienThi(tc, kq)}</td>
                 <td className={td}>

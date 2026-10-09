@@ -8,6 +8,7 @@ import Textarea from '../../../../components/ui/Textarea';
 import { DIALOG_SIZE } from '../../../../lib/dialog-sizes';
 import { cn, formatNumberVN } from '../../../../lib/utils';
 import { quyDoiNguong } from '../core/ket-luan';
+import { docTongNhanh } from '../core/ti-le';
 import type { GiamSatChatLuong, KetQuaThung, ThungMau, TieuChi } from '../core/types';
 import { useLuuKetQuaThung } from '../hooks/use-giam-sat-chat-luong';
 
@@ -40,6 +41,8 @@ const NhapKetQuaThungDialog: React.FC<Props> = ({ phieu, thung, onClose, onQuetT
   const luu = useLuuKetQuaThung();
   const [nhap, setNhap] = useState<Nhap>(() => giaTriBanDau(phieu.tieu_chi, thung.ket_qua));
   const [ghiChu, setGhiChu] = useState(thung.ghi_chu ?? '');
+  const [tongNhanh, setTongNhanh] = useState(thung.tong_nhanh != null ? String(thung.tong_nhanh) : '');
+  const [loiTongNhanh, setLoiTongNhanh] = useState(false);
   const [loi, setLoi] = useState<Record<string, string>>({});
 
   const dat = (ma: string, v: string | boolean | null) => {
@@ -91,12 +94,14 @@ const NhapKetQuaThungDialog: React.FC<Props> = ({ phieu, thung, onClose, onQuetT
 
   const submit = (quetTiep: boolean) => {
     const ketQua = docKetQua();
-    if (!ketQua) {
+    const tong = docTongNhanh(tongNhanh);
+    setLoiTongNhanh(tong == null);
+    if (!ketQua || tong == null) {
       toast.error(t('giamSatChatLuong.nhap.conThieu'));
       return;
     }
     luu.mutate(
-      { idThung: thung.id, idPhieu: phieu.id, ketQua, ghiChu },
+      { idThung: thung.id, idPhieu: phieu.id, ketQua, tongNhanh: tong, ghiChu },
       {
         onSuccess: (p) => {
           if (p.trang_thai === 'hoan_thanh' && p.ket_luan) {
@@ -186,8 +191,31 @@ const NhapKetQuaThungDialog: React.FC<Props> = ({ phieu, thung, onClose, onQuetT
           </p>
         )}
 
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-sm font-medium leading-tight">{t('giamSatChatLuong.nhap.tongNhanh')}</div>
+            <div className="text-[11px] text-muted-foreground leading-tight mt-0.5">{t('giamSatChatLuong.nhap.tongNhanhHint')}</div>
+            {loiTongNhanh && <div className="text-xs text-rose-600 mt-0.5">{t('giamSatChatLuong.nhap.tongNhanhLoi')}</div>}
+          </div>
+          <input
+            type="text"
+            inputMode="numeric"
+            value={tongNhanh}
+            onChange={(e) => {
+              setTongNhanh(e.target.value);
+              setLoiTongNhanh(false);
+            }}
+            onFocus={(e) => e.target.select()}
+            className={cn(
+              'h-11 w-20 rounded-lg border bg-background text-center text-base font-semibold tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/30',
+              loiTongNhanh ? 'border-rose-500' : 'border-border'
+            )}
+            aria-label={t('giamSatChatLuong.nhap.tongNhanh')}
+          />
+        </div>
+
         {nhom.soDo.length > 0 && (
-          <div className="space-y-2">
+          <div className="space-y-2 border-t border-border pt-3">
             {nhom.soDo.map((tc) => (
               <div key={tc.ma} className="flex items-center justify-between gap-3">
                 {nhan(tc)}

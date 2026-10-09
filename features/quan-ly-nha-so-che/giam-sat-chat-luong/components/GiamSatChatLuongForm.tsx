@@ -10,11 +10,13 @@ import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
 import Input from '../../../../components/ui/Input';
 import Textarea from '../../../../components/ui/Textarea';
 import Combobox from '../../../../components/ui/Combobox';
-import { TRANG_THAI, TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
-import { useHangHoaRefQuery } from '../../../../lib/hooks/use-ref-queries';
+import { TRANG_THAI } from '../../../../lib/constants';
 import { getTodayISO } from '../../../../lib/utils';
 import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
+import { useFarmHangHoaRefQuery } from '../../hang-hoa-phan-thuoc/hooks/use-farm-hang-hoa';
+import { useFarmDanhMucList } from '../../hang-hoa-phan-thuoc/hooks/use-farm-danh-muc';
 import { giamSatChatLuongFormSchema, type GiamSatChatLuongFormValues } from '../core/schema';
+import { locThanhPham } from '../core/thanh-pham';
 import type { GiamSatChatLuong } from '../core/types';
 import { useCreateGiamSatChatLuong, useUpdateGiamSatChatLuong } from '../hooks/use-giam-sat-chat-luong';
 
@@ -57,7 +59,8 @@ const GiamSatChatLuongForm: React.FC<Props> = ({
   const isEdit = !!initialData;
   const createMutation = useCreateGiamSatChatLuong();
   const updateMutation = useUpdateGiamSatChatLuong(onClose);
-  const { data: hangHoaList = [] } = useHangHoaRefQuery();
+  const { data: hangHoaList = [] } = useFarmHangHoaRefQuery();
+  const { data: danhMucList = [] } = useFarmDanhMucList();
 
   const defaultValues = useMemo<GiamSatChatLuongFormValues>(
     () =>
@@ -104,17 +107,17 @@ const GiamSatChatLuongForm: React.FC<Props> = ({
     [branches, allowedBranchIds, initialData?.id_chi_nhanh]
   );
 
-  const hangHoaOptions = useMemo(
-    () =>
-      hangHoaList
-        .filter((h) => h.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG || h.id === initialData?.id_hang_hoa)
-        .map((h) => ({
-          value: h.id,
-          label: h.ma_hang ? `${h.ma_hang} - ${h.ten_hang}` : h.ten_hang,
-          subLabel: h.ten_danh_muc || h.don_vi_tinh || undefined,
-        })),
-    [hangHoaList, initialData?.id_hang_hoa]
-  );
+  // Thành phẩm lấy từ danh mục hàng hoá Nhà sơ chế, chỉ nhánh "Thành phẩm"; giữ hàng đang chọn khi sửa.
+  const hangHoaOptions = useMemo(() => {
+    const thanhPham = locThanhPham(hangHoaList, danhMucList);
+    const dangChon = hangHoaList.find((h) => h.id === initialData?.id_hang_hoa);
+    const list = dangChon && !thanhPham.includes(dangChon) ? [dangChon, ...thanhPham] : thanhPham;
+    return list.map((h) => ({
+      value: h.id,
+      label: h.ma_hang ? `${h.ma_hang} - ${h.ten_hang}` : h.ten_hang,
+      subLabel: h.ten_danh_muc || h.don_vi_tinh || undefined,
+    }));
+  }, [hangHoaList, danhMucList, initialData?.id_hang_hoa]);
 
   const onSubmit: SubmitHandler<GiamSatChatLuongFormValues> = (values) => {
     if (isEdit && initialData) updateMutation.mutate({ id: initialData.id, data: values });

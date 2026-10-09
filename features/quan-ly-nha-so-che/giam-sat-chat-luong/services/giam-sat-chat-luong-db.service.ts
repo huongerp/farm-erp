@@ -35,9 +35,9 @@ const TABLE_TC = 'fp_farm_gscl_tieu_chi';
 const ROW_COLUMNS =
   'id,so_phieu,ngay,id_chi_nhanh,id_hang_hoa,ma_cay_hang,so_thung_cay,so_thung_mau,tieu_chi,trang_thai,ket_luan,' +
   'ghi_chu,id_nguoi_tao,tg_tao,tg_cap_nhat,tg_nop,id_nguoi_nop,chi_nhanh:fp_var_chi_nhanh(ten_chi_nhanh),' +
-  'hang_hoa:fp_mh_danh_sach_hang_hoa(ma_hang_hoa,ten_hang_hoa),thung:fp_farm_giam_sat_chat_luong_ct(da_kiem)';
+  'hang_hoa:fp_farm_danh_sach_hang_hoa(ma_hang_hoa,ten_hang_hoa),thung:fp_farm_giam_sat_chat_luong_ct(da_kiem)';
 
-const CT_COLUMNS = 'id,id_phieu,stt_thung,ma_tem,ket_qua,da_kiem,tg_kiem,id_nguoi_kiem,ghi_chu';
+const CT_COLUMNS = 'id,id_phieu,stt_thung,ma_tem,ket_qua,tong_nhanh,da_kiem,tg_kiem,id_nguoi_kiem,ghi_chu';
 const TC_COLUMNS = 'id,ma,ten,loai,don_vi,nguong_min,nguong_max,thu_tu,dang_dung';
 
 interface DbRow {
@@ -69,6 +69,7 @@ interface DbCtRow {
   stt_thung: number;
   ma_tem: string;
   ket_qua: KetQuaThung | null;
+  tong_nhanh: number | null;
   da_kiem: boolean;
   tg_kiem: string | null;
   id_nguoi_kiem: number | null;
@@ -150,6 +151,7 @@ function ctToModel(row: DbCtRow): ThungMau {
     stt_thung: row.stt_thung,
     ma_tem: row.ma_tem,
     ket_qua: row.ket_qua ?? {},
+    tong_nhanh: row.tong_nhanh,
     da_kiem: row.da_kiem,
     tg_kiem: row.tg_kiem,
     id_nguoi_kiem: idStr(row.id_nguoi_kiem),
@@ -398,6 +400,8 @@ export interface LuuKetQuaThungInput {
   idThung: string;
   idPhieu: string;
   ketQua: KetQuaThung;
+  /** Tổng số nhánh/nải trong thùng — mẫu số tỉ lệ lỗi. */
+  tongNhanh: number;
   ghiChu: string | null;
   idNguoi: string | null;
 }
@@ -408,6 +412,7 @@ export async function luuKetQuaThungDb(input: LuuKetQuaThungInput): Promise<Giam
     .from(TABLE_CT)
     .update({
       ket_qua: input.ketQua,
+      tong_nhanh: input.tongNhanh,
       ghi_chu: blank(input.ghiChu),
       da_kiem: true,
       tg_kiem: new Date().toISOString(),
@@ -478,7 +483,7 @@ export async function sapXepTieuChiDb(ids: string[]): Promise<void> {
 // ── Liên kết Đăng ký nhận hàng (xếp cây hàng lên xe) ──────────────────────────
 
 const PHIEU_QC_COLUMNS =
-  'id,so_phieu,ngay,id_chi_nhanh,trang_thai,ket_luan,so_thung_cay,ma_cay_hang,hang_hoa:fp_mh_danh_sach_hang_hoa(ten_hang_hoa)';
+  'id,so_phieu,ngay,id_chi_nhanh,trang_thai,ket_luan,so_thung_cay,ma_cay_hang,hang_hoa:fp_farm_danh_sach_hang_hoa(ten_hang_hoa)';
 
 interface DbPhieuQcRow {
   id: number;

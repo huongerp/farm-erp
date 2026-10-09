@@ -4,7 +4,7 @@ import { AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
-import { useHangHoaRefQuery } from '../../../../lib/hooks/use-ref-queries';
+import { useFarmHangHoaRefQuery } from '../../hang-hoa-phan-thuoc/hooks/use-farm-hang-hoa';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { useAuthStore } from '../../../../store/useStore';
 import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
@@ -92,7 +92,7 @@ const DanhSachTab: React.FC = () => {
     !viewScope.isLoading
   );
   const { data: branches = [] } = useBranches();
-  const { data: hangHoaList = [] } = useHangHoaRefQuery();
+  const { data: hangHoaList = [] } = useFarmHangHoaRefQuery();
   const tenHangHoa = useMemo(() => new Map(hangHoaList.map((h) => [h.id, h.ten_hang])), [hangHoaList]);
   const { data: viewingFull } = useGiamSatChatLuongById(viewing?.id);
   const viewingItem = viewingFull ?? pageList.find((p) => p.id === viewing?.id) ?? null;
