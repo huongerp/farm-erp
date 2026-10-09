@@ -10,6 +10,7 @@ import {
   GIOI_HAN,
   soKhopHeader,
   vungA1,
+  vungCanXoaKhiGhiDe,
   type CheDoGhi,
   type LechHeader,
   type MauSoCot,
@@ -96,8 +97,17 @@ async function batchUpdate(at: string, id: string, requests: unknown[], idempote
   });
 }
 
-/** Tạo tab nếu chưa có; tab có rồi thì nới lưới (không bao giờ thu nhỏ — giữ dữ liệu người dùng). */
-async function damBaoTab(at: string, file: ThongTinFile, tenTab: string, soDong: number, soCot: number): Promise<number> {
+/**
+ * Tạo tab nếu chưa có; tab có rồi thì nới lưới (không bao giờ thu nhỏ — giữ dữ liệu người dùng).
+ * Trả kèm số dòng của lưới sau khi nới — để không xoá vùng nằm ngoài lưới.
+ */
+async function damBaoTab(
+  at: string,
+  file: ThongTinFile,
+  tenTab: string,
+  soDong: number,
+  soCot: number,
+): Promise<{ sheetId: number; soDongLuoi: number }> {
   const co = file.tabs.find((t) => t.title === tenTab);
   if (!co) {
     const r = (await batchUpdate(
@@ -115,7 +125,7 @@ async function damBaoTab(at: string, file: ThongTinFile, tenTab: string, soDong:
       ],
       false,
     )) as { replies?: { addSheet?: { properties?: { sheetId?: number } } }[] };
-    return r.replies?.[0]?.addSheet?.properties?.sheetId ?? 0;
+    return { sheetId: r.replies?.[0]?.addSheet?.properties?.sheetId ?? 0, soDongLuoi: Math.max(soDong, 1000) };
   }
   if (co.rowCount < soDong || co.columnCount < soCot) {
     await batchUpdate(
@@ -135,7 +145,7 @@ async function damBaoTab(at: string, file: ThongTinFile, tenTab: string, soDong:
       true,
     );
   }
-  return co.sheetId;
+  return { sheetId: co.sheetId, soDongLuoi: Math.max(co.rowCount, soDong) };
 }
 
 async function ghiVung(at: string, id: string, range: string, values: OSheet[][]): Promise<void> {
@@ -280,7 +290,7 @@ export async function ghiBang(opts: {
 
   if (cheDo === 'ghi_de') {
     const tongDong = rows.length + 1;
-    const sheetId = await damBaoTab(at, file, tenTab, tongDong, Math.max(soCot, rongCu));
+    const { sheetId, soDongLuoi } = await damBaoTab(at, file, tenTab, tongDong, Math.max(soCot, rongCu));
     const tatCa: OSheet[][] = [header, ...rows];
     let dongBatDau = 1;
     for (const lo of chiaLo(tatCa, GIOI_HAN.loGhi)) {
@@ -288,10 +298,7 @@ export async function ghiBang(opts: {
       await ghiVung(at, id, vungA1(tenTab, `A${dongBatDau}:${cotChu(soCot)}${cuoi}`), lo);
       dongBatDau = cuoi + 1;
     }
-    const rong = Math.max(soCot, rongCu);
-    const canXoa = [vungA1(tenTab, `A${tongDong + 1}:${cotChu(rong)}`)];
-    if (rongCu > soCot) canXoa.push(vungA1(tenTab, `${cotChu(soCot + 1)}1:${cotChu(rongCu)}${tongDong}`));
-    await xoaVung(at, id, canXoa);
+    await xoaVung(at, id, vungCanXoaKhiGhiDe({ tenTab, tongDong, soDongLuoi, soCot, rongCu }));
     await batchUpdate(
       at,
       id,
@@ -305,7 +312,7 @@ export async function ghiBang(opts: {
   }
 
   const tabTrong = rongCu === 0;
-  const sheetId = await damBaoTab(at, file, tenTab, 1, soCot);
+  const { sheetId } = await damBaoTab(at, file, tenTab, 1, soCot);
   if (tabTrong) await ghiVung(at, id, vungA1(tenTab, `A1:${cotChu(soCot)}1`), [header]);
   for (const lo of chiaLo(rows, GIOI_HAN.loGhi)) await noiThem(at, id, tenTab, lo);
   await batchUpdate(at, id, yeuCauDinhDang(sheetId, soCot, mauSo, tabTrong), true);

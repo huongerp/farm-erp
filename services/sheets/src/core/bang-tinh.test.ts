@@ -8,6 +8,7 @@ import {
   kiemTraYeuCauXuat,
   soKhopHeader,
   vungA1,
+  vungCanXoaKhiGhiDe,
 } from './bang-tinh.ts';
 
 describe('cotChu / vungA1', () => {
@@ -104,5 +105,23 @@ describe('dinhDangSoSheet', () => {
   it('ngày có mẫu, số thường để Google tự hiển thị', () => {
     expect(dinhDangSoSheet('date')).toEqual({ type: 'DATE', pattern: 'dd/mm/yyyy' });
     expect(dinhDangSoSheet('number')).toBeNull();
+  });
+});
+
+describe('vungCanXoaKhiGhiDe', () => {
+  it('lưới vừa khít số dòng ghi → không xoá vùng đuôi (tránh "exceeds grid limits")', () => {
+    expect(vungCanXoaKhiGhiDe({ tenTab: 'Data', tongDong: 3397, soDongLuoi: 3397, soCot: 32, rongCu: 0 })).toEqual([]);
+  });
+
+  it('lưới còn dòng phía dưới → xoá đuôi theo bề rộng lớn hơn của bảng cũ/mới', () => {
+    expect(vungCanXoaKhiGhiDe({ tenTab: 'Data', tongDong: 10, soDongLuoi: 1000, soCot: 3, rongCu: 2 })).toEqual(["'Data'!A11:C"]);
+  });
+
+  it('bảng cũ rộng hơn → xoá thêm phần cột thừa trong phạm vi dòng mới', () => {
+    expect(vungCanXoaKhiGhiDe({ tenTab: 'Báo cáo', tongDong: 5, soDongLuoi: 5, soCot: 2, rongCu: 4 })).toEqual(["'Báo cáo'!C1:D5"]);
+    expect(vungCanXoaKhiGhiDe({ tenTab: 'Báo cáo', tongDong: 5, soDongLuoi: 20, soCot: 2, rongCu: 4 })).toEqual([
+      "'Báo cáo'!A6:D",
+      "'Báo cáo'!C1:D5",
+    ]);
   });
 });

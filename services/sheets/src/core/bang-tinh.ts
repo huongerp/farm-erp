@@ -37,6 +37,25 @@ export function vungA1(tenTab: string, vung?: string): string {
   return vung ? `${tab}!${vung}` : tab;
 }
 
+/**
+ * Vùng phải xoá sau khi ghi đè `tongDong` dòng (gồm header): đuôi dòng thừa của bảng cũ và
+ * phần cột bảng cũ rộng hơn bảng mới. Vùng đuôi chỉ có khi lưới còn dòng phía dưới — lưới
+ * vừa khít mà vẫn gửi `A{tongDong+1}` thì Google báo "exceeds grid limits".
+ */
+export function vungCanXoaKhiGhiDe(o: {
+  tenTab: string;
+  tongDong: number;
+  soDongLuoi: number;
+  soCot: number;
+  rongCu: number;
+}): string[] {
+  const { tenTab, tongDong, soDongLuoi, soCot, rongCu } = o;
+  const vung: string[] = [];
+  if (soDongLuoi > tongDong) vung.push(vungA1(tenTab, `A${tongDong + 1}:${cotChu(Math.max(soCot, rongCu))}`));
+  if (rongCu > soCot) vung.push(vungA1(tenTab, `${cotChu(soCot + 1)}1:${cotChu(rongCu)}${tongDong}`));
+  return vung;
+}
+
 /** Bỏ ký tự điều khiển (xuống dòng, tab…) — Google từ chối chúng trong tên tab/file. */
 function boKyTuDieuKhien(s: string): string {
   return Array.from(s)
