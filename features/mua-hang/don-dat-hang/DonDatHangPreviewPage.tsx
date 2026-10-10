@@ -1,213 +1,46 @@
 /**
- * Trang preview đơn đặt hàng (mở tab mới) – toolbar Đóng + Tải (PDF/DOC/XLSX) + In.
- * Route: /mua-hang/don-dat-hang/preview/:id
- * Bố cục tham chiếu: Phiếu đề xuất vật tư (PhieuDeXuatVatTuPreviewPage).
+ * Trang in đơn đặt hàng. Route: /mua-hang/don-dat-hang/preview/:id — khung in dùng chung (khổ, hướng, lề, phông, cỡ chữ, cột chỉnh trên bảng cài đặt).
  */
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React from 'react';
+import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
-import { X, Printer, Download, ChevronDown, FileText, FileType, FileSpreadsheet } from 'lucide-react';
+import { FileSpreadsheet } from 'lucide-react';
+import PhieuInPage from '../../../components/shared/phieu-in/PhieuInPage';
 import { useDonDatHangById } from './hooks/use-don-dat-hang';
-import { exportDonDatHangToPDF, exportDonDatHangToDoc, exportDonDatHangToXLSX } from './utils/export-don-dat-hang';
+import { exportDonDatHangToXLSX, getFileName } from './utils/export-don-dat-hang';
 import DonDatHangPreviewContent from './components/DonDatHangPreviewContent';
 
-export type DonDatHangExportFormat = 'pdf' | 'doc' | 'xlsx';
-
-const EXPORT_OPTIONS: { format: DonDatHangExportFormat; labelKey: string; icon: React.ReactNode }[] = [
-  { format: 'pdf', labelKey: 'donDatHang.preview.downloadPdf', icon: <FileText size={16} /> },
-  { format: 'doc', labelKey: 'donDatHang.preview.downloadDoc', icon: <FileType size={16} /> },
-  { format: 'xlsx', labelKey: 'donDatHang.preview.downloadXlsx', icon: <FileSpreadsheet size={16} /> },
-];
+const MAC_DINH = { kho: 'a4', huong: 'doc', leMm: 15 } as const;
 
 const DonDatHangPreviewPage: React.FC = () => {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const { data: po, isLoading, isError, error, refetch } = useDonDatHangById(id ?? undefined);
-  const [exporting, setExporting] = useState(false);
-  const [downloadOpen, setDownloadOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!po) return;
-    const prev = document.title;
-    document.title = `${t('donDatHang.preview.title')} - ${po.so_po}`;
-    return () => {
-      document.title = prev;
-    };
-  }, [po, t]);
-
-  const handleClose = useCallback(() => {
-    if (window.history.length > 1) {
-      navigate(-1);
-    } else {
-      // window.open(..., 'noopener') → window.opener === null, browser chặn window.close().
-      // Điều hướng về danh sách của module để vẫn thoát được khi mở qua deep-link / F5.
-      navigate('/mua-hang/don-dat-hang', { replace: true });
-    }
-  }, [navigate]);
-
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        if (downloadOpen) setDownloadOpen(false);
-        else handleClose();
-      }
-    };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  }, [handleClose, downloadOpen]);
-
-  useEffect(() => {
-    if (!downloadOpen) return;
-    const handler = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setDownloadOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [downloadOpen]);
-
-  const handlePrint = () => {
-    const styleEl = document.createElement('style');
-    styleEl.id = 'don-dat-hang-print-page-override';
-    styleEl.innerHTML = '@page { margin: 15mm 15mm 15mm 20mm !important; size: A4 portrait; }';
-    document.head.appendChild(styleEl);
-    const cleanup = () => {
-      document.getElementById('don-dat-hang-print-page-override')?.remove();
-      window.removeEventListener('afterprint', cleanup);
-    };
-    window.addEventListener('afterprint', cleanup);
-    window.print();
-  };
-
-  const handleExport = useCallback(
-    async (format: DonDatHangExportFormat) => {
-      if (!po) return;
-      setDownloadOpen(false);
-      setExporting(true);
-      try {
-        const chiTiet = po.chi_tiet ?? [];
-        if (format === 'pdf') await exportDonDatHangToPDF(po, chiTiet);
-        else if (format === 'doc') await exportDonDatHangToDoc(po, chiTiet);
-        else if (format === 'xlsx') await exportDonDatHangToXLSX(po, chiTiet);
-      } catch (e) {
-        if (import.meta.env.DEV) console.error('Export error:', e);
-        toast.error(t('common.exportError'));
-      } finally {
-        setExporting(false);
-      }
-    },
-    [po, t]
-  );
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-muted/30">
-        <div
-          className="h-10 w-10 rounded-full border-2 border-primary/30 border-t-primary animate-spin"
-          aria-label={t('common.loading')}
-        />
-      </div>
-    );
-  }
-
-  const notFound = !isLoading && !po && !isError;
-  const loadError = isError;
-
-  if (notFound || loadError) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-muted/30 p-4">
-        <p className="text-destructive font-medium text-center">
-          {loadError
-            ? (error?.message ?? t('donDatHang.preview.loadError'))
-            : t('donDatHang.preview.notFound')}
-        </p>
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          {loadError && (
-            <button
-              type="button"
-              onClick={() => refetch()}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-card hover:bg-muted/50 font-medium"
-            >
-              {t('common.retry')}
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={handleClose}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white hover:bg-primary/90"
-          >
-            <X size={16} />
-            {t('common.close')}
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const loi = isError
+    ? (error?.message ?? t('donDatHang.preview.loadError'))
+    : !isLoading && !po
+      ? t('donDatHang.preview.notFound')
+      : null;
 
   return (
-    <>
-      <div
-        className="don-dat-hang-preview-backdrop fixed inset-0 z-[70] flex flex-col bg-muted/90"
-        role="main"
-        aria-label={t('donDatHang.preview.title')}
-      >
-        <div className="don-dat-hang-preview-toolbar flex items-center justify-between gap-3 px-4 py-3 bg-card border-b border-border shadow-sm shrink-0 print:hidden">
-          <button
-            type="button"
-            onClick={handleClose}
-            className="p-2 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
-            aria-label={t('common.close')}
-          >
-            <X size={20} />
-          </button>
-          <div className="flex items-center gap-2">
-            <div className="relative" ref={dropdownRef}>
-              <button
-                type="button"
-                onClick={() => setDownloadOpen((o) => !o)}
-                disabled={exporting}
-                className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border border-border bg-card hover:bg-muted/50 disabled:opacity-70 disabled:pointer-events-none"
-              >
-                <Download size={16} />
-                {t('donDatHang.preview.download')}
-                <ChevronDown size={14} className={`transition-transform ${downloadOpen ? 'rotate-180' : ''}`} />
-              </button>
-              {downloadOpen && (
-                <div className="absolute right-0 top-full mt-1 min-w-[120px] py-1 bg-card rounded-xl border border-border shadow-xl z-[100]">
-                  {EXPORT_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.format}
-                      type="button"
-                      onClick={() => handleExport(opt.format)}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted/60 rounded-none first:rounded-t-xl last:rounded-b-xl"
-                    >
-                      {opt.icon}
-                      {t(opt.labelKey)}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            <button
-              type="button"
-              onClick={handlePrint}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-primary text-white hover:bg-primary/90"
-            >
-              <Printer size={16} />
-              {t('donDatHang.preview.print')}
-            </button>
-          </div>
-        </div>
-
-        <div className="don-dat-hang-preview-body flex-1 overflow-auto p-4 md:p-6 flex justify-center print:p-0 print:overflow-visible">
-          <div className="bg-white shadow-xl rounded-sm don-dat-hang-preview-content-wrapper print:shadow-none" style={{ width: '210mm', minHeight: '297mm' }}>
-            <DonDatHangPreviewContent po={po!} />
-          </div>
-        </div>
-      </div>
-    </>
+    <PhieuInPage
+      title={po ? `${t('donDatHang.preview.title')} - ${po.so_po}` : t('donDatHang.preview.title')}
+      mauKey="don-dat-hang"
+      macDinh={MAC_DINH}
+      tenFile={po ? getFileName(po) : 'don-dat-hang'}
+      duongDanVe="/mua-hang/don-dat-hang"
+      isLoading={isLoading}
+      loi={loi}
+      onRetry={isError ? () => void refetch() : undefined}
+      taiThem={
+        po
+          ? [{ key: 'xlsx', label: 'XLSX', icon: <FileSpreadsheet size={16} />, onClick: () => exportDonDatHangToXLSX(po, po.chi_tiet ?? []) }]
+          : undefined
+      }
+    >
+      {po && <DonDatHangPreviewContent po={po} />}
+    </PhieuInPage>
   );
 };
 

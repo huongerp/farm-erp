@@ -53,22 +53,52 @@ function sangRgb(mau: string): string {
 }
 const doiMau = (v: string) => v.replace(/\b(?:oklch|oklab|lch|lab|color)\([^()]*\)/g, sangRgb);
 
+/** Nhân cỡ chữ đã tính (`13.3333px`) theo tỉ lệ — bản DOC không có `zoom`. */
+function nhanCoChu(v: string, tiLe: number): string {
+  if (tiLe === 1) return v;
+  const m = /^([\d.]+)px$/.exec(v.trim());
+  return m ? `${(Number(m[1]) * tiLe).toFixed(2)}px` : v;
+}
+
 /** Chép style đã tính (Tailwind) vào `style` inline, bỏ class — dùng được ở nơi không có CSS của app. */
-function nhanBanKemStyle(src: Element, dst: Element) {
+function nhanBanKemStyle(src: Element, dst: Element, tiLeChu = 1) {
   const cs = getComputedStyle(src);
-  const decl = CSS_GIU.map((p) => `${p}:${doiMau(cs.getPropertyValue(p))}`).join(';');
+  const decl = CSS_GIU.map((p) => {
+    const v = doiMau(cs.getPropertyValue(p));
+    return `${p}:${p === 'font-size' ? nhanCoChu(v, tiLeChu) : v}`;
+  }).join(';');
   (dst as HTMLElement).setAttribute('style', decl);
   dst.removeAttribute('class');
-  for (let i = 0; i < src.children.length; i++) nhanBanKemStyle(src.children[i], dst.children[i]);
+  for (let i = 0; i < src.children.length; i++) nhanBanKemStyle(src.children[i], dst.children[i], tiLeChu);
 }
 
 /** Bản HTML độc lập của nút preview (style inline, màu rgb, ảnh URL tuyệt đối). */
-function htmlDocLap(node: HTMLElement, bo?: { paddingMm?: number }): string {
+function htmlDocLap(node: HTMLElement, bo?: { paddingMm?: number; tiLeChu?: number }): string {
   const clone = node.cloneNode(true) as HTMLElement;
-  nhanBanKemStyle(node, clone);
+  nhanBanKemStyle(node, clone, bo?.tiLeChu);
   if (bo?.paddingMm != null) clone.style.padding = `${bo.paddingMm}mm`;
   clone.querySelectorAll('img').forEach((img) => img.setAttribute('src', (img as HTMLImageElement).src));
+  // Lớp phủ kéo cột chỉ dùng trên màn hình.
+  clone.querySelectorAll('[data-phieu-in-bo-khi-xuat]').forEach((el) => el.remove());
   return clone.outerHTML;
+}
+
+/**
+ * Đọc nút ở trạng thái "không zoom", bề rộng `rongMm` — cỡ chữ của khung in làm bằng CSS
+ * `zoom`, html2canvas / Word không hiểu `zoom` nên phải dựng bản phẳng. Đổi style rồi trả
+ * lại ngay trong cùng một tick nên màn hình không nháy.
+ */
+function docKhongZoom<T>(node: HTMLElement, rongMm: number, doc: () => T): T {
+  const zoom = node.style.zoom;
+  const width = node.style.width;
+  node.style.zoom = '1';
+  node.style.width = `${rongMm}mm`;
+  try {
+    return doc();
+  } finally {
+    node.style.zoom = zoom;
+    node.style.width = width;
+  }
 }
 
 export interface ThamSoPdf {
@@ -77,18 +107,30 @@ export interface ThamSoPdf {
   /** Khổ giấy (mm) theo hướng. */
   wMm: number;
   hMm: number;
+  /** Lề trang (mm) — áp cho MỌI trang, nội dung tràn trang sau vẫn chừa lề. */
+  leMm: number;
+  /** Tỉ lệ cỡ chữ (zoom của khung in), 1 = như thiết kế. */
+  tiLe?: number;
   /** Tên file không kèm đuôi. */
   tenFile: string;
 }
 
-/** PDF đúng khổ / hướng: dựng bản độc lập trong iframe trống, chụp html2canvas rồi cắt theo trang. */
+/**
+ * PDF đúng khổ / hướng: dựng bản độc lập trong iframe trống, chụp html2canvas rồi cắt theo trang.
+ * `node` là phần NỘI DUNG (không gồm lề). Cỡ chữ: dựng bản rộng `nội dung / tiLe` rồi co ảnh
+ * về đúng bề rộng nội dung — cùng hiệu ứng với `zoom` trên màn hình.
+ */
 export async function taiPdfTuNode(node: HTMLElement, ts: ThamSoPdf): Promise<void> {
   const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([import('jspdf'), import('html2canvas')]);
-  const { wMm, hMm } = ts;
-  const body = htmlDocLap(node);
+  const { wMm, hMm, leMm } = ts;
+  const tiLe = ts.tiLe && ts.tiLe > 0 ? ts.tiLe : 1;
+  const rongNoiDung = wMm - 2 * leMm;
+  const caoNoiDung = hMm - 2 * leMm;
+  const rongDung = rongNoiDung / tiLe;
+  const body = docKhongZoom(node, rongDung, () => htmlDocLap(node));
 
   const iframe = document.createElement('iframe');
-  iframe.style.cssText = `position:fixed;left:-10000px;top:0;width:${wMm}mm;height:${hMm}mm;border:0;visibility:hidden`;
+  iframe.style.cssText = `position:fixed;left:-10000px;top:0;width:${rongDung}mm;height:${hMm}mm;border:0;visibility:hidden`;
   iframe.srcdoc = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>*{box-sizing:border-box}body{margin:0;background:#fff}</style></head><body>${body}</body></html>`;
   document.body.appendChild(iframe);
   try {
@@ -116,12 +158,16 @@ export async function taiPdfTuNode(node: HTMLElement, ts: ThamSoPdf): Promise<vo
     const huong = ts.huong === 'ngang' ? 'l' : 'p';
     const pdf = new jsPDF({ orientation: huong, unit: 'mm', format: ts.kho });
     const img = canvas.toDataURL('image/jpeg', 0.92);
-    const hAnh = (canvas.height / canvas.width) * wMm;
+    const hAnh = (canvas.height / canvas.width) * rongNoiDung;
     // Nội dung dài hơn trang chỉ vì sai số làm tròn thì không sinh trang trắng.
-    const soTrang = Math.max(1, Math.ceil((hAnh - 1) / hMm));
+    const soTrang = Math.max(1, Math.ceil((hAnh - 1) / caoNoiDung));
+    pdf.setFillColor(255, 255, 255);
     for (let i = 0; i < soTrang; i++) {
       if (i > 0) pdf.addPage(ts.kho, huong);
-      pdf.addImage(img, 'JPEG', 0, -i * hMm, wMm, hAnh);
+      pdf.addImage(img, 'JPEG', leMm, leMm - i * caoNoiDung, rongNoiDung, hAnh);
+      // Ảnh dài vẽ tràn qua lề trên / dưới — phủ trắng để trang nào cũng đủ lề.
+      pdf.rect(0, 0, wMm, leMm, 'F');
+      pdf.rect(0, hMm - leMm, wMm, leMm, 'F');
     }
     taiVe(pdf.output('blob'), `${ts.tenFile}.pdf`);
   } finally {
@@ -132,13 +178,17 @@ export async function taiPdfTuNode(node: HTMLElement, ts: ThamSoPdf): Promise<vo
 export interface ThamSoDoc {
   /** Giá trị `size` của @page, vd `A4 landscape`. */
   pageSize: string;
+  /** Bề rộng giấy (mm) theo hướng. */
+  wMm: number;
   leMm: number;
+  tiLe?: number;
   tenFile: string;
 }
 
 export function taiDocTuNode(node: HTMLElement, ts: ThamSoDoc): void {
-  // Lề đã do @page lo — bỏ padding của tờ giấy trên màn hình.
-  const body = htmlDocLap(node, { paddingMm: 0 });
+  const tiLe = ts.tiLe && ts.tiLe > 0 ? ts.tiLe : 1;
+  // Lề đã do @page lo — `node` là phần nội dung. Word không có zoom → nhân cỡ chữ.
+  const body = docKhongZoom(node, ts.wMm - 2 * ts.leMm, () => htmlDocLap(node, { paddingMm: 0, tiLeChu: tiLe }));
   const html = [
     '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">',
     '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>',

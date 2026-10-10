@@ -1,6 +1,6 @@
 /**
  * Dữ liệu mẫu in phiếu bảo trì / sửa chữa — thuần, không phụ thuộc React / store.
- * HTML dựng ở utils/phieu-in-html.ts từ kết quả của `duLieuPhieuIn`.
+ * Bản in dựng ở components/preview/ (React) từ kết quả của `duLieuPhieuIn`.
  */
 import type { TFunction } from 'i18next';
 import type { PhieuBaoTriSuaChua, TrangThaiPhieu } from './types';

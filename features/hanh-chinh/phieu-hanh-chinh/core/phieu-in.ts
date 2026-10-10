@@ -1,6 +1,6 @@
 /**
  * Dữ liệu mẫu in phiếu hành chính — thuần, không phụ thuộc React / store.
- * HTML dựng ở utils/phieu-in-html.ts từ kết quả của `duLieuPhieuIn`.
+ * Bản in dựng ở components/preview/ (React) từ kết quả của `duLieuPhieuIn`.
  */
 import type { TFunction } from 'i18next';
 import type { AdminFormRequest } from './types';

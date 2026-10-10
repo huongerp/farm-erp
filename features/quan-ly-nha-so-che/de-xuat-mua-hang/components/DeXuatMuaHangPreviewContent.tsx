@@ -19,7 +19,7 @@ const DeXuatMuaHangPreviewContent: React.FC<Props> = ({ phieu }) => {
   const chiTiet = phieu.chi_tiet ?? [];
 
   return (
-    <div className="de-xuat-mua-hang-preview-content de-xuat-mua-hang-preview bg-white text-gray-900 font-sans text-[10pt] pt-[15mm] pr-[15mm] pb-[15mm] pl-[20mm] print:p-0 min-h-full flex flex-col">
+    <div className="de-xuat-mua-hang-preview-content de-xuat-mua-hang-preview bg-white text-gray-900 font-sans text-[10pt] min-h-[var(--in-trang-h,auto)] flex flex-col">
       {/* Header công ty */}
       <div className="flex items-start gap-4 pb-4 mb-4 border-b-2 border-gray-300">
         {companyInfo.appLogo && (

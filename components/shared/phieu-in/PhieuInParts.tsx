@@ -7,16 +7,12 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn, formatDateTime } from '../../../lib/utils';
 import { useUIStore } from '../../../store/useStore';
+import { usePhieuIn } from './phieu-in-context';
 
 interface KhungPhieuProps {
-  /** Khổ giấy (mm) theo hướng đang in. */
-  wMm: number;
-  hMm: number;
-  /** Lề trang (mm) — trên màn hình là padding, khi in do @page lo. */
-  leMm: number;
   title: string;
   subtitle?: string;
-  /** Khổ nhỏ (A5): chữ và header thu nhỏ. */
+  /** Khổ nhỏ: chữ và header thu nhỏ. Mặc định theo khổ đang in (A5 = compact). */
   compact?: boolean;
   /**
    * Class gốc của tờ giấy — CSS in (`@media print` trong index.css) và hàm xuất file tìm
@@ -26,30 +22,28 @@ interface KhungPhieuProps {
   children: React.ReactNode;
 }
 
-/** Tờ giấy đúng khổ: header công ty, tiêu đề, nội dung, chân "In lúc". */
+/** Cỡ chữ gốc (pt) của KhungPhieu — truyền cho `PhieuInPage coChuGocPt`. */
+export const coChuKhungPhieu = (kho: 'a4' | 'a5') => (kho === 'a5' ? 9 : 10.5);
+
+/**
+ * Nội dung tờ giấy: header công ty, tiêu đề, nội dung, chân "In lúc". Khổ, lề, cỡ chữ do khung
+ * `PhieuInPage` lo; khối này cao tối thiểu đúng một trang (`--in-trang-h`) để chân nằm cuối trang.
+ */
 export const KhungPhieu: React.FC<KhungPhieuProps> = ({
-  wMm,
-  hMm,
-  leMm,
   title,
   subtitle,
-  compact = false,
+  compact: compactProp,
   className = 'phieu-in-content',
   children,
 }) => {
   const { t } = useTranslation();
   const company = useUIStore((s) => s.companyInfo);
+  const { compact: compactKho } = usePhieuIn();
+  const compact = compactProp ?? compactKho;
   return (
     <div
-      className={cn(className, 'bg-white text-gray-900 font-sans box-border flex flex-col p-[var(--le)] print:p-0')}
-      style={
-        {
-          '--le': `${leMm}mm`,
-          width: `${wMm}mm`,
-          minHeight: `${hMm}mm`,
-          fontSize: compact ? '9pt' : '10.5pt',
-        } as React.CSSProperties
-      }
+      className={cn(className, 'bg-white text-gray-900 font-sans box-border flex flex-col')}
+      style={{ minHeight: 'var(--in-trang-h, auto)', fontSize: compact ? '9pt' : '10.5pt' }}
     >
       <div className={cn('flex items-center gap-3 border-b-2 border-gray-300', compact ? 'pb-2 mb-2' : 'pb-3 mb-3')}>
         {company.appLogo && (

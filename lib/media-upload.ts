@@ -14,6 +14,7 @@ export type ThuMucAnh =
   | 'nhan-vien'
   | 'hop-dong'
   | 'dang-ky-nhan-hang'
+  | 'dang-ky-tham-quan'
   | 'bao-cao-nhan-cong'
   | 'giam-sat-chat-luong'
   | 'cong-ty';

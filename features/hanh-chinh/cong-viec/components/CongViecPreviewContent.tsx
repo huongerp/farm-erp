@@ -35,7 +35,7 @@ const CongViecPreviewContent: React.FC<Props> = ({ record, congViecCon = [], get
   );
 
   return (
-    <div className="cong-viec-preview-content bg-white text-gray-900 font-sans text-[10pt] p-5 min-h-full">
+    <div className="cong-viec-preview-content bg-white text-gray-900 font-sans text-[10pt] min-h-[var(--in-trang-h,auto)]">
       {/* Header công ty */}
       <div className="flex items-start gap-4 pb-4 mb-4 border-b-2 border-gray-300">
         {companyInfo.appLogo && (

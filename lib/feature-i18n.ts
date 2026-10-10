@@ -44,6 +44,7 @@ export type FeatureI18nKey =
   | 'thong-ke-san-xuat'
   | 'thu-hoach'
   | 'dang-ky-nhan-hang'
+  | 'dang-ky-tham-quan'
   | 'giam-sat-chat-luong'
   | 'ket-noi-google'
   | 'kiem-ke-kho-phan-thuoc'
@@ -83,6 +84,7 @@ const FEATURE_I18N_KEYS = new Set<FeatureI18nKey>([
   'thong-ke-san-xuat',
   'thu-hoach',
   'dang-ky-nhan-hang',
+  'dang-ky-tham-quan',
   'giam-sat-chat-luong',
   'ket-noi-google',
   'kiem-ke-kho-phan-thuoc',
@@ -136,6 +138,7 @@ const FEATURE_I18N_LOADERS: Record<FeatureI18nKey, () => Promise<{ default: Reco
   'thong-ke-san-xuat': () => import('../features/quan-ly-nha-so-che/thong-ke-san-xuat/locales/vi.json'),
   'thu-hoach': () => import('../features/quan-ly-nha-so-che/thu-hoach/locales/vi.json'),
   'dang-ky-nhan-hang': () => import('../features/quan-ly-nha-so-che/dang-ky-nhan-hang/locales/vi.json'),
+  'dang-ky-tham-quan': () => import('../features/quan-ly-nha-so-che/dang-ky-tham-quan/locales/vi.json'),
   'giam-sat-chat-luong': () => import('../features/quan-ly-nha-so-che/giam-sat-chat-luong/locales/vi.json'),
   'ket-noi-google': () => import('../features/he-thong/ket-noi-google/locales/vi.json'),
   'kiem-ke-kho-phan-thuoc': () => import('../features/quan-ly-nha-so-che/kiem-ke-kho-phan-thuoc/locales/vi.json'),
@@ -158,6 +161,7 @@ const FEATURE_I18N_DEPS: Partial<Record<FeatureI18nKey, FeatureI18nKey[]>> = {
   'bao-tri-sua-chua': ['danh-muc-tai-san', 'thiet-lap-tai-san', 'thu-chi-quy'],
   'cap-phat-thu-hoi': ['danh-muc-tai-san', 'thiet-lap-tai-san'],
   'dang-ky-nhan-hang': ['giam-sat-chat-luong'],
+  'dang-ky-tham-quan': ['dang-ky-nhan-hang'],
   'danh-muc-tai-san': ['bao-tri-sua-chua', 'cap-phat-thu-hoi', 'thiet-lap-tai-san'],
   'danh-sach-doi-tac': ['phieu-kho'],
   'danh-sach-hang-hoa': ['danh-muc-hang-hoa', 'ton-kho'],

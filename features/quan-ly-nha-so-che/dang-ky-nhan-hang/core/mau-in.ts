@@ -14,62 +14,25 @@ dayjs.extend(timezone);
 
 export const LOAI_IN = ['dang-ky', 'kiem-hang', 'tong-hop'] as const;
 export type LoaiIn = (typeof LOAI_IN)[number];
-export const KHO_GIAY = ['a4', 'a5'] as const;
-export type KhoGiay = (typeof KHO_GIAY)[number];
-export const HUONG_GIAY = ['doc', 'ngang'] as const;
-export type HuongGiay = (typeof HUONG_GIAY)[number];
 
-export interface ThamSoIn {
-  loai: LoaiIn;
-  kho: KhoGiay;
-  huong: HuongGiay;
+const laLoaiIn = (v: string | null | undefined): v is LoaiIn => v != null && (LOAI_IN as readonly string[]).includes(v);
+
+/** Loại phiếu trong URL preview; lạ → phiếu đăng ký. Khổ / hướng / cỡ chữ do khung in nhớ theo mẫu. */
+export function docLoaiIn(sp: URLSearchParams): LoaiIn {
+  const v = sp.get('loai');
+  return laLoaiIn(v) ? v : 'dang-ky';
 }
 
-/** Phiếu đăng ký mặc định A5 dọc — vừa cỡ mẫu giấy đang dùng ở cổng. */
-export const THAM_SO_IN_MAC_DINH: ThamSoIn = { loai: 'dang-ky', kho: 'a5', huong: 'doc' };
-
-const thuoc = <T extends string>(ds: readonly T[], v: string | null | undefined): v is T =>
-  v != null && (ds as readonly string[]).includes(v);
-
-/** Chỉ phiếu đăng ký được chọn khổ / hướng; hai loại còn lại cố định A4 dọc. */
-export function chuanHoaThamSoIn(v: { loai?: string | null; kho?: string | null; huong?: string | null }): ThamSoIn {
-  const loai = thuoc(LOAI_IN, v.loai) ? v.loai : THAM_SO_IN_MAC_DINH.loai;
-  if (loai !== 'dang-ky') return { loai, kho: 'a4', huong: 'doc' };
-  return {
-    loai,
-    kho: thuoc(KHO_GIAY, v.kho) ? v.kho : THAM_SO_IN_MAC_DINH.kho,
-    huong: thuoc(HUONG_GIAY, v.huong) ? v.huong : THAM_SO_IN_MAC_DINH.huong,
-  };
+export function taoUrlPreview(id: string, loai: LoaiIn = 'dang-ky'): string {
+  return `/quan-ly-nha-so-che/dang-ky-nhan-hang/preview/${encodeURIComponent(id)}?loai=${loai}`;
 }
 
-export function docThamSoIn(sp: URLSearchParams): ThamSoIn {
-  return chuanHoaThamSoIn({ loai: sp.get('loai'), kho: sp.get('kho'), huong: sp.get('huong') });
-}
-
-export function taoUrlPreview(id: string, ts: Partial<ThamSoIn> = {}): string {
-  const p = chuanHoaThamSoIn(ts);
-  const q = new URLSearchParams({ loai: p.loai });
-  if (p.loai === 'dang-ky') {
-    q.set('kho', p.kho);
-    q.set('huong', p.huong);
-  }
-  return `/quan-ly-nha-so-che/dang-ky-nhan-hang/preview/${encodeURIComponent(id)}?${q.toString()}`;
-}
-
-/** Kích thước tờ giấy (mm). */
-export function kichThuocGiay(kho: KhoGiay, huong: HuongGiay): { wMm: number; hMm: number } {
-  const [ngan, dai] = kho === 'a4' ? [210, 297] : [148, 210];
-  return huong === 'doc' ? { wMm: ngan, hMm: dai } : { wMm: dai, hMm: ngan };
-}
-
-/** Lề in (mm) — A5 hẹp hơn để còn chỗ cho nội dung. */
-export function leTrang(kho: KhoGiay): number {
-  return kho === 'a4' ? 15 : 10;
-}
-
-/** Chuỗi cho CSS `@page { size: … }`, vd `A5 landscape`. */
-export function cssPageSize(kho: KhoGiay, huong: HuongGiay): string {
-  return `${kho.toUpperCase()} ${huong === 'doc' ? 'portrait' : 'landscape'}`;
+/**
+ * Mặc định in của từng loại: phiếu đăng ký A5 dọc (vừa mẫu giấy ở cổng, lề hẹp),
+ * kiểm hàng / tổng hợp A4 dọc. Người dùng đổi trên trang preview thì khung in nhớ đè.
+ */
+export function macDinhIn(loai: LoaiIn): { kho: 'a4' | 'a5'; huong: 'doc' | 'ngang'; leMm: number } {
+  return loai === 'dang-ky' ? { kho: 'a5', huong: 'doc', leMm: 10 } : { kho: 'a4', huong: 'doc', leMm: 15 };
 }
 
 export function tenFileIn(loai: LoaiIn, phieu: Pick<DangKyNhanHang, 'id' | 'so_xe' | 'ngay_dang_ky'>): string {

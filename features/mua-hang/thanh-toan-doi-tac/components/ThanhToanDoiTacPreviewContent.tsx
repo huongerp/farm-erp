@@ -22,7 +22,7 @@ const ThanhToanDoiTacPreviewContent: React.FC<Props> = ({ data }) => {
   const companyInfo = useUIStore((s) => s.companyInfo);
 
   return (
-    <div className="thanh-toan-doi-tac-preview-content bg-white text-gray-900 font-sans text-[10pt] p-5 min-h-full">
+    <div className="thanh-toan-doi-tac-preview-content bg-white text-gray-900 font-sans text-[10pt] min-h-[var(--in-trang-h,auto)]">
       <div className="flex items-start gap-4 pb-4 mb-4 border-b-2 border-gray-300">
         {companyInfo.appLogo && (
           <img src={companyInfo.appLogo} alt="Logo" className="w-16 h-16 object-contain shrink-0" />

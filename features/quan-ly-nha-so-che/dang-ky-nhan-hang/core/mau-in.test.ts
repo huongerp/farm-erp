@@ -1,38 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import {
-  chuanHoaThamSoIn,
-  cssPageSize,
-  docThamSoIn,
-  kichThuocGiay,
-  taoSheetXlsx,
-  taoUrlPreview,
-  tenFileIn,
-} from './mau-in';
+import { docLoaiIn, macDinhIn, taoSheetXlsx, taoUrlPreview, tenFileIn } from './mau-in';
 import { gopTheoHangHoa } from './gop-hang-hoa';
 import type { DangKyNhanHang, DangKyNhanHangCt } from './types';
 
 describe('tham số mẫu in', () => {
-  it('khổ / hướng giấy (mm)', () => {
-    expect(kichThuocGiay('a4', 'doc')).toEqual({ wMm: 210, hMm: 297 });
-    expect(kichThuocGiay('a4', 'ngang')).toEqual({ wMm: 297, hMm: 210 });
-    expect(kichThuocGiay('a5', 'doc')).toEqual({ wMm: 148, hMm: 210 });
-    expect(kichThuocGiay('a5', 'ngang')).toEqual({ wMm: 210, hMm: 148 });
-    expect(cssPageSize('a5', 'ngang')).toBe('A5 landscape');
+  it('mặc định khổ: đăng ký A5 dọc, còn lại A4 dọc', () => {
+    expect(macDinhIn('dang-ky')).toMatchObject({ kho: 'a5', huong: 'doc' });
+    expect(macDinhIn('tong-hop')).toMatchObject({ kho: 'a4', huong: 'doc' });
   });
 
-  it('giá trị lạ → mặc định; kiểm hàng / tổng hợp luôn A4 dọc', () => {
-    expect(chuanHoaThamSoIn({ loai: 'xyz', kho: 'b5', huong: 'nghieng' })).toEqual({ loai: 'dang-ky', kho: 'a5', huong: 'doc' });
-    expect(chuanHoaThamSoIn({ loai: 'dang-ky', kho: 'a4', huong: 'ngang' })).toEqual({ loai: 'dang-ky', kho: 'a4', huong: 'ngang' });
-    expect(chuanHoaThamSoIn({ loai: 'kiem-hang', kho: 'a5', huong: 'ngang' })).toEqual({ loai: 'kiem-hang', kho: 'a4', huong: 'doc' });
-  });
-
-  it('URL preview ⇄ tham số', () => {
-    const url = taoUrlPreview('12', { loai: 'dang-ky', kho: 'a4', huong: 'ngang' });
-    expect(url).toBe('/quan-ly-nha-so-che/dang-ky-nhan-hang/preview/12?loai=dang-ky&kho=a4&huong=ngang');
-    expect(docThamSoIn(new URL(url, 'http://x').searchParams)).toEqual({ loai: 'dang-ky', kho: 'a4', huong: 'ngang' });
-    expect(taoUrlPreview('12', { loai: 'tong-hop', kho: 'a5' })).toBe(
-      '/quan-ly-nha-so-che/dang-ky-nhan-hang/preview/12?loai=tong-hop'
-    );
+  it('URL preview ⇄ loại; loại lạ → đăng ký', () => {
+    const url = taoUrlPreview('12', 'kiem-hang');
+    expect(url).toBe('/quan-ly-nha-so-che/dang-ky-nhan-hang/preview/12?loai=kiem-hang');
+    expect(docLoaiIn(new URL(url, 'http://x').searchParams)).toBe('kiem-hang');
+    expect(docLoaiIn(new URLSearchParams('loai=xyz'))).toBe('dang-ky');
   });
 
   it('tên file an toàn', () => {

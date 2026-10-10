@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { formatDateTimeShort, formatYmdToDisplay, getTimezone } from '../../../../../lib/utils';
 import type { DangKyNhanHang } from '../../core/types';
 import type { NhomHangHoa } from '../../core/gop-hang-hoa';
-import type { HuongGiay, KhoGiay } from '../../core/mau-in';
+import { usePhieuIn } from '../../../../../components/shared/phieu-in/phieu-in-context';
 import {
   NGUONG_TRE_PHUT,
   formatThoiLuong,
@@ -17,8 +17,6 @@ import { BangHangHoa, BangThongTin, DongCham, HangKyTen, KhungPhieu, TieuDeMuc }
 export interface MauPhieuProps {
   phieu: DangKyNhanHang;
   nhom: NhomHangHoa[];
-  kho: KhoGiay;
-  huong: HuongGiay;
 }
 
 const xeCont = (p: DangKyNhanHang) => [p.so_xe, p.so_cont].filter(Boolean).join(' / ');
@@ -38,8 +36,9 @@ const KhoiHanhChinh: React.FC<{ nho: boolean }> = ({ nho }) => {
 };
 
 /** 1) Phiếu đăng ký ra/vào cổng — bám mẫu giấy "PHIẾU ĐĂNG KÝ NHẬN HÀNG". */
-export const PhieuDangKyPreview: React.FC<MauPhieuProps> = ({ phieu, kho, huong }) => {
+export const PhieuDangKyPreview: React.FC<MauPhieuProps> = ({ phieu }) => {
   const { t } = useTranslation();
+  const { kho, huong } = usePhieuIn();
   const nho = kho === 'a5';
   const ngang = huong === 'ngang';
   const gap = nho ? 'space-y-2' : 'space-y-3';
@@ -68,7 +67,7 @@ export const PhieuDangKyPreview: React.FC<MauPhieuProps> = ({ phieu, kho, huong 
   );
 
   return (
-    <KhungPhieu kho={kho} huong={huong} title={t('dangKyNhanHang.preview.title.dang-ky')}>
+    <KhungPhieu title={t('dangKyNhanHang.preview.title.dang-ky')}>
       {ngang ? (
         <div className="grid grid-cols-[1.4fr_1fr] gap-6 flex-1">
           <div className={gap}>
@@ -109,12 +108,12 @@ function useThongTinChung(phieu: DangKyNhanHang): [string, React.ReactNode][] {
   ];
 }
 
-/** 2) Phiếu kiểm hàng xuất (A4 dọc). */
+/** 2) Phiếu kiểm hàng xuất (mặc định A4 dọc). */
 export const PhieuKiemHangPreview: React.FC<MauPhieuProps> = ({ phieu, nhom }) => {
   const { t } = useTranslation();
   const chung = useThongTinChung(phieu);
   return (
-    <KhungPhieu kho="a4" huong="doc" title={t('dangKyNhanHang.preview.title.kiem-hang')}>
+    <KhungPhieu title={t('dangKyNhanHang.preview.title.kiem-hang')}>
       <BangThongTin
         rows={[
           ...chung,
@@ -138,7 +137,7 @@ export const PhieuKiemHangPreview: React.FC<MauPhieuProps> = ({ phieu, nhom }) =
 
 const ANH_TOI_DA = 6;
 
-/** 3) Phiếu tổng hợp: đăng ký + thời gian + hàng hoá + ảnh (A4 dọc). */
+/** 3) Phiếu tổng hợp: đăng ký + thời gian + hàng hoá + ảnh (mặc định A4 dọc). */
 export const PhieuTongHopPreview: React.FC<MauPhieuProps> = ({ phieu, nhom }) => {
   const { t } = useTranslation();
   const tz = getTimezone();
@@ -156,7 +155,7 @@ export const PhieuTongHopPreview: React.FC<MauPhieuProps> = ({ phieu, nhom }) =>
   const conLai = phieu.hinh_anh_urls.length - anh.length;
 
   return (
-    <KhungPhieu kho="a4" huong="doc" title={t('dangKyNhanHang.preview.title.tong-hop')}>
+    <KhungPhieu title={t('dangKyNhanHang.preview.title.tong-hop')}>
       <TieuDeMuc>1. {t('dangKyNhanHang.detail.thongTinDangKy')}</TieuDeMuc>
       <BangThongTin
         rows={[

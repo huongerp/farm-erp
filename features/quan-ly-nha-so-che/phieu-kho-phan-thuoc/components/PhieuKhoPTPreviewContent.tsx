@@ -51,7 +51,7 @@ const PhieuKhoPTPreviewContent: React.FC<Props> = ({ phieu }) => {
   const title = getTitleUppercase(phieu.loai);
 
   return (
-    <div className="phieu-kho-pt-preview-content bg-white text-gray-900 font-sans text-[10pt] pt-[15mm] pr-[15mm] pb-[15mm] pl-[20mm] print:p-0 min-h-full">
+    <div className="phieu-kho-pt-preview-content bg-white text-gray-900 font-sans text-[10pt] min-h-[var(--in-trang-h,auto)]">
       {/* Bảng document: thead lặp header công ty mỗi trang khi in */}
       <table className="phieu-kho-pt-print-doc w-full border-collapse">
         <thead className="phieu-kho-pt-print-running-header">

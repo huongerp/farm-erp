@@ -196,6 +196,10 @@ xem mẫu ở các hook `use-*-view-scope.ts`.
   `core/trang-thai.ts` (có test), cổng theo người dùng ở `hooks/use-thu-chi-quy-permissions.ts`. Mở khoá
   chỉ dành cho `cap_bac = 1` / quản trị; phiếu khoá phải chặn cả ở `ThuChiLienQuanSection` (bảng nhúng
   trong drawer của 3 module khác, KHÔNG đọc được ModulePermissionGuard của quỹ).
+- Trang in phiếu: MỌI trang preview dùng `components/shared/phieu-in/PhieuInPage` (`mauKey` + `macDinh` khổ/hướng/lề).
+  Khung lo lề, `@page`, cỡ chữ (zoom), phông, kéo cột mọi `<table>` (bỏ qua `data-in-co-dinh`), PDF/DOC chụp từ
+  bản xem trước; cài đặt nhớ theo mẫu ở `lib/phieu-in/`. Nội dung phiếu KHÔNG đặt width/padding cứng, không thêm
+  khối `@media print` riêng, không viết lại HTML chuỗi để xuất PDF.
 - Thêm chuỗi hiển thị vào `vi.json` của module hoặc `locales/vi/*.json` (`node scripts/check-i18n-keys.mjs`
   soi trùng khoá).
 - Format: ESLint là chuẩn bắt buộc. Prettier CHƯA áp cho toàn repo (`npm run format:check` đang báo rất

@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { Sprout, Truck, PackagePlus, Package, BookOpen, Users, Layers, Boxes, BarChart3, ClipboardList, ClipboardCheck, Settings, BadgeCheck } from 'lucide-react';
+import { Sprout, Truck, PackagePlus, Package, BookOpen, Users, Layers, Boxes, BarChart3, ClipboardList, ClipboardCheck, Settings, BadgeCheck, UserCheck } from 'lucide-react';
 import type { ModuleItem } from '../components/dashboard/SubModuleCard';
 import type { ModuleGroup } from '../components/dashboard/ModuleDashboardLayout';
 
@@ -24,8 +24,9 @@ export function getQuanLyNhaSoCheModuleTitleKeyBySlug(slug: string): string {
 
 /** Slug module Quản lý nhà sơ chế (dashboard, breadcrumb, hướng dẫn). Kho phân thuốc dùng slug riêng để không trùng kho vận /mua-hang. */
 export const QUAN_LY_NHA_SO_CHE_MODULE_SLUGS: string[] = [
-  'giam-sat-chat-luong',
   'dang-ky-nhan-hang',
+  'dang-ky-tham-quan',
+  'giam-sat-chat-luong',
   'thu-hoach',
   'bao-cao-nhan-cong',
   'bao-cao-so-che',
@@ -65,6 +66,25 @@ export function getQuanLyNhaSoCheGroups(
 
   return [
     {
+      groupTitle: t('page.quanLyNhaSoChe.groupPhieu'),
+      items: [
+        item({
+          slug: 'dang-ky-nhan-hang',
+          titleKey: 'page.quanLyNhaSoChe.modules.dangKyNhanHang',
+          descKey: 'page.quanLyNhaSoChe.descs.dangKyNhanHang',
+          icon: Truck,
+          color: 'bg-sky-600',
+        }),
+        item({
+          slug: 'dang-ky-tham-quan',
+          titleKey: 'page.quanLyNhaSoChe.modules.dangKyThamQuan',
+          descKey: 'page.quanLyNhaSoChe.descs.dangKyThamQuan',
+          icon: UserCheck,
+          color: 'bg-rose-500',
+        }),
+      ],
+    },
+    {
       groupTitle: t('page.quanLyNhaSoChe.groupKeHoach'),
       items: [
         item({
@@ -73,13 +93,6 @@ export function getQuanLyNhaSoCheGroups(
           descKey: 'page.quanLyNhaSoChe.descs.giamSatChatLuong',
           icon: BadgeCheck,
           color: 'bg-teal-600',
-        }),
-        item({
-          slug: 'dang-ky-nhan-hang',
-          titleKey: 'page.quanLyNhaSoChe.modules.dangKyNhanHang',
-          descKey: 'page.quanLyNhaSoChe.descs.dangKyNhanHang',
-          icon: Truck,
-          color: 'bg-sky-600',
         }),
         item({
           slug: 'thu-hoach',

@@ -4,18 +4,9 @@
  * Refactor: types & buildSections dùng chung cho PDF và preview HTML.
  */
 import type { Employee } from '../core/types';
-import { formatDateTime } from '../../../../lib/utils';
-import {
-  STATUS_BADGE_CONFIG,
-  GENDER_BADGE_CONFIG,
-  CONTRACT_BADGE_CONFIG,
-  EDUCATION_BADGE_CONFIG,
-  MARITAL_BADGE_CONFIG,
-} from '../core/constants';
+import { STATUS_BADGE_CONFIG, GENDER_BADGE_CONFIG, CONTRACT_BADGE_CONFIG, EDUCATION_BADGE_CONFIG, MARITAL_BADGE_CONFIG } from '../core/constants';
 import { formatDate, getTenureText } from '@/lib/utils';
 import i18n from '../../../../lib/i18n';
-import { useUIStore } from '../../../../store/useStore';
-import { ensureJsPDFVietnameseFont, JSPDF_VI_FONT_FAMILY } from '../../../../lib/jspdf-vietnamese-font';
 
 /** Một dòng trong section (nhãn + giá trị) */
 export interface EmployeePdfSectionRow {
@@ -28,9 +19,6 @@ export interface EmployeePdfSection {
   title: string;
   rows: EmployeePdfSectionRow[];
 }
-
-const PDF_MARGIN_X = 14;
-const PDF_PRIMARY_COLOR: [number, number, number] = [59, 130, 246];
 
 function badgeLabel(value: unknown, config: Record<string, { label: string }>): string {
   if (value == null || value === '') return '—';
@@ -128,111 +116,4 @@ export function buildEmployeeProfileSections(emp: Employee): EmployeePdfSection[
       ],
     },
   ];
-}
-
-/**
- * Xuất hồ sơ nhân viên ra PDF A4 và mở tab mới.
- * Revoke object URL sau khi mở để tránh rò rỉ bộ nhớ.
- */
-export async function printEmployeePDF(emp: Employee): Promise<void> {
-  const [{ jsPDF }, autoTableModule] = await Promise.all([
-    import('jspdf'),
-    import('jspdf-autotable'),
-  ]);
-  const autoTable = autoTableModule.default;
-
-  const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
-  await ensureJsPDFVietnameseFont(doc);
-  const pageWidth = doc.internal.pageSize.getWidth();
-  let y = 14;
-
-  // Header công ty (như bảng lương)
-  const company = useUIStore.getState().companyInfo;
-  doc.setFontSize(11);
-  doc.setFont(JSPDF_VI_FONT_FAMILY, 'bold');
-  doc.text(company.companyName || '', pageWidth / 2, y, { align: 'center' });
-  y += 5;
-  doc.setFont(JSPDF_VI_FONT_FAMILY, 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(80);
-  if (company.address) {
-    doc.text(company.address, PDF_MARGIN_X, y);
-    y += 4;
-  }
-  const contact: string[] = [];
-  if (company.email) contact.push(company.email);
-  if (company.phone) contact.push(company.phone);
-  if (contact.length) {
-    doc.text(contact.join('  ·  '), PDF_MARGIN_X, y);
-    y += 5;
-  }
-  doc.setTextColor(0);
-  doc.setDrawColor(200);
-  doc.setLineWidth(0.3);
-  doc.line(PDF_MARGIN_X, y, pageWidth - PDF_MARGIN_X, y);
-  y += 6;
-
-  doc.setFontSize(16);
-  doc.setFont(JSPDF_VI_FONT_FAMILY, 'bold');
-  doc.text(i18n.t('employee.pdf.title'), pageWidth / 2, y, { align: 'center' });
-  y += 8;
-
-  doc.setFontSize(10);
-  doc.setFont(JSPDF_VI_FONT_FAMILY, 'normal');
-  doc.setTextColor(100);
-  doc.text(`${i18n.t('employee.pdf.code')} ${emp.ma_nhan_vien}  •  ${emp.ho_ten}`, pageWidth / 2, y, { align: 'center' });
-  doc.setTextColor(0);
-  y += 3;
-
-  doc.setDrawColor(200);
-  doc.setLineWidth(0.3);
-  doc.line(PDF_MARGIN_X, y, pageWidth - PDF_MARGIN_X, y);
-  y += 6;
-
-  const sections = buildEmployeeProfileSections(emp);
-
-  for (const section of sections) {
-    if (y > 260) {
-      doc.addPage();
-      y = 14;
-    }
-
-    autoTable(doc, {
-      startY: y,
-      head: [[{ content: section.title, colSpan: 2, styles: { font: JSPDF_VI_FONT_FAMILY, fillColor: PDF_PRIMARY_COLOR, fontSize: 8, fontStyle: 'bold', textColor: 255, cellPadding: { top: 2.5, bottom: 2.5, left: 4, right: 4 } } }]],
-      body: section.rows.map(r => [r.label, r.value]),
-      theme: 'grid',
-      styles: {
-        font: JSPDF_VI_FONT_FAMILY,
-        fontSize: 8,
-        cellPadding: { top: 2, bottom: 2, left: 4, right: 4 },
-        lineColor: [220, 220, 220],
-        lineWidth: 0.2,
-      },
-      headStyles: { font: JSPDF_VI_FONT_FAMILY, fillColor: PDF_PRIMARY_COLOR },
-      columnStyles: {
-        0: { cellWidth: 50, font: JSPDF_VI_FONT_FAMILY, fontStyle: 'bold', textColor: [80, 80, 80] },
-        1: { font: JSPDF_VI_FONT_FAMILY, textColor: [30, 30, 30] },
-      },
-      margin: { left: PDF_MARGIN_X, right: PDF_MARGIN_X },
-      didDrawPage: () => {},
-    });
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    y = (doc as any).lastAutoTable.finalY + 5;
-  }
-
-  const printDate = formatDateTime(new Date());
-  doc.setFontSize(7);
-  doc.setTextColor(150);
-  doc.text(`${i18n.t('employee.pdf.printedAt')} ${printDate}`, PDF_MARGIN_X, doc.internal.pageSize.getHeight() - 8);
-
-  const pdfBlob = doc.output('blob');
-  const url = URL.createObjectURL(pdfBlob);
-  const w = window.open(url, '_blank');
-  if (w) {
-    w.addEventListener('load', () => URL.revokeObjectURL(url), { once: true });
-  } else {
-    URL.revokeObjectURL(url);
-  }
 }

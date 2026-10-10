@@ -5,37 +5,15 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn, formatNumberVN } from '../../../../../lib/utils';
-import { KhungPhieu as KhungPhieuChung } from '../../../../../components/shared/phieu-in/PhieuInParts';
 import type { NhomHangHoa } from '../../core/gop-hang-hoa';
-import { kichThuocGiay, leTrang, type HuongGiay, type KhoGiay } from '../../core/mau-in';
 
-export { BangThongTin, DongCham, HangKyTen, TieuDeMuc } from '../../../../../components/shared/phieu-in/PhieuInParts';
-
-interface KhungProps {
-  kho: KhoGiay;
-  huong: HuongGiay;
-  title: string;
-  subtitle?: string;
-  children: React.ReactNode;
-}
-
-/** Tờ giấy đúng khổ / hướng của mẫu đang chọn — giữ class `dknh-preview-content` cho CSS in + xuất file. */
-export const KhungPhieu: React.FC<KhungProps> = ({ kho, huong, title, subtitle, children }) => {
-  const { wMm, hMm } = kichThuocGiay(kho, huong);
-  return (
-    <KhungPhieuChung
-      wMm={wMm}
-      hMm={hMm}
-      leMm={leTrang(kho)}
-      title={title}
-      subtitle={subtitle}
-      compact={kho === 'a5'}
-      className="dknh-preview-content"
-    >
-      {children}
-    </KhungPhieuChung>
-  );
-};
+export {
+  BangThongTin,
+  DongCham,
+  HangKyTen,
+  KhungPhieu,
+  TieuDeMuc,
+} from '../../../../../components/shared/phieu-in/PhieuInParts';
 
 export const BangHangHoa: React.FC<{ nhom: NhomHangHoa[] }> = ({ nhom }) => {
   const { t } = useTranslation();

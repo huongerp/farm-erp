@@ -43,7 +43,7 @@ const PayslipPreviewContent: React.FC<Props> = ({ record }) => {
   const printedAt = formatDateTime(new Date());
 
   return (
-    <div className="payslip-preview-content bg-white text-gray-900 font-sans text-[10pt] p-5 min-h-full">
+    <div className="payslip-preview-content bg-white text-gray-900 font-sans text-[10pt] min-h-[var(--in-trang-h,auto)]">
       {/* Header công ty: logo + tên đầy đủ, địa chỉ, email, SĐT */}
       <div className="flex items-start gap-4 pb-4 mb-4 border-b-2 border-gray-300">
         {companyInfo.appLogo && (

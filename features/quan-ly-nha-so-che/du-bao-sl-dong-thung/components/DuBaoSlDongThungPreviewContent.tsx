@@ -65,8 +65,7 @@ const DuBaoSlDongThungPreviewContent: React.FC<Props> = ({ data }) => {
 
   return (
     <div
-      className="du-bao-sl-dong-thung-preview-content bg-white text-gray-900 font-sans text-[10pt] p-5 box-border"
-      style={{ minHeight: '297mm' }}
+      className="du-bao-sl-dong-thung-preview-content bg-white text-gray-900 font-sans text-[10pt] box-border min-h-[var(--in-trang-h,auto)]"
     >
       {/* === Header công ty === */}
       <div className="flex items-start gap-3 pb-3 mb-3 border-b-2 border-gray-300">

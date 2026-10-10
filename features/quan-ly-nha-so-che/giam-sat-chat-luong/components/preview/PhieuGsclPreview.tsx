@@ -16,9 +16,6 @@ import type { GiaTriKetQua, GiamSatChatLuong, ThungMau, TieuChi } from '../../co
 interface Props {
   phieu: GiamSatChatLuong;
   thung: ThungMau[];
-  wMm: number;
-  hMm: number;
-  leMm: number;
 }
 
 const so = (n: number | null) => (n == null ? '—' : formatNumberVN(n, { maxFractionDigits: 2 }));
@@ -47,7 +44,7 @@ function oNguong(tc: TieuChi, kq: KetQuaTieuChi): string {
   return kq.nguongMax != null ? `≤ ${so(kq.nguongMax)}` : '—';
 }
 
-const PhieuGsclPreview: React.FC<Props> = ({ phieu, thung, wMm, hMm, leMm }) => {
+const PhieuGsclPreview: React.FC<Props> = ({ phieu, thung }) => {
   const { t } = useTranslation();
   const daKiem = useMemo(() => thung.filter((x) => x.da_kiem), [thung]);
   const chiTiet = useMemo(() => {
@@ -80,7 +77,7 @@ const PhieuGsclPreview: React.FC<Props> = ({ phieu, thung, wMm, hMm, leMm }) => 
 
   return (
     // compact: 11 tiêu chí × 10 thùng (mỗi thùng 2 cột lỗi / tỉ lệ) phải vừa MỘT trang A4 ngang.
-    <KhungPhieu wMm={wMm} hMm={hMm} leMm={leMm} title={t('giamSatChatLuong.preview.title')} subtitle={subtitle} compact>
+    <KhungPhieu title={t('giamSatChatLuong.preview.title')} subtitle={subtitle} compact>
       <TieuDeMuc>{t('giamSatChatLuong.preview.thongTin')}</TieuDeMuc>
       <BangThongTin rows={thongTin} />
 
