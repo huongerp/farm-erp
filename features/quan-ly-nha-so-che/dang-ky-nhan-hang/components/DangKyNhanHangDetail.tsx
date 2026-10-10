@@ -26,7 +26,7 @@ import DetailField from '../../../../components/shared/DetailField';
 import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
 import DetailDrawerFooter from '../../../../components/shared/DetailDrawerFooter';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
-import { cn, formatDateTimeShort, formatYmdToDisplay, getTimezone } from '../../../../lib/utils';
+import { cn, formatDateTimeShort, formatNumberVN, formatYmdToDisplay, getTimezone } from '../../../../lib/utils';
 import type { DangKyNhanHang } from '../core/types';
 import {
   coTheCheckIn,
@@ -203,7 +203,15 @@ const DangKyNhanHangDetail: React.FC<Props> = ({
             <div className="flex-1 min-w-0">
               <h2 className="text-base font-bold text-foreground leading-tight truncate font-mono">{xe}</h2>
               <p className="text-body-sm text-muted-foreground mt-0.5 line-clamp-1">
-                {[data.khach_hang, data.loai_hang_hoa].filter(Boolean).join(' · ') || '—'}
+                {[
+                  data.khach_hang,
+                  data.loai_hang_hoa,
+                  data.so_luong_dang_ky != null
+                    ? `${t('dangKyNhanHang.form.soLuongDangKy')}: ${formatNumberVN(data.so_luong_dang_ky)}`
+                    : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · ') || '—'}
               </p>
               <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                 <TrangThaiBadge value={tt} />

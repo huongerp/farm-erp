@@ -12,6 +12,8 @@ export interface DangKyNhanHang {
   ngay_dang_ky: string;
   khach_hang: string | null;
   loai_hang_hoa: string | null;
+  /** Số lượng khai lúc đăng ký xe (nhập tay) — khác tong_so_luong (cây hàng quét lên xe). */
+  so_luong_dang_ky: number | null;
   so_xe: string | null;
   so_cont: string | null;
   ten_tai_xe: string | null;

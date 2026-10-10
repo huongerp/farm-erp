@@ -149,6 +149,8 @@ const DangKyNhanHangList: React.FC<Props> = ({
         return one(item.khach_hang || '—', undefined, item.khach_hang ?? undefined);
       case 'loai_hang_hoa':
         return one(item.loai_hang_hoa || '—', undefined, item.loai_hang_hoa ?? undefined);
+      case 'so_luong_dang_ky':
+        return one(item.so_luong_dang_ky != null ? formatNumberVN(item.so_luong_dang_ky) : '—', 'tabular-nums');
       case 'ten_tai_xe':
         return one(item.ten_tai_xe || '—', undefined, item.ten_tai_xe ?? undefined);
       case 'sdt_tai_xe':

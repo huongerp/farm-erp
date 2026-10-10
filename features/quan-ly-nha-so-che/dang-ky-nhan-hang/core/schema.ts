@@ -16,6 +16,12 @@ export const dangKyNhanHangFormSchema = z
     ngay_dang_ky: z.string().min(1, { message: i18n.t('dangKyNhanHang.validation.ngayRequired') }),
     khach_hang: optText,
     loai_hang_hoa: optText,
+    so_luong_dang_ky: z
+      .string()
+      .trim()
+      .regex(/^\d+(\.\d{1,2})?$/, { message: i18n.t('dangKyNhanHang.validation.soLuongInvalid') })
+      .optional()
+      .or(z.literal('')),
     so_xe: optText,
     so_cont: optText,
     ten_tai_xe: optText,

@@ -19,7 +19,7 @@ const TABLE_CT = 'fp_farm_dang_ky_nhan_hang_ct';
 const VIEW_TONG = 'v_farm_dang_ky_nhan_hang_tong_hh';
 
 const ROW_COLUMNS =
-  'id,id_chi_nhanh,ngay_dang_ky,khach_hang,loai_hang_hoa,so_xe,so_cont,ten_tai_xe,sdt_tai_xe,' +
+  'id,id_chi_nhanh,ngay_dang_ky,khach_hang,loai_hang_hoa,so_luong_dang_ky,so_xe,so_cont,ten_tai_xe,sdt_tai_xe,' +
   'gio_dang_ky_tu,gio_dang_ky_den,tg_vao_thuc_te,tg_ra_thuc_te,id_nguoi_check_in,id_nguoi_check_out,' +
   'trang_thai,ghi_chu,hinh_anh_urls,id_nguoi_tao,tg_tao,tg_cap_nhat,chi_nhanh:fp_var_chi_nhanh(ten_chi_nhanh)';
 
@@ -34,6 +34,7 @@ interface DbRow {
   ngay_dang_ky: string;
   khach_hang: string | null;
   loai_hang_hoa: string | null;
+  so_luong_dang_ky: string | number | null;
   so_xe: string | null;
   so_cont: string | null;
   ten_tai_xe: string | null;
@@ -102,6 +103,7 @@ function rowToModel(row: DbRow): DangKyNhanHang {
     ngay_dang_ky: row.ngay_dang_ky,
     khach_hang: row.khach_hang,
     loai_hang_hoa: row.loai_hang_hoa,
+    so_luong_dang_ky: row.so_luong_dang_ky != null ? num(row.so_luong_dang_ky) : null,
     so_xe: row.so_xe,
     so_cont: row.so_cont,
     ten_tai_xe: row.ten_tai_xe,
@@ -172,6 +174,7 @@ function formPayload(v: DangKyNhanHangFormValues): Record<string, unknown> {
     ngay_dang_ky: v.ngay_dang_ky,
     khach_hang: blank(v.khach_hang),
     loai_hang_hoa: blank(v.loai_hang_hoa),
+    so_luong_dang_ky: blank(v.so_luong_dang_ky) != null ? Number(blank(v.so_luong_dang_ky)) : null,
     so_xe: blank(v.so_xe)?.toUpperCase() ?? null,
     so_cont: blank(v.so_cont)?.toUpperCase() ?? null,
     ten_tai_xe: blank(v.ten_tai_xe),

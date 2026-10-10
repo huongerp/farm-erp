@@ -2,7 +2,7 @@ import React, { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Controller, useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Building2, Calendar, Clock, ImagePlus, Phone, Truck, User } from 'lucide-react';
+import { Building2, Calendar, Clock, ImagePlus, Package, Phone, Truck, User } from 'lucide-react';
 import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/GenericDrawer';
 import FormSection from '../../../../components/shared/FormSection';
 import FormGrid from '../../../../components/shared/FormGrid';
@@ -35,6 +35,7 @@ function toForm(d: DangKyNhanHang): DangKyNhanHangFormValues {
     ngay_dang_ky: d.ngay_dang_ky,
     khach_hang: d.khach_hang ?? '',
     loai_hang_hoa: d.loai_hang_hoa ?? '',
+    so_luong_dang_ky: d.so_luong_dang_ky != null ? String(d.so_luong_dang_ky) : '',
     so_xe: d.so_xe ?? '',
     so_cont: d.so_cont ?? '',
     ten_tai_xe: d.ten_tai_xe ?? '',
@@ -68,6 +69,7 @@ const DangKyNhanHangForm: React.FC<Props> = ({
             ngay_dang_ky: getTodayISO(),
             khach_hang: '',
             loai_hang_hoa: '',
+            so_luong_dang_ky: '',
             so_xe: '',
             so_cont: '',
             ten_tai_xe: '',
@@ -114,7 +116,7 @@ const DangKyNhanHangForm: React.FC<Props> = ({
   const pending = isSubmitting || createMutation.isPending || updateMutation.isPending;
 
   const textField = (
-    name: 'so_xe' | 'so_cont' | 'ten_tai_xe' | 'sdt_tai_xe',
+    name: 'so_luong_dang_ky' | 'so_xe' | 'so_cont' | 'ten_tai_xe' | 'sdt_tai_xe',
     labelKey: string,
     icon: React.ReactNode,
     extra?: React.InputHTMLAttributes<HTMLInputElement>
@@ -217,6 +219,13 @@ const DangKyNhanHangForm: React.FC<Props> = ({
                 />
               )}
             />
+            {textField('so_luong_dang_ky', 'dangKyNhanHang.form.soLuongDangKy', <Package size={12} />, {
+              type: 'number',
+              inputMode: 'decimal',
+              min: 0,
+              step: 'any',
+              placeholder: t('dangKyNhanHang.form.soLuongDangKyPlaceholder'),
+            })}
             {textField('so_xe', 'dangKyNhanHang.form.soXe', <Truck size={12} />, {
               placeholder: '81C-180.26',
               autoCapitalize: 'characters',

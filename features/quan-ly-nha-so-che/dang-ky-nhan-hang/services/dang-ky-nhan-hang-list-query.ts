@@ -24,6 +24,7 @@ export const DKNH_SORTABLE_DB_COLUMNS = new Set([
   'ngay_dang_ky',
   'khach_hang',
   'loai_hang_hoa',
+  'so_luong_dang_ky',
   'so_xe',
   'so_cont',
   'ten_tai_xe',

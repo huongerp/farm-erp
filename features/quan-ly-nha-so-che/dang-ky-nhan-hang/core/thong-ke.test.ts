@@ -15,6 +15,7 @@ function phieu(p: Partial<DangKyNhanHang> & { id: string }): DangKyNhanHang {
     ngay_dang_ky: '2026-09-30',
     khach_hang: 'TQ',
     loai_hang_hoa: 'TQ4',
+    so_luong_dang_ky: null,
     so_xe: null,
     so_cont: null,
     ten_tai_xe: null,
