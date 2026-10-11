@@ -3,7 +3,7 @@
  * (hàng xuất, mỗi thùng 1 dòng), view v_farm_dang_ky_nhan_hang_tong_hh (tổng theo phiếu + hàng).
  */
 import { db, fetchAllRows, fetchTablePage, throwDbError, type PaginatedTableResult } from '../../../../lib/db';
-import { applyPostgrestSearch, dieuKienKyTheoNgay } from '../../../../lib/postgrest-search';
+import { applyPostgrestSearch } from '../../../../lib/postgrest-search';
 import i18n from '../../../../lib/i18n';
 import type { DangKyNhanHang, DangKyNhanHangCt, NguonDongHang, TongHangHoaPhieu, TrangThaiDkNh } from '../core/types';
 import { chuanHoaGio } from '../core/thoi-gian';
@@ -25,7 +25,7 @@ const ROW_COLUMNS =
 
 const CT_COLUMNS =
   'id,id_phieu,id_phieu_gscl,so_luong,nguon,ma_tem_quet,tg_quet,id_nguoi_quet,' +
-  'gscl:fp_farm_giam_sat_chat_luong(so_phieu,ngay,ma_cay_hang,ket_luan,id_hang_hoa,' +
+  'gscl:fp_farm_giam_sat_chat_luong(so_phieu,ngay,ma_cay_hang,ket_luan,id_hang_hoa,so_thung_cay,' +
   'hang_hoa:fp_farm_danh_sach_hang_hoa(ma_hang_hoa,ten_hang_hoa,dvt))';
 
 interface DbRow {
@@ -69,6 +69,7 @@ interface DbCtRow {
     ma_cay_hang: string | null;
     ket_luan: 'dat' | 'khong_dat' | null;
     id_hang_hoa: number | null;
+    so_thung_cay: string | number | null;
     hang_hoa?: { ma_hang_hoa: string | null; ten_hang_hoa: string | null; dvt: string | null } | null;
   } | null;
 }
@@ -142,6 +143,7 @@ function ctToModel(row: DbCtRow): DangKyNhanHangCt {
     ten_hang_hoa: g?.hang_hoa?.ten_hang_hoa ?? null,
     dvt: g?.hang_hoa?.dvt ?? null,
     so_luong: num(row.so_luong),
+    so_thung_qc: g?.so_thung_cay != null ? num(g.so_thung_cay) : null,
     nguon: row.nguon,
     ma_tem_quet: row.ma_tem_quet,
     tg_quet: row.tg_quet,
@@ -207,8 +209,6 @@ function applyDkNhListQuery(q: any, query: DangKyNhanHangListServerQuery): any {
   if (query.trangThai.length > 0) sel = sel.in('trang_thai', query.trangThai);
   if (query.ngayFrom) sel = sel.gte('ngay_dang_ky', query.ngayFrom);
   if (query.ngayTo) sel = sel.lte('ngay_dang_ky', query.ngayTo);
-  const ky = dieuKienKyTheoNgay(query.nam, query.thang, 'ngay_dang_ky');
-  if (ky.length) sel = sel.or(ky.join(','));
 
   sel = applyPostgrestSearch(sel, query.searchTerm, DKNH_SEARCH_SPEC);
 
@@ -460,6 +460,12 @@ export async function themDongHangDb(row: ThemDongHangInput): Promise<boolean> {
     throwDbError(error);
   }
   return true;
+}
+
+/** Sửa số thùng thực xếp lên xe của một dòng cây hàng (CHECK so_luong > 0 ở DB). */
+export async function capNhatSoLuongDongDb(id: string, soLuong: number): Promise<void> {
+  const { error } = await db.from(TABLE_CT).update({ so_luong: soLuong }).eq('id', toIntId(id));
+  if (error) throwDbError(error);
 }
 
 export async function xoaDongHangDb(ids: string[]): Promise<void> {

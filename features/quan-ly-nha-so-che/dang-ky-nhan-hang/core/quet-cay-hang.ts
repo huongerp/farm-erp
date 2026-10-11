@@ -35,3 +35,14 @@ export function danhGiaQuetCayHang(v: DauVaoQuet): DanhGiaQuet {
   if (v.xeKhac.length > 0) canhBao.push('xe_khac');
   return { ghi: true, muc: canhBao.length ? 'canh_bao' : 'ok', canhBao };
 }
+
+/**
+ * Số thùng người quét gõ (lúc xếp cây hàng lên xe / sửa dòng): số nguyên dương,
+ * chấm / phẩy / khoảng trắng coi là ngăn nghìn ("1.200" = 1200). `null` = không hợp lệ.
+ */
+export function docSoThung(raw: string): number | null {
+  const s = raw.trim().replace(/[.,\s]/g, '');
+  if (!/^\d+$/.test(s)) return null;
+  const n = Number(s);
+  return Number.isSafeInteger(n) && n > 0 ? n : null;
+}

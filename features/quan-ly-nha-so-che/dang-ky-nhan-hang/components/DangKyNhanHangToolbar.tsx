@@ -1,13 +1,17 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Building2, Calendar, CalendarDays, CircleDot, Download, Plus, Printer } from 'lucide-react';
+import { Building2, Calendar, CircleDot, Download, Plus, Printer } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
+import DateRangePicker from '../../../../components/ui/DateRangePicker';
+import { MobileFilterField } from '../../../../components/ui/MobileFilterSheet';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
 import { TRANG_THAI_DKNH } from '../core/types';
+import { KY_CUSTOM } from '../core/ky-loc';
+import { useKyChip } from '../hooks/use-ky-chip';
 import type { DkNhTomTat } from '../services/dang-ky-nhan-hang-service';
 import { useDangKyNhanHangStore } from '../store/useDangKyNhanHangStore';
 
@@ -55,23 +59,6 @@ const DangKyNhanHangToolbar: React.FC<Props> = ({
     return m;
   };
 
-  const namOptions = useMemo(() => {
-    const m = dem((r) => r.ngay_dang_ky.slice(0, 4));
-    return [...m.entries()].sort((a, b) => b[0].localeCompare(a[0])).map(([v, count]) => ({ value: v, label: v, count }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data]);
-
-  const thangOptions = useMemo(() => {
-    const m = dem((r) => r.ngay_dang_ky.slice(0, 7));
-    return [...m.entries()]
-      .sort((a, b) => b[0].localeCompare(a[0]))
-      .map(([v, count]) => {
-        const [y, mo] = v.split('-');
-        return { value: v, label: `${mo}/${y}`, count };
-      });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data]);
-
   const trangThaiOptions = useMemo(() => {
     const m = dem((r) => r.trang_thai);
     return TRANG_THAI_DKNH.map((v) => ({ value: v, label: t(`dangKyNhanHang.trangThai.${v}`), count: m.get(v) ?? 0 }));
@@ -86,25 +73,28 @@ const DangKyNhanHangToolbar: React.FC<Props> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [branches, data]);
 
+  const kyChip = useKyChip(filters.dateFrom, filters.dateTo, (from, to) => {
+    setFilter('dateFrom', from);
+    setFilter('dateTo', to);
+  });
+  const coKy = !!(filters.dateFrom || filters.dateTo);
+
   const activeFilterCount =
     (searchInput.trim() ? 1 : 0) +
-    (filters.nam?.length ?? 0) +
-    (filters.thang?.length ?? 0) +
+    (coKy ? 1 : 0) +
     (filters.trang_thai?.length ?? 0) +
     (filters.id_chi_nhanh?.length ?? 0);
 
   const handleClearAllFilters = () => {
     commitSearchTerm('');
-    setFilter('nam', []);
-    setFilter('thang', []);
+    setFilter('dateFrom', '');
+    setFilter('dateTo', '');
     setFilter('trang_thai', []);
     setFilter('id_chi_nhanh', []);
   };
 
   const groups = [
     { key: 'trang_thai', label: t('dangKyNhanHang.col.trangThai'), icon: CircleDot, options: trangThaiOptions, width: 'sm:w-[150px]' },
-    { key: 'nam', label: t('dangKyNhanHang.toolbar.filterNam'), icon: Calendar, options: namOptions, width: 'sm:w-[110px]' },
-    { key: 'thang', label: t('dangKyNhanHang.toolbar.filterThang'), icon: CalendarDays, options: thangOptions, width: 'sm:w-[130px]' },
     { key: 'id_chi_nhanh', label: t('dangKyNhanHang.col.chiNhanh'), icon: Building2, options: branchOptions, width: 'sm:w-[170px]' },
   ] as const;
 
@@ -117,11 +107,38 @@ const DangKyNhanHangToolbar: React.FC<Props> = ({
     onChange: (v: string[]) => setFilter(g.key, v),
   }));
 
-  const filterItems: FilterChipItem[] = filterGroups.map((g, i) => ({
-    kind: 'group',
-    group: g,
-    className: `w-full ${groups[i].width}`,
-  }));
+  const filterItems: FilterChipItem[] = [
+    {
+      kind: 'custom',
+      key: 'ky',
+      node: (
+        <DateRangePicker
+          presets={kyChip.presets}
+          value={kyChip.value}
+          onChange={kyChip.onChange}
+          placeholder={t('dangKyNhanHang.toolbar.filterThoiGian')}
+          customPresetId={KY_CUSTOM}
+          className="w-full sm:w-auto shrink-0"
+        />
+      ),
+    },
+    ...filterGroups.map(
+      (g, i): FilterChipItem => ({ kind: 'group', group: g, className: `w-full ${groups[i].width}` })
+    ),
+  ];
+
+  // Điện thoại không có hàng chip → chip thời gian hiện thẳng trong bảng lọc.
+  const mobileFilterExtra = (
+    <MobileFilterField label={t('dangKyNhanHang.toolbar.filterThoiGian')} icon={Calendar} active={coKy}>
+      <DateRangePicker
+        inline
+        presets={kyChip.presets}
+        value={kyChip.value}
+        onChange={kyChip.onChange}
+        customPresetId={KY_CUSTOM}
+      />
+    </MobileFilterField>
+  );
 
   const leadingActions = (
     <Tooltip content={t('dangKyNhanHang.inDanhSach.nutIn')} placement="bottom">
@@ -174,6 +191,8 @@ const DangKyNhanHangToolbar: React.FC<Props> = ({
       actions={renderActions}
       filters={<ResponsiveFilterChips items={filterItems} />}
       filterGroups={filterGroups}
+      mobileFilterExtra={mobileFilterExtra}
+      mobileFilterExtraCount={coKy ? 1 : 0}
       mobileActions={[
         { key: 'print', label: t('dangKyNhanHang.inDanhSach.nutIn'), icon: Printer, onClick: onPrintList, description: '' },
         { key: 'export', label: t('common.export'), icon: Download, onClick: onExport, description: '' },

@@ -6,10 +6,9 @@ import type { DangKyNhanHang } from '../core/types';
 import type { NhomHangHoa } from '../core/gop-hang-hoa';
 import { taoSheetXlsx, tenFileIn, type LoaiIn } from '../core/mau-in';
 import {
-  COT_DANH_SACH_IN,
-  ngayVn,
+  cotDanhSachIn,
   taoAoaDanhSachXlsx,
-  tenFileDanhSach,
+  type CotDanhSachIn,
   type DongDanhSachIn,
 } from '../core/danh-sach-in';
 
@@ -26,14 +25,33 @@ export async function taiXlsx(phieu: DangKyNhanHang, nhom: NhomHangHoa[], loai: 
   XLSX.writeFile(wb, `${tenFileIn(loai, phieu)}.xlsx`);
 }
 
-/** Tải "Danh sách dự kiến xe giao nhận hàng" của một ngày dạng XLSX (cùng cột với bản in). */
-export async function taiXlsxDanhSach(ngay: string, dong: DongDanhSachIn[], t: TFunction): Promise<void> {
+/** Tải danh sách xe đang lọc dạng XLSX (cùng tiêu đề và cột với bản in). */
+export async function taiXlsxDanhSach(
+  tieuDe: string,
+  tenFile: string,
+  dong: DongDanhSachIn[],
+  t: TFunction
+): Promise<void> {
   const XLSX = await import('xlsx');
-  const aoa = taoAoaDanhSachXlsx(ngay, dong, (k, vars) => t(`dangKyNhanHang.inDanhSach.${k}`, vars));
+  const aoa = taoAoaDanhSachXlsx(tieuDe.toUpperCase(), dong, (k, vars) => t(`dangKyNhanHang.inDanhSach.${k}`, vars));
   const ws = XLSX.utils.aoa_to_sheet(aoa);
-  ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: COT_DANH_SACH_IN.length - 1 } }];
-  ws['!cols'] = [6, 14, 20, 12, 14, 26, 18, 12, 30].map((wch) => ({ wch }));
+  const cot = cotDanhSachIn(dong);
+  ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: cot.length - 1 } }];
+  ws['!cols'] = cot.map((c) => ({ wch: RONG_COT_XLSX[c] }));
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, ngayVn(ngay).slice(0, 5).replace('/', '-'));
-  XLSX.writeFile(wb, `${tenFileDanhSach(ngay)}.xlsx`);
+  XLSX.utils.book_append_sheet(wb, ws, 'Danh sach xe');
+  XLSX.writeFile(wb, `${tenFile}.xlsx`);
 }
+
+const RONG_COT_XLSX: Record<CotDanhSachIn, number> = {
+  stt: 6,
+  ngay: 12,
+  soXe: 14,
+  taiXe: 20,
+  trangThai: 12,
+  kho: 14,
+  thongTin: 26,
+  khachHang: 18,
+  soLuong: 12,
+  loaiHang: 30,
+};

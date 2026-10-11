@@ -2,8 +2,9 @@ import { createGenericStore, type ColumnConfig } from '../../../../store/createG
 import i18n from '../../../../lib/i18n';
 
 export interface DangKyNhanHangFilters {
-  nam: string[];
-  thang: string[];
+  /** Khoảng ngày đăng ký (YYYY-MM-DD, rỗng = không giới hạn) — chip thời gian. */
+  dateFrom: string;
+  dateTo: string;
   trang_thai: string[];
   id_chi_nhanh: string[];
 }
@@ -37,7 +38,7 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
   col('ten_nguoi_tao', 'nguoiTao', 120, 190, 16),
 ];
 
-const initialFilters: DangKyNhanHangFilters = { nam: [], thang: [], trang_thai: [], id_chi_nhanh: [] };
+const initialFilters: DangKyNhanHangFilters = { dateFrom: '', dateTo: '', trang_thai: [], id_chi_nhanh: [] };
 
 export const useDangKyNhanHangStore = createGenericStore<DangKyNhanHangFilters>(
   initialFilters,

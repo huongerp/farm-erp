@@ -7,11 +7,14 @@ import ExportDialog from '../../../../components/shared/LazyExportDialog';
 import { useExportData } from '../../../../lib/useExportData';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
+import { formatNumberVN } from '../../../../lib/utils';
 import { useAuthStore } from '../../../../store/useStore';
 import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
 import type { DangKyNhanHang } from '../core/types';
 import { coTheSuaPhieu, coTheXoaPhieu } from '../core/trang-thai';
 import { chiNhanhGanNhatCuaToi, goiYGiaTri } from '../core/goi-y';
+import { taoUrlInDanhSach } from '../core/danh-sach-in';
+import type { TrangThaiDkNh } from '../core/types';
 import type { DangKyNhanHangListServerQuery } from '../services/dang-ky-nhan-hang-list-query';
 import { fetchAllDkNhForListQuery } from '../services/dang-ky-nhan-hang-service';
 import {
@@ -33,9 +36,11 @@ import DangKyNhanHangList from './DangKyNhanHangList';
 import DangKyNhanHangForm from './DangKyNhanHangForm';
 import DangKyNhanHangDetail from './DangKyNhanHangDetail';
 import CheckInOutDialog from './CheckInOutDialog';
-import InDanhSachDialog from './InDanhSachDialog';
 
 /** Cột hiển thị → cột sắp xếp ở DB (cột ghép / tính toán không sort ở server). */
+/** Danh sách đang lọc dài hơn mức này thì hỏi lại trước khi mở bản in. */
+const NGUONG_IN_NHIEU = 500;
+
 const SORT_COLUMN_MAP: Record<string, string> = {
   gio_dang_ky: 'gio_dang_ky_tu',
 };
@@ -65,7 +70,6 @@ const DanhSachTab: React.FC = () => {
 
   const [showForm, setShowForm] = useState(false);
   const [showExport, setShowExport] = useState(false);
-  const [showInDanhSach, setShowInDanhSach] = useState(false);
   const [editingItem, setEditingItem] = useState<DangKyNhanHang | null>(null);
   const [viewingId, setViewingId] = useState<string | null>(null);
   const [quick, setQuick] = useState<{ item: DangKyNhanHang; mode: 'checkIn' | 'checkOut' } | null>(null);
@@ -79,8 +83,8 @@ const DanhSachTab: React.FC = () => {
       searchTerm,
       viewAll: viewScope.viewAll,
       allowedBranchIds: viewScope.allowedBranchIds,
-      nam: filters.nam ?? [],
-      thang: filters.thang ?? [],
+      ngayFrom: filters.dateFrom || undefined,
+      ngayTo: filters.dateTo || undefined,
       trangThai: filters.trang_thai ?? [],
       idChiNhanh: filters.id_chi_nhanh ?? [],
       sortColumn: sort.column ? (SORT_COLUMN_MAP[sort.column] ?? sort.column) : null,
@@ -201,6 +205,26 @@ const DanhSachTab: React.FC = () => {
     });
   };
 
+  /** In đúng danh sách đang lọc (mọi trang) — trang in đọc lại bộ lọc từ URL. */
+  const handlePrintList = () => {
+    const url = taoUrlInDanhSach({
+      tu: filters.dateFrom ?? '',
+      den: filters.dateTo ?? '',
+      q: searchTerm,
+      trangThai: (filters.trang_thai ?? []) as TrangThaiDkNh[],
+      idChiNhanh: filters.id_chi_nhanh ?? [],
+      sortColumn: listServerQuery.sortColumn,
+      sortDirection: listServerQuery.sortDirection,
+    });
+    const mo = () => void window.open(url, '_blank', 'noopener,noreferrer');
+    if (totalCount <= NGUONG_IN_NHIEU) return mo();
+    confirm({
+      title: t('dangKyNhanHang.inDanhSach.nhieuTitle'),
+      message: t('dangKyNhanHang.inDanhSach.nhieuMessage', { n: formatNumberVN(totalCount) }),
+      onConfirm: mo,
+    });
+  };
+
   return (
     <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
       <DangKyNhanHangToolbar
@@ -213,7 +237,7 @@ const DanhSachTab: React.FC = () => {
         }}
         onDeleteMany={handleDeleteMany}
         onExport={handleExport}
-        onPrintList={() => setShowInDanhSach(true)}
+        onPrintList={handlePrintList}
         canCreate={canCreate}
         canDelete={canDelete}
       />
@@ -288,17 +312,6 @@ const DanhSachTab: React.FC = () => {
             onDelete={canDelete ? handleDelete : undefined}
             canUpdate={canUpdate}
             canDelete={canDelete}
-          />
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {showInDanhSach && (
-          <InDanhSachDialog
-            branches={branches}
-            allowedBranchIds={viewScope.viewAll ? null : viewScope.allowedBranchIds}
-            idChiNhanhDangLoc={filters.id_chi_nhanh ?? []}
-            onClose={() => setShowInDanhSach(false)}
           />
         )}
       </AnimatePresence>

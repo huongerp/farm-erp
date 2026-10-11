@@ -12,7 +12,7 @@ import {
   getXeDaXepCayHang,
   timPhieuQcTheoMaTem,
 } from '../../giam-sat-chat-luong/services/giam-sat-chat-luong-service';
-import { danhGiaQuetCayHang } from '../core/quet-cay-hang';
+import { danhGiaQuetCayHang, docSoThung } from '../core/quet-cay-hang';
 import { themDongHang } from '../services/dang-ky-nhan-hang-service';
 import { QUERY_KEY_DKNH } from './use-dang-ky-nhan-hang';
 
@@ -26,7 +26,8 @@ const tenCayHang = (p: PhieuQcTomTat) =>
 
 /**
  * Xếp cây hàng lên xe: quét tem QC (hoặc chọn tay phiếu QC) → kiểm luật
- * (core/quet-cay-hang) → ghi CẢ cây hàng (so_thung_cay thùng).
+ * (core/quet-cay-hang) → hỏi số thùng thực xếp lên xe (mặc định so_thung_cay của cây hàng)
+ * → ghi một dòng cây hàng.
  */
 export function useQuetCayHang(idPhieu: string) {
   const userId = useAuthStore((s) => s.user?.id);
@@ -60,28 +61,42 @@ export function useQuetCayHang(idPhieu: string) {
       }
 
       const p = phieuQc!;
-      const moi = await themDongHang({
-        id_phieu: idPhieu,
-        id_phieu_gscl: p.id,
-        so_luong: p.so_thung_cay,
-        nguon: chonTay ? 'tay' : 'quet',
-        ma_tem_quet: maTem,
-        id_nguoi_quet: userId ? String(userId) : null,
-      });
-      if (!moi) return { ok: false, message: i18n.t('dangKyNhanHang.cayHang.daCo', { ten: tenCayHang(p) }) };
-
-      // Trong lúc quét chỉ tải lại bảng cây hàng của phiếu; cả module tải lại khi đóng máy quét.
-      void qc.invalidateQueries({ queryKey: [...QUERY_KEY_DKNH, 'chiTiet', idPhieu] });
       const canh = kq.canhBao.map((c) =>
         i18n.t(`dangKyNhanHang.cayHang.canhBao_${c}`, { xe: xeKhac.join(', ') })
       );
+      const ghi = async (soThung: number): Promise<KetQuaQuet> => {
+        const moi = await themDongHang({
+          id_phieu: idPhieu,
+          id_phieu_gscl: p.id,
+          so_luong: soThung,
+          nguon: chonTay ? 'tay' : 'quet',
+          ma_tem_quet: maTem,
+          id_nguoi_quet: userId ? String(userId) : null,
+        });
+        if (!moi) return { ok: false, message: i18n.t('dangKyNhanHang.cayHang.daCo', { ten: tenCayHang(p) }) };
+
+        // Trong lúc quét chỉ tải lại bảng cây hàng của phiếu; cả module tải lại khi đóng máy quét.
+        void qc.invalidateQueries({ queryKey: [...QUERY_KEY_DKNH, 'chiTiet', idPhieu] });
+        return {
+          ok: true,
+          canhBao: canh.length > 0,
+          message: [
+            i18n.t('dangKyNhanHang.cayHang.daGhi', { ten: tenCayHang(p), thung: formatNumberVN(soThung) }),
+            ...canh,
+          ].join(' — '),
+        };
+      };
       return {
         ok: true,
         canhBao: canh.length > 0,
-        message: [
-          i18n.t('dangKyNhanHang.cayHang.daGhi', { ten: tenCayHang(p), thung: formatNumberVN(p.so_thung_cay) }),
-          ...canh,
-        ].join(' — '),
+        message: [tenCayHang(p), ...canh].join(' — '),
+        nhapSo: {
+          nhan: i18n.t('dangKyNhanHang.cayHang.soThungNhap', { n: formatNumberVN(p.so_thung_cay) }),
+          macDinh: p.so_thung_cay,
+          doc: docSoThung,
+          loi: i18n.t('dangKyNhanHang.cayHang.soThungKhongHopLe'),
+          ghi,
+        },
       };
     },
     [qc, idPhieu, userId]

@@ -1,6 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AlertTriangle, Layers, ScanLine, Trash2, Undo2 } from 'lucide-react';
+import { AnimatePresence } from 'framer-motion';
+import { AlertTriangle, Layers, Pencil, Trash2, Undo2 } from 'lucide-react';
 import GenericSubTableSection from '../../../../components/shared/GenericSubTableSection';
 import SubTable, { type SubTableColumn } from '../../../../components/shared/sub-table/SubTable';
 import SubTableActionButton from '../../../../components/shared/sub-table/SubTableActionButton';
@@ -11,6 +12,7 @@ import { useConfirmStore } from '../../../../store/useConfirmStore';
 import type { DangKyNhanHangCt } from '../core/types';
 import { gopTheoHangHoa } from '../core/gop-hang-hoa';
 import { useHoanTacDongCuoi, useXoaDongHang } from '../hooks/use-dang-ky-nhan-hang';
+import SuaSoThungDialog from './SuaSoThungDialog';
 
 interface Props {
   idPhieu: string;
@@ -23,7 +25,8 @@ interface Props {
 
 /**
  * Bảng con "Cây hàng xuất" — TUỲ CHỌN: phiếu chỉ đăng ký xe thì để trống.
- * Mỗi dòng 1 cây hàng (phiếu Giám sát chất lượng), ghi bằng quét tem QC hoặc chọn tay.
+ * Mỗi dòng 1 cây hàng (phiếu Giám sát chất lượng), ghi bằng quét tem QC hoặc chọn tay;
+ * số thùng nhập lúc quét, sửa lại qua icon bút (mobile: chạm card).
  */
 const CayHangXuatSection: React.FC<Props> = ({ idPhieu, rows, loading, canEdit, onScan }) => {
   const { t } = useTranslation();
@@ -31,6 +34,7 @@ const CayHangXuatSection: React.FC<Props> = ({ idPhieu, rows, loading, canEdit, 
   const hoanTac = useHoanTacDongCuoi();
   const confirm = useConfirmStore((s) => s.confirm);
   const busy = xoa.isPending || hoanTac.isPending;
+  const [dangSua, setDangSua] = useState<DangKyNhanHangCt | null>(null);
 
   const tongThung = useMemo(() => rows.reduce((s, r) => s + r.so_luong, 0), [rows]);
   const theoThanhPham = useMemo(() => gopTheoHangHoa(rows), [rows]);
@@ -84,16 +88,17 @@ const CayHangXuatSection: React.FC<Props> = ({ idPhieu, rows, loading, canEdit, 
                 </span>
               ))}
             {canEdit && (
-              <div className="ml-auto flex flex-wrap items-center gap-2">
-                <Button type="button" variant="outline" size="sm" onClick={() => hoanTac.mutate(idPhieu)} disabled={busy}>
-                  <Undo2 size={14} className="mr-1.5" />
-                  {t('dangKyNhanHang.hangHoa.hoanTacCuoi')}
-                </Button>
-                <Button type="button" variant="outline" size="sm" onClick={onScan}>
-                  <ScanLine size={14} className="mr-1.5" />
-                  {t('dangKyNhanHang.cayHang.quetTem')}
-                </Button>
-              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="ml-auto"
+                onClick={() => hoanTac.mutate(idPhieu)}
+                disabled={busy}
+              >
+                <Undo2 size={14} className="mr-1.5" />
+                {t('dangKyNhanHang.hangHoa.hoanTacCuoi')}
+              </Button>
             )}
           </div>
 
@@ -131,7 +136,16 @@ const CayHangXuatSection: React.FC<Props> = ({ idPhieu, rows, loading, canEdit, 
                     </>
                   );
                 case 'so_thung':
-                  return <span className="tabular-nums font-semibold">{formatNumberVN(r.so_luong)}</span>;
+                  return (
+                    <>
+                      <span className="tabular-nums font-semibold">{formatNumberVN(r.so_luong)}</span>
+                      {r.so_thung_qc != null && r.so_thung_qc !== r.so_luong && (
+                        <span className="text-caption text-muted-foreground block tabular-nums">
+                          {t('dangKyNhanHang.cayHang.soThungQc', { n: formatNumberVN(r.so_thung_qc) })}
+                        </span>
+                      )}
+                    </>
+                  );
                 case 'ket_luan':
                   return r.ket_luan_gscl ? (
                     <span
@@ -166,21 +180,32 @@ const CayHangXuatSection: React.FC<Props> = ({ idPhieu, rows, loading, canEdit, 
             renderActions={
               canEdit
                 ? (r) => (
-                    <SubTableActionButton
-                      label={t('common.delete')}
-                      icon={<Trash2 size={14} />}
-                      tone="danger"
-                      disabled={busy}
-                      onClick={() => xoaDong(r)}
-                    />
+                    <>
+                      <SubTableActionButton
+                        primary
+                        label={t('dangKyNhanHang.cayHang.sua')}
+                        icon={<Pencil size={14} />}
+                        disabled={busy}
+                        onClick={() => setDangSua(r)}
+                      />
+                      <SubTableActionButton
+                        label={t('common.delete')}
+                        icon={<Trash2 size={14} />}
+                        tone="danger"
+                        disabled={busy}
+                        onClick={() => xoaDong(r)}
+                      />
+                    </>
                   )
                 : undefined
             }
-            actionsWidth={56}
+            onMobileCardClick={canEdit ? setDangSua : undefined}
+            actionsWidth={80}
             maxHeight="420px"
           />
         </div>
       )}
+      <AnimatePresence>{dangSua && <SuaSoThungDialog row={dangSua} onClose={() => setDangSua(null)} />}</AnimatePresence>
     </GenericSubTableSection>
   );
 };

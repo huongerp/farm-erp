@@ -39,6 +39,7 @@ const dong = (id: string, idHh: string, ma: string, sl = 60): DangKyNhanHangCt =
   ten_hang_hoa: `Hàng ${ma}`,
   dvt: 'Thùng',
   so_luong: sl,
+  so_thung_qc: sl,
   nguon: 'quet',
   tg_quet: '',
   id_nguoi_quet: null,

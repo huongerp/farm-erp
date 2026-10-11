@@ -23,11 +23,11 @@ import { MobileFilterField } from '../../../../components/ui/MobileFilterSheet';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import { StatsKpiGrid, type StatsKpiCardItem } from '../../../../components/shared/stats';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
-import { getDateRangeFromPreset } from '../../../../lib/date-presets';
 import { formatDateTimeShort, formatNumberVN, formatYmdToDisplay, getTodayISO } from '../../../../lib/utils';
 import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
 import { tinhThongKeDangKyNhanHang, type PhieuThoiGian, type ThongKeNhom } from '../core/thong-ke';
 import { formatThoiLuong } from '../core/thoi-gian';
+import { khoangTheoPreset } from '../core/ky-loc';
 import type { DangKyNhanHang } from '../core/types';
 import { useDangKyNhanHangById, useDangKyNhanHangThongKe } from '../hooks/use-dang-ky-nhan-hang';
 import { useDangKyNhanHangViewScope } from '../hooks/use-dang-ky-nhan-hang-view-scope';
@@ -39,21 +39,6 @@ const ThongKeCharts = lazy(() => import('./stats/ThongKeCharts'));
 /** Mặc định không giới hạn thời gian (Tất cả). */
 const PRESET_MAC_DINH = 'all';
 const PRESET_IDS = ['today', '7days', 'thisMonth', 'lastMonth', 'thisQuarter', 'thisYear', 'all', 'custom'] as const;
-
-function addDaysIso(ymd: string, days: number): string {
-  const [y, m, d] = ymd.split('-').map(Number);
-  const dt = new Date(Date.UTC(y, m - 1, d + days));
-  return dt.toISOString().slice(0, 10);
-}
-
-function khoangNgay(preset: string, customStart: string, customEnd: string): { from: string; to: string } {
-  const today = getTodayISO();
-  if (preset === 'today') return { from: today, to: today };
-  if (preset === '7days') return { from: addDaysIso(today, -6), to: today };
-  if (preset === 'custom') return { from: customStart, to: customEnd };
-  const r = getDateRangeFromPreset(preset);
-  return { from: r.dateFrom, to: r.dateTo };
-}
 
 const ThongKeTab: React.FC = () => {
   const { t } = useTranslation();
@@ -68,7 +53,7 @@ const ThongKeTab: React.FC = () => {
   // Bản mới nhất sau khi check in/out ngay trong drawer.
   const { data: viewingFull } = useDangKyNhanHangById(viewing?.id);
 
-  const { from, to } = khoangNgay(range.preset, range.customStart, range.customEnd);
+  const { from, to } = khoangTheoPreset(range.preset, getTodayISO(), range.customStart, range.customEnd);
 
   const query = useMemo(
     () => ({
@@ -77,8 +62,6 @@ const ThongKeTab: React.FC = () => {
       searchTerm: '',
       viewAll: viewScope.viewAll,
       allowedBranchIds: viewScope.allowedBranchIds,
-      nam: [],
-      thang: [],
       trangThai: [],
       idChiNhanh,
       ngayFrom: from || undefined,
@@ -112,7 +95,7 @@ const ThongKeTab: React.FC = () => {
     [branches],
   );
 
-  const presets = PRESET_IDS.map((id) => ({ id, label: t(`dangKyNhanHang.stats.preset.${id}`) }));
+  const presets = PRESET_IDS.map((id) => ({ id, label: t(`dangKyNhanHang.preset.${id}`) }));
   const displayLabel =
     range.preset === 'custom' && (from || to)
       ? `${from ? formatYmdToDisplay(from) : '…'} – ${to ? formatYmdToDisplay(to) : '…'}`

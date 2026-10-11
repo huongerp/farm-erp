@@ -6,6 +6,7 @@ import type { DangKyNhanHangFormValues } from '../core/schema';
 import type { DangKyNhanHangListServerQuery } from '../services/dang-ky-nhan-hang-list-query';
 import {
   capNhatAnh,
+  capNhatSoLuongDong,
   checkIn,
   checkOut,
   createDkNh,
@@ -181,6 +182,19 @@ export function useCapNhatAnhDangKyNhanHang(onSuccess?: () => void) {
     onSuccess: () => {
       invalidate();
       toast.success(i18n.t('dangKyNhanHang.toast.anhSuccess'));
+      onSuccess?.();
+    },
+    onError: onErr,
+  });
+}
+
+export function useSuaSoThungDong(onSuccess?: () => void) {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: ({ id, soLuong }: { id: string; soLuong: number }) => capNhatSoLuongDong(id, soLuong),
+    onSuccess: () => {
+      invalidate();
+      toast.success(i18n.t('dangKyNhanHang.toast.suaDongSuccess'));
       onSuccess?.();
     },
     onError: onErr,

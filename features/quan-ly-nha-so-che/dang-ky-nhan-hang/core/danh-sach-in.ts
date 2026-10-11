@@ -1,40 +1,88 @@
 /**
- * In "Danh sách dự kiến xe giao nhận hàng" theo ngày: tham số URL, dòng bảng in và dữ liệu
- * sheet XLSX. Thuần — không phụ thuộc React hay store.
+ * In "Danh sách dự kiến xe giao nhận hàng" theo bộ lọc đang áp trên toolbar danh sách:
+ * tham số URL, tiêu đề, dòng bảng in và dữ liệu sheet XLSX. Thuần — không phụ thuộc React hay store.
  */
-import type { DangKyNhanHang, TrangThaiDkNh } from './types';
+import { TRANG_THAI_DKNH, type DangKyNhanHang, type TrangThaiDkNh } from './types';
+import { DKNH_SORTABLE_DB_COLUMNS } from '../services/dang-ky-nhan-hang-list-query';
 
 const DUONG_DAN = '/quan-ly-nha-so-che/dang-ky-nhan-hang/in-danh-sach';
 const YMD = /^\d{4}-\d{2}-\d{2}$/;
 
-/** Trạng thái được in — phiếu huỷ không phải xe dự kiến vào. */
-export const TRANG_THAI_IN_DANH_SACH: TrangThaiDkNh[] = ['cho_vao', 'da_vao', 'da_ra'];
-
-export function taoUrlInDanhSach(ngay: string, idChiNhanh: string[] = []): string {
-  const sp = new URLSearchParams({ ngay });
-  if (idChiNhanh.length) sp.set('cn', idChiNhanh.join(','));
-  return `${DUONG_DAN}?${sp.toString()}`;
+/** Bộ lọc danh sách mang sang trang in (cùng nghĩa với DangKyNhanHangListServerQuery). */
+export interface LocInDanhSach {
+  /** YYYY-MM-DD, rỗng = không giới hạn */
+  tu: string;
+  den: string;
+  q: string;
+  trangThai: TrangThaiDkNh[];
+  idChiNhanh: string[];
+  sortColumn: string | null;
+  sortDirection: 'asc' | 'desc' | null;
 }
 
-/** Ngày sai định dạng / thiếu → null (trang in báo lỗi); chi nhánh chỉ giữ id số. */
-export function docThamSoInDanhSach(sp: URLSearchParams): { ngay: string | null; idChiNhanh: string[] } {
-  const ngay = sp.get('ngay');
-  const idChiNhanh = (sp.get('cn') ?? '')
+export function taoUrlInDanhSach(loc: LocInDanhSach): string {
+  const sp = new URLSearchParams();
+  if (loc.tu) sp.set('tu', loc.tu);
+  if (loc.den) sp.set('den', loc.den);
+  if (loc.q.trim()) sp.set('q', loc.q.trim());
+  if (loc.trangThai.length) sp.set('tt', loc.trangThai.join(','));
+  if (loc.idChiNhanh.length) sp.set('cn', loc.idChiNhanh.join(','));
+  if (loc.sortColumn && loc.sortDirection) {
+    sp.set('sort', loc.sortColumn);
+    sp.set('dir', loc.sortDirection);
+  }
+  const qs = sp.toString();
+  return qs ? `${DUONG_DAN}?${qs}` : DUONG_DAN;
+}
+
+const ngayHopLe = (v: string | null) => (v && YMD.test(v) && !Number.isNaN(Date.parse(v)) ? v : '');
+const dsTach = (v: string | null) =>
+  (v ?? '')
     .split(',')
     .map((s) => s.trim())
-    .filter((s) => /^\d+$/.test(s));
-  return { ngay: ngay && YMD.test(ngay) && !Number.isNaN(Date.parse(ngay)) ? ngay : null, idChiNhanh };
+    .filter(Boolean);
+
+/** Đọc lại bộ lọc từ URL; giá trị lạ (ngày sai, trạng thái / cột sort không có) bị bỏ qua. */
+export function docThamSoInDanhSach(sp: URLSearchParams): LocInDanhSach {
+  const sort = sp.get('sort');
+  const dir = sp.get('dir');
+  const sortHopLe = sort != null && DKNH_SORTABLE_DB_COLUMNS.has(sort) && (dir === 'asc' || dir === 'desc');
+  return {
+    tu: ngayHopLe(sp.get('tu')),
+    den: ngayHopLe(sp.get('den')),
+    q: (sp.get('q') ?? '').trim(),
+    trangThai: dsTach(sp.get('tt')).filter((s): s is TrangThaiDkNh =>
+      (TRANG_THAI_DKNH as readonly string[]).includes(s)
+    ),
+    idChiNhanh: dsTach(sp.get('cn')).filter((s) => /^\d+$/.test(s)),
+    sortColumn: sortHopLe ? sort : null,
+    sortDirection: sortHopLe ? dir : null,
+  };
 }
 
 export const ngayVn = (ymd: string) => ymd.split('-').reverse().join('/');
 
-export function tenFileDanhSach(ngay: string): string {
-  return `danh-sach-xe-${ngayVn(ngay).replace(/\//g, '-')}`;
+/** Khoá tiêu đề (trong `dangKyNhanHang.inDanhSach.tieuDe.*`) + biến theo khoảng ngày đang lọc. */
+export function tieuDeDanhSach(tu: string, den: string): { key: string; vars: Record<string, string> } {
+  if (tu && den && tu === den) return { key: 'ngay', vars: { ngay: ngayVn(tu) } };
+  if (tu && den) return { key: 'khoang', vars: { tu: ngayVn(tu), den: ngayVn(den) } };
+  if (tu) return { key: 'tu', vars: { tu: ngayVn(tu) } };
+  if (den) return { key: 'den', vars: { den: ngayVn(den) } };
+  return { key: 'tatCa', vars: {} };
+}
+
+export function tenFileDanhSach(tu: string, den: string): string {
+  const d = (ymd: string) => ngayVn(ymd).replace(/\//g, '-');
+  if (tu && den && tu === den) return `danh-sach-xe-${d(tu)}`;
+  if (tu || den) return `danh-sach-xe-${tu ? d(tu) : ''}_${den ? d(den) : ''}`;
+  return 'danh-sach-xe';
 }
 
 export interface DongDanhSachIn {
   id: string;
   stt: number;
+  /** dd/mm/yyyy */
+  ngay: string;
   soXe: string;
   taiXe: string;
   trangThai: string;
@@ -45,72 +93,60 @@ export interface DongDanhSachIn {
   loaiHang: string;
 }
 
-/** Bỏ phiếu huỷ, xếp theo giờ đăng ký (chưa có giờ xuống cuối), đánh STT. */
+/** Giữ nguyên thứ tự server (theo sort của danh sách), chỉ đánh STT và map cột. */
 export function taoDongDanhSachIn(
   phieu: DangKyNhanHang[],
   nhanTrangThai: (tt: TrangThaiDkNh) => string
 ): DongDanhSachIn[] {
-  return phieu
-    .filter((p) => TRANG_THAI_IN_DANH_SACH.includes(p.trang_thai))
-    .map((p, i) => ({ p, i }))
-    .sort((a, b) => {
-      const ga = a.p.gio_dang_ky_tu;
-      const gb = b.p.gio_dang_ky_tu;
-      if (ga && gb && ga !== gb) return ga.localeCompare(gb);
-      if (!ga !== !gb) return ga ? -1 : 1;
-      return a.i - b.i;
-    })
-    .map(({ p }, i) => ({
-      id: p.id,
-      stt: i + 1,
-      soXe: p.so_xe || p.so_cont || '',
-      taiXe: p.ten_tai_xe ?? '',
-      trangThai: nhanTrangThai(p.trang_thai),
-      kho: p.ten_chi_nhanh ?? '',
-      thongTin: p.ghi_chu ?? '',
-      khachHang: p.khach_hang ?? '',
-      soLuong: p.so_luong_dang_ky,
-      loaiHang: p.loai_hang_hoa ?? '',
-    }));
+  return phieu.map((p, i) => ({
+    id: p.id,
+    stt: i + 1,
+    ngay: ngayVn(p.ngay_dang_ky),
+    soXe: p.so_xe || p.so_cont || '',
+    taiXe: p.ten_tai_xe ?? '',
+    trangThai: nhanTrangThai(p.trang_thai),
+    kho: p.ten_chi_nhanh ?? '',
+    thongTin: p.ghi_chu ?? '',
+    khachHang: p.khach_hang ?? '',
+    soLuong: p.so_luong_dang_ky,
+    loaiHang: p.loai_hang_hoa ?? '',
+  }));
 }
 
-/** Khoá nhãn cột (trong `dangKyNhanHang.inDanhSach.col.*`) theo đúng thứ tự in. */
-export const COT_DANH_SACH_IN = [
-  'stt',
-  'soXe',
-  'taiXe',
-  'trangThai',
-  'kho',
-  'thongTin',
-  'khachHang',
-  'soLuong',
-  'loaiHang',
-] as const;
+export type CotDanhSachIn = Exclude<keyof DongDanhSachIn, 'id'>;
+
+/** Cột in theo thứ tự; danh sách trải nhiều ngày thì thêm cột Ngày sau STT. */
+export function cotDanhSachIn(dong: DongDanhSachIn[]): CotDanhSachIn[] {
+  const nhieuNgay = new Set(dong.map((d) => d.ngay)).size > 1;
+  return [
+    'stt',
+    ...(nhieuNgay ? (['ngay'] as const) : []),
+    'soXe',
+    'taiXe',
+    'trangThai',
+    'kho',
+    'thongTin',
+    'khachHang',
+    'soLuong',
+    'loaiHang',
+  ];
+}
 
 /**
  * Dòng sheet XLSX: tiêu đề, "Số lượng xe: N", dòng trống, header, dữ liệu.
  * `nhan(key)` trả nhãn theo key trong `dangKyNhanHang.inDanhSach.*` (truyền `t` của i18n).
  */
 export function taoAoaDanhSachXlsx(
-  ngay: string,
+  tieuDe: string,
   dong: DongDanhSachIn[],
   nhan: (key: string, vars?: Record<string, unknown>) => string
 ): (string | number)[][] {
+  const cot = cotDanhSachIn(dong);
   return [
-    [nhan('tieuDe', { ngay: ngayVn(ngay) })],
+    [tieuDe],
     [nhan('soLuongXe', { n: dong.length })],
     [],
-    COT_DANH_SACH_IN.map((c) => nhan(`col.${c}`)),
-    ...dong.map((d) => [
-      d.stt,
-      d.soXe,
-      d.taiXe,
-      d.trangThai,
-      d.kho,
-      d.thongTin,
-      d.khachHang,
-      d.soLuong ?? '',
-      d.loaiHang,
-    ]),
+    cot.map((c) => nhan(`col.${c}`)),
+    ...dong.map((d) => cot.map((c) => d[c] ?? '')),
   ];
 }

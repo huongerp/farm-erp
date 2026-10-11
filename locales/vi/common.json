@@ -504,5 +504,8 @@
   "common.qrScanner.den": "Bật/tắt đèn",
   "common.qrScanner.xong": "Xong",
   "common.qrScanner.hoanTacCuoi": "Hoàn tác lần cuối",
-  "common.qrScanner.hoanTacXong": "Đã xoá lần ghi gần nhất"
+  "common.qrScanner.hoanTacXong": "Đã xoá lần ghi gần nhất",
+  "common.qrScanner.ghi": "Ghi",
+  "common.qrScanner.boQua": "Bỏ qua",
+  "common.qrScanner.daBoQua": "Đã bỏ qua, chưa ghi: {{ten}}"
 }

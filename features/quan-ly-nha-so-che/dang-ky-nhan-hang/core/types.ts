@@ -59,8 +59,10 @@ export interface DangKyNhanHangCt {
   ma_hang_hoa: string | null;
   ten_hang_hoa: string | null;
   dvt: string | null;
-  /** Số thùng của cây hàng lúc ghi. */
+  /** Số thùng thực xếp lên xe (nhập lúc quét, mặc định = số thùng cây hàng; sửa được). */
   so_luong: number;
+  /** Số thùng của cây hàng theo phiếu QC hiện tại — so với `so_luong` để biết đã chỉnh. */
+  so_thung_qc: number | null;
   nguon: NguonDongHang;
   ma_tem_quet: string | null;
   tg_quet: string;

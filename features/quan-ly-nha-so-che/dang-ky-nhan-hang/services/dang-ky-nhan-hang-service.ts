@@ -24,6 +24,7 @@ export {
   khoiPhucDkNhDb as khoiPhucDkNh,
   capNhatAnhDb as capNhatAnh,
   themDongHangDb as themDongHang,
+  capNhatSoLuongDongDb as capNhatSoLuongDong,
   xoaDongHangDb as xoaDongHang,
   hoanTacDongCuoiDb as hoanTacDongCuoi,
   getTongHangHoaTheoPhieuDb as getTongHangHoaTheoPhieu,

@@ -7,13 +7,9 @@ export interface DangKyNhanHangListServerQuery {
   searchTerm: string;
   viewAll: boolean;
   allowedBranchIds: string[];
-  /** yyyy */
-  nam: string[];
-  /** yyyy-mm */
-  thang: string[];
   trangThai: TrangThaiDkNh[] | string[];
   idChiNhanh: string[];
-  /** Khoảng ngày đăng ký (ISO) — tab Thống kê. */
+  /** Khoảng ngày đăng ký (ISO) — chip thời gian. */
   ngayFrom?: string;
   ngayTo?: string;
   sortColumn: string | null;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { danhGiaQuetCayHang, type DauVaoQuet } from './quet-cay-hang';
+import { danhGiaQuetCayHang, docSoThung, type DauVaoQuet } from './quet-cay-hang';
 
 const vao = (p: Partial<DauVaoQuet> = {}): DauVaoQuet => ({
   laTemQc: true,
@@ -39,5 +39,17 @@ describe('danhGiaQuetCayHang', () => {
       muc: 'canh_bao',
       canhBao: ['khong_dat', 'xe_khac'],
     });
+  });
+});
+
+describe('docSoThung', () => {
+  it('số nguyên dương, chấm/phẩy là ngăn nghìn', () => {
+    expect(docSoThung(' 30 ')).toBe(30);
+    expect(docSoThung('1.200')).toBe(1200);
+    expect(docSoThung('1,200')).toBe(1200);
+  });
+
+  it('rỗng / 0 / âm / chữ → không hợp lệ', () => {
+    for (const raw of ['', '  ', '0', '-5', 'abc', '3a', '1e3']) expect(docSoThung(raw)).toBeNull();
   });
 });

@@ -1,38 +1,52 @@
 /**
- * Mẫu in "Danh sách dự kiến xe giao nhận hàng" một ngày — mỗi xe một dòng, cùng cột với bảng
- * kê tay trên Google Sheet trước đây. Khổ / lề / cỡ chữ / bề rộng cột do khung PhieuInPage lo.
+ * Mẫu in "Danh sách dự kiến xe giao nhận hàng" theo bộ lọc của danh sách — mỗi xe một dòng, cùng
+ * cột với bảng kê tay trên Google Sheet trước đây (thêm cột Ngày khi danh sách trải nhiều ngày).
+ * Khổ / lề / cỡ chữ / bề rộng cột do khung PhieuInPage lo.
  */
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn, formatNumberVN } from '../../../../../lib/utils';
-import { COT_DANH_SACH_IN, ngayVn, type DongDanhSachIn } from '../../core/danh-sach-in';
+import { cotDanhSachIn, type CotDanhSachIn, type DongDanhSachIn } from '../../core/danh-sach-in';
 import { KhungPhieu } from './PreviewParts';
 
-/** Bề rộng ban đầu (%) theo thứ tự COT_DANH_SACH_IN. */
-const RONG_COT = [5, 11, 13, 9, 9, 15, 11, 8, 19];
-const CAN_GIUA = new Set(['stt', 'trangThai']);
+/** Bề rộng ban đầu theo tỉ lệ — quy về % theo các cột đang in. */
+const TI_LE_COT: Record<CotDanhSachIn, number> = {
+  stt: 5,
+  ngay: 9,
+  soXe: 11,
+  taiXe: 13,
+  trangThai: 9,
+  kho: 9,
+  thongTin: 15,
+  khachHang: 11,
+  soLuong: 8,
+  loaiHang: 19,
+};
+const CAN_GIUA = new Set<CotDanhSachIn>(['stt', 'ngay', 'trangThai']);
 
-const MauDanhSachXe: React.FC<{ ngay: string; dong: DongDanhSachIn[]; chiNhanh?: string }> = ({
-  ngay,
+const oDong = (d: DongDanhSachIn, c: CotDanhSachIn): React.ReactNode =>
+  c === 'soLuong' ? (d.soLuong != null ? formatNumberVN(d.soLuong) : '') : d[c];
+
+const MauDanhSachXe: React.FC<{ tieuDe: string; phuDe?: string; dong: DongDanhSachIn[] }> = ({
+  tieuDe,
+  phuDe,
   dong,
-  chiNhanh,
 }) => {
   const { t } = useTranslation();
+  const cot = cotDanhSachIn(dong);
+  const tong = cot.reduce((s, c) => s + TI_LE_COT[c], 0);
   const th = 'border border-gray-400 bg-gray-100 px-1.5 py-1 font-semibold align-middle';
   const td = 'border border-gray-300 px-1.5 py-1 align-top break-words';
   return (
-    <KhungPhieu
-      title={t('dangKyNhanHang.inDanhSach.tieuDe', { ngay: ngayVn(ngay) })}
-      subtitle={chiNhanh ? `${t('dangKyNhanHang.col.chiNhanh')}: ${chiNhanh}` : undefined}
-    >
+    <KhungPhieu title={tieuDe} subtitle={phuDe}>
       <p className="font-semibold mb-2">{t('dangKyNhanHang.inDanhSach.soLuongXe', { n: dong.length })}</p>
       <table className="w-full border-collapse text-[0.95em]">
         <thead>
           <tr>
-            {COT_DANH_SACH_IN.map((c, i) => (
+            {cot.map((c) => (
               <th
                 key={c}
-                style={{ width: `${RONG_COT[i]}%` }}
+                style={{ width: `${((TI_LE_COT[c] / tong) * 100).toFixed(2)}%` }}
                 className={cn(th, CAN_GIUA.has(c) ? 'text-center' : c === 'soLuong' ? 'text-right' : 'text-left')}
               >
                 {t(`dangKyNhanHang.inDanhSach.col.${c}`)}
@@ -43,24 +57,27 @@ const MauDanhSachXe: React.FC<{ ngay: string; dong: DongDanhSachIn[]; chiNhanh?:
         <tbody>
           {dong.length === 0 ? (
             <tr>
-              <td colSpan={COT_DANH_SACH_IN.length} className={cn(td, 'text-center italic text-gray-500 py-4')}>
+              <td colSpan={cot.length} className={cn(td, 'text-center italic text-gray-500 py-4')}>
                 {t('dangKyNhanHang.inDanhSach.trong')}
               </td>
             </tr>
           ) : (
             dong.map((d) => (
               <tr key={d.id} className="break-inside-avoid">
-                <td className={cn(td, 'text-center tabular-nums')}>{d.stt}</td>
-                <td className={cn(td, 'font-mono font-semibold')}>{d.soXe}</td>
-                <td className={td}>{d.taiXe}</td>
-                <td className={cn(td, 'text-center')}>{d.trangThai}</td>
-                <td className={td}>{d.kho}</td>
-                <td className={td}>{d.thongTin}</td>
-                <td className={td}>{d.khachHang}</td>
-                <td className={cn(td, 'text-right tabular-nums')}>
-                  {d.soLuong != null ? formatNumberVN(d.soLuong) : ''}
-                </td>
-                <td className={td}>{d.loaiHang}</td>
+                {cot.map((c) => (
+                  <td
+                    key={c}
+                    className={cn(
+                      td,
+                      CAN_GIUA.has(c) && 'text-center',
+                      (c === 'stt' || c === 'ngay' || c === 'soLuong') && 'tabular-nums',
+                      c === 'soLuong' && 'text-right',
+                      c === 'soXe' && 'font-mono font-semibold'
+                    )}
+                  >
+                    {oDong(d, c)}
+                  </td>
+                ))}
               </tr>
             ))
           )}

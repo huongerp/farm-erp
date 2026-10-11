@@ -5,6 +5,7 @@ import type QrScannerType from 'qr-scanner';
 import GenericDrawer from './GenericDrawer';
 import Button from '../ui/Button';
 import Combobox from '../ui/Combobox';
+import Input from '../ui/Input';
 import { DIALOG_SIZE } from '../../lib/dialog-sizes';
 import { taoBoLocQuetTrung } from '../../lib/qr-quet';
 import { cn } from '../../lib/utils';
@@ -14,6 +15,27 @@ export interface KetQuaQuet {
   message: string;
   /** Đã ghi nhận nhưng cần người quét để ý (hiện vàng, tiếng bíp khác). */
   canhBao?: boolean;
+  /**
+   * Mã hợp lệ nhưng cần người quét gõ thêm một số trước khi ghi (vd số thùng thực xếp
+   * lên xe). Dialog dừng nhận mã mới, hiện ô số; Ghi → `ghi(so)` cho kết quả cuối.
+   */
+  nhapSo?: NhapSoKhiQuet;
+}
+
+export interface NhapSoKhiQuet {
+  /** Nhãn ô số, vd "Số thùng xếp lên xe". */
+  nhan: string;
+  macDinh: number;
+  /** Đọc chuỗi gõ → số hợp lệ; `null` = sai, hiện `loi`. */
+  doc: (raw: string) => number | null;
+  loi: string;
+  ghi: (so: number) => Promise<KetQuaQuet>;
+}
+
+interface ChoNhapSo {
+  message: string;
+  canhBao?: boolean;
+  nhapSo: NhapSoKhiQuet;
 }
 
 /** Danh sách chọn tay dưới camera (tem hỏng / không có camera / máy quét cầm tay). */
@@ -77,6 +99,61 @@ function baoHieu(ok: boolean, canhBao = false) {
 
 const trim = (raw: string) => raw.trim() || null;
 
+/** Ô số hiện dưới camera khi mã vừa quét cần nhập thêm (Enter = Ghi). */
+const KhoiNhapSo: React.FC<{ cho: ChoNhapSo; onXong: (so: number | null) => void }> = ({ cho, onXong }) => {
+  const { t } = useTranslation();
+  const [raw, setRaw] = useState(String(cho.nhapSo.macDinh));
+  const [loi, setLoi] = useState<string>();
+  const inputRef = useRef<HTMLInputElement>(null);
+  // Người quét gõ số ngay, không phải chạm vào ô.
+  useEffect(() => inputRef.current?.focus(), []);
+  const ghi = () => {
+    const so = cho.nhapSo.doc(raw);
+    if (so == null) setLoi(cho.nhapSo.loi);
+    else onXong(so);
+  };
+  return (
+    <div
+      className={cn(
+        'rounded-xl border p-3 space-y-2.5',
+        cho.canhBao ? 'border-amber-500/40 bg-amber-500/10' : 'border-primary/30 bg-primary/5'
+      )}
+    >
+      <p className={cn('text-sm break-words', cho.canhBao ? 'text-amber-800 dark:text-amber-300' : 'text-foreground')}>
+        {cho.canhBao && <AlertTriangle size={14} className="inline mr-1 -mt-0.5" />}
+        {cho.message}
+      </p>
+      <form
+        className="flex items-end gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          ghi();
+        }}
+      >
+        <div className="flex-1 min-w-0">
+          <Input
+            ref={inputRef}
+            label={cho.nhapSo.nhan}
+            value={raw}
+            onChange={(e) => {
+              setRaw(e.target.value);
+              setLoi(undefined);
+            }}
+            onFocus={(e) => e.target.select()}
+            inputMode="numeric"
+            error={loi}
+            className="text-right tabular-nums font-semibold"
+          />
+        </div>
+        <Button type="button" variant="outline" onClick={() => onXong(null)}>
+          {t('common.qrScanner.boQua')}
+        </Button>
+        <Button type="submit">{t('common.qrScanner.ghi')}</Button>
+      </form>
+    </div>
+  );
+};
+
 /**
  * Quét QR bằng camera sau (thư viện `qr-scanner`, lazy-load khi mở dialog).
  * Danh sách chọn tay (tuỳ chọn) đặt dưới camera; máy quét cầm tay (gõ mã + Enter như bàn
@@ -109,11 +186,14 @@ const QrScannerDialog: React.FC<QrScannerDialogProps> = ({
   const [lichSu, setLichSu] = useState<LichSu[]>([]);
   const [soThanhCong, setSoThanhCong] = useState(0);
   const [chonKey, setChonKey] = useState(0);
+  const [cho, setCho] = useState<ChoNhapSo | null>(null);
+  const choXongRef = useRef<((so: number | null) => void) | null>(null);
 
   const xuLyMa = useCallback(
     (raw: string, boQuaTrung = false) => {
       const ma = chuanHoa(raw);
-      if (!ma || doneRef.current) return;
+      // Đang chờ gõ số cho mã trước → không nhận mã mới (camera vẫn thấy tem khác trong khung).
+      if (!ma || doneRef.current || choXongRef.current) return;
       const now = Date.now();
       if (boQuaTrung) boLocRef.current.datLai();
       if (!boLocRef.current.thay(ma, now)) return;
@@ -127,6 +207,26 @@ const QrScannerDialog: React.FC<QrScannerDialogProps> = ({
         } catch (e) {
           kq = { ok: false, message: e instanceof Error ? e.message : String(e) };
         }
+        if (kq.ok && kq.nhapSo) {
+          const nhapSo = kq.nhapSo;
+          const so = await new Promise<number | null>((resolve) => {
+            choXongRef.current = resolve;
+            setCho({ message: kq.message, canhBao: kq.canhBao, nhapSo });
+          });
+          choXongRef.current = null;
+          setCho(null);
+          if (so == null) {
+            kq = { ok: false, message: t('common.qrScanner.daBoQua', { ten: kq.message }) };
+            setLichSu((cur) => [{ ...kq, id: now }, ...cur].slice(0, 8));
+            if (mode === 'mot-lan') doneRef.current = false;
+            return;
+          }
+          try {
+            kq = await nhapSo.ghi(so);
+          } catch (e) {
+            kq = { ok: false, message: e instanceof Error ? e.message : String(e) };
+          }
+        }
         baoHieu(kq.ok, kq.canhBao);
         if (kq.ok) setSoThanhCong((n) => n + 1);
         setLichSu((cur) => [{ ...kq, id: now }, ...cur].slice(0, 8));
@@ -136,7 +236,7 @@ const QrScannerDialog: React.FC<QrScannerDialogProps> = ({
         }
       });
     },
-    [mode, chuanHoa, onDetected, onClose]
+    [mode, chuanHoa, onDetected, onClose, t]
   );
   // Camera khởi tạo một lần — callback của nó phải luôn gọi bản xuLyMa mới nhất
   // (dữ liệu tra mã có thể tải xong sau khi mở dialog).
@@ -171,6 +271,7 @@ const QrScannerDialog: React.FC<QrScannerDialogProps> = ({
     })();
     return () => {
       cancelled = true;
+      choXongRef.current?.(null);
       scannerRef.current?.destroy();
       scannerRef.current = null;
     };
@@ -207,7 +308,7 @@ const QrScannerDialog: React.FC<QrScannerDialogProps> = ({
                   [{ ok: false, message: undoDoneMessage ?? t('common.qrScanner.hoanTacXong'), id: Date.now() }, ...cur].slice(0, 8)
                 );
               }}
-              disabled={undoPending}
+              disabled={undoPending || cho != null}
             >
               <Undo2 size={14} className="mr-1.5" />
               {undoLabel ?? t('common.qrScanner.hoanTacCuoi')}
@@ -254,7 +355,9 @@ const QrScannerDialog: React.FC<QrScannerDialogProps> = ({
           )}
         </div>
 
-        {chonTay && (
+        {cho && <KhoiNhapSo cho={cho} onXong={(so) => choXongRef.current?.(so)} />}
+
+        {chonTay && !cho && (
           <Combobox
             key={chonKey}
             label={chonTay.label}
