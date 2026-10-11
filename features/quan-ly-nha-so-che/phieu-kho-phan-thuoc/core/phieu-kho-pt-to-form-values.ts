@@ -1,7 +1,10 @@
 import type { DeXuatMuaHang } from '../../de-xuat-mua-hang/core/types';
 import type { PhieuKhoPTChiTietFormItem, PhieuKhoPTFormValues } from './schema';
+import { getTodayISO } from '../../../../lib/utils';
 
-const today = () => new Date().toISOString().slice(0, 10);
+// Ngày theo múi giờ công ty — toISOString() là UTC, trước 7h sáng ra ngày hôm qua mà người
+// thường không tự sửa được (ô ngày khoá, chỉ cấp cao đổi).
+const today = () => getTodayISO();
 
 /**
  * Dòng phiếu kho nhập từ dòng đề xuất mua hàng.

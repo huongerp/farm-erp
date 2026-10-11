@@ -64,6 +64,9 @@ export interface KhoBienThe {
     deXuatStats: string;
     tonKhoTheoKy: string;
     hangHoaDangDung: string;
+    /** Xin sửa phiếu kho đã duyệt / cấp cao xử lý yêu cầu (migration 035). */
+    xinSuaPhieuKho: string;
+    xuLyXinSuaPhieuKho: string;
   };
 }
 
@@ -100,6 +103,8 @@ export const BIEN_THE_SO_CHE: KhoBienThe = {
     deXuatStats: 'rpc_farm_de_xuat_mua_hang_stats',
     tonKhoTheoKy: 'rpc_farm_ton_kho_pt_theo_ky',
     hangHoaDangDung: 'rpc_farm_hang_hoa_dang_dung',
+    xinSuaPhieuKho: 'rpc_farm_pt_phieu_kho_xin_sua',
+    xuLyXinSuaPhieuKho: 'rpc_farm_pt_phieu_kho_xu_ly_xin_sua',
   },
 };
 
@@ -137,6 +142,8 @@ export const BIEN_THE_PHAN_THUOC: KhoBienThe = {
     deXuatStats: 'rpc_pt_de_xuat_mua_hang_stats',
     tonKhoTheoKy: 'rpc_pt_ton_kho_theo_ky',
     hangHoaDangDung: 'rpc_pt_hang_hoa_dang_dung',
+    xinSuaPhieuKho: 'rpc_pt_phieu_kho_xin_sua',
+    xuLyXinSuaPhieuKho: 'rpc_pt_phieu_kho_xu_ly_xin_sua',
   },
 };
 

@@ -26,6 +26,8 @@ import { useAuthStore } from '../../../../store/useStore';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
 import type { PhieuKhoPT, TrangThaiPhieuKhoPT } from '../core/types';
 import { canBulkApprovePhieuKhoPT } from '../core/constants';
+import { phieuMoChoSuaXoa } from '../core/quyen-sua-phieu';
+import { usePhieuKhoPTCapCao } from '../hooks/use-phieu-kho-pt-cap-cao';
 import type { Kho } from '../../../kho-van/danh-sach-kho/core/types';
 import DanhSachToolbar from './DanhSachToolbar';
 import DanhSachList from './DanhSachList';
@@ -96,6 +98,9 @@ const DanhSachTab: React.FC = () => {
   const nguoiDuyetIdRaw = user?.id != null ? Number(user.id) : null;
   const nguoiDuyetId = nguoiDuyetIdRaw != null && !Number.isNaN(nguoiDuyetIdRaw) ? nguoiDuyetIdRaw : null;
   const nguoiDuyetTen = user?.ho_va_ten?.trim() || user?.full_name?.trim() || user?.email?.trim() || '';
+  const capCao = usePhieuKhoPTCapCao();
+  /** Phiếu đã duyệt chỉ cấp cao / người được cấp quyền sửa xoá được (core/quyen-sua-phieu.ts). */
+  const moChoSuaXoa = (item: PhieuKhoPT) => phieuMoChoSuaXoa(item, { capCao, nhanVienId: nguoiDuyetId });
 
   const dateRangeStr = useMemo(() => {
     const dp = typeof filters.datePreset === 'string' ? filters.datePreset : 'all';
@@ -245,8 +250,20 @@ const DanhSachTab: React.FC = () => {
     });
   };
 
+  /** Phiếu đã duyệt bị khoá được bỏ khỏi lô, không chặn cả lô. */
   const handleDeleteMany = () => {
-    const ids = Array.from(selectedIds);
+    const selected = Array.from(selectedIds);
+    const ids = selected.filter((id) => {
+      const item = tableRows.find((p) => p.id === id);
+      return !item || moChoSuaXoa(item);
+    });
+    if (ids.length === 0) {
+      toast.message(t('phieuKhoPhanThuoc.xinSua.deleteManyNoneAllowed'));
+      return;
+    }
+    if (ids.length < selected.length) {
+      toast.message(t('phieuKhoPhanThuoc.xinSua.deleteManySkipped', { count: selected.length - ids.length }));
+    }
     confirm({
       title: t('phieuKhoPhanThuoc.deleteTitle'),
       message: t('common.deleteManyConfirm', { count: ids.length }),
@@ -307,8 +324,6 @@ const DanhSachTab: React.FC = () => {
       </button>
     ) : null;
 
-  const canEditItem = (item: PhieuKhoPT) => item.trang_thai === 'Chờ duyệt';
-
   return (
     <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
       <DanhSachToolbar
@@ -346,7 +361,8 @@ const DanhSachTab: React.FC = () => {
           onEdit={canUpdate ? handleEdit : undefined}
           onDelete={canDelete ? handleDelete : undefined}
           onView={setViewingItem}
-          canEditItem={canEditItem}
+          canEditItem={moChoSuaXoa}
+          canDeleteItem={moChoSuaXoa}
         />
       </div>
 

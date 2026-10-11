@@ -10,10 +10,11 @@ import Textarea from '../../../../components/ui/Textarea';
 import Combobox from '../../../../components/ui/Combobox';
 import { phieuKhoPTSchema, type PhieuKhoPTFormValues } from '../core/schema';
 import type { PhieuKhoPT, LoaiPhieuKhoPT } from '../core/types';
-import { cn, formatNumberVN } from '../../../../lib/utils';
+import { cn, formatNumberVN, getTodayISO } from '../../../../lib/utils';
 import type { Kho } from '../../../kho-van/danh-sach-kho/core/types';
 import type { FarmHangHoa } from '../../hang-hoa-phan-thuoc/core/types';
 import { useCreatePhieuKhoPT, useUpdatePhieuKhoPT } from '../hooks/use-phieu-kho-pt';
+import { usePhieuKhoPTCapCao } from '../hooks/use-phieu-kho-pt-cap-cao';
 import { getNextSoPhieuFarmPt } from '../services/phieu-kho-pt-service';
 import { useFarmHangHoaList } from '../../hang-hoa-phan-thuoc/hooks/use-farm-hang-hoa';
 import { useFarmTonKhoPTTheoKho } from '../../ton-kho-phan-thuoc/hooks/use-farm-ton-kho-pt';
@@ -43,7 +44,9 @@ interface Props {
   onRequestAddHangHoa?: () => Promise<FarmHangHoa | null>;
 }
 
-const today = () => new Date().toISOString().slice(0, 10);
+// Ngày theo múi giờ công ty — toISOString() là UTC, trước 7h sáng ra ngày hôm qua mà người
+// thường không tự sửa được (ô ngày khoá, chỉ cấp cao đổi).
+const today = () => getTodayISO();
 
 const LOAI_OPTIONS: { value: LoaiPhieuKhoPT; labelKey: string }[] = [
   { value: 'nhập', labelKey: 'phieuKhoPhanThuoc.tabs.nhap' },
@@ -58,6 +61,8 @@ const PhieuKhoPTForm: React.FC<Props> = ({ khoList, khoDenList, initialData, pre
   const isEdit = !!initialData?.id;
   const createMutation = useCreatePhieuKhoPT(onClose);
   const updateMutation = useUpdatePhieuKhoPT(onClose);
+  // Chỉ cấp cao đổi được ngày phiếu (trigger DB chặn cả khi sửa); người khác tạo mới luôn ngày hôm nay.
+  const capCao = usePhieuKhoPTCapCao();
   const { data: hangHoaList = [], isLoading: isLoadingHangHoa, isError: isErrorHangHoa } = useFarmHangHoaList();
 
   // Giữ nguyên tham chiếu suốt vòng đời form để effect reset không chạy lại mỗi lần render.
@@ -270,6 +275,8 @@ const PhieuKhoPTForm: React.FC<Props> = ({ khoList, khoDenList, initialData, pre
     const sanitized: PhieuKhoPTFormValues = {
       ...data,
       so_phieu: soPhieu || data.so_phieu?.trim() || '',
+      // Ô ngày đã readOnly; chốt thêm lúc lưu để tạo mới của người thường luôn là hôm nay.
+      ngay: capCao || isEdit ? data.ngay : today(),
       kho_den_id: data.kho_den_id === '' || data.kho_den_id === undefined ? null : data.kho_den_id,
       mo_ta: data.mo_ta?.trim() || undefined,
       // Liên kết đề xuất: giữ nguyên qua submit dù không có input nào hiển thị.
@@ -285,7 +292,7 @@ const PhieuKhoPTForm: React.FC<Props> = ({ khoList, khoDenList, initialData, pre
       })),
     };
     if (isEdit && initialData) {
-      updateMutation.mutate({ id: initialData.id, data: sanitized });
+      updateMutation.mutate({ id: initialData.id, data: sanitized, capCao });
     } else {
       createMutation.mutate(sanitized);
     }
@@ -338,6 +345,9 @@ const PhieuKhoPTForm: React.FC<Props> = ({ khoList, khoDenList, initialData, pre
               type="date"
               icon={<Calendar size={12} />}
               required
+              readOnly={!capCao}
+              title={!capCao ? t('phieuKhoPhanThuoc.form.dateLockedHint') : undefined}
+              className={!capCao ? 'cursor-not-allowed bg-muted/40 text-muted-foreground' : undefined}
               {...register('ngay')}
               error={errors.ngay?.message}
             />

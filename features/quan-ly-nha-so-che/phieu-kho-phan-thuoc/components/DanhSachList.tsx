@@ -24,6 +24,7 @@ interface Props {
   onDelete?: (id: string) => void;
   onView?: (item: PhieuKhoPT) => void;
   canEditItem?: (item: PhieuKhoPT) => boolean;
+  canDeleteItem?: (item: PhieuKhoPT) => boolean;
   serverTotalCount?: number;
 }
 
@@ -59,6 +60,7 @@ const DanhSachList: React.FC<Props> = ({
   onDelete,
   onView,
   canEditItem,
+  canDeleteItem,
   serverTotalCount,
 }) => {
   const { t } = useTranslation();
@@ -150,7 +152,7 @@ const DanhSachList: React.FC<Props> = ({
                 <Edit size={14} />
               </button>
             )}
-            {onDelete && (
+            {onDelete && (!canDeleteItem || canDeleteItem(item)) && (
               <button
                 type="button"
                 onClick={(e) => {
@@ -214,7 +216,7 @@ const DanhSachList: React.FC<Props> = ({
               <Edit size={14} />
             </button>
           )}
-          {onDelete && (
+          {onDelete && (!canDeleteItem || canDeleteItem(item)) && (
             <button
               type="button"
               onClick={(e) => {

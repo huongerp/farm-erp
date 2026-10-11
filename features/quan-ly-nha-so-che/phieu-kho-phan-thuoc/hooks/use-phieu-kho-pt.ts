@@ -13,11 +13,13 @@ import {
   updatePhieuKhoPTTrangThai,
   updatePhieuKhoPTTrangThaiMany,
   importPhieuKhoPT,
+  xinSuaPhieuKhoPT,
+  xuLyXinSuaPhieuKhoPT,
 } from '../services/phieu-kho-pt-service';
 import type { ChiTietPhieuKhoPTListServerQuery, PhieuKhoPTListServerQuery } from '../services/phieu-kho-pt-list-query';
 import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
 import type { PhieuKhoPTFormValues } from '../core/schema';
-import type { LoaiPhieuKhoPT } from '../core/types';
+import type { HanhDongXinSuaPhieuKhoPT, LoaiPhieuKhoPT } from '../core/types';
 import i18n from '../../../../lib/i18n';
 import { FARM_TON_KHO_PT_QUERY_KEY } from '../../ton-kho-phan-thuoc/hooks/use-farm-ton-kho-pt';
 import { useKhoBienThe } from '../../kho-bien-the/KhoBienTheProvider';
@@ -129,7 +131,8 @@ export const useUpdatePhieuKhoPT = (onSuccess?: () => void) => {
   const bt = useKhoBienThe();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: PhieuKhoPTFormValues }) => updatePhieuKhoPT(bt, id, data),
+    mutationFn: ({ id, data, capCao }: { id: string; data: PhieuKhoPTFormValues; capCao: boolean }) =>
+      updatePhieuKhoPT(bt, id, data, capCao),
     onSuccess: (result) => {
       qc.setQueryData([...QUERY_KEY, result.phieu.id, bt.key], result.phieu);
       qc.invalidateQueries({ queryKey: QUERY_KEY_CHI_TIET });
@@ -274,5 +277,47 @@ export const useDeletePhieuKhoPTMany = () => {
     onError: (err: Error) => toast.error(err.message),
   });
 };
+
+/**
+ * Xin sửa phiếu đã duyệt (người thường) và cấp / từ chối / khoá lại (cấp cao).
+ * Thông báo do trigger DB sinh — KHÔNG insert thông báo từ đây.
+ */
+function useXinSuaMutation<TArg extends { id: string }>(
+  goi: (bt: ReturnType<typeof useKhoBienThe>, arg: TArg) => Promise<void>,
+  toastKey: (arg: TArg) => string,
+  onSuccess?: () => void
+) {
+  const bt = useKhoBienThe();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (arg: TArg) => goi(bt, arg),
+    onSuccess: async (_void, arg) => {
+      qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
+      try {
+        const fresh = await getPhieuKhoPTById(bt, arg.id);
+        if (fresh) qc.setQueryData([...QUERY_KEY, arg.id, bt.key], fresh);
+      } catch {
+        qc.invalidateQueries({ queryKey: [...QUERY_KEY, arg.id] });
+      }
+      toast.success(i18n.t(toastKey(arg)));
+      onSuccess?.();
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+}
+
+export const useXinSuaPhieuKhoPT = (onSuccess?: () => void) =>
+  useXinSuaMutation<{ id: string; lyDo: string }>(
+    (bt, { id, lyDo }) => xinSuaPhieuKhoPT(bt, id, lyDo),
+    () => 'phieuKhoPhanThuoc.xinSua.toast.xin',
+    onSuccess
+  );
+
+export const useXuLyXinSuaPhieuKhoPT = (onSuccess?: () => void) =>
+  useXinSuaMutation<{ id: string; hanhDong: HanhDongXinSuaPhieuKhoPT }>(
+    (bt, { id, hanhDong }) => xuLyXinSuaPhieuKhoPT(bt, id, hanhDong),
+    ({ hanhDong }) => `phieuKhoPhanThuoc.xinSua.toast.${hanhDong}`,
+    onSuccess
+  );
 
 export { QUERY_KEY as PHIEU_KHO_PT_QUERY_KEY, QUERY_KEY_CHI_TIET as PHIEU_KHO_PT_CHI_TIET_QUERY_KEY };

@@ -16,6 +16,12 @@ export const TRANG_THAI_PHIEU_KHO_PT_TO_NUM: Record<TrangThaiPhieuKhoPT, number>
   'Không duyệt': 2,
 };
 
+/** Yêu cầu sửa phiếu đã duyệt: chờ cấp cao cấp quyền / đã cấp cho người xin. NULL = không có. */
+export type TrangThaiSuaPhieuKhoPT = 'cho_cap' | 'da_cap';
+
+/** Thao tác cấp cao trên yêu cầu xin sửa (tham số RPC xu_ly_xin_sua). */
+export type HanhDongXinSuaPhieuKhoPT = 'cap' | 'tu_choi' | 'khoa_lai';
+
 /** Dòng chi tiết — khớp fp_farm_phieu_kho_phan_thuoc_chi_tiet. */
 export interface PhieuKhoPTChiTiet {
   id: string;
@@ -58,6 +64,15 @@ export interface PhieuKhoPT {
   /** Đề xuất mua hàng farm đã sinh ra phiếu này (null nếu lập tay). */
   id_de_xuat_mua_hang?: string | null;
   so_phieu_de_xuat?: string | null;
+  /** Xin sửa phiếu đã duyệt (migration 035) — xem core/quyen-sua-phieu.ts. */
+  trang_thai_sua?: TrangThaiSuaPhieuKhoPT | null;
+  id_nguoi_xin_sua?: number | null;
+  ten_nguoi_xin_sua?: string | null;
+  ly_do_xin_sua?: string | null;
+  tg_xin_sua?: string | null;
+  id_nguoi_cap_sua?: number | null;
+  ten_nguoi_cap_sua?: string | null;
+  tg_cap_sua?: string | null;
   tg_tao: string;
   tg_cap_nhat: string;
   chi_tiet?: PhieuKhoPTChiTiet[];

@@ -8,6 +8,8 @@ export {
   updatePhieuKhoPTTrangThaiManyDb as updatePhieuKhoPTTrangThaiMany,
   deletePhieuKhoPTDb as deletePhieuKhoPT,
   deletePhieuKhoPTManyDb as deletePhieuKhoPTMany,
+  xinSuaPhieuKhoPTDb as xinSuaPhieuKhoPT,
+  xuLyXinSuaPhieuKhoPTDb as xuLyXinSuaPhieuKhoPT,
   getPhieuKhoPTPageDb as getPhieuKhoPTPage,
   getChiTietPhieuKhoPTPageDb as getChiTietPhieuKhoPTPage,
   fetchAllPhieuKhoPTForListQueryDb as fetchAllPhieuKhoPTForListQuery,

@@ -8,8 +8,11 @@ import type {
   LoaiPhieuKhoPT,
   ChiTietPhieuKhoPTFlat,
   TrangThaiPhieuKhoPT,
+  TrangThaiSuaPhieuKhoPT,
+  HanhDongXinSuaPhieuKhoPT,
 } from '../core/types';
 import type { PhieuKhoPTFormValues } from '../core/schema';
+import { trangThaiSauKhiSua } from '../core/quyen-sua-phieu';
 import i18n from '../../../../lib/i18n';
 import { getKhoRef } from '../../../kho-van/danh-sach-kho/services/kho-service';
 import { getAllFarmHangHoa } from '../../hang-hoa-phan-thuoc/services/farm-hang-hoa-service';
@@ -43,10 +46,10 @@ const PHIEU_PT_CHI_TIET_ROW_SELECT =
   'id, id_phieu_kho, id_hang_hoa, ten_hang_hoa, don_vi_tinh, pham_cap, so_luong, don_gia, thanh_tien, so_lot, ghi_chu, nguoi_tao_id, ten_nguoi_tao, tg_tao, tg_cap_nhat';
 
 const PHIEU_PT_SUMMARY_SELECT =
-  'id, so_phieu, ngay, loai, kho_id, ten_kho, kho_den_id, ten_kho_den, trang_thai, mo_ta, id_nguoi_duyet, nguoi_tao_id, ten_nguoi_tao, id_de_xuat_mua_hang, so_phieu_de_xuat, tg_tao, tg_cap_nhat, so_dong, tong_so_luong, tong_tien, ref_ten_kho, ref_ten_kho_den, ref_ten_nguoi_tao, ref_ten_nguoi_duyet';
+  'id, so_phieu, ngay, loai, kho_id, ten_kho, kho_den_id, ten_kho_den, trang_thai, mo_ta, id_nguoi_duyet, nguoi_tao_id, ten_nguoi_tao, id_de_xuat_mua_hang, so_phieu_de_xuat, tg_tao, tg_cap_nhat, so_dong, tong_so_luong, tong_tien, ref_ten_kho, ref_ten_kho_den, ref_ten_nguoi_tao, ref_ten_nguoi_duyet, trang_thai_sua, id_nguoi_xin_sua, ten_nguoi_xin_sua, ly_do_xin_sua, tg_xin_sua, id_nguoi_cap_sua, ten_nguoi_cap_sua, tg_cap_sua';
 
 const PHIEU_PT_HEADER_ROW_SELECT =
-  'id, so_phieu, ngay, loai, kho_id, ten_kho, kho_den_id, ten_kho_den, trang_thai, mo_ta, trao_doi, id_nguoi_duyet, nguoi_tao_id, ten_nguoi_tao, id_de_xuat_mua_hang, so_phieu_de_xuat, tg_tao, tg_cap_nhat';
+  'id, so_phieu, ngay, loai, kho_id, ten_kho, kho_den_id, ten_kho_den, trang_thai, mo_ta, trao_doi, id_nguoi_duyet, nguoi_tao_id, ten_nguoi_tao, id_de_xuat_mua_hang, so_phieu_de_xuat, tg_tao, tg_cap_nhat, trang_thai_sua, id_nguoi_xin_sua, ten_nguoi_xin_sua, ly_do_xin_sua, tg_xin_sua, id_nguoi_cap_sua, ten_nguoi_cap_sua, tg_cap_sua';
 
 interface PhieuKhoPTDbRow {
   id: number;
@@ -67,6 +70,14 @@ interface PhieuKhoPTDbRow {
   so_phieu_de_xuat?: string | null;
   tg_tao: string | null;
   tg_cap_nhat: string | null;
+  trang_thai_sua?: string | null;
+  id_nguoi_xin_sua?: number | null;
+  ten_nguoi_xin_sua?: string | null;
+  ly_do_xin_sua?: string | null;
+  tg_xin_sua?: string | null;
+  id_nguoi_cap_sua?: number | null;
+  ten_nguoi_cap_sua?: string | null;
+  tg_cap_sua?: string | null;
 }
 
 interface ChiTietDbRow {
@@ -174,6 +185,14 @@ function rowToPhieu(
     ten_nguoi_tao: enrich?.ten_nguoi_tao ?? row.ten_nguoi_tao ?? undefined,
     id_de_xuat_mua_hang: row.id_de_xuat_mua_hang != null ? String(row.id_de_xuat_mua_hang) : null,
     so_phieu_de_xuat: row.so_phieu_de_xuat ?? null,
+    trang_thai_sua: (row.trang_thai_sua as TrangThaiSuaPhieuKhoPT | null | undefined) ?? null,
+    id_nguoi_xin_sua: row.id_nguoi_xin_sua ?? null,
+    ten_nguoi_xin_sua: row.ten_nguoi_xin_sua ?? null,
+    ly_do_xin_sua: row.ly_do_xin_sua ?? null,
+    tg_xin_sua: row.tg_xin_sua ?? null,
+    id_nguoi_cap_sua: row.id_nguoi_cap_sua ?? null,
+    ten_nguoi_cap_sua: row.ten_nguoi_cap_sua ?? null,
+    tg_cap_sua: row.tg_cap_sua ?? null,
     tg_tao: row.tg_tao ?? new Date().toISOString(),
     tg_cap_nhat: row.tg_cap_nhat ?? new Date().toISOString(),
   };
@@ -413,7 +432,8 @@ function headerPayloadFromForm(
   data: PhieuKhoPTFormValues,
   khoMap: Record<string, string>,
   nguoiTaoId: number | null,
-  tenNguoiTao: string | null
+  tenNguoiTao: string | null,
+  trangThai: string = data.trang_thai
 ) {
   const loai = data.loai as LoaiPhieuKhoPT;
   return {
@@ -424,7 +444,7 @@ function headerPayloadFromForm(
     ten_kho: khoMap[String(data.kho_id)] ?? null,
     kho_den_id: loai === 'chuyển' && data.kho_den_id ? Number(data.kho_den_id) : null,
     ten_kho_den: loai === 'chuyển' && data.kho_den_id ? (khoMap[String(data.kho_den_id)] ?? null) : null,
-    trang_thai: data.trang_thai,
+    trang_thai: trangThai,
     mo_ta: data.mo_ta?.trim() || null,
     nguoi_tao_id: nguoiTaoId,
     ten_nguoi_tao: tenNguoiTao,
@@ -503,8 +523,16 @@ export async function createPhieuKhoPTDb(bt: KhoBienThe, data: PhieuKhoPTFormVal
  * Sửa phiếu theo thứ tự an toàn: ghi dòng MỚI trước, xong mới xoá dòng CŨ theo id.
  * Bước nào lỗi thì hoàn lại header + bỏ dòng mới → phiếu giữ nguyên như trước khi sửa,
  * không còn ca "xoá hết dòng rồi insert lỗi" làm phiếu mất dòng.
+ *
+ * `capCao` quyết định trạng thái sau khi sửa: người được cấp quyền sửa phiếu đã duyệt thì
+ * phiếu về 'Chờ duyệt' (core/quyen-sua-phieu.ts — trigger DB cũng ép như vậy).
  */
-export async function updatePhieuKhoPTDb(bt: KhoBienThe, id: string, data: PhieuKhoPTFormValues): Promise<PhieuKhoPTSaveResult> {
+export async function updatePhieuKhoPTDb(
+  bt: KhoBienThe,
+  id: string,
+  data: PhieuKhoPTFormValues,
+  capCao: boolean
+): Promise<PhieuKhoPTSaveResult> {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('phieuKhoPhanThuoc.service.notFound'));
 
@@ -552,9 +580,10 @@ export async function updatePhieuKhoPTDb(bt: KhoBienThe, id: string, data: Phieu
   const nguoiTaoId = data.nguoi_tao_id != null ? Number(data.nguoi_tao_id) : null;
   const tenNguoiTao = nguoiTaoId != null ? (nvMap[String(nguoiTaoId)] ?? null) : null;
 
+  const trangThaiMoi = trangThaiSauKhiSua(old.trang_thai as TrangThaiPhieuKhoPT, capCao);
   const { error: updateErr } = await db
     .from(bt.bang.phieuKho)
-    .update(headerPayloadFromForm(data, khoMap, nguoiTaoId, tenNguoiTao))
+    .update(headerPayloadFromForm(data, khoMap, nguoiTaoId, tenNguoiTao, trangThaiMoi))
     .eq('id', idNum);
   if (updateErr) throwDbError(updateErr);
 
@@ -843,6 +872,24 @@ export async function updatePhieuKhoPTTrangThaiManyDb(
   }
 
   return { okIds, failed };
+}
+
+// ---------------------------------------------------------------------------
+// XIN SỬA PHIẾU ĐÃ DUYỆT (RPC migration 035 — kiểm quyền ở server)
+// ---------------------------------------------------------------------------
+
+export async function xinSuaPhieuKhoPTDb(bt: KhoBienThe, id: string, lyDo: string): Promise<void> {
+  const { error } = await db.rpc(bt.rpc.xinSuaPhieuKho, { p_id: Number(id), p_ly_do: lyDo.trim() });
+  if (error) throwDbError(error);
+}
+
+export async function xuLyXinSuaPhieuKhoPTDb(
+  bt: KhoBienThe,
+  id: string,
+  hanhDong: HanhDongXinSuaPhieuKhoPT
+): Promise<void> {
+  const { error } = await db.rpc(bt.rpc.xuLyXinSuaPhieuKho, { p_id: Number(id), p_hanh_dong: hanhDong });
+  if (error) throwDbError(error);
 }
 
 export async function deletePhieuKhoPTDb(bt: KhoBienThe, id: string): Promise<void> {

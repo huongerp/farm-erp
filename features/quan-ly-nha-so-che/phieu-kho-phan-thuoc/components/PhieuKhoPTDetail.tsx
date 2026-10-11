@@ -1,6 +1,20 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FileText, Calendar, Warehouse, ArrowRightLeft, Package, Printer, CheckCircle, XCircle, Copy, AlertTriangle } from 'lucide-react';
+import {
+  FileText,
+  Calendar,
+  Warehouse,
+  ArrowRightLeft,
+  Package,
+  Printer,
+  CheckCircle,
+  XCircle,
+  Copy,
+  AlertTriangle,
+  FilePen,
+  Lock,
+  Unlock,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import Button from '../../../../components/ui/Button';
 import DetailDrawerFooter from '../../../../components/shared/DetailDrawerFooter';
@@ -15,7 +29,18 @@ import DetailField from '../../../../components/shared/DetailField';
 import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
 import GenericSubTableSection from '../../../../components/shared/GenericSubTableSection';
 import { BTN_CLOSE, CONFIRM_YES } from '../../../../lib/button-labels';
-import { useUpdatePhieuKhoPTTrangThai } from '../hooks/use-phieu-kho-pt';
+import { useUpdatePhieuKhoPTTrangThai, useXinSuaPhieuKhoPT, useXuLyXinSuaPhieuKhoPT } from '../hooks/use-phieu-kho-pt';
+import { usePhieuKhoPTCapCao } from '../hooks/use-phieu-kho-pt-cap-cao';
+import {
+  canKhoaLaiQuyenSua,
+  canXinSuaPhieuKhoPT,
+  canXuLyYeuCauSua,
+  phieuMoChoSuaXoa,
+  TRANG_THAI_SUA_CHO_CAP,
+  TRANG_THAI_SUA_DA_CAP,
+} from '../core/quyen-sua-phieu';
+import type { HanhDongXinSuaPhieuKhoPT } from '../core/types';
+import XinSuaPhieuDialog from './XinSuaPhieuDialog';
 import { useAuthStore } from '../../../../store/useStore';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { useKhoBienThe } from '../../kho-bien-the/KhoBienTheProvider';
@@ -48,6 +73,28 @@ const PhieuKhoPTDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
   const [duyetGhiChu, setDuyetGhiChu] = useState('');
   const [duyetOption, setDuyetOption] = useState<'Đã duyệt' | 'Không duyệt'>('Đã duyệt');
   const updateTrangThaiMutation = useUpdatePhieuKhoPTTrangThai(() => setShowDuyetPopup(false));
+
+  // Phiếu đã duyệt: chỉ cấp cao / người được cấp quyền mới sửa xoá; người khác "Xin sửa".
+  const capCao = usePhieuKhoPTCapCao();
+  const nguoi = { capCao, nhanVienId: nguoiDuyetIdValid };
+  const moChoSuaXoa = phieuMoChoSuaXoa(data, nguoi);
+  const showXinSua = canXinSuaPhieuKhoPT(data, nguoi, !!onEdit || !!onDelete);
+  const [showXinSuaDialog, setShowXinSuaDialog] = useState(false);
+  const xinSuaMutation = useXinSuaPhieuKhoPT(() => setShowXinSuaDialog(false));
+  const xuLyMutation = useXuLyXinSuaPhieuKhoPT();
+  const xuLyXinSua = (hanhDong: HanhDongXinSuaPhieuKhoPT) => {
+    if (hanhDong === 'cap') {
+      xuLyMutation.mutate({ id: data.id, hanhDong });
+      return;
+    }
+    confirm({
+      title: t(`phieuKhoPhanThuoc.xinSua.confirm.${hanhDong}.title`),
+      message: t(`phieuKhoPhanThuoc.xinSua.confirm.${hanhDong}.message`, { ten: data.ten_nguoi_xin_sua ?? '' }),
+      variant: 'warning',
+      confirmText: CONFIRM_YES(),
+      onConfirm: () => xuLyMutation.mutate({ id: data.id, hanhDong }),
+    });
+  };
 
   const isDaQuyetDinh = data.trang_thai === 'Đã duyệt' || data.trang_thai === 'Không duyệt';
   const statusLabel =
@@ -109,7 +156,7 @@ const PhieuKhoPTDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
     applyTrangThai(duyetOption);
   };
 
-  const detailToolbarActions: DetailToolbarAction[] = useMemo(() => {
+  const detailToolbarActions: DetailToolbarAction[] = (() => {
     const actions: DetailToolbarAction[] = [];
     if (canApprove) {
       actions.push({
@@ -121,6 +168,41 @@ const PhieuKhoPTDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
           setShowDuyetPopup(true);
         },
         variant: 'primary',
+      });
+    }
+    if (showXinSua) {
+      actions.push({
+        label: t('phieuKhoPhanThuoc.xinSua.action'),
+        icon: <FilePen size={16} />,
+        onClick: () => setShowXinSuaDialog(true),
+        variant: 'warning',
+      });
+    }
+    if (canXuLyYeuCauSua(data, capCao)) {
+      actions.push(
+        {
+          label: t('phieuKhoPhanThuoc.xinSua.capAction'),
+          icon: <Unlock size={16} />,
+          onClick: () => xuLyXinSua('cap'),
+          variant: 'success',
+          disabled: xuLyMutation.isPending,
+        },
+        {
+          label: t('phieuKhoPhanThuoc.xinSua.tuChoiAction'),
+          icon: <XCircle size={16} />,
+          onClick: () => xuLyXinSua('tu_choi'),
+          variant: 'danger',
+          disabled: xuLyMutation.isPending,
+        }
+      );
+    }
+    if (canKhoaLaiQuyenSua(data, capCao)) {
+      actions.push({
+        label: t('phieuKhoPhanThuoc.xinSua.khoaLaiAction'),
+        icon: <Lock size={16} />,
+        onClick: () => xuLyXinSua('khoa_lai'),
+        variant: 'warning',
+        disabled: xuLyMutation.isPending,
       });
     }
     if (onCopy) {
@@ -139,13 +221,13 @@ const PhieuKhoPTDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
       onClick: () => window.open(previewPath, '_blank', 'noopener,noreferrer'),
     });
     return actions;
-  }, [data, canApprove, isDaQuyetDinh, onCopy, onClose, previewPath, t]);
+  })();
 
   const renderFooter = (
     <DetailDrawerFooter
       onClose={onClose}
-      onEdit={onEdit ? () => { onEdit(data); onClose(); } : undefined}
-      onDelete={onDelete ? () => { onDelete(data.id); onClose(); } : undefined}
+      onEdit={onEdit && moChoSuaXoa ? () => { onEdit(data); onClose(); } : undefined}
+      onDelete={onDelete && moChoSuaXoa ? () => { onDelete(data.id); onClose(); } : undefined}
     />
   );
 
@@ -193,6 +275,43 @@ const PhieuKhoPTDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
             </div>
           </div>
         </div>
+
+        {data.trang_thai_sua === TRANG_THAI_SUA_CHO_CAP && (
+          <div className="flex gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-800 dark:text-amber-200">
+            <FilePen size={16} className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
+            <div className="min-w-0 space-y-0.5">
+              <p className="font-medium">
+                {t('phieuKhoPhanThuoc.xinSua.bannerChoCap', {
+                  ten: data.ten_nguoi_xin_sua ?? '—',
+                  thoiGian: data.tg_xin_sua ? formatDateTimeShort(data.tg_xin_sua) : '',
+                })}
+              </p>
+              {data.ly_do_xin_sua && (
+                <p className="whitespace-pre-line break-words">
+                  {t('phieuKhoPhanThuoc.xinSua.lyDoLabel')}: {data.ly_do_xin_sua}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+        {data.trang_thai_sua === TRANG_THAI_SUA_DA_CAP && (
+          <div className="flex gap-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-800 dark:text-emerald-200">
+            <Unlock size={16} className="mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+            <p className="min-w-0">
+              {t('phieuKhoPhanThuoc.xinSua.bannerDaCap', {
+                ten: data.ten_nguoi_xin_sua ?? '—',
+                nguoiCap: data.ten_nguoi_cap_sua ?? '—',
+                thoiGian: data.tg_cap_sua ? formatDateTimeShort(data.tg_cap_sua) : '',
+              })}
+            </p>
+          </div>
+        )}
+        {showXinSua && (
+          <div className="flex gap-2.5 rounded-xl border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+            <Lock size={16} className="mt-0.5 shrink-0" />
+            <p>{t('phieuKhoPhanThuoc.xinSua.bannerKhoa')}</p>
+          </div>
+        )}
 
         <DetailToolbar actions={detailToolbarActions} className="bg-card rounded-xl border border-border" />
 
@@ -316,6 +435,15 @@ const PhieuKhoPTDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
           </DetailFieldGrid>
         </DetailSection>
       </div>
+
+      {showXinSuaDialog && (
+        <XinSuaPhieuDialog
+          soPhieu={data.so_phieu}
+          isPending={xinSuaMutation.isPending}
+          onClose={() => setShowXinSuaDialog(false)}
+          onConfirm={(lyDo) => xinSuaMutation.mutate({ id: data.id, lyDo })}
+        />
+      )}
 
       {showDuyetPopup && (
         <div role="presentation" className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50" onClick={() => setShowDuyetPopup(false)}>
