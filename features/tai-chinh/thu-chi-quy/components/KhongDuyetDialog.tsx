@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Unlock, X, Info } from 'lucide-react';
+import { XCircle, X, Info } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Textarea from '../../../../components/ui/Textarea';
 import { BTN_CANCEL } from '../../../../lib/button-labels';
 
 interface Props {
   soPhieu: string;
-  /** Tiêu đề thay thế — dùng cho xin mở hàng loạt (một lý do chung cho nhiều phiếu). */
+  /** Tiêu đề thay thế — dùng cho không duyệt hàng loạt (một lý do chung cho nhiều phiếu). */
   title?: string;
   isPending: boolean;
   onClose: () => void;
@@ -16,16 +16,16 @@ interface Props {
 }
 
 /**
- * Popup nhập lý do xin mở khoá. Lý do BẮT BUỘC: người duyệt ở xa, không có lý do
- * thì họ chỉ thấy "ai đó xin mở phiếu nào đó" và sẽ duyệt bừa.
+ * Popup nhập lý do không duyệt. Lý do BẮT BUỘC: người lập phiếu nhận thông báo
+ * cần biết sai ở đâu (vd mua hàng mà không nhập kho) để làm lại cho đúng.
  * Chỉ mount khi đang mở (cha render có điều kiện) nên state tự sạch mỗi lần mở lại.
  */
-const XinMoKhoaDialog: React.FC<Props> = ({ soPhieu, title, isPending, onClose, onConfirm }) => {
+const KhongDuyetDialog: React.FC<Props> = ({ soPhieu, title, isPending, onClose, onConfirm }) => {
   const { t } = useTranslation();
   const [lyDo, setLyDo] = useState('');
   const [touched, setTouched] = useState(false);
 
-  const loi = touched && !lyDo.trim() ? t('thuChiQuy.moKhoa.lyDoRequired') : undefined;
+  const loi = touched && !lyDo.trim() ? t('thuChiQuy.khongDuyet.lyDoRequired') : undefined;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,11 +54,11 @@ const XinMoKhoaDialog: React.FC<Props> = ({ soPhieu, title, isPending, onClose, 
         >
           <div className="px-6 pt-5 pb-4 border-b border-border bg-muted/30 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-400">
-                <Unlock size={18} />
+              <div className="w-9 h-9 rounded-lg bg-red-500/10 flex items-center justify-center text-red-600 dark:text-red-400">
+                <XCircle size={18} />
               </div>
               <h3 className="text-lg font-semibold text-foreground">
-                {title ?? t('thuChiQuy.moKhoa.xinMoTitle', { soPhieu })}
+                {title ?? t('thuChiQuy.khongDuyet.title', { soPhieu })}
               </h3>
             </div>
             <button
@@ -75,12 +75,12 @@ const XinMoKhoaDialog: React.FC<Props> = ({ soPhieu, title, isPending, onClose, 
           <form onSubmit={handleSubmit} className="px-6 py-4 space-y-4">
             <div className="flex gap-2.5 rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-sm text-muted-foreground">
               <Info size={16} className="mt-0.5 shrink-0" />
-              <p>{t('thuChiQuy.moKhoa.xinMoHint')}</p>
+              <p>{t('thuChiQuy.khongDuyet.hint')}</p>
             </div>
 
             <Textarea
-              label={t('thuChiQuy.moKhoa.lyDoLabel')}
-              placeholder={t('thuChiQuy.moKhoa.lyDoPlaceholder')}
+              label={t('thuChiQuy.khongDuyet.lyDoLabel')}
+              placeholder={t('thuChiQuy.khongDuyet.lyDoPlaceholder')}
               value={lyDo}
               onChange={(e) => setLyDo(e.target.value)}
               onBlur={() => setTouched(true)}
@@ -101,8 +101,8 @@ const XinMoKhoaDialog: React.FC<Props> = ({ soPhieu, title, isPending, onClose, 
               >
                 {BTN_CANCEL()}
               </Button>
-              <Button type="submit" className="bg-primary text-white" disabled={isPending}>
-                {t('thuChiQuy.moKhoa.guiYeuCau')}
+              <Button type="submit" className="bg-red-600 text-white hover:bg-red-700" disabled={isPending}>
+                {t('thuChiQuy.khongDuyet.xacNhan')}
               </Button>
             </div>
           </form>
@@ -112,4 +112,4 @@ const XinMoKhoaDialog: React.FC<Props> = ({ soPhieu, title, isPending, onClose, 
   );
 };
 
-export default XinMoKhoaDialog;
+export default KhongDuyetDialog;

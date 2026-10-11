@@ -3,26 +3,24 @@ import { useAuthStore } from '../../../../store/useStore';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import { laCapBacToanQuyen } from '../../../he-thong/phan-quyen/core/cap-bac-toan-quyen';
 import {
-  canDuyetMoThuChiQuy,
-  canKhoaThuChiQuy,
+  canDuyetThuChiQuy,
+  canKhongDuyetThuChiQuy,
   canMutateThuChiQuy,
-  canTuChoiMoThuChiQuy,
-  canXinMoThuChiQuy,
+  canTraVeChoDuyetThuChiQuy,
   isThuChiQuyLocked,
 } from '../core/trang-thai';
 import type { PhieuQuyTrangThai } from '../core/trang-thai';
 
 export interface ThuChiQuyPermissions {
-  /** cap_bac = 1 hoặc quyền admin/all trên module — người duy nhất mở khoá được. */
+  /** cap_bac = 1 hoặc quyền admin/all trên module — người duy nhất duyệt / không duyệt được. */
   laCapCao: boolean;
   canCreate: boolean;
   isLocked: (item: PhieuQuyTrangThai) => boolean;
   canEditRow: (item: PhieuQuyTrangThai) => boolean;
   canDeleteRow: (item: PhieuQuyTrangThai) => boolean;
-  canKhoa: (item: PhieuQuyTrangThai) => boolean;
-  canXinMo: (item: PhieuQuyTrangThai) => boolean;
-  canDuyetMo: (item: PhieuQuyTrangThai) => boolean;
-  canTuChoiMo: (item: PhieuQuyTrangThai) => boolean;
+  canDuyet: (item: PhieuQuyTrangThai) => boolean;
+  canKhongDuyet: (item: PhieuQuyTrangThai) => boolean;
+  canTraVe: (item: PhieuQuyTrangThai) => boolean;
 }
 
 /**
@@ -35,17 +33,15 @@ export function useThuChiQuyPermissions(): ThuChiQuyPermissions {
 
   return useMemo(() => {
     const laCapCao = canAdmin || laCapBacToanQuyen(user?.cap_bac);
-    const userId = user?.id ?? null;
     return {
       laCapCao,
       canCreate,
       isLocked: isThuChiQuyLocked,
       canEditRow: (item) => canMutateThuChiQuy(item, canUpdate, laCapCao),
       canDeleteRow: (item) => canMutateThuChiQuy(item, canDelete, laCapCao),
-      canKhoa: (item) => canKhoaThuChiQuy(item, laCapCao, userId),
-      canXinMo: (item) => canXinMoThuChiQuy(item, laCapCao, userId),
-      canDuyetMo: (item) => canDuyetMoThuChiQuy(item, laCapCao),
-      canTuChoiMo: (item) => canTuChoiMoThuChiQuy(item, laCapCao),
+      canDuyet: (item) => canDuyetThuChiQuy(item, laCapCao),
+      canKhongDuyet: (item) => canKhongDuyetThuChiQuy(item, laCapCao),
+      canTraVe: (item) => canTraVeChoDuyetThuChiQuy(item, laCapCao),
     };
-  }, [canAdmin, canCreate, canUpdate, canDelete, user?.cap_bac, user?.id]);
+  }, [canAdmin, canCreate, canUpdate, canDelete, user?.cap_bac]);
 }

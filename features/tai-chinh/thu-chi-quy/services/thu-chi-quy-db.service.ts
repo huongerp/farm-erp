@@ -37,8 +37,7 @@ const RPC_NEXT_SO_PHIEU_BATCH = 'get_next_so_phieu_tc_quy_batch';
 const BASE_COLUMNS =
   'id,so_phieu,ngay,id_chi_nhanh,ten_chi_nhanh,loai,so_tien,so_luong,don_gia,' +
   'id_hang_muc,ten_hang_muc,dien_giai,ghi_chu,loai_chung_tu,id_chung_tu,so_chung_tu,' +
-  'id_nguoi_tao,ten_nguoi_tao,trang_thai,id_nguoi_yeu_cau_mo,ten_nguoi_yeu_cau_mo,' +
-  'ly_do_yeu_cau_mo,tg_yeu_cau_mo,id_nguoi_xu_ly_mo,ten_nguoi_xu_ly_mo,tg_xu_ly_mo,' +
+  'id_nguoi_tao,ten_nguoi_tao,trang_thai,id_nguoi_duyet,ten_nguoi_duyet,tg_duyet,ly_do_khong_duyet,' +
   'tg_tao,tg_cap_nhat';
 
 /** Không select ref_tim_kiem (chuỗi dài, chỉ phục vụ ilike ở server). */
@@ -64,13 +63,10 @@ interface DbRow {
   id_nguoi_tao: number | null;
   ten_nguoi_tao: string | null;
   trang_thai: string | null;
-  id_nguoi_yeu_cau_mo: number | null;
-  ten_nguoi_yeu_cau_mo: string | null;
-  ly_do_yeu_cau_mo: string | null;
-  tg_yeu_cau_mo: string | null;
-  id_nguoi_xu_ly_mo: number | null;
-  ten_nguoi_xu_ly_mo: string | null;
-  tg_xu_ly_mo: string | null;
+  id_nguoi_duyet: number | null;
+  ten_nguoi_duyet: string | null;
+  tg_duyet: string | null;
+  ly_do_khong_duyet: string | null;
   tg_tao: string | null;
   tg_cap_nhat: string | null;
 }
@@ -105,8 +101,8 @@ function normalizeNguon(v: string | null): ThuChiNguon | null {
 }
 
 function normalizeTrangThai(v: string | null): TrangThaiThuChiQuy {
-  if (v === TRANG_THAI_THU_CHI_QUY.KHOA || v === TRANG_THAI_THU_CHI_QUY.CHO_MO) return v;
-  return TRANG_THAI_THU_CHI_QUY.MO;
+  if (v === TRANG_THAI_THU_CHI_QUY.DA_DUYET || v === TRANG_THAI_THU_CHI_QUY.KHONG_DUYET) return v;
+  return TRANG_THAI_THU_CHI_QUY.CHO_DUYET;
 }
 
 function rowToItem(row: DbRow): ThuChiQuy {
@@ -130,13 +126,10 @@ function rowToItem(row: DbRow): ThuChiQuy {
     id_nguoi_tao: row.id_nguoi_tao != null ? String(row.id_nguoi_tao) : null,
     ten_nguoi_tao: row.ten_nguoi_tao ?? undefined,
     trang_thai: normalizeTrangThai(row.trang_thai),
-    id_nguoi_yeu_cau_mo: row.id_nguoi_yeu_cau_mo != null ? String(row.id_nguoi_yeu_cau_mo) : null,
-    ten_nguoi_yeu_cau_mo: row.ten_nguoi_yeu_cau_mo ?? null,
-    ly_do_yeu_cau_mo: row.ly_do_yeu_cau_mo ?? null,
-    tg_yeu_cau_mo: row.tg_yeu_cau_mo ?? null,
-    id_nguoi_xu_ly_mo: row.id_nguoi_xu_ly_mo != null ? String(row.id_nguoi_xu_ly_mo) : null,
-    ten_nguoi_xu_ly_mo: row.ten_nguoi_xu_ly_mo ?? null,
-    tg_xu_ly_mo: row.tg_xu_ly_mo ?? null,
+    id_nguoi_duyet: row.id_nguoi_duyet != null ? String(row.id_nguoi_duyet) : null,
+    ten_nguoi_duyet: row.ten_nguoi_duyet ?? null,
+    tg_duyet: row.tg_duyet ?? null,
+    ly_do_khong_duyet: row.ly_do_khong_duyet ?? null,
     tg_tao: row.tg_tao ?? new Date().toISOString(),
     tg_cap_nhat: row.tg_cap_nhat ?? new Date().toISOString(),
   };
@@ -404,11 +397,11 @@ export async function updateThuChiQuy(
 }
 
 /* ------------------------------------------------------------------ */
-/* Khoá / mở khoá phiếu                                                */
+/* Duyệt / không duyệt phiếu                                           */
 /* ------------------------------------------------------------------ */
 
 /**
- * Ba hàm dưới đây CỐ Ý không đi qua `toPayload`: chúng chỉ chạm cột trạng thái,
+ * Các hàm dưới đây CỐ Ý không đi qua `toPayload`: chúng chỉ chạm cột trạng thái,
  * không ghi đè nội dung phiếu. Trigger `tr_thong_bao_fp_tc_quy_thu_chi` chỉ bắn
  * khi cột `trang_thai` đổi giá trị, nên mỗi lệnh ở đây sinh đúng một sự kiện.
  */
@@ -424,74 +417,51 @@ async function updateTrangThai(id: string, patch: Record<string, unknown>): Prom
   return row;
 }
 
-/** Chốt phiếu: mo → khoa. Xoá dấu vết yêu cầu mở cũ để lần sau xin lại từ đầu. */
-function patchKhoa(): Record<string, unknown> {
-  return {
-    trang_thai: TRANG_THAI_THU_CHI_QUY.KHOA,
-    id_nguoi_yeu_cau_mo: null,
-    ten_nguoi_yeu_cau_mo: null,
-    ly_do_yeu_cau_mo: null,
-    tg_yeu_cau_mo: null,
-    id_nguoi_xu_ly_mo: null,
-    ten_nguoi_xu_ly_mo: null,
-    tg_xu_ly_mo: null,
+/** Hành động chuyển trạng thái — cùng khoá với `TRANG_THAI_NGUON_BULK`. */
+export type HanhDongDuyetThuChiQuy = 'duyet' | 'khong_duyet' | 'tra_ve';
+
+export interface DuyetThuChiQuyExtra {
+  hanhDong: HanhDongDuyetThuChiQuy;
+  /** Bắt buộc khi `khong_duyet`. */
+  lyDo?: string;
+  idNguoiDuyet?: string | null;
+  tenNguoiDuyet?: string | null;
+}
+
+/**
+ * - duyệt → da_duyet, ghi người duyệt, xoá lý do không duyệt cũ.
+ * - không duyệt → khong_duyet, lý do bắt buộc (form đã chặn, đây là lưới an toàn cuối).
+ * - đưa về → cho_duyet, xoá sạch dấu vết lần xét trước.
+ */
+function patchDuyet(extra: DuyetThuChiQuyExtra): Record<string, unknown> {
+  if (extra.hanhDong === 'tra_ve') {
+    return {
+      trang_thai: TRANG_THAI_THU_CHI_QUY.CHO_DUYET,
+      id_nguoi_duyet: null,
+      ten_nguoi_duyet: null,
+      tg_duyet: null,
+      ly_do_khong_duyet: null,
+    };
+  }
+  const nguoiDuyet = {
+    id_nguoi_duyet: extra.idNguoiDuyet ? Number(extra.idNguoiDuyet) : null,
+    ten_nguoi_duyet: extra.tenNguoiDuyet ?? null,
+    tg_duyet: new Date().toISOString(),
   };
+  if (extra.hanhDong === 'duyet') {
+    return { trang_thai: TRANG_THAI_THU_CHI_QUY.DA_DUYET, ...nguoiDuyet, ly_do_khong_duyet: null };
+  }
+  const lyDo = (extra.lyDo ?? '').trim();
+  if (!lyDo) throw new Error(i18n.t('thuChiQuy.khongDuyet.lyDoRequired'));
+  return { trang_thai: TRANG_THAI_THU_CHI_QUY.KHONG_DUYET, ...nguoiDuyet, ly_do_khong_duyet: lyDo };
 }
 
-export async function khoaThuChiQuy(id: string): Promise<ThuChiQuy> {
-  return updateTrangThai(id, patchKhoa());
-}
-
-export interface XinMoThuChiQuyExtra {
-  lyDo: string;
-  idNguoiYeuCau?: string | null;
-  tenNguoiYeuCau?: string | null;
-}
-
-/** khoa → cho_mo. Lý do bắt buộc (form đã chặn, đây là lưới an toàn cuối). */
-function patchXinMo(extra: XinMoThuChiQuyExtra): Record<string, unknown> {
-  const lyDo = extra.lyDo.trim();
-  if (!lyDo) throw new Error(i18n.t('thuChiQuy.moKhoa.lyDoRequired'));
-
-  return {
-    trang_thai: TRANG_THAI_THU_CHI_QUY.CHO_MO,
-    id_nguoi_yeu_cau_mo: extra.idNguoiYeuCau ? Number(extra.idNguoiYeuCau) : null,
-    ten_nguoi_yeu_cau_mo: extra.tenNguoiYeuCau ?? null,
-    ly_do_yeu_cau_mo: lyDo,
-    tg_yeu_cau_mo: new Date().toISOString(),
-    id_nguoi_xu_ly_mo: null,
-    ten_nguoi_xu_ly_mo: null,
-    tg_xu_ly_mo: null,
-  };
-}
-
-export async function xinMoThuChiQuy(id: string, extra: XinMoThuChiQuyExtra): Promise<ThuChiQuy> {
-  return updateTrangThai(id, patchXinMo(extra));
-}
-
-export interface XuLyMoThuChiQuyExtra {
-  /** true = duyệt (→ mo); false = từ chối (→ khoa, giữ nguyên nội dung yêu cầu). */
-  duyet: boolean;
-  idNguoiXuLy?: string | null;
-  tenNguoiXuLy?: string | null;
-}
-
-/** cho_mo → mo (duyệt) hoặc cho_mo → khoa (từ chối); cấp cao mở thẳng phiếu khoa cũng dùng hàm này. */
-function patchXuLyMo(extra: XuLyMoThuChiQuyExtra): Record<string, unknown> {
-  return {
-    trang_thai: extra.duyet ? TRANG_THAI_THU_CHI_QUY.MO : TRANG_THAI_THU_CHI_QUY.KHOA,
-    id_nguoi_xu_ly_mo: extra.idNguoiXuLy ? Number(extra.idNguoiXuLy) : null,
-    ten_nguoi_xu_ly_mo: extra.tenNguoiXuLy ?? null,
-    tg_xu_ly_mo: new Date().toISOString(),
-  };
-}
-
-export async function xuLyMoThuChiQuy(id: string, extra: XuLyMoThuChiQuyExtra): Promise<ThuChiQuy> {
-  return updateTrangThai(id, patchXuLyMo(extra));
+export async function duyetThuChiQuy(id: string, extra: DuyetThuChiQuyExtra): Promise<ThuChiQuy> {
+  return updateTrangThai(id, patchDuyet(extra));
 }
 
 /* ------------------------------------------------------------------ */
-/* Khoá / mở khoá hàng loạt                                            */
+/* Duyệt / không duyệt hàng loạt                                       */
 /* ------------------------------------------------------------------ */
 
 /** Lô id cho `.in()` — giữ URL PostgREST ngắn khi chọn nhiều phiếu. */
@@ -559,20 +529,8 @@ async function updateTrangThaiMany(
   return count;
 }
 
-export async function khoaThuChiQuyMany(ids: string[]): Promise<number> {
-  return updateTrangThaiMany(ids, TRANG_THAI_NGUON_BULK.khoa, patchKhoa());
-}
-
-export async function xinMoThuChiQuyMany(ids: string[], extra: XinMoThuChiQuyExtra): Promise<number> {
-  return updateTrangThaiMany(ids, TRANG_THAI_NGUON_BULK.xin_mo, patchXinMo(extra));
-}
-
-export async function xuLyMoThuChiQuyMany(ids: string[], extra: XuLyMoThuChiQuyExtra): Promise<number> {
-  return updateTrangThaiMany(
-    ids,
-    extra.duyet ? TRANG_THAI_NGUON_BULK.mo : TRANG_THAI_NGUON_BULK.tu_choi_mo,
-    patchXuLyMo(extra)
-  );
+export async function duyetThuChiQuyMany(ids: string[], extra: DuyetThuChiQuyExtra): Promise<number> {
+  return updateTrangThaiMany(ids, TRANG_THAI_NGUON_BULK[extra.hanhDong], patchDuyet(extra));
 }
 
 export async function deleteThuChiQuyList(ids: string[]): Promise<void> {

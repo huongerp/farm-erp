@@ -12,16 +12,12 @@ import {
   createThuChiQuy,
   updateThuChiQuy,
   deleteThuChiQuyList,
-  khoaThuChiQuy,
-  xinMoThuChiQuy,
-  xuLyMoThuChiQuy,
-  khoaThuChiQuyMany,
-  xinMoThuChiQuyMany,
-  xuLyMoThuChiQuyMany,
+  duyetThuChiQuy,
+  duyetThuChiQuyMany,
 } from '../services/thu-chi-quy-service';
 import { PAGE_SIZE } from '../core/constants';
 import type { ThuChiQuyListServerQuery } from '../services/thu-chi-quy-list-query';
-import type { XinMoThuChiQuyExtra, XuLyMoThuChiQuyExtra } from '../services/thu-chi-quy-service';
+import type { DuyetThuChiQuyExtra } from '../services/thu-chi-quy-service';
 import type { ThuChiQuyFormValues } from '../core/schema';
 import type { ThuChiNguon } from '../core/types';
 
@@ -146,88 +142,43 @@ export const useDeleteThuChiQuy = () => {
 };
 
 /* ------------------------------------------------------------------ */
-/* Khoá / mở khoá                                                      */
+/* Duyệt / không duyệt / đưa về chờ duyệt                              */
 /* ------------------------------------------------------------------ */
 
-export const useKhoaThuChiQuy = (onSuccess?: () => void) => {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => khoaThuChiQuy(id),
-    onSuccess: () => {
-      invalidateAll(qc);
-      toast.success(i18n.t('thuChiQuy.toast.khoaSuccess'));
-      onSuccess?.();
-    },
-    onError: (e: unknown) => toast.error((e as Error).message),
-  });
-};
+const TOAST_DUYET = {
+  duyet: 'thuChiQuy.toast.duyetSuccess',
+  khong_duyet: 'thuChiQuy.toast.khongDuyetSuccess',
+  tra_ve: 'thuChiQuy.toast.traVeSuccess',
+} as const;
 
-export const useXinMoThuChiQuy = (onSuccess?: () => void) => {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, extra }: { id: string; extra: XinMoThuChiQuyExtra }) => xinMoThuChiQuy(id, extra),
-    onSuccess: () => {
-      invalidateAll(qc);
-      toast.success(i18n.t('thuChiQuy.toast.xinMoSuccess'));
-      onSuccess?.();
-    },
-    onError: (e: unknown) => toast.error((e as Error).message),
-  });
-};
+const TOAST_DUYET_MANY = {
+  duyet: 'thuChiQuy.toast.bulkDuyetSuccess',
+  khong_duyet: 'thuChiQuy.toast.bulkKhongDuyetSuccess',
+  tra_ve: 'thuChiQuy.toast.bulkTraVeSuccess',
+} as const;
 
-export const useXuLyMoThuChiQuy = (onSuccess?: () => void) => {
+export const useDuyetThuChiQuy = (onSuccess?: () => void) => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, extra }: { id: string; extra: XuLyMoThuChiQuyExtra }) => xuLyMoThuChiQuy(id, extra),
+    mutationFn: ({ id, extra }: { id: string; extra: DuyetThuChiQuyExtra }) => duyetThuChiQuy(id, extra),
     onSuccess: (_d, { extra }) => {
       invalidateAll(qc);
-      toast.success(
-        i18n.t(extra.duyet ? 'thuChiQuy.toast.moSuccess' : 'thuChiQuy.toast.tuChoiMoSuccess')
-      );
+      toast.success(i18n.t(TOAST_DUYET[extra.hanhDong]));
       onSuccess?.();
     },
     onError: (e: unknown) => toast.error((e as Error).message),
   });
 };
 
-/* ------------------------------------------------------------------ */
-/* Khoá / mở khoá hàng loạt — toast báo số phiếu DB đổi thật           */
-/* ------------------------------------------------------------------ */
-
-export const useKhoaThuChiQuyMany = () => {
+/** Hàng loạt — toast báo số phiếu DB đổi thật. */
+export const useDuyetThuChiQuyMany = (onSuccess?: () => void) => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (ids: string[]) => khoaThuChiQuyMany(ids),
-    onSuccess: (count) => {
-      invalidateAll(qc);
-      toast.success(i18n.t('thuChiQuy.toast.bulkKhoaSuccess', { count }));
-    },
-    onError: (e: unknown) => toast.error((e as Error).message),
-  });
-};
-
-export const useXinMoThuChiQuyMany = (onSuccess?: () => void) => {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ ids, extra }: { ids: string[]; extra: XinMoThuChiQuyExtra }) => xinMoThuChiQuyMany(ids, extra),
-    onSuccess: (count) => {
-      invalidateAll(qc);
-      toast.success(i18n.t('thuChiQuy.toast.bulkXinMoSuccess', { count }));
-      onSuccess?.();
-    },
-    onError: (e: unknown) => toast.error((e as Error).message),
-  });
-};
-
-export const useXuLyMoThuChiQuyMany = () => {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ ids, extra }: { ids: string[]; extra: XuLyMoThuChiQuyExtra }) => xuLyMoThuChiQuyMany(ids, extra),
+    mutationFn: ({ ids, extra }: { ids: string[]; extra: DuyetThuChiQuyExtra }) => duyetThuChiQuyMany(ids, extra),
     onSuccess: (count, { extra }) => {
       invalidateAll(qc);
-      toast.success(
-        i18n.t(extra.duyet ? 'thuChiQuy.toast.bulkMoSuccess' : 'thuChiQuy.toast.bulkTuChoiMoSuccess', { count })
-      );
+      toast.success(i18n.t(TOAST_DUYET_MANY[extra.hanhDong], { count }));
+      onSuccess?.();
     },
     onError: (e: unknown) => toast.error((e as Error).message),
   });

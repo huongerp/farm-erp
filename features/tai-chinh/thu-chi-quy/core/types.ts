@@ -2,17 +2,18 @@
 export type LoaiThuChi = 'thu' | 'chi';
 
 /**
- * Trạng thái chốt sổ của một phiếu quỹ:
- * - `mo`     — đang mở, sửa/xoá bình thường.
- * - `khoa`   — đã chốt; người thường hết sửa/xoá, chỉ cấp cao thao tác được.
- * - `cho_mo` — người lập phiếu đã xin mở lại, đang chờ cấp cao duyệt (vẫn khoá).
+ * Trạng thái duyệt của một phiếu quỹ:
+ * - `cho_duyet`   — mới lập, chưa xét; sửa/xoá theo quyền module.
+ * - `da_duyet`    — cấp cao đã duyệt; người thường hết sửa/xoá.
+ * - `khong_duyet` — cấp cao không duyệt (vd mua hàng mà không nhập kho): KHÔNG tính
+ *   vào tồn quỹ / thống kê, không quyết toán; người thường hết sửa/xoá.
  */
-export type TrangThaiThuChiQuy = 'mo' | 'khoa' | 'cho_mo';
+export type TrangThaiThuChiQuy = 'cho_duyet' | 'da_duyet' | 'khong_duyet';
 
 export const TRANG_THAI_THU_CHI_QUY = {
-  MO: 'mo',
-  KHOA: 'khoa',
-  CHO_MO: 'cho_mo',
+  CHO_DUYET: 'cho_duyet',
+  DA_DUYET: 'da_duyet',
+  KHONG_DUYET: 'khong_duyet',
 } as const satisfies Record<string, TrangThaiThuChiQuy>;
 
 /** Nguồn chứng từ liên kết với phiếu quỹ (đa hình: mỗi nguồn một bảng). */
@@ -46,15 +47,12 @@ export interface ThuChiQuy {
   id_nguoi_tao?: string | null;
   ten_nguoi_tao?: string;
   trang_thai: TrangThaiThuChiQuy;
-  /** Người bấm "Xin mở khoá" — chỉ có khi phiếu từng ở trạng thái cho_mo */
-  id_nguoi_yeu_cau_mo?: string | null;
-  ten_nguoi_yeu_cau_mo?: string | null;
-  ly_do_yeu_cau_mo?: string | null;
-  tg_yeu_cau_mo?: string | null;
-  /** Người duyệt / từ chối yêu cầu mở khoá */
-  id_nguoi_xu_ly_mo?: string | null;
-  ten_nguoi_xu_ly_mo?: string | null;
-  tg_xu_ly_mo?: string | null;
+  /** Người duyệt / không duyệt gần nhất (cấp cao) */
+  id_nguoi_duyet?: string | null;
+  ten_nguoi_duyet?: string | null;
+  tg_duyet?: string | null;
+  /** Lý do không duyệt — bắt buộc khi chuyển sang khong_duyet */
+  ly_do_khong_duyet?: string | null;
   tg_tao: string;
   tg_cap_nhat: string;
 }

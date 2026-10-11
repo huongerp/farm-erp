@@ -192,10 +192,12 @@ xem mẫu ở các hook `use-*-view-scope.ts`.
   không UPDATE thẳng `mat_khau_hash`.
 - Thông báo sinh bằng trigger DB ghi vào outbox, **không** gọi thêm insert từ frontend sau mutation —
   làm vậy sẽ sót khi dữ liệu đổi từ SQL tay hoặc module khác. Xem [docs/THONG_BAO_PUSH.md](docs/THONG_BAO_PUSH.md).
-- Sổ quỹ (`features/tai-chinh/thu-chi-quy`) có trạng thái khoá: `mo` / `khoa` / `cho_mo`. Luật thuần ở
-  `core/trang-thai.ts` (có test), cổng theo người dùng ở `hooks/use-thu-chi-quy-permissions.ts`. Mở khoá
-  chỉ dành cho `cap_bac = 1` / quản trị; phiếu khoá phải chặn cả ở `ThuChiLienQuanSection` (bảng nhúng
-  trong drawer của 3 module khác, KHÔNG đọc được ModulePermissionGuard của quỹ).
+- Sổ quỹ (`features/tai-chinh/thu-chi-quy`) có trạng thái duyệt: `cho_duyet` / `da_duyet` / `khong_duyet`
+  (migration 036). Luật thuần ở `core/trang-thai.ts` (có test), cổng theo người dùng ở
+  `hooks/use-thu-chi-quy-permissions.ts`; DB chặn lại bằng trigger `fn_tc_quy_khoa_duyet`. Duyệt / không duyệt
+  chỉ dành cho `cap_bac = 1` / quản trị; phiếu đã xét phải chặn cả ở `ThuChiLienQuanSection` (bảng nhúng
+  trong drawer của 3 module khác, KHÔNG đọc được ModulePermissionGuard của quỹ). Phiếu `khong_duyet` KHÔNG
+  tính vào tồn quỹ / số dư / thống kê — view `v_tc_quy_*` và `rpc_tc_quy_thu_chi_stats` lọc cùng luật `tinhVaoTonQuy`.
 - Trang in phiếu: MỌI trang preview dùng `components/shared/phieu-in/PhieuInPage` (`mauKey` + `macDinh` khổ/hướng/lề).
   Khung lo lề, `@page`, cỡ chữ (zoom), phông, kéo cột mọi `<table>` (bỏ qua `data-in-co-dinh`), PDF/DOC chụp từ
   bản xem trước; cài đặt nhớ theo mẫu ở `lib/phieu-in/`. Nội dung phiếu KHÔNG đặt width/padding cứng, không thêm

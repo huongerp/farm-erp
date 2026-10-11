@@ -59,9 +59,9 @@ export function buildThuChiQuyListServerQuery(params: {
   const loai = strArr(filters.loai).filter((v): v is LoaiThuChi => v === 'thu' || v === 'chi');
   const nguonChungTu = strArr(filters.nguonChungTu).filter(isThuChiNguon);
   const trangThai = strArr(filters.trangThai).filter((v): v is TrangThaiThuChiQuy =>
-    v === TRANG_THAI_THU_CHI_QUY.MO ||
-    v === TRANG_THAI_THU_CHI_QUY.KHOA ||
-    v === TRANG_THAI_THU_CHI_QUY.CHO_MO
+    v === TRANG_THAI_THU_CHI_QUY.CHO_DUYET ||
+    v === TRANG_THAI_THU_CHI_QUY.DA_DUYET ||
+    v === TRANG_THAI_THU_CHI_QUY.KHONG_DUYET
   );
 
   return {

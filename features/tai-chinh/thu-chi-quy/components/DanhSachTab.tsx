@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import { Info, Lock, Unlock, XCircle } from 'lucide-react';
+import { CheckCircle2, Info, RotateCcw, XCircle } from 'lucide-react';
 import BulkActionButton from '../../../../components/shared/BulkActionButton';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import LazyExportDialog from '../../../../components/shared/LazyExportDialog';
@@ -19,25 +19,26 @@ import ThuChiQuyToolbar from './ThuChiQuyToolbar';
 import ThuChiQuyList from './ThuChiQuyList';
 import ThuChiQuyForm from './ThuChiQuyForm';
 import ThuChiQuyDetail from './ThuChiQuyDetail';
-import XinMoKhoaDialog from './XinMoKhoaDialog';
+import KhongDuyetDialog from './KhongDuyetDialog';
 import { useThuChiQuyStore } from '../store/useThuChiQuyStore';
 import { useThuChiQuyViewScope } from '../hooks/use-thu-chi-quy-view-scope';
 import {
   useDeleteThuChiQuy,
-  useKhoaThuChiQuy,
-  useKhoaThuChiQuyMany,
+  useDuyetThuChiQuy,
+  useDuyetThuChiQuyMany,
   useQuySoDu,
   useThuChiQuyPage,
-  useXinMoThuChiQuy,
-  useXinMoThuChiQuyMany,
-  useXuLyMoThuChiQuy,
-  useXuLyMoThuChiQuyMany,
 } from '../hooks/use-thu-chi-quy';
-import { phanLoaiBulkThuChiQuy, type HanhDongBulkThuChiQuy } from '../core/trang-thai';
+import {
+  phanLoaiBulkThuChiQuy,
+  trangThaiQuyToI18nKey,
+  type HanhDongBulkThuChiQuy,
+} from '../core/trang-thai';
 import { useThuChiQuyPermissions } from '../hooks/use-thu-chi-quy-permissions';
 import { useAuthStore } from '../../../../store/useStore';
 import { buildThuChiQuyListServerQuery } from '../services/thu-chi-quy-list-query';
 import { getThuChiQuyAll, getThuChiQuyTrangThaiByIds } from '../services/thu-chi-quy-service';
+import type { HanhDongDuyetThuChiQuy } from '../services/thu-chi-quy-service';
 import { useThuChiQuyImport } from '../hooks/use-thu-chi-quy-import';
 import { nguonChungTuToI18nKey } from '../core/constants';
 import type { ThuChiQuy, ThuChiQuyRow } from '../core/types';
@@ -68,9 +69,9 @@ const DanhSachTab: React.FC = () => {
   const [showExport, setShowExport] = useState(false);
   const [exportRows, setExportRows] = useState<ThuChiQuyRow[]>([]);
   const [exportLoading, setExportLoading] = useState(false);
-  const [xinMoItem, setXinMoItem] = useState<ThuChiQuy | null>(null);
-  /** Id các phiếu đang chờ nhập lý do xin mở hàng loạt (null = dialog đóng). */
-  const [xinMoBulkIds, setXinMoBulkIds] = useState<string[] | null>(null);
+  const [khongDuyetItem, setKhongDuyetItem] = useState<ThuChiQuy | null>(null);
+  /** Id các phiếu đang chờ nhập lý do không duyệt hàng loạt (null = dialog đóng). */
+  const [khongDuyetBulkIds, setKhongDuyetBulkIds] = useState<string[] | null>(null);
   const [bulkChecking, setBulkChecking] = useState(false);
 
   useEffect(() => () => resetState(), [resetState]);
@@ -125,16 +126,15 @@ const DanhSachTab: React.FC = () => {
   );
 
   const deleteMutation = useDeleteThuChiQuy();
-  const khoaMutation = useKhoaThuChiQuy();
-  const xinMoMutation = useXinMoThuChiQuy(() => setXinMoItem(null));
-  const xuLyMoMutation = useXuLyMoThuChiQuy();
-  const trangThaiPending =
-    khoaMutation.isPending || xinMoMutation.isPending || xuLyMoMutation.isPending;
-  const khoaManyMutation = useKhoaThuChiQuyMany();
-  const xinMoManyMutation = useXinMoThuChiQuyMany(() => setXinMoBulkIds(null));
-  const xuLyMoManyMutation = useXuLyMoThuChiQuyMany();
-  const bulkBusy =
-    bulkChecking || khoaManyMutation.isPending || xinMoManyMutation.isPending || xuLyMoManyMutation.isPending;
+  const duyetMutation = useDuyetThuChiQuy(() => setKhongDuyetItem(null));
+  const duyetManyMutation = useDuyetThuChiQuyMany(() => setKhongDuyetBulkIds(null));
+  const bulkBusy = bulkChecking || duyetManyMutation.isPending;
+
+  /** Người đang bấm duyệt — ghi kèm mọi lần chuyển trạng thái. */
+  const nguoiDuyet = {
+    idNguoiDuyet: user?.id ?? null,
+    tenNguoiDuyet: user?.ho_va_ten || user?.full_name || null,
+  };
 
   const hasOtherFilter =
     filters.loai.length > 0 ||
@@ -216,7 +216,6 @@ const DanhSachTab: React.FC = () => {
       const rowsTra = await getThuChiQuyTrangThaiByIds(ids);
       const { hopLe, boQua } = phanLoaiBulkThuChiQuy(ids, rowsTra, hanhDong, {
         laCapCao: perms.laCapCao,
-        userId: user?.id ?? null,
         coQuyenXoa: canDelete,
       });
       return { ids: hopLe.map((r) => r.id), boQua };
@@ -254,116 +253,69 @@ const DanhSachTab: React.FC = () => {
     });
   };
 
-  /** Khoá / mở khoá / từ chối mở hàng loạt — cùng một khuôn: lọc → confirm → một lệnh UPDATE. */
-  const handleTrangThaiMany = async (hanhDong: 'khoa' | 'mo' | 'tu_choi_mo') => {
+  /**
+   * Duyệt / không duyệt / đưa về hàng loạt — cùng một khuôn: lọc → (confirm | nhập lý do)
+   * → một lệnh UPDATE. Không duyệt cần lý do nên mở dialog thay cho confirm.
+   */
+  const handleTrangThaiMany = async (hanhDong: HanhDongDuyetThuChiQuy) => {
     const kq = await locPhieuHopLe(Array.from(selectedIds), hanhDong);
     if (!kq) return;
     if (kq.ids.length === 0) {
       toast.error(t(`thuChiQuy.bulk.${hanhDong}.noneAllowed`));
       return;
     }
+    if (hanhDong === 'khong_duyet') {
+      if (kq.boQua > 0) toast.warning(t('thuChiQuy.bulk.boQuaNote', { count: kq.boQua }));
+      setKhongDuyetBulkIds(kq.ids);
+      return;
+    }
     confirm({
       title: t(`thuChiQuy.bulk.${hanhDong}.title`),
       message: t(`thuChiQuy.bulk.${hanhDong}.message`, { count: kq.ids.length }) + ghiChuBoQua(kq.boQua),
-      variant: hanhDong === 'mo' ? 'warning' : hanhDong === 'tu_choi_mo' ? 'danger' : 'warning',
+      variant: 'warning',
       confirmText: CONFIRM_YES(),
       onConfirm: async () => {
-        if (hanhDong === 'khoa') {
-          await khoaManyMutation.mutateAsync(kq.ids);
-        } else {
-          await xuLyMoManyMutation.mutateAsync({
-            ids: kq.ids,
-            extra: {
-              duyet: hanhDong === 'mo',
-              idNguoiXuLy: user?.id ?? null,
-              tenNguoiXuLy: user?.ho_va_ten || user?.full_name || null,
-            },
-          });
-        }
+        await duyetManyMutation.mutateAsync({ ids: kq.ids, extra: { hanhDong, ...nguoiDuyet } });
         clearSelection();
       },
     });
   };
 
-  /** Xin mở hàng loạt: lọc phiếu hợp lệ trước, rồi mở dialog nhập MỘT lý do chung. */
-  const handleXinMoMany = async () => {
-    const kq = await locPhieuHopLe(Array.from(selectedIds), 'xin_mo');
-    if (!kq) return;
-    if (kq.ids.length === 0) {
-      toast.error(t('thuChiQuy.bulk.xin_mo.noneAllowed'));
-      return;
-    }
-    if (kq.boQua > 0) toast.warning(t('thuChiQuy.bulk.boQuaNote', { count: kq.boQua }));
-    setXinMoBulkIds(kq.ids);
-  };
-
-  const bulkActions = (
+  const bulkActions = perms.laCapCao ? (
     <>
       <BulkActionButton
-        icon={Lock}
-        tone="warning"
-        label={t('thuChiQuy.bulk.khoa.action')}
-        onClick={() => handleTrangThaiMany('khoa')}
+        icon={CheckCircle2}
+        tone="success"
+        label={t('thuChiQuy.bulk.duyet.action')}
+        onClick={() => handleTrangThaiMany('duyet')}
         disabled={bulkBusy}
       />
-      {perms.laCapCao ? (
-        <>
-          <BulkActionButton
-            icon={Unlock}
-            tone="success"
-            label={t('thuChiQuy.bulk.mo.action')}
-            onClick={() => handleTrangThaiMany('mo')}
-            disabled={bulkBusy}
-          />
-          <BulkActionButton
-            icon={XCircle}
-            tone="danger"
-            label={t('thuChiQuy.bulk.tu_choi_mo.action')}
-            onClick={() => handleTrangThaiMany('tu_choi_mo')}
-            disabled={bulkBusy}
-          />
-        </>
-      ) : (
-        <BulkActionButton
-          icon={Unlock}
-          tone="muted"
-          label={t('thuChiQuy.bulk.xin_mo.action')}
-          onClick={handleXinMoMany}
-          disabled={bulkBusy}
-        />
-      )}
+      <BulkActionButton
+        icon={XCircle}
+        tone="danger"
+        label={t('thuChiQuy.bulk.khong_duyet.action')}
+        onClick={() => handleTrangThaiMany('khong_duyet')}
+        disabled={bulkBusy}
+      />
+      <BulkActionButton
+        icon={RotateCcw}
+        tone="muted"
+        label={t('thuChiQuy.bulk.tra_ve.action')}
+        onClick={() => handleTrangThaiMany('tra_ve')}
+        disabled={bulkBusy}
+      />
     </>
-  );
+  ) : undefined;
 
-  /* --- Khoá / mở khoá ------------------------------------------------- */
+  /* --- Duyệt / không duyệt một phiếu ----------------------------------- */
 
-  const handleKhoa = (item: ThuChiQuy) => {
+  const handleDuyetMot = (item: ThuChiQuy, hanhDong: 'duyet' | 'tra_ve') => {
     confirm({
-      title: t('thuChiQuy.moKhoa.khoaTitle'),
-      message: t('thuChiQuy.moKhoa.khoaMessage', { soPhieu: item.so_phieu }),
+      title: t(`thuChiQuy.duyetPhieu.${hanhDong}Title`),
+      message: t(`thuChiQuy.duyetPhieu.${hanhDong}Message`, { soPhieu: item.so_phieu }),
       variant: 'warning',
       confirmText: CONFIRM_YES(),
-      onConfirm: () => khoaMutation.mutate(item.id),
-    });
-  };
-
-  const handleXuLyMo = (item: ThuChiQuy, duyet: boolean) => {
-    confirm({
-      title: t(duyet ? 'thuChiQuy.moKhoa.duyetTitle' : 'thuChiQuy.moKhoa.tuChoiTitle'),
-      message: t(duyet ? 'thuChiQuy.moKhoa.duyetMessage' : 'thuChiQuy.moKhoa.tuChoiMessage', {
-        soPhieu: item.so_phieu,
-      }),
-      variant: duyet ? 'warning' : 'danger',
-      confirmText: CONFIRM_YES(),
-      onConfirm: () =>
-        xuLyMoMutation.mutate({
-          id: item.id,
-          extra: {
-            duyet,
-            idNguoiXuLy: user?.id ?? null,
-            tenNguoiXuLy: user?.ho_va_ten || user?.full_name || null,
-          },
-        }),
+      onConfirm: () => duyetMutation.mutate({ id: item.id, extra: { hanhDong, ...nguoiDuyet } }),
     });
   };
 
@@ -381,6 +333,7 @@ const DanhSachTab: React.FC = () => {
       { key: 'ghi_chu', label: t('thuChiQuy.store.ghiChuCol') },
       { key: 'chi_nhanh', label: t('thuChiQuy.store.chiNhanhCol') },
       { key: 'nguoi_tao', label: t('thuChiQuy.store.nguoiTaoCol') },
+      { key: 'trang_thai', label: t('thuChiQuy.store.trangThaiCol') },
     ],
     [t]
   );
@@ -400,6 +353,7 @@ const DanhSachTab: React.FC = () => {
         ghi_chu: r.ghi_chu || '',
         chi_nhanh: r.ref_ten_chi_nhanh || r.ten_chi_nhanh || '',
         nguoi_tao: r.ref_ten_nguoi_tao || r.ten_nguoi_tao || '',
+        trang_thai: t(trangThaiQuyToI18nKey(r.trang_thai)),
       })),
     [exportRows, t]
   );
@@ -494,31 +448,24 @@ const DanhSachTab: React.FC = () => {
             onClose={() => setDetailItem(null)}
             onEdit={canUpdate && perms.canEditRow(detailItem) ? handleEdit : undefined}
             onDelete={canDelete && perms.canDeleteRow(detailItem) ? handleDelete : undefined}
-            onKhoa={perms.canKhoa(detailItem) ? handleKhoa : undefined}
-            onXinMo={perms.canXinMo(detailItem) ? (item) => setXinMoItem(item) : undefined}
-            onDuyetMo={perms.canDuyetMo(detailItem) ? (item) => handleXuLyMo(item, true) : undefined}
-            onTuChoiMo={
-              perms.canTuChoiMo(detailItem) ? (item) => handleXuLyMo(item, false) : undefined
-            }
-            trangThaiPending={trangThaiPending}
+            onDuyet={perms.canDuyet(detailItem) ? (item) => handleDuyetMot(item, 'duyet') : undefined}
+            onKhongDuyet={perms.canKhongDuyet(detailItem) ? (item) => setKhongDuyetItem(item) : undefined}
+            onTraVe={perms.canTraVe(detailItem) ? (item) => handleDuyetMot(item, 'tra_ve') : undefined}
+            trangThaiPending={duyetMutation.isPending}
           />
         )}
       </AnimatePresence>
 
       <AnimatePresence>
-        {xinMoItem && (
-          <XinMoKhoaDialog
-            soPhieu={xinMoItem.so_phieu}
-            isPending={xinMoMutation.isPending}
-            onClose={() => setXinMoItem(null)}
+        {khongDuyetItem && (
+          <KhongDuyetDialog
+            soPhieu={khongDuyetItem.so_phieu}
+            isPending={duyetMutation.isPending}
+            onClose={() => setKhongDuyetItem(null)}
             onConfirm={(lyDo) =>
-              xinMoMutation.mutate({
-                id: xinMoItem.id,
-                extra: {
-                  lyDo,
-                  idNguoiYeuCau: user?.id ?? null,
-                  tenNguoiYeuCau: user?.ho_va_ten || user?.full_name || null,
-                },
+              duyetMutation.mutate({
+                id: khongDuyetItem.id,
+                extra: { hanhDong: 'khong_duyet', lyDo, ...nguoiDuyet },
               })
             }
           />
@@ -526,22 +473,15 @@ const DanhSachTab: React.FC = () => {
       </AnimatePresence>
 
       <AnimatePresence>
-        {xinMoBulkIds && (
-          <XinMoKhoaDialog
+        {khongDuyetBulkIds && (
+          <KhongDuyetDialog
             soPhieu=""
-            title={t('thuChiQuy.bulk.xin_mo.title', { count: xinMoBulkIds.length })}
-            isPending={xinMoManyMutation.isPending}
-            onClose={() => setXinMoBulkIds(null)}
+            title={t('thuChiQuy.bulk.khong_duyet.title', { count: khongDuyetBulkIds.length })}
+            isPending={duyetManyMutation.isPending}
+            onClose={() => setKhongDuyetBulkIds(null)}
             onConfirm={(lyDo) =>
-              xinMoManyMutation.mutate(
-                {
-                  ids: xinMoBulkIds,
-                  extra: {
-                    lyDo,
-                    idNguoiYeuCau: user?.id ?? null,
-                    tenNguoiYeuCau: user?.ho_va_ten || user?.full_name || null,
-                  },
-                },
+              duyetManyMutation.mutate(
+                { ids: khongDuyetBulkIds, extra: { hanhDong: 'khong_duyet', lyDo, ...nguoiDuyet } },
                 { onSuccess: () => clearSelection() }
               )
             }

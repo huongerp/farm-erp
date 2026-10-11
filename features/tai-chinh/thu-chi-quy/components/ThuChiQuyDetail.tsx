@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { Wallet, FileText, Link2, ExternalLink, Lock, Unlock, XCircle } from 'lucide-react';
+import { Wallet, FileText, Link2, ExternalLink, CheckCircle2, RotateCcw, XCircle, ClipboardCheck } from 'lucide-react';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
 import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';
@@ -30,10 +30,9 @@ interface Props {
   onEdit?: (item: ThuChiQuyDetailData) => void;
   onDelete?: (item: ThuChiQuyDetailData) => void;
   /** Hành động trạng thái — để trống thì nút tương ứng không hiện. */
-  onKhoa?: (item: ThuChiQuyDetailData) => void;
-  onXinMo?: (item: ThuChiQuyDetailData) => void;
-  onDuyetMo?: (item: ThuChiQuyDetailData) => void;
-  onTuChoiMo?: (item: ThuChiQuyDetailData) => void;
+  onDuyet?: (item: ThuChiQuyDetailData) => void;
+  onKhongDuyet?: (item: ThuChiQuyDetailData) => void;
+  onTraVe?: (item: ThuChiQuyDetailData) => void;
   trangThaiPending?: boolean;
   /** >0 khi mở chồng lên drawer khác (section trong drawer chứng từ) */
   stackLevel?: number;
@@ -44,10 +43,9 @@ const ThuChiQuyDetail: React.FC<Props> = ({
   onClose,
   onEdit,
   onDelete,
-  onKhoa,
-  onXinMo,
-  onDuyetMo,
-  onTuChoiMo,
+  onDuyet,
+  onKhongDuyet,
+  onTraVe,
   trangThaiPending = false,
   stackLevel = 0,
 }) => {
@@ -58,44 +56,35 @@ const ThuChiQuyDetail: React.FC<Props> = ({
 
   const toolbarActions = React.useMemo<DetailToolbarAction[]>(() => {
     const list: DetailToolbarAction[] = [];
-    if (onKhoa) {
+    if (onDuyet) {
       list.push({
-        label: t('thuChiQuy.detail.toolbar.khoa'),
-        icon: <Lock size={16} />,
-        variant: 'warning',
-        disabled: trangThaiPending,
-        onClick: () => onKhoa(data),
-      });
-    }
-    if (onXinMo) {
-      list.push({
-        label: t('thuChiQuy.detail.toolbar.xinMo'),
-        icon: <Unlock size={16} />,
-        variant: 'outline',
-        disabled: trangThaiPending,
-        onClick: () => onXinMo(data),
-      });
-    }
-    if (onDuyetMo) {
-      list.push({
-        label: t('thuChiQuy.detail.toolbar.duyetMo'),
-        icon: <Unlock size={16} />,
+        label: t('thuChiQuy.detail.toolbar.duyet'),
+        icon: <CheckCircle2 size={16} />,
         variant: 'success',
         disabled: trangThaiPending,
-        onClick: () => onDuyetMo(data),
+        onClick: () => onDuyet(data),
       });
     }
-    if (onTuChoiMo) {
+    if (onKhongDuyet) {
       list.push({
-        label: t('thuChiQuy.detail.toolbar.tuChoiMo'),
+        label: t('thuChiQuy.detail.toolbar.khongDuyet'),
         icon: <XCircle size={16} />,
         variant: 'danger',
         disabled: trangThaiPending,
-        onClick: () => onTuChoiMo(data),
+        onClick: () => onKhongDuyet(data),
+      });
+    }
+    if (onTraVe) {
+      list.push({
+        label: t('thuChiQuy.detail.toolbar.traVe'),
+        icon: <RotateCcw size={16} />,
+        variant: 'outline',
+        disabled: trangThaiPending,
+        onClick: () => onTraVe(data),
       });
     }
     return list;
-  }, [data, onKhoa, onXinMo, onDuyetMo, onTuChoiMo, trangThaiPending, t]);
+  }, [data, onDuyet, onKhongDuyet, onTraVe, trangThaiPending, t]);
 
   return (
     <GenericDrawer
@@ -167,27 +156,26 @@ const ThuChiQuyDetail: React.FC<Props> = ({
           />
         )}
 
-        {data.trang_thai === TRANG_THAI_THU_CHI_QUY.CHO_MO && (
+        {data.trang_thai !== TRANG_THAI_THU_CHI_QUY.CHO_DUYET && (
           <DetailSection
-            title={t('thuChiQuy.detail.yeuCauSection')}
-            icon={<Unlock size={14} />}
+            title={t('thuChiQuy.detail.duyetSection')}
+            icon={<ClipboardCheck size={14} />}
             variant="secondary"
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <DetailField label={t('thuChiQuy.detail.nguoiDuyet')} value={data.ten_nguoi_duyet} />
               <DetailField
-                label={t('thuChiQuy.detail.nguoiYeuCauMo')}
-                value={data.ten_nguoi_yeu_cau_mo}
+                label={t('thuChiQuy.detail.tgDuyet')}
+                value={data.tg_duyet ? formatDateTimeShort(data.tg_duyet) : undefined}
               />
-              <DetailField
-                label={t('thuChiQuy.detail.tgYeuCauMo')}
-                value={data.tg_yeu_cau_mo ? formatDateTimeShort(data.tg_yeu_cau_mo) : undefined}
-              />
-              <div className="col-span-1 sm:col-span-2">
-                <DetailField
-                  label={t('thuChiQuy.detail.lyDoYeuCauMo')}
-                  value={data.ly_do_yeu_cau_mo}
-                />
-              </div>
+              {data.trang_thai === TRANG_THAI_THU_CHI_QUY.KHONG_DUYET && (
+                <div className="col-span-1 sm:col-span-2">
+                  <DetailField label={t('thuChiQuy.detail.lyDoKhongDuyet')} value={data.ly_do_khong_duyet} />
+                  <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+                    {t('thuChiQuy.detail.khongTinhTonQuy')}
+                  </p>
+                </div>
+              )}
             </div>
           </DetailSection>
         )}
@@ -245,18 +233,6 @@ const ThuChiQuyDetail: React.FC<Props> = ({
             <DetailField label={t('thuChiQuy.detail.createdBy')} value={data.ref_ten_nguoi_tao || data.ten_nguoi_tao} />
             <DetailField label={t('thuChiQuy.detail.createdAt')} value={formatDateTimeShort(data.tg_tao)} />
             <DetailField label={t('thuChiQuy.store.updatedCol')} value={formatDateTimeShort(data.tg_cap_nhat)} />
-            {data.ten_nguoi_xu_ly_mo ? (
-              <>
-                <DetailField
-                  label={t('thuChiQuy.detail.nguoiXuLyMo')}
-                  value={data.ten_nguoi_xu_ly_mo}
-                />
-                <DetailField
-                  label={t('thuChiQuy.detail.tgXuLyMo')}
-                  value={data.tg_xu_ly_mo ? formatDateTimeShort(data.tg_xu_ly_mo) : undefined}
-                />
-              </>
-            ) : null}
           </div>
         </DetailSection>
       </div>

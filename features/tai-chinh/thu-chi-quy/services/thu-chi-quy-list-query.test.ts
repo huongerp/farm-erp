@@ -88,13 +88,13 @@ describe('buildThuChiQuyListServerQuery', () => {
     const q = call({
       filters: {
         ...emptyFilters,
-        trangThai: ['khoa', 'mo', 'khoa', 'dang_mo' as never, ''],
+        trangThai: ['khong_duyet', 'cho_duyet', 'khong_duyet', 'khoa' as never, ''],
       },
     });
-    expect(q.trangThai).toEqual(['khoa', 'mo']);
+    expect(q.trangThai).toEqual(['cho_duyet', 'khong_duyet']);
   });
 
-  it('không chọn trạng thái nào = xem cả phiếu mở lẫn phiếu khoá', () => {
+  it('không chọn trạng thái nào = xem mọi trạng thái', () => {
     expect(call().trangThai).toEqual([]);
   });
 });

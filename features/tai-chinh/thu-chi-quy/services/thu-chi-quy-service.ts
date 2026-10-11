@@ -13,17 +13,13 @@ export {
   updateThuChiQuy,
   deleteThuChiQuyList,
   insertThuChiQuyBulk,
-  khoaThuChiQuy,
-  xinMoThuChiQuy,
-  xuLyMoThuChiQuy,
+  duyetThuChiQuy,
   getThuChiQuyTrangThaiByIds,
-  khoaThuChiQuyMany,
-  xinMoThuChiQuyMany,
-  xuLyMoThuChiQuyMany,
+  duyetThuChiQuyMany,
 } from './thu-chi-quy-db.service';
 export type {
   ChungTuRef,
   ThuChiQuyTrangThaiRow,
-  XinMoThuChiQuyExtra,
-  XuLyMoThuChiQuyExtra,
+  DuyetThuChiQuyExtra,
+  HanhDongDuyetThuChiQuy,
 } from './thu-chi-quy-db.service';
