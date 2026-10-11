@@ -48,6 +48,8 @@
   "deXuatMuaHang.form.itemName": "Tên hàng",
   "deXuatMuaHang.form.quantity": "Số lượng",
   "deXuatMuaHang.form.unit": "Đơn vị",
+  "deXuatMuaHang.form.tonKho": "Tồn kho",
+  "deXuatMuaHang.form.tonShort": "Tồn",
   "deXuatMuaHang.form.tienDoMh": "Tiến độ MH",
   "deXuatMuaHang.form.tienDoMhPlaceholder": "Chọn tiến độ",
   "deXuatMuaHang.form.specs": "Thông số",

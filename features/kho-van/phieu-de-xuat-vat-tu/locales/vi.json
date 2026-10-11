@@ -49,6 +49,8 @@
   "phieuDeXuatVatTu.form.itemName": "Tên hàng",
   "phieuDeXuatVatTu.form.quantity": "Số lượng",
   "phieuDeXuatVatTu.form.unit": "Đơn vị",
+  "phieuDeXuatVatTu.form.tonKho": "Tồn kho",
+  "phieuDeXuatVatTu.form.tonShort": "Tồn",
   "phieuDeXuatVatTu.form.tienDoMh": "Tiến độ MH",
   "phieuDeXuatVatTu.form.tienDoMhPlaceholder": "Chọn tiến độ",
   "phieuDeXuatVatTu.form.specs": "Thông số",

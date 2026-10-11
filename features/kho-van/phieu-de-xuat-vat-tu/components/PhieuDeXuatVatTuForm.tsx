@@ -18,6 +18,7 @@ import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { useAuthStore } from '../../../../store/useStore';
 import { useCreatePhieuDeXuatVatTu, useUpdatePhieuDeXuatVatTu } from '../hooks/use-phieu-de-xuat-vat-tu';
 import { useHangHoaRefQuery } from '../../../../lib/hooks/use-ref-queries';
+import { useTonKhoTheoKho } from '../../phieu-kho/hooks/use-phieu-kho';
 import type { HangHoaRefLite } from '../../danh-sach-hang-hoa/services/hang-hoa-service';
 import { useCauHinhDeXuatVatTu } from '../../../mua-hang/thiet-lap-de-xuat-vat-tu/hooks/use-cau-hinh-de-xuat-vat-tu';
 import { useTienDoMuaHangList } from '../../../mua-hang/thiet-lap-de-xuat-vat-tu/hooks/use-tien-do-mua-hang';
@@ -29,7 +30,7 @@ import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
 import GenericSubTableSection from '../../../../components/shared/GenericSubTableSection';
 import SubTable, { type SubTableColumn } from '../../../../components/shared/sub-table/SubTable';
 import SubTableActionButton from '../../../../components/shared/sub-table/SubTableActionButton';
-import { cn } from '../../../../lib/utils';
+import { cn, formatNumberVN } from '../../../../lib/utils';
 import { dongDeXuatDoDang } from '../../../../lib/de-xuat-chi-tiet';
 
 function addDays(dateStr: string, days: number): string {
@@ -107,26 +108,6 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
     [employees]
   );
 
-  const hangHoaComboboxOptions = useMemo(
-    () =>
-      hangHoaList
-        .filter((h) => h.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG)
-        .map((h) => ({
-          value: h.id,
-          label: `${h.ma_hang} - ${h.ten_hang}`,
-          subLabel: h.don_vi_tinh ? `${t('phieuDeXuatVatTu.form.unit')}: ${h.don_vi_tinh}` : undefined,
-        })),
-    [hangHoaList, t]
-  );
-
-  const hangHoaComboboxOptionsWithAdd = useMemo(
-    () => [
-      ...(onRequestAddHangHoa ? [{ value: ADD_HANG_HOA, label: `➕ ${t('phieuDeXuatVatTu.form.addProduct')}`, subLabel: undefined }] : []),
-      ...hangHoaComboboxOptions,
-    ],
-    [hangHoaComboboxOptions, onRequestAddHangHoa, t]
-  );
-
   const renderAddOption = (opt: { value: string | number; label: string }) =>
     opt.value === ADD_HANG_HOA ? <span className="text-primary font-medium">{opt.label}</span> : undefined;
 
@@ -161,6 +142,42 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
 
   const { fields, append, remove } = useFieldArray({ control, name: 'chi_tiet' });
   const chiTietValues = useWatch({ control, name: 'chi_tiet' }) ?? [];
+  const khoIdWatch = useWatch({ control, name: 'id_noi_de_xuat' });
+
+  // Tồn hiện tại của kho "Nơi đề xuất" — người lập soi trước khi đề xuất mua.
+  const { data: tonRows, isFetching: isFetchingTon } = useTonKhoTheoKho(khoIdWatch || undefined);
+  const tonMap = useMemo(() => {
+    const m: Record<string, number> = {};
+    (tonRows ?? []).forEach((r) => {
+      m[r.id_hang_hoa] = (m[r.id_hang_hoa] ?? 0) + r.so_luong;
+    });
+    return m;
+  }, [tonRows]);
+
+  const hangHoaComboboxOptions = useMemo(
+    () =>
+      hangHoaList
+        .filter((h) => h.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG)
+        .map((h) => {
+          const parts: string[] = [];
+          if (h.don_vi_tinh) parts.push(`${t('phieuDeXuatVatTu.form.unit')}: ${h.don_vi_tinh}`);
+          if (khoIdWatch && tonRows) parts.push(`${t('phieuDeXuatVatTu.form.tonShort')}: ${formatNumberVN(tonMap[h.id] ?? 0)}`);
+          return {
+            value: h.id,
+            label: `${h.ma_hang} - ${h.ten_hang}`,
+            subLabel: parts.length > 0 ? parts.join(' · ') : undefined,
+          };
+        }),
+    [hangHoaList, t, khoIdWatch, tonRows, tonMap]
+  );
+
+  const hangHoaComboboxOptionsWithAdd = useMemo(
+    () => [
+      ...(onRequestAddHangHoa ? [{ value: ADD_HANG_HOA, label: `➕ ${t('phieuDeXuatVatTu.form.addProduct')}`, subLabel: undefined }] : []),
+      ...hangHoaComboboxOptions,
+    ],
+    [hangHoaComboboxOptions, onRequestAddHangHoa, t]
+  );
 
   const defaultKhoByBranch = useMemo(() => {
     const branchId = getUserBranchId(user);
@@ -328,6 +345,7 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
     { id: 'hang_hoa', label: t('phieuDeXuatVatTu.form.item'), width: 300, minWidth: 200, sticky: true },
     { id: 'so_luong', label: t('phieuDeXuatVatTu.form.quantity'), width: 130, minWidth: 96 },
     { id: 'dvt', label: t('phieuDeXuatVatTu.form.unit'), width: 80, minWidth: 56 },
+    { id: 'ton_kho', label: t('phieuDeXuatVatTu.form.tonKho'), width: 100, minWidth: 72, align: 'right' },
     { id: 'tien_do', label: t('phieuDeXuatVatTu.form.tienDoMh'), width: 180, minWidth: 130 },
     { id: 'thong_so', label: t('phieuDeXuatVatTu.form.specs'), width: 220, minWidth: 140 },
     { id: 'ghi_chu', label: t('phieuDeXuatVatTu.form.note'), width: 220, minWidth: 140 },
@@ -391,6 +409,16 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
             {idHangHoa ? (hangHoaMap[idHangHoa]?.don_vi_tinh ?? '—') : '—'}
           </span>
         );
+      case 'ton_kho': {
+        if (!idHangHoa || !khoIdWatch) return <span className="text-xs text-muted-foreground">—</span>;
+        if (isFetchingTon && !tonRows) return <span className="text-xs text-muted-foreground">…</span>;
+        const ton = tonMap[idHangHoa] ?? 0;
+        return (
+          <span className={cn('text-sm tabular-nums whitespace-nowrap', ton <= 0 ? 'text-rose-600 dark:text-rose-400' : 'text-foreground')}>
+            {formatNumberVN(ton)}
+          </span>
+        );
+      }
       case 'tien_do':
         return (
           <Controller
@@ -462,7 +490,7 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
         )}
       </div>
       {chiTietColumns
-        .filter((c) => c.id !== 'so_luong' && c.id !== 'dvt')
+        .filter((c) => c.id !== 'so_luong' && c.id !== 'dvt' && c.id !== 'ton_kho')
         .map((c) => (
           <React.Fragment key={c.id}>
             <div className="space-y-1">
@@ -470,7 +498,7 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
               {renderChiTietField(c.id, index)}
             </div>
             {c.id === 'hang_hoa' && (
-              <div className="grid grid-cols-[1fr_auto] gap-3 items-end">
+              <div className="grid grid-cols-[1fr_auto_auto] gap-3 items-end">
                 <div className="space-y-1 min-w-0">
                   <span className="text-caption font-medium text-muted-foreground">{t('phieuDeXuatVatTu.form.quantity')}</span>
                   {renderChiTietField('so_luong', index)}
@@ -478,6 +506,10 @@ const PhieuDeXuatVatTuForm: React.FC<Props> = ({ khoList, employees, initialData
                 <div className="space-y-1 pb-2">
                   <span className="text-caption font-medium text-muted-foreground block">{t('phieuDeXuatVatTu.form.unit')}</span>
                   {renderChiTietField('dvt', index)}
+                </div>
+                <div className="space-y-1 pb-2 text-right">
+                  <span className="text-caption font-medium text-muted-foreground block">{t('phieuDeXuatVatTu.form.tonKho')}</span>
+                  {renderChiTietField('ton_kho', index)}
                 </div>
               </div>
             )}

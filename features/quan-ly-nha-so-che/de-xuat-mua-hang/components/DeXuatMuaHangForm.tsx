@@ -34,9 +34,10 @@ import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
 import GenericSubTableSection from '../../../../components/shared/GenericSubTableSection';
 import SubTable, { type SubTableColumn } from '../../../../components/shared/sub-table/SubTable';
 import SubTableActionButton from '../../../../components/shared/sub-table/SubTableActionButton';
-import { cn } from '../../../../lib/utils';
+import { cn, formatNumberVN } from '../../../../lib/utils';
 import { dongDeXuatDoDang } from '../../../../lib/de-xuat-chi-tiet';
 import { useKhoBienThe } from '../../kho-bien-the/KhoBienTheProvider';
+import { useFarmTonKhoPTTheoKho } from '../../ton-kho-phan-thuoc/hooks/use-farm-ton-kho-pt';
 
 function addDays(dateStr: string, days: number): string {
   const d = new Date(dateStr);
@@ -113,24 +114,6 @@ const DeXuatMuaHangForm: React.FC<Props> = ({ khoList, employees, initialData, o
     [employees]
   );
 
-  const hangHoaComboboxOptions = useMemo(
-    () =>
-      hangHoaList.map((h) => ({
-        value: h.id,
-        label: `${h.ma_hang} - ${h.ten_hang}`,
-        subLabel: h.don_vi_tinh ? `${t('deXuatMuaHang.form.unit')}: ${h.don_vi_tinh}` : undefined,
-      })),
-    [hangHoaList, t]
-  );
-
-  const hangHoaComboboxOptionsWithAdd = useMemo(
-    () => [
-      ...(onRequestAddHangHoa ? [{ value: ADD_HANG_HOA, label: `➕ ${t('deXuatMuaHang.form.addProduct')}`, subLabel: undefined }] : []),
-      ...hangHoaComboboxOptions,
-    ],
-    [hangHoaComboboxOptions, onRequestAddHangHoa, t]
-  );
-
   const renderAddOption = (opt: { value: string | number; label: string }) =>
     opt.value === ADD_HANG_HOA ? <span className="text-primary font-medium">{opt.label}</span> : undefined;
 
@@ -166,6 +149,41 @@ const DeXuatMuaHangForm: React.FC<Props> = ({ khoList, employees, initialData, o
 
   const { fields, append, remove } = useFieldArray({ control, name: 'chi_tiet' });
   const chiTietValues = useWatch({ control, name: 'chi_tiet' }) ?? [];
+  const khoIdWatch = useWatch({ control, name: 'id_noi_de_xuat' });
+
+  // Tồn hiện tại của kho "Nơi đề xuất" — người lập soi trước khi đề xuất mua.
+  const { data: tonRows, isFetching: isFetchingTon } = useFarmTonKhoPTTheoKho(khoIdWatch || null);
+  const tonMap = useMemo(() => {
+    const m: Record<string, number> = {};
+    (tonRows ?? []).forEach((r) => {
+      const id = String(r.id_hang_hoa);
+      m[id] = (m[id] ?? 0) + Number(r.so_luong);
+    });
+    return m;
+  }, [tonRows]);
+
+  const hangHoaComboboxOptions = useMemo(
+    () =>
+      hangHoaList.map((h) => {
+        const parts: string[] = [];
+        if (h.don_vi_tinh) parts.push(`${t('deXuatMuaHang.form.unit')}: ${h.don_vi_tinh}`);
+        if (khoIdWatch && tonRows) parts.push(`${t('deXuatMuaHang.form.tonShort')}: ${formatNumberVN(tonMap[h.id] ?? 0)}`);
+        return {
+          value: h.id,
+          label: `${h.ma_hang} - ${h.ten_hang}`,
+          subLabel: parts.length > 0 ? parts.join(' · ') : undefined,
+        };
+      }),
+    [hangHoaList, t, khoIdWatch, tonRows, tonMap]
+  );
+
+  const hangHoaComboboxOptionsWithAdd = useMemo(
+    () => [
+      ...(onRequestAddHangHoa ? [{ value: ADD_HANG_HOA, label: `➕ ${t('deXuatMuaHang.form.addProduct')}`, subLabel: undefined }] : []),
+      ...hangHoaComboboxOptions,
+    ],
+    [hangHoaComboboxOptions, onRequestAddHangHoa, t]
+  );
 
   const defaultKhoByBranch = useMemo(() => {
     const branchId = getUserBranchId(user);
@@ -315,6 +333,7 @@ const DeXuatMuaHangForm: React.FC<Props> = ({ khoList, employees, initialData, o
     { id: 'hang_hoa', label: t('deXuatMuaHang.form.item'), width: 300, minWidth: 200, sticky: true },
     { id: 'so_luong', label: t('deXuatMuaHang.form.quantity'), width: 130, minWidth: 96 },
     { id: 'dvt', label: t('deXuatMuaHang.form.unit'), width: 80, minWidth: 56 },
+    { id: 'ton_kho', label: t('deXuatMuaHang.form.tonKho'), width: 100, minWidth: 72, align: 'right' },
     { id: 'tien_do', label: t('deXuatMuaHang.form.tienDoMh'), width: 180, minWidth: 130 },
     { id: 'thong_so', label: t('deXuatMuaHang.form.specs'), width: 220, minWidth: 140 },
     { id: 'ghi_chu', label: t('deXuatMuaHang.form.note'), width: 220, minWidth: 140 },
@@ -378,6 +397,16 @@ const DeXuatMuaHangForm: React.FC<Props> = ({ khoList, employees, initialData, o
             {idHangHoa ? (hangHoaMap[idHangHoa]?.don_vi_tinh ?? '—') : '—'}
           </span>
         );
+      case 'ton_kho': {
+        if (!idHangHoa || !khoIdWatch) return <span className="text-xs text-muted-foreground">—</span>;
+        if (isFetchingTon && !tonRows) return <span className="text-xs text-muted-foreground">…</span>;
+        const ton = tonMap[idHangHoa] ?? 0;
+        return (
+          <span className={cn('text-sm tabular-nums whitespace-nowrap', ton <= 0 ? 'text-rose-600 dark:text-rose-400' : 'text-foreground')}>
+            {formatNumberVN(ton)}
+          </span>
+        );
+      }
       case 'tien_do':
         return (
           <Controller
@@ -449,7 +478,7 @@ const DeXuatMuaHangForm: React.FC<Props> = ({ khoList, employees, initialData, o
         )}
       </div>
       {chiTietColumns
-        .filter((c) => c.id !== 'so_luong' && c.id !== 'dvt')
+        .filter((c) => c.id !== 'so_luong' && c.id !== 'dvt' && c.id !== 'ton_kho')
         .map((c) => (
           <React.Fragment key={c.id}>
             <div className="space-y-1">
@@ -457,7 +486,7 @@ const DeXuatMuaHangForm: React.FC<Props> = ({ khoList, employees, initialData, o
               {renderChiTietField(c.id, index)}
             </div>
             {c.id === 'hang_hoa' && (
-              <div className="grid grid-cols-[1fr_auto] gap-3 items-end">
+              <div className="grid grid-cols-[1fr_auto_auto] gap-3 items-end">
                 <div className="space-y-1 min-w-0">
                   <span className="text-caption font-medium text-muted-foreground">{t('deXuatMuaHang.form.quantity')}</span>
                   {renderChiTietField('so_luong', index)}
@@ -465,6 +494,10 @@ const DeXuatMuaHangForm: React.FC<Props> = ({ khoList, employees, initialData, o
                 <div className="space-y-1 pb-2">
                   <span className="text-caption font-medium text-muted-foreground block">{t('deXuatMuaHang.form.unit')}</span>
                   {renderChiTietField('dvt', index)}
+                </div>
+                <div className="space-y-1 pb-2 text-right">
+                  <span className="text-caption font-medium text-muted-foreground block">{t('deXuatMuaHang.form.tonKho')}</span>
+                  {renderChiTietField('ton_kho', index)}
                 </div>
               </div>
             )}
