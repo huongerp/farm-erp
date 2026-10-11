@@ -13,6 +13,7 @@ import {
   createChiTietKiemKeDb,
   deleteChiTietKiemKeDb,
   updateChiTietKetQuaDb,
+  capNhatSoLuongSoTheoNgayDb,
   dieuChinhTonTheoKetQuaDb,
   dieuChinhTonTheoDotDb,
   hoanThanhDotDb,
@@ -48,6 +49,7 @@ export async function taoDanhSachKiemKe(
 export const createChiTietKiemKe = createChiTietKiemKeDb;
 export const deleteChiTietKiemKe = deleteChiTietKiemKeDb;
 export const updateChiTietKetQua = updateChiTietKetQuaDb;
+export const capNhatSoLuongSoTheoNgay = capNhatSoLuongSoTheoNgayDb;
 export const dieuChinhTonTheoKetQua = dieuChinhTonTheoKetQuaDb;
 export const dieuChinhTonTheoDot = dieuChinhTonTheoDotDb;
 export const hoanThanhDot = hoanThanhDotDb;

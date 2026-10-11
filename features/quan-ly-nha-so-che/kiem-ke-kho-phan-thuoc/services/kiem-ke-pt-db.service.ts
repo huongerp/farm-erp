@@ -8,13 +8,14 @@ import i18n from '../../../../lib/i18n';
 import { getKhoRef } from '../../../kho-van/danh-sach-kho/services/kho-service';
 import { getEmployeesRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
 import { getFarmHangHoaRef } from '../../hang-hoa-phan-thuoc/services/farm-hang-hoa-service';
-import { getTonKhoPTMatrixByKhoIds } from '../../ton-kho-phan-thuoc/services/farm-ton-kho-pt';
+import { getTonKhoPTTheoKy } from '../../ton-kho-phan-thuoc/services/farm-ton-kho-pt';
 import { computeKetQuaKiemKePT } from '../core/ket-qua';
 import {
   coTheSuaDotPT,
   coTheXoaDotPT,
   coTheSuaChiTietPT,
   coTheSuaDongKiemKePT,
+  coTheSuaSoLuongSoPT,
   coTheChuyenTrangThaiDotPT,
 } from '../core/quyen-sua-dot';
 import type {
@@ -465,6 +466,11 @@ export async function updateDotKiemKePT(
     }
   }
 
+  // SL sổ = tồn cuối ngày bắt đầu → đổi ngày thì lấy lại sổ cho các dòng chưa điều chỉnh.
+  if (data.ngay_bat_dau != null && data.ngay_bat_dau !== existing.ngay_bat_dau) {
+    await capNhatSoLuongSoTheoNgayPT(bt, id, capCao);
+  }
+
   const updated = await getDotKiemKePTById(bt, id);
   if (!updated) throw new Error(i18n.t('kiemKeKhoPT.service.notFound'));
   return updated;
@@ -562,11 +568,65 @@ export async function getChiTietByDotPT(bt: KhoBienThe, id_dot: string): Promise
 }
 
 /**
- * Snapshot tồn theo phạm vi đợt → sinh dòng kiểm kê, rồi chuyển đợt sang `dang_kiem_ke`.
+ * SL sổ của đợt = tồn CUỐI NGÀY `ngay` (ngày bắt đầu đợt) theo kho × hàng, khoá `kho|hàng`.
  *
- * Tồn lấy từ `v_farm_ton_kho_phan_thuoc` — view tính mọi phiếu `trang_thai <> 'Không duyệt'`
- * (kể cả "Chờ duyệt"), nên phiếu điều chỉnh sinh ra sau này ("Đã duyệt") có hiệu lực ngay.
+ * Cùng RPC với màn Tồn kho (chip Từ ngày – Đến ngày, `tu` trống): tính mọi phiếu
+ * `trang_thai <> 'Không duyệt'` (kể cả "Chờ duyệt") có `ngay <= ngay`. Phiếu điều chỉnh do
+ * kiểm kê sinh ra cũng ghi đúng ngày bắt đầu (migration 037) → xem Tồn kho ngày đó ra số
+ * thực tế đã đếm.
  */
+async function layTonTheoNgayPT(bt: KhoBienThe, ngay: string, khoIds: string[]): Promise<Map<string, number>> {
+  const khoSet = new Set(khoIds);
+  const rows = await getTonKhoPTTheoKy(bt, { tu: '', den: ngay, chiDaDuyet: false });
+  const ton = new Map<string, number>();
+  for (const r of rows) {
+    if (khoSet.has(r.id_kho)) ton.set(`${r.id_kho}|${r.id_hang_hoa}`, r.ton_cuoi);
+  }
+  return ton;
+}
+
+/**
+ * Lấy lại SL sổ theo ngày bắt đầu hiện tại của đợt cho mọi dòng CHƯA sinh phiếu điều chỉnh
+ * (dòng đã điều chỉnh giữ nguyên sổ — đổi sẽ lệch với phiếu đã ghi), tính lại kết quả.
+ * Gọi khi đổi ngày bắt đầu, hoặc từ nút "Lấy lại SL sổ theo ngày". Trả số dòng đã đổi.
+ */
+export async function capNhatSoLuongSoTheoNgayPT(bt: KhoBienThe, id_dot: string, capCao = false): Promise<number> {
+  const dot = await getDotKiemKePTById(bt, id_dot);
+  if (!dot) throw new Error(i18n.t('kiemKeKhoPT.service.notFound'));
+  if (!coTheSuaChiTietPT(dot.trang_thai, capCao)) {
+    throw new Error(i18n.t('kiemKeKhoPT.service.hoanThanhChiCapCao'));
+  }
+  const dongs = (await getChiTietByDotPT(bt, id_dot)).filter((c) => !c.id_phieu_kho_dieu_chinh);
+  if (dongs.length === 0) return 0;
+
+  const ton = await layTonTheoNgayPT(bt, dot.ngay_bat_dau, [...new Set(dongs.map((c) => c.id_kho))]);
+
+  // Gom các dòng cùng (sổ mới, kết quả) → một UPDATE … WHERE id IN (…) mỗi nhóm.
+  const nhom = new Map<string, { so: number; ketQua: string; ids: number[] }>();
+  for (const c of dongs) {
+    const so = ton.get(`${c.id_kho}|${c.id_hang_hoa}`) ?? 0;
+    if (so === c.so_luong_so) continue;
+    const ketQua = computeKetQuaKiemKePT(so, c.so_luong_thuc_te ?? null);
+    const key = `${so}|${ketQua}`;
+    const g = nhom.get(key) ?? { so, ketQua, ids: [] };
+    g.ids.push(Number(c.id));
+    nhom.set(key, g);
+  }
+
+  const groups = [...nhom.values()];
+  for (let i = 0; i < groups.length; i += 8) {
+    const results = await Promise.all(
+      groups.slice(i, i + 8).map((g) =>
+        db.from(bt.bang.dotKiemKeChiTiet).update({ so_luong_so: g.so, ket_qua: g.ketQua }).in('id', g.ids)
+      )
+    );
+    const loi = results.find((r) => r.error)?.error;
+    if (loi) throwDbError(loi);
+  }
+  return groups.reduce((n, g) => n + g.ids.length, 0);
+}
+
+/** SL sổ = tồn cuối ngày bắt đầu của đợt → sinh dòng kiểm kê, rồi chuyển đợt sang `dang_kiem_ke`. */
 export async function taoDanhSachKiemKePT(
   bt: KhoBienThe,
   id_dot: string,
@@ -585,11 +645,11 @@ export async function taoDanhSachKiemKePT(
     : dot.id_kho;
   if (khoIdsToProcess.length === 0) throw new Error(i18n.t('kiemKeKhoPT.service.dotChuaChonKho'));
 
-  const [hangHoaList, existing, tonRows] = await Promise.all([
+  const [hangHoaList, existing, ton] = await Promise.all([
     getFarmHangHoaRef(bt),
     getChiTietByDotPT(bt, id_dot),
     // Một request cho mọi kho trong phạm vi, thay vì một request mỗi kho.
-    getTonKhoPTMatrixByKhoIds(bt, khoIdsToProcess),
+    layTonTheoNgayPT(bt, dot.ngay_bat_dau, khoIdsToProcess),
   ]);
 
   // `fp_farm_danh_sach_hang_hoa` không còn cột trang_thai → chỉ lọc theo danh mục / hàng hóa.
@@ -598,13 +658,6 @@ export async function taoDanhSachKiemKePT(
     if (filters?.id_danh_muc?.length && (!h.danh_muc_id || !filters.id_danh_muc.includes(h.danh_muc_id))) return false;
     return true;
   });
-
-  const tonByKho = new Map<string, Map<string, number>>();
-  for (const r of tonRows) {
-    const m = tonByKho.get(r.id_kho) ?? new Map<string, number>();
-    m.set(r.id_hang_hoa, r.so_luong);
-    tonByKho.set(r.id_kho, m);
-  }
 
   const existingKeys = new Set(existing.map((c) => `${c.id_kho}|${c.id_hang_hoa}`));
   const idDotNum = Number(id_dot);
@@ -617,7 +670,6 @@ export async function taoDanhSachKiemKePT(
   }[] = [];
 
   for (const id_kho of khoIdsToProcess) {
-    const tonMap = tonByKho.get(id_kho) ?? new Map<string, number>();
     for (const hh of hangHoaCanKiem) {
       const key = `${id_kho}|${hh.id}`;
       if (existingKeys.has(key)) continue;
@@ -625,7 +677,7 @@ export async function taoDanhSachKiemKePT(
         id_dot_kiem_ke_pt: idDotNum,
         id_kho: Number(id_kho),
         id_hang_hoa: Number(hh.id),
-        so_luong_so: tonMap.get(hh.id) ?? 0,
+        so_luong_so: ton.get(key) ?? 0,
         ket_qua: 'chua_kiem',
       });
       existingKeys.add(key);
@@ -664,15 +716,14 @@ export async function createChiTietKiemKePT(
   const khoCanThem = khoHopLe.filter((k) => !existingKeys.has(`${k}|${id_hang_hoa}`));
   if (khoCanThem.length === 0) throw new Error(i18n.t('kiemKeKhoPT.service.chiTietAlreadyExists'));
 
-  const tonRows = await getTonKhoPTMatrixByKhoIds(bt, khoCanThem);
-  const tonMap = new Map(tonRows.filter((r) => r.id_hang_hoa === id_hang_hoa).map((r) => [r.id_kho, r.so_luong]));
+  const ton = await layTonTheoNgayPT(bt, dot.ngay_bat_dau, khoCanThem);
 
   const { error } = await db.from(bt.bang.dotKiemKeChiTiet).insert(
     khoCanThem.map((id_kho) => ({
       id_dot_kiem_ke_pt: Number(id_dot),
       id_kho: Number(id_kho),
       id_hang_hoa: Number(id_hang_hoa),
-      so_luong_so: tonMap.get(id_kho) ?? 0,
+      so_luong_so: ton.get(`${id_kho}|${id_hang_hoa}`) ?? 0,
       so_luong_thuc_te: null,
       ket_qua: 'chua_kiem',
     }))
@@ -733,12 +784,26 @@ export async function updateChiTietKetQuaPT(
         : Number(r.so_luong_thuc_te);
   const ghiChuDong = data.ghi_chu_dong !== undefined ? data.ghi_chu_dong : r.ghi_chu_dong;
 
+  // Gõ tay SL sổ: chỉ người tạo đợt / cấp cao (xem coTheSuaSoLuongSoPT).
+  let soLuongSo = Number(r.so_luong_so);
+  const doiSo = data.so_luong_so !== undefined && data.so_luong_so !== soLuongSo;
+  if (doiSo) {
+    const dot = await getDotKiemKePTById(bt, String(r.id_dot_kiem_ke_pt));
+    if (!dot) throw new Error(i18n.t('kiemKeKhoPT.service.notFound'));
+    const dong = { id_phieu_kho_dieu_chinh: r.id_phieu_kho_dieu_chinh != null ? String(r.id_phieu_kho_dieu_chinh) : null };
+    if (!coTheSuaSoLuongSoPT(dong, dot, id_nguoi_kiem, capCao)) {
+      throw new Error(i18n.t('kiemKeKhoPT.service.suaSoChiNguoiTao'));
+    }
+    soLuongSo = data.so_luong_so as number;
+  }
+
   const { error } = await db
     .from(bt.bang.dotKiemKeChiTiet)
     .update({
+      ...(doiSo ? { so_luong_so: soLuongSo } : {}),
       so_luong_thuc_te: soLuongThucTe ?? null,
       ghi_chu_dong: ghiChuDong?.trim() || null,
-      ket_qua: computeKetQuaKiemKePT(Number(r.so_luong_so), soLuongThucTe ?? null),
+      ket_qua: computeKetQuaKiemKePT(soLuongSo, soLuongThucTe ?? null),
       id_nguoi_kiem: Number(id_nguoi_kiem),
       ngay_kiem: new Date().toISOString(),
     })

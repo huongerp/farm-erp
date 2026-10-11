@@ -13,6 +13,7 @@ import {
   Warehouse,
   BarChart3,
   Package,
+  CalendarClock,
 } from 'lucide-react';
 import GenericDrawer, { DRAWER_WIDTH_KIEM_KE_KHO } from '../../../../components/shared/GenericDrawer';
 import DetailSection from '../../../../components/shared/DetailSection';
@@ -35,7 +36,7 @@ import {
 } from '../core/constants';
 import { getPhieuKiemKePTPreviewUrl } from '../core/preview-url';
 import { countPendingDieuChinhPT, getChiTietKiemKePTStats } from '../core/ket-qua';
-import { coTheSuaChiTietPT, coTheChuyenTrangThaiDotPT } from '../core/quyen-sua-dot';
+import { coTheSuaChiTietPT, coTheChuyenTrangThaiDotPT, coTheSuaSoLuongSoPT } from '../core/quyen-sua-dot';
 import { useKiemKeCapCaoPT } from '../hooks/use-kiem-ke-cap-cao';
 import {
   useUpdateChiTietKetQuaPT,
@@ -43,6 +44,7 @@ import {
   useDeleteChiTietKiemKePT,
   useDieuChinhTonTheoKetQuaPT,
   useDieuChinhTonTheoDotPT,
+  useCapNhatSoLuongSoTheoNgayPT,
 } from '../hooks/use-kiem-ke-pt';
 import NhapKetQuaKiemKePTDialog from './NhapKetQuaKiemKePTDialog';
 import ThemDongKiemKePTDialog from './ThemDongKiemKePTDialog';
@@ -97,6 +99,7 @@ const DotKiemKePTDetail: React.FC<Props> = ({
   const deleteChiTietMutation = useDeleteChiTietKiemKePT();
   const dieuChinhRowMutation = useDieuChinhTonTheoKetQuaPT();
   const dieuChinhDotMutation = useDieuChinhTonTheoDotPT(data.id);
+  const layLaiSoMutation = useCapNhatSoLuongSoTheoNgayPT(data.id);
 
   const isDangKiemKe = data.trang_thai === 'dang_kiem_ke';
   // Đợt đã chốt sổ chỉ cấp cao mới sửa được — cùng luật với service.
@@ -163,6 +166,17 @@ const DotKiemKePTDetail: React.FC<Props> = ({
     [confirm, t, dieuChinhRowMutation]
   );
 
+  const handleLayLaiSoClick = useCallback(() => {
+    confirm({
+      title: t('kiemKeKhoPT.confirm.layLaiSoTitle'),
+      message: t('kiemKeKhoPT.confirm.layLaiSoMessage', { ngay: formatDate(data.ngay_bat_dau) }),
+      variant: 'warning',
+      onConfirm: () => {
+        void layLaiSoMutation.mutateAsync();
+      },
+    });
+  }, [confirm, t, data.ngay_bat_dau, layLaiSoMutation]);
+
   // Hoàn thành = chốt sổ: sau đó người thường không sửa được nữa → hỏi trước, nhắc số dòng chưa kiểm.
   const handleHoanThanhClick = useCallback(() => {
     if (!onHoanThanh) return;
@@ -194,6 +208,15 @@ const DotKiemKePTDetail: React.FC<Props> = ({
         onClick: handleDieuChinhDotClick,
         variant: 'secondary',
         disabled: dieuChinhDotMutation.isPending,
+      });
+    }
+    if (canEditLines && chiTiet.length > 0) {
+      actions.push({
+        label: t('kiemKeKhoPT.layLaiSo'),
+        icon: <CalendarClock size={16} />,
+        onClick: handleLayLaiSoClick,
+        variant: 'secondary',
+        disabled: layLaiSoMutation.isPending,
       });
     }
     if (canEditLines && onTaoDanhSach) {
@@ -232,6 +255,9 @@ const DotKiemKePTDetail: React.FC<Props> = ({
     isDangKiemKe,
     pendingDieuChinhCount,
     handleDieuChinhDotClick,
+    chiTiet.length,
+    handleLayLaiSoClick,
+    layLaiSoMutation.isPending,
     onTaoDanhSach,
     onHoanThanh,
     handleHoanThanhClick,
@@ -449,6 +475,8 @@ const DotKiemKePTDetail: React.FC<Props> = ({
         onSave={handleNhapKetQuaSave}
         hasNext={nextRow != null}
         isLoading={updateKetQuaMutation.isPending}
+        canEditSo={nhapKetQuaRow != null && coTheSuaSoLuongSoPT(nhapKetQuaRow, data, currentUserId, capCao)}
+        ngaySo={data.ngay_bat_dau}
       />
 
       <ThemDongKiemKePTDialog

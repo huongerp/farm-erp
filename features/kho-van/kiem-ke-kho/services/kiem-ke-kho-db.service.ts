@@ -1,7 +1,7 @@
 /**
  * Service đợt kiểm kê kho – DB: (fp_mh_dot_kiem_ke_kho, fp_mh_dot_kiem_ke_kho_kho, fp_mh_dot_kiem_ke_kho_chi_tiet).
  */
-import { db, fetchTablePage, throwDbError, type PaginatedTableResult } from '../../../../lib/db';
+import { db, fetchTablePage, fetchAllRows, throwDbError, type PaginatedTableResult } from '../../../../lib/db';
 import { buildPostgrestSearchOr } from '../../../../lib/postgrest-search';
 import type {
   DotKiemKeKho,
@@ -29,7 +29,6 @@ export interface TaoDanhSachKiemKeKhoFiltersDb {
   id_danh_muc?: string[];
   id_hang_hoa?: string[];
 }
-import { getTonKhoTheoKho } from '../../phieu-kho/services/ton-kho-service';
 import { getKhoRef } from '../../danh-sach-kho/services/kho-service';
 import { getHangHoaRef } from '../../danh-sach-hang-hoa/services/hang-hoa-service';
 import { getEmployeesRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
@@ -39,6 +38,7 @@ import {
   coTheXoaDot,
   coTheSuaChiTiet,
   coTheSuaDongKiemKe,
+  coTheSuaSoLuongSo,
   coTheChuyenTrangThaiDot,
 } from '../core/quyen-sua-dot';
 
@@ -545,6 +545,10 @@ export async function updateDotKiemKeKhoDb(
       if (errKho) throwDbError(errKho);
     }
   }
+  // SL sổ = tồn cuối ngày bắt đầu → đổi ngày thì lấy lại sổ cho các dòng chưa điều chỉnh.
+  if (data.ngay_bat_dau != null && data.ngay_bat_dau !== existing.ngay_bat_dau) {
+    await capNhatSoLuongSoTheoNgayDb(id, capCao);
+  }
   const updated = await getDotKiemKeKhoByIdDb(id);
   if (!updated) throw new Error(i18n.t('kiemKeKho.service.notFound'));
   return updated;
@@ -582,6 +586,66 @@ export async function changeTrangThaiDotDb(
   return updated;
 }
 
+/**
+ * SL sổ của đợt = tồn CUỐI NGÀY `ngay` (ngày bắt đầu đợt) theo kho × hàng, khoá `kho|hàng`.
+ * RPC `rpc_mh_ton_kho_den_ngay` (migration 037) cùng luật view `fp_mh_ton_kho` (mọi phiếu trừ
+ * 'Không duyệt') nhưng chỉ tính phiếu `ngay <= ngay`. Phiếu điều chỉnh do kiểm kê sinh ra cũng
+ * ghi đúng ngày bắt đầu → xem tồn ngày đó ra số thực tế đã đếm.
+ */
+async function layTonTheoNgayKho(ngay: string, khoIds: string[]): Promise<Map<string, number>> {
+  const rows = await fetchAllRows<{ id_kho: number; id_hang_hoa: number; so_luong: number | string | null }>(
+    (from, to) =>
+      db
+        .rpc('rpc_mh_ton_kho_den_ngay', { p_den: ngay, p_kho_ids: khoIds.map(Number) })
+        .order('id_kho')
+        .order('id_hang_hoa')
+        .range(from, to)
+  );
+  return new Map(rows.map((r) => [`${r.id_kho}|${r.id_hang_hoa}`, Number(r.so_luong) || 0]));
+}
+
+/**
+ * Lấy lại SL sổ theo ngày bắt đầu hiện tại của đợt cho mọi dòng CHƯA sinh phiếu điều chỉnh
+ * (dòng đã điều chỉnh giữ nguyên sổ — đổi sẽ lệch với phiếu đã ghi), tính lại kết quả.
+ * Gọi khi đổi ngày bắt đầu, hoặc từ nút "Lấy lại SL sổ theo ngày". Trả số dòng đã đổi.
+ */
+export async function capNhatSoLuongSoTheoNgayDb(id_dot_kiem_ke_kho: string, capCao = false): Promise<number> {
+  const dot = await getDotKiemKeKhoByIdDb(id_dot_kiem_ke_kho);
+  if (!dot) throw new Error(i18n.t('kiemKeKho.service.notFound'));
+  if (!coTheSuaChiTiet(dot.trang_thai, capCao)) {
+    throw new Error(i18n.t('kiemKeKho.service.hoanThanhChiCapCao'));
+  }
+  const dongs = (await getChiTietByDotDb(id_dot_kiem_ke_kho)).filter((c) => !c.id_phieu_kho_dieu_chinh);
+  if (dongs.length === 0) return 0;
+
+  const ton = await layTonTheoNgayKho(dot.ngay_bat_dau, [...new Set(dongs.map((c) => c.id_kho))]);
+
+  // Gom các dòng cùng (sổ mới, kết quả) → một UPDATE … WHERE id IN (…) mỗi nhóm.
+  const nhom = new Map<string, { so: number; ketQua: KetQuaKiemKeKho; ids: number[] }>();
+  for (const c of dongs) {
+    const so = ton.get(`${c.id_kho}|${c.id_hang_hoa}`) ?? 0;
+    if (so === c.so_luong_so) continue;
+    const ketQua = computeKetQua(so, c.so_luong_thuc_te ?? null);
+    const key = `${so}|${ketQua}`;
+    const g = nhom.get(key) ?? { so, ketQua, ids: [] };
+    g.ids.push(Number(c.id));
+    nhom.set(key, g);
+  }
+
+  const groups = [...nhom.values()];
+  for (let i = 0; i < groups.length; i += 8) {
+    const results = await Promise.all(
+      groups.slice(i, i + 8).map((g) =>
+        db.from(TABLE_CHI_TIET).update({ so_luong_so: g.so, ket_qua: g.ketQua }).in('id', g.ids)
+      )
+    );
+    const loi = results.find((r) => r.error)?.error;
+    if (loi) throwDbError(loi);
+  }
+  return groups.reduce((n, g) => n + g.ids.length, 0);
+}
+
+/** SL sổ = tồn cuối ngày bắt đầu của đợt → sinh dòng kiểm kê, rồi chuyển đợt sang `dang_kiem_ke`. */
 export async function taoDanhSachKiemKeDb(
   id_dot_kiem_ke_kho: string,
   filters?: TaoDanhSachKiemKeKhoFiltersDb,
@@ -609,23 +673,15 @@ export async function taoDanhSachKiemKeDb(
     return true;
   });
 
-  const tonByKho = new Map<string, Map<string, number>>();
-  for (const id_kho of khoIdsToProcess) {
-    const tonTheoKho = await getTonKhoTheoKho(id_kho);
-    const m = new Map<string, number>();
-    for (const { id_hang_hoa, so_luong } of tonTheoKho) {
-      m.set(id_hang_hoa, so_luong);
-    }
-    tonByKho.set(id_kho, m);
-  }
+  // Một request cho mọi kho trong phạm vi, thay vì một request mỗi kho.
+  const ton = await layTonTheoNgayKho(dot.ngay_bat_dau, khoIdsToProcess);
 
   const toInsert: { id_dot_kiem_ke_kho: number; id_kho: number; id_hang_hoa: number; so_luong_so: number; ket_qua: string }[] = [];
   for (const id_kho of khoIdsToProcess) {
-    const tonMap = tonByKho.get(id_kho) ?? new Map<string, number>();
     for (const hh of activeHangHoa) {
       const key = `${id_kho}|${hh.id}`;
       if (existingKeys.has(key)) continue;
-      const so_luong_so = tonMap.get(hh.id) ?? 0;
+      const so_luong_so = ton.get(key) ?? 0;
       toInsert.push({
         id_dot_kiem_ke_kho: idDotNum,
         id_kho: Number(id_kho),
@@ -665,9 +721,8 @@ export async function createChiTietKiemKeDb(
   const existing = await getChiTietByDotDb(id_dot_kiem_ke_kho);
   if (existing.some((c) => c.id_kho === id_kho && c.id_hang_hoa === id_hang_hoa))
     throw new Error(i18n.t('kiemKeKho.service.chiTietAlreadyExists'));
-  const tonTheoKho = await getTonKhoTheoKho(id_kho);
-  const ton = tonTheoKho.find((t) => t.id_hang_hoa === id_hang_hoa);
-  const so_luong_so = ton?.so_luong ?? 0;
+  const ton = await layTonTheoNgayKho(dot.ngay_bat_dau, [id_kho]);
+  const so_luong_so = ton.get(`${id_kho}|${id_hang_hoa}`) ?? 0;
   const { data: row, error } = await db
     .from(TABLE_CHI_TIET)
     .insert({
@@ -730,10 +785,23 @@ export async function updateChiTietKetQuaDb(
   }
   const soLuongThucTe = data.so_luong_thuc_te !== undefined ? data.so_luong_thuc_te : r.so_luong_thuc_te;
   const ghiChuDong = data.ghi_chu_dong !== undefined ? data.ghi_chu_dong : r.ghi_chu_dong;
-  const ketQua = computeKetQua(Number(r.so_luong_so), soLuongThucTe ?? null);
+  // Gõ tay SL sổ: chỉ người tạo đợt / cấp cao (xem coTheSuaSoLuongSo).
+  let soLuongSo = Number(r.so_luong_so);
+  const doiSo = data.so_luong_so !== undefined && data.so_luong_so !== soLuongSo;
+  if (doiSo) {
+    const dot = await getDotKiemKeKhoByIdDb(String(r.id_dot_kiem_ke_kho));
+    if (!dot) throw new Error(i18n.t('kiemKeKho.service.notFound'));
+    const dong = { id_phieu_kho_dieu_chinh: r.id_phieu_kho_dieu_chinh != null ? String(r.id_phieu_kho_dieu_chinh) : null };
+    if (!coTheSuaSoLuongSo(dong, dot, id_nguoi_kiem, capCao)) {
+      throw new Error(i18n.t('kiemKeKho.service.suaSoChiNguoiTao'));
+    }
+    soLuongSo = data.so_luong_so as number;
+  }
+  const ketQua = computeKetQua(soLuongSo, soLuongThucTe ?? null);
   const { error: updateErr } = await db
     .from(TABLE_CHI_TIET)
     .update({
+      ...(doiSo ? { so_luong_so: soLuongSo } : {}),
       so_luong_thuc_te: soLuongThucTe ?? null,
       ghi_chu_dong: ghiChuDong?.trim() || null,
       ket_qua: ketQua,

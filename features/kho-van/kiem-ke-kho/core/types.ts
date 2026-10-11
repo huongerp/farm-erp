@@ -100,6 +100,8 @@ export interface DotKiemKeKhoCreate {
 
 /** Payload cập nhật kết quả một dòng chi tiết */
 export interface ChiTietKiemKeKhoUpdate {
+  /** Gõ tay SL sổ — chỉ người tạo đợt / cấp cao (core/quyen-sua-dot.ts). */
+  so_luong_so?: number;
   so_luong_thuc_te?: number | null;
   ghi_chu_dong?: string | null;
 }

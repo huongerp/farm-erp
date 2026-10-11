@@ -51,3 +51,20 @@ export function coTheSuaDongKiemKe(
   if (!coTheSuaChiTiet(trangThai, capCao)) return false;
   return capCao || !dong.id_phieu_kho_dieu_chinh;
 }
+
+/**
+ * Gõ tay SL sổ một dòng: chỉ người TẠO đợt (hoặc cấp cao). SL sổ mặc định là tồn
+ * cuối ngày bắt đầu của đợt; người tạo đợt là người chốt sổ nên được hiệu chỉnh khi
+ * sổ có phiếu nhập/xuất muộn. Cùng chặn như sửa dòng: đợt đã chốt / dòng đã sinh
+ * phiếu điều chỉnh thì chỉ cấp cao.
+ */
+export function coTheSuaSoLuongSo(
+  dong: { id_phieu_kho_dieu_chinh?: string | null },
+  dot: { trang_thai: TrangThaiDotKiemKeKho; id_nguoi_tao?: string | null },
+  userId: string | null | undefined,
+  capCao: boolean
+): boolean {
+  if (!coTheSuaDongKiemKe(dong, dot.trang_thai, capCao)) return false;
+  if (capCao) return true;
+  return userId != null && dot.id_nguoi_tao != null && String(userId) === String(dot.id_nguoi_tao);
+}

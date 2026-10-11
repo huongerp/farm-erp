@@ -5,6 +5,7 @@ import {
   coTheSuaChiTiet,
   coTheChuyenTrangThaiDot,
   coTheSuaDongKiemKe,
+  coTheSuaSoLuongSo,
 } from './quyen-sua-dot';
 
 const HANH_DONG = [
@@ -52,5 +53,21 @@ describe('coTheSuaDongKiemKe — sửa / xoá một dòng', () => {
   it('cấp cao vẫn sửa được dòng đã điều chỉnh, kể cả đợt đã chốt', () => {
     expect(coTheSuaDongKiemKe(daDieuChinh, 'dang_kiem_ke', true)).toBe(true);
     expect(coTheSuaDongKiemKe(daDieuChinh, 'hoan_thanh', true)).toBe(true);
+  });
+});
+
+describe('coTheSuaSoLuongSo — gõ tay SL sổ', () => {
+  const dong = { id_phieu_kho_dieu_chinh: null };
+  const dot = { trang_thai: 'dang_kiem_ke' as const, id_nguoi_tao: '7' };
+
+  it('người tạo đợt sửa được, người khác thì không', () => {
+    expect(coTheSuaSoLuongSo(dong, dot, '7', false)).toBe(true);
+    expect(coTheSuaSoLuongSo(dong, dot, '8', false)).toBe(false);
+  });
+
+  it('người tạo vẫn bị chặn khi đợt đã chốt hoặc dòng đã sinh phiếu điều chỉnh; cấp cao thì được', () => {
+    expect(coTheSuaSoLuongSo(dong, { ...dot, trang_thai: 'hoan_thanh' }, '7', false)).toBe(false);
+    expect(coTheSuaSoLuongSo({ id_phieu_kho_dieu_chinh: '42' }, dot, '7', false)).toBe(false);
+    expect(coTheSuaSoLuongSo({ id_phieu_kho_dieu_chinh: '42' }, dot, '9', true)).toBe(true);
   });
 });

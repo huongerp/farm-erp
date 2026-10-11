@@ -14,19 +14,22 @@ import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
 import { dotKiemKeKhoSchema, type DotKiemKeKhoFormValues } from '../core/schema';
 import { useCreateDotKiemKeKho, useUpdateDotKiemKeKho, useNextMaDotDotKiemKeKho, formatMaDotDotKiemKeKho } from '../hooks/use-kiem-ke-kho';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
+import { getTodayISO } from '../../../../lib/utils';
 import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 import { useEmployeesRefQuery } from '@/lib/hooks/use-ref-queries';
 import type { DotKiemKeKho } from '../core/types';
 
-const DEFAULT_VALUES: DotKiemKeKhoFormValues = {
-  ma_dot: '',
-  ten_dot: '',
-  ngay_bat_dau: new Date().toISOString().slice(0, 10),
-  ngay_ket_thuc: new Date().toISOString().slice(0, 10),
-  id_nguoi_phu_trach: '',
-  id_kho: [],
-  ghi_chu: null,
-};
+// Hàm, không phải hằng: "hôm nay" theo giờ VN tại lúc mở form (toISOString là ngày UTC,
+// trước 7h sáng ra hôm qua; hằng module thì kẹt ngày lúc tải trang).
+const giaTriMacDinh = (): DotKiemKeKhoFormValues => ({
+    ma_dot: '',
+    ten_dot: '',
+    ngay_bat_dau: getTodayISO(),
+    ngay_ket_thuc: getTodayISO(),
+    id_nguoi_phu_trach: '',
+    id_kho: [],
+    ghi_chu: null,
+});
 
 interface Props {
   onClose: () => void;
@@ -56,7 +59,7 @@ const DotKiemKeKhoForm: React.FC<Props> = ({ onClose, initialData, onSuccessAfte
         id_kho: initialData.id_kho ?? [],
         ghi_chu: initialData.ghi_chu ?? null,
       }
-    : DEFAULT_VALUES;
+    : giaTriMacDinh();
 
   const { register, handleSubmit, formState: { errors, isDirty }, control, setValue, reset } = useForm<DotKiemKeKhoFormValues>({
     resolver: zodResolver(dotKiemKeKhoSchema),
@@ -150,13 +153,16 @@ const DotKiemKeKhoForm: React.FC<Props> = ({ onClose, initialData, onSuccessAfte
               placeholder={t('kiemKeKho.form.tenDotPlaceholder')}
               required
             />
-            <Input
-              type="date"
-              label={t('kiemKeKho.store.ngayBatDauCol')}
-              {...register('ngay_bat_dau')}
-              error={errors.ngay_bat_dau?.message}
-              required
-            />
+            <div>
+              <Input
+                type="date"
+                label={t('kiemKeKho.store.ngayBatDauCol')}
+                {...register('ngay_bat_dau')}
+                error={errors.ngay_bat_dau?.message}
+                required
+              />
+              <p className="mt-1 text-xs text-muted-foreground">{t('kiemKeKho.form.ngayBatDauHint')}</p>
+            </div>
             <Input
               type="date"
               label={t('kiemKeKho.store.ngayKetThucCol')}

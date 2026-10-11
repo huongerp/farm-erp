@@ -1,5 +1,6 @@
 /**
- * Dialog nhập kết quả kiểm cho một dòng chi tiết: số lượng thực tế, ghi chú.
+ * Dialog nhập kết quả kiểm cho một dòng chi tiết: số lượng thực tế, ghi chú — và SL sổ
+ * khi người dùng là người tạo đợt / cấp cao (`canEditSo`).
  *
  * Người đi kho thường nhập liên tục từng dòng trên điện thoại: "Lưu & dòng tiếp"
  * mở luôn dòng chưa kiểm kế tiếp, Enter = lưu, ô số bật bàn phím số.
@@ -11,7 +12,7 @@ import { AlertTriangle, ClipboardCheck, X } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Input from '../../../../components/ui/Input';
 import Textarea from '../../../../components/ui/Textarea';
-import { cn, formatNumberVN } from '../../../../lib/utils';
+import { cn, formatDate, formatNumberVN } from '../../../../lib/utils';
 import type { ChiTietKiemKeKho, ChiTietKiemKeKhoUpdate } from '../core/types';
 
 interface Props {
@@ -23,6 +24,10 @@ interface Props {
   /** Còn dòng chưa kiểm phía sau không — quyết định có hiện nút "Lưu & dòng tiếp". */
   hasNext?: boolean;
   isLoading?: boolean;
+  /** Người tạo đợt / cấp cao: gõ tay SL sổ (core/quyen-sua-dot.ts → coTheSuaSoLuongSo). */
+  canEditSo?: boolean;
+  /** Ngày bắt đầu của đợt — SL sổ mặc định là tồn cuối ngày này. */
+  ngaySo?: string;
 }
 
 const NhapKetQuaKiemKeDialog: React.FC<Props> = ({
@@ -32,8 +37,12 @@ const NhapKetQuaKiemKeDialog: React.FC<Props> = ({
   onSave,
   hasNext = false,
   isLoading = false,
+  canEditSo = false,
+  ngaySo,
 }) => {
   const { t } = useTranslation();
+  const [so_luong_so, setSoLuongSo] = useState<string>('');
+  const [errorSo, setErrorSo] = useState<string | undefined>();
   const [so_luong_thuc_te, setSoLuongThucTe] = useState<string>('');
   const [ghi_chu_dong, setGhiChuDong] = useState<string>('');
   const [error, setError] = useState<string | undefined>();
@@ -46,8 +55,10 @@ const NhapKetQuaKiemKeDialog: React.FC<Props> = ({
     setPrevSync({ open, row });
     if (open && row) {
       setSoLuongThucTe(row.so_luong_thuc_te != null ? String(row.so_luong_thuc_te) : '');
+      setSoLuongSo(String(row.so_luong_so));
       setGhiChuDong(row.ghi_chu_dong ?? '');
       setError(undefined);
+      setErrorSo(undefined);
     }
   }
 
@@ -60,9 +71,9 @@ const NhapKetQuaKiemKeDialog: React.FC<Props> = ({
 
   const handleGiongSo = useCallback(() => {
     if (!row) return;
-    setSoLuongThucTe(String(row.so_luong_so));
+    setSoLuongThucTe(canEditSo ? so_luong_so : String(row.so_luong_so));
     setError(undefined);
-  }, [row]);
+  }, [row, canEditSo, so_luong_so]);
 
   const handleSave = useCallback(
     (next: boolean) => {
@@ -74,9 +85,18 @@ const NhapKetQuaKiemKeDialog: React.FC<Props> = ({
         setError(t('kiemKeKho.validation.soLuongNonNegative'));
         return;
       }
-      onSave({ so_luong_thuc_te: num, ghi_chu_dong: ghi_chu_dong.trim() || null }, next);
+      const payload: ChiTietKiemKeKhoUpdate = { so_luong_thuc_te: num, ghi_chu_dong: ghi_chu_dong.trim() || null };
+      if (canEditSo && row) {
+        const so = Number(so_luong_so.trim().replace(',', '.'));
+        if (so_luong_so.trim() === '' || Number.isNaN(so) || so < 0) {
+          setErrorSo(t('kiemKeKho.validation.soLuongNonNegative'));
+          return;
+        }
+        if (so !== row.so_luong_so) payload.so_luong_so = so;
+      }
+      onSave(payload, next);
     },
-    [so_luong_thuc_te, ghi_chu_dong, onSave, isLoading, t]
+    [so_luong_thuc_te, so_luong_so, ghi_chu_dong, onSave, isLoading, canEditSo, row, t]
   );
 
   const handleClose = useCallback(() => {
@@ -149,11 +169,35 @@ const NhapKetQuaKiemKeDialog: React.FC<Props> = ({
                     {t('kiemKeKho.nhapKetQua.daDieuChinhWarning')}
                   </p>
                 )}
-                <p className="text-sm text-muted-foreground">
-                  {t('kiemKeKho.nhapKetQua.soLuongSo')}:{' '}
-                  <strong className="text-foreground tabular-nums">{formatNumberVN(soLuongSo)}</strong>
-                  {donViTinh ? ` ${donViTinh}` : ''}
-                </p>
+                {canEditSo ? (
+                  <div>
+                    <Input
+                      type="text"
+                      inputMode="decimal"
+                      autoComplete="off"
+                      label={`${t('kiemKeKho.nhapKetQua.soLuongSo')}${donViTinh ? ` (${donViTinh})` : ''}`}
+                      value={so_luong_so}
+                      onChange={(e) => {
+                        setSoLuongSo(e.target.value);
+                        setErrorSo(undefined);
+                      }}
+                      error={errorSo}
+                      className="h-11 text-base tabular-nums"
+                    />
+                    {ngaySo && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {t('kiemKeKho.nhapKetQua.soLuongSoHint', { ngay: formatDate(ngaySo) })}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    {t('kiemKeKho.nhapKetQua.soLuongSo')}:{' '}
+                    <strong className="text-foreground tabular-nums">{formatNumberVN(soLuongSo)}</strong>
+                    {donViTinh ? ` ${donViTinh}` : ''}
+                    {ngaySo ? ` · ${formatDate(ngaySo)}` : ''}
+                  </p>
+                )}
                 <div className="flex items-end gap-2">
                   <div className="flex-1 min-w-0">
                     <Input

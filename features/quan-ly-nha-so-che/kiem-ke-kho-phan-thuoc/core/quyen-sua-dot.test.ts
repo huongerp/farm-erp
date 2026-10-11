@@ -5,6 +5,7 @@ import {
   coTheSuaChiTietPT,
   coTheChuyenTrangThaiDotPT,
   coTheSuaDongKiemKePT,
+  coTheSuaSoLuongSoPT,
 } from './quyen-sua-dot';
 
 const HANH_DONG = [
@@ -52,5 +53,28 @@ describe('coTheSuaDongKiemKePT — sửa / xoá một dòng', () => {
   it('cấp cao vẫn sửa được dòng đã điều chỉnh, kể cả đợt đã chốt', () => {
     expect(coTheSuaDongKiemKePT(daDieuChinh, 'dang_kiem_ke', true)).toBe(true);
     expect(coTheSuaDongKiemKePT(daDieuChinh, 'hoan_thanh', true)).toBe(true);
+  });
+});
+
+describe('coTheSuaSoLuongSoPT — gõ tay SL sổ', () => {
+  const dong = { id_phieu_kho_dieu_chinh: null };
+  const dot = { trang_thai: 'dang_kiem_ke' as const, id_nguoi_tao: '7' };
+
+  it('người tạo đợt sửa được, người khác thì không', () => {
+    expect(coTheSuaSoLuongSoPT(dong, dot, '7', false)).toBe(true);
+    expect(coTheSuaSoLuongSoPT(dong, dot, '8', false)).toBe(false);
+    expect(coTheSuaSoLuongSoPT(dong, dot, null, false)).toBe(false);
+  });
+
+  it('đợt không ghi người tạo: chỉ cấp cao', () => {
+    const dotKhongNguoiTao = { trang_thai: 'draft' as const, id_nguoi_tao: null };
+    expect(coTheSuaSoLuongSoPT(dong, dotKhongNguoiTao, '7', false)).toBe(false);
+    expect(coTheSuaSoLuongSoPT(dong, dotKhongNguoiTao, '7', true)).toBe(true);
+  });
+
+  it('người tạo vẫn bị chặn khi đợt đã chốt hoặc dòng đã sinh phiếu điều chỉnh', () => {
+    expect(coTheSuaSoLuongSoPT(dong, { ...dot, trang_thai: 'hoan_thanh' }, '7', false)).toBe(false);
+    expect(coTheSuaSoLuongSoPT({ id_phieu_kho_dieu_chinh: '42' }, dot, '7', false)).toBe(false);
+    expect(coTheSuaSoLuongSoPT({ id_phieu_kho_dieu_chinh: '42' }, dot, '9', true)).toBe(true);
   });
 });

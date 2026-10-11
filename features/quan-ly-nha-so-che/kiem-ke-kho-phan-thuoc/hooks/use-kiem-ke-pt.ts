@@ -19,6 +19,7 @@ import {
   createChiTietKiemKePT,
   deleteChiTietKiemKePT,
   updateChiTietKetQuaPT,
+  capNhatSoLuongSoTheoNgayPT,
   dieuChinhTonTheoKetQuaPT,
   dieuChinhTonTheoDotPT,
 } from '../services/kiem-ke-pt-service';
@@ -233,6 +234,21 @@ export function useUpdateChiTietKetQuaPT(onSuccess?: () => void) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY_KIEM_KE_PT });
       onSuccess?.();
+    },
+    onError: (err: unknown) => toast.error((err as Error).message),
+  });
+}
+
+/** Nút "Lấy lại SL sổ theo ngày": sổ = tồn cuối ngày bắt đầu, chỉ dòng chưa điều chỉnh. */
+export function useCapNhatSoLuongSoTheoNgayPT(id_dot: string) {
+  const bt = useKhoBienThe();
+  const qc = useQueryClient();
+  const capCao = useKiemKeCapCaoPT();
+  return useMutation({
+    mutationFn: () => capNhatSoLuongSoTheoNgayPT(bt, id_dot, capCao),
+    onSuccess: (count) => {
+      qc.invalidateQueries({ queryKey: QUERY_KEY_KIEM_KE_PT });
+      toast.success(i18n.t('kiemKeKhoPT.toast.layLaiSoSuccess', { count }));
     },
     onError: (err: unknown) => toast.error((err as Error).message),
   });

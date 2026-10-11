@@ -17,6 +17,7 @@ export {
   createChiTietKiemKePT,
   deleteChiTietKiemKePT,
   updateChiTietKetQuaPT,
+  capNhatSoLuongSoTheoNgayPT,
   dieuChinhTonTheoKetQuaPT,
   dieuChinhTonTheoDotPT,
 } from './kiem-ke-pt-db.service';

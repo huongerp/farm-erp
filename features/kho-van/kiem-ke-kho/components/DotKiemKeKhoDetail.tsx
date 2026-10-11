@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ClipboardCheck, List, CheckCircle, Printer, Power, RefreshCw, FileText, X, Calendar, User, Warehouse, BarChart3 } from 'lucide-react';
+import { ClipboardCheck, List, CheckCircle, Printer, Power, RefreshCw, FileText, X, Calendar, User, Warehouse, BarChart3, CalendarClock } from 'lucide-react';
 import GenericDrawer, { DRAWER_WIDTH_KIEM_KE_KHO } from '../../../../components/shared/GenericDrawer';
 import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';
@@ -18,7 +18,7 @@ import { getStatusBadgeClass } from '../../../../lib/status-badge';
 import { useAuthStore } from '../../../../store/useStore';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { getTrangThaiDotLabel, TRANG_THAI_DOT_SEMANTIC, KET_QUA_SEMANTIC } from '../core/constants';
-import { coTheSuaDot, coTheSuaChiTiet, coTheChuyenTrangThaiDot } from '../core/quyen-sua-dot';
+import { coTheSuaDot, coTheSuaChiTiet, coTheChuyenTrangThaiDot, coTheSuaSoLuongSo } from '../core/quyen-sua-dot';
 import { useKiemKeCapCao } from '../hooks/use-kiem-ke-cap-cao';
 import type { DotKiemKeKho, ChiTietKiemKeKho, ChiTietKiemKeKhoUpdate, KetQuaKiemKeKho } from '../core/types';
 import {
@@ -28,6 +28,7 @@ import {
   useDieuChinhTonTheoKetQua,
   useDieuChinhTonTheoDot,
   useUpdateDotKiemKeKho,
+  useCapNhatSoLuongSoTheoNgay,
 } from '../hooks/use-kiem-ke-kho';
 import NhapKetQuaKiemKeDialog from './NhapKetQuaKiemKeDialog';
 import ThemDongKiemKeDialog from './ThemDongKiemKeDialog';
@@ -104,6 +105,7 @@ const DotKiemKeKhoDetail: React.FC<Props> = ({
   const deleteChiTietMutation = useDeleteChiTietKiemKe(data.id);
   const dieuChinhRowMutation = useDieuChinhTonTheoKetQua(data.id);
   const dieuChinhDotMutation = useDieuChinhTonTheoDot(data.id);
+  const layLaiSoMutation = useCapNhatSoLuongSoTheoNgay(data.id);
   const confirm = useConfirmStore((s) => s.confirm);
 
   const isDangKiemKe = data.trang_thai === 'dang_kiem_ke';
@@ -183,6 +185,17 @@ const DotKiemKeKhoDetail: React.FC<Props> = ({
     [confirm, t, dieuChinhRowMutation]
   );
 
+  const handleLayLaiSoClick = useCallback(() => {
+    confirm({
+      title: t('kiemKeKho.confirm.layLaiSoTitle'),
+      message: t('kiemKeKho.confirm.layLaiSoMessage', { ngay: formatDate(data.ngay_bat_dau) }),
+      variant: 'warning',
+      onConfirm: () => {
+        void layLaiSoMutation.mutateAsync();
+      },
+    });
+  }, [confirm, t, data.ngay_bat_dau, layLaiSoMutation]);
+
   const handleSaveGhiChu = useCallback(() => {
     updateDotMutation.mutate(
       { id: data.id, data: { ghi_chu: ghiChuValue.trim() || undefined } },
@@ -214,6 +227,15 @@ const DotKiemKeKhoDetail: React.FC<Props> = ({
         icon: <FileText size={16} />,
         onClick: () => setGhiChuOpen(true),
         variant: 'secondary',
+      });
+    }
+    if (canEditLines && chiTiet.length > 0) {
+      actions.push({
+        label: t('kiemKeKho.layLaiSo'),
+        icon: <CalendarClock size={16} />,
+        onClick: handleLayLaiSoClick,
+        variant: 'secondary',
+        disabled: layLaiSoMutation.isPending,
       });
     }
     if (canEditLines && onTaoDanhSach) {
@@ -252,6 +274,9 @@ const DotKiemKeKhoDetail: React.FC<Props> = ({
     isDangKiemKe,
     pendingDieuChinhCount,
     handleDieuChinhDotClick,
+    chiTiet.length,
+    handleLayLaiSoClick,
+    layLaiSoMutation.isPending,
     onTaoDanhSach,
     onHoanThanh,
     onStatusChange,
@@ -469,6 +494,8 @@ const DotKiemKeKhoDetail: React.FC<Props> = ({
         onSave={handleNhapKetQuaSave}
         hasNext={nextRow != null}
         isLoading={updateKetQuaMutation.isPending}
+        canEditSo={nhapKetQuaRow != null && coTheSuaSoLuongSo(nhapKetQuaRow, data, currentUserId, capCao)}
+        ngaySo={data.ngay_bat_dau}
       />
 
       <ThemDongKiemKeDialog

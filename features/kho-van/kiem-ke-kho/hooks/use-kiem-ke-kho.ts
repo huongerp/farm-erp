@@ -11,6 +11,7 @@ import {
   createChiTietKiemKe,
   deleteChiTietKiemKe,
   updateChiTietKetQua,
+  capNhatSoLuongSoTheoNgay,
   dieuChinhTonTheoKetQua,
   dieuChinhTonTheoDot,
   hoanThanhDot,
@@ -210,6 +211,20 @@ export function useDieuChinhTonTheoKetQua(_id_dot: string, onSuccess?: () => voi
       qc.invalidateQueries({ queryKey: TON_KHO_QUERY_KEY });
       toast.success(i18n.t('kiemKeKho.toast.dieuChinhTonSuccess'));
       onSuccess?.();
+    },
+    onError: (err: unknown) => toast.error((err as Error).message),
+  });
+}
+
+/** Nút "Lấy lại SL sổ theo ngày": sổ = tồn cuối ngày bắt đầu, chỉ dòng chưa điều chỉnh. */
+export function useCapNhatSoLuongSoTheoNgay(id_dot: string) {
+  const qc = useQueryClient();
+  const capCao = useKiemKeCapCao();
+  return useMutation({
+    mutationFn: () => capNhatSoLuongSoTheoNgay(id_dot, capCao),
+    onSuccess: (count) => {
+      qc.invalidateQueries({ queryKey: QUERY_KEY_KIEM_KE_KHO });
+      toast.success(i18n.t('kiemKeKho.toast.layLaiSoSuccess', { count }));
     },
     onError: (err: unknown) => toast.error((err as Error).message),
   });
