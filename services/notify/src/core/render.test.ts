@@ -277,26 +277,25 @@ describe('đơn đặt hàng', () => {
 });
 
 describe('sổ quỹ', () => {
-  it('xin mở khoá nêu số phiếu và lý do', () => {
+  it('không duyệt nêu số phiếu và lý do', () => {
     const kq = renderThongBao(
-      nguCanh('fp_tc_quy_thu_chi', 'quy.xin_mo_khoa', { so_phieu: 'PC-0007' }, { lyDo: 'Nhập nhầm số tiền' })
+      nguCanh('fp_tc_quy_thu_chi', 'quy.khong_duyet', { so_phieu: 'PC-0007' }, { lyDo: 'Mua hàng chưa nhập kho' })
     );
-    expect(kq.tieuDe).toBe('Phiếu quỹ PC-0007 xin mở khoá');
-    expect(kq.noiDung).toBe('Nguyễn Văn A xin mở khoá phiếu quỹ. Lý do: Nhập nhầm số tiền');
+    expect(kq.tieuDe).toBe('Phiếu quỹ PC-0007 không được duyệt');
+    expect(kq.noiDung).toBe(
+      'Nguyễn Văn A không duyệt phiếu quỹ, phiếu không được quyết toán. Lý do: Mua hàng chưa nhập kho'
+    );
   });
 
   it('thiếu lý do vẫn ra câu đọc được', () => {
-    const kq = renderThongBao(nguCanh('fp_tc_quy_thu_chi', 'quy.xin_mo_khoa', { so_phieu: 'PC-1' }));
-    expect(kq.noiDung).toBe('Nguyễn Văn A xin mở khoá phiếu quỹ, chờ bạn duyệt.');
+    const kq = renderThongBao(nguCanh('fp_tc_quy_thu_chi', 'quy.khong_duyet', { so_phieu: 'PC-1' }));
+    expect(kq.noiDung).toBe('Nguyễn Văn A không duyệt phiếu quỹ, phiếu không được quyết toán.');
   });
 
-  it('duyệt và từ chối nói rõ phiếu còn khoá hay không', () => {
-    expect(
-      renderThongBao(nguCanh('fp_tc_quy_thu_chi', 'quy.duyet_mo_khoa', { so_phieu: 'PT-9' })).tieuDe
-    ).toBe('Phiếu quỹ PT-9 đã được mở khoá');
-    expect(
-      renderThongBao(nguCanh('fp_tc_quy_thu_chi', 'quy.tu_choi_mo_khoa', { so_phieu: 'PT-9' })).noiDung
-    ).toBe('Nguyễn Văn A đã từ chối yêu cầu mở khoá; phiếu vẫn đang khoá.');
+  it('đã duyệt', () => {
+    expect(renderThongBao(nguCanh('fp_tc_quy_thu_chi', 'quy.da_duyet', { so_phieu: 'PT-9' })).tieuDe).toBe(
+      'Phiếu quỹ PT-9 đã được duyệt'
+    );
   });
 });
 

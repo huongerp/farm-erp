@@ -230,3 +230,23 @@ describe('phiếu hành chính — nhóm duyệt theo phòng ban của người 
     expect(kq.map((x) => x.id)).toEqual([41]);
   });
 });
+
+describe('xin sửa phiếu kho — người xin và nhóm quản trị module', () => {
+  const MO_TA_PT = MO_TA_BANG['fp_pt_phieu_kho']!;
+
+  it('người xin đọc từ id_nguoi_xin_sua, không phải người tạo', () => {
+    const d = dong({ payload: { nguoi_tao_id: 5, id_nguoi_xin_sua: '7' } });
+    expect(giaiVaiTheoPayload('nguoi_xin_sua', MO_TA_PT, d, suKien())).toEqual([7]);
+  });
+
+  it('quan_tri_module lấy danh sách worker tra; cấp bậc 1 vẫn rung vì sự kiện mức cao', () => {
+    const kq = dinhTuyen(
+      dong({ actor_id: 7 }),
+      suKien({ loai: 'phieu.xin_sua', muc: 'cao', vai: ['quan_tri_module'] }),
+      MO_TA_PT,
+      [duyet(1, 1), duyet(3), duyet(7)]
+    );
+    expect(kq.map((x) => x.id).sort()).toEqual([1, 3]);
+    expect(kq.every((x) => !x.imLang)).toBe(true);
+  });
+});

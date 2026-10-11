@@ -92,7 +92,9 @@ export async function xuLyMotSuKien(dong: DongOutbox): Promise<void> {
 
   for (const suKien of dsSuKien) {
     let nhomDuyet: Awaited<ReturnType<typeof db.layNguoiDuyet>> = [];
-    if (suKien.vai.includes('nhom_duyet')) {
+    if (suKien.vai.includes('quan_tri_module')) {
+      nhomDuyet = await db.layQuanTriModule(moTa.moduleId);
+    } else if (suKien.vai.includes('nhom_duyet')) {
       if (moTa.nhomDuyetTheoPhongBanNguoiTao) {
         // Dùng chính bộ giải vai của routing để khỏi chép lại luật đọc cột
         // người tạo — mỗi bảng đặt tên cột một kiểu.

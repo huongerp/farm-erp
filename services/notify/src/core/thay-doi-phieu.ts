@@ -38,6 +38,15 @@ const COT_BO_QUA = new Set([
   'trang_thai',
   'so_dong',
   'tong_so_luong',
+  // Luồng xin sửa phiếu kho (mig 035) — có sự kiện riêng, không phải "nội dung phiếu".
+  'trang_thai_sua',
+  'id_nguoi_xin_sua',
+  'ten_nguoi_xin_sua',
+  'ly_do_xin_sua',
+  'tg_xin_sua',
+  'id_nguoi_cap_sua',
+  'ten_nguoi_cap_sua',
+  'tg_cap_sua',
 ]);
 
 /**

@@ -75,6 +75,15 @@ export async function layNguoiDuyet(moduleId: string, chiNhanhId: number | null)
   return kq.rows.map((r) => ({ nhanVienId: Number(r.nhan_vien_id), capBac: Number(r.cap_bac) }));
 }
 
+/** Cấp bậc 1 + admin/all trên module — người nhận yêu cầu "xin sửa" (mig 035). */
+export async function layQuanTriModule(moduleId: string): Promise<NguoiDuyet[]> {
+  const kq = await pool.query<{ nhan_vien_id: string; cap_bac: number }>(
+    'SELECT nhan_vien_id, cap_bac FROM public.rpc_tb_quan_tri_module($1)',
+    [moduleId]
+  );
+  return kq.rows.map((r) => ({ nhanVienId: Number(r.nhan_vien_id), capBac: Number(r.cap_bac) }));
+}
+
 /**
  * Nhóm duyệt theo phòng ban của người tạo. Hàm RIÊNG chứ không phải tham số
  * thứ ba của rpc_tb_nguoi_duyet: Postgres phân biệt hàm theo số tham số, thêm

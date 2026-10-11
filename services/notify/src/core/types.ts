@@ -21,7 +21,13 @@ export type VaiNguoiNhan =
   | 'ho_tro'
   | 'ho_tro_moi'
   | 'nguoi_giao'
-  | 'nguoi_yeu_cau_mo';
+  /** Người xin sửa phiếu kho đã duyệt (cột id_nguoi_xin_sua). */
+  | 'nguoi_xin_sua'
+  /**
+   * Cấp bậc 1 + người có admin/all trên module (rpc_tb_quan_tri_module) — KHÔNG gồm
+   * người chỉ có approve như 'nhom_duyet'. Giống 'nhom_duyet', phải tra phân quyền.
+   */
+  | 'quan_tri_module';
 
 /** Một dòng trong fp_var_su_kien_thong_bao. */
 export interface DongOutbox {

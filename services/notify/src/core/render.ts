@@ -171,6 +171,25 @@ export function renderThongBao(nc: NguCanhRender): NoiDungThongBao {
         noiDung: noiDungSuaSauDuyet(tenActor, docThayDoi(suKien.duLieu)),
       };
 
+    // --- Phiếu kho: xin sửa phiếu đã duyệt (mig 035) -------------------------
+    case 'phieu.xin_sua':
+      return {
+        tieuDe: `${nhan} xin sửa`,
+        noiDung: lyDo
+          ? `${boiActor(tenActor, 'xin cấp quyền sửa phiếu đã duyệt.')} Lý do: ${catBot(lyDo, DAI_TOI_DA_TRAO_DOI)}`
+          : boiActor(tenActor, 'xin cấp quyền sửa phiếu đã duyệt.'),
+      };
+    case 'phieu.duyet_xin_sua':
+      return {
+        tieuDe: `${nhan} đã được cấp quyền sửa`,
+        noiDung: boiActor(tenActor, 'đã cấp quyền, bạn sửa hoặc xoá phiếu được rồi.'),
+      };
+    case 'phieu.tu_choi_xin_sua':
+      return {
+        tieuDe: `${nhan} bị từ chối xin sửa`,
+        noiDung: boiActor(tenActor, 'đã từ chối yêu cầu sửa; phiếu vẫn đang khoá.'),
+      };
+
     // --- Công việc -----------------------------------------------------------
     case 'cong_viec.duoc_giao':
       return {
@@ -265,23 +284,18 @@ export function renderThongBao(nc: NguCanhRender): NoiDungThongBao {
         noiDung: boiActor(tenActor, 'đã huỷ đơn đặt hàng này.'),
       };
 
-    // --- Sổ quỹ: khoá / xin mở khoá ------------------------------------------
-    case 'quy.xin_mo_khoa':
+    // --- Sổ quỹ: duyệt / không duyệt ------------------------------------------
+    case 'quy.da_duyet':
       return {
-        tieuDe: `${nhan} xin mở khoá`,
+        tieuDe: `${nhan} đã được duyệt`,
+        noiDung: boiActor(tenActor, 'đã duyệt phiếu quỹ.'),
+      };
+    case 'quy.khong_duyet':
+      return {
+        tieuDe: `${nhan} không được duyệt`,
         noiDung: lyDo
-          ? `${boiActor(tenActor, 'xin mở khoá phiếu quỹ.')} Lý do: ${catBot(lyDo, DAI_TOI_DA_TRAO_DOI)}`
-          : boiActor(tenActor, 'xin mở khoá phiếu quỹ, chờ bạn duyệt.'),
-      };
-    case 'quy.duyet_mo_khoa':
-      return {
-        tieuDe: `${nhan} đã được mở khoá`,
-        noiDung: boiActor(tenActor, 'đã mở khoá phiếu, bạn sửa lại được rồi.'),
-      };
-    case 'quy.tu_choi_mo_khoa':
-      return {
-        tieuDe: `${nhan} bị từ chối mở khoá`,
-        noiDung: boiActor(tenActor, 'đã từ chối yêu cầu mở khoá; phiếu vẫn đang khoá.'),
+          ? `${boiActor(tenActor, 'không duyệt phiếu quỹ, phiếu không được quyết toán.')} Lý do: ${catBot(lyDo, DAI_TOI_DA_TRAO_DOI)}`
+          : boiActor(tenActor, 'không duyệt phiếu quỹ, phiếu không được quyết toán.'),
       };
 
     default:

@@ -77,6 +77,54 @@ describe('phiếu có luồng duyệt', () => {
   });
 });
 
+describe('phiếu kho — xin sửa phiếu đã duyệt (trang_thai_sua)', () => {
+  const pk = (cu: string | null, moi: string | null, them: Record<string, unknown> = {}) =>
+    dong({
+      bang: 'fp_pt_phieu_kho',
+      trang_thai_cu: 'Đã duyệt',
+      trang_thai_moi: 'Đã duyệt',
+      payload_cu: { trang_thai_sua: cu },
+      payload: { trang_thai_sua: moi, ...them },
+    });
+
+  it('xin sửa thì báo mức cao cho nhóm quản trị module, kèm lý do — không ra sua_sau_duyet', () => {
+    const kq = phanTichSuKien(pk(null, 'cho_cap', { ly_do_xin_sua: 'Sai số lượng' }));
+    expect(kq).toHaveLength(1);
+    expect(kq[0]!.loai).toBe('phieu.xin_sua');
+    expect(kq[0]!.muc).toBe('cao');
+    expect(kq[0]!.vai).toEqual(['quan_tri_module']);
+    expect(kq[0]!.duLieu['lyDo']).toBe('Sai số lượng');
+  });
+
+  it('cấp quyền thì báo người xin; từ chối cũng báo người xin', () => {
+    expect(phanTichSuKien(pk('cho_cap', 'da_cap'))[0]).toMatchObject({
+      loai: 'phieu.duyet_xin_sua',
+      vai: ['nguoi_xin_sua'],
+    });
+    expect(phanTichSuKien(pk('cho_cap', null))[0]).toMatchObject({
+      loai: 'phieu.tu_choi_xin_sua',
+      vai: ['nguoi_xin_sua'],
+    });
+  });
+
+  it('cấp cao khoá lại (da_cap → NULL) thì im lặng', () => {
+    expect(phanTichSuKien(pk('da_cap', null))).toEqual([]);
+  });
+
+  it('duyệt lại phiếu (xoá luôn quyền đã cấp) chỉ ra phieu.da_duyet', () => {
+    const kq = phanTichSuKien(
+      dong({
+        bang: 'fp_farm_phieu_kho_phan_thuoc',
+        trang_thai_cu: 'Chờ duyệt',
+        trang_thai_moi: 'Đã duyệt',
+        payload_cu: { trang_thai_sua: 'da_cap' },
+        payload: { trang_thai_sua: null },
+      })
+    );
+    expect(kq.map((x) => x.loai)).toEqual(['phieu.da_duyet']);
+  });
+});
+
 describe('công việc', () => {
   const cv = (p: Partial<DongOutbox>) => dong({ bang: 'fp_hc_cong_viec', ...p });
 
@@ -302,7 +350,7 @@ describe('đơn đặt hàng', () => {
   });
 });
 
-describe('sổ quỹ — khoá / xin mở khoá', () => {
+describe('sổ quỹ — duyệt / không duyệt', () => {
   const quy = (cu: string | null, moi: string, payload: Record<string, unknown> = {}) =>
     phanTichSuKien(
       dong({
@@ -314,37 +362,31 @@ describe('sổ quỹ — khoá / xin mở khoá', () => {
       })
     );
 
-  it('khoá phiếu là việc thường ngày, không báo cho ai', () => {
-    expect(quy('mo', 'khoa')).toEqual([]);
-  });
-
-  it('xin mở khoá thì báo nhóm duyệt, mức cao, kèm lý do', () => {
-    const kq = quy('khoa', 'cho_mo', { ly_do_yeu_cau_mo: 'Nhập nhầm số tiền' });
+  it('không duyệt thì báo người lập phiếu, mức cao, kèm lý do', () => {
+    const kq = quy('cho_duyet', 'khong_duyet', { ly_do_khong_duyet: 'Mua hàng chưa nhập kho' });
     expect(kq).toHaveLength(1);
-    expect(kq[0]!.loai).toBe('quy.xin_mo_khoa');
-    expect(kq[0]!.vai).toEqual(['nhom_duyet']);
+    expect(kq[0]!.loai).toBe('quy.khong_duyet');
+    expect(kq[0]!.vai).toEqual(['nguoi_tao']);
     expect(kq[0]!.muc).toBe('cao');
-    expect(kq[0]!.duLieu['lyDo']).toBe('Nhập nhầm số tiền');
+    expect(kq[0]!.duLieu['lyDo']).toBe('Mua hàng chưa nhập kho');
   });
 
-  it('duyệt mở (cho_mo → mo) báo cho đúng người đã xin, không phải người tạo', () => {
-    const kq = quy('cho_mo', 'mo');
-    expect(kq[0]!.loai).toBe('quy.duyet_mo_khoa');
-    expect(kq[0]!.vai).toEqual(['nguoi_yeu_cau_mo']);
+  it('duyệt (kể cả đổi ý từ không duyệt) báo người lập phiếu, mức thường', () => {
+    for (const cu of ['cho_duyet', 'khong_duyet']) {
+      const kq = quy(cu, 'da_duyet');
+      expect(kq[0]!.loai).toBe('quy.da_duyet');
+      expect(kq[0]!.vai).toEqual(['nguoi_tao']);
+      expect(kq[0]!.muc).toBe('thuong');
+    }
   });
 
-  it('cấp cao mở thẳng phiếu khoá thì báo cho người tạo phiếu', () => {
-    expect(quy('khoa', 'mo')[0]!.vai).toEqual(['nguoi_tao']);
-  });
-
-  it('từ chối (cho_mo → khoa) báo lại cho người xin', () => {
-    const kq = quy('cho_mo', 'khoa');
-    expect(kq[0]!.loai).toBe('quy.tu_choi_mo_khoa');
-    expect(kq[0]!.vai).toEqual(['nguoi_yeu_cau_mo']);
+  it('đưa về chờ duyệt thì im lặng', () => {
+    expect(quy('da_duyet', 'cho_duyet')).toEqual([]);
+    expect(quy('khong_duyet', 'cho_duyet')).toEqual([]);
   });
 
   it('trạng thái không đổi thì im lặng (import Excel, sửa nội dung)', () => {
-    expect(quy('khoa', 'khoa')).toEqual([]);
+    expect(quy('da_duyet', 'da_duyet')).toEqual([]);
     expect(phanTichSuKien(dong({ bang: 'fp_tc_quy_thu_chi', trang_thai_moi: null }))).toEqual([]);
   });
 });

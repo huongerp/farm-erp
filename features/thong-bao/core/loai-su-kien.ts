@@ -21,12 +21,14 @@ export const LOAI_SU_KIEN_THEO_MODULE: Record<string, readonly string[]> = {
   ],
   'quan-ly-nha-so-che/phieu-kho-phan-thuoc': [
     'phieu.cho_duyet', 'phieu.da_duyet', 'phieu.khong_duyet', 'phieu.sua_sau_duyet',
+    'phieu.xin_sua', 'phieu.duyet_xin_sua', 'phieu.tu_choi_xin_sua',
   ],
   'phan-thuoc/de-xuat-mua-hang': [
     'phieu.cho_duyet', 'phieu.doi_duyet', 'phieu.da_duyet', 'phieu.khong_duyet', 'phieu.sua_sau_duyet',
   ],
   'phan-thuoc/phieu-kho-phan-thuoc': [
     'phieu.cho_duyet', 'phieu.da_duyet', 'phieu.khong_duyet', 'phieu.sua_sau_duyet',
+    'phieu.xin_sua', 'phieu.duyet_xin_sua', 'phieu.tu_choi_xin_sua',
   ],
   'hanh-chinh/cong-viec': [
     'cong_viec.duoc_giao', 'cong_viec.them_ho_tro', 'cong_viec.trao_doi_moi',
@@ -40,9 +42,7 @@ export const LOAI_SU_KIEN_THEO_MODULE: Record<string, readonly string[]> = {
     'don_hang.cho_duyet', 'don_hang.da_xac_nhan', 'don_hang.dang_giao',
     'don_hang.da_nhan_du', 'don_hang.huy',
   ],
-  'tai-chinh/thu-chi-quy': [
-    'quy.xin_mo_khoa', 'quy.duyet_mo_khoa', 'quy.tu_choi_mo_khoa',
-  ],
+  'tai-chinh/thu-chi-quy': ['quy.da_duyet', 'quy.khong_duyet'],
 };
 
 /** Module đã đấu thông báo, theo thứ tự hiện trên hàng chip lọc. */
@@ -54,6 +54,9 @@ const KIEU_THEO_LOAI: Record<string, NotificationType> = {
   'phieu.da_duyet': 'success',
   'phieu.khong_duyet': 'error',
   'phieu.sua_sau_duyet': 'warning',
+  'phieu.xin_sua': 'warning',
+  'phieu.duyet_xin_sua': 'success',
+  'phieu.tu_choi_xin_sua': 'error',
 
   'cong_viec.duoc_giao': 'info',
   'cong_viec.them_ho_tro': 'info',
@@ -74,6 +77,9 @@ const KIEU_THEO_LOAI: Record<string, NotificationType> = {
   'don_hang.da_nhan_du': 'success',
   'don_hang.huy': 'error',
 
+  'quy.da_duyet': 'success',
+  'quy.khong_duyet': 'error',
+  // Luồng khoá / xin mở cũ (bỏ ở migration 036) — giữ để thông báo đã gửi vẫn đúng màu.
   'quy.xin_mo_khoa': 'warning',
   'quy.duyet_mo_khoa': 'success',
   'quy.tu_choi_mo_khoa': 'error',

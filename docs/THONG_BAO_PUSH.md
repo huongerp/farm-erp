@@ -96,6 +96,20 @@ lại toàn bộ dòng chi tiết — nên khi người dùng chỉ sửa mặt 
 nào khác biệt và câu thông báo nói thẳng "thay đổi nằm ở danh sách mặt hàng". Muốn nêu đích danh
 mặt hàng nào đổi thì phải gắn trigger cho bảng chi tiết (kể cả DELETE) và gom sự kiện ở worker.
 
+**Xin sửa phiếu kho đã duyệt** — chỉ hai module phiếu kho (Sơ chế + Phân thuốc, migration 035).
+Phiếu `Đã duyệt` bị khoá ở DB (trigger `tr_a_khoa_phieu_da_duyet`); người không phải cấp bậc 1 /
+quản trị phải xin sửa qua RPC `rpc_*_phieu_kho_xin_sua`. Không có trigger riêng: `tr_thong_bao_*`
+sẵn có bắt mọi UPDATE, worker so cột `trang_thai_sua` giữa `payload_cu` và `payload`.
+
+| Sự kiện | Khi | Ai nhận | Mức |
+|---|---|---|---|
+| `phieu.xin_sua` | `trang_thai_sua`: NULL → `cho_cap` | Cấp bậc 1 + admin/all trên module (`rpc_tb_quan_tri_module`, không gồm người chỉ có approve, không lọc chi nhánh) | **cao** |
+| `phieu.duyet_xin_sua` | `cho_cap → da_cap` | Người xin (`id_nguoi_xin_sua`) | **cao** |
+| `phieu.tu_choi_xin_sua` | `cho_cap → NULL` | Người xin | **cao** |
+
+`da_cap → NULL` (cấp cao khoá lại) không báo. Người được cấp lưu bản sửa thì phiếu về `Chờ duyệt`
+→ ra `phieu.cho_duyet` như thường; duyệt lại thì trigger tự xoá quyền đã cấp.
+
 ### Công việc — `hanh-chinh/cong-viec`
 
 | Sự kiện | Khi | Ai nhận | Mức |
@@ -156,20 +170,19 @@ Máy trạng thái 7 bước, chỉ báo 5 mốc có người phải hành độ
 
 ### Thu chi quỹ — `tai-chinh/thu-chi-quy`
 
-Không có luồng duyệt phiếu; chỉ báo quanh việc **khoá / mở khoá sổ quỹ**. Trigger ở đây khác 7 module
-trên: chỉ `AFTER UPDATE OF trang_thai ... WHEN (OLD.trang_thai IS DISTINCT FROM NEW.trang_thai)`, vì
-module có luồng import Excel hàng trăm dòng — bắt cả INSERT sẽ đổ rác vào outbox.
+Luồng duyệt phiếu (migration 036, thay luồng khoá / xin mở cũ): `cho_duyet → da_duyet | khong_duyet`, chỉ
+cấp bậc 1 / quản trị module chuyển trạng thái. Trigger ở đây khác 7 module trên: chỉ
+`AFTER UPDATE OF trang_thai ... WHEN (OLD.trang_thai IS DISTINCT FROM NEW.trang_thai)`, vì module có luồng
+import Excel hàng trăm dòng — bắt cả INSERT sẽ đổ rác vào outbox.
 
 | Sự kiện | Khi | Ai nhận | Mức |
 |---|---|---|---|
-| `quy.xin_mo_khoa` | `khoa → cho_mo` | Cấp bậc 1 / quản trị module | **cao** |
-| `quy.duyet_mo_khoa` | `cho_mo → mo` | Người đã xin mở (`id_nguoi_yeu_cau_mo`) | **cao** |
-| `quy.duyet_mo_khoa` | `khoa → mo` (mở thẳng) | Người tạo phiếu | **cao** |
-| `quy.tu_choi_mo_khoa` | `cho_mo → khoa` | Người đã xin mở | **cao** |
+| `quy.da_duyet` | `→ da_duyet` | Người tạo phiếu | thường |
+| `quy.khong_duyet` | `→ khong_duyet` (kèm `ly_do_khong_duyet`) | Người tạo phiếu | **cao** |
 
-`mo → khoa` **không** báo cho ai: khoá sổ là thao tác thường ngày của chính người lập phiếu.
-Vai `nguoi_yeu_cau_mo` là vai riêng của module này (xem `routing.ts`), không dùng lại `nguoi_tao`
-vì người xin mở chưa chắc là người lập phiếu.
+`→ cho_duyet` (cấp cao đưa phiếu về) **không** báo. Ba loại cũ `quy.xin_mo_khoa` / `quy.duyet_mo_khoa` /
+`quy.tu_choi_mo_khoa` không còn sinh, chỉ giữ nhãn + màu ở `features/thong-bao/core/loai-su-kien.ts` cho
+thông báo đã gửi trước đây.
 
 ### Ba luật chống ồn
 

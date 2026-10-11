@@ -69,9 +69,8 @@ export function giaiVaiTheoPayload(
       const id = soNguyen(p['trach_nhiem']);
       return id === null ? [] : [id];
     }
-    case 'nguoi_yeu_cau_mo': {
-      // Người XIN mở khoá, không nhất thiết là người lập phiếu.
-      const id = soNguyen(p['id_nguoi_yeu_cau_mo']);
+    case 'nguoi_xin_sua': {
+      const id = soNguyen(p['id_nguoi_xin_sua']);
       return id === null ? [] : [id];
     }
     case 'ho_tro':
@@ -79,6 +78,7 @@ export function giaiVaiTheoPayload(
     case 'ho_tro_moi':
       return mangSo(suKien.duLieu['hoTroMoi']);
     case 'nhom_duyet':
+    case 'quan_tri_module':
       return [];
     default:
       return [];
@@ -94,6 +94,9 @@ export function giaiVaiTheoPayload(
  *   3. Cấp bậc 1 lọt vào qua vai 'nhom_duyet' thì nhận ở mức im lặng, trừ khi
  *      sự kiện mức cao hoặc họ còn trúng một vai đích thực (người tạo phiếu,
  *      người chịu trách nhiệm…).
+ *
+ * `nhomDuyet` là danh sách worker đã tra cho vai nhóm của sự kiện: nhóm duyệt
+ * ('nhom_duyet') hoặc nhóm quản trị module ('quan_tri_module').
  */
 export function dinhTuyen(
   dong: DongOutbox,
@@ -103,7 +106,7 @@ export function dinhTuyen(
 ): NguoiNhanDaChon[] {
   const vaiDichThuc = new Set<number>();
   for (const vai of suKien.vai) {
-    if (vai === 'nhom_duyet') continue;
+    if (vai === 'nhom_duyet' || vai === 'quan_tri_module') continue;
     for (const id of giaiVaiTheoPayload(vai, moTa, dong, suKien)) vaiDichThuc.add(id);
   }
 
@@ -113,7 +116,7 @@ export function dinhTuyen(
     ketQua.set(id, { id, imLang: false });
   }
 
-  if (suKien.vai.includes('nhom_duyet')) {
+  if (suKien.vai.includes('nhom_duyet') || suKien.vai.includes('quan_tri_module')) {
     for (const nd of nhomDuyet) {
       const daCo = ketQua.get(nd.nhanVienId);
       if (daCo && !daCo.imLang) continue;

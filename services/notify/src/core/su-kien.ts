@@ -33,9 +33,13 @@ export const TT_DH_DA_NHAN_DU = 'Đã nhận đủ';
 export const TT_DH_HUY = 'Hủy';
 
 /** Sổ quỹ — mã không dấu, khớp CHECK của fp_tc_quy_thu_chi. */
-export const TT_QUY_MO = 'mo';
-export const TT_QUY_KHOA = 'khoa';
-export const TT_QUY_CHO_MO = 'cho_mo';
+export const TT_QUY_CHO_DUYET = 'cho_duyet';
+export const TT_QUY_DA_DUYET = 'da_duyet';
+export const TT_QUY_KHONG_DUYET = 'khong_duyet';
+
+/** Xin sửa phiếu kho đã duyệt (cột trang_thai_sua, mig 035). NULL = không có yêu cầu. */
+export const TT_SUA_CHO_CAP = 'cho_cap';
+export const TT_SUA_DA_CAP = 'da_cap';
 
 /** Công việc — mã không dấu. */
 export const TT_CV_CHO_BAO_CAO = 'cho_bao_cao';
@@ -106,6 +110,11 @@ function phanTichPhieuDuyet(dong: DongOutbox): SuKienDaPhanTich[] {
     }
   }
 
+  // Đổi trạng thái xin sửa (chỉ phiếu kho có cột này; bảng khác luôn undefined
+  // ở cả hai phía nên không lọt vào đây).
+  const xinSua = phanTichXinSua(dong);
+  if (xinSua) return xinSua;
+
   // Không đổi trạng thái mà phiếu đang ở "Đã duyệt" nghĩa là nội dung phiếu đã
   // duyệt bị sửa — người duyệt cần biết vì họ đã ký vào bản cũ. Kèm luôn danh
   // sách cột đã đổi để thông báo nói rõ sửa gì, khỏi phải mở phiếu ra dò.
@@ -120,6 +129,29 @@ function phanTichPhieuDuyet(dong: DongOutbox): SuKienDaPhanTich[] {
     ];
   }
 
+  return [];
+}
+
+/**
+ * Luồng xin sửa phiếu kho đã duyệt. Trả null khi trang_thai_sua không đổi.
+ * `da_cap → NULL` (cấp cao khoá lại) không báo — thao tác dọn dẹp của chính cấp cao.
+ */
+function phanTichXinSua(dong: DongOutbox): SuKienDaPhanTich[] | null {
+  if (!dong.payload_cu) return null;
+  const moi = dong.payload['trang_thai_sua'] ?? null;
+  const cu = dong.payload_cu['trang_thai_sua'] ?? null;
+  if (moi === cu) return null;
+
+  const lyDo = dong.payload['ly_do_xin_sua'] ?? null;
+  if (moi === TT_SUA_CHO_CAP) {
+    return [{ loai: 'phieu.xin_sua', muc: 'cao', vai: ['quan_tri_module'], duLieu: { lyDo } }];
+  }
+  if (moi === TT_SUA_DA_CAP && cu === TT_SUA_CHO_CAP) {
+    return [{ loai: 'phieu.duyet_xin_sua', muc: 'cao', vai: ['nguoi_xin_sua'], duLieu: {} }];
+  }
+  if (moi === null && cu === TT_SUA_CHO_CAP) {
+    return [{ loai: 'phieu.tu_choi_xin_sua', muc: 'cao', vai: ['nguoi_xin_sua'], duLieu: { lyDo } }];
+  }
   return [];
 }
 
@@ -290,48 +322,29 @@ function phanTichDonDatHang(dong: DongOutbox): SuKienDaPhanTich[] {
   }
 }
 
-// --- Sổ quỹ: khoá / xin mở khoá ---------------------------------------------
+// --- Sổ quỹ: duyệt / không duyệt ------------------------------------------
 
 /**
- * Chỉ ba mốc đáng báo. `mo → khoa` KHÔNG báo: đó là thao tác thường ngày của
- * chính người lập phiếu, báo lên sẽ thành tiếng ồn hằng ngày cho nhóm duyệt.
+ * Chỉ báo cho người lập phiếu khi phiếu được xét. Phiếu mới (INSERT) không báo —
+ * trigger chỉ bắt UPDATE OF trang_thai — và `→ cho_duyet` (cấp cao đưa về) cũng im:
+ * người lập sửa lại được, không có việc gì phải làm ngay.
  */
 function phanTichQuyThuChi(dong: DongOutbox): SuKienDaPhanTich[] {
   if (!daDoiTrangThai(dong)) return [];
 
   switch (dong.trang_thai_moi) {
-    case TT_QUY_CHO_MO:
+    case TT_QUY_DA_DUYET:
+      return [{ loai: 'quy.da_duyet', muc: 'thuong', vai: ['nguoi_tao'], duLieu: {} }];
+    case TT_QUY_KHONG_DUYET:
+      // Mức cao: tiền đã chi nhưng không được quyết toán, người lập phải xử lý.
       return [
         {
-          loai: 'quy.xin_mo_khoa',
+          loai: 'quy.khong_duyet',
           muc: 'cao',
-          vai: ['nhom_duyet'],
-          duLieu: { lyDo: dong.payload['ly_do_yeu_cau_mo'] ?? null },
+          vai: ['nguoi_tao'],
+          duLieu: { lyDo: dong.payload['ly_do_khong_duyet'] ?? null },
         },
       ];
-    case TT_QUY_MO:
-      // Về "mo" từ "cho_mo" là DUYỆT; từ "khoa" là cấp cao mở thẳng, người tạo
-      // cũng cần biết phiếu của mình sửa lại được.
-      return [
-        {
-          loai: 'quy.duyet_mo_khoa',
-          muc: 'cao',
-          vai: dong.trang_thai_cu === TT_QUY_CHO_MO ? ['nguoi_yeu_cau_mo'] : ['nguoi_tao'],
-          duLieu: {},
-        },
-      ];
-    case TT_QUY_KHOA:
-      // khoa ← cho_mo là TỪ CHỐI; khoa ← mo là khoá thường, không báo.
-      return dong.trang_thai_cu === TT_QUY_CHO_MO
-        ? [
-            {
-              loai: 'quy.tu_choi_mo_khoa',
-              muc: 'cao',
-              vai: ['nguoi_yeu_cau_mo'],
-              duLieu: { lyDo: dong.payload['ly_do_yeu_cau_mo'] ?? null },
-            },
-          ]
-        : [];
     default:
       return [];
   }
