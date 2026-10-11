@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
   coKetLuan,
   coTheKiemThung,
+  coTheHuyXuat,
   coTheMoPhieu,
   coTheNop,
   coTheSuaPhieu,
   coTheXoaPhieu,
+  coTheXuat,
   trangThaiTheoSoThung,
 } from './trang-thai';
 
@@ -70,5 +72,31 @@ describe('quyền thao tác theo trạng thái', () => {
     expect(coTheXoaPhieu('dang_kiem', 3, false)).toBe(false);
     expect(coTheXoaPhieu('da_nop', 0, false)).toBe(false);
     expect(coTheXoaPhieu('da_nop', 10, true)).toBe(true);
+  });
+});
+
+describe('xuất / huỷ xuất', () => {
+  it('chỉ xuất được phiếu đã nộp', () => {
+    expect(coTheXuat('da_nop')).toBe(true);
+    expect(coTheXuat('hoan_thanh')).toBe(false);
+    expect(coTheXuat('da_xuat')).toBe(false);
+    expect(coTheXuat('huy')).toBe(false);
+  });
+
+  it('chỉ cấp cao huỷ xuất; phiếu đã xuất không mở phiếu thẳng', () => {
+    expect(coTheHuyXuat('da_xuat', true)).toBe(true);
+    expect(coTheHuyXuat('da_xuat', false)).toBe(false);
+    expect(coTheHuyXuat('da_nop', true)).toBe(false);
+    expect(coTheMoPhieu('da_xuat', true)).toBe(false);
+  });
+
+  it('đã xuất: giữ trạng thái, có kết luận, khoá như đã nộp', () => {
+    expect(trangThaiTheoSoThung('da_xuat', 10, 12)).toBe('da_xuat');
+    expect(coKetLuan('da_xuat')).toBe(true);
+    expect(coTheKiemThung('da_xuat', false)).toBe(false);
+    expect(coTheKiemThung('da_xuat', true)).toBe(true);
+    expect(coTheSuaPhieu('da_xuat', false)).toBe(false);
+    expect(coTheXoaPhieu('da_xuat', 0, false)).toBe(false);
+    expect(coTheXoaPhieu('da_xuat', 10, true)).toBe(true);
   });
 });

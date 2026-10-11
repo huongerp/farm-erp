@@ -35,7 +35,7 @@ const TABLE_CAI_DAT = 'fp_farm_gscl_cai_dat';
 
 const ROW_COLUMNS =
   'id,so_phieu,ngay,id_chi_nhanh,id_hang_hoa,ma_cay_hang,so_thung_cay,so_thung_mau,tieu_chi,trang_thai,ket_luan,' +
-  'ghi_chu,id_nguoi_tao,tg_tao,tg_cap_nhat,tg_nop,id_nguoi_nop,chi_nhanh:fp_var_chi_nhanh(ten_chi_nhanh),' +
+  'ghi_chu,id_nguoi_tao,tg_tao,tg_cap_nhat,tg_nop,id_nguoi_nop,tg_xuat,id_nguoi_xuat,chi_nhanh:fp_var_chi_nhanh(ten_chi_nhanh),' +
   'hang_hoa:fp_farm_danh_sach_hang_hoa(ma_hang_hoa,ten_hang_hoa),thung:fp_farm_giam_sat_chat_luong_ct(da_kiem)';
 
 const CT_COLUMNS = 'id,id_phieu,stt_thung,ma_tem,ket_qua,tong_nhanh,da_kiem,tg_kiem,id_nguoi_kiem,ghi_chu,hinh_anh_urls';
@@ -59,6 +59,8 @@ interface DbRow {
   tg_cap_nhat: string;
   tg_nop: string | null;
   id_nguoi_nop: number | null;
+  tg_xuat: string | null;
+  id_nguoi_xuat: number | null;
   chi_nhanh?: { ten_chi_nhanh: string | null } | null;
   hang_hoa?: { ma_hang_hoa: string | null; ten_hang_hoa: string | null } | null;
   thung?: { da_kiem: boolean }[] | null;
@@ -142,6 +144,9 @@ function rowToModel(row: DbRow): GiamSatChatLuong {
     tg_nop: row.tg_nop,
     id_nguoi_nop: idStr(row.id_nguoi_nop),
     ten_nguoi_nop: null,
+    tg_xuat: row.tg_xuat,
+    id_nguoi_xuat: idStr(row.id_nguoi_xuat),
+    ten_nguoi_xuat: null,
     so_thung_da_kiem: (row.thung ?? []).filter((t) => t.da_kiem).length,
   };
 }
@@ -350,6 +355,34 @@ export async function moPhieuGsclDb(id: string): Promise<GiamSatChatLuong> {
   if (error) throwDbError(error);
   if (((data as unknown[] | null) ?? []).length === 0) throw new Error(i18n.t('giamSatChatLuong.service.trangThaiDaDoi'));
   return capNhatKetLuanDb(id);
+}
+
+/** Xuất phiếu: chỉ từ "đã nộp". Có điều kiện trạng thái để hai người bấm cùng lúc không ghi đè. */
+export async function xuatGsclDb(id: string, idNguoi: string | null): Promise<void> {
+  const { data, error } = await db
+    .from(TABLE)
+    .update({
+      trang_thai: 'da_xuat',
+      tg_xuat: new Date().toISOString(),
+      id_nguoi_xuat: idNguoi ? toIntId(idNguoi) : null,
+    })
+    .eq('id', toIntId(id))
+    .eq('trang_thai', 'da_nop')
+    .select('id');
+  if (error) throwDbError(error);
+  if (((data as unknown[] | null) ?? []).length === 0) throw new Error(i18n.t('giamSatChatLuong.service.trangThaiDaDoi'));
+}
+
+/** Huỷ xuất (cấp cao — DB chặn người khác): phiếu về "đã nộp". */
+export async function huyXuatGsclDb(id: string): Promise<void> {
+  const { data, error } = await db
+    .from(TABLE)
+    .update({ trang_thai: 'da_nop', tg_xuat: null, id_nguoi_xuat: null })
+    .eq('id', toIntId(id))
+    .eq('trang_thai', 'da_xuat')
+    .select('id');
+  if (error) throwDbError(error);
+  if (((data as unknown[] | null) ?? []).length === 0) throw new Error(i18n.t('giamSatChatLuong.service.trangThaiDaDoi'));
 }
 
 /** Chụp lại bộ tiêu chí đang dùng vào phiếu (cấp cao — vd vừa sửa ngưỡng) rồi tính lại kết luận. */

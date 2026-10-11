@@ -22,7 +22,9 @@ import {
   Send,
   Tag,
   Truck,
+  Undo2,
   User,
+  PackageCheck,
 } from 'lucide-react';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
 import DetailToolbar, { type DetailToolbarAction } from '../../../../components/shared/DetailToolbar';
@@ -35,12 +37,14 @@ import { formatDateTimeShort, formatYmdToDisplay } from '../../../../lib/utils';
 import { ketLuanPhieu } from '../core/ket-luan';
 import {
   coTheHuy,
+  coTheHuyXuat,
   coTheKhoiPhuc,
   coTheKiemThung,
   coTheMoPhieu,
   coTheNop,
   coTheSuaPhieu,
   coTheXoaPhieu,
+  coTheXuat,
 } from '../core/trang-thai';
 import { taoUrlInPhieu } from '../core/preview-url';
 import { docCaiDatTem } from '../core/mau-tem';
@@ -165,6 +169,12 @@ const GiamSatChatLuongDetail: React.FC<Props> = ({
     }
     if (coTheMoPhieu(tt, capCao)) {
       a.push({ label: t('giamSatChatLuong.toolbar.moPhieu'), icon: <LockOpen />, onClick: () => hoi('moPhieu'), variant: 'warning' });
+    }
+    if (coTheXuat(tt)) {
+      a.push({ label: t('giamSatChatLuong.toolbar.xuat'), icon: <PackageCheck />, onClick: () => hoi('xuat'), variant: 'success' });
+    }
+    if (coTheHuyXuat(tt, capCao)) {
+      a.push({ label: t('giamSatChatLuong.toolbar.huyXuat'), icon: <Undo2 />, onClick: () => hoi('huyXuat'), variant: 'warning' });
     }
     if (coTheHuy(tt)) {
       a.push({ label: t('giamSatChatLuong.toolbar.huy'), icon: <Ban />, onClick: () => hoi('huy', 'danger'), variant: 'danger' });
@@ -352,6 +362,12 @@ const GiamSatChatLuongDetail: React.FC<Props> = ({
                 <>
                   <DetailField label={t('giamSatChatLuong.detail.nguoiNop')} value={data.ten_nguoi_nop ?? ''} emptyText="—" icon={<Send size={12} />} />
                   <DetailField label={t('giamSatChatLuong.detail.tgNop')} value={formatDateTimeShort(data.tg_nop)} icon={<Calendar size={12} />} />
+                </>
+              )}
+              {data.tg_xuat && (
+                <>
+                  <DetailField label={t('giamSatChatLuong.detail.nguoiXuat')} value={data.ten_nguoi_xuat ?? ''} emptyText="—" icon={<PackageCheck size={12} />} />
+                  <DetailField label={t('giamSatChatLuong.detail.tgXuat')} value={formatDateTimeShort(data.tg_xuat)} icon={<Calendar size={12} />} />
                 </>
               )}
             </DetailFieldGrid>

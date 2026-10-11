@@ -1,13 +1,13 @@
 /**
  * Máy trạng thái phiếu giám sát chất lượng:
  *
- *   dang_kiem ──đủ N thùng──▶ hoan_thanh ──nộp──▶ da_nop
- *      │  ▲                      │  ▲                │
- *      │  └── tăng thùng mẫu ────┘  └── mở phiếu ────┘ (cấp cao)
+ *   dang_kiem ──đủ N thùng──▶ hoan_thanh ──nộp──▶ da_nop ──xuất──▶ da_xuat
+ *      │  ▲                      │  ▲                │  ▲              │
+ *      │  └── tăng thùng mẫu ────┘  └── mở phiếu ────┘  └─ huỷ xuất ───┘ (cấp cao)
  *      └──huỷ──▶ huy ──khôi phục──▶ dang_kiem
  *
- * Trước khi nộp, người kiểm (có quyền sửa) chấm lại / sửa phiếu thoải mái. Đã nộp thì khoá:
- * chỉ cấp cao sửa, xoá, chấm lại hoặc mở phiếu. DB khoá y hệt (migration 018).
+ * Trước khi nộp, người kiểm (có quyền sửa) chấm lại / sửa phiếu thoải mái. Đã nộp / đã xuất thì
+ * khoá: chỉ cấp cao sửa, xoá, chấm lại, mở phiếu hoặc huỷ xuất. DB khoá y hệt (migration 018, 034).
  * `capCao` = cấp bậc 1 hoặc quyền admin/all trên module.
  */
 import type { StatusBadgeSemantic } from '../../../../lib/status-badge';
@@ -17,6 +17,7 @@ export const TRANG_THAI_GSCL_SEMANTIC: Record<TrangThaiGscl, StatusBadgeSemantic
   dang_kiem: 'pending',
   hoan_thanh: 'info',
   da_nop: 'success',
+  da_xuat: 'waiting',
   huy: 'neutral',
 };
 
@@ -25,21 +26,26 @@ export const KET_LUAN_GSCL_SEMANTIC: Record<KetLuanGscl, StatusBadgeSemantic> = 
   khong_dat: 'rejected',
 };
 
-/** Trạng thái sau khi lưu kết quả thùng / đổi số thùng mẫu. Phiếu huỷ và phiếu đã nộp giữ nguyên. */
+/** Đã nộp hoặc đã xuất — phiếu khoá với người thường. */
+function daKhoa(tt: TrangThaiGscl): boolean {
+  return tt === 'da_nop' || tt === 'da_xuat';
+}
+
+/** Trạng thái sau khi lưu kết quả thùng / đổi số thùng mẫu. Phiếu huỷ và phiếu đã nộp / đã xuất giữ nguyên. */
 export function trangThaiTheoSoThung(tt: TrangThaiGscl, soDaKiem: number, soThungMau: number): TrangThaiGscl {
-  if (tt === 'huy' || tt === 'da_nop') return tt;
+  if (tt === 'huy' || daKhoa(tt)) return tt;
   return soThungMau > 0 && soDaKiem >= soThungMau ? 'hoan_thanh' : 'dang_kiem';
 }
 
-/** Phiếu đã đủ thùng — được ghi kết luận (cả khi đã nộp). */
+/** Phiếu đã đủ thùng — được ghi kết luận (cả khi đã nộp / đã xuất). */
 export function coKetLuan(tt: TrangThaiGscl): boolean {
-  return tt === 'hoan_thanh' || tt === 'da_nop';
+  return tt === 'hoan_thanh' || daKhoa(tt);
 }
 
 /** Quét tem / nhập kết quả thùng. */
 export function coTheKiemThung(tt: TrangThaiGscl, capCao: boolean): boolean {
   if (tt === 'dang_kiem' || tt === 'hoan_thanh') return true;
-  return tt === 'da_nop' && capCao;
+  return daKhoa(tt) && capCao;
 }
 
 export function coTheSuaPhieu(tt: TrangThaiGscl, capCao: boolean): boolean {
@@ -47,10 +53,10 @@ export function coTheSuaPhieu(tt: TrangThaiGscl, capCao: boolean): boolean {
   return capCao;
 }
 
-/** Xoá: đã nộp → chỉ cấp cao; còn lại: chưa kiểm thùng nào, hoặc cấp cao. */
+/** Xoá: đã nộp / đã xuất → chỉ cấp cao; còn lại: chưa kiểm thùng nào, hoặc cấp cao. */
 export function coTheXoaPhieu(tt: TrangThaiGscl, soDaKiem: number, capCao: boolean): boolean {
   if (capCao) return true;
-  if (tt === 'da_nop') return false;
+  if (daKhoa(tt)) return false;
   return soDaKiem === 0;
 }
 
@@ -59,8 +65,19 @@ export function coTheNop(tt: TrangThaiGscl): boolean {
   return tt === 'hoan_thanh';
 }
 
+/** Mở phiếu chỉ từ đã nộp — phiếu đã xuất phải huỷ xuất trước. */
 export function coTheMoPhieu(tt: TrangThaiGscl, capCao: boolean): boolean {
   return tt === 'da_nop' && capCao;
+}
+
+/** Xuất: chỉ phiếu đã nộp; ai có quyền sửa module cũng xuất được. */
+export function coTheXuat(tt: TrangThaiGscl): boolean {
+  return tt === 'da_nop';
+}
+
+/** Huỷ xuất (về đã nộp): chỉ cấp cao. */
+export function coTheHuyXuat(tt: TrangThaiGscl, capCao: boolean): boolean {
+  return tt === 'da_xuat' && capCao;
 }
 
 export function coTheHuy(tt: TrangThaiGscl): boolean {

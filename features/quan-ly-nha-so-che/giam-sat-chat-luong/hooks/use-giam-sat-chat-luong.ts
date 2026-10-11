@@ -22,6 +22,7 @@ import {
   getTieuChi,
   getXeDaXepCayHang,
   huyGscl,
+  huyXuatGscl,
   khoiPhucGscl,
   luuKetQuaThung,
   moPhieuGscl,
@@ -29,6 +30,7 @@ import {
   sapXepTieuChi,
   updateCaiDatGscl,
   updateGscl,
+  xuatGscl,
   updateTieuChi,
   type CaiDatGscl,
   type LuuKetQuaThungInput,
@@ -142,7 +144,7 @@ export function useDeleteGiamSatChatLuongMany() {
   });
 }
 
-export type HanhDongPhieu = 'huy' | 'khoiPhuc' | 'nop' | 'moPhieu';
+export type HanhDongPhieu = 'huy' | 'khoiPhuc' | 'nop' | 'moPhieu' | 'xuat' | 'huyXuat';
 
 export function useHanhDongGiamSatChatLuong() {
   const invalidate = useInvalidate();
@@ -152,6 +154,8 @@ export function useHanhDongGiamSatChatLuong() {
       if (action === 'huy') return huyGscl(id);
       if (action === 'khoiPhuc') return khoiPhucGscl(id);
       if (action === 'nop') return nopGscl(id, idNguoiHienTai(user?.id));
+      if (action === 'xuat') return xuatGscl(id, idNguoiHienTai(user?.id));
+      if (action === 'huyXuat') return huyXuatGscl(id);
       return moPhieuGscl(id);
     },
     onSuccess: (_r, { action }) => {
