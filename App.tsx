@@ -115,6 +115,10 @@ const DangKyNhanHangInDanhSachPage = lazyWithFeatureI18n(
   'dang-ky-nhan-hang',
   () => import('./features/quan-ly-nha-so-che/dang-ky-nhan-hang/DangKyNhanHangInDanhSachPage')
 );
+const ThuHoachInThongKePage = lazyWithFeatureI18n(
+  'thu-hoach',
+  () => import('./features/quan-ly-nha-so-che/thu-hoach/ThuHoachInThongKePage')
+);
 const DangKyThamQuanPreviewPage = lazyWithFeatureI18n(
   'dang-ky-tham-quan',
   () => import('./features/quan-ly-nha-so-che/dang-ky-tham-quan/DangKyThamQuanPreviewPage')
@@ -389,6 +393,18 @@ const App = () => {
               <ModulePermissionGuard moduleId="quan-ly-nha-so-che/dang-ky-nhan-hang">
                 <Suspense fallback={<PageFallback />}>
                   <DangKyNhanHangInDanhSachPage />
+                </Suspense>
+              </ModulePermissionGuard>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/quan-ly-nha-so-che/thu-hoach/in-thong-ke"
+          element={
+            <ProtectedRoute>
+              <ModulePermissionGuard moduleId="quan-ly-nha-so-che/thu-hoach">
+                <Suspense fallback={<PageFallback />}>
+                  <ThuHoachInThongKePage />
                 </Suspense>
               </ModulePermissionGuard>
             </ProtectedRoute>

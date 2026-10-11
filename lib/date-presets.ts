@@ -21,7 +21,18 @@ export function getDateRangeFromPreset(presetId: string): { dateFrom: string; da
   const pad = (n: number) => String(n).padStart(2, '0');
   const today = `${y}-${pad(m + 1)}-${pad(d.getDate())}`;
 
+  // Tuần bắt đầu Thứ 2 (như tuần ISO của app).
+  const ymd = (x: Date) => `${x.getFullYear()}-${pad(x.getMonth() + 1)}-${pad(x.getDate())}`;
+  const dauTuan = new Date(y, m, d.getDate() - ((d.getDay() + 6) % 7));
+
   switch (presetId) {
+    case 'thisWeek':
+      return { dateFrom: ymd(dauTuan), dateTo: today };
+    case 'lastWeek': {
+      const tu = new Date(dauTuan.getFullYear(), dauTuan.getMonth(), dauTuan.getDate() - 7);
+      const den = new Date(dauTuan.getFullYear(), dauTuan.getMonth(), dauTuan.getDate() - 1);
+      return { dateFrom: ymd(tu), dateTo: ymd(den) };
+    }
     case 'thisMonth':
       return { dateFrom: `${y}-${pad(m + 1)}-01`, dateTo: today };
     case 'lastMonth': {
