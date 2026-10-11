@@ -2,6 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { MapPin, Package } from 'lucide-react';
 import type { TonKhoStats } from './useTonKhoStats';
+import { formatNumberVN } from '../../../../../lib/utils';
 
 interface Props {
   byWarehouse: TonKhoStats['byWarehouse'];
@@ -22,9 +23,10 @@ const StatsTables: React.FC<Props> = ({ byWarehouse, topProducts }) => {
             </h3>
           </div>
         </div>
-        <div className="overflow-x-auto max-h-[280px] overflow-y-auto">
+        {/* Điện thoại: không cuộn lồng trong trang cuộn — để bảng dài theo nội dung. */}
+        <div className="overflow-x-auto md:max-h-[280px] md:overflow-y-auto">
           <table className="w-full text-xs">
-            <thead className="sticky top-0 bg-muted/95 z-[1]">
+            <thead className="sticky top-0 bg-muted z-[1]">
               <tr className="border-b border-border">
                 <th className="text-left px-4 py-2 font-medium text-muted-foreground">
                   #
@@ -49,8 +51,8 @@ const StatsTables: React.FC<Props> = ({ byWarehouse, topProducts }) => {
                   <tr key={row.name} className="hover:bg-muted/20">
                     <td className="px-4 py-2 text-muted-foreground tabular-nums">{idx + 1}</td>
                     <td className="px-4 py-2 text-foreground font-medium">{row.name}</td>
-                    <td className="px-4 py-2 text-right font-semibold tabular-nums">
-                      {row.value.toLocaleString('vi-VN')}
+                    <td className="px-4 py-2 text-right font-semibold tabular-nums whitespace-nowrap">
+                      {formatNumberVN(row.value, { maxFractionDigits: 2 })}
                     </td>
                   </tr>
                 ))
@@ -69,9 +71,10 @@ const StatsTables: React.FC<Props> = ({ byWarehouse, topProducts }) => {
             </h3>
           </div>
         </div>
-        <div className="overflow-x-auto max-h-[280px] overflow-y-auto">
+        {/* Điện thoại: không cuộn lồng trong trang cuộn — để bảng dài theo nội dung. */}
+        <div className="overflow-x-auto md:max-h-[280px] md:overflow-y-auto">
           <table className="w-full text-xs">
-            <thead className="sticky top-0 bg-muted/95 z-[1]">
+            <thead className="sticky top-0 bg-muted z-[1]">
               <tr className="border-b border-border">
                 <th className="text-left px-4 py-2 font-medium text-muted-foreground">
                   #
@@ -95,11 +98,11 @@ const StatsTables: React.FC<Props> = ({ byWarehouse, topProducts }) => {
                 topProducts.map((row, idx) => (
                   <tr key={`${row.name}-${idx}`} className="hover:bg-muted/20">
                     <td className="px-4 py-2 text-muted-foreground tabular-nums">{idx + 1}</td>
-                    <td className="px-4 py-2 text-foreground font-medium truncate max-w-[200px]" title={row.name}>
+                    <td className="px-4 py-2 text-foreground font-medium truncate max-w-[140px] sm:max-w-[200px]" title={row.name}>
                       {row.name}
                     </td>
-                    <td className="px-4 py-2 text-right font-semibold tabular-nums">
-                      {row.value.toLocaleString('vi-VN')}
+                    <td className="px-4 py-2 text-right font-semibold tabular-nums whitespace-nowrap">
+                      {formatNumberVN(row.value, { maxFractionDigits: 2 })}
                     </td>
                   </tr>
                 ))

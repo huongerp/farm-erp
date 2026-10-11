@@ -23,7 +23,7 @@ const TonKhoThongKeTab: React.FC = () => {
     queryFn: getKhoList,
     staleTime: 1000 * 60 * 30,
   });
-  const { data: hangHoaList = [] } = useHangHoaRefQuery();
+  const { data: hangHoaList = [], isLoading: loadingHangHoa } = useHangHoaRefQuery();
 
   const [filterWarehouseIds, setFilterWarehouseIds] = useState<string[]>([]);
 
@@ -34,8 +34,8 @@ const TonKhoThongKeTab: React.FC = () => {
   }, [tonKhoListRaw, filterWarehouseIds]);
 
   const stats = useMemo(
-    () => computeTonKhoStats(filteredTonKho, khoList, hangHoaList),
-    [filteredTonKho, khoList, hangHoaList]
+    () => computeTonKhoStats(filteredTonKho, khoList, hangHoaList, (id) => t('tonKho.hangMoCoi', { id })),
+    [filteredTonKho, khoList, hangHoaList, t]
   );
 
   const warehouseOptions = useMemo(() => {
@@ -94,7 +94,7 @@ const TonKhoThongKeTab: React.FC = () => {
     );
   }
 
-  if (isLoading) {
+  if (isLoading || loadingHangHoa) {
     return (
       <div className="flex flex-col h-full min-h-0">
         <div className="shrink-0 py-3 px-3 sm:px-4 border-b border-border/50 bg-muted/20">

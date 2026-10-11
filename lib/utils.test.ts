@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   parseFormattedNumber,
   formatNumberVN,
+  formatSoRutGon,
   formatCurrency,
   formatDate,
   formatDateShort,
@@ -33,6 +34,21 @@ describe('parseFormattedNumber', () => {
   it('trả 0 khi input không phải string (null/undefined qua any)', () => {
     expect(parseFormattedNumber(null as unknown as string)).toBe(0);
     expect(parseFormattedNumber(undefined as unknown as string)).toBe(0);
+  });
+});
+
+describe('formatSoRutGon', () => {
+  it('rút gọn theo vi-VN: nghìn / triệu / tỷ, tối đa 1 chữ số lẻ', () => {
+    expect(formatSoRutGon(950)).toBe('950');
+    expect(formatSoRutGon(850000)).toBe('850\u00a0N');
+    expect(formatSoRutGon(3400000)).toBe('3,4\u00a0Tr');
+    expect(formatSoRutGon(6882364.24)).toBe('6,9\u00a0Tr');
+    expect(formatSoRutGon(-25000)).toBe('-25\u00a0N');
+  });
+
+  it('trả — cho null/undefined/NaN', () => {
+    expect(formatSoRutGon(null)).toBe('—');
+    expect(formatSoRutGon(NaN)).toBe('—');
   });
 });
 

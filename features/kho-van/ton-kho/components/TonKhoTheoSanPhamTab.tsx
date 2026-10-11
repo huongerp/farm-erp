@@ -15,6 +15,7 @@ import ListPageSkeleton from '../../../../components/shared/ListPageSkeleton';
 import TablePaginationFooter from '../../../../components/shared/TablePaginationFooter';
 import GenericSubTableSection from '../../../../components/shared/GenericSubTableSection';
 import TonKhoToolbar from './TonKhoToolbar';
+import TonKyMobileCard from './TonKyMobileCard';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import { useSearchInputCommit } from '../../../../lib/hooks/use-search-input-commit';
 import {
@@ -61,13 +62,16 @@ export type RowProduct = {
   canh_bao: boolean;
   /** Số lượng tồn theo từng kho (id_kho → so_luong). */
   by_kho: Record<string, number>;
+  /** Hàng không còn trong danh mục hàng hoá (phiếu cũ vẫn tham chiếu). */
+  mo_coi: boolean;
 };
 
 function useProductRows(tonKhoListOverride?: TonKhoRecord[]) {
+  const { t } = useTranslation();
   const { data: tonKhoListRaw = [], isLoading: tonLoading, isFetchingOverlay: tonFetching } = useAllTonKho();
   const tonKhoList = tonKhoListOverride !== undefined ? tonKhoListOverride : tonKhoListRaw;
   const { data: dinhMucMap, isLoading: loadingDinhMuc } = useDinhMucTonKho();
-  const { data: hangHoaList = [] } = useHangHoaRefQuery();
+  const { data: hangHoaList = [], isLoading: loadingHangHoa } = useHangHoaRefQuery();
   const byProduct = useMemo(() => {
     const map = new Map<string, number>();
     tonKhoList.forEach((r) => {
@@ -101,24 +105,48 @@ function useProductRows(tonKhoListOverride?: TonKhoRecord[]) {
         });
         return {
           id_hang_hoa,
-          ma_hang: h?.ma_hang ?? id_hang_hoa,
-          ten_hang: h?.ten_hang ?? '—',
+          ma_hang: h?.ma_hang ?? `#${id_hang_hoa}`,
+          ten_hang: h?.ten_hang ?? t('tonKho.hangDaXoa'),
           ten_danh_muc: h?.ten_danh_muc ?? undefined,
           don_vi_tinh: h?.don_vi_tinh ?? '—',
           tong_so_luong,
           ton_toi_thieu: ton_toi_thieu ?? undefined,
           canh_bao,
           by_kho,
+          mo_coi: !h,
         };
       })
       .filter((r) => r.tong_so_luong !== 0)
       .sort((a, b) => b.tong_so_luong - a.tong_so_luong);
-  }, [byProduct, hangHoaMap, tonKhoList, dinhMucMap]);
+  }, [byProduct, hangHoaMap, tonKhoList, dinhMucMap, t]);
   return {
     rows,
-    isLoading: tonLoading || loadingDinhMuc,
-    isFetchingOverlay: tonFetching && !loadingDinhMuc,
+    // Chờ cả danh mục hàng hoá — chưa có thì mọi dòng bị coi là hàng đã xoá.
+    isLoading: tonLoading || loadingDinhMuc || loadingHangHoa,
+    isFetchingOverlay: tonFetching && !loadingDinhMuc && !loadingHangHoa,
   };
+}
+
+/** Khung bảng con trong drawer: ≥ md là bảng cuộn, điện thoại là danh sách `mobile` (không cuộn ngang). */
+function KhungBangCon({
+  maxHeight,
+  mobile,
+  children,
+}: {
+  maxHeight: string;
+  mobile: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <>
+      <div className="md:hidden space-y-1.5">{mobile}</div>
+      <div className="hidden md:block rounded-xl border border-border overflow-hidden bg-card">
+        <div className="overflow-x-auto overflow-y-auto custom-scrollbar" style={{ maxHeight }}>
+          <table className="w-full text-sm text-left border-collapse">{children}</table>
+        </div>
+      </div>
+    </>
+  );
 }
 
 function ProductDetailDrawer({
@@ -129,7 +157,7 @@ function ProductDetailDrawer({
   onClose: () => void;
 }) {
   const { t } = useTranslation();
-  const { id_hang_hoa, ma_hang, ten_hang, tong_so_luong, ton_toi_thieu, canh_bao } = row;
+  const { id_hang_hoa, ma_hang, ten_hang, don_vi_tinh, tong_so_luong, ton_toi_thieu, canh_bao } = row;
   const { data: byKho = [], isLoading: loadingTonKho } = useTonKhoTheoHangHoa(id_hang_hoa);
   const { data: lichSu = [], isLoading: loadingLichSu } = useLichSuNhapXuatByHangHoa(id_hang_hoa);
   const [selectedKhoId, setSelectedKhoId] = useState<string | null>(null);
@@ -176,57 +204,60 @@ function ProductDetailDrawer({
       }
     >
       <div className="space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="rounded-xl border border-border/80 bg-gradient-to-br from-muted/40 to-muted/20 p-4 shadow-sm transition-shadow hover:shadow">
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
+          <div className="rounded-xl border border-border/80 bg-gradient-to-br from-muted/40 to-muted/20 p-2.5 sm:p-4 shadow-sm transition-shadow hover:shadow">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+              <div className="hidden sm:flex h-10 w-10 rounded-lg bg-primary/10 items-center justify-center shrink-0">
                 <Package size={18} className="text-primary" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                <p className="text-2xs sm:text-xs font-medium text-muted-foreground uppercase tracking-wide truncate">
                   {t('tonKho.byProduct.detailMinStock')}
                 </p>
-                <p className="text-lg font-bold text-foreground tabular-nums mt-0.5">
+                <p className="text-base sm:text-lg font-bold text-foreground tabular-nums mt-0.5 break-words">
                   {ton_toi_thieu != null ? ton_toi_thieu.toLocaleString('vi-VN') : '—'}
                 </p>
               </div>
             </div>
           </div>
-          <div className="rounded-xl border border-border/80 bg-gradient-to-br from-muted/40 to-muted/20 p-4 shadow-sm transition-shadow hover:shadow">
+          <div className="rounded-xl border border-border/80 bg-gradient-to-br from-muted/40 to-muted/20 p-2.5 sm:p-4 shadow-sm transition-shadow hover:shadow">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
+              <div className="hidden sm:flex h-10 w-10 rounded-lg bg-emerald-500/10 items-center justify-center shrink-0">
                 <Warehouse size={18} className="text-emerald-600 dark:text-emerald-400" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                <p className="text-2xs sm:text-xs font-medium text-muted-foreground uppercase tracking-wide truncate">
                   {t('tonKho.byProduct.detailCurrentStock')}
                 </p>
-                <p className={cn('text-lg font-bold tabular-nums mt-0.5', tong_so_luong < 0 ? 'text-destructive' : 'text-foreground')}>
+                <p className={cn('text-base sm:text-lg font-bold tabular-nums mt-0.5 break-words', tong_so_luong < 0 ? 'text-destructive' : 'text-foreground')}>
                   {tong_so_luong.toLocaleString('vi-VN')}
+                  {don_vi_tinh && don_vi_tinh !== '—' ? (
+                    <span className="ml-1 inline-block whitespace-nowrap text-xs font-medium text-muted-foreground">{don_vi_tinh}</span>
+                  ) : null}
                 </p>
               </div>
             </div>
           </div>
           <div className={cn(
-            'rounded-xl border p-4 shadow-sm transition-shadow hover:shadow',
+            'rounded-xl border p-2.5 sm:p-4 shadow-sm transition-shadow hover:shadow',
             canh_bao
               ? 'border-amber-300/80 bg-gradient-to-br from-amber-50/80 to-amber-100/40 dark:from-amber-950/30 dark:to-amber-900/20'
               : 'border-border/80 bg-gradient-to-br from-muted/40 to-muted/20'
           )}>
             <div className="flex items-center gap-3">
               <div className={cn(
-                'h-10 w-10 rounded-lg flex items-center justify-center shrink-0',
+                'hidden sm:flex h-10 w-10 rounded-lg items-center justify-center shrink-0',
                 canh_bao ? 'bg-amber-500/15' : 'bg-muted'
               )}>
                 <AlertTriangle size={18} className={canh_bao ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                <p className="text-2xs sm:text-xs font-medium text-muted-foreground uppercase tracking-wide truncate">
                   {t('tonKho.byProduct.detailAlert')}
                 </p>
                 <p className="mt-1">
                   {canh_bao ? (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-400/30 text-xs font-semibold">
+                    <span className="inline-flex items-center gap-1.5 px-1.5 sm:px-2.5 py-1 rounded-lg bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-400/30 text-xs font-semibold">
                       <AlertTriangle size={12} />
                       {t('tonKho.byProduct.filterBelowMin')}
                     </span>
@@ -269,10 +300,34 @@ function ProductDetailDrawer({
           emptyTitle={t('tonKho.byProduct.empty')}
           loading={loading}
           loadingText={t('tonKho.loading')}
-          maxTableHeight="240px"
+          contentMode="raw"
         >
           {byKho.length > 0 && (
-            <>
+            <KhungBangCon
+              maxHeight="240px"
+              mobile={byKho.map((r) => (
+                <button
+                  key={r.id_kho}
+                  type="button"
+                  onClick={() => setSelectedKhoId((prev) => (prev === r.id_kho ? null : r.id_kho))}
+                  className={cn(
+                    'w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-lg border text-left transition-colors',
+                    selectedKhoId === r.id_kho ? 'border-primary/40 bg-primary/10' : 'border-border bg-card active:bg-muted/60'
+                  )}
+                >
+                  <span className="flex items-center gap-2 min-w-0 text-sm">
+                    <Warehouse size={14} className="text-muted-foreground shrink-0" />
+                    <span className="truncate">{khoMap[r.id_kho] ?? r.id_kho}</span>
+                  </span>
+                  <span className={cn('text-sm font-semibold tabular-nums shrink-0', r.so_luong < 0 && 'text-destructive')}>
+                    {r.so_luong.toLocaleString('vi-VN')}
+                    {don_vi_tinh && don_vi_tinh !== '—' ? (
+                      <span className="ml-1 text-xs font-normal text-muted-foreground">{don_vi_tinh}</span>
+                    ) : null}
+                  </span>
+                </button>
+              ))}
+            >
               <thead className="sticky top-0 z-[1] bg-muted border-b border-border">
                 <tr>
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap w-10">#</th>
@@ -309,7 +364,7 @@ function ProductDetailDrawer({
                   </tr>
                 ))}
               </tbody>
-            </>
+            </KhungBangCon>
           )}
         </GenericSubTableSection>
 
@@ -320,10 +375,43 @@ function ProductDetailDrawer({
           emptyTitle={lichSu.length === 0 ? t('tonKho.byProduct.emptyHistory') : t('tonKho.byProduct.historyFilteredEmpty')}
           loading={loading}
           loadingText={t('tonKho.loading')}
-          maxTableHeight="280px"
+          contentMode="raw"
         >
           {lichSu.length > 0 && lichSuFiltered.length > 0 ? (
-            <>
+            <KhungBangCon
+              maxHeight="280px"
+              mobile={lichSuFiltered.map((histRow) => {
+                const tonSau = tonSauByChiTiet.get(histRow.id_chi_tiet);
+                return (
+                  <div key={histRow.id_chi_tiet} className="px-3 py-2 rounded-lg border border-border bg-card">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="flex items-center gap-2 min-w-0">
+                        <TonKhoLoaiBadge loai={histRow.loai} />
+                        <span className="font-mono text-xs truncate">{histRow.so_phieu}</span>
+                      </span>
+                      <span className="text-sm font-semibold tabular-nums shrink-0">
+                        {histRow.so_luong.toLocaleString('vi-VN')}
+                        {histRow.don_vi_tinh ? (
+                          <span className="ml-1 text-xs font-normal text-muted-foreground">{histRow.don_vi_tinh}</span>
+                        ) : null}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 mt-1 text-xs text-muted-foreground">
+                      <span className="truncate">
+                        {formatDateTime(histRow.tg_tao ?? histRow.ngay) || '—'} · {histRow.ten_kho ?? '—'}
+                        {histRow.ten_kho_den ? ` → ${histRow.ten_kho_den}` : ''}
+                      </span>
+                      <span className={cn('tabular-nums shrink-0', tonSau !== undefined && tonSau < 0 && 'text-destructive')}>
+                        {t('tonKho.history.stockAfter')}: {tonSau !== undefined ? tonSau.toLocaleString('vi-VN') : '—'}
+                      </span>
+                    </div>
+                    {histRow.ghi_chu ? (
+                      <p className="mt-1 text-xs text-muted-foreground line-clamp-2 break-words">{histRow.ghi_chu}</p>
+                    ) : null}
+                  </div>
+                );
+              })}
+            >
               <thead className="sticky top-0 z-[1] bg-muted border-b border-border">
                 <tr>
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[140px]">{t('tonKho.history.dateTime')}</th>
@@ -363,7 +451,7 @@ function ProductDetailDrawer({
                   );
                 })}
               </tbody>
-            </>
+            </KhungBangCon>
           ) : null}
         </GenericSubTableSection>
       </div>
@@ -566,7 +654,9 @@ const TonKhoTheoSanPhamTab: React.FC = () => {
       case 'ten_hang':
         return (
           <td key={col.id} className={cn('px-4 py-3', stickyClass)} style={baseStyle}>
-            <span className="font-medium text-foreground">{item.ten_hang}</span>
+            <span className={cn('font-medium', item.mo_coi ? 'text-muted-foreground italic' : 'text-foreground')}>
+              {item.ten_hang}
+            </span>
           </td>
         );
       case 'tong_so_luong':
@@ -646,7 +736,7 @@ const TonKhoTheoSanPhamTab: React.FC = () => {
               tableColumns={visibleColumns.length}
               tableRowCount={8}
               tableColumnWithSubline={0}
-              cardCount={0}
+              cardCount={6}
             />
           ) : filteredList.length === 0 ? (
             <div className="flex-1 min-h-0 flex items-center justify-center p-4">
@@ -658,12 +748,40 @@ const TonKhoTheoSanPhamTab: React.FC = () => {
             </div>
           ) : (
             <>
-              <div className="flex-1 min-h-0 overflow-auto custom-scrollbar">
+              <div className="md:hidden flex-1 min-h-0 overflow-y-auto px-3 py-2 space-y-2">
+                {paginatedData.map((item) => (
+                  <TonKyMobileCard
+                    key={item.id_hang_hoa}
+                    tenHang={item.ten_hang}
+                    maHang={item.ma_hang}
+                    donVi={item.don_vi_tinh}
+                    danhMuc={item.ten_danh_muc}
+                    moCoi={item.mo_coi}
+                    soChinh={item.tong_so_luong}
+                    nhanSoChinh={t('tonKho.mobile.tonHienTai')}
+                    soChinhCanhBao={item.canh_bao}
+                    canhBao={
+                      item.canh_bao
+                        ? item.ton_toi_thieu != null
+                          ? t('tonKho.mobile.duoiDinhMuc', { dinhMuc: item.ton_toi_thieu.toLocaleString('vi-VN') })
+                          : t('tonKho.byProduct.filterBelowMin')
+                        : undefined
+                    }
+                    theoKho={khoList
+                      .map((k) => ({ id: k.id, ten: k.ten_kho, so: item.by_kho[k.id] ?? 0 }))
+                      .filter((k) => k.so !== 0)
+                      .sort((a, b) => b.so - a.so)
+                      .map((k) => ({ ...k, canhBao: k.so < 0 }))}
+                    onClick={() => setDetailProduct(item)}
+                  />
+                ))}
+              </div>
+              <div className="hidden md:block flex-1 min-h-0 overflow-auto custom-scrollbar">
                 <table
                   className="w-full text-sm text-left border-separate border-spacing-0"
                   style={{ minWidth: tableMinWidth }}
                 >
-                  <thead className="sticky top-0 z-10 bg-muted/95">
+                  <thead className="sticky top-0 z-10 bg-muted">
                     <tr>
                       {visibleColumns.map((col) => {
                         const isNumeric =
@@ -676,7 +794,7 @@ const TonKhoTheoSanPhamTab: React.FC = () => {
                           <th
                             key={col.id}
                             className={cn(
-                              'px-4 py-3 font-semibold text-muted-foreground text-xs whitespace-nowrap border-b border-border bg-muted/95',
+                              'px-4 py-3 font-semibold text-muted-foreground text-xs whitespace-nowrap border-b border-border bg-muted',
                               isNumeric && 'text-right',
                               isSticky && 'sticky z-[11]',
                               isSticky && col.id === lastStickyColId && 'border-r border-border'

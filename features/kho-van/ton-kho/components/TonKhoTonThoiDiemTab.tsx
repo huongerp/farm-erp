@@ -8,6 +8,7 @@ import EmptyState from '../../../../components/shared/EmptyState';
 import ListPageSkeleton from '../../../../components/shared/ListPageSkeleton';
 import TablePaginationFooter from '../../../../components/shared/TablePaginationFooter';
 import TonKhoToolbar from './TonKhoToolbar';
+import TonKyMobileCard, { KyDangXemBar } from './TonKyMobileCard';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
 import DateRangePicker from '../../../../components/ui/DateRangePicker';
 import type { DateRangeValue } from '../../../../components/ui/DateRangePicker';
@@ -59,6 +60,8 @@ export type RowKyProduct = {
   tong_xuat: number;
   tong_cuoi: number;
   by_kho: Record<string, PeriodCell>;
+  /** Hàng không còn trong danh mục hàng hoá (phiếu cũ vẫn tham chiếu). */
+  mo_coi: boolean;
 };
 
 function zeroCell(): PeriodCell {
@@ -187,8 +190,8 @@ const TonKhoTonThoiDiemTab: React.FC = () => {
         const h = hangHoaMap[cell.id_hang_hoa];
         row = {
           id_hang_hoa: cell.id_hang_hoa,
-          ma_hang: h?.ma_hang ?? cell.id_hang_hoa,
-          ten_hang: h?.ten_hang ?? '—',
+          ma_hang: h?.ma_hang ?? `#${cell.id_hang_hoa}`,
+          ten_hang: h?.ten_hang ?? t('tonKho.hangDaXoa'),
           ten_danh_muc: h?.ten_danh_muc ?? undefined,
           don_vi_tinh: h?.don_vi_tinh ?? h?.dvt ?? '—',
           tong_dau: 0,
@@ -196,6 +199,7 @@ const TonKhoTonThoiDiemTab: React.FC = () => {
           tong_xuat: 0,
           tong_cuoi: 0,
           by_kho: {},
+          mo_coi: !h,
         };
         byHh.set(cell.id_hang_hoa, row);
       }
@@ -227,7 +231,7 @@ const TonKhoTonThoiDiemTab: React.FC = () => {
           r.tong_xuat !== 0
       )
       .sort((a, b) => b.tong_cuoi - a.tong_cuoi || a.ma_hang.localeCompare(b.ma_hang));
-  }, [nxt?.byCell, hangHoaMap, filters.warehouseIds]);
+  }, [nxt?.byCell, hangHoaMap, filters.warehouseIds, t]);
 
   const filterFn = useCallback((item: RowKyProduct, term: string, f: TonKhoFilters) => {
     if (!khopTimKiem(item, term)) return false;
@@ -510,7 +514,9 @@ const TonKhoTonThoiDiemTab: React.FC = () => {
       case 'ten_hang':
         return (
           <td key={col.id} className={cn('px-4 py-3', stickyClass)} style={baseStyle}>
-            <span className="font-medium text-foreground">{item.ten_hang}</span>
+            <span className={cn('font-medium', item.mo_coi ? 'text-muted-foreground italic' : 'text-foreground')}>
+              {item.ten_hang}
+            </span>
           </td>
         );
       case 'ten_danh_muc':
@@ -571,6 +577,18 @@ const TonKhoTonThoiDiemTab: React.FC = () => {
           mobileFilterExtra={mobileFilterExtra}
           mobileFilterExtraCount={kyKhacMacDinh ? 1 : 0}
         />
+        <KyDangXemBar
+          soMatHang={filteredList.length}
+          picker={
+            <DateRangePicker
+              presets={dateRangePresets}
+              value={dateRangeValue}
+              onChange={handleDateRangeChange}
+              placeholder={t('tonKho.tonThoiDiem.periodPlaceholder')}
+              customPresetId={CUSTOM_PRESET_ID}
+            />
+          }
+        />
 
         <div className="flex-1 min-h-0 flex flex-col bg-card overflow-hidden relative">
           {isFetchingOverlay ? (
@@ -595,7 +613,7 @@ const TonKhoTonThoiDiemTab: React.FC = () => {
               tableColumns={Math.min(visibleColumns.length, 8)}
               tableRowCount={8}
               tableColumnWithSubline={0}
-              cardCount={0}
+              cardCount={6}
             />
           ) : filteredList.length === 0 ? (
             <div className="flex-1 min-h-0 flex items-center justify-center p-4">
@@ -607,13 +625,37 @@ const TonKhoTonThoiDiemTab: React.FC = () => {
             </div>
           ) : (
             <>
-              <div className="flex-1 min-h-0 overflow-auto custom-scrollbar">
+              <div className="md:hidden flex-1 min-h-0 overflow-y-auto px-3 py-2 space-y-2">
+                {paginatedData.map((item) => (
+                  <TonKyMobileCard
+                    key={item.id_hang_hoa}
+                    tenHang={item.ten_hang}
+                    maHang={item.ma_hang}
+                    donVi={item.don_vi_tinh}
+                    danhMuc={item.ten_danh_muc}
+                    moCoi={item.mo_coi}
+                    soChinh={item.tong_cuoi}
+                    nhanSoChinh={t('tonKho.mobile.cuoiKy')}
+                    chiTiet={[
+                      { key: 'dau', nhan: t('tonKho.tonThoiDiem.colDauKy'), so: item.tong_dau },
+                      { key: 'nhap', nhan: t('tonKho.mobile.nhap'), so: item.tong_nhap, kieu: 'nhap' },
+                      { key: 'xuat', nhan: t('tonKho.mobile.xuat'), so: item.tong_xuat, kieu: 'xuat' },
+                    ]}
+                    theoKho={displayKhoList
+                      .map((k) => ({ id: k.id, ten: k.ten_kho, so: item.by_kho[k.id]?.ton_cuoi_ky ?? 0 }))
+                      .filter((k) => k.so !== 0)
+                      .sort((a, b) => b.so - a.so)
+                      .map((k) => ({ ...k, canhBao: k.so < 0 }))}
+                  />
+                ))}
+              </div>
+              <div className="hidden md:block flex-1 min-h-0 overflow-auto custom-scrollbar">
                 <table
                   className="w-full text-sm text-left border-separate border-spacing-0"
                   style={{ minWidth: tableMinWidth }}
                 >
                   <thead className="sticky top-0 z-10">
-                    <tr className="bg-muted/95">
+                    <tr className="bg-muted">
                       {headerGroups.map((g) => {
                         if (g.kind === 'single') {
                           const stickyLeft = stickyLeftById.get(g.col.id);
@@ -623,7 +665,7 @@ const TonKhoTonThoiDiemTab: React.FC = () => {
                               key={g.col.id}
                               rowSpan={2}
                               className={cn(
-                                'px-4 py-2.5 font-semibold text-muted-foreground text-xs whitespace-nowrap border-b border-border bg-muted/95 align-bottom',
+                                'px-4 py-2.5 font-semibold text-muted-foreground text-xs whitespace-nowrap border-b border-border bg-muted align-bottom',
                                 isSticky && 'sticky z-[11]',
                                 isSticky && g.col.id === lastStickyColId && 'border-r border-border'
                               )}
@@ -640,14 +682,14 @@ const TonKhoTonThoiDiemTab: React.FC = () => {
                           <th
                             key={g.key}
                             colSpan={g.cols.length}
-                            className="px-2 py-1.5 font-semibold text-foreground/80 text-xs whitespace-nowrap border-b border-border bg-muted/80 text-center border-l border-border/60"
+                            className="px-2 py-1.5 font-semibold text-foreground/80 text-xs whitespace-nowrap border-b border-border bg-muted text-center border-l border-border/60"
                           >
                             {g.label}
                           </th>
                         );
                       })}
                     </tr>
-                    <tr className="bg-muted/95">
+                    <tr className="bg-muted">
                       {headerGroups.map((g) => {
                         if (g.kind === 'single') return null;
                         return g.cols.map((col, idx) => {
@@ -667,7 +709,7 @@ const TonKhoTonThoiDiemTab: React.FC = () => {
                             <th
                               key={col.id}
                               className={cn(
-                                'px-3 py-1.5 font-medium text-muted-foreground text-[11px] whitespace-nowrap border-b border-border bg-muted/95 text-right',
+                                'px-3 py-1.5 font-medium text-muted-foreground text-[11px] whitespace-nowrap border-b border-border bg-muted text-right',
                                 idx === 0 && 'border-l border-border/60'
                               )}
                               style={getColumnCellStyle(col)}

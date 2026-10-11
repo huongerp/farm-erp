@@ -67,5 +67,15 @@
   "tonKho.stats.productCol": "Sản phẩm",
   "tonKho.stats.qtyCol": "Số lượng",
   "tonKho.loading": "Đang tải...",
-  "tonKho.records": "bản ghi"
+  "tonKho.records": "bản ghi",
+  "tonKho.mobile.cuoiKy": "Cuối kỳ",
+  "tonKho.mobile.tonHienTai": "Tồn hiện tại",
+  "tonKho.mobile.nhap": "Nhập",
+  "tonKho.mobile.xuat": "Xuất",
+  "tonKho.mobile.themKho": "+{{count}} kho",
+  "tonKho.mobile.anBotKho": "Thu gọn",
+  "tonKho.mobile.soMatHang": "{{count}} mặt hàng",
+  "tonKho.mobile.duoiDinhMuc": "Dưới định mức {{dinhMuc}}",
+  "tonKho.hangDaXoa": "Không còn trong danh mục hàng hoá",
+  "tonKho.hangMoCoi": "#{{id}} · ngoài danh mục"
 }

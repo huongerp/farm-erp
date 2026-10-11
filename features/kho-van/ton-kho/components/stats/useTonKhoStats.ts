@@ -22,7 +22,9 @@ export interface TonKhoStats {
 export function computeTonKhoStats(
   tonKhoList: TonKhoRecord[],
   khoList: Kho[],
-  hangHoaList: { id: string; ma_hang: string; ten_hang: string }[]
+  hangHoaList: { id: string; ma_hang: string; ten_hang: string }[],
+  /** Nhãn cho hàng không còn trong danh mục (phiếu cũ vẫn tham chiếu). */
+  nhanHangMoCoi: (id: string) => string = (id) => `#${id}`
 ): TonKhoStats | null {
   if (!tonKhoList.length) return null;
   let total = 0;
@@ -47,7 +49,7 @@ export function computeTonKhoStats(
   const topProducts = Array.from(totalByHangHoa.entries())
     .map(([id, value]) => {
       const h = hangHoaMap[id];
-      return { name: h ? `${h.ma} - ${h.ten}` : id, value };
+      return { name: h ? `${h.ma} - ${h.ten}` : nhanHangMoCoi(id), value };
     })
     .sort((a, b) => b.value - a.value)
     .slice(0, 10);

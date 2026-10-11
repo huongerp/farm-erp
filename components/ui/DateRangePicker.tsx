@@ -178,10 +178,11 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
 
       {/* Popover */}
       {open && (
-        <div className="absolute left-0 top-full mt-1.5 z-50 bg-card rounded-xl shadow-xl border border-border overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
-          <div className="flex">
+        <div className="absolute left-0 top-full mt-1.5 z-50 w-[min(calc(100vw-2rem),320px)] sm:w-auto bg-card rounded-xl shadow-xl border border-border overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+          {/* Điện thoại (< 640px): popup 380px tràn mép → xếp dọc, chọn nhanh lên trên. */}
+          <div className="flex flex-col-reverse sm:flex-row">
             {/* Left column: From / To */}
-            <div className="w-[180px] p-3 space-y-2.5 border-r border-border">
+            <div className="w-full sm:w-[180px] p-3 space-y-2.5 border-t sm:border-t-0 sm:border-r border-border">
               {tuNgay}
               {denNgay}
               {isCustom && value.customStart && value.customEnd && (
@@ -196,7 +197,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
             </div>
 
             {/* Right column: Preset grid (2 cols) */}
-            <div className="w-[200px] p-2">{chonNhanh(2)}</div>
+            <div className="w-full sm:w-[200px] p-2">{chonNhanh(2)}</div>
           </div>
         </div>
       )}

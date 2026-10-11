@@ -13,6 +13,13 @@ import {
 } from 'recharts';
 import ChartTooltip from '../../../../../components/ui/ChartTooltip';
 import { STATS_CHART_HEIGHT, CHART_COLORS } from './stats-constants';
+import { formatSoRutGon } from '../../../../../lib/utils';
+
+/** Nhãn trục tên hàng: cắt gọn, tên đầy đủ xem ở tooltip. */
+const catNhan = (s: string, max = 18) => (s.length > max ? `${s.slice(0, max - 1)}…` : s);
+
+/** Chiều cao biểu đồ thanh ngang theo số dòng để nhãn không chồng nhau. */
+const caoTheoSoDong = (n: number) => Math.max(STATS_CHART_HEIGHT, n * 28 + 32);
 
 export interface ChartItem {
   name: string;
@@ -48,15 +55,15 @@ const StatsCharts: React.FC<Props> = ({ byWarehouse, topProducts }) => {
               {t('tonKho.stats.byWarehouse')}
             </h3>
           </div>
-          <ResponsiveContainer width="100%" height={STATS_CHART_HEIGHT}>
+          <ResponsiveContainer width="100%" height={caoTheoSoDong(byWarehouse.length)}>
             <BarChart
               data={byWarehouse}
               margin={{ top: 4, right: 4, left: 4, bottom: 4 }}
               layout="vertical"
             >
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.5} />
-              <XAxis type="number" tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} axisLine={false} tickLine={false} allowDecimals={false} />
-              <YAxis type="category" dataKey="name" width={80} tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} axisLine={false} tickLine={false} />
+              <XAxis type="number" tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} axisLine={false} tickLine={false} allowDecimals={false} tickFormatter={formatSoRutGon} />
+              <YAxis type="category" dataKey="name" width={84} interval={0} tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} axisLine={false} tickLine={false} tickFormatter={(v: string) => catNhan(v, 14)} />
               <Tooltip content={<ChartTooltip />} />
               <Bar dataKey="value" radius={[0, 6, 6, 0]} name={t('tonKho.stats.qtyCol')}>
                 {byWarehouse.map((_, i) => (
@@ -76,24 +83,18 @@ const StatsCharts: React.FC<Props> = ({ byWarehouse, topProducts }) => {
               {t('tonKho.stats.topProducts')}
             </h3>
           </div>
-          <ResponsiveContainer width="100%" height={STATS_CHART_HEIGHT}>
+          {/* Thanh ngang: tên hàng dài đọc được trên điện thoại, không phải xoay chéo nhãn. */}
+          <ResponsiveContainer width="100%" height={caoTheoSoDong(topProducts.length)}>
             <BarChart
               data={topProducts}
-              margin={{ top: 4, right: 4, left: 4, bottom: 24 }}
+              margin={{ top: 4, right: 4, left: 4, bottom: 4 }}
+              layout="vertical"
             >
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.5} />
-              <XAxis
-                dataKey="name"
-                tick={{ fontSize: 9, fill: 'var(--muted-foreground)' }}
-                axisLine={false}
-                tickLine={false}
-                angle={-20}
-                textAnchor="end"
-                height={56}
-              />
-              <YAxis tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} axisLine={false} tickLine={false} allowDecimals={false} />
+              <XAxis type="number" tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} axisLine={false} tickLine={false} allowDecimals={false} tickFormatter={formatSoRutGon} />
+              <YAxis type="category" dataKey="name" width={120} interval={0} tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} axisLine={false} tickLine={false} tickFormatter={(v: string) => catNhan(v)} />
               <Tooltip content={<ChartTooltip />} />
-              <Bar dataKey="value" radius={[6, 6, 0, 0]} name={t('tonKho.byProduct.totalQty')}>
+              <Bar dataKey="value" radius={[0, 6, 6, 0]} name={t('tonKho.byProduct.totalQty')}>
                 {topProducts.map((_, i) => (
                   <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
                 ))}

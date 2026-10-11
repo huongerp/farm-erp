@@ -231,6 +231,14 @@ export function formatNumberVN(value: number | null | undefined, options?: { max
   return new Intl.NumberFormat('vi-VN', { minimumFractionDigits: minFractionDigits, maximumFractionDigits: maxFractionDigits }).format(value);
 }
 
+const SO_RUT_GON = new Intl.NumberFormat('vi-VN', { notation: 'compact', maximumFractionDigits: 1 });
+
+/** Số rút gọn cho trục biểu đồ / thẻ chật: 850000 → "850 N", 3400000 → "3,4 Tr", 1.2e9 → "1,2 T". */
+export function formatSoRutGon(value: number | null | undefined): string {
+  if (value == null || Number.isNaN(value)) return '—';
+  return SO_RUT_GON.format(value);
+}
+
 /** Parse chuỗi số đã format (phân tách hàng nghìn) về number. Hỗ trợ vi-VN (1.234,56) và en-US (1,234.56). */
 export function parseFormattedNumber(str: string, locale?: string): number {
   if (!str || typeof str !== 'string') return 0;

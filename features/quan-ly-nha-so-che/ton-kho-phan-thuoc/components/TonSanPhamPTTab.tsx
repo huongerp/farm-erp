@@ -33,6 +33,7 @@ import { useSearchInputCommit } from '../../../../lib/hooks/use-search-input-com
 import { useListWithFilter } from '../../../../lib/hooks';
 import { getDateRangeFromPreset, getPresetFromDates } from '../../../../lib/date-presets';
 import TonKhoToolbar from '../../../kho-van/ton-kho/components/TonKhoToolbar';
+import TonKyMobileCard, { KyDangXemBar } from '../../../kho-van/ton-kho/components/TonKyMobileCard';
 import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
 import GenericTable from '../../../../components/shared/GenericTable';
 import DateRangePicker, { type DateRangeValue } from '../../../../components/ui/DateRangePicker';
@@ -389,51 +390,38 @@ const TonSanPhamPTTab: React.FC = () => {
   };
 
   const renderMobileCard = (item: TonKhoPTProductAgg) => {
-    const canhBao = laHangDuoiDinhMuc(item);
+    const chuaNhap = laHangChuaPhatSinh(item);
+    const canhBao = chuaNhap
+      ? t('tonKhoPhanThuoc.hint.chuaNhapKho')
+      : laHangDuoiDinhMuc(item) && item.dinh_muc
+        ? t('tonKhoPhanThuoc.hint.duoiDinhMuc', { dinhMuc: formatNumberVN(item.dinh_muc) })
+        : undefined;
     return (
-      <div
-        role="button"
-        tabIndex={0}
+      <TonKyMobileCard
+        tenHang={item.ten_hang}
+        maHang={item.ma_hang}
+        donVi={item.don_vi_tinh}
+        danhMuc={item.ten_danh_muc}
+        soChinh={item.ton_cuoi}
+        nhanSoChinh={t('tonKhoPhanThuoc.table.tonCuoi')}
+        soChinhCanhBao={chuaNhap || laHangDuoiDinhMuc(item)}
+        canhBao={canhBao}
+        chiTiet={[
+          { key: 'tonDau', nhan: t('tonKhoPhanThuoc.table.tonDau'), so: item.ton_dau },
+          { key: 'nhap', nhan: t('tonKhoPhanThuoc.table.nhap'), so: item.nhap, kieu: 'nhap' as const },
+          { key: 'xuat', nhan: t('tonKhoPhanThuoc.table.xuat'), so: item.xuat, kieu: 'xuat' as const },
+          // Chuyển kho ròng chỉ khác 0 khi đang lọc kho — xem mọi kho thì bỏ cho thẻ gọn.
+          ...(item.chuyen !== 0 ? [{ key: 'chuyen', nhan: t('tonKhoPhanThuoc.table.chuyen'), so: item.chuyen }] : []),
+        ]}
+        theoKho={displayKhoList
+          .filter((k) => k.id in item.by_kho && item.by_kho[k.id] !== 0)
+          .map((k) => {
+            const qty = item.by_kho[k.id];
+            return { id: k.id, ten: k.ten_kho, so: qty, canhBao: qty < 0 || laDuoiDinhMuc(qty, item.dinh_muc) };
+          })
+          .sort((a, b) => b.so - a.so)}
         onClick={() => setDetail(item)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            setDetail(item);
-          }
-        }}
-        className="bg-card rounded-xl border border-border p-3.5 shadow-sm cursor-pointer"
-      >
-        <div className="flex items-start justify-between gap-2 mb-2.5">
-          <div className="min-w-0">
-            <h4 className="font-semibold text-foreground text-sm line-clamp-1">{item.ten_hang}</h4>
-            <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
-              <span className="font-mono">{item.ma_hang}</span>
-              <span>{item.don_vi_tinh}</span>
-            </div>
-          </div>
-          <div className="text-right shrink-0">
-            <div className={cn('text-base font-bold tabular-nums', (canhBao || item.ton_cuoi < 0) && 'text-destructive')}>
-              {formatNumberVN(item.ton_cuoi)}
-            </div>
-            <div className="text-[11px] text-muted-foreground">{t('tonKhoPhanThuoc.table.tonCuoi')}</div>
-          </div>
-        </div>
-        <div className="grid grid-cols-4 gap-2 text-xs">
-          {(
-            [
-              ['tonDau', item.ton_dau, ''],
-              ['nhap', item.nhap, 'text-emerald-600 dark:text-emerald-400'],
-              ['xuat', item.xuat, 'text-amber-600 dark:text-amber-400'],
-              ['chuyen', item.chuyen, ''],
-            ] as const
-          ).map(([key, val, cls]) => (
-            <div key={key}>
-              <div className="text-muted-foreground">{t(`tonKhoPhanThuoc.table.${key}`)}</div>
-              <div className={cn('tabular-nums font-medium', cls)}>{so(val)}</div>
-            </div>
-          ))}
-        </div>
-      </div>
+      />
     );
   };
 
@@ -465,6 +453,18 @@ const TonSanPhamPTTab: React.FC = () => {
           }
           mobileFilterExtraCount={kyKhacMacDinh ? 1 : 0}
           onExport={handleExport}
+        />
+        <KyDangXemBar
+          soMatHang={rangeOk ? sortedList.length : 0}
+          picker={
+            <DateRangePicker
+              presets={dateRangePresets}
+              value={dateRangeValue}
+              onChange={handleDateRangeChange}
+              placeholder={t('tonKhoPhanThuoc.filter.period')}
+              customPresetId={CUSTOM_PRESET_ID}
+            />
+          }
         />
 
         <div className="flex-1 min-h-0 flex flex-col">
