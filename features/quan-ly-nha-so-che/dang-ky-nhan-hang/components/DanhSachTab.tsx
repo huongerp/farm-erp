@@ -33,6 +33,7 @@ import DangKyNhanHangList from './DangKyNhanHangList';
 import DangKyNhanHangForm from './DangKyNhanHangForm';
 import DangKyNhanHangDetail from './DangKyNhanHangDetail';
 import CheckInOutDialog from './CheckInOutDialog';
+import InDanhSachDialog from './InDanhSachDialog';
 
 /** Cột hiển thị → cột sắp xếp ở DB (cột ghép / tính toán không sort ở server). */
 const SORT_COLUMN_MAP: Record<string, string> = {
@@ -64,6 +65,7 @@ const DanhSachTab: React.FC = () => {
 
   const [showForm, setShowForm] = useState(false);
   const [showExport, setShowExport] = useState(false);
+  const [showInDanhSach, setShowInDanhSach] = useState(false);
   const [editingItem, setEditingItem] = useState<DangKyNhanHang | null>(null);
   const [viewingId, setViewingId] = useState<string | null>(null);
   const [quick, setQuick] = useState<{ item: DangKyNhanHang; mode: 'checkIn' | 'checkOut' } | null>(null);
@@ -211,6 +213,7 @@ const DanhSachTab: React.FC = () => {
         }}
         onDeleteMany={handleDeleteMany}
         onExport={handleExport}
+        onPrintList={() => setShowInDanhSach(true)}
         canCreate={canCreate}
         canDelete={canDelete}
       />
@@ -285,6 +288,17 @@ const DanhSachTab: React.FC = () => {
             onDelete={canDelete ? handleDelete : undefined}
             canUpdate={canUpdate}
             canDelete={canDelete}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showInDanhSach && (
+          <InDanhSachDialog
+            branches={branches}
+            allowedBranchIds={viewScope.viewAll ? null : viewScope.allowedBranchIds}
+            idChiNhanhDangLoc={filters.id_chi_nhanh ?? []}
+            onClose={() => setShowInDanhSach(false)}
           />
         )}
       </AnimatePresence>

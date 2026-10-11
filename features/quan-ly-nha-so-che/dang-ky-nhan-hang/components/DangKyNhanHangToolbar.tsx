@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Building2, Calendar, CalendarDays, CircleDot, Download, Plus } from 'lucide-react';
+import { Building2, Calendar, CalendarDays, CircleDot, Download, Plus, Printer } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
@@ -19,6 +19,7 @@ interface Props {
   onAdd: () => void;
   onDeleteMany: () => void;
   onExport: () => void;
+  onPrintList: () => void;
   canCreate?: boolean;
   canDelete?: boolean;
 }
@@ -30,6 +31,7 @@ const DangKyNhanHangToolbar: React.FC<Props> = ({
   onAdd,
   onDeleteMany,
   onExport,
+  onPrintList,
   canCreate = true,
   canDelete = true,
 }) => {
@@ -121,6 +123,19 @@ const DangKyNhanHangToolbar: React.FC<Props> = ({
     className: `w-full ${groups[i].width}`,
   }));
 
+  const leadingActions = (
+    <Tooltip content={t('dangKyNhanHang.inDanhSach.nutIn')} placement="bottom">
+      <button
+        type="button"
+        onClick={onPrintList}
+        aria-label={t('dangKyNhanHang.inDanhSach.nutIn')}
+        className="hidden sm:flex h-8 w-8 items-center justify-center border rounded-lg transition-all bg-background border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+      >
+        <Printer size={15} />
+      </button>
+    </Tooltip>
+  );
+
   const renderActions = (
     <>
       <div className="hidden sm:flex items-center gap-2">
@@ -155,10 +170,14 @@ const DangKyNhanHangToolbar: React.FC<Props> = ({
       searchTerm={searchInput}
       onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
+      leadingActions={leadingActions}
       actions={renderActions}
       filters={<ResponsiveFilterChips items={filterItems} />}
       filterGroups={filterGroups}
-      mobileActions={[{ key: 'export', label: t('common.export'), icon: Download, onClick: onExport, description: '' }]}
+      mobileActions={[
+        { key: 'print', label: t('dangKyNhanHang.inDanhSach.nutIn'), icon: Printer, onClick: onPrintList, description: '' },
+        { key: 'export', label: t('common.export'), icon: Download, onClick: onExport, description: '' },
+      ]}
       onAdd={canCreate ? onAdd : undefined}
       showBack
       activeFilterCount={activeFilterCount}
