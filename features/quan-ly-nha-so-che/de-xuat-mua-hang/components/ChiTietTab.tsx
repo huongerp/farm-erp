@@ -55,6 +55,7 @@ function phieuToFormValues(phieu: DeXuatMuaHang): DeXuatMuaHangFormValues {
       ghi_chu: ct.ghi_chu ?? '',
       id_tien_do_mh: ct.id_tien_do_mh ?? null,
       ten_tien_do_mh: ct.ten_tien_do_mh ?? null,
+      id_chi_tiet: ct.id,
       trao_doi: ct.trao_doi ?? null,
     })),
   };
@@ -145,12 +146,12 @@ const ChiTietTab: React.FC = () => {
 
   const hasSelection = selectedIds.size > 0;
 
-  /** Ngày cần để prefill popup chuyển tiến độ — chỉ khi mọi dòng đã chọn cùng một ngày. */
   const chuyenTienDoRows = useMemo(
     () => (singleRowForChuyenTienDo ? [singleRowForChuyenTienDo] : tableRows.filter((r) => selectedIds.has(r.id))),
     [singleRowForChuyenTienDo, tableRows, selectedIds]
   );
 
+  /** Ngày cần để prefill popup chuyển tiến độ — chỉ khi mọi dòng đã chọn cùng một ngày. */
   const chuyenTienDoDefaultNgayCan = useMemo(() => {
     const values = new Set(chuyenTienDoRows.map((r) => r.ngay_can ?? ''));
     return values.size === 1 ? ([...values][0] || null) : null;
@@ -172,8 +173,8 @@ const ChiTietTab: React.FC = () => {
         ...phieuToFormValues(phieuForEdit),
         chi_tiet: (phieuForEdit.chi_tiet ?? []).map((ct) =>
           ct.id === editingRow.id
-            ? { id_hang_hoa: ct.id_hang_hoa, so_luong: payload.so_luong, thong_so: payload.thong_so, ghi_chu: payload.ghi_chu, id_tien_do_mh: payload.id_tien_do_mh ?? null, ten_tien_do_mh: payload.ten_tien_do_mh ?? null, trao_doi: ct.trao_doi ?? null }
-            : { id_hang_hoa: ct.id_hang_hoa, so_luong: ct.so_luong, thong_so: ct.thong_so ?? '', ghi_chu: ct.ghi_chu ?? '', id_tien_do_mh: ct.id_tien_do_mh ?? null, ten_tien_do_mh: ct.ten_tien_do_mh ?? null, trao_doi: ct.trao_doi ?? null }
+            ? { id_hang_hoa: ct.id_hang_hoa, so_luong: payload.so_luong, thong_so: payload.thong_so, ghi_chu: payload.ghi_chu, id_tien_do_mh: payload.id_tien_do_mh ?? null, ten_tien_do_mh: payload.ten_tien_do_mh ?? null, id_chi_tiet: ct.id, trao_doi: ct.trao_doi ?? null }
+            : { id_hang_hoa: ct.id_hang_hoa, so_luong: ct.so_luong, thong_so: ct.thong_so ?? '', ghi_chu: ct.ghi_chu ?? '', id_tien_do_mh: ct.id_tien_do_mh ?? null, ten_tien_do_mh: ct.ten_tien_do_mh ?? null, id_chi_tiet: ct.id, trao_doi: ct.trao_doi ?? null }
         ),
       };
       updateMutation.mutate(
@@ -214,11 +215,10 @@ const ChiTietTab: React.FC = () => {
                 ghi_chu: ct.ghi_chu ?? '',
                 id_tien_do_mh: ct.id_tien_do_mh ?? null,
                 ten_tien_do_mh: ct.ten_tien_do_mh ?? null,
+                id_chi_tiet: ct.id,
                 trao_doi: ct.trao_doi ?? null,
               };
             }
-            const prev = (ct.trao_doi ?? '').trim();
-            const newTraoDoi = prev ? `${prev}\n${traoDoiLine}` : traoDoiLine;
             return {
               id_hang_hoa: ct.id_hang_hoa,
               so_luong: ct.so_luong,
@@ -226,7 +226,8 @@ const ChiTietTab: React.FC = () => {
               ghi_chu: ct.ghi_chu ?? '',
               id_tien_do_mh: result.id_tien_do_mh,
               ten_tien_do_mh: result.ten_tien_do_mh,
-              trao_doi: newTraoDoi,
+              id_chi_tiet: ct.id,
+              trao_doi_them: traoDoiLine,
             };
           });
           const data: DeXuatMuaHangFormValues = {
@@ -274,6 +275,7 @@ const ChiTietTab: React.FC = () => {
               ghi_chu: ct.ghi_chu ?? '',
               id_tien_do_mh: ct.id_tien_do_mh ?? null,
               ten_tien_do_mh: ct.ten_tien_do_mh ?? null,
+              id_chi_tiet: ct.id,
               trao_doi: ct.trao_doi ?? null,
             })),
           };
@@ -605,9 +607,9 @@ const ChiTietTab: React.FC = () => {
         open={showChuyenTienDoModal}
         selectedCount={singleRowForChuyenTienDo ? 1 : selectedIds.size}
         defaultNgayCan={chuyenTienDoDefaultNgayCan}
+        tienDoHienTai={chuyenTienDoHienTai}
         onClose={() => {
           setShowChuyenTienDoModal(false);
-        tienDoHienTai={chuyenTienDoHienTai}
           setSingleRowForChuyenTienDo(null);
         }}
         onConfirm={handleChuyenTienDoConfirm}

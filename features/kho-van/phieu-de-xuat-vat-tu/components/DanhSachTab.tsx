@@ -47,12 +47,15 @@ import {
   getExportColumnsPhieuDeXuatVatTuList,
   exportFileNamePhieuDeXuatVatTuList,
 } from '../utils/export-phieu-de-xuat-vat-tu-danh-sach';
+import { laCapBacToanQuyen } from '../../../he-thong/phan-quyen/core/cap-bac-toan-quyen';
 
 const DanhSachTab: React.FC = () => {
   const { t } = useTranslation();
-  const { canCreate, canUpdate, canDelete, canApprove } = useModulePermissionFromContext();
+  const { canCreate, canUpdate, canDelete, canApprove, canAdmin } = useModulePermissionFromContext();
   const { canCreate: canCreateHangHoa } = useModulePermission('kho-van/danh-sach-hang-hoa');
   const user = useAuthStore((s) => s.user);
+  /** Trao đổi trên dòng hàng: chỉ quản trị module hoặc cấp bậc 1 (RPC migration 039 kiểm lại). */
+  const coTheSuaTraoDoi = canAdmin || laCapBacToanQuyen(user?.cap_bac);
   const confirm = useConfirmStore((s) => s.confirm);
   const {
     searchTerm,
@@ -451,6 +454,7 @@ const DanhSachTab: React.FC = () => {
             onCreateDonDatHang={canCreate ? (item) => setCreateDonDatHangFrom(viewingPhieuFull ?? item) : undefined}
             canEdit={!!canUpdate}
             canDelete={canDelete}
+            coTheSuaTraoDoi={coTheSuaTraoDoi}
             idChiNhanhNoiDeXuat={
               khoList.find(
                 (k) => String(k.id) === String((viewingPhieuFull ?? viewingItem).id_noi_de_xuat)

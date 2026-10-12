@@ -2,6 +2,7 @@
  * Service phiếu đề xuất vật tư – đọc/ghi DB (fp_mh_phieu_de_xuat_vat_tu, fp_mh_phieu_de_xuat_vat_tu_chi_tiet).
  */
 import { db, fetchAllRows, fetchTablePage, type PaginatedTableResult, throwDbError } from '../../../../lib/db';
+import { traoDoiKhiLuuLai } from '../../../../lib/trao-doi-log';
 import type { PhieuDeXuatVatTu, PhieuDeXuatVatTuChiTiet, PhieuDeXuatVatTuChiTietRow } from '../core/types';
 import type { PhieuDeXuatVatTuFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
@@ -589,6 +590,16 @@ export async function updatePhieuDeXuatVatTuDb(id: string, data: PhieuDeXuatVatT
   const { error: updateErr } = await db.from(TABLE_PHIEU).update(payload).eq('id', idNum);
   if (updateErr) throwDbError(updateErr);
 
+  // Trao đổi lấy bản đang lưu theo id dòng, không theo form mở từ trước (traoDoiKhiLuuLai).
+  const { data: traoDoiRows, error: traoDoiErr } = await db
+    .from(TABLE_CHI_TIET)
+    .select('id, trao_doi')
+    .eq('id_phieu_de_xuat_vat_tu', idNum);
+  if (traoDoiErr) throwDbError(traoDoiErr);
+  const traoDoiDangLuu = new Map(
+    ((traoDoiRows ?? []) as { id: number; trao_doi: string | null }[]).map((r) => [String(r.id), r.trao_doi])
+  );
+
   await db.from(TABLE_CHI_TIET).delete().eq('id_phieu_de_xuat_vat_tu', idNum);
 
   const [hangHoaList, khoList, employees] = await Promise.all([
@@ -617,7 +628,7 @@ export async function updatePhieuDeXuatVatTuDb(id: string, data: PhieuDeXuatVatT
       ghi_chu: c.ghi_chu?.trim() || null,
       id_tien_do_mh: c.id_tien_do_mh ? Number(c.id_tien_do_mh) : null,
       ten_tien_do_mh: c.ten_tien_do_mh?.trim() || null,
-      trao_doi: c.trao_doi?.trim() || null,
+      trao_doi: traoDoiKhiLuuLai(c, traoDoiDangLuu),
       so_phieu: soPhieu,
       ngay: data.ngay.trim() || null,
       ngay_can: data.ngay_can.trim() || null,
@@ -658,6 +669,24 @@ function mergeGhiChuDuyet(existing: string | null | undefined, options?: UpdateP
   const noteText = options?.ghi_chu?.trim();
   if (!noteText) return existing || null;
   return (existing ? existing + '\n' : '') + `${options?.notePrefix ?? ''}${noteText}`;
+}
+
+/**
+ * Ghi đè trao đổi của một dòng hàng (chỉ quản trị / cấp bậc 1 — RPC tự kiểm, migration 039).
+ * `traoDoiCu`: giá trị lúc mở popup; DB báo lỗi nếu đã có người ghi khác trong lúc đó.
+ */
+export async function suaTraoDoiChiTietDb(
+  idChiTiet: string,
+  traoDoi: string | null,
+  traoDoiCu: string | null
+): Promise<string | null> {
+  const { data, error } = await db.rpc('rpc_mh_de_xuat_vt_ct_sua_trao_doi', {
+    p_id: Number(idChiTiet),
+    p_trao_doi: traoDoi,
+    p_trao_doi_cu: traoDoiCu,
+  });
+  if (error) throwDbError(error);
+  return (data as string | null) ?? null;
 }
 
 /**

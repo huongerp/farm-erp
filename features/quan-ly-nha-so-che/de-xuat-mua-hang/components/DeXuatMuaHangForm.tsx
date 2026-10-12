@@ -212,6 +212,7 @@ const DeXuatMuaHangForm: React.FC<Props> = ({ khoList, employees, initialData, o
           id_tien_do_mh: ct.id_tien_do_mh ?? null,
           ten_tien_do_mh: ct.ten_tien_do_mh ?? null,
           trao_doi: ct.trao_doi ?? null,
+          id_chi_tiet: ct.id,
         })),
       });
     } else if (isCopy) {
@@ -292,6 +293,7 @@ const DeXuatMuaHangForm: React.FC<Props> = ({ khoList, employees, initialData, o
         id_tien_do_mh: c.id_tien_do_mh?.trim() || null,
         ten_tien_do_mh: c.ten_tien_do_mh?.trim() || null,
         trao_doi: c.trao_doi?.trim() || null,
+        id_chi_tiet: c.id_chi_tiet ?? null,
       })),
     };
     if (isEdit && initialData) {

@@ -45,4 +45,12 @@ describe('parseTraoDoiGanNhat', () => {
       noiDung: '',
     });
   });
+
+  it('tin nhiều dòng lấy trọn mục cuối, nhận cả thời điểm dd/mm/yyyy HH:mm', () => {
+    const log = '[2026-09-17T07:30:00.000Z] Đã đặt hàng\n[12/10/2026 14:30] Chị Hà: mua 70%\nkhông lấy 50%';
+    expect(parseTraoDoiGanNhat(log)).toEqual({
+      timestamp: '12/10/2026 14:30',
+      noiDung: 'Chị Hà: mua 70%\nkhông lấy 50%',
+    });
+  });
 });

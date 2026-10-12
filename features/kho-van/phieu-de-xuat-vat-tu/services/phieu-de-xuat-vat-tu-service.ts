@@ -15,6 +15,7 @@ import {
   deletePhieuDeXuatVatTuManyDb,
   updatePhieuDeXuatVatTuTrangThaiDb,
   updatePhieuDeXuatVatTuTrangThaiManyDb,
+  suaTraoDoiChiTietDb,
   getAllPhieuDeXuatVatTuChiTietDb,
   getPhieuDeXuatVatTuChiTietPageDb,
   fetchAllPhieuDeXuatVatTuChiTietForListQueryDb,
@@ -50,6 +51,7 @@ export const deletePhieuDeXuatVatTu = deletePhieuDeXuatVatTuDb;
 export const deletePhieuDeXuatVatTuMany = deletePhieuDeXuatVatTuManyDb;
 export const updatePhieuDeXuatVatTuTrangThai = updatePhieuDeXuatVatTuTrangThaiDb;
 export const updatePhieuDeXuatVatTuTrangThaiMany = updatePhieuDeXuatVatTuTrangThaiManyDb;
+export const suaTraoDoiChiTiet = suaTraoDoiChiTietDb;
 export type {
   UpdatePhieuDeXuatTrangThaiOptions,
   UpdatePhieuDeXuatTrangThaiManyResult,

@@ -18,6 +18,7 @@ import {
   getAllDeXuatMuaHangChiTietDb,
   getDeXuatMuaHangChiTietPageDb,
   fetchAllDeXuatMuaHangChiTietForListQueryDb,
+  suaTraoDoiChiTietDb,
 } from './de-xuat-mua-hang-db.service';
 import type { DeXuatMuaHangChiTietListServerQuery, DeXuatMuaHangListServerQuery } from './de-xuat-mua-hang-list-query';
 import { buildDeXuatMuaHangChiTietListServerQuery, buildDeXuatMuaHangListServerQuery } from './de-xuat-mua-hang-list-query';
@@ -53,6 +54,7 @@ export const deleteDeXuatMuaHang = deleteDeXuatMuaHangDb;
 export const deleteDeXuatMuaHangMany = deleteDeXuatMuaHangManyDb;
 export const updateDeXuatMuaHangTrangThai = updateDeXuatMuaHangTrangThaiDb;
 export const updateDeXuatMuaHangTrangThaiMany = updateDeXuatMuaHangTrangThaiManyDb;
+export const suaTraoDoiChiTiet = suaTraoDoiChiTietDb;
 export type {
   UpdateDeXuatMuaHangTrangThaiOptions,
   UpdateDeXuatMuaHangTrangThaiManyResult,

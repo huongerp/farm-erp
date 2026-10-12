@@ -11,6 +11,10 @@ export const phieuDeXuatVatTuChiTietItemSchema = z.object({
   id_tien_do_mh: z.string().optional().nullable(),
   ten_tien_do_mh: z.string().optional().nullable(),
   trao_doi: z.string().optional().nullable(),
+  /** Id dòng đang có trong DB — lưu lại thì giữ trao đổi đang lưu (xem traoDoiKhiLuuLai). */
+  id_chi_tiet: z.string().optional().nullable(),
+  /** Mục log nối thêm vào trao đổi (chuyển tiến độ). */
+  trao_doi_them: z.string().optional().nullable(),
 });
 
 /** Form cho phép dòng trống (id_hang_hoa rỗng, so_luong 0); filter khi submit. */
@@ -22,6 +26,10 @@ export const phieuDeXuatVatTuChiTietFormItemSchema = z.object({
   id_tien_do_mh: z.string().optional().nullable(),
   ten_tien_do_mh: z.string().optional().nullable(),
   trao_doi: z.string().optional().nullable(),
+  /** Id dòng đang có trong DB — lưu lại thì giữ trao đổi đang lưu (xem traoDoiKhiLuuLai). */
+  id_chi_tiet: z.string().optional().nullable(),
+  /** Mục log nối thêm vào trao đổi (chuyển tiến độ). */
+  trao_doi_them: z.string().optional().nullable(),
 });
 
 export const phieuDeXuatVatTuSchema = z

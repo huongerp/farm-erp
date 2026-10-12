@@ -25,6 +25,9 @@ import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
 import GenericSubTableSection from '../../../../components/shared/GenericSubTableSection';
 import SubTable, { type SubTableColumn } from '../../../../components/shared/sub-table/SubTable';
 import ThuChiLienQuanSection from '../../../tai-chinh/thu-chi-quy/components/shared/ThuChiLienQuanSection';
+import TraoDoiCell from '../../../../components/shared/trao-doi/TraoDoiCell';
+import TraoDoiDialog from '../../../../components/shared/trao-doi/TraoDoiDialog';
+import { useSuaTraoDoiChiTiet } from '../hooks/use-phieu-de-xuat-vat-tu';
 
 const PREVIEW_BASE = '/mua-hang/phieu-de-xuat-vat-tu/preview';
 
@@ -82,6 +85,8 @@ interface Props {
   showOverdueBadge?: boolean;
   /** Chi nhánh của kho nơi đề xuất — điền sẵn farm khi thêm phiếu thu chi liên quan */
   idChiNhanhNoiDeXuat?: string | null;
+  /** Quản trị module / cấp bậc 1: sửa trao đổi từng dòng hàng; người khác chỉ xem. */
+  coTheSuaTraoDoi?: boolean;
 }
 
 const PhieuDeXuatVatTuDetail: React.FC<Props> = ({
@@ -96,11 +101,14 @@ const PhieuDeXuatVatTuDetail: React.FC<Props> = ({
   canEdit = true,
   canDelete = true,
   showOverdueBadge = false,
+  coTheSuaTraoDoi = false,
   idChiNhanhNoiDeXuat,
 }) => {
   const { t } = useTranslation();
   const canApprove = isTrangThaiChoPheDuyet(data.trang_thai) && !!onApprove;
   const [showApprovePopup, setShowApprovePopup] = useState(false);
+  const [traoDoiDong, setTraoDoiDong] = useState<PhieuDeXuatVatTuChiTiet | null>(null);
+  const suaTraoDoi = useSuaTraoDoiChiTiet(() => setTraoDoiDong(null));
   const [approveGhiChu, setApproveGhiChu] = useState('');
 
   const submitApprove = (trangThai: TrangThaiPhieuDeXuatVatTu) => {
@@ -171,6 +179,7 @@ const PhieuDeXuatVatTuDetail: React.FC<Props> = ({
     { id: 'don_vi_tinh', label: t('phieuDeXuatVatTu.form.unit'), width: 90, minWidth: 56 },
     { id: 'tien_do', label: t('phieuDeXuatVatTu.form.tienDoMh'), width: 150, minWidth: 100, mobile: 'badge' },
     { id: 'thong_so', label: t('phieuDeXuatVatTu.form.specs'), width: 220, minWidth: 120, mobile: 'full' },
+    { id: 'trao_doi', label: t('common.traoDoi.col'), width: 280, minWidth: 160, mobile: 'full' },
     { id: 'ghi_chu', label: t('phieuDeXuatVatTu.form.note'), width: 220, minWidth: 120, mobile: 'full' },
   ];
 
@@ -205,6 +214,8 @@ const PhieuDeXuatVatTuDetail: React.FC<Props> = ({
         );
       case 'thong_so':
         return <span className="text-xs text-muted-foreground whitespace-pre-line">{ct.thong_so || '—'}</span>;
+      case 'trao_doi':
+        return <TraoDoiCell traoDoi={ct.trao_doi} coTheSua={coTheSuaTraoDoi} onMo={() => setTraoDoiDong(ct)} />;
       case 'ghi_chu':
         return <span className="text-xs text-muted-foreground whitespace-pre-line">{ct.ghi_chu || '—'}</span>;
       default:
@@ -417,6 +428,20 @@ const PhieuDeXuatVatTuDetail: React.FC<Props> = ({
               </div>
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {traoDoiDong && (
+          <TraoDoiDialog
+            tenDong={traoDoiDong.ten_hang ?? ''}
+            traoDoi={traoDoiDong.trao_doi}
+            readOnly={!coTheSuaTraoDoi}
+            dangLuu={suaTraoDoi.isPending}
+            onSave={(traoDoi, traoDoiCu) =>
+              suaTraoDoi.mutate({ idPhieu: data.id, idChiTiet: traoDoiDong.id, traoDoi, traoDoiCu })
+            }
+            onClose={() => setTraoDoiDong(null)}
+          />
         )}
       </AnimatePresence>
     </>

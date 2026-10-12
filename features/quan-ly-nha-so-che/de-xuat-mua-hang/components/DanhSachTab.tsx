@@ -47,14 +47,17 @@ import {
 } from '../utils/export-de-xuat-mua-hang-danh-sach';
 import { useKhoBienThe } from '../../kho-bien-the/KhoBienTheProvider';
 import { khoModuleId } from '../../kho-bien-the/bien-the';
+import { laCapBacToanQuyen } from '../../../he-thong/phan-quyen/core/cap-bac-toan-quyen';
 
 const DanhSachTab: React.FC = () => {
   const bt = useKhoBienThe();
   const { t } = useTranslation();
-  const { canCreate, canUpdate, canDelete, canApprove } = useModulePermissionFromContext();
+  const { canCreate, canUpdate, canDelete, canApprove, canAdmin } = useModulePermissionFromContext();
   const { canCreate: canCreateHangHoa } = useModulePermission(khoModuleId(bt, 'hang-hoa-phan-thuoc'));
   const { canCreate: canCreatePhieuKho } = useModulePermission(khoModuleId(bt, 'phieu-kho-phan-thuoc'));
   const user = useAuthStore((s) => s.user);
+  /** Trao đổi trên dòng hàng: chỉ quản trị module hoặc cấp bậc 1 (RPC migration 039 kiểm lại). */
+  const coTheSuaTraoDoi = canAdmin || laCapBacToanQuyen(user?.cap_bac);
   const confirm = useConfirmStore((s) => s.confirm);
   const {
     searchTerm,
@@ -457,6 +460,7 @@ const DanhSachTab: React.FC = () => {
             canEdit={!!canUpdate}
             canDelete={canDelete}
             showOverdueBadge={isOverdue(viewingPhieuFull ?? viewingItem)}
+            coTheSuaTraoDoi={coTheSuaTraoDoi}
             idChiNhanhNoiDeXuat={
               khoList.find(
                 (k) => String(k.id) === String((viewingPhieuFull ?? viewingItem).id_noi_de_xuat)

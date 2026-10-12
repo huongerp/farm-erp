@@ -1,36 +1,19 @@
 /**
- * Trường `trao_doi` của dòng chi tiết là log nhiều dòng, dòng mới append xuống cuối:
- * `[2026-09-17T07:30:00.000Z] Chuyển tiến độ sang: X. Ngày cần: Y. Ghi chú: Z`
- * Hàm dưới bóc dòng cuối cùng để hiện ra listview.
+ * Trường `trao_doi` của dòng chi tiết là log nhiều mục, mục mới append xuống cuối
+ * (định dạng ở `lib/trao-doi-log.ts`). Hàm dưới lấy mục cuối để hiện ra listview.
  */
+import { tachTraoDoi } from '../../../../lib/trao-doi-log';
+
 export interface TraoDoiGanNhat {
-  /** Timestamp trong ngoặc vuông đầu dòng; null khi dòng không có timestamp hợp lệ. */
+  /** Thời điểm trong ngoặc vuông đầu mục (ISO hoặc dd/mm/yyyy HH:mm); null khi mục không có thời điểm. */
   timestamp: string | null;
-  /** Phần nội dung sau timestamp (hoặc cả dòng nếu không có timestamp). */
+  /** Nội dung mục (có thể nhiều dòng). */
   noiDung: string;
 }
 
-const LINE_WITH_TIMESTAMP = /^\[([^\]]+)\]\s*([\s\S]*)$/;
-
-/** Lấy dòng trao đổi gần nhất (dòng cuối có nội dung). Trả null nếu log rỗng. */
+/** Lấy mục trao đổi gần nhất (mục cuối, kể cả tin nhiều dòng). Trả null nếu log rỗng. */
 export function parseTraoDoiGanNhat(traoDoi: string | null | undefined): TraoDoiGanNhat | null {
-  if (traoDoi == null) return null;
-  const lines = traoDoi.split('\n');
-  let lastLine = '';
-  for (let i = lines.length - 1; i >= 0; i -= 1) {
-    const line = lines[i].trim();
-    if (line !== '') {
-      lastLine = line;
-      break;
-    }
-  }
-  if (lastLine === '') return null;
-
-  const matched = LINE_WITH_TIMESTAMP.exec(lastLine);
-  if (matched) {
-    const raw = matched[1].trim();
-    const noiDung = matched[2].trim();
-    if (!Number.isNaN(Date.parse(raw))) return { timestamp: raw, noiDung };
-  }
-  return { timestamp: null, noiDung: lastLine };
+  const muc = tachTraoDoi(traoDoi);
+  const cuoi = muc[muc.length - 1];
+  return cuoi ? { timestamp: cuoi.thoiDiem, noiDung: cuoi.noiDung } : null;
 }

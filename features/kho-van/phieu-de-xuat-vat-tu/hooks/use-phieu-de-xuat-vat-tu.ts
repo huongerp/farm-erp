@@ -12,6 +12,7 @@ import {
   deletePhieuDeXuatVatTuMany,
   updatePhieuDeXuatVatTuTrangThai,
   updatePhieuDeXuatVatTuTrangThaiMany,
+  suaTraoDoiChiTiet,
 } from '../services/phieu-de-xuat-vat-tu-service';
 import type { PhieuDeXuatChiTietListServerQuery, PhieuDeXuatVatTuListServerQuery } from '../services/phieu-de-xuat-list-query';
 import type { PhieuDeXuatVatTuFormValues } from '../core/schema';
@@ -217,6 +218,22 @@ export const useDeletePhieuDeXuatVatTuMany = () => {
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
       qc.invalidateQueries({ queryKey: PHIEU_DE_XUAT_SO_PHIEU_QUERY_KEY });
       toast.success(i18n.t('phieuDeXuatVatTu.toast.deleteSuccess'));
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+};
+
+/** Ghi trao đổi của một dòng hàng (popup trong chi tiết phiếu) — chỉ cấp cao. */
+export const useSuaTraoDoiChiTiet = (onSuccess?: () => void) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (v: { idPhieu: string; idChiTiet: string; traoDoi: string | null; traoDoiCu: string | null }) =>
+      suaTraoDoiChiTiet(v.idChiTiet, v.traoDoi, v.traoDoiCu),
+    onSuccess: (_, v) => {
+      qc.invalidateQueries({ queryKey: [...QUERY_KEY, v.idPhieu] });
+      qc.invalidateQueries({ queryKey: QUERY_KEY_CHI_TIET });
+      toast.success(i18n.t('common.traoDoi.luuThanhCong'));
+      onSuccess?.();
     },
     onError: (err: Error) => toast.error(err.message),
   });
