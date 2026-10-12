@@ -1,8 +1,7 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import SharedQrScannerDialog, { type KetQuaQuet } from '../../../../components/shared/QrScannerDialog';
-import { formatYmdToDisplay } from '../../../../lib/utils';
-import { TIEN_TO_CHON_TAY, usePhieuQcXepXe } from '../hooks/use-quet-cay-hang';
+import { TIEN_TO_CHON_TAY, usePhieuQcOptions } from '../hooks/use-quet-cay-hang';
 
 export type { KetQuaQuet };
 
@@ -26,23 +25,7 @@ const trim = (raw: string) => raw.trim() || null;
  */
 const QrScannerDialog: React.FC<Props> = ({ title, idChiNhanh, onDetected, onUndoLast, undoPending, onClose }) => {
   const { t } = useTranslation();
-  const { data: dsPhieu = [] } = usePhieuQcXepXe(idChiNhanh);
-  const options = useMemo(
-    () =>
-      dsPhieu.map((p) => ({
-        value: p.id,
-        label: [p.so_phieu, p.ten_hang_hoa].filter(Boolean).join(' · '),
-        subLabel: [
-          formatYmdToDisplay(p.ngay),
-          p.ma_cay_hang ? t('dangKyNhanHang.cayHang.cay', { ma: p.ma_cay_hang }) : null,
-          t('dangKyNhanHang.cayHang.soThung', { n: p.so_thung_cay }),
-          p.ket_luan ? t(`dangKyNhanHang.cayHang.ketLuan_${p.ket_luan}`) : null,
-        ]
-          .filter(Boolean)
-          .join(' · '),
-      })),
-    [dsPhieu, t]
-  );
+  const { options } = usePhieuQcOptions(idChiNhanh);
 
   return (
     <SharedQrScannerDialog

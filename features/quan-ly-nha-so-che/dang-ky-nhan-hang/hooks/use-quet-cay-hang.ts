@@ -1,7 +1,7 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import i18n from '../../../../lib/i18n';
-import { formatNumberVN } from '../../../../lib/utils';
+import { formatNumberVN, formatYmdToDisplay } from '../../../../lib/utils';
 import { useAuthStore } from '../../../../store/useStore';
 import type { KetQuaQuet } from '../../../../components/shared/QrScannerDialog';
 import { docMaTem } from '../../giam-sat-chat-luong/core/qr';
@@ -115,4 +115,30 @@ export function usePhieuQcXepXe(idChiNhanh: string | undefined) {
     enabled: !!idChiNhanh,
     staleTime: 60_000,
   });
+}
+
+/**
+ * Lựa chọn phiếu QC cho ô chọn tay (máy quét + drawer "Thêm tay").
+ * `boQuaIds`: phiếu QC đã có trên xe này — không hiện lại.
+ */
+export function usePhieuQcOptions(idChiNhanh: string | undefined, boQuaIds?: readonly string[]) {
+  const { data: dsPhieu = [], isLoading } = usePhieuQcXepXe(idChiNhanh);
+  const options = useMemo(() => {
+    const bo = new Set(boQuaIds ?? []);
+    return dsPhieu
+      .filter((p) => !bo.has(p.id))
+      .map((p) => ({
+        value: p.id,
+        label: [p.so_phieu, p.ten_hang_hoa].filter(Boolean).join(' · '),
+        subLabel: [
+          formatYmdToDisplay(p.ngay),
+          p.ma_cay_hang ? i18n.t('dangKyNhanHang.cayHang.cay', { ma: p.ma_cay_hang }) : null,
+          i18n.t('dangKyNhanHang.cayHang.soThung', { n: p.so_thung_cay }),
+          p.ket_luan ? i18n.t(`dangKyNhanHang.cayHang.ketLuan_${p.ket_luan}`) : null,
+        ]
+          .filter(Boolean)
+          .join(' · '),
+      }));
+  }, [dsPhieu, boQuaIds]);
+  return { options, isLoading };
 }

@@ -58,6 +58,7 @@ import { useQuetCayHang } from '../hooks/use-quet-cay-hang';
 import TrangThaiBadge from './TrangThaiBadge';
 import HinhAnhGallery from './HinhAnhGallery';
 import CayHangXuatSection from './CayHangXuatSection';
+import ThemCayHangTayDialog from './ThemCayHangTayDialog';
 import CheckInOutDialog from './CheckInOutDialog';
 import HinhAnhDialog from './HinhAnhDialog';
 import ChonMauInDialog from './ChonMauInDialog';
@@ -113,7 +114,7 @@ const DangKyNhanHangDetail: React.FC<Props> = ({
   const hoanTacDong = useHoanTacDongCuoi();
   const { data: chiTiet = [], isLoading: chiTietLoading } = useDangKyNhanHangChiTiet(data.id);
 
-  const [dialog, setDialog] = useState<null | 'checkIn' | 'checkOut' | 'anh' | 'quet' | 'in'>(null);
+  const [dialog, setDialog] = useState<null | 'checkIn' | 'checkOut' | 'anh' | 'quet' | 'themTay' | 'in'>(null);
 
   const { ghiNhan, lamMoiSauQuet } = useQuetCayHang(data.id);
 
@@ -297,6 +298,7 @@ const DangKyNhanHangDetail: React.FC<Props> = ({
             loading={chiTietLoading}
             canEdit={canEditHang}
             onScan={() => setDialog('quet')}
+            onThemTay={() => setDialog('themTay')}
           />
 
           <DetailSection title={t('dangKyNhanHang.detail.systemInfo')} icon={<Calendar size={14} />} variant="muted">
@@ -314,6 +316,14 @@ const DangKyNhanHangDetail: React.FC<Props> = ({
           <CheckInOutDialog mode={dialog} data={data} onClose={() => setDialog(null)} />
         )}
         {dialog === 'anh' && <HinhAnhDialog data={data} onClose={() => setDialog(null)} />}
+        {dialog === 'themTay' && (
+          <ThemCayHangTayDialog
+            idPhieu={data.id}
+            idChiNhanh={data.id_chi_nhanh}
+            rows={chiTiet}
+            onClose={() => setDialog(null)}
+          />
+        )}
         {dialog === 'in' && <ChonMauInDialog idPhieu={data.id} onClose={() => setDialog(null)} />}
         {dialog === 'quet' && (
           <Suspense fallback={null}>

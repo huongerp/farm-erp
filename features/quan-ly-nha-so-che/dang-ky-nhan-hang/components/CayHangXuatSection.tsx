@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
-import { AlertTriangle, Layers, Pencil, Trash2, Undo2 } from 'lucide-react';
+import { AlertTriangle, Layers, ListPlus, Pencil, Trash2, Undo2 } from 'lucide-react';
 import GenericSubTableSection from '../../../../components/shared/GenericSubTableSection';
 import SubTable, { type SubTableColumn } from '../../../../components/shared/sub-table/SubTable';
 import SubTableActionButton from '../../../../components/shared/sub-table/SubTableActionButton';
@@ -21,14 +21,16 @@ interface Props {
   /** Theo trạng thái phiếu + quyền (coTheSuaHangHoa && canUpdate). */
   canEdit: boolean;
   onScan: () => void;
+  /** Cây hàng không có tem: chọn tay phiếu QC. */
+  onThemTay: () => void;
 }
 
 /**
  * Bảng con "Cây hàng xuất" — TUỲ CHỌN: phiếu chỉ đăng ký xe thì để trống.
- * Mỗi dòng 1 cây hàng (phiếu Giám sát chất lượng), ghi bằng quét tem QC hoặc chọn tay;
+ * Mỗi dòng 1 cây hàng (phiếu Giám sát chất lượng), ghi bằng quét tem QC hoặc nút "Thêm tay" (không có tem);
  * số thùng nhập lúc quét, sửa lại qua icon bút (mobile: chạm card).
  */
-const CayHangXuatSection: React.FC<Props> = ({ idPhieu, rows, loading, canEdit, onScan }) => {
+const CayHangXuatSection: React.FC<Props> = ({ idPhieu, rows, loading, canEdit, onScan, onThemTay }) => {
   const { t } = useTranslation();
   const xoa = useXoaDongHang();
   const hoanTac = useHoanTacDongCuoi();
@@ -66,6 +68,20 @@ const CayHangXuatSection: React.FC<Props> = ({ idPhieu, rows, loading, canEdit, 
       count={rows.length}
       addLabel={canEdit ? t('dangKyNhanHang.cayHang.quetTem') : undefined}
       onAdd={canEdit ? onScan : undefined}
+      headerActions={
+        canEdit ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onThemTay}
+            className="min-h-[44px] h-8 px-3 shrink-0 touch-manipulation"
+          >
+            <ListPlus size={14} className="mr-1.5" />
+            {t('dangKyNhanHang.cayHang.themTay')}
+          </Button>
+        ) : undefined
+      }
       loading={loading}
       loadingText={t('dangKyNhanHang.loading')}
       emptyTitle={t('dangKyNhanHang.cayHang.empty')}

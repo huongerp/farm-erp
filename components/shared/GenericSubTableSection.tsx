@@ -15,6 +15,8 @@ export interface GenericSubTableSectionProps {
   addLabel?: string;
   /** Callback khi bấm Thêm */
   onAdd?: () => void;
+  /** Nút phụ trên header, đặt bên trái nút Thêm (vd. "Thêm tay" cạnh "Quét tem"). */
+  headerActions?: React.ReactNode;
   /** Khi không có dữ liệu: tiêu đề EmptyState */
   emptyTitle?: string;
   /** Mô tả EmptyState */
@@ -53,6 +55,7 @@ const GenericSubTableSection: React.FC<GenericSubTableSectionProps> = ({
   count,
   addLabel,
   onAdd,
+  headerActions,
   emptyTitle,
   emptyDescription,
   emptyIcon,
@@ -87,6 +90,7 @@ const GenericSubTableSection: React.FC<GenericSubTableSectionProps> = ({
           )}
         </div>
         <div className="flex-1 self-center h-px border-b border-dashed border-border/80 mx-1" aria-hidden />
+        {headerActions}
         {onAdd && addLabel && (
           <Button
             type="button"
