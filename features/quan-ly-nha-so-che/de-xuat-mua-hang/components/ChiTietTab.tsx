@@ -146,13 +146,24 @@ const ChiTietTab: React.FC = () => {
   const hasSelection = selectedIds.size > 0;
 
   /** Ngày cần để prefill popup chuyển tiến độ — chỉ khi mọi dòng đã chọn cùng một ngày. */
+  const chuyenTienDoRows = useMemo(
+    () => (singleRowForChuyenTienDo ? [singleRowForChuyenTienDo] : tableRows.filter((r) => selectedIds.has(r.id))),
+    [singleRowForChuyenTienDo, tableRows, selectedIds]
+  );
+
   const chuyenTienDoDefaultNgayCan = useMemo(() => {
-    const rows = singleRowForChuyenTienDo
-      ? [singleRowForChuyenTienDo]
-      : tableRows.filter((r) => selectedIds.has(r.id));
-    const values = new Set(rows.map((r) => r.ngay_can ?? ''));
+    const values = new Set(chuyenTienDoRows.map((r) => r.ngay_can ?? ''));
     return values.size === 1 ? ([...values][0] || null) : null;
-  }, [singleRowForChuyenTienDo, tableRows, selectedIds]);
+  }, [chuyenTienDoRows]);
+
+  /** Tiến độ hiện tại cho popup — `null` khi các dòng đã chọn đang ở nhiều tiến độ khác nhau. */
+  const chuyenTienDoHienTai = useMemo(() => {
+    const first = chuyenTienDoRows[0];
+    if (!first) return undefined;
+    const ten = first.ten_tien_do_mh ?? '';
+    if (chuyenTienDoRows.some((r) => (r.ten_tien_do_mh ?? '') !== ten)) return null;
+    return { id: first.id_tien_do_mh ?? null, ten: ten || null };
+  }, [chuyenTienDoRows]);
 
   const handleSaveEdit = useCallback(
     (payload: ChiTietRowEditPayload) => {
@@ -596,6 +607,7 @@ const ChiTietTab: React.FC = () => {
         defaultNgayCan={chuyenTienDoDefaultNgayCan}
         onClose={() => {
           setShowChuyenTienDoModal(false);
+        tienDoHienTai={chuyenTienDoHienTai}
           setSingleRowForChuyenTienDo(null);
         }}
         onConfirm={handleChuyenTienDoConfirm}

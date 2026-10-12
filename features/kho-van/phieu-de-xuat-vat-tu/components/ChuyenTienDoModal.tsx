@@ -9,6 +9,8 @@ import Textarea from '../../../../components/ui/Textarea';
 import { BTN_CANCEL } from '../../../../lib/button-labels';
 import { useTienDoMuaHangList } from '../../../mua-hang/thiet-lap-de-xuat-vat-tu/hooks/use-tien-do-mua-hang';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
+import { cn } from '../../../../lib/utils';
+import { getTienDoMhBadgeClass } from '../core/constants';
 
 export interface ChuyenTienDoResult {
   id_tien_do_mh: string;
@@ -23,13 +25,18 @@ interface Props {
   selectedCount: number;
   /** Ngày cần hiện tại của các dòng đã chọn (chỉ khi mọi dòng cùng một ngày). */
   defaultNgayCan?: string | null;
+  /**
+   * Tiến độ hiện tại của các dòng đã chọn: cùng một tiến độ → `{ id, ten }` (ten rỗng = chưa có),
+   * khác nhau → `null`. Dùng để hiện cho người dùng và chọn sẵn trong ô Tiến độ MH.
+   */
+  tienDoHienTai?: { id: string | null; ten: string | null } | null;
   onClose: () => void;
   onConfirm: (result: ChuyenTienDoResult) => void;
 }
 
-const ChuyenTienDoModal: React.FC<Props> = ({ open, selectedCount, defaultNgayCan, onClose, onConfirm }) => {
+const ChuyenTienDoModal: React.FC<Props> = ({ open, selectedCount, defaultNgayCan, tienDoHienTai, onClose, onConfirm }) => {
   const { t } = useTranslation();
-  const { data: tienDoMuaHangList = [] } = useTienDoMuaHangList();
+  const { data: tienDoMuaHangList = [], isPending: dangTaiTienDo } = useTienDoMuaHangList();
   const [idTienDo, setIdTienDo] = useState<string | null>(null);
   const [ghiChu, setGhiChu] = useState('');
   const [ngayCan, setNgayCan] = useState('');
@@ -45,7 +52,10 @@ const ChuyenTienDoModal: React.FC<Props> = ({ open, selectedCount, defaultNgayCa
 
   // Mở modal (hoặc tiến độ mặc định / ngày cần đổi khi đang mở) → nạp lại giá trị mặc định.
   // Chỉnh state ngay khi render thay vì effect; so theo giá trị để không lặp render khi list đang tải.
-  const tienDoMacDinh = options[0]?.value ?? null;
+  // Chọn sẵn tiến độ hiện tại nếu mọi dòng cùng một tiến độ còn hoạt động, không thì tiến độ đầu tiên.
+  const idTienDoHienTai = tienDoHienTai?.id != null ? String(tienDoHienTai.id) : null;
+  const tienDoMacDinh =
+    (idTienDoHienTai && options.find((o) => String(o.value) === idTienDoHienTai)?.value) || (options[0]?.value ?? null);
   const [prevSync, setPrevSync] = useState<{ open: boolean; tienDo: string | null; ngayCan: string | null | undefined } | null>(
     null
   );
@@ -116,15 +126,39 @@ const ChuyenTienDoModal: React.FC<Props> = ({ open, selectedCount, defaultNgayCa
             </button>
           </div>
           <form onSubmit={handleSubmit} className="px-6 py-4 space-y-4">
-            <Combobox
-              label={t('phieuDeXuatVatTu.form.tienDoMh')}
-              options={options}
-              value={idTienDo}
-              onChange={(v) => setIdTienDo(v ?? null)}
-              placeholder={t('phieuDeXuatVatTu.form.tienDoMhPlaceholder')}
-              searchable
-              required
-            />
+            <div className="flex flex-wrap items-center gap-2 text-sm">
+              <span className="text-muted-foreground">{t('phieuDeXuatVatTu.chiTietTab.tienDoHienTai')}</span>
+              {tienDoHienTai === null ? (
+                <span className="text-foreground">{t('phieuDeXuatVatTu.chiTietTab.tienDoHienTaiKhacNhau')}</span>
+              ) : tienDoHienTai?.ten ? (
+                <span
+                  className={cn(
+                    'inline-flex px-2 py-0.5 rounded-full text-xs font-medium border whitespace-nowrap',
+                    getTienDoMhBadgeClass(tienDoHienTai.ten)
+                  )}
+                >
+                  {tienDoHienTai.ten}
+                </span>
+              ) : (
+                <span className="text-muted-foreground">{t('phieuDeXuatVatTu.chiTietTab.tienDoHienTaiTrong')}</span>
+              )}
+            </div>
+            <div>
+              <Combobox
+                label={t('phieuDeXuatVatTu.form.tienDoMh')}
+                options={options}
+                value={idTienDo}
+                onChange={(v) => setIdTienDo(v ?? null)}
+                placeholder={t('phieuDeXuatVatTu.form.tienDoMhPlaceholder')}
+                searchable
+                required
+              />
+              {!dangTaiTienDo && options.length === 0 && (
+                <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                  {t('phieuDeXuatVatTu.chiTietTab.chuaThietLapTienDo')}
+                </p>
+              )}
+            </div>
             <div>
               <Input
                 label={t('phieuDeXuatVatTu.form.requiredDate')}

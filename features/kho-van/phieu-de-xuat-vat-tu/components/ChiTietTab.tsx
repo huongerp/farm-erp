@@ -189,6 +189,18 @@ const ChiTietTab: React.FC = () => {
 
   const handleSaveEdit = useCallback(
     (payload: ChiTietRowEditPayload) => {
+  /** Tiến độ hiện tại cho popup — `null` khi các dòng đã chọn đang ở nhiều tiến độ khác nhau. */
+  const chuyenTienDoHienTai = useMemo(() => {
+    const rows = singleRowForChuyenTienDo
+      ? [singleRowForChuyenTienDo]
+      : tableRows.filter((r) => selectedIds.has(r.id));
+    const first = rows[0];
+    if (!first) return undefined;
+    const ten = first.ten_tien_do_mh ?? '';
+    if (rows.some((r) => (r.ten_tien_do_mh ?? '') !== ten)) return null;
+    return { id: first.id_tien_do_mh ?? null, ten: ten || null };
+  }, [singleRowForChuyenTienDo, tableRows, selectedIds]);
+
       if (!editingRow || !phieuForEdit) return;
       const data: PhieuDeXuatVatTuFormValues = {
         ...phieuToFormValues(phieuForEdit),
@@ -627,6 +639,7 @@ const ChiTietTab: React.FC = () => {
         paginatedData={paginatedExportData}
         selectedData={selectedExportData}
         fileName="Phieu_De_Xuat_Vat_Tu_Chi_Tiet"
+        tienDoHienTai={chuyenTienDoHienTai}
         visibleColumnKeys={CHI_TIET_EXPORT_KEYS}
       />
 

@@ -548,3 +548,19 @@ html[data-text-size="large"] { font-size: 18px; }
   break-inside: avoid;
   page-break-inside: avoid;
 }
+
+/* iOS Safari: ô date/time giữ bề rộng tối thiểu và chiều cao riêng của hệ điều hành → tràn mép
+   khung (popup hẹp trên điện thoại) và cao hơn h-10. Chỉ áp trên iOS (-webkit-touch-callout). */
+@supports (-webkit-touch-callout: none) {
+  input[type='date'],
+  input[type='time'],
+  input[type='datetime-local'],
+  input[type='month'] {
+    -webkit-appearance: none;
+    appearance: none;
+    min-width: 0;
+  }
+  input::-webkit-date-and-time-value {
+    text-align: left;
+  }
+}
