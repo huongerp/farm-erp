@@ -1,7 +1,7 @@
 /** Ba mẫu in: phiếu đăng ký ra/vào cổng, phiếu kiểm hàng, phiếu tổng hợp. */
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { formatDateTimeShort, formatYmdToDisplay, getTimezone } from '../../../../../lib/utils';
+import { formatDateTimeShort, formatNumberVN, formatYmdToDisplay, getTimezone } from '../../../../../lib/utils';
 import type { DangKyNhanHang } from '../../core/types';
 import type { NhomHangHoa } from '../../core/gop-hang-hoa';
 import { usePhieuIn } from '../../../../../components/shared/phieu-in/phieu-in-context';
@@ -46,7 +46,14 @@ export const PhieuDangKyPreview: React.FC<MauPhieuProps> = ({ phieu }) => {
   const thongTin = (
     <div className={gap}>
       <DongCham label={t('dangKyNhanHang.col.khachHang')} value={phieu.khach_hang} />
-      <DongCham label={t('dangKyNhanHang.col.loaiHang')} value={phieu.loai_hang_hoa} />
+      <div className="flex gap-3">
+        <DongCham className="flex-[2]" label={t('dangKyNhanHang.col.loaiHang')} value={phieu.loai_hang_hoa} />
+        <DongCham
+          className="flex-1"
+          label={t('dangKyNhanHang.inDanhSach.col.soLuong')}
+          value={phieu.so_luong_dang_ky != null ? formatNumberVN(phieu.so_luong_dang_ky) : ''}
+        />
+      </div>
       <DongCham label={t('dangKyNhanHang.preview.soXeSoCont')} value={xeCont(phieu)} />
       <DongCham label={t('dangKyNhanHang.preview.tenTaiXe')} value={taiXe(phieu)} />
       <p className="font-semibold m-0 pt-1">{t('dangKyNhanHang.form.xinPhepRaVao')}</p>
