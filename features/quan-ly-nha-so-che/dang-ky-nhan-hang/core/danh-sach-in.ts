@@ -2,7 +2,9 @@
  * In "Danh sách dự kiến xe giao nhận hàng" theo bộ lọc đang áp trên toolbar danh sách:
  * tham số URL, tiêu đề, dòng bảng in và dữ liệu sheet XLSX. Thuần — không phụ thuộc React hay store.
  */
+import dayjs from 'dayjs';
 import { TRANG_THAI_DKNH, type DangKyNhanHang, type TrangThaiDkNh } from './types';
+import { chuanHoaGio, TZ_MAC_DINH } from './thoi-gian';
 import { DKNH_SORTABLE_DB_COLUMNS } from '../services/dang-ky-nhan-hang-list-query';
 
 const DUONG_DAN = '/quan-ly-nha-so-che/dang-ky-nhan-hang/in-danh-sach';
@@ -87,16 +89,35 @@ export interface DongDanhSachIn {
   taiXe: string;
   trangThai: string;
   kho: string;
+  /** Khung giờ đăng ký "HH:mm – HH:mm" */
+  tgDuKien: string;
+  /** Giờ vào – ra thực tế; mốc khác ngày đăng ký thì kèm "DD/MM" */
+  tgThucTe: string;
   thongTin: string;
   khachHang: string;
   soLuong: number | null;
   loaiHang: string;
 }
 
+/** "07:00 – 09:00"; thiếu một đầu thì "…"; không có giờ nào → rỗng. */
+export function khoangGio(tu: string | null | undefined, den: string | null | undefined): string {
+  if (!tu && !den) return '';
+  return `${tu || '…'} – ${den || '…'}`;
+}
+
+/** Giờ thực tế `HH:mm` theo `tz`; khác ngày đăng ký thì thêm ` DD/MM`. */
+function gioThucTe(iso: string | null, ngay: string, tz: string): string | null {
+  if (!iso) return null;
+  const d = dayjs(iso).tz(tz);
+  if (!d.isValid()) return null;
+  return d.format('YYYY-MM-DD') === ngay ? d.format('HH:mm') : d.format('HH:mm DD/MM');
+}
+
 /** Giữ nguyên thứ tự server (theo sort của danh sách), chỉ đánh STT và map cột. */
 export function taoDongDanhSachIn(
   phieu: DangKyNhanHang[],
-  nhanTrangThai: (tt: TrangThaiDkNh) => string
+  nhanTrangThai: (tt: TrangThaiDkNh) => string,
+  tz: string = TZ_MAC_DINH
 ): DongDanhSachIn[] {
   return phieu.map((p, i) => ({
     id: p.id,
@@ -106,6 +127,8 @@ export function taoDongDanhSachIn(
     taiXe: p.ten_tai_xe ?? '',
     trangThai: nhanTrangThai(p.trang_thai),
     kho: p.ten_chi_nhanh ?? '',
+    tgDuKien: khoangGio(chuanHoaGio(p.gio_dang_ky_tu), chuanHoaGio(p.gio_dang_ky_den)),
+    tgThucTe: khoangGio(gioThucTe(p.tg_vao_thuc_te, p.ngay_dang_ky, tz), gioThucTe(p.tg_ra_thuc_te, p.ngay_dang_ky, tz)),
     thongTin: p.ghi_chu ?? '',
     khachHang: p.khach_hang ?? '',
     soLuong: p.so_luong_dang_ky,
@@ -125,6 +148,8 @@ export function cotDanhSachIn(dong: DongDanhSachIn[]): CotDanhSachIn[] {
     'taiXe',
     'trangThai',
     'kho',
+    'tgDuKien',
+    'tgThucTe',
     'thongTin',
     'khachHang',
     'soLuong',

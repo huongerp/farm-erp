@@ -17,12 +17,14 @@ const TI_LE_COT: Record<CotDanhSachIn, number> = {
   taiXe: 13,
   trangThai: 9,
   kho: 9,
-  thongTin: 15,
+  tgDuKien: 10,
+  tgThucTe: 11,
+  thongTin: 12,
   khachHang: 11,
   soLuong: 8,
-  loaiHang: 19,
+  loaiHang: 15,
 };
-const CAN_GIUA = new Set<CotDanhSachIn>(['stt', 'ngay', 'trangThai']);
+const CAN_GIUA = new Set<CotDanhSachIn>(['stt', 'ngay', 'trangThai', 'tgDuKien', 'tgThucTe']);
 
 const oDong = (d: DongDanhSachIn, c: CotDanhSachIn): React.ReactNode =>
   c === 'soLuong' ? (d.soLuong != null ? formatNumberVN(d.soLuong) : '') : d[c];
@@ -70,7 +72,8 @@ const MauDanhSachXe: React.FC<{ tieuDe: string; phuDe?: string; dong: DongDanhSa
                     className={cn(
                       td,
                       CAN_GIUA.has(c) && 'text-center',
-                      (c === 'stt' || c === 'ngay' || c === 'soLuong') && 'tabular-nums',
+                      (c === 'stt' || c === 'ngay' || c === 'soLuong' || c === 'tgDuKien' || c === 'tgThucTe') &&
+                        'tabular-nums',
                       c === 'soLuong' && 'text-right',
                       c === 'soXe' && 'font-mono font-semibold'
                     )}

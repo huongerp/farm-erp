@@ -78,6 +78,34 @@ describe('taoDongDanhSachIn', () => {
       loaiHang: 'HQ1 10CP - 12CP',
     });
   });
+
+  it('TG dự kiến: khung giờ đăng ký, thiếu một đầu thì "…", không có thì trống', () => {
+    const dong = taoDongDanhSachIn(
+      [
+        phieu({ id: '1', gio_dang_ky_tu: '07:00:00', gio_dang_ky_den: '09:30:00' }),
+        phieu({ id: '2', gio_dang_ky_tu: '13:00' }),
+        phieu({ id: '3' }),
+      ],
+      nhanTT
+    );
+    expect(dong.map((d) => d.tgDuKien)).toEqual(['07:00 – 09:30', '13:00 – …', '']);
+  });
+
+  it('TG thực tế: giờ vào – ra theo múi giờ, chưa ra thì "…", mốc khác ngày đăng ký kèm ngày', () => {
+    const dong = taoDongDanhSachIn(
+      [
+        // 07:15 và 09:30 giờ VN ngày 11/10
+        phieu({ id: '1', tg_vao_thuc_te: '2026-10-11T00:15:00Z', tg_ra_thuc_te: '2026-10-11T02:30:00Z' }),
+        phieu({ id: '2', tg_vao_thuc_te: '2026-10-11T00:15:00Z' }),
+        // vào 23:40 ngày 11/10, ra 01:10 ngày 12/10 (giờ VN)
+        phieu({ id: '3', tg_vao_thuc_te: '2026-10-11T16:40:00Z', tg_ra_thuc_te: '2026-10-11T18:10:00Z' }),
+        phieu({ id: '4' }),
+      ],
+      nhanTT,
+      'Asia/Ho_Chi_Minh'
+    );
+    expect(dong.map((d) => d.tgThucTe)).toEqual(['07:15 – 09:30', '07:15 – …', '23:40 – 01:10 12/10', '']);
+  });
 });
 
 describe('tham số URL', () => {
@@ -152,11 +180,13 @@ describe('XLSX', () => {
       'col.taiXe',
       'col.trangThai',
       'col.kho',
+      'col.tgDuKien',
+      'col.tgThucTe',
       'col.thongTin',
       'col.khachHang',
       'col.soLuong',
       'col.loaiHang',
     ]);
-    expect(aoa[4]).toEqual([1, '56H-16643', '', 'TT:cho_vao', 'NSC fp3', '', 'HQ1', '', 'HQ1 10CP - 12CP']);
+    expect(aoa[4]).toEqual([1, '56H-16643', '', 'TT:cho_vao', 'NSC fp3', '', '', '', 'HQ1', '', 'HQ1 10CP - 12CP']);
   });
 });

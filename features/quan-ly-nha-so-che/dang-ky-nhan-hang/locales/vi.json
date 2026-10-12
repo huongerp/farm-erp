@@ -182,6 +182,8 @@
   "dangKyNhanHang.inDanhSach.col.taiXe": "Tài xế",
   "dangKyNhanHang.inDanhSach.col.trangThai": "Trạng thái",
   "dangKyNhanHang.inDanhSach.col.kho": "Kho",
+  "dangKyNhanHang.inDanhSach.col.tgDuKien": "TG dự kiến",
+  "dangKyNhanHang.inDanhSach.col.tgThucTe": "TG thực tế (vào – ra)",
   "dangKyNhanHang.inDanhSach.col.thongTin": "Thông tin thêm",
   "dangKyNhanHang.inDanhSach.col.khachHang": "Khách hàng",
   "dangKyNhanHang.inDanhSach.col.soLuong": "Số lượng (thùng)",

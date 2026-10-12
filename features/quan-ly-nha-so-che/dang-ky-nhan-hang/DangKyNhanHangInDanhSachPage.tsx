@@ -10,6 +10,7 @@ import { useQuery } from '@tanstack/react-query';
 import { FileSpreadsheet } from 'lucide-react';
 import PhieuInPage from '../../../components/shared/phieu-in/PhieuInPage';
 import { coChuKhungPhieu } from '../../../components/shared/phieu-in/PhieuInParts';
+import { getTimezone } from '../../../lib/utils';
 import { useBranches } from '../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
 import { fetchAllDkNhForListQuery } from './services/dang-ky-nhan-hang-service';
 import type { DangKyNhanHangListServerQuery } from './services/dang-ky-nhan-hang-list-query';
@@ -52,7 +53,7 @@ const DangKyNhanHangInDanhSachPage: React.FC = () => {
   });
 
   const dong = useMemo(
-    () => taoDongDanhSachIn(data ?? [], (tt) => t(`dangKyNhanHang.trangThai.${tt}`)),
+    () => taoDongDanhSachIn(data ?? [], (tt) => t(`dangKyNhanHang.trangThai.${tt}`), getTimezone()),
     [data, t]
   );
 
