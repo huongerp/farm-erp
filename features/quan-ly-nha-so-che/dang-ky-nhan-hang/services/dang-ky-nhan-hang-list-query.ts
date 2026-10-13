@@ -1,5 +1,6 @@
 /** Tham số truy vấn danh sách Đăng ký nhận hàng — lọc / sắp xếp / cắt trang ở PostgREST. */
 import type { TrangThaiDkNh } from '../core/types';
+import type { TinhTrangPhieuXuat } from '../core/phieu-xuat';
 
 export interface DangKyNhanHangListServerQuery {
   page: number;
@@ -9,6 +10,8 @@ export interface DangKyNhanHangListServerQuery {
   allowedBranchIds: string[];
   trangThai: TrangThaiDkNh[] | string[];
   idChiNhanh: string[];
+  /** Chip "Phiếu xuất kho" — cột tinh_trang_phieu_xuat (trigger DB, migration 042). */
+  tinhTrangPhieuXuat: TinhTrangPhieuXuat[] | string[];
   /** Khoảng ngày đăng ký (ISO) — chip thời gian. */
   ngayFrom?: string;
   ngayTo?: string;
@@ -29,6 +32,7 @@ export const DKNH_SORTABLE_DB_COLUMNS = new Set([
   'tg_vao_thuc_te',
   'tg_ra_thuc_te',
   'trang_thai',
+  'tinh_trang_phieu_xuat',
   'tg_tao',
   'tg_cap_nhat',
 ]);

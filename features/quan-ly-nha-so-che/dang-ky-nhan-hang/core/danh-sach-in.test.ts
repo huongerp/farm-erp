@@ -38,6 +38,7 @@ function phieu(p: Partial<DangKyNhanHang> & { id: string }): DangKyNhanHang {
     ten_nguoi_tao: null,
     tg_tao: '',
     tg_cap_nhat: '',
+    tinh_trang_phieu_xuat: null,
     tong_so_luong: 0,
     ...p,
   };
@@ -115,6 +116,7 @@ describe('tham số URL', () => {
     q: 'HQ1',
     trangThai: ['cho_vao', 'da_vao'],
     idChiNhanh: ['12', '3'],
+    phieuXuat: ['chua_tao', 'can_cap_nhat'],
     sortColumn: 'gio_dang_ky_tu',
     sortDirection: 'asc',
   };
@@ -124,20 +126,23 @@ describe('tham số URL', () => {
   });
 
   it('không lọc gì → URL trống tham số, đọc ra bộ lọc rỗng', () => {
-    const rong: LocInDanhSach = { tu: '', den: '', q: '', trangThai: [], idChiNhanh: [], sortColumn: null, sortDirection: null };
+    const rong: LocInDanhSach = { tu: '', den: '', q: '', trangThai: [], idChiNhanh: [], phieuXuat: [], sortColumn: null, sortDirection: null };
     const url = taoUrlInDanhSach(rong);
     expect(url).toBe('/quan-ly-nha-so-che/dang-ky-nhan-hang/in-danh-sach');
     expect(docThamSoInDanhSach(new URL(url, 'http://x').searchParams)).toEqual(rong);
   });
 
   it('giá trị lạ bị bỏ: ngày sai, trạng thái lạ, id không phải số, cột sort không cho phép', () => {
-    const sp = new URLSearchParams('tu=11/10/2026&den=2026-10-11&tt=cho_vao,xyz&cn=1,abc,,2&sort=mat_khau&dir=asc');
+    const sp = new URLSearchParams(
+      'tu=11/10/2026&den=2026-10-11&tt=cho_vao,xyz&cn=1,abc,,2&px=da_tao,abc&sort=mat_khau&dir=asc'
+    );
     expect(docThamSoInDanhSach(sp)).toEqual({
       tu: '',
       den: '2026-10-11',
       q: '',
       trangThai: ['cho_vao'],
       idChiNhanh: ['1', '2'],
+      phieuXuat: ['da_tao'],
       sortColumn: null,
       sortDirection: null,
     });

@@ -35,6 +35,7 @@ function phieu(p: Partial<DangKyNhanHang> & { id: string }): DangKyNhanHang {
     ten_nguoi_tao: null,
     tg_tao: '',
     tg_cap_nhat: '',
+    tinh_trang_phieu_xuat: null,
     tong_so_luong: 0,
     ...p,
   };

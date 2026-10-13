@@ -28,8 +28,9 @@ const tenCayHang = (p: PhieuQcTomTat) =>
  * Xếp cây hàng lên xe: quét tem QC (hoặc chọn tay phiếu QC) → kiểm luật
  * (core/quet-cay-hang) → hỏi số thùng thực xếp lên xe (mặc định so_thung_cay của cây hàng)
  * → ghi một dòng cây hàng.
+ * `soPhieuXuat`: xe đã có phiếu xuất kho → mỗi lần ghi nhắc phiếu cần cập nhật (không tự đồng bộ).
  */
-export function useQuetCayHang(idPhieu: string) {
+export function useQuetCayHang(idPhieu: string, soPhieuXuat?: string | null) {
   const userId = useAuthStore((s) => s.user?.id);
   const qc = useQueryClient();
 
@@ -83,6 +84,7 @@ export function useQuetCayHang(idPhieu: string) {
           message: [
             i18n.t('dangKyNhanHang.cayHang.daGhi', { ten: tenCayHang(p), thung: formatNumberVN(soThung) }),
             ...canh,
+            ...(soPhieuXuat ? [i18n.t('dangKyNhanHang.phieuXuat.nhacQuet', { so: soPhieuXuat })] : []),
           ].join(' — '),
         };
       };
@@ -99,7 +101,7 @@ export function useQuetCayHang(idPhieu: string) {
         },
       };
     },
-    [qc, idPhieu, userId]
+    [qc, idPhieu, userId, soPhieuXuat]
   );
 
   const lamMoiSauQuet = useCallback(() => qc.invalidateQueries({ queryKey: QUERY_KEY_DKNH }), [qc]);

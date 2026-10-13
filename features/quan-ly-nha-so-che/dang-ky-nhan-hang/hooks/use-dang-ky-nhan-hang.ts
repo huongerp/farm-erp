@@ -4,6 +4,7 @@ import i18n from '../../../../lib/i18n';
 import { useAuthStore } from '../../../../store/useStore';
 import type { DangKyNhanHangFormValues } from '../core/schema';
 import type { DangKyNhanHangListServerQuery } from '../services/dang-ky-nhan-hang-list-query';
+import { FARM_TON_KHO_PT_QUERY_KEY } from '../../ton-kho-phan-thuoc/hooks/use-farm-ton-kho-pt';
 import {
   capNhatAnh,
   capNhatSoLuongDong,
@@ -18,11 +19,14 @@ import {
   getDkNhPage,
   getDkNhTomTat,
   getTongHangHoaTheoPhieu,
+  getPhieuXuatCuaXe,
+  getXeCuaPhieuKho,
   hoanTacCheckIn,
   hoanTacCheckOut,
   hoanTacDongCuoi,
   huyDkNh,
   khoiPhucDkNh,
+  taoPhieuXuat,
   updateDkNh,
   xoaDongHang,
   type CheckInOutInput,
@@ -221,6 +225,46 @@ export function useHoanTacDongCuoi() {
       invalidate();
       if (ok) toast.success(i18n.t('dangKyNhanHang.toast.hoanTacDongSuccess'));
       else toast.info(i18n.t('dangKyNhanHang.hangHoa.empty'));
+    },
+    onError: onErr,
+  });
+}
+
+// ── Phiếu xuất kho thành phẩm (migration 042) ─────────────────────────────────
+
+/**
+ * Phiếu xuất của xe. Nằm dưới QUERY_KEY_DKNH nên mọi thao tác cây hàng (quét, thêm tay, sửa thùng,
+ * xoá, hoàn tác) — vốn đã invalidate QUERY_KEY_DKNH — tự tải lại, cảnh báo "cần cập nhật" hiện ngay.
+ */
+export function usePhieuXuatCuaXe(idDknh: string | undefined) {
+  return useQuery({
+    queryKey: [...QUERY_KEY_DKNH, 'phieuXuat', idDknh],
+    queryFn: () => getPhieuXuatCuaXe(idDknh!),
+    enabled: !!idDknh,
+  });
+}
+
+/** Phiếu kho Sơ chế → xe sinh ra nó (chi tiết phiếu kho hiện "Nguồn"). */
+export function useXeCuaPhieuKho(idPhieuKho: string | undefined, enabled = true) {
+  return useQuery({
+    queryKey: [...QUERY_KEY_DKNH, 'xeCuaPhieuKho', idPhieuKho],
+    queryFn: () => getXeCuaPhieuKho(idPhieuKho!),
+    enabled: !!idPhieuKho && enabled,
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
+/** Tạo / cập nhật phiếu xuất (một RPC). `capNhat` chỉ để chọn câu toast. */
+export function useTaoPhieuXuat(onSuccess?: () => void) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ idDknh, khoId }: { idDknh: string; khoId: string; capNhat: boolean }) => taoPhieuXuat(idDknh, khoId),
+    onSuccess: (_id, { capNhat }) => {
+      qc.invalidateQueries({ queryKey: QUERY_KEY_DKNH });
+      qc.invalidateQueries({ queryKey: ['phieuKhoPhanThuoc'] });
+      qc.invalidateQueries({ queryKey: FARM_TON_KHO_PT_QUERY_KEY });
+      toast.success(i18n.t(capNhat ? 'dangKyNhanHang.phieuXuat.toastCapNhat' : 'dangKyNhanHang.phieuXuat.toastTao'));
+      onSuccess?.();
     },
     onError: onErr,
   });

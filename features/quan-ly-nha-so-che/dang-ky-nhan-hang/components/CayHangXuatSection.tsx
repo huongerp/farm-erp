@@ -23,6 +23,8 @@ interface Props {
   onScan: () => void;
   /** Cây hàng không có tem: chọn tay phiếu QC. */
   onThemTay: () => void;
+  /** Dải "Phiếu xuất kho" (PhieuXuatKhoPanel) — hiện đầu bảng, kể cả khi xe đã bỏ hết cây mà vẫn còn phiếu. */
+  phieuXuat?: React.ReactNode;
 }
 
 /**
@@ -30,7 +32,7 @@ interface Props {
  * Mỗi dòng 1 cây hàng (phiếu Giám sát chất lượng), ghi bằng quét tem QC hoặc nút "Thêm tay" (không có tem);
  * số thùng nhập lúc quét, sửa lại qua icon bút (mobile: chạm card).
  */
-const CayHangXuatSection: React.FC<Props> = ({ idPhieu, rows, loading, canEdit, onScan, onThemTay }) => {
+const CayHangXuatSection: React.FC<Props> = ({ idPhieu, rows, loading, canEdit, onScan, onThemTay, phieuXuat }) => {
   const { t } = useTranslation();
   const xoa = useXoaDongHang();
   const hoanTac = useHoanTacDongCuoi();
@@ -88,8 +90,10 @@ const CayHangXuatSection: React.FC<Props> = ({ idPhieu, rows, loading, canEdit, 
       emptyDescription={t(canEdit ? 'dangKyNhanHang.cayHang.emptyHint' : 'dangKyNhanHang.hangHoa.emptyHintKhongSua')}
       contentMode="raw"
     >
+      {rows.length === 0 && phieuXuat}
       {rows.length > 0 && (
         <div className="space-y-2.5">
+          {phieuXuat}
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs text-muted-foreground tabular-nums">
               {t('dangKyNhanHang.cayHang.tongKet', { cay: rows.length, thung: formatNumberVN(tongThung) })}

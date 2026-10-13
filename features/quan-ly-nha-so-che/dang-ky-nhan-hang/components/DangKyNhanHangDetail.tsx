@@ -33,8 +33,8 @@ import {
   coTheCheckOut,
   coTheHoanTacCheckIn,
   coTheHoanTacCheckOut,
-  coTheHuy,
-  coTheKhoiPhuc,
+  coTheHuyPhieu,
+  coTheKhoiPhucPhieu,
   coTheSuaHangHoa,
   coTheSuaPhieu,
   coTheThemAnh,
@@ -52,7 +52,10 @@ import {
   useChuyenTrangThaiDangKyNhanHang,
   useDangKyNhanHangChiTiet,
   useHoanTacDongCuoi,
+  usePhieuXuatCuaXe,
 } from '../hooks/use-dang-ky-nhan-hang';
+import { coTheTaoPhieuXuat, khoaBoiPhieuXuat, soLechPhieuXuat, tinhTrangPhieuXuat } from '../core/phieu-xuat';
+import { useAuthStore } from '../../../../store/useStore';
 import { useDangKyNhanHangCapCao } from '../hooks/use-dang-ky-nhan-hang-view-scope';
 import { useQuetCayHang } from '../hooks/use-quet-cay-hang';
 import TrangThaiBadge from './TrangThaiBadge';
@@ -62,6 +65,8 @@ import ThemCayHangTayDialog from './ThemCayHangTayDialog';
 import CheckInOutDialog from './CheckInOutDialog';
 import HinhAnhDialog from './HinhAnhDialog';
 import ChonMauInDialog from './ChonMauInDialog';
+import PhieuXuatKhoPanel from './PhieuXuatKhoPanel';
+import TaoPhieuXuatDialog from './TaoPhieuXuatDialog';
 
 const QrScannerDialog = lazy(() => import('./QrScannerDialog'));
 
@@ -113,13 +118,19 @@ const DangKyNhanHangDetail: React.FC<Props> = ({
   const chuyen = useChuyenTrangThaiDangKyNhanHang();
   const hoanTacDong = useHoanTacDongCuoi();
   const { data: chiTiet = [], isLoading: chiTietLoading } = useDangKyNhanHangChiTiet(data.id);
+  const { data: phieuXuat = null } = usePhieuXuatCuaXe(data.id);
+  const idNguoiDung = useAuthStore((s) => (s.user?.id != null ? String(s.user.id) : null));
 
-  const [dialog, setDialog] = useState<null | 'checkIn' | 'checkOut' | 'anh' | 'quet' | 'themTay' | 'in'>(null);
+  const [dialog, setDialog] = useState<null | 'checkIn' | 'checkOut' | 'anh' | 'quet' | 'themTay' | 'in' | 'phieuXuat'>(null);
 
-  const { ghiNhan, lamMoiSauQuet } = useQuetCayHang(data.id);
+  const { ghiNhan, lamMoiSauQuet } = useQuetCayHang(data.id, phieuXuat?.so_phieu);
 
   const tt = data.trang_thai;
-  const canEditHang = canUpdate && coTheSuaHangHoa(tt, capCao);
+  // Phiếu xuất kho đã duyệt khoá cây hàng (trigger fn_dknh_ct_khoa_phieu_xuat_duyet, migration 042).
+  const khoaPhieuXuat = khoaBoiPhieuXuat(phieuXuat, capCao, idNguoiDung);
+  const canEditHang = canUpdate && coTheSuaHangHoa(tt, capCao) && !khoaPhieuXuat;
+  const tinhTrangPx = tinhTrangPhieuXuat(chiTiet, phieuXuat);
+  const chenhLechPx = useMemo(() => (phieuXuat ? soLechPhieuXuat(chiTiet, phieuXuat.dong) : []), [chiTiet, phieuXuat]);
   const canEditPhieu = canUpdate && coTheSuaPhieu(tt, capCao);
   const canDeletePhieu = canDelete && coTheXoaPhieu(tt, capCao);
 
@@ -155,10 +166,10 @@ const DangKyNhanHangDetail: React.FC<Props> = ({
     if (coTheThemAnh(tt)) {
       a.push({ label: t('dangKyNhanHang.toolbar.hinhAnh'), icon: <Images />, onClick: () => setDialog('anh'), variant: 'secondary' });
     }
-    if (coTheHuy(tt)) {
+    if (coTheHuyPhieu(tt, capCao)) {
       a.push({ label: t('dangKyNhanHang.toolbar.huy'), icon: <Ban />, onClick: () => hoi('huy', 'huy', 'danger'), variant: 'danger' });
     }
-    if (coTheKhoiPhuc(tt)) {
+    if (coTheKhoiPhucPhieu(tt, capCao)) {
       a.push({ label: t('dangKyNhanHang.toolbar.khoiPhuc'), icon: <RotateCcw />, onClick: () => hoi('khoiPhuc', 'khoiPhuc'), variant: 'warning' });
     }
     if (coTheHoanTacCheckIn(tt, capCao)) {
@@ -299,6 +310,18 @@ const DangKyNhanHangDetail: React.FC<Props> = ({
             canEdit={canEditHang}
             onScan={() => setDialog('quet')}
             onThemTay={() => setDialog('themTay')}
+            phieuXuat={
+              tinhTrangPx || phieuXuat ? (
+                <PhieuXuatKhoPanel
+                  phieu={phieuXuat}
+                  tinhTrang={tinhTrangPx}
+                  chenhLech={chenhLechPx}
+                  coTheTao={canUpdate && coTheTaoPhieuXuat(tt, chiTiet.length, khoaPhieuXuat)}
+                  khoa={khoaPhieuXuat}
+                  onTao={() => setDialog('phieuXuat')}
+                />
+              ) : undefined
+            }
           />
 
           <DetailSection title={t('dangKyNhanHang.detail.systemInfo')} icon={<Calendar size={14} />} variant="muted">
@@ -325,6 +348,9 @@ const DangKyNhanHangDetail: React.FC<Props> = ({
           />
         )}
         {dialog === 'in' && <ChonMauInDialog idPhieu={data.id} onClose={() => setDialog(null)} />}
+        {dialog === 'phieuXuat' && (
+          <TaoPhieuXuatDialog data={data} rows={chiTiet} phieu={phieuXuat} onClose={() => setDialog(null)} />
+        )}
         {dialog === 'quet' && (
           <Suspense fallback={null}>
             <QrScannerDialog

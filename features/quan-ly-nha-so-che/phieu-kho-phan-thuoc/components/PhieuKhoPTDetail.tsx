@@ -14,6 +14,7 @@ import {
   FilePen,
   Lock,
   Unlock,
+  Truck,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Button from '../../../../components/ui/Button';
@@ -21,7 +22,7 @@ import DetailDrawerFooter from '../../../../components/shared/DetailDrawerFooter
 import Textarea from '../../../../components/ui/Textarea';
 import { cn } from '../../../../lib/utils';
 import type { PhieuKhoPT, LoaiPhieuKhoPT, TrangThaiPhieuKhoPT } from '../core/types';
-import { formatDateTimeShort, formatNumberVN } from '../../../../lib/utils';
+import { formatDateTimeShort, formatNumberVN, formatYmdToDisplay } from '../../../../lib/utils';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
 import DetailToolbar, { type DetailToolbarAction } from '../../../../components/shared/DetailToolbar';
 import DetailSection from '../../../../components/shared/DetailSection';
@@ -45,6 +46,7 @@ import { useAuthStore } from '../../../../store/useStore';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { useKhoBienThe } from '../../kho-bien-the/KhoBienTheProvider';
 import { khoPreviewUrl } from '../../kho-bien-the/bien-the';
+import { useXeCuaPhieuKho } from '../../dang-ky-nhan-hang/hooks/use-dang-ky-nhan-hang';
 
 interface Props {
   data: PhieuKhoPT;
@@ -110,6 +112,8 @@ const PhieuKhoPTDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
   const isXuat = data.loai === 'xuất';
 
   const previewPath = khoPreviewUrl(bt, 'phieu-kho-phan-thuoc', data.id);
+  // Phiếu xuất thành phẩm sinh từ Đăng ký nhận hàng (migration 042) — chỉ bảng Sơ chế có liên kết.
+  const { data: xeNguon } = useXeCuaPhieuKho(data.id, bt.key === 'so-che' && isXuat);
 
   const optionLabel = (value: TrangThaiPhieuKhoPT) =>
     value === 'Đã duyệt'
@@ -342,6 +346,16 @@ const PhieuKhoPTDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
               icon={<FileText size={12} />}
               className="col-span-1 sm:col-span-2"
             />
+            {xeNguon && (
+              <DetailField
+                label={t('phieuKhoPhanThuoc.detail.nguonXe')}
+                value={[xeNguon.so_xe, xeNguon.so_cont, xeNguon.khach_hang, formatYmdToDisplay(xeNguon.ngay_dang_ky)]
+                  .filter(Boolean)
+                  .join(' · ')}
+                icon={<Truck size={12} />}
+                className="col-span-1 sm:col-span-2"
+              />
+            )}
             {data.trao_doi && (
               <DetailField
                 label={t('phieuKhoPhanThuoc.detail.traoDoi')}

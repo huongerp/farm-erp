@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Building2, Calendar, CircleDot, Download, Plus, Printer } from 'lucide-react';
+import { Building2, Calendar, CircleDot, Download, PackageCheck, Plus, Printer } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import DateRangePicker from '../../../../components/ui/DateRangePicker';
@@ -11,6 +11,7 @@ import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolb
 import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
 import { TRANG_THAI_DKNH } from '../core/types';
 import { KY_CUSTOM } from '../core/ky-loc';
+import { TINH_TRANG_PHIEU_XUAT } from '../core/phieu-xuat';
 import { useKyChip } from '../hooks/use-ky-chip';
 import type { DkNhTomTat } from '../services/dang-ky-nhan-hang-service';
 import { useDangKyNhanHangStore } from '../store/useDangKyNhanHangStore';
@@ -65,6 +66,16 @@ const DangKyNhanHangToolbar: React.FC<Props> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, t]);
 
+  const phieuXuatOptions = useMemo(() => {
+    const m = dem((r) => r.tinh_trang_phieu_xuat ?? '');
+    return TINH_TRANG_PHIEU_XUAT.map((v) => ({
+      value: v,
+      label: t(`dangKyNhanHang.phieuXuat.tinhTrang.${v}`),
+      count: m.get(v) ?? 0,
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, t]);
+
   const branchOptions = useMemo(() => {
     const m = dem((r) => r.id_chi_nhanh ?? '');
     return branches
@@ -83,7 +94,8 @@ const DangKyNhanHangToolbar: React.FC<Props> = ({
     (searchInput.trim() ? 1 : 0) +
     (coKy ? 1 : 0) +
     (filters.trang_thai?.length ?? 0) +
-    (filters.id_chi_nhanh?.length ?? 0);
+    (filters.id_chi_nhanh?.length ?? 0) +
+    (filters.phieu_xuat?.length ?? 0);
 
   const handleClearAllFilters = () => {
     commitSearchTerm('');
@@ -91,11 +103,13 @@ const DangKyNhanHangToolbar: React.FC<Props> = ({
     setFilter('dateTo', '');
     setFilter('trang_thai', []);
     setFilter('id_chi_nhanh', []);
+    setFilter('phieu_xuat', []);
   };
 
   const groups = [
     { key: 'trang_thai', label: t('dangKyNhanHang.col.trangThai'), icon: CircleDot, options: trangThaiOptions, width: 'sm:w-[150px]' },
     { key: 'id_chi_nhanh', label: t('dangKyNhanHang.col.chiNhanh'), icon: Building2, options: branchOptions, width: 'sm:w-[170px]' },
+    { key: 'phieu_xuat', label: t('dangKyNhanHang.col.phieuXuat'), icon: PackageCheck, options: phieuXuatOptions, width: 'sm:w-[170px]' },
   ] as const;
 
   const filterGroups = groups.map((g) => ({

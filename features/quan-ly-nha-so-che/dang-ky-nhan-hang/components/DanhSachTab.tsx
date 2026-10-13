@@ -31,6 +31,7 @@ import {
   getExportColumnsDangKyNhanHang,
   mapDangKyNhanHangRow,
 } from '../utils/export-dang-ky-nhan-hang';
+import type { TinhTrangPhieuXuat } from '../core/phieu-xuat';
 import DangKyNhanHangToolbar from './DangKyNhanHangToolbar';
 import DangKyNhanHangList from './DangKyNhanHangList';
 import DangKyNhanHangForm from './DangKyNhanHangForm';
@@ -87,6 +88,7 @@ const DanhSachTab: React.FC = () => {
       ngayTo: filters.dateTo || undefined,
       trangThai: filters.trang_thai ?? [],
       idChiNhanh: filters.id_chi_nhanh ?? [],
+      tinhTrangPhieuXuat: filters.phieu_xuat ?? [],
       sortColumn: sort.column ? (SORT_COLUMN_MAP[sort.column] ?? sort.column) : null,
       sortDirection: sort.direction,
     }),
@@ -213,6 +215,7 @@ const DanhSachTab: React.FC = () => {
       q: searchTerm,
       trangThai: (filters.trang_thai ?? []) as TrangThaiDkNh[],
       idChiNhanh: filters.id_chi_nhanh ?? [],
+      phieuXuat: (filters.phieu_xuat ?? []) as TinhTrangPhieuXuat[],
       sortColumn: listServerQuery.sortColumn,
       sortDirection: listServerQuery.sortDirection,
     });

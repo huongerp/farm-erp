@@ -5,6 +5,8 @@ import {
   coTheHoanTacCheckIn,
   coTheHoanTacCheckOut,
   coTheHuy,
+  coTheHuyPhieu,
+  coTheKhoiPhucPhieu,
   coTheSuaHangHoa,
   coTheSuaPhieu,
   coTheThemAnh,
@@ -24,6 +26,15 @@ describe('máy trạng thái đăng ký nhận hàng', () => {
     expect(coTheHuy('cho_vao')).toBe(true);
     expect(coTheHuy('da_vao')).toBe(false);
     expect(coTheHuy('da_ra')).toBe(false);
+  });
+
+  it('nút huỷ / khôi phục chỉ dành cho cấp cao', () => {
+    expect(coTheHuyPhieu('cho_vao', false)).toBe(false);
+    expect(coTheHuyPhieu('cho_vao', true)).toBe(true);
+    expect(coTheHuyPhieu('da_vao', true)).toBe(false);
+    expect(coTheKhoiPhucPhieu('huy', false)).toBe(false);
+    expect(coTheKhoiPhucPhieu('huy', true)).toBe(true);
+    expect(coTheKhoiPhucPhieu('cho_vao', true)).toBe(false);
   });
 
   it('hoàn tác chỉ dành cho cấp cao, đúng trạng thái', () => {

@@ -38,6 +38,7 @@ const DangKyNhanHangInDanhSachPage: React.FC = () => {
       allowedBranchIds: viewScope.allowedBranchIds,
       trangThai: loc.trangThai,
       idChiNhanh: loc.idChiNhanh,
+      tinhTrangPhieuXuat: loc.phieuXuat,
       ngayFrom: loc.tu || undefined,
       ngayTo: loc.den || undefined,
       sortColumn: loc.sortColumn,

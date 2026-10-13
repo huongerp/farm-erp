@@ -82,6 +82,8 @@ export const useChungTuRefList = (loai: ThuChiNguon | null, search = '') =>
     queryFn: () => getChungTuRefList(loai!, search),
     enabled: !!loai,
     staleTime: 1000 * 60 * 2,
+    // Gõ tìm phiếu: giữ danh sách cũ trong lúc chờ server, không nháy rỗng.
+    placeholderData: keepPreviousData,
   });
 
 /** Số dư quỹ hiện tại theo chi nhánh (null = mọi chi nhánh). */

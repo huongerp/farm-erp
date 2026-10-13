@@ -1,11 +1,13 @@
 /**
  * Đăng ký nhận hàng — DB: fp_farm_dang_ky_nhan_hang (phiếu), fp_farm_dang_ky_nhan_hang_ct
- * (hàng xuất, mỗi thùng 1 dòng), view v_farm_dang_ky_nhan_hang_tong_hh (tổng theo phiếu + hàng).
+ * (cây hàng xuất, mỗi cây 1 dòng), view v_farm_dang_ky_nhan_hang_tong_hh (tổng theo phiếu + hàng).
  */
 import { db, fetchAllRows, fetchTablePage, throwDbError, type PaginatedTableResult } from '../../../../lib/db';
 import { applyPostgrestSearch } from '../../../../lib/postgrest-search';
 import i18n from '../../../../lib/i18n';
 import type { DangKyNhanHang, DangKyNhanHangCt, NguonDongHang, TongHangHoaPhieu, TrangThaiDkNh } from '../core/types';
+import type { PhieuXuatCuaXe, TinhTrangPhieuXuat, TrangThaiPhieuKho } from '../core/phieu-xuat';
+import { BIEN_THE_SO_CHE } from '../../kho-bien-the/bien-the';
 import { chuanHoaGio } from '../core/thoi-gian';
 import type { DangKyNhanHangFormValues } from '../core/schema';
 import {
@@ -21,7 +23,8 @@ const VIEW_TONG = 'v_farm_dang_ky_nhan_hang_tong_hh';
 const ROW_COLUMNS =
   'id,id_chi_nhanh,ngay_dang_ky,khach_hang,loai_hang_hoa,so_luong_dang_ky,so_xe,so_cont,ten_tai_xe,sdt_tai_xe,' +
   'gio_dang_ky_tu,gio_dang_ky_den,tg_vao_thuc_te,tg_ra_thuc_te,id_nguoi_check_in,id_nguoi_check_out,' +
-  'trang_thai,ghi_chu,hinh_anh_urls,id_nguoi_tao,tg_tao,tg_cap_nhat,chi_nhanh:fp_var_chi_nhanh(ten_chi_nhanh)';
+  'trang_thai,ghi_chu,hinh_anh_urls,id_nguoi_tao,tg_tao,tg_cap_nhat,tinh_trang_phieu_xuat,' +
+  'chi_nhanh:fp_var_chi_nhanh(ten_chi_nhanh)';
 
 const CT_COLUMNS =
   'id,id_phieu,id_phieu_gscl,so_luong,nguon,ma_tem_quet,tg_quet,id_nguoi_quet,' +
@@ -51,6 +54,7 @@ interface DbRow {
   id_nguoi_tao: number | null;
   tg_tao: string;
   tg_cap_nhat: string;
+  tinh_trang_phieu_xuat: TinhTrangPhieuXuat | null;
   chi_nhanh?: { ten_chi_nhanh: string | null } | null;
 }
 
@@ -124,6 +128,7 @@ function rowToModel(row: DbRow): DangKyNhanHang {
     ten_nguoi_tao: null,
     tg_tao: row.tg_tao,
     tg_cap_nhat: row.tg_cap_nhat,
+    tinh_trang_phieu_xuat: row.tinh_trang_phieu_xuat ?? null,
     tong_so_luong: 0,
   };
 }
@@ -207,6 +212,7 @@ function applyDkNhListQuery(q: any, query: DangKyNhanHangListServerQuery): any {
     sel = sel.in('id_chi_nhanh', query.idChiNhanh.map(Number).filter(Number.isFinite));
   }
   if (query.trangThai.length > 0) sel = sel.in('trang_thai', query.trangThai);
+  if (query.tinhTrangPhieuXuat.length > 0) sel = sel.in('tinh_trang_phieu_xuat', query.tinhTrangPhieuXuat);
   if (query.ngayFrom) sel = sel.gte('ngay_dang_ky', query.ngayFrom);
   if (query.ngayTo) sel = sel.lte('ngay_dang_ky', query.ngayTo);
 
@@ -270,6 +276,7 @@ export interface DkNhTomTatRow {
   ngay_dang_ky: string;
   id_chi_nhanh: number | null;
   trang_thai: TrangThaiDkNh;
+  tinh_trang_phieu_xuat: TinhTrangPhieuXuat | null;
   khach_hang: string | null;
   loai_hang_hoa: string | null;
   id_nguoi_tao: number | null;
@@ -281,7 +288,7 @@ export async function getDkNhTomTatDb(viewAll: boolean, allowedBranchIds: string
   return fetchAllRows<DkNhTomTatRow>((from, to) => {
     let sel = db
       .from(TABLE)
-      .select('id,ngay_dang_ky,id_chi_nhanh,trang_thai,khach_hang,loai_hang_hoa,id_nguoi_tao,tg_tao');
+      .select('id,ngay_dang_ky,id_chi_nhanh,trang_thai,tinh_trang_phieu_xuat,khach_hang,loai_hang_hoa,id_nguoi_tao,tg_tao');
     if (!viewAll) {
       const ids = allowedBranchIds.map(Number).filter(Number.isFinite);
       sel = ids.length === 0 ? sel.eq('id', -1) : sel.in('id_chi_nhanh', ids);
@@ -489,4 +496,80 @@ export async function hoanTacDongCuoiDb(idPhieu: string): Promise<boolean> {
   if (!row) return false;
   await xoaDongHangDb([String(row.id)]);
   return true;
+}
+
+// ── Phiếu xuất kho thành phẩm (migration 042) ─────────────────────────────────
+
+const PK = BIEN_THE_SO_CHE.bang.phieuKho;
+
+interface DbPhieuXuatRow {
+  id: number;
+  so_phieu: string;
+  ngay: string;
+  trang_thai: TrangThaiPhieuKho;
+  kho_id: number;
+  ten_kho: string | null;
+  trang_thai_sua: 'cho_cap' | 'da_cap' | null;
+  id_nguoi_xin_sua: number | null;
+  dong: { id_hang_hoa: number; ten_hang_hoa: string | null; so_luong: string | number }[] | null;
+}
+
+/** Phiếu xuất còn hiệu lực (≠ Không duyệt) gắn với xe — kèm dòng để so lệch với cây hàng. */
+export async function getPhieuXuatCuaXeDb(idDknh: string): Promise<PhieuXuatCuaXe | null> {
+  const { data, error } = await db
+    .from(PK)
+    .select(
+      `id,so_phieu,ngay,trang_thai,kho_id,ten_kho,trang_thai_sua,id_nguoi_xin_sua,` +
+        `dong:${BIEN_THE_SO_CHE.bang.phieuKhoChiTiet}(id_hang_hoa,ten_hang_hoa,so_luong)`
+    )
+    .eq('id_dang_ky_nhan_hang', toIntId(idDknh))
+    .neq('trang_thai', 'Không duyệt')
+    .order('id', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throwDbError(error);
+  if (!data) return null;
+  const r = data as unknown as DbPhieuXuatRow;
+  return {
+    id: String(r.id),
+    so_phieu: r.so_phieu,
+    ngay: r.ngay,
+    trang_thai: r.trang_thai,
+    kho_id: String(r.kho_id),
+    ten_kho: r.ten_kho,
+    trang_thai_sua: r.trang_thai_sua,
+    id_nguoi_xin_sua: idStr(r.id_nguoi_xin_sua),
+    dong: (r.dong ?? []).map((d) => ({ id_hang_hoa: String(d.id_hang_hoa), ten_hang_hoa: d.ten_hang_hoa, so_luong: num(d.so_luong) })),
+  };
+}
+
+/** Tạo phiếu xuất từ cây hàng trên xe, hoặc ghi lại dòng nếu xe đã có phiếu (rpc_dknh_tao_phieu_xuat). Trả id phiếu kho. */
+export async function taoPhieuXuatDb(idDknh: string, khoId: string): Promise<string> {
+  const { data, error } = await db.rpc('rpc_dknh_tao_phieu_xuat', {
+    p_id_dknh: toIntId(idDknh),
+    p_kho_id: toIntId(khoId),
+  });
+  if (error) throwDbError(error);
+  return String(data);
+}
+
+export interface XeCuaPhieuKho {
+  id: string;
+  ngay_dang_ky: string;
+  so_xe: string | null;
+  so_cont: string | null;
+  khach_hang: string | null;
+}
+
+/** Ngược lại: phiếu kho Sơ chế sinh từ xe nào (chi tiết phiếu kho hiện "Nguồn"). */
+export async function getXeCuaPhieuKhoDb(idPhieuKho: string): Promise<XeCuaPhieuKho | null> {
+  const { data, error } = await db
+    .from(PK)
+    .select('xe:fp_farm_dang_ky_nhan_hang(id,ngay_dang_ky,so_xe,so_cont,khach_hang)')
+    .eq('id', toIntId(idPhieuKho))
+    .not('id_dang_ky_nhan_hang', 'is', null)
+    .maybeSingle();
+  if (error) throwDbError(error);
+  const xe = (data as { xe: (Omit<XeCuaPhieuKho, 'id'> & { id: number }) | null } | null)?.xe;
+  return xe ? { ...xe, id: String(xe.id) } : null;
 }

@@ -63,6 +63,7 @@ const ThongKeTab: React.FC = () => {
       viewAll: viewScope.viewAll,
       allowedBranchIds: viewScope.allowedBranchIds,
       trangThai: [],
+      tinhTrangPhieuXuat: [],
       idChiNhanh,
       ngayFrom: from || undefined,
       ngayTo: to || undefined,

@@ -6,6 +6,7 @@ import dayjs from 'dayjs';
 import { TRANG_THAI_DKNH, type DangKyNhanHang, type TrangThaiDkNh } from './types';
 import { chuanHoaGio, TZ_MAC_DINH } from './thoi-gian';
 import { DKNH_SORTABLE_DB_COLUMNS } from '../services/dang-ky-nhan-hang-list-query';
+import { TINH_TRANG_PHIEU_XUAT, type TinhTrangPhieuXuat } from './phieu-xuat';
 
 const DUONG_DAN = '/quan-ly-nha-so-che/dang-ky-nhan-hang/in-danh-sach';
 const YMD = /^\d{4}-\d{2}-\d{2}$/;
@@ -18,6 +19,7 @@ export interface LocInDanhSach {
   q: string;
   trangThai: TrangThaiDkNh[];
   idChiNhanh: string[];
+  phieuXuat: TinhTrangPhieuXuat[];
   sortColumn: string | null;
   sortDirection: 'asc' | 'desc' | null;
 }
@@ -29,6 +31,7 @@ export function taoUrlInDanhSach(loc: LocInDanhSach): string {
   if (loc.q.trim()) sp.set('q', loc.q.trim());
   if (loc.trangThai.length) sp.set('tt', loc.trangThai.join(','));
   if (loc.idChiNhanh.length) sp.set('cn', loc.idChiNhanh.join(','));
+  if (loc.phieuXuat.length) sp.set('px', loc.phieuXuat.join(','));
   if (loc.sortColumn && loc.sortDirection) {
     sp.set('sort', loc.sortColumn);
     sp.set('dir', loc.sortDirection);
@@ -57,6 +60,9 @@ export function docThamSoInDanhSach(sp: URLSearchParams): LocInDanhSach {
       (TRANG_THAI_DKNH as readonly string[]).includes(s)
     ),
     idChiNhanh: dsTach(sp.get('cn')).filter((s) => /^\d+$/.test(s)),
+    phieuXuat: dsTach(sp.get('px')).filter((s): s is TinhTrangPhieuXuat =>
+      (TINH_TRANG_PHIEU_XUAT as readonly string[]).includes(s)
+    ),
     sortColumn: sortHopLe ? sort : null,
     sortDirection: sortHopLe ? dir : null,
   };

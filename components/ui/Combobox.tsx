@@ -46,6 +46,11 @@ interface ComboboxProps {
    * lúc đó để lại một mảng trống lớn. Mặc định false để không đổi 53 chỗ đang dùng.
    */
   dropdownAutoHeight?: boolean;
+  /**
+   * Tìm ở server: báo từ khoá mỗi khi gõ (và '' khi đóng dropdown). Có prop này thì
+   * KHÔNG lọc client nữa — `options` truyền vào đã là kết quả lọc của server.
+   */
+  onSearchChange?: (term: string) => void;
 }
 
 const Combobox: React.FC<ComboboxProps> = ({
@@ -69,6 +74,7 @@ const Combobox: React.FC<ComboboxProps> = ({
   creatable = false,
   creatableLabel = 'Thêm mới',
   dropdownAutoHeight = false,
+  onSearchChange,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -163,15 +169,20 @@ const Combobox: React.FC<ComboboxProps> = ({
     return () => window.removeEventListener('scroll', onScroll, true);
   }, [isOpen, dropdownInPortal]);
 
+  // onSearchChange nên là hàm ổn định (vd setState) — đổi mỗi render sẽ gọi lại thừa.
+  useEffect(() => {
+    onSearchChange?.(isOpen ? searchTerm : '');
+  }, [searchTerm, isOpen, onSearchChange]);
+
   // Filter options based on search term (or show all when not searchable)
   const filteredOptions = useMemo(() => {
-    if (!searchable || !searchTerm) return options;
+    if (!searchable || !searchTerm || onSearchChange) return options;
     return options.filter(
       (option) =>
         option.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (option.subLabel && option.subLabel.toLowerCase().includes(searchTerm.toLowerCase()))
     );
-  }, [options, searchTerm, searchable]);
+  }, [options, searchTerm, searchable, onSearchChange]);
 
   // When creatable: show "Thêm mới: {searchTerm}" if searchTerm is non-empty and not exactly in options
   const canCreateNew = creatable && searchTerm.trim() !== '' && !options.some((o) => String(o.value).toLowerCase() === searchTerm.trim().toLowerCase());

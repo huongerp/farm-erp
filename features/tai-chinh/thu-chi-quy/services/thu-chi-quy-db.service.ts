@@ -10,6 +10,7 @@
 import { db, fetchAllRows, fetchTablePage, throwDbError, type PaginatedTableResult } from '../../../../lib/db';
 import { bulkInsert, chunkBy } from '../../../../lib/import-bulk';
 import { postgrestQuotedIlikePattern } from '../../../../lib/postgrest-or-ilike';
+import { applyPostgrestSearch } from '../../../../lib/postgrest-search';
 import i18n from '../../../../lib/i18n';
 import { buildSoPhieu, isThuChiNguon } from '../core/constants';
 import { TRANG_THAI_NGUON_BULK } from '../core/trang-thai';
@@ -302,7 +303,7 @@ const CHUNG_TU_NGUON: Record<
 
 /**
  * Danh sách phiếu nguồn mới nhất để chọn trong form (mặc định 50 phiếu gần nhất,
- * gõ vào ô tìm kiếm thì lọc theo số phiếu ở server).
+ * gõ vào ô tìm kiếm thì lọc ở server theo số phiếu / mô tả / ngày).
  * Đọc thẳng bảng của module khác thay vì import service của họ — tránh phụ thuộc
  * chéo giữa các feature.
  */
@@ -314,10 +315,11 @@ export async function getChungTuRefList(
   const cfg = CHUNG_TU_NGUON[loai];
   const cols = [cfg.cotSo, cfg.cotNgay, cfg.cotMoTa].filter(Boolean).join(',');
   let sel = db.from(cfg.table).select(`id,${cols}`);
-  const term = search.trim();
-  if (term) {
-    sel = sel.ilike(cfg.cotSo, postgrestQuotedIlikePattern(`%${term}%`));
-  }
+  // Tìm cả số phiếu lẫn mô tả (hiện ở dòng phụ của combobox) và ngày dd/mm/yyyy.
+  sel = applyPostgrestSearch(sel, search, {
+    text: [cfg.cotSo, cfg.cotMoTa].filter((c): c is string => !!c),
+    dates: [cfg.cotNgay],
+  });
   const { data, error } = await sel.order(cfg.cotNgay, { ascending: false }).limit(limit);
   if (error) throwDbError(error);
   return ((data ?? []) as unknown as Record<string, unknown>[]).map((row) => ({

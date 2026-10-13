@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useForm, Controller, SubmitHandler, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -27,6 +27,7 @@ import {
 } from '../hooks/use-thu-chi-quy';
 import { NGUON_CHUNG_TU } from '../core/constants';
 import { formatDate } from '../../../../lib/utils';
+import { useDebouncedValue } from '../../../../lib/hooks/use-debounced-value';
 
 function today(): string {
   const d = new Date();
@@ -130,16 +131,27 @@ const ThuChiQuyForm: React.FC<Props> = ({
   const loaiChungTu = useWatch({ control, name: 'loai_chung_tu' });
   const idChungTu = useWatch({ control, name: 'id_chung_tu' });
 
-  const { data: chungTuList = [], isFetching: chungTuLoading } = useChungTuRefList(loaiChungTu ?? null);
-  const chungTuOptions = useMemo(
-    () =>
-      chungTuList.map((ct) => ({
-        value: ct.id,
-        label: ct.so || ct.id,
-        subLabel: [ct.ngay ? formatDate(ct.ngay) : '', ct.mo_ta ?? ''].filter(Boolean).join(' · '),
-      })),
-    [chungTuList]
+  const soChungTu = useWatch({ control, name: 'so_chung_tu' });
+
+  // Chỉ tải 50 phiếu mới nhất; phiếu cũ hơn phải tìm ở server (gõ số phiếu / mô tả / ngày).
+  const [chungTuSearch, setChungTuSearch] = useState('');
+  const chungTuSearchDebounced = useDebouncedValue(chungTuSearch);
+  const { data: chungTuList = [], isFetching: chungTuLoading } = useChungTuRefList(
+    loaiChungTu ?? null,
+    chungTuSearchDebounced
   );
+  const chungTuOptions = useMemo(() => {
+    const opts = chungTuList.map((ct) => ({
+      value: ct.id,
+      label: ct.so || ct.id,
+      subLabel: [ct.ngay ? formatDate(ct.ngay) : '', ct.mo_ta ?? ''].filter(Boolean).join(' · '),
+    }));
+    // Phiếu đang chọn nằm ngoài kết quả hiện tại (phiếu cũ, hoặc vừa tìm xong) vẫn phải hiện số phiếu.
+    if (idChungTu && !opts.some((o) => o.value === idChungTu)) {
+      opts.unshift({ value: idChungTu, label: soChungTu || idChungTu, subLabel: '' });
+    }
+    return opts;
+  }, [chungTuList, idChungTu, soChungTu]);
   const nguonOptions = useMemo(
     () => NGUON_CHUNG_TU.map((n) => ({ value: n, label: t(nguonChungTuFullI18nKey(n)) })),
     [t]
@@ -247,6 +259,7 @@ const ThuChiQuyForm: React.FC<Props> = ({
                     // Lưu kèm số phiếu để phiếu quỹ vẫn đọc được khi phiếu nguồn bị xoá.
                     setValue('so_chung_tu', chungTuList.find((ct) => ct.id === id)?.so ?? null);
                   }}
+                  onSearchChange={setChungTuSearch}
                   disabled={!loaiChungTu}
                   placeholder={
                     loaiChungTu

@@ -277,5 +277,6 @@
   "phieuKhoPhanThuoc.service.vuotTonItem": "{{hang}} tại {{kho}}: tồn {{ton}}, cần {{can}}",
   "phieuKhoPhanThuoc.service.canhBaoDuoiDinhMuc": "Tồn dưới định mức — {{detail}}",
   "phieuKhoPhanThuoc.service.duoiDinhMucItem": "{{hang}} tại {{kho}}: còn {{sau}}, định mức {{dinhMuc}}",
-  "phieuKhoPhanThuoc.import.guideNote5": "• Phiếu Xuất / Chuyển không được vượt tồn kho hiện tại (tính cả phiếu chờ duyệt và các phiếu phía trên trong cùng file)."
+  "phieuKhoPhanThuoc.import.guideNote5": "• Phiếu Xuất / Chuyển không được vượt tồn kho hiện tại (tính cả phiếu chờ duyệt và các phiếu phía trên trong cùng file).",
+  "phieuKhoPhanThuoc.detail.nguonXe": "Nguồn: đăng ký xe"
 }

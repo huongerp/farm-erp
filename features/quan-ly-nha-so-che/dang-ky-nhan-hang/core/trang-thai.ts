@@ -5,6 +5,9 @@
  *      │                    ▲  │                  │
  *      └──huỷ──▶ huy        └──┴── hoàn tác (cấp cao) ┘
  *
+ * Huỷ / khôi phục / hoàn tác chỉ cấp cao; DB chặn lại bằng trigger
+ * `fn_dknh_khoa_chuyen_trang_thai` (migration 041) — người thường chỉ check in / check out.
+ *
  * Hàng hoá xuất và ảnh là TUỲ CHỌN: có phiếu chỉ đăng ký xe + check in/out, nên
  * check out không bao giờ đòi có dòng hàng hay ảnh.
  * `capCao` = cấp bậc 1 hoặc quyền admin/all trên module.
@@ -34,6 +37,18 @@ export function coTheHuy(tt: TrangThaiDkNh): boolean {
 
 export function coTheKhoiPhuc(tt: TrangThaiDkNh): boolean {
   return tt === 'huy';
+}
+
+/**
+ * Nút Huỷ / Khôi phục của đăng ký nhận hàng: chỉ cấp cao.
+ * (`coTheHuy` / `coTheKhoiPhuc` giữ nguyên vì Đăng ký tham quan dùng chung.)
+ */
+export function coTheHuyPhieu(tt: TrangThaiDkNh, capCao: boolean): boolean {
+  return capCao && coTheHuy(tt);
+}
+
+export function coTheKhoiPhucPhieu(tt: TrangThaiDkNh, capCao: boolean): boolean {
+  return capCao && coTheKhoiPhuc(tt);
 }
 
 /** Đưa về trạng thái trước (xoá giờ vào / giờ ra) — chỉ cấp cao, để sửa bấm nhầm. */

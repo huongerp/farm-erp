@@ -7,6 +7,8 @@ export interface DangKyNhanHangFilters {
   dateTo: string;
   trang_thai: string[];
   id_chi_nhanh: string[];
+  /** Tình trạng phiếu xuất kho (tinh_trang_phieu_xuat). */
+  phieu_xuat: string[];
 }
 
 const col = (id: string, key: string, minWidth: number, maxWidth: number, order: number): ColumnConfig => ({
@@ -21,6 +23,8 @@ const col = (id: string, key: string, minWidth: number, maxWidth: number, order:
 export const DEFAULT_COLUMNS: ColumnConfig[] = [
   col('ngay_dang_ky', 'ngay', 96, 120, 0),
   col('trang_thai', 'trangThai', 120, 150, 1),
+  // 1.5: cột thêm sau (migration 042) — người đã lưu thứ tự cột cũ vẫn thấy nó ngay sau Trạng thái.
+  col('tinh_trang_phieu_xuat', 'phieuXuat', 120, 150, 1.5),
   col('so_xe', 'soXe', 100, 150, 2),
   col('so_cont', 'soCont', 110, 160, 3),
   col('khach_hang', 'khachHang', 100, 180, 4),
@@ -38,7 +42,7 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
   col('ten_nguoi_tao', 'nguoiTao', 120, 190, 16),
 ];
 
-const initialFilters: DangKyNhanHangFilters = { dateFrom: '', dateTo: '', trang_thai: [], id_chi_nhanh: [] };
+const initialFilters: DangKyNhanHangFilters = { dateFrom: '', dateTo: '', trang_thai: [], id_chi_nhanh: [], phieu_xuat: [] };
 
 export const useDangKyNhanHangStore = createGenericStore<DangKyNhanHangFilters>(
   initialFilters,

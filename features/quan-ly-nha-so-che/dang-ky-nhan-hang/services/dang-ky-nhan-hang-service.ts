@@ -1,5 +1,6 @@
 import type { PaginatedTableResult } from '../../../../lib/db';
 import type { DangKyNhanHang, DangKyNhanHangCt, TrangThaiDkNh } from '../core/types';
+import type { TinhTrangPhieuXuat } from '../core/phieu-xuat';
 import type { DangKyNhanHangListServerQuery } from './dang-ky-nhan-hang-list-query';
 import { getEmployeesRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
 import { getXeDaXepCayHang } from '../../giam-sat-chat-luong/services/giam-sat-chat-luong-service';
@@ -28,6 +29,10 @@ export {
   xoaDongHangDb as xoaDongHang,
   hoanTacDongCuoiDb as hoanTacDongCuoi,
   getTongHangHoaTheoPhieuDb as getTongHangHoaTheoPhieu,
+  getPhieuXuatCuaXeDb as getPhieuXuatCuaXe,
+  taoPhieuXuatDb as taoPhieuXuat,
+  getXeCuaPhieuKhoDb as getXeCuaPhieuKho,
+  type XeCuaPhieuKho,
   type CheckInOutInput,
   type ThemDongHangInput,
 } from './dang-ky-nhan-hang-db.service';
@@ -91,6 +96,7 @@ export interface DkNhTomTat {
   id_chi_nhanh: string | null;
   ten_chi_nhanh: string | null;
   trang_thai: TrangThaiDkNh;
+  tinh_trang_phieu_xuat: TinhTrangPhieuXuat | null;
   khach_hang: string | null;
   loai_hang_hoa: string | null;
   id_nguoi_tao: string | null;
@@ -105,6 +111,7 @@ export async function getDkNhTomTat(viewAll: boolean, allowedBranchIds: string[]
     id_chi_nhanh: r.id_chi_nhanh != null ? String(r.id_chi_nhanh) : null,
     ten_chi_nhanh: null,
     trang_thai: r.trang_thai,
+    tinh_trang_phieu_xuat: r.tinh_trang_phieu_xuat,
     khach_hang: r.khach_hang,
     loai_hang_hoa: r.loai_hang_hoa,
     id_nguoi_tao: r.id_nguoi_tao != null ? String(r.id_nguoi_tao) : null,

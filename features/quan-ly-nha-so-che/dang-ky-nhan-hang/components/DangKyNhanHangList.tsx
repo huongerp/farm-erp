@@ -22,6 +22,7 @@ import {
   soPhutVaoTre,
 } from '../core/thoi-gian';
 import TrangThaiBadge from './TrangThaiBadge';
+import PhieuXuatBadge from './PhieuXuatBadge';
 
 interface Props {
   data: DangKyNhanHang[];
@@ -141,6 +142,8 @@ const DangKyNhanHangList: React.FC<Props> = ({
         return one(formatYmdToDisplay(item.ngay_dang_ky), 'tabular-nums');
       case 'trang_thai':
         return <TrangThaiBadge value={item.trang_thai} />;
+      case 'tinh_trang_phieu_xuat':
+        return <PhieuXuatBadge value={item.tinh_trang_phieu_xuat} />;
       case 'so_xe':
         return one(item.so_xe || '—', 'font-mono font-medium');
       case 'so_cont':
@@ -283,6 +286,7 @@ const DangKyNhanHangList: React.FC<Props> = ({
                 {formatNumberVN(item.tong_so_luong)} {t('dangKyNhanHang.hangHoa.thung')}
               </span>
             )}
+            {item.tinh_trang_phieu_xuat && <PhieuXuatBadge value={item.tinh_trang_phieu_xuat} />}
           </div>
         )}
         <div className="flex items-center justify-between gap-1 pt-2 border-t border-border mt-2">

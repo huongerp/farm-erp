@@ -1,3 +1,5 @@
+import type { TinhTrangPhieuXuat } from './phieu-xuat';
+
 /** Trạng thái phiếu — DB: fp_farm_dang_ky_nhan_hang.trang_thai */
 export const TRANG_THAI_DKNH = ['cho_vao', 'da_vao', 'da_ra', 'huy'] as const;
 export type TrangThaiDkNh = (typeof TRANG_THAI_DKNH)[number];
@@ -37,6 +39,8 @@ export interface DangKyNhanHang {
   ten_nguoi_tao: string | null;
   tg_tao: string;
   tg_cap_nhat: string;
+  /** Phiếu xuất kho sinh từ cây hàng — NULL khi xe chưa có cây (migration 042). */
+  tinh_trang_phieu_xuat: TinhTrangPhieuXuat | null;
   /** Tổng số lượng hàng xuất (view tổng) — 0 khi phiếu chỉ đăng ký xe. */
   tong_so_luong: number;
 }
