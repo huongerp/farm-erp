@@ -12,7 +12,7 @@ import Textarea from '../../../../components/ui/Textarea';
 import Combobox from '../../../../components/ui/Combobox';
 import MultiImageInput from '../../../../components/ui/MultiImageInput';
 import { TRANG_THAI } from '../../../../lib/constants';
-import { getTodayISO } from '../../../../lib/utils';
+import { formatYmdToDisplay, getTodayISO } from '../../../../lib/utils';
 import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
 import { dangKyNhanHangFormSchema, type DangKyNhanHangFormValues } from '../core/schema';
 import type { DangKyNhanHang } from '../core/types';
@@ -22,6 +22,8 @@ import { MAX_ANH_PHIEU, imageItemsToUrls, uploadAnhDangKyNhanHang, urlsToImageIt
 interface Props {
   branches: Branch[];
   initialData?: DangKyNhanHang | null;
+  /** Sao chép: mở form tạo mới với mọi thông tin của phiếu nguồn (không kèm cây hàng), farm để trống chọn lại. */
+  copyFrom?: DangKyNhanHang | null;
   preferredBranchId?: string | null;
   /** Giá trị đã dùng (toàn bộ phiếu) — gợi ý cho ô khách hàng / loại hàng. */
   goiYKhachHang: string[];
@@ -50,6 +52,7 @@ function toForm(d: DangKyNhanHang): DangKyNhanHangFormValues {
 const DangKyNhanHangForm: React.FC<Props> = ({
   branches,
   initialData,
+  copyFrom,
   preferredBranchId,
   goiYKhachHang,
   goiYLoaiHang,
@@ -64,7 +67,10 @@ const DangKyNhanHangForm: React.FC<Props> = ({
     () =>
       initialData
         ? toForm(initialData)
-        : {
+        : copyFrom
+          ? // Một xe lấy hàng ở nhiều farm → phiếu y hệt, chỉ khác farm: bắt chọn lại để không lưu nhầm phiếu trùng.
+            { ...toForm(copyFrom), id_chi_nhanh: '' }
+          : {
             id_chi_nhanh: preferredBranchId ?? '',
             ngay_dang_ky: getTodayISO(),
             khach_hang: '',
@@ -79,7 +85,7 @@ const DangKyNhanHangForm: React.FC<Props> = ({
             ghi_chu: '',
             hinh_anh_urls: [],
           },
-    [initialData, preferredBranchId]
+    [initialData, copyFrom, preferredBranchId]
   );
 
   const {
@@ -139,8 +145,22 @@ const DangKyNhanHangForm: React.FC<Props> = ({
 
   return (
     <GenericDrawer
-      title={t(isEdit ? 'dangKyNhanHang.form.titleEdit' : 'dangKyNhanHang.form.titleCreate')}
-      subtitle={t('dangKyNhanHang.form.subtitle')}
+      title={t(
+        isEdit
+          ? 'dangKyNhanHang.form.titleEdit'
+          : copyFrom
+            ? 'dangKyNhanHang.form.titleCopy'
+            : 'dangKyNhanHang.form.titleCreate'
+      )}
+      subtitle={
+        !isEdit && copyFrom
+          ? t('dangKyNhanHang.form.saoChepTu', {
+              farm: copyFrom.ten_chi_nhanh ?? '—',
+              xe: [copyFrom.so_xe, copyFrom.so_cont].filter(Boolean).join(' · ') || '—',
+              ngay: formatYmdToDisplay(copyFrom.ngay_dang_ky),
+            })
+          : t('dangKyNhanHang.form.subtitle')
+      }
       icon={<Truck className="text-primary" size={22} />}
       onClose={onClose}
       isDirty={isDirty}

@@ -72,6 +72,7 @@ const DanhSachTab: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [editingItem, setEditingItem] = useState<DangKyNhanHang | null>(null);
+  const [copyingItem, setCopyingItem] = useState<DangKyNhanHang | null>(null);
   const [viewingId, setViewingId] = useState<string | null>(null);
   const [quick, setQuick] = useState<{ item: DangKyNhanHang; mode: 'checkIn' | 'checkOut' } | null>(null);
 
@@ -175,6 +176,15 @@ const DanhSachTab: React.FC = () => {
 
   const openEdit = (item: DangKyNhanHang) => {
     setEditingItem(item);
+    setCopyingItem(null);
+    setViewingId(null);
+    setShowForm(true);
+  };
+
+  /** Sao chép: form tạo mới mang mọi thông tin phiếu nguồn, không kèm cây hàng. */
+  const openCopy = (item: DangKyNhanHang) => {
+    setEditingItem(null);
+    setCopyingItem(item);
     setViewingId(null);
     setShowForm(true);
   };
@@ -236,6 +246,7 @@ const DanhSachTab: React.FC = () => {
         selectedCount={selectedIds.size}
         onAdd={() => {
           setEditingItem(null);
+          setCopyingItem(null);
           setShowForm(true);
         }}
         onDeleteMany={handleDeleteMany}
@@ -273,6 +284,7 @@ const DanhSachTab: React.FC = () => {
               : undefined
           }
           onQuickAction={canUpdate ? (item, mode) => setQuick({ item, mode }) : undefined}
+          onCopy={canCreate ? openCopy : undefined}
         />
       </div>
 
@@ -281,12 +293,14 @@ const DanhSachTab: React.FC = () => {
           <DangKyNhanHangForm
             branches={branches}
             initialData={editingItem}
+            copyFrom={copyingItem}
             preferredBranchId={editingItem ? null : preferredBranchId}
             goiYKhachHang={goiYKhachHang}
             goiYLoaiHang={goiYLoaiHang}
             onClose={() => {
               setShowForm(false);
               setEditingItem(null);
+              setCopyingItem(null);
             }}
           />
         )}
@@ -313,6 +327,7 @@ const DanhSachTab: React.FC = () => {
             onClose={() => setViewingId(null)}
             onEdit={canUpdate ? openEdit : undefined}
             onDelete={canDelete ? handleDelete : undefined}
+            onCopy={canCreate ? openCopy : undefined}
             canUpdate={canUpdate}
             canDelete={canDelete}
           />

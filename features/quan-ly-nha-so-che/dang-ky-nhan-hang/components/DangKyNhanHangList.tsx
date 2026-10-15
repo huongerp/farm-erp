@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Edit, LogIn, LogOut, Trash2 } from 'lucide-react';
+import { Copy, Edit, LogIn, LogOut, Trash2 } from 'lucide-react';
 import GenericTable from '../../../../components/shared/GenericTable';
 import type { ColumnConfig, SortState } from '../../../../store/createGenericStore';
 import {
@@ -43,6 +43,8 @@ interface Props {
   onView: (item: DangKyNhanHang) => void;
   onEdit?: (item: DangKyNhanHang) => void;
   onDelete?: (id: string) => void;
+  /** Sao chép phiếu sang form tạo mới — nút trên card mobile. */
+  onCopy?: (item: DangKyNhanHang) => void;
   /** Nút check in / check out nhanh ngay trên dòng / card mobile. */
   onQuickAction?: (item: DangKyNhanHang, mode: 'checkIn' | 'checkOut') => void;
 }
@@ -69,6 +71,7 @@ const DangKyNhanHangList: React.FC<Props> = ({
   onView,
   onEdit,
   onDelete,
+  onCopy,
   onQuickAction,
 }) => {
   const { t } = useTranslation();
@@ -292,6 +295,20 @@ const DangKyNhanHangList: React.FC<Props> = ({
         <div className="flex items-center justify-between gap-1 pt-2 border-t border-border mt-2">
           <div>{quickBtn(item, 'md')}</div>
           <div className="flex gap-1">
+            {onCopy && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCopy(item);
+                }}
+                className="p-2 text-muted-foreground hover:bg-muted rounded-lg"
+                aria-label={t('dangKyNhanHang.toolbar.saoChep')}
+                title={t('dangKyNhanHang.toolbar.saoChep')}
+              >
+                <Copy size={14} />
+              </button>
+            )}
             {onEdit && (
               <button
                 type="button"

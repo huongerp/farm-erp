@@ -6,6 +6,7 @@ import {
   Building2,
   Calendar,
   Clock,
+  Copy,
   FileText,
   Images,
   LogIn,
@@ -25,6 +26,7 @@ import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';
 import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
 import DetailDrawerFooter from '../../../../components/shared/DetailDrawerFooter';
+import Button from '../../../../components/ui/Button';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { cn, formatDateTimeShort, formatNumberVN, formatYmdToDisplay, getTimezone } from '../../../../lib/utils';
 import type { DangKyNhanHang } from '../core/types';
@@ -75,6 +77,8 @@ interface Props {
   onClose: () => void;
   onEdit?: (item: DangKyNhanHang) => void;
   onDelete?: (id: string) => void;
+  /** Sao chép sang form tạo mới (không kèm cây hàng) — chỉ truyền khi có quyền tạo. */
+  onCopy?: (item: DangKyNhanHang) => void;
   canUpdate?: boolean;
   canDelete?: boolean;
 }
@@ -108,6 +112,7 @@ const DangKyNhanHangDetail: React.FC<Props> = ({
   onClose,
   onEdit,
   onDelete,
+  onCopy,
   canUpdate = true,
   canDelete = true,
 }) => {
@@ -204,6 +209,13 @@ const DangKyNhanHangDetail: React.FC<Props> = ({
             canDelete={canDeletePhieu}
             onEdit={onEdit && canEditPhieu ? () => onEdit(data) : undefined}
             onDelete={onDelete && canDeletePhieu ? () => onDelete(data.id) : undefined}
+            extraActions={
+              onCopy && (
+                <Button variant="outline" size="sm" onClick={() => onCopy(data)}>
+                  <Copy size={16} className="mr-2" /> {t('dangKyNhanHang.toolbar.saoChep')}
+                </Button>
+              )
+            }
           />
         }
       >
