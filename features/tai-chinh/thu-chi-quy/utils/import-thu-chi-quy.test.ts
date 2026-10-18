@@ -190,6 +190,19 @@ describe('buildThuChiQuyImportPlan', () => {
     ).toContain('errHangMucAmbiguous');
   });
 
+  it('người thường (ngayBatBuoc) chỉ nhập được phiếu đúng ngày hôm nay; cấp cao nhập mọi ngày', () => {
+    const rows = [
+      { [IMPORT_ROW_KEY]: 2, ngay: '1/8/2026', dien_giai: 'A', hang_muc: 'Vật tư', chi: 1000 },
+      { [IMPORT_ROW_KEY]: 3, ngay: '31/7/2026', dien_giai: 'B', hang_muc: 'Vật tư', chi: 1000 },
+    ];
+    const nguoiThuong = buildThuChiQuyImportPlan(rows, { ...input, ngayBatBuoc: '2026-08-01' });
+    expect(nguoiThuong.toInsert.map((r) => r.row)).toEqual([2]);
+    expect(nguoiThuong.errors.map((e) => e.row)).toEqual([3]);
+    expect(nguoiThuong.errors[0].msg).toContain('errNgayChiHomNay');
+
+    expect(buildThuChiQuyImportPlan(rows, { ...input, ngayBatBuoc: null }).toInsert).toHaveLength(2);
+  });
+
   it('gom mọi lỗi của một dòng và giữ dữ liệu gốc (không có __row) để xuất file lỗi', () => {
     const plan = buildThuChiQuyImportPlan([{ [IMPORT_ROW_KEY]: 9, ngay: 'x', dien_giai: '', chi: 1000 }], input);
     expect(plan.errors[0].msg.split('; ').length).toBeGreaterThanOrEqual(3);

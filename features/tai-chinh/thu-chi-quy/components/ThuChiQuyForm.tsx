@@ -44,6 +44,11 @@ interface Props {
   defaultChiNhanhId?: string;
   /** Chi nhánh được phép chọn; rỗng = không giới hạn (viewAll) */
   allowedBranchIds?: string[];
+  /**
+   * Cho chọn / đổi ngày phiếu (chỉ cấp cao — `canSuaNgayThuChiQuy`). false: phiếu mới
+   * luôn mang ngày hôm nay, sửa phiếu giữ nguyên ngày cũ.
+   */
+  choSuaNgay: boolean;
   onClose: () => void;
 }
 
@@ -53,6 +58,7 @@ const ThuChiQuyForm: React.FC<Props> = ({
   stackLevel = 0,
   defaultChiNhanhId = '',
   allowedBranchIds = [],
+  choSuaNgay,
   onClose,
 }) => {
   const { t } = useTranslation();
@@ -90,9 +96,12 @@ const ThuChiQuyForm: React.FC<Props> = ({
       so_chung_tu: null,
       // Chỉ ghi đè bằng các trường prefill THỰC SỰ có giá trị — spread thẳng sẽ
       // set undefined và xoá mất farm/hạng mục vừa suy ra ở trên.
-      ...Object.fromEntries(Object.entries(prefill ?? {}).filter(([, v]) => v !== undefined)),
+      // Người thường không được lấy ngày của chứng từ gốc — phiếu mới luôn là hôm nay.
+      ...Object.fromEntries(
+        Object.entries(prefill ?? {}).filter(([k, v]) => v !== undefined && (choSuaNgay || k !== 'ngay'))
+      ),
     };
-  }, [defaultChiNhanhId, phieuGanNhat, user?.id_chi_nhanh, prefill]);
+  }, [defaultChiNhanhId, phieuGanNhat, user?.id_chi_nhanh, prefill, choSuaNgay]);
 
   const {
     register,
@@ -187,6 +196,8 @@ const ThuChiQuyForm: React.FC<Props> = ({
     };
     const payload: ThuChiQuyFormValues = {
       ...data,
+      // Ô ngày chỉ readOnly ở UI → chốt lại lúc lưu (form mở qua nửa đêm, sửa DOM).
+      ngay: choSuaNgay ? data.ngay : initialData?.ngay ?? today(),
       dien_giai: data.dien_giai.trim(),
       ghi_chu: data.ghi_chu?.trim() || null,
     };
@@ -307,6 +318,10 @@ const ThuChiQuyForm: React.FC<Props> = ({
               label={t('thuChiQuy.form.ngay')}
               icon={<Calendar size={14} />}
               required
+              // readOnly thay vì disabled: react-hook-form bỏ giá trị field disabled khi submit.
+              readOnly={!choSuaNgay}
+              className={choSuaNgay ? undefined : 'cursor-not-allowed bg-muted text-muted-foreground'}
+              title={choSuaNgay ? undefined : t('thuChiQuy.form.ngayChiCapCao')}
               {...register('ngay')}
               error={errors.ngay?.message}
             />

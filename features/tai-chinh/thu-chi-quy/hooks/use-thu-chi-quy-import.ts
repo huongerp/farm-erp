@@ -30,6 +30,11 @@ const COLUMNS: { key: string; label: string; hint: string; required?: boolean; r
   { key: 'ghi_chu', label: 'store.ghiChuCol', hint: 'hintGhiChu' },
 ];
 
+function yyyymmdd(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
 function ddmmyyyy(d: Date): string {
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
@@ -41,10 +46,12 @@ interface Args {
   /** Farm đang chọn trên thanh công cụ. */
   chiNhanhDangXem: string[];
   hangMucList: HangMucThuChi[];
+  /** Cấp cao được nhập phiếu mọi ngày; người thường chỉ ngày hôm nay. */
+  choSuaNgay: boolean;
 }
 
 /** Wiring Import Excel cho Sổ quỹ. Bố cục file mẫu do `lib/import-template.ts` dựng. */
-export function useThuChiQuyImport({ allowedBranches, chiNhanhDangXem, hangMucList }: Args) {
+export function useThuChiQuyImport({ allowedBranches, chiNhanhDangXem, hangMucList, choSuaNgay }: Args) {
   const { t } = useTranslation();
   const tr = useCallback((k: string, o?: Record<string, unknown>) => t(`thuChiQuy.${k}`, o ?? {}), [t]);
   const qc = useQueryClient();
@@ -105,6 +112,7 @@ export function useThuChiQuyImport({ allowedBranches, chiNhanhDangXem, hangMucLi
         hangMuc: hangMucList.map((hm) => ({ id: hm.id, ma: hm.ma, ten: hm.ten, loai: hm.loai })),
         chiNhanh: allowedBranches.map((b) => ({ id: String(b.id), ma: b.ma_chi_nhanh, ten: b.ten_chi_nhanh })),
         defaultChiNhanhId: chiNhanhDangXem.length === 1 ? chiNhanhDangXem[0] : null,
+        ngayBatBuoc: choSuaNgay ? null : yyyymmdd(new Date()),
       });
       if (plan.toInsert.length === 0) {
         setImportErrors(plan.errors);
@@ -144,7 +152,7 @@ export function useThuChiQuyImport({ allowedBranches, chiNhanhDangXem, hangMucLi
       }
       return { created: outcome.done, skipped: errors.length };
     },
-    [allowedBranches, chiNhanhDangXem, hangMucList, qc, tr, user]
+    [allowedBranches, chiNhanhDangXem, choSuaNgay, hangMucList, qc, tr, user]
   );
 
   return {

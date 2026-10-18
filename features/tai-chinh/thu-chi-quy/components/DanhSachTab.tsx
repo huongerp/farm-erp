@@ -82,7 +82,12 @@ const DanhSachTab: React.FC = () => {
     return branches.filter((b) => allowed.has(String(b.id)));
   }, [branches, viewScope.viewAll, viewScope.allowedBranchIds]);
 
-  const importer = useThuChiQuyImport({ allowedBranches, chiNhanhDangXem, hangMucList });
+  const importer = useThuChiQuyImport({
+    allowedBranches,
+    chiNhanhDangXem,
+    hangMucList,
+    choSuaNgay: perms.canSuaNgay,
+  });
 
   /**
    * Mặc định để TRỐNG = tất cả farm trong phạm vi xem (cấp bậc 1 / quyền admin
@@ -433,6 +438,7 @@ const DanhSachTab: React.FC = () => {
             initialData={editingItem}
             defaultChiNhanhId={chiNhanhDangXem.length === 1 ? chiNhanhDangXem[0] : ''}
             allowedBranchIds={viewScope.viewAll ? [] : viewScope.allowedBranchIds}
+            choSuaNgay={perms.canSuaNgay}
             onClose={() => {
               setShowForm(false);
               setEditingItem(null);

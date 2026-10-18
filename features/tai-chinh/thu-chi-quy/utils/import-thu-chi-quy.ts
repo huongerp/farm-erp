@@ -59,6 +59,11 @@ export interface ImportPlanInput {
   chiNhanh: ChiNhanhRefLite[];
   /** Farm đang chọn trên thanh công cụ (khi chọn đúng một) — dùng cho dòng để trống cột Farm. */
   defaultChiNhanhId?: string | null;
+  /**
+   * yyyy-mm-dd: người không phải cấp cao chỉ được nhập phiếu đúng ngày này (hôm nay) —
+   * dòng khác ngày báo lỗi, KHÔNG tự đổi ngày. null/undefined = cho mọi ngày (cấp cao).
+   */
+  ngayBatBuoc?: string | null;
 }
 
 /** Ghép số lượng / đơn giá của sổ cũ vào ghi chú (không còn cột riêng trên UI). */
@@ -126,6 +131,7 @@ export function buildThuChiQuyImportPlan(
 
     const ngay = parseImportDate(raw.ngay);
     if (!ngay) errs.push(tr('errNgay'));
+    else if (input.ngayBatBuoc && ngay !== input.ngayBatBuoc) errs.push(tr('errNgayChiHomNay'));
 
     const dienGiai = normalizeText(raw.dien_giai);
     if (!dienGiai) errs.push(tr('errDienGiai'));

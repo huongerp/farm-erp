@@ -6,6 +6,7 @@ import {
   canDuyetThuChiQuy,
   canKhongDuyetThuChiQuy,
   canMutateThuChiQuy,
+  canSuaNgayThuChiQuy,
   canTraVeChoDuyetThuChiQuy,
   isThuChiQuyLocked,
 } from '../core/trang-thai';
@@ -15,6 +16,8 @@ export interface ThuChiQuyPermissions {
   /** cap_bac = 1 hoặc quyền admin/all trên module — người duy nhất duyệt / không duyệt được. */
   laCapCao: boolean;
   canCreate: boolean;
+  /** Chọn / đổi ngày phiếu — chỉ cấp cao. */
+  canSuaNgay: boolean;
   isLocked: (item: PhieuQuyTrangThai) => boolean;
   canEditRow: (item: PhieuQuyTrangThai) => boolean;
   canDeleteRow: (item: PhieuQuyTrangThai) => boolean;
@@ -36,6 +39,7 @@ export function useThuChiQuyPermissions(): ThuChiQuyPermissions {
     return {
       laCapCao,
       canCreate,
+      canSuaNgay: canSuaNgayThuChiQuy(laCapCao),
       isLocked: isThuChiQuyLocked,
       canEditRow: (item) => canMutateThuChiQuy(item, canUpdate, laCapCao),
       canDeleteRow: (item) => canMutateThuChiQuy(item, canDelete, laCapCao),

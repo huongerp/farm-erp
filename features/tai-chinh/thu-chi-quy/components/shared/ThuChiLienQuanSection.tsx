@@ -10,7 +10,7 @@ import { useConfirmStore } from '../../../../../store/useConfirmStore';
 import { useModulePermission } from '../../../../he-thong/phan-quyen/hooks/use-module-permission';
 import { laCapBacToanQuyen } from '../../../../he-thong/phan-quyen/core/cap-bac-toan-quyen';
 import { useAuthStore } from '../../../../../store/useStore';
-import { canMutateThuChiQuy } from '../../core/trang-thai';
+import { canMutateThuChiQuy, canSuaNgayThuChiQuy } from '../../core/trang-thai';
 import { useThuChiQuyByChungTu, useDeleteThuChiQuy } from '../../hooks/use-thu-chi-quy';
 import { THU_CHI_QUY_MODULE_ID, useThuChiQuyViewScope } from '../../hooks/use-thu-chi-quy-view-scope';
 import { getLoaiBadgeClass, loaiThuChiToI18nKey } from '../../core/constants';
@@ -289,6 +289,7 @@ const ThuChiLienQuanSection: React.FC<ThuChiLienQuanSectionProps> = ({
             stackLevel={1}
             defaultChiNhanhId={idChiNhanhMacDinh ? String(idChiNhanhMacDinh) : ''}
             allowedBranchIds={viewScope.viewAll ? [] : viewScope.allowedBranchIds}
+            choSuaNgay={canSuaNgayThuChiQuy(laCapCao)}
             onClose={() => {
               setShowForm(false);
               setEditingItem(null);

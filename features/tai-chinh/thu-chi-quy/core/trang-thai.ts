@@ -129,6 +129,15 @@ export function phanLoaiBulkThuChiQuy<T extends PhieuQuyTrangThai & { id: string
   return { hopLe, boQua: daXet.size - hopLe.length };
 }
 
+/**
+ * Ngày phiếu quỹ quyết định thứ tự tồn quỹ lũy kế → chỉ cấp cao được chọn / đổi ngày.
+ * Người thường: phiếu mới luôn mang ngày hôm nay, sửa phiếu giữ nguyên ngày.
+ * DB chặn lại cùng luật ở trigger `fn_tc_quy_khoa_duyet` (migration 043).
+ */
+export function canSuaNgayThuChiQuy(laCapCao: boolean): boolean {
+  return laCapCao;
+}
+
 /** Khoá i18n nhãn trạng thái (thuChiQuy.trangThai.*). */
 export function trangThaiQuyToI18nKey(trangThai: string): string {
   switch (trangThai) {
