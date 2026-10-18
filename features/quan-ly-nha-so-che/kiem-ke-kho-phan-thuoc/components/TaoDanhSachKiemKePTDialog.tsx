@@ -15,6 +15,7 @@ import { getFarmHangHoaRef } from '../../hang-hoa-phan-thuoc/services/farm-hang-
 import { useKhoList } from '../../../kho-van/danh-sach-kho/hooks/use-kho';
 import type { TaoDanhSachKiemKePTFilters } from '../core/types';
 import { useKhoBienThe } from '../../kho-bien-the/KhoBienTheProvider';
+import { locHangHoaChoChon } from '../../hang-hoa-phan-thuoc/core/trang-thai';
 
 interface Props {
   open: boolean;
@@ -61,8 +62,8 @@ const TaoDanhSachKiemKePTDialog: React.FC<Props> = ({
       .map((k) => ({ label: k.ten_kho, value: k.id, subLabel: k.ma_kho }));
   }, [khoList, idKhoOfDot]);
 
-  // Hàng hóa / danh mục farm không có cột trang_thai → không lọc theo trạng thái.
-  const hangHoaOptions = hangHoaList.map((h) => ({
+  // Chỉ hàng đang hoạt động; hàng ngừng còn tồn vẫn được service đưa vào khi để trống ô này.
+  const hangHoaOptions = locHangHoaChoChon(hangHoaList).map((h) => ({
     label: h.ten_hang_hoa,
     value: h.id,
     subLabel: h.ma_hang_hoa,

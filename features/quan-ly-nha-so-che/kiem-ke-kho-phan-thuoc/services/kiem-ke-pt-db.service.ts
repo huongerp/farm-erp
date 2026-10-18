@@ -30,6 +30,7 @@ import type {
 import type { DotKiemKePTListServerQuery } from './kiem-ke-pt-list-query';
 import { KKPT_SORT_MAC_DINH } from './kiem-ke-pt-list-query';
 import type { KhoBienThe } from '../../kho-bien-the/bien-the';
+import { canDuaVaoKiemKe } from '../../hang-hoa-phan-thuoc/core/trang-thai';
 
 const DOT_COLUMNS =
   'id,ma_dot,ten_dot,ngay_bat_dau,ngay_ket_thuc,trang_thai,id_nguoi_phu_trach,id_nguoi_tao,ghi_chu,tg_tao,tg_cap_nhat';
@@ -652,7 +653,7 @@ export async function taoDanhSachKiemKePT(
     layTonTheoNgayPT(bt, dot.ngay_bat_dau, khoIdsToProcess),
   ]);
 
-  // `fp_farm_danh_sach_hang_hoa` không còn cột trang_thai → chỉ lọc theo danh mục / hàng hóa.
+  // Lọc theo danh mục / hàng hóa; trạng thái lọc theo từng kho bên dưới (hàng ngừng còn tồn vẫn kiểm).
   const hangHoaCanKiem = hangHoaList.filter((h) => {
     if (filters?.id_hang_hoa?.length && !filters.id_hang_hoa.includes(h.id)) return false;
     if (filters?.id_danh_muc?.length && (!h.danh_muc_id || !filters.id_danh_muc.includes(h.danh_muc_id))) return false;
@@ -673,6 +674,7 @@ export async function taoDanhSachKiemKePT(
     for (const hh of hangHoaCanKiem) {
       const key = `${id_kho}|${hh.id}`;
       if (existingKeys.has(key)) continue;
+      if (!canDuaVaoKiemKe(hh, ton.get(key) ?? 0)) continue;
       toInsert.push({
         id_dot_kiem_ke_pt: idDotNum,
         id_kho: Number(id_kho),

@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Folder, FolderTree, Ruler } from 'lucide-react';
+import { Plus, Folder, FolderTree, Ruler, Power } from 'lucide-react';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import Button from '../../../../components/ui/Button';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
@@ -94,13 +95,27 @@ const HangHoaToolbar: React.FC<Props> = ({
       .map(([value]) => ({ label: value, value, count: counts[value] }));
   }, [data]);
 
+  const trangThaiOptions = useMemo(
+    () =>
+      [TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG, TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG].map((value) => ({
+        label:
+          value === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG
+            ? t('farmHangHoaPhanThuoc.hangHoa.active')
+            : t('farmHangHoaPhanThuoc.hangHoa.inactive'),
+        value,
+        count: data.filter((h) => h.trang_thai === value).length,
+      })),
+    [data, t]
+  );
+
   const activeFilterCount = useMemo(
     () =>
       (searchInput.trim() ? 1 : 0) +
       (filters.id_danh_muc_cha.length > 0 ? 1 : 0) +
       (filters.id_danh_muc.length > 0 ? 1 : 0) +
-      (filters.dvt.length > 0 ? 1 : 0),
-    [searchInput, filters.id_danh_muc_cha.length, filters.id_danh_muc.length, filters.dvt.length]
+      (filters.dvt.length > 0 ? 1 : 0) +
+      (filters.trang_thai.length > 0 ? 1 : 0),
+    [searchInput, filters.id_danh_muc_cha.length, filters.id_danh_muc.length, filters.dvt.length, filters.trang_thai.length]
   );
 
   const handleClearAllFilters = () => {
@@ -108,6 +123,7 @@ const HangHoaToolbar: React.FC<Props> = ({
     setFilter('id_danh_muc_cha', []);
     setFilter('id_danh_muc', []);
     setFilter('dvt', []);
+    setFilter('trang_thai', []);
   };
 
   const renderFilters = (
@@ -135,6 +151,14 @@ const HangHoaToolbar: React.FC<Props> = ({
         placeholder={t('farmHangHoaPhanThuoc.hangHoa.filters.dvt')}
         icon={Ruler}
         className="w-full sm:w-[140px]"
+      />
+      <FilterChipMultiSelect
+        options={trangThaiOptions}
+        value={filters.trang_thai}
+        onChange={(v) => setFilter('trang_thai', v)}
+        placeholder={t('farmHangHoaPhanThuoc.hangHoa.filters.trangThai')}
+        icon={Power}
+        className="w-full sm:w-[160px]"
       />
     </>
   );
@@ -165,11 +189,21 @@ const HangHoaToolbar: React.FC<Props> = ({
         value: filters.dvt,
         onChange: (val: string[]) => setFilter('dvt', val),
       },
+      {
+        key: 'trang_thai',
+        label: t('farmHangHoaPhanThuoc.hangHoa.filters.trangThai'),
+        icon: Power,
+        options: trangThaiOptions,
+        value: filters.trang_thai,
+        onChange: (val: string[]) => setFilter('trang_thai', val),
+      },
     ],
     [
       filters.id_danh_muc_cha,
       filters.id_danh_muc,
       filters.dvt,
+      filters.trang_thai,
+      trangThaiOptions,
       setFilter,
       t,
       danhMucChaOptions,

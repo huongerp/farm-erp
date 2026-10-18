@@ -149,6 +149,7 @@ export function useFarmHangHoaImportExport({
       { key: 'don_gia', label: t('farmHangHoaPhanThuoc.hangHoa.store.priceCol') },
       { key: 'dinh_muc', label: t('farmHangHoaPhanThuoc.hangHoa.store.dinhMucCol') },
       { key: 'mo_ta', label: t('farmHangHoaPhanThuoc.hangHoa.store.descCol') },
+      { key: 'trang_thai', label: t('farmHangHoaPhanThuoc.hangHoa.store.statusCol') },
       { key: 'tg_cap_nhat', label: t('farmHangHoaPhanThuoc.hangHoa.store.updatedCol') },
     ],
     [t]
@@ -164,6 +165,7 @@ export function useFarmHangHoaImportExport({
       don_gia: item.don_gia ?? '',
       dinh_muc: item.dinh_muc ?? '',
       mo_ta: item.mo_ta ?? '',
+      trang_thai: item.trang_thai,
       tg_cap_nhat: formatDateShort(item.tg_cap_nhat),
     }),
     []

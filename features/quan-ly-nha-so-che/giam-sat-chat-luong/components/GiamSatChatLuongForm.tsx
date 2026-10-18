@@ -19,6 +19,7 @@ import { giamSatChatLuongFormSchema, type GiamSatChatLuongFormValues } from '../
 import { locThanhPham } from '../core/thanh-pham';
 import type { GiamSatChatLuong } from '../core/types';
 import { useCreateGiamSatChatLuong, useUpdateGiamSatChatLuong } from '../hooks/use-giam-sat-chat-luong';
+import { locHangHoaChoChon } from '../../hang-hoa-phan-thuoc/core/trang-thai';
 
 /** Mặc định theo cách làm ở xưởng: 1 cây ~60 thùng (đôi khi 30), lấy 10 thùng mẫu. */
 const SO_THUNG_CAY_MAC_DINH = 60;
@@ -107,9 +108,10 @@ const GiamSatChatLuongForm: React.FC<Props> = ({
     [branches, allowedBranchIds, initialData?.id_chi_nhanh]
   );
 
-  // Thành phẩm lấy từ danh mục hàng hoá Nhà sơ chế, chỉ nhánh "Thành phẩm"; giữ hàng đang chọn khi sửa.
+  // Thành phẩm lấy từ danh mục hàng hoá Nhà sơ chế, chỉ nhánh "Thành phẩm", bỏ hàng ngừng hoạt động;
+  // giữ hàng đang chọn khi sửa.
   const hangHoaOptions = useMemo(() => {
-    const thanhPham = locThanhPham(hangHoaList, danhMucList);
+    const thanhPham = locHangHoaChoChon(locThanhPham(hangHoaList, danhMucList));
     const dangChon = hangHoaList.find((h) => h.id === initialData?.id_hang_hoa);
     const list = dangChon && !thanhPham.includes(dangChon) ? [dangChon, ...thanhPham] : thanhPham;
     return list.map((h) => ({

@@ -9,6 +9,7 @@ import {
   deleteFarmHangHoa,
   deleteFarmHangHoaMany,
   importFarmHangHoa,
+  setTrangThaiFarmHangHoa,
 } from '../services/farm-hang-hoa-service';
 import type { FarmHangHoaFormValues } from '../core/schema';
 import type { FarmHangHoa } from '../core/types';
@@ -18,6 +19,7 @@ import { invalidateRefCache } from '../../../../lib/ref-cache';
 import type { ImportMode } from '../../../../lib/import-types';
 import type { HangHoaRefColumn } from '../utils/import-hang-hoa';
 import { useKhoBienThe } from '../../kho-bien-the/KhoBienTheProvider';
+import { TRANG_THAI_HOAT_DONG, type TrangThaiHoatDong } from '../../../../lib/constants';
 
 export const FARM_HANG_HOA_QUERY_KEY = ['farmHangHoaPhanThuoc'] as const;
 
@@ -83,6 +85,29 @@ export const useUpdateFarmHangHoa = (onSuccess?: () => void) => {
       qc.invalidateQueries({ queryKey: FARM_TON_KHO_PT_QUERY_KEY });
       toast.success(i18n.t('farmHangHoaPhanThuoc.hangHoa.toast.updateSuccess'));
       onSuccess?.();
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+};
+
+export const useDoiTrangThaiFarmHangHoa = () => {
+  const bt = useKhoBienThe();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, trang_thai }: { id: string; trang_thai: TrangThaiHoatDong }) =>
+      setTrangThaiFarmHangHoa(bt, id, trang_thai),
+    onSuccess: (_data, { trang_thai }) => {
+      invalidateRefCache('farmHangHoa');
+      qc.invalidateQueries({ queryKey: FARM_HANG_HOA_QUERY_KEY });
+      // Dialog kiểm kê dùng key riêng ['farmHangHoaRef', bt.key].
+      qc.invalidateQueries({ queryKey: ['farmHangHoaRef'] });
+      toast.success(
+        i18n.t(
+          trang_thai === TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG
+            ? 'farmHangHoaPhanThuoc.hangHoa.toast.ngungSuccess'
+            : 'farmHangHoaPhanThuoc.hangHoa.toast.kichHoatSuccess'
+        )
+      );
     },
     onError: (err: Error) => toast.error(err.message),
   });

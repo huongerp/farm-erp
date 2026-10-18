@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Package, Calendar, Folder, DollarSign, FileText } from 'lucide-react';
+import { Package, Calendar, Folder, DollarSign, FileText, PauseCircle, PlayCircle, Power } from 'lucide-react';
 import type { FarmHangHoa } from '../core/types';
 import { formatDateShort } from '../../../../lib/utils';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
@@ -8,16 +8,62 @@ import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';
 import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
 import DetailDrawerFooter from '../../../../components/shared/DetailDrawerFooter';
+import DetailToolbar, { type DetailToolbarAction } from '../../../../components/shared/DetailToolbar';
+import { useConfirmStore } from '../../../../store/useConfirmStore';
+import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
+import { useDoiTrangThaiFarmHangHoa } from '../hooks/use-farm-hang-hoa';
+import TrangThaiHangHoaBadge from './TrangThaiHangHoaBadge';
 
 interface Props {
   data: FarmHangHoa;
   onClose: () => void;
   onEdit?: (item: FarmHangHoa) => void;
   onDelete?: (id: string) => void;
+  /** Quyền sửa module → hiện nút Ngừng hoạt động / Hoạt động lại. */
+  canDoiTrangThai?: boolean;
 }
 
-const HangHoaDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete }) => {
+const HangHoaDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, canDoiTrangThai = false }) => {
   const { t } = useTranslation();
+  const confirm = useConfirmStore((s) => s.confirm);
+  const doiTrangThai = useDoiTrangThaiFarmHangHoa();
+  const dangHoatDong = data.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
+
+  const handleDoiTrangThai = () => {
+    const moi = dangHoatDong ? TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG : TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
+    confirm({
+      title: t('farmHangHoaPhanThuoc.hangHoa.statusChangeTitle'),
+      message: t(
+        dangHoatDong ? 'farmHangHoaPhanThuoc.hangHoa.confirmNgung' : 'farmHangHoaPhanThuoc.hangHoa.confirmKichHoat',
+        { ma: data.ma_hang_hoa }
+      ),
+      variant: dangHoatDong ? 'warning' : 'info',
+      confirmText: t(
+        dangHoatDong ? 'farmHangHoaPhanThuoc.hangHoa.actionNgung' : 'farmHangHoaPhanThuoc.hangHoa.actionKichHoat'
+      ),
+      onConfirm: () => doiTrangThai.mutate({ id: data.id, trang_thai: moi }),
+    });
+  };
+
+  const toolbarActions: DetailToolbarAction[] = canDoiTrangThai
+    ? [
+        dangHoatDong
+          ? {
+              label: t('farmHangHoaPhanThuoc.hangHoa.actionNgung'),
+              icon: <PauseCircle size={16} />,
+              onClick: handleDoiTrangThai,
+              variant: 'warning',
+              disabled: doiTrangThai.isPending,
+            }
+          : {
+              label: t('farmHangHoaPhanThuoc.hangHoa.actionKichHoat'),
+              icon: <PlayCircle size={16} />,
+              onClick: handleDoiTrangThai,
+              variant: 'success',
+              disabled: doiTrangThai.isPending,
+            },
+      ]
+    : [];
 
   const renderFooter = (
     <DetailDrawerFooter
@@ -46,8 +92,11 @@ const HangHoaDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete }) => 
           <div className="flex-1 min-w-0">
             <h2 className="text-base font-bold text-foreground leading-tight truncate">{data.ten_hang_hoa}</h2>
             <p className="text-body-sm text-muted-foreground font-mono mt-0.5">{data.ma_hang_hoa}</p>
+            <TrangThaiHangHoaBadge trangThai={data.trang_thai} className="mt-1.5" />
           </div>
         </div>
+
+        <DetailToolbar actions={toolbarActions} className="bg-card rounded-xl border border-border" />
 
         <DetailSection title={t('farmHangHoaPhanThuoc.hangHoa.detail.basicInfo')} icon={<Package size={14} />} variant="primary">
           <DetailFieldGrid cols={2}>
@@ -82,6 +131,11 @@ const HangHoaDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete }) => 
               value={data.dinh_muc != null ? data.dinh_muc.toLocaleString('vi-VN') : ''}
               icon={<Package size={12} />}
               emptyText="—"
+            />
+            <DetailField
+              label={t('farmHangHoaPhanThuoc.hangHoa.detail.status')}
+              value={dangHoatDong ? t('farmHangHoaPhanThuoc.hangHoa.active') : t('farmHangHoaPhanThuoc.hangHoa.inactive')}
+              icon={<Power size={12} />}
             />
             {data.mo_ta != null && data.mo_ta !== '' && (
               <DetailField

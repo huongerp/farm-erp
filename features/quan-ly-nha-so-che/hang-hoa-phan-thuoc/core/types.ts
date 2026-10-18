@@ -1,3 +1,5 @@
+import type { TrangThaiHoatDong } from '../../../../lib/constants';
+
 /** Danh mục hàng hóa farm: 2 cấp (cha id_cha null, con id_cha = id cha). */
 export interface FarmDanhMuc {
   id: string;
@@ -23,6 +25,8 @@ export interface FarmHangHoa {
   don_gia: number | null;
   /** Định mức tồn mỗi kho (cột dinh_muc) — tồn dưới mức này báo đỏ, không chặn lưu phiếu. */
   dinh_muc: number | null;
+  /** Ngừng hoạt động → ẩn khỏi ô chọn hàng ở phiếu mới (migration 044). */
+  trang_thai: TrangThaiHoatDong;
   tg_tao: string;
   tg_cap_nhat: string;
   ten_danh_muc?: string;

@@ -7,6 +7,7 @@ export interface FarmHangHoaFilters {
   id_danh_muc_cha: string[];
   id_danh_muc: string[];
   dvt: string[];
+  trang_thai: string[];
 }
 
 export const DEFAULT_COLUMNS: ColumnConfig[] = [
@@ -18,13 +19,15 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'don_gia', label: i18n.t('farmHangHoaPhanThuoc.hangHoa.store.priceCol'), visible: true, minWidth: 100, maxWidth: 140, order: 5 },
   { id: 'dinh_muc', label: i18n.t('farmHangHoaPhanThuoc.hangHoa.store.dinhMucCol'), visible: true, minWidth: 90, maxWidth: 140, order: 6 },
   { id: 'mo_ta', label: i18n.t('farmHangHoaPhanThuoc.hangHoa.store.descCol'), visible: true, minWidth: 140, maxWidth: 280, order: 7 },
-  { id: 'tg_cap_nhat', label: i18n.t('farmHangHoaPhanThuoc.hangHoa.store.updatedCol'), visible: true, minWidth: 100, maxWidth: 140, order: 8 },
+  { id: 'trang_thai', label: i18n.t('farmHangHoaPhanThuoc.hangHoa.store.statusCol'), visible: true, minWidth: 120, maxWidth: 160, order: 8 },
+  { id: 'tg_cap_nhat', label: i18n.t('farmHangHoaPhanThuoc.hangHoa.store.updatedCol'), visible: true, minWidth: 100, maxWidth: 140, order: 9 },
 ];
 
 const initialFilters: FarmHangHoaFilters = {
   id_danh_muc_cha: [],
   id_danh_muc: [],
   dvt: [],
+  trang_thai: [],
 };
 
 export const useFarmHangHoaStore = storeTheoBienThe((bt) =>

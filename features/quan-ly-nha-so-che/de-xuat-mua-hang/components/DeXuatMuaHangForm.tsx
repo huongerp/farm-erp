@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useForm, useWatch, Controller, SubmitHandler, useFieldArray, type FieldErrors, type Resolver } from 'react-hook-form';
+import { locHangHoaChoChon } from '../../hang-hoa-phan-thuoc/core/trang-thai';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { FileText, Calendar, Warehouse, User, UserCheck, Package, Trash2 } from 'lucide-react';
@@ -162,9 +163,15 @@ const DeXuatMuaHangForm: React.FC<Props> = ({ khoList, employees, initialData, o
     return m;
   }, [tonRows]);
 
+  // Hàng ngừng hoạt động không hiện ở ô chọn, trừ mã đang nằm trên phiếu (sửa phiếu cũ).
+  const chiTietWatch = useWatch({ control, name: 'chi_tiet' });
+  const idsHangDangChon = useMemo(
+    () => (chiTietWatch ?? []).map((c) => c?.id_hang_hoa ?? '').join('|'),
+    [chiTietWatch]
+  );
   const hangHoaComboboxOptions = useMemo(
     () =>
-      hangHoaList.map((h) => {
+      locHangHoaChoChon(hangHoaList, idsHangDangChon.split('|')).map((h) => {
         const parts: string[] = [];
         if (h.don_vi_tinh) parts.push(`${t('deXuatMuaHang.form.unit')}: ${h.don_vi_tinh}`);
         if (khoIdWatch && tonRows) parts.push(`${t('deXuatMuaHang.form.tonShort')}: ${formatNumberVN(tonMap[h.id] ?? 0)}`);
@@ -174,7 +181,7 @@ const DeXuatMuaHangForm: React.FC<Props> = ({ khoList, employees, initialData, o
           subLabel: parts.length > 0 ? parts.join(' · ') : undefined,
         };
       }),
-    [hangHoaList, t, khoIdWatch, tonRows, tonMap]
+    [hangHoaList, idsHangDangChon, t, khoIdWatch, tonRows, tonMap]
   );
 
   const hangHoaComboboxOptionsWithAdd = useMemo(

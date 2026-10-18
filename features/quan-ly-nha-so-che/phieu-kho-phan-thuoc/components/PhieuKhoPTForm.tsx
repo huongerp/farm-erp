@@ -2,6 +2,7 @@ import React, { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useForm, useWatch, Controller, SubmitHandler, useFieldArray, type Resolver } from 'react-hook-form';
+import { locHangHoaChoChon } from '../../hang-hoa-phan-thuoc/core/trang-thai';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { FileText, Calendar, Warehouse, ArrowRightLeft, Package, Trash2 } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
@@ -118,14 +119,18 @@ const PhieuKhoPTForm: React.FC<Props> = ({ khoList, khoDenList, initialData, pre
     return [{ value: ADD_KHO_DEN, label: `➕ ${t('phieuKhoPhanThuoc.form.addWarehouse')}` }, ...base];
   }, [khoDenList, khoList, khoIdWatch, t, onRequestAddKho]);
 
+  // Hàng ngừng hoạt động không hiện ở ô chọn, trừ mã đang nằm trên phiếu (sửa phiếu cũ).
+  const idsHangDangChon = (Array.isArray(chiTietWatch) ? chiTietWatch : [])
+    .map((c) => c?.id_hang_hoa ?? '')
+    .join('|');
   const hangHoaComboboxOptions = useMemo(
     () =>
-      hangHoaList.map((h) => ({
+      locHangHoaChoChon(hangHoaList, idsHangDangChon.split('|')).map((h) => ({
         value: h.id,
         label: `${h.ma_hang_hoa ?? h.ma_hang} — ${h.ten_hang_hoa ?? h.ten_hang}`,
         subLabel: h.dvt ? `${t('phieuKhoPhanThuoc.form.unit')}: ${h.dvt}` : undefined,
       })),
-    [hangHoaList, t]
+    [hangHoaList, idsHangDangChon, t]
   );
 
   const hangHoaComboboxOptionsWithAdd = useMemo(

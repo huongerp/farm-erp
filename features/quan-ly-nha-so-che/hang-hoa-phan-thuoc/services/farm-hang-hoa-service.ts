@@ -16,9 +16,11 @@ import type {
 import { throwDbError } from '../../../../lib/db-errors';
 import { tuDongRpc, type PhieuDangDung } from '../../../../lib/hang-hoa-dang-dung';
 import type { KhoBienThe } from '../../kho-bien-the/bien-the';
+import type { TrangThaiHoatDong } from '../../../../lib/constants';
+import { chuanHoaTrangThaiHangHoa } from '../core/trang-thai';
 
 const HANG_HOA_COLUMNS =
-  'id,danh_muc_id,danh_muc_cha_id,ma_hang_hoa,ten_hang_hoa,dvt,pham_cap,don_gia,dinh_muc,mo_ta,tg_tao,tg_cap_nhat';
+  'id,danh_muc_id,danh_muc_cha_id,ma_hang_hoa,ten_hang_hoa,dvt,pham_cap,don_gia,dinh_muc,mo_ta,trang_thai,tg_tao,tg_cap_nhat';
 
 interface FarmHangHoaRow {
   id: number;
@@ -31,6 +33,7 @@ interface FarmHangHoaRow {
   don_gia: string | number | null;
   dinh_muc: string | number | null;
   mo_ta: string | null;
+  trang_thai: string | null;
   tg_tao: string | null;
   tg_cap_nhat: string | null;
 }
@@ -51,6 +54,7 @@ function rowToFarmHangHoa(row: FarmHangHoaRow, tenDanhMuc?: string): FarmHangHoa
     pham_cap: row.pham_cap ?? null,
     don_gia: Number.isNaN(donGia) ? null : donGia,
     dinh_muc: Number.isNaN(dinhMuc) ? null : dinhMuc,
+    trang_thai: chuanHoaTrangThaiHangHoa(row.trang_thai),
     tg_tao: row.tg_tao ?? new Date().toISOString(),
     tg_cap_nhat: row.tg_cap_nhat ?? new Date().toISOString(),
     ten_danh_muc: tenDanhMuc,
@@ -119,6 +123,8 @@ export type FarmHangHoaRefLite = {
   ten_danh_muc?: string;
   /** Đơn giá mặc định (điền sẵn khi tạo phiếu kho nhập). */
   don_gia: number | null;
+  /** Ô chọn hàng lọc qua `locHangHoaChoChon`; tra tên dòng phiếu cũ vẫn dùng cả hàng ngừng. */
+  trang_thai: TrangThaiHoatDong;
 };
 
 /** Danh sách hàng hóa farm dạng ref (cache TTL — nhiều trang list cùng gọi). */
@@ -138,6 +144,7 @@ export const getFarmHangHoaRef = async (bt: KhoBienThe): Promise<FarmHangHoaRefL
       danh_muc_cha_id: h.danh_muc_cha_id,
       ten_danh_muc: h.ten_danh_muc,
       don_gia: h.don_gia,
+      trang_thai: h.trang_thai,
     }));
   });
 
@@ -223,6 +230,21 @@ export const updateFarmHangHoa = async (bt: KhoBienThe, id: string, data: FarmHa
   if (error) throwDbError(error);
   const [enriched] = await enrichWithTenDanhMuc(bt, [updated as FarmHangHoaRow]);
   return enriched;
+};
+
+/** Đổi Đang hoạt động / Ngừng hoạt động (nút trong chi tiết hàng hoá). */
+export const setTrangThaiFarmHangHoa = async (
+  bt: KhoBienThe,
+  id: string,
+  trang_thai: TrangThaiHoatDong
+): Promise<void> => {
+  const idNum = Number(id);
+  if (Number.isNaN(idNum)) throw new Error(i18n.t('farmHangHoaPhanThuoc.hangHoa.service.notFound'));
+  const { error } = await db
+    .from(bt.bang.hangHoa)
+    .update({ trang_thai, tg_cap_nhat: new Date().toISOString() })
+    .eq('id', idNum);
+  if (error) throwDbError(error);
 };
 
 export const deleteFarmHangHoa = async (bt: KhoBienThe, id: string): Promise<void> => {

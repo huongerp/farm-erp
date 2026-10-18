@@ -5,6 +5,7 @@ import { cn, formatDateShort, formatNumberVN } from '../../../../lib/utils';
 import type { FarmHangHoa } from '../core/types';
 import GenericTable from '../../../../components/shared/GenericTable';
 import type { ColumnConfig } from '../../../../store/createGenericStore';
+import TrangThaiHangHoaBadge from './TrangThaiHangHoaBadge';
 
 interface Props {
   data: FarmHangHoa[];
@@ -85,6 +86,8 @@ const HangHoaList: React.FC<Props> = ({
             {item.mo_ta ?? '—'}
           </span>
         );
+      case 'trang_thai':
+        return <TrangThaiHangHoaBadge trangThai={item.trang_thai} />;
       case 'tg_cap_nhat':
         return <span className="text-xs text-muted-foreground">{formatDateShort(item.tg_cap_nhat)}</span>;
       case 'actions':
@@ -140,6 +143,7 @@ const HangHoaList: React.FC<Props> = ({
         <span className="font-mono text-xs font-medium text-muted-foreground bg-muted px-2 py-1 rounded border border-border">
           {item.ma_hang_hoa}
         </span>
+        <TrangThaiHangHoaBadge trangThai={item.trang_thai} />
       </div>
       <div className="font-medium text-foreground text-sm mb-1">{item.ten_hang_hoa}</div>
       <div className="text-xs text-muted-foreground mb-2">

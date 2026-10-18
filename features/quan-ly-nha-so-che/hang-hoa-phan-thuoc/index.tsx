@@ -160,7 +160,8 @@ const HangHoaPhanThuocPage: React.FC = () => {
       f.id_danh_muc.length === 0 || (item.danh_muc_id != null && f.id_danh_muc.includes(item.danh_muc_id));
     const matchesDvt =
       f.dvt.length === 0 || (item.dvt != null && item.dvt.trim() !== '' && f.dvt.includes(item.dvt.trim()));
-    return matchesSearch && matchesDanhMucCha && matchesDanhMucCon && matchesDvt;
+    const matchesTrangThai = f.trang_thai.length === 0 || f.trang_thai.includes(item.trang_thai);
+    return matchesSearch && matchesDanhMucCha && matchesDanhMucCon && matchesDvt && matchesTrangThai;
   }, []);
 
   const filteredHh = useListWithFilter(hhList, hhSearch, hhFilters, hhFilterFn);
@@ -513,6 +514,7 @@ const HangHoaPhanThuocPage: React.FC = () => {
                 : undefined
             }
             onDelete={canDelete ? (id) => { setHhViewing(null); handleHhDelete(id); } : undefined}
+            canDoiTrangThai={canUpdate}
           />
         )}
       </AnimatePresence>
