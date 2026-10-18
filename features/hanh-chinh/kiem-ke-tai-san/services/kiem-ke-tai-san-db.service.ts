@@ -41,6 +41,7 @@ import { getTaiSanList, updateTaiSanFromKiemKe } from '../../danh-muc-tai-san/se
 import { getAssetStorageLocations } from '../../thiet-lap-tai-san/services/noi-luu-service';
 import { getEmployeesRef } from '@/features/he-thong/nhan-vien/services/nhan-vien-service';
 import { getAssetStatuses } from '../../thiet-lap-tai-san/services/trang-thai-service';
+import { idTrangThaiKhongKiemKe } from '../core/constants';
 
 const TABLE_DOT = 'fp_ts_dot_kiem_ke_tai_san';
 const TABLE_CT = 'fp_ts_dot_kiem_ke_tai_san_chi_tiet';
@@ -383,8 +384,13 @@ export async function taoDanhSachKiemKeDb(
   const dot = await getDotKiemKeByIdDb(id_dot_kiem_ke);
   if (!dot) throw new Error('Đợt kiểm kê không tồn tại');
   if (!CAN_EDIT_DOT.includes(dot.trang_thai)) throw new Error('Chỉ tạo danh sách khi đợt ở trạng thái Nháp hoặc Đang kiểm kê');
-  const [assets, locations] = await Promise.all([getTaiSanList(), getAssetStorageLocations()]);
-  let filtered = assets.filter((a) => (a as { trang_thai?: number }).trang_thai === 1);
+  const [assets, locations, statuses] = await Promise.all([
+    getTaiSanList(),
+    getAssetStorageLocations(),
+    getAssetStatuses(),
+  ]);
+  const loaiTru = idTrangThaiKhongKiemKe(statuses);
+  let filtered = assets.filter((a) => !loaiTru.has(a.id_trang_thai));
   if (dot.id_nhom.length) {
     filtered = filtered.filter((a) => dot.id_nhom.includes(a.id_nhom));
   }

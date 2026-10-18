@@ -341,6 +341,14 @@ const ChiTietDonDatHangTab: React.FC = () => {
             </span>
           </td>
         );
+      case 'so_phieu_de_xuat':
+        return (
+          <td key={col.id} className="px-4 py-3 font-mono text-xs text-muted-foreground" style={getColumnCellStyle(col)}>
+            <span className="block truncate whitespace-nowrap" title={row.so_phieu_de_xuat ?? ''}>
+              {row.so_phieu_de_xuat?.trim() || '—'}
+            </span>
+          </td>
+        );
       case 'ngay_dat':
         return (
           <td key={col.id} className="px-4 py-3 whitespace-nowrap text-muted-foreground text-sm" style={getColumnCellStyle(col)}>

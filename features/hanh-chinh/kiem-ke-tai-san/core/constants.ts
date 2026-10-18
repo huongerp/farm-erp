@@ -24,3 +24,12 @@ export const KET_QUA_OPTIONS: { value: KetQuaKiemKe; label: string }[] = [
   { value: 'Chênh trạng thái', label: 'Chênh trạng thái' },
   { value: 'Thiếu', label: 'Thiếu' },
 ];
+
+/** Mã trạng thái tài sản (fp_ts_trang_thai_tai_san.ma) KHÔNG đưa vào danh sách kiểm kê */
+export const MA_TRANG_THAI_KHONG_KIEM_KE = ['THANH_LY', 'MAT_HONG'] as const;
+
+/** Id các trạng thái tài sản bị loại khỏi "Tạo danh sách" kiểm kê, tra theo mã (không phân biệt hoa thường) */
+export function idTrangThaiKhongKiemKe(statuses: { id: string; ma: string }[]): Set<string> {
+  const maLoaiTru = new Set<string>(MA_TRANG_THAI_KHONG_KIEM_KE);
+  return new Set(statuses.filter((s) => maLoaiTru.has(s.ma.trim().toUpperCase())).map((s) => s.id));
+}

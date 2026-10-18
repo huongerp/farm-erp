@@ -60,6 +60,9 @@ export interface DonDatHang {
   trang_thai: DonDatHangTrangThai;
   tg_tao: string;
   tg_cap_nhat: string;
+  /** Số dòng hàng / tổng thành tiền — chỉ có khi đọc từ view summary (migration 047). */
+  so_dong_hang?: number | null;
+  tong_tien?: number | null;
   chi_tiet?: DonDatHangChiTiet[];
 }
 

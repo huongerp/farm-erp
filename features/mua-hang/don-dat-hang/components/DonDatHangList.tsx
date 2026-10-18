@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Edit, FileText, Trash2 } from 'lucide-react';
-import { cn, formatDateShort } from '../../../../lib/utils';
+import { cn, formatDateShort, formatNumberVN } from '../../../../lib/utils';
 import type { DonDatHang } from '../core/types';
 import { TRANG_THAI_KEY, STATUS_VARIANTS } from '../core/constants';
 import GenericTable from '../../../../components/shared/GenericTable';
@@ -72,6 +72,14 @@ const DonDatHangList: React.FC<Props> = ({
             {item.so_po}
           </span>
         );
+      case 'so_phieu_de_xuat':
+        return item.so_phieu_de_xuat?.trim() ? (
+          <span className="inline-block max-w-full truncate whitespace-nowrap font-mono text-xs font-medium text-muted-foreground bg-muted px-2 py-1 rounded border border-border" title={item.so_phieu_de_xuat}>
+            {item.so_phieu_de_xuat}
+          </span>
+        ) : (
+          <span className="text-sm text-muted-foreground">—</span>
+        );
       case 'ngay_dat':
         return <span className="block truncate whitespace-nowrap text-sm text-muted-foreground">{item.ngay_dat}</span>;
       case 'ngay_giao_dk':
@@ -80,8 +88,18 @@ const DonDatHangList: React.FC<Props> = ({
         return <span className="block truncate whitespace-nowrap text-sm text-muted-foreground">{item.ten_nha_cung_cap ?? '—'}</span>;
       case 'ten_kho_nhan':
         return <span className="block truncate whitespace-nowrap text-sm text-muted-foreground">{item.ten_kho_nhan ?? '—'}</span>;
+      case 'so_dong_hang':
+        return <span className="block truncate whitespace-nowrap text-right tabular-nums text-sm text-muted-foreground">{item.so_dong_hang != null ? formatNumberVN(item.so_dong_hang) : '—'}</span>;
+      case 'tong_tien':
+        return <span className="block truncate whitespace-nowrap text-right tabular-nums text-sm font-medium text-foreground">{item.tong_tien != null ? formatNumberVN(item.tong_tien) : '—'}</span>;
       case 'ten_nguoi_dat':
         return <span className="block truncate whitespace-nowrap text-sm text-muted-foreground">{item.ten_nguoi_dat ?? '—'}</span>;
+      case 'ten_nguoi_duyet':
+        return <span className="block truncate whitespace-nowrap text-sm text-muted-foreground">{item.ten_nguoi_duyet ?? '—'}</span>;
+      case 'ghi_chu':
+        return <span className="block truncate whitespace-nowrap text-xs text-muted-foreground" title={item.ghi_chu ?? ''}>{item.ghi_chu?.trim() || '—'}</span>;
+      case 'tg_tao':
+        return <span className="block truncate whitespace-nowrap text-xs text-muted-foreground">{formatDateShort(item.tg_tao)}</span>;
       case 'trang_thai':
         return renderStatusBadge(item);
       case 'tg_cap_nhat':
@@ -124,7 +142,12 @@ const DonDatHangList: React.FC<Props> = ({
         {renderStatusBadge(item)}
       </div>
       <div className="text-xs text-muted-foreground mb-1">{item.ngay_dat} · {item.ten_nha_cung_cap ?? '—'}</div>
-      <div className="text-sm text-foreground mb-1">{item.ten_kho_nhan ?? '—'}</div>
+      <div className="flex items-center justify-between gap-2 mb-1">
+        <span className="truncate text-sm text-foreground">{item.ten_kho_nhan ?? '—'}</span>
+        {item.tong_tien != null && (
+          <span className="shrink-0 tabular-nums text-sm font-medium text-foreground">{formatNumberVN(item.tong_tien)}</span>
+        )}
+      </div>
       <div className="flex items-center gap-1.5 min-w-0 text-xs text-muted-foreground mb-2">
         <FileText size={12} className="shrink-0" />
         <span className="shrink-0">{t('donDatHang.form.linkRequest')}:</span>

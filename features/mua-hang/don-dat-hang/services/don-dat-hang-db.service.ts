@@ -29,7 +29,7 @@ const VIEW_DON_DAT_HANG_SUMMARY = 'v_don_dat_hang_summary';
 const VIEW_DON_DAT_HANG_CHI_TIET_FLAT = 'v_don_dat_hang_chi_tiet_flat';
 
 const VIEW_DON_DAT_HANG_SUMMARY_COLUMNS =
-  'id,so_po,ngay_dat,ngay_giao_dk,id_nha_cung_cap,ten_nha_cung_cap,id_kho_nhan,ten_kho_nhan,id_phieu_de_xuat_vat_tu,id_nguoi_dat,id_nguoi_duyet,ghi_chu,trang_thai,tg_tao,tg_cap_nhat,so_phieu_de_xuat_ref,ref_ma_nha_cung_cap,ref_ten_nha_cung_cap,ref_ten_kho_nhan,ref_ten_nguoi_dat,ref_ma_nguoi_dat,ref_ten_nguoi_duyet,ref_ma_nguoi_duyet';
+  'id,so_po,ngay_dat,ngay_giao_dk,id_nha_cung_cap,ten_nha_cung_cap,id_kho_nhan,ten_kho_nhan,id_phieu_de_xuat_vat_tu,id_nguoi_dat,id_nguoi_duyet,ghi_chu,trang_thai,tg_tao,tg_cap_nhat,so_phieu_de_xuat_ref,ref_ma_nha_cung_cap,ref_ten_nha_cung_cap,ref_ten_kho_nhan,ref_ten_nguoi_dat,ref_ma_nguoi_dat,ref_ten_nguoi_duyet,ref_ma_nguoi_duyet,so_dong_hang,tong_tien';
 
 const DON_DAT_HANG_ROW_COLUMNS =
   'id,so_po,ngay_dat,ngay_giao_dk,id_nha_cung_cap,ten_nha_cung_cap,id_kho_nhan,ten_kho_nhan,id_phieu_de_xuat_vat_tu,id_nguoi_dat,id_nguoi_duyet,ghi_chu,trang_thai,tg_tao,tg_cap_nhat';
@@ -49,6 +49,9 @@ type DonSummaryRow = DonDbRow & {
   ref_ma_nguoi_dat?: string | null;
   ref_ten_nguoi_duyet?: string | null;
   ref_ma_nguoi_duyet?: string | null;
+  so_dong_hang?: number | null;
+  /** numeric → PostgREST có thể trả chuỗi. */
+  tong_tien?: number | string | null;
 };
 
 interface DonDbRow {
@@ -175,6 +178,8 @@ function mapDonSummaryRowToDon(row: DonSummaryRow): DonDatHang {
   });
   if (ten_nha_cung_cap != null) don.ten_nha_cung_cap = ten_nha_cung_cap;
   if (ten_kho_nhan != null) don.ten_kho_nhan = ten_kho_nhan;
+  don.so_dong_hang = row.so_dong_hang != null ? Number(row.so_dong_hang) : null;
+  don.tong_tien = row.tong_tien != null ? Number(row.tong_tien) : null;
   return don;
 }
 

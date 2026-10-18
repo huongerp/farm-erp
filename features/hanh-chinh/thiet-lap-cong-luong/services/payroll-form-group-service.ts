@@ -11,9 +11,9 @@ const TABLE = 'fp_hr_nhom_phieu_hanh_chinh';
 const ROW_COLUMNS = 'id,loai_phieu,so_luong_thang,ghi_chu,trang_thai,tg_tao,tg_cap_nhat';
 
 function normalizeTrangThai(val: unknown): TrangThaiHoatDong {
-  if (val === TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG) return TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG;
-  if (val === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG) return TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
-  return Number(val) === 0 ? TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG : TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
+  return val === TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG
+    ? TRANG_THAI_HOAT_DONG.NGUNG_HOAT_DONG
+    : TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
 }
 
 /** Map loại phiếu tiếng Việt (DB) <-> mã (app) */
