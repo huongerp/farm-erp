@@ -10,6 +10,7 @@ import type { DonDatHang, DonDatHangChiTiet } from '../core/types';
 import { TRANG_THAI_KEY } from '../core/constants';
 import { formatDate, getTodayISODate } from '../../../../lib/utils';
 import i18n from '../../../../lib/i18n';
+import { tenFileAnToan } from '../../../../lib/phieu-in/ten-file';
 
 function safe(v: string | number | null | undefined): string {
   if (v == null || v === '') return '–';
@@ -22,7 +23,7 @@ function getTrangThaiLabel(trangThai: DonDatHang['trang_thai'], t: (k: string) =
 }
 
 export function getFileName(po: DonDatHang): string {
-  const slug = po.so_po.replace(/\s+/g, '_').replace(/[^\w\u00C0-\u024F\-_]/gi, '');
+  const slug = tenFileAnToan(po.so_po);
   return `Don_dat_hang_${slug}_${getTodayISODate()}`;
 }
 

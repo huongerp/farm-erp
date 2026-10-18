@@ -37,11 +37,11 @@ const PhieuKhoPTPreviewPage: React.FC = () => {
       onRetry={isError ? () => void refetch() : undefined}
       taiThem={
         phieu
-          ? [{ key: 'xlsx', label: 'XLSX', icon: <FileSpreadsheet size={16} />, onClick: () => exportPhieuKhoPTToXLSX(phieu, phieu.chi_tiet ?? []) }]
+          ? [{ key: 'xlsx', label: 'XLSX', icon: <FileSpreadsheet size={16} />, onClick: () => exportPhieuKhoPTToXLSX(phieu, phieu.chi_tiet ?? [], bt.key) }]
           : undefined
       }
     >
-      {phieu && <PhieuKhoPTPreviewContent phieu={phieu} />}
+      {phieu && <PhieuKhoPTPreviewContent phieu={phieu} bienThe={bt.key} />}
     </PhieuInPage>
   );
 };

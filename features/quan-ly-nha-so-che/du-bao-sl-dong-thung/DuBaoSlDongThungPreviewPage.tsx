@@ -6,7 +6,7 @@ import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { FileSpreadsheet } from 'lucide-react';
 import PhieuInPage from '../../../components/shared/phieu-in/PhieuInPage';
-import { formatDateShort } from '../../../lib/utils';
+import { formatYmdToDisplay } from '../../../lib/utils';
 import { useDuBaoSlDongThungById } from './hooks/use-du-bao-sl-dong-thung';
 import { exportDuBaoSlDongThungToXLSX, fileName } from './utils/export-du-bao-sl-dong-thung';
 import DuBaoSlDongThungPreviewContent from './components/DuBaoSlDongThungPreviewContent';
@@ -26,7 +26,7 @@ const DuBaoSlDongThungPreviewPage: React.FC = () => {
 
   return (
     <PhieuInPage
-      title={data ? `${t('duBaoSlDongThung.preview.title')} - ${formatDateShort(data.ngay)}` : t('duBaoSlDongThung.preview.title')}
+      title={data ? `${t('duBaoSlDongThung.preview.title')} - ${formatYmdToDisplay(data.ngay?.slice(0, 10))}` : t('duBaoSlDongThung.preview.title')}
       mauKey="du-bao-sl-dong-thung"
       macDinh={MAC_DINH}
       tenFile={data ? fileName(data) : 'du-bao-sl-dong-thung'}

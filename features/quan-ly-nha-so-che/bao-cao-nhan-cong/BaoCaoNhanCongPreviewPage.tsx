@@ -6,12 +6,13 @@ import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { FileSpreadsheet } from 'lucide-react';
 import PhieuInPage from '../../../components/shared/phieu-in/PhieuInPage';
-import { formatDateShort } from '../../../lib/utils';
+import { formatYmdToDisplay } from '../../../lib/utils';
 import { useBaoCaoNhanCongById } from './hooks/use-bao-cao-nhan-cong';
 import { exportBaoCaoNhanCongToXLSX, fileName } from './utils/export-bao-cao-nhan-cong';
 import BaoCaoNhanCongPreviewContent from './components/BaoCaoNhanCongPreviewContent';
 
-const MAC_DINH = { kho: 'a4', huong: 'doc', leMm: 15 } as const;
+// Bảng chuyền nhiều cột: khổ ngang để chữ 8pt vẫn vừa.
+const MAC_DINH = { kho: 'a4', huong: 'ngang', leMm: 10 } as const;
 
 const BaoCaoNhanCongPreviewPage: React.FC = () => {
   const { t } = useTranslation();
@@ -26,7 +27,7 @@ const BaoCaoNhanCongPreviewPage: React.FC = () => {
 
   return (
     <PhieuInPage
-      title={data ? `${t('baoCaoNhanCong.preview.title')} - ${formatDateShort(data.ngay)}` : t('baoCaoNhanCong.preview.title')}
+      title={data ? `${t('baoCaoNhanCong.preview.title')} - ${formatYmdToDisplay(data.ngay?.slice(0, 10))}` : t('baoCaoNhanCong.preview.title')}
       mauKey="bao-cao-nhan-cong"
       macDinh={MAC_DINH}
       tenFile={data ? fileName(data) : 'bao-cao-nhan-cong'}

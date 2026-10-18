@@ -4,14 +4,13 @@
 import type { FarmDuBaoSlDongThung } from '../core/types';
 import { computeDuBaoSlDongThungKpiFromFarm } from '../core/kpi';
 import { dbsdtTrangThaiLabel, getDbsdtPreviewSignLabels } from '../core/dbsdt-preview-layout';
-import { formatDateShort, getTodayISODate } from '../../../../lib/utils';
+import { formatYmdToDisplay, getTodayISODate } from '../../../../lib/utils';
 import i18n from '../../../../lib/i18n';
 import { useUIStore } from '../../../../store/useStore';
+import { tenFileAnToan } from '../../../../lib/phieu-in/ten-file';
 
 export function fileName(data: FarmDuBaoSlDongThung): string {
-  const branch = (data.ten_chi_nhanh ?? 'chi_nhanh')
-    .replace(/\s+/g, '_')
-    .replace(/[^\w\u00C0-\u024F\-_]/gi, '');
+  const branch = tenFileAnToan(data.ten_chi_nhanh ?? 'chi_nhanh');
   return `Du_bao_dong_thung_${data.ngay}_${branch}_${getTodayISODate()}`;
 }
 
@@ -27,7 +26,7 @@ export async function exportDuBaoSlDongThungToXLSX(data: FarmDuBaoSlDongThung): 
     ...(info.address ? [[t('company.address'), info.address]] : []),
     [],
     [t('duBaoSlDongThung.preview.title')],
-    [t('duBaoSlDongThung.form.ngay'), formatDateShort(data.ngay)],
+    [t('duBaoSlDongThung.form.ngay'), formatYmdToDisplay(data.ngay?.slice(0, 10))],
     [t('duBaoSlDongThung.form.branch'), data.ten_chi_nhanh ?? ''],
     [t('duBaoSlDongThung.store.colTrangThai'), status],
     [t('duBaoSlDongThung.store.colNguoiTao'), data.ten_nguoi_tao ?? ''],

@@ -8,7 +8,8 @@ import PhieuInPage from '../../../components/shared/phieu-in/PhieuInPage';
 import { useKyKhauHaoById, useChiTietKhauHao } from './hooks/use-khau-hao-tai-san';
 import BaoCaoKhauHaoPreviewContent from './components/BaoCaoKhauHaoPreviewContent';
 
-const MAC_DINH = { kho: 'a4', huong: 'doc', leMm: 12 } as const;
+// 9 cột (5 cột tiền) — khổ ngang cho vừa.
+const MAC_DINH = { kho: 'a4', huong: 'ngang', leMm: 12 } as const;
 
 const BaoCaoKhauHaoPreviewPage: React.FC = () => {
   const { t } = useTranslation();

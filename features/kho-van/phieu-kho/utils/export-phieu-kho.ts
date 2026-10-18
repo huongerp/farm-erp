@@ -10,7 +10,9 @@ import { trangThaiToI18nKey } from '../core/constants';
 import { formatDateVietnameseLong, getTodayISODate } from '../../../../lib/utils';
 import i18n from '../../../../lib/i18n';
 import { useUIStore } from '../../../../store/useStore';
-import { sumSoLuongByPhamCap } from './sum-so-luong-by-pham-cap';
+import { tongTheoDvt, tongTheoPhamCap } from '../../../../lib/phieu-in/tong-so-luong';
+import { tenFileAnToan } from '../../../../lib/phieu-in/ten-file';
+import { LOAI_DB_TO_TAB } from '../core/types';
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
@@ -41,21 +43,18 @@ function getNoiDiNoiDen(p: PhieuKho) {
   }
 }
 
-function titleOf(loai: LoaiPhieuKho): string {
-  const w = loai === 'nhập' ? 'NHẬP' : loai === 'xuất' ? 'XUẤT' : 'CHUYỂN';
-  return `PHIẾU ${w} KHO`;
+function titleOf(loai: LoaiPhieuKho, t: (k: string) => string): string {
+  return t(`phieuKho.preview.tieuDe_${LOAI_DB_TO_TAB[loai] ?? 'nhap'}`).toLocaleUpperCase('vi');
 }
 
 export function fileName(p: PhieuKho): string {
-  const slug = `${p.so_phieu}_${p.loai}`
-    .replace(/\s+/g, '_')
-    .replace(/[^\w\u00C0-\u024F\-_]/gi, '');
+  const slug = tenFileAnToan(`${p.so_phieu}_${p.loai}`);
   return `Phieu_kho_${slug}_${getTodayISODate()}`;
 }
 
 function colHeaders(t: (k: string) => string) {
   return [
-    'TT',
+    t('common.phieuIn.stt'),
     t('phieuKho.preview.danhMuc'),
     t('phieuKho.form.itemName'),
     t('phieuKho.form.phamCap'),
@@ -111,7 +110,7 @@ export async function exportPhieuKhoToXLSX(
     ...(info.phone ? [[t('company.phone'), info.phone]] : []),
     [],
     [formatDateVietnameseLong(phieu.ngay)],
-    [titleOf(phieu.loai)],
+    [titleOf(phieu.loai, t)],
     [t('phieuKho.form.code'), phieu.so_phieu],
     ...(getPoDisplay(phieu) ? [[t('phieuKho.detail.linkPo'), getPoDisplay(phieu)!]] : []),
     [t('phieuKho.preview.noiDi'), noiDi],
@@ -136,19 +135,21 @@ export async function exportPhieuKhoToXLSX(
   });
 
   if (chiTiet.length > 0) {
-    const total = chiTiet.reduce((s, c) => s + (Number(c.so_luong) || 0), 0);
-    rows.push([t('phieuKho.preview.totalQty'), '', '', '', '', total, '', '']);
-    for (const { phamCap, soLuong } of sumSoLuongByPhamCap(chiTiet)) {
-      rows.push([t('phieuKho.preview.totalQtyByPhamCap', { phamCap }), '', '', '', '', soLuong, '', '']);
+    for (const d of tongTheoDvt(chiTiet)) {
+      rows.push([t('phieuKho.preview.totalQty'), '', '', '', d.dvt ?? '', d.soLuong, '', '']);
+    }
+    for (const d of tongTheoPhamCap(chiTiet)) {
+      const phamCap = d.phamCap ?? t('phieuKho.preview.chuaPhanCap');
+      rows.push([t('phieuKho.preview.totalQtyByPhamCap', { phamCap }), '', '', '', d.dvt ?? '', d.soLuong, '', '']);
     }
   }
 
   rows.push([]);
   rows.push([
-    t('phieuKho.preview.signCreator'),
-    t('phieuKho.preview.signChecker'),
-    t('phieuKho.preview.signRelated'),
-    t('phieuKho.preview.signApprover'),
+    t('common.phieuIn.ky.nguoiLap'),
+    t(phieu.loai === 'nhập' ? 'phieuKho.preview.signNguoiGiao' : 'phieuKho.preview.signNguoiNhan'),
+    t('common.phieuIn.ky.thuKho'),
+    t('common.phieuIn.ky.nguoiDuyet'),
   ]);
 
   const ws = XLSX.utils.aoa_to_sheet(rows);

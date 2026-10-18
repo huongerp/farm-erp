@@ -8,6 +8,7 @@
 import type { DeXuatMuaHang, DeXuatMuaHangChiTiet } from '../core/types';
 import { formatDate, formatDateVietnameseLong, getTodayISODate } from '../../../../lib/utils';
 import i18n from '../../../../lib/i18n';
+import { tenFileAnToan } from '../../../../lib/phieu-in/ten-file';
 import { useUIStore } from '../../../../store/useStore';
 
 /* ------------------------------------------------------------------ */
@@ -20,13 +21,13 @@ function safe(v: string | number | null | undefined): string {
 }
 
 export function fileName(p: DeXuatMuaHang): string {
-  const slug = p.so_phieu.replace(/\s+/g, '_').replace(/[^\w\u00C0-\u024F\-_]/gi, '');
+  const slug = tenFileAnToan(p.so_phieu);
   return `De_xuat_mua_hang_${slug}_${getTodayISODate()}`;
 }
 
 function colHeaders(t: (k: string) => string) {
   return [
-    'TT',
+    t('common.phieuIn.stt'),
     t('deXuatMuaHang.form.itemName'),
     t('deXuatMuaHang.form.specs'),
     t('deXuatMuaHang.form.unit'),
@@ -70,7 +71,7 @@ export async function exportDeXuatMuaHangToXLSX(
     ...(info.phone ? [[t('company.phone'), info.phone]] : []),
     [],
     [formatDateVietnameseLong(phieu.ngay)],
-    ['ĐỀ XUẤT VẬT TƯ'],
+    [t('deXuatMuaHang.preview.title').toLocaleUpperCase('vi')],
     [t('deXuatMuaHang.form.code'), phieu.so_phieu],
     [t('deXuatMuaHang.preview.donVi'), phieu.ten_noi_de_xuat ?? '–'],
     [t('deXuatMuaHang.preview.nguoiTao'), phieu.ten_nguoi_de_xuat ?? '–'],
@@ -94,10 +95,9 @@ export async function exportDeXuatMuaHangToXLSX(
 
   rows.push([]);
   rows.push([
-    t('deXuatMuaHang.preview.signCreator'),
+    t('common.phieuIn.ky.nguoiDeXuat'),
     t('deXuatMuaHang.preview.signChecker'),
-    t('deXuatMuaHang.preview.signRelated'),
-    t('deXuatMuaHang.preview.signApprover'),
+    t('common.phieuIn.ky.nguoiDuyet'),
   ]);
 
   const ws = XLSX.utils.aoa_to_sheet(rows);

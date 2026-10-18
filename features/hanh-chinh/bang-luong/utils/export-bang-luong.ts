@@ -236,7 +236,7 @@ export async function exportBangLuongExcel(record: BangLuongRecord): Promise<voi
   if (info.phone) rows.push([i18n.t('company.phone'), info.phone]);
   rows.push([]);
 
-  rows.push([i18n.t('bangLuong.pdf.title')]);
+  rows.push([i18n.t('bangLuong.pdf.title').toLocaleUpperCase('vi')]);
   rows.push([i18n.t('bangLuong.detail.employee'), empLabel]);
   rows.push([i18n.t('bangLuong.detail.period'), periodStr]);
   rows.push([]);

@@ -4,9 +4,10 @@
 import type { ThanhToanDoiTac } from '../core/types';
 import { formatDate, getTodayISODate } from '../../../../lib/utils';
 import i18n from '../../../../lib/i18n';
+import { tenFileAnToan } from '../../../../lib/phieu-in/ten-file';
 
 export function getFileName(item: ThanhToanDoiTac): string {
-  const slug = item.so_phieu.replace(/\s+/g, '_').replace(/[^\w\u00C0-\u024F\-_]/gi, '');
+  const slug = tenFileAnToan(item.so_phieu);
   return `Thanh_toan_doi_tac_${slug}_${getTodayISODate()}`;
 }
 

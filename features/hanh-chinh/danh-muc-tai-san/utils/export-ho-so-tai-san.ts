@@ -5,9 +5,10 @@ import type { TaiSan } from '../core/types';
 import { getTodayISODate } from '../../../../lib/utils';
 import i18n from '../../../../lib/i18n';
 import { useUIStore } from '../../../../store/useStore';
+import { tenFileAnToan } from '../../../../lib/phieu-in/ten-file';
 
 export function getFileName(record: TaiSan): string {
-  const slug = `${record.ma_tai_san}_${record.ten_tai_san}`.replace(/\s+/g, '_').replace(/[^\w\u00C0-\u024F\-_]/gi, '');
+  const slug = tenFileAnToan(`${record.ma_tai_san}_${record.ten_tai_san}`);
   return `Ho_so_tai_san_${slug}_${getTodayISODate()}`;
 }
 

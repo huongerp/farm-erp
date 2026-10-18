@@ -12,7 +12,7 @@ import {
   sumTongCongQuyDoiPhieu,
   sumTongGioTangCaTichPhieu,
 } from './types';
-import { formatDateShort, formatNumberVN } from '../../../../lib/utils';
+import { formatYmdToDisplay, formatNumberVN } from '../../../../lib/utils';
 
 export type BcncPreviewField = { label: string; value: string; bold?: boolean };
 
@@ -30,7 +30,7 @@ export function getBcncPreviewOverviewRows(
   const status = bcncTrangThaiLabel(data, t);
   const rows: BcncPreviewField[][] = [
     [
-      { label: t('baoCaoNhanCong.form.ngay'), value: formatDateShort(data.ngay) },
+      { label: t('baoCaoNhanCong.form.ngay'), value: formatYmdToDisplay(data.ngay?.slice(0, 10)) },
       { label: t('baoCaoNhanCong.form.branch'), value: data.ten_chi_nhanh?.trim() || '—' },
       { label: t('baoCaoNhanCong.store.colTrangThai'), value: status },
       { label: t('baoCaoNhanCong.store.colNguoiTao'), value: data.ten_nguoi_tao?.trim() || '—' },

@@ -8,6 +8,7 @@
 import type { PhieuDeXuatVatTu, PhieuDeXuatVatTuChiTiet } from '../core/types';
 import { formatDate, formatDateVietnameseLong, getTodayISODate } from '../../../../lib/utils';
 import i18n from '../../../../lib/i18n';
+import { tenFileAnToan } from '../../../../lib/phieu-in/ten-file';
 import { useUIStore } from '../../../../store/useStore';
 
 /* ------------------------------------------------------------------ */
@@ -20,13 +21,13 @@ function safe(v: string | number | null | undefined): string {
 }
 
 export function fileName(p: PhieuDeXuatVatTu): string {
-  const slug = p.so_phieu.replace(/\s+/g, '_').replace(/[^\w\u00C0-\u024F\-_]/gi, '');
+  const slug = tenFileAnToan(p.so_phieu);
   return `Phieu_de_xuat_vat_tu_${slug}_${getTodayISODate()}`;
 }
 
 function colHeaders(t: (k: string) => string) {
   return [
-    'TT',
+    t('common.phieuIn.stt'),
     t('phieuDeXuatVatTu.form.itemName'),
     t('phieuDeXuatVatTu.form.specs'),
     t('phieuDeXuatVatTu.form.unit'),
@@ -70,7 +71,7 @@ export async function exportPhieuDeXuatVatTuToXLSX(
     ...(info.phone ? [[t('company.phone'), info.phone]] : []),
     [],
     [formatDateVietnameseLong(phieu.ngay)],
-    ['ĐỀ XUẤT VẬT TƯ'],
+    [t('phieuDeXuatVatTu.preview.title').toLocaleUpperCase('vi')],
     [t('phieuDeXuatVatTu.form.code'), phieu.so_phieu],
     [t('phieuDeXuatVatTu.preview.donVi'), phieu.ten_noi_de_xuat ?? '–'],
     [t('phieuDeXuatVatTu.preview.nguoiTao'), phieu.ten_nguoi_de_xuat ?? '–'],
@@ -94,10 +95,9 @@ export async function exportPhieuDeXuatVatTuToXLSX(
 
   rows.push([]);
   rows.push([
-    t('phieuDeXuatVatTu.preview.signCreator'),
+    t('common.phieuIn.ky.nguoiDeXuat'),
     t('phieuDeXuatVatTu.preview.signChecker'),
-    t('phieuDeXuatVatTu.preview.signRelated'),
-    t('phieuDeXuatVatTu.preview.signApprover'),
+    t('common.phieuIn.ky.nguoiDuyet'),
   ]);
 
   const ws = XLSX.utils.aoa_to_sheet(rows);

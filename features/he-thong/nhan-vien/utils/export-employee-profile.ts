@@ -24,7 +24,7 @@ export async function exportEmployeeProfileExcel(emp: Employee): Promise<void> {
     ...(info.email ? [[i18n.t('company.email'), info.email]] : []),
     ...(info.phone ? [[i18n.t('company.phone'), info.phone]] : []),
     [],
-    [i18n.t('employee.pdf.title')],
+    [i18n.t('employee.pdf.title').toLocaleUpperCase('vi')],
     [i18n.t('employee.pdf.code'), emp.ma_nhan_vien],
     [i18n.t('employee.detail.fullName'), emp.ho_ten],
     [],

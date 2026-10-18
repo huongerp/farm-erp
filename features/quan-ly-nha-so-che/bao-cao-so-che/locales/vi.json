@@ -190,12 +190,16 @@
   "baoCaoSoChe.preview.title": "Phiếu báo cáo sơ chế",
   "baoCaoSoChe.preview.print": "In",
   "baoCaoSoChe.preview.download": "Tải xuống",
-  "baoCaoSoChe.preview.printedAt": "In lúc:",
   "baoCaoSoChe.preview.loadError": "Không thể tải báo cáo. Vui lòng thử lại.",
   "baoCaoSoChe.preview.notFound": "Không tìm thấy báo cáo.",
   "baoCaoSoChe.preview.signCreator": "Người lập báo cáo",
   "baoCaoSoChe.preview.signSupervisor": "Trưởng ca SX",
   "baoCaoSoChe.preview.signManager": "Quản lý nhà sơ chế",
   "baoCaoSoChe.preview.signApprover": "Người phê duyệt",
-  "baoCaoSoChe.preview.signHint": "Ký, ghi rõ họ tên"
+  "baoCaoSoChe.preview.signHint": "(Ký, ghi rõ họ tên)",
+  "baoCaoSoChe.preview.colChiSo": "Chỉ số",
+  "baoCaoSoChe.preview.colGiaTri": "Giá trị",
+  "baoCaoSoChe.preview.colGhiChu": "Ghi chú",
+  "baoCaoSoChe.preview.dvtThung": "Thùng",
+  "baoCaoSoChe.preview.dvtKg": "kg"
 }

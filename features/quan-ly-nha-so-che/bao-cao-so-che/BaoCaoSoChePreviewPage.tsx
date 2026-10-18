@@ -6,7 +6,7 @@ import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { FileSpreadsheet } from 'lucide-react';
 import PhieuInPage from '../../../components/shared/phieu-in/PhieuInPage';
-import { formatDateShort } from '../../../lib/utils';
+import { formatYmdToDisplay } from '../../../lib/utils';
 import { useBaoCaoSoCheById } from './hooks/use-bao-cao-so-che';
 import { useBaoCaoNhanCongList } from '../bao-cao-nhan-cong/hooks/use-bao-cao-nhan-cong';
 import { useDuBaoSlDongThungList } from '../du-bao-sl-dong-thung/hooks/use-du-bao-sl-dong-thung';
@@ -30,7 +30,7 @@ const BaoCaoSoChePreviewPage: React.FC = () => {
 
   return (
     <PhieuInPage
-      title={data ? `${t('baoCaoSoChe.preview.title')} - ${formatDateShort(data.ngay)}` : t('baoCaoSoChe.preview.title')}
+      title={data ? `${t('baoCaoSoChe.preview.title')} - ${formatYmdToDisplay(data.ngay?.slice(0, 10))}` : t('baoCaoSoChe.preview.title')}
       mauKey="bao-cao-so-che"
       macDinh={MAC_DINH}
       tenFile={data ? fileName(data) : 'bao-cao-so-che'}

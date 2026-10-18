@@ -7,6 +7,7 @@ import {
   formatDate,
   formatDateShort,
   formatYmdToDisplay,
+  formatDateVietnameseLong,
 } from './utils';
 
 describe('parseFormattedNumber', () => {
@@ -90,6 +91,18 @@ describe('formatDate / formatDateShort', () => {
     // 2024-06-15T10:00:00Z = 2024-06-15 17:00 giờ VN — cùng ngày, tránh lệch múi giờ ở biên ngày.
     expect(formatDate('2024-06-15T10:00:00Z')).toBe('15/06/2024');
     expect(formatDateShort('2024-06-15T10:00:00Z')).toBe('15/06');
+  });
+});
+
+describe('formatDateVietnameseLong', () => {
+  it('ngày thuần YYYY-MM-DD cắt chuỗi, không lệch múi giờ', () => {
+    expect(formatDateVietnameseLong('2026-01-01')).toBe('Ngày 01 tháng 01 năm 2026');
+    expect(formatDateVietnameseLong('2026-10-18')).toBe('Ngày 18 tháng 10 năm 2026');
+  });
+
+  it('rỗng → chuỗi rỗng', () => {
+    expect(formatDateVietnameseLong(null)).toBe('');
+    expect(formatDateVietnameseLong('')).toBe('');
   });
 });
 

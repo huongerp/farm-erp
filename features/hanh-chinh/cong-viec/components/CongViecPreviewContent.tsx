@@ -1,128 +1,92 @@
 /**
- * Nội dung in công việc khổ A4 – header công ty + thông tin công việc + báo cáo.
+ * Nội dung in phiếu giao việc — khung chuẩn hệ thống (PhieuInParts): thông tin công việc, mô tả /
+ * kết quả, danh sách việc con, ô ký người giao · người nhận.
  * Dùng cho trang preview /hanh-chinh/cong-viec/preview/:id và lệnh in.
  */
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { formatDateTime, formatDateTimeShort } from '../../../../lib/utils';
-import { useUIStore } from '../../../../store/useStore';
+import { formatDateTimeShort, formatYmdToDisplay } from '../../../../lib/utils';
+import {
+  BangThongTin,
+  HangKyTen,
+  KhungPhieu,
+  TD_IN,
+  TH_IN,
+} from '../../../../components/shared/phieu-in/PhieuInParts';
 import { getTrangThaiLabel, getUuTienLabel } from '../core/constants';
 import type { CongViec } from '../core/types';
 
 interface Props {
   record: CongViec;
-  /** Công việc con của record (đã lọc sẵn ở trang preview) */
+  /** Danh sách công việc con (khi có id_cha trỏ tới record). */
   congViecCon?: CongViec[];
-  /** Tra tên nhân viên theo id – trang preview truyền vào để component thuần hiển thị */
+  /** Tra tên nhân viên theo id. */
   getEmployeeName: (id: number | string | null | undefined) => string;
 }
 
+const KhoiChu: React.FC<{ nhan: string; noiDung?: string | null }> = ({ nhan, noiDung }) =>
+  noiDung?.trim() ? (
+    <div className="mt-2 break-inside-avoid">
+      <p className="font-semibold m-0">{nhan}:</p>
+      <p className="m-0 whitespace-pre-line break-words">{noiDung}</p>
+    </div>
+  ) : null;
+
 const CongViecPreviewContent: React.FC<Props> = ({ record, congViecCon = [], getEmployeeName }) => {
   const { t } = useTranslation();
-  const companyInfo = useUIStore((s) => s.companyInfo);
-  const printedAt = formatDateTime(new Date());
-
-  /** Hàm render (không phải component) để React không phải remount mỗi lần render lại trang */
-  const renderRow = (label: string, value: React.ReactNode) => (
-    <tr key={label}>
-      <td className="w-[32%] border border-gray-300 p-1.5 text-[10pt] font-semibold text-gray-600 bg-gray-50/50 align-top">
-        {label}
-      </td>
-      <td className="border border-gray-300 p-1.5 text-[10pt] text-gray-900 align-top whitespace-pre-line break-words">
-        {value || '—'}
-      </td>
-    </tr>
-  );
+  const hoTro = (record.nguoi_ho_tro ?? []).map((id) => getEmployeeName(id)).join(', ');
 
   return (
-    <div className="cong-viec-preview-content bg-white text-gray-900 font-sans text-[10pt] min-h-[var(--in-trang-h,auto)]">
-      {/* Header công ty */}
-      <div className="flex items-start gap-4 pb-4 mb-4 border-b-2 border-gray-300">
-        {companyInfo.appLogo && (
-          <img src={companyInfo.appLogo} alt="Logo" className="w-16 h-16 object-contain shrink-0" />
-        )}
-        <div className="min-w-0 flex-1">
-          <h2 className="text-[14pt] font-bold text-gray-900 uppercase tracking-tight">
-            {companyInfo.companyName}
-          </h2>
-          {companyInfo.address && (
-            <p className="text-[9pt] text-gray-600 mt-0.5">
-              {t('company.address')}: {companyInfo.address}
-            </p>
-          )}
-          {(companyInfo.email || companyInfo.phone) && (
-            <p className="text-[9pt] text-gray-600">
-              {companyInfo.email && <span>{t('company.email')}: {companyInfo.email}</span>}
-              {companyInfo.email && companyInfo.phone && ' · '}
-              {companyInfo.phone && <span>{t('company.phone')}: {companyInfo.phone}</span>}
-            </p>
-          )}
-        </div>
-      </div>
-
-      <h1 className="text-center text-[16pt] font-bold mb-2 uppercase">{t('congViec.preview.title')}</h1>
-      <p className="text-center text-[10pt] text-gray-500 mb-3">{record.tieu_de}</p>
-      <hr className="border-t border-gray-300 my-3" />
-
-      <table className="w-full border-collapse mt-3 text-[10pt]">
-        <thead>
-          <tr>
-            <th colSpan={2} className="bg-primary text-white p-1.5 text-left text-[9pt] font-bold">
-              {t('congViec.form.basicInfo')}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {renderRow(t('congViec.form.tieuDe'), record.tieu_de)}
-          {renderRow(t('congViec.form.nguoiGiao'), getEmployeeName(record.id_nguoi_giao))}
-          {renderRow(t('congViec.form.trachNhiem'), getEmployeeName(record.trach_nhiem))}
-          {renderRow(t('congViec.form.nguoiHoTro'), (record.nguoi_ho_tro ?? []).map((id) => getEmployeeName(id)).join(', '))}
-          {renderRow(t('congViec.form.uuTien'), getUuTienLabel(record.uu_tien, t))}
-          {renderRow(t('congViec.form.trangThai'), getTrangThaiLabel(record.trang_thai, t))}
-          {renderRow(t('congViec.form.moTa'), record.mo_ta?.trim())}
-          {renderRow(t('congViec.detail.ketQua'), record.ket_qua?.trim())}
-          {renderRow(t('congViec.detail.linkKetQua'), record.link_ket_qua?.trim())}
-          {renderRow(t('congViec.detail.createdAt'), formatDateTimeShort(record.tg_tao))}
-          {renderRow(t('congViec.store.updatedCol'), formatDateTimeShort(record.tg_cap_nhat))}
-        </tbody>
-      </table>
+    <KhungPhieu title={t('congViec.preview.title')} ngay={formatDateTimeShort(record.tg_tao)}>
+      <p className="text-center font-bold text-[1.1em] mt-0 mb-2">{record.tieu_de}</p>
+      <BangThongTin
+        rows={[
+          [t('congViec.form.nguoiGiao'), getEmployeeName(record.id_nguoi_giao)],
+          [t('congViec.form.trachNhiem'), getEmployeeName(record.trach_nhiem)],
+          [t('congViec.form.uuTien'), getUuTienLabel(record.uu_tien, t)],
+          [t('congViec.form.trangThai'), getTrangThaiLabel(record.trang_thai, t)],
+          ...(record.ngay_het_han
+            ? [[t('congViec.preview.hanHoanThanh'), formatYmdToDisplay(record.ngay_het_han.slice(0, 10))] as [string, string]]
+            : []),
+          ...(hoTro ? [[t('congViec.form.nguoiHoTro'), hoTro] as [string, string]] : []),
+        ]}
+      />
+      <KhoiChu nhan={t('congViec.form.moTa')} noiDung={record.mo_ta} />
+      <KhoiChu nhan={t('congViec.detail.ketQua')} noiDung={record.ket_qua} />
+      <KhoiChu nhan={t('congViec.detail.linkKetQua')} noiDung={record.link_ket_qua} />
 
       {congViecCon.length > 0 && (
-        <table className="w-full border-collapse mt-4 text-[10pt]">
-          <thead>
-            <tr>
-              <th colSpan={3} className="bg-primary text-white p-1.5 text-left text-[9pt] font-bold">
-                {t('congViec.detail.conList')}
-              </th>
-            </tr>
-            <tr>
-              <th className="w-[8%] border border-gray-300 p-1.5 text-[9pt] font-semibold text-gray-600 bg-gray-50/50">
-                #
-              </th>
-              <th className="border border-gray-300 p-1.5 text-left text-[9pt] font-semibold text-gray-600 bg-gray-50/50">
-                {t('congViec.store.tieuDeCol')}
-              </th>
-              <th className="w-[26%] border border-gray-300 p-1.5 text-left text-[9pt] font-semibold text-gray-600 bg-gray-50/50">
-                {t('congViec.store.trangThaiCol')}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {congViecCon.map((c, i) => (
-              <tr key={c.id}>
-                <td className="border border-gray-300 p-1.5 text-center tabular-nums">{i + 1}</td>
-                <td className="border border-gray-300 p-1.5">{c.tieu_de}</td>
-                <td className="border border-gray-300 p-1.5">{getTrangThaiLabel(c.trang_thai, t)}</td>
+        <>
+          <p className="font-bold uppercase mt-3 mb-1">{t('congViec.detail.conList')}</p>
+          <table className="w-full border-collapse">
+            <thead>
+              <tr>
+                <th className={`${TH_IN} p-1.5 text-center w-10`}>{t('common.phieuIn.stt')}</th>
+                <th className={`${TH_IN} p-1.5 text-left`}>{t('congViec.store.tieuDeCol')}</th>
+                <th className={`${TH_IN} p-1.5 text-left w-[26%]`}>{t('congViec.store.trangThaiCol')}</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {congViecCon.map((c, i) => (
+                <tr key={c.id}>
+                  <td className={`${TD_IN} p-1.5 text-center tabular-nums`}>{i + 1}</td>
+                  <td className={`${TD_IN} p-1.5`}>{c.tieu_de}</td>
+                  <td className={`${TD_IN} p-1.5`}>{getTrangThaiLabel(c.trang_thai, t)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
       )}
 
-      <p className="text-[7pt] text-gray-500 mt-5">
-        {t('congViec.preview.printedAt')} {printedAt}
-      </p>
-    </div>
+      <HangKyTen
+        className="mt-6"
+        labels={[
+          { label: t('common.phieuIn.ky.nguoiGiao'), ten: getEmployeeName(record.id_nguoi_giao) },
+          { label: t('common.phieuIn.ky.nguoiNhan'), ten: getEmployeeName(record.trach_nhiem) },
+        ]}
+      />
+    </KhungPhieu>
   );
 };
 

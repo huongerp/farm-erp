@@ -28,8 +28,8 @@ import {
 } from '../core/ct-sub';
 import { formatNumberVN } from '../../../../lib/utils';
 
-const thBase = 'border border-gray-300 px-0.5 py-0.5 text-[6pt] font-semibold text-gray-700 bg-gray-50';
-const tdBase = 'border border-gray-300 px-0.5 py-0.5 text-[6pt] tabular-nums';
+const thBase = 'border border-gray-400 px-1 py-0.5 text-[8pt] font-semibold text-gray-700 bg-gray-50';
+const tdBase = 'border border-gray-300 px-1 py-0.5 text-[8pt] tabular-nums';
 const tdText = `${tdBase} text-left`;
 const tdNum = `${tdBase} text-right`;
 const tdSub = `${tdBase} text-right text-gray-600 bg-gray-50/80`;
@@ -147,7 +147,7 @@ const BaoCaoNhanCongPreviewTable: React.FC<Props> = ({ data }) => {
   const tongTongGioTc = sumTongGioTangCaTichPhieu(data);
 
   return (
-    <table className="w-full border-collapse border border-gray-300 text-gray-900 table-fixed text-[6pt]">
+    <table className="w-full border-collapse border border-gray-300 text-gray-900 table-fixed text-[8pt]">
       <thead>
         <tr>
           <th rowSpan={2} className={`${thBase} text-center w-8`}>
@@ -179,12 +179,12 @@ const BaoCaoNhanCongPreviewTable: React.FC<Props> = ({ data }) => {
           </th>
         </tr>
         <tr>
-          <th className={`${thBase} text-right text-[6.5pt] font-medium`}>{t('baoCaoNhanCong.detail.colNhanSu')}</th>
-          <th className={`${thBase} text-right text-[6.5pt] font-medium`}>{t('baoCaoNhanCong.form.colGioTb')}</th>
-          <th className={`${thBase} text-right text-[6.5pt] font-medium`}>{t('baoCaoNhanCong.detail.colNhanSu')}</th>
-          <th className={`${thBase} text-right text-[6.5pt] font-medium`}>{t('baoCaoNhanCong.form.colGioTb')}</th>
-          <th className={`${thBase} text-right text-[6.5pt] font-medium`}>{t('baoCaoNhanCong.detail.colNhanSu')}</th>
-          <th className={`${thBase} text-right text-[6.5pt] font-medium`}>{t('baoCaoNhanCong.form.colGioTb')}</th>
+          <th className={`${thBase} text-right text-[8pt] font-medium`}>{t('baoCaoNhanCong.detail.colNhanSu')}</th>
+          <th className={`${thBase} text-right text-[8pt] font-medium`}>{t('baoCaoNhanCong.form.colGioTb')}</th>
+          <th className={`${thBase} text-right text-[8pt] font-medium`}>{t('baoCaoNhanCong.detail.colNhanSu')}</th>
+          <th className={`${thBase} text-right text-[8pt] font-medium`}>{t('baoCaoNhanCong.form.colGioTb')}</th>
+          <th className={`${thBase} text-right text-[8pt] font-medium`}>{t('baoCaoNhanCong.detail.colNhanSu')}</th>
+          <th className={`${thBase} text-right text-[8pt] font-medium`}>{t('baoCaoNhanCong.form.colGioTb')}</th>
         </tr>
       </thead>
       <tbody>

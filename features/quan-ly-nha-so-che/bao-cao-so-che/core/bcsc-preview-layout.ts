@@ -4,7 +4,7 @@
 import type { TFunction } from 'i18next';
 import type { FarmBaoCaoSoChe } from './types';
 import { TRANG_THAI_BAO_CAO_SO_CHE } from './types';
-import { formatDateShort, formatNumberVN } from '../../../../lib/utils';
+import { formatYmdToDisplay, formatNumberVN } from '../../../../lib/utils';
 
 export type BcscPreviewField = { label: string; value: string; bold?: boolean };
 
@@ -22,7 +22,7 @@ export function getBcscPreviewOverviewRows(
   const status = bcscTrangThaiLabel(data, t);
   const rows: BcscPreviewField[][] = [
     [
-      { label: t('baoCaoSoChe.form.ngay'), value: formatDateShort(data.ngay) },
+      { label: t('baoCaoSoChe.form.ngay'), value: formatYmdToDisplay(data.ngay?.slice(0, 10)) },
       { label: t('baoCaoSoChe.form.branch'), value: data.ten_chi_nhanh?.trim() || '—' },
       { label: t('baoCaoSoChe.store.colTrangThai'), value: status },
       { label: t('baoCaoSoChe.form.donViTinh'), value: data.don_vi_tinh?.trim() || '—' },

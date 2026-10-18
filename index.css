@@ -541,19 +541,6 @@ html[data-text-size="large"] { font-size: 18px; }
   }
 }
 
-/* Báo cáo sơ chế: section break-inside để trình duyệt không cắt ngang khi in */
-.bao-cao-so-che-preview-content .bcsc-section {
-  break-inside: avoid;
-  page-break-inside: avoid;
-}
-.bao-cao-so-che-preview-content table {
-  break-inside: auto;
-}
-.bao-cao-so-che-preview-content tr {
-  break-inside: avoid;
-  page-break-inside: avoid;
-}
-
 /* iOS Safari: ô date/time giữ bề rộng tối thiểu và chiều cao riêng của hệ điều hành → tràn mép
    khung (popup hẹp trên điện thoại) và cao hơn h-10. Chỉ áp trên iOS (-webkit-touch-callout). */
 @supports (-webkit-touch-callout: none) {

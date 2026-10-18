@@ -1,218 +1,111 @@
 /**
- * Nội dung in phiếu kiểm kê kho A4 — header công ty + thông tin đợt + thống kê + bảng chi tiết 8 cột + footer ký.
- * Đây là nguồn WYSIWYG cho window.print(); nội dung phải khớp với file PDF/DOC/XLSX export.
+ * Nội dung in phiếu kiểm kê kho (Nhà sơ chế / Phân thuốc) — khung chuẩn hệ thống (PhieuInParts): đầu phiếu (mã đợt),
+ * thông tin đợt, dòng thống kê kết quả, bảng chi tiết (ẩn cột ghi chú khi trống), ô ký.
+ * Nội dung phải khớp với file XLSX export.
  */
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { formatDate, formatDateTime } from '../../../../lib/utils';
-import { useUIStore } from '../../../../store/useStore';
+import { formatYmdToDisplay } from '../../../../lib/utils';
+import { cotCoDuLieu } from '../../../../lib/phieu-in/tong-so-luong';
+import {
+  BangThongTin,
+  HangKyTen,
+  KhungPhieu,
+  TD_IN,
+  TH_IN,
+} from '../../../../components/shared/phieu-in/PhieuInParts';
 import { getTrangThaiDotLabelPT, getKetQuaLabelPT } from '../core/constants';
 import {
   getKiemKeKhoPTChiTietStats,
   buildKiemKeKhoStatsText,
   formatKiemKeKhoPTQty,
   getKiemKeKhoVariance,
+  getKiemKeKhoPreviewSignLabels,
 } from '../core/kkpt-preview-layout';
-import PhieuKiemKePTPreviewSignFooter from './PhieuKiemKePTPreviewSignFooter';
 import type { DotKiemKePT, ChiTietKiemKePT } from '../core/types';
+
+const th = `${TH_IN} p-1.5 text-[9pt]`;
+const td = `${TD_IN} p-1.5`;
+const ngayIn = (v?: string | null) => formatYmdToDisplay(v?.slice(0, 10));
 
 interface Props {
   dot: DotKiemKePT;
   chiTiet: ChiTietKiemKePT[];
 }
 
-const InfoRow = ({
-  label,
-  value,
-}: {
-  label: string;
-  value: string | number | null | undefined;
-}) => (
-  <tr>
-    <td className="w-[40%] border border-gray-300 p-1.5 text-[10pt] font-semibold text-gray-600 bg-gray-50/50">
-      {label}
-    </td>
-    <td className="border border-gray-300 p-1.5 text-[10pt] text-gray-900">{value ?? '—'}</td>
-  </tr>
-);
-
 const PhieuKiemKePTPreviewContent: React.FC<Props> = ({ dot, chiTiet }) => {
   const { t } = useTranslation();
-  const companyInfo = useUIStore((s) => s.companyInfo);
-  const printedAt = formatDateTime(new Date());
   const stats = getKiemKeKhoPTChiTietStats(chiTiet);
+  const coGhiChu = cotCoDuLieu(chiTiet, (c) => c.ghi_chu_dong);
+  const [kyPhuTrach, ...kyKhac] = getKiemKeKhoPreviewSignLabels(t);
+
+  const thongTin: [string, React.ReactNode][] = [
+    [t('kiemKeKhoPT.store.tenDotCol'), dot.ten_dot],
+    [t('kiemKeKhoPT.store.trangThaiCol'), getTrangThaiDotLabelPT(dot.trang_thai, t)],
+    [t('kiemKeKhoPT.store.ngayBatDauCol'), ngayIn(dot.ngay_bat_dau)],
+    [t('kiemKeKhoPT.store.ngayKetThucCol'), ngayIn(dot.ngay_ket_thuc)],
+    [t('kiemKeKhoPT.store.nguoiPhuTrachCol'), dot.ten_nguoi_phu_trach || dot.ma_nguoi_phu_trach],
+  ];
 
   return (
-    <div className="phieu-kiem-ke-kho-preview-content bg-white text-gray-900 font-sans text-[10pt] min-h-[var(--in-trang-h,auto)]">
-      {/* Company header */}
-      <div className="flex items-start gap-4 pb-4 mb-4 border-b-2 border-gray-300">
-        {companyInfo.appLogo && (
-          <img src={companyInfo.appLogo} alt="Logo" className="w-16 h-16 object-contain shrink-0" />
-        )}
-        <div className="min-w-0 flex-1">
-          <h2 className="text-[14pt] font-bold text-gray-900 uppercase tracking-tight">
-            {companyInfo.companyName}
-          </h2>
-          {companyInfo.address && (
-            <p className="text-[9pt] text-gray-600 mt-0.5">
-              {t('company.address')}: {companyInfo.address}
-            </p>
-          )}
-          {(companyInfo.email || companyInfo.phone) && (
-            <p className="text-[9pt] text-gray-600">
-              {companyInfo.email && (
-                <span>
-                  {t('company.email')}: {companyInfo.email}
-                </span>
-              )}
-              {companyInfo.email && companyInfo.phone && ' · '}
-              {companyInfo.phone && (
-                <span>
-                  {t('company.phone')}: {companyInfo.phone}
-                </span>
-              )}
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* Title */}
-      <h1 className="text-center text-[16pt] font-bold mb-2 uppercase">
-        {t('kiemKeKhoPT.preview.title')}
-      </h1>
-      <p className="text-center text-[10pt] text-gray-500 mb-3">
-        {dot.ma_dot} · {dot.ten_dot} · {getTrangThaiDotLabelPT(dot.trang_thai, t)}
-      </p>
-      <hr className="border-t border-gray-300 my-3" />
-
-      {/* Dot info table */}
-      <table className="w-full border-collapse mt-3 text-[10pt]">
-        <thead>
-          <tr>
-            <th
-              colSpan={2}
-              className="bg-primary text-white p-1.5 text-left text-[9pt] font-bold"
-            >
-              {t('kiemKeKhoPT.form.infoSection')}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <InfoRow label={t('kiemKeKhoPT.store.maDotCol')} value={dot.ma_dot} />
-          <InfoRow label={t('kiemKeKhoPT.store.tenDotCol')} value={dot.ten_dot} />
-          <InfoRow label={t('kiemKeKhoPT.store.ngayBatDauCol')} value={formatDate(dot.ngay_bat_dau)} />
-          <InfoRow label={t('kiemKeKhoPT.store.ngayKetThucCol')} value={formatDate(dot.ngay_ket_thuc)} />
-          <InfoRow
-            label={t('kiemKeKhoPT.store.trangThaiCol')}
-            value={getTrangThaiDotLabelPT(dot.trang_thai, t)}
-          />
-          <InfoRow
-            label={t('kiemKeKhoPT.store.nguoiPhuTrachCol')}
-            value={dot.ten_nguoi_phu_trach || dot.ma_nguoi_phu_trach}
-          />
-          <InfoRow label={t('kiemKeKhoPT.store.ghiChuCol')} value={dot.ghi_chu} />
-        </tbody>
-      </table>
-
-      {/* Stats summary line */}
-      {chiTiet.length > 0 && (
-        <p className="text-[9pt] text-gray-600 mt-2">
-          {buildKiemKeKhoStatsText(stats, t)}
+    <KhungPhieu title={t('kiemKeKhoPT.preview.title')} soPhieu={dot.ma_dot}>
+      <BangThongTin rows={thongTin} />
+      {dot.ghi_chu?.trim() && (
+        <p className="mt-2 mb-0 whitespace-pre-line break-words">
+          <span className="font-semibold">{t('kiemKeKhoPT.store.ghiChuCol')}: </span>
+          {dot.ghi_chu}
         </p>
       )}
 
-      {/* Detail table */}
       {chiTiet.length > 0 ? (
         <>
-          <h2 className="text-[11pt] font-semibold mt-4 mb-2 text-gray-900">
-            {t('kiemKeKhoPT.chiTietSection')}
-          </h2>
-          <div className="overflow-x-auto">
-            <table className="kiem-ke-kho-print-detail-table w-full border-collapse text-[10pt]">
-              <thead>
-                <tr>
-                  <th className="border border-gray-300 bg-primary text-white p-1.5 text-center text-[9pt] font-bold w-[4%]">
-                    TT
-                  </th>
-                  <th className="border border-gray-300 bg-primary text-white p-1.5 text-left text-[9pt] font-bold w-[12%]">
-                    {t('kiemKeKhoPT.store.khoCol')}
-                  </th>
-                  <th className="border border-gray-300 bg-primary text-white p-1.5 text-left text-[9pt] font-bold w-[22%]">
-                    {t('kiemKeKhoPT.store.hangHoaCol')}
-                  </th>
-                  <th className="border border-gray-300 bg-primary text-white p-1.5 text-right text-[9pt] font-bold w-[10%]">
-                    {t('kiemKeKhoPT.store.soLuongSoCol')}
-                  </th>
-                  <th className="border border-gray-300 bg-primary text-white p-1.5 text-right text-[9pt] font-bold w-[10%]">
-                    {t('kiemKeKhoPT.store.soLuongThucTeCol')}
-                  </th>
-                  <th className="border border-gray-300 bg-primary text-white p-1.5 text-right text-[9pt] font-bold w-[10%]">
-                    {t('kiemKeKhoPT.detail.chenhLech')}
-                  </th>
-                  <th className="border border-gray-300 bg-primary text-white p-1.5 text-left text-[9pt] font-bold w-[10%]">
-                    {t('kiemKeKhoPT.store.ketQuaCol')}
-                  </th>
-                  <th className="border border-gray-300 bg-primary text-white p-1.5 text-left text-[9pt] font-bold">
-                    {t('kiemKeKhoPT.store.ghiChuCol')}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {chiTiet.map((c, idx) => {
-                  const variance = getKiemKeKhoVariance(c);
-                  const varianceLabel =
-                    variance == null
-                      ? '—'
-                      : variance > 0
-                        ? `+${formatKiemKeKhoPTQty(variance)}`
-                        : formatKiemKeKhoPTQty(variance);
-                  return (
-                    <tr key={c.id} className="break-inside-avoid">
-                      <td className="border border-gray-300 p-1.5 text-gray-900 text-center tabular-nums">
-                        {idx + 1}
-                      </td>
-                      <td className="border border-gray-300 p-1.5 text-gray-900">
-                        {(c.ten_kho || c.ma_kho) ?? '—'}
-                      </td>
-                      <td className="border border-gray-300 p-1.5 text-gray-900">
-                        {(c.ten_hang || c.ma_hang) ?? '—'}
-                      </td>
-                      <td className="border border-gray-300 p-1.5 text-gray-900 tabular-nums text-right">
-                        {formatKiemKeKhoPTQty(c.so_luong_so, c.don_vi_tinh)}
-                      </td>
-                      <td className="border border-gray-300 p-1.5 text-gray-900 tabular-nums text-right">
-                        {formatKiemKeKhoPTQty(c.so_luong_thuc_te, c.don_vi_tinh)}
-                      </td>
-                      <td className="border border-gray-300 p-1.5 text-gray-900 tabular-nums text-right">
-                        {varianceLabel}
-                      </td>
-                      <td className="border border-gray-300 p-1.5 text-gray-900">
-                        {getKetQuaLabelPT(c.ket_qua, t)}
-                      </td>
-                      <td className="border border-gray-300 p-1.5 text-gray-900 text-[9pt]">
-                        {c.ghi_chu_dong ?? '—'}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <p className="font-bold uppercase mt-3 mb-0.5">{t('kiemKeKhoPT.chiTietSection')}</p>
+          <p className="text-[0.9em] text-gray-600 mt-0 mb-1">{buildKiemKeKhoStatsText(stats, t)}</p>
+          <table className="w-full border-collapse">
+            <thead>
+              <tr>
+                <th className={`${th} text-center w-[5%]`}>{t('common.phieuIn.stt')}</th>
+                <th className={`${th} text-left w-[13%]`}>{t('kiemKeKhoPT.store.khoCol')}</th>
+                <th className={`${th} text-left`}>{t('kiemKeKhoPT.store.hangHoaCol')}</th>
+                <th className={`${th} text-right w-[11%]`}>{t('kiemKeKhoPT.store.soLuongSoCol')}</th>
+                <th className={`${th} text-right w-[11%]`}>{t('kiemKeKhoPT.store.soLuongThucTeCol')}</th>
+                <th className={`${th} text-right w-[11%]`}>{t('kiemKeKhoPT.detail.chenhLech')}</th>
+                <th className={`${th} text-left w-[10%]`}>{t('kiemKeKhoPT.store.ketQuaCol')}</th>
+                {coGhiChu && <th className={`${th} text-left`}>{t('kiemKeKhoPT.store.ghiChuCol')}</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {chiTiet.map((c, idx) => {
+                const lech = getKiemKeKhoVariance(c);
+                return (
+                  <tr key={c.id}>
+                    <td className={`${td} text-center tabular-nums`}>{idx + 1}</td>
+                    <td className={td}>{c.ten_kho || c.ma_kho}</td>
+                    <td className={td}>{c.ten_hang || c.ma_hang}</td>
+                    <td className={`${td} tabular-nums text-right`}>{formatKiemKeKhoPTQty(c.so_luong_so, c.don_vi_tinh)}</td>
+                    <td className={`${td} tabular-nums text-right`}>
+                      {formatKiemKeKhoPTQty(c.so_luong_thuc_te, c.don_vi_tinh)}
+                    </td>
+                    <td className={`${td} tabular-nums text-right`}>
+                      {lech == null ? '' : `${lech > 0 ? '+' : ''}${formatKiemKeKhoPTQty(lech, c.don_vi_tinh)}`}
+                    </td>
+                    <td className={td}>{getKetQuaLabelPT(c.ket_qua, t)}</td>
+                    {coGhiChu && <td className={`${td} text-[0.9em]`}>{c.ghi_chu_dong}</td>}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </>
       ) : (
-        <p className="text-[10pt] text-gray-500 italic mt-4">{t('kiemKeKhoPT.chiTietEmpty')}</p>
+        <p className="text-gray-500 italic mt-3 mb-0">{t('kiemKeKhoPT.chiTietEmpty')}</p>
       )}
 
-      {/* Signature footer */}
-      <PhieuKiemKePTPreviewSignFooter />
-
-      {/* Printed-at footer */}
-      <footer className="mt-8 pt-4 border-t border-gray-200">
-        <p className="text-[7pt] text-gray-500">
-          {t('kiemKeKhoPT.preview.printedAt')} {printedAt}
-        </p>
-      </footer>
-    </div>
+      <HangKyTen
+        className="mt-6"
+        labels={[{ label: kyPhuTrach, ten: dot.ten_nguoi_phu_trach }, ...kyKhac]}
+      />
+    </KhungPhieu>
   );
 };
 

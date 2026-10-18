@@ -7,6 +7,7 @@ import { formatDate, formatDateTimeShort, formatDateVietnameseLong, getTodayISOD
 import i18n from '../../../../lib/i18n';
 import { useUIStore } from '../../../../store/useStore';
 import { getLoaiPhieuLabel } from '../core/constants';
+import { tenFileAnToan } from '../../../../lib/phieu-in/ten-file';
 
 function safe(v: string | null | undefined): string {
   if (v == null || v === '') return '–';
@@ -14,7 +15,7 @@ function safe(v: string | null | undefined): string {
 }
 
 export function fileName(phieu: PhieuCapPhatThuHoi): string {
-  const slug = `${phieu.ma_phieu}_${phieu.loai_phieu}`.replace(/\s+/g, '_').replace(/[^\w\u00C0-\u024F\-_]/gi, '');
+  const slug = tenFileAnToan(`${phieu.ma_phieu}_${phieu.loai_phieu}`);
   return `Phieu_CPTH_${slug}_${getTodayISODate()}`;
 }
 
@@ -75,7 +76,7 @@ export async function exportPhieuToXLSX(phieu: PhieuCapPhatThuHoi): Promise<void
     ...(info.phone ? [[i18n.t('company.phone'), info.phone]] : []),
     [],
     [formatDateVietnameseLong(phieu.ngay_thuc_hien)],
-    [`PHIẾU ${loaiLabel.toUpperCase()}`],
+    [t('capPhatThuHoi.preview.tieuDe', { loai: loaiLabel }).toLocaleUpperCase('vi')],
     [t('capPhatThuHoi.store.maPhieuCol'), phieu.ma_phieu],
     [t('capPhatThuHoi.preview.nguoiGiao'), safe(phieu.ten_nguoi_giu_truoc)],
     [t('capPhatThuHoi.preview.nguoiNhan'), safe(phieu.ten_nguoi_giu_sau)],

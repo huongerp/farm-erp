@@ -74,7 +74,7 @@ const PhieuThamQuanPreview: React.FC<{ phieu: DangKyThamQuan | null }> = ({ phie
       {/* Đầu phiếu: công ty bên trái, số phiếu / ngày bên phải — một dòng cho gọn khổ A5. */}
       <div className="flex items-center gap-2 text-[0.8em] text-gray-600">
         {company.appLogo && <img src={company.appLogo} alt="" className="h-[1.8em] w-[1.8em] object-contain shrink-0" />}
-        <span className="flex-1 min-w-0 font-semibold uppercase truncate">{company.companyName}</span>
+        <span className="flex-1 min-w-0 font-semibold uppercase leading-tight break-words">{company.companyName}</span>
         {phieu && (
           <span className="shrink-0 tabular-nums">
             {t('dangKyThamQuan.preview.so')}: {phieu.id} · {formatYmdToDisplay(phieu.ngay_dang_ky)}

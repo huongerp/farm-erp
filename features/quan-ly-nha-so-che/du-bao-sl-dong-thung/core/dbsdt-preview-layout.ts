@@ -4,7 +4,7 @@
 import type { TFunction } from 'i18next';
 import type { FarmDuBaoSlDongThung } from './types';
 import { TRANG_THAI_DU_BAO_SL_DONG_THUNG } from './types';
-import { formatDateShort } from '../../../../lib/utils';
+import { formatYmdToDisplay } from '../../../../lib/utils';
 
 export type DbsdtPreviewField = { label: string; value: string; bold?: boolean };
 
@@ -22,7 +22,7 @@ export function getDbsdtPreviewOverviewRows(
   const status = dbsdtTrangThaiLabel(data, t);
   const rows: DbsdtPreviewField[][] = [
     [
-      { label: t('duBaoSlDongThung.form.ngay'), value: formatDateShort(data.ngay) },
+      { label: t('duBaoSlDongThung.form.ngay'), value: formatYmdToDisplay(data.ngay?.slice(0, 10)) },
       { label: t('duBaoSlDongThung.form.branch'), value: data.ten_chi_nhanh?.trim() || '—' },
       { label: t('duBaoSlDongThung.store.colTrangThai'), value: status },
       { label: t('duBaoSlDongThung.store.colNguoiTao'), value: data.ten_nguoi_tao?.trim() || '—' },

@@ -10,7 +10,10 @@ import type { PhieuKhoPT, PhieuKhoPTChiTiet, LoaiPhieuKhoPT } from '../core/type
 import { formatDateVietnameseLong, getTodayISODate } from '../../../../lib/utils';
 import i18n from '../../../../lib/i18n';
 import { useUIStore } from '../../../../store/useStore';
-import { sumSoLuongByPhamCap } from './sum-so-luong-by-pham-cap';
+import { tongTheoDvt, tongTheoPhamCap } from '../../../../lib/phieu-in/tong-so-luong';
+import { tenFileAnToan } from '../../../../lib/phieu-in/ten-file';
+import type { KhoBienTheKey } from '../../kho-bien-the/bien-the';
+import { tieuDePhieuKhoPTKey, trangThaiPhieuKhoPTKey } from './phieu-kho-pt-in';
 
 function safe(v: string | number | null | undefined): string {
   if (v == null || v === '') return '–';
@@ -18,12 +21,7 @@ function safe(v: string | number | null | undefined): string {
 }
 
 function getTrangThaiLabel(trangThai: string, t: (k: string) => string): string {
-  const map: Record<string, string> = {
-    'Chờ duyệt': 'phieuKhoPhanThuoc.status.pending',
-    'Đã duyệt': 'phieuKhoPhanThuoc.status.approved',
-    'Không duyệt': 'phieuKhoPhanThuoc.status.rejected',
-  };
-  return t(map[trangThai] ?? 'phieuKhoPhanThuoc.status.pending');
+  return t(trangThaiPhieuKhoPTKey(trangThai));
 }
 
 function getNoiDiNoiDen(p: PhieuKhoPT): { noiDi: string; noiDen: string } {
@@ -39,21 +37,19 @@ function getNoiDiNoiDen(p: PhieuKhoPT): { noiDi: string; noiDen: string } {
   }
 }
 
-function titleOf(loai: LoaiPhieuKhoPT): string {
-  const w = loai === 'nhập' ? 'NHẬP' : loai === 'xuất' ? 'XUẤT' : 'LUÂN CHUYỂN';
-  return `PHIẾU ${w} KHO NSC`;
+function titleOf(loai: LoaiPhieuKhoPT, bienThe: KhoBienTheKey): string {
+  const t = i18n.t.bind(i18n);
+  return t(tieuDePhieuKhoPTKey(loai), { kho: t(`phieuKhoPhanThuoc.preview.tenKho_${bienThe}`) }).toLocaleUpperCase('vi');
 }
 
 export function fileName(p: PhieuKhoPT): string {
-  const slug = `${p.so_phieu}_${p.loai}`
-    .replace(/\s+/g, '_')
-    .replace(/[^\w\u00C0-\u024F\-_]/gi, '');
+  const slug = tenFileAnToan(`${p.so_phieu}_${p.loai}`);
   return `Phieu_kho_${slug}_${getTodayISODate()}`;
 }
 
 function colHeaders(t: (k: string) => string) {
   return [
-    'TT',
+    i18n.t('common.phieuIn.stt'),
     t('phieuKhoPhanThuoc.preview.danhMuc'),
     t('phieuKhoPhanThuoc.form.itemName'),
     t('phieuKhoPhanThuoc.form.phamCap'),
@@ -64,7 +60,11 @@ function colHeaders(t: (k: string) => string) {
   ];
 }
 
-export async function exportPhieuKhoPTToXLSX(phieu: PhieuKhoPT, chiTiet: PhieuKhoPTChiTiet[]): Promise<void> {
+export async function exportPhieuKhoPTToXLSX(
+  phieu: PhieuKhoPT,
+  chiTiet: PhieuKhoPTChiTiet[],
+  bienThe: KhoBienTheKey
+): Promise<void> {
   const XLSX = await import('xlsx');
   const t = i18n.t.bind(i18n);
   const info = useUIStore.getState().companyInfo;
@@ -77,7 +77,7 @@ export async function exportPhieuKhoPTToXLSX(phieu: PhieuKhoPT, chiTiet: PhieuKh
     ...(info.phone ? [[t('company.phone'), info.phone]] : []),
     [],
     [formatDateVietnameseLong(phieu.ngay)],
-    [titleOf(phieu.loai)],
+    [titleOf(phieu.loai, bienThe)],
     [t('phieuKhoPhanThuoc.form.code'), phieu.so_phieu],
     [t('phieuKhoPhanThuoc.preview.noiDi'), noiDi],
     [t('phieuKhoPhanThuoc.preview.noiDen'), noiDen],
@@ -101,19 +101,21 @@ export async function exportPhieuKhoPTToXLSX(phieu: PhieuKhoPT, chiTiet: PhieuKh
   });
 
   if (chiTiet.length > 0) {
-    const total = chiTiet.reduce((s, c) => s + (Number(c.so_luong) || 0), 0);
-    rows.push([t('phieuKhoPhanThuoc.preview.totalQty'), '', '', '', '', total, '', '']);
-    for (const { phamCap, soLuong } of sumSoLuongByPhamCap(chiTiet)) {
-      rows.push([t('phieuKhoPhanThuoc.preview.totalQtyByPhamCap', { phamCap }), '', '', '', '', soLuong, '', '']);
+    for (const d of tongTheoDvt(chiTiet)) {
+      rows.push([t('phieuKhoPhanThuoc.preview.totalQty'), '', '', '', d.dvt ?? '', d.soLuong, '', '']);
+    }
+    for (const d of tongTheoPhamCap(chiTiet)) {
+      const phamCap = d.phamCap ?? t('phieuKhoPhanThuoc.preview.chuaPhanCap');
+      rows.push([t('phieuKhoPhanThuoc.preview.totalQtyByPhamCap', { phamCap }), '', '', '', d.dvt ?? '', d.soLuong, '', '']);
     }
   }
 
   rows.push([]);
   rows.push([
-    t('phieuKhoPhanThuoc.preview.signCreator'),
-    t('phieuKhoPhanThuoc.preview.signChecker'),
-    t('phieuKhoPhanThuoc.preview.signRelated'),
-    t('phieuKhoPhanThuoc.preview.signApprover'),
+    t('common.phieuIn.ky.nguoiLap'),
+    t(phieu.loai === 'nhập' ? 'common.phieuIn.ky.nguoiGiao' : 'common.phieuIn.ky.nguoiNhan'),
+    t('common.phieuIn.ky.thuKho'),
+    t('common.phieuIn.ky.nguoiDuyet'),
   ]);
 
   const ws = XLSX.utils.aoa_to_sheet(rows);

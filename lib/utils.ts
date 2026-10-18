@@ -140,9 +140,15 @@ export function formatMonthYearShort(value: string | Date | dayjs.Dayjs | null |
   return toTz(value).format('MM/YY')
 }
 
-/** Ngày dạng phiếu in tiếng Việt: "Ngày dd tháng mm năm yyyy" */
+/**
+ * Ngày dạng phiếu in tiếng Việt: "Ngày dd tháng mm năm yyyy".
+ * Ngày thuần `YYYY-MM-DD` cắt chuỗi trực tiếp (như formatYmdToDisplay) — đưa qua đổi múi giờ
+ * có thể lệch sang ngày hôm trước / sau.
+ */
 export function formatDateVietnameseLong(value: string | Date | dayjs.Dayjs | null | undefined): string {
-  if (value == null) return ''
+  if (value == null || value === '') return ''
+  const ymd = typeof value === 'string' ? /^(\d{4})-(\d{2})-(\d{2})$/.exec(value) : null
+  if (ymd) return `Ngày ${ymd[3]} tháng ${ymd[2]} năm ${ymd[1]}`
   const d = toTz(value)
   return `Ngày ${d.format('DD')} tháng ${d.format('MM')} năm ${d.format('YYYY')}`
 }

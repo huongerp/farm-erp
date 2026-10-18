@@ -1,12 +1,13 @@
 /**
- * Nội dung in báo cáo sơ chế A4 dọc — header công ty + tổng quan + các section + chữ ký.
+ * Nội dung in báo cáo sơ chế A4 dọc — khung chuẩn hệ thống (PhieuInParts): tổng quan + các mục
+ * I–V + ô ký. Bản in trắng đen: không tô màu xanh/đỏ, kết quả đọc bằng chữ.
  */
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { FarmBaoCaoSoChe } from '../core/types';
 import type { FarmBaoCaoNhanCong } from '../../bao-cao-nhan-cong/core/types';
 import type { FarmDuBaoSlDongThung } from '../../du-bao-sl-dong-thung/core/types';
-import { bcscTrangThaiLabel } from '../core/bcsc-preview-layout';
+import { getBcscPreviewSignLabels } from '../core/bcsc-preview-layout';
 import {
   findBaoCaoNhanCongByBranchAndDate,
   findDuBaoSlDongThungByBranchAndDate,
@@ -24,10 +25,9 @@ import {
 import { enrichPhamCapRowsWithDerived, sumPhamCapDisplayTotals } from '../core/pham-cap-derived';
 import { sumTienThuongKpiThuong } from '../core/types';
 import { computeKpiPhanTram } from '../../shared/kpi-thuong/types';
-import { formatDateShort, formatDateTime, formatNumberVN } from '../../../../lib/utils';
-import { useUIStore } from '../../../../store/useStore';
+import { formatNumberVN, formatYmdToDisplay } from '../../../../lib/utils';
+import { HangKyTen, KhungPhieu, TD_IN, TH_IN } from '../../../../components/shared/phieu-in/PhieuInParts';
 import BaoCaoSoChePreviewOverview from './BaoCaoSoChePreviewOverview';
-import BaoCaoSoChePreviewSignFooter from './BaoCaoSoChePreviewSignFooter';
 
 interface Props {
   data: FarmBaoCaoSoChe;
@@ -48,29 +48,30 @@ function MetricTablePrint({
   sectionTitle: string;
   rows: { stt: number; chiSo: string; dvt: string; giaTri: string; ghiChu: string }[];
 }) {
-  const thStyle = 'border border-gray-300 px-1.5 py-1 text-[7.5pt] font-semibold bg-gray-100 text-gray-700';
-  const tdStyle = 'border border-gray-300 px-1.5 py-1 text-[7.5pt]';
+  const { t } = useTranslation();
+  const thStyle = `${TH_IN} px-1.5 py-1 text-[8pt]`;
+  const tdStyle = `${TD_IN} px-1.5 py-1 text-[8pt]`;
   return (
-    <div className="bcsc-section mb-3">
-      <h2 className="text-[9pt] font-semibold text-gray-800 mb-1">{sectionTitle}</h2>
+    <div className="break-inside-avoid mb-3">
+      <h2 className="text-[9pt] font-bold uppercase text-gray-900 mb-1">{sectionTitle}</h2>
       <table className="w-full border-collapse table-fixed text-left">
         <thead>
           <tr>
-            <th className={`${thStyle} w-8 text-center`}>TT</th>
-            <th className={`${thStyle}`} style={{ width: '35%' }}>Chỉ số</th>
-            <th className={`${thStyle} w-20`}>ĐVT</th>
-            <th className={`${thStyle} w-20 text-right`}>Giá trị</th>
-            <th className={thStyle}>Ghi chú</th>
+            <th className={`${thStyle} w-8 text-center`}>{t('common.phieuIn.stt')}</th>
+            <th className={`${thStyle}`} style={{ width: '35%' }}>{t('baoCaoSoChe.preview.colChiSo')}</th>
+            <th className={`${thStyle} w-20`}>{t('common.phieuIn.dvt')}</th>
+            <th className={`${thStyle} w-20 text-right`}>{t('baoCaoSoChe.preview.colGiaTri')}</th>
+            <th className={thStyle}>{t('baoCaoSoChe.preview.colGhiChu')}</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((r) => (
-            <tr key={r.stt} className="even:bg-gray-50">
-              <td className={`${tdStyle} text-center text-gray-500`}>{r.stt}</td>
+            <tr key={r.stt}>
+              <td className={`${tdStyle} text-center`}>{r.stt}</td>
               <td className={tdStyle}>{r.chiSo}</td>
-              <td className={`${tdStyle} text-gray-500`}>{r.dvt}</td>
+              <td className={tdStyle}>{r.dvt}</td>
               <td className={`${tdStyle} text-right font-medium tabular-nums`}>{r.giaTri}</td>
-              <td className={`${tdStyle} text-gray-500 whitespace-pre-wrap`}>{r.ghiChu}</td>
+              <td className={`${tdStyle} whitespace-pre-wrap`}>{r.ghiChu === '—' ? '' : r.ghiChu}</td>
             </tr>
           ))}
         </tbody>
@@ -81,10 +82,8 @@ function MetricTablePrint({
 
 const BaoCaoSoChePreviewContent: React.FC<Props> = ({ data, bcncList, dbdtList }) => {
   const { t } = useTranslation();
-  const companyInfo = useUIStore((s) => s.companyInfo);
-  const printedAt = formatDateTime(new Date());
-  const trangThaiLabel = bcscTrangThaiLabel(data, t);
-  const slipU = data.don_vi_tinh?.trim() || 'thùng';
+  const dvtThung = t('baoCaoSoChe.preview.dvtThung');
+  const slipU = data.don_vi_tinh?.trim() || dvtThung;
 
   const bcnc = useMemo(
     () => findBaoCaoNhanCongByBranchAndDate(bcncList, data.ngay, data.id_chi_nhanh),
@@ -132,7 +131,7 @@ const BaoCaoSoChePreviewContent: React.FC<Props> = ({ data, bcncList, dbdtList }
   const bcncRows = labor
     ? [
         { stt: 1, chiSo: t('baoCaoSoChe.bcnc.tongCongNhanLamViec'), dvt: t('baoCaoSoChe.bcnc.dvt.nguoi'), giaTri: fmtNum(labor.tongCongQuyDoiPhieu), ghiChu: g1 },
-        { stt: 2, chiSo: t('baoCaoSoChe.bcnc.tongGioCnNgay'),        dvt: t('baoCaoSoChe.bcnc.dvt.gio'),     giaTri: fmtNum(labor.tongGioCnNgay),        ghiChu: g2 },
+        { stt: 2, chiSo: t('baoCaoSoChe.bcnc.tongGioCnNgay'),        dvt: t('baoCaoSoChe.bcnc.dvt.gio'),     giaTri: fmtNum(labor.tongGioCnNgay),        ghiChu: g2 === g1 ? '' : g2 },
         { stt: 3, chiSo: t('baoCaoSoChe.bcnc.congQdRowIV'),    dvt: t('baoCaoSoChe.bcnc.dvt.tongCong'), giaTri: fmtNum(labor.congQdRowIV),    ghiChu: g3 },
         { stt: 4, chiSo: t('baoCaoSoChe.bcnc.tongGioTcRowIV'), dvt: t('baoCaoSoChe.bcnc.dvt.gio'),     giaTri: fmtNum(labor.tongGioTcRowIV), ghiChu: g4 },
         { stt: 5, chiSo: t('baoCaoSoChe.bcnc.congQdTongNgay'), dvt: t('baoCaoSoChe.bcnc.dvt.tongCong'), giaTri: fmtNum(labor.congQdTongNgay), ghiChu: '—' },
@@ -156,44 +155,20 @@ const BaoCaoSoChePreviewContent: React.FC<Props> = ({ data, bcncList, dbdtList }
   // ---- Rows KPI tính toán ----
   const o = BCSC_KPI_STT_OFFSET;
   const kpiCalcRows = [
-    { stt: o + 1, chiSo: t('baoCaoSoChe.kpi.nsThungCongNgay'),     dvt: t('baoCaoSoChe.kpi.dvt.perCong', { dvt: 'Thùng' }),     giaTri: fmtNum(kpis.nsThungCongNgay),     ghiChu: '—' },
-    { stt: o + 2, chiSo: t('baoCaoSoChe.kpi.nsThungGioCong'),       dvt: t('baoCaoSoChe.kpi.dvt.perGio', { dvt: 'Thùng' }),      giaTri: fmtNum(kpis.nsThungGioCong),      ghiChu: '—' },
-    { stt: o + 3, chiSo: t('baoCaoSoChe.kpi.nsBinhQuanNguoiGio'),   dvt: t('baoCaoSoChe.kpi.dvt.perGio', { dvt: 'kg' }), giaTri: fmtNum(kpis.nsBinhQuanNguoiGio), ghiChu: '—' },
-    { stt: o + 4, chiSo: t('baoCaoSoChe.kpi.soThungTp'),             dvt: 'Thùng',                                                giaTri: fmtNum(kpis.thungThanhPham),      ghiChu: '—' },
+    { stt: o + 1, chiSo: t('baoCaoSoChe.kpi.nsThungCongNgay'),     dvt: t('baoCaoSoChe.kpi.dvt.perCong', { dvt: dvtThung }),     giaTri: fmtNum(kpis.nsThungCongNgay),     ghiChu: '—' },
+    { stt: o + 2, chiSo: t('baoCaoSoChe.kpi.nsThungGioCong'),       dvt: t('baoCaoSoChe.kpi.dvt.perGio', { dvt: dvtThung }),      giaTri: fmtNum(kpis.nsThungGioCong),      ghiChu: '—' },
+    { stt: o + 3, chiSo: t('baoCaoSoChe.kpi.nsBinhQuanNguoiGio'),   dvt: t('baoCaoSoChe.kpi.dvt.perGio', { dvt: t('baoCaoSoChe.preview.dvtKg') }), giaTri: fmtNum(kpis.nsBinhQuanNguoiGio), ghiChu: '—' },
+    { stt: o + 4, chiSo: t('baoCaoSoChe.kpi.soThungTp'),             dvt: dvtThung,                                                giaTri: fmtNum(kpis.thungThanhPham),      ghiChu: '—' },
     { stt: o + 5, chiSo: t('baoCaoSoChe.kpi.tongLuong'),             dvt: t('baoCaoSoChe.kpi.dvt.tongLuong'),                   giaTri: fmtNum(kpis.tongLuong),           ghiChu: '—' },
     { stt: o + 6, chiSo: t('baoCaoSoChe.kpi.chiPhiNcPerKg'),         dvt: t('baoCaoSoChe.kpi.dvt.chiPhiPerKg'),                giaTri: fmtNum(kpis.chiPhiNhanCongPerKg), ghiChu: '—' },
   ];
 
-  const tdPrint = 'border border-gray-300 px-1.5 py-1 text-[7.5pt]';
-  const thPrint = `${tdPrint} font-semibold bg-gray-100 text-gray-700`;
+  const tdPrint = `${TD_IN} px-1.5 py-1 text-[8pt]`;
+  const thPrint = `${TH_IN} px-1.5 py-1 text-[8pt]`;
+  const tongTyLe = phamCapEnriched.reduce((sum, r) => sum + (r.ty_le_pct > 0 ? r.ty_le_pct : 0), 0);
 
   return (
-    <div className="bao-cao-so-che-preview-content bg-white text-gray-900 font-sans text-[10pt] box-border min-h-[var(--in-trang-h,auto)]"
-    >
-      {/* === Header công ty === */}
-      <div className="flex items-start gap-3 pb-3 mb-3 border-b-2 border-gray-300">
-        {companyInfo.appLogo && (
-          <img src={companyInfo.appLogo} alt="Logo" className="w-14 h-14 object-contain shrink-0" />
-        )}
-        <div className="min-w-0 flex-1">
-          <h2 className="text-[13pt] font-bold text-gray-900 uppercase tracking-tight">
-            {companyInfo.companyName}
-          </h2>
-          {companyInfo.address && (
-            <p className="text-[8pt] text-gray-600 mt-0.5">
-              {t('company.address')}: {companyInfo.address}
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* === Tiêu đề === */}
-      <h1 className="text-center text-[14pt] font-bold mb-1 uppercase">{t('baoCaoSoChe.preview.title')}</h1>
-      <p className="text-center text-[9pt] text-gray-500 mb-3">
-        {formatDateShort(data.ngay)}
-        {data.ten_chi_nhanh ? ` · ${data.ten_chi_nhanh}` : ''} · {trangThaiLabel}
-      </p>
-
+    <KhungPhieu title={t('baoCaoSoChe.preview.title')} ngay={formatYmdToDisplay(data.ngay?.slice(0, 10))}>
       {/* === Tổng quan === */}
       <BaoCaoSoChePreviewOverview data={data} />
 
@@ -204,8 +179,8 @@ const BaoCaoSoChePreviewContent: React.FC<Props> = ({ data, bcncList, dbdtList }
           rows={bcncRows}
         />
       ) : (
-        <div className="bcsc-section mb-3">
-          <h2 className="text-[9pt] font-semibold text-gray-800 mb-1">{`I. ${t('baoCaoSoChe.form.sectionBcncTitle')}`}</h2>
+        <div className="break-inside-avoid mb-3">
+          <h2 className="text-[9pt] font-bold uppercase text-gray-900 mb-1">{`I. ${t('baoCaoSoChe.form.sectionBcncTitle')}`}</h2>
           <p className="text-[8pt] text-gray-500">{t('baoCaoSoChe.bcnc.needNgayChiNhanh')}</p>
         </div>
       )}
@@ -217,15 +192,15 @@ const BaoCaoSoChePreviewContent: React.FC<Props> = ({ data, bcncList, dbdtList }
       />
 
       {/* === III. Phẩm cấp / loại thùng === */}
-      <div className="bcsc-section mb-3">
-        <h2 className="text-[9pt] font-semibold text-gray-800 mb-1">{`III. ${t('baoCaoSoChe.form.sectionPhamCapTitle')}`}</h2>
+      <div className="break-inside-avoid mb-3">
+        <h2 className="text-[9pt] font-bold uppercase text-gray-900 mb-1">{`III. ${t('baoCaoSoChe.form.sectionPhamCapTitle')}`}</h2>
         {phamCapEnriched.length === 0 ? (
           <p className="text-[8pt] text-gray-500">{t('baoCaoSoChe.phamCap.detailEmpty')}</p>
         ) : (
           <table className="w-full border-collapse table-fixed text-left">
             <thead>
               <tr>
-                <th className={`${thPrint} w-7 text-center`}>TT</th>
+                <th className={`${thPrint} w-7 text-center`}>{t('common.phieuIn.stt')}</th>
                 <th className={thPrint} style={{ width: '28%' }}>{t('baoCaoSoChe.phamCap.colPhamCap')}</th>
                 <th className={`${thPrint} text-right`}>{t('baoCaoSoChe.phamCap.colSoKg')}</th>
                 <th className={`${thPrint} text-right`}>{t('baoCaoSoChe.phamCap.colSoThung')}</th>
@@ -237,8 +212,8 @@ const BaoCaoSoChePreviewContent: React.FC<Props> = ({ data, bcncList, dbdtList }
             </thead>
             <tbody>
               {phamCapEnriched.map((r, i) => (
-                <tr key={i} className="even:bg-gray-50">
-                  <td className={`${tdPrint} text-center text-gray-500`}>{i + 1}</td>
+                <tr key={i}>
+                  <td className={`${tdPrint} text-center`}>{i + 1}</td>
                   <td className={tdPrint}>{r.ten_pham_cap?.trim() || '—'}</td>
                   <td className={`${tdPrint} text-right tabular-nums`}>{fmtNum(r.so_tham_chieu)}</td>
                   <td className={`${tdPrint} text-right tabular-nums`}>{fmtNum(r.so_thung)}</td>
@@ -255,7 +230,7 @@ const BaoCaoSoChePreviewContent: React.FC<Props> = ({ data, bcncList, dbdtList }
                 <td className={`${tdPrint} text-right tabular-nums`}></td>
                 <td className={`${tdPrint} text-right tabular-nums`}>{fmtNum(phamCapEnriched.reduce((s, r) => s + (r.so_thung ?? 0), 0))}</td>
                 <td className={`${tdPrint} text-right tabular-nums`}>{fmtNum(phamCapEnriched.reduce((s, r) => s + r.tong_kg, 0))}</td>
-                <td className={`${tdPrint} text-right tabular-nums`}>100%</td>
+                <td className={`${tdPrint} text-right tabular-nums`}>{tongTyLe > 0 ? `${fmtNum(tongTyLe)}%` : ''}</td>
                 <td className={`${tdPrint} text-right tabular-nums`}>{fmtNum(phamCapEnriched.reduce((s, r) => s + (r.so_thung_quy_doi ?? 0), 0))}</td>
                 <td className={tdPrint}></td>
               </tr>
@@ -271,15 +246,15 @@ const BaoCaoSoChePreviewContent: React.FC<Props> = ({ data, bcncList, dbdtList }
       />
 
       {/* === V. Đánh giá KPI / Thưởng === */}
-      <div className="bcsc-section mb-3">
-        <h2 className="text-[9pt] font-semibold text-gray-800 mb-1">{`V. ${t('baoCaoSoChe.kpiThuong.sectionTitle')}`}</h2>
+      <div className="break-inside-avoid mb-3">
+        <h2 className="text-[9pt] font-bold uppercase text-gray-900 mb-1">{`V. ${t('baoCaoSoChe.kpiThuong.sectionTitle')}`}</h2>
         {kpiThuongSorted.length === 0 ? (
           <p className="text-[8pt] text-gray-500">{t('baoCaoSoChe.kpiThuong.emptyDetail')}</p>
         ) : (
           <table className="w-full border-collapse table-fixed text-left">
             <thead>
               <tr>
-                <th className={`${thPrint} w-7 text-center`}>TT</th>
+                <th className={`${thPrint} w-7 text-center`}>{t('common.phieuIn.stt')}</th>
                 <th className={thPrint} style={{ width: '28%' }}>{t('baoCaoSoChe.kpiThuong.colHangMuc')}</th>
                 <th className={`${thPrint} w-14`}>{t('baoCaoSoChe.kpiThuong.colDvt')}</th>
                 <th className={`${thPrint} w-16 text-right`}>{t('baoCaoSoChe.kpiThuong.colMucTieu')}</th>
@@ -296,29 +271,19 @@ const BaoCaoSoChePreviewContent: React.FC<Props> = ({ data, bcncList, dbdtList }
                   r.phan_tram != null && Number.isFinite(Number(r.phan_tram))
                     ? Number(r.phan_tram)
                     : computeKpiPhanTram(r.muc_tieu, r.thuc_te);
-                const tienCls = r.tien_thuong > 0 ? 'color:#16a34a' : r.tien_thuong < 0 ? 'color:#dc2626' : '';
                 return (
-                  <tr key={r.id || i} className="even:bg-gray-50">
-                    <td className={`${tdPrint} text-center text-gray-500`}>{i + 1}</td>
+                  <tr key={r.id || i}>
+                    <td className={`${tdPrint} text-center`}>{i + 1}</td>
                     <td className={tdPrint}>{r.ten_hang_muc?.trim() || '—'}</td>
-                    <td className={`${tdPrint} text-gray-500`}>{r.don_vi_tinh?.trim() || '—'}</td>
+                    <td className={tdPrint}>{r.don_vi_tinh?.trim() || '—'}</td>
                     <td className={`${tdPrint} text-right tabular-nums`}>{r.muc_tieu?.trim() || '—'}</td>
                     <td className={`${tdPrint} text-right tabular-nums`}>{r.thuc_te?.trim() || '—'}</td>
                     <td className={`${tdPrint} text-right tabular-nums`}>
                       {pct != null ? `${fmtNum(pct)}%` : '—'}
                     </td>
-                    <td className={tdPrint} style={{
-                      color: r.danh_gia?.trim() === 'Đạt' ? '#16a34a'
-                           : r.danh_gia?.trim() === 'Không đạt' ? '#dc2626'
-                           : undefined,
-                      fontWeight: r.danh_gia?.trim() === 'Đạt' || r.danh_gia?.trim() === 'Không đạt' ? 600 : undefined,
-                    }}>
-                      {r.danh_gia?.trim() || '—'}
-                    </td>
-                    <td className={`${tdPrint} text-right tabular-nums font-medium`} style={{ ...(tienCls ? { color: r.tien_thuong > 0 ? '#16a34a' : '#dc2626' } : {}) }}>
-                      {formatNumberVN(r.tien_thuong)}
-                    </td>
-                    <td className={`${tdPrint} text-gray-500 whitespace-pre-wrap`}>{r.ghi_chu?.trim() || '—'}</td>
+                    <td className={`${tdPrint} font-semibold`}>{r.danh_gia?.trim() || '—'}</td>
+                    <td className={`${tdPrint} text-right tabular-nums font-medium`}>{formatNumberVN(r.tien_thuong)}</td>
+                    <td className={`${tdPrint} whitespace-pre-wrap`}>{r.ghi_chu?.trim() || ''}</td>
                   </tr>
                 );
               })}
@@ -332,16 +297,11 @@ const BaoCaoSoChePreviewContent: React.FC<Props> = ({ data, bcncList, dbdtList }
         )}
       </div>
 
-      {/* === Footer ký tên === */}
-      <BaoCaoSoChePreviewSignFooter />
-
-      {/* === Thời gian in === */}
-      <footer className="mt-auto pt-3 border-t border-gray-200">
-        <p className="text-[7pt] text-gray-500 m-0">
-          {t('baoCaoSoChe.preview.printedAt')} {printedAt}
-        </p>
-      </footer>
-    </div>
+      <HangKyTen
+        className="mt-4"
+        labels={getBcscPreviewSignLabels(t).map((label, i) => (i === 0 ? { label, ten: data.ten_nguoi_tao } : label))}
+      />
+    </KhungPhieu>
   );
 };
 

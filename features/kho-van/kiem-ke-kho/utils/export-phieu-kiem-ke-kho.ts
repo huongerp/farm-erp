@@ -8,6 +8,7 @@ import i18n from '../../../../lib/i18n';
 import { useUIStore } from '../../../../store/useStore';
 import { getTrangThaiDotLabel } from '../core/constants';
 import { getKiemKeKhoChiTietStats, getKiemKeKhoPreviewSignLabels, getKiemKeKhoVariance } from '../core/kkk-preview-layout';
+import { tenFileAnToan } from '../../../../lib/phieu-in/ten-file';
 
 function safeText(v: string | number | null | undefined): string {
   if (v == null || v === '') return '—';
@@ -15,7 +16,7 @@ function safeText(v: string | number | null | undefined): string {
 }
 
 export function getFileName(dot: DotKiemKeKho): string {
-  const slug = `${dot.ma_dot}_${dot.ten_dot}`.replace(/\s+/g, '_').replace(/[^\w\u00C0-\u024F\-_]/gi, '');
+  const slug = tenFileAnToan(`${dot.ma_dot}_${dot.ten_dot}`);
   return `Phieu_kiem_ke_kho_${slug}_${getTodayISODate()}`;
 }
 

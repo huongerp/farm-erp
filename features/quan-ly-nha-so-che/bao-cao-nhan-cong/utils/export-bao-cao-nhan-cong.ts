@@ -4,10 +4,11 @@
 import type { FarmBaoCaoNhanCong, FarmBaoCaoNhanCongCt } from '../core/types';
 import { chuyenTtLabelByThuTu, normalizeChiTietForDisplay, sumSlCongNgay, sumSlCongNua, sumSlTangCa, sumSoGioTc, sumTongCongQuyDoiPhieu, sumTongCongQuyDoiTuChiTiet, sumTongGioTangCaTichPhieu, sumTongGioTangCaTichTuChiTiet, tongCongQuyDoiNgayVaNua, tongGioTangCaTichMotDong } from '../core/types';
 import { combinedRowGhiChuAtIndex, displayLoaiTotalsOnCt, formatGioTbVN, hasSubLinesOnCt, isSubFormRowEmpty, subAlignedRowCount, subByLoaiForCtDisplay, sumDisplayLoaiTotalsOnRows, sumTongGioQuyDoiRowIVFromRows, tongGioCongNgayVaNua } from '../core/ct-sub';
-import { formatDateShort, getTodayISODate } from '../../../../lib/utils';
+import { formatYmdToDisplay, getTodayISODate } from '../../../../lib/utils';
 import i18n from '../../../../lib/i18n';
 import { useUIStore } from '../../../../store/useStore';
 import { bcncTrangThaiLabel, getBcncPreviewSignLabels } from '../core/bcnc-preview-layout';
+import { tenFileAnToan } from '../../../../lib/phieu-in/ten-file';
 
 const EMPTY = '—';
 
@@ -17,9 +18,7 @@ function safe(v: string | number | null | undefined): string {
 }
 
 export function fileName(data: FarmBaoCaoNhanCong): string {
-  const branch = (data.ten_chi_nhanh ?? 'chi_nhanh')
-    .replace(/\s+/g, '_')
-    .replace(/[^\w\u00C0-\u024F\-_]/gi, '');
+  const branch = tenFileAnToan(data.ten_chi_nhanh ?? 'chi_nhanh');
   return `Bao_cao_nhan_cong_${data.ngay}_${branch}_${getTodayISODate()}`;
 }
 
@@ -115,7 +114,7 @@ export async function exportBaoCaoNhanCongToXLSX(data: FarmBaoCaoNhanCong): Prom
     ...(info.address ? [[t('company.address'), info.address]] : []),
     [],
     [t('baoCaoNhanCong.preview.title')],
-    [t('baoCaoNhanCong.form.ngay'), formatDateShort(data.ngay)],
+    [t('baoCaoNhanCong.form.ngay'), formatYmdToDisplay(data.ngay?.slice(0, 10))],
     [t('baoCaoNhanCong.form.branch'), safe(data.ten_chi_nhanh)],
     [t('baoCaoNhanCong.store.colTrangThai'), status],
     [t('baoCaoNhanCong.store.colTongCongNgay'), sumSlCongNgay(data)],

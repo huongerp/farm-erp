@@ -1,254 +1,149 @@
 /**
- * Nội dung in phiếu kho phân thuốc A4 (nhập / xuất / luân chuyển).
- * Bố cục: header công ty (lặp mỗi trang khi in), ngày, tiêu đề, mã phiếu, Nơi đi/Nơi đến,
- * bảng chi tiết + tổng số lượng và tổng theo phẩm cấp, 4 ô chữ ký.
+ * Nội dung in phiếu kho Nhà sơ chế / Phân thuốc (nhập / xuất / luân chuyển) — khung chuẩn hệ thống
+ * (PhieuInParts): đầu phiếu lặp mỗi trang, thông tin phiếu, bảng chi tiết (ẩn cột trống), tổng theo
+ * ĐVT / phẩm cấp, ô ký. Tên kho trên tiêu đề theo biến thể (NSC / Phân thuốc).
  */
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { formatDateVietnameseLong, formatDateTime, formatNumberVN } from '../../../../lib/utils';
-import { useUIStore } from '../../../../store/useStore';
-import type { PhieuKhoPT, PhieuKhoPTChiTiet, LoaiPhieuKhoPT } from '../core/types';
-import { sumSoLuongByPhamCap } from '../utils/sum-so-luong-by-pham-cap';
+import { formatNumberVN, formatYmdToDisplay } from '../../../../lib/utils';
+import { cotCoDuLieu, tongTheoDvt, tongTheoPhamCap } from '../../../../lib/phieu-in/tong-so-luong';
+import {
+  BangThongTin,
+  DongTongTheoDvt,
+  HangKyTen,
+  KhungPhieu,
+  TD_IN,
+  TH_IN,
+} from '../../../../components/shared/phieu-in/PhieuInParts';
+import type { KhoBienTheKey } from '../../kho-bien-the/bien-the';
+import type { PhieuKhoPT, PhieuKhoPTChiTiet } from '../core/types';
+import { trangThaiPhieuKhoPTKey, tieuDePhieuKhoPTKey } from '../utils/phieu-kho-pt-in';
 
-function getTitleUppercase(loai: LoaiPhieuKhoPT): string {
-  const loaiUpper = loai === 'nhập' ? 'NHẬP' : loai === 'xuất' ? 'XUẤT' : 'LUÂN CHUYỂN';
-  return `PHIẾU ${loaiUpper} KHO NSC`;
+/** Nơi đi / Nơi đến: phiếu nhập chỉ có kho đến, phiếu xuất chỉ có kho đi — bỏ phía trống. */
+function getNoiDiNoiDen(phieu: PhieuKhoPT): { noiDi?: string; noiDen?: string } {
+  const kho = phieu.ten_kho ?? phieu.kho_id;
+  if (phieu.loai === 'nhập') return { noiDen: kho };
+  if (phieu.loai === 'xuất') return { noiDi: kho };
+  return { noiDi: kho, noiDen: phieu.ten_kho_den };
 }
 
-function getTrangThaiLabel(trangThai: string, t: (k: string) => string): string {
-  const key =
-    trangThai === 'Chờ duyệt'
-      ? 'phieuKhoPhanThuoc.status.pending'
-      : trangThai === 'Đã duyệt'
-        ? 'phieuKhoPhanThuoc.status.approved'
-        : 'phieuKhoPhanThuoc.status.rejected';
-  return t(key);
-}
-
-function getNoiDiNoiDen(phieu: PhieuKhoPT): { noiDi: string; noiDen: string } {
-  switch (phieu.loai) {
-    case 'nhập':
-      return { noiDi: '—', noiDen: phieu.ten_kho ?? phieu.kho_id ?? '—' };
-    case 'xuất':
-      return { noiDi: phieu.ten_kho ?? phieu.kho_id ?? '—', noiDen: '—' };
-    case 'chuyển':
-      return { noiDi: phieu.ten_kho ?? phieu.kho_id ?? '—', noiDen: phieu.ten_kho_den ?? '—' };
-    default:
-      return { noiDi: '—', noiDen: '—' };
-  }
-}
+const th = `${TH_IN} p-1.5 text-[9pt]`;
+const td = `${TD_IN} p-1.5`;
 
 interface Props {
   phieu: PhieuKhoPT;
+  bienThe: KhoBienTheKey;
 }
 
-const PhieuKhoPTPreviewContent: React.FC<Props> = ({ phieu }) => {
+const PhieuKhoPTPreviewContent: React.FC<Props> = ({ phieu, bienThe }) => {
   const { t } = useTranslation();
-  const companyInfo = useUIStore((s) => s.companyInfo);
-  const printedAt = formatDateTime(new Date());
   const chiTiet: PhieuKhoPTChiTiet[] = phieu.chi_tiet ?? [];
   const { noiDi, noiDen } = getNoiDiNoiDen(phieu);
-  const title = getTitleUppercase(phieu.loai);
+  const title = t(tieuDePhieuKhoPTKey(phieu.loai), { kho: t(`phieuKhoPhanThuoc.preview.tenKho_${bienThe}`) });
+
+  const theoDvt = tongTheoDvt(chiTiet);
+  const coPhamCap = cotCoDuLieu(chiTiet, (c) => c.pham_cap);
+  const coLot = cotCoDuLieu(chiTiet, (c) => c.so_lot);
+  const coGhiChu = cotCoDuLieu(chiTiet, (c) => c.ghi_chu);
+  const soCotTruocDvt = 3 + (coPhamCap ? 1 : 0);
+  const soCotSau = (coLot ? 1 : 0) + (coGhiChu ? 1 : 0);
+
+  const thongTin: [string, React.ReactNode][] = [
+    ...(noiDi ? [[t('phieuKhoPhanThuoc.preview.noiDi'), noiDi] as [string, React.ReactNode]] : []),
+    ...(noiDen ? [[t('phieuKhoPhanThuoc.preview.noiDen'), noiDen] as [string, React.ReactNode]] : []),
+    [t('phieuKhoPhanThuoc.store.statusCol'), t(trangThaiPhieuKhoPTKey(phieu.trang_thai))],
+    ...(phieu.so_phieu_de_xuat
+      ? [[t('phieuKhoPhanThuoc.preview.deXuat'), phieu.so_phieu_de_xuat] as [string, React.ReactNode]]
+      : []),
+  ];
+
+  const dongTong = (key: string, nhan: string, dvt: string | null, soLuong: number, chinh: boolean) => (
+    <tr key={key} className={chinh ? 'bg-gray-100 font-semibold' : 'bg-gray-50 text-[0.9em]'}>
+      <td colSpan={soCotTruocDvt} className={td}>
+        {nhan}
+      </td>
+      <td className={`${td} text-center`}>{dvt ?? ''}</td>
+      <td className={`${td} tabular-nums text-right`}>{formatNumberVN(soLuong)}</td>
+      {soCotSau > 0 && <td colSpan={soCotSau} className={td} />}
+    </tr>
+  );
 
   return (
-    <div className="phieu-kho-pt-preview-content bg-white text-gray-900 font-sans text-[10pt] min-h-[var(--in-trang-h,auto)]">
-      {/* Bảng document: thead lặp header công ty mỗi trang khi in */}
-      <table className="phieu-kho-pt-print-doc w-full border-collapse">
-        <thead className="phieu-kho-pt-print-running-header">
-          <tr>
-            <td className="p-0 align-top">
-              <div className="flex items-start gap-4 pb-3 mb-3 border-b-2 border-gray-300">
-                {companyInfo.appLogo && (
-                  <img src={companyInfo.appLogo} alt="Logo" className="w-14 h-14 object-contain shrink-0" />
-                )}
-                <div className="min-w-0 flex-1">
-                  <h2 className="text-[13pt] font-bold text-gray-900 uppercase tracking-tight">
-                    {companyInfo.companyName}
-                  </h2>
-                  {companyInfo.address && (
-                    <p className="text-[8pt] text-gray-600 mt-0.5">
-                      {t('company.address')}: {companyInfo.address}
-                    </p>
-                  )}
-                  {(companyInfo.email || companyInfo.phone) && (
-                    <p className="text-[8pt] text-gray-600">
-                      {companyInfo.email && (
-                        <span>
-                          {t('company.email')}: {companyInfo.email}
-                        </span>
-                      )}
-                      {companyInfo.email && companyInfo.phone && ' · '}
-                      {companyInfo.phone && (
-                        <span>
-                          {t('company.phone')}: {companyInfo.phone}
-                        </span>
-                      )}
-                    </p>
-                  )}
-                  <p className="text-[8pt] text-gray-700 mt-1 font-medium">
-                    {title} · {t('phieuKhoPhanThuoc.form.code')}: {phieu.so_phieu}
-                  </p>
-                </div>
-              </div>
-            </td>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td className="p-0 align-top">
-              <p className="text-[10pt] text-gray-700 mb-1 text-left font-normal not-italic">
-                {formatDateVietnameseLong(phieu.ngay)}
-              </p>
+    <KhungPhieu title={title} soPhieu={phieu.so_phieu} ngay={formatYmdToDisplay(phieu.ngay?.slice(0, 10))} lapDauTrang>
+      <BangThongTin rows={thongTin} />
+      {phieu.mo_ta?.trim() && (
+        <p className="mt-2 mb-0 whitespace-pre-line break-words">
+          <span className="font-semibold">{t('phieuKhoPhanThuoc.form.description')}: </span>
+          {phieu.mo_ta}
+        </p>
+      )}
 
-              <h1 className="text-center text-[16pt] font-bold mb-1 uppercase">{title}</h1>
-              <p className="text-center text-[10pt] text-gray-600 mb-4">
-                ({t('phieuKhoPhanThuoc.form.code')}: {phieu.so_phieu})
-              </p>
+      <p className="font-bold uppercase mt-3 mb-1">{t('phieuKhoPhanThuoc.preview.danhSachChiTiet')}</p>
+      {chiTiet.length > 0 ? (
+        <table className="w-full border-collapse">
+          <thead>
+            <tr>
+              <th className={`${th} text-center w-10`}>{t('common.phieuIn.stt')}</th>
+              <th className={`${th} text-left`}>{t('phieuKhoPhanThuoc.preview.danhMuc')}</th>
+              <th className={`${th} text-left`}>{t('phieuKhoPhanThuoc.form.itemName')}</th>
+              {coPhamCap && <th className={`${th} text-left w-24`}>{t('phieuKhoPhanThuoc.form.phamCap')}</th>}
+              <th className={`${th} text-center w-16`}>{t('common.phieuIn.dvt')}</th>
+              <th className={`${th} text-right w-20`}>{t('phieuKhoPhanThuoc.form.quantity')}</th>
+              {coLot && <th className={`${th} text-center w-20`}>{t('phieuKhoPhanThuoc.preview.soLot')}</th>}
+              {coGhiChu && <th className={`${th} text-left`}>{t('phieuKhoPhanThuoc.form.note')}</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {chiTiet.map((c, idx) => (
+              <tr key={c.id}>
+                <td className={`${td} text-center`}>{idx + 1}</td>
+                <td className={`${td} text-[0.9em]`}>{c.ten_danh_muc}</td>
+                <td className={td}>{c.ten_hang ?? c.ten_hang_hoa}</td>
+                {coPhamCap && <td className={`${td} text-[0.9em]`}>{c.pham_cap}</td>}
+                <td className={`${td} text-center`}>{c.don_vi_tinh}</td>
+                <td className={`${td} tabular-nums text-right`}>{formatNumberVN(c.so_luong)}</td>
+                {coLot && <td className={`${td} text-center text-[0.9em]`}>{c.so_lot}</td>}
+                {coGhiChu && <td className={`${td} text-[0.9em]`}>{c.ghi_chu}</td>}
+              </tr>
+            ))}
+          </tbody>
+          <tfoot className="break-inside-avoid">
+            <DongTongTheoDvt
+              nhan={t('phieuKhoPhanThuoc.preview.totalQty')}
+              theoDvt={theoDvt}
+              soCotTruocDvt={soCotTruocDvt}
+              soCotSau={soCotSau}
+            />
+            {tongTheoPhamCap(chiTiet).map((d, i) =>
+              dongTong(
+                `pc-${i}`,
+                t('phieuKhoPhanThuoc.preview.totalQtyByPhamCap', {
+                  phamCap: d.phamCap ?? t('phieuKhoPhanThuoc.preview.chuaPhanCap'),
+                }),
+                d.dvt,
+                d.soLuong,
+                false
+              )
+            )}
+          </tfoot>
+        </table>
+      ) : (
+        <p className="text-gray-500 italic m-0">{t('phieuKhoPhanThuoc.form.noItems')}</p>
+      )}
 
-              <div className="grid grid-cols-2 gap-4 text-[10pt] mb-3">
-                <div>
-                  <span className="font-semibold text-gray-600">{t('phieuKhoPhanThuoc.preview.noiDi')}: </span>
-                  <span className="text-gray-900">{noiDi}</span>
-                </div>
-                <div>
-                  <span className="font-semibold text-gray-600">{t('phieuKhoPhanThuoc.preview.noiDen')}: </span>
-                  <span className="text-gray-900">{noiDen}</span>
-                </div>
-              </div>
-
-              <p className="text-[10pt] mb-1">
-                <span className="font-semibold text-gray-600">{t('phieuKhoPhanThuoc.form.description')}: </span>
-                <span className="text-gray-900 whitespace-pre-line break-words">{phieu.mo_ta ?? '—'}</span>
-              </p>
-
-              <p className="text-[10pt] mb-4">
-                <span className="font-semibold text-gray-600">{t('phieuKhoPhanThuoc.store.statusCol')}: </span>
-                <span className="text-gray-900">{getTrangThaiLabel(phieu.trang_thai, t)}</span>
-              </p>
-
-              <h2 className="text-[11pt] font-semibold mt-2 mb-2 text-gray-900">
-                {t('phieuKhoPhanThuoc.preview.danhSachChiTiet')}
-              </h2>
-              {chiTiet.length > 0 ? (
-                <div className="overflow-x-auto print:overflow-visible">
-                  <table className="phieu-kho-pt-print-detail-table w-full border-collapse text-[10pt]">
-                    <thead>
-                      <tr>
-                        <th className="border border-gray-300 bg-primary text-white p-1.5 text-center text-[9pt] font-bold w-10">
-                          TT
-                        </th>
-                        <th className="border border-gray-300 bg-primary text-white p-1.5 text-left text-[9pt] font-bold">
-                          {t('phieuKhoPhanThuoc.preview.danhMuc')}
-                        </th>
-                        <th className="border border-gray-300 bg-primary text-white p-1.5 text-left text-[9pt] font-bold">
-                          {t('phieuKhoPhanThuoc.form.itemName')}
-                        </th>
-                        <th className="border border-gray-300 bg-primary text-white p-1.5 text-left text-[9pt] font-bold w-24">
-                          {t('phieuKhoPhanThuoc.form.phamCap')}
-                        </th>
-                        <th className="border border-gray-300 bg-primary text-white p-1.5 text-center text-[9pt] font-bold w-16">
-                          {t('phieuKhoPhanThuoc.form.unit')}
-                        </th>
-                        <th className="border border-gray-300 bg-primary text-white p-1.5 text-right text-[9pt] font-bold w-20">
-                          {t('phieuKhoPhanThuoc.form.quantity')}
-                        </th>
-                        <th className="border border-gray-300 bg-primary text-white p-1.5 text-center text-[9pt] font-bold w-20">
-                          {t('phieuKhoPhanThuoc.preview.soLot')}
-                        </th>
-                        <th className="border border-gray-300 bg-primary text-white p-1.5 text-left text-[9pt] font-bold">
-                          {t('phieuKhoPhanThuoc.form.note')}
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {chiTiet.map((c, idx) => (
-                        <tr key={c.id}>
-                          <td className="border border-gray-300 p-1.5 text-gray-900 text-center">{idx + 1}</td>
-                          <td className="border border-gray-300 p-1.5 text-gray-900 text-[9pt]">
-                            {c.ten_danh_muc ?? '—'}
-                          </td>
-                          <td className="border border-gray-300 p-1.5 text-gray-900">
-                            {c.ten_hang ?? c.ten_hang_hoa ?? '—'}
-                          </td>
-                          <td className="border border-gray-300 p-1.5 text-gray-900 text-[9pt]">{c.pham_cap ?? '—'}</td>
-                          <td className="border border-gray-300 p-1.5 text-gray-900 text-center">
-                            {c.don_vi_tinh ?? '—'}
-                          </td>
-                          <td className="border border-gray-300 p-1.5 text-gray-900 tabular-nums text-right">
-                            {formatNumberVN(c.so_luong)}
-                          </td>
-                          <td className="border border-gray-300 p-1.5 text-gray-900 text-center text-[9pt]">
-                            {c.so_lot ?? '—'}
-                          </td>
-                          <td className="border border-gray-300 p-1.5 text-gray-900 text-[9pt]">{c.ghi_chu ?? '—'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                    <tfoot>
-                      <tr className="bg-gray-100 font-semibold text-gray-900 break-inside-avoid">
-                        <td colSpan={5} className="border border-gray-300 p-1.5 text-[10pt]">
-                          {t('phieuKhoPhanThuoc.preview.totalQty')}
-                        </td>
-                        <td className="border border-gray-300 p-1.5 text-[10pt] tabular-nums text-right">
-                          {formatNumberVN(chiTiet.reduce((s, c) => s + (Number(c.so_luong) || 0), 0))}
-                        </td>
-                        <td colSpan={2} className="border border-gray-300 p-1.5" />
-                      </tr>
-                      {sumSoLuongByPhamCap(chiTiet).map(({ phamCap, soLuong }) => (
-                        <tr key={phamCap} className="bg-gray-50 text-gray-900 break-inside-avoid">
-                          <td colSpan={5} className="border border-gray-300 p-1.5 text-[9pt]">
-                            {t('phieuKhoPhanThuoc.preview.totalQtyByPhamCap', { phamCap })}
-                          </td>
-                          <td className="border border-gray-300 p-1.5 text-[9pt] tabular-nums text-right">
-                            {formatNumberVN(soLuong)}
-                          </td>
-                          <td colSpan={2} className="border border-gray-300 p-1.5" />
-                        </tr>
-                      ))}
-                    </tfoot>
-                  </table>
-                </div>
-              ) : (
-                <p className="text-[10pt] text-gray-500 italic">{t('phieuKhoPhanThuoc.form.noItems')}</p>
-              )}
-
-              <div className="phieu-kho-pt-print-sign-footer grid grid-cols-4 gap-4 mt-8 pt-4 border-t border-gray-300">
-                <div className="text-center">
-                  <p className="text-[10pt] font-semibold text-gray-800 mb-0.5">
-                    {t('phieuKhoPhanThuoc.preview.signCreator')}
-                  </p>
-                  <p className="text-[8pt] text-gray-500">{t('phieuKhoPhanThuoc.preview.signHint')}</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-[10pt] font-semibold text-gray-800 mb-0.5">
-                    {t('phieuKhoPhanThuoc.preview.signChecker')}
-                  </p>
-                  <p className="text-[8pt] text-gray-500">{t('phieuKhoPhanThuoc.preview.signHint')}</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-[10pt] font-semibold text-gray-800 mb-0.5">
-                    {t('phieuKhoPhanThuoc.preview.signRelated')}
-                  </p>
-                  <p className="text-[8pt] text-gray-500">{t('phieuKhoPhanThuoc.preview.signHint')}</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-[10pt] font-semibold text-gray-800 mb-0.5">
-                    {t('phieuKhoPhanThuoc.preview.signApprover')}
-                  </p>
-                  <p className="text-[8pt] text-gray-500">{t('phieuKhoPhanThuoc.preview.signHint')}</p>
-                </div>
-              </div>
-
-              <footer className="mt-8 pt-4 border-t border-gray-200">
-                <p className="text-[7pt] text-gray-500 text-left">
-                  {t('phieuKhoPhanThuoc.preview.printedAt')} {printedAt}
-                </p>
-              </footer>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+      <HangKyTen
+        className="mt-6"
+        labels={[
+          { label: t('common.phieuIn.ky.nguoiLap'), ten: phieu.ten_nguoi_tao },
+          t(phieu.loai === 'nhập' ? 'common.phieuIn.ky.nguoiGiao' : 'common.phieuIn.ky.nguoiNhan'),
+          t('common.phieuIn.ky.thuKho'),
+          {
+            label: t('common.phieuIn.ky.nguoiDuyet'),
+            ten: phieu.trang_thai === 'Đã duyệt' ? phieu.ten_nguoi_duyet : null,
+          },
+        ]}
+      />
+    </KhungPhieu>
   );
 };
 

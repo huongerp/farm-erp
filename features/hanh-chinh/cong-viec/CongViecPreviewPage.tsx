@@ -39,8 +39,9 @@ const CongViecPreviewPage: React.FC = () => {
 
   const getEmployeeName = useCallback(
     (empId: number | string | null | undefined) => {
-      if (empId == null) return '—';
-      return employeeNameMap.get(String(empId)) ?? String(empId);
+      // Không tra được tên (nhân viên đã xoá…) → để trống, không in mã id nội bộ lên phiếu.
+      if (empId == null) return '';
+      return employeeNameMap.get(String(empId)) ?? '';
     },
     [employeeNameMap]
   );
