@@ -3,6 +3,7 @@
  * Bắt buộc appendChild trước khi click rồi remove sau — thiếu appendChild khiến
  * Firefox/Safari không kích hoạt được download (chỉ Chrome cho phép click() trên
  * <a> chưa gắn vào DOM).
+ * Thu hồi URL trễ: Safari iOS đọc blob bất đồng bộ sau click, thu hồi ngay thì tải hụt.
  */
 export function downloadBlob(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob);
@@ -12,5 +13,5 @@ export function downloadBlob(blob: Blob, filename: string): void {
   document.body.appendChild(a);
   a.click();
   a.remove();
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }

@@ -1,23 +1,15 @@
 /**
  * Tải phiếu in về máy (PDF / DOC) từ CHÍNH nút preview đang hiển thị — bố cục chỉ có một
  * nguồn là component React. Nội dung đã được React escape nên không ghép chuỗi HTML tay.
- * - PDF: nhân bản nút kèm style đã tính vào iframe trống, chụp html2canvas, cắt theo trang.
+ * - PDF: nhân bản nút kèm style đã tính vào iframe trống (nạp cùng phông web của app), chụp
+ *   html2canvas từng trang, ngắt trang ở mép dòng / khối không tách.
  * - DOC: nhân bản nút kèm style inline + @page (Word đọc được).
  */
+import { downloadBlob } from '../download-blob';
+import { chonDiemNgatTrang, type KhoiNguyen } from './ngat-trang-pdf';
 
 export type KhoGiayIn = 'a4' | 'a5';
 export type HuongGiayIn = 'doc' | 'ngang';
-
-export function taiVe(blob: Blob, name: string): void {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = name;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
 
 const CSS_GIU = [
   'display', 'flex-direction', 'flex', 'flex-wrap', 'justify-content', 'align-items', 'gap', 'box-sizing',
@@ -27,6 +19,10 @@ const CSS_GIU = [
   'border-top', 'border-bottom', 'border-left', 'border-right', 'border-collapse',
   'font-size', 'font-weight', 'font-style', 'font-family', 'letter-spacing', 'text-align', 'text-transform',
   'color', 'background-color', 'white-space', 'line-height', 'vertical-align', 'object-fit', 'word-break',
+  // Dấu "HỦY", con dấu xoay: thiếu vị trí / transform thì rơi vào giữa dòng chảy văn bản.
+  'position', 'top', 'right', 'bottom', 'left', 'z-index', 'transform', 'transform-origin', 'opacity',
+  // Bề rộng cột đã kéo, ngắt mã dài, căn số; break-inside để PDF biết khối không được tách trang.
+  'table-layout', 'overflow-wrap', 'font-variant-numeric', 'break-inside',
 ];
 
 /**
@@ -60,22 +56,48 @@ function nhanCoChu(v: string, tiLe: number): string {
   return m ? `${(Number(m[1]) * tiLe).toFixed(2)}px` : v;
 }
 
+const pxSo = (v: string) => {
+  const m = /^(-?[\d.]+)px$/.exec(v.trim());
+  return m ? Number(m[1]) : null;
+};
+
+/** Ảnh / SVG giữ đúng chiều cao; phần tử khác cao theo nội dung. */
+const giuCaoCoDinh = (el: Element) => el instanceof SVGElement || /^(IMG|CANVAS|VIDEO)$/.test(el.tagName);
+
+interface TuyChonNhanBan {
+  tiLeChu?: number;
+  /**
+   * `height` (px) thành `min-height` — bản dựng có phông / chữ xuống dòng lệch chút so với màn
+   * hình vẫn không bị xén nội dung (khung bảng `overflow-x-auto` + cao cứng). Khoảng trống ký
+   * (div cao cố định, rỗng) vẫn giữ nguyên.
+   */
+  caoTheoNoiDung?: boolean;
+}
+
 /** Chép style đã tính (Tailwind) vào `style` inline, bỏ class — dùng được ở nơi không có CSS của app. */
-function nhanBanKemStyle(src: Element, dst: Element, tiLeChu = 1) {
+function nhanBanKemStyle(src: Element, dst: Element, tc: TuyChonNhanBan = {}) {
   const cs = getComputedStyle(src);
+  const gian = tc.caoTheoNoiDung && !giuCaoCoDinh(src);
   const decl = CSS_GIU.map((p) => {
     const v = doiMau(cs.getPropertyValue(p));
-    return `${p}:${p === 'font-size' ? nhanCoChu(v, tiLeChu) : v}`;
+    if (p === 'font-size') return `${p}:${nhanCoChu(v, tc.tiLeChu ?? 1)}`;
+    if (gian && p === 'height') return 'height:auto';
+    if (gian && p === 'min-height') {
+      const cao = pxSo(cs.height);
+      const toiThieu = pxSo(v) ?? 0;
+      return cao != null && cao > toiThieu ? `min-height:${cao}px` : `${p}:${v}`;
+    }
+    return `${p}:${v}`;
   }).join(';');
   (dst as HTMLElement).setAttribute('style', decl);
   dst.removeAttribute('class');
-  for (let i = 0; i < src.children.length; i++) nhanBanKemStyle(src.children[i], dst.children[i], tiLeChu);
+  for (let i = 0; i < src.children.length; i++) nhanBanKemStyle(src.children[i], dst.children[i], tc);
 }
 
 /** Bản HTML độc lập của nút preview (style inline, màu rgb, ảnh URL tuyệt đối). */
-function htmlDocLap(node: HTMLElement, bo?: { paddingMm?: number; tiLeChu?: number }): string {
+function htmlDocLap(node: HTMLElement, bo?: TuyChonNhanBan & { paddingMm?: number }): string {
   const clone = node.cloneNode(true) as HTMLElement;
-  nhanBanKemStyle(node, clone, bo?.tiLeChu);
+  nhanBanKemStyle(node, clone, bo);
   if (bo?.paddingMm != null) clone.style.padding = `${bo.paddingMm}mm`;
   clone.querySelectorAll('img').forEach((img) => img.setAttribute('src', (img as HTMLImageElement).src));
   // Lớp phủ kéo cột chỉ dùng trên màn hình.
@@ -115,8 +137,51 @@ export interface ThamSoPdf {
   tenFile: string;
 }
 
+const escAttr = (v: string) => v.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+
 /**
- * PDF đúng khổ / hướng: dựng bản độc lập trong iframe trống, chụp html2canvas rồi cắt theo trang.
+ * Link stylesheet phông web của app (Inter ở index.html, phông Google do `loadFont` nạp thêm).
+ * Iframe thiếu chúng thì dàn chữ bằng phông dự phòng (hẹp hơn) trong khi html2canvas vẽ trên
+ * canvas của document chính bằng phông thật (rộng hơn) → các từ đè lên nhau, mất khoảng trắng.
+ */
+function linkPhongWeb(): string {
+  return Array.from(document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"][href^="https://fonts.googleapis.com/"]'))
+    .map((l) => `<link rel="stylesheet" href="${escAttr(l.href)}">`)
+    .join('');
+}
+
+/** Chờ phông của iframe tải xong; mạng chậm / offline thì thôi sau `ms` để vẫn xuất được. */
+async function choPhong(doc: Document, ms = 4000): Promise<void> {
+  if (!doc.fonts) return;
+  // Ép dàn trang để trình duyệt bắt đầu tải các phông đang dùng trước khi đọc `ready`.
+  void doc.body.offsetHeight;
+  await Promise.race([doc.fonts.ready.then(() => undefined), new Promise<void>((r) => setTimeout(r, ms))]);
+}
+
+/**
+ * Khối không được tách qua hai trang: dòng bảng (trừ dòng bọc cả bảng con — phiếu kho dùng bảng
+ * ngoài để lặp header), đoạn chữ, tiêu đề, ảnh và khối `break-inside: avoid` (ô ký, dòng tổng).
+ */
+function khoiKhongTach(root: HTMLElement): KhoiNguyen[] {
+  const goc = root.getBoundingClientRect().top;
+  const out: KhoiNguyen[] = [];
+  root.querySelectorAll<HTMLElement>('*').forEach((el) => {
+    const tag = el.tagName;
+    const nguyen =
+      (tag === 'TR' && !el.querySelector('table')) ||
+      /^(P|H[1-6]|LI|IMG|SVG)$/i.test(tag) ||
+      el.style.getPropertyValue('break-inside') === 'avoid';
+    if (!nguyen) return;
+    const r = el.getBoundingClientRect();
+    if (r.height > 0) out.push({ top: r.top - goc, bottom: r.bottom - goc });
+  });
+  return out;
+}
+
+/**
+ * PDF đúng khổ / hướng: dựng bản độc lập trong iframe trống, chụp html2canvas TỪNG TRANG
+ * (canvas nhỏ — một canvas cả phiếu dài vượt giới hạn ~16,7 MP của iOS ra PDF trắng) và ngắt
+ * trang ở mép dòng bảng / khối không tách thay vì cắt ngang chữ.
  * `node` là phần NỘI DUNG (không gồm lề). Cỡ chữ: dựng bản rộng `nội dung / tiLe` rồi co ảnh
  * về đúng bề rộng nội dung — cùng hiệu ứng với `zoom` trên màn hình.
  */
@@ -127,11 +192,11 @@ export async function taiPdfTuNode(node: HTMLElement, ts: ThamSoPdf): Promise<vo
   const rongNoiDung = wMm - 2 * leMm;
   const caoNoiDung = hMm - 2 * leMm;
   const rongDung = rongNoiDung / tiLe;
-  const body = docKhongZoom(node, rongDung, () => htmlDocLap(node));
+  const body = docKhongZoom(node, rongDung, () => htmlDocLap(node, { caoTheoNoiDung: true }));
 
   const iframe = document.createElement('iframe');
   iframe.style.cssText = `position:fixed;left:-10000px;top:0;width:${rongDung}mm;height:${hMm}mm;border:0;visibility:hidden`;
-  iframe.srcdoc = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>*{box-sizing:border-box}body{margin:0;background:#fff}</style></head><body>${body}</body></html>`;
+  iframe.srcdoc = `<!DOCTYPE html><html><head><meta charset="UTF-8">${linkPhongWeb()}<style>*{box-sizing:border-box}body{margin:0;background:#fff}</style></head><body>${body}</body></html>`;
   document.body.appendChild(iframe);
   try {
     await new Promise<void>((ok, fail) => {
@@ -142,34 +207,40 @@ export async function taiPdfTuNode(node: HTMLElement, ts: ThamSoPdf): Promise<vo
     const root = doc?.body.firstElementChild as HTMLElement | null;
     if (!doc || !root) throw new Error('iframe body not available');
     // Chờ ảnh tải xong (lỗi cũng bỏ qua) để PDF không thiếu ảnh.
-    await Promise.all(
-      Array.from(doc.images).map((im) =>
+    await Promise.all([
+      choPhong(doc),
+      ...Array.from(doc.images).map((im) =>
         im.complete
           ? null
           : new Promise<void>((r) => {
               im.addEventListener('load', () => r(), { once: true });
               im.addEventListener('error', () => r(), { once: true });
             })
-      )
-    );
+      ),
+    ]);
     iframe.style.height = `${root.scrollHeight}px`;
-    const canvas = await html2canvas(root, { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false });
+
+    const rect = root.getBoundingClientRect();
+    const pxMoiMm = rect.width / rongNoiDung;
+    const moc = chonDiemNgatTrang(root.scrollHeight, caoNoiDung * pxMoiMm, khoiKhongTach(root));
 
     const huong = ts.huong === 'ngang' ? 'l' : 'p';
     const pdf = new jsPDF({ orientation: huong, unit: 'mm', format: ts.kho });
-    const img = canvas.toDataURL('image/jpeg', 0.92);
-    const hAnh = (canvas.height / canvas.width) * rongNoiDung;
-    // Nội dung dài hơn trang chỉ vì sai số làm tròn thì không sinh trang trắng.
-    const soTrang = Math.max(1, Math.ceil((hAnh - 1) / caoNoiDung));
-    pdf.setFillColor(255, 255, 255);
-    for (let i = 0; i < soTrang; i++) {
+    for (let i = 0; i < moc.length - 1; i++) {
+      const canvas = await html2canvas(root, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+        y: moc[i],
+        width: Math.ceil(rect.width),
+        height: Math.ceil(moc[i + 1] - moc[i]),
+      });
       if (i > 0) pdf.addPage(ts.kho, huong);
-      pdf.addImage(img, 'JPEG', leMm, leMm - i * caoNoiDung, rongNoiDung, hAnh);
-      // Ảnh dài vẽ tràn qua lề trên / dưới — phủ trắng để trang nào cũng đủ lề.
-      pdf.rect(0, 0, wMm, leMm, 'F');
-      pdf.rect(0, hMm - leMm, wMm, leMm, 'F');
+      const hAnh = Math.min(caoNoiDung, (canvas.height / canvas.width) * rongNoiDung);
+      pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', leMm, leMm, rongNoiDung, hAnh);
     }
-    taiVe(pdf.output('blob'), `${ts.tenFile}.pdf`);
+    downloadBlob(pdf.output('blob'), `${ts.tenFile}.pdf`);
   } finally {
     iframe.remove();
   }
@@ -195,5 +266,5 @@ export function taiDocTuNode(node: HTMLElement, ts: ThamSoDoc): void {
     `<style>@page{size:${ts.pageSize};margin:${ts.leMm}mm}body{font-family:Arial,sans-serif}</style>`,
     `</head><body>${body}</body></html>`,
   ].join('');
-  taiVe(new Blob(['﻿' + html], { type: 'application/msword;charset=utf-8' }), `${ts.tenFile}.doc`);
+  downloadBlob(new Blob(['﻿' + html], { type: 'application/msword;charset=utf-8' }), `${ts.tenFile}.doc`);
 }

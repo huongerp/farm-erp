@@ -146,6 +146,9 @@ export function useKeoCotBangIn({ rootRef, khungRef, cot, onDoi, onDatLai, phuTh
     const khung = khungRef.current;
     if (!khung) return;
     const goc = khung.getBoundingClientRect();
+    // Khung bị co (transform scale trên điện thoại): toạ độ đo được là toạ độ hiển thị, lớp phủ
+    // nằm trong khung nên phải đổi về toạ độ chưa co.
+    const co = khung.offsetWidth > 0 ? goc.width / khung.offsetWidth : 1;
     const out: TayKeo[] = [];
     bangs().forEach((table, idx) => {
       const bang = String(idx);
@@ -165,9 +168,9 @@ export function useKeoCotBangIn({ rootRef, khungRef, cot, onDoi, onDatLai, phuTh
           key: `${bang}-${i}`,
           bang,
           i: i - 1,
-          left: mep[i] - goc.left,
-          top: tRect.top - goc.top,
-          height: Math.max(12, day - tRect.top),
+          left: (mep[i] - goc.left) / co,
+          top: (tRect.top - goc.top) / co,
+          height: Math.max(12, (day - tRect.top) / co),
         });
       }
     });

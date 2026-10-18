@@ -3,7 +3,9 @@
  * xuống PDF·DOC… / In), tờ giấy căn giữa, bảng cài đặt in (khổ, hướng, lề, phông, cỡ chữ,
  * độ rộng cột — nhớ riêng theo `mauKey`), trạng thái đang tải / lỗi.
  *
- * - Lề: padding của tờ giấy trên màn hình; khi in do `@page { margin }` lo (chèn lúc bấm In).
+ * - Lề: padding của tờ giấy trên màn hình; khi in do `@page { margin }` lo — gắn suốt lúc trang mở
+ *   nên Ctrl/Cmd+P cũng đúng khổ / lề, kèm số trang ở góc dưới (trình duyệt hỗ trợ margin box).
+ * - Điện thoại: tờ giấy co vừa bề ngang màn hình (transform, chỉ trên màn hình, không ảnh hưởng in).
  * - Cỡ chữ: lớp `.phieu-in-zoom` đặt `zoom: k` + `width: 100/k %` → chữ to/nhỏ mà bố cục vẫn
  *   vừa khổ, áp được cho cả mẫu cũ đang cố định pt.
  * - Cột: `useKeoCotBangIn` soi mọi bảng trong phiếu, tay kéo vẽ ở lớp phủ không in.
@@ -33,6 +35,9 @@ export { kichThuocGiayIn } from '../../../lib/phieu-in/cai-dat-in';
 export { usePhieuIn } from './phieu-in-context';
 
 const PRINT_STYLE_ID = 'phieu-in-page-override';
+const PX_MOI_MM = 96 / 25.4;
+/** Dưới bề rộng này (px) tờ giấy co vừa màn hình thay vì cuộn ngang. */
+const MAN_HEP_PX = 768;
 
 export interface MucTaiThem {
   key: string;
@@ -90,6 +95,8 @@ const PhieuInPage: React.FC<Props> = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const paperRef = useRef<HTMLDivElement>(null);
   const zoomRef = useRef<HTMLDivElement>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const [vuaMan, setVuaMan] = useState({ tiLe: 1, caoPx: 0 });
 
   const daLuu = useCaiDatInStore((s) => s.theoMau[mauKey]);
   const datCaiDat = useCaiDatInStore((s) => s.datCaiDat);
@@ -149,19 +156,37 @@ const PhieuInPage: React.FC<Props> = ({
     return () => document.removeEventListener('mousedown', handler);
   }, [downloadOpen]);
 
-  const handlePrint = () => {
+  // @page theo cài đặt — gắn suốt lúc trang mở (Ctrl/Cmd+P cũng đúng khổ, lề) + số trang.
+  useEffect(() => {
     document.getElementById(PRINT_STYLE_ID)?.remove();
     const styleEl = document.createElement('style');
     styleEl.id = PRINT_STYLE_ID;
-    styleEl.textContent = `@page { size: ${pageSize}; margin: ${leMm}mm !important; }`;
+    styleEl.textContent = `@page { size: ${pageSize}; margin: ${leMm}mm !important; @bottom-right { content: counter(page) "/" counter(pages); font: 8pt sans-serif; color: #6b7280; } }`;
     document.head.appendChild(styleEl);
-    const cleanup = () => {
-      document.getElementById(PRINT_STYLE_ID)?.remove();
-      window.removeEventListener('afterprint', cleanup);
+    return () => styleEl.remove();
+  }, [pageSize, leMm]);
+
+  const handlePrint = () => window.print();
+
+  // Màn hẹp: co tờ giấy vừa bề ngang vùng xem (đo lại khi xoay máy / mở bảng cài đặt / nội dung đổi cao).
+  useEffect(() => {
+    const body = bodyRef.current;
+    const paper = paperRef.current;
+    if (!body || !paper) return;
+    const rongGiayPx = wMm * PX_MOI_MM;
+    const tinh = () => {
+      const cs = getComputedStyle(body);
+      const rongXem = body.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+      const tiLe = window.innerWidth < MAN_HEP_PX && rongXem > 0 && rongXem < rongGiayPx ? rongXem / rongGiayPx : 1;
+      const caoPx = paper.offsetHeight;
+      setVuaMan((cu) => (cu.tiLe === tiLe && cu.caoPx === caoPx ? cu : { tiLe, caoPx }));
     };
-    window.addEventListener('afterprint', cleanup);
-    window.print();
-  };
+    tinh();
+    const ro = new ResizeObserver(tinh);
+    ro.observe(body);
+    ro.observe(paper);
+    return () => ro.disconnect();
+  }, [wMm, isLoading, loi]);
 
   const chay = async (viec: () => void | Promise<void>) => {
     setDownloadOpen(false);
@@ -234,7 +259,7 @@ const PhieuInPage: React.FC<Props> = ({
 
   return (
     <div className="phieu-in-backdrop fixed inset-0 z-[70] flex flex-col bg-muted/90" role="main" aria-label={title}>
-      <div className="phieu-in-toolbar flex flex-wrap items-center justify-between gap-2 px-3 sm:px-4 py-3 bg-card border-b border-border shadow-sm shrink-0 print:hidden">
+      <div className="phieu-in-toolbar flex flex-wrap items-center justify-between gap-2 px-3 sm:px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] bg-card border-b border-border shadow-sm shrink-0 print:hidden">
         <div className="flex items-center gap-2 min-w-0">
           <button
             type="button"
@@ -303,48 +328,62 @@ const PhieuInPage: React.FC<Props> = ({
       <div className="phieu-in-main flex-1 min-h-0 flex">
         {/* Căn giữa bằng mx-auto (không dùng justify-center): tờ A4 ngang rộng hơn màn hình
             vẫn cuộn ngang tới được mép trái. */}
-        <div className="phieu-in-body flex-1 min-w-0 overflow-auto p-4 md:p-6 flex items-start print:p-0 print:overflow-visible">
+        <div
+          ref={bodyRef}
+          className="phieu-in-body flex-1 min-w-0 overflow-auto p-4 md:p-6 flex items-start print:p-0 print:overflow-visible"
+        >
+          {/* Lớp co vừa màn hình: giữ chỗ đúng kích thước tờ giấy sau khi scale (transform không đổi bố cục). */}
           <div
-            ref={paperRef}
-            className="phieu-in-content-wrapper relative bg-white text-gray-900 shadow-xl rounded-sm shrink-0 mx-auto box-border print:p-0"
-            style={{ width: `${wMm}mm`, minHeight: `${hMm}mm`, padding: `${leMm}mm` }}
+            className="phieu-in-vua-man shrink-0 mx-auto"
+            style={vuaMan.tiLe < 1 ? { width: wMm * PX_MOI_MM * vuaMan.tiLe, height: vuaMan.caoPx * vuaMan.tiLe } : undefined}
           >
             <div
-              ref={zoomRef}
-              className="phieu-in-zoom"
-              data-font={fontCss ? font : undefined}
-              style={
-                {
-                  zoom: k,
-                  width: `${100 / k}%`,
-                  '--in-font': fontCss,
-                  '--in-trang-h': `${(hMm - 2 * leMm) / k}mm`,
-                } as React.CSSProperties
-              }
+              ref={paperRef}
+              className="phieu-in-content-wrapper relative bg-white text-gray-900 shadow-xl rounded-sm box-border print:p-0"
+              style={{
+                width: `${wMm}mm`,
+                minHeight: `${hMm}mm`,
+                padding: `${leMm}mm`,
+                ...(vuaMan.tiLe < 1 && { transform: `scale(${vuaMan.tiLe})`, transformOrigin: 'top left' }),
+              }}
             >
-              <PhieuInContext.Provider value={ctx}>{children}</PhieuInContext.Provider>
-            </div>
-            <div className="phieu-in-lop-keo absolute inset-0 pointer-events-none print:hidden" data-phieu-in-bo-khi-xuat>
-              {tayKeo.map((tk) => (
-                <div
-                  key={tk.key}
-                  role="slider"
-                  aria-orientation="horizontal"
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-valuenow={tk.rongPct}
-                  aria-label={t('common.phieuIn.keoCot')}
-                  tabIndex={0}
-                  title={t('common.phieuIn.keoCot')}
-                  onPointerDown={(e) => batDauKeo(e, tk)}
-                  onKeyDown={(e) => keoBangPhim(e, tk)}
-                  onDoubleClick={() => onDatLaiBang(tk.bang)}
-                  className="group absolute pointer-events-auto cursor-col-resize touch-none flex justify-center outline-none"
-                  style={{ left: tk.left - 4, top: tk.top, height: tk.height, width: 9 }}
-                >
-                  <span className="w-0.5 h-full rounded-full bg-primary/0 group-hover:bg-primary/70 group-focus-visible:bg-primary transition-colors" />
-                </div>
-              ))}
+              <div
+                ref={zoomRef}
+                className="phieu-in-zoom"
+                data-font={fontCss ? font : undefined}
+                style={
+                  {
+                    zoom: k,
+                    width: `${100 / k}%`,
+                    '--in-font': fontCss,
+                    '--in-trang-h': `${(hMm - 2 * leMm) / k}mm`,
+                  } as React.CSSProperties
+                }
+              >
+                <PhieuInContext.Provider value={ctx}>{children}</PhieuInContext.Provider>
+              </div>
+              <div className="phieu-in-lop-keo absolute inset-0 pointer-events-none print:hidden" data-phieu-in-bo-khi-xuat>
+                {tayKeo.map((tk) => (
+                  <div
+                    key={tk.key}
+                    role="slider"
+                    aria-orientation="horizontal"
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={tk.rongPct}
+                    aria-label={t('common.phieuIn.keoCot')}
+                    tabIndex={0}
+                    title={t('common.phieuIn.keoCot')}
+                    onPointerDown={(e) => batDauKeo(e, tk)}
+                    onKeyDown={(e) => keoBangPhim(e, tk)}
+                    onDoubleClick={() => onDatLaiBang(tk.bang)}
+                    className="group absolute pointer-events-auto cursor-col-resize touch-none flex justify-center outline-none"
+                    style={{ left: tk.left - 4, top: tk.top, height: tk.height, width: 9 }}
+                  >
+                    <span className="w-0.5 h-full rounded-full bg-primary/0 group-hover:bg-primary/70 group-focus-visible:bg-primary transition-colors" />
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
