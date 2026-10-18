@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Edit, Trash2 } from 'lucide-react';
+import { Edit, FileText, Trash2 } from 'lucide-react';
 import { cn, formatDateShort } from '../../../../lib/utils';
 import type { DonDatHang } from '../core/types';
 import { TRANG_THAI_KEY, STATUS_VARIANTS } from '../core/constants';
@@ -125,6 +125,11 @@ const DonDatHangList: React.FC<Props> = ({
       </div>
       <div className="text-xs text-muted-foreground mb-1">{item.ngay_dat} · {item.ten_nha_cung_cap ?? '—'}</div>
       <div className="text-sm text-foreground mb-1">{item.ten_kho_nhan ?? '—'}</div>
+      <div className="flex items-center gap-1.5 min-w-0 text-xs text-muted-foreground mb-2">
+        <FileText size={12} className="shrink-0" />
+        <span className="shrink-0">{t('donDatHang.form.linkRequest')}:</span>
+        <span className="truncate font-mono font-medium text-foreground">{item.so_phieu_de_xuat?.trim() || '—'}</span>
+      </div>
       <div className="flex justify-between items-center pt-2 border-t border-border">
         <span className="text-xs text-muted-foreground">{formatDateShort(item.tg_cap_nhat)}</span>
         <div className="flex gap-1">
