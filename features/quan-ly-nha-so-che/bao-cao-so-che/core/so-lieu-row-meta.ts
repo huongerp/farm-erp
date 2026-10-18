@@ -104,7 +104,7 @@ export const SO_LIEU_BUONG_ROW_DEFS: { key: SoLieuRowKey; labelKey: string }[] =
 ];
 
 /** Số dòng chỉ số trong khối BCNC readout. */
-export const BCSC_BCNC_READOUT_ROW_COUNT = 4;
+export const BCSC_BCNC_READOUT_ROW_COUNT = 5;
 /** STT bắt đầu cho bảng số liệu buồng (sau các dòng BCNC). */
 export const BCSC_SO_LIEU_STT_OFFSET = BCSC_BCNC_READOUT_ROW_COUNT;
 

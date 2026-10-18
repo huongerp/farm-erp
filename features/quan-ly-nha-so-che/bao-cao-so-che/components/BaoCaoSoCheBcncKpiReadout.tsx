@@ -20,6 +20,7 @@ const ZERO_LABOR_SNAPSHOT: BcscLaborFromBcncSnapshot = {
   tongGioCnNgay: 0,
   congQdRowIV: 0,
   tongGioTcRowIV: 0,
+  congQdTongNgay: 0,
 };
 
 interface Props {
@@ -157,6 +158,13 @@ const BaoCaoSoCheBcncKpiReadout: React.FC<Props> = ({
         dvt: t('baoCaoSoChe.bcnc.dvt.gio'),
         giaTri: fmtNum(L.tongGioTcRowIV),
         ghiChu: g4,
+      },
+      {
+        stt: o + 5,
+        chiSo: t('baoCaoSoChe.bcnc.congQdTongNgay'),
+        dvt: t('baoCaoSoChe.bcnc.dvt.tongCong'),
+        giaTri: fmtNum(L.congQdTongNgay),
+        ghiChu: '—',
       },
     ];
   }, [laborForBcncTable, bcncGhiChu, bcncSttBase, t]);

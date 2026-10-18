@@ -135,6 +135,7 @@ const BaoCaoSoChePreviewContent: React.FC<Props> = ({ data, bcncList, dbdtList }
         { stt: 2, chiSo: t('baoCaoSoChe.bcnc.tongGioCnNgay'),        dvt: t('baoCaoSoChe.bcnc.dvt.gio'),     giaTri: fmtNum(labor.tongGioCnNgay),        ghiChu: g2 },
         { stt: 3, chiSo: t('baoCaoSoChe.bcnc.congQdRowIV'),    dvt: t('baoCaoSoChe.bcnc.dvt.tongCong'), giaTri: fmtNum(labor.congQdRowIV),    ghiChu: g3 },
         { stt: 4, chiSo: t('baoCaoSoChe.bcnc.tongGioTcRowIV'), dvt: t('baoCaoSoChe.bcnc.dvt.gio'),     giaTri: fmtNum(labor.tongGioTcRowIV), ghiChu: g4 },
+        { stt: 5, chiSo: t('baoCaoSoChe.bcnc.congQdTongNgay'), dvt: t('baoCaoSoChe.bcnc.dvt.tongCong'), giaTri: fmtNum(labor.congQdTongNgay), ghiChu: '—' },
       ]
     : [];
 

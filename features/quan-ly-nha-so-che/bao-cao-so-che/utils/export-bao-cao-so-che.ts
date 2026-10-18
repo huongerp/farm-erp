@@ -83,6 +83,7 @@ export async function exportBaoCaoSoCheToXLSX(
           [2, t('baoCaoSoChe.bcnc.tongGioCnNgay'),        t('baoCaoSoChe.bcnc.dvt.gio'),     labor.tongGioCnNgay,        g2],
           [3, t('baoCaoSoChe.bcnc.congQdRowIV'),    t('baoCaoSoChe.bcnc.dvt.tongCong'), labor.congQdRowIV,    g3],
           [4, t('baoCaoSoChe.bcnc.tongGioTcRowIV'), t('baoCaoSoChe.bcnc.dvt.gio'),     labor.tongGioTcRowIV, g4],
+          [5, t('baoCaoSoChe.bcnc.congQdTongNgay'), t('baoCaoSoChe.bcnc.dvt.tongCong'), labor.congQdTongNgay, '—'],
         ]
       : [['—', t('baoCaoSoChe.bcnc.needNgayChiNhanh')]]),
     [],

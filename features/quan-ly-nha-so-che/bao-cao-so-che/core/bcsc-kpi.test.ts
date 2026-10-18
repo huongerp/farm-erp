@@ -69,3 +69,22 @@ describe('extractLaborSnapshotFromBcnc — tongGioCnNgay', () => {
     expect(snap.tongGioCnNgay).toBe(0);
   });
 });
+
+describe('extractLaborSnapshotFromBcnc — congQdTongNgay', () => {
+  it('cộng cả dòng V (định biên không SX), còn congQdRowIV chỉ 5 chuyền SX', () => {
+    const ct = (id: string, loai_chuyen: FarmBaoCaoNhanCong['chi_tiet'][number]['loai_chuyen'], sl_cong_ngay: number, sl_cong_nua: number, thu_tu: number) => ({
+      id, id_bao_cao: 'bcnc-1', loai_chuyen, sl_cong_ngay, sl_cong_nua, sl_tang_ca: 0, so_gio_tc: 0, ghi_chu: null, thu_tu,
+    });
+    const bcnc = minimalBcnc({
+      chi_tiet: [
+        ct('ct-1', 'XAN_NAI', 3, 0, 1),
+        ct('ct-2', 'TIA_DANH_GIA', 6, 2, 2),
+        ct('ct-6', 'CONG_DINH_BIEN_KHONG_SAN_XUAT', 6, 0, 6),
+      ],
+    });
+
+    const snap = extractLaborSnapshotFromBcnc(bcnc);
+    expect(snap.congQdRowIV).toBe(10);
+    expect(snap.congQdTongNgay).toBe(16);
+  });
+});

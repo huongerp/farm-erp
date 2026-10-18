@@ -8,6 +8,7 @@ import {
   normalizeChiTietForDisplay,
   sumChiTietNumericPart,
   sumTongCongQuyDoiTuChiTiet,
+  sumTongCongQuyDoiPhieu,
   sumTongGioTangCaTichTuChiTiet,
   chuyenTtLabelByThuTu,
 } from '../../bao-cao-nhan-cong/core/types';
@@ -73,8 +74,8 @@ export function computeTyLeThuHoiDanhGia(
 }
 
 /**
- * Ghi chú 4 dòng bảng chỉ số BCNC trên báo cáo sơ chế — từ ghi chú phiếu + ghi chú từng chuyền (I.1…III).
- * Dòng 1–2: cùng nội dung (phiếu + các chuyền có ghi chú). Dòng 3–4: '—' (dòng IV là tổng tính toán, không có ghi chú riêng).
+ * Ghi chú 4 dòng đầu bảng chỉ số BCNC trên báo cáo sơ chế — từ ghi chú phiếu + ghi chú từng chuyền (I.1…III).
+ * Dòng 1–2: cùng nội dung (phiếu + các chuyền có ghi chú). Dòng 3–4: '—' (dòng IV là tổng tính toán, không có ghi chú riêng). Dòng 5 (tổng ngày) cũng '—'.
  */
 export function extractBcncTableGhiChuRows(bcnc: FarmBaoCaoNhanCong | null): [string, string, string, string] {
   if (!bcnc) return ['—', '—', '—', '—'];
@@ -102,6 +103,8 @@ export interface BcscLaborFromBcncSnapshot {
   congQdRowIV: number;
   /** Tổng giờ TC dòng IV — tổng giờ tăng ca tích 5 chuyền sản xuất */
   tongGioTcRowIV: number;
+  /** Công QĐ dòng TỔNG NGÀY = dòng IV + dòng V (khớp ô Công QĐ "TỔNG NGÀY" của BCNC) */
+  congQdTongNgay: number;
 }
 
 export function extractLaborSnapshotFromBcnc(bcnc: FarmBaoCaoNhanCong): BcscLaborFromBcncSnapshot {
@@ -115,6 +118,7 @@ export function extractLaborSnapshotFromBcnc(bcnc: FarmBaoCaoNhanCong): BcscLabo
     tongGioCnNgay,
     congQdRowIV: sumTongCongQuyDoiTuChiTiet(production),
     tongGioTcRowIV: sumTongGioTangCaTichTuChiTiet(production),
+    congQdTongNgay: sumTongCongQuyDoiPhieu(bcnc),
   };
 }
 
