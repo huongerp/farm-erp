@@ -5,6 +5,8 @@ import { User, Calendar, Building2, Tag } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDoiTacRefQuery, useEmployeesRefQuery } from '../../../../lib/hooks/use-ref-queries';
 import { getAllDonDatHangDb, fetchDonDatHangThongKeFromRpc, fetchChiTietForCategoryStatsDb } from '../services/don-dat-hang-db.service';
+import { useDonDatHangServerScope } from '../hooks/use-don-dat-hang-view-scope';
+import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import EmptyState from '../../../../components/shared/EmptyState';
 import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
@@ -36,6 +38,8 @@ const ThongKeTab: React.FC = () => {
   const { t } = useTranslation();
   const { data: supplierList = [] } = useDoiTacRefQuery('nha_cung_cap');
   const { data: employees = [] } = useEmployeesRefQuery();
+  const { scope, isLoading: scopeLoading } = useDonDatHangServerScope();
+  const scopeKey = useMemo(() => stableListQueryKeyPart(scope), [scope]);
 
   const [filterStatus, setFilterStatus] = useState<string[]>([]);
   const [filterSupplier, setFilterSupplier] = useState<string[]>([]);
@@ -54,8 +58,9 @@ const ThongKeTab: React.FC = () => {
     [dateFrom, dateTo, filterStatus, filterSupplier, filterBuyer]
   );
 
-  const { data: thongKe, isLoading, isError } = useQuery({
-    queryKey: ['donDatHang', 'thongKe', filterStatus, filterSupplier, filterBuyer, dateFrom, dateTo],
+  // Chờ đủ quyền + kho mới gọi, tránh chớp ra số liệu của farm khác.
+  const { data: thongKe, isLoading: thongKeLoading, isError } = useQuery({
+    queryKey: ['donDatHang', 'thongKe', scopeKey, filterStatus, filterSupplier, filterBuyer, dateFrom, dateTo],
     queryFn: async () => {
       const rpc = await fetchDonDatHangThongKeFromRpc({
         dateFrom,
@@ -63,17 +68,20 @@ const ThongKeTab: React.FC = () => {
         filterStatus,
         filterSupplier,
         filterBuyer,
+        scope,
       });
       if (rpc) return { kind: 'rpc' as const, rpc };
-      const list = await getAllDonDatHangDb();
+      const list = await getAllDonDatHangDb(scope);
       const filteredList = filterDonDatHangList(list, statsFilterParams);
       return { kind: 'fallback' as const, list, filteredList };
     },
+    enabled: !scopeLoading,
     staleTime: 60_000,
   });
+  const isLoading = scopeLoading || thongKeLoading;
 
   const { data: categoryRows } = useQuery({
-    queryKey: ['donDatHang', 'categoryStats', filterStatus, filterSupplier, filterBuyer, dateFrom, dateTo],
+    queryKey: ['donDatHang', 'categoryStats', scopeKey, filterStatus, filterSupplier, filterBuyer, dateFrom, dateTo],
     queryFn: () =>
       fetchChiTietForCategoryStatsDb({
         dateFrom: dateFrom || undefined,
@@ -81,7 +89,9 @@ const ThongKeTab: React.FC = () => {
         filterStatus: filterStatus.length ? filterStatus : undefined,
         filterSupplier: filterSupplier.length ? filterSupplier : undefined,
         filterBuyer: filterBuyer.length ? filterBuyer : undefined,
+        scope,
       }),
+    enabled: !scopeLoading,
     staleTime: 60_000,
   });
 

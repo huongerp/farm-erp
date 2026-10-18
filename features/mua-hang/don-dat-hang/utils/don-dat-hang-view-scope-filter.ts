@@ -1,36 +1,24 @@
-import type { Kho } from '../../../kho-van/danh-sach-kho/core/types';
-import type { DonDatHang } from '../core/types';
-import type { EmployeeBranchModuleScope } from '../../../he-thong/nhan-vien/hooks/use-employee-branch-module-scope';
+/**
+ * Phạm vi xem đơn đặt hàng phía client — cùng luật với applyDonDatHangScope (lọc ở PostgREST):
+ * xem hết (cấp bậc 1 / admin / all), hoặc đơn do chính mình đặt, hoặc kho nhận thuộc farm của mình.
+ * Dùng cho các chỗ lấy đơn theo id (drawer, trang in) và ô lọc Kho nhận.
+ */
+import type { BranchListScope } from '../../../../lib/branch-scope-query';
 
-function isOwnDon(p: DonDatHang, employeeId: string | null): boolean {
-  return !!(employeeId && String(p.id_nguoi_dat) === employeeId);
+type DonPhamVi = { id_kho_nhan?: string | null; id_nguoi_dat?: string | null };
+
+export function donDatHangTrongPhamVi(don: DonPhamVi, scope: BranchListScope): boolean {
+  if (scope.viewAll) return true;
+  const own = scope.ownEmployeeIdNum;
+  if (own != null && don.id_nguoi_dat != null && Number(don.id_nguoi_dat) === own) return true;
+  if (!scope.viewByBranch) return false;
+  if (don.id_kho_nhan == null || don.id_kho_nhan === '') return false;
+  return scope.allowedKhoNumericIds.includes(Number(don.id_kho_nhan));
 }
 
-export function filterDonDatHangListByViewScope(
-  list: DonDatHang[],
-  khoList: Kho[],
-  scope: Pick<EmployeeBranchModuleScope, 'viewAll' | 'viewByBranch' | 'allowedBranchIds' | 'currentEmployeeId'>
-): DonDatHang[] {
-  if (scope.viewAll) return list;
-
-  const empId = scope.currentEmployeeId;
-
-  if (!scope.viewByBranch) {
-    return empId ? list.filter((p) => isOwnDon(p, empId)) : [];
-  }
-
-  const khoIdToBranchId = new Map<string, string>();
-  khoList.forEach((k) => {
-    if (k.id_chi_nhanh != null) khoIdToBranchId.set(k.id, k.id_chi_nhanh);
-  });
-  const allowedSet = new Set(scope.allowedBranchIds);
-
-  return list.filter((p) => {
-    if (isOwnDon(p, empId)) return true;
-    if (scope.allowedBranchIds.length === 0) return false;
-    const kid = p.id_kho_nhan;
-    if (!kid) return false;
-    const branchId = khoIdToBranchId.get(kid);
-    return branchId != null && allowedSet.has(branchId);
-  });
+/** Kho hiện ở ô lọc "Kho nhận": người bị giới hạn chỉ thấy kho thuộc farm mình. */
+export function locKhoTheoPhamVi<K extends { id: string }>(khoList: K[], scope: BranchListScope): K[] {
+  if (scope.viewAll) return khoList;
+  const allow = new Set(scope.viewByBranch ? scope.allowedKhoNumericIds : []);
+  return khoList.filter((k) => allow.has(Number(k.id)));
 }

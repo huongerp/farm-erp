@@ -5,7 +5,6 @@ import type { DonDatHangFormValues } from '../core/schema';
 import type { PaginatedTableResult } from '../../../../lib/db';
 import type { ChiTietDonDatHangFlat, DonDatHang, DonDatHangTrangThai } from '../core/types';
 import {
-  getAllDonDatHangDb,
   getDonDatHangByIdDb,
   getDonDatHangPageDb,
   fetchAllDonDatHangForListQueryDb,
@@ -34,7 +33,6 @@ export async function getNextSoPoFormatted(): Promise<string> {
   return `PO-${year}-${String(n).padStart(5, '0')}`;
 }
 
-export const getAllDonDatHang = getAllDonDatHangDb;
 export async function getDonDatHangPage(
   page: number,
   pageSize?: number,

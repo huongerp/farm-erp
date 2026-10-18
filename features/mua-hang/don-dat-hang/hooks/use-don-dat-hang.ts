@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
-  getAllDonDatHang,
   getDonDatHangPage,
   getChiTietDonDatHangPage,
   getDonDatHangById,
@@ -19,6 +18,8 @@ import type { DonDatHangFormValues } from '../core/schema';
 import type { DonDatHang } from '../core/types';
 import i18n from '../../../../lib/i18n';
 import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
+import type { BranchListScope } from '../../../../lib/branch-scope-query';
+import { donDatHangTrongPhamVi } from '../utils/don-dat-hang-view-scope-filter';
 
 const QUERY_KEY = ['donDatHang'] as const;
 const PHAN_LOAI_CHI_TIET_QUERY_KEY = [...QUERY_KEY, 'phanLoaiChiTiet'] as const;
@@ -30,14 +31,6 @@ export const useNextSoPoDonDatHang = (enabled: boolean) => {
     queryFn: getNextSoPoFormatted,
     enabled,
     staleTime: 0,
-  });
-};
-
-export const useDonDatHangList = () => {
-  return useQuery({
-    queryKey: QUERY_KEY,
-    queryFn: getAllDonDatHang,
-    staleTime: 1000 * 60 * 15,
   });
 };
 
@@ -53,32 +46,47 @@ const DON_DAT_HANG_PAGE_SIZE = 50;
 const CHI_TIET_DON_DAT_HANG_PAGE_SIZE = 100;
 
 /** Danh sách đơn đặt hàng theo trang (server-side). `pageIndex` 0-based. */
-export const useDonDatHangListPaged = (pageIndex: number, listQuery: DonDatHangListServerQuery) => {
+export const useDonDatHangListPaged = (pageIndex: number, listQuery: DonDatHangListServerQuery, enabled = true) => {
   const qPart = stableListQueryKeyPart(listQuery);
   return useQuery({
     queryKey: [...QUERY_KEY, 'paged', pageIndex, DON_DAT_HANG_PAGE_SIZE, qPart] as const,
     queryFn: () => getDonDatHangPage(pageIndex, DON_DAT_HANG_PAGE_SIZE, listQuery),
+    enabled,
     staleTime: 1000 * 60 * 15,
     placeholderData: keepPreviousData,
   });
 };
 
 /** Chi tiết phẳng (mỗi dòng = một dòng hàng trên đơn), server-side. `pageIndex` 0-based. */
-export const useChiTietDonDatHangListPaged = (pageIndex: number, listQuery: DonDatHangListServerQuery) => {
+export const useChiTietDonDatHangListPaged = (
+  pageIndex: number,
+  listQuery: DonDatHangListServerQuery,
+  enabled = true
+) => {
   const qPart = stableListQueryKeyPart(listQuery);
   return useQuery({
     queryKey: [...QUERY_KEY, 'chiTietPaged', pageIndex, CHI_TIET_DON_DAT_HANG_PAGE_SIZE, qPart] as const,
     queryFn: () => getChiTietDonDatHangPage(pageIndex, CHI_TIET_DON_DAT_HANG_PAGE_SIZE, listQuery),
+    enabled,
     staleTime: 1000 * 60 * 15,
     placeholderData: keepPreviousData,
   });
 };
 
-export const useDonDatHangById = (id: string | undefined) => {
+/**
+ * Một đơn theo id (drawer, form sửa, trang in). Đơn ngoài phạm vi xem → null (như không tìm thấy).
+ * queryKey giữ [donDatHang, id] để mutation setQueryData vẫn khớp; phạm vi áp ở `select`.
+ */
+export const useDonDatHangById = (
+  id: string | undefined,
+  phamVi: { scope: BranchListScope; isLoading: boolean }
+) => {
+  const { scope, isLoading: scopeLoading } = phamVi;
   return useQuery({
     queryKey: [...QUERY_KEY, id],
     queryFn: () => getDonDatHangById(id!),
-    enabled: !!id,
+    enabled: !!id && !scopeLoading,
+    select: (don) => (don && donDatHangTrongPhamVi(don, scope) ? don : null),
   });
 };
 

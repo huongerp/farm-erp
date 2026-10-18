@@ -459,7 +459,18 @@ const App = () => {
           }
         />
         <Route path="/mua-hang/phieu-de-xuat-vat-tu/preview/:id" element={<ProtectedRoute><Suspense fallback={<PageFallback />}><PhieuDeXuatVatTuPreviewPage /></Suspense></ProtectedRoute>} />
-        <Route path="/mua-hang/don-dat-hang/preview/:id" element={<ProtectedRoute><Suspense fallback={<PageFallback />}><DonDatHangPreviewPage /></Suspense></ProtectedRoute>} />
+        <Route
+          path="/mua-hang/don-dat-hang/preview/:id"
+          element={
+            <ProtectedRoute>
+              <ModulePermissionGuard moduleId="mua-hang/don-dat-hang">
+                <Suspense fallback={<PageFallback />}>
+                  <DonDatHangPreviewPage />
+                </Suspense>
+              </ModulePermissionGuard>
+            </ProtectedRoute>
+          }
+        />
         <Route path="/mua-hang/thanh-toan-doi-tac/preview/:id" element={<ProtectedRoute><Suspense fallback={<PageFallback />}><ThanhToanDoiTacPreviewPage /></Suspense></ProtectedRoute>} />
         <Route path="/bao-cao-khau-hao/:id" element={<ProtectedRoute><Suspense fallback={<PageFallback />}><BaoCaoKhauHaoPreviewPage /></Suspense></ProtectedRoute>} />
         <Route path="/*" element={

@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { FileSpreadsheet } from 'lucide-react';
 import PhieuInPage from '../../../components/shared/phieu-in/PhieuInPage';
 import { useDonDatHangById } from './hooks/use-don-dat-hang';
+import { useDonDatHangServerScope } from './hooks/use-don-dat-hang-view-scope';
 import { exportDonDatHangToXLSX, getFileName } from './utils/export-don-dat-hang';
 import DonDatHangPreviewContent from './components/DonDatHangPreviewContent';
 
@@ -15,7 +16,9 @@ const MAC_DINH = { kho: 'a4', huong: 'doc', leMm: 15 } as const;
 const DonDatHangPreviewPage: React.FC = () => {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
-  const { data: po, isLoading, isError, error, refetch } = useDonDatHangById(id ?? undefined);
+  const phamVi = useDonDatHangServerScope();
+  const { data: po, isLoading: poLoading, isError, error, refetch } = useDonDatHangById(id ?? undefined, phamVi);
+  const isLoading = poLoading || phamVi.isLoading;
 
   const loi = isError
     ? (error?.message ?? t('donDatHang.preview.loadError'))

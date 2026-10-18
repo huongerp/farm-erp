@@ -18,6 +18,7 @@ import { buildDonDatHangListServerQuery, fetchAllChiTietDonDatHangForListQuery }
 import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
 import { useDoiTacRefQuery, useEmployeesRefQuery, useHangHoaRefQuery, usePhieuDeXuatSoPhieuMinimalQuery } from '../../../../lib/hooks/use-ref-queries';
 import { useKhoList } from '../../../kho-van/danh-sach-kho/hooks/use-kho';
+import { locKhoTheoPhamVi } from '../utils/don-dat-hang-view-scope-filter';
 import { useChiTietDonDatHangStore } from '../store/useChiTietDonDatHangStore';
 import type { ChiTietDonDatHangFlat, DonDatHang } from '../core/types';
 import { TRANG_THAI_KEY, STATUS_VARIANTS } from '../core/constants';
@@ -58,7 +59,7 @@ const ChiTietDonDatHangTab: React.FC = () => {
   const { t } = useTranslation();
   const { canCreate, canUpdate, canDelete, canApprove, canAdmin } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
-  const { data: khoList = [] } = useKhoList();
+  const { data: khoList = [], isPending: khoPending } = useKhoList();
   const { data: supplierList = [] } = useDoiTacRefQuery('nha_cung_cap');
   const { data: employees = [] } = useEmployeesRefQuery();
   const { data: hangHoaList = [] } = useHangHoaRefQuery();
@@ -113,15 +114,21 @@ const ChiTietDonDatHangTab: React.FC = () => {
     [searchTerm, filters, viewScope, khoList]
   );
   const listQueryKey = useMemo(() => stableListQueryKeyPart(listServerQuery), [listServerQuery]);
+  // Chờ đủ quyền + danh sách kho mới truy vấn, tránh chớp ra đơn của farm khác.
+  const phamVi = useMemo(
+    () => ({ scope: listServerQuery.scope, isLoading: viewScope.isLoading || (!viewScope.viewAll && khoPending) }),
+    [listServerQuery.scope, viewScope.isLoading, viewScope.viewAll, khoPending]
+  );
+  const khoLocOptions = useMemo(() => locKhoTheoPhamVi(khoList, phamVi.scope), [khoList, phamVi.scope]);
   const pageIndex = Math.max(0, pagination.page - 1);
-  const pageQuery = useChiTietDonDatHangListPaged(pageIndex, listServerQuery);
+  const pageQuery = useChiTietDonDatHangListPaged(pageIndex, listServerQuery, !phamVi.isLoading);
   const tableRows = useMemo(() => pageQuery.data?.data ?? [], [pageQuery.data]);
   const totalCount = pageQuery.data?.totalCount ?? 0;
   const isLoading = !pageQuery.data && pageQuery.isPending;
   const isFetchingOverlay = !!pageQuery.data && pageQuery.isFetching;
 
-  const { data: viewingPoFull } = useDonDatHangById(viewingDonId ?? undefined);
-  const { data: editingPoFull } = useDonDatHangById(editingItem?.id);
+  const { data: viewingPoFull } = useDonDatHangById(viewingDonId ?? undefined, phamVi);
+  const { data: editingPoFull } = useDonDatHangById(editingItem?.id, phamVi);
   const deleteMutation = useDeleteDonDatHang();
   const updateTrangThaiMutation = useUpdateDonDatHangTrangThai();
 
@@ -466,7 +473,7 @@ const ChiTietDonDatHangTab: React.FC = () => {
         data={tableRows}
         chipCountsMode="unweighted"
         supplierList={supplierList}
-        khoList={khoList}
+        khoList={khoLocOptions}
         employees={employees}
         danhMucCap1Options={danhMucCap1Options}
         danhMucCap2Options={danhMucCap2Options}

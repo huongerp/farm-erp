@@ -178,11 +178,10 @@ function mapDonSummaryRowToDon(row: DonSummaryRow): DonDatHang {
   return don;
 }
 
-export async function getAllDonDatHangDb(): Promise<DonDatHang[]> {
+/** Toàn bộ đơn trong phạm vi xem (fallback tab Thống kê khi RPC lỗi). */
+export async function getAllDonDatHangDb(scope: BranchListScope): Promise<DonDatHang[]> {
   const rows = await fetchAllRows<DonSummaryRow>((from, to) =>
-    db
-      .from(VIEW_DON_DAT_HANG_SUMMARY)
-      .select(VIEW_DON_DAT_HANG_SUMMARY_COLUMNS)
+    applyDonDatHangScope(db.from(VIEW_DON_DAT_HANG_SUMMARY).select(VIEW_DON_DAT_HANG_SUMMARY_COLUMNS), scope)
       .order('ngay_dat', { ascending: false })
       .order('so_po', { ascending: false })
       .range(from, to)
@@ -802,6 +801,16 @@ type RpcDonStatsJson = {
   chipByBuyerId: Record<string, number>;
 };
 
+/** Tham số phạm vi cho rpc_don_dat_hang_stats (migration 045) — cùng luật applyDonDatHangScope. */
+function phamViRpcParams(scope: BranchListScope) {
+  if (scope.viewAll) return { p_gioi_han: false };
+  return {
+    p_gioi_han: true,
+    p_kho_ids: scope.viewByBranch ? scope.allowedKhoNumericIds : [],
+    p_nguoi_dat_id: scope.ownEmployeeIdNum,
+  };
+}
+
 /** Gọi rpc_don_dat_hang_stats (docs/db-schema-baseline.sql). Trả null nếu RPC chưa deploy / lỗi. */
 export async function fetchDonDatHangThongKeFromRpc(params: {
   dateFrom: string;
@@ -809,6 +818,7 @@ export async function fetchDonDatHangThongKeFromRpc(params: {
   filterStatus: string[];
   filterSupplier: string[];
   filterBuyer: string[];
+  scope: BranchListScope;
 }): Promise<DonDatHangThongKeRpcResult | null> {
   const toDate = (s: string) => (s && s.trim() !== '' ? s.trim().slice(0, 10) : null);
   const pSupplier = params.filterSupplier.map((x) => Number(x)).filter((n) => !Number.isNaN(n));
@@ -819,6 +829,7 @@ export async function fetchDonDatHangThongKeFromRpc(params: {
     p_trang_thai: params.filterStatus.length ? params.filterStatus : null,
     p_supplier_ids: pSupplier.length ? pSupplier : null,
     p_buyer_ids: pBuyer.length ? pBuyer : null,
+    ...phamViRpcParams(params.scope),
   });
   if (error || data == null || typeof data !== 'object') return null;
   const j = data as RpcDonStatsJson;
@@ -858,12 +869,13 @@ export async function fetchChiTietForCategoryStatsDb(params: {
   filterStatus?: string[];
   filterSupplier?: string[];
   filterBuyer?: string[];
+  scope: BranchListScope;
 }): Promise<ChiTietCategoryStatsItem[]> {
   const rows = await fetchAllRows<{ id_hang_hoa: number; phan_loai: string | null }>((from, to) => {
-    let q = db
-      .from(VIEW_DON_DAT_HANG_CHI_TIET_FLAT)
-      .select('id_hang_hoa,phan_loai')
-      .range(from, to);
+    let q = applyDonDatHangScope(
+      db.from(VIEW_DON_DAT_HANG_CHI_TIET_FLAT).select('id_hang_hoa,phan_loai'),
+      params.scope
+    ).range(from, to);
     if (params.filterStatus?.length) q = q.in('trang_thai', params.filterStatus);
     if (params.filterSupplier?.length) {
       const nums = params.filterSupplier.map(Number).filter((n) => !Number.isNaN(n));
