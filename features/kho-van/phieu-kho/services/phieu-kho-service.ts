@@ -13,6 +13,8 @@ import {
   deletePhieuKhoManyDb,
   getPhieuKhoByDoiTacDb,
   getPhieuKhoByDonDatHangDb,
+  getDaNhapTheoDonDatHangDb,
+  getDongDonDatHangDb,
   getChiTietPhieuKhoAllDb,
   getLichSuNhapXuatByHangHoaDb,
   getLichSuNhapXuatByKhoDb,
@@ -41,6 +43,8 @@ export const deletePhieuKho = deletePhieuKhoDb;
 export const deletePhieuKhoMany = deletePhieuKhoManyDb;
 export const getPhieuKhoByDoiTac = getPhieuKhoByDoiTacDb;
 export const getPhieuKhoByDonDatHang = getPhieuKhoByDonDatHangDb;
+export const getDaNhapTheoDonDatHang = getDaNhapTheoDonDatHangDb;
+export const getDongDonDatHang = getDongDonDatHangDb;
 export const getChiTietPhieuKhoAll = getChiTietPhieuKhoAllDb;
 export const getLichSuNhapXuatByHangHoa = getLichSuNhapXuatByHangHoaDb;
 export const getLichSuNhapXuatByKho = getLichSuNhapXuatByKhoDb;

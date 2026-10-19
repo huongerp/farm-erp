@@ -9,7 +9,7 @@ import Combobox from '../../../../components/ui/Combobox';
 import type { DonDatHang, DonDatHangTrangThai } from '../core/types';
 import { TRANG_THAI_CHO_DUYET, TRANG_THAI_DA_XAC_NHAN, TRANG_THAI_HUY } from '../core/types';
 import { TRANG_THAI_KEY, TRANG_THAI_DON_DAT_HANG, STATUS_VARIANTS } from '../core/constants';
-import { formatDateTimeShort } from '../../../../lib/utils';
+import { formatDateTimeShort, formatNumberVN } from '../../../../lib/utils';
 import { cn } from '../../../../lib/utils';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
 import DetailToolbar, { type DetailToolbarAction } from '../../../../components/shared/DetailToolbar';
@@ -19,6 +19,8 @@ import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
 import GenericSubTableSection from '../../../../components/shared/GenericSubTableSection';
 import ThuChiLienQuanSection from '../../../tai-chinh/thu-chi-quy/components/shared/ThuChiLienQuanSection';
 import PhieuNhapTheoDonSection from '../../../kho-van/phieu-kho/components/shared/PhieuNhapTheoDonSection';
+import { useDaNhapTheoDonDatHang } from '../../../kho-van/phieu-kho/hooks/use-phieu-kho';
+import { conHangChuaDu, tinhConLai } from '../../../../lib/thuc-hien-tung-phan';
 
 const PREVIEW_BASE = '/mua-hang/don-dat-hang/preview';
 
@@ -50,6 +52,18 @@ interface Props {
   /** > 0 khi mở chồng lên drawer khác (vd. section đơn hàng trong drawer phiếu đề xuất vật tư). */
   stackLevel?: number;
 }
+
+/** Ô "Đã nhập / Đặt" theo hàng (hàng lặp nhiều dòng thì là tổng theo hàng). */
+const DaNhapCell: React.FC<{ r?: { da_thuc_hien: number; so_luong_nguon: number; con_lai: number } }> = ({ r }) => (
+  <td
+    className={cn(
+      'px-4 py-2.5 tabular-nums text-right text-xs font-medium whitespace-nowrap',
+      !r ? 'text-muted-foreground' : r.con_lai <= 0 ? 'text-emerald-600 dark:text-emerald-400' : r.da_thuc_hien > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'
+    )}
+  >
+    {r ? `${formatNumberVN(r.da_thuc_hien)}/${formatNumberVN(r.so_luong_nguon)}` : '—'}
+  </td>
+);
 
 const DonDatHangDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onApprove, onChangeStatus, onPrint, onCreatePhieuNhapKho, idChiNhanhKhoNhan, stackLevel = 0 }) => {
   const { t } = useTranslation();
@@ -85,6 +99,14 @@ const DonDatHangDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
 
   const showChangeStatusButton = !!onChangeStatus;
 
+  // Nhập kho từng đợt: chỉ khoá nút khi mọi hàng của đơn đã nhập đủ.
+  const daNhapQuery = useDaNhapTheoDonDatHang(onCreatePhieuNhapKho ? data.id : null);
+  const conLaiTheoHang = useMemo(
+    () => (daNhapQuery.data ? new Map(tinhConLai(data.chi_tiet, daNhapQuery.data).map((r) => [r.id_hang_hoa, r])) : null),
+    [data.chi_tiet, daNhapQuery.data]
+  );
+  const daNhapDu = !!conLaiTheoHang && conLaiTheoHang.size > 0 && !conHangChuaDu([...conLaiTheoHang.values()]);
+
   const toolbarActions: DetailToolbarAction[] = useMemo(
     () => [
       ...(showChangeStatusButton
@@ -114,9 +136,10 @@ const DonDatHangDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
       ...(onCreatePhieuNhapKho
         ? [
             {
-              label: t('donDatHang.detail.toolbar.createPhieuNhapKho'),
+              label: daNhapDu ? t('common.tungPhan.daNhapDu') : t('donDatHang.detail.toolbar.createPhieuNhapKho'),
               icon: <Warehouse size={16} />,
               onClick: () => onCreatePhieuNhapKho(data),
+              disabled: daNhapDu || !conLaiTheoHang,
             },
           ]
         : []),
@@ -130,7 +153,7 @@ const DonDatHangDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
         variant: 'primary' as const,
       },
     ],
-    [showChangeStatusButton, canApprove, data, onPrint, onCreatePhieuNhapKho, t]
+    [showChangeStatusButton, canApprove, conLaiTheoHang, daNhapDu, data, onPrint, onCreatePhieuNhapKho, t]
   );
 
   const statusLabel = t(`donDatHang.status.${TRANG_THAI_KEY[data.trang_thai as keyof typeof TRANG_THAI_KEY] ?? 'draft'}`);
@@ -208,6 +231,9 @@ const DonDatHangDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[260px]">{t('donDatHang.form.item')} (tên)</th>
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[88px]">{t('donDatHang.form.unit')}</th>
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[100px]">{t('donDatHang.form.quantity')}</th>
+                  {conLaiTheoHang && (
+                    <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[96px] text-right">{t('common.tungPhan.daNhap')}</th>
+                  )}
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[104px]">{t('donDatHang.form.unitPrice')}</th>
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[116px]">Thành tiền</th>
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[200px]">{t('donDatHang.chiTietTab.purposeOfUseCol')}</th>
@@ -225,6 +251,7 @@ const DonDatHangDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
                     <td className="px-4 py-2.5 text-sm min-w-[12rem] max-w-md truncate" title={ct.ten_hang ?? ''}>{ct.ten_hang ?? '—'}</td>
                     <td className="px-4 py-2.5 text-xs text-muted-foreground">{ct.don_vi_tinh ?? '—'}</td>
                     <td className="px-4 py-2.5 tabular-nums text-sm">{ct.so_luong}</td>
+                    {conLaiTheoHang && <DaNhapCell r={conLaiTheoHang.get(String(ct.id_hang_hoa))} />}
                     <td className="px-4 py-2.5 tabular-nums text-right text-sm">{ct.don_gia != null ? ct.don_gia.toLocaleString('vi-VN') : '—'}</td>
                     <td className="px-4 py-2.5 tabular-nums text-right font-medium text-sm">{ct.thanh_tien != null ? ct.thanh_tien.toLocaleString('vi-VN') : '—'}</td>
                     <td className="px-4 py-2.5 text-xs text-muted-foreground max-w-xs truncate" title={ct.muc_dich_su_dung ?? ''}>
@@ -241,7 +268,7 @@ const DonDatHangDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
         <PhieuNhapTheoDonSection
           idDonDatHang={data.id}
           chiTietDon={data.chi_tiet}
-          onAdd={onCreatePhieuNhapKho ? () => onCreatePhieuNhapKho(data) : undefined}
+          onAdd={onCreatePhieuNhapKho && !daNhapDu ? () => onCreatePhieuNhapKho(data) : undefined}
           stackLevel={stackLevel + 1}
         />
 

@@ -16,7 +16,8 @@ import type { Kho } from '../../../kho-van/danh-sach-kho/core/types';
 import type { FarmHangHoa } from '../../hang-hoa-phan-thuoc/core/types';
 import { useCreatePhieuKhoPT, useUpdatePhieuKhoPT } from '../hooks/use-phieu-kho-pt';
 import { usePhieuKhoPTCapCao } from '../hooks/use-phieu-kho-pt-cap-cao';
-import { getNextSoPhieuFarmPt } from '../services/phieu-kho-pt-service';
+import { getDaNhapTheoDeXuat, getDongDeXuat, getNextSoPhieuFarmPt } from '../services/phieu-kho-pt-service';
+import { moTaDongVuot, timDongVuot } from '../../../../lib/thuc-hien-tung-phan';
 import { useFarmHangHoaList } from '../../hang-hoa-phan-thuoc/hooks/use-farm-hang-hoa';
 import { useFarmTonKhoPTTheoKho } from '../../ton-kho-phan-thuoc/hooks/use-farm-ton-kho-pt';
 import { buildTonMap, laDuoiDinhMuc, phieuDelta, tonSauPhieu, type TonMap } from '../utils/ton-kho-check';
@@ -43,11 +44,19 @@ interface Props {
   onClose: () => void;
   onRequestAddKho?: () => Promise<Kho | null>;
   onRequestAddHangHoa?: () => Promise<FarmHangHoa | null>;
+  /** Tầng drawer khi mở chồng lên drawer khác (vd sửa phiếu từ drawer Đề xuất mua hàng). */
+  stackLevel?: number;
 }
 
 // Ngày theo múi giờ công ty — toISOString() là UTC, trước 7h sáng ra ngày hôm qua mà người
 // thường không tự sửa được (ô ngày khoá, chỉ cấp cao đổi).
 const today = () => getTodayISO();
+
+/**
+ * Mặc định ổn định khi danh mục hàng hoá chưa tải xong: `= []` tạo mảng mới mỗi render → hangHoaMap
+ * mới → effect reset chạy lại → useWatch setState → lặp vô hạn ("Maximum update depth exceeded").
+ */
+const HANG_HOA_RONG: FarmHangHoa[] = [];
 
 const LOAI_OPTIONS: { value: LoaiPhieuKhoPT; labelKey: string }[] = [
   { value: 'nhập', labelKey: 'phieuKhoPhanThuoc.tabs.nhap' },
@@ -55,7 +64,16 @@ const LOAI_OPTIONS: { value: LoaiPhieuKhoPT; labelKey: string }[] = [
   { value: 'chuyển', labelKey: 'phieuKhoPhanThuoc.tabs.chuyen' },
 ];
 
-const PhieuKhoPTForm: React.FC<Props> = ({ khoList, khoDenList, initialData, prefillValues, onClose, onRequestAddKho, onRequestAddHangHoa }) => {
+const PhieuKhoPTForm: React.FC<Props> = ({
+  khoList,
+  khoDenList,
+  initialData,
+  prefillValues,
+  onClose,
+  onRequestAddKho,
+  onRequestAddHangHoa,
+  stackLevel,
+}) => {
   const bt = useKhoBienThe();
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
@@ -64,7 +82,7 @@ const PhieuKhoPTForm: React.FC<Props> = ({ khoList, khoDenList, initialData, pre
   const updateMutation = useUpdatePhieuKhoPT(onClose);
   // Chỉ cấp cao đổi được ngày phiếu (trigger DB chặn cả khi sửa); người khác tạo mới luôn ngày hôm nay.
   const capCao = usePhieuKhoPTCapCao();
-  const { data: hangHoaList = [], isLoading: isLoadingHangHoa, isError: isErrorHangHoa } = useFarmHangHoaList();
+  const { data: hangHoaList = HANG_HOA_RONG, isLoading: isLoadingHangHoa, isError: isErrorHangHoa } = useFarmHangHoaList();
 
   // Giữ nguyên tham chiếu suốt vòng đời form để effect reset không chạy lại mỗi lần render.
   const defaultValues = useMemo<Partial<PhieuKhoPTFormValues>>(
@@ -215,6 +233,9 @@ const PhieuKhoPTForm: React.FC<Props> = ({ khoList, khoDenList, initialData, pre
         mo_ta: initialData.mo_ta ?? '',
         trang_thai: initialData.trang_thai,
         nguoi_tao_id: initialData.nguoi_tao_id ?? null,
+        // Giữ liên kết đề xuất khi sửa — thiếu thì lưu xong phiếu mất liên kết, số "đã nhập" sai.
+        id_de_xuat_mua_hang: initialData.id_de_xuat_mua_hang ?? null,
+        so_phieu_de_xuat: initialData.so_phieu_de_xuat ?? null,
         chi_tiet: (initialData.chi_tiet ?? []).map((ct) => ({
           id_hang_hoa: ct.id_hang_hoa,
           so_luong: ct.so_luong,
@@ -268,6 +289,33 @@ const PhieuKhoPTForm: React.FC<Props> = ({ khoList, khoDenList, initialData, pre
       toast.error(t('phieuKhoPhanThuoc.validation.atLeastOneItem'));
       return;
     }
+    // Nhập kho từng phần theo đề xuất: tổng các phiếu nhập không vượt số lượng đề xuất.
+    const idDeXuat = data.id_de_xuat_mua_hang ?? prefillValues?.id_de_xuat_mua_hang ?? null;
+    if (idDeXuat && data.loai === 'nhập') {
+      try {
+        const [nguon, daNhapKhac] = await Promise.all([
+          getDongDeXuat(bt, idDeXuat),
+          getDaNhapTheoDeXuat(bt, idDeXuat, isEdit ? initialData?.id : null),
+        ]);
+        const vuot = timDongVuot(nguon, daNhapKhac, validChiTiet, isEdit ? initialData?.chi_tiet : null);
+        if (vuot.length > 0) {
+          const tenHang = (id: string) => hangHoaList.find((h) => String(h.id) === id)?.ten_hang ?? '';
+          toast.error(
+            t('common.tungPhan.vuotSoLuong', {
+              soPhieu: data.so_phieu_de_xuat ?? prefillValues?.so_phieu_de_xuat ?? '',
+              chiTiet: moTaDongVuot(vuot, tenHang, (ten, toiDa) =>
+                t('common.tungPhan.vuotDong', { ten, toiDa: formatNumberVN(toiDa) })
+              ),
+            }),
+            { duration: 8000 }
+          );
+          return;
+        }
+      } catch {
+        toast.error(t('common.tungPhan.khongKiemTraDuoc'));
+        return;
+      }
+    }
     let soPhieu = data.so_phieu?.trim() ?? '';
     if (!isEdit) {
       try {
@@ -320,6 +368,7 @@ const PhieuKhoPTForm: React.FC<Props> = ({ khoList, khoDenList, initialData, pre
       icon={<FileText size={20} />}
       onClose={onClose}
       isDirty={isDirty}
+      stackLevel={stackLevel}
       footer={
         <FormDrawerFooter
           formId="phieu-kho-pt-form"

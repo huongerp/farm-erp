@@ -25,9 +25,7 @@ import { TRANG_THAI_KEY, STATUS_VARIANTS } from '../core/constants';
 import ChiTietDonDatHangToolbar from './ChiTietDonDatHangToolbar';
 import DonDatHangDetail from './DonDatHangDetail';
 import DonDatHangForm from './DonDatHangForm';
-import PhieuKhoForm from '../../../kho-van/phieu-kho/components/PhieuKhoForm';
-import type { PhieuKhoFormValues } from '../../../kho-van/phieu-kho/core/schema';
-import type { DonDatHangSoPoOption } from '../services/don-dat-hang-db.service';
+import TaoPhieuNhapTuDon from './TaoPhieuNhapTuDon';
 import EmptyState from '../../../../components/shared/EmptyState';
 import ListPageSkeleton from '../../../../components/shared/ListPageSkeleton';
 import TablePaginationFooter from '../../../../components/shared/TablePaginationFooter';
@@ -592,40 +590,9 @@ const ChiTietDonDatHangTab: React.FC = () => {
       )}
 
       <AnimatePresence>
-        {createPhieuNhapFrom && (() => {
-          const don = createPhieuNhapFrom;
-          const donOpt: DonDatHangSoPoOption = {
-            id: don.id,
-            so_po: don.so_po,
-            ngay: (don.ngay_dat ?? '').slice(0, 10),
-          };
-          const prefill: Partial<PhieuKhoFormValues> = {
-            id_don_dat_hang: don.id,
-            ngay: (don.ngay_dat ?? '').slice(0, 10),
-            kho_id: don.id_kho_nhan ?? '',
-            id_nha_cung_cap: don.id_nha_cung_cap ?? null,
-            mo_ta: don.so_po ? `Nhập theo đơn ${don.so_po}` : undefined,
-            chi_tiet: (don.chi_tiet ?? [])
-              .filter((c) => c.id_hang_hoa?.trim() && Number(c.so_luong) > 0)
-              .map((c) => ({
-                id_hang_hoa: c.id_hang_hoa,
-                so_luong: c.so_luong,
-                don_gia: c.don_gia,
-                so_lot: '',
-                ghi_chu: c.ghi_chu ?? '',
-              })),
-          };
-          return (
-            <PhieuKhoForm
-              key={`phieu-nhap-from-ddh-ct-${don.id}`}
-              loai="nhap"
-              khoList={khoList}
-              prefillValues={prefill}
-              donDatHangExtraOptions={[donOpt]}
-              onClose={() => setCreatePhieuNhapFrom(null)}
-            />
-          );
-        })()}
+        {createPhieuNhapFrom && (
+          <TaoPhieuNhapTuDon don={createPhieuNhapFrom} khoList={khoList} onClose={() => setCreatePhieuNhapFrom(null)} />
+        )}
       </AnimatePresence>
 
       <AnimatePresence>

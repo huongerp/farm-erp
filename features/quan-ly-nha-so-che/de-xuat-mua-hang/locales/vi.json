@@ -210,6 +210,5 @@
   "deXuatMuaHang.exportChiTiet.idHangHoa": "ID hàng hóa",
   "deXuatMuaHang.exportChiTiet.idTienDoMh": "ID tiến độ mh",
   "deXuatMuaHang.exportChiTiet.traoDoi": "Trao đổi",
-  "deXuatMuaHang.detail.phieuKhoAlreadyCreated": "Đã tạo phiếu kho {{soPhieu}}",
   "deXuatMuaHang.validation.lineIncomplete": "Dòng {{rows}} chưa đủ: cần chọn hàng hoá và nhập số lượng > 0 (hoặc xoá dòng)."
 }

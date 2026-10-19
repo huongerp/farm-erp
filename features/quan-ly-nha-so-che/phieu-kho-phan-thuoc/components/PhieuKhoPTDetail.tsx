@@ -55,6 +55,8 @@ interface Props {
   onDelete?: (id: string) => void;
   onCopy?: (item: PhieuKhoPT) => void;
   canApprove?: boolean;
+  /** Tầng drawer khi mở chồng lên drawer khác (vd từ drawer Đề xuất mua hàng). */
+  stackLevel?: number;
 }
 
 function loaiLabel(loai: LoaiPhieuKhoPT, t: (k: string) => string): string {
@@ -63,7 +65,7 @@ function loaiLabel(loai: LoaiPhieuKhoPT, t: (k: string) => string): string {
   return t('phieuKhoPhanThuoc.tabs.chuyen');
 }
 
-const PhieuKhoPTDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onCopy, canApprove = true }) => {
+const PhieuKhoPTDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onCopy, canApprove = true, stackLevel }) => {
   const bt = useKhoBienThe();
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
@@ -243,6 +245,7 @@ const PhieuKhoPTDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
       onClose={onClose}
       footer={renderFooter}
       maxWidthClass={DRAWER_WIDTH_DETAIL}
+      stackLevel={stackLevel}
     >
       <div className="space-y-5">
         <div className="bg-card p-4 rounded-xl border border-border/50 shadow-sm flex items-center gap-4">

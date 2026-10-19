@@ -25,6 +25,21 @@
       "autoPort": true
     },
     {
+      "name": "dev-auth-3011",
+      "runtimeExecutable": "env",
+      "runtimeArgs": [
+        "DEV_AUTH_PROXY_TARGET=http://127.0.0.1:3011",
+        "npm",
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "3006",
+        "--strictPort"
+      ],
+      "port": 3006
+    },
+    {
       "name": "preview",
       "runtimeExecutable": "npm",
       "runtimeArgs": [

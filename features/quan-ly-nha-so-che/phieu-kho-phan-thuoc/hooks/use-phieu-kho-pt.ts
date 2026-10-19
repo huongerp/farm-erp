@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import {
   getPhieuKhoPTById,
   getPhieuKhoPTByDeXuatIds,
+  getDaNhapTheoDeXuat,
   getPhieuKhoPTPage,
   getChiTietPhieuKhoPTPage,
   createPhieuKhoPT,
@@ -39,6 +40,20 @@ export const usePhieuKhoPTByDeXuat = (deXuatIds: string[]) => {
     queryFn: () => getPhieuKhoPTByDeXuatIds(bt, ids),
     enabled: ids.length > 0,
     staleTime: 1000 * 60 * 2,
+  });
+};
+
+/**
+ * Số lượng đã nhập theo hàng của một đề xuất (nhập kho từng phần). Key nằm dưới 'byDeXuat' để
+ * mọi chỗ đang làm mới badge "Đã tạo phiếu kho" cũng làm mới số này.
+ */
+export const useDaNhapTheoDeXuat = (idDeXuat: string | undefined) => {
+  const bt = useKhoBienThe();
+  return useQuery({
+    queryKey: [...QUERY_KEY, 'byDeXuat', 'daNhap', idDeXuat, bt.key] as const,
+    queryFn: () => getDaNhapTheoDeXuat(bt, idDeXuat!),
+    enabled: !!idDeXuat,
+    staleTime: 1000 * 30,
   });
 };
 
@@ -135,6 +150,7 @@ export const useUpdatePhieuKhoPT = (onSuccess?: () => void) => {
       updatePhieuKhoPT(bt, id, data, capCao),
     onSuccess: (result) => {
       qc.setQueryData([...QUERY_KEY, result.phieu.id, bt.key], result.phieu);
+      qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'byDeXuat'] });
       qc.invalidateQueries({ queryKey: QUERY_KEY_CHI_TIET });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY_CHI_TIET, 'paged'] });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
@@ -188,6 +204,8 @@ export const useUpdatePhieuKhoPTTrangThai = (onSuccess?: () => void) => {
         ten_nguoi_duyet_hien_thi,
       }),
     onSuccess: async (_void, { id }) => {
+      // Không duyệt / duyệt lại làm đổi số "đã nhập" theo đề xuất.
+      qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'byDeXuat'] });
       qc.invalidateQueries({ queryKey: QUERY_KEY_CHI_TIET });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY_CHI_TIET, 'paged'] });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
@@ -235,6 +253,7 @@ export const useUpdatePhieuKhoPTTrangThaiMany = (onSuccess?: () => void) => {
       }),
     onSuccess: (result, { ids }) => {
       result.okIds.forEach((id) => qc.removeQueries({ queryKey: [...QUERY_KEY, id] }));
+      qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'byDeXuat'] });
       qc.invalidateQueries({ queryKey: QUERY_KEY_CHI_TIET });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY_CHI_TIET, 'paged'] });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });

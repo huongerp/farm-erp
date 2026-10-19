@@ -4,6 +4,7 @@ import {
   getDonDatHangPage,
   getChiTietDonDatHangPage,
   getDonDatHangById,
+  getDaDatTheoPhieuDeXuat,
   getDonDatHangByPhieuDeXuat,
   createDonDatHang,
   updateDonDatHang,
@@ -105,6 +106,17 @@ export const useDonDatHangByPhieuDeXuat = (
     enabled: !!idPhieuDeXuat && !scopeLoading,
     staleTime: 1000 * 60 * 2,
     select: (list) => list.filter((don) => donDatHangTrongPhamVi(don, scope)),
+  });
+};
+
+/** Số lượng đã đặt theo hàng của một phiếu đề xuất vật tư (đặt hàng từng phần) — key dưới
+ * byPhieuDeXuat để mọi mutation đơn đặt hàng cũng làm mới số này. */
+export const useDaDatTheoPhieuDeXuat = (idPhieuDeXuat: string | null | undefined) => {
+  return useQuery({
+    queryKey: [...BY_PHIEU_DE_XUAT_QUERY_KEY, 'daDat', idPhieuDeXuat],
+    queryFn: () => getDaDatTheoPhieuDeXuat(idPhieuDeXuat!),
+    enabled: !!idPhieuDeXuat,
+    staleTime: 1000 * 30,
   });
 };
 

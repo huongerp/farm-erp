@@ -10,8 +10,10 @@ import Combobox from '../../../../components/ui/Combobox';
 import NumberInput from '../../../../components/ui/NumberInput';
 import Button from '../../../../components/ui/Button';
 import { DonDatHangFormValues, getDonDatHangSchema, type DonDatHangChiTietFormItem } from '../core/schema';
-import { mapPhieuDeXuatChiTietToDonDatHangLines } from '../core/don-dat-hang-to-form-values';
-import type { DonDatHang } from '../core/types';
+import { mapDongChonToDonDatHangLines, mapPhieuDeXuatChiTietToDonDatHangLines } from '../core/don-dat-hang-to-form-values';
+import { getDaDatTheoPhieuDeXuat, getDongPhieuDeXuatVatTu } from '../services/don-dat-hang-service';
+import { moTaDongVuot, timDongVuot, tinhConLai } from '../../../../lib/thuc-hien-tung-phan';
+import { TRANG_THAI_HUY, type DonDatHang } from '../core/types';
 import type { Kho } from '../../../kho-van/danh-sach-kho/core/types';
 import type { EmployeeRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
 import type { DoiTacRefLite } from '../../../kho-van/danh-sach-doi-tac/services/doi-tac-service';
@@ -395,7 +397,20 @@ const DonDatHangForm: React.FC<Props> = ({
       setValue('ghi_chu', phieuGhiChu);
     }
     if (phieuForAutoFill.chi_tiet?.length) {
-      replace(mapPhieuDeXuatChiTietToDonDatHangLines(phieuForAutoFill.chi_tiet));
+      // Đặt hàng từng phần: chỉ điền phần CÒN LẠI (trừ các đơn khác đã lập từ phiếu, bỏ đơn Hủy).
+      const phieu = phieuForAutoFill;
+      getDaDatTheoPhieuDeXuat(phieu.id)
+        .then((daDat) => {
+          if (appliedPhieuIdRef.current !== phieu.id) return;
+          const conLai = tinhConLai(phieu.chi_tiet, daDat)
+            .filter((r) => r.con_lai > 0)
+            .map((r) => ({ id_hang_hoa: r.id_hang_hoa, so_luong: r.con_lai }));
+          replace(mapDongChonToDonDatHangLines(phieu.chi_tiet, conLai));
+        })
+        .catch(() => {
+          // Không đọc được số đã đặt → điền đủ, lúc lưu vẫn bị chặn nếu vượt.
+          if (appliedPhieuIdRef.current === phieu.id) replace(mapPhieuDeXuatChiTietToDonDatHangLines(phieu.chi_tiet));
+        });
     }
   }, [phieuForAutoFill, replace, setValue]);
 
@@ -440,13 +455,40 @@ const DonDatHangForm: React.FC<Props> = ({
     }
   }, [initialData, reset, isDirty]);
 
-  const onSubmit: SubmitHandler<DonDatHangFormValues> = (data) => {
+  const onSubmit: SubmitHandler<DonDatHangFormValues> = async (data) => {
     const validChiTiet = (data.chi_tiet ?? []).filter(
       (c) => c.id_hang_hoa?.trim() && Number(c.so_luong) > 0
     );
     if (validChiTiet.length === 0) {
       toast.error(t('donDatHang.validation.atLeastOneItem'));
       return;
+    }
+    // Đặt hàng từng phần theo phiếu đề xuất: tổng các đơn (trừ đơn Hủy) không vượt SL đề xuất.
+    const idPhieuDeXuat = data.id_phieu_de_xuat_vat_tu ? String(data.id_phieu_de_xuat_vat_tu) : null;
+    if (idPhieuDeXuat && data.trang_thai !== TRANG_THAI_HUY) {
+      try {
+        const [nguon, daDatKhac] = await Promise.all([
+          getDongPhieuDeXuatVatTu(idPhieuDeXuat),
+          getDaDatTheoPhieuDeXuat(idPhieuDeXuat, isEdit ? initialData?.id : null),
+        ]);
+        const vuot = timDongVuot(nguon, daDatKhac, validChiTiet, isEdit ? initialData?.chi_tiet : null);
+        if (vuot.length > 0) {
+          const soPhieu = phieuDeXuatList.find((p) => String(p.id) === idPhieuDeXuat)?.so_phieu ?? `#${idPhieuDeXuat}`;
+          toast.error(
+            t('common.tungPhan.vuotSoLuong', {
+              soPhieu,
+              chiTiet: moTaDongVuot(vuot, (id) => hangHoaMap[id]?.ten_hang ?? '', (ten, toiDa) =>
+                t('common.tungPhan.vuotDong', { ten, toiDa: formatNumberVN(toiDa) })
+              ),
+            }),
+            { duration: 8000 }
+          );
+          return;
+        }
+      } catch {
+        toast.error(t('common.tungPhan.khongKiemTraDuoc'));
+        return;
+      }
     }
     const sanitized: DonDatHangFormValues = {
       ...data,

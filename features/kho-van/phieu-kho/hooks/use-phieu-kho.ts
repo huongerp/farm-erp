@@ -4,6 +4,7 @@ import {
   getAllPhieuKho,
   getPhieuKhoById,
   getPhieuKhoByDonDatHang,
+  getDaNhapTheoDonDatHang,
   getPhieuKhoPage,
   getChiTietPhieuKhoPage,
   createPhieuKho,
@@ -97,6 +98,17 @@ export const usePhieuKhoByDonDatHang = (idDonDatHang: string | null) => {
     queryFn: () => getPhieuKhoByDonDatHang(idDonDatHang!),
     enabled: !!idDonDatHang,
     staleTime: 1000 * 60 * 2,
+  });
+};
+
+/** Số lượng đã nhập theo hàng của một đơn đặt hàng (nhập từng phần) — key dưới byDonDatHang để
+ * mọi mutation phiếu kho đang làm mới danh sách phiếu theo đơn cũng làm mới số này. */
+export const useDaNhapTheoDonDatHang = (idDonDatHang: string | null | undefined) => {
+  return useQuery({
+    queryKey: [...QUERY_KEY_BY_DON, 'daNhap', idDonDatHang],
+    queryFn: () => getDaNhapTheoDonDatHang(idDonDatHang!),
+    enabled: !!idDonDatHang,
+    staleTime: 1000 * 30,
   });
 };
 

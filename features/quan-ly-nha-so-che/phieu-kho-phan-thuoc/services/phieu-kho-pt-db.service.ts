@@ -13,6 +13,7 @@ import type {
 } from '../core/types';
 import type { PhieuKhoPTFormValues } from '../core/schema';
 import { trangThaiSauKhiSua } from '../core/quyen-sua-phieu';
+import { TRANG_THAI_PT_KHONG_DUYET } from '../core/constants';
 import i18n from '../../../../lib/i18n';
 import { getKhoRef } from '../../../kho-van/danh-sach-kho/services/kho-service';
 import { getAllFarmHangHoa } from '../../hang-hoa-phan-thuoc/services/farm-hang-hoa-service';
@@ -285,23 +286,69 @@ export async function getPhieuKhoPTByIdDb(bt: KhoBienThe, id: string): Promise<P
   return phieu;
 }
 
-/** Phiếu kho đã sinh ra từ một đề xuất mua hàng (badge + chặn tạo trùng ở module Đề xuất). */
-export type PhieuKhoPTByDeXuat = { id: string; so_phieu: string; loai: LoaiPhieuKhoPT; id_de_xuat_mua_hang: string };
-
-export async function getPhieuKhoPTByDeXuatIdsDb(bt: KhoBienThe, deXuatIds: string[]): Promise<PhieuKhoPTByDeXuat[]> {
+/**
+ * Phiếu kho đã sinh ra từ các đề xuất mua hàng (section "Phiếu kho liên quan" trong drawer Đề xuất).
+ * Đọc view summary để có sẵn tên kho, tổng số lượng — không phải tra thêm bảng con.
+ */
+export async function getPhieuKhoPTByDeXuatIdsDb(bt: KhoBienThe, deXuatIds: string[]): Promise<PhieuKhoPT[]> {
   const numIds = [...new Set(deXuatIds.map((s) => Number(s)).filter((n) => !Number.isNaN(n)))];
   if (numIds.length === 0) return [];
   const { data, error } = await db
-    .from(bt.bang.phieuKho)
-    .select('id, so_phieu, loai, id_de_xuat_mua_hang')
+    .from(bt.view.phieuKhoSummary)
+    .select(PHIEU_PT_SUMMARY_SELECT)
     .in('id_de_xuat_mua_hang', numIds)
+    .order('ngay', { ascending: true })
     .order('id', { ascending: true });
   if (error) throwDbError(error);
-  return ((data ?? []) as { id: number; so_phieu: string | null; loai: string; id_de_xuat_mua_hang: number }[]).map((r) => ({
-    id: String(r.id),
-    so_phieu: r.so_phieu ?? '',
-    loai: r.loai as LoaiPhieuKhoPT,
-    id_de_xuat_mua_hang: String(r.id_de_xuat_mua_hang),
+  return ((data ?? []) as PhieuKhoPTSummaryRow[]).map(mapPhieuKhoPTSummaryRowToPhieu);
+}
+
+/**
+ * Số lượng ĐÃ NHẬP theo đề xuất (nhập kho từng phần): dòng của mọi phiếu NHẬP trỏ về đề xuất,
+ * trừ phiếu "Không duyệt" — phiếu chờ duyệt vẫn giữ chỗ để hai người không nhập trùng phần còn lại.
+ * `boQuaPhieuId`: phiếu đang sửa, không tính vào "đã nhập" của chính nó.
+ */
+export async function getDaNhapTheoDeXuatDb(
+  bt: KhoBienThe,
+  idDeXuat: string,
+  boQuaPhieuId?: string | null
+): Promise<{ id_hang_hoa: string; so_luong: number }[]> {
+  const idNum = Number(idDeXuat);
+  if (!idDeXuat || Number.isNaN(idNum)) return [];
+  let q = db
+    .from(bt.bang.phieuKho)
+    .select('id')
+    .eq('id_de_xuat_mua_hang', idNum)
+    .eq('loai', 'nhập')
+    .neq('trang_thai', TRANG_THAI_PT_KHONG_DUYET);
+  if (boQuaPhieuId && !Number.isNaN(Number(boQuaPhieuId))) q = q.neq('id', Number(boQuaPhieuId));
+  const { data: phieu, error } = await q;
+  if (error) throwDbError(error);
+  const ids = ((phieu ?? []) as { id: number }[]).map((p) => p.id);
+  if (ids.length === 0) return [];
+  const { data: lines, error: errCt } = await db
+    .from(bt.bang.phieuKhoChiTiet)
+    .select('id_hang_hoa, so_luong')
+    .in('id_phieu_kho', ids);
+  if (errCt) throwDbError(errCt);
+  return ((lines ?? []) as { id_hang_hoa: number; so_luong: number | string }[]).map((l) => ({
+    id_hang_hoa: String(l.id_hang_hoa),
+    so_luong: Number(l.so_luong) || 0,
+  }));
+}
+
+/** Dòng hàng (đã gộp cả dòng trùng) của đề xuất — nguồn để chặn phiếu nhập vượt số lượng. */
+export async function getDongDeXuatDb(bt: KhoBienThe, idDeXuat: string): Promise<{ id_hang_hoa: string; so_luong: number }[]> {
+  const idNum = Number(idDeXuat);
+  if (!idDeXuat || Number.isNaN(idNum)) return [];
+  const { data, error } = await db
+    .from(bt.bang.deXuatChiTiet)
+    .select('id_hang_hoa, so_luong')
+    .eq('id_de_xuat_mua_hang', idNum);
+  if (error) throwDbError(error);
+  return ((data ?? []) as { id_hang_hoa: number; so_luong: number | string }[]).map((l) => ({
+    id_hang_hoa: String(l.id_hang_hoa),
+    so_luong: Number(l.so_luong) || 0,
   }));
 }
 

@@ -7,6 +7,7 @@ import { db, fetchAllRows, fetchTablePage, type PaginatedTableResult, throwDbErr
 import type { PhieuKho, PhieuKhoChiTiet, LoaiPhieuKho, ChiTietPhieuKhoFlat, TrangThaiPhieuKho } from '../core/types';
 import { filterPhieuKhoChiTietForSave, type PhieuKhoFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
+import { TRANG_THAI_KHONG_DUYET } from '../core/constants';
 
 /** Dòng lịch sử nhập/xuất/chuyển theo hàng hóa. */
 export interface LichSuNhapXuatRow {
@@ -704,6 +705,48 @@ export async function getPhieuKhoByDonDatHangDb(idDonDatHang: string): Promise<P
   if (error) throwDbError(error);
   const rows = (data ?? []) as PhieuKhoSummaryRow[];
   return rows.map((row) => mapPhieuKhoSummaryRowToPhieu(row));
+}
+
+type DongSoLuongDb = { id_hang_hoa: number; so_luong: number | string };
+const toDongSoLuong = (rows: unknown) =>
+  ((rows ?? []) as DongSoLuongDb[]).map((l) => ({ id_hang_hoa: String(l.id_hang_hoa), so_luong: Number(l.so_luong) || 0 }));
+
+/**
+ * Số lượng ĐÃ NHẬP theo đơn đặt hàng (nhập kho từng phần): dòng của mọi phiếu nhập trỏ về đơn,
+ * trừ phiếu "Không duyệt". `boQuaPhieuId`: phiếu đang sửa, không tính vào chính nó.
+ */
+export async function getDaNhapTheoDonDatHangDb(
+  idDonDatHang: string,
+  boQuaPhieuId?: string | null
+): Promise<{ id_hang_hoa: string; so_luong: number }[]> {
+  const idNum = Number(idDonDatHang);
+  if (!idDonDatHang || Number.isNaN(idNum)) return [];
+  let q = db
+    .from(TABLE_PHIEU)
+    .select('id')
+    .eq('id_don_dat_hang', idNum)
+    .eq('loai', 'nhập')
+    .neq('trang_thai', TRANG_THAI_KHONG_DUYET);
+  if (boQuaPhieuId && !Number.isNaN(Number(boQuaPhieuId))) q = q.neq('id', Number(boQuaPhieuId));
+  const { data: phieu, error } = await q;
+  if (error) throwDbError(error);
+  const ids = ((phieu ?? []) as { id: number }[]).map((p) => p.id);
+  if (ids.length === 0) return [];
+  const { data, error: errCt } = await db.from(TABLE_CHI_TIET).select('id_hang_hoa, so_luong').in('id_phieu_kho', ids);
+  if (errCt) throwDbError(errCt);
+  return toDongSoLuong(data);
+}
+
+/** Dòng hàng của đơn đặt hàng — nguồn để chặn phiếu nhập vượt số lượng đặt. */
+export async function getDongDonDatHangDb(idDonDatHang: string): Promise<{ id_hang_hoa: string; so_luong: number }[]> {
+  const idNum = Number(idDonDatHang);
+  if (!idDonDatHang || Number.isNaN(idNum)) return [];
+  const { data, error } = await db
+    .from('fp_mh_don_dat_hang_chi_tiet')
+    .select('id_hang_hoa, so_luong')
+    .eq('id_don_dat_hang', idNum);
+  if (error) throwDbError(error);
+  return toDongSoLuong(data);
 }
 
 /** Cache một lần/session — tránh gọi getKhoRef + getDoiTacRef + getEmployeesRef mỗi lần đổi trang chi tiết phiếu. */

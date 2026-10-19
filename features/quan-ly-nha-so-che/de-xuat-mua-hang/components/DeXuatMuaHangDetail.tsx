@@ -7,7 +7,9 @@ import DetailDrawerFooter from '../../../../components/shared/DetailDrawerFooter
 import Textarea from '../../../../components/ui/Textarea';
 import type { DeXuatMuaHang, DeXuatMuaHangChiTiet } from '../core/types';
 import type { TrangThaiDeXuatMuaHang } from '../core/constants';
-import { usePhieuKhoPTByDeXuat } from '../../phieu-kho-phan-thuoc/hooks/use-phieu-kho-pt';
+import { useDaNhapTheoDeXuat } from '../../phieu-kho-phan-thuoc/hooks/use-phieu-kho-pt';
+import PhieuKhoTheoDeXuatSection from '../../phieu-kho-phan-thuoc/components/shared/PhieuKhoTheoDeXuatSection';
+import { conHangChuaDu, tinhConLai } from '../../../../lib/thuc-hien-tung-phan';
 import {
   TRANG_THAI_DA_DUYET,
   TRANG_THAI_DOI_DUYET,
@@ -111,10 +113,14 @@ const DeXuatMuaHangDetail: React.FC<Props> = ({
   const { t } = useTranslation();
   const canApprove = isTrangThaiChoPheDuyet(data.trang_thai) && !!onApprove;
   const daDuyet = data.trang_thai === TRANG_THAI_DA_DUYET;
-  const { data: phieuKhoLienKet = [] } = usePhieuKhoPTByDeXuat(daDuyet ? [data.id] : []);
-  const soPhieuKhoDaTao = phieuKhoLienKet.map((p) => p.so_phieu).filter(Boolean).join(', ');
   const canCreatePhieuKho = daDuyet && !!onCreatePhieuKho;
-  const soPhieuKhoLienKet = phieuKhoLienKet.length;
+  // Nhập kho từng phần: được tạo nhiều phiếu, chỉ khoá nút khi mọi hàng đã nhập đủ số lượng.
+  const daNhapQuery = useDaNhapTheoDeXuat(daDuyet ? data.id : undefined);
+  const conLaiTheoHang = useMemo(
+    () => (daNhapQuery.data ? new Map(tinhConLai(data.chi_tiet, daNhapQuery.data).map((r) => [r.id_hang_hoa, r])) : null),
+    [data.chi_tiet, daNhapQuery.data]
+  );
+  const daNhapDu = !!conLaiTheoHang && conLaiTheoHang.size > 0 && !conHangChuaDu([...conLaiTheoHang.values()]);
   const [showApprovePopup, setShowApprovePopup] = useState(false);
   const [traoDoiDong, setTraoDoiDong] = useState<DeXuatMuaHangChiTiet | null>(null);
   const suaTraoDoi = useSuaTraoDoiChiTiet(() => setTraoDoiDong(null));
@@ -150,10 +156,10 @@ const DeXuatMuaHangDetail: React.FC<Props> = ({
       ...(canCreatePhieuKho
         ? [
             {
-              label: t('deXuatMuaHang.detail.toolbar.createPhieuKho'),
+              label: daNhapDu ? t('common.tungPhan.daNhapDu') : t('deXuatMuaHang.detail.toolbar.createPhieuKho'),
               icon: <PackagePlus size={16} />,
               onClick: () => onCreatePhieuKho?.(data),
-              disabled: soPhieuKhoLienKet > 0,
+              disabled: daNhapDu || !conLaiTheoHang,
             },
           ]
         : []),
@@ -167,7 +173,7 @@ const DeXuatMuaHangDetail: React.FC<Props> = ({
         variant: 'primary' as const,
       },
     ],
-    [bt, canApprove, canCreatePhieuKho, data, onCopy, onClose, onPrint, onCreatePhieuKho, soPhieuKhoLienKet, t, setShowApprovePopup]
+    [bt, canApprove, canCreatePhieuKho, conLaiTheoHang, daNhapDu, data, onCopy, onClose, onPrint, onCreatePhieuKho, t, setShowApprovePopup]
   );
 
   const statusLabel = t(`deXuatMuaHang.status.${trangThaiToI18nKey(data.trang_thai)}`);
@@ -187,6 +193,9 @@ const DeXuatMuaHangDetail: React.FC<Props> = ({
     { id: 'ma_hang', label: t('deXuatMuaHang.form.itemCode'), width: 130, minWidth: 90, mobile: 'hidden' },
     { id: 'so_luong', label: t('deXuatMuaHang.form.quantity'), width: 120, minWidth: 80, align: 'right' },
     { id: 'don_vi_tinh', label: t('deXuatMuaHang.form.unit'), width: 90, minWidth: 56 },
+    ...(conLaiTheoHang
+      ? [{ id: 'da_nhap', label: t('common.tungPhan.daNhap'), width: 110, minWidth: 80, align: 'right' as const }]
+      : []),
     { id: 'tien_do', label: t('deXuatMuaHang.form.tienDoMh'), width: 150, minWidth: 100, mobile: 'badge' },
     { id: 'thong_so', label: t('deXuatMuaHang.form.specs'), width: 220, minWidth: 120, mobile: 'full' },
     { id: 'trao_doi', label: t('common.traoDoi.col'), width: 280, minWidth: 160, mobile: 'full' },
@@ -209,6 +218,21 @@ const DeXuatMuaHangDetail: React.FC<Props> = ({
         return <span className="tabular-nums font-medium">{formatNumberVN(ct.so_luong)}</span>;
       case 'don_vi_tinh':
         return <span className="text-xs text-muted-foreground">{ct.don_vi_tinh ?? '—'}</span>;
+      case 'da_nhap': {
+        // Hàng lặp nhiều dòng thì số đã nhập / SL là tổng theo hàng.
+        const r = conLaiTheoHang?.get(String(ct.id_hang_hoa));
+        if (!r) return <span className="text-xs text-muted-foreground">—</span>;
+        return (
+          <span
+            className={cn(
+              'tabular-nums text-xs font-medium',
+              r.con_lai <= 0 ? 'text-emerald-600 dark:text-emerald-400' : r.da_thuc_hien > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'
+            )}
+          >
+            {formatNumberVN(r.da_thuc_hien)}/{formatNumberVN(r.so_luong_nguon)}
+          </span>
+        );
+      }
       case 'tien_do':
         return ct.ten_tien_do_mh ? (
           <span
@@ -260,11 +284,6 @@ const DeXuatMuaHangDetail: React.FC<Props> = ({
               >
                 {statusLabel}
               </span>
-              {soPhieuKhoDaTao && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20">
-                  {t('deXuatMuaHang.detail.phieuKhoAlreadyCreated', { soPhieu: soPhieuKhoDaTao })}
-                </span>
-              )}
               {showOverdueBadge && (
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30">
                   {t('deXuatMuaHang.overdueWarning')}
@@ -327,6 +346,8 @@ const DeXuatMuaHangDetail: React.FC<Props> = ({
             />
           )}
         </GenericSubTableSection>
+
+        <PhieuKhoTheoDeXuatSection idDeXuat={data.id} />
 
         <ThuChiLienQuanSection
           loaiChungTu={bt.nguonThuChi}

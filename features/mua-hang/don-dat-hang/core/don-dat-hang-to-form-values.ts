@@ -1,6 +1,7 @@
 import type { PhieuDeXuatVatTu, PhieuDeXuatVatTuChiTiet } from '../../../kho-van/phieu-de-xuat-vat-tu/core/types';
 import type { DonDatHang } from './types';
 import type { DonDatHangChiTietFormItem, DonDatHangFormValues } from './schema';
+import { ghepDongChon, type DongDaChon } from '../../../../lib/thuc-hien-tung-phan';
 
 /** Dòng chi tiết đơn đặt hàng từ phiếu đề xuất: Mục đích ← ghi chú dòng phiếu. */
 export function mapPhieuDeXuatChiTietToDonDatHangLines(
@@ -16,13 +17,31 @@ export function mapPhieuDeXuatChiTietToDonDatHangLines(
   }));
 }
 
-/** Điền sẵn đơn đặt hàng mới từ phiếu đề xuất liên kết. */
-export function phieuDeXuatToDonDatHangPrefill(phieu: PhieuDeXuatVatTu): Partial<DonDatHangFormValues> {
+/** Dòng đơn theo lựa chọn đặt từng phần (popup / phần còn lại): SL lần này, mục đích ← ghi chú dòng phiếu. */
+export function mapDongChonToDonDatHangLines(
+  chiTiet: PhieuDeXuatVatTuChiTiet[] | undefined,
+  dongChon: readonly DongDaChon[]
+): DonDatHangChiTietFormItem[] {
+  return mapPhieuDeXuatChiTietToDonDatHangLines(
+    ghepDongChon(chiTiet, dongChon).map(({ dong, so_luong }) => ({ ...dong, so_luong }))
+  );
+}
+
+/**
+ * Điền sẵn đơn đặt hàng mới từ phiếu đề xuất liên kết. `dongChon` (popup chọn hàng): chỉ lấy các
+ * hàng đó với SL lần này; bỏ trống → mọi dòng đủ SL.
+ */
+export function phieuDeXuatToDonDatHangPrefill(
+  phieu: PhieuDeXuatVatTu,
+  dongChon?: readonly DongDaChon[]
+): Partial<DonDatHangFormValues> {
   return {
     id_phieu_de_xuat_vat_tu: phieu.id,
     ngay_giao_dk: phieu.ngay_can,
     ghi_chu: phieu.ghi_chu?.trim() || '',
-    chi_tiet: mapPhieuDeXuatChiTietToDonDatHangLines(phieu.chi_tiet),
+    chi_tiet: dongChon
+      ? mapDongChonToDonDatHangLines(phieu.chi_tiet, dongChon)
+      : mapPhieuDeXuatChiTietToDonDatHangLines(phieu.chi_tiet),
   };
 }
 

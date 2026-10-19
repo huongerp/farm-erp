@@ -75,3 +75,11 @@ describe('deXuatMuaHangToPhieuKhoPTPrefill', () => {
     expect(deXuatMuaHangToPhieuKhoPTPrefill(phieu).chi_tiet).toHaveLength(2);
   });
 });
+
+describe('nhập từng phần theo lựa chọn ở popup', () => {
+  it('chỉ lấy hàng được chọn với SL lần này, giữ ghi chú dòng đề xuất', () => {
+    const prefill = deXuatMuaHangToPhieuKhoPTPrefill(phieu, [{ id_hang_hoa: '11', so_luong: 2 }]);
+    expect(prefill.chi_tiet).toEqual([{ id_hang_hoa: '11', so_luong: 2, don_gia: 0, so_lot: '', ghi_chu: 'gấp' }]);
+    expect(prefill.id_de_xuat_mua_hang).toBe('7');
+  });
+});

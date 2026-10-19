@@ -35,6 +35,8 @@ import DeXuatMuaHangBulkApproveDialog from './DeXuatMuaHangBulkApproveDialog';
 import DeXuatMuaHangToolbar from './DeXuatMuaHangToolbar';
 import DeXuatMuaHangList from './DeXuatMuaHangList';
 import DeXuatMuaHangForm from './DeXuatMuaHangForm';
+import ChonHangNhapKhoDialog from './ChonHangNhapKhoDialog';
+import type { DongDaChon } from '../../../../lib/thuc-hien-tung-phan';
 import DeXuatMuaHangDetail, { type DeXuatMuaHangApprovePayload } from './DeXuatMuaHangDetail';
 import ExportDialog from '../../../../components/shared/LazyExportDialog';
 import { useExportData } from '../../../../lib/useExportData';
@@ -83,7 +85,9 @@ const DanhSachTab: React.FC = () => {
   const addHangHoaResolveRef = useRef<(h: FarmHangHoa | null) => void>(null);
   const [showExport, setShowExport] = useState(false);
   const [bulkApprove, setBulkApprove] = useState<{ ids: string[]; skipped: number } | null>(null);
-  const [createPhieuKhoFrom, setCreatePhieuKhoFrom] = useState<DeXuatMuaHang | null>(null);
+  /** Bước 1: popup chọn hàng + SL nhập lần này; bước 2: form phiếu kho với các dòng đã chọn. */
+  const [chonHangNhapFrom, setChonHangNhapFrom] = useState<DeXuatMuaHang | null>(null);
+  const [createPhieuKhoFrom, setCreatePhieuKhoFrom] = useState<{ phieu: DeXuatMuaHang; dongChon: DongDaChon[] } | null>(null);
 
   const { data: khoList = [] } = useKhoList();
   const { data: employees = [] } = useEmployeesRefQuery();
@@ -133,7 +137,7 @@ const DanhSachTab: React.FC = () => {
   const { data: viewingPhieuFull } = useDeXuatMuaHangById(viewingItem?.id);
   /** Ổn định tham chiếu để form phiếu kho không bị reset lại mỗi lần render. */
   const phieuKhoPrefill = useMemo(
-    () => (createPhieuKhoFrom ? deXuatMuaHangToPhieuKhoPTPrefill(createPhieuKhoFrom) : null),
+    () => (createPhieuKhoFrom ? deXuatMuaHangToPhieuKhoPTPrefill(createPhieuKhoFrom.phieu, createPhieuKhoFrom.dongChon) : null),
     [createPhieuKhoFrom]
   );
   const { data: editingPhieuFull } = useDeXuatMuaHangById(editingItem?.id);
@@ -455,7 +459,7 @@ const DanhSachTab: React.FC = () => {
             onDelete={canDelete ? handleDelete : undefined}
             onApprove={canApprove ? handleApprove : undefined}
             onCreatePhieuKho={
-              canCreatePhieuKho ? (item) => setCreatePhieuKhoFrom(viewingPhieuFull ?? item) : undefined
+              canCreatePhieuKho ? (item) => setChonHangNhapFrom(viewingPhieuFull ?? item) : undefined
             }
             canEdit={!!canUpdate}
             canDelete={canDelete}
@@ -466,6 +470,19 @@ const DanhSachTab: React.FC = () => {
                 (k) => String(k.id) === String((viewingPhieuFull ?? viewingItem).id_noi_de_xuat)
               )?.id_chi_nhanh ?? null
             }
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {chonHangNhapFrom && (
+          <ChonHangNhapKhoDialog
+            phieu={chonHangNhapFrom}
+            onClose={() => setChonHangNhapFrom(null)}
+            onConfirm={(dongChon) => {
+              setCreatePhieuKhoFrom({ phieu: chonHangNhapFrom, dongChon });
+              setChonHangNhapFrom(null);
+            }}
           />
         )}
       </AnimatePresence>

@@ -5,7 +5,7 @@
 import { db, fetchAllRows, fetchTablePage, type PaginatedTableResult, throwDbError } from '../../../../lib/db';
 import type { ChiTietDonDatHangFlat, DonDatHang, DonDatHangChiTiet, DonDatHangTrangThai } from '../core/types';
 import type { DonDatHangFormValues } from '../core/schema';
-import { TRANG_THAI_NHAP } from '../core/types';
+import { TRANG_THAI_HUY, TRANG_THAI_NHAP } from '../core/types';
 import i18n from '../../../../lib/i18n';
 import { getKhoRef } from '../../../kho-van/danh-sach-kho/services/kho-service';
 import { getDoiTacRef } from '../../../kho-van/danh-sach-doi-tac/services/doi-tac-service';
@@ -566,6 +566,43 @@ export async function getDonDatHangByPhieuDeXuatDb(idPhieuDeXuat: string): Promi
     .order('so_po', { ascending: false });
   if (error) throwDbError(error);
   return ((data ?? []) as DonSummaryRow[]).map((row) => mapDonSummaryRowToDon(row));
+}
+
+type DongSoLuongDb = { id_hang_hoa: number; so_luong: number | string };
+const toDongSoLuong = (rows: unknown) =>
+  ((rows ?? []) as DongSoLuongDb[]).map((l) => ({ id_hang_hoa: String(l.id_hang_hoa), so_luong: Number(l.so_luong) || 0 }));
+
+/**
+ * Số lượng ĐÃ ĐẶT theo phiếu đề xuất vật tư (đặt hàng từng phần): dòng của mọi đơn lập từ phiếu,
+ * trừ đơn "Hủy". `boQuaDonId`: đơn đang sửa, không tính vào chính nó.
+ */
+export async function getDaDatTheoPhieuDeXuatDb(
+  idPhieuDeXuat: string,
+  boQuaDonId?: string | null
+): Promise<{ id_hang_hoa: string; so_luong: number }[]> {
+  const idNum = Number(idPhieuDeXuat);
+  if (!idPhieuDeXuat || Number.isNaN(idNum)) return [];
+  let q = db.from(TABLE_DON).select('id').eq('id_phieu_de_xuat_vat_tu', idNum).neq('trang_thai', TRANG_THAI_HUY);
+  if (boQuaDonId && !Number.isNaN(Number(boQuaDonId))) q = q.neq('id', Number(boQuaDonId));
+  const { data: don, error } = await q;
+  if (error) throwDbError(error);
+  const ids = ((don ?? []) as { id: number }[]).map((d) => d.id);
+  if (ids.length === 0) return [];
+  const { data, error: errCt } = await db.from(TABLE_CHI_TIET).select('id_hang_hoa, so_luong').in('id_don_dat_hang', ids);
+  if (errCt) throwDbError(errCt);
+  return toDongSoLuong(data);
+}
+
+/** Dòng hàng của phiếu đề xuất vật tư — nguồn để chặn đơn đặt vượt số lượng đề xuất. */
+export async function getDongPhieuDeXuatVatTuDb(idPhieuDeXuat: string): Promise<{ id_hang_hoa: string; so_luong: number }[]> {
+  const idNum = Number(idPhieuDeXuat);
+  if (!idPhieuDeXuat || Number.isNaN(idNum)) return [];
+  const { data, error } = await db
+    .from('fp_mh_phieu_de_xuat_vat_tu_chi_tiet')
+    .select('id_hang_hoa, so_luong')
+    .eq('id_phieu_de_xuat_vat_tu', idNum);
+  if (error) throwDbError(error);
+  return toDongSoLuong(data);
 }
 
 export async function createDonDatHangDb(data: DonDatHangFormValues): Promise<DonDatHang> {

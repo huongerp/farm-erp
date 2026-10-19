@@ -30,9 +30,7 @@ import { TRANG_THAI_CHO_DUYET, canBulkApprovePhieuDeXuat } from '../core/constan
 import type { TrangThaiPhieuDeXuatVatTu } from '../core/constants';
 import type { HangHoa } from '../../danh-sach-hang-hoa/core/types';
 import DanhSachHangHoaForm from '../../danh-sach-hang-hoa/components/DanhSachHangHoaForm';
-import DonDatHangForm from '../../../mua-hang/don-dat-hang/components/DonDatHangForm';
-import { phieuDeXuatToDonDatHangPrefill } from '../../../mua-hang/don-dat-hang/core/don-dat-hang-to-form-values';
-import type { PhieuDeXuatSoPhieuOption } from '../services/phieu-de-xuat-vat-tu-db.service';
+import TaoDonTuPhieuDeXuat from '../../../mua-hang/don-dat-hang/components/TaoDonTuPhieuDeXuat';
 import PhieuDeXuatBulkApproveDialog from './PhieuDeXuatBulkApproveDialog';
 import PhieuDeXuatVatTuToolbar from './PhieuDeXuatVatTuToolbar';
 import PhieuDeXuatVatTuList from './PhieuDeXuatVatTuList';
@@ -466,20 +464,14 @@ const DanhSachTab: React.FC = () => {
       </AnimatePresence>
 
       <AnimatePresence>
-        {createDonDatHangFrom && (() => {
-          const phieu = createDonDatHangFrom;
-          const phieuDeXuatOption: PhieuDeXuatSoPhieuOption = { id: phieu.id, so_phieu: phieu.so_phieu, ngay: phieu.ngay };
-          const prefill = phieuDeXuatToDonDatHangPrefill(phieu);
-          return (
-            <DonDatHangForm
-              khoList={khoList}
-              employees={employees}
-              phieuDeXuatList={[phieuDeXuatOption]}
-              prefillValues={prefill}
-              onClose={() => setCreateDonDatHangFrom(null)}
-            />
-          );
-        })()}
+        {createDonDatHangFrom && (
+          <TaoDonTuPhieuDeXuat
+            phieu={createDonDatHangFrom}
+            khoList={khoList}
+            employees={employees}
+            onClose={() => setCreateDonDatHangFrom(null)}
+          />
+        )}
       </AnimatePresence>
     </div>
   );

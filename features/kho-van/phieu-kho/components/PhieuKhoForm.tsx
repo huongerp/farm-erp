@@ -18,7 +18,8 @@ import type { HangHoaRefLite } from '../../danh-sach-hang-hoa/services/hang-hoa-
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { useCreatePhieuKho, useUpdatePhieuKho, useTonKhoTheoKho } from '../hooks/use-phieu-kho';
 import { useCanEditPhieuKhoNgay } from '../hooks/use-can-edit-phieu-kho-ngay';
-import { getNextSoPhieu } from '../services/phieu-kho-service';
+import { getDaNhapTheoDonDatHang, getDongDonDatHang, getNextSoPhieu } from '../services/phieu-kho-service';
+import { moTaDongVuot, timDongVuot } from '../../../../lib/thuc-hien-tung-phan';
 import { useHangHoaRefQuery, useDoiTacRefQuery, useDonDatHangSoPoMinimalQuery } from '../../../../lib/hooks/use-ref-queries';
 import type { DonDatHangSoPoOption } from '../../../mua-hang/don-dat-hang/services/don-dat-hang-db.service';
 import { useAuthStore } from '../../../../store/useStore';
@@ -59,6 +60,9 @@ interface Props {
 }
 
 const today = () => new Date().toISOString().slice(0, 10);
+/** Mặc định ỔN ĐỊNH khi danh mục hàng chưa tải: `= []` tạo mảng mới mỗi render → hangHoaMap mới →
+ * effect reset chạy lại → useWatch setState → lặp vô hạn (Maximum update depth exceeded). */
+const HANG_HOA_RONG: HangHoaRefLite[] = [];
 
 const PhieuKhoForm: React.FC<Props> = ({
   loai,
@@ -81,7 +85,7 @@ const PhieuKhoForm: React.FC<Props> = ({
   const isEdit = !!initialData?.id;
   const createMutation = useCreatePhieuKho(loai, onClose);
   const updateMutation = useUpdatePhieuKho(onClose);
-  const { data: hangHoaList = [], isLoading: isLoadingHangHoa, isError: isErrorHangHoa } = useHangHoaRefQuery();
+  const { data: hangHoaList = HANG_HOA_RONG, isLoading: isLoadingHangHoa, isError: isErrorHangHoa } = useHangHoaRefQuery();
   const { data: nhaCungCapList = [] } = useDoiTacRefQuery('nha_cung_cap');
   const { data: khachHangList = [] } = useDoiTacRefQuery('khach_hang');
   const { data: donDatHangMinimal = [] } = useDonDatHangSoPoMinimalQuery();
@@ -248,6 +252,34 @@ const PhieuKhoForm: React.FC<Props> = ({
     if (validChiTiet.length === 0) {
       toast.error(t('phieuKho.validation.atLeastOneItem'));
       return;
+    }
+    // Nhập theo đơn từng đợt: tổng các phiếu nhập không vượt số lượng đặt (cả khi chọn đơn ở combobox).
+    const idDon = loai === 'nhap' && data.id_don_dat_hang ? String(data.id_don_dat_hang) : null;
+    if (idDon) {
+      try {
+        const [nguon, daNhapKhac] = await Promise.all([
+          getDongDonDatHang(idDon),
+          getDaNhapTheoDonDatHang(idDon, isEdit ? initialData?.id : null),
+        ]);
+        const vuot = timDongVuot(nguon, daNhapKhac, validChiTiet, isEdit ? initialData?.chi_tiet : null);
+        if (vuot.length > 0) {
+          const soPo =
+            [...donDatHangExtraOptions, ...donDatHangMinimal].find((d) => String(d.id) === idDon)?.so_po ?? `#${idDon}`;
+          toast.error(
+            t('common.tungPhan.vuotSoLuong', {
+              soPhieu: soPo,
+              chiTiet: moTaDongVuot(vuot, (id) => hangHoaMap[id]?.ten_hang ?? '', (ten, toiDa) =>
+                t('common.tungPhan.vuotDong', { ten, toiDa: formatNumberVN(toiDa) })
+              ),
+            }),
+            { duration: 8000 }
+          );
+          return;
+        }
+      } catch {
+        toast.error(t('common.tungPhan.khongKiemTraDuoc'));
+        return;
+      }
     }
     let soPhieu = data.so_phieu?.trim() ?? '';
     if (!isEdit) {
