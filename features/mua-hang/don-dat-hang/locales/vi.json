@@ -246,5 +246,9 @@
   "donDatHang.export.chiTiet.don_gia": "Đơn giá",
   "donDatHang.export.chiTiet.thanh_tien": "Thành tiền",
   "donDatHang.export.chiTiet.don_vi_tinh": "Đơn vị",
-  "donDatHang.export.chiTiet.ghi_chu": "Ghi chú dòng"
+  "donDatHang.export.chiTiet.ghi_chu": "Ghi chú dòng",
+  "donDatHang.lienQuanDeXuat.title": "Đơn đặt hàng",
+  "donDatHang.lienQuanDeXuat.add": "Tạo đơn đặt hàng",
+  "donDatHang.lienQuanDeXuat.emptyTitle": "Chưa có đơn đặt hàng",
+  "donDatHang.lienQuanDeXuat.emptyHint": "Đơn đặt hàng lập từ phiếu đề xuất này sẽ hiện ở đây."
 }

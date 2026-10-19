@@ -18,6 +18,7 @@ import DetailField from '../../../../components/shared/DetailField';
 import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
 import GenericSubTableSection from '../../../../components/shared/GenericSubTableSection';
 import ThuChiLienQuanSection from '../../../tai-chinh/thu-chi-quy/components/shared/ThuChiLienQuanSection';
+import PhieuNhapTheoDonSection from '../../../kho-van/phieu-kho/components/shared/PhieuNhapTheoDonSection';
 
 const PREVIEW_BASE = '/mua-hang/don-dat-hang/preview';
 
@@ -46,9 +47,11 @@ interface Props {
   onCreatePhieuNhapKho?: (item: DonDatHang) => void;
   /** Chi nhánh của kho nhận — prefill khi tạo phiếu thu chi quỹ liên quan. */
   idChiNhanhKhoNhan?: string | null;
+  /** > 0 khi mở chồng lên drawer khác (vd. section đơn hàng trong drawer phiếu đề xuất vật tư). */
+  stackLevel?: number;
 }
 
-const DonDatHangDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onApprove, onChangeStatus, onPrint, onCreatePhieuNhapKho, idChiNhanhKhoNhan }) => {
+const DonDatHangDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onApprove, onChangeStatus, onPrint, onCreatePhieuNhapKho, idChiNhanhKhoNhan, stackLevel = 0 }) => {
   const { t } = useTranslation();
   const canApprove = data.trang_thai === TRANG_THAI_CHO_DUYET && !!onApprove;
   const [showApprovePopup, setShowApprovePopup] = useState(false);
@@ -150,6 +153,7 @@ const DonDatHangDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
       onClose={onClose}
       footer={renderFooter}
       maxWidthClass={DRAWER_WIDTH_DETAIL}
+      stackLevel={stackLevel}
     >
       <div className="space-y-5">
         <div className="bg-card p-4 rounded-xl border border-border/50 shadow-sm flex items-center gap-4">
@@ -234,7 +238,15 @@ const DonDatHangDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
           )}
         </GenericSubTableSection>
 
+        <PhieuNhapTheoDonSection
+          idDonDatHang={data.id}
+          chiTietDon={data.chi_tiet}
+          onAdd={onCreatePhieuNhapKho ? () => onCreatePhieuNhapKho(data) : undefined}
+          stackLevel={stackLevel + 1}
+        />
+
         <ThuChiLienQuanSection
+          stackLevel={stackLevel + 1}
           loaiChungTu="don_dat_hang"
           idChungTu={data.id}
           soChungTu={data.so_po}

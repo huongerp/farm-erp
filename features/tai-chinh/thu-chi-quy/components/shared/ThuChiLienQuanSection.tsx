@@ -31,6 +31,8 @@ export interface ThuChiLienQuanSectionProps {
   loaiMacDinh?: LoaiThuChi;
   /** Chỉ xem, ẩn mọi nút thao tác */
   readOnly?: boolean;
+  /** Tầng drawer cho form/chi tiết quỹ mở từ section (mặc định 1 = chồng lên drawer nền). */
+  stackLevel?: number;
   className?: string;
 }
 
@@ -55,6 +57,7 @@ const ThuChiLienQuanSection: React.FC<ThuChiLienQuanSectionProps> = ({
   soTienGoiY,
   loaiMacDinh = 'chi',
   readOnly = false,
+  stackLevel = 1,
   className,
 }) => {
   const { t } = useTranslation();
@@ -286,7 +289,7 @@ const ThuChiLienQuanSection: React.FC<ThuChiLienQuanSectionProps> = ({
           <ThuChiQuyForm
             initialData={editingItem}
             prefill={editingItem ? undefined : prefill}
-            stackLevel={1}
+            stackLevel={stackLevel}
             defaultChiNhanhId={idChiNhanhMacDinh ? String(idChiNhanhMacDinh) : ''}
             allowedBranchIds={viewScope.viewAll ? [] : viewScope.allowedBranchIds}
             choSuaNgay={canSuaNgayThuChiQuy(laCapCao)}
@@ -302,7 +305,7 @@ const ThuChiLienQuanSection: React.FC<ThuChiLienQuanSectionProps> = ({
         {detailItem && (
           <ThuChiQuyDetail
             data={detailItem}
-            stackLevel={1}
+            stackLevel={stackLevel}
             onClose={() => setDetailItem(null)}
             onEdit={canEditRow(detailItem) ? openEdit : undefined}
             onDelete={canDeleteRow(detailItem) ? handleDelete : undefined}

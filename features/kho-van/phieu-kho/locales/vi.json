@@ -241,5 +241,11 @@
   "phieuKho.export.chiTiet.chi_tiet_nguoi_tao_id": "ID người tạo dòng",
   "phieuKho.export.chiTiet.chi_tiet_ten_nguoi_tao": "Tên người tạo dòng",
   "phieuKho.export.chiTiet.chi_tiet_tg_tao": "Dòng — thời gian tạo",
-  "phieuKho.export.chiTiet.chi_tiet_tg_cap_nhat": "Dòng — thời gian cập nhật"
+  "phieuKho.export.chiTiet.chi_tiet_tg_cap_nhat": "Dòng — thời gian cập nhật",
+  "phieuKho.lienQuanDon.title": "Phiếu nhập kho",
+  "phieuKho.lienQuanDon.add": "Tạo phiếu nhập",
+  "phieuKho.lienQuanDon.emptyTitle": "Chưa có phiếu nhập kho",
+  "phieuKho.lienQuanDon.emptyHint": "Phiếu nhập lập theo đơn này sẽ hiện ở đây.",
+  "phieuKho.lienQuanDon.total": "Đã nhập / đặt",
+  "phieuKho.lienQuanDon.totalHint": "Không tính phiếu Không duyệt; cộng thô số lượng, không quy đổi đơn vị tính."
 }

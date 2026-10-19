@@ -690,6 +690,22 @@ export async function getPhieuKhoByDoiTacDb(idDoiTac: string, loaiDoiTac: 'nha_c
   return rows.map((row) => mapPhieuKhoSummaryRowToPhieu(row));
 }
 
+/** Phiếu nhập kho lập theo một đơn đặt hàng (section "Phiếu nhập kho" trong drawer đơn). */
+export async function getPhieuKhoByDonDatHangDb(idDonDatHang: string): Promise<PhieuKho[]> {
+  const idNum = Number(idDonDatHang);
+  if (Number.isNaN(idNum)) return [];
+  const { data, error } = await db
+    .from(VIEW_PHIEU_KHO_SUMMARY)
+    .select(PHIEU_KHO_SUMMARY_SELECT)
+    .eq('loai', 'nhập')
+    .eq('id_don_dat_hang', idNum)
+    .order('ngay', { ascending: false })
+    .order('so_phieu', { ascending: false });
+  if (error) throwDbError(error);
+  const rows = (data ?? []) as PhieuKhoSummaryRow[];
+  return rows.map((row) => mapPhieuKhoSummaryRowToPhieu(row));
+}
+
 /** Cache một lần/session — tránh gọi getKhoRef + getDoiTacRef + getEmployeesRef mỗi lần đổi trang chi tiết phiếu. */
 type ChiTietEnrichmentMaps = {
   khoMap: Record<string, string>;

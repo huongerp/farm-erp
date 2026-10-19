@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import {
   getAllPhieuKho,
   getPhieuKhoById,
+  getPhieuKhoByDonDatHang,
   getPhieuKhoPage,
   getChiTietPhieuKhoPage,
   createPhieuKho,
@@ -29,6 +30,9 @@ const QUERY_KEY = ['phieuKho'] as const;
 const invalidateTonKho = (qc: ReturnType<typeof useQueryClient>) => {
   qc.invalidateQueries({ queryKey: TON_KHO_QUERY_KEY });
 };
+
+/** Section "Phiếu nhập kho" trong drawer đơn đặt hàng — mọi mutation phiếu đều phải làm mới. */
+const QUERY_KEY_BY_DON = [...QUERY_KEY, 'byDonDatHang'] as const;
 
 /** @deprecated Dùng usePhieuKhoListPaged — full load ~3.6k phiếu gây egress lớn. */
 export const usePhieuKhoList = () => {
@@ -87,6 +91,15 @@ export const usePhieuKhoById = (id: string | undefined) => {
   });
 };
 
+export const usePhieuKhoByDonDatHang = (idDonDatHang: string | null) => {
+  return useQuery({
+    queryKey: [...QUERY_KEY_BY_DON, idDonDatHang],
+    queryFn: () => getPhieuKhoByDonDatHang(idDonDatHang!),
+    enabled: !!idDonDatHang,
+    staleTime: 1000 * 60 * 2,
+  });
+};
+
 /** Số phiếu tiếp theo khi tạo mới (Option B: RPC). Chỉ gọi khi đang tạo phiếu (enabled = true). */
 export const useNextSoPhieu = (loai: LoaiPhieuKhoTab, enabled: boolean) => {
   const loaiDb = LOAI_TAB_TO_DB[loai];
@@ -117,6 +130,7 @@ export const useCreatePhieuKho = (loaiTab: LoaiPhieuKhoTab, onSuccess?: () => vo
       qc.invalidateQueries({ queryKey: QUERY_KEY_CHI_TIET });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY_CHI_TIET, 'paged'] });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
+      qc.invalidateQueries({ queryKey: QUERY_KEY_BY_DON });
       invalidateTonKho(qc);
       toast.success(i18n.t('phieuKho.toast.createSuccess'));
       onSuccess?.();
@@ -137,6 +151,7 @@ export const useUpdatePhieuKho = (onSuccess?: () => void) => {
       qc.invalidateQueries({ queryKey: QUERY_KEY_CHI_TIET });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY_CHI_TIET, 'paged'] });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
+      qc.invalidateQueries({ queryKey: QUERY_KEY_BY_DON });
       invalidateTonKho(qc);
       toast.success(i18n.t('phieuKho.toast.updateSuccess'));
       onSuccess?.();
@@ -155,6 +170,7 @@ export const useDeletePhieuKho = () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY_CHI_TIET });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY_CHI_TIET, 'paged'] });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
+      qc.invalidateQueries({ queryKey: QUERY_KEY_BY_DON });
       invalidateTonKho(qc);
       toast.success(i18n.t('phieuKho.toast.deleteSuccess'));
     },
@@ -187,6 +203,7 @@ export const useUpdatePhieuKhoTrangThai = (onSuccess?: () => void) => {
       qc.invalidateQueries({ queryKey: QUERY_KEY_CHI_TIET });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY_CHI_TIET, 'paged'] });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
+      qc.invalidateQueries({ queryKey: QUERY_KEY_BY_DON });
       invalidateTonKho(qc);
       try {
         const fresh = await getPhieuKhoById(id);
@@ -237,6 +254,7 @@ export const useUpdatePhieuKhoTrangThaiMany = (onSuccess?: () => void) => {
       qc.invalidateQueries({ queryKey: QUERY_KEY_CHI_TIET });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY_CHI_TIET, 'paged'] });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
+      qc.invalidateQueries({ queryKey: QUERY_KEY_BY_DON });
       invalidateTonKho(qc);
 
       if (result.failed.length === 0) {
@@ -268,6 +286,7 @@ export const useDeletePhieuKhoMany = () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY_CHI_TIET });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY_CHI_TIET, 'paged'] });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
+      qc.invalidateQueries({ queryKey: QUERY_KEY_BY_DON });
       invalidateTonKho(qc);
       toast.success(i18n.t('phieuKho.toast.deleteSuccess'));
     },

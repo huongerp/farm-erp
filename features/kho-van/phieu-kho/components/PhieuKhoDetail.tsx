@@ -38,9 +38,11 @@ interface Props {
   onCopy?: (item: PhieuKho) => void;
   /** Có quyền phê duyệt – ẩn nút Duyệt khi false */
   canApprove?: boolean;
+  /** > 0 khi mở chồng lên drawer khác (vd. section phiếu nhập trong drawer đơn đặt hàng). */
+  stackLevel?: number;
 }
 
-const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete, onCopy, canApprove = true }) => {
+const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete, onCopy, canApprove = true, stackLevel = 0 }) => {
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const confirm = useConfirmStore((s) => s.confirm);
@@ -149,6 +151,7 @@ const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete
       onClose={onClose}
       footer={renderFooter}
       maxWidthClass={DRAWER_WIDTH_PHIEU_KHO}
+      stackLevel={stackLevel}
     >
       <div className="space-y-5">
         <div className="bg-card p-4 rounded-xl border border-border/50 shadow-sm flex items-center gap-4">

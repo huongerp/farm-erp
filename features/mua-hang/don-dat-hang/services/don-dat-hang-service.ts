@@ -6,6 +6,7 @@ import type { PaginatedTableResult } from '../../../../lib/db';
 import type { ChiTietDonDatHangFlat, DonDatHang, DonDatHangTrangThai } from '../core/types';
 import {
   getDonDatHangByIdDb,
+  getDonDatHangByPhieuDeXuatDb,
   getDonDatHangPageDb,
   fetchAllDonDatHangForListQueryDb,
   getChiTietDonDatHangPageDb,
@@ -55,6 +56,7 @@ export const fetchAllChiTietDonDatHangForListQuery = fetchAllChiTietDonDatHangFo
 export const getPhanLoaiDonDatHangChiTiet = getPhanLoaiDonDatHangChiTietDb;
 export const getNextSoPoDonDatHang = getNextSoPoFormatted;
 export const getDonDatHangById = getDonDatHangByIdDb;
+export const getDonDatHangByPhieuDeXuat = getDonDatHangByPhieuDeXuatDb;
 export const createDonDatHang = (data: DonDatHangFormValues) => createDonDatHangDb(data);
 export const updateDonDatHang = updateDonDatHangDb;
 export const updateDonDatHangTrangThai = (

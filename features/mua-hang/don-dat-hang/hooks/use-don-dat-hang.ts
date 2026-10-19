@@ -4,6 +4,7 @@ import {
   getDonDatHangPage,
   getChiTietDonDatHangPage,
   getDonDatHangById,
+  getDonDatHangByPhieuDeXuat,
   createDonDatHang,
   updateDonDatHang,
   updateDonDatHangTrangThai,
@@ -23,6 +24,8 @@ import { donDatHangTrongPhamVi } from '../utils/don-dat-hang-view-scope-filter';
 
 const QUERY_KEY = ['donDatHang'] as const;
 const PHAN_LOAI_CHI_TIET_QUERY_KEY = [...QUERY_KEY, 'phanLoaiChiTiet'] as const;
+/** Section đơn hàng trong drawer phiếu đề xuất vật tư — mutation đơn phải làm mới. */
+const BY_PHIEU_DE_XUAT_QUERY_KEY = [...QUERY_KEY, 'byPhieuDeXuat'] as const;
 
 /** Số PO tiếp theo khi tạo mới (format PO-YYYY-NNNNN). Chỉ gọi khi mở form tạo đơn (enabled = true). Có thể sửa mã trên form. */
 export const useNextSoPoDonDatHang = (enabled: boolean) => {
@@ -90,6 +93,21 @@ export const useDonDatHangById = (
   });
 };
 
+/** Đơn lập từ một phiếu đề xuất vật tư, lọc theo phạm vi xem đơn (như useDonDatHangById). */
+export const useDonDatHangByPhieuDeXuat = (
+  idPhieuDeXuat: string | null,
+  phamVi: { scope: BranchListScope; isLoading: boolean }
+) => {
+  const { scope, isLoading: scopeLoading } = phamVi;
+  return useQuery({
+    queryKey: [...BY_PHIEU_DE_XUAT_QUERY_KEY, idPhieuDeXuat],
+    queryFn: () => getDonDatHangByPhieuDeXuat(idPhieuDeXuat!),
+    enabled: !!idPhieuDeXuat && !scopeLoading,
+    staleTime: 1000 * 60 * 2,
+    select: (list) => list.filter((don) => donDatHangTrongPhamVi(don, scope)),
+  });
+};
+
 export const useCreateDonDatHang = (onSuccess?: () => void) => {
   const qc = useQueryClient();
   return useMutation({
@@ -98,6 +116,7 @@ export const useCreateDonDatHang = (onSuccess?: () => void) => {
       qc.setQueryData(QUERY_KEY, (old: DonDatHang[] | undefined) => (old ? [created, ...old] : [created]));
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'chiTietPaged'] });
+      qc.invalidateQueries({ queryKey: BY_PHIEU_DE_XUAT_QUERY_KEY });
       qc.invalidateQueries({ queryKey: PHAN_LOAI_CHI_TIET_QUERY_KEY });
       toast.success(i18n.t('donDatHang.toast.createSuccess'));
       onSuccess?.();
@@ -118,6 +137,7 @@ export const useUpdateDonDatHang = (onSuccess?: () => void) => {
       qc.setQueryData([...QUERY_KEY, updated.id], updated);
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'chiTietPaged'] });
+      qc.invalidateQueries({ queryKey: BY_PHIEU_DE_XUAT_QUERY_KEY });
       qc.invalidateQueries({ queryKey: PHAN_LOAI_CHI_TIET_QUERY_KEY });
       toast.success(i18n.t('donDatHang.toast.updateSuccess'));
       onSuccess?.();
@@ -146,6 +166,7 @@ export const useUpdateDonDatHangTrangThai = (onSuccess?: () => void) => {
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, id] });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'chiTietPaged'] });
+      qc.invalidateQueries({ queryKey: BY_PHIEU_DE_XUAT_QUERY_KEY });
       toast.success(i18n.t('donDatHang.toast.updateSuccess'));
       onSuccess?.();
     },
@@ -176,6 +197,7 @@ export const useUpdateDonDatHangTrangThaiMany = (onSuccess?: () => void) => {
       result.okIds.forEach((id) => qc.removeQueries({ queryKey: [...QUERY_KEY, id] }));
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'chiTietPaged'] });
+      qc.invalidateQueries({ queryKey: BY_PHIEU_DE_XUAT_QUERY_KEY });
 
       if (result.failed.length === 0) {
         toast.success(i18n.t('donDatHang.toast.bulkApproveSuccess', { count: result.okIds.length }));
@@ -204,6 +226,7 @@ export const useDeleteDonDatHang = () => {
       qc.removeQueries({ queryKey: [...QUERY_KEY, id] });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'chiTietPaged'] });
+      qc.invalidateQueries({ queryKey: BY_PHIEU_DE_XUAT_QUERY_KEY });
       qc.invalidateQueries({ queryKey: PHAN_LOAI_CHI_TIET_QUERY_KEY });
       toast.success(i18n.t('donDatHang.toast.deleteSuccess'));
     },
@@ -221,6 +244,7 @@ export const useDeleteDonDatHangMany = () => {
       ids.forEach((id) => qc.removeQueries({ queryKey: [...QUERY_KEY, id] }));
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'chiTietPaged'] });
+      qc.invalidateQueries({ queryKey: BY_PHIEU_DE_XUAT_QUERY_KEY });
       qc.invalidateQueries({ queryKey: PHAN_LOAI_CHI_TIET_QUERY_KEY });
       toast.success(i18n.t('donDatHang.toast.deleteSuccess'));
     },

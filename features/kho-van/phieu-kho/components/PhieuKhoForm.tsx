@@ -54,6 +54,8 @@ interface Props {
   /** Mở form sửa đối tác đang chọn (NCC / KH). */
   onRequestEditNcc?: (id: string) => void;
   onRequestEditKh?: (id: string) => void;
+  /** > 0 khi mở chồng lên drawer khác. */
+  stackLevel?: number;
 }
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -71,6 +73,7 @@ const PhieuKhoForm: React.FC<Props> = ({
   onRequestAddKh,
   onRequestEditNcc,
   onRequestEditKh,
+  stackLevel = 0,
 }) => {
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
@@ -325,6 +328,7 @@ const PhieuKhoForm: React.FC<Props> = ({
         />
       }
       maxWidthClass={DRAWER_WIDTH_PHIEU_KHO}
+      stackLevel={stackLevel}
     >
       <form id="phieu-kho-form" onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <FormSection title={t('phieuKho.detail.basicInfo')} icon={<FileText size={14} />} variant="primary">

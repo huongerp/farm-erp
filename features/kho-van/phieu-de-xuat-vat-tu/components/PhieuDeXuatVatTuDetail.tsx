@@ -25,6 +25,7 @@ import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
 import GenericSubTableSection from '../../../../components/shared/GenericSubTableSection';
 import SubTable, { type SubTableColumn } from '../../../../components/shared/sub-table/SubTable';
 import ThuChiLienQuanSection from '../../../tai-chinh/thu-chi-quy/components/shared/ThuChiLienQuanSection';
+import DonDatHangTheoDeXuatSection from '../../../mua-hang/don-dat-hang/components/shared/DonDatHangTheoDeXuatSection';
 import TraoDoiCell from '../../../../components/shared/trao-doi/TraoDoiCell';
 import TraoDoiDialog from '../../../../components/shared/trao-doi/TraoDoiDialog';
 import { useSuaTraoDoiChiTiet } from '../hooks/use-phieu-de-xuat-vat-tu';
@@ -312,6 +313,11 @@ const PhieuDeXuatVatTuDetail: React.FC<Props> = ({
             />
           )}
         </GenericSubTableSection>
+
+        <DonDatHangTheoDeXuatSection
+          idPhieuDeXuat={data.id}
+          onAdd={onCreateDonDatHang ? () => onCreateDonDatHang(data) : undefined}
+        />
 
         <ThuChiLienQuanSection
           loaiChungTu="phieu_de_xuat_vat_tu"

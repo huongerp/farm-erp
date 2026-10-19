@@ -9,7 +9,7 @@ import { useMemo } from 'react';
 import { useEmployeeBranchModuleScope } from '../../../he-thong/nhan-vien/hooks/use-employee-branch-module-scope';
 import type { EmployeeBranchModuleScope } from '../../../he-thong/nhan-vien/hooks/use-employee-branch-module-scope';
 
-const MODULE_ID = 'kho-van/phieu-kho';
+export const PHIEU_KHO_MODULE_ID = 'kho-van/phieu-kho';
 
 export interface PhieuKhoViewScope extends EmployeeBranchModuleScope {
   /** Khi không viewAll: id nhân viên để luôn xem phiếu do họ tạo (= currentEmployeeId) */
@@ -17,7 +17,7 @@ export interface PhieuKhoViewScope extends EmployeeBranchModuleScope {
 }
 
 export function usePhieuKhoViewScope(): PhieuKhoViewScope {
-  const base = useEmployeeBranchModuleScope(MODULE_ID);
+  const base = useEmployeeBranchModuleScope(PHIEU_KHO_MODULE_ID);
   return useMemo(
     (): PhieuKhoViewScope => ({
       ...base,

@@ -554,6 +554,20 @@ export async function getDonDatHangByIdDb(id: string): Promise<DonDatHang | null
   return don;
 }
 
+/** Các đơn lập từ một phiếu đề xuất vật tư (section trong drawer đề xuất) — chỉ header, không kéo chi tiết. */
+export async function getDonDatHangByPhieuDeXuatDb(idPhieuDeXuat: string): Promise<DonDatHang[]> {
+  const idNum = Number(idPhieuDeXuat);
+  if (Number.isNaN(idNum)) return [];
+  const { data, error } = await db
+    .from(VIEW_DON_DAT_HANG_SUMMARY)
+    .select(VIEW_DON_DAT_HANG_SUMMARY_COLUMNS)
+    .eq('id_phieu_de_xuat_vat_tu', idNum)
+    .order('ngay_dat', { ascending: false })
+    .order('so_po', { ascending: false });
+  if (error) throwDbError(error);
+  return ((data ?? []) as DonSummaryRow[]).map((row) => mapDonSummaryRowToDon(row));
+}
+
 export async function createDonDatHangDb(data: DonDatHangFormValues): Promise<DonDatHang> {
   const soPo = data.so_po.trim();
   const { data: existing } = await db.from(TABLE_DON).select('id').eq('so_po', soPo).maybeSingle();

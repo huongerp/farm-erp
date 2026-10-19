@@ -11,12 +11,12 @@ import {
 import { useKhoList } from '../../../kho-van/danh-sach-kho/hooks/use-kho';
 import { buildEmployeeBranchScopeForServer, type BranchListScope } from '../../../../lib/branch-scope-query';
 
-const MODULE_ID = 'mua-hang/don-dat-hang';
+export const DON_DAT_HANG_MODULE_ID = 'mua-hang/don-dat-hang';
 
 export type DonDatHangViewScope = EmployeeBranchModuleScope;
 
 export function useDonDatHangViewScope(): DonDatHangViewScope {
-  return useEmployeeBranchModuleScope(MODULE_ID);
+  return useEmployeeBranchModuleScope(DON_DAT_HANG_MODULE_ID);
 }
 
 /**
