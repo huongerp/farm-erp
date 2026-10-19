@@ -1,6 +1,7 @@
 /**
  * Nội dung in phiếu kho Nhà sơ chế / Phân thuốc (nhập / xuất / luân chuyển) — khung chuẩn hệ thống
- * (PhieuInParts): đầu phiếu lặp mỗi trang, thông tin phiếu, bảng chi tiết (ẩn cột trống), tổng theo
+ * (PhieuInParts): đầu phiếu lặp mỗi trang, thông tin phiếu, bảng chi tiết (ẩn Phẩm cấp / Số lô khi
+ * trống, Ghi chú luôn hiện), tổng theo
  * ĐVT / phẩm cấp, ô ký. Tên kho trên tiêu đề theo biến thể (NSC / Phân thuốc).
  */
 import React from 'react';
@@ -44,9 +45,9 @@ const PhieuKhoPTPreviewContent: React.FC<Props> = ({ phieu, bienThe }) => {
   const theoDvt = tongTheoDvt(chiTiet);
   const coPhamCap = cotCoDuLieu(chiTiet, (c) => c.pham_cap);
   const coLot = cotCoDuLieu(chiTiet, (c) => c.so_lot);
-  const coGhiChu = cotCoDuLieu(chiTiet, (c) => c.ghi_chu);
   const soCotTruocDvt = 3 + (coPhamCap ? 1 : 0);
-  const soCotSau = (coLot ? 1 : 0) + (coGhiChu ? 1 : 0);
+  // +1: cột Ghi chú luôn có (để trống thì ghi tay khi giao nhận).
+  const soCotSau = (coLot ? 1 : 0) + 1;
 
   const thongTin: [string, React.ReactNode][] = [
     ...(noiDi ? [[t('phieuKhoPhanThuoc.preview.noiDi'), noiDi] as [string, React.ReactNode]] : []),
@@ -90,7 +91,7 @@ const PhieuKhoPTPreviewContent: React.FC<Props> = ({ phieu, bienThe }) => {
               <th className={`${th} text-center w-16`}>{t('common.phieuIn.dvt')}</th>
               <th className={`${th} text-right w-20`}>{t('phieuKhoPhanThuoc.form.quantity')}</th>
               {coLot && <th className={`${th} text-center w-20`}>{t('phieuKhoPhanThuoc.preview.soLot')}</th>}
-              {coGhiChu && <th className={`${th} text-left`}>{t('phieuKhoPhanThuoc.form.note')}</th>}
+              <th className={`${th} text-left w-[20%]`}>{t('phieuKhoPhanThuoc.form.note')}</th>
             </tr>
           </thead>
           <tbody>
@@ -103,7 +104,7 @@ const PhieuKhoPTPreviewContent: React.FC<Props> = ({ phieu, bienThe }) => {
                 <td className={`${td} text-center`}>{c.don_vi_tinh}</td>
                 <td className={`${td} tabular-nums text-right`}>{formatNumberVN(c.so_luong)}</td>
                 {coLot && <td className={`${td} text-center text-[0.9em]`}>{c.so_lot}</td>}
-                {coGhiChu && <td className={`${td} text-[0.9em]`}>{c.ghi_chu}</td>}
+                <td className={`${td} text-[0.9em]`}>{c.ghi_chu}</td>
               </tr>
             ))}
           </tbody>
