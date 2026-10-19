@@ -52,6 +52,7 @@ const RONG_COT_XLSX: Record<CotDanhSachIn, number> = {
   kho: 14,
   tgDuKien: 14,
   tgThucTe: 18,
+  tongThoiGian: 16,
   thongTin: 26,
   khachHang: 18,
   soLuong: 12,

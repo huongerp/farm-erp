@@ -106,6 +106,7 @@ describe('taoDongDanhSachIn', () => {
       'Asia/Ho_Chi_Minh'
     );
     expect(dong.map((d) => d.tgThucTe)).toEqual(['07:15 – 09:30', '07:15 – …', '23:40 – 01:10 12/10', '']);
+    expect(dong.map((d) => d.tongThoiGian)).toEqual(['2 giờ 15 phút', '', '1 giờ 30 phút', '']);
   });
 });
 
@@ -187,11 +188,12 @@ describe('XLSX', () => {
       'col.kho',
       'col.tgDuKien',
       'col.tgThucTe',
+      'col.tongThoiGian',
       'col.thongTin',
       'col.khachHang',
       'col.soLuong',
       'col.loaiHang',
     ]);
-    expect(aoa[4]).toEqual([1, '56H-16643', '', 'TT:cho_vao', 'NSC fp3', '', '', '', 'HQ1', '', 'HQ1 10CP - 12CP']);
+    expect(aoa[4]).toEqual([1, '56H-16643', '', 'TT:cho_vao', 'NSC fp3', '', '', '', '', 'HQ1', '', 'HQ1 10CP - 12CP']);
   });
 });

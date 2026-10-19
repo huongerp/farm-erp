@@ -4,7 +4,7 @@
  */
 import dayjs from 'dayjs';
 import { TRANG_THAI_DKNH, type DangKyNhanHang, type TrangThaiDkNh } from './types';
-import { chuanHoaGio, TZ_MAC_DINH } from './thoi-gian';
+import { chuanHoaGio, formatThoiLuong, soPhutTrongFarm, TZ_MAC_DINH } from './thoi-gian';
 import { DKNH_SORTABLE_DB_COLUMNS } from '../services/dang-ky-nhan-hang-list-query';
 import { TINH_TRANG_PHIEU_XUAT, type TinhTrangPhieuXuat } from './phieu-xuat';
 
@@ -99,6 +99,8 @@ export interface DongDanhSachIn {
   tgDuKien: string;
   /** Giờ vào – ra thực tế; mốc khác ngày đăng ký thì kèm "DD/MM" */
   tgThucTe: string;
+  /** Tổng thời gian trong farm (vào → ra), "1 giờ 27 phút"; chưa ra / thiếu giờ → rỗng */
+  tongThoiGian: string;
   thongTin: string;
   khachHang: string;
   soLuong: number | null;
@@ -119,6 +121,11 @@ function gioThucTe(iso: string | null, ngay: string, tz: string): string | null 
   return d.format('YYYY-MM-DD') === ngay ? d.format('HH:mm') : d.format('HH:mm DD/MM');
 }
 
+function tongThoiGian(vao: string | null, ra: string | null): string {
+  const phut = soPhutTrongFarm(vao, ra);
+  return phut == null ? '' : formatThoiLuong(phut);
+}
+
 /** Giữ nguyên thứ tự server (theo sort của danh sách), chỉ đánh STT và map cột. */
 export function taoDongDanhSachIn(
   phieu: DangKyNhanHang[],
@@ -135,6 +142,7 @@ export function taoDongDanhSachIn(
     kho: p.ten_chi_nhanh ?? '',
     tgDuKien: khoangGio(chuanHoaGio(p.gio_dang_ky_tu), chuanHoaGio(p.gio_dang_ky_den)),
     tgThucTe: khoangGio(gioThucTe(p.tg_vao_thuc_te, p.ngay_dang_ky, tz), gioThucTe(p.tg_ra_thuc_te, p.ngay_dang_ky, tz)),
+    tongThoiGian: tongThoiGian(p.tg_vao_thuc_te, p.tg_ra_thuc_te),
     thongTin: p.ghi_chu ?? '',
     khachHang: p.khach_hang ?? '',
     soLuong: p.so_luong_dang_ky,
@@ -156,6 +164,7 @@ export function cotDanhSachIn(dong: DongDanhSachIn[]): CotDanhSachIn[] {
     'kho',
     'tgDuKien',
     'tgThucTe',
+    'tongThoiGian',
     'thongTin',
     'khachHang',
     'soLuong',
