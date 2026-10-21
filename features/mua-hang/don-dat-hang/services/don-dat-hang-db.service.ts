@@ -29,10 +29,10 @@ const VIEW_DON_DAT_HANG_SUMMARY = 'v_don_dat_hang_summary';
 const VIEW_DON_DAT_HANG_CHI_TIET_FLAT = 'v_don_dat_hang_chi_tiet_flat';
 
 const VIEW_DON_DAT_HANG_SUMMARY_COLUMNS =
-  'id,so_po,ngay_dat,ngay_giao_dk,id_nha_cung_cap,ten_nha_cung_cap,id_kho_nhan,ten_kho_nhan,id_phieu_de_xuat_vat_tu,id_nguoi_dat,id_nguoi_duyet,ghi_chu,trang_thai,tg_tao,tg_cap_nhat,so_phieu_de_xuat_ref,ref_ma_nha_cung_cap,ref_ten_nha_cung_cap,ref_ten_kho_nhan,ref_ten_nguoi_dat,ref_ma_nguoi_dat,ref_ten_nguoi_duyet,ref_ma_nguoi_duyet,so_dong_hang,tong_tien';
+  'id,so_po,ngay_dat,ngay_giao_dk,id_nha_cung_cap,ten_nha_cung_cap,id_kho_nhan,ten_kho_nhan,id_phieu_de_xuat_vat_tu,id_nguoi_dat,id_nguoi_duyet,dieu_khoan_thanh_toan,ghi_chu,trang_thai,tg_tao,tg_cap_nhat,so_phieu_de_xuat_ref,ref_ma_nha_cung_cap,ref_ten_nha_cung_cap,ref_ten_kho_nhan,ref_ten_nguoi_dat,ref_ma_nguoi_dat,ref_ten_nguoi_duyet,ref_ma_nguoi_duyet,so_dong_hang,tong_tien';
 
 const DON_DAT_HANG_ROW_COLUMNS =
-  'id,so_po,ngay_dat,ngay_giao_dk,id_nha_cung_cap,ten_nha_cung_cap,id_kho_nhan,ten_kho_nhan,id_phieu_de_xuat_vat_tu,id_nguoi_dat,id_nguoi_duyet,ghi_chu,trang_thai,tg_tao,tg_cap_nhat';
+  'id,so_po,ngay_dat,ngay_giao_dk,id_nha_cung_cap,ten_nha_cung_cap,id_kho_nhan,ten_kho_nhan,id_phieu_de_xuat_vat_tu,id_nguoi_dat,id_nguoi_duyet,dieu_khoan_thanh_toan,ghi_chu,trang_thai,tg_tao,tg_cap_nhat';
 
 function trangThaiFromDb(s: string | null): DonDatHangTrangThai {
   if (s == null || s === '') return TRANG_THAI_NHAP;
@@ -66,6 +66,7 @@ interface DonDbRow {
   id_phieu_de_xuat_vat_tu: number | null;
   id_nguoi_dat: number;
   id_nguoi_duyet: number | null;
+  dieu_khoan_thanh_toan: string | null;
   ghi_chu: string | null;
   trang_thai: string;
   tg_tao: string | null;
@@ -134,6 +135,7 @@ function rowToDon(
     id_nguoi_duyet: row.id_nguoi_duyet != null ? String(row.id_nguoi_duyet) : null,
     ten_nguoi_duyet: enrich?.ten_nguoi_duyet ?? null,
     ma_nguoi_duyet: enrich?.ma_nguoi_duyet ?? null,
+    dieu_khoan_thanh_toan: row.dieu_khoan_thanh_toan ?? undefined,
     ghi_chu: row.ghi_chu ?? undefined,
     trang_thai: trangThaiFromDb(row.trang_thai),
     tg_tao: row.tg_tao ?? new Date().toISOString(),
@@ -630,6 +632,7 @@ export async function createDonDatHangDb(data: DonDatHangFormValues): Promise<Do
     id_phieu_de_xuat_vat_tu: toNum(data.id_phieu_de_xuat_vat_tu),
     id_nguoi_dat: Number(data.id_nguoi_dat),
     id_nguoi_duyet: toNum(data.id_nguoi_duyet),
+    dieu_khoan_thanh_toan: data.dieu_khoan_thanh_toan?.trim() || null,
     ghi_chu: data.ghi_chu?.trim() || null,
     trang_thai: data.trang_thai,
   };
@@ -695,6 +698,7 @@ export async function updateDonDatHangDb(id: string, data: DonDatHangFormValues)
     id_phieu_de_xuat_vat_tu: toNum(data.id_phieu_de_xuat_vat_tu),
     id_nguoi_dat: Number(data.id_nguoi_dat),
     id_nguoi_duyet: toNum(data.id_nguoi_duyet),
+    dieu_khoan_thanh_toan: data.dieu_khoan_thanh_toan?.trim() || null,
     ghi_chu: data.ghi_chu?.trim() || null,
     trang_thai: data.trang_thai,
   };

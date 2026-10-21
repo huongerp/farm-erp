@@ -1,6 +1,6 @@
 /**
  * Nội dung in đơn đặt hàng (PO) — khung chuẩn hệ thống (PhieuInParts): thông tin đơn, bảng hàng hoá
- * (chữ dài xuống dòng, không cắt "…"; cột trống tự ẩn), tổng cộng + số tiền bằng chữ, ô ký.
+ * (chữ dài xuống dòng, không cắt "…"; cột Danh mục / Mục đích trống tự ẩn, Phân loại + Ghi chú luôn in), tổng cộng + số tiền bằng chữ, ô ký.
  */
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -32,10 +32,10 @@ const DonDatHangPreviewContent: React.FC<Props> = ({ po }) => {
   const trangThaiKey = TRANG_THAI_KEY[po.trang_thai];
   const coDanhMuc = cotCoDuLieu(chiTiet, (c) => c.ten_danh_muc_cap2 ?? c.ten_danh_muc_cap1);
   const coMucDich = cotCoDuLieu(chiTiet, (c) => c.muc_dich_su_dung);
-  const coGhiChu = cotCoDuLieu(chiTiet, (c) => c.ghi_chu);
   const tongTien = chiTiet.reduce((s, c) => s + (Number(c.thanh_tien) || 0), 0);
   const soCotTruocTien = 6 + (coDanhMuc ? 1 : 0);
-  const soCotSau = (coMucDich ? 1 : 0) + (coGhiChu ? 1 : 0);
+  // Cột Ghi chú luôn in (ô trống để ghi tay).
+  const soCotSau = (coMucDich ? 1 : 0) + 1;
 
   const thongTin: [string, React.ReactNode][] = [
     [t('donDatHang.form.supplier'), [po.ma_nha_cung_cap, po.ten_nha_cung_cap].filter(Boolean).join(' - ')],
@@ -68,14 +68,14 @@ const DonDatHangPreviewContent: React.FC<Props> = ({ po }) => {
               <tr>
                 <th className={`${th} text-center w-8`}>{t('common.phieuIn.stt')}</th>
                 {coDanhMuc && <th className={`${th} text-left`}>{t('donDatHang.preview.danhMuc')}</th>}
-                <th className={`${th} text-left w-[12%]`}>{t('donDatHang.preview.maHang')}</th>
+                <th className={`${th} text-left`}>{t('donDatHang.chiTietTab.classificationCol')}</th>
                 <th className={`${th} text-left`}>{t('donDatHang.preview.tenHang')}</th>
                 <th className={`${th} text-center w-14`}>{t('common.phieuIn.dvt')}</th>
                 <th className={`${th} text-right w-16`}>{t('donDatHang.form.quantity')}</th>
                 <th className={`${th} text-right w-20`}>{t('donDatHang.form.unitPrice')}</th>
                 <th className={`${th} text-right w-24`}>{t('donDatHang.form.amount')}</th>
                 {coMucDich && <th className={`${th} text-left`}>{t('donDatHang.chiTietTab.purposeOfUseCol')}</th>}
-                {coGhiChu && <th className={`${th} text-left`}>{t('donDatHang.form.note')}</th>}
+                <th className={`${th} text-left`}>{t('donDatHang.form.note')}</th>
               </tr>
             </thead>
             <tbody>
@@ -87,14 +87,14 @@ const DonDatHangPreviewContent: React.FC<Props> = ({ po }) => {
                       {[ct.ten_danh_muc_cap1, ct.ten_danh_muc_cap2].filter(Boolean).join(' / ')}
                     </td>
                   )}
-                  <td className={`${td} text-[0.9em] break-all`}>{ct.ma_hang}</td>
+                  <td className={`${td} text-[0.9em]`}>{ct.phan_loai}</td>
                   <td className={td}>{ct.ten_hang}</td>
                   <td className={`${td} text-center`}>{ct.don_vi_tinh}</td>
                   <td className={`${td} text-right tabular-nums`}>{formatNumberVN(ct.so_luong)}</td>
                   <td className={`${td} text-right tabular-nums`}>{tien(ct.don_gia)}</td>
                   <td className={`${td} text-right tabular-nums font-medium`}>{tien(ct.thanh_tien)}</td>
                   {coMucDich && <td className={`${td} text-[0.9em]`}>{ct.muc_dich_su_dung}</td>}
-                  {coGhiChu && <td className={`${td} text-[0.9em]`}>{ct.ghi_chu}</td>}
+                  <td className={`${td} text-[0.9em]`}>{ct.ghi_chu}</td>
                 </tr>
               ))}
             </tbody>
