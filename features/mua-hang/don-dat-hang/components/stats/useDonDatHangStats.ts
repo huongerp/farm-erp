@@ -1,11 +1,10 @@
 import { useMemo } from 'react';
 import type { DonDatHang } from '../../core/types';
 import { TRANG_THAI_DON_DAT_HANG, TRANG_THAI_KEY } from '../../core/constants';
-import { TRANG_THAI_NHAP, TRANG_THAI_HUY } from '../../core/types';
+import { TRANG_THAI_HUY } from '../../core/types';
 
 export interface DonDatHangStatsSummary {
   total: number;
-  draft: number;
   inProgress: number;
   completed: number;
   cancelled: number;
@@ -45,7 +44,6 @@ export function filterDonDatHangList(list: DonDatHang[], params: DonDatHangStats
 
 /** Logic thuần (dùng cho Thống kê RPC + fallback client). */
 export function computeDonDatHangStats(list: DonDatHang[]) {
-    const draft = list.filter((d) => d.trang_thai === TRANG_THAI_NHAP).length;
     const inProgress = list.filter((d) =>
       ['Chờ duyệt', 'Đã gửi', 'Đã xác nhận', 'Đang giao'].includes(d.trang_thai)
     ).length;
@@ -98,7 +96,6 @@ export function computeDonDatHangStats(list: DonDatHang[]) {
     return {
       summary: {
         total: list.length,
-        draft,
         inProgress,
         completed,
         cancelled,

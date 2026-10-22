@@ -1,5 +1,4 @@
 import {
-  TRANG_THAI_NHAP,
   TRANG_THAI_CHO_DUYET,
   TRANG_THAI_DA_GUI,
   TRANG_THAI_DA_XAC_NHAN,
@@ -12,7 +11,6 @@ import {
 
 /** Danh sách trạng thái (text) – dùng cho filter, form, hiển thị. */
 export const TRANG_THAI_DON_DAT_HANG = [
-  TRANG_THAI_NHAP,
   TRANG_THAI_CHO_DUYET,
   TRANG_THAI_DA_GUI,
   TRANG_THAI_DA_XAC_NHAN,
@@ -24,7 +22,6 @@ export const TRANG_THAI_DON_DAT_HANG = [
 
 /** Map trạng thái (text) -> key locale (donDatHang.status.*) */
 export const TRANG_THAI_KEY: Record<DonDatHangTrangThai, string> = {
-  [TRANG_THAI_NHAP]: 'draft',
   [TRANG_THAI_CHO_DUYET]: 'pending',
   [TRANG_THAI_DA_GUI]: 'sent',
   [TRANG_THAI_DA_XAC_NHAN]: 'confirmed',
@@ -40,7 +37,6 @@ export const TRANG_THAI_KEY: Record<DonDatHangTrangThai, string> = {
  * 'Đã nhận đủ' và 'Đã đóng' tách màu riêng (trước đây cùng emerald, không phân biệt được).
  */
 export const STATUS_VARIANTS: Record<string, string> = {
-  [TRANG_THAI_NHAP]: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20',
   [TRANG_THAI_CHO_DUYET]: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
   [TRANG_THAI_DA_GUI]: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
   [TRANG_THAI_DA_XAC_NHAN]: 'bg-primary/10 text-primary border-primary/20',

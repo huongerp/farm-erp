@@ -105,7 +105,7 @@ const DonDatHangTheoDeXuatSection: React.FC<DonDatHangTheoDeXuatSectionProps> = 
                         STATUS_VARIANTS[item.trang_thai] ?? 'bg-muted text-muted-foreground border-border',
                       )}
                     >
-                      {t(`donDatHang.status.${TRANG_THAI_KEY[item.trang_thai] ?? 'draft'}`)}
+                      {t(`donDatHang.status.${TRANG_THAI_KEY[item.trang_thai] ?? 'pending'}`)}
                     </span>
                   </td>
                   <td className="px-4 py-2 text-xs font-semibold tabular-nums text-right whitespace-nowrap">

@@ -18,7 +18,6 @@ export interface DonDatHangChiTiet {
 }
 
 /** Trạng thái đơn đặt hàng – text như DB (giống module đề xuất vật tư). */
-export const TRANG_THAI_NHAP = 'Nháp';
 export const TRANG_THAI_CHO_DUYET = 'Chờ duyệt';
 export const TRANG_THAI_DA_GUI = 'Đã gửi';
 export const TRANG_THAI_DA_XAC_NHAN = 'Đã xác nhận';
@@ -28,7 +27,6 @@ export const TRANG_THAI_DA_DONG = 'Đã đóng';
 export const TRANG_THAI_HUY = 'Hủy';
 
 export type DonDatHangTrangThai =
-  | typeof TRANG_THAI_NHAP
   | typeof TRANG_THAI_CHO_DUYET
   | typeof TRANG_THAI_DA_GUI
   | typeof TRANG_THAI_DA_XAC_NHAN

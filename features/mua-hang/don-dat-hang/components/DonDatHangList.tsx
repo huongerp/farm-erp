@@ -60,7 +60,7 @@ const DonDatHangList: React.FC<Props> = ({
         STATUS_VARIANTS[item.trang_thai] ?? 'bg-muted text-muted-foreground border-border'
       )}
     >
-      {t(`donDatHang.status.${TRANG_THAI_KEY[item.trang_thai as keyof typeof TRANG_THAI_KEY] ?? 'draft'}`)}
+      {t(`donDatHang.status.${TRANG_THAI_KEY[item.trang_thai as keyof typeof TRANG_THAI_KEY] ?? 'pending'}`)}
     </span>
   );
 

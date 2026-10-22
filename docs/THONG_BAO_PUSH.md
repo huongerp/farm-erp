@@ -158,11 +158,12 @@ duyệt bị sửa" gửi cho cả nhóm duyệt.
 
 ### Đơn đặt hàng — `mua-hang/don-dat-hang`
 
-Máy trạng thái 7 bước, chỉ báo 5 mốc có người phải hành động. Bỏ `Nháp → Đã gửi` và `Đã đóng`.
+Máy trạng thái 7 bước, chỉ báo 5 mốc có người phải hành động. Bỏ `Đã gửi` và `Đã đóng`.
+Không còn `Nháp` (migration 049): đơn tạo mới vào thẳng `Chờ duyệt`, nên INSERT báo luôn nhóm duyệt.
 
 | Sự kiện | Khi | Ai nhận | Mức |
 |---|---|---|---|
-| `don_hang.cho_duyet` | → `Chờ duyệt` | Người có quyền duyệt + cấp bậc 1 | thường |
+| `don_hang.cho_duyet` | INSERT hoặc → `Chờ duyệt` | Người có quyền duyệt + cấp bậc 1 | thường |
 | `don_hang.da_xac_nhan` | → `Đã xác nhận` | Người đặt | thường |
 | `don_hang.dang_giao` | → `Đang giao` | Người đặt | thường |
 | `don_hang.da_nhan_du` | → `Đã nhận đủ` | Người đặt | thường |

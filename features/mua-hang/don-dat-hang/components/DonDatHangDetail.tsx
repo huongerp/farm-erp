@@ -78,7 +78,7 @@ const DonDatHangDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
     () =>
       TRANG_THAI_DON_DAT_HANG.map((s) => ({
         value: s,
-        label: t(`donDatHang.status.${TRANG_THAI_KEY[s] ?? 'draft'}`),
+        label: t(`donDatHang.status.${TRANG_THAI_KEY[s] ?? 'pending'}`),
       })),
     [t]
   );
@@ -156,7 +156,7 @@ const DonDatHangDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
     [showChangeStatusButton, canApprove, conLaiTheoHang, daNhapDu, data, onPrint, onCreatePhieuNhapKho, t]
   );
 
-  const statusLabel = t(`donDatHang.status.${TRANG_THAI_KEY[data.trang_thai as keyof typeof TRANG_THAI_KEY] ?? 'draft'}`);
+  const statusLabel = t(`donDatHang.status.${TRANG_THAI_KEY[data.trang_thai as keyof typeof TRANG_THAI_KEY] ?? 'pending'}`);
   const statusClass = STATUS_VARIANTS[data.trang_thai] ?? 'bg-muted text-muted-foreground border-border';
 
   const renderFooter = (

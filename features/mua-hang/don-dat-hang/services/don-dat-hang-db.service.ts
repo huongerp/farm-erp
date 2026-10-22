@@ -5,7 +5,7 @@
 import { db, fetchAllRows, fetchTablePage, type PaginatedTableResult, throwDbError } from '../../../../lib/db';
 import type { ChiTietDonDatHangFlat, DonDatHang, DonDatHangChiTiet, DonDatHangTrangThai } from '../core/types';
 import type { DonDatHangFormValues } from '../core/schema';
-import { TRANG_THAI_HUY, TRANG_THAI_NHAP } from '../core/types';
+import { TRANG_THAI_CHO_DUYET, TRANG_THAI_HUY } from '../core/types';
 import i18n from '../../../../lib/i18n';
 import { getKhoRef } from '../../../kho-van/danh-sach-kho/services/kho-service';
 import { getDoiTacRef } from '../../../kho-van/danh-sach-doi-tac/services/doi-tac-service';
@@ -35,7 +35,7 @@ const DON_DAT_HANG_ROW_COLUMNS =
   'id,so_po,ngay_dat,ngay_giao_dk,id_nha_cung_cap,ten_nha_cung_cap,id_kho_nhan,ten_kho_nhan,id_phieu_de_xuat_vat_tu,id_nguoi_dat,id_nguoi_duyet,dieu_khoan_thanh_toan,ghi_chu,trang_thai,tg_tao,tg_cap_nhat';
 
 function trangThaiFromDb(s: string | null): DonDatHangTrangThai {
-  if (s == null || s === '') return TRANG_THAI_NHAP;
+  if (s == null || s === '') return TRANG_THAI_CHO_DUYET;
   return s as DonDatHangTrangThai;
 }
 

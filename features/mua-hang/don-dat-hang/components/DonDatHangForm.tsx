@@ -13,7 +13,7 @@ import { DonDatHangFormValues, getDonDatHangSchema, type DonDatHangChiTietFormIt
 import { mapDongChonToDonDatHangLines, mapPhieuDeXuatChiTietToDonDatHangLines } from '../core/don-dat-hang-to-form-values';
 import { getDaDatTheoPhieuDeXuat, getDongPhieuDeXuatVatTu } from '../services/don-dat-hang-service';
 import { moTaDongVuot, timDongVuot, tinhConLai } from '../../../../lib/thuc-hien-tung-phan';
-import { TRANG_THAI_HUY, type DonDatHang } from '../core/types';
+import { TRANG_THAI_CHO_DUYET, TRANG_THAI_HUY, type DonDatHang } from '../core/types';
 import type { Kho } from '../../../kho-van/danh-sach-kho/core/types';
 import type { EmployeeRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
 import type { DoiTacRefLite } from '../../../kho-van/danh-sach-doi-tac/services/doi-tac-service';
@@ -353,7 +353,7 @@ const DonDatHangForm: React.FC<Props> = ({
     id_nguoi_duyet: null,
     dieu_khoan_thanh_toan: '',
     ghi_chu: '',
-    trang_thai: 'Nháp',
+    trang_thai: TRANG_THAI_CHO_DUYET,
     chi_tiet: [],
   };
 

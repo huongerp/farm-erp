@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import {
-  TRANG_THAI_NHAP,
   TRANG_THAI_CHO_DUYET,
   TRANG_THAI_DA_GUI,
   TRANG_THAI_DA_XAC_NHAN,
@@ -23,7 +22,6 @@ describe('canBulkApproveDonDatHang — cổng lọc đơn cho duyệt/hủy hàn
 
   it('đơn đã đi tiếp trong luồng bị loại khỏi lô', () => {
     const khac = [
-      TRANG_THAI_NHAP,
       TRANG_THAI_DA_GUI,
       TRANG_THAI_DA_XAC_NHAN,
       TRANG_THAI_DANG_GIAO,

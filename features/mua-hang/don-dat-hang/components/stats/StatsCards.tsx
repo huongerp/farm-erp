@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { FileText, FileEdit, Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { FileText, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import type { DonDatHangStatsSummary } from './useDonDatHangStats';
 
 interface Props {
@@ -15,12 +15,6 @@ const StatsCards: React.FC<Props> = ({ summary }) => {
       value: summary.total,
       icon: FileText,
       className: 'bg-primary/10 text-primary border-primary/20',
-    },
-    {
-      title: t('donDatHang.status.draft'),
-      value: summary.draft,
-      icon: FileEdit,
-      className: 'bg-slate-500/10 text-slate-700 border-slate-500/20',
     },
     {
       title: t('donDatHang.stats.inProgress'),
@@ -43,7 +37,7 @@ const StatsCards: React.FC<Props> = ({ summary }) => {
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-2.5">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
       {cards.map((card) => (
         <div
           key={card.title}

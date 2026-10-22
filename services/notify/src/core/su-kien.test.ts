@@ -333,7 +333,11 @@ describe('đơn đặt hàng', () => {
     phanTichSuKien(dong({ bang: 'fp_mh_don_dat_hang', trang_thai_cu: cu, trang_thai_moi: moi }));
 
   it('báo đúng 5 mốc đáng quan tâm', () => {
-    expect(dh('Nháp', 'Chờ duyệt')[0]!.loai).toBe('don_hang.cho_duyet');
+    // Đơn mới tạo vào thẳng Chờ duyệt (migration 049 bỏ Nháp) → INSERT có trạng thái cũ null.
+    const taoMoi = phanTichSuKien(
+      dong({ bang: 'fp_mh_don_dat_hang', thao_tac: 'INSERT', trang_thai_cu: null, trang_thai_moi: 'Chờ duyệt' })
+    );
+    expect(taoMoi[0]!.loai).toBe('don_hang.cho_duyet');
     expect(dh('Đã gửi', 'Đã xác nhận')[0]!.loai).toBe('don_hang.da_xac_nhan');
     expect(dh('Đã xác nhận', 'Đang giao')[0]!.loai).toBe('don_hang.dang_giao');
     expect(dh('Đang giao', 'Đã nhận đủ')[0]!.loai).toBe('don_hang.da_nhan_du');

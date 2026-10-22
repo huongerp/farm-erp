@@ -114,7 +114,6 @@ function sheetFromRows(
 function summaryRows(stats: DonDatHangReportStats, t: TFunction): Array<[string, string | number]> {
   return [
     [t('donDatHang.stats.total'), stats.summary.total],
-    [t('donDatHang.status.draft'), stats.summary.draft],
     [t('donDatHang.stats.inProgress'), stats.summary.inProgress],
     [t('donDatHang.stats.completed'), stats.summary.completed],
     [t('donDatHang.status.cancelled'), stats.summary.cancelled],

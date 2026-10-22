@@ -300,8 +300,8 @@ function phanTichPhieuHanhChinh(dong: DongOutbox): SuKienDaPhanTich[] {
 // --- Đơn đặt hàng ------------------------------------------------------------
 
 /**
- * Máy trạng thái 7 bước nhưng chỉ 5 mốc đáng báo. Bỏ Nháp → Đã gửi và Đã đóng:
- * không ai phải hành động vì chúng.
+ * Máy trạng thái 7 bước nhưng chỉ 5 mốc đáng báo. Bỏ Đã gửi và Đã đóng: không ai phải hành
+ * động vì chúng. Đơn mới tạo vào thẳng Chờ duyệt (migration 049 bỏ Nháp) nên INSERT cũng báo nhóm duyệt.
  */
 function phanTichDonDatHang(dong: DongOutbox): SuKienDaPhanTich[] {
   if (!daDoiTrangThai(dong)) return [];
