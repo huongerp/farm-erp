@@ -78,70 +78,7 @@ Mỗi module trong `features/` theo cùng một khuôn:
 - Lỗi từ PostgREST format qua `lib/db-errors.ts` để hiện toast tiếng Việt kèm mã lỗi.
 - Bảng dữ liệu đặt tên `fp_var_*` (danh mục/hệ thống), `fp_farm_*` (nghiệp vụ farm), `fp_hr_*` (nhân sự).
 
-### Danh sách: phân trang ở SERVER, không tải cả bảng
-
-Module có dữ liệu lớn dần theo thời gian (phiếu, báo cáo, danh mục hàng hoá) phải
-lọc / sắp xếp / cắt trang ở PostgREST. Khuôn đã áp dụng — xem
-`features/quan-ly-nha-so-che/bao-cao-nhan-cong` làm mẫu đầy đủ nhất:
-
-```
-services/<module>-list-query.ts   # kiểu XListServerQuery + cột sort được ở DB
-services/<module>-db.service.ts   # apply<X>ListQuery dùng chung cho:
-                                  #   get<X>Page()            → một trang (fetchTablePage)
-                                  #   fetchAll<X>ForListQuery() → CHỈ khi bấm Xuất file
-                                  #   get<X>TomTat()          → vài cột cho chip lọc/gợi ý
-hooks/use-<module>.ts             # use<X>Page(query) + placeholderData: keepPreviousData
-components/<X>List.tsx            # GenericTable nhận totalRecordsOverride + isFetching
-```
-
-- Ô tìm kiếm ở server: `applyPostgrestSearch` (`lib/postgrest-search.ts`) — tự escape
-  `%`/`_`, chỉ so cột số khi từ khoá là số nguyên, cột ngày nhận `dd/mm/yyyy`.
-- Lọc theo kỳ (năm/tháng): `dieuKienKyTheoNgay` cùng file.
-- Cần lọc theo cột của bảng khác (tên nhân viên, chi nhánh của tài sản): tra id trước
-  bằng một truy vấn nhẹ rồi `.in('cot_id', ids)` — xem `bang-luong-service.ts`.
-- Bảng cha kèm bảng con: dùng embed của PostgREST
-  (`ban_cha(cot,...,bang_con(cot,...))`) để lấy một trang trong MỘT request, thay vì
-  `.in()` với toàn bộ id.
-- Chip lọc và số đếm phải tính trên **toàn bộ** dữ liệu → dùng bản `TomTat` vài cột,
-  không dùng dữ liệu của trang đang xem.
-
-**Cố ý GIỮ lọc ở client** (chuyển sang server là sai hướng, không phải bỏ sót):
-
-- **Bảng cây** — Công việc (`id_cha`), Phòng ban: cắt trang ở DB làm mất nhánh cha
-  hoặc con nằm ngoài trang, cây dựng ra sẽ sai.
-- **Danh mục cấu hình dùng làm ref chung** — kho, chi nhánh, chức vụ, cấp bậc, nhóm
-  tài sản, nơi lưu, hạng mục thu chi…: số dòng cố định nhỏ, lại được cache IndexedDB
-  và dùng lại ở form/phiếu khắp nơi; phân trang riêng cho màn danh sách sẽ phá cache
-  dùng chung đó.
-- **Kanban / Gantt / báo cáo tổng hợp**: bản chất cần toàn bộ tập dữ liệu trong phạm
-  vi, nên lọc ở server theo kỳ + phạm vi thay vì cắt trang.
-
-### Bảng dùng chung
-
-- `GenericTable` / `HierarchyTable` đặt `table-layout: fixed` + `<colgroup>` + một
-  `<col>` đệm. Thiếu ba thứ này thì kéo đổi bề rộng cột sẽ "không ăn".
-- Kéo cột: truyền `onResizeColumn={resizeColumn}` của store; logic nằm ở
-  `lib/table-core/use-column-resize.ts` (pointer event, ←/→, double-click auto-fit).
-- Ẩn/hiện cột, thứ tự và bề rộng được lưu qua `zustand/persist`; mỗi store khai
-  `storageKey` dạng `table-<module>`. `resetState()` CỐ Ý không đụng `columns`.
-- Ô tìm kiếm quét **mọi cột** qua `createListSearchMatcher` (`lib/list-search-matcher.ts`),
-  bỏ dấu tiếng Việt. Placeholder dùng chung `common.searchPlaceholder` — không đặt
-  gợi ý riêng từng module (làm người dùng tưởng chỉ tìm được vài cột được kể tên).
-
-### Toolbar lọc
-
-- Hàng chip desktop: truyền `filters={<ResponsiveFilterChips items={...} />}`
-  (`components/shared/ResponsiveFilterChips.tsx`, logic + test ở `lib/filter-chip-split.ts`).
-  Tối đa 5 bộ lọc ngoài toolbar ở màn ≥ 1024px, 3 ở 640–1024px, dư vào nút Filter.
-  Item `kind: 'custom'` (chọn khoảng ngày, ô ngày, nút gạt) luôn hiện nhưng vẫn tính chỗ;
-  bộ lọc ít dùng → `luonVaoFilter`. Không tự `.slice` / tự đặt `FilterOverflowDropdown`.
-- Điện thoại (< 640px) dùng bảng lọc từ `filterGroups`. Control không phải danh sách chọn
-  phải truyền thêm qua `mobileFilterExtra` (+ `mobileFilterExtraCount`) của GenericToolbar /
-  DashboardToolbar, bọc bằng `MobileFilterField`; chọn khoảng ngày dùng
-  `<DateRangePicker inline …/>` cùng value/onChange với desktop. Thiếu bước này thì điện
-  thoại không lọc được theo ngày.
-- Tab thống kê dùng `components/shared/StatsToolbar.tsx` (truyền nhãn đã dịch qua props),
-  không tạo bản sao `stats/StatsToolbar.tsx` riêng cho module.
+- Danh sách phân trang ở SERVER (khuôn `*-list-query` + `*-db.service`), bảng dùng chung (`GenericTable`/`HierarchyTable`) và toolbar lọc: chi tiết ở `.claude/rules/danh-sach-phan-trang-server.md` và `.claude/rules/bang-va-toolbar-loc.md` (tự nạp khi chạm file liên quan; xem bảng cuối file).
 
 ## Phân quyền — hai tầng phải khớp nhau
 
@@ -192,16 +129,6 @@ xem mẫu ở các hook `use-*-view-scope.ts`.
   không UPDATE thẳng `mat_khau_hash`.
 - Thông báo sinh bằng trigger DB ghi vào outbox, **không** gọi thêm insert từ frontend sau mutation —
   làm vậy sẽ sót khi dữ liệu đổi từ SQL tay hoặc module khác. Xem [docs/THONG_BAO_PUSH.md](docs/THONG_BAO_PUSH.md).
-- Sổ quỹ (`features/tai-chinh/thu-chi-quy`) có trạng thái duyệt: `cho_duyet` / `da_duyet` / `khong_duyet`
-  (migration 036). Luật thuần ở `core/trang-thai.ts` (có test), cổng theo người dùng ở
-  `hooks/use-thu-chi-quy-permissions.ts`; DB chặn lại bằng trigger `fn_tc_quy_khoa_duyet`. Duyệt / không duyệt
-  chỉ dành cho `cap_bac = 1` / quản trị; phiếu đã xét phải chặn cả ở `ThuChiLienQuanSection` (bảng nhúng
-  trong drawer của 3 module khác, KHÔNG đọc được ModulePermissionGuard của quỹ). Phiếu `khong_duyet` KHÔNG
-  tính vào tồn quỹ / số dư / thống kê — view `v_tc_quy_*` và `rpc_tc_quy_thu_chi_stats` lọc cùng luật `tinhVaoTonQuy`.
-- Trang in phiếu: MỌI trang preview dùng `components/shared/phieu-in/PhieuInPage` (`mauKey` + `macDinh` khổ/hướng/lề).
-  Khung lo lề, `@page`, cỡ chữ (zoom), phông, kéo cột mọi `<table>` (bỏ qua `data-in-co-dinh`), PDF/DOC chụp từ
-  bản xem trước; cài đặt nhớ theo mẫu ở `lib/phieu-in/`. Nội dung phiếu KHÔNG đặt width/padding cứng, không thêm
-  khối `@media print` riêng, không viết lại HTML chuỗi để xuất PDF.
 - Thêm chuỗi hiển thị vào `vi.json` của module hoặc `locales/vi/*.json` (`node scripts/check-i18n-keys.mjs`
   soi trùng khoá).
 - Format: ESLint là chuẩn bắt buộc. Prettier CHƯA áp cho toàn repo (`npm run format:check` đang báo rất
@@ -210,3 +137,14 @@ xem mẫu ở các hook `use-*-view-scope.ts`.
 - Commit message: dòng đầu tiếng Việt có dấu nói rõ việc đã làm (vd "Thêm module Giám sát chất lượng"),
   dòng trống, rồi gạch đầu dòng chi tiết nếu cần. Không dùng message vô nghĩa ("312313", "jhkjhk") —
   lịch sử git là chỗ tra lại khi có lỗi.
+
+## Ghi chép theo mảng — `.claude/rules/`
+
+Chi tiết từng mảng nằm ở `.claude/rules/` và **tự nạp** khi đọc/sửa file thuộc mảng đó. Làm việc liên quan mà chưa chạm file mảng (lên kế hoạch, trả lời câu hỏi) thì đọc file rule tương ứng trước.
+
+| Mảng | File | Tự nạp khi chạm |
+|---|---|---|
+| Danh sách phân trang/lọc/sắp xếp ở PostgREST (khuôn `*-list-query` + `*-db.service`) | [danh-sach-phan-trang-server.md](.claude/rules/danh-sach-phan-trang-server.md) | `features/**/services/*-list-query.ts`, `features/**/services/*-db.service.ts`, `lib/postgrest-search.ts` … |
+| GenericTable/HierarchyTable, kéo cột, ô tìm kiếm, chip lọc, toolbar mobile | [bang-va-toolbar-loc.md](.claude/rules/bang-va-toolbar-loc.md) | `components/shared/GenericTable.tsx`, `components/shared/HierarchyTable.tsx`, `components/shared/GenericToolbar.tsx` … |
+| Sổ quỹ: trạng thái duyệt, tồn quỹ, trigger `fn_tc_quy_khoa_duyet` | [so-quy-thu-chi.md](.claude/rules/so-quy-thu-chi.md) | `features/tai-chinh/**` |
+| Trang in phiếu (`PhieuInPage`, khổ/hướng/lề, PDF/DOC) | [phieu-in.md](.claude/rules/phieu-in.md) | `components/shared/phieu-in/**`, `lib/phieu-in/**` |
