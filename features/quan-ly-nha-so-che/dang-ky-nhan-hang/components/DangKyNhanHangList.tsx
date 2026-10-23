@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Copy, Edit, LogIn, LogOut, Trash2 } from 'lucide-react';
+import { Building2, Copy, Edit, LogIn, LogOut, Trash2 } from 'lucide-react';
 import GenericTable from '../../../../components/shared/GenericTable';
 import type { ColumnConfig, SortState } from '../../../../store/createGenericStore';
 import {
@@ -260,6 +260,12 @@ const DangKyNhanHangList: React.FC<Props> = ({
           </div>
           <TrangThaiBadge value={item.trang_thai} />
         </div>
+        {item.ten_chi_nhanh && (
+          <div className="text-xs font-medium text-primary flex items-center gap-1 min-w-0 mb-1">
+            <Building2 size={12} className="shrink-0" />
+            <span className="truncate">{item.ten_chi_nhanh}</span>
+          </div>
+        )}
         <div className="text-xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-1">
           <span>{formatYmdToDisplay(item.ngay_dang_ky)}</span>
           {(item.gio_dang_ky_tu || item.gio_dang_ky_den) && (
