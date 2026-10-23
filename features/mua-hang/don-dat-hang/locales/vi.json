@@ -2,6 +2,7 @@
   "donDatHang.tabs.list": "Danh sách",
   "donDatHang.tabs.chiTiet": "Chi tiết",
   "donDatHang.tabs.stats": "Thống kê",
+  "donDatHang.filters.orderDate": "Ngày đặt",
   "donDatHang.store.soPoCol": "Số PO",
   "donDatHang.store.orderDateCol": "Ngày đặt",
   "donDatHang.store.deliveryDateCol": "Ngày giao DK",

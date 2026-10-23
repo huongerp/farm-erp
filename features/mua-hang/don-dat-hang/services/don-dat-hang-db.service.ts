@@ -226,6 +226,8 @@ function applyDonDatHangListQuery(q: any, query: DonDatHangListServerQuery): any
   if (query.idNhaCungCap.length) b = b.in('id_nha_cung_cap', query.idNhaCungCap);
   if (query.idKhoNhan.length) b = b.in('id_kho_nhan', query.idKhoNhan);
   if (query.idNguoiDat.length) b = b.in('id_nguoi_dat', query.idNguoiDat);
+  if (query.ngayFrom) b = b.gte('ngay_dat', query.ngayFrom);
+  if (query.ngayTo) b = b.lte('ngay_dat', query.ngayTo);
   const term = (query.searchTerm ?? '').trim();
   if (term) {
     const esc = term.replace(/%/g, '\\%').replace(/_/g, '\\_');
@@ -262,6 +264,8 @@ function applyChiTietDonDatHangFlatListQuery(q: any, query: DonDatHangListServer
   if (query.idNhaCungCap.length) b = b.in('id_nha_cung_cap', query.idNhaCungCap);
   if (query.idKhoNhan.length) b = b.in('id_kho_nhan', query.idKhoNhan);
   if (query.idNguoiDat.length) b = b.in('id_nguoi_dat', query.idNguoiDat);
+  if (query.ngayFrom) b = b.gte('ngay_dat', query.ngayFrom);
+  if (query.ngayTo) b = b.lte('ngay_dat', query.ngayTo);
   if (query.phanLoai.length) b = b.in('phan_loai', query.phanLoai);
   if (query.idHangHoaByProductFilters?.length) b = b.in('id_hang_hoa', query.idHangHoaByProductFilters);
   const term = (query.searchTerm ?? '').trim();

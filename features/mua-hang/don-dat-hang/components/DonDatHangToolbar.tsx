@@ -1,11 +1,15 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Tag, Building2, Warehouse, User, Download } from 'lucide-react';
+import { Plus, Tag, Building2, Warehouse, User, Download, Calendar } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
+import DateRangePicker, { type DateRangeValue } from '../../../../components/ui/DateRangePicker';
+import { MobileFilterField } from '../../../../components/ui/MobileFilterSheet';
 import { useSearchInputCommit } from '../../../../lib/hooks/use-search-input-commit';
+import { DATE_RANGE_PRESETS, type DateRangePresetId } from '../../../he-thong/nhan-vien/core/stats-constants';
+import { getDateRangeFromPreset } from '../../../he-thong/nhan-vien/utils/stats-date-range';
 import { useDonDatHangStore } from '../store/useDonDatHangStore';
 import type { DonDatHang } from '../core/types';
 import type { Kho } from '../../../kho-van/danh-sach-kho/core/types';
@@ -63,6 +67,27 @@ const DonDatHangToolbar: React.FC<Props> = ({
     commit: commitSearchTerm,
   });
 
+  const datePreset = filters.datePreset ?? 'all';
+  const customDateFrom = filters.customDateFrom ?? '';
+  const customDateEnd = filters.customDateEnd ?? '';
+  const dateFilterActive = datePreset !== 'all' || !!customDateFrom.trim() || !!customDateEnd.trim();
+  const dateRangeLabel = useMemo(
+    () =>
+      getDateRangeFromPreset(
+        datePreset,
+        customDateFrom ? new Date(customDateFrom) : undefined,
+        customDateEnd ? new Date(customDateEnd) : undefined
+      ).label,
+    [datePreset, customDateFrom, customDateEnd]
+  );
+  const dateRangePickerPresets = useMemo(() => DATE_RANGE_PRESETS.map((p) => ({ id: p.id, label: p.label })), []);
+  const dateValue: DateRangeValue = { preset: datePreset, customStart: customDateFrom, customEnd: customDateEnd };
+  const onDateChange = (v: DateRangeValue) => {
+    setFilter('datePreset', v.preset as DateRangePresetId);
+    setFilter('customDateFrom', v.customStart);
+    setFilter('customDateEnd', v.customEnd);
+  };
+
   const statusOptions = useMemo(
     () =>
       TRANG_THAI_DON_DAT_HANG.map((s) => ({
@@ -109,8 +134,9 @@ const DonDatHangToolbar: React.FC<Props> = ({
       (filters.status?.length ?? 0) +
       (filters.nhaCungCapIds?.length ?? 0) +
       (filters.khoNhanIds?.length ?? 0) +
-      (filters.nguoiDatIds?.length ?? 0),
-    [searchInput, filters.status, filters.nhaCungCapIds, filters.khoNhanIds, filters.nguoiDatIds]
+      (filters.nguoiDatIds?.length ?? 0) +
+      (dateFilterActive ? 1 : 0),
+    [searchInput, filters.status, filters.nhaCungCapIds, filters.khoNhanIds, filters.nguoiDatIds, dateFilterActive]
   );
 
   const handleClearAllFilters = () => {
@@ -119,6 +145,9 @@ const DonDatHangToolbar: React.FC<Props> = ({
     setFilter('nhaCungCapIds', []);
     setFilter('khoNhanIds', []);
     setFilter('nguoiDatIds', []);
+    setFilter('datePreset', 'all');
+    setFilter('customDateFrom', '');
+    setFilter('customDateEnd', '');
   };
 
   const mobileActions = useMemo(
@@ -203,11 +232,33 @@ const DonDatHangToolbar: React.FC<Props> = ({
     ]
   );
 
-  const filterItems: FilterChipItem[] = filterGroups.map((g, i) => ({
-    kind: 'group',
-    group: g,
-    className: i === 0 ? 'w-full sm:w-[140px]' : 'w-full sm:w-[160px]',
-  }));
+  const filterItems: FilterChipItem[] = [
+    { kind: 'group', group: filterGroups[0], className: 'w-full sm:w-[140px]' },
+    {
+      kind: 'custom',
+      key: 'dateRange',
+      node: (
+        <DateRangePicker
+          presets={dateRangePickerPresets}
+          value={dateValue}
+          onChange={onDateChange}
+          displayLabel={dateRangeLabel}
+          placeholder={t('donDatHang.filters.orderDate')}
+          className="w-full sm:w-auto"
+        />
+      ),
+    },
+    ...filterGroups.slice(1).map(
+      (g): FilterChipItem => ({ kind: 'group', group: g, className: 'w-full sm:w-[160px]' })
+    ),
+  ];
+
+  // Bảng lọc mobile chỉ có các nhóm chọn — bù khoảng ngày của desktop.
+  const mobileFilterExtra = (
+    <MobileFilterField label={t('donDatHang.filters.orderDate')} icon={Calendar} active={dateFilterActive}>
+      <DateRangePicker inline presets={dateRangePickerPresets} value={dateValue} onChange={onDateChange} />
+    </MobileFilterField>
+  );
 
   /** Mobile: nút export cạnh ô tìm; desktop: nút export trong hàng actions (giống Phiếu kho). */
   const searchTrailingExport = (
@@ -271,6 +322,8 @@ const DonDatHangToolbar: React.FC<Props> = ({
       }
       filters={<ResponsiveFilterChips items={filterItems} />}
       filterGroups={filterGroups}
+      mobileFilterExtra={mobileFilterExtra}
+      mobileFilterExtraCount={dateFilterActive ? 1 : 0}
       mobileActions={mobileActions}
       searchTrailing={searchTrailingExport}
       onAdd={canCreate ? onAdd : undefined}

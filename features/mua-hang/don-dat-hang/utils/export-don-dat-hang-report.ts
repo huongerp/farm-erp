@@ -133,6 +133,8 @@ function buildStatsListQuery(filters: DonDatHangReportFilters): DonDatHangListSe
     idNhaCungCap: toNum(filters.supplierValues),
     idKhoNhan: [],
     idNguoiDat: toNum(filters.buyerValues),
+    ngayFrom: '',
+    ngayTo: '',
     idDanhMucCap1: [],
     idDanhMucCap2: [],
     phanLoai: [],

@@ -1,5 +1,6 @@
 import { createGenericStore, type ColumnConfig } from '../../../../store/createGenericStore';
 import i18n from '../../../../lib/i18n';
+import type { DateRangePresetId } from '../../../he-thong/nhan-vien/core/stats-constants';
 
 export interface DonDatHangFilters {
   status: string[];
@@ -9,6 +10,10 @@ export interface DonDatHangFilters {
   danhMucCap1Ids?: string[];
   danhMucCap2Ids?: string[];
   phanLoai?: string[];
+  /** Kỳ lọc theo Ngày đặt; 'all' = không lọc. Optional vì store tab Chi tiết dùng chung builder. */
+  datePreset?: DateRangePresetId;
+  customDateFrom?: string;
+  customDateEnd?: string;
 }
 
 const getDefaultColumns = (): ColumnConfig[] => [
@@ -36,6 +41,9 @@ const initialFilters: DonDatHangFilters = {
   danhMucCap1Ids: [],
   danhMucCap2Ids: [],
   phanLoai: [],
+  datePreset: 'all',
+  customDateFrom: '',
+  customDateEnd: '',
 };
 
 export const useDonDatHangStore = createGenericStore<DonDatHangFilters>(
