@@ -10,6 +10,7 @@ import {
   updateDonDatHang,
   updateDonDatHangTrangThai,
   updateDonDatHangTrangThaiMany,
+  hoanTacNhanDuDonDatHang,
   deleteDonDatHang,
   deleteDonDatHangMany,
   getPhanLoaiDonDatHangChiTiet,
@@ -18,6 +19,7 @@ import {
 import type { DonDatHangListServerQuery } from '../services/don-dat-hang-list-query';
 import type { DonDatHangFormValues } from '../core/schema';
 import type { DonDatHang } from '../core/types';
+import { TRANG_THAI_KEY } from '../core/constants';
 import i18n from '../../../../lib/i18n';
 import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
 import type { BranchListScope } from '../../../../lib/branch-scope-query';
@@ -180,6 +182,28 @@ export const useUpdateDonDatHangTrangThai = (onSuccess?: () => void) => {
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'chiTietPaged'] });
       qc.invalidateQueries({ queryKey: BY_PHIEU_DE_XUAT_QUERY_KEY });
       toast.success(i18n.t('donDatHang.toast.updateSuccess'));
+      onSuccess?.();
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+};
+
+/** Hoàn tác "Nhận đủ": về trạng thái DB đã nhớ; toast báo trạng thái đích. */
+export const useHoanTacNhanDuDonDatHang = (onSuccess?: () => void) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => hoanTacNhanDuDonDatHang(id),
+    onSuccess: async (dich, id) => {
+      qc.invalidateQueries({ queryKey: QUERY_KEY });
+      qc.invalidateQueries({ queryKey: [...QUERY_KEY, id] });
+      qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
+      qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'chiTietPaged'] });
+      qc.invalidateQueries({ queryKey: BY_PHIEU_DE_XUAT_QUERY_KEY });
+      toast.success(
+        i18n.t('donDatHang.nhanDu.hoanTacSuccess', {
+          trangThai: i18n.t(`donDatHang.status.${TRANG_THAI_KEY[dich] ?? 'pending'}`),
+        })
+      );
       onSuccess?.();
     },
     onError: (err: Error) => toast.error(err.message),

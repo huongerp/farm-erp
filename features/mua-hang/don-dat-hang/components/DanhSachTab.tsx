@@ -11,6 +11,7 @@ import {
   useDeleteDonDatHangMany,
   useUpdateDonDatHangTrangThai,
   useUpdateDonDatHangTrangThaiMany,
+  useHoanTacNhanDuDonDatHang,
 } from '../hooks/use-don-dat-hang';
 import { useDonDatHangViewScope } from '../hooks/use-don-dat-hang-view-scope';
 import { buildDonDatHangListServerQuery, fetchAllDonDatHangForListQuery } from '../services/don-dat-hang-service';
@@ -22,7 +23,8 @@ import { useDonDatHangStore } from '../store/useDonDatHangStore';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL, CONFIRM_YES } from '../../../../lib/button-labels';
 import type { DonDatHang } from '../core/types';
-import { TRANG_THAI_DA_XAC_NHAN, TRANG_THAI_HUY } from '../core/types';
+import type { Kho } from '../../../kho-van/danh-sach-kho/core/types';
+import { TRANG_THAI_DA_NHAN_DU, TRANG_THAI_DA_XAC_NHAN, TRANG_THAI_HUY } from '../core/types';
 import { canBulkApproveDonDatHang } from '../core/constants';
 import DonDatHangToolbar from './DonDatHangToolbar';
 import DonDatHangList from './DonDatHangList';
@@ -41,6 +43,9 @@ import {
 
 /** Đồng bộ Google Sheet tự động — nguồn v_xuat_don_dat_hang (services/sheets/src/core/nguon-dong-bo.ts). */
 const DONG_BO_DON_DAT_HANG = { moduleId: 'mua-hang/don-dat-hang' };
+// Mặc định `= []` sẽ ra mảng mới mỗi render khi query kho chưa có dữ liệu → listServerQuery đổi liên tục
+// → khối điều chỉnh-lúc-render (exportSync) gọi setState vô hạn ("Too many re-renders").
+const KHO_RONG: Kho[] = [];
 
 const DanhSachTab: React.FC = () => {
   const { t } = useTranslation();
@@ -71,7 +76,7 @@ const DanhSachTab: React.FC = () => {
   const [createPhieuNhapFrom, setCreatePhieuNhapFrom] = useState<DonDatHang | null>(null);
 
   const { data: supplierList = [] } = useDoiTacRefQuery('nha_cung_cap');
-  const { data: khoList = [], isPending: khoPending } = useKhoList();
+  const { data: khoList = KHO_RONG, isPending: khoPending } = useKhoList();
   const { data: employees = [] } = useEmployeesRefQuery();
   const { data: phieuDeXuatList = [] } = usePhieuDeXuatSoPhieuMinimalQuery();
   const viewScope = useDonDatHangViewScope();
@@ -104,6 +109,7 @@ const DanhSachTab: React.FC = () => {
   const deleteMutation = useDeleteDonDatHang();
   const deleteManyMutation = useDeleteDonDatHangMany();
   const updateTrangThaiMutation = useUpdateDonDatHangTrangThai();
+  const hoanTacNhanDuMutation = useHoanTacNhanDuDonDatHang();
   const trangThaiManyMutation = useUpdateDonDatHangTrangThaiMany();
 
   useEffect(() => {
@@ -215,6 +221,17 @@ const DanhSachTab: React.FC = () => {
       });
     },
     [updateTrangThaiMutation]
+  );
+
+  // Nhân viên nhận hàng: popup xác nhận nằm trong DonDatHangDetail, ở đây chỉ ghi trạng thái.
+  const handleNhanDu = useCallback(
+    (item: DonDatHang) => updateTrangThaiMutation.mutate({ id: item.id, trangThai: TRANG_THAI_DA_NHAN_DU }),
+    [updateTrangThaiMutation]
+  );
+
+  const handleHoanTacNhanDu = useCallback(
+    (item: DonDatHang) => hoanTacNhanDuMutation.mutate(item.id),
+    [hoanTacNhanDuMutation]
   );
 
   const handleDelete = (id: string) => {
@@ -389,6 +406,8 @@ const DanhSachTab: React.FC = () => {
             onDelete={canDelete ? handleDelete : undefined}
             onApprove={canApprove ? handleApprove : undefined}
             onChangeStatus={canAdmin ? handleChangeStatus : undefined}
+            onNhanDu={canCreate ? handleNhanDu : undefined}
+            onHoanTacNhanDu={canCreate ? handleHoanTacNhanDu : undefined}
             // Chờ viewingPoFull load xong mới cho tạo phiếu nhập — nếu không, item có thể là dòng
             // summary (chưa có chi_tiet) và phiếu nhập tạo ra sẽ trống, không có dòng hàng nào.
             onCreatePhieuNhapKho={canCreate && viewingPoFull ? () => setCreatePhieuNhapFrom(viewingPoFull) : undefined}

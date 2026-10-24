@@ -58,3 +58,30 @@ export function canBulkApproveDonDatHang(trangThai: string, canApprove: boolean)
   if (!canApprove) return false;
   return trangThai === TRANG_THAI_CHO_DUYET;
 }
+
+/**
+ * Nút "Nhận đủ" ở drawer chi tiết: chỉ đơn đã duyệt và đang chờ hàng về. Đơn Chờ duyệt phải duyệt trước
+ * (không nhảy cóc bước duyệt); Đã đóng / Hủy là đơn đã kết thúc.
+ */
+export const TRANG_THAI_CO_THE_NHAN_DU = [TRANG_THAI_DA_XAC_NHAN, TRANG_THAI_DA_GUI, TRANG_THAI_DANG_GIAO] as const;
+
+/** Quyền bấm Nhận đủ / Hoàn tác = quyền Tạo (cùng nhóm nhân viên tạo phiếu nhập kho từ đơn). */
+export function canNhanDuDonDatHang(trangThai: string, canCreate: boolean): boolean {
+  if (!canCreate) return false;
+  return (TRANG_THAI_CO_THE_NHAN_DU as readonly string[]).includes(trangThai);
+}
+
+export function canHoanTacNhanDu(trangThai: string, canCreate: boolean): boolean {
+  if (!canCreate) return false;
+  return trangThai === TRANG_THAI_DA_NHAN_DU;
+}
+
+/**
+ * Trạng thái đích khi hoàn tác nhận đủ: trạng thái trigger DB đã nhớ (cột trang_thai_truoc_nhan_du, migration 050).
+ * Đơn chuyển sang Đã nhận đủ trước khi có migration (cột NULL) hoặc giá trị lạ → "Đang giao" (hàng đang về, chưa đủ).
+ */
+export function trangThaiSauHoanTacNhanDu(truoc: string | null | undefined): DonDatHangTrangThai {
+  const hopLe = TRANG_THAI_DON_DAT_HANG.find((s) => s === truoc);
+  if (!hopLe || hopLe === TRANG_THAI_DA_NHAN_DU) return TRANG_THAI_DANG_GIAO;
+  return hopLe;
+}

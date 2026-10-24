@@ -18,6 +18,7 @@ import {
   updateDonDatHangDb,
   updateDonDatHangTrangThaiDb,
   updateDonDatHangTrangThaiManyDb,
+  hoanTacNhanDuDonDatHangDb,
   deleteDonDatHangDb,
   deleteDonDatHangManyDb,
   getNextSoPoDonDatHangDb,
@@ -74,6 +75,7 @@ export const updateDonDatHangTrangThaiMany = (
   trang_thai: DonDatHangTrangThai,
   options?: { ghi_chu?: string; notePrefix?: string }
 ) => updateDonDatHangTrangThaiManyDb(ids, trang_thai, options);
+export const hoanTacNhanDuDonDatHang = hoanTacNhanDuDonDatHangDb;
 export const deleteDonDatHang = deleteDonDatHangDb;
 export const deleteDonDatHangMany = deleteDonDatHangManyDb;
 export const fetchChiTietForCategoryStats = fetchChiTietForCategoryStatsDb;

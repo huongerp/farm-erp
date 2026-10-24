@@ -5,7 +5,7 @@
 import { db, fetchAllRows, fetchTablePage, type PaginatedTableResult, throwDbError } from '../../../../lib/db';
 import type { ChiTietDonDatHangFlat, DonDatHang, DonDatHangChiTiet, DonDatHangTrangThai } from '../core/types';
 import type { DonDatHangFormValues } from '../core/schema';
-import { TRANG_THAI_CHO_DUYET, TRANG_THAI_HUY } from '../core/types';
+import { TRANG_THAI_CHO_DUYET, TRANG_THAI_DA_NHAN_DU, TRANG_THAI_HUY } from '../core/types';
 import i18n from '../../../../lib/i18n';
 import { getKhoRef } from '../../../kho-van/danh-sach-kho/services/kho-service';
 import { getDoiTacRef } from '../../../kho-van/danh-sach-doi-tac/services/doi-tac-service';
@@ -13,7 +13,7 @@ import { getHangHoaRef, type HangHoaRefLite } from '../../../kho-van/danh-sach-h
 import type { BranchListScope } from '../../../../lib/branch-scope-query';
 import { postgrestQuotedIlikePattern } from '../../../../lib/postgrest-or-ilike';
 import type { DonDatHangListServerQuery } from './don-dat-hang-list-query';
-import { TRANG_THAI_DON_DAT_HANG, TRANG_THAI_KEY } from '../core/constants';
+import { TRANG_THAI_DON_DAT_HANG, TRANG_THAI_KEY, trangThaiSauHoanTacNhanDu } from '../core/constants';
 import type {
   DonDatHangStatsByTrangThai,
   DonDatHangStatsSummary,
@@ -767,6 +767,38 @@ export async function updateDonDatHangTrangThaiDb(
     .update({ trang_thai, ghi_chu: mergedGhiChu })
     .eq('id', idNum);
   if (error) throwDbError(error);
+}
+
+/**
+ * Hoàn tác "Nhận đủ": đưa đơn về trạng thái trigger DB đã nhớ (trang_thai_truoc_nhan_du, migration 050).
+ * Điều kiện `trang_thai = Đã nhận đủ` nằm ngay trong câu UPDATE → bấm đôi / người khác vừa đổi thì không ghi đè.
+ * Trả về trạng thái đích để toast báo đơn đã về đâu.
+ */
+export async function hoanTacNhanDuDonDatHangDb(id: string): Promise<DonDatHangTrangThai> {
+  const idNum = Number(id);
+  if (Number.isNaN(idNum)) throw new Error(i18n.t('donDatHang.service.notFound'));
+
+  const { data: row, error: fetchErr } = await db
+    .from(TABLE_DON)
+    .select('trang_thai, trang_thai_truoc_nhan_du')
+    .eq('id', idNum)
+    .maybeSingle();
+  if (fetchErr) throwDbError(fetchErr);
+  if (!row) throw new Error(i18n.t('donDatHang.service.notFound'));
+
+  const r = row as { trang_thai: string; trang_thai_truoc_nhan_du?: string | null };
+  if (r.trang_thai !== TRANG_THAI_DA_NHAN_DU) throw new Error(i18n.t('donDatHang.nhanDu.khongConNhanDu'));
+
+  const dich = trangThaiSauHoanTacNhanDu(r.trang_thai_truoc_nhan_du);
+  const { data: updated, error } = await db
+    .from(TABLE_DON)
+    .update({ trang_thai: dich })
+    .eq('id', idNum)
+    .eq('trang_thai', TRANG_THAI_DA_NHAN_DU)
+    .select('id');
+  if (error) throwDbError(error);
+  if (!updated?.length) throw new Error(i18n.t('donDatHang.nhanDu.khongConNhanDu'));
+  return dich;
 }
 
 export interface UpdateDonDatHangTrangThaiManyResult {

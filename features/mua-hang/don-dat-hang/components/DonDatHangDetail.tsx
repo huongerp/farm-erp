@@ -1,14 +1,15 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence, motion } from 'framer-motion';
-import { FileText, Calendar, Building2, Warehouse, User, UserCheck, Package, CreditCard, CheckCircle, Printer, X, RefreshCw } from 'lucide-react';
+import { FileText, Calendar, Building2, Warehouse, User, UserCheck, Package, CreditCard, CheckCircle, Printer, X, RefreshCw, PackageCheck, Undo2 } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import DetailDrawerFooter from '../../../../components/shared/DetailDrawerFooter';
 import Textarea from '../../../../components/ui/Textarea';
 import Combobox from '../../../../components/ui/Combobox';
 import type { DonDatHang, DonDatHangTrangThai } from '../core/types';
 import { TRANG_THAI_CHO_DUYET, TRANG_THAI_DA_XAC_NHAN, TRANG_THAI_HUY } from '../core/types';
-import { TRANG_THAI_KEY, TRANG_THAI_DON_DAT_HANG, STATUS_VARIANTS } from '../core/constants';
+import { TRANG_THAI_KEY, TRANG_THAI_DON_DAT_HANG, STATUS_VARIANTS, canNhanDuDonDatHang, canHoanTacNhanDu } from '../core/constants';
+import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { formatDateTimeShort, formatNumberVN } from '../../../../lib/utils';
 import { cn } from '../../../../lib/utils';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
@@ -44,6 +45,10 @@ interface Props {
   onApprove?: (item: DonDatHang, payload: DonDatHangApprovePayload) => void;
   /** Gọi khi bấm Chuyển trạng thái và xác nhận trong popup */
   onChangeStatus?: (item: DonDatHang, payload: DonDatHangChangeStatusPayload) => void;
+  /** Nhân viên nhận hàng bấm "Nhận đủ" (đã qua popup xác nhận) — chỉ truyền khi có quyền Tạo. */
+  onNhanDu?: (item: DonDatHang) => void;
+  /** Bấm nhầm "Nhận đủ" → đưa đơn về trạng thái trước đó (đã qua popup xác nhận). */
+  onHoanTacNhanDu?: (item: DonDatHang) => void;
   onPrint?: (item: DonDatHang) => void;
   /** Mở form phiếu nhập kho với dữ liệu từ đơn (tab Mua hàng). */
   onCreatePhieuNhapKho?: (item: DonDatHang) => void;
@@ -65,8 +70,9 @@ const DaNhapCell: React.FC<{ r?: { da_thuc_hien: number; so_luong_nguon: number;
   </td>
 );
 
-const DonDatHangDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onApprove, onChangeStatus, onPrint, onCreatePhieuNhapKho, idChiNhanhKhoNhan, stackLevel = 0 }) => {
+const DonDatHangDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onApprove, onChangeStatus, onNhanDu, onHoanTacNhanDu, onPrint, onCreatePhieuNhapKho, idChiNhanhKhoNhan, stackLevel = 0 }) => {
   const { t } = useTranslation();
+  const confirm = useConfirmStore((s) => s.confirm);
   const canApprove = data.trang_thai === TRANG_THAI_CHO_DUYET && !!onApprove;
   const [showApprovePopup, setShowApprovePopup] = useState(false);
   const [approveGhiChu, setApproveGhiChu] = useState('');
@@ -107,6 +113,38 @@ const DonDatHangDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
   );
   const daNhapDu = !!conLaiTheoHang && conLaiTheoHang.size > 0 && !conHangChuaDu([...conLaiTheoHang.values()]);
 
+  const showNhanDu = !!onNhanDu && canNhanDuDonDatHang(data.trang_thai, true);
+  const showHoanTacNhanDu = !!onHoanTacNhanDu && canHoanTacNhanDu(data.trang_thai, true);
+
+  const handleNhanDu = useCallback(() => {
+    // Phiếu nhập kho chưa đủ số lượng đặt: chỉ nhắc (hàng có thể nhận trước, nhập kho sau), không chặn.
+    const nhapKhoChuaDu = !!conLaiTheoHang && !daNhapDu;
+    confirm({
+      title: t('donDatHang.nhanDu.confirmTitle'),
+      message: (
+        <>
+          {t('donDatHang.nhanDu.confirmMessage', { soPo: data.so_po })}
+          {nhapKhoChuaDu && (
+            <span className="block mt-2 text-amber-600 dark:text-amber-400">{t('donDatHang.nhanDu.canhBaoNhapKhoChuaDu')}</span>
+          )}
+        </>
+      ),
+      variant: nhapKhoChuaDu ? 'warning' : 'info',
+      confirmText: t('donDatHang.detail.toolbar.nhanDu'),
+      onConfirm: () => onNhanDu?.(data),
+    });
+  }, [confirm, conLaiTheoHang, daNhapDu, data, onNhanDu, t]);
+
+  const handleHoanTacNhanDu = useCallback(() => {
+    confirm({
+      title: t('donDatHang.nhanDu.hoanTacTitle'),
+      message: t('donDatHang.nhanDu.hoanTacMessage', { soPo: data.so_po }),
+      variant: 'warning',
+      confirmText: t('donDatHang.detail.toolbar.hoanTacNhanDu'),
+      onConfirm: () => onHoanTacNhanDu?.(data),
+    });
+  }, [confirm, data, onHoanTacNhanDu, t]);
+
   const toolbarActions: DetailToolbarAction[] = useMemo(
     () => [
       ...(showChangeStatusButton
@@ -133,6 +171,26 @@ const DonDatHangDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
             },
           ]
         : []),
+      ...(showNhanDu
+        ? [
+            {
+              label: t('donDatHang.detail.toolbar.nhanDu'),
+              icon: <PackageCheck size={16} />,
+              onClick: handleNhanDu,
+              variant: 'success' as const,
+            },
+          ]
+        : []),
+      ...(showHoanTacNhanDu
+        ? [
+            {
+              label: t('donDatHang.detail.toolbar.hoanTacNhanDu'),
+              icon: <Undo2 size={16} />,
+              onClick: handleHoanTacNhanDu,
+              variant: 'warning' as const,
+            },
+          ]
+        : []),
       ...(onCreatePhieuNhapKho
         ? [
             {
@@ -153,7 +211,7 @@ const DonDatHangDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
         variant: 'primary' as const,
       },
     ],
-    [showChangeStatusButton, canApprove, conLaiTheoHang, daNhapDu, data, onPrint, onCreatePhieuNhapKho, t]
+    [showChangeStatusButton, canApprove, showNhanDu, handleNhanDu, showHoanTacNhanDu, handleHoanTacNhanDu, conLaiTheoHang, daNhapDu, data, onPrint, onCreatePhieuNhapKho, t]
   );
 
   const statusLabel = t(`donDatHang.status.${TRANG_THAI_KEY[data.trang_thai as keyof typeof TRANG_THAI_KEY] ?? 'pending'}`);

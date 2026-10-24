@@ -11,6 +11,7 @@ import {
   useDonDatHangById,
   useDeleteDonDatHang,
   useUpdateDonDatHangTrangThai,
+  useHoanTacNhanDuDonDatHang,
   usePhanLoaiDonDatHangChiTiet,
 } from '../hooks/use-don-dat-hang';
 import { useDonDatHangViewScope } from '../hooks/use-don-dat-hang-view-scope';
@@ -21,6 +22,7 @@ import { useKhoList } from '../../../kho-van/danh-sach-kho/hooks/use-kho';
 import { locKhoTheoPhamVi } from '../utils/don-dat-hang-view-scope-filter';
 import { useChiTietDonDatHangStore } from '../store/useChiTietDonDatHangStore';
 import type { ChiTietDonDatHangFlat, DonDatHang } from '../core/types';
+import { TRANG_THAI_DA_NHAN_DU } from '../core/types';
 import { TRANG_THAI_KEY, STATUS_VARIANTS } from '../core/constants';
 import ChiTietDonDatHangToolbar from './ChiTietDonDatHangToolbar';
 import DonDatHangDetail from './DonDatHangDetail';
@@ -129,6 +131,7 @@ const ChiTietDonDatHangTab: React.FC = () => {
   const { data: editingPoFull } = useDonDatHangById(editingItem?.id, phamVi);
   const deleteMutation = useDeleteDonDatHang();
   const updateTrangThaiMutation = useUpdateDonDatHangTrangThai();
+  const hoanTacNhanDuMutation = useHoanTacNhanDuDonDatHang();
 
   const phanLoaiOptions = useMemo(() => {
     return phanLoaiList.map((value) => ({ label: value, value, count: 1 }));
@@ -297,6 +300,17 @@ const ChiTietDonDatHangTab: React.FC = () => {
       });
     },
     [updateTrangThaiMutation]
+  );
+
+  // Nhân viên nhận hàng: popup xác nhận nằm trong DonDatHangDetail, ở đây chỉ ghi trạng thái.
+  const handleNhanDu = useCallback(
+    (item: DonDatHang) => updateTrangThaiMutation.mutate({ id: item.id, trangThai: TRANG_THAI_DA_NHAN_DU }),
+    [updateTrangThaiMutation]
+  );
+
+  const handleHoanTacNhanDu = useCallback(
+    (item: DonDatHang) => hoanTacNhanDuMutation.mutate(item.id),
+    [hoanTacNhanDuMutation]
   );
 
   const handleDelete = useCallback(
@@ -581,6 +595,8 @@ const ChiTietDonDatHangTab: React.FC = () => {
           onDelete={canDelete ? handleDelete : undefined}
           onApprove={canApprove ? handleApprove : undefined}
           onChangeStatus={canAdmin ? handleChangeStatus : undefined}
+          onNhanDu={canCreate ? handleNhanDu : undefined}
+          onHoanTacNhanDu={canCreate ? handleHoanTacNhanDu : undefined}
           // Chờ viewingPoFull load xong mới cho tạo phiếu nhập — xem giải thích trong DanhSachTab.tsx.
           onCreatePhieuNhapKho={canCreate && viewingPoFull ? () => setCreatePhieuNhapFrom(viewingPoFull) : undefined}
           idChiNhanhKhoNhan={
