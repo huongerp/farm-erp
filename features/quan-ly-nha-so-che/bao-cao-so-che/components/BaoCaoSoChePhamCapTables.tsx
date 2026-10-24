@@ -11,6 +11,13 @@ import type { FarmBaoCaoSoChePhamCapRow } from '../core/pham-cap';
 import { PHAM_CAP_ROWS_MAX, emptyPhamCapRow, sumPhamCapTotals, lookupPhieuNhapSoLuong, sumPhieuNhapRefForRows } from '../core/pham-cap';
 import { enrichPhamCapRowsWithDerived } from '../core/pham-cap-derived';
 import { formatNumberVN, cn } from '../../../../lib/utils';
+import { useIsMobile } from '../../../../lib/hooks/use-is-mobile';
+import {
+  buildPhamCapMobileCards,
+  buildPhamCapMobileTotalFields,
+  type PhamCapMobileField,
+  type PhamCapMobileFieldKey,
+} from '../core/pham-cap-mobile';
 
 function pctDisplay(n: number): string {
   if (!Number.isFinite(n)) return '—';
@@ -34,6 +41,37 @@ function PhieuNhapRefCell({
     <span className="text-xs font-medium tabular-nums text-muted-foreground">
       {formatNumberVN(qty)}
     </span>
+  );
+}
+
+const PHAM_CAP_MOBILE_LABEL_KEY: Record<PhamCapMobileFieldKey, string> = {
+  soKg: 'baoCaoSoChe.phamCap.colSoKg',
+  phieuNhap: 'baoCaoSoChe.phamCap.mobileSoLuongPhieuNhap',
+  soThung: 'baoCaoSoChe.phamCap.colSoThung',
+  tongKg: 'baoCaoSoChe.phamCap.colTongKg',
+  tyLe: 'baoCaoSoChe.phamCap.colTyLe',
+  quyDoi: 'baoCaoSoChe.phamCap.mobileSoThungQuyDoi',
+};
+
+/** Lưới nhãn / giá trị của một thẻ phẩm cấp (điện thoại). */
+function PhamCapMobileFieldGrid({ fields }: { fields: PhamCapMobileField[] }) {
+  const { t } = useTranslation();
+  return (
+    <dl className="grid grid-cols-3 gap-x-3 gap-y-2">
+      {fields.map((f) => (
+        <div key={f.key} className="min-w-0">
+          <dt className="text-xs text-muted-foreground leading-tight">{t(PHAM_CAP_MOBILE_LABEL_KEY[f.key])}</dt>
+          <dd
+            className={cn(
+              'mt-0.5 text-sm font-semibold tabular-nums',
+              f.warn && 'text-amber-600 dark:text-amber-500'
+            )}
+          >
+            {f.value === null ? '…' : f.pct ? pctDisplay(f.value) : formatNumberVN(f.value)}
+          </dd>
+        </div>
+      ))}
+    </dl>
   );
 }
 
@@ -302,6 +340,7 @@ export const BaoCaoSoChePhamCapDetailTable: React.FC<{
   phieuNhapRefLoading?: boolean;
 }> = ({ rows, phieuNhapByPhamCap, phieuNhapRefLoading = false }) => {
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
   const sorted = useMemo(
     () => [...rows].sort((a, b) => (a.thu_tu ?? 0) - (b.thu_tu ?? 0)),
     [rows]
@@ -312,6 +351,37 @@ export const BaoCaoSoChePhamCapDetailTable: React.FC<{
     () => sumPhieuNhapRefForRows(phieuNhapByPhamCap, sorted),
     [phieuNhapByPhamCap, sorted]
   );
+
+  if (isMobile) {
+    if (sorted.length === 0) {
+      return <p className="py-4 text-center text-xs text-muted-foreground">{t('baoCaoSoChe.phamCap.detailEmpty')}</p>;
+    }
+    const cards = buildPhamCapMobileCards(sorted, derived, phieuNhapByPhamCap, phieuNhapRefLoading);
+    return (
+      <div className="space-y-2">
+        <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-2">
+          <p className="text-sm font-semibold text-primary">{t('baoCaoSoChe.phamCap.totalRow')}</p>
+          <PhamCapMobileFieldGrid
+            fields={buildPhamCapMobileTotalFields(totals, phieuNhapRefTotal, phieuNhapRefLoading)}
+          />
+        </div>
+        {cards.map((c, idx) => (
+          <div key={`${sorted[idx].id ?? 'row'}-${idx}`} className="rounded-xl border border-border bg-card p-3 space-y-2">
+            <p className="text-sm font-semibold text-foreground">
+              <span className="mr-1.5 text-xs font-normal text-muted-foreground tabular-nums">{idx + 1}.</span>
+              {c.title}
+            </p>
+            <PhamCapMobileFieldGrid fields={c.fields} />
+            {c.ghiChu ? (
+              <p className="border-t border-border/60 pt-2 text-xs text-muted-foreground leading-snug whitespace-pre-wrap">
+                {c.ghiChu}
+              </p>
+            ) : null}
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="overflow-x-auto rounded-lg border border-border bg-muted/10">

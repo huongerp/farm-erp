@@ -14,6 +14,8 @@ import {
 } from '../core/bcsc-kpi';
 import { BCSC_KPI_STT_OFFSET } from '../core/so-lieu-row-meta';
 import type { BaoCaoSoCheFormValues } from '../core/schema';
+import { useIsMobile } from '../../../../lib/hooks/use-is-mobile';
+import BcscMetricListMobile from './BcscMetricListMobile';
 
 const ZERO_LABOR_SNAPSHOT: BcscLaborFromBcncSnapshot = {
   tongCongQuyDoiPhieu: 0,
@@ -49,8 +51,34 @@ function MetricTable({
   rows,
 }: {
   headers: { stt: string; chiSo: string; dvt: string; giaTri: string; ghiChu: string };
-  rows: { stt: number; chiSo: string; dvt: string; giaTri: React.ReactNode; ghiChu: string }[];
+  rows: {
+    stt: number;
+    chiSo: string;
+    /** Tên đầy đủ (không viết tắt) cho điện thoại. */
+    chiSoMobile?: string;
+    dvt: string;
+    giaTri: React.ReactNode;
+    ghiChu: string;
+    /** `giaTri` là ô nhập. */
+    input?: boolean;
+  }[];
 }) {
+  const isMobile = useIsMobile();
+  if (isMobile) {
+    return (
+      <BcscMetricListMobile
+        items={rows.map((r) => ({
+          key: `${r.stt}-${r.chiSo}`,
+          stt: r.stt,
+          label: r.chiSoMobile ?? r.chiSo,
+          value: r.giaTri,
+          dvt: r.dvt,
+          ghiChu: r.ghiChu,
+          input: r.input,
+        }))}
+      />
+    );
+  }
   return (
     <div className="overflow-x-auto rounded-lg border border-border bg-background">
       <table className="w-full min-w-[520px] text-sm text-left border-collapse">
@@ -176,6 +204,7 @@ const BaoCaoSoCheBcncKpiReadout: React.FC<Props> = ({
         {
           stt: o + 1,
           chiSo: t('baoCaoSoChe.kpi.nsThungCongNgay'),
+          chiSoMobile: t('baoCaoSoChe.kpi.mobileNsThungCongNgay'),
           dvt: t('baoCaoSoChe.kpi.dvt.perCong', { dvt: 'Thùng' }),
           giaTri: fmtNum(kpis.nsThungCongNgay),
           ghiChu: '—',
@@ -183,6 +212,7 @@ const BaoCaoSoCheBcncKpiReadout: React.FC<Props> = ({
         {
           stt: o + 2,
           chiSo: t('baoCaoSoChe.kpi.nsThungGioCong'),
+          chiSoMobile: t('baoCaoSoChe.kpi.mobileNsThungGioCong'),
           dvt: t('baoCaoSoChe.kpi.dvt.perGio', { dvt: 'Thùng' }),
           giaTri: fmtNum(kpis.nsThungGioCong),
           ghiChu: '—',
@@ -190,6 +220,7 @@ const BaoCaoSoCheBcncKpiReadout: React.FC<Props> = ({
         {
           stt: o + 3,
           chiSo: t('baoCaoSoChe.kpi.nsBinhQuanNguoiGio'),
+          chiSoMobile: t('baoCaoSoChe.kpi.mobileNsBinhQuanNguoiGio'),
           dvt: t('baoCaoSoChe.kpi.dvt.perGio', { dvt: 'kg' }),
           giaTri: fmtNum(kpis.nsBinhQuanNguoiGio),
           ghiChu: '—',
@@ -204,6 +235,7 @@ const BaoCaoSoCheBcncKpiReadout: React.FC<Props> = ({
         {
           stt: o + 5,
           chiSo: t('baoCaoSoChe.kpi.tongLuong'),
+          input: variant === 'kpi' && !!control,
           dvt: t('baoCaoSoChe.kpi.dvt.tongLuong'),
           giaTri:
             variant === 'kpi' && control ? (

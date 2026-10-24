@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Copy, ChevronDown, Boxes, Layers, Lock, MessageSquare, Printer, Unlock, Users, Calculator, Package } from 'lucide-react';
 import type { FarmBaoCaoSoChe } from '../core/types';
 import { TRANG_THAI_BAO_CAO_SO_CHE } from '../core/types';
-import { cn, formatDateShort, formatDateTimeShort, formatNumberVN } from '../../../../lib/utils';
+import { cn, formatDateTimeShort, formatNumberVN, formatYmdToDisplay } from '../../../../lib/utils';
 import GenericDrawer, { DRAWER_WIDTH_BAO_CAO_SO_CHE } from '../../../../components/shared/GenericDrawer';
 import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';
@@ -22,7 +22,7 @@ import BaoCaoSoCheBcncKpiReadout from './BaoCaoSoCheBcncKpiReadout';
 import BaoCaoKpiThuongDetailSection from '../../shared/kpi-thuong/BaoCaoKpiThuongDetailSection';
 import { BaoCaoSoChePhamCapDetailTable } from './BaoCaoSoChePhamCapTables';
 import { sumPhamCapDisplayTotals } from '../core/pham-cap-derived';
-import { getBaoCaoSoChePreviewUrl } from '../core/preview-url';
+import ChonMauInDialog from './ChonMauInDialog';
 import {
   bcscSoLieuColChiSo,
   bcscSoLieuColDvt,
@@ -52,6 +52,8 @@ import {
   enrichBaoCaoSoCheKpiThuongRows,
 } from '../core/bcsc-kpi';
 import DetailDrawerFooter from '../../../../components/shared/DetailDrawerFooter';
+import { useIsMobile } from '../../../../lib/hooks/use-is-mobile';
+import BcscMetricListMobile from './BcscMetricListMobile';
 
 interface Props {
   data: FarmBaoCaoSoChe;
@@ -87,6 +89,8 @@ const BaoCaoSoCheDetail: React.FC<Props> = ({
   const { data: dbsdtList = [] } = useDuBaoSlDongThungList();
 
   const [showBcncDetail, setShowBcncDetail] = useState(false);
+  const [showChonMauIn, setShowChonMauIn] = useState(false);
+  const isMobile = useIsMobile();
 
   const soLieuMetaForm = useMemo(() => mergeSoLieuMetaToForm(data.so_lieu_row_meta), [data.so_lieu_row_meta]);
   const donViTinhKpi = useMemo(() => deriveDonViTinhSlipFromSoLieuMeta(soLieuMetaForm), [soLieuMetaForm]);
@@ -154,7 +158,7 @@ const BaoCaoSoCheDetail: React.FC<Props> = ({
       label: t('baoCaoSoChe.detail.printReport'),
       icon: <Printer size={16} />,
       variant: 'primary',
-      onClick: () => window.open(getBaoCaoSoChePreviewUrl(data.id), '_blank', 'noopener,noreferrer'),
+      onClick: () => setShowChonMauIn(true),
     },
   ];
   if (canCopyNextDay) {
@@ -217,7 +221,7 @@ const BaoCaoSoCheDetail: React.FC<Props> = ({
   return (
     <GenericDrawer
       title={t('baoCaoSoChe.detail.title')}
-      subtitle={formatDateShort(data.ngay)}
+      subtitle={[formatYmdToDisplay(data.ngay), data.ten_chi_nhanh].filter(Boolean).join(' · ')}
       icon={<Layers className="text-emerald-600" size={22} />}
       onClose={onClose}
       maxWidthClass={DRAWER_WIDTH_BAO_CAO_SO_CHE}
@@ -229,7 +233,7 @@ const BaoCaoSoCheDetail: React.FC<Props> = ({
         )}
         <DetailSection title={t('baoCaoSoChe.detail.sectionOverview')} icon={<Layers size={14} />} variant="primary">
           <DetailFieldGrid cols={2}>
-            <DetailField label={t('baoCaoSoChe.form.ngay')} value={formatDateShort(data.ngay)} />
+            <DetailField label={t('baoCaoSoChe.form.ngay')} value={formatYmdToDisplay(data.ngay)} />
             <DetailField label={t('baoCaoSoChe.form.branch')} value={data.ten_chi_nhanh ?? '—'} />
             <DetailField
               label={t('baoCaoSoChe.store.colTrangThai')}
@@ -306,6 +310,23 @@ const BaoCaoSoCheDetail: React.FC<Props> = ({
         </DetailSection>
 
         <DetailSection title={t('baoCaoSoChe.form.sectionSoCheTitle')} icon={<Layers size={14} />} variant="primary">
+          {isMobile ? (
+            <div className="rounded-xl border border-border bg-card px-3">
+              <BcscMetricListMobile
+                items={SO_LIEU_BUONG_ROW_DEFS.map((def, idx) => {
+                  const meta = soLieuMetaForm[def.key];
+                  return {
+                    key: def.key,
+                    stt: BCSC_SO_LIEU_STT_OFFSET + idx + 1,
+                    label: t(def.labelKey),
+                    value: formatNumberVN(data[def.key] as number),
+                    dvt: meta.don_vi_tinh_phu?.trim() || SO_LIEU_ROW_DVT_DEFAULT,
+                    ghiChu: meta.ghi_chu,
+                  };
+                })}
+              />
+            </div>
+          ) : (
           <div className="overflow-x-auto rounded-lg border border-border bg-muted/10">
             <table className={bcscSoLieuTableClass}>
               <thead>
@@ -360,6 +381,7 @@ const BaoCaoSoCheDetail: React.FC<Props> = ({
               </tbody>
             </table>
           </div>
+          )}
         </DetailSection>
 
         <DetailSection title={t('baoCaoSoChe.form.sectionPhamCapTitle')} icon={<Package size={14} />} variant="primary">
@@ -396,6 +418,7 @@ const BaoCaoSoCheDetail: React.FC<Props> = ({
           </DetailSection>
         )}
       </div>
+      {showChonMauIn && <ChonMauInDialog idPhieu={data.id} onClose={() => setShowChonMauIn(false)} />}
       </GenericDrawer>
   );
 };

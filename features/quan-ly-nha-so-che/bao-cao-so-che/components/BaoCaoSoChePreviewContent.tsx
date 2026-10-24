@@ -1,6 +1,6 @@
 /**
  * Nội dung in báo cáo sơ chế A4 dọc — khung chuẩn hệ thống (PhieuInParts): tổng quan + các mục
- * I–V + ô ký. Bản in trắng đen: không tô màu xanh/đỏ, kết quả đọc bằng chữ.
+ * theo loại phiếu (tổng hợp I–V / I–II / III–V) + ô ký. Bản in trắng đen: không tô màu xanh/đỏ, kết quả đọc bằng chữ.
  */
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -28,8 +28,10 @@ import { computeKpiPhanTram } from '../../shared/kpi-thuong/types';
 import { formatNumberVN, formatYmdToDisplay } from '../../../../lib/utils';
 import { HangKyTen, KhungPhieu, TD_IN, TH_IN } from '../../../../components/shared/phieu-in/PhieuInParts';
 import BaoCaoSoChePreviewOverview from './BaoCaoSoChePreviewOverview';
+import { MUC_THEO_LOAI, type LoaiIn } from '../core/mau-in';
 
 interface Props {
+  loai: LoaiIn;
   data: FarmBaoCaoSoChe;
   bcncList: FarmBaoCaoNhanCong[];
   dbdtList: FarmDuBaoSlDongThung[];
@@ -80,8 +82,9 @@ function MetricTablePrint({
   );
 }
 
-const BaoCaoSoChePreviewContent: React.FC<Props> = ({ data, bcncList, dbdtList }) => {
+const BaoCaoSoChePreviewContent: React.FC<Props> = ({ loai, data, bcncList, dbdtList }) => {
   const { t } = useTranslation();
+  const muc = new Set(MUC_THEO_LOAI[loai]);
   const dvtThung = t('baoCaoSoChe.preview.dvtThung');
   const slipU = data.don_vi_tinh?.trim() || dvtThung;
 
@@ -168,12 +171,12 @@ const BaoCaoSoChePreviewContent: React.FC<Props> = ({ data, bcncList, dbdtList }
   const tongTyLe = phamCapEnriched.reduce((sum, r) => sum + (r.ty_le_pct > 0 ? r.ty_le_pct : 0), 0);
 
   return (
-    <KhungPhieu title={t('baoCaoSoChe.preview.title')} ngay={formatYmdToDisplay(data.ngay?.slice(0, 10))}>
+    <KhungPhieu title={t(`baoCaoSoChe.mauIn.ten.${loai}`)} ngay={formatYmdToDisplay(data.ngay?.slice(0, 10))}>
       {/* === Tổng quan === */}
       <BaoCaoSoChePreviewOverview data={data} />
 
       {/* === I. Báo cáo nhân công === */}
-      {bcncRows.length > 0 ? (
+      {muc.has('I') && (bcncRows.length > 0 ? (
         <MetricTablePrint
           sectionTitle={`I. ${t('baoCaoSoChe.form.sectionBcncTitle')}`}
           rows={bcncRows}
@@ -183,119 +186,127 @@ const BaoCaoSoChePreviewContent: React.FC<Props> = ({ data, bcncList, dbdtList }
           <h2 className="text-[9pt] font-bold uppercase text-gray-900 mb-1">{`I. ${t('baoCaoSoChe.form.sectionBcncTitle')}`}</h2>
           <p className="text-[8pt] text-gray-500">{t('baoCaoSoChe.bcnc.needNgayChiNhanh')}</p>
         </div>
-      )}
+      ))}
 
       {/* === II. Số liệu buồng === */}
-      <MetricTablePrint
-        sectionTitle={`II. ${t('baoCaoSoChe.form.sectionSoCheTitle')}`}
-        rows={soLieuRows}
-      />
+      {muc.has('II') && (
+        <MetricTablePrint
+          sectionTitle={`II. ${t('baoCaoSoChe.form.sectionSoCheTitle')}`}
+          rows={soLieuRows}
+        />
+      )}
 
       {/* === III. Phẩm cấp / loại thùng === */}
-      <div className="break-inside-avoid mb-3">
-        <h2 className="text-[9pt] font-bold uppercase text-gray-900 mb-1">{`III. ${t('baoCaoSoChe.form.sectionPhamCapTitle')}`}</h2>
-        {phamCapEnriched.length === 0 ? (
-          <p className="text-[8pt] text-gray-500">{t('baoCaoSoChe.phamCap.detailEmpty')}</p>
-        ) : (
-          <table className="w-full border-collapse table-fixed text-left">
-            <thead>
-              <tr>
-                <th className={`${thPrint} w-7 text-center`}>{t('common.phieuIn.stt')}</th>
-                <th className={thPrint} style={{ width: '28%' }}>{t('baoCaoSoChe.phamCap.colPhamCap')}</th>
-                <th className={`${thPrint} text-right`}>{t('baoCaoSoChe.phamCap.colSoKg')}</th>
-                <th className={`${thPrint} text-right`}>{t('baoCaoSoChe.phamCap.colSoThung')}</th>
-                <th className={`${thPrint} text-right`}>{t('baoCaoSoChe.phamCap.colTongKg')}</th>
-                <th className={`${thPrint} text-right`}>{t('baoCaoSoChe.phamCap.colTyLe')}</th>
-                <th className={`${thPrint} text-right`}>{t('baoCaoSoChe.phamCap.colSoThungQD')}</th>
-                <th className={thPrint}>{t('baoCaoSoChe.phamCap.colGhiChu')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {phamCapEnriched.map((r, i) => (
-                <tr key={i}>
-                  <td className={`${tdPrint} text-center`}>{i + 1}</td>
-                  <td className={tdPrint}>{r.ten_pham_cap?.trim() || '—'}</td>
-                  <td className={`${tdPrint} text-right tabular-nums`}>{fmtNum(r.so_tham_chieu)}</td>
-                  <td className={`${tdPrint} text-right tabular-nums`}>{fmtNum(r.so_thung)}</td>
-                  <td className={`${tdPrint} text-right tabular-nums font-medium`}>{fmtNum(r.tong_kg)}</td>
-                  <td className={`${tdPrint} text-right tabular-nums`}>
-                    {r.ty_le_pct > 0 ? `${fmtNum(r.ty_le_pct)}%` : '—'}
-                  </td>
-                  <td className={`${tdPrint} text-right tabular-nums`}>{fmtNum(r.so_thung_quy_doi)}</td>
-                  <td className={tdPrint}>{r.ghi_chu?.trim() || '—'}</td>
+      {muc.has('III') && (
+        <div className="break-inside-avoid mb-3">
+          <h2 className="text-[9pt] font-bold uppercase text-gray-900 mb-1">{`III. ${t('baoCaoSoChe.form.sectionPhamCapTitle')}`}</h2>
+          {phamCapEnriched.length === 0 ? (
+            <p className="text-[8pt] text-gray-500">{t('baoCaoSoChe.phamCap.detailEmpty')}</p>
+          ) : (
+            <table className="w-full border-collapse table-fixed text-left">
+              <thead>
+                <tr>
+                  <th className={`${thPrint} w-7 text-center`}>{t('common.phieuIn.stt')}</th>
+                  <th className={thPrint} style={{ width: '28%' }}>{t('baoCaoSoChe.phamCap.colPhamCap')}</th>
+                  <th className={`${thPrint} text-right`}>{t('baoCaoSoChe.phamCap.colSoKg')}</th>
+                  <th className={`${thPrint} text-right`}>{t('baoCaoSoChe.phamCap.colSoThung')}</th>
+                  <th className={`${thPrint} text-right`}>{t('baoCaoSoChe.phamCap.colTongKg')}</th>
+                  <th className={`${thPrint} text-right`}>{t('baoCaoSoChe.phamCap.colTyLe')}</th>
+                  <th className={`${thPrint} text-right`}>{t('baoCaoSoChe.phamCap.colSoThungQD')}</th>
+                  <th className={thPrint}>{t('baoCaoSoChe.phamCap.colGhiChu')}</th>
                 </tr>
-              ))}
-              <tr className="bg-gray-100 font-semibold">
-                <td colSpan={2} className={`${tdPrint} text-right`}>{t('baoCaoSoChe.phamCap.totalRow')}</td>
-                <td className={`${tdPrint} text-right tabular-nums`}></td>
-                <td className={`${tdPrint} text-right tabular-nums`}>{fmtNum(phamCapEnriched.reduce((s, r) => s + (r.so_thung ?? 0), 0))}</td>
-                <td className={`${tdPrint} text-right tabular-nums`}>{fmtNum(phamCapEnriched.reduce((s, r) => s + r.tong_kg, 0))}</td>
-                <td className={`${tdPrint} text-right tabular-nums`}>{tongTyLe > 0 ? `${fmtNum(tongTyLe)}%` : ''}</td>
-                <td className={`${tdPrint} text-right tabular-nums`}>{fmtNum(phamCapEnriched.reduce((s, r) => s + (r.so_thung_quy_doi ?? 0), 0))}</td>
-                <td className={tdPrint}></td>
-              </tr>
-            </tbody>
-          </table>
-        )}
-      </div>
+              </thead>
+              <tbody>
+                {phamCapEnriched.map((r, i) => (
+                  <tr key={i}>
+                    <td className={`${tdPrint} text-center`}>{i + 1}</td>
+                    <td className={tdPrint}>{r.ten_pham_cap?.trim() || '—'}</td>
+                    <td className={`${tdPrint} text-right tabular-nums`}>{fmtNum(r.so_tham_chieu)}</td>
+                    <td className={`${tdPrint} text-right tabular-nums`}>{fmtNum(r.so_thung)}</td>
+                    <td className={`${tdPrint} text-right tabular-nums font-medium`}>{fmtNum(r.tong_kg)}</td>
+                    <td className={`${tdPrint} text-right tabular-nums`}>
+                      {r.ty_le_pct > 0 ? `${fmtNum(r.ty_le_pct)}%` : '—'}
+                    </td>
+                    <td className={`${tdPrint} text-right tabular-nums`}>{fmtNum(r.so_thung_quy_doi)}</td>
+                    <td className={tdPrint}>{r.ghi_chu?.trim() || '—'}</td>
+                  </tr>
+                ))}
+                <tr className="bg-gray-100 font-semibold">
+                  <td colSpan={2} className={`${tdPrint} text-right`}>{t('baoCaoSoChe.phamCap.totalRow')}</td>
+                  <td className={`${tdPrint} text-right tabular-nums`}></td>
+                  <td className={`${tdPrint} text-right tabular-nums`}>{fmtNum(phamCapEnriched.reduce((s, r) => s + (r.so_thung ?? 0), 0))}</td>
+                  <td className={`${tdPrint} text-right tabular-nums`}>{fmtNum(phamCapEnriched.reduce((s, r) => s + r.tong_kg, 0))}</td>
+                  <td className={`${tdPrint} text-right tabular-nums`}>{tongTyLe > 0 ? `${fmtNum(tongTyLe)}%` : ''}</td>
+                  <td className={`${tdPrint} text-right tabular-nums`}>{fmtNum(phamCapEnriched.reduce((s, r) => s + (r.so_thung_quy_doi ?? 0), 0))}</td>
+                  <td className={tdPrint}></td>
+                </tr>
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
 
       {/* === IV. Năng suất & lương === */}
-      <MetricTablePrint
-        sectionTitle={`IV. ${t('baoCaoSoChe.form.sectionNsLuongTitle')}`}
-        rows={kpiCalcRows}
-      />
+      {muc.has('IV') && (
+        <MetricTablePrint
+          sectionTitle={`IV. ${t('baoCaoSoChe.form.sectionNsLuongTitle')}`}
+          rows={kpiCalcRows}
+        />
+      )}
 
       {/* === V. Đánh giá KPI / Thưởng === */}
-      <div className="break-inside-avoid mb-3">
-        <h2 className="text-[9pt] font-bold uppercase text-gray-900 mb-1">{`V. ${t('baoCaoSoChe.kpiThuong.sectionTitle')}`}</h2>
-        {kpiThuongSorted.length === 0 ? (
-          <p className="text-[8pt] text-gray-500">{t('baoCaoSoChe.kpiThuong.emptyDetail')}</p>
-        ) : (
-          <table className="w-full border-collapse table-fixed text-left">
-            <thead>
-              <tr>
-                <th className={`${thPrint} w-7 text-center`}>{t('common.phieuIn.stt')}</th>
-                <th className={thPrint} style={{ width: '28%' }}>{t('baoCaoSoChe.kpiThuong.colHangMuc')}</th>
-                <th className={`${thPrint} w-14`}>{t('baoCaoSoChe.kpiThuong.colDvt')}</th>
-                <th className={`${thPrint} w-16 text-right`}>{t('baoCaoSoChe.kpiThuong.colMucTieu')}</th>
-                <th className={`${thPrint} w-16 text-right`}>{t('baoCaoSoChe.kpiThuong.colThucTe')}</th>
-                <th className={`${thPrint} w-14 text-right`}>{t('baoCaoSoChe.kpiThuong.colPhanTram')}</th>
-                <th className={`${thPrint} w-16`}>{t('baoCaoSoChe.kpiThuong.colDanhGia')}</th>
-                <th className={`${thPrint} w-20 text-right`}>{t('baoCaoSoChe.kpiThuong.colTienThuong')}</th>
-                <th className={thPrint}>{t('baoCaoSoChe.kpiThuong.colGhiChu')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {kpiThuongSorted.map((r, i) => {
-                const pct =
-                  r.phan_tram != null && Number.isFinite(Number(r.phan_tram))
-                    ? Number(r.phan_tram)
-                    : computeKpiPhanTram(r.muc_tieu, r.thuc_te);
-                return (
-                  <tr key={r.id || i}>
-                    <td className={`${tdPrint} text-center`}>{i + 1}</td>
-                    <td className={tdPrint}>{r.ten_hang_muc?.trim() || '—'}</td>
-                    <td className={tdPrint}>{r.don_vi_tinh?.trim() || '—'}</td>
-                    <td className={`${tdPrint} text-right tabular-nums`}>{r.muc_tieu?.trim() || '—'}</td>
-                    <td className={`${tdPrint} text-right tabular-nums`}>{r.thuc_te?.trim() || '—'}</td>
-                    <td className={`${tdPrint} text-right tabular-nums`}>
-                      {pct != null ? `${fmtNum(pct)}%` : '—'}
-                    </td>
-                    <td className={`${tdPrint} font-semibold`}>{r.danh_gia?.trim() || '—'}</td>
-                    <td className={`${tdPrint} text-right tabular-nums font-medium`}>{formatNumberVN(r.tien_thuong)}</td>
-                    <td className={`${tdPrint} whitespace-pre-wrap`}>{r.ghi_chu?.trim() || ''}</td>
-                  </tr>
-                );
-              })}
-              <tr className="bg-gray-100 font-semibold">
-                <td colSpan={7} className={`${tdPrint} text-right`}>{t('baoCaoSoChe.kpiThuong.rowTongThuong')}</td>
-                <td className={`${tdPrint} text-right tabular-nums`}>{formatNumberVN(tongThuong)}</td>
-                <td className={tdPrint} />
-              </tr>
-            </tbody>
-          </table>
-        )}
-      </div>
+      {muc.has('V') && (
+        <div className="break-inside-avoid mb-3">
+          <h2 className="text-[9pt] font-bold uppercase text-gray-900 mb-1">{`V. ${t('baoCaoSoChe.kpiThuong.sectionTitle')}`}</h2>
+          {kpiThuongSorted.length === 0 ? (
+            <p className="text-[8pt] text-gray-500">{t('baoCaoSoChe.kpiThuong.emptyDetail')}</p>
+          ) : (
+            <table className="w-full border-collapse table-fixed text-left">
+              <thead>
+                <tr>
+                  <th className={`${thPrint} w-7 text-center`}>{t('common.phieuIn.stt')}</th>
+                  <th className={thPrint} style={{ width: '28%' }}>{t('baoCaoSoChe.kpiThuong.colHangMuc')}</th>
+                  <th className={`${thPrint} w-14`}>{t('baoCaoSoChe.kpiThuong.colDvt')}</th>
+                  <th className={`${thPrint} w-16 text-right`}>{t('baoCaoSoChe.kpiThuong.colMucTieu')}</th>
+                  <th className={`${thPrint} w-16 text-right`}>{t('baoCaoSoChe.kpiThuong.colThucTe')}</th>
+                  <th className={`${thPrint} w-14 text-right`}>{t('baoCaoSoChe.kpiThuong.colPhanTram')}</th>
+                  <th className={`${thPrint} w-16`}>{t('baoCaoSoChe.kpiThuong.colDanhGia')}</th>
+                  <th className={`${thPrint} w-20 text-right`}>{t('baoCaoSoChe.kpiThuong.colTienThuong')}</th>
+                  <th className={thPrint}>{t('baoCaoSoChe.kpiThuong.colGhiChu')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {kpiThuongSorted.map((r, i) => {
+                  const pct =
+                    r.phan_tram != null && Number.isFinite(Number(r.phan_tram))
+                      ? Number(r.phan_tram)
+                      : computeKpiPhanTram(r.muc_tieu, r.thuc_te);
+                  return (
+                    <tr key={r.id || i}>
+                      <td className={`${tdPrint} text-center`}>{i + 1}</td>
+                      <td className={tdPrint}>{r.ten_hang_muc?.trim() || '—'}</td>
+                      <td className={tdPrint}>{r.don_vi_tinh?.trim() || '—'}</td>
+                      <td className={`${tdPrint} text-right tabular-nums`}>{r.muc_tieu?.trim() || '—'}</td>
+                      <td className={`${tdPrint} text-right tabular-nums`}>{r.thuc_te?.trim() || '—'}</td>
+                      <td className={`${tdPrint} text-right tabular-nums`}>
+                        {pct != null ? `${fmtNum(pct)}%` : '—'}
+                      </td>
+                      <td className={`${tdPrint} font-semibold`}>{r.danh_gia?.trim() || '—'}</td>
+                      <td className={`${tdPrint} text-right tabular-nums font-medium`}>{formatNumberVN(r.tien_thuong)}</td>
+                      <td className={`${tdPrint} whitespace-pre-wrap`}>{r.ghi_chu?.trim() || ''}</td>
+                    </tr>
+                  );
+                })}
+                <tr className="bg-gray-100 font-semibold">
+                  <td colSpan={7} className={`${tdPrint} text-right`}>{t('baoCaoSoChe.kpiThuong.rowTongThuong')}</td>
+                  <td className={`${tdPrint} text-right tabular-nums`}>{formatNumberVN(tongThuong)}</td>
+                  <td className={tdPrint} />
+                </tr>
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
 
       <HangKyTen
         className="mt-4"
