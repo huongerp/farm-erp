@@ -34,7 +34,7 @@ import ListPageSkeleton from '../../../../components/shared/ListPageSkeleton';
 import ChiTietRowDetail from './ChiTietRowDetail';
 import ChiTietRowEditModal, { type ChiTietRowEditPayload } from './ChiTietRowEditModal';
 import ChuyenTienDoModal, { type ChuyenTienDoResult } from './ChuyenTienDoModal';
-import { cn } from '../../../../lib/utils';
+import { cn, formatYmdToDisplay } from '../../../../lib/utils';
 import { parseTraoDoiGanNhat } from '../utils/trao-doi-gan-nhat';
 import { hienThiThoiDiemTraoDoi } from '../../../../components/shared/trao-doi/hien-thi';
 import { CONFIRM_DELETE } from '../../../../lib/button-labels';
@@ -509,26 +509,49 @@ const ChiTietTab: React.FC = () => {
   const renderMobileCard = useCallback(
     (item: PhieuDeXuatVatTuChiTietRow, isSelected: boolean) => (
       <div
-        className={cn('p-3 rounded-lg border cursor-pointer', isSelected ? 'border-primary bg-primary/5' : 'border-border')}
+        className={cn(
+          'bg-card rounded-xl border p-3.5 shadow-sm transition-all active:scale-[0.98] cursor-pointer',
+          isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'
+        )}
         onClick={() => setViewingRow(item)}
         onKeyDown={(e) => e.key === 'Enter' && setViewingRow(item)}
         role="button"
         tabIndex={0}
       >
-        <div className="flex justify-between items-start gap-2">
-          <span className="font-mono text-sm font-medium text-foreground">{item.so_phieu ?? '—'}</span>
-          <div className="flex flex-wrap items-center gap-1 justify-end">
+        <div className="flex items-start justify-between gap-2">
+          <h4 className="font-semibold text-foreground text-sm line-clamp-2 min-w-0">{item.ten_hang || item.ma_hang || '—'}</h4>
+          <div className="flex flex-wrap items-center gap-1 justify-end shrink-0">
             {renderStatusBadge(item.trang_thai_phieu)}
             {item.ten_tien_do_mh ? renderTienDoBadge(item.ten_tien_do_mh) : null}
           </div>
         </div>
-        <p className="text-sm text-foreground mt-0.5 line-clamp-2">{item.ten_hang || item.ma_hang || '—'}</p>
-        <p className="text-xs text-muted-foreground mt-0.5">
-          {Number(item.so_luong).toLocaleString('vi-VN')} {item.don_vi_tinh ?? ''} · {item.ten_noi_de_xuat ?? '—'}
+        <p className="text-xs text-muted-foreground truncate mt-0.5">
+          {item.so_phieu ?? '—'}
+          {item.ngay ? ` · ${formatYmdToDisplay(item.ngay)}` : ''}
+          {item.ten_noi_de_xuat ? ` · ${item.ten_noi_de_xuat}` : ''}
         </p>
+        <div className="mt-2 flex items-center justify-between gap-2 text-sm">
+          <span className="tabular-nums">
+            <span className="text-xs text-muted-foreground">{t('phieuDeXuatVatTu.form.quantity')}: </span>
+            <span className="font-semibold">{Number(item.so_luong).toLocaleString('vi-VN')}</span>
+            {item.don_vi_tinh ? ` ${item.don_vi_tinh}` : ''}
+          </span>
+          {item.ngay_can && (
+            <span className="shrink-0 tabular-nums">
+              <span className="text-xs text-muted-foreground">{t('phieuDeXuatVatTu.store.ngayCanCol')}: </span>
+              <span className="font-semibold">{formatYmdToDisplay(item.ngay_can)}</span>
+            </span>
+          )}
+        </div>
+        {item.ten_nguoi_de_xuat && (
+          <p className="mt-1 text-sm text-foreground/80 truncate">
+            <span className="text-muted-foreground">{t('phieuDeXuatVatTu.store.nguoiDeXuatCol')}: </span>
+            {item.ten_nguoi_de_xuat}
+          </p>
+        )}
       </div>
     ),
-    [renderStatusBadge, renderTienDoBadge]
+    [renderStatusBadge, renderTienDoBadge, t]
   );
 
   if (pageQuery.isPending && !pageQuery.data) {

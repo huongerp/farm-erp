@@ -25,6 +25,7 @@ import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';
 import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
 import DetailDrawerFooter from '../../../../components/shared/DetailDrawerFooter';
+import SubTable, { type SubTableColumn } from '../../../../components/shared/sub-table/SubTable';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { formatDateTimeShort, formatYmdToDisplay } from '../../../../lib/utils';
 import {
@@ -107,6 +108,37 @@ const DangKyThamQuanDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete
   const phut = tt === 'da_vao' ? soPhutDangOTrongFarm(data.tg_vao_thuc_te) : soPhutTrongFarm(data.tg_vao_thuc_te, data.tg_ra_thuc_te);
   const daiDien = data.nguoi_dai_dien || data.khach[0]?.ho_ten || '—';
 
+  const khachColumns: SubTableColumn[] = [
+    { id: 'ho_ten', label: t('dangKyThamQuan.khach.hoTen'), width: 150, minWidth: 110, sticky: true, mobile: 'title' },
+    { id: 'gioi_tinh', label: t('dangKyThamQuan.khach.gioiTinh'), width: 80, minWidth: 60 },
+    { id: 'quoc_tich', label: t('dangKyThamQuan.khach.quocTich'), width: 100, minWidth: 70 },
+    { id: 'so_dien_thoai', label: t('dangKyThamQuan.khach.sdt'), width: 115, minWidth: 90 },
+    { id: 'nguoi_gioi_thieu', label: t('dangKyThamQuan.khach.nguoiGioiThieu'), width: 130, minWidth: 90 },
+    { id: 'khu_vuc_tham_quan', label: t('dangKyThamQuan.khach.khuVuc'), width: 130, minWidth: 90 },
+    { id: 'don_vi_lam_viec', label: t('dangKyThamQuan.khach.donVi'), width: 140, minWidth: 90, mobile: 'full' },
+  ];
+
+  const renderKhachCell = (colId: string, k: DangKyThamQuan['khach'][number]) => {
+    switch (colId) {
+      case 'ho_ten':
+        return <span className="font-medium">{k.ho_ten}</span>;
+      case 'gioi_tinh':
+        return k.gioi_tinh ? t(`dangKyThamQuan.gioiTinh.${k.gioi_tinh}`) : '—';
+      case 'quoc_tich':
+        return k.quoc_tich || '—';
+      case 'so_dien_thoai':
+        return <span className="tabular-nums">{k.so_dien_thoai || '—'}</span>;
+      case 'nguoi_gioi_thieu':
+        return k.nguoi_gioi_thieu || '—';
+      case 'khu_vuc_tham_quan':
+        return k.khu_vuc_tham_quan || '—';
+      case 'don_vi_lam_viec':
+        return k.don_vi_lam_viec || '—';
+      default:
+        return null;
+    }
+  };
+
   return (
     <>
       <GenericDrawer
@@ -174,36 +206,15 @@ const DangKyThamQuanDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete
             {data.khach.length === 0 ? (
               <p className="text-sm text-muted-foreground/70 italic m-0">{t('dangKyThamQuan.khach.empty')}</p>
             ) : (
-              <div className="overflow-x-auto -mx-1">
-                <table className="w-full text-sm min-w-[640px]">
-                  <thead>
-                    <tr className="text-left text-xs text-muted-foreground border-b border-border">
-                      <th className="py-1.5 px-1 w-8">#</th>
-                      <th className="py-1.5 px-1">{t('dangKyThamQuan.khach.hoTen')}</th>
-                      <th className="py-1.5 px-1">{t('dangKyThamQuan.khach.gioiTinh')}</th>
-                      <th className="py-1.5 px-1">{t('dangKyThamQuan.khach.quocTich')}</th>
-                      <th className="py-1.5 px-1">{t('dangKyThamQuan.khach.sdt')}</th>
-                      <th className="py-1.5 px-1">{t('dangKyThamQuan.khach.nguoiGioiThieu')}</th>
-                      <th className="py-1.5 px-1">{t('dangKyThamQuan.khach.khuVuc')}</th>
-                      <th className="py-1.5 px-1">{t('dangKyThamQuan.khach.donVi')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.khach.map((k) => (
-                      <tr key={k.stt} className="border-b border-border/50 last:border-0">
-                        <td className="py-1.5 px-1 tabular-nums text-muted-foreground">{k.stt}</td>
-                        <td className="py-1.5 px-1 font-medium">{k.ho_ten}</td>
-                        <td className="py-1.5 px-1">{k.gioi_tinh ? t(`dangKyThamQuan.gioiTinh.${k.gioi_tinh}`) : '—'}</td>
-                        <td className="py-1.5 px-1">{k.quoc_tich || '—'}</td>
-                        <td className="py-1.5 px-1 tabular-nums">{k.so_dien_thoai || '—'}</td>
-                        <td className="py-1.5 px-1">{k.nguoi_gioi_thieu || '—'}</td>
-                        <td className="py-1.5 px-1">{k.khu_vuc_tham_quan || '—'}</td>
-                        <td className="py-1.5 px-1">{k.don_vi_lam_viec || '—'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              // SubTable: desktop là bảng như cũ, điện thoại chuyển sang thẻ (họ tên làm tiêu đề) — khỏi vuốt ngang.
+              <SubTable
+                tableKey="dang-ky-tham-quan.khach"
+                columns={khachColumns}
+                rows={data.khach}
+                keyExtractor={(k) => String(k.stt)}
+                renderCell={renderKhachCell}
+                maxHeight="360px"
+              />
             )}
           </DetailSection>
 

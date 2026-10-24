@@ -28,6 +28,8 @@
   "dangKyNhanHang.col.chiNhanh": "Chi nhánh",
   "dangKyNhanHang.col.ghiChu": "Ghi chú",
   "dangKyNhanHang.col.nguoiTao": "Người tạo",
+  "dangKyNhanHang.card.soLuongDangKy": "Số lượng đăng ký",
+  "dangKyNhanHang.card.soLuongXuat": "Số lượng xuất",
   "dangKyNhanHang.toolbar.checkIn": "Check in",
   "dangKyNhanHang.toolbar.checkOut": "Check out",
   "dangKyNhanHang.toolbar.quetQr": "Quét tem QC",

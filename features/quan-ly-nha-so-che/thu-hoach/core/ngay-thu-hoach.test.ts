@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { soTuanIso } from '../../../../lib/am-lich';
 import { THU_HOACH_DAY_SUFFIXES } from './types';
-import { ngayCuaThu, traiPhangNgay } from './ngay-thu-hoach';
+import { khoangNgayTuan, ngayCuaThu, traiPhangNgay } from './ngay-thu-hoach';
 import type { FarmThuHoach } from './types';
 
 describe('ngayCuaThu', () => {
@@ -47,5 +47,15 @@ describe('traiPhangNgay', () => {
     expect(dong[0]).toMatchObject({ ngay: '2026-04-27', thang: 4, keHoach: 10, thucTe: 8, farmKey: '3' });
     expect(dong[6]).toMatchObject({ ngay: '2026-05-03', thang: 5, keHoach: 5, thucTe: 6 });
     expect(dong[1]).toMatchObject({ keHoach: 0, thucTe: 0 });
+  });
+});
+
+describe('khoangNgayTuan', () => {
+  it('tuần 41/2026 = 05/10 – 11/10', () => {
+    expect(khoangNgayTuan(2026, 41)).toBe('05/10 – 11/10');
+  });
+  it('tuần vắt qua năm vẫn ra đúng ngày/tháng', () => {
+    expect(khoangNgayTuan(2026, 1)).toBe('29/12 – 04/01');
+    expect(khoangNgayTuan(2026, 53)).toBe('28/12 – 03/01');
   });
 });

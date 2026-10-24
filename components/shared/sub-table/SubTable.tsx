@@ -69,6 +69,8 @@ interface SubTableProps<T> {
   renderMobileCard?: (row: T, index: number) => React.ReactNode;
   /** Chạm vào card mobile — hành động chính của dòng. */
   onMobileCardClick?: (row: T) => void;
+  /** Bấm cả dòng trên desktop (nút trong ô nên `stopPropagation`). */
+  onRowClick?: (row: T) => void;
   rowClassName?: (row: T, index: number) => string | undefined;
   /** Hiện khi `rows` rỗng. */
   emptyContent?: React.ReactNode;
@@ -105,6 +107,7 @@ function SubTable<T>({
   actionsWidth = 112,
   renderMobileCard,
   onMobileCardClick,
+  onRowClick,
   rowClassName,
   emptyContent,
   maxHeight = '420px',
@@ -245,7 +248,8 @@ function SubTable<T>({
               {rows.map((row, index) => (
                 <tr
                   key={keyExtractor(row, index)}
-                  className={cn('group transition-colors hover:bg-accent', rowClassName?.(row, index))}
+                  onClick={onRowClick ? () => onRowClick(row) : undefined}
+                  className={cn('group transition-colors hover:bg-accent', onRowClick && 'cursor-pointer', rowClassName?.(row, index))}
                 >
                   {showIndex && (
                     <td className="sticky left-0 z-[1] px-2 py-2 text-center text-muted-foreground tabular-nums bg-card group-hover:bg-accent border-b border-border">

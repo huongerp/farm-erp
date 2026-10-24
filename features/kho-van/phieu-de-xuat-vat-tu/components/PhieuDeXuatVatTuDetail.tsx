@@ -256,7 +256,7 @@ const PhieuDeXuatVatTuDetail: React.FC<Props> = ({
     <>
     <GenericDrawer
       title={t('phieuDeXuatVatTu.detail.title')}
-      subtitle={data.so_phieu}
+      subtitle={[data.so_phieu, data.ten_nguoi_de_xuat].filter(Boolean).join(' · ')}
       icon={<FileText size={18} />}
       onClose={onClose}
       footer={renderFooter}

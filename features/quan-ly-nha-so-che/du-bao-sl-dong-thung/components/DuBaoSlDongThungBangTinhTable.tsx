@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { FarmDuBaoSlDongThung } from '../core/types';
 import { computeDuBaoSlDongThungKpiFromFarm } from '../core/kpi';
 import { cn, formatNumberVN } from '../../../../lib/utils';
+import { useIsMobile } from '../../../../lib/hooks/use-is-mobile';
 
 interface Props {
   data: FarmDuBaoSlDongThung;
@@ -15,6 +16,7 @@ interface Props {
 const DuBaoSlDongThungBangTinhTable: React.FC<Props> = ({ data }) => {
   const { t } = useTranslation();
   const kpi = computeDuBaoSlDongThungKpiFromFarm(data);
+  const isMobile = useIsMobile();
 
   const cellNum = (n: number | null, bold?: boolean) => (
     <span className={cn('tabular-nums text-sm', bold ? 'font-bold text-primary' : 'text-foreground')}>
@@ -23,6 +25,52 @@ const DuBaoSlDongThungBangTinhTable: React.FC<Props> = ({ data }) => {
   );
 
   const pct = (r: number) => `${formatNumberVN(Math.round(r * 10000) / 100)}%`;
+
+  // 15 dòng chỉ số: desktop là bảng 5 cột như cũ, điện thoại (bảng 42rem phải vuốt ngang) là danh sách dọc.
+  const dong: { stt: number; value: React.ReactNode; unit: string; nhan?: 'muted' | 'primary' | 'primaryStrong' }[] = [
+    { stt: 1, value: cellNum(data.so_buong_can_mau), unit: 'unitBuong', nhan: undefined },
+    { stt: 2, value: cellNum(data.tong_can_nang_mau), unit: 'unitKg', nhan: undefined },
+    { stt: 3, value: cellNum(kpi.can_nang_binh_quan_buong), unit: 'unitKgPerBuong', nhan: 'muted' },
+    { stt: 4, value: cellNum(data.tong_buong_nhap_ke_hoach), unit: 'unitBuong', nhan: undefined },
+    { stt: 5, value: cellNum(kpi.tong_khoi_luong_ke_hoach), unit: 'unitKg', nhan: 'muted' },
+    { stt: 6, value: pct(data.ty_le_thu_hoi_ke_hoach), unit: 'unitPercent', nhan: undefined },
+    { stt: 7, value: cellNum(kpi.khoi_luong_dong_thung_ke_hoach), unit: 'unitKg', nhan: 'muted' },
+    { stt: 8, value: cellNum(data.quy_cach_dong_thung_ke_hoach), unit: 'unitKgPerThung', nhan: undefined },
+    { stt: 9, value: cellNum(kpi.tong_so_thung_ke_hoach, true), unit: 'unitThung', nhan: 'primary' },
+    { stt: 10, value: cellNum(data.tong_buong_nhap_thuc_te), unit: 'unitBuong', nhan: undefined },
+    { stt: 11, value: cellNum(kpi.tong_khoi_luong_thuc_te), unit: 'unitKg', nhan: 'muted' },
+    { stt: 12, value: pct(data.ty_le_thu_hoi_thuc_te), unit: 'unitPercent', nhan: undefined },
+    { stt: 13, value: cellNum(kpi.khoi_luong_dong_thung_thuc_te), unit: 'unitKg', nhan: 'muted' },
+    { stt: 14, value: cellNum(data.quy_cach_dong_thung_thuc_te), unit: 'unitKgPerThung', nhan: undefined },
+    { stt: 15, value: cellNum(kpi.tong_so_thung_thuc_te, true), unit: 'unitThung', nhan: 'primaryStrong' }
+  ];
+  const nhan = (stt: number) => t(`duBaoSlDongThung.form.row${stt}`);
+  const ghiChu = (stt: number) => t(`duBaoSlDongThung.form.row${stt}Note`);
+  const donVi = (unit: string) => t(`duBaoSlDongThung.form.${unit}`);
+
+  if (isMobile) {
+    return (
+      <div className="rounded-lg border border-border divide-y divide-border/80">
+        {dong.map((d) => {
+          const noiBat = d.nhan === 'primary' || d.nhan === 'primaryStrong';
+          return (
+            <div key={d.stt} className={cn('px-3 py-2', noiBat && 'bg-primary/10 dark:bg-primary/15')}>
+              <div className="flex items-baseline justify-between gap-3">
+                <span className={cn('text-sm min-w-0', noiBat ? 'font-bold text-primary' : 'text-muted-foreground')}>
+                  {d.stt}. {nhan(d.stt)}
+                </span>
+                <span className="shrink-0 text-right whitespace-nowrap">
+                  {d.value}
+                  <span className={cn('ml-1 text-xs', noiBat ? 'font-medium text-primary' : 'text-muted-foreground')}>{donVi(d.unit)}</span>
+                </span>
+              </div>
+              <p className="mt-0.5 text-xs text-muted-foreground">{ghiChu(d.stt)}</p>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
 
   return (
     <div className="overflow-x-auto rounded-lg border border-border">
@@ -37,111 +85,26 @@ const DuBaoSlDongThungBangTinhTable: React.FC<Props> = ({ data }) => {
           </tr>
         </thead>
         <tbody>
-          <tr className="border-b border-border/80">
-            <td className="px-2 py-2 text-center tabular-nums">1</td>
-            <td className="px-3 py-2 text-muted-foreground">{t('duBaoSlDongThung.form.row1')}</td>
-            <td className="px-2 py-2 text-right">{cellNum(data.so_buong_can_mau)}</td>
-            <td className="px-2 py-2 text-muted-foreground">{t('duBaoSlDongThung.form.unitBuong')}</td>
-            <td className="px-2 py-2 text-xs text-muted-foreground">{t('duBaoSlDongThung.form.row1Note')}</td>
-          </tr>
-          <tr className="border-b border-border/80">
-            <td className="px-2 py-2 text-center tabular-nums">2</td>
-            <td className="px-3 py-2 text-muted-foreground">{t('duBaoSlDongThung.form.row2')}</td>
-            <td className="px-2 py-2 text-right">{cellNum(data.tong_can_nang_mau)}</td>
-            <td className="px-2 py-2 text-muted-foreground">{t('duBaoSlDongThung.form.unitKg')}</td>
-            <td className="px-2 py-2 text-xs text-muted-foreground">{t('duBaoSlDongThung.form.row2Note')}</td>
-          </tr>
-          <tr className="border-b border-border/80 bg-muted/20">
-            <td className="px-2 py-2 text-center tabular-nums">3</td>
-            <td className="px-3 py-2 text-muted-foreground">{t('duBaoSlDongThung.form.row3')}</td>
-            <td className="px-2 py-2 text-right">{cellNum(kpi.can_nang_binh_quan_buong)}</td>
-            <td className="px-2 py-2 text-muted-foreground">{t('duBaoSlDongThung.form.unitKgPerBuong')}</td>
-            <td className="px-2 py-2 text-xs text-muted-foreground">{t('duBaoSlDongThung.form.row3Note')}</td>
-          </tr>
-          <tr className="border-b border-border/80">
-            <td className="px-2 py-2 text-center tabular-nums">4</td>
-            <td className="px-3 py-2 text-muted-foreground">{t('duBaoSlDongThung.form.row4')}</td>
-            <td className="px-2 py-2 text-right">{cellNum(data.tong_buong_nhap_ke_hoach)}</td>
-            <td className="px-2 py-2 text-muted-foreground">{t('duBaoSlDongThung.form.unitBuong')}</td>
-            <td className="px-2 py-2 text-xs text-muted-foreground">{t('duBaoSlDongThung.form.row4Note')}</td>
-          </tr>
-          <tr className="border-b border-border/80 bg-muted/20">
-            <td className="px-2 py-2 text-center tabular-nums">5</td>
-            <td className="px-3 py-2 text-muted-foreground">{t('duBaoSlDongThung.form.row5')}</td>
-            <td className="px-2 py-2 text-right">{cellNum(kpi.tong_khoi_luong_ke_hoach)}</td>
-            <td className="px-2 py-2 text-muted-foreground">{t('duBaoSlDongThung.form.unitKg')}</td>
-            <td className="px-2 py-2 text-xs text-muted-foreground">{t('duBaoSlDongThung.form.row5Note')}</td>
-          </tr>
-          <tr className="border-b border-border/80">
-            <td className="px-2 py-2 text-center tabular-nums">6</td>
-            <td className="px-3 py-2 text-muted-foreground">{t('duBaoSlDongThung.form.row6')}</td>
-            <td className="px-2 py-2 text-right">{pct(data.ty_le_thu_hoi_ke_hoach)}</td>
-            <td className="px-2 py-2 text-muted-foreground">{t('duBaoSlDongThung.form.unitPercent')}</td>
-            <td className="px-2 py-2 text-xs text-muted-foreground">{t('duBaoSlDongThung.form.row6Note')}</td>
-          </tr>
-          <tr className="border-b border-border/80 bg-muted/20">
-            <td className="px-2 py-2 text-center tabular-nums">7</td>
-            <td className="px-3 py-2 text-muted-foreground">{t('duBaoSlDongThung.form.row7')}</td>
-            <td className="px-2 py-2 text-right">{cellNum(kpi.khoi_luong_dong_thung_ke_hoach)}</td>
-            <td className="px-2 py-2 text-muted-foreground">{t('duBaoSlDongThung.form.unitKg')}</td>
-            <td className="px-2 py-2 text-xs text-muted-foreground">{t('duBaoSlDongThung.form.row7Note')}</td>
-          </tr>
-          <tr className="border-b border-border/80">
-            <td className="px-2 py-2 text-center tabular-nums">8</td>
-            <td className="px-3 py-2 text-muted-foreground">{t('duBaoSlDongThung.form.row8')}</td>
-            <td className="px-2 py-2 text-right">{cellNum(data.quy_cach_dong_thung_ke_hoach)}</td>
-            <td className="px-2 py-2 text-muted-foreground">{t('duBaoSlDongThung.form.unitKgPerThung')}</td>
-            <td className="px-2 py-2 text-xs text-muted-foreground">{t('duBaoSlDongThung.form.row8Note')}</td>
-          </tr>
-          <tr className="border-b border-border/80 bg-primary/10 dark:bg-primary/15">
-            <td className="px-2 py-2 text-center font-bold text-primary tabular-nums">9</td>
-            <td className="px-3 py-2 font-bold text-primary">{t('duBaoSlDongThung.form.row9')}</td>
-            <td className="px-2 py-2 text-right">{cellNum(kpi.tong_so_thung_ke_hoach, true)}</td>
-            <td className="px-2 py-2 font-medium text-primary">{t('duBaoSlDongThung.form.unitThung')}</td>
-            <td className="px-2 py-2 text-xs text-muted-foreground">{t('duBaoSlDongThung.form.row9Note')}</td>
-          </tr>
-          <tr className="border-b border-border/80">
-            <td className="px-2 py-2 text-center tabular-nums">10</td>
-            <td className="px-3 py-2 text-muted-foreground">{t('duBaoSlDongThung.form.row10')}</td>
-            <td className="px-2 py-2 text-right">{cellNum(data.tong_buong_nhap_thuc_te)}</td>
-            <td className="px-2 py-2 text-muted-foreground">{t('duBaoSlDongThung.form.unitBuong')}</td>
-            <td className="px-2 py-2 text-xs text-muted-foreground">{t('duBaoSlDongThung.form.row10Note')}</td>
-          </tr>
-          <tr className="border-b border-border/80 bg-muted/20">
-            <td className="px-2 py-2 text-center tabular-nums">11</td>
-            <td className="px-3 py-2 text-muted-foreground">{t('duBaoSlDongThung.form.row11')}</td>
-            <td className="px-2 py-2 text-right">{cellNum(kpi.tong_khoi_luong_thuc_te)}</td>
-            <td className="px-2 py-2 text-muted-foreground">{t('duBaoSlDongThung.form.unitKg')}</td>
-            <td className="px-2 py-2 text-xs text-muted-foreground">{t('duBaoSlDongThung.form.row11Note')}</td>
-          </tr>
-          <tr className="border-b border-border/80">
-            <td className="px-2 py-2 text-center tabular-nums">12</td>
-            <td className="px-3 py-2 text-muted-foreground">{t('duBaoSlDongThung.form.row12')}</td>
-            <td className="px-2 py-2 text-right">{pct(data.ty_le_thu_hoi_thuc_te)}</td>
-            <td className="px-2 py-2 text-muted-foreground">{t('duBaoSlDongThung.form.unitPercent')}</td>
-            <td className="px-2 py-2 text-xs text-muted-foreground">{t('duBaoSlDongThung.form.row12Note')}</td>
-          </tr>
-          <tr className="border-b border-border/80 bg-muted/20">
-            <td className="px-2 py-2 text-center tabular-nums">13</td>
-            <td className="px-3 py-2 text-muted-foreground">{t('duBaoSlDongThung.form.row13')}</td>
-            <td className="px-2 py-2 text-right">{cellNum(kpi.khoi_luong_dong_thung_thuc_te)}</td>
-            <td className="px-2 py-2 text-muted-foreground">{t('duBaoSlDongThung.form.unitKg')}</td>
-            <td className="px-2 py-2 text-xs text-muted-foreground">{t('duBaoSlDongThung.form.row13Note')}</td>
-          </tr>
-          <tr className="border-b border-border/80">
-            <td className="px-2 py-2 text-center tabular-nums">14</td>
-            <td className="px-3 py-2 text-muted-foreground">{t('duBaoSlDongThung.form.row14')}</td>
-            <td className="px-2 py-2 text-right">{cellNum(data.quy_cach_dong_thung_thuc_te)}</td>
-            <td className="px-2 py-2 text-muted-foreground">{t('duBaoSlDongThung.form.unitKgPerThung')}</td>
-            <td className="px-2 py-2 text-xs text-muted-foreground">{t('duBaoSlDongThung.form.row14Note')}</td>
-          </tr>
-          <tr className="border-b border-border/80 bg-primary/15 dark:bg-primary/20 last:border-0">
-            <td className="px-2 py-2 text-center font-bold text-primary tabular-nums">15</td>
-            <td className="px-3 py-2 font-bold text-primary">{t('duBaoSlDongThung.form.row15')}</td>
-            <td className="px-2 py-2 text-right">{cellNum(kpi.tong_so_thung_thuc_te, true)}</td>
-            <td className="px-2 py-2 font-medium text-primary">{t('duBaoSlDongThung.form.unitThung')}</td>
-            <td className="px-2 py-2 text-xs text-muted-foreground">{t('duBaoSlDongThung.form.row15Note')}</td>
-          </tr>
+          {dong.map((d) => {
+            const noiBat = d.nhan === 'primary' || d.nhan === 'primaryStrong';
+            return (
+              <tr
+                key={d.stt}
+                className={cn(
+                  'border-b border-border/80',
+                  d.nhan === 'muted' && 'bg-muted/20',
+                  d.nhan === 'primary' && 'bg-primary/10 dark:bg-primary/15',
+                  d.nhan === 'primaryStrong' && 'bg-primary/15 dark:bg-primary/20 last:border-0'
+                )}
+              >
+                <td className={cn('px-2 py-2 text-center tabular-nums', noiBat && 'font-bold text-primary')}>{d.stt}</td>
+                <td className={cn('px-3 py-2', noiBat ? 'font-bold text-primary' : 'text-muted-foreground')}>{nhan(d.stt)}</td>
+                <td className="px-2 py-2 text-right">{d.value}</td>
+                <td className={cn('px-2 py-2', noiBat ? 'font-medium text-primary' : 'text-muted-foreground')}>{donVi(d.unit)}</td>
+                <td className="px-2 py-2 text-xs text-muted-foreground">{ghiChu(d.stt)}</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

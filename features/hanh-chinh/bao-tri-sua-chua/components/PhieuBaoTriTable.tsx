@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Edit, Trash2 } from 'lucide-react';
 import GenericTable from '../../../../components/shared/GenericTable';
 import Tooltip from '../../../../components/ui/Tooltip';
-import { formatDateTimeShort, formatDate, formatCurrency } from '../../../../lib/utils';
+import { formatDateTimeShort, formatCurrency, formatYmdToDisplay } from '../../../../lib/utils';
 import type { PhieuBaoTriSuaChua } from '../core/types';
 import { getTrangThaiLabel } from '../core/constants';
 import { useBaoTriSuaChuaStore } from '../store/useBaoTriSuaChuaStore';
@@ -58,7 +58,7 @@ const PhieuBaoTriTable: React.FC<Props> = ({ isFetching, totalRecordsOverride, d
         );
       case 'ngay':
         return (
-          <span className="text-sm tabular-nums">{formatDate(item.ngay)}</span>
+          <span className="text-sm tabular-nums">{formatYmdToDisplay(item.ngay)}</span>
         );
       case 'ten_hang_muc':
         return (
@@ -164,20 +164,36 @@ const PhieuBaoTriTable: React.FC<Props> = ({ isFetching, totalRecordsOverride, d
     <div
       role="button"
       tabIndex={0}
-      className={isSelected ? 'border-primary bg-primary/5' : ''}
+      className={`bg-card rounded-xl border p-3.5 shadow-sm transition-all cursor-pointer ${
+        isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'
+      }`}
       onClick={() => handleRowClick?.(item)}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleRowClick?.(item); } }}
     >
-      <div className="flex justify-between items-start gap-2">
-        <span className="font-mono text-sm font-medium">{item.ma_phieu}</span>
-        <span className="text-xs text-muted-foreground">{formatDate(item.ngay)}</span>
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h4 className="font-semibold text-foreground text-sm line-clamp-2">{item.ten_tai_san || '—'}</h4>
+          <p className="text-xs text-muted-foreground truncate mt-0.5">
+            <span className="font-mono">{item.ma_phieu}</span>
+            {` · ${formatYmdToDisplay(item.ngay)} · ${item.ten_chi_nhanh || '—'}`}
+          </p>
+        </div>
+        <div className="shrink-0">{renderTrangThaiBadge(item.trang_thai)}</div>
       </div>
-      <p className="text-xs text-muted-foreground mt-0.5">{item.ten_hang_muc || item.id_hang_muc}</p>
-      <p className="text-sm text-foreground mt-0.5">{item.ten_tai_san ?? '—'}</p>
-      {item.ma_tai_san && (
-        <p className="text-xs font-mono text-muted-foreground">{item.ma_tai_san}</p>
+      <div className="flex items-center justify-between gap-2 mt-2.5">
+        <span className="text-xs text-muted-foreground truncate">
+          {t('baoTriSuaChua.store.hangMucCol')}: {item.ten_hang_muc || '—'}
+        </span>
+        <div className="text-right shrink-0">
+          <span className="text-xs text-muted-foreground mr-1.5">{t('baoTriSuaChua.store.soTienCol')}</span>
+          <span className="text-sm font-semibold tabular-nums text-foreground">{formatCurrency(item.so_tien)}</span>
+        </div>
+      </div>
+      {item.ten_nha_cung_cap && (
+        <p className="mt-1.5 text-xs text-muted-foreground truncate">
+          {t('baoTriSuaChua.store.nhaCungCapCol')}: <span className="text-foreground">{item.ten_nha_cung_cap}</span>
+        </p>
       )}
-      <p className="text-xs text-muted-foreground">{formatCurrency(item.so_tien)} • {getTrangThaiLabel(item.trang_thai, t)}</p>
     </div>
   );
 

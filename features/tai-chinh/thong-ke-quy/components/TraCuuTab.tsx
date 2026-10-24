@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import GenericTable from '../../../../components/shared/GenericTable';
 import LazyExportDialog from '../../../../components/shared/LazyExportDialog';
 import ImportExportButtons from '../../thu-chi-quy/components/ImportExportButtons';
-import { formatDate, formatNumberVN } from '../../../../lib/utils';
+import { formatDate, formatNumberVN, formatYmdToDisplay } from '../../../../lib/utils';
 import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
 import { useThuChiQuyViewScope } from '../../thu-chi-quy/hooks/use-thu-chi-quy-view-scope';
 import { useThuChiQuyPage } from '../../thu-chi-quy/hooks/use-thu-chi-quy';
@@ -13,6 +13,7 @@ import { getThuChiQuyAll } from '../../thu-chi-quy/services/thu-chi-quy-service'
 import { resolveAllowedChiNhanhIds } from '../../thu-chi-quy/utils/quy-view-scope';
 import type { ThuChiQuyListServerQuery } from '../../thu-chi-quy/services/thu-chi-quy-list-query';
 import type { ThuChiQuyRow } from '../../thu-chi-quy/core/types';
+import { getTrangThaiQuyBadgeClass, trangThaiQuyToI18nKey } from '../../thu-chi-quy/core/trang-thai';
 import { useTraCuuQuyStore } from '../store/useTraCuuQuyStore';
 import ThongKeToolbar, { DEFAULT_THONG_KE_FILTER, resolveDateRange, type ThongKeToolbarValue } from './ThongKeToolbar';
 
@@ -101,7 +102,7 @@ const TraCuuTab: React.FC = () => {
   const renderCell = (colId: string, item: ThuChiQuyRow) => {
     switch (colId) {
       case 'ngay':
-        return <span className="text-sm tabular-nums">{formatDate(item.ngay)}</span>;
+        return <span className="text-sm tabular-nums">{formatYmdToDisplay(item.ngay)}</span>;
       case 'so_phieu':
         return <span className="font-mono text-sm">{item.so_phieu}</span>;
       case 'dien_giai':
@@ -151,22 +152,38 @@ const TraCuuTab: React.FC = () => {
     <div className="bg-card rounded-xl border border-border p-3.5 shadow-sm">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-sm font-medium text-foreground line-clamp-2">{item.dien_giai}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {formatDate(item.ngay)} · {item.so_phieu}
+          <h4 className="font-semibold text-foreground text-sm line-clamp-2">{item.dien_giai || '—'}</h4>
+          <p className="text-xs text-muted-foreground truncate mt-0.5">
+            <span className="font-mono">{item.so_phieu}</span>
+            {` · ${formatYmdToDisplay(item.ngay)} · ${item.ref_ten_chi_nhanh || item.ten_chi_nhanh || '—'}`}
           </p>
         </div>
         <span
-          className={`text-sm font-semibold tabular-nums shrink-0 ${item.loai === 'thu' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}
+          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border shrink-0 ${getTrangThaiQuyBadgeClass(item.trang_thai)}`}
         >
-          {item.loai === 'thu' ? '+' : '−'}
-          {money(item.so_tien)}
+          {t(trangThaiQuyToI18nKey(item.trang_thai))}
         </span>
       </div>
-      <div className="flex justify-between items-center pt-2.5 mt-2 border-t border-border text-xs">
-        <span className="text-muted-foreground">{t('thuChiQuy.store.tonQuyCol')}</span>
-        <span className="font-bold tabular-nums">{money(item.ton_quy)}</span>
+      <div className="flex items-center justify-between gap-2 mt-2.5">
+        <span className="text-xs text-muted-foreground truncate">
+          {t('thuChiQuy.store.hangMucCol')}: {item.ref_ten_hang_muc || item.ten_hang_muc || '—'}
+        </span>
+        <div className="text-right shrink-0">
+          <span className="text-xs text-muted-foreground mr-1.5">{t('thuChiQuy.form.soTien')}</span>
+          <span
+            className={`text-sm font-semibold tabular-nums ${item.loai === 'thu' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}
+          >
+            {item.loai === 'thu' ? '+' : '−'}
+            {money(item.so_tien)}
+          </span>
+        </div>
       </div>
+      {filter.chiNhanhId && (
+        <div className="flex justify-between items-center pt-2 mt-2.5 border-t border-border text-xs text-muted-foreground">
+          <span>{t('thuChiQuy.store.tonQuyCol')}</span>
+          <span className="tabular-nums">{money(item.ton_quy)}</span>
+        </div>
+      )}
     </div>
   );
 

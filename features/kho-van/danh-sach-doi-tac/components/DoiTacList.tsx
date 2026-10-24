@@ -60,6 +60,17 @@ const DoiTacList: React.FC<Props> = ({
     [columns]
   );
 
+  const renderTrangThaiBadge = (item: DoiTac) =>
+    item.trang_thai === 'Đang hoạt động' ? (
+      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+        {t('common.activeStatus')}
+      </span>
+    ) : (
+      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border">
+        {t('common.inactiveStatus')}
+      </span>
+    );
+
   const renderCell = (colId: string, item: DoiTac) => {
     switch (colId) {
       case 'thu_tu':
@@ -126,15 +137,7 @@ const DoiTacList: React.FC<Props> = ({
           </div>
         );
       case 'trang_thai':
-        return item.trang_thai === 'Đang hoạt động' ? (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
-            {t('common.activeStatus')}
-          </span>
-        ) : (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border">
-            {t('common.inactiveStatus')}
-          </span>
-        );
+        return renderTrangThaiBadge(item);
       case 'tg_cap_nhat':
         return <span className="text-xs text-muted-foreground">{formatDateShort(item.tg_cap_nhat)}</span>;
       case 'actions':
@@ -160,65 +163,80 @@ const DoiTacList: React.FC<Props> = ({
   const renderMobileCard = (item: DoiTac, isSelected: boolean) => {
     const qrUrl = buildQrThumbUrl(item);
     return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={() => onView?.(item)}
-      onKeyDown={(e) => e.key === 'Enter' && onView?.(item)}
-      className={cn(
-        'bg-card rounded-xl border p-3.5 shadow-sm transition-all active:scale-[0.98]',
-        isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'
-      )}
-    >
-      <div className="flex items-center justify-between gap-2 mb-2">
-        <span className="font-mono text-xs font-medium text-muted-foreground bg-muted px-2 py-1 rounded border border-border">
-          {item.ma_ncc}
-        </span>
-        <span className="text-xs text-muted-foreground">
-          {item.loai_doi_tac === 'nha_cung_cap' ? t('doiTac.tabs.nhaCungCap') : t('doiTac.tabs.khachHang')}
-        </span>
-      </div>
-      <div className="flex items-start gap-3 mb-2">
-        <div className="flex-1 min-w-0">
-          <div className="font-medium text-foreground text-sm mb-1">{item.ten_ncc}</div>
-          <div className="text-xs text-muted-foreground">{item.ten_nhom ?? '—'} {item.dien_thoai ? `· ${item.dien_thoai}` : ''}</div>
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => onView?.(item)}
+        onKeyDown={(e) => e.key === 'Enter' && onView?.(item)}
+        className={cn(
+          'bg-card rounded-xl border p-3.5 shadow-sm transition-all active:scale-[0.98]',
+          isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'
+        )}
+      >
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-2">
+              <h4 className="font-semibold text-foreground text-sm truncate min-w-0">{item.ten_ncc}</h4>
+              <div className="shrink-0">{renderTrangThaiBadge(item)}</div>
+            </div>
+            <p className="text-xs text-muted-foreground truncate mt-0.5">
+              {item.ma_ncc}
+              {' · '}
+              {item.loai_doi_tac === 'nha_cung_cap' ? t('doiTac.tabs.nhaCungCap') : t('doiTac.tabs.khachHang')}
+              {item.ten_nhom ? ` · ${item.ten_nhom}` : ''}
+            </p>
+            {item.dien_thoai && (
+              <p className="mt-1.5 text-sm text-foreground truncate tabular-nums">
+                <span className="text-muted-foreground">{t('doiTac.store.phoneCol')}: </span>
+                {item.dien_thoai}
+              </p>
+            )}
+          </div>
+          {qrUrl && (
+            <img
+              src={qrUrl}
+              alt={`QR ${item.ma_ncc}`}
+              width={56}
+              height={56}
+              loading="lazy"
+              className="rounded border border-border bg-white shrink-0"
+            />
+          )}
         </div>
-        {qrUrl && (
-          <img
-            src={qrUrl}
-            alt={`QR ${item.ma_ncc}`}
-            width={56}
-            height={56}
-            loading="lazy"
-            className="rounded border border-border bg-white shrink-0"
-          />
+        {(item.ten_tags ?? []).length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-2">
+            {(item.ten_tags ?? []).map((name) => (
+              <span key={name} className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+                {name}
+              </span>
+            ))}
+          </div>
+        )}
+        {(onEdit || onDelete) && (
+          <div className="flex justify-end gap-3 mt-2.5 pt-2.5 border-t border-border">
+            {onEdit && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onEdit(item); }}
+                className="h-10 w-10 flex items-center justify-center text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-all active:scale-90"
+                aria-label={t('common.edit')}
+              >
+                <Edit size={16} />
+              </button>
+            )}
+            {onDelete && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
+                className="h-10 w-10 flex items-center justify-center text-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 rounded-lg transition-all active:scale-90"
+                aria-label={t('common.delete')}
+              >
+                <Trash2 size={16} />
+              </button>
+            )}
+          </div>
         )}
       </div>
-      {(item.ten_tags ?? []).length > 0 && (
-        <div className="flex flex-wrap gap-1 mb-2">
-          {(item.ten_tags ?? []).map((name) => (
-            <span key={name} className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-primary/10 text-primary border border-primary/20">
-              {name}
-            </span>
-          ))}
-        </div>
-      )}
-      <div className="flex justify-between items-center pt-2 border-t border-border">
-        <span className="text-xs text-muted-foreground">{formatDateShort(item.tg_cap_nhat)}</span>
-        <div className="flex gap-1">
-          {onEdit && (
-            <button type="button" onClick={(e) => { e.stopPropagation(); onEdit(item); }} className="p-2 text-primary hover:bg-primary/10 rounded-lg" aria-label={t('common.edit')}>
-              <Edit size={14} />
-            </button>
-          )}
-          {onDelete && (
-            <button type="button" onClick={(e) => { e.stopPropagation(); onDelete(item.id); }} className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg" aria-label={t('common.delete')}>
-              <Trash2 size={14} />
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
     );
   };
 

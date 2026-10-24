@@ -1,9 +1,9 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Edit, Trash2, Wallet } from 'lucide-react';
+import { Edit, Trash2 } from 'lucide-react';
 import GenericTable from '../../../../components/shared/GenericTable';
 import Tooltip from '../../../../components/ui/Tooltip';
-import { formatDate, formatDateTimeShort, formatNumberVN } from '../../../../lib/utils';
+import { formatDateTimeShort, formatNumberVN, formatYmdToDisplay } from '../../../../lib/utils';
 import { getLoaiBadgeClass, loaiThuChiToI18nKey, nguonChungTuToI18nKey } from '../core/constants';
 import { getTrangThaiQuyBadgeClass, trangThaiQuyToI18nKey } from '../core/trang-thai';
 import type { ThuChiQuy, ThuChiQuyRow } from '../core/types';
@@ -60,7 +60,7 @@ const ThuChiQuyList: React.FC<Props> = ({
 
   const renderLoaiBadge = (item: ThuChiQuyRow) => (
     <span
-      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getLoaiBadgeClass(item.loai)}`}
+      className={`inline-flex items-center shrink-0 whitespace-nowrap px-2 py-0.5 rounded-full text-xs font-medium border ${getLoaiBadgeClass(item.loai)}`}
     >
       {t(loaiThuChiToI18nKey(item.loai))}
     </span>
@@ -109,7 +109,7 @@ const ThuChiQuyList: React.FC<Props> = ({
   const renderCell = (colId: string, item: ThuChiQuyRow) => {
     switch (colId) {
       case 'ngay':
-        return <span className="text-sm text-foreground tabular-nums">{formatDate(item.ngay)}</span>;
+        return <span className="text-sm text-foreground tabular-nums">{formatYmdToDisplay(item.ngay)}</span>;
       case 'so_phieu':
         return (
           <div className="flex items-center gap-2">
@@ -238,50 +238,54 @@ const ThuChiQuyList: React.FC<Props> = ({
           onRowClick?.(item);
         }
       }}
-      className="bg-card rounded-xl border border-border p-3.5 shadow-sm transition-all cursor-pointer"
+      className={`bg-card rounded-xl border p-3.5 shadow-sm transition-all cursor-pointer ${
+        isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'
+      }`}
     >
-      <div className="flex items-center gap-3 mb-3">
-        <div className="h-11 w-11 rounded-lg bg-primary/15 border border-primary/20 flex items-center justify-center text-primary shrink-0">
-          <Wallet size={20} />
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h4 className="font-semibold text-foreground text-sm line-clamp-2">{item.dien_giai || '—'}</h4>
+          <p className="text-xs text-muted-foreground truncate mt-0.5">
+            <span className="font-mono">{item.so_phieu}</span>
+            {` · ${formatYmdToDisplay(item.ngay)} · ${item.ref_ten_chi_nhanh || item.ten_chi_nhanh || '—'}`}
+          </p>
         </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between gap-2">
-            <h4 className="font-semibold text-foreground text-sm line-clamp-1">{item.dien_giai}</h4>
-            <input
-              type="checkbox"
-              checked={isSelected}
-              onChange={() => toggleSelection(item.id)}
-              onClick={(e) => e.stopPropagation()}
-              className="w-4 h-4 rounded border-border text-primary accent-primary cursor-pointer shrink-0"
-              aria-label={t('common.select')}
-            />
-          </div>
-          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-            <span className="text-xs font-mono text-muted-foreground">{item.so_phieu}</span>
-            <span className="text-xs text-muted-foreground tabular-nums">{formatDate(item.ngay)}</span>
-            {renderLoaiBadge(item)}
-          </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <span
+            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getTrangThaiQuyBadgeClass(item.trang_thai)}`}
+          >
+            {t(trangThaiQuyToI18nKey(item.trang_thai))}
+          </span>
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={() => toggleSelection(item.id)}
+            onClick={(e) => e.stopPropagation()}
+            className="w-4 h-4 rounded border-border text-primary accent-primary cursor-pointer shrink-0"
+            aria-label={t('common.select')}
+          />
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-2 text-xs">
-        <div>
-          <span className="text-muted-foreground">{t('thuChiQuy.store.hangMucCol')}: </span>
-          <span className="text-foreground">{item.ref_ten_hang_muc || item.ten_hang_muc || '—'}</span>
+      <div className="flex items-center justify-between gap-2 mt-2.5">
+        <div className="flex items-center gap-2 min-w-0">
+          {renderLoaiBadge(item)}
+          <span className="text-xs text-muted-foreground truncate">
+            {t('thuChiQuy.store.hangMucCol')}: {item.ref_ten_hang_muc || item.ten_hang_muc || '—'}
+          </span>
         </div>
-        <div className="text-right">
+        <div className="text-right shrink-0">
+          <span className="text-xs text-muted-foreground mr-1.5">{t('thuChiQuy.form.soTien')}</span>
           <span
-            className={`font-semibold tabular-nums ${item.loai === 'thu' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}
+            className={`text-sm font-semibold tabular-nums ${item.loai === 'thu' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}
           >
             {item.loai === 'thu' ? '+' : '−'}
             {money(item.so_tien)}
           </span>
         </div>
       </div>
-      <div className="flex justify-between items-center pt-2.5 mt-2 border-t border-border text-xs">
-        <span className="text-muted-foreground">
-          {t('thuChiQuy.store.tonQuyCol')} · {item.ref_ten_chi_nhanh || item.ten_chi_nhanh || '—'}
-        </span>
-        <span className="font-bold text-foreground tabular-nums">{money(item.ton_quy)}</span>
+      <div className="flex justify-between items-center pt-2 mt-2.5 border-t border-border text-xs text-muted-foreground">
+        <span>{t('thuChiQuy.store.tonQuyCol')}</span>
+        <span className="tabular-nums">{money(item.ton_quy)}</span>
       </div>
     </div>
   );

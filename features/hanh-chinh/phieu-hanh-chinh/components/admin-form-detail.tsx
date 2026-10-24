@@ -11,7 +11,8 @@ import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
 import DetailToolbar, { DetailToolbarAction } from '../../../../components/shared/DetailToolbar';
 import { formatDate, formatDateTimeShort } from '../../../../lib/utils';
 import { AdminFormRequest } from '../core/types';
-import { getAdminFormShiftLabel, getAdminFormStatusLabel, getApprovalStatusLabel } from '../core/constants';
+import { ADMIN_FORM_STATUS_BADGE, getAdminFormShiftLabel, getAdminFormStatusLabel, getApprovalStatusLabel } from '../core/constants';
+import { getStatusBadgeClass } from '../../../../lib/status-badge';
 import { getAdminFormTypeLabel } from '../../thiet-lap-cong-luong/core/constants';
 import { useAuthStore } from '../../../../store/useStore';
 import { laLoaiTheoKhoang } from '../core/khoang-nghi';
@@ -184,8 +185,18 @@ const AdminFormDetail: React.FC<Props> = ({
   return (
     <>
       <GenericDrawer
-        title={t('adminForm.detail.title')}
-        subtitle={getAdminFormTypeLabel(data.loai_phieu, t)}
+        // Người duyệt mở trên điện thoại cần thấy ngay ai xin, xin gì và đang ở bước nào — không phải cuộn.
+        title={data.ten_nguoi_tao || t('adminForm.detail.title')}
+        subtitle={
+          <span className="flex items-center gap-2 min-w-0 text-xs text-muted-foreground">
+            <span className="truncate">{getAdminFormTypeLabel(data.loai_phieu, t)}</span>
+            <span
+              className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusBadgeClass(ADMIN_FORM_STATUS_BADGE[data.trang_thai] ?? 'info')}`}
+            >
+              {getAdminFormStatusLabel(data.trang_thai, t)}
+            </span>
+          </span>
+        }
         icon={<FileText size={18} />}
         onClose={onClose}
         footer={renderFooter}

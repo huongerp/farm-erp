@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Edit, Trash2 } from 'lucide-react';
-import { cn, formatDateShort, formatNumberVN } from '../../../../lib/utils';
+import { cn, formatDateShort, formatNumberVN, formatYmdToDisplay } from '../../../../lib/utils';
 import type { PhieuDeXuatVatTu } from '../core/types';
 import { TRANG_THAI_PHIEU_DE_XUAT_VAT_TU, getTrangThaiPhieuBadgeClass, trangThaiToI18nKey } from '../core/constants';
 import GenericTable from '../../../../components/shared/GenericTable';
@@ -140,46 +140,70 @@ const PhieuDeXuatVatTuList: React.FC<Props> = ({
     }
   };
 
-  const renderMobileCard = (item: PhieuDeXuatVatTu, isSelected: boolean) => (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={() => onView?.(item)}
-      onKeyDown={(e) => e.key === 'Enter' && onView?.(item)}
-      className={cn(
-        'bg-card rounded-xl border p-3.5 shadow-sm transition-all active:scale-[0.98]',
-        isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'
-      )}
-    >
-      <div className="flex items-center justify-between gap-2 mb-2">
-        <span className="font-mono text-xs font-medium text-muted-foreground bg-muted px-2 py-1 rounded border border-border">
-          {item.so_phieu}
-        </span>
-        {renderStatusBadges(item)}
-      </div>
-      <div className="text-xs text-muted-foreground mb-1">{item.ngay} · {item.ten_noi_de_xuat ?? '—'}</div>
-      <div className="text-sm text-foreground mb-1">{item.ten_nguoi_de_xuat ?? '—'}</div>
-      <div className="text-xs text-muted-foreground tabular-nums mb-1">
-        {t('phieuDeXuatVatTu.store.lineItemsCol')}: {formatNumberVN(item.tong_so_dong ?? 0, { maxFractionDigits: 0 })} · {t('phieuDeXuatVatTu.store.totalQuantityCol')}: {formatNumberVN(item.tong_so_luong ?? 0)}
-      </div>
-      {item.ghi_chu && <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{item.ghi_chu}</p>}
-      <div className="flex justify-between items-center pt-2 border-t border-border">
-        <span className="text-xs text-muted-foreground">{formatDateShort(item.tg_cap_nhat)}</span>
-        <div className="flex gap-1">
-          {onEdit && (!canEditItem || canEditItem(item)) && (
-            <button type="button" onClick={(e) => { e.stopPropagation(); onEdit(item); }} className="p-2 text-primary hover:bg-primary/10 rounded-lg" aria-label={t('common.edit')}>
-              <Edit size={14} />
-            </button>
-          )}
-          {onDelete && (!canDeleteItem || canDeleteItem(item)) && (
-            <button type="button" onClick={(e) => { e.stopPropagation(); onDelete(item.id); }} className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg" aria-label={t('common.delete')}>
-              <Trash2 size={14} />
-            </button>
-          )}
+  const renderMobileCard = (item: PhieuDeXuatVatTu, isSelected: boolean) => {
+    const coSuaDuoc = !!onEdit && (!canEditItem || canEditItem(item));
+    const coXoaDuoc = !!onDelete && (!canDeleteItem || canDeleteItem(item));
+    return (
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => onView?.(item)}
+        onKeyDown={(e) => e.key === 'Enter' && onView?.(item)}
+        className={cn(
+          'bg-card rounded-xl border p-3.5 shadow-sm transition-all active:scale-[0.98]',
+          isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'
+        )}
+      >
+        <div className="flex items-start justify-between gap-2">
+          <h4 className="font-semibold text-foreground text-sm truncate min-w-0">{item.so_phieu}</h4>
+          <div className="shrink-0">{renderStatusBadges(item)}</div>
         </div>
+        <p className="text-xs text-muted-foreground truncate mt-0.5">
+          {formatYmdToDisplay(item.ngay)}
+          {item.ten_noi_de_xuat ? ` · ${item.ten_noi_de_xuat}` : ''}
+        </p>
+        <p className="mt-2 text-sm text-foreground tabular-nums">
+          <span className="text-muted-foreground">{t('phieuDeXuatVatTu.store.ngayCanCol')}: </span>
+          <span className="font-semibold">{formatYmdToDisplay(item.ngay_can)}</span>
+        </p>
+        <div className="mt-1 flex items-center justify-between gap-2 text-sm">
+          <span className="min-w-0 truncate text-foreground/80">
+            <span className="text-muted-foreground">{t('phieuDeXuatVatTu.store.nguoiDeXuatCol')}: </span>
+            {item.ten_nguoi_de_xuat ?? '—'}
+          </span>
+          <span className="shrink-0 tabular-nums">
+            <span className="text-xs text-muted-foreground">{t('phieuDeXuatVatTu.store.lineItemsCol')}: </span>
+            <span className="font-semibold">{formatNumberVN(item.tong_so_dong ?? 0, { maxFractionDigits: 0 })}</span>
+          </span>
+        </div>
+        {item.ghi_chu && <p className="mt-1.5 text-xs text-muted-foreground line-clamp-2">{item.ghi_chu}</p>}
+        {(coSuaDuoc || coXoaDuoc) && (
+          <div className="flex justify-end gap-3 mt-2.5 pt-2.5 border-t border-border">
+            {coSuaDuoc && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onEdit?.(item); }}
+                className="h-10 w-10 flex items-center justify-center text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-all active:scale-90"
+                aria-label={t('common.edit')}
+              >
+                <Edit size={16} />
+              </button>
+            )}
+            {coXoaDuoc && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onDelete?.(item.id); }}
+                className="h-10 w-10 flex items-center justify-center text-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 rounded-lg transition-all active:scale-90"
+                aria-label={t('common.delete')}
+              >
+                <Trash2 size={16} />
+              </button>
+            )}
+          </div>
+        )}
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <GenericTable<PhieuDeXuatVatTu>

@@ -13,6 +13,7 @@ import {
   DRAWER_Z_CONTENT_BASE,
 } from '../../lib/dialog-sizes';
 import { useIsMobile } from '../../lib/hooks/use-is-mobile';
+import { DrawerDirtyGuardContext } from './drawer-dirty-guard';
 
 export {
   DRAWER_WIDTH_FORM,
@@ -99,21 +100,25 @@ const GenericDrawer: React.FC<GenericDrawerProps> = ({
     return registerBusy('dirty');
   }, [isDirty]);
 
-  /** Đóng có xác nhận nếu form đang có thay đổi chưa lưu. */
-  const requestClose = useCallback(() => {
-    if (isDirty) {
-      confirm({
-        title: t('common.unsavedChangesTitle'),
-        message: t('common.unsavedChangesMessage'),
-        variant: 'warning',
-        confirmText: t('common.discard'),
-        cancelText: t('common.keepEditing'),
-        onConfirm: () => onClose(),
-      });
-      return;
-    }
-    onClose();
-  }, [isDirty, onClose, confirm, t]);
+  /** Chạy `action` (đóng / huỷ) có xác nhận nếu form đang có thay đổi chưa lưu. */
+  const guardDirty = useCallback(
+    (action: () => void) => {
+      if (isDirty) {
+        confirm({
+          title: t('common.unsavedChangesTitle'),
+          message: t('common.unsavedChangesMessage'),
+          variant: 'warning',
+          confirmText: t('common.discard'),
+          cancelText: t('common.keepEditing'),
+          onConfirm: action,
+        });
+        return;
+      }
+      action();
+    },
+    [isDirty, confirm, t]
+  );
+  const requestClose = useCallback(() => guardDirty(onClose), [guardDirty, onClose]);
 
   // Giữ tham chiếu tới requestClose mới nhất mà không đưa vào dependency của effect bên dưới,
   // vì requestClose đổi identity mỗi khi isDirty đổi (gõ ký tự đầu tiên) và effect đó không được chạy lại.
@@ -206,7 +211,7 @@ const GenericDrawer: React.FC<GenericDrawerProps> = ({
             paddingRight: 'max(0.75rem, env(safe-area-inset-right, 0px))',
           }}
         >
-          {footer}
+          <DrawerDirtyGuardContext.Provider value={guardDirty}>{footer}</DrawerDirtyGuardContext.Provider>
         </div>
       )}
     </>

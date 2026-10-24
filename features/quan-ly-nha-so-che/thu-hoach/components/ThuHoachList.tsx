@@ -4,6 +4,7 @@ import { Edit, Trash2 } from 'lucide-react';
 import { cn, formatDateShort, formatNumberVN } from '../../../../lib/utils';
 import type { FarmThuHoach, ThuHoachDaySuffix } from '../core/types';
 import { THU_HOACH_DAY_SUFFIXES } from '../core/types';
+import { khoangNgayTuan } from '../core/ngay-thu-hoach';
 import { sumKeHoachWeek, sumThucTeWeek, formatThuDuKienShort } from '../core/utils';
 import GenericTable from '../../../../components/shared/GenericTable';
 import type { ColumnConfig } from '../../../../store/createGenericStore';
@@ -170,74 +171,93 @@ const ThuHoachList: React.FC<Props> = ({
     }
   };
 
-  const renderMobileCard = (item: FarmThuHoach, isSelected: boolean) => (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={() => onView?.(item)}
-      onKeyDown={(e) => e.key === 'Enter' && onView?.(item)}
-      className={cn(
-        'bg-card rounded-xl border p-3.5 shadow-sm transition-all active:scale-[0.98]',
-        isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'
-      )}
-    >
-      <div className="flex items-center justify-between gap-2 mb-2">
-        <span className="text-sm font-semibold">
-          {t('thuHoach.store.colNam')} {item.nam} · {t('thuHoach.store.colTuan')} {item.tuan}
-        </span>
-      </div>
-      <div className="text-sm text-foreground mb-1">{item.ten_chi_nhanh ?? '—'}</div>
-      {(item.ten_nguoi_tao?.trim() ?? '') !== '' && (
-        <div className="text-xs text-muted-foreground mb-1">
-          {t('thuHoach.store.colNguoiTao')}: {item.ten_nguoi_tao}
-        </div>
-      )}
-      <div className="text-xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-1">
-        <span>
-          {t('thuHoach.stats.abbrDT')} {formatNumberVN(item.du_thu_tuan ?? 0)}
-        </span>
-        <span>
-          {t('thuHoach.stats.abbrKH')} {formatNumberVN(sumKeHoachWeek(item))}
-        </span>
-        <span>
-          {t('thuHoach.stats.abbrTT')} {formatNumberVN(sumThucTeWeek(item))}
-        </span>
-      </div>
-      {(item.thu_du_kien?.length ?? 0) > 0 && (
-        <div className="text-xs text-muted-foreground mt-1">
-          {t('thuHoach.form.thuDuKien')}: {formatThuDuKienShort(item.thu_du_kien ?? [])}
-        </div>
-      )}
-      <div className="flex justify-end gap-1 pt-2 border-t border-border mt-2">
-        {onEdit && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit(item);
-            }}
-            className="p-2 text-primary hover:bg-primary/10 rounded-lg"
-            aria-label={t('common.edit')}
-          >
-            <Edit size={14} />
-          </button>
+  const renderMobileCard = (item: FarmThuHoach, isSelected: boolean) => {
+    const keHoach = sumKeHoachWeek(item);
+    const thucTe = sumThucTeWeek(item);
+    const chenhLech = thucTe - keHoach;
+    const nguoiTao = item.ten_nguoi_tao?.trim() ?? '';
+    return (
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => onView?.(item)}
+        onKeyDown={(e) => e.key === 'Enter' && onView?.(item)}
+        className={cn(
+          'bg-card rounded-xl border p-3.5 shadow-sm transition-all',
+          isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'
         )}
-        {onDelete && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(item.id);
-            }}
-            className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg"
-            aria-label={t('common.delete')}
-          >
-            <Trash2 size={14} />
-          </button>
+      >
+        <div className="min-w-0">
+          <h4 className="font-semibold text-foreground text-sm truncate">{item.ten_chi_nhanh ?? '—'}</h4>
+          <p className="text-xs text-muted-foreground truncate mt-0.5 tabular-nums">
+            {t('thuHoach.store.colTuan')} {item.tuan}/{item.nam} · {khoangNgayTuan(item.nam, item.tuan)}
+            {nguoiTao ? ` · ${nguoiTao}` : ''}
+          </p>
+        </div>
+        <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5 text-sm tabular-nums">
+          <div>
+            <div className="text-xs text-muted-foreground">{t('thuHoach.card.duThu')}</div>
+            <div className="font-semibold">{formatNumberVN(item.du_thu_tuan ?? 0)}</div>
+          </div>
+          <div>
+            <div className="text-xs text-muted-foreground">{t('thuHoach.card.keHoach')}</div>
+            <div className="font-semibold">{formatNumberVN(keHoach)}</div>
+          </div>
+          <div>
+            <div className="text-xs text-muted-foreground">{t('thuHoach.card.thucTe')}</div>
+            <div className="font-semibold">{formatNumberVN(thucTe)}</div>
+          </div>
+          <div>
+            <div className="text-xs text-muted-foreground">{t('thuHoach.card.chenhLech')}</div>
+            <div
+              className={cn(
+                'font-semibold',
+                chenhLech < 0 ? 'text-rose-600 dark:text-rose-400' : chenhLech > 0 ? 'text-emerald-600 dark:text-emerald-400' : ''
+              )}
+            >
+              {chenhLech > 0 ? '+' : ''}
+              {formatNumberVN(chenhLech)}
+            </div>
+          </div>
+        </div>
+        {(item.thu_du_kien?.length ?? 0) > 0 && (
+          <p className="mt-2 text-xs text-muted-foreground">
+            {t('thuHoach.form.thuDuKien')}: {formatThuDuKienShort(item.thu_du_kien ?? [])}
+          </p>
+        )}
+        {(onEdit || onDelete) && (
+          <div className="flex justify-end gap-3 mt-2.5 pt-2.5 border-t border-border">
+            {onEdit && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(item);
+                }}
+                className="h-10 w-10 flex items-center justify-center text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-all active:scale-90"
+                aria-label={t('common.edit')}
+              >
+                <Edit size={16} />
+              </button>
+            )}
+            {onDelete && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(item.id);
+                }}
+                className="h-10 w-10 flex items-center justify-center text-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 rounded-lg transition-all active:scale-90"
+                aria-label={t('common.delete')}
+              >
+                <Trash2 size={16} />
+              </button>
+            )}
+          </div>
         )}
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <GenericTable<FarmThuHoach>

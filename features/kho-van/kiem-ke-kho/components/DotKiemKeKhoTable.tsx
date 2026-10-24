@@ -1,14 +1,15 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Edit, Trash2 } from 'lucide-react';
 import GenericTable from '../../../../components/shared/GenericTable';
 import Tooltip from '../../../../components/ui/Tooltip';
-import { formatDateTimeShort, formatDate, cn } from '../../../../lib/utils';
+import { formatDateTimeShort, formatDate, formatYmdToDisplay, cn } from '../../../../lib/utils';
 import { getStatusBadgeClass } from '../../../../lib/status-badge';
 import { useKiemKeCapCao } from '../hooks/use-kiem-ke-cap-cao';
 import type { DotKiemKeKho } from '../core/types';
 import { getTrangThaiDotLabel, TRANG_THAI_DOT_SEMANTIC } from '../core/constants';
 import { useKiemKeKhoStore } from '../store/useKiemKeKhoStore';
+import { useKhoList } from '../../danh-sach-kho/hooks/use-kho';
 
 interface Props {
   data: DotKiemKeKho[];
@@ -27,6 +28,8 @@ const DotKiemKeKhoTable: React.FC<Props> = ({ isFetching, totalRecordsOverride, 
   const { t } = useTranslation();
   // Đợt đã chốt sổ: chỉ cấp cao còn thấy nút Sửa / Xoá.
   const capCao = useKiemKeCapCao();
+  const { data: khoList = [] } = useKhoList();
+  const khoTheoId = useMemo(() => new Map(khoList.map((k) => [k.id, k.ten_kho])), [khoList]);
   const {
     columns,
     resizeColumn,
@@ -157,32 +160,57 @@ const DotKiemKeKhoTable: React.FC<Props> = ({ isFetching, totalRecordsOverride, 
   };
 
   const handleRowClick = onView ?? onEdit;
-  const renderMobileCard = (item: DotKiemKeKho, isSelected: boolean) => (
-    <div
-      role="button"
-      tabIndex={0}
-      className={isSelected ? 'border-primary bg-primary/5' : ''}
-      onClick={() => handleRowClick?.(item)}
-      onKeyDown={(e) => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); handleRowClick?.(item); } }}
-    >
-      <div className="flex justify-between items-start gap-2">
-        <span className="font-medium text-sm">{item.ma_dot}</span>
-        {renderTrangThaiBadge(item.trang_thai)}
-      </div>
-      <p className="text-sm text-foreground mt-0.5">{item.ten_dot || '—'}</p>
-      <p className="text-xs text-muted-foreground">
-        {formatDate(item.ngay_bat_dau)} → {formatDate(item.ngay_ket_thuc)} · {item.ten_nguoi_tao || '—'} ·{' '}
-        {item.ten_nguoi_phu_trach || '—'}
-      </p>
-      <div className="flex gap-3 mt-1.5 text-xs text-muted-foreground">
-        <span>{t('kiemKeKho.store.soKhoCol')}: {item.so_kho ?? item.id_kho?.length ?? 0}</span>
-        <span>{t('kiemKeKho.store.soHangHoaCol')}: {item.so_hang_hoa ?? '—'}</span>
-        {(item.so_lech ?? 0) > 0 && (
-          <span className="text-amber-600 dark:text-amber-400">{t('kiemKeKho.store.soLechCol')}: {item.so_lech}</span>
+  const renderMobileCard = (item: DotKiemKeKho, isSelected: boolean) => {
+    const tenKho = (item.id_kho ?? []).map((id) => khoTheoId.get(id)).filter((v): v is string => !!v);
+    const soKho = item.so_kho ?? item.id_kho?.length ?? 0;
+    return (
+      <div
+        role="button"
+        tabIndex={0}
+        className={cn(
+          'bg-card rounded-xl border p-3.5 shadow-sm transition-all active:scale-[0.98]',
+          isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'
+        )}
+        onClick={() => handleRowClick?.(item)}
+        onKeyDown={(e) => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); handleRowClick?.(item); } }}
+      >
+        <div className="flex items-start justify-between gap-2">
+          <h4 className="font-semibold text-foreground text-sm truncate min-w-0">{item.ma_dot}</h4>
+          <div className="shrink-0">{renderTrangThaiBadge(item.trang_thai)}</div>
+        </div>
+        {item.ten_dot && <p className="text-sm text-foreground/80 line-clamp-2 mt-0.5">{item.ten_dot}</p>}
+        <p className="text-xs text-muted-foreground tabular-nums mt-0.5">
+          {formatYmdToDisplay(item.ngay_bat_dau)} → {formatYmdToDisplay(item.ngay_ket_thuc)}
+        </p>
+        <p className="mt-2 text-sm text-foreground line-clamp-2">
+          <span className="text-muted-foreground">{t('kiemKeKho.store.khoCol')}: </span>
+          {tenKho.length > 0 ? tenKho.join(', ') : `${soKho}`}
+        </p>
+        <div className="mt-1.5 flex items-center gap-3 text-sm tabular-nums">
+          <span>
+            <span className="text-xs text-muted-foreground">{t('kiemKeKho.store.soHangHoaCol')}: </span>
+            <span className="font-semibold">{item.so_hang_hoa ?? '—'}</span>
+          </span>
+          {(item.so_lech ?? 0) > 0 && (
+            <span className="text-amber-600 dark:text-amber-400">
+              <span className="text-xs">{t('kiemKeKho.store.soLechCol')}: </span>
+              <span className="font-semibold">{item.so_lech}</span>
+            </span>
+          )}
+        </div>
+        {(item.ten_nguoi_tao || item.ten_nguoi_phu_trach) && (
+          <p className="mt-1 text-xs text-muted-foreground truncate">
+            {[
+              item.ten_nguoi_tao ? `${t('kiemKeKho.store.nguoiTaoCol')}: ${item.ten_nguoi_tao}` : '',
+              item.ten_nguoi_phu_trach ? `${t('kiemKeKho.store.nguoiPhuTrachCol')}: ${item.ten_nguoi_phu_trach}` : '',
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+          </p>
         )}
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <GenericTable<DotKiemKeKho>

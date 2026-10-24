@@ -28,6 +28,8 @@ import {
   type PhieuTomTatTrung,
 } from '../core/form-mappers';
 import BaoCaoNhanCongChuyenSubEditor from './BaoCaoNhanCongChuyenSubEditor';
+import BaoCaoNhanCongChuyenCard from './BaoCaoNhanCongChuyenCard';
+import { useIsMobile } from '../../../../lib/hooks/use-is-mobile';
 import {
   findSubSlGioPairIssues,
   formatGioTbVN,
@@ -93,6 +95,7 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
   onClose,
 }) => {
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
   const isEdit = !!initialData;
   const { canCreate, canEditRow } = useBaoCaoNhanCongPermissions();
   const createMutation = useCreateBaoCaoNhanCong(onClose);
@@ -340,6 +343,64 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
     );
   };
 
+  /** Điện thoại: một thẻ / chuyền (cùng số liệu với dòng bảng desktop; chỉ mount MỘT bố cục). */
+  const renderChuyenCard = (
+    index: number,
+    tt: string,
+    labelKey: `baoCaoNhanCong.chuyen.${LoaiChuyen}`,
+    code: string
+  ) => {
+    const row = chiTiet?.[index];
+    const sub = normalizeChiTietSubFormByLoai(row?.sub);
+    const expanded = expandedRows.has(index);
+    const cnNgay = formLoaiTotals(row, 'CN_NGAY');
+    const cnNua = formLoaiTotals(row, 'CN_NUA');
+    const tangCa = formLoaiTotals(row, 'TANG_CA');
+    const toggleLabel = `${expanded ? t('baoCaoNhanCong.sub.collapse') : t('baoCaoNhanCong.sub.viewBreakdown')} (${subAlignedRowCount(sub)})`;
+    return (
+      <BaoCaoNhanCongChuyenCard
+        key={code}
+        tt={tt}
+        title={t(labelKey)}
+        cnNgay={cnNgay}
+        cnNua={cnNua}
+        tangCa={tangCa}
+        quyDoi={tongCongQuyDoiNgayVaNua(row ?? {})}
+        tongGio={tongGioCongNgayVaNua(cnNgay, cnNua)}
+        tongGioTc={tongGioTangCaTichMotDong({ ...row, sub })}
+        expanded={expanded}
+        onToggle={() => toggleExpandRow(index)}
+        toggleLabel={toggleLabel}
+        ghiChu={
+          <Controller
+            name={`chi_tiet.${index}.ghi_chu`}
+            control={control}
+            render={({ field }) => (
+              <Textarea
+                {...field}
+                value={field.value ?? ''}
+                rows={1}
+                className="text-sm resize-y w-full min-h-0 py-1.5"
+                placeholder="—"
+              />
+            )}
+          />
+        }
+      >
+        {expanded && (
+          <BaoCaoNhanCongChuyenSubEditor
+            layout="cards"
+            chiTietIndex={index}
+            control={control}
+            setValue={setValue}
+            getValues={getValues}
+            subErrors={errors.chi_tiet?.[index]?.sub}
+          />
+        )}
+      </BaoCaoNhanCongChuyenCard>
+    );
+  };
+
   const handleUploadImage = useCallback((file: File) => uploadAnh(file, 'bao-cao-nhan-cong'), []);
 
   return (
@@ -428,6 +489,36 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
         </FormSection>
 
         <FormSection title={t('baoCaoNhanCong.form.sectionChuyen')} icon={<Users size={14} />} variant="primary">
+          {isMobile ? (
+            <div className="space-y-2">
+              <BaoCaoNhanCongChuyenCard
+                tone="total"
+                title={t('baoCaoNhanCong.form.rowTongNgay')}
+                cnNgay={tongCnNgay}
+                cnNua={tongCnNua}
+                tangCa={tongTangCa}
+                quyDoi={tongQuyDoiPhieu}
+                tongGio={tongTongGioNgayNua}
+                tongGioTc={tongTongGioTc}
+              />
+              {productionSlice.map((row, index) => {
+                const code = row.loai_chuyen as LoaiChuyen;
+                return renderChuyenCard(index, chuyenTtLabelByThuTu(index + 1), `baoCaoNhanCong.chuyen.${code}`, code);
+              })}
+              <BaoCaoNhanCongChuyenCard
+                tone="subtotal"
+                tt="IV"
+                title={t('baoCaoNhanCong.form.rowCongNhanDinhBien')}
+                cnNgay={ivCnNgay}
+                cnNua={ivCnNua}
+                tangCa={ivTangCa}
+                quyDoi={ivQuyDoi}
+                tongGio={ivTongGioNgayNua}
+                tongGioTc={ivTongGioTc}
+              />
+              {renderChuyenCard(vIndex, 'V', vLabelKey, vCode)}
+            </div>
+          ) : (
           <div className="overflow-x-auto rounded-lg border border-border">
             <table className={bcncTableClass}>
               <thead>
@@ -508,6 +599,7 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
               </tbody>
             </table>
           </div>
+          )}
         </FormSection>
 
       </form>

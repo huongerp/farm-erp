@@ -150,7 +150,8 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
       className={cn(
         'absolute right-0 w-[min(100vw-2rem,380px)] max-w-full',
         isOpenUp ? 'bottom-full mb-2' : 'top-full mt-2',
-        'bg-card/95 backdrop-blur-xl rounded-xl shadow-xl border border-border overflow-hidden z-50',
+        // Điện thoại: nền đặc — nền mờ để lộ chữ trang phía sau, khó đọc.
+        'bg-card md:bg-card/95 md:backdrop-blur-xl rounded-xl shadow-xl border border-border overflow-hidden z-50',
         'flex flex-col',
         className
       )}

@@ -101,11 +101,16 @@ const DangKyThamQuanList: React.FC<Props> = ({
             e.stopPropagation();
             onEdit(item);
           }}
-          className={cn('text-primary hover:bg-primary/10', lon ? 'p-2 rounded-lg' : 'p-1.5 rounded-md')}
+          className={cn(
+            'text-primary',
+            lon
+              ? 'h-10 w-10 flex items-center justify-center bg-primary/5 hover:bg-primary/10 rounded-lg transition-all active:scale-90'
+              : 'hover:bg-primary/10 p-1.5 rounded-md'
+          )}
           title={t('common.edit')}
           aria-label={t('common.edit')}
         >
-          <Edit size={14} />
+          <Edit size={lon ? 16 : 14} />
         </button>
       )}
       {onDelete && (
@@ -115,11 +120,16 @@ const DangKyThamQuanList: React.FC<Props> = ({
             e.stopPropagation();
             onDelete(item.id);
           }}
-          className={cn('text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30', lon ? 'p-2 rounded-lg' : 'p-1.5 rounded-md')}
+          className={cn(
+            'text-rose-500',
+            lon
+              ? 'h-10 w-10 flex items-center justify-center bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 rounded-lg transition-all active:scale-90'
+              : 'hover:bg-rose-50 dark:hover:bg-rose-950/30 p-1.5 rounded-md'
+          )}
           title={t('common.delete')}
           aria-label={t('common.delete')}
         >
-          <Trash2 size={14} />
+          <Trash2 size={lon ? 16 : 14} />
         </button>
       )}
     </>
@@ -187,6 +197,13 @@ const DangKyThamQuanList: React.FC<Props> = ({
   const renderMobileCard = (item: DangKyThamQuan, isSelected: boolean) => {
     const donVi = donViCuaPhieu(item);
     const mucDich = mucDichCuaPhieu(item);
+    const nhan = (label: string, value: React.ReactNode) => (
+      <div className="min-w-0">
+        <div className="text-xs text-muted-foreground">{label}</div>
+        <div className="text-sm font-medium truncate">{value}</div>
+      </div>
+    );
+    const hasFooter = (!!onQuickAction && !!quickMode(item)) || !!onEdit || !!onDelete;
     return (
       <div
         role="button"
@@ -194,29 +211,38 @@ const DangKyThamQuanList: React.FC<Props> = ({
         onClick={() => onView(item)}
         onKeyDown={(e) => e.key === 'Enter' && onView(item)}
         className={cn(
-          'bg-card rounded-xl border p-3.5 shadow-sm transition-all active:scale-[0.98]',
+          'bg-card rounded-xl border p-3.5 shadow-sm transition-all',
           isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'
         )}
       >
-        <div className="flex items-start justify-between gap-2 mb-1.5">
+        <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <div className="text-sm font-semibold truncate">{item.nguoi_dai_dien || item.khach[0]?.ho_ten || '—'}</div>
-            {donVi && <div className="text-xs text-muted-foreground truncate">{donVi}</div>}
+            <h4 className="text-sm font-semibold truncate">{item.nguoi_dai_dien || item.khach[0]?.ho_ten || '—'}</h4>
+            <p className="text-xs text-muted-foreground truncate mt-0.5 tabular-nums">
+              {khoangThoiGian(item)}
+              {item.ten_chi_nhanh ? ` · ${item.ten_chi_nhanh}` : ''}
+            </p>
           </div>
           <TrangThaiBadge value={item.trang_thai} />
         </div>
-        <div className="text-xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-1">
-          <span className="tabular-nums">{khoangThoiGian(item)}</span>
-          <span className="inline-flex items-center gap-1">
-            <Users size={12} />
-            {item.khach.length} {t('dangKyThamQuan.khach.nguoi')}
-          </span>
-          {mucDich && <span>{mucDich}</span>}
+        <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5">
+          {nhan(
+            t('dangKyThamQuan.col.soKhach'),
+            <span className="inline-flex items-center gap-1 font-semibold tabular-nums">
+              <Users size={12} />
+              {item.khach.length} {t('dangKyThamQuan.khach.nguoi')}
+            </span>
+          )}
+          {donVi && nhan(t('dangKyThamQuan.col.donVi'), donVi)}
+          {item.ten_nguoi_tiep_don && nhan(t('dangKyThamQuan.col.nguoiTiepDon'), item.ten_nguoi_tiep_don)}
+          {mucDich && nhan(t('dangKyThamQuan.col.mucDich'), mucDich)}
         </div>
-        <div className="flex items-center justify-between gap-1 pt-2 border-t border-border mt-2">
-          <div>{quickBtn(item, 'md')}</div>
-          <div className="flex gap-1">{nutSuaXoa(item, true)}</div>
-        </div>
+        {hasFooter && (
+          <div className="flex items-center justify-between gap-3 mt-2.5 pt-2.5 border-t border-border">
+            <div>{quickBtn(item, 'md')}</div>
+            <div className="flex gap-3">{nutSuaXoa(item, true)}</div>
+          </div>
+        )}
       </div>
     );
   };

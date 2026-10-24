@@ -122,6 +122,7 @@
   "adminForm.session.afternoon": "Chiều",
   "adminForm.store.periodCol": "Thời gian",
   "adminForm.store.daysCol": "Số ngày",
+  "adminForm.card.soNgay": "{{soNgay}} ngày",
   "adminForm.filter.me": "Tôi",
   "adminForm.validation.rangeInvalidDate": "Ngày không hợp lệ",
   "adminForm.validation.rangeReversed": "Đến ngày / buổi phải sau Từ ngày / buổi",

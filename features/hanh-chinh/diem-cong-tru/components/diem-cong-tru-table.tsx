@@ -1,9 +1,10 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Edit, Trash2, Scale } from 'lucide-react';
+import { Edit, Trash2 } from 'lucide-react';
 import GenericTable from '../../../../components/shared/GenericTable';
 import Tooltip from '../../../../components/ui/Tooltip';
 import { formatDateTimeShort } from '../../../../lib/utils';
+import { formatKyThangNam } from '../../bang-luong/utils/ky-hien-thi';
 import { DiemCongTruRecord } from '../core/types';
 import { useDiemCongTruStore } from '../store/useDiemCongTruStore';
 import { getDiemCongTruLoaiLabel } from '../core/constants';
@@ -140,53 +141,46 @@ const DiemCongTruTable: React.FC<Props> = ({ isFetching, totalRecordsOverride, d
         isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'
       }`}
     >
-      <div className="flex items-center gap-3 mb-3">
-        <div className="h-11 w-11 rounded-lg bg-primary/15 border border-primary/20 flex items-center justify-center text-primary shrink-0">
-          <Scale size={20} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between gap-2">
-            <h4 className="font-semibold text-foreground text-sm truncate">
-              {item.ma_nhan_vien && item.ten_nhan_vien
-                ? `${item.ma_nhan_vien} - ${item.ten_nhan_vien}`
-                : item.ten_nhan_vien || item.ma_nhan_vien || '—'}
-            </h4>
-            <div role="presentation" onClick={(e) => e.stopPropagation()} className="shrink-0">
-              <input
-                type="checkbox"
-                checked={isSelected}
-                onChange={() => toggleSelection(item.id)}
-                className="w-4 h-4 rounded border-border text-primary accent-primary cursor-pointer"
-                aria-label={t('common.select')}
-              />
-            </div>
-          </div>
-          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-            <span className="text-xs text-muted-foreground tabular-nums">
-              {formatPeriod(item.nam, item.thang)}
-            </span>
-            {renderLoaiBadge(item.loai)}
-            <span className="text-xs font-semibold text-foreground">{item.diem} điểm</span>
-          </div>
-        </div>
-      </div>
-      <div className="grid grid-cols-1 gap-2 px-3 py-2 bg-muted/30 rounded-lg mb-3 text-body-sm">
-        <div>
-          <p className="text-muted-foreground mb-0.5">{t('diemCongTru.store.categoryCol')}</p>
-          <p className="font-medium text-foreground line-clamp-1">
-            {item.ten_hang_muc || item.ma_hang_muc || '—'}
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h4 className="font-semibold text-foreground text-sm truncate">
+            {item.ma_nhan_vien && item.ten_nhan_vien
+              ? `${item.ma_nhan_vien} - ${item.ten_nhan_vien}`
+              : item.ten_nhan_vien || item.ma_nhan_vien || '—'}
+          </h4>
+          <p className="text-xs text-muted-foreground truncate mt-0.5 tabular-nums">
+            {t('diemCongTru.card.ky')} {formatKyThangNam(item.nam, item.thang)}
           </p>
         </div>
-        {item.mo_ta && (
-          <div>
-            <p className="text-muted-foreground mb-0.5">{t('diemCongTru.store.moTaCol')}</p>
-            <p className="text-foreground line-clamp-2">{item.mo_ta}</p>
+        <div className="flex items-center gap-2 shrink-0">
+          {renderLoaiBadge(item.loai)}
+          <div role="presentation" onClick={(e) => e.stopPropagation()}>
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={() => toggleSelection(item.id)}
+              className="w-4 h-4 rounded border-border text-primary accent-primary cursor-pointer"
+              aria-label={t('common.select')}
+            />
           </div>
-        )}
+        </div>
       </div>
-      <div className="flex justify-between items-center pt-2.5 border-t border-border">
-        <span className="text-muted-foreground text-xs">{formatDateTimeShort(item.tg_cap_nhat)}</span>
-        <div className="flex gap-1.5">
+      <div className="flex items-center justify-between gap-2 mt-2.5">
+        <span className="text-xs text-muted-foreground truncate">
+          {t('diemCongTru.store.categoryCol')}: <span className="text-foreground">{item.ten_hang_muc || item.ma_hang_muc || '—'}</span>
+        </span>
+        <div className="shrink-0">
+          <span className="text-xs text-muted-foreground mr-1.5">{t('diemCongTru.store.diemCol')}</span>
+          <span className="text-sm font-semibold text-foreground tabular-nums">{item.diem}</span>
+        </div>
+      </div>
+      {item.mo_ta && (
+        <p className="mt-1.5 text-xs text-muted-foreground line-clamp-2">
+          {t('diemCongTru.store.moTaCol')}: <span className="text-foreground">{item.mo_ta}</span>
+        </p>
+      )}
+      {(canUpdate || canDelete) && (
+        <div className="flex justify-end gap-3 mt-2.5 pt-2.5 border-t border-border">
           {canUpdate && (
             <button
               type="button"
@@ -194,10 +188,10 @@ const DiemCongTruTable: React.FC<Props> = ({ isFetching, totalRecordsOverride, d
                 e.stopPropagation();
                 onEdit(item);
               }}
-              className="p-2 text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-all active:scale-90"
+              className="h-10 w-10 flex items-center justify-center text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-all active:scale-90"
               aria-label={t('common.edit')}
             >
-              <Edit size={14} />
+              <Edit size={16} />
             </button>
           )}
           {canDelete && (
@@ -207,14 +201,14 @@ const DiemCongTruTable: React.FC<Props> = ({ isFetching, totalRecordsOverride, d
                 e.stopPropagation();
                 onDelete(item.id);
               }}
-              className="p-2 text-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 rounded-lg transition-all active:scale-90"
+              className="h-10 w-10 flex items-center justify-center text-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 rounded-lg transition-all active:scale-90"
               aria-label={t('common.delete')}
             >
-              <Trash2 size={14} />
+              <Trash2 size={16} />
             </button>
           )}
         </div>
-      </div>
+      )}
     </div>
   );
 

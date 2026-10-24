@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { usePrimaryColor } from '../../lib/theme-utils';
 import { useFavoriteModules } from '../../lib/use-favorite-modules';
 import { warmupNavigationTarget } from '../../lib/submenu-prefetch';
+import { cn } from '../../lib/utils';
 
 export interface ModuleItem {
   title: string;
@@ -114,7 +115,8 @@ const SubModuleCard: React.FC<ModuleItem> = ({ title, description, icon: Icon, c
           aria-hidden
         />
       </div>
-      <div className="flex-1 min-w-0">
+      {/* Chừa lề phải cho nút ghim / hướng dẫn đặt tuyệt đối ở góc — không thì mô tả 2 dòng bị đè. */}
+      <div className={cn('flex-1 min-w-0', (moduleId || guidePath) && 'pr-7')}>
         <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors text-sm mb-0.5 md:mb-1 truncate">{title}</h3>
         <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{description}</p>
       </div>

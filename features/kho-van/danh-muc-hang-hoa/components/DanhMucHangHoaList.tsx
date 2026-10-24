@@ -351,63 +351,100 @@ const DanhMucHangHoaList: React.FC<Props> = ({
           <div className="space-y-3">
             {paginatedData.map((item) => {
               const isParent = !item.id_cha;
+              const isSelected = selectedIds.has(item.id);
+              const tenCha = item.id_cha ? parentNameMap[item.id_cha] : undefined;
+              const coHanhDong = (isParent && !!onAddChild) || !!onEdit || !!onDelete;
               return (
                 <div
                   key={item.id}
-                  className="bg-card rounded-xl border border-border p-3.5 shadow-sm"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => onView?.(item)}
+                  onKeyDown={(e) => e.key === 'Enter' && onView?.(item)}
+                  className={cn(
+                    'bg-card rounded-xl border p-3.5 shadow-sm transition-all active:scale-[0.98]',
+                    isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'
+                  )}
                 >
-                  <div className="flex items-center gap-3 mb-2">
+                  <div className="flex items-start gap-3">
                     <div className="h-11 w-11 rounded-lg bg-primary/15 border border-primary/20 flex items-center justify-center text-primary shrink-0">
                       <List size={22} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold text-foreground text-sm truncate">
-                        {item.ten_danh_muc}
-                      </h4>
-                      <div className="text-xs text-muted-foreground font-mono mt-0.5">
-                        {item.ma_danh_muc}
+                      <div className="flex items-start justify-between gap-2">
+                        <h4 className="font-semibold text-foreground text-sm truncate min-w-0">
+                          {item.ten_danh_muc}
+                        </h4>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {item.trang_thai === 'Đang hoạt động' ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+                              {t('common.active')}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border">
+                              {t('common.inactive')}
+                            </span>
+                          )}
+                          <div role="presentation" onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => onToggleSelection(item.id)}
+                              className="w-4 h-4 rounded border-border text-primary accent-primary cursor-pointer"
+                              aria-label={t('common.select')}
+                            />
+                          </div>
+                        </div>
                       </div>
+                      <p className="text-xs text-muted-foreground font-mono mt-0.5 truncate">{item.ma_danh_muc}</p>
+                      {tenCha && (
+                        <p className="mt-1.5 text-sm text-foreground truncate">
+                          <span className="text-muted-foreground">{t('danhMucHangHoa.store.tenCha')}: </span>
+                          {tenCha}
+                        </p>
+                      )}
+                      {item.mo_ta && <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{item.mo_ta}</p>}
                     </div>
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.has(item.id)}
-                      onChange={() => onToggleSelection(item.id)}
-                      className="w-4 h-4 rounded border-border text-primary accent-primary"
+                  </div>
+                  {coHanhDong && (
+                    <div
+                      className="flex justify-end gap-3 mt-2.5 pt-2.5 border-t border-border"
+                      role="presentation"
                       onClick={(e) => e.stopPropagation()}
-                    />
-                  </div>
-                  <div className="flex flex-wrap gap-2 mt-2 items-center justify-center">
-                    {isParent && onAddChild && (
-                      <button
-                        type="button"
-                        onClick={() => onAddChild(item)}
-                        className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg text-xs inline-flex items-center gap-1"
-                      >
-                        <FolderPlus size={14} />
-                        {t('danhMucHangHoa.detail.addChild')}
-                      </button>
-                    )}
-                    {onEdit && (
-                      <button
-                        type="button"
-                        onClick={() => onEdit(item)}
-                        aria-label={t('common.edit')}
-                        className="p-2 text-primary hover:bg-primary/10 rounded-lg"
-                      >
-                        <Edit size={14} />
-                      </button>
-                    )}
-                    {onDelete && (
-                      <button
-                        type="button"
-                        onClick={() => onDelete(item.id)}
-                        aria-label={t('common.delete')}
-                        className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    )}
-                  </div>
+                    >
+                      {isParent && onAddChild && (
+                        <button
+                          type="button"
+                          onClick={() => onAddChild(item)}
+                          aria-label={t('danhMucHangHoa.detail.addChild')}
+                          className="h-10 px-3 flex items-center justify-center gap-1.5 text-xs text-emerald-600 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:hover:bg-emerald-950/50 rounded-lg transition-all active:scale-90"
+                        >
+                          <FolderPlus size={16} />
+                          {t('danhMucHangHoa.detail.addChild')}
+                        </button>
+                      )}
+                      {onEdit && (
+                        <button
+                          type="button"
+                          onClick={() => onEdit(item)}
+                          aria-label={t('common.edit')}
+                          className="h-10 w-10 flex items-center justify-center text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-all active:scale-90"
+                        >
+                          <Edit size={16} />
+                        </button>
+                      )}
+                      {onDelete && (
+                        <button
+                          type="button"
+                          onClick={() => onDelete(item.id)}
+                          aria-label={t('common.delete')}
+                          className="h-10 w-10 flex items-center justify-center text-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 rounded-lg transition-all active:scale-90"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}

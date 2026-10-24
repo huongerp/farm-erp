@@ -1,9 +1,10 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Banknote, Edit, Trash2 } from 'lucide-react';
+import { Edit, Trash2 } from 'lucide-react';
 import GenericTable from '../../../../components/shared/GenericTable';
 import Tooltip from '../../../../components/ui/Tooltip';
 import { formatDateTimeShort, formatCurrency } from '../../../../lib/utils';
+import { formatKyThangNam } from '../utils/ky-hien-thi';
 import type { BangLuongRecord } from '../core/types';
 import { useBangLuongMyStore } from '../store/useBangLuongMyStore';
 
@@ -130,73 +131,73 @@ const BangLuongMyTable: React.FC<Props> = ({ isFetching, totalRecordsOverride, d
         isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'
       }`}
     >
-      <div className="flex items-center gap-3 mb-3">
-        <div className="h-11 w-11 rounded-lg bg-primary/15 border border-primary/20 flex items-center justify-center text-primary shrink-0">
-          <Banknote size={20} />
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h4 className="font-semibold text-foreground text-sm tabular-nums">
+            {t('bangLuong.store.periodCol')} {formatKyThangNam(item.nam, item.thang)}
+          </h4>
+          {item.ten_phong_ban && (
+            <p className="text-xs text-muted-foreground truncate mt-0.5">{item.ten_phong_ban}</p>
+          )}
         </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between gap-2">
-            <h4 className="font-semibold text-foreground text-sm truncate">
-              {formatPeriod(item.nam, item.thang)}
-            </h4>
-            <div role="presentation" onClick={(e) => e.stopPropagation()} className="shrink-0">
-              <input
-                type="checkbox"
-                checked={isSelected}
-                onChange={() => toggleSelection(item.id)}
-                className="w-4 h-4 rounded border-border text-primary accent-primary cursor-pointer"
-                aria-label={t('common.select')}
-              />
-            </div>
-          </div>
-          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-            <span className="text-xs font-semibold text-primary">
-              {formatCurrency(item.tong_luong)}
-            </span>
-          </div>
+        <div role="presentation" onClick={(e) => e.stopPropagation()} className="shrink-0">
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={() => toggleSelection(item.id)}
+            className="w-4 h-4 rounded border-border text-primary accent-primary cursor-pointer"
+            aria-label={t('common.select')}
+          />
         </div>
       </div>
-      <div className="grid grid-cols-1 gap-2 px-3 py-2 bg-muted/30 rounded-lg mb-3 text-body-sm">
-        <div>
-          <p className="text-muted-foreground mb-0.5">{t('bangLuong.store.departmentCol')}</p>
-          <p className="font-medium text-foreground line-clamp-1">
-            {item.ten_phong_ban || '—'}
-          </p>
-        </div>
-        <div>
-          <p className="text-muted-foreground mb-0.5">{t('bangLuong.store.tongLuongCol')}</p>
-          <p className="text-foreground font-medium">{formatCurrency(item.tong_luong)}</p>
-        </div>
+      <div className="flex items-center justify-between gap-2 mt-2.5">
+        <span className="text-xs text-muted-foreground">{t('bangLuong.store.tongLuongCol')}</span>
+        <span className="text-sm font-semibold text-primary tabular-nums">{formatCurrency(item.tong_luong)}</span>
       </div>
-      <div className="flex justify-between items-center pt-2.5 border-t border-border">
-        <span className="text-muted-foreground text-xs">
-          {formatDateTimeShort(item.tg_cap_nhat)}
+      <div className="flex items-center justify-between gap-2 mt-1 text-xs text-muted-foreground">
+        <span>
+          {t('bangLuong.store.ngayCongCol')}:{' '}
+          <span className="text-foreground tabular-nums">
+            {item.ngay_cong}/{item.ngay_cong_chuan}
+          </span>
         </span>
-        {(canUpdate && onEdit) || (canDelete && onDelete) ? (
-          <div className="flex gap-1.5">
-            {canUpdate && onEdit && (
+        <span className="inline-flex items-center gap-1.5">
+          {t('bangLuong.detail.diemKpi')}: <span className="text-foreground tabular-nums">{item.diem_kpi}</span>
+          <span
+            className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[11px] font-medium border ${
+              item.kpi_dat
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900'
+                : 'bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-900'
+            }`}
+          >
+            {item.kpi_dat ? t('bangLuong.detail.kpiDat') : t('bangLuong.detail.kpiKhongDat')}
+          </span>
+        </span>
+      </div>
+      {((canUpdate && onEdit) || (canDelete && onDelete)) && (
+        <div className="flex justify-end gap-3 mt-2.5 pt-2.5 border-t border-border">
+          {canUpdate && onEdit && (
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onEdit(item); }}
-              className="p-2 text-primary bg-primary/5 hover:bg-primary/10 rounded-lg"
+              className="h-10 w-10 flex items-center justify-center text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-all active:scale-90"
               aria-label={t('common.edit')}
             >
-              <Edit size={14} />
+              <Edit size={16} />
             </button>
-            )}
-            {canDelete && onDelete && (
+          )}
+          {canDelete && onDelete && (
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
-              className="p-2 text-rose-500 bg-rose-50 hover:bg-rose-100 rounded-lg"
+              className="h-10 w-10 flex items-center justify-center text-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 rounded-lg transition-all active:scale-90"
               aria-label={t('common.delete')}
             >
-              <Trash2 size={14} />
+              <Trash2 size={16} />
             </button>
-            )}
-          </div>
-        ) : null}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
 

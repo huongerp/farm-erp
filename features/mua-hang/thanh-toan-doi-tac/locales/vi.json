@@ -54,6 +54,7 @@
   "thanhToanDoiTac.store.trangThaiCol": "Trạng thái",
   "thanhToanDoiTac.store.soTienCol": "Số tiền",
   "thanhToanDoiTac.store.updatedCol": "Cập nhật",
+  "thanhToanDoiTac.card.donViChi": "Đơn vị chi",
   "thanhToanDoiTac.form.createTitle": "Thêm thanh toán đối tác",
   "thanhToanDoiTac.form.editTitle": "Sửa thanh toán đối tác",
   "thanhToanDoiTac.form.soPhieu": "Số phiếu",

@@ -131,7 +131,7 @@ const ThanhToanDoiTacDetail: React.FC<Props> = ({
     <>
       <GenericDrawer
         title={t('thanhToanDoiTac.detail.title')}
-        subtitle={data.so_phieu}
+        subtitle={[data.so_phieu, data.ten_doi_tac].filter(Boolean).join(' · ')}
         icon={<CreditCard size={18} />}
         onClose={onClose}
         footer={renderFooter}

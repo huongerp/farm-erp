@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Edit, Trash2 } from 'lucide-react';
-import { cn, formatDateShort, formatNumberVN } from '../../../../lib/utils';
+import { cn, formatDateShort, formatNumberVN, formatYmdToDisplay } from '../../../../lib/utils';
 import type { HopDong } from '../core/types';
 import GenericTable from '../../../../components/shared/GenericTable';
 import type { ColumnConfig } from '../../../../store/createGenericStore';
@@ -218,31 +218,55 @@ const HopDongList: React.FC<Props> = ({
         isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'
       )}
     >
-      <div className="flex items-center justify-between gap-2 mb-2">
-        <span className="font-mono text-xs font-medium text-muted-foreground bg-muted px-2 py-1 rounded border border-border">
-          {item.ma_hop_dong}
-        </span>
-        {renderStatus(item)}
-      </div>
-      <div className="font-medium text-foreground text-sm mb-1">{item.ten_hop_dong ?? '—'}</div>
-      <div className="text-xs text-muted-foreground mb-2">
-        {item.ten_nha_cung_cap ?? '—'} · {item.ngay ?? '—'}
-      </div>
-      <div className="text-xs text-muted-foreground space-y-0.5 mb-2 tabular-nums">
-        <div>
-          {t('hopDong.store.thanhTienCol')}:{' '}
-          {formatNumberVN(item.thanh_tien)} · {t('hopDong.store.tongDaThanhToanCol')}:{' '}
-          {formatNumberVN(item.tong_da_thanh_toan)}
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h4 className="font-semibold text-foreground text-sm truncate">{item.ma_hop_dong}</h4>
+          {item.ten_hop_dong && <p className="text-sm text-foreground/80 truncate">{item.ten_hop_dong}</p>}
         </div>
-        <div>
-          {t('hopDong.store.tienConLaiCol')}:{' '}
-          {formatNumberVN(item.tien_con_lai)} · {t('hopDong.store.cayConLaiCol')}:{' '}
-          {formatNumberVN(Number(item.cay_con_lai))}
-        </div>
+        <div className="shrink-0">{renderStatus(item)}</div>
       </div>
-      <div className="flex justify-between items-center pt-2 border-t border-border">
-        <span className="text-xs text-muted-foreground">{formatDateShort(item.tg_cap_nhat)}</span>
-        <div className="flex gap-1">
+      <p className="text-xs text-muted-foreground truncate mt-0.5">
+        {item.ngay ? formatYmdToDisplay(item.ngay) : '—'}
+        {item.ten_nha_cung_cap ? ` · ${item.ten_nha_cung_cap}` : ''}
+      </p>
+      <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5 tabular-nums">
+        <div className="min-w-0">
+          <dt className="text-xs text-muted-foreground">{t('hopDong.store.thanhTienCol')}</dt>
+          <dd className="text-sm font-semibold truncate">{formatNumberVN(item.thanh_tien)}</dd>
+        </div>
+        <div className="min-w-0">
+          <dt className="text-xs text-muted-foreground">{t('hopDong.store.tongDaThanhToanCol')}</dt>
+          <dd className="text-sm font-semibold truncate">{formatNumberVN(item.tong_da_thanh_toan)}</dd>
+        </div>
+        <div className="min-w-0">
+          <dt className="text-xs text-muted-foreground">{t('hopDong.store.tienConLaiCol')}</dt>
+          <dd
+            className={cn(
+              'text-sm font-semibold truncate',
+              item.tien_con_lai != null && item.tien_con_lai < 0 && 'text-rose-600'
+            )}
+          >
+            {formatNumberVN(item.tien_con_lai)}
+          </dd>
+        </div>
+        <div className="min-w-0">
+          <dt className="text-xs text-muted-foreground">{t('hopDong.store.cayConLaiCol')}</dt>
+          <dd
+            className={cn(
+              'text-sm font-semibold truncate',
+              item.cay_con_lai != null && Number(item.cay_con_lai) < 0 && 'text-rose-600'
+            )}
+          >
+            {formatNumberVN(Number(item.cay_con_lai))}
+          </dd>
+        </div>
+      </dl>
+      <p className="mt-1.5 text-xs text-muted-foreground tabular-nums">
+        {t('hopDong.store.soLuongCayCol')}: {formatNumberVN(Number(item.so_luong_cay))} · {t('hopDong.store.tongCayDaGiaoCol')}:{' '}
+        {formatNumberVN(Number(item.tong_cay_da_giao))}
+      </p>
+      {(onEdit || onDelete) && (
+        <div className="flex justify-end gap-3 mt-2.5 pt-2.5 border-t border-border">
           {onEdit && (
             <button
               type="button"
@@ -250,10 +274,10 @@ const HopDongList: React.FC<Props> = ({
                 e.stopPropagation();
                 onEdit(item);
               }}
-              className="p-2 text-primary hover:bg-primary/10 rounded-lg"
+              className="h-10 w-10 flex items-center justify-center text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-all active:scale-90"
               aria-label={t('common.edit')}
             >
-              <Edit size={14} />
+              <Edit size={16} />
             </button>
           )}
           {onDelete && (
@@ -263,14 +287,14 @@ const HopDongList: React.FC<Props> = ({
                 e.stopPropagation();
                 onDelete(item.id);
               }}
-              className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg"
+              className="h-10 w-10 flex items-center justify-center text-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 rounded-lg transition-all active:scale-90"
               aria-label={t('common.delete')}
             >
-              <Trash2 size={14} />
+              <Trash2 size={16} />
             </button>
           )}
         </div>
-      </div>
+      )}
     </div>
   );
 

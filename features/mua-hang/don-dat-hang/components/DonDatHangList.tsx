@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Edit, FileText, Trash2 } from 'lucide-react';
-import { cn, formatDateShort, formatNumberVN } from '../../../../lib/utils';
+import { cn, formatDateShort, formatNumberVN, formatYmdToDisplay } from '../../../../lib/utils';
 import type { DonDatHang } from '../core/types';
 import { TRANG_THAI_KEY, STATUS_VARIANTS } from '../core/constants';
 import GenericTable from '../../../../components/shared/GenericTable';
@@ -135,39 +135,72 @@ const DonDatHangList: React.FC<Props> = ({
         isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'
       )}
     >
-      <div className="flex items-center justify-between gap-2 mb-2">
-        <span className="font-mono text-xs font-medium text-muted-foreground bg-muted px-2 py-1 rounded border border-border">
-          {item.so_po}
-        </span>
-        {renderStatusBadge(item)}
+      <div className="flex items-start justify-between gap-2">
+        <h4 className="font-semibold text-foreground text-sm truncate min-w-0">{item.so_po}</h4>
+        <div className="shrink-0">{renderStatusBadge(item)}</div>
       </div>
-      <div className="text-xs text-muted-foreground mb-1">{item.ngay_dat} · {item.ten_nha_cung_cap ?? '—'}</div>
-      <div className="flex items-center justify-between gap-2 mb-1">
-        <span className="truncate text-sm text-foreground">{item.ten_kho_nhan ?? '—'}</span>
+      <p className="text-xs text-muted-foreground truncate mt-0.5">
+        {formatYmdToDisplay(item.ngay_dat)}
+        {item.ten_kho_nhan ? ` · ${item.ten_kho_nhan}` : ''}
+      </p>
+      <p className="mt-2 text-sm text-foreground truncate">
+        <span className="text-muted-foreground">{t('donDatHang.store.supplierCol')}: </span>
+        {item.ten_nha_cung_cap ?? '—'}
+      </p>
+      <div className="mt-1 flex items-center justify-between gap-2 text-sm">
+        <span className="min-w-0 truncate tabular-nums">
+          <span className="text-xs text-muted-foreground">{t('donDatHang.store.deliveryDateCol')}: </span>
+          <span className="font-medium">{formatYmdToDisplay(item.ngay_giao_dk) || '—'}</span>
+        </span>
         {item.tong_tien != null && (
-          <span className="shrink-0 tabular-nums text-sm font-medium text-foreground">{formatNumberVN(item.tong_tien)}</span>
+          <span className="shrink-0 tabular-nums">
+            <span className="text-xs text-muted-foreground">{t('donDatHang.store.totalAmountCol')}: </span>
+            <span className="font-semibold">{formatNumberVN(item.tong_tien)}</span>
+          </span>
         )}
       </div>
-      <div className="flex items-center gap-1.5 min-w-0 text-xs text-muted-foreground mb-2">
-        <FileText size={12} className="shrink-0" />
-        <span className="shrink-0">{t('donDatHang.form.linkRequest')}:</span>
-        <span className="truncate font-mono font-medium text-foreground">{item.so_phieu_de_xuat?.trim() || '—'}</span>
+      <div className="mt-1 flex items-center justify-between gap-2 text-xs text-muted-foreground">
+        <span className="min-w-0 truncate">
+          {t('donDatHang.store.buyerCol')}: {item.ten_nguoi_dat ?? '—'}
+        </span>
+        {item.so_dong_hang != null && (
+          <span className="shrink-0 tabular-nums">
+            {t('donDatHang.store.lineCountCol')}: {formatNumberVN(item.so_dong_hang, { maxFractionDigits: 0 })}
+          </span>
+        )}
       </div>
-      <div className="flex justify-between items-center pt-2 border-t border-border">
-        <span className="text-xs text-muted-foreground">{formatDateShort(item.tg_cap_nhat)}</span>
-        <div className="flex gap-1">
+      {item.so_phieu_de_xuat?.trim() && (
+        <div className="mt-1.5 flex items-center gap-1.5 min-w-0 text-xs text-muted-foreground">
+          <FileText size={12} className="shrink-0" />
+          <span className="truncate font-mono font-medium text-foreground" title={t('donDatHang.form.linkRequest')}>
+            {item.so_phieu_de_xuat.trim()}
+          </span>
+        </div>
+      )}
+      {(onEdit || onDelete) && (
+        <div className="flex justify-end gap-3 mt-2.5 pt-2.5 border-t border-border">
           {onEdit && (
-            <button type="button" onClick={(e) => { e.stopPropagation(); onEdit(item); }} className="p-2 text-primary hover:bg-primary/10 rounded-lg" aria-label={t('common.edit')}>
-              <Edit size={14} />
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onEdit(item); }}
+              className="h-10 w-10 flex items-center justify-center text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-all active:scale-90"
+              aria-label={t('common.edit')}
+            >
+              <Edit size={16} />
             </button>
           )}
           {onDelete && (
-            <button type="button" onClick={(e) => { e.stopPropagation(); onDelete(item.id); }} className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg" aria-label={t('common.delete')}>
-              <Trash2 size={14} />
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
+              className="h-10 w-10 flex items-center justify-center text-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 rounded-lg transition-all active:scale-90"
+              aria-label={t('common.delete')}
+            >
+              <Trash2 size={16} />
             </button>
           )}
         </div>
-      </div>
+      )}
     </div>
   );
 

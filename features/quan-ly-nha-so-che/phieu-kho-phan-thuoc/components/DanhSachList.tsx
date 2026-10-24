@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Edit, Trash2 } from 'lucide-react';
-import { cn, formatDateShort, formatNumberVN } from '../../../../lib/utils';
+import { cn, formatDateShort, formatNumberVN, formatYmdToDisplay } from '../../../../lib/utils';
 import type { PhieuKhoPT } from '../core/types';
 import GenericTable from '../../../../components/shared/GenericTable';
 import { LoaiPhieuKhoPTBadge, TrangThaiPhieuKhoPTBadge } from './shared/PhieuKhoPTBadges';
@@ -139,66 +139,100 @@ const DanhSachList: React.FC<Props> = ({
     }
   };
 
-  const renderMobileCard = (item: PhieuKhoPT, isSelected: boolean) => (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={() => onView?.(item)}
-      onKeyDown={(e) => e.key === 'Enter' && onView?.(item)}
-      className={cn(
-        'bg-card rounded-xl border p-3.5 shadow-sm transition-all active:scale-[0.98]',
-        isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'
-      )}
-    >
-      <div className="flex items-center justify-between gap-2 mb-2">
-        <LoaiPhieuKhoPTBadge loai={item.loai} />
-        {renderStatusBadge(item)}
-      </div>
-      <span className="font-mono text-xs font-medium text-muted-foreground bg-muted px-2 py-1 rounded border border-border inline-block mb-2">
-        {item.so_phieu}
-      </span>
-      <div className="text-xs text-muted-foreground mb-1">
-        {item.ngay} · {item.ten_kho ?? '—'}
-      </div>
-      {item.loai === 'chuyển' && item.ten_kho_den && (
-        <div className="text-xs text-muted-foreground mb-1">→ {item.ten_kho_den}</div>
-      )}
-      <div className="text-xs text-muted-foreground tabular-nums mb-2">
-        {t('phieuKhoPhanThuoc.list.totalItems')}: {formatNumberVN(item.tong_so_dong ?? 0, { maxFractionDigits: 0 })}
-      </div>
-      <div className="flex justify-between items-center pt-2 border-t border-border">
-        <span className="text-xs text-muted-foreground">{formatDateShort(item.tg_cap_nhat)}</span>
-        <div className="flex gap-1">
-          {onEdit && (!canEditItem || canEditItem(item)) && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit(item);
-              }}
-              className="p-2 text-primary hover:bg-primary/10 rounded-lg"
-              aria-label={t('common.edit')}
-            >
-              <Edit size={14} />
-            </button>
-          )}
-          {onDelete && (!canDeleteItem || canDeleteItem(item)) && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(item.id);
-              }}
-              className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg"
-              aria-label={t('common.delete')}
-            >
-              <Trash2 size={14} />
-            </button>
-          )}
+  const renderMobileCard = (item: PhieuKhoPT, isSelected: boolean) => {
+    const coSua = !!onEdit && (!canEditItem || canEditItem(item));
+    const coXoa = !!onDelete && (!canDeleteItem || canDeleteItem(item));
+    const nguoiDuyet = item.ten_nguoi_duyet ?? '';
+    const nguoiTao = item.ten_nguoi_tao ?? '';
+    return (
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => onView?.(item)}
+        onKeyDown={(e) => e.key === 'Enter' && onView?.(item)}
+        className={cn(
+          'bg-card rounded-xl border p-3.5 shadow-sm transition-all',
+          isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'
+        )}
+      >
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <h4 className="font-semibold text-foreground text-sm font-mono truncate">{item.so_phieu}</h4>
+            <p className="text-xs text-muted-foreground truncate mt-0.5 tabular-nums">
+              {formatYmdToDisplay(item.ngay)}
+              {item.ten_kho ? ` · ${item.ten_kho}` : ''}
+            </p>
+          </div>
+          <div className="flex flex-col items-end gap-1 shrink-0">
+            {renderStatusBadge(item)}
+            <LoaiPhieuKhoPTBadge loai={item.loai} />
+          </div>
         </div>
+        {item.loai === 'chuyển' && item.ten_kho_den && (
+          <p className="mt-2 text-sm text-foreground/80 truncate">
+            <span className="text-muted-foreground">{t('phieuKhoPhanThuoc.card.khoNhan')}: </span>
+            {item.ten_kho_den}
+          </p>
+        )}
+        <div className="mt-2 grid grid-cols-2 gap-x-3 text-sm tabular-nums">
+          <div>
+            <div className="text-xs text-muted-foreground">{t('phieuKhoPhanThuoc.card.tongSoLuong')}</div>
+            <div className="font-semibold">{formatNumberVN(item.tong_so_luong ?? 0)}</div>
+          </div>
+          <div>
+            <div className="text-xs text-muted-foreground">{t('phieuKhoPhanThuoc.list.totalItems')}</div>
+            <div className="font-semibold">{formatNumberVN(item.tong_so_dong ?? 0, { maxFractionDigits: 0 })}</div>
+          </div>
+        </div>
+        {(nguoiTao || nguoiDuyet) && (
+          <div className="mt-2 grid grid-cols-2 gap-x-3 text-xs">
+            {nguoiTao && (
+              <div className="min-w-0">
+                <div className="text-muted-foreground">{t('phieuKhoPhanThuoc.card.nguoiTao')}</div>
+                <div className="font-medium truncate">{nguoiTao}</div>
+              </div>
+            )}
+            {nguoiDuyet && (
+              <div className="min-w-0">
+                <div className="text-muted-foreground">{t('phieuKhoPhanThuoc.card.nguoiDuyet')}</div>
+                <div className="font-medium truncate">{nguoiDuyet}</div>
+              </div>
+            )}
+          </div>
+        )}
+        {(coSua || coXoa) && (
+          <div className="flex justify-end gap-3 mt-2.5 pt-2.5 border-t border-border">
+            {coSua && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit?.(item);
+                }}
+                className="h-10 w-10 flex items-center justify-center text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-all active:scale-90"
+                aria-label={t('common.edit')}
+              >
+                <Edit size={16} />
+              </button>
+            )}
+            {coXoa && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete?.(item.id);
+                }}
+                className="h-10 w-10 flex items-center justify-center text-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 rounded-lg transition-all active:scale-90"
+                aria-label={t('common.delete')}
+              >
+                <Trash2 size={16} />
+              </button>
+            )}
+          </div>
+        )}
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <GenericTable<PhieuKhoPT>

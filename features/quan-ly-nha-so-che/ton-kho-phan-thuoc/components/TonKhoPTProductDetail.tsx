@@ -7,6 +7,7 @@ import DetailSection from '../../../../components/shared/DetailSection';
 import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
 import DetailField from '../../../../components/shared/DetailField';
 import GenericSubTableSection from '../../../../components/shared/GenericSubTableSection';
+import SubTable, { type SubTableColumn } from '../../../../components/shared/sub-table/SubTable';
 import Button from '../../../../components/ui/Button';
 import { BTN_CLOSE } from '../../../../lib/button-labels';
 import { cn, formatNumberVN, formatYmdToDisplay } from '../../../../lib/utils';
@@ -25,8 +26,44 @@ const TonKhoPTProductDetail: React.FC<Props> = ({ agg, ky, onClose }) => {
     tu: ky.tu ? formatYmdToDisplay(ky.tu) : t('tonKhoPhanThuoc.detail.tuDau'),
     den: ky.den ? formatYmdToDisplay(ky.den) : t('tonKhoPhanThuoc.detail.homNay'),
   });
-  const th = 'text-right px-3 py-2 text-xs font-semibold whitespace-nowrap';
-  const td = 'px-3 py-2 text-right tabular-nums';
+
+  const khoColumns: SubTableColumn[] = [
+    { id: 'ten_kho', label: t('tonKhoPhanThuoc.table.kho'), width: 200, minWidth: 120, sticky: true, mobile: 'title' },
+    { id: 'ton_dau', label: t('tonKhoPhanThuoc.table.tonDau'), width: 100, minWidth: 70, align: 'right' },
+    { id: 'nhap', label: t('tonKhoPhanThuoc.table.nhap'), width: 100, minWidth: 70, align: 'right' },
+    { id: 'xuat', label: t('tonKhoPhanThuoc.table.xuat'), width: 100, minWidth: 70, align: 'right' },
+    { id: 'chuyen', label: t('tonKhoPhanThuoc.table.chuyen'), width: 100, minWidth: 70, align: 'right' },
+    { id: 'ton_cuoi', label: t('tonKhoPhanThuoc.table.tonCuoi'), width: 110, minWidth: 80, align: 'right' },
+  ];
+
+  const renderKhoCell = (colId: string, k: TonKhoPTProductAgg['kho'][number]) => {
+    switch (colId) {
+      case 'ten_kho':
+        return k.ten_kho;
+      case 'ton_dau':
+        return <span className="tabular-nums">{formatNumberVN(k.ton_dau)}</span>;
+      case 'nhap':
+        return <span className="tabular-nums text-emerald-600 dark:text-emerald-400">{formatNumberVN(k.nhap)}</span>;
+      case 'xuat':
+        return <span className="tabular-nums text-amber-600 dark:text-amber-400">{formatNumberVN(k.xuat)}</span>;
+      case 'chuyen': {
+        const chuyen = k.chuyen_den - k.chuyen_di;
+        return (
+          <span className="tabular-nums text-muted-foreground">
+            {chuyen > 0 ? `+${formatNumberVN(chuyen)}` : formatNumberVN(chuyen)}
+          </span>
+        );
+      }
+      case 'ton_cuoi':
+        return (
+          <span className={cn('tabular-nums font-medium', k.ton_cuoi < 0 && 'text-destructive')}>
+            {formatNumberVN(k.ton_cuoi)}
+          </span>
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <GenericDrawer
@@ -67,42 +104,18 @@ const TonKhoPTProductDetail: React.FC<Props> = ({ agg, ky, onClose }) => {
           icon={<Warehouse size={14} />}
           count={agg.kho.length}
           emptyTitle={t('tonKhoPhanThuoc.detail.emptyWarehouse')}
-          maxTableHeight="280px"
+          contentMode="raw"
         >
           {agg.kho.length > 0 ? (
-            <>
-              <thead className="sticky top-0 z-[1] bg-muted border-b border-border">
-                <tr>
-                  <th className="text-left px-3 py-2 text-xs font-semibold whitespace-nowrap">
-                    {t('tonKhoPhanThuoc.table.kho')}
-                  </th>
-                  <th className={th}>{t('tonKhoPhanThuoc.table.tonDau')}</th>
-                  <th className={th}>{t('tonKhoPhanThuoc.table.nhap')}</th>
-                  <th className={th}>{t('tonKhoPhanThuoc.table.xuat')}</th>
-                  <th className={th}>{t('tonKhoPhanThuoc.table.chuyen')}</th>
-                  <th className={th}>{t('tonKhoPhanThuoc.table.tonCuoi')}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/70">
-                {agg.kho.map((k) => {
-                  const chuyen = k.chuyen_den - k.chuyen_di;
-                  return (
-                    <tr key={k.id_kho}>
-                      <td className="px-3 py-2">{k.ten_kho}</td>
-                      <td className={td}>{formatNumberVN(k.ton_dau)}</td>
-                      <td className={cn(td, 'text-emerald-600 dark:text-emerald-400')}>{formatNumberVN(k.nhap)}</td>
-                      <td className={cn(td, 'text-amber-600 dark:text-amber-400')}>{formatNumberVN(k.xuat)}</td>
-                      <td className={cn(td, 'text-muted-foreground')}>
-                        {chuyen > 0 ? `+${formatNumberVN(chuyen)}` : formatNumberVN(chuyen)}
-                      </td>
-                      <td className={cn(td, 'font-medium', k.ton_cuoi < 0 && 'text-destructive')}>
-                        {formatNumberVN(k.ton_cuoi)}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </>
+            // SubTable: desktop là bảng như cũ, điện thoại chuyển sang thẻ (Kho làm tiêu đề, 5 số xếp lưới 2 cột).
+            <SubTable
+              tableKey="ton-kho-pt.detail-kho"
+              columns={khoColumns}
+              rows={agg.kho}
+              keyExtractor={(k) => k.id_kho}
+              renderCell={renderKhoCell}
+              maxHeight="280px"
+            />
           ) : undefined}
         </GenericSubTableSection>
 

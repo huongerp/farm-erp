@@ -35,6 +35,9 @@ const TABLE_CT = 'fp_ts_phieu_cap_phat_thu_hoi_ct';
 
 const PHIEU_CP_TH_COLUMNS =
   'id,ma_phieu,loai_phieu,id_nguoi_giu_truoc,ten_nguoi_giu_truoc,ma_nguoi_giu_truoc,id_nguoi_giu_sau,ten_nguoi_giu_sau,ma_nguoi_giu_sau,ngay_thuc_hien,id_nguoi_thuc_hien,ten_nguoi_thuc_hien,id_nguoi_tao,ten_nguoi_tao,ghi_chu,trang_thai,tg_tao,tg_cap_nhat';
+/** Trang danh sách: kèm tên tài sản của từng phiếu (nhúng theo FK id_phieu) để thẻ mobile hiện được
+ * phiếu cấp/thu CÁI GÌ — không dùng cho xuất file (fetchAll) để khỏi phình dữ liệu. */
+const PHIEU_CP_TH_PAGE_COLUMNS = `${PHIEU_CP_TH_COLUMNS},tai_san_ct:fp_ts_phieu_cap_phat_thu_hoi_ct(ma_tai_san,ten_tai_san)`;
 const PHIEU_CP_CT_COLUMNS =
   'id,id_phieu,id_tai_san,ma_tai_san,ten_tai_san,id_noi_luu_truoc,ten_noi_luu_truoc,id_noi_luu_sau,ten_noi_luu_sau,ghi_chu,tg_tao,tg_cap_nhat';
 
@@ -86,6 +89,8 @@ export interface DbPhieuRow {
   trang_thai: string;
   tg_tao: string | null;
   tg_cap_nhat: string | null;
+  /** Chỉ có ở truy vấn trang danh sách (PHIEU_CP_TH_PAGE_COLUMNS). */
+  tai_san_ct?: { ma_tai_san: string | null; ten_tai_san: string | null }[] | null;
 }
 
 export interface DbPhieuChiTietRow {
@@ -128,6 +133,9 @@ function rowToPhieu(row: DbPhieuRow, chi_tiet?: PhieuCapPhatThuHoiChiTiet[]): Ph
     tg_tao: row.tg_tao ?? new Date().toISOString(),
     tg_cap_nhat: row.tg_cap_nhat ?? new Date().toISOString(),
     chi_tiet,
+    tai_san_tom_tat: row.tai_san_ct
+      ? row.tai_san_ct.map((ct) => ct.ten_tai_san || ct.ma_tai_san || '').filter(Boolean)
+      : undefined,
   };
 }
 
@@ -220,7 +228,7 @@ export async function getPhieuCapPhatPageDb(
 ): Promise<PaginatedTableResult<PhieuCapPhatThuHoi>> {
   const result = await fetchTablePage<DbPhieuRow>(query.page, query.pageSize, async (from, to) => {
     const res = await applyCpthListQuery(
-      db.from(TABLE).select(PHIEU_CP_TH_COLUMNS, { count: 'exact' }),
+      db.from(TABLE).select(PHIEU_CP_TH_PAGE_COLUMNS, { count: 'exact' }),
       query
     ).range(from, to);
     return { data: (res.data as unknown as DbPhieuRow[] | null) ?? null, error: res.error, count: res.count };

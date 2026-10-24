@@ -35,6 +35,8 @@
   "capPhatThuHoi.form.noiLuuTruocAuto": "Tự động theo tài sản",
   "capPhatThuHoi.form.nguoiGiuTruocAuto": "Tự động theo tài sản",
   "capPhatThuHoi.form.atWarehouse": "Ở kho",
+  "capPhatThuHoi.card.taiSan": "{{count}} tài sản",
+  "capPhatThuHoi.card.conLai": "+{{count}} khác",
   "capPhatThuHoi.form.noiLuuSau": "Nơi lưu sau",
   "capPhatThuHoi.form.noiLuuSauPlaceholder": "Chọn nơi lưu",
   "capPhatThuHoi.form.nguoiGiuTruoc": "Người giữ trước",

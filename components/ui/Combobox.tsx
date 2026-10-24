@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom';
 import { ChevronDown, Check, Search, X, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../lib/utils';
+import { useIsMobile } from '../../lib/hooks/use-is-mobile';
+import { useTranslation } from 'react-i18next';
 
 export interface Option {
   label: string;
@@ -77,6 +79,11 @@ const Combobox: React.FC<ComboboxProps> = ({
   onSearchChange,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  // Điện thoại: luôn mở dạng sheet phủ màn hình qua portal. Popover 320px ngay dưới ô sẽ bị
+  // bàn phím ảo (~300px) che gần hết, chỉ còn thấy 1-2 lựa chọn.
+  const isMobile = useIsMobile();
+  const portalMode = dropdownInPortal || isMobile;
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
   const [highlightedIndex, setHighlightedIndex] = useState(0);
   const [dropdownRect, setDropdownRect] = useState<{ top: number; left: number; width: number } | null>(null);
@@ -102,10 +109,10 @@ const Combobox: React.FC<ComboboxProps> = ({
 
   useEffect(() => {
     if (!isOpen) return;
-    if (dropdownInPortal) {
+    if (portalMode) {
       updateDropdownRect();
     }
-  }, [isOpen, dropdownInPortal]);
+  }, [isOpen, portalMode]);
 
   // Reset highlight khi mở lại hoặc khi danh sách lọc đổi (gõ tìm kiếm) — luôn bắt đầu ở đầu danh sách.
   // Điều chỉnh ngay khi render (so với giá trị trước) thay vì setState trong effect.
@@ -126,7 +133,7 @@ const Combobox: React.FC<ComboboxProps> = ({
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       const target = (event.target as Node);
       if (containerRef.current?.contains(target)) return;
-      if (dropdownInPortal && (target as Element).closest?.('[data-combobox-dropdown]')) return;
+      if (portalMode && (target as Element).closest?.('[data-combobox-dropdown]')) return;
       setIsOpen(false);
     };
     document.addEventListener('mousedown', handleClickOutside as (e: MouseEvent) => void);
@@ -135,7 +142,7 @@ const Combobox: React.FC<ComboboxProps> = ({
       document.removeEventListener('mousedown', handleClickOutside as (e: MouseEvent) => void);
       document.removeEventListener('touchstart', handleClickOutside as (e: TouchEvent) => void);
     };
-  }, [dropdownInPortal]);
+  }, [portalMode]);
 
   // Escape đóng dropdown, KHÔNG đóng drawer/form bên ngoài. GenericDrawer cũng lắng
   // nghe Escape trên document — dùng stopImmediatePropagation để chặn handler đó chạy
@@ -157,7 +164,8 @@ const Combobox: React.FC<ComboboxProps> = ({
 
   // When dropdown in portal: close on scroll of outside elements. Trên mobile bỏ qua scroll trong 400ms sau khi mở để tránh nháy.
   useEffect(() => {
-    if (!isOpen || !dropdownInPortal) return;
+    // Sheet toàn màn trên điện thoại không trôi theo trang; bàn phím ảo bật lên còn làm cuộn viewport.
+    if (!isOpen || !portalMode || isMobile) return;
     const onScroll = (e: Event) => {
       if (Date.now() - openedAtRef.current < 400) return;
       const target = e.target as Element | null;
@@ -167,7 +175,7 @@ const Combobox: React.FC<ComboboxProps> = ({
     };
     window.addEventListener('scroll', onScroll, true);
     return () => window.removeEventListener('scroll', onScroll, true);
-  }, [isOpen, dropdownInPortal]);
+  }, [isOpen, portalMode, isMobile]);
 
   // onSearchChange nên là hàm ổn định (vd setState) — đổi mỗi render sẽ gọi lại thừa.
   useEffect(() => {
@@ -302,7 +310,7 @@ const Combobox: React.FC<ComboboxProps> = ({
 
       {error && <p className="text-xs font-medium text-destructive mt-1.5 ml-1">{error}</p>}
 
-      {dropdownInPortal && isOpen && dropdownRect && typeof document !== 'undefined' ? (
+      {portalMode && isOpen && dropdownRect && typeof document !== 'undefined' ? (
         createPortal(
           <AnimatePresence>
             <motion.div
@@ -313,15 +321,35 @@ const Combobox: React.FC<ComboboxProps> = ({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
               transition={{ duration: 0.15 }}
-              className="fixed z-[9999] flex flex-col bg-card border border-border rounded-xl shadow-xl overflow-hidden"
-              style={{
-                top: dropdownRect.top,
-                left: dropdownRect.left,
-                width: Math.max(dropdownRect.width, 280),
-                maxHeight: 320,
-                ...(dropdownAutoHeight ? {} : { height: 320 }),
-              }}
+              className={cn(
+                'fixed z-[9999] flex flex-col bg-card overflow-hidden',
+                isMobile ? 'inset-0' : 'border border-border rounded-xl shadow-xl'
+              )}
+              style={
+                isMobile
+                  ? { paddingTop: 'env(safe-area-inset-top, 0px)' }
+                  : {
+                      top: dropdownRect.top,
+                      left: dropdownRect.left,
+                      width: Math.max(dropdownRect.width, 280),
+                      maxHeight: 320,
+                      ...(dropdownAutoHeight ? {} : { height: 320 }),
+                    }
+              }
             >
+              {isMobile && (
+                <div className="flex-none flex items-center justify-between gap-2 pl-4 pr-2 h-12 border-b border-border">
+                  <span className="text-sm font-semibold text-foreground truncate">{label ?? placeholder}</span>
+                  <button
+                    type="button"
+                    onClick={() => setIsOpen(false)}
+                    aria-label={t('common.close')}
+                    className="h-10 w-10 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-muted"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+              )}
               {searchable && (
                 <div className="flex-none p-2 border-b border-border bg-card z-10">
                   <div className="relative">
@@ -412,7 +440,7 @@ const Combobox: React.FC<ComboboxProps> = ({
         )
       ) : (
         <AnimatePresence>
-          {isOpen && !disabled && !dropdownInPortal && (
+          {isOpen && !disabled && !portalMode && (
             <motion.div
               id={listboxId}
               role="listbox"

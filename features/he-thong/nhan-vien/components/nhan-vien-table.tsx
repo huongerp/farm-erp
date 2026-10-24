@@ -142,7 +142,7 @@ const EmployeeTable: React.FC<Props> = ({ data, totalRecordsOverride, isLoading,
 
     const renderMobileCard = (item: Employee, isSelected: boolean) => (
         <div key={item.id} role="button" tabIndex={0} onClick={() => onView(item)} onKeyDown={(e) => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onView(item); } }} className={cn(
-            "bg-card rounded-xl border p-3.5 shadow-sm transition-all active:scale-[0.98]",
+            "bg-card rounded-xl border p-3.5 shadow-sm transition-all",
             isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'
         )}>
             <div className="flex items-center gap-3 mb-3">
@@ -171,26 +171,40 @@ const EmployeeTable: React.FC<Props> = ({ data, totalRecordsOverride, isLoading,
                     </div>
                 </div>
             </div>
-            <div className="grid grid-cols-2 gap-2 px-3 py-2 bg-muted/30 rounded-lg mb-3 text-body-sm">
-                <div>
+            <div className="grid grid-cols-2 gap-2 px-3 py-2 bg-muted/30 rounded-lg text-body-sm">
+                <div className="min-w-0">
                     <p className="text-muted-foreground mb-0.5">{t('employee.position')}</p>
-                    <p className="font-medium text-foreground truncate">{item.ten_chuc_vu}</p>
+                    <p className="font-medium text-foreground truncate">{item.ten_chuc_vu || '—'}</p>
                 </div>
-                <div className="text-right">
+                <div className="min-w-0">
                     <p className="text-muted-foreground mb-0.5">{t('employee.department')}</p>
-                    <p className="font-medium text-foreground truncate">{item.ten_phong_ban}</p>
+                    <p className="font-medium text-foreground truncate">{item.ten_phong_ban || '—'}</p>
                 </div>
+                {item.ten_chi_nhanh && (
+                    <div className="col-span-2 min-w-0">
+                        <p className="text-muted-foreground mb-0.5">{t('employee.store.branchCol')}</p>
+                        <p className="font-medium text-foreground truncate">{item.ten_chi_nhanh}</p>
+                    </div>
+                )}
             </div>
-            <div className="flex justify-between items-center pt-2.5 border-t border-border">
-                <div className="flex items-center gap-1.5 text-muted-foreground text-xs">
-                    <Phone size={12} />
-                    <span>{item.so_dien_thoai}</span>
+            {(item.so_dien_thoai || canUpdate || canDelete) && (
+                <div className="flex justify-between items-center gap-3 mt-3 pt-2.5 border-t border-border">
+                    {item.so_dien_thoai ? (
+                        <a
+                            href={`tel:${item.so_dien_thoai.replace(/\s+/g, '')}`}
+                            onClick={e => e.stopPropagation()}
+                            className="flex items-center gap-1.5 text-primary text-sm font-medium tabular-nums min-h-10"
+                        >
+                            <Phone size={14} />
+                            <span>{item.so_dien_thoai}</span>
+                        </a>
+                    ) : <span />}
+                    <div className="flex gap-3">
+                        {canUpdate && <button onClick={e => { e.stopPropagation(); onEdit(item); }} aria-label={t('common.edit')} className="h-10 w-10 flex items-center justify-center text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-all active:scale-90"><Edit size={16} /></button>}
+                        {canDelete && <button onClick={e => { e.stopPropagation(); onDelete(item.id); }} aria-label={t('common.delete')} className="h-10 w-10 flex items-center justify-center text-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 rounded-lg transition-all active:scale-90"><Trash2 size={16} /></button>}
+                    </div>
                 </div>
-                <div className="flex gap-1.5">
-                    {canUpdate && <button onClick={e => { e.stopPropagation(); onEdit(item); }} aria-label={t('common.edit')} className="min-h-[44px] min-w-[44px] flex items-center justify-center text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-all active:scale-90"><Edit size={14} /></button>}
-                    {canDelete && <button onClick={e => { e.stopPropagation(); onDelete(item.id); }} aria-label={t('common.delete')} className="min-h-[44px] min-w-[44px] flex items-center justify-center text-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 rounded-lg transition-all active:scale-90"><Trash2 size={14} /></button>}
-                </div>
-            </div>
+            )}
         </div>
     );
 

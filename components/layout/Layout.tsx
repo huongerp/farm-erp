@@ -24,7 +24,7 @@ import { signOut, changeOwnPassword } from '../../lib/auth';
 import { toast } from 'sonner';
 import { useCompanyInfo } from '../../features/he-thong/thong-tin-cong-ty/hooks/use-thong-tin-cong-ty';
 import { warmupNavigationTarget } from '../../lib/submenu-prefetch';
-import { consumeReloadContext, restoreReloadScroll } from '../../lib/reload-context';
+import { consumeReloadContext, restoreReloadScroll, SCROLL_ROOT_ID } from '../../lib/reload-context';
 import { PASSWORD_MIN_LENGTH } from '../../lib/constants';
 
 /** Sidebar width: expanded 240px (gọn), collapsed 64px (4rem, 8px grid) */
@@ -54,6 +54,16 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     const ctx = consumeReloadContext(window.location.pathname + window.location.search);
     if (ctx != null) restoreReloadScroll(ctx.scrollTop);
   }, []);
+
+  // Trang cuộn trong <main>, không phải window → React Router không tự đưa về đầu khi đổi route:
+  // trang mới mở ra lệch đúng bằng độ cuộn của trang trước (che mất toolbar). Bỏ qua lần mount
+  // để không đè vị trí khôi phục sau reload ở effect trên.
+  const scrollPathRef = useRef(location.pathname);
+  useEffect(() => {
+    if (scrollPathRef.current === location.pathname) return;
+    scrollPathRef.current = location.pathname;
+    document.getElementById(SCROLL_ROOT_ID)?.scrollTo({ top: 0 });
+  }, [location.pathname]);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const [changePasswordNew, setChangePasswordNew] = useState('');

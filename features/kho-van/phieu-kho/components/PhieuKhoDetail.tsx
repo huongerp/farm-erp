@@ -146,7 +146,7 @@ const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete
     <>
     <GenericDrawer
       title={t('phieuKho.detail.title')}
-      subtitle={data.so_phieu}
+      subtitle={[data.so_phieu, data.ten_kho].filter(Boolean).join(' · ')}
       icon={<FileText size={18} />}
       onClose={onClose}
       footer={renderFooter}

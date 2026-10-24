@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Edit, Trash2 } from 'lucide-react';
-import { cn, formatDateShort, formatNumberVN } from '../../../../lib/utils';
+import { cn, formatDateShort, formatNumberVN, formatYmdToDisplay } from '../../../../lib/utils';
 import type { DeXuatMuaHang } from '../core/types';
 import { TRANG_THAI_DE_XUAT_MUA_HANG, getTrangThaiPhieuBadgeClass, trangThaiToI18nKey } from '../core/constants';
 import GenericTable from '../../../../components/shared/GenericTable';
@@ -140,46 +140,89 @@ const DeXuatMuaHangList: React.FC<Props> = ({
     }
   };
 
-  const renderMobileCard = (item: DeXuatMuaHang, isSelected: boolean) => (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={() => onView?.(item)}
-      onKeyDown={(e) => e.key === 'Enter' && onView?.(item)}
-      className={cn(
-        'bg-card rounded-xl border p-3.5 shadow-sm transition-all active:scale-[0.98]',
-        isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'
-      )}
-    >
-      <div className="flex items-center justify-between gap-2 mb-2">
-        <span className="font-mono text-xs font-medium text-muted-foreground bg-muted px-2 py-1 rounded border border-border">
-          {item.so_phieu}
-        </span>
-        {renderStatusBadges(item)}
-      </div>
-      <div className="text-xs text-muted-foreground mb-1">{item.ngay} · {item.ten_noi_de_xuat ?? '—'}</div>
-      <div className="text-sm text-foreground mb-1">{item.ten_nguoi_de_xuat ?? '—'}</div>
-      <div className="text-xs text-muted-foreground tabular-nums mb-1">
-        {t('deXuatMuaHang.store.lineItemsCol')}: {formatNumberVN(item.tong_so_dong ?? 0, { maxFractionDigits: 0 })} · {t('deXuatMuaHang.store.totalQuantityCol')}: {formatNumberVN(item.tong_so_luong ?? 0)}
-      </div>
-      {item.ghi_chu && <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{item.ghi_chu}</p>}
-      <div className="flex justify-between items-center pt-2 border-t border-border">
-        <span className="text-xs text-muted-foreground">{formatDateShort(item.tg_cap_nhat)}</span>
-        <div className="flex gap-1">
-          {onEdit && (!canEditItem || canEditItem(item)) && (
-            <button type="button" onClick={(e) => { e.stopPropagation(); onEdit(item); }} className="p-2 text-primary hover:bg-primary/10 rounded-lg" aria-label={t('common.edit')}>
-              <Edit size={14} />
-            </button>
-          )}
-          {onDelete && (!canDeleteItem || canDeleteItem(item)) && (
-            <button type="button" onClick={(e) => { e.stopPropagation(); onDelete(item.id); }} className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg" aria-label={t('common.delete')}>
-              <Trash2 size={14} />
-            </button>
-          )}
+  const renderMobileCard = (item: DeXuatMuaHang, isSelected: boolean) => {
+    const coSua = !!onEdit && (!canEditItem || canEditItem(item));
+    const coXoa = !!onDelete && (!canDeleteItem || canDeleteItem(item));
+    return (
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => onView?.(item)}
+        onKeyDown={(e) => e.key === 'Enter' && onView?.(item)}
+        className={cn(
+          'bg-card rounded-xl border p-3.5 shadow-sm transition-all',
+          isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'
+        )}
+      >
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <h4 className="font-semibold text-foreground text-sm font-mono truncate">{item.so_phieu}</h4>
+            <p className="text-xs text-muted-foreground truncate mt-0.5 tabular-nums">
+              {formatYmdToDisplay(item.ngay)}
+              {item.ten_noi_de_xuat ? ` · ${item.ten_noi_de_xuat}` : ''}
+            </p>
+          </div>
+          <div className="shrink-0">{renderStatusBadges(item)}</div>
         </div>
+        <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5 text-sm">
+          {item.ten_nguoi_de_xuat && (
+            <div className="min-w-0">
+              <div className="text-xs text-muted-foreground">{t('deXuatMuaHang.store.nguoiDeXuatCol')}</div>
+              <div className="font-medium truncate">{item.ten_nguoi_de_xuat}</div>
+            </div>
+          )}
+          {item.ngay_can && (
+            <div>
+              <div className="text-xs text-muted-foreground">{t('deXuatMuaHang.store.ngayCanCol')}</div>
+              <div className="font-semibold tabular-nums">{formatYmdToDisplay(item.ngay_can)}</div>
+            </div>
+          )}
+          <div>
+            <div className="text-xs text-muted-foreground">{t('deXuatMuaHang.store.lineItemsCol')}</div>
+            <div className="font-semibold tabular-nums">
+              {formatNumberVN(item.tong_so_dong ?? 0, { maxFractionDigits: 0 })}
+            </div>
+          </div>
+        </div>
+        {item.ghi_chu && (
+          <p className="mt-2 text-sm text-foreground/80 line-clamp-2">
+            <span className="text-muted-foreground">{t('deXuatMuaHang.store.notesCol')}: </span>
+            {item.ghi_chu}
+          </p>
+        )}
+        {(coSua || coXoa) && (
+          <div className="flex justify-end gap-3 mt-2.5 pt-2.5 border-t border-border">
+            {coSua && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit?.(item);
+                }}
+                className="h-10 w-10 flex items-center justify-center text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-all active:scale-90"
+                aria-label={t('common.edit')}
+              >
+                <Edit size={16} />
+              </button>
+            )}
+            {coXoa && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete?.(item.id);
+                }}
+                className="h-10 w-10 flex items-center justify-center text-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 rounded-lg transition-all active:scale-90"
+                aria-label={t('common.delete')}
+              >
+                <Trash2 size={16} />
+              </button>
+            )}
+          </div>
+        )}
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <GenericTable<DeXuatMuaHang>

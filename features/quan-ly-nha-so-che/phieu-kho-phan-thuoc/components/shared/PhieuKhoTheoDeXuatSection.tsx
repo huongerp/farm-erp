@@ -3,7 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
 import { Warehouse, Eye, Edit, Trash2 } from 'lucide-react';
 import GenericSubTableSection from '../../../../../components/shared/GenericSubTableSection';
-import Tooltip from '../../../../../components/ui/Tooltip';
+import SubTable, { type SubTableColumn } from '../../../../../components/shared/sub-table/SubTable';
+import SubTableActionButton from '../../../../../components/shared/sub-table/SubTableActionButton';
 import { formatNumberVN, formatYmdToDisplay } from '../../../../../lib/utils';
 import { CONFIRM_DELETE } from '../../../../../lib/button-labels';
 import { useConfirmStore } from '../../../../../store/useConfirmStore';
@@ -93,6 +94,57 @@ const PhieuKhoTheoDeXuatSection: React.FC<PhieuKhoTheoDeXuatSectionProps> = ({ i
   const tenKho = (item: PhieuKhoPT) =>
     item.loai === 'chuyển' && item.ten_kho_den ? `${item.ten_kho ?? '—'} → ${item.ten_kho_den}` : (item.ten_kho ?? '—');
 
+  const columns: SubTableColumn[] = [
+    { id: 'so_phieu', label: t('phieuKhoPhanThuoc.store.soPhieuCol'), width: 150, minWidth: 110, sticky: true, mobile: 'title' },
+    { id: 'ngay', label: t('phieuKhoPhanThuoc.store.ngayCol'), width: 100, minWidth: 90 },
+    { id: 'loai', label: t('phieuKhoPhanThuoc.store.loaiCol'), width: 110, minWidth: 80 },
+    { id: 'kho', label: t('phieuKhoPhanThuoc.store.khoCol'), width: 180, minWidth: 120 },
+    { id: 'trang_thai', label: t('phieuKhoPhanThuoc.store.statusCol'), width: 130, minWidth: 90, mobile: 'badge' },
+    { id: 'tong_so_luong', label: t('phieuKhoPhanThuoc.list.totalQuantity'), width: 110, minWidth: 80, align: 'right' },
+  ];
+
+  const renderCell = (colId: string, item: PhieuKhoPT) => {
+    switch (colId) {
+      case 'so_phieu':
+        return <span className="text-xs font-mono">{item.so_phieu}</span>;
+      case 'ngay':
+        return <span className="text-xs tabular-nums">{formatYmdToDisplay(item.ngay)}</span>;
+      case 'loai':
+        return <LoaiPhieuKhoPTBadge loai={item.loai} />;
+      case 'kho':
+        return <span className="text-xs">{tenKho(item)}</span>;
+      case 'trang_thai':
+        return <TrangThaiPhieuKhoPTBadge trangThai={item.trang_thai} />;
+      case 'tong_so_luong':
+        return <span className="text-xs font-semibold tabular-nums">{formatNumberVN(item.tong_so_luong ?? 0)}</span>;
+      default:
+        return null;
+    }
+  };
+
+  const renderActions = (item: PhieuKhoPT) => (
+    <>
+      <SubTableActionButton
+        primary
+        tone="neutral"
+        label={t('common.view')}
+        icon={<Eye size={14} />}
+        onClick={() => setDetailItem(item)}
+      />
+      {canEditRow(item) && (
+        <SubTableActionButton label={t('common.edit')} icon={<Edit size={14} />} onClick={() => openEdit(item)} />
+      )}
+      {canDeleteRow(item) && (
+        <SubTableActionButton
+          label={t('common.delete')}
+          icon={<Trash2 size={14} />}
+          tone="danger"
+          onClick={() => handleDelete(item.id)}
+        />
+      )}
+    </>
+  );
+
   return (
     <>
       <GenericSubTableSection
@@ -104,112 +156,22 @@ const PhieuKhoTheoDeXuatSection: React.FC<PhieuKhoTheoDeXuatSectionProps> = ({ i
         emptyIcon={<Warehouse className="w-10 h-10 text-muted-foreground" />}
         loading={isLoading && !!idDeXuat}
         loadingText={t('common.loading')}
-        maxTableHeight="280px"
+        contentMode="raw"
         className={className}
       >
         {items.length > 0 ? (
-          <>
-            <thead className="sticky top-0 z-[1] bg-muted border-b border-border">
-              <tr>
-                <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap text-left">
-                  {t('phieuKhoPhanThuoc.store.soPhieuCol')}
-                </th>
-                <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap text-left">
-                  {t('phieuKhoPhanThuoc.store.ngayCol')}
-                </th>
-                <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap text-left">
-                  {t('phieuKhoPhanThuoc.store.loaiCol')}
-                </th>
-                <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap text-left">
-                  {t('phieuKhoPhanThuoc.store.khoCol')}
-                </th>
-                <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap text-left">
-                  {t('phieuKhoPhanThuoc.store.statusCol')}
-                </th>
-                <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap text-right">
-                  {t('phieuKhoPhanThuoc.list.totalQuantity')}
-                </th>
-                <th className="sticky right-0 z-[2] bg-muted px-2 py-2 w-[104px] border-l border-border" />
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item) => (
-                <tr
-                  key={item.id}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => setDetailItem(item)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      setDetailItem(item);
-                    }
-                  }}
-                  className="border-b border-border/60 last:border-0 hover:bg-muted/60 transition-colors cursor-pointer"
-                >
-                  <td className="px-4 py-2 text-xs font-mono whitespace-nowrap">{item.so_phieu}</td>
-                  <td className="px-4 py-2 text-xs tabular-nums whitespace-nowrap">{formatYmdToDisplay(item.ngay)}</td>
-                  <td className="px-4 py-2 whitespace-nowrap">
-                    <LoaiPhieuKhoPTBadge loai={item.loai} />
-                  </td>
-                  <td className="px-4 py-2 text-xs whitespace-nowrap">{tenKho(item)}</td>
-                  <td className="px-4 py-2 whitespace-nowrap">
-                    <TrangThaiPhieuKhoPTBadge trangThai={item.trang_thai} />
-                  </td>
-                  <td className="px-4 py-2 text-xs font-semibold tabular-nums text-right whitespace-nowrap">
-                    {formatNumberVN(item.tong_so_luong ?? 0)}
-                  </td>
-                  <td className="sticky right-0 z-[1] bg-card px-2 py-2 border-l border-border">
-                    <div className="flex items-center justify-end gap-1">
-                      <Tooltip content={t('common.view')} placement="left">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDetailItem(item);
-                          }}
-                          className="p-1.5 text-muted-foreground hover:bg-muted rounded-lg"
-                          aria-label={t('common.view')}
-                        >
-                          <Eye size={14} />
-                        </button>
-                      </Tooltip>
-                      {canEditRow(item) && (
-                        <Tooltip content={t('common.edit')} placement="left">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openEdit(item);
-                            }}
-                            className="p-1.5 text-primary hover:bg-primary/10 rounded-lg"
-                            aria-label={t('common.edit')}
-                          >
-                            <Edit size={14} />
-                          </button>
-                        </Tooltip>
-                      )}
-                      {canDeleteRow(item) && (
-                        <Tooltip content={t('common.delete')} placement="left">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDelete(item.id);
-                            }}
-                            className="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg"
-                            aria-label={t('common.delete')}
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </Tooltip>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </>
+          // SubTable: desktop là bảng như cũ (nút thao tác ghim phải), điện thoại chuyển sang thẻ — khỏi vuốt ngang.
+          <SubTable
+            tableKey="phieu-kho-pt.theo-de-xuat"
+            columns={columns}
+            rows={items}
+            keyExtractor={(item) => item.id}
+            renderCell={renderCell}
+            renderActions={renderActions}
+            onMobileCardClick={setDetailItem}
+            onRowClick={setDetailItem}
+            maxHeight="280px"
+          />
         ) : null}
       </GenericSubTableSection>
 

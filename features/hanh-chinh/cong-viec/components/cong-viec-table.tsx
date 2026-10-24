@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Edit, Trash2, ClipboardList } from 'lucide-react';
+import { Edit, Trash2 } from 'lucide-react';
 import GenericTable from '../../../../components/shared/GenericTable';
 import Tooltip from '../../../../components/ui/Tooltip';
 import { formatDateTimeShort } from '../../../../lib/utils';
@@ -37,8 +37,9 @@ const CongViecTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onV
     const m: Record<number, string> = {};
     employees.forEach((e) => {
       const id = typeof e.id === 'number' ? e.id : parseInt(String(e.id), 10);
-      if (!Number.isNaN(id) && id > 0) {
-        m[id] = e.ho_ten?.trim() || e.ma_nhan_vien || String(e.id);
+      const ten = e.ho_ten?.trim() || e.ma_nhan_vien;
+      if (!Number.isNaN(id) && id > 0 && ten) {
+        m[id] = ten;
       }
     });
     return m;
@@ -47,6 +48,9 @@ const CongViecTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onV
     if (id == null) return '—';
     return employeeNameMap[id] ?? String(id);
   };
+  /** Thẻ mobile: không biết tên thì hiện '—', không lộ id thô. */
+  const getEmployeeNameCard = (id: number | null | undefined) =>
+    id == null ? '—' : employeeNameMap[id] ?? '—';
 
   const renderCell = (colId: string, item: CongViec) => {
     switch (colId) {
@@ -137,54 +141,46 @@ const CongViecTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onV
         isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'
       }`}
     >
-      <div className="flex items-center gap-3 mb-2">
-        <div className="h-10 w-10 rounded-lg bg-primary/15 border border-primary/20 flex items-center justify-center text-primary shrink-0">
-          <ClipboardList size={18} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between gap-2">
-            <h4 className="font-semibold text-foreground text-sm line-clamp-2">{item.tieu_de}</h4>
-            <div role="presentation" onClick={(e) => e.stopPropagation()} className="shrink-0">
-              <input
-                type="checkbox"
-                checked={isSelected}
-                onChange={() => toggleSelection(String(item.id))}
-                className="w-4 h-4 rounded border-border text-primary accent-primary cursor-pointer"
-                aria-label={t('common.select')}
-              />
-            </div>
-          </div>
-          {item.mo_ta?.trim() && (
-            <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5 whitespace-pre-line" title={item.mo_ta.trim()}>
-              {item.mo_ta.trim()}
-            </p>
-          )}
-          <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-xs text-muted-foreground">
-            <span><span className="font-medium text-foreground/80">{t('congViec.form.trachNhiem')}:</span> {getEmployeeName(item.trach_nhiem)}</span>
-            <span><span className="font-medium text-foreground/80">{t('congViec.form.nguoiGiao')}:</span> {getEmployeeName(item.id_nguoi_giao)}</span>
-            {(item.nguoi_ho_tro ?? []).length > 0 && (
-              <span><span className="font-medium text-foreground/80">{t('congViec.form.nguoiHoTro')}:</span> {(item.nguoi_ho_tro ?? []).map(getEmployeeName).join(', ')}</span>
-            )}
-          </div>
-          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-            {renderUuTienBadge(item.uu_tien, t)}
-            {renderTrangThaiBadge(item.trang_thai, t)}
-            <span className="text-xs text-muted-foreground">{formatDateTimeShort(item.tg_cap_nhat)}</span>
+      <div className="flex items-start justify-between gap-2">
+        <h4 className="font-semibold text-foreground text-sm line-clamp-2 min-w-0">{item.tieu_de}</h4>
+        <div className="flex items-center gap-2 shrink-0">
+          {renderTrangThaiBadge(item.trang_thai, t)}
+          <div role="presentation" onClick={(e) => e.stopPropagation()}>
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={() => toggleSelection(String(item.id))}
+              className="w-4 h-4 rounded border-border text-primary accent-primary cursor-pointer"
+              aria-label={t('common.select')}
+            />
           </div>
         </div>
       </div>
-      <div className="flex justify-between items-center pt-2.5 border-t border-border flex-wrap gap-1">
-        <div className="flex gap-1.5">
+      {item.mo_ta?.trim() && (
+        <p className="text-xs text-muted-foreground line-clamp-2 mt-1 whitespace-pre-line" title={item.mo_ta.trim()}>
+          {item.mo_ta.trim()}
+        </p>
+      )}
+      <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-2 text-xs text-muted-foreground">
+        <span><span className="font-medium text-foreground/80">{t('congViec.form.trachNhiem')}:</span> {getEmployeeNameCard(item.trach_nhiem)}</span>
+        <span><span className="font-medium text-foreground/80">{t('congViec.form.nguoiGiao')}:</span> {getEmployeeNameCard(item.id_nguoi_giao)}</span>
+        {(item.nguoi_ho_tro ?? []).length > 0 && (
+          <span><span className="font-medium text-foreground/80">{t('congViec.form.nguoiHoTro')}:</span> {(item.nguoi_ho_tro ?? []).map(getEmployeeNameCard).join(', ')}</span>
+        )}
+      </div>
+      <div className="flex items-center justify-between gap-2 mt-2.5 pt-2.5 border-t border-border">
+        <div className="flex items-center gap-2 flex-wrap">{renderUuTienBadge(item.uu_tien, t)}</div>
+        <div className="flex gap-3">
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
               onEdit(item);
             }}
-            className="p-2 text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-all"
+            className="h-10 w-10 flex items-center justify-center text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-all active:scale-90"
             aria-label={t('common.edit')}
           >
-            <Edit size={14} />
+            <Edit size={16} />
           </button>
           <button
             type="button"
@@ -192,10 +188,10 @@ const CongViecTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onV
               e.stopPropagation();
               onDelete(item.id);
             }}
-            className="p-2 text-rose-500 bg-rose-50 hover:bg-rose-100 dark:hover:bg-rose-950/30 rounded-lg transition-all"
+            className="h-10 w-10 flex items-center justify-center text-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 rounded-lg transition-all active:scale-90"
             aria-label={t('common.delete')}
           >
-            <Trash2 size={14} />
+            <Trash2 size={16} />
           </button>
         </div>
       </div>

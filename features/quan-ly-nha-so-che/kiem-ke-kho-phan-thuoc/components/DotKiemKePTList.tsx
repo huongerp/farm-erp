@@ -3,8 +3,10 @@ import { useTranslation } from 'react-i18next';
 import { Edit, Trash2 } from 'lucide-react';
 import GenericTable from '../../../../components/shared/GenericTable';
 import Tooltip from '../../../../components/ui/Tooltip';
-import { formatDateTimeShort, formatDate, formatNumberVN, cn } from '../../../../lib/utils';
+import { formatDateTimeShort, formatDate, formatNumberVN, cn, formatYmdToDisplay } from '../../../../lib/utils';
 import { getStatusBadgeClass } from '../../../../lib/status-badge';
+import { useKhoList } from '../../../kho-van/danh-sach-kho/hooks/use-kho';
+import { tomTatTenKho } from '../core/ten-kho';
 import { useKiemKeCapCaoPT } from '../hooks/use-kiem-ke-cap-cao';
 import type { DotKiemKePT } from '../core/types';
 import { getTrangThaiDotLabelPT, TRANG_THAI_DOT_SEMANTIC_PT } from '../core/constants';
@@ -55,6 +57,7 @@ const DotKiemKePTList: React.FC<Props> = ({
   const { t } = useTranslation();
   // Đợt đã chốt sổ: chỉ cấp cao còn thấy nút Sửa / Xoá.
   const capCao = useKiemKeCapCaoPT();
+  const { data: khoList = [] } = useKhoList();
   const columns = useKiemKeKhoPTStore((s) => s.columns);
   const resizeColumn = useKiemKeKhoPTStore((s) => s.resizeColumn);
   const visibleColumns = useMemo(
@@ -179,32 +182,75 @@ const DotKiemKePTList: React.FC<Props> = ({
   };
 
   const handleRowClick = onView ?? onEdit;
-  const renderMobileCard = (item: DotKiemKePT, isSelected: boolean) => (
-    <div
-      role="button"
-      tabIndex={0}
-      className={isSelected ? 'border-primary bg-primary/5' : ''}
-      onClick={() => handleRowClick?.(item)}
-      onKeyDown={(e) => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); handleRowClick?.(item); } }}
-    >
-      <div className="flex justify-between items-start gap-2">
-        <span className="font-medium text-sm">{item.ma_dot}</span>
-        {renderTrangThaiBadge(item.trang_thai)}
-      </div>
-      <p className="text-sm text-foreground mt-0.5">{item.ten_dot || '—'}</p>
-      <p className="text-xs text-muted-foreground">
-        {formatDate(item.ngay_bat_dau)} → {formatDate(item.ngay_ket_thuc)} · {item.ten_nguoi_tao || '—'} ·{' '}
-        {item.ten_nguoi_phu_trach || '—'}
-      </p>
-      <div className="flex gap-3 mt-1.5 text-xs text-muted-foreground">
-        <span>{t('kiemKeKhoPT.store.soKhoCol')}: {item.so_kho ?? item.id_kho?.length ?? 0}</span>
-        <span>{t('kiemKeKhoPT.store.soHangHoaCol')}: {item.so_hang_hoa ?? '—'}</span>
-        {(item.so_lech ?? 0) > 0 && (
-          <span className="text-amber-600 dark:text-amber-400">{t('kiemKeKhoPT.store.soLechCol')}: {item.so_lech}</span>
+  const renderMobileCard = (item: DotKiemKePT, isSelected: boolean) => {
+    const kho = tomTatTenKho(item.id_kho, khoList);
+    const nguoiTao = item.ten_nguoi_tao || item.ma_nguoi_tao;
+    const nguoiPhuTrach = item.ten_nguoi_phu_trach || item.ma_nguoi_phu_trach;
+    const soLech = item.so_lech ?? 0;
+    return (
+      <div
+        role="button"
+        tabIndex={0}
+        className={cn(
+          'bg-card rounded-xl border p-3.5 shadow-sm transition-all',
+          isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'
         )}
+        onClick={() => handleRowClick?.(item)}
+        onKeyDown={(e) => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); handleRowClick?.(item); } }}
+      >
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <h4 className="font-semibold text-foreground text-sm truncate">{item.ten_dot || item.ma_dot}</h4>
+            <p className="text-xs text-muted-foreground truncate mt-0.5 tabular-nums">
+              {item.ten_dot ? `${item.ma_dot} · ` : ''}
+              {formatYmdToDisplay(item.ngay_bat_dau)} → {formatYmdToDisplay(item.ngay_ket_thuc)}
+            </p>
+          </div>
+          <div className="shrink-0">{renderTrangThaiBadge(item.trang_thai)}</div>
+        </div>
+        <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5 text-sm">
+          {nguoiTao && (
+            <div className="min-w-0">
+              <div className="text-xs text-muted-foreground">{t('kiemKeKhoPT.store.nguoiTaoCol')}</div>
+              <div className="font-medium truncate">{nguoiTao}</div>
+            </div>
+          )}
+          {nguoiPhuTrach && (
+            <div className="min-w-0">
+              <div className="text-xs text-muted-foreground">{t('kiemKeKhoPT.store.nguoiPhuTrachCol')}</div>
+              <div className="font-medium truncate">{nguoiPhuTrach}</div>
+            </div>
+          )}
+          {kho.ten.length > 0 && (
+            <div className="col-span-2 min-w-0">
+              <div className="text-xs text-muted-foreground">{t('kiemKeKhoPT.store.khoCol')}</div>
+              <div className="font-medium">
+                {kho.ten.join(', ')}
+                {kho.conLai > 0 && (
+                  <span className="text-muted-foreground font-normal">
+                    {' '}
+                    {t('kiemKeKhoPT.card.khoKhac', { n: kho.conLai })}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+          {item.so_hang_hoa != null && (
+            <div>
+              <div className="text-xs text-muted-foreground">{t('kiemKeKhoPT.store.soHangHoaCol')}</div>
+              <div className="font-semibold tabular-nums">{formatNumberVN(item.so_hang_hoa)}</div>
+            </div>
+          )}
+          {soLech > 0 && (
+            <div>
+              <div className="text-xs text-muted-foreground">{t('kiemKeKhoPT.store.soLechCol')}</div>
+              <div className="font-semibold tabular-nums text-amber-600 dark:text-amber-400">{soLech}</div>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <GenericTable<DotKiemKePT>

@@ -227,7 +227,7 @@ const TaiSanTable: React.FC<Props> = ({
         isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'
       }`}
     >
-      <div className="flex items-center gap-3 mb-2">
+      <div className="flex items-start gap-3">
         {item.hinh_anh ? (
           <img
             src={item.hinh_anh}
@@ -240,27 +240,35 @@ const TaiSanTable: React.FC<Props> = ({
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between gap-2">
-            <h4 className="font-semibold text-foreground text-sm truncate">{item.ten_tai_san}</h4>
-            {showActions && (
-              <div role="presentation" onClick={(e) => e.stopPropagation()} className="shrink-0">
-                <input
-                  type="checkbox"
-                  checked={isSelected}
-                  onChange={() => toggleSelection(item.id)}
-                  className="w-4 h-4 rounded border-border text-primary accent-primary cursor-pointer"
-                  aria-label={t('common.select')}
-                />
-              </div>
-            )}
+          <div className="flex items-start justify-between gap-2">
+            <h4 className="font-semibold text-foreground text-sm line-clamp-2">{item.ten_tai_san || '—'}</h4>
+            <div className="flex items-center gap-2 shrink-0">
+              {item.ten_trang_thai && (
+                <span className="text-xs font-medium text-foreground px-2 py-0.5 rounded-full bg-muted/50 border border-border">
+                  {item.ten_trang_thai}
+                </span>
+              )}
+              {showActions && (
+                <div role="presentation" onClick={(e) => e.stopPropagation()}>
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => toggleSelection(item.id)}
+                    className="w-4 h-4 rounded border-border text-primary accent-primary cursor-pointer"
+                    aria-label={t('common.select')}
+                  />
+                </div>
+              )}
+            </div>
           </div>
-          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-            <span className="text-xs font-mono text-muted-foreground">{item.ma_tai_san}</span>
-            <span className="text-xs text-muted-foreground">{item.ten_nhom || '—'}</span>
-          </div>
+          <p className="text-xs text-muted-foreground truncate mt-0.5">
+            <span className="font-mono">{item.ma_tai_san}</span>
+            {item.ten_nhom ? ` · ${item.ten_nhom}` : ''}
+            {item.ten_chi_nhanh ? ` · ${item.ten_chi_nhanh}` : ''}
+          </p>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-2 text-body-sm mb-2">
+      <div className="grid grid-cols-2 gap-2 text-body-sm mt-2.5">
         <div>
           <p className="text-muted-foreground text-xs">{t('danhSachTaiSan.store.noiLuuCol')}</p>
           <p className="font-medium truncate">{item.ten_noi_luu || '—'}</p>
@@ -271,7 +279,7 @@ const TaiSanTable: React.FC<Props> = ({
         </div>
       </div>
       {(showActions && (canUpdate || canDelete)) && (
-        <div className="flex justify-end gap-1.5 pt-2 border-t border-border">
+        <div className="flex justify-end gap-3 mt-2.5 pt-2.5 border-t border-border">
           {canUpdate && (
             <button
               type="button"
@@ -279,9 +287,10 @@ const TaiSanTable: React.FC<Props> = ({
                 e.stopPropagation();
                 onEdit(item);
               }}
-              className="p-2 text-primary bg-primary/5 rounded-lg text-sm"
+              className="h-10 w-10 flex items-center justify-center text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-all active:scale-90"
+              aria-label={t('common.edit')}
             >
-              <Edit size={14} className="mr-1 inline" /> {t('common.edit')}
+              <Edit size={16} />
             </button>
           )}
           {canDelete && (
@@ -291,9 +300,10 @@ const TaiSanTable: React.FC<Props> = ({
                 e.stopPropagation();
                 onDelete(item.id);
               }}
-              className="p-2 text-rose-500 bg-rose-50 rounded-lg text-sm"
+              className="h-10 w-10 flex items-center justify-center text-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 rounded-lg transition-all active:scale-90"
+              aria-label={t('common.delete')}
             >
-              <Trash2 size={14} className="mr-1 inline" /> {t('common.delete')}
+              <Trash2 size={16} />
             </button>
           )}
         </div>

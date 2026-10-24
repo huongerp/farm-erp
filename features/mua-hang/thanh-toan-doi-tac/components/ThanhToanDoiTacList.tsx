@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Edit, Trash2 } from 'lucide-react';
-import { cn, formatDateShort, formatNumberVN } from '../../../../lib/utils';
+import { cn, formatDateShort, formatNumberVN, formatYmdToDisplay } from '../../../../lib/utils';
 import type { ThanhToanDoiTac } from '../core/types';
 import GenericTable from '../../../../components/shared/GenericTable';
 import type { ColumnConfig } from '../../../../store/createGenericStore';
@@ -127,34 +127,53 @@ const ThanhToanDoiTacList: React.FC<Props> = ({
         isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'
       )}
     >
-      <div className="flex items-center justify-between gap-2 mb-2">
-        <span className="font-mono text-xs font-medium text-muted-foreground bg-muted px-2 py-1 rounded border border-border">
-          {item.so_phieu}
+      <div className="flex items-start justify-between gap-2">
+        <h4 className="font-semibold text-foreground text-sm truncate min-w-0">{item.so_phieu}</h4>
+        <div className="shrink-0">{renderStatusBadge(item)}</div>
+      </div>
+      <p className="text-xs text-muted-foreground truncate mt-0.5">
+        {formatYmdToDisplay(item.ngay)}
+        {item.ngay_xu_ly ? ` · ${t('thanhToanDoiTac.store.ngayXuLyCol')}: ${formatYmdToDisplay(item.ngay_xu_ly)}` : ''}
+      </p>
+      <p className="mt-2 text-sm font-medium text-foreground line-clamp-2">{item.hang_muc_thanh_toan}</p>
+      {(item.ten_doi_tac || item.ten_nhom) && (
+        <p className="mt-0.5 text-xs text-muted-foreground truncate">
+          {t('thanhToanDoiTac.store.doiTacCol')}: {[item.ten_doi_tac, item.ten_nhom].filter(Boolean).join(' · ')}
+        </p>
+      )}
+      <div className="mt-1.5 flex items-center justify-between gap-2 text-sm">
+        <span className="min-w-0 truncate text-xs text-muted-foreground">
+          {item.ten_don_vi ? `${t('thanhToanDoiTac.card.donViChi')}: ${item.ten_don_vi}` : ''}
         </span>
-        {renderStatusBadge(item)}
+        <span className="shrink-0 tabular-nums">
+          <span className="text-xs text-muted-foreground">{t('thanhToanDoiTac.store.soTienCol')}: </span>
+          <span className="font-semibold">{formatNumberVN(item.so_tien)}</span>
+        </span>
       </div>
-      <div className="font-medium text-foreground text-sm mb-1">{item.hang_muc_thanh_toan}</div>
-      <div className="text-xs text-muted-foreground mb-2">
-        {[item.ten_nhom, item.ten_doi_tac].filter(Boolean).join(' · ') || '—'} · {item.ngay}
-      </div>
-      <div className="text-sm tabular-nums font-medium mb-2">
-        {formatNumberVN(item.so_tien)}
-      </div>
-      <div className="flex justify-between items-center pt-2 border-t border-border">
-        <span className="text-xs text-muted-foreground">{formatDateShort(item.tg_cap_nhat)}</span>
-        <div className="flex gap-1">
+      {(onEdit || onDelete) && (
+        <div className="flex justify-end gap-3 mt-2.5 pt-2.5 border-t border-border">
           {onEdit && (
-            <button type="button" onClick={(e) => { e.stopPropagation(); onEdit(item); }} className="p-2 text-primary hover:bg-primary/10 rounded-lg" aria-label={t('common.edit')}>
-              <Edit size={14} />
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onEdit(item); }}
+              className="h-10 w-10 flex items-center justify-center text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-all active:scale-90"
+              aria-label={t('common.edit')}
+            >
+              <Edit size={16} />
             </button>
           )}
           {onDelete && (
-            <button type="button" onClick={(e) => { e.stopPropagation(); onDelete(item.id); }} className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg" aria-label={t('common.delete')}>
-              <Trash2 size={14} />
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
+              className="h-10 w-10 flex items-center justify-center text-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 rounded-lg transition-all active:scale-90"
+              aria-label={t('common.delete')}
+            >
+              <Trash2 size={16} />
             </button>
           )}
         </div>
-      </div>
+      )}
     </div>
   );
 

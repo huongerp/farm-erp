@@ -5,12 +5,12 @@ import Tooltip from '../../../../components/ui/Tooltip';
 import GenericTable from '../../../../components/shared/GenericTable';
 import { formatDate, formatDateTimeShort } from '../../../../lib/utils';
 import { AdminFormRequest } from '../core/types';
-import { getAdminFormShiftLabel, getAdminFormStatusLabel } from '../core/constants';
+import { ADMIN_FORM_STATUS_BADGE, getAdminFormShiftLabel, getAdminFormStatusLabel } from '../core/constants';
 import { getAdminFormTypeLabel } from '../../thiet-lap-cong-luong/core/constants';
 import type { GenericState } from '../../../../store/createGenericStore';
 import type { AdminFormListFilters } from '../store/useAdminFormListStore';
 import { getStatusBadgeClass } from '../../../../lib/status-badge';
-import { hienThiSoNgay, moTaKhoangNhieuNgay } from '../utils/hien-thi-khoang';
+import { hienThiSoNgay, moTaKhoangNhieuNgay, moTaThoiGianPhieu } from '../utils/hien-thi-khoang';
 
 interface Props {
   data: AdminFormRequest[];
@@ -42,42 +42,13 @@ const AdminFormTable: React.FC<Props> = ({ isFetching, totalRecordsOverride, dat
     setSort,
   } = useStore();
 
-  const renderStatusBadge = (status: AdminFormRequest['trang_thai']) => {
-    const label = getAdminFormStatusLabel(status, t);
-    if (status === 'approved') {
-      return (
-        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusBadgeClass('success')}`}>
-          {label}
-        </span>
-      );
-    }
-    if (status === 'rejected') {
-      return (
-        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusBadgeClass('rejected')}`}>
-          {label}
-        </span>
-      );
-    }
-    if (status === 'cancelled') {
-      return (
-        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusBadgeClass('neutral')}`}>
-          {label}
-        </span>
-      );
-    }
-    if (status === 'manager_approved') {
-      return (
-        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusBadgeClass('pending')}`}>
-          {label}
-        </span>
-      );
-    }
-    return (
-      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusBadgeClass('info')}`}>
-        {label}
-      </span>
-    );
-  };
+  const renderStatusBadge = (status: AdminFormRequest['trang_thai']) => (
+    <span
+      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusBadgeClass(ADMIN_FORM_STATUS_BADGE[status] ?? 'info')}`}
+    >
+      {getAdminFormStatusLabel(status, t)}
+    </span>
+  );
 
   const renderCell = (colId: string, item: AdminFormRequest) => {
     switch (colId) {
@@ -185,68 +156,61 @@ const AdminFormTable: React.FC<Props> = ({ isFetching, totalRecordsOverride, dat
         isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'
       }`}
     >
-      <div className="flex items-center gap-3 mb-3">
-        <div className="h-11 w-11 rounded-lg bg-primary/15 border border-primary/20 flex items-center justify-center text-primary shrink-0">
-          <FileText size={20} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between gap-2">
-            <h4 className="font-semibold text-foreground text-sm truncate">
-              {getAdminFormTypeLabel(item.loai_phieu, t)}
-            </h4>
-            <div role="presentation" onClick={(e) => e.stopPropagation()} className="shrink-0">
-              <input
-                type="checkbox"
-                checked={isSelected}
-                onChange={() => toggleSelection(item.id)}
-                className="w-4 h-4 rounded border-border text-primary accent-primary cursor-pointer"
-                aria-label={t('common.select')}
-              />
-            </div>
-          </div>
-          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-            <span className="text-xs text-muted-foreground">{item.ngay ? formatDate(item.ngay) : item.ngay}</span>
-            {renderStatusBadge(item.trang_thai)}
-          </div>
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-2 px-3 py-2 bg-muted/30 rounded-lg mb-3 text-body-sm">
-        <div>
-          <p className="text-muted-foreground mb-0.5">{t('adminForm.store.periodCol')}</p>
-          <p className="font-medium text-foreground tabular-nums">
-            {moTaKhoangNhieuNgay(item, t) ?? getAdminFormShiftLabel(item.ca, t)}
+      {/* Người duyệt lướt danh sách cần biết ngay: AI xin – LOẠI gì – KHI NÀO – VÌ SAO – đang ở trạng thái nào. */}
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h4 className="font-semibold text-foreground text-sm truncate">{item.ten_nguoi_tao || '—'}</h4>
+          <p className="text-xs text-muted-foreground truncate mt-0.5">
+            {getAdminFormTypeLabel(item.loai_phieu, t)}
+            {item.ten_phong_ban ? ` · ${item.ten_phong_ban}` : ''}
           </p>
         </div>
-        <div>
-          <p className="text-muted-foreground mb-0.5">{t('adminForm.store.daysCol')}</p>
-          <p className="font-medium text-foreground tabular-nums">{hienThiSoNgay(item)}</p>
+        <div className="flex items-center gap-2 shrink-0">
+          {renderStatusBadge(item.trang_thai)}
+          <div role="presentation" onClick={(e) => e.stopPropagation()}>
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={() => toggleSelection(item.id)}
+              className="w-4 h-4 rounded border-border text-primary accent-primary cursor-pointer"
+              aria-label={t('common.select')}
+            />
+          </div>
         </div>
       </div>
-      <div className="flex justify-between items-center pt-2.5 border-t border-border">
-        <span className="text-muted-foreground text-xs">{formatDateTimeShort(item.tg_cap_nhat)}</span>
-        <div className="flex gap-1.5">
+      <p className="mt-2 px-2.5 py-1.5 bg-muted/40 rounded-lg text-sm font-medium text-foreground tabular-nums">
+        {moTaThoiGianPhieu(item, t)}
+      </p>
+      {item.ly_do && (
+        <p className="mt-2 text-sm text-foreground/80 line-clamp-2">
+          <span className="text-muted-foreground">{t('adminForm.store.reasonCol')}: </span>
+          {item.ly_do}
+        </p>
+      )}
+      {((canUpdate && onEdit) || (canDelete && onDelete)) && (
+        <div className="flex justify-end gap-3 mt-2.5 pt-2.5 border-t border-border">
           {canUpdate && onEdit && (
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onEdit(item); }}
-              className="p-2 text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-all active:scale-90"
+              className="h-10 w-10 flex items-center justify-center text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-all active:scale-90"
               aria-label={t('common.edit')}
             >
-              <Edit size={14} />
+              <Edit size={16} />
             </button>
           )}
           {canDelete && onDelete && (
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
-              className="p-2 text-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 rounded-lg transition-all active:scale-90"
+              className="h-10 w-10 flex items-center justify-center text-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 rounded-lg transition-all active:scale-90"
               aria-label={t('common.delete')}
             >
-              <Trash2 size={14} />
+              <Trash2 size={16} />
             </button>
           )}
         </div>
-      </div>
+      )}
     </div>
   );
 

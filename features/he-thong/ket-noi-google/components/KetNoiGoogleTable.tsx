@@ -2,7 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link2 } from 'lucide-react';
 import GenericTable from '../../../../components/shared/GenericTable';
-import { cn, formatDateTimeShort } from '../../../../lib/utils';
+import { cn, formatDateTime, formatDateTimeShort } from '../../../../lib/utils';
 import { useKetNoiGoogleStore } from '../store/useKetNoiGoogleStore';
 import { tinhTrangKetNoi } from '../core/trang-thai';
 import type { KetNoiGoogle } from '../core/types';
@@ -62,7 +62,7 @@ const KetNoiGoogleTable: React.FC<Props> = ({ data, isLoading, isError, onRetry,
       tabIndex={0}
       onClick={() => onView(item)}
       onKeyDown={(e) => e.key === 'Enter' && onView(item)}
-      className={cn('bg-card rounded-xl border p-3.5 shadow-sm transition-all active:scale-[0.98]', isSelected ? 'border-primary' : 'border-border')}
+      className={cn('bg-card rounded-xl border p-3.5 shadow-sm transition-all', isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border')}
     >
       <div className="flex items-center gap-3">
         <div className="h-10 w-10 rounded-lg bg-sky-500/15 border border-sky-500/20 flex items-center justify-center text-sky-600 shrink-0">
@@ -76,8 +76,11 @@ const KetNoiGoogleTable: React.FC<Props> = ({ data, isLoading, isError, onRetry,
           <p className="text-xs text-muted-foreground truncate mt-0.5">{item.google_email}</p>
         </div>
       </div>
-      <div className="mt-2.5 pt-2.5 border-t border-border text-xs text-muted-foreground">
-        {soLich(item)}
+      <div className="mt-2.5 pt-2.5 border-t border-border space-y-1 text-sm">
+        <div>{soLich(item)}</div>
+        <div className="text-xs text-muted-foreground tabular-nums">
+          {t('ketNoiGoogle.col.lastSync')}: {item.lan_dong_bo_cuoi ? formatDateTime(item.lan_dong_bo_cuoi) : '—'}
+        </div>
       </div>
     </div>
   );

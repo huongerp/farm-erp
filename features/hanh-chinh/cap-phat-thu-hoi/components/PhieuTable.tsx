@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Edit, Trash2 } from 'lucide-react';
 import GenericTable from '../../../../components/shared/GenericTable';
 import Tooltip from '../../../../components/ui/Tooltip';
-import { formatDateTimeShort, formatDate } from '../../../../lib/utils';
+import { formatDateTimeShort, formatYmdToDisplay } from '../../../../lib/utils';
 import type { PhieuCapPhatThuHoi } from '../core/types';
 import { getLoaiPhieuLabel } from '../core/constants';
 import { useCapPhatThuHoiStore } from '../store/useCapPhatThuHoiStore';
@@ -58,7 +58,7 @@ const PhieuTable: React.FC<Props> = ({ data, isFetching, totalRecordsOverride, i
         );
       case 'ngay_thuc_hien':
         return (
-          <span className="text-sm tabular-nums">{formatDate(item.ngay_thuc_hien)}</span>
+          <span className="text-sm tabular-nums">{formatYmdToDisplay(item.ngay_thuc_hien)}</span>
         );
       case 'ghi_chu':
         return (
@@ -114,22 +114,45 @@ const PhieuTable: React.FC<Props> = ({ data, isFetching, totalRecordsOverride, i
   };
 
   const handleRowClick = onView ?? onEdit;
+  const atWarehouse = t('capPhatThuHoi.form.atWarehouse');
   const renderMobileCard = (item: PhieuCapPhatThuHoi, isSelected: boolean) => (
     <div
       role="button"
       tabIndex={0}
-      className={isSelected ? 'border-primary bg-primary/5' : ''}
+      className={`bg-card rounded-xl border p-3.5 shadow-sm transition-all cursor-pointer ${
+        isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'
+      }`}
       onClick={() => handleRowClick?.(item)}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleRowClick?.(item); } }}
     >
-      <div className="flex justify-between items-start gap-2">
-        <span className="font-medium text-sm">{item.ma_phieu}</span>
-        <span className="text-xs text-muted-foreground">{formatDate(item.ngay_thuc_hien)}</span>
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h4 className="font-semibold text-foreground text-sm line-clamp-2">
+            {item.ten_nguoi_giu_truoc || atWarehouse} → {item.ten_nguoi_giu_sau || atWarehouse}
+          </h4>
+          <p className="text-xs text-muted-foreground truncate mt-0.5">
+            <span className="font-mono">{item.ma_phieu}</span>
+            {` · ${formatYmdToDisplay(item.ngay_thuc_hien)}`}
+          </p>
+        </div>
+        <div className="shrink-0">{renderLoaiBadge(item.loai_phieu)}</div>
       </div>
-      <p className="text-sm text-foreground mt-0.5">{getLoaiPhieuLabel(item.loai_phieu, t)}</p>
-      <p className="text-xs text-muted-foreground">
-        {item.ten_nguoi_giu_truoc ?? '—'} → {item.ten_nguoi_giu_sau ?? '—'}
-      </p>
+      {/* Phiếu cấp / thu CÁI GÌ — thông tin chính của phiếu, trước đây thẻ không có. */}
+      {item.tai_san_tom_tat && item.tai_san_tom_tat.length > 0 && (
+        <p className="mt-2 text-sm text-foreground line-clamp-2">
+          <span className="font-semibold">{t('capPhatThuHoi.card.taiSan', { count: item.tai_san_tom_tat.length })}: </span>
+          {item.tai_san_tom_tat.slice(0, 3).join(', ')}
+          {item.tai_san_tom_tat.length > 3 && (
+            <span className="text-muted-foreground"> {t('capPhatThuHoi.card.conLai', { count: item.tai_san_tom_tat.length - 3 })}</span>
+          )}
+        </p>
+      )}
+      {item.ten_nguoi_thuc_hien && (
+        <p className="mt-2 text-xs text-muted-foreground truncate">
+          {t('capPhatThuHoi.store.nguoiThucHienCol')}: <span className="text-foreground">{item.ten_nguoi_thuc_hien}</span>
+        </p>
+      )}
+      {item.ghi_chu && <p className="mt-1.5 text-xs text-muted-foreground line-clamp-2">{item.ghi_chu}</p>}
     </div>
   );
 

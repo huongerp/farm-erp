@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import EmptyState from '../../../../components/shared/EmptyState';
 import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
+import { useIsMobile } from '../../../../lib/hooks/use-is-mobile';
 import DateRangePicker from '../../../../components/ui/DateRangePicker';
 import { MobileFilterField, type FilterGroup } from '../../../../components/ui/MobileFilterSheet';
 import { useThongKeSanXuat } from '../hooks/use-thong-ke-san-xuat';
@@ -18,6 +19,7 @@ import {
 } from '../utils/export-thong-ke-san-xuat';
 import ThongKeSanXuatSummaryCards from './ThongKeSanXuatSummaryCards';
 import ThongKeSanXuatTable from './ThongKeSanXuatTable';
+import ThongKeSanXuatCards from './ThongKeSanXuatCards';
 import StatsToolbar from './stats/StatsToolbar';
 import StatsTables from './stats/StatsTables';
 
@@ -28,6 +30,7 @@ const StatsCharts = lazy(() => import('./stats/StatsCharts'));
 
 const ThongKeSanXuatPage: React.FC = () => {
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
   const { canView, isLoading: permLoading } = useThongKeSanXuatPermissions();
 
   const {
@@ -273,7 +276,11 @@ const ThongKeSanXuatPage: React.FC = () => {
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
                   Chi tiết theo ngày
                 </p>
-                <ThongKeSanXuatTable rows={filteredRows} />
+                {isMobile ? (
+                  <ThongKeSanXuatCards rows={filteredRows} />
+                ) : (
+                  <ThongKeSanXuatTable rows={filteredRows} />
+                )}
               </div>
             </>
           )}

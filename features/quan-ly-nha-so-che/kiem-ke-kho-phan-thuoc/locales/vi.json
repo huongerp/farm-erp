@@ -116,6 +116,7 @@
   "kiemKeKhoPT.store.soKhoCol": "Số kho",
   "kiemKeKhoPT.store.soHangHoaCol": "Số hàng hóa",
   "kiemKeKhoPT.store.soLechCol": "Số lệch",
+  "kiemKeKhoPT.card.khoKhac": "và {{n}} kho khác",
   "kiemKeKhoPT.table.themDong": "Thêm dòng",
   "kiemKeKhoPT.table.suaDong": "Sửa",
   "kiemKeKhoPT.table.xoaDong": "Xóa dòng",

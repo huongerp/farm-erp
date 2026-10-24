@@ -123,21 +123,33 @@ const KyKhauHaoTable: React.FC<Props> = ({ isFetching, totalRecordsOverride, dat
 
   const renderMobileCard = (item: KyKhauHao, isSelected: boolean) => (
     <div
-      className={isSelected ? 'border-primary bg-primary/5' : ''}
+      className={`bg-card rounded-xl border p-3.5 shadow-sm transition-all cursor-pointer ${
+        isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'
+      }`}
       onClick={() => onView?.(item)}
       onKeyDown={(e) => e.key === 'Enter' && onView?.(item)}
       role="button"
       tabIndex={0}
     >
-      <div className="flex items-center justify-between gap-2">
-        <span className="font-medium text-sm">
-          {item.thang}/{item.nam}
+      <div className="flex items-start justify-between gap-2">
+        <h4 className="font-semibold text-foreground text-sm tabular-nums">
+          {t('khauHaoTaiSan.store.maKyCol')} {String(item.thang).padStart(2, '0')}/{item.nam}
+        </h4>
+        <div className="shrink-0">{renderTrangThaiBadge(item.trang_thai)}</div>
+      </div>
+      <div className="flex items-center justify-between gap-2 mt-2.5">
+        <span className="text-xs text-muted-foreground">{t('khauHaoTaiSan.store.tongKhauHaoKyCol')}</span>
+        <span className="text-sm font-semibold tabular-nums text-foreground">
+          {item.tong_khau_hao_ky != null ? formatCurrency(item.tong_khau_hao_ky) : '—'}
         </span>
-        {renderTrangThaiBadge(item.trang_thai)}
       </div>
-      <div className="mt-1 text-xs text-muted-foreground">
-        {item.tong_nguyen_gia != null && `${t('khauHaoTaiSan.store.tongNguyenGiaCol')}: ${formatCurrency(item.tong_nguyen_gia)}`}
+      <div className="flex items-center justify-between gap-2 mt-1 text-xs text-muted-foreground">
+        <span>{t('khauHaoTaiSan.store.tongNguyenGiaCol')}</span>
+        <span className="tabular-nums">
+          {item.tong_nguyen_gia != null ? formatCurrency(item.tong_nguyen_gia) : '—'}
+        </span>
       </div>
+      {item.ghi_chu && <p className="mt-1.5 text-xs text-muted-foreground line-clamp-2">{item.ghi_chu}</p>}
     </div>
   );
 

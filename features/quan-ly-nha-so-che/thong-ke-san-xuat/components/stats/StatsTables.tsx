@@ -1,21 +1,10 @@
 import React from 'react';
 import { Building2, FileCheck, CheckCircle2, Banknote } from 'lucide-react';
-import { formatNumberVN } from '../../../../../lib/utils';
+import { useIsMobile } from '../../../../../lib/hooks/use-is-mobile';
+import { fmt1, fmtInt, fmtCur, fmtCurSigned, fmtPct, buildKpiRows } from './stats-format';
+import { tongHopChiNhanh, tongHopSoCheThung } from './stats-totals';
+import { MobileStatsShell, ByChiNhanhCards, KpiAnalysisCards, SoCheThungCards } from './StatsTablesMobile';
 import type { ThongKeSanXuatStats, ByChiNhanhRow, KpiAnalysis } from './useThongKeSanXuatStats';
-
-const fmt1 = (v: number | null) =>
-  v == null ? '—' : formatNumberVN(v, { maxFractionDigits: 1, minFractionDigits: 0 });
-const fmtInt = (v: number) => formatNumberVN(v, { maxFractionDigits: 0 });
-const fmtCur = (v: number) =>
-  v === 0 ? '—' : v >= 1_000_000 ? `${formatNumberVN(v / 1_000_000, { maxFractionDigits: 1 })}tr` : fmtInt(v);
-const fmtCurSigned = (v: number) => {
-  if (v === 0) return '—';
-  const abs = Math.abs(v);
-  const s = abs >= 1_000_000 ? `${formatNumberVN(abs / 1_000_000, { maxFractionDigits: 1 })}tr` : fmtInt(abs);
-  return v > 0 ? `+${s}` : `-${s}`;
-};
-const fmtPct = (v: number | null) =>
-  v == null ? '—' : `${formatNumberVN(v, { maxFractionDigits: 0 })}%`;
 
 // ─── Shared components ────────────────────────────────────────────────────────
 
@@ -45,6 +34,14 @@ const TD = ({ children, right, center, cls }: { children: React.ReactNode; right
 // ─── Table 1: Tổng hợp theo chi nhánh ────────────────────────────────────────
 
 function TableByChiNhanh({ rows }: { rows: ByChiNhanhRow[] }) {
+  const isMobile = useIsMobile();
+  if (isMobile) {
+    return (
+      <MobileStatsShell title="Tổng hợp theo chi nhánh" icon={<Building2 size={14} className="text-primary" />}>
+        <ByChiNhanhCards rows={rows} />
+      </MobileStatsShell>
+    );
+  }
   return (
     <TableShell title="Tổng hợp theo chi nhánh" icon={<Building2 size={14} className="text-primary" />}>
       <table className="w-full text-xs min-w-[700px]">
@@ -81,14 +78,8 @@ function TableByChiNhanh({ rows }: { rows: ByChiNhanhRow[] }) {
           ))}
         </tbody>
         {rows.length > 1 && (() => {
-          const totNgay = rows.reduce((s, r) => s + r.tongNgay, 0);
-          const totCongQD = rows.reduce((s, r) => s + r.tongCongQuyDoi, 0);
-          const totGioTC = rows.reduce((s, r) => s + r.tongGioTangCaTich, 0);
-          const totDat = rows.reduce((s, r) => s + r.ngayDatKpi, 0);
-          const totBcsc = rows.reduce((s, r) => s + r.ngayCoBcsc, 0);
-          const totDuong = rows.reduce((s, r) => s + r.tienThuongDuong, 0);
-          const totAm = rows.reduce((s, r) => s + r.tienThuongAm, 0);
-          const totNet = totDuong + totAm;
+          const { tongNgay: totNgay, tongCongQD: totCongQD, tongGioTC: totGioTC, ngayDat: totDat, ngayCoBcsc: totBcsc,
+            tienThuongDuong: totDuong, tienThuongAm: totAm, net: totNet, kpiRate } = tongHopChiNhanh(rows);
           return (
             <tfoot>
               <tr className="bg-muted/40 font-semibold border-t border-border">
@@ -98,7 +89,7 @@ function TableByChiNhanh({ rows }: { rows: ByChiNhanhRow[] }) {
                 <TD right>—</TD>
                 <TD right cls={totGioTC > 0 ? 'text-orange-600 dark:text-orange-400' : ''}>{totGioTC > 0 ? fmt1(totGioTC) : '—'}</TD>
                 <TD right>{totBcsc > 0 ? `${totDat}/${totBcsc}` : '—'}</TD>
-                <TD right cls="text-foreground">{fmtPct(totBcsc > 0 ? (totDat / totBcsc) * 100 : null)}</TD>
+                <TD right cls="text-foreground">{fmtPct(kpiRate)}</TD>
                 <TD right cls="text-emerald-600 dark:text-emerald-400">{totDuong > 0 ? fmtCur(totDuong) : '—'}</TD>
                 <TD right cls="text-red-500 dark:text-red-400">{totAm < 0 ? fmtCur(Math.abs(totAm)) : '—'}</TD>
                 <TD right cls={totNet > 0 ? 'text-emerald-600 dark:text-emerald-400 font-bold' : totNet < 0 ? 'text-red-500 font-bold' : ''}>{totNet !== 0 ? fmtCurSigned(totNet) : '—'}</TD>
@@ -114,35 +105,15 @@ function TableByChiNhanh({ rows }: { rows: ByChiNhanhRow[] }) {
 // ─── Table 2: KPI & Thưởng/Phạt ─────────────────────────────────────────────
 
 function TableKpiAnalysis({ a }: { a: KpiAnalysis }) {
-  const kpiRows = [
-    {
-      label: 'Ngày đạt đủ KPI',
-      count: a.ngayDatKpi,
-      pct: a.tongNgayCoBcsc > 0 ? fmtPct((a.ngayDatKpi / a.tongNgayCoBcsc) * 100) : '—',
-      tienThuong: a.tienThuongTrenNgayDat != null && a.tienThuongTrenNgayDat > 0 ? fmtCur(a.tienThuongTrenNgayDat) : '—',
-      tienPhat: '—',
-      net: a.tienThuongTrenNgayDat != null ? fmtCurSigned(a.tienThuongTrenNgayDat) : '—',
-      cls: 'text-emerald-600 dark:text-emerald-400',
-    },
-    {
-      label: 'Ngày chưa đạt KPI (có BCSC)',
-      count: a.ngayKhongDatKpi,
-      pct: a.tongNgayCoBcsc > 0 ? fmtPct((a.ngayKhongDatKpi / a.tongNgayCoBcsc) * 100) : '—',
-      tienThuong: '—',
-      tienPhat: a.tienPhatTrenNgayKhongDat != null && a.tienPhatTrenNgayKhongDat < 0 ? fmtCur(Math.abs(a.tienPhatTrenNgayKhongDat)) : '—',
-      net: a.tienPhatTrenNgayKhongDat != null && a.tienPhatTrenNgayKhongDat !== 0 ? fmtCurSigned(a.tienPhatTrenNgayKhongDat) : '—',
-      cls: 'text-red-500 dark:text-red-400',
-    },
-    {
-      label: 'Ngày không có BC sơ chế',
-      count: a.ngayKhongCoBcsc,
-      pct: '—',
-      tienThuong: '—',
-      tienPhat: '—',
-      net: '—',
-      cls: 'text-muted-foreground',
-    },
-  ];
+  const isMobile = useIsMobile();
+  if (isMobile) {
+    return (
+      <MobileStatsShell title="Phân tích KPI & Thưởng / Phạt" icon={<CheckCircle2 size={14} className="text-primary" />}>
+        <KpiAnalysisCards a={a} />
+      </MobileStatsShell>
+    );
+  }
+  const kpiRows = buildKpiRows(a);
 
   return (
     <TableShell title="Phân tích KPI & Thưởng / Phạt" icon={<CheckCircle2 size={14} className="text-primary" />}>
@@ -210,8 +181,16 @@ function TableBcStatus({ rows }: { rows: ThongKeSanXuatStats['bcStatusRows'] }) 
 // ─── Table 4: Sơ chế & Đóng thùng ────────────────────────────────────────────
 
 function TableSoCheThung({ rows }: { rows: ByChiNhanhRow[] }) {
+  const isMobile = useIsMobile();
   const visible = rows.filter((r) => r.tongBuongSoChe > 0 || r.tongThungKH > 0 || r.tongThungTT > 0);
   if (visible.length === 0) return null;
+  if (isMobile) {
+    return (
+      <MobileStatsShell title="Sơ chế & Đóng thùng theo chi nhánh" icon={<Banknote size={14} className="text-primary" />}>
+        <SoCheThungCards rows={visible} />
+      </MobileStatsShell>
+    );
+  }
   return (
     <TableShell title="Sơ chế & Đóng thùng theo chi nhánh" icon={<Banknote size={14} className="text-primary" />}>
       <table className="w-full text-xs min-w-[480px]">
@@ -230,9 +209,7 @@ function TableSoCheThung({ rows }: { rows: ByChiNhanhRow[] }) {
           ))}
         </tbody>
         {visible.length > 1 && (() => {
-          const totSC = visible.reduce((s, r) => s + r.tongBuongSoChe, 0);
-          const totKH = visible.reduce((s, r) => s + r.tongThungKH, 0);
-          const totTT = visible.reduce((s, r) => s + r.tongThungTT, 0);
+          const { tongBuongSoChe: totSC, tongThungKH: totKH, tongThungTT: totTT, tyLeTTKH } = tongHopSoCheThung(visible);
           return (
             <tfoot>
               <tr className="bg-muted/40 border-t border-border">
@@ -240,7 +217,7 @@ function TableSoCheThung({ rows }: { rows: ByChiNhanhRow[] }) {
                 <TD right cls="font-bold">{totSC > 0 ? fmtInt(totSC) : '—'}</TD>
                 <TD right cls="font-bold">{totKH > 0 ? fmtInt(totKH) : '—'}</TD>
                 <TD right cls="font-bold text-indigo-600 dark:text-indigo-400">{totTT > 0 ? fmtInt(totTT) : '—'}</TD>
-                <TD right cls="font-semibold">{totKH > 0 ? fmtPct((totTT / totKH) * 100) : '—'}</TD>
+                <TD right cls="font-semibold">{fmtPct(tyLeTTKH)}</TD>
               </tr>
             </tfoot>
           );

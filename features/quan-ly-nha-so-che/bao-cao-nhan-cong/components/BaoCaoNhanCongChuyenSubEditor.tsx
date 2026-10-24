@@ -42,10 +42,12 @@ interface Props {
   setValue: UseFormSetValue<BaoCaoNhanCongFormValues>;
   getValues: UseFormGetValues<BaoCaoNhanCongFormValues>;
   subErrors?: SubFieldErrors;
+  /** `cards`: bố cục điện thoại (khối div); mặc định `table`: các `<tr>` trong bảng chuyền. */
+  layout?: 'table' | 'cards';
 }
 
 /** Dòng chi tiết + nút thêm — render trực tiếp trong tbody bảng chuyền (cùng lưới detail). */
-const BaoCaoNhanCongChuyenSubEditor: React.FC<Props> = ({ chiTietIndex, control, setValue, getValues, subErrors }) => {
+const BaoCaoNhanCongChuyenSubEditor: React.FC<Props> = ({ chiTietIndex, control, setValue, getValues, subErrors, layout = 'table' }) => {
   const { t } = useTranslation();
 
   const syncTotals = useCallback(
@@ -121,47 +123,94 @@ const BaoCaoNhanCongChuyenSubEditor: React.FC<Props> = ({ chiTietIndex, control,
     applySub(padSubToRowCount(next, Math.max(1, subAlignedRowCount(next))));
   };
 
-  const loaiInputCells = (rowIdx: number, loai: LoaiChiTieu) => {
-    const slName = `chi_tiet.${chiTietIndex}.sub.${loai}.${rowIdx}.sl_cong` as const;
-    const gioName = `chi_tiet.${chiTietIndex}.sub.${loai}.${rowIdx}.so_gio` as const;
-    const pairErr = subPairError(subErrors, loai, rowIdx);
+  const slField = (rowIdx: number, loai: LoaiChiTieu, label?: string) => (
+    <Controller
+      name={`chi_tiet.${chiTietIndex}.sub.${loai}.${rowIdx}.sl_cong` as const}
+      control={control}
+      render={({ field: f }) => (
+        <NumberInput
+          value={Number(f.value ?? 0)}
+          onChange={(v) => updateLoaiCell(rowIdx, loai, { sl_cong: v })}
+          {...SL_INPUT}
+          compact
+          label={label}
+          className="w-full min-w-0 max-w-full"
+          error={subPairError(subErrors, loai, rowIdx)}
+        />
+      )}
+    />
+  );
+
+  const gioField = (rowIdx: number, loai: LoaiChiTieu, label?: string) => (
+    <Controller
+      name={`chi_tiet.${chiTietIndex}.sub.${loai}.${rowIdx}.so_gio` as const}
+      control={control}
+      render={({ field: f }) => (
+        <NumberInput
+          value={Number(f.value ?? 0)}
+          onChange={(v) => updateLoaiCell(rowIdx, loai, { so_gio: v })}
+          {...GIO_INPUT}
+          compact
+          label={label}
+          className="w-full min-w-0 max-w-full"
+          error={subPairError(subErrors, loai, rowIdx)}
+        />
+      )}
+    />
+  );
+
+  const loaiInputCells = (rowIdx: number, loai: LoaiChiTieu) => (
+    <React.Fragment key={loai}>
+      <td className={bcncTdInput}>{slField(rowIdx, loai)}</td>
+      <td className={bcncTdInput}>{gioField(rowIdx, loai)}</td>
+    </React.Fragment>
+  );
+
+  if (layout === 'cards') {
     return (
-      <React.Fragment key={loai}>
-        <td className={bcncTdInput}>
-          <Controller
-            name={slName}
-            control={control}
-            render={({ field: f }) => (
-              <NumberInput
-                value={Number(f.value ?? 0)}
-                onChange={(v) => updateLoaiCell(rowIdx, loai, { sl_cong: v })}
-                {...SL_INPUT}
-                compact
-                className="w-full min-w-0 max-w-full"
-                error={pairErr}
-              />
-            )}
-          />
-        </td>
-        <td className={bcncTdInput}>
-          <Controller
-            name={gioName}
-            control={control}
-            render={({ field: f }) => (
-              <NumberInput
-                value={Number(f.value ?? 0)}
-                onChange={(v) => updateLoaiCell(rowIdx, loai, { so_gio: v })}
-                {...GIO_INPUT}
-                compact
-                className="w-full min-w-0 max-w-full"
-                error={pairErr}
-              />
-            )}
-          />
-        </td>
-      </React.Fragment>
+      <div className="space-y-2 border-t border-border/60 pt-2.5">
+        {Array.from({ length: rowCount }, (_, rowIdx) => (
+          <div key={rowIdx} className="rounded-lg bg-muted/40 p-2.5 space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-semibold text-foreground/80">
+                {t('baoCaoNhanCong.sub.detailRow', { index: rowIdx + 1 })}
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 shrink-0 text-rose-600"
+                disabled={rowCount <= 1}
+                onClick={() => removeRow(rowIdx)}
+                aria-label={t('common.delete')}
+              >
+                <Trash2 size={15} />
+              </Button>
+            </div>
+            {LOAI_CHI_TIEU_CODES.map((loai) => (
+              <div key={loai}>
+                <div className="text-xs font-medium text-foreground/70 mb-1">{t(`baoCaoNhanCong.sub.loai.${loai}`)}</div>
+                <div className="grid grid-cols-2 gap-2">
+                  {slField(rowIdx, loai, t('baoCaoNhanCong.card.nhanSu'))}
+                  {gioField(rowIdx, loai, t('baoCaoNhanCong.card.soGio'))}
+                </div>
+              </div>
+            ))}
+            <Input
+              value={alignedSub.CN_NGAY[rowIdx]?.ghi_chu ?? ''}
+              onChange={(e) => setRowGhiChu(rowIdx, e.target.value || null)}
+              className="text-sm min-w-0"
+              placeholder={t('baoCaoNhanCong.sub.ghiChuPlaceholder')}
+            />
+          </div>
+        ))}
+        <Button type="button" variant="outline" size="sm" className="h-8 text-xs gap-1" onClick={addRow}>
+          <Plus size={13} />
+          {t('baoCaoNhanCong.sub.addRow')}
+        </Button>
+      </div>
     );
-  };
+  }
 
   return (
     <>

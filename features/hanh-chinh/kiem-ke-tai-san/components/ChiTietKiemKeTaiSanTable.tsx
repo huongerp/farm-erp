@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { PenLine, RefreshCw, Trash2, Package } from 'lucide-react';
+import { PenLine, RefreshCw, Trash2 } from 'lucide-react';
 import GenericTable from '../../../../components/shared/GenericTable';
 import Tooltip from '../../../../components/ui/Tooltip';
 import { cn } from '../../../../lib/utils';
@@ -152,70 +152,107 @@ const ChiTietKiemKeTaiSanTable: React.FC<Props> = ({
     }
   };
 
-  const renderMobileCard = (item: ChiTietKiemKe, isSelected: boolean) => (
-    <div className={cn('p-3', isSelected && 'border-primary bg-primary/5')}>
-      <div className="flex items-start justify-between gap-2 mb-1.5">
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-            <Package size={16} className="text-primary" />
-          </div>
+  /** Một dòng so sánh sổ sách – thực tế; chỉ in thực tế khi đợt báo chênh và giá trị khác sổ. */
+  const renderSoSanh = (label: string, so?: string | null, thucTe?: string | null, chenh = false) => {
+    const lech = chenh && !!thucTe && thucTe !== so;
+    if (!so && !lech) return null;
+    return (
+      <p className="text-xs text-muted-foreground">
+        {label}:{' '}
+        {lech ? (
+          <>
+            {t('kiemKeTaiSan.card.so')} <span className="text-foreground">{so || '—'}</span>
+            {' → '}
+            {t('kiemKeTaiSan.card.thucTe')}{' '}
+            <strong className="text-amber-700 dark:text-amber-400">{thucTe}</strong>
+          </>
+        ) : (
+          <span className="text-foreground">{so}</span>
+        )}
+      </p>
+    );
+  };
+
+  const renderMobileCard = (item: ChiTietKiemKe, isSelected: boolean) => {
+    const chenh = isChenh(item);
+    const coNhapKetQua = isDangKiemKe && !!onNhapKetQua;
+    const coCapNhatSo = isDangKiemKe && !!onCapNhatSo && canCapNhatSo(item);
+    const coHanhDong = showActions && (coNhapKetQua || coCapNhatSo || !!onDelete);
+    return (
+      <div
+        className={cn(
+          'bg-card rounded-xl border p-3.5 shadow-sm transition-all',
+          isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'
+        )}
+      >
+        <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className="font-medium text-sm truncate">{item.ten_tai_san || item.ma_tai_san || '—'}</p>
-            <p className="text-xs text-muted-foreground truncate">{item.ten_noi_luu_so || '—'}</p>
+            <h4 className="font-semibold text-foreground text-sm line-clamp-2">
+              {item.ten_tai_san || item.ma_tai_san || '—'}
+            </h4>
+            {item.ma_tai_san && item.ten_tai_san && (
+              <p className="text-xs text-muted-foreground font-mono truncate mt-0.5">{item.ma_tai_san}</p>
+            )}
           </div>
+          <div className="shrink-0">{renderKetQuaBadge(item.ket_qua)}</div>
         </div>
-        {renderKetQuaBadge(item.ket_qua)}
-      </div>
-      <div className="flex gap-4 text-xs text-muted-foreground mt-1.5">
-        <span>{t('kiemKeTaiSan.store.nguoiGiuSoCol')}: <strong className="text-foreground">{item.ten_nguoi_giu_so || '—'}</strong></span>
-        <span>{t('kiemKeTaiSan.store.trangThaiSoCol')}: <strong className="text-foreground">{item.ten_trang_thai_so || '—'}</strong></span>
-      </div>
-      {showActions && (
-        <div className="flex gap-1.5 mt-2 pt-2 border-t border-border justify-end">
-          {isDangKiemKe && onNhapKetQua && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onNhapKetQua(item);
-              }}
-              className="p-1.5 text-primary bg-primary/5 hover:bg-primary/10 rounded-md"
-              aria-label={t('kiemKeTaiSan.table.nhapKetQua')}
-            >
-              <PenLine size={14} />
-            </button>
-          )}
-          {isDangKiemKe && onCapNhatSo && canCapNhatSo(item) && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onCapNhatSo(item.id);
-              }}
-              disabled={capNhatSoLoading}
-              className="p-1.5 text-secondary-foreground bg-muted/50 hover:bg-muted rounded-md"
-              aria-label={t('kiemKeTaiSan.capNhatSoTheoKetQua')}
-            >
-              <RefreshCw size={14} />
-            </button>
-          )}
-          {onDelete && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(item);
-              }}
-              className="p-1.5 text-rose-500 bg-rose-50 hover:bg-rose-100 dark:hover:bg-rose-950/30 rounded-md"
-              aria-label={t('kiemKeTaiSan.table.xoaDong')}
-            >
-              <Trash2 size={14} />
-            </button>
-          )}
+        <div className="mt-2 space-y-0.5">
+          {renderSoSanh(t('kiemKeTaiSan.card.noiLuu'), item.ten_noi_luu_so, item.ten_noi_luu_thuc_te, chenh)}
+          {renderSoSanh(t('kiemKeTaiSan.card.nguoiGiu'), item.ten_nguoi_giu_so, item.ten_nguoi_giu_thuc_te, chenh)}
+          {renderSoSanh(t('kiemKeTaiSan.card.trangThai'), item.ten_trang_thai_so, item.ten_trang_thai_thuc_te, chenh)}
         </div>
-      )}
-    </div>
-  );
+        {item.ghi_chu_dong && (
+          <p className="mt-1.5 text-xs text-muted-foreground line-clamp-2">{item.ghi_chu_dong}</p>
+        )}
+        {coHanhDong && (
+          <div className="flex justify-end gap-3 mt-2.5 pt-2.5 border-t border-border">
+            {coNhapKetQua && onNhapKetQua && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onNhapKetQua(item);
+                }}
+                disabled={nhapKetQuaLoading}
+                className="h-10 w-10 flex items-center justify-center text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-all active:scale-90"
+                aria-label={t('kiemKeTaiSan.table.nhapKetQua')}
+              >
+                <PenLine size={16} />
+              </button>
+            )}
+            {coCapNhatSo && onCapNhatSo && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCapNhatSo(item.id);
+                }}
+                disabled={capNhatSoLoading}
+                className="h-10 w-10 flex items-center justify-center text-secondary-foreground bg-muted/50 hover:bg-muted rounded-lg transition-all active:scale-90"
+                aria-label={t('kiemKeTaiSan.capNhatSoTheoKetQua')}
+              >
+                <RefreshCw size={16} />
+              </button>
+            )}
+            {onDelete && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(item);
+                }}
+                disabled={deleteLoading}
+                className="h-10 w-10 flex items-center justify-center text-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 rounded-lg transition-all active:scale-90"
+                aria-label={t('kiemKeTaiSan.table.xoaDong')}
+              >
+                <Trash2 size={16} />
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <GenericTable<ChiTietKiemKe>

@@ -18,6 +18,12 @@ export function ngayCuaThu(nam: number, tuan: number, thu: ThuHoachDaySuffix): s
   return new Date(thu2Tuan1 + lech * MOT_NGAY).toISOString().slice(0, 10);
 }
 
+/** Khoảng ngày của tuần ISO để hiện cạnh số tuần, vd "05/10 – 11/10" (thứ Hai → Chủ nhật, không kèm năm). */
+export function khoangNgayTuan(nam: number, tuan: number): string {
+  const dd_mm = (ymd: string) => `${ymd.slice(8, 10)}/${ymd.slice(5, 7)}`;
+  return `${dd_mm(ngayCuaThu(nam, tuan, 't2'))} – ${dd_mm(ngayCuaThu(nam, tuan, 'cn'))}`;
+}
+
 /** Một ô ngày của một bản ghi. `nam`/`tuan` là tuần ISO của bản ghi; `thang` theo ngày lịch thật. */
 export interface DongNgay {
   farmKey: string;

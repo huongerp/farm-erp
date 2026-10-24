@@ -605,7 +605,7 @@ function GenericTable<T>({
               <span className="text-muted-foreground/60"> · {Math.min((page - 1) * pageSize + 1, totalRecords)}–{Math.min(page * pageSize, totalRecords)}</span>
             </span>
             {/* Mobile: compact range */}
-            <span className="sm:hidden tabular-nums text-muted-foreground">
+            <span className="sm:hidden tabular-nums text-muted-foreground whitespace-nowrap">
               <span className="font-medium text-foreground">{Math.min((page - 1) * pageSize + 1, totalRecords)}–{Math.min(page * pageSize, totalRecords)}</span>
               <span className="text-muted-foreground/50"> / {totalRecords}</span>
             </span>
@@ -643,7 +643,7 @@ function GenericTable<T>({
               <select
                 value={pageSize}
                 onChange={(e) => onPageSizeChange(Number(e.target.value))}
-                className="h-7 min-w-[3rem] border border-border rounded bg-card px-1.5 text-xs font-medium text-foreground outline-none focus:ring-1 focus:ring-primary/20 cursor-pointer"
+                className="h-9 min-w-[3rem] border border-border rounded bg-card px-1.5 text-xs font-medium text-foreground outline-none focus:ring-1 focus:ring-primary/20 cursor-pointer"
                 aria-label="Số bản ghi mỗi trang"
               >
                 <option value={10}>10</option>
@@ -656,13 +656,13 @@ function GenericTable<T>({
           </div>
 
           {/* Right: Pagination controls */}
-          <div className="flex items-center gap-0.5">
+          <div className="flex items-center gap-1 md:gap-0.5">
             <Tooltip content="Trang đầu" placement="top">
               <Button
                 variant="outline" size="sm"
                 disabled={page === 1}
                 onClick={() => onPageChange(1)}
-                className="h-6 w-6 p-0 border-border rounded hover:bg-primary hover:text-white hover:border-primary transition-all"
+                className="hidden md:inline-flex h-9 w-9 md:h-6 md:w-6 p-0 border-border rounded hover:bg-primary hover:text-white hover:border-primary transition-all"
               >
                 <ChevronsLeft size={13} />
               </Button>
@@ -672,7 +672,7 @@ function GenericTable<T>({
                 variant="outline" size="sm"
                 disabled={page === 1}
                 onClick={() => onPageChange(page - 1)}
-                className="h-6 w-6 p-0 border-border rounded hover:bg-primary hover:text-white hover:border-primary transition-all"
+                className="h-9 w-9 md:h-6 md:w-6 p-0 border-border rounded hover:bg-primary hover:text-white hover:border-primary transition-all"
               >
                 <ChevronLeft size={13} />
               </Button>
@@ -702,7 +702,7 @@ function GenericTable<T>({
                         setEditingPage(true); setPageInput(String(page)); setTimeout(() => pageInputRef.current?.select(), 50);
                       }
                     }}
-                    className="h-6 min-w-[24px] flex items-center justify-center rounded bg-primary text-white text-xs font-bold px-1 tabular-nums cursor-default"
+                    className="h-9 min-w-[36px] md:h-6 md:min-w-[24px] flex items-center justify-center rounded bg-primary text-white text-xs font-bold px-1 tabular-nums cursor-default"
                   >
                     {page}
                   </span>
@@ -717,7 +717,7 @@ function GenericTable<T>({
                 variant="outline" size="sm"
                 disabled={page >= totalPages}
                 onClick={() => onPageChange(page + 1)}
-                className="h-6 w-6 p-0 border-border rounded hover:bg-primary hover:text-white hover:border-primary transition-all"
+                className="h-9 w-9 md:h-6 md:w-6 p-0 border-border rounded hover:bg-primary hover:text-white hover:border-primary transition-all"
               >
                 <ChevronRight size={13} />
               </Button>
@@ -727,7 +727,7 @@ function GenericTable<T>({
                 variant="outline" size="sm"
                 disabled={page >= totalPages}
                 onClick={() => onPageChange(totalPages)}
-                className="h-6 w-6 p-0 border-border rounded hover:bg-primary hover:text-white hover:border-primary transition-all"
+                className="hidden md:inline-flex h-9 w-9 md:h-6 md:w-6 p-0 border-border rounded hover:bg-primary hover:text-white hover:border-primary transition-all"
               >
                 <ChevronsRight size={13} />
               </Button>

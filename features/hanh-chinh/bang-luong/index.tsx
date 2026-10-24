@@ -25,7 +25,7 @@ const BangLuongPage: React.FC = () => {
   if (!viewAll && activeTab !== 'my') setActiveTab('my');
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-3.75rem)] md:h-[calc(100dvh-4.5rem)] relative">
+    <div className="flex flex-col h-[calc(100dvh-7.75rem-env(safe-area-inset-bottom,0px))] md:h-[calc(100dvh-4.5rem)] relative">
       <div className="shrink-0 relative z-0">
         <TabGroup tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
       </div>

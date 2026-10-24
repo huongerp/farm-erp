@@ -1,4 +1,5 @@
 import type { TFunction } from 'i18next';
+import type { StatusBadgeSemantic } from '../../../../lib/status-badge';
 
 export const ADMIN_FORM_SHIFTS = ['morning', 'afternoon', 'full'] as const;
 export type AdminFormShift = typeof ADMIN_FORM_SHIFTS[number];
@@ -26,6 +27,15 @@ export const getAdminFormShiftLabel = (shift: AdminFormShift, t: TFunction) => {
     default:
       return shift;
   }
+};
+
+/** Màu badge trạng thái — dùng chung cho bảng, thẻ mobile và đầu drawer chi tiết. */
+export const ADMIN_FORM_STATUS_BADGE: Record<AdminFormStatus, StatusBadgeSemantic> = {
+  pending: 'info',
+  manager_approved: 'pending',
+  approved: 'success',
+  rejected: 'rejected',
+  cancelled: 'neutral',
 };
 
 export const getAdminFormStatusLabel = (status: AdminFormStatus, t: TFunction) => {

@@ -12,33 +12,7 @@ import {
 import { displayLoaiTotalsOnCt } from '../../bao-cao-nhan-cong/core/ct-sub';
 import type { ThongKeSanXuatRow } from '../core/types';
 import { kpiThucTeDisplay } from '../core/kpi-display';
-
-// ─── helpers ─────────────────────────────────────────────────────────────────
-
-const n = (v: unknown, d = 0) =>
-  v == null || !Number.isFinite(Number(v))
-    ? '—'
-    : formatNumberVN(Number(v), { maxFractionDigits: d, minFractionDigits: 0 });
-
-const pct = (v: number | null) =>
-  v == null ? '—' : `${formatNumberVN(v * 100, { maxFractionDigits: 1 })}%`;
-
-const pctDirect = (v: number | null) =>
-  v == null ? '—' : `${formatNumberVN(v, { maxFractionDigits: 1 })}%`;
-
-const currency = (v: number) =>
-  v === 0
-    ? '0'
-    : v >= 1_000_000
-    ? `${formatNumberVN(v / 1_000_000, { maxFractionDigits: 2 })}tr`
-    : formatNumberVN(v, { maxFractionDigits: 0 });
-
-const KPI_BADGE: Record<string, { label: string; cls: string }> = {
-  Đạt: { label: 'Đạt', cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' },
-  Tốt: { label: 'Tốt', cls: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400' },
-  'Không đạt': { label: 'K.đạt', cls: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
-  Kém: { label: 'Kém', cls: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400' },
-};
+import { n, pct, pctDirect, currency, KPI_BADGE } from '../utils/format-thong-ke';
 
 // ─── Th / Td helpers ─────────────────────────────────────────────────────────
 
@@ -91,7 +65,7 @@ function Td({
 
 // ─── BC badge ────────────────────────────────────────────────────────────────
 
-function BcBadge({ has, label }: { has: boolean; label: string }) {
+export function BcBadge({ has, label }: { has: boolean; label: string }) {
   return (
     <span
       className={cn(
@@ -109,7 +83,7 @@ function BcBadge({ has, label }: { has: boolean; label: string }) {
 
 // ─── KPI badges ──────────────────────────────────────────────────────────────
 
-function KpiBadges({ kpiSnapshot }: { kpiSnapshot: ThongKeSanXuatRow['kpiSnapshot'] }) {
+export function KpiBadges({ kpiSnapshot }: { kpiSnapshot: ThongKeSanXuatRow['kpiSnapshot'] }) {
   if (!kpiSnapshot || kpiSnapshot.tongKpi === 0) return <span className="text-muted-foreground/40">—</span>;
   return (
     <div className="flex flex-wrap gap-0.5">

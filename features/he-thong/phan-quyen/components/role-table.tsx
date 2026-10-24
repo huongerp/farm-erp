@@ -21,6 +21,13 @@ const RoleTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete }) => {
     selectedIds, toggleSelection, toggleAllSelection 
   } = useRoleStore();
 
+  const renderStatusBadge = (item: PositionPermission) =>
+    item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium border border-primary/20"><ShieldCheck size={12}/> {t('permission.active')}</span>
+    ) : (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-xs font-medium border border-border"><ShieldAlert size={12}/> {t('permission.inactive')}</span>
+    );
+
   const renderCell = (colId: string, item: PositionPermission) => {
     switch (colId) {
         case 'vai_tro':
@@ -65,16 +72,12 @@ const RoleTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete }) => {
                 </div>
             );
         case 'trang_thai':
-            return item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium border border-primary/20"><ShieldCheck size={12}/> {t('permission.active')}</span>
-            ) : (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-xs font-medium border border-border"><ShieldAlert size={12}/> {t('permission.inactive')}</span>
-            );
+            return renderStatusBadge(item);
         case 'actions':
             return (
                 <div className="flex items-center justify-center gap-1">
-                    <button onClick={(e) => { e.stopPropagation(); onEdit(item); }} className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-all"><Edit size={16} /></button>
-                    <button onClick={(e) => { e.stopPropagation(); onDelete(item.id); }} className="p-2 text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-all"><Trash2 size={16} /></button>
+                    <button onClick={(e) => { e.stopPropagation(); onEdit(item); }} aria-label={t('common.edit')} className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-all"><Edit size={16} /></button>
+                    <button onClick={(e) => { e.stopPropagation(); onDelete(item.id); }} aria-label={t('common.delete')} className="p-2 text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-all"><Trash2 size={16} /></button>
                 </div>
             );
         default: return null;
@@ -82,25 +85,25 @@ const RoleTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete }) => {
   };
 
   const renderMobileCard = (item: PositionPermission, isSelected: boolean) => (
-      <div key={item.id} className={`bg-card rounded-xl border p-4 shadow-sm ${isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'}`}>
-            <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20"><Shield size={20} /></div>
-                    <div>
-                        <h4 className="font-semibold text-foreground text-sm">{item.ten_chuc_vu}</h4>
-                        <p className="text-xs font-mono text-muted-foreground">{item.ma_chuc_vu}</p>
-                    </div>
+      <div key={item.id} className={`bg-card rounded-xl border p-3.5 shadow-sm transition-all ${isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'}`}>
+            <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                    <h4 className="font-semibold text-foreground text-sm truncate">{item.ten_chuc_vu}</h4>
+                    <p className="text-xs text-muted-foreground truncate mt-0.5">
+                        <span className="font-mono">{item.ma_chuc_vu}</span>
+                        {item.ten_phong_ban ? ` · ${item.ten_phong_ban}` : ''}
+                    </p>
                 </div>
-                <input type="checkbox" checked={isSelected} onChange={() => toggleSelection(item.id)} className="w-5 h-5 rounded border-border text-primary accent-primary" />
+                <div className="flex items-center gap-2 shrink-0">
+                    {renderStatusBadge(item)}
+                    <input type="checkbox" checked={isSelected} onChange={() => toggleSelection(item.id)} className="w-4 h-4 rounded border-border text-primary accent-primary cursor-pointer" aria-label={t('common.select')} />
+                </div>
             </div>
-            <div className="flex items-center gap-2 mb-3 text-body-sm text-muted-foreground">
-                <Building2 size={14} /> {item.ten_phong_ban}
-            </div>
-            <div className="flex justify-between items-center pt-3 border-t border-border">
-                 <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground"><Users size={14}/> {t('permission.staffCount', { count: item.so_nhan_vien })}</div>
-                 <div className="flex gap-2">
-                    <button onClick={() => onEdit(item)} className="p-2 text-primary bg-primary/10 rounded-xl"><Edit size={16} /></button>
-                    <button onClick={() => onDelete(item.id)} className="p-2 text-red-500 bg-red-50 dark:bg-red-950/30 rounded-xl"><Trash2 size={16} /></button>
+            <div className="flex justify-between items-center gap-3 mt-2.5 pt-2.5 border-t border-border">
+                 <div className="flex items-center gap-1.5 text-sm font-semibold text-foreground"><Users size={14} className="text-muted-foreground" /> {t('permission.staffCount', { count: item.so_nhan_vien })}</div>
+                 <div className="flex gap-3">
+                    <button onClick={() => onEdit(item)} aria-label={t('common.edit')} className="h-10 w-10 flex items-center justify-center text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-all active:scale-90"><Edit size={16} /></button>
+                    <button onClick={() => onDelete(item.id)} aria-label={t('common.delete')} className="h-10 w-10 flex items-center justify-center text-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 rounded-lg transition-all active:scale-90"><Trash2 size={16} /></button>
                  </div>
             </div>
       </div>

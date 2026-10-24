@@ -2,6 +2,7 @@ import React from 'react';
 import { Save, ArrowRight, UserPlus } from 'lucide-react';
 import Button from '../ui/Button';
 import { BTN_CANCEL, BTN_SAVE, BTN_CREATE } from '../../lib/button-labels';
+import { useDrawerDirtyGuard } from './drawer-dirty-guard';
 
 export interface FormDrawerFooterProps {
   /** Id của form để submit từ ngoài (nút Lưu/Tạo gửi submit cho form này) */
@@ -37,10 +38,13 @@ export const FormDrawerFooter: React.FC<FormDrawerFooterProps> = ({
   const resolvedSave = saveLabel ?? BTN_SAVE();
   const resolvedCreate = createLabel ?? BTN_CREATE();
   const resolvedCreateIcon = createIcon ?? <UserPlus className="mr-2 h-4 w-4" />;
+  // Trong GenericDrawer: Huỷ khi form đã sửa phải hỏi trước, giống Esc / nút X.
+  const guardDirty = useDrawerDirtyGuard();
+  const handleCancel = () => (guardDirty ? guardDirty(onCancel) : onCancel());
 
   return (
     <div className="flex items-center justify-between w-full gap-3">
-      <Button variant="outline" size="sm" onClick={onCancel} disabled={isLoading} className="border-border text-muted-foreground">
+      <Button variant="outline" size="sm" onClick={handleCancel} disabled={isLoading} className="border-border text-muted-foreground">
         {resolvedCancel}
       </Button>
       <Button type="submit" form={formId} size="sm" isLoading={isLoading} className="bg-primary text-white shadow-lg">

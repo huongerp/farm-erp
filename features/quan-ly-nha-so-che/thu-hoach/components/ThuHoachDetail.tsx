@@ -20,6 +20,8 @@ import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
 import ThucTeDialog from './ThucTeDialog';
 import ThuHoachTraoDoiDialog from './ThuHoachTraoDoiDialog';
 import DetailDrawerFooter from '../../../../components/shared/DetailDrawerFooter';
+import { useIsMobile } from '../../../../lib/hooks/use-is-mobile';
+import { ngayCuaThu } from '../core/ngay-thu-hoach';
 
 interface Props {
   data: FarmThuHoach;
@@ -41,6 +43,7 @@ const ThuHoachDetail: React.FC<Props> = ({
   const { t } = useTranslation();
   const [showThucTe, setShowThucTe] = useState(false);
   const [showTraoDoi, setShowTraoDoi] = useState(false);
+  const isMobile = useIsMobile();
 
   const toolbarActions: DetailToolbarAction[] = useMemo(() => {
     const actions: DetailToolbarAction[] = [];
@@ -113,15 +116,15 @@ const ThuHoachDetail: React.FC<Props> = ({
             <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border border-border bg-muted/25 px-3 py-2 text-sm tabular-nums">
               <span className="font-medium text-foreground shrink-0">{t('thuHoach.detail.weekTotals')}</span>
               <span className="whitespace-nowrap">
-                <span className="text-muted-foreground">{t('thuHoach.stats.abbrDT')}</span>{' '}
+                <span className="text-muted-foreground">{t('thuHoach.card.duThu')}</span>{' '}
                 {formatNumberVN(data.du_thu_tuan ?? 0)}
               </span>
               <span className="whitespace-nowrap">
-                <span className="text-muted-foreground">{t('thuHoach.stats.abbrKH')}</span>{' '}
+                <span className="text-muted-foreground">{t('thuHoach.detail.keHoach')}</span>{' '}
                 {formatNumberVN(sumKeHoachWeek(data))}
               </span>
               <span className="whitespace-nowrap">
-                <span className="text-muted-foreground">{t('thuHoach.stats.abbrTT')}</span>{' '}
+                <span className="text-muted-foreground">{t('thuHoach.detail.thucTe')}</span>{' '}
                 {formatNumberVN(sumThucTeWeek(data))}
               </span>
               <span
@@ -130,85 +133,137 @@ const ThuHoachDetail: React.FC<Props> = ({
                   sumChenhLechWeek(data) >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
                 )}
               >
-                <span className="text-muted-foreground font-normal">{t('thuHoach.stats.abbrCL')}</span>{' '}
+                <span className="text-muted-foreground font-normal">{t('thuHoach.detail.chenhLechRow')}</span>{' '}
                 {formatNumberVN(sumChenhLechWeek(data))}
               </span>
             </div>
-            <div className="overflow-x-auto rounded-lg border border-border/80 bg-card -mx-0.5">
-              <table className="w-full min-w-[520px] text-sm border-collapse">
-                <thead>
-                  <tr className="border-b border-border bg-muted/40">
-                    <th
-                      scope="col"
-                      className="sticky left-0 z-[1] bg-muted/40 px-2 py-2 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap"
-                    >
-                      {t('thuHoach.detail.dailyTableMetric')}
-                    </th>
-                    {THU_HOACH_DAY_SUFFIXES.map((s) => (
-                      <th
-                        key={s}
-                        scope="col"
-                        className="px-2 py-2 text-center text-xs font-semibold text-foreground tabular-nums whitespace-nowrap"
-                      >
-                        {thuHoachDayColumnLabel(s)}
+            {isMobile ? (
+              // Điện thoại: bảng xoay ngang→dọc (mỗi dòng một thứ) để vừa 390px, không phải vuốt ngang.
+              <div className="rounded-lg border border-border/80 bg-card overflow-hidden">
+                <table className="w-full text-sm border-collapse">
+                  <thead>
+                    <tr className="border-b border-border bg-muted/40">
+                      <th scope="col" className="px-2 py-2 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">
+                        {t('thuHoach.detail.dailyTableNgay')}
                       </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-b border-border/70">
-                    <th
-                      scope="row"
-                      className="sticky left-0 z-[1] bg-card px-2 py-2 text-left text-xs font-medium text-muted-foreground whitespace-nowrap border-r border-border/50"
-                    >
-                      {t('thuHoach.detail.keHoach')}
-                    </th>
-                    {THU_HOACH_DAY_SUFFIXES.map((s) => (
-                      <td key={s} className="px-2 py-2 text-center tabular-nums text-foreground">
-                        {formatNumberVN(Number(data[`ke_hoach_${s}` as keyof FarmThuHoach] ?? 0))}
-                      </td>
-                    ))}
-                  </tr>
-                  <tr className="border-b border-border/70">
-                    <th
-                      scope="row"
-                      className="sticky left-0 z-[1] bg-card px-2 py-2 text-left text-xs font-medium text-muted-foreground whitespace-nowrap border-r border-border/50"
-                    >
-                      {t('thuHoach.detail.thucTe')}
-                    </th>
-                    {THU_HOACH_DAY_SUFFIXES.map((s) => (
-                      <td key={s} className="px-2 py-2 text-center tabular-nums text-foreground">
-                        {formatNumberVN(Number(data[`thuc_te_${s}` as keyof FarmThuHoach] ?? 0))}
-                      </td>
-                    ))}
-                  </tr>
-                  <tr>
-                    <th
-                      scope="row"
-                      className="sticky left-0 z-[1] bg-card px-2 py-2 text-left text-xs font-medium text-muted-foreground whitespace-nowrap border-r border-border/50"
-                    >
-                      {t('thuHoach.detail.chenhLechRow')}
-                    </th>
+                      <th scope="col" className="px-2 py-2 text-right text-xs font-semibold text-muted-foreground">
+                        {t('thuHoach.detail.keHoach')}
+                      </th>
+                      <th scope="col" className="px-2 py-2 text-right text-xs font-semibold text-muted-foreground">
+                        {t('thuHoach.detail.thucTe')}
+                      </th>
+                      <th scope="col" className="px-2 py-2 text-right text-xs font-semibold text-muted-foreground">
+                        {t('thuHoach.detail.chenhLechRow')}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
                     {THU_HOACH_DAY_SUFFIXES.map((s) => {
                       const kh = Number(data[`ke_hoach_${s}` as keyof FarmThuHoach] ?? 0);
                       const tt = Number(data[`thuc_te_${s}` as keyof FarmThuHoach] ?? 0);
                       const cl = tt - kh;
+                      const ymd = ngayCuaThu(data.nam, data.tuan, s);
                       return (
-                        <td
-                          key={s}
-                          className={cn(
-                            'px-2 py-2 text-center tabular-nums font-medium',
-                            cl >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
-                          )}
-                        >
-                          {formatNumberVN(cl)}
-                        </td>
+                        <tr key={s} className="border-b border-border/70 last:border-0">
+                          <th scope="row" className="px-2 py-2 text-left font-medium text-foreground whitespace-nowrap">
+                            {thuHoachDayColumnLabel(s)}
+                            <span className="ml-1.5 text-xs font-normal text-muted-foreground tabular-nums">
+                              {ymd.slice(8, 10)}/{ymd.slice(5, 7)}
+                            </span>
+                          </th>
+                          <td className="px-2 py-2 text-right tabular-nums text-foreground">{formatNumberVN(kh)}</td>
+                          <td className="px-2 py-2 text-right tabular-nums text-foreground">{formatNumberVN(tt)}</td>
+                          <td
+                            className={cn(
+                              'px-2 py-2 text-right tabular-nums font-medium',
+                              cl >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+                            )}
+                          >
+                            {formatNumberVN(cl)}
+                          </td>
+                        </tr>
                       );
                     })}
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="overflow-x-auto rounded-lg border border-border/80 bg-card -mx-0.5">
+                <table className="w-full min-w-[520px] text-sm border-collapse">
+                  <thead>
+                    <tr className="border-b border-border bg-muted/40">
+                      <th
+                        scope="col"
+                        className="sticky left-0 z-[1] bg-muted/40 px-2 py-2 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap"
+                      >
+                        {t('thuHoach.detail.dailyTableMetric')}
+                      </th>
+                      {THU_HOACH_DAY_SUFFIXES.map((s) => (
+                        <th
+                          key={s}
+                          scope="col"
+                          className="px-2 py-2 text-center text-xs font-semibold text-foreground tabular-nums whitespace-nowrap"
+                        >
+                          {thuHoachDayColumnLabel(s)}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b border-border/70">
+                      <th
+                        scope="row"
+                        className="sticky left-0 z-[1] bg-card px-2 py-2 text-left text-xs font-medium text-muted-foreground whitespace-nowrap border-r border-border/50"
+                      >
+                        {t('thuHoach.detail.keHoach')}
+                      </th>
+                      {THU_HOACH_DAY_SUFFIXES.map((s) => (
+                        <td key={s} className="px-2 py-2 text-center tabular-nums text-foreground">
+                          {formatNumberVN(Number(data[`ke_hoach_${s}` as keyof FarmThuHoach] ?? 0))}
+                        </td>
+                      ))}
+                    </tr>
+                    <tr className="border-b border-border/70">
+                      <th
+                        scope="row"
+                        className="sticky left-0 z-[1] bg-card px-2 py-2 text-left text-xs font-medium text-muted-foreground whitespace-nowrap border-r border-border/50"
+                      >
+                        {t('thuHoach.detail.thucTe')}
+                      </th>
+                      {THU_HOACH_DAY_SUFFIXES.map((s) => (
+                        <td key={s} className="px-2 py-2 text-center tabular-nums text-foreground">
+                          {formatNumberVN(Number(data[`thuc_te_${s}` as keyof FarmThuHoach] ?? 0))}
+                        </td>
+                      ))}
+                    </tr>
+                    <tr>
+                      <th
+                        scope="row"
+                        className="sticky left-0 z-[1] bg-card px-2 py-2 text-left text-xs font-medium text-muted-foreground whitespace-nowrap border-r border-border/50"
+                      >
+                        {t('thuHoach.detail.chenhLechRow')}
+                      </th>
+                      {THU_HOACH_DAY_SUFFIXES.map((s) => {
+                        const kh = Number(data[`ke_hoach_${s}` as keyof FarmThuHoach] ?? 0);
+                        const tt = Number(data[`thuc_te_${s}` as keyof FarmThuHoach] ?? 0);
+                        const cl = tt - kh;
+                        return (
+                          <td
+                            key={s}
+                            className={cn(
+                              'px-2 py-2 text-center tabular-nums font-medium',
+                              cl >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+                            )}
+                          >
+                            {formatNumberVN(cl)}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            )}
           </DetailSection>
 
           <DetailSection title={t('thuHoach.form.ghiChu')} variant="muted">

@@ -128,63 +128,75 @@ const HangHoaList: React.FC<Props> = ({
     }
   };
 
-  const renderMobileCard = (item: FarmHangHoa, isSelected: boolean) => (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={() => onView?.(item)}
-      onKeyDown={(e) => e.key === 'Enter' && onView?.(item)}
-      className={cn(
-        'bg-card rounded-xl border p-3.5 shadow-sm transition-all active:scale-[0.98]',
-        isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'
-      )}
-    >
-      <div className="flex items-center justify-between gap-2 mb-2">
-        <span className="font-mono text-xs font-medium text-muted-foreground bg-muted px-2 py-1 rounded border border-border">
-          {item.ma_hang_hoa}
-        </span>
-        <TrangThaiHangHoaBadge trangThai={item.trang_thai} />
+  const renderMobileCard = (item: FarmHangHoa, isSelected: boolean) => {
+    const nhan = (label: string, value: React.ReactNode) => (
+      <div className="min-w-0">
+        <div className="text-xs text-muted-foreground">{label}</div>
+        <div className="text-sm font-semibold truncate tabular-nums">{value}</div>
       </div>
-      <div className="font-medium text-foreground text-sm mb-1">{item.ten_hang_hoa}</div>
-      <div className="text-xs text-muted-foreground mb-2">
-        {item.ten_danh_muc ?? '—'} · {item.dvt ?? '—'}
-      </div>
-      {item.don_gia != null && (
-        <div className="text-sm tabular-nums text-muted-foreground mb-2">{formatNumberVN(item.don_gia)}</div>
-      )}
-      <div className="flex justify-between items-center pt-2 border-t border-border">
-        <span className="text-xs text-muted-foreground">{formatDateShort(item.tg_cap_nhat)}</span>
-        <div className="flex gap-1">
-          {onEdit && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit(item);
-              }}
-              className="p-2 text-primary hover:bg-primary/10 rounded-lg"
-              aria-label={t('common.edit')}
-            >
-              <Edit size={14} />
-            </button>
-          )}
-          {onDelete && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(item.id);
-              }}
-              className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg"
-              aria-label={t('common.delete')}
-            >
-              <Trash2 size={14} />
-            </button>
-          )}
+    );
+    return (
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => onView?.(item)}
+        onKeyDown={(e) => e.key === 'Enter' && onView?.(item)}
+        className={cn(
+          'bg-card rounded-xl border p-3.5 shadow-sm transition-all',
+          isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'
+        )}
+      >
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <h4 className="font-semibold text-foreground text-sm truncate">{item.ten_hang_hoa}</h4>
+            <p className="text-xs text-muted-foreground truncate mt-0.5">
+              <span className="font-mono">{item.ma_hang_hoa}</span>
+              {item.ten_danh_muc ? ` · ${item.ten_danh_muc}` : ''}
+            </p>
+          </div>
+          <div className="shrink-0">
+            <TrangThaiHangHoaBadge trangThai={item.trang_thai} />
+          </div>
         </div>
+        <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5">
+          {item.don_gia != null && nhan(t('farmHangHoaPhanThuoc.hangHoa.store.priceCol'), formatNumberVN(item.don_gia))}
+          {item.dvt && nhan(t('farmHangHoaPhanThuoc.hangHoa.store.unitCol'), item.dvt)}
+          {item.pham_cap && nhan(t('farmHangHoaPhanThuoc.hangHoa.store.phamCapCol'), item.pham_cap)}
+          {item.dinh_muc != null && nhan(t('farmHangHoaPhanThuoc.hangHoa.store.dinhMucCol'), formatNumberVN(item.dinh_muc))}
+        </div>
+        {(onEdit || onDelete) && (
+          <div className="flex justify-end gap-3 mt-2.5 pt-2.5 border-t border-border">
+            {onEdit && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(item);
+                }}
+                className="h-10 w-10 flex items-center justify-center text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-all active:scale-90"
+                aria-label={t('common.edit')}
+              >
+                <Edit size={16} />
+              </button>
+            )}
+            {onDelete && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(item.id);
+                }}
+                className="h-10 w-10 flex items-center justify-center text-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 rounded-lg transition-all active:scale-90"
+                aria-label={t('common.delete')}
+              >
+                <Trash2 size={16} />
+              </button>
+            )}
+          </div>
+        )}
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <GenericTable<FarmHangHoa>

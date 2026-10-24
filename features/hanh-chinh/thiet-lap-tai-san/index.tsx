@@ -48,14 +48,14 @@ const ThietLapTaiSanPage: React.FC = () => {
   if (scopeLoading) return null;
   if (!viewAll) {
     return (
-      <div className="flex flex-col h-[calc(100dvh-3.75rem)] md:h-[calc(100dvh-4.5rem)] relative flex-1 min-h-0">
+      <div className="flex flex-col h-[calc(100dvh-7.75rem-env(safe-area-inset-bottom,0px))] md:h-[calc(100dvh-4.5rem)] relative flex-1 min-h-0">
         <EmptyState title={t('thietLapTaiSan.noViewAccess')} className="m-4" />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-3.75rem)] md:h-[calc(100dvh-4.5rem)] relative">
+    <div className="flex flex-col h-[calc(100dvh-7.75rem-env(safe-area-inset-bottom,0px))] md:h-[calc(100dvh-4.5rem)] relative">
       <div className="shrink-0 relative z-0">
         <TabGroup tabs={tabs} activeTab={activeTab} onChange={handleTabChange} />
       </div>

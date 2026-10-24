@@ -48,6 +48,8 @@ export interface PhieuCapPhatThuHoi {
   tg_cap_nhat: string;
   /** Chi tiết (populated khi getById) */
   chi_tiet?: PhieuCapPhatThuHoiChiTiet[];
+  /** Tên tài sản trong phiếu — chỉ có ở trang danh sách, cho thẻ mobile. */
+  tai_san_tom_tat?: string[];
 }
 
 /** Dòng chi tiết khi tạo/sửa phiếu */

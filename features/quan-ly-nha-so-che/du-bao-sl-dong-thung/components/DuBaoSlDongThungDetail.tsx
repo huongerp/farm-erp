@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Lock, Printer, Unlock, Boxes } from 'lucide-react';
 import type { FarmDuBaoSlDongThung } from '../core/types';
 import { TRANG_THAI_DU_BAO_SL_DONG_THUNG } from '../core/types';
-import { cn, formatDateShort, formatDateTimeShort, formatNumberVN } from '../../../../lib/utils';
+import { cn, formatDateTimeShort, formatNumberVN, formatYmdToDisplay } from '../../../../lib/utils';
 import GenericDrawer, { DRAWER_WIDTH_BAO_CAO_NHAN_CONG } from '../../../../components/shared/GenericDrawer';
 import { computeDuBaoSlDongThungKpiFromFarm } from '../core/kpi';
 import DetailSection from '../../../../components/shared/DetailSection';
@@ -103,7 +103,7 @@ const DuBaoSlDongThungDetail: React.FC<Props> = ({
   return (
     <GenericDrawer
       title={t('duBaoSlDongThung.detail.title')}
-      subtitle={formatDateShort(data.ngay)}
+      subtitle={[formatYmdToDisplay(data.ngay), data.ten_chi_nhanh].filter(Boolean).join(' · ')}
       icon={<Boxes className="text-violet-600" size={22} />}
       onClose={onClose}
       maxWidthClass={DRAWER_WIDTH_BAO_CAO_NHAN_CONG}
@@ -115,7 +115,7 @@ const DuBaoSlDongThungDetail: React.FC<Props> = ({
         )}
         <DetailSection title={t('duBaoSlDongThung.detail.sectionOverview')} icon={<Boxes size={14} />} variant="primary">
           <DetailFieldGrid cols={2}>
-            <DetailField label={t('duBaoSlDongThung.form.ngay')} value={formatDateShort(data.ngay)} />
+            <DetailField label={t('duBaoSlDongThung.form.ngay')} value={formatYmdToDisplay(data.ngay)} />
             <DetailField label={t('duBaoSlDongThung.form.branch')} value={data.ten_chi_nhanh ?? '—'} />
             <DetailField
               label={t('duBaoSlDongThung.store.colTrangThai')}

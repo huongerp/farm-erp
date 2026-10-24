@@ -30,7 +30,9 @@ import {
   bcncTdGhiChu,
 } from '../core/bcnc-detail-table';
 import { formatNumberVN } from '../../../../lib/utils';
+import { useIsMobile } from '../../../../lib/hooks/use-is-mobile';
 import BaoCaoNhanCongDetailChuyenRow from './BaoCaoNhanCongDetailChuyenRow';
+import BaoCaoNhanCongChuyenCards from './BaoCaoNhanCongChuyenCards';
 
 interface Props {
   data: FarmBaoCaoNhanCong;
@@ -42,6 +44,7 @@ interface Props {
  */
 const BaoCaoNhanCongChuyenTable: React.FC<Props> = ({ data }) => {
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
 
   const { production, vRow } = normalizeChiTietForDisplay(data.chi_tiet ?? []);
   const ivQuyDoi = sumTongCongQuyDoiTuChiTiet(production);
@@ -56,6 +59,32 @@ const BaoCaoNhanCongChuyenTable: React.FC<Props> = ({ data }) => {
   const tongTangCa = sumDisplayLoaiTotalsOnRows(data.chi_tiet ?? [], 'TANG_CA');
   const tongTongGioNgayNua = tongGioCongNgayVaNua(tongCnNgay, tongCnNua);
   const tongTongGioTc = sumTongGioTangCaTichPhieu(data);
+
+  // Điện thoại: mỗi chuyền một thẻ thay vì bảng 16 cột (chỉ render MỘT bố cục).
+  if (isMobile) {
+    return (
+      <BaoCaoNhanCongChuyenCards
+        production={production}
+        vRow={vRow}
+        subtotal={{
+          cnNgay: ivCnNgay,
+          cnNua: ivCnNua,
+          tangCa: ivTangCa,
+          quyDoi: ivQuyDoi,
+          tongGio: ivTongGioNgayNua,
+          tongGioTc: ivTongGioTc,
+        }}
+        total={{
+          cnNgay: tongCnNgay,
+          cnNua: tongCnNua,
+          tangCa: tongTangCa,
+          quyDoi: tongQuyDoiPhieu,
+          tongGio: tongTongGioNgayNua,
+          tongGioTc: tongTongGioTc,
+        }}
+      />
+    );
+  }
 
   return (
     <div className="overflow-x-auto rounded-lg border border-border">

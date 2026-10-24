@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { History } from 'lucide-react';
 import GenericSubTableSection from '../../../../components/shared/GenericSubTableSection';
+import SubTable, { type SubTableColumn } from '../../../../components/shared/sub-table/SubTable';
 import { useFarmPhieuKhoPTHangNxHistory } from '../hooks/use-farm-ton-kho-pt';
 import type { TonKhoPTHangNxHistoryRow } from '../core/types';
 import { formatNumberVN } from '../../../../lib/utils';
@@ -56,6 +57,48 @@ const TonKhoPTHangNxHistorySection: React.FC<Props> = ({ idHangHoa, ky }) => {
     [data, ky.tu, ky.den]
   );
 
+  const columns: SubTableColumn[] = [
+    { id: 'ngay', label: t('tonKhoPhanThuoc.detail.historyNx.colDate'), width: 100, minWidth: 90, sticky: true, mobile: 'badge' },
+    { id: 'so_phieu', label: t('tonKhoPhanThuoc.detail.historyNx.colSoPhieu'), width: 140, minWidth: 100, sticky: true, mobile: 'title' },
+    { id: 'loai', label: t('tonKhoPhanThuoc.detail.historyNx.colLoai'), width: 90, minWidth: 70 },
+    { id: 'kho', label: t('tonKhoPhanThuoc.detail.historyNx.colKho'), width: 180, minWidth: 140, mobile: 'full' },
+    { id: 'so_luong', label: t('tonKhoPhanThuoc.detail.historyNx.colSl'), width: 110, minWidth: 80, align: 'right' },
+    { id: 'ton_sau', label: t('tonKhoPhanThuoc.detail.historyNx.colTon'), width: 100, minWidth: 70, align: 'right' },
+    { id: 'trang_thai', label: t('tonKhoPhanThuoc.detail.historyNx.colTrangThai'), width: 120, minWidth: 80 },
+  ];
+
+  const renderCell = (colId: string, row: TonKhoPTHangNxHistoryRow) => {
+    switch (colId) {
+      case 'ngay':
+        return <span className="tabular-nums text-muted-foreground whitespace-nowrap">{formatNgayVN(row.ngay)}</span>;
+      case 'so_phieu':
+        return <span className="font-mono text-xs">{row.so_phieu}</span>;
+      case 'loai':
+        return loaiLabel(t, row.loai);
+      case 'kho':
+        return <span className="text-muted-foreground text-xs">{khoDisplay(row, t)}</span>;
+      case 'so_luong':
+        return (
+          <span className="tabular-nums">
+            {formatNumberVN(row.so_luong)}
+            {row.don_vi_tinh ? <span className="text-muted-foreground text-xs ml-1">{row.don_vi_tinh}</span> : null}
+          </span>
+        );
+      case 'ton_sau': {
+        const tonSau = tonSauByChiTiet.get(String(row.chi_tiet_id));
+        return (
+          <span className="tabular-nums text-muted-foreground">
+            {tonSau !== undefined ? formatNumberVN(tonSau) : '—'}
+          </span>
+        );
+      }
+      case 'trang_thai':
+        return <span className="text-xs">{row.trang_thai || '—'}</span>;
+      default:
+        return null;
+    }
+  };
+
   return (
     <GenericSubTableSection
       title={t('tonKhoPhanThuoc.detail.historyNx.title')}
@@ -65,59 +108,18 @@ const TonKhoPTHangNxHistorySection: React.FC<Props> = ({ idHangHoa, ky }) => {
       loadingText={t('tonKhoPhanThuoc.detail.historyNx.loading')}
       emptyTitle={t('tonKhoPhanThuoc.detail.historyNx.empty')}
       emptyDescription={isError ? errMsg : t('tonKhoPhanThuoc.detail.historyNx.emptyHint')}
-      maxTableHeight="260px"
+      contentMode="raw"
     >
       {!isLoading && !isError && rows.length > 0 ? (
-        <>
-          <thead className="sticky top-0 z-[1] bg-muted border-b border-border">
-            <tr>
-              <th className="text-left px-3 py-2 text-xs font-semibold whitespace-nowrap">
-                {t('tonKhoPhanThuoc.detail.historyNx.colDate')}
-              </th>
-              <th className="text-left px-3 py-2 text-xs font-semibold whitespace-nowrap">
-                {t('tonKhoPhanThuoc.detail.historyNx.colSoPhieu')}
-              </th>
-              <th className="text-left px-3 py-2 text-xs font-semibold whitespace-nowrap">
-                {t('tonKhoPhanThuoc.detail.historyNx.colLoai')}
-              </th>
-              <th className="text-left px-3 py-2 text-xs font-semibold min-w-[140px]">
-                {t('tonKhoPhanThuoc.detail.historyNx.colKho')}
-              </th>
-              <th className="text-right px-3 py-2 text-xs font-semibold whitespace-nowrap">
-                {t('tonKhoPhanThuoc.detail.historyNx.colSl')}
-              </th>
-              <th className="text-right px-3 py-2 text-xs font-semibold whitespace-nowrap">
-                {t('tonKhoPhanThuoc.detail.historyNx.colTon')}
-              </th>
-              <th className="text-left px-3 py-2 text-xs font-semibold whitespace-nowrap">
-                {t('tonKhoPhanThuoc.detail.historyNx.colTrangThai')}
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border/70">
-            {rows.map((row) => {
-              const tonSau = tonSauByChiTiet.get(String(row.chi_tiet_id));
-              return (
-              <tr key={row.chi_tiet_id} className="border-b border-border/70">
-                <td className="px-3 py-2 tabular-nums text-muted-foreground whitespace-nowrap">{formatNgayVN(row.ngay)}</td>
-                <td className="px-3 py-2 font-mono text-xs">{row.so_phieu}</td>
-                <td className="px-3 py-2">{loaiLabel(t, row.loai)}</td>
-                <td className="px-3 py-2 text-muted-foreground text-xs">{khoDisplay(row, t)}</td>
-                <td className="px-3 py-2 text-right tabular-nums">
-                  {formatNumberVN(row.so_luong)}
-                  {row.don_vi_tinh ? (
-                    <span className="text-muted-foreground text-xs ml-1">{row.don_vi_tinh}</span>
-                  ) : null}
-                </td>
-                <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
-                  {tonSau !== undefined ? formatNumberVN(tonSau) : '—'}
-                </td>
-                <td className="px-3 py-2 text-xs">{row.trang_thai || '—'}</td>
-              </tr>
-              );
-            })}
-          </tbody>
-        </>
+        // SubTable: desktop là bảng như cũ, điện thoại chuyển sang thẻ (số phiếu làm tiêu đề, ngày ở góc phải).
+        <SubTable
+          tableKey="ton-kho-pt.history-nx"
+          columns={columns}
+          rows={rows}
+          keyExtractor={(row) => String(row.chi_tiet_id)}
+          renderCell={renderCell}
+          maxHeight="260px"
+        />
       ) : undefined}
     </GenericSubTableSection>
   );

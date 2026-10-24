@@ -36,6 +36,7 @@
   "diemCongTru.store.loaiCol": "Loại",
   "diemCongTru.store.categoryCol": "Hạng mục",
   "diemCongTru.store.diemCol": "Điểm",
+  "diemCongTru.card.ky": "Kỳ",
   "diemCongTru.store.moTaCol": "Mô tả",
   "diemCongTru.store.updatedCol": "Cập nhật",
   "diemCongTru.validation.employeeRequired": "Vui lòng chọn nhân viên",

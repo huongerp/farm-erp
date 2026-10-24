@@ -22,6 +22,8 @@ import DetailDrawerFooter from '../../../../components/shared/DetailDrawerFooter
 import Textarea from '../../../../components/ui/Textarea';
 import { cn } from '../../../../lib/utils';
 import type { PhieuKhoPT, LoaiPhieuKhoPT, TrangThaiPhieuKhoPT } from '../core/types';
+
+type ChiTietPhieuKhoPT = NonNullable<PhieuKhoPT['chi_tiet']>[number];
 import { formatDateTimeShort, formatNumberVN, formatYmdToDisplay } from '../../../../lib/utils';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
 import DetailToolbar, { type DetailToolbarAction } from '../../../../components/shared/DetailToolbar';
@@ -29,6 +31,7 @@ import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';
 import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
 import GenericSubTableSection from '../../../../components/shared/GenericSubTableSection';
+import SubTable, { type SubTableColumn } from '../../../../components/shared/sub-table/SubTable';
 import { BTN_CLOSE, CONFIRM_YES } from '../../../../lib/button-labels';
 import { useUpdatePhieuKhoPTTrangThai, useXinSuaPhieuKhoPT, useXuLyXinSuaPhieuKhoPT } from '../hooks/use-phieu-kho-pt';
 import { usePhieuKhoPTCapCao } from '../hooks/use-phieu-kho-pt-cap-cao';
@@ -237,10 +240,59 @@ const PhieuKhoPTDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
     />
   );
 
+  const chiTietColumns: SubTableColumn[] = [
+    { id: 'ten_hang', label: t('phieuKhoPhanThuoc.form.itemName'), width: 200, minWidth: 140, sticky: true, mobile: 'title' },
+    { id: 'ma_hang', label: t('phieuKhoPhanThuoc.form.itemCode'), width: 110, minWidth: 80, mobile: 'hidden' },
+    { id: 'pham_cap', label: t('phieuKhoPhanThuoc.form.phamCap'), width: 120, minWidth: 80 },
+    { id: 'so_luong', label: t('phieuKhoPhanThuoc.form.quantity'), width: 110, minWidth: 80, align: 'right' },
+    { id: 'don_vi_tinh', label: t('phieuKhoPhanThuoc.form.unit'), width: 80, minWidth: 56, mobile: 'hidden' },
+    { id: 'don_gia', label: t('phieuKhoPhanThuoc.form.unitPrice'), width: 110, minWidth: 80, align: 'right' },
+    { id: 'thanh_tien', label: t('phieuKhoPhanThuoc.form.amount'), width: 120, minWidth: 90, align: 'right' },
+    { id: 'so_lot', label: t('phieuKhoPhanThuoc.preview.soLot'), width: 100, minWidth: 70 },
+    { id: 'ghi_chu', label: t('phieuKhoPhanThuoc.form.note'), width: 180, minWidth: 100, mobile: 'full' },
+  ];
+
+  const renderChiTietCell = (colId: string, ct: ChiTietPhieuKhoPT) => {
+    switch (colId) {
+      case 'ten_hang':
+        return (
+          <>
+            <span className="text-sm">{ct.ten_hang ?? ct.ten_hang_hoa ?? '—'}</span>
+            {/* Mobile ẩn cột Mã → hiện mã ngay dưới tên. */}
+            {ct.ma_hang && <span className="md:hidden block text-xs text-muted-foreground font-mono">{ct.ma_hang}</span>}
+          </>
+        );
+      case 'ma_hang':
+        return <span className="font-mono text-xs">{ct.ma_hang ?? '—'}</span>;
+      case 'pham_cap':
+        return <span className="text-xs text-muted-foreground truncate" title={ct.pham_cap ?? undefined}>{ct.pham_cap ?? '—'}</span>;
+      case 'so_luong':
+        // Mobile ẩn cột ĐVT → ghép đơn vị vào số lượng.
+        return (
+          <span className="tabular-nums">
+            {formatNumberVN(ct.so_luong)}
+            {ct.don_vi_tinh && <span className="md:hidden text-muted-foreground"> {ct.don_vi_tinh}</span>}
+          </span>
+        );
+      case 'don_vi_tinh':
+        return <span className="text-xs text-muted-foreground">{ct.don_vi_tinh ?? '—'}</span>;
+      case 'don_gia':
+        return <span className="tabular-nums">{formatNumberVN(ct.don_gia)}</span>;
+      case 'thanh_tien':
+        return <span className="tabular-nums">{formatNumberVN(ct.thanh_tien)}</span>;
+      case 'so_lot':
+        return <span className="text-xs text-muted-foreground">{ct.so_lot ?? '—'}</span>;
+      case 'ghi_chu':
+        return <span className="text-xs text-muted-foreground">{ct.ghi_chu ?? '—'}</span>;
+      default:
+        return null;
+    }
+  };
+
   return (
     <GenericDrawer
       title={t('phieuKhoPhanThuoc.detail.title')}
-      subtitle={data.so_phieu}
+      subtitle={[data.so_phieu, data.ten_kho].filter(Boolean).join(' · ')}
       icon={<FileText size={18} />}
       onClose={onClose}
       footer={renderFooter}
@@ -384,64 +436,18 @@ const PhieuKhoPTDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
           count={data.chi_tiet?.length ?? 0}
           emptyTitle={t('phieuKhoPhanThuoc.form.noItems')}
           emptyDescription={t('phieuKhoPhanThuoc.form.noItemsHint')}
-          maxTableHeight="320px"
+          contentMode="raw"
         >
           {data.chi_tiet && data.chi_tiet.length > 0 && (
-            <>
-              <thead className="sticky top-0 z-[1] bg-muted border-b border-border">
-                <tr>
-                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap w-10">#</th>
-                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[100px]">
-                    {t('phieuKhoPhanThuoc.form.itemCode')}
-                  </th>
-                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[140px]">
-                    {t('phieuKhoPhanThuoc.form.itemName')}
-                  </th>
-                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[100px]">
-                    {t('phieuKhoPhanThuoc.form.phamCap')}
-                  </th>
-                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap w-20">
-                    {t('phieuKhoPhanThuoc.form.unit')}
-                  </th>
-                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap w-24">
-                    {t('phieuKhoPhanThuoc.form.quantity')}
-                  </th>
-                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[90px]">
-                    {t('phieuKhoPhanThuoc.form.unitPrice')}
-                  </th>
-                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[100px]">
-                    {t('phieuKhoPhanThuoc.form.amount')}
-                  </th>
-                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[90px]">
-                    {t('phieuKhoPhanThuoc.preview.soLot')}
-                  </th>
-                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[120px]">
-                    {t('phieuKhoPhanThuoc.form.note')}
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="[&>tr>td]:border-b [&>tr>td]:border-border">
-                {data.chi_tiet.map((ct, idx) => (
-                  <tr key={ct.id} className="hover:bg-muted/60 transition-colors">
-                    <td className="px-4 py-2.5 text-muted-foreground tabular-nums">{idx + 1}</td>
-                    <td className="px-4 py-2.5 font-mono text-xs">{ct.ma_hang ?? '—'}</td>
-                    <td className="px-4 py-2.5 text-sm">{ct.ten_hang ?? ct.ten_hang_hoa ?? '—'}</td>
-                    <td
-                      className="px-4 py-2.5 text-xs text-muted-foreground max-w-[120px] truncate"
-                      title={ct.pham_cap ?? undefined}
-                    >
-                      {ct.pham_cap ?? '—'}
-                    </td>
-                    <td className="px-4 py-2.5 text-xs text-muted-foreground">{ct.don_vi_tinh ?? '—'}</td>
-                    <td className="px-4 py-2.5 tabular-nums">{formatNumberVN(ct.so_luong)}</td>
-                    <td className="px-4 py-2.5 tabular-nums">{formatNumberVN(ct.don_gia)}</td>
-                    <td className="px-4 py-2.5 tabular-nums">{formatNumberVN(ct.thanh_tien)}</td>
-                    <td className="px-4 py-2.5 text-xs text-muted-foreground">{ct.so_lot ?? '—'}</td>
-                    <td className="px-4 py-2.5 text-xs text-muted-foreground">{ct.ghi_chu ?? '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </>
+            // SubTable: desktop là bảng như cũ, điện thoại chuyển sang thẻ — bảng 10 cột (~900px) phải vuốt ngang.
+            <SubTable
+              tableKey="phieu-kho-pt.detail"
+              columns={chiTietColumns}
+              rows={data.chi_tiet}
+              keyExtractor={(ct) => ct.id}
+              renderCell={renderChiTietCell}
+              maxHeight="320px"
+            />
           )}
         </GenericSubTableSection>
 

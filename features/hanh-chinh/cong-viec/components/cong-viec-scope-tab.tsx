@@ -335,7 +335,7 @@ const CongViecScopeTab: React.FC<Props> = ({ scope }) => {
   const isEmpty = isListView ? flattenedList.length === 0 : dataForKanbanGantt.length === 0;
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-3.75rem)] md:h-[calc(100dvh-4.5rem)]">
+    <div className="flex flex-col h-[calc(100dvh-7.75rem-env(safe-area-inset-bottom,0px))] md:h-[calc(100dvh-4.5rem)]">
       <div className="shrink-0 mb-2">
         <TabGroup tabs={tabs} activeTab={activeTabId} onChange={(id) => setActiveTabId(id as TabId)} />
       </div>

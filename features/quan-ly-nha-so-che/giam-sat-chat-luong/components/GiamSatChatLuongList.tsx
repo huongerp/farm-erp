@@ -139,38 +139,60 @@ const GiamSatChatLuongList: React.FC<Props> = ({
     }
   };
 
-  const renderMobileCard = (item: GiamSatChatLuong, isSelected: boolean) => (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={() => onView(item)}
-      onKeyDown={(e) => e.key === 'Enter' && onView(item)}
-      className={cn(
-        'bg-card rounded-xl border p-3.5 shadow-sm transition-all active:scale-[0.98]',
-        isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'
-      )}
-    >
-      <div className="flex items-start justify-between gap-2 mb-1.5">
-        <div className="min-w-0">
-          <div className="text-sm font-semibold truncate">{item.ten_hang_hoa || '—'}</div>
-          <div className="text-xs text-muted-foreground font-mono truncate">
-            {item.so_phieu}
-            {item.ma_cay_hang ? ` · ${item.ma_cay_hang}` : ''}
+  const renderMobileCard = (item: GiamSatChatLuong, isSelected: boolean) => {
+    const du = item.so_thung_da_kiem >= item.so_thung_mau;
+    const pct = item.so_thung_mau ? Math.min(100, (item.so_thung_da_kiem / item.so_thung_mau) * 100) : 0;
+    return (
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => onView(item)}
+        onKeyDown={(e) => e.key === 'Enter' && onView(item)}
+        className={cn(
+          'bg-card rounded-xl border p-3.5 shadow-sm transition-all',
+          isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'
+        )}
+      >
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <h4 className="text-sm font-semibold truncate">{item.ten_hang_hoa || '—'}</h4>
+            <p className="text-xs text-muted-foreground truncate mt-0.5 tabular-nums">
+              {formatYmdToDisplay(item.ngay)}
+              {item.ten_chi_nhanh ? ` · ${item.ten_chi_nhanh}` : ''}
+            </p>
+            <p className="text-xs text-muted-foreground font-mono truncate mt-0.5">
+              {item.so_phieu}
+              {item.ma_cay_hang ? ` · ${item.ma_cay_hang}` : ''}
+            </p>
+          </div>
+          <div className="flex flex-col items-end gap-1 shrink-0">
+            <TrangThaiBadge value={item.trang_thai} />
+            {item.ket_luan && <KetLuanBadge value={item.ket_luan} />}
           </div>
         </div>
-        <div className="flex flex-col items-end gap-1 shrink-0">
-          <TrangThaiBadge value={item.trang_thai} />
-          {item.ket_luan && <KetLuanBadge value={item.ket_luan} />}
+        <div className="mt-2">
+          <div className="flex items-baseline justify-between gap-2 text-sm">
+            <span className="text-xs text-muted-foreground">{t('giamSatChatLuong.card.daKiem')}</span>
+            <span
+              className={cn('tabular-nums font-semibold', du && 'text-emerald-600 dark:text-emerald-400')}
+            >
+              {t('giamSatChatLuong.card.daKiemGiaTri', { da: item.so_thung_da_kiem, mau: item.so_thung_mau })}
+            </span>
+          </div>
+          <div className="mt-1 h-1.5 rounded-full bg-muted overflow-hidden">
+            <div
+              className={cn('h-full rounded-full', du ? 'bg-emerald-500' : 'bg-amber-500')}
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+          <p className="mt-1.5 text-xs text-muted-foreground">
+            {t('giamSatChatLuong.card.thungMoiCay')}:{' '}
+            <span className="font-medium text-foreground tabular-nums">{item.so_thung_cay}</span>
+          </p>
         </div>
       </div>
-      <div className="text-xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-1 mb-2">
-        <span>{formatYmdToDisplay(item.ngay)}</span>
-        {item.ten_chi_nhanh && <span>{item.ten_chi_nhanh}</span>}
-        <span>{t('giamSatChatLuong.list.thungCay', { n: item.so_thung_cay })}</span>
-      </div>
-      <TienDo item={item} />
-    </div>
-  );
+    );
+  };
 
   return (
     <GenericTable<GiamSatChatLuong>

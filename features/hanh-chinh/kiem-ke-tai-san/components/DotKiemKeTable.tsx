@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Edit, Trash2 } from 'lucide-react';
 import GenericTable from '../../../../components/shared/GenericTable';
 import Tooltip from '../../../../components/ui/Tooltip';
-import { formatDateTimeShort, formatDate } from '../../../../lib/utils';
+import { formatDateTimeShort, formatDate, formatYmdToDisplay } from '../../../../lib/utils';
 import type { DotKiemKe } from '../core/types';
 import { getTrangThaiDotLabel } from '../core/constants';
 import { useKiemKeTaiSanStore } from '../store/useKiemKeTaiSanStore';
@@ -127,18 +127,26 @@ const DotKiemKeTable: React.FC<Props> = ({ isFetching, totalRecordsOverride, dat
     <div
       role="button"
       tabIndex={0}
-      className={isSelected ? 'border-primary bg-primary/5' : ''}
+      className={`bg-card rounded-xl border p-3.5 shadow-sm transition-all cursor-pointer ${
+        isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'
+      }`}
       onClick={() => handleRowClick?.(item)}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleRowClick?.(item); } }}
     >
-      <div className="flex justify-between items-start gap-2">
-        <span className="font-medium text-sm">{item.ma_dot}</span>
-        {renderTrangThaiBadge(item.trang_thai)}
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h4 className="font-semibold text-foreground text-sm line-clamp-2">{item.ten_dot || '—'}</h4>
+          <p className="text-xs text-muted-foreground truncate mt-0.5">
+            <span className="font-mono">{item.ma_dot}</span>
+            {` · ${formatYmdToDisplay(item.ngay_bat_dau)} → ${formatYmdToDisplay(item.ngay_ket_thuc)}`}
+          </p>
+        </div>
+        <div className="shrink-0">{renderTrangThaiBadge(item.trang_thai)}</div>
       </div>
-      <p className="text-sm text-foreground mt-0.5">{item.ten_dot || '—'}</p>
-      <p className="text-xs text-muted-foreground">
-        {formatDate(item.ngay_bat_dau)} → {formatDate(item.ngay_ket_thuc)} · {item.ten_nguoi_phu_trach || '—'}
+      <p className="mt-2 text-xs text-muted-foreground truncate">
+        {t('kiemKeTaiSan.store.nguoiPhuTrachCol')}: <span className="text-foreground">{item.ten_nguoi_phu_trach || '—'}</span>
       </p>
+      {item.ghi_chu && <p className="mt-1.5 text-xs text-muted-foreground line-clamp-2">{item.ghi_chu}</p>}
     </div>
   );
 

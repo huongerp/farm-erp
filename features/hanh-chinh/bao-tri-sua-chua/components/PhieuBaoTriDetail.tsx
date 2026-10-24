@@ -181,7 +181,7 @@ const PhieuBaoTriDetail: React.FC<Props> = ({
     <GenericDrawer
       title={t('baoTriSuaChua.detail.title')}
       icon={<Wrench size={20} />}
-      subtitle={`${displayData.ma_phieu} • ${displayData.ten_hang_muc ?? displayData.id_hang_muc}`}
+      subtitle={[displayData.ma_phieu, displayData.ten_tai_san, displayData.ten_hang_muc].filter(Boolean).join(' · ')}
       onClose={onClose}
       footer={footer}
       maxWidthClass={DRAWER_WIDTH_DETAIL}

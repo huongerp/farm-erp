@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Edit, Trash2 } from 'lucide-react';
-import { cn, formatDateShort, formatDateTimeShort, formatNumberVN } from '../../../../lib/utils';
+import { cn, formatDateTimeShort, formatNumberVN } from '../../../../lib/utils';
 import type { HangHoa } from '../core/types';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import GenericTable from '../../../../components/shared/GenericTable';
@@ -200,36 +200,54 @@ const DanhSachHangHoaList: React.FC<Props> = ({
         isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'
       )}
     >
-      <div className="flex items-center justify-between gap-2 mb-2">
-        <span className="font-mono text-xs font-medium text-muted-foreground bg-muted px-2 py-1 rounded border border-border">
-          {item.ma_hang_hoa}
+      <div className="flex items-start justify-between gap-2">
+        <h4 className="font-semibold text-foreground text-sm line-clamp-2 min-w-0">{item.ten_hang_hoa}</h4>
+        <div className="shrink-0">{renderStatusBadge(item)}</div>
+      </div>
+      <p className="text-xs text-muted-foreground truncate mt-0.5">
+        <span className="font-mono">{item.ma_hang_hoa}</span>
+        {item.ten_danh_muc ? ` · ${item.ten_danh_muc}` : ''}
+      </p>
+      <div className="mt-2 flex items-center justify-between gap-2 text-sm">
+        <span className="min-w-0 truncate text-xs text-muted-foreground">
+          {[
+            item.dvt ? `${t('hangHoa.store.unitCol')}: ${item.dvt}` : '',
+            item.pham_cap ? `${t('hangHoa.store.phamCapCol')}: ${item.pham_cap}` : '',
+          ]
+            .filter(Boolean)
+            .join(' · ')}
         </span>
-        {renderStatusBadge(item)}
+        {item.don_gia != null && (
+          <span className="shrink-0 tabular-nums">
+            <span className="text-xs text-muted-foreground">{t('hangHoa.store.priceCol')}: </span>
+            <span className="font-semibold">{formatNumberVN(item.don_gia)}</span>
+          </span>
+        )}
       </div>
-      <div className="font-medium text-foreground text-sm mb-1">{item.ten_hang_hoa}</div>
-      <div className="text-xs text-muted-foreground mb-2">
-        {[item.ten_danh_muc ?? '—', item.dvt ?? '—'].join(' · ')}
-      </div>
-      {item.don_gia != null && (
-        <div className="text-sm tabular-nums text-muted-foreground mb-2">
-          {formatNumberVN(item.don_gia)}
-        </div>
-      )}
-      <div className="flex justify-between items-center pt-2 border-t border-border">
-        <span className="text-xs text-muted-foreground">{formatDateShort(item.tg_cap_nhat)}</span>
-        <div className="flex gap-1">
+      {(onEdit || onDelete) && (
+        <div className="flex justify-end gap-3 mt-2.5 pt-2.5 border-t border-border">
           {onEdit && (
-            <button type="button" onClick={(e) => { e.stopPropagation(); onEdit(item); }} className="p-2 text-primary hover:bg-primary/10 rounded-lg" aria-label={t('common.edit')}>
-              <Edit size={14} />
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onEdit(item); }}
+              className="h-10 w-10 flex items-center justify-center text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-all active:scale-90"
+              aria-label={t('common.edit')}
+            >
+              <Edit size={16} />
             </button>
           )}
           {onDelete && (
-            <button type="button" onClick={(e) => { e.stopPropagation(); onDelete(item.id); }} className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg" aria-label={t('common.delete')}>
-              <Trash2 size={14} />
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
+              className="h-10 w-10 flex items-center justify-center text-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 rounded-lg transition-all active:scale-90"
+              aria-label={t('common.delete')}
+            >
+              <Trash2 size={16} />
             </button>
           )}
         </div>
-      </div>
+      )}
     </div>
   );
 

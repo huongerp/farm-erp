@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Edit, Trash2 } from 'lucide-react';
-import { cn, formatDateShort, formatDateTimeShort, formatNumberVN } from '../../../../lib/utils';
+import { cn, formatDateShort, formatDateTimeShort, formatNumberVN, formatYmdToDisplay } from '../../../../lib/utils';
 import type { FarmDuBaoSlDongThung } from '../core/types';
 import { computeDuBaoSlDongThungKpiFromFarm } from '../core/kpi';
 import GenericTable from '../../../../components/shared/GenericTable';
@@ -64,6 +64,22 @@ const DuBaoSlDongThungList: React.FC<Props> = ({
     [columns]
   );
 
+  const renderTrangThaiBadge = (item: FarmDuBaoSlDongThung) => {
+    const locked = item.trang_thai === 'khoa';
+    return (
+      <span
+        className={cn(
+          'inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium tabular-nums',
+          locked
+            ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-100'
+            : 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-100'
+        )}
+      >
+        {locked ? t('duBaoSlDongThung.trangThai.khoa') : t('duBaoSlDongThung.trangThai.mo')}
+      </span>
+    );
+  };
+
   const renderCell = (colId: string, item: FarmDuBaoSlDongThung) => {
     const kpi = computeDuBaoSlDongThungKpiFromFarm(item);
     switch (colId) {
@@ -71,21 +87,8 @@ const DuBaoSlDongThungList: React.FC<Props> = ({
         return <span className="text-sm font-medium tabular-nums">{formatDateShort(item.ngay)}</span>;
       case 'ten_chi_nhanh':
         return <span className="text-sm text-muted-foreground">{item.ten_chi_nhanh ?? '—'}</span>;
-      case 'trang_thai': {
-        const locked = item.trang_thai === 'khoa';
-        return (
-          <span
-            className={cn(
-              'inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium tabular-nums',
-              locked
-                ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-100'
-                : 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-100'
-            )}
-          >
-            {locked ? t('duBaoSlDongThung.trangThai.khoa') : t('duBaoSlDongThung.trangThai.mo')}
-          </span>
-        );
-      }
+      case 'trang_thai':
+        return renderTrangThaiBadge(item);
       case 'tong_so_thung_ke_hoach':
         return (
           <span className="text-sm tabular-nums font-semibold text-primary">{formatNumberVN(kpi.tong_so_thung_ke_hoach)}</span>
@@ -189,6 +192,25 @@ const DuBaoSlDongThungList: React.FC<Props> = ({
 
   const renderMobileCard = (item: FarmDuBaoSlDongThung, isSelected: boolean) => {
     const kpi = computeDuBaoSlDongThungKpiFromFarm(item);
+    const nguoiTao = item.ten_nguoi_tao?.trim() ?? '';
+    const phanTram = (v: number) => `${formatNumberVN(Math.round(Number(v) * 10000) / 100)}%`;
+    const cot = [
+      {
+        key: 'kh',
+        tieuDe: t('duBaoSlDongThung.card.keHoach'),
+        thung: kpi.tong_so_thung_ke_hoach,
+        kg: kpi.tong_khoi_luong_ke_hoach,
+        tyLe: item.ty_le_thu_hoi_ke_hoach,
+      },
+      {
+        key: 'tt',
+        tieuDe: t('duBaoSlDongThung.card.thucTe'),
+        thung: kpi.tong_so_thung_thuc_te,
+        kg: kpi.tong_khoi_luong_thuc_te,
+        tyLe: item.ty_le_thu_hoi_thuc_te,
+      },
+    ];
+    const hasAction = (onEdit && allowEdit(item)) || (onDelete && allowDelete(item));
     return (
       <div
         role="button"
@@ -196,63 +218,69 @@ const DuBaoSlDongThungList: React.FC<Props> = ({
         onClick={() => onView?.(item)}
         onKeyDown={(e) => e.key === 'Enter' && onView?.(item)}
         className={cn(
-          'bg-card rounded-xl border p-3.5 shadow-sm transition-all active:scale-[0.98]',
+          'bg-card rounded-xl border p-3.5 shadow-sm transition-all',
           isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'
         )}
       >
-        <div className="text-sm font-semibold tabular-nums mb-1">{formatDateShort(item.ngay)}</div>
-        <div className="text-sm text-foreground mb-1">{item.ten_chi_nhanh ?? '—'}</div>
-        <div className="text-xs text-muted-foreground mb-1">
-          {t('duBaoSlDongThung.store.colTrangThai')}:{' '}
-          {item.trang_thai === 'khoa' ? t('duBaoSlDongThung.trangThai.khoa') : t('duBaoSlDongThung.trangThai.mo')}
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <h4 className="font-semibold text-foreground text-sm truncate">{item.ten_chi_nhanh ?? '—'}</h4>
+            <p className="text-xs text-muted-foreground truncate mt-0.5 tabular-nums">
+              {formatYmdToDisplay(item.ngay)}
+              {nguoiTao ? ` · ${nguoiTao}` : ''}
+            </p>
+          </div>
+          <div className="shrink-0">{renderTrangThaiBadge(item)}</div>
         </div>
-        <div className="text-xs text-muted-foreground mb-1">
-          {t('duBaoSlDongThung.store.colTongSoThungKeHoach')}:{' '}
-          <span className="font-semibold text-primary tabular-nums">{formatNumberVN(kpi.tong_so_thung_ke_hoach)}</span>
+        <div className="mt-2 grid grid-cols-2 gap-x-3 text-sm tabular-nums">
+          {cot.map((c) => (
+            <div key={c.key} className="space-y-1.5 rounded-lg bg-muted/40 px-2.5 py-2">
+              <div className="text-xs font-semibold text-foreground">{c.tieuDe}</div>
+              <div>
+                <div className="text-xs text-muted-foreground">{t('duBaoSlDongThung.card.tongThung')}</div>
+                <div className="font-semibold text-primary">{formatNumberVN(c.thung)}</div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground">{t('duBaoSlDongThung.card.tongKhoiLuong')}</div>
+                <div className="font-semibold">{formatNumberVN(c.kg)}</div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground">{t('duBaoSlDongThung.card.tyLeThuHoi')}</div>
+                <div className="font-semibold">{phanTram(c.tyLe)}</div>
+              </div>
+            </div>
+          ))}
         </div>
-        <div className="text-xs text-muted-foreground mb-1">
-          {t('duBaoSlDongThung.store.colTongSoThungThucTe')}:{' '}
-          <span className="font-semibold text-primary tabular-nums">{formatNumberVN(kpi.tong_so_thung_thuc_te)}</span>
-        </div>
-        <div className="text-xs text-muted-foreground mb-1">
-          {t('duBaoSlDongThung.store.colTgTao')}: {formatDateTimeShort(item.tg_tao)}
-        </div>
-        <div className="text-xs text-muted-foreground mb-1">
-          {t('duBaoSlDongThung.store.colUpdated')}: {formatDateTimeShort(item.tg_cap_nhat)}
-        </div>
-        {(item.ten_nguoi_tao?.trim() ?? '') !== '' && (
-          <div className="text-xs text-muted-foreground mb-1">
-            {t('duBaoSlDongThung.store.colNguoiTao')}: {item.ten_nguoi_tao}
+        {hasAction && (
+          <div className="flex justify-end gap-3 mt-2.5 pt-2.5 border-t border-border">
+            {onEdit && allowEdit(item) && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(item);
+                }}
+                className="h-10 w-10 flex items-center justify-center text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-all active:scale-90"
+                aria-label={t('common.edit')}
+              >
+                <Edit size={16} />
+              </button>
+            )}
+            {onDelete && allowDelete(item) && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(item.id);
+                }}
+                className="h-10 w-10 flex items-center justify-center text-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 rounded-lg transition-all active:scale-90"
+                aria-label={t('common.delete')}
+              >
+                <Trash2 size={16} />
+              </button>
+            )}
           </div>
         )}
-        <div className="flex justify-end gap-1 pt-2 border-t border-border mt-2">
-          {onEdit && allowEdit(item) && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit(item);
-              }}
-              className="p-2 text-primary hover:bg-primary/10 rounded-lg"
-              aria-label={t('common.edit')}
-            >
-              <Edit size={14} />
-            </button>
-          )}
-          {onDelete && allowDelete(item) && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(item.id);
-              }}
-              className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg"
-              aria-label={t('common.delete')}
-            >
-              <Trash2 size={14} />
-            </button>
-          )}
-        </div>
       </div>
     );
   };

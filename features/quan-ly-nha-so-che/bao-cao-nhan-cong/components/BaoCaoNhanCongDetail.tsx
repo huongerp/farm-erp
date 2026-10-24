@@ -14,7 +14,7 @@ import {
   sumTongCongQuyDoiPhieu,
   sumTongGioTangCaTichPhieu,
 } from '../core/types';
-import { cn, formatDateShort, formatDateTimeShort, formatNumberVN } from '../../../../lib/utils';
+import { cn, formatDateTimeShort, formatNumberVN, formatYmdToDisplay } from '../../../../lib/utils';
 import GenericDrawer, { DRAWER_WIDTH_BAO_CAO_NHAN_CONG } from '../../../../components/shared/GenericDrawer';
 import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';
@@ -150,7 +150,7 @@ const BaoCaoNhanCongDetail: React.FC<Props> = ({
     <>
     <GenericDrawer
       title={t('baoCaoNhanCong.detail.title')}
-      subtitle={formatDateShort(data.ngay)}
+      subtitle={[formatYmdToDisplay(data.ngay), data.ten_chi_nhanh].filter(Boolean).join(' · ')}
       icon={<Users className="text-cyan-600" size={22} />}
       onClose={onClose}
       maxWidthClass={DRAWER_WIDTH_BAO_CAO_NHAN_CONG}
@@ -162,7 +162,7 @@ const BaoCaoNhanCongDetail: React.FC<Props> = ({
         )}
         <DetailSection title={t('baoCaoNhanCong.detail.sectionOverview')} icon={<Users size={14} />} variant="primary">
           <DetailFieldGrid cols={3} className="gap-y-3">
-            <DetailField label={t('baoCaoNhanCong.form.ngay')} value={formatDateShort(data.ngay)} />
+            <DetailField label={t('baoCaoNhanCong.form.ngay')} value={formatYmdToDisplay(data.ngay)} />
             <DetailField label={t('baoCaoNhanCong.form.branch')} value={data.ten_chi_nhanh ?? '—'} />
             <DetailField
               label={t('baoCaoNhanCong.store.colTrangThai')}
@@ -182,27 +182,27 @@ const BaoCaoNhanCongDetail: React.FC<Props> = ({
               }
             />
             <DetailField
-              label={t('baoCaoNhanCong.store.colTongCongNgay')}
+              label={t('baoCaoNhanCong.card.congNhanCaNgay')}
               value={<span className="tabular-nums">{formatNumberVN(sumSlCongNgay(data))}</span>}
             />
             <DetailField
-              label={t('baoCaoNhanCong.store.colTongCongNua')}
+              label={t('baoCaoNhanCong.card.congNhanNuaNgay')}
               value={<span className="tabular-nums">{formatNumberVN(sumSlCongNua(data))}</span>}
             />
             <DetailField
-              label={t('baoCaoNhanCong.store.colTongCongQuyDoi')}
+              label={t('baoCaoNhanCong.card.congQuyDoi')}
               value={<span className="font-bold tabular-nums text-primary">{formatNumberVN(sumTongCongQuyDoiPhieu(data))}</span>}
             />
             <DetailField
-              label={t('baoCaoNhanCong.store.colTongTangCa')}
+              label={t('baoCaoNhanCong.card.soNguoiTangCa')}
               value={<span className="tabular-nums">{formatNumberVN(sumSlTangCa(data))}</span>}
             />
             <DetailField
-              label={t('baoCaoNhanCong.store.colGioTangCa')}
+              label={t('baoCaoNhanCong.card.soGioTangCaCong')}
               value={<span className="tabular-nums">{formatNumberVN(sumSoGioTc(data))}</span>}
             />
             <DetailField
-              label={t('baoCaoNhanCong.store.colTongGioTangCa')}
+              label={t('baoCaoNhanCong.card.tongGioTangCa')}
               value={<span className="font-bold tabular-nums text-primary">{formatNumberVN(sumTongGioTangCaTichPhieu(data))}</span>}
             />
             <DetailField label={t('baoCaoNhanCong.store.colNguoiTao')} value={data.ten_nguoi_tao ?? '—'} />

@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Edit, Trash2 } from 'lucide-react';
-import { cn, formatDateShort, formatDateTimeShort, formatNumberVN } from '../../../../lib/utils';
+import { cn, formatDateShort, formatDateTimeShort, formatNumberVN, formatYmdToDisplay } from '../../../../lib/utils';
 import type { FarmBaoCaoNhanCong } from '../core/types';
 import {
   sumSlCongNgay,
@@ -74,27 +74,30 @@ const BaoCaoNhanCongList: React.FC<Props> = ({
     [columns]
   );
 
+  const renderTrangThaiBadge = (item: FarmBaoCaoNhanCong) => {
+    const locked = item.trang_thai === 'khoa';
+    return (
+      <span
+        className={cn(
+          'inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium tabular-nums',
+          locked
+            ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-100'
+            : 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-100'
+        )}
+      >
+        {locked ? t('baoCaoNhanCong.trangThai.khoa') : t('baoCaoNhanCong.trangThai.mo')}
+      </span>
+    );
+  };
+
   const renderCell = (colId: string, item: FarmBaoCaoNhanCong) => {
     switch (colId) {
       case 'ngay':
         return <span className="text-sm font-medium tabular-nums">{formatDateShort(item.ngay)}</span>;
       case 'ten_chi_nhanh':
         return <span className="text-sm text-muted-foreground">{item.ten_chi_nhanh ?? '—'}</span>;
-      case 'trang_thai': {
-        const locked = item.trang_thai === 'khoa';
-        return (
-          <span
-            className={cn(
-              'inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium tabular-nums',
-              locked
-                ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-100'
-                : 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-100'
-            )}
-          >
-            {locked ? t('baoCaoNhanCong.trangThai.khoa') : t('baoCaoNhanCong.trangThai.mo')}
-          </span>
-        );
-      }
+      case 'trang_thai':
+        return renderTrangThaiBadge(item);
       case 'hinh_anh':
         return (
           <span className="text-xs text-muted-foreground" title={t('baoCaoNhanCong.list.photosOnDetailHint')}>
@@ -182,78 +185,92 @@ const BaoCaoNhanCongList: React.FC<Props> = ({
     }
   };
 
-  const renderMobileCard = (item: FarmBaoCaoNhanCong, isSelected: boolean) => (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={() => onView?.(item)}
-      onKeyDown={(e) => e.key === 'Enter' && onView?.(item)}
-      className={cn(
-        'bg-card rounded-xl border p-3.5 shadow-sm transition-all active:scale-[0.98]',
-        isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'
-      )}
-    >
-      <div className="text-sm font-semibold tabular-nums mb-1">{formatDateShort(item.ngay)}</div>
-      <div className="text-sm text-foreground mb-1">{item.ten_chi_nhanh ?? '—'}</div>
-      <div className="text-xs text-muted-foreground mb-1">
-        {t('baoCaoNhanCong.store.colTrangThai')}:{' '}
-        {item.trang_thai === 'khoa' ? t('baoCaoNhanCong.trangThai.khoa') : t('baoCaoNhanCong.trangThai.mo')}
-      </div>
-      <div className="text-xs text-muted-foreground mb-1">
-        {t('baoCaoNhanCong.store.colTongCongNgay')}: {formatNumberVN(sumSlCongNgay(item))}
-      </div>
-      <div className="text-xs text-muted-foreground mb-1">
-        {t('baoCaoNhanCong.store.colTongCongQuyDoi')}:{' '}
-        <span className="font-semibold text-primary tabular-nums">{formatNumberVN(sumTongCongQuyDoiPhieu(item))}</span>
-      </div>
-      <div className="text-xs text-muted-foreground mb-1">
-        {t('baoCaoNhanCong.store.colTongCongNua')}: {formatNumberVN(sumSlCongNua(item))} ·{' '}
-        {t('baoCaoNhanCong.store.colTongTangCa')}: {formatNumberVN(sumSlTangCa(item))} ·{' '}
-        {t('baoCaoNhanCong.store.colGioTangCa')}: {formatNumberVN(sumSoGioTc(item))} ·{' '}
-        {t('baoCaoNhanCong.store.colTongGioTangCa')}:{' '}
-        <span className="font-semibold text-primary tabular-nums">{formatNumberVN(sumTongGioTangCaTichPhieu(item))}</span>
-      </div>
-      <div className="text-xs text-muted-foreground mb-1">
-        {t('baoCaoNhanCong.store.colTgTao')}: {formatDateTimeShort(item.tg_tao)}
-      </div>
-      <div className="text-xs text-muted-foreground mb-1">
-        {t('baoCaoNhanCong.store.colUpdated')}: {formatDateTimeShort(item.tg_cap_nhat)}
-      </div>
-      {(item.ten_nguoi_tao?.trim() ?? '') !== '' && (
-        <div className="text-xs text-muted-foreground mb-1">
-          {t('baoCaoNhanCong.store.colNguoiTao')}: {item.ten_nguoi_tao}
+  const renderMobileCard = (item: FarmBaoCaoNhanCong, isSelected: boolean) => {
+    const nguoiTao = item.ten_nguoi_tao?.trim() ?? '';
+    const soNguoiTangCa = sumSlTangCa(item);
+    const tongGioTangCa = sumTongGioTangCaTichPhieu(item);
+    const coTangCa = soNguoiTangCa > 0 || tongGioTangCa > 0;
+    const hasAction = (onEdit && allowEdit(item)) || (onDelete && allowDelete(item));
+    return (
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => onView?.(item)}
+        onKeyDown={(e) => e.key === 'Enter' && onView?.(item)}
+        className={cn(
+          'bg-card rounded-xl border p-3.5 shadow-sm transition-all',
+          isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'
+        )}
+      >
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <h4 className="font-semibold text-foreground text-sm truncate">{item.ten_chi_nhanh ?? '—'}</h4>
+            <p className="text-xs text-muted-foreground truncate mt-0.5 tabular-nums">
+              {formatYmdToDisplay(item.ngay)}
+              {nguoiTao ? ` · ${nguoiTao}` : ''}
+            </p>
+          </div>
+          <div className="shrink-0">{renderTrangThaiBadge(item)}</div>
         </div>
-      )}
-      <div className="flex justify-end gap-1 pt-2 border-t border-border mt-2">
-        {onEdit && allowEdit(item) && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit(item);
-            }}
-            className="p-2 text-primary hover:bg-primary/10 rounded-lg"
-            aria-label={t('common.edit')}
-          >
-            <Edit size={14} />
-          </button>
+        <div className="mt-2 grid grid-cols-3 gap-x-3 gap-y-1.5 text-sm tabular-nums">
+          <div>
+            <div className="text-xs text-muted-foreground">{t('baoCaoNhanCong.card.congQuyDoi')}</div>
+            <div className="font-semibold text-primary">{formatNumberVN(sumTongCongQuyDoiPhieu(item))}</div>
+          </div>
+          <div>
+            <div className="text-xs text-muted-foreground">{t('baoCaoNhanCong.card.congNhanCaNgay')}</div>
+            <div className="font-semibold">{formatNumberVN(sumSlCongNgay(item))}</div>
+          </div>
+          <div>
+            <div className="text-xs text-muted-foreground">{t('baoCaoNhanCong.card.congNhanNuaNgay')}</div>
+            <div className="font-semibold">{formatNumberVN(sumSlCongNua(item))}</div>
+          </div>
+        </div>
+        {coTangCa && (
+          <div className="mt-2 pt-2 border-t border-border grid grid-cols-2 gap-x-3 text-sm tabular-nums">
+            <div>
+              <div className="text-xs text-muted-foreground">{t('baoCaoNhanCong.card.soNguoiTangCa')}</div>
+              <div className="font-semibold">{formatNumberVN(soNguoiTangCa)}</div>
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground">{t('baoCaoNhanCong.card.tongGioTangCa')}</div>
+              <div className="font-semibold">{formatNumberVN(tongGioTangCa)}</div>
+            </div>
+          </div>
         )}
-        {onDelete && allowDelete(item) && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(item.id);
-            }}
-            className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg"
-            aria-label={t('common.delete')}
-          >
-            <Trash2 size={14} />
-          </button>
+        {hasAction && (
+          <div className="flex justify-end gap-3 mt-2.5 pt-2.5 border-t border-border">
+            {onEdit && allowEdit(item) && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(item);
+                }}
+                className="h-10 w-10 flex items-center justify-center text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-all active:scale-90"
+                aria-label={t('common.edit')}
+              >
+                <Edit size={16} />
+              </button>
+            )}
+            {onDelete && allowDelete(item) && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(item.id);
+                }}
+                className="h-10 w-10 flex items-center justify-center text-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 rounded-lg transition-all active:scale-90"
+                aria-label={t('common.delete')}
+              >
+                <Trash2 size={16} />
+              </button>
+            )}
+          </div>
         )}
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <GenericTable<FarmBaoCaoNhanCong>

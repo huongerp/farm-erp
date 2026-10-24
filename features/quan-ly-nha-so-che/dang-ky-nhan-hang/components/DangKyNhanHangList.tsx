@@ -240,6 +240,15 @@ const DangKyNhanHangList: React.FC<Props> = ({
 
   const renderMobileCard = (item: DangKyNhanHang, isSelected: boolean) => {
     const p = thoiLuong(item);
+    const nhan = (label: string, value: React.ReactNode) => (
+      <div className="min-w-0">
+        <div className="text-xs text-muted-foreground">{label}</div>
+        <div className="text-sm font-medium truncate">{value}</div>
+      </div>
+    );
+    const coQuick =
+      !!onQuickAction && (coTheCheckIn(item.trang_thai) || coTheCheckOut(item.trang_thai));
+    const hasFooter = coQuick || !!onCopy || !!onEdit || !!onDelete;
     return (
       <div
         role="button"
@@ -247,11 +256,11 @@ const DangKyNhanHangList: React.FC<Props> = ({
         onClick={() => onView(item)}
         onKeyDown={(e) => e.key === 'Enter' && onView(item)}
         className={cn(
-          'bg-card rounded-xl border p-3.5 shadow-sm transition-all active:scale-[0.98]',
+          'bg-card rounded-xl border p-3.5 shadow-sm transition-all',
           isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border'
         )}
       >
-        <div className="flex items-start justify-between gap-2 mb-1.5">
+        <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <div className="text-sm font-semibold font-mono truncate">{item.so_xe || item.so_cont || '—'}</div>
             {item.so_xe && item.so_cont && (
@@ -260,89 +269,99 @@ const DangKyNhanHangList: React.FC<Props> = ({
           </div>
           <TrangThaiBadge value={item.trang_thai} />
         </div>
-        {item.ten_chi_nhanh && (
-          <div className="text-xs font-medium text-primary flex items-center gap-1 min-w-0 mb-1">
-            <Building2 size={12} className="shrink-0" />
-            <span className="truncate">{item.ten_chi_nhanh}</span>
-          </div>
-        )}
-        <div className="text-xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-1">
-          <span>{formatYmdToDisplay(item.ngay_dang_ky)}</span>
+        <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1 min-w-0 tabular-nums">
+          <span className="shrink-0">{formatYmdToDisplay(item.ngay_dang_ky)}</span>
           {(item.gio_dang_ky_tu || item.gio_dang_ky_den) && (
-            <span>
-              {item.gio_dang_ky_tu ?? '…'} – {item.gio_dang_ky_den ?? '…'}
+            <span className="shrink-0">
+              · {item.gio_dang_ky_tu ?? '…'} – {item.gio_dang_ky_den ?? '…'}
             </span>
           )}
-          {item.khach_hang && <span>{item.khach_hang}</span>}
-          {item.loai_hang_hoa && <span>{item.loai_hang_hoa}</span>}
-          {item.ten_tai_xe && <span>{item.ten_tai_xe}</span>}
+          {item.ten_chi_nhanh && (
+            <span className="truncate flex items-center gap-1 min-w-0">
+              · <Building2 size={12} className="shrink-0" />
+              <span className="truncate">{item.ten_chi_nhanh}</span>
+            </span>
+          )}
+        </p>
+        <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5">
+          {item.khach_hang && nhan(t('dangKyNhanHang.col.khachHang'), item.khach_hang)}
+          {item.loai_hang_hoa && nhan(t('dangKyNhanHang.col.loaiHang'), item.loai_hang_hoa)}
+          {item.ten_tai_xe && nhan(t('dangKyNhanHang.col.taiXe'), item.ten_tai_xe)}
+          {item.so_luong_dang_ky != null &&
+            nhan(
+              t('dangKyNhanHang.card.soLuongDangKy'),
+              <span className="tabular-nums font-semibold">{formatNumberVN(item.so_luong_dang_ky)}</span>
+            )}
         </div>
-        {(item.tg_vao_thuc_te || item.tong_so_luong > 0) && (
-          <div className="text-xs mt-1.5 flex flex-wrap gap-x-3 gap-y-1 tabular-nums">
-            {item.tg_vao_thuc_te && (
-              <span>
-                {t('dangKyNhanHang.col.gioVao')}: {formatDateTimeShort(item.tg_vao_thuc_te)}
-              </span>
+        {(item.tg_vao_thuc_te || item.tong_so_luong > 0 || item.tinh_trang_phieu_xuat) && (
+          <div className="mt-2 pt-2 border-t border-border grid grid-cols-2 gap-x-3 gap-y-1.5 tabular-nums">
+            {item.tg_vao_thuc_te &&
+              nhan(t('dangKyNhanHang.col.gioVao'), formatDateTimeShort(item.tg_vao_thuc_te))}
+            {item.tg_ra_thuc_te &&
+              nhan(t('dangKyNhanHang.col.gioRa'), formatDateTimeShort(item.tg_ra_thuc_te))}
+            {p != null && nhan(t('dangKyNhanHang.col.thoiLuong'), formatThoiLuong(p))}
+            {item.tong_so_luong > 0 &&
+              nhan(
+                t('dangKyNhanHang.card.soLuongXuat'),
+                <span className="font-semibold">
+                  {formatNumberVN(item.tong_so_luong)} {t('dangKyNhanHang.hangHoa.thung')}
+                </span>
+              )}
+            {item.tinh_trang_phieu_xuat && (
+              <div className="min-w-0">
+                <div className="text-xs text-muted-foreground">{t('dangKyNhanHang.col.phieuXuat')}</div>
+                <PhieuXuatBadge value={item.tinh_trang_phieu_xuat} />
+              </div>
             )}
-            {item.tg_ra_thuc_te && (
-              <span>
-                {t('dangKyNhanHang.col.gioRa')}: {formatDateTimeShort(item.tg_ra_thuc_te)}
-              </span>
-            )}
-            {p != null && <span className="font-medium">{formatThoiLuong(p)}</span>}
-            {item.tong_so_luong > 0 && (
-              <span>
-                {formatNumberVN(item.tong_so_luong)} {t('dangKyNhanHang.hangHoa.thung')}
-              </span>
-            )}
-            {item.tinh_trang_phieu_xuat && <PhieuXuatBadge value={item.tinh_trang_phieu_xuat} />}
           </div>
         )}
-        <div className="flex items-center justify-between gap-1 pt-2 border-t border-border mt-2">
-          <div>{quickBtn(item, 'md')}</div>
-          <div className="flex gap-1">
-            {onCopy && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onCopy(item);
-                }}
-                className="p-2 text-muted-foreground hover:bg-muted rounded-lg"
-                aria-label={t('dangKyNhanHang.toolbar.saoChep')}
-                title={t('dangKyNhanHang.toolbar.saoChep')}
-              >
-                <Copy size={14} />
-              </button>
-            )}
-            {onEdit && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit(item);
-                }}
-                className="p-2 text-primary hover:bg-primary/10 rounded-lg"
-                aria-label={t('common.edit')}
-              >
-                <Edit size={14} />
-              </button>
-            )}
-            {onDelete && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(item.id);
-                }}
-                className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg"
-                aria-label={t('common.delete')}
-              >
-                <Trash2 size={14} />
-              </button>
-            )}
+        {hasFooter && (
+          <div className="flex items-center justify-between gap-3 mt-2.5 pt-2.5 border-t border-border">
+            <div>{quickBtn(item, 'md')}</div>
+            <div className="flex gap-3">
+              {onCopy && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onCopy(item);
+                  }}
+                  className="h-10 w-10 flex items-center justify-center text-muted-foreground bg-muted/50 hover:bg-muted rounded-lg transition-all active:scale-90"
+                  aria-label={t('dangKyNhanHang.toolbar.saoChep')}
+                  title={t('dangKyNhanHang.toolbar.saoChep')}
+                >
+                  <Copy size={16} />
+                </button>
+              )}
+              {onEdit && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(item);
+                  }}
+                  className="h-10 w-10 flex items-center justify-center text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-all active:scale-90"
+                  aria-label={t('common.edit')}
+                >
+                  <Edit size={16} />
+                </button>
+              )}
+              {onDelete && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(item.id);
+                  }}
+                  className="h-10 w-10 flex items-center justify-center text-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 rounded-lg transition-all active:scale-90"
+                  aria-label={t('common.delete')}
+                >
+                  <Trash2 size={16} />
+                </button>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     );
   };

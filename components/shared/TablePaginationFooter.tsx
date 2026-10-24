@@ -110,14 +110,14 @@ export const TablePaginationFooter: React.FC<TablePaginationFooterProps> = ({
         </div>
       </div>
 
-      <div className="flex items-center gap-0.5">
+      <div className="flex items-center gap-1 md:gap-0.5">
         <Tooltip content={t('common.firstPage')} placement="top">
           <Button
             variant="outline"
             size="sm"
             disabled={page === 1}
             onClick={() => onPageChange(1)}
-            className="h-6 w-6 p-0 border-border rounded hover:bg-primary hover:text-white hover:border-primary transition-all"
+            className="hidden md:inline-flex h-9 w-9 md:h-6 md:w-6 p-0 border-border rounded hover:bg-primary hover:text-white hover:border-primary transition-all"
           >
             <ChevronsLeft size={13} />
           </Button>
@@ -128,7 +128,7 @@ export const TablePaginationFooter: React.FC<TablePaginationFooterProps> = ({
             size="sm"
             disabled={page === 1}
             onClick={() => onPageChange(page - 1)}
-            className="h-6 w-6 p-0 border-border rounded hover:bg-primary hover:text-white hover:border-primary transition-all"
+            className="h-9 w-9 md:h-6 md:w-6 p-0 border-border rounded hover:bg-primary hover:text-white hover:border-primary transition-all"
           >
             <ChevronLeft size={13} />
           </Button>
@@ -163,7 +163,7 @@ export const TablePaginationFooter: React.FC<TablePaginationFooterProps> = ({
                     setTimeout(() => pageInputRef.current?.select(), 50);
                   }
                 }}
-                className="h-6 min-w-[24px] flex items-center justify-center rounded bg-primary text-white text-xs font-bold px-1 tabular-nums cursor-default"
+                className="h-9 min-w-[36px] md:h-6 md:min-w-[24px] flex items-center justify-center rounded bg-primary text-white text-xs font-bold px-1 tabular-nums cursor-default"
               >
                 {page}
               </span>
@@ -178,7 +178,7 @@ export const TablePaginationFooter: React.FC<TablePaginationFooterProps> = ({
             size="sm"
             disabled={page >= totalPages}
             onClick={() => onPageChange(page + 1)}
-            className="h-6 w-6 p-0 border-border rounded hover:bg-primary hover:text-white hover:border-primary transition-all"
+            className="h-9 w-9 md:h-6 md:w-6 p-0 border-border rounded hover:bg-primary hover:text-white hover:border-primary transition-all"
           >
             <ChevronRight size={13} />
           </Button>
@@ -189,7 +189,7 @@ export const TablePaginationFooter: React.FC<TablePaginationFooterProps> = ({
             size="sm"
             disabled={page >= totalPages}
             onClick={() => onPageChange(totalPages)}
-            className="h-6 w-6 p-0 border-border rounded hover:bg-primary hover:text-white hover:border-primary transition-all"
+            className="hidden md:inline-flex h-9 w-9 md:h-6 md:w-6 p-0 border-border rounded hover:bg-primary hover:text-white hover:border-primary transition-all"
           >
             <ChevronsRight size={13} />
           </Button>
