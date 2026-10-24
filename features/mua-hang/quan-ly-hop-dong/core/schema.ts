@@ -1,12 +1,21 @@
 import { z } from 'zod';
 import i18n from '../../../../lib/i18n';
-import { TRANG_THAI_HOP_DONG } from './constants';
+import { LOAI_DOT_VALUES, TRANG_THAI_HOP_DONG } from './constants';
 import { hinhAnhUrlsSchema } from '../../../quan-ly-nha-so-che/shared/hinh-anh-url-schema';
 
-/** Một dòng thanh toán (modal trong chi tiết HĐ) — trừ ghi chú, các trường đều bắt buộc */
+/**
+ * Một dòng thanh toán (modal trong chi tiết HĐ) — trừ ghi chú, các trường đều bắt buộc.
+ * Dòng cọc: form tự đặt so_cay_thuc_nhan = tien_tru_coc = 0 (ẩn ô), service chuẩn hoá lại trước khi lưu.
+ */
 export const hopDongChiTietLineSchema = z.object({
   ngay: z.string().trim().min(1, i18n.t('hopDong.validation.ctNgayRequired')),
   ten_dot: z.string().trim().min(1, i18n.t('hopDong.validation.ctTenDotRequired')),
+  loai_dot: z.enum(LOAI_DOT_VALUES, { message: i18n.t('hopDong.validation.ctLoaiDotInvalid') }),
+  tien_tru_coc: z.coerce
+    .number()
+    .refine((n) => Number.isFinite(n), { message: i18n.t('hopDong.validation.ctTruCocMin') })
+    .refine((n) => n >= 0, { message: i18n.t('hopDong.validation.ctTruCocMin') })
+    .default(0),
   so_tien: z.coerce
     .number({ message: i18n.t('hopDong.validation.ctSoTienRequired') })
     .refine((n) => Number.isFinite(n), { message: i18n.t('hopDong.validation.ctSoTienRequired') })

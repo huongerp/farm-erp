@@ -15,7 +15,8 @@ import DetailToolbar, { type DetailToolbarAction } from '../../../../components/
 import GenericSubTableSection from '../../../../components/shared/GenericSubTableSection';
 import type { HopDong } from '../core/types';
 import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
-import { TRANG_THAI_HOP_DONG } from '../core/constants';
+import { LOAI_DOT, TRANG_THAI_HOP_DONG } from '../core/constants';
+import { giaTriHang } from '../core/tinh-tien-dot';
 import {
   useUpdateHopDongTrangThai,
   useInsertHopDongChiTiet,
@@ -211,6 +212,26 @@ const HopDongDetail: React.FC<Props> = ({
                 value={formatNumberVN(data.tong_da_thanh_toan != null ? Number(data.tong_da_thanh_toan) : null)}
               />
               <DetailField
+                label={t('hopDong.store.tienCocCol')}
+                value={formatNumberVN(data.tien_coc != null ? Number(data.tien_coc) : null)}
+              />
+              <DetailField
+                label={t('hopDong.store.cocDaTruCol')}
+                value={formatNumberVN(data.coc_da_tru != null ? Number(data.coc_da_tru) : null)}
+              />
+              <DetailField
+                label={t('hopDong.store.cocConLaiCol')}
+                value={
+                  data.coc_con_lai != null ? (
+                    <span className={cn(Number(data.coc_con_lai) < 0 && 'text-rose-600')}>
+                      {formatNumberVN(Number(data.coc_con_lai))}
+                    </span>
+                  ) : (
+                    '—'
+                  )
+                }
+              />
+              <DetailField
                 label={t('hopDong.store.tongCayDaGiaoCol')}
                 value={formatNumberVN(data.tong_cay_da_giao != null ? Number(data.tong_cay_da_giao) : null)}
               />
@@ -276,8 +297,11 @@ const HopDongDetail: React.FC<Props> = ({
             <colgroup>
               <col style={{ width: '104px', minWidth: '104px' }} />
               <col style={{ width: '128px', minWidth: '120px' }} />
-              <col style={{ width: '120px', minWidth: '116px' }} />
+              <col style={{ width: '96px', minWidth: '92px' }} />
               <col style={{ width: '104px', minWidth: '100px' }} />
+              <col style={{ width: '120px', minWidth: '116px' }} />
+              <col style={{ width: '120px', minWidth: '116px' }} />
+              <col style={{ width: '120px', minWidth: '116px' }} />
               <col style={{ width: '152px', minWidth: '140px' }} />
               <col style={{ minWidth: '180px' }} />
               {canUpdateChiTiet && <col style={{ width: '88px', minWidth: '88px' }} />}
@@ -290,11 +314,20 @@ const HopDongDetail: React.FC<Props> = ({
                 <th className="text-left py-2.5 px-3 text-xs font-semibold text-muted-foreground whitespace-nowrap min-w-[120px]">
                   {t('hopDong.form.ctTenDot')}
                 </th>
-                <th className="text-right py-2.5 px-3 text-xs font-semibold text-muted-foreground whitespace-nowrap min-w-[116px]">
-                  {t('hopDong.form.ctSoTien')}
+                <th className="text-left py-2.5 px-3 text-xs font-semibold text-muted-foreground whitespace-nowrap min-w-[92px]">
+                  {t('hopDong.form.ctLoaiDot')}
                 </th>
                 <th className="text-right py-2.5 px-3 text-xs font-semibold text-muted-foreground whitespace-nowrap min-w-[100px]">
                   {t('hopDong.form.ctSoCay')}
+                </th>
+                <th className="text-right py-2.5 px-3 text-xs font-semibold text-muted-foreground whitespace-nowrap min-w-[116px]">
+                  {t('hopDong.form.ctGiaTriHang')}
+                </th>
+                <th className="text-right py-2.5 px-3 text-xs font-semibold text-muted-foreground whitespace-nowrap min-w-[116px]">
+                  {t('hopDong.form.ctTruCoc')}
+                </th>
+                <th className="text-right py-2.5 px-3 text-xs font-semibold text-muted-foreground whitespace-nowrap min-w-[116px]">
+                  {t('hopDong.form.ctThucTra')}
                 </th>
                 <th className="text-left py-2.5 px-3 text-xs font-semibold text-muted-foreground whitespace-nowrap min-w-[140px]">
                   {t('hopDong.form.ctChiNhanh')}
@@ -312,7 +345,7 @@ const HopDongDetail: React.FC<Props> = ({
             <tbody>
               {lines.length === 0 ? (
                 <tr>
-                  <td colSpan={canUpdateChiTiet ? 7 : 6} className="py-6 text-center text-muted-foreground text-sm">
+                  <td colSpan={canUpdateChiTiet ? 10 : 9} className="py-6 text-center text-muted-foreground text-sm">
                     —
                   </td>
                 </tr>
@@ -323,11 +356,22 @@ const HopDongDetail: React.FC<Props> = ({
                       {ct.ngay ? formatDateShort(ct.ngay) : '—'}
                     </td>
                     <td className="py-2.5 px-3 text-sm min-w-[120px]">{ct.ten_dot ?? '—'}</td>
-                    <td className="py-2.5 px-3 text-sm text-right tabular-nums whitespace-nowrap">
-                      {formatNumberVN(ct.so_tien != null ? Number(ct.so_tien) : null)}
+                    <td className="py-2.5 px-3 text-sm whitespace-nowrap">
+                      {ct.loai_dot === LOAI_DOT.COC ? t('hopDong.loaiDot.coc') : t('hopDong.loaiDot.thanhToan')}
                     </td>
                     <td className="py-2.5 px-3 text-sm text-right tabular-nums whitespace-nowrap">
-                      {formatNumberVN(ct.so_cay_thuc_nhan != null ? Number(ct.so_cay_thuc_nhan) : null)}
+                      {ct.loai_dot === LOAI_DOT.COC
+                        ? '—'
+                        : formatNumberVN(ct.so_cay_thuc_nhan != null ? Number(ct.so_cay_thuc_nhan) : null)}
+                    </td>
+                    <td className="py-2.5 px-3 text-sm text-right tabular-nums whitespace-nowrap">
+                      {ct.loai_dot === LOAI_DOT.COC ? '—' : formatNumberVN(giaTriHang(ct.so_cay_thuc_nhan, data.don_gia))}
+                    </td>
+                    <td className="py-2.5 px-3 text-sm text-right tabular-nums whitespace-nowrap">
+                      {ct.tien_tru_coc > 0 ? formatNumberVN(ct.tien_tru_coc) : '—'}
+                    </td>
+                    <td className="py-2.5 px-3 text-sm text-right tabular-nums whitespace-nowrap font-medium">
+                      {formatNumberVN(ct.so_tien != null ? Number(ct.so_tien) : null)}
                     </td>
                     <td className="py-2.5 px-3 text-sm min-w-[140px]">
                       {ct.id_chi_nhanh ? (cnMap[ct.id_chi_nhanh] ?? ct.id_chi_nhanh) : '—'}
@@ -441,6 +485,8 @@ const HopDongDetail: React.FC<Props> = ({
         }}
         initial={editingLine}
         chiNhanhList={chiNhanhList}
+        donGia={data.don_gia != null ? Number(data.don_gia) : null}
+        chiTiet={lines}
         onSubmit={onSaveCt}
         isLoading={ctPending}
       />

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Edit, Trash2 } from 'lucide-react';
 import { cn, formatDateShort, formatNumberVN } from '../../../../lib/utils';
 import type { HopDongChiTietEnriched } from '../core/types';
+import { LOAI_DOT } from '../core/constants';
 import GenericTable from '../../../../components/shared/GenericTable';
 import type { ColumnConfig } from '../../../../store/createGenericStore';
 import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
@@ -58,6 +59,9 @@ const ThanhToanList: React.FC<Props> = ({
     [columns]
   );
 
+  const loaiDotLabel = (item: HopDongChiTietEnriched) =>
+    item.loai_dot === LOAI_DOT.COC ? t('hopDong.loaiDot.coc') : t('hopDong.loaiDot.thanhToan');
+
   const renderCell = (colId: string, item: HopDongChiTietEnriched) => {
     switch (colId) {
       case 'ngay':
@@ -80,10 +84,20 @@ const ThanhToanList: React.FC<Props> = ({
             {formatNumberVN(item.so_tien != null ? Number(item.so_tien) : null)}
           </span>
         );
+      case 'loai_dot':
+        return <span className="text-sm text-muted-foreground whitespace-nowrap">{loaiDotLabel(item)}</span>;
       case 'so_cay_thuc_nhan':
         return (
           <span className="text-sm tabular-nums">
-            {formatNumberVN(item.so_cay_thuc_nhan != null ? Number(item.so_cay_thuc_nhan) : null)}
+            {item.loai_dot === LOAI_DOT.COC
+              ? '—'
+              : formatNumberVN(item.so_cay_thuc_nhan != null ? Number(item.so_cay_thuc_nhan) : null)}
+          </span>
+        );
+      case 'tien_tru_coc':
+        return (
+          <span className="text-sm tabular-nums">
+            {item.tien_tru_coc > 0 ? formatNumberVN(item.tien_tru_coc) : '—'}
           </span>
         );
       case 'ten_chi_nhanh':
@@ -155,14 +169,27 @@ const ThanhToanList: React.FC<Props> = ({
         </span>
         <span className="text-xs text-muted-foreground">{item.ngay ? formatDateShort(item.ngay) : '—'}</span>
       </div>
-      <div className="font-medium text-foreground text-sm mb-1">{item.ten_dot ?? '—'}</div>
+      <div className="font-medium text-foreground text-sm mb-1">
+        {item.ten_dot ?? '—'}
+        <span className="ml-1.5 text-xs font-normal text-muted-foreground">· {loaiDotLabel(item)}</span>
+      </div>
       <div className="text-xs text-muted-foreground mb-2">{item.ten_nha_cung_cap ?? '—'}</div>
       <div className="text-xs text-muted-foreground tabular-nums space-y-0.5 mb-2">
         <div>
-          {t('hopDong.form.ctSoTien')}: {formatNumberVN(item.so_tien != null ? Number(item.so_tien) : null)} ·{' '}
-          {t('hopDong.form.ctSoCay')}:{' '}
-          {formatNumberVN(item.so_cay_thuc_nhan != null ? Number(item.so_cay_thuc_nhan) : null)}
+          {t('hopDong.form.ctThucTra')}: {formatNumberVN(item.so_tien != null ? Number(item.so_tien) : null)}
+          {item.loai_dot !== LOAI_DOT.COC && (
+            <>
+              {' · '}
+              {t('hopDong.form.ctSoCay')}:{' '}
+              {formatNumberVN(item.so_cay_thuc_nhan != null ? Number(item.so_cay_thuc_nhan) : null)}
+            </>
+          )}
         </div>
+        {item.tien_tru_coc > 0 && (
+          <div>
+            {t('hopDong.form.ctTruCoc')}: {formatNumberVN(item.tien_tru_coc)}
+          </div>
+        )}
         <div>
           {t('hopDong.form.ctChiNhanh')}:{' '}
           {item.id_chi_nhanh ? (cnMap[item.id_chi_nhanh] ?? item.id_chi_nhanh) : '—'}

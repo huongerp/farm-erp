@@ -1,4 +1,4 @@
-import type { TrangThaiHopDong } from './constants';
+import type { LoaiDot, TrangThaiHopDong } from './constants';
 
 export interface HopDongChiTiet {
   id: string;
@@ -7,6 +7,10 @@ export interface HopDongChiTiet {
   ten_dot: string | null;
   so_tien: number | null;
   so_cay_thuc_nhan: number | null;
+  /** coc = tiền cọc, thanh_toan = thanh toán theo số cây (migration 051) */
+  loai_dot: LoaiDot;
+  /** Tiền cọc khấu trừ vào đợt; so_tien là tiền thực chi sau khi trừ */
+  tien_tru_coc: number;
   ghi_chu: string | null;
   id_chi_nhanh: string | null;
   ten_chi_nhanh?: string | null;
@@ -40,6 +44,10 @@ export interface HopDong {
   tong_cay_da_giao?: number | null;
   tien_con_lai?: number | null;
   cay_con_lai?: number | null;
+  /** Tổng hợp cọc từ dòng chi tiết (core/tinh-tien-dot.ts) */
+  tien_coc?: number | null;
+  coc_da_tru?: number | null;
+  coc_con_lai?: number | null;
   chi_tiet?: HopDongChiTiet[];
 }
 

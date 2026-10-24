@@ -16,7 +16,8 @@ import {
 } from './hop-dong-list-query';
 import type { HopDong, HopDongChiTiet, HopDongChiTietEnriched } from '../core/types';
 import type { HopDongFormValues, HopDongChiTietLineValues } from '../core/schema';
-import type { TrangThaiHopDong } from '../core/constants';
+import { LOAI_DOT, type TrangThaiHopDong } from '../core/constants';
+import { chuanHoaDongTheoLoai, tongHopCoc, type TongHopCoc } from '../core/tinh-tien-dot';
 import { getDoiTacRef } from '../../../kho-van/danh-sach-doi-tac/services/doi-tac-service';
 import i18n from '../../../../lib/i18n';
 
@@ -35,28 +36,39 @@ const HOP_ROW_COLUMNS =
 const VIEW_SUMMARY_SELECT = '*';
 
 const CT_SELECT =
-  'id,id_hop_dong,ngay,ten_dot,so_tien,so_cay_thuc_nhan,ghi_chu,id_chi_nhanh,id_nguoi_tao,tg_tao,tg_cap_nhat';
+  'id,id_hop_dong,ngay,ten_dot,so_tien,so_cay_thuc_nhan,loai_dot,tien_tru_coc,ghi_chu,id_chi_nhanh,id_nguoi_tao,tg_tao,tg_cap_nhat';
 
 /** Chỉ dùng để gom nhóm theo hợp đồng (danh sách) — không phụ thuộc view summary. */
-const CT_AGG_SELECT = 'id_hop_dong,so_tien,so_cay_thuc_nhan';
+const CT_AGG_SELECT = 'id_hop_dong,so_tien,so_cay_thuc_nhan,loai_dot,tien_tru_coc';
 
 interface CtAggRow {
   id_hop_dong: number;
   so_tien: number | null;
   so_cay_thuc_nhan: number | null;
+  loai_dot: string | null;
+  tien_tru_coc: number | string | null;
 }
 
-type CtAgg = { dot: number; tongTien: number; tongCay: number };
+type CtAgg = { dot: number; tongTien: number; tongCay: number; coc: TongHopCoc };
+
+const CT_AGG_RONG: CtAgg = { dot: 0, tongTien: 0, tongCay: 0, coc: tongHopCoc([]) };
 
 function buildCtAggMap(ctRows: CtAggRow[]): Map<number, CtAgg> {
-  const m = new Map<number, CtAgg>();
+  const theoHop = new Map<number, CtAggRow[]>();
   for (const r of ctRows) {
-    const id = r.id_hop_dong;
-    const cur = m.get(id) ?? { dot: 0, tongTien: 0, tongCay: 0 };
-    cur.dot += 1;
-    cur.tongTien += Number(r.so_tien) || 0;
-    cur.tongCay += Number(r.so_cay_thuc_nhan) || 0;
-    m.set(id, cur);
+    const ds = theoHop.get(r.id_hop_dong);
+    if (ds) ds.push(r);
+    else theoHop.set(r.id_hop_dong, [r]);
+  }
+  const m = new Map<number, CtAgg>();
+  for (const [id, ds] of theoHop) {
+    let tongTien = 0;
+    let tongCay = 0;
+    for (const r of ds) {
+      tongTien += Number(r.so_tien) || 0;
+      tongCay += Number(r.so_cay_thuc_nhan) || 0;
+    }
+    m.set(id, { dot: ds.length, tongTien, tongCay, coc: tongHopCoc(ds) });
   }
   return m;
 }
@@ -72,6 +84,7 @@ function applyAggregatesFromChiTiet(hop: HopDong): HopDong {
   }
   const tt = hop.thanh_tien ?? 0;
   const sl = hop.so_luong_cay != null ? Number(hop.so_luong_cay) : 0;
+  const coc = tongHopCoc(lines);
   return {
     ...hop,
     tong_da_thanh_toan: tongTien,
@@ -79,6 +92,9 @@ function applyAggregatesFromChiTiet(hop: HopDong): HopDong {
     tong_cay_da_giao: tongCay,
     tien_con_lai: tt - tongTien,
     cay_con_lai: sl - tongCay,
+    tien_coc: coc.tienCoc,
+    coc_da_tru: coc.cocDaTru,
+    coc_con_lai: coc.cocConLai,
   };
 }
 
@@ -92,6 +108,9 @@ function enrichSummaryRowWithCtAgg(row: HopSummaryRow, agg: CtAgg): HopSummaryRo
     tong_cay_da_giao: agg.tongCay,
     tien_con_lai: tt - agg.tongTien,
     cay_con_lai: sl - agg.tongCay,
+    tien_coc: agg.coc.tienCoc,
+    coc_da_tru: agg.coc.cocDaTru,
+    coc_con_lai: agg.coc.cocConLai,
   };
 }
 
@@ -123,6 +142,9 @@ type HopSummaryRow = HopDbRow & {
   tong_cay_da_giao?: number | string | null;
   tien_con_lai?: number | string | null;
   cay_con_lai?: number | string | null;
+  tien_coc?: number | string | null;
+  coc_da_tru?: number | string | null;
+  coc_con_lai?: number | string | null;
 };
 
 interface ChiTietDbRow {
@@ -132,6 +154,8 @@ interface ChiTietDbRow {
   ten_dot: string | null;
   so_tien: number | null;
   so_cay_thuc_nhan: number | null;
+  loai_dot: string | null;
+  tien_tru_coc: number | string | null;
   ghi_chu: string | null;
   id_chi_nhanh: number | null;
   id_nguoi_tao: number | null;
@@ -187,6 +211,9 @@ function rowToHop(
     tong_cay_da_giao: numFromSummary(row.tong_cay_da_giao),
     tien_con_lai: numFromSummary(row.tien_con_lai),
     cay_con_lai: numFromSummary(row.cay_con_lai),
+    tien_coc: numFromSummary(row.tien_coc),
+    coc_da_tru: numFromSummary(row.coc_da_tru),
+    coc_con_lai: numFromSummary(row.coc_con_lai),
     chi_tiet: enrich?.chi_tiet,
   };
 }
@@ -199,11 +226,28 @@ function rowToChiTiet(row: ChiTietDbRow, idHopStr: string): HopDongChiTiet {
     ten_dot: row.ten_dot,
     so_tien: row.so_tien != null ? Number(row.so_tien) : null,
     so_cay_thuc_nhan: row.so_cay_thuc_nhan != null ? Number(row.so_cay_thuc_nhan) : null,
+    loai_dot: row.loai_dot === LOAI_DOT.COC ? LOAI_DOT.COC : LOAI_DOT.THANH_TOAN,
+    tien_tru_coc: Number(row.tien_tru_coc) || 0,
     ghi_chu: row.ghi_chu,
     id_chi_nhanh: row.id_chi_nhanh != null ? String(row.id_chi_nhanh) : null,
     id_nguoi_tao: row.id_nguoi_tao != null ? String(row.id_nguoi_tao) : null,
     tg_tao: row.tg_tao,
     tg_cap_nhat: row.tg_cap_nhat,
+  };
+}
+
+/** Cột ghi được của một dòng (chung insert/update); dòng cọc chuẩn hoá về 0 cây, 0 trừ cọc. */
+function lineToCtFields(line: HopDongChiTietLineValues) {
+  const c = chuanHoaDongTheoLoai(line);
+  return {
+    ngay: c.ngay?.trim() || null,
+    ten_dot: c.ten_dot?.trim() || null,
+    so_tien: c.so_tien != null ? Number(c.so_tien) : null,
+    so_cay_thuc_nhan: c.so_cay_thuc_nhan != null ? Number(c.so_cay_thuc_nhan) : null,
+    loai_dot: c.loai_dot,
+    tien_tru_coc: Number(c.tien_tru_coc) || 0,
+    ghi_chu: c.ghi_chu?.trim() || null,
+    id_chi_nhanh: toNum(c.id_chi_nhanh ?? undefined),
   };
 }
 
@@ -214,12 +258,7 @@ function lineToCtPayload(
 ) {
   return {
     id_hop_dong: idHopNum,
-    ngay: c.ngay?.trim() || null,
-    ten_dot: c.ten_dot?.trim() || null,
-    so_tien: c.so_tien != null ? Number(c.so_tien) : null,
-    so_cay_thuc_nhan: c.so_cay_thuc_nhan != null ? Number(c.so_cay_thuc_nhan) : null,
-    ghi_chu: c.ghi_chu?.trim() || null,
-    id_chi_nhanh: toNum(c.id_chi_nhanh ?? undefined),
+    ...lineToCtFields(c),
     id_nguoi_tao: idNguoiTaoNum != null && Number.isFinite(idNguoiTaoNum) ? idNguoiTaoNum : null,
   };
 }
@@ -278,7 +317,7 @@ export async function getHopDongPageDb(
   return {
     ...result,
     data: result.data.map((row) => {
-      const agg = aggMap.get(row.id) ?? { dot: 0, tongTien: 0, tongCay: 0 };
+      const agg = aggMap.get(row.id) ?? CT_AGG_RONG;
       return rowToHop(enrichSummaryRowWithCtAgg(row, agg));
     }),
   };
@@ -291,7 +330,7 @@ export async function fetchAllHopDongForListQuery(query: HopDongListServerQuery)
   );
   const aggMap = await ctAggChoIds(rows.map((r) => r.id));
   return rows.map((row) => {
-    const agg = aggMap.get(row.id) ?? { dot: 0, tongTien: 0, tongCay: 0 };
+    const agg = aggMap.get(row.id) ?? CT_AGG_RONG;
     return rowToHop(enrichSummaryRowWithCtAgg(row, agg));
   });
 }
@@ -312,7 +351,7 @@ export async function getAllHopDongDb(): Promise<HopDong[]> {
   const aggMap = buildCtAggMap(ctRows);
 
   return rows.map((row) => {
-    const agg = aggMap.get(row.id) ?? { dot: 0, tongTien: 0, tongCay: 0 };
+    const agg = aggMap.get(row.id) ?? CT_AGG_RONG;
     return rowToHop(enrichSummaryRowWithCtAgg(row, agg));
   });
 }
@@ -457,14 +496,7 @@ export async function updateHopDongChiTietDb(idCt: string, row: HopDongChiTietLi
   if (Number.isNaN(idNum)) throw new Error(i18n.t('hopDong.service.notFound'));
   const { data: exists } = await db.from(TABLE_CT).select('id').eq('id', idNum).maybeSingle();
   if (!exists) throw new Error(i18n.t('hopDong.service.notFound'));
-  const payload = {
-    ngay: row.ngay?.trim() || null,
-    ten_dot: row.ten_dot?.trim() || null,
-    so_tien: row.so_tien != null ? Number(row.so_tien) : null,
-    so_cay_thuc_nhan: row.so_cay_thuc_nhan != null ? Number(row.so_cay_thuc_nhan) : null,
-    ghi_chu: row.ghi_chu?.trim() || null,
-    id_chi_nhanh: toNum(row.id_chi_nhanh ?? undefined),
-  };
+  const payload = lineToCtFields(row);
   const { error } = await db.from(TABLE_CT).update(payload).eq('id', idNum);
   if (error) throwDbError(error);
 }

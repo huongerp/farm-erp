@@ -13,15 +13,17 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
     order: 1,
   },
   { id: 'ten_dot', label: i18n.t('hopDong.thanhToan.store.tenDotCol'), visible: true, minWidth: 120, maxWidth: 200, order: 2 },
-  { id: 'so_tien', label: i18n.t('hopDong.thanhToan.store.soTienCol'), visible: true, minWidth: 120, maxWidth: 140, order: 3 },
+  { id: 'loai_dot', label: i18n.t('hopDong.thanhToan.store.loaiDotCol'), visible: true, minWidth: 90, maxWidth: 120, order: 3 },
   { id: 'so_cay_thuc_nhan', label: i18n.t('hopDong.thanhToan.store.soCayCol'), visible: true, minWidth: 100, maxWidth: 120, order: 4 },
+  { id: 'tien_tru_coc', label: i18n.t('hopDong.thanhToan.store.truCocCol'), visible: true, minWidth: 110, maxWidth: 140, order: 5 },
+  { id: 'so_tien', label: i18n.t('hopDong.thanhToan.store.soTienCol'), visible: true, minWidth: 120, maxWidth: 140, order: 6 },
   {
     id: 'ten_chi_nhanh',
     label: i18n.t('hopDong.thanhToan.store.chiNhanhCol'),
     visible: true,
     minWidth: 120,
     maxWidth: 180,
-    order: 5,
+    order: 7,
   },
   {
     id: 'ten_nha_cung_cap',
@@ -29,9 +31,9 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
     visible: true,
     minWidth: 140,
     maxWidth: 220,
-    order: 6,
+    order: 8,
   },
-  { id: 'ghi_chu', label: i18n.t('hopDong.thanhToan.store.ghiChuCol'), visible: true, minWidth: 100, maxWidth: 180, order: 7 },
+  { id: 'ghi_chu', label: i18n.t('hopDong.thanhToan.store.ghiChuCol'), visible: true, minWidth: 100, maxWidth: 180, order: 9 },
 ];
 
 const initialFilters: ThanhToanFilters = {

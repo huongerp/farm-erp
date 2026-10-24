@@ -89,8 +89,8 @@ const ThanhToanTab: React.FC = () => {
 
   const exportColumnsList = useMemo(() => getExportColumnsThanhToanList(t), [t]);
   const exportMapList = useCallback(
-    (item: HopDongChiTietEnriched) => mapThanhToanListRow(item, chiNhanhMap),
-    [chiNhanhMap]
+    (item: HopDongChiTietEnriched) => mapThanhToanListRow(item, chiNhanhMap, t),
+    [chiNhanhMap, t]
   );
   const { exportData, paginatedData: paginatedExportData, selectedData: selectedExportData } =
     useExportData<HopDongChiTietEnriched>({
@@ -139,8 +139,10 @@ const ThanhToanTab: React.FC = () => {
   const lineFromForm = (values: ThanhToanFormValues): HopDongChiTietLineValues => ({
     ngay: values.ngay,
     ten_dot: values.ten_dot,
+    loai_dot: values.loai_dot,
     so_tien: values.so_tien,
     so_cay_thuc_nhan: values.so_cay_thuc_nhan,
+    tien_tru_coc: values.tien_tru_coc,
     ghi_chu: values.ghi_chu,
     id_chi_nhanh: values.id_chi_nhanh,
   });
@@ -279,6 +281,7 @@ const ThanhToanTab: React.FC = () => {
         open={formOpen}
         hopDongList={hopDongList}
         chiNhanhList={chiNhanhList}
+        chiTietAll={allList}
         initial={editingItem}
         onClose={() => {
           setFormOpen(false);

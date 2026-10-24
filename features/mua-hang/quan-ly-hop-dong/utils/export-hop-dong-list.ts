@@ -2,7 +2,7 @@ import type { TFunction } from 'i18next';
 import type { ExportColumn } from '../../../../components/shared/LazyExportDialog';
 import type { HopDong, HopDongChiTietEnriched } from '../core/types';
 import { formatDateShort, formatDateTimeShort, formatNumberVN, getTodayISODate } from '../../../../lib/utils';
-import { TRANG_THAI_HOP_DONG } from '../core/constants';
+import { LOAI_DOT, TRANG_THAI_HOP_DONG } from '../core/constants';
 
 export const LIST_EXPORT_SHEET_HOP_DONG = 'HopDong';
 export const LIST_EXPORT_SHEET_THANH_TOAN = 'ThanhToan';
@@ -16,6 +16,8 @@ export const HOP_DONG_LIST_EXPORT_KEYS = [
   'thanh_tien',
   'so_dot_thanh_toan',
   'tong_da_thanh_toan',
+  'tien_coc',
+  'coc_con_lai',
   'tong_cay_da_giao',
   'tien_con_lai',
   'cay_con_lai',
@@ -29,8 +31,10 @@ export const THANH_TOAN_LIST_EXPORT_KEYS = [
   'ma_hop_dong',
   'ten_hop_dong',
   'ten_dot',
-  'so_tien',
+  'loai_dot',
   'so_cay_thuc_nhan',
+  'tien_tru_coc',
+  'so_tien',
   'ten_chi_nhanh',
   'ten_nha_cung_cap',
   'ghi_chu',
@@ -67,6 +71,8 @@ export function mapHopDongListRow(item: HopDong, t: TFunction): Record<string, u
     thanh_tien: cellNum(item.thanh_tien),
     so_dot_thanh_toan: item.so_dot_thanh_toan != null ? String(item.so_dot_thanh_toan) : '',
     tong_da_thanh_toan: cellNum(item.tong_da_thanh_toan),
+    tien_coc: cellNum(item.tien_coc),
+    coc_con_lai: cellNum(item.coc_con_lai),
     tong_cay_da_giao: cellNum(item.tong_cay_da_giao),
     tien_con_lai: cellNum(item.tien_con_lai),
     cay_con_lai: cellNum(item.cay_con_lai),
@@ -78,15 +84,18 @@ export function mapHopDongListRow(item: HopDong, t: TFunction): Record<string, u
 
 export function mapThanhToanListRow(
   item: HopDongChiTietEnriched,
-  chiNhanhMap: Record<string, string>
+  chiNhanhMap: Record<string, string>,
+  t: TFunction
 ): Record<string, unknown> {
   return {
     ngay: cellDate(item.ngay),
     ma_hop_dong: item.ma_hop_dong ?? '',
     ten_hop_dong: item.ten_hop_dong ?? '',
     ten_dot: item.ten_dot ?? '',
-    so_tien: cellNum(item.so_tien),
+    loai_dot: item.loai_dot === LOAI_DOT.COC ? t('hopDong.loaiDot.coc') : t('hopDong.loaiDot.thanhToan'),
     so_cay_thuc_nhan: cellNum(item.so_cay_thuc_nhan),
+    tien_tru_coc: cellNum(item.tien_tru_coc),
+    so_tien: cellNum(item.so_tien),
     ten_chi_nhanh: item.id_chi_nhanh ? (chiNhanhMap[item.id_chi_nhanh] ?? item.id_chi_nhanh) : '',
     ten_nha_cung_cap: item.ten_nha_cung_cap ?? '',
     ghi_chu: item.ghi_chu ?? '',

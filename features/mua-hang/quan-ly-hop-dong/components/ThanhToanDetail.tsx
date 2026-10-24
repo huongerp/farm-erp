@@ -8,7 +8,7 @@ import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
 import type { HopDongChiTietEnriched } from '../core/types';
 import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
 import { cn, formatDateShort, formatDateTimeShort, formatNumberVN } from '../../../../lib/utils';
-import { TRANG_THAI_HOP_DONG } from '../core/constants';
+import { LOAI_DOT, TRANG_THAI_HOP_DONG } from '../core/constants';
 import DetailDrawerFooter from '../../../../components/shared/DetailDrawerFooter';
 
 interface Props {
@@ -29,6 +29,8 @@ const ThanhToanDetail: React.FC<Props> = ({ data, chiNhanhList, onClose, onEdit,
     });
     return m;
   }, [chiNhanhList]);
+
+  const laCoc = data.loai_dot === LOAI_DOT.COC;
 
   const statusLabel =
     data.trang_thai_hop_dong === TRANG_THAI_HOP_DONG[1]
@@ -90,12 +92,21 @@ const ThanhToanDetail: React.FC<Props> = ({ data, chiNhanhList, onClose, onEdit,
             />
             <DetailField label={t('hopDong.form.ctTenDot')} value={data.ten_dot ?? '—'} />
             <DetailField
-              label={t('hopDong.form.ctSoTien')}
-              value={formatNumberVN(data.so_tien != null ? Number(data.so_tien) : null)}
+              label={t('hopDong.form.ctLoaiDot')}
+              value={laCoc ? t('hopDong.loaiDot.coc') : t('hopDong.loaiDot.thanhToan')}
             />
+            {!laCoc && (
+              <>
+                <DetailField
+                  label={t('hopDong.form.ctSoCay')}
+                  value={formatNumberVN(data.so_cay_thuc_nhan != null ? Number(data.so_cay_thuc_nhan) : null)}
+                />
+                <DetailField label={t('hopDong.form.ctTruCoc')} value={formatNumberVN(data.tien_tru_coc)} />
+              </>
+            )}
             <DetailField
-              label={t('hopDong.form.ctSoCay')}
-              value={formatNumberVN(data.so_cay_thuc_nhan != null ? Number(data.so_cay_thuc_nhan) : null)}
+              label={laCoc ? t('hopDong.form.ctSoTienCoc') : t('hopDong.form.ctSoTienThucTra')}
+              value={formatNumberVN(data.so_tien != null ? Number(data.so_tien) : null)}
             />
             <DetailField
               label={t('hopDong.form.ctChiNhanh')}

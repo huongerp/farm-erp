@@ -1,12 +1,11 @@
 import React, { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, useWatch, Controller, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Wallet } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
 import Textarea from '../../../../components/ui/Textarea';
 import Combobox from '../../../../components/ui/Combobox';
-import CurrencyInput from '../../../../components/ui/CurrencyInput';
 import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/GenericDrawer';
 import FormSection from '../../../../components/shared/FormSection';
 import FormGrid from '../../../../components/shared/FormGrid';
@@ -15,13 +14,18 @@ import { thanhToanFormSchema, type ThanhToanFormValues } from '../core/schema';
 import type { HopDongChiTietEnriched } from '../core/types';
 import type { HopDong } from '../core/types';
 import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
+import { LOAI_DOT } from '../core/constants';
+import { goiYThucTra, tongHopCoc, truCocVuotConLai } from '../core/tinh-tien-dot';
 import { TRANG_THAI } from '../../../../lib/constants';
 import { getTodayISO } from '../../../../lib/utils';
+import DotThanhToanFields from './DotThanhToanFields';
 
 interface Props {
   open: boolean;
   hopDongList: HopDong[];
   chiNhanhList: Branch[];
+  /** Mọi dòng thanh toán (dữ liệu tab) — lọc theo HĐ đang chọn để tính cọc còn lại */
+  chiTietAll: HopDongChiTietEnriched[];
   initial?: HopDongChiTietEnriched | null;
   onClose: () => void;
   onSubmit: (values: ThanhToanFormValues) => void;
@@ -33,8 +37,10 @@ function emptyValues(): ThanhToanFormValues {
     id_hop_dong: '',
     ngay: getTodayISO(),
     ten_dot: '',
+    loai_dot: LOAI_DOT.THANH_TOAN,
     so_tien: undefined as unknown as number,
     so_cay_thuc_nhan: undefined as unknown as number,
+    tien_tru_coc: 0,
     ghi_chu: '',
     id_chi_nhanh: '',
   };
@@ -46,8 +52,10 @@ function toFormValues(ct: HopDongChiTietEnriched | null | undefined): ThanhToanF
     id_hop_dong: ct.id_hop_dong,
     ngay: ct.ngay ?? '',
     ten_dot: ct.ten_dot ?? '',
+    loai_dot: ct.loai_dot,
     so_tien: ct.so_tien ?? (undefined as unknown as number),
     so_cay_thuc_nhan: ct.so_cay_thuc_nhan ?? (undefined as unknown as number),
+    tien_tru_coc: ct.tien_tru_coc ?? 0,
     ghi_chu: ct.ghi_chu ?? '',
     id_chi_nhanh: ct.id_chi_nhanh ?? '',
   };
@@ -57,6 +65,7 @@ const ThanhToanForm: React.FC<Props> = ({
   open,
   hopDongList,
   chiNhanhList,
+  chiTietAll,
   initial,
   onClose,
   onSubmit,
@@ -65,20 +74,54 @@ const ThanhToanForm: React.FC<Props> = ({
   const { t } = useTranslation();
   const isEdit = !!initial?.id;
 
+  const form = useForm<ThanhToanFormValues>({
+    resolver: zodResolver(thanhToanFormSchema),
+    defaultValues: emptyValues(),
+  });
   const {
     register,
     control,
     handleSubmit,
     reset,
+    getValues,
+    setValue,
+    setError,
     formState: { errors, isDirty },
-  } = useForm<ThanhToanFormValues>({
-    resolver: zodResolver(thanhToanFormSchema),
-    defaultValues: emptyValues(),
-  });
+  } = form;
 
   useEffect(() => {
     if (open) reset(toFormValues(initial ?? null));
   }, [open, initial, reset]);
+
+  const idHopDong = useWatch({ control, name: 'id_hop_dong' });
+  const donGiaCua = (id: string) => hopDongList.find((h) => h.id === id)?.don_gia ?? null;
+  const dongCuaHd = (id: string) => chiTietAll.filter((c) => c.id_hop_dong === id);
+  const donGia = donGiaCua(idHopDong);
+  const { cocConLai } = useMemo(
+    () => tongHopCoc(chiTietAll.filter((c) => c.id_hop_dong === idHopDong), initial?.id),
+    [chiTietAll, idHopDong, initial?.id]
+  );
+
+  /** Chọn HĐ (thêm mới): HĐ chưa có đợt → Cọc, ngược lại Thanh toán; tính lại thực trả theo đơn giá mới. */
+  const onChonHopDong = (id: string) => {
+    if (dongCuaHd(id).length === 0) {
+      setValue('loai_dot', LOAI_DOT.COC);
+      setValue('so_cay_thuc_nhan', 0);
+      setValue('tien_tru_coc', 0);
+      return;
+    }
+    setValue('loai_dot', LOAI_DOT.THANH_TOAN);
+    const goiY = goiYThucTra(getValues('so_cay_thuc_nhan'), donGiaCua(id), getValues('tien_tru_coc'));
+    if (goiY != null) setValue('so_tien', goiY);
+  };
+
+  const submit = (v: ThanhToanFormValues) => {
+    if (truCocVuotConLai(v.loai_dot, v.tien_tru_coc, cocConLai)) {
+      setError('tien_tru_coc', { message: t('hopDong.validation.ctTruCocVuot') });
+      return;
+    }
+    onSubmit(v);
+  };
 
   const hopDongOptions = useMemo(
     () =>
@@ -113,9 +156,10 @@ const ThanhToanForm: React.FC<Props> = ({
         />
       }
     >
+      <FormProvider {...form}>
       <form
         id="thanh-toan-form"
-        onSubmit={handleSubmit((v) => onSubmit(v))}
+        onSubmit={handleSubmit(submit)}
         className="space-y-5"
       >
         <FormSection title={t('hopDong.thanhToan.detail.hopDongSection')} icon={<Wallet size={14} />} variant="primary">
@@ -129,7 +173,10 @@ const ThanhToanForm: React.FC<Props> = ({
                   placeholder={t('hopDong.thanhToan.selectHopDongPlaceholder')}
                   options={hopDongOptions}
                   value={field.value}
-                  onChange={field.onChange}
+                  onChange={(v) => {
+                    field.onChange(v);
+                    if (!isEdit && v) onChonHopDong(String(v));
+                  }}
                   error={errors.id_hop_dong?.message}
                   required
                   disabled={isEdit}
@@ -154,34 +201,7 @@ const ThanhToanForm: React.FC<Props> = ({
               error={errors.ten_dot?.message}
               {...register('ten_dot')}
             />
-            <Controller
-              name="so_tien"
-              control={control}
-              render={({ field }) => (
-                <CurrencyInput
-                  label={t('hopDong.form.ctSoTien')}
-                  suffix={t('hopDong.form.suffixDong')}
-                  required
-                  value={field.value ?? ''}
-                  onChange={(v) => field.onChange(v)}
-                  error={errors.so_tien?.message as string | undefined}
-                />
-              )}
-            />
-            <Controller
-              name="so_cay_thuc_nhan"
-              control={control}
-              render={({ field }) => (
-                <CurrencyInput
-                  label={t('hopDong.form.ctSoCay')}
-                  suffix={t('hopDong.form.suffixCay')}
-                  required
-                  value={field.value ?? ''}
-                  onChange={(v) => field.onChange(v)}
-                  error={errors.so_cay_thuc_nhan?.message as string | undefined}
-                />
-              )}
-            />
+            <DotThanhToanFields donGia={donGia} cocConLai={cocConLai} />
             <div className="sm:col-span-2">
               <Controller
                 name="id_chi_nhanh"
@@ -205,6 +225,7 @@ const ThanhToanForm: React.FC<Props> = ({
           </FormGrid>
         </FormSection>
       </form>
+      </FormProvider>
     </GenericDrawer>
   );
 };
