@@ -8,7 +8,8 @@ import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';
 import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
 import { cn } from '../../../../lib/utils';
-import { getTienDoMhBadgeClass, getTrangThaiPhieuBadgeClass, trangThaiToI18nKey } from '../core/constants';
+import { getTrangThaiPhieuBadgeClass, trangThaiToI18nKey } from '../core/constants';
+import TienDoMhBadge from './TienDoMhBadge';
 import DetailDrawerFooter from '../../../../components/shared/DetailDrawerFooter';
 
 interface Props {
@@ -82,11 +83,7 @@ const ChiTietRowDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
               >
                 {statusLabel}
               </span>
-              {data.ten_tien_do_mh ? (
-                <span className={cn('inline-flex px-2 py-0.5 rounded-full text-xs font-medium border', getTienDoMhBadgeClass(data.ten_tien_do_mh))}>
-                  {data.ten_tien_do_mh}
-                </span>
-              ) : null}
+              {data.ten_tien_do_mh ? <TienDoMhBadge ten={data.ten_tien_do_mh} id={data.id_tien_do_mh} /> : null}
             </div>
           </div>
         </div>
@@ -160,9 +157,7 @@ const ChiTietRowDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
               label={t('deXuatMuaHang.form.tienDoMh')}
               value={
                 data.ten_tien_do_mh ? (
-                  <span className={cn('inline-flex px-2 py-0.5 rounded-full text-xs font-medium border', getTienDoMhBadgeClass(data.ten_tien_do_mh))}>
-                    {data.ten_tien_do_mh}
-                  </span>
+                  <TienDoMhBadge ten={data.ten_tien_do_mh} id={data.id_tien_do_mh} />
                 ) : (
                   '—'
                 )

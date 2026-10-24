@@ -14,11 +14,11 @@ import {
   TRANG_THAI_DA_DUYET,
   TRANG_THAI_DOI_DUYET,
   TRANG_THAI_KHONG_DUYET,
-  getTienDoMhBadgeClass,
   getTrangThaiPhieuBadgeClass,
   isTrangThaiChoPheDuyet,
   trangThaiToI18nKey,
 } from '../core/constants';
+import TienDoMhBadge from './TienDoMhBadge';
 import { cn, formatDateTimeShort, formatNumberVN } from '../../../../lib/utils';
 import GenericDrawer, { DRAWER_WIDTH_DE_XUAT } from '../../../../components/shared/GenericDrawer';
 import DetailToolbar, { type DetailToolbarAction } from '../../../../components/shared/DetailToolbar';
@@ -235,14 +235,7 @@ const DeXuatMuaHangDetail: React.FC<Props> = ({
       }
       case 'tien_do':
         return ct.ten_tien_do_mh ? (
-          <span
-            className={cn(
-              'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border whitespace-nowrap',
-              getTienDoMhBadgeClass(ct.ten_tien_do_mh)
-            )}
-          >
-            {ct.ten_tien_do_mh}
-          </span>
+          <TienDoMhBadge ten={ct.ten_tien_do_mh} id={ct.id_tien_do_mh} />
         ) : (
           <span className="text-xs text-muted-foreground">—</span>
         );

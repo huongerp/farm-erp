@@ -9,8 +9,7 @@ import Textarea from '../../../../components/ui/Textarea';
 import { BTN_CANCEL } from '../../../../lib/button-labels';
 import { useFarmTienDoMuaHangList } from '../../thiet-lap-de-xuat-mua-hang/hooks/use-farm-tien-do-mua-hang';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
-import { cn } from '../../../../lib/utils';
-import { getTienDoMhBadgeClass } from '../core/constants';
+import TienDoMhBadge from './TienDoMhBadge';
 
 export interface ChuyenTienDoResult {
   id_tien_do_mh: string;
@@ -143,14 +142,7 @@ const ChuyenTienDoModal: React.FC<Props> = ({ open, selectedCount, defaultNgayCa
               {tienDoHienTai === null ? (
                 <span className="text-foreground">{t('deXuatMuaHang.chiTietTab.tienDoHienTaiKhacNhau')}</span>
               ) : tienDoHienTai?.ten ? (
-                <span
-                  className={cn(
-                    'inline-flex px-2 py-0.5 rounded-full text-xs font-medium border whitespace-nowrap',
-                    getTienDoMhBadgeClass(tienDoHienTai.ten)
-                  )}
-                >
-                  {tienDoHienTai.ten}
-                </span>
+                <TienDoMhBadge ten={tienDoHienTai.ten} id={tienDoHienTai.id} />
               ) : (
                 <span className="text-muted-foreground">{t('deXuatMuaHang.chiTietTab.tienDoHienTaiTrong')}</span>
               )}

@@ -22,7 +22,8 @@ import type { DateRangePresetId } from '../../../he-thong/nhan-vien/core/stats-c
 import type { Kho } from '../../danh-sach-kho/core/types';
 import type { PhieuDeXuatVatTu, PhieuDeXuatVatTuChiTietRow } from '../core/types';
 import type { PhieuDeXuatVatTuFormValues } from '../core/schema';
-import { getTienDoMhBadgeClass, getTrangThaiPhieuBadgeClass, trangThaiToI18nKey } from '../core/constants';
+import { getTrangThaiPhieuBadgeClass, trangThaiToI18nKey } from '../core/constants';
+import TienDoMhBadge from './TienDoMhBadge';
 import ChiTietTabToolbar from './ChiTietTabToolbar';
 import ExportDialog from '../../../../components/shared/LazyExportDialog';
 import GenericTable from '../../../../components/shared/GenericTable';
@@ -385,13 +386,9 @@ const ChiTietTab: React.FC = () => {
     );
   }, [t]);
 
-  const renderTienDoBadge = useCallback((tenTienDo: string | null | undefined) => {
+  const renderTienDoBadge = useCallback((tenTienDo: string | null | undefined, idTienDo?: string | null) => {
     if (tenTienDo == null || tenTienDo === '') return <span className="text-muted-foreground text-sm">—</span>;
-    return (
-      <span className={cn('inline-flex px-2 py-0.5 rounded-full text-xs font-medium border whitespace-nowrap', getTienDoMhBadgeClass(tenTienDo))}>
-        {tenTienDo}
-      </span>
-    );
+    return <TienDoMhBadge ten={tenTienDo} id={idTienDo} />;
   }, []);
 
   const renderCell = useCallback(
@@ -429,7 +426,7 @@ const ChiTietTab: React.FC = () => {
         case 'don_vi_tinh':
           return <span className="block truncate whitespace-nowrap text-sm text-muted-foreground" title={item.don_vi_tinh ?? ''}>{item.don_vi_tinh ?? '—'}</span>;
         case 'ten_tien_do_mh':
-          return renderTienDoBadge(item.ten_tien_do_mh);
+          return renderTienDoBadge(item.ten_tien_do_mh, item.id_tien_do_mh);
         case 'thong_so':
           return (
             <span className="block truncate whitespace-nowrap text-xs text-muted-foreground" title={item.thong_so ?? ''}>{item.thong_so ?? '—'}</span>
@@ -522,7 +519,7 @@ const ChiTietTab: React.FC = () => {
           <h4 className="font-semibold text-foreground text-sm line-clamp-2 min-w-0">{item.ten_hang || item.ma_hang || '—'}</h4>
           <div className="flex flex-wrap items-center gap-1 justify-end shrink-0">
             {renderStatusBadge(item.trang_thai_phieu)}
-            {item.ten_tien_do_mh ? renderTienDoBadge(item.ten_tien_do_mh) : null}
+            {item.ten_tien_do_mh ? renderTienDoBadge(item.ten_tien_do_mh, item.id_tien_do_mh) : null}
           </div>
         </div>
         <p className="text-xs text-muted-foreground truncate mt-0.5">
