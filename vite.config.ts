@@ -213,7 +213,7 @@ export default defineConfig(({ mode }) => {
         manifest: pwaManifest,
         injectManifest: {
           // Giữ đúng danh sách precache của cấu hình generateSW trước đây.
-          globPatterns: ['**/*.html', 'icons/*.png', 'manifest.webmanifest', 'fonts/**/*'],
+          globPatterns: ['**/*.html', 'icons/*.png', 'phieu-in/*.png', 'manifest.webmanifest', 'fonts/**/*'],
           globIgnores: ['**/stats.html'],
         },
         devOptions: {

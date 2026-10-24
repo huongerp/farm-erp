@@ -7,6 +7,7 @@
  * - XLSX : SheetJS aoa_to_sheet (Unicode gốc, Excel mở đúng).
  */
 import type { PhieuKhoPT, PhieuKhoPTChiTiet, LoaiPhieuKhoPT } from '../core/types';
+import { ghiXlsxCoBangHinh } from '../../../../lib/export/xlsx-bang-hinh';
 import { formatDateVietnameseLong, getTodayISODate } from '../../../../lib/utils';
 import i18n from '../../../../lib/i18n';
 import { useUIStore } from '../../../../store/useStore';
@@ -122,5 +123,5 @@ export async function exportPhieuKhoPTToXLSX(
   ws['!cols'] = [{ wch: 6 }, { wch: 22 }, { wch: 28 }, { wch: 14 }, { wch: 10 }, { wch: 12 }, { wch: 14 }, { wch: 24 }];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Phieu_kho_PT');
-  XLSX.writeFile(wb, `${fileName(phieu)}.xlsx`);
+  await ghiXlsxCoBangHinh(XLSX, wb, `${fileName(phieu)}.xlsx`);
 }

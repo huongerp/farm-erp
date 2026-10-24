@@ -2,6 +2,7 @@
  * Xuất báo cáo nhân công (PDF / DOC / XLSX) — A4 dọc.
  */
 import type { FarmBaoCaoNhanCong, FarmBaoCaoNhanCongCt } from '../core/types';
+import { ghiXlsxCoBangHinh } from '../../../../lib/export/xlsx-bang-hinh';
 import { chuyenTtLabelByThuTu, normalizeChiTietForDisplay, sumSlCongNgay, sumSlCongNua, sumSlTangCa, sumSoGioTc, sumTongCongQuyDoiPhieu, sumTongCongQuyDoiTuChiTiet, sumTongGioTangCaTichPhieu, sumTongGioTangCaTichTuChiTiet, tongCongQuyDoiNgayVaNua, tongGioTangCaTichMotDong } from '../core/types';
 import { combinedRowGhiChuAtIndex, displayLoaiTotalsOnCt, formatGioTbVN, hasSubLinesOnCt, isSubFormRowEmpty, subAlignedRowCount, subByLoaiForCtDisplay, sumDisplayLoaiTotalsOnRows, sumTongGioQuyDoiRowIVFromRows, tongGioCongNgayVaNua } from '../core/ct-sub';
 import { formatYmdToDisplay, getTodayISODate } from '../../../../lib/utils';
@@ -193,5 +194,5 @@ export async function exportBaoCaoNhanCongToXLSX(data: FarmBaoCaoNhanCong): Prom
   ];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Bao_cao_nhan_cong');
-  XLSX.writeFile(wb, `${fileName(data)}.xlsx`);
+  await ghiXlsxCoBangHinh(XLSX, wb, `${fileName(data)}.xlsx`);
 }

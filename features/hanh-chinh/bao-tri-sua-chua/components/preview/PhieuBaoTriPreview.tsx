@@ -6,6 +6,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatCurrency, formatDate, formatDateTime } from '../../../../../lib/utils';
 import { useUIStore } from '../../../../../store/useStore';
+import { BangHinhPhieuIn } from '../../../../../components/shared/phieu-in/PhieuInParts';
 import type { PhieuBaoTriSuaChua, TrangThaiPhieu } from '../../core/types';
 import { duLieuPhieuIn } from '../../core/phieu-in';
 
@@ -49,6 +50,7 @@ const PhieuBaoTriPreview: React.FC<{ phieu: PhieuBaoTriSuaChua }> = ({ phieu }) 
       className="phieu-in-content relative flex flex-col overflow-hidden bg-white text-[#111] min-h-[var(--in-trang-h,auto)]"
       style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: '12pt', lineHeight: 1.45 }}
     >
+      <BangHinhPhieuIn compact={false} />
       <div className="flex items-start gap-2.5">
         {info.appLogo && <img src={info.appLogo} alt="" className="w-[56px] h-[56px] object-contain shrink-0" />}
         <div className="flex-1 min-w-0">

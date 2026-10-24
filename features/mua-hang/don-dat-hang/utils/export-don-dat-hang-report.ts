@@ -3,6 +3,7 @@ import type { WorkSheet } from 'xlsx';
 import { formatDate, formatDateTime, getTodayISODate } from '../../../../lib/utils';
 import i18n from '../../../../lib/i18n';
 import { useUIStore } from '../../../../store/useStore';
+import { bangHinhHtml, choAnhTai } from '../../../../lib/phieu-in/bang-hinh';
 import { TRANG_THAI_KEY } from '../core/constants';
 import type { ChiTietDonDatHangFlat, DonDatHang } from '../core/types';
 import type {
@@ -277,6 +278,7 @@ function buildCompanyHeaderHTML(): string {
   if (info.phone) contact.push(`${i18n.t('company.phone')}: ${info.phone}`);
 
   return `
+${bangHinhHtml(44, 8)}
 <div class="company-header">
   ${logoHtml}
   <div>
@@ -525,7 +527,8 @@ export function printDonDatHangReport(payload: DonDatHangReportPayload): void {
   printWindow.document.close();
   printWindow.focus();
   printWindow.onafterprint = () => printWindow.close();
+  // Chờ logo + băng hình tải xong, nếu không bản in thiếu ảnh.
   window.setTimeout(() => {
-    printWindow.print();
+    void choAnhTai(printWindow.document).then(() => printWindow.print());
   }, 250);
 }

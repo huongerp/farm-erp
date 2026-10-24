@@ -6,6 +6,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatDate, formatDateTime } from '../../../../../lib/utils';
 import { useUIStore } from '../../../../../store/useStore';
+import { BangHinhPhieuIn } from '../../../../../components/shared/phieu-in/PhieuInParts';
 import type { AdminFormRequest } from '../../core/types';
 import { duLieuPhieuIn, type KetQuaIn } from '../../core/phieu-in';
 
@@ -69,6 +70,7 @@ const PhieuHanhChinhPreview: React.FC<{ phieu: AdminFormRequest }> = ({ phieu })
         </div>
       )}
 
+      <BangHinhPhieuIn compact={false} />
       <div className="flex items-start gap-2.5">
         {info.appLogo && <img src={info.appLogo} alt="" className="w-[56px] h-[56px] object-contain shrink-0" />}
         <div className="flex-1 min-w-0">

@@ -3,6 +3,7 @@
  * `components/preview/PhieuHanhChinhPreview` qua khung in dùng chung.
  */
 import i18n from '../../../../lib/i18n';
+import { ghiXlsxCoBangHinh } from '../../../../lib/export/xlsx-bang-hinh';
 import { formatDate, getTodayISODate } from '../../../../lib/utils';
 import { useUIStore } from '../../../../store/useStore';
 import type { AdminFormRequest } from '../core/types';
@@ -36,5 +37,5 @@ export async function exportPhieuHanhChinhXLSX(p: AdminFormRequest): Promise<voi
   ws['!cols'] = [{ wch: 22 }, { wch: 60 }];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Phieu');
-  XLSX.writeFile(wb, `${tenFilePhieuHanhChinh(p)}.xlsx`);
+  await ghiXlsxCoBangHinh(XLSX, wb, `${tenFilePhieuHanhChinh(p)}.xlsx`);
 }

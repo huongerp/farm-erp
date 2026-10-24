@@ -6,6 +6,7 @@
  * - XLSX : SheetJS aoa_to_sheet (Unicode).
  */
 import type { PhieuDeXuatVatTu, PhieuDeXuatVatTuChiTiet } from '../core/types';
+import { ghiXlsxCoBangHinh } from '../../../../lib/export/xlsx-bang-hinh';
 import { formatDate, formatDateVietnameseLong, getTodayISODate } from '../../../../lib/utils';
 import i18n from '../../../../lib/i18n';
 import { tenFileAnToan } from '../../../../lib/phieu-in/ten-file';
@@ -111,5 +112,5 @@ export async function exportPhieuDeXuatVatTuToXLSX(
   ];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Phieu_de_xuat');
-  XLSX.writeFile(wb, `${fileName(phieu)}.xlsx`);
+  await ghiXlsxCoBangHinh(XLSX, wb, `${fileName(phieu)}.xlsx`);
 }

@@ -3,6 +3,7 @@
  * `components/preview/PhieuBaoTriPreview` qua khung in dùng chung.
  */
 import i18n from '../../../../lib/i18n';
+import { ghiXlsxCoBangHinh } from '../../../../lib/export/xlsx-bang-hinh';
 import { formatCurrency, formatDate, getTodayISODate } from '../../../../lib/utils';
 import { useUIStore } from '../../../../store/useStore';
 import type { PhieuBaoTriSuaChua } from '../core/types';
@@ -44,5 +45,5 @@ export async function exportPhieuBaoTriXLSX(p: PhieuBaoTriSuaChua): Promise<void
   ws['!cols'] = [{ wch: 22 }, { wch: 60 }];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Phieu');
-  XLSX.writeFile(wb, `${tenFilePhieuBaoTri(p)}.xlsx`);
+  await ghiXlsxCoBangHinh(XLSX, wb, `${tenFilePhieuBaoTri(p)}.xlsx`);
 }

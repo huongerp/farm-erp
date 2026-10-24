@@ -3,6 +3,7 @@
  * PDF dùng print-employee-pdf.ts (đã có header).
  */
 import type { Employee } from '../core/types';
+import { ghiXlsxCoBangHinh } from '../../../../lib/export/xlsx-bang-hinh';
 import { getTodayISODate } from '../../../../lib/utils';
 import i18n from '../../../../lib/i18n';
 import { useUIStore } from '../../../../store/useStore';
@@ -42,5 +43,5 @@ export async function exportEmployeeProfileExcel(emp: Employee): Promise<void> {
   ws['!cols'] = [{ wch: 32 }, { wch: 40 }];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Ho so');
-  XLSX.writeFile(wb, `Ho_so_${safeFileName(emp.ho_ten)}_${emp.ma_nhan_vien}_${getTodayISODate()}.xlsx`);
+  await ghiXlsxCoBangHinh(XLSX, wb, `Ho_so_${safeFileName(emp.ho_ten)}_${emp.ma_nhan_vien}_${getTodayISODate()}.xlsx`);
 }

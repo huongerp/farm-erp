@@ -4,9 +4,11 @@
  * Input: kết quả từ useKiemKeKhoStats + meta bộ lọc đang áp dụng.
  */
 import type { KiemKeKhoStatsSummary, KiemKeKhoStatsByTrangThai } from '../components/stats/useKiemKeKhoStats';
+import { ghiXlsxCoBangHinh } from '../../../../lib/export/xlsx-bang-hinh';
 import { formatDateTime, getTodayISODate } from '../../../../lib/utils';
 import i18n from '../../../../lib/i18n';
 import { useUIStore } from '../../../../store/useStore';
+import { bangHinhHtml } from '../../../../lib/phieu-in/bang-hinh';
 
 const FONT = "Arial, 'Helvetica Neue', sans-serif";
 
@@ -116,6 +118,7 @@ function buildThongKeBodyHTML(
 
   return `
 <div style="font-family:${FONT};font-size:10pt;color:#222;padding:15mm 15mm 15mm 20mm;background:#fff;min-width:500px;box-sizing:border-box">
+  ${bangHinhHtml(48)}
   <div style="display:flex;align-items:flex-start;gap:14px;padding-bottom:14px;margin-bottom:14px;border-bottom:2px solid #333">
     ${logoHtml}
     <div>
@@ -278,5 +281,5 @@ export async function exportKiemKeKhoThongKeToXLSX(
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Thong_ke');
-  XLSX.writeFile(wb, `${getFileName()}.xlsx`);
+  await ghiXlsxCoBangHinh(XLSX, wb, `${getFileName()}.xlsx`);
 }

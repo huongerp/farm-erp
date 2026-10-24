@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { cn, formatDateTime, formatNumberVN } from '../../../lib/utils';
 import { useUIStore } from '../../../store/useStore';
 import { usePhieuIn } from './phieu-in-context';
+import { BANG_HINH_URL } from '../../../lib/phieu-in/bang-hinh';
 
 /**
  * Ô đầu bảng / ô dữ liệu chuẩn bản in. Màu CỐ ĐỊNH (không theo màu theme của người dùng) —
@@ -42,6 +43,20 @@ interface KhungPhieuProps {
 /** Cỡ chữ gốc (pt) của KhungPhieu — truyền cho `PhieuInPage coChuGocPt`. */
 export const coChuKhungPhieu = (kho: 'a4' | 'a5') => (kho === 'a5' ? 9 : 10.5);
 
+/**
+ * Băng hình «cây chuối + fp ForPeasantz» căn giữa trên cùng đầu phiếu, phía trên dòng công ty.
+ * Phiếu tự dựng đầu riêng (không qua `KhungPhieu`) cũng đặt khối này ngay trên header của mình.
+ */
+export const BangHinhPhieuIn: React.FC<{ compact?: boolean }> = ({ compact }) => {
+  const { compact: compactKho } = usePhieuIn();
+  const nho = compact ?? compactKho;
+  return (
+    <div className={cn('text-center leading-none', nho ? 'mb-1' : 'mb-1.5')}>
+      <img src={BANG_HINH_URL} alt="" className={cn('inline-block w-auto max-w-full', nho ? 'h-[20pt]' : 'h-[26pt]')} />
+    </div>
+  );
+};
+
 /** Đầu phiếu: logo · tên công ty, địa chỉ, liên hệ, MST · số phiếu / ngày (phải). */
 const DauPhieu: React.FC<{ compact: boolean; soPhieu?: string | null; ngay?: string | null }> = ({
   compact,
@@ -57,35 +72,38 @@ const DauPhieu: React.FC<{ compact: boolean; soPhieu?: string | null; ngay?: str
   ].filter(Boolean);
   const chuNho = compact ? 'text-[7pt]' : 'text-[8pt]';
   return (
-    <div className={cn('flex items-start gap-3 border-b-2 border-gray-300', compact ? 'pb-2 mb-2' : 'pb-3 mb-3')}>
-      {company.appLogo && (
-        <img src={company.appLogo} alt="" className={cn('object-contain shrink-0', compact ? 'w-10 h-10' : 'w-14 h-14')} />
-      )}
-      <div className="min-w-0 flex-1">
-        <h2 className={cn('font-bold uppercase leading-tight break-words m-0', compact ? 'text-[9.5pt]' : 'text-[12pt]')}>
-          {company.companyName}
-        </h2>
-        {company.address && (
-          <p className={cn('text-gray-600 mt-0.5 mb-0', chuNho)}>
-            {t('company.address')}: {company.address}
-          </p>
+    <div className={cn('border-b-2 border-gray-300', compact ? 'pb-2 mb-2' : 'pb-3 mb-3')}>
+      <BangHinhPhieuIn compact={compact} />
+      <div className="flex items-start gap-3">
+        {company.appLogo && (
+          <img src={company.appLogo} alt="" className={cn('object-contain shrink-0', compact ? 'w-10 h-10' : 'w-14 h-14')} />
         )}
-        {lienHe.length > 0 && <p className={cn('text-gray-600 m-0', chuNho)}>{lienHe.join(' · ')}</p>}
-      </div>
-      {(soPhieu || ngay) && (
-        <div className={cn('shrink-0 text-right leading-snug', compact ? 'text-[7.5pt]' : 'text-[8.5pt]')}>
-          {soPhieu && (
-            <p className="m-0">
-              {t('common.phieuIn.so')}: <span className="font-bold">{soPhieu}</span>
+        <div className="min-w-0 flex-1">
+          <h2 className={cn('font-bold uppercase leading-tight break-words m-0', compact ? 'text-[9.5pt]' : 'text-[12pt]')}>
+            {company.companyName}
+          </h2>
+          {company.address && (
+            <p className={cn('text-gray-600 mt-0.5 mb-0', chuNho)}>
+              {t('company.address')}: {company.address}
             </p>
           )}
-          {ngay && (
-            <p className="m-0 text-gray-600">
-              {t('common.phieuIn.ngay')}: {ngay}
-            </p>
-          )}
+          {lienHe.length > 0 && <p className={cn('text-gray-600 m-0', chuNho)}>{lienHe.join(' · ')}</p>}
         </div>
-      )}
+        {(soPhieu || ngay) && (
+          <div className={cn('shrink-0 text-right leading-snug', compact ? 'text-[7.5pt]' : 'text-[8.5pt]')}>
+            {soPhieu && (
+              <p className="m-0">
+                {t('common.phieuIn.so')}: <span className="font-bold">{soPhieu}</span>
+              </p>
+            )}
+            {ngay && (
+              <p className="m-0 text-gray-600">
+                {t('common.phieuIn.ngay')}: {ngay}
+              </p>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

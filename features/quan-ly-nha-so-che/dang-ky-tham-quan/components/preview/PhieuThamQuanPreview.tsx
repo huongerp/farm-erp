@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { cn, formatYmdToDisplay } from '../../../../../lib/utils';
 import { useUIStore } from '../../../../../store/useStore';
 import { usePhieuIn } from '../../../../../components/shared/phieu-in/phieu-in-context';
+import { BangHinhPhieuIn } from '../../../../../components/shared/phieu-in/PhieuInParts';
 import { MUC_DICH_THAM_QUAN, PHUONG_TIEN, type DangKyThamQuan } from '../../core/types';
 import { dongKhachIn } from '../../core/khach';
 import { SO_DONG_KHACH_TOI_THIEU, tachGioPhutNgay, type GioPhutNgay } from '../../core/mau-in';
@@ -71,6 +72,7 @@ const PhieuThamQuanPreview: React.FC<{ phieu: DangKyThamQuan | null }> = ({ phie
       className="phieu-in-content bg-white text-gray-900 font-sans box-border flex flex-col"
       style={{ minHeight: 'var(--in-trang-h, auto)', fontSize: compact ? '9pt' : '11pt' }}
     >
+      <BangHinhPhieuIn />
       {/* Đầu phiếu: công ty bên trái, số phiếu / ngày bên phải — một dòng cho gọn khổ A5. */}
       <div className="flex items-center gap-2 text-[0.8em] text-gray-600">
         {company.appLogo && <img src={company.appLogo} alt="" className="h-[1.8em] w-[1.8em] object-contain shrink-0" />}

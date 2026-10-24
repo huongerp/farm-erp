@@ -6,6 +6,7 @@ import { downloadBlob } from '../../../../lib/download-blob';
 import { useUIStore } from '../../../../store/useStore';
 import i18n from '../../../../lib/i18n';
 import { ensureJsPDFVietnameseFont } from '../../../../lib/jspdf-vietnamese-font';
+import { bangHinhHtml, choAnhTai } from '../../../../lib/phieu-in/bang-hinh';
 import type { NXTReportFilters } from '../core/types';
 import type { TFunction } from 'i18next';
 import { getNXTByPeriod, getPhieuInPeriod, getTonAtDate } from '../services/bao-cao-nxt-service';
@@ -29,6 +30,7 @@ function buildCompanyHeaderHTML(): string {
   if (info.phone) contact.push(`${i18n.t('company.phone')}: ${e(info.phone)}`);
   const contactLine = contact.join(' · ');
   return `
+${bangHinhHtml(48)}
 <div style="display:flex;align-items:flex-start;gap:16px;padding-bottom:16px;margin-bottom:16px;border-bottom:2px solid #333;font-family:${FONT_STACK}">
   ${logoHtml}
   <div style="flex:1;min-width:0">
@@ -168,6 +170,7 @@ export async function exportBaoCaoNXTToPdf(
   document.body.appendChild(container);
 
   try {
+    await choAnhTai(container);
     await doc.html(container, {
       callback: () => {},
       html2canvas: { useCORS: true },

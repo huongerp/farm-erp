@@ -2,6 +2,7 @@
  * Xuất hồ sơ tài sản ra PDF, Excel, Doc – tham chiếu export-bang-luong.
  */
 import type { TaiSan } from '../core/types';
+import { ghiXlsxCoBangHinh } from '../../../../lib/export/xlsx-bang-hinh';
 import { getTodayISODate } from '../../../../lib/utils';
 import i18n from '../../../../lib/i18n';
 import { useUIStore } from '../../../../store/useStore';
@@ -47,5 +48,5 @@ export async function exportHoSoTaiSanExcel(record: TaiSan): Promise<void> {
   ws['!cols'] = [{ wch: 28 }, { wch: 40 }];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Ho so tai san');
-  XLSX.writeFile(wb, `${getFileName(record)}.xlsx`);
+  await ghiXlsxCoBangHinh(XLSX, wb, `${getFileName(record)}.xlsx`);
 }

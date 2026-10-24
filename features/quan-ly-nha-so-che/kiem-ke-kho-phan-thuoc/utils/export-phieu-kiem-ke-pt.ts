@@ -3,6 +3,7 @@
  * xem trước qua khung in dùng chung (components/shared/phieu-in/PhieuInPage).
  */
 import type { DotKiemKePT, ChiTietKiemKePT } from '../core/types';
+import { ghiXlsxCoBangHinh } from '../../../../lib/export/xlsx-bang-hinh';
 import { formatDate, getTodayISODate } from '../../../../lib/utils';
 import i18n from '../../../../lib/i18n';
 import { useUIStore } from '../../../../store/useStore';
@@ -100,5 +101,5 @@ export async function exportPhieuKiemKePTToXLSX(
   ];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Phieu_kiem_ke_PT');
-  XLSX.writeFile(wb, `${getFileName(dot)}.xlsx`);
+  await ghiXlsxCoBangHinh(XLSX, wb, `${getFileName(dot)}.xlsx`);
 }

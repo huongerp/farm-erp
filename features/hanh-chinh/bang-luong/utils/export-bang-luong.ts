@@ -3,6 +3,7 @@
  * Cấu trúc: Header công ty (logo, tên, địa chỉ, liên hệ) → Tiêu đề → Thông tin cơ bản → Chi tiết lương → Cộng trừ (nếu có) → Tổng lương → Chữ ký → In lúc.
  */
 import type { BangLuongRecord } from '../core/types';
+import { ghiXlsxCoBangHinh } from '../../../../lib/export/xlsx-bang-hinh';
 import { formatCurrency, formatDateTime, getTodayISODate } from '../../../../lib/utils';
 import { downloadBlob } from '../../../../lib/download-blob';
 import i18n from '../../../../lib/i18n';
@@ -280,7 +281,7 @@ export async function exportBangLuongExcel(record: BangLuongRecord): Promise<voi
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Phieu luong');
   const filename = `Phieu_luong_${sanitizeFileName(empLabel)}_${periodStr}_${getTodayISODate()}.xlsx`;
-  XLSX.writeFile(wb, filename);
+  await ghiXlsxCoBangHinh(XLSX, wb, filename);
 }
 
 /** Xuất phiếu lương Doc (HTML mở bằng Word) – layout giống preview */

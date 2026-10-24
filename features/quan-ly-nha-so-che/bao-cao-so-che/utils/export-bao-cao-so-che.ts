@@ -2,6 +2,7 @@
  * Xuất báo cáo sơ chế (PDF / DOC / XLSX) — A4 dọc.
  */
 import type { FarmBaoCaoSoChe } from '../core/types';
+import { ghiXlsxCoBangHinh } from '../../../../lib/export/xlsx-bang-hinh';
 import type { FarmBaoCaoNhanCong } from '../../bao-cao-nhan-cong/core/types';
 import type { FarmDuBaoSlDongThung } from '../../du-bao-sl-dong-thung/core/types';
 import { findBaoCaoNhanCongByBranchAndDate, findDuBaoSlDongThungByBranchAndDate, extractLaborSnapshotFromBcnc, extractBcncTableGhiChuRows, computeBaoCaoSoCheKpis, buildBaoCaoSoCheKpiThuongPresetSources, enrichBaoCaoSoCheKpiThuongRows } from '../core/bcsc-kpi';
@@ -149,5 +150,5 @@ export async function exportBaoCaoSoCheToXLSX(
   ws['!cols'] = [{ wch: 6 }, { wch: 36 }, { wch: 18 }, { wch: 14 }, { wch: 14 }, { wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 22 }];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Báo cáo sơ chế');
-  XLSX.writeFile(wb, `${fileName(data)}.xlsx`);
+  await ghiXlsxCoBangHinh(XLSX, wb, `${fileName(data)}.xlsx`);
 }

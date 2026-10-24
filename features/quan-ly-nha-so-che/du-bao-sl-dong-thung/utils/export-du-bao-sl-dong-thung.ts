@@ -2,6 +2,7 @@
  * Xuất phiếu dự báo SL đóng thùng (PDF / DOC / XLSX) — A4 dọc.
  */
 import type { FarmDuBaoSlDongThung } from '../core/types';
+import { ghiXlsxCoBangHinh } from '../../../../lib/export/xlsx-bang-hinh';
 import { computeDuBaoSlDongThungKpiFromFarm } from '../core/kpi';
 import { dbsdtTrangThaiLabel, getDbsdtPreviewSignLabels } from '../core/dbsdt-preview-layout';
 import { formatYmdToDisplay, getTodayISODate } from '../../../../lib/utils';
@@ -58,5 +59,5 @@ export async function exportDuBaoSlDongThungToXLSX(data: FarmDuBaoSlDongThung): 
   ws['!cols'] = [{ wch: 5 }, { wch: 40 }, { wch: 14 }, { wch: 14 }, { wch: 30 }];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Dự báo đóng thùng');
-  XLSX.writeFile(wb, `${fileName(data)}.xlsx`);
+  await ghiXlsxCoBangHinh(XLSX, wb, `${fileName(data)}.xlsx`);
 }

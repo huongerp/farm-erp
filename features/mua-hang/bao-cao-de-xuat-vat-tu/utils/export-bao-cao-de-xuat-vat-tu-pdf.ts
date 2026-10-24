@@ -7,6 +7,7 @@ import { useUIStore } from '../../../../store/useStore';
 import { escapeHtml as e } from '../../../../lib/escape-html';
 import i18n from '../../../../lib/i18n';
 import { ensureJsPDFVietnameseFont } from '../../../../lib/jspdf-vietnamese-font';
+import { bangHinhHtml, choAnhTai } from '../../../../lib/phieu-in/bang-hinh';
 import type { BaoCaoDeXuatVatTuFilters } from '../core/types';
 import type { TFunction } from 'i18next';
 import { getTongHopDeXuatKy, getPhieuDeXuatInPeriod } from '../services/bao-cao-de-xuat-vat-tu-service';
@@ -30,6 +31,7 @@ function buildCompanyHeaderHTML(): string {
   if (info.phone) contact.push(`${i18n.t('company.phone')}: ${e(info.phone)}`);
   const contactLine = contact.join(' · ');
   return `
+${bangHinhHtml(48)}
 <div style="display:flex;align-items:flex-start;gap:16px;padding-bottom:16px;margin-bottom:16px;border-bottom:2px solid #333;font-family:${FONT_STACK}">
   ${logoHtml}
   <div style="flex:1;min-width:0">
@@ -163,6 +165,7 @@ ${table3}
   document.body.appendChild(container);
 
   try {
+    await choAnhTai(container);
     await doc.html(container, {
       callback: () => {},
       html2canvas: { useCORS: true },

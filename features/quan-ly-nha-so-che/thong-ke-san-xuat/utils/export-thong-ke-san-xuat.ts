@@ -3,11 +3,13 @@
  * Pattern tham khảo: export-bao-cao-so-che.ts
  */
 import { formatNumberVN, formatDateShort, getTodayISODate } from '../../../../lib/utils';
+import { ghiXlsxCoBangHinh } from '../../../../lib/export/xlsx-bang-hinh';
 import { useUIStore } from '../../../../store/useStore';
 import type { ThongKeSanXuatStats, KpiAnalysis, ByChiNhanhRow } from '../components/stats/useThongKeSanXuatStats';
 import type { ThongKeSanXuatSummary, ThongKeSanXuatRow } from '../core/types';
 import { kpiThucTeDisplay } from '../core/kpi-display';
 import { escapeHtml as e } from '../../../../lib/escape-html';
+import { bangHinhHtml } from '../../../../lib/phieu-in/bang-hinh';
 
 // ─── Style constants ──────────────────────────────────────────────────────────
 
@@ -98,6 +100,7 @@ function buildCompanyHeader(): string {
     ? `<img src="${e(info.appLogo)}" alt="Logo" style="width:52px;height:52px;object-fit:contain;flex-shrink:0" />`
     : '';
   return `
+${bangHinhHtml(44)}
 <div style="display:flex;align-items:flex-start;gap:12px;padding-bottom:10px;margin-bottom:10px;border-bottom:2px solid #333;font-family:${FONT}">
   ${logoHtml}
   <div>
@@ -662,5 +665,5 @@ export async function exportThongKeSanXuatToXLSX(
   ];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Thống kê sản xuất');
-  XLSX.writeFile(wb, `thong_ke_san_xuat_${getTodayISODate()}.xlsx`);
+  await ghiXlsxCoBangHinh(XLSX, wb, `thong_ke_san_xuat_${getTodayISODate()}.xlsx`);
 }

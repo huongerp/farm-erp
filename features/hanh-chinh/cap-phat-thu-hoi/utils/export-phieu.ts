@@ -3,6 +3,7 @@
  * PDF: jsPDF + autotable. DOC: HTML table (Word). XLSX: SheetJS.
  */
 import type { PhieuCapPhatThuHoi } from '../core/types';
+import { ghiXlsxCoBangHinh } from '../../../../lib/export/xlsx-bang-hinh';
 import { formatDate, formatDateTimeShort, formatDateVietnameseLong, getTodayISODate } from '../../../../lib/utils';
 import i18n from '../../../../lib/i18n';
 import { useUIStore } from '../../../../store/useStore';
@@ -108,5 +109,5 @@ export async function exportPhieuToXLSX(phieu: PhieuCapPhatThuHoi): Promise<void
   ws['!cols'] = [{ wch: 22 }, { wch: 28 }, { wch: 32 }, { wch: 18 }, { wch: 18 }, { wch: 20 }];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Phieu_CPTH');
-  XLSX.writeFile(wb, `${fileName(phieu)}.xlsx`);
+  await ghiXlsxCoBangHinh(XLSX, wb, `${fileName(phieu)}.xlsx`);
 }
