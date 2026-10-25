@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Calendar, Plus } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
+import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
 import { MobileFilterField } from '../../../../components/ui/MobileFilterSheet';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useBangLuongMyStore } from '../store/useBangLuongMyStore';
@@ -31,17 +32,24 @@ const BangLuongMyToolbar: React.FC<Props> = ({ onAdd, onClearSelection, selected
   const activeFilterCount = filters.yearMonth ? 1 : 0;
   const handleClearAllFilters = () => setFilter('yearMonth', '');
 
-  const renderFilters = (
-    <div className="relative w-full sm:w-[160px]">
-      <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-      <input
-        type="month"
-        value={filters.yearMonth}
-        onChange={(e) => setFilter('yearMonth', e.target.value)}
-        className="w-full h-9 pl-8 pr-2 bg-muted/40 border border-border/60 rounded-lg text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all"
-      />
-    </div>
-  );
+  const filterItems: FilterChipItem[] = [
+    {
+      kind: 'custom',
+      key: 'yearMonth',
+      node: (
+        <div className="relative w-full sm:w-[160px]">
+          <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+          <input
+            type="month"
+            value={filters.yearMonth}
+            onChange={(e) => setFilter('yearMonth', e.target.value)}
+            aria-label={t('bangLuong.filter.period')}
+            className="w-full h-9 pl-8 pr-2 bg-muted/40 border border-border/60 rounded-lg text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all"
+          />
+        </div>
+      ),
+    },
+  ];
 
   // Điện thoại ẩn hàng lọc desktop → đưa ô chọn tháng vào bảng lọc mobile.
   const mobileFilterExtra = (
@@ -73,9 +81,10 @@ const BangLuongMyToolbar: React.FC<Props> = ({ onAdd, onClearSelection, selected
       onSearchChange={setSearchInput}
       onClearSelection={onClearSelection}
       actions={renderActions}
-      filters={renderFilters}
+      filters={<ResponsiveFilterChips items={filterItems} />}
       onDeleteMany={canDelete && onDeleteMany && selectedIds.size > 0 ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
       filterGroups={[]}
+      onAdd={canCreate && onAdd ? onAdd : undefined}
       mobileFilterExtra={mobileFilterExtra}
       mobileFilterExtraCount={filters.yearMonth ? 1 : 0}
       activeFilterCount={activeFilterCount}

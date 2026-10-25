@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Banknote, User, Building2, Calendar, FileText } from 'lucide-react';
+import { Banknote, User, Building2, Calendar, Printer } from 'lucide-react';
 import DetailDrawerFooter from '../../../../components/shared/DetailDrawerFooter';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
 import DetailSection from '../../../../components/shared/DetailSection';
@@ -8,9 +8,10 @@ import DetailField from '../../../../components/shared/DetailField';
 import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
 import DetailToolbar, { DetailToolbarAction } from '../../../../components/shared/DetailToolbar';
 import { formatCurrency, cn } from '../../../../lib/utils';
+import { formatKyThangNam } from '../utils/ky-hien-thi';
 import type { BangLuongRecord } from '../core/types';
 
-/** App dùng HashRouter: route nằm sau #, nên URL mở tab phải có hash */
+/** Trang in phiếu lương (mở tab mới). */
 const getPayslipPreviewUrl = (id: string) =>
   `/phieu-luong/${encodeURIComponent(id)}`;
 
@@ -25,12 +26,12 @@ interface Props {
 
 const BangLuongDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, canUpdate = true, canDelete = true }) => {
   const { t } = useTranslation();
-  const periodStr = `${data.nam}-${String(data.thang).padStart(2, '0')}`;
+  const periodStr = formatKyThangNam(data.nam, data.thang);
 
   const toolbarActions: DetailToolbarAction[] = [
     {
       label: t('bangLuong.detail.exportPayslip'),
-      icon: <FileText />,
+      icon: <Printer />,
       onClick: () => window.open(getPayslipPreviewUrl(data.id), '_blank', 'noopener,noreferrer'),
       variant: 'primary',
     },
@@ -56,34 +57,34 @@ const BangLuongDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, can
       maxWidthClass={DRAWER_WIDTH_DETAIL}
     >
       <div className="space-y-5">
-        <div className="bg-card rounded-xl border border-border overflow-hidden">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3.5 border-b border-border bg-muted/20">
-            <div className="rounded-lg bg-background/80 p-2.5 border border-border">
-              <p className="text-xs text-muted-foreground mb-0.5">{t('bangLuong.detail.ngayCong')}</p>
-              <p className="text-sm font-semibold tabular-nums">
-                {data.ngay_cong} / {data.ngay_cong_chuan}
-              </p>
-            </div>
-            <div className="rounded-lg bg-background/80 p-2.5 border border-border">
-              <p className="text-xs text-muted-foreground mb-0.5">{t('bangLuong.store.luongCoBanTinhCol')}</p>
-              <p className="text-sm font-semibold tabular-nums">{formatCurrency(data.luong_co_ban_tinh)}</p>
-            </div>
-            <div className="rounded-lg bg-background/80 p-2.5 border border-border">
-              <p className="text-xs text-muted-foreground mb-0.5">{t('bangLuong.store.congTruNetCol')}</p>
-              <p className={cn(
-                'text-sm font-semibold tabular-nums',
-                data.cong_tru_net >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
-              )}>
-                {data.cong_tru_net >= 0 ? '+' : ''}{formatCurrency(data.cong_tru_net)}
-              </p>
-            </div>
-            <div className="rounded-lg bg-background/80 p-2.5 border border-border col-span-2 sm:col-span-1">
-              <p className="text-xs text-muted-foreground mb-0.5">{t('bangLuong.detail.tongLuong')}</p>
-              <p className="text-sm font-bold tabular-nums text-primary">{formatCurrency(data.tong_luong)}</p>
+        <div className="bg-card p-4 rounded-xl border border-border/50 shadow-sm flex items-center gap-4">
+          <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-white shadow-primary/20 shadow-lg shrink-0">
+            <Banknote size={24} className="text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-base font-bold text-foreground leading-tight truncate">
+              {data.ten_nhan_vien || data.ma_nhan_vien || '—'}
+            </h2>
+            <p className="text-body-sm text-muted-foreground mt-0.5 truncate">
+              {[periodStr, data.ten_phong_ban].filter(Boolean).join(' · ')}
+            </p>
+            <div className="mt-1.5 flex items-center gap-2 flex-wrap">
+              <span className="text-sm font-bold text-primary tabular-nums">{formatCurrency(data.tong_luong)}</span>
+              <span
+                className={cn(
+                  'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border',
+                  data.kpi_dat
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900'
+                    : 'bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-900'
+                )}
+              >
+                {data.kpi_dat ? t('bangLuong.detail.kpiDat') : t('bangLuong.detail.kpiKhongDat')}
+              </span>
             </div>
           </div>
-          <DetailToolbar actions={toolbarActions} className="!border-0" />
         </div>
+
+        <DetailToolbar actions={toolbarActions} className="bg-card rounded-xl border border-border" />
 
         <DetailSection
           title={t('bangLuong.detail.employee')}
@@ -108,11 +109,6 @@ const BangLuongDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, can
               icon={<Building2 size={12} />}
               emptyText="—"
             />
-            <DetailField
-              label={t('bangLuong.detail.ngayCong')}
-              value={`${data.ngay_cong} / ${data.ngay_cong_chuan}`}
-              icon={<Calendar size={12} />}
-            />
           </DetailFieldGrid>
         </DetailSection>
 
@@ -122,6 +118,11 @@ const BangLuongDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, can
           variant="primary"
         >
           <DetailFieldGrid>
+            <DetailField
+              label={t('bangLuong.detail.ngayCong')}
+              value={`${data.ngay_cong} / ${data.ngay_cong_chuan}`}
+              icon={<Calendar size={12} />}
+            />
             <DetailField
               label={t('bangLuong.detail.luongCoBan')}
               value={formatCurrency(data.luong_co_ban_tinh)}
@@ -175,15 +176,6 @@ const BangLuongDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, can
           </DetailSection>
         )}
 
-        <DetailSection
-          title={t('bangLuong.detail.tongLuong')}
-          icon={<Banknote size={14} />}
-          variant="primary"
-        >
-          <p className="text-lg font-bold text-primary">
-            {formatCurrency(data.tong_luong)}
-          </p>
-        </DetailSection>
       </div>
     </GenericDrawer>
   );

@@ -10,7 +10,7 @@ import {
   Calendar,
 } from 'lucide-react';
 import DashboardToolbar from '../../../../components/shared/DashboardToolbar';
-import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import ResponsiveFilterChips from '../../../../components/shared/ResponsiveFilterChips';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import { useBangLuongRecords } from '../hooks/use-bang-luong';
 import { useBangLuongStats } from '../hooks/use-bang-luong-stats';
@@ -98,26 +98,7 @@ const ThongKeTab: React.FC = () => {
   );
 
   const renderFilters = (
-    <>
-      <FilterChipMultiSelect
-        options={periodOptions}
-        value={filterYearMonths}
-        onChange={setFilterYearMonths}
-        placeholder={t('bangLuong.stats.periodPlaceholder')}
-        icon={Calendar}
-        className="w-full sm:w-[160px]"
-        size="md"
-      />
-      <FilterChipMultiSelect
-        options={departmentOptions}
-        value={filterDeptIds}
-        onChange={setFilterDeptIds}
-        placeholder={t('bangLuong.filter.phong')}
-        icon={Building2}
-        className="w-full sm:w-[160px]"
-        size="md"
-      />
-    </>
+    <ResponsiveFilterChips items={filterGroups.map((group) => ({ kind: 'group' as const, group }))} />
   );
 
   if (isError) {

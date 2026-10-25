@@ -22,9 +22,6 @@ interface Props {
   canDelete?: boolean;
 }
 
-const formatPeriod = (nam: number, thang: number) =>
-  `${nam}-${String(thang).padStart(2, '0')}`;
-
 const BangLuongManagedTable: React.FC<Props> = ({ isFetching, totalRecordsOverride, data, isLoading, onView, onEdit, onDelete, canUpdate = true, canDelete = true }) => {
   const { t } = useTranslation();
   const {
@@ -56,13 +53,13 @@ const BangLuongManagedTable: React.FC<Props> = ({ isFetching, totalRecordsOverri
       case 'period':
         return (
           <span className="text-sm font-medium text-foreground tabular-nums">
-            {formatPeriod(item.nam, item.thang)}
+            {formatKyThangNam(item.nam, item.thang)}
           </span>
         );
       case 'ten_phong_ban':
         return (
           <span className="text-sm text-foreground">
-            {item.ten_phong_ban || item.id_phong_ban || '—'}
+            {item.ten_phong_ban || '—'}
           </span>
         );
       case 'ngay_cong':

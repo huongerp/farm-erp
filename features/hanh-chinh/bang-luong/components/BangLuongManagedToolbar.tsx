@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Calendar, Building2, Plus } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
-import FilterChipMultiSelect from '../../../../components/shared/FilterChipMultiSelect';
+import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
 import { MobileFilterField, type FilterGroup } from '../../../../components/ui/MobileFilterSheet';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useBangLuongManagedStore } from '../store/useBangLuongManagedStore';
@@ -93,27 +93,25 @@ const BangLuongManagedToolbar: React.FC<Props> = ({ items = [], onAdd, onClearSe
     </Button>
   ) : null;
 
-  const renderFilters = (
-    <>
-      <FilterChipMultiSelect
-        options={phongOptions}
-        value={filters.phongBan}
-        onChange={(val) => setFilter('phongBan', val)}
-        placeholder={t('bangLuong.filter.phong')}
-        icon={Building2}
-        className="w-full sm:w-[160px]"
-      />
-      <div className="relative w-full sm:w-[160px]">
-        <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-        <input
-          type="month"
-          value={filters.yearMonth}
-          onChange={(e) => setFilter('yearMonth', e.target.value)}
-          className="w-full h-9 pl-8 pr-2 bg-muted/40 border border-border/60 rounded-lg text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all"
-        />
-      </div>
-    </>
-  );
+  const filterItems: FilterChipItem[] = [
+    { kind: 'group', group: filterGroups[0] },
+    {
+      kind: 'custom',
+      key: 'yearMonth',
+      node: (
+        <div className="relative w-full sm:w-[160px]">
+          <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+          <input
+            type="month"
+            value={filters.yearMonth}
+            onChange={(e) => setFilter('yearMonth', e.target.value)}
+            aria-label={t('bangLuong.filter.period')}
+            className="w-full h-9 pl-8 pr-2 bg-muted/40 border border-border/60 rounded-lg text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all"
+          />
+        </div>
+      ),
+    },
+  ];
 
   return (
     <GenericToolbar
@@ -122,9 +120,10 @@ const BangLuongManagedToolbar: React.FC<Props> = ({ items = [], onAdd, onClearSe
       onSearchChange={setSearchInput}
       onClearSelection={onClearSelection}
       actions={renderActions}
-      filters={renderFilters}
+      filters={<ResponsiveFilterChips items={filterItems} />}
       onDeleteMany={canDelete && onDeleteMany && selectedIds.size > 0 ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
       filterGroups={filterGroups}
+      onAdd={canCreate && onAdd ? onAdd : undefined}
       mobileFilterExtra={mobileFilterExtra}
       mobileFilterExtraCount={filters.yearMonth ? 1 : 0}
       activeFilterCount={activeFilterCount}
