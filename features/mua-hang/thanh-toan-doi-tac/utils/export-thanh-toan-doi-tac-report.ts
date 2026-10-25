@@ -244,7 +244,7 @@ function buildCompanyHeaderHTML(): string {
   if (info.phone) contact.push(`${i18n.t('company.phone')}: ${info.phone}`);
 
   return `
-${bangHinhHtml(44, 8)}
+${bangHinhHtml()}
 <div class="company-header">
   ${logoHtml}
   <div>

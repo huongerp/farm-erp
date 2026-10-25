@@ -72,7 +72,8 @@ const PhieuThamQuanPreview: React.FC<{ phieu: DangKyThamQuan | null }> = ({ phie
       className="phieu-in-content bg-white text-gray-900 font-sans box-border flex flex-col"
       style={{ minHeight: 'var(--in-trang-h, auto)', fontSize: compact ? '9pt' : '11pt' }}
     >
-      <BangHinhPhieuIn />
+      {/* Phiếu A5 ngang bó 1 trang — băng hình thu nhỏ để ô ký không tràn sang trang 2. */}
+      <BangHinhPhieuIn rongMm={62} />
       {/* Đầu phiếu: công ty bên trái, số phiếu / ngày bên phải — một dòng cho gọn khổ A5. */}
       <div className="flex items-center gap-2 text-[0.8em] text-gray-600">
         {company.appLogo && <img src={company.appLogo} alt="" className="h-[1.8em] w-[1.8em] object-contain shrink-0" />}

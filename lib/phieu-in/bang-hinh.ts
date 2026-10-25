@@ -1,25 +1,28 @@
 /**
- * Băng hình «hàng cây chuối + logo fp ForPeasantz» in trên cùng đầu phiếu — phía TRÊN dòng logo +
- * tên công ty (không thay). Ảnh tĩnh ở `public/phieu-in/bang-hinh-fp.png` (ghép từ 2 ảnh trong mẫu
- * Excel «Bảng xác nhận đầu vào lô clip»), dùng chung cho phiếu in React, PDF dựng từ HTML, trang in
+ * Băng hình «HTX NN Công Nghệ Cao fp - ForPeasantz» (thanh tên, ông nông dân, hàng cây, logo fp) in
+ * trên cùng đầu phiếu — phía TRÊN dòng logo + tên công ty (không thay). Ảnh tĩnh ở
+ * `public/phieu-in/bang-hinh-fp-2.png` (đổi ảnh thì đổi cả tên file để trình duyệt/PWA không giữ bản cũ), dùng chung cho phiếu in React, PDF dựng từ HTML, trang in
  * báo cáo và file Excel tải về.
  */
 
-/** Kích thước gốc của ảnh (px) — tính chiều rộng theo chiều cao muốn in. */
-export const BANG_HINH_RONG = 789;
-export const BANG_HINH_CAO = 86;
+/** Kích thước gốc của ảnh (px) — tính chiều cao theo chiều rộng muốn in. */
+export const BANG_HINH_RONG = 1344;
+export const BANG_HINH_CAO = 253;
 
 /** Đường dẫn tương đối theo BASE_URL của app (dùng trong trang của app). */
-export const BANG_HINH_URL = `${import.meta.env.BASE_URL.replace(/\/?$/, '/')}phieu-in/bang-hinh-fp.png`;
+export const BANG_HINH_URL = `${import.meta.env.BASE_URL.replace(/\/?$/, '/')}phieu-in/bang-hinh-fp-2.png`;
 
 /** Đường dẫn tuyệt đối — cho cửa sổ `about:blank` / iframe `srcdoc`, nơi đường dẫn tương đối không chạy. */
 export function bangHinhUrlTuyetDoi(): string {
   return new URL(BANG_HINH_URL, window.location.origin).href;
 }
 
-/** Khối HTML căn giữa cho các template chuỗi HTML (PDF/in báo cáo). */
-export function bangHinhHtml(caoPx = 40, cachDuoiPx = 6): string {
-  return `<div style="text-align:center;margin:0 0 ${cachDuoiPx}px 0;line-height:0"><img src="${bangHinhUrlTuyetDoi()}" alt="" style="height:${caoPx}px;width:auto;max-width:100%;display:inline-block" /></div>`;
+/**
+ * Khối HTML căn giữa cho các template chuỗi HTML (PDF/in báo cáo). Định cỡ theo chiều rộng
+ * (`height:auto` giữ tỉ lệ) để khung hẹp hơn vẫn không méo ảnh.
+ */
+export function bangHinhHtml(rongToiDaPx = 530, cachDuoiPx = 8): string {
+  return `<div style="text-align:center;margin:0 0 ${cachDuoiPx}px 0;line-height:0"><img src="${bangHinhUrlTuyetDoi()}" alt="" style="width:100%;max-width:${rongToiDaPx}px;height:auto;display:inline-block" /></div>`;
 }
 
 let base64Promise: Promise<string | null> | null = null;

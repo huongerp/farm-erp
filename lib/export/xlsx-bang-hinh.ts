@@ -1,5 +1,5 @@
 /**
- * Gắn băng hình «cây chuối + fp ForPeasantz» lên đầu file Excel có đầu công ty.
+ * Gắn băng hình «HTX NN Công Nghệ Cao fp - ForPeasantz» lên đầu file Excel có đầu công ty.
  *
  * Các file Excel phiếu/báo cáo dựng bằng SheetJS bản community — bản này không nhúng được ảnh. Nên:
  * dời sheet đầu xuống `SO_DONG_BANG_HINH` dòng (ô, merge, chiều cao dòng đi theo), ghi ra buffer, mở lại
@@ -14,9 +14,9 @@ type XlsxModule = typeof import('xlsx');
 
 /** Số dòng trống chèn trên cùng để đặt ảnh. */
 export const SO_DONG_BANG_HINH = 1;
-/** Chiều cao dòng chứa ảnh (pt) và chiều cao ảnh (px) — 36pt = 48px, ảnh 40px chừa lề trên/dưới. */
-const CAO_DONG_PT = 36;
-const CAO_ANH_PX = 40;
+/** Bề rộng ảnh muốn đặt (px) — thu nhỏ nếu các cột hẹp hơn; dòng 1 cao theo ảnh + lề trên/dưới. */
+const RONG_ANH_PX = 520;
+const LE_DOC_PX = 4;
 const EMU_MOI_PX = 9525;
 /** Độ rộng cột mặc định của Excel (ký tự) khi `!cols` không khai báo. */
 const RONG_COT_MAC_DINH = 8.43;
@@ -80,6 +80,9 @@ export function viTriAnh(rongCotPx: number[], rongAnhMuon: number, caoAnhMuon: n
   return { cot: 0, lechPx: 0, rong, cao };
 }
 
+/** Chiều cao (px) của dòng chứa ảnh: ảnh + lề trên/dưới. */
+export const caoDongTheoAnh = (caoAnhPx: number, lePx: number) => caoAnhPx + 2 * lePx;
+
 /** Thay `XLSX.writeFile(wb, tenFile)` cho các file có đầu công ty ở sheet đầu tiên. */
 export async function ghiXlsxCoBangHinh(XLSX: XlsxModule, wb: WorkBook, tenFile: string): Promise<void> {
   const base64 = await taiBangHinhBase64();
@@ -102,8 +105,6 @@ export async function ghiXlsxCoBangHinh(XLSX: XlsxModule, wb: WorkBook, tenFile:
     await ewb.xlsx.load(buf);
     const ews = ewb.worksheets[0];
 
-    for (let r = 1; r <= SO_DONG_BANG_HINH; r++) ews.getRow(r).height = CAO_DONG_PT / SO_DONG_BANG_HINH;
-
     const range = XLSX.utils.decode_range(wsGoc['!ref'] ?? 'A1');
     const cols = wsGoc['!cols'] ?? [];
     const rongCotPx = Array.from({ length: range.e.c + 1 }, (_, c) => {
@@ -114,17 +115,18 @@ export async function ghiXlsxCoBangHinh(XLSX: XlsxModule, wb: WorkBook, tenFile:
     });
     const { cot, lechPx, rong, cao } = viTriAnh(
       rongCotPx,
-      Math.round((CAO_ANH_PX * BANG_HINH_RONG) / BANG_HINH_CAO),
-      CAO_ANH_PX,
+      RONG_ANH_PX,
+      Math.round((RONG_ANH_PX * BANG_HINH_CAO) / BANG_HINH_RONG),
     );
+    const caoDongPt = (caoDongTheoAnh(cao, LE_DOC_PX) * 72) / 96;
+    for (let r = 1; r <= SO_DONG_BANG_HINH; r++) ews.getRow(r).height = caoDongPt / SO_DONG_BANG_HINH;
     const imageId = ewb.addImage({ base64, extension: 'png' });
     // Neo bằng toạ độ gốc (EMU): `tl.col/row` số lẻ của ExcelJS quy đổi theo độ rộng cột ước lượng sai.
-    const caoDongPx = (CAO_DONG_PT * 96) / 72;
     const tl = {
       nativeCol: cot,
       nativeColOff: Math.round(lechPx * EMU_MOI_PX),
       nativeRow: 0,
-      nativeRowOff: Math.round(Math.max(0, (caoDongPx - cao) / 2) * EMU_MOI_PX),
+      nativeRowOff: Math.round(LE_DOC_PX * EMU_MOI_PX),
     };
     ews.addImage(imageId, {
       tl: tl as unknown as { col: number; row: number },

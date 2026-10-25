@@ -100,7 +100,7 @@ function buildCompanyHeader(): string {
     ? `<img src="${e(info.appLogo)}" alt="Logo" style="width:52px;height:52px;object-fit:contain;flex-shrink:0" />`
     : '';
   return `
-${bangHinhHtml(44)}
+${bangHinhHtml()}
 <div style="display:flex;align-items:flex-start;gap:12px;padding-bottom:10px;margin-bottom:10px;border-bottom:2px solid #333;font-family:${FONT}">
   ${logoHtml}
   <div>

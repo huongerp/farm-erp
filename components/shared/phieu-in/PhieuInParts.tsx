@@ -44,15 +44,23 @@ interface KhungPhieuProps {
 export const coChuKhungPhieu = (kho: 'a4' | 'a5') => (kho === 'a5' ? 9 : 10.5);
 
 /**
- * Băng hình «cây chuối + fp ForPeasantz» căn giữa trên cùng đầu phiếu, phía trên dòng công ty.
- * Phiếu tự dựng đầu riêng (không qua `KhungPhieu`) cũng đặt khối này ngay trên header của mình.
+ * Băng hình «HTX NN Công Nghệ Cao fp - ForPeasantz» căn giữa trên cùng đầu phiếu, phía trên dòng công ty.
+ * Phiếu tự dựng đầu riêng (không qua `KhungPhieu`) cũng đặt khối này ngay trên header của mình;
+ * phiếu bó cứng 1 trang có thể truyền `rongMm` nhỏ hơn để không đẩy ô ký sang trang sau.
  */
-export const BangHinhPhieuIn: React.FC<{ compact?: boolean }> = ({ compact }) => {
+export const BangHinhPhieuIn: React.FC<{ compact?: boolean; rongMm?: number }> = ({ compact, rongMm }) => {
   const { compact: compactKho } = usePhieuIn();
   const nho = compact ?? compactKho;
   return (
     <div className={cn('text-center leading-none', nho ? 'mb-1' : 'mb-1.5')}>
-      <img src={BANG_HINH_URL} alt="" className={cn('inline-block w-auto max-w-full', nho ? 'h-[20pt]' : 'h-[26pt]')} />
+      {/* Định cỡ theo chiều rộng + h-auto: khung hẹp hơn thì max-w-full thu nhỏ mà vẫn đúng tỉ lệ
+          (không dùng object-fit — html2canvas/Word không hiểu). */}
+      <img
+        src={BANG_HINH_URL}
+        alt=""
+        className={cn('inline-block h-auto max-w-full', rongMm == null && (nho ? 'w-[70mm]' : 'w-[140mm]'))}
+        style={rongMm == null ? undefined : { width: `${rongMm}mm` }}
+      />
     </div>
   );
 };

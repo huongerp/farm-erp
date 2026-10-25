@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import * as XLSX from 'xlsx';
-import { dichSheetXuong, viTriAnh } from './xlsx-bang-hinh';
+import { caoDongTheoAnh, dichSheetXuong, viTriAnh } from './xlsx-bang-hinh';
 
 describe('dichSheetXuong', () => {
   const taoSheet = () => {
@@ -53,5 +53,11 @@ describe('viTriAnh', () => {
 
   it('ảnh rộng hơn các cột thì thu nhỏ giữ tỉ lệ, đặt sát trái', () => {
     expect(viTriAnh([100, 100], 400, 40)).toEqual({ cot: 0, lechPx: 0, rong: 200, cao: 20 });
+  });
+});
+
+describe('caoDongTheoAnh', () => {
+  it('dòng chứa ảnh cao bằng ảnh cộng lề trên và dưới', () => {
+    expect(caoDongTheoAnh(98, 4)).toBe(106);
   });
 });
