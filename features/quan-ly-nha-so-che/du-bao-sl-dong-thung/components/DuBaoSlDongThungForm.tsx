@@ -10,7 +10,13 @@ import NumberInput from '../../../../components/ui/NumberInput';
 import { duBaoSlDongThungFormSchema, type DuBaoSlDongThungFormValues } from '../core/schema';
 import type { FarmDuBaoSlDongThung } from '../core/types';
 import { cn, formatNumberVN } from '../../../../lib/utils';
-import { defaultFormValues, farmDuBaoSlDongThungToForm, computeKpiFromForm } from '../core/form-mappers';
+import {
+  apTongThuDgdvVaoDuBaoForm,
+  defaultFormValues,
+  farmDuBaoSlDongThungToForm,
+  computeKpiFromForm,
+} from '../core/form-mappers';
+import { DGDV_BANG_DANH_GIA_URL, useDgdvTongNgay } from '../../danh-gia-dau-vao/hooks/use-dgdv-tong-ngay';
 import { useCreateDuBaoSlDongThung, useUpdateDuBaoSlDongThung } from '../hooks/use-du-bao-sl-dong-thung';
 import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
 import { TRANG_THAI } from '../../../../lib/constants';
@@ -24,7 +30,7 @@ interface Props {
   initialData?: FarmDuBaoSlDongThung | null;
   preferredBranch?: { id_chi_nhanh: string; ten_chi_nhanh: string } | null;
   onClose: () => void;
-  /** Chỉ quản trị mới được nhập dòng 10–14 (phần thực tế). */
+  /** Chỉ quản trị mới được nhập dòng 12, 14 (phần thực tế); dòng 10 khoá theo Đánh giá đầu vào. */
   canAdmin?: boolean;
 }
 
@@ -87,8 +93,12 @@ const DuBaoSlDongThungForm: React.FC<Props> = ({ branches, initialData, preferre
   });
 
   const idChiNhanh = useWatch({ control, name: 'id_chi_nhanh' });
+  const ngay = useWatch({ control, name: 'ngay' });
   const watched = useWatch({ control }) as DuBaoSlDongThungFormValues;
-  const kpi = computeKpiFromForm(watched);
+  // Dòng 10 khoá: Tổng thu live theo Đánh giá đầu vào; dòng 11, 13, 15 tính lại theo số này.
+  const { data: tongDgdv, isError: dgdvLoi } = useDgdvTongNgay(ngay, idChiNhanh);
+  const tongThuDgdv = tongDgdv?.tong_thu ?? null;
+  const kpi = computeKpiFromForm(apTongThuDgdvVaoDuBaoForm(watched, tongThuDgdv));
 
   useEffect(() => {
     // Không reset nếu người dùng đã bắt đầu sửa — cùng lý do đã sửa ở BaoCaoSoCheForm.
@@ -105,7 +115,9 @@ const DuBaoSlDongThungForm: React.FC<Props> = ({ branches, initialData, preferre
     if (b) setValue('ten_chi_nhanh', b.ten_chi_nhanh);
   }, [idChiNhanh, branches, setValue]);
 
-  const onSubmit: SubmitHandler<DuBaoSlDongThungFormValues> = (data) => {
+  const onSubmit: SubmitHandler<DuBaoSlDongThungFormValues> = (raw) => {
+    // Gửi đúng số đang hiện ở dòng 10 (DB trigger vẫn ghi đè theo Đánh giá đầu vào dù gửi gì).
+    const data = apTongThuDgdvVaoDuBaoForm(raw, tongThuDgdv);
     if (isEdit && initialData) {
       updateMutation.mutate({ id: initialData.id, data });
       return;
@@ -343,27 +355,21 @@ const DuBaoSlDongThungForm: React.FC<Props> = ({ branches, initialData, preferre
                 <tr className="border-b border-border/80">
                   <td className="px-2 py-2 text-center tabular-nums text-muted-foreground">10</td>
                   <td className="px-3 py-2 text-muted-foreground">{t('duBaoSlDongThung.form.row10')}</td>
-                  <td className={cn('px-1 py-1', canAdmin && inputCell)}>
-                    {canAdmin ? (
-                      <Controller
-                        name="tong_buong_nhap_thuc_te"
-                        control={control}
-                        render={({ field }) => (
-                          <NumberInput
-                            compact
-                            value={field.value}
-                            onChange={(n) => field.onChange(Math.max(0, Math.floor(n)))}
-                            maxFractionDigits={0}
-                            className="border-0 bg-transparent shadow-none"
-                          />
-                        )}
-                      />
-                    ) : (
-                      readOnlyNum(watched.tong_buong_nhap_thuc_te)
-                    )}
-                  </td>
+                  {/* Ô khoá: số do DB ghi đè theo Đánh giá đầu vào, không cho nhập tay (kể cả quản trị). */}
+                  <td className="px-1 py-1">{readOnlyNum(tongThuDgdv)}</td>
                   <td className="px-2 py-2 text-muted-foreground">{t('duBaoSlDongThung.form.unitBuong')}</td>
-                  <td className="px-2 py-2 text-xs text-muted-foreground leading-snug">{t('duBaoSlDongThung.form.row10Note')}</td>
+                  <td className="px-2 py-2 text-xs text-muted-foreground leading-snug">
+                    <a
+                      href={DGDV_BANG_DANH_GIA_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={t('duBaoSlDongThung.form.row10NoteTitle')}
+                      className="text-primary hover:underline"
+                    >
+                      {t('duBaoSlDongThung.form.row10Note')}
+                    </a>
+                    {dgdvLoi && <span className="block text-destructive">{t('duBaoSlDongThung.form.dgdvLoi')}</span>}
+                  </td>
                 </tr>
                 <tr className="border-b border-border/80 bg-muted/20">
                   <td className="px-2 py-2 text-center tabular-nums text-muted-foreground">11</td>

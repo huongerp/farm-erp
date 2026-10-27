@@ -43,6 +43,7 @@ export type FeatureI18nKey =
   | 'thiet-lap-de-xuat-mua-hang'
   | 'thong-ke-san-xuat'
   | 'thu-hoach'
+  | 'danh-gia-dau-vao'
   | 'dang-ky-nhan-hang'
   | 'dang-ky-tham-quan'
   | 'giam-sat-chat-luong'
@@ -83,6 +84,7 @@ const FEATURE_I18N_KEYS = new Set<FeatureI18nKey>([
   'thiet-lap-de-xuat-mua-hang',
   'thong-ke-san-xuat',
   'thu-hoach',
+  'danh-gia-dau-vao',
   'dang-ky-nhan-hang',
   'dang-ky-tham-quan',
   'giam-sat-chat-luong',
@@ -137,6 +139,7 @@ const FEATURE_I18N_LOADERS: Record<FeatureI18nKey, () => Promise<{ default: Reco
   'thiet-lap-de-xuat-mua-hang': () => import('../features/quan-ly-nha-so-che/thiet-lap-de-xuat-mua-hang/locales/vi.json'),
   'thong-ke-san-xuat': () => import('../features/quan-ly-nha-so-che/thong-ke-san-xuat/locales/vi.json'),
   'thu-hoach': () => import('../features/quan-ly-nha-so-che/thu-hoach/locales/vi.json'),
+  'danh-gia-dau-vao': () => import('../features/quan-ly-nha-so-che/danh-gia-dau-vao/locales/vi.json'),
   'dang-ky-nhan-hang': () => import('../features/quan-ly-nha-so-che/dang-ky-nhan-hang/locales/vi.json'),
   'dang-ky-tham-quan': () => import('../features/quan-ly-nha-so-che/dang-ky-tham-quan/locales/vi.json'),
   'giam-sat-chat-luong': () => import('../features/quan-ly-nha-so-che/giam-sat-chat-luong/locales/vi.json'),
@@ -157,7 +160,7 @@ const FEATURE_I18N_DEPS: Partial<Record<FeatureI18nKey, FeatureI18nKey[]>> = {
   'bao-cao-de-xuat-vat-tu': ['don-dat-hang', 'phieu-de-xuat-vat-tu'],
   'bao-cao-nhan-cong': ['bao-cao-so-che'],
   'bao-cao-nhap-xuat-ton': ['danh-muc-hang-hoa', 'danh-sach-hang-hoa', 'phieu-kho'],
-  'bao-cao-so-che': ['bao-cao-nhan-cong', 'du-bao-sl-dong-thung'],
+  'bao-cao-so-che': ['bao-cao-nhan-cong', 'danh-gia-dau-vao', 'du-bao-sl-dong-thung'],
   'bao-tri-sua-chua': ['danh-muc-tai-san', 'thiet-lap-tai-san', 'thu-chi-quy'],
   'cap-phat-thu-hoi': ['danh-muc-tai-san', 'thiet-lap-tai-san'],
   'dang-ky-nhan-hang': ['giam-sat-chat-luong', 'ton-kho-phan-thuoc'],
@@ -167,6 +170,7 @@ const FEATURE_I18N_DEPS: Partial<Record<FeatureI18nKey, FeatureI18nKey[]>> = {
   'danh-sach-hang-hoa': ['danh-muc-hang-hoa', 'ton-kho'],
   'de-xuat-mua-hang': ['hang-hoa-phan-thuoc', 'phieu-kho', 'phieu-kho-phan-thuoc', 'thiet-lap-de-xuat-mua-hang', 'thu-chi-quy', 'ton-kho-phan-thuoc'],
   'giam-sat-chat-luong': ['hang-hoa-phan-thuoc'],
+  'du-bao-sl-dong-thung': ['danh-gia-dau-vao'],
   'don-dat-hang': ['danh-sach-doi-tac', 'danh-sach-hang-hoa', 'phieu-de-xuat-vat-tu', 'phieu-kho', 'thu-chi-quy'],
   'hang-hoa-phan-thuoc': ['ton-kho-phan-thuoc'],
   'khau-hao-tai-san': ['danh-muc-tai-san', 'thiet-lap-tai-san'],

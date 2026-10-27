@@ -132,6 +132,11 @@ const SubmenuPage: React.FC = () => {
           <ErrorBoundary>{renderLazySubmenuModule('dang-ky-tham-quan')}</ErrorBoundary>
         ));
       }
+      if (decodedSlug === 'danh-gia-dau-vao') {
+        return wrapWithPermission(basePath ?? '', decodedSlug, (
+          <ErrorBoundary>{renderLazySubmenuModule('danh-gia-dau-vao')}</ErrorBoundary>
+        ));
+      }
       if (decodedSlug === 'thu-hoach') {
         return wrapWithPermission(basePath ?? '', decodedSlug, (
           <ErrorBoundary>{renderLazySubmenuModule('thu-hoach')}</ErrorBoundary>

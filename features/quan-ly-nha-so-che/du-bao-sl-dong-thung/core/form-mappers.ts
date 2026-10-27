@@ -38,6 +38,18 @@ export function farmDuBaoSlDongThungToForm(row: FarmDuBaoSlDongThung): DuBaoSlDo
   };
 }
 
+/**
+ * Dòng 10 «Tổng số buồng nhập (thực tế)» = Tổng thu của Đánh giá đầu vào (`fn_dgdv_tong_ngay`, migration 052).
+ * Chưa có số (chưa chọn ngày/chi nhánh, đang tải, lỗi) → giữ số đã lưu; DB trigger vẫn ghi đè khi lưu.
+ */
+export function apTongThuDgdvVaoDuBaoForm(
+  values: DuBaoSlDongThungFormValues,
+  tongThu: number | null | undefined
+): DuBaoSlDongThungFormValues {
+  if (tongThu == null || !Number.isFinite(tongThu)) return values;
+  return { ...values, tong_buong_nhap_thuc_te: Math.max(0, Math.floor(tongThu)) };
+}
+
 export function formValuesToKpiInput(values: DuBaoSlDongThungFormValues): DuBaoSlDongThungKpiInput {
   const r = (pct: number) => Math.min(1, Math.max(0, (Number(pct) || 0) / 100));
   return {

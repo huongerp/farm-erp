@@ -88,6 +88,8 @@
   "page.quanLyNhaSoChe.descs.dangKyNhanHang": "Đăng ký xe/cont nhận hàng, check in – check out, ảnh và hàng xuất theo QR.",
   "page.quanLyNhaSoChe.modules.dangKyThamQuan": "Đăng ký tham quan farm",
   "page.quanLyNhaSoChe.descs.dangKyThamQuan": "Phiếu đăng ký khách/đoàn tham quan farm: danh sách khách, mục đích, check in – check out, in phiếu A5.",
+  "page.quanLyNhaSoChe.modules.danhGiaDauVao": "Đánh giá đầu vào",
+  "page.quanLyNhaSoChe.descs.danhGiaDauVao": "Phiếu tuần kiểm tra buồng đầu vào theo lô và màu dây: số lượng, đánh giá, KSC.",
   "page.quanLyNhaSoChe.modules.thuHoach": "Thu hoạch",
   "page.quanLyNhaSoChe.descs.thuHoach": "Lập kế hoạch và theo dõi đợt thu hoạch.",
   "page.quanLyNhaSoChe.modules.baoCaoNhanCong": "Báo cáo nhân công",

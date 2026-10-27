@@ -15,6 +15,17 @@ export const SO_LIEU_ROW_DVT_QC_PCT = '%' as const;
 
 export type SoLieuRowKey = (typeof SO_LIEU_ROW_KEYS)[number];
 
+/**
+ * Chỉ tiêu khoá theo Đánh giá đầu vào (migration 052): form chỉ hiện, DB trigger ghi đè.
+ * Tổng thu → `tong_buong_thu_hoach`; KSC → `tong_buong_khong_so_che`.
+ */
+export const SO_LIEU_ROW_KEYS_TU_DGDV = ['tong_buong_thu_hoach', 'tong_buong_khong_so_che'] as const;
+export type SoLieuRowKeyTuDgdv = (typeof SO_LIEU_ROW_KEYS_TU_DGDV)[number];
+
+export function laSoLieuRowTuDgdv(k: SoLieuRowKey): k is SoLieuRowKeyTuDgdv {
+  return (SO_LIEU_ROW_KEYS_TU_DGDV as readonly string[]).includes(k);
+}
+
 export interface SoLieuRowMetaEntry {
   ghi_chu?: string | null;
   don_vi_tinh_phu?: string | null;

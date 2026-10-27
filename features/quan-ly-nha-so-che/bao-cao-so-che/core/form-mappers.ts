@@ -50,6 +50,18 @@ export function farmBaoCaoSoCheToForm(row: FarmBaoCaoSoChe): BaoCaoSoCheFormValu
   };
 }
 
+/**
+ * Ghép tổng ngày của Đánh giá đầu vào (`fn_dgdv_tong_ngay`) vào 2 chỉ tiêu khoá trước khi lưu.
+ * Chưa có số (chưa chọn ngày/chi nhánh, đang tải, lỗi) → giữ nguyên; DB trigger vẫn ghi đè đúng số.
+ */
+export function apTongDgdvVaoBcscForm(
+  values: BaoCaoSoCheFormValues,
+  tong: { tong_thu: number; ksc: number } | null | undefined
+): BaoCaoSoCheFormValues {
+  if (!tong) return values;
+  return { ...values, tong_buong_thu_hoach: tong.tong_thu, tong_buong_khong_so_che: tong.ksc };
+}
+
 /** Ngày ISO yyyy-mm-dd + số ngày (theo lịch local). */
 export function addCalendarDaysIso(isoDate: string, deltaDays: number): string {
   const raw = isoDate.slice(0, 10);

@@ -34,6 +34,7 @@ const RAW_SUBMENU_MODULE_IMPORTS = {
   'giam-sat-chat-luong': () => import('../features/quan-ly-nha-so-che/giam-sat-chat-luong'),
   'dang-ky-nhan-hang': () => import('../features/quan-ly-nha-so-che/dang-ky-nhan-hang'),
   'dang-ky-tham-quan': () => import('../features/quan-ly-nha-so-che/dang-ky-tham-quan'),
+  'danh-gia-dau-vao': () => import('../features/quan-ly-nha-so-che/danh-gia-dau-vao'),
   'thu-hoach': () => import('../features/quan-ly-nha-so-che/thu-hoach'),
   'bao-cao-nhan-cong': () => import('../features/quan-ly-nha-so-che/bao-cao-nhan-cong'),
   'bao-cao-so-che': () => import('../features/quan-ly-nha-so-che/bao-cao-so-che'),

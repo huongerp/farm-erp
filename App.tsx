@@ -131,6 +131,10 @@ const BaoCaoSoChePreviewPage = lazyWithFeatureI18n(
   'bao-cao-so-che',
   () => import('./features/quan-ly-nha-so-che/bao-cao-so-che/BaoCaoSoChePreviewPage')
 );
+const DanhGiaDauVaoPreviewPage = lazyWithFeatureI18n(
+  'danh-gia-dau-vao',
+  () => import('./features/quan-ly-nha-so-che/danh-gia-dau-vao/DanhGiaDauVaoPreviewPage')
+);
 const DuBaoSlDongThungPreviewPage = lazyWithFeatureI18n(
   'du-bao-sl-dong-thung',
   () => import('./features/quan-ly-nha-so-che/du-bao-sl-dong-thung/DuBaoSlDongThungPreviewPage')
@@ -441,6 +445,18 @@ const App = () => {
               <ModulePermissionGuard moduleId="quan-ly-nha-so-che/bao-cao-so-che">
                 <Suspense fallback={<PageFallback />}>
                   <BaoCaoSoChePreviewPage />
+                </Suspense>
+              </ModulePermissionGuard>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/quan-ly-nha-so-che/danh-gia-dau-vao/preview"
+          element={
+            <ProtectedRoute>
+              <ModulePermissionGuard moduleId="quan-ly-nha-so-che/danh-gia-dau-vao">
+                <Suspense fallback={<PageFallback />}>
+                  <DanhGiaDauVaoPreviewPage />
                 </Suspense>
               </ModulePermissionGuard>
             </ProtectedRoute>

@@ -12,10 +12,12 @@ import Combobox from '../../../../components/ui/Combobox';
 import { baoCaoSoCheFormSchema, type BaoCaoSoCheFormValues } from '../core/schema';
 import type { FarmBaoCaoSoChe } from '../core/types';
 import {
+  apTongDgdvVaoBcscForm,
   defaultFormValues,
   farmBaoCaoSoCheToForm,
   findBaoCaoSoCheDuplicateByBranchAndDate,
 } from '../core/form-mappers';
+import { useDgdvTongNgay } from '../../danh-gia-dau-vao/hooks/use-dgdv-tong-ngay';
 import { BCSC_KPI_STT_OFFSET, BCSC_SO_LIEU_STT_OFFSET, deriveDonViTinhSlipFromSoLieuMeta } from '../core/so-lieu-row-meta';
 import { useCreateBaoCaoSoChe, useUpdateBaoCaoSoChe } from '../hooks/use-bao-cao-so-che';
 import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
@@ -135,6 +137,16 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
     idChiNhanh
   );
 
+  // 2 chỉ tiêu khoá (Tổng thu hoạch / Không sơ chế) lấy live theo Đánh giá đầu vào của ngày + chi nhánh.
+  const { data: tongDgdv, isError: dgdvLoi } = useDgdvTongNgay(ngay, idChiNhanh);
+  const giaTriTuDgdv = useMemo(
+    () => ({
+      tong_buong_thu_hoach: tongDgdv?.tong_thu ?? null,
+      tong_buong_khong_so_che: tongDgdv?.ksc ?? null,
+    }),
+    [tongDgdv]
+  );
+
   const bcnc = useMemo(
     () => findBaoCaoNhanCongByBranchAndDate(bcncList, ngay ?? '', idChiNhanh ?? ''),
     [bcncList, ngay, idChiNhanh]
@@ -177,7 +189,9 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
     if (b) setValue('ten_chi_nhanh', b.ten_chi_nhanh);
   }, [idChiNhanh, branches, setValue]);
 
-  const onSubmit: SubmitHandler<BaoCaoSoCheFormValues> = (data) => {
+  const onSubmit: SubmitHandler<BaoCaoSoCheFormValues> = (raw) => {
+    // Gửi đúng số đang hiện ở 2 ô khoá (DB trigger vẫn ghi đè theo Đánh giá đầu vào dù gửi gì).
+    const data = apTongDgdvVaoBcscForm(raw, tongDgdv);
     const dup = findBaoCaoSoCheDuplicateByBranchAndDate(
       existingList,
       data.ngay,
@@ -282,6 +296,8 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
               control={control}
               errors={errors}
               sttOffset={BCSC_SO_LIEU_STT_OFFSET}
+              giaTriTuDgdv={giaTriTuDgdv}
+              dgdvLoi={dgdvLoi}
             />
           </div>
         </FormSection>

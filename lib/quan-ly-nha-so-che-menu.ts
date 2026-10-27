@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { Sprout, Truck, PackagePlus, Package, BookOpen, Users, Layers, Boxes, BarChart3, ClipboardList, ClipboardCheck, Settings, BadgeCheck, UserCheck } from 'lucide-react';
+import { Sprout, Truck, PackagePlus, Package, BookOpen, Users, Layers, Boxes, BarChart3, ClipboardList, ClipboardCheck, ClipboardPen, Settings, BadgeCheck, UserCheck } from 'lucide-react';
 import type { ModuleItem } from '../components/dashboard/SubModuleCard';
 import type { ModuleGroup } from '../components/dashboard/ModuleDashboardLayout';
 
@@ -27,6 +27,7 @@ export const QUAN_LY_NHA_SO_CHE_MODULE_SLUGS: string[] = [
   'dang-ky-nhan-hang',
   'dang-ky-tham-quan',
   'giam-sat-chat-luong',
+  'danh-gia-dau-vao',
   'thu-hoach',
   'bao-cao-nhan-cong',
   'bao-cao-so-che',
@@ -93,6 +94,13 @@ export function getQuanLyNhaSoCheGroups(
           descKey: 'page.quanLyNhaSoChe.descs.giamSatChatLuong',
           icon: BadgeCheck,
           color: 'bg-teal-600',
+        }),
+        item({
+          slug: 'danh-gia-dau-vao',
+          titleKey: 'page.quanLyNhaSoChe.modules.danhGiaDauVao',
+          descKey: 'page.quanLyNhaSoChe.descs.danhGiaDauVao',
+          icon: ClipboardPen,
+          color: 'bg-fuchsia-600',
         }),
         item({
           slug: 'thu-hoach',

@@ -24,16 +24,30 @@ import {
   SO_LIEU_ROW_DVT_DEFAULT,
   SO_LIEU_ROW_DVT_QC_PCT,
   SO_LIEU_ROW_KEYS,
+  laSoLieuRowTuDgdv,
+  type SoLieuRowKeyTuDgdv,
 } from '../core/so-lieu-row-meta';
+import { formatNumberVN } from '../../../../lib/utils';
+import { DGDV_BANG_DANH_GIA_URL } from '../../danh-gia-dau-vao/hooks/use-dgdv-tong-ngay';
 
 interface Props {
   control: Control<BaoCaoSoCheFormValues>;
   errors: FieldErrors<BaoCaoSoCheFormValues>;
   /** STT cột TT bắt đầu từ số này (nối sau các dòng BCNC). */
   sttOffset: number;
+  /** Số của 2 chỉ tiêu khoá theo Đánh giá đầu vào (ngày + chi nhánh đang chọn); null → «—». */
+  giaTriTuDgdv: Record<SoLieuRowKeyTuDgdv, number | null>;
+  /** RPC tổng ngày lỗi → hiện dòng báo dưới ghi chú nguồn. */
+  dgdvLoi?: boolean;
 }
 
-const BaoCaoSoCheSoLieuBuongFormTable: React.FC<Props> = ({ control, errors, sttOffset }) => {
+const BaoCaoSoCheSoLieuBuongFormTable: React.FC<Props> = ({
+  control,
+  errors,
+  sttOffset,
+  giaTriTuDgdv,
+  dgdvLoi = false,
+}) => {
   const { t } = useTranslation();
   const rowMeta = useWatch({ control, name: 'so_lieu_row_meta' });
 
@@ -76,6 +90,7 @@ const BaoCaoSoCheSoLieuBuongFormTable: React.FC<Props> = ({ control, errors, stt
           <tbody>
             {SO_LIEU_BUONG_ROW_DEFS.map((def, idx) => {
               const isQcPct = def.key === 'danh_gia_loi_qc_pct';
+              const tuDgdv = laSoLieuRowTuDgdv(def.key);
               const numErr = errors[def.key as keyof BaoCaoSoCheFormValues]?.message as string | undefined;
               const metaErrGhi = errors.so_lieu_row_meta?.[def.key]?.ghi_chu?.message as string | undefined;
               const metaErrDvt = errors.so_lieu_row_meta?.[def.key]?.don_vi_tinh_phu?.message as string | undefined;
@@ -86,24 +101,49 @@ const BaoCaoSoCheSoLieuBuongFormTable: React.FC<Props> = ({ control, errors, stt
                   </td>
                   <td className={`${bcscSoLieuTdChiSo} text-muted-foreground text-xs leading-snug`}>
                     {t(def.labelKey)}
+                    {tuDgdv && (
+                      <>
+                        <a
+                          href={DGDV_BANG_DANH_GIA_URL}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title={t('baoCaoSoChe.form.layTuDgdvTitle')}
+                          className="mt-0.5 block text-[11px] text-primary hover:underline"
+                        >
+                          {t('baoCaoSoChe.form.layTuDgdv')}
+                        </a>
+                        {dgdvLoi && (
+                          <span className="mt-0.5 block text-[11px] text-destructive">
+                            {t('baoCaoSoChe.form.dgdvLoi')}
+                          </span>
+                        )}
+                      </>
+                    )}
                   </td>
                   <td className={bcscSoLieuTdGiaTri}>
-                    <Controller
-                      name={def.key}
-                      control={control}
-                      render={({ field }) => (
-                        <NumberInput
-                          value={field.value ?? 0}
-                          onChange={field.onChange}
-                          min={0}
-                          max={isQcPct ? 100 : undefined}
-                          compact
-                          showZeroFormatted
-                          className="text-right w-full"
-                          error={numErr}
-                        />
-                      )}
-                    />
+                    {laSoLieuRowTuDgdv(def.key) ? (
+                      // Ô khoá: số do DB ghi đè theo Đánh giá đầu vào, không cho nhập tay.
+                      <span className="block w-full rounded-md bg-muted/40 px-2 py-1.5 text-right text-sm font-medium tabular-nums text-foreground">
+                        {formatNumberVN(giaTriTuDgdv[def.key])}
+                      </span>
+                    ) : (
+                      <Controller
+                        name={def.key}
+                        control={control}
+                        render={({ field }) => (
+                          <NumberInput
+                            value={field.value ?? 0}
+                            onChange={field.onChange}
+                            min={0}
+                            max={isQcPct ? 100 : undefined}
+                            compact
+                            showZeroFormatted
+                            className="text-right w-full"
+                            error={numErr}
+                          />
+                        )}
+                      />
+                    )}
                   </td>
                   <td className={bcscSoLieuTdDvt}>
                     <Controller
