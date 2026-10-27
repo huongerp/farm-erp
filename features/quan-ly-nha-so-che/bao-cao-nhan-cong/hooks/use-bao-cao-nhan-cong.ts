@@ -7,6 +7,7 @@ import {
   getAllBaoCaoNhanCong,
   getBaoCaoNhanCongPage,
   getBaoCaoNhanCongTomTat,
+  getBaoCaoNhanCongTheoNgay,
   getBaoCaoNhanCongById,
   createBaoCaoNhanCong,
   updateBaoCaoNhanCong,
@@ -59,6 +60,25 @@ export function useBaoCaoNhanCongTomTat(viewAll: boolean, allowedBranchIds: stri
     queryFn: () => getBaoCaoNhanCongTomTat(viewAll, allowedBranchIds),
     enabled,
     staleTime: 1000 * 60 * 5,
+  });
+}
+
+/**
+ * Mọi phiếu của một ngày kèm chi tiết — tab Tổng hợp theo ngày. Key nằm dưới
+ * QUERY_KEY_BAO_CAO_NHAN_CONG nên thêm / sửa / xoá phiếu tự làm mới bảng.
+ */
+export function useBaoCaoNhanCongTheoNgay(
+  ngay: string,
+  viewAll: boolean,
+  allowedBranchIds: string[],
+  enabled = true
+) {
+  return useQuery({
+    queryKey: [...QUERY_KEY_BAO_CAO_NHAN_CONG, 'theoNgay', ngay, viewAll, [...allowedBranchIds].sort().join(',')],
+    queryFn: () => getBaoCaoNhanCongTheoNgay(ngay, viewAll, allowedBranchIds),
+    enabled: enabled && !!ngay,
+    placeholderData: keepPreviousData,
+    staleTime: 1000 * 60 * 2,
   });
 }
 

@@ -194,5 +194,21 @@
   "baoCaoNhanCong.sub.multiLineHint": "Đang có nhiều dòng — bấm nút trên để sửa.",
   "baoCaoNhanCong.form.tableEntryHint": "CN ngày / CN nửa: ô trên là SL, ô dưới là giờ (1, 1,5…). Tăng ca: SL và giờ riêng. Tách nhiều dòng khi có nhiều ca.",
   "baoCaoNhanCong.form.colSlNgayHint": "SL / Giờ",
-  "baoCaoNhanCong.form.colSlNuaHint": "SL / Giờ"
+  "baoCaoNhanCong.form.colSlNuaHint": "SL / Giờ",
+  "baoCaoNhanCong.tabs.list": "Danh sách phiếu",
+  "baoCaoNhanCong.tabs.tongHop": "Tổng hợp theo ngày",
+  "baoCaoNhanCong.tongHop.title": "Bảng tổng hợp nhân sự các nhà sơ chế — ngày {{ngay}}",
+  "baoCaoNhanCong.tongHop.ngay": "Ngày",
+  "baoCaoNhanCong.tongHop.ngayTruoc": "Ngày trước",
+  "baoCaoNhanCong.tongHop.ngaySau": "Ngày sau",
+  "baoCaoNhanCong.tongHop.colNhaSoChe": "Nhà sơ chế",
+  "baoCaoNhanCong.tongHop.col.quanLy": "Quản lý",
+  "baoCaoNhanCong.tongHop.col.xanTia": "Nhóm xắn, tỉa",
+  "baoCaoNhanCong.tongHop.col.canDongThung": "Nhóm cân, CP, đóng thùng",
+  "baoCaoNhanCong.tongHop.col.kho": "Nhóm kho",
+  "baoCaoNhanCong.tongHop.col.tangCuong": "Tăng cường",
+  "baoCaoNhanCong.tongHop.colTongNs": "Tổng NS",
+  "baoCaoNhanCong.tongHop.tongCong": "Tổng cộng",
+  "baoCaoNhanCong.tongHop.chuaBaoCao": "Chưa báo cáo",
+  "baoCaoNhanCong.tongHop.empty": "Chưa có báo cáo nhân công ngày này"
 }

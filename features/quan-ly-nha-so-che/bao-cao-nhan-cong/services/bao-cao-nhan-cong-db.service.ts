@@ -286,16 +286,20 @@ const BCNC_SEARCH_SPEC = {
  */
 const BCNC_LIST_SELECT = `${ROW_CHA_LIST},${TABLE_CT}(${ROW_CT},${TABLE_CT_SUB}(${ROW_CT_SUB}))`;
 
+/** Phạm vi xem theo chi nhánh — dùng chung cho danh sách và tổng hợp theo ngày. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyBcncPhamViXem(sel: any, viewAll: boolean, allowedBranchIds: string[]): any {
+  if (viewAll) return sel;
+  const ids = allowedBranchIds.map(Number).filter(Number.isFinite);
+  // Không được phép xem chi nhánh nào → trả rỗng, đừng để lọt toàn bộ dữ liệu.
+  return ids.length === 0 ? sel.eq('id', -1) : sel.in('id_chi_nhanh', ids);
+}
+
 /** Lọc + sắp xếp dùng chung cho trang danh sách và cho lượt tải phục vụ xuất file. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function applyBcncListQuery(q: any, query: BaoCaoNhanCongListServerQuery): any {
-  let sel = q;
+  let sel = applyBcncPhamViXem(q, query.viewAll, query.allowedBranchIds);
 
-  if (!query.viewAll) {
-    const ids = query.allowedBranchIds.map(Number).filter(Number.isFinite);
-    // Không được phép xem chi nhánh nào → trả rỗng, đừng để lọt toàn bộ dữ liệu.
-    sel = ids.length === 0 ? sel.eq('id', -1) : sel.in('id_chi_nhanh', ids);
-  }
   if (query.idChiNhanh.length > 0) {
     sel = sel.in('id_chi_nhanh', query.idChiNhanh.map(Number).filter(Number.isFinite));
   }
@@ -342,6 +346,23 @@ export async function fetchAllBaoCaoNhanCongForListQuery(
 ): Promise<FarmBaoCaoNhanCong[]> {
   const rows = await fetchAllRows<DbRowChaEmbed>((from, to) =>
     applyBcncListQuery(db.from(TABLE_CHA).select(BCNC_LIST_SELECT), query).range(from, to)
+  );
+  return rows.map(embedRowToModel);
+}
+
+/**
+ * Mọi phiếu của MỘT ngày kèm chi tiết (embed như danh sách) — tab «Tổng hợp theo ngày».
+ * Phạm vi xem lọc y hệt danh sách.
+ */
+export async function getBaoCaoNhanCongTheoNgayDb(
+  ngay: string,
+  viewAll: boolean,
+  allowedBranchIds: string[]
+): Promise<FarmBaoCaoNhanCong[]> {
+  const rows = await fetchAllRows<DbRowChaEmbed>((from, to) =>
+    applyBcncPhamViXem(db.from(TABLE_CHA).select(BCNC_LIST_SELECT).eq('ngay', ngay), viewAll, allowedBranchIds)
+      .order('id', { ascending: true })
+      .range(from, to)
   );
   return rows.map(embedRowToModel);
 }

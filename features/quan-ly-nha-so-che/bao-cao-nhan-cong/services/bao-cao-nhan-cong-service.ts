@@ -8,6 +8,7 @@ import {
   getBaoCaoNhanCongPageDb,
   getBaoCaoNhanCongTomTatDb,
   fetchAllBaoCaoNhanCongForListQuery as fetchAllBaoCaoNhanCongForListQueryDb,
+  getBaoCaoNhanCongTheoNgayDb,
   type BaoCaoNhanCongTomTatRow,
   getBaoCaoNhanCongByIdDb,
   createBaoCaoNhanCongDb,
@@ -77,6 +78,18 @@ export async function fetchAllBaoCaoNhanCongForListQuery(
   query: BaoCaoNhanCongListServerQuery
 ): Promise<FarmBaoCaoNhanCong[]> {
   return enrichTenNguoiTao(await fetchAllBaoCaoNhanCongForListQueryDb(query));
+}
+
+/**
+ * Mọi phiếu của một ngày kèm chi tiết — tab Tổng hợp theo ngày.
+ * Bảng tổng hợp không hiện người tạo nên bỏ bước tra tên (đỡ một request).
+ */
+export async function getBaoCaoNhanCongTheoNgay(
+  ngay: string,
+  viewAll: boolean,
+  allowedBranchIds: string[]
+): Promise<FarmBaoCaoNhanCong[]> {
+  return getBaoCaoNhanCongTheoNgayDb(ngay, viewAll, allowedBranchIds);
 }
 
 export type { BaoCaoNhanCongTomTatRow };
