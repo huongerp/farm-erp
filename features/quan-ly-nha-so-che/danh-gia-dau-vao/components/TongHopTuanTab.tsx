@@ -1,278 +1,311 @@
 /**
- * Tab «Tổng hợp tuần» — CHỈ XEM. Chọn tuần farm (‹ › lùi / tiến, mặc định tuần hiện tại) + chi nhánh.
- * Đọc view `v_fp_farm_dgdv_tong_ngay_day` cho 7 ngày T2→CN (đã cộng mọi chuyến), mọi phép gom ở
- * core/tong-hop: bảng tổ trưởng → lô × ngày, bảng theo dây / tuần thu hoạch, và (khi xem tất cả chi nhánh)
- * bảng chi nhánh × ngày. Xuất Excel bảng tổ trưởng → lô dạng phẳng.
+ * Tab «Tổng hợp tuần» — CHỈ XEM, khuôn list chuẩn: `DashboardToolbar` (tuần farm ‹ › + chip Chi nhánh đa chọn /
+ * Có KSC / Tổ trưởng, Xuất Excel) + `GenericTable` mỗi dòng = tuần × chi nhánh (số ngày có số, số chuyến, T2→CN,
+ * tổng tuần, KSC, % KSC; dòng tổng trên đầu bảng) → bấm dòng mở Detail tổng tuần (`tong-hop/TongTuanDetail`:
+ * tổ trưởng → lô × ngày, theo dây / tuần thu hoạch). Nguồn: view `v_fp_farm_dgdv_tong_ngay_day` (đã cộng mọi
+ * chuyến) + `v_fp_farm_dgdv_tong_chuyen` (đếm chuyến); gom / lọc ở core/tong-hop. Xuất Excel: bảng tổ trưởng → lô
+ * dạng phẳng của các chi nhánh đang hiện (`cotXuatTuan`, `dongXuatTuan`).
  */
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import EmptyState from '../../../../components/shared/EmptyState';
+import { AlertTriangle, Building2, CalendarRange, ChevronLeft, ChevronRight, FileSpreadsheet, UserRound } from 'lucide-react';
+import DashboardToolbar from '../../../../components/shared/DashboardToolbar';
+import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
+import GenericTable from '../../../../components/shared/GenericTable';
 import ExportDialog from '../../../../components/shared/LazyExportDialog';
+import { MobileFilterField, type FilterGroup } from '../../../../components/ui/MobileFilterSheet';
 import Button from '../../../../components/ui/Button';
+import Tooltip from '../../../../components/ui/Tooltip';
 import { cn, formatNumberVN, formatYmdToDisplay, getTodayISO } from '../../../../lib/utils';
-import { nhanCotDay } from '../core/bang-tinh';
 import { cacNgayCuaTuanFarm, nhanTuanFarm, soSanhTuan, tuanFarmCuaNgay, tuanKeTiep } from '../core/tuan';
-import { tongHopTuanTheoChiNhanh, tongHopTuanTheoDay, tongHopTuanTheoLo, type DgdvTuanDay } from '../core/tong-hop';
-import { useDgdvTongNgayDay } from '../hooks/use-dgdv-tong-ngay';
+import {
+  LOC_KSC,
+  dsToTruong,
+  khopLocKsc,
+  locDongTheoToTruong,
+  tongHopTuanChiNhanh,
+  tongHopTuanTheoLo,
+  type DgdvTuanChiNhanhDong,
+} from '../core/tong-hop';
+import { useDgdvTongChuyen, useDgdvTongNgayDay } from '../hooks/use-dgdv-tong-ngay';
 import { useDgdvChiNhanhXem } from '../hooks/use-dgdv-chi-nhanh-xem';
-import { useMauDay } from '../hooks/use-danh-muc-dgdv';
+import { useDgdvTongTuanStore } from '../store/useDgdvTongHopStore';
 import { nhanTiLeKsc } from '../utils/export-danh-sach';
 import { cotXuatTuan, dongXuatTuan } from '../utils/export-tong-hop';
-import { styleTieuDeCot } from '../utils/mau-day';
-import TongHopToolbar from './tong-hop/TongHopToolbar';
-import { BangTongHop, TieuDeBang } from './tong-hop/BangTongHop';
-import { TD, TH, W_COT_DAU, fmtO } from './tong-hop/bang-tong-hop';
+import { fmtO } from './tong-hop/bang-tong-hop';
+import TongTuanDetail from './tong-hop/TongTuanDetail';
+
+const KHONG_CHON = new Set<string>();
+const boQua = () => undefined;
 
 const TongHopTuanTab: React.FC = () => {
   const { t } = useTranslation();
   const homNay = getTodayISO();
   const tuanNay = useMemo(() => tuanFarmCuaNgay(homNay), [homNay]);
   const [tuan, setTuan] = useState(tuanNay);
-  const [idCn, setIdCn] = useState('');
   const [moXuat, setMoXuat] = useState(false);
+  const [xemCn, setXemCn] = useState<string | null>(null);
+  const { filters, setFilter, resetFilters, columns, resizeColumn, pagination, setPage, setPageSize } = useDgdvTongTuanStore();
+  const chonCn = filters.id_chi_nhanh;
 
-  const { dsChiNhanh, tenCn, phamVi, thuTuCn, dangTaiPhamVi } = useDgdvChiNhanhXem(idCn || null);
-  const { mauTheoId } = useMauDay();
+  // Một chi nhánh → lọc ở server; nhiều / tất cả → tải cả phạm vi rồi lọc tại chỗ.
+  const { dsChiNhanh, tenCn, phamVi, thuTuCn, dangTaiPhamVi } = useDgdvChiNhanhXem(chonCn.length === 1 ? chonCn[0] : null);
   const ngays = useMemo(() => cacNgayCuaTuanFarm(tuan.nam, tuan.tuan), [tuan]);
   const q = useDgdvTongNgayDay(ngays[0], ngays[6], phamVi, !dangTaiPhamVi);
-
-  const rows = useMemo(() => q.data ?? [], [q.data]);
-  const theoLo = useMemo(() => tongHopTuanTheoLo(rows, ngays, thuTuCn), [rows, ngays, thuTuCn]);
-  const theoDay = useMemo(() => tongHopTuanTheoDay(rows), [rows]);
-  const xemTatCa = !idCn && thuTuCn.length > 1;
-  const theoCn = useMemo(
-    () => (xemTatCa ? tongHopTuanTheoChiNhanh(rows, ngays, thuTuCn) : []),
-    [xemTatCa, rows, ngays, thuTuCn]
+  const qChuyen = useDgdvTongChuyen(ngays[0], ngays[6], phamVi, !dangTaiPhamVi);
+  /** Cột T2→CN kèm ngày dd/mm của tuần đang xem. */
+  const cotHien = useMemo(
+    () =>
+      columns.map((c) => {
+        const m = /^n(\d)$/.exec(c.id);
+        return m ? { ...c, label: `${t(`danhGiaDauVao.thu.${m[1]}`)} ${formatYmdToDisplay(ngays[Number(m[1])]).slice(0, 5)}` } : c;
+      }),
+    [columns, ngays, t]
   );
-  const coSo = theoLo.toTruong.length > 0;
-  const nhieuCn = new Set(theoLo.toTruong.map((g) => g.id_chi_nhanh)).size > 1;
 
+  /** Dòng view của các chi nhánh đang chọn. */
+  const rowsCn = useMemo(() => {
+    const ds = q.data ?? [];
+    if (chonCn.length <= 1) return ds;
+    const cho = new Set(chonCn);
+    return ds.filter((r) => cho.has(r.id_chi_nhanh));
+  }, [q.data, chonCn]);
+  const rows = useMemo(() => locDongTheoToTruong(rowsCn, filters.to_truong), [rowsCn, filters.to_truong]);
+  const tatCaDong = useMemo(() => tongHopTuanChiNhanh(rows, ngays, thuTuCn, qChuyen.data ?? []), [rows, ngays, thuTuCn, qChuyen.data]);
+  const dsDong = useMemo(() => tatCaDong.filter((r) => khopLocKsc(r.ksc, filters.ksc)), [tatCaDong, filters.ksc]);
+  const tong = useMemo(
+    () =>
+      dsDong.reduce(
+        (s, r) => ({
+          tongThu: s.tongThu + r.tongThu,
+          ksc: s.ksc + r.ksc,
+          soChuyen: s.soChuyen + r.soChuyen,
+          theoNgay: s.theoNgay.map((v, i) => v + r.theoNgay[i]),
+        }),
+        { tongThu: 0, ksc: 0, soChuyen: 0, theoNgay: ngays.map(() => 0) }
+      ),
+    [dsDong, ngays]
+  );
+  const toTruongTuyChon = useMemo(() => dsToTruong(rowsCn.map((r) => r.to_truong)), [rowsCn]);
+  const tenToTruongLoc = toTruongTuyChon.filter((x) => filters.to_truong.includes(x.khoa)).map((x) => x.ten);
+  const coSo = dsDong.length > 0;
+
+  /** Dòng view của các chi nhánh đang hiện trong bảng (sau chip KSC). */
+  const rowsHien = useMemo(() => {
+    const cn = new Set(dsDong.map((r) => r.id_chi_nhanh));
+    return rows.filter((r) => cn.has(r.id_chi_nhanh));
+  }, [rows, dsDong]);
   const exportColumns = useMemo(() => cotXuatTuan(ngays, t), [ngays, t]);
-  const exportData = useMemo(() => (moXuat ? dongXuatTuan(theoLo, tenCn, t) : []), [moXuat, theoLo, tenCn, t]);
-
-  const nhanXeDoi = t('danhGiaDauVao.luoi.xeDoi');
-  const nhanDay = useCallback(
-    (d: DgdvTuanDay) =>
-      d.id_mau_1 == null
-        ? t('danhGiaDauVao.luoi.dutDay')
-        : nhanCotDay({ id_mau_1: d.id_mau_1, id_mau_2: d.id_mau_2, xe_doi: d.xe_doi }, mauTheoId, nhanXeDoi),
-    [t, mauTheoId, nhanXeDoi]
+  const exportData = useMemo(
+    () => (moXuat ? dongXuatTuan(tongHopTuanTheoLo(rowsHien, ngays, thuTuCn), tenCn, t) : []),
+    [moXuat, rowsHien, ngays, thuTuCn, tenCn, t]
   );
 
+  const doiTuan = (tf: typeof tuan) => {
+    setTuan(tf);
+    setPage(1);
+  };
   const chonKy = (inline: boolean) => (
     <div className={cn('inline-flex items-center gap-1', inline ? 'w-full' : 'shrink-0')}>
-      <Button
-        variant="outline"
-        size="sm"
-        className="h-9 w-9 p-0 shrink-0"
-        onClick={() => setTuan((x) => tuanKeTiep(x, -1))}
-        aria-label={t('danhGiaDauVao.tuan.tuanTruoc')}
-      >
+      <Button variant="outline" size="sm" className="h-9 w-9 p-0 shrink-0" onClick={() => doiTuan(tuanKeTiep(tuan, -1))} aria-label={t('danhGiaDauVao.tuan.tuanTruoc')}>
         <ChevronLeft className="w-4 h-4" />
       </Button>
       <button
         type="button"
-        className={cn(
-          'h-9 rounded-md border border-border px-2.5 text-sm font-medium tabular-nums whitespace-nowrap hover:bg-muted/50',
-          inline && 'flex-1'
-        )}
+        className={cn('h-9 rounded-md border border-border px-2.5 text-sm font-medium tabular-nums whitespace-nowrap hover:bg-muted/50', inline && 'flex-1')}
         title={t('danhGiaDauVao.tuan.veTuanNay')}
-        onClick={() => setTuan(tuanNay)}
+        onClick={() => doiTuan(tuanNay)}
       >
         {nhanTuanFarm(tuan)}
         {soSanhTuan(tuan, tuanNay) === 0 && <span className="ml-1 text-caption text-primary">· {t('danhGiaDauVao.bang.tuanNay')}</span>}
       </button>
-      <Button
-        variant="outline"
-        size="sm"
-        className="h-9 w-9 p-0 shrink-0"
-        onClick={() => setTuan((x) => tuanKeTiep(x, 1))}
-        aria-label={t('danhGiaDauVao.tuan.tuanSau')}
-      >
+      <Button variant="outline" size="sm" className="h-9 w-9 p-0 shrink-0" onClick={() => doiTuan(tuanKeTiep(tuan, 1))} aria-label={t('danhGiaDauVao.tuan.tuanSau')}>
         <ChevronRight className="w-4 h-4" />
       </Button>
     </div>
   );
 
-  const tieuDeNgay = ngays.map((n, i) => (
-    <th key={n} className={cn(TH, 'min-w-[4.5rem]')}>
-      <div>{t(`danhGiaDauVao.thu.${i}`)}</div>
-      <div className="font-normal text-muted-foreground">{formatYmdToDisplay(n).slice(0, 5)}</div>
-    </th>
-  ));
-  const oTong = (tongThu: number, ksc: number, dam = false) => (
-    <>
-      <td className={cn(TD, 'text-right tabular-nums', dam ? 'font-bold text-primary' : 'font-semibold')}>{formatNumberVN(tongThu)}</td>
-      <td className={cn(TD, 'text-right tabular-nums text-rose-600')}>{fmtO(ksc)}</td>
-      <td className={cn(TD, 'text-right tabular-nums')}>{nhanTiLeKsc(ksc, tongThu)}</td>
-    </>
+  const filterGroups: FilterGroup[] = useMemo(() => {
+    const dem = (fn: (r: DgdvTuanChiNhanhDong) => boolean) => tatCaDong.filter(fn).length;
+    return [
+      {
+        key: 'branch',
+        label: t('danhGiaDauVao.toolbar.filterBranch'),
+        icon: Building2,
+        options: dsChiNhanh.map((b) => ({ value: String(b.id), label: `${b.ma_chi_nhanh} — ${b.ten_chi_nhanh}` })),
+        value: filters.id_chi_nhanh,
+        onChange: (v: string[]) => setFilter('id_chi_nhanh', v),
+      },
+      {
+        key: 'ksc',
+        label: t('danhGiaDauVao.tongHop.filterKsc'),
+        icon: AlertTriangle,
+        options: [
+          { value: LOC_KSC.CO, label: t('danhGiaDauVao.tongHop.coLoi'), count: dem((r) => r.ksc > 0) },
+          { value: LOC_KSC.KHONG, label: t('danhGiaDauVao.tongHop.khongLoi'), count: dem((r) => r.ksc === 0) },
+        ],
+        value: filters.ksc,
+        onChange: (v: string[]) => setFilter('ksc', v),
+      },
+      {
+        key: 'to_truong',
+        label: t('danhGiaDauVao.form.toTruong'),
+        icon: UserRound,
+        options: toTruongTuyChon.map((x) => ({ value: x.khoa, label: x.ten })),
+        value: filters.to_truong,
+        onChange: (v: string[]) => setFilter('to_truong', v),
+      },
+    ];
+  }, [t, tatCaDong, dsChiNhanh, toTruongTuyChon, filters, setFilter]);
+  const filterItems: FilterChipItem[] = [
+    { kind: 'custom', key: 'ky', node: chonKy(false) },
+    { kind: 'group', group: filterGroups[0], className: 'w-full sm:w-[200px]' },
+    { kind: 'group', group: filterGroups[1], className: 'w-full sm:w-[140px]' },
+    { kind: 'group', group: filterGroups[2], className: 'w-full sm:w-[180px]' },
+  ];
+
+  const iconBtn = 'h-9 w-9 p-0 inline-flex items-center justify-center border-border text-muted-foreground hover:bg-muted/50';
+  const actions = (
+    <Tooltip content={t('danhGiaDauVao.bang.xuatExcel')} placement="bottom">
+      <Button variant="outline" size="sm" className={iconBtn} disabled={!coSo} onClick={() => setMoXuat(true)} aria-label={t('danhGiaDauVao.bang.xuatExcel')}>
+        <FileSpreadsheet className="w-4 h-4" />
+      </Button>
+    </Tooltip>
   );
-  const tieuDeTong = (
-    <>
-      <th className={cn(TH, 'min-w-[5.5rem]')}>{t('danhGiaDauVao.tuan.colTongTuan')}</th>
-      <th className={cn(TH, 'min-w-[4.5rem]')}>{t('danhGiaDauVao.store.colKsc')}</th>
-      <th className={cn(TH, 'min-w-[4.5rem]')}>{t('danhGiaDauVao.store.colTiLeKsc')}</th>
-    </>
+
+  const renderCell = (colId: string, r: DgdvTuanChiNhanhDong) => {
+    const m = /^n(\d)$/.exec(colId);
+    if (m) return <span className="text-sm tabular-nums">{fmtO(r.theoNgay[Number(m[1])] ?? 0)}</span>;
+    switch (colId) {
+      case 'tuan':
+        return <span className="text-sm tabular-nums whitespace-nowrap">{nhanTuanFarm(tuan)}</span>;
+      case 'id_chi_nhanh':
+        return <span className="text-sm font-medium">{tenCn(r.id_chi_nhanh)}</span>;
+      case 'so_ngay':
+        return <span className="text-sm tabular-nums">{r.soNgayCoSo}</span>;
+      case 'so_chuyen':
+        return <span className="text-sm tabular-nums">{r.soChuyen}</span>;
+      case 'tong_thu':
+        return <span className="text-sm tabular-nums font-semibold text-primary">{formatNumberVN(r.tongThu)}</span>;
+      case 'ksc':
+        return <span className={cn('text-sm tabular-nums', r.ksc > 0 && 'text-rose-600 font-medium')}>{formatNumberVN(r.ksc)}</span>;
+      case 'ti_le_ksc':
+        return <span className="text-sm tabular-nums text-muted-foreground">{nhanTiLeKsc(r.ksc, r.tongThu)}</span>;
+      default:
+        return null;
+    }
+  };
+  const renderTong = (colId: string) => {
+    const m = /^n(\d)$/.exec(colId);
+    if (m) return <span className="text-xs font-semibold tabular-nums">{fmtO(tong.theoNgay[Number(m[1])] ?? 0)}</span>;
+    switch (colId) {
+      case 'tuan':
+        return <span className="text-xs font-semibold">{t('danhGiaDauVao.luoi.tongCong')}</span>;
+      case 'so_chuyen':
+        return <span className="text-xs font-semibold tabular-nums">{tong.soChuyen}</span>;
+      case 'tong_thu':
+        return <span className="text-xs font-bold tabular-nums text-primary">{formatNumberVN(tong.tongThu)}</span>;
+      case 'ksc':
+        return <span className="text-xs font-bold tabular-nums text-rose-600">{formatNumberVN(tong.ksc)}</span>;
+      case 'ti_le_ksc':
+        return <span className="text-xs font-semibold tabular-nums">{nhanTiLeKsc(tong.ksc, tong.tongThu)}</span>;
+      default:
+        return null;
+    }
+  };
+  const renderMobileCard = (r: DgdvTuanChiNhanhDong) => (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => setXemCn(r.id_chi_nhanh)}
+      onKeyDown={(e) => e.key === 'Enter' && setXemCn(r.id_chi_nhanh)}
+      className="bg-card rounded-xl border border-border p-3.5 shadow-sm"
+    >
+      <h4 className="font-semibold text-foreground text-sm truncate">{tenCn(r.id_chi_nhanh)}</h4>
+      <p className="text-xs text-muted-foreground truncate mt-0.5 tabular-nums">
+        {nhanTuanFarm(tuan)} · {t('danhGiaDauVao.tongHop.ngayChuyenGiaTri', { ngay: r.soNgayCoSo, chuyen: r.soChuyen })}
+      </p>
+      <div className="mt-2 grid grid-cols-3 gap-2 text-sm tabular-nums">
+        <div className="rounded-lg bg-muted/40 px-2.5 py-2">
+          <div className="text-xs text-muted-foreground">{t('danhGiaDauVao.tuan.colTongTuan')}</div>
+          <div className="font-semibold text-primary">{formatNumberVN(r.tongThu)}</div>
+        </div>
+        <div className="rounded-lg bg-muted/40 px-2.5 py-2">
+          <div className="text-xs text-muted-foreground">{t('danhGiaDauVao.store.colKsc')}</div>
+          <div className="font-semibold">{formatNumberVN(r.ksc)}</div>
+        </div>
+        <div className="rounded-lg bg-muted/40 px-2.5 py-2">
+          <div className="text-xs text-muted-foreground">{t('danhGiaDauVao.store.colTiLeKsc')}</div>
+          <div className="font-semibold">{nhanTiLeKsc(r.ksc, r.tongThu)}</div>
+        </div>
+      </div>
+    </div>
   );
+
+  const dongXem = xemCn ? tatCaDong.find((r) => r.id_chi_nhanh === xemCn) : undefined;
+  const rowsXem = useMemo(() => (xemCn ? rows.filter((r) => r.id_chi_nhanh === xemCn) : []), [rows, xemCn]);
 
   return (
     <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-      <TongHopToolbar
-        chonKy={chonKy}
-        nhanKy={t('danhGiaDauVao.tuan.chonTuan')}
-        dsChiNhanh={dsChiNhanh}
-        idChiNhanh={idCn}
-        onDoiChiNhanh={setIdCn}
-        coSo={coSo}
-        onXuat={() => setMoXuat(true)}
+      <DashboardToolbar
+        hideBack
+        filters={<ResponsiveFilterChips items={filterItems} />}
+        filterGroups={filterGroups}
+        mobileFilterExtra={
+          <MobileFilterField label={t('danhGiaDauVao.tuan.chonTuan')} icon={CalendarRange} active>
+            {chonKy(true)}
+          </MobileFilterField>
+        }
+        mobileFilterExtraCount={1}
+        activeFilterCount={filters.id_chi_nhanh.length + filters.ksc.length + filters.to_truong.length}
+        onClearFilters={resetFilters}
+        actions={actions}
+        mobileActions={actions}
+        mobileRow2Content={chonKy(true)}
+        className="static z-auto border-b border-border"
       />
 
-      <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-4 space-y-5">
-        {q.isPending || dangTaiPhamVi ? (
-          <p className="text-sm text-muted-foreground">{t('danhGiaDauVao.loading')}</p>
-        ) : q.isError ? (
-          <p className="text-sm text-rose-600">{(q.error as Error)?.message}</p>
-        ) : !coSo ? (
-          <EmptyState title={t('danhGiaDauVao.tuan.khongCoDuLieu')} description={t('danhGiaDauVao.bang.khongCoDuLieuHint')} />
-        ) : (
-          <>
-            <p className="m-0 flex flex-wrap gap-x-3 gap-y-1 text-sm font-semibold">
-              <span>{nhanTuanFarm(tuan)}</span>
-              <span>·</span>
-              <span>
-                {t('danhGiaDauVao.luoi.tongThu')} <span className="text-primary tabular-nums">{formatNumberVN(theoLo.tongThu)}</span>
-              </span>
-              <span>·</span>
-              <span>
-                {t('danhGiaDauVao.luoi.ksc')} <span className="text-rose-600 tabular-nums">{formatNumberVN(theoLo.ksc)}</span>
-              </span>
-              <span>·</span>
-              <span className="tabular-nums">{t('danhGiaDauVao.bang.tiLeKsc', { tiLe: nhanTiLeKsc(theoLo.ksc, theoLo.tongThu) })}</span>
-            </p>
-
-            <section className="space-y-1.5">
-              <TieuDeBang>{t('danhGiaDauVao.tuan.bangLo')}</TieuDeBang>
-              <BangTongHop>
-                <thead>
-                  <tr>
-                    <th className={cn(TH, W_COT_DAU, 'sticky left-0 z-20 bg-muted text-left')}>{t('danhGiaDauVao.tuan.colToTruongLo')}</th>
-                    {tieuDeNgay}
-                    {tieuDeTong}
-                  </tr>
-                </thead>
-                <tbody>
-                  {theoLo.toTruong.map((g) => (
-                    <React.Fragment key={g.khoa}>
-                      <tr className="bg-sky-100 dark:bg-sky-950 font-semibold">
-                        <td className={cn(TD, W_COT_DAU, 'sticky left-0 z-10 bg-sky-100 dark:bg-sky-950')}>
-                          {g.ten_to_truong ?? t('danhGiaDauVao.luoi.chuaCoToTruong')}
-                          {nhieuCn && <span className="ml-1 font-normal text-caption text-muted-foreground">· {tenCn(g.id_chi_nhanh)}</span>}
-                        </td>
-                        {g.theoNgay.map((v, i) => (
-                          <td key={i} className={cn(TD, 'text-right tabular-nums')}>{fmtO(v)}</td>
-                        ))}
-                        {oTong(g.tongThu, g.ksc)}
-                      </tr>
-                      {g.lo.map((lo) => (
-                        <tr key={`${lo.id_chi_nhanh}-${lo.id_lo}`}>
-                          <td className={cn(TD, W_COT_DAU, 'sticky left-0 z-10 bg-card pl-4')}>{lo.ten_lo ?? '—'}</td>
-                          {lo.theoNgay.map((v, i) => (
-                            <td key={i} className={cn(TD, 'text-right tabular-nums')}>{fmtO(v)}</td>
-                          ))}
-                          {oTong(lo.tongThu, lo.ksc)}
-                        </tr>
-                      ))}
-                    </React.Fragment>
-                  ))}
-                  <tr className="bg-muted font-bold">
-                    <td className={cn(TD, W_COT_DAU, 'sticky left-0 z-10 bg-muted')}>{t('danhGiaDauVao.luoi.tongCong')}</td>
-                    {theoLo.theoNgay.map((v, i) => (
-                      <td key={i} className={cn(TD, 'text-right tabular-nums')}>{formatNumberVN(v)}</td>
-                    ))}
-                    {oTong(theoLo.tongThu, theoLo.ksc, true)}
-                  </tr>
-                </tbody>
-              </BangTongHop>
-            </section>
-
-            <section className="space-y-1.5">
-              <TieuDeBang>{t('danhGiaDauVao.tuan.bangDay')}</TieuDeBang>
-              <BangTongHop>
-                <thead>
-                  <tr>
-                    <th className={cn(TH, W_COT_DAU, 'sticky left-0 z-20 bg-muted text-left')}>{t('danhGiaDauVao.tuan.colDay')}</th>
-                    <th className={cn(TH, 'min-w-[11rem] text-left')}>{t('danhGiaDauVao.tuan.colTuanThuHoach')}</th>
-                    <th className={cn(TH, 'min-w-[5.5rem]')}>{t('danhGiaDauVao.store.colTongThu')}</th>
-                    <th className={cn(TH, 'min-w-[4.5rem]')}>{t('danhGiaDauVao.store.colKsc')}</th>
-                    <th className={cn(TH, 'min-w-[4.5rem]')}>{t('danhGiaDauVao.store.colTiLeKsc')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {theoDay.map((d) => (
-                    <tr key={d.khoa}>
-                      <td
-                        className={cn(TD, W_COT_DAU, 'sticky left-0 z-10 bg-card font-medium')}
-                        style={d.id_mau_1 ? styleTieuDeCot(mauTheoId.get(d.id_mau_1)?.ma_mau ?? null, d.id_mau_2 ? (mauTheoId.get(d.id_mau_2)?.ma_mau ?? null) : null) : undefined}
-                      >
-                        {nhanDay(d)}
-                      </td>
-                      <td className={cn(TD, 'whitespace-nowrap')}>
-                        {d.tuanThuHoach && d.tuanChichBap
-                          ? t('danhGiaDauVao.tuan.thCb', { th: d.tuanThuHoach.tuan, cb: d.tuanChichBap.tuan })
-                          : d.id_mau_1
-                            ? t('danhGiaDauVao.luoi.chuaCoTuan')
-                            : ''}
-                      </td>
-                      {oTong(d.tongThu, d.ksc)}
-                    </tr>
-                  ))}
-                  <tr className="bg-muted font-bold">
-                    <td className={cn(TD, W_COT_DAU, 'sticky left-0 z-10 bg-muted')} colSpan={2}>
-                      {t('danhGiaDauVao.luoi.tongCong')}
-                    </td>
-                    {oTong(theoLo.tongThu, theoLo.ksc, true)}
-                  </tr>
-                </tbody>
-              </BangTongHop>
-            </section>
-
-            {theoCn.length > 0 && (
-              <section className="space-y-1.5">
-                <TieuDeBang>{t('danhGiaDauVao.tuan.bangChiNhanh')}</TieuDeBang>
-                <BangTongHop>
-                  <thead>
-                    <tr>
-                      <th className={cn(TH, W_COT_DAU, 'sticky left-0 z-20 bg-muted text-left')}>{t('danhGiaDauVao.tuan.colChiNhanh')}</th>
-                      {tieuDeNgay}
-                      {tieuDeTong}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {theoCn.map((c) => (
-                      <tr key={c.id_chi_nhanh}>
-                        <td className={cn(TD, W_COT_DAU, 'sticky left-0 z-10 bg-card font-medium')}>{tenCn(c.id_chi_nhanh)}</td>
-                        {c.theoNgay.map((v, i) => (
-                          <td key={i} className={cn(TD, 'text-right tabular-nums')}>{fmtO(v)}</td>
-                        ))}
-                        {oTong(c.tongThu, c.ksc)}
-                      </tr>
-                    ))}
-                    <tr className="bg-muted font-bold">
-                      <td className={cn(TD, W_COT_DAU, 'sticky left-0 z-10 bg-muted')}>{t('danhGiaDauVao.luoi.tongCong')}</td>
-                      {theoLo.theoNgay.map((v, i) => (
-                        <td key={i} className={cn(TD, 'text-right tabular-nums')}>{formatNumberVN(v)}</td>
-                      ))}
-                      {oTong(theoLo.tongThu, theoLo.ksc, true)}
-                    </tr>
-                  </tbody>
-                </BangTongHop>
-              </section>
-            )}
-          </>
-        )}
+      <div className="flex-1 min-h-0 flex flex-col px-4 pb-4 pt-1">
+        <GenericTable<DgdvTuanChiNhanhDong>
+          data={dsDong}
+          columns={cotHien}
+          onResizeColumn={resizeColumn}
+          isLoading={q.isPending || dangTaiPhamVi}
+          isError={q.isError}
+          onRetry={() => void q.refetch()}
+          loadingText={t('danhGiaDauVao.loading')}
+          selectedIds={KHONG_CHON}
+          onToggleSelection={boQua}
+          onToggleAll={boQua}
+          page={pagination.page}
+          pageSize={pagination.pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+          renderCell={renderCell}
+          renderMobileCard={renderMobileCard}
+          renderSummaryRow={coSo ? renderTong : undefined}
+          keyExtractor={(r) => r.id_chi_nhanh}
+          onRowClick={(r) => setXemCn(r.id_chi_nhanh)}
+          showActionsColumn={false}
+          emptyTitle={t('danhGiaDauVao.tuan.khongCoDuLieu')}
+          emptyDescription={t('danhGiaDauVao.bang.khongCoDuLieuHint')}
+        />
       </div>
+
+      <AnimatePresence>
+        {dongXem && (
+          <TongTuanDetail
+            tuan={tuan}
+            ngays={ngays}
+            dong={dongXem}
+            tenChiNhanh={tenCn(dongXem.id_chi_nhanh)}
+            rows={rowsXem}
+            tenToTruongLoc={tenToTruongLoc}
+            onClose={() => setXemCn(null)}
+          />
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {moXuat && (

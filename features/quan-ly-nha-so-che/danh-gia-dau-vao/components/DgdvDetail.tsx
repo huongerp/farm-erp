@@ -1,13 +1,16 @@
 /**
- * Chi tiết phiếu chuyến: thông tin phiếu + lưới lô × dây của đúng ngày phiếu (dùng chung lưới với tab Bảng
- * đánh giá, chỉ xem) + bảng Chi tiết đánh giá (nhập SL · đánh giá · SL lỗi · lý do · đứt dây) + In ngày /
- * In cả tuần farm, Xuất Excel dạng dòng, Sao chép sang chuyến mới, Khoá.
+ * Chi tiết phiếu chuyến (60rem): ngày · chuyến · tuần · chi nhánh trên tiêu đề; thông tin gọn (trạng thái, tổng
+ * thu, KSC, ghi chú; người tạo / cập nhật ở dòng phụ cuối) + bảng con «Theo lô» (bấm lô → drawer lô) + «Chi tiết
+ * đánh giá» (bấm dòng → drawer xem dòng; nhập SL · đánh giá · SL lỗi · lý do · đứt dây, «Nhập theo lô»).
+ * Lưới Excel lô × dây mở bằng «Xem dạng lưới» (drawer con rộng). In ngày / In cả tuần farm, Xuất Excel dạng
+ * dòng, Sao chép sang chuyến mới, Khoá.
  */
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ClipboardPen, Copy, FileSpreadsheet, Lock, Printer, Unlock } from 'lucide-react';
+import { AnimatePresence } from 'framer-motion';
+import { ClipboardPen, Copy, FileSpreadsheet, Grid3x3, Lock, Printer, Unlock } from 'lucide-react';
 import GenericDrawer from '../../../../components/shared/GenericDrawer';
-import { DRAWER_WIDTH_WIDE } from '../../../../lib/dialog-sizes';
+import { DRAWER_WIDTH_BAO_CAO_SO_CHE, DRAWER_WIDTH_WIDE } from '../../../../lib/dialog-sizes';
 import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';
 import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
@@ -18,7 +21,7 @@ import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { formatDateTimeShort, formatNumberVN, formatYmdToDisplay } from '../../../../lib/utils';
 import type { DgdvPhieuDayDu } from '../core/types';
 import { TRANG_THAI_DGDV } from '../core/types';
-import { cacNgayCuaTuanFarm, nhanTuanFarm } from '../core/tuan';
+import { cacNgayCuaTuanFarm } from '../core/tuan';
 import { tongPhieu } from '../core/bang-tinh';
 import { useUpdateDgdvTrangThai } from '../hooks/use-danh-gia-dau-vao';
 import { useDungLuoi } from '../hooks/use-dung-luoi';
@@ -26,6 +29,8 @@ import { getDgdvPreviewUrl } from '../utils/preview-url';
 import { nhanTiLeKsc } from '../utils/export-danh-sach';
 import DgdvLuoiNgayTable from './luoi/DgdvLuoiNgayTable';
 import DgdvChiTietSection from './chi-tiet/DgdvChiTietSection';
+import DgdvTheoLoSection from './chi-tiet/DgdvTheoLoSection';
+import { useDgdvChiTietDrawers } from './chi-tiet/useDgdvChiTietDrawers';
 import LazyImportDialog from '../../../../components/shared/LazyImportDialog';
 import { useDgdvImport } from '../hooks/use-dgdv-import';
 import { TrangThaiDgdvBadge } from './DgdvList';
@@ -41,6 +46,8 @@ interface Props {
   dangXuat?: boolean;
   canToggleTrangThai: boolean;
   canNhapLuoi: boolean;
+  /** Tầng drawer — 1 khi mở chồng từ Detail tổng ngày. */
+  stackLevel?: number;
 }
 
 const DgdvDetail: React.FC<Props> = ({
@@ -53,6 +60,7 @@ const DgdvDetail: React.FC<Props> = ({
   dangXuat,
   canToggleTrangThai,
   canNhapLuoi,
+  stackLevel = 0,
 }) => {
   const { t } = useTranslation();
   const confirm = useConfirmStore((s) => s.confirm);
@@ -62,6 +70,8 @@ const DgdvDetail: React.FC<Props> = ({
     [data.id, data.ngay, data.chuyen, data.id_chi_nhanh]
   );
   const importer = useDgdvImport(phieuCoDinh);
+  const { mo, drawers } = useDgdvChiTietDrawers(data, canNhapLuoi, stackLevel);
+  const [xemLuoi, setXemLuoi] = useState(false);
 
   const ngay = data.ngay;
   const cacNgayTuan = useMemo(() => cacNgayCuaTuanFarm(data.nam, data.tuan), [data.nam, data.tuan]);
@@ -77,7 +87,8 @@ const DgdvDetail: React.FC<Props> = ({
     window.open(getDgdvPreviewUrl(tu, den, data.id_chi_nhanh), '_blank', 'noopener,noreferrer');
 
   const actions: DetailToolbarAction[] = [
-    { label: t('danhGiaDauVao.detail.inNgay'), icon: <Printer size={16} />, variant: 'primary', onClick: () => moIn(ngay, ngay) },
+    { label: t('danhGiaDauVao.detail.xemLuoi'), icon: <Grid3x3 size={16} />, variant: 'primary', disabled: !luoi, onClick: () => setXemLuoi(true) },
+    { label: t('danhGiaDauVao.detail.inNgay'), icon: <Printer size={16} />, variant: 'outline', onClick: () => moIn(ngay, ngay) },
     { label: t('danhGiaDauVao.detail.inTuan'), icon: <Printer size={16} />, variant: 'outline', onClick: () => moIn(cacNgayTuan[0], cacNgayTuan[6]) },
   ];
   if (onXuatExcel) {
@@ -110,43 +121,31 @@ const DgdvDetail: React.FC<Props> = ({
     });
   }
 
+  const tieuDe = [
+    t('danhGiaDauVao.detail.tieuDeNgay', { ngay: formatYmdToDisplay(data.ngay) }),
+    t('danhGiaDauVao.detail.tieuDeChuyen', { chuyen: data.chuyen }),
+    t('danhGiaDauVao.luoi.tuan', { tuan: data.tuan }),
+    data.ten_chi_nhanh,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+
   return (
     <GenericDrawer
-      title={[
-        t('danhGiaDauVao.detail.tieuDeNgay', { ngay: formatYmdToDisplay(data.ngay) }),
-        t('danhGiaDauVao.detail.tieuDeChuyen', { chuyen: data.chuyen }),
-        t('danhGiaDauVao.luoi.tuan', { tuan: data.tuan }),
-        data.ten_chi_nhanh,
-      ]
-        .filter(Boolean)
-        .join(' · ')}
-      subtitle={t('danhGiaDauVao.detail.title')}
+      // Điện thoại: tiêu đề ngắn (chuyến · chi nhánh), ngày · tuần xuống dòng phụ — không bị cắt mất chi nhánh.
+      title={[t('danhGiaDauVao.detail.tieuDeChuyen', { chuyen: data.chuyen }), data.ten_chi_nhanh].filter(Boolean).join(' · ')}
+      subtitle={`${t('danhGiaDauVao.detail.tieuDeNgay', { ngay: formatYmdToDisplay(data.ngay) })} · ${t('danhGiaDauVao.luoi.tuan', { tuan: data.tuan })}`}
       icon={<ClipboardPen className="text-fuchsia-600" size={22} />}
       onClose={onClose}
-      maxWidthClass={DRAWER_WIDTH_WIDE}
-      fullWidthContent
-      footer={
-        <DetailDrawerFooter
-          onClose={onClose}
-          canUpdate={!!onEdit}
-          canDelete={!!onDelete}
-          onEdit={onEdit}
-          onDelete={onDelete}
-        />
-      }
+      stackLevel={stackLevel}
+      maxWidthClass={DRAWER_WIDTH_BAO_CAO_SO_CHE}
+      footer={<DetailDrawerFooter onClose={onClose} canUpdate={!!onEdit} canDelete={!!onDelete} onEdit={onEdit} onDelete={onDelete} />}
     >
       <div className="space-y-4 pb-2">
         <DetailToolbar actions={actions} className="bg-card rounded-xl border border-border" />
 
         <DetailSection title={t('danhGiaDauVao.detail.sectionPhieu')} icon={<ClipboardPen size={14} />} variant="primary">
-          <DetailFieldGrid cols={3}>
-            <DetailField label={t('danhGiaDauVao.store.colNgay')} value={formatYmdToDisplay(data.ngay)} />
-            <DetailField label={t('danhGiaDauVao.store.colChuyen')} value={String(data.chuyen)} />
-            <DetailField
-              label={t('danhGiaDauVao.store.colNamTuan')}
-              value={`${nhanTuanFarm({ nam: data.nam, tuan: data.tuan })} · ${data.nam}`}
-            />
-            <DetailField label={t('danhGiaDauVao.store.colBranch')} value={data.ten_chi_nhanh ?? '—'} />
+          <DetailFieldGrid cols={3} className="grid-cols-2 gap-y-3">
             <DetailField label={t('danhGiaDauVao.store.colTrangThai')} value={<TrangThaiDgdvBadge trangThai={data.trang_thai} />} />
             <DetailField
               label={t('danhGiaDauVao.store.colTongThu')}
@@ -161,31 +160,53 @@ const DgdvDetail: React.FC<Props> = ({
                 </span>
               }
             />
-            <DetailField label={t('danhGiaDauVao.store.colNguoiTao')} value={data.ten_nguoi_tao ?? '—'} />
-            <DetailField label={t('danhGiaDauVao.store.colUpdated')} value={formatDateTimeShort(data.tg_cap_nhat)} />
             {data.ghi_chu?.trim() && (
               <DetailField
                 label={t('danhGiaDauVao.form.ghiChu')}
                 value={<div className="whitespace-pre-wrap">{data.ghi_chu}</div>}
-                className="sm:col-span-2 lg:col-span-3"
+                className="col-span-2 lg:col-span-3"
               />
             )}
           </DetailFieldGrid>
-        </DetailSection>
-
-        <DetailSection title={t('danhGiaDauVao.detail.sectionLuoi')} variant="primary">
           {khoa && (
-            <p className="text-caption text-amber-700 dark:text-amber-400 m-0 mb-1 inline-flex items-center gap-1">
+            <p className="text-caption text-amber-700 dark:text-amber-400 m-0 mt-2 inline-flex items-center gap-1">
               <Lock size={12} />
               {t('danhGiaDauVao.luoi.daKhoa')}
             </p>
           )}
-          {luoi && <DgdvLuoiNgayTable luoi={luoi} canhBao={canhBao} />}
         </DetailSection>
 
-        <DgdvChiTietSection phieu={data} canNhap={canNhapLuoi} onImport={importer.openImport} />
+        <DgdvTheoLoSection phieu={data} canNhap={canNhapLuoi} onXemLo={mo.xemLo} onNhapTheoLo={mo.nhapTheoLo} />
+
+        <DgdvChiTietSection phieu={data} canNhap={canNhapLuoi} onImport={importer.openImport} mo={mo} />
+
+        <p className="m-0 text-caption text-muted-foreground">
+          {t('danhGiaDauVao.detail.dongPhu', {
+            nguoiTao: data.ten_nguoi_tao ?? '—',
+            tao: formatDateTimeShort(data.tg_tao),
+            capNhat: formatDateTimeShort(data.tg_cap_nhat),
+          })}
+        </p>
         <LazyImportDialog open={importer.showImport} onClose={importer.closeImport} {...importer.dialogProps} />
       </div>
+
+      {drawers}
+
+      <AnimatePresence>
+        {xemLuoi && luoi && (
+          <GenericDrawer
+            title={t('danhGiaDauVao.detail.sectionLuoi')}
+            subtitle={tieuDe}
+            icon={<Grid3x3 size={18} />}
+            onClose={() => setXemLuoi(false)}
+            stackLevel={stackLevel + 1}
+            maxWidthClass={DRAWER_WIDTH_WIDE}
+            fullWidthContent
+          >
+            <DgdvLuoiNgayTable luoi={luoi} canhBao={canhBao} />
+          </GenericDrawer>
+        )}
+      </AnimatePresence>
     </GenericDrawer>
   );
 };

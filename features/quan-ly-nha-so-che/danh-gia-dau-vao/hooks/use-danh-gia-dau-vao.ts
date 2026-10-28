@@ -174,6 +174,26 @@ export function useLuuDongDgdv() {
   });
 }
 
+/**
+ * Lưu cả một lô («Nhập theo lô»): chạy các bước của `keHoachLuuCaLo` (core/chi-tiet-dong) qua đúng đường ghi
+ * từng dòng như `useLuuDongDgdv` — xoá / ghi ô, đặt đứt dây.
+ */
+export function useLuuCaLoDgdv() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ops: DgdvThaoTacGhi[]) => chayThaoTac(ops),
+    onSuccess: (_v, ops) => {
+      lamMoiSauGhiDong(qc);
+      toast.success(i18n.t('danhGiaDauVao.nhapLo.daLuu', { n: ops.length }));
+    },
+    onError: (err: Error) => {
+      // Ghi dở giữa chừng: tải lại để bảng nhập thấy đúng số đã vào DB.
+      lamMoiSauGhiDong(qc);
+      toast.error(err.message);
+    },
+  });
+}
+
 export function useXoaDongDgdv() {
   const qc = useQueryClient();
   return useMutation({

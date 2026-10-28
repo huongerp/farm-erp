@@ -22,6 +22,7 @@ import type {
 import type { DgdvFormValues } from '../core/schema';
 import { gonTen, khoaTen } from '../core/chuan-hoa-ten';
 import { cacNgayCuaTuanFarm, docKhoaTuanFarm } from '../core/tuan';
+import { LOC_KSC } from '../core/tong-hop';
 import type { DongImportRpc } from '../utils/import-dong';
 
 const TABLE = 'fp_farm_dgdv';
@@ -260,6 +261,11 @@ function applyDgdvListQuery(q: any, query: DgdvListServerQuery): any {
   let sel = locPhamVi(q, query.viewAll, query.allowedBranchIds);
   if (query.idChiNhanh.length > 0) sel = sel.in('id_chi_nhanh', toInt8s(query.idChiNhanh));
   if (query.trangThai.length > 0) sel = sel.in('trang_thai', query.trangThai);
+  const chuyen = (query.chuyen ?? []).map(Number).filter(Number.isInteger);
+  if (chuyen.length > 0) sel = sel.in('chuyen', chuyen);
+  if ((query.idNguoiTao ?? []).length > 0) sel = sel.in('id_nguoi_tao', toInt8s(query.idNguoiTao!));
+  const ksc = query.ksc ?? [];
+  if (ksc.length === 1) sel = ksc[0] === LOC_KSC.CO ? sel.gt('ksc', 0) : sel.eq('ksc', 0);
   if (query.tuNgay) sel = sel.gte('ngay', query.tuNgay);
   if (query.denNgay) sel = sel.lte('ngay', query.denNgay);
   // Tuần farm (nhiều tuần, có thể khác năm) → ngày thuộc các tuần đó; tránh or(and(nam,tuan)) lồng nhau.

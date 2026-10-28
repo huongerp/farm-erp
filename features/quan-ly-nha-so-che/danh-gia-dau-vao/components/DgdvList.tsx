@@ -38,7 +38,7 @@ export const TrangThaiDgdvBadge: React.FC<{ trangThai: DgdvListRow['trang_thai']
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium',
+        'inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium whitespace-nowrap shrink-0',
         khoa
           ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-100'
           : 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-100'

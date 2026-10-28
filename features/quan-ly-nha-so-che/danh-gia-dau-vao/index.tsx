@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { List, Grid3x3, CalendarRange, BarChart3 } from 'lucide-react';
 import TabGroup from '../../../components/ui/TabGroup';
+import { useIsMobile } from '../../../lib/hooks/use-is-mobile';
 import DanhSachTab from './components/DanhSachTab';
 import BangDanhGiaTab from './components/BangDanhGiaTab';
 import TongHopTuanTab from './components/TongHopTuanTab';
@@ -18,6 +19,7 @@ type TabId = (typeof VALID_TABS)[number];
 const DanhGiaDauVaoPage: React.FC = () => {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
+  const isMobile = useIsMobile();
   const tabFromUrl = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState<TabId>(() =>
     VALID_TABS.includes(tabFromUrl as TabId) ? (tabFromUrl as TabId) : 'danh-sach'
@@ -41,12 +43,13 @@ const DanhGiaDauVaoPage: React.FC = () => {
 
   const tabs = useMemo(
     () => [
-      { id: 'danh-sach', label: t('danhGiaDauVao.tabs.danhSach'), icon: List },
-      { id: 'bang', label: t('danhGiaDauVao.tabs.tongHopNgay'), icon: Grid3x3 },
-      { id: 'tuan', label: t('danhGiaDauVao.tabs.tongHopTuan'), icon: CalendarRange },
-      { id: 'thang', label: t('danhGiaDauVao.tabs.soSanhThang'), icon: BarChart3 },
+      // Điện thoại: nhãn ngắn một dòng (nhãn đầy đủ xuống 3 dòng trong 4 tab chia đều).
+      { id: 'danh-sach', label: t(isMobile ? 'danhGiaDauVao.tabs.danhSachNgan' : 'danhGiaDauVao.tabs.danhSach'), icon: List },
+      { id: 'bang', label: t(isMobile ? 'danhGiaDauVao.tabs.tongHopNgayNgan' : 'danhGiaDauVao.tabs.tongHopNgay'), icon: Grid3x3 },
+      { id: 'tuan', label: t(isMobile ? 'danhGiaDauVao.tabs.tongHopTuanNgan' : 'danhGiaDauVao.tabs.tongHopTuan'), icon: CalendarRange },
+      { id: 'thang', label: t(isMobile ? 'danhGiaDauVao.tabs.soSanhThangNgan' : 'danhGiaDauVao.tabs.soSanhThang'), icon: BarChart3 },
     ],
-    [t]
+    [t, isMobile]
   );
 
   return (

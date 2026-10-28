@@ -6,7 +6,14 @@ import {
   khoangTaiThang,
   ngayCuoiThang,
   tiLeKsc,
+  dsToTruong,
+  khopLocKsc,
+  locDongTheoToTruong,
+  locNgayChiNhanh,
+  locPhieuTheoToTruong,
+  tongHopNgayChiNhanh,
   tongHopThang,
+  tongHopTuanChiNhanh,
   tongHopTuanTheoChiNhanh,
   tongHopTuanTheoDay,
   tongHopTuanTheoLo,
@@ -14,6 +21,7 @@ import {
   type DgdvDongNgayDay,
 } from './tong-hop';
 import { cacNgayCuaTuanFarm } from './tuan';
+import type { DgdvPhieuDayDu } from './types';
 
 // Tuần farm 44/2026: T2 26/10 → CN 01/11.
 const NGAYS = cacNgayCuaTuanFarm(2026, 44);
@@ -152,5 +160,101 @@ describe('tongHopThang', () => {
   it('chỉ chi nhánh có số; chi nhánh lạ xếp sau các chi nhánh đã biết', () => {
     const ds = tongHopThang([ch('2026-10-01', '9', 1), ch('2026-10-02', '2', 1)], ['2026-10'], ['1', '2']).dsChiNhanh;
     expect(ds).toEqual(['2', '9']);
+  });
+});
+
+// ---- Danh sách tổng hợp ngày / tuần ----
+
+/** Phiếu tối giản: mỗi lô [tổ trưởng, SL, SL lỗi, đứt dây]. */
+function phieu(id: string, ngay: string, cn: string, chuyen: number, lo: [string | null, number, number, number][], khoa = false): DgdvPhieuDayDu {
+  return {
+    id,
+    ngay,
+    chuyen,
+    nam: 2026,
+    tuan: 44,
+    id_chi_nhanh: cn,
+    ten_chi_nhanh: `CN ${cn}`,
+    ghi_chu: null,
+    trang_thai: khoa ? 'khoa' : 'mo',
+    id_nguoi_tao: null,
+    tg_tao: '',
+    tg_cap_nhat: '',
+    cot: [],
+    lo: lo.map(([toTruong, sl, loi, dut], i) => ({
+      id: `${id}-l${i}`,
+      id_phieu: id,
+      id_lo: `x${i}`,
+      to_truong: toTruong,
+      ghi_chu: null,
+      stt: i + 1,
+      ten_lo: `Lô ${i}`,
+      lo_ngay: dut ? [{ id: `${id}-n${i}`, id_phieu_lo: `${id}-l${i}`, ngay, dut_day: dut }] : [],
+      dong: [{ id: `${id}-d${i}`, id_phieu_lo: `${id}-l${i}`, id_cot: 'c', ngay, stt_dong: 1, so_luong: sl, danh_gia: null, so_luong_loi: loi, ly_do_loi: null }],
+    })),
+  };
+}
+
+describe('tongHopNgayChiNhanh + lọc', () => {
+  const ds = [
+    phieu('p2', NGAYS[0], '1', 2, [['An', 50, 0, 0]], true),
+    phieu('p1', NGAYS[0], '1', 1, [['An', 100, 5, 4], ['Bình', 30, 0, 0]], true),
+    phieu('p3', NGAYS[0], '2', 1, [['bình', 20, 0, 0]]),
+    phieu('p4', NGAYS[1], '1', 1, [[null, 10, 0, 0]]),
+  ];
+  const rows = tongHopNgayChiNhanh(ds, ['2', '1']);
+
+  it('gom (ngày, chi nhánh) cộng mọi chuyến; ngày mới trước, chi nhánh theo thứ tự; chuyến theo số', () => {
+    expect(rows.map((r) => [r.ngay, r.id_chi_nhanh, r.soChuyen, r.tongThu, r.ksc, r.daKhoaHet, r.ids_phieu])).toEqual([
+      [NGAYS[1], '1', 1, 10, 0, false, ['p4']],
+      [NGAYS[0], '2', 1, 20, 0, false, ['p3']],
+      [NGAYS[0], '1', 2, 184, 5, true, ['p1', 'p2']],
+    ]);
+  });
+
+  it('lọc trạng thái + KSC; rỗng / chọn cả hai = không lọc', () => {
+    expect(locNgayChiNhanh(rows, { trangThai: ['khoa'], ksc: [] }).map((r) => r.khoa)).toEqual([`${NGAYS[0]}|1`]);
+    expect(locNgayChiNhanh(rows, { trangThai: ['mo'], ksc: ['khong'] })).toHaveLength(2);
+    expect(locNgayChiNhanh(rows, { trangThai: [], ksc: ['co', 'khong'] })).toHaveLength(3);
+  });
+
+  it('tổ trưởng: lọc lô, bỏ phiếu không còn lô; tuỳ chọn gom hoa thường, bỏ trống', () => {
+    const loc = locPhieuTheoToTruong(ds, ['bình']);
+    expect(loc.map((p) => [p.id, p.lo.length])).toEqual([
+      ['p1', 1],
+      ['p3', 1],
+    ]);
+    expect(tongHopNgayChiNhanh(loc).map((r) => [r.id_chi_nhanh, r.tongThu])).toEqual([
+      ['1', 30],
+      ['2', 20],
+    ]);
+    expect(dsToTruong(ds.flatMap((p) => p.lo.map((l) => l.to_truong)))).toEqual([
+      { khoa: 'an', ten: 'An' },
+      { khoa: 'bình', ten: 'Bình' },
+    ]);
+    expect(locPhieuTheoToTruong(ds, [])).toBe(ds);
+  });
+});
+
+describe('tongHopTuanChiNhanh', () => {
+  it('cột T2→CN + số ngày có số + số chuyến trong tuần; lọc tổ trưởng trên dòng view; khopLocKsc', () => {
+    const rows = [
+      dong({ so_luong: 100, so_luong_loi: 2 }),
+      dong({ ngay: NGAYS[3], so_luong: 40, to_truong: 'Bình' }),
+      dong({ id_chi_nhanh: '2', so_luong: 7 }),
+    ];
+    const chuyen = [
+      { ngay: NGAYS[0], id_chi_nhanh: '1' },
+      { ngay: NGAYS[0], id_chi_nhanh: '1' },
+      { ngay: NGAYS[3], id_chi_nhanh: '1' },
+      { ngay: '2026-11-02', id_chi_nhanh: '1' },
+    ];
+    const ds = tongHopTuanChiNhanh(rows, NGAYS, ['1', '2'], chuyen);
+    expect(ds.map((c) => [c.id_chi_nhanh, c.tongThu, c.ksc, c.soNgayCoSo, c.soChuyen])).toEqual([
+      ['1', 140, 2, 2, 3],
+      ['2', 7, 0, 1, 0],
+    ]);
+    expect(locDongTheoToTruong(rows, ['bình'])).toHaveLength(1);
+    expect([khopLocKsc(2, ['co']), khopLocKsc(0, ['co']), khopLocKsc(0, [])]).toEqual([true, false, true]);
   });
 });

@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Building2, Calendar, Download, Hash, Plus, Settings, ToggleLeft, Upload } from 'lucide-react';
+import { AlertTriangle, Building2, Calendar, Download, Hash, ListOrdered, Plus, Settings, ToggleLeft, Upload, UserRound } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import DateRangePicker, { type DateRangeValue } from '../../../../components/ui/DateRangePicker';
@@ -13,6 +13,8 @@ import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
 import type { DgdvTomTat } from '../services/danh-gia-dau-vao-db.service';
 import { useDanhGiaDauVaoStore } from '../store/useDanhGiaDauVaoStore';
 import { khoaTuanFarm, nhanTuanFarm } from '../core/tuan';
+import { LOC_KSC } from '../core/tong-hop';
+import { useNhanVienRef } from '../hooks/use-danh-muc-dgdv';
 
 const KY_CUSTOM = 'custom';
 /** Tuần ở preset = T2–CN, trùng tuần farm. */
@@ -59,6 +61,8 @@ const DgdvToolbar: React.FC<Props> = ({
   const reorderColumns = useDanhGiaDauVaoStore((s) => s.reorderColumns);
   const resetColumns = useDanhGiaDauVaoStore((s) => s.resetColumns);
   const resetColumnWidths = useDanhGiaDauVaoStore((s) => s.resetColumnWidths);
+  const { data: dsNhanVien } = useNhanVienRef();
+  const tenNhanVien = useMemo(() => new Map((dsNhanVien ?? []).map((e) => [String(e.id), e.ho_ten])), [dsNhanVien]);
 
   // Preset giữ ở state cục bộ (như ky-loc-chip của Bảo trì): suy ngược từ ngày thì bấm «Tuỳ chọn» lúc
   // chưa có ngày sẽ bị hiểu thành «Tất cả» và ô chọn khoảng biến mất.
@@ -119,8 +123,39 @@ const DgdvToolbar: React.FC<Props> = ({
         value: filters.trang_thai ?? [],
         onChange: (v: string[]) => setFilter('trang_thai', v),
       },
+      {
+        key: 'chuyen',
+        label: t('danhGiaDauVao.toolbar.filterChuyen'),
+        icon: ListOrdered,
+        options: [...new Set(data.map((d) => d.chuyen))]
+          .sort((a, b) => a - b)
+          .map((c) => ({ value: String(c), label: t('danhGiaDauVao.detail.tieuDeChuyen', { chuyen: c }), count: dem((d) => d.chuyen === c) })),
+        value: filters.chuyen ?? [],
+        onChange: (v: string[]) => setFilter('chuyen', v),
+      },
+      {
+        key: 'ksc',
+        label: t('danhGiaDauVao.tongHop.filterKsc'),
+        icon: AlertTriangle,
+        options: [
+          { value: LOC_KSC.CO, label: t('danhGiaDauVao.tongHop.coLoi') },
+          { value: LOC_KSC.KHONG, label: t('danhGiaDauVao.tongHop.khongLoi') },
+        ],
+        value: filters.ksc ?? [],
+        onChange: (v: string[]) => setFilter('ksc', v),
+      },
+      {
+        key: 'nguoi_tao',
+        label: t('danhGiaDauVao.store.colNguoiTao'),
+        icon: UserRound,
+        options: [...new Set(data.map((d) => d.id_nguoi_tao).filter((x): x is string => !!x))]
+          .map((id) => ({ value: id, label: tenNhanVien.get(id) ?? `#${id}`, count: dem((d) => d.id_nguoi_tao === id) }))
+          .sort((a, b) => a.label.localeCompare(b.label, 'vi')),
+        value: filters.nguoi_tao ?? [],
+        onChange: (v: string[]) => setFilter('nguoi_tao', v),
+      },
     ];
-  }, [t, data, branches, filters.id_chi_nhanh, filters.tuan_farm, filters.trang_thai, setFilter]);
+  }, [t, data, branches, tenNhanVien, filters.id_chi_nhanh, filters.tuan_farm, filters.trang_thai, filters.chuyen, filters.ksc, filters.nguoi_tao, setFilter]);
 
   const kyPicker = (inline: boolean) => (
     <DateRangePicker
@@ -138,6 +173,9 @@ const DgdvToolbar: React.FC<Props> = ({
     { kind: 'group', group: filterGroups[1], className: 'w-full sm:w-[200px]' },
     { kind: 'group', group: filterGroups[0], className: 'w-full sm:w-[200px]' },
     { kind: 'group', group: filterGroups[2], className: 'w-full sm:w-[140px]' },
+    { kind: 'group', group: filterGroups[3], className: 'w-full sm:w-[130px]' },
+    { kind: 'group', group: filterGroups[4], className: 'w-full sm:w-[140px]' },
+    { kind: 'group', group: filterGroups[5], className: 'w-full sm:w-[180px]' },
   ];
   // Điện thoại không có hàng chip → chọn khoảng ngày hiện thẳng trong bảng lọc.
   const mobileFilterExtra = (
@@ -151,6 +189,9 @@ const DgdvToolbar: React.FC<Props> = ({
     (filters.id_chi_nhanh?.length ?? 0) +
     (filters.tuan_farm?.length ?? 0) +
     (filters.trang_thai?.length ?? 0) +
+    (filters.chuyen?.length ?? 0) +
+    (filters.ksc?.length ?? 0) +
+    (filters.nguoi_tao?.length ?? 0) +
     (coKy ? 1 : 0);
 
   const handleClearAllFilters = () => {

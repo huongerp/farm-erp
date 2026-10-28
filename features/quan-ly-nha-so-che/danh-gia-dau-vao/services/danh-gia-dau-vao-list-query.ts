@@ -16,6 +16,12 @@ export interface DgdvListServerQuery {
   tuanFarm: string[];
   trangThai: string[];
   idChiNhanh: string[];
+  /** Số chuyến (1, 2, 3…) dạng chuỗi; rỗng = mọi chuyến. */
+  chuyen?: string[];
+  /** id nhân viên người tạo phiếu. */
+  idNguoiTao?: string[];
+  /** Chip «Có KSC»: `co` = KSC > 0, `khong` = KSC = 0 (cột `ksc` của view); rỗng / cả hai = không lọc. */
+  ksc?: string[];
   sortColumn: string | null;
   sortDirection: 'asc' | 'desc' | null;
 }

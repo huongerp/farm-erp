@@ -1,13 +1,16 @@
 /**
- * Tổng hợp tuần / so sánh tháng của Đánh giá đầu vào — thuần, không React, không gọi db.
+ * Tổng hợp ngày / tuần / so sánh tháng của Đánh giá đầu vào — thuần, không React, không gọi db.
+ * Danh sách tab ngày gom từ phiếu đầy đủ (`tongHopNgayChiNhanh`), tab tuần từ view tổng ngày × dây
+ * (`tongHopTuanChiNhanh`); chip lọc Trạng thái / Có KSC / Tổ trưởng lọc tại chỗ trên dữ liệu đã tải.
  *
  * Nguồn (migration 057, đã cộng mọi chuyến ở DB):
  *   - tuần: view `v_fp_farm_dgdv_tong_ngay_day` — ngày × chi nhánh × lô × dây; dòng `id_mau_1` null = đứt dây.
  *   - tháng: view `v_fp_farm_dgdv_tong_chuyen` — 1 dòng / phiếu (chuyến).
  * Tổng thu = Σ so_luong (gồm dòng đứt dây), KSC = Σ so_luong_loi — khớp `fn_dgdv_tong_ngay`.
  */
-import type { TuanFarm } from './types';
-import { khoaDay } from './bang-tinh';
+import type { DgdvPhieuDayDu, TuanFarm } from './types';
+import { TRANG_THAI_DGDV } from './types';
+import { khoaDay, tongPhieu } from './bang-tinh';
 import { gonTen, khoaTen } from './chuan-hoa-ten';
 import { soSanhTuan, tuanChichBapTuThuHoach } from './tuan';
 
@@ -223,6 +226,149 @@ export function tongHopTuanTheoChiNhanh(
   }
   const soSanhCn = hamThuTuCn(thuTuCn);
   return [...m.values()].sort((a, b) => soSanhCn(a.id_chi_nhanh, b.id_chi_nhanh));
+}
+
+// ---- Danh sách tổng hợp ngày / tuần (tab «Tổng hợp ngày», «Tổng hợp tuần») -------------------
+
+/** Chip «Có KSC»: `co` = có buồng lỗi (KSC > 0), `khong` = không lỗi. */
+export const LOC_KSC = { CO: 'co', KHONG: 'khong' } as const;
+/** Chip «Trạng thái» của dòng ngày: `khoa` = mọi chuyến đã khoá, `mo` = còn chuyến mở. */
+export const LOC_TRANG_THAI_NGAY = { KHOA: 'khoa', MO: 'mo' } as const;
+
+/** Rỗng hoặc chọn cả hai = không lọc. */
+export function khopLocKsc(ksc: number, loc: readonly string[]): boolean {
+  if (loc.length === 0) return true;
+  return loc.includes(ksc > 0 ? LOC_KSC.CO : LOC_KSC.KHONG);
+}
+
+export interface DgdvToTruongTuyChon {
+  /** `khoaTen` của tên */
+  khoa: string;
+  ten: string;
+}
+
+/** Tổ trưởng có trong dữ liệu (bỏ trống), gom không phân biệt hoa thường, xếp theo tên. */
+export function dsToTruong(tenCacDong: readonly (string | null | undefined)[]): DgdvToTruongTuyChon[] {
+  const m = new Map<string, string>();
+  for (const ten of tenCacDong) {
+    const g = gonTen(ten);
+    if (g && !m.has(khoaTen(g))) m.set(khoaTen(g), g);
+  }
+  return [...m.entries()].map(([khoa, ten]) => ({ khoa, ten })).sort((a, b) => soSanhTen(a.ten, b.ten));
+}
+
+/**
+ * Lọc tổ trưởng ở mức LÔ: mỗi phiếu chỉ giữ lô có tổ trưởng thuộc `toTruong` (khoá `khoaTen`), phiếu không còn
+ * lô nào thì bỏ. Rỗng = giữ nguyên mảng.
+ */
+export function locPhieuTheoToTruong(dsPhieu: DgdvPhieuDayDu[], toTruong: readonly string[]): DgdvPhieuDayDu[] {
+  if (toTruong.length === 0) return dsPhieu;
+  const cho = new Set(toTruong);
+  return dsPhieu.flatMap((p) => {
+    const lo = p.lo.filter((l) => cho.has(khoaTen(l.to_truong)));
+    return lo.length > 0 ? [{ ...p, lo }] : [];
+  });
+}
+
+/** Lọc dòng view tổng ngày × dây theo tổ trưởng (khoá `khoaTen`). Rỗng = giữ nguyên. */
+export function locDongTheoToTruong<T extends { to_truong: string | null }>(rows: readonly T[], toTruong: readonly string[]): readonly T[] {
+  if (toTruong.length === 0) return rows;
+  const cho = new Set(toTruong);
+  return rows.filter((r) => cho.has(khoaTen(r.to_truong)));
+}
+
+export interface DgdvNgayChiNhanh extends TongThuKsc {
+  /** `ngay|id_chi_nhanh` */
+  khoa: string;
+  ngay: string;
+  /** tuần farm của ngày */
+  nam: number;
+  tuan: number;
+  id_chi_nhanh: string;
+  ten_chi_nhanh: string | null;
+  soChuyen: number;
+  /** mọi chuyến của ngày đã khoá */
+  daKhoaHet: boolean;
+  /** id phiếu (chuyến) theo số chuyến */
+  ids_phieu: string[];
+}
+
+/**
+ * Danh sách tab «Tổng hợp ngày»: mỗi (ngày, chi nhánh) một dòng — cộng mọi chuyến như `fn_dgdv_tong_ngay`.
+ * Xếp ngày mới trước, trong ngày theo `thuTuCn` (chi nhánh lạ sau, theo id).
+ */
+export function tongHopNgayChiNhanh(dsPhieu: readonly DgdvPhieuDayDu[], thuTuCn: readonly string[] = []): DgdvNgayChiNhanh[] {
+  const m = new Map<string, DgdvNgayChiNhanh & { _chuyen: { id: string; chuyen: number }[] }>();
+  for (const p of dsPhieu) {
+    const k = `${p.ngay}|${p.id_chi_nhanh}`;
+    let g = m.get(k);
+    if (!g) {
+      g = {
+        khoa: k,
+        ngay: p.ngay,
+        nam: p.nam,
+        tuan: p.tuan,
+        id_chi_nhanh: p.id_chi_nhanh,
+        ten_chi_nhanh: p.ten_chi_nhanh ?? null,
+        soChuyen: 0,
+        daKhoaHet: true,
+        ids_phieu: [],
+        tongThu: 0,
+        ksc: 0,
+        _chuyen: [],
+      };
+      m.set(k, g);
+    }
+    const tp = tongPhieu(p);
+    g.tongThu += tp.tongThu;
+    g.ksc += tp.ksc;
+    g.soChuyen += 1;
+    g.daKhoaHet = g.daKhoaHet && p.trang_thai === TRANG_THAI_DGDV.KHOA;
+    g._chuyen.push({ id: p.id, chuyen: p.chuyen });
+  }
+  const soSanhCn = hamThuTuCn(thuTuCn);
+  return [...m.values()]
+    .map(({ _chuyen, ...g }) => ({ ...g, ids_phieu: [..._chuyen].sort((a, b) => a.chuyen - b.chuyen).map((c) => c.id) }))
+    .sort((a, b) => b.ngay.localeCompare(a.ngay) || soSanhCn(a.id_chi_nhanh, b.id_chi_nhanh));
+}
+
+/** Chip Trạng thái + Có KSC của tab ngày (rỗng = không lọc). */
+export function locNgayChiNhanh(
+  rows: readonly DgdvNgayChiNhanh[],
+  loc: { trangThai: readonly string[]; ksc: readonly string[] }
+): DgdvNgayChiNhanh[] {
+  return rows.filter(
+    (r) =>
+      (loc.trangThai.length === 0 || loc.trangThai.includes(r.daKhoaHet ? LOC_TRANG_THAI_NGAY.KHOA : LOC_TRANG_THAI_NGAY.MO)) &&
+      khopLocKsc(r.ksc, loc.ksc)
+  );
+}
+
+export interface DgdvTuanChiNhanhDong extends DgdvTuanChiNhanh {
+  /** số ngày trong tuần có tổng thu > 0 */
+  soNgayCoSo: number;
+  /** số chuyến (phiếu) của chi nhánh trong tuần */
+  soChuyen: number;
+}
+
+/**
+ * Danh sách tab «Tổng hợp tuần»: mỗi chi nhánh có số trong tuần một dòng (cột T2→CN như
+ * `tongHopTuanTheoChiNhanh`) + số ngày có số + số chuyến (đếm `dsChuyen` có ngày trong `ngays`).
+ */
+export function tongHopTuanChiNhanh(
+  rows: readonly DgdvDongNgayDay[],
+  ngays: readonly string[],
+  thuTuCn: readonly string[] = [],
+  dsChuyen: readonly Pick<DgdvDongChuyen, 'ngay' | 'id_chi_nhanh'>[] = []
+): DgdvTuanChiNhanhDong[] {
+  const coNgay = new Set(ngays);
+  const demChuyen = new Map<string, number>();
+  for (const c of dsChuyen) if (coNgay.has(c.ngay)) demChuyen.set(c.id_chi_nhanh, (demChuyen.get(c.id_chi_nhanh) ?? 0) + 1);
+  return tongHopTuanTheoChiNhanh(rows, ngays, thuTuCn).map((c) => ({
+    ...c,
+    soNgayCoSo: c.theoNgay.filter((v) => v > 0).length,
+    soChuyen: demChuyen.get(c.id_chi_nhanh) ?? 0,
+  }));
 }
 
 // ---- So sánh tháng ---------------------------------------------------------------

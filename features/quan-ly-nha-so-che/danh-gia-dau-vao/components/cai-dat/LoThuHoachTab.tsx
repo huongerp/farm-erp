@@ -5,7 +5,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Edit, Plus, Trash2 } from 'lucide-react';
 import Button from '../../../../../components/ui/Button';
 import Input from '../../../../../components/ui/Input';
-import Select from '../../../../../components/ui/Select';
 import Combobox from '../../../../../components/ui/Combobox';
 import { useConfirmStore } from '../../../../../store/useConfirmStore';
 import { cn } from '../../../../../lib/utils';
@@ -61,13 +60,14 @@ const LoForm: React.FC<{
           name="id_chi_nhanh"
           control={control}
           render={({ field }) => (
-            <Select
+            <Combobox
               label={t('danhGiaDauVao.form.branch')}
               required
-              value={field.value ?? ''}
-              onChange={(e) => field.onChange(e.target.value)}
               options={chiNhanhOptions}
+              value={field.value ?? ''}
+              onChange={(v) => field.onChange(v ? String(v) : '')}
               placeholder={t('danhGiaDauVao.form.branchPlaceholder')}
+              dropdownInPortal
               error={errors.id_chi_nhanh?.message as string | undefined}
             />
           )}
@@ -161,11 +161,13 @@ const LoThuHoachTab: React.FC = () => {
     <div className="space-y-3">
       <div className="flex flex-wrap items-end gap-2">
         <div className="w-full sm:w-64">
-          <Select
+          <Combobox
             label={t('danhGiaDauVao.toolbar.filterBranch')}
+            options={chiNhanhOptions}
             value={locCn}
-            onChange={(e) => setLocCn(e.target.value)}
-            options={[{ value: '', label: t('danhGiaDauVao.caiDat.tatCaChiNhanh') }, ...chiNhanhOptions]}
+            onChange={(v) => setLocCn(v ? String(v) : '')}
+            placeholder={t('danhGiaDauVao.caiDat.tatCaChiNhanh')}
+            dropdownInPortal
           />
         </div>
         {dangSua === null && (

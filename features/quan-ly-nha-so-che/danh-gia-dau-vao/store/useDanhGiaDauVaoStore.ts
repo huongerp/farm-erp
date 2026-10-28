@@ -6,6 +6,12 @@ export interface DgdvFilters {
   /** tuần farm dạng khoá '2026-44' (core/tuan `khoaTuanFarm`) */
   tuan_farm: string[];
   trang_thai: string[];
+  /** số chuyến dạng chuỗi ('1', '2'…) */
+  chuyen: string[];
+  /** id nhân viên người tạo */
+  nguoi_tao: string[];
+  /** 'co' = có KSC, 'khong' = không lỗi */
+  ksc: string[];
   /** khoảng ngày 'YYYY-MM-DD' — '' = không giới hạn */
   tu_ngay: string;
   den_ngay: string;
@@ -30,6 +36,9 @@ const initialFilters: DgdvFilters = {
   id_chi_nhanh: [],
   tuan_farm: [],
   trang_thai: [],
+  chuyen: [],
+  nguoi_tao: [],
+  ksc: [],
   tu_ngay: '',
   den_ngay: '',
 };

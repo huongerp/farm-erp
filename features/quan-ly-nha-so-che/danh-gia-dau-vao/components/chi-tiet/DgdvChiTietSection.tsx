@@ -1,42 +1,41 @@
 /**
  * Bảng con «Chi tiết đánh giá» trong Detail phiếu (khuôn `GenericSubTableSection` + `SubTable`): mỗi dòng
  * = một ô lưới (lô × dây × dòng) hoặc đứt dây của lô — mọi dòng cùng ngày của phiếu (1 phiếu = 1 chuyến
- * của một ngày). Thêm / Sửa / Xoá từng dòng, Import Excel. Lưới ngang ở trên chỉ để xem — mọi số nhập ở đây.
+ * của một ngày). Bấm dòng LUÔN mở drawer xem dòng (kể cả không có quyền nhập / phiếu khoá); Thêm / Sửa / Xoá
+ * từng dòng, «Nhập theo lô», Import Excel khi được nhập. Drawer con do `useDgdvChiTietDrawers` (Detail) giữ.
  */
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AnimatePresence } from 'framer-motion';
-import { ClipboardList, Edit, Trash2, Upload } from 'lucide-react';
+import { ClipboardList, Edit, Rows3, Trash2, Upload } from 'lucide-react';
 import GenericSubTableSection from '../../../../../components/shared/GenericSubTableSection';
 import SubTable, { type SubTableColumn } from '../../../../../components/shared/sub-table/SubTable';
 import SubTableActionButton from '../../../../../components/shared/sub-table/SubTableActionButton';
 import SubTableSearchBox from '../../../../../components/shared/sub-table/SubTableSearchBox';
 import Button from '../../../../../components/ui/Button';
-import { useConfirmStore } from '../../../../../store/useConfirmStore';
 import { foldVi } from '../../../../../lib/search-text';
-import { cn, formatNumberVN, formatYmdToDisplay } from '../../../../../lib/utils';
+import { cn, formatNumberVN } from '../../../../../lib/utils';
 import type { DgdvPhieuDayDu } from '../../core/types';
 import { dongPhangCuaPhieu, tongDongPhang, type DgdvDongPhang } from '../../core/chi-tiet-dong';
 import { nhanCotDay } from '../../core/bang-tinh';
-import { styleTieuDeCot } from '../../utils/mau-day';
-import { useXoaDongDgdv } from '../../hooks/use-danh-gia-dau-vao';
 import { useMauDay } from '../../hooks/use-danh-muc-dgdv';
-import DgdvDongForm from './DgdvDongForm';
+import { ChipDay } from '../ChipDay';
+import TheDongMobile from '../TheDongMobile';
+import type { DgdvChiTietMo } from './useDgdvChiTietDrawers';
 
 interface Props {
   phieu: DgdvPhieuDayDu;
   /** Được thêm / sửa / xoá dòng (phiếu mở + có quyền). */
   canNhap: boolean;
   onImport?: () => void;
+  mo: DgdvChiTietMo;
 }
 
-const DgdvChiTietSection: React.FC<Props> = ({ phieu, canNhap, onImport }) => {
+const nutHeader = 'min-h-[44px] h-8 sm:h-8 px-3 shrink-0';
+
+const DgdvChiTietSection: React.FC<Props> = ({ phieu, canNhap, onImport, mo }) => {
   const { t } = useTranslation();
-  const confirm = useConfirmStore((s) => s.confirm);
-  const xoa = useXoaDongDgdv();
   const { mauTheoId } = useMauDay();
   const [tim, setTim] = useState('');
-  const [dangSua, setDangSua] = useState<DgdvDongPhang | 'moi' | null>(null);
 
   const tatCa = useMemo(() => dongPhangCuaPhieu(phieu), [phieu]);
   const cotTheoId = useMemo(() => new Map(phieu.cot.map((c) => [c.id, c])), [phieu.cot]);
@@ -58,6 +57,7 @@ const DgdvChiTietSection: React.FC<Props> = ({ phieu, canNhap, onImport }) => {
   };
   const hien = tu.length > 0 ? tatCa.filter(khop) : tatCa;
   const tong = tongDongPhang(hien);
+  const coKhung = phieu.lo.length > 0 && phieu.cot.length > 0;
 
   const columns: SubTableColumn[] = [
     { id: 'lo', label: t('danhGiaDauVao.form.lo'), width: 110, minWidth: 80, sticky: true, mobile: 'title' },
@@ -75,18 +75,8 @@ const DgdvChiTietSection: React.FC<Props> = ({ phieu, canNhap, onImport }) => {
         return <span className="text-sm font-medium">{r.ten_lo ?? '—'}</span>;
       case 'to_truong':
         return <span className="text-sm">{r.to_truong ?? '—'}</span>;
-      case 'day': {
-        const c = r.id_cot ? cotTheoId.get(r.id_cot) : undefined;
-        const m1 = c ? mauTheoId.get(c.id_mau_1)?.ma_mau ?? null : null;
-        const m2 = c?.id_mau_2 ? mauTheoId.get(c.id_mau_2)?.ma_mau ?? null : null;
-        return c ? (
-          <span className="inline-flex rounded-md px-2 py-0.5 text-xs font-semibold whitespace-nowrap" style={styleTieuDeCot(m1, m2)}>
-            {nhanDay(r)}
-          </span>
-        ) : (
-          <span className="inline-flex rounded-md px-2 py-0.5 text-xs font-medium bg-muted text-muted-foreground">{nhanDay(r)}</span>
-        );
-      }
+      case 'day':
+        return <ChipDay cot={r.id_cot ? (cotTheoId.get(r.id_cot) ?? null) : null} mauTheoId={mauTheoId} />;
       case 'so_luong':
         return <span className="tabular-nums text-sm font-medium">{formatNumberVN(r.so_luong)}</span>;
       case 'danh_gia':
@@ -104,86 +94,98 @@ const DgdvChiTietSection: React.FC<Props> = ({ phieu, canNhap, onImport }) => {
     }
   };
 
-  const hoiXoa = (r: DgdvDongPhang) =>
-    confirm({
-      title: t('danhGiaDauVao.chiTiet.xoaTitle'),
-      message: t('danhGiaDauVao.chiTiet.xoaMessage', { lo: r.ten_lo ?? '', day: nhanDay(r), ngay: formatYmdToDisplay(r.ngay) }),
-      variant: 'danger',
-      confirmText: t('common.delete'),
-      onConfirm: async () => {
-        await xoa.mutateAsync(r);
-      },
-    });
-
   return (
-    <>
-      <GenericSubTableSection
-        title={t('danhGiaDauVao.chiTiet.title')}
-        icon={<ClipboardList size={14} className="text-primary" />}
-        count={tatCa.length}
-        addLabel={canNhap ? t('danhGiaDauVao.chiTiet.themDong') : undefined}
-        onAdd={canNhap && phieu.lo.length > 0 ? () => setDangSua('moi') : undefined}
-        headerActions={
-          canNhap && onImport ? (
-            <Button type="button" size="sm" variant="outline" onClick={onImport} className="min-h-[44px] h-8 sm:h-8 px-3 shrink-0">
-              <Upload size={14} className="mr-1.5" />
-              {t('danhGiaDauVao.import.nut')}
-            </Button>
-          ) : undefined
-        }
-        contentMode="raw"
-        emptyTitle={t('danhGiaDauVao.chiTiet.empty')}
-        emptyDescription={canNhap ? t('danhGiaDauVao.chiTiet.emptyHint') : undefined}
-      >
-        {tatCa.length > 0 && (
-          <div className="space-y-2.5">
-            <SubTableSearchBox value={tim} onChange={setTim} shown={hien.length} total={tatCa.length} />
-            <SubTable
-              tableKey="danh-gia-dau-vao.chi-tiet"
-              columns={columns}
-              rows={hien}
-              keyExtractor={(r) => r.key}
-              renderCell={renderCell}
-              renderActions={
-                canNhap
-                  ? (r) => (
-                      <div className="flex items-center justify-end gap-1">
-                        <SubTableActionButton label={t('common.edit')} icon={<Edit size={14} />} onClick={() => setDangSua(r)} primary />
-                        <SubTableActionButton tone="danger" label={t('common.delete')} icon={<Trash2 size={14} />} onClick={() => hoiXoa(r)} />
-                      </div>
-                    )
-                  : undefined
-              }
-              actionsWidth={84}
-              onRowClick={canNhap ? (r) => setDangSua(r) : undefined}
-              onMobileCardClick={canNhap ? (r) => setDangSua(r) : undefined}
-              rowClassName={(r) => (r.loai === 'dut_day' ? 'bg-muted/40' : undefined)}
-              emptyContent={<p className="py-4 text-center text-sm text-muted-foreground m-0">{t('danhGiaDauVao.chiTiet.khongCoDongLoc')}</p>}
-              maxHeight="420px"
-            />
-            <div className="flex flex-wrap justify-end gap-x-4 text-sm">
-              <span>
-                {t('danhGiaDauVao.chiTiet.tongSoLuong')}{' '}
-                <span className="font-bold tabular-nums text-primary">{formatNumberVN(tong.soLuong)}</span>
-              </span>
-              <span>
-                {t('danhGiaDauVao.chiTiet.tongLoi')} <span className="font-bold tabular-nums text-rose-600">{formatNumberVN(tong.soLuongLoi)}</span>
-              </span>
-            </div>
-          </div>
-        )}
-      </GenericSubTableSection>
-
-      <AnimatePresence>
-        {dangSua && (
-          <DgdvDongForm
-            phieu={phieu}
-            dong={dangSua === 'moi' ? null : dangSua}
-            onClose={() => setDangSua(null)}
+    <GenericSubTableSection
+      title={t('danhGiaDauVao.chiTiet.title')}
+      icon={<ClipboardList size={14} className="text-primary" />}
+      count={tatCa.length}
+      addLabel={canNhap ? t('danhGiaDauVao.chiTiet.themDong') : undefined}
+      onAdd={canNhap && coKhung ? mo.themDong : undefined}
+      headerActions={
+        canNhap ? (
+          <>
+            {coKhung && (
+              <Button type="button" size="sm" variant="outline" onClick={() => mo.nhapTheoLo(null)} className={nutHeader}>
+                <Rows3 size={14} className="mr-1.5" />
+                {t('danhGiaDauVao.nhapLo.nut')}
+              </Button>
+            )}
+            {onImport && (
+              <Button type="button" size="sm" variant="outline" onClick={onImport} className={nutHeader}>
+                <Upload size={14} className="mr-1.5" />
+                {t('danhGiaDauVao.import.nut')}
+              </Button>
+            )}
+          </>
+        ) : undefined
+      }
+      contentMode="raw"
+      emptyTitle={t('danhGiaDauVao.chiTiet.empty')}
+      emptyDescription={canNhap ? t('danhGiaDauVao.chiTiet.emptyHint') : undefined}
+    >
+      {tatCa.length > 0 && (
+        <div className="space-y-2.5">
+          <SubTableSearchBox value={tim} onChange={setTim} shown={hien.length} total={tatCa.length} />
+          <SubTable
+            tableKey="danh-gia-dau-vao.chi-tiet"
+            columns={columns}
+            rows={hien}
+            keyExtractor={(r) => r.key}
+            renderCell={renderCell}
+            renderActions={
+              canNhap
+                ? (r) => (
+                    <div className="flex items-center justify-end gap-1">
+                      <SubTableActionButton label={t('common.edit')} icon={<Edit size={14} />} onClick={() => mo.suaDong(r)} primary />
+                      <SubTableActionButton tone="danger" label={t('common.delete')} icon={<Trash2 size={14} />} onClick={() => mo.xoaDong(r)} />
+                    </div>
+                  )
+                : undefined
+            }
+            actionsWidth={84}
+            onRowClick={mo.xemDong}
+            renderMobileCard={(r) => (
+              // Điện thoại: card gọn «lô · chip dây ……… SL» + «đánh giá · lỗi (lý do)»; chạm → drawer dòng (có Sửa / Xoá).
+              <TheDongMobile
+                onClick={() => mo.xemDong(r)}
+                className={r.loai === 'dut_day' ? 'bg-muted/40' : r.so_luong_loi > r.so_luong ? 'bg-rose-50 dark:bg-rose-950/30' : undefined}
+                tieuDe={
+                  <>
+                    <span className="shrink-0">{r.ten_lo ?? '—'}</span>
+                    {renderCell('day', r)}
+                  </>
+                }
+                soChinh={formatNumberVN(r.so_luong)}
+                phu={
+                  r.loai === 'dut_day' ? undefined : (
+                    <>
+                      {r.danh_gia && <span>{r.danh_gia}</span>}
+                      {r.so_luong_loi > 0 && (
+                        <span className="text-rose-600 font-medium">
+                          {t('danhGiaDauVao.luoi.colSlLoi')} {formatNumberVN(r.so_luong_loi)}
+                          {r.ly_do_loi ? ` (${r.ly_do_loi})` : ''}
+                        </span>
+                      )}
+                    </>
+                  )
+                }
+              />
+            )}
+            rowClassName={(r) => (r.loai === 'dut_day' ? 'bg-muted/40' : r.so_luong_loi > r.so_luong ? 'bg-rose-50 dark:bg-rose-950/30' : undefined)}
+            emptyContent={<p className="py-4 text-center text-sm text-muted-foreground m-0">{t('danhGiaDauVao.chiTiet.khongCoDongLoc')}</p>}
+            maxHeight="420px"
           />
-        )}
-      </AnimatePresence>
-    </>
+          <div className="flex flex-wrap justify-end gap-x-4 text-sm">
+            <span>
+              {t('danhGiaDauVao.chiTiet.tongSoLuong')} <span className="font-bold tabular-nums text-primary">{formatNumberVN(tong.soLuong)}</span>
+            </span>
+            <span>
+              {t('danhGiaDauVao.chiTiet.tongLoi')} <span className="font-bold tabular-nums text-rose-600">{formatNumberVN(tong.soLuongLoi)}</span>
+            </span>
+          </div>
+        </div>
+      )}
+    </GenericSubTableSection>
   );
 };
 

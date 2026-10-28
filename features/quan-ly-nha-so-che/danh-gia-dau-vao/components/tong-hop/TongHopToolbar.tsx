@@ -70,6 +70,8 @@ const TongHopToolbar: React.FC<Props> = ({ chonKy, nhanKy, dsChiNhanh, idChiNhan
       activeFilterCount={idChiNhanh ? 1 : 0}
       onClearFilters={() => onDoiChiNhanh('')}
       actions={actions}
+      mobileActions={actions}
+      mobileRow2Content={chonKy(true)}
       className="static z-auto border-b border-border"
     />
   );

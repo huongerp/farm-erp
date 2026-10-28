@@ -1,7 +1,8 @@
 /**
  * Dialog thêm / sửa một dòng «Chi tiết đánh giá»: Lô · Dây (hoặc «Đứt dây») · Số lượng · Đánh giá ·
  * SL lỗi · Lý do lỗi. Ngày luôn = ngày của phiếu (1 phiếu = 1 chuyến của một ngày) — không có ô chọn.
- * «Lưu & thêm tiếp» giữ Lô + Dây để nhập liền nhiều dòng.
+ * «Lưu & thêm tiếp» giữ Lô + Dây để nhập liền nhiều dòng; Enter trong ô gõ = Lưu. Nhập cả lô một lần:
+ * `DgdvNhapTheoLoDrawer`.
  * Ghi theo kế hoạch ở core/chi-tiet-dong (`useLuuDongDgdv`); lý do gõ mới tự vào danh mục.
  */
 import React, { useEffect, useMemo, useRef } from 'react';
@@ -13,7 +14,6 @@ import GenericDrawer from '../../../../../components/shared/GenericDrawer';
 import FormSection from '../../../../../components/shared/FormSection';
 import FormGrid from '../../../../../components/shared/FormGrid';
 import Input from '../../../../../components/ui/Input';
-import Select from '../../../../../components/ui/Select';
 import Combobox from '../../../../../components/ui/Combobox';
 import Button from '../../../../../components/ui/Button';
 import { BTN_CANCEL } from '../../../../../lib/button-labels';
@@ -26,15 +26,18 @@ import { nhanCotDay } from '../../core/bang-tinh';
 import { tenKhongTrung } from '../../core/chuan-hoa-ten';
 import { useLuuDongDgdv } from '../../hooks/use-danh-gia-dau-vao';
 import { useLyDoDgdv, useMauDay, useThemLyDoNeuMoi } from '../../hooks/use-danh-muc-dgdv';
+import { ChipDay } from '../ChipDay';
 
 interface Props {
   phieu: DgdvPhieuDayDu;
   /** Dòng đang sửa; null = thêm mới. */
   dong: DgdvDongPhang | null;
   onClose: () => void;
+  /** Tầng drawer (mặc định 1 — chồng trên Detail phiếu). */
+  stackLevel?: number;
 }
 
-const DgdvDongForm: React.FC<Props> = ({ phieu, dong, onClose }) => {
+const DgdvDongForm: React.FC<Props> = ({ phieu, dong, onClose, stackLevel = 1 }) => {
   const { t } = useTranslation();
   const isEdit = !!dong;
   const luu = useLuuDongDgdv();
@@ -89,6 +92,7 @@ const DgdvDongForm: React.FC<Props> = ({ phieu, dong, onClose }) => {
     return () => clearTimeout(h);
   }, [setFocus]);
 
+  const cotTheoId = useMemo(() => new Map(cotSapXep.map((c) => [c.id, c])), [cotSapXep]);
   const loOptions = loSapXep.map((l) => ({ value: l.id, label: l.ten_lo ?? '—', subLabel: l.to_truong ?? '' }));
   const dayOptions = [
     ...cotSapXep.map((c) => ({ value: c.id, label: nhanCotDay(c, mauTheoId, t('danhGiaDauVao.luoi.xeDoi')) })),
@@ -136,7 +140,7 @@ const DgdvDongForm: React.FC<Props> = ({ phieu, dong, onClose }) => {
       icon={<ListPlus size={18} />}
       onClose={onClose}
       isDirty={isDirty}
-      stackLevel={1}
+      stackLevel={stackLevel}
       footer={
         <div className="flex items-center justify-between w-full gap-3">
           <Button variant="outline" size="sm" onClick={onClose} disabled={luu.isPending} className="border-border text-muted-foreground">
@@ -161,7 +165,8 @@ const DgdvDongForm: React.FC<Props> = ({ phieu, dong, onClose }) => {
         id="dgdv-dong-form"
         onSubmit={(e) => {
           e.preventDefault();
-          gui(!isEdit);
+          e.stopPropagation();
+          gui(false);
         }}
         className="space-y-4"
       >
@@ -187,12 +192,17 @@ const DgdvDongForm: React.FC<Props> = ({ phieu, dong, onClose }) => {
               name="id_cot"
               control={control}
               render={({ field }) => (
-                <Select
+                <Combobox
                   label={t('danhGiaDauVao.chiTiet.colDay')}
                   required
-                  value={field.value}
-                  onChange={(e) => field.onChange(e.target.value)}
                   options={dayOptions}
+                  value={field.value}
+                  onChange={(v) => field.onChange(v ? String(v) : '')}
+                  placeholder={t('danhGiaDauVao.chiTiet.chonDay')}
+                  dropdownInPortal
+                  renderOption={(o) => (
+                    <ChipDay cot={o.value === DONG_DUT_DAY ? null : (cotTheoId.get(String(o.value)) ?? null)} mauTheoId={mauTheoId} />
+                  )}
                   error={errors.id_cot?.message as string | undefined}
                 />
               )}
