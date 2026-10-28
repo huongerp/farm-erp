@@ -1,6 +1,6 @@
-/** Chọn nhanh khoảng ngày cho Bảng đánh giá + danh sách tuần ISO phủ khoảng đó (thuần). */
-import { cacNgayTrongKhoang, congNgay, ngayDauTuanIso, tuanIsoCuaNgay, tuanKeTiep } from '../core/tuan';
-import type { TuanIso } from '../core/types';
+/** Chọn nhanh khoảng ngày cho Bảng đánh giá + danh sách tuần farm phủ khoảng đó (thuần). */
+import { cacNgayTrongKhoang, congNgay, ngayDauTuanFarm, tuanFarmCuaNgay, tuanKeTiep } from '../core/tuan';
+import type { TuanFarm } from '../core/types';
 
 export type KieuKhoangNhanh = 'hom-nay' | 'tuan-nay' | 'tuan-truoc';
 
@@ -9,8 +9,8 @@ export const SO_NGAY_TOI_DA = 31;
 
 export function khoangNhanh(kieu: KieuKhoangNhanh, homNay: string): { tu: string; den: string } {
   if (kieu === 'hom-nay') return { tu: homNay, den: homNay };
-  const t = kieu === 'tuan-nay' ? tuanIsoCuaNgay(homNay) : tuanKeTiep(tuanIsoCuaNgay(homNay), -1);
-  const dau = ngayDauTuanIso(t.nam, t.tuan);
+  const t = kieu === 'tuan-nay' ? tuanFarmCuaNgay(homNay) : tuanKeTiep(tuanFarmCuaNgay(homNay), -1);
+  const dau = ngayDauTuanFarm(t.nam, t.tuan);
   return { tu: dau, den: congNgay(dau, 6) };
 }
 
@@ -30,11 +30,11 @@ export function chuanHoaKhoang(tu: string, den: string): { tu: string; den: stri
   return b > maxDen ? { tu: a, den: maxDen, biCat: true } : { tu: a, den: b, biCat: false };
 }
 
-/** Các tuần ISO (không trùng, theo thứ tự) chứa ít nhất một ngày trong khoảng. */
-export function cacTuanTrongKhoang(tu: string, den: string): TuanIso[] {
-  const kq: TuanIso[] = [];
+/** Các tuần farm (không trùng, theo thứ tự) chứa ít nhất một ngày trong khoảng. */
+export function cacTuanTrongKhoang(tu: string, den: string): TuanFarm[] {
+  const kq: TuanFarm[] = [];
   for (const ngay of cacNgayTrongKhoang(tu, den)) {
-    const t = tuanIsoCuaNgay(ngay);
+    const t = tuanFarmCuaNgay(ngay);
     if (!kq.some((x) => x.nam === t.nam && x.tuan === t.tuan)) kq.push(t);
   }
   return kq;

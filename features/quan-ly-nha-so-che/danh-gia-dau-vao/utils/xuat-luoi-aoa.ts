@@ -4,7 +4,7 @@
  * tiêu đề · dòng KSC/Tổng thu/Tuần/Ngày · 3 dòng tiêu đề cột · tổ trưởng → lô → dòng · tổng cộng.
  */
 import type { DgdvKhoiNgay, DgdvLuoiNgay } from '../core/bang-tinh';
-import type { TuanIso } from '../core/types';
+import type { TuanFarm } from '../core/types';
 
 export interface DgdvNhanXuat {
   tieuDe: (tenChiNhanh: string) => string;
@@ -16,7 +16,7 @@ export interface DgdvNhanXuat {
   danhGia: string;
   slLoi: string;
   lyDoLoi: string;
-  tuan: (t: TuanIso) => string;
+  tuan: (t: TuanFarm) => string;
   chuaCoTuan: string;
   tongCong: string;
   chuaCoToTruong: string;

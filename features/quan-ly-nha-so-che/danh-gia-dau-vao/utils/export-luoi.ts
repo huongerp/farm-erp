@@ -1,16 +1,30 @@
 /**
- * Tải Bảng đánh giá (khoảng ngày đang chọn) dạng XLSX — một sheet, mỗi ngày × chi nhánh một khối,
+ * Tải Tổng hợp ngày (khoảng ngày đang chọn, lưới đã cộng mọi chuyến) dạng XLSX — một sheet, mỗi ngày × chi nhánh một khối,
  * có băng hình đầu file (ghiXlsxCoBangHinh). Bản community của SheetJS không tô màu ô được: tiêu đề
  * dây ghi tên màu (kèm «xé đôi»), màu nền chỉ có ở bản in / PDF.
  */
 import type { TFunction } from 'i18next';
-import type { DgdvKhoiNgay } from '../core/bang-tinh';
+import type { DgdvKhoiNgay, DgdvLuoiNgay } from '../core/bang-tinh';
+import { nhanTiLeKsc } from './export-danh-sach';
 import { formatNumberVN, formatYmdToDisplay } from '../../../../lib/utils';
 import { ghiXlsxCoBangHinh } from '../../../../lib/export/xlsx-bang-hinh';
 import { taoAoaLuoi, type DgdvNhanXuat } from './xuat-luoi-aoa';
 
 export function tenFileLuoi(tu: string, den: string): string {
   return tu === den ? `danh-gia-dau-vao-${tu}` : `danh-gia-dau-vao-${tu}_${den}`;
+}
+
+/**
+ * Lưới tổng ngày (chuyen = 0): «2 chuyến (C1: 320 · C2: 410) · % KSC 2,5%»; lưới một chuyến → null.
+ * Dùng chung cho dòng thông tin của bản in và file XLSX.
+ */
+export function tomTatChuyenLuoi(l: Pick<DgdvLuoiNgay, 'chuyen' | 'dsChuyen' | 'ksc' | 'tongThu'>, t: TFunction): string | null {
+  if (l.chuyen !== 0) return null;
+  const ds = l.dsChuyen.map((c) => t('danhGiaDauVao.bang.chuyenNhan', { chuyen: c.chuyen, tongThu: formatNumberVN(c.tongThu) })).join(' · ');
+  return [
+    t('danhGiaDauVao.luoi.tomTatChuyen', { n: l.dsChuyen.length, ds }),
+    t('danhGiaDauVao.bang.tiLeKsc', { tiLe: nhanTiLeKsc(l.ksc, l.tongThu) }),
+  ].join(' · ');
 }
 
 export function nhanXuatLuoi(t: TFunction): DgdvNhanXuat {
@@ -20,9 +34,12 @@ export function nhanXuatLuoi(t: TFunction): DgdvNhanXuat {
       [
         `${t('danhGiaDauVao.luoi.ksc')} ${formatNumberVN(l.ksc)}`,
         `${t('danhGiaDauVao.luoi.tongThu')} ${formatNumberVN(l.tongThu)}`,
+        tomTatChuyenLuoi(l, t),
         `${t('danhGiaDauVao.luoi.tuanThuHoach')} ${l.tuanThuHoach.length > 0 ? l.tuanThuHoach.map((x) => x.tuan).join(', ') : l.tuan}`,
         `${t('danhGiaDauVao.luoi.ngay')} ${formatYmdToDisplay(l.ngay)}`,
-      ].join(' · '),
+      ]
+        .filter(Boolean)
+        .join(' · '),
     lo: t('danhGiaDauVao.luoi.colLo'),
     slBuong: t('danhGiaDauVao.luoi.colSlBuong'),
     ghiChu: t('danhGiaDauVao.luoi.colGhiChu'),

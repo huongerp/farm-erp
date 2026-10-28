@@ -23,6 +23,8 @@ const nhan: DgdvNhanXuat = {
 
 const phieu: DgdvPhieuDayDu = {
   id: 'p1',
+  ngay: NGAY,
+  chuyen: 1,
   nam: 2026,
   tuan: 43,
   id_chi_nhanh: '1',
@@ -33,7 +35,7 @@ const phieu: DgdvPhieuDayDu = {
   tg_tao: '',
   tg_cap_nhat: '',
   cot: [
-    { id: 'c1', id_phieu: 'p1', stt: 1, chich_bap_tu: null, chich_bap_den: null, thu_hoach_tu: '2026-10-19', thu_hoach_den: null, id_mau_1: 'm1', id_mau_2: null, xe_doi: false },
+    { id: 'c1', id_phieu: 'p1', stt: 1, th_nam: 2026, th_tuan: 43, chich_bap_tu: null, chich_bap_den: null, thu_hoach_tu: '2026-10-19', thu_hoach_den: null, id_mau_1: 'm1', id_mau_2: null, xe_doi: false },
   ],
   lo: [
     {
@@ -49,9 +51,11 @@ const phieu: DgdvPhieuDayDu = {
 
 describe('xuất Excel Bảng đánh giá', () => {
   const mau = taoMapMau([{ id: 'm1', ten: 'Đỏ', ma_mau: '#E53935', thu_tu: 1, dang_dung: true, tg_tao: '', tg_cap_nhat: '' }]);
-  const khoi = dungLuoiKhoangNgay([phieu], NGAY, '2026-10-22', mau, { nhanXeDoi: 'xé đôi' });
+  // Chuyến 1 của ngày 22/10: cùng khung dây / lô, chưa có số.
+  const phieu22: DgdvPhieuDayDu = { ...phieu, id: 'p2', ngay: '2026-10-22', lo: phieu.lo.map((l) => ({ ...l, lo_ngay: [], dong: [] })) };
+  const khoi = dungLuoiKhoangNgay([phieu, phieu22], NGAY, '2026-10-23', mau, { nhanXeDoi: 'xé đôi' });
 
-  it('một khối cho ngày có phiếu, ngày trống vẫn có khối nếu thuộc tuần phiếu', () => {
+  it('một khối cho mỗi phiếu (chuyến), ngày không có phiếu thì không có khối', () => {
     const { aoa, soCot } = taoAoaLuoi(khoi, nhan);
     expect(soCot).toBe(7);
     expect(aoa[0][0]).toBe('BANG FP5');
@@ -64,9 +68,10 @@ describe('xuất Excel Bảng đánh giá', () => {
     expect(aoa[6]).toEqual(['Lô 1 (đứt dây 2)', 17, 10, 'Thiếu lá', 1, 'Chín bệnh', 'gc']);
     expect(aoa[7]).toEqual(['', '', 5, '', '', '', '']);
     expect(aoa[8].slice(0, 3)).toEqual(['Tổng', 17, 15]);
-    // khối ngày 22/10 sau một dòng trống
+    // khối ngày 22/10 sau một dòng trống; 23/10 không có phiếu → hết
     expect(aoa[9]).toEqual([]);
     expect(aoa[10][0]).toBe('BANG FP5');
+    expect(aoa.filter((r) => r[0] === 'BANG FP5')).toHaveLength(2);
   });
 
   it('gộp ô: tiêu đề, cột cố định 3 dòng tiêu đề, ô lô nhiều dòng', () => {

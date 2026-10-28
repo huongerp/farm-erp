@@ -1,16 +1,17 @@
 /**
- * Form phiếu tuần Đánh giá đầu vào: năm / tuần ISO / chi nhánh / ghi chú + bảng cột dây
- * (chích bắp → gợi ý thu hoạch +10 tuần, màu 1–2, xé đôi) + bảng lô.
+ * Form phiếu chuyến Đánh giá đầu vào: ngày (mặc định hôm nay) / chi nhánh / chuyến (gợi ý chuyến kế tiếp)
+ * / tuần farm (chỉ đọc, tính từ ngày) / ghi chú + bảng cột dây (màu 1–2, xé đôi, tuần thu hoạch farm —
+ * chích bắp = −9 tuần) + bảng lô. «Chép dây & lô từ chuyến trước» lấy khung của phiếu gần nhất cùng chi nhánh.
  * Lô và tổ trưởng là chữ: chọn từ gợi ý hoặc gõ mới — lô chưa có trong danh mục của chi nhánh được tạo
  * lúc lưu (services/danh-gia-dau-vao-db.service `ganIdLo`). Cột dây và lô khớp theo `id` (thêm / sửa / xoá).
  */
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { Controller, useFieldArray, useForm, useWatch, type Resolver, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowDown, ArrowUp, ClipboardPen, Columns3, ListPlus, MapPinned, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, ClipboardPen, Columns3, CopyPlus, ListPlus, MapPinned, Trash2 } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
-import Select from '../../../../components/ui/Select';
 import Combobox from '../../../../components/ui/Combobox';
 import Button from '../../../../components/ui/Button';
 import GenericDrawer from '../../../../components/shared/GenericDrawer';
@@ -20,12 +21,15 @@ import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
 import GenericSubTableSection from '../../../../components/shared/GenericSubTableSection';
 import SubTable, { type SubTableColumn } from '../../../../components/shared/sub-table/SubTable';
 import { cn, formatYmdToDisplay, getTodayISO } from '../../../../lib/utils';
+import { useConfirmStore } from '../../../../store/useConfirmStore';
+import { CONFIRM_YES } from '../../../../lib/button-labels';
 import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
 import { dgdvFormSchema, type DgdvFormValues } from '../core/schema';
-import type { DgdvPhieuDayDu } from '../core/types';
+import type { DgdvPhieuDayDu, TuanFarm } from '../core/types';
 import { khoaTen, tenKhongTrung } from '../core/chuan-hoa-ten';
-import { congNgay, goiYThuHoach, ngayDauTuanIso, soTuanIsoTrongNam, tuanIsoCuaNgay } from '../core/tuan';
-import { useLuuDgdv } from '../hooks/use-danh-gia-dau-vao';
+import { dungPhieuSaoChep } from '../core/bang-tinh';
+import { cacTuanQuanh, docKhoaTuanFarm, khoaTuanFarm, nhanTuanFarm, soSanhTuan, tuanChichBapTuThuHoach, tuanFarmCuaNgay } from '../core/tuan';
+import { useDgdvChuyenKeTiep, useLayPhieuChuyenTruoc, useLuuDgdv } from '../hooks/use-danh-gia-dau-vao';
 import { useLoThuHoach, useMauDay, useNhanVienRef } from '../hooks/use-danh-muc-dgdv';
 import { styleTieuDeCot } from '../utils/mau-day';
 
@@ -43,16 +47,14 @@ function phieuSangForm(p: DgdvPhieuDayDu): DgdvFormValues {
   const theoStt = <T extends { stt: number; id: string }>(ds: T[]) =>
     [...ds].sort((a, b) => a.stt - b.stt || a.id.localeCompare(b.id));
   return {
-    nam: p.nam,
-    tuan: p.tuan,
+    ngay: p.ngay,
+    chuyen: p.chuyen,
     id_chi_nhanh: p.id_chi_nhanh,
     ghi_chu: p.ghi_chu ?? '',
     cot: theoStt(p.cot).map((c) => ({
       id: c.id,
-      chich_bap_tu: c.chich_bap_tu,
-      chich_bap_den: c.chich_bap_den,
-      thu_hoach_tu: c.thu_hoach_tu,
-      thu_hoach_den: c.thu_hoach_den,
+      th_nam: c.th_nam,
+      th_tuan: c.th_tuan,
       id_mau_1: c.id_mau_1,
       id_mau_2: c.id_mau_2,
       xe_doi: c.xe_doi,
@@ -61,15 +63,20 @@ function phieuSangForm(p: DgdvPhieuDayDu): DgdvFormValues {
   };
 }
 
-const COT_MOI: DgdvFormValues['cot'][number] = {
-  chich_bap_tu: null,
-  chich_bap_den: null,
-  thu_hoach_tu: null,
-  thu_hoach_den: null,
+/** Dây mới: tuần thu hoạch mặc định = tuần farm của ngày phiếu (sửa được). */
+const cotMoi = (th: TuanFarm): DgdvFormValues['cot'][number] => ({
+  th_nam: th.nam,
+  th_tuan: th.tuan,
   id_mau_1: '',
   id_mau_2: null,
   xe_doi: false,
-};
+});
+
+const YMD_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Select tuần thu hoạch: tuần của ngày phiếu − 4 … + 2. */
+const TUAN_TH_TRUOC = 4;
+const TUAN_TH_SAU = 2;
 
 const iconBtn = 'p-1.5 rounded-md text-muted-foreground hover:bg-muted disabled:opacity-30 disabled:hover:bg-transparent';
 /** Ô nhập trong bảng: cùng chiều cao h-9 với Combobox (`triggerClassName`). */
@@ -80,6 +87,8 @@ const cellLoi = 'border-destructive';
 const DgdvForm: React.FC<Props> = ({ branches, initial, giaTriMacDinh, onClose, onSaved }) => {
   const { t } = useTranslation();
   const isEdit = !!initial;
+  const confirm = useConfirmStore((s) => s.confirm);
+  const layChuyenTruoc = useLayPhieuChuyenTruoc();
   const luu = useLuuDgdv((id) => {
     onSaved?.(id);
     onClose();
@@ -90,10 +99,9 @@ const DgdvForm: React.FC<Props> = ({ branches, initial, giaTriMacDinh, onClose, 
 
   const defaultValues = useMemo<DgdvFormValues>(() => {
     if (initial) return phieuSangForm(initial);
-    const tuanNay = tuanIsoCuaNgay(getTodayISO());
     return {
-      nam: tuanNay.nam,
-      tuan: tuanNay.tuan,
+      ngay: getTodayISO(),
+      chuyen: 1,
       id_chi_nhanh: '',
       ghi_chu: '',
       cot: [],
@@ -107,6 +115,7 @@ const DgdvForm: React.FC<Props> = ({ branches, initial, giaTriMacDinh, onClose, 
     handleSubmit,
     setValue,
     getValues,
+    getFieldState,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<DgdvFormValues>({
     resolver: zodResolver(dgdvFormSchema) as Resolver<DgdvFormValues>,
@@ -115,8 +124,19 @@ const DgdvForm: React.FC<Props> = ({ branches, initial, giaTriMacDinh, onClose, 
   const cotArr = useFieldArray({ control, name: 'cot' });
   const loArr = useFieldArray({ control, name: 'lo' });
 
-  const nam = Number(useWatch({ control, name: 'nam' })) || defaultValues.nam;
+  const ngay = useWatch({ control, name: 'ngay' });
   const idChiNhanh = useWatch({ control, name: 'id_chi_nhanh' });
+  const tuanCuaNgay = useMemo(
+    () => tuanFarmCuaNgay(YMD_RE.test(ngay ?? '') ? ngay : getTodayISO()),
+    [ngay]
+  );
+
+  // Tạo mới: gợi ý chuyến kế tiếp của (ngày, chi nhánh) — không đè số người dùng đã gõ.
+  const chuyenKeTiep = useDgdvChuyenKeTiep(YMD_RE.test(ngay ?? '') ? ngay : null, idChiNhanh || null, !isEdit);
+  useEffect(() => {
+    if (isEdit || chuyenKeTiep.data == null || getFieldState('chuyen').isDirty) return;
+    setValue('chuyen', chuyenKeTiep.data);
+  }, [isEdit, chuyenKeTiep.data, getFieldState, setValue]);
   const cotWatch = useWatch({ control, name: 'cot' });
   const loWatch = useWatch({ control, name: 'lo' });
 
@@ -128,20 +148,58 @@ const DgdvForm: React.FC<Props> = ({ branches, initial, giaTriMacDinh, onClose, 
     return opts;
   }, [branches, initial]);
 
-  const tuanOptions = useMemo(() => {
-    const n = nam >= 2000 && nam <= 2100 ? soTuanIsoTrongNam(nam) : 52;
-    return Array.from({ length: n }, (_, i) => {
-      const dau = ngayDauTuanIso(nam, i + 1);
-      return {
-        value: String(i + 1),
-        label: t('danhGiaDauVao.form.tuanOption', {
-          tuan: i + 1,
-          tu: formatYmdToDisplay(dau).slice(0, 5),
-          den: formatYmdToDisplay(congNgay(dau, 6)).slice(0, 5),
-        }),
-      };
+  /** Tuần thu hoạch chọn được: tuần của ngày phiếu −4 … +2 (nhãn kèm khoảng ngày). */
+  const dsTuanTh = useMemo(() => cacTuanQuanh(tuanCuaNgay, TUAN_TH_TRUOC, TUAN_TH_SAU), [tuanCuaNgay]);
+  /** + tuần đang lưu của dây nếu nằm ngoài dải (dây chép / phiếu cũ) — không làm mất giá trị. */
+  const tuanThOptions = (dangChon: TuanFarm | null) => {
+    const ds = dangChon && !dsTuanTh.some((x) => soSanhTuan(x, dangChon) === 0) ? [...dsTuanTh, dangChon] : dsTuanTh;
+    return [...ds]
+      .sort(soSanhTuan)
+      .map((x) => ({ value: khoaTuanFarm(x), label: `${nhanTuanFarm(x)}${x.nam !== tuanCuaNgay.nam ? ` · ${x.nam}` : ''}` }));
+  };
+
+  /** Chép dây + lô + tổ trưởng (không số) từ phiếu gần nhất trước chuyến này của chi nhánh. */
+  const chepTuChuyenTruoc = async () => {
+    const v = getValues();
+    if (!v.id_chi_nhanh || !YMD_RE.test(v.ngay ?? '')) {
+      toast.message(t('danhGiaDauVao.form.chepCanChiNhanh'));
+      return;
+    }
+    const truoc = await layChuyenTruoc.mutateAsync({
+      ngay: v.ngay,
+      chuyen: Number(v.chuyen) || 1,
+      idChiNhanh: v.id_chi_nhanh,
+      boQuaId: initial?.id ?? null,
     });
-  }, [nam, t]);
+    if (!truoc) {
+      toast.message(t('danhGiaDauVao.form.chepKhongCo'));
+      return;
+    }
+    const khung = dungPhieuSaoChep(truoc, { ngay: v.ngay, chuyen: Number(v.chuyen) || 1 });
+    const ap = () => {
+      setValue('cot', khung.cot, { shouldDirty: true });
+      setValue('lo', khung.lo, { shouldDirty: true });
+      toast.success(
+        t('danhGiaDauVao.form.chepXong', {
+          day: khung.cot.length,
+          lo: khung.lo.length,
+          chuyen: truoc.chuyen,
+          ngay: formatYmdToDisplay(truoc.ngay),
+        })
+      );
+    };
+    if ((v.cot ?? []).length === 0 && (v.lo ?? []).length === 0) {
+      ap();
+      return;
+    }
+    confirm({
+      title: t('danhGiaDauVao.form.chepTitle'),
+      message: t('danhGiaDauVao.form.chepThayThe', { chuyen: truoc.chuyen, ngay: formatYmdToDisplay(truoc.ngay) }),
+      variant: 'warning',
+      confirmText: CONFIRM_YES(),
+      onConfirm: ap,
+    });
+  };
 
   /** Màu đang dùng + màu đã ngừng nhưng phiếu còn trỏ tới. */
   const mauOptions = useMemo(() => {
@@ -172,13 +230,6 @@ const DgdvForm: React.FC<Props> = ({ branches, initial, giaTriMacDinh, onClose, 
       ]).map((ten) => ({ value: ten, label: ten })),
     [dsLo, loWatch, dsNhanVien]
   );
-
-  const doiChichBap = (i: number, dau: 'tu' | 'den', v: string) => {
-    const giaTri = v || null;
-    setValue(`cot.${i}.chich_bap_${dau}`, giaTri, { shouldDirty: true });
-    const g = goiYThuHoach(dau === 'tu' ? giaTri : null, dau === 'den' ? giaTri : null);
-    setValue(`cot.${i}.thu_hoach_${dau}`, dau === 'tu' ? g.thu_hoach_tu : g.thu_hoach_den, { shouldDirty: true });
-  };
 
   const themMoiLo = () => {
     const daCo = new Set((getValues('lo') ?? []).map((l) => khoaTen(l.ten_lo)));
@@ -211,44 +262,42 @@ const DgdvForm: React.FC<Props> = ({ branches, initial, giaTriMacDinh, onClose, 
 
   const cotColumns: SubTableColumn[] = [
     { id: 'xem', label: t('danhGiaDauVao.form.xemTruoc'), width: 140, minWidth: 110, sticky: true, mobile: 'title' },
-    { id: 'chich_bap', label: t('danhGiaDauVao.form.chichBap'), width: 278, minWidth: 250, mobile: 'full' },
-    { id: 'thu_hoach', label: t('danhGiaDauVao.form.thuHoach'), width: 278, minWidth: 250, mobile: 'full' },
     { id: 'mau_1', label: t('danhGiaDauVao.form.mau1'), width: 124, minWidth: 100 },
     { id: 'mau_2', label: t('danhGiaDauVao.form.mau2'), width: 124, minWidth: 100 },
     { id: 'xe_doi', label: t('danhGiaDauVao.form.xeDoi'), width: 72, minWidth: 64, align: 'center' },
+    { id: 'tuan_thu_hoach', label: t('danhGiaDauVao.form.tuanThuHoach'), width: 380, minWidth: 300, mobile: 'full' },
   ];
 
-  const oNgay = (i: number, loai: 'chich_bap' | 'thu_hoach', dau: 'tu' | 'den') => {
-    const loi = errors.cot?.[i];
-    const msg = dau === 'den' ? loi?.[`${loai}_den`]?.message : undefined;
-    const aria = `${t(`danhGiaDauVao.form.${loai === 'chich_bap' ? 'chichBap' : 'thuHoach'}`)} ${t(`danhGiaDauVao.form.${dau}`)}`;
-    if (loai === 'chich_bap') {
-      return (
-        <input
-          type="date"
-          className={cn(cellInput, msg && cellLoi)}
-          title={msg}
-          aria-label={aria}
-          value={cotWatch?.[i]?.[`chich_bap_${dau}`] ?? ''}
-          onChange={(e) => doiChichBap(i, dau, e.target.value)}
-        />
-      );
-    }
+  /** Tuần thu hoạch farm (một select, khoá '2026-44' → th_nam + th_tuan) + «Chích bắp: …» chỉ đọc (= −9 tuần). */
+  const oTuanThuHoach = (i: number) => {
+    const loi = errors.cot?.[i]?.th_tuan?.message ?? errors.cot?.[i]?.th_nam?.message;
+    const c = cotWatch?.[i];
+    const th = c?.th_nam && c?.th_tuan ? { nam: Number(c.th_nam), tuan: Number(c.th_tuan) } : null;
     return (
-      <Controller
-        name={`cot.${i}.thu_hoach_${dau}`}
-        control={control}
-        render={({ field }) => (
-          <input
-            type="date"
-            className={cn(cellInput, msg && cellLoi)}
-            title={msg}
-            aria-label={aria}
-            value={field.value ?? ''}
-            onChange={(e) => field.onChange(e.target.value || null)}
-          />
-        )}
-      />
+      <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2">
+        <select
+          className={cn(cellInput, 'sm:w-[13.5rem] sm:shrink-0', loi && cellLoi)}
+          title={loi}
+          aria-label={t('danhGiaDauVao.form.tuanThuHoach')}
+          value={th ? khoaTuanFarm(th) : ''}
+          onChange={(e) => {
+            const tf = docKhoaTuanFarm(e.target.value);
+            if (!tf) return;
+            setValue(`cot.${i}.th_nam`, tf.nam, { shouldDirty: true, shouldValidate: !!loi });
+            setValue(`cot.${i}.th_tuan`, tf.tuan, { shouldDirty: true, shouldValidate: !!loi });
+          }}
+        >
+          {!th && <option value="">{t('danhGiaDauVao.validation.tuanThuHoachRequired')}</option>}
+          {tuanThOptions(th).map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+        <span className="text-caption text-muted-foreground tabular-nums whitespace-nowrap">
+          {th ? t('danhGiaDauVao.form.chichBapLa', { tuan: nhanTuanFarm(tuanChichBapTuThuHoach(th)) }) : '—'}
+        </span>
+      </div>
     );
   };
 
@@ -294,15 +343,8 @@ const DgdvForm: React.FC<Props> = ({ branches, initial, giaTriMacDinh, onClose, 
           </div>
         );
       }
-      case 'chich_bap':
-      case 'thu_hoach':
-        return (
-          <div className="flex items-center gap-1">
-            {oNgay(i, colId, 'tu')}
-            <span className="text-muted-foreground">–</span>
-            {oNgay(i, colId, 'den')}
-          </div>
-        );
+      case 'tuan_thu_hoach':
+        return oTuanThuHoach(i);
       case 'mau_1':
         return oMau(i, 1);
       case 'mau_2':
@@ -431,42 +473,23 @@ const DgdvForm: React.FC<Props> = ({ branches, initial, giaTriMacDinh, onClose, 
       <form id="dgdv-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <FormSection title={t('danhGiaDauVao.form.sectionPhieu')} icon={<ClipboardPen size={14} />} variant="primary">
           <div className="grid grid-cols-2 sm:grid-cols-12 gap-3">
-            <div className="sm:col-span-2">
+            <div className="sm:col-span-3">
               <Controller
-                name="nam"
+                name="ngay"
                 control={control}
                 render={({ field }) => (
                   <Input
-                    label={t('danhGiaDauVao.form.nam')}
-                    type="number"
-                    inputMode="numeric"
-                    min={2000}
-                    max={2100}
+                    label={t('danhGiaDauVao.form.ngay')}
+                    type="date"
                     required
-                    value={field.value == null ? '' : String(field.value)}
+                    value={field.value ?? ''}
                     onChange={(e) => field.onChange(e.target.value)}
-                    error={errors.nam?.message}
+                    error={errors.ngay?.message}
                   />
                 )}
               />
             </div>
-            <div className="sm:col-span-3">
-              <Controller
-                name="tuan"
-                control={control}
-                render={({ field }) => (
-                  <Select
-                    label={t('danhGiaDauVao.form.tuan')}
-                    required
-                    value={String(field.value ?? '')}
-                    onChange={(e) => field.onChange(Number(e.target.value))}
-                    options={tuanOptions}
-                    error={errors.tuan?.message}
-                  />
-                )}
-              />
-            </div>
-            <div className="col-span-2 sm:col-span-3">
+            <div className="sm:col-span-4">
               <Controller
                 name="id_chi_nhanh"
                 control={control}
@@ -483,7 +506,33 @@ const DgdvForm: React.FC<Props> = ({ branches, initial, giaTriMacDinh, onClose, 
                 )}
               />
             </div>
-            <div className="col-span-2 sm:col-span-4">
+            <div className="sm:col-span-2">
+              <Controller
+                name="chuyen"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    label={t('danhGiaDauVao.form.chuyen')}
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    required
+                    value={field.value == null ? '' : String(field.value)}
+                    onChange={(e) => field.onChange(e.target.value)}
+                    error={errors.chuyen?.message}
+                  />
+                )}
+              />
+              {!isEdit && chuyenKeTiep.data != null && (
+                <p className="text-caption text-muted-foreground m-0 mt-0.5">
+                  {t('danhGiaDauVao.form.chuyenGoiY', { chuyen: chuyenKeTiep.data })}
+                </p>
+              )}
+            </div>
+            <div className="sm:col-span-3">
+              <Input label={t('danhGiaDauVao.form.tuan')} value={nhanTuanFarm(tuanCuaNgay)} readOnly disabled />
+            </div>
+            <div className="col-span-2 sm:col-span-12">
               <Controller
                 name="ghi_chu"
                 control={control}
@@ -493,12 +542,30 @@ const DgdvForm: React.FC<Props> = ({ branches, initial, giaTriMacDinh, onClose, 
           </div>
         </FormSection>
 
+        {!isEdit && (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-dashed border-border px-3 py-2">
+            <p className="text-caption text-muted-foreground m-0">{t('danhGiaDauVao.form.chepHint')}</p>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={!idChiNhanh || layChuyenTruoc.isPending}
+              isLoading={layChuyenTruoc.isPending}
+              onClick={() => void chepTuChuyenTruoc().catch(() => undefined)}
+              className="min-h-[44px] h-8 sm:h-8 px-3 shrink-0"
+            >
+              <CopyPlus size={14} className="mr-1.5" />
+              {t('danhGiaDauVao.form.chepNut')}
+            </Button>
+          </div>
+        )}
+
         <GenericSubTableSection
           title={t('danhGiaDauVao.form.sectionCot')}
           icon={<Columns3 size={14} className="text-primary" />}
           count={cotArr.fields.length}
           addLabel={t('danhGiaDauVao.form.themCot')}
-          onAdd={() => cotArr.append({ ...COT_MOI })}
+          onAdd={() => cotArr.append(cotMoi(tuanCuaNgay))}
           contentMode="raw"
           emptyTitle={t('danhGiaDauVao.form.chuaCoCot')}
           emptyDescription={t('danhGiaDauVao.form.cotHint')}

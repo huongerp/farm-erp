@@ -1,13 +1,14 @@
 /** Đánh giá đầu vào — ghép tên người tạo từ danh sách nhân viên rút gọn (cache). Tổ trưởng là chữ gõ tay. */
 import { getEmployeesRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
 import type { PaginatedTableResult } from '../../../../lib/db';
-import type { DgdvPhieuDayDu, FarmDgdv, TuanIso, VarLoThuHoach } from '../core/types';
+import type { DgdvPhieuDayDu, FarmDgdv, VarLoThuHoach } from '../core/types';
 import type { DgdvListServerQuery } from './danh-gia-dau-vao-list-query';
 import {
   fetchAllDgdvForListQueryDb,
   getDgdvByIdDb,
+  getDgdvDayDuTheoIdsDb,
   getDgdvPageDb,
-  getDgdvTheoTuanDb,
+  getDgdvTheoKhoangNgayDb,
   type DgdvListRow,
 } from './danh-gia-dau-vao-db.service';
 import { getLoThuHoachDb } from './danh-muc-dgdv.service';
@@ -50,13 +51,18 @@ export async function getDgdvById(id: string): Promise<DgdvPhieuDayDu | null> {
   return kq;
 }
 
-export async function getDgdvTheoTuan(
-  dsTuan: TuanIso[],
+export async function getDgdvDayDuTheoIds(ids: string[]): Promise<DgdvPhieuDayDu[]> {
+  return enrichPhieu(await getDgdvDayDuTheoIdsDb(ids));
+}
+
+export async function getDgdvTheoKhoangNgay(
+  tu: string,
+  den: string,
   idChiNhanh: string | null,
   viewAll: boolean,
   allowedBranchIds: string[]
 ): Promise<DgdvPhieuDayDu[]> {
-  return enrichPhieu(await getDgdvTheoTuanDb(dsTuan, idChiNhanh, viewAll, allowedBranchIds));
+  return enrichPhieu(await getDgdvTheoKhoangNgayDb(tu, den, idChiNhanh, viewAll, allowedBranchIds));
 }
 
 export const getLoThuHoach = (): Promise<VarLoThuHoach[]> => getLoThuHoachDb();

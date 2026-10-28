@@ -1,20 +1,26 @@
 /**
  * Import Excel «Chi tiết đánh giá»: 1 dòng file = 1 dòng đánh giá (hoặc đứt dây). Thuần — test trực tiếp.
- * Parse + kiểm từng dòng ở đây; phần tạo phiếu / lô / cột dây và ghi số chạy trong RPC `rpc_dgdv_import`
- * (migration 056, một transaction). Dòng lỗi bị loại và báo đúng số dòng Excel (`IMPORT_ROW_KEY`).
+ * Parse + kiểm từng dòng ở đây; phần tạo phiếu (theo ngày + chi nhánh + chuyến) / lô / cột dây và ghi số
+ * chạy trong RPC `rpc_dgdv_import` (migration 057, một transaction). Dòng lỗi bị loại và báo đúng số dòng
+ * Excel (`IMPORT_ROW_KEY`).
  */
 import i18n from '../../../../lib/i18n';
 import { IMPORT_ROW_KEY, type ImportErrorRow } from '../../../../lib/import-types';
 import { matchKey, normalizeText, parseImportDate, parseImportInt } from '../../../../lib/import-common';
+import { formatYmdToDisplay } from '../../../../lib/utils';
 import { gonTen, khoaTen } from '../core/chuan-hoa-ten';
-import { soTuanIsoTrongNam, tuanIsoCuaNgay } from '../core/tuan';
-import type { TuanIso } from '../core/types';
+import { soTuanTrongNamFarm, tuanFarmCuaNgay } from '../core/tuan';
+import type { TuanFarm } from '../core/types';
 
 const tr = (k: string, o?: Record<string, unknown>) => i18n.t(`danhGiaDauVao.import.${k}`, o ?? {});
 
-/** Thứ tự cột file mẫu. `chi_nhanh` chỉ có khi import ở danh sách (trong phiếu đã biết chi nhánh). */
+/**
+ * Thứ tự cột file mẫu. `chi_nhanh` chỉ có khi import ở danh sách (trong phiếu đã biết chi nhánh);
+ * `chuyen` trống = chuyến 1 (import trong phiếu: trống = chuyến của phiếu).
+ */
 export const COT_IMPORT_DGDV = [
   'ngay',
+  'chuyen',
   'chi_nhanh',
   'lo',
   'to_truong',
@@ -43,8 +49,10 @@ export interface RefMau {
   ma_mau: string;
 }
 
-/** Import trong một phiếu: mọi dòng phải thuộc tuần + chi nhánh này. */
-export interface PhieuCoDinh extends TuanIso {
+/** Import trong một phiếu: mọi dòng phải cùng ngày + chuyến + chi nhánh của phiếu. */
+export interface PhieuCoDinh {
+  ngay: string;
+  chuyen: number;
   id_chi_nhanh: string;
 }
 
@@ -52,6 +60,8 @@ export interface PhieuCoDinh extends TuanIso {
 export interface DongImportRpc {
   row: number;
   ngay: string;
+  /** ≥ 1 */
+  chuyen: number;
   id_chi_nhanh: number;
   ten_lo: string;
   to_truong: string | null;
@@ -70,11 +80,11 @@ export interface DongImportRpc {
 const CO = new Set(['x', 'có', 'co', '1', 'true', 'yes', 'y', 'v', '✓']);
 
 /**
- * Tuần thu hoạch chỉ ghi số tuần → năm ISO lấy theo ngày đánh giá, lệch quá nửa năm thì sang năm kề
- * (vd. ngày 03/01/2027 tuần 1, dây thu hoạch «tuần 52» → 52/2026).
+ * Tuần thu hoạch chỉ ghi số tuần → năm farm lấy theo ngày đánh giá, lệch quá nửa năm thì sang năm kề
+ * (vd. ngày 06/01/2027 tuần 2, dây thu hoạch «tuần 52» → 52/2026).
  */
-export function tuanThuHoachTheoNgay(tuan: number, ngay: string): TuanIso {
-  const t = tuanIsoCuaNgay(ngay);
+export function tuanThuHoachTheoNgay(tuan: number, ngay: string): TuanFarm {
+  const t = tuanFarmCuaNgay(ngay);
   if (tuan - t.tuan > 26) return { nam: t.nam - 1, tuan };
   if (t.tuan - tuan > 26) return { nam: t.nam + 1, tuan };
   return { nam: t.nam, tuan };
@@ -107,12 +117,19 @@ export function parseDongImport(
     const ngay = parseImportDate(r.ngay);
     if (!ngay) msgs.push(tr('loiNgay'));
 
+    // Chuyến: trống = 1 (trong phiếu: trống = chuyến của phiếu); có ghi thì phải nguyên ≥ 1.
+    let chuyen: number | null = coDinh?.chuyen ?? 1;
+    if (normalizeText(r.chuyen)) {
+      const c = parseImportInt(r.chuyen);
+      chuyen = c.ok && c.value != null && c.value >= 1 ? c.value : null;
+      if (chuyen == null) msgs.push(tr('loiChuyen'));
+    }
+
     let idCn: string | null = null;
     if (coDinh) {
       idCn = coDinh.id_chi_nhanh;
-      if (ngay) {
-        const t = tuanIsoCuaNgay(ngay);
-        if (t.nam !== coDinh.nam || t.tuan !== coDinh.tuan) msgs.push(tr('loiNgoaiTuan', { tuan: coDinh.tuan, nam: coDinh.nam }));
+      if ((ngay && ngay !== coDinh.ngay) || (chuyen != null && chuyen !== coDinh.chuyen)) {
+        msgs.push(tr('loiNgoaiPhieu', { chuyen: coDinh.chuyen, ngay: formatYmdToDisplay(coDinh.ngay) }));
       }
     } else {
       const cn = cnTheoKhoa.get(matchKey(r.chi_nhanh));
@@ -148,23 +165,24 @@ export function parseDongImport(
     if (!slLoi.ok) msgs.push(tr('loiSlLoi'));
     else if (sl.ok && sl.value != null && (slLoi.value ?? 0) > sl.value) msgs.push(tr('loiSlLoiLonHon'));
 
-    let th: TuanIso | null = ngay ? tuanIsoCuaNgay(ngay) : null;
+    let th: TuanFarm | null = ngay ? tuanFarmCuaNgay(ngay) : null;
     if (!dutDay && normalizeText(r.tuan_thu_hoach)) {
       const so = parseImportInt(String(r.tuan_thu_hoach).replace(/^tu[aầ]n\s*/i, ''));
       if (!so.ok || so.value == null || so.value < 1 || so.value > 53) msgs.push(tr('loiTuanThuHoach'));
       else if (ngay) {
         th = tuanThuHoachTheoNgay(so.value, ngay);
-        if (th.tuan > soTuanIsoTrongNam(th.nam)) msgs.push(tr('loiTuanThuHoach'));
+        if (th.tuan > soTuanTrongNamFarm(th.nam)) msgs.push(tr('loiTuanThuHoach'));
       }
     }
 
-    if (msgs.length > 0 || !ngay || !idCn || !tenLo || !th || !sl.ok || sl.value == null) {
+    if (msgs.length > 0 || !ngay || chuyen == null || !idCn || !tenLo || !th || !sl.ok || sl.value == null) {
       loi.push({ row, msg: msgs.join('; '), values: r });
       return;
     }
     dong.push({
       row,
       ngay,
+      chuyen,
       id_chi_nhanh: Number(idCn),
       ten_lo: tenLo,
       to_truong: gonTen(normalizeText(r.to_truong)),

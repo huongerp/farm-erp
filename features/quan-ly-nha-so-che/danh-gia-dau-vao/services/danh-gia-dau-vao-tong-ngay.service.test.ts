@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 // Service gọi db thật — chỉ test phần đọc/kiểm tham số thuần, không dựng PostgREST client.
-vi.mock('../../../../lib/db', () => ({ db: {}, throwDbError: vi.fn() }));
+vi.mock('../../../../lib/db', () => ({ db: {}, fetchAllRows: vi.fn(), throwDbError: vi.fn() }));
 
 import { docDgdvTongNgay, idChiNhanhChoRpc } from './danh-gia-dau-vao-tong-ngay.service';
 

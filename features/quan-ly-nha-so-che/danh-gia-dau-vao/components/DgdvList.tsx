@@ -1,11 +1,12 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Edit, Trash2 } from 'lucide-react';
-import { cn, formatDateTimeShort, formatNumberVN } from '../../../../lib/utils';
+import { cn, formatDateTimeShort, formatNumberVN, formatYmdToDisplay } from '../../../../lib/utils';
 import GenericTable from '../../../../components/shared/GenericTable';
 import type { ColumnConfig, SortState } from '../../../../store/createGenericStore';
 import type { DgdvListRow } from '../services/danh-gia-dau-vao-db.service';
-import { khoangNgayTuan } from '../utils/export-danh-sach';
+import { nhanTiLeKsc } from '../utils/export-danh-sach';
+import { nhanTuanFarm } from '../core/tuan';
 import { phieuDaKhoa } from '../core/permissions';
 
 interface Props {
@@ -114,24 +115,28 @@ const DgdvList: React.FC<Props> = ({
 
   const renderCell = (colId: string, item: DgdvListRow) => {
     switch (colId) {
-      case 'nam_tuan':
+      case 'ngay':
+        return <span className="text-sm font-medium tabular-nums whitespace-nowrap">{formatYmdToDisplay(item.ngay)}</span>;
+      case 'chuyen':
+        return <span className="text-sm tabular-nums">{item.chuyen}</span>;
+      case 'tuan':
         return (
-          <span className="text-sm font-medium tabular-nums">
-            {t('danhGiaDauVao.list.namTuan', { tuan: item.tuan, nam: item.nam })}
+          <span className="text-sm tabular-nums whitespace-nowrap" title={String(item.nam)}>
+            {nhanTuanFarm({ nam: item.nam, tuan: item.tuan })}
           </span>
         );
-      case 'khoang_ngay':
-        return <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">{khoangNgayTuan(item.nam, item.tuan)}</span>;
       case 'id_chi_nhanh':
         return <span className="text-sm text-muted-foreground">{item.ten_chi_nhanh ?? '—'}</span>;
-      case 'tong_thu_tuan':
-        return <span className="text-sm tabular-nums font-semibold text-primary">{formatNumberVN(item.tong_thu_tuan)}</span>;
-      case 'ksc_tuan':
+      case 'tong_thu':
+        return <span className="text-sm tabular-nums font-semibold text-primary">{formatNumberVN(item.tong_thu)}</span>;
+      case 'ksc':
         return (
-          <span className={cn('text-sm tabular-nums', item.ksc_tuan > 0 && 'text-rose-600 font-medium')}>
-            {formatNumberVN(item.ksc_tuan)}
+          <span className={cn('text-sm tabular-nums', item.ksc > 0 && 'text-rose-600 font-medium')}>
+            {formatNumberVN(item.ksc)}
           </span>
         );
+      case 'ti_le_ksc':
+        return <span className="text-sm tabular-nums text-muted-foreground">{nhanTiLeKsc(item.ksc, item.tong_thu)}</span>;
       case 'trang_thai':
         return <TrangThaiDgdvBadge trangThai={item.trang_thai} />;
       case 'ten_nguoi_tao':
@@ -171,20 +176,27 @@ const DgdvList: React.FC<Props> = ({
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <h4 className="font-semibold text-foreground text-sm truncate">
-              {t('danhGiaDauVao.list.namTuan', { tuan: item.tuan, nam: item.nam })} · {item.ten_chi_nhanh ?? '—'}
+              {t('danhGiaDauVao.list.ngayChuyen', { ngay: formatYmdToDisplay(item.ngay), chuyen: item.chuyen })} ·{' '}
+              {item.ten_chi_nhanh ?? '—'}
             </h4>
-            <p className="text-xs text-muted-foreground truncate mt-0.5 tabular-nums">{khoangNgayTuan(item.nam, item.tuan)}</p>
+            <p className="text-xs text-muted-foreground truncate mt-0.5 tabular-nums">
+              {nhanTuanFarm({ nam: item.nam, tuan: item.tuan })}
+            </p>
           </div>
           <TrangThaiDgdvBadge trangThai={item.trang_thai} />
         </div>
-        <div className="mt-2 grid grid-cols-2 gap-2 text-sm tabular-nums">
+        <div className="mt-2 grid grid-cols-3 gap-2 text-sm tabular-nums">
           <div className="rounded-lg bg-muted/40 px-2.5 py-2">
             <div className="text-xs text-muted-foreground">{t('danhGiaDauVao.store.colTongThu')}</div>
-            <div className="font-semibold text-primary">{formatNumberVN(item.tong_thu_tuan)}</div>
+            <div className="font-semibold text-primary">{formatNumberVN(item.tong_thu)}</div>
           </div>
           <div className="rounded-lg bg-muted/40 px-2.5 py-2">
             <div className="text-xs text-muted-foreground">{t('danhGiaDauVao.store.colKsc')}</div>
-            <div className="font-semibold">{formatNumberVN(item.ksc_tuan)}</div>
+            <div className="font-semibold">{formatNumberVN(item.ksc)}</div>
+          </div>
+          <div className="rounded-lg bg-muted/40 px-2.5 py-2">
+            <div className="text-xs text-muted-foreground">{t('danhGiaDauVao.store.colTiLeKsc')}</div>
+            <div className="font-semibold">{nhanTiLeKsc(item.ksc, item.tong_thu)}</div>
           </div>
         </div>
         {(sua || xoa) && (

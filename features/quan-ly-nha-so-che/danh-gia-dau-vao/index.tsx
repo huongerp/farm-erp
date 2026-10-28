@@ -1,15 +1,20 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
-import { List, Grid3x3 } from 'lucide-react';
+import { List, Grid3x3, CalendarRange, BarChart3 } from 'lucide-react';
 import TabGroup from '../../../components/ui/TabGroup';
 import DanhSachTab from './components/DanhSachTab';
 import BangDanhGiaTab from './components/BangDanhGiaTab';
+import TongHopTuanTab from './components/TongHopTuanTab';
+import SoSanhThangTab from './components/SoSanhThangTab';
 
-const VALID_TABS = ['danh-sach', 'bang'] as const;
+const VALID_TABS = ['danh-sach', 'bang', 'tuan', 'thang'] as const;
 type TabId = (typeof VALID_TABS)[number];
 
-/** Đánh giá đầu vào: tab Danh sách phiếu tuần + tab Bảng đánh giá (lưới nhập theo ngày). */
+/**
+ * Đánh giá đầu vào: «Phiếu chuyến» (id `danh-sach`), «Tổng hợp ngày» (id `bang` — giữ cho link cũ từ Báo cáo
+ * sơ chế / Dự báo), «Tổng hợp tuần», «So sánh tháng». Cả trang nằm trong ModulePermissionGuard của route.
+ */
 const DanhGiaDauVaoPage: React.FC = () => {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -37,7 +42,9 @@ const DanhGiaDauVaoPage: React.FC = () => {
   const tabs = useMemo(
     () => [
       { id: 'danh-sach', label: t('danhGiaDauVao.tabs.danhSach'), icon: List },
-      { id: 'bang', label: t('danhGiaDauVao.tabs.bangDanhGia'), icon: Grid3x3 },
+      { id: 'bang', label: t('danhGiaDauVao.tabs.tongHopNgay'), icon: Grid3x3 },
+      { id: 'tuan', label: t('danhGiaDauVao.tabs.tongHopTuan'), icon: CalendarRange },
+      { id: 'thang', label: t('danhGiaDauVao.tabs.soSanhThang'), icon: BarChart3 },
     ],
     [t]
   );
@@ -50,6 +57,8 @@ const DanhGiaDauVaoPage: React.FC = () => {
       <div className="flex-1 min-h-0 flex flex-col mt-1.5">
         {activeTab === 'danh-sach' && <DanhSachTab />}
         {activeTab === 'bang' && <BangDanhGiaTab />}
+        {activeTab === 'tuan' && <TongHopTuanTab />}
+        {activeTab === 'thang' && <SoSanhThangTab />}
       </div>
     </div>
   );

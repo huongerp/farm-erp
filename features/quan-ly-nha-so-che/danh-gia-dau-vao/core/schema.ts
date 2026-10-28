@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import i18n from '../../../../lib/i18n';
-import { soTuanIsoTrongNam } from './tuan';
+import { soTuanTrongNamFarm } from './tuan';
 import { khoaTen } from './chuan-hoa-ten';
 
 const reqMsg = (key: string) => i18n.t(key);
@@ -22,24 +22,21 @@ const idBatBuoc = (msgKey: string) =>
 /** id tuỳ chọn — base là pipe nên KHÔNG gọi thêm `.max()` phía sau. */
 const idTuyChon = z.preprocess(rongThanhNull, z.string().nullable());
 
-/** Ngày 'YYYY-MM-DD' tuỳ chọn — base là pipe nên KHÔNG gọi thêm `.max()` phía sau. */
-const ngayTuyChon = z.preprocess(
-  rongThanhNull,
-  z.string().regex(YMD_RE, reqMsg('danhGiaDauVao.validation.ngayKhongHopLe')).nullable()
-);
-
 const ghiChuTuyChon = (max: number) => z.string().max(max).optional().nullable();
 
 // ---- Form phiếu -----------------------------------------------------------------
 
+/** Dây nhận TUẦN THU HOẠCH farm (`th_nam`, `th_tuan`); 4 cột ngày chích bắp / thu hoạch do DB tự điền. */
 export const dgdvCotFormSchema = z
   .object({
     /** id cột đã lưu (sửa phiếu); bỏ trống = cột mới. */
     id: z.string().optional(),
-    chich_bap_tu: ngayTuyChon,
-    chich_bap_den: ngayTuyChon,
-    thu_hoach_tu: ngayTuyChon,
-    thu_hoach_den: ngayTuyChon,
+    th_nam: z.coerce.number().int().min(2000).max(2100),
+    th_tuan: z.coerce
+      .number({ message: reqMsg('danhGiaDauVao.validation.tuanThuHoachRequired') })
+      .int()
+      .min(1, reqMsg('danhGiaDauVao.validation.tuanThuHoachRequired'))
+      .max(53),
     id_mau_1: idBatBuoc('danhGiaDauVao.validation.mau1Required'),
     id_mau_2: idTuyChon,
     xe_doi: z.boolean().default(false),
@@ -48,11 +45,8 @@ export const dgdvCotFormSchema = z
     if (c.id_mau_2 != null && c.id_mau_2 === c.id_mau_1) {
       ctx.addIssue({ code: 'custom', path: ['id_mau_2'], message: reqMsg('danhGiaDauVao.validation.mau2TrungMau1') });
     }
-    if (c.chich_bap_tu && c.chich_bap_den && c.chich_bap_den < c.chich_bap_tu) {
-      ctx.addIssue({ code: 'custom', path: ['chich_bap_den'], message: reqMsg('danhGiaDauVao.validation.denTruocTu') });
-    }
-    if (c.thu_hoach_tu && c.thu_hoach_den && c.thu_hoach_den < c.thu_hoach_tu) {
-      ctx.addIssue({ code: 'custom', path: ['thu_hoach_den'], message: reqMsg('danhGiaDauVao.validation.denTruocTu') });
+    if (c.th_tuan > soTuanTrongNamFarm(c.th_nam)) {
+      ctx.addIssue({ code: 'custom', path: ['th_tuan'], message: reqMsg('danhGiaDauVao.validation.tuanKhongCoTrongNam') });
     }
   });
 
@@ -69,10 +63,15 @@ export const dgdvLoFormSchema = z.object({
   ghi_chu: ghiChuTuyChon(2000),
 });
 
+/** Phiếu = 1 chuyến: ngày + chuyến + chi nhánh (năm / tuần farm do DB tự tính từ ngày). */
 export const dgdvFormSchema = z
   .object({
-    nam: z.coerce.number().int().min(2000).max(2100),
-    tuan: z.coerce.number().int().min(1).max(53),
+    ngay: z.string().regex(YMD_RE, reqMsg('danhGiaDauVao.validation.ngayKhongHopLe')),
+    chuyen: z.coerce
+      .number({ message: reqMsg('danhGiaDauVao.validation.chuyenKhongHopLe') })
+      .int(reqMsg('danhGiaDauVao.validation.chuyenKhongHopLe'))
+      .min(1, reqMsg('danhGiaDauVao.validation.chuyenKhongHopLe'))
+      .max(99, reqMsg('danhGiaDauVao.validation.chuyenKhongHopLe')),
     id_chi_nhanh: idBatBuoc('danhGiaDauVao.validation.branchRequired'),
     ghi_chu: ghiChuTuyChon(8000),
     /** Thứ tự mảng = stt khi lưu. */
@@ -80,9 +79,6 @@ export const dgdvFormSchema = z
     lo: z.array(dgdvLoFormSchema).default([]),
   })
   .superRefine((f, ctx) => {
-    if (f.tuan === 53 && soTuanIsoTrongNam(f.nam) < 53) {
-      ctx.addIssue({ code: 'custom', path: ['tuan'], message: reqMsg('danhGiaDauVao.validation.tuanKhongCoTrongNam') });
-    }
     const daGap = new Set<string>();
     f.lo.forEach((l, i) => {
       const k = khoaTen(l.ten_lo);

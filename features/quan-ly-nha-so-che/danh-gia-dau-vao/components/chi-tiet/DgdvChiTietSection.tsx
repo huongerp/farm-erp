@@ -1,7 +1,7 @@
 /**
  * Bảng con «Chi tiết đánh giá» trong Detail phiếu (khuôn `GenericSubTableSection` + `SubTable`): mỗi dòng
- * = một ô lưới (lô × dây × ngày × dòng) hoặc đứt dây của lô × ngày. Thêm / Sửa / Xoá từng dòng, Import Excel.
- * Lưới ngang ở trên chỉ để xem — mọi số nhập ở đây.
+ * = một ô lưới (lô × dây × dòng) hoặc đứt dây của lô — mọi dòng cùng ngày của phiếu (1 phiếu = 1 chuyến
+ * của một ngày). Thêm / Sửa / Xoá từng dòng, Import Excel. Lưới ngang ở trên chỉ để xem — mọi số nhập ở đây.
  */
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -17,7 +17,6 @@ import { foldVi } from '../../../../../lib/search-text';
 import { cn, formatNumberVN, formatYmdToDisplay } from '../../../../../lib/utils';
 import type { DgdvPhieuDayDu } from '../../core/types';
 import { dongPhangCuaPhieu, tongDongPhang, type DgdvDongPhang } from '../../core/chi-tiet-dong';
-import { cacNgayCuaTuan } from '../../core/tuan';
 import { nhanCotDay } from '../../core/bang-tinh';
 import { styleTieuDeCot } from '../../utils/mau-day';
 import { useXoaDongDgdv } from '../../hooks/use-danh-gia-dau-vao';
@@ -28,23 +27,17 @@ interface Props {
   phieu: DgdvPhieuDayDu;
   /** Được thêm / sửa / xoá dòng (phiếu mở + có quyền). */
   canNhap: boolean;
-  /** Ngày đang chọn ở chip lưới phía trên — mặc định lọc theo ngày này. */
-  ngayDangChon: string;
   onImport?: () => void;
 }
 
-const CA_TUAN = 'tuan';
-
-const DgdvChiTietSection: React.FC<Props> = ({ phieu, canNhap, ngayDangChon, onImport }) => {
+const DgdvChiTietSection: React.FC<Props> = ({ phieu, canNhap, onImport }) => {
   const { t } = useTranslation();
   const confirm = useConfirmStore((s) => s.confirm);
   const xoa = useXoaDongDgdv();
   const { mauTheoId } = useMauDay();
-  const [loc, setLoc] = useState<string>(CA_TUAN);
   const [tim, setTim] = useState('');
   const [dangSua, setDangSua] = useState<DgdvDongPhang | 'moi' | null>(null);
 
-  const cacNgay = useMemo(() => cacNgayCuaTuan(phieu.nam, phieu.tuan), [phieu.nam, phieu.tuan]);
   const tatCa = useMemo(() => dongPhangCuaPhieu(phieu), [phieu]);
   const cotTheoId = useMemo(() => new Map(phieu.cot.map((c) => [c.id, c])), [phieu.cot]);
   const nhanDay = (r: DgdvDongPhang) => {
@@ -52,23 +45,21 @@ const DgdvChiTietSection: React.FC<Props> = ({ phieu, canNhap, ngayDangChon, onI
     return c ? nhanCotDay(c, mauTheoId, t('danhGiaDauVao.luoi.xeDoi')) : t('danhGiaDauVao.luoi.dutDay');
   };
 
-  const theoNgay = loc === CA_TUAN ? tatCa : tatCa.filter((r) => r.ngay === loc);
   /** Tìm trên mọi cột đang hiện, bỏ dấu; nhiều từ thì phải có đủ. */
   const tu = foldVi(tim.trim().toLowerCase()).split(/\s+/).filter(Boolean);
   const khop = (r: DgdvDongPhang) => {
     const chu = foldVi(
-      [formatYmdToDisplay(r.ngay), r.ten_lo, r.to_truong, nhanDay(r), r.so_luong, r.danh_gia, r.so_luong_loi, r.ly_do_loi]
+      [r.ten_lo, r.to_truong, nhanDay(r), r.so_luong, r.danh_gia, r.so_luong_loi, r.ly_do_loi]
         .filter((x) => x != null && x !== '')
         .join(' ')
         .toLowerCase()
     );
     return tu.every((w) => chu.includes(w));
   };
-  const hien = tu.length > 0 ? theoNgay.filter(khop) : theoNgay;
+  const hien = tu.length > 0 ? tatCa.filter(khop) : tatCa;
   const tong = tongDongPhang(hien);
 
   const columns: SubTableColumn[] = [
-    { id: 'ngay', label: t('danhGiaDauVao.luoi.ngay'), width: 96, minWidth: 80, mobile: 'badge' },
     { id: 'lo', label: t('danhGiaDauVao.form.lo'), width: 110, minWidth: 80, sticky: true, mobile: 'title' },
     { id: 'to_truong', label: t('danhGiaDauVao.form.toTruong'), width: 150, minWidth: 100 },
     { id: 'day', label: t('danhGiaDauVao.chiTiet.colDay'), width: 170, minWidth: 110 },
@@ -80,15 +71,6 @@ const DgdvChiTietSection: React.FC<Props> = ({ phieu, canNhap, ngayDangChon, onI
 
   const renderCell = (colId: string, r: DgdvDongPhang) => {
     switch (colId) {
-      case 'ngay': {
-        const i = cacNgay.indexOf(r.ngay);
-        return (
-          <span className="tabular-nums text-sm">
-            {i >= 0 ? `${t(`danhGiaDauVao.thu.${i}`)} · ` : ''}
-            {formatYmdToDisplay(r.ngay).slice(0, 5)}
-          </span>
-        );
-      }
       case 'lo':
         return <span className="text-sm font-medium">{r.ten_lo ?? '—'}</span>;
       case 'to_truong':
@@ -133,21 +115,6 @@ const DgdvChiTietSection: React.FC<Props> = ({ phieu, canNhap, ngayDangChon, onI
       },
     });
 
-  const chip = (value: string, label: string, so: number) => (
-    <button
-      key={value}
-      type="button"
-      onClick={() => setLoc(value)}
-      className={cn(
-        'h-8 px-3 rounded-lg border text-xs font-medium tabular-nums whitespace-nowrap',
-        loc === value ? 'bg-primary text-white border-primary' : 'border-border bg-background hover:bg-muted'
-      )}
-    >
-      {label}
-      {so > 0 && <span className={cn('ml-1', loc === value ? 'text-white/80' : 'text-muted-foreground')}>({so})</span>}
-    </button>
-  );
-
   return (
     <>
       <GenericSubTableSection
@@ -170,13 +137,7 @@ const DgdvChiTietSection: React.FC<Props> = ({ phieu, canNhap, ngayDangChon, onI
       >
         {tatCa.length > 0 && (
           <div className="space-y-2.5">
-            <div className="flex flex-wrap items-center gap-1.5">
-              {chip(CA_TUAN, t('danhGiaDauVao.chiTiet.caTuan'), tatCa.length)}
-              {cacNgay.map((d, i) =>
-                chip(d, `${t(`danhGiaDauVao.thu.${i}`)} · ${formatYmdToDisplay(d).slice(0, 5)}`, tatCa.filter((r) => r.ngay === d).length)
-              )}
-            </div>
-            <SubTableSearchBox value={tim} onChange={setTim} shown={hien.length} total={theoNgay.length} />
+            <SubTableSearchBox value={tim} onChange={setTim} shown={hien.length} total={tatCa.length} />
             <SubTable
               tableKey="danh-gia-dau-vao.chi-tiet"
               columns={columns}
@@ -218,7 +179,6 @@ const DgdvChiTietSection: React.FC<Props> = ({ phieu, canNhap, ngayDangChon, onI
           <DgdvDongForm
             phieu={phieu}
             dong={dangSua === 'moi' ? null : dangSua}
-            ngayMacDinh={loc === CA_TUAN ? ngayDangChon : loc}
             onClose={() => setDangSua(null)}
           />
         )}

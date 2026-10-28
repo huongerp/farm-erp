@@ -55,11 +55,18 @@ export interface VarDgdvLyDo {
   tg_cap_nhat: string;
 }
 
-// ---- Phiếu tuần -----------------------------------------------------------------
+// ---- Phiếu chuyến ---------------------------------------------------------------
 
-/** fp_farm_dgdv — 1 phiếu / tuần ISO (nam, tuan) / chi nhánh. `nam` là năm ISO của tuần. */
+/**
+ * fp_farm_dgdv — 1 phiếu = 1 CHUYẾN (ngay, chi nhánh, chuyen 1, 2, 3…), migration 057.
+ * `nam` / `tuan` là tuần farm của `ngay` — DB tự tính (trigger), app không gửi.
+ */
 export interface FarmDgdv {
   id: string;
+  /** 'YYYY-MM-DD' */
+  ngay: string;
+  /** Số chuyến trong ngày của chi nhánh, ≥ 1. */
+  chuyen: number;
   nam: number;
   tuan: number;
   id_chi_nhanh: string;
@@ -72,11 +79,16 @@ export interface FarmDgdv {
   tg_cap_nhat: string;
 }
 
-/** fp_farm_dgdv_cot — cột dây của phiếu; ngày dạng 'YYYY-MM-DD'. */
+/**
+ * fp_farm_dgdv_cot — cột dây của phiếu. Nguồn là tuần thu hoạch farm (`th_nam`, `th_tuan`);
+ * 4 cột ngày chỉ để đọc — DB tự điền (thu hoạch = T2–CN tuần đó, chích bắp = tuần −9).
+ */
 export interface FarmDgdvCot {
   id: string;
   id_phieu: string;
   stt: number;
+  th_nam: number;
+  th_tuan: number;
   chich_bap_tu: string | null;
   chich_bap_den: string | null;
   thu_hoach_tu: string | null;
@@ -123,7 +135,7 @@ export interface FarmDgdvDong {
 
 // ---- Phiếu đầy đủ đã ghép (cho UI) ----------------------------------------------
 
-/** Lô của phiếu kèm tên (join danh mục) + đứt dây + ô lưới của mọi ngày trong tuần. */
+/** Lô của phiếu kèm tên (join danh mục) + đứt dây + ô lưới (cùng ngày của phiếu). */
 export interface DgdvLoDayDu extends FarmDgdvLo {
   ten_lo: string | null;
   lo_ngay: FarmDgdvLoNgay[];
@@ -136,8 +148,8 @@ export interface DgdvPhieuDayDu extends FarmDgdv {
   lo: DgdvLoDayDu[];
 }
 
-/** Tuần ISO: `nam` là năm ISO (có thể khác năm dương lịch ở đầu/cuối năm). */
-export interface TuanIso {
+/** Tuần farm: `nam` là năm của Chủ nhật cuối tuần (xem core/tuan.ts). */
+export interface TuanFarm {
   nam: number;
   tuan: number;
 }

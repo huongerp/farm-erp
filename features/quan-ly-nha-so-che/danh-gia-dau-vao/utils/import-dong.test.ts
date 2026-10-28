@@ -11,10 +11,13 @@ const refs = {
 };
 
 describe('tuanThuHoachTheoNgay', () => {
-  it('lấy năm theo ngày, lệch quá nửa năm thì sang năm kề', () => {
+  it('lấy năm farm theo ngày, lệch quá nửa năm thì sang năm kề', () => {
     expect(tuanThuHoachTheoNgay(42, '2026-10-19')).toEqual({ nam: 2026, tuan: 42 });
     expect(tuanThuHoachTheoNgay(52, '2027-01-06')).toEqual({ nam: 2026, tuan: 52 });
     expect(tuanThuHoachTheoNgay(1, '2026-12-23')).toEqual({ nam: 2027, tuan: 1 });
+    // 28/12/2026 đã thuộc năm farm 2027 (tuần 1) — ISO thì vẫn là 53/2026
+    expect(tuanThuHoachTheoNgay(1, '2026-12-28')).toEqual({ nam: 2027, tuan: 1 });
+    expect(tuanThuHoachTheoNgay(52, '2026-12-28')).toEqual({ nam: 2026, tuan: 52 });
   });
 });
 
@@ -45,6 +48,7 @@ describe('parseDongImport', () => {
       {
         row: 5,
         ngay: '2026-10-19',
+        chuyen: 1,
         id_chi_nhanh: 1,
         ten_lo: 'A3-3',
         to_truong: 'A.Hâu',
@@ -69,20 +73,51 @@ describe('parseDongImport', () => {
     expect(dong[0]).toMatchObject({ id_mau_1: null, id_mau_2: null, so_luong: 9, danh_gia: null, so_luong_loi: 0, th_tuan: 43, row: 2 });
   });
 
-  it('gom lỗi theo dòng, loại dòng lỗi; import trong phiếu chặn ngày ngoài tuần', () => {
+  it('cột chuyến: trống = 1, số nguyên ≥ 1; 0 / số lẻ / chữ là lỗi', () => {
+    const dongMau = { ngay: '2026-10-20', chi_nhanh: 'FP1', lo: 'A1', mau_1: 'Đen', so_luong: 5 };
+    const { dong, loi } = parseDongImport(
+      [
+        { ...dongMau, chuyen: '' },
+        { ...dongMau, chuyen: '3' },
+        { ...dongMau, chuyen: 0 },
+        { ...dongMau, chuyen: '1.5' },
+        { ...dongMau, chuyen: 'hai' },
+      ],
+      refs
+    );
+    expect(dong.map((d) => [d.row, d.chuyen])).toEqual([
+      [2, 1],
+      [3, 3],
+    ]);
+    expect(loi.map((l) => l.row)).toEqual([4, 5, 6]);
+  });
+
+  it('gom lỗi theo dòng, loại dòng lỗi; import trong phiếu chặn ngày / chuyến khác phiếu', () => {
     const { dong, loi } = parseDongImport(
       [
         { ngay: '31/02/2026', chi_nhanh: 'XX', lo: '', mau_1: 'Hồng', so_luong: 0 },
         { ngay: '2026-10-19', lo: 'A1', mau_1: 'Đen', mau_2: 'đen', so_luong: 5, so_luong_loi: 7 },
-        { ngay: '2026-10-27', lo: 'A1', mau_1: 'Đen', so_luong: 5 },
+        { ngay: '2026-10-20', lo: 'A1', mau_1: 'Đen', so_luong: 5 },
+        { ngay: '2026-10-19', chuyen: 1, lo: 'A1', mau_1: 'Đen', so_luong: 5 },
       ],
       refs,
-      { nam: 2026, tuan: 43, id_chi_nhanh: '1' }
+      { ngay: '2026-10-19', chuyen: 2, id_chi_nhanh: '1' }
     );
     expect(dong).toEqual([]);
-    expect(loi.map((l) => l.row)).toEqual([2, 3, 4]);
+    expect(loi.map((l) => l.row)).toEqual([2, 3, 4, 5]);
     expect(loi[0].msg.split('; ').length).toBeGreaterThanOrEqual(4);
     expect(loi[1].msg.split('; ')).toHaveLength(2);
     expect(loi[2].msg).not.toBe('');
+    expect(loi[3].msg).not.toBe('');
+  });
+
+  it('import trong phiếu: chuyến trống = chuyến của phiếu', () => {
+    const { dong, loi } = parseDongImport(
+      [{ ngay: '19/10/2026', lo: 'A1', mau_1: 'Đen', so_luong: 5 }],
+      refs,
+      { ngay: '2026-10-19', chuyen: 2, id_chi_nhanh: '1' }
+    );
+    expect(loi).toEqual([]);
+    expect(dong[0]).toMatchObject({ ngay: '2026-10-19', chuyen: 2, id_chi_nhanh: 1 });
   });
 });

@@ -9,6 +9,7 @@ import { cn, formatNumberVN, formatYmdToDisplay } from '../../../../../lib/utils
 import { KhungPhieu, TD_IN, TH_IN } from '../../../../../components/shared/phieu-in/PhieuInParts';
 import type { DgdvKhoiNgay, DgdvLuoiNgay } from '../../core/bang-tinh';
 import { styleTieuDeCot } from '../../utils/mau-day';
+import { tomTatChuyenLuoi } from '../../utils/export-luoi';
 
 const th = `${TH_IN} px-1 py-0.5 text-center align-middle`;
 const td = `${TD_IN} px-1 py-0.5 align-middle`;
@@ -145,6 +146,7 @@ const DgdvPreviewContent: React.FC<{ dsKhoi: DgdvKhoiNgay[] }> = ({ dsKhoi }) =>
     <>
       {dsLuoi.map((luoi, i) => {
         const tuanThu = luoi.tuanThuHoach.length > 0 ? luoi.tuanThuHoach.map((x) => x.tuan).join(', ') : String(luoi.tuan);
+        const tomTat = tomTatChuyenLuoi(luoi, t);
         return (
           // Mỗi ngày một trang: KhungPhieu cao đúng một trang trên màn hình, khi in ngắt trang trước khối sau.
           <div key={`${luoi.ngay}-${luoi.id_phieu}`} style={i > 0 ? { breakBefore: 'page' } : undefined}>
@@ -157,6 +159,7 @@ const DgdvPreviewContent: React.FC<{ dsKhoi: DgdvKhoiNgay[] }> = ({ dsKhoi }) =>
                 {formatNumberVN(luoi.tongThu)} · {t('danhGiaDauVao.luoi.tuanThuHoach')} {tuanThu} · {t('danhGiaDauVao.luoi.ngay')}{' '}
                 {formatYmdToDisplay(luoi.ngay)}
               </p>
+              {tomTat && <p className="text-center m-0 mb-2">{tomTat}</p>}
               <LuoiIn luoi={luoi} />
             </KhungPhieu>
           </div>

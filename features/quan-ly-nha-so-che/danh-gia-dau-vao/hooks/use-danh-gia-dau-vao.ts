@@ -2,12 +2,14 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient, type QueryClie
 import { toast } from 'sonner';
 import i18n from '../../../../lib/i18n';
 import type { DgdvListServerQuery } from '../services/danh-gia-dau-vao-list-query';
-import { fetchAllDgdvForListQuery, getDgdvById, getDgdvPage, getDgdvTheoTuan } from '../services/danh-gia-dau-vao-service';
+import { fetchAllDgdvForListQuery, getDgdvById, getDgdvPage, getDgdvTheoKhoangNgay } from '../services/danh-gia-dau-vao-service';
 import {
   createDgdvDb,
   deleteDgdvManyDb,
   deleteDongDb,
   getDgdvTomTatDb,
+  getPhieuChuyenTruocDb,
+  layChuyenKeTiep,
   luuDutDayDb,
   updateDgdvDb,
   updateDgdvTrangThaiManyDb,
@@ -15,7 +17,6 @@ import {
 } from '../services/danh-gia-dau-vao-db.service';
 import type { DgdvFormValues } from '../core/schema';
 import type { DgdvPhieuDayDu, TrangThaiDgdvPhieu } from '../core/types';
-import { cacTuanTrongKhoang } from '../utils/khoang-ngay';
 import {
   keHoachLuuDong,
   keHoachXoaDong,
@@ -39,7 +40,7 @@ export function useDgdvPage(query: DgdvListServerQuery, enabled = true) {
   });
 }
 
-/** Tóm tắt toàn bộ phiếu trong phạm vi: chip lọc, gợi ý chi nhánh, chặn trùng tuần. */
+/** Tóm tắt toàn bộ phiếu trong phạm vi: chip lọc, gợi ý chi nhánh, chặn trùng chuyến. */
 export function useDgdvTomTat(viewAll: boolean, allowedBranchIds: string[], enabled = true) {
   return useQuery({
     queryKey: [...QUERY_KEY_DGDV, 'tomTat', viewAll, [...allowedBranchIds].sort().join(',')],
@@ -57,7 +58,7 @@ export function useDgdvById(id: string | undefined) {
   });
 }
 
-/** Phiếu đầy đủ của mọi tuần phủ khoảng ngày (một chi nhánh hoặc cả phạm vi khi `idChiNhanh` rỗng). */
+/** Phiếu đầy đủ (mọi chuyến) có ngày trong khoảng (một chi nhánh hoặc cả phạm vi khi `idChiNhanh` rỗng). */
 export function useDgdvTheoKhoang(
   tu: string,
   den: string,
@@ -68,9 +69,28 @@ export function useDgdvTheoKhoang(
 ) {
   return useQuery({
     queryKey: [...QUERY_KEY_DGDV, 'khoang', tu, den, idChiNhanh, viewAll, [...allowedBranchIds].sort().join(',')],
-    queryFn: () => getDgdvTheoTuan(cacTuanTrongKhoang(tu, den), idChiNhanh, viewAll, allowedBranchIds),
+    queryFn: () => getDgdvTheoKhoangNgay(tu, den, idChiNhanh, viewAll, allowedBranchIds),
     enabled: enabled && !!tu && !!den,
     staleTime: 1000 * 30,
+  });
+}
+
+/** Số chuyến kế tiếp của (ngày, chi nhánh) — gợi ý khi tạo phiếu. Chưa đủ ngày / chi nhánh → không gọi. */
+export function useDgdvChuyenKeTiep(ngay: string | null | undefined, idChiNhanh: string | null | undefined, enabled = true) {
+  return useQuery({
+    queryKey: [...QUERY_KEY_DGDV, 'chuyenKeTiep', ngay ?? '', idChiNhanh ?? ''],
+    queryFn: () => layChuyenKeTiep(ngay!, idChiNhanh!),
+    enabled: enabled && !!ngay && !!idChiNhanh,
+    staleTime: 1000 * 10,
+  });
+}
+
+/** Chép dây & lô từ chuyến trước: gọi khi bấm nút (không tự tải), xem `getPhieuChuyenTruocDb`. */
+export function useLayPhieuChuyenTruoc() {
+  return useMutation({
+    mutationFn: ({ ngay, chuyen, idChiNhanh, boQuaId }: { ngay: string; chuyen: number; idChiNhanh: string; boQuaId: string | null }) =>
+      getPhieuChuyenTruocDb(ngay, chuyen, idChiNhanh, boQuaId),
+    onError: (err: Error) => toast.error(err.message),
   });
 }
 
@@ -134,7 +154,9 @@ async function chayThaoTac(ops: DgdvThaoTacGhi[]): Promise<void> {
 function lamMoiSauGhiDong(qc: QueryClient) {
   qc.invalidateQueries({ queryKey: [...QUERY_KEY_DGDV, 'full'] });
   qc.invalidateQueries({ queryKey: [...QUERY_KEY_DGDV, 'khoang'] });
-  // Tổng thu cả tuần ở danh sách: đánh dấu cũ, tải lại khi quay về danh sách.
+  qc.invalidateQueries({ queryKey: [...QUERY_KEY_DGDV, 'tongNgayDay'] });
+  qc.invalidateQueries({ queryKey: [...QUERY_KEY_DGDV, 'tongChuyen'] });
+  // Tổng thu của chuyến ở danh sách: đánh dấu cũ, tải lại khi quay về danh sách.
   qc.invalidateQueries({ queryKey: [...QUERY_KEY_DGDV, 'page'], refetchType: 'none' });
 }
 

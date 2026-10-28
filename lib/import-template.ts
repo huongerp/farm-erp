@@ -37,6 +37,11 @@ export interface BuildTemplateInput {
   sampleRows?: ImportSampleRow[];
   referenceSheets?: ImportReferenceSheet[];
   labels: TemplateLabels;
+  /**
+   * Dữ liệu THẬT đặt dưới tiêu đề sheet "Nhập liệu" — chỉ dùng cho file XUẤT dạng dòng nhập lại được
+   * (sửa rồi import ngược). File mẫu tải từ ImportDialog không truyền → sheet chỉ có tiêu đề như cũ.
+   */
+  inputRows?: TemplateCell[][];
 }
 
 /** Excel giới hạn tên sheet 31 ký tự và không được trùng. */
@@ -54,7 +59,13 @@ function isFilled(v: TemplateCell | undefined): boolean {
   return v !== null && v !== undefined && String(v).trim() !== '';
 }
 
-export function buildImportTemplate({ columns, sampleRows = [], referenceSheets = [], labels }: BuildTemplateInput): TemplateSheet[] {
+export function buildImportTemplate({
+  columns,
+  sampleRows = [],
+  referenceSheets = [],
+  labels,
+  inputRows = [],
+}: BuildTemplateInput): TemplateSheet[] {
   const header = columns.map((c) => c.label);
   const used = new Set<string>();
   const uniqueName = (raw: string) => {
@@ -67,7 +78,11 @@ export function buildImportTemplate({ columns, sampleRows = [], referenceSheets 
 
   const sheets: TemplateSheet[] = [];
 
-  sheets.push({ name: uniqueName(labels.inputSheet), rows: [header], widths: widthsOf([header, ...sampleRows]) });
+  sheets.push({
+    name: uniqueName(labels.inputSheet),
+    rows: [header, ...inputRows],
+    widths: widthsOf([header, ...sampleRows, ...inputRows]),
+  });
 
   const guideRows: TemplateCell[][] = [
     [labels.guideColumn, labels.guideRequired, labels.guideRule, labels.guideExample],

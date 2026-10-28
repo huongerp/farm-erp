@@ -1,7 +1,8 @@
 /**
- * Tab «Bảng đánh giá» — bảng TỔNG HỢP chi tiết đánh giá theo ngày, CHỈ XEM: gom từ các phiếu tuần đã có,
- * mỗi ngày × phiếu một khối lưới (như file Excel). Toolbar chuẩn `DashboardToolbar`: khoảng ngày + chi nhánh,
- * In / Xuất Excel. Nhập / sửa số ở Detail phiếu (bảng «Chi tiết đánh giá») — bấm «Mở phiếu» ở đầu khối.
+ * Tab «Tổng hợp ngày» (id `bang`) — CHỈ XEM: mỗi ngày × chi nhánh một khối lưới lô × dây đã CỘNG MỌI CHUYẾN
+ * (`gopChuyen`, dây gom theo màu / xé đôi / tuần thu hoạch). Đầu khối: số chuyến + tổng thu / KSC từng chuyến
+ * (bấm để mở Detail phiếu chuyến đó — có Xuất Excel) + % KSC. Toolbar chuẩn `DashboardToolbar`: khoảng ngày +
+ * chi nhánh, In / Xuất Excel (đều dùng lưới đã gộp). Nhập / sửa số ở Detail phiếu (bảng «Chi tiết đánh giá»).
  */
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -15,12 +16,15 @@ import DateRangePicker, { type DateRangeValue } from '../../../../components/ui/
 import { MobileFilterField, type FilterGroup } from '../../../../components/ui/MobileFilterSheet';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
-import { formatYmdToDisplay, getTodayISO } from '../../../../lib/utils';
+import { formatNumberVN, formatYmdToDisplay, getTodayISO } from '../../../../lib/utils';
 import { TRANG_THAI } from '../../../../lib/constants';
 import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
 import { useDgdvById, useDgdvTheoKhoang } from '../hooks/use-danh-gia-dau-vao';
 import { useDgdvPermissions, useDgdvViewScope } from '../hooks/use-danh-gia-dau-vao-permissions';
 import { useDungLuoi } from '../hooks/use-dung-luoi';
+import { useDgdvXuatChiTiet } from '../hooks/use-dgdv-xuat-chi-tiet';
+import type { DgdvLuoiNgay } from '../core/bang-tinh';
+import { nhanTiLeKsc } from '../utils/export-danh-sach';
 import { chuanHoaKhoang, khoangNhanh, kieuCuaKhoang, type KieuKhoangNhanh } from '../utils/khoang-ngay';
 import { getDgdvPreviewUrl } from '../utils/preview-url';
 import { taiXlsxLuoi } from '../utils/export-luoi';
@@ -34,6 +38,37 @@ const KHOA_NHAN_NHANH: Record<KieuKhoangNhanh, string> = {
   'tuan-truoc': 'danhGiaDauVao.bang.tuanTruoc',
 };
 const TUY_CHON = 'tuy-chon';
+
+/** Đầu khối tổng ngày: «2 chuyến · [C1: 320] [C2: 410] · % KSC 2,5%» — bấm một chuyến mở phiếu đó. */
+const CacChuyenDauKhoi: React.FC<{ luoi: DgdvLuoiNgay; onMo: (idPhieu: string) => void }> = ({ luoi, onMo }) => {
+  const { t } = useTranslation();
+  return (
+    <span className="inline-flex flex-wrap items-center gap-1.5 text-xs">
+      <span className="text-muted-foreground">{t('danhGiaDauVao.bang.soChuyen', { n: luoi.dsChuyen.length })}</span>
+      {luoi.dsChuyen.map((c) => (
+        <button
+          key={c.id_phieu}
+          type="button"
+          className="inline-flex items-center gap-1 rounded-md border border-border px-1.5 py-0.5 font-medium text-primary hover:bg-primary/10"
+          title={t('danhGiaDauVao.bang.chuyenTitle', { chuyen: c.chuyen, tongThu: formatNumberVN(c.tongThu), ksc: formatNumberVN(c.ksc) })}
+          aria-label={t('danhGiaDauVao.bang.moPhieu', { chuyen: c.chuyen })}
+          onClick={() => onMo(c.id_phieu)}
+        >
+          <ExternalLink size={11} />
+          <span className="tabular-nums">{t('danhGiaDauVao.bang.chuyenNhan', { chuyen: c.chuyen, tongThu: formatNumberVN(c.tongThu) })}</span>
+          {c.ksc > 0 && (
+            <span className="font-normal text-rose-600 tabular-nums">
+              · {t('danhGiaDauVao.luoi.ksc')} {formatNumberVN(c.ksc)}
+            </span>
+          )}
+        </button>
+      ))}
+      <span className="font-medium tabular-nums">
+        {t('danhGiaDauVao.bang.tiLeKsc', { tiLe: nhanTiLeKsc(luoi.ksc, luoi.tongThu) })}
+      </span>
+    </span>
+  );
+};
 
 const BangDanhGiaTab: React.FC = () => {
   const { t } = useTranslation();
@@ -71,7 +106,8 @@ const BangDanhGiaTab: React.FC = () => {
     const cho = new Set(chonCn);
     return ds.filter((p) => cho.has(p.id_chi_nhanh));
   }, [q.data, chonCn]);
-  const { dsKhoi, canhBao } = useDungLuoi(dsPhieu, khoang.tu, khoang.den);
+  const { dsKhoi, canhBao } = useDungLuoi(dsPhieu, khoang.tu, khoang.den, true);
+  const xuatChiTiet = useDgdvXuatChiTiet();
   const coSo = dsKhoi.some((k) => k.luoi.length > 0);
 
   // ---- Toolbar ----
@@ -198,16 +234,7 @@ const BangDanhGiaTab: React.FC = () => {
                 <DgdvLuoiNgayTable
                   luoi={luoi}
                   canhBao={canhBao}
-                  dauKhoiPhu={
-                    <button
-                      type="button"
-                      className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-                      onClick={() => setMoPhieuId(luoi.id_phieu)}
-                    >
-                      <ExternalLink size={12} />
-                      {t('danhGiaDauVao.bang.moPhieu', { tuan: luoi.tuan })}
-                    </button>
-                  }
+                  dauKhoiPhu={<CacChuyenDauKhoi luoi={luoi} onMo={setMoPhieuId} />}
                 />
               </section>
             ))
@@ -222,6 +249,8 @@ const BangDanhGiaTab: React.FC = () => {
             onClose={() => setMoPhieuId(null)}
             canToggleTrangThai={canToggleTrangThai}
             canNhapLuoi={canNhapLuoi(phieuMo)}
+            onXuatExcel={() => void xuatChiTiet.xuatPhieu(phieuMo)}
+            dangXuat={xuatChiTiet.dangXuat}
           />
         )}
       </AnimatePresence>

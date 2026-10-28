@@ -1,6 +1,7 @@
 /**
- * Dialog thêm / sửa một dòng «Chi tiết đánh giá»: Ngày · Lô · Dây (hoặc «Đứt dây») · Số lượng ·
- * Đánh giá · SL lỗi · Lý do lỗi. «Lưu & thêm tiếp» giữ Ngày + Lô + Dây để nhập liền nhiều dòng.
+ * Dialog thêm / sửa một dòng «Chi tiết đánh giá»: Lô · Dây (hoặc «Đứt dây») · Số lượng · Đánh giá ·
+ * SL lỗi · Lý do lỗi. Ngày luôn = ngày của phiếu (1 phiếu = 1 chuyến của một ngày) — không có ô chọn.
+ * «Lưu & thêm tiếp» giữ Lô + Dây để nhập liền nhiều dòng.
  * Ghi theo kế hoạch ở core/chi-tiet-dong (`useLuuDongDgdv`); lý do gõ mới tự vào danh mục.
  */
 import React, { useEffect, useMemo, useRef } from 'react';
@@ -21,7 +22,6 @@ import { DONG_DUT_DAY, dgdvDongFormSchema, type DgdvDongFormValues } from '../..
 import type { DgdvPhieuDayDu } from '../../core/types';
 import { LOAI_LY_DO_DGDV } from '../../core/types';
 import type { DgdvDongPhang } from '../../core/chi-tiet-dong';
-import { cacNgayCuaTuan } from '../../core/tuan';
 import { nhanCotDay } from '../../core/bang-tinh';
 import { tenKhongTrung } from '../../core/chuan-hoa-ten';
 import { useLuuDongDgdv } from '../../hooks/use-danh-gia-dau-vao';
@@ -31,12 +31,10 @@ interface Props {
   phieu: DgdvPhieuDayDu;
   /** Dòng đang sửa; null = thêm mới. */
   dong: DgdvDongPhang | null;
-  /** Ngày mặc định khi thêm (chip ngày đang chọn ở Detail). */
-  ngayMacDinh: string;
   onClose: () => void;
 }
 
-const DgdvDongForm: React.FC<Props> = ({ phieu, dong, ngayMacDinh, onClose }) => {
+const DgdvDongForm: React.FC<Props> = ({ phieu, dong, onClose }) => {
   const { t } = useTranslation();
   const isEdit = !!dong;
   const luu = useLuuDongDgdv();
@@ -46,7 +44,6 @@ const DgdvDongForm: React.FC<Props> = ({ phieu, dong, ngayMacDinh, onClose }) =>
   /** Bấm «Lưu & thêm tiếp» → lưu xong giữ dialog, xoá số. */
   const themTiep = useRef(false);
 
-  const cacNgay = useMemo(() => cacNgayCuaTuan(phieu.nam, phieu.tuan), [phieu.nam, phieu.tuan]);
   const loSapXep = useMemo(() => [...phieu.lo].sort((a, b) => a.stt - b.stt), [phieu.lo]);
   const cotSapXep = useMemo(() => [...phieu.cot].sort((a, b) => a.stt - b.stt), [phieu.cot]);
 
@@ -63,7 +60,7 @@ const DgdvDongForm: React.FC<Props> = ({ phieu, dong, ngayMacDinh, onClose }) =>
             ly_do_loi: dong.ly_do_loi,
           }
         : {
-            ngay: cacNgay.includes(ngayMacDinh) ? ngayMacDinh : cacNgay[0],
+            ngay: phieu.ngay,
             id_phieu_lo: loSapXep[0]?.id ?? '',
             id_cot: cotSapXep[0]?.id ?? '',
             so_luong: 0,
@@ -71,7 +68,7 @@ const DgdvDongForm: React.FC<Props> = ({ phieu, dong, ngayMacDinh, onClose }) =>
             so_luong_loi: 0,
             ly_do_loi: null,
           },
-    [dong, cacNgay, ngayMacDinh, loSapXep, cotSapXep]
+    [dong, phieu.ngay, loSapXep, cotSapXep]
   );
 
   const {
@@ -92,7 +89,6 @@ const DgdvDongForm: React.FC<Props> = ({ phieu, dong, ngayMacDinh, onClose }) =>
     return () => clearTimeout(h);
   }, [setFocus]);
 
-  const ngayOptions = cacNgay.map((d, i) => ({ value: d, label: `${t(`danhGiaDauVao.thu.${i}`)} · ${formatYmdToDisplay(d)}` }));
   const loOptions = loSapXep.map((l) => ({ value: l.id, label: l.ten_lo ?? '—', subLabel: l.to_truong ?? '' }));
   const dayOptions = [
     ...cotSapXep.map((c) => ({ value: c.id, label: nhanCotDay(c, mauTheoId, t('danhGiaDauVao.luoi.xeDoi')) })),
@@ -108,7 +104,7 @@ const DgdvDongForm: React.FC<Props> = ({ phieu, dong, ngayMacDinh, onClose }) =>
       cu: dong,
       moi: {
         id_phieu_lo: v.id_phieu_lo,
-        ngay: v.ngay,
+        ngay: phieu.ngay,
         id_cot: dutDay ? null : v.id_cot,
         so_luong: v.so_luong,
         danh_gia: dutDay ? null : v.danh_gia,
@@ -136,7 +132,7 @@ const DgdvDongForm: React.FC<Props> = ({ phieu, dong, ngayMacDinh, onClose }) =>
   return (
     <GenericDrawer
       title={isEdit ? t('danhGiaDauVao.chiTiet.suaTitle') : t('danhGiaDauVao.chiTiet.themTitle')}
-      subtitle={t('danhGiaDauVao.list.namTuan', { tuan: phieu.tuan, nam: phieu.nam })}
+      subtitle={`${t('danhGiaDauVao.detail.tieuDeNgay', { ngay: formatYmdToDisplay(phieu.ngay) })} · ${t('danhGiaDauVao.detail.tieuDeChuyen', { chuyen: phieu.chuyen })}`}
       icon={<ListPlus size={18} />}
       onClose={onClose}
       isDirty={isDirty}
@@ -170,21 +166,7 @@ const DgdvDongForm: React.FC<Props> = ({ phieu, dong, ngayMacDinh, onClose }) =>
         className="space-y-4"
       >
         <FormSection title={t('danhGiaDauVao.chiTiet.sectionVitri')} variant="primary">
-          <FormGrid cols={3}>
-            <Controller
-              name="ngay"
-              control={control}
-              render={({ field }) => (
-                <Select
-                  label={t('danhGiaDauVao.luoi.ngay')}
-                  required
-                  value={field.value}
-                  onChange={(e) => field.onChange(e.target.value)}
-                  options={ngayOptions}
-                  error={errors.ngay?.message}
-                />
-              )}
-            />
+          <FormGrid cols={2}>
             <Controller
               name="id_phieu_lo"
               control={control}

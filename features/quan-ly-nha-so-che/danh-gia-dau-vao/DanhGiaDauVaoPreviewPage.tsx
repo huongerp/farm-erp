@@ -33,7 +33,8 @@ const DanhGiaDauVaoPreviewPage: React.FC = () => {
     !!ts && !viewScope.isLoading
   );
   const dsPhieu = useMemo(() => q.data ?? [], [q.data]);
-  const { dsKhoi, dangTaiMau } = useDungLuoi(dsPhieu, ts?.tu ?? '', ts?.den ?? '');
+  // Như tab Tổng hợp ngày: mỗi ngày × chi nhánh một lưới cộng mọi chuyến.
+  const { dsKhoi, dangTaiMau } = useDungLuoi(dsPhieu, ts?.tu ?? '', ts?.den ?? '', true);
 
   const tieuDe = ts
     ? `${t('danhGiaDauVao.title')} - ${formatYmdToDisplay(ts.tu)}${ts.den !== ts.tu ? ` → ${formatYmdToDisplay(ts.den)}` : ''}`

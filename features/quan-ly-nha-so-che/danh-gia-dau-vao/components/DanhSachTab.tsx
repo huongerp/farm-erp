@@ -10,7 +10,9 @@ import LazyImportDialog from '../../../../components/shared/LazyImportDialog';
 import { useExportData } from '../../../../lib/useExportData';
 import { TRANG_THAI } from '../../../../lib/constants';
 import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
-import type { DgdvListServerQuery } from '../services/danh-gia-dau-vao-list-query';
+import { DGDV_XUAT_CHI_TIET_TOI_DA, type DgdvListServerQuery } from '../services/danh-gia-dau-vao-list-query';
+import { useDgdvXuatChiTiet } from '../hooks/use-dgdv-xuat-chi-tiet';
+import XuatChonKieuDialog from './XuatChonKieuDialog';
 import type { DgdvListRow } from '../services/danh-gia-dau-vao-db.service';
 import {
   fetchAllDgdvForListQuery,
@@ -62,7 +64,9 @@ const DanhSachTab: React.FC = () => {
   const [form, setForm] = useState<FormState>(null);
   const [viewingId, setViewingId] = useState<string | null>(null);
   const [showExport, setShowExport] = useState(false);
+  const [showChonXuat, setShowChonXuat] = useState(false);
   const [showCaiDat, setShowCaiDat] = useState(false);
+  const xuatChiTiet = useDgdvXuatChiTiet();
 
   const viewScope = useDgdvViewScope();
   const listServerQuery: DgdvListServerQuery = useMemo(
@@ -72,8 +76,9 @@ const DanhSachTab: React.FC = () => {
       searchTerm,
       viewAll: viewScope.viewAll,
       allowedBranchIds: viewScope.allowedBranchIds,
-      nam: filters.nam ?? [],
-      tuan: filters.tuan ?? [],
+      tuNgay: filters.tu_ngay || null,
+      denNgay: filters.den_ngay || null,
+      tuanFarm: filters.tuan_farm ?? [],
       trangThai: filters.trang_thai ?? [],
       idChiNhanh: filters.id_chi_nhanh ?? [],
       sortColumn: sort.column,
@@ -203,14 +208,14 @@ const DanhSachTab: React.FC = () => {
     });
   };
 
-  /** Sao chép sang tuần kế tiếp: tuần mới đã có phiếu của chi nhánh → báo lỗi, không mở form. */
+  /** Sao chép sang chuyến mới cùng ngày: lấy chuyến kế tiếp (lớn nhất đang có + 1) của ngày + chi nhánh. */
   const handleSaoChep = () => {
     if (!viewing) return;
-    const v = dungPhieuSaoChep(viewing);
-    if (tomTat.some((p) => p.nam === v.nam && p.tuan === v.tuan && p.id_chi_nhanh === v.id_chi_nhanh)) {
-      toast.error(t('danhGiaDauVao.toast.trungTuan', { tuan: v.tuan, nam: v.nam }));
-      return;
-    }
+    const chuyenMax = Math.max(
+      0,
+      ...tomTat.filter((p) => p.ngay === viewing.ngay && p.id_chi_nhanh === viewing.id_chi_nhanh).map((p) => p.chuyen)
+    );
+    const v = dungPhieuSaoChep(viewing, { ngay: viewing.ngay, chuyen: chuyenMax + 1 });
     setViewingId(null);
     setForm({ kieu: 'moi', giaTri: v });
   };
@@ -249,7 +254,7 @@ const DanhSachTab: React.FC = () => {
         onDeleteMany={canDelete ? handleDeleteMany : undefined}
         bulkActions={bulkActions}
         onImport={perm.canCreate ? importer.openImport : undefined}
-        onExport={() => (totalCount === 0 ? toast.warning(t('danhGiaDauVao.noExportData')) : setShowExport(true))}
+        onExport={() => (totalCount === 0 ? toast.warning(t('danhGiaDauVao.noExportData')) : setShowChonXuat(true))}
         onCaiDat={canCaiDat ? () => setShowCaiDat(true) : undefined}
         canCreate={canCreate}
         canDelete={canDelete}
@@ -278,6 +283,24 @@ const DanhSachTab: React.FC = () => {
           canDeleteRow={canDeleteRow}
         />
       </div>
+
+      <AnimatePresence>
+        {showChonXuat && (
+          <XuatChonKieuDialog
+            tongSo={totalCount}
+            toiDaChiTiet={DGDV_XUAT_CHI_TIET_TOI_DA}
+            dangXuat={xuatChiTiet.dangXuat}
+            onChiTiet={() => {
+              void xuatChiTiet.xuatTheoLoc(listServerQuery, totalCount).then(() => setShowChonXuat(false));
+            }}
+            onTomTat={() => {
+              setShowChonXuat(false);
+              setShowExport(true);
+            }}
+            onClose={() => setShowChonXuat(false)}
+          />
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {showExport && (
@@ -313,6 +336,8 @@ const DanhSachTab: React.FC = () => {
             onEdit={canEditRow(viewing) ? () => handleEdit(viewing) : undefined}
             onDelete={canDeleteRow(viewing) ? () => handleDelete(viewing.id) : undefined}
             onSaoChep={canCreate ? handleSaoChep : undefined}
+            onXuatExcel={() => void xuatChiTiet.xuatPhieu(viewing)}
+            dangXuat={xuatChiTiet.dangXuat}
             canToggleTrangThai={canToggleTrangThai}
             canNhapLuoi={canNhapLuoi(viewing)}
           />

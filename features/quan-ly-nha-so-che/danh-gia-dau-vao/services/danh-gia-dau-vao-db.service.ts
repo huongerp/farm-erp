@@ -1,10 +1,13 @@
 /**
- * Đánh giá đầu vào — DB: fp_farm_dgdv (+ _cot, _lo, _lo_ngay, _dong). Migration 052.
+ * Đánh giá đầu vào — DB: fp_farm_dgdv (+ _cot, _lo, _lo_ngay, _dong). Migration 052, 057.
+ * 1 phiếu = 1 chuyến (ngay, id_chi_nhanh, chuyen); nam / tuan (tuần farm) do DB tự tính — app không gửi.
+ * Danh sách đọc view `v_fp_farm_dgdv_tong_chuyen` (đã có tổng) để lọc / sắp xếp ở PostgREST.
  * id bigint → String() ngay trong mapper; lỗi PostgREST format qua lib/db-errors.
  */
 import { db, fetchAllRows, fetchTablePage, throwDbError, formatDbError, type PaginatedTableResult } from '../../../../lib/db';
 import { applyPostgrestSearch } from '../../../../lib/postgrest-search';
 import i18n from '../../../../lib/i18n';
+import { formatYmdToDisplay } from '../../../../lib/utils';
 import { DGDV_SORTABLE_DB_COLUMNS, DGDV_SORT_MAC_DINH, type DgdvListServerQuery } from './danh-gia-dau-vao-list-query';
 import { TRANG_THAI_DGDV } from '../core/types';
 import type {
@@ -15,30 +18,30 @@ import type {
   FarmDgdvDong,
   FarmDgdvLoNgay,
   TrangThaiDgdvPhieu,
-  TuanIso,
 } from '../core/types';
 import type { DgdvFormValues } from '../core/schema';
 import { gonTen, khoaTen } from '../core/chuan-hoa-ten';
+import { cacNgayCuaTuanFarm, docKhoaTuanFarm } from '../core/tuan';
 import type { DongImportRpc } from '../utils/import-dong';
 
 const TABLE = 'fp_farm_dgdv';
+const VIEW_LIST = 'v_fp_farm_dgdv_tong_chuyen';
 const TABLE_COT = 'fp_farm_dgdv_cot';
 const TABLE_LO = 'fp_farm_dgdv_lo';
 const TABLE_LO_NGAY = 'fp_farm_dgdv_lo_ngay';
 const TABLE_DONG = 'fp_farm_dgdv_dong';
 const T_DM_LO = 'fp_var_lo_thu_hoach';
 
-const PHIEU_COLUMNS = 'id,nam,tuan,id_chi_nhanh,ghi_chu,trang_thai,id_nguoi_tao,tg_tao,tg_cap_nhat';
-const COT_COLUMNS = 'id,id_phieu,stt,chich_bap_tu,chich_bap_den,thu_hoach_tu,thu_hoach_den,id_mau_1,id_mau_2,xe_doi';
+const PHIEU_COLUMNS = 'id,ngay,chuyen,nam,tuan,id_chi_nhanh,ghi_chu,trang_thai,id_nguoi_tao,tg_tao,tg_cap_nhat';
+const COT_COLUMNS =
+  'id,id_phieu,stt,th_nam,th_tuan,chich_bap_tu,chich_bap_den,thu_hoach_tu,thu_hoach_den,id_mau_1,id_mau_2,xe_doi';
 const DONG_COLUMNS = 'id,id_phieu_lo,id_cot,ngay,stt_dong,so_luong,danh_gia,so_luong_loi,ly_do_loi';
 const LO_NGAY_COLUMNS = 'id,id_phieu_lo,ngay,dut_day';
 
-/** Danh sách: phiếu + tên chi nhánh + số của bảng con (chỉ cột cần cộng) để ra Tổng thu / KSC cả tuần. */
-const LIST_SELECT =
-  `${PHIEU_COLUMNS},chi_nhanh:fp_var_chi_nhanh(ten_chi_nhanh),` +
-  `${TABLE_LO}(${TABLE_DONG}(so_luong,so_luong_loi),${TABLE_LO_NGAY}(dut_day))`;
+/** Danh sách: view đã có tên chi nhánh + tổng SL / đứt dây / tổng thu / KSC của chuyến. */
+const LIST_SELECT = `${PHIEU_COLUMNS},ten_chi_nhanh,tong_so_luong,tong_dut_day,tong_thu,ksc`;
 
-/** Phiếu đầy đủ: cột dây + lô (tên lô) + đứt dây + ô lưới của cả tuần — MỘT request. */
+/** Phiếu đầy đủ: cột dây + lô (tên lô) + đứt dây + ô lưới của chuyến — MỘT request. */
 const FULL_SELECT =
   `${PHIEU_COLUMNS},chi_nhanh:fp_var_chi_nhanh(ten_chi_nhanh),` +
   `${TABLE_COT}(${COT_COLUMNS}),` +
@@ -49,6 +52,8 @@ type Id = number | string;
 
 interface DbPhieuRow {
   id: Id;
+  ngay: string;
+  chuyen: number | string;
   nam: number;
   tuan: number;
   id_chi_nhanh: Id;
@@ -58,19 +63,24 @@ interface DbPhieuRow {
   tg_tao: string;
   tg_cap_nhat: string;
   chi_nhanh?: { ten_chi_nhanh: string | null } | null;
+  /** cột phẳng của view danh sách */
+  ten_chi_nhanh?: string | null;
 }
 
+/** Dòng view v_fp_farm_dgdv_tong_chuyen (bigint có thể về dạng chuỗi). */
 interface DbListRow extends DbPhieuRow {
-  fp_farm_dgdv_lo?: {
-    fp_farm_dgdv_dong?: { so_luong: number | null; so_luong_loi: number | null }[];
-    fp_farm_dgdv_lo_ngay?: { dut_day: number | null }[];
-  }[];
+  tong_so_luong: number | string | null;
+  tong_dut_day: number | string | null;
+  tong_thu: number | string | null;
+  ksc: number | string | null;
 }
 
 interface DbCotRow {
   id: Id;
   id_phieu: Id;
   stt: number;
+  th_nam: number;
+  th_tuan: number;
   chich_bap_tu: string | null;
   chich_bap_den: string | null;
   thu_hoach_tu: string | null;
@@ -116,10 +126,14 @@ interface DbFullRow extends DbPhieuRow {
   fp_farm_dgdv_lo?: DbLoRow[];
 }
 
-/** Dòng danh sách: phiếu + Tổng thu / KSC cả tuần (cộng như fn_dgdv_tong_ngay, gộp 7 ngày). */
+/** Dòng danh sách: phiếu chuyến + tổng của chuyến (view, cộng như fn_dgdv_tong_ngay nhưng chỉ một chuyến). */
 export interface DgdvListRow extends FarmDgdv {
-  tong_thu_tuan: number;
-  ksc_tuan: number;
+  tong_so_luong: number;
+  tong_dut_day: number;
+  /** = tong_so_luong + tong_dut_day */
+  tong_thu: number;
+  /** Σ số lượng lỗi */
+  ksc: number;
 }
 
 const str = (v: Id | null | undefined): string | null => (v == null || v === '' ? null : String(v));
@@ -142,10 +156,12 @@ function trangThai(v: string | null | undefined): TrangThaiDgdvPhieu {
 function mapPhieu(r: DbPhieuRow): FarmDgdv {
   return {
     id: String(r.id),
+    ngay: ymd(r.ngay),
+    chuyen: so(r.chuyen),
     nam: so(r.nam),
     tuan: so(r.tuan),
     id_chi_nhanh: String(r.id_chi_nhanh),
-    ten_chi_nhanh: r.chi_nhanh?.ten_chi_nhanh ?? null,
+    ten_chi_nhanh: r.ten_chi_nhanh ?? r.chi_nhanh?.ten_chi_nhanh ?? null,
     ghi_chu: r.ghi_chu ?? null,
     trang_thai: trangThai(r.trang_thai),
     id_nguoi_tao: str(r.id_nguoi_tao),
@@ -156,16 +172,13 @@ function mapPhieu(r: DbPhieuRow): FarmDgdv {
 }
 
 function mapListRow(r: DbListRow): DgdvListRow {
-  let tongThu = 0;
-  let ksc = 0;
-  for (const lo of r.fp_farm_dgdv_lo ?? []) {
-    for (const d of lo.fp_farm_dgdv_dong ?? []) {
-      tongThu += so(d.so_luong);
-      ksc += so(d.so_luong_loi);
-    }
-    for (const n of lo.fp_farm_dgdv_lo_ngay ?? []) tongThu += so(n.dut_day);
-  }
-  return { ...mapPhieu(r), tong_thu_tuan: tongThu, ksc_tuan: ksc };
+  return {
+    ...mapPhieu(r),
+    tong_so_luong: so(r.tong_so_luong),
+    tong_dut_day: so(r.tong_dut_day),
+    tong_thu: so(r.tong_thu),
+    ksc: so(r.ksc),
+  };
 }
 
 export function mapCot(r: DbCotRow): FarmDgdvCot {
@@ -173,6 +186,8 @@ export function mapCot(r: DbCotRow): FarmDgdvCot {
     id: String(r.id),
     id_phieu: String(r.id_phieu),
     stt: so(r.stt),
+    th_nam: so(r.th_nam),
+    th_tuan: so(r.th_tuan),
     chich_bap_tu: r.chich_bap_tu ? ymd(r.chich_bap_tu) : null,
     chich_bap_den: r.chich_bap_den ? ymd(r.chich_bap_den) : null,
     thu_hoach_tu: r.thu_hoach_tu ? ymd(r.thu_hoach_tu) : null,
@@ -225,10 +240,11 @@ function mapFull(r: DbFullRow): DgdvPhieuDayDu {
 
 // ---- Danh sách -------------------------------------------------------------------
 
-/** Cột tham gia ô tìm kiếm ở server (bảng không có cột tên chi nhánh — lọc chi nhánh bằng chip). */
+/** Cột tham gia ô tìm kiếm ở server (view có sẵn tên chi nhánh). */
 const DGDV_SEARCH_SPEC = {
-  text: ['ghi_chu', 'trang_thai'],
-  numeric: ['id', 'nam', 'tuan'],
+  text: ['ghi_chu', 'trang_thai', 'ten_chi_nhanh'],
+  numeric: ['id', 'nam', 'tuan', 'chuyen'],
+  dates: ['ngay'],
 } as const;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -244,8 +260,14 @@ function applyDgdvListQuery(q: any, query: DgdvListServerQuery): any {
   let sel = locPhamVi(q, query.viewAll, query.allowedBranchIds);
   if (query.idChiNhanh.length > 0) sel = sel.in('id_chi_nhanh', toInt8s(query.idChiNhanh));
   if (query.trangThai.length > 0) sel = sel.in('trang_thai', query.trangThai);
-  if (query.nam.length > 0) sel = sel.in('nam', toInt8s(query.nam));
-  if (query.tuan.length > 0) sel = sel.in('tuan', toInt8s(query.tuan));
+  if (query.tuNgay) sel = sel.gte('ngay', query.tuNgay);
+  if (query.denNgay) sel = sel.lte('ngay', query.denNgay);
+  // Tuần farm (nhiều tuần, có thể khác năm) → ngày thuộc các tuần đó; tránh or(and(nam,tuan)) lồng nhau.
+  const ngayCuaTuan = query.tuanFarm.flatMap((k) => {
+    const t = docKhoaTuanFarm(k);
+    return t ? cacNgayCuaTuanFarm(t.nam, t.tuan) : [];
+  });
+  if (query.tuanFarm.length > 0) sel = sel.in('ngay', ngayCuaTuan.length > 0 ? ngayCuaTuan : ['1900-01-01']);
 
   sel = applyPostgrestSearch(sel, query.searchTerm, DGDV_SEARCH_SPEC);
 
@@ -253,14 +275,17 @@ function applyDgdvListQuery(q: any, query: DgdvListServerQuery): any {
   const sortCol = dbSortable ? query.sortColumn! : DGDV_SORT_MAC_DINH.column;
   const ascending = dbSortable ? query.sortDirection !== 'desc' : DGDV_SORT_MAC_DINH.ascending;
 
-  if (sortCol === 'nam_tuan') sel = sel.order('nam', { ascending }).order('tuan', { ascending });
+  // Ngày → ngay, chuyen; Chuyến → chuyen, ngay; Tuần → nam, tuan rồi ngay, chuyen.
+  if (sortCol === 'tuan') sel = sel.order('nam', { ascending }).order('tuan', { ascending });
+  if (sortCol === 'chuyen') sel = sel.order('chuyen', { ascending }).order('ngay', { ascending });
+  else if (sortCol === 'ngay' || sortCol === 'tuan') sel = sel.order('ngay', { ascending }).order('chuyen', { ascending });
   else sel = sel.order(sortCol, { ascending });
   return sel.order('id', { ascending: false });
 }
 
 export async function getDgdvPageDb(query: DgdvListServerQuery): Promise<PaginatedTableResult<DgdvListRow>> {
   const result = await fetchTablePage<DbListRow>(query.page, query.pageSize, async (from, to) => {
-    const res = await applyDgdvListQuery(db.from(TABLE).select(LIST_SELECT, { count: 'exact' }), query).range(from, to);
+    const res = await applyDgdvListQuery(db.from(VIEW_LIST).select(LIST_SELECT, { count: 'exact' }), query).range(from, to);
     return { data: (res.data as DbListRow[] | null) ?? null, error: res.error, count: res.count };
   });
   return { ...result, data: result.data.map(mapListRow) };
@@ -269,13 +294,16 @@ export async function getDgdvPageDb(query: DgdvListServerQuery): Promise<Paginat
 /** Toàn bộ phiếu khớp bộ lọc — CHỈ dùng khi bấm Xuất file. */
 export async function fetchAllDgdvForListQueryDb(query: DgdvListServerQuery): Promise<DgdvListRow[]> {
   const rows = await fetchAllRows<DbListRow>((from, to) =>
-    applyDgdvListQuery(db.from(TABLE).select(LIST_SELECT), query).range(from, to)
+    applyDgdvListQuery(db.from(VIEW_LIST).select(LIST_SELECT), query).range(from, to)
   );
   return rows.map(mapListRow);
 }
 
 export interface DgdvTomTat {
   id: string;
+  ngay: string;
+  chuyen: number;
+  /** tuần farm của ngày */
   nam: number;
   tuan: number;
   id_chi_nhanh: string;
@@ -284,16 +312,22 @@ export interface DgdvTomTat {
   tg_tao: string;
 }
 
-/** Tóm tắt toàn bộ phiếu trong phạm vi — chip lọc + số đếm, gợi ý chi nhánh, chặn trùng tuần. */
+/** Tóm tắt toàn bộ phiếu trong phạm vi — chip lọc + số đếm, gợi ý chi nhánh, chặn trùng chuyến. */
 export async function getDgdvTomTatDb(viewAll: boolean, allowedBranchIds: string[]): Promise<DgdvTomTat[]> {
   const rows = await fetchAllRows<DbPhieuRow>((from, to) =>
-    locPhamVi(db.from(TABLE).select('id,nam,tuan,id_chi_nhanh,trang_thai,id_nguoi_tao,tg_tao'), viewAll, allowedBranchIds)
-      .order('nam', { ascending: false })
-      .order('tuan', { ascending: false })
+    locPhamVi(
+      db.from(TABLE).select('id,ngay,chuyen,nam,tuan,id_chi_nhanh,trang_thai,id_nguoi_tao,tg_tao'),
+      viewAll,
+      allowedBranchIds
+    )
+      .order('ngay', { ascending: false })
+      .order('chuyen', { ascending: false })
       .range(from, to)
   );
   return rows.map((r) => ({
     id: String(r.id),
+    ngay: ymd(r.ngay),
+    chuyen: so(r.chuyen),
     nam: so(r.nam),
     tuan: so(r.tuan),
     id_chi_nhanh: String(r.id_chi_nhanh),
@@ -301,6 +335,22 @@ export async function getDgdvTomTatDb(viewAll: boolean, allowedBranchIds: string
     id_nguoi_tao: str(r.id_nguoi_tao),
     tg_tao: r.tg_tao,
   }));
+}
+
+/** Số chuyến kế tiếp của (ngày, chi nhánh) = chuyến lớn nhất đang có + 1 (chưa có phiếu → 1). */
+export async function layChuyenKeTiep(ngay: string, idChiNhanh: string): Promise<number> {
+  const cn = toInt8(idChiNhanh);
+  if (cn == null || !ngay) return 1;
+  const { data, error } = await db
+    .from(TABLE)
+    .select('chuyen')
+    .eq('ngay', ngay)
+    .eq('id_chi_nhanh', cn)
+    .order('chuyen', { ascending: false })
+    .limit(1);
+  if (error) throwDbError(error, { resource: `${TABLE}.chuyenKeTiep` });
+  const max = so((data as { chuyen: number | string }[] | null)?.[0]?.chuyen);
+  return max + 1;
 }
 
 // ---- Phiếu đầy đủ ------------------------------------------------------------------
@@ -313,46 +363,106 @@ export async function getDgdvByIdDb(id: string): Promise<DgdvPhieuDayDu | null> 
   return data ? mapFull(data as unknown as DbFullRow) : null;
 }
 
+/** Phiếu đầy đủ theo danh sách id (xuất chi tiết theo bộ lọc) — chia lô để URL `in.(…)` không quá dài. */
+export async function getDgdvDayDuTheoIdsDb(ids: string[]): Promise<DgdvPhieuDayDu[]> {
+  const numIds = toInt8s(ids);
+  const ds: DgdvPhieuDayDu[] = [];
+  for (let i = 0; i < numIds.length; i += 100) {
+    const { data, error } = await db.from(TABLE).select(FULL_SELECT).in('id', numIds.slice(i, i + 100));
+    if (error) throwDbError(error, { resource: `${TABLE}.theoIds` });
+    ds.push(...((data ?? []) as unknown as DbFullRow[]).map(mapFull));
+  }
+  return ds;
+}
+
+/** Chép khung: cột dây + lô (tên lô), không kéo ô số. */
+const KHUNG_SELECT =
+  `${PHIEU_COLUMNS},${TABLE_COT}(${COT_COLUMNS}),` +
+  `${TABLE_LO}(id,id_phieu,id_lo,to_truong,ghi_chu,stt,lo:fp_var_lo_thu_hoach(ten_lo))`;
+
 /**
- * Phiếu đầy đủ của các tuần (bảng đánh giá theo khoảng ngày) — một chi nhánh, hoặc mọi chi nhánh
- * trong phạm vi khi `idChiNhanh` rỗng.
+ * Phiếu gần nhất TRƯỚC chuyến (ngày, chuyến) của chi nhánh: cùng ngày chuyến nhỏ hơn, không có thì ngày
+ * trước đó (chuyến lớn nhất). Chỉ có khung dây + lô (để chép sang phiếu mới). `boQuaId` = phiếu đang sửa.
  */
-export async function getDgdvTheoTuanDb(
-  dsTuan: TuanIso[],
+export async function getPhieuChuyenTruocDb(
+  ngay: string,
+  chuyen: number,
+  idChiNhanh: string,
+  boQuaId: string | null
+): Promise<DgdvPhieuDayDu | null> {
+  const cn = toInt8(idChiNhanh);
+  if (cn == null || !ngay) return null;
+  let sel = db
+    .from(TABLE)
+    .select(KHUNG_SELECT)
+    .eq('id_chi_nhanh', cn)
+    .or(`ngay.lt.${ngay},and(ngay.eq.${ngay},chuyen.lt.${Math.max(1, Math.trunc(chuyen) || 1)})`);
+  const bo = toInt8(boQuaId);
+  if (bo != null) sel = sel.neq('id', bo);
+  const { data, error } = await sel
+    .order('ngay', { ascending: false })
+    .order('chuyen', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throwDbError(error, { resource: `${TABLE}.chuyenTruoc` });
+  return data ? mapFull(data as unknown as DbFullRow) : null;
+}
+
+/**
+ * Phiếu đầy đủ (mọi chuyến) có ngày trong khoảng [tu, den] — bảng đánh giá theo khoảng ngày; một chi
+ * nhánh, hoặc mọi chi nhánh trong phạm vi khi `idChiNhanh` rỗng.
+ */
+export async function getDgdvTheoKhoangNgayDb(
+  tu: string,
+  den: string,
   idChiNhanh: string | null,
   viewAll: boolean,
   allowedBranchIds: string[]
 ): Promise<DgdvPhieuDayDu[]> {
-  if (dsTuan.length === 0) return [];
+  if (!tu || !den || den < tu) return [];
   // Chi nhánh lấy từ URL trang in: ngoài phạm vi xem thì coi như không có phiếu.
   if (idChiNhanh && !viewAll && !allowedBranchIds.map(String).includes(idChiNhanh)) return [];
-  let sel = db.from(TABLE).select(FULL_SELECT);
+  let sel = db.from(TABLE).select(FULL_SELECT).gte('ngay', tu).lte('ngay', den);
   sel = idChiNhanh ? sel.eq('id_chi_nhanh', toInt8(idChiNhanh) ?? -1) : locPhamVi(sel, viewAll, allowedBranchIds);
-  sel = sel.or(dsTuan.map((t) => `and(nam.eq.${t.nam},tuan.eq.${t.tuan})`).join(','));
-  const { data, error } = await sel.order('nam').order('tuan').order('id_chi_nhanh');
-  if (error) throwDbError(error, { resource: `${TABLE}.theoTuan` });
+  const { data, error } = await sel.order('ngay').order('id_chi_nhanh').order('chuyen');
+  if (error) throwDbError(error, { resource: `${TABLE}.theoKhoangNgay` });
   return ((data ?? []) as unknown as DbFullRow[]).map(mapFull);
 }
 
 // ---- Thêm / sửa phiếu ----------------------------------------------------------------
 
-/** Lỗi rõ ràng khi (năm, tuần, chi nhánh) đã có phiếu khác — DB cũng chặn bằng UNIQUE. */
-async function kiemTraTrungTuan(nam: number, tuan: number, idChiNhanh: number, boQuaId: number | null): Promise<void> {
-  let sel = db.from(TABLE).select('id').eq('nam', nam).eq('tuan', tuan).eq('id_chi_nhanh', idChiNhanh);
+/** Lỗi rõ ràng khi (ngày, chi nhánh, chuyến) đã có phiếu khác — DB cũng chặn bằng UNIQUE. */
+async function kiemTraTrungChuyen(ngay: string, chuyen: number, idChiNhanh: number, boQuaId: number | null): Promise<void> {
+  let sel = db.from(TABLE).select('id').eq('ngay', ngay).eq('chuyen', chuyen).eq('id_chi_nhanh', idChiNhanh);
   if (boQuaId != null) sel = sel.neq('id', boQuaId);
   const { data, error } = await sel.limit(1);
-  if (error) throwDbError(error, { resource: `${TABLE}.trungTuan` });
-  if ((data ?? []).length > 0) throw new Error(i18n.t('danhGiaDauVao.toast.trungTuan', { tuan, nam }));
+  if (error) throwDbError(error, { resource: `${TABLE}.trungChuyen` });
+  if ((data ?? []).length > 0) {
+    throw new Error(i18n.t('danhGiaDauVao.toast.trungChuyen', { chuyen, ngay: formatYmdToDisplay(ngay) }));
+  }
 }
 
+/**
+ * Lỗi ghi đầu phiếu: đụng UNIQUE (ngay, id_chi_nhanh, chuyen) — hai người lưu cùng lúc, hoặc import chen
+ * vào sau bước kiểm trùng — thì báo đúng câu «trùng chuyến» kèm mã; lỗi khác qua lib/db-errors.
+ */
+function loiGhiPhieu(error: unknown, values: Pick<DgdvFormValues, 'ngay' | 'chuyen'>): Error {
+  const e = error as { code?: string; message?: string; details?: string | null };
+  const chu = `${e?.message ?? ''} ${e?.details ?? ''}`;
+  const trung = e?.code === '23505' && /fp_farm_dgdv_ngay_cn_chuyen_key|\(ngay, id_chi_nhanh, chuyen\)/.test(chu);
+  if (!trung) return new Error(formatDbError(error, { resource: TABLE }));
+  return new Error(
+    `[23505] ${i18n.t('danhGiaDauVao.toast.trungChuyen', { chuyen: values.chuyen, ngay: formatYmdToDisplay(values.ngay) })}`
+  );
+}
+
+/** Dây chỉ ghi tuần thu hoạch — 4 cột ngày do trigger DB tự điền (migration 057). */
 function cotBody(c: DgdvFormValues['cot'][number], idPhieu: number, stt: number) {
   return {
     id_phieu: idPhieu,
     stt,
-    chich_bap_tu: c.chich_bap_tu,
-    chich_bap_den: c.chich_bap_den,
-    thu_hoach_tu: c.thu_hoach_tu,
-    thu_hoach_den: c.thu_hoach_den,
+    th_nam: c.th_nam,
+    th_tuan: c.th_tuan,
     id_mau_1: toInt8(c.id_mau_1),
     id_mau_2: toInt8(c.id_mau_2),
     xe_doi: !!c.xe_doi,
@@ -434,20 +544,20 @@ async function khopBangCon<T extends { id?: string }>(
 export async function createDgdvDb(values: DgdvFormValues): Promise<string> {
   const idChiNhanh = toInt8(values.id_chi_nhanh);
   if (idChiNhanh == null) throw new Error(i18n.t('danhGiaDauVao.validation.branchRequired'));
-  await kiemTraTrungTuan(values.nam, values.tuan, idChiNhanh, null);
+  await kiemTraTrungChuyen(values.ngay, values.chuyen, idChiNhanh, null);
 
   const { data, error } = await db
     .from(TABLE)
     .insert({
-      nam: values.nam,
-      tuan: values.tuan,
+      ngay: values.ngay,
+      chuyen: values.chuyen,
       id_chi_nhanh: idChiNhanh,
       ghi_chu: values.ghi_chu?.trim() || null,
       trang_thai: TRANG_THAI_DGDV.MO,
     })
     .select('id')
     .single();
-  if (error) throw new Error(formatDbError(error, { resource: TABLE }));
+  if (error) throw loiGhiPhieu(error, values);
   const idPhieu = Number((data as { id: Id }).id);
 
   try {
@@ -464,18 +574,19 @@ export async function updateDgdvDb(id: string, values: DgdvFormValues): Promise<
   const idPhieu = toInt8(id);
   const idChiNhanh = toInt8(values.id_chi_nhanh);
   if (idPhieu == null || idChiNhanh == null) throw new Error('Invalid id');
-  await kiemTraTrungTuan(values.nam, values.tuan, idChiNhanh, idPhieu);
+  await kiemTraTrungChuyen(values.ngay, values.chuyen, idChiNhanh, idPhieu);
 
+  // Đổi ngày: trigger DB dời ngày mọi ô / đứt dây của phiếu theo (migration 057).
   const { error } = await db
     .from(TABLE)
     .update({
-      nam: values.nam,
-      tuan: values.tuan,
+      ngay: values.ngay,
+      chuyen: values.chuyen,
       id_chi_nhanh: idChiNhanh,
       ghi_chu: values.ghi_chu?.trim() || null,
     })
     .eq('id', idPhieu);
-  if (error) throw new Error(formatDbError(error, { resource: TABLE }));
+  if (error) throw loiGhiPhieu(error, values);
 
   await khopBangCon(TABLE_COT, idPhieu, values.cot, cotBody);
   await khopBangCon(TABLE_LO, idPhieu, await ganIdLo(idChiNhanh, values.lo), loBody);
@@ -573,7 +684,7 @@ export interface DgdvImportKetQua {
   so_day_moi: number;
 }
 
-/** Ghi các dòng đã parse qua RPC `rpc_dgdv_import` (migration 056) — một transaction, lỗi là không ghi gì. */
+/** Ghi các dòng đã parse qua RPC `rpc_dgdv_import` (migration 057, theo chuyến) — một transaction, lỗi là không ghi gì. */
 export async function importDongDgdvDb(
   rows: DongImportRpc[],
   thayThe: boolean,

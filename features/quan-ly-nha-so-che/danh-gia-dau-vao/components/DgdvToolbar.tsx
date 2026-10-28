@@ -1,14 +1,22 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Building2, Calendar, Download, Hash, Plus, Settings, ToggleLeft, Upload } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
+import DateRangePicker, { type DateRangeValue } from '../../../../components/ui/DateRangePicker';
+import { MobileFilterField } from '../../../../components/ui/MobileFilterSheet';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
+import { getDateRangeFromPreset, getPresetFromDates } from '../../../../lib/date-presets';
 import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
 import type { DgdvTomTat } from '../services/danh-gia-dau-vao-db.service';
 import { useDanhGiaDauVaoStore } from '../store/useDanhGiaDauVaoStore';
+import { khoaTuanFarm, nhanTuanFarm } from '../core/tuan';
+
+const KY_CUSTOM = 'custom';
+/** Tuần ở preset = T2–CN, trùng tuần farm. */
+const KY_PRESET_IDS = ['all', 'thisWeek', 'lastWeek', 'thisMonth', 'lastMonth', KY_CUSTOM] as const;
 
 interface Props {
   /** Tóm tắt TOÀN BỘ phiếu trong phạm vi (không phải trang đang xem) — chip đếm trên toàn bộ. */
@@ -44,6 +52,7 @@ const DgdvToolbar: React.FC<Props> = ({
   const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useDanhGiaDauVaoStore);
   const filters = useDanhGiaDauVaoStore((s) => s.filters);
   const setFilter = useDanhGiaDauVaoStore((s) => s.setFilter);
+  const resetFilters = useDanhGiaDauVaoStore((s) => s.resetFilters);
   const clearSelection = useDanhGiaDauVaoStore((s) => s.clearSelection);
   const columns = useDanhGiaDauVaoStore((s) => s.columns);
   const toggleColumn = useDanhGiaDauVaoStore((s) => s.toggleColumn);
@@ -51,10 +60,28 @@ const DgdvToolbar: React.FC<Props> = ({
   const resetColumns = useDanhGiaDauVaoStore((s) => s.resetColumns);
   const resetColumnWidths = useDanhGiaDauVaoStore((s) => s.resetColumnWidths);
 
+  // Preset giữ ở state cục bộ (như ky-loc-chip của Bảo trì): suy ngược từ ngày thì bấm «Tuỳ chọn» lúc
+  // chưa có ngày sẽ bị hiểu thành «Tất cả» và ô chọn khoảng biến mất.
+  const [preset, setPreset] = useState(() => getPresetFromDates(filters.tu_ngay, filters.den_ngay));
+  const kyPresets = useMemo(() => KY_PRESET_IDS.map((id) => ({ id, label: t(`danhGiaDauVao.toolbar.preset.${id}`) })), [t]);
+  const coKy = !!(filters.tu_ngay || filters.den_ngay);
+  const kyValue = useMemo(
+    () => ({ preset: !coKy && preset !== KY_CUSTOM ? 'all' : preset, customStart: filters.tu_ngay, customEnd: filters.den_ngay }),
+    [coKy, preset, filters.tu_ngay, filters.den_ngay]
+  );
+  const onKyChange = (v: DateRangeValue) => {
+    setPreset(v.preset);
+    const r = v.preset === KY_CUSTOM ? { dateFrom: v.customStart, dateTo: v.customEnd } : getDateRangeFromPreset(v.preset);
+    setFilter('tu_ngay', r.dateFrom);
+    setFilter('den_ngay', r.dateTo);
+  };
+
   const filterGroups = useMemo(() => {
     const dem = (fn: (d: DgdvTomTat) => boolean) => data.filter(fn).length;
-    const namSet = [...new Set(data.map((d) => d.nam))].sort((a, b) => b - a);
-    const tuanSet = [...new Set(data.map((d) => d.tuan))].sort((a, b) => b - a);
+    const tuanSet = new Map<string, { nam: number; tuan: number }>();
+    for (const d of data) tuanSet.set(khoaTuanFarm(d), { nam: d.nam, tuan: d.tuan });
+    const dsTuan = [...tuanSet.entries()].sort((a, b) => b[0].localeCompare(a[0]));
+    const nhieuNam = new Set(data.map((d) => d.nam)).size > 1;
     const idsCo = new Set(data.map((d) => d.id_chi_nhanh));
     return [
       {
@@ -68,24 +95,17 @@ const DgdvToolbar: React.FC<Props> = ({
         onChange: (v: string[]) => setFilter('id_chi_nhanh', v),
       },
       {
-        key: 'nam',
-        label: t('danhGiaDauVao.toolbar.filterNam'),
-        icon: Calendar,
-        options: namSet.map((n) => ({ value: String(n), label: String(n), count: dem((d) => d.nam === n) })),
-        value: filters.nam ?? [],
-        onChange: (v: string[]) => setFilter('nam', v),
-      },
-      {
-        key: 'tuan',
+        key: 'tuan_farm',
         label: t('danhGiaDauVao.toolbar.filterTuan'),
         icon: Hash,
-        options: tuanSet.map((n) => ({
-          value: String(n),
-          label: t('danhGiaDauVao.luoi.tuan', { tuan: n }),
-          count: dem((d) => d.tuan === n),
+        options: dsTuan.map(([k, tf]) => ({
+          value: k,
+          label: nhanTuanFarm(tf),
+          subLabel: nhieuNam ? String(tf.nam) : undefined,
+          count: dem((d) => d.nam === tf.nam && d.tuan === tf.tuan),
         })),
-        value: filters.tuan ?? [],
-        onChange: (v: string[]) => setFilter('tuan', v),
+        value: filters.tuan_farm ?? [],
+        onChange: (v: string[]) => setFilter('tuan_farm', v),
       },
       {
         key: 'trang_thai',
@@ -100,24 +120,43 @@ const DgdvToolbar: React.FC<Props> = ({
         onChange: (v: string[]) => setFilter('trang_thai', v),
       },
     ];
-  }, [t, data, branches, filters.id_chi_nhanh, filters.nam, filters.tuan, filters.trang_thai, setFilter]);
+  }, [t, data, branches, filters.id_chi_nhanh, filters.tuan_farm, filters.trang_thai, setFilter]);
 
-  const chipWidths = ['sm:w-[200px]', 'sm:w-[110px]', 'sm:w-[120px]', 'sm:w-[140px]'];
-  const filterItems: FilterChipItem[] = filterGroups.map((g, i) => ({ kind: 'group', group: g, className: `w-full ${chipWidths[i]}` }));
+  const kyPicker = (inline: boolean) => (
+    <DateRangePicker
+      inline={inline}
+      presets={kyPresets}
+      value={kyValue}
+      onChange={onKyChange}
+      placeholder={inline ? undefined : t('danhGiaDauVao.toolbar.filterNgay')}
+      customPresetId={KY_CUSTOM}
+      className={inline ? undefined : 'w-full sm:w-auto shrink-0'}
+    />
+  );
+  const filterItems: FilterChipItem[] = [
+    { kind: 'custom', key: 'ky', node: kyPicker(false) },
+    { kind: 'group', group: filterGroups[1], className: 'w-full sm:w-[200px]' },
+    { kind: 'group', group: filterGroups[0], className: 'w-full sm:w-[200px]' },
+    { kind: 'group', group: filterGroups[2], className: 'w-full sm:w-[140px]' },
+  ];
+  // Điện thoại không có hàng chip → chọn khoảng ngày hiện thẳng trong bảng lọc.
+  const mobileFilterExtra = (
+    <MobileFilterField label={t('danhGiaDauVao.toolbar.filterNgay')} icon={Calendar} active={coKy}>
+      {kyPicker(true)}
+    </MobileFilterField>
+  );
 
   const activeFilterCount =
     (searchInput.trim() ? 1 : 0) +
     (filters.id_chi_nhanh?.length ?? 0) +
-    (filters.nam?.length ?? 0) +
-    (filters.tuan?.length ?? 0) +
-    (filters.trang_thai?.length ?? 0);
+    (filters.tuan_farm?.length ?? 0) +
+    (filters.trang_thai?.length ?? 0) +
+    (coKy ? 1 : 0);
 
   const handleClearAllFilters = () => {
     commitSearchTerm('');
-    setFilter('id_chi_nhanh', []);
-    setFilter('nam', []);
-    setFilter('tuan', []);
-    setFilter('trang_thai', []);
+    setPreset('all');
+    resetFilters();
   };
 
   const mobileActions = useMemo(
@@ -175,6 +214,8 @@ const DgdvToolbar: React.FC<Props> = ({
       actions={renderActions}
       filters={<ResponsiveFilterChips items={filterItems} />}
       filterGroups={filterGroups}
+      mobileFilterExtra={mobileFilterExtra}
+      mobileFilterExtraCount={coKy ? 1 : 0}
       mobileActions={mobileActions}
       onAdd={canCreate ? onAdd : undefined}
       showBack

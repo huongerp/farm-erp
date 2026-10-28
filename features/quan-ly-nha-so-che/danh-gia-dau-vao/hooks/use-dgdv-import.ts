@@ -17,21 +17,18 @@ const BAT_BUOC = new Set<CotImportDgdv>(['ngay', 'chi_nhanh', 'lo', 'mau_1', 'so
 const MODES: ImportMode[] = ['create', 'upsert'];
 
 /**
- * Wiring Import Excel «Chi tiết đánh giá» (khuôn `LazyImportDialog`). `coDinh` có → import vào một phiếu
- * (file mẫu bỏ cột Chi nhánh, chỉ nhận ngày trong tuần của phiếu). Chế độ: `create` = cộng thêm dòng,
- * `upsert` = thay số các ngày có trong file. Parse ở utils/import-dong, ghi ở RPC `rpc_dgdv_import`.
+ * Cấu hình file mẫu import «Chi tiết đánh giá»: cột, dòng ví dụ, ghi chú, sheet tra cứu. Dùng chung cho
+ * dialog import và file XUẤT dạng dòng (utils/export-chi-tiet) để hai bên luôn cùng nhãn cột.
+ * `coDinh` có → bản trong một phiếu (bỏ cột Chuyến + Chi nhánh).
  */
-export function useDgdvImport(coDinh?: (PhieuCoDinh & { id: string }) | null) {
+export function useDgdvMauImport(coDinh?: PhieuCoDinh | null) {
   const { t } = useTranslation();
   const tr = useCallback((k: string, o?: Record<string, unknown>) => t(`danhGiaDauVao.import.${k}`, o ?? {}), [t]);
-  const qc = useQueryClient();
-  const [showImport, setShowImport] = useState(false);
-  const [importErrors, setImportErrors] = useState<ImportErrorRow[]>([]);
   const { data: branches = [] } = useBranches();
   const { data: dsMau = [] } = useMauDay();
   const { data: dsLyDo = [] } = useLyDoDgdv();
 
-  const cot = useMemo(() => COT_IMPORT_DGDV.filter((k) => !(coDinh && k === 'chi_nhanh')), [coDinh]);
+  const cot = useMemo(() => COT_IMPORT_DGDV.filter((k) => !(coDinh && (k === 'chi_nhanh' || k === 'chuyen'))), [coDinh]);
   const chiNhanh = useMemo(
     () =>
       branches
@@ -46,17 +43,20 @@ export function useDgdvImport(coDinh?: (PhieuCoDinh & { id: string }) | null) {
   );
 
   const sampleRows = useMemo<ImportSampleRow[]>(() => {
-    const ngay = formatYmdToDisplay(getTodayISO());
+    const ngay = formatYmdToDisplay(coDinh?.ngay ?? getTodayISO());
     const cn = chiNhanh[0]?.ma ?? 'FP1';
-    // Theo file giấy: lô A3-3, dây «Xanh lá – Đen» tuần 42 nhiều dòng (mỗi dòng một đánh giá), đứt dây riêng.
+    // Theo file giấy: lô A3-3, dây «Xanh lá – Đen» tuần 42 nhiều dòng (mỗi dòng một đánh giá), đứt dây riêng;
+    // dòng cuối là chuyến 2 cùng ngày.
     const mau = [
-      [ngay, cn, 'A3-3', 'A.Hâu', 'Xanh lá', 'Đen', '', 42, 10, 'Thiếu lá', '', ''],
-      [ngay, cn, 'A3-3', 'A.Hâu', 'Xanh lá', 'Đen', '', 42, 15, 'Chín xanh', 2, 'Chín bệnh'],
-      [ngay, cn, 'A3-3', 'A.Hâu', 'Xanh lá', 'Đen', '', 42, 60, '', '', ''],
-      [ngay, cn, 'A3-3', 'A.Hâu', 'Đỏ', 'Xanh dương', 'x', 42, 30, '', '', ''],
-      [ngay, cn, 'A3-3', 'A.Hâu', GIA_TRI_DUT_DAY, '', '', '', 9, '', '', ''],
+      [ngay, 1, cn, 'A3-3', 'A.Hâu', 'Xanh lá', 'Đen', '', 42, 10, 'Thiếu lá', '', ''],
+      [ngay, 1, cn, 'A3-3', 'A.Hâu', 'Xanh lá', 'Đen', '', 42, 15, 'Chín xanh', 2, 'Chín bệnh'],
+      [ngay, 1, cn, 'A3-3', 'A.Hâu', 'Xanh lá', 'Đen', '', 42, 60, '', '', ''],
+      [ngay, 1, cn, 'A3-3', 'A.Hâu', 'Đỏ', 'Xanh dương', 'x', 42, 30, '', '', ''],
+      [ngay, 1, cn, 'A3-3', 'A.Hâu', GIA_TRI_DUT_DAY, '', '', '', 9, '', '', ''],
+      [ngay, 2, cn, 'A3-3', 'A.Hâu', 'Xanh lá', 'Đen', '', 42, 25, '', '', ''],
     ];
-    return coDinh ? mau.map((r) => r.filter((_, i) => i !== 1)) : mau;
+    // Trong phiếu: bỏ cột Chuyến (1) + Chi nhánh (2), bỏ dòng chuyến khác.
+    return coDinh ? mau.slice(0, 5).map((r) => r.filter((_, i) => i !== 1 && i !== 2)) : mau;
   }, [chiNhanh, coDinh]);
 
   const guideNotes = useMemo(
@@ -65,7 +65,9 @@ export function useDgdvImport(coDinh?: (PhieuCoDinh & { id: string }) | null) {
       tr('guide2', { dutDay: GIA_TRI_DUT_DAY }),
       tr('guide3'),
       tr('guide4'),
-      coDinh ? tr('guidePhieu', { tuan: coDinh.tuan, nam: coDinh.nam }) : tr('guideDanhSach'),
+      coDinh
+        ? tr('guidePhieu', { chuyen: coDinh.chuyen, ngay: formatYmdToDisplay(coDinh.ngay) })
+        : tr('guideDanhSach'),
     ],
     [tr, coDinh]
   );
@@ -86,6 +88,20 @@ export function useDgdvImport(coDinh?: (PhieuCoDinh & { id: string }) | null) {
     ],
     [tr, coDinh, chiNhanh, dsMau, dsLyDo]
   );
+
+  return { tr, chiNhanh, dsMau, importColumns, sampleRows, guideNotes, referenceSheets };
+}
+
+/**
+ * Wiring Import Excel «Chi tiết đánh giá» (khuôn `LazyImportDialog`). `coDinh` có → import vào một phiếu
+ * (file mẫu bỏ cột Chuyến + Chi nhánh, chỉ nhận đúng ngày của phiếu). Chế độ: `create` = cộng thêm dòng,
+ * `upsert` = thay số các (ngày, chuyến) có trong file. Parse ở utils/import-dong, ghi ở RPC `rpc_dgdv_import`.
+ */
+export function useDgdvImport(coDinh?: (PhieuCoDinh & { id: string }) | null) {
+  const qc = useQueryClient();
+  const [showImport, setShowImport] = useState(false);
+  const [importErrors, setImportErrors] = useState<ImportErrorRow[]>([]);
+  const { tr, chiNhanh, dsMau, importColumns, sampleRows, guideNotes, referenceSheets } = useDgdvMauImport(coDinh);
 
   const handleImport = useCallback(
     async (rows: Record<string, unknown>[], options: ImportOptions): Promise<ImportSummary> => {
@@ -131,7 +147,7 @@ export function useDgdvImport(coDinh?: (PhieuCoDinh & { id: string }) | null) {
         create: { label: tr('modeThem'), desc: tr('modeThemDesc') },
         upsert: { label: tr('modeThayThe'), desc: tr('modeThayTheDesc') },
       },
-      templateFileName: coDinh ? tr('fileMauPhieu', { tuan: coDinh.tuan, nam: coDinh.nam }) : tr('fileMau'),
+      templateFileName: coDinh ? tr('fileMauPhieu', { chuyen: coDinh.chuyen, ngay: coDinh.ngay }) : tr('fileMau'),
     },
   };
 }
