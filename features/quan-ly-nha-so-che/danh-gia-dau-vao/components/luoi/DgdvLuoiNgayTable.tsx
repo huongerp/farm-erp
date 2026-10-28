@@ -4,17 +4,20 @@
  * Dòng tổ trưởng (nền xanh nhạt) tự cộng; mỗi lô nhiều dòng. Mọi số tổng lấy từ mô hình
  * `dungLuoiNgay` (core/bang-tinh) — component không tự cộng. Dùng chung cho tab Bảng đánh giá và Detail.
  */
-import React, { useId, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus } from 'lucide-react';
 import { cn, formatNumberVN, formatYmdToDisplay } from '../../../../../lib/utils';
 import type { DgdvCotHienThi, DgdvLoNgay, DgdvLuoiNgay } from '../../core/bang-tinh';
-import type { FarmDgdvDong, VarDgdvLyDo } from '../../core/types';
+import type { FarmDgdvDong, LoaiLyDoDgdv, VarDgdvLyDo } from '../../core/types';
 import { LOAI_LY_DO_DGDV } from '../../core/types';
+import { tenKhongTrung } from '../../core/chuan-hoa-ten';
 import { styleTieuDeCot } from '../../utils/mau-day';
 import { khoaCanhBao, soNguyenKhongAm, type DgdvGiaTriO } from '../../utils/cap-nhat-luoi';
 import { useLuuDutDay, useLuuGhiChuLo, useLuuODgdv } from '../../hooks/use-danh-gia-dau-vao';
 import { useTuLuu } from '../../hooks/use-tu-luu';
+import { useThemLyDoNeuMoi } from '../../hooks/use-danh-muc-dgdv';
+import OGoiY from './OGoiY';
 
 interface Props {
   luoi: DgdvLuoiNgay;
@@ -63,9 +66,10 @@ const OCotDay: React.FC<{
   sttDong: number;
   editable: boolean;
   canhBao: boolean;
-  dlDanhGia: string;
-  dlLoi: string;
-}> = ({ o, idPhieuLo, idCot, ngay, sttDong, editable, canhBao, dlDanhGia, dlLoi }) => {
+  goiYDanhGia: readonly string[];
+  goiYLoi: readonly string[];
+  themLyDo: (ten: string | null, loai: LoaiLyDoDgdv) => void;
+}> = ({ o, idPhieuLo, idCot, ngay, sttDong, editable, canhBao, goiYDanhGia, goiYLoi, themLyDo }) => {
   const { t } = useTranslation();
   const luuO = useLuuODgdv();
   const goc = useMemo(() => gtTuO(o), [o]);
@@ -103,13 +107,16 @@ const OCotDay: React.FC<{
         />
       </td>
       <td className={cn(TD, 'p-0')}>
-        <input
+        <OGoiY
           className={INPUT}
-          list={dlDanhGia}
+          goiY={goiYDanhGia}
           value={giaTri.dg}
           maxLength={200}
-          onChange={(e) => doi('dg', e.target.value)}
-          onBlur={flush}
+          onChange={(v) => doi('dg', v)}
+          onRoiO={(v) => {
+            flush();
+            themLyDo(v.trim() || null, LOAI_LY_DO_DGDV.DANH_GIA);
+          }}
           aria-label={t('danhGiaDauVao.luoi.colDanhGia')}
         />
       </td>
@@ -124,13 +131,16 @@ const OCotDay: React.FC<{
         />
       </td>
       <td className={cn(TD, 'p-0')}>
-        <input
+        <OGoiY
           className={INPUT}
-          list={dlLoi}
+          goiY={goiYLoi}
           value={giaTri.ld}
           maxLength={200}
-          onChange={(e) => doi('ld', e.target.value)}
-          onBlur={flush}
+          onChange={(v) => doi('ld', v)}
+          onRoiO={(v) => {
+            flush();
+            themLyDo(v.trim() || null, LOAI_LY_DO_DGDV.LOI);
+          }}
           aria-label={t('danhGiaDauVao.luoi.colLyDoLoi')}
         />
       </td>
@@ -197,9 +207,12 @@ const TieuDeCot: React.FC<{ cot: DgdvCotHienThi }> = ({ cot }) => (
 
 const DgdvLuoiNgayTable: React.FC<Props> = ({ luoi, editable, canhBao, dsLyDo, anDauKhoi }) => {
   const { t } = useTranslation();
-  const uid = useId();
-  const dlDanhGia = `${uid}-dg`;
-  const dlLoi = `${uid}-loi`;
+  const themLyDo = useThemLyDoNeuMoi();
+  const goiYDanhGia = useMemo(
+    () => tenKhongTrung(dsLyDo.filter((x) => x.loai === LOAI_LY_DO_DGDV.DANH_GIA).map((x) => x.ten)),
+    [dsLyDo]
+  );
+  const goiYLoi = useMemo(() => tenKhongTrung(dsLyDo.filter((x) => x.loai === LOAI_LY_DO_DGDV.LOI).map((x) => x.ten)), [dsLyDo]);
   /** Số dòng mở thêm theo lô (nút «Thêm dòng») — chỉ ở giao diện, dòng có số mới thành bản ghi. */
   const [soDongMo, setSoDongMo] = useState<Record<string, number>>({});
 
@@ -230,25 +243,6 @@ const DgdvLuoiNgayTable: React.FC<Props> = ({ luoi, editable, canhBao, dsLyDo, a
           </span>
           {luoi.ten_chi_nhanh && <span className="text-muted-foreground font-normal">· {luoi.ten_chi_nhanh}</span>}
         </div>
-      )}
-
-      {editable && (
-        <>
-          <datalist id={dlDanhGia}>
-            {dsLyDo
-              .filter((x) => x.loai === LOAI_LY_DO_DGDV.DANH_GIA)
-              .map((x) => (
-                <option key={x.id} value={x.ten} />
-              ))}
-          </datalist>
-          <datalist id={dlLoi}>
-            {dsLyDo
-              .filter((x) => x.loai === LOAI_LY_DO_DGDV.LOI)
-              .map((x) => (
-                <option key={x.id} value={x.ten} />
-              ))}
-          </datalist>
-        </>
       )}
 
       {soCot === 0 && <p className="text-xs text-amber-700 dark:text-amber-400 m-0">{t('danhGiaDauVao.luoi.chuaCoCot')}</p>}
@@ -326,18 +320,21 @@ const DgdvLuoiNgayTable: React.FC<Props> = ({ luoi, editable, canhBao, dsLyDo, a
                         {i === 0 && (
                           <>
                             <td rowSpan={soDong} className={cn(TD, W_LO, VANG, 'sticky left-0 z-10 align-top')}>
-                              <div className="font-medium break-words">{lo.ten_lo ?? '—'}</div>
+                              <div className="flex items-start justify-between gap-1">
+                                <span className="font-medium break-words min-w-0">{lo.ten_lo ?? '—'}</span>
+                                {editable && soCot > 0 && (
+                                  <button
+                                    type="button"
+                                    className="shrink-0 inline-flex items-center gap-0.5 text-caption text-primary hover:underline"
+                                    onClick={() => setSoDongMo((s) => ({ ...s, [lo.id_phieu_lo]: soDong + 1 }))}
+                                    title={t('danhGiaDauVao.luoi.themDong')}
+                                  >
+                                    <Plus size={12} />
+                                    {t('danhGiaDauVao.luoi.dong')}
+                                  </button>
+                                )}
+                              </div>
                               <ODutDay lo={lo} ngay={luoi.ngay} editable={editable} />
-                              {editable && soCot > 0 && (
-                                <button
-                                  type="button"
-                                  className="mt-0.5 inline-flex items-center gap-0.5 text-caption text-primary hover:underline"
-                                  onClick={() => setSoDongMo((s) => ({ ...s, [lo.id_phieu_lo]: soDong + 1 }))}
-                                >
-                                  <Plus size={12} />
-                                  {t('danhGiaDauVao.luoi.themDong')}
-                                </button>
-                              )}
                             </td>
                             <td
                               rowSpan={soDong}
@@ -357,8 +354,9 @@ const DgdvLuoiNgayTable: React.FC<Props> = ({ luoi, editable, canhBao, dsLyDo, a
                             sttDong={stt}
                             editable={editable}
                             canhBao={canhBao.has(khoaCanhBao(lo.id_phieu_lo, c.id, luoi.ngay, stt))}
-                            dlDanhGia={dlDanhGia}
-                            dlLoi={dlLoi}
+                            goiYDanhGia={goiYDanhGia}
+                            goiYLoi={goiYLoi}
+                            themLyDo={themLyDo}
                           />
                         ))}
                         {i === 0 && (

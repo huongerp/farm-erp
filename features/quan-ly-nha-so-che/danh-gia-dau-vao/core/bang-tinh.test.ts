@@ -60,13 +60,15 @@ function o(idLo: string, idCot: string, so_luong: number, extra: Partial<FarmDgd
   };
 }
 
+/** nv1b = cùng người với nv1 nhưng gõ khác hoa thường / khoảng trắng. */
+const TO_TRUONG: Record<string, string> = { nv1: 'Tổ trưởng A', nv1b: ' tổ trưởng  a ', nv2: 'Tổ trưởng B' };
+
 function lo(id: string, ten: string, stt: number, toTruong: string, dutDay: number, dong: FarmDgdvDong[]): DgdvLoDayDu {
   return {
     id,
     id_phieu: 'p1',
     id_lo: `lo-${id}`,
-    id_to_truong: toTruong,
-    ten_to_truong: toTruong === 'nv1' ? 'Tổ trưởng A' : 'Tổ trưởng B',
+    to_truong: TO_TRUONG[toTruong],
     ghi_chu: `ghi chú ${ten}`,
     stt,
     ten_lo: ten,
@@ -100,7 +102,7 @@ function phieuMau(): DgdvPhieuDayDu {
     cot: Array.from({ length: 9 }, (_, i) => cot(i + 1)),
     // stt xen kẽ tổ trưởng để thử gom nhóm
     lo: [
-      lo('L4', 'A3-3', 4, 'nv1', 1, [o('L4', 'c1', 24)]),
+      lo('L4', 'A3-3', 4, 'nv1b', 1, [o('L4', 'c1', 24)]),
       a32,
       lo('L2', 'a2-3', 2, 'nv2', 2, [o('L2', 'c2', 41)]),
       lo('L3', 'a2-4', 3, 'nv2', 0, [o('L3', 'c3', 50, { so_luong_loi: 1 })]),
@@ -134,7 +136,7 @@ describe('tổng theo ngày (khớp fn_dgdv_tong_ngay)', () => {
     expect(t.c9).toBe(1);
   });
 
-  it('dòng tổ trưởng gom lô theo id_to_truong, xếp theo stt', () => {
+  it('dòng tổ trưởng gom lô theo tên tổ trưởng (không phân biệt hoa thường), xếp theo stt', () => {
     const g = tongToTruongNgay(phieuMau(), NGAY);
     expect(g.map((x) => [x.ten_to_truong, x.ids_phieu_lo, x.slBuong, x.soLuongLoi])).toEqual([
       ['Tổ trưởng A', ['L1', 'L4'], 307, 2],
@@ -183,10 +185,10 @@ describe('sao chép sang tuần mới', () => {
     const f = dungPhieuSaoChep({ ...phieuMau(), tuan: 53 });
     expect([f.nam, f.tuan, f.id_chi_nhanh, f.ghi_chu]).toEqual([2027, 1, 'cn1', null]);
     expect(f.lo).toEqual([
-      { id_lo: 'lo-L1', id_to_truong: 'nv1', ghi_chu: 'ghi chú A3-2' },
-      { id_lo: 'lo-L2', id_to_truong: 'nv2', ghi_chu: 'ghi chú a2-3' },
-      { id_lo: 'lo-L3', id_to_truong: 'nv2', ghi_chu: 'ghi chú a2-4' },
-      { id_lo: 'lo-L4', id_to_truong: 'nv1', ghi_chu: 'ghi chú A3-3' },
+      { ten_lo: 'A3-2', to_truong: 'Tổ trưởng A', ghi_chu: 'ghi chú A3-2' },
+      { ten_lo: 'a2-3', to_truong: 'Tổ trưởng B', ghi_chu: 'ghi chú a2-3' },
+      { ten_lo: 'a2-4', to_truong: 'Tổ trưởng B', ghi_chu: 'ghi chú a2-4' },
+      { ten_lo: 'A3-3', to_truong: ' tổ trưởng  a ', ghi_chu: 'ghi chú A3-3' },
     ]);
     expect(f.cot).toHaveLength(9);
     expect(f.cot[0]).toEqual({

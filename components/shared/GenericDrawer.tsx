@@ -44,6 +44,11 @@ interface GenericDrawerProps {
    * thay vì đóng ngay — tránh mất dữ liệu đang nhập.
    */
   isDirty?: boolean;
+  /**
+   * Nội dung trải hết bề rộng drawer thay vì gói trong `max-w-4xl` ở giữa. Dùng cho drawer rộng
+   * (DRAWER_WIDTH_WIDE) chứa bảng / lưới nhiều cột — không thì hai bên thừa khoảng trống lớn.
+   */
+  fullWidthContent?: boolean;
 }
 
 const GenericDrawer: React.FC<GenericDrawerProps> = ({
@@ -57,6 +62,7 @@ const GenericDrawer: React.FC<GenericDrawerProps> = ({
   variant = 'drawer',
   stackLevel = 0,
   isDirty = false,
+  fullWidthContent = false,
 }) => {
   const { t } = useTranslation();
   const confirm = useConfirmStore((s) => s.confirm);
@@ -196,7 +202,7 @@ const GenericDrawer: React.FC<GenericDrawerProps> = ({
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto bg-muted/50 p-4 sm:p-5 custom-scrollbar">
-        <div className="max-w-4xl mx-auto">
+        <div className={fullWidthContent ? 'w-full' : 'max-w-4xl mx-auto'}>
           {children}
         </div>
       </div>

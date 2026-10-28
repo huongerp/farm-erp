@@ -17,6 +17,7 @@ import type {
   VarMauDay,
 } from './types';
 import { cacNgayTrongKhoang, congNgay, ngayThuocTuan, soSanhTuan, tuanIsoCuaNgay, tuanKeTiep } from './tuan';
+import { gonTen, khoaTen } from './chuan-hoa-ten';
 
 // ---- Tổng theo ô / lô / ngày ----------------------------------------------------
 
@@ -93,7 +94,6 @@ function congDongVaoCot(kq: Record<string, number>, dong: FarmDgdvDong[], ngay: 
 }
 
 export interface DgdvTongToTruongNgay extends DgdvTongLoNgay {
-  id_to_truong: string | null;
   ten_to_truong: string | null;
   /** id fp_farm_dgdv_lo theo stt */
   ids_phieu_lo: string[];
@@ -105,11 +105,11 @@ function loTheoStt<T extends { stt: number; id: string }>(ds: T[]): T[] {
   return [...ds].sort((a, b) => a.stt - b.stt || a.id.localeCompare(b.id));
 }
 
-/** Gom lô theo id_to_truong (null là một nhóm riêng); nhóm xếp theo lô có stt nhỏ nhất. */
+/** Gom lô theo tên tổ trưởng (khoaTen — không phân biệt hoa thường; trống là một nhóm riêng); nhóm xếp theo lô có stt nhỏ nhất. */
 function gomTheoToTruong(dsLo: DgdvLoDayDu[]): DgdvLoDayDu[][] {
   const nhom = new Map<string, DgdvLoDayDu[]>();
   for (const lo of loTheoStt(dsLo)) {
-    const k = lo.id_to_truong ?? '';
+    const k = khoaTen(lo.to_truong);
     const ds = nhom.get(k);
     if (ds) ds.push(lo);
     else nhom.set(k, [lo]);
@@ -133,8 +133,7 @@ export function tongToTruongNgay(phieu: Pick<DgdvPhieuDayDu, 'cot' | 'lo'>, ngay
     }
     return {
       ...t,
-      id_to_truong: dsLo[0].id_to_truong,
-      ten_to_truong: dsLo.find((l) => l.ten_to_truong)?.ten_to_truong ?? null,
+      ten_to_truong: gonTen(dsLo.find((l) => gonTen(l.to_truong))?.to_truong),
       ids_phieu_lo: dsLo.map((l) => l.id),
       tongTheoCot,
     };
@@ -367,8 +366,8 @@ export function dungPhieuSaoChep(phieu: DgdvPhieuDayDu): DgdvFormValues {
       xe_doi: c.xe_doi,
     })),
     lo: loTheoStt(phieu.lo).map((l) => ({
-      id_lo: l.id_lo,
-      id_to_truong: l.id_to_truong,
+      ten_lo: l.ten_lo ?? '',
+      to_truong: l.to_truong,
       ghi_chu: l.ghi_chu,
     })),
   };

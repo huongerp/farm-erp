@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import i18n from '../../../../lib/i18n';
 import { soTuanIsoTrongNam } from './tuan';
+import { khoaTen } from './chuan-hoa-ten';
 
 const reqMsg = (key: string) => i18n.t(key);
 
@@ -55,11 +56,16 @@ export const dgdvCotFormSchema = z
     }
   });
 
+/** Chữ gõ tay tuỳ chọn: trim, rỗng → null. */
+const chuTuyChon = (max: number) => z.preprocess(rongThanhNull, z.string().max(max).nullable());
+
 export const dgdvLoFormSchema = z.object({
   /** id dòng fp_farm_dgdv_lo đã lưu (sửa phiếu); bỏ trống = lô mới. */
   id: z.string().optional(),
-  id_lo: idBatBuoc('danhGiaDauVao.validation.loRequired'),
-  id_to_truong: idTuyChon,
+  /** Tên lô: chọn lô có sẵn của chi nhánh hoặc gõ tên mới — lúc lưu, tên chưa có sẽ thành lô mới. */
+  ten_lo: z.string().trim().min(1, reqMsg('danhGiaDauVao.validation.loRequired')).max(200),
+  /** Tổ trưởng gõ tay. */
+  to_truong: chuTuyChon(200),
   ghi_chu: ghiChuTuyChon(2000),
 });
 
@@ -79,11 +85,12 @@ export const dgdvFormSchema = z
     }
     const daGap = new Set<string>();
     f.lo.forEach((l, i) => {
-      if (!l.id_lo) return;
-      if (daGap.has(l.id_lo)) {
-        ctx.addIssue({ code: 'custom', path: ['lo', i, 'id_lo'], message: reqMsg('danhGiaDauVao.validation.loTrung') });
+      const k = khoaTen(l.ten_lo);
+      if (!k) return;
+      if (daGap.has(k)) {
+        ctx.addIssue({ code: 'custom', path: ['lo', i, 'ten_lo'], message: reqMsg('danhGiaDauVao.validation.loTrung') });
       }
-      daGap.add(l.id_lo);
+      daGap.add(k);
     });
   });
 
@@ -104,7 +111,7 @@ export const mauDayFormSchema = z.object({
 export const loThuHoachFormSchema = z.object({
   ten_lo: z.string().trim().min(1, reqMsg('danhGiaDauVao.validation.tenRequired')).max(200),
   id_chi_nhanh: idBatBuoc('danhGiaDauVao.validation.branchRequired'),
-  id_to_truong: idTuyChon,
+  to_truong: chuTuyChon(200),
   ghi_chu: ghiChuTuyChon(2000),
   thu_tu: z.coerce.number().int().min(0).default(0),
   dang_dung: z.boolean().default(true),

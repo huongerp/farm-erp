@@ -18,12 +18,14 @@ import type {
   TuanIso,
 } from '../core/types';
 import type { DgdvFormValues } from '../core/schema';
+import { gonTen, khoaTen } from '../core/chuan-hoa-ten';
 
 const TABLE = 'fp_farm_dgdv';
 const TABLE_COT = 'fp_farm_dgdv_cot';
 const TABLE_LO = 'fp_farm_dgdv_lo';
 const TABLE_LO_NGAY = 'fp_farm_dgdv_lo_ngay';
 const TABLE_DONG = 'fp_farm_dgdv_dong';
+const T_DM_LO = 'fp_var_lo_thu_hoach';
 
 const PHIEU_COLUMNS = 'id,nam,tuan,id_chi_nhanh,ghi_chu,trang_thai,id_nguoi_tao,tg_tao,tg_cap_nhat';
 const COT_COLUMNS = 'id,id_phieu,stt,chich_bap_tu,chich_bap_den,thu_hoach_tu,thu_hoach_den,id_mau_1,id_mau_2,xe_doi';
@@ -39,7 +41,7 @@ const LIST_SELECT =
 const FULL_SELECT =
   `${PHIEU_COLUMNS},chi_nhanh:fp_var_chi_nhanh(ten_chi_nhanh),` +
   `${TABLE_COT}(${COT_COLUMNS}),` +
-  `${TABLE_LO}(id,id_phieu,id_lo,id_to_truong,ghi_chu,stt,lo:fp_var_lo_thu_hoach(ten_lo),` +
+  `${TABLE_LO}(id,id_phieu,id_lo,to_truong,ghi_chu,stt,lo:fp_var_lo_thu_hoach(ten_lo),` +
   `${TABLE_LO_NGAY}(${LO_NGAY_COLUMNS}),${TABLE_DONG}(${DONG_COLUMNS}))`;
 
 type Id = number | string;
@@ -100,7 +102,7 @@ interface DbLoRow {
   id: Id;
   id_phieu: Id;
   id_lo: Id;
-  id_to_truong: Id | null;
+  to_truong: string | null;
   ghi_chu: string | null;
   stt: number;
   lo?: { ten_lo: string | null } | null;
@@ -203,11 +205,10 @@ function mapLo(r: DbLoRow): DgdvLoDayDu {
     id: String(r.id),
     id_phieu: String(r.id_phieu),
     id_lo: String(r.id_lo),
-    id_to_truong: str(r.id_to_truong),
+    to_truong: r.to_truong ?? null,
     ghi_chu: r.ghi_chu ?? null,
     stt: so(r.stt),
     ten_lo: r.lo?.ten_lo ?? null,
-    ten_to_truong: null,
     lo_ngay: (r.fp_farm_dgdv_lo_ngay ?? []).map(mapLoNgay),
     dong: (r.fp_farm_dgdv_dong ?? []).map(mapDong),
   };
@@ -357,14 +358,41 @@ function cotBody(c: DgdvFormValues['cot'][number], idPhieu: number, stt: number)
   };
 }
 
-function loBody(l: DgdvFormValues['lo'][number], idPhieu: number, stt: number) {
+type LoCoId = DgdvFormValues['lo'][number] & { id_lo: number };
+
+function loBody(l: LoCoId, idPhieu: number, stt: number) {
   return {
     id_phieu: idPhieu,
-    id_lo: toInt8(l.id_lo),
-    id_to_truong: toInt8(l.id_to_truong),
+    id_lo: l.id_lo,
+    to_truong: gonTen(l.to_truong),
     ghi_chu: l.ghi_chu?.trim() || null,
     stt,
   };
+}
+
+/**
+ * Lô trong form là TÊN (chọn lô có sẵn hoặc gõ mới). Tra tên → id trong danh mục lô của chi nhánh
+ * (không phân biệt hoa thường); tên chưa có thì tạo lô mới (tổ trưởng của dòng làm mặc định).
+ */
+async function ganIdLo(idChiNhanh: number, dsLo: DgdvFormValues['lo']): Promise<LoCoId[]> {
+  if (dsLo.length === 0) return [];
+  const { data, error } = await db.from(T_DM_LO).select('id,ten_lo').eq('id_chi_nhanh', idChiNhanh);
+  if (error) throwDbError(error, { resource: T_DM_LO });
+  const idTheoTen = new Map(((data ?? []) as { id: Id; ten_lo: string }[]).map((r) => [khoaTen(r.ten_lo), Number(r.id)]));
+
+  const thieu = new Map<string, { ten_lo: string; id_chi_nhanh: number; to_truong: string | null }>();
+  for (const l of dsLo) {
+    const k = khoaTen(l.ten_lo);
+    if (!idTheoTen.has(k) && !thieu.has(k)) {
+      thieu.set(k, { ten_lo: gonTen(l.ten_lo) ?? l.ten_lo, id_chi_nhanh: idChiNhanh, to_truong: gonTen(l.to_truong) });
+    }
+  }
+  if (thieu.size > 0) {
+    const { data: moi, error: e2 } = await db.from(T_DM_LO).insert([...thieu.values()]).select('id,ten_lo');
+    if (e2) throwDbError(e2, { resource: T_DM_LO });
+    for (const r of (moi ?? []) as { id: Id; ten_lo: string }[]) idTheoTen.set(khoaTen(r.ten_lo), Number(r.id));
+  }
+  return dsLo.map((l) => ({ ...l, id_lo: idTheoTen.get(khoaTen(l.ten_lo)) ?? -1 }));
 }
 
 /**
@@ -423,7 +451,7 @@ export async function createDgdvDb(values: DgdvFormValues): Promise<string> {
 
   try {
     await khopBangCon(TABLE_COT, idPhieu, values.cot, cotBody);
-    await khopBangCon(TABLE_LO, idPhieu, values.lo, loBody);
+    await khopBangCon(TABLE_LO, idPhieu, await ganIdLo(idChiNhanh, values.lo), loBody);
   } catch (err) {
     await db.from(TABLE).delete().eq('id', idPhieu);
     throw err;
@@ -449,7 +477,7 @@ export async function updateDgdvDb(id: string, values: DgdvFormValues): Promise<
   if (error) throw new Error(formatDbError(error, { resource: TABLE }));
 
   await khopBangCon(TABLE_COT, idPhieu, values.cot, cotBody);
-  await khopBangCon(TABLE_LO, idPhieu, values.lo, loBody);
+  await khopBangCon(TABLE_LO, idPhieu, await ganIdLo(idChiNhanh, values.lo), loBody);
 }
 
 export async function deleteDgdvManyDb(ids: string[]): Promise<void> {

@@ -8,6 +8,7 @@ import {
   luuLoThuHoachDb,
   luuLyDoDb,
   luuMauDayDb,
+  themLyDoNeuChuaCoDb,
   xoaLoThuHoachDb,
   xoaLyDoDb,
   xoaMauDayDb,
@@ -16,6 +17,8 @@ import { getLoThuHoach } from '../services/danh-gia-dau-vao-service';
 import { getEmployeesRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
 import { taoMapMau } from '../core/bang-tinh';
 import type { DgdvLyDoFormValues, LoThuHoachFormValues, MauDayFormValues } from '../core/schema';
+import type { LoaiLyDoDgdv } from '../core/types';
+import { laTenMoi } from '../core/chuan-hoa-ten';
 import { QUERY_KEY_DGDV } from './use-danh-gia-dau-vao';
 
 const QK_MAU = [...QUERY_KEY_DGDV, 'dm', 'mau'] as const;
@@ -35,7 +38,7 @@ export function useLoThuHoach() {
   return useQuery({ queryKey: QK_LO, queryFn: getLoThuHoach, staleTime: DM_STALE });
 }
 
-/** Nhân viên rút gọn cho ô chọn tổ trưởng (dùng chung key ['employees','ref'] với module khác). */
+/** Nhân viên rút gọn — gợi ý tên cho ô tổ trưởng gõ tay (dùng chung key ['employees','ref'] với module khác). */
 export function useNhanVienRef() {
   return useQuery({ queryKey: ['employees', 'ref'], queryFn: getEmployeesRef, staleTime: DM_STALE });
 }
@@ -83,3 +86,18 @@ export const useLuuLoThuHoach = (onDone?: () => void) =>
 export const useXoaLoThuHoach = () => useXoaDanhMuc(QK_LO, xoaLoThuHoachDb);
 export const useLuuLyDo = (onDone?: () => void) => useLuuDanhMuc<DgdvLyDoFormValues>(QK_LY_DO, luuLyDoDb, onDone);
 export const useXoaLyDo = () => useXoaDanhMuc(QK_LY_DO, xoaLyDoDb);
+
+/**
+ * Ô lưới vừa lưu một lý do chưa có trong danh sách chọn nhanh → thêm vào danh sách (im lặng, không toast:
+ * ô đã lưu xong, đây chỉ là gợi ý cho lần sau). Lỗi thêm cũng chỉ bỏ qua.
+ */
+export function useThemLyDoNeuMoi() {
+  const qc = useQueryClient();
+  const { data: dsLyDo = [] } = useLyDoDgdv();
+  return (ten: string | null, loai: LoaiLyDoDgdv) => {
+    if (!ten || !laTenMoi(ten, dsLyDo.filter((x) => x.loai === loai).map((x) => x.ten))) return;
+    themLyDoNeuChuaCoDb(ten, loai)
+      .then(() => qc.invalidateQueries({ queryKey: QK_LY_DO }))
+      .catch(() => undefined);
+  };
+}

@@ -28,7 +28,7 @@ const phieu: DgdvPhieuDayDu = {
   tg_cap_nhat: '',
   cot: [],
   lo: [
-    { id: 'l1', id_phieu: 'p1', id_lo: 'x', id_to_truong: null, ghi_chu: null, stt: 1, ten_lo: 'A', ten_to_truong: null, lo_ngay: [], dong: [dong('d1', 10)] },
+    { id: 'l1', id_phieu: 'p1', id_lo: 'x', to_truong: null, ghi_chu: null, stt: 1, ten_lo: 'A', lo_ngay: [], dong: [dong('d1', 10)] },
   ],
 };
 const khoa = { id_phieu_lo: 'l1', id_cot: 'c1', ngay: NGAY, stt_dong: 1 };

@@ -96,6 +96,7 @@ const DgdvDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onSaoChe
       icon={<ClipboardPen className="text-fuchsia-600" size={22} />}
       onClose={onClose}
       maxWidthClass={DRAWER_WIDTH_WIDE}
+      fullWidthContent
       footer={
         <DetailDrawerFooter
           onClose={onClose}
@@ -107,29 +108,40 @@ const DgdvDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onSaoChe
       }
     >
       <div className="space-y-4 pb-2">
-        <DetailToolbar actions={actions} className="bg-card rounded-xl border border-border" />
-
-        <DetailSection title={t('danhGiaDauVao.detail.sectionPhieu')} icon={<ClipboardPen size={14} />} variant="primary">
-          <DetailFieldGrid cols={2}>
-            <DetailField label={t('danhGiaDauVao.store.colNamTuan')} value={t('danhGiaDauVao.list.namTuan', { tuan: data.tuan, nam: data.nam })} />
-            <DetailField label={t('danhGiaDauVao.store.colKhoangNgay')} value={khoangNgayTuan(data.nam, data.tuan)} />
-            <DetailField label={t('danhGiaDauVao.store.colBranch')} value={data.ten_chi_nhanh ?? '—'} />
-            <DetailField label={t('danhGiaDauVao.store.colTrangThai')} value={<TrangThaiDgdvBadge trangThai={data.trang_thai} />} />
-            <DetailField
-              label={t('danhGiaDauVao.store.colTongThu')}
-              value={<span className="font-bold tabular-nums text-primary">{formatNumberVN(tongTuan.tongThu)}</span>}
-            />
-            <DetailField label={t('danhGiaDauVao.store.colKsc')} value={<span className="tabular-nums">{formatNumberVN(tongTuan.ksc)}</span>} />
-            <DetailField label={t('danhGiaDauVao.store.colNguoiTao')} value={data.ten_nguoi_tao ?? '—'} />
-            <DetailField label={t('danhGiaDauVao.store.colUpdated')} value={formatDateTimeShort(data.tg_cap_nhat)} />
-            <DetailField
-              label={t('danhGiaDauVao.form.ghiChu')}
-              value={data.ghi_chu?.trim() ? <div className="whitespace-pre-wrap">{data.ghi_chu}</div> : ''}
-              emptyText="—"
-              className="sm:col-span-2"
-            />
-          </DetailFieldGrid>
-        </DetailSection>
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto]">
+          <DetailSection title={t('danhGiaDauVao.detail.sectionPhieu')} icon={<ClipboardPen size={14} />} variant="primary">
+            <DetailFieldGrid cols={3} className="lg:grid-cols-4 gap-y-3">
+              <DetailField label={t('danhGiaDauVao.store.colNamTuan')} value={t('danhGiaDauVao.list.namTuan', { tuan: data.tuan, nam: data.nam })} />
+              <DetailField label={t('danhGiaDauVao.store.colKhoangNgay')} value={khoangNgayTuan(data.nam, data.tuan)} />
+              <DetailField label={t('danhGiaDauVao.store.colBranch')} value={data.ten_chi_nhanh ?? '—'} />
+              <DetailField label={t('danhGiaDauVao.store.colTrangThai')} value={<TrangThaiDgdvBadge trangThai={data.trang_thai} />} />
+              <DetailField
+                label={t('danhGiaDauVao.store.colTongThu')}
+                value={<span className="font-bold tabular-nums text-primary">{formatNumberVN(tongTuan.tongThu)}</span>}
+              />
+              <DetailField
+                label={t('danhGiaDauVao.store.colKsc')}
+                value={<span className="font-bold tabular-nums text-rose-600">{formatNumberVN(tongTuan.ksc)}</span>}
+              />
+              <DetailField label={t('danhGiaDauVao.store.colNguoiTao')} value={data.ten_nguoi_tao ?? '—'} />
+              <DetailField label={t('danhGiaDauVao.store.colUpdated')} value={formatDateTimeShort(data.tg_cap_nhat)} />
+              {data.ghi_chu?.trim() && (
+                <DetailField
+                  label={t('danhGiaDauVao.form.ghiChu')}
+                  value={<div className="whitespace-pre-wrap">{data.ghi_chu}</div>}
+                  className="sm:col-span-2 lg:col-span-4"
+                />
+              )}
+            </DetailFieldGrid>
+          </DetailSection>
+          <DetailToolbar
+            actions={actions}
+            className={cn(
+              'bg-card rounded-xl border border-border content-center lg:w-[19rem] lg:grid-cols-2',
+              actions.length > 3 ? 'grid-cols-4 sm:grid-cols-4' : 'grid-cols-3 sm:grid-cols-3'
+            )}
+          />
+        </div>
 
         <DetailSection title={t('danhGiaDauVao.detail.sectionLuoi')} variant="primary">
           <div className="flex flex-wrap gap-1.5 mb-2">

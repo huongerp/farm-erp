@@ -1,4 +1,4 @@
-/** Đánh giá đầu vào — ghép tên nhân viên (người tạo, tổ trưởng) từ danh sách nhân viên rút gọn (cache). */
+/** Đánh giá đầu vào — ghép tên người tạo từ danh sách nhân viên rút gọn (cache). Tổ trưởng là chữ gõ tay. */
 import { getEmployeesRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
 import type { PaginatedTableResult } from '../../../../lib/db';
 import type { DgdvPhieuDayDu, FarmDgdv, TuanIso, VarLoThuHoach } from '../core/types';
@@ -31,7 +31,6 @@ async function enrichPhieu(items: DgdvPhieuDayDu[]): Promise<DgdvPhieuDayDu[]> {
   return items.map((p) => ({
     ...p,
     ten_nguoi_tao: tenTheoId(m, p.id_nguoi_tao),
-    lo: p.lo.map((l) => ({ ...l, ten_to_truong: tenTheoId(m, l.id_to_truong) })),
   }));
 }
 
@@ -60,9 +59,4 @@ export async function getDgdvTheoTuan(
   return enrichPhieu(await getDgdvTheoTuanDb(dsTuan, idChiNhanh, viewAll, allowedBranchIds));
 }
 
-export async function getLoThuHoach(): Promise<VarLoThuHoach[]> {
-  const rows = await getLoThuHoachDb();
-  if (rows.length === 0) return rows;
-  const m = await mapTenNhanVien();
-  return rows.map((r) => ({ ...r, ten_to_truong: tenTheoId(m, r.id_to_truong) }));
-}
+export const getLoThuHoach = (): Promise<VarLoThuHoach[]> => getLoThuHoachDb();

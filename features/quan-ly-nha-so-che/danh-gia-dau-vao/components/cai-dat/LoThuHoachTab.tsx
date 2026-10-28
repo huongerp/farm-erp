@@ -14,6 +14,7 @@ import { useBranches } from '../../../../he-thong/chi-nhanh/hooks/use-chi-nhanh'
 import { loThuHoachFormSchema, type LoThuHoachFormValues } from '../../core/schema';
 import type { VarLoThuHoach } from '../../core/types';
 import { useLoThuHoach, useLuuLoThuHoach, useNhanVienRef, useXoaLoThuHoach } from '../../hooks/use-danh-muc-dgdv';
+import { tenKhongTrung } from '../../core/chuan-hoa-ten';
 
 interface Opt {
   value: string;
@@ -24,9 +25,9 @@ const LoForm: React.FC<{
   initial: VarLoThuHoach | null;
   idChiNhanhMacDinh: string;
   chiNhanhOptions: Opt[];
-  nhanVienOptions: Opt[];
+  toTruongOptions: Opt[];
   onDone: () => void;
-}> = ({ initial, idChiNhanhMacDinh, chiNhanhOptions, nhanVienOptions, onDone }) => {
+}> = ({ initial, idChiNhanhMacDinh, chiNhanhOptions, toTruongOptions, onDone }) => {
   const { t } = useTranslation();
   const luu = useLuuLoThuHoach(onDone);
   const {
@@ -39,12 +40,12 @@ const LoForm: React.FC<{
       ? {
           ten_lo: initial.ten_lo,
           id_chi_nhanh: initial.id_chi_nhanh,
-          id_to_truong: initial.id_to_truong,
+          to_truong: initial.to_truong,
           ghi_chu: initial.ghi_chu ?? '',
           thu_tu: initial.thu_tu,
           dang_dung: initial.dang_dung,
         }
-      : { ten_lo: '', id_chi_nhanh: idChiNhanhMacDinh, id_to_truong: null, ghi_chu: '', thu_tu: 0, dang_dung: true },
+      : { ten_lo: '', id_chi_nhanh: idChiNhanhMacDinh, to_truong: null, ghi_chu: '', thu_tu: 0, dang_dung: true },
   });
   const onSubmit: SubmitHandler<LoThuHoachFormValues> = (data) => luu.mutate({ id: initial?.id ?? null, data });
 
@@ -72,15 +73,17 @@ const LoForm: React.FC<{
           )}
         />
         <Controller
-          name="id_to_truong"
+          name="to_truong"
           control={control}
           render={({ field }) => (
             <Combobox
               label={t('danhGiaDauVao.form.toTruong')}
-              options={nhanVienOptions}
+              options={toTruongOptions}
               value={field.value ?? ''}
-              onChange={(v) => field.onChange(v ? String(v) : null)}
+              onChange={(v) => field.onChange(v ? String(v).trim() : null)}
               placeholder={t('danhGiaDauVao.form.chonToTruong')}
+              creatable
+              creatableLabel={t('danhGiaDauVao.form.dungTen')}
               dropdownInPortal
             />
           )}
@@ -146,10 +149,13 @@ const LoThuHoachTab: React.FC = () => {
         .map((b) => ({ value: String(b.id), label: `${b.ma_chi_nhanh} — ${b.ten_chi_nhanh}` })),
     [branches, dsLo]
   );
-  const nhanVienOptions = useMemo(() => dsNhanVien.map((e) => ({ value: String(e.id), label: e.ho_ten })), [dsNhanVien]);
+  const toTruongOptions = useMemo(
+    () => tenKhongTrung([...dsLo.map((l) => l.to_truong), ...dsNhanVien.map((e) => e.ho_ten)]).map((ten) => ({ value: ten, label: ten })),
+    [dsLo, dsNhanVien]
+  );
   const hienThi = locCn ? dsLo.filter((l) => l.id_chi_nhanh === locCn) : dsLo;
   const iconBtn = 'p-1.5 rounded-md hover:bg-muted';
-  const formProps = { idChiNhanhMacDinh: locCn, chiNhanhOptions, nhanVienOptions, onDone: () => setDangSua(null) };
+  const formProps = { idChiNhanhMacDinh: locCn, chiNhanhOptions, toTruongOptions, onDone: () => setDangSua(null) };
 
   return (
     <div className="space-y-3">
@@ -186,7 +192,7 @@ const LoThuHoachTab: React.FC = () => {
                 <div className="min-w-0 flex-1">
                   <div className="text-sm font-medium truncate">{l.ten_lo}</div>
                   <div className="text-xs text-muted-foreground truncate">
-                    {[l.ten_chi_nhanh, l.ten_to_truong ? `${t('danhGiaDauVao.form.toTruong')}: ${l.ten_to_truong}` : null, l.ghi_chu]
+                    {[l.ten_chi_nhanh, l.to_truong ? `${t('danhGiaDauVao.form.toTruong')}: ${l.to_truong}` : null, l.ghi_chu]
                       .filter(Boolean)
                       .join(' · ')}
                   </div>

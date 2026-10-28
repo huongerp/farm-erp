@@ -30,14 +30,14 @@ export interface VarMauDay {
   tg_cap_nhat: string;
 }
 
-/** fp_var_lo_thu_hoach — lô thuộc 1 chi nhánh, tổ trưởng mặc định chép vào phiếu khi thêm lô. */
+/** fp_var_lo_thu_hoach — lô thuộc 1 chi nhánh, tổ trưởng (gõ tay) chép vào phiếu khi thêm lô. */
 export interface VarLoThuHoach {
   id: string;
   ten_lo: string;
   id_chi_nhanh: string;
   ten_chi_nhanh?: string | null;
-  id_to_truong: string | null;
-  ten_to_truong?: string | null;
+  /** Tổ trưởng mặc định — gõ tay (migration 054), không gắn tài khoản nhân viên. */
+  to_truong: string | null;
   ghi_chu: string | null;
   dang_dung: boolean;
   thu_tu: number;
@@ -92,7 +92,8 @@ export interface FarmDgdvLo {
   id: string;
   id_phieu: string;
   id_lo: string;
-  id_to_truong: string | null;
+  /** Tổ trưởng gõ tay; dòng tổ trưởng của lưới gom theo tên này. */
+  to_truong: string | null;
   ghi_chu: string | null;
   stt: number;
 }
@@ -125,7 +126,6 @@ export interface FarmDgdvDong {
 /** Lô của phiếu kèm tên (join danh mục) + đứt dây + ô lưới của mọi ngày trong tuần. */
 export interface DgdvLoDayDu extends FarmDgdvLo {
   ten_lo: string | null;
-  ten_to_truong: string | null;
   lo_ngay: FarmDgdvLoNgay[];
   dong: FarmDgdvDong[];
 }
