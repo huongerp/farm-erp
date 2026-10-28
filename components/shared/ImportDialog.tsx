@@ -55,6 +55,8 @@ interface ImportDialogProps {
   /** Truyền để hiện khối chọn chế độ import. Không truyền → luôn chạy `create` như trước. */
   modes?: ImportMode[];
   defaultMode?: ImportMode;
+  /** Nhãn + mô tả riêng cho từng chế độ khi nghĩa khác mặc định (vd. «Thay số các ngày có trong file»). */
+  modeLabels?: Partial<Record<ImportMode, { label: string; desc: string }>>;
   /** Truyền để hiện select cột tham chiếu. */
   refColumns?: ImportRefColumn[];
   defaultRefColumn?: string;
@@ -66,7 +68,7 @@ type Step = 'upload' | 'mapping' | 'result';
 const ImportDialog: React.FC<ImportDialogProps> = ({
   open, onClose, columns, onImport, templateFileName = 'template',
   referenceSheets, sampleRows, guideNotes, importErrors,
-  modes, defaultMode, refColumns, defaultRefColumn, maxRows = DEFAULT_MAX_ROWS,
+  modes, defaultMode, modeLabels, refColumns, defaultRefColumn, maxRows = DEFAULT_MAX_ROWS,
 }) => {
   const { t } = useTranslation();
   const [step, setStep] = useState<Step>('upload');
@@ -448,10 +450,10 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
                               />
                               <span>
                                 <span className="block text-xs font-medium text-foreground">
-                                  {m === 'upsert' ? t('shared.import.modeUpsert') : t('shared.import.modeCreate')}
+                                  {modeLabels?.[m]?.label ?? (m === 'upsert' ? t('shared.import.modeUpsert') : t('shared.import.modeCreate'))}
                                 </span>
                                 <span className="block text-2xs text-muted-foreground mt-0.5">
-                                  {m === 'upsert' ? t('shared.import.modeUpsertDesc') : t('shared.import.modeCreateDesc')}
+                                  {modeLabels?.[m]?.desc ?? (m === 'upsert' ? t('shared.import.modeUpsertDesc') : t('shared.import.modeCreateDesc'))}
                                 </span>
                               </span>
                             </label>

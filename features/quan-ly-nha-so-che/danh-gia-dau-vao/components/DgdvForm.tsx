@@ -8,7 +8,7 @@ import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Controller, useFieldArray, useForm, useWatch, type Resolver, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowDown, ArrowUp, ClipboardPen, Columns3, ListPlus, MapPinned, Plus, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, ClipboardPen, Columns3, ListPlus, MapPinned, Trash2 } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
 import Select from '../../../../components/ui/Select';
 import Combobox from '../../../../components/ui/Combobox';
@@ -17,6 +17,8 @@ import GenericDrawer from '../../../../components/shared/GenericDrawer';
 import { DRAWER_WIDTH_WIDE } from '../../../../lib/dialog-sizes';
 import FormSection from '../../../../components/shared/FormSection';
 import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
+import GenericSubTableSection from '../../../../components/shared/GenericSubTableSection';
+import SubTable, { type SubTableColumn } from '../../../../components/shared/sub-table/SubTable';
 import { cn, formatYmdToDisplay, getTodayISO } from '../../../../lib/utils';
 import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
 import { dgdvFormSchema, type DgdvFormValues } from '../core/schema';
@@ -74,7 +76,6 @@ const iconBtn = 'p-1.5 rounded-md text-muted-foreground hover:bg-muted disabled:
 const cellInput =
   'h-9 w-full min-w-0 rounded-lg border border-border bg-background px-2 text-body-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary/40';
 const cellLoi = 'border-destructive';
-const th = 'px-2 py-2 text-left font-medium text-muted-foreground';
 
 const DgdvForm: React.FC<Props> = ({ branches, initial, giaTriMacDinh, onClose, onSaved }) => {
   const { t } = useTranslation();
@@ -208,6 +209,205 @@ const DgdvForm: React.FC<Props> = ({ branches, initial, giaTriMacDinh, onClose, 
     </div>
   );
 
+  const cotColumns: SubTableColumn[] = [
+    { id: 'xem', label: t('danhGiaDauVao.form.xemTruoc'), width: 140, minWidth: 110, sticky: true, mobile: 'title' },
+    { id: 'chich_bap', label: t('danhGiaDauVao.form.chichBap'), width: 278, minWidth: 250, mobile: 'full' },
+    { id: 'thu_hoach', label: t('danhGiaDauVao.form.thuHoach'), width: 278, minWidth: 250, mobile: 'full' },
+    { id: 'mau_1', label: t('danhGiaDauVao.form.mau1'), width: 124, minWidth: 100 },
+    { id: 'mau_2', label: t('danhGiaDauVao.form.mau2'), width: 124, minWidth: 100 },
+    { id: 'xe_doi', label: t('danhGiaDauVao.form.xeDoi'), width: 72, minWidth: 64, align: 'center' },
+  ];
+
+  const oNgay = (i: number, loai: 'chich_bap' | 'thu_hoach', dau: 'tu' | 'den') => {
+    const loi = errors.cot?.[i];
+    const msg = dau === 'den' ? loi?.[`${loai}_den`]?.message : undefined;
+    const aria = `${t(`danhGiaDauVao.form.${loai === 'chich_bap' ? 'chichBap' : 'thuHoach'}`)} ${t(`danhGiaDauVao.form.${dau}`)}`;
+    if (loai === 'chich_bap') {
+      return (
+        <input
+          type="date"
+          className={cn(cellInput, msg && cellLoi)}
+          title={msg}
+          aria-label={aria}
+          value={cotWatch?.[i]?.[`chich_bap_${dau}`] ?? ''}
+          onChange={(e) => doiChichBap(i, dau, e.target.value)}
+        />
+      );
+    }
+    return (
+      <Controller
+        name={`cot.${i}.thu_hoach_${dau}`}
+        control={control}
+        render={({ field }) => (
+          <input
+            type="date"
+            className={cn(cellInput, msg && cellLoi)}
+            title={msg}
+            aria-label={aria}
+            value={field.value ?? ''}
+            onChange={(e) => field.onChange(e.target.value || null)}
+          />
+        )}
+      />
+    );
+  };
+
+  const oMau = (i: number, so: 1 | 2) => {
+    const loi = errors.cot?.[i]?.[`id_mau_${so}`];
+    return (
+      <Controller
+        name={`cot.${i}.id_mau_${so}`}
+        control={control}
+        render={({ field }) => (
+          <select
+            className={cn(cellInput, loi && cellLoi)}
+            title={loi?.message}
+            value={field.value ?? ''}
+            onChange={(e) => field.onChange(so === 1 ? e.target.value : e.target.value || null)}
+            aria-label={t(`danhGiaDauVao.form.mau${so}`)}
+          >
+            <option value="">{so === 1 ? t('danhGiaDauVao.form.chonMau') : t('danhGiaDauVao.form.khongCoMau2')}</option>
+            {mauOptions.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        )}
+      />
+    );
+  };
+
+  const renderCot = (colId: string, i: number) => {
+    const c = cotWatch?.[i];
+    switch (colId) {
+      case 'xem': {
+        const m1 = c?.id_mau_1 ? mauTheoId.get(c.id_mau_1) : undefined;
+        const m2 = c?.id_mau_2 ? mauTheoId.get(c.id_mau_2) : undefined;
+        return (
+          <div
+            className="h-9 rounded-lg border border-border px-2 flex items-center text-xs font-semibold whitespace-nowrap overflow-hidden"
+            style={styleTieuDeCot(m1?.ma_mau ?? null, m2?.ma_mau ?? null)}
+          >
+            {[m1?.ten, m2?.ten].filter(Boolean).join(' - ') || <span className="text-muted-foreground font-normal">—</span>}
+            {c?.xe_doi ? ` ${t('danhGiaDauVao.luoi.xeDoi')}` : ''}
+          </div>
+        );
+      }
+      case 'chich_bap':
+      case 'thu_hoach':
+        return (
+          <div className="flex items-center gap-1">
+            {oNgay(i, colId, 'tu')}
+            <span className="text-muted-foreground">–</span>
+            {oNgay(i, colId, 'den')}
+          </div>
+        );
+      case 'mau_1':
+        return oMau(i, 1);
+      case 'mau_2':
+        return oMau(i, 2);
+      case 'xe_doi':
+        return (
+          <Controller
+            name={`cot.${i}.xe_doi`}
+            control={control}
+            render={({ field }) => (
+              <input
+                type="checkbox"
+                className="h-4 w-4 align-middle accent-primary"
+                checked={!!field.value}
+                onChange={(e) => field.onChange(e.target.checked)}
+                aria-label={t('danhGiaDauVao.form.xeDoi')}
+              />
+            )}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
+  const loColumns: SubTableColumn[] = [
+    { id: 'ten_lo', label: t('danhGiaDauVao.form.lo'), width: 240, minWidth: 180, sticky: true, mobile: 'full' },
+    { id: 'to_truong', label: t('danhGiaDauVao.form.toTruong'), width: 240, minWidth: 180, mobile: 'full' },
+    { id: 'ghi_chu', label: t('danhGiaDauVao.form.ghiChuLo'), width: 320, minWidth: 160, mobile: 'full' },
+  ];
+
+  const renderLo = (colId: string, i: number) => {
+    switch (colId) {
+      case 'ten_lo': {
+        const tenLo = loWatch?.[i]?.ten_lo ?? '';
+        const loMoi = !!tenLo.trim() && !loTheoTen.has(khoaTen(tenLo));
+        const loiLo = errors.lo?.[i]?.ten_lo?.message as string | undefined;
+        return (
+          <div>
+            <Controller
+              name={`lo.${i}.ten_lo`}
+              control={control}
+              render={({ field }) => (
+                <Combobox
+                  options={loOptions}
+                  value={field.value ?? ''}
+                  onChange={(v) => {
+                    const ten = v ? String(v).trim() : '';
+                    // Gõ trùng tên lô có sẵn (khác hoa thường) → dùng đúng tên trong danh mục + tổ trưởng của lô.
+                    const lo = loTheoTen.get(khoaTen(ten));
+                    field.onChange(lo?.ten_lo ?? ten);
+                    if (lo && !getValues(`lo.${i}.to_truong`)) {
+                      setValue(`lo.${i}.to_truong`, lo.to_truong, { shouldDirty: true });
+                    }
+                  }}
+                  placeholder={t('danhGiaDauVao.form.chonLo')}
+                  creatable
+                  creatableLabel={t('danhGiaDauVao.form.taoLo')}
+                  dropdownInPortal
+                  triggerClassName={cn('h-9', loiLo && 'border-destructive')}
+                />
+              )}
+            />
+            {loiLo ? (
+              <p className="text-caption text-destructive m-0 mt-0.5">{loiLo}</p>
+            ) : (
+              loMoi && <p className="text-caption text-primary m-0 mt-0.5">{t('danhGiaDauVao.form.loMoiSeTao')}</p>
+            )}
+          </div>
+        );
+      }
+      case 'to_truong':
+        return (
+          <Controller
+            name={`lo.${i}.to_truong`}
+            control={control}
+            render={({ field }) => (
+              <Combobox
+                options={toTruongOptions}
+                value={field.value ?? ''}
+                onChange={(v) => field.onChange(v ? String(v).trim() : null)}
+                placeholder={t('danhGiaDauVao.form.chonToTruong')}
+                creatable
+                creatableLabel={t('danhGiaDauVao.form.dungTen')}
+                dropdownInPortal
+                triggerClassName="h-9"
+              />
+            )}
+          />
+        );
+      case 'ghi_chu':
+        return (
+          <Controller
+            name={`lo.${i}.ghi_chu`}
+            control={control}
+            render={({ field }) => (
+              <input {...field} className={cellInput} value={field.value ?? ''} aria-label={t('danhGiaDauVao.form.ghiChuLo')} />
+            )}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <GenericDrawer
       onClose={onClose}
@@ -293,278 +493,70 @@ const DgdvForm: React.FC<Props> = ({ branches, initial, giaTriMacDinh, onClose, 
           </div>
         </FormSection>
 
-        <FormSection
+        <GenericSubTableSection
           title={t('danhGiaDauVao.form.sectionCot')}
-          icon={<Columns3 size={14} />}
-          variant="primary"
-          action={
-            <Button type="button" size="sm" variant="outline" onClick={() => cotArr.append({ ...COT_MOI })}>
-              <Plus size={14} className="mr-1" />
-              {t('danhGiaDauVao.form.themCot')}
-            </Button>
-          }
+          icon={<Columns3 size={14} className="text-primary" />}
+          count={cotArr.fields.length}
+          addLabel={t('danhGiaDauVao.form.themCot')}
+          onAdd={() => cotArr.append({ ...COT_MOI })}
+          contentMode="raw"
+          emptyTitle={t('danhGiaDauVao.form.chuaCoCot')}
+          emptyDescription={t('danhGiaDauVao.form.cotHint')}
         >
-          <p className="text-caption text-muted-foreground m-0 mb-2">{t('danhGiaDauVao.form.cotHint')}</p>
-          <div className="overflow-x-auto rounded-lg border border-border">
-            <table className="w-full text-body-sm">
-              <thead>
-                <tr className="bg-muted/50 border-b border-border text-xs">
-                  <th className={cn(th, 'w-8 text-center')}>#</th>
-                  <th className={cn(th, 'min-w-[9rem]')}>{t('danhGiaDauVao.form.xemTruoc')}</th>
-                  <th className={th}>{t('danhGiaDauVao.form.chichBap')}</th>
-                  <th className={th}>{t('danhGiaDauVao.form.thuHoach')}</th>
-                  <th className={cn(th, 'min-w-[8rem]')}>{t('danhGiaDauVao.form.mau1')}</th>
-                  <th className={cn(th, 'min-w-[8rem]')}>{t('danhGiaDauVao.form.mau2')}</th>
-                  <th className={cn(th, 'text-center')}>{t('danhGiaDauVao.form.xeDoi')}</th>
-                  <th className="w-24" />
-                </tr>
-              </thead>
-              <tbody>
-                {cotArr.fields.length === 0 && (
-                  <tr>
-                    <td colSpan={8} className="px-3 py-5 text-center text-muted-foreground">
-                      {t('danhGiaDauVao.form.chuaCoCot')}
-                    </td>
-                  </tr>
-                )}
-                {cotArr.fields.map((f, i) => {
-                  const c = cotWatch?.[i];
-                  const loi = errors.cot?.[i];
-                  const m1 = c?.id_mau_1 ? mauTheoId.get(c.id_mau_1) : undefined;
-                  const m2 = c?.id_mau_2 ? mauTheoId.get(c.id_mau_2) : undefined;
-                  const khoangNgay = (loai: 'chich_bap' | 'thu_hoach') => (
-                    <div className="flex items-center gap-1">
-                      {(['tu', 'den'] as const).map((dau, k) => (
-                        <React.Fragment key={dau}>
-                          {k === 1 && <span className="text-muted-foreground">–</span>}
-                          {loai === 'chich_bap' ? (
-                            <input
-                              type="date"
-                              className={cn(cellInput, 'w-[8.75rem]', loi?.chich_bap_den && dau === 'den' && cellLoi)}
-                              title={dau === 'den' ? loi?.chich_bap_den?.message : undefined}
-                              aria-label={`${t('danhGiaDauVao.form.chichBap')} ${t(`danhGiaDauVao.form.${dau}`)}`}
-                              value={c?.[`chich_bap_${dau}`] ?? ''}
-                              onChange={(e) => doiChichBap(i, dau, e.target.value)}
-                            />
-                          ) : (
-                            <Controller
-                              name={`cot.${i}.thu_hoach_${dau}`}
-                              control={control}
-                              render={({ field }) => (
-                                <input
-                                  type="date"
-                                  className={cn(cellInput, 'w-[8.75rem]', loi?.thu_hoach_den && dau === 'den' && cellLoi)}
-                                  title={dau === 'den' ? loi?.thu_hoach_den?.message : undefined}
-                                  aria-label={`${t('danhGiaDauVao.form.thuHoach')} ${t(`danhGiaDauVao.form.${dau}`)}`}
-                                  value={field.value ?? ''}
-                                  onChange={(e) => field.onChange(e.target.value || null)}
-                                />
-                              )}
-                            />
-                          )}
-                        </React.Fragment>
-                      ))}
-                    </div>
-                  );
-                  return (
-                    <tr key={f.id} className="border-b border-border/70 last:border-b-0">
-                      <td className="px-2 py-1.5 text-center tabular-nums text-muted-foreground">{i + 1}</td>
-                      <td className="px-1 py-1.5">
-                        <div
-                          className="h-9 rounded-lg border border-border px-2 flex items-center text-xs font-semibold whitespace-nowrap"
-                          style={styleTieuDeCot(m1?.ma_mau ?? null, m2?.ma_mau ?? null)}
-                        >
-                          {[m1?.ten, m2?.ten].filter(Boolean).join(' - ') || <span className="text-muted-foreground font-normal">—</span>}
-                          {c?.xe_doi ? ` ${t('danhGiaDauVao.luoi.xeDoi')}` : ''}
-                        </div>
-                      </td>
-                      <td className="px-1 py-1.5">{khoangNgay('chich_bap')}</td>
-                      <td className="px-1 py-1.5">{khoangNgay('thu_hoach')}</td>
-                      <td className="px-1 py-1.5">
-                        <Controller
-                          name={`cot.${i}.id_mau_1`}
-                          control={control}
-                          render={({ field }) => (
-                            <select
-                              className={cn(cellInput, loi?.id_mau_1 && cellLoi)}
-                              title={loi?.id_mau_1?.message}
-                              value={field.value ?? ''}
-                              onChange={(e) => field.onChange(e.target.value)}
-                              aria-label={t('danhGiaDauVao.form.mau1')}
-                            >
-                              <option value="">{t('danhGiaDauVao.form.chonMau')}</option>
-                              {mauOptions.map((o) => (
-                                <option key={o.value} value={o.value}>
-                                  {o.label}
-                                </option>
-                              ))}
-                            </select>
-                          )}
-                        />
-                      </td>
-                      <td className="px-1 py-1.5">
-                        <Controller
-                          name={`cot.${i}.id_mau_2`}
-                          control={control}
-                          render={({ field }) => (
-                            <select
-                              className={cn(cellInput, loi?.id_mau_2 && cellLoi)}
-                              title={loi?.id_mau_2?.message}
-                              value={field.value ?? ''}
-                              onChange={(e) => field.onChange(e.target.value || null)}
-                              aria-label={t('danhGiaDauVao.form.mau2')}
-                            >
-                              <option value="">{t('danhGiaDauVao.form.khongCoMau2')}</option>
-                              {mauOptions.map((o) => (
-                                <option key={o.value} value={o.value}>
-                                  {o.label}
-                                </option>
-                              ))}
-                            </select>
-                          )}
-                        />
-                      </td>
-                      <td className="px-1 py-1.5 text-center">
-                        <Controller
-                          name={`cot.${i}.xe_doi`}
-                          control={control}
-                          render={({ field }) => (
-                            <input
-                              type="checkbox"
-                              className="h-4 w-4 align-middle accent-primary"
-                              checked={!!field.value}
-                              onChange={(e) => field.onChange(e.target.checked)}
-                              aria-label={t('danhGiaDauVao.form.xeDoi')}
-                            />
-                          )}
-                        />
-                      </td>
-                      <td className="px-1 py-1.5">{nutDoiCho(cotArr, i)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-          {cotArr.fields.some((_, i) => errors.cot?.[i]) && (
-            <p className="text-caption text-destructive m-0 mt-1.5">{t('danhGiaDauVao.form.cotCoLoi')}</p>
-          )}
-          {isEdit && <p className="text-caption text-amber-700 dark:text-amber-400 m-0 mt-1.5">{t('danhGiaDauVao.form.xoaCotCanhBao')}</p>}
-        </FormSection>
-
-        <FormSection
-          title={t('danhGiaDauVao.form.sectionLo')}
-          icon={<MapPinned size={14} />}
-          variant="primary"
-          action={
-            <div className="flex gap-2">
-              {loCuaChiNhanh.length > 0 && (
-                <Button type="button" size="sm" variant="ghost" onClick={themMoiLo}>
-                  <ListPlus size={14} className="mr-1" />
-                  {t('danhGiaDauVao.form.themMoiLo')}
-                </Button>
+          {cotArr.fields.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-caption text-muted-foreground m-0">{t('danhGiaDauVao.form.cotHint')}</p>
+              <SubTable
+                tableKey="danh-gia-dau-vao.form-cot"
+                columns={cotColumns}
+                rows={cotArr.fields}
+                keyExtractor={(f) => f.id}
+                renderCell={(colId, _f, i) => renderCot(colId, i)}
+                renderActions={(_f, i) => nutDoiCho(cotArr, i)}
+                actionsWidth={112}
+              />
+              {cotArr.fields.some((_, i) => errors.cot?.[i]) && (
+                <p className="text-caption text-destructive m-0">{t('danhGiaDauVao.form.cotCoLoi')}</p>
               )}
-              <Button type="button" size="sm" variant="outline" onClick={() => loArr.append({ ten_lo: '', to_truong: null, ghi_chu: '' })}>
-                <Plus size={14} className="mr-1" />
-                {t('danhGiaDauVao.form.themLo')}
-              </Button>
+              {isEdit && <p className="text-caption text-amber-700 dark:text-amber-400 m-0">{t('danhGiaDauVao.form.xoaCotCanhBao')}</p>}
             </div>
+          )}
+        </GenericSubTableSection>
+
+        <GenericSubTableSection
+          title={t('danhGiaDauVao.form.sectionLo')}
+          icon={<MapPinned size={14} className="text-primary" />}
+          count={loArr.fields.length}
+          addLabel={t('danhGiaDauVao.form.themLo')}
+          onAdd={() => loArr.append({ ten_lo: '', to_truong: null, ghi_chu: '' })}
+          headerActions={
+            loCuaChiNhanh.length > 0 ? (
+              <Button type="button" size="sm" variant="outline" onClick={themMoiLo} className="min-h-[44px] h-8 sm:h-8 px-3 shrink-0">
+                <ListPlus size={14} className="mr-1.5" />
+                {t('danhGiaDauVao.form.themMoiLo')}
+              </Button>
+            ) : undefined
           }
+          contentMode="raw"
+          emptyTitle={t('danhGiaDauVao.form.chuaCoLo')}
+          emptyDescription={t('danhGiaDauVao.form.loHint')}
         >
-          <p className="text-caption text-muted-foreground m-0 mb-2">{t('danhGiaDauVao.form.loHint')}</p>
-          <div className="overflow-x-auto rounded-lg border border-border">
-            <table className="w-full text-body-sm">
-              <thead>
-                <tr className="bg-muted/50 border-b border-border text-xs">
-                  <th className={cn(th, 'w-8 text-center')}>#</th>
-                  <th className={cn(th, 'min-w-[12rem] w-[28%]')}>{t('danhGiaDauVao.form.lo')}</th>
-                  <th className={cn(th, 'min-w-[12rem] w-[28%]')}>{t('danhGiaDauVao.form.toTruong')}</th>
-                  <th className={cn(th, 'min-w-[12rem]')}>{t('danhGiaDauVao.form.ghiChuLo')}</th>
-                  <th className="w-24" />
-                </tr>
-              </thead>
-              <tbody>
-                {loArr.fields.length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="px-3 py-5 text-center text-muted-foreground">
-                      {t('danhGiaDauVao.form.chuaCoLo')}
-                    </td>
-                  </tr>
-                )}
-                {loArr.fields.map((f, i) => {
-                  const tenLo = loWatch?.[i]?.ten_lo ?? '';
-                  const loMoi = !!tenLo.trim() && !loTheoTen.has(khoaTen(tenLo));
-                  const loiLo = errors.lo?.[i]?.ten_lo?.message as string | undefined;
-                  return (
-                    <tr key={f.id} className="border-b border-border/70 last:border-b-0 align-top">
-                      <td className="px-2 py-1.5 pt-3.5 text-center tabular-nums text-muted-foreground">{i + 1}</td>
-                      <td className="px-1 py-1.5">
-                        <Controller
-                          name={`lo.${i}.ten_lo`}
-                          control={control}
-                          render={({ field }) => (
-                            <Combobox
-                              options={loOptions}
-                              value={field.value ?? ''}
-                              onChange={(v) => {
-                                const ten = v ? String(v).trim() : '';
-                                // Gõ trùng tên lô có sẵn (khác hoa thường) → dùng đúng tên trong danh mục + tổ trưởng của lô.
-                                const lo = loTheoTen.get(khoaTen(ten));
-                                field.onChange(lo?.ten_lo ?? ten);
-                                if (lo && !getValues(`lo.${i}.to_truong`)) {
-                                  setValue(`lo.${i}.to_truong`, lo.to_truong, { shouldDirty: true });
-                                }
-                              }}
-                              placeholder={t('danhGiaDauVao.form.chonLo')}
-                              creatable
-                              creatableLabel={t('danhGiaDauVao.form.taoLo')}
-                              dropdownInPortal
-                              triggerClassName={cn('h-9', loiLo && 'border-destructive')}
-                            />
-                          )}
-                        />
-                        {loiLo ? (
-                          <p className="text-caption text-destructive m-0 mt-0.5">{loiLo}</p>
-                        ) : (
-                          loMoi && <p className="text-caption text-primary m-0 mt-0.5">{t('danhGiaDauVao.form.loMoiSeTao')}</p>
-                        )}
-                      </td>
-                      <td className="px-1 py-1.5">
-                        <Controller
-                          name={`lo.${i}.to_truong`}
-                          control={control}
-                          render={({ field }) => (
-                            <Combobox
-                              options={toTruongOptions}
-                              value={field.value ?? ''}
-                              onChange={(v) => field.onChange(v ? String(v).trim() : null)}
-                              placeholder={t('danhGiaDauVao.form.chonToTruong')}
-                              creatable
-                              creatableLabel={t('danhGiaDauVao.form.dungTen')}
-                              dropdownInPortal
-                              triggerClassName="h-9"
-                            />
-                          )}
-                        />
-                      </td>
-                      <td className="px-1 py-1.5">
-                        <Controller
-                          name={`lo.${i}.ghi_chu`}
-                          control={control}
-                          render={({ field }) => (
-                            <input {...field} className={cellInput} value={field.value ?? ''} aria-label={t('danhGiaDauVao.form.ghiChuLo')} />
-                          )}
-                        />
-                      </td>
-                      <td className="px-1 py-1.5 pt-2">{nutDoiCho(loArr, i)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-          {isEdit && <p className="text-caption text-amber-700 dark:text-amber-400 m-0 mt-1.5">{t('danhGiaDauVao.form.xoaLoCanhBao')}</p>}
-        </FormSection>
+          {loArr.fields.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-caption text-muted-foreground m-0">{t('danhGiaDauVao.form.loHint')}</p>
+              <SubTable
+                tableKey="danh-gia-dau-vao.form-lo"
+                columns={loColumns}
+                rows={loArr.fields}
+                keyExtractor={(f) => f.id}
+                renderCell={(colId, _f, i) => renderLo(colId, i)}
+                renderActions={(_f, i) => nutDoiCho(loArr, i)}
+                actionsWidth={112}
+              />
+              {isEdit && <p className="text-caption text-amber-700 dark:text-amber-400 m-0">{t('danhGiaDauVao.form.xoaLoCanhBao')}</p>}
+            </div>
+          )}
+        </GenericSubTableSection>
       </form>
     </GenericDrawer>
   );

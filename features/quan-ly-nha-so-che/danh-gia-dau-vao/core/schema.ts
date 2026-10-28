@@ -126,3 +126,36 @@ export const dgdvLyDoFormSchema = z.object({
 export type MauDayFormValues = z.infer<typeof mauDayFormSchema>;
 export type LoThuHoachFormValues = z.infer<typeof loThuHoachFormSchema>;
 export type DgdvLyDoFormValues = z.infer<typeof dgdvLyDoFormSchema>;
+
+// ---- Dòng chi tiết đánh giá (Detail phiếu) ----------------------------------------
+
+/** Giá trị ô «Dây» khi chọn «Đứt dây» (không phải id cột). */
+export const DONG_DUT_DAY = 'dut_day';
+
+const soNguyenKhongAm = (msgKey: string) =>
+  z.preprocess(
+    (v) => (v === '' || v == null ? 0 : v),
+    z.coerce.number({ message: reqMsg(msgKey) }).int(reqMsg(msgKey)).min(0, reqMsg(msgKey))
+  );
+
+export const dgdvDongFormSchema = z
+  .object({
+    ngay: z.string().regex(YMD_RE, reqMsg('danhGiaDauVao.validation.ngayKhongHopLe')),
+    id_phieu_lo: idBatBuoc('danhGiaDauVao.validation.loRequired'),
+    /** id cột dây hoặc `DONG_DUT_DAY`. */
+    id_cot: idBatBuoc('danhGiaDauVao.validation.dayRequired'),
+    so_luong: soNguyenKhongAm('danhGiaDauVao.validation.soNguyenKhongAm'),
+    danh_gia: z.preprocess(rongThanhNull, z.string().max(200).nullable()),
+    so_luong_loi: soNguyenKhongAm('danhGiaDauVao.validation.soNguyenKhongAm'),
+    ly_do_loi: z.preprocess(rongThanhNull, z.string().max(200).nullable()),
+  })
+  .superRefine((d, ctx) => {
+    if (d.so_luong <= 0) {
+      ctx.addIssue({ code: 'custom', path: ['so_luong'], message: reqMsg('danhGiaDauVao.validation.soLuongRequired') });
+    }
+    if (d.id_cot !== DONG_DUT_DAY && d.so_luong_loi > d.so_luong) {
+      ctx.addIssue({ code: 'custom', path: ['so_luong_loi'], message: reqMsg('danhGiaDauVao.luoi.canhBaoLoi') });
+    }
+  });
+
+export type DgdvDongFormValues = z.infer<typeof dgdvDongFormSchema>;

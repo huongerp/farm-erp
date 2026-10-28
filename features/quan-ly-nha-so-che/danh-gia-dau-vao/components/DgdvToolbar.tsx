@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Building2, Calendar, Download, Hash, Plus, Settings, ToggleLeft } from 'lucide-react';
+import { Building2, Calendar, Download, Hash, Plus, Settings, ToggleLeft, Upload } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
@@ -18,6 +18,8 @@ interface Props {
   onAdd: () => void;
   onDeleteMany?: () => void;
   onExport: () => void;
+  /** Mở Import Excel dòng chi tiết — chỉ truyền khi được tạo phiếu. */
+  onImport?: () => void;
   /** Mở dialog Cài đặt — chỉ truyền khi được ghi danh mục. */
   onCaiDat?: () => void;
   canCreate?: boolean;
@@ -32,6 +34,7 @@ const DgdvToolbar: React.FC<Props> = ({
   onAdd,
   onDeleteMany,
   onExport,
+  onImport,
   onCaiDat,
   canCreate = true,
   canDelete = true,
@@ -119,10 +122,11 @@ const DgdvToolbar: React.FC<Props> = ({
 
   const mobileActions = useMemo(
     () => [
+      ...(onImport ? [{ key: 'import', label: t('danhGiaDauVao.import.nut'), icon: Upload, onClick: onImport, description: '' }] : []),
       { key: 'export', label: t('common.export'), icon: Download, onClick: onExport, description: '' },
       ...(onCaiDat ? [{ key: 'cai-dat', label: t('danhGiaDauVao.caiDat.title'), icon: Settings, onClick: onCaiDat, description: '' }] : []),
     ],
-    [onExport, onCaiDat, t]
+    [onExport, onImport, onCaiDat, t]
   );
 
   const iconBtn =
@@ -135,6 +139,13 @@ const DgdvToolbar: React.FC<Props> = ({
           <Tooltip content={t('danhGiaDauVao.caiDat.title')} placement="bottom">
             <Button variant="outline" size="sm" onClick={onCaiDat} className={iconBtn} aria-label={t('danhGiaDauVao.caiDat.title')}>
               <Settings className="w-4 h-4" />
+            </Button>
+          </Tooltip>
+        )}
+        {onImport && (
+          <Tooltip content={t('danhGiaDauVao.import.nut')} placement="bottom">
+            <Button variant="outline" size="sm" onClick={onImport} className={iconBtn} aria-label={t('danhGiaDauVao.import.nut')}>
+              <Upload className="w-4 h-4" />
             </Button>
           </Tooltip>
         )}

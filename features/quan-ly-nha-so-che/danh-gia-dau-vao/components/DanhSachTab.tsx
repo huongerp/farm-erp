@@ -6,6 +6,7 @@ import { Lock, Unlock } from 'lucide-react';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL, CONFIRM_YES } from '../../../../lib/button-labels';
 import ExportDialog from '../../../../components/shared/LazyExportDialog';
+import LazyImportDialog from '../../../../components/shared/LazyImportDialog';
 import { useExportData } from '../../../../lib/useExportData';
 import { TRANG_THAI } from '../../../../lib/constants';
 import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
@@ -21,6 +22,7 @@ import {
 } from '../hooks/use-danh-gia-dau-vao';
 import { useDgdvPermissions, useDgdvViewScope } from '../hooks/use-danh-gia-dau-vao-permissions';
 import { useDanhGiaDauVaoStore } from '../store/useDanhGiaDauVaoStore';
+import { useDgdvImport } from '../hooks/use-dgdv-import';
 import { dungPhieuSaoChep } from '../core/bang-tinh';
 import type { DgdvFormValues } from '../core/schema';
 import { TRANG_THAI_DGDV, type TrangThaiDgdvPhieu } from '../core/types';
@@ -37,6 +39,7 @@ type FormState = { kieu: 'moi'; giaTri: Partial<DgdvFormValues> | null } | { kie
 const DanhSachTab: React.FC = () => {
   const { t } = useTranslation();
   const perm = useDgdvPermissions();
+  const importer = useDgdvImport();
   const { canCreate, canDelete, canEditRow, canDeleteRow, canToggleTrangThai, canCaiDat, canNhapLuoi } = perm;
   const confirm = useConfirmStore((s) => s.confirm);
   const {
@@ -245,6 +248,7 @@ const DanhSachTab: React.FC = () => {
         onAdd={() => setForm({ kieu: 'moi', giaTri: branchesForm[0] ? { id_chi_nhanh: branchesForm[0].id } : null })}
         onDeleteMany={canDelete ? handleDeleteMany : undefined}
         bulkActions={bulkActions}
+        onImport={perm.canCreate ? importer.openImport : undefined}
         onExport={() => (totalCount === 0 ? toast.warning(t('danhGiaDauVao.noExportData')) : setShowExport(true))}
         onCaiDat={canCaiDat ? () => setShowCaiDat(true) : undefined}
         canCreate={canCreate}
@@ -314,6 +318,8 @@ const DanhSachTab: React.FC = () => {
           />
         )}
       </AnimatePresence>
+
+      <LazyImportDialog open={importer.showImport} onClose={importer.closeImport} {...importer.dialogProps} />
 
       <AnimatePresence>{showCaiDat && <CaiDatDialog onClose={() => setShowCaiDat(false)} />}</AnimatePresence>
     </div>

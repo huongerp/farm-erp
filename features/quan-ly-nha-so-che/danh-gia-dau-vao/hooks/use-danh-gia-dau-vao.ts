@@ -9,7 +9,6 @@ import {
   deleteDongDb,
   getDgdvTomTatDb,
   luuDutDayDb,
-  luuGhiChuLoDb,
   updateDgdvDb,
   updateDgdvTrangThaiManyDb,
   upsertDongDb,
@@ -18,14 +17,12 @@ import type { DgdvFormValues } from '../core/schema';
 import type { DgdvPhieuDayDu, TrangThaiDgdvPhieu } from '../core/types';
 import { cacTuanTrongKhoang } from '../utils/khoang-ngay';
 import {
-  apDutDayVaoPhieu,
-  apGhiChuLoVaoPhieu,
-  apOVaoPhieu,
-  apVaoDuLieuCache,
-  laORong,
-  type DgdvGiaTriO,
-  type DgdvKhoaO,
-} from '../utils/cap-nhat-luoi';
+  keHoachLuuDong,
+  keHoachXoaDong,
+  type DgdvDongInput,
+  type DgdvDongPhang,
+  type DgdvThaoTacGhi,
+} from '../core/chi-tiet-dong';
 
 export const QUERY_KEY_DGDV = ['danhGiaDauVao'] as const;
 
@@ -123,59 +120,46 @@ export function useUpdateDgdvTrangThai() {
   });
 }
 
-// ---- Tự lưu lưới -------------------------------------------------------------------
+// ---- Dòng chi tiết đánh giá ------------------------------------------------------------
 
-/** Áp thay đổi vào mọi phiếu đang cache (bảng đánh giá + chi tiết) — số tự cộng ngay. */
-function apVaoCache(qc: QueryClient, fn: (p: DgdvPhieuDayDu) => DgdvPhieuDayDu) {
-  qc.setQueriesData({ queryKey: [...QUERY_KEY_DGDV, 'khoang'] }, (d: unknown) => apVaoDuLieuCache(d, fn));
-  qc.setQueriesData({ queryKey: [...QUERY_KEY_DGDV, 'full'] }, (d: unknown) => apVaoDuLieuCache(d, fn));
+async function chayThaoTac(ops: DgdvThaoTacGhi[]): Promise<void> {
+  // Tuần tự: xoá dòng cũ trước khi ghi dòng mới (đổi lô / dây / ngày).
+  for (const op of ops) {
+    if (op.op === 'xoaDong') await deleteDongDb(op.khoa);
+    else if (op.op === 'ghiDong') await upsertDongDb({ ...op.khoa, ...op.gt });
+    else await luuDutDayDb(op.id_phieu_lo, op.ngay, op.dutDay);
+  }
+}
+
+function lamMoiSauGhiDong(qc: QueryClient) {
+  qc.invalidateQueries({ queryKey: [...QUERY_KEY_DGDV, 'full'] });
+  qc.invalidateQueries({ queryKey: [...QUERY_KEY_DGDV, 'khoang'] });
   // Tổng thu cả tuần ở danh sách: đánh dấu cũ, tải lại khi quay về danh sách.
   qc.invalidateQueries({ queryKey: [...QUERY_KEY_DGDV, 'page'], refetchType: 'none' });
 }
 
-/** Lưu một ô lưới: ô trống hết → xoá dòng; còn lại upsert theo khoá ô. */
-export function useLuuODgdv() {
+/** Thêm (cu = null) / sửa một dòng chi tiết — kế hoạch ghi ở core/chi-tiet-dong. */
+export function useLuuDongDgdv() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ khoa, gt }: { khoa: DgdvKhoaO; gt: DgdvGiaTriO }) => {
-      if (laORong(gt)) {
-        await deleteDongDb(khoa);
-        return { khoa, dong: null };
-      }
-      const dong = await upsertDongDb({
-        ...khoa,
-        ...gt,
-        danh_gia: gt.danh_gia?.trim() || null,
-        ly_do_loi: gt.ly_do_loi?.trim() || null,
-      });
-      return { khoa, dong };
+    mutationFn: ({ phieu, cu, moi }: { phieu: DgdvPhieuDayDu; cu: DgdvDongPhang | null; moi: DgdvDongInput }) =>
+      chayThaoTac(keHoachLuuDong(phieu, cu, moi)),
+    onSuccess: (_v, { cu }) => {
+      lamMoiSauGhiDong(qc);
+      toast.success(i18n.t(cu ? 'danhGiaDauVao.chiTiet.daSua' : 'danhGiaDauVao.chiTiet.daThem'));
     },
-    onSuccess: ({ khoa, dong }) => apVaoCache(qc, (p) => apOVaoPhieu(p, khoa, dong)),
     onError: (err: Error) => toast.error(err.message),
   });
 }
 
-export function useLuuDutDay() {
+export function useXoaDongDgdv() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ idPhieuLo, ngay, dutDay }: { idPhieuLo: string; ngay: string; dutDay: number }) => ({
-      idPhieuLo,
-      ngay,
-      row: await luuDutDayDb(idPhieuLo, ngay, dutDay),
-    }),
-    onSuccess: ({ idPhieuLo, ngay, row }) => apVaoCache(qc, (p) => apDutDayVaoPhieu(p, idPhieuLo, ngay, row)),
-    onError: (err: Error) => toast.error(err.message),
-  });
-}
-
-export function useLuuGhiChuLo() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ idPhieuLo, ghiChu }: { idPhieuLo: string; ghiChu: string | null }) => {
-      await luuGhiChuLoDb(idPhieuLo, ghiChu);
-      return { idPhieuLo, ghiChu };
+    mutationFn: (cu: DgdvDongPhang) => chayThaoTac(keHoachXoaDong(cu)),
+    onSuccess: () => {
+      lamMoiSauGhiDong(qc);
+      toast.success(i18n.t('danhGiaDauVao.chiTiet.daXoa'));
     },
-    onSuccess: ({ idPhieuLo, ghiChu }) => apVaoCache(qc, (p) => apGhiChuLoVaoPhieu(p, idPhieuLo, ghiChu)),
     onError: (err: Error) => toast.error(err.message),
   });
 }

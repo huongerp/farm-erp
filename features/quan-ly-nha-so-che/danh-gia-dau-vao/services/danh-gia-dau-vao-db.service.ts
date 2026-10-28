@@ -19,6 +19,7 @@ import type {
 } from '../core/types';
 import type { DgdvFormValues } from '../core/schema';
 import { gonTen, khoaTen } from '../core/chuan-hoa-ten';
+import type { DongImportRpc } from '../utils/import-dong';
 
 const TABLE = 'fp_farm_dgdv';
 const TABLE_COT = 'fp_farm_dgdv_cot';
@@ -562,11 +563,27 @@ export async function luuDutDayDb(idPhieuLo: string, ngay: string, dutDay: numbe
   return mapLoNgay(data as DbLoNgayRow);
 }
 
-/** Ghi chú của lô trong phiếu (cột «Ghi chú» cuối lưới — dùng chung cả tuần). */
-export async function luuGhiChuLoDb(idPhieuLo: string, ghiChu: string | null): Promise<void> {
-  const { error } = await db
-    .from(TABLE_LO)
-    .update({ ghi_chu: ghiChu?.trim() || null })
-    .eq('id', toInt8(idPhieuLo) ?? -1);
-  if (error) throwDbError(error, { resource: `${TABLE_LO}.ghiChu` });
+// ---- Import Excel dòng chi tiết ---------------------------------------------------------
+
+export interface DgdvImportKetQua {
+  errors: { row: number; msg: string }[];
+  so_dong: number;
+  so_phieu_moi: number;
+  so_lo_moi: number;
+  so_day_moi: number;
+}
+
+/** Ghi các dòng đã parse qua RPC `rpc_dgdv_import` (migration 056) — một transaction, lỗi là không ghi gì. */
+export async function importDongDgdvDb(
+  rows: DongImportRpc[],
+  thayThe: boolean,
+  idPhieu: string | null
+): Promise<DgdvImportKetQua> {
+  const { data, error } = await db.rpc('rpc_dgdv_import', {
+    p_rows: rows,
+    p_thay_the: thayThe,
+    p_id_phieu: toInt8(idPhieu),
+  });
+  if (error) throwDbError(error, { resource: 'rpc_dgdv_import' });
+  return data as DgdvImportKetQua;
 }
