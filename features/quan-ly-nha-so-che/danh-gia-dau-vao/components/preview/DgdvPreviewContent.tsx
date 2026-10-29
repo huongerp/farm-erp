@@ -130,7 +130,7 @@ const LuoiIn: React.FC<{ luoi: DgdvLuoiNgay }> = ({ luoi }) => {
   );
 };
 
-const DgdvPreviewContent: React.FC<{ dsKhoi: DgdvKhoiNgay[] }> = ({ dsKhoi }) => {
+const DgdvPreviewContent: React.FC<{ dsKhoi: DgdvKhoiNgay[]; chuyen?: number }> = ({ dsKhoi, chuyen }) => {
   const { t } = useTranslation();
   const dsLuoi = dsKhoi.flatMap((k) => k.luoi);
 
@@ -156,7 +156,8 @@ const DgdvPreviewContent: React.FC<{ dsKhoi: DgdvKhoiNgay[] }> = ({ dsKhoi }) =>
             >
               <p className="text-center font-semibold m-0 mb-2">
                 {t('danhGiaDauVao.luoi.ksc')} {formatNumberVN(luoi.ksc)} · {t('danhGiaDauVao.luoi.tongThu')}{' '}
-                {formatNumberVN(luoi.tongThu)} · {t('danhGiaDauVao.luoi.tuanThuHoach')} {tuanThu} · {t('danhGiaDauVao.luoi.ngay')}{' '}
+                {formatNumberVN(luoi.tongThu)}
+                {chuyen != null && <> · {t('danhGiaDauVao.detail.tieuDeChuyen', { chuyen })}</>} · {t('danhGiaDauVao.luoi.tuanThuHoach')} {tuanThu} · {t('danhGiaDauVao.luoi.ngay')}{' '}
                 {formatYmdToDisplay(luoi.ngay)}
               </p>
               {tomTat && <p className="text-center m-0 mb-2">{tomTat}</p>}

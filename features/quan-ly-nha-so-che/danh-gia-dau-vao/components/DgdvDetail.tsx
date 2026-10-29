@@ -2,7 +2,7 @@
  * Chi tiết phiếu chuyến (60rem): ngày · chuyến · tuần · chi nhánh trên tiêu đề; thông tin gọn (trạng thái, tổng
  * thu, KSC, ghi chú; người tạo / cập nhật ở dòng phụ cuối) + bảng con «Theo lô» (bấm lô → drawer lô) + «Chi tiết
  * đánh giá» (bấm dòng → drawer xem dòng; nhập SL · đánh giá · SL lỗi · lý do · đứt dây, «Nhập theo lô»).
- * Lưới Excel lô × dây mở bằng «Xem dạng lưới» (drawer con rộng). In ngày / In cả tuần farm, Xuất Excel dạng
+ * Lưới Excel lô × dây mở bằng «Xem dạng lưới» (drawer con rộng). In chuyến / ngày / tuần farm, Xuất Excel dạng
  * dòng, Sao chép sang chuyến mới, Khoá.
  */
 import React, { useMemo, useState } from 'react';
@@ -21,11 +21,10 @@ import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { formatDateTimeShort, formatNumberVN, formatYmdToDisplay } from '../../../../lib/utils';
 import type { DgdvPhieuDayDu } from '../core/types';
 import { TRANG_THAI_DGDV } from '../core/types';
-import { cacNgayCuaTuanFarm } from '../core/tuan';
 import { tongPhieu } from '../core/bang-tinh';
 import { useUpdateDgdvTrangThai } from '../hooks/use-danh-gia-dau-vao';
 import { useDungLuoi } from '../hooks/use-dung-luoi';
-import { getDgdvPreviewUrl } from '../utils/preview-url';
+import { getDgdvInTuanUrl, getDgdvPreviewChuyenUrl, getDgdvPreviewUrl } from '../utils/preview-url';
 import { nhanTiLeKsc } from '../utils/export-danh-sach';
 import DgdvLuoiNgayTable from './luoi/DgdvLuoiNgayTable';
 import DgdvChiTietSection from './chi-tiet/DgdvChiTietSection';
@@ -74,8 +73,6 @@ const DgdvDetail: React.FC<Props> = ({
   const [xemLuoi, setXemLuoi] = useState(false);
 
   const ngay = data.ngay;
-  const cacNgayTuan = useMemo(() => cacNgayCuaTuanFarm(data.nam, data.tuan), [data.nam, data.tuan]);
-
   const dsPhieu = useMemo(() => [data], [data]);
   const { dsKhoi, canhBao } = useDungLuoi(dsPhieu, ngay, ngay);
   const luoi = dsKhoi[0]?.luoi[0];
@@ -85,11 +82,19 @@ const DgdvDetail: React.FC<Props> = ({
 
   const moIn = (tu: string, den: string) =>
     window.open(getDgdvPreviewUrl(tu, den, data.id_chi_nhanh), '_blank', 'noopener,noreferrer');
+  const moInTuan = () =>
+    window.open(getDgdvInTuanUrl(data.nam, data.tuan, [data.id_chi_nhanh]), '_blank', 'noopener,noreferrer');
 
   const actions: DetailToolbarAction[] = [
     { label: t('danhGiaDauVao.detail.xemLuoi'), icon: <Grid3x3 size={16} />, variant: 'primary', disabled: !luoi, onClick: () => setXemLuoi(true) },
+    {
+      label: t('danhGiaDauVao.detail.inChuyen'),
+      icon: <Printer size={16} />,
+      variant: 'outline',
+      onClick: () => window.open(getDgdvPreviewChuyenUrl(data.id), '_blank', 'noopener,noreferrer'),
+    },
     { label: t('danhGiaDauVao.detail.inNgay'), icon: <Printer size={16} />, variant: 'outline', onClick: () => moIn(ngay, ngay) },
-    { label: t('danhGiaDauVao.detail.inTuan'), icon: <Printer size={16} />, variant: 'outline', onClick: () => moIn(cacNgayTuan[0], cacNgayTuan[6]) },
+    { label: t('danhGiaDauVao.detail.inTuan'), icon: <Printer size={16} />, variant: 'outline', onClick: moInTuan },
   ];
   if (onXuatExcel) {
     actions.push({

@@ -9,7 +9,7 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
-import { AlertTriangle, Building2, CalendarRange, ChevronLeft, ChevronRight, FileSpreadsheet, UserRound } from 'lucide-react';
+import { AlertTriangle, Building2, CalendarRange, ChevronLeft, ChevronRight, FileSpreadsheet, Printer, UserRound } from 'lucide-react';
 import DashboardToolbar from '../../../../components/shared/DashboardToolbar';
 import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
 import GenericTable from '../../../../components/shared/GenericTable';
@@ -33,6 +33,7 @@ import { useDgdvChiNhanhXem } from '../hooks/use-dgdv-chi-nhanh-xem';
 import { useDgdvTongTuanStore } from '../store/useDgdvTongHopStore';
 import { nhanTiLeKsc } from '../utils/export-danh-sach';
 import { cotXuatTuan, dongXuatTuan } from '../utils/export-tong-hop';
+import { getDgdvInTuanUrl } from '../utils/preview-url';
 import { fmtO } from './tong-hop/bang-tong-hop';
 import TongTuanDetail from './tong-hop/TongTuanDetail';
 
@@ -167,11 +168,25 @@ const TongHopTuanTab: React.FC = () => {
 
   const iconBtn = 'h-9 w-9 p-0 inline-flex items-center justify-center border-border text-muted-foreground hover:bg-muted/50';
   const actions = (
-    <Tooltip content={t('danhGiaDauVao.bang.xuatExcel')} placement="bottom">
-      <Button variant="outline" size="sm" className={iconBtn} disabled={!coSo} onClick={() => setMoXuat(true)} aria-label={t('danhGiaDauVao.bang.xuatExcel')}>
-        <FileSpreadsheet className="w-4 h-4" />
-      </Button>
-    </Tooltip>
+    <div className="flex items-center gap-2">
+      <Tooltip content={t('danhGiaDauVao.bang.in')} placement="bottom">
+        <Button
+          variant="outline"
+          size="sm"
+          className={iconBtn}
+          disabled={!coSo}
+          onClick={() => window.open(getDgdvInTuanUrl(tuan.nam, tuan.tuan, chonCn, filters.to_truong, filters.ksc), '_blank', 'noopener,noreferrer')}
+          aria-label={t('danhGiaDauVao.bang.in')}
+        >
+          <Printer className="w-4 h-4" />
+        </Button>
+      </Tooltip>
+      <Tooltip content={t('danhGiaDauVao.bang.xuatExcel')} placement="bottom">
+        <Button variant="outline" size="sm" className={iconBtn} disabled={!coSo} onClick={() => setMoXuat(true)} aria-label={t('danhGiaDauVao.bang.xuatExcel')}>
+          <FileSpreadsheet className="w-4 h-4" />
+        </Button>
+      </Tooltip>
+    </div>
   );
 
   const renderCell = (colId: string, r: DgdvTuanChiNhanhDong) => {
@@ -302,6 +317,8 @@ const TongHopTuanTab: React.FC = () => {
             tenChiNhanh={tenCn(dongXem.id_chi_nhanh)}
             rows={rowsXem}
             tenToTruongLoc={tenToTruongLoc}
+            toTruong={filters.to_truong}
+            ksc={filters.ksc}
             onClose={() => setXemCn(null)}
           />
         )}

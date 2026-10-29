@@ -5,6 +5,7 @@
 import type { TFunction } from 'i18next';
 import type { ExportColumn } from '../../../../components/shared/LazyExportDialog';
 import { formatYmdToDisplay } from '../../../../lib/utils';
+import { ghiXlsxCoBangHinh } from '../../../../lib/export/xlsx-bang-hinh';
 import { tiLeKsc, type DgdvSoSanhThang, type DgdvThangChiNhanh, type DgdvTongHopTuan } from '../core/tong-hop';
 
 /** Số / % làm tròn 1 chữ số; không tính được → '' (ô trống). */
@@ -62,6 +63,30 @@ export function dongXuatTuan(
     });
   }
   return ds;
+}
+
+/** Tải nhanh XLSX của phiếu tuần từ đúng mô hình đã gom cho phần in. */
+export async function taiXlsxTuan(
+  kq: DgdvTongHopTuan,
+  ngays: readonly string[],
+  tenCn: (id: string) => string,
+  tenFile: string,
+  t: TFunction
+): Promise<boolean> {
+  const cot = cotXuatTuan(ngays, t);
+  const dong = dongXuatTuan(kq, tenCn, t);
+  if (dong.length === 0) return false;
+  const XLSX = await import('xlsx');
+  const aoa = [
+    cot.map((c) => c.label),
+    ...dong.map((r) => cot.map((c) => r[c.key] ?? '')),
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols'] = cot.map((c, i) => ({ wch: i < 3 ? 22 : c.key === 'ti_le' ? 12 : 14 }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, t('danhGiaDauVao.tabs.tongHopTuan').slice(0, 31));
+  await ghiXlsxCoBangHinh(XLSX, wb, `${tenFile}.xlsx`);
+  return true;
 }
 
 // ---- Tháng -----------------------------------------------------------------------

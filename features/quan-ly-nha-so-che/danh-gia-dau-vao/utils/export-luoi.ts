@@ -56,7 +56,7 @@ export function nhanXuatLuoi(t: TFunction): DgdvNhanXuat {
 }
 
 /** Trả false khi khoảng ngày không có phiếu nào (không tạo file rỗng). */
-export async function taiXlsxLuoi(dsKhoi: DgdvKhoiNgay[], tu: string, den: string, t: TFunction): Promise<boolean> {
+export async function taiXlsxLuoi(dsKhoi: DgdvKhoiNgay[], tu: string, den: string, t: TFunction, tenFile = tenFileLuoi(tu, den)): Promise<boolean> {
   const { aoa, merges, soCot } = taoAoaLuoi(dsKhoi, nhanXuatLuoi(t));
   if (aoa.length === 0) return false;
   const XLSX = await import('xlsx');
@@ -70,6 +70,6 @@ export async function taiXlsxLuoi(dsKhoi: DgdvKhoiNgay[], tu: string, den: strin
   });
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, t('danhGiaDauVao.title').slice(0, 31));
-  await ghiXlsxCoBangHinh(XLSX, wb, `${tenFileLuoi(tu, den)}.xlsx`);
+  await ghiXlsxCoBangHinh(XLSX, wb, `${tenFile}.xlsx`);
   return true;
 }

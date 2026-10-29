@@ -5,12 +5,13 @@
  */
 import React, { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CalendarRange } from 'lucide-react';
+import { CalendarRange, Printer } from 'lucide-react';
 import GenericDrawer from '../../../../../components/shared/GenericDrawer';
 import DetailSection from '../../../../../components/shared/DetailSection';
 import DetailField from '../../../../../components/shared/DetailField';
 import DetailFieldGrid from '../../../../../components/shared/DetailFieldGrid';
 import DetailDrawerFooter from '../../../../../components/shared/DetailDrawerFooter';
+import DetailToolbar, { type DetailToolbarAction } from '../../../../../components/shared/DetailToolbar';
 import { DRAWER_WIDTH_BAO_CAO_SO_CHE } from '../../../../../lib/dialog-sizes';
 import { cn, formatNumberVN, formatYmdToDisplay } from '../../../../../lib/utils';
 import type { TuanFarm } from '../../core/types';
@@ -19,6 +20,7 @@ import { nhanTuanFarm } from '../../core/tuan';
 import { tongHopTuanTheoDay, tongHopTuanTheoLo, type DgdvDongNgayDay, type DgdvTuanChiNhanhDong, type DgdvTuanDay } from '../../core/tong-hop';
 import { useMauDay } from '../../hooks/use-danh-muc-dgdv';
 import { nhanTiLeKsc } from '../../utils/export-danh-sach';
+import { getDgdvInTuanUrl } from '../../utils/preview-url';
 import { styleTieuDeCot } from '../../utils/mau-day';
 import { BangTongHop, TieuDeBang } from './BangTongHop';
 import { TD, TH, W_COT_DAU, fmtO } from './bang-tong-hop';
@@ -31,10 +33,12 @@ interface Props {
   /** Dòng view tổng ngày × dây của chi nhánh trong tuần (đã lọc tổ trưởng nếu có). */
   rows: readonly DgdvDongNgayDay[];
   tenToTruongLoc: string[];
+  toTruong: string[];
+  ksc: string[];
   onClose: () => void;
 }
 
-const TongTuanDetail: React.FC<Props> = ({ tuan, ngays, dong, tenChiNhanh, rows, tenToTruongLoc, onClose }) => {
+const TongTuanDetail: React.FC<Props> = ({ tuan, ngays, dong, tenChiNhanh, rows, tenToTruongLoc, toTruong, ksc, onClose }) => {
   const { t } = useTranslation();
   const { mauTheoId } = useMauDay();
   const theoLo = useMemo(() => tongHopTuanTheoLo(rows, ngays, [dong.id_chi_nhanh]), [rows, ngays, dong.id_chi_nhanh]);
@@ -69,6 +73,14 @@ const TongTuanDetail: React.FC<Props> = ({ tuan, ngays, dong, tenChiNhanh, rows,
       <th className={cn(TH, 'min-w-[4.5rem]')}>{t('danhGiaDauVao.store.colTiLeKsc')}</th>
     </>
   );
+  const actions: DetailToolbarAction[] = [
+    {
+      label: t('danhGiaDauVao.detail.inTuan'),
+      icon: <Printer size={16} />,
+      variant: 'primary',
+      onClick: () => window.open(getDgdvInTuanUrl(tuan.nam, tuan.tuan, [dong.id_chi_nhanh], toTruong, ksc), '_blank', 'noopener,noreferrer'),
+    },
+  ];
 
   return (
     <GenericDrawer
@@ -84,6 +96,7 @@ const TongTuanDetail: React.FC<Props> = ({ tuan, ngays, dong, tenChiNhanh, rows,
       footer={<DetailDrawerFooter onClose={onClose} canUpdate={false} canDelete={false} />}
     >
       <div className="space-y-4 pb-2">
+        <DetailToolbar actions={actions} className="bg-card rounded-xl border border-border" />
         <DetailSection title={t('danhGiaDauVao.tongHop.sectionTongTuan')} icon={<CalendarRange size={14} />} variant="primary">
           <DetailFieldGrid cols={3}>
             <DetailField
