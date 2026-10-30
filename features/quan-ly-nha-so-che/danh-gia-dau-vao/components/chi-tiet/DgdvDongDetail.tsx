@@ -33,7 +33,7 @@ const DgdvDongDetail: React.FC<Props> = ({ phieu, dong, canNhap, onClose, onSua,
   const { mauTheoId } = useMauDay();
   const cot = useMemo(() => (dong.id_cot ? (phieu.cot.find((c) => c.id === dong.id_cot) ?? null) : null), [phieu.cot, dong.id_cot]);
   const dutDay = dong.loai === 'dut_day';
-  const loiQua = dong.so_luong_loi > dong.so_luong;
+  const loiQua = dong.so_luong_huy > dong.so_luong;
 
   return (
     <GenericDrawer
@@ -57,13 +57,13 @@ const DgdvDongDetail: React.FC<Props> = ({ phieu, dong, canNhap, onClose, onSua,
               <DetailField
                 label={t('danhGiaDauVao.luoi.colSlLoi')}
                 value={
-                  <span className={cn('tabular-nums', loiQua ? 'font-semibold text-rose-600' : dong.so_luong_loi > 0 && 'text-rose-600')}>
-                    {formatNumberVN(dong.so_luong_loi)}
+                  <span className={cn('tabular-nums', loiQua ? 'font-semibold text-rose-600' : dong.so_luong_huy > 0 && 'text-rose-600')}>
+                    {formatNumberVN(dong.so_luong_huy)}
                     {loiQua && <span className="ml-2 text-caption">{t('danhGiaDauVao.luoi.canhBaoLoi')}</span>}
                   </span>
                 }
               />
-              <DetailField label={t('danhGiaDauVao.luoi.colLyDoLoi')} value={dong.ly_do_loi ?? '—'} className="sm:col-span-2" />
+              <DetailField label={t('danhGiaDauVao.luoi.colLyDoLoi')} value={dong.ly_do_huy ?? '—'} className="sm:col-span-2" />
             </>
           )}
         </DetailFieldGrid>

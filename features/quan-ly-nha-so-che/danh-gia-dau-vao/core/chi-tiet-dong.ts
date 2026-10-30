@@ -23,8 +23,8 @@ export interface DgdvDongPhang {
   stt_dong: number;
   so_luong: number;
   danh_gia: string | null;
-  so_luong_loi: number;
-  ly_do_loi: string | null;
+  so_luong_huy: number;
+  ly_do_huy: string | null;
 }
 
 /** Giá trị nhập của dialog dòng. `id_cot` = null nghĩa là «Đứt dây». */
@@ -34,8 +34,8 @@ export interface DgdvDongInput {
   id_cot: string | null;
   so_luong: number;
   danh_gia: string | null;
-  so_luong_loi: number;
-  ly_do_loi: string | null;
+  so_luong_huy: number;
+  ly_do_huy: string | null;
 }
 
 export interface DgdvKhoaDong {
@@ -50,7 +50,7 @@ export type DgdvThaoTacGhi =
   | {
       op: 'ghiDong';
       khoa: DgdvKhoaDong;
-      gt: { so_luong: number; danh_gia: string | null; so_luong_loi: number; ly_do_loi: string | null };
+      gt: { so_luong: number; danh_gia: string | null; so_luong_huy: number; ly_do_huy: string | null };
     }
   /** dutDay = 0 → xoá. */
   | { op: 'ghiDutDay'; id_phieu_lo: string; ngay: string; dutDay: number };
@@ -72,8 +72,8 @@ export function dongPhangCuaPhieu(phieu: Pick<DgdvPhieuDayDu, 'lo' | 'cot'>): Dg
         stt_dong: d.stt_dong,
         so_luong: d.so_luong,
         danh_gia: d.danh_gia,
-        so_luong_loi: d.so_luong_loi,
-        ly_do_loi: d.ly_do_loi,
+        so_luong_huy: d.so_luong_huy,
+        ly_do_huy: d.ly_do_huy,
       });
     }
     for (const n of lo.lo_ngay) {
@@ -87,8 +87,8 @@ export function dongPhangCuaPhieu(phieu: Pick<DgdvPhieuDayDu, 'lo' | 'cot'>): Dg
         stt_dong: 0,
         so_luong: n.dut_day,
         danh_gia: null,
-        so_luong_loi: 0,
-        ly_do_loi: null,
+        so_luong_huy: 0,
+        ly_do_huy: null,
       });
     }
   }
@@ -140,8 +140,8 @@ export function keHoachLuuDong(
   const gt = {
     so_luong: moi.so_luong,
     danh_gia: chuHoacNull(moi.danh_gia),
-    so_luong_loi: moi.so_luong_loi,
-    ly_do_loi: chuHoacNull(moi.ly_do_loi),
+    so_luong_huy: moi.so_luong_huy,
+    ly_do_huy: chuHoacNull(moi.ly_do_huy),
   };
   if (cu?.loai === 'day' && cu.id_cot === moi.id_cot && cu.id_phieu_lo === moi.id_phieu_lo && cu.ngay === moi.ngay) {
     ops.push({ op: 'ghiDong', khoa: { id_phieu_lo: cu.id_phieu_lo, id_cot: cu.id_cot, ngay: cu.ngay, stt_dong: cu.stt_dong }, gt });
@@ -179,7 +179,7 @@ export interface DgdvTongLoPhieu {
   dutDay: number;
   /** soLuong + dutDay = tổng thu của lô */
   slBuong: number;
-  /** Σ so_luong_loi */
+  /** Σ so_luong_huy */
   ksc: number;
   /** số dòng dây đã nhập */
   soDong: number;
@@ -201,9 +201,9 @@ export function tongTheoLo(phieu: Pick<DgdvPhieuDayDu, 'lo'>): DgdvTongLoPhieu[]
         soLuong,
         dutDay,
         slBuong: soLuong + dutDay,
-        ksc: lo.dong.reduce((s, d) => s + d.so_luong_loi, 0),
+        ksc: lo.dong.reduce((s, d) => s + d.so_luong_huy, 0),
         soDong: lo.dong.length,
-        coCanhBao: lo.dong.some((d) => d.so_luong_loi > d.so_luong),
+        coCanhBao: lo.dong.some((d) => d.so_luong_huy > d.so_luong),
       };
     });
 }
@@ -234,8 +234,8 @@ export interface DgdvHangNhapLo {
   stt_dong: number | null;
   so_luong: number;
   danh_gia: string | null;
-  so_luong_loi: number;
-  ly_do_loi: string | null;
+  so_luong_huy: number;
+  ly_do_huy: string | null;
 }
 
 export const KHOA_HANG_DUT_DAY = 'dut';
@@ -246,8 +246,8 @@ const hangTrong = (idCot: string | null, key: string): DgdvHangNhapLo => ({
   stt_dong: null,
   so_luong: 0,
   danh_gia: null,
-  so_luong_loi: 0,
-  ly_do_loi: null,
+  so_luong_huy: 0,
+  ly_do_huy: null,
 });
 
 /**
@@ -271,8 +271,8 @@ export function hangNhapCuaLo(phieu: Pick<DgdvPhieuDayDu, 'lo' | 'cot'>, idPhieu
         stt_dong: d.stt_dong,
         so_luong: d.so_luong,
         danh_gia: d.danh_gia,
-        so_luong_loi: d.so_luong_loi,
-        ly_do_loi: d.ly_do_loi,
+        so_luong_huy: d.so_luong_huy,
+        ly_do_huy: d.ly_do_huy,
       });
     }
   }
@@ -295,8 +295,8 @@ export type LoiHangNhap = 'thieuSoLuong' | 'slLoiLonHon';
 /** Hàng có chữ / SL lỗi mà thiếu số lượng, hoặc SL lỗi > SL (dây) — chặn lưu cả lô. Hàng trống hết = hợp lệ. */
 export function loiHangNhap(h: DgdvHangNhapLo): LoiHangNhap | null {
   if (h.id_cot == null) return null;
-  if (h.so_luong_loi > h.so_luong) return h.so_luong > 0 ? 'slLoiLonHon' : 'thieuSoLuong';
-  if (h.so_luong <= 0 && (chuHoacNull(h.danh_gia) || chuHoacNull(h.ly_do_loi))) return 'thieuSoLuong';
+  if (h.so_luong_huy > h.so_luong) return h.so_luong > 0 ? 'slLoiLonHon' : 'thieuSoLuong';
+  if (h.so_luong <= 0 && (chuHoacNull(h.danh_gia) || chuHoacNull(h.ly_do_huy))) return 'thieuSoLuong';
   return null;
 }
 
@@ -323,8 +323,8 @@ export function keHoachLuuCaLo(
   const gtCua = (h: DgdvHangNhapLo) => ({
     so_luong: h.so_luong,
     danh_gia: chuHoacNull(h.danh_gia),
-    so_luong_loi: h.so_luong_loi,
-    ly_do_loi: chuHoacNull(h.ly_do_loi),
+    so_luong_huy: h.so_luong_huy,
+    ly_do_huy: chuHoacNull(h.ly_do_huy),
   });
 
   const xoa: DgdvThaoTacGhi[] = [];
@@ -338,9 +338,9 @@ export function keHoachLuuCaLo(
     const gt = gtCua(h);
     const doi =
       gt.so_luong !== d.so_luong ||
-      gt.so_luong_loi !== d.so_luong_loi ||
+      gt.so_luong_huy !== d.so_luong_huy ||
       gt.danh_gia !== chuHoacNull(d.danh_gia) ||
-      gt.ly_do_loi !== chuHoacNull(d.ly_do_loi);
+      gt.ly_do_huy !== chuHoacNull(d.ly_do_huy);
     if (doi) sua.push({ op: 'ghiDong', khoa: khoa(d.id_cot, d.stt_dong), gt });
   }
 
@@ -364,7 +364,7 @@ export function keHoachLuuCaLo(
 
 /** Tổng số lượng (gồm đứt dây) + tổng SL lỗi của các dòng đang hiện. */
 export function tongDongPhang(ds: readonly DgdvDongPhang[]): { soLuong: number; soLuongLoi: number } {
-  return ds.reduce((s, r) => ({ soLuong: s.soLuong + r.so_luong, soLuongLoi: s.soLuongLoi + r.so_luong_loi }), {
+  return ds.reduce((s, r) => ({ soLuong: s.soLuong + r.so_luong, soLuongLoi: s.soLuongLoi + r.so_luong_huy }), {
     soLuong: 0,
     soLuongLoi: 0,
   });

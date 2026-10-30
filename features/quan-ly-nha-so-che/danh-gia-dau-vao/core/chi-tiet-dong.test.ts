@@ -27,8 +27,8 @@ const o = (id: string, lo: string, cot: string, ngay: string, stt: number, sl: n
   stt_dong: stt,
   so_luong: sl,
   danh_gia: null,
-  so_luong_loi: loi,
-  ly_do_loi: null,
+  so_luong_huy: loi,
+  ly_do_huy: null,
 });
 
 function phieu(): Pick<DgdvPhieuDayDu, 'lo' | 'cot'> {
@@ -64,7 +64,7 @@ describe('dongPhangCuaPhieu', () => {
 describe('keHoachLuuDong', () => {
   const p = phieu();
   const ds = dongPhangCuaPhieu(p);
-  const gtRong = { danh_gia: null, so_luong_loi: 0, ly_do_loi: null };
+  const gtRong = { danh_gia: null, so_luong_huy: 0, ly_do_huy: null };
 
   it('thêm dây mới → stt kế tiếp của (lô, dây, ngày)', () => {
     expect(sttDongKeTiep(p, 'L1', 'c1', N1)).toBe(3);
@@ -75,8 +75,8 @@ describe('keHoachLuuDong', () => {
 
   it('sửa giữ khoá → ghi đè đúng dòng; đổi dây → xoá cũ + ghi mới', () => {
     const d3 = ds.find((r) => r.key === 'd:d3')!;
-    expect(keHoachLuuDong(p, d3, { id_phieu_lo: 'L1', id_cot: 'c1', ngay: N1, so_luong: 21, danh_gia: ' Thiếu lá ', so_luong_loi: 0, ly_do_loi: '' })).toEqual([
-      { op: 'ghiDong', khoa: { id_phieu_lo: 'L1', id_cot: 'c1', ngay: N1, stt_dong: 1 }, gt: { so_luong: 21, danh_gia: 'Thiếu lá', so_luong_loi: 0, ly_do_loi: null } },
+    expect(keHoachLuuDong(p, d3, { id_phieu_lo: 'L1', id_cot: 'c1', ngay: N1, so_luong: 21, danh_gia: ' Thiếu lá ', so_luong_huy: 0, ly_do_huy: '' })).toEqual([
+      { op: 'ghiDong', khoa: { id_phieu_lo: 'L1', id_cot: 'c1', ngay: N1, stt_dong: 1 }, gt: { so_luong: 21, danh_gia: 'Thiếu lá', so_luong_huy: 0, ly_do_huy: null } },
     ]);
     const ops = keHoachLuuDong(p, d3, { id_phieu_lo: 'L1', id_cot: 'c2', ngay: N1, so_luong: 20, ...gtRong });
     expect(ops.map((x) => x.op)).toEqual(['xoaDong', 'ghiDong']);
@@ -150,14 +150,14 @@ describe('nhập theo lô', () => {
     ds = themHangChoDay(ds, 'c1');
     ds = themHangChoDay(ds, 'c1');
     ds = sua(ds, 'c:c1:m1', { so_luong: 4 });
-    ds = sua(ds, 'c:c1:m2', { so_luong: 6, so_luong_loi: 1, ly_do_loi: 'Chín' });
+    ds = sua(ds, 'c:c1:m2', { so_luong: 6, so_luong_huy: 1, ly_do_huy: 'Chín' });
     ds = sua(ds, KHOA_HANG_DUT_DAY, { so_luong: 2 });
     const k = (cot: string, stt: number) => ({ id_phieu_lo: 'L1', id_cot: cot, ngay: N1, stt_dong: stt });
     expect(keHoachLuuCaLo(p, 'L1', N1, ds)).toEqual([
       { op: 'xoaDong', khoa: k('c1', 2) },
-      { op: 'ghiDong', khoa: k('c2', 1), gt: { so_luong: 12, danh_gia: 'Thiếu lá', so_luong_loi: 2, ly_do_loi: null } },
-      { op: 'ghiDong', khoa: k('c1', 3), gt: { so_luong: 4, danh_gia: null, so_luong_loi: 0, ly_do_loi: null } },
-      { op: 'ghiDong', khoa: k('c1', 4), gt: { so_luong: 6, danh_gia: null, so_luong_loi: 1, ly_do_loi: 'Chín' } },
+      { op: 'ghiDong', khoa: k('c2', 1), gt: { so_luong: 12, danh_gia: 'Thiếu lá', so_luong_huy: 2, ly_do_huy: null } },
+      { op: 'ghiDong', khoa: k('c1', 3), gt: { so_luong: 4, danh_gia: null, so_luong_huy: 0, ly_do_huy: null } },
+      { op: 'ghiDong', khoa: k('c1', 4), gt: { so_luong: 6, danh_gia: null, so_luong_huy: 1, ly_do_huy: 'Chín' } },
       { op: 'ghiDutDay', id_phieu_lo: 'L1', ngay: N1, dutDay: 2 },
     ]);
   });
@@ -171,9 +171,9 @@ describe('nhập theo lô', () => {
     const h = hangNhapCuaLo(p, 'L2', N1)[1];
     expect(loiHangNhap(h)).toBeNull();
     expect(loiHangNhap({ ...h, danh_gia: 'Thiếu lá' })).toBe('thieuSoLuong');
-    expect(loiHangNhap({ ...h, so_luong_loi: 2 })).toBe('thieuSoLuong');
-    expect(loiHangNhap({ ...h, so_luong: 3, so_luong_loi: 4 })).toBe('slLoiLonHon');
-    expect(loiHangNhap({ ...h, so_luong: 3, so_luong_loi: 3 })).toBeNull();
-    expect(loiHangNhap({ ...h, id_cot: null, so_luong_loi: 9 })).toBeNull();
+    expect(loiHangNhap({ ...h, so_luong_huy: 2 })).toBe('thieuSoLuong');
+    expect(loiHangNhap({ ...h, so_luong: 3, so_luong_huy: 4 })).toBe('slLoiLonHon');
+    expect(loiHangNhap({ ...h, so_luong: 3, so_luong_huy: 3 })).toBeNull();
+    expect(loiHangNhap({ ...h, id_cot: null, so_luong_huy: 9 })).toBeNull();
   });
 });

@@ -42,8 +42,8 @@ const DgdvLoDetail: React.FC<Props> = ({ phieu, idPhieuLo, canNhap, onClose, onX
     { id: 'day', label: t('danhGiaDauVao.chiTiet.colDay'), width: 170, minWidth: 110, sticky: true, mobile: 'title' },
     { id: 'so_luong', label: t('danhGiaDauVao.luoi.colSoLuong'), width: 84, minWidth: 64, align: 'right' },
     { id: 'danh_gia', label: t('danhGiaDauVao.luoi.colDanhGia'), width: 140, minWidth: 90 },
-    { id: 'so_luong_loi', label: t('danhGiaDauVao.luoi.colSlLoi'), width: 76, minWidth: 60, align: 'right' },
-    { id: 'ly_do_loi', label: t('danhGiaDauVao.luoi.colLyDoLoi'), width: 140, minWidth: 90 },
+    { id: 'so_luong_huy', label: t('danhGiaDauVao.luoi.colSlLoi'), width: 76, minWidth: 60, align: 'right' },
+    { id: 'ly_do_huy', label: t('danhGiaDauVao.luoi.colLyDoLoi'), width: 140, minWidth: 90 },
   ];
   const renderCell = (colId: string, r: DgdvDongPhang) => {
     switch (colId) {
@@ -53,14 +53,14 @@ const DgdvLoDetail: React.FC<Props> = ({ phieu, idPhieuLo, canNhap, onClose, onX
         return <span className="tabular-nums text-sm font-medium">{formatNumberVN(r.so_luong)}</span>;
       case 'danh_gia':
         return <span className="text-sm">{r.danh_gia ?? ''}</span>;
-      case 'so_luong_loi':
+      case 'so_luong_huy':
         return (
-          <span className={cn('tabular-nums text-sm', r.so_luong_loi > r.so_luong && 'text-rose-600 font-semibold')}>
-            {r.so_luong_loi ? formatNumberVN(r.so_luong_loi) : ''}
+          <span className={cn('tabular-nums text-sm', r.so_luong_huy > r.so_luong && 'text-rose-600 font-semibold')}>
+            {r.so_luong_huy ? formatNumberVN(r.so_luong_huy) : ''}
           </span>
         );
-      case 'ly_do_loi':
-        return <span className="text-sm">{r.ly_do_loi ?? ''}</span>;
+      case 'ly_do_huy':
+        return <span className="text-sm">{r.ly_do_huy ?? ''}</span>;
       default:
         return null;
     }
@@ -123,7 +123,7 @@ const DgdvLoDetail: React.FC<Props> = ({ phieu, idPhieuLo, canNhap, onClose, onX
             renderCell={renderCell}
             onRowClick={onXemDong}
             onMobileCardClick={onXemDong}
-            rowClassName={(r) => (r.loai === 'dut_day' ? 'bg-muted/40' : r.so_luong_loi > r.so_luong ? 'bg-rose-50 dark:bg-rose-950/30' : undefined)}
+            rowClassName={(r) => (r.loai === 'dut_day' ? 'bg-muted/40' : r.so_luong_huy > r.so_luong ? 'bg-rose-50 dark:bg-rose-950/30' : undefined)}
             emptyContent={<p className="py-4 text-center text-sm text-muted-foreground m-0">{t('danhGiaDauVao.theoLo.loChuaCoSo')}</p>}
           />
         </DetailSection>

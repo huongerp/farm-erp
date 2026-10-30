@@ -42,8 +42,8 @@ const phieu: DgdvPhieuDayDu = {
       id: 'l1', id_phieu: 'p1', id_lo: 'x', to_truong: 'Anh A', ghi_chu: 'gc', stt: 1, ten_lo: 'Lô 1',
       lo_ngay: [{ id: 'n1', id_phieu_lo: 'l1', ngay: NGAY, dut_day: 2 }],
       dong: [
-        { id: 'd1', id_phieu_lo: 'l1', id_cot: 'c1', ngay: NGAY, stt_dong: 1, so_luong: 10, danh_gia: 'Thiếu lá', so_luong_loi: 1, ly_do_loi: 'Chín bệnh' },
-        { id: 'd2', id_phieu_lo: 'l1', id_cot: 'c1', ngay: NGAY, stt_dong: 2, so_luong: 5, danh_gia: null, so_luong_loi: 0, ly_do_loi: null },
+        { id: 'd1', id_phieu_lo: 'l1', id_cot: 'c1', ngay: NGAY, stt_dong: 1, so_luong: 10, danh_gia: 'Thiếu lá', so_luong_huy: 1, ly_do_huy: 'Chín bệnh' },
+        { id: 'd2', id_phieu_lo: 'l1', id_cot: 'c1', ngay: NGAY, stt_dong: 2, so_luong: 5, danh_gia: null, so_luong_huy: 0, ly_do_huy: null },
       ],
     },
   ],

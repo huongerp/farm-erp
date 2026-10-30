@@ -39,19 +39,19 @@ function dong(p: Partial<DgdvDongNgayDay>): DgdvDongNgayDay {
     th_nam: 2026,
     th_tuan: 44,
     so_luong: 0,
-    so_luong_loi: 0,
+    so_luong_huy: 0,
     ...p,
   };
 }
 
 describe('tongHopTuanTheoLo', () => {
   const rows = [
-    dong({ so_luong: 100, so_luong_loi: 5 }),
-    dong({ ngay: NGAYS[2], so_luong: 50, so_luong_loi: 1 }),
+    dong({ so_luong: 100, so_luong_huy: 5 }),
+    dong({ ngay: NGAYS[2], so_luong: 50, so_luong_huy: 1 }),
     dong({ ngay: NGAYS[2], id_mau_1: null, th_nam: null, th_tuan: null, so_luong: 4 }), // đứt dây
     dong({ id_lo: 'l10', ten_lo: 'Lô 10', to_truong: ' võ thị  cưng ', so_luong: 30 }),
     dong({ id_lo: 'l2', ten_lo: 'Lô 2', to_truong: null, ngay: NGAYS[1], so_luong: 20 }),
-    dong({ id_lo: 'l2', ten_lo: 'Lô 2', to_truong: 'Trần Văn A', ngay: NGAYS[6], so_luong: 10, so_luong_loi: 2 }),
+    dong({ id_lo: 'l2', ten_lo: 'Lô 2', to_truong: 'Trần Văn A', ngay: NGAYS[6], so_luong: 10, so_luong_huy: 2 }),
     dong({ ngay: '2026-11-02', so_luong: 999 }), // ngoài tuần
   ];
   const kq = tongHopTuanTheoLo(rows, NGAYS);
@@ -87,7 +87,7 @@ describe('tongHopTuanTheoDay', () => {
     const ds = tongHopTuanTheoDay([
       dong({ id_mau_1: null, th_nam: null, th_tuan: null, so_luong: 3 }),
       dong({ th_tuan: 45, so_luong: 10 }),
-      dong({ so_luong: 20, so_luong_loi: 2 }),
+      dong({ so_luong: 20, so_luong_huy: 2 }),
       dong({ id_lo: 'l2', ngay: NGAYS[3], so_luong: 5 }),
       dong({ xe_doi: true, so_luong: 7 }),
     ]);
@@ -104,7 +104,7 @@ describe('tongHopTuanTheoDay', () => {
 
 describe('tongHopTuanTheoChiNhanh', () => {
   it('chỉ chi nhánh có số trong tuần mới có dòng', () => {
-    const ds = tongHopTuanTheoChiNhanh([dong({ so_luong: 8, so_luong_loi: 1 })], NGAYS, ['1', '2']);
+    const ds = tongHopTuanTheoChiNhanh([dong({ so_luong: 8, so_luong_huy: 1 })], NGAYS, ['1', '2']);
     expect(ds.map((c) => [c.id_chi_nhanh, c.tongThu, c.ksc, c.theoNgay[0]])).toEqual([['1', 8, 1, 8]]);
   });
 });
@@ -190,7 +190,7 @@ function phieu(id: string, ngay: string, cn: string, chuyen: number, lo: [string
       stt: i + 1,
       ten_lo: `Lô ${i}`,
       lo_ngay: dut ? [{ id: `${id}-n${i}`, id_phieu_lo: `${id}-l${i}`, ngay, dut_day: dut }] : [],
-      dong: [{ id: `${id}-d${i}`, id_phieu_lo: `${id}-l${i}`, id_cot: 'c', ngay, stt_dong: 1, so_luong: sl, danh_gia: null, so_luong_loi: loi, ly_do_loi: null }],
+      dong: [{ id: `${id}-d${i}`, id_phieu_lo: `${id}-l${i}`, id_cot: 'c', ngay, stt_dong: 1, so_luong: sl, danh_gia: null, so_luong_huy: loi, ly_do_huy: null }],
     })),
   };
 }
@@ -239,7 +239,7 @@ describe('tongHopNgayChiNhanh + lọc', () => {
 describe('tongHopTuanChiNhanh', () => {
   it('cột T2→CN + số ngày có số + số chuyến trong tuần; lọc tổ trưởng trên dòng view; khopLocKsc', () => {
     const rows = [
-      dong({ so_luong: 100, so_luong_loi: 2 }),
+      dong({ so_luong: 100, so_luong_huy: 2 }),
       dong({ ngay: NGAYS[3], so_luong: 40, to_truong: 'Bình' }),
       dong({ id_chi_nhanh: '2', so_luong: 7 }),
     ];

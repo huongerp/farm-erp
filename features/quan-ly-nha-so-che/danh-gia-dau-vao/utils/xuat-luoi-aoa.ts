@@ -96,7 +96,7 @@ function dungKhoi(luoi: DgdvLuoiNgay, nhan: DgdvNhanXuat, r0: number, out: DgdvA
           ...luoi.cot.flatMap((cot) => {
             const o = d.o[cot.id];
             return o
-              ? [soHoacRong(o.so_luong), o.danh_gia ?? '', soHoacRong(o.so_luong_loi), o.ly_do_loi ?? '']
+              ? [soHoacRong(o.so_luong), o.danh_gia ?? '', soHoacRong(o.so_luong_huy), o.ly_do_huy ?? '']
               : ['', '', '', ''];
           }),
           i === 0 ? (lo.ghi_chu ?? '') : '',

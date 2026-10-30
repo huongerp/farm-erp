@@ -43,9 +43,9 @@ const OCotDay: React.FC<{ o: FarmDgdvDong | undefined; canhBao: boolean }> = ({ 
       <td className={cn(TD, 'text-right tabular-nums')}>{o ? fmt(o.so_luong) : ''}</td>
       <td className={TD}>{o?.danh_gia ?? ''}</td>
       <td className={cn(TD, 'text-right tabular-nums', loiCls)} title={canhBao ? t('danhGiaDauVao.luoi.canhBaoLoi') : undefined}>
-        {o ? fmt(o.so_luong_loi) : ''}
+        {o ? fmt(o.so_luong_huy) : ''}
       </td>
-      <td className={TD}>{o?.ly_do_loi ?? ''}</td>
+      <td className={TD}>{o?.ly_do_huy ?? ''}</td>
     </>
   );
 };

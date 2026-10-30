@@ -8,7 +8,7 @@
  * Công thức (PHẢI khớp `fn_dgdv_tong_ngay`, migration 057):
  *   SL buồng (lô)  = Σ so_luong các dây (mọi dòng) + dut_day
  *   Tổng thu ngày  = Σ SL buồng các lô của MỌI chuyến trong ngày
- *   KSC ngày       = Σ so_luong_loi
+ *   KSC ngày       = Σ so_luong_huy
  */
 import type { DgdvFormValues } from './schema';
 import type {
@@ -33,7 +33,7 @@ export interface DgdvTongLoNgay {
   dutDay: number;
   /** soLuong + dutDay */
   slBuong: number;
-  /** Σ so_luong_loi (KSC) */
+  /** Σ so_luong_huy (KSC) */
   soLuongLoi: number;
 }
 
@@ -48,7 +48,7 @@ export function tongLo(lo: Pick<DgdvLoDayDu, 'dong' | 'lo_ngay'>): DgdvTongLoNga
   let soLuongLoi = 0;
   for (const d of lo.dong) {
     soLuong += d.so_luong;
-    soLuongLoi += d.so_luong_loi;
+    soLuongLoi += d.so_luong_huy;
   }
   const dutDay = lo.lo_ngay.reduce((s, n) => s + n.dut_day, 0);
   return { soLuong, dutDay, slBuong: soLuong + dutDay, soLuongLoi };
@@ -519,7 +519,7 @@ export interface DgdvCanhBaoLoi {
   ngay: string;
   stt_dong: number;
   so_luong: number;
-  so_luong_loi: number;
+  so_luong_huy: number;
 }
 
 /** Ô có số lượng lỗi > số lượng (cảnh báo, không chặn lưu). */
@@ -527,14 +527,14 @@ export function kiemTraSoLuongLoi(phieu: Pick<DgdvPhieuDayDu, 'lo'>): DgdvCanhBa
   const kq: DgdvCanhBaoLoi[] = [];
   for (const lo of phieu.lo) {
     for (const d of lo.dong) {
-      if (d.so_luong_loi > d.so_luong) {
+      if (d.so_luong_huy > d.so_luong) {
         kq.push({
           id_phieu_lo: d.id_phieu_lo,
           id_cot: d.id_cot,
           ngay: d.ngay,
           stt_dong: d.stt_dong,
           so_luong: d.so_luong,
-          so_luong_loi: d.so_luong_loi,
+          so_luong_huy: d.so_luong_huy,
         });
       }
     }

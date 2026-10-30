@@ -59,8 +59,8 @@ const DgdvDongForm: React.FC<Props> = ({ phieu, dong, onClose, stackLevel = 1 })
             id_cot: dong.id_cot ?? DONG_DUT_DAY,
             so_luong: dong.so_luong,
             danh_gia: dong.danh_gia,
-            so_luong_loi: dong.so_luong_loi,
-            ly_do_loi: dong.ly_do_loi,
+            so_luong_huy: dong.so_luong_huy,
+            ly_do_huy: dong.ly_do_huy,
           }
         : {
             ngay: phieu.ngay,
@@ -68,8 +68,8 @@ const DgdvDongForm: React.FC<Props> = ({ phieu, dong, onClose, stackLevel = 1 })
             id_cot: cotSapXep[0]?.id ?? '',
             so_luong: 0,
             danh_gia: null,
-            so_luong_loi: 0,
-            ly_do_loi: null,
+            so_luong_huy: 0,
+            ly_do_huy: null,
           },
     [dong, phieu.ngay, loSapXep, cotSapXep]
   );
@@ -112,17 +112,17 @@ const DgdvDongForm: React.FC<Props> = ({ phieu, dong, onClose, stackLevel = 1 })
         id_cot: dutDay ? null : v.id_cot,
         so_luong: v.so_luong,
         danh_gia: dutDay ? null : v.danh_gia,
-        so_luong_loi: dutDay ? 0 : v.so_luong_loi,
-        ly_do_loi: dutDay ? null : v.ly_do_loi,
+        so_luong_huy: dutDay ? 0 : v.so_luong_huy,
+        ly_do_huy: dutDay ? null : v.ly_do_huy,
       },
     });
     if (!dutDay) {
       themLyDo(v.danh_gia, LOAI_LY_DO_DGDV.DANH_GIA);
-      themLyDo(v.ly_do_loi, LOAI_LY_DO_DGDV.LOI);
+      themLyDo(v.ly_do_huy, LOAI_LY_DO_DGDV.LOI);
     }
     if (themTiep.current && !isEdit) {
       const { ngay, id_phieu_lo, id_cot } = getValues();
-      reset({ ngay, id_phieu_lo, id_cot, so_luong: 0, danh_gia: null, so_luong_loi: 0, ly_do_loi: null });
+      reset({ ngay, id_phieu_lo, id_cot, so_luong: 0, danh_gia: null, so_luong_huy: 0, ly_do_huy: null });
       setTimeout(() => setFocus('so_luong'), 0);
     } else {
       onClose();
@@ -255,7 +255,7 @@ const DgdvDongForm: React.FC<Props> = ({ phieu, dong, onClose, stackLevel = 1 })
             )}
             {!laDutDay && (
               <Controller
-                name="so_luong_loi"
+                name="so_luong_huy"
                 control={control}
                 render={({ field }) => (
                   <Input
@@ -266,14 +266,14 @@ const DgdvDongForm: React.FC<Props> = ({ phieu, dong, onClose, stackLevel = 1 })
                     min={0}
                     value={field.value === 0 ? '' : String(field.value ?? '')}
                     onChange={(e) => field.onChange(e.target.value)}
-                    error={errors.so_luong_loi?.message}
+                    error={errors.so_luong_huy?.message}
                   />
                 )}
               />
             )}
             {!laDutDay && (
               <Controller
-                name="ly_do_loi"
+                name="ly_do_huy"
                 control={control}
                 render={({ field }) => (
                   <Combobox

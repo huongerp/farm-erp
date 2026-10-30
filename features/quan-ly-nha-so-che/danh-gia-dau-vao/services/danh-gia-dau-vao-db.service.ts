@@ -36,7 +36,7 @@ const T_DM_LO = 'fp_var_lo_thu_hoach';
 const PHIEU_COLUMNS = 'id,ngay,chuyen,nam,tuan,id_chi_nhanh,ghi_chu,trang_thai,id_nguoi_tao,tg_tao,tg_cap_nhat';
 const COT_COLUMNS =
   'id,id_phieu,stt,th_nam,th_tuan,chich_bap_tu,chich_bap_den,thu_hoach_tu,thu_hoach_den,id_mau_1,id_mau_2,xe_doi';
-const DONG_COLUMNS = 'id,id_phieu_lo,id_cot,ngay,stt_dong,so_luong,danh_gia,so_luong_loi,ly_do_loi';
+const DONG_COLUMNS = 'id,id_phieu_lo,id_cot,ngay,stt_dong,so_luong,danh_gia,so_luong_huy,ly_do_huy';
 const LO_NGAY_COLUMNS = 'id,id_phieu_lo,ngay,dut_day';
 
 /** Danh sách: view đã có tên chi nhánh + tổng SL / đứt dây / tổng thu / KSC của chuyến. */
@@ -99,8 +99,8 @@ interface DbDongRow {
   stt_dong: number;
   so_luong: number | null;
   danh_gia: string | null;
-  so_luong_loi: number | null;
-  ly_do_loi: string | null;
+  so_luong_huy: number | null;
+  ly_do_huy: string | null;
 }
 
 interface DbLoNgayRow {
@@ -208,8 +208,8 @@ export function mapDong(r: DbDongRow): FarmDgdvDong {
     stt_dong: so(r.stt_dong),
     so_luong: so(r.so_luong),
     danh_gia: r.danh_gia ?? null,
-    so_luong_loi: so(r.so_luong_loi),
-    ly_do_loi: r.ly_do_loi ?? null,
+    so_luong_huy: so(r.so_luong_huy),
+    ly_do_huy: r.ly_do_huy ?? null,
   };
 }
 
@@ -621,8 +621,8 @@ export interface DgdvOInput {
   stt_dong: number;
   so_luong: number;
   danh_gia: string | null;
-  so_luong_loi: number;
-  ly_do_loi: string | null;
+  so_luong_huy: number;
+  ly_do_huy: string | null;
 }
 
 /** Ghi một ô (upsert theo khoá ô). Trả dòng đã lưu. */
@@ -637,8 +637,8 @@ export async function upsertDongDb(o: DgdvOInput): Promise<FarmDgdvDong> {
         stt_dong: o.stt_dong,
         so_luong: o.so_luong,
         danh_gia: o.danh_gia,
-        so_luong_loi: o.so_luong_loi,
-        ly_do_loi: o.ly_do_loi,
+        so_luong_huy: o.so_luong_huy,
+        ly_do_huy: o.ly_do_huy,
       },
       { onConflict: 'id_phieu_lo,ngay,stt_dong,id_cot' }
     )

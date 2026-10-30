@@ -37,8 +37,8 @@ describe('parseDongImport', () => {
           tuan_thu_hoach: 'Tuần 42',
           so_luong: '10',
           danh_gia: 'Thiếu lá',
-          so_luong_loi: '',
-          ly_do_loi: '',
+          so_luong_huy: '',
+          ly_do_huy: '',
         },
       ],
       refs
@@ -59,18 +59,18 @@ describe('parseDongImport', () => {
         th_tuan: 42,
         so_luong: 10,
         danh_gia: 'Thiếu lá',
-        so_luong_loi: 0,
-        ly_do_loi: null,
+        so_luong_huy: 0,
+        ly_do_huy: null,
       },
     ]);
   });
 
   it('đứt dây: bỏ màu 2 / đánh giá / lỗi; tuần thu hoạch trống = tuần của ngày', () => {
     const { dong } = parseDongImport(
-      [{ ngay: '2026-10-20', chi_nhanh: 'FP1', lo: 'A3-3', mau_1: 'đứt dây', mau_2: 'Đen', so_luong: 9, danh_gia: 'x', so_luong_loi: 3 }],
+      [{ ngay: '2026-10-20', chi_nhanh: 'FP1', lo: 'A3-3', mau_1: 'đứt dây', mau_2: 'Đen', so_luong: 9, danh_gia: 'x', so_luong_huy: 3 }],
       refs
     );
-    expect(dong[0]).toMatchObject({ id_mau_1: null, id_mau_2: null, so_luong: 9, danh_gia: null, so_luong_loi: 0, th_tuan: 43, row: 2 });
+    expect(dong[0]).toMatchObject({ id_mau_1: null, id_mau_2: null, so_luong: 9, danh_gia: null, so_luong_huy: 0, th_tuan: 43, row: 2 });
   });
 
   it('cột chuyến: trống = 1, số nguyên ≥ 1; 0 / số lẻ / chữ là lỗi', () => {
@@ -96,7 +96,7 @@ describe('parseDongImport', () => {
     const { dong, loi } = parseDongImport(
       [
         { ngay: '31/02/2026', chi_nhanh: 'XX', lo: '', mau_1: 'Hồng', so_luong: 0 },
-        { ngay: '2026-10-19', lo: 'A1', mau_1: 'Đen', mau_2: 'đen', so_luong: 5, so_luong_loi: 7 },
+        { ngay: '2026-10-19', lo: 'A1', mau_1: 'Đen', mau_2: 'đen', so_luong: 5, so_luong_huy: 7 },
         { ngay: '2026-10-20', lo: 'A1', mau_1: 'Đen', so_luong: 5 },
         { ngay: '2026-10-19', chuyen: 1, lo: 'A1', mau_1: 'Đen', so_luong: 5 },
       ],

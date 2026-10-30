@@ -48,7 +48,7 @@ const DgdvChiTietSection: React.FC<Props> = ({ phieu, canNhap, onImport, mo }) =
   const tu = foldVi(tim.trim().toLowerCase()).split(/\s+/).filter(Boolean);
   const khop = (r: DgdvDongPhang) => {
     const chu = foldVi(
-      [r.ten_lo, r.to_truong, nhanDay(r), r.so_luong, r.danh_gia, r.so_luong_loi, r.ly_do_loi]
+      [r.ten_lo, r.to_truong, nhanDay(r), r.so_luong, r.danh_gia, r.so_luong_huy, r.ly_do_huy]
         .filter((x) => x != null && x !== '')
         .join(' ')
         .toLowerCase()
@@ -65,8 +65,8 @@ const DgdvChiTietSection: React.FC<Props> = ({ phieu, canNhap, onImport, mo }) =
     { id: 'day', label: t('danhGiaDauVao.chiTiet.colDay'), width: 170, minWidth: 110 },
     { id: 'so_luong', label: t('danhGiaDauVao.luoi.colSoLuong'), width: 90, minWidth: 70, align: 'right' },
     { id: 'danh_gia', label: t('danhGiaDauVao.luoi.colDanhGia'), width: 150, minWidth: 100 },
-    { id: 'so_luong_loi', label: t('danhGiaDauVao.luoi.colSlLoi'), width: 80, minWidth: 64, align: 'right' },
-    { id: 'ly_do_loi', label: t('danhGiaDauVao.luoi.colLyDoLoi'), width: 150, minWidth: 100 },
+    { id: 'so_luong_huy', label: t('danhGiaDauVao.luoi.colSlLoi'), width: 80, minWidth: 64, align: 'right' },
+    { id: 'ly_do_huy', label: t('danhGiaDauVao.luoi.colLyDoLoi'), width: 150, minWidth: 100 },
   ];
 
   const renderCell = (colId: string, r: DgdvDongPhang) => {
@@ -81,14 +81,14 @@ const DgdvChiTietSection: React.FC<Props> = ({ phieu, canNhap, onImport, mo }) =
         return <span className="tabular-nums text-sm font-medium">{formatNumberVN(r.so_luong)}</span>;
       case 'danh_gia':
         return <span className="text-sm">{r.danh_gia ?? ''}</span>;
-      case 'so_luong_loi':
+      case 'so_luong_huy':
         return (
-          <span className={cn('tabular-nums text-sm', r.so_luong_loi > r.so_luong && 'text-rose-600 font-semibold')}>
-            {r.so_luong_loi ? formatNumberVN(r.so_luong_loi) : ''}
+          <span className={cn('tabular-nums text-sm', r.so_luong_huy > r.so_luong && 'text-rose-600 font-semibold')}>
+            {r.so_luong_huy ? formatNumberVN(r.so_luong_huy) : ''}
           </span>
         );
-      case 'ly_do_loi':
-        return <span className="text-sm">{r.ly_do_loi ?? ''}</span>;
+      case 'ly_do_huy':
+        return <span className="text-sm">{r.ly_do_huy ?? ''}</span>;
       default:
         return null;
     }
@@ -148,7 +148,7 @@ const DgdvChiTietSection: React.FC<Props> = ({ phieu, canNhap, onImport, mo }) =
               // Điện thoại: card gọn «lô · chip dây ……… SL» + «đánh giá · lỗi (lý do)»; chạm → drawer dòng (có Sửa / Xoá).
               <TheDongMobile
                 onClick={() => mo.xemDong(r)}
-                className={r.loai === 'dut_day' ? 'bg-muted/40' : r.so_luong_loi > r.so_luong ? 'bg-rose-50 dark:bg-rose-950/30' : undefined}
+                className={r.loai === 'dut_day' ? 'bg-muted/40' : r.so_luong_huy > r.so_luong ? 'bg-rose-50 dark:bg-rose-950/30' : undefined}
                 tieuDe={
                   <>
                     <span className="shrink-0">{r.ten_lo ?? '—'}</span>
@@ -160,10 +160,10 @@ const DgdvChiTietSection: React.FC<Props> = ({ phieu, canNhap, onImport, mo }) =
                   r.loai === 'dut_day' ? undefined : (
                     <>
                       {r.danh_gia && <span>{r.danh_gia}</span>}
-                      {r.so_luong_loi > 0 && (
+                      {r.so_luong_huy > 0 && (
                         <span className="text-rose-600 font-medium">
-                          {t('danhGiaDauVao.luoi.colSlLoi')} {formatNumberVN(r.so_luong_loi)}
-                          {r.ly_do_loi ? ` (${r.ly_do_loi})` : ''}
+                          {t('danhGiaDauVao.luoi.colSlLoi')} {formatNumberVN(r.so_luong_huy)}
+                          {r.ly_do_huy ? ` (${r.ly_do_huy})` : ''}
                         </span>
                       )}
                     </>
@@ -171,7 +171,7 @@ const DgdvChiTietSection: React.FC<Props> = ({ phieu, canNhap, onImport, mo }) =
                 }
               />
             )}
-            rowClassName={(r) => (r.loai === 'dut_day' ? 'bg-muted/40' : r.so_luong_loi > r.so_luong ? 'bg-rose-50 dark:bg-rose-950/30' : undefined)}
+            rowClassName={(r) => (r.loai === 'dut_day' ? 'bg-muted/40' : r.so_luong_huy > r.so_luong ? 'bg-rose-50 dark:bg-rose-950/30' : undefined)}
             emptyContent={<p className="py-4 text-center text-sm text-muted-foreground m-0">{t('danhGiaDauVao.chiTiet.khongCoDongLoc')}</p>}
             maxHeight="420px"
           />

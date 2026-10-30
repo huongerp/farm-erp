@@ -142,15 +142,15 @@ export const dgdvDongFormSchema = z
     id_cot: idBatBuoc('danhGiaDauVao.validation.dayRequired'),
     so_luong: soNguyenKhongAm('danhGiaDauVao.validation.soNguyenKhongAm'),
     danh_gia: z.preprocess(rongThanhNull, z.string().max(200).nullable()),
-    so_luong_loi: soNguyenKhongAm('danhGiaDauVao.validation.soNguyenKhongAm'),
-    ly_do_loi: z.preprocess(rongThanhNull, z.string().max(200).nullable()),
+    so_luong_huy: soNguyenKhongAm('danhGiaDauVao.validation.soNguyenKhongAm'),
+    ly_do_huy: z.preprocess(rongThanhNull, z.string().max(200).nullable()),
   })
   .superRefine((d, ctx) => {
     if (d.so_luong <= 0) {
       ctx.addIssue({ code: 'custom', path: ['so_luong'], message: reqMsg('danhGiaDauVao.validation.soLuongRequired') });
     }
-    if (d.id_cot !== DONG_DUT_DAY && d.so_luong_loi > d.so_luong) {
-      ctx.addIssue({ code: 'custom', path: ['so_luong_loi'], message: reqMsg('danhGiaDauVao.luoi.canhBaoLoi') });
+    if (d.id_cot !== DONG_DUT_DAY && d.so_luong_huy > d.so_luong) {
+      ctx.addIssue({ code: 'custom', path: ['so_luong_huy'], message: reqMsg('danhGiaDauVao.luoi.canhBaoLoi') });
     }
   });
 

@@ -83,7 +83,7 @@ export function useDgdvMauImport(coDinh?: PhieuCoDinh | null) {
       {
         name: tr('sheetLyDo'),
         headers: [tr('refTen'), tr('refLoai')],
-        data: dsLyDo.map((x) => [x.ten, x.loai === LOAI_LY_DO_DGDV.LOI ? tr('col.ly_do_loi') : tr('col.danh_gia')]),
+        data: dsLyDo.map((x) => [x.ten, x.loai === LOAI_LY_DO_DGDV.LOI ? tr('col.ly_do_huy') : tr('col.danh_gia')]),
       },
     ],
     [tr, coDinh, chiNhanh, dsMau, dsLyDo]

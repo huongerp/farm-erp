@@ -41,7 +41,7 @@ interface Props {
   stackLevel: number;
 }
 
-type CotSo = 'so_luong' | 'so_luong_loi';
+type CotSo = 'so_luong' | 'so_luong_huy';
 
 /** Ô số: chỉ giữ chữ số; rỗng = 0. */
 const docSo = (s: string) => {
@@ -89,7 +89,7 @@ const DgdvNhapTheoLoDrawer: React.FC<Props> = ({ phieu, idPhieuLo, onClose, stac
   // ---- Focus: Enter nhảy ô số kế; mở drawer / đổi lô → ô SL đầu ----
   const oRef = useRef(new Map<string, HTMLInputElement>());
   const thuTuO = useMemo(
-    () => hang.flatMap((h) => (h.id_cot == null ? [`${h.key}:so_luong`] : [`${h.key}:so_luong`, `${h.key}:so_luong_loi`])),
+    () => hang.flatMap((h) => (h.id_cot == null ? [`${h.key}:so_luong`] : [`${h.key}:so_luong`, `${h.key}:so_luong_huy`])),
     [hang]
   );
   const focusO = (k: string | undefined) => {
@@ -112,7 +112,7 @@ const DgdvNhapTheoLoDrawer: React.FC<Props> = ({ phieu, idPhieuLo, onClose, stac
   const loi = useMemo(() => new Map(hang.map((h) => [h.key, loiHangNhap(h)])), [hang]);
   const tong = useMemo(() => {
     const sl = hang.reduce((s, h) => s + h.so_luong, 0);
-    const ksc = hang.reduce((s, h) => s + (h.id_cot ? h.so_luong_loi : 0), 0);
+    const ksc = hang.reduce((s, h) => s + (h.id_cot ? h.so_luong_huy : 0), 0);
     return { sl, ksc };
   }, [hang]);
 
@@ -157,7 +157,7 @@ const DgdvNhapTheoLoDrawer: React.FC<Props> = ({ phieu, idPhieuLo, onClose, stac
       for (const h of hang) {
         if (h.id_cot == null || h.so_luong <= 0) continue;
         themLyDo(h.danh_gia?.trim() || null, LOAI_LY_DO_DGDV.DANH_GIA);
-        themLyDo(h.ly_do_loi?.trim() || null, LOAI_LY_DO_DGDV.LOI);
+        themLyDo(h.ly_do_huy?.trim() || null, LOAI_LY_DO_DGDV.LOI);
       }
     }
     if (sangLoKe && loKe) chuyenLo(loKe.id);
@@ -194,7 +194,7 @@ const DgdvNhapTheoLoDrawer: React.FC<Props> = ({ phieu, idPhieuLo, onClose, stac
     );
   };
 
-  const oChu = (h: DgdvHangNhapLo, cot: 'danh_gia' | 'ly_do_loi') => (
+  const oChu = (h: DgdvHangNhapLo, cot: 'danh_gia' | 'ly_do_huy') => (
     <Combobox
       options={cot === 'danh_gia' ? goiYDanhGia : goiYLoi}
       value={h[cot] ?? ''}
@@ -245,8 +245,8 @@ const DgdvNhapTheoLoDrawer: React.FC<Props> = ({ phieu, idPhieuLo, onClose, stac
                   <td className="px-2 py-1">{chip(h)}</td>
                   <td className="px-2 py-1">{oNhapSo(h, 'so_luong', l === 'thieuSoLuong')}</td>
                   <td className="px-2 py-1">{h.id_cot ? oChu(h, 'danh_gia') : null}</td>
-                  <td className="px-2 py-1">{h.id_cot ? oNhapSo(h, 'so_luong_loi', l === 'slLoiLonHon') : null}</td>
-                  <td className="px-2 py-1">{h.id_cot ? oChu(h, 'ly_do_loi') : null}</td>
+                  <td className="px-2 py-1">{h.id_cot ? oNhapSo(h, 'so_luong_huy', l === 'slLoiLonHon') : null}</td>
+                  <td className="px-2 py-1">{h.id_cot ? oChu(h, 'ly_do_huy') : null}</td>
                   <td className="px-1 py-1 text-center">{nutThemDong(h)}</td>
                 </tr>
                 {l && (
@@ -282,11 +282,11 @@ const DgdvNhapTheoLoDrawer: React.FC<Props> = ({ phieu, idPhieuLo, onClose, stac
               {h.id_cot && (
                 <div className="space-y-1">
                   <span className="text-xs font-medium">{t('danhGiaDauVao.luoi.colSlLoi')}</span>
-                  {oNhapSo(h, 'so_luong_loi', l === 'slLoiLonHon')}
+                  {oNhapSo(h, 'so_luong_huy', l === 'slLoiLonHon')}
                 </div>
               )}
               {h.id_cot && <div>{oChu(h, 'danh_gia')}</div>}
-              {h.id_cot && <div>{oChu(h, 'ly_do_loi')}</div>}
+              {h.id_cot && <div>{oChu(h, 'ly_do_huy')}</div>}
             </div>
             {l && <p className="m-0 text-caption text-destructive">{nhanLoi(l)}</p>}
           </div>

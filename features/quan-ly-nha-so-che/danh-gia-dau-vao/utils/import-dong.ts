@@ -30,8 +30,8 @@ export const COT_IMPORT_DGDV = [
   'tuan_thu_hoach',
   'so_luong',
   'danh_gia',
-  'so_luong_loi',
-  'ly_do_loi',
+  'so_luong_huy',
+  'ly_do_huy',
 ] as const;
 export type CotImportDgdv = (typeof COT_IMPORT_DGDV)[number];
 
@@ -73,8 +73,8 @@ export interface DongImportRpc {
   th_tuan: number;
   so_luong: number;
   danh_gia: string | null;
-  so_luong_loi: number;
-  ly_do_loi: string | null;
+  so_luong_huy: number;
+  ly_do_huy: string | null;
 }
 
 const CO = new Set(['x', 'có', 'co', '1', 'true', 'yes', 'y', 'v', '✓']);
@@ -161,7 +161,7 @@ export function parseDongImport(
 
     const sl = parseImportInt(r.so_luong);
     if (!sl.ok || sl.value == null || sl.value <= 0) msgs.push(tr('loiSoLuong'));
-    const slLoi = dutDay ? ({ ok: true, value: 0 } as const) : parseImportInt(r.so_luong_loi);
+    const slLoi = dutDay ? ({ ok: true, value: 0 } as const) : parseImportInt(r.so_luong_huy);
     if (!slLoi.ok) msgs.push(tr('loiSlLoi'));
     else if (sl.ok && sl.value != null && (slLoi.value ?? 0) > sl.value) msgs.push(tr('loiSlLoiLonHon'));
 
@@ -193,8 +193,8 @@ export function parseDongImport(
       th_tuan: th.tuan,
       so_luong: sl.value,
       danh_gia: dutDay ? null : gonTen(normalizeText(r.danh_gia)),
-      so_luong_loi: dutDay ? 0 : (slLoi.ok ? (slLoi.value ?? 0) : 0),
-      ly_do_loi: dutDay ? null : gonTen(normalizeText(r.ly_do_loi)),
+      so_luong_huy: dutDay ? 0 : (slLoi.ok ? (slLoi.value ?? 0) : 0),
+      ly_do_huy: dutDay ? null : gonTen(normalizeText(r.ly_do_huy)),
     });
   });
 

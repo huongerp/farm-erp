@@ -57,8 +57,8 @@ function o(idLo: string, idCot: string, so_luong: number, extra: Partial<FarmDgd
     stt_dong: 1,
     so_luong,
     danh_gia: null,
-    so_luong_loi: 0,
-    ly_do_loi: null,
+    so_luong_huy: 0,
+    ly_do_huy: null,
     ...extra,
   };
 }
@@ -88,7 +88,7 @@ function phieuMau(): DgdvPhieuDayDu {
     // dây 1 chia 2 dòng: 10 + 3 = 13
     o('L1', C(1), 10),
     o('L1', C(1), 3, { stt_dong: 2 }),
-    ...SO_A32.slice(1).map((sl, i) => o('L1', C(i + 2), sl, i + 2 === 5 ? { so_luong_loi: 2, ly_do_loi: 'Chín bệnh' } : {})),
+    ...SO_A32.slice(1).map((sl, i) => o('L1', C(i + 2), sl, i + 2 === 5 ? { so_luong_huy: 2, ly_do_huy: 'Chín bệnh' } : {})),
   ]);
   return {
     id: 'p1',
@@ -108,7 +108,7 @@ function phieuMau(): DgdvPhieuDayDu {
       lo('L4', 'A3-3', 4, 'nv1b', 1, [o('L4', C(1), 24)]),
       a32,
       lo('L2', 'a2-3', 2, 'nv2', 2, [o('L2', C(2), 41)]),
-      lo('L3', 'a2-4', 3, 'nv2', 0, [o('L3', C(3), 50, { so_luong_loi: 1 })]),
+      lo('L3', 'a2-4', 3, 'nv2', 0, [o('L3', C(3), 50, { so_luong_huy: 1 })]),
     ],
   };
 }
@@ -129,7 +129,7 @@ function phieuChuyen2(): DgdvPhieuDayDu {
     id_phieu: 'p2',
     ghi_chu: null,
   };
-  const b1: DgdvLoDayDu = { ...lo('M2', 'B1', 2, 'nv2', 0, [o('M2', 'p2-c44', 11, { so_luong_loi: 2 })]), id_phieu: 'p2' };
+  const b1: DgdvLoDayDu = { ...lo('M2', 'B1', 2, 'nv2', 0, [o('M2', 'p2-c44', 11, { so_luong_huy: 2 })]), id_phieu: 'p2' };
   return {
     ...phieuMau(),
     id: 'p2',
@@ -282,9 +282,9 @@ describe('kiểm tra số lượng lỗi', () => {
   it('cảnh báo ô có số lỗi > số lượng, không ném lỗi', () => {
     const p = phieuMau();
     expect(kiemTraSoLuongLoi(p)).toEqual([]);
-    p.lo[0].dong[0].so_luong_loi = 30;
+    p.lo[0].dong[0].so_luong_huy = 30;
     expect(kiemTraSoLuongLoi(p)).toEqual([
-      { id_phieu_lo: 'L4', id_cot: C(1), ngay: NGAY, stt_dong: 1, so_luong: 24, so_luong_loi: 30 },
+      { id_phieu_lo: 'L4', id_cot: C(1), ngay: NGAY, stt_dong: 1, so_luong: 24, so_luong_huy: 30 },
     ]);
   });
 });

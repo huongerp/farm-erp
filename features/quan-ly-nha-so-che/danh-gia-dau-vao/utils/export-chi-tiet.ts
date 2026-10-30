@@ -52,8 +52,8 @@ export function dungDongXuatChiTiet(dsPhieu: readonly DgdvPhieuDayDu[], ref: Ref
         tuan_thu_hoach: dutDay ? '' : c.th_tuan,
         so_luong: r.so_luong,
         danh_gia: dutDay ? '' : (r.danh_gia ?? ''),
-        so_luong_loi: dutDay || !r.so_luong_loi ? '' : r.so_luong_loi,
-        ly_do_loi: dutDay ? '' : (r.ly_do_loi ?? ''),
+        so_luong_huy: dutDay || !r.so_luong_huy ? '' : r.so_luong_huy,
+        ly_do_huy: dutDay ? '' : (r.ly_do_huy ?? ''),
       };
       rows.push(COT_IMPORT_DGDV.map((k) => o[k]));
     }

@@ -97,8 +97,8 @@ const LuoiIn: React.FC<{ luoi: DgdvLuoiNgay }> = ({ luoi }) => {
                       <React.Fragment key={c.id}>
                         <td className={tdSo}>{o ? fmt(o.so_luong) : ''}</td>
                         <td className={td}>{o?.danh_gia ?? ''}</td>
-                        <td className={tdSo}>{o ? fmt(o.so_luong_loi) : ''}</td>
-                        <td className={td}>{o?.ly_do_loi ?? ''}</td>
+                        <td className={tdSo}>{o ? fmt(o.so_luong_huy) : ''}</td>
+                        <td className={td}>{o?.ly_do_huy ?? ''}</td>
                       </React.Fragment>
                     );
                   })}

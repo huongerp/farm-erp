@@ -6,7 +6,7 @@
  * Nguồn (migration 057, đã cộng mọi chuyến ở DB):
  *   - tuần: view `v_fp_farm_dgdv_tong_ngay_day` — ngày × chi nhánh × lô × dây; dòng `id_mau_1` null = đứt dây.
  *   - tháng: view `v_fp_farm_dgdv_tong_chuyen` — 1 dòng / phiếu (chuyến).
- * Tổng thu = Σ so_luong (gồm dòng đứt dây), KSC = Σ so_luong_loi — khớp `fn_dgdv_tong_ngay`.
+ * Tổng thu = Σ so_luong (gồm dòng đứt dây), KSC = Σ so_luong_huy — khớp `fn_dgdv_tong_ngay`.
  */
 import type { DgdvPhieuDayDu, TuanFarm } from './types';
 import { TRANG_THAI_DGDV } from './types';
@@ -49,7 +49,7 @@ export interface DgdvDongNgayDay {
   th_nam: number | null;
   th_tuan: number | null;
   so_luong: number;
-  so_luong_loi: number;
+  so_luong_huy: number;
 }
 
 export interface DgdvTuanLo extends TongThuKsc {
@@ -117,10 +117,10 @@ export function tongHopTuanTheoLo(
     }
     lo.theoNgay[i] += r.so_luong;
     lo.tongThu += r.so_luong;
-    lo.ksc += r.so_luong_loi;
+    lo.ksc += r.so_luong_huy;
     theoNgay[i] += r.so_luong;
     tongThu += r.so_luong;
-    ksc += r.so_luong_loi;
+    ksc += r.so_luong_huy;
   }
 
   const soSanhCn = hamThuTuCn(thuTuCn);
@@ -186,7 +186,7 @@ export function tongHopTuanTheoDay(rows: readonly DgdvDongNgayDay[]): DgdvTuanDa
       m.set(k, d);
     }
     d.tongThu += r.so_luong;
-    d.ksc += r.so_luong_loi;
+    d.ksc += r.so_luong_huy;
   }
   const hang = (d: DgdvTuanDay) => (d.id_mau_1 == null ? 2 : d.tuanThuHoach ? 0 : 1);
   // sort ổn định → cùng tuần giữ thứ tự gặp đầu tiên
@@ -222,7 +222,7 @@ export function tongHopTuanTheoChiNhanh(
     const c = lay(r.id_chi_nhanh);
     c.theoNgay[i] += r.so_luong;
     c.tongThu += r.so_luong;
-    c.ksc += r.so_luong_loi;
+    c.ksc += r.so_luong_huy;
   }
   const soSanhCn = hamThuTuCn(thuTuCn);
   return [...m.values()].sort((a, b) => soSanhCn(a.id_chi_nhanh, b.id_chi_nhanh));

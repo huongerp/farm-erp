@@ -129,8 +129,8 @@ export interface FarmDgdvDong {
   /** trống = đạt */
   danh_gia: string | null;
   /** số buồng lỗi = không sơ chế (KSC) */
-  so_luong_loi: number;
-  ly_do_loi: string | null;
+  so_luong_huy: number;
+  ly_do_huy: string | null;
 }
 
 // ---- Phiếu đầy đủ đã ghép (cho UI) ----------------------------------------------

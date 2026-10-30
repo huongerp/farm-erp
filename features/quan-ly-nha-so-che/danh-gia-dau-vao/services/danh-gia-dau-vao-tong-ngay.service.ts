@@ -62,7 +62,7 @@ export interface DgdvTongNgayDay {
   th_nam: number | null;
   th_tuan: number | null;
   so_luong: number;
-  so_luong_loi: number;
+  so_luong_huy: number;
 }
 
 type Id = number | string;
@@ -84,7 +84,7 @@ export function mapTongNgayDay(r: Record<string, unknown>): DgdvTongNgayDay {
     th_nam: soHoacNull(r.th_nam),
     th_tuan: soHoacNull(r.th_tuan),
     so_luong: soKhongAm(r.so_luong),
-    so_luong_loi: soKhongAm(r.so_luong_loi),
+    so_luong_huy: soKhongAm(r.so_luong_huy),
   };
 }
 

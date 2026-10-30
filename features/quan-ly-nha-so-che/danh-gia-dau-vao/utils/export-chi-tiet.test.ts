@@ -56,8 +56,8 @@ const dong = (id: string, idLo: string, idCot: string, ngay: string, stt: number
   stt_dong: stt,
   so_luong: so,
   danh_gia: null,
-  so_luong_loi: 0,
-  ly_do_loi: null,
+  so_luong_huy: 0,
+  ly_do_huy: null,
   ...extra,
 });
 
@@ -83,7 +83,7 @@ const dsPhieu: DgdvPhieuDayDu[] = [
         stt: 1,
         lo_ngay: [{ id: 'n1', id_phieu_lo: 'l1', ngay: '2026-10-26', dut_day: 9 }],
         dong: [
-          dong('d2', 'l1', 'c1', '2026-10-26', 2, 15, { danh_gia: 'Chín xanh', so_luong_loi: 2, ly_do_loi: 'Chín bệnh' }),
+          dong('d2', 'l1', 'c1', '2026-10-26', 2, 15, { danh_gia: 'Chín xanh', so_luong_huy: 2, ly_do_huy: 'Chín bệnh' }),
           dong('d1', 'l1', 'c1', '2026-10-26', 1, 10, { danh_gia: 'Thiếu lá' }),
           dong('d3', 'l1', 'c2', '2026-10-26', 1, 30),
         ],
@@ -121,10 +121,10 @@ describe('dungDongXuatChiTiet', () => {
     }));
     const { dong: kq, loi } = parseDongImport(banGhi, { chiNhanh: [{ id: '1', ma: 'FP1', ten: 'Farm FP1' }], mau });
     expect(loi).toEqual([]);
-    const chung = { id_chi_nhanh: 1, to_truong: 'A.Hâu', ten_lo: 'A3-3', id_mau_2: null, xe_doi: false, danh_gia: null, so_luong_loi: 0, ly_do_loi: null };
+    const chung = { id_chi_nhanh: 1, to_truong: 'A.Hâu', ten_lo: 'A3-3', id_mau_2: null, xe_doi: false, danh_gia: null, so_luong_huy: 0, ly_do_huy: null };
     expect(kq).toEqual([
       { ...chung, row: 2, ngay: '2026-10-26', chuyen: 1, id_mau_1: 6, id_mau_2: 1, th_nam: 2026, th_tuan: 44, so_luong: 10, danh_gia: 'Thiếu lá' },
-      { ...chung, row: 3, ngay: '2026-10-26', chuyen: 1, id_mau_1: 6, id_mau_2: 1, th_nam: 2026, th_tuan: 44, so_luong: 15, danh_gia: 'Chín xanh', so_luong_loi: 2, ly_do_loi: 'Chín bệnh' },
+      { ...chung, row: 3, ngay: '2026-10-26', chuyen: 1, id_mau_1: 6, id_mau_2: 1, th_nam: 2026, th_tuan: 44, so_luong: 15, danh_gia: 'Chín xanh', so_luong_huy: 2, ly_do_huy: 'Chín bệnh' },
       { ...chung, row: 4, ngay: '2026-10-26', chuyen: 1, id_mau_1: 7, xe_doi: true, th_nam: 2026, th_tuan: 43, so_luong: 30 },
       // đứt dây: tuần thu hoạch không dùng — parser gán tuần của ngày
       { ...chung, row: 5, ngay: '2026-10-26', chuyen: 1, id_mau_1: null, th_nam: 2026, th_tuan: 44, so_luong: 9 },
