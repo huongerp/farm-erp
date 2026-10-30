@@ -1,12 +1,14 @@
 /**
- * Xuất Excel bảng phẳng cho tab «Tổng hợp tuần» (1 dòng / lô) và «So sánh tháng» (1 dòng / tháng × chi nhánh)
+ * Xuất Excel bảng phẳng: tab «Tổng hợp tuần» (1 dòng / tuần × chi nhánh như bảng; Detail tuần: 1 dòng / lô) và
+ * «So sánh tháng» (1 dòng / tháng × chi nhánh)
  * qua ExportDialog. Chỉ đổi mô hình đã gom ở core/tong-hop thành dòng — không tự cộng lại số.
  */
 import type { TFunction } from 'i18next';
 import type { ExportColumn } from '../../../../components/shared/LazyExportDialog';
 import { formatYmdToDisplay } from '../../../../lib/utils';
 import { ghiXlsxCoBangHinh } from '../../../../lib/export/xlsx-bang-hinh';
-import { tiLeKsc, type DgdvSoSanhThang, type DgdvThangChiNhanh, type DgdvTongHopTuan } from '../core/tong-hop';
+import { nhanTuanFarm } from '../core/tuan';
+import { tiLeKsc, tiLeSoChe, type DgdvSoSanhThang, type DgdvThangChiNhanh, type DgdvTongHopTuan, type DgdvTuanKyDong } from '../core/tong-hop';
 
 /** Số / % làm tròn 1 chữ số; không tính được → '' (ô trống). */
 const pt = (v: number | null) => (v == null ? '' : Math.round(v * 10) / 10);
@@ -16,6 +18,38 @@ export const nhanThang = (thang: string, t: TFunction) =>
   t('danhGiaDauVao.thang.nhanThang', { thang: Number(thang.slice(5, 7)), nam: thang.slice(0, 4) });
 
 // ---- Tuần ------------------------------------------------------------------------
+
+/** Cột xuất danh sách tab «Tổng hợp tuần» (kỳ nhiều tuần — cột T2→CN không kèm ngày). */
+export function cotXuatTuanKy(t: TFunction): ExportColumn[] {
+  return [
+    { key: 'tuan', label: t('danhGiaDauVao.store.colNamTuan') },
+    { key: 'chi_nhanh', label: t('danhGiaDauVao.tuan.colChiNhanh') },
+    { key: 'so_ngay', label: t('danhGiaDauVao.thang.colSoNgay'), type: 'number' },
+    { key: 'so_chuyen', label: t('danhGiaDauVao.thang.colSoChuyen'), type: 'number' },
+    ...Array.from({ length: 7 }, (_, i) => ({ key: `n${i}`, label: t(`danhGiaDauVao.thu.${i}`), type: 'number' as const })),
+    { key: 'tong', label: t('danhGiaDauVao.tuan.colTongTuan'), type: 'number' },
+    { key: 'ksc', label: t('danhGiaDauVao.store.colKsc'), type: 'number' },
+    { key: 'ti_le', label: t('danhGiaDauVao.store.colTiLeKsc'), type: 'percent' },
+    { key: 'so_che', label: t('danhGiaDauVao.store.colSoChe'), type: 'number' },
+    { key: 'ti_le_so_che', label: t('danhGiaDauVao.store.colTiLeSoChe'), type: 'percent' },
+  ];
+}
+
+/** Một dòng / (tuần, chi nhánh) như bảng đang hiện. */
+export function dongXuatTuanKy(rows: readonly DgdvTuanKyDong[], tenCn: (id: string) => string): Record<string, unknown>[] {
+  return rows.map((r) => ({
+    tuan: nhanTuanFarm({ nam: r.nam, tuan: r.tuan }),
+    chi_nhanh: tenCn(r.id_chi_nhanh),
+    so_ngay: r.soNgayCoSo,
+    so_chuyen: r.soChuyen,
+    ...Object.fromEntries(r.theoNgay.map((v, i) => [`n${i}`, v])),
+    tong: r.tongThu,
+    ksc: r.ksc,
+    ti_le: pt(tiLeKsc(r.ksc, r.tongThu)),
+    so_che: r.soChe ?? '',
+    ti_le_so_che: pt(tiLeSoChe(r.soChe, r.thuCoBc)),
+  }));
+}
 
 export function cotXuatTuan(ngays: readonly string[], t: TFunction): ExportColumn[] {
   return [

@@ -1,6 +1,7 @@
 /**
- * Tab «So sánh tháng» — CHỈ XEM. Chọn 3 / 6 / 12 tháng (kết thúc tháng hiện tại) + chi nhánh. Đọc view
- * `v_fp_farm_dgdv_tong_chuyen` (1 dòng / chuyến, gồm cả tháng liền trước để tính chênh), gom ở
+ * Tab «So sánh tháng» — CHỈ XEM. Chip Kỳ (mặc định «Tất cả» = từ tháng có số đầu tiên tới tháng này; kỳ khác lấy
+ * trọn các tháng mà kỳ chạm tới) + chi nhánh. Đọc view `v_fp_farm_dgdv_tong_chuyen` (1 dòng / chuyến, gồm cả tháng
+ * liền trước để tính chênh), gom ở
  * core/tong-hop `tongHopThang`. Biểu đồ cột chồng tổng thu theo chi nhánh, nhãn % KSC trên đỉnh cột
  * (một trục — không vẽ trục % thứ hai). Bảng tháng × chi nhánh + Xuất Excel dạng phẳng.
  */
@@ -11,18 +12,17 @@ import { Bar, BarChart, CartesianGrid, LabelList, Legend, ResponsiveContainer, T
 import EmptyState from '../../../../components/shared/EmptyState';
 import ExportDialog from '../../../../components/shared/LazyExportDialog';
 import ChartTooltip from '../../../../components/ui/ChartTooltip';
+import DateRangePicker from '../../../../components/ui/DateRangePicker';
 import { cn, formatNumberVN, getTodayISO } from '../../../../lib/utils';
-import { cacThangKetThuc, khoangTaiThang, tongHopThang, type DgdvThangChiNhanh } from '../core/tong-hop';
+import { cacThangCuaKy, khoangTaiThang, tongHopThang, type DgdvThangChiNhanh } from '../core/tong-hop';
 import { useDgdvTongChuyen } from '../hooks/use-dgdv-tong-ngay';
+import { useKyDgdv } from '../hooks/use-ky-dgdv';
 import { useDgdvChiNhanhXem } from '../hooks/use-dgdv-chi-nhanh-xem';
 import { nhanTiLeKsc } from '../utils/export-danh-sach';
 import { cotXuatThang, dongXuatThang, nhanThang } from '../utils/export-tong-hop';
 import TongHopToolbar from './tong-hop/TongHopToolbar';
 import { BangTongHop, TieuDeBang } from './tong-hop/BangTongHop';
 import { TD, TH, fmtO } from './tong-hop/bang-tong-hop';
-
-const SO_THANG = [3, 6, 12] as const;
-type SoThang = (typeof SO_THANG)[number];
 
 /** Màu theo chi nhánh — thứ tự cố định theo danh sách chi nhánh trong phạm vi (màu đi theo chi nhánh, không theo hạng). */
 const MAU_SERIES = ['#6366f1', '#f59e0b', '#06b6d4', '#ec4899', '#10b981', '#8b5cf6'];
@@ -38,14 +38,20 @@ const ptChenh = (n: number) => `${n > 0 ? '+' : n < 0 ? '−' : ''}${formatNumbe
 const SoSanhThangTab: React.FC = () => {
   const { t } = useTranslation();
   const thangNay = getTodayISO().slice(0, 7);
-  const [soThang, setSoThang] = useState<SoThang>(6);
+  const ky = useKyDgdv();
   const [idCn, setIdCn] = useState('');
   const [moXuat, setMoXuat] = useState(false);
 
   const { dsChiNhanh, tenCn, phamVi, thuTuCn, dangTaiPhamVi } = useDgdvChiNhanhXem(idCn || null);
-  const dsThang = useMemo(() => cacThangKetThuc(thangNay, soThang), [thangNay, soThang]);
-  const khoang = useMemo(() => khoangTaiThang(dsThang), [dsThang]);
-  const q = useDgdvTongChuyen(khoang.tu, khoang.den, phamVi, !dangTaiPhamVi);
+  // «Tất cả» (đầu kỳ rỗng): tải mọi chuyến rồi lấy tháng đầu từ dữ liệu; kỳ có đầu: tải trọn các tháng + tháng trước.
+  const dauMo = !ky.khoang.tu;
+  const thangKy = useMemo(() => cacThangCuaKy(ky.khoang.tu, ky.khoang.den, thangNay), [ky.khoang, thangNay]);
+  const khoangTai = useMemo(() => (dauMo ? { tu: '', den: ky.khoang.den } : khoangTaiThang(thangKy)), [dauMo, ky.khoang.den, thangKy]);
+  const q = useDgdvTongChuyen(khoangTai.tu, khoangTai.den, phamVi, !dangTaiPhamVi);
+  const dsThang = useMemo(
+    () => (dauMo ? cacThangCuaKy('', ky.khoang.den, thangNay, q.data?.[0]?.ngay ?? null) : thangKy),
+    [dauMo, ky.khoang.den, thangNay, q.data, thangKy]
+  );
 
   const kq = useMemo(() => tongHopThang(q.data ?? [], dsThang, thuTuCn), [q.data, dsThang, thuTuCn]);
   const coSo = kq.tongThang.some((d) => d.soChuyen > 0);
@@ -82,23 +88,15 @@ const SoSanhThangTab: React.FC = () => {
   const exportData = useMemo(() => (moXuat ? dongXuatThang(kq, tenCn, t) : []), [moXuat, kq, tenCn, t]);
 
   const chonKy = (inline: boolean) => (
-    <div role="group" aria-label={t('danhGiaDauVao.thang.soThang')} className={cn('inline-flex rounded-md border border-border p-0.5', inline ? 'w-full' : 'shrink-0')}>
-      {SO_THANG.map((n) => (
-        <button
-          key={n}
-          type="button"
-          aria-pressed={soThang === n}
-          onClick={() => setSoThang(n)}
-          className={cn(
-            'h-8 px-3 rounded text-sm font-medium whitespace-nowrap',
-            inline && 'flex-1',
-            soThang === n ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted/50'
-          )}
-        >
-          {t('danhGiaDauVao.thang.nThang', { n })}
-        </button>
-      ))}
-    </div>
+    <DateRangePicker
+      inline={inline}
+      presets={ky.presets}
+      value={ky.value}
+      onChange={ky.onChange}
+      customPresetId="custom"
+      displayLabel={inline ? undefined : ky.displayLabel}
+      className={inline ? undefined : 'shrink-0'}
+    />
   );
 
   const dongBang = (d: DgdvThangChiNhanh, tong: boolean) => (
@@ -131,7 +129,7 @@ const SoSanhThangTab: React.FC = () => {
     <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
       <TongHopToolbar
         chonKy={chonKy}
-        nhanKy={t('danhGiaDauVao.thang.soThang')}
+        nhanKy={ky.nhan || t('danhGiaDauVao.thang.soThang')}
         dsChiNhanh={dsChiNhanh}
         idChiNhanh={idCn}
         onDoiChiNhanh={setIdCn}

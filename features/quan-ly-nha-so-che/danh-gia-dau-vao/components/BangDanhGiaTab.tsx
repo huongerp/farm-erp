@@ -1,9 +1,11 @@
 /**
  * Tab «Tổng hợp ngày» (id `bang` — giữ cho link `DGDV_BANG_DANH_GIA_URL` từ Báo cáo sơ chế / Dự báo), CHỈ XEM.
- * Khuôn list chuẩn: `DashboardToolbar` (khoảng ngày ≤ 31 ngày + chip Chi nhánh / Trạng thái / Có KSC / Tổ trưởng,
+ * Khuôn list chuẩn: `DashboardToolbar` (chip Kỳ — mặc định «Tất cả» + chip Chi nhánh / Trạng thái / Có KSC / Tổ trưởng,
  * In, Xuất Excel lưới đã gộp) + `GenericTable` mỗi dòng = ngày × chi nhánh (cộng mọi chuyến, dòng tổng trên đầu
- * bảng) → bấm dòng mở Detail tổng ngày (`tong-hop/TongNgayDetail`). Dữ liệu: phiếu đầy đủ trong khoảng
- * (`useDgdvTheoKhoang`), gom + lọc tại chỗ ở core/tong-hop. Nhập / sửa số ở Detail phiếu chuyến.
+ * bảng) → bấm dòng mở Detail tổng ngày (`tong-hop/TongNgayDetail`, tải phiếu đầy đủ của riêng ngày đó).
+ * Dữ liệu bảng: view tổng chuyến (nhẹ, đủ cho kỳ dài) + Tổng buồng sơ chế của Báo cáo sơ chế (cột % BC cuối ngày);
+ * lọc tổ trưởng → tổng lấy từ view tổng ngày × dây đã lọc ở server. In / Xuất lưới cần phiếu đầy đủ → chỉ khi kỳ
+ * ≤ `SO_NGAY_TOI_DA` ngày. Nhập / sửa số ở Detail phiếu chuyến.
  */
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -13,17 +15,22 @@ import { AlertTriangle, Building2, Calendar, FileSpreadsheet, Printer, ToggleLef
 import DashboardToolbar from '../../../../components/shared/DashboardToolbar';
 import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
 import GenericTable from '../../../../components/shared/GenericTable';
-import DateRangePicker, { type DateRangeValue } from '../../../../components/ui/DateRangePicker';
+import DateRangePicker from '../../../../components/ui/DateRangePicker';
 import { MobileFilterField, type FilterGroup } from '../../../../components/ui/MobileFilterSheet';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
-import { cn, formatNumberVN, formatYmdToDisplay, getTodayISO } from '../../../../lib/utils';
+import { cn, formatNumberVN, formatYmdToDisplay } from '../../../../lib/utils';
 import { TRANG_THAI } from '../../../../lib/constants';
 import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
 import { useDgdvTheoKhoang } from '../hooks/use-danh-gia-dau-vao';
 import { useDgdvViewScope } from '../hooks/use-danh-gia-dau-vao-permissions';
 import { useMauDay } from '../hooks/use-danh-muc-dgdv';
+import { useBcscSoChe, useDgdvTenToTruong, useDgdvTongChuyen, useDgdvTongNgayDay } from '../hooks/use-dgdv-tong-ngay';
+import { useKyDgdv } from '../hooks/use-ky-dgdv';
+import { getDgdvTheoKhoangNgay } from '../services/danh-gia-dau-vao-service';
+import type { DgdvPhamViTong } from '../services/danh-gia-dau-vao-tong-ngay.service';
 import { dungLuoiKhoangNgay } from '../core/bang-tinh';
+import { khoaTen } from '../core/chuan-hoa-ten';
 import { nhanTuanFarm } from '../core/tuan';
 import {
   LOC_KSC,
@@ -31,34 +38,44 @@ import {
   dsToTruong,
   locNgayChiNhanh,
   locPhieuTheoToTruong,
-  tongHopNgayChiNhanh,
+  tongHopNgayTuChuyen,
+  tongTheoNgayChiNhanh,
   type DgdvNgayChiNhanh,
 } from '../core/tong-hop';
+import type { DgdvPhieuDayDu } from '../core/types';
 import { useDgdvTongNgayStore } from '../store/useDgdvTongHopStore';
 import { nhanTiLeKsc } from '../utils/export-danh-sach';
-import { chuanHoaKhoang, khoangNhanh, kieuCuaKhoang, type KieuKhoangNhanh } from '../utils/khoang-ngay';
+import { SO_NGAY_TOI_DA, soNgayCuaKhoang } from '../utils/khoang-ngay';
 import { getDgdvPreviewUrl } from '../utils/preview-url';
 import { taiXlsxLuoi } from '../utils/export-luoi';
 import { TrangThaiDgdvBadge } from './DgdvList';
 import TongNgayDetail from './tong-hop/TongNgayDetail';
 
-const KIEU_NHANH: KieuKhoangNhanh[] = ['hom-nay', 'tuan-nay', 'tuan-truoc'];
-const KHOA_NHAN_NHANH: Record<KieuKhoangNhanh, string> = {
-  'hom-nay': 'danhGiaDauVao.bang.homNay',
-  'tuan-nay': 'danhGiaDauVao.bang.tuanNay',
-  'tuan-truoc': 'danhGiaDauVao.bang.tuanTruoc',
-};
-const TUY_CHON = 'tuy-chon';
 const KHONG_CHON = new Set<string>();
 const boQua = () => undefined;
 
+/** Detail tổng ngày: tải phiếu đầy đủ của riêng (ngày, chi nhánh) được bấm rồi mới mở drawer. */
+const TongNgayDetailTai: React.FC<{
+  dong: DgdvNgayChiNhanh;
+  phamVi: DgdvPhamViTong;
+  toTruong: readonly string[];
+  tenToTruongLoc: string[];
+  onClose: () => void;
+}> = ({ dong, phamVi, toTruong, tenToTruongLoc, onClose }) => {
+  const q = useDgdvTheoKhoang(dong.ngay, dong.ngay, dong.id_chi_nhanh, phamVi.viewAll, phamVi.allowedBranchIds);
+  const goc = useMemo(() => (q.data ?? []).filter((p) => p.id_chi_nhanh === dong.id_chi_nhanh), [q.data, dong.id_chi_nhanh]);
+  const loc = useMemo(() => locPhieuTheoToTruong(goc, toTruong), [goc, toTruong]);
+  if (!q.data) return null;
+  return <TongNgayDetail dong={dong} dsPhieu={loc} dsPhieuGoc={goc} tenToTruongLoc={tenToTruongLoc} onClose={onClose} />;
+};
+
 const BangDanhGiaTab: React.FC = () => {
   const { t } = useTranslation();
-  const homNay = getTodayISO();
-  const [khoang, setKhoang] = useState(() => khoangNhanh('hom-nay', homNay));
   const [dangXuat, setDangXuat] = useState(false);
   const [xemKhoa, setXemKhoa] = useState<string | null>(null);
   const { filters, setFilter, resetFilters, columns, resizeColumn, pagination, setPage, setPageSize } = useDgdvTongNgayStore();
+  const ky = useKyDgdv(() => setPage(1));
+  const khoang = ky.khoang;
   const chonCn = filters.id_chi_nhanh;
 
   const viewScope = useDgdvViewScope();
@@ -73,64 +90,62 @@ const BangDanhGiaTab: React.FC = () => {
     return dangDung.filter((b) => cho.has(String(b.id)));
   }, [branches, viewScope.viewAll, viewScope.allowedBranchIds]);
   const thuTuCn = useMemo(() => dsChiNhanh.map((b) => String(b.id)), [dsChiNhanh]);
+  const tenTheoId = useMemo(() => new Map(branches.map((b) => [String(b.id), b.ten_chi_nhanh])), [branches]);
 
   // Một chi nhánh → lọc ở server; nhiều / tất cả → tải cả phạm vi rồi lọc tại chỗ.
-  const q = useDgdvTheoKhoang(
-    khoang.tu,
-    khoang.den,
-    chonCn.length === 1 ? chonCn[0] : null,
-    viewScope.viewAll,
-    viewScope.allowedBranchIds,
-    !viewScope.isLoading
+  const phamVi: DgdvPhamViTong = useMemo(
+    () => ({ idChiNhanh: chonCn.length === 1 ? chonCn[0] : null, viewAll: viewScope.viewAll, allowedBranchIds: viewScope.allowedBranchIds }),
+    [chonCn, viewScope.viewAll, viewScope.allowedBranchIds]
   );
-  /** Phiếu đủ lô của các chi nhánh đang chọn. */
-  const dsPhieuCn = useMemo(() => {
+  const sanSang = !viewScope.isLoading;
+  const q = useDgdvTongChuyen(khoang.tu, khoang.den, phamVi, sanSang);
+  const qSoChe = useBcscSoChe(khoang.tu, khoang.den, phamVi, sanSang);
+
+  // Tổ trưởng: tuỳ chọn từ mọi tên đã nhập ở lô; đang lọc → tải dòng tổng ngày × dây của các tên đó (lọc ở server).
+  const qTen = useDgdvTenToTruong();
+  const toTruongTuyChon = useMemo(() => dsToTruong(qTen.data ?? []), [qTen.data]);
+  const locToTruong = filters.to_truong.length > 0;
+  const tenGocLoc = useMemo(() => {
+    const cho = new Set(filters.to_truong);
+    return (qTen.data ?? []).filter((x) => cho.has(khoaTen(x)));
+  }, [qTen.data, filters.to_truong]);
+  const qLoc = useDgdvTongNgayDay(khoang.tu, khoang.den, phamVi, sanSang && locToTruong && !!qTen.data, tenGocLoc, true);
+  const tongLoc = useMemo(() => (locToTruong ? tongTheoNgayChiNhanh(qLoc.data ?? []) : null), [locToTruong, qLoc.data]);
+
+  const tatCaDong = useMemo(() => {
     const ds = q.data ?? [];
-    if (chonCn.length === 0) return ds;
-    const cho = new Set(chonCn);
-    return ds.filter((p) => cho.has(p.id_chi_nhanh));
-  }, [q.data, chonCn]);
-  /** + lọc tổ trưởng ở mức lô. */
-  const dsPhieu = useMemo(() => locPhieuTheoToTruong(dsPhieuCn, filters.to_truong), [dsPhieuCn, filters.to_truong]);
-  const tatCaDong = useMemo(() => tongHopNgayChiNhanh(dsPhieu, thuTuCn), [dsPhieu, thuTuCn]);
+    const cho = chonCn.length > 1 ? new Set(chonCn) : null;
+    return tongHopNgayTuChuyen(cho ? ds.filter((c) => cho.has(c.id_chi_nhanh)) : ds, { thuTuCn, soChe: qSoChe.data, tongLoc }).map((r) => ({
+      ...r,
+      ten_chi_nhanh: tenTheoId.get(r.id_chi_nhanh) ?? `#${r.id_chi_nhanh}`,
+    }));
+  }, [q.data, chonCn, thuTuCn, qSoChe.data, tongLoc, tenTheoId]);
   const dsDong = useMemo(
     () => locNgayChiNhanh(tatCaDong, { trangThai: filters.trang_thai, ksc: filters.ksc }),
     [tatCaDong, filters.trang_thai, filters.ksc]
   );
   const tong = useMemo(
-    () => dsDong.reduce((s, r) => ({ tongThu: s.tongThu + r.tongThu, ksc: s.ksc + r.ksc, soChuyen: s.soChuyen + r.soChuyen }), { tongThu: 0, ksc: 0, soChuyen: 0 }),
+    () =>
+      dsDong.reduce(
+        (s, r) => ({
+          tongThu: s.tongThu + r.tongThu,
+          ksc: s.ksc + r.ksc,
+          soChuyen: s.soChuyen + r.soChuyen,
+          // Tỉ lệ dòng tổng chỉ tính trên các ngày có Báo cáo sơ chế.
+          soChe: s.soChe + (r.soChe ?? 0),
+          thuCoBc: s.thuCoBc + (r.soChe != null ? r.tongThu : 0),
+        }),
+        { tongThu: 0, ksc: 0, soChuyen: 0, soChe: 0, thuCoBc: 0 }
+      ),
     [dsDong]
   );
-  const toTruongTuyChon = useMemo(() => dsToTruong(dsPhieuCn.flatMap((p) => p.lo.map((l) => l.to_truong))), [dsPhieuCn]);
   const coSo = dsDong.length > 0;
-
-  /** Phiếu (đã lọc) thuộc các dòng đang hiện — cho Xuất Excel. */
-  const phieuCuaDong = (ds: readonly DgdvNgayChiNhanh[]) => {
-    const khoa = new Set(ds.map((r) => r.khoa));
-    return dsPhieu.filter((p) => khoa.has(`${p.ngay}|${p.id_chi_nhanh}`));
-  };
+  const dangTai = q.isPending || viewScope.isLoading || (locToTruong && (qTen.isPending || qLoc.isPending));
 
   // ---- Toolbar ----
-  const kieu = kieuCuaKhoang(khoang.tu, khoang.den, homNay);
-  const presets = useMemo(
-    () => [...KIEU_NHANH.map((k) => ({ id: k, label: t(KHOA_NHAN_NHANH[k]) })), { id: TUY_CHON, label: t('danhGiaDauVao.bang.tuyChon') }],
-    [t]
-  );
-  const rangeValue: DateRangeValue = { preset: kieu ?? TUY_CHON, customStart: khoang.tu, customEnd: khoang.den };
-  const doiKhoang = (v: DateRangeValue) => {
-    if (v.preset !== TUY_CHON) {
-      setKhoang(khoangNhanh(v.preset as KieuKhoangNhanh, homNay));
-      setPage(1);
-      return;
-    }
-    if (!v.customStart || !v.customEnd) return;
-    const k = chuanHoaKhoang(v.customStart, v.customEnd);
-    if (k.biCat) toast.message(t('danhGiaDauVao.bang.khoangBiCat'));
-    setKhoang({ tu: k.tu, den: k.den });
-    setPage(1);
-  };
-  const nhanKhoang =
-    khoang.tu === khoang.den ? formatYmdToDisplay(khoang.tu) : `${formatYmdToDisplay(khoang.tu)} – ${formatYmdToDisplay(khoang.den)}`;
+  /** In / Xuất lưới: mỗi ngày một khối lưới từ phiếu đầy đủ → chỉ khi kỳ có giới hạn và ≤ 31 ngày. */
+  const inDuoc = soNgayCuaKhoang(khoang.tu, khoang.den) <= SO_NGAY_TOI_DA;
+  const nhanKhoaIn = t('danhGiaDauVao.bang.chonKyIn', { n: SO_NGAY_TOI_DA });
 
   const filterGroups: FilterGroup[] = useMemo(() => {
     const dem = (fn: (r: DgdvNgayChiNhanh) => boolean) => tatCaDong.filter(fn).length;
@@ -179,11 +194,11 @@ const BangDanhGiaTab: React.FC = () => {
   const chonKhoang = (inline: boolean) => (
     <DateRangePicker
       inline={inline}
-      presets={presets}
-      value={rangeValue}
-      onChange={doiKhoang}
-      customPresetId={TUY_CHON}
-      displayLabel={inline ? undefined : nhanKhoang}
+      presets={ky.presets}
+      value={ky.value}
+      onChange={ky.onChange}
+      customPresetId="custom"
+      displayLabel={inline ? undefined : ky.displayLabel}
       className={inline ? undefined : 'shrink-0'}
     />
   );
@@ -196,10 +211,17 @@ const BangDanhGiaTab: React.FC = () => {
   ];
   const activeFilterCount = filters.id_chi_nhanh.length + filters.trang_thai.length + filters.ksc.length + filters.to_truong.length;
 
+  /** Phiếu (lọc tổ trưởng ở mức lô) thuộc các dòng đang hiện — cho Xuất Excel lưới. */
+  const phieuCuaDong = (dsPhieu: DgdvPhieuDayDu[], ds: readonly DgdvNgayChiNhanh[]) => {
+    const khoa = new Set(ds.map((r) => r.khoa));
+    return locPhieuTheoToTruong(dsPhieu, filters.to_truong).filter((p) => khoa.has(`${p.ngay}|${p.id_chi_nhanh}`));
+  };
+
   const xuatExcel = async () => {
     setDangXuat(true);
     try {
-      const dsKhoi = dungLuoiKhoangNgay(phieuCuaDong(dsDong), khoang.tu, khoang.den, mauTheoId, {
+      const dsPhieu = await getDgdvTheoKhoangNgay(khoang.tu, khoang.den, phamVi.idChiNhanh, phamVi.viewAll, phamVi.allowedBranchIds);
+      const dsKhoi = dungLuoiKhoangNgay(phieuCuaDong(dsPhieu, dsDong), khoang.tu, khoang.den, mauTheoId, {
         nhanXeDoi: t('danhGiaDauVao.luoi.xeDoi'),
         gopChuyen: true,
       });
@@ -217,17 +239,17 @@ const BangDanhGiaTab: React.FC = () => {
   const iconBtn = 'h-9 w-9 p-0 inline-flex items-center justify-center border-border text-muted-foreground hover:bg-muted/50';
   const actions = (
     <div className="flex items-center gap-2">
-      <Tooltip content={t('danhGiaDauVao.bang.in')} placement="bottom">
-        <Button variant="outline" size="sm" className={iconBtn} disabled={!coSo} onClick={moIn} aria-label={t('danhGiaDauVao.bang.in')}>
+      <Tooltip content={inDuoc ? t('danhGiaDauVao.bang.in') : nhanKhoaIn} placement="bottom">
+        <Button variant="outline" size="sm" className={iconBtn} disabled={!coSo || !inDuoc} onClick={moIn} aria-label={t('danhGiaDauVao.bang.in')}>
           <Printer className="w-4 h-4" />
         </Button>
       </Tooltip>
-      <Tooltip content={t('danhGiaDauVao.bang.xuatExcel')} placement="bottom">
+      <Tooltip content={inDuoc ? t('danhGiaDauVao.bang.xuatExcel') : nhanKhoaIn} placement="bottom">
         <Button
           variant="outline"
           size="sm"
           className={iconBtn}
-          disabled={!coSo || dangXuat}
+          disabled={!coSo || dangXuat || !inDuoc}
           onClick={() => void xuatExcel()}
           aria-label={t('danhGiaDauVao.bang.xuatExcel')}
         >
@@ -254,6 +276,10 @@ const BangDanhGiaTab: React.FC = () => {
         return <span className={cn('text-sm tabular-nums', r.ksc > 0 && 'text-rose-600 font-medium')}>{formatNumberVN(r.ksc)}</span>;
       case 'ti_le_ksc':
         return <span className="text-sm tabular-nums text-muted-foreground">{nhanTiLeKsc(r.ksc, r.tongThu)}</span>;
+      case 'so_che':
+        return <span className="text-sm tabular-nums">{r.soChe == null ? '–' : formatNumberVN(r.soChe)}</span>;
+      case 'ti_le_so_che':
+        return <span className="text-sm tabular-nums text-muted-foreground">{r.soChe == null ? '–' : nhanTiLeKsc(r.soChe, r.tongThu)}</span>;
       case 'trang_thai':
         return <TrangThaiDgdvBadge trangThai={r.daKhoaHet ? 'khoa' : 'mo'} />;
       default:
@@ -272,6 +298,10 @@ const BangDanhGiaTab: React.FC = () => {
         return <span className="text-xs font-bold tabular-nums text-rose-600">{formatNumberVN(tong.ksc)}</span>;
       case 'ti_le_ksc':
         return <span className="text-xs font-semibold tabular-nums">{nhanTiLeKsc(tong.ksc, tong.tongThu)}</span>;
+      case 'so_che':
+        return <span className="text-xs font-semibold tabular-nums">{tong.thuCoBc > 0 ? formatNumberVN(tong.soChe) : '–'}</span>;
+      case 'ti_le_so_che':
+        return <span className="text-xs font-semibold tabular-nums">{tong.thuCoBc > 0 ? nhanTiLeKsc(tong.soChe, tong.thuCoBc) : '–'}</span>;
       default:
         return null;
     }
@@ -303,15 +333,16 @@ const BangDanhGiaTab: React.FC = () => {
           <div className="font-semibold">{nhanTiLeKsc(r.ksc, r.tongThu)}</div>
         </div>
       </div>
+      {r.soChe != null && (
+        <p className="mt-2 text-xs text-muted-foreground tabular-nums">
+          {t('danhGiaDauVao.store.colSoChe')}: <span className="font-medium text-foreground">{formatNumberVN(r.soChe)}</span> ·{' '}
+          {t('danhGiaDauVao.store.colTiLeSoChe')}: <span className="font-medium text-foreground">{nhanTiLeKsc(r.soChe, r.tongThu)}</span>
+        </p>
+      )}
     </div>
   );
 
   const dongXem = xemKhoa ? tatCaDong.find((r) => r.khoa === xemKhoa) : undefined;
-  const phieuXem = useMemo(() => {
-    if (!xemKhoa) return null;
-    const cua = (ds: typeof dsPhieu) => ds.filter((p) => `${p.ngay}|${p.id_chi_nhanh}` === xemKhoa);
-    return { loc: cua(dsPhieu), goc: cua(dsPhieuCn) };
-  }, [xemKhoa, dsPhieu, dsPhieuCn]);
   const tenToTruongLoc = toTruongTuyChon.filter((x) => filters.to_truong.includes(x.khoa)).map((x) => x.ten);
 
   return (
@@ -321,7 +352,7 @@ const BangDanhGiaTab: React.FC = () => {
         filters={<ResponsiveFilterChips items={filterItems} />}
         filterGroups={filterGroups}
         mobileFilterExtra={
-          <MobileFilterField label={t('danhGiaDauVao.bang.khoangNgay')} icon={Calendar} active>
+          <MobileFilterField label={ky.nhan || t('danhGiaDauVao.bang.khoangNgay')} icon={Calendar} active>
             {chonKhoang(true)}
           </MobileFilterField>
         }
@@ -340,8 +371,8 @@ const BangDanhGiaTab: React.FC = () => {
           data={dsDong}
           columns={columns}
           onResizeColumn={resizeColumn}
-          isLoading={q.isPending || viewScope.isLoading}
-          isError={q.isError}
+          isLoading={dangTai}
+          isError={q.isError || qLoc.isError}
           onRetry={() => void q.refetch()}
           loadingText={t('danhGiaDauVao.loading')}
           selectedIds={KHONG_CHON}
@@ -363,11 +394,12 @@ const BangDanhGiaTab: React.FC = () => {
       </div>
 
       <AnimatePresence>
-        {dongXem && phieuXem && (
-          <TongNgayDetail
+        {dongXem && (
+          <TongNgayDetailTai
+            key={dongXem.khoa}
             dong={dongXem}
-            dsPhieu={phieuXem.loc}
-            dsPhieuGoc={phieuXem.goc}
+            phamVi={phamVi}
+            toTruong={filters.to_truong}
             tenToTruongLoc={tenToTruongLoc}
             onClose={() => setXemKhoa(null)}
           />

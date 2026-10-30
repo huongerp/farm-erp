@@ -1,5 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import {
+  getBcscSoCheDb,
+  getDgdvTenToTruongDb,
   getDgdvTongChuyenDb,
   getDgdvTongNgayDayDb,
   getDgdvTongNgayDb,
@@ -29,22 +31,56 @@ export function useDgdvTongNgay(ngay: string | null | undefined, idChiNhanh: str
 
 const khoaPhamVi = (pv: DgdvPhamViTong) => [pv.idChiNhanh, pv.viewAll, [...pv.allowedBranchIds].sort().join(',')];
 
-/** Tổng ngày × lô × dây (cộng mọi chuyến) trong khoảng ngày — view `v_fp_farm_dgdv_tong_ngay_day`. */
-export function useDgdvTongNgayDay(tu: string, den: string, pv: DgdvPhamViTong, enabled = true) {
+/**
+ * Tổng ngày × lô × dây (cộng mọi chuyến) trong khoảng ngày — view `v_fp_farm_dgdv_tong_ngay_day`.
+ * `toTruong` (tên gốc) → chỉ lô của các tổ trưởng đó. Mặc định cần đủ hai đầu khoảng (view nhiều dòng);
+ * `choKhoangMo` cho phép đầu rỗng — chỉ dùng khi đã lọc tổ trưởng.
+ */
+export function useDgdvTongNgayDay(
+  tu: string,
+  den: string,
+  pv: DgdvPhamViTong,
+  enabled = true,
+  toTruong?: readonly string[],
+  choKhoangMo = false
+) {
   return useQuery({
-    queryKey: [...QUERY_KEY_DGDV, 'tongNgayDay', tu, den, ...khoaPhamVi(pv)],
-    queryFn: () => getDgdvTongNgayDayDb(tu, den, pv),
-    enabled: enabled && !!tu && !!den,
+    queryKey: [...QUERY_KEY_DGDV, 'tongNgayDay', tu, den, ...khoaPhamVi(pv), toTruong ? [...toTruong].sort().join('|') : null],
+    queryFn: () => getDgdvTongNgayDayDb(tu, den, pv, toTruong),
+    enabled: enabled && (choKhoangMo || (!!tu && !!den)),
     staleTime: 1000 * 30,
   });
 }
 
-/** Tổng từng chuyến trong khoảng ngày — view `v_fp_farm_dgdv_tong_chuyen`. */
+/** Tổng từng chuyến trong khoảng ngày (đầu rỗng = không giới hạn) — view `v_fp_farm_dgdv_tong_chuyen`. */
 export function useDgdvTongChuyen(tu: string, den: string, pv: DgdvPhamViTong, enabled = true) {
   return useQuery({
     queryKey: [...QUERY_KEY_DGDV, 'tongChuyen', tu, den, ...khoaPhamVi(pv)],
     queryFn: () => getDgdvTongChuyenDb(tu, den, pv),
-    enabled: enabled && !!tu && !!den,
+    enabled,
     staleTime: 1000 * 30,
+  });
+}
+
+/**
+ * Tổng buồng sơ chế theo Báo cáo sơ chế (`ngay|id_chi_nhanh` → số) cho cột «% BC cuối ngày».
+ * Key nằm ngoài nhánh DGDV: số này đổi khi lưu Báo cáo sơ chế, không phải khi lưu phiếu.
+ */
+export function useBcscSoChe(tu: string, den: string, pv: DgdvPhamViTong, enabled = true) {
+  return useQuery({
+    queryKey: ['bcscSoCheTheoNgay', tu, den, ...khoaPhamVi(pv)],
+    queryFn: () => getBcscSoCheDb(tu, den, pv),
+    enabled,
+    staleTime: 1000 * 30,
+  });
+}
+
+/** Tên tổ trưởng (gốc) đã nhập ở lô của mọi phiếu — tuỳ chọn chip Tổ trưởng. */
+export function useDgdvTenToTruong(enabled = true) {
+  return useQuery({
+    queryKey: [...QUERY_KEY_DGDV, 'tenToTruong'],
+    queryFn: getDgdvTenToTruongDb,
+    enabled,
+    staleTime: 1000 * 60,
   });
 }

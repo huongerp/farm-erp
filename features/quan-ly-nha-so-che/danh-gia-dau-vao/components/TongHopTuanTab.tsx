@@ -1,38 +1,34 @@
 /**
- * Tab «Tổng hợp tuần» — CHỈ XEM, khuôn list chuẩn: `DashboardToolbar` (tuần farm ‹ › + chip Chi nhánh đa chọn /
- * Có KSC / Tổ trưởng, Xuất Excel) + `GenericTable` mỗi dòng = tuần × chi nhánh (số ngày có số, số chuyến, T2→CN,
- * tổng tuần, KSC, % KSC; dòng tổng trên đầu bảng) → bấm dòng mở Detail tổng tuần (`tong-hop/TongTuanDetail`:
- * tổ trưởng → lô × ngày, theo dây / tuần thu hoạch). Nguồn: view `v_fp_farm_dgdv_tong_ngay_day` (đã cộng mọi
- * chuyến) + `v_fp_farm_dgdv_tong_chuyen` (đếm chuyến); gom / lọc ở core/tong-hop. Xuất Excel: bảng tổ trưởng → lô
- * dạng phẳng của các chi nhánh đang hiện (`cotXuatTuan`, `dongXuatTuan`).
+ * Tab «Tổng hợp tuần» — CHỈ XEM, khuôn list chuẩn: `DashboardToolbar` (chip Kỳ — mặc định «Tất cả» + chip Chi nhánh
+ * đa chọn / Có KSC / Tổ trưởng, In, Xuất Excel) + `GenericTable` mỗi dòng = tuần farm × chi nhánh (số ngày có số,
+ * số chuyến, T2→CN, tổng tuần, KSC, % huỷ, sơ chế theo Báo cáo sơ chế, % BC cuối ngày; dòng tổng trên đầu bảng) →
+ * bấm dòng mở Detail tổng tuần (`tong-hop/TongTuanDetail`: tổ trưởng → lô × ngày, theo dây / tuần thu hoạch — tải
+ * view tổng ngày × dây của riêng tuần đó). Nguồn bảng: view `v_fp_farm_dgdv_tong_chuyen` (gom `tongHopTuanTuChuyen`);
+ * lọc tổ trưởng → tổng lấy từ view tổng ngày × dây đã lọc ở server. In: trang in tuần — chỉ khi mọi dòng cùng một tuần.
  */
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
-import { AlertTriangle, Building2, CalendarRange, ChevronLeft, ChevronRight, FileSpreadsheet, Printer, UserRound } from 'lucide-react';
+import { AlertTriangle, Building2, CalendarRange, FileSpreadsheet, Printer, UserRound } from 'lucide-react';
 import DashboardToolbar from '../../../../components/shared/DashboardToolbar';
 import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
 import GenericTable from '../../../../components/shared/GenericTable';
 import ExportDialog from '../../../../components/shared/LazyExportDialog';
+import DateRangePicker from '../../../../components/ui/DateRangePicker';
 import { MobileFilterField, type FilterGroup } from '../../../../components/ui/MobileFilterSheet';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
-import { cn, formatNumberVN, formatYmdToDisplay, getTodayISO } from '../../../../lib/utils';
-import { cacNgayCuaTuanFarm, nhanTuanFarm, soSanhTuan, tuanFarmCuaNgay, tuanKeTiep } from '../core/tuan';
-import {
-  LOC_KSC,
-  dsToTruong,
-  khopLocKsc,
-  locDongTheoToTruong,
-  tongHopTuanChiNhanh,
-  tongHopTuanTheoLo,
-  type DgdvTuanChiNhanhDong,
-} from '../core/tong-hop';
-import { useDgdvTongChuyen, useDgdvTongNgayDay } from '../hooks/use-dgdv-tong-ngay';
+import { cn, formatNumberVN } from '../../../../lib/utils';
+import { cacNgayCuaTuanFarm, nhanTuanFarm } from '../core/tuan';
+import { khoaTen } from '../core/chuan-hoa-ten';
+import { LOC_KSC, dsToTruong, khopLocKsc, tongHopTuanTuChuyen, tongTheoNgayChiNhanh, type DgdvTuanKyDong } from '../core/tong-hop';
+import { useBcscSoChe, useDgdvTenToTruong, useDgdvTongChuyen, useDgdvTongNgayDay } from '../hooks/use-dgdv-tong-ngay';
 import { useDgdvChiNhanhXem } from '../hooks/use-dgdv-chi-nhanh-xem';
+import { useKyDgdv } from '../hooks/use-ky-dgdv';
+import type { DgdvPhamViTong } from '../services/danh-gia-dau-vao-tong-ngay.service';
 import { useDgdvTongTuanStore } from '../store/useDgdvTongHopStore';
 import { nhanTiLeKsc } from '../utils/export-danh-sach';
-import { cotXuatTuan, dongXuatTuan } from '../utils/export-tong-hop';
+import { cotXuatTuanKy, dongXuatTuanKy } from '../utils/export-tong-hop';
 import { getDgdvInTuanUrl } from '../utils/preview-url';
 import { fmtO } from './tong-hop/bang-tong-hop';
 import TongTuanDetail from './tong-hop/TongTuanDetail';
@@ -40,40 +36,56 @@ import TongTuanDetail from './tong-hop/TongTuanDetail';
 const KHONG_CHON = new Set<string>();
 const boQua = () => undefined;
 
+/** Detail tổng tuần: tải dòng tổng ngày × dây của riêng (tuần, chi nhánh) được bấm. */
+const TongTuanDetailTai: React.FC<{
+  dong: DgdvTuanKyDong;
+  phamVi: DgdvPhamViTong;
+  /** tên tổ trưởng gốc đang lọc; null = không lọc */
+  tenGocLoc: readonly string[] | null;
+  tenChiNhanh: string;
+  tenToTruongLoc: string[];
+  toTruong: string[];
+  ksc: string[];
+  onClose: () => void;
+}> = ({ dong, phamVi, tenGocLoc, ...rest }) => {
+  const tuan = useMemo(() => ({ nam: dong.nam, tuan: dong.tuan }), [dong.nam, dong.tuan]);
+  const ngays = useMemo(() => cacNgayCuaTuanFarm(dong.nam, dong.tuan), [dong.nam, dong.tuan]);
+  const pv = useMemo(() => ({ ...phamVi, idChiNhanh: dong.id_chi_nhanh }), [phamVi, dong.id_chi_nhanh]);
+  const q = useDgdvTongNgayDay(ngays[0], ngays[6], pv, true, tenGocLoc ?? undefined);
+  if (!q.data) return null;
+  return <TongTuanDetail tuan={tuan} ngays={ngays} dong={dong} rows={q.data} {...rest} />;
+};
+
 const TongHopTuanTab: React.FC = () => {
   const { t } = useTranslation();
-  const homNay = getTodayISO();
-  const tuanNay = useMemo(() => tuanFarmCuaNgay(homNay), [homNay]);
-  const [tuan, setTuan] = useState(tuanNay);
   const [moXuat, setMoXuat] = useState(false);
-  const [xemCn, setXemCn] = useState<string | null>(null);
+  const [xemKhoa, setXemKhoa] = useState<string | null>(null);
   const { filters, setFilter, resetFilters, columns, resizeColumn, pagination, setPage, setPageSize } = useDgdvTongTuanStore();
+  const ky = useKyDgdv(() => setPage(1));
+  const khoang = ky.khoang;
   const chonCn = filters.id_chi_nhanh;
 
   // Một chi nhánh → lọc ở server; nhiều / tất cả → tải cả phạm vi rồi lọc tại chỗ.
   const { dsChiNhanh, tenCn, phamVi, thuTuCn, dangTaiPhamVi } = useDgdvChiNhanhXem(chonCn.length === 1 ? chonCn[0] : null);
-  const ngays = useMemo(() => cacNgayCuaTuanFarm(tuan.nam, tuan.tuan), [tuan]);
-  const q = useDgdvTongNgayDay(ngays[0], ngays[6], phamVi, !dangTaiPhamVi);
-  const qChuyen = useDgdvTongChuyen(ngays[0], ngays[6], phamVi, !dangTaiPhamVi);
-  /** Cột T2→CN kèm ngày dd/mm của tuần đang xem. */
-  const cotHien = useMemo(
-    () =>
-      columns.map((c) => {
-        const m = /^n(\d)$/.exec(c.id);
-        return m ? { ...c, label: `${t(`danhGiaDauVao.thu.${m[1]}`)} ${formatYmdToDisplay(ngays[Number(m[1])]).slice(0, 5)}` } : c;
-      }),
-    [columns, ngays, t]
-  );
+  const q = useDgdvTongChuyen(khoang.tu, khoang.den, phamVi, !dangTaiPhamVi);
+  const qSoChe = useBcscSoChe(khoang.tu, khoang.den, phamVi, !dangTaiPhamVi);
 
-  /** Dòng view của các chi nhánh đang chọn. */
-  const rowsCn = useMemo(() => {
+  // Tổ trưởng: tuỳ chọn từ mọi tên đã nhập ở lô; đang lọc → tổng lấy từ view tổng ngày × dây của các tên đó.
+  const qTen = useDgdvTenToTruong();
+  const toTruongTuyChon = useMemo(() => dsToTruong(qTen.data ?? []), [qTen.data]);
+  const locToTruong = filters.to_truong.length > 0;
+  const tenGocLoc = useMemo(() => {
+    const cho = new Set(filters.to_truong);
+    return (qTen.data ?? []).filter((x) => cho.has(khoaTen(x)));
+  }, [qTen.data, filters.to_truong]);
+  const qLoc = useDgdvTongNgayDay(khoang.tu, khoang.den, phamVi, !dangTaiPhamVi && locToTruong && !!qTen.data, tenGocLoc, true);
+  const tongLoc = useMemo(() => (locToTruong ? tongTheoNgayChiNhanh(qLoc.data ?? []) : null), [locToTruong, qLoc.data]);
+
+  const tatCaDong = useMemo(() => {
     const ds = q.data ?? [];
-    if (chonCn.length <= 1) return ds;
-    const cho = new Set(chonCn);
-    return ds.filter((r) => cho.has(r.id_chi_nhanh));
-  }, [q.data, chonCn]);
-  const rows = useMemo(() => locDongTheoToTruong(rowsCn, filters.to_truong), [rowsCn, filters.to_truong]);
-  const tatCaDong = useMemo(() => tongHopTuanChiNhanh(rows, ngays, thuTuCn, qChuyen.data ?? []), [rows, ngays, thuTuCn, qChuyen.data]);
+    const cho = chonCn.length > 1 ? new Set(chonCn) : null;
+    return tongHopTuanTuChuyen(cho ? ds.filter((c) => cho.has(c.id_chi_nhanh)) : ds, { thuTuCn, soChe: qSoChe.data, tongLoc });
+  }, [q.data, chonCn, thuTuCn, qSoChe.data, tongLoc]);
   const dsDong = useMemo(() => tatCaDong.filter((r) => khopLocKsc(r.ksc, filters.ksc)), [tatCaDong, filters.ksc]);
   const tong = useMemo(
     () =>
@@ -83,52 +95,37 @@ const TongHopTuanTab: React.FC = () => {
           ksc: s.ksc + r.ksc,
           soChuyen: s.soChuyen + r.soChuyen,
           theoNgay: s.theoNgay.map((v, i) => v + r.theoNgay[i]),
+          soChe: s.soChe + (r.soChe ?? 0),
+          thuCoBc: s.thuCoBc + r.thuCoBc,
+          coBc: s.coBc || r.soChe != null,
         }),
-        { tongThu: 0, ksc: 0, soChuyen: 0, theoNgay: ngays.map(() => 0) }
+        { tongThu: 0, ksc: 0, soChuyen: 0, theoNgay: [0, 0, 0, 0, 0, 0, 0], soChe: 0, thuCoBc: 0, coBc: false }
       ),
-    [dsDong, ngays]
+    [dsDong]
   );
-  const toTruongTuyChon = useMemo(() => dsToTruong(rowsCn.map((r) => r.to_truong)), [rowsCn]);
   const tenToTruongLoc = toTruongTuyChon.filter((x) => filters.to_truong.includes(x.khoa)).map((x) => x.ten);
   const coSo = dsDong.length > 0;
+  const dangTai = q.isPending || dangTaiPhamVi || (locToTruong && (qTen.isPending || qLoc.isPending));
+  /** Trang in tuần in một tuần: chỉ bật khi mọi dòng đang hiện cùng một tuần. */
+  const tuanIn = coSo && dsDong.every((r) => r.nam === dsDong[0].nam && r.tuan === dsDong[0].tuan) ? dsDong[0] : null;
 
-  /** Dòng view của các chi nhánh đang hiện trong bảng (sau chip KSC). */
-  const rowsHien = useMemo(() => {
-    const cn = new Set(dsDong.map((r) => r.id_chi_nhanh));
-    return rows.filter((r) => cn.has(r.id_chi_nhanh));
-  }, [rows, dsDong]);
-  const exportColumns = useMemo(() => cotXuatTuan(ngays, t), [ngays, t]);
-  const exportData = useMemo(
-    () => (moXuat ? dongXuatTuan(tongHopTuanTheoLo(rowsHien, ngays, thuTuCn), tenCn, t) : []),
-    [moXuat, rowsHien, ngays, thuTuCn, tenCn, t]
-  );
+  const exportColumns = useMemo(() => cotXuatTuanKy(t), [t]);
+  const exportData = useMemo(() => (moXuat ? dongXuatTuanKy(dsDong, tenCn) : []), [moXuat, dsDong, tenCn]);
 
-  const doiTuan = (tf: typeof tuan) => {
-    setTuan(tf);
-    setPage(1);
-  };
   const chonKy = (inline: boolean) => (
-    <div className={cn('inline-flex items-center gap-1', inline ? 'w-full' : 'shrink-0')}>
-      <Button variant="outline" size="sm" className="h-9 w-9 p-0 shrink-0" onClick={() => doiTuan(tuanKeTiep(tuan, -1))} aria-label={t('danhGiaDauVao.tuan.tuanTruoc')}>
-        <ChevronLeft className="w-4 h-4" />
-      </Button>
-      <button
-        type="button"
-        className={cn('h-9 rounded-md border border-border px-2.5 text-sm font-medium tabular-nums whitespace-nowrap hover:bg-muted/50', inline && 'flex-1')}
-        title={t('danhGiaDauVao.tuan.veTuanNay')}
-        onClick={() => doiTuan(tuanNay)}
-      >
-        {nhanTuanFarm(tuan)}
-        {soSanhTuan(tuan, tuanNay) === 0 && <span className="ml-1 text-caption text-primary">· {t('danhGiaDauVao.bang.tuanNay')}</span>}
-      </button>
-      <Button variant="outline" size="sm" className="h-9 w-9 p-0 shrink-0" onClick={() => doiTuan(tuanKeTiep(tuan, 1))} aria-label={t('danhGiaDauVao.tuan.tuanSau')}>
-        <ChevronRight className="w-4 h-4" />
-      </Button>
-    </div>
+    <DateRangePicker
+      inline={inline}
+      presets={ky.presets}
+      value={ky.value}
+      onChange={ky.onChange}
+      customPresetId="custom"
+      displayLabel={inline ? undefined : ky.displayLabel}
+      className={inline ? undefined : 'shrink-0'}
+    />
   );
 
   const filterGroups: FilterGroup[] = useMemo(() => {
-    const dem = (fn: (r: DgdvTuanChiNhanhDong) => boolean) => tatCaDong.filter(fn).length;
+    const dem = (fn: (r: DgdvTuanKyDong) => boolean) => tatCaDong.filter(fn).length;
     return [
       {
         key: 'branch',
@@ -169,13 +166,15 @@ const TongHopTuanTab: React.FC = () => {
   const iconBtn = 'h-9 w-9 p-0 inline-flex items-center justify-center border-border text-muted-foreground hover:bg-muted/50';
   const actions = (
     <div className="flex items-center gap-2">
-      <Tooltip content={t('danhGiaDauVao.bang.in')} placement="bottom">
+      <Tooltip content={tuanIn ? t('danhGiaDauVao.bang.in') : t('danhGiaDauVao.tuan.inMotTuan')} placement="bottom">
         <Button
           variant="outline"
           size="sm"
           className={iconBtn}
-          disabled={!coSo}
-          onClick={() => window.open(getDgdvInTuanUrl(tuan.nam, tuan.tuan, chonCn, filters.to_truong, filters.ksc), '_blank', 'noopener,noreferrer')}
+          disabled={!tuanIn}
+          onClick={() =>
+            tuanIn && window.open(getDgdvInTuanUrl(tuanIn.nam, tuanIn.tuan, chonCn, filters.to_truong, filters.ksc), '_blank', 'noopener,noreferrer')
+          }
           aria-label={t('danhGiaDauVao.bang.in')}
         >
           <Printer className="w-4 h-4" />
@@ -189,12 +188,12 @@ const TongHopTuanTab: React.FC = () => {
     </div>
   );
 
-  const renderCell = (colId: string, r: DgdvTuanChiNhanhDong) => {
+  const renderCell = (colId: string, r: DgdvTuanKyDong) => {
     const m = /^n(\d)$/.exec(colId);
     if (m) return <span className="text-sm tabular-nums">{fmtO(r.theoNgay[Number(m[1])] ?? 0)}</span>;
     switch (colId) {
       case 'tuan':
-        return <span className="text-sm tabular-nums whitespace-nowrap">{nhanTuanFarm(tuan)}</span>;
+        return <span className="text-sm tabular-nums whitespace-nowrap">{nhanTuanFarm(r)}</span>;
       case 'id_chi_nhanh':
         return <span className="text-sm font-medium">{tenCn(r.id_chi_nhanh)}</span>;
       case 'so_ngay':
@@ -207,6 +206,10 @@ const TongHopTuanTab: React.FC = () => {
         return <span className={cn('text-sm tabular-nums', r.ksc > 0 && 'text-rose-600 font-medium')}>{formatNumberVN(r.ksc)}</span>;
       case 'ti_le_ksc':
         return <span className="text-sm tabular-nums text-muted-foreground">{nhanTiLeKsc(r.ksc, r.tongThu)}</span>;
+      case 'so_che':
+        return <span className="text-sm tabular-nums">{r.soChe == null ? '–' : formatNumberVN(r.soChe)}</span>;
+      case 'ti_le_so_che':
+        return <span className="text-sm tabular-nums text-muted-foreground">{r.soChe == null ? '–' : nhanTiLeKsc(r.soChe, r.thuCoBc)}</span>;
       default:
         return null;
     }
@@ -225,21 +228,25 @@ const TongHopTuanTab: React.FC = () => {
         return <span className="text-xs font-bold tabular-nums text-rose-600">{formatNumberVN(tong.ksc)}</span>;
       case 'ti_le_ksc':
         return <span className="text-xs font-semibold tabular-nums">{nhanTiLeKsc(tong.ksc, tong.tongThu)}</span>;
+      case 'so_che':
+        return <span className="text-xs font-semibold tabular-nums">{tong.coBc ? formatNumberVN(tong.soChe) : '–'}</span>;
+      case 'ti_le_so_che':
+        return <span className="text-xs font-semibold tabular-nums">{tong.coBc ? nhanTiLeKsc(tong.soChe, tong.thuCoBc) : '–'}</span>;
       default:
         return null;
     }
   };
-  const renderMobileCard = (r: DgdvTuanChiNhanhDong) => (
+  const renderMobileCard = (r: DgdvTuanKyDong) => (
     <div
       role="button"
       tabIndex={0}
-      onClick={() => setXemCn(r.id_chi_nhanh)}
-      onKeyDown={(e) => e.key === 'Enter' && setXemCn(r.id_chi_nhanh)}
+      onClick={() => setXemKhoa(r.khoa)}
+      onKeyDown={(e) => e.key === 'Enter' && setXemKhoa(r.khoa)}
       className="bg-card rounded-xl border border-border p-3.5 shadow-sm"
     >
       <h4 className="font-semibold text-foreground text-sm truncate">{tenCn(r.id_chi_nhanh)}</h4>
       <p className="text-xs text-muted-foreground truncate mt-0.5 tabular-nums">
-        {nhanTuanFarm(tuan)} · {t('danhGiaDauVao.tongHop.ngayChuyenGiaTri', { ngay: r.soNgayCoSo, chuyen: r.soChuyen })}
+        {nhanTuanFarm(r)} · {t('danhGiaDauVao.tongHop.ngayChuyenGiaTri', { ngay: r.soNgayCoSo, chuyen: r.soChuyen })}
       </p>
       <div className="mt-2 grid grid-cols-3 gap-2 text-sm tabular-nums">
         <div className="rounded-lg bg-muted/40 px-2.5 py-2">
@@ -255,11 +262,16 @@ const TongHopTuanTab: React.FC = () => {
           <div className="font-semibold">{nhanTiLeKsc(r.ksc, r.tongThu)}</div>
         </div>
       </div>
+      {r.soChe != null && (
+        <p className="mt-2 text-xs text-muted-foreground tabular-nums">
+          {t('danhGiaDauVao.store.colSoChe')}: <span className="font-medium text-foreground">{formatNumberVN(r.soChe)}</span> ·{' '}
+          {t('danhGiaDauVao.store.colTiLeSoChe')}: <span className="font-medium text-foreground">{nhanTiLeKsc(r.soChe, r.thuCoBc)}</span>
+        </p>
+      )}
     </div>
   );
 
-  const dongXem = xemCn ? tatCaDong.find((r) => r.id_chi_nhanh === xemCn) : undefined;
-  const rowsXem = useMemo(() => (xemCn ? rows.filter((r) => r.id_chi_nhanh === xemCn) : []), [rows, xemCn]);
+  const dongXem = xemKhoa ? tatCaDong.find((r) => r.khoa === xemKhoa) : undefined;
 
   return (
     <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
@@ -268,7 +280,7 @@ const TongHopTuanTab: React.FC = () => {
         filters={<ResponsiveFilterChips items={filterItems} />}
         filterGroups={filterGroups}
         mobileFilterExtra={
-          <MobileFilterField label={t('danhGiaDauVao.tuan.chonTuan')} icon={CalendarRange} active>
+          <MobileFilterField label={ky.nhan || t('danhGiaDauVao.tuan.chonTuan')} icon={CalendarRange} active>
             {chonKy(true)}
           </MobileFilterField>
         }
@@ -282,12 +294,12 @@ const TongHopTuanTab: React.FC = () => {
       />
 
       <div className="flex-1 min-h-0 flex flex-col px-4 pb-4 pt-1">
-        <GenericTable<DgdvTuanChiNhanhDong>
+        <GenericTable<DgdvTuanKyDong>
           data={dsDong}
-          columns={cotHien}
+          columns={columns}
           onResizeColumn={resizeColumn}
-          isLoading={q.isPending || dangTaiPhamVi}
-          isError={q.isError}
+          isLoading={dangTai}
+          isError={q.isError || qLoc.isError}
           onRetry={() => void q.refetch()}
           loadingText={t('danhGiaDauVao.loading')}
           selectedIds={KHONG_CHON}
@@ -300,8 +312,8 @@ const TongHopTuanTab: React.FC = () => {
           renderCell={renderCell}
           renderMobileCard={renderMobileCard}
           renderSummaryRow={coSo ? renderTong : undefined}
-          keyExtractor={(r) => r.id_chi_nhanh}
-          onRowClick={(r) => setXemCn(r.id_chi_nhanh)}
+          keyExtractor={(r) => r.khoa}
+          onRowClick={(r) => setXemKhoa(r.khoa)}
           showActionsColumn={false}
           emptyTitle={t('danhGiaDauVao.tuan.khongCoDuLieu')}
           emptyDescription={t('danhGiaDauVao.bang.khongCoDuLieuHint')}
@@ -310,16 +322,16 @@ const TongHopTuanTab: React.FC = () => {
 
       <AnimatePresence>
         {dongXem && (
-          <TongTuanDetail
-            tuan={tuan}
-            ngays={ngays}
+          <TongTuanDetailTai
+            key={dongXem.khoa}
             dong={dongXem}
+            phamVi={phamVi}
+            tenGocLoc={locToTruong ? tenGocLoc : null}
             tenChiNhanh={tenCn(dongXem.id_chi_nhanh)}
-            rows={rowsXem}
             tenToTruongLoc={tenToTruongLoc}
             toTruong={filters.to_truong}
             ksc={filters.ksc}
-            onClose={() => setXemCn(null)}
+            onClose={() => setXemKhoa(null)}
           />
         )}
       </AnimatePresence>
@@ -331,7 +343,7 @@ const TongHopTuanTab: React.FC = () => {
             onClose={() => setMoXuat(false)}
             columns={exportColumns}
             data={exportData}
-            fileName={`danh-gia-dau-vao-tuan-${tuan.nam}-${String(tuan.tuan).padStart(2, '0')}`}
+            fileName="danh-gia-dau-vao-tong-hop-tuan"
             sheetName={t('danhGiaDauVao.tabs.tongHopTuan')}
           />
         )}

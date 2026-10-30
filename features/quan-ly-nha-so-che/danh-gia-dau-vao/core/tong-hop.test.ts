@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   KHOA_DUT_DAY,
-  cacThangKetThuc,
   congThang,
   khoangTaiThang,
   ngayCuoiThang,
@@ -11,7 +10,12 @@ import {
   locDongTheoToTruong,
   locNgayChiNhanh,
   locPhieuTheoToTruong,
-  tongHopNgayChiNhanh,
+  cacThangCuaKy,
+  tiLeSoChe,
+  tongHopNgayTuChuyen,
+  tongHopTuanTuChuyen,
+  tongTheoNgayChiNhanh,
+  type DgdvDongChuyenDu,
   tongHopThang,
   tongHopTuanChiNhanh,
   tongHopTuanTheoChiNhanh,
@@ -110,10 +114,9 @@ describe('tongHopTuanTheoChiNhanh', () => {
 });
 
 describe('tháng', () => {
-  it('congThang / cacThangKetThuc qua năm, ngày cuối tháng, khoảng tải gồm tháng trước', () => {
+  it('congThang qua năm, ngày cuối tháng, khoảng tải gồm tháng trước', () => {
     expect(congThang('2026-01', -1)).toBe('2025-12');
     expect(congThang('2026-11', 2)).toBe('2027-01');
-    expect(cacThangKetThuc('2026-02', 3)).toEqual(['2025-12', '2026-01', '2026-02']);
     expect(ngayCuoiThang('2028-02')).toBe('2028-02-29');
     expect(khoangTaiThang(['2026-09', '2026-10'])).toEqual({ tu: '2026-08-01', den: '2026-10-31' });
   });
@@ -195,21 +198,36 @@ function phieu(id: string, ngay: string, cn: string, chuyen: number, lo: [string
   };
 }
 
-describe('tongHopNgayChiNhanh + lọc', () => {
-  const ds = [
-    phieu('p2', NGAYS[0], '1', 2, [['An', 50, 0, 0]], true),
-    phieu('p1', NGAYS[0], '1', 1, [['An', 100, 5, 4], ['Bình', 30, 0, 0]], true),
-    phieu('p3', NGAYS[0], '2', 1, [['bình', 20, 0, 0]]),
-    phieu('p4', NGAYS[1], '1', 1, [[null, 10, 0, 0]]),
-  ];
-  const rows = tongHopNgayChiNhanh(ds, ['2', '1']);
+/** Dòng view tổng chuyến tối giản. */
+const chuyenDu = (id: string, ngay: string, cn: string, chuyen: number, tongThu: number, ksc = 0, khoa = false): DgdvDongChuyenDu => ({
+  id,
+  ngay,
+  id_chi_nhanh: cn,
+  chuyen,
+  tong_thu: tongThu,
+  ksc,
+  trang_thai: khoa ? 'khoa' : 'mo',
+});
 
-  it('gom (ngày, chi nhánh) cộng mọi chuyến; ngày mới trước, chi nhánh theo thứ tự; chuyến theo số', () => {
-    expect(rows.map((r) => [r.ngay, r.id_chi_nhanh, r.soChuyen, r.tongThu, r.ksc, r.daKhoaHet, r.ids_phieu])).toEqual([
-      [NGAYS[1], '1', 1, 10, 0, false, ['p4']],
-      [NGAYS[0], '2', 1, 20, 0, false, ['p3']],
-      [NGAYS[0], '1', 2, 184, 5, true, ['p1', 'p2']],
+describe('tongHopNgayTuChuyen + lọc', () => {
+  const ds = [
+    chuyenDu('p2', NGAYS[0], '1', 2, 50, 0, true),
+    chuyenDu('p1', NGAYS[0], '1', 1, 134, 5, true),
+    chuyenDu('p3', NGAYS[0], '2', 1, 20),
+    chuyenDu('p4', NGAYS[1], '1', 1, 10),
+  ];
+  const soChe = new Map([[`${NGAYS[0]}|1`, 150]]);
+  const rows = tongHopNgayTuChuyen(ds, { thuTuCn: ['2', '1'], soChe });
+
+  it('gom (ngày, chi nhánh) cộng mọi chuyến; ngày mới trước, chi nhánh theo thứ tự; chuyến theo số; sơ chế theo BC', () => {
+    expect(rows.map((r) => [r.ngay, r.id_chi_nhanh, r.soChuyen, r.tongThu, r.ksc, r.daKhoaHet, r.ids_phieu, r.soChe])).toEqual([
+      [NGAYS[1], '1', 1, 10, 0, false, ['p4'], null],
+      [NGAYS[0], '2', 1, 20, 0, false, ['p3'], null],
+      [NGAYS[0], '1', 2, 184, 5, true, ['p1', 'p2'], 150],
     ]);
+    expect([rows[2].nam, rows[2].tuan]).toEqual([2026, 44]);
+    expect(tiLeSoChe(150, 184)).toBeCloseTo(81.52, 2);
+    expect([tiLeSoChe(null, 184), tiLeSoChe(5, 0)]).toEqual([null, null]);
   });
 
   it('lọc trạng thái + KSC; rỗng / chọn cả hai = không lọc', () => {
@@ -218,21 +236,61 @@ describe('tongHopNgayChiNhanh + lọc', () => {
     expect(locNgayChiNhanh(rows, { trangThai: [], ksc: ['co', 'khong'] })).toHaveLength(3);
   });
 
-  it('tổ trưởng: lọc lô, bỏ phiếu không còn lô; tuỳ chọn gom hoa thường, bỏ trống', () => {
-    const loc = locPhieuTheoToTruong(ds, ['bình']);
-    expect(loc.map((p) => [p.id, p.lo.length])).toEqual([
+  it('lọc tổ trưởng: tổng lấy từ dòng view đã lọc, bỏ ngày không có, bỏ cột sơ chế', () => {
+    const tongLoc = tongTheoNgayChiNhanh([
+      dong({ ngay: NGAYS[0], id_chi_nhanh: '1', so_luong: 30, so_luong_huy: 1 }),
+      dong({ ngay: NGAYS[0], id_chi_nhanh: '1', so_luong: 4 }),
+    ]);
+    expect(tongHopNgayTuChuyen(ds, { soChe, tongLoc }).map((r) => [r.khoa, r.tongThu, r.ksc, r.soChuyen, r.soChe])).toEqual([
+      [`${NGAYS[0]}|1`, 34, 1, 2, null],
+    ]);
+  });
+
+  it('tổ trưởng: lọc lô của phiếu, bỏ phiếu không còn lô; tuỳ chọn gom hoa thường, bỏ trống', () => {
+    const dsPhieu = [phieu('p1', NGAYS[0], '1', 1, [['An', 100, 5, 4], ['Bình', 30, 0, 0]]), phieu('p3', NGAYS[0], '2', 1, [['bình', 20, 0, 0]]), phieu('p4', NGAYS[1], '1', 1, [[null, 10, 0, 0]])];
+    expect(locPhieuTheoToTruong(dsPhieu, ['bình']).map((p) => [p.id, p.lo.length])).toEqual([
       ['p1', 1],
       ['p3', 1],
     ]);
-    expect(tongHopNgayChiNhanh(loc).map((r) => [r.id_chi_nhanh, r.tongThu])).toEqual([
-      ['1', 30],
-      ['2', 20],
-    ]);
-    expect(dsToTruong(ds.flatMap((p) => p.lo.map((l) => l.to_truong)))).toEqual([
+    expect(dsToTruong(dsPhieu.flatMap((p) => p.lo.map((l) => l.to_truong)))).toEqual([
       { khoa: 'an', ten: 'An' },
       { khoa: 'bình', ten: 'Bình' },
     ]);
-    expect(locPhieuTheoToTruong(ds, [])).toBe(ds);
+    expect(locPhieuTheoToTruong(dsPhieu, [])).toBe(dsPhieu);
+  });
+});
+
+describe('tongHopTuanTuChuyen', () => {
+  it('tuần farm × chi nhánh, cột T2→CN, tuần mới trước; sơ chế cộng các ngày có BC', () => {
+    const ds = [
+      chuyenDu('a', NGAYS[0], '1', 1, 100, 2),
+      chuyenDu('b', NGAYS[0], '1', 2, 20),
+      chuyenDu('c', NGAYS[6], '1', 1, 40),
+      chuyenDu('d', '2026-10-25', '1', 1, 9), // CN tuần 43
+      chuyenDu('e', NGAYS[2], '2', 1, 7),
+    ];
+    const soChe = new Map([
+      [`${NGAYS[0]}|1`, 110],
+      [`${NGAYS[6]}|1`, 35],
+    ]);
+    const kq = tongHopTuanTuChuyen(ds, { thuTuCn: ['1', '2'], soChe });
+    const soCheT2 = new Map([[`${NGAYS[0]}|1`, 110]]);
+    expect(kq.map((r) => [r.khoa, r.theoNgay, r.tongThu, r.ksc, r.soChuyen, r.soNgayCoSo, r.soChe, r.thuCoBc])).toEqual([
+      ['2026-44|1', [120, 0, 0, 0, 0, 0, 40], 160, 2, 3, 2, 145, 160],
+      ['2026-44|2', [0, 0, 7, 0, 0, 0, 0], 7, 0, 1, 1, null, 0],
+      ['2026-43|1', [0, 0, 0, 0, 0, 0, 9], 9, 0, 1, 1, null, 0],
+    ]);
+    // Chỉ T2 có báo cáo: mẫu số % chỉ là tổng thu T2.
+    expect(tongHopTuanTuChuyen(ds, { soChe: soCheT2 })[0].thuCoBc).toBe(120);
+  });
+});
+
+describe('cacThangCuaKy', () => {
+  it('theo khoảng; «Tất cả» từ tháng có số đầu tới tháng này; không có số → tháng này', () => {
+    expect(cacThangCuaKy('2026-08-15', '2026-10-30', '2026-10')).toEqual(['2026-08', '2026-09', '2026-10']);
+    expect(cacThangCuaKy('', '', '2026-10', '2025-11-20')).toEqual(['2025-11', '2025-12', '2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07', '2026-08', '2026-09', '2026-10']);
+    expect(cacThangCuaKy('', '', '2026-10', null)).toEqual(['2026-10']);
+    expect(cacThangCuaKy('2026-10-30', '2026-10-30', '2026-10')).toEqual(['2026-10']);
   });
 });
 

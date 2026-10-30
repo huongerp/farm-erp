@@ -96,6 +96,17 @@ export interface DgdvPhamViTong {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+function locKhoang(q: any, tu: string, den: string): any {
+  let x = q;
+  if (tu) x = x.gte('ngay', tu);
+  if (den) x = x.lte('ngay', den);
+  return x;
+}
+
+/** Khoảng [tu, den], đầu rỗng = không giới hạn phía đó; ngược chiều → không có dòng nào. */
+const khoangHopLe = (tu: string, den: string) => !(tu && den && den < tu);
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function locChiNhanh(q: any, pv: DgdvPhamViTong): any {
   if (pv.idChiNhanh) return q.eq('id_chi_nhanh', idChiNhanhChoRpc(pv.idChiNhanh) ?? -1);
   if (pv.viewAll) return q;
@@ -103,16 +114,26 @@ function locChiNhanh(q: any, pv: DgdvPhamViTong): any {
   return ids.length === 0 ? q.eq('id_chi_nhanh', -1) : q.in('id_chi_nhanh', ids);
 }
 
-/** Tổng ngày × lô × dây trong khoảng [tu, den] (cộng mọi chuyến). */
-export async function getDgdvTongNgayDayDb(tu: string, den: string, pv: DgdvPhamViTong): Promise<DgdvTongNgayDay[]> {
-  if (!tu || !den || den < tu) return [];
-  const rows = await fetchAllRows<Record<string, unknown>>((from, to) =>
-    locChiNhanh(db.from(VIEW_TONG_NGAY_DAY).select('*').gte('ngay', tu).lte('ngay', den), pv)
+/**
+ * Tổng ngày × lô × dây trong khoảng [tu, den] (cộng mọi chuyến; đầu rỗng = không giới hạn).
+ * `toTruong` (tên gốc như đã nhập) → chỉ lô của các tổ trưởng đó, lọc ở server.
+ */
+export async function getDgdvTongNgayDayDb(
+  tu: string,
+  den: string,
+  pv: DgdvPhamViTong,
+  toTruong?: readonly string[]
+): Promise<DgdvTongNgayDay[]> {
+  if (!khoangHopLe(tu, den)) return [];
+  if (toTruong && toTruong.length === 0) return [];
+  const rows = await fetchAllRows<Record<string, unknown>>((from, to) => {
+    const q = locChiNhanh(locKhoang(db.from(VIEW_TONG_NGAY_DAY).select('*'), tu, den), pv);
+    return (toTruong ? q.in('to_truong', [...toTruong]) : q)
       .order('ngay')
       .order('id_chi_nhanh')
       .order('id_lo')
-      .range(from, to)
-  );
+      .range(from, to);
+  });
   return rows.map(mapTongNgayDay);
 }
 
@@ -127,6 +148,7 @@ export interface DgdvTongChuyen {
   tong_dut_day: number;
   tong_thu: number;
   ksc: number;
+  trang_thai: string;
 }
 
 export function mapTongChuyen(r: Record<string, unknown>): DgdvTongChuyen {
@@ -139,19 +161,16 @@ export function mapTongChuyen(r: Record<string, unknown>): DgdvTongChuyen {
     tong_dut_day: soKhongAm(r.tong_dut_day),
     tong_thu: soKhongAm(r.tong_thu),
     ksc: soKhongAm(r.ksc),
+    trang_thai: String(r.trang_thai ?? ''),
   };
 }
 
-/** Tổng từng chuyến có ngày trong khoảng [tu, den], xếp ngày → chi nhánh → chuyến. */
+/** Tổng từng chuyến có ngày trong khoảng [tu, den] (đầu rỗng = không giới hạn), xếp ngày → chi nhánh → chuyến. */
 export async function getDgdvTongChuyenDb(tu: string, den: string, pv: DgdvPhamViTong): Promise<DgdvTongChuyen[]> {
-  if (!tu || !den || den < tu) return [];
+  if (!khoangHopLe(tu, den)) return [];
   const rows = await fetchAllRows<Record<string, unknown>>((from, to) =>
     locChiNhanh(
-      db
-        .from(VIEW_TONG_CHUYEN)
-        .select('id,ngay,chuyen,id_chi_nhanh,tong_so_luong,tong_dut_day,tong_thu,ksc')
-        .gte('ngay', tu)
-        .lte('ngay', den),
+      locKhoang(db.from(VIEW_TONG_CHUYEN).select('id,ngay,chuyen,id_chi_nhanh,tong_so_luong,tong_dut_day,tong_thu,ksc,trang_thai'), tu, den),
       pv
     )
       .order('ngay')
@@ -160,4 +179,45 @@ export async function getDgdvTongChuyenDb(tu: string, den: string, pv: DgdvPhamV
       .range(from, to)
   );
   return rows.map(mapTongChuyen);
+}
+
+// ---- Số sơ chế của Báo cáo sơ chế (cột «% BC cuối ngày») --------------------------------------
+
+const BANG_BCSC = 'fp_farm_bao_cao_so_che';
+const MA_TONG_SO_CHE = 'tong_buong_so_che';
+
+/**
+ * Tổng buồng sơ chế (chỉ tiêu `tong_buong_so_che`) của Báo cáo sơ chế trong khoảng → Map `ngay|id_chi_nhanh`.
+ * Ngày chưa có báo cáo không có khoá (khác 0). Báo cáo duy nhất / (ngày, chi nhánh) — `uq_fp_farm_bcsc_chi_nhanh_ngay`.
+ */
+export async function getBcscSoCheDb(tu: string, den: string, pv: DgdvPhamViTong): Promise<Map<string, number>> {
+  if (!khoangHopLe(tu, den)) return new Map();
+  const rows = await fetchAllRows<Record<string, unknown>>((from, to) =>
+    locChiNhanh(
+      locKhoang(db.from(BANG_BCSC).select('ngay,id_chi_nhanh,ct:fp_farm_bao_cao_so_che_ct(gia_tri)'), tu, den).eq(
+        'ct.ma_chi_tieu',
+        MA_TONG_SO_CHE
+      ),
+      pv
+    )
+      .order('ngay')
+      .order('id_chi_nhanh')
+      .range(from, to)
+  );
+  const m = new Map<string, number>();
+  for (const r of rows) {
+    const ct = Array.isArray(r.ct) ? (r.ct as { gia_tri: unknown }[]) : [];
+    m.set(`${String(r.ngay ?? '').slice(0, 10)}|${String(r.id_chi_nhanh)}`, ct.reduce((s, x) => s + soKhongAm(x.gia_tri), 0));
+  }
+  return m;
+}
+
+// ---- Tổ trưởng đã nhập ở các lô của phiếu (tuỳ chọn chip Tổ trưởng) -----------------------------
+
+/** Mọi tên tổ trưởng (gốc, khác rỗng) đã nhập ở lô của phiếu — để gom tuỳ chọn và lọc `in` ở server. */
+export async function getDgdvTenToTruongDb(): Promise<string[]> {
+  const rows = await fetchAllRows<{ to_truong: string | null }>((from, to) =>
+    db.from('fp_farm_dgdv_lo').select('to_truong').not('to_truong', 'is', null).order('id').range(from, to)
+  );
+  return [...new Set(rows.map((r) => r.to_truong ?? '').filter((x) => x.trim() !== ''))];
 }

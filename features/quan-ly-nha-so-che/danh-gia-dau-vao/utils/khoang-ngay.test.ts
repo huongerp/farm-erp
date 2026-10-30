@@ -1,21 +1,37 @@
 import { describe, expect, it } from 'vitest';
-import { cacTuanTrongKhoang, chuanHoaKhoang, khoangNhanh, kieuCuaKhoang, SO_NGAY_TOI_DA } from './khoang-ngay';
+import { cacTuanTrongKhoang, chuanHoaKhoang, khoangTheoKy, kyCuaKhoang, soNgayCuaKhoang, SO_NGAY_TOI_DA } from './khoang-ngay';
 import { mauChuTuongPhan } from './mau-day';
 
 // 2026-10-21 là thứ Tư tuần farm 43/2026 (19/10 – 25/10).
 const HOM_NAY = '2026-10-21';
 
 describe('khoảng ngày Bảng đánh giá', () => {
-  it('chọn nhanh: hôm nay / tuần này / tuần trước (T2 → CN)', () => {
-    expect(khoangNhanh('hom-nay', HOM_NAY)).toEqual({ tu: HOM_NAY, den: HOM_NAY });
-    expect(khoangNhanh('tuan-nay', HOM_NAY)).toEqual({ tu: '2026-10-19', den: '2026-10-25' });
-    expect(khoangNhanh('tuan-truoc', HOM_NAY)).toEqual({ tu: '2026-10-12', den: '2026-10-18' });
-    expect(kieuCuaKhoang('2026-10-19', '2026-10-25', HOM_NAY)).toBe('tuan-nay');
-    expect(kieuCuaKhoang('2026-10-19', '2026-10-20', HOM_NAY)).toBeNull();
+  it('kỳ ngày / tuần farm (T2 → CN) / tháng / quý / năm; Tất cả = không giới hạn', () => {
+    expect(khoangTheoKy('all', HOM_NAY)).toEqual({ tu: '', den: '' });
+    expect(khoangTheoKy('today', HOM_NAY)).toEqual({ tu: HOM_NAY, den: HOM_NAY });
+    expect(khoangTheoKy('yesterday', HOM_NAY)).toEqual({ tu: '2026-10-20', den: '2026-10-20' });
+    expect(khoangTheoKy('7days', HOM_NAY)).toEqual({ tu: '2026-10-15', den: HOM_NAY });
+    expect(khoangTheoKy('thisWeek', HOM_NAY)).toEqual({ tu: '2026-10-19', den: '2026-10-25' });
+    expect(khoangTheoKy('lastWeek', HOM_NAY)).toEqual({ tu: '2026-10-12', den: '2026-10-18' });
+    expect(khoangTheoKy('thisMonth', HOM_NAY)).toEqual({ tu: '2026-10-01', den: HOM_NAY });
+    expect(khoangTheoKy('lastMonth', HOM_NAY)).toEqual({ tu: '2026-09-01', den: '2026-09-30' });
+    expect(khoangTheoKy('thisQuarter', HOM_NAY)).toEqual({ tu: '2026-10-01', den: HOM_NAY });
+    expect(khoangTheoKy('thisYear', HOM_NAY)).toEqual({ tu: '2026-01-01', den: HOM_NAY });
+    expect(khoangTheoKy('custom', HOM_NAY, '2026-10-02', '2026-10-05')).toEqual({ tu: '2026-10-02', den: '2026-10-05' });
   });
 
-  it('tuần trước qua năm', () => {
-    expect(khoangNhanh('tuan-truoc', '2027-01-06')).toEqual({ tu: '2026-12-28', den: '2027-01-03' });
+  it('qua năm: tuần trước, tháng trước, quý', () => {
+    expect(khoangTheoKy('lastWeek', '2027-01-06')).toEqual({ tu: '2026-12-28', den: '2027-01-03' });
+    expect(khoangTheoKy('lastMonth', '2027-01-06')).toEqual({ tu: '2026-12-01', den: '2026-12-31' });
+    expect(khoangTheoKy('thisQuarter', '2027-05-06')).toEqual({ tu: '2027-04-01', den: '2027-05-06' });
+  });
+
+  it('kỳ của khoảng + số ngày', () => {
+    expect(kyCuaKhoang('', '', HOM_NAY)).toBe('all');
+    expect(kyCuaKhoang('2026-10-19', '2026-10-25', HOM_NAY)).toBe('thisWeek');
+    expect(kyCuaKhoang('2026-10-19', '2026-10-20', HOM_NAY)).toBe('custom');
+    expect(soNgayCuaKhoang('2026-10-19', '2026-10-25')).toBe(7);
+    expect(soNgayCuaKhoang('', '')).toBe(Infinity);
   });
 
   it('đảo khoảng ngược và cắt quá dài', () => {

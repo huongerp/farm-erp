@@ -8,17 +8,16 @@ import { MobileFilterField } from '../../../../components/ui/MobileFilterSheet';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
-import { getDateRangeFromPreset, getPresetFromDates } from '../../../../lib/date-presets';
+import { getTodayISO } from '../../../../lib/utils';
 import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
 import type { DgdvTomTat } from '../services/danh-gia-dau-vao-db.service';
 import { useDanhGiaDauVaoStore } from '../store/useDanhGiaDauVaoStore';
 import { khoaTuanFarm, nhanTuanFarm } from '../core/tuan';
 import { LOC_KSC } from '../core/tong-hop';
+import { KY_DGDV, KY_TUY_CHON, khoangTheoKy, kyCuaKhoang } from '../utils/khoang-ngay';
 import { useNhanVienRef } from '../hooks/use-danh-muc-dgdv';
 
-const KY_CUSTOM = 'custom';
-/** Tuần ở preset = T2–CN, trùng tuần farm. */
-const KY_PRESET_IDS = ['all', 'thisWeek', 'lastWeek', 'thisMonth', 'lastMonth', KY_CUSTOM] as const;
+const KY_CUSTOM = KY_TUY_CHON;
 
 interface Props {
   /** Tóm tắt TOÀN BỘ phiếu trong phạm vi (không phải trang đang xem) — chip đếm trên toàn bộ. */
@@ -66,8 +65,8 @@ const DgdvToolbar: React.FC<Props> = ({
 
   // Preset giữ ở state cục bộ (như ky-loc-chip của Bảo trì): suy ngược từ ngày thì bấm «Tuỳ chọn» lúc
   // chưa có ngày sẽ bị hiểu thành «Tất cả» và ô chọn khoảng biến mất.
-  const [preset, setPreset] = useState(() => getPresetFromDates(filters.tu_ngay, filters.den_ngay));
-  const kyPresets = useMemo(() => KY_PRESET_IDS.map((id) => ({ id, label: t(`danhGiaDauVao.toolbar.preset.${id}`) })), [t]);
+  const [preset, setPreset] = useState<string>(() => kyCuaKhoang(filters.tu_ngay, filters.den_ngay, getTodayISO()));
+  const kyPresets = useMemo(() => KY_DGDV.map((id) => ({ id, label: t(`danhGiaDauVao.toolbar.preset.${id}`) })), [t]);
   const coKy = !!(filters.tu_ngay || filters.den_ngay);
   const kyValue = useMemo(
     () => ({ preset: !coKy && preset !== KY_CUSTOM ? 'all' : preset, customStart: filters.tu_ngay, customEnd: filters.den_ngay }),
@@ -75,9 +74,9 @@ const DgdvToolbar: React.FC<Props> = ({
   );
   const onKyChange = (v: DateRangeValue) => {
     setPreset(v.preset);
-    const r = v.preset === KY_CUSTOM ? { dateFrom: v.customStart, dateTo: v.customEnd } : getDateRangeFromPreset(v.preset);
-    setFilter('tu_ngay', r.dateFrom);
-    setFilter('den_ngay', r.dateTo);
+    const r = khoangTheoKy(v.preset, getTodayISO(), v.customStart, v.customEnd);
+    setFilter('tu_ngay', r.tu);
+    setFilter('den_ngay', r.den);
   };
 
   const filterGroups = useMemo(() => {

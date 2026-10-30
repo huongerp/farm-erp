@@ -1,6 +1,6 @@
 /**
  * Store bảng của tab «Tổng hợp ngày» (dòng = ngày × chi nhánh) và «Tổng hợp tuần» (dòng = tuần × chi nhánh):
- * cột (ẩn / kéo bề rộng — chỉ cột được lưu), phân trang, chip lọc tại chỗ. Khoảng ngày / tuần giữ ở state của tab.
+ * cột (ẩn / kéo bề rộng — chỉ cột được lưu), phân trang, chip lọc tại chỗ. Kỳ giữ ở state của tab (`useKyDgdv`).
  */
 import { createGenericStore, type ColumnConfig } from '../../../../store/createGenericStore';
 import i18n from '../../../../lib/i18n';
@@ -29,7 +29,9 @@ const COT_NGAY: ColumnConfig[] = [
   { id: 'tong_thu', label: i18n.t('danhGiaDauVao.store.colTongThu'), visible: true, minWidth: 100, maxWidth: 140, order: 4 },
   { id: 'ksc', label: i18n.t('danhGiaDauVao.store.colKsc'), visible: true, minWidth: 80, maxWidth: 110, order: 5 },
   { id: 'ti_le_ksc', label: i18n.t('danhGiaDauVao.store.colTiLeKsc'), visible: true, minWidth: 80, maxWidth: 110, order: 6 },
-  { id: 'trang_thai', label: i18n.t('danhGiaDauVao.store.colTrangThai'), visible: true, minWidth: 116, maxWidth: 170, order: 7 },
+  { id: 'so_che', label: i18n.t('danhGiaDauVao.store.colSoChe'), visible: true, minWidth: 96, maxWidth: 140, order: 7 },
+  { id: 'ti_le_so_che', label: i18n.t('danhGiaDauVao.store.colTiLeSoChe'), visible: true, minWidth: 104, maxWidth: 150, order: 8 },
+  { id: 'trang_thai', label: i18n.t('danhGiaDauVao.store.colTrangThai'), visible: true, minWidth: 116, maxWidth: 170, order: 9 },
 ];
 
 const COT_TUAN: ColumnConfig[] = [
@@ -48,6 +50,8 @@ const COT_TUAN: ColumnConfig[] = [
   { id: 'tong_thu', label: i18n.t('danhGiaDauVao.tuan.colTongTuan'), visible: true, minWidth: 100, maxWidth: 140, order: 11 },
   { id: 'ksc', label: i18n.t('danhGiaDauVao.store.colKsc'), visible: true, minWidth: 80, maxWidth: 110, order: 12 },
   { id: 'ti_le_ksc', label: i18n.t('danhGiaDauVao.store.colTiLeKsc'), visible: true, minWidth: 80, maxWidth: 110, order: 13 },
+  { id: 'so_che', label: i18n.t('danhGiaDauVao.store.colSoChe'), visible: true, minWidth: 96, maxWidth: 140, order: 14 },
+  { id: 'ti_le_so_che', label: i18n.t('danhGiaDauVao.store.colTiLeSoChe'), visible: true, minWidth: 104, maxWidth: 150, order: 15 },
 ];
 
 export const useDgdvTongNgayStore = createGenericStore<DgdvTongNgayFilters>(
