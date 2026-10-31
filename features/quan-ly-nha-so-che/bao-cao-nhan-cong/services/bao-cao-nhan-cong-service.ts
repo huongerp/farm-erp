@@ -1,5 +1,5 @@
 import type { BaoCaoNhanCongFormValues } from '../core/schema';
-import type { FarmBaoCaoNhanCong, TrangThaiBaoCaoNhanCongPhieu } from '../core/types';
+import type { FarmBaoCaoNhanCong, TrangThaiBaoCaoNhanCongPhieu, VarNhanVienSoChe } from '../core/types';
 import { getEmployeesRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
 import type { PaginatedTableResult } from '../../../../lib/db';
 import type { BaoCaoNhanCongListServerQuery } from './bao-cao-nhan-cong-list-query';
@@ -17,6 +17,8 @@ import {
   deleteBaoCaoNhanCongManyDb,
   updateBaoCaoNhanCongTrangThaiDb,
   updateBaoCaoNhanCongTrangThaiManyDb,
+  getNhanVienSoCheDb,
+  updateNhanVienSoCheDb,
 } from './bao-cao-nhan-cong-db.service';
 
 async function enrichTenNguoiTao(items: FarmBaoCaoNhanCong[]): Promise<FarmBaoCaoNhanCong[]> {
@@ -141,4 +143,16 @@ export async function updateBaoCaoNhanCongTrangThai(
   const row = await updateBaoCaoNhanCongTrangThaiDb(id, trang_thai);
   const [enriched] = await enrichTenNguoiTao([row]);
   return enriched;
+}
+
+/** Danh mục nhân viên sơ chế của chi nhánh — gợi ý tên trong form + drawer «Danh sách nhân viên». */
+export async function getNhanVienSoChe(idChiNhanh: string): Promise<VarNhanVienSoChe[]> {
+  return getNhanVienSoCheDb(idChiNhanh);
+}
+
+export async function updateNhanVienSoChe(
+  id: string,
+  patch: Partial<Pick<VarNhanVienSoChe, 'ho_ten' | 'vi_tri' | 'loai_chuyen' | 'dang_dung'>>
+): Promise<void> {
+  await updateNhanVienSoCheDb(id, patch);
 }

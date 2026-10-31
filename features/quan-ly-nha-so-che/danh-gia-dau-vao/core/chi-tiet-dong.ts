@@ -232,6 +232,10 @@ export interface DgdvHangNhapLo {
   id_cot: string | null;
   /** stt_dong đã lưu; null = hàng mới */
   stt_dong: number | null;
+  /**
+   * Hàng dây: SL ĐẠT (không gồm huỷ) — người nhập gõ «đạt 1, huỷ 2», khi lưu ghi `so_luong` = đạt + huỷ.
+   * Hàng đứt dây: số đứt dây.
+   */
   so_luong: number;
   danh_gia: string | null;
   so_luong_huy: number;
@@ -239,6 +243,15 @@ export interface DgdvHangNhapLo {
 }
 
 export const KHOA_HANG_DUT_DAY = 'dut';
+
+/** SL đạt hiển thị khi nhập từ tổng đã lưu (dữ liệu cũ lỡ huỷ > tổng thì kẹp 0). */
+export const sangSlDat = (soLuong: number, huy: number): number => Math.max(0, soLuong - huy);
+
+/** Tổng buồng (`so_luong` ghi DB) từ SL đạt + SL huỷ. */
+export const sangSlTong = (dat: number, huy: number): number => dat + huy;
+
+/** Tổng buồng của một hàng nhập: dây = đạt + huỷ, đứt dây = số đứt dây. */
+export const tongHang = (h: DgdvHangNhapLo): number => (h.id_cot == null ? h.so_luong : sangSlTong(h.so_luong, h.so_luong_huy));
 
 const hangTrong = (idCot: string | null, key: string): DgdvHangNhapLo => ({
   key,
@@ -269,7 +282,7 @@ export function hangNhapCuaLo(phieu: Pick<DgdvPhieuDayDu, 'lo' | 'cot'>, idPhieu
         key: `c:${c.id}:${d.stt_dong}`,
         id_cot: c.id,
         stt_dong: d.stt_dong,
-        so_luong: d.so_luong,
+        so_luong: sangSlDat(d.so_luong, d.so_luong_huy),
         danh_gia: d.danh_gia,
         so_luong_huy: d.so_luong_huy,
         ly_do_huy: d.ly_do_huy,
@@ -290,20 +303,19 @@ export function themHangChoDay(hang: readonly DgdvHangNhapLo[], idCot: string): 
   return [...hang.slice(0, chen), moi, ...hang.slice(chen)];
 }
 
-export type LoiHangNhap = 'thieuSoLuong' | 'slLoiLonHon';
+export type LoiHangNhap = 'thieuSoLuong';
 
-/** Hàng có chữ / SL lỗi mà thiếu số lượng, hoặc SL lỗi > SL (dây) — chặn lưu cả lô. Hàng trống hết = hợp lệ. */
+/** Hàng dây có chữ mà SL đạt + SL huỷ = 0 — chặn lưu cả lô. Hàng trống hết = hợp lệ. */
 export function loiHangNhap(h: DgdvHangNhapLo): LoiHangNhap | null {
   if (h.id_cot == null) return null;
-  if (h.so_luong_huy > h.so_luong) return h.so_luong > 0 ? 'slLoiLonHon' : 'thieuSoLuong';
-  if (h.so_luong <= 0 && (chuHoacNull(h.danh_gia) || chuHoacNull(h.ly_do_huy))) return 'thieuSoLuong';
+  if (tongHang(h) <= 0 && (chuHoacNull(h.danh_gia) || chuHoacNull(h.ly_do_huy))) return 'thieuSoLuong';
   return null;
 }
 
 /**
  * Các bước ghi để số của lô `idPhieuLo` (ngày `ngay`) khớp bảng nhập `hang`:
- * - Dòng đã lưu: SL ≤ 0 hoặc không còn trong bảng → xoá; đổi số / chữ → ghi đè đúng khoá; không đổi → bỏ qua.
- * - Hàng mới có SL > 0 → ghi ở stt_dong kế tiếp của (lô, dây, ngày), các hàng mới cùng dây nối tiếp nhau.
+ * - Dòng đã lưu: đạt + huỷ = 0 hoặc không còn trong bảng → xoá; đổi số / chữ → ghi đè đúng khoá; không đổi → bỏ qua.
+ * - Hàng mới có đạt + huỷ > 0 (ghi `so_luong` = đạt + huỷ) → ghi ở stt_dong kế tiếp của (lô, dây, ngày), các hàng mới cùng dây nối tiếp nhau.
  * - Đứt dây: khác số đang có → đặt số mới (0 = xoá).
  * Thứ tự: xoá → ghi đè → thêm → đứt dây (xoá trước để không vướng khoá). Không kiểm lỗi — gọi `loiHangNhap` trước.
  */
@@ -321,7 +333,7 @@ export function keHoachLuuCaLo(
   );
   const khoa = (idCot: string, stt: number): DgdvKhoaDong => ({ id_phieu_lo: idPhieuLo, id_cot: idCot, ngay, stt_dong: stt });
   const gtCua = (h: DgdvHangNhapLo) => ({
-    so_luong: h.so_luong,
+    so_luong: tongHang(h),
     danh_gia: chuHoacNull(h.danh_gia),
     so_luong_huy: h.so_luong_huy,
     ly_do_huy: chuHoacNull(h.ly_do_huy),
@@ -331,7 +343,7 @@ export function keHoachLuuCaLo(
   const sua: DgdvThaoTacGhi[] = [];
   for (const d of cu) {
     const h = hangTheoKhoa.get(khoaO(d.id_cot, d.stt_dong));
-    if (!h || h.so_luong <= 0) {
+    if (!h || tongHang(h) <= 0) {
       xoa.push({ op: 'xoaDong', khoa: khoa(d.id_cot, d.stt_dong) });
       continue;
     }
@@ -347,7 +359,7 @@ export function keHoachLuuCaLo(
   const them: DgdvThaoTacGhi[] = [];
   const sttKe = new Map<string, number>();
   for (const h of hang) {
-    if (h.id_cot == null || h.stt_dong != null || h.so_luong <= 0) continue;
+    if (h.id_cot == null || h.stt_dong != null || tongHang(h) <= 0) continue;
     const stt = sttKe.get(h.id_cot) ?? sttDongKeTiep(phieu, idPhieuLo, h.id_cot, ngay);
     sttKe.set(h.id_cot, stt + 1);
     them.push({ op: 'ghiDong', khoa: khoa(h.id_cot, stt), gt: gtCua(h) });

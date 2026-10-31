@@ -30,6 +30,7 @@ import BaoCaoNhanCongToolbar from './BaoCaoNhanCongToolbar';
 import BaoCaoNhanCongList from './BaoCaoNhanCongList';
 import BaoCaoNhanCongForm from './BaoCaoNhanCongForm';
 import BaoCaoNhanCongDetail from './BaoCaoNhanCongDetail';
+import DanhMucNhanVienDialog from './DanhMucNhanVienDialog';
 import {
   mapFarmBaoCaoNhanCongListRow,
   getExportColumnsBaoCaoNhanCongList,
@@ -40,6 +41,7 @@ const DanhSachTab: React.FC = () => {
   const { t } = useTranslation();
   const {
     canCreate,
+    canUpdate,
     canDelete,
     canEditRow,
     canDeleteRow,
@@ -65,6 +67,7 @@ const DanhSachTab: React.FC = () => {
   } = useBaoCaoNhanCongStore();
 
   const [showForm, setShowForm] = useState(false);
+  const [showDmNv, setShowDmNv] = useState(false);
   const [editingItem, setEditingItem] = useState<FarmBaoCaoNhanCong | null>(null);
   const [viewingItemRaw, setViewingItem] = useState<FarmBaoCaoNhanCong | null>(null);
   const [openedFormFromDetailId, setOpenedFormFromDetailId] = useState<string | null>(null);
@@ -347,6 +350,7 @@ const DanhSachTab: React.FC = () => {
         onDeleteMany={canBulkDeleteSelection ? handleDeleteMany : undefined}
         onExport={handleExport}
         bulkActions={bulkActions}
+        onDanhSachNv={canCreate || canUpdate ? () => setShowDmNv(true) : undefined}
         canCreate={canCreate}
         canDelete={canDelete}
       />
@@ -422,6 +426,16 @@ const DanhSachTab: React.FC = () => {
             canDelete={detailCanDelete}
             canCopyNextDay={detailCanCopyNextDay}
             canToggleTrangThai={canToggleTrangThai}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showDmNv && (
+          <DanhMucNhanVienDialog
+            branches={branches}
+            idChiNhanhMacDinh={preferredBranch?.id_chi_nhanh}
+            onClose={() => setShowDmNv(false)}
           />
         )}
       </AnimatePresence>

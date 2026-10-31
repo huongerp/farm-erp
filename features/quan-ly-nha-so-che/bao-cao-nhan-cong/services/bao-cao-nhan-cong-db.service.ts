@@ -1,5 +1,6 @@
 /**
- * Báo cáo nhân công — DB: fp_farm_bao_cao_nhan_cong + _ct + _ct_sub
+ * Báo cáo nhân công — DB: fp_farm_bao_cao_nhan_cong + _ct + _ct_sub + _nv (tên theo chuyền)
+ * + danh mục fp_var_nhan_vien_so_che.
  */
 import { db, fetchAllRows, fetchTablePage, throwDbError, formatDbError, type PaginatedTableResult } from '../../../../lib/db';
 import { applyPostgrestSearch } from '../../../../lib/postgrest-search';
@@ -11,19 +12,26 @@ import {
 } from './bao-cao-nhan-cong-list-query';
 import i18n from '../../../../lib/i18n';
 import type {
+  ChamCong,
   FarmBaoCaoNhanCong,
   FarmBaoCaoNhanCongCt,
+  FarmBaoCaoNhanCongNv,
+  LoaiChuyen,
   TrangThaiBaoCaoNhanCongPhieu,
+  VarNhanVienSoChe,
 } from '../core/types';
 import { TRANG_THAI_BAO_CAO_NHAN_CONG } from '../core/types';
 import type { BaoCaoNhanCongFormValues } from '../core/schema';
 import type { FarmBaoCaoNhanCongCtSub, LoaiChiTieu } from '../core/ct-sub';
 import { LOAI_CHI_TIEU_CODES, groupSubModelsByLoai } from '../core/ct-sub';
 import { applySubTotalsToChiTietForm } from '../core/form-mappers';
+import { gonTen, khoaTen } from '../../danh-gia-dau-vao/core/chuan-hoa-ten';
 
 const TABLE_CHA = 'fp_farm_bao_cao_nhan_cong';
 const TABLE_CT = 'fp_farm_bao_cao_nhan_cong_ct';
 const TABLE_CT_SUB = 'fp_farm_bao_cao_nhan_cong_ct_sub';
+const TABLE_NV = 'fp_farm_bao_cao_nhan_cong_nv';
+const TABLE_DM_NV = 'fp_var_nhan_vien_so_che';
 
 /** List — bỏ hinh_anh_urls (~1.8MB/dòng base64). Ảnh chỉ load khi mở chi tiết (ROW_CHA_DETAIL). */
 const ROW_CHA_LIST =
@@ -38,6 +46,10 @@ const ROW_CT =
 
 const ROW_CT_SUB =
   'id,id_bcnc_ct,loai_chi_tieu,thu_tu,sl_cong,so_gio,ghi_chu';
+
+const ROW_NV = 'id,id_bcnc_ct,id_nhan_vien,ho_ten,vi_tri,cham_cong,so_gio_cong,so_gio_tc,ghi_chu,thu_tu';
+
+const ROW_DM_NV = 'id,id_chi_nhanh,ho_ten,vi_tri,loai_chuyen,dang_dung,thu_tu';
 
 function parseIdToInt8(id: string | null | undefined): number | null {
   if (id == null || id === '') return null;
@@ -107,6 +119,56 @@ interface DbRowCtSub {
   sl_cong: string | number | null;
   so_gio: string | number | null;
   ghi_chu: string | null;
+}
+
+interface DbRowNv {
+  id: number;
+  id_bcnc_ct: number;
+  id_nhan_vien: number | null;
+  ho_ten: string;
+  vi_tri: string | null;
+  cham_cong: string;
+  so_gio_cong: string | number | null;
+  so_gio_tc: string | number | null;
+  ghi_chu: string | null;
+  thu_tu: number | null;
+}
+
+interface DbRowDmNv {
+  id: number;
+  id_chi_nhanh: number;
+  ho_ten: string;
+  vi_tri: string | null;
+  loai_chuyen: string | null;
+  dang_dung: boolean;
+  thu_tu: number | null;
+}
+
+function nvRowToModel(row: DbRowNv): FarmBaoCaoNhanCongNv {
+  return {
+    id: String(row.id),
+    id_bcnc_ct: String(row.id_bcnc_ct),
+    id_nhan_vien: row.id_nhan_vien != null ? String(row.id_nhan_vien) : null,
+    ho_ten: row.ho_ten,
+    vi_tri: row.vi_tri ?? null,
+    cham_cong: row.cham_cong as ChamCong,
+    so_gio_cong: num(row.so_gio_cong),
+    so_gio_tc: num(row.so_gio_tc),
+    ghi_chu: row.ghi_chu ?? null,
+    thu_tu: row.thu_tu ?? 0,
+  };
+}
+
+function dmNvRowToModel(row: DbRowDmNv): VarNhanVienSoChe {
+  return {
+    id: String(row.id),
+    id_chi_nhanh: String(row.id_chi_nhanh),
+    ho_ten: row.ho_ten,
+    vi_tri: row.vi_tri ?? null,
+    loai_chuyen: (row.loai_chuyen as LoaiChuyen | null) ?? null,
+    dang_dung: !!row.dang_dung,
+    thu_tu: row.thu_tu ?? 0,
+  };
 }
 
 function subRowToModel(row: DbRowCtSub): FarmBaoCaoNhanCongCtSub {
@@ -233,9 +295,11 @@ function subPayloadRows(
 
 async function insertCtAndSub(
   idBaoCao: number,
+  idChiNhanh: number | null,
   chiTiet: BaoCaoNhanCongFormValues['chi_tiet']
 ): Promise<void> {
   const synced = applySubTotalsToChiTietForm(chiTiet);
+  const idNvTheoTen = await ganIdNhanVien(idChiNhanh, synced);
   for (let i = 0; i < synced.length; i++) {
     const r = synced[i]!;
     const { data: insertedCt, error: eCt } = await db
@@ -258,6 +322,21 @@ async function insertCtAndSub(
     if (subRows.length > 0) {
       const { error: eSub } = await db.from(TABLE_CT_SUB).insert(subRows);
       if (eSub) throwDbError(eSub, { resource: `${TABLE_CT_SUB}.insert` });
+    }
+    if (r.nhan_vien.length > 0) {
+      const nvRows = r.nhan_vien.map((nv, j) => ({
+        id_bcnc_ct: ctId,
+        id_nhan_vien: idNvTheoTen.get(khoaTen(nv.ho_ten)) ?? null,
+        ho_ten: gonTen(nv.ho_ten) ?? nv.ho_ten,
+        vi_tri: gonTen(nv.vi_tri),
+        cham_cong: nv.cham_cong,
+        so_gio_cong: num(nv.so_gio_cong),
+        so_gio_tc: num(nv.so_gio_tc),
+        ghi_chu: nv.ghi_chu?.trim() || null,
+        thu_tu: j + 1,
+      }));
+      const { error: eNv } = await db.from(TABLE_NV).insert(nvRows);
+      if (eNv) throwDbError(eNv, { resource: `${TABLE_NV}.insert` });
     }
   }
 }
@@ -421,7 +500,81 @@ export async function getBaoCaoNhanCongByIdDb(id: string): Promise<FarmBaoCaoNha
   if (!data) return null;
   const row = data as DbRowCha;
   const ctMap = await fetchChiTietForIds([String(row.id)]);
-  return chaRowToModel(row, ctMap.get(String(row.id)) ?? []);
+  return chaRowToModel(row, await ganNhanVienVaoChiTiet(ctMap.get(String(row.id)) ?? []));
+}
+
+/** Chỉ chi tiết phiếu mới tải tên (danh sách / xuất file chỉ cần số). */
+async function ganNhanVienVaoChiTiet(ct: FarmBaoCaoNhanCongCt[]): Promise<FarmBaoCaoNhanCongCt[]> {
+  const ctIds = ct.map((c) => Number(c.id)).filter((n) => Number.isFinite(n));
+  if (ctIds.length === 0) return ct;
+  const { data, error } = await db.from(TABLE_NV).select(ROW_NV).in('id_bcnc_ct', ctIds).order('thu_tu');
+  if (error) throwDbError(error, { resource: `${TABLE_NV}.select` });
+  const theoCt = new Map<string, FarmBaoCaoNhanCongNv[]>();
+  for (const r of (data ?? []) as DbRowNv[]) {
+    const k = String(r.id_bcnc_ct);
+    theoCt.set(k, [...(theoCt.get(k) ?? []), nvRowToModel(r)]);
+  }
+  return ct.map((c) => ({ ...c, nhan_vien: theoCt.get(c.id) ?? [] }));
+}
+
+/** Danh mục nhân viên sơ chế của một chi nhánh (cả người đã bỏ «Đang dùng» — để hiện đúng phiếu cũ). */
+export async function getNhanVienSoCheDb(idChiNhanh: string): Promise<VarNhanVienSoChe[]> {
+  const idCn = parseIdToInt8(idChiNhanh);
+  if (idCn == null) return [];
+  const { data, error } = await db
+    .from(TABLE_DM_NV)
+    .select(ROW_DM_NV)
+    .eq('id_chi_nhanh', idCn)
+    .order('thu_tu')
+    .order('ho_ten');
+  if (error) throwDbError(error, { resource: TABLE_DM_NV });
+  return ((data ?? []) as DbRowDmNv[]).map(dmNvRowToModel);
+}
+
+export async function updateNhanVienSoCheDb(
+  id: string,
+  patch: Partial<Pick<VarNhanVienSoChe, 'ho_ten' | 'vi_tri' | 'loai_chuyen' | 'dang_dung'>>
+): Promise<void> {
+  const body: Record<string, unknown> = { ...patch };
+  if (patch.ho_ten !== undefined) body.ho_ten = gonTen(patch.ho_ten) ?? '';
+  if (patch.vi_tri !== undefined) body.vi_tri = gonTen(patch.vi_tri);
+  const { error } = await db.from(TABLE_DM_NV).update(body).eq('id', Number(id));
+  if (error) throwDbError(error, { resource: `${TABLE_DM_NV}.update` });
+}
+
+type NvTheoChuyen = BaoCaoNhanCongFormValues['chi_tiet'][number];
+
+/**
+ * Tên trong phiếu → id danh mục của chi nhánh (không phân biệt hoa thường); tên chưa có thì thêm vào
+ * danh mục với vị trí + chuyền của lần gặp đầu (khuôn ganIdLo của Đánh giá đầu vào).
+ */
+async function ganIdNhanVien(idChiNhanh: number | null, chiTiet: NvTheoChuyen[]): Promise<Map<string, number>> {
+  const idTheoTen = new Map<string, number>();
+  const ds = chiTiet.flatMap((ct) => ct.nhan_vien.map((nv) => ({ nv, loai: ct.loai_chuyen })));
+  if (idChiNhanh == null || ds.length === 0) return idTheoTen;
+
+  const docDanhMuc = async () => {
+    const { data, error } = await db.from(TABLE_DM_NV).select('id,ho_ten').eq('id_chi_nhanh', idChiNhanh);
+    if (error) throwDbError(error, { resource: TABLE_DM_NV });
+    for (const r of (data ?? []) as { id: number; ho_ten: string }[]) idTheoTen.set(khoaTen(r.ho_ten), Number(r.id));
+  };
+  await docDanhMuc();
+
+  const thieu = new Map<string, { id_chi_nhanh: number; ho_ten: string; vi_tri: string | null; loai_chuyen: string }>();
+  for (const { nv, loai } of ds) {
+    const k = khoaTen(nv.ho_ten);
+    if (k && !idTheoTen.has(k) && !thieu.has(k)) {
+      thieu.set(k, { id_chi_nhanh: idChiNhanh, ho_ten: gonTen(nv.ho_ten) ?? nv.ho_ten, vi_tri: gonTen(nv.vi_tri), loai_chuyen: loai });
+    }
+  }
+  if (thieu.size > 0) {
+    const { data, error } = await db.from(TABLE_DM_NV).insert([...thieu.values()]).select('id,ho_ten');
+    // Người khác vừa thêm cùng tên (UNIQUE chi nhánh + tên) → đọc lại danh mục là đủ.
+    if (error && !isUniqueViolation(error)) throwDbError(error, { resource: `${TABLE_DM_NV}.insert` });
+    if (error) await docDanhMuc();
+    for (const r of (data ?? []) as { id: number; ho_ten: string }[]) idTheoTen.set(khoaTen(r.ho_ten), Number(r.id));
+  }
+  return idTheoTen;
 }
 
 function chaPayloadCreate(values: BaoCaoNhanCongFormValues, idNguoiTao: string | null) {
@@ -456,7 +609,7 @@ export async function createBaoCaoNhanCongDb(
   const { data: inserted, error } = await db.from(TABLE_CHA).insert(payload).select(ROW_CHA_DETAIL).single();
   if (error) throw mapChaInsertUpdateError(error);
   const parent = inserted as DbRowCha;
-  await insertCtAndSub(parent.id, values.chi_tiet);
+  await insertCtAndSub(parent.id, parseIdToInt8(values.id_chi_nhanh), values.chi_tiet);
   return (await getBaoCaoNhanCongByIdDb(String(parent.id)))!;
 }
 
@@ -470,7 +623,7 @@ export async function updateBaoCaoNhanCongDb(
   if (error) throw mapChaInsertUpdateError(error);
   const { error: delErr } = await db.from(TABLE_CT).delete().eq('id_bao_cao', numId);
   if (delErr) throwDbError(delErr, { resource: `${TABLE_CT}.delete` });
-  await insertCtAndSub(numId, values.chi_tiet);
+  await insertCtAndSub(numId, parseIdToInt8(values.id_chi_nhanh), values.chi_tiet);
   return (await getBaoCaoNhanCongByIdDb(id))!;
 }
 

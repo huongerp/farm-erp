@@ -158,7 +158,7 @@ const FEATURE_I18N_LOADERS: Record<FeatureI18nKey, () => Promise<{ default: Reco
  */
 const FEATURE_I18N_DEPS: Partial<Record<FeatureI18nKey, FeatureI18nKey[]>> = {
   'bao-cao-de-xuat-vat-tu': ['don-dat-hang', 'phieu-de-xuat-vat-tu'],
-  'bao-cao-nhan-cong': ['bao-cao-so-che'],
+  'bao-cao-nhan-cong': ['bao-cao-so-che', 'danh-gia-dau-vao'],
   'bao-cao-nhap-xuat-ton': ['danh-muc-hang-hoa', 'danh-sach-hang-hoa', 'phieu-kho'],
   'bao-cao-so-che': ['bao-cao-nhan-cong', 'danh-gia-dau-vao', 'du-bao-sl-dong-thung'],
   'bao-tri-sua-chua': ['danh-muc-tai-san', 'thiet-lap-tai-san', 'thu-chi-quy'],

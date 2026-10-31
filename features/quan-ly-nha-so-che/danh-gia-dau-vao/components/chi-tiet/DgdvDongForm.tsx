@@ -1,6 +1,6 @@
 /**
- * Dialog thêm / sửa một dòng «Chi tiết đánh giá»: Lô · Dây (hoặc «Đứt dây») · Số lượng · Đánh giá ·
- * SL lỗi · Lý do lỗi. Ngày luôn = ngày của phiếu (1 phiếu = 1 chuyến của một ngày) — không có ô chọn.
+ * Dialog thêm / sửa một dòng «Chi tiết đánh giá»: Lô · Dây (hoặc «Đứt dây») · SL đạt · Đánh giá ·
+ * SL huỷ · Lý do huỷ — dòng dây lưu `so_luong` = đạt + huỷ (đứt dây: ô số là số đứt dây). Ngày luôn = ngày của phiếu (1 phiếu = 1 chuyến của một ngày) — không có ô chọn.
  * «Lưu & thêm tiếp» giữ Lô + Dây để nhập liền nhiều dòng; Enter trong ô gõ = Lưu. Nhập cả lô một lần:
  * `DgdvNhapTheoLoDrawer`.
  * Ghi theo kế hoạch ở core/chi-tiet-dong (`useLuuDongDgdv`); lý do gõ mới tự vào danh mục.
@@ -21,7 +21,7 @@ import { formatYmdToDisplay } from '../../../../../lib/utils';
 import { DONG_DUT_DAY, dgdvDongFormSchema, type DgdvDongFormValues } from '../../core/schema';
 import type { DgdvPhieuDayDu } from '../../core/types';
 import { LOAI_LY_DO_DGDV } from '../../core/types';
-import type { DgdvDongPhang } from '../../core/chi-tiet-dong';
+import { sangSlDat, sangSlTong, type DgdvDongPhang } from '../../core/chi-tiet-dong';
 import { nhanCotDay } from '../../core/bang-tinh';
 import { tenKhongTrung } from '../../core/chuan-hoa-ten';
 import { useLuuDongDgdv } from '../../hooks/use-danh-gia-dau-vao';
@@ -57,7 +57,7 @@ const DgdvDongForm: React.FC<Props> = ({ phieu, dong, onClose, stackLevel = 1 })
             ngay: dong.ngay,
             id_phieu_lo: dong.id_phieu_lo,
             id_cot: dong.id_cot ?? DONG_DUT_DAY,
-            so_luong: dong.so_luong,
+            so_luong: dong.id_cot ? sangSlDat(dong.so_luong, dong.so_luong_huy) : dong.so_luong,
             danh_gia: dong.danh_gia,
             so_luong_huy: dong.so_luong_huy,
             ly_do_huy: dong.ly_do_huy,
@@ -110,7 +110,7 @@ const DgdvDongForm: React.FC<Props> = ({ phieu, dong, onClose, stackLevel = 1 })
         id_phieu_lo: v.id_phieu_lo,
         ngay: phieu.ngay,
         id_cot: dutDay ? null : v.id_cot,
-        so_luong: v.so_luong,
+        so_luong: dutDay ? v.so_luong : sangSlTong(v.so_luong, v.so_luong_huy),
         danh_gia: dutDay ? null : v.danh_gia,
         so_luong_huy: dutDay ? 0 : v.so_luong_huy,
         ly_do_huy: dutDay ? null : v.ly_do_huy,
@@ -224,8 +224,8 @@ const DgdvDongForm: React.FC<Props> = ({ phieu, dong, onClose, stackLevel = 1 })
               render={({ field }) => (
                 <Input
                   {...field}
-                  label={t('danhGiaDauVao.luoi.colSoLuong')}
-                  required
+                  label={laDutDay ? t('danhGiaDauVao.luoi.colSoLuong') : t('danhGiaDauVao.nhapLo.colSlDat')}
+                  required={laDutDay}
                   type="number"
                   inputMode="numeric"
                   min={0}

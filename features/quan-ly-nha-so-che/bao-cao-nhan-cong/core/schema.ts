@@ -1,8 +1,9 @@
 import { z } from 'zod';
-import { LOAI_CHUYEN_CODES, type LoaiChuyen } from './types';
+import { CHAM_CONG_CODES, LOAI_CHUYEN_CODES, type ChamCong, type LoaiChuyen } from './types';
 import i18n from '../../../../lib/i18n';
 import { hinhAnhUrlsSchema } from '../../shared/hinh-anh-url-schema';
 import { findSubSlGioPairIssues, normalizeChiTietSubFormByLoai } from './ct-sub';
+import { nguoiVuotMotCong } from './danh-sach-nv';
 
 const reqMsg = (key: string) => i18n.t(key);
 
@@ -18,6 +19,16 @@ const chiTietSubSchema = z.object({
   TANG_CA: z.array(ctSubRowSchema).max(200).default([]),
 });
 
+/** Một người trong danh sách tên của chuyền (giờ ≤ 24, ràng buộc tên / giờ > 0 ở superRefine). */
+const nhanVienRowSchema = z.object({
+  ho_ten: z.string().max(200).default(''),
+  vi_tri: z.string().max(200).nullable().default(null),
+  cham_cong: z.enum(CHAM_CONG_CODES as unknown as [ChamCong, ...ChamCong[]]),
+  so_gio_cong: z.coerce.number().min(0).max(24).default(0),
+  so_gio_tc: z.coerce.number().min(0).max(24).default(0),
+  ghi_chu: z.string().max(500).nullable().default(null),
+});
+
 const chiTietRowSchema = z.object({
   loai_chuyen: z.enum(LOAI_CHUYEN_CODES as unknown as [LoaiChuyen, ...LoaiChuyen[]]),
   sl_cong_ngay: z.coerce.number().min(0).default(0),
@@ -26,6 +37,7 @@ const chiTietRowSchema = z.object({
   so_gio_tc: z.coerce.number().min(0).default(0),
   ghi_chu: z.string().max(8000).optional().nullable(),
   sub: chiTietSubSchema,
+  nhan_vien: z.array(nhanVienRowSchema).max(200).default([]),
 });
 
 export const baoCaoNhanCongFormSchema = z
@@ -53,9 +65,26 @@ export const baoCaoNhanCongFormSchema = z
           });
         }
       }
+      ct.nhan_vien.forEach((nv, idx) => {
+        const path = ['chi_tiet', chiTietIdx, 'nhan_vien', idx];
+        if (!nv.ho_ten.trim()) {
+          ctx.addIssue({ code: z.ZodIssueCode.custom, message: reqMsg('baoCaoNhanCong.validation.nvTenRequired'), path: [...path, 'ho_ten'] });
+        }
+        if (!(nv.so_gio_cong > 0)) {
+          ctx.addIssue({ code: z.ZodIssueCode.custom, message: reqMsg('baoCaoNhanCong.validation.nvGioRequired'), path: [...path, 'so_gio_cong'] });
+        }
+      });
     });
+    for (const { chiTietIdx, idx } of nguoiVuotMotCong(data.chi_tiet)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: reqMsg('baoCaoNhanCong.validation.nvVuotMotCong'),
+        path: ['chi_tiet', chiTietIdx, 'nhan_vien', idx, 'ho_ten'],
+      });
+    }
   });
 
 export type BaoCaoNhanCongFormValues = z.infer<typeof baoCaoNhanCongFormSchema>;
 export type CtSubRowFormValues = z.infer<typeof ctSubRowSchema>;
 export type ChiTietSubFormValues = z.infer<typeof chiTietSubSchema>;
+export type NhanVienRowFormValues = z.infer<typeof nhanVienRowSchema>;

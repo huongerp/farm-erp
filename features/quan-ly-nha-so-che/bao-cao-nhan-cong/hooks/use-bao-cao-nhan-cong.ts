@@ -15,6 +15,8 @@ import {
   deleteBaoCaoNhanCongMany,
   updateBaoCaoNhanCongTrangThai,
   updateBaoCaoNhanCongTrangThaiMany,
+  getNhanVienSoChe,
+  updateNhanVienSoChe,
 } from '../services/bao-cao-nhan-cong-service';
 import {
   findBaoCaoDuplicateByBranchAndDate,
@@ -22,7 +24,7 @@ import {
   type PhieuTomTatTrung,
 } from '../core/form-mappers';
 import type { BaoCaoNhanCongFormValues } from '../core/schema';
-import type { FarmBaoCaoNhanCong, TrangThaiBaoCaoNhanCongPhieu } from '../core/types';
+import type { FarmBaoCaoNhanCong, TrangThaiBaoCaoNhanCongPhieu, VarNhanVienSoChe } from '../core/types';
 
 export const QUERY_KEY_BAO_CAO_NHAN_CONG = ['baoCaoNhanCong'] as const;
 
@@ -202,5 +204,29 @@ export function useUpdateBaoCaoNhanCongTrangThai() {
       toast.success(i18n.t('baoCaoNhanCong.toast.trangThaiUpdated'));
     },
     onError: (err: Error) => toast.error(err.message),
+  });
+}
+
+/** Danh mục nhân viên sơ chế theo chi nhánh (nằm dưới khoá module → lưu phiếu xong tự tải lại tên mới). */
+export function useNhanVienSoChe(idChiNhanh: string | null | undefined) {
+  return useQuery({
+    queryKey: [...QUERY_KEY_BAO_CAO_NHAN_CONG, 'nhanVienSoChe', idChiNhanh ?? ''],
+    queryFn: () => getNhanVienSoChe(idChiNhanh!),
+    enabled: !!idChiNhanh,
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
+export function useUpdateNhanVienSoChe() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, patch }: { id: string; patch: Partial<Pick<VarNhanVienSoChe, 'ho_ten' | 'vi_tri' | 'loai_chuyen' | 'dang_dung'>> }) =>
+      updateNhanVienSoChe(id, patch),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [...QUERY_KEY_BAO_CAO_NHAN_CONG, 'nhanVienSoChe'] });
+    },
+    onError: (err: Error) => {
+      toast.error(err.message);
+    },
   });
 }

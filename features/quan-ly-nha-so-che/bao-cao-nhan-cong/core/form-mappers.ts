@@ -15,6 +15,7 @@ import {
   padSubToRowCount,
   type ChiTietSubFormByLoai,
 } from './ct-sub';
+import { nvChoNgayKe, nvCoTen, nvModelsToForm, subTuDanhSachNv } from './danh-sach-nv';
 
 export function defaultChiTietRows(): BaoCaoNhanCongFormValues['chi_tiet'] {
   return LOAI_CHUYEN_CODES.map((loai_chuyen) => {
@@ -25,6 +26,7 @@ export function defaultChiTietRows(): BaoCaoNhanCongFormValues['chi_tiet'] {
       ...totals,
       ghi_chu: null,
       sub,
+      nhan_vien: [],
     };
   }) as BaoCaoNhanCongFormValues['chi_tiet'];
 }
@@ -62,6 +64,7 @@ export function farmBaoCaoNhanCongToForm(row: FarmBaoCaoNhanCong): BaoCaoNhanCon
       ...totals,
       ghi_chu: c?.ghi_chu ?? null,
       sub,
+      nhan_vien: nvModelsToForm(c?.nhan_vien),
     };
   }) as BaoCaoNhanCongFormValues['chi_tiet'];
 
@@ -75,14 +78,19 @@ export function farmBaoCaoNhanCongToForm(row: FarmBaoCaoNhanCong): BaoCaoNhanCon
   };
 }
 
-/** Đồng bộ tổng trên từng dòng chi_tiet từ sub (gọi trước submit). */
+/**
+ * Đồng bộ tổng trên từng dòng chi_tiet từ sub (gọi trước submit). Chuyền có danh sách tên thì sub
+ * luôn sinh lại từ danh sách — số gõ tay (nếu còn sót) không được lưu.
+ */
 export function applySubTotalsToChiTietForm(
   chi_tiet: BaoCaoNhanCongFormValues['chi_tiet']
 ): BaoCaoNhanCongFormValues['chi_tiet'] {
   return chi_tiet.map((row) => {
-    const sub = normalizeChiTietSubFormByLoai(trimSubEmptyTrailingRows(normalizeChiTietSubFormByLoai(row.sub)));
+    const nhan_vien = nvCoTen(row.nhan_vien);
+    const nguon = nhan_vien.length > 0 ? subTuDanhSachNv(nhan_vien) : row.sub;
+    const sub = normalizeChiTietSubFormByLoai(trimSubEmptyTrailingRows(normalizeChiTietSubFormByLoai(nguon)));
     const totals = syncChiTietTotalsFromSub(sub);
-    return { ...row, sub, ...totals };
+    return { ...row, sub, nhan_vien, ...totals };
   });
 }
 
@@ -108,7 +116,10 @@ function clearSubGhiChu(sub: ChiTietSubFormByLoai): ChiTietSubFormByLoai {
   return out;
 }
 
-/** Copy sang ngày kế: giữ số liệu chuyền/sub, không copy ghi chú phiếu / chuyền / ảnh. */
+/**
+ * Copy sang ngày kế: giữ số liệu chuyền/sub, không copy ghi chú phiếu / chuyền / ảnh.
+ * Chuyền có danh sách tên: chép người (bỏ tăng ca) rồi đếm lại sub từ danh sách.
+ */
 export function farmBaoCaoNhanCongToFormNextDay(row: FarmBaoCaoNhanCong): BaoCaoNhanCongFormValues {
   const base = farmBaoCaoNhanCongToForm(row);
   return {
@@ -116,11 +127,14 @@ export function farmBaoCaoNhanCongToFormNextDay(row: FarmBaoCaoNhanCong): BaoCao
     ngay: addCalendarDaysIso(row.ngay, 1),
     ghi_chu: null,
     hinh_anh_urls: [],
-    chi_tiet: base.chi_tiet.map((ct) => ({
-      ...ct,
-      ghi_chu: null,
-      sub: normalizeChiTietSubFormByLoai(clearSubGhiChu(normalizeChiTietSubFormByLoai(ct.sub))),
-    })),
+    chi_tiet: applySubTotalsToChiTietForm(
+      base.chi_tiet.map((ct) => ({
+        ...ct,
+        ghi_chu: null,
+        sub: normalizeChiTietSubFormByLoai(clearSubGhiChu(normalizeChiTietSubFormByLoai(ct.sub))),
+        nhan_vien: nvChoNgayKe(ct.nhan_vien),
+      }))
+    ),
   };
 }
 

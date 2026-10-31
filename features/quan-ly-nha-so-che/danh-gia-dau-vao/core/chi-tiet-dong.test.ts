@@ -120,12 +120,12 @@ describe('nhập theo lô', () => {
   const p = phieu();
   const sua = (ds: DgdvHangNhapLo[], key: string, gt: Partial<DgdvHangNhapLo>) => ds.map((h) => (h.key === key ? { ...h, ...gt } : h));
 
-  it('hàng nhập: dây theo stt cột, dòng đã lưu điền sẵn, dây chưa có số một hàng trống, đứt dây cuối', () => {
-    expect(hangNhapCuaLo(p, 'L1', N1).map((h) => [h.key, h.stt_dong, h.so_luong])).toEqual([
-      ['c:c1:1', 1, 20],
-      ['c:c1:2', 2, 7],
-      ['c:c2:1', 1, 10],
-      [KHOA_HANG_DUT_DAY, null, 0],
+  it('hàng nhập: dây theo stt cột, dòng đã lưu điền sẵn SL đạt (tổng − huỷ), dây chưa có số một hàng trống, đứt dây cuối', () => {
+    expect(hangNhapCuaLo(p, 'L1', N1).map((h) => [h.key, h.stt_dong, h.so_luong, h.so_luong_huy])).toEqual([
+      ['c:c1:1', 1, 20, 0],
+      ['c:c1:2', 2, 7, 0],
+      ['c:c2:1', 1, 8, 2],
+      [KHOA_HANG_DUT_DAY, null, 0, 0],
     ]);
     expect(hangNhapCuaLo(p, 'L2', N1).map((h) => [h.key, h.so_luong])).toEqual([
       ['c:c1:1', 5],
@@ -143,7 +143,7 @@ describe('nhập theo lô', () => {
     expect(keHoachLuuCaLo(p, 'L1', N1, hangNhapCuaLo(p, 'L1', N1))).toEqual([]);
   });
 
-  it('xoá (SL = 0) → sửa → thêm (stt nối tiếp) → đứt dây', () => {
+  it('xoá (đạt + huỷ = 0) → sửa → thêm (stt nối tiếp) → đứt dây; ghi so_luong = đạt + huỷ', () => {
     let ds = hangNhapCuaLo(p, 'L1', N1);
     ds = sua(ds, 'c:c1:2', { so_luong: 0 });
     ds = sua(ds, 'c:c2:1', { so_luong: 12, danh_gia: ' Thiếu lá ' });
@@ -155,9 +155,9 @@ describe('nhập theo lô', () => {
     const k = (cot: string, stt: number) => ({ id_phieu_lo: 'L1', id_cot: cot, ngay: N1, stt_dong: stt });
     expect(keHoachLuuCaLo(p, 'L1', N1, ds)).toEqual([
       { op: 'xoaDong', khoa: k('c1', 2) },
-      { op: 'ghiDong', khoa: k('c2', 1), gt: { so_luong: 12, danh_gia: 'Thiếu lá', so_luong_huy: 2, ly_do_huy: null } },
+      { op: 'ghiDong', khoa: k('c2', 1), gt: { so_luong: 14, danh_gia: 'Thiếu lá', so_luong_huy: 2, ly_do_huy: null } },
       { op: 'ghiDong', khoa: k('c1', 3), gt: { so_luong: 4, danh_gia: null, so_luong_huy: 0, ly_do_huy: null } },
-      { op: 'ghiDong', khoa: k('c1', 4), gt: { so_luong: 6, danh_gia: null, so_luong_huy: 1, ly_do_huy: 'Chín' } },
+      { op: 'ghiDong', khoa: k('c1', 4), gt: { so_luong: 7, danh_gia: null, so_luong_huy: 1, ly_do_huy: 'Chín' } },
       { op: 'ghiDutDay', id_phieu_lo: 'L1', ngay: N1, dutDay: 2 },
     ]);
   });
@@ -167,13 +167,32 @@ describe('nhập theo lô', () => {
     expect(keHoachLuuCaLo(p, 'L2', N1, ds)).toEqual([{ op: 'ghiDutDay', id_phieu_lo: 'L2', ngay: N1, dutDay: 0 }]);
   });
 
-  it('lỗi hàng: thiếu SL khi có chữ / SL lỗi; SL lỗi > SL; đứt dây không kiểm', () => {
+  it('đạt 1 huỷ 2 (thu 3) và đạt 0 huỷ 1 (huỷ hết) → hợp lệ, ghi tổng', () => {
+    let ds = hangNhapCuaLo(p, 'L2', N1);
+    ds = themHangChoDay(ds, 'c1');
+    ds = sua(ds, 'c:c1:m1', { so_luong: 1, so_luong_huy: 2, ly_do_huy: 'Trái chín' });
+    ds = sua(ds, 'c:c2:m1', { so_luong: 0, so_luong_huy: 1, ly_do_huy: 'Trái chín' });
+    expect(ds.map(loiHangNhap).every((l) => l == null)).toBe(true);
+    const k = (cot: string, stt: number) => ({ id_phieu_lo: 'L2', id_cot: cot, ngay: N1, stt_dong: stt });
+    expect(keHoachLuuCaLo(p, 'L2', N1, ds)).toEqual([
+      { op: 'ghiDong', khoa: k('c1', 2), gt: { so_luong: 3, danh_gia: null, so_luong_huy: 2, ly_do_huy: 'Trái chín' } },
+      { op: 'ghiDong', khoa: k('c2', 1), gt: { so_luong: 1, danh_gia: null, so_luong_huy: 1, ly_do_huy: 'Trái chín' } },
+    ]);
+  });
+
+  it('dữ liệu cũ huỷ > tổng → SL đạt kẹp 0', () => {
+    const p2 = phieu();
+    p2.lo[0].dong = [{ ...p2.lo[0].dong[0], so_luong: 1, so_luong_huy: 2 }];
+    expect(hangNhapCuaLo(p2, 'L2', N1)[0]).toMatchObject({ so_luong: 0, so_luong_huy: 2 });
+  });
+
+  it('lỗi hàng: có chữ mà đạt + huỷ = 0; đứt dây không kiểm', () => {
     const h = hangNhapCuaLo(p, 'L2', N1)[1];
     expect(loiHangNhap(h)).toBeNull();
     expect(loiHangNhap({ ...h, danh_gia: 'Thiếu lá' })).toBe('thieuSoLuong');
-    expect(loiHangNhap({ ...h, so_luong_huy: 2 })).toBe('thieuSoLuong');
-    expect(loiHangNhap({ ...h, so_luong: 3, so_luong_huy: 4 })).toBe('slLoiLonHon');
-    expect(loiHangNhap({ ...h, so_luong: 3, so_luong_huy: 3 })).toBeNull();
-    expect(loiHangNhap({ ...h, id_cot: null, so_luong_huy: 9 })).toBeNull();
+    expect(loiHangNhap({ ...h, ly_do_huy: 'Chín' })).toBe('thieuSoLuong');
+    expect(loiHangNhap({ ...h, so_luong_huy: 2, ly_do_huy: 'Chín' })).toBeNull();
+    expect(loiHangNhap({ ...h, so_luong: 3, so_luong_huy: 4 })).toBeNull();
+    expect(loiHangNhap({ ...h, id_cot: null, danh_gia: 'x' })).toBeNull();
   });
 });

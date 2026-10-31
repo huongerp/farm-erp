@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { useForm, useWatch, Controller, type SubmitHandler, type Resolver } from 'react-hook-form';
+import { useForm, useWatch, Controller, type SubmitHandler, type SubmitErrorHandler, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Building2, Users, Images, ChevronDown } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
@@ -28,6 +28,8 @@ import {
   type PhieuTomTatTrung,
 } from '../core/form-mappers';
 import BaoCaoNhanCongChuyenSubEditor from './BaoCaoNhanCongChuyenSubEditor';
+import BaoCaoNhanCongNhanVienEditor from './BaoCaoNhanCongNhanVienEditor';
+import { nvCoTen } from '../core/danh-sach-nv';
 import BaoCaoNhanCongChuyenCard from './BaoCaoNhanCongChuyenCard';
 import { useIsMobile } from '../../../../lib/hooks/use-is-mobile';
 import {
@@ -59,7 +61,7 @@ import {
   bcncTdGhiChu,
 } from '../core/bcnc-detail-table';
 
-import { useCreateBaoCaoNhanCong, useUpdateBaoCaoNhanCong } from '../hooks/use-bao-cao-nhan-cong';
+import { useCreateBaoCaoNhanCong, useNhanVienSoChe, useUpdateBaoCaoNhanCong } from '../hooks/use-bao-cao-nhan-cong';
 import { useBaoCaoNhanCongPermissions } from '../hooks/use-bao-cao-nhan-cong-permissions';
 import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
 import { TRANG_THAI } from '../../../../lib/constants';
@@ -157,6 +159,7 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
   });
 
   const idChiNhanh = useWatch({ control, name: 'id_chi_nhanh' });
+  const { data: danhMucNv = [] } = useNhanVienSoChe(idChiNhanh);
 
   useEffect(() => {
     // Không reset nếu người dùng đã bắt đầu sửa — cùng lý do đã sửa ở BaoCaoSoCheForm.
@@ -180,17 +183,29 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
     if (b) setValue('ten_chi_nhanh', b.ten_chi_nhanh);
   }, [idChiNhanh, branches, setValue]);
 
-  const onInvalid = useCallback(() => {
-    const pairMsg = t('baoCaoNhanCong.validation.slGioPairRequired');
-    const expand = new Set<number>();
-    getValues('chi_tiet').forEach((ct, i) => {
-      if (findSubSlGioPairIssues(ct.sub).length > 0) expand.add(i);
-    });
-    if (expand.size > 0) {
-      toast.error(pairMsg);
-      setExpandedRows((prev) => new Set([...prev, ...expand]));
-    }
-  }, [getValues, t]);
+  const onInvalid = useCallback<SubmitErrorHandler<BaoCaoNhanCongFormValues>>(
+    (formErrors) => {
+      const pairMsg = t('baoCaoNhanCong.validation.slGioPairRequired');
+      const expand = new Set<number>();
+      let nvMsg: string | undefined;
+      getValues('chi_tiet').forEach((ct, i) => {
+        if (findSubSlGioPairIssues(ct.sub).length > 0) expand.add(i);
+        const nvErr = formErrors.chi_tiet?.[i]?.nhan_vien;
+        if (Array.isArray(nvErr)) {
+          const dau = nvErr.find(Boolean);
+          if (dau) {
+            expand.add(i);
+            nvMsg ??= (dau.ho_ten?.message ?? dau.so_gio_cong?.message) as string | undefined;
+          }
+        }
+      });
+      if (expand.size > 0) {
+        toast.error(nvMsg ?? pairMsg);
+        setExpandedRows((prev) => new Set([...prev, ...expand]));
+      }
+    },
+    [getValues, t]
+  );
 
   const onSubmit: SubmitHandler<BaoCaoNhanCongFormValues> = (data) => {
     if (isEdit && initialData) {
@@ -261,6 +276,19 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
     []
   );
 
+  const renderNhanVienEditor = (index: number, loaiChuyen: LoaiChuyen) => (
+    <BaoCaoNhanCongNhanVienEditor
+      chiTietIndex={index}
+      loaiChuyen={loaiChuyen}
+      control={control}
+      setValue={setValue}
+      getValues={getValues}
+      danhMuc={danhMucNv}
+      nvErrors={errors.chi_tiet?.[index]?.nhan_vien as React.ComponentProps<typeof BaoCaoNhanCongNhanVienEditor>['nvErrors']}
+      chuaChonChiNhanh={!idChiNhanh}
+    />
+  );
+
   const renderChuyenDataRow = (
     index: number,
     tt: string,
@@ -270,7 +298,8 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
     const row = chiTiet?.[index];
     const sub = normalizeChiTietSubFormByLoai(row?.sub);
     const expanded = expandedRows.has(index);
-    const subCount = subAlignedRowCount(sub);
+    const nvCount = nvCoTen(row?.nhan_vien).length;
+    const subCount = nvCount > 0 ? t('baoCaoNhanCong.nv.soNguoi', { n: nvCount }) : subAlignedRowCount(sub);
     const cnNgay = formLoaiTotals(row, 'CN_NGAY');
     const cnNua = formLoaiTotals(row, 'CN_NUA');
     const tangCa = formLoaiTotals(row, 'TANG_CA');
@@ -331,6 +360,13 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
           </td>
         </tr>
         {expanded && (
+          <tr className="bg-muted/10 border-b border-border/60">
+            <td colSpan={12} className="px-2 py-2">
+              {renderNhanVienEditor(index, code as LoaiChuyen)}
+            </td>
+          </tr>
+        )}
+        {expanded && (row?.nhan_vien?.length ?? 0) === 0 && (
           <BaoCaoNhanCongChuyenSubEditor
             chiTietIndex={index}
             control={control}
@@ -356,7 +392,8 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
     const cnNgay = formLoaiTotals(row, 'CN_NGAY');
     const cnNua = formLoaiTotals(row, 'CN_NUA');
     const tangCa = formLoaiTotals(row, 'TANG_CA');
-    const toggleLabel = `${expanded ? t('baoCaoNhanCong.sub.collapse') : t('baoCaoNhanCong.sub.viewBreakdown')} (${subAlignedRowCount(sub)})`;
+    const nvCount = nvCoTen(row?.nhan_vien).length;
+    const toggleLabel = `${expanded ? t('baoCaoNhanCong.sub.collapse') : t('baoCaoNhanCong.sub.viewBreakdown')} (${nvCount > 0 ? t('baoCaoNhanCong.nv.soNguoi', { n: nvCount }) : subAlignedRowCount(sub)})`;
     return (
       <BaoCaoNhanCongChuyenCard
         key={code}
@@ -388,6 +425,9 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
         }
       >
         {expanded && (
+          <div className="border-t border-border/60 pt-2.5">{renderNhanVienEditor(index, code as LoaiChuyen)}</div>
+        )}
+        {expanded && (row?.nhan_vien?.length ?? 0) === 0 && (
           <BaoCaoNhanCongChuyenSubEditor
             layout="cards"
             chiTietIndex={index}

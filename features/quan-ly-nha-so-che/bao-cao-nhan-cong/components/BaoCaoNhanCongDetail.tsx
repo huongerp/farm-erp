@@ -3,6 +3,7 @@ import type { PhieuTomTatTrung } from '../core/form-mappers';
 import ReactDOM from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import BaoCaoNhanCongChuyenTable from './BaoCaoNhanCongChuyenTable';
+import BaoCaoNhanCongNhanVienBang from './BaoCaoNhanCongNhanVienBang';
 import { useTranslation } from 'react-i18next';
 import { Copy, Lock, Printer, Unlock, Users, Images, X, ZoomIn, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { FarmBaoCaoNhanCong } from '../core/types';
@@ -246,6 +247,12 @@ const BaoCaoNhanCongDetail: React.FC<Props> = ({
         <DetailSection title={t('baoCaoNhanCong.form.sectionChuyen')} variant="primary">
           <BaoCaoNhanCongChuyenTable data={data} />
         </DetailSection>
+
+        {(data.chi_tiet ?? []).some((ct) => (ct.nhan_vien?.length ?? 0) > 0) && (
+          <DetailSection title={t('baoCaoNhanCong.nv.sectionDetail')} icon={<Users size={14} />} variant="primary">
+            <BaoCaoNhanCongNhanVienBang data={data} />
+          </DetailSection>
+        )}
 
       </div>
     </GenericDrawer>

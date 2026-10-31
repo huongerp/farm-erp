@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import type { BaoCaoNhanCongTomTat } from '../services/bao-cao-nhan-cong-service';
 import { useTranslation } from 'react-i18next';
-import { Plus, Building2, Calendar, Hash, ToggleLeft, Download } from 'lucide-react';
+import { Plus, Building2, Calendar, Hash, ToggleLeft, Download, Users } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
@@ -25,6 +25,8 @@ interface Props {
   canDelete?: boolean;
   /** Nút bulk riêng của module (khóa/mở khóa hàng loạt), hiện cạnh nút Xóa khi có dòng được chọn. */
   bulkActions?: React.ReactNode;
+  /** Mở drawer «Danh sách nhân viên» (danh mục tên theo chi nhánh). */
+  onDanhSachNv?: () => void;
 }
 
 function ngayToYear(ngay: string): string {
@@ -46,6 +48,7 @@ const BaoCaoNhanCongToolbar: React.FC<Props> = ({
   canCreate = true,
   canDelete = true,
   bulkActions,
+  onDanhSachNv,
 }) => {
   const { t } = useTranslation();
   const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useBaoCaoNhanCongStore);
@@ -181,8 +184,11 @@ const BaoCaoNhanCongToolbar: React.FC<Props> = ({
         onClick: onExport,
         description: '',
       },
+      ...(onDanhSachNv
+        ? [{ key: 'danh-sach-nv', label: t('baoCaoNhanCong.dmNv.title'), icon: Users, onClick: onDanhSachNv, description: '' }]
+        : []),
     ],
-    [onExport, t]
+    [onExport, onDanhSachNv, t]
   );
 
   const renderActions = (
@@ -198,6 +204,19 @@ const BaoCaoNhanCongToolbar: React.FC<Props> = ({
             <Download className="w-4 h-4" />
           </Button>
         </Tooltip>
+        {onDanhSachNv && (
+          <Tooltip content={t('baoCaoNhanCong.dmNv.title')} placement="bottom">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onDanhSachNv}
+              aria-label={t('baoCaoNhanCong.dmNv.title')}
+              className="inline-flex min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-9 w-9 p-0 items-center justify-center border-border text-muted-foreground hover:bg-muted/50"
+            >
+              <Users className="w-4 h-4" />
+            </Button>
+          </Tooltip>
+        )}
       </div>
       {canCreate ? (
         <Button

@@ -11,9 +11,12 @@ import type { DgdvKhoiNgay, DgdvLuoiNgay } from '../../core/bang-tinh';
 import { styleTieuDeCot } from '../../utils/mau-day';
 import { tomTatChuyenLuoi } from '../../utils/export-luoi';
 
-const th = `${TH_IN} px-1 py-0.5 text-center align-middle`;
-const td = `${TD_IN} px-1 py-0.5 align-middle`;
-const tdSo = `${td} text-right tabular-nums`;
+// ~47 cột (11 màu × 4) trên A4 ngang: tiêu đề phụ nhãn ngắn, ô chữ được ngắt giữa từ (`anywhere` hạ bề rộng tối
+// thiểu) để bảng luôn vừa khổ thay vì tràn mất cột cuối; ô số giữ bề rộng (`break-words` chỉ ngắt khi bị ép).
+// Người dùng kéo cột (khung in đặt table-layout fixed) thì chữ / số xuống dòng trong ô, không đè sang ô bên.
+const th = `${TH_IN} px-0.5 py-0.5 text-center align-middle [overflow-wrap:anywhere]`;
+const td = `${TD_IN} px-0.5 py-0.5 align-middle [overflow-wrap:anywhere]`;
+const tdSo = `${TD_IN} px-0.5 py-0.5 align-middle text-right tabular-nums break-words`;
 const VANG = 'bg-amber-50';
 const XANH = 'bg-sky-50';
 const fmt = (n: number) => (n === 0 ? '' : formatNumberVN(n));
@@ -44,10 +47,10 @@ const LuoiIn: React.FC<{ luoi: DgdvLuoiNgay }> = ({ luoi }) => {
         <tr>
           {luoi.cot.map((c) => (
             <React.Fragment key={c.id}>
-              <th className={cn(th, 'font-medium')}>{t('danhGiaDauVao.luoi.colSoLuong')}</th>
-              <th className={cn(th, 'font-medium')}>{t('danhGiaDauVao.luoi.colDanhGia')}</th>
-              <th className={cn(th, 'font-medium')}>{t('danhGiaDauVao.luoi.colSlLoi')}</th>
-              <th className={cn(th, 'font-medium')}>{t('danhGiaDauVao.luoi.colLyDoLoi')}</th>
+              <th className={cn(th, 'font-medium')} title={t('danhGiaDauVao.luoi.colSoLuong')}>{t('danhGiaDauVao.luoi.inSoLuong')}</th>
+              <th className={cn(th, 'font-medium')} title={t('danhGiaDauVao.luoi.colDanhGia')}>{t('danhGiaDauVao.luoi.inDanhGia')}</th>
+              <th className={cn(th, 'font-medium')} title={t('danhGiaDauVao.luoi.colSlLoi')}>{t('danhGiaDauVao.luoi.inSlHuy')}</th>
+              <th className={cn(th, 'font-medium')} title={t('danhGiaDauVao.luoi.colLyDoLoi')}>{t('danhGiaDauVao.luoi.inLyDo')}</th>
             </React.Fragment>
           ))}
         </tr>

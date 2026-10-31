@@ -1,8 +1,8 @@
 /**
  * Drawer con «Nhập theo lô»: chọn lô (hiện tổ trưởng) → một hàng cho MỖI dây của phiếu (dây đã có nhiều dòng
- * thì mỗi dòng một hàng, «+» thêm dòng cho dây) + hàng «Đứt dây»; ô SL · đánh giá · SL lỗi · lý do lỗi, số đã có
- * điền sẵn. Enter ở ô số nhảy ô số kế (SL → SL lỗi → hàng dưới), Tab theo thứ tự ô; SL lỗi > SL báo đỏ ngay và
- * chặn lưu. «Lưu & sang lô kế» theo thứ tự lô của phiếu. Ghi: `keHoachLuuCaLo` (core/chi-tiet-dong) →
+ * thì mỗi dòng một hàng, «+» thêm dòng cho dây) + hàng «Đứt dây»; ô SL đạt · đánh giá · SL huỷ · lý do huỷ, số đã có
+ * điền sẵn (SL đạt = tổng − huỷ; lưu ghi tổng = đạt + huỷ). Enter ở ô số nhảy ô số kế (SL đạt → SL huỷ → hàng dưới),
+ * Tab theo thứ tự ô; có chữ mà đạt + huỷ = 0 báo đỏ ngay và chặn lưu. «Lưu & sang lô kế» theo thứ tự lô của phiếu. Ghi: `keHoachLuuCaLo` (core/chi-tiet-dong) →
  * `useLuuCaLoDgdv` (cùng đường ghi từng dòng). Điện thoại: mỗi hàng một card 4 ô, nút lưu ở footer dính đáy.
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -23,8 +23,8 @@ import {
   keHoachLuuCaLo,
   loiHangNhap,
   themHangChoDay,
+  tongHang,
   type DgdvHangNhapLo,
-  type LoiHangNhap,
 } from '../../core/chi-tiet-dong';
 import { tenKhongTrung } from '../../core/chuan-hoa-ten';
 import { useLuuCaLoDgdv } from '../../hooks/use-danh-gia-dau-vao';
@@ -111,7 +111,7 @@ const DgdvNhapTheoLoDrawer: React.FC<Props> = ({ phieu, idPhieuLo, onClose, stac
 
   const loi = useMemo(() => new Map(hang.map((h) => [h.key, loiHangNhap(h)])), [hang]);
   const tong = useMemo(() => {
-    const sl = hang.reduce((s, h) => s + h.so_luong, 0);
+    const sl = hang.reduce((s, h) => s + tongHang(h), 0);
     const ksc = hang.reduce((s, h) => s + (h.id_cot ? h.so_luong_huy : 0), 0);
     return { sl, ksc };
   }, [hang]);
@@ -121,7 +121,8 @@ const DgdvNhapTheoLoDrawer: React.FC<Props> = ({ phieu, idPhieuLo, onClose, stac
   const goiYDanhGia = goiY(LOAI_LY_DO_DGDV.DANH_GIA);
   const goiYLoi = goiY(LOAI_LY_DO_DGDV.LOI);
 
-  const nhanLoi = (l: LoiHangNhap) => (l === 'slLoiLonHon' ? t('danhGiaDauVao.luoi.canhBaoLoi') : t('danhGiaDauVao.validation.soLuongRequired'));
+  const nhanLoi = t('danhGiaDauVao.validation.datHoacHuyRequired');
+  const nhanSlDat = (h: DgdvHangNhapLo) => (h.id_cot ? t('danhGiaDauVao.nhapLo.colSlDat') : t('danhGiaDauVao.luoi.colSoLuong'));
 
   const doiLo = (id: string) => {
     if (!id || id === idLo) return;
@@ -189,7 +190,7 @@ const DgdvNhapTheoLoDrawer: React.FC<Props> = ({ phieu, idPhieuLo, onClose, stac
         onChange={(e) => doiHang(h.key, { [cot]: docSo(e.target.value) })}
         onKeyDown={onEnter(k)}
         onFocus={(e) => e.target.select()}
-        aria-label={cot === 'so_luong' ? t('danhGiaDauVao.luoi.colSoLuong') : t('danhGiaDauVao.luoi.colSlLoi')}
+        aria-label={cot === 'so_luong' ? nhanSlDat(h) : t('danhGiaDauVao.luoi.colSlLoi')}
       />
     );
   };
@@ -229,7 +230,7 @@ const DgdvNhapTheoLoDrawer: React.FC<Props> = ({ phieu, idPhieuLo, onClose, stac
         <thead className="bg-muted text-xs">
           <tr>
             <th className="px-2 py-1.5 text-left font-semibold w-[13rem]">{t('danhGiaDauVao.chiTiet.colDay')}</th>
-            <th className="px-2 py-1.5 text-right font-semibold w-[6rem]">{t('danhGiaDauVao.luoi.colSoLuong')}</th>
+            <th className="px-2 py-1.5 text-right font-semibold w-[6rem]">{t('danhGiaDauVao.nhapLo.colSlDat')}</th>
             <th className="px-2 py-1.5 text-left font-semibold">{t('danhGiaDauVao.luoi.colDanhGia')}</th>
             <th className="px-2 py-1.5 text-right font-semibold w-[6rem]">{t('danhGiaDauVao.luoi.colSlLoi')}</th>
             <th className="px-2 py-1.5 text-left font-semibold">{t('danhGiaDauVao.luoi.colLyDoLoi')}</th>
@@ -243,16 +244,16 @@ const DgdvNhapTheoLoDrawer: React.FC<Props> = ({ phieu, idPhieuLo, onClose, stac
               <React.Fragment key={h.key}>
                 <tr className={cn('border-t border-border', h.id_cot == null && 'bg-muted/40')}>
                   <td className="px-2 py-1">{chip(h)}</td>
-                  <td className="px-2 py-1">{oNhapSo(h, 'so_luong', l === 'thieuSoLuong')}</td>
+                  <td className="px-2 py-1">{oNhapSo(h, 'so_luong', l != null)}</td>
                   <td className="px-2 py-1">{h.id_cot ? oChu(h, 'danh_gia') : null}</td>
-                  <td className="px-2 py-1">{h.id_cot ? oNhapSo(h, 'so_luong_huy', l === 'slLoiLonHon') : null}</td>
+                  <td className="px-2 py-1">{h.id_cot ? oNhapSo(h, 'so_luong_huy', l != null) : null}</td>
                   <td className="px-2 py-1">{h.id_cot ? oChu(h, 'ly_do_huy') : null}</td>
                   <td className="px-1 py-1 text-center">{nutThemDong(h)}</td>
                 </tr>
                 {l && (
                   <tr>
                     <td colSpan={6} className="px-2 pb-1 text-caption text-destructive">
-                      {nhanLoi(l)}
+                      {nhanLoi}
                     </td>
                   </tr>
                 )}
@@ -276,19 +277,19 @@ const DgdvNhapTheoLoDrawer: React.FC<Props> = ({ phieu, idPhieuLo, onClose, stac
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
-                <span className="text-xs font-medium">{t('danhGiaDauVao.luoi.colSoLuong')}</span>
-                {oNhapSo(h, 'so_luong', l === 'thieuSoLuong')}
+                <span className="text-xs font-medium">{nhanSlDat(h)}</span>
+                {oNhapSo(h, 'so_luong', l != null)}
               </div>
               {h.id_cot && (
                 <div className="space-y-1">
                   <span className="text-xs font-medium">{t('danhGiaDauVao.luoi.colSlLoi')}</span>
-                  {oNhapSo(h, 'so_luong_huy', l === 'slLoiLonHon')}
+                  {oNhapSo(h, 'so_luong_huy', l != null)}
                 </div>
               )}
               {h.id_cot && <div>{oChu(h, 'danh_gia')}</div>}
               {h.id_cot && <div>{oChu(h, 'ly_do_huy')}</div>}
             </div>
-            {l && <p className="m-0 text-caption text-destructive">{nhanLoi(l)}</p>}
+            {l && <p className="m-0 text-caption text-destructive">{nhanLoi}</p>}
           </div>
         );
       })}

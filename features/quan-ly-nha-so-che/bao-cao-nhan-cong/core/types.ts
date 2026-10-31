@@ -35,6 +35,36 @@ export interface FarmBaoCaoNhanCongCt {
   thu_tu: number;
   /** Dòng con theo CN ngày / CN nửa / tăng ca — từ fp_farm_bao_cao_nhan_cong_ct_sub */
   sub_by_loai?: ChiTietSubByLoai;
+  /** Tên từng người của chuyền — fp_farm_bao_cao_nhan_cong_nv (chỉ tải ở chi tiết phiếu) */
+  nhan_vien?: FarmBaoCaoNhanCongNv[];
+}
+
+/** Cả ngày / nửa ngày của một người trong phiếu */
+export const CHAM_CONG_CODES = ['CA_NGAY', 'NUA_NGAY'] as const;
+export type ChamCong = (typeof CHAM_CONG_CODES)[number];
+
+export interface FarmBaoCaoNhanCongNv {
+  id: string;
+  id_bcnc_ct: string;
+  id_nhan_vien: string | null;
+  ho_ten: string;
+  vi_tri: string | null;
+  cham_cong: ChamCong;
+  so_gio_cong: number;
+  so_gio_tc: number;
+  ghi_chu: string | null;
+  thu_tu: number;
+}
+
+/** Danh mục nhân viên sơ chế theo chi nhánh — fp_var_nhan_vien_so_che */
+export interface VarNhanVienSoChe {
+  id: string;
+  id_chi_nhanh: string;
+  ho_ten: string;
+  vi_tri: string | null;
+  loai_chuyen: LoaiChuyen | null;
+  dang_dung: boolean;
+  thu_tu: number;
 }
 
 export type ChiTietNumericFields = Pick<

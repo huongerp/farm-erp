@@ -146,11 +146,14 @@ export const dgdvDongFormSchema = z
     ly_do_huy: z.preprocess(rongThanhNull, z.string().max(200).nullable()),
   })
   .superRefine((d, ctx) => {
-    if (d.so_luong <= 0) {
-      ctx.addIssue({ code: 'custom', path: ['so_luong'], message: reqMsg('danhGiaDauVao.validation.soLuongRequired') });
-    }
-    if (d.id_cot !== DONG_DUT_DAY && d.so_luong_huy > d.so_luong) {
-      ctx.addIssue({ code: 'custom', path: ['so_luong_huy'], message: reqMsg('danhGiaDauVao.luoi.canhBaoLoi') });
+    // Dòng dây: `so_luong` của form là SL ĐẠT, lưu ghi đạt + huỷ → chỉ cần một trong hai > 0.
+    const dutDay = d.id_cot === DONG_DUT_DAY;
+    if (dutDay ? d.so_luong <= 0 : d.so_luong + d.so_luong_huy <= 0) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['so_luong'],
+        message: reqMsg(dutDay ? 'danhGiaDauVao.validation.soLuongRequired' : 'danhGiaDauVao.validation.datHoacHuyRequired'),
+      });
     }
   });
 
