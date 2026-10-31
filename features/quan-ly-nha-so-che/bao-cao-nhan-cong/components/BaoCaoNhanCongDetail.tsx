@@ -27,6 +27,7 @@ import { useCopyBaoCaoNhanCongToNextDay, useUpdateBaoCaoNhanCongTrangThai } from
 import { TRANG_THAI_BAO_CAO_NHAN_CONG } from '../core/types';
 import { getBaoCaoNhanCongPreviewUrl } from '../core/preview-url';
 import DetailDrawerFooter from '../../../../components/shared/DetailDrawerFooter';
+import ChonKieuInDialog from './ChonKieuInDialog';
 
 interface Props {
   data: FarmBaoCaoNhanCong;
@@ -63,6 +64,8 @@ const BaoCaoNhanCongDetail: React.FC<Props> = ({
   const trangThaiMutation = useUpdateBaoCaoNhanCongTrangThai();
 
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [chonIn, setChonIn] = useState(false);
+  const coDanhSachTen = (data.chi_tiet ?? []).some((ct) => (ct.nhan_vien?.length ?? 0) > 0);
   const hinhAnhUrls = data.hinh_anh_urls ?? [];
 
   const openLightbox = (idx: number) => setLightboxIndex(idx);
@@ -87,7 +90,7 @@ const BaoCaoNhanCongDetail: React.FC<Props> = ({
       label: t('baoCaoNhanCong.detail.printReport'),
       icon: <Printer size={16} />,
       variant: 'primary',
-      onClick: () => window.open(getBaoCaoNhanCongPreviewUrl(data.id), '_blank', 'noopener,noreferrer'),
+      onClick: () => setChonIn(true),
     },
   ];
   if (canCopyNextDay) {
@@ -248,7 +251,7 @@ const BaoCaoNhanCongDetail: React.FC<Props> = ({
           <BaoCaoNhanCongChuyenTable data={data} />
         </DetailSection>
 
-        {(data.chi_tiet ?? []).some((ct) => (ct.nhan_vien?.length ?? 0) > 0) && (
+        {coDanhSachTen && (
           <DetailSection title={t('baoCaoNhanCong.nv.sectionDetail')} icon={<Users size={14} />} variant="primary">
             <BaoCaoNhanCongNhanVienBang data={data} />
           </DetailSection>
@@ -256,6 +259,17 @@ const BaoCaoNhanCongDetail: React.FC<Props> = ({
 
       </div>
     </GenericDrawer>
+
+    {chonIn && (
+      <ChonKieuInDialog
+        coDanhSachTen={coDanhSachTen}
+        onClose={() => setChonIn(false)}
+        onChon={(noiDung) => {
+          window.open(getBaoCaoNhanCongPreviewUrl(data.id, noiDung), '_blank', 'noopener,noreferrer');
+          setChonIn(false);
+        }}
+      />
+    )}
 
     {lightboxIndex !== null && ReactDOM.createPortal(
       <AnimatePresence>

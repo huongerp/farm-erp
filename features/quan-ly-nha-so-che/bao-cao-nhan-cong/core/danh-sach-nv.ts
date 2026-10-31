@@ -5,7 +5,8 @@
  */
 import { gonTen, khoaTen } from '../../danh-gia-dau-vao/core/chuan-hoa-ten';
 import { padSubToRowCount, subAlignedRowCount, type ChiTietSubFormByLoai, type CtSubFormRow } from './ct-sub';
-import type { ChamCong, FarmBaoCaoNhanCongNv, LoaiChuyen, VarNhanVienSoChe } from './types';
+import type { ChamCong, FarmBaoCaoNhanCong, FarmBaoCaoNhanCongCt, FarmBaoCaoNhanCongNv, LoaiChuyen, VarNhanVienSoChe } from './types';
+import { chuyenTtLabelByThuTu, normalizeChiTietForDisplay } from './types';
 
 /** Giờ mặc định khi thêm người — dữ liệu đã nhập: cả ngày luôn 7,5h; nửa ngày hay gặp 4–4,5h. */
 export const GIO_CONG_MAC_DINH: Record<ChamCong, number> = { CA_NGAY: 7.5, NUA_NGAY: 4 };
@@ -116,4 +117,24 @@ export function nvModelsToForm(rows: readonly FarmBaoCaoNhanCongNv[] | undefined
 /** Copy sang ngày kế: giữ người, vị trí, cả/nửa ngày; tăng ca và ghi chú là của riêng hôm đó. */
 export function nvChoNgayKe(ds: readonly NvFormRow[] | undefined): NvFormRow[] {
   return nvCoTen(ds).map((r) => ({ ...r, so_gio_tc: 0, ghi_chu: null }));
+}
+
+export interface NhomNvTheoChuyen {
+  /** Nhãn TT của chuyền trên phiếu (I…IV, V). */
+  tt: string;
+  /** Thứ tự chuyền trên phiếu (0 = đầu) — để sắp khi gộp nhiều phiếu. */
+  thuTuChuyen: number;
+  ct: FarmBaoCaoNhanCongCt;
+  nhanVien: FarmBaoCaoNhanCongNv[];
+}
+
+/** Tên theo chuyền đúng thứ tự trên phiếu (chuyền SX rồi dòng V), bỏ chuyền không có tên. */
+export function nhomNhanVienTheoChuyen(data: Pick<FarmBaoCaoNhanCong, 'chi_tiet'>): NhomNvTheoChuyen[] {
+  const { production, vRow } = normalizeChiTietForDisplay(data.chi_tiet ?? []);
+  return [
+    ...production.map((ct, i) => ({ ct, tt: chuyenTtLabelByThuTu(i + 1), thuTuChuyen: i })),
+    { ct: vRow, tt: 'V', thuTuChuyen: production.length },
+  ]
+    .map((g) => ({ ...g, nhanVien: [...(g.ct.nhan_vien ?? [])].sort((a, b) => a.thu_tu - b.thu_tu) }))
+    .filter((g) => g.nhanVien.length > 0);
 }

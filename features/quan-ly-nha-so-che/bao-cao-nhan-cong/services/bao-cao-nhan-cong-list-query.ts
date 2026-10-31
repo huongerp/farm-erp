@@ -44,4 +44,10 @@ export const BCNC_SORTABLE_DB_COLUMNS = new Set([
 /** Sắp xếp mặc định: phiếu mới nhất lên đầu. */
 export const BCNC_SORT_MAC_DINH = { column: 'ngay', ascending: false } as const;
 
+/**
+ * Tối đa số phiếu cho xuất «Chi tiết nhân viên» (kèm tên từng người) — ~2,5 tháng × 5 chi nhánh.
+ * Quá thì yêu cầu lọc hẹp lại thay vì tải một file khổng lồ.
+ */
+export const BCNC_XUAT_NV_TOI_DA = 400;
+
 export { dieuKienKyTheoNgay, khoangNgay } from '../../../../lib/postgrest-search';

@@ -31,6 +31,9 @@ import BaoCaoNhanCongList from './BaoCaoNhanCongList';
 import BaoCaoNhanCongForm from './BaoCaoNhanCongForm';
 import BaoCaoNhanCongDetail from './BaoCaoNhanCongDetail';
 import DanhMucNhanVienDialog from './DanhMucNhanVienDialog';
+import XuatChonKieuDialog from './XuatChonKieuDialog';
+import { useBcncXuatNv } from '../hooks/use-bcnc-xuat-nv';
+import { BCNC_XUAT_NV_TOI_DA } from '../services/bao-cao-nhan-cong-list-query';
 import {
   mapFarmBaoCaoNhanCongListRow,
   getExportColumnsBaoCaoNhanCongList,
@@ -72,6 +75,8 @@ const DanhSachTab: React.FC = () => {
   const [viewingItemRaw, setViewingItem] = useState<FarmBaoCaoNhanCong | null>(null);
   const [openedFormFromDetailId, setOpenedFormFromDetailId] = useState<string | null>(null);
   const [showExport, setShowExport] = useState(false);
+  const [showChonXuat, setShowChonXuat] = useState(false);
+  const xuatNv = useBcncXuatNv();
 
   const viewScope = useBaoCaoNhanCongViewScope();
 
@@ -181,7 +186,7 @@ const DanhSachTab: React.FC = () => {
       toast.warning(t('baoCaoNhanCong.noExportData'));
       return;
     }
-    setShowExport(true);
+    setShowChonXuat(true);
   }, [totalCount, t]);
 
   useEffect(() => {
@@ -378,6 +383,24 @@ const DanhSachTab: React.FC = () => {
           canDeleteRow={canDeleteRow}
         />
       </div>
+
+      <AnimatePresence>
+        {showChonXuat && (
+          <XuatChonKieuDialog
+            tongSo={totalCount}
+            toiDaChiTiet={BCNC_XUAT_NV_TOI_DA}
+            dangXuat={xuatNv.dangXuat}
+            onClose={() => setShowChonXuat(false)}
+            onTongHop={() => {
+              setShowChonXuat(false);
+              setShowExport(true);
+            }}
+            onChiTiet={(kieu) => {
+              void xuatNv.xuat(kieu, listServerQuery, totalCount).then((ok) => ok && setShowChonXuat(false));
+            }}
+          />
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {showExport && (

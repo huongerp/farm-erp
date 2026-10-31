@@ -5,7 +5,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { FarmBaoCaoNhanCong } from '../core/types';
-import { chuyenTtLabelByThuTu, normalizeChiTietForDisplay } from '../core/types';
+import { nhomNhanVienTheoChuyen } from '../core/danh-sach-nv';
 import { formatNumberVN } from '../../../../lib/utils';
 
 interface Props {
@@ -34,16 +34,12 @@ const LOP = {
 
 const BaoCaoNhanCongNhanVienBang: React.FC<Props> = ({ data, variant = 'screen' }) => {
   const { t } = useTranslation();
-  const { production, vRow } = normalizeChiTietForDisplay(data.chi_tiet ?? []);
-  const nhom = [
-    ...production.map((ct, i) => ({ ct, tt: chuyenTtLabelByThuTu(i + 1) })),
-    { ct: vRow, tt: 'V' },
-  ].filter(({ ct }) => (ct.nhan_vien?.length ?? 0) > 0);
+  const nhom = nhomNhanVienTheoChuyen(data);
   if (nhom.length === 0) return null;
 
   const c = LOP[variant];
   const num = `${c.td} text-right tabular-nums`;
-  const tong = nhom.reduce((s, { ct }) => s + (ct.nhan_vien?.length ?? 0), 0);
+  const tong = nhom.reduce((s, { nhanVien }) => s + nhanVien.length, 0);
   let stt = 0;
 
   return (
@@ -61,14 +57,14 @@ const BaoCaoNhanCongNhanVienBang: React.FC<Props> = ({ data, variant = 'screen' 
           </tr>
         </thead>
         <tbody>
-          {nhom.map(({ ct, tt }) => (
+          {nhom.map(({ ct, tt, nhanVien }) => (
             <React.Fragment key={ct.loai_chuyen}>
               <tr>
                 <td colSpan={7} className={c.group}>
-                  {tt}. {t(`baoCaoNhanCong.chuyen.${ct.loai_chuyen}`)} — {t('baoCaoNhanCong.nv.soNguoi', { n: ct.nhan_vien!.length })}
+                  {tt}. {t(`baoCaoNhanCong.chuyen.${ct.loai_chuyen}`)} — {t('baoCaoNhanCong.nv.soNguoi', { n: nhanVien.length })}
                 </td>
               </tr>
-              {ct.nhan_vien!.map((nv) => {
+              {nhanVien.map((nv) => {
                 stt += 1;
                 return (
                   <tr key={nv.id}>

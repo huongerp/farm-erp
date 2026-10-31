@@ -1,5 +1,5 @@
 /**
- * Xuất báo cáo nhân công (PDF / DOC / XLSX) — A4 dọc.
+ * Xuất XLSX một báo cáo nhân công theo nội dung in: sheet bảng chuyền, sheet danh sách tên, hoặc cả hai.
  */
 import type { FarmBaoCaoNhanCong, FarmBaoCaoNhanCongCt } from '../core/types';
 import { ghiXlsxCoBangHinh } from '../../../../lib/export/xlsx-bang-hinh';
@@ -10,6 +10,11 @@ import i18n from '../../../../lib/i18n';
 import { useUIStore } from '../../../../store/useStore';
 import { bcncTrangThaiLabel, getBcncPreviewSignLabels } from '../core/bcnc-preview-layout';
 import { tenFileAnToan } from '../../../../lib/phieu-in/ten-file';
+import type { NoiDungIn } from '../core/preview-url';
+import { nhomNhanVienTheoChuyen } from '../core/danh-sach-nv';
+
+type XlsxModule = typeof import('xlsx');
+type Aoa = (string | number)[][];
 
 const EMPTY = '—';
 
@@ -103,18 +108,16 @@ function subRowXlsx(
   return out;
 }
 
-export async function exportBaoCaoNhanCongToXLSX(data: FarmBaoCaoNhanCong): Promise<void> {
-  const XLSX = await import('xlsx');
+/** Đầu sheet: công ty + tiêu đề + thông tin phiếu + số tổng. */
+function dongDauPhieu(data: FarmBaoCaoNhanCong, tieuDe: string): Aoa {
   const t = i18n.t.bind(i18n);
   const info = useUIStore.getState().companyInfo;
   const status = bcncTrangThaiLabel(data, t);
-  const { production, vRow } = normalizeChiTietForDisplay(data.chi_tiet ?? []);
-
-  const rows: (string | number)[][] = [
+  return [
     [info.companyName],
     ...(info.address ? [[t('company.address'), info.address]] : []),
     [],
-    [t('baoCaoNhanCong.preview.title')],
+    [tieuDe],
     [t('baoCaoNhanCong.form.ngay'), formatYmdToDisplay(data.ngay?.slice(0, 10))],
     [t('baoCaoNhanCong.form.branch'), safe(data.ten_chi_nhanh)],
     [t('baoCaoNhanCong.store.colTrangThai'), status],
@@ -127,8 +130,13 @@ export async function exportBaoCaoNhanCongToXLSX(data: FarmBaoCaoNhanCong): Prom
     [t('baoCaoNhanCong.store.colNguoiTao'), safe(data.ten_nguoi_tao)],
     ...(data.ghi_chu?.trim() ? [[t('baoCaoNhanCong.form.ghiChuPhieu'), data.ghi_chu]] : []),
     [],
-    tableHeaders(t),
   ];
+}
+
+function sheetChuyen(XLSX: XlsxModule, data: FarmBaoCaoNhanCong) {
+  const t = i18n.t.bind(i18n);
+  const { production, vRow } = normalizeChiTietForDisplay(data.chi_tiet ?? []);
+  const rows: Aoa = [...dongDauPhieu(data, t('baoCaoNhanCong.preview.title')), tableHeaders(t)];
 
   production.forEach((row, idx) => {
     rows.push(mainRowXlsx(row, t, undefined, idx));
@@ -192,7 +200,58 @@ export async function exportBaoCaoNhanCongToXLSX(data: FarmBaoCaoNhanCong): Prom
     { wch: 10 },
     { wch: 24 },
   ];
+  return ws;
+}
+
+/** Danh sách tên dạng phẳng (mỗi người một dòng, có cột chuyền) — lọc/sắp được trong Excel. */
+function sheetNhanVien(XLSX: XlsxModule, data: FarmBaoCaoNhanCong) {
+  const t = i18n.t.bind(i18n);
+  const rows: Aoa = [
+    ...dongDauPhieu(data, t('baoCaoNhanCong.preview.tieuDeDanhSachNv')),
+    [
+      t('baoCaoNhanCong.nv.stt'),
+      t('baoCaoNhanCong.form.colTt'),
+      t('baoCaoNhanCong.form.colChuyen'),
+      t('baoCaoNhanCong.nv.hoTen'),
+      t('baoCaoNhanCong.nv.viTri'),
+      t('baoCaoNhanCong.nv.cong'),
+      t('baoCaoNhanCong.nv.gioCong'),
+      t('baoCaoNhanCong.nv.gioTc'),
+      t('baoCaoNhanCong.form.colGhiChu'),
+    ],
+  ];
+  let stt = 0;
+  for (const { ct, tt, nhanVien } of nhomNhanVienTheoChuyen(data)) {
+    for (const nv of nhanVien) {
+      stt += 1;
+      rows.push([
+        stt,
+        tt,
+        t(`baoCaoNhanCong.chuyen.${ct.loai_chuyen}`),
+        nv.ho_ten,
+        nv.vi_tri ?? '',
+        t(`baoCaoNhanCong.nv.chamCong.${nv.cham_cong}`),
+        Number(nv.so_gio_cong),
+        Number(nv.so_gio_tc),
+        nv.ghi_chu ?? '',
+      ]);
+    }
+  }
+  rows.push(['', '', t('baoCaoNhanCong.nv.tongNguoi', { n: stt })]);
+  rows.push([]);
+  rows.push(getBcncPreviewSignLabels(t));
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{ wch: 5 }, { wch: 5 }, { wch: 30 }, { wch: 26 }, { wch: 22 }, { wch: 10 }, { wch: 9 }, { wch: 9 }, { wch: 24 }];
+  return ws;
+}
+
+export async function exportBaoCaoNhanCongToXLSX(data: FarmBaoCaoNhanCong, noiDung: NoiDungIn = 'ca-hai'): Promise<void> {
+  const XLSX = await import('xlsx');
+  const coTen = nhomNhanVienTheoChuyen(data).length > 0;
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Bao_cao_nhan_cong');
+  if (noiDung !== 'nhan-vien') XLSX.utils.book_append_sheet(wb, sheetChuyen(XLSX, data), 'Bao_cao_nhan_cong');
+  if (noiDung !== 'chuyen' && coTen) XLSX.utils.book_append_sheet(wb, sheetNhanVien(XLSX, data), 'Danh_sach_NV');
+  if (wb.SheetNames.length === 0) XLSX.utils.book_append_sheet(wb, sheetChuyen(XLSX, data), 'Bao_cao_nhan_cong');
   await ghiXlsxCoBangHinh(XLSX, wb, `${fileName(data)}.xlsx`);
 }

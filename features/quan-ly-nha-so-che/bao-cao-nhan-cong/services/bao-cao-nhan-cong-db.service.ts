@@ -446,16 +446,34 @@ export async function getBaoCaoNhanCongTheoNgayDb(
   return rows.map(embedRowToModel);
 }
 
-/** Bản ghi cha kèm bảng con lồng (embed). */
+/** Bản ghi cha kèm bảng con lồng (embed). Bảng tên chỉ có khi select `BCNC_XUAT_NV_SELECT`. */
 interface DbRowChaEmbed extends DbRowCha {
-  [TABLE_CT]?: (DbRowCt & { [TABLE_CT_SUB]?: DbRowCtSub[] })[];
+  [TABLE_CT]?: (DbRowCt & { [TABLE_CT_SUB]?: DbRowCtSub[]; [TABLE_NV]?: DbRowNv[] })[];
 }
 
 function embedRowToModel(row: DbRowChaEmbed): FarmBaoCaoNhanCong {
-  const cts = (row[TABLE_CT] ?? []).map((ct) =>
-    ctRowToModel(ct, (ct[TABLE_CT_SUB] ?? []).map(subRowToModel))
-  );
+  const cts = (row[TABLE_CT] ?? []).map((ct) => {
+    const model = ctRowToModel(ct, (ct[TABLE_CT_SUB] ?? []).map(subRowToModel));
+    const nv = ct[TABLE_NV];
+    return nv ? { ...model, nhan_vien: nv.map(nvRowToModel).sort((a, b) => a.thu_tu - b.thu_tu) } : model;
+  });
   return chaRowToModel(row, cts, false);
+}
+
+/** Danh sách + bảng tên của từng chuyền — chỉ cho xuất «Chi tiết nhân viên». */
+const BCNC_XUAT_NV_SELECT = `${ROW_CHA_LIST},${TABLE_CT}(${ROW_CT},${TABLE_CT_SUB}(${ROW_CT_SUB}),${TABLE_NV}(${ROW_NV}))`;
+
+/**
+ * Mọi phiếu khớp bộ lọc danh sách, kèm tên nhân viên (một request/trang nhờ embed) —
+ * CHỈ khi bấm xuất Chi tiết nhân viên; giới hạn số phiếu ở `BCNC_XUAT_NV_TOI_DA`.
+ */
+export async function fetchBaoCaoNhanCongKemNvForListQuery(
+  query: BaoCaoNhanCongListServerQuery
+): Promise<FarmBaoCaoNhanCong[]> {
+  const rows = await fetchAllRows<DbRowChaEmbed>((from, to) =>
+    applyBcncListQuery(db.from(TABLE_CHA).select(BCNC_XUAT_NV_SELECT), query).range(from, to)
+  );
+  return rows.map(embedRowToModel);
 }
 
 /**
