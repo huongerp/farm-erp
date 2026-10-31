@@ -1,4 +1,4 @@
-import type { FarmDuBaoSlDongThung } from './types';
+import type { DuBaoTonNgay, FarmDuBaoSlDongThung } from './types';
 import type { DuBaoSlDongThungFormValues } from './schema';
 import { computeDuBaoSlDongThungKpi, type DuBaoSlDongThungKpiInput } from './kpi';
 
@@ -39,15 +39,21 @@ export function farmDuBaoSlDongThungToForm(row: FarmDuBaoSlDongThung): DuBaoSlDo
 }
 
 /**
- * Dòng 10 «Tổng số buồng nhập (thực tế)» = Tổng thu của Đánh giá đầu vào (`fn_dgdv_tong_ngay`, migration 052).
- * Chưa có số (chưa chọn ngày/chi nhánh, đang tải, lỗi) → giữ số đã lưu; DB trigger vẫn ghi đè khi lưu.
+ * Dòng 10 «Tổng số buồng nhập (thực tế)» = tồn đầu + Tổng thu Đánh giá đầu vào − tồn cuối
+ * (tồn theo Báo cáo sơ chế cùng ngày + chi nhánh; khớp trigger `fn_dgdv_trg_du_bao_khoa_so`, migration 060).
+ * Âm → 0. Thiếu một trong hai số (chưa chọn ngày/chi nhánh, đang tải, lỗi) → giữ số đã lưu; DB trigger vẫn ghi đè khi lưu.
  */
+export function tinhBuongNhapThucTe(tongThu: number, ton: DuBaoTonNgay): number {
+  return Math.max(0, Math.floor(ton.ton_dau + tongThu - ton.ton_cuoi));
+}
+
 export function apTongThuDgdvVaoDuBaoForm(
   values: DuBaoSlDongThungFormValues,
-  tongThu: number | null | undefined
+  tongThu: number | null | undefined,
+  ton: DuBaoTonNgay | null | undefined
 ): DuBaoSlDongThungFormValues {
-  if (tongThu == null || !Number.isFinite(tongThu)) return values;
-  return { ...values, tong_buong_nhap_thuc_te: Math.max(0, Math.floor(tongThu)) };
+  if (tongThu == null || !Number.isFinite(tongThu) || !ton) return values;
+  return { ...values, tong_buong_nhap_thuc_te: tinhBuongNhapThucTe(tongThu, ton) };
 }
 
 export function formValuesToKpiInput(values: DuBaoSlDongThungFormValues): DuBaoSlDongThungKpiInput {

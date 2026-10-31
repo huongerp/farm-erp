@@ -5,7 +5,7 @@ import type { FarmDuBaoSlDongThung } from '../core/types';
 import { ghiXlsxCoBangHinh } from '../../../../lib/export/xlsx-bang-hinh';
 import { computeDuBaoSlDongThungKpiFromFarm } from '../core/kpi';
 import { dbsdtTrangThaiLabel, getDbsdtPreviewSignLabels } from '../core/dbsdt-preview-layout';
-import { formatYmdToDisplay, getTodayISODate } from '../../../../lib/utils';
+import { formatNumberVN, formatYmdToDisplay, getTodayISODate } from '../../../../lib/utils';
 import i18n from '../../../../lib/i18n';
 import { useUIStore } from '../../../../store/useStore';
 import { tenFileAnToan } from '../../../../lib/phieu-in/ten-file';
@@ -44,7 +44,7 @@ export async function exportDuBaoSlDongThungToXLSX(data: FarmDuBaoSlDongThung): 
     [7, t('duBaoSlDongThung.form.row7'), kpi.khoi_luong_dong_thung_ke_hoach, t('duBaoSlDongThung.form.unitKg'), t('duBaoSlDongThung.form.row7Note')],
     [8, t('duBaoSlDongThung.form.row8'), data.quy_cach_dong_thung_ke_hoach, t('duBaoSlDongThung.form.unitKgPerThung'), t('duBaoSlDongThung.form.row8Note')],
     [9, t('duBaoSlDongThung.form.row9'), kpi.tong_so_thung_ke_hoach, t('duBaoSlDongThung.form.unitThung'), t('duBaoSlDongThung.form.row9Note')],
-    [10, t('duBaoSlDongThung.form.row10'), data.tong_buong_nhap_thuc_te, t('duBaoSlDongThung.form.unitBuong'), t('duBaoSlDongThung.form.row10Note')],
+    [10, t('duBaoSlDongThung.form.row10'), data.tong_buong_nhap_thuc_te, t('duBaoSlDongThung.form.unitBuong'), t('duBaoSlDongThung.form.row10NoteLuu', { tonDau: formatNumberVN(data.sl_buong_ton_dau_ngay), tonCuoi: formatNumberVN(data.sl_buong_ton_cuoi_ngay) })],
     [11, t('duBaoSlDongThung.form.row11'), kpi.tong_khoi_luong_thuc_te, t('duBaoSlDongThung.form.unitKg'), t('duBaoSlDongThung.form.row11Note')],
     [12, t('duBaoSlDongThung.form.row12'), data.ty_le_thu_hoi_thuc_te * 100, t('duBaoSlDongThung.form.unitPercent'), t('duBaoSlDongThung.form.row12Note')],
     [13, t('duBaoSlDongThung.form.row13'), kpi.khoi_luong_dong_thung_thuc_te, t('duBaoSlDongThung.form.unitKg'), t('duBaoSlDongThung.form.row13Note')],

@@ -52,7 +52,7 @@ const DuBaoSlDongThungPreviewContent: React.FC<Props> = ({ data }) => {
     { stt: 7, label: t('duBaoSlDongThung.form.row7'), value: fmtNum(kpi.khoi_luong_dong_thung_ke_hoach), unit: t('duBaoSlDongThung.form.unitKg'), note: t('duBaoSlDongThung.form.row7Note') },
     { stt: 8, label: t('duBaoSlDongThung.form.row8'), value: fmtNum(data.quy_cach_dong_thung_ke_hoach), unit: t('duBaoSlDongThung.form.unitKgPerThung'), note: t('duBaoSlDongThung.form.row8Note') },
     { stt: 9, label: t('duBaoSlDongThung.form.row9'), value: fmtNum(kpi.tong_so_thung_ke_hoach), unit: t('duBaoSlDongThung.form.unitThung'), note: t('duBaoSlDongThung.form.row9Note'), highlight: true },
-    { stt: 10, label: t('duBaoSlDongThung.form.row10'), value: fmtNum(data.tong_buong_nhap_thuc_te), unit: t('duBaoSlDongThung.form.unitBuong'), note: t('duBaoSlDongThung.form.row10Note') },
+    { stt: 10, label: t('duBaoSlDongThung.form.row10'), value: fmtNum(data.tong_buong_nhap_thuc_te), unit: t('duBaoSlDongThung.form.unitBuong'), note: t('duBaoSlDongThung.form.row10NoteLuu', { tonDau: fmtNum(data.sl_buong_ton_dau_ngay), tonCuoi: fmtNum(data.sl_buong_ton_cuoi_ngay) }) },
     { stt: 11, label: t('duBaoSlDongThung.form.row11'), value: fmtNum(kpi.tong_khoi_luong_thuc_te), unit: t('duBaoSlDongThung.form.unitKg'), note: t('duBaoSlDongThung.form.row11Note') },
     { stt: 12, label: t('duBaoSlDongThung.form.row12'), value: fmtPct(data.ty_le_thu_hoi_thuc_te), unit: '', note: t('duBaoSlDongThung.form.row12Note') },
     { stt: 13, label: t('duBaoSlDongThung.form.row13'), value: fmtNum(kpi.khoi_luong_dong_thung_thuc_te), unit: t('duBaoSlDongThung.form.unitKg'), note: t('duBaoSlDongThung.form.row13Note') },

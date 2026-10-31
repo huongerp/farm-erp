@@ -15,14 +15,14 @@ import {
   DBDT_SORT_MAC_DINH,
   type DuBaoSlDongThungListServerQuery,
 } from './du-bao-sl-dong-thung-list-query';
-import type { FarmDuBaoSlDongThung, TrangThaiDuBaoSlDongThungPhieu } from '../core/types';
+import type { DuBaoTonNgay, FarmDuBaoSlDongThung, TrangThaiDuBaoSlDongThungPhieu } from '../core/types';
 import { TRANG_THAI_DU_BAO_SL_DONG_THUNG } from '../core/types';
 import type { DuBaoSlDongThungFormValues } from '../core/schema';
 
 const TABLE = 'fp_farm_du_bao_sl_dong_thung';
 
 const ROW_SELECT =
-  'id,ngay,id_chi_nhanh,ten_chi_nhanh,so_buong_can_mau,tong_can_nang_mau,tong_buong_nhap_ke_hoach,ty_le_thu_hoi_ke_hoach,quy_cach_dong_thung_ke_hoach,tong_buong_nhap_thuc_te,ty_le_thu_hoi_thuc_te,quy_cach_dong_thung_thuc_te,can_nang_binh_quan_buong,tong_khoi_luong_ke_hoach,tong_so_thung_ke_hoach,tong_khoi_luong_thuc_te,tong_so_thung_thuc_te,ghi_chu,id_nguoi_tao,trang_thai,tg_tao,tg_cap_nhat';
+  'id,ngay,id_chi_nhanh,ten_chi_nhanh,so_buong_can_mau,tong_can_nang_mau,tong_buong_nhap_ke_hoach,ty_le_thu_hoi_ke_hoach,quy_cach_dong_thung_ke_hoach,tong_buong_nhap_thuc_te,sl_buong_ton_dau_ngay,sl_buong_ton_cuoi_ngay,ty_le_thu_hoi_thuc_te,quy_cach_dong_thung_thuc_te,can_nang_binh_quan_buong,tong_khoi_luong_ke_hoach,tong_so_thung_ke_hoach,tong_khoi_luong_thuc_te,tong_so_thung_thuc_te,ghi_chu,id_nguoi_tao,trang_thai,tg_tao,tg_cap_nhat';
 
 function parseIdToInt8(id: string | null | undefined): number | null {
   if (id == null || id === '') return null;
@@ -55,6 +55,8 @@ interface DbRow {
   ty_le_thu_hoi_ke_hoach: string | number | null;
   quy_cach_dong_thung_ke_hoach: string | number | null;
   tong_buong_nhap_thuc_te: number | null;
+  sl_buong_ton_dau_ngay: number | null;
+  sl_buong_ton_cuoi_ngay: number | null;
   ty_le_thu_hoi_thuc_te: string | number | null;
   quy_cach_dong_thung_thuc_te: string | number | null;
   /** GENERATED — null khi so_buong_can_mau = 0 */
@@ -86,6 +88,8 @@ function rowToModel(row: DbRow): FarmDuBaoSlDongThung {
     ty_le_thu_hoi_ke_hoach: num(row.ty_le_thu_hoi_ke_hoach),
     quy_cach_dong_thung_ke_hoach: num(row.quy_cach_dong_thung_ke_hoach),
     tong_buong_nhap_thuc_te: Math.max(0, Math.floor(num(row.tong_buong_nhap_thuc_te))),
+    sl_buong_ton_dau_ngay: Math.max(0, Math.floor(num(row.sl_buong_ton_dau_ngay))),
+    sl_buong_ton_cuoi_ngay: Math.max(0, Math.floor(num(row.sl_buong_ton_cuoi_ngay))),
     ty_le_thu_hoi_thuc_te: num(row.ty_le_thu_hoi_thuc_te),
     quy_cach_dong_thung_thuc_te: num(row.quy_cach_dong_thung_thuc_te),
     can_nang_binh_quan_buong: row.can_nang_binh_quan_buong != null ? num(row.can_nang_binh_quan_buong) : null,
@@ -299,4 +303,16 @@ export async function updateDuBaoSlDongThungTrangThaiDb(
     .eq('id', numId);
   if (error) throwDbError(error, { resource: `${TABLE}.updateTrangThai` });
   return (await getDuBaoSlDongThungByIdDb(id))!;
+}
+
+/** Tồn đầu / tồn cuối ngày của Báo cáo sơ chế cùng ngày + chi nhánh — cho ghi chú + số live ở dòng 10. */
+export async function getDuBaoTonNgayDb(ngay: string, idChiNhanh: number): Promise<DuBaoTonNgay> {
+  const { data, error } = await db.rpc('fn_du_bao_ton_ngay', { p_ngay: ngay, p_id_chi_nhanh: idChiNhanh });
+  if (error) throwDbError(error);
+  // RPC trả TABLE → mảng 1 dòng.
+  const dong = (Array.isArray(data) ? data[0] : data) as Partial<Record<keyof DuBaoTonNgay, unknown>> | null;
+  return {
+    ton_dau: Math.max(0, Math.floor(num(dong?.ton_dau as string | number | null | undefined))),
+    ton_cuoi: Math.max(0, Math.floor(num(dong?.ton_cuoi as string | number | null | undefined))),
+  };
 }

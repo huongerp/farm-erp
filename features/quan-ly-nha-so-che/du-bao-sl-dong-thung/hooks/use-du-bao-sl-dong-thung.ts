@@ -15,6 +15,9 @@ import {
   updateDuBaoSlDongThungTrangThai,
   updateDuBaoSlDongThungTrangThaiMany,
 } from '../services/du-bao-sl-dong-thung-service';
+import { getDuBaoTonNgayDb } from '../services/du-bao-sl-dong-thung-db.service';
+import { idChiNhanhChoRpc } from '../../danh-gia-dau-vao/services/danh-gia-dau-vao-tong-ngay.service';
+import { QUERY_KEY_BAO_CAO_SO_CHE } from '../../bao-cao-so-che/hooks/use-bao-cao-so-che';
 import type { DuBaoSlDongThungFormValues } from '../core/schema';
 import type { TrangThaiDuBaoSlDongThungPhieu } from '../core/types';
 
@@ -38,6 +41,21 @@ export function useDuBaoSlDongThungTomTat(viewAll: boolean, allowedBranchIds: st
     queryFn: () => getDuBaoSlDongThungTomTat(viewAll, allowedBranchIds),
     enabled,
     staleTime: 1000 * 60 * 5,
+  });
+}
+
+/**
+ * Tồn đầu / tồn cuối ngày theo Báo cáo sơ chế cùng ngày + chi nhánh — cho dòng 10 (migration 060).
+ * Key nằm dưới `QUERY_KEY_BAO_CAO_SO_CHE` nên lưu Báo cáo sơ chế là tự tải lại.
+ */
+export function useDuBaoTonNgay(ngay: string | null | undefined, idChiNhanh: string | number | null | undefined) {
+  const ngayIso = ngay ? ngay.slice(0, 10) : '';
+  const cn = idChiNhanhChoRpc(idChiNhanh);
+  return useQuery({
+    queryKey: [...QUERY_KEY_BAO_CAO_SO_CHE, 'tonNgayDuBao', ngayIso, cn],
+    queryFn: () => getDuBaoTonNgayDb(ngayIso, cn!),
+    enabled: !!ngayIso && cn != null,
+    staleTime: 1000 * 30,
   });
 }
 

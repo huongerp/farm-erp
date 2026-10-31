@@ -16,7 +16,11 @@ export interface FarmDuBaoSlDongThung {
   tong_buong_nhap_ke_hoach: number;
   ty_le_thu_hoi_ke_hoach: number;
   quy_cach_dong_thung_ke_hoach: number;
+  /** Dòng 10 = max(0, tồn đầu + Tổng thu ĐGĐV − tồn cuối) — DB trigger ghi (migration 060). */
   tong_buong_nhap_thuc_te: number;
+  /** Tồn đầu / tồn cuối ngày theo Báo cáo sơ chế cùng ngày + chi nhánh — DB trigger ghi. */
+  sl_buong_ton_dau_ngay: number;
+  sl_buong_ton_cuoi_ngay: number;
   ty_le_thu_hoi_thuc_te: number;
   quy_cach_dong_thung_thuc_te: number;
   /** GENERATED ALWAYS STORED — null khi so_buong_can_mau = 0 */
@@ -35,4 +39,10 @@ export interface FarmDuBaoSlDongThung {
   trang_thai: TrangThaiDuBaoSlDongThungPhieu;
   tg_tao: string;
   tg_cap_nhat: string;
+}
+
+/** Tồn đầu / tồn cuối ngày của Báo cáo sơ chế (RPC `fn_du_bao_ton_ngay`); chưa có báo cáo = 0. */
+export interface DuBaoTonNgay {
+  ton_dau: number;
+  ton_cuoi: number;
 }

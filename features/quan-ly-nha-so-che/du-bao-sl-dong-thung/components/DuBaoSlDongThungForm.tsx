@@ -12,12 +12,13 @@ import type { FarmDuBaoSlDongThung } from '../core/types';
 import { cn, formatNumberVN } from '../../../../lib/utils';
 import {
   apTongThuDgdvVaoDuBaoForm,
+  tinhBuongNhapThucTe,
   defaultFormValues,
   farmDuBaoSlDongThungToForm,
   computeKpiFromForm,
 } from '../core/form-mappers';
 import { DGDV_BANG_DANH_GIA_URL, useDgdvTongNgay } from '../../danh-gia-dau-vao/hooks/use-dgdv-tong-ngay';
-import { useCreateDuBaoSlDongThung, useUpdateDuBaoSlDongThung } from '../hooks/use-du-bao-sl-dong-thung';
+import { useCreateDuBaoSlDongThung, useDuBaoTonNgay, useUpdateDuBaoSlDongThung } from '../hooks/use-du-bao-sl-dong-thung';
 import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
 import { TRANG_THAI } from '../../../../lib/constants';
 import GenericDrawer, { DRAWER_WIDTH_BAO_CAO_NHAN_CONG } from '../../../../components/shared/GenericDrawer';
@@ -95,10 +96,13 @@ const DuBaoSlDongThungForm: React.FC<Props> = ({ branches, initialData, preferre
   const idChiNhanh = useWatch({ control, name: 'id_chi_nhanh' });
   const ngay = useWatch({ control, name: 'ngay' });
   const watched = useWatch({ control }) as DuBaoSlDongThungFormValues;
-  // Dòng 10 khoá: Tổng thu live theo Đánh giá đầu vào; dòng 11, 13, 15 tính lại theo số này.
+  // Dòng 10 khoá: tồn đầu + Tổng thu ĐGĐV − tồn cuối (tồn theo Báo cáo sơ chế cùng ngày), live;
+  // dòng 11, 13, 15 tính lại theo số này.
   const { data: tongDgdv, isError: dgdvLoi } = useDgdvTongNgay(ngay, idChiNhanh);
+  const { data: tonNgay, isError: tonLoi } = useDuBaoTonNgay(ngay, idChiNhanh);
   const tongThuDgdv = tongDgdv?.tong_thu ?? null;
-  const kpi = computeKpiFromForm(apTongThuDgdvVaoDuBaoForm(watched, tongThuDgdv));
+  const buongNhapThucTe = tongThuDgdv != null && tonNgay ? tinhBuongNhapThucTe(tongThuDgdv, tonNgay) : null;
+  const kpi = computeKpiFromForm(apTongThuDgdvVaoDuBaoForm(watched, tongThuDgdv, tonNgay));
 
   useEffect(() => {
     // Không reset nếu người dùng đã bắt đầu sửa — cùng lý do đã sửa ở BaoCaoSoCheForm.
@@ -116,8 +120,8 @@ const DuBaoSlDongThungForm: React.FC<Props> = ({ branches, initialData, preferre
   }, [idChiNhanh, branches, setValue]);
 
   const onSubmit: SubmitHandler<DuBaoSlDongThungFormValues> = (raw) => {
-    // Gửi đúng số đang hiện ở dòng 10 (DB trigger vẫn ghi đè theo Đánh giá đầu vào dù gửi gì).
-    const data = apTongThuDgdvVaoDuBaoForm(raw, tongThuDgdv);
+    // Gửi đúng số đang hiện ở dòng 10 (DB trigger vẫn ghi đè theo ĐGĐV + Báo cáo sơ chế dù gửi gì).
+    const data = apTongThuDgdvVaoDuBaoForm(raw, tongThuDgdv, tonNgay);
     if (isEdit && initialData) {
       updateMutation.mutate({ id: initialData.id, data });
       return;
@@ -355,8 +359,8 @@ const DuBaoSlDongThungForm: React.FC<Props> = ({ branches, initialData, preferre
                 <tr className="border-b border-border/80">
                   <td className="px-2 py-2 text-center tabular-nums text-muted-foreground">10</td>
                   <td className="px-3 py-2 text-muted-foreground">{t('duBaoSlDongThung.form.row10')}</td>
-                  {/* Ô khoá: số do DB ghi đè theo Đánh giá đầu vào, không cho nhập tay (kể cả quản trị). */}
-                  <td className="px-1 py-1">{readOnlyNum(tongThuDgdv)}</td>
+                  {/* Ô khoá: số do DB ghi đè theo ĐGĐV + Báo cáo sơ chế, không cho nhập tay (kể cả quản trị). */}
+                  <td className="px-1 py-1">{readOnlyNum(buongNhapThucTe)}</td>
                   <td className="px-2 py-2 text-muted-foreground">{t('duBaoSlDongThung.form.unitBuong')}</td>
                   <td className="px-2 py-2 text-xs text-muted-foreground leading-snug">
                     <a
@@ -366,9 +370,16 @@ const DuBaoSlDongThungForm: React.FC<Props> = ({ branches, initialData, preferre
                       title={t('duBaoSlDongThung.form.row10NoteTitle')}
                       className="text-primary hover:underline"
                     >
-                      {t('duBaoSlDongThung.form.row10Note')}
+                      {tongThuDgdv != null && tonNgay
+                        ? t('duBaoSlDongThung.form.row10NoteChiTiet', {
+                            tonDau: formatNumberVN(tonNgay.ton_dau),
+                            thu: formatNumberVN(tongThuDgdv),
+                            tonCuoi: formatNumberVN(tonNgay.ton_cuoi),
+                          })
+                        : t('duBaoSlDongThung.form.row10Note')}
                     </a>
                     {dgdvLoi && <span className="block text-destructive">{t('duBaoSlDongThung.form.dgdvLoi')}</span>}
+                    {tonLoi && <span className="block text-destructive">{t('duBaoSlDongThung.form.tonLoi')}</span>}
                   </td>
                 </tr>
                 <tr className="border-b border-border/80 bg-muted/20">
