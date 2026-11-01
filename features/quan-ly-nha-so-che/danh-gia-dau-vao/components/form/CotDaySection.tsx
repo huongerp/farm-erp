@@ -1,5 +1,5 @@
 /**
- * Section «Cột dây» của form phiếu: bảng con CHỈ ĐỌC (chip màu dây · tuần thu hoạch · chích bắp · xé đôi)
+ * Section «Cột dây» của form phiếu: bảng con CHỈ ĐỌC (chip màu dây · tuần thu hoạch · chích bắp · xé đôi · ghi chú)
  * + Lên / Xuống / Xoá. Thêm hoặc bấm dòng → `CotDayDrawer` (do form cha mở). Thứ tự dòng = thứ tự cột lưới.
  */
 import React from 'react';
@@ -36,6 +36,7 @@ const CotDaySection: React.FC<Props> = ({ fields, values, mauTheoId, coLoi, isEd
     { id: 'tuan_th', label: t('danhGiaDauVao.form.tuanThuHoach'), width: 150, minWidth: 110 },
     { id: 'chich_bap', label: t('danhGiaDauVao.form.tuanChichBap'), width: 130, minWidth: 100 },
     { id: 'xe_doi', label: t('danhGiaDauVao.form.xeDoi'), width: 72, minWidth: 64, align: 'center', mobile: 'badge' },
+    { id: 'ghi_chu', label: t('danhGiaDauVao.form.ghiChuDay'), width: 200, minWidth: 120, mobile: 'full' },
   ];
 
   const renderCell = (colId: string, _f: { id: string }, i: number) => {
@@ -55,6 +56,12 @@ const CotDaySection: React.FC<Props> = ({ fields, values, mauTheoId, coLoi, isEd
         return <span className="text-sm tabular-nums text-muted-foreground">{th ? nhanTuanFarm(tuanChichBapTuThuHoach(th)) : '—'}</span>;
       case 'xe_doi':
         return c.xe_doi ? <Check size={14} className="inline text-primary" aria-label={t('danhGiaDauVao.form.xeDoi')} /> : null;
+      case 'ghi_chu':
+        return c.ghi_chu ? (
+          <span className="block truncate text-sm text-muted-foreground" title={c.ghi_chu}>
+            {c.ghi_chu}
+          </span>
+        ) : null;
       default:
         return null;
     }

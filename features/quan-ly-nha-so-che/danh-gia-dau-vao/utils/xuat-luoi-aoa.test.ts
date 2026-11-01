@@ -35,7 +35,7 @@ const phieu: DgdvPhieuDayDu = {
   tg_tao: '',
   tg_cap_nhat: '',
   cot: [
-    { id: 'c1', id_phieu: 'p1', stt: 1, th_nam: 2026, th_tuan: 43, chich_bap_tu: null, chich_bap_den: null, thu_hoach_tu: '2026-10-19', thu_hoach_den: null, id_mau_1: 'm1', id_mau_2: null, xe_doi: false },
+    { id: 'c1', id_phieu: 'p1', stt: 1, th_nam: 2026, th_tuan: 43, chich_bap_tu: null, chich_bap_den: null, thu_hoach_tu: '2026-10-19', thu_hoach_den: null, id_mau_1: 'm1', id_mau_2: null, xe_doi: false, ghi_chu: null },
   ],
   lo: [
     {

@@ -65,8 +65,7 @@ function buildKpiSnapshot(
   const presetSources = buildBaoCaoSoCheKpiThuongPresetSources(
     kpis,
     Number.isFinite(Number(bcsc.danh_gia_loi_qc_pct)) ? Number(bcsc.danh_gia_loi_qc_pct) : null,
-    dbdt,
-    phamCapTotals.so_thung
+    dbdt
   );
   const enriched = enrichBaoCaoSoCheKpiThuongRows(rawRows, presetSources);
   const rows = enriched.map((row, index) => {

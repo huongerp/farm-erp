@@ -10,7 +10,7 @@ import { useIsMobile } from '../../../../lib/hooks/use-is-mobile';
 import type { BaoCaoNhanCongFormValues, NhanVienRowFormValues } from '../core/schema';
 import type { LoaiChuyen, VarNhanVienSoChe } from '../core/types';
 import { syncChiTietTotalsFromSub } from '../core/ct-sub';
-import { buoiCuaChamCong, chamChieuCaChuyen, doiBuoi, nhomCuaChuyenChuaCo, nvFormRowMoi, subTuDanhSachNv, type NvFormRow } from '../core/danh-sach-nv';
+import { buoiCuaChamCong, chamChieuCaChuyen, doiBuoi, doiNghi, nhomCuaChuyenChuaCo, nvFormRowMoi, subTuDanhSachNv, type NvFormRow } from '../core/danh-sach-nv';
 import { khoaTen, laTenMoi, tenKhongTrung } from '../../danh-gia-dau-vao/core/chuan-hoa-ten';
 
 const GIO_INPUT = { maxFractionDigits: 2, min: 0, max: 24 } as const;
@@ -97,6 +97,13 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
     if (!row) return;
     const moi = doiBuoi(row, buoi);
     if (moi !== row) patchRow(idx, { cham_cong: moi.cham_cong, so_gio_cong: moi.so_gio_cong });
+  };
+
+  const bamNghi = (idx: number) => {
+    const row = current()[idx];
+    if (!row) return;
+    const moi = doiNghi(row);
+    patchRow(idx, { cham_cong: moi.cham_cong, so_gio_cong: moi.so_gio_cong, so_gio_tc: moi.so_gio_tc });
   };
 
   const coDongSang = ds.some((r) => r.cham_cong === 'SANG');
@@ -189,6 +196,17 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
                     </button>
                   );
                 })}
+                <button
+                  type="button"
+                  onClick={() => bamNghi(idx)}
+                  aria-pressed={row.cham_cong === 'NGHI'}
+                  className={cn(
+                    'flex-1 px-2.5 text-xs font-medium whitespace-nowrap transition-colors border-l border-border',
+                    row.cham_cong === 'NGHI' ? 'bg-rose-600 text-white' : 'bg-background text-muted-foreground hover:text-rose-600'
+                  )}
+                >
+                  {t('baoCaoNhanCong.nv.nghi')}
+                </button>
               </div>
               {row.cham_cong === 'NUA_NGAY' && <span className="text-caption text-muted-foreground whitespace-nowrap">{t('baoCaoNhanCong.nv.nuaNgayCu')}</span>}
             </div>
@@ -196,6 +214,7 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
               value={row.so_gio_cong}
               onChange={(v) => patchRow(idx, { so_gio_cong: v })}
               {...GIO_INPUT}
+              disabled={row.cham_cong === 'NGHI'}
               compact
               label={isMobile ? t('baoCaoNhanCong.nv.gioCong') : undefined}
               className="w-full min-w-0"
@@ -206,6 +225,7 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
                 value={row.so_gio_tc}
                 onChange={(v) => patchRow(idx, { so_gio_tc: v })}
                 {...GIO_INPUT}
+                disabled={row.cham_cong === 'NGHI'}
                 compact
                 label={isMobile ? t('baoCaoNhanCong.nv.gioTc') : undefined}
                 className="w-full min-w-0"

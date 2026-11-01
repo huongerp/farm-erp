@@ -82,10 +82,17 @@ const BaoCaoSoCheKpiThuongFormSection: React.FC<Props> = ({
     const rows = kpiRows ?? [];
     presetSources.forEach((source, index) => {
       if (index >= PRESET_COUNT) return;
-      const { thucTeStr, phanTram, danhGia } = resolveBcscPresetKpiDerivedFields(
+      const { thucTeStr, mucTieuStr, phanTram, danhGia } = resolveBcscPresetKpiDerivedFields(
         source,
         rows[index]?.muc_tieu ?? null
       );
+      if (source.donViTinh) {
+        setValue(`kpi_thuong.${index}.don_vi_tinh`, source.donViTinh, { shouldDirty: false, shouldTouch: false });
+      }
+      if ('mucTieuValue' in source) {
+        setValue(`kpi_thuong.${index}.muc_tieu`, mucTieuStr, { shouldDirty: false, shouldTouch: false });
+        setValue(`kpi_thuong.${index}.phan_tram`, phanTram, { shouldDirty: false, shouldTouch: false });
+      }
       if (thucTeStr == null) return;
       setValue(`kpi_thuong.${index}.thuc_te`, thucTeStr, { shouldDirty: false, shouldTouch: false });
       if (phanTram != null) {
@@ -153,6 +160,14 @@ const BaoCaoSoCheKpiThuongFormSection: React.FC<Props> = ({
                     : '—'
                   : null;
 
+                /* Mục tiêu tự lấy (vd. Tỷ lệ thu hồi = số thùng dự báo ĐBĐT) → chỉ đọc */
+                const mucTieuAuto = isPreset && source != null && 'mucTieuValue' in source;
+                const mucTieuDisplay = mucTieuAuto
+                  ? presetDerived!.mucTieuStr != null
+                    ? formatNumberVN(Number(presetDerived!.mucTieuStr))
+                    : '—'
+                  : null;
+
                 const danhGiaPreset = isPreset ? presetDerived!.danhGia : null;
                 const pctPreset = isPreset
                   ? presetDerived!.phanTram
@@ -182,7 +197,7 @@ const BaoCaoSoCheKpiThuongFormSection: React.FC<Props> = ({
                     {/* ĐVT — luôn read-only cho preset */}
                     <td className="px-2 py-1.5 align-top">
                       {isPreset ? (
-                        <span className="text-xs text-muted-foreground">{row?.don_vi_tinh || '—'}</span>
+                        <span className="text-xs text-muted-foreground">{source?.donViTinh || row?.don_vi_tinh || '—'}</span>
                       ) : (
                         <Controller
                           name={`kpi_thuong.${index}.don_vi_tinh`}
@@ -194,21 +209,30 @@ const BaoCaoSoCheKpiThuongFormSection: React.FC<Props> = ({
                       )}
                     </td>
 
-                    {/* Mục tiêu — preset có giá trị mặc định khi tạo phiếu, vẫn chỉnh được */}
+                    {/* Mục tiêu — preset có giá trị mặc định khi tạo phiếu, vẫn chỉnh được (trừ hàng tự lấy) */}
                     <td className="px-2 py-1.5 align-top">
-                      <Controller
-                        name={`kpi_thuong.${index}.muc_tieu`}
-                        control={control}
-                        render={({ field: f }) => (
-                          <Input
-                            {...f}
-                            value={f.value ?? ''}
-                            className="text-xs w-full tabular-nums"
-                            placeholder="—"
-                            disabled={disabled}
-                          />
-                        )}
-                      />
+                      {mucTieuAuto ? (
+                        <span className={cn(
+                          'text-xs tabular-nums font-medium',
+                          mucTieuDisplay === '—' ? 'text-muted-foreground opacity-50' : 'text-foreground'
+                        )}>
+                          {mucTieuDisplay}
+                        </span>
+                      ) : (
+                        <Controller
+                          name={`kpi_thuong.${index}.muc_tieu`}
+                          control={control}
+                          render={({ field: f }) => (
+                            <Input
+                              {...f}
+                              value={f.value ?? ''}
+                              className="text-xs w-full tabular-nums"
+                              placeholder="—"
+                              disabled={disabled}
+                            />
+                          )}
+                        />
+                      )}
                     </td>
 
                     {/* Thực tế — tự tính cho preset, editable cho hàng thêm mới */}

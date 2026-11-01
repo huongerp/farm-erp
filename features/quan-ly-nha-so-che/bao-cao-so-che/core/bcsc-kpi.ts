@@ -43,8 +43,8 @@ export function findDuBaoSlDongThungByBranchAndDate(
   return row ?? null;
 }
 
-/** Thực tế KPI hàng 3 (Tỷ lệ thu hồi) = dòng 15 ĐBĐT: Tổng số thùng dự kiến (TT). */
-export function extractTyLeThuHoiThucTeFromDbdt(
+/** Mục tiêu KPI hàng 3 (Tỷ lệ thu hồi) = dòng 15 ĐBĐT: Tổng số thùng dự kiến (TT). */
+export function extractSoThungDuBaoFromDbdt(
   dbdt: FarmDuBaoSlDongThung | null
 ): number | null {
   if (!dbdt) return null;
@@ -52,25 +52,10 @@ export function extractTyLeThuHoiThucTeFromDbdt(
   return Number.isFinite(thung) ? thung : null;
 }
 
-/** Cột % KPI hàng 3 = dòng 12 ĐBĐT: Tỷ lệ thu hồi (TT), thang 0–100. */
-export function extractTyLeThuHoiPhanTramFromDbdt(
-  dbdt: FarmDuBaoSlDongThung | null
-): number | null {
-  if (!dbdt) return null;
-  const r = Number(dbdt.ty_le_thu_hoi_thuc_te);
-  if (!Number.isFinite(r)) return null;
-  return Math.min(100, Math.max(0, r * 100));
-}
-
-/** Đánh giá hàng 3: thực tế (thùng ĐBĐT) < tổng Số thùng (Loại thùng) phẩm cấp → Đạt. */
-export function computeTyLeThuHoiDanhGia(
-  thucTeThung: number | null,
-  phamCapTongSoThung: number | null
-): string | null {
-  if (thucTeThung == null || phamCapTongSoThung == null || !Number.isFinite(phamCapTongSoThung)) {
-    return null;
-  }
-  return thucTeThung < phamCapTongSoThung ? 'Đạt' : 'Không đạt';
+/** % chênh lệch thực tế so với mục tiêu: (tt − mt) / mt × 100; âm = thiếu so với dự báo. */
+export function computeKpiPhanTramChenhLech(thucTe: number, mucTieu: number): number | null {
+  if (!Number.isFinite(thucTe) || !Number.isFinite(mucTieu) || mucTieu <= EPS) return null;
+  return ((thucTe - mucTieu) / mucTieu) * 100;
 }
 
 /**
@@ -181,29 +166,47 @@ export function computeBaoCaoSoCheKpis(
 export interface BcscKpiThuongPresetSource {
   thucTeValue: number | null;
   isHigherBetter: boolean;
-  /** Cột % — nếu có thì dùng trực tiếp (vd. tỷ lệ thu hồi TT từ ĐBĐT). */
-  phanTramValue?: number | null;
-  /** Ngưỡng tổng Số thùng (Loại thùng) phẩm cấp — dùng đánh giá hàng Tỷ lệ thu hồi. */
-  phamCapTongSoThung?: number | null;
+  /**
+   * Mục tiêu tự lấy (không nhập tay) — có trường này thì cột % là chênh lệch so mục tiêu
+   * và Đạt khi thực tế ≥ mục tiêu (vd. Tỷ lệ thu hồi: mục tiêu = số thùng dự báo ĐBĐT).
+   */
+  mucTieuValue?: number | null;
+  /** ĐVT ghi đè lên dòng đã lưu. */
+  donViTinh?: string;
 }
 
 export function resolveBcscPresetKpiDerivedFields(
   source: BcscKpiThuongPresetSource,
   mucTieu: string | null | undefined
-): { thucTeStr: string | null; phanTram: number | null; danhGia: string | null } {
+): {
+  thucTeStr: string | null;
+  /** Chỉ có khi source tự lấy mục tiêu (`mucTieuValue`). */
+  mucTieuStr: string | null;
+  phanTram: number | null;
+  danhGia: string | null;
+} {
   const thucTeStr = numericKpiString(source.thucTeValue);
-  if (thucTeStr == null) {
-    return { thucTeStr: null, phanTram: null, danhGia: null };
+  if ('mucTieuValue' in source) {
+    const mucTieuStr = numericKpiString(source.mucTieuValue);
+    const tt = source.thucTeValue as number;
+    const mt = source.mucTieuValue as number;
+    // Chưa có dự báo (hoặc dự báo 0 thùng) → không so được
+    if (thucTeStr == null || mucTieuStr == null || mt <= EPS) {
+      return { thucTeStr, mucTieuStr, phanTram: null, danhGia: null };
+    }
+    return {
+      thucTeStr,
+      mucTieuStr,
+      phanTram: computeKpiPhanTramChenhLech(tt, mt),
+      danhGia: tt >= mt ? 'Đạt' : 'Không đạt',
+    };
   }
-  const phanTram =
-    source.phanTramValue != null && Number.isFinite(source.phanTramValue)
-      ? source.phanTramValue
-      : computeKpiPhanTram(mucTieu, thucTeStr);
-  const danhGia =
-    source.phamCapTongSoThung != null
-      ? computeTyLeThuHoiDanhGia(source.thucTeValue, source.phamCapTongSoThung)
-      : computePresetDanhGia(thucTeStr, mucTieu, source.isHigherBetter);
-  return { thucTeStr, phanTram, danhGia };
+  if (thucTeStr == null) {
+    return { thucTeStr: null, mucTieuStr: null, phanTram: null, danhGia: null };
+  }
+  const phanTram = computeKpiPhanTram(mucTieu, thucTeStr);
+  const danhGia = computePresetDanhGia(thucTeStr, mucTieu, source.isHigherBetter);
+  return { thucTeStr, mucTieuStr: null, phanTram, danhGia };
 }
 
 function numericKpiString(value: number | null | undefined): string | null {
@@ -226,17 +229,17 @@ function computePresetDanhGia(
 export function buildBaoCaoSoCheKpiThuongPresetSources(
   kpis: BcscKpiComputed,
   danhGiaLoiQcPct: number | null,
-  dbdt: FarmDuBaoSlDongThung | null,
-  phamCapTongSoThung: number
+  dbdt: FarmDuBaoSlDongThung | null
 ): [BcscKpiThuongPresetSource, BcscKpiThuongPresetSource, BcscKpiThuongPresetSource] {
   return [
     { thucTeValue: kpis.nsThungGioCong, isHigherBetter: true },
     { thucTeValue: Number.isFinite(Number(danhGiaLoiQcPct)) ? Number(danhGiaLoiQcPct) : null, isHigherBetter: false },
     {
-      thucTeValue: extractTyLeThuHoiThucTeFromDbdt(dbdt),
+      // Tỷ lệ thu hồi: số thùng nhập kho (phẩm cấp quy đổi) so với số thùng dự báo ĐBĐT
+      thucTeValue: kpis.thungThanhPham,
+      mucTieuValue: extractSoThungDuBaoFromDbdt(dbdt),
+      donViTinh: 'thùng',
       isHigherBetter: true,
-      phanTramValue: extractTyLeThuHoiPhanTramFromDbdt(dbdt),
-      phamCapTongSoThung,
     },
   ];
 }
@@ -249,13 +252,21 @@ export function enrichBaoCaoSoCheKpiThuongRows(
   return rows.map((row, index) => {
     if (index >= presetSources.length) return row;
     const source = presetSources[index];
-    const { thucTeStr, phanTram, danhGia } = resolveBcscPresetKpiDerivedFields(source, row.muc_tieu);
-    if (thucTeStr == null) return row;
-    return {
+    const { thucTeStr, mucTieuStr, phanTram, danhGia } = resolveBcscPresetKpiDerivedFields(
+      source,
+      row.muc_tieu
+    );
+    const base = {
       ...row,
+      ...(source.donViTinh ? { don_vi_tinh: source.donViTinh } : {}),
+      ...('mucTieuValue' in source ? { muc_tieu: mucTieuStr } : {}),
+    };
+    if (thucTeStr == null) return base;
+    return {
+      ...base,
       thuc_te: thucTeStr,
       phan_tram: phanTram,
-      danh_gia: danhGia ?? row.danh_gia,
+      danh_gia: 'mucTieuValue' in source ? danhGia : (danhGia ?? row.danh_gia),
     };
   });
 }

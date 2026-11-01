@@ -40,6 +40,7 @@ export const dgdvCotFormSchema = z
     id_mau_1: idBatBuoc('danhGiaDauVao.validation.mau1Required'),
     id_mau_2: idTuyChon,
     xe_doi: z.boolean().default(false),
+    ghi_chu: ghiChuTuyChon(500),
   })
   .superRefine((c, ctx) => {
     if (c.id_mau_2 != null && c.id_mau_2 === c.id_mau_1) {

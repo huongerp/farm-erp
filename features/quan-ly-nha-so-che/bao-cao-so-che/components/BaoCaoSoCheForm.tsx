@@ -167,10 +167,9 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
       buildBaoCaoSoCheKpiThuongPresetSources(
         kpis,
         Number.isFinite(Number(danhGiaLoiQcPct)) ? Number(danhGiaLoiQcPct) : null,
-        dbsdtRecord,
-        phamCapTotals.so_thung
+        dbsdtRecord
       ),
-    [kpis, danhGiaLoiQcPct, dbsdtRecord, phamCapTotals.so_thung]
+    [kpis, danhGiaLoiQcPct, dbsdtRecord]
   );
 
   useEffect(() => {

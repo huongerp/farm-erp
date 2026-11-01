@@ -113,6 +113,8 @@ export function dungDongChiTietNv(dsPhieu: readonly FarmBaoCaoNhanCong[]): DongC
     const idChiNhanh = p.id_chi_nhanh ?? '';
     for (const { ct, tt, thuTuChuyen, nhanVien } of nhomNhanVienTheoChuyen(p)) {
       for (const nv of nhanVien) {
+        // Nghỉ cả ngày: hôm đó không làm vị trí nào → không tính là đổi vị trí.
+        if (nv.cham_cong === 'NGHI') continue;
         const khoa = khoaNguoi(idChiNhanh, nv.id_nhan_vien, nv.ho_ten);
         const coSo = {
           loaiChuyen: ct.loai_chuyen,

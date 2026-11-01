@@ -52,6 +52,7 @@ const BaoCaoNhanCongNhanVienBang: React.FC<Props> = ({ data, variant = 'screen' 
             <th className={c.th}>{t('baoCaoNhanCong.nv.viTri')}</th>
             <th className={`${c.th} text-center`}>{t('baoCaoNhanCong.nv.sang')}</th>
             <th className={`${c.th} text-center`}>{t('baoCaoNhanCong.nv.chieu')}</th>
+            <th className={`${c.th} text-center`}>{t('baoCaoNhanCong.nv.nghi')}</th>
             <th className={`${c.th} text-right`}>{t('baoCaoNhanCong.nv.gioCong')}</th>
             <th className={`${c.th} text-right`}>{t('baoCaoNhanCong.nv.gioTc')}</th>
             <th className={c.th}>{t('baoCaoNhanCong.form.colGhiChu')}</th>
@@ -61,7 +62,7 @@ const BaoCaoNhanCongNhanVienBang: React.FC<Props> = ({ data, variant = 'screen' 
           {nhom.map(({ ct, tt, nhanVien }) => (
             <React.Fragment key={ct.loai_chuyen}>
               <tr>
-                <td colSpan={8} className={c.group}>
+                <td colSpan={9} className={c.group}>
                   {tt}. {t(`baoCaoNhanCong.chuyen.${ct.loai_chuyen}`)} — {t('baoCaoNhanCong.nv.soNguoi', { n: nhanVien.length })}
                 </td>
               </tr>
@@ -82,6 +83,7 @@ const BaoCaoNhanCongNhanVienBang: React.FC<Props> = ({ data, variant = 'screen' 
                         <td className={`${c.td} text-center`}>{buoiCuaChamCong(nv.cham_cong).chieu ? '✓' : ''}</td>
                       </>
                     )}
+                    <td className={`${c.td} text-center`}>{nv.cham_cong === 'NGHI' ? '✓' : ''}</td>
                     <td className={num}>{formatNumberVN(nv.so_gio_cong)}</td>
                     <td className={num}>{nv.so_gio_tc > 0 ? formatNumberVN(nv.so_gio_tc) : '—'}</td>
                     <td className={c.td}>{nv.ghi_chu ?? ''}</td>
@@ -91,7 +93,7 @@ const BaoCaoNhanCongNhanVienBang: React.FC<Props> = ({ data, variant = 'screen' 
             </React.Fragment>
           ))}
           <tr>
-            <td colSpan={8} className={c.total}>
+            <td colSpan={9} className={c.total}>
               {t('baoCaoNhanCong.nv.tongNguoi', { n: tong })}
             </td>
           </tr>

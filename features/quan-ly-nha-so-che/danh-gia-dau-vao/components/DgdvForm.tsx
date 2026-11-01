@@ -61,6 +61,7 @@ function phieuSangForm(p: DgdvPhieuDayDu): DgdvFormValues {
       id_mau_1: c.id_mau_1,
       id_mau_2: c.id_mau_2,
       xe_doi: c.xe_doi,
+      ghi_chu: c.ghi_chu ?? '',
     })),
     lo: theoStt(p.lo).map((l) => ({ id: l.id, ten_lo: l.ten_lo ?? '', to_truong: l.to_truong, ghi_chu: l.ghi_chu ?? '' })),
   };
@@ -73,6 +74,7 @@ const cotMoi = (th: TuanFarm): DgdvFormValues['cot'][number] => ({
   id_mau_1: '',
   id_mau_2: null,
   xe_doi: false,
+  ghi_chu: '',
 });
 
 const YMD_RE = /^\d{4}-\d{2}-\d{2}$/;

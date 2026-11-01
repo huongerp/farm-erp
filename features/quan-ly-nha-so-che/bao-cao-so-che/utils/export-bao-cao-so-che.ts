@@ -60,8 +60,7 @@ export async function exportBaoCaoSoCheToXLSX(
     buildBaoCaoSoCheKpiThuongPresetSources(
       kpis,
       Number.isFinite(Number(data.danh_gia_loi_qc_pct)) ? Number(data.danh_gia_loi_qc_pct) : null,
-      dbsdtRecord,
-      phamCapTotals.so_thung
+      dbsdtRecord
     )
   );
   const tongThuong = sumTienThuongKpiThuong(kpiThuong);

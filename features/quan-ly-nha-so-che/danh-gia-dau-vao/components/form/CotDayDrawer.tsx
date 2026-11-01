@@ -1,6 +1,6 @@
 /**
  * Drawer con của form phiếu: thêm / sửa MỘT cột dây — tuần thu hoạch farm (chích bắp = −9 tuần, chỉ đọc),
- * màu 1, màu 2 («Không có» = dây 1 màu), xé đôi. Chỉ ghi vào field array của form cha (không gọi DB) —
+ * màu 1, màu 2 («Không có» = dây 1 màu), xé đôi, ghi chú. Chỉ ghi vào field array của form cha (không gọi DB) —
  * cả phiếu vẫn lưu một lần ở form cha. «Lưu & thêm tiếp» giữ tuần thu hoạch vừa chọn, màu 1 focus sẵn.
  */
 import React, { useEffect, useMemo, useRef } from 'react';
@@ -12,6 +12,7 @@ import GenericDrawer from '../../../../../components/shared/GenericDrawer';
 import FormSection from '../../../../../components/shared/FormSection';
 import FormGrid from '../../../../../components/shared/FormGrid';
 import Combobox from '../../../../../components/ui/Combobox';
+import Input from '../../../../../components/ui/Input';
 import { DRAWER_WIDTH_STACKED } from '../../../../../lib/dialog-sizes';
 import { dgdvCotFormSchema, type DgdvCotFormValues } from '../../core/schema';
 import type { TuanFarm, VarMauDay } from '../../core/types';
@@ -200,6 +201,21 @@ const CotDayDrawer: React.FC<Props> = ({ giaTri, macDinh, tuanCuaNgay, mauOption
               />
             </div>
           </FormGrid>
+          <div className="mt-3">
+            <Controller
+              name="ghi_chu"
+              control={control}
+              render={({ field }) => (
+                <Input
+                  {...field}
+                  value={field.value ?? ''}
+                  label={t('danhGiaDauVao.form.ghiChuDay')}
+                  maxLength={500}
+                  error={errors.ghi_chu?.message as string | undefined}
+                />
+              )}
+            />
+          </div>
           <div className="mt-3 flex items-center gap-2 text-caption text-muted-foreground">
             {t('danhGiaDauVao.form.xemTruoc')}:
             <ChipDay

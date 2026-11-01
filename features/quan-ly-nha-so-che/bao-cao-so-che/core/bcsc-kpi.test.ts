@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { extractLaborSnapshotFromBcnc } from './bcsc-kpi';
+import { extractLaborSnapshotFromBcnc, resolveBcscPresetKpiDerivedFields } from './bcsc-kpi';
 import type { FarmBaoCaoNhanCong } from '../../bao-cao-nhan-cong/core/types';
 
 function minimalBcnc(overrides: Partial<FarmBaoCaoNhanCong> = {}): FarmBaoCaoNhanCong {
@@ -86,5 +86,32 @@ describe('extractLaborSnapshotFromBcnc — congQdTongNgay', () => {
     const snap = extractLaborSnapshotFromBcnc(bcnc);
     expect(snap.congQdRowIV).toBe(10);
     expect(snap.congQdTongNgay).toBe(16);
+  });
+});
+
+describe('resolveBcscPresetKpiDerivedFields — Tỷ lệ thu hồi (mục tiêu = số thùng dự báo)', () => {
+  const src = (thucTe: number | null, duBao: number | null) => ({
+    thucTeValue: thucTe,
+    mucTieuValue: duBao,
+    isHigherBetter: true,
+  });
+
+  it('510 thùng nhập kho so với 417 thùng dự báo → +22,30%, Đạt (bỏ qua mục tiêu đã lưu)', () => {
+    const r = resolveBcscPresetKpiDerivedFields(src(510, 417), '90');
+    expect(r.mucTieuStr).toBe('417');
+    expect(r.thucTeStr).toBe('510');
+    expect(r.phanTram).toBeCloseTo(22.3022, 4);
+    expect(r.danhGia).toBe('Đạt');
+  });
+
+  it('nhập kho ít hơn dự báo → % âm, Không đạt', () => {
+    const r = resolveBcscPresetKpiDerivedFields(src(400, 417), null);
+    expect(r.phanTram).toBeCloseTo(-4.0767, 4);
+    expect(r.danhGia).toBe('Không đạt');
+  });
+
+  it('chưa có phiếu dự báo → mục tiêu, %, đánh giá trống; thực tế vẫn hiện', () => {
+    const r = resolveBcscPresetKpiDerivedFields(src(510, null), '90');
+    expect(r).toEqual({ thucTeStr: '510', mucTieuStr: null, phanTram: null, danhGia: null });
   });
 });

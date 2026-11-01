@@ -8,11 +8,11 @@ import { padSubToRowCount, subAlignedRowCount, type ChiTietSubFormByLoai, type C
 import type { ChamCong, FarmBaoCaoNhanCong, FarmBaoCaoNhanCongCt, FarmBaoCaoNhanCongNv, LoaiChuyen, VarNhanVienSoChe } from './types';
 import { chuyenTtLabelByThuTu, normalizeChiTietForDisplay } from './types';
 
-/** Giờ mặc định khi thêm người — cả ngày 7,5h = sáng 3,75h + chiều 3,75h; NUA_NGAY là mã cũ (4h). */
-export const GIO_CONG_MAC_DINH: Record<ChamCong, number> = { CA_NGAY: 7.5, SANG: 3.75, CHIEU: 3.75, NUA_NGAY: 4 };
+/** Giờ mặc định khi thêm người — cả ngày 7,5h = sáng 3,75h + chiều 3,75h; nghỉ 0h; NUA_NGAY là mã cũ (4h). */
+export const GIO_CONG_MAC_DINH: Record<ChamCong, number> = { CA_NGAY: 7.5, SANG: 3.75, CHIEU: 3.75, NUA_NGAY: 4, NGHI: 0 };
 
-/** Một người được tính bao nhiêu công (cả ngày 1, sáng / chiều / nửa ngày ½). */
-export const CONG_THEO_CHAM_CONG: Record<ChamCong, number> = { CA_NGAY: 1, SANG: 0.5, CHIEU: 0.5, NUA_NGAY: 0.5 };
+/** Một người được tính bao nhiêu công (cả ngày 1, sáng / chiều / nửa ngày ½, nghỉ 0). */
+export const CONG_THEO_CHAM_CONG: Record<ChamCong, number> = { CA_NGAY: 1, SANG: 0.5, CHIEU: 0.5, NUA_NGAY: 0.5, NGHI: 0 };
 
 export interface NvFormRow {
   ho_ten: string;
@@ -28,7 +28,7 @@ const num = (v: unknown) => {
   return Number.isFinite(n) ? n : 0;
 };
 
-/** Buổi của một mã chấm công. NUA_NGAY (phiếu cũ) không gán buổi nào → cả hai false, hiển thị «½». */
+/** Buổi của một mã chấm công. NUA_NGAY (phiếu cũ) và NGHI không gán buổi nào → cả hai false. */
 export function buoiCuaChamCong(cc: ChamCong): { sang: boolean; chieu: boolean } {
   return { sang: cc === 'SANG' || cc === 'CA_NGAY', chieu: cc === 'CHIEU' || cc === 'CA_NGAY' };
 }
@@ -54,14 +54,21 @@ function doiChamCong(row: NvFormRow, cc: ChamCong): NvFormRow {
 }
 
 /**
- * Bật/tắt một buổi. Tắt buổi cuối cùng thì giữ nguyên dòng (vắng cả ngày = xoá dòng).
- * NUA_NGAY (không rõ buổi) bấm buổi nào thành đúng buổi đó.
+ * Bật/tắt một buổi. Tắt buổi cuối cùng thì giữ nguyên dòng (nghỉ cả ngày = nút Nghỉ).
+ * NUA_NGAY (không rõ buổi) / NGHI bấm buổi nào thành đúng buổi đó.
  */
 export function doiBuoi(row: NvFormRow, buoi: 'sang' | 'chieu'): NvFormRow {
-  if (row.cham_cong === 'NUA_NGAY') return doiChamCong(row, buoi === 'sang' ? 'SANG' : 'CHIEU');
+  if (row.cham_cong === 'NUA_NGAY' || row.cham_cong === 'NGHI') return doiChamCong(row, buoi === 'sang' ? 'SANG' : 'CHIEU');
   const cur = buoiCuaChamCong(row.cham_cong);
   const cc = chamCongTuBuoi(buoi === 'sang' ? !cur.sang : cur.sang, buoi === 'chieu' ? !cur.chieu : cur.chieu);
   return cc ? doiChamCong(row, cc) : row;
+}
+
+/** Bật/tắt Nghỉ cả ngày: bật thì ép 0 giờ công + 0 giờ TC (kể cả giờ đã sửa tay); tắt thì về mặc định theo giờ. */
+export function doiNghi(row: NvFormRow, now: Date = new Date()): NvFormRow {
+  if (row.cham_cong !== 'NGHI') return { ...row, cham_cong: 'NGHI', so_gio_cong: 0, so_gio_tc: 0 };
+  const cc = chamCongMacDinh(now);
+  return { ...row, cham_cong: cc, so_gio_cong: GIO_CONG_MAC_DINH[cc] };
 }
 
 /** «Chấm chiều cả chuyền»: dòng chỉ có Sáng thành Cả ngày, dòng khác giữ nguyên. */

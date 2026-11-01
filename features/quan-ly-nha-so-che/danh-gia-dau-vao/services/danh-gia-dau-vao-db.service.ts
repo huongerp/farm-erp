@@ -35,7 +35,7 @@ const T_DM_LO = 'fp_var_lo_thu_hoach';
 
 const PHIEU_COLUMNS = 'id,ngay,chuyen,nam,tuan,id_chi_nhanh,ghi_chu,trang_thai,id_nguoi_tao,tg_tao,tg_cap_nhat';
 const COT_COLUMNS =
-  'id,id_phieu,stt,th_nam,th_tuan,chich_bap_tu,chich_bap_den,thu_hoach_tu,thu_hoach_den,id_mau_1,id_mau_2,xe_doi';
+  'id,id_phieu,stt,th_nam,th_tuan,chich_bap_tu,chich_bap_den,thu_hoach_tu,thu_hoach_den,id_mau_1,id_mau_2,xe_doi,ghi_chu';
 const DONG_COLUMNS = 'id,id_phieu_lo,id_cot,ngay,stt_dong,so_luong,danh_gia,so_luong_huy,ly_do_huy';
 const LO_NGAY_COLUMNS = 'id,id_phieu_lo,ngay,dut_day';
 
@@ -89,6 +89,7 @@ interface DbCotRow {
   id_mau_1: Id;
   id_mau_2: Id | null;
   xe_doi: boolean | null;
+  ghi_chu: string | null;
 }
 
 interface DbDongRow {
@@ -196,6 +197,7 @@ export function mapCot(r: DbCotRow): FarmDgdvCot {
     id_mau_1: String(r.id_mau_1),
     id_mau_2: str(r.id_mau_2),
     xe_doi: !!r.xe_doi,
+    ghi_chu: r.ghi_chu ?? null,
   };
 }
 
@@ -472,6 +474,7 @@ function cotBody(c: DgdvFormValues['cot'][number], idPhieu: number, stt: number)
     id_mau_1: toInt8(c.id_mau_1),
     id_mau_2: toInt8(c.id_mau_2),
     xe_doi: !!c.xe_doi,
+    ghi_chu: c.ghi_chu?.trim() || null,
   };
 }
 

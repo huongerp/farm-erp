@@ -27,6 +27,7 @@ const cot = (id: string, p: Partial<FarmDgdvCot>): FarmDgdvCot => ({
   id_mau_1: '6',
   id_mau_2: null,
   xe_doi: false,
+  ghi_chu: null,
   ...p,
 });
 

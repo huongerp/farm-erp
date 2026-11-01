@@ -5,6 +5,7 @@ import {
   chamCongMacDinh,
   chamCongTuBuoi,
   doiBuoi,
+  doiNghi,
   nguoiVuotMotCong,
   nhomCuaChuyenChuaCo,
   nvChoNgayKe,
@@ -134,6 +135,26 @@ describe('buổi chấm công', () => {
     const cu = nv('A', { cham_cong: 'NUA_NGAY', so_gio_cong: 4 });
     expect(doiBuoi(cu, 'chieu')).toMatchObject({ cham_cong: 'CHIEU', so_gio_cong: 3.75 });
     expect(doiBuoi(cu, 'sang')).toMatchObject({ cham_cong: 'SANG', so_gio_cong: 3.75 });
+  });
+
+  it('doiNghi: bật ép 0 giờ công + TC, bấm lại về mặc định theo giờ', () => {
+    const nghi = doiNghi(nv('A', { so_gio_cong: 9, so_gio_tc: 2 }));
+    expect(nghi).toMatchObject({ cham_cong: 'NGHI', so_gio_cong: 0, so_gio_tc: 0 });
+    expect(doiNghi(nghi, SANG_SOM)).toMatchObject({ cham_cong: 'SANG', so_gio_cong: 3.75 });
+    expect(doiNghi(nghi, TRUA)).toMatchObject({ cham_cong: 'CA_NGAY', so_gio_cong: 7.5 });
+  });
+
+  it('doiBuoi: đang Nghỉ bấm buổi nào thành buổi đó với giờ mặc định', () => {
+    const nghi = nv('A', { cham_cong: 'NGHI', so_gio_cong: 0 });
+    expect(doiBuoi(nghi, 'sang')).toMatchObject({ cham_cong: 'SANG', so_gio_cong: 3.75 });
+    expect(doiBuoi(nghi, 'chieu')).toMatchObject({ cham_cong: 'CHIEU', so_gio_cong: 3.75 });
+  });
+
+  it('Nghỉ: không vào số công của chuyền, không tính trùng công', () => {
+    const sub = subTuDanhSachNv([nv('A'), nv('B', { cham_cong: 'NGHI', so_gio_cong: 0, so_gio_tc: 0 })]);
+    expect(sub.CN_NGAY).toEqual([{ sl_cong: 1, so_gio: 7.5, ghi_chu: null }]);
+    expect(sub.CN_NUA.filter((r) => r.sl_cong)).toEqual([]);
+    expect(nguoiVuotMotCong([{ nhan_vien: [nv('A'), nv('A', { cham_cong: 'NGHI', so_gio_cong: 0 })] }])).toEqual([]);
   });
 
   it('chamChieuCaChuyen: chỉ dòng Sáng thành Cả ngày', () => {

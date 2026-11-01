@@ -44,6 +44,7 @@ function cot(i: number, idPhieu = 'p1'): FarmDgdvCot {
     id_mau_1: i === 9 ? 'm8' : `m${i}`,
     id_mau_2: i === 9 ? 'm9' : null,
     xe_doi: i === 9,
+    ghi_chu: null,
   };
 }
 

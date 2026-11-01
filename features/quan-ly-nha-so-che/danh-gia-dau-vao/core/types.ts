@@ -97,6 +97,7 @@ export interface FarmDgdvCot {
   /** null = dây 1 màu */
   id_mau_2: string | null;
   xe_doi: boolean;
+  ghi_chu: string | null;
 }
 
 /** fp_farm_dgdv_lo — lô trong phiếu (mỗi lô 1 lần / phiếu). */

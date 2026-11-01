@@ -216,6 +216,7 @@ function sheetNhanVien(XLSX: XlsxModule, data: FarmBaoCaoNhanCong) {
       t('baoCaoNhanCong.nv.viTri'),
       t('baoCaoNhanCong.nv.sang'),
       t('baoCaoNhanCong.nv.chieu'),
+      t('baoCaoNhanCong.nv.nghi'),
       t('baoCaoNhanCong.nv.gioCong'),
       t('baoCaoNhanCong.nv.gioTc'),
       t('baoCaoNhanCong.form.colGhiChu'),
@@ -235,6 +236,7 @@ function sheetNhanVien(XLSX: XlsxModule, data: FarmBaoCaoNhanCong) {
         nv.vi_tri ?? '',
         nuaCu ? '½' : buoi.sang ? '✓' : '',
         buoi.chieu ? '✓' : '',
+        nv.cham_cong === 'NGHI' ? '✓' : '',
         Number(nv.so_gio_cong),
         Number(nv.so_gio_tc),
         nv.ghi_chu ?? '',
@@ -246,7 +248,7 @@ function sheetNhanVien(XLSX: XlsxModule, data: FarmBaoCaoNhanCong) {
   rows.push(getBcncPreviewSignLabels(t));
 
   const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols'] = [{ wch: 5 }, { wch: 5 }, { wch: 30 }, { wch: 26 }, { wch: 22 }, { wch: 7 }, { wch: 7 }, { wch: 9 }, { wch: 9 }, { wch: 24 }];
+  ws['!cols'] = [{ wch: 5 }, { wch: 5 }, { wch: 30 }, { wch: 26 }, { wch: 22 }, { wch: 7 }, { wch: 7 }, { wch: 7 }, { wch: 9 }, { wch: 9 }, { wch: 24 }];
   return ws;
 }
 

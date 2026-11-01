@@ -34,8 +34,8 @@ const o = (id: string, lo: string, cot: string, ngay: string, stt: number, sl: n
 function phieu(): Pick<DgdvPhieuDayDu, 'lo' | 'cot'> {
   return {
     cot: [
-      { id: 'c2', id_phieu: 'p', stt: 2, th_nam: 2026, th_tuan: 43, chich_bap_tu: null, chich_bap_den: null, thu_hoach_tu: null, thu_hoach_den: null, id_mau_1: '1', id_mau_2: null, xe_doi: false },
-      { id: 'c1', id_phieu: 'p', stt: 1, th_nam: 2026, th_tuan: 43, chich_bap_tu: null, chich_bap_den: null, thu_hoach_tu: null, thu_hoach_den: null, id_mau_1: '2', id_mau_2: null, xe_doi: false },
+      { id: 'c2', id_phieu: 'p', stt: 2, th_nam: 2026, th_tuan: 43, chich_bap_tu: null, chich_bap_den: null, thu_hoach_tu: null, thu_hoach_den: null, id_mau_1: '1', id_mau_2: null, xe_doi: false, ghi_chu: null },
+      { id: 'c1', id_phieu: 'p', stt: 1, th_nam: 2026, th_tuan: 43, chich_bap_tu: null, chich_bap_den: null, thu_hoach_tu: null, thu_hoach_den: null, id_mau_1: '2', id_mau_2: null, xe_doi: false, ghi_chu: null },
     ],
     lo: [
       {

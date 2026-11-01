@@ -130,10 +130,9 @@ const BaoCaoSoCheDetail: React.FC<Props> = ({
       buildBaoCaoSoCheKpiThuongPresetSources(
         kpis,
         Number.isFinite(Number(data.danh_gia_loi_qc_pct)) ? Number(data.danh_gia_loi_qc_pct) : null,
-        dbsdtRecord,
-        phamCapTotals.so_thung
+        dbsdtRecord
       ),
-    [kpis, data.danh_gia_loi_qc_pct, dbsdtRecord, phamCapTotals.so_thung]
+    [kpis, data.danh_gia_loi_qc_pct, dbsdtRecord]
   );
 
   const enrichedKpiRows = useMemo(() => {

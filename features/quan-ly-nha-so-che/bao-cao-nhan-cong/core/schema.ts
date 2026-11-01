@@ -70,7 +70,7 @@ export const baoCaoNhanCongFormSchema = z
         if (!nv.ho_ten.trim()) {
           ctx.addIssue({ code: z.ZodIssueCode.custom, message: reqMsg('baoCaoNhanCong.validation.nvTenRequired'), path: [...path, 'ho_ten'] });
         }
-        if (!(nv.so_gio_cong > 0)) {
+        if (nv.cham_cong !== 'NGHI' && !(nv.so_gio_cong > 0)) {
           ctx.addIssue({ code: z.ZodIssueCode.custom, message: reqMsg('baoCaoNhanCong.validation.nvGioRequired'), path: [...path, 'so_gio_cong'] });
         }
       });

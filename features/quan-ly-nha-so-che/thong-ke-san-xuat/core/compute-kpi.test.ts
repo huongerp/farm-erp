@@ -164,8 +164,7 @@ function expectedEnrichedRows(
   const presetSources = buildBaoCaoSoCheKpiThuongPresetSources(
     kpis,
     Number.isFinite(Number(bcsc.danh_gia_loi_qc_pct)) ? Number(bcsc.danh_gia_loi_qc_pct) : null,
-    dbdt,
-    phamCapTotals.so_thung
+    dbdt
   );
   return enrichBaoCaoSoCheKpiThuongRows(bcsc.kpi_thuong ?? [], presetSources);
 }
@@ -183,9 +182,11 @@ describe('mergeThongKeSanXuatRows — KPI enrich', () => {
     expect(row.kpiSnapshot?.rows[1].thuc_te).toBe(expected[1].thuc_te);
     expect(row.kpiSnapshot?.rows[2].thuc_te).toBe(expected[2].thuc_te);
     expect(row.kpiSnapshot?.rows[0].thuc_te).not.toBe('1');
-    expect(row.kpiSnapshot?.rows[2].thuc_te).toBe('0');
-    expect(row.kpiSnapshot?.rows[2].phan_tram).toBeCloseTo(88, 4);
-    expect(row.kpiSnapshot?.rows[2].danh_gia).toBe('Đạt');
+    // Tỷ lệ thu hồi: thực tế = số thùng quy đổi phẩm cấp (35); dự báo 0 thùng → không so
+    expect(row.kpiSnapshot?.rows[2].thuc_te).toBe('35');
+    expect(row.kpiSnapshot?.rows[2].muc_tieu).toBe('0');
+    expect(row.kpiSnapshot?.rows[2].phan_tram).toBeNull();
+    expect(row.kpiSnapshot?.rows[2].danh_gia).toBeNull();
     expect(row.kpiSnapshot?.rows[1].thuc_te).toBe('0.5');
   });
 
@@ -204,8 +205,11 @@ describe('mergeThongKeSanXuatRows — KPI enrich', () => {
     const [row] = mergeThongKeSanXuatRows([bcnc], [bcsc], [dbdt]);
     const kpi3 = row.kpiSnapshot?.rows[2];
 
-    expect(kpi3?.thuc_te).toBe('90');
-    expect(kpi3?.phan_tram).toBeCloseTo(90, 4);
+    // 35 thùng nhập kho so với 90 thùng dự báo → lệch (35 − 90) / 90
+    expect(kpi3?.muc_tieu).toBe('90');
+    expect(kpi3?.thuc_te).toBe('35');
+    expect(kpi3?.don_vi_tinh).toBe('thùng');
+    expect(kpi3?.phan_tram).toBeCloseTo(((35 - 90) / 90) * 100, 4);
     expect(kpi3?.danh_gia).toBe('Không đạt');
     expect(row.kpiSnapshot?.tatCaKpiDat).toBe(
       (row.kpiSnapshot?.rows ?? []).every(
