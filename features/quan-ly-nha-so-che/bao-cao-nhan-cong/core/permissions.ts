@@ -10,19 +10,16 @@ export function isBaoCaoNhanCongLocked(item: FarmBaoCaoNhanCong): boolean {
 /**
  * Sửa / xóa phiếu:
  * - Quản trị (`admin` / `all`) → được sửa/xóa tất cả.
- * - Quyền thường → chỉ được sửa/xóa phiếu mình tạo (`id_nguoi_tao`) và chưa khóa.
+ * - Quyền thường (Sửa/Xóa) → sửa/xóa mọi phiếu chưa khóa.
  */
 export function canMutateBaoCaoNhanCong(
   item: FarmBaoCaoNhanCong,
   moduleAllowed: boolean,
-  moduleCanAdmin: boolean,
-  userId: string | null | undefined
+  moduleCanAdmin: boolean
 ): boolean {
   if (moduleCanAdmin) return true;
   if (!moduleAllowed) return false;
-  if (isBaoCaoNhanCongLocked(item)) return false;
-  if (!userId || !item.id_nguoi_tao) return false;
-  return String(userId) === String(item.id_nguoi_tao);
+  return !isBaoCaoNhanCongLocked(item);
 }
 
 /** Khóa / mở khóa phiếu — chỉ quyền quản trị module. */

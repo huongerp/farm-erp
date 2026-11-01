@@ -1,17 +1,16 @@
 import React, { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useWatch, type Control, type FieldErrors, type UseFormGetValues, type UseFormSetValue } from 'react-hook-form';
-import { Plus, Trash2, UserPlus, Users } from 'lucide-react';
+import { Plus, Sun, Trash2, UserPlus, Users } from 'lucide-react';
 import Combobox from '../../../../components/ui/Combobox';
 import NumberInput from '../../../../components/ui/NumberInput';
 import Button from '../../../../components/ui/Button';
 import { cn } from '../../../../lib/utils';
 import { useIsMobile } from '../../../../lib/hooks/use-is-mobile';
 import type { BaoCaoNhanCongFormValues, NhanVienRowFormValues } from '../core/schema';
-import type { ChamCong, LoaiChuyen, VarNhanVienSoChe } from '../core/types';
-import { CHAM_CONG_CODES } from '../core/types';
+import type { LoaiChuyen, VarNhanVienSoChe } from '../core/types';
 import { syncChiTietTotalsFromSub } from '../core/ct-sub';
-import { GIO_CONG_MAC_DINH, nhomCuaChuyenChuaCo, nvFormRowMoi, subTuDanhSachNv, type NvFormRow } from '../core/danh-sach-nv';
+import { buoiCuaChamCong, chamChieuCaChuyen, doiBuoi, nhomCuaChuyenChuaCo, nvFormRowMoi, subTuDanhSachNv, type NvFormRow } from '../core/danh-sach-nv';
 import { khoaTen, laTenMoi, tenKhongTrung } from '../../danh-gia-dau-vao/core/chuan-hoa-ten';
 
 const GIO_INPUT = { maxFractionDigits: 2, min: 0, max: 24 } as const;
@@ -93,13 +92,15 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
     patchRow(idx, { ho_ten: nv?.ho_ten ?? ten, vi_tri: row?.vi_tri || nv?.vi_tri || null });
   };
 
-  const doiChamCong = (idx: number, cc: ChamCong) => {
+  const bamBuoi = (idx: number, buoi: 'sang' | 'chieu') => {
     const row = current()[idx];
-    if (!row || row.cham_cong === cc) return;
-    // Giờ còn là mặc định của loại cũ thì đổi theo mặc định loại mới; giờ đã sửa tay thì giữ.
-    const gio = row.so_gio_cong === GIO_CONG_MAC_DINH[row.cham_cong] ? GIO_CONG_MAC_DINH[cc] : row.so_gio_cong;
-    patchRow(idx, { cham_cong: cc, so_gio_cong: gio });
+    if (!row) return;
+    const moi = doiBuoi(row, buoi);
+    if (moi !== row) patchRow(idx, { cham_cong: moi.cham_cong, so_gio_cong: moi.so_gio_cong });
   };
+
+  const coDongSang = ds.some((r) => r.cham_cong === 'SANG');
+  const chamChieu = () => apply(chamChieuCaChuyen(current()));
 
   const themNguoi = () => apply([...current(), nvFormRowMoi()]);
 
@@ -118,6 +119,12 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
         <span className="text-caption text-muted-foreground flex-1 min-w-[12rem]">
           {ds.length > 0 ? t('baoCaoNhanCong.nv.dangDem') : t('baoCaoNhanCong.nv.hint')}
         </span>
+        {coDongSang && (
+          <Button type="button" variant="outline" size="sm" className="h-8 text-xs gap-1" onClick={chamChieu}>
+            <Sun size={13} />
+            {t('baoCaoNhanCong.nv.chamChieuCaChuyen')}
+          </Button>
+        )}
       </div>
 
       {ds.length > 0 && (
@@ -163,21 +170,27 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
                 dropdownInPortal
               />
             </div>
-            <div className="col-span-2 sm:col-span-1 inline-flex rounded-md border border-border overflow-hidden h-9 self-start">
-              {CHAM_CONG_CODES.map((cc) => (
-                <button
-                  key={cc}
-                  type="button"
-                  onClick={() => doiChamCong(idx, cc)}
-                  aria-pressed={row.cham_cong === cc}
-                  className={cn(
-                    'flex-1 px-2.5 text-xs font-medium whitespace-nowrap transition-colors',
-                    row.cham_cong === cc ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:text-primary'
-                  )}
-                >
-                  {t(`baoCaoNhanCong.nv.chamCong.${cc}`)}
-                </button>
-              ))}
+            <div className="col-span-2 sm:col-span-1 inline-flex items-center gap-1.5 self-start">
+              <div className="inline-flex rounded-md border border-border overflow-hidden h-9">
+                {(['sang', 'chieu'] as const).map((buoi) => {
+                  const bat = buoiCuaChamCong(row.cham_cong)[buoi];
+                  return (
+                    <button
+                      key={buoi}
+                      type="button"
+                      onClick={() => bamBuoi(idx, buoi)}
+                      aria-pressed={bat}
+                      className={cn(
+                        'flex-1 px-2.5 text-xs font-medium whitespace-nowrap transition-colors',
+                        bat ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:text-primary'
+                      )}
+                    >
+                      {t(`baoCaoNhanCong.nv.${buoi}`)}
+                    </button>
+                  );
+                })}
+              </div>
+              {row.cham_cong === 'NUA_NGAY' && <span className="text-caption text-muted-foreground whitespace-nowrap">{t('baoCaoNhanCong.nv.nuaNgayCu')}</span>}
             </div>
             <NumberInput
               value={row.so_gio_cong}

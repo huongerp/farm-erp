@@ -11,7 +11,7 @@ import { useUIStore } from '../../../../store/useStore';
 import { bcncTrangThaiLabel, getBcncPreviewSignLabels } from '../core/bcnc-preview-layout';
 import { tenFileAnToan } from '../../../../lib/phieu-in/ten-file';
 import type { NoiDungIn } from '../core/preview-url';
-import { nhomNhanVienTheoChuyen } from '../core/danh-sach-nv';
+import { buoiCuaChamCong, nhomNhanVienTheoChuyen } from '../core/danh-sach-nv';
 
 type XlsxModule = typeof import('xlsx');
 type Aoa = (string | number)[][];
@@ -214,7 +214,8 @@ function sheetNhanVien(XLSX: XlsxModule, data: FarmBaoCaoNhanCong) {
       t('baoCaoNhanCong.form.colChuyen'),
       t('baoCaoNhanCong.nv.hoTen'),
       t('baoCaoNhanCong.nv.viTri'),
-      t('baoCaoNhanCong.nv.cong'),
+      t('baoCaoNhanCong.nv.sang'),
+      t('baoCaoNhanCong.nv.chieu'),
       t('baoCaoNhanCong.nv.gioCong'),
       t('baoCaoNhanCong.nv.gioTc'),
       t('baoCaoNhanCong.form.colGhiChu'),
@@ -224,13 +225,16 @@ function sheetNhanVien(XLSX: XlsxModule, data: FarmBaoCaoNhanCong) {
   for (const { ct, tt, nhanVien } of nhomNhanVienTheoChuyen(data)) {
     for (const nv of nhanVien) {
       stt += 1;
+      const buoi = buoiCuaChamCong(nv.cham_cong);
+      const nuaCu = nv.cham_cong === 'NUA_NGAY';
       rows.push([
         stt,
         tt,
         t(`baoCaoNhanCong.chuyen.${ct.loai_chuyen}`),
         nv.ho_ten,
         nv.vi_tri ?? '',
-        t(`baoCaoNhanCong.nv.chamCong.${nv.cham_cong}`),
+        nuaCu ? '½' : buoi.sang ? '✓' : '',
+        buoi.chieu ? '✓' : '',
         Number(nv.so_gio_cong),
         Number(nv.so_gio_tc),
         nv.ghi_chu ?? '',
@@ -242,7 +246,7 @@ function sheetNhanVien(XLSX: XlsxModule, data: FarmBaoCaoNhanCong) {
   rows.push(getBcncPreviewSignLabels(t));
 
   const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols'] = [{ wch: 5 }, { wch: 5 }, { wch: 30 }, { wch: 26 }, { wch: 22 }, { wch: 10 }, { wch: 9 }, { wch: 9 }, { wch: 24 }];
+  ws['!cols'] = [{ wch: 5 }, { wch: 5 }, { wch: 30 }, { wch: 26 }, { wch: 22 }, { wch: 7 }, { wch: 7 }, { wch: 9 }, { wch: 9 }, { wch: 24 }];
   return ws;
 }
 

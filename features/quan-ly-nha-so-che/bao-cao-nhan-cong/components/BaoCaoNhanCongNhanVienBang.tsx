@@ -5,7 +5,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { FarmBaoCaoNhanCong } from '../core/types';
-import { nhomNhanVienTheoChuyen } from '../core/danh-sach-nv';
+import { buoiCuaChamCong, nhomNhanVienTheoChuyen } from '../core/danh-sach-nv';
 import { formatNumberVN } from '../../../../lib/utils';
 
 interface Props {
@@ -50,7 +50,8 @@ const BaoCaoNhanCongNhanVienBang: React.FC<Props> = ({ data, variant = 'screen' 
             <th className={`${c.th} w-10 text-center`}>{t('baoCaoNhanCong.nv.stt')}</th>
             <th className={c.th}>{t('baoCaoNhanCong.nv.hoTen')}</th>
             <th className={c.th}>{t('baoCaoNhanCong.nv.viTri')}</th>
-            <th className={c.th}>{t('baoCaoNhanCong.nv.cong')}</th>
+            <th className={`${c.th} text-center`}>{t('baoCaoNhanCong.nv.sang')}</th>
+            <th className={`${c.th} text-center`}>{t('baoCaoNhanCong.nv.chieu')}</th>
             <th className={`${c.th} text-right`}>{t('baoCaoNhanCong.nv.gioCong')}</th>
             <th className={`${c.th} text-right`}>{t('baoCaoNhanCong.nv.gioTc')}</th>
             <th className={c.th}>{t('baoCaoNhanCong.form.colGhiChu')}</th>
@@ -60,7 +61,7 @@ const BaoCaoNhanCongNhanVienBang: React.FC<Props> = ({ data, variant = 'screen' 
           {nhom.map(({ ct, tt, nhanVien }) => (
             <React.Fragment key={ct.loai_chuyen}>
               <tr>
-                <td colSpan={7} className={c.group}>
+                <td colSpan={8} className={c.group}>
                   {tt}. {t(`baoCaoNhanCong.chuyen.${ct.loai_chuyen}`)} — {t('baoCaoNhanCong.nv.soNguoi', { n: nhanVien.length })}
                 </td>
               </tr>
@@ -71,7 +72,16 @@ const BaoCaoNhanCongNhanVienBang: React.FC<Props> = ({ data, variant = 'screen' 
                     <td className={`${c.td} text-center tabular-nums`}>{stt}</td>
                     <td className={c.td}>{nv.ho_ten}</td>
                     <td className={c.td}>{nv.vi_tri ?? '—'}</td>
-                    <td className={c.td}>{t(`baoCaoNhanCong.nv.chamCong.${nv.cham_cong}`)}</td>
+                    {nv.cham_cong === 'NUA_NGAY' ? (
+                      <td colSpan={2} className={`${c.td} text-center`}>
+                        ½
+                      </td>
+                    ) : (
+                      <>
+                        <td className={`${c.td} text-center`}>{buoiCuaChamCong(nv.cham_cong).sang ? '✓' : ''}</td>
+                        <td className={`${c.td} text-center`}>{buoiCuaChamCong(nv.cham_cong).chieu ? '✓' : ''}</td>
+                      </>
+                    )}
                     <td className={num}>{formatNumberVN(nv.so_gio_cong)}</td>
                     <td className={num}>{nv.so_gio_tc > 0 ? formatNumberVN(nv.so_gio_tc) : '—'}</td>
                     <td className={c.td}>{nv.ghi_chu ?? ''}</td>
@@ -81,7 +91,7 @@ const BaoCaoNhanCongNhanVienBang: React.FC<Props> = ({ data, variant = 'screen' 
             </React.Fragment>
           ))}
           <tr>
-            <td colSpan={7} className={c.total}>
+            <td colSpan={8} className={c.total}>
               {t('baoCaoNhanCong.nv.tongNguoi', { n: tong })}
             </td>
           </tr>

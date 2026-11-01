@@ -39,8 +39,8 @@ export interface FarmBaoCaoNhanCongCt {
   nhan_vien?: FarmBaoCaoNhanCongNv[];
 }
 
-/** Cả ngày / nửa ngày của một người trong phiếu */
-export const CHAM_CONG_CODES = ['CA_NGAY', 'NUA_NGAY'] as const;
+/** Chấm công của một người trong phiếu: Sáng, Chiều, Cả ngày (= sáng + chiều); NUA_NGAY là mã cũ (không biết buổi nào) */
+export const CHAM_CONG_CODES = ['CA_NGAY', 'NUA_NGAY', 'SANG', 'CHIEU'] as const;
 export type ChamCong = (typeof CHAM_CONG_CODES)[number];
 
 export interface FarmBaoCaoNhanCongNv {

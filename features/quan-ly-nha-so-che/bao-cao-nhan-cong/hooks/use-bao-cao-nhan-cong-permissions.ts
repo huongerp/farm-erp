@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
-import { useAuthStore } from '../../../../store/useStore';
 import type { FarmBaoCaoNhanCong } from '../core/types';
 import {
   canCopyBaoCaoNhanCongToNextDay,
@@ -12,7 +11,6 @@ import {
 export function useBaoCaoNhanCongPermissions() {
   const { canView, canCreate, canUpdate, canDelete, canAdmin, isLoading } =
     useModulePermissionFromContext();
-  const user = useAuthStore((s) => s.user);
 
   return useMemo(
     () => ({
@@ -24,18 +22,17 @@ export function useBaoCaoNhanCongPermissions() {
       isLoading,
       canToggleTrangThai: canToggleTrangThaiBaoCaoNhanCong(canAdmin),
       canEditRow: (item: FarmBaoCaoNhanCong) =>
-        canMutateBaoCaoNhanCong(item, canUpdate, canAdmin, user?.id),
+        canMutateBaoCaoNhanCong(item, canUpdate, canAdmin),
       canDeleteRow: (item: FarmBaoCaoNhanCong) =>
-        canMutateBaoCaoNhanCong(item, canDelete, canAdmin, user?.id),
+        canMutateBaoCaoNhanCong(item, canDelete, canAdmin),
       canCopyNextDay: () => canCopyBaoCaoNhanCongToNextDay(canCreate || canAdmin),
       canMutate: (item: FarmBaoCaoNhanCong, action: 'update' | 'delete') =>
         canMutateBaoCaoNhanCong(
           item,
           action === 'update' ? canUpdate : canDelete,
-          canAdmin,
-          user?.id
+          canAdmin
         ),
     }),
-    [canView, canCreate, canUpdate, canDelete, canAdmin, isLoading, user]
+    [canView, canCreate, canUpdate, canDelete, canAdmin, isLoading]
   );
 }
