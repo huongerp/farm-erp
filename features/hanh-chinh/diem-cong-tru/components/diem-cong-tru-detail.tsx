@@ -1,29 +1,70 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Scale } from 'lucide-react';
+import { Lock, Printer, Scale, Unlock } from 'lucide-react';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
 import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';
+import DetailToolbar, { type DetailToolbarAction } from '../../../../components/shared/DetailToolbar';
 import { formatDateTimeShort } from '../../../../lib/utils';
+import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { getDiemCongTruLoaiLabel } from '../core/constants';
+import { laBanGhiKhoa } from '../core/quyen-khoa';
 import type { DiemCongTruRecord } from '../core/types';
+import { useUpdateDiemCongTruTrangThai } from '../hooks/use-diem-cong-tru';
 import DetailDrawerFooter from '../../../../components/shared/DetailDrawerFooter';
+import DiemCongTruTrangThaiBadge from './diem-cong-tru-trang-thai-badge';
 
 interface Props {
   data: DiemCongTruRecord;
   onClose: () => void;
   onEdit: (item: DiemCongTruRecord) => void;
   onDelete?: (id: string) => void;
-  canUpdate?: boolean;
-  canDelete?: boolean;
+  /** Đã tính theo trạng thái khoá của bản ghi (coTheSua / coTheXoa). */
+  canUpdate: boolean;
+  canDelete: boolean;
+  /** Quản trị module hoặc cấp bậc 1 (coTheDoiKhoa). */
+  canDoiKhoa: boolean;
 }
 
 const formatPeriod = (nam: number, thang: number) =>
   `${nam}-${String(thang).padStart(2, '0')}`;
 
-const DiemCongTruDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, canUpdate = true, canDelete = true }) => {
+const DiemCongTruDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, canUpdate, canDelete, canDoiKhoa }) => {
   const { t } = useTranslation();
+  const confirm = useConfirmStore((s) => s.confirm);
+  const trangThaiMutation = useUpdateDiemCongTruTrangThai();
   const subtitle = `${data.ten_nhan_vien || data.ma_nhan_vien || '—'} · ${formatPeriod(data.nam, data.thang)}`;
+  const dangKhoa = laBanGhiKhoa(data);
+
+  const toolbarActions: DetailToolbarAction[] = useMemo(() => {
+    const actions: DetailToolbarAction[] = [
+      {
+        label: t('diemCongTru.detail.printPhieu'),
+        icon: <Printer size={16} />,
+        variant: 'primary',
+        onClick: () => window.open(`/hanh-chinh/diem-cong-tru/preview/${data.id}`, '_blank', 'noopener,noreferrer'),
+      },
+    ];
+    if (canDoiKhoa) {
+      actions.push({
+        label: dangKhoa ? t('diemCongTru.detail.unlock') : t('diemCongTru.detail.lock'),
+        icon: dangKhoa ? <Unlock size={16} /> : <Lock size={16} />,
+        variant: dangKhoa ? 'success' : 'warning',
+        disabled: trangThaiMutation.isPending,
+        onClick: () =>
+          confirm({
+            title: dangKhoa ? t('diemCongTru.detail.unlockTitle') : t('diemCongTru.detail.lockTitle'),
+            message: dangKhoa ? t('diemCongTru.detail.unlockMessage') : t('diemCongTru.detail.lockMessage'),
+            variant: dangKhoa ? 'info' : 'warning',
+            confirmText: dangKhoa ? t('diemCongTru.detail.unlock') : t('diemCongTru.detail.lock'),
+            onConfirm: async () => {
+              await trangThaiMutation.mutateAsync({ id: data.id, trang_thai: dangKhoa ? 'mo' : 'khoa' }).catch(() => {});
+            },
+          }),
+      });
+    }
+    return actions;
+  }, [t, data.id, dangKhoa, canDoiKhoa, confirm, trangThaiMutation]);
 
   const renderFooter = (
     <DetailDrawerFooter
@@ -87,9 +128,12 @@ const DiemCongTruDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, c
               <span className="text-sm font-semibold text-foreground tabular-nums">
                 {data.diem} {t('diemCongTru.detail.points')}
               </span>
+              <DiemCongTruTrangThaiBadge trangThai={data.trang_thai} />
             </div>
           </div>
         </div>
+
+        <DetailToolbar actions={toolbarActions} className="bg-card rounded-xl border border-border" />
 
         <DetailSection
           title={t('diemCongTru.form.basicInfo')}
@@ -120,6 +164,10 @@ const DiemCongTruDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, c
             <DetailField
               label={t('diemCongTru.store.diemCol')}
               value={String(data.diem)}
+            />
+            <DetailField
+              label={t('diemCongTru.store.trangThaiCol')}
+              value={<DiemCongTruTrangThaiBadge trangThai={data.trang_thai} />}
             />
             {data.mo_ta ? (
               <div className="col-span-1 sm:col-span-2">

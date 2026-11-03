@@ -9,7 +9,10 @@ import {
   deleteDiemCongTruRecords,
   getPayrollPointGroupsForModule,
   getDiemCongTruPage,
+  getDiemCongTruById,
+  updateDiemCongTruTrangThai,
 } from '../services/diem-cong-tru-service';
+import type { DiemCongTruTrangThai } from '../core/types';
 import { getEmployeesRef } from '@/features/he-thong/nhan-vien/services/nhan-vien-service';
 import { useAuthStore } from '../../../../store/useStore';
 import { DiemCongTruFormValues } from '../core/schema';
@@ -24,6 +27,14 @@ export function useDiemCongTruPage(query: DiemCongTruListServerQuery, enabled = 
     staleTime: 1000 * 60 * 2,
   });
 }
+
+/** Một bản ghi theo id — trang in phiếu. */
+export const useDiemCongTruById = (id: string | null) =>
+  useQuery({
+    queryKey: ['diemCongTruRecords', 'byId', id],
+    queryFn: () => getDiemCongTruById(id!),
+    enabled: !!id,
+  });
 
 export const useDiemCongTruRecords = () =>
   useQuery({
@@ -70,6 +81,23 @@ export const useUpdateDiemCongTruRecord = (onSuccess?: () => void) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['diemCongTruRecords'] });
       toast.success(i18n.t('diemCongTru.toast.updateSuccess'));
+      if (onSuccess) onSuccess();
+    },
+    onError: (err: unknown) => toast.error((err as Error).message),
+  });
+};
+
+/** Khoá / mở khoá bản ghi — chỉ quản trị module hoặc cấp bậc 1 (DB chặn lần nữa). */
+export const useUpdateDiemCongTruTrangThai = (onSuccess?: () => void) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, trang_thai }: { id: string; trang_thai: DiemCongTruTrangThai }) =>
+      updateDiemCongTruTrangThai(id, trang_thai),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['diemCongTruRecords'] });
+      toast.success(
+        i18n.t(variables.trang_thai === 'khoa' ? 'diemCongTru.toast.lockSuccess' : 'diemCongTru.toast.unlockSuccess')
+      );
       if (onSuccess) onSuccess();
     },
     onError: (err: unknown) => toast.error((err as Error).message),

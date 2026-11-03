@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Edit, Trash2 } from 'lucide-react';
+import DiemCongTruTrangThaiBadge from './diem-cong-tru-trang-thai-badge';
 import GenericTable from '../../../../components/shared/GenericTable';
 import Tooltip from '../../../../components/ui/Tooltip';
 import { formatDateTimeShort } from '../../../../lib/utils';
@@ -19,11 +20,12 @@ interface Props {
   onEdit: (item: DiemCongTruRecord) => void;
   onDelete: (id: string) => void;
   onView?: (item: DiemCongTruRecord) => void;
-  canUpdate?: boolean;
-  canDelete?: boolean;
+  /** Quyền sửa / xoá theo từng bản ghi (bản ghi khoá chỉ quản trị / cấp bậc 1). */
+  canEditItem: (item: DiemCongTruRecord) => boolean;
+  canDeleteItem: (item: DiemCongTruRecord) => boolean;
 }
 
-const DiemCongTruTable: React.FC<Props> = ({ isFetching, totalRecordsOverride, data, isLoading, onEdit, onDelete, onView, canUpdate = true, canDelete = true }) => {
+const DiemCongTruTable: React.FC<Props> = ({ isFetching, totalRecordsOverride, data, isLoading, onEdit, onDelete, onView, canEditItem, canDeleteItem }) => {
   const { t } = useTranslation();
   const {
     columns,
@@ -87,13 +89,17 @@ const DiemCongTruTable: React.FC<Props> = ({ isFetching, totalRecordsOverride, d
             {item.mo_ta || '—'}
           </span>
         );
+      case 'trang_thai':
+        return <DiemCongTruTrangThaiBadge trangThai={item.trang_thai} />;
       case 'tg_cap_nhat':
         return (
           <span className="text-xs text-muted-foreground tabular-nums">
             {formatDateTimeShort(item.tg_cap_nhat)}
           </span>
         );
-      case 'actions':
+      case 'actions': {
+        const canUpdate = canEditItem(item);
+        const canDelete = canDeleteItem(item);
         return (
           <div className="flex items-center justify-center gap-1">
             {canUpdate && (
@@ -126,12 +132,16 @@ const DiemCongTruTable: React.FC<Props> = ({ isFetching, totalRecordsOverride, d
             )}
           </div>
         );
+      }
       default:
         return null;
     }
   };
 
-  const renderMobileCard = (item: DiemCongTruRecord, isSelected: boolean) => (
+  const renderMobileCard = (item: DiemCongTruRecord, isSelected: boolean) => {
+    const canUpdate = canEditItem(item);
+    const canDelete = canDeleteItem(item);
+    return (
     <div
       role="button"
       tabIndex={0}
@@ -153,6 +163,7 @@ const DiemCongTruTable: React.FC<Props> = ({ isFetching, totalRecordsOverride, d
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          {item.trang_thai === 'khoa' && <DiemCongTruTrangThaiBadge trangThai={item.trang_thai} />}
           {renderLoaiBadge(item.loai)}
           <div role="presentation" onClick={(e) => e.stopPropagation()}>
             <input
@@ -210,7 +221,8 @@ const DiemCongTruTable: React.FC<Props> = ({ isFetching, totalRecordsOverride, d
         </div>
       )}
     </div>
-  );
+    );
+  };
 
   return (
     <GenericTable

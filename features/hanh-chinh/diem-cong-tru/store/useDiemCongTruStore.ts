@@ -14,7 +14,8 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'ten_hang_muc', label: i18n.t('diemCongTru.store.categoryCol'), visible: true, minWidth: 200, order: 3 },
   { id: 'diem', label: i18n.t('diemCongTru.store.diemCol'), visible: true, minWidth: 90, order: 4 },
   { id: 'mo_ta', label: i18n.t('diemCongTru.store.moTaCol'), visible: true, minWidth: 200, order: 5 },
-  { id: 'tg_cap_nhat', label: i18n.t('diemCongTru.store.updatedCol'), visible: false, minWidth: 140, order: 6 },
+  { id: 'trang_thai', label: i18n.t('diemCongTru.store.trangThaiCol'), visible: true, minWidth: 110, order: 6 },
+  { id: 'tg_cap_nhat', label: i18n.t('diemCongTru.store.updatedCol'), visible: false, minWidth: 140, order: 7 },
 ];
 
 const initialFilters: DiemCongTruFilters = {

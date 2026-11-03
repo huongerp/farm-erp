@@ -17,11 +17,19 @@ import { useDiemCongTruStore } from './store/useDiemCongTruStore';
 import { useConfirmStore } from '../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../lib/button-labels';
 import { DiemCongTruRecord } from './core/types';
+import { coTheDoiKhoa, coTheSua, coTheXoa } from './core/quyen-khoa';
+import { useCapBacToanQuyen } from '../../he-thong/phan-quyen/hooks/use-cap-bac-toan-quyen';
+import { toast } from 'sonner';
 
 
 const DiemCongTruPage: React.FC = () => {
   const { t } = useTranslation();
-  const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
+  const { canCreate, canUpdate, canDelete, canAdmin } = useModulePermissionFromContext();
+  const capBacToanQuyen = useCapBacToanQuyen();
+  const quyen = { canAdmin, canUpdate, canDelete };
+  const canDoiKhoa = coTheDoiKhoa(quyen, capBacToanQuyen);
+  const canEditItem = (item: DiemCongTruRecord) => coTheSua(item, quyen, capBacToanQuyen);
+  const canDeleteItem = (item: DiemCongTruRecord) => coTheXoa(item, quyen, capBacToanQuyen);
   const confirm = useConfirmStore((s) => s.confirm);
   const {
     searchTerm,
@@ -68,6 +76,8 @@ const DiemCongTruPage: React.FC = () => {
 
   // Bản ghi đang xem không còn trong trang hiện tại → đóng drawer (chỉnh ngay lúc render, không qua effect).
   if (detailItem && !pageList.some((r) => r.id === detailItem.id)) setDetailItem(null);
+  /** Bản mới nhất từ trang (vd. vừa khoá/mở khoá) — state detailItem chỉ giữ id đang mở. */
+  const detailHienTai = detailItem ? (pageList.find((r) => r.id === detailItem.id) ?? detailItem) : null;
 
 
   const handleView = (item: DiemCongTruRecord) => {
@@ -77,6 +87,7 @@ const DiemCongTruPage: React.FC = () => {
   };
 
   const handleEdit = (item: DiemCongTruRecord) => {
+    if (!canEditItem(item)) return;
     setEditingItem(item);
     setShowForm(true);
     if (detailItem?.id === item.id) {
@@ -89,6 +100,8 @@ const DiemCongTruPage: React.FC = () => {
   };
 
   const handleDelete = (id: string) => {
+    const item = pageList.find((r) => r.id === id);
+    if (item && !canDeleteItem(item)) return;
     confirm({
       title: t('diemCongTru.deleteTitle'),
       message: t('diemCongTru.deleteMessage'),
@@ -104,10 +117,20 @@ const DiemCongTruPage: React.FC = () => {
     });
   };
 
-  const handleDeleteMany = (ids: string[]) => {
+  const handleDeleteMany = (selected: string[]) => {
+    // Người không đủ quyền: bỏ các bản ghi đang khoá (DB cũng chặn lần nữa).
+    const biKhoa = new Set(pageList.filter((r) => !canDeleteItem(r)).map((r) => r.id));
+    const ids = selected.filter((id) => !biKhoa.has(id));
+    const soBoQua = selected.length - ids.length;
+    if (ids.length === 0) {
+      toast.error(t('diemCongTru.bulkDeleteAllLocked'));
+      return;
+    }
     confirm({
       title: t('diemCongTru.bulkDeleteTitle'),
-      message: t('diemCongTru.bulkDeleteMessage', { count: ids.length }),
+      message:
+        t('diemCongTru.bulkDeleteMessage', { count: ids.length }) +
+        (soBoQua > 0 ? ` ${t('diemCongTru.bulkDeleteSkipLocked', { count: soBoQua })}` : ''),
       variant: 'danger',
       confirmText: CONFIRM_DELETE_ALL(),
       onConfirm: async () => {
@@ -156,8 +179,8 @@ const DiemCongTruPage: React.FC = () => {
             onEdit={handleEdit}
             onDelete={handleDelete}
             onView={handleView}
-            canUpdate={canUpdate}
-            canDelete={canDelete}
+            canEditItem={canEditItem}
+            canDeleteItem={canDeleteItem}
           />
         </div>
 
@@ -168,17 +191,18 @@ const DiemCongTruPage: React.FC = () => {
         </AnimatePresence>
 
         <AnimatePresence>
-          {detailItem && !showForm && (
+          {detailHienTai && !showForm && (
             <DiemCongTruDetail
-              data={detailItem}
+              data={detailHienTai}
               onClose={() => setDetailItem(null)}
               onEdit={(item) => handleEdit(item)}
               onDelete={(id) => {
                 setDetailItem(null);
                 handleDelete(id);
               }}
-              canUpdate={canUpdate}
-              canDelete={canDelete}
+              canUpdate={canEditItem(detailHienTai)}
+              canDelete={canDeleteItem(detailHienTai)}
+              canDoiKhoa={canDoiKhoa}
             />
           )}
         </AnimatePresence>

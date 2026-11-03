@@ -1,6 +1,9 @@
 /** Loại điểm: cộng hoặc trừ */
 export type DiemCongTruLoai = 'cong' | 'tru';
 
+/** Trạng thái bản ghi: mở (sửa/xoá theo quyền module) hoặc khoá (chỉ quản trị / cấp bậc 1) */
+export type DiemCongTruTrangThai = 'mo' | 'khoa';
+
 export interface DiemCongTruRecord {
   id: string;
   id_nhan_vien: string;
@@ -14,6 +17,7 @@ export interface DiemCongTruRecord {
   ma_hang_muc?: string;
   diem: number;
   mo_ta?: string;
+  trang_thai: DiemCongTruTrangThai;
   tg_tao: string;
   tg_cap_nhat: string;
 }

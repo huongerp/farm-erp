@@ -19,4 +19,8 @@ export const updateDiemCongTruRecord = updateDiemCongTruRecordDb;
 
 export const deleteDiemCongTruRecords = deleteDiemCongTruRecordsDb;
 
-export { getDiemCongTruPage } from './diem-cong-tru-db.service';
+export {
+  getDiemCongTruPage,
+  getDiemCongTruById,
+  updateDiemCongTruTrangThai,
+} from './diem-cong-tru-db.service';

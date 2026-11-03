@@ -51,6 +51,7 @@ const PayslipPreviewPage = lazy(() => import('./features/hanh-chinh/bang-luong/P
 const EmployeeProfilePreviewPage = lazy(() => import('./features/he-thong/nhan-vien/EmployeeProfilePreviewPage'));
 const CongViecPreviewPage = lazy(() => import('./features/hanh-chinh/cong-viec/CongViecPreviewPage'));
 const PhieuHanhChinhPreviewPage = lazy(() => import('./features/hanh-chinh/phieu-hanh-chinh/PhieuHanhChinhPreviewPage'));
+const DiemCongTruPreviewPage = lazy(() => import('./features/hanh-chinh/diem-cong-tru/DiemCongTruPreviewPage'));
 const HoSoTaiSanPreviewPage = lazyWithFeatureI18n(
   'danh-muc-tai-san',
   () => import('./features/hanh-chinh/danh-muc-tai-san/HoSoTaiSanPreviewPage')
@@ -289,6 +290,18 @@ const App = () => {
           }
         />
         <Route path="/hanh-chinh/cap-phat-thu-hoi/preview/:id" element={<ProtectedRoute><Suspense fallback={<PageFallback />}><PhieuCPTHPreviewPage /></Suspense></ProtectedRoute>} />
+        <Route
+          path="/hanh-chinh/diem-cong-tru/preview/:id"
+          element={
+            <ProtectedRoute>
+              <ModulePermissionGuard moduleId="hanh-chinh/diem-cong-tru">
+                <Suspense fallback={<PageFallback />}>
+                  <DiemCongTruPreviewPage />
+                </Suspense>
+              </ModulePermissionGuard>
+            </ProtectedRoute>
+          }
+        />
         <Route path="/phieu-kiem-ke/:id" element={<ProtectedRoute><Suspense fallback={<PageFallback />}><PhieuKiemKePreviewPage /></Suspense></ProtectedRoute>} />
         <Route path="/mua-hang/kiem-ke-kho/preview/:id" element={<ProtectedRoute><Suspense fallback={<PageFallback />}><PhieuKiemKeKhoPreviewPage /></Suspense></ProtectedRoute>} />
         <Route path="/mua-hang/phieu-kho/preview/:id" element={<ProtectedRoute><Suspense fallback={<PageFallback />}><PhieuKhoPreviewPage /></Suspense></ProtectedRoute>} />

@@ -16,7 +16,7 @@ import {
   DIEM_CT_SORT_MAC_DINH,
   type DiemCongTruListServerQuery,
 } from './diem-cong-tru-list-query';
-import type { DiemCongTruRecord } from '../core/types';
+import type { DiemCongTruRecord, DiemCongTruTrangThai } from '../core/types';
 import type { DiemCongTruFormValues } from '../core/schema';
 import { getPayrollPointGroups } from '../../thiet-lap-cong-luong/services/payroll-point-group-service';
 import { getEmployeesRef } from '@/features/he-thong/nhan-vien/services/nhan-vien-service';
@@ -25,7 +25,7 @@ import i18n from '../../../../lib/i18n';
 const TABLE = 'fp_hr_diem_cong_tru';
 
 const ROW_COLUMNS =
-  'id,id_nhan_vien,nam,thang,loai,id_hang_muc,ten_hang_muc,diem,mo_ta,ghi_chu,id_nguoi_tao,tg_tao,tg_cap_nhat';
+  'id,id_nhan_vien,nam,thang,loai,id_hang_muc,ten_hang_muc,diem,mo_ta,ghi_chu,trang_thai,id_nguoi_tao,tg_tao,tg_cap_nhat';
 
 interface DbRow {
   id: number;
@@ -38,6 +38,7 @@ interface DbRow {
   diem: number;
   mo_ta: string | null;
   ghi_chu: string | null;
+  trang_thai: string | null;
   id_nguoi_tao: number | null;
   tg_tao: string | null;
   tg_cap_nhat: string | null;
@@ -66,6 +67,7 @@ function rowToItem(
     ma_hang_muc: hm?.ma,
     diem: Number(row.diem),
     mo_ta: moTa,
+    trang_thai: row.trang_thai === 'khoa' ? 'khoa' : 'mo',
     tg_tao: row.tg_tao ?? new Date().toISOString(),
     tg_cap_nhat: row.tg_cap_nhat ?? new Date().toISOString(),
   };
@@ -174,6 +176,23 @@ export async function getDiemCongTruRecords(): Promise<DiemCongTruRecord[]> {
   return rows.map((row) => rowToItem(row, employeeMap, hangMucMap));
 }
 
+/** Một bản ghi theo id (trang in phiếu) — null khi không tồn tại. */
+export async function getDiemCongTruById(id: string): Promise<DiemCongTruRecord | null> {
+  const idNum = Number(id);
+  if (!Number.isFinite(idNum)) return null;
+  const [{ data: row, error }, pointGroups, employees] = await Promise.all([
+    db.from(TABLE).select(ROW_COLUMNS).eq('id', idNum).maybeSingle(),
+    getPayrollPointGroups(),
+    getEmployeesRef(),
+  ]);
+  if (error) throwDbError(error, { resource: TABLE });
+  if (!row) return null;
+
+  const employeeMap = new Map(employees.map((e) => [e.id, { ho_ten: e.ho_ten, ma_nhan_vien: e.ma_nhan_vien }]));
+  const hangMucMap = new Map(pointGroups.map((g) => [g.id, { ten: g.ten, ma: g.ma }]));
+  return rowToItem(row as DbRow, employeeMap, hangMucMap);
+}
+
 export async function createDiemCongTruRecord(
   data: DiemCongTruFormValues,
   id_nguoi_tao?: string
@@ -260,4 +279,17 @@ export async function deleteDiemCongTruRecords(ids: string[]): Promise<void> {
   if (numIds.length === 0) return;
   const { error } = await db.from(TABLE).delete().in('id', numIds);
   if (error) throwDbError(error);
+}
+
+/** Khoá / mở khoá — trigger migration 066 chặn người không phải quản trị / cấp bậc 1. */
+export async function updateDiemCongTruTrangThai(
+  id: string,
+  trang_thai: DiemCongTruTrangThai
+): Promise<void> {
+  const idNum = Number(id);
+  if (!Number.isFinite(idNum)) throw new Error(i18n.t('diemCongTru.service.notFound'));
+  const { data, error } = await db.from(TABLE).update({ trang_thai }).eq('id', idNum).select('id');
+  if (error) throwDbError(error);
+  // RLS lọc mất dòng → PostgREST trả mảng rỗng thay vì lỗi.
+  if (!data || data.length === 0) throw new Error(i18n.t('diemCongTru.service.notFound'));
 }
