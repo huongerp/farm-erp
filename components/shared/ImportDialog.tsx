@@ -61,6 +61,8 @@ interface ImportDialogProps {
   refColumns?: ImportRefColumn[];
   defaultRefColumn?: string;
   maxRows?: number;
+  /** Dừng trước khi gọi onImport nếu còn dòng thiếu dữ liệu bắt buộc (phiếu nhiều dòng). */
+  requireAllRowsValid?: boolean;
 }
 
 type Step = 'upload' | 'mapping' | 'result';
@@ -68,7 +70,7 @@ type Step = 'upload' | 'mapping' | 'result';
 const ImportDialog: React.FC<ImportDialogProps> = ({
   open, onClose, columns, onImport, templateFileName = 'template',
   referenceSheets, sampleRows, guideNotes, importErrors,
-  modes, defaultMode, modeLabels, refColumns, defaultRefColumn, maxRows = DEFAULT_MAX_ROWS,
+  modes, defaultMode, modeLabels, refColumns, defaultRefColumn, maxRows = DEFAULT_MAX_ROWS, requireAllRowsValid = false,
 }) => {
   const { t } = useTranslation();
   const [step, setStep] = useState<Step>('upload');
@@ -232,6 +234,13 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
 
     setClientErrors(rowErrors);
     setParsedCount(parsed.length);
+
+    if (requireAllRowsValid && rowErrors.length > 0) {
+      setSummary({ created: 0, skipped: sheetData.length });
+      setStep('result');
+      setImporting(false);
+      return;
+    }
 
     try {
       const result = parsed.length > 0 ? await onImport(parsed, { mode, refColumn: refColumn || undefined }) : undefined;

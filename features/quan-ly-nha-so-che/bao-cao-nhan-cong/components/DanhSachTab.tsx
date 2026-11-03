@@ -24,6 +24,8 @@ import { TRANG_THAI_BAO_CAO_NHAN_CONG } from '../core/types';
 import type { TrangThaiBaoCaoNhanCongPhieu } from '../core/types';
 import { useAuthStore } from '../../../../store/useStore';
 import ExportDialog from '../../../../components/shared/LazyExportDialog';
+import LazyImportDialog from '../../../../components/shared/LazyImportDialog';
+import { useBaoCaoNhanCongImport } from '../hooks/use-bao-cao-nhan-cong-import';
 import { useExportData } from '../../../../lib/useExportData';
 import { useBaoCaoNhanCongViewScope } from '../hooks/use-bao-cao-nhan-cong-view-scope';
 import BaoCaoNhanCongToolbar from './BaoCaoNhanCongToolbar';
@@ -77,6 +79,7 @@ const DanhSachTab: React.FC = () => {
   const [showExport, setShowExport] = useState(false);
   const [showChonXuat, setShowChonXuat] = useState(false);
   const xuatNv = useBcncXuatNv();
+  const importer = useBaoCaoNhanCongImport();
 
   const viewScope = useBaoCaoNhanCongViewScope();
 
@@ -354,6 +357,7 @@ const DanhSachTab: React.FC = () => {
         }}
         onDeleteMany={canBulkDeleteSelection ? handleDeleteMany : undefined}
         onExport={handleExport}
+        onImport={canCreate ? importer.openImport : undefined}
         bulkActions={bulkActions}
         onDanhSachNv={canCreate || canUpdate ? () => setShowDmNv(true) : undefined}
         canCreate={canCreate}
@@ -383,6 +387,8 @@ const DanhSachTab: React.FC = () => {
           canDeleteRow={canDeleteRow}
         />
       </div>
+
+      <LazyImportDialog open={importer.showImport} onClose={importer.closeImport} {...importer.dialogProps} />
 
       <AnimatePresence>
         {showChonXuat && (

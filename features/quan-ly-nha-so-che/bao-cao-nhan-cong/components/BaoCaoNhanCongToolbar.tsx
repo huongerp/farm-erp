@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import type { BaoCaoNhanCongTomTat } from '../services/bao-cao-nhan-cong-service';
 import { useTranslation } from 'react-i18next';
-import { Plus, Building2, Calendar, Hash, ToggleLeft, Download, Users } from 'lucide-react';
+import { Plus, Building2, Calendar, Hash, ToggleLeft, Download, Upload, Users } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
@@ -21,6 +21,7 @@ interface Props {
   onAdd: () => void;
   onDeleteMany?: () => void;
   onExport: () => void;
+  onImport?: () => void;
   canCreate?: boolean;
   canDelete?: boolean;
   /** Nút bulk riêng của module (khóa/mở khóa hàng loạt), hiện cạnh nút Xóa khi có dòng được chọn. */
@@ -45,6 +46,7 @@ const BaoCaoNhanCongToolbar: React.FC<Props> = ({
   onAdd,
   onDeleteMany,
   onExport,
+  onImport,
   canCreate = true,
   canDelete = true,
   bulkActions,
@@ -177,6 +179,7 @@ const BaoCaoNhanCongToolbar: React.FC<Props> = ({
 
   const mobileActions = useMemo(
     () => [
+      ...(canCreate && onImport ? [{ key: 'import', label: t('common.import'), icon: Upload, onClick: onImport, description: '' }] : []),
       {
         key: 'export',
         label: t('common.export'),
@@ -188,12 +191,25 @@ const BaoCaoNhanCongToolbar: React.FC<Props> = ({
         ? [{ key: 'danh-sach-nv', label: t('baoCaoNhanCong.dmNv.title'), icon: Users, onClick: onDanhSachNv, description: '' }]
         : []),
     ],
-    [onExport, onDanhSachNv, t]
+    [onExport, onImport, canCreate, onDanhSachNv, t]
   );
 
   const renderActions = (
     <>
       <div className="hidden sm:flex items-center gap-2">
+        {canCreate && onImport && (
+          <Tooltip content={t('common.import')} placement="bottom">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onImport}
+              aria-label={t('common.import')}
+              className="inline-flex min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-9 w-9 p-0 items-center justify-center border-border text-muted-foreground hover:bg-muted/50"
+            >
+              <Upload className="w-4 h-4" />
+            </Button>
+          </Tooltip>
+        )}
         <Tooltip content={t('common.export')} placement="bottom">
           <Button
             variant="outline"
