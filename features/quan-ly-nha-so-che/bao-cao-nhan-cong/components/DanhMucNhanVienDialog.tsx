@@ -10,8 +10,9 @@ import { TRANG_THAI } from '../../../../lib/constants';
 import { DIALOG_SIZE } from '../../../../lib/dialog-sizes';
 import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
 import { LOAI_CHUYEN_CODES, type LoaiChuyen, type VarNhanVienSoChe } from '../core/types';
-import { useNhanVienSoChe, useUpdateNhanVienSoChe } from '../hooks/use-bao-cao-nhan-cong';
-import { gonTen, tenKhongTrung } from '../../danh-gia-dau-vao/core/chuan-hoa-ten';
+import { useNhanVienSoChe, useUpdateNhanVienSoChe, useThemViTriNeuMoi, useViTriSoChe } from '../hooks/use-bao-cao-nhan-cong';
+import { gonTen } from '../../danh-gia-dau-vao/core/chuan-hoa-ten';
+import { gopViTriOptions } from '../core/vi-tri-danh-muc';
 
 type Patch = Pick<VarNhanVienSoChe, 'ho_ten' | 'vi_tri' | 'loai_chuyen' | 'dang_dung'>;
 
@@ -23,6 +24,7 @@ const SuaNguoi: React.FC<{
 }> = ({ nv, viTriOptions, chuyenOptions, onDone }) => {
   const { t } = useTranslation();
   const luu = useUpdateNhanVienSoChe();
+  const themViTriNeuMoi = useThemViTriNeuMoi();
   const [v, setV] = useState<Patch>({ ho_ten: nv.ho_ten, vi_tri: nv.vi_tri, loai_chuyen: nv.loai_chuyen, dang_dung: nv.dang_dung });
   const tenTrong = !gonTen(v.ho_ten);
 
@@ -40,9 +42,13 @@ const SuaNguoi: React.FC<{
           label={t('baoCaoNhanCong.nv.viTri')}
           options={viTriOptions}
           value={v.vi_tri ?? ''}
-          onChange={(x) => setV({ ...v, vi_tri: x ? String(x).trim() : null })}
+          onChange={(x) => {
+            const viTri = x ? String(x).trim() : null;
+            setV({ ...v, vi_tri: viTri });
+            themViTriNeuMoi(viTri);
+          }}
           creatable
-          creatableLabel={t('baoCaoNhanCong.nv.dungTenMoi')}
+          creatableLabel={t('baoCaoNhanCong.nv.themViTriMoi')}
           dropdownInPortal
         />
         <Combobox
@@ -95,6 +101,7 @@ const DanhMucNhanVienDialog: React.FC<Props> = ({ branches, idChiNhanhMacDinh = 
   const [idCn, setIdCn] = useState(idChiNhanhMacDinh);
   const [dangSua, setDangSua] = useState<string | null>(null);
   const { data: ds = [], isLoading } = useNhanVienSoChe(idCn);
+  const { data: viTriDanhMuc = [] } = useViTriSoChe();
 
   const chiNhanhOptions = useMemo(
     () =>
@@ -107,7 +114,10 @@ const DanhMucNhanVienDialog: React.FC<Props> = ({ branches, idChiNhanhMacDinh = 
     () => LOAI_CHUYEN_CODES.map((c) => ({ value: c, label: t(`baoCaoNhanCong.chuyen.${c}`) })),
     [t]
   );
-  const viTriOptions = useMemo(() => tenKhongTrung(ds.map((nv) => nv.vi_tri)).map((x) => ({ value: x, label: x })), [ds]);
+  const viTriOptions = useMemo(
+    () => gopViTriOptions(viTriDanhMuc, ds.map((nv) => nv.vi_tri)).map((x) => ({ value: x, label: x })),
+    [viTriDanhMuc, ds]
+  );
 
   return (
     <GenericDrawer

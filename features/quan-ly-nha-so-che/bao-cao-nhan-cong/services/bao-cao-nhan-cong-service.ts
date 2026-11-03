@@ -1,5 +1,5 @@
 import type { BaoCaoNhanCongFormValues } from '../core/schema';
-import type { FarmBaoCaoNhanCong, TrangThaiBaoCaoNhanCongPhieu, VarNhanVienSoChe } from '../core/types';
+import type { FarmBaoCaoNhanCong, TrangThaiBaoCaoNhanCongPhieu, VarNhanVienSoChe, VarViTriSoChe } from '../core/types';
 import { getEmployeesRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
 import type { PaginatedTableResult } from '../../../../lib/db';
 import type { BaoCaoNhanCongListServerQuery } from './bao-cao-nhan-cong-list-query';
@@ -19,6 +19,10 @@ import {
   updateBaoCaoNhanCongTrangThaiManyDb,
   getNhanVienSoCheDb,
   updateNhanVienSoCheDb,
+  getViTriSoCheDb,
+  luuViTriSoCheDb,
+  xoaViTriSoCheDb,
+  themViTriNeuChuaCoDb,
 } from './bao-cao-nhan-cong-db.service';
 
 async function enrichTenNguoiTao(items: FarmBaoCaoNhanCong[]): Promise<FarmBaoCaoNhanCong[]> {
@@ -155,4 +159,25 @@ export async function updateNhanVienSoChe(
   patch: Partial<Pick<VarNhanVienSoChe, 'ho_ten' | 'vi_tri' | 'loai_chuyen' | 'dang_dung'>>
 ): Promise<void> {
   await updateNhanVienSoCheDb(id, patch);
+}
+
+/** Danh mục vị trí công việc dùng chung (Cài đặt + gợi ý dropdown trong form). */
+export async function getViTriSoChe(): Promise<VarViTriSoChe[]> {
+  return getViTriSoCheDb();
+}
+
+export async function luuViTriSoChe(
+  id: string | null,
+  data: { ten: string; dang_dung: boolean }
+): Promise<void> {
+  await luuViTriSoCheDb(id, data);
+}
+
+export async function xoaViTriSoChe(id: string): Promise<void> {
+  await xoaViTriSoCheDb(id);
+}
+
+/** Gõ vị trí mới ở form → thêm vào danh mục để lần sau có gợi ý (im lặng, lỗi bỏ qua ở hook). */
+export async function themViTriNeuChuaCo(ten: string): Promise<void> {
+  await themViTriNeuChuaCoDb(ten);
 }

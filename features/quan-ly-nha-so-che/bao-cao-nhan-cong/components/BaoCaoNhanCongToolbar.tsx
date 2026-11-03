@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import type { BaoCaoNhanCongTomTat } from '../services/bao-cao-nhan-cong-service';
 import { useTranslation } from 'react-i18next';
-import { Plus, Building2, Calendar, Hash, ToggleLeft, Download, Upload, Users } from 'lucide-react';
+import { Plus, Building2, Calendar, Hash, ToggleLeft, Download, Upload, Users, Settings } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
@@ -28,6 +28,8 @@ interface Props {
   bulkActions?: React.ReactNode;
   /** Mở drawer «Danh sách nhân viên» (danh mục tên theo chi nhánh). */
   onDanhSachNv?: () => void;
+  /** Mở «Cài đặt báo cáo nhân công» (danh mục vị trí công việc…). */
+  onCaiDat?: () => void;
 }
 
 function ngayToYear(ngay: string): string {
@@ -51,6 +53,7 @@ const BaoCaoNhanCongToolbar: React.FC<Props> = ({
   canDelete = true,
   bulkActions,
   onDanhSachNv,
+  onCaiDat,
 }) => {
   const { t } = useTranslation();
   const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useBaoCaoNhanCongStore);
@@ -190,9 +193,23 @@ const BaoCaoNhanCongToolbar: React.FC<Props> = ({
       ...(onDanhSachNv
         ? [{ key: 'danh-sach-nv', label: t('baoCaoNhanCong.dmNv.title'), icon: Users, onClick: onDanhSachNv, description: '' }]
         : []),
+      ...(onCaiDat
+        ? [{ key: 'settings', label: t('baoCaoNhanCong.caiDat.title'), icon: Settings, onClick: onCaiDat, description: '' }]
+        : []),
     ],
-    [onExport, onImport, canCreate, onDanhSachNv, t]
+    [onExport, onImport, canCreate, onDanhSachNv, onCaiDat, t]
   );
+
+  /** Nút bánh răng đặt trước cụm Import / Export (leadingActions nằm bên trái actions). */
+  const iconBtn =
+    'h-8 w-8 flex items-center justify-center border rounded-lg transition-all bg-background border-border text-muted-foreground hover:bg-muted hover:text-foreground';
+  const leading = onCaiDat ? (
+    <Tooltip content={t('baoCaoNhanCong.caiDat.title')} placement="bottom">
+      <button type="button" onClick={onCaiDat} className={iconBtn} aria-label={t('baoCaoNhanCong.caiDat.title')}>
+        <Settings size={15} />
+      </button>
+    </Tooltip>
+  ) : null;
 
   const renderActions = (
     <>
@@ -255,6 +272,7 @@ const BaoCaoNhanCongToolbar: React.FC<Props> = ({
       searchTerm={searchInput}
       onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
+      leadingActions={leading}
       actions={renderActions}
       filters={<ResponsiveFilterChips items={filterItems} />}
       filterGroups={filterGroups}

@@ -19,6 +19,7 @@ import type {
   LoaiChuyen,
   TrangThaiBaoCaoNhanCongPhieu,
   VarNhanVienSoChe,
+  VarViTriSoChe,
 } from '../core/types';
 import { TRANG_THAI_BAO_CAO_NHAN_CONG } from '../core/types';
 import type { BaoCaoNhanCongFormValues } from '../core/schema';
@@ -32,6 +33,7 @@ const TABLE_CT = 'fp_farm_bao_cao_nhan_cong_ct';
 const TABLE_CT_SUB = 'fp_farm_bao_cao_nhan_cong_ct_sub';
 const TABLE_NV = 'fp_farm_bao_cao_nhan_cong_nv';
 const TABLE_DM_NV = 'fp_var_nhan_vien_so_che';
+const TABLE_DM_VT = 'fp_var_vi_tri_so_che';
 
 /** List — bỏ hinh_anh_urls (~1.8MB/dòng base64). Ảnh chỉ load khi mở chi tiết (ROW_CHA_DETAIL). */
 const ROW_CHA_LIST =
@@ -50,6 +52,8 @@ const ROW_CT_SUB =
 const ROW_NV = 'id,id_bcnc_ct,id_nhan_vien,ho_ten,vi_tri,cham_cong,so_gio_cong,so_gio_tc,ghi_chu,thu_tu';
 
 const ROW_DM_NV = 'id,id_chi_nhanh,ho_ten,vi_tri,loai_chuyen,dang_dung,thu_tu';
+
+const ROW_DM_VT = 'id,ten,dang_dung,thu_tu';
 
 function parseIdToInt8(id: string | null | undefined): number | null {
   if (id == null || id === '') return null;
@@ -144,6 +148,13 @@ interface DbRowDmNv {
   thu_tu: number | null;
 }
 
+interface DbRowDmVt {
+  id: number;
+  ten: string;
+  dang_dung: boolean;
+  thu_tu: number | null;
+}
+
 function nvRowToModel(row: DbRowNv): FarmBaoCaoNhanCongNv {
   return {
     id: String(row.id),
@@ -166,6 +177,15 @@ function dmNvRowToModel(row: DbRowDmNv): VarNhanVienSoChe {
     ho_ten: row.ho_ten,
     vi_tri: row.vi_tri ?? null,
     loai_chuyen: (row.loai_chuyen as LoaiChuyen | null) ?? null,
+    dang_dung: !!row.dang_dung,
+    thu_tu: row.thu_tu ?? 0,
+  };
+}
+
+function dmVtRowToModel(row: DbRowDmVt): VarViTriSoChe {
+  return {
+    id: String(row.id),
+    ten: row.ten,
     dang_dung: !!row.dang_dung,
     thu_tu: row.thu_tu ?? 0,
   };
@@ -547,6 +567,58 @@ export async function getNhanVienSoCheDb(idChiNhanh: string): Promise<VarNhanVie
     .order('ho_ten');
   if (error) throwDbError(error, { resource: TABLE_DM_NV });
   return ((data ?? []) as DbRowDmNv[]).map(dmNvRowToModel);
+}
+
+/** Danh mục vị trí công việc dùng chung — sắp theo thu_tu rồi tên (vị trí mới thêm cuối). */
+export async function getViTriSoCheDb(): Promise<VarViTriSoChe[]> {
+  const { data, error } = await db.from(TABLE_DM_VT).select(ROW_DM_VT).order('thu_tu').order('ten');
+  if (error) throwDbError(error, { resource: TABLE_DM_VT });
+  return ((data ?? []) as DbRowDmVt[]).map(dmVtRowToModel);
+}
+
+async function thuTuViTriMoiNhatDb(): Promise<number> {
+  const { data, error } = await db
+    .from(TABLE_DM_VT)
+    .select('thu_tu')
+    .order('thu_tu', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throwDbError(error, { resource: `${TABLE_DM_VT}.maxThuTu` });
+  return ((data as { thu_tu: number | null } | null)?.thu_tu ?? 0) + 1;
+}
+
+export async function luuViTriSoCheDb(
+  id: string | null,
+  data: { ten: string; dang_dung: boolean }
+): Promise<void> {
+  const body = { ten: gonTen(data.ten) ?? '', dang_dung: data.dang_dung };
+  if (id) {
+    const { error } = await db.from(TABLE_DM_VT).update(body).eq('id', Number(id));
+    if (error) throwDbError(error, { resource: `${TABLE_DM_VT}.update` });
+    return;
+  }
+  const { error } = await db
+    .from(TABLE_DM_VT)
+    .insert({ ...body, thu_tu: await thuTuViTriMoiNhatDb() });
+  if (error) throwDbError(error, { resource: `${TABLE_DM_VT}.insert` });
+}
+
+export async function xoaViTriSoCheDb(id: string): Promise<void> {
+  const { error } = await db.from(TABLE_DM_VT).delete().eq('id', Number(id));
+  if (error) throwDbError(error, { resource: `${TABLE_DM_VT}.delete` });
+}
+
+/**
+ * Thêm vị trí gõ mới ở form / danh mục nhân viên. Trùng (UNIQUE lower(ten) — người khác vừa thêm)
+ * thì coi như xong: mục đích chỉ là lần sau có gợi ý.
+ */
+export async function themViTriNeuChuaCoDb(ten: string): Promise<void> {
+  const gon = gonTen(ten);
+  if (!gon) return;
+  const { error } = await db
+    .from(TABLE_DM_VT)
+    .insert({ ten: gon, dang_dung: true, thu_tu: await thuTuViTriMoiNhatDb() });
+  if (error && !isUniqueViolation(error)) throwDbError(error, { resource: `${TABLE_DM_VT}.insert` });
 }
 
 export async function updateNhanVienSoCheDb(

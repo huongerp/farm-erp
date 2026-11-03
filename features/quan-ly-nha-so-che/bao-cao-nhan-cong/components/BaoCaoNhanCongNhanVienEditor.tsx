@@ -8,10 +8,12 @@ import Button from '../../../../components/ui/Button';
 import { cn } from '../../../../lib/utils';
 import { useIsMobile } from '../../../../lib/hooks/use-is-mobile';
 import type { BaoCaoNhanCongFormValues, NhanVienRowFormValues } from '../core/schema';
-import { NGOAI_LE_CODE, type LoaiChuyen, type VarNhanVienSoChe } from '../core/types';
+import { NGOAI_LE_CODE, type LoaiChuyen, type VarNhanVienSoChe, type VarViTriSoChe } from '../core/types';
 import { syncChiTietTotalsFromSub } from '../core/ct-sub';
+import { gopViTriOptions } from '../core/vi-tri-danh-muc';
 import { buoiCuaChamCong, chamChieuCaChuyen, doiBuoi, doiNghi, nhomCuaChuyenChuaCo, nvFormRowMoi, nvKhongTinhGio, tongHopNgoaiLe, subTuDanhSachNv, type NvFormRow } from '../core/danh-sach-nv';
-import { khoaTen, laTenMoi, tenKhongTrung } from '../../danh-gia-dau-vao/core/chuan-hoa-ten';
+import { khoaTen, laTenMoi } from '../../danh-gia-dau-vao/core/chuan-hoa-ten';
+import { useThemViTriNeuMoi } from '../hooks/use-bao-cao-nhan-cong';
 
 const GIO_INPUT = { maxFractionDigits: 2, min: 0, max: 24 } as const;
 
@@ -23,6 +25,8 @@ interface Props {
   getValues: UseFormGetValues<BaoCaoNhanCongFormValues>;
   /** Danh mục nhân viên của chi nhánh đang chọn. */
   danhMuc: VarNhanVienSoChe[];
+  /** Danh mục vị trí công việc dùng chung — gợi ý trước, đúng thứ tự. */
+  viTriDanhMuc?: VarViTriSoChe[];
   nvErrors?: FieldErrors<NhanVienRowFormValues>[];
   /** Chưa chọn chi nhánh thì chưa có danh mục để gợi ý. */
   chuaChonChiNhanh?: boolean;
@@ -39,11 +43,13 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
   setValue,
   getValues,
   danhMuc,
+  viTriDanhMuc = [],
   nvErrors,
   chuaChonChiNhanh,
 }) => {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
+  const themViTriNeuMoi = useThemViTriNeuMoi();
   const ngoaiLe = loaiChuyen === NGOAI_LE_CODE;
   const gridCols = ngoaiLe
     ? 'sm:grid-cols-[minmax(0,2fr)_minmax(0,1.5fr)_auto_auto]'
@@ -58,8 +64,12 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
     [dangDung]
   );
   const viTriOptions = useMemo(
-    () => tenKhongTrung([...danhMuc.map((nv) => nv.vi_tri), ...ds.map((r) => r.vi_tri)]).map((v) => ({ value: v, label: v })),
-    [danhMuc, ds]
+    () =>
+      gopViTriOptions(viTriDanhMuc, [...danhMuc.map((nv) => nv.vi_tri), ...ds.map((r) => r.vi_tri)]).map((v) => ({
+        value: v,
+        label: v,
+      })),
+    [viTriDanhMuc, danhMuc, ds]
   );
   const dsTenDanhMuc = useMemo(() => danhMuc.map((nv) => nv.ho_ten), [danhMuc]);
 
@@ -177,11 +187,15 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
               <Combobox
                 options={viTriOptions}
                 value={row.vi_tri ?? ''}
-                onChange={(x) => patchRow(idx, { vi_tri: x ? String(x).trim() : null })}
+                onChange={(x) => {
+                  const viTri = x ? String(x).trim() : null;
+                  patchRow(idx, { vi_tri: viTri });
+                  themViTriNeuMoi(viTri);
+                }}
                 placeholder={t('baoCaoNhanCong.nv.viTri')}
                 error={err?.vi_tri?.message as string | undefined}
                 creatable
-                creatableLabel={t('baoCaoNhanCong.nv.dungTenMoi')}
+                creatableLabel={t('baoCaoNhanCong.nv.themViTriMoi')}
                 dropdownInPortal
               />
             </div>

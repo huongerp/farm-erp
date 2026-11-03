@@ -17,6 +17,10 @@ import {
   updateBaoCaoNhanCongTrangThaiMany,
   getNhanVienSoChe,
   updateNhanVienSoChe,
+  getViTriSoChe,
+  luuViTriSoChe,
+  xoaViTriSoChe,
+  themViTriNeuChuaCo,
 } from '../services/bao-cao-nhan-cong-service';
 import {
   findBaoCaoDuplicateByBranchAndDate,
@@ -25,8 +29,12 @@ import {
 } from '../core/form-mappers';
 import type { BaoCaoNhanCongFormValues } from '../core/schema';
 import type { FarmBaoCaoNhanCong, TrangThaiBaoCaoNhanCongPhieu, VarNhanVienSoChe } from '../core/types';
+import { laTenMoi } from '../../danh-gia-dau-vao/core/chuan-hoa-ten';
 
 export const QUERY_KEY_BAO_CAO_NHAN_CONG = ['baoCaoNhanCong'] as const;
+
+/** Danh mục vị trí công việc dùng chung — nằm dưới khoá module để đổi tên là form tự tải lại. */
+const QUERY_KEY_VI_TRI_SO_CHE = [...QUERY_KEY_BAO_CAO_NHAN_CONG, 'viTriSoChe'] as const;
 
 export function useBaoCaoNhanCongList() {
   return useQuery({
@@ -229,4 +237,54 @@ export function useUpdateNhanVienSoChe() {
       toast.error(err.message);
     },
   });
+}
+
+/** Danh mục vị trí dùng chung (Cài đặt + gợi ý dropdown). */
+export function useViTriSoChe() {
+  return useQuery({
+    queryKey: QUERY_KEY_VI_TRI_SO_CHE,
+    queryFn: getViTriSoChe,
+    staleTime: 1000 * 60 * 10,
+  });
+}
+
+export function useLuuViTriSoChe(onDone?: () => void) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string | null; data: { ten: string; dang_dung: boolean } }) =>
+      luuViTriSoChe(id, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QUERY_KEY_VI_TRI_SO_CHE });
+      toast.success(i18n.t('baoCaoNhanCong.caiDat.daLuu'));
+      onDone?.();
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+}
+
+export function useXoaViTriSoChe() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: xoaViTriSoChe,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QUERY_KEY_VI_TRI_SO_CHE });
+      toast.success(i18n.t('baoCaoNhanCong.caiDat.daXoa'));
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+}
+
+/**
+ * Ô vị trí vừa chọn / gõ tên chưa có trong danh mục → thêm vào để lần sau có gợi ý.
+ * Im lặng: ô đã nhận giá trị, đây chỉ là việc phụ; lỗi cũng bỏ qua.
+ */
+export function useThemViTriNeuMoi() {
+  const qc = useQueryClient();
+  const { data: dsViTri = [] } = useViTriSoChe();
+  return (ten: string | null | undefined) => {
+    if (!ten || !laTenMoi(ten, dsViTri.map((x) => x.ten))) return;
+    themViTriNeuChuaCo(ten)
+      .then(() => qc.invalidateQueries({ queryKey: QUERY_KEY_VI_TRI_SO_CHE }))
+      .catch(() => undefined);
+  };
 }

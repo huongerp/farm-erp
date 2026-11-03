@@ -62,7 +62,7 @@ import {
   bcncTdGhiChu,
 } from '../core/bcnc-detail-table';
 
-import { useCreateBaoCaoNhanCong, useNhanVienSoChe, useUpdateBaoCaoNhanCong } from '../hooks/use-bao-cao-nhan-cong';
+import { useCreateBaoCaoNhanCong, useNhanVienSoChe, useUpdateBaoCaoNhanCong, useViTriSoChe } from '../hooks/use-bao-cao-nhan-cong';
 import { useBaoCaoNhanCongPermissions } from '../hooks/use-bao-cao-nhan-cong-permissions';
 import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
 import { TRANG_THAI } from '../../../../lib/constants';
@@ -161,6 +161,7 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
 
   const idChiNhanh = useWatch({ control, name: 'id_chi_nhanh' });
   const { data: danhMucNv = [] } = useNhanVienSoChe(idChiNhanh);
+  const { data: viTriDanhMuc = [] } = useViTriSoChe();
 
   useEffect(() => {
     // Không reset nếu người dùng đã bắt đầu sửa — cùng lý do đã sửa ở BaoCaoSoCheForm.
@@ -285,6 +286,7 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
       setValue={setValue}
       getValues={getValues}
       danhMuc={danhMucNv}
+      viTriDanhMuc={viTriDanhMuc}
       nvErrors={errors.chi_tiet?.[index]?.nhan_vien as React.ComponentProps<typeof BaoCaoNhanCongNhanVienEditor>['nvErrors']}
       chuaChonChiNhanh={!idChiNhanh}
     />

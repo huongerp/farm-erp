@@ -70,6 +70,14 @@ export interface VarNhanVienSoChe {
   thu_tu: number;
 }
 
+/** Danh mục vị trí công việc dùng chung — fp_var_vi_tri_so_che */
+export interface VarViTriSoChe {
+  id: string;
+  ten: string;
+  dang_dung: boolean;
+  thu_tu: number;
+}
+
 export type ChiTietNumericFields = Pick<
   FarmBaoCaoNhanCongCt,
   'sl_cong_ngay' | 'sl_cong_nua' | 'sl_tang_ca' | 'so_gio_tc'

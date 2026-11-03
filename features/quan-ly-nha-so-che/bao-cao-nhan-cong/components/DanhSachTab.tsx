@@ -33,6 +33,7 @@ import BaoCaoNhanCongList from './BaoCaoNhanCongList';
 import BaoCaoNhanCongForm from './BaoCaoNhanCongForm';
 import BaoCaoNhanCongDetail from './BaoCaoNhanCongDetail';
 import DanhMucNhanVienDialog from './DanhMucNhanVienDialog';
+import CaiDatDialog from './cai-dat/CaiDatDialog';
 import XuatChonKieuDialog from './XuatChonKieuDialog';
 import { useBcncXuatNv } from '../hooks/use-bcnc-xuat-nv';
 import { BCNC_XUAT_NV_TOI_DA } from '../services/bao-cao-nhan-cong-list-query';
@@ -73,6 +74,7 @@ const DanhSachTab: React.FC = () => {
 
   const [showForm, setShowForm] = useState(false);
   const [showDmNv, setShowDmNv] = useState(false);
+  const [showCaiDat, setShowCaiDat] = useState(false);
   const [editingItem, setEditingItem] = useState<FarmBaoCaoNhanCong | null>(null);
   const [viewingItemRaw, setViewingItem] = useState<FarmBaoCaoNhanCong | null>(null);
   const [openedFormFromDetailId, setOpenedFormFromDetailId] = useState<string | null>(null);
@@ -360,6 +362,7 @@ const DanhSachTab: React.FC = () => {
         onImport={canCreate ? importer.openImport : undefined}
         bulkActions={bulkActions}
         onDanhSachNv={canCreate || canUpdate ? () => setShowDmNv(true) : undefined}
+        onCaiDat={canCreate || canUpdate ? () => setShowCaiDat(true) : undefined}
         canCreate={canCreate}
         canDelete={canDelete}
       />
@@ -467,6 +470,10 @@ const DanhSachTab: React.FC = () => {
             onClose={() => setShowDmNv(false)}
           />
         )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showCaiDat && <CaiDatDialog onClose={() => setShowCaiDat(false)} />}
       </AnimatePresence>
     </div>
   );
